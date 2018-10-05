@@ -619,7 +619,8 @@ contains
         endif
       else if( header_name == '!DENSITY' ) then
         if( cid >0 ) then
-          if( fstr_ctrl_get_DENSITY( ctrl, fstrSOLID%materials(cid)%variables )/=0 ) then
+          if( fstr_ctrl_get_DENSITY( ctrl, fstrSOLID%materials(cid)%variables, &
+              fstrSOLID%materials(cid)%dict)/=0 )  then
             write(*,*) '### Error: Fail in read in density definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in density definition : ', cid
             stop
@@ -632,6 +633,24 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 )  then
             write(*,*) '### Error: Fail in read in expansion coefficient definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in expansion coefficient definition : ', cid
+            stop
+          endif
+        endif
+      else if( header_name == '!CONDUCTIVITY' ) then
+        if( cid >0 ) then
+          if( fstr_ctrl_get_CONDUCTIVITY( ctrl, fstrSOLID%materials(cid)%variables, &
+              fstrSOLID%materials(cid)%dict)/=0 )  then
+            write(*,*) '### Error: Fail in read in conductivity definition : ' , cid
+            write(ILOG,*) '### Error: Fail in read in conductivity definition : ', cid
+            stop
+          endif
+        endif
+      else if( header_name == '!SPECIFIC_HEAT' .or. header_name == '!SPECIFIC HEAT' ) then
+        if( cid >0 ) then
+          if( fstr_ctrl_get_SPECIFIC_HEAT( ctrl, fstrSOLID%materials(cid)%variables, &
+              fstrSOLID%materials(cid)%dict)/=0 )  then
+            write(*,*) '### Error: Fail in read in specific heat definition : ' , cid
+            write(ILOG,*) '### Error: Fail in read in specific heat definition : ', cid
             stop
           endif
         endif

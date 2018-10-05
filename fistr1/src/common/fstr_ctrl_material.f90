@@ -544,100 +544,217 @@ contains
 
   !----------------------------------------------------------------------
   !> Read in !DENSITY
-  integer function fstr_ctrl_get_DENSITY( ctrl, matval )
+  integer function fstr_ctrl_get_DENSITY(ctrl, matval, dict)
     integer(kind=kint), intent(in) :: ctrl
     real(kind=kreal),intent(out)   :: matval(:)
-
-    integer(kind=kint) :: i, rcode, depends
     real(kind=kreal),pointer :: fval(:,:)
-    character(len=HECMW_NAME_LEN) :: data_fmt
-
-    data_fmt = "R "
+    type(DICT_STRUCT), pointer :: dict
+    type(tTable) :: mttable
+    integer(kind=kint) :: i, n, rcode, depends, ipt
+    character(len=HECMW_NAME_LEN) :: ss
 
     fstr_ctrl_get_DENSITY = -1
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if(n == 0) return
 
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
-    if( depends>1 ) depends = 1 ! we consider temprature dependence only currently
+    rcode = fstr_ctrl_get_param_ex(ctrl, 'DEPENDENCIES ', '# ', 0,   'I', depends)
+    if(1 < depends) depends = 1
 
-    allocate( fval(1,depends+1) )
-    do i=2,1+depends
-      data_fmt = data_fmt //"R "
-    enddo
-    fstr_ctrl_get_DENSITY                                      &
-      = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
-    if( fstr_ctrl_get_DENSITY==0 ) matval(M_DENSITY) = fval(1,1)
+    allocate(fval(depends+1, n))
 
-    if( associated(fval) ) deallocate(fval)
+    if(depends == 0)then
+      fstr_ctrl_get_DENSITY = fstr_ctrl_get_data_array_ex(ctrl, "R ", fval(1,:))
+    else
+      fstr_ctrl_get_DENSITY = fstr_ctrl_get_data_array_ex(ctrl, "RR ", fval(1,:), fval(2,:))
+    endif
 
+    if(fstr_ctrl_get_DENSITY == 0)then
+      matval(M_EXAPNSION) = fval(1,1)
+      call init_table( mttable,depends, 1+depends, n, fval )
+      call dict_add_key( dict, MC_DENSITY, mttable )
+    endif
+
+    call finalize_table(mttable)
+    if(associated(fval)) deallocate(fval)
   end function fstr_ctrl_get_DENSITY
-
 
   !----------------------------------------------------------------------
   !> Read in !EXPANSION_COEFF
-  integer function fstr_ctrl_get_EXPANSION_COEFF( ctrl, matval, dict )
+  integer function fstr_ctrl_get_EXPANSION_COEFF(ctrl, matval, dict)
+    type(DICT_STRUCT), pointer :: dict
     integer(kind=kint), intent(in) :: ctrl
-    real(kind=kreal),intent(out)   :: matval(:)
-    type(DICT_STRUCT), pointer     :: dict
-
+    real(kind=kreal),intent(out) :: matval(:)
+    type(tTable) :: mttable
     integer(kind=kint) :: i, n, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:)
-    type( tTable )           :: mttable
+    real(kind=kreal), pointer :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt, ss
 
     data_fmt = "R "
-
     fstr_ctrl_get_EXPANSION_COEFF = -1
-    n = fstr_ctrl_get_data_line_n( ctrl )
-    if( n == 0 ) return               ! fail in reading plastic
-
+    n = fstr_ctrl_get_data_line_n(ctrl)
+    if(n == 0) return
     ss = 'ISOTROPIC,ORTHOTROPIC '
-    ipt = 1  !default
-    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  ss, 0, 'P',   ipt    ) /= 0 ) return
+    ipt = 1
+    if(fstr_ctrl_get_param_ex(ctrl, 'TYPE ', ss, 0, 'P', ipt) /= 0) return
 
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
-    if( depends>1 ) depends = 1 ! we consider temprature dependence only currently
+    rcode = fstr_ctrl_get_param_ex(ctrl, 'DEPENDENCIES ', '# ',  0, 'I', depends)
+    if(1 < depends) depends = 1
 
-    if( ipt==1 ) then
-      allocate( fval(depends+1, n) )
-      do i=2,1+depends
+    if(ipt == 1)then
+      allocate(fval(depends+1, n))
+      do i = 2, 1+depends
         data_fmt = data_fmt //"R "
       enddo
-      if( depends==0 ) then
-        fstr_ctrl_get_EXPANSION_COEFF = &
-          fstr_ctrl_get_data_array_ex( ctrl, "R ", fval(1,:) )
+      if(depends == 0)then
+        fstr_ctrl_get_EXPANSION_COEFF = fstr_ctrl_get_data_array_ex(ctrl, "R ", fval(1,:))
       else
-        fstr_ctrl_get_EXPANSION_COEFF = &
-          fstr_ctrl_get_data_array_ex( ctrl, "RR ", fval(1,:), fval(2,:) )
+        fstr_ctrl_get_EXPANSION_COEFF = fstr_ctrl_get_data_array_ex(ctrl, "RR ", fval(1,:), fval(2,:))
       endif
-      if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
+      if(fstr_ctrl_get_EXPANSION_COEFF == 0)then
         matval(M_EXAPNSION) = fval(1,1)
-        call init_table( mttable,depends, 1+depends, n, fval )
-        call dict_add_key( dict, MC_THEMOEXP, mttable )
+        call init_table(mttable,depends, 1+depends, n, fval)
+        call dict_add_key(dict, MC_THEMOEXP, mttable)
       endif
     else
-      allocate( fval(3+depends,n) )
-      do i=2,3+depends
+      allocate(fval(3+depends, n))
+      do i = 2, 3+depends
         data_fmt = trim(data_fmt) //"R "
       enddo
-      if( depends==0 ) then
-        fstr_ctrl_get_EXPANSION_COEFF = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+      if(depends == 0)then
+        fstr_ctrl_get_EXPANSION_COEFF = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:))
       elseif( depends==1 ) then
         fstr_ctrl_get_EXPANSION_COEFF = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:) )
+        & fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:))
       endif
-      if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
-        call init_table( mttable, depends, 3+depends,n, fval )
-        if( fstr_ctrl_get_EXPANSION_COEFF==0 ) call dict_add_key( dict, MC_ORTHOEXP, mttable )
+      if(fstr_ctrl_get_EXPANSION_COEFF == 0)then
+        call init_table(mttable, depends, 3+depends,n, fval)
+        if(fstr_ctrl_get_EXPANSION_COEFF == 0) call dict_add_key(dict, MC_ORTHOEXP, mttable)
       endif
     endif
 
-    call finalize_table( mttable )
-    if( associated(fval) ) deallocate(fval)
+    call finalize_table(mttable)
+    if(associated(fval)) deallocate(fval)
   end function fstr_ctrl_get_EXPANSION_COEFF
 
+  !----------------------------------------------------------------------
+  !> Read in !CONDUCTIVITY
+  integer function fstr_ctrl_get_CONDUCTIVITY( ctrl, matval, dict )
+    type(DICT_STRUCT), pointer :: dict
+    integer(kind=kint), intent(in) :: ctrl
+    real(kind=kreal),intent(out) :: matval(:)
+    type(tTable) :: mttable
+    integer(kind=kint) :: i, n, rcode, depends, ipt
+    real(kind=kreal), pointer :: fval(:,:)
+    character(len=HECMW_NAME_LEN) :: data_fmt, ss
+
+    data_fmt = "R "
+    fstr_ctrl_get_CONDUCTIVITY = -1
+    n = fstr_ctrl_get_data_line_n(ctrl)
+    if(n == 0) return
+    ss = 'ISOTROPIC,ORTHOTROPIC '
+    ipt = 1
+    if(fstr_ctrl_get_param_ex(ctrl, 'TYPE ', ss, 0, 'P', ipt) /= 0) return
+
+    depends = 0
+    rcode = fstr_ctrl_get_param_ex(ctrl, 'DEPENDENCIES ', '# ',  0, 'I', depends)
+    if(1 < depends) depends = 1
+
+    if(ipt == 1)then
+      allocate(fval(depends+1, n))
+      do i = 2, 1+depends
+        data_fmt = data_fmt //"R "
+      enddo
+      if(depends == 0)then
+        fstr_ctrl_get_CONDUCTIVITY = fstr_ctrl_get_data_array_ex(ctrl, "R ", fval(1,:))
+      else
+        fstr_ctrl_get_CONDUCTIVITY = fstr_ctrl_get_data_array_ex(ctrl, "RR ", fval(1,:), fval(2,:))
+      endif
+      if(fstr_ctrl_get_CONDUCTIVITY == 0)then
+        matval(M_CONDUCTIVITY) = fval(1,1)
+        call init_table(mttable,depends, 1+depends, n, fval)
+        call dict_add_key(dict, MC_CONDUCTIVITY, mttable)
+      endif
+    else
+      allocate(fval(3+depends, n))
+      do i = 2, 3+depends
+        data_fmt = trim(data_fmt) //"R "
+      enddo
+      if(depends == 0)then
+        fstr_ctrl_get_CONDUCTIVITY = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:))
+      elseif( depends==1 ) then
+        fstr_ctrl_get_CONDUCTIVITY = &
+        & fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:))
+      endif
+      if(fstr_ctrl_get_CONDUCTIVITY == 0)then
+        call init_table(mttable, depends, 3+depends,n, fval)
+        if(fstr_ctrl_get_CONDUCTIVITY == 0) call dict_add_key(dict, MC_ORTHO_CONDUCTIVITY, mttable)
+      endif
+    endif
+
+    call finalize_table(mttable)
+    if(associated(fval)) deallocate(fval)
+  end function fstr_ctrl_get_CONDUCTIVITY
+
+  !----------------------------------------------------------------------
+  !> Read in !SPECIFIC_HEAT
+  integer function fstr_ctrl_get_SPECIFIC_HEAT(ctrl, matval, dict)
+    type(DICT_STRUCT), pointer :: dict
+    integer(kind=kint), intent(in) :: ctrl
+    real(kind=kreal),intent(out) :: matval(:)
+    type(tTable) :: mttable
+    integer(kind=kint) :: i, n, rcode, depends, ipt
+    real(kind=kreal), pointer :: fval(:,:)
+    character(len=HECMW_NAME_LEN) :: data_fmt, ss
+
+    data_fmt = "R "
+    fstr_ctrl_get_SPECIFIC_HEAT = -1
+    n = fstr_ctrl_get_data_line_n(ctrl)
+    if(n == 0) return
+    ss = 'ISOTROPIC,ORTHOTROPIC '
+    ipt = 1
+    if(fstr_ctrl_get_param_ex(ctrl, 'TYPE ', ss, 0, 'P', ipt) /= 0) return
+
+    depends = 0
+    rcode = fstr_ctrl_get_param_ex(ctrl, 'DEPENDENCIES ', '# ',  0, 'I', depends)
+    if(1 < depends) depends = 1
+
+    if(ipt == 1)then
+      allocate(fval(depends+1, n))
+      do i = 2, 1+depends
+        data_fmt = data_fmt //"R "
+      enddo
+      if(depends == 0)then
+        fstr_ctrl_get_SPECIFIC_HEAT = fstr_ctrl_get_data_array_ex(ctrl, "R ", fval(1,:))
+      else
+        fstr_ctrl_get_SPECIFIC_HEAT = fstr_ctrl_get_data_array_ex(ctrl, "RR ", fval(1,:), fval(2,:))
+      endif
+      if(fstr_ctrl_get_SPECIFIC_HEAT == 0)then
+        matval(M_SPECIFIC_HEAT) = fval(1,1)
+        call init_table(mttable,depends, 1+depends, n, fval)
+        call dict_add_key(dict, MC_SPECIFIC_HEAT, mttable)
+      endif
+    else
+      allocate(fval(3+depends, n))
+      do i = 2, 3+depends
+        data_fmt = trim(data_fmt) //"R "
+      enddo
+      if(depends == 0)then
+        fstr_ctrl_get_SPECIFIC_HEAT = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:))
+      elseif( depends==1 ) then
+        fstr_ctrl_get_SPECIFIC_HEAT = &
+        & fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:))
+      endif
+      if(fstr_ctrl_get_SPECIFIC_HEAT == 0)then
+        call init_table(mttable, depends, 3+depends,n, fval)
+        if(fstr_ctrl_get_SPECIFIC_HEAT == 0) call dict_add_key(dict, MC_ORTHO_SPECIFIC_HEAT, mttable)
+      endif
+    endif
+
+    call finalize_table(mttable)
+    if(associated(fval)) deallocate(fval)
+  end function fstr_ctrl_get_SPECIFIC_HEAT
 
   integer function read_user_matl( ctrl, matval )
     integer(kind=kint), intent(in)    :: ctrl

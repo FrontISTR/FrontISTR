@@ -92,11 +92,8 @@ module mMaterial
   integer(kind=kint), parameter :: M_PLCONST4 = 8
   integer(kind=kint), parameter :: M_PLCONST5 = 9
   integer(kind=kint), parameter :: M_KINEHARD = 10
-
   integer(kind=kint), parameter :: M_EXAPNSION = 20
-
   integer(kind=kint), parameter :: M_ALPHA_OVER_MU = 21
-
   integer(kind=kint), parameter :: M_BEAM_RADIUS = 22
   integer(kind=kint), parameter :: M_BEAM_ANGLE1 = 23
   integer(kind=kint), parameter :: M_BEAM_ANGLE2 = 24
@@ -104,8 +101,9 @@ module mMaterial
   integer(kind=kint), parameter :: M_BEAM_ANGLE4 = 26
   integer(kind=kint), parameter :: M_BEAM_ANGLE5 = 27
   integer(kind=kint), parameter :: M_BEAM_ANGLE6 = 28
-
   integer(kind=kint), parameter :: M_VISCOCITY = 29
+  integer(kind=kint), parameter :: M_CONDUCTIVITY = 30
+  integer(kind=kint), parameter :: M_SPECIFIC_HEAT = 31
 
   ! Dictionary constants
   character(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
@@ -116,6 +114,11 @@ module mMaterial
   character(len=DICT_KEY_LENGTH) :: MC_VISCOELASTIC = 'VISCOELASTIC' ! Prony coeff only curr.
   character(len=DICT_KEY_LENGTH) :: MC_NORTON = 'NORTON'             ! NOrton's creep law
   character(len=DICT_KEY_LENGTH) :: MC_INCOMP_NEWTONIAN = 'INCOMP_FLUID' ! viscocity
+  character(len=DICT_KEY_LENGTH) :: MC_CONDUCTIVITY = 'CONDUCTIVITY' ! conductivity
+  character(len=DICT_KEY_LENGTH) :: MC_SPECIFIC_HEAT = 'SPECIFIC_HEAT' ! specific heat
+  character(len=DICT_KEY_LENGTH) :: MC_ORTHO_CONDUCTIVITY = 'ORTHO_CONDUCTIVITY' ! conductivity
+  character(len=DICT_KEY_LENGTH) :: MC_ORTHO_SPECIFIC_HEAT = 'ORTHO_SPECIFIC_HEAT' ! specific heat
+  character(len=DICT_KEY_LENGTH) :: MC_DENSITY = 'DENSITY' ! density
 
   type tshellmat
     integer(kind=kint)         :: ortho
