@@ -34,7 +34,7 @@ contains
     write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'IIr '
 
     iType=2
-    ss='INITIAL,TRANSIT'
+    ss='INITIAL,TRANSIT '
     fstr_ctrl_get_nval = -1
     rcode=fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   ss,   0,   'P',   iType  )
 
