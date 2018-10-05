@@ -1628,6 +1628,167 @@ extern int HECMW_get_etype_shape(int etype) {
   return -1;
 }
 
+extern int HECMW_get_etype_vtk_shape(int etype) {
+  switch (etype) {
+
+    case HECMW_ETYPE_ROD1:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_ROD2:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_TRI1:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_TRI2:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_TRI22:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_QUA1:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_QUA2:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_ROD31:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_TET1:
+      return HECMW_VTK_SHAPE_TETRA;
+    case HECMW_ETYPE_TET1_4:
+      return HECMW_VTK_SHAPE_TETRA;
+    case HECMW_ETYPE_TET2:
+      return HECMW_VTK_SHAPE_TETRA2;
+    case HECMW_ETYPE_TET22:
+      return HECMW_VTK_SHAPE_TETRA;
+    case HECMW_ETYPE_PRI1:
+      return HECMW_VTK_SHAPE_PRISM;
+    case HECMW_ETYPE_PRI2:
+      return HECMW_VTK_SHAPE_PRISM;
+    case HECMW_ETYPE_HEX1:
+      return HECMW_VTK_SHAPE_HEXA;
+    case HECMW_ETYPE_HEX1_4:
+      return HECMW_VTK_SHAPE_HEXA;
+    case HECMW_ETYPE_HEX2:
+      return HECMW_VTK_SHAPE_HEXA;
+    case HECMW_ETYPE_PYR1:
+      return HECMW_VTK_SHAPE_PYRAM;
+    case HECMW_ETYPE_PYR2:
+      return HECMW_VTK_SHAPE_PYRAM;
+    case HECMW_ETYPE_MST1:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_MST2:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_MSQ1:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_MSQ2:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_JTB1:
+      return HECMW_VTK_SHAPE_LINE;
+    /* case HECMW_ETYPE_JTR1:
+      return HECMW_VTK_SHAPE_LINE; */
+    case HECMW_ETYPE_JTT1:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_JTT2:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_JTQ1:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_JTQ2:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_BEM1:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_BEM2:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_BEM3:
+      return HECMW_VTK_SHAPE_LINE; /* mixed beam-341*/
+    case HECMW_ETYPE_SHT1:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_SHT2:
+      return HECMW_VTK_SHAPE_TRI;
+    case HECMW_ETYPE_SHQ1:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_SHQ2:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_SHQ3:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_SHT6:
+      return HECMW_VTK_SHAPE_TRI; /* mixed shell-solid */
+    case HECMW_ETYPE_SHQ8:
+      return HECMW_VTK_SHAPE_QUAD;
+    case HECMW_ETYPE_LN11:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN12:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN13:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN14:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN15:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN16:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN21:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN22:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN23:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN24:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN25:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN26:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN31:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN32:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN33:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN34:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN35:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN36:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN41:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN42:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN43:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN44:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN45:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN46:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN51:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN52:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN53:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN54:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN55:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN56:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN61:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN62:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN63:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN64:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN65:
+      return HECMW_VTK_SHAPE_LINE;
+    case HECMW_ETYPE_LN66:
+      return HECMW_VTK_SHAPE_LINE;
+    default:
+      return -1;
+  }
+
+  return -1;
+}
+
+
 /*============================================================================*/
 
 extern int HECMW_is_etype_rod(int etype) {

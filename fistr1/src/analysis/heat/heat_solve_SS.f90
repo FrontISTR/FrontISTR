@@ -6,28 +6,27 @@
 module m_heat_solve_SS
 contains
 
-  subroutine heat_solve_SS ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,CTIME )
-
+  subroutine heat_solve_SS ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_boundary
     use m_heat_init
     use m_hecmw2fstr_mesh_conv
     use m_solve_lineq
-
     implicit none
     integer(kind=kint) :: ISTEP, iterALL, ITM, i, INCR, LMAX, LMIN, inod, ii, bup_n_dof
     real(kind=kreal)   :: CTIME, BETA, STIME, val, CHK, TMAX, TMIN, temp
-
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
-
+    type(hecmwST_matrix), pointer   :: hecMATmpc
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     BETA    = 1.0d0
     STIME   = 0.0d0
@@ -42,91 +41,59 @@ contains
 
     !C--------------------  START OF STEADY STATE  ----------------------------
     do
-      !C--------------------
-      iterALL= iterALL + 1
-      hecMAT%X = 0.0d0
-      !C
+      iterALL = iterALL + 1
+
       !C-- MATRIX ASSEMBLING
-
-      call hecmw_barrier(hecMESH)
       call heat_mat_ass_conductivity( hecMESH, hecMAT, fstrHEAT, BETA )
-      write(IDBG,*) 'mat_ass_conductivity: OK'
-      ! do i = 1, hecMESH%nn_internal
-      !   write(IDBG,*) i, hecMAT%D(i)
-      ! enddo
-      call flush(IDBG)
+      call heat_mat_ass_boundary( hecMESH, hecMAT, hecMATmpc, fstrHEAT, STIME, ETIME, 0.d0 )
 
-      call heat_mat_ass_boundary( hecMESH, hecMAT, fstrHEAT, STIME, ETIME, 0.d0 )
-      write(IDBG,*) 'mat_ass_boundary: OK'
-      ! do i = 1, hecMESH%nn_internal
-      !   write(IDBG,*) i, hecMAT%D(i)
-      ! enddo
-      call flush(IDBG)
-
-      call hecmw_barrier(hecMESH)
-
-      !C
       !C-- SOLVER
-      hecMAT%Iarray(97) = 1   !Need numerical factorization
+      hecMATmpc%Iarray(97) = 1   !Need numerical factorization
       bup_n_dof = hecMESH%n_dof
       hecMESH%n_dof = 1
-      call solve_LINEQ(hecMESH,hecMAT)
-      hecMESH%n_dof=bup_n_dof
-      write(IDBG,*) 'solve_LINEQ: OK'
-      call flush(IDBG)
-      !C
+      call solve_LINEQ(hecMESH,hecMATmpc)
+      hecMESH%n_dof = bup_n_dof
+      call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
+
       !C-- UPDATE
-
-      do i= 1, hecMESH%n_node
-        fstrHEAT%TEMPC(i)= fstrHEAT%TEMP(i)
+      do i = 1, hecMESH%n_node
+        fstrHEAT%TEMPC(i) = fstrHEAT%TEMP(i)
+        fstrHEAT%TEMP (i) = hecMAT%X(i)
       enddo
 
-      do i= 1, hecMESH%n_node
-        fstrHEAT%TEMP (i)= hecMAT%X(i)
+      val = 0.0d0
+      do i = 1, hecMESH%nn_internal
+        val = val + (fstrHEAT%TEMP(i) - fstrHEAT%TEMPC(i))**2
       enddo
-
-      val= 0.d0
-      do i= 1, hecMESH%nn_internal
-        val= val + (fstrHEAT%TEMP(i) - fstrHEAT%TEMPC(i))**2
-      enddo
-
-      call hecmw_allREDUCE_R1 ( hecMESH, val, hecmw_sum )
+      call hecmw_allREDUCE_R1(hecMESH, val, hecmw_sum)
 
       CHK = dsqrt(val)
       if( hecMESH%my_rank.eq.0 ) then
-        !write(*,'(i8,1p2e16.6,i10)')    iterALL,CHK,hecMAT%RESIDactual,hecMAT%ITERactual
-        !write(IMSG,'(i8,1p2e16.6,i10)') iterALL,CHK,hecMAT%RESIDactual,hecMAT%ITERactual
         write(*,'(i8,1p1e16.6)')    iterALL,CHK
         write(IMSG,'(i8,1p1e16.6)') iterALL,CHK
         call flush(IMSG)
       endif
 
-      if( CHK.lt.EPS ) then
+      if( CHK < EPS ) then
         if( hecMESH%my_rank.eq.0 ) then
-          write(*,*)
           write(*,*) ' !!! CONVERGENCE ACHIEVED '
-          write(IMSG,*)
           write(IMSG,*) ' !!! CONVERGENCE ACHIEVED '
-          INCR = 0
-          !write(ISTA,'(3i8,1pE15.7,i8)') ISTEP,INCR,iterALL-1,CHK,hecMAT%ITERactual
-          write(ISTA,'(3i8,1pE15.7)') ISTEP,INCR,iterALL-1,CHK
+          write(ISTA,'(2i8,1pE15.7)') ISTEP,iterALL-1,CHK
         endif
         exit
       endif
 
-      if ( iterALL.ge.ITM ) then
+      if(ITM <= iterALL)then
         if( hecMESH%my_rank.eq.0 ) then
-          write(*,*)
           write(*,*) ' !!! ITERATION COUNT OVER : MAX = ', ITM
-          write(IMSG,*)
           write(IMSG,*) ' !!! ITERATION COUNT OVER : MAX = ', ITM
         endif
         call hecmw_abort( hecmw_comm_get_comm() )
       endif
-
-      !C--------------------
     enddo
     !C--------------------  END OF STEADY STATE  ------------------
+
+    call hecmw_mpc_mat_finalize( hecMESH, hecMAT, hecMATmpc )
 
     TMAX = -1.0d10
     TMIN =  1.0d10

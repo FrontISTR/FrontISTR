@@ -54,7 +54,7 @@ contains
       t(3,3) = t(1,1)*t(2,2) - t(1,2)*t(2,1)
     endif
 
-  end subroutine
+  end subroutine framtr
 
   !> Calculate stiff matrix of BEAM elements
   subroutine STF_Beam(etype,nn,ecoord,section,E,P,STIFF)
@@ -149,8 +149,7 @@ contains
     stiff(:,7:9) = matmul( stiff(:,7:9), trans )
     stiff(:,10:12) = matmul( stiff(:,10:12), trans )
 
-  end subroutine
-
+  end subroutine STF_Beam
 
   ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
   !> Calculate stiff matrix of BEAM elements
@@ -1076,6 +1075,10 @@ contains
       gausses(1)%strain(k) = e_hat(1, 1)
       gausses(1)%stress(k) = t_hat(1, 1)
 
+      !set stress and strain for output
+      gausses(1)%strain_out(k) = gausses(1)%strain(k)
+      gausses(1)%stress_out(k) = gausses(1)%stress(k)
+
       !--------------------------------------------------------
 
       ndstrain(1, k) = 0.0D0
@@ -1170,13 +1173,13 @@ contains
 
        gausses(1)%nqm(1:12) = rnqm(1:12)
 
-       write (6,'(a5,6a15)') 'dis-ij','x','y','z','theta-x','theta-y','theta-z'
-       write (6,'(a,1p,6e15.5,0p)') 'dis-i',(tdisp(j),j= 1, 3),(tdisp(j),j= 7, 9)
-       write (6,'(a,1p,6e15.5,0p)') 'dis-j',(tdisp(j),j= 4, 6),(tdisp(j),j=10,12)
-       write (6,'(a5,6a15)') 'nqm-ij','N','Qy','QZ','Mx','My','Mz'
-       write (6,'(a,1p,6e15.5,0p)') 'nqm-i',(rnqm(j),j= 1, 3),(rnqm(j),j= 7, 9)
-       write (6,'(a,1p,6e15.5,0p)') 'nqm-j',(rnqm(j),j= 4, 6),(rnqm(j),j=10,12)
-       write (6,'(a)') ''
+!       write (6,'(a5,6a15)') 'dis-ij','x','y','z','theta-x','theta-y','theta-z'
+!       write (6,'(a,1p,6e15.5,0p)') 'dis-i',(tdisp(j),j= 1, 3),(tdisp(j),j= 7, 9)
+!       write (6,'(a,1p,6e15.5,0p)') 'dis-j',(tdisp(j),j= 4, 6),(tdisp(j),j=10,12)
+!       write (6,'(a5,6a15)') 'nqm-ij','N','Qy','QZ','Mx','My','Mz'
+!       write (6,'(a,1p,6e15.5,0p)') 'nqm-i',(rnqm(j),j= 1, 3),(rnqm(j),j= 7, 9)
+!       write (6,'(a,1p,6e15.5,0p)') 'nqm-j',(rnqm(j),j= 4, 6),(rnqm(j),j=10,12)
+!       write (6,'(a)') ''
 
     !--------------------------------------------------------------------
 
@@ -1204,8 +1207,8 @@ contains
 
     !--------------------------------------------------------------------
 
-    estrain(1:6) = gausses(1)%strain(1:6)
-    estress(1:6) = gausses(1)%stress(1:6)
+    estrain(1:6) = gausses(1)%strain_out(1:6)
+    estress(1:6) = gausses(1)%stress_out(1:6)
     enqm(1:12)   = gausses(1)%nqm(1:12)
 
   end subroutine ElementalStress_Beam_641

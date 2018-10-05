@@ -16,6 +16,7 @@ module hecmw_matrix_ass
   public :: hecmw_mat_add_node
   public :: hecmw_array_search_i
   public :: hecmw_mat_ass_equation
+  public :: hecmw_mat_ass_equation_rhs
   public :: hecmw_mat_add_dof
   public :: hecmw_mat_ass_bc
   public :: hecmw_mat_ass_contact
@@ -176,11 +177,11 @@ contains
     type (hecmwST_local_mesh)     :: hecMESH
     !** Local variables
     real(kind=kreal), pointer :: penalty
-    real(kind=kreal) :: ALPHA, a1_2inv, ai, aj, factor, ci
+    real(kind=kreal) :: ALPHA, a1_2inv, ai, aj, factor
     integer(kind=kint) :: NDIAG, impc, is, iE, i, j, inod, idof, jnod, jdof
     logical :: is_internal_i, is_internal_j
 
-    if( hecmw_mat_get_penalized(hecMAT) == 1 .and. hecmw_mat_get_penalized_b(hecMAT) == 1) return
+    if( hecmw_mat_get_penalized(hecMAT) == 1 ) return
 
     ! write(*,*) "INFO: imposing MPC by penalty"
 
@@ -190,11 +191,18 @@ contains
     if (penalty < 1.0) write(*,*) "WARNING: penalty ", penalty, " smaller than 1"
 
     ALPHA= hecmw_mat_diag_max(hecMAT, hecMESH) * penalty
+    call hecmw_mat_set_penalty_alpha(hecMAT, ALPHA)
 
-    do impc = 1, hecMESH%mpc%n_mpc
+    OUTER: do impc = 1, hecMESH%mpc%n_mpc
       is = hecMESH%mpc%mpc_index(impc-1) + 1
       iE = hecMESH%mpc%mpc_index(impc)
+
+      do i = is, iE
+        if (hecMESH%mpc%mpc_dof(i) > hecMAT%NDOF) cycle OUTER
+      enddo
+
       a1_2inv = 1.0 / hecMESH%mpc%mpc_val(is)**2
+
 
       do i = is, iE
         inod = hecMESH%mpc%mpc_item(i)
@@ -205,32 +213,66 @@ contains
         ai = hecMESH%mpc%mpc_val(i)
         factor = ai * a1_2inv
 
-        if( hecmw_mat_get_penalized(hecMAT) == 0) then
-          do j = is, iE
-            jnod = hecMESH%mpc%mpc_item(j)
+        do j = is, iE
+          jnod = hecMESH%mpc%mpc_item(j)
 
-            is_internal_j = (hecMESH%node_ID(2*jnod) == hecmw_comm_get_rank())
-            if (.not. (is_internal_i .or. is_internal_j)) cycle
+          is_internal_j = (hecMESH%node_ID(2*jnod) == hecmw_comm_get_rank())
+          if (.not. (is_internal_i .or. is_internal_j)) cycle
 
-            jdof = hecMESH%mpc%mpc_dof(j)
-            aj = hecMESH%mpc%mpc_val(j)
+          jdof = hecMESH%mpc%mpc_dof(j)
+          aj = hecMESH%mpc%mpc_val(j)
 
-            call hecmw_mat_add_dof(hecMAT, inod, idof, jnod, jdof, aj*factor*ALPHA)
-          enddo
-        endif
+          call hecmw_mat_add_dof(hecMAT, inod, idof, jnod, jdof, aj*factor*ALPHA)
+        enddo
 
-        if( hecmw_mat_get_penalized_b(hecMAT) == 0) then
-          ci = hecMESH%mpc%mpc_const(impc)
-          !$omp atomic
-          hecMAT%B(3*(inod-1)+idof) = hecMAT%B(3*(inod-1)+idof) + ci*factor*ALPHA
-        endif
       enddo
-    enddo
+    enddo OUTER
 
     call hecmw_mat_set_penalized(hecMAT, 1)
-    call hecmw_mat_set_penalized_b(hecMAT, 1)
 
   end subroutine hecmw_mat_ass_equation
+
+
+  subroutine hecmw_mat_ass_equation_rhs ( hecMESH, hecMAT )
+    type (hecmwST_matrix), target :: hecMAT
+    type (hecmwST_local_mesh)     :: hecMESH
+    !** Local variables
+    real(kind=kreal) :: ALPHA, a1_2inv, ai, factor, ci
+    integer(kind=kint) :: ndof, impc, iS, iE, i, inod, idof
+
+    if( hecmw_mat_get_penalized_b(hecMAT) == 1) return
+
+    ALPHA = hecmw_mat_get_penalty_alpha(hecMAT)
+    if (ALPHA <= 0.0) stop "ERROR: penalty applied on vector before matrix"
+
+    ndof = hecMAT%NDOF
+
+    OUTER: do impc = 1, hecMESH%mpc%n_mpc
+      iS = hecMESH%mpc%mpc_index(impc-1) + 1
+      iE = hecMESH%mpc%mpc_index(impc)
+
+      do i = is, iE
+        if (hecMESH%mpc%mpc_dof(i) > ndof) cycle OUTER
+      enddo
+
+      a1_2inv = 1.0 / hecMESH%mpc%mpc_val(iS)**2
+
+      do i = iS, iE
+        inod = hecMESH%mpc%mpc_item(i)
+
+        idof = hecMESH%mpc%mpc_dof(i)
+        ai = hecMESH%mpc%mpc_val(i)
+        factor = ai * a1_2inv
+
+        ci = hecMESH%mpc%mpc_const(impc)
+        !$omp atomic
+        hecMAT%B(ndof*(inod-1)+idof) = hecMAT%B(ndof*(inod-1)+idof) + ci*factor*ALPHA
+      enddo
+    enddo OUTER
+
+    call hecmw_mat_set_penalized_b(hecMAT, 1)
+
+  end subroutine hecmw_mat_ass_equation_rhs
 
 
   subroutine hecmw_mat_add_dof(hecMAT, inod, idof, jnod, jdof, val)

@@ -20,24 +20,5 @@
 !VISUAL,metod=PSR
 !surface_num=1
 !surface 1
-#!output_type = complete_reorder_avs
-!output_type = separate_complete_avs
-!!surface_style = 1
-!!color_comp_name = DISPLACEMENT
-!!color_subcomp = 0
-#!color_comp_name = STRESS
-#!color_subcomp = 7
-!!deform_display_on = 1
-!!initial_style = 4
-!!deform_style = 3
-!!deform_num_of_frames = 1
-!!output_type = bmp
-!!viewpoint = 10, 5, 3
-!!up_direction = 0, 0, 1
-!!color_mapping_style = 1
-!!color_mapping_bar_on = 1
-!!scale_marking_on = 1
-!!num_of_scale = 6
-!!font_size = 1.5
-!!rotate_style = 3
+!output_type=VTK
 !END

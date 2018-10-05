@@ -111,6 +111,11 @@ module m_fstr
   integer(kind=kint), pointer :: NRRES     ! position of restart read
   integer(kind=kint), pointer :: NPRINT    ! interval of write
 
+  integer(kind=kint), parameter :: kOPSS_SOLUTION = 1
+  integer(kind=kint), parameter :: kOPSS_MATERIAL = 2
+  integer(kind=kint)            :: OPSSTYPE = kOPSS_SOLUTION ! output stress/strain type
+
+
   !> REFTEMP
   real(kind=kreal), pointer :: REF_TEMP
 
@@ -282,6 +287,8 @@ module m_fstr
     integer( kind=kint ),pointer :: COUPLE_ngrp_ID(:)
 
     !> VALUE
+    integer(kind=kint) :: maxn_gauss
+
     real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
     real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
     real(kind=kreal), pointer :: MISES(:)     !< nodal MISES
@@ -306,6 +313,12 @@ module m_fstr
     real(kind=kreal), pointer :: YIELD_RATIO(:)    !< yield ratio
 
     real(kind=kreal), pointer :: ENQM(:)      !< elemental NQM
+    real(kind=kreal), pointer :: REACTION(:)    !< reaction_force
+
+    real(kind=kreal), pointer :: CONT_NFORCE(:)  !< contact normal force for output
+    real(kind=kreal), pointer :: CONT_FRIC(:)    !< contact friction force for output
+    real(kind=kreal), pointer :: CONT_RELVEL(:)  !< contact ralative velocity for output
+    real(kind=kreal), pointer :: CONT_STATE(:)   !< contact state for output
 
     type(fstr_solid_physic_val), pointer :: SOLID=>null()     !< for solid physical value stracture
     type(fstr_solid_physic_val), pointer :: SHELL=>null()     !< for shell physical value stracture
@@ -394,16 +407,6 @@ module m_fstr
     real(kind=kreal), pointer :: TEMP0(:)
     real(kind=kreal), pointer :: TEMPC(:)
     real(kind=kreal), pointer :: TEMP (:)
-    real(kind=kreal), pointer :: TEMPW(:)
-
-    !> Residual
-    real(kind=kreal), pointer :: re(:)
-    real(kind=kreal), pointer :: QV(:)
-    real(kind=kreal), pointer :: RR(:)
-    real(kind=kreal), pointer :: RL(:)
-    real(kind=kreal), pointer :: RU(:)
-    real(kind=kreal), pointer :: RD(:)
-    real(kind=kreal), pointer :: IWKX(:,:)
 
     !> FIXTEMP
     integer :: T_FIX_tot
@@ -551,6 +554,7 @@ module m_fstr
     real   (kind=kreal), pointer :: mass(:)
     real   (kind=kreal), pointer :: effmass(:)
     real   (kind=kreal), pointer :: partfactor(:)
+    logical :: is_free = .false.
   end type fstr_eigen
 
   !> Data for coupling analysis
@@ -643,6 +647,7 @@ contains
     nullify( S%STRESS )
     nullify( S%STRAIN )
     nullify( S%MISES )
+    nullify( S%REACTION )
     nullify( S%ESTRESS )
     nullify( S%ESTRAIN )
     nullify( S%EMISES )
@@ -691,14 +696,6 @@ contains
     nullify( H%TEMP0 )
     nullify( H%TEMPC )
     nullify( H%TEMP  )
-    nullify( H%TEMPW )
-    nullify( H%re )
-    nullify( H%QV )
-    nullify( H%RR )
-    nullify( H%RL )
-    nullify( H%RU )
-    nullify( H%RD )
-    nullify( H%IWKX )
     nullify( H%T_FIX_node )
     nullify( H%T_FIX_ampl )
     nullify( H%T_FIX_val )
@@ -782,7 +779,7 @@ contains
     hecMAT%Iarray(32)=    0    ! = dumpexit
     hecMAT%Iarray(33)=    0    ! = usejad
     hecMAT%Iarray(34)=   10    ! = ncolor_in
-    hecMAT%Iarray(13)=    3    ! = mpc_method
+    hecMAT%Iarray(13)=    0    ! = mpc_method
     hecMAT%Iarray(14)=    0    ! = estcond
     hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
 

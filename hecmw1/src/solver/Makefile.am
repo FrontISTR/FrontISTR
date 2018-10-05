@@ -117,7 +117,8 @@ install-module:
 	@cd solver_direct && $(MAKE) @build_target@
 	@cd solver_direct_parallel && $(MAKE) @build_target@
 	@cd solver_direct_lag && $(MAKE) @build_target@
-  
+	@cd mpc           && $(MAKE) @build_target@
+
 install:
 	@cd communication && $(MAKE) install
 	@cd matrix        && $(MAKE) install
@@ -131,6 +132,7 @@ install:
 	@cd solver_direct && $(MAKE) install
 	@cd solver_direct_parallel && $(MAKE) install
 	@cd solver_direct_lag && $(MAKE) install
+	@cd mpc           && $(MAKE) install
 
 clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
@@ -146,7 +148,8 @@ clean:
 	@cd solver_direct && $(MAKE) clean
 	@cd solver_direct_parallel && $(MAKE) clean
 	@cd solver_direct_lag && $(MAKE) clean
-  
+	@cd mpc           && $(MAKE) clean
+
 distclean: clean
 	@cd communication && $(MAKE) distclean
 	@cd matrix        && $(MAKE) distclean
@@ -160,6 +163,7 @@ distclean: clean
 	@cd solver_direct && $(MAKE) distclean
 	@cd solver_direct_parallel && $(MAKE) distclean
 	@cd solver_direct_lag && $(MAKE) distclean
+	@cd mpc           && $(MAKE) distclean
 
 maintainer-clean:
 	@cd communication && $(MAKE) maintainer-clean
@@ -174,3 +178,4 @@ maintainer-clean:
 	@cd solver_direct && $(MAKE) maintainer-clean
 	@cd solver_direct_parallel && $(MAKE) maintainer-clean
 	@cd solver_direct_lag && $(MAKE) maintainer-clean
+	@cd mpc           && $(MAKE) maintainer-clean

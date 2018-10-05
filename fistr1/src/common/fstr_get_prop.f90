@@ -139,7 +139,6 @@ contains
 
   end subroutine fstr_get_prop
 
-  !-----Modifed by N.Morita GSFS, Univ. of Tokyo ------------------------------------------------------
   subroutine fstr_get_prop_shell(hecMESH,shell_var,mid,n_subitem,ee,pp,rho,alpha,thick,alpha_over_mu, &
       n_totlyr,shell_ortho,mpos)
     use m_fstr
@@ -147,7 +146,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (tshellmat),pointer :: shell_var(:)
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu, tmp
-    integer(kind=kint) :: mid, count, i, flag
+    integer(kind=kint) :: mid, count, i, j, flag
     integer(kind=kint) :: shell_ortho, n_ls, n_mod, n_totlyr, section_type
     integer(kind=kint) :: n_subitem, mpos
 
@@ -185,44 +184,51 @@ contains
       n_totlyr=0
 
       i=1
-      do
-        if(i >= n_subitem) exit
-        flag=hecMESH%material%mat_val(mpos+i)
-        if(flag == 0)then
-          n_totlyr=n_totlyr+1
-          i=i+4
-        elseif(flag == 1)then
-          n_totlyr=n_totlyr+1
-          i=i+9
+      flag=int(hecMESH%material%mat_val(mpos+i))
+      if(flag == 0)then
+        if(mod(n_subitem-1, 3) == 0)then
+          n_totlyr=(n_subitem-1)/3
         else
           write(IMSG,*) '###Error: Shell property invalid'
+          write(*,*) '###Error: Shell property invalid'
           stop
         endif
-      enddo
+      elseif(flag == 1)then
+        if(mod(n_subitem-1, 9) == 0)then
+          n_totlyr=(n_subitem-1)/9
+        else
+          write(IMSG,*) '###Error: Shell property invalid'
+          write(*,*) '###Error: Shell property invalid'
+          stop
+        endif
+      else
+        write(IMSG,*) '###Error: Shell property invalid'
+        write(*,*) '###Error: Shell property invalid'
+        stop
+      endif
+
       allocate(shell_var(n_totlyr))
       count=1
-      i=1
-      do
-        if(i >= n_subitem)exit
+      i=2
+      do j=1,n_totlyr
         !search material
-        flag=hecMESH%material%mat_val(mpos+i)
         if(flag==0)then
-          shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
-          shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
-          shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
-          shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+3)
-          i=i+4
+          shell_var(count)%ortho = dble(flag)
+          shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i  )
+          shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+1)
+          shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+2)
+          i=i+3
         elseif(flag==1)then
-          shell_var(count)%ortho = hecMESH%material%mat_val(mpos+i  )
-          shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i+1)
-          shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+2)
-          shell_var(count)%ee2   = hecMESH%material%mat_val(mpos+i+3)
-          shell_var(count)%g12   = hecMESH%material%mat_val(mpos+i+4)
-          shell_var(count)%g23   = hecMESH%material%mat_val(mpos+i+5)
-          shell_var(count)%g31   = hecMESH%material%mat_val(mpos+i+6)
-          shell_var(count)%angle = hecMESH%material%mat_val(mpos+i+7)
-          shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+8)
-          i=i+9
+          shell_var(count)%ortho = dble(flag)
+          shell_var(count)%ee    = hecMESH%material%mat_val(mpos+i  )
+          shell_var(count)%pp    = hecMESH%material%mat_val(mpos+i+1)
+          shell_var(count)%ee2   = hecMESH%material%mat_val(mpos+i+2)
+          shell_var(count)%g12   = hecMESH%material%mat_val(mpos+i+3)
+          shell_var(count)%g23   = hecMESH%material%mat_val(mpos+i+4)
+          shell_var(count)%g31   = hecMESH%material%mat_val(mpos+i+5)
+          shell_var(count)%angle = hecMESH%material%mat_val(mpos+i+6)
+          shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+7)
+          i=i+8
         else
           write(IMSG,*) '###Error: Shell property invalid'
           stop

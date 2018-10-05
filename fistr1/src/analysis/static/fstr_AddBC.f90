@@ -101,6 +101,7 @@ contains
               call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
             endif
           endif
+
         enddo
       enddo
     enddo

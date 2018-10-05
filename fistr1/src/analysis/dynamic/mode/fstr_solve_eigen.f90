@@ -30,18 +30,25 @@ contains
     type(fstr_eigen)          :: fstrEIG
     type(fstrST_matrix_contact_lagrange) :: fstrMAT
 
+    type(hecmwST_matrix), pointer :: hecMATmpc
     real(kind=kreal) :: t1, t2
 
     t1 = hecmw_Wtime()
 
-    fstrSOLID%dunode = 0.0d0
-    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0 )
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
-    call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
+    fstrSOLID%dunode = 0.0d0
+    call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
+
+    call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+    call fstr_AddBC(1,  hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, fstrMAT, 2)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
+    call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
 
-    call fstr_solve_lanczos(hecMESH, hecMAT, fstrSOLID, fstrEIG)
+    call fstr_solve_lanczos(hecMESH, hecMATmpc, fstrSOLID, fstrEIG)
+    call hecmw_mpc_tback_eigvec(hecMESH, hecMAT, fstrEIG%iter, fstrEIG%eigvec)
 
     call fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
 

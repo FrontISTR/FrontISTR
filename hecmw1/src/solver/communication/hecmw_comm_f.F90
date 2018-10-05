@@ -160,6 +160,23 @@ contains
 #endif
   end subroutine hecmw_allreduce_int_1
 
+  subroutine hecmw_alltoall_int(sbuf, sc, rbuf, rc, comm)
+    use hecmw_util
+    implicit none
+    integer(kind=kint) :: sbuf(*)
+    integer(kind=kint) :: sc
+    integer(kind=kint) :: rbuf(*)
+    integer(kind=kint) :: rc
+    integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    call MPI_alltoall( sbuf, sc, MPI_INTEGER, &
+      &     rbuf, rc, MPI_INTEGER, comm, ierr )
+#else
+    rbuf(1:sc)=sbuf(1:sc)
+#endif
+  end subroutine hecmw_alltoall_int
+
   subroutine hecmw_isend_int(sbuf, sc, dest, &
       &     tag, comm, req)
     use hecmw_util

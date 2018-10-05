@@ -23,8 +23,9 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_color_composite_sf.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_generate_histogram_sf.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_subimage_composite_sf.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_endian.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_output_femap.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_output_vtk.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_endian.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_pvr_main.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_comm_util.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_mem_util.c

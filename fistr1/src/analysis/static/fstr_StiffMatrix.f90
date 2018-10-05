@@ -33,7 +33,7 @@ contains
     real(kind=kreal)   :: tt(20), ecoord(3,20)
     real(kind=kreal)   :: thick, val, pa1
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
-    real(kind=kreal)   :: u(6,20), du(6,20), coords(3,3), u_prev(4,20)
+    real(kind=kreal)   :: u(6,20), du(6,20), coords(3,3), u_prev(6,20)
     integer            :: ig0, grpid, ig, iS0, iE0,ik, in, isect, ihead, cdsys_ID
 
     ! ----- initialize
@@ -116,9 +116,17 @@ contains
                 stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
             endif
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
-            if( material%nlgeom_flag /= INFINITE ) call StiffMat_abort( ic_type, 3 )
-            call STF_C3D8IC( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
-              &           stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr )
+            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
+              CALL STF_C3D8IC                                                              &
+                ( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+                stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
+                fstrSOLID%elements(icel)%aux, tt(1:nn) )
+            else
+              CALL STF_C3D8IC                                                              &
+                ( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+                stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
+                fstrSOLID%elements(icel)%aux )
+            endif
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
             if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
               call STF_C3D8Fbar                                                                        &

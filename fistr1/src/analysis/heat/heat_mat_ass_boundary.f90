@@ -9,7 +9,7 @@ contains
   !C***
   !C*** MAT_ASS_BOUNDARY
   !C***
-  subroutine heat_mat_ass_boundary ( hecMESH,hecMAT,fstrHEAT,ATIME, BTIME, DTIME )
+  subroutine heat_mat_ass_boundary ( hecMESH,hecMAT,hecMATmpc,fstrHEAT,ATIME, BTIME, DTIME )
 
     use m_fstr
     use m_heat_mat_ass_bc_CFLUX
@@ -22,6 +22,7 @@ contains
     real(kind=kreal) :: ATIME, BTIME, CTIME, DTIME
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
+    type(hecmwST_matrix), pointer :: hecMATmpc
     type(hecmwST_local_mesh) :: hecMESH
 
     CTIME = ATIME + BTIME
@@ -51,11 +52,18 @@ contains
     !C===
     call heat_mat_ass_bc_RADIATE ( hecMESH, hecMAT, fstrHEAT, CTIME )
     !C
+    !C +------+
+    !C | MPC  |
+    !C +------+
+    !C===
+    call hecmw_mpc_mat_ass( hecMESH, hecMAT, hecMATmpc )
+    call hecmw_mpc_trans_rhs( hecMESH, hecMAT, hecMATmpc )
+    !C
     !C +------------+
     !C | !BOUNDARY  |
     !C +------------+
     !C===
-    call heat_mat_ass_bc_FIXT ( hecMAT, fstrHEAT, CTIME )
+    call heat_mat_ass_bc_FIXT ( hecMATmpc, fstrHEAT, CTIME )
     return
 
   end subroutine heat_mat_ass_boundary

@@ -2229,6 +2229,37 @@ static char *get_result_file(char *name_ID, int nstep, int istep, int n_rank,
   return retfname;
 }
 
+static char *get_filename_body(char *file) {
+  static char filename[HECMW_FILENAME_LEN+1];
+  strcpy(filename, "");
+  strcat(filename, file);
+  return filename;
+}
+
+static char *get_result_filebody(char *name_ID) {
+  struct result_entry *result;
+  char *fname, *retfname;
+
+  result = get_result_entry(name_ID);
+
+  if (result == NULL) {
+    HECMW_set_error(HECMW_UTIL_E0024, "NAME: %s",
+                    name_ID ? name_ID : "Not specified");
+    return NULL;
+  }
+
+  fname = get_filename_body(result->filename);
+
+  retfname = HECMW_strdup(fname);
+
+  if (retfname == NULL) {
+    HECMW_set_error(errno, "");
+    return NULL;
+  }
+
+  return retfname;
+}
+
 char *HECMW_ctrl_get_result_file(char *name_ID, int nstep, int istep,
                                  int *fg_text) {
   return get_result_file(name_ID, nstep, istep, 0, 0, fg_text, 1);
@@ -2248,6 +2279,10 @@ char *HECMW_ctrl_get_result_fileheader_sub(char *name_ID, int nstep, int istep,
                                            int n_rank, int i_rank,
                                            int *fg_text) {
   return get_result_file(name_ID, nstep, istep, n_rank, i_rank, fg_text, 0);
+}
+
+char *HECMW_ctrl_get_result_filebody(char *name_ID) {
+  return get_result_filebody(name_ID);
 }
 
 char *HECMW_ctrl_get_restart_file(char *name_ID) {

@@ -355,8 +355,8 @@ contains
       do i = 1, ni
         do j = 1, ni
           do k = 1, 6
-            edstrain(i,k) = edstrain(i,k) + func(i,j) * gausses(j)%strain(k)
-            edstress(i,k) = edstress(i,k) + func(i,j) * gausses(j)%stress(k)
+            edstrain(i,k) = edstrain(i,k) + func(i,j) * gausses(j)%strain_out(k)
+            edstress(i,k) = edstress(i,k) + func(i,j) * gausses(j)%stress_out(k)
             !            tdstrain(i,k) = tdstrain(i,k) + func(i,j) * gausses(j)%tstrain(k)
           enddo
         enddo
@@ -365,8 +365,8 @@ contains
       do i = 1, ni
         do j = 1, ni
           do k = 1, 6
-            edstrain(i,k) = edstrain(i,k) + func(i,j) * gausses(j)%strain(k)
-            edstress(i,k) = edstress(i,k) + func(i,j) * gausses(j)%stress(k)
+            edstrain(i,k) = edstrain(i,k) + func(i,j) * gausses(j)%strain_out(k)
+            edstress(i,k) = edstress(i,k) + func(i,j) * gausses(j)%stress_out(k)
             !            tdstrain(i,k) = tdstrain(i,k) + func(i,j) * gausses(j)%tstrain(k)
           enddo
         enddo
@@ -396,8 +396,8 @@ contains
           if( j==1 .or. j==2 .or. j==3 .or. j==7 .or. j==8 .or. j==9 ) then
             ic = ic + 1
             do k = 1, 6
-              edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain(k)
-              edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress(k)
+              edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain_out(k)
+              edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress_out(k)
               !              tdstrain(i,k) = tdstrain(i,k) + func(i,ic) * gausses(j)%tstrain(k)
             enddo
           endif
@@ -438,8 +438,8 @@ contains
               j==19 .or. j==21 .or. j==25 .or. j==27 ) then
             ic = ic + 1
             do k = 1, 6
-              edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain(k)
-              edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress(k)
+              edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain_out(k)
+              edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress_out(k)
               !              tdstrain(i,k) = tdstrain(i,k) + func(i,ic) * gausses(j)%tstrain(k)
             enddo
           endif
@@ -660,8 +660,8 @@ contains
       do i = 1, ni
         do j = 1, ni
           do k = 1, 4
-            edstrain(i,k) = edstrain(i,k) + func(i,j) * gausses(j)%strain(k)
-            edstress(i,k) = edstress(i,k) + func(i,j) * gausses(j)%stress(k)
+            edstrain(i,k) = edstrain(i,k) + func(i,j) * gausses(j)%strain_out(k)
+            edstress(i,k) = edstress(i,k) + func(i,j) * gausses(j)%stress_out(k)
             !            tdstrain(i,k) = tdstrain(i,k) + func(i,j) * gausses(j)%tstrain(k)
           enddo
         enddo
@@ -670,8 +670,8 @@ contains
       do i = 1, ni
         do j = 1, ni
           do k = 1, 4
-            edstrain(i,k) = edstrain(i,k) + func(i,j) * gausses(j)%strain(k)
-            edstress(i,k) = edstress(i,k) + func(i,j) * gausses(j)%stress(k)
+            edstrain(i,k) = edstrain(i,k) + func(i,j) * gausses(j)%strain_out(k)
+            edstress(i,k) = edstress(i,k) + func(i,j) * gausses(j)%stress_out(k)
             !            tdstrain(i,k) = tdstrain(i,k) + func(i,j) * gausses(j)%tstrain(k)
           enddo
         enddo
@@ -692,8 +692,8 @@ contains
           if( j==1 .or. j==3 .or. j==7 .or. j==9 ) then
             ic = ic + 1
             do k = 1, 4
-              edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain(k)
-              edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress(k)
+              edstrain(i,k) = edstrain(i,k) + func(i,ic) * gausses(j)%strain_out(k)
+              edstress(i,k) = edstress(i,k) + func(i,ic) * gausses(j)%stress_out(k)
               !              tdstrain(i,k) = tdstrain(i,k) + func(i,ic) * gausses(j)%tstrain(k)
             enddo
           endif

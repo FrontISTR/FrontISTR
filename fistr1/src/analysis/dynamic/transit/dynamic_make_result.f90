@@ -4,6 +4,7 @@
 !-------------------------------------------------------------------------------
 !> This module provide a function to prepare output of dynamic analysis
 module m_dynamic_make_result
+  use m_static_make_result
   implicit none
 contains
 
@@ -14,7 +15,6 @@ contains
     use m_fstr
     use m_out
     use m_static_lib
-    use m_static_make_result
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
     type (fstr_dynamic)       :: fstrDYNAMIC
@@ -116,7 +116,7 @@ contains
       id = 1
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(2), ndof )
       label = 'REACTION_FORCE'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%QFORCE )
+      call hecmw_result_add( id, nitem, label, fstrSOLID%REACTION )
     endif
     ! --- STRAIN @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(3) ) then
@@ -164,16 +164,20 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(9) .and. ndof/=6 ) then
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(9), ndof )
-      ngauss = NumOfQuadPoints( hecMESH%elem_type_item(1) )
+      ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
-        do i = 1, hecMESH%n_elem
-          do j = 1, nitem
-            work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain(j)
+        if( k > size(fstrSOLID%elements(i)%gausses) ) then
+          work(:) = 0.d0
+        else
+          do i = 1, hecMESH%n_elem
+            do j = 1, nitem
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
+            enddo
           enddo
-        enddo
+        end if
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
@@ -181,16 +185,20 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(10) .and. ndof/=6 ) then
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(10), ndof )
-      ngauss = NumOfQuadPoints( hecMESH%elem_type_item(1) )
+      ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRESS',trim(adjustl(s))
         label = adjustl(label)
-        do i = 1, hecMESH%n_elem
-          do j = 1, nitem
-            work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress(j)
+        if( k > size(fstrSOLID%elements(i)%gausses) ) then
+          work(:) = 0.d0
+        else
+          do i = 1, hecMESH%n_elem
+            do j = 1, nitem
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
+            enddo
           enddo
-        enddo
+        end if
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
@@ -198,14 +206,20 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(11) .and. fstrSOLID%StaticType/=3 ) then
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
-      ngauss = NumOfQuadPoints( hecMESH%elem_type_item(1) )
+      ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
-        do i = 1, hecMESH%n_elem
-          work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
-        enddo
+        if( k > size(fstrSOLID%elements(i)%gausses) ) then
+          do i = 1, hecMESH%n_elem
+            work(i) = 0.d0
+          enddo
+        else
+          do i = 1, hecMESH%n_elem
+            work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+          enddo
+        endif
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
@@ -227,7 +241,7 @@ contains
     if( fstrSOLID%output_ctrl(3)%outinfo%on(14) .and. associated(testrain) ) then
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(14), ndof )
-      ngauss = NumOfQuadPoints( hecMESH%elem_type_item(1) )
+      ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'THERMAL_GaussSTRAIN',trim(adjustl(s))
@@ -240,6 +254,42 @@ contains
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
+    ! --- CONTACT NORMAL FORCE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_NFORCE,1)
+      id = 1
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(30), ndof )
+      label = 'CONTACT_NFORCE'
+      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_NFORCE )
+    endif
+
+    ! --- CONTACT FRICTION FORCE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(31) .and. associated(fstrSOLID%CONT_FRIC) ) then
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_FRIC,1)
+      id = 1
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(31), ndof )
+      label = 'CONTACT_FRICTION'
+      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_FRIC )
+    endif
+
+    ! --- CONTACT RELATIVE VELOCITY @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(32) .and. associated(fstrSOLID%CONT_RELVEL) ) then
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_RELVEL,1)
+      id = 1
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(32), ndof )
+      label = 'CONTACT_RELVEL'
+      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_RELVEL )
+    endif
+
+    ! --- CONTACT STATE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,1,fstrSOLID%CONT_STATE,2)
+      id = 1
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(33), ndof )
+      label = 'CONTACT_STATE'
+      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_STATE )
+    endif
+
     ! --- WRITE
     nameID = 'fstrRES'
     call hecmw_result_write_by_name( nameID )
@@ -339,15 +389,35 @@ contains
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(12), ndof )
     endif
+    ! --- CONTACT NORMAL FORCE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
+      ncomp = ncomp + 1
+      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(30), ndof )
+    endif
+    ! --- CONTACT FRICTION FORCE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(31) .and. associated(fstrSOLID%CONT_FRIC) ) then
+      ncomp = ncomp + 1
+      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(31), ndof )
+    endif
+    ! --- CONTACT RELATIVE VELOCITY @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(32) .and. associated(fstrSOLID%CONT_RELVEL) ) then
+      ncomp = ncomp + 1
+      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(32), ndof )
+    endif
+    ! --- CONTACT STATE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
+      ncomp = ncomp + 1
+      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(33), ndof )
+    endif
 
     fstrRESULT%nn_component = ncomp
     fstrRESULT%ne_component = ecomp
     allocate( fstrRESULT%nn_dof(ncomp) )
     allocate( fstrRESULT%node_label(ncomp) )
     allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )
-    allocate( fstrRESULT%ne_dof(ecomp) )
-    allocate( fstrRESULT%elem_label(ecomp) )
-    allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
+    !allocate( fstrRESULT%ne_dof(ecomp) )
+    !allocate( fstrRESULT%elem_label(ecomp) )
+    !allocate( fstrRESULT%elem_val_item(eitem*hecMESH%n_elem) )
     ncomp = 0
     iitem = 0
     ecomp = 0
@@ -423,7 +493,7 @@ contains
       fstrRESULT%node_label(ncomp) = 'REACTION_FORCE'
       do i = 1, hecMESH%n_node
         do j = 1, nn
-          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%QFORCE(nn*(i-1)+j)
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%REACTION(nn*(i-1)+j)
         enddo
       enddo
       iitem = iitem + nn
@@ -474,6 +544,66 @@ contains
       do i = 1, hecMESH%n_node
         do j = 1, nn
           fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = tnstrain(nn*(i-1)+j)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- CONTACT NORMAL FORCE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_NFORCE,1)
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(30), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'CONTACT_NFORCE'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%CONT_NFORCE(nn*(i-1)+j)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- CONTACT FRICTION FORCE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(31) .and. associated(fstrSOLID%CONT_FRIC) ) then
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_FRIC,1)
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(31), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'CONTACT_FRICTION'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%CONT_FRIC(nn*(i-1)+j)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- CONTACT RELATIVE VELOCITY @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(32) .and. associated(fstrSOLID%CONT_RELVEL) ) then
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_RELVEL,1)
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(32), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'CONTACT_RELVEL'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%CONT_RELVEL(nn*(i-1)+j)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- CONTACT STATE @node
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,1,fstrSOLID%CONT_STATE,2)
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(33), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'CONTACT_STATE'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%CONT_STATE(nn*(i-1)+j)
         enddo
       enddo
       iitem = iitem + nn

@@ -42,6 +42,7 @@ contains
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
+    fstrSOLID%REACTION = 0.d0
 
     flag_u = 1
     !C=============================C
@@ -111,6 +112,9 @@ contains
                 call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
               endif
             endif
+
+            !for output reaction force
+            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           enddo
         enddo
 
@@ -158,6 +162,9 @@ contains
                 call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
               endif
             endif
+
+            !for output reaction force
+            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           enddo
         enddo
       enddo
@@ -191,6 +198,9 @@ contains
           do idof = idofS, idofE
             hecMAT%B        (NDOF*in-(NDOF-idof)) = RHS
             fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
+
+            !for output reaction force
+            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo

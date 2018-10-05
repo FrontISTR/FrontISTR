@@ -8,15 +8,23 @@
 ###############################################################
 cmake_minimum_required(VERSION 2.8.11)
 
+###############################################################
+# Check building mode whether out-of-source builds
+###############################################################
+if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+  message(FATAL_ERROR "
+*************** ERROR ***************
+ Only support for out-of-source building.
+ You may need to remove CMakeCache.txt file and CMakeFiles/ directory.
+ Please make new directory such as build/ and run cmake in it again.
+[example]
+ rm CMakeCache.txt; rm -rf CMakeFiles/
+ mkdir build/; cd build/
+ cmake ..
+ make")
+endif()
+
 project(FrontISTR Fortran C CXX)
-# set default libraries search path
-if(NOT CMAKE_PREFIX_PATH)
-  set(CMAKE_PREFIX_PATH "$ENV{HOME}/local" CACHE PATH "Search Path" FORCE)
-endif()
-# set default installation path
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/local" CACHE PATH "Install Path" FORCE)
-endif()
 ###############################################################
 # Includes standard macros
 ###############################################################
@@ -109,12 +117,11 @@ endif()
 # -DWITH_OPENMP      : for multi-(core|processor) environment
 # -DWITH_REFINER     : compile with REVOCAP_Refiner
 # -DWITH_REVOCAP     : compile with REVOCAP_Coupler
-# -DWITH_PARACON     : for parallel contact (unimplemented)
 # -DWITH_METIS       : compile with METIS graph partitioning package
 #   -DMETIS_VER_4    : uses METIS-4
-# -DWITH_PARMETIS    : compile with ParMETIS (unimplemented)
+# -DWITH_PARMETIS    : compile with ParMETIS
 #   -DPARMETIS_VER_3 : uses PARMETIS-3
-# -DWITH_MKL         : compile with MKL PARDISO (unimplemented)
+# -DWITH_MKL         : compile with MKL PARDISO
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
@@ -135,7 +142,6 @@ find_package(Scalapack)
 find_package(Trilinos)
 find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
-option(WITH_PARACON "for parallel contact" OFF)
 option(WITH_DOC "Generate API documents." ${WITH_DOC})
 option(WINDOWS "build on windows" ${WINDOWS})
 option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
@@ -205,17 +211,6 @@ if(WITH_REVOCAP AND REVOCAP_FOUND)
   list(APPEND FrontISTR_INCLUDE_DIRS ${REVOCAP_INCLUDE_PATH})
 else()
   set(WITH_REVOCAP OFF)
-endif()
-
-###################
-# -DWITH_PARACON
-###################
-if(WITH_PARACON)
-  list(APPEND FrontISTR_DEFINITIONS "PARA_CONTACT")
-  set(PARA_CONTACT ON)
-else()
-  set(WITH_PARACON OFF)
-  set(PARA_CONTACT OFF)
 endif()
 
 ###################
@@ -325,7 +320,7 @@ if(WITH_DOC)
     file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr.css DESTINATION ${CMAKE_BINARY_DIR}/doc/)
     file(COPY ${CMAKE_SOURCE_DIR}/doc/fistr_logo.png DESTINATION ${CMAKE_BINARY_DIR}/doc/)
 
-    set(doxy_main_page "${CMAKE_SOURCE_DIR}/INSTALL.md")
+    set(doxy_main_page "${CMAKE_SOURCE_DIR}/README.md")
     set(doxyfile_in ${CMAKE_SOURCE_DIR}/doc/Doxyfile.in)
     set(doxyfile ${CMAKE_BINARY_DIR}/doc/Doxyfile)
     configure_file(${doxyfile_in} ${doxyfile} @ONLY)
@@ -396,7 +391,7 @@ endif()
 ###############################################################################
 include(InstallRequiredSystemLibraries)
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Large-scale structural analysis program with FEM ")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/INSTALL.md")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
 set(CPACK_PACKAGE_VENDOR "FrontISTR Forum, The University of Tokyo")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")

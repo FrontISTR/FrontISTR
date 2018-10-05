@@ -16,6 +16,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/iterative/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/solver_direct/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/solver_direct_parallel/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/solver_direct_lag/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/mpc/CMakeLists.txt)
 
 list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver.f90

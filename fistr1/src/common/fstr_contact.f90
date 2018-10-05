@@ -214,8 +214,9 @@ contains
   end subroutine
 
   !> Scanning contact state
-  subroutine fstr_scan_contact_state( cstep, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )
+  subroutine fstr_scan_contact_state( cstep, dt, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )
     integer, intent(in)                    :: cstep      !< current step number
+      real(kind=kreal), intent(in)           :: dt
     integer, intent(in)                    :: ctAlgo     !< contact analysis algorithm
     type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
@@ -225,6 +226,9 @@ contains
     character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag
     integer :: i, grpid
     logical :: iactive
+
+      fstrSOLID%CONT_RELVEL(:) = 0.d0
+      fstrSOLID%CONT_STATE(:) = 0.d0
 
     if( ctAlgo == kcaSLAGRANGE ) then
       flag_ctAlgo = 'SLagrange'
@@ -251,13 +255,16 @@ contains
         call clear_contact_state(fstrSOLID%contacts(i));  cycle
       endif
       if( present(B) ) then
-        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%QFORCE(:),   &
-          infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu, B )
+        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu, B )
       else
-        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%QFORCE(:),   &
-          infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu )
+        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu )
       endif
       if( .not. active ) active = iactive
+
+        !for output contact state
+        call set_contact_state_vector( fstrSOLID%contacts(i), dt, fstrSOLID%CONT_RELVEL, fstrSOLID%CONT_STATE )
     enddo
 
     infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
@@ -297,6 +304,18 @@ contains
         , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged )
     enddo
     if( nc>0 ) gnt = gnt/nc
+  end subroutine
+
+  !> Update tangent force
+  subroutine fstr_update_contact_TangentForce( fstrSOLID )
+    type(fstr_solid), intent(inout)        :: fstrSOLID
+
+    integer :: i, nc
+
+    nc = size(fstrSOLID%contacts)
+    do i=1, nc
+      call update_contact_TangentForce( fstrSOLID%contacts(i) )
+    enddo
   end subroutine
 
   !> Introduce contact stiff into global stiff matrix or mpc conditions into hecMESH
@@ -359,5 +378,31 @@ contains
     enddo
 
   end subroutine
+
+  subroutine initialize_contact_output_vectors(fstrSOLID,hecMAT)
+    type(fstr_solid)       :: fstrSOLID      !< type fstr_solid
+    type(hecmwST_matrix)   :: hecMAT         !< type hecmwST_matrix
+
+    if( .not. associated(fstrSOLID%CONT_NFORCE) ) then
+      allocate( fstrSOLID%CONT_NFORCE(hecMAT%NP*3) )
+      fstrSOLID%CONT_NFORCE(:) = 0.d0
+    end if
+
+    if( .not. associated(fstrSOLID%CONT_FRIC) ) then
+      allocate( fstrSOLID%CONT_FRIC(hecMAT%NP*3) )
+      fstrSOLID%CONT_FRIC(:) = 0.d0
+    end if
+
+    if( .not. associated(fstrSOLID%CONT_RELVEL) ) then
+      allocate( fstrSOLID%CONT_RELVEL(hecMAT%NP*3) )
+      fstrSOLID%CONT_RELVEL(:) = 0.d0
+    end if
+
+    if( .not. associated(fstrSOLID%CONT_STATE) ) then
+      allocate( fstrSOLID%CONT_STATE(hecMAT%NP*1) )
+      fstrSOLID%CONT_STATE(:) = 0.d0
+    end if
+  end subroutine
+
 
 end module mContact

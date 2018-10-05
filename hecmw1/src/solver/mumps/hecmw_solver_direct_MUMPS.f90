@@ -29,7 +29,6 @@ contains
     integer(kind=kint) :: istat,myrank
     real(kind=kreal) :: t1,t2,t3
 
-    call hecmw_mat_ass_equation( hecMESH, hecMAT )
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     t1=hecmw_wtime()
