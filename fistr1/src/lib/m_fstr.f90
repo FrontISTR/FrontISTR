@@ -111,6 +111,11 @@ module m_fstr
   integer(kind=kint), pointer :: NRRES     ! position of restart read
   integer(kind=kint), pointer :: NPRINT    ! interval of write
 
+  integer(kind=kint), parameter :: kOPSS_SOLUTION = 1
+  integer(kind=kint), parameter :: kOPSS_MATERIAL = 2
+  integer(kind=kint)            :: OPSSTYPE = kOPSS_SOLUTION ! output stress/strain type
+
+
   !> REFTEMP
   real(kind=kreal), pointer :: REF_TEMP
 

@@ -850,6 +850,10 @@ contains
       gausses(1)%strain(k) = e_hat(1, 1)
       gausses(1)%stress(k) = t_hat(1, 1)
 
+      !set stress and strain for output
+      gausses(1)%strain_out(k) = gausses(1)%strain(k)
+      gausses(1)%stress_out(k) = gausses(1)%stress(k)
+
       !--------------------------------------------------------
 
       ndstrain(1, k) = 0.0D0
@@ -961,8 +965,8 @@ contains
 
     !--------------------------------------------------------------------
 
-    estrain(1:6) = gausses(1)%strain(1:6)
-    estress(1:6) = gausses(1)%stress(1:6)
+    estrain(1:6) = gausses(1)%strain_out(1:6)
+    estress(1:6) = gausses(1)%stress_out(1:6)
 
   end subroutine ElementalStress_Beam_641
 

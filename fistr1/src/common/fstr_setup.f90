@@ -164,6 +164,8 @@ contains
         c_aincparam = c_aincparam + 1
       else if( header_name == '!TIME_POINTS' ) then
         c_timepoints = c_timepoints + 1
+      else if( header_name == '!OUTPUT_SSTYPE' ) then
+        call fstr_setup_OUTPUT_SSTYPE( ctrl, P )
 
         !--------------- for static -------------------------
 
@@ -365,14 +367,14 @@ contains
       ! set default 361 element formulation
       if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
         if( p%PARAM%nlgeom ) then
-          fstrSOLID%sections(i)%elemopt361 = kel361BBAR
+          fstrSOLID%sections(i)%elemopt361 = kel361FBAR
         else
           fstrSOLID%sections(i)%elemopt361 = kel361IC
         end if
       else if( p%PARAM%solution_type==kstEIGEN ) then
         fstrSOLID%sections(i)%elemopt361 = kel361IC
       else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
-        fstrSOLID%sections(i)%elemopt361 = kel361BBAR
+        fstrSOLID%sections(i)%elemopt361 = kel361FBAR
       else
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
@@ -1034,6 +1036,13 @@ contains
       nn = hecmw_get_max_node(hecMESH%elem_type(i))
       allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
       fstrSOLID%elements(i)%equiForces = 0.0d0
+
+      if( hecMESH%elem_type(i)==361 ) then
+        if( fstrSOLID%sections(isect)%elemopt361==kel361IC ) then
+          allocate( fstrSOLID%elements(i)%aux(3,3) )
+          fstrSOLID%elements(i)%aux = 0.0d0
+        endif
+      endif
     enddo
 
     call hecmw_allreduce_I1(hecMESH,fstrSOLID%maxn_gauss,HECMW_MAX)
@@ -1055,6 +1064,9 @@ contains
       endif
       if(associated(fstrSOLID%elements(i)%equiForces) ) then
         deallocate(fstrSOLID%elements(i)%equiForces)
+      endif
+      if( associated(fstrSOLID%elements(i)%aux) ) then
+        deallocate(fstrSOLID%elements(i)%aux)
       endif
     enddo
 
@@ -3204,6 +3216,24 @@ contains
 
   end subroutine fstr_setup_CONTACTALGO
 
+  !-----------------------------------------------------------------------------!
+  !> Read in !OUTPUT_SSTYPE                                                         !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_OUTPUT_SSTYPE( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode, nid
+    character(len=HECMW_NAME_LEN) :: data_fmt
+
+    data_fmt = 'SOLUTION,MATERIAL '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', data_fmt, 0, 'P', nid )
+    OPSSTYPE = nid
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+  end subroutine fstr_setup_OUTPUT_SSTYPE
 
 end module m_fstr_setup
 

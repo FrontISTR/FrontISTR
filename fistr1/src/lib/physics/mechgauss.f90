@@ -19,6 +19,8 @@ module mMechGauss
     real(kind=kreal)          :: plstrain               !< plastic strain
     real(kind=kreal)          :: strain_bak(6)          !< strain
     real(kind=kreal)          :: stress_bak(6)              !< stress
+    real(kind=kreal)          :: strain_out(6)          !< strain
+    real(kind=kreal)          :: stress_out(6)          !< stress
   end type
 
   ! ----------------------------------------------------------------------------
@@ -28,6 +30,7 @@ module mMechGauss
     integer                     :: iset                  !< plane strain, stress etc
     real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces
     type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
+    real(kind=kreal), pointer   :: aux(:,:) => null()    !< nodeless dof for incompatible element
   end type
 
 contains
@@ -38,6 +41,7 @@ contains
     integer :: n
     gauss%strain=0.d0; gauss%stress=0.d0
     gauss%strain_bak=0.d0; gauss%stress_bak=0.d0
+    gauss%strain_out=0.d0; gauss%stress_out=0.d0
     gauss%plstrain =0.d0
     if( gauss%pMaterial%mtype==USERMATERIAL ) then
       if( gauss%pMaterial%nfstatus> 0 ) then
