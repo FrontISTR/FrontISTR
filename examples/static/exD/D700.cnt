@@ -15,66 +15,9 @@
  1.0e-8, 1.0, 0.0
 !WRITE,VISUAL
 !WRITE,RESULT
-##
-## POST CONTROL
-##
-!VISUAL, method=PSR
 #
-# number of figures
-#
-!surface_num = 1
-#
-# 1st.
-#
-!surface  
-#
-# = 1 : Boundary Surface
-#
-!surface_style = 1
-!group_name    = boundary
-#
-# for Deformation
-#
-!deform_display_on    = 1 
-!deform_num_of_frames = 1
-!!initial_style       = 1
-!!deform_style        = 4
-#
-# for Contour
-#
-!!display_method  = 1
-!!color_comp_name = STRESS 
-!!color_subcomp   = 7
-!!fixed_range_on  = 1
-!!range_value     = 0.0  1.0 
-#
-# for Output Device
-#
-!output_type   = BMP
-!!output_type  = AVS
-#
-# for BMP
-#
-#====
-#====
-!viewpoint           = 5.0  -1000.0   0.0
-!!num_of_lights      = 1
-!!position_of_lights = 0.0  0.0  0.0
-!!up_direction       = 0.0  0.0  1.0
-#====
-#====
-!x_resolurron         = 500
-!y_resolution         = 500
-!color_mapping_style  = 1
-!!interval_mapping    = -0.01, 0.02 
-!color_mapping_bar_on = 1
-!scale_marking_on     = 1
-!num_of_scale         = 5
-!font_size            = 1.5
-!font_color           = 1.0  1.0  1.0
-#====
-#====
-!ambient_coef  = 0.3
-!diffuse_coef  = 0.7
-!specular_coef = 0.5
+!VISUAL,metod=PSR
+!surface_num=1
+!surface 1
+!output_type=VTK
 !END

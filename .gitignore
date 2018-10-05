@@ -5,6 +5,8 @@
 *.log
 *.inp
 *.bmp
+*.pvtu
+*.vtu
 *.lst
 *.bak
 *.BAK

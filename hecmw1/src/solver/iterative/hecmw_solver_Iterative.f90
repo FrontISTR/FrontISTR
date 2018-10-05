@@ -70,7 +70,6 @@ contains
     endif
 
     !C ERROR CHECK
-    call hecmw_solve_check_zerorhs(hecMESH, hecMAT) !C-- ZERO RHS norm
     call hecmw_solve_check_zerodiag(hecMESH, hecMAT) !C-- ZERO DIAGONAL component
 
     !C-- IN CASE OF MPC-CG
@@ -202,7 +201,7 @@ contains
 
   end subroutine hecmw_solve_check_zerodiag
 
-  subroutine hecmw_solve_check_zerorhs (hecMESH, hecMAT)
+  function hecmw_solve_check_zerorhs (hecMESH, hecMAT)
     use hecmw_util
     use hecmw_matrix_misc
     use m_hecmw_solve_error
@@ -212,11 +211,14 @@ contains
     type (hecmwST_matrix), target :: hecMAT
     real(kind=kreal),    dimension(1) :: RHS
     integer (kind=kint)::PRECOND,iterPREmax,i,j,error
+    logical :: hecmw_solve_check_zerorhs
+
     PRECOND   = hecmw_mat_get_precond(hecMAT)
     iterPREmax= hecmw_mat_get_iterpremax(hecMAT)
     !C
     !C-- ZERO RHS norm
     error= 0
+    hecmw_solve_check_zerorhs = .false.
 
     RHS(1)= 0.d0
     do i= 1, hecMAT%N
@@ -235,10 +237,10 @@ contains
       error= HECMW_SOLVER_ERROR_ZERO_RHS
       call hecmw_solve_error (hecMESH, error)
       hecMAT%X(:)=0.d0
-      return
+      hecmw_solve_check_zerorhs = .true.
     endif
 
-  end subroutine hecmw_solve_check_zerorhs
+  end function hecmw_solve_check_zerorhs
 
   subroutine hecmw_solve_iterative_printmsg (hecMESH, hecMAT, METHOD)
     use hecmw_util
