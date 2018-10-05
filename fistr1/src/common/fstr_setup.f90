@@ -1412,8 +1412,8 @@ contains
       allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ) )
     end if
 
-    if( P%PARAM%fg_visual == kON .and. P%MESH%my_rank == 0) then
-      call fstr_setup_visualize( ctrl )
+    if( P%PARAM%fg_visual == kON )then
+      call fstr_setup_visualize( ctrl, P%MESH%my_rank )
     end if
 
     call hecmw_barrier( P%MESH ) ! JP-7
