@@ -551,6 +551,7 @@ module m_fstr
     real   (kind=kreal), pointer :: mass(:)
     real   (kind=kreal), pointer :: effmass(:)
     real   (kind=kreal), pointer :: partfactor(:)
+    logical :: is_free = .false.
   end type fstr_eigen
 
   !> Data for coupling analysis

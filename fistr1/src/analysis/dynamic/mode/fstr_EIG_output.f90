@@ -16,10 +16,9 @@ contains
     type(fstr_eigen)         :: fstrEIG
 
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
-    integer(kind=kint) :: i, j, jn, nget
-    integer(kind=kint) :: in1, in2, in3
-    real(kind=kreal)   :: chk, gm, r1, r2, r3
-    real(kind=kreal), allocatable :: s(:), t(:), u(:)
+    integer(kind=kint) :: i, j, k, in, jn, nget
+    real(kind=kreal)   :: chk, gm
+    real(kind=kreal), allocatable :: s(:), t(:), u(:), r(:)
     real(kind=kreal), pointer     :: mass(:), eigval(:), eigvec(:,:)
 
     N      = hecMAT%N
@@ -33,52 +32,35 @@ contains
     eigval => fstrEIG%eigval
     eigvec => fstrEIG%eigvec
 
-    allocate(fstrEIG%effmass(3*NGET))
-    allocate(fstrEIG%partfactor(3*NGET))
+    allocate(fstrEIG%effmass(NDOF*nget))
+    allocate(fstrEIG%partfactor(NDOF*nget))
     allocate(s(NPNDOF))
     allocate(t(NPNDOF))
     allocate(u(NPNDOF))
+    allocate(r(NDOF))
     fstrEIG%effmass    = 0.0d0
     fstrEIG%partfactor = 0.0d0
 
-    do i=1, NGET
-      r1 = 0.0d0
-      r2 = 0.0d0
-      r3 = 0.0d0
+    do i = 1, nget
+      r  = 0.0d0
       gm = 0.0d0
-      if(NDOF == 3)then
-        do j=1, N
-          in1 = 3*j-2
-          in2 = 3*j-1
-          in3 = 3*j
-          r1 = r1 + mass(in1)*eigvec(in1,i)
-          r2 = r2 + mass(in2)*eigvec(in2,i)
-          r3 = r3 + mass(in3)*eigvec(in3,i)
-          gm = gm + mass(in1)*eigvec(in1,i)*eigvec(in1,i) &
-            & + mass(in2)*eigvec(in2,i)*eigvec(in2,i) &
-            & + mass(in3)*eigvec(in3,i)*eigvec(in3,i)
+      do j = 1, N
+        do k = 1, NDOF
+          in = NDOF*(j-1) + k
+          r(k) = r(k) + mass(in)*eigvec(in,i)
+          gm   = gm   + mass(in)*eigvec(in,i)*eigvec(in,i)
         enddo
-      elseif(NDOF == 2)then
-        do j=1, N
-          in1 = 2*j-1
-          in2 = 2*j
-          r1 = r1 + mass(in1)*eigvec(in1,i)
-          r2 = r2 + mass(in2)*eigvec(in2,i)
-          gm = gm + mass(in1)*eigvec(in1,i)*eigvec(in1,i) &
-            & + mass(in2)*eigvec(in2,i)*eigvec(in2,i)
-        enddo
-      endif
-      call hecmw_allreduce_R1(hecMESH,r1,hecmw_sum)
-      call hecmw_allreduce_R1(hecMESH,r2,hecmw_sum)
-      call hecmw_allreduce_R1(hecMESH,r3,hecmw_sum)
-      call hecmw_allreduce_R1(hecMESH,gm,hecmw_sum)
+      enddo
 
-      fstrEIG%partfactor(3*i-2) = r1/gm
-      fstrEIG%partfactor(3*i-1) = r2/gm
-      fstrEIG%partfactor(3*i  ) = r3/gm
-      fstrEIG%effmass(3*i-2) = r1*r1/gm
-      fstrEIG%effmass(3*i-1) = r2*r2/gm
-      fstrEIG%effmass(3*i  ) = r3*r3/gm
+      call hecmw_allreduce_R(hecMESH, r, NDOF, hecmw_sum)
+      call hecmw_allreduce_R1(hecMESH, gm, hecmw_sum)
+
+      gm = 1.0d0/gm
+      do j = 1, NDOF
+        in = NDOF*(i-1) + j
+        fstrEIG%partfactor(in) = gm*r(j)
+        fstrEIG%effmass(in)    = gm*r(j)*r(j)
+      enddo
     enddo
 
     call EGLIST(hecMESH, hecMAT, fstrEIG)
@@ -89,12 +71,11 @@ contains
       write(IMSG,*) '*--E I G E N V A L U E  C O N V E R G E N C E--*'
       write(IMSG,*) 'Absolute residual =  |(||Kx - lambda*Mx||)|'
       write(IMSG,*) '   Iter.#   Eigenvalue    Abs. Residual  '
+      write(ILOG,*) '   Iter.#   Eigenvalue    Abs. Residual  '
       write(IMSG,*) '   *-----*  *---------*  *--------------*'
     endif
 
-    do j = 1,fstrEIG%nget
-      jn = j
-
+    do j = 1, fstrEIG%nget
       do i = 1, NNDOF
         u(i) = eigvec(i,j)
       enddo
@@ -107,13 +88,14 @@ contains
 
       chk = 0.0d0
       do i = 1,NNDOF
-        chk = chk + (t(i) - (eigval(jn)-fstrEIG%sigma)*s(i))**2
+        chk = chk + (t(i) - (eigval(j)-fstrEIG%sigma)*s(i))**2
       enddo
       call hecmw_allreduce_R1(hecMESH, chk, hecmw_sum)
       chk = dsqrt(chk)
 
       if(myrank == 0)then
-        write(IMSG,'(2X,I5,2X,5E15.6)') jn, eigval(jn), chk
+        write(IMSG,'(2x,i5,2x,1p5e15.6)') j, eigval(j), chk
+        write(ILOG,'(i5,1p5e12.4)') j, eigval(j), chk
       endif
     enddo
 
@@ -121,6 +103,10 @@ contains
       write(IMSG,*)'*    ---END Eigenvalue listing---     *'
     endif
 
+    deallocate(s)
+    deallocate(t)
+    deallocate(u)
+    deallocate(r)
   end subroutine fstr_eigen_output
 
   subroutine fstr_eigen_make_result(hecMESH, hecMAT, fstrEIG, fstrRESULT)
@@ -213,10 +199,12 @@ contains
     type(hecmwST_matrix)     :: hecMAT
     type(fstr_eigen)         :: fstrEIG
 
+    integer(kind=kint) :: NDOF
     integer(kind=kint) :: i, j, in, iter ,nget
-    real(kind=kreal)   :: pi, EEE, WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
+    real(kind=kreal)   :: pi, angle, freq, pf(3), em(3)
     real(kind=kreal), pointer :: eigval(:)
 
+    NDOF = hecMAT%NDOF
     nget = fstrEIG%nget
     iter = fstrEIG%iter
     PI   = 4.0d0 * datan(1.0d0)
@@ -253,20 +241,21 @@ contains
         "---------  ---------  ---------  ---------  ---------  ---------"
 
       in = 0
-      do i=1, nget
+      do i = 1, nget
         in = in + 1
-        EEE = eigval(i)
-        if(EEE < 0.0d0) EEE = 0.0d0
-        WWW = dsqrt(EEE)
-        FFF = WWW*0.5/PI
-        PFX = fstrEIG%partfactor(3*i-2)
-        PFY = fstrEIG%partfactor(3*i-1)
-        PFZ = fstrEIG%partfactor(3*i  )
-        EMX = fstrEIG%effmass(3*i-2)
-        EMY = fstrEIG%effmass(3*i-1)
-        EMZ = fstrEIG%effmass(3*i  )
-        write(ILOG,'(I5,1P9E12.4)') in, EEE,  WWW, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
-        write(*   ,'(I5,1P8E11.3)') in, 1.0d0/FFF, FFF, PFX, PFY, PFZ, EMX, EMY, EMZ
+        if(eigval(i) < 0.0d0) eigval(i) = 0.0d0
+        angle = dsqrt(eigval(i))
+        freq = angle*0.5d0/PI
+
+        pf = 0.0d0
+        em = 0.0d0
+        do j = 1, min(NDOF, 3)
+          pf(j) = fstrEIG%partfactor(NDOF*(i-1) + j)
+          em(j) = fstrEIG%effmass(NDOF*(i-1) + j)
+        enddo
+
+        write(ILOG,'(I5,1P9E12.4)') in, eigval(i), angle, freq, pf(1), pf(2), pf(3), em(1), em(2), em(3)
+        write(*   ,'(I5,1P8E11.3)') in, 1.0d0/freq, freq, pf(1), pf(2), pf(3), em(1), em(2), em(3)
       enddo
       write(ILOG,*)""
       write(*,*)""
