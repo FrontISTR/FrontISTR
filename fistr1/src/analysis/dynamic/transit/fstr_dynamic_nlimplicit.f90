@@ -58,6 +58,9 @@ contains
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
     real(kind=kreal), pointer :: coord(:)
 
+    iexit = 0
+    resb = 0.0d0
+
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)

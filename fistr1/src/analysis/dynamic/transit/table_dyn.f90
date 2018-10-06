@@ -25,6 +25,10 @@ contains
     integer(kind=kint) :: s1, s2, flag_u
     real(kind=kreal)   :: t_1, t_2, t_t, f_1, f_2, f_t
 
+    jj_n_amp = 0
+    s1 = 0; s2 = 0
+    t_1 = 0.0d0; t_2 = 0.0d0; t_t = 0.0d0; f_1 = 0.0d0; f_2 = 0.0d0; f_t = 0.0d0
+
     if( flag_u .eq. 1 ) then
       jj_n_amp = fstrSOLID%BOUNDARY_ngrp_amp(ig0)
     else if( flag_u .eq. 2 ) then

@@ -252,6 +252,7 @@ contains
     real(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
     data EPS/1.0E-35/
     DET=1.d0
+    LR = 0.0d0
     do I=1,NN
       IP(I)=I
     enddo

@@ -69,7 +69,7 @@ contains
   subroutine cmat_resize( cmat, newlen )
     type(hecmwST_matrix_contact) :: cmat
     integer(kind=kint) :: newlen
-    type(hecmwST_index_value_pair), pointer :: temp(:)
+    type(hecmwST_index_value_pair), allocatable :: temp(:)
 
     integer(kind=kint) :: i
 
@@ -78,16 +78,18 @@ contains
     if( cmat%max_val > 0 ) then
       allocate( temp( cmat%n_val ) )
       do i = 1, cmat%n_val
-        temp(i) = cmat%pair(i)
+        temp(i)%i = cmat%pair(i)%i
+        temp(i)%j = cmat%pair(i)%j
+        temp(i)%val = cmat%pair(i)%val
       enddo
       deallocate( cmat%pair )
-    endif
 
-    allocate( cmat%pair( newlen ) )
+      allocate( cmat%pair( newlen ) )
 
-    if( cmat%max_val > 0 ) then
       do i = 1, cmat%n_val
-        cmat%pair(i) = temp(i)
+        cmat%pair(i)%i = temp(i)%i
+        cmat%pair(i)%j = temp(i)%j
+        cmat%pair(i)%val = temp(i)%val
       enddo
       deallocate( temp )
     endif

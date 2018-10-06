@@ -222,6 +222,7 @@ contains
     if (associated(spMAT%IRN)) deallocate(spMAT%IRN)
     if (associated(spMAT%JCN)) deallocate(spMAT%JCN)
     if (associated(spMAT%A)) deallocate(spMAT%A)
+    ierr = -1
     N_loc=spMAT%N_loc
     if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) then
       allocate(spMAT%IRN(N_loc+1), spMAT%JCN(NZ), spMAT%A(NZ), stat=ierr)

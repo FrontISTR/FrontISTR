@@ -152,16 +152,6 @@ contains
 
       isL= INL(i-1) + 1
       ieL= INL(i  )
-
-      do ii = 1, NDOF
-        iq(ii) = NDOF*(inod-1)+ii
-      end do
-      do ii = 1, NDOF
-        do ij = 1, NDOF
-          AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)=AL(NDOF2*(k-1)+NDOF*(ii-1)+ij)*scale(ip(ii))*scale(iq(ij))
-        end do
-      end do
-
       !*voption indep (IAL,AL,SCALE)
       do k= isL, ieL
         inod= IAL(k)
