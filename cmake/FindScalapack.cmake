@@ -89,7 +89,7 @@ if(EXISTS $ENV{MKLROOT})
   endif()
 else()
   find_library(SCALAPACK_LIBRARIES
-    NAMES scalapack
+    NAMES scalapack scalapack-openmpi
     HINTS $ENV{SCALAPACK_ROOT}/build/lib
     ${CMAKE_SOURCE_DIR}/../scalapack-2.0.2/build/lib
     $ENV{HOME}/scalapack-2.0.2/build/lib
@@ -98,7 +98,8 @@ else()
     ${CMAKE_LIBRARY_PATH}
     /usr/local/scalapack/lib
     /usr/local/lib
-    /usr/lib)
+    /usr/lib
+    /usr/lib/x86_64-linux-gnu)
   unset(WITH_MKL)
   find_package_handle_standard_args(Scalapack
     DEFAULT_MSG SCALAPACK_LIBRARIES)
