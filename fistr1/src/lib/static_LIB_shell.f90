@@ -130,6 +130,8 @@ contains
 
     sstable = 0
     flag_dof = 0
+    ny = 0
+
     !--------------------------------------------------------------------
 
     ! MITC4
@@ -458,6 +460,7 @@ contains
     !--------------------------------------------------------------------
     !     MODIFIED to LAMINATED SHELL ANALYSIS
     !--------------------------------------------------------------------
+    zeta_ly = 0.0D0
 
     n_totlyr =  gausses(1)%pMaterial%totallyr
     do n_layer=1,n_totlyr
@@ -1384,6 +1387,9 @@ contains
     real(kind = kreal) :: E(3, 3), Ev(5)
     real(kind = kreal) :: S(3, 3), Sv(5)
     real(kind = kreal) :: sumlyr
+
+
+    zeta_ly = 0.0d0
 
     !--------------------------------------------------------------------
 
@@ -2400,6 +2406,8 @@ contains
     real(kind = kreal) :: coefx, coefy, coefz
     real(kind = kreal) :: x, y, z
     real(kind = kreal) :: sumlyr
+
+    ny = 0
 
     !--------------------------------------------------------------------
 

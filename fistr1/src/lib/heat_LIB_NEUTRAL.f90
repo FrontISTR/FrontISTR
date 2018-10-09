@@ -25,6 +25,10 @@ contains
 
     type(hecmwST_local_mesh) :: hecMESH
 
+    CP = 0.0d0
+    CD = 0.0d0
+    RHO = 0.0d0
+
     !C
     !C==put MATERIAL : ( BLOCK NO. = 601 )
     !C

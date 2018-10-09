@@ -47,6 +47,7 @@ contains
     implicit none
     integer(kind=kint) :: hecmw_operation_hec2mpi
     integer(kind=kint) :: operation
+    hecmw_operation_hec2mpi = -1
     if (operation == HECMW_SUM) then
       hecmw_operation_hec2mpi = MPI_SUM
     elseif (operation == HECMW_PROD) then

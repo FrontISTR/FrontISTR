@@ -1367,6 +1367,7 @@ contains
     data XG/-0.5773502691896D0,0.5773502691896D0/
     data WGT/1.0D0,1.0D0/
 
+    COD = 0.0d0
     !
     !* SET COORDINATES
     !

@@ -57,7 +57,7 @@ contains
     integer(kind=kint) :: ierror
     integer(kind=kint) :: iiii5, iexit
     integer(kind=kint) :: revocap_flag
-    real(kind=kreal),pointer :: prevB(:)
+    real(kind=kreal), allocatable :: prevB(:)
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: bsize, res
@@ -67,6 +67,8 @@ contains
 
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
+    a1 = 0.0d0; a2 = 0.0d0; a3 = 0.0d0; b1 = 0.0d0; b2 = 0.0d0; b3 = 0.0d0
+    c1 = 0.0d0; c2 = 0.0d0
 
     call cpu_time( time_1 )
 
@@ -84,6 +86,7 @@ contains
       if( fstrPARAM%fg_couple_type==5 .or. &
           fstrPARAM%fg_couple_type==6 ) then
         allocate( prevB(hecMAT%NP*ndof)      ,stat=ierror )
+        prevB = 0.0d0
         if( ierror /= 0 ) then
           write(idbg,*) 'stop due to allocation error <fstr_solve_NONLINEAR_DYNAMIC, prevB>'
           write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror

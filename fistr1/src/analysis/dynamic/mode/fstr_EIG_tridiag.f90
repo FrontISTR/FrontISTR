@@ -259,6 +259,8 @@ contains
       c2 = c
       el1 = e(l1)
       s = 0.0d0
+      s2 = 0.0d0
+      c3 = 0.0d0
       mml = m - l
       !     .......... for i=m-1 step -1 until l do -- ..........
       do ii = 1, mml

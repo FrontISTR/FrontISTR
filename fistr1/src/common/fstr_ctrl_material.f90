@@ -189,6 +189,7 @@ contains
     ! NEOHOOKE
     if( ipt==1 ) then
       allocate( fval(2,depends+1) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RR "
         fstr_ctrl_get_HYPERELASTIC =                           &
@@ -207,6 +208,7 @@ contains
       ! MOONEY
     else if( ipt==2 ) then
       allocate( fval(3,depends+1) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRR "
         fstr_ctrl_get_HYPERELASTIC =                       &
@@ -222,6 +224,7 @@ contains
       ! ARRUDA
     else if( ipt==3 ) then
       allocate( fval(3,depends+1) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRR "
         fstr_ctrl_get_HYPERELASTIC = &
@@ -236,7 +239,7 @@ contains
 
     else if( ipt==4 ) then    !User
       allocate( fval(10,10) )
-      fval =0.d0
+      fval =0.0d0
       fstr_ctrl_get_HYPERELASTIC = fstr_ctrl_get_data_ex( ctrl, 1, 'rrrrrrrrrr ',    &
         fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
         fval(7,:), fval(8,:), fval(9,:), fval(10,:) )

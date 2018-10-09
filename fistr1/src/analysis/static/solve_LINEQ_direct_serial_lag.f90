@@ -13,7 +13,7 @@ module m_solve_LINEQ_direct_serial_lag
 contains
 
   subroutine solve_LINEQ_serial_lag_hecmw_init(hecMAT,fstrMAT,is_sym)
-
+    implicit none
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
     logical                                  :: is_sym         !< symmetry of matrix
@@ -24,7 +24,7 @@ contains
 
 
   subroutine solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
-
+    implicit none
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
@@ -40,7 +40,7 @@ contains
 
     ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
     ilag_sta = hecMAT%NP*hecMAT%NDOF + 1
-    numNon0 = hecMAT%NPU*hecMAT%NDOF**2+hecMAT%NP*hecMAT%NDOF*(ndof+1)/2 &
+    numNon0 = hecMAT%NPU*hecMAT%NDOF**2+hecMAT%NP*hecMAT%NDOF*(ntdf+1)/2 &
       + (fstrMAT%numU_lagrange)*hecMAT%NDOF+fstrMAT%num_lagrange
 
     allocate(b(size(hecMAT%B)))

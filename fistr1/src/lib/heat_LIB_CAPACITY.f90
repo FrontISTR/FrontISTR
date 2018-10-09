@@ -1428,6 +1428,7 @@ contains
     implicit real(kind=kreal) (A-H,O-Z)
     dimension CP(3),temp(ntab),funcA(ntab+1),funcB(ntab+1)
 
+    itab = 0
     if( Tpoi.LT.temp(1) ) then
       itab= 1
     elseif ( Tpoi.GE.temp(ntab) ) then
@@ -1456,6 +1457,7 @@ contains
     implicit real(kind=kreal) (A-H,O-Z)
     dimension DENS(3),temp(ntab),funcA(ntab+1),funcB(ntab+1)
 
+    itab = 0
     if( Tpoi.LT.temp(1) ) then
       itab= 1
     elseif ( Tpoi.GE.temp(ntab) ) then

@@ -65,6 +65,7 @@ contains
     !C**FOR ALL FINITE ELEMENTS
     head   = 0
     smax   = 0.0d0
+    val    = 0.0d0
     !C
     do itype = 1, hecMESH%n_elem_type
       is = hecMESH%elem_type_index(itype-1) + 1
@@ -256,8 +257,6 @@ contains
     !C
     !C*Deallocate work array
     deallocate(ss)
-    !C
-    return
   end subroutine setMASS
 
   !C*--------------------------------------------------------------------*

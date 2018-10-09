@@ -248,6 +248,8 @@ contains
     real(kind=kreal) PHX, PHY, PHZ
     real(kind=kreal) COEFX, COEFY, COEFZ
     real(kind=kreal) normal(3), localcoord(3), elecoord(3, nn), deriv(nn, 3)
+
+    AX = 0.0d0; AY = 0.0d0; AZ = 0.0d0; RX = 0.0d0; RY = 0.0d0; RZ = 0.0d0;
     !
     ! SET VALUE
     !
@@ -558,8 +560,8 @@ contains
     end if
   end subroutine
 
-  !Hughes,  T. J. R., and J. Winget, ÅgFinite Rotation Effects in Numerical Integration of
-  ! Rate Constitutive Equations Arising in Large Deformation Analysis,Åh
+  !Hughes,  T. J. R., and J. Winget, ?gFinite Rotation Effects in Numerical Integration of
+  ! Rate Constitutive Equations Arising in Large Deformation Analysis,?h
   ! International Journal for Numerical Methods in Engineering, vol. 15, pp. 1862-1867, 1980.
   subroutine Hughes_Winget_rotation_3D( rot, stress_in, stress_out )
     use m_utilities
