@@ -167,17 +167,19 @@ contains
       ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
-        write(label,'(a,a)') 'GaussSTRAIN',trim(adjustl(s))
+        write(label,'(a,a)') 'GaussSTRESS',trim(adjustl(s))
         label = adjustl(label)
-        if( k > size(fstrSOLID%elements(i)%gausses) ) then
-          work(:) = 0.d0
-        else
-          do i = 1, hecMESH%n_elem
+        do i = 1, hecMESH%n_elem
+          if( k > size(fstrSOLID%elements(i)%gausses) ) then
             do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain(j)
+              work(nitem*(i-1)+j) = 0.0D0
             enddo
-          enddo
-        end if
+          else
+            do j = 1, nitem
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
+            enddo
+          endif
+        enddo
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
@@ -190,15 +192,17 @@ contains
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRESS',trim(adjustl(s))
         label = adjustl(label)
-        if( k > size(fstrSOLID%elements(i)%gausses) ) then
-          work(:) = 0.d0
-        else
-          do i = 1, hecMESH%n_elem
+        do i = 1, hecMESH%n_elem
+          if( k > size(fstrSOLID%elements(i)%gausses) ) then
             do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress(j)
+              work(nitem*(i-1)+j) = 0.0D0
             enddo
-          enddo
-        end if
+          else
+            do j = 1, nitem
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
+            enddo
+          endif
+        enddo
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
@@ -209,17 +213,19 @@ contains
       ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
-        write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
+        write(label,'(a,a)') 'GaussSTRESS',trim(adjustl(s))
         label = adjustl(label)
-        if( k > size(fstrSOLID%elements(i)%gausses) ) then
-          do i = 1, hecMESH%n_elem
-            work(i) = 0.d0
-          enddo
-        else
-          do i = 1, hecMESH%n_elem
-            work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
-          enddo
-        endif
+        do i = 1, hecMESH%n_elem
+          if( k > size(fstrSOLID%elements(i)%gausses) ) then
+            do j = 1, nitem
+              work(nitem*(i-1)+j) = 0.0D0
+            enddo
+          else
+            do j = 1, nitem
+              work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+            enddo
+          endif
+        enddo
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif

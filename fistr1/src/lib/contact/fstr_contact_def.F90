@@ -491,6 +491,7 @@ contains
 
     distclr = 1.0d0          !1.d-1
     clearance = 1.d-6
+    sid = 0
 
     slave = contact%slave(nslave)
     coord(:) = currpos(3*slave-2:3*slave)

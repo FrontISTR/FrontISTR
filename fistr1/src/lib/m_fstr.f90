@@ -111,6 +111,11 @@ module m_fstr
   integer(kind=kint), pointer :: NRRES     ! position of restart read
   integer(kind=kint), pointer :: NPRINT    ! interval of write
 
+  integer(kind=kint), parameter :: kOPSS_SOLUTION = 1
+  integer(kind=kint), parameter :: kOPSS_MATERIAL = 2
+  integer(kind=kint)            :: OPSSTYPE = kOPSS_SOLUTION ! output stress/strain type
+
+
   !> REFTEMP
   real(kind=kreal), pointer :: REF_TEMP
 
@@ -194,6 +199,8 @@ module m_fstr
     real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
     real(kind=kreal), pointer :: EPSTRESS_VECT(:,:)   !< elemental principal stress vector
     real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:)   !< elemental principal strain vector
+    real(kind=kreal), pointer :: ENQM(:)      !< elemental NQM
+
 
     type(fstr_solid_physic_val), pointer :: LAYER(:)    !< Laminated Shell's layer (1,2,3,4,5,...)
     type(fstr_solid_physic_val), pointer :: PLUS    !< for SHELL PLUS
@@ -305,6 +312,7 @@ module m_fstr
 
     real(kind=kreal), pointer :: YIELD_RATIO(:)    !< yield ratio
 
+    real(kind=kreal), pointer :: ENQM(:)      !< elemental NQM
     real(kind=kreal), pointer :: REACTION(:)    !< reaction_force
 
     real(kind=kreal), pointer :: CONT_NFORCE(:)  !< contact normal force for output
@@ -399,16 +407,6 @@ module m_fstr
     real(kind=kreal), pointer :: TEMP0(:)
     real(kind=kreal), pointer :: TEMPC(:)
     real(kind=kreal), pointer :: TEMP (:)
-    real(kind=kreal), pointer :: TEMPW(:)
-
-    !> Residual
-    real(kind=kreal), pointer :: re(:)
-    real(kind=kreal), pointer :: QV(:)
-    real(kind=kreal), pointer :: RR(:)
-    real(kind=kreal), pointer :: RL(:)
-    real(kind=kreal), pointer :: RU(:)
-    real(kind=kreal), pointer :: RD(:)
-    real(kind=kreal), pointer :: IWKX(:,:)
 
     !> FIXTEMP
     integer :: T_FIX_tot
@@ -556,6 +554,7 @@ module m_fstr
     real   (kind=kreal), pointer :: mass(:)
     real   (kind=kreal), pointer :: effmass(:)
     real   (kind=kreal), pointer :: partfactor(:)
+    logical :: is_free = .false.
   end type fstr_eigen
 
   !> Data for coupling analysis
@@ -652,6 +651,7 @@ contains
     nullify( S%ESTRESS )
     nullify( S%ESTRAIN )
     nullify( S%EMISES )
+    nullify( S%ENQM )
     nullify( S%GL          )
     nullify( S%QFORCE      )
     nullify( S%VELOCITY_ngrp_ID )
@@ -696,14 +696,6 @@ contains
     nullify( H%TEMP0 )
     nullify( H%TEMPC )
     nullify( H%TEMP  )
-    nullify( H%TEMPW )
-    nullify( H%re )
-    nullify( H%QV )
-    nullify( H%RR )
-    nullify( H%RL )
-    nullify( H%RU )
-    nullify( H%RD )
-    nullify( H%IWKX )
     nullify( H%T_FIX_node )
     nullify( H%T_FIX_ampl )
     nullify( H%T_FIX_val )
@@ -1056,6 +1048,7 @@ contains
     phys%ESTRAIN = 0.0d0
     phys%ESTRESS = 0.0d0
     phys%EMISES  = 0.0d0
+    phys%ENQM    = 0.0d0
   end subroutine fstr_solid_phys_zero
 
   subroutine fstr_solid_phys_clear(fstrSOLID)

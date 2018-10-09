@@ -33,6 +33,9 @@ contains
     real(kind=kreal) :: xxn, aa
 
     real(kind=kreal) :: c3,e,un,G,ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
+
+    aa = 0.0d0
+    xxn = 0.0d0
     !
     !     elastic
     !
@@ -132,6 +135,9 @@ contains
     real(kind=kreal) :: xxn, aa
 
     real(kind=kreal) :: c3,e,un,G,dg,ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
+
+    aa = 0.0d0
+    xxn = 0.0d0
 
     if( dtime==0.d0 ) return
     !

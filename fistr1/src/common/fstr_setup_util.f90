@@ -245,6 +245,7 @@ contains
     integer(kind=kint), save :: grp_count = 1
     character(50) :: grp_name_s
 
+    exist_n = 0
     call set_group_pointers( hecMESH, grp_type_name )
     if( grp_type_name == 'node_grp') then
       exist_n = node_global_to_local( hecMESH, no_list, no_count )
@@ -1308,19 +1309,36 @@ contains
   ! 3) All following lines under the header are writen to the opend file        !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_visualize( ctrl )
+  subroutine fstr_setup_visualize( ctrl, my_rank )
+    implicit none
+    integer(kind=kint) :: ctrl, my_rank, rcode
+    character(HECMW_FILENAME_LEN) :: vis_filename = 'hecmw_vis.ini'
+    logical :: is_exit
+
+    rcode = fstr_ctrl_seek_header( ctrl, '!VISUAL ' )
+    if(rcode == 0) return
+
+    if(my_rank == 0)then
+      call fstr_setup_visualize_main( ctrl, vis_filename )
+    endif
+
+    inquire(file = vis_filename, EXIST = is_exit)
+
+    if(.not. is_exit)then
+      call fstr_setup_visualize_main( ctrl, vis_filename )
+    endif
+  end subroutine fstr_setup_visualize
+
+  subroutine fstr_setup_visualize_main( ctrl, vis_filename )
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: rcode
     integer(kind=kint) :: i, start_n, end_n
-    character(HECMW_FILENAME_LEN) :: vis_filename = 'hecmw_vis.ini'
+    character(HECMW_FILENAME_LEN) :: vis_filename
     integer(kind=kint), parameter :: buffsize = 127
     character( buffsize ) :: buff
     character( buffsize ) :: head
     character( buffsize ) :: msg
-
-    rcode = fstr_ctrl_seek_header( ctrl, '!VISUAL ' )
-    if( rcode == 0 ) return
 
     start_n = fstr_ctrl_get_c_h_pos( ctrl )
     end_n = fstr_ctrl_get_rec_number( ctrl )
@@ -1339,7 +1357,7 @@ contains
 
     1000    write(msg,*) 'Error: cannot create file:"', trim(vis_filename), '" for visualization'
     call fstr_setup_util_err_stop(msg)
-  end subroutine fstr_setup_visualize
+  end subroutine fstr_setup_visualize_main
 
   !******************************************************************************
 

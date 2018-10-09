@@ -173,6 +173,10 @@ contains
     integer(kind=kint) NOD(NN)
     integer(kind=kint) LX,I,SURTYPE,NSUR
     real(kind=kreal) VX,VY,localcoord(2),deriv(NN,2),elecoord(2,NN)
+
+    rx = 0.0d0; ry = 0.0d0
+    ay = 0.0d0; ax = 0.0d0
+
     !  CONSTANT
     PAI=4.d0*atan(1.d0)
     ! SET VALUE
@@ -500,6 +504,10 @@ contains
       gausses(LX)%strain(1:4) = matmul( B(:,:), totaldisp )
       gausses(LX)%stress(1:4) = matmul( D(1:4, 1:4), gausses(LX)%strain(1:4)-EPSTH(1:4) )
 
+      !set stress and strain for output
+      gausses(LX)%strain_out(1:4) = gausses(LX)%strain(1:4)
+      gausses(LX)%stress_out(1:4) = gausses(LX)%stress(1:4)
+
       !
       !    ----- calculate the Internal Force
       qf(1:nn*ndof) = qf(1:nn*ndof) +                                     &
@@ -528,8 +536,8 @@ contains
     TEMP(:)=0.d0
     IC = NumOfQuadPoints(etype)
     do i=1,IC
-      TEMP(1:4) = TEMP(1:4) + gausses(i)%strain(1:4)
-      TEMP(5:8) = TEMP(5:8) + gausses(i)%stress(1:4)
+      TEMP(1:4) = TEMP(1:4) + gausses(i)%strain_out(1:4)
+      TEMP(5:8) = TEMP(5:8) + gausses(i)%stress_out(1:4)
     enddo
     TEMP(1:8) = TEMP(1:8)/IC
     forall( i=1:NN )
@@ -556,8 +564,8 @@ contains
     strain(:)=0.d0; stress(:)=0.d0
     IC = NumOfQuadPoints(etype)
     do i=1,IC
-      strain(:) = strain(:) + gausses(i)%strain(1:4)
-      stress(:) = stress(:) + gausses(i)%stress(1:4)
+      strain(:) = strain(:) + gausses(i)%strain_out(1:4)
+      stress(:) = stress(:) + gausses(i)%stress_out(1:4)
     enddo
     strain(:) = strain(:)/IC
     stress(:) = stress(:)/IC

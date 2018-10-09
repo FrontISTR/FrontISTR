@@ -107,6 +107,7 @@ contains
           yy(i)=hecMESH%node(j-1)
           zz(i)=hecMESH%node(j  )
         end do
+        area = 0.0d0
         if( node_n == 3 ) then
           area = area_of_triangle( xx,yy,zz )
         else if( node_n == 4 ) then

@@ -42,7 +42,7 @@ contains
     outinfo%grp_id_name = "ALL"
     outinfo%grp_id      = -1
     outinfo%on(:)       = .false.
-    outinfo%num_items   = 34
+    outinfo%num_items   = 35
 
     outinfo%keyWord(1)  = "DISP"
     outinfo%vtype(1)    = -2
@@ -148,6 +148,10 @@ contains
 
     outinfo%keyWord(34) = "MATERIAL_ID"
     outinfo%vtype(34)   = -1
+
+    outinfo%keyWord(35) = "BEAM_NQM"
+    outinfo%vtype(35)   = -5
+
   end subroutine initOutInfo
 
 
@@ -184,6 +188,8 @@ contains
       if(ndim == 4 .or. ndim == 6)n_comp_valtype=6
     else if( vtype==-4 ) then
       n_comp_valtype = ndim*ndim
+    else if( vtype==-5 ) then
+      n_comp_valtype = ndim*4
     else
       n_comp_valtype = 0
     endif

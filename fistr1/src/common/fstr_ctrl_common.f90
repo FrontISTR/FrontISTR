@@ -47,7 +47,7 @@ contains
 
     fstr_ctrl_get_SOLUTION = -1
 
-    s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN,NZPROF'
+    s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN,NZPROF '
     if( fstr_ctrl_get_param_ex( ctrl,      'TYPE ',     s,    1,   'P',  type )/= 0) return
     type = type -1
 
@@ -436,8 +436,8 @@ contains
     character(len=HECMW_NAME_LEN), allocatable :: header_name(:), onoff(:), vtype(:)
 
     write( ss, * )  HECMW_NAME_LEN
-    write( data_fmt, '(a,a,a,a)') 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss))
-    !  write( data_fmt, '(a,a,a,a,a,a)') 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss))
+    write( data_fmt, '(a,a,a,a,a)') 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss)), ' '
+    !  write( data_fmt, '(a,a,a,a,a,a,a)') 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss)), ' '
 
     fstr_ctrl_get_outitem = .false.
 
@@ -507,7 +507,7 @@ contains
     real(kind=kreal), intent(out)      :: ttol           !< tolrence along contact tangent
 
     integer           :: rcode, ipt
-    character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID'
+    character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
     real(kind=kreal)  :: fcoeff(n),tPenalty(n)
@@ -515,14 +515,14 @@ contains
     tPenalty = 1.0d6
 
     write(ss,*)  HECMW_NAME_LEN
-    write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr'
+    write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
 
     fstr_ctrl_get_CONTACT = .false.
     contact(1)%ctype = 1   ! pure slave-master contact; default value
     contact(1)%algtype = CONTACTSSLID ! small sliding contact; default value
     rcode = fstr_ctrl_get_param_ex( ctrl, 'INTERACTION ', s1, 0, 'P', contact(1)%algtype )
     if( contact(1)%algtype==CONTACTGLUED ) contact(1)%algtype=CONTACTFSLID  ! not complemented yet
-    if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '#', 1, 'I', contact(1)%group )/=0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', contact(1)%group )/=0) return
     do rcode=2,n
       contact(rcode)%ctype = contact(1)%ctype
       contact(rcode)%group = contact(1)%group
@@ -538,9 +538,9 @@ contains
     np = 0.d0;  tp=0.d0
     ntol = 0.d0;  ttol=0.d0
     if( fstr_ctrl_get_param_ex( ctrl, 'NPENALTY ',  '# ',  0, 'R', np ) /= 0 ) return
-    if( fstr_ctrl_get_param_ex( ctrl, 'TPENALTY ', '#', 0, 'R', tp ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'TPENALTY ', '# ', 0, 'R', tp ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'NTOL ',  '# ',  0, 'R', ntol ) /= 0 ) return
-    if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '#', 0, 'R', ttol ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '# ', 0, 'R', ttol ) /= 0 ) return
     fstr_ctrl_get_CONTACT = .true.
   end function fstr_ctrl_get_CONTACT
 

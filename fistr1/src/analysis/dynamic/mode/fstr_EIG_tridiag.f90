@@ -22,7 +22,7 @@ module m_fstr_EIG_tridiag
 
 contains
 
-  subroutine tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter)
+  subroutine tridiag(hecMESH, hecMAT, fstrEIG, Q, Tri, iter, is_converge)
     use hecmw
     use m_fstr
     use m_fstr_EIG_lanczos_util
@@ -33,25 +33,29 @@ contains
     type(fstr_tri_diag)      :: Tri
     type(fstr_eigen_vec), pointer :: Q(:)
 
+    integer(kind=kint), intent(in) :: iter
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
-    integer(kind=kint) :: iter, iter2, ierr, maxiter
-    real(kind=kreal)   :: chk
+    integer(kind=kint) :: iter2, ierr, maxiter
+    real(kind=kreal)   :: resid, chk, sigma, tolerance, max_eigval
     real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)
 
     integer(kind=kint), allocatable :: iparm(:)
     real(kind=kreal), pointer       :: eigvec(:,:)
     real(kind=kreal), pointer       :: eigval(:)
+    logical :: is_converge
 
     N      = hecMAT%N
     NP     = hecMAT%NP
     NDOF   = hecMESH%n_dof
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
-    maxiter= fstrEIG%maxiter
     eigval => fstrEIG%eigval
     eigvec => fstrEIG%eigvec
+    nget      = fstrEIG%nget
+    maxiter   = fstrEIG%maxiter
+    tolerance = fstrEIG%tolerance
 
     allocate( iparm(maxiter) )
     allocate( temp(maxiter)  )
@@ -77,37 +81,54 @@ contains
 
     call QL_decomposition(iter, iter, alpha, beta, L, ierr)
 
-    do i = 1, iter
-      if(alpha(i) /= 0.0d0)then
-        eigval(i) = 1.0d0/alpha(i) + fstrEIG%sigma
-      endif
+    is_converge = .true.
+    chk = 0.0d0
+    max_eigval = maxval(alpha)
+    do i = 1, min(nget, iter)
+      resid = dabs(Tri%beta(iter+1)*L(iter,i))/max_eigval
+      chk = max(chk, resid)
+      if(tolerance < resid) is_converge = .false.
     enddo
+    if(myrank == 0) write(*,"(i8,1pe12.5)")iter, chk
 
-    call evsort(eigval, iparm, iter)
+    if(iter < nget) is_converge = .false.
+    if(iter == maxiter-1) is_converge = .true.
 
-    temp = eigval
+    if(is_converge)then
+      sigma = 0.0d0
+      if(fstrEIG%is_free) sigma = 0.1d0
+      do i = 1, iter
+        if(alpha(i) /= 0.0d0)then
+          eigval(i) = 1.0d0/alpha(i) + sigma
+        endif
+      enddo
 
-    eigvec = 0.0d0
-    do k=1, iter
-      in = iparm(k)
-      eigval(k) = temp(in)
-      do j=1, iter
-        do i=1, NPNDOF
-          eigvec(i, k) = eigvec(i, k) + Q(j)%q(i) * L(j, in)
+      call evsort(eigval, iparm, iter)
+
+      temp = eigval
+
+      eigvec = 0.0d0
+      do k=1, iter
+        in = iparm(k)
+        eigval(k) = temp(in)
+        do j=1, iter
+          do i=1, NPNDOF
+            eigvec(i, k) = eigvec(i, k) + Q(j)%q(i) * L(j, in)
+          enddo
         enddo
       enddo
-    enddo
 
-    do j=1, iter
-      chk = maxval(eigvec(:,j))
-      call hecmw_allreduce_R1(hecMESH, chk, hecmw_max)
-      if(chk /= 0.0d0)then
-        chk = 1.0d0/chk
-        do i = 1, NNDOF
-          eigvec(i,j) = eigvec(i,j) * chk
-        enddo
-      endif
-    enddo
+      do j=1, iter
+        chk = maxval(eigvec(:,j))
+        call hecmw_allreduce_R1(hecMESH, chk, hecmw_max)
+        if(chk /= 0.0d0)then
+          chk = 1.0d0/chk
+          do i = 1, NNDOF
+            eigvec(i,j) = eigvec(i,j) * chk
+          enddo
+        endif
+      enddo
+    endif
 
     deallocate(iparm)
     deallocate(temp)
@@ -180,6 +201,7 @@ contains
   !calls a2b2 for  dsqrt(a*a + b*b) .
   !=======================================================================
 
+  !call QL_decomposition(iter, iter, alpha, beta, L, ierr)
   subroutine QL_decomposition(nm, n, d, e, z, ierror)
     use hecmw
     implicit none
@@ -237,6 +259,8 @@ contains
       c2 = c
       el1 = e(l1)
       s = 0.0d0
+      s2 = 0.0d0
+      c3 = 0.0d0
       mml = m - l
       !     .......... for i=m-1 step -1 until l do -- ..........
       do ii = 1, mml

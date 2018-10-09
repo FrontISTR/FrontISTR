@@ -305,6 +305,8 @@ contains
     real(kind=kreal) :: eqvs, sita, eta, fai, J1,J2,J3, f, devia(6)
     real(kind=kreal) :: pstrain, back(6)
 
+    f = 0.0d0
+
     kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) back(1:6) = extval(1:6)
 
@@ -369,6 +371,8 @@ contains
     real(kind=kreal) :: resi(2,2), invd(2,2), fstat_bak(6)
     logical          :: right, kinematic, ierr
     real(kind=kreal) :: ftrial, betan, back(6)
+
+    f = 0.0d0
 
     ytype = getYieldFunction( matl%mtype )
     if( ytype==3 ) then

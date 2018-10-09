@@ -25,7 +25,13 @@ contains
     integer(kind=kint) :: i, myrank, NDOF
     integer(kind=kint) :: imsg = 51
     NDOF=hecMAT%NDOF
-    !C
+
+    !C ERROR CHECK
+    if(hecmw_solve_check_zerorhs(hecMESH, hecMAT))then
+      hecMAT%B = 0.0d0
+      return
+    endif
+
     select case(hecMAT%Iarray(99))
         !* Call Iterative Solver
       case (1)

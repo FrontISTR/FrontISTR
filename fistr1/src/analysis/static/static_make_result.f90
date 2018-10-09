@@ -142,7 +142,7 @@ contains
             enddo
           else
             do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain(j)
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
             enddo
           endif
         enddo
@@ -166,7 +166,7 @@ contains
             enddo
           else
             do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress(j)
+              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
             enddo
           endif
         enddo
@@ -394,6 +394,15 @@ contains
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(7), ndof )
       label = 'ElementalSTRESS'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%ESTRESS )
+    endif
+
+    ! --- NQM @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(30) ) then
+      id = 2
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(30), ndof )
+      label = 'ElementalNQM'//trim(clyr)
+!      write (6,*) 'RES%ENQM',RES%ENQM(1)
+      call hecmw_result_add( id, nitem, label, RES%ENQM )
     endif
 
     ! --- MISES @element

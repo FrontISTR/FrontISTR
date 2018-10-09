@@ -80,6 +80,7 @@ contains
     ! CONVERT TO CSR or COO STYLE
     ndof=hecMAT%NDOF; ndof2=ndof*ndof
     m=1
+    ii = 0
     do i=1,hecMAT%N
       do idof=1,ndof
         i0=spMAT%offset+ndof*(i-1)
@@ -151,6 +152,7 @@ contains
     integer(kind=kint) :: m, i, idof, i0, ii, ls, le, l, j, j0, jdof, jdofs
     integer(kind=kint) :: offset_l, offset_d, offset_u
     ndof=hecMAT%NDOF; ndof2=ndof*ndof
+    ii = 0
     m=1
     do i=1,hecMAT%N
       do idof=1,ndof

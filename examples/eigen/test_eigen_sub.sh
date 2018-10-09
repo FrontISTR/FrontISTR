@@ -13,6 +13,8 @@ test_log="test.log"
 
 print_u () {
 	fg=1
+	OLDIFS=$IFS
+	IFS=
 	cat $1 | while read s
 	do
 		if [ "${s}" = "*RESULT OF EIGEN VALUE ANALYSIS*" ]; then
@@ -23,6 +25,8 @@ print_u () {
 			# skip lines
 			read s
 			read s
+			read s
+			echo ${s}
 			read s
 			read s
 			# eigen values and etc.
@@ -36,8 +40,20 @@ print_u () {
 			echo ${s}
 			read s
 			echo ${s}
+			read s
+			echo ${s}
+			read s
+			read s
+			echo ${s}
+			read s
+			echo ${s}
+			read s
+			echo ${s}
+			read s
+			echo ${s}
 		fi
 	done
+	IFS=$OLDIFS
 }
 
 
@@ -113,7 +129,7 @@ help () {
 	echo "  2d     : 2 dimentional model"
 	echo "  3d     : 3 dimentional model"
 	echo "  shell  : shell model"
-	echo "  all or no options : all model" 
+	echo "  all or no options : all model"
 }
 
 

@@ -40,6 +40,7 @@ contains
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: restrt_step(1)
 
+    num_monit = 0
 
     if(dabs(fstrDYNAMIC%t_delta) < 1.0e-20) then
       if( hecMESH%my_rank == 0 ) then
@@ -59,7 +60,6 @@ contains
         header = adjustl("MONITOR/")
         call hecmw_ctrl_make_subdir( adjustl("MONITOR/test.txt"), limit )
       endif
-      num_monit = 0
       ig = fstrDYNAMIC%ngrp_monit
       is = hecMESH%node_group%grp_index(ig-1)+1
       iE = hecMESH%node_group%grp_index(ig)

@@ -54,7 +54,7 @@ contains
       t(3,3) = t(1,1)*t(2,2) - t(1,2)*t(2,1)
     endif
 
-  end subroutine
+  end subroutine framtr
 
   !> Calculate stiff matrix of BEAM elements
   subroutine STF_Beam(etype,nn,ecoord,section,E,P,STIFF)
@@ -149,8 +149,7 @@ contains
     stiff(:,7:9) = matmul( stiff(:,7:9), trans )
     stiff(:,10:12) = matmul( stiff(:,10:12), trans )
 
-  end subroutine
-
+  end subroutine STF_Beam
 
   ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
   !> Calculate stiff matrix of BEAM elements
@@ -367,6 +366,220 @@ contains
   !####################################################################
   ! > (Gaku Hashimoto, The University of Tokyo, 2014/02/06)
 
+      !> Calculate N,Q,M vector of BEAM elements
+!####################################################################
+      SUBROUTINE NQM_Beam_641                                         &
+                 (etype, nn, ecoord, gausses, section, stiff, tt, t0, tdisp, rnqm)
+!####################################################################
+
+      USE mMechGauss
+
+!--------------------------------------------------------------------
+
+      INTEGER, INTENT(IN)            :: etype              !< element type
+      INTEGER, INTENT(IN)            :: nn                 !< the total number of elemental nodes
+      REAL(kind=kreal), INTENT(IN)   :: ecoord(3, nn)      !< coordinates of elemental nodes
+      TYPE(tGaussStatus), INTENT(IN) :: gausses(:)         !< status of Gaussian qudrature points
+      REAL(kind=kreal), INTENT(IN)   :: section(:)         !< section parameters
+      REAL(kind=kreal), INTENT(OUT)  :: stiff(nn*3, nn*3)  !< elemental stiffness matrix
+      REAL(kind=kreal), INTENT(IN), OPTIONAL :: tt(nn), t0(nn)
+
+      REAL(kind=kreal), INTENT(INOUT)   :: tdisp(nn*3)         !< displcement vector
+      REAL(kind=kreal), INTENT(OUT)  :: rnqm(nn*3)         !< elemental NQM
+
+      REAL(kind=kreal)     :: tdisp1(nn*3)
+      INTEGER(KIND = kint) :: jj, kk
+
+!--------------------------------------------------------------------
+
+      REAL(KIND = kreal) :: refv(3)
+      REAL(KIND = kreal) :: trans(3, 3), transt(3, 3)
+      REAL(kind = kreal) :: ec(3, 2)
+      REAL(KIND = kreal) :: tempc
+      REAL(KIND = kreal) :: ina1(1), outa1(2)
+      REAL(KIND = kreal) :: ee, pp
+      REAL(KIND = kreal) :: le
+      REAL(KIND = kreal) :: l2, l3, g, a, iy, iz, jx
+      REAL(KIND = kreal) :: ea, twoe, foure, twelvee, sixe
+
+      LOGICAL :: ierr
+
+!--------------------------------------------------------------------
+
+      refv(1) = section(1)
+      refv(2) = section(2)
+      refv(3) = section(3)
+
+      ec(1, 1) = ecoord(1, 1)
+      ec(2, 1) = ecoord(2, 1)
+      ec(3, 1) = ecoord(3, 1)
+      ec(1, 2) = ecoord(1, 2)
+      ec(2, 2) = ecoord(2, 2)
+      ec(3, 2) = ecoord(3, 2)
+
+      CALL framtr(refv, ec, le, trans)
+
+      transt= TRANSPOSE( trans )
+
+      l2 = le*le
+      l3 = l2*le
+
+!--------------------------------------------------------------------
+
+      IF( PRESENT( tt ) ) THEN
+
+       tempc = 0.5D0*( tt(1)+tt(2) )
+
+      END IF
+
+!--------------------------------------------------------------------
+
+      IF( PRESENT( tt ) ) THEN
+
+       ina1(1) = tempc
+
+       CALL fetch_TableData( MC_ISOELASTIC, gausses(1)%pMaterial%dict, outa1, ierr, ina1 )
+
+      ELSE
+
+       ierr = .TRUE.
+
+      END IF
+
+      !--------------------------------------------------------------
+
+      IF( ierr ) THEN
+
+       ee = gausses(1)%pMaterial%variables(M_YOUNGS)
+       pp = gausses(1)%pMaterial%variables(M_POISSON)
+
+      ELSE
+
+       ee = outa1(1)
+       pp = outa1(2)
+
+      END IF
+
+!--------------------------------------------------------------------
+
+      g = ee/( 2.0D0*( 1.0D0+pp ) )
+
+      a = section(4)
+
+      iy = section(5)
+      iz = section(6)
+      jx = section(7)
+
+!      write (6,'(a,4e15.5)') 'a,iy,iz,jx',a,iy,iz,jx
+
+!--------------------------------------------------------------------
+
+      ea = ee*a/le
+
+      twoe    = 2.0D0*ee/le
+      foure   = 4.0D0*ee/le
+      twelvee = 12.0D0*ee/l3
+      sixe    = 6.0D0*ee/l2
+
+!--------------------------------------------------------------------
+
+      stiff = 0.0D0
+
+      stiff(1, 1) = ea
+      !stiff(7, 1) = -ea
+      stiff(4, 1) = -ea
+
+      stiff(2, 2)  = twelvee*iz
+      !stiff(6, 2) = sixe*iz
+      stiff(9, 2)  = sixe*iz
+      !stiff(8, 2) = -twelvee*iz
+      stiff(5, 2)  = -twelvee*iz
+      stiff(12, 2) = sixe*iz
+
+      stiff(3, 3)  = twelvee*iy
+      !stiff(5, 3) = -sixe*iy
+      stiff(8, 3)  = -sixe*iy
+      !stiff(9, 3) = -twelvee*iy
+      stiff(6, 3)  = -twelvee*iy
+      stiff(11, 3) = -sixe*iy
+
+      !stiff(4, 4) = g*jx/le
+      stiff(7, 7)  = g*jx/le
+      !stiff(10, 4) = -g*jx/le
+      stiff(10, 7) = -g*jx/le
+
+      !stiff(3, 5) = -sixe*iy
+      stiff(3, 8)  = -sixe*iy
+      !stiff(5, 5) = foure*iy
+      stiff(8, 8)  = foure*iy
+      !stiff(9, 5) = sixe*iy
+      stiff(6, 8)  = sixe*iy
+      !stiff(11, 5) = twoe*iy
+      stiff(11, 8) = twoe*iy
+
+      !stiff(2, 6) = sixe*iz
+      stiff(2, 9)  = sixe*iz
+      !stiff(6, 6) = foure*iz
+      stiff(9, 9)  = foure*iz
+      !stiff(8, 6) = -sixe*iz
+      stiff(5, 9)  = -sixe*iz
+      !stiff(12, 6) = twoe*iz
+      stiff(12, 9) = twoe*iz
+
+      !stiff(1, 7) = -ea
+      stiff(1, 4) = -ea
+      !stiff(7, 7) = ea
+      stiff(4, 4) = ea
+
+      !stiff(2, 8) = -twelvee*iz
+      stiff(2, 5)  = -twelvee*iz
+      !stiff(6, 8) = -sixe*iz
+      stiff(9, 5)  = -sixe*iz
+      !stiff(8, 8) = twelvee*iz
+      stiff(5, 5)  = twelvee*iz
+      !stiff(12, 8) = -sixe*iz
+      stiff(12, 5) = -sixe*iz
+
+      !stiff(3, 9) = -twelvee*iy
+      stiff(3, 6)  = -twelvee*iy
+      !stiff(5, 9) = sixe*iy
+      stiff(8, 6)  = sixe*iy
+      !stiff(9, 9) = twelvee*iy
+      stiff(6, 6)  = twelvee*iy
+      !stiff(11, 9) = sixe*iy
+      stiff(11, 6) = sixe*iy
+
+      !stiff(4, 10) = -g*jx/le
+      stiff(7, 10)  = -g*jx/le
+      stiff(10, 10) = g*jx/le
+
+      stiff(3, 11) = -sixe*iy
+      !stiff(5, 11) = twoe*iy
+      stiff(8, 11) = twoe*iy
+      !stiff(9, 11) = sixe*iy
+      stiff(6, 11) = sixe*iy
+      stiff(11, 11) = foure*iy
+
+      stiff(2, 12)  = sixe*iz
+      !stiff(6, 12) = twoe*iz
+      stiff(9, 12)  = twoe*iz
+      !stiff(8, 12) = -sixe*iz
+      stiff(5, 12)  = -sixe*iz
+      stiff(12, 12) = foure*iz
+
+!--------------------------------------------------------------------
+       tdisp1(  1: 3 ) = MATMUL( trans, tdisp(  1: 3 ) )
+       tdisp1(  4: 6 ) = MATMUL( trans, tdisp(  4: 6 ) )
+       tdisp1(  7: 9 ) = MATMUL( trans, tdisp(  7: 9 ) )
+       tdisp1( 10:12 ) = MATMUL( trans, tdisp( 10:12 ) )
+!--------------------------------------------------------------------
+       rnqm( 1:12 ) = MATMUL( stiff, tdisp1 )
+
+      RETURN
+
+!####################################################################
+      END SUBROUTINE NQM_Beam_641
+!####################################################################
 
   ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
   !####################################################################
@@ -666,7 +879,15 @@ contains
 
     !--------------------------------------------------------------------
 
+    real(kind=kreal) :: stiffx(12, 12)  !< elemental stiffness matrix
+    real(kind=kreal) :: tdisp(12)  !< elemental stiffness matrix
+    real(kind=kreal) :: rnqm(12)  !< elemental NQM
+    real(kind=kreal) :: temp
+
+    !--------------------------------------------------------------------
+
     integer(kind = kint) :: i, j, k
+    integer(kind = kint) :: jj,kk
 
     real(kind = kreal) :: tempc, temp0
     real(kind = kreal) :: ina1(1), outa1(2)
@@ -687,6 +908,9 @@ contains
     real(kind = kreal) :: pi
 
     logical :: ierr
+
+    alp = 0.0d0; alp0 = 0.0d0
+    tempc = 0.0d0; temp0 = 0.0d0
 
     !--------------------------------------------------------------------
 
@@ -803,6 +1027,7 @@ contains
 
       !--------------------------------------------------------
 
+      jj = 0
       do j = 1, nn
 
         do i = 1, 3
@@ -810,6 +1035,9 @@ contains
           edisp_hat(i, j) = trans(i, 1)*edisp(1, j) &
             +trans(i, 2)*edisp(2, j) &
             +trans(i, 3)*edisp(3, j)
+
+          jj = jj + 1
+          tdisp(jj) = edisp(i,j)
 
         end do
 
@@ -849,6 +1077,10 @@ contains
 
       gausses(1)%strain(k) = e_hat(1, 1)
       gausses(1)%stress(k) = t_hat(1, 1)
+
+      !set stress and strain for output
+      gausses(1)%strain_out(k) = gausses(1)%strain(k)
+      gausses(1)%stress_out(k) = gausses(1)%stress(k)
 
       !--------------------------------------------------------
 
@@ -937,6 +1169,22 @@ contains
     end do
 
     !--------------------------------------------------------------------
+      stiffx = 0.0
+
+      call NQM_Beam_641                                         &
+                 (etype, nn, ecoord, gausses, section, stiffx, tt, t0, tdisp, rnqm )
+
+       gausses(1)%nqm(1:12) = rnqm(1:12)
+
+!       write (6,'(a5,6a15)') 'dis-ij','x','y','z','theta-x','theta-y','theta-z'
+!       write (6,'(a,1p,6e15.5,0p)') 'dis-i',(tdisp(j),j= 1, 3),(tdisp(j),j= 7, 9)
+!       write (6,'(a,1p,6e15.5,0p)') 'dis-j',(tdisp(j),j= 4, 6),(tdisp(j),j=10,12)
+!       write (6,'(a5,6a15)') 'nqm-ij','N','Qy','QZ','Mx','My','Mz'
+!       write (6,'(a,1p,6e15.5,0p)') 'nqm-i',(rnqm(j),j= 1, 3),(rnqm(j),j= 7, 9)
+!       write (6,'(a,1p,6e15.5,0p)') 'nqm-j',(rnqm(j),j= 4, 6),(rnqm(j),j=10,12)
+!       write (6,'(a)') ''
+
+    !--------------------------------------------------------------------
 
     return
 
@@ -947,7 +1195,7 @@ contains
 
   !####################################################################
   subroutine ElementalStress_Beam_641                         &
-      ( gausses, estrain, estress )
+      ( gausses, estrain, estress, enqm )
     !####################################################################
     use m_fstr
     use mMechGauss
@@ -958,11 +1206,13 @@ contains
     type(tGaussStatus), intent(inout) :: gausses(:)
     real(kind = kreal), intent(out)   :: estrain(6)
     real(kind = kreal), intent(out)   :: estress(6)
+    real(kind = kreal), intent(out)   :: enqm(12)
 
     !--------------------------------------------------------------------
 
-    estrain(1:6) = gausses(1)%strain(1:6)
-    estress(1:6) = gausses(1)%stress(1:6)
+    estrain(1:6) = gausses(1)%strain_out(1:6)
+    estress(1:6) = gausses(1)%stress_out(1:6)
+    enqm(1:12)   = gausses(1)%nqm(1:12)
 
   end subroutine ElementalStress_Beam_641
 

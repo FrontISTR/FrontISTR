@@ -564,6 +564,10 @@ contains
 
       !----------------------------------------------------------
 
+      !set stress and strain for output
+      gausses(LX)%strain_out(1:6) = gausses(LX)%strain(1:6)
+      gausses(LX)%stress_out(1:6) = gausses(LX)%stress(1:6)
+
     end do loopMatrix
 
     !----------------------------------------------------------------

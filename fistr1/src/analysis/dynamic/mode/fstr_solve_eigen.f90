@@ -38,7 +38,7 @@ contains
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
     fstrSOLID%dunode = 0.0d0
-    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0 )
+    call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
 
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)

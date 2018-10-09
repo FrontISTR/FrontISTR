@@ -85,6 +85,10 @@ contains
     TOL     = hecmw_mat_get_resid( hecMAT )
 
     error = 0
+    RHO1 = 0.0d0
+    ALPHA = 0.0d0
+    BETA = 0.0d0
+    OMEGA = 0.0d0
 
     allocate (WW(NDOF*NP, 8))
     WW = 0.d0
