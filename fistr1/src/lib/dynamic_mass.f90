@@ -4,9 +4,10 @@
 !-------------------------------------------------------------------------------
 !>  This module contains subroutines used in 3d eigen analysis for
 module m_dynamic_mass
+
 contains
 
-  subroutine mass_C2(etype, nn, ecoord, gausses, mass, lumped, temperature)
+  subroutine mass_C2(etype, nn, ecoord, gausses, sec_opt, thick, mass, lumped, temperature)
     use mMechGauss
     use m_MatMatrix
     use elementInfo
@@ -19,17 +20,20 @@ contains
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
     type(tMaterial), pointer :: matl !< material information
     integer(kind=kint), parameter :: ndof = 2
-    integer(kind=kint) :: i, j, LX, serr
+    integer(kind=kint) :: i, j, LX, serr, sec_opt
     real(kind=kreal) :: naturalCoord(2)
-    real(kind=kreal) :: func(nn)
-    real(kind=kreal) :: det, wg, rho
-    real(kind=kreal) :: D(2, 2), N(2, nn*ndof), DN(2, nn*ndof)
-    real(kind=kreal) :: gderiv(nn, 2)
-    real(kind=kreal) :: coordsys(2, 2)
+    real(kind=kreal) :: func(nn), thick
+    real(kind=kreal) :: det, wg, rho, diag_mass, total_mass
+    real(kind=kreal) :: D(2,2), N(2, nn*ndof), DN(2, nn*ndof)
+    real(kind=kreal) :: gderiv(nn,2)
+    real(kind=kreal) :: coordsys(2,2)
     logical :: is_lumped
 
     mass(:,:) = 0.0d0
+    lumped = 0.0d0
     matl => gausses(1)%pMaterial
+
+    if(sec_opt == 2) thick = 1.0d0
 
     do LX = 1, NumOfQuadPoints(etype)
       call getQuadPoint(etype, LX, naturalCoord)
@@ -54,10 +58,10 @@ contains
       endif
 
       D = 0.0d0
-      D(1,1) = rho
-      D(2,2) = rho
+      D(1,1) = rho*thick
+      D(2,2) = rho*thick
 
-      wg = getWeight(etype,LX)*det
+      wg = getWeight(etype, LX)*det
 
       N = 0.0d0
       do i = 1, nn
@@ -71,14 +75,25 @@ contains
       end forall
     enddo
 
+    total_mass = 0.0d0
+    do i = 1, nn*ndof, ndof
+      do j = 1, nn*ndof, ndof
+        total_mass = total_mass + mass(j,i)
+      enddo
+    enddo
+
     is_lumped = .true.
     if(is_lumped)then
-      lumped = 0.0d0
-      do i = 1, nn*ndof
-        do j = 1, nn*ndof
-          lumped(i) = lumped(i) + mass(j,i)
-        enddo
+      diag_mass = 0.0d0
+      do i = 1, nn*ndof, ndof
+        diag_mass = diag_mass + mass(i,i)
       enddo
+
+      diag_mass = 1.0d0/diag_mass
+      do i = 1, nn*ndof
+        lumped(i) = lumped(i) + mass(i,i)*total_mass*diag_mass
+      enddo
+
       mass = 0.0d0
       do i = 1, nn*ndof
         mass(i,i) = lumped(i)
@@ -102,13 +117,14 @@ contains
     integer(kind=kint) :: i, j, LX, serr
     real(kind=kreal) :: naturalCoord(3)
     real(kind=kreal) :: func(nn)
-    real(kind=kreal) :: det, wg, rho
+    real(kind=kreal) :: det, wg, rho, diag_mass, total_mass
     real(kind=kreal) :: D(3, 3), N(3, nn*ndof), DN(3, nn*ndof)
     real(kind=kreal) :: gderiv(nn, 3)
     real(kind=kreal) :: coordsys(3, 3)
     logical :: is_lumped
 
     mass(:,:) = 0.0d0
+    lumped = 0.0d0
     matl => gausses(1)%pMaterial
 
     do LX = 1, NumOfQuadPoints(etype)
@@ -153,14 +169,25 @@ contains
       end forall
     enddo
 
+    total_mass = 0.0d0
+    do i = 1, nn*ndof, ndof
+      do j = 1, nn*ndof, ndof
+        total_mass = total_mass + mass(j,i)
+      enddo
+    enddo
+
     is_lumped = .true.
     if(is_lumped)then
-      lumped = 0.0d0
-      do i = 1, nn*ndof
-        do j = 1, nn*ndof
-          lumped(i) = lumped(i) + mass(j,i)
-        enddo
+      diag_mass = 0.0d0
+      do i = 1, nn*ndof, ndof
+        diag_mass = diag_mass + mass(i,i)
       enddo
+
+      diag_mass = 1.0d0/diag_mass
+      do i = 1, nn*ndof
+        lumped(i) = lumped(i) + mass(i,i)*total_mass*diag_mass
+      enddo
+
       mass = 0.0d0
       do i = 1, nn*ndof
         mass(i,i) = lumped(i)

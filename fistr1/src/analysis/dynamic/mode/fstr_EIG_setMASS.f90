@@ -23,7 +23,7 @@ contains
     type(fstr_eigen)         :: fstrEIG
     integer(kind=kint) :: i, iS, iE, ii, nn, j, jn, jS, jE, k
     integer(kind=kint) :: N, NP, NDOF
-    integer(kind=kint) :: icel, ic_type, itype, isect, ihead, iax, cid
+    integer(kind=kint) :: icel, ic_type, itype, isect, ihead, sec_opt, cid
     integer(kind=kint) :: nodLOCAL(20)
     real(kind=kreal) :: val, surf, chkmass
     real(kind=kreal) :: rho, thick, length
@@ -55,46 +55,46 @@ contains
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item(jS+j)
           do i = 1, 3
-            ecoord(i,j) = hecMESH%node(3*nodLOCAL(j)-3+i)
+            ecoord(i,j) = hecMESH%node(3*(nodLOCAL(j)-1)+i)
           enddo
         enddo
 
         isect = hecMESH%section_ID(icel)
         ihead = hecMESH%section%sect_R_index(isect-1)
         cid   = hecMESH%section%sect_mat_ID_item(isect)
-!        iax   = hecMESH%section%sect_opt(isect)
+        sec_opt = hecMESH%section%sect_opt(isect)
         rho   = fstrSOLID%materials(cid)%variables(M_DENSITY)
         thick = fstrSOLID%materials(cid)%variables(M_THICK)
 
         lumped = 0.0d0
         if(ic_type == 231 .or. ic_type == 232 .or. ic_type == 241 .or. ic_type == 242)then
-          call mass_C2(ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, mass, lumped)
+          call mass_C2(ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses, sec_opt, thick, mass, lumped)
 
         elseif(ic_type == 341 .or. ic_type == 342 .or. ic_type == 351 .or. ic_type == 352 .or. &
              & ic_type == 361 .or. ic_type == 362 )then
-          call mass_C3(ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, mass, lumped)
+          call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass, lumped)
 
         elseif(ic_type == 731 .or. ic_type == 761)then
-          surf = get_face3(ecoord)
+          surf = get_face3(ecoord(1:3,1:nn))
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           thick = fstrSOLID%materials(cid)%variables(M_THICK)
           val = surf*thick*rho/3.0d0
 
         elseif(ic_type == 741 .or. ic_type == 781)then
-          surf = get_face4(ecoord)
+          surf = get_face4(ecoord(1:3,1:nn))
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           thick = fstrSOLID%materials(cid)%variables(M_THICK)
           val = surf*thick*rho/4.0d0
 
         elseif(ic_type == 611 .or. ic_type == 641)then
           surf = hecMESH%section%sect_R_item(ihead+4)
-          length = get_length(ecoord)
+          length = get_length(ecoord(1:3,1:nn))
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           val = 0.5d0*surf*length*rho
 
         elseif(ic_type == 301)then
           surf = hecMESH%section%sect_R_item(ihead+1)
-          length = get_length(ecoord)
+          length = get_length(ecoord(1:3,1:nn))
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           val = 0.5d0*surf*length*rho
 
