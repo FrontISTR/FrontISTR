@@ -109,6 +109,7 @@ contains
     Q(1)%q = 0.0d0
     Tri%alpha = 0.0d0
     Tri%beta  = 0.0d0
+    hecMAT%X  = 0.0d0
 
     call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, fstrEIG%eigvec, p, Q(1)%q, Tri%beta(1))
 
