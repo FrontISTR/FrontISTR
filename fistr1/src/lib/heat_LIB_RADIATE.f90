@@ -549,6 +549,7 @@ contains
     data XG/-0.5773502691896,0.5773502691896/
     data WGT/1.0,1.0/
     !
+    ISUF = 0
     if( LTYPE.EQ.1 ) then
       NOD(1) = 1
       NOD(2) = 2
@@ -686,6 +687,7 @@ contains
     WGT(1) = 0.5555555555
     WGT(2) = 0.8888888888
     WGT(3) = 0.5555555555
+    ISUF = 0
     !
     if( LTYPE.EQ.1 ) then
       NOD(1) = 1

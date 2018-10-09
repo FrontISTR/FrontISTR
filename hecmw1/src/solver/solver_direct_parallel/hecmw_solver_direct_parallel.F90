@@ -869,6 +869,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     neqns_a1=neqns_a+2
     ir=0
     ierr=0
+    izz0 = 0.0d0
     !
     !  set z pivot
     !
@@ -3579,6 +3580,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       call errtrp('stop due to allocation error.')
     end if
 
+    isem = 0
+
     2 continue
     ks=xlnzr(ic)
     ke=xlnzr(ic+1)
@@ -4060,6 +4063,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ierr=0
     allocate(temp(9,neqns),indx(neqns), stat=ierr)
+    temp = 0.0d0
+    indx = 0
 
     ks=xlnzr(ic)
     ke=xlnzr(ic+1)
@@ -4093,7 +4098,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             320       continue
 
             200    continue
-            return
+
+    deallocate(temp,indx)
   end subroutine s3um1
 
 

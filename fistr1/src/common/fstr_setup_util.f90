@@ -245,6 +245,7 @@ contains
     integer(kind=kint), save :: grp_count = 1
     character(50) :: grp_name_s
 
+    exist_n = 0
     call set_group_pointers( hecMESH, grp_type_name )
     if( grp_type_name == 'node_grp') then
       exist_n = node_global_to_local( hecMESH, no_list, no_count )

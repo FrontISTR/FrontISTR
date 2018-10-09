@@ -48,14 +48,13 @@ contains
     DELMAX = fstrHEAT%STEP_DELMAX(ISTEP)
     ITM    = fstrPARAM%itmax(ISTEP)
     EPS    = fstrPARAM%eps(ISTEP)
-    TT     = CTIME
+    TT     = 0.0d0
     write(*,*) ' DTIME=',DTIME
     write(*,*) 'EETIME=',EETIME
     write(*,*) 'DELMIN=',DELMIN
     write(*,*) 'DELMAX=',DELMAX
     write(*,*) '   ITM=',ITM
     write(*,*) '   EPS=',EPS
-    write(*,*) '    TT=',TT
 
     max_step = ( EETIME + 0.1d0 * DTIME ) / DTIME
     BETA = 0.5d0

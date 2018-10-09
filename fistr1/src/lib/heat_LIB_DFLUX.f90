@@ -551,6 +551,7 @@ contains
     !
     IVOL=0
     ISUF=0
+    NOD = 0
     if( LTYPE.EQ.0 ) then
       IVOL=1
     else

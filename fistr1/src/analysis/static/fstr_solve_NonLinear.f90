@@ -249,6 +249,7 @@ contains
       fstrSOLID%dunode(:) = 0.0d0
 
       ! ----- Inner Iteration, lagrange multiplier constant
+      res0   = 0.0d0
       res1   = 0.0d0
       relres = 1.0d0
 
@@ -512,6 +513,7 @@ contains
       count_step = count_step+1
 
       ! ----- Inner Iteration
+      res0   = 0.d0
       res1   = 0.d0
       relres = 1.d0
 

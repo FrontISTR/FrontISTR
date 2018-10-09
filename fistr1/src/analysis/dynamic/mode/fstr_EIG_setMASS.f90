@@ -39,6 +39,7 @@ contains
 
     allocate(fstrEIG%mass(NP*NDOF))
     fstrEIG%mass = 0.0d0
+    val    = 0.0d0
 
     do itype = 1, hecMESH%n_elem_type
       iS = hecMESH%elem_type_index(itype-1) + 1
@@ -46,8 +47,8 @@ contains
       ic_type = hecMESH%elem_type_item(itype)
       nn = hecmw_get_max_node(ic_type)
 
-      if (hecmw_is_etype_link(ic_type) ) cycle
-      if (ic_type == 3414) cycle
+      if(hecmw_is_etype_link(ic_type)) cycle
+      if(ic_type == 3414) cycle
 
       do icel = iS, iE
         jS = hecMESH%elem_node_index(icel-1)

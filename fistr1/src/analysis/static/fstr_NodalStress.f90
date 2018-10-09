@@ -608,11 +608,11 @@ contains
         fstrSOLID%ESTRESS(3*icel-1) = estress(2)
         fstrSOLID%ESTRESS(3*icel-0) = estress(3)
 
-        if( associated(testrain) ) then
-          testrain(3*icel-2) = tstrain(1)
-          testrain(3*icel-1) = tstrain(2)
-          testrain(3*icel  ) = tstrain(3)
-        endif
+        !if( associated(testrain) ) then
+        !  testrain(3*icel-2) = tstrain(1)
+        !  testrain(3*icel-1) = tstrain(2)
+        !  testrain(3*icel  ) = tstrain(3)
+        !endif
         s11 = estress(1)
         s22 = estress(2)
         s12 = estress(3)
