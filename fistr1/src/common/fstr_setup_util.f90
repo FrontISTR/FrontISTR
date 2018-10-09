@@ -1228,6 +1228,7 @@ contains
     implicit none
     integer(kind=kint) :: ctrl, my_rank, rcode
     character(HECMW_FILENAME_LEN) :: vis_filename = 'hecmw_vis.ini'
+    logical :: is_exit
 
     rcode = fstr_ctrl_seek_header( ctrl, '!VISUAL ' )
     if(rcode == 0) return
@@ -1236,7 +1237,9 @@ contains
       call fstr_setup_visualize_main( ctrl, vis_filename )
     endif
 
-    if(access(vis_filename, " ") /= 0)then
+    inquire(file = vis_filename, EXIST = is_exit)
+
+    if(.not. is_exit)then
       call fstr_setup_visualize_main( ctrl, vis_filename )
     endif
   end subroutine fstr_setup_visualize
