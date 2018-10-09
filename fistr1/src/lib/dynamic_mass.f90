@@ -11,6 +11,7 @@ contains
     use mMechGauss
     use m_MatMatrix
     use elementInfo
+    implicit none
     type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
     integer(kind=kint), intent(in) :: etype                  !< element type
     integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
@@ -105,6 +106,7 @@ contains
     use mMechGauss
     use m_MatMatrix
     use elementInfo
+    implicit none
     type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
     integer(kind=kint), intent(in) :: etype                  !< element type
     integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
