@@ -38,6 +38,7 @@ contains
 
     hecMAT%NDOF = 1
     hecMAT%Iarray(98) = 1   !Assmebly complete
+    hecMAT%X = 0.0d0
 
     !C--------------------  START OF STEADY STATE  ----------------------------
     do

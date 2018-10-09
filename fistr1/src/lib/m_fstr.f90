@@ -846,6 +846,12 @@ contains
       call hecmw_abort( hecmw_comm_get_comm() )
     endif
     call hecmw_cmat_init( hecMAT%cmat )
+    hecMAT%D  = 0.0d0
+    hecMAT%AL = 0.0d0
+    hecMAT%AU = 0.0d0
+    hecMAT%B  = 0.0d0
+    hecMAT%X  = 0.0d0
+    hecMAT%ALU = 0.0d0
   end subroutine hecMAT_init
 
   subroutine hecMAT_finalize( hecMAT )
