@@ -268,6 +268,7 @@ contains
     integer(kind=kint) :: s1, s2, flag
     real(kind=kreal) :: t_1, t_2, t_t, f_1, f_2, tincre
 
+    s1 = 0; s2 = 0
     jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
 
     if( jj_n_amp <= 0 ) then  ! Amplitude not defined

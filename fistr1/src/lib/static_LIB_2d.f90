@@ -173,6 +173,10 @@ contains
     integer(kind=kint) NOD(NN)
     integer(kind=kint) LX,I,SURTYPE,NSUR
     real(kind=kreal) VX,VY,localcoord(2),deriv(NN,2),elecoord(2,NN)
+
+    rx = 0.0d0; ry = 0.0d0
+    ay = 0.0d0; ax = 0.0d0
+
     !  CONSTANT
     PAI=4.d0*atan(1.d0)
     ! SET VALUE

@@ -90,6 +90,9 @@ contains
 
     error = 0
     n_indef_precond = 0
+    RHO1 = 0.0d0
+    ALPHA1 = 0.0d0
+    BETA = 0.0d0
 
     allocate (WW(NDOF*NP, 4))
     WW = 0.d0
