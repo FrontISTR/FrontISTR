@@ -174,29 +174,29 @@ contains
         call pc_strupr( type_name_list(i) )
         lid = -1;
         if(      type_name_list(i)(1:2) == 'BX'  ) then; lid = 1
-      else if( type_name_list(i)(1:2) == 'BY'  ) then; lid = 2
-    else if( type_name_list(i)(1:2) == 'BZ'  ) then; lid = 3
-  else if( type_name_list(i)(1:4) == 'GRAV') then; lid = 4
-else if( type_name_list(i)(1:4) == 'CENT') then; lid = 5
-else if( type_name_list(i)(1:2) == 'PP'  ) then; lid = 10
-else if( type_name_list(i)(1:2) == 'P0'  ) then; lid = 10
-else if( type_name_list(i)(1:2) == 'PX'  ) then
-lid = 10; params(1,:)=1.d0; params(2,:)=0.d0; params(3,:)=0.d0
-else if( type_name_list(i)(1:2) == 'PY'  ) then
-lid = 10; params(1,:)=0.d0; params(2,:)=1.d0; params(3,:)=0.d0
-else if( type_name_list(i)(1:2) == 'PZ'  ) then
-lid = 10; params(1,:)=0.d0; params(2,:)=0.d0; params(3,:)=1.d0
-else if( type_name_list(i)(1:2) == 'P1'  ) then; lid = 10
-else if( type_name_list(i)(1:2) == 'P2'  ) then; lid = 20
-else if( type_name_list(i)(1:2) == 'P3'  ) then; lid = 30
-else if( type_name_list(i)(1:2) == 'P4'  ) then; lid = 40
-else if( type_name_list(i)(1:2) == 'P5'  ) then; lid = 50
-else if( type_name_list(i)(1:2) == 'P6'  ) then; lid = 60
-else if( type_name_list(i)(1:1) == 'S'   ) then; lid = 100
-else
-write(ILOG, *) 'Error : !DLOAD : Load  type ',type_name_list(i), ' is unknown'
-deallocate( type_name_list )
-return
+        else if( type_name_list(i)(1:2) == 'BY'  ) then; lid = 2
+        else if( type_name_list(i)(1:2) == 'BZ'  ) then; lid = 3
+        else if( type_name_list(i)(1:4) == 'GRAV') then; lid = 4
+        else if( type_name_list(i)(1:4) == 'CENT') then; lid = 5
+        else if( type_name_list(i)(1:2) == 'PP'  ) then; lid = 10
+        else if( type_name_list(i)(1:2) == 'P0'  ) then; lid = 10
+        else if( type_name_list(i)(1:2) == 'PX'  ) then
+          lid = 10; params(1,:)=1.d0; params(2,:)=0.d0; params(3,:)=0.d0
+        else if( type_name_list(i)(1:2) == 'PY'  ) then
+          lid = 10; params(1,:)=0.d0; params(2,:)=1.d0; params(3,:)=0.d0
+        else if( type_name_list(i)(1:2) == 'PZ'  ) then
+          lid = 10; params(1,:)=0.d0; params(2,:)=0.d0; params(3,:)=1.d0
+        else if( type_name_list(i)(1:2) == 'P1'  ) then; lid = 10
+        else if( type_name_list(i)(1:2) == 'P2'  ) then; lid = 20
+        else if( type_name_list(i)(1:2) == 'P3'  ) then; lid = 30
+        else if( type_name_list(i)(1:2) == 'P4'  ) then; lid = 40
+        else if( type_name_list(i)(1:2) == 'P5'  ) then; lid = 50
+        else if( type_name_list(i)(1:2) == 'P6'  ) then; lid = 60
+        else if( type_name_list(i)(1:1) == 'S'   ) then; lid = 100
+        else
+          write(ILOG, *) 'Error : !DLOAD : Load  type ',type_name_list(i), ' is unknown'
+          deallocate( type_name_list )
+          return
         end if
         load_type(i) = lid
       end do
