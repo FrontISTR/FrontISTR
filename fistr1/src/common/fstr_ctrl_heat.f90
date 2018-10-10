@@ -151,13 +151,13 @@ contains
         lid = -1;
         call pc_strupr( type_name_list(i) )
         if(      type_name_list(i)(1:2) == 'BF'  ) then; lid = 0
-      else if( type_name_list(i)(1:2) == 'S0'  ) then; lid = 1
-    else if( type_name_list(i)(1:2) == 'S1'  ) then; lid = 1
-  else if( type_name_list(i)(1:2) == 'S2'  ) then; lid = 2
-else if( type_name_list(i)(1:2) == 'S3'  ) then; lid = 3
-else if( type_name_list(i)(1:2) == 'S4'  ) then; lid = 4
-else if( type_name_list(i)(1:2) == 'S5'  ) then; lid = 5
-else if( type_name_list(i)(1:2) == 'S6'  ) then; lid = 6
+        else if( type_name_list(i)(1:2) == 'S0'  ) then; lid = 1
+        else if( type_name_list(i)(1:2) == 'S1'  ) then; lid = 1
+        else if( type_name_list(i)(1:2) == 'S2'  ) then; lid = 2
+        else if( type_name_list(i)(1:2) == 'S3'  ) then; lid = 3
+        else if( type_name_list(i)(1:2) == 'S4'  ) then; lid = 4
+        else if( type_name_list(i)(1:2) == 'S5'  ) then; lid = 5
+        else if( type_name_list(i)(1:2) == 'S6'  ) then; lid = 6
         end if
         if( lid < 0 ) then
           write(ILOG,*) 'Error : !DFLUX : Load  type ',type_name_list(i),' is unknown'
@@ -251,12 +251,12 @@ else if( type_name_list(i)(1:2) == 'S6'  ) then; lid = 6
         lid = -1;
         call pc_strupr( type_name_list(i) )
         if(      type_name_list(i)(1:2) == 'F0'  ) then; lid = 1
-      else if( type_name_list(i)(1:2) == 'F1'  ) then; lid = 1
-    else if( type_name_list(i)(1:2) == 'F2'  ) then; lid = 2
-  else if( type_name_list(i)(1:2) == 'F3'  ) then; lid = 3
-else if( type_name_list(i)(1:2) == 'F4'  ) then; lid = 4
-else if( type_name_list(i)(1:2) == 'F5'  ) then; lid = 5
-else if( type_name_list(i)(1:2) == 'F6'  ) then; lid = 6
+        else if( type_name_list(i)(1:2) == 'F1'  ) then; lid = 1
+        else if( type_name_list(i)(1:2) == 'F2'  ) then; lid = 2
+        else if( type_name_list(i)(1:2) == 'F3'  ) then; lid = 3
+        else if( type_name_list(i)(1:2) == 'F4'  ) then; lid = 4
+        else if( type_name_list(i)(1:2) == 'F5'  ) then; lid = 5
+        else if( type_name_list(i)(1:2) == 'F6'  ) then; lid = 6
         end if
         if( lid < 0 ) then
           write(ILOG,*) 'Error : !FILM : Load  type ',type_name_list(i),' is unknown'
@@ -354,12 +354,12 @@ else if( type_name_list(i)(1:2) == 'F6'  ) then; lid = 6
         lid = -1;
         call pc_strupr( type_name_list(i) )
         if(      type_name_list(i)(1:2) == 'R0'  ) then; lid = 1
-      else if( type_name_list(i)(1:2) == 'R1'  ) then; lid = 1
-    else if( type_name_list(i)(1:2) == 'R2'  ) then; lid = 2
-  else if( type_name_list(i)(1:2) == 'R3'  ) then; lid = 3
-else if( type_name_list(i)(1:2) == 'R4'  ) then; lid = 4
-else if( type_name_list(i)(1:2) == 'R5'  ) then; lid = 5
-else if( type_name_list(i)(1:2) == 'R6'  ) then; lid = 6
+        else if( type_name_list(i)(1:2) == 'R1'  ) then; lid = 1
+        else if( type_name_list(i)(1:2) == 'R2'  ) then; lid = 2
+        else if( type_name_list(i)(1:2) == 'R3'  ) then; lid = 3
+        else if( type_name_list(i)(1:2) == 'R4'  ) then; lid = 4
+        else if( type_name_list(i)(1:2) == 'R5'  ) then; lid = 5
+        else if( type_name_list(i)(1:2) == 'R6'  ) then; lid = 6
         end if
         if( lid < 0 ) then
           write(ILOG,*) 'Error : !RADIATE : Load  type ',type_name_list(i),' is unknown'
