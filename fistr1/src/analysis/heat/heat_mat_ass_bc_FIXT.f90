@@ -11,14 +11,14 @@ contains
   !C*** MAT_ASS_BC_FIXT
   !C***
   !C
-  subroutine heat_mat_ass_bc_FIXT( hecMAT, fstrHEAT, CTIME )
+  subroutine heat_mat_ass_bc_FIXT( hecMAT, fstrHEAT, CTIME, DTIME, beta )
 
     use m_fstr
     use m_heat_get_amplitude
 
     implicit none
     integer(kind=kint) :: ib, ii, id
-    real(kind=kreal)   :: CTIME, QQ
+    real(kind=kreal)   :: CTIME, DTIME, QQ, beta
     type(fstr_heat)      :: fstrHEAT
     type(hecmwST_matrix) :: hecMAT
     logical :: OutOfRange
