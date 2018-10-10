@@ -124,7 +124,7 @@ contains
         fstrHEAT%TEMP0(i) = fstrHEAT%TEMP(i)
       enddo
 
-      !call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, ISTEP, next_time)
+      call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, ISTEP, next_time)
       call heat_output_result(hecMESH, fstrHEAT, total_step, max_step)
       call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, max_step)
       call heat_output_restart(hecMESH, fstrHEAT, total_step, max_step, next_time)
