@@ -26,6 +26,8 @@ contains
     integer(kind=kint) :: restart_step(1)
     real(kind=kreal)   :: restart_time(1)
     integer(kind=kint) :: restrt_data_size
+    integer(kind=kint) :: in, nmax, nmin
+    real(kind=kreal)   :: temp, tmax, tmin
     integer, parameter :: miniter = 4
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: label
@@ -217,6 +219,34 @@ contains
       tstep = tstep+1
       write(ILOG,*)
       write(ILOG,'(a,i6, a,f10.3)') ' STEP =', tstep, ' Time  =', CTIME
+
+      tmax = -1.0d10
+      tmin =  1.0d10
+      nmax = -1
+      nmin = -1
+
+      write(ILOG,*)
+      write(ILOG,'(a,i6)')    ' ISTEP =', tstep
+      write(ILOG,'(a,f10.3)') ' Time  =', ctime
+
+      do i = 1, hecMESH%nn_internal
+        inod = fstrPARAM%global_local_id(1,i)
+        in = fstrPARAM%global_local_id(2,i)
+        temp = fstrHEAT%TEMP(in)
+        if(tmax < temp)then
+          tmax = temp
+          nmax = inod
+        endif
+        if(temp < tmin)then
+          tmin = temp
+          nmin = inod
+        endif
+      enddo
+
+      write(ILOG,'(a,f10.3,i10)') ' Maximum Temperature :', tmax
+      write(ILOG,'(a,i10)')       ' Maximum Node No.    :', nmax
+      write(ILOG,'(a,f10.3,i10)') ' Minimum Temperature :', tmin
+      write(ILOG,'(a,i10)')       ' Minimum Node No.    :', nmin
 
       if( IRESULT.eq.1 .and. (mod(tstep,IRRES).eq.0 .or. tstep.eq.max_step) ) then
         header = '*fstrresult'
