@@ -27,9 +27,9 @@ contains
       iterALL = iterALL + 1
       hecMAT%X = 0.0d0
 
-      !call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrHEAT)
-      !if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, DTIME)
-      !call heat_mat_ass_boundary(hecMESH, hecMAT, hecMATmpc, fstrHEAT, next_time, DTIME)
+      call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrHEAT, fstrHEAT%beta)
+      if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, DTIME)
+      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMATmpc, fstrHEAT, next_time, DTIME)
 
       hecMATmpc%Iarray(97) = 1 !Need numerical factorization
       bup_n_dof = hecMESH%n_dof

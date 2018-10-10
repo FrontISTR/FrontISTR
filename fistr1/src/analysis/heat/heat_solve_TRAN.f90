@@ -117,7 +117,7 @@ contains
         !C-- MATRIX ASSEMBLING -----
         call heat_mat_ass_conductivity ( hecMESH,hecMAT,fstrHEAT,BETA )
         call heat_mat_ass_capacity ( hecMESH,hecMAT,fstrHEAT,DTIME )
-        call heat_mat_ass_boundary ( hecMESH,hecMAT,hecMATmpc,fstrHEAT,TT,ST, DTIME )
+        call heat_mat_ass_boundary ( hecMESH,hecMAT,hecMATmpc,fstrHEAT,TT+ST, DTIME )
 
         !C-- SOLVER
         hecMATmpc%Iarray(97) = 1   !Need numerical factorization

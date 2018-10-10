@@ -9,7 +9,7 @@ contains
   !C***
   !C*** MAT_ASS_BOUNDARY
   !C***
-  subroutine heat_mat_ass_boundary ( hecMESH,hecMAT,hecMATmpc,fstrHEAT,ATIME, BTIME, DTIME )
+  subroutine heat_mat_ass_boundary ( hecMESH,hecMAT,hecMATmpc,fstrHEAT,CTIME, DTIME )
 
     use m_fstr
     use m_heat_mat_ass_bc_CFLUX
@@ -19,13 +19,11 @@ contains
     use m_heat_mat_ass_bc_RADIATE
 
     implicit none
-    real(kind=kreal) :: ATIME, BTIME, CTIME, DTIME
+    real(kind=kreal) :: CTIME, DTIME
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_matrix), pointer :: hecMATmpc
     type(hecmwST_local_mesh) :: hecMESH
-
-    CTIME = ATIME + BTIME
 
     !C
     !C +---------+
