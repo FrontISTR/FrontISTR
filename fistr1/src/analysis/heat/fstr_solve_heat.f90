@@ -58,7 +58,6 @@ contains
         write(IMSG,*) ' NSTEP=',fstrHEAT%STEPtot
         write(IMSG,*) ' ISTEP=',ISTEP
         write(IMSG,*) ' ITMAX=',fstrPARAM%ITMAX(ISTEP)
-        write(IMSG,*) 'TEMTOL=',TEMTOL
         write(IMSG,*) '   ISS=',ISS
         write(IMSG,*) '       ISS = 0 ; Steady State'
         write(IMSG,*) '       ISS = 1 ; Transient'

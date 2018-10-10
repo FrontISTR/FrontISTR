@@ -2,10 +2,45 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief This module provides subroutines for calculating heat conductance
-!! attribution
-module m_heat_LIB_CONDUCTIVITY
+!> \brief This module provides subroutines for calculating heat conductive
+!! matrix for various elements
+
+module m_heat_lib_conductivity
 contains
+
+  !> GET CONDUCTIVITY
+  subroutine heat_GET_CONDUCTIVITY ( Tpoi,imat,COND,ntab,temp,funcA,funcB )
+    !C***
+    !C*** GET CONDUCTIVITY
+    !C***
+    use hecmw
+
+    implicit real(kind=kreal) (A-H,O-Z)
+    dimension COND(3),temp(ntab),funcA(ntab+1),funcB(ntab+1)
+
+    COND(1)= funcB(1)
+    COND(2)= COND(1)
+    COND(3)= COND(1)
+
+    if( ntab .GT. 1 ) then
+      if( Tpoi.LE.temp(1) ) then
+        itab= 1
+      else
+        itab= ntab + 1
+        do ikk= 1, ntab - 1
+          if( Tpoi.GT.temp(ikk).AND.Tpoi.LE.temp(ikk+1) ) then
+            itab= ikk + 1
+            exit
+          endif
+        enddo
+      endif
+      COND(1)= funcA(itab)*Tpoi+ funcB(itab)
+      COND(2)= COND(1)
+      COND(3)= COND(1)
+    endif
+    return
+  end subroutine heat_GET_CONDUCTIVITY
+
   !C************************************************************************
   !C*  THERMAL_111 ( NN,XX,YY,ZZ,TT,IMAT,ASECT,SS,ntab,temp,funcA,funcB )
   !C*  THERMAL_231 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
@@ -24,15 +59,16 @@ contains
   !C*  THERMAL_362 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
 
   !> CALCULATION 1D 2 NODE CONDUCTANCE ELEMENT
-  subroutine heat_THERMAL_111 (NN,XX,YY,ZZ,TT,IMAT,ASECT,SS,ntab,temp,funcA,funcB)
+  subroutine heat_THERMAL_111 (NN,XX,YY,ZZ,TT,IMAT,ASECT,SS &
+      ,ntab,temp,funcA,funcB)
     !*
     !* CALCULATION 1D 2 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
     dimension CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !
     DX = XX(2) - XX(1)
     DY = YY(2) - YY(1)
@@ -47,30 +83,29 @@ contains
       CTEMP = CTEMP + TT(I) * 0.5d0
     enddo
 
-    call heat_GET_CONDUCTIVITY( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
-
+    call heat_GET_CONDUCTIVITY( CTEMP, IMAT, CC, ntab, temp, funcA, funcB )
+    !
     SS(1) =  CC(1) * ASECT * AL
     SS(2) = -SS(1)
     SS(3) = -SS(1)
     SS(4) =  SS(1)
     !
     return
-
   end subroutine heat_THERMAL_111
 
   !> CALCULATION 2D 3 NODE CONDUCTANCE ELEMENT
-  subroutine heat_THERMAL_231( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
+  subroutine heat_THERMAL_231 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB)
     !C*
     !C*CALCULATION 2D 3 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),H(3),HL1(3),HL2(3),HL3(3)
-    dimension BX(3),BY(3),BZ(3),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    data XG/-0.5773502691896,0.5773502691896/
-    data WGT/1.0,1.0/
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), H(3), HL1(3), HL2(3), HL3(3)
+    dimension BX(3), BY(3), BZ(3), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    data XG/-0.5773502691896D0,0.5773502691896D0/
+    data WGT/1.0D0,1.0D0/
     !C
     !C*LOOP OVER ALL INTEGRATION POINTS
     do L2=1,2
@@ -123,7 +158,7 @@ contains
         do I=1,NN
           CTEMP=CTEMP+H(I)*TT(I)
         enddo
-        call heat_GET_CONDUCTIVITY( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+        call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
         !C*WEIGT VALUE AT GAUSSIAN POINT
         WGX=CC(1)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
         WGY=CC(2)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
@@ -135,26 +170,26 @@ contains
             SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX+BY(I)*BY(J)*WGY
           enddo
         enddo
+        !C
       enddo
-      !C
     enddo
+    !C
     return
-
   end subroutine heat_THERMAL_231
 
   !> CALCULATION 2D 4 NODE CONDUCTANCE ELEMENT
-  subroutine heat_THERMAL_241( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
+  subroutine heat_THERMAL_241 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB)
     !C*
     !C*CALCULATION 2D 4 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),H(4),HR(4),HS(4),HT(4)
-    dimension BX(4),BY(4),BZ(4),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    data XG/-0.5773502691896,0.5773502691896/
-    data WGT/1.0,1.0/
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), H(4), HR(4), HS(4), HT(4)
+    dimension BX(4), BY(4), BZ(4), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    data XG/-0.5773502691896D0, 0.5773502691896D0/
+    data WGT/1.0D0,1.0D0/
     !C
     !C*LOOP OVER ALL INTEGRATION POINTS
     do LX=1,2
@@ -202,7 +237,7 @@ contains
         do I=1,NN
           CTEMP=CTEMP+H(I)*TT(I)
         enddo
-        call heat_GET_CONDUCTIVITY( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+        call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
         !*WEIGT VALUE AT GAUSSIAN POINT
         WGX=CC(1)*WGT(LX)*WGT(LY)*DET*THICK
         WGY=CC(2)*WGT(LX)*WGT(LY)*DET*THICK
@@ -219,22 +254,22 @@ contains
     enddo
     !C
     return
-
   end subroutine heat_THERMAL_241
+
   !> CALCULATION 3D 4 NODE CONDUCTANCE ELEMENT
-  subroutine heat_THERMAL_341( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
+  subroutine heat_THERMAL_341 (NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB)
     !*
     !* CALCULATION 3D 4 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),H(4),HR(4),HS(4),HT(4)
-    dimension BX(4),BY(4),BZ(4),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    data XG/-0.5773502691896,0.5773502691896/
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), H(4), HR(4), HS(4), HT(4)
+    dimension BX(4), BY(4), BZ(4), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    data XG/-0.5773502691896D0,0.5773502691896D0/
     !*      DATA XG/-1.0,1.0/
-    data WGT/1.0,1.0/
+    data WGT/1.0D0,1.0D0/
     !
     !* LOOP FOR INTEGRATION POINTS
     do L3=1,2
@@ -267,6 +302,7 @@ contains
           HT(2)=0.0
           HT(3)=1.0
           HT(4)=-1.0
+
           !JACOBI MATRIX
           XJ11=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)
           XJ21=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)
@@ -277,24 +313,31 @@ contains
           XJ13=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4)
           XJ23=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)
           XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4)
+          !
           !DETERMINANT OF JACOBIAN
-          DET=XJ11*XJ22*XJ33   &
+          !
+          DET=XJ11*XJ22*XJ33 &
             +XJ12*XJ23*XJ31 &
             +XJ13*XJ21*XJ32 &
             -XJ13*XJ22*XJ31 &
             -XJ12*XJ21*XJ33 &
             -XJ11*XJ23*XJ32
+
           !CONDUCTIVITY AT CURRENT TEMPERATURE
+
           CTEMP=0.0
           do I=1,4
             CTEMP=CTEMP+H(I)*TT(I)
           enddo
-          call heat_GET_CONDUCTIVITY( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+          call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+
           ! WEIGT VALUE AT GAUSSIAN POINT
+
           DET = -DET
           WGX=CC(1)*WGT(L1)*WGT(L2)*WGT(L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
           WGY=CC(2)*WGT(L1)*WGT(L2)*WGT(L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
           WGZ=CC(3)*WGT(L1)*WGT(L2)*WGT(L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
+
           ! INVERSION OF JACOBIAN
           DUM=1.0/DET
           XJI11=DUM*( XJ22*XJ33-XJ23*XJ32)
@@ -312,16 +355,36 @@ contains
             BZ(J)=XJI31*HR(J)+XJI32*HS(J)+XJI33*HT(J)
           enddo
           !
-          SS( 1)=SS( 1)+BX(1)*BX(1)*WGX+BY(1)*BY(1)*WGY+BZ(1)*BZ(1)*WGZ
-          SS( 2)=SS( 2)+BX(1)*BX(2)*WGX+BY(1)*BY(2)*WGY+BZ(1)*BZ(2)*WGZ
-          SS( 6)=SS( 6)+BX(2)*BX(2)*WGX+BY(2)*BY(2)*WGY+BZ(2)*BZ(2)*WGZ
-          SS( 3)=SS( 3)+BX(1)*BX(3)*WGX+BY(1)*BY(3)*WGY+BZ(1)*BZ(3)*WGZ
-          SS( 7)=SS( 7)+BX(2)*BX(3)*WGX+BY(2)*BY(3)*WGY+BZ(2)*BZ(3)*WGZ
-          SS(11)=SS(11)+BX(3)*BX(3)*WGX+BY(3)*BY(3)*WGY+BZ(3)*BZ(3)*WGZ
-          SS( 4)=SS( 4)+BX(1)*BX(4)*WGX+BY(1)*BY(4)*WGY+BZ(1)*BZ(4)*WGZ
-          SS( 8)=SS( 8)+BX(2)*BX(4)*WGX+BY(2)*BY(4)*WGY+BZ(2)*BZ(4)*WGZ
-          SS(12)=SS(12)+BX(3)*BX(4)*WGX+BY(3)*BY(4)*WGY+BZ(3)*BZ(4)*WGZ
-          SS(16)=SS(16)+BX(4)*BX(4)*WGX+BY(4)*BY(4)*WGY+BZ(4)*BZ(4)*WGZ
+          SS( 1)=SS( 1)+BX(1)*BX(1)*WGX &
+            +BY(1)*BY(1)*WGY &
+            +BZ(1)*BZ(1)*WGZ
+          SS( 2)=SS( 2)+BX(1)*BX(2)*WGX &
+            +BY(1)*BY(2)*WGY &
+            +BZ(1)*BZ(2)*WGZ
+          SS( 6)=SS( 6)+BX(2)*BX(2)*WGX &
+            +BY(2)*BY(2)*WGY &
+            +BZ(2)*BZ(2)*WGZ
+          SS( 3)=SS( 3)+BX(1)*BX(3)*WGX &
+            +BY(1)*BY(3)*WGY &
+            +BZ(1)*BZ(3)*WGZ
+          SS( 7)=SS( 7)+BX(2)*BX(3)*WGX &
+            +BY(2)*BY(3)*WGY &
+            +BZ(2)*BZ(3)*WGZ
+          SS(11)=SS(11)+BX(3)*BX(3)*WGX &
+            +BY(3)*BY(3)*WGY &
+            +BZ(3)*BZ(3)*WGZ
+          SS( 4)=SS( 4)+BX(1)*BX(4)*WGX &
+            +BY(1)*BY(4)*WGY &
+            +BZ(1)*BZ(4)*WGZ
+          SS( 8)=SS( 8)+BX(2)*BX(4)*WGX &
+            +BY(2)*BY(4)*WGY &
+            +BZ(2)*BZ(4)*WGZ
+          SS(12)=SS(12)+BX(3)*BX(4)*WGX &
+            +BY(3)*BY(4)*WGY &
+            +BZ(3)*BZ(4)*WGZ
+          SS(16)=SS(16)+BX(4)*BX(4)*WGX &
+            +BY(4)*BY(4)*WGY &
+            +BZ(4)*BZ(4)*WGZ
           !
         enddo
       enddo
@@ -335,28 +398,27 @@ contains
     SS(15) = SS(12)
     !
     return
-
   end subroutine heat_THERMAL_341
 
   !> CALCULATION 3D 6 NODE CONDUCTANCE ELEMENT
-  subroutine heat_THERMAL_351( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
+  subroutine heat_THERMAL_351 (NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB)
     !*
     !* CALCULATION 3D 6 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),XG1(3),XG2(3),WGT1(3) &
-      ,H(6),HR(6),HS(6),HT(6)       &
-      ,BX(6),BY(6),BZ(6),CC(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), XG1(3), XG2(3), WGT1(3) &
+      , H(6), HR(6), HS(6), HT(6) &
+      , BX(6), BY(6), BZ(6), CC(3)
 
     dimension temp(*),funcA(*),funcB(*)
 
-    data XG   /-0.5773502691896,0.5773502691896/
-    data WGT  /1.0,1.0/
-    data XG1  /0.6666666667,0.16666666667,0.16666666667/
-    data XG2  /0.1666666667,0.66666666667,0.16666666667/
-    data WGT1 /0.1666666667,0.16666666667,0.16666666667/
+    data XG   /-0.5773502691896D0,0.5773502691896D0/
+    data WGT  /1.0D0,1.0D0/
+    data XG1  /0.6666666667D0,0.16666666667D0,0.16666666667D0/
+    data XG2  /0.1666666667D0,0.66666666667D0,0.16666666667D0/
+    data WGT1 /0.1666666667D0,0.16666666667D0,0.16666666667D0/
 
 
     !*INTEGRATION FOR Z-COORDINATE
@@ -398,16 +460,29 @@ contains
         HT(4) =  0.5*X1
         HT(5) =  0.5*X2
         HT(6) =  0.5*(1.0-X1-X2)
+
         !*JACOBI MATRIX
-        XJ11 = HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)+HR(5)*XX(5)+HR(6)*XX(6)
-        XJ21 = HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)+HS(5)*XX(5)+HS(6)*XX(6)
-        XJ31 = HT(1)*XX(1)+HT(2)*XX(2)+HT(3)*XX(3)+HT(4)*XX(4)+HT(5)*XX(5)+HT(6)*XX(6)
-        XJ12 = HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)+HR(5)*YY(5)+HR(6)*YY(6)
-        XJ22 = HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4)+HS(5)*YY(5)+HS(6)*YY(6)
-        XJ32 = HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4)+HT(5)*YY(5)+HT(6)*YY(6)
-        XJ13 = HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4)+HR(5)*ZZ(5)+HR(6)*ZZ(6)
-        XJ23 = HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)+HS(5)*ZZ(5)+HS(6)*ZZ(6)
-        XJ33 = HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4)+HT(5)*ZZ(5)+HT(6)*ZZ(6)
+        XJ11 = HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4) &
+          +HR(5)*XX(5)+HR(6)*XX(6)
+        XJ21 = HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4) &
+          +HS(5)*XX(5)+HS(6)*XX(6)
+        XJ31 = HT(1)*XX(1)+HT(2)*XX(2)+HT(3)*XX(3)+HT(4)*XX(4) &
+          +HT(5)*XX(5)+HT(6)*XX(6)
+
+        XJ12 = HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4) &
+          +HR(5)*YY(5)+HR(6)*YY(6)
+        XJ22 = HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4) &
+          +HS(5)*YY(5)+HS(6)*YY(6)
+        XJ32 = HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4) &
+          +HT(5)*YY(5)+HT(6)*YY(6)
+
+        XJ13 = HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4) &
+          +HR(5)*ZZ(5)+HR(6)*ZZ(6)
+        XJ23 = HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4) &
+          +HS(5)*ZZ(5)+HS(6)*ZZ(6)
+        XJ33 = HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4) &
+          +HT(5)*ZZ(5)+HT(6)*ZZ(6)
+
         !*DETERMINANT OF JACOBIAN
         DET = XJ11*XJ22*XJ33 &
           +XJ12*XJ23*XJ31 &
@@ -421,7 +496,7 @@ contains
         do I=1,6
           CTEMP = CTEMP+H(I)*TT(I)
         enddo
-        call heat_GET_CONDUCTIVITY( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+        call heat_GET_CONDUCTIVITY (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 
         !* WEIGT VALUE AT GAUSSIAN POINT
         WGX = CC(1)*WGT1(L12)*WGT(LZ)*DET
@@ -447,72 +522,72 @@ contains
         enddo
         !
         SS( 1) = SS( 1) + BX(1)*BX(1)*WGX &
-          + BY(1)*BY(1)*WGY            &
+          + BY(1)*BY(1)*WGY &
           + BZ(1)*BZ(1)*WGZ
         SS( 2) = SS( 2) + BX(1)*BX(2)*WGX &
-          + BY(1)*BY(2)*WGY            &
+          + BY(1)*BY(2)*WGY &
           + BZ(1)*BZ(2)*WGZ
         SS( 3) = SS( 3) + BX(1)*BX(3)*WGX &
-          + BY(1)*BY(3)*WGY            &
+          + BY(1)*BY(3)*WGY &
           + BZ(1)*BZ(3)*WGZ
         SS( 4) = SS( 4) + BX(1)*BX(4)*WGX &
-          + BY(1)*BY(4)*WGY            &
+          + BY(1)*BY(4)*WGY &
           + BZ(1)*BZ(4)*WGZ
         SS( 5) = SS( 5) + BX(1)*BX(5)*WGX &
-          + BY(1)*BY(5)*WGY            &
+          + BY(1)*BY(5)*WGY &
           + BZ(1)*BZ(5)*WGZ
         SS( 6) = SS( 6) + BX(1)*BX(6)*WGX &
-          + BY(1)*BY(6)*WGY            &
+          + BY(1)*BY(6)*WGY &
           + BZ(1)*BZ(6)*WGZ
         SS( 8) = SS( 8) + BX(2)*BX(2)*WGX &
-          + BY(2)*BY(2)*WGY            &
+          + BY(2)*BY(2)*WGY &
           + BZ(2)*BZ(2)*WGZ
         SS( 9) = SS( 9) + BX(2)*BX(3)*WGX &
-          + BY(2)*BY(3)*WGY            &
+          + BY(2)*BY(3)*WGY &
           + BZ(2)*BZ(3)*WGZ
         SS(10) = SS(10) + BX(2)*BX(4)*WGX &
-          + BY(2)*BY(4)*WGY            &
+          + BY(2)*BY(4)*WGY &
           + BZ(2)*BZ(4)*WGZ
         SS(11) = SS(11) + BX(2)*BX(5)*WGX &
-          + BY(2)*BY(5)*WGY            &
+          + BY(2)*BY(5)*WGY &
           + BZ(2)*BZ(5)*WGZ
         SS(12) = SS(12) + BX(2)*BX(6)*WGX &
-          + BY(2)*BY(6)*WGY            &
+          + BY(2)*BY(6)*WGY &
           + BZ(2)*BZ(6)*WGZ
         SS(15) = SS(15) + BX(3)*BX(3)*WGX &
-          + BY(3)*BY(3)*WGY            &
+          + BY(3)*BY(3)*WGY &
           + BZ(3)*BZ(3)*WGZ
         SS(16) = SS(16) + BX(3)*BX(4)*WGX &
-          + BY(3)*BY(4)*WGY            &
+          + BY(3)*BY(4)*WGY &
           + BZ(3)*BZ(4)*WGZ
         SS(17) = SS(17) + BX(3)*BX(5)*WGX &
-          + BY(3)*BY(5)*WGY            &
+          + BY(3)*BY(5)*WGY &
           + BZ(3)*BZ(5)*WGZ
         SS(18) = SS(18) + BX(3)*BX(6)*WGX &
-          + BY(3)*BY(6)*WGY            &
+          + BY(3)*BY(6)*WGY &
           + BZ(3)*BZ(6)*WGZ
         SS(22) = SS(22) + BX(4)*BX(4)*WGX &
-          + BY(4)*BY(4)*WGY            &
+          + BY(4)*BY(4)*WGY &
           + BZ(4)*BZ(4)*WGZ
         SS(23) = SS(23) + BX(4)*BX(5)*WGX &
-          + BY(4)*BY(5)*WGY            &
+          + BY(4)*BY(5)*WGY &
           + BZ(4)*BZ(5)*WGZ
         SS(24) = SS(24) + BX(4)*BX(6)*WGX &
-          + BY(4)*BY(6)*WGY            &
+          + BY(4)*BY(6)*WGY &
           + BZ(4)*BZ(6)*WGZ
         SS(29) = SS(29) + BX(5)*BX(5)*WGX &
-          + BY(5)*BY(5)*WGY            &
+          + BY(5)*BY(5)*WGY &
           + BZ(5)*BZ(5)*WGZ
         SS(30) = SS(30) + BX(5)*BX(6)*WGX &
-          + BY(5)*BY(6)*WGY            &
+          + BY(5)*BY(6)*WGY &
           + BZ(5)*BZ(6)*WGZ
         SS(36) = SS(36) + BX(6)*BX(6)*WGX &
-          + BY(6)*BY(6)*WGY            &
+          + BY(6)*BY(6)*WGY &
           + BZ(6)*BZ(6)*WGZ
 
       enddo
     enddo
-    !
+
     SS( 7) = SS( 2)
     SS(13) = SS( 3)
     SS(14) = SS( 9)
@@ -528,9 +603,8 @@ contains
     SS(33) = SS(18)
     SS(34) = SS(24)
     SS(35) = SS(30)
-    !
-    return
 
+    return
   end subroutine heat_THERMAL_351
 
   !> CALCULATION 3D 8 NODE CONDUCTANCE ELEMENT
@@ -539,14 +613,14 @@ contains
     !* CALCULATION 3D 8 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(2),WGT(2),H(8),HR(8),HS(8),HT(8)
-    dimension BX(8),BY(8),BZ(8),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    !*      DATA XG/-1.0,1.0/
-    data WGT/1.0,1.0/
-    data XG/-0.5773502691896, 0.5773502691896/
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(2), WGT(2), H(8), HR(8), HS(8), HT(8)
+    dimension BX(8), BY(8), BZ(8), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    !*      DATA XG/-1.0D0,1.0D0/
+    data WGT/1.0D0,1.0D0/
+    data XG/-0.5773502691896D0, 0.5773502691896D0/
     !
     do LX=1,2
       RI=XG(LX)
@@ -609,23 +683,23 @@ contains
           XJ31=HT(1)*XX(1)+HT(2)*XX(2)+HT(3)*XX(3)+HT(4)*XX(4) &
             +HT(5)*XX(5)+HT(6)*XX(6)+HT(7)*XX(7)+HT(8)*XX(8)
           !
-          XJ12=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)  &
+          XJ12=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4) &
             +HR(5)*YY(5)+HR(6)*YY(6)+HR(7)*YY(7)+HR(8)*YY(8)
-          XJ22=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4)  &
+          XJ22=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4) &
             +HS(5)*YY(5)+HS(6)*YY(6)+HS(7)*YY(7)+HS(8)*YY(8)
-          XJ32=HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4)  &
+          XJ32=HT(1)*YY(1)+HT(2)*YY(2)+HT(3)*YY(3)+HT(4)*YY(4) &
             +HT(5)*YY(5)+HT(6)*YY(6)+HT(7)*YY(7)+HT(8)*YY(8)
           !
-          XJ13=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4)  &
+          XJ13=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4) &
             +HR(5)*ZZ(5)+HR(6)*ZZ(6)+HR(7)*ZZ(7)+HR(8)*ZZ(8)
-          XJ23=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)  &
+          XJ23=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4) &
             +HS(5)*ZZ(5)+HS(6)*ZZ(6)+HS(7)*ZZ(7)+HS(8)*ZZ(8)
-          XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4)  &
+          XJ33=HT(1)*ZZ(1)+HT(2)*ZZ(2)+HT(3)*ZZ(3)+HT(4)*ZZ(4) &
             +HT(5)*ZZ(5)+HT(6)*ZZ(6)+HT(7)*ZZ(7)+HT(8)*ZZ(8)
           !
           !*DETERMINANT OF JACOBIAN
           !
-          DET=XJ11*XJ22*XJ33  &
+          DET=XJ11*XJ22*XJ33 &
             +XJ12*XJ23*XJ31 &
             +XJ13*XJ21*XJ32 &
             -XJ13*XJ22*XJ31 &
@@ -812,14 +886,13 @@ contains
 
   !> CALCULATION 3D 6 NODE INTERFACE ELEMENT
   subroutine heat_THERMAL_531 ( NN,XXX,YYY,ZZZ,TEMP,TZERO,THICK,HH,RR1,RR2,SS )
-    !*---------------------------------------------------------------------*
     !*
     !* CALCULATION 3D 6 NODE INTERFACE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XXX(NN),YYY(NN),ZZZ(NN),TEMP(NN),SS(NN*NN)
-    dimension XX(3),YY(3),ZZ(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XXX(NN), YYY(NN), ZZZ(NN), TEMP(NN), SS(NN*NN)
+    dimension XX(3), YY(3), ZZ(3)
 
     write(*,*) 'TYPE=531 not yet available..'
     stop
@@ -831,9 +904,9 @@ contains
     !* CALCULATION 3D 8 NODE INTERFACE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XXX(NN),YYY(NN),ZZZ(NN),TEMP(NN),SS(NN*NN)
-    dimension XX(4),YY(4),ZZ(4)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XXX(NN), YYY(NN), ZZZ(NN), TEMP(NN), SS(NN*NN)
+    dimension XX(4), YY(4), ZZ(4)
 
     XX(1)=XXX(1)
     XX(2)=XXX(2)
@@ -875,23 +948,23 @@ contains
     RRR1 = RR1**0.25
     RRR2 = RR2**0.25
 
-    HA1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 )     &
-      * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR1
-    HA2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 )     &
-      * ( RRR1 * T2Z      +   RRR2 * T6Z )    * RRR1
-    HA3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 )     &
-      * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR1
-    HA4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 )     &
-      * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR1
+    HA1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 ) &
+      &    * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR1
+    HA2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 ) &
+      &    * ( RRR1 * T2Z      +   RRR2 * T6Z )    * RRR1
+    HA3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 ) &
+      &    * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR1
+    HA4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 ) &
+      &    * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR1
 
-    HB1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 )     &
-      * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR2
-    HB2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 )     &
-      * ( RRR1 * T2Z      +   RRR2 * T6Z )    * RRR2
-    HB3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 )     &
-      * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR2
-    HB4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 )     &
-      * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR2
+    HB1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 ) &
+      &    * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR2
+    HB2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 ) &
+      &    * ( RRR1 * T2Z      +   RRR2 * T6Z )    * RRR2
+    HB3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 ) &
+      &    * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR2
+    HB4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 ) &
+      &    * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR2
 
     HHH = HH / THICK
 
@@ -945,7 +1018,7 @@ contains
     !
     PI=4.0*atan(1.0)
     !
-    XG(1) =-0.5773502691896258
+    XG(1) =-0.5773502691896258D0
     XG(2) =-XG(1)
     AA=0.0
     !
@@ -999,18 +1072,18 @@ contains
     !* CALCULATION 4 NODE SHELL ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
     dimension CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !
-    dimension XG(2),WGT(2),H(4),HR(4),HS(4)
-    dimension COD(3,4)
-    dimension G1(3),G2(3),G3(3),E1(3),E2(3),E3(3),REF(3)
-    dimension EN(3,4),THE(3,3),AMAT(3,3),BV(3),WK(3)
-    dimension DTDX(4),DTDY(4)
-    data XG/-0.5773502691896,0.5773502691896/
-    data WGT/1.0,1.0/
+    dimension XG(2), WGT(2), H(4), HR(4), HS(4)
+    dimension COD(3, 4)
+    dimension G1(3), G2(3), G3(3), E1(3), E2(3), E3(3), REF(3)
+    dimension EN(3, 4), THE(3, 3), AMAT(3, 3), BV(3), WK(3)
+    dimension DTDX(4), DTDY(4)
+    data XG/-0.5773502691896D0,0.5773502691896D0/
+    data WGT/1.0D0,1.0D0/
     !
     !* SET COORDINATES
     !
@@ -1114,7 +1187,7 @@ contains
           !
           !*DETERMINANT OF JACOBIAN
           !
-          DET = XJ11*XJ22*XJ33   &
+          DET = XJ11*XJ22*XJ33 &
             + XJ12*XJ23*XJ31 &
             + XJ13*XJ21*XJ32 &
             - XJ13*XJ22*XJ31 &
@@ -1169,12 +1242,12 @@ contains
 
           else
 
-            E1(1) =  0.0
-            E1(2) =  0.0
-            E1(3) = -1.0
-            E2(1) =  0.0
-            E2(2) =  1.0
-            E2(3) =  0.0
+            E1(1) =  0.D0
+            E1(2) =  0.D0
+            E1(3) = -1.D0
+            E2(1) =  0.D0
+            E2(2) =  1.D0
+            E2(3) =  0.D0
 
           end if
           !
@@ -1194,22 +1267,22 @@ contains
             BV(2) = HS(I)
             BV(3) = 0.0
 
-            WK(1) = AMAT(1,1)*BV(1)   &
+            WK(1) = AMAT(1,1)*BV(1) &
               + AMAT(1,2)*BV(2) &
               + AMAT(1,3)*BV(3)
-            WK(2) = AMAT(2,1)*BV(1)   &
+            WK(2) = AMAT(2,1)*BV(1) &
               + AMAT(2,2)*BV(2) &
               + AMAT(2,3)*BV(3)
-            WK(3) = AMAT(3,1)*BV(1)   &
+            WK(3) = AMAT(3,1)*BV(1) &
               + AMAT(3,2)*BV(2) &
               + AMAT(3,3)*BV(3)
-            BV(1) = THE(1,1)*WK(1)   &
+            BV(1) = THE(1,1)*WK(1) &
               + THE(1,2)*WK(2) &
               + THE(1,3)*WK(3)
-            BV(2) = THE(2,1)*WK(1)   &
+            BV(2) = THE(2,1)*WK(1) &
               + THE(2,2)*WK(2) &
               + THE(2,3)*WK(3)
-            BV(3) = THE(3,1)*WK(1)   &
+            BV(3) = THE(3,1)*WK(1) &
               + THE(3,2)*WK(2) &
               + THE(3,3)*WK(3)
 
@@ -1232,25 +1305,25 @@ contains
           VALX = CC(1)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
           VALY = CC(2)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
           !
-          SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX &
+          SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX  &
             + DTDY(1)*DTDY(1)*VALY
-          SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX &
+          SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX  &
             + DTDY(1)*DTDY(2)*VALY
-          SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX &
+          SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX  &
             + DTDY(1)*DTDY(3)*VALY
-          SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX &
+          SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX  &
             + DTDY(1)*DTDY(4)*VALY
-          SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX &
+          SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX  &
             + DTDY(2)*DTDY(2)*VALY
-          SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX &
+          SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX  &
             + DTDY(2)*DTDY(3)*VALY
-          SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX &
+          SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX  &
             + DTDY(2)*DTDY(4)*VALY
-          SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX &
+          SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX  &
             + DTDY(3)*DTDY(3)*VALY
-          SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX &
+          SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX  &
             + DTDY(3)*DTDY(4)*VALY
-          SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX &
+          SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX  &
             + DTDY(4)*DTDY(4)*VALY
 
         enddo
@@ -1260,10 +1333,10 @@ contains
     SS( 3) = SS( 3) + SS( 4)
     SS( 7) = SS( 7) + SS( 8)
     SS(11) = SS(11) + SS(16) + 2.0*SS(12)
-    SS( 4) = 0.0
-    SS( 8) = 0.0
-    SS(12) = 0.0
-    SS(16) = 0.0
+    SS( 4) = 0.0D0
+    SS( 8) = 0.0D0
+    SS(12) = 0.0D0
+    SS(16) = 0.0D0
 
     SS( 5) = SS( 2)
     SS( 9) = SS( 3)
@@ -1281,18 +1354,18 @@ contains
     !* CALCULATION 4 NODE SHELL ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
     dimension CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !
-    dimension XG(2),WGT(2),H(4),HR(4),HS(4)
-    dimension COD(3,4)
-    dimension G1(3),G2(3),G3(3),E1(3),E2(3),E3(3),REF(3)
-    dimension EN(3,4),THE(3,3),AMAT(3,3),BV(3),WK(3)
-    dimension DTDX(4),DTDY(4)
-    data XG/-0.5773502691896,0.5773502691896/
-    data WGT/1.0,1.0/
+    dimension XG(2), WGT(2), H(4), HR(4), HS(4)
+    dimension COD(3, 4)
+    dimension G1(3), G2(3), G3(3), E1(3), E2(3), E3(3), REF(3)
+    dimension EN(3, 4), THE(3, 3), AMAT(3, 3), BV(3), WK(3)
+    dimension DTDX(4), DTDY(4)
+    data XG/-0.5773502691896D0,0.5773502691896D0/
+    data WGT/1.0D0,1.0D0/
 
     !
     !* SET COORDINATES
@@ -1478,12 +1551,12 @@ contains
 
           else
 
-            E1(1) =  0.0
-            E1(2) =  0.0
-            E1(3) = -1.0
-            E2(1) =  0.0
-            E2(2) =  1.0
-            E2(3) =  0.0
+            E1(1) =  0.D0
+            E1(2) =  0.D0
+            E1(3) = -1.D0
+            E2(1) =  0.D0
+            E2(2) =  1.D0
+            E2(3) =  0.D0
 
           end if
           !
@@ -1503,22 +1576,22 @@ contains
             BV(2) = HS(I)
             BV(3) = 0.0
 
-            WK(1) = AMAT(1,1)*BV(1)   &
+            WK(1) = AMAT(1,1)*BV(1) &
               + AMAT(1,2)*BV(2) &
               + AMAT(1,3)*BV(3)
-            WK(2) = AMAT(2,1)*BV(1)   &
+            WK(2) = AMAT(2,1)*BV(1) &
               + AMAT(2,2)*BV(2) &
               + AMAT(2,3)*BV(3)
-            WK(3) = AMAT(3,1)*BV(1)   &
+            WK(3) = AMAT(3,1)*BV(1) &
               + AMAT(3,2)*BV(2) &
               + AMAT(3,3)*BV(3)
-            BV(1) = THE(1,1)*WK(1)   &
+            BV(1) = THE(1,1)*WK(1) &
               + THE(1,2)*WK(2) &
               + THE(1,3)*WK(3)
-            BV(2) = THE(2,1)*WK(1)   &
+            BV(2) = THE(2,1)*WK(1) &
               + THE(2,2)*WK(2) &
               + THE(2,3)*WK(3)
-            BV(3) = THE(3,1)*WK(1)   &
+            BV(3) = THE(3,1)*WK(1) &
               + THE(3,2)*WK(2) &
               + THE(3,3)*WK(3)
 
@@ -1541,25 +1614,25 @@ contains
           VALX = CC(1)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
           VALY = CC(2)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
           !
-          SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX &
+          SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX  &
             + DTDY(1)*DTDY(1)*VALY
-          SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX &
+          SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX  &
             + DTDY(1)*DTDY(2)*VALY
-          SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX &
+          SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX  &
             + DTDY(1)*DTDY(3)*VALY
-          SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX &
+          SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX  &
             + DTDY(1)*DTDY(4)*VALY
-          SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX &
+          SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX  &
             + DTDY(2)*DTDY(2)*VALY
-          SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX &
+          SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX  &
             + DTDY(2)*DTDY(3)*VALY
-          SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX &
+          SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX  &
             + DTDY(2)*DTDY(4)*VALY
-          SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX &
+          SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX  &
             + DTDY(3)*DTDY(3)*VALY
-          SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX &
+          SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX  &
             + DTDY(3)*DTDY(4)*VALY
-          SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX &
+          SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX  &
             + DTDY(4)*DTDY(4)*VALY
 
         enddo
@@ -1578,15 +1651,16 @@ contains
 
   !> CALCULATION 2D 6 NODE CONDUCTANCE ELEMENT
   subroutine heat_THERMAL_232 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB)
+    !C*--------------------------------------------------------------------*
     !C*
     !C*CALCULATION 2D 6 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(3),WGT(3),H(6),HL1(6),HL2(6),HL3(6)
-    dimension BX(6),BY(6),BZ(6),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(3), WGT(3), H(6), HL1(6), HL2(6), HL3(6)
+    dimension BX(6), BY(6), BZ(6), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -1680,16 +1754,15 @@ contains
 
   !> CALCULATION 2D 8 NODE CONDUCTANCE ELEMENT
   subroutine heat_THERMAL_242 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB)
-    !C*--------------------------------------------------------------------*
     !C*
     !C*CALCULATION 2D 8 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension XG(3),WGT(3),H(8),HR(8),HS(8),HT(8)
-    dimension BX(8),BY(8),BZ(8),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension XG(3), WGT(3), H(8), HR(8), HS(8), HT(8)
+    dimension BX(8), BY(8), BZ(8), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -1778,17 +1851,16 @@ contains
 
   !> CALCULATION 3D 10 NODE CONDUCTANCE ELEMENT
   subroutine heat_THERMAL_342 (NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB)
-    !C*--------------------------------------------------------------------*
     !C*
     !C* CALCULATION 3D 10 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension H(10),HL1(10),HL2(10),HL3(10),HL4(10)
-    dimension BX(10),BY(10),BZ(10),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    real(kind=kreal) XG(3),WGT(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension H(10), HL1(10), HL2(10), HL3(10), HL4(10)
+    dimension BX(10), BY(10), BZ(10), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    real(kind=kreal) XG(3), WGT(3)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -1887,7 +1959,7 @@ contains
           enddo
           !C
           !C* DETERMINANT OF JACOBIAN
-          DET=XJ11*XJ22*XJ33  &
+          DET=XJ11*XJ22*XJ33 &
             +XJ12*XJ23*XJ31 &
             +XJ13*XJ21*XJ32 &
             -XJ13*XJ22*XJ31 &
@@ -1920,13 +1992,13 @@ contains
           WGZ=CC(3)*WGT(L1)*WGT(L2)*WGT(L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
           !C
           do J=1, NN
-            BX(J)=XJI11*(HL1(J)-HL4(J))  &
+            BX(J)=XJI11*(HL1(J)-HL4(J)) &
               +XJI12*(HL2(J)-HL4(J)) &
               +XJI13*(HL3(J)-HL4(J))
-            BY(J)=XJI21*(HL1(J)-HL4(J))  &
+            BY(J)=XJI21*(HL1(J)-HL4(J)) &
               +XJI22*(HL2(J)-HL4(J)) &
               +XJI23*(HL3(J)-HL4(J))
-            BZ(J)=XJI31*(HL1(J)-HL4(J))  &
+            BZ(J)=XJI31*(HL1(J)-HL4(J)) &
               +XJI32*(HL2(J)-HL4(J)) &
               +XJI33*(HL3(J)-HL4(J))
           enddo
@@ -1954,11 +2026,11 @@ contains
     !* CALCULATION 3D 15 NODE CONDUCTANCE ELEMENT
     !*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension H(15),HL1(15),HL2(15),HL3(15),HZ(15),BX(15),BY(15),BZ(15),CC(3)
-    dimension temp(*),funcA(*),funcB(*)
-    real(kind=kreal) XG(3),WGT(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension H(15), HL1(15), HL2(15), HL3(15), HZ(15), BX(15), BY(15), BZ(15), CC(3)
+    dimension temp(*), funcA(*), funcB(*)
+    real(kind=kreal) XG(3), WGT(3)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -2082,7 +2154,7 @@ contains
           enddo
           !C
           !C* DETERMINANT OF JACOBIAN
-          DET = XJ11*XJ22*XJ33  &
+          DET = XJ11*XJ22*XJ33 &
             +XJ12*XJ23*XJ31 &
             +XJ13*XJ21*XJ32 &
             -XJ13*XJ22*XJ31 &
@@ -2144,12 +2216,12 @@ contains
     !C* CALCULATION 3D 20 NODE CONDUCTANCE ELEMENT
     !C*
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(NN),YY(NN),ZZ(NN),TT(NN),SS(NN*NN)
-    dimension H(20),HR(20),HS(20),HT(20)
-    dimension BX(20),BY(20),BZ(20),CC(3)
-    dimension temp(ntab),funcA(ntab+1),funcB(ntab+1)
-    real(kind=kreal) XG(3),WGT(3)
+    implicit real(kind=kreal) (A - H, O - Z)
+    dimension XX(NN), YY(NN), ZZ(NN), TT(NN), SS(NN*NN)
+    dimension H(20), HR(20), HS(20), HT(20)
+    dimension BX(20), BY(20), BZ(20), CC(3)
+    dimension temp(ntab), funcA(ntab + 1), funcB(ntab + 1)
+    real(kind=kreal) XG(3), WGT(3)
     !C
     XG(1) = -0.7745966692
     XG(2) =  0.0
@@ -2278,7 +2350,7 @@ contains
             XJ33=XJ33+HT(I)*ZZ(I)
           enddo
           !C* DETERMINANT OF JACOBIAN
-          DET=XJ11*XJ22*XJ33  &
+          DET=XJ11*XJ22*XJ33 &
             +XJ12*XJ23*XJ31 &
             +XJ13*XJ21*XJ32 &
             -XJ13*XJ22*XJ31 &
@@ -2322,8 +2394,7 @@ contains
           do I = 1, NN
             do J = 1, NN
               IJ = IJ + 1
-              SS(IJ)=SS(IJ) &
-                +BX(I)*BX(J)*WGX &
+              SS(IJ)=SS(IJ)+BX(I)*BX(J)*WGX &
                 +BY(I)*BY(J)*WGY &
                 +BZ(I)*BZ(J)*WGZ
             enddo
@@ -2335,38 +2406,4 @@ contains
     !
     return
   end subroutine heat_THERMAL_362
-
-  !> GET CONDUCTIVITY
-  subroutine heat_GET_CONDUCTIVITY ( Tpoi,imat,COND,ntab,temp,funcA,funcB )
-    !***
-    !*** GET CONDUCTIVITY
-    !***
-    use hecmw
-
-    implicit real(kind=kreal) (A-H,O-Z)
-    dimension COND(3),temp(ntab),funcA(ntab+1),funcB(ntab+1)
-
-    COND(1)= funcB(1)
-    COND(2)= COND(1)
-    COND(3)= COND(1)
-
-    if( ntab .GT. 1 ) then
-      if( Tpoi.LE.temp(1) ) then
-        itab= 1
-      else
-        itab= ntab + 1
-        do ikk= 1, ntab - 1
-          if( Tpoi.GT.temp(ikk).AND.Tpoi.LE.temp(ikk+1) ) then
-            itab= ikk + 1
-            exit
-          endif
-        enddo
-      endif
-      COND(1)= funcA(itab)*Tpoi+ funcB(itab)
-      COND(2)= COND(1)
-      COND(3)= COND(1)
-    endif
-    return
-
-  end subroutine heat_GET_CONDUCTIVITY
-end module m_heat_LIB_CONDUCTIVITY
+end module m_heat_lib_conductivity
