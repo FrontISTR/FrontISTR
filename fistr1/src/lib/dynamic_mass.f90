@@ -76,30 +76,8 @@ contains
       end forall
     enddo
 
-    total_mass = 0.0d0
-    do i = 1, nn*ndof, ndof
-      do j = 1, nn*ndof, ndof
-        total_mass = total_mass + mass(j,i)
-      enddo
-    enddo
-
     is_lumped = .true.
-    if(is_lumped)then
-      diag_mass = 0.0d0
-      do i = 1, nn*ndof, ndof
-        diag_mass = diag_mass + mass(i,i)
-      enddo
-
-      diag_mass = 1.0d0/diag_mass
-      do i = 1, nn*ndof
-        lumped(i) = lumped(i) + mass(i,i)*total_mass*diag_mass
-      enddo
-
-      mass = 0.0d0
-      do i = 1, nn*ndof
-        mass(i,i) = lumped(i)
-      enddo
-    endif
+    if(is_lumped) call get_lumped_mass(nn, ndof, mass, lumped)
   end subroutine mass_C2
 
   subroutine mass_C3(etype, nn, ecoord, gausses, mass, lumped, temperature)
@@ -171,6 +149,17 @@ contains
       end forall
     enddo
 
+    is_lumped = .true.
+    if(is_lumped) call get_lumped_mass(nn, ndof, mass, lumped)
+  end subroutine mass_C3
+
+  subroutine get_lumped_mass(nn, ndof, mass, lumped)
+    use hecmw
+    implicit none
+    integer(kind=kint) :: i, j, nn, ndof
+    real(kind=kreal) :: lumped(:), mass(:,:)
+    real(kind=kreal) :: diag_mass, total_mass
+
     total_mass = 0.0d0
     do i = 1, nn*ndof, ndof
       do j = 1, nn*ndof, ndof
@@ -178,24 +167,21 @@ contains
       enddo
     enddo
 
-    is_lumped = .true.
-    if(is_lumped)then
-      diag_mass = 0.0d0
-      do i = 1, nn*ndof, ndof
-        diag_mass = diag_mass + mass(i,i)
-      enddo
+    diag_mass = 0.0d0
+    do i = 1, nn*ndof, ndof
+      diag_mass = diag_mass + mass(i,i)
+    enddo
 
-      diag_mass = 1.0d0/diag_mass
-      do i = 1, nn*ndof
-        lumped(i) = lumped(i) + mass(i,i)*total_mass*diag_mass
-      enddo
+    diag_mass = 1.0d0/diag_mass
+    do i = 1, nn*ndof
+      lumped(i) = lumped(i) + mass(i,i)*total_mass*diag_mass
+    enddo
 
-      mass = 0.0d0
-      do i = 1, nn*ndof
-        mass(i,i) = lumped(i)
-      enddo
-    endif
-  end subroutine mass_C3
+    mass = 0.0d0
+    do i = 1, nn*ndof
+      mass(i,i) = lumped(i)
+    enddo
+  end subroutine get_lumped_mass
 
   function get_length(ecoord)
     use hecmw
