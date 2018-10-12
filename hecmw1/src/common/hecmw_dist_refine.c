@@ -1244,7 +1244,7 @@ static int rebuild_elem_ID(const struct hecmwST_local_mesh *mesh,
 static int rebuild_global_elem_ID(const struct hecmwST_local_mesh *mesh,
                                   struct hecmwST_local_mesh *ref_mesh) {
   int i, j, k;
-  int count;
+  int min_ID;
   int *global_elem_ID_org;
   int *global_elem_ID_ref;
 
@@ -1254,8 +1254,12 @@ static int rebuild_global_elem_ID(const struct hecmwST_local_mesh *mesh,
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
-  count              = 0;
+  min_ID = 0;
   global_elem_ID_org = mesh->global_elem_ID;
+  for (i = 0; i < mesh->n_elem_gross; i++) {
+    if (global_elem_ID_org[i] < min_ID)
+      min_ID = global_elem_ID_org[i];
+  }
   global_elem_ID_ref = ref_mesh->global_elem_ID;
   for (i = 0; i < mesh->n_elem_type; i++) {
     int etype, istart, iend, n_elem, ierror, ndiv;
@@ -1269,8 +1273,8 @@ static int rebuild_global_elem_ID(const struct hecmwST_local_mesh *mesh,
     for (j = 0; j < n_elem; j++) {
       global_elem_ID_ref[0] = global_elem_ID_org[0];
       for (k = 1; k < ndiv; k++) {
-        count++;
-        global_elem_ID_ref[k] = -count;
+        min_ID--;
+        global_elem_ID_ref[k] = min_ID;
       }
       global_elem_ID_org += 1;
       global_elem_ID_ref += ndiv;
@@ -1445,7 +1449,7 @@ static int rebuild_elem_info(const struct hecmwST_local_mesh *mesh,
 static int rebuild_node_info(const struct hecmwST_local_mesh *mesh,
                              struct hecmwST_local_mesh *ref_mesh) {
   int i;
-  int count;
+  int count, min_ID;
 
   HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding node info...\n",
             mesh->my_rank);
@@ -1477,13 +1481,15 @@ static int rebuild_node_info(const struct hecmwST_local_mesh *mesh,
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
+  min_ID = 0;
   for (i = 0; i < mesh->n_node_gross; i++) {
     ref_mesh->global_node_ID[i] = mesh->global_node_ID[i];
+    if (mesh->global_node_ID[i] < min_ID)
+      min_ID = mesh->global_node_ID[i];
   }
-  count = 0;
   for (i = mesh->n_node_gross; i < ref_mesh->n_node_gross; i++) {
-    count++;
-    ref_mesh->global_node_ID[i] = -count;
+    min_ID--;
+    ref_mesh->global_node_ID[i] = min_ID;
   }
 
   if (mesh->hecmw_flag_initcon && mesh->n_node_gross > 0) {
@@ -1854,7 +1860,8 @@ static int rebuild_comm_tables_serial(const struct hecmwST_local_mesh *mesh,
                mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED);
 
   /* nn_internal, n_node */
-  ref_mesh->nn_internal = ref_mesh->n_node = ref_mesh->n_node_gross;
+  ref_mesh->nn_internal = count_internal(mesh->my_rank, ref_mesh->n_node_gross, ref_mesh->node_ID);
+  ref_mesh->n_node = ref_mesh->n_node_gross;
   ref_mesh->nn_middle = ref_mesh->n_node;
 
   /* node_internal_list */
@@ -1869,7 +1876,8 @@ static int rebuild_comm_tables_serial(const struct hecmwST_local_mesh *mesh,
   }
 
   /* ne_internal, n_elem */
-  ref_mesh->ne_internal = ref_mesh->n_elem = ref_mesh->n_elem_gross;
+  ref_mesh->ne_internal = count_internal(mesh->my_rank, ref_mesh->n_elem_gross, ref_mesh->elem_ID);
+  ref_mesh->n_elem = ref_mesh->n_elem_gross;
 
   /* elem_internal_list */
   ref_mesh->elem_internal_list =
