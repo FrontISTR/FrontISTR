@@ -2864,6 +2864,10 @@ static int setup_elem_mat(struct hecmwST_local_mesh *mesh) {
       n = 1;
       HECMW_assert(elem->mpc_matid != -1);
       start = &elem->mpc_matid;
+    } else if (mesh->elem_type[i] >= 1000 && mesh->elem_type[i] < 1100) {
+      n = 1;
+      HECMW_assert(elem->mpc_matid != -1);
+      start = &elem->mpc_matid;
     } else {
       if (elem->nmatitem > 0) {
         HECMW_assert(mesh->material);
@@ -3032,6 +3036,24 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
 
 error:
   return -1;
+}
+
+static int setup_contact_sectid(struct hecmwST_local_mesh *mesh) {
+  int i;
+  struct hecmw_io_element *elem;
+
+  HECMW_assert(mesh);
+
+  for (i = 0; i < mesh->n_elem; i++) {
+    /* depends on setup_elem() */
+    if (mesh->elem_type[i] < 1000) continue;
+    if (mesh->elem_type[i] >= 1100) continue;
+    elem = HECMW_io_get_elem(mesh->global_elem_ID[i]);
+    HECMW_assert(elem);
+    HECMW_assert(elem->mpc_sectid != -1);
+    mesh->section_ID[i] = elem->mpc_sectid;
+  }
+  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3799,12 +3821,12 @@ error:
 static int post_contact_convert_sgroup(void)
 {
   struct hecmw_io_contact *p;
-  int elem_id;
+  int elem_id, contact_id;
 
   elem_id = HECMW_io_get_elem_max_id();
   elem_id++;
 
-  for (p = _contact; p; p = p->next) {
+  for (p = _contact, contact_id = 1; p; p = p->next, contact_id++) {
     struct hecmw_io_sgrp *sgrp;
     int n_item, i, id, ret;
     int *elem, *surf;
@@ -3828,13 +3850,14 @@ static int post_contact_convert_sgroup(void)
     HECMW_set_int_iter_init(sgrp->item);
     for (i = 0; HECMW_set_int_iter_next(sgrp->item, &id); i++) {
       int eid, sid, etype, surf_etype, surf_nnode, j;
-      struct hecmw_io_element *element;
+      struct hecmw_io_element *element, *ptelem;
       const int *surf_nodes;
       int nodes[8];
 
       decode_surf_key(id, &eid, &sid);
 
       element = HECMW_io_get_elem(eid);
+      HECMW_assert(element);
       etype = element->type;
 
       /* extract surface */
@@ -3848,8 +3871,13 @@ static int post_contact_convert_sgroup(void)
       }
 
       /* add surface patch elem */
-      if (HECMW_io_add_elem(elem_id, surf_etype, nodes, 0, NULL) == NULL)
+      ptelem = HECMW_io_add_elem(elem_id, surf_etype, nodes, 0, NULL);
+      if (ptelem == NULL) {
         return -1;
+      }
+
+      ptelem->mpc_matid = surf_etype % 100;
+      ptelem->mpc_sectid = contact_id;
 
       elem[i] = elem_id;
       surf[i] = 1;
@@ -4045,6 +4073,8 @@ struct hecmwST_local_mesh *HECMW_io_make_local_mesh(void) {
   HECMW_log(HECMW_LOG_DEBUG, "setup_sect done");
   if (setup_mpc_sectid(mesh)) goto error;
   HECMW_log(HECMW_LOG_DEBUG, "setup_mpc_sectid done");
+  if (setup_contact_sectid(mesh)) goto error;
+  HECMW_log(HECMW_LOG_DEBUG, "setup_contact_sectid done");
   if (setup_elem_check_sectid(mesh)) goto error;
   HECMW_log(HECMW_LOG_DEBUG, "setup_elem_check_sectid done");
   if (setup_elem_mat(mesh)) goto error;
