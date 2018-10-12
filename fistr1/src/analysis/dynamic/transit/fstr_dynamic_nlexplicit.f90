@@ -302,6 +302,7 @@ contains
         fstrDYNAMIC%DISP(j,3) = fstrDYNAMIC%DISP(j,1)
         fstrDYNAMIC%DISP(j,1) = hecMAT%X(j)
 
+        hecMAT%X(j)  = fstrSOLID%dunode(j)
       end do
 
       ! ----- update strain, stress, and internal force
