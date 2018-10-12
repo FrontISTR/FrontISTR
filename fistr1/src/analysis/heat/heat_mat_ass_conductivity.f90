@@ -2,44 +2,33 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief This module provides a subroutine to assemble heat conductance
-!! attribution
 module m_heat_mat_ass_conductivity
 contains
-  !C***
-  !C*** MAT_ASS_CONDUCTIVITY
-  !C***
-  subroutine heat_mat_ass_conductivity( hecMESH,hecMAT,fstrHEAT,BETA )
 
+  subroutine heat_mat_ass_conductivity( hecMESH,hecMAT,fstrHEAT,BETA )
+    use hecmw
     use m_fstr
     use m_heat_lib
-
+    use m_static_LIB
     implicit none
-    integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab
-    integer(kind=kint) :: in0, nn, i, nodLOCAL, jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL
-    real(kind=kreal)   :: BETA, TZERO, ALFA, temp, funcA, funcB, XX, YY, ZZ, TT, T0, SS
-    real(kind=kreal)   :: asect, thick, GTH, GHH, GR1, GR2
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab
+    integer(kind=kint) :: in0, nn, i, in, j, nodLOCAL, jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL
+    real(kind=kreal)   :: BETA, TZERO, ALFA, temp, funcA, funcB, XX, YY, ZZ, TT, T0, SS
+    real(kind=kreal)   :: asect, thick, GTH, GHH, GR1, GR2
+    real(kind=kreal) :: lumped(20), stiff(20, 20), ecoord(3,20)
+    real(kind=kreal), allocatable :: S(:)
 
-    !!    real (kind=kreal),pointer :: temp(:),funcA(:),funcB(:)
     dimension nodLOCAL(20),XX(20),YY(20),ZZ(20),TT(20),T0(20)                &
       ,SS(400),temp(1000),funcA(1000),funcB(1000)
-    !C +-------+
-    !C | INIT. |
-    !C +-------+
 
     TZERO = hecMESH%zero_temp
     ALFA = 1.0 - BETA
 
     call hecmw_mat_clear(hecMAT)
     call hecmw_mat_clear_b(hecMAT)
-
-    !C +-------------------------------+
-    !C | ELEMENT-by-ELEMENT ASSEMBLING |
-    !C | according to ELEMENT TYPE     |
-    !C +-------------------------------+
 
     do itype= 1, hecMESH%n_elem_type
       is= hecMESH%elem_type_index(itype-1) + 1
@@ -149,35 +138,30 @@ contains
           call heat_THERMAL_741 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
         endif
 
-        ic = 0
-        do ip = 1, nn
-          inod = nodLOCAL(ip)
-          do jp = 1, nn
-            ic = ic + 1
-            jnod = nodLOCAL(jp)
-
-            if( jnod.gt.inod ) then
-              isU = hecMAT%indexU(inod-1) + 1
-              ieU = hecMAT%indexU(inod)
-              do ik = isU, ieU
-                if( hecMAT%itemU(ik).eq.jnod ) hecMAT%AU(ik) = hecMAT%AU(ik) + SS(ic)*BETA
-              enddo
-            elseif( jnod.lt.inod ) then
-              isL = hecMAT%indexL(inod-1) + 1
-              ieL = hecMAT%indexL(inod)
-              do ik = isL, ieL
-                if( hecMAT%itemL(ik).eq.jnod ) hecMAT%AL(ik) = hecMAT%AL(ik) + SS(ic)*BETA
-              enddo
-            else
-              hecMAT%D(inod) = hecMAT%D(inod) + SS(ic)*BETA
-            endif
-
-            hecMAT%B(inod) = hecMAT%B(inod) - SS(ic)*T0(jp)*ALFA
+        stiff = 0.0d0
+        in = 1
+        do i = 1, nn
+          do j = 1, nn
+            stiff(j,i) = SS(in)
+            in = in + 1
           enddo
         enddo
-        !C
+
+        call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiff)
+
       enddo
     enddo
 
+    allocate(S(hecMAT%NP))
+    S = 0.0d0
+
+    call hecmw_matvec(hecMESH, hecMAT, fstrHEAT%TEMP0, S)
+
+    hecMAT%D  = BETA*hecMAT%D
+    hecMAT%AU = BETA*hecMAT%AU
+    hecMAT%AL = BETA*hecMAT%AL
+    hecMAT%B  = hecMAT%B - ALFA*S
+
+    deallocate(S)
   end subroutine heat_mat_ass_conductivity
 end module m_heat_mat_ass_conductivity
