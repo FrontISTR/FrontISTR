@@ -471,7 +471,7 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
     }
 
     sprintf(rcap_name, "SG_%s", grp->grp_name[i]);
-    num   = HECMW_varray_int_nval(&other);
+    num   = HECMW_varray_int_nval(&other) / 2;
     array = HECMW_varray_int_get_v(&other);
     rcapAppendFaceGroup(rcap_name, num, array);
 
