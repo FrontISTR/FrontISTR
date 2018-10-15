@@ -148,17 +148,4 @@ contains
     endif
   end function hecmw_is_etype_patch
 
-  function hecmw_is_etype_special(etype)
-    logical :: hecmw_is_etype_special
-    integer(kind=kint) :: etype
-    external hecmw_is_etype_special_if
-    integer(kind=kint) :: hecmw_is_etype_special_if
-
-    if (hecmw_is_etype_special_if(etype) /= 0) then
-      hecmw_is_etype_special = .true.
-    else
-      hecmw_is_etype_special = .false.
-    endif
-  end function hecmw_is_etype_special
-
 end module hecmw_etype

@@ -1010,7 +1010,8 @@ contains
     do i=1,hecMESH%n_elem
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
-      if (hecmw_is_etype_special(fstrSOLID%elements(i)%etype)) cycle
+      if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
+      if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
