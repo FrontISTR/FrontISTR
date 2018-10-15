@@ -1566,8 +1566,10 @@ contains
       if (rank == hecMESH%my_rank) then  !   internal: set mapping
         map(i) = lid
       else                               !   external
-        !     search global_ID in external nodes
-        llid = find_external_gid(hecMESH, gid)
+        ! !     search global_ID in external nodes
+        ! llid = find_external_gid(hecMESH, gid)
+        !     search node_ID in external nodes
+        llid = find_external_node_ID(hecMESH, lid, rank)
         if (llid > 0) then  !     found: set mapping
           map(i) = llid
         else                !     not found
@@ -1592,6 +1594,21 @@ contains
       endif
     enddo
   end function find_external_gid
+
+  function find_external_node_ID(hecMESH, lid, rank)
+    implicit none
+    integer(kind=kint) :: find_external_node_ID
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: lid, rank
+    integer(kind=kint) :: i
+    find_external_node_ID = -1
+    do i = hecMESH%nn_internal+1, hecMESH%n_node
+      if (hecMESH%node_ID(2*i-1) == lid .and. hecMESH%node_ID(2*i) == rank) then
+        find_external_node_ID = i
+        return
+      endif
+    enddo
+  end function find_external_node_ID
 
   subroutine extract_add_nodes(ncols, cols, map, n_add_node, add_nodes)
     implicit none

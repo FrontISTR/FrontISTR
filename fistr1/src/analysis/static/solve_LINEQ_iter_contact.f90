@@ -1915,7 +1915,7 @@ contains
       allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
       dst%export_item(:) = src%export_item(:)
       allocate(dst%global_node_ID(dst%n_node))
-      dst%global_node_ID(:) = src%global_node_ID(:)
+      dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
     else
       dst%import_index(:)= 0
       dst%export_index(:)= 0
@@ -1923,7 +1923,7 @@ contains
       dst%export_item => null()
     endif
     allocate(dst%node_ID(2*dst%n_node))
-    dst%node_ID(:)     = src%node_ID(:)
+    dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*dst%n_node)
     allocate(dst%elem_type_item(dst%n_elem_type))
     dst%elem_type_item(:) = src%elem_type_item(:)
     !dst%mpc            = src%mpc
