@@ -14,7 +14,7 @@ contains
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab
+    integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab, NDOF
     integer(kind=kint) :: in0, nn, i, in, j, nodLOCAL, jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL
     real(kind=kreal)   :: BETA, TZERO, ALFA, temp, funcA, funcB, XX, YY, ZZ, TT, T0, SS
     real(kind=kreal)   :: asect, thick, GTH, GHH, GR1, GR2
@@ -24,6 +24,7 @@ contains
     dimension nodLOCAL(20),XX(20),YY(20),ZZ(20),TT(20),T0(20)                &
       ,SS(400),temp(1000),funcA(1000),funcB(1000)
 
+    NDOF = hecMESH%n_dof
     TZERO = hecMESH%zero_temp
     ALFA = 1.0 - BETA
 
@@ -61,6 +62,9 @@ contains
           ZZ(i) = hecMESH%node  ( 3*nodLOCAL(i)   )
           TT(i) = fstrHEAT%TEMP (   nodLOCAL(i)   )
           T0(i) = fstrHEAT%TEMP0(   nodLOCAL(i)   )
+          do j = 1, 3
+            ecoord(j,i) = hecMESH%node(3*(nodLOCAL(i)-1)+j)
+          enddo
         enddo
         do i = 1, nn*nn
           SS(i) = 0.0
@@ -117,7 +121,7 @@ contains
           GR2 = hecMESH%section%sect_R_item(jsect+3)
           call heat_THERMAL_541 ( nn,XX,YY,ZZ,TT,TZERO,GTH,GHH,GR1,GR2,SS )
 
-        elseif( ic_type.eq.731 ) then
+        elseif(ic_type == 731)then
           nn = 4
           nodLOCAL(nn) = hecMESH%elem_node_item(in0+nn-1)
           XX(nn) = XX(nn-1)
@@ -132,10 +136,19 @@ contains
           enddo
           call heat_THERMAL_731 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
 
-        elseif( ic_type.eq.741 ) then
-          is = hecMESH%section%sect_R_index(isect)
-          THICK = hecMESH%section%sect_R_item(is)
-          call heat_THERMAL_741 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
+          !in = hecMesh%section%sect_R_index(isect)
+          !thick = hecMESH%section%sect_R_item(in)
+          !call heat_conductivity_shell_731(ic_type, nn, ecoord(1:3,1:nn), TT, IMAT, thick, SS, stiff, &
+          !  fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
+
+        elseif(ic_type == 741)then
+          in = hecMesh%section%sect_R_index(isect)
+          thick = hecMESH%section%sect_R_item(in)
+          call heat_conductivity_shell_741(ic_type, nn, ecoord(1:3,1:nn), TT, IMAT, thick, SS, stiff, &
+            fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
+
+        else
+          write(*,*)"** error setMASS"
         endif
 
         stiff = 0.0d0

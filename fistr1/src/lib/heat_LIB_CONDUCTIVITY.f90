@@ -2,61 +2,34 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief This module provides subroutines for calculating heat conductive
-!! matrix for various elements
-
 module m_heat_lib_conductivity
 contains
 
-  !> GET CONDUCTIVITY
-  subroutine heat_GET_CONDUCTIVITY ( Tpoi,imat,COND,ntab,temp,funcA,funcB )
-    !C***
-    !C*** GET CONDUCTIVITY
-    !C***
+  subroutine heat_GET_coefficient(Tpoi, imat, coef, ntab, temp, funcA, funcB)
     use hecmw
+    implicit none
+    real(kind=kreal) :: coef(3)
+    integer(kind=kint) :: i, in, imat, itab, ntab
+    real(kind=kreal) :: Tpoi, temp(ntab), funcA(ntab+1), funcB(ntab+1)
 
-    implicit real(kind=kreal) (A-H,O-Z)
-    dimension COND(3),temp(ntab),funcA(ntab+1),funcB(ntab+1)
-
-    COND(1)= funcB(1)
-    COND(2)= COND(1)
-    COND(3)= COND(1)
-
-    if( ntab .GT. 1 ) then
-      if( Tpoi.LE.temp(1) ) then
-        itab= 1
-      else
-        itab= ntab + 1
-        do ikk= 1, ntab - 1
-          if( Tpoi.GT.temp(ikk).AND.Tpoi.LE.temp(ikk+1) ) then
-            itab= ikk + 1
-            exit
-          endif
-        enddo
-      endif
-      COND(1)= funcA(itab)*Tpoi+ funcB(itab)
-      COND(2)= COND(1)
-      COND(3)= COND(1)
+    itab = 0
+    if(Tpoi < temp(1)) then
+      itab = 1
+    elseif(temp(ntab) <= Tpoi)then
+      itab = ntab + 1
+    else
+      do in = 1, ntab - 1
+        if(temp(in) <= Tpoi .and. Tpoi < temp(in+1))then
+          itab = in + 1
+          exit
+        endif
+      enddo
     endif
-    return
-  end subroutine heat_GET_CONDUCTIVITY
 
-  !C************************************************************************
-  !C*  THERMAL_111 ( NN,XX,YY,ZZ,TT,IMAT,ASECT,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_231 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_241 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_341 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_351 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_361 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-  !c*  THERMAL_531 ( NN,XXX,YYY,ZZZ,TEMP,TZERO,CROSS,HH,RR1,RR2,SS )
-  !C*  THERMAL_541 ( NN,XXX,YYY,ZZZ,TEMP,TZERO,CROSS,HH,RR1,RR2,SS )
-  !C*  THERMAL_731 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_741 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_232 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_242 ( NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_342 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_352 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-  !C*  THERMAL_362 ( NN,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
+    coef(1) = funcA(itab)*Tpoi + funcB(itab)
+    coef(2) = coef(1)
+    coef(3) = coef(1)
+  end subroutine heat_GET_coefficient
 
   !> CALCULATION 1D 2 NODE CONDUCTANCE ELEMENT
   subroutine heat_THERMAL_111 (NN,XX,YY,ZZ,TT,IMAT,ASECT,SS &
@@ -83,7 +56,7 @@ contains
       CTEMP = CTEMP + TT(I) * 0.5d0
     enddo
 
-    call heat_GET_CONDUCTIVITY( CTEMP, IMAT, CC, ntab, temp, funcA, funcB )
+    call heat_GET_coefficient( CTEMP, IMAT, CC, ntab, temp, funcA, funcB )
     !
     SS(1) =  CC(1) * ASECT * AL
     SS(2) = -SS(1)
@@ -158,7 +131,7 @@ contains
         do I=1,NN
           CTEMP=CTEMP+H(I)*TT(I)
         enddo
-        call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+        call heat_GET_coefficient(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
         !C*WEIGT VALUE AT GAUSSIAN POINT
         WGX=CC(1)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
         WGY=CC(2)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
@@ -237,7 +210,7 @@ contains
         do I=1,NN
           CTEMP=CTEMP+H(I)*TT(I)
         enddo
-        call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+        call heat_GET_coefficient(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
         !*WEIGT VALUE AT GAUSSIAN POINT
         WGX=CC(1)*WGT(LX)*WGT(LY)*DET*THICK
         WGY=CC(2)*WGT(LX)*WGT(LY)*DET*THICK
@@ -329,7 +302,7 @@ contains
           do I=1,4
             CTEMP=CTEMP+H(I)*TT(I)
           enddo
-          call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+          call heat_GET_coefficient(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 
           ! WEIGT VALUE AT GAUSSIAN POINT
 
@@ -496,7 +469,7 @@ contains
         do I=1,6
           CTEMP = CTEMP+H(I)*TT(I)
         enddo
-        call heat_GET_CONDUCTIVITY (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+        call heat_GET_coefficient (CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
 
         !* WEIGT VALUE AT GAUSSIAN POINT
         WGX = CC(1)*WGT1(L12)*WGT(LZ)*DET
@@ -732,7 +705,7 @@ contains
           do I=1,NN
             CTEMP=CTEMP+H(I)*TT(I)
           enddo
-          call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+          call heat_GET_coefficient(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
           !
           !* WEIGT VALUE AT GAUSSIAN POINT
           WGX=-CC(1)*WGT(LX)*WGT(LY)*WGT(LZ)*DET
@@ -1298,7 +1271,7 @@ contains
           do I = 1, NN
             CTEMP = CTEMP + H(I)*TT(I)
           enddo
-          call heat_GET_CONDUCTIVITY( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+          call heat_GET_coefficient( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
           !
           !* SET INTEGRATION WEIGHT
           !
@@ -1607,7 +1580,7 @@ contains
           do I = 1, NN
             CTEMP = CTEMP + H(I)*TT(I)
           enddo
-          call heat_GET_CONDUCTIVITY( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+          call heat_GET_coefficient( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
           !
           !* SET INTEGRATION WEIGHT
           !
@@ -1732,7 +1705,7 @@ contains
         do I=1,NN
           CTEMP=CTEMP+H(I)*TT(I)
         enddo
-        call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+        call heat_GET_coefficient(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
         !C*WEIGT VALUE AT GAUSSIAN POINT
         WGX=CC(1)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
         WGY=CC(2)*WGT(L1)*WGT(L2)*DET*THICK*(1.0-X2)*0.25
@@ -1829,7 +1802,7 @@ contains
         do I=1,NN
           CTEMP=CTEMP+H(I)*TT(I)
         enddo
-        call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+        call heat_GET_coefficient(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
         !*WEIGT VALUE AT GAUSSIAN POINT
         WGX=CC(1)*WGT(LX)*WGT(LY)*DET*THICK
         WGY=CC(2)*WGT(LX)*WGT(LY)*DET*THICK
@@ -1983,7 +1956,7 @@ contains
           do I=1,NN
             CTEMP=CTEMP+H(I)*TT(I)
           enddo
-          call heat_GET_CONDUCTIVITY( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+          call heat_GET_coefficient( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
           !C
           !C* WEIGT VALUE AT GAUSSIAN POINT
           DET = -DET
@@ -2166,7 +2139,7 @@ contains
           do I=1,NN
             CTEMP = CTEMP+H(I)*TT(I)
           enddo
-          call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+          call heat_GET_coefficient(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
           !C* WEIGT VALUE AT GAUSSIAN POINT
           WGX = CC(1)*WGT(L1)*WGT(L2)*WGT(LZ)*DET*(1.0-X2)*0.25
           WGY = CC(2)*WGT(L1)*WGT(L2)*WGT(LZ)*DET*(1.0-X2)*0.25
@@ -2383,7 +2356,7 @@ contains
           do I=1,NN
             CTEMP=CTEMP+H(I)*TT(I)
           enddo
-          call heat_GET_CONDUCTIVITY(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
+          call heat_GET_coefficient(CTEMP,IMAT,CC,ntab,temp,funcA,funcB)
           !C
           !C* WEIGT VALUE AT GAUSSIAN POINT
           WGX=-CC(1)*WGT(LX)*WGT(LY)*WGT(LZ)*DET
@@ -2406,4 +2379,539 @@ contains
     !
     return
   end subroutine heat_THERMAL_362
+
+  !> CALCULATION 4 NODE SHELL ELEMENT
+  subroutine heat_conductivity_shell_731(etype, nn, ecoord, TT, IMAT, thick, SS, stiff, &
+      ntab, temp, funcA, funcB)
+    use mMechGauss
+    use m_MatMatrix
+    use elementInfo
+    use m_dynamic_mass
+    implicit none
+    !type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
+    integer(kind=kint), intent(in) :: etype                  !< element type
+    integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
+    real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
+    real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
+    real(kind=kreal), intent(inout) :: SS(:)              !< stiff matrix
+    real(kind=kreal), intent(inout) :: TT(nn) !< temperature
+    type(tMaterial), pointer :: matl !< material information
+    integer(kind=kint) :: i, j, LX, IMAT, ntab
+    integer(kind=kint) :: IG1, IG2, IG3, INOD
+    real(kind=kreal) :: surf, thick, temp_i
+    real(kind=kreal) :: RI, RM, RP, SI, SM, SP, TI, VALX, VALY, VALZ, VAR
+    real(kind=kreal) :: XJ11, XJ12, XJ13, XJ21, XJ22, XJ23, XJ31, XJ32, XJ33, XSUM
+    real(kind=kreal) :: det, wg, rho, diag_stiff, total_stiff
+    real(kind=kreal) :: CC(3), CTEMP, DUM
+    real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
+    real(kind=kreal) ::  XG(2), WGT(2), H(4), HR(4), HS(4)
+    real(kind=kreal) ::  COD(3, 4)
+    real(kind=kreal) ::  G1(3), G2(3), G3(3), E1(3), E2(3), E3(3), REF(3)
+    real(kind=kreal) ::  EN(3, 4), THE(3, 3), AMAT(3, 3), BV(3), WK(3)
+    real(kind=kreal) ::  DTDX(4), DTDY(4)
+    data XG/-0.5773502691896D0,0.5773502691896D0/
+    data WGT/1.0D0,1.0D0/
+
+    do I = 1, NN
+      COD(1,I) = ecoord(1,i)
+      COD(2,I) = ecoord(2,i)
+      COD(3,I) = ecoord(3,i)
+    enddo
+
+    TT(nn) = TT(nn-1)
+    COD(1,nn) = COD(1,nn-1)
+    COD(2,nn) = COD(2,nn-1)
+    COD(3,nn) = COD(3,nn-1)
+
+    !* SET REFFRENSE VECTOR TO DETERMINE LOCAL COORDINATE SYSTEM
+    REF(1) = 0.25*( COD(1,2) + COD(1,3) - COD(1,1) - COD(1,4) )
+    REF(2) = 0.25*( COD(2,2) + COD(2,3) - COD(2,1) - COD(2,4) )
+    REF(3) = 0.25*( COD(3,2) + COD(3,3) - COD(3,1) - COD(3,4) )
+
+    G1(1) = COD(1,1) - COD(1,2)
+    G1(2) = COD(2,1) - COD(2,2)
+    G1(3) = COD(3,1) - COD(3,2)
+    G2(1) = COD(1,2) - COD(1,3)
+    G2(2) = COD(2,2) - COD(2,3)
+    G2(3) = COD(3,2) - COD(3,3)
+
+    !* G3()=G1() X G2()
+    G3(1) = G1(2)*G2(3) - G1(3)*G2(2)
+    G3(2) = G1(3)*G2(1) - G1(1)*G2(3)
+    G3(3) = G1(1)*G2(2) - G1(2)*G2(1)
+
+    !*  SET BASE VECTOR IN LOCAL CARTESIAN COORDINATE
+    XSUM = dsqrt( G3(1)**2 + G3(2)**2 + G3(3)**2 )
+
+    do I = 1, NN
+      EN(1,I) = G3(1) / XSUM
+      EN(2,I) = G3(2) / XSUM
+      EN(3,I) = G3(3) / XSUM
+    enddo
+
+    !*   LOOP FOR GAUSS INTEGRATION POINT
+    do IG3 = 1, 2
+      TI = XG(IG3)
+      do IG2 = 1, 2
+        SI = XG(IG2)
+        do IG1 = 1, 2
+          RI = XG(IG1)
+
+          RP = 1.0 + RI
+          SP = 1.0 + SI
+          RM = 1.0 - RI
+          SM = 1.0 - SI
+
+          H(1)  =  0.25*RM*SM
+          H(2)  =  0.25*RP*SM
+          H(3)  =  0.25*RP*SP
+          H(4)  =  0.25*RM*SP
+
+          HR(1) = -0.25*SM
+          HR(2) =  0.25*SM
+          HR(3) =  0.25*SP
+          HR(4) = -0.25*SP
+
+          HS(1) = -0.25*RM
+          HS(2) = -0.25*RP
+          HS(3) =  0.25*RP
+          HS(4) =  0.25*RM
+
+          !* COVARIANT BASE VECTOR AT A GAUSS INTEGRARION POINT
+          do I = 1, 3
+            G1(I) = 0.0
+            G2(I) = 0.0
+            G3(I) = 0.0
+
+            do INOD = 1, NN
+              VAR   = COD(I,INOD) + THICK*0.5*TI*EN(I,INOD)
+              G1(I) = G1(I) + HR(INOD)*VAR
+              G2(I) = G2(I) + HS(INOD)*VAR
+              G3(I) = G3(I) + THICK*0.5*H(INOD)*EN(I,INOD)
+            enddo
+          enddo
+
+          !*JACOBI MATRIX
+          XJ11 = G1(1)
+          XJ12 = G1(2)
+          XJ13 = G1(3)
+          XJ21 = G2(1)
+          XJ22 = G2(2)
+          XJ23 = G2(3)
+          XJ31 = G3(1)
+          XJ32 = G3(2)
+          XJ33 = G3(3)
+
+          !*DETERMINANT OF JACOBIAN
+          DET = XJ11*XJ22*XJ33 &
+            + XJ12*XJ23*XJ31 &
+            + XJ13*XJ21*XJ32 &
+            - XJ13*XJ22*XJ31 &
+            - XJ12*XJ21*XJ33 &
+            - XJ11*XJ23*XJ32
+
+          !* INVERSION OF JACOBIAN
+          DUM = 1.0 / DET
+          AMAT(1,1) = DUM*(  XJ22*XJ33 - XJ23*XJ32 )
+          AMAT(2,1) = DUM*( -XJ21*XJ33 + XJ23*XJ31 )
+          AMAT(3,1) = DUM*(  XJ21*XJ32 - XJ22*XJ31 )
+          AMAT(1,2) = DUM*( -XJ12*XJ33 + XJ13*XJ32 )
+          AMAT(2,2) = DUM*(  XJ11*XJ33 - XJ13*XJ31 )
+          AMAT(3,2) = DUM*( -XJ11*XJ32 + XJ12*XJ31 )
+          AMAT(1,3) = DUM*(  XJ12*XJ23 - XJ13*XJ22 )
+          AMAT(2,3) = DUM*( -XJ11*XJ23 + XJ13*XJ21 )
+          AMAT(3,3) = DUM*(  XJ11*XJ22 - XJ12*XJ21 )
+
+          !*  SET BASE VECTOR IN LOCAL CARTESIAN COORDINATE
+          XSUM  = dsqrt( G3(1)**2 + G3(2)**2 + G3(3)**2 )
+          E3(1) = G3(1) / XSUM
+          E3(2) = G3(2) / XSUM
+          E3(3) = G3(3) / XSUM
+          E2(1) = -REF(2)*E3(3) + REF(3)*E3(2)
+          E2(2) = -REF(3)*E3(1) + REF(1)*E3(3)
+          E2(3) = -REF(1)*E3(2) + REF(2)*E3(1)
+          E1(1) = -E3(2)*E2(3) + E3(3)*E2(2)
+          E1(2) = -E3(3)*E2(1) + E3(1)*E2(3)
+          E1(3) = -E3(1)*E2(2) + E3(2)*E2(1)
+          XSUM = dsqrt(E2(1)**2 + E2(2)**2 + E2(3)**2)
+
+          if ( XSUM .GT. 1.E-15 ) then
+            E2(1) = E2(1) / XSUM
+            E2(2) = E2(2) / XSUM
+            E2(3) = E2(3) / XSUM
+            E1(1) = -E3(2)*E2(3) + E3(3)*E2(2)
+            E1(2) = -E3(3)*E2(1) + E3(1)*E2(3)
+            E1(3) = -E3(1)*E2(2) + E3(2)*E2(1)
+            XSUM = dsqrt( E1(1)**2 + E1(2)**2 + E1(3)**2 )
+            E1(1) = E1(1) / XSUM
+            E1(2) = E1(2) / XSUM
+            E1(3) = E1(3) / XSUM
+          else
+            E1(1) =  0.D0
+            E1(2) =  0.D0
+            E1(3) = -1.D0
+            E2(1) =  0.D0
+            E2(2) =  1.D0
+            E2(3) =  0.D0
+          end if
+
+          THE(1,1) = E1(1)
+          THE(1,2) = E1(2)
+          THE(1,3) = E1(3)
+          THE(2,1) = E2(1)
+          THE(2,2) = E2(2)
+          THE(2,3) = E2(3)
+          THE(3,1) = E3(1)
+          THE(3,2) = E3(2)
+          THE(3,3) = E3(3)
+
+          do I = 1, NN
+            BV(1) = HR(I)
+            BV(2) = HS(I)
+            BV(3) = 0.0
+            WK(1) = AMAT(1,1)*BV(1) &
+              + AMAT(1,2)*BV(2) &
+              + AMAT(1,3)*BV(3)
+            WK(2) = AMAT(2,1)*BV(1) &
+              + AMAT(2,2)*BV(2) &
+              + AMAT(2,3)*BV(3)
+            WK(3) = AMAT(3,1)*BV(1) &
+              + AMAT(3,2)*BV(2) &
+              + AMAT(3,3)*BV(3)
+            BV(1) = THE(1,1)*WK(1) &
+              + THE(1,2)*WK(2) &
+              + THE(1,3)*WK(3)
+            BV(2) = THE(2,1)*WK(1) &
+              + THE(2,2)*WK(2) &
+              + THE(2,3)*WK(3)
+            BV(3) = THE(3,1)*WK(1) &
+              + THE(3,2)*WK(2) &
+              + THE(3,3)*WK(3)
+            DTDX(I) = BV(1)
+            DTDY(I) = BV(2)
+          enddo
+
+          !*CONDUCTIVITY AT CURRENT TEMPERATURE
+          CTEMP=0.0
+          do I = 1, NN
+            CTEMP = CTEMP + H(I)*TT(I)
+          enddo
+          call heat_GET_coefficient( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+
+          !* SET INTEGRATION WEIGHT
+          VALX = CC(1)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
+          VALY = CC(2)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
+          SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX  &
+            + DTDY(1)*DTDY(1)*VALY
+          SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX  &
+            + DTDY(1)*DTDY(2)*VALY
+          SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX  &
+            + DTDY(1)*DTDY(3)*VALY
+          SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX  &
+            + DTDY(1)*DTDY(4)*VALY
+          SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX  &
+            + DTDY(2)*DTDY(2)*VALY
+          SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX  &
+            + DTDY(2)*DTDY(3)*VALY
+          SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX  &
+            + DTDY(2)*DTDY(4)*VALY
+          SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX  &
+            + DTDY(3)*DTDY(3)*VALY
+          SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX  &
+            + DTDY(3)*DTDY(4)*VALY
+          SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX  &
+            + DTDY(4)*DTDY(4)*VALY
+        enddo
+      enddo
+    enddo
+
+    SS( 3) = SS( 3) + SS( 4)
+    SS( 7) = SS( 7) + SS( 8)
+    SS(11) = SS(11) + SS(16) + 2.0*SS(12)
+    SS( 4) = 0.0D0
+    SS( 8) = 0.0D0
+    SS(12) = 0.0D0
+    SS(16) = 0.0D0
+
+    SS( 5) = SS( 2)
+    SS( 9) = SS( 3)
+    SS(10) = SS( 7)
+    SS(13) = SS( 4)
+    SS(14) = SS( 8)
+    SS(15) = SS(12)
+  end subroutine heat_conductivity_shell_731
+
+  subroutine heat_conductivity_shell_741(etype, nn, ecoord, TT, IMAT, thick, SS, stiff, &
+      ntab, temp, funcA, funcB)
+    use mMechGauss
+    use m_MatMatrix
+    use elementInfo
+    implicit none
+    !type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
+    integer(kind=kint), intent(in) :: etype                  !< element type
+    integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
+    real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
+    real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
+    real(kind=kreal), intent(inout) :: SS(:)              !< stiff matrix
+    real(kind=kreal), intent(in) :: TT(nn) !< temperature
+    type(tMaterial), pointer :: matl !< material information
+    integer(kind=kint) :: i, j, LX, LY, IMAT, ntab
+    integer(kind=kint) :: IG1, IG2, IG3, INOD
+    real(kind=kreal) :: TI, VALX, VALY, VALZ, VAR
+    real(kind=kreal) :: XJ11, XJ12, XJ13, XJ21, XJ22, XJ23, XJ31, XJ32, XJ33
+    real(kind=kreal) :: naturalCoord(2), XSUM
+    real(kind=kreal) :: func(nn), thick, temp_i
+    real(kind=kreal) :: det, wg, rho, diag_stiff, total_stiff
+    real(kind=kreal) :: D(1,1), N(1, nn), DN(1, nn)
+    real(kind=kreal) :: gderiv(nn,2)
+    real(kind=kreal) :: CC(3)
+    real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
+    real(kind=kreal) :: XG(2), RI, SI, RP, SP, RM, SM, HR(4), HS(4)
+    real(kind=kreal) :: XR, XS, YR, YS, ZR, ZS
+    real(kind=kreal) :: H(4), X(4), Y(4), Z(4)
+    real(kind=kreal) ::  WGT(2), CTEMP, DUM
+    real(kind=kreal) ::  COD(3, 4)
+    real(kind=kreal) ::  G1(3), G2(3), G3(3), E1(3), E2(3), E3(3), REF(3)
+    real(kind=kreal) ::  EN(3, 4), THE(3, 3), AMAT(3, 3), BV(3), WK(3)
+    real(kind=kreal) ::  DTDX(4), DTDY(4)
+    data XG/-0.5773502691896D0,0.5773502691896D0/
+    data WGT/1.0D0,1.0D0/
+
+    do I = 1, NN
+      COD(1,I) = ecoord(1,i)
+      COD(2,I) = ecoord(2,i)
+      COD(3,I) = ecoord(3,i)
+    enddo
+
+    !* SET REFFRENSE VECTOR TO DETERMINE LOCAL COORDINATE SYSTEM
+    REF(1) = 0.25*( COD(1,2) + COD(1,3) - COD(1,1) - COD(1,4) )
+    REF(2) = 0.25*( COD(2,2) + COD(2,3) - COD(2,1) - COD(2,4) )
+    REF(3) = 0.25*( COD(3,2) + COD(3,3) - COD(3,1) - COD(3,4) )
+
+    do I = 1, NN
+      if     ( I .EQ. 1 ) then
+        G1(1) = -0.5*COD(1,1) + 0.5*COD(1,2)
+        G1(2) = -0.5*COD(2,1) + 0.5*COD(2,2)
+        G1(3) = -0.5*COD(3,1) + 0.5*COD(3,2)
+        G2(1) = -0.5*COD(1,1) + 0.5*COD(1,4)
+        G2(2) = -0.5*COD(2,1) + 0.5*COD(2,4)
+        G2(3) = -0.5*COD(3,1) + 0.5*COD(3,4)
+      else if( I .EQ. 2 ) then
+        G1(1) = -0.5*COD(1,1) + 0.5*COD(1,2)
+        G1(2) = -0.5*COD(2,1) + 0.5*COD(2,2)
+        G1(3) = -0.5*COD(3,1) + 0.5*COD(3,2)
+        G2(1) = -0.5*COD(1,2) + 0.5*COD(1,3)
+        G2(2) = -0.5*COD(2,2) + 0.5*COD(2,3)
+        G2(3) = -0.5*COD(3,2) + 0.5*COD(3,3)
+      else if( I .EQ. 3 ) then
+        G1(1) =  0.5*COD(1,3) - 0.5*COD(1,4)
+        G1(2) =  0.5*COD(2,3) - 0.5*COD(2,4)
+        G1(3) =  0.5*COD(3,3) - 0.5*COD(3,4)
+        G2(1) = -0.5*COD(1,2) + 0.5*COD(1,3)
+        G2(2) = -0.5*COD(2,2) + 0.5*COD(2,3)
+        G2(3) = -0.5*COD(3,2) + 0.5*COD(3,3)
+      else if( I .EQ. 4 ) then
+        G1(1) =  0.5*COD(1,3) - 0.5*COD(1,4)
+        G1(2) =  0.5*COD(2,3) - 0.5*COD(2,4)
+        G1(3) =  0.5*COD(3,3) - 0.5*COD(3,4)
+        G2(1) = -0.5*COD(1,1) + 0.5*COD(1,4)
+        G2(2) = -0.5*COD(2,1) + 0.5*COD(2,4)
+        G2(3) = -0.5*COD(3,1) + 0.5*COD(3,4)
+      end if
+
+      !* G3()=G1() X G2()
+      G3(1) = G1(2)*G2(3) - G1(3)*G2(2)
+      G3(2) = G1(3)*G2(1) - G1(1)*G2(3)
+      G3(3) = G1(1)*G2(2) - G1(2)*G2(1)
+
+      !*  SET BASE VECTOR IN LOCAL CARTESIAN COORDINATE
+      XSUM = dsqrt( G3(1)**2 + G3(2)**2 + G3(3)**2 )
+      E3(1)   = G3(1) / XSUM
+      E3(2)   = G3(2) / XSUM
+      E3(3)   = G3(3) / XSUM
+      EN(1,I) = E3(1)
+      EN(2,I) = E3(2)
+      EN(3,I) = E3(3)
+    enddo
+
+    !*   LOOP FOR GAUSS INTEGRATION POINT
+    do IG3 = 1, 2
+      TI = XG(IG3)
+      do IG2 = 1, 2
+        SI = XG(IG2)
+        do IG1 = 1, 2
+          RI = XG(IG1)
+          RP = 1.0 + RI
+          SP = 1.0 + SI
+          RM = 1.0 - RI
+          SM = 1.0 - SI
+
+          H(1)  =  0.25*RM*SM
+          H(2)  =  0.25*RP*SM
+          H(3)  =  0.25*RP*SP
+          H(4)  =  0.25*RM*SP
+
+          HR(1) = -0.25*SM
+          HR(2) =  0.25*SM
+          HR(3) =  0.25*SP
+          HR(4) = -0.25*SP
+
+          HS(1) = -0.25*RM
+          HS(2) = -0.25*RP
+          HS(3) =  0.25*RP
+          HS(4) =  0.25*RM
+
+          !* COVARIANT BASE VECTOR AT A GAUSS INTEGRARION POINT
+          do I = 1, 3
+            G1(I) = 0.0
+            G2(I) = 0.0
+            G3(I) = 0.0
+            do INOD = 1, NN
+              VAR   = COD(I,INOD) + THICK*0.5*TI*EN(I,INOD)
+              G1(I) = G1(I) + HR(INOD)*VAR
+              G2(I) = G2(I) + HS(INOD)*VAR
+              G3(I) = G3(I) + THICK*0.5*H(INOD)*EN(I,INOD)
+            enddo
+          enddo
+
+          !*JACOBI MATRIX
+          XJ11 = G1(1)
+          XJ12 = G1(2)
+          XJ13 = G1(3)
+          XJ21 = G2(1)
+          XJ22 = G2(2)
+          XJ23 = G2(3)
+          XJ31 = G3(1)
+          XJ32 = G3(2)
+          XJ33 = G3(3)
+
+          !*DETERMINANT OF JACOBIAN
+          DET = XJ11*XJ22*XJ33 &
+            + XJ12*XJ23*XJ31 &
+            + XJ13*XJ21*XJ32 &
+            - XJ13*XJ22*XJ31 &
+            - XJ12*XJ21*XJ33 &
+            - XJ11*XJ23*XJ32
+
+          !* INVERSION OF JACOBIAN
+          DUM = 1.0 / DET
+          AMAT(1,1) = DUM*(  XJ22*XJ33 - XJ23*XJ32 )
+          AMAT(2,1) = DUM*( -XJ21*XJ33 + XJ23*XJ31 )
+          AMAT(3,1) = DUM*(  XJ21*XJ32 - XJ22*XJ31 )
+          AMAT(1,2) = DUM*( -XJ12*XJ33 + XJ13*XJ32 )
+          AMAT(2,2) = DUM*(  XJ11*XJ33 - XJ13*XJ31 )
+          AMAT(3,2) = DUM*( -XJ11*XJ32 + XJ12*XJ31 )
+          AMAT(1,3) = DUM*(  XJ12*XJ23 - XJ13*XJ22 )
+          AMAT(2,3) = DUM*( -XJ11*XJ23 + XJ13*XJ21 )
+          AMAT(3,3) = DUM*(  XJ11*XJ22 - XJ12*XJ21 )
+
+          !*  SET BASE VECTOR IN LOCAL CARTESIAN COORDINATE
+          XSUM  = dsqrt( G3(1)**2 + G3(2)**2 + G3(3)**2 )
+          E3(1) = G3(1) / XSUM
+          E3(2) = G3(2) / XSUM
+          E3(3) = G3(3) / XSUM
+          E2(1) = -REF(2)*E3(3) + REF(3)*E3(2)
+          E2(2) = -REF(3)*E3(1) + REF(1)*E3(3)
+          E2(3) = -REF(1)*E3(2) + REF(2)*E3(1)
+          E1(1) = -E3(2)*E2(3) + E3(3)*E2(2)
+          E1(2) = -E3(3)*E2(1) + E3(1)*E2(3)
+          E1(3) = -E3(1)*E2(2) + E3(2)*E2(1)
+          XSUM = dsqrt( E2(1)**2 + E2(2)**2 + E2(3)**2 )
+
+          if ( XSUM .GT. 1.E-15 ) then
+            E2(1) = E2(1) / XSUM
+            E2(2) = E2(2) / XSUM
+            E2(3) = E2(3) / XSUM
+            E1(1) = -E3(2)*E2(3) + E3(3)*E2(2)
+            E1(2) = -E3(3)*E2(1) + E3(1)*E2(3)
+            E1(3) = -E3(1)*E2(2) + E3(2)*E2(1)
+            XSUM = dsqrt( E1(1)**2 + E1(2)**2 + E1(3)**2 )
+
+            E1(1) = E1(1) / XSUM
+            E1(2) = E1(2) / XSUM
+            E1(3) = E1(3) / XSUM
+          else
+            E1(1) =  0.D0
+            E1(2) =  0.D0
+            E1(3) = -1.D0
+            E2(1) =  0.D0
+            E2(2) =  1.D0
+            E2(3) =  0.D0
+          endif
+          THE(1,1) = E1(1)
+          THE(1,2) = E1(2)
+          THE(1,3) = E1(3)
+          THE(2,1) = E2(1)
+          THE(2,2) = E2(2)
+          THE(2,3) = E2(3)
+          THE(3,1) = E3(1)
+          THE(3,2) = E3(2)
+          THE(3,3) = E3(3)
+          do I = 1, NN
+            BV(1) = HR(I)
+            BV(2) = HS(I)
+            BV(3) = 0.0
+            WK(1) = AMAT(1,1)*BV(1) &
+              + AMAT(1,2)*BV(2) &
+              + AMAT(1,3)*BV(3)
+            WK(2) = AMAT(2,1)*BV(1) &
+              + AMAT(2,2)*BV(2) &
+              + AMAT(2,3)*BV(3)
+            WK(3) = AMAT(3,1)*BV(1) &
+              + AMAT(3,2)*BV(2) &
+              + AMAT(3,3)*BV(3)
+            BV(1) = THE(1,1)*WK(1) &
+              + THE(1,2)*WK(2) &
+              + THE(1,3)*WK(3)
+            BV(2) = THE(2,1)*WK(1) &
+              + THE(2,2)*WK(2) &
+              + THE(2,3)*WK(3)
+            BV(3) = THE(3,1)*WK(1) &
+              + THE(3,2)*WK(2) &
+              + THE(3,3)*WK(3)
+            DTDX(I) = BV(1)
+            DTDY(I) = BV(2)
+          enddo
+
+          !*CONDUCTIVITY AT CURRENT TEMPERATURE
+          CTEMP=0.0
+          do I = 1, NN
+            CTEMP = CTEMP + H(I)*TT(I)
+          enddo
+          call heat_GET_coefficient( CTEMP,IMAT,CC,ntab,temp,funcA,funcB )
+
+          !* SET INTEGRATION WEIGHT
+          VALX = CC(1)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
+          VALY = CC(2)*WGT(IG1)*WGT(IG2)*WGT(IG3)*DET
+          SS( 1) = SS( 1) + DTDX(1)*DTDX(1)*VALX  &
+            + DTDY(1)*DTDY(1)*VALY
+          SS( 2) = SS( 2) + DTDX(1)*DTDX(2)*VALX  &
+            + DTDY(1)*DTDY(2)*VALY
+          SS( 3) = SS( 3) + DTDX(1)*DTDX(3)*VALX  &
+            + DTDY(1)*DTDY(3)*VALY
+          SS( 4) = SS( 4) + DTDX(1)*DTDX(4)*VALX  &
+            + DTDY(1)*DTDY(4)*VALY
+          SS( 6) = SS( 6) + DTDX(2)*DTDX(2)*VALX  &
+            + DTDY(2)*DTDY(2)*VALY
+          SS( 7) = SS( 7) + DTDX(2)*DTDX(3)*VALX  &
+            + DTDY(2)*DTDY(3)*VALY
+          SS( 8) = SS( 8) + DTDX(2)*DTDX(4)*VALX  &
+            + DTDY(2)*DTDY(4)*VALY
+          SS(11) = SS(11) + DTDX(3)*DTDX(3)*VALX  &
+            + DTDY(3)*DTDY(3)*VALY
+          SS(12) = SS(12) + DTDX(3)*DTDX(4)*VALX  &
+            + DTDY(3)*DTDY(4)*VALY
+          SS(16) = SS(16) + DTDX(4)*DTDX(4)*VALX  &
+            + DTDY(4)*DTDY(4)*VALY
+        enddo
+      enddo
+    enddo
+    SS( 5) = SS( 2)
+    SS( 9) = SS( 3)
+    SS(10) = SS( 7)
+    SS(13) = SS( 4)
+    SS(14) = SS( 8)
+    SS(15) = SS(12)
+  end subroutine heat_conductivity_shell_741
+
 end module m_heat_lib_conductivity
