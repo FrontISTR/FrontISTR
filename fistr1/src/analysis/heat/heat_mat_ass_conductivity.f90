@@ -119,7 +119,7 @@ contains
           GHH = hecMESH%section%sect_R_item(jsect+1)
           GR1 = hecMESH%section%sect_R_item(jsect+2)
           GR2 = hecMESH%section%sect_R_item(jsect+3)
-          call heat_THERMAL_541 ( nn,XX,YY,ZZ,TT,TZERO,GTH,GHH,GR1,GR2,SS )
+          call heat_conductivity_541(nn, ecoord, TT, TZERO, GTH, GHH, GR1, GR2, SS, stiff)
 
         elseif(ic_type == 731)then
           nn = 4

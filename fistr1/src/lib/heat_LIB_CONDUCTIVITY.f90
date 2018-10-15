@@ -979,66 +979,6 @@ contains
     return
   end subroutine heat_THERMAL_541
 
-  !> CALCULATION SURFACE AREA FOR 4 POINTS
-  subroutine heat_get_area ( XX,YY,ZZ,AA )
-    !*
-    !*  CALCULATION SURFACE AREA FOR 4 POINTS
-    !*
-    use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(4),YY(4),ZZ(4)
-    dimension XG(2),H(4),HR(4),HS(4)
-    !
-    PI=4.0*atan(1.0)
-    !
-    XG(1) =-0.5773502691896258D0
-    XG(2) =-XG(1)
-    AA=0.0
-    !
-    do LX=1,2
-      RI=XG(LX)
-      do LY=1,2
-        SI=XG(LY)
-        RP=1.0+RI
-        SP=1.0+SI
-        RM=1.0-RI
-        SM=1.0-SI
-        !*INTERPOLATION FUNCTION
-        H(1)=0.25*RP*SP
-        H(2)=0.25*RM*SP
-        H(3)=0.25*RM*SM
-        H(4)=0.25*RP*SM
-        !*DERIVATIVE OF INTERPOLATION FUNCTION
-        !*  FOR R-COORDINATE
-        HR(1)= .25*SP
-        HR(2)=-.25*SP
-        HR(3)=-.25*SM
-        HR(4)= .25*SM
-        !*  FOR S-COORDINATE
-        HS(1)= .25*RP
-        HS(2)= .25*RM
-        HS(3)=-.25*RM
-        HS(4)=-.25*RP
-
-        !*JACOBI MATRIX
-        XR=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)
-        XS=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)
-        YR=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)
-        YS=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4)
-        ZR=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4)
-        ZS=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)
-
-        DET=(YR*ZS-ZR*YS)**2+(ZR*XS-XR*ZS)**2+(XR*YS-YR*XS)**2
-        DET=sqrt(DET)
-        !
-        AA=AA+DET
-        !
-      enddo
-    enddo
-
-    return
-  end subroutine heat_get_area
-
   !> CALCULATION 4 NODE SHELL ELEMENT
   subroutine heat_THERMAL_731 (NN,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB)
     !*
@@ -2913,5 +2853,160 @@ contains
     SS(14) = SS( 8)
     SS(15) = SS(12)
   end subroutine heat_conductivity_shell_741
+
+  subroutine heat_conductivity_541(NN,ecoord,TEMP,TZERO,THICK,HH,RR1,RR2,SS,stiff )
+    use hecmw
+    implicit real(kind=kreal) (A - H, O - Z)
+    real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
+    real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
+    dimension XXX(NN), YYY(NN), ZZZ(NN), TEMP(NN), SS(NN*NN)
+    dimension XX(4), YY(4), ZZ(4)
+
+    XX(1)=ecoord(1,1)
+    XX(2)=ecoord(1,2)
+    XX(3)=ecoord(1,3)
+    XX(4)=ecoord(1,4)
+    YY(1)=ecoord(2,1)
+    YY(2)=ecoord(2,2)
+    YY(3)=ecoord(2,3)
+    YY(4)=ecoord(2,4)
+    ZZ(1)=ecoord(3,1)
+    ZZ(2)=ecoord(3,2)
+    ZZ(3)=ecoord(3,3)
+    ZZ(4)=ecoord(3,4)
+    call heat_get_area(XX, YY, ZZ, SA)
+
+    XX(1)=ecoord(1,5)
+    XX(2)=ecoord(1,6)
+    XX(3)=ecoord(1,7)
+    XX(4)=ecoord(1,8)
+    YY(1)=ecoord(2,5)
+    YY(2)=ecoord(2,6)
+    YY(3)=ecoord(2,7)
+    YY(4)=ecoord(2,8)
+    ZZ(1)=ecoord(3,5)
+    ZZ(2)=ecoord(3,6)
+    ZZ(3)=ecoord(3,7)
+    ZZ(4)=ecoord(3,8)
+    call heat_get_area(XX, YY, ZZ, SB)
+
+    T1Z=TEMP(1)-TZERO
+    T2Z=TEMP(2)-TZERO
+    T3Z=TEMP(3)-TZERO
+    T4Z=TEMP(4)-TZERO
+    T5Z=TEMP(5)-TZERO
+    T6Z=TEMP(6)-TZERO
+    T7Z=TEMP(7)-TZERO
+    T8Z=TEMP(8)-TZERO
+
+    RRR1 = RR1**0.25
+    RRR2 = RR2**0.25
+
+    HA1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 ) &
+      &    * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR1
+    HA2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 ) &
+      &    * ( RRR1 * T2Z      +   RRR2 * T6Z )    * RRR1
+    HA3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 ) &
+      &    * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR1
+    HA4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 ) &
+      &    * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR1
+
+    HB1= (( RRR1 * T1Z )**2 + ( RRR2 * T5Z )**2 ) &
+      &    * ( RRR1 * T1Z      +   RRR2 * T5Z )    * RRR2
+    HB2= (( RRR1 * T2Z )**2 + ( RRR2 * T6Z )**2 ) &
+      &    * ( RRR1 * T2Z      +   RRR2 * T6Z )    * RRR2
+    HB3= (( RRR1 * T3Z )**2 + ( RRR2 * T7Z )**2 ) &
+      &    * ( RRR1 * T3Z      +   RRR2 * T7Z )    * RRR2
+    HB4= (( RRR1 * T4Z )**2 + ( RRR2 * T8Z )**2 ) &
+      &    * ( RRR1 * T4Z      +   RRR2 * T8Z )    * RRR2
+
+    HHH = HH / THICK
+
+    SS( 1) = ( HHH + HA1 ) * SA * 0.25
+    SS(10) = ( HHH + HA2 ) * SA * 0.25
+    SS(19) = ( HHH + HA3 ) * SA * 0.25
+    SS(28) = ( HHH + HA4 ) * SA * 0.25
+
+    SS(37) = ( HHH + HB1 ) * SB * 0.25
+    SS(46) = ( HHH + HB2 ) * SB * 0.25
+    SS(55) = ( HHH + HB3 ) * SB * 0.25
+    SS(64) = ( HHH + HB4 ) * SB * 0.25
+
+    SM = ( SA + SB ) * 0.5
+    HH1 = ( HA1 + HB1 ) * 0.5
+    HH2 = ( HA2 + HB2 ) * 0.5
+    HH3 = ( HA3 + HB3 ) * 0.5
+    HH4 = ( HA4 + HB4 ) * 0.5
+
+    SS(33) = -( HHH + HH1 ) * SM * 0.25
+    SS(42) = -( HHH + HH2 ) * SM * 0.25
+    SS(51) = -( HHH + HH3 ) * SM * 0.25
+    SS(60) = -( HHH + HH4 ) * SM * 0.25
+
+    SS( 5) = SS(33)
+    SS(14) = SS(42)
+    SS(23) = SS(51)
+    SS(32) = SS(60)
+
+    !C    1                              ( 1- 1)    2  3  4  5  6  7  8
+    !C    2  3                          9   (10- 3)   11 12 13 14 15 16
+    !C    4  5  6                      17 18   (19- 6)   20 21 22 23 24
+    !C    7  8  9 10          --->     25 26 27   (28-10)   29 30 31 32
+    !C   11 12 13 14 15       --->     33 34 35 36   (37-15)   38 39 40
+    !C   16 17 18 19 20 21             41 42 43 44 45   (46-21)   47 48
+    !C   22 23 24 25 26 27 28          49 50 51 52 53 54   (55-28)   56
+    !C   29 30 31 32 33 34 35 36       57 58 59 60 61 62 63   (64-36)
+  end subroutine heat_conductivity_541
+
+  subroutine heat_get_area ( XX,YY,ZZ,AA )
+    use hecmw
+    implicit real(kind=kreal)(A-H,O-Z)
+    dimension XX(4),YY(4),ZZ(4)
+    dimension XG(2),H(4),HR(4),HS(4)
+
+    PI=4.0*atan(1.0)
+
+    XG(1) =-0.5773502691896258D0
+    XG(2) =-XG(1)
+    AA=0.0
+
+    do LX=1,2
+      RI=XG(LX)
+      do LY=1,2
+        SI=XG(LY)
+        RP=1.0+RI
+        SP=1.0+SI
+        RM=1.0-RI
+        SM=1.0-SI
+        !*INTERPOLATION FUNCTION
+        H(1)=0.25*RP*SP
+        H(2)=0.25*RM*SP
+        H(3)=0.25*RM*SM
+        H(4)=0.25*RP*SM
+        !*DERIVATIVE OF INTERPOLATION FUNCTION
+        !*  FOR R-COORDINATE
+        HR(1)= .25*SP
+        HR(2)=-.25*SP
+        HR(3)=-.25*SM
+        HR(4)= .25*SM
+        !*  FOR S-COORDINATE
+        HS(1)= .25*RP
+        HS(2)= .25*RM
+        HS(3)=-.25*RM
+        HS(4)=-.25*RP
+        !*JACOBI MATRIX
+        XR=HR(1)*XX(1)+HR(2)*XX(2)+HR(3)*XX(3)+HR(4)*XX(4)
+        XS=HS(1)*XX(1)+HS(2)*XX(2)+HS(3)*XX(3)+HS(4)*XX(4)
+        YR=HR(1)*YY(1)+HR(2)*YY(2)+HR(3)*YY(3)+HR(4)*YY(4)
+        YS=HS(1)*YY(1)+HS(2)*YY(2)+HS(3)*YY(3)+HS(4)*YY(4)
+        ZR=HR(1)*ZZ(1)+HR(2)*ZZ(2)+HR(3)*ZZ(3)+HR(4)*ZZ(4)
+        ZS=HS(1)*ZZ(1)+HS(2)*ZZ(2)+HS(3)*ZZ(3)+HS(4)*ZZ(4)
+
+        DET=(YR*ZS-ZR*YS)**2+(ZR*XS-XR*ZS)**2+(XR*YS-YR*XS)**2
+        DET=sqrt(DET)
+        AA=AA+DET
+      enddo
+    enddo
+  end subroutine heat_get_area
 
 end module m_heat_lib_conductivity
