@@ -38,10 +38,12 @@ contains
 
     hecMAT%NDOF = 1
     hecMAT%Iarray(98) = 1   !Assmebly complete
+    hecMAT%X = 0.0d0
 
     !C--------------------  START OF STEADY STATE  ----------------------------
     do
       iterALL = iterALL + 1
+      hecMAT%X = 0.0d0
 
       !C-- MATRIX ASSEMBLING
       call heat_mat_ass_conductivity( hecMESH, hecMAT, fstrHEAT, BETA )

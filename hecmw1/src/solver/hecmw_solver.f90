@@ -28,7 +28,7 @@ contains
 
     !C ERROR CHECK
     if(hecmw_solve_check_zerorhs(hecMESH, hecMAT))then
-      hecMAT%B = 0.0d0
+      hecMAT%X = 0.0d0
       return
     endif
 
