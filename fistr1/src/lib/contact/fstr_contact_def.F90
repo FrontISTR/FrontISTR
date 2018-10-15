@@ -78,12 +78,14 @@ contains
     integer :: i
     write(file,*) "CONTACT:", contact%ctype,contact%group,trim(contact%pair_name),contact%fcoeff
     write(file,*) "---Slave----"
+    write(file,*) "num.slave",size(contact%slave)
     if( associated(contact%slave) ) then
       do i=1,size(contact%slave)
         write(file, *) contact%slave(i)
       enddo
     endif
     write(file,*) "----master---"
+    write(file,*) "num.master",size(contact%master)
     if( associated(contact%master) ) then
       do i=1,size(contact%master)
         call write_surf( file, contact%master(i) )

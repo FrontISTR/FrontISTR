@@ -322,6 +322,86 @@ contains
     call backset_group_pointers( hecMESH, grp_type_name )
   end subroutine append_new_group
 
+  subroutine append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id )
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    integer(kind=kint), intent(in) :: sgrp_id
+    integer(kind=kint), intent(out) :: ngrp_id
+    integer(kind=kint) :: is, ie, nnode, i, ic, isurf, ic_type, stype, nn, j0, j, new_nnode
+    integer(kind=kint) :: snode(20)
+    integer(kind=kint), allocatable :: node(:)
+    type(tSurfElement) :: surf
+    character(len=HECMW_NAME_LEN) :: grp_name
+    is= hecMESH%surf_group%grp_index(sgrp_id-1) + 1
+    ie= hecMESH%surf_group%grp_index(sgrp_id  )
+    ! count num of nodes on surface incl duplication
+    nnode = 0
+    do i=is,ie
+      ic   = hecMESH%surf_group%grp_item(2*i-1)
+      isurf = hecMESH%surf_group%grp_item(2*i)
+      ic_type = hecMESH%elem_type(ic)
+      call getSubFace( ic_type, isurf, stype, snode )
+      nnode = nnode + getNumberOfNodes( stype )
+    enddo
+    ! extract nodes on surface incl duplication
+    allocate( node(nnode) )
+    nnode = 0
+    do i=is,ie
+      ic   = hecMESH%surf_group%grp_item(2*i-1)
+      isurf = hecMESH%surf_group%grp_item(2*i)
+      ic_type = hecMESH%elem_type(ic)
+      call getSubFace( ic_type, isurf, stype, snode )
+      nn = getNumberOfNodes( stype )
+      j0 = hecMESH%elem_node_index(ic-1)
+      do j=1,nn
+        node(nnode+j) = hecMESH%elem_node_item(j0+snode(j))
+      enddo
+      nnode = nnode + nn
+    enddo
+    ! sort and uniq node list
+    call qsort_int_array(node, 1, nnode)
+    call uniq_int_array(node, nnode, new_nnode)
+    ! append node group
+    write( grp_name, '(a,a)') trim(hecMESH%surf_group%grp_name(sgrp_id)), '_S'
+    call append_new_group(hecMESH, 'node_grp', grp_name, new_nnode, node, ngrp_id)
+    deallocate(node)
+  end subroutine append_node_grp_from_surf_grp
+
+  subroutine append_intersection_node_grp( hecMESH, ngrp_id1, ngrp_id2 )
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    integer(kind=kint), intent(in) :: ngrp_id1, ngrp_id2
+    integer(kind=kint) :: nnode1, nnode2, nnode, is, i, nisect, ngrp_id
+    integer(kind=kint), allocatable :: node(:), isect(:)
+    character(len=HECMW_NAME_LEN) :: grp_name
+    nnode1 = hecMESH%node_group%grp_index(ngrp_id1) - hecMESH%node_group%grp_index(ngrp_id1-1)
+    nnode2 = hecMESH%node_group%grp_index(ngrp_id2) - hecMESH%node_group%grp_index(ngrp_id2-1)
+    nnode = nnode1 + nnode2
+    allocate( node(nnode) )
+    is= hecMESH%node_group%grp_index(ngrp_id1-1)
+    do i=1,nnode1
+      node(i) = hecMESH%node_group%grp_item(is+i)
+    enddo
+    is= hecMESH%node_group%grp_index(ngrp_id2-1)
+    do i=1,nnode2
+      node(nnode1+i) = hecMESH%node_group%grp_item(is+i)
+    enddo
+    call qsort_int_array(node, 1, nnode)
+    allocate( isect(nnode) )
+    nisect = 0
+    do i=1,nnode-1
+      if( node(i) == node(i+1) ) then
+        nisect = nisect + 1
+        isect(nisect) = node(i)
+      endif
+    enddo
+    write( grp_name, '(a,a,a)') &
+         trim(hecMESH%node_group%grp_name(ngrp_id1)),'_AND_',trim(hecMESH%node_group%grp_name(ngrp_id2))
+    call append_new_group(hecMESH, 'node_grp', grp_name, nisect, isect, ngrp_id)
+    deallocate(node)
+    deallocate(isect)
+  end subroutine append_intersection_node_grp
+
   !------------------------------------------------------------------------------
   ! JP-0
   ! grp_type_name : 'node_grp', 'elem_grp' or 'surf_grp'
