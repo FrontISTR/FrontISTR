@@ -124,22 +124,11 @@ contains
         elseif(ic_type == 731)then
           nn = 4
           nodLOCAL(nn) = hecMESH%elem_node_item(in0+nn-1)
-          XX(nn) = XX(nn-1)
-          YY(nn) = YY(nn-1)
-          ZZ(nn) = ZZ(nn-1)
-          TT(nn) = TT(nn-1)
-          T0(nn) = T0(nn-1)
-          is = hecMESH%section%sect_R_index(isect)
-          THICK = hecMESH%section%sect_R_item(is)
-          do i = (nn-1)*(nn-1)+1, nn*nn
-            SS(i) = 0.0
-          enddo
-          call heat_THERMAL_731 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-
-          !in = hecMesh%section%sect_R_index(isect)
-          !thick = hecMESH%section%sect_R_item(in)
-          !call heat_conductivity_shell_731(ic_type, nn, ecoord(1:3,1:nn), TT, IMAT, thick, SS, stiff, &
-          !  fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
+          in = hecMesh%section%sect_R_index(isect)
+          thick = hecMESH%section%sect_R_item(in)
+          SS = 0.0d0
+          call heat_conductivity_shell_731(ic_type, nn, ecoord(1:3,1:nn), TT, IMAT, thick, SS, stiff, &
+            fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         elseif(ic_type == 741)then
           in = hecMesh%section%sect_R_index(isect)
