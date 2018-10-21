@@ -18,6 +18,8 @@ module hecmw_solver_las_nn
   public :: hecmw_Ttvec_nn
   public :: hecmw_TtmatTvec_nn
   public :: hecmw_mat_diag_sr_nn
+  public :: hecmw_mat_add_nn
+  public :: hecmw_mat_multiple_nn
 
   ! ! for communication hiding in matvec
   ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
@@ -536,4 +538,42 @@ contains
     deallocate(W)
   end subroutine hecmw_mat_diag_sr_nn
 
+  subroutine hecmw_mat_add_nn(hecMAT1, hecMAT2, hecMAT3)
+    use hecmw_util
+    implicit none
+    type (hecmwST_matrix)     :: hecMAT1, hecMAT2, hecMAT3
+    integer(kind=kint) :: i
+
+    do i = 1, hecMAT1%NP*hecMAT1%NDOF*hecMAT1%NDOF
+      hecMAT3%D(i) = hecMAT1%D(i) + hecMAT2%D(i)
+    enddo
+
+    do i = 1, hecMAT1%NPU*hecMAT1%NDOF*hecMAT1%NDOF
+      hecMAT3%AU(i) = hecMAT1%AU(i) + hecMAT2%AU(i)
+    enddo
+
+    do i = 1, hecMAT1%NPL*hecMAT1%NDOF*hecMAT1%NDOF
+      hecMAT3%AL(i) = hecMAT1%AL(i) + hecMAT2%AL(i)
+    enddo
+  end subroutine hecmw_mat_add_nn
+
+  subroutine hecmw_mat_multiple_nn(hecMAT, alpha)
+    use hecmw_util
+    implicit none
+    type (hecmwST_matrix)     :: hecMAT
+    real(kind=kreal), intent(in) :: alpha
+    integer(kind=kint) :: i
+
+    do i = 1, hecMAT%NP*hecMAT%NDOF*hecMAT%NDOF
+      hecMAT%D(i) = alpha*hecMAT%D(i)
+    enddo
+
+    do i = 1, hecMAT%NPU*hecMAT%NDOF*hecMAT%NDOF
+      hecMAT%AU(i) = alpha*hecMAT%AU(i)
+    enddo
+
+    do i = 1, hecMAT%NPL*hecMAT%NDOF*hecMAT%NDOF
+      hecMAT%AL(i) = alpha*hecMAT%AL(i)
+    enddo
+  end subroutine hecmw_mat_multiple_nn
 end module hecmw_solver_las_nn
