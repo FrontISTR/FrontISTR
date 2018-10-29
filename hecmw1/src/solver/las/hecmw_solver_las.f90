@@ -27,6 +27,8 @@ module hecmw_solver_las
   public :: hecmw_matvec_clear_timer
   public :: hecmw_matvec_get_timer
   public :: hecmw_mat_diag_sr
+  public :: hecmw_mat_add
+  public :: hecmw_mat_multiple
 
   real(kind=kreal), save :: time_Ax = 0.d0
   logical, save :: mpcmatvec_flg = .false.
@@ -263,4 +265,24 @@ contains
 
   end subroutine hecmw_mat_diag_sr
 
+  subroutine hecmw_mat_add(hecMAT1, hecMAT2, hecMAT3)
+    use hecmw_util
+    use hecmw_solver_las_33
+    use hecmw_solver_las_nn
+    implicit none
+    type (hecmwST_matrix), intent(inout), target :: hecMAT1, hecMAT2, hecMAT3
+
+    call hecmw_mat_add_nn(hecMAT1, hecMAT2, hecMAT3)
+  end subroutine hecmw_mat_add
+
+  subroutine hecmw_mat_multiple(hecMAT, alpha)
+    use hecmw_util
+    use hecmw_solver_las_33
+    use hecmw_solver_las_nn
+    implicit none
+    type (hecmwST_matrix), intent(inout), target :: hecMAT
+    real(kind=kreal), intent(in) :: alpha
+
+    call hecmw_mat_multiple_nn(hecMAT, alpha)
+  end subroutine hecmw_mat_multiple
 end module hecmw_solver_las
