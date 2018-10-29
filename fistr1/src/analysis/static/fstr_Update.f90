@@ -354,8 +354,6 @@ contains
       write(*,*) '###ERROR### : Element type not supported for static analysis'
     else if( flag == 2 ) then
       write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
-    else if( flag == 3 ) then !361IC element cannot be used for nonlinear analysis
-      write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
     endif
     write(*,*) ' ic_type = ', ic_type
     call hecmw_abort(hecmw_comm_get_comm())

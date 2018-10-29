@@ -842,13 +842,6 @@ contains
       enddo
     endif
 
-    if( fstrSOLID%elemopt361==0 ) then
-      if( P%PARAM%nlgeom ) then
-        write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
-        fstrSOLID%elemopt361 = 1
-      endif
-    endif
-
     if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
