@@ -405,22 +405,20 @@ contains
               fstrSOLID%elements(icel)%gausses,pa1,iset, vect(1:nn*2) )
 
           elseif( ic_type == 361 ) then
-            if( .not. fstrPARAM%nlgeom ) then
-              if( fstrSOLID%elemopt361 == 1 ) then
-                call TLOAD_C3D8Bbar                                                          &
-                  ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
-                  fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
-              else
-                call TLOAD_C3D8IC                                                            &
-                  ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
-                  fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
-              endif
-            else
-              if( fstrSOLID%elemopt361 /= 1 ) then
-                write(*,*) '###ERROR### : nonlinear analysis not supported with 361 IC element'
-                call hecmw_abort( hecmw_comm_get_comm())
-              endif
+            if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then
+              call TLOAD_C3                                                          &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+            else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then
               call TLOAD_C3D8Bbar                                                          &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+            else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then
+              call TLOAD_C3D8IC                                                            &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+            else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then
+              call TLOAD_C3D8Fbar                                                            &
                 ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
                 fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
             endif
