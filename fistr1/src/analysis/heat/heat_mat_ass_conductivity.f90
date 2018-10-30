@@ -31,7 +31,7 @@ contains
     call hecmw_mat_clear(hecMAT)
     call hecmw_mat_clear_b(hecMAT)
 
-    do itype= 1, hecMESH%n_elem_type
+    do itype = 1, hecMESH%n_elem_type
       is= hecMESH%elem_type_index(itype-1) + 1
       iE= hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
@@ -70,7 +70,7 @@ contains
           SS(i) = 0.0
         enddo
 
-        if( ic_type.eq.111 ) then
+        if(ic_type == 111) then
           is = hecMESH%section%sect_R_index(isect)
           ASECT = hecMESH%section%sect_R_item(is)
           call heat_THERMAL_111 ( nn,XX,YY,ZZ,TT,IMAT,ASECT,SS,ntab,temp,funcA,funcB )
@@ -81,25 +81,12 @@ contains
           call heat_conductivity_C2(ic_type, nn, ecoord(1:2,1:nn), TT, IMAT, thick, stiff, &
             fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
-        elseif( ic_type.eq.341 ) then
-          call heat_THERMAL_341 ( nn,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
+        elseif(ic_type == 341 .or. ic_type == 342 .or. ic_type == 351 .or. ic_type == 352 .or. &
+             & ic_type == 361 .or. ic_type == 362)then
+          call heat_conductivity_C3(ic_type, nn, ecoord(1:3,1:nn), TT, IMAT, stiff, &
+            fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
-        elseif( ic_type.eq.342 ) then
-          call heat_THERMAL_342 ( nn,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-
-        elseif( ic_type.eq.351 ) then
-          call heat_THERMAL_351 ( nn,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-
-        elseif( ic_type.eq.352 ) then
-          call heat_THERMAL_352 ( nn,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-
-        elseif( ic_type.eq.361 ) then
-          call heat_THERMAL_361 ( nn,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-
-        elseif( ic_type.eq.362 ) then
-          call heat_THERMAL_362 ( nn,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
-
-        elseif (ic_type.eq.541) then
+        elseif (ic_type == 541) then
           jsect = hecMESH%section%sect_R_index(isect-1)+1
           GTH = hecMESH%section%sect_R_item(jsect)
           GHH = hecMESH%section%sect_R_item(jsect+1)
@@ -126,7 +113,7 @@ contains
           write(*,*)"** error setMASS"
         endif
 
-        if(.not.(ic_type == 231 .or. ic_type == 232 .or. ic_type == 241 .or. ic_type == 242))then
+        if(ic_type == 541 .or. ic_type == 731 .or. ic_type == 741)then
           stiff = 0.0d0
           in = 1
           do i = 1, nn

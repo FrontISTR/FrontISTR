@@ -2399,7 +2399,6 @@ contains
         stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
       end forall
     enddo
-
   end subroutine heat_conductivity_C2
 
   subroutine heat_conductivity_C3(etype, nn, ecoord, temperature, IMAT, stiff, &
