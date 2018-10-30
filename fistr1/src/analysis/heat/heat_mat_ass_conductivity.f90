@@ -32,12 +32,12 @@ contains
     call hecmw_mat_clear_b(hecMAT)
 
     do itype = 1, hecMESH%n_elem_type
-      is= hecMESH%elem_type_index(itype-1) + 1
-      iE= hecMESH%elem_type_index(itype  )
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
       if (hecmw_is_etype_link(ic_type)) cycle
 
-      do icel = is, iE
+      do icel = iS, iE
         isect = hecMESH%section_ID(icel)
         IMAT = hecMESH%section%sect_mat_ID_item(isect)
 
@@ -71,9 +71,10 @@ contains
         enddo
 
         if(ic_type == 111) then
-          is = hecMESH%section%sect_R_index(isect)
-          ASECT = hecMESH%section%sect_R_item(is)
-          call heat_THERMAL_111 ( nn,XX,YY,ZZ,TT,IMAT,ASECT,SS,ntab,temp,funcA,funcB )
+          in = hecMESH%section%sect_R_index(isect)
+          ASECT = hecMESH%section%sect_R_item(in)
+          call heat_conductivity_C1(ic_type, nn, ecoord(1:2,1:nn), TT, IMAT, ASECT, stiff, &
+            fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         elseif(ic_type == 231 .or. ic_type == 232 .or. ic_type == 241 .or. ic_type == 242)then
           in = hecMesh%section%sect_R_index(isect)
