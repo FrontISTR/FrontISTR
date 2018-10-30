@@ -105,13 +105,13 @@ contains
   !> Compute eigenvalue and eigenvetor for symmetric 3*3 tensor using
   !> Jacobi iteration adapted from numerical recpies
   subroutine eigen3 (tensor, eigval, princ)
-    real(kind=kreal) :: tensor(6)     !< tensor
-    real(kind=kreal) :: eigval(3)     !< vector containing the eigvalches
-    real(kind=kreal) :: princ(3, 3)   !< matrix containing the three principal column vectors
+    real(kind=kreal), intent(in)  :: tensor(6)     !< tensor
+    real(kind=kreal), intent(out) :: eigval(3)     !< vector containing the eigvalches
+    real(kind=kreal), intent(out) :: princ(3, 3)   !< matrix containing the three principal column vectors
 
     integer, parameter :: msweep = 50
     integer :: i,j, is, ip, iq, ir
-    real(kind=kreal) :: fsum, od, theta, t, c, s, tau, g, h, hd, btens(3,3)
+    real(kind=kreal) :: fsum, od, theta, t, c, s, tau, g, h, hd, btens(3,3), factor
 
     btens(1,1)=tensor(1); btens(2,2)=tensor(2); btens(3,3)=tensor(3)
     btens(1,2)=tensor(4); btens(2,1)=btens(1,2)
@@ -120,13 +120,23 @@ contains
     !
     !     Initialise princ to the identity
     !
+    factor = 0.d0
     do i = 1, 3
       do j = 1, 3
         princ (i, j) = 0.d0
       end do
       princ (i, i) = 1.d0
       eigval (i) = btens (i, i)
+      factor = factor + dabs(btens(i,i))
     end do
+    !     Scaling and iszero/isnan exception
+    if( factor == 0.d0 .or. factor /= factor ) then
+      return
+    else
+      eigval(1:3) = eigval(1:3)/factor
+      btens(1:3,1:3) = btens(1:3,1:3)/factor
+    end if
+
     !
     !     Starts sweeping.
     !
@@ -140,8 +150,10 @@ contains
       !
       !     If the fsum of off-diagonal terms is zero returns
       !
-      if ( fsum < 1.d-10 ) return
-
+      if ( fsum < 1.d-10 ) then
+        eigval(1:3) = eigval(1:3)*factor
+        return
+      endif
       !
       !     Performs the sweep in three rotations. One per off diagonal term
       !
@@ -426,14 +438,13 @@ contains
     s23 = tensor(5)
     s13 = tensor(6)
 
-    !応力テンソルの１～３次不変量
+    ! invariants of stress tensor
     j1 = s11 + s22 + s33
     j2 = -s11*s22 - s22*s33 - s33*s11 + s12**2 + s23**2 + s13**2
     j3 = s11*s22*s33 + 2*s12*s23*s13 - s11*s23**2 - s22*s13**2 - s33*s12**2
-    !Cardanoの方法
+    ! Cardano's method
     ! x^3+ ax^2   + bx  +c =0
     ! s^3 - J1*s^2 -J2s -J3 =0
-    !より
     call cardano(-j1, -j2, -j3, x1, x2, x3)
     eigval(1)= real(x1)
     eigval(2)= real(x2)
