@@ -75,25 +75,11 @@ contains
           ASECT = hecMESH%section%sect_R_item(is)
           call heat_THERMAL_111 ( nn,XX,YY,ZZ,TT,IMAT,ASECT,SS,ntab,temp,funcA,funcB )
 
-        elseif( ic_type.eq.231 ) then
-          is = hecMESH%section%sect_R_index(isect)
-          THICK = hecMESH%section%sect_R_item(is)
-          call heat_THERMAL_231 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-
-        elseif( ic_type.eq.232 ) then
-          is = hecMESH%section%sect_R_index(isect)
-          THICK = hecMESH%section%sect_R_item(is)
-          call heat_THERMAL_232 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-
-        elseif( ic_type.eq.241 ) then
-          is = hecMESH%section%sect_R_index(isect)
-          THICK = hecMESH%section%sect_R_item(is)
-          call heat_THERMAL_241 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
-
-        elseif( ic_type.eq.242 ) then
-          is = hecMESH%section%sect_R_index(isect)
-          THICK = hecMESH%section%sect_R_item(is)
-          call heat_THERMAL_242 ( nn,XX,YY,ZZ,TT,IMAT,THICK,SS,ntab,temp,funcA,funcB )
+        elseif(ic_type == 231 .or. ic_type == 232 .or. ic_type == 241 .or. ic_type == 242)then
+          in = hecMesh%section%sect_R_index(isect)
+          thick = hecMESH%section%sect_R_item(in)
+          call heat_conductivity_C2(ic_type, nn, ecoord(1:2,1:nn), TT, IMAT, thick, stiff, &
+            fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         elseif( ic_type.eq.341 ) then
           call heat_THERMAL_341 ( nn,XX,YY,ZZ,TT,IMAT,SS,ntab,temp,funcA,funcB )
@@ -140,14 +126,16 @@ contains
           write(*,*)"** error setMASS"
         endif
 
-        stiff = 0.0d0
-        in = 1
-        do i = 1, nn
-          do j = 1, nn
-            stiff(j,i) = SS(in)
-            in = in + 1
+        if(.not.(ic_type == 231 .or. ic_type == 232 .or. ic_type == 241 .or. ic_type == 242))then
+          stiff = 0.0d0
+          in = 1
+          do i = 1, nn
+            do j = 1, nn
+              stiff(j,i) = SS(in)
+              in = in + 1
+            enddo
           enddo
-        enddo
+        endif
 
         call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiff)
 
@@ -165,5 +153,6 @@ contains
     hecMAT%B  = hecMAT%B - ALFA*S
 
     deallocate(S)
+
   end subroutine heat_mat_ass_conductivity
 end module m_heat_mat_ass_conductivity

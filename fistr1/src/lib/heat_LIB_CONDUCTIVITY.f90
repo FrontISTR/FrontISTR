@@ -2320,6 +2320,134 @@ contains
     return
   end subroutine heat_THERMAL_362
 
+  subroutine heat_conductivity_C1(etype, nn, ecoord, temperature, IMAT, surf, lumped, stiff, &
+      ntab, temp, funcA, funcB)
+    use hecmw
+    implicit none
+    integer(kind=kint), intent(in) :: etype !< element type
+    integer(kind=kint), intent(in) :: nn !< number of elemental nodes
+    real(kind=kreal), intent(in) :: temperature(nn) !< temperature
+    real(kind=kreal), intent(out) :: stiff(:,:) !< stiff matrix
+    real(kind=kreal), intent(out) :: lumped(:) !< stiff matrix
+    integer(kind=kint), parameter :: ndof = 1
+    integer(kind=kint) :: i, j, IMAT
+    integer(kind=kint) :: ntab
+    real(kind=kreal) :: ecoord(3, nn)
+    real(kind=kreal) :: dx, dy, dz, surf, val, temp_i, length
+    real(kind=kreal) :: CC(3)
+    real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
+
+    if(etype == 611)then
+      ecoord(1,2) = ecoord(1,3); ecoord(2,2) = ecoord(2,3); ecoord(3,2) = ecoord(3,3)
+    endif
+
+    dx = ecoord(1,2) - ecoord(1,1)
+    dy = ecoord(2,2) - ecoord(2,1)
+    dz = ecoord(3,2) - ecoord(3,1)
+    length = dsqrt(dx*dx + dy*dy + dz*dz)
+    val = surf*length
+
+    temp_i = (temperature(1) + temperature(2))*0.5d0
+    call heat_GET_coefficient(temp_i, IMAT, CC, ntab, temp, funcA, funcB)
+
+    stiff(1,1) =  val*CC(1)
+    stiff(2,1) = -val*CC(1)
+    stiff(1,2) = -val*CC(1)
+    stiff(2,2) =  val*CC(1)
+  end subroutine heat_conductivity_C1
+
+  subroutine heat_conductivity_C2(etype, nn, ecoord, temperature, IMAT, thick, stiff, &
+      ntab, temp, funcA, funcB)
+    use mMechGauss
+    use m_MatMatrix
+    use elementInfo
+    implicit none
+    !type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
+    integer(kind=kint), intent(in) :: etype                  !< element type
+    integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
+    real(kind=kreal), intent(in)  :: ecoord(2,nn)           !< coordinates of elemental nodes
+    real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
+    real(kind=kreal), intent(in) :: temperature(nn) !< temperature
+    type(tMaterial), pointer :: matl !< material information
+    integer(kind=kint) :: i, j, LX, IMAT, ntab
+    real(kind=kreal) :: naturalCoord(2)
+    real(kind=kreal) :: func(nn), thick, temp_i
+    real(kind=kreal) :: det, wg, rho, diag_stiff, total_stiff
+    real(kind=kreal) :: D(2,2), N(2,nn), DN(2,nn)
+    real(kind=kreal) :: gderiv(nn,2)
+    real(kind=kreal) :: CC(3)
+    real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
+
+    stiff = 0.0d0
+    !matl => gausses(1)%pMaterial
+
+    do LX = 1, NumOfQuadPoints(etype)
+      call getQuadPoint(etype, LX, naturalCoord)
+      call getShapeFunc(etype, naturalCoord, func)
+      call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
+
+      temp_i = dot_product(func, temperature)
+      call heat_GET_coefficient(temp_i, IMAT, CC, ntab, temp, funcA, funcB)
+
+      D = 0.0d0
+      D(1,1) = CC(1)*thick
+      D(2,2) = CC(1)*thick
+      wg = getWeight(etype, LX)*det
+
+      DN = matmul(D, transpose(gderiv))
+      forall(i = 1:nn,  j = 1:nn)
+        stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
+      end forall
+    enddo
+
+  end subroutine heat_conductivity_C2
+
+  subroutine heat_conductivity_C3(etype, nn, ecoord, temperature, IMAT, stiff, &
+      ntab, temp, funcA, funcB)
+    use mMechGauss
+    use m_MatMatrix
+    use elementInfo
+    implicit none
+    !type(tGaussStatus), intent(in) :: gausses(:)             !< status of qudrature points
+    integer(kind=kint), intent(in) :: etype                  !< element type
+    integer(kind=kint), intent(in) :: nn                     !< number of elemental nodes
+    real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
+    real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
+    real(kind=kreal), intent(in) :: temperature(nn) !< temperature
+    type(tMaterial), pointer :: matl !< material information
+    integer(kind=kint) :: i, j, LX, IMAT, ntab
+    real(kind=kreal) :: naturalCoord(3)
+    real(kind=kreal) :: func(nn), temp_i
+    real(kind=kreal) :: det, wg, rho, diag_stiff, total_stiff
+    real(kind=kreal) :: D(3, 3), N(3, nn), DN(3, nn)
+    real(kind=kreal) :: gderiv(nn, 3)
+    real(kind=kreal) :: SPE(3)
+    real(kind=kreal) :: temp(ntab), funcA(ntab+1), funcB(ntab+1)
+
+    stiff = 0.0d0
+    !matl => gausses(1)%pMaterial
+
+    do LX = 1, NumOfQuadPoints(etype)
+      call getQuadPoint(etype, LX, naturalCoord)
+      call getShapeFunc(etype, naturalCoord, func)
+      call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
+
+      temp_i = dot_product(func, temperature)
+      call heat_GET_coefficient(temp_i, IMAT, SPE, ntab, temp, funcA, funcB)
+
+      D = 0.0d0
+      D(1,1) = SPE(1)
+      D(2,2) = SPE(1)
+      D(3,3) = SPE(1)
+      wg = getWeight(etype, LX)*det
+
+      DN = matmul(D, transpose(gderiv))
+      forall(i = 1:nn,  j = 1:nn)
+        stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
+      end forall
+    enddo
+  end subroutine heat_conductivity_C3
+
   !> CALCULATION 4 NODE SHELL ELEMENT
   subroutine heat_conductivity_shell_731(etype, nn, ecoord, TT, IMAT, thick, SS, stiff, &
       ntab, temp, funcA, funcB)
