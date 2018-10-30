@@ -1,880 +1,684 @@
  fstr_setup: OK
   Initial condition of temperatures: OK
 
- STEP =     1 Time  =   120.000
-
  ISTEP =     1
  Time  =   120.000
  Maximum Temperature :   100.716
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       219
-
- STEP =     2 Time  =   240.000
+ Minimum Node No.    :        21
 
  ISTEP =     2
  Time  =   240.000
  Maximum Temperature :   101.425
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =     3 Time  =   360.000
+ Minimum Node No.    :       211
 
  ISTEP =     3
  Time  =   360.000
  Maximum Temperature :   102.126
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =     4 Time  =   480.000
+ Minimum Node No.    :       211
 
  ISTEP =     4
  Time  =   480.000
  Maximum Temperature :   102.820
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =     5 Time  =   600.000
+ Minimum Node No.    :       211
 
  ISTEP =     5
  Time  =   600.000
  Maximum Temperature :   103.507
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =     6 Time  =   720.000
+ Minimum Node No.    :       211
 
  ISTEP =     6
  Time  =   720.000
  Maximum Temperature :   104.187
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =     7 Time  =   840.000
+ Minimum Node No.    :       213
 
  ISTEP =     7
  Time  =   840.000
  Maximum Temperature :   104.861
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =     8 Time  =   960.000
+ Minimum Node No.    :       213
 
  ISTEP =     8
  Time  =   960.000
  Maximum Temperature :   105.527
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =     9 Time  =  1080.000
+ Minimum Node No.    :       213
 
  ISTEP =     9
  Time  =  1080.000
  Maximum Temperature :   106.187
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    10 Time  =  1200.000
+ Minimum Node No.    :       213
 
  ISTEP =    10
  Time  =  1200.000
  Maximum Temperature :   106.841
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    11 Time  =  1320.000
+ Minimum Node No.    :       213
 
  ISTEP =    11
  Time  =  1320.000
  Maximum Temperature :   107.489
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    12 Time  =  1440.000
+ Minimum Node No.    :       213
 
  ISTEP =    12
  Time  =  1440.000
  Maximum Temperature :   108.130
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    13 Time  =  1560.000
+ Minimum Node No.    :       213
 
  ISTEP =    13
  Time  =  1560.000
  Maximum Temperature :   108.766
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    14 Time  =  1680.000
+ Minimum Node No.    :       213
 
  ISTEP =    14
  Time  =  1680.000
  Maximum Temperature :   109.395
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    15 Time  =  1800.000
+ Minimum Node No.    :       213
 
  ISTEP =    15
  Time  =  1800.000
  Maximum Temperature :   110.019
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    16 Time  =  1920.000
+ Minimum Node No.    :       213
 
  ISTEP =    16
  Time  =  1920.000
  Maximum Temperature :   110.638
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    17 Time  =  2040.000
+ Minimum Node No.    :       213
 
  ISTEP =    17
  Time  =  2040.000
  Maximum Temperature :   111.250
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    18 Time  =  2160.000
+ Minimum Node No.    :       213
 
  ISTEP =    18
  Time  =  2160.000
  Maximum Temperature :   111.858
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    19 Time  =  2280.000
+ Minimum Node No.    :       213
 
  ISTEP =    19
  Time  =  2280.000
  Maximum Temperature :   112.460
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    20 Time  =  2400.000
+ Minimum Node No.    :       213
 
  ISTEP =    20
  Time  =  2400.000
  Maximum Temperature :   113.057
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    21 Time  =  2520.000
+ Minimum Node No.    :       213
 
  ISTEP =    21
  Time  =  2520.000
  Maximum Temperature :   113.648
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    22 Time  =  2640.000
+ Minimum Node No.    :       213
 
  ISTEP =    22
  Time  =  2640.000
  Maximum Temperature :   114.235
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    23 Time  =  2760.000
+ Minimum Node No.    :       213
 
  ISTEP =    23
  Time  =  2760.000
  Maximum Temperature :   114.817
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    24 Time  =  2880.000
+ Minimum Node No.    :       213
 
  ISTEP =    24
  Time  =  2880.000
  Maximum Temperature :   115.394
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    25 Time  =  3000.000
+ Minimum Node No.    :       213
 
  ISTEP =    25
  Time  =  3000.000
  Maximum Temperature :   115.966
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    26 Time  =  3120.000
+ Minimum Node No.    :       213
 
  ISTEP =    26
  Time  =  3120.000
  Maximum Temperature :   116.534
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    27 Time  =  3240.000
+ Minimum Node No.    :       213
 
  ISTEP =    27
  Time  =  3240.000
  Maximum Temperature :   117.097
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    28 Time  =  3360.000
+ Minimum Node No.    :       213
 
  ISTEP =    28
  Time  =  3360.000
  Maximum Temperature :   117.656
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    29 Time  =  3480.000
+ Minimum Node No.    :       213
 
  ISTEP =    29
  Time  =  3480.000
  Maximum Temperature :   118.211
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    30 Time  =  3600.000
+ Minimum Node No.    :       213
 
  ISTEP =    30
  Time  =  3600.000
  Maximum Temperature :   118.761
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    31 Time  =  3720.000
+ Minimum Node No.    :       213
 
  ISTEP =    31
  Time  =  3720.000
  Maximum Temperature :   119.306
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    32 Time  =  3840.000
+ Minimum Node No.    :       213
 
  ISTEP =    32
  Time  =  3840.000
  Maximum Temperature :   119.848
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    33 Time  =  3960.000
+ Minimum Node No.    :       213
 
  ISTEP =    33
  Time  =  3960.000
  Maximum Temperature :   120.386
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    34 Time  =  4080.000
+ Minimum Node No.    :       213
 
  ISTEP =    34
  Time  =  4080.000
  Maximum Temperature :   120.920
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    35 Time  =  4200.000
+ Minimum Node No.    :       213
 
  ISTEP =    35
  Time  =  4200.000
  Maximum Temperature :   121.449
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    36 Time  =  4320.000
+ Minimum Node No.    :       213
 
  ISTEP =    36
  Time  =  4320.000
  Maximum Temperature :   121.975
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    37 Time  =  4440.000
+ Minimum Node No.    :       213
 
  ISTEP =    37
  Time  =  4440.000
  Maximum Temperature :   122.497
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    38 Time  =  4560.000
+ Minimum Node No.    :       213
 
  ISTEP =    38
  Time  =  4560.000
  Maximum Temperature :   123.016
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    39 Time  =  4680.000
+ Minimum Node No.    :       213
 
  ISTEP =    39
  Time  =  4680.000
  Maximum Temperature :   123.530
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    40 Time  =  4800.000
+ Minimum Node No.    :       213
 
  ISTEP =    40
  Time  =  4800.000
  Maximum Temperature :   124.042
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    41 Time  =  4920.000
+ Minimum Node No.    :       213
 
  ISTEP =    41
  Time  =  4920.000
  Maximum Temperature :   124.549
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    42 Time  =  5040.000
+ Minimum Node No.    :       213
 
  ISTEP =    42
  Time  =  5040.000
  Maximum Temperature :   125.053
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    43 Time  =  5160.000
+ Minimum Node No.    :       213
 
  ISTEP =    43
  Time  =  5160.000
  Maximum Temperature :   125.554
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    44 Time  =  5280.000
+ Minimum Node No.    :       213
 
  ISTEP =    44
  Time  =  5280.000
  Maximum Temperature :   126.052
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    45 Time  =  5400.000
+ Minimum Node No.    :       213
 
  ISTEP =    45
  Time  =  5400.000
  Maximum Temperature :   126.546
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    46 Time  =  5520.000
+ Minimum Node No.    :       213
 
  ISTEP =    46
  Time  =  5520.000
  Maximum Temperature :   127.037
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    47 Time  =  5640.000
+ Minimum Node No.    :       213
 
  ISTEP =    47
  Time  =  5640.000
  Maximum Temperature :   127.524
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    48 Time  =  5760.000
+ Minimum Node No.    :       213
 
  ISTEP =    48
  Time  =  5760.000
  Maximum Temperature :   128.009
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    49 Time  =  5880.000
+ Minimum Node No.    :       213
 
  ISTEP =    49
  Time  =  5880.000
  Maximum Temperature :   128.490
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    50 Time  =  6000.000
+ Minimum Node No.    :       213
 
  ISTEP =    50
  Time  =  6000.000
  Maximum Temperature :   128.969
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    51 Time  =  6120.000
+ Minimum Node No.    :       213
 
  ISTEP =    51
  Time  =  6120.000
  Maximum Temperature :   129.444
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    52 Time  =  6240.000
+ Minimum Node No.    :       213
 
  ISTEP =    52
  Time  =  6240.000
  Maximum Temperature :   129.917
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    53 Time  =  6360.000
+ Minimum Node No.    :       213
 
  ISTEP =    53
  Time  =  6360.000
  Maximum Temperature :   130.386
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    54 Time  =  6480.000
+ Minimum Node No.    :       213
 
  ISTEP =    54
  Time  =  6480.000
  Maximum Temperature :   130.853
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    55 Time  =  6600.000
+ Minimum Node No.    :       213
 
  ISTEP =    55
  Time  =  6600.000
  Maximum Temperature :   131.317
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    56 Time  =  6720.000
+ Minimum Node No.    :       213
 
  ISTEP =    56
  Time  =  6720.000
  Maximum Temperature :   131.778
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    57 Time  =  6840.000
+ Minimum Node No.    :       213
 
  ISTEP =    57
  Time  =  6840.000
  Maximum Temperature :   132.237
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    58 Time  =  6960.000
+ Minimum Node No.    :       213
 
  ISTEP =    58
  Time  =  6960.000
  Maximum Temperature :   132.693
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    59 Time  =  7080.000
+ Minimum Node No.    :       213
 
  ISTEP =    59
  Time  =  7080.000
  Maximum Temperature :   133.146
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    60 Time  =  7200.000
+ Minimum Node No.    :       215
 
  ISTEP =    60
  Time  =  7200.000
  Maximum Temperature :   133.596
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    61 Time  =  7320.000
+ Minimum Node No.    :       215
 
  ISTEP =    61
  Time  =  7320.000
  Maximum Temperature :   134.044
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    62 Time  =  7440.000
+ Minimum Node No.    :       215
 
  ISTEP =    62
  Time  =  7440.000
  Maximum Temperature :   134.490
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    63 Time  =  7560.000
+ Minimum Node No.    :       215
 
  ISTEP =    63
  Time  =  7560.000
  Maximum Temperature :   134.933
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    64 Time  =  7680.000
+ Minimum Node No.    :       215
 
  ISTEP =    64
  Time  =  7680.000
  Maximum Temperature :   135.373
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    65 Time  =  7800.000
+ Minimum Node No.    :       215
 
  ISTEP =    65
  Time  =  7800.000
  Maximum Temperature :   135.812
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    66 Time  =  7920.000
+ Minimum Node No.    :       215
 
  ISTEP =    66
  Time  =  7920.000
  Maximum Temperature :   136.247
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    67 Time  =  8040.000
+ Minimum Node No.    :       215
 
  ISTEP =    67
  Time  =  8040.000
  Maximum Temperature :   136.681
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    68 Time  =  8160.000
+ Minimum Node No.    :       215
 
  ISTEP =    68
  Time  =  8160.000
  Maximum Temperature :   137.112
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    69 Time  =  8280.000
+ Minimum Node No.    :       215
 
  ISTEP =    69
  Time  =  8280.000
  Maximum Temperature :   137.541
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    70 Time  =  8400.000
+ Minimum Node No.    :       215
 
  ISTEP =    70
  Time  =  8400.000
  Maximum Temperature :   137.968
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    71 Time  =  8520.000
+ Minimum Node No.    :       215
 
  ISTEP =    71
  Time  =  8520.000
  Maximum Temperature :   138.392
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    72 Time  =  8640.000
+ Minimum Node No.    :       215
 
  ISTEP =    72
  Time  =  8640.000
  Maximum Temperature :   138.814
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    73 Time  =  8760.000
+ Minimum Node No.    :       215
 
  ISTEP =    73
  Time  =  8760.000
  Maximum Temperature :   139.234
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    74 Time  =  8880.000
+ Minimum Node No.    :       215
 
  ISTEP =    74
  Time  =  8880.000
  Maximum Temperature :   139.652
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    75 Time  =  9000.000
+ Minimum Node No.    :       215
 
  ISTEP =    75
  Time  =  9000.000
  Maximum Temperature :   140.068
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    76 Time  =  9120.000
+ Minimum Node No.    :       215
 
  ISTEP =    76
  Time  =  9120.000
  Maximum Temperature :   140.482
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    77 Time  =  9240.000
+ Minimum Node No.    :       215
 
  ISTEP =    77
  Time  =  9240.000
  Maximum Temperature :   140.894
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    78 Time  =  9360.000
+ Minimum Node No.    :       215
 
  ISTEP =    78
  Time  =  9360.000
  Maximum Temperature :   141.303
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    79 Time  =  9480.000
+ Minimum Node No.    :       215
 
  ISTEP =    79
  Time  =  9480.000
  Maximum Temperature :   141.711
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    80 Time  =  9600.000
+ Minimum Node No.    :       215
 
  ISTEP =    80
  Time  =  9600.000
  Maximum Temperature :   142.117
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    81 Time  =  9720.000
+ Minimum Node No.    :       215
 
  ISTEP =    81
  Time  =  9720.000
  Maximum Temperature :   142.521
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    82 Time  =  9840.000
+ Minimum Node No.    :       215
 
  ISTEP =    82
  Time  =  9840.000
  Maximum Temperature :   142.923
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    83 Time  =  9960.000
+ Minimum Node No.    :       215
 
  ISTEP =    83
  Time  =  9960.000
  Maximum Temperature :   143.323
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    84 Time  = 10080.000
+ Minimum Node No.    :       215
 
  ISTEP =    84
  Time  = 10080.000
  Maximum Temperature :   143.721
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    85 Time  = 10200.000
+ Minimum Node No.    :       215
 
  ISTEP =    85
  Time  = 10200.000
  Maximum Temperature :   144.118
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    86 Time  = 10320.000
+ Minimum Node No.    :       215
 
  ISTEP =    86
  Time  = 10320.000
  Maximum Temperature :   144.512
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       119
-
- STEP =    87 Time  = 10440.000
+ Minimum Node No.    :       215
 
  ISTEP =    87
  Time  = 10440.000
  Maximum Temperature :   144.905
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       219
-
- STEP =    88 Time  = 10560.000
+ Minimum Node No.    :       215
 
  ISTEP =    88
  Time  = 10560.000
  Maximum Temperature :   145.296
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       219
-
- STEP =    89 Time  = 10680.000
+ Minimum Node No.    :       215
 
  ISTEP =    89
  Time  = 10680.000
  Maximum Temperature :   145.685
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       219
-
- STEP =    90 Time  = 10800.000
+ Minimum Node No.    :       215
 
  ISTEP =    90
  Time  = 10800.000
  Maximum Temperature :   146.073
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       219
-
- STEP =    91 Time  = 10920.000
+ Minimum Node No.    :       215
 
  ISTEP =    91
  Time  = 10920.000
  Maximum Temperature :   146.459
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       219
-
- STEP =    92 Time  = 11040.000
+ Minimum Node No.    :       215
 
  ISTEP =    92
  Time  = 11040.000
  Maximum Temperature :   146.843
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :       219
-
- STEP =    93 Time  = 11160.000
+ Minimum Node No.    :       215
 
  ISTEP =    93
  Time  = 11160.000
  Maximum Temperature :   147.225
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :        21
-
- STEP =    94 Time  = 11280.000
+ Minimum Node No.    :       215
 
  ISTEP =    94
  Time  = 11280.000
  Maximum Temperature :   147.606
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :        21
-
- STEP =    95 Time  = 11400.000
+ Minimum Node No.    :       215
 
  ISTEP =    95
  Time  = 11400.000
  Maximum Temperature :   147.985
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :        21
-
- STEP =    96 Time  = 11520.000
+ Minimum Node No.    :       215
 
  ISTEP =    96
  Time  = 11520.000
  Maximum Temperature :   148.363
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :        21
-
- STEP =    97 Time  = 11640.000
+ Minimum Node No.    :       215
 
  ISTEP =    97
  Time  = 11640.000
  Maximum Temperature :   148.739
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
- Minimum Node No.    :        21
-
- STEP =    98 Time  = 11760.000
+ Minimum Node No.    :       215
 
  ISTEP =    98
  Time  = 11760.000
@@ -883,16 +687,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =    99 Time  = 11880.000
-
  ISTEP =    99
  Time  = 11880.000
  Maximum Temperature :   149.486
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   100 Time  = 12000.000
 
  ISTEP =   100
  Time  = 12000.000
@@ -901,16 +701,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   101 Time  = 12120.000
-
  ISTEP =   101
  Time  = 12120.000
  Maximum Temperature :   150.227
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   102 Time  = 12240.000
 
  ISTEP =   102
  Time  = 12240.000
@@ -919,16 +715,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   103 Time  = 12360.000
-
  ISTEP =   103
  Time  = 12360.000
  Maximum Temperature :   150.963
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   104 Time  = 12480.000
 
  ISTEP =   104
  Time  = 12480.000
@@ -937,16 +729,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   105 Time  = 12600.000
-
  ISTEP =   105
  Time  = 12600.000
  Maximum Temperature :   151.692
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   106 Time  = 12720.000
 
  ISTEP =   106
  Time  = 12720.000
@@ -955,16 +743,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   107 Time  = 12840.000
-
  ISTEP =   107
  Time  = 12840.000
  Maximum Temperature :   152.416
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   108 Time  = 12960.000
 
  ISTEP =   108
  Time  = 12960.000
@@ -973,16 +757,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   109 Time  = 13080.000
-
  ISTEP =   109
  Time  = 13080.000
  Maximum Temperature :   153.134
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   110 Time  = 13200.000
 
  ISTEP =   110
  Time  = 13200.000
@@ -991,16 +771,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   111 Time  = 13320.000
-
  ISTEP =   111
  Time  = 13320.000
  Maximum Temperature :   153.846
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   112 Time  = 13440.000
 
  ISTEP =   112
  Time  = 13440.000
@@ -1009,16 +785,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   113 Time  = 13560.000
-
  ISTEP =   113
  Time  = 13560.000
  Maximum Temperature :   154.553
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   114 Time  = 13680.000
 
  ISTEP =   114
  Time  = 13680.000
@@ -1027,16 +799,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   115 Time  = 13800.000
-
  ISTEP =   115
  Time  = 13800.000
  Maximum Temperature :   155.255
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   116 Time  = 13920.000
 
  ISTEP =   116
  Time  = 13920.000
@@ -1045,16 +813,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   117 Time  = 14040.000
-
  ISTEP =   117
  Time  = 14040.000
  Maximum Temperature :   155.952
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   118 Time  = 14160.000
 
  ISTEP =   118
  Time  = 14160.000
@@ -1063,16 +827,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   119 Time  = 14280.000
-
  ISTEP =   119
  Time  = 14280.000
  Maximum Temperature :   156.643
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   120 Time  = 14400.000
 
  ISTEP =   120
  Time  = 14400.000
@@ -1081,16 +841,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   121 Time  = 14520.000
-
  ISTEP =   121
  Time  = 14520.000
  Maximum Temperature :   157.330
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   122 Time  = 14640.000
 
  ISTEP =   122
  Time  = 14640.000
@@ -1099,16 +855,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   123 Time  = 14760.000
-
  ISTEP =   123
  Time  = 14760.000
  Maximum Temperature :   158.012
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   124 Time  = 14880.000
 
  ISTEP =   124
  Time  = 14880.000
@@ -1117,16 +869,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   125 Time  = 15000.000
-
  ISTEP =   125
  Time  = 15000.000
  Maximum Temperature :   158.689
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   126 Time  = 15120.000
 
  ISTEP =   126
  Time  = 15120.000
@@ -1135,16 +883,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   127 Time  = 15240.000
-
  ISTEP =   127
  Time  = 15240.000
  Maximum Temperature :   159.361
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   128 Time  = 15360.000
 
  ISTEP =   128
  Time  = 15360.000
@@ -1153,16 +897,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   129 Time  = 15480.000
-
  ISTEP =   129
  Time  = 15480.000
  Maximum Temperature :   160.029
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   130 Time  = 15600.000
 
  ISTEP =   130
  Time  = 15600.000
@@ -1171,16 +911,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   131 Time  = 15720.000
-
  ISTEP =   131
  Time  = 15720.000
  Maximum Temperature :   160.692
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   132 Time  = 15840.000
 
  ISTEP =   132
  Time  = 15840.000
@@ -1189,16 +925,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   133 Time  = 15960.000
-
  ISTEP =   133
  Time  = 15960.000
  Maximum Temperature :   161.351
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   134 Time  = 16080.000
 
  ISTEP =   134
  Time  = 16080.000
@@ -1207,16 +939,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   135 Time  = 16200.000
-
  ISTEP =   135
  Time  = 16200.000
  Maximum Temperature :   162.005
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   136 Time  = 16320.000
 
  ISTEP =   136
  Time  = 16320.000
@@ -1225,16 +953,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   137 Time  = 16440.000
-
  ISTEP =   137
  Time  = 16440.000
  Maximum Temperature :   162.655
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   138 Time  = 16560.000
 
  ISTEP =   138
  Time  = 16560.000
@@ -1243,16 +967,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   139 Time  = 16680.000
-
  ISTEP =   139
  Time  = 16680.000
  Maximum Temperature :   163.301
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   140 Time  = 16800.000
 
  ISTEP =   140
  Time  = 16800.000
@@ -1261,16 +981,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   141 Time  = 16920.000
-
  ISTEP =   141
  Time  = 16920.000
  Maximum Temperature :   163.943
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   142 Time  = 17040.000
 
  ISTEP =   142
  Time  = 17040.000
@@ -1279,16 +995,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   143 Time  = 17160.000
-
  ISTEP =   143
  Time  = 17160.000
  Maximum Temperature :   164.581
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   144 Time  = 17280.000
 
  ISTEP =   144
  Time  = 17280.000
@@ -1297,16 +1009,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   145 Time  = 17400.000
-
  ISTEP =   145
  Time  = 17400.000
  Maximum Temperature :   165.215
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   146 Time  = 17520.000
 
  ISTEP =   146
  Time  = 17520.000
@@ -1315,16 +1023,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   147 Time  = 17640.000
-
  ISTEP =   147
  Time  = 17640.000
  Maximum Temperature :   165.845
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   148 Time  = 17760.000
 
  ISTEP =   148
  Time  = 17760.000
@@ -1333,16 +1037,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   149 Time  = 17880.000
-
  ISTEP =   149
  Time  = 17880.000
  Maximum Temperature :   166.471
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   150 Time  = 18000.000
 
  ISTEP =   150
  Time  = 18000.000
@@ -1351,16 +1051,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   151 Time  = 18120.000
-
  ISTEP =   151
  Time  = 18120.000
  Maximum Temperature :   167.093
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   152 Time  = 18240.000
 
  ISTEP =   152
  Time  = 18240.000
@@ -1369,16 +1065,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   153 Time  = 18360.000
-
  ISTEP =   153
  Time  = 18360.000
  Maximum Temperature :   167.712
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   154 Time  = 18480.000
 
  ISTEP =   154
  Time  = 18480.000
@@ -1387,16 +1079,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   155 Time  = 18600.000
-
  ISTEP =   155
  Time  = 18600.000
  Maximum Temperature :   168.327
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   156 Time  = 18720.000
 
  ISTEP =   156
  Time  = 18720.000
@@ -1405,16 +1093,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   157 Time  = 18840.000
-
  ISTEP =   157
  Time  = 18840.000
  Maximum Temperature :   168.938
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   158 Time  = 18960.000
 
  ISTEP =   158
  Time  = 18960.000
@@ -1423,16 +1107,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   159 Time  = 19080.000
-
  ISTEP =   159
  Time  = 19080.000
  Maximum Temperature :   169.546
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   160 Time  = 19200.000
 
  ISTEP =   160
  Time  = 19200.000
@@ -1441,16 +1121,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   161 Time  = 19320.000
-
  ISTEP =   161
  Time  = 19320.000
  Maximum Temperature :   170.150
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   162 Time  = 19440.000
 
  ISTEP =   162
  Time  = 19440.000
@@ -1459,16 +1135,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   163 Time  = 19560.000
-
  ISTEP =   163
  Time  = 19560.000
  Maximum Temperature :   170.751
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   164 Time  = 19680.000
 
  ISTEP =   164
  Time  = 19680.000
@@ -1477,16 +1149,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   165 Time  = 19800.000
-
  ISTEP =   165
  Time  = 19800.000
  Maximum Temperature :   171.348
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   166 Time  = 19920.000
 
  ISTEP =   166
  Time  = 19920.000
@@ -1495,16 +1163,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   167 Time  = 20040.000
-
  ISTEP =   167
  Time  = 20040.000
  Maximum Temperature :   171.943
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   168 Time  = 20160.000
 
  ISTEP =   168
  Time  = 20160.000
@@ -1513,16 +1177,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   169 Time  = 20280.000
-
  ISTEP =   169
  Time  = 20280.000
  Maximum Temperature :   172.533
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   170 Time  = 20400.000
 
  ISTEP =   170
  Time  = 20400.000
@@ -1531,16 +1191,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   171 Time  = 20520.000
-
  ISTEP =   171
  Time  = 20520.000
  Maximum Temperature :   173.121
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   172 Time  = 20640.000
 
  ISTEP =   172
  Time  = 20640.000
@@ -1549,16 +1205,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   173 Time  = 20760.000
-
  ISTEP =   173
  Time  = 20760.000
  Maximum Temperature :   173.706
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   174 Time  = 20880.000
 
  ISTEP =   174
  Time  = 20880.000
@@ -1567,16 +1219,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   175 Time  = 21000.000
-
  ISTEP =   175
  Time  = 21000.000
  Maximum Temperature :   174.287
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   176 Time  = 21120.000
 
  ISTEP =   176
  Time  = 21120.000
@@ -1585,16 +1233,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   177 Time  = 21240.000
-
  ISTEP =   177
  Time  = 21240.000
  Maximum Temperature :   174.865
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   178 Time  = 21360.000
 
  ISTEP =   178
  Time  = 21360.000
@@ -1603,16 +1247,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   179 Time  = 21480.000
-
  ISTEP =   179
  Time  = 21480.000
  Maximum Temperature :   175.440
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   180 Time  = 21600.000
 
  ISTEP =   180
  Time  = 21600.000
@@ -1621,16 +1261,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   181 Time  = 21720.000
-
  ISTEP =   181
  Time  = 21720.000
  Maximum Temperature :   176.012
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   182 Time  = 21840.000
 
  ISTEP =   182
  Time  = 21840.000
@@ -1639,16 +1275,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   183 Time  = 21960.000
-
  ISTEP =   183
  Time  = 21960.000
  Maximum Temperature :   176.581
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   184 Time  = 22080.000
 
  ISTEP =   184
  Time  = 22080.000
@@ -1657,16 +1289,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   185 Time  = 22200.000
-
  ISTEP =   185
  Time  = 22200.000
  Maximum Temperature :   177.148
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   186 Time  = 22320.000
 
  ISTEP =   186
  Time  = 22320.000
@@ -1675,16 +1303,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   187 Time  = 22440.000
-
  ISTEP =   187
  Time  = 22440.000
  Maximum Temperature :   177.711
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   188 Time  = 22560.000
 
  ISTEP =   188
  Time  = 22560.000
@@ -1693,16 +1317,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   189 Time  = 22680.000
-
  ISTEP =   189
  Time  = 22680.000
  Maximum Temperature :   178.271
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   190 Time  = 22800.000
 
  ISTEP =   190
  Time  = 22800.000
@@ -1711,16 +1331,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   191 Time  = 22920.000
-
  ISTEP =   191
  Time  = 22920.000
  Maximum Temperature :   178.829
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   192 Time  = 23040.000
 
  ISTEP =   192
  Time  = 23040.000
@@ -1729,16 +1345,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   193 Time  = 23160.000
-
  ISTEP =   193
  Time  = 23160.000
  Maximum Temperature :   179.384
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   194 Time  = 23280.000
 
  ISTEP =   194
  Time  = 23280.000
@@ -1747,16 +1359,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   195 Time  = 23400.000
-
  ISTEP =   195
  Time  = 23400.000
  Maximum Temperature :   179.936
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   196 Time  = 23520.000
 
  ISTEP =   196
  Time  = 23520.000
@@ -1765,16 +1373,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   197 Time  = 23640.000
-
  ISTEP =   197
  Time  = 23640.000
  Maximum Temperature :   180.486
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   198 Time  = 23760.000
 
  ISTEP =   198
  Time  = 23760.000
@@ -1783,16 +1387,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   199 Time  = 23880.000
-
  ISTEP =   199
  Time  = 23880.000
  Maximum Temperature :   181.032
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   200 Time  = 24000.000
 
  ISTEP =   200
  Time  = 24000.000
@@ -1801,16 +1401,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   201 Time  = 24120.000
-
  ISTEP =   201
  Time  = 24120.000
  Maximum Temperature :   181.576
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   202 Time  = 24240.000
 
  ISTEP =   202
  Time  = 24240.000
@@ -1819,16 +1415,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   203 Time  = 24360.000
-
  ISTEP =   203
  Time  = 24360.000
  Maximum Temperature :   182.118
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   204 Time  = 24480.000
 
  ISTEP =   204
  Time  = 24480.000
@@ -1837,16 +1429,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   205 Time  = 24600.000
-
  ISTEP =   205
  Time  = 24600.000
  Maximum Temperature :   182.657
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   206 Time  = 24720.000
 
  ISTEP =   206
  Time  = 24720.000
@@ -1855,16 +1443,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   207 Time  = 24840.000
-
  ISTEP =   207
  Time  = 24840.000
  Maximum Temperature :   183.193
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   208 Time  = 24960.000
 
  ISTEP =   208
  Time  = 24960.000
@@ -1873,16 +1457,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   209 Time  = 25080.000
-
  ISTEP =   209
  Time  = 25080.000
  Maximum Temperature :   183.727
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   210 Time  = 25200.000
 
  ISTEP =   210
  Time  = 25200.000
@@ -1891,16 +1471,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   211 Time  = 25320.000
-
  ISTEP =   211
  Time  = 25320.000
  Maximum Temperature :   184.259
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   212 Time  = 25440.000
 
  ISTEP =   212
  Time  = 25440.000
@@ -1909,16 +1485,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   213 Time  = 25560.000
-
  ISTEP =   213
  Time  = 25560.000
  Maximum Temperature :   184.788
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   214 Time  = 25680.000
 
  ISTEP =   214
  Time  = 25680.000
@@ -1927,16 +1499,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   215 Time  = 25800.000
-
  ISTEP =   215
  Time  = 25800.000
  Maximum Temperature :   185.314
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   216 Time  = 25920.000
 
  ISTEP =   216
  Time  = 25920.000
@@ -1945,16 +1513,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   217 Time  = 26040.000
-
  ISTEP =   217
  Time  = 26040.000
  Maximum Temperature :   185.838
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   218 Time  = 26160.000
 
  ISTEP =   218
  Time  = 26160.000
@@ -1963,16 +1527,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   219 Time  = 26280.000
-
  ISTEP =   219
  Time  = 26280.000
  Maximum Temperature :   186.360
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   220 Time  = 26400.000
 
  ISTEP =   220
  Time  = 26400.000
@@ -1981,16 +1541,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   221 Time  = 26520.000
-
  ISTEP =   221
  Time  = 26520.000
  Maximum Temperature :   186.880
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   222 Time  = 26640.000
 
  ISTEP =   222
  Time  = 26640.000
@@ -1999,16 +1555,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   223 Time  = 26760.000
-
  ISTEP =   223
  Time  = 26760.000
  Maximum Temperature :   187.397
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   224 Time  = 26880.000
 
  ISTEP =   224
  Time  = 26880.000
@@ -2017,16 +1569,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   225 Time  = 27000.000
-
  ISTEP =   225
  Time  = 27000.000
  Maximum Temperature :   187.912
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   226 Time  = 27120.000
 
  ISTEP =   226
  Time  = 27120.000
@@ -2035,16 +1583,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   227 Time  = 27240.000
-
  ISTEP =   227
  Time  = 27240.000
  Maximum Temperature :   188.425
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   228 Time  = 27360.000
 
  ISTEP =   228
  Time  = 27360.000
@@ -2053,16 +1597,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   229 Time  = 27480.000
-
  ISTEP =   229
  Time  = 27480.000
  Maximum Temperature :   188.935
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   230 Time  = 27600.000
 
  ISTEP =   230
  Time  = 27600.000
@@ -2071,16 +1611,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   231 Time  = 27720.000
-
  ISTEP =   231
  Time  = 27720.000
  Maximum Temperature :   189.443
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   232 Time  = 27840.000
 
  ISTEP =   232
  Time  = 27840.000
@@ -2089,16 +1625,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   233 Time  = 27960.000
-
  ISTEP =   233
  Time  = 27960.000
  Maximum Temperature :   189.949
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   234 Time  = 28080.000
 
  ISTEP =   234
  Time  = 28080.000
@@ -2107,16 +1639,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   235 Time  = 28200.000
-
  ISTEP =   235
  Time  = 28200.000
  Maximum Temperature :   190.453
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   236 Time  = 28320.000
 
  ISTEP =   236
  Time  = 28320.000
@@ -2125,16 +1653,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   237 Time  = 28440.000
-
  ISTEP =   237
  Time  = 28440.000
  Maximum Temperature :   190.955
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   238 Time  = 28560.000
 
  ISTEP =   238
  Time  = 28560.000
@@ -2143,16 +1667,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   239 Time  = 28680.000
-
  ISTEP =   239
  Time  = 28680.000
  Maximum Temperature :   191.455
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   240 Time  = 28800.000
 
  ISTEP =   240
  Time  = 28800.000
@@ -2161,16 +1681,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   241 Time  = 28920.000
-
  ISTEP =   241
  Time  = 28920.000
  Maximum Temperature :   191.952
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   242 Time  = 29040.000
 
  ISTEP =   242
  Time  = 29040.000
@@ -2179,16 +1695,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   243 Time  = 29160.000
-
  ISTEP =   243
  Time  = 29160.000
  Maximum Temperature :   192.448
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   244 Time  = 29280.000
 
  ISTEP =   244
  Time  = 29280.000
@@ -2197,16 +1709,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   245 Time  = 29400.000
-
  ISTEP =   245
  Time  = 29400.000
  Maximum Temperature :   192.941
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   246 Time  = 29520.000
 
  ISTEP =   246
  Time  = 29520.000
@@ -2215,16 +1723,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   247 Time  = 29640.000
-
  ISTEP =   247
  Time  = 29640.000
  Maximum Temperature :   193.433
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   248 Time  = 29760.000
 
  ISTEP =   248
  Time  = 29760.000
@@ -2233,16 +1737,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   249 Time  = 29880.000
-
  ISTEP =   249
  Time  = 29880.000
  Maximum Temperature :   193.922
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   250 Time  = 30000.000
 
  ISTEP =   250
  Time  = 30000.000
@@ -2251,16 +1751,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   251 Time  = 30120.000
-
  ISTEP =   251
  Time  = 30120.000
  Maximum Temperature :   194.410
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   252 Time  = 30240.000
 
  ISTEP =   252
  Time  = 30240.000
@@ -2269,16 +1765,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   253 Time  = 30360.000
-
  ISTEP =   253
  Time  = 30360.000
  Maximum Temperature :   194.895
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   254 Time  = 30480.000
 
  ISTEP =   254
  Time  = 30480.000
@@ -2287,16 +1779,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   255 Time  = 30600.000
-
  ISTEP =   255
  Time  = 30600.000
  Maximum Temperature :   195.379
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   256 Time  = 30720.000
 
  ISTEP =   256
  Time  = 30720.000
@@ -2305,16 +1793,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   257 Time  = 30840.000
-
  ISTEP =   257
  Time  = 30840.000
  Maximum Temperature :   195.860
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   258 Time  = 30960.000
 
  ISTEP =   258
  Time  = 30960.000
@@ -2323,16 +1807,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   259 Time  = 31080.000
-
  ISTEP =   259
  Time  = 31080.000
  Maximum Temperature :   196.340
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   260 Time  = 31200.000
 
  ISTEP =   260
  Time  = 31200.000
@@ -2341,16 +1821,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   261 Time  = 31320.000
-
  ISTEP =   261
  Time  = 31320.000
  Maximum Temperature :   196.818
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   262 Time  = 31440.000
 
  ISTEP =   262
  Time  = 31440.000
@@ -2359,16 +1835,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   263 Time  = 31560.000
-
  ISTEP =   263
  Time  = 31560.000
  Maximum Temperature :   197.294
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   264 Time  = 31680.000
 
  ISTEP =   264
  Time  = 31680.000
@@ -2377,16 +1849,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   265 Time  = 31800.000
-
  ISTEP =   265
  Time  = 31800.000
  Maximum Temperature :   197.768
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   266 Time  = 31920.000
 
  ISTEP =   266
  Time  = 31920.000
@@ -2395,16 +1863,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   267 Time  = 32040.000
-
  ISTEP =   267
  Time  = 32040.000
  Maximum Temperature :   198.240
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   268 Time  = 32160.000
 
  ISTEP =   268
  Time  = 32160.000
@@ -2413,16 +1877,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   269 Time  = 32280.000
-
  ISTEP =   269
  Time  = 32280.000
  Maximum Temperature :   198.711
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   270 Time  = 32400.000
 
  ISTEP =   270
  Time  = 32400.000
@@ -2431,16 +1891,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   271 Time  = 32520.000
-
  ISTEP =   271
  Time  = 32520.000
  Maximum Temperature :   199.180
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   272 Time  = 32640.000
 
  ISTEP =   272
  Time  = 32640.000
@@ -2449,16 +1905,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   273 Time  = 32760.000
-
  ISTEP =   273
  Time  = 32760.000
  Maximum Temperature :   199.647
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   274 Time  = 32880.000
 
  ISTEP =   274
  Time  = 32880.000
@@ -2467,16 +1919,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   275 Time  = 33000.000
-
  ISTEP =   275
  Time  = 33000.000
  Maximum Temperature :   200.112
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   276 Time  = 33120.000
 
  ISTEP =   276
  Time  = 33120.000
@@ -2485,16 +1933,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   277 Time  = 33240.000
-
  ISTEP =   277
  Time  = 33240.000
  Maximum Temperature :   200.575
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   278 Time  = 33360.000
 
  ISTEP =   278
  Time  = 33360.000
@@ -2503,16 +1947,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   279 Time  = 33480.000
-
  ISTEP =   279
  Time  = 33480.000
  Maximum Temperature :   201.037
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   280 Time  = 33600.000
 
  ISTEP =   280
  Time  = 33600.000
@@ -2521,16 +1961,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   281 Time  = 33720.000
-
  ISTEP =   281
  Time  = 33720.000
  Maximum Temperature :   201.497
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   282 Time  = 33840.000
 
  ISTEP =   282
  Time  = 33840.000
@@ -2539,16 +1975,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   283 Time  = 33960.000
-
  ISTEP =   283
  Time  = 33960.000
  Maximum Temperature :   201.956
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   284 Time  = 34080.000
 
  ISTEP =   284
  Time  = 34080.000
@@ -2557,16 +1989,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   285 Time  = 34200.000
-
  ISTEP =   285
  Time  = 34200.000
  Maximum Temperature :   202.412
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   286 Time  = 34320.000
 
  ISTEP =   286
  Time  = 34320.000
@@ -2575,16 +2003,12 @@
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
 
- STEP =   287 Time  = 34440.000
-
  ISTEP =   287
  Time  = 34440.000
  Maximum Temperature :   202.867
  Maximum Node No.    :         1
  Minimum Temperature :   100.000
  Minimum Node No.    :        21
-
- STEP =   288 Time  = 34560.000
 
  ISTEP =   288
  Time  = 34560.000

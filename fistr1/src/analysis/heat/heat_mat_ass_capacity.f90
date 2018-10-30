@@ -37,7 +37,7 @@ contains
         do i = 1, nn
           nodLOCAL(i) = hecMESH%elem_node_item(in0+i)
           do j = 1, NDOF
-            ecoord(j,i) = hecMESH%node(NDOF*(nodLOCAL(i)-1)+j)
+            ecoord(j,i) = hecMESH%node(3*(nodLOCAL(i)-1)+j)
           enddo
           temp(i) = fstrHEAT%TEMP0(nodLOCAL(i))
         enddo
