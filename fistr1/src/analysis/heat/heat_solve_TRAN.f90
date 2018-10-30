@@ -6,7 +6,7 @@
 module m_heat_solve_TRAN
 contains
 
-  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
+  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -22,6 +22,7 @@ contains
     real(kind=kreal)   :: val, CHK, tmpmax, dltmp, tmpmax_myrank
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
+    type(fstr_solid)          :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
@@ -88,7 +89,7 @@ contains
         call hecmw_abort(hecmw_comm_get_comm())
       endif
 
-      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, total_time, delta_time)
+      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrPARAM, fstrHEAT, ISTEP, total_time, delta_time)
 
       if(0.0d0 < DELMIN)then
         tmpmax = 0.0d0

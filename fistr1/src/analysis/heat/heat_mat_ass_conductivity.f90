@@ -5,7 +5,7 @@
 module m_heat_mat_ass_conductivity
 contains
 
-  subroutine heat_mat_ass_conductivity( hecMESH,hecMAT,fstrHEAT,beta )
+  subroutine heat_mat_ass_conductivity( hecMESH,hecMAT,fstrSOLID,fstrHEAT,beta )
     use hecmw
     use m_fstr
     use m_heat_lib
@@ -13,6 +13,7 @@ contains
     implicit none
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
+    type(fstr_solid)         :: fstrSOLID
     type(hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab, NDOF
     integer(kind=kint) :: in0, nn, i, in, j, nodLOCAL(20), jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL

@@ -661,7 +661,7 @@ contains
     rcode = fstr_ctrl_get_param_ex(ctrl, 'DEPENDENCIES ', '# ',  0, 'I', depends)
     if(1 < depends) depends = 1
 
-    if(ipt == 1)then
+    !if(ipt == 1)then
       allocate(fval(depends+1, n))
       do i = 2, 1+depends
         data_fmt = data_fmt //"R "
@@ -676,22 +676,22 @@ contains
         call init_table(mttable,depends, 1+depends, n, fval)
         call dict_add_key(dict, MC_CONDUCTIVITY, mttable)
       endif
-    else
-      allocate(fval(3+depends, n))
-      do i = 2, 3+depends
-        data_fmt = trim(data_fmt) //"R "
-      enddo
-      if(depends == 0)then
-        fstr_ctrl_get_CONDUCTIVITY = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:))
-      elseif( depends==1 ) then
-        fstr_ctrl_get_CONDUCTIVITY = &
-        & fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:))
-      endif
-      if(fstr_ctrl_get_CONDUCTIVITY == 0)then
-        call init_table(mttable, depends, 3+depends,n, fval)
-        if(fstr_ctrl_get_CONDUCTIVITY == 0) call dict_add_key(dict, MC_ORTHO_CONDUCTIVITY, mttable)
-      endif
-    endif
+    !else
+    !  allocate(fval(3+depends, n))
+    !  do i = 2, 3+depends
+    !    data_fmt = trim(data_fmt) //"R "
+    !  enddo
+    !  if(depends == 0)then
+    !    fstr_ctrl_get_CONDUCTIVITY = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:))
+    !  elseif( depends==1 ) then
+    !    fstr_ctrl_get_CONDUCTIVITY = &
+    !    & fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:))
+    !  endif
+    !  if(fstr_ctrl_get_CONDUCTIVITY == 0)then
+    !    call init_table(mttable, depends, 3+depends,n, fval)
+    !    if(fstr_ctrl_get_CONDUCTIVITY == 0) call dict_add_key(dict, MC_ORTHO_CONDUCTIVITY, mttable)
+    !  endif
+    !endif
 
     call finalize_table(mttable)
     if(associated(fval)) deallocate(fval)
@@ -720,7 +720,7 @@ contains
     rcode = fstr_ctrl_get_param_ex(ctrl, 'DEPENDENCIES ', '# ',  0, 'I', depends)
     if(1 < depends) depends = 1
 
-    if(ipt == 1)then
+    !if(ipt == 1)then
       allocate(fval(depends+1, n))
       do i = 2, 1+depends
         data_fmt = data_fmt //"R "
@@ -735,22 +735,22 @@ contains
         call init_table(mttable,depends, 1+depends, n, fval)
         call dict_add_key(dict, MC_SPECIFIC_HEAT, mttable)
       endif
-    else
-      allocate(fval(3+depends, n))
-      do i = 2, 3+depends
-        data_fmt = trim(data_fmt) //"R "
-      enddo
-      if(depends == 0)then
-        fstr_ctrl_get_SPECIFIC_HEAT = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:))
-      elseif( depends==1 ) then
-        fstr_ctrl_get_SPECIFIC_HEAT = &
-        & fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:))
-      endif
-      if(fstr_ctrl_get_SPECIFIC_HEAT == 0)then
-        call init_table(mttable, depends, 3+depends,n, fval)
-        if(fstr_ctrl_get_SPECIFIC_HEAT == 0) call dict_add_key(dict, MC_ORTHO_SPECIFIC_HEAT, mttable)
-      endif
-    endif
+    !else
+    !  allocate(fval(3+depends, n))
+    !  do i = 2, 3+depends
+    !    data_fmt = trim(data_fmt) //"R "
+    !  enddo
+    !  if(depends == 0)then
+    !    fstr_ctrl_get_SPECIFIC_HEAT = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:))
+    !  elseif( depends==1 ) then
+    !    fstr_ctrl_get_SPECIFIC_HEAT = &
+    !    & fstr_ctrl_get_data_array_ex(ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:))
+    !  endif
+    !  if(fstr_ctrl_get_SPECIFIC_HEAT == 0)then
+    !    call init_table(mttable, depends, 3+depends,n, fval)
+    !    if(fstr_ctrl_get_SPECIFIC_HEAT == 0) call dict_add_key(dict, MC_ORTHO_SPECIFIC_HEAT, mttable)
+    !  endif
+    !endif
 
     call finalize_table(mttable)
     if(associated(fval)) deallocate(fval)
