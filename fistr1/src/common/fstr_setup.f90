@@ -1045,8 +1045,12 @@ contains
   subroutine fstr_solid_finalize( fstrSOLID )
     type(fstr_solid) :: fstrSOLID
     integer :: i, j, ierror
-    if( associated(fstrSOLID%materials) )    &
+    if( associated(fstrSOLID%materials) ) then
+      do j=1,size(fstrSOLID%materials)
+        call finalizeMaterial(fstrSOLID%materials(j))
+      enddo
       deallocate( fstrSOLID%materials )
+    endif
     if( .not. associated(fstrSOLID%elements ) ) return
     do i=1,size(fstrSOLID%elements)
       if( associated(fstrSOLID%elements(i)%gausses) ) then
