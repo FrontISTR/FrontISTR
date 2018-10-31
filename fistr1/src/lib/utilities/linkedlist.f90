@@ -102,7 +102,7 @@ subroutine list_destroy( list )
     type(LINKED_LIST), pointer  :: next
 
     current => list
-    do while ( associated(current%next) )
+    do while ( associated(current) )
         next => current%next
         call finalize_table( current%data%value )
         deallocate( current )
