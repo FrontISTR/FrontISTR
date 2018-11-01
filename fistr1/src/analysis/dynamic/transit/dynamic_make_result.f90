@@ -11,7 +11,7 @@ contains
   !C***
   !>  OUTPUT result file for dynamic analysis
   !C***
-  subroutine fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep )
+  subroutine fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep, time )
     use m_fstr
     use m_out
     use m_static_lib
@@ -19,6 +19,7 @@ contains
     type(fstr_solid)         :: fstrSOLID
     type (fstr_dynamic)       :: fstrDYNAMIC
     integer(kind=kint)        :: maxstep, istep
+    real(kind=kreal)          :: time        !< current time
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 
     character(len=HECMW_HEADER_LEN) :: header
@@ -54,6 +55,13 @@ contains
     ! --- INITIALIZE
     header = '*fstrresult'
     call hecmw_result_init( hecMESH, istep, header )
+
+    ! --- TIME
+    id = 3 !global data
+    label = 'TOTALTIME'
+    work(1) = time
+    call hecmw_result_add( id, 1, label, work )
+
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
       if(ndof /= 4) then
@@ -316,7 +324,7 @@ contains
     type(hecmwST_result_data) :: fstrRESULT
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 
-    integer(kind=kint) :: i, j, ndof, mdof, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, idx
+    integer(kind=kint) :: i, j, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, idx
 
     tnstrain => fstrSOLID%TNSTRAIN
     testrain => fstrSOLID%TESTRAIN
@@ -334,10 +342,16 @@ contains
     if( ndof==6 ) mdof = 6
 
     call hecmw_nullify_result_data( fstrRESULT )
+    gcomp = 0
+    gitem = 0
     ncomp = 0
     nitem = 0
     ecomp = 0
     eitem = 0
+
+    ! --- TIME
+    gcomp = gcomp + 1
+    gitem = gitem + 1
 
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
@@ -416,8 +430,12 @@ contains
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(33), ndof )
     endif
 
+    fstrRESULT%ng_component = gcomp
     fstrRESULT%nn_component = ncomp
     fstrRESULT%ne_component = ecomp
+    allocate( fstrRESULT%ng_dof(gcomp) )
+    allocate( fstrRESULT%global_label(gcomp) )
+    allocate( fstrRESULT%global_val_item(gitem) )
     allocate( fstrRESULT%nn_dof(ncomp) )
     allocate( fstrRESULT%node_label(ncomp) )
     allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )

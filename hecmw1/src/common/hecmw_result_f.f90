@@ -27,12 +27,16 @@ module hecmw_result
   private :: get_elem_component
 
   type hecmwST_result_data
+    integer(kind=kint) :: ng_component
     integer(kind=kint) :: nn_component
     integer(kind=kint) :: ne_component
+    integer(kind=kint),pointer :: ng_dof(:)
     integer(kind=kint),pointer :: nn_dof(:)
     integer(kind=kint),pointer :: ne_dof(:)
+    character(len=HECMW_NAME_LEN),pointer :: global_label(:)
     character(len=HECMW_NAME_LEN),pointer :: node_label(:)
     character(len=HECMW_NAME_LEN),pointer :: elem_label(:)
+    real(kind=kreal),pointer :: global_val_item(:)
     real(kind=kreal),pointer :: node_val_item(:)
     real(kind=kreal),pointer :: elem_val_item(:)
   end type hecmwST_result_data
@@ -48,10 +52,13 @@ contains
 
   subroutine hecmw_nullify_result_data( P )
     type( hecmwST_result_data ) :: P
+    nullify( P%ng_dof )
     nullify( P%nn_dof )
     nullify( P%ne_dof )
+    nullify( P%global_label )
     nullify( P%node_label )
     nullify( P%elem_label )
+    nullify( P%global_val_item )
     nullify( P%node_val_item )
     nullify( P%elem_val_item )
   end subroutine hecmw_nullify_result_data
@@ -73,12 +80,12 @@ contains
   end subroutine hecmw_result_init
 
 
-  subroutine hecmw_result_add(node_or_elem, n_dof, label, data)
-    integer(kind=kint) :: node_or_elem, n_dof, ierr
+  subroutine hecmw_result_add(dtype, n_dof, label, data)
+    integer(kind=kint) :: dtype, n_dof, ierr
     character(len=HECMW_NAME_LEN) :: label
     real(kind=kreal) :: data(:)
 
-    call hecmw_result_add_if(node_or_elem, n_dof, label, data, ierr)
+    call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_add
 
@@ -129,12 +136,39 @@ contains
     type(hecmwST_result_data), intent(in)    :: result_data
     integer(kind=kint),        intent(inout) :: ierr
 
+    call  put_global_component( result_data, ierr )
+    if( ierr /= 0 )  return
     call  put_node_component( result_data, ierr )
     if( ierr /= 0 )  return
     call  put_elem_component( result_data, ierr )
     if( ierr /= 0 )  return
   end subroutine  hecmw_result_copy_f2c
 
+
+  subroutine  put_global_component( result_data, ierr )
+    type(hecmwST_result_data), intent(in)    :: result_data
+    integer(kind=kint),        intent(inout) :: ierr
+
+    sname = "hecmwST_result_data"
+
+    vname = "ng_component"
+    call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%ng_component, ierr )
+    if( ierr /= 0 )  return
+
+    if( result_data%ng_component /= 0 )  then
+      vname = "ng_dof"
+      call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%ng_dof, ierr )
+      if( ierr /= 0 )  return
+
+      vname = "global_label"
+      call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%global_label, ierr )
+      if( ierr /= 0 )  return
+
+      vname = "global_val_item"
+      call  hecmw_result_copy_f2c_set_if( sname, vname, result_data%global_val_item, ierr )
+      if( ierr /= 0 )  return
+    endif
+  end subroutine  put_global_component
 
   subroutine  put_node_component( result_data, ierr )
     type(hecmwST_result_data), intent(in)    :: result_data
@@ -265,12 +299,42 @@ contains
     integer(kind=kint) :: n_node, n_elem, ierr
     type(hecmwST_result_data) :: result
 
+    call get_global_component(result, n_node, ierr)
+    if(ierr /= 0) return
     call get_node_component(result, n_node, ierr)
     if(ierr /= 0) return
-
     call get_elem_component(result, n_elem, ierr)
     if(ierr /= 0) return
   end subroutine hecmw_result_copy_c2f
+
+
+  subroutine get_global_component(result, n_global, ierr)
+    integer(kind=kint) :: n_global, ierr
+    type(hecmwST_result_data) :: result
+
+    sname = 'hecmwST_result_data'
+
+    vname = 'ng_component'
+    call hecmw_result_copy_c2f_set_if(sname, vname, result%ng_component, ierr)
+    if(ierr /= 0) return
+
+    if(result%ng_component > 0) then
+      vname = 'ng_dof'
+      allocate(result%ng_dof(result%ng_component))
+      call hecmw_result_copy_c2f_set_if(sname, vname, result%ng_dof, ierr)
+      if(ierr /= 0) return
+
+      vname = 'global_label'
+      allocate(result%global_label(result%ng_component))
+      call hecmw_result_copy_c2f_set_if(sname, vname, result%global_label, ierr)
+      if(ierr /= 0) return
+
+      vname = 'global_val_item'
+      allocate(result%global_val_item(sum(result%ng_dof)*n_global))
+      call hecmw_result_copy_c2f_set_if(sname, vname, result%global_val_item, ierr)
+      if(ierr /= 0) return
+    endif
+  end subroutine get_global_component
 
 
   subroutine get_node_component(result, n_node, ierr)
@@ -336,6 +400,30 @@ contains
     integer(kind=kint)                       :: ierr
 
     ierr = 0
+
+    if( associated( result_data%ng_dof ) )  then
+      deallocate( result_data%ng_dof, stat=ierr )
+      if( ierr /= 0 )  then
+        print *, "Error: Deallocation error"
+        call  hecmw_abort( hecmw_comm_get_comm( ) )
+      endif
+    endif
+
+    if( associated( result_data%global_label ) )  then
+      deallocate( result_data%global_label, stat=ierr )
+      if( ierr /= 0 )  then
+        print *, "Error: Deallocation error"
+        call  hecmw_abort( hecmw_comm_get_comm( ) )
+      endif
+    endif
+
+    if( associated( result_data%global_val_item ) )  then
+      deallocate( result_data%global_val_item, stat=ierr )
+      if( ierr /= 0 )  then
+        print *, "Error: Deallocation error"
+        call  hecmw_abort( hecmw_comm_get_comm( ) )
+      endif
+    endif
 
     if( associated( result_data%nn_dof ) )  then
       deallocate( result_data%nn_dof, stat=ierr )

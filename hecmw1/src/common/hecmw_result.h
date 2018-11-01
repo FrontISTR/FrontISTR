@@ -9,12 +9,16 @@
 #include "hecmw_struct.h"
 
 struct hecmwST_result_data {
+  int ng_component;
   int nn_component;
   int ne_component;
+  int *ng_dof;
   int *nn_dof;
   int *ne_dof;
+  char **global_label;
   char **node_label;
   char **elem_label;
+  double *global_val_item;
   double *node_val_item;
   double *elem_val_item;
 };
@@ -25,7 +29,7 @@ extern int HECMW_result_init_body(int n_node, int n_elem, int *nodeID,
                                   int *elemID, int i_step,
                                   char *header);
 extern int HECMW_result_finalize(void);
-extern int HECMW_result_add(int node_or_elem, int n_dof, char *label,
+extern int HECMW_result_add(int dtype, int n_dof, char *label,
                             double *ptr);
 extern int HECMW_result_write_by_name(char *name_ID);
 extern int HECMW_result_write_by_addfname(char *name_ID, char *addfname);

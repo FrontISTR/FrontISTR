@@ -30,6 +30,7 @@ static int nelem;
 static char head[HECMW_HEADER_LEN + 1];
 static char line_buf[LINEBUF_SIZE + 1];
 
+static struct result_list *global_list;
 static struct result_list *node_list;
 static struct result_list *elem_list;
 
@@ -82,6 +83,13 @@ static int is_valid_label(char *label) {
 static void clear() {
   struct result_list *p, *q;
 
+  for (p = global_list; p; p = q) {
+    q = p->next;
+    HECMW_free(p->label);
+    HECMW_free(p);
+  }
+  global_list = NULL;
+
   for (p = node_list; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
@@ -104,6 +112,15 @@ void HECMW_result_free(struct hecmwST_result_data *result) {
   int i;
 
   if (result == NULL) return;
+
+  if (result->ng_component > 0) {
+    HECMW_free(result->ng_dof);
+    HECMW_free(result->global_val_item);
+    for (i = 0; i < result->ng_component; i++) {
+      HECMW_free(result->global_label[i]);
+    }
+    HECMW_free(result->global_label);
+  }
 
   if (result->nn_component > 0) {
     HECMW_free(result->nn_dof);
@@ -167,6 +184,21 @@ int HECMW_result_finalize(void) {
   return 0;
 }
 
+static int add_to_global_list(struct result_list *result) {
+  struct result_list *p, *q;
+
+  q = NULL;
+  for (p = global_list; p; p = (q = p)->next)
+    ;
+
+  if (q == NULL) {
+    global_list = result;
+  } else {
+    q->next = result;
+  }
+  return 0;
+}
+
 static int add_to_node_list(struct result_list *result) {
   struct result_list *p, *q;
 
@@ -226,10 +258,10 @@ error:
   return NULL;
 }
 
-int HECMW_result_add(int node_or_elem, int n_dof, char *label, double *ptr) {
+int HECMW_result_add(int dtype, int n_dof, char *label, double *ptr) {
   struct result_list *result;
 
-  if (node_or_elem != 1 && node_or_elem != 2) {
+  if (dtype < 1 && dtype > 3) {
     HECMW_set_error(HECMW_UTIL_E0206, "");
     goto error;
   }
@@ -244,18 +276,32 @@ int HECMW_result_add(int node_or_elem, int n_dof, char *label, double *ptr) {
     goto error;
   }
 
-  if (node_or_elem == 1) {
+  if (dtype == 1) {
     /* node */
     if (add_to_node_list(result)) goto error;
-  } else {
+  } else if (dtype == 2)  {
     /* elem */
     if (add_to_elem_list(result)) goto error;
+  } else {
+    /* global */
+    if (add_to_global_list(result)) goto error;
   }
 
   return 0;
 error:
   HECMW_free(result);
   return -1;
+}
+
+static int count_ng_comp(void) {
+  int ng_comp;
+  struct result_list *p;
+
+  ng_comp = 0;
+  for (p = global_list; p; p = p->next) {
+    ng_comp++;
+  }
+  return ng_comp;
 }
 
 static int count_nn_comp(void) {
@@ -638,7 +684,7 @@ void HECMW_RESULT_FINALIZE_IF(int *err) { hecmw_result_finalize_if(err); }
 
 /*---------------------------------------------------------------------------*/
 
-void hecmw_result_add_if(int *node_or_elem, int *n_dof, char *label,
+void hecmw_result_add_if(int *dtype, int *n_dof, char *label,
                          double *ptr, int *err, int len) {
   char label_str[HECMW_NAME_LEN + 1];
   int n, size;
@@ -650,10 +696,12 @@ void hecmw_result_add_if(int *node_or_elem, int *n_dof, char *label,
   if (HECMW_strcpy_f2c_r(label, len, label_str, sizeof(label_str)) == NULL)
     return;
 
-  if (*node_or_elem == 1) {
+  if (*dtype == 1) { //node
     n = nnode;
-  } else {
+  } else if (*dtype == 2) { //element
     n = nelem;
+  } else { // global
+    n = 1;
   }
   size = sizeof(double) * n * (*n_dof);
   data = HECMW_malloc(size);
@@ -672,24 +720,24 @@ void hecmw_result_add_if(int *node_or_elem, int *n_dof, char *label,
   remain->next = remainder;
   remainder    = remain;
 
-  if (HECMW_result_add(*node_or_elem, *n_dof, label_str, data)) return;
+  if (HECMW_result_add(*dtype, *n_dof, label_str, data)) return;
 
   *err = 0;
 }
 
-void hecmw_result_add_if_(int *node_or_elem, int *n_dof, char *label,
+void hecmw_result_add_if_(int *dtype, int *n_dof, char *label,
                           double *ptr, int *err, int len) {
-  hecmw_result_add_if(node_or_elem, n_dof, label, ptr, err, len);
+  hecmw_result_add_if(dtype, n_dof, label, ptr, err, len);
 }
 
-void hecmw_result_add_if__(int *node_or_elem, int *n_dof, char *label,
+void hecmw_result_add_if__(int *dtype, int *n_dof, char *label,
                            double *ptr, int *err, int len) {
-  hecmw_result_add_if(node_or_elem, n_dof, label, ptr, err, len);
+  hecmw_result_add_if(dtype, n_dof, label, ptr, err, len);
 }
 
-void HECMW_RESULT_ADD_IF(int *node_or_elem, int *n_dof, char *label,
+void HECMW_RESULT_ADD_IF(int *dtype, int *n_dof, char *label,
                          double *ptr, int *err, int len) {
-  hecmw_result_add_if(node_or_elem, n_dof, label, ptr, err, len);
+  hecmw_result_add_if(dtype, n_dof, label, ptr, err, len);
 }
 
 /*----------------------------------------------------------------------------*/

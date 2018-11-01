@@ -19,7 +19,7 @@ contains
   !C***
   !>  OUTPUT result file for static analysis
   !C***
-  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, flag )
+  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, flag )
     use m_fstr
     use m_out
     use m_static_lib
@@ -31,6 +31,7 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type (fstr_param       )  :: fstrPARAM    !< analysis control parameters
     integer(kind=kint)        :: istep, flag
+    real(kind=kreal)          :: time        !< current time
     integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
     real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
@@ -62,6 +63,11 @@ contains
     header = '*fstrresult'
     call hecmw_result_init( hecMESH, istep, header )
 
+    ! --- TIME
+    id = 3 !global data
+    label = 'TOTALTIME'
+    work(1) = time
+    call hecmw_result_add( id, 1, label, work )
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1)) then
       id = 1
@@ -465,7 +471,7 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
     integer(kind=kint) :: n_lyr, ntot_lyr, it, coef33, is_33shell, is_33beam
-    integer(kind=kint) :: i, j, k, ndof, mdof, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
+    integer(kind=kint) :: i, j, k, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
     real(kind=kreal), allocatable   ::unode(:)
     character(len=4) :: cnum
@@ -493,12 +499,17 @@ contains
     endif
 
     call hecmw_nullify_result_data( fstrRESULT )
+    gcomp = 0
+    gitem = 0
     ncomp = 0
     nitem = 0
     ecomp = 0
     eitem = 0
 
     ! --- COUNT SUM OF ALL NITEM
+    ! --- TIME
+    gcomp = gcomp + 1
+    gitem = gitem + 1
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
       ncomp = ncomp + 1
@@ -617,8 +628,12 @@ contains
     endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    fstrRESULT%ng_component = gcomp
     fstrRESULT%nn_component = ncomp
     fstrRESULT%ne_component = ecomp
+    allocate( fstrRESULT%ng_dof(gcomp) )
+    allocate( fstrRESULT%global_label(gcomp) )
+    allocate( fstrRESULT%global_val_item(gitem) )
     allocate( fstrRESULT%nn_dof(ncomp) )
     allocate( fstrRESULT%node_label(ncomp) )
     allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )
@@ -629,6 +644,11 @@ contains
     iitem = 0
     ecomp = 0
     jitem = 0
+
+    ! --- TIME
+    fstrRESULT%ng_dof(1) = 1
+    fstrRESULT%global_label(1) = "TOTALTIME"
+    fstrRESULT%global_val_item(1) = 1.d0
 
     ! --- DISPLACEMENT
     if (fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then

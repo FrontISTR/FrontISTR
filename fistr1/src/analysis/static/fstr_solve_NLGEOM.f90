@@ -75,7 +75,7 @@ contains
       call fstr_set_timeinc_base( dtime )
       fstrSOLID%restart_nout = - fstrSOLID%restart_nout
     else
-      call fstr_static_Output( 1, 0, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, .true. )
+      call fstr_static_Output( 1, 0, 0.d0, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, .true. )
     endif
 
     fstrSOLID%FACTOR = 0.0d0
@@ -209,7 +209,8 @@ contains
         ! ----- Result output (include visualize output)
         is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
           & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
-        call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, is_OutPoint )
+        call fstr_static_Output( tot_step, step_count, fstr_get_time(), hecMESH, fstrSOLID, fstrPARAM, &
+          &                      fstrPR%solution_type, is_OutPoint )
 
         time_2 = hecmw_Wtime()
         if( hecMESH%my_rank==0 ) then
