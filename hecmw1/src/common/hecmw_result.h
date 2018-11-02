@@ -24,10 +24,10 @@ struct hecmwST_result_data {
 };
 
 extern int HECMW_result_init(struct hecmwST_local_mesh *hecMESH,
-                             int i_step, char *header);
+                             int i_step, char *header, char *comment);
 extern int HECMW_result_init_body(int n_node, int n_elem, int *nodeID,
                                   int *elemID, int i_step,
-                                  char *header);
+                                  char *header, char *comment);
 extern int HECMW_result_finalize(void);
 extern int HECMW_result_add(int dtype, int n_dof, char *label,
                             double *ptr);
@@ -38,13 +38,13 @@ extern int HECMW_result_write_txt_by_fname(char *filename);
 
 extern int HECMW_result_write_ST_by_name(char *name_ID,
                                          struct hecmwST_result_data *result,
-                                         int n_node, int n_elem, char *header);
+                                         int n_node, int n_elem, char *header, char *comment);
 extern int HECMW_result_write_bin_ST_by_fname(
     char *filename, struct hecmwST_result_data *result, int n_node, int n_elem,
-    char *header);
+    char *header, char *comment);
 extern int HECMW_result_write_txt_ST_by_fname(
     char *filename, struct hecmwST_result_data *result, int n_node, int n_elem,
-    char *header);
+    char *header, char *comment);
 
 extern struct hecmwST_result_data *HECMW_result_read_by_name(char *name_ID,
                                                              int i_step);
@@ -54,6 +54,7 @@ extern void HECMW_result_free(struct hecmwST_result_data *result);
 extern int HECMW_result_get_nnode(void);
 extern int HECMW_result_get_nelem(void);
 extern char *HECMW_result_get_header(char *buff);
+extern char *HECMW_result_get_comment(char *buff);
 extern int *HECMW_result_get_nodeID(int *buff);
 extern int *HECMW_result_get_elemID(int *buff);
 extern void HECMW_result_free_nodeID(void);

@@ -72,6 +72,18 @@ bin_output_result_header(FILE *fp)
 		return -1;
 	}
 
+	/* comment */
+	rc = hecmw_write_bin(fp,"*comment");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*comment");
+		return -1;
+	}
+	rc = hecmw_write_bin(fp,"S", comment_line);
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "head");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -86,6 +98,13 @@ bin_output_result_global(FILE *fp)
 	rc = hecmw_write_bin(fp,"*global");
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "*global");
+		return -1;
+	}
+
+	/* ng_component */
+	rc = hecmw_write_bin(fp, "II", count_ng_comp());
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "ng_comp");
 		return -1;
 	}
 
@@ -321,11 +340,12 @@ bin_output_result_data(FILE *fp)
 
 static int
 bin_output_result_header_ST(struct hecmwST_result_data *result, char *header,
-		FILE *fp)
+		char *comment, FILE *fp)
 {
 	int rc,len;
 	char *p,*q;
 	char head[HECMW_HEADER_LEN+1];
+	char comment_line[HECMW_MSG_LEN+1];
 
 	if(header == NULL) {
 		head[0] = '\0';
@@ -347,6 +367,31 @@ bin_output_result_header_ST(struct hecmwST_result_data *result, char *header,
 		return -1;
 	}
 
+	if(comment == NULL) {
+		comment_line[0] = '\0';
+	} else {
+		len = 0;
+		p = comment;
+		q = comment_line;
+		while(len < sizeof(comment_line)-1 && *p && *p != '\n') {
+			*q++ = *p++;
+			len++;
+		}
+		*++q = '\0';
+	}
+
+	/* comment */
+	rc = hecmw_write_bin(fp,"*comment");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*comment");
+		return -1;
+	}
+	rc = hecmw_write_bin(fp, "S", comment);
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "comment");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -360,6 +405,13 @@ bin_output_result_global_ST(struct hecmwST_result_data *result, FILE *fp)
 	rc = hecmw_write_bin(fp,"*global");
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "*global");
+		return -1;
+	}
+
+	/* ng_component */
+	rc = hecmw_write_bin(fp, "II", result->ng_component);
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "ng_comp");
 		return -1;
 	}
 
@@ -533,11 +585,11 @@ bin_output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *
 
 
 static int
-bin_output_result_data_ST(struct hecmwST_result_data *result, int n_node, int n_elem, char *header, FILE *fp)
+bin_output_result_data_ST(struct hecmwST_result_data *result, int n_node, int n_elem, char *header, char *comment, FILE *fp)
 {
 	HECMW_assert(fp);
 
-	if(bin_output_result_header_ST(result, header, fp)) {
+	if(bin_output_result_header_ST(result, header, comment, fp)) {
 		return -1;
 	}
 	if(bin_output_result_global_ST(result, fp)) {
@@ -572,6 +624,17 @@ bin_input_result_header(struct hecmwST_result_data *result, FILE *fp)
 		return -1;
 	}
 	strcpy( head, line_buf );
+
+	/* comment */
+	if(hecmw_read_bin(fp, "S", line_buf)) { //skip comment header
+		HECMW_set_error(HECMW_UTIL_E0205, "comment");
+		return -1;
+	}
+	if(hecmw_read_bin(fp, "S", line_buf)) {
+		HECMW_set_error(HECMW_UTIL_E0205, "comment");
+		return -1;
+	}
+	strcpy( comment_line, line_buf );
 
 	return 0;
 }

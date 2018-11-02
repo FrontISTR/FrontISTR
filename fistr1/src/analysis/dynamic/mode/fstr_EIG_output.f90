@@ -122,8 +122,9 @@ contains
     integer(kind=kint) :: i, istep, nget, NP, NDOF, NPNDOF, totalmpc, MPC_METHOD
     real(kind=kreal)   :: t1
     real(kind=kreal), pointer :: eigvec(:,:)
-    real(kind=kreal), allocatable :: X(:)
+    real(kind=kreal), allocatable :: X(:), egval(:)
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
 
@@ -137,8 +138,10 @@ contains
 
     allocate(X(NPNDOF))
     X = 0.0d0
+    allocate(egval(1))
 
     do istep = 1, nget
+      egval(1) = fstrEIG%eigval(1)
       do i=1,NPNDOF
         X(i) = eigvec(i,istep)
       enddo
@@ -158,7 +161,10 @@ contains
 
       if( IRESULT.eq.1 ) then
         header = "*fstrresult"
-        call hecmw_result_init(hecMESH,istep,header)
+        comment = "eigen_result"
+        call hecmw_result_init(hecMESH,istep,header,comment)
+        label = "EIGENVALUE"
+        call hecmw_result_add(3,1,label,egval)
         label = "DISPLACEMENT"
         call hecmw_result_add(1,NDOF,label,X)
         nameID = "fstrRES"
@@ -168,8 +174,15 @@ contains
 
       if( IVISUAL.eq.1 ) then
         call hecmw_nullify_result_data(fstrRESULT)
+        fstrRESULT%ng_component = 1
         fstrRESULT%nn_component = 1
         fstrRESULT%ne_component = 0
+        allocate(fstrRESULT%ng_dof(1))
+        allocate(fstrRESULT%global_label(1))
+        allocate(fstrRESULT%global_val_item(1))
+        fstrRESULT%ng_dof(1) = 1
+        fstrRESULT%global_label(1) = 'EIGENVALUE'
+        fstrRESULT%global_val_item(1) = egval(1)
         allocate(fstrRESULT%nn_dof(1))
         allocate(fstrRESULT%node_label(1))
         allocate(fstrRESULT%node_val_item(NDOF*hecMAT%NP))

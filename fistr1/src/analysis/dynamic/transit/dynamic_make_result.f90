@@ -23,6 +23,7 @@ contains
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
 
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label, s, nameID
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, idx, ngauss
     integer(kind=kint) :: n_lyr, ntot_lyr, is_33shell, is_33beam
@@ -54,7 +55,8 @@ contains
 
     ! --- INITIALIZE
     header = '*fstrresult'
-    call hecmw_result_init( hecMESH, istep, header )
+    comment = 'dynamic_result'
+    call hecmw_result_init( hecMESH, istep, header, comment )
 
     ! --- TIME
     id = 3 !global data

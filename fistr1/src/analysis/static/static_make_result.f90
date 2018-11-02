@@ -37,6 +37,7 @@ contains
     real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
     real(kind=kreal), allocatable   :: work(:), unode(:), rnode(:)
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname, cnum
     character(len=6), allocatable   :: clyr(:)
 
@@ -61,7 +62,8 @@ contains
 
     ! --- INITIALIZE
     header = '*fstrresult'
-    call hecmw_result_init( hecMESH, istep, header )
+    comment = 'static_result'
+    call hecmw_result_init( hecMESH, istep, header, comment )
 
     ! --- TIME
     id = 3 !global data

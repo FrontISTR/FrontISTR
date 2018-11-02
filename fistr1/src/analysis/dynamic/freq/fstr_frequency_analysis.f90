@@ -17,6 +17,7 @@ contains
     !---- body
 
     call hecmw_nullify_result_data(fstrRESULT)
+    fstrRESULT%ng_component = 0
     fstrRESULT%nn_component = numcomp
     fstrRESULT%ne_component = 0
     allocate( fstrRESULT%nn_dof(numcomp) )
@@ -449,12 +450,14 @@ contains
     !---- vals
     integer(kind=kint)              :: im
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label, nameid
     !---- body
 
     nameid='fstrRES'
     header='*fstrresult'
-    call hecmw_result_init(hecMESH, ifreq, header)
+    comment='frequency_result'
+    call hecmw_result_init(hecMESH, ifreq, header, comment)
     if(iout(1) == 1) then
       label='displacement'
       call hecmw_result_add(1, 3, label, disp) !mode=node, ndof=3
@@ -983,6 +986,7 @@ contains
     !---- vals
     integer(kind=kint)              :: im, s
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label, nameid
     real(kind=kreal), allocatable   :: absval(:)
     !---- body
@@ -991,9 +995,10 @@ contains
     allocate(absval(s))
 
     nameid='fstrDYNA'
-    header='*fstrresult'
+    header='*fstrresult 2.0'
+    comment='frequency_result'
 
-    call hecmw_result_init(hecMESH, istp, header)
+    call hecmw_result_init(hecMESH, istp, header, comment)
 
     if(iout(1) == 1) then
       label='displacement_real'

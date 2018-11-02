@@ -359,6 +359,7 @@ void HECMW_RESULT_WRITE_ST_FINALIZE_IF(int *err) {
 void hecmw_result_write_st_by_name_if(char *name_ID, int *err, int len) {
   char name_ID_str[HECMW_NAME_LEN + 1];
   char head[HECMW_HEADER_LEN + 1];
+  char comment[HECMW_MSG_LEN + 1];
 
   *err = 1;
 
@@ -367,7 +368,8 @@ void hecmw_result_write_st_by_name_if(char *name_ID, int *err, int len) {
     return;
 
   HECMW_result_get_header(head);
-  if (HECMW_result_write_ST_by_name(name_ID_str, result, nnode, nelem, head))
+  HECMW_result_get_comment(comment);
+  if (HECMW_result_write_ST_by_name(name_ID_str, result, nnode, nelem, head, comment))
     return;
 
   *err = 0;

@@ -132,6 +132,7 @@ int main(int argc, char** argv) {
   fstr_res_info** res;
   fstr_glt* glt;
   char header[HECMW_HEADER_LEN + 1];
+  char comment[HECMW_MSG_LEN + 1];
   char* fileheader;
   char dirname[HECMW_HEADER_LEN + 1];
   char buff[HECMW_HEADER_LEN + 1];
@@ -211,13 +212,14 @@ int main(int argc, char** argv) {
     sprintf(out_fname, "%s%s.%d", dirname, out_fheader, step);
     fprintf(log_fp, "output to %s .. ", out_fname);
     HECMW_result_get_header(header);
-    HECMW_result_init(glmesh, step, header);
+    HECMW_result_get_comment(comment);
+    HECMW_result_init(glmesh, step, header, comment);
     if (binary) {
       rcode = HECMW_result_write_bin_ST_by_fname(out_fname, data, glt->node_n,
-                                                 glt->elem_n, header);
+                                                 glt->elem_n, header, comment);
     } else {
       rcode = HECMW_result_write_txt_ST_by_fname(out_fname, data, glt->node_n,
-                                                 glt->elem_n, header);
+                                                 glt->elem_n, header, comment);
     }
     if (rcode) {
       fprintf(stderr, "ERROR : Cannot open/write file %s\n", out_fname);

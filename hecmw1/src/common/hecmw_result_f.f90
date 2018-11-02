@@ -67,15 +67,16 @@ contains
   !C Write result data to file
   !C=============================================================================
 
-  subroutine hecmw_result_init(hecMESH, i_step, header)
+  subroutine hecmw_result_init(hecMESH, i_step, header, comment)
     type(hecmwST_local_mesh):: hecMESH
     integer(kind=kint) :: nnode, nelem, i_step, ierr
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN) :: comment
 
     nnode = hecMESH%n_node
     nelem = hecMESH%n_elem
 
-    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, i_step, header, ierr)
+    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, i_step, header, comment, ierr)
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_init
 
