@@ -157,6 +157,7 @@ contains
 
     endif
 
+    call finalize_table( mattable )
     if( associated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_ELASTICITY
 
@@ -713,6 +714,7 @@ contains
 
     endif
 
+    call finalize_table( mattable )
     if( associated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_FLUID
 
