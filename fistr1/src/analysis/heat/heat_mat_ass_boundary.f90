@@ -7,7 +7,7 @@
 module m_heat_mat_ass_boundary
 contains
 
-  subroutine heat_mat_ass_boundary(hecMESH, hecMAT, hecMATmpc, fstrHEAT, next_time, DTIME)
+  subroutine heat_mat_ass_boundary(hecMESH, hecMAT, hecMATmpc, fstrHEAT, next_time, delta_time)
     use m_fstr
     use m_heat_mat_ass_bc_CFLUX
     use m_heat_mat_ass_bc_DFLUX
@@ -19,28 +19,28 @@ contains
     type(hecmwST_matrix) :: hecMAT
     type(hecmwST_matrix), pointer :: hecMATmpc
     type(hecmwST_local_mesh) :: hecMESH
-    real(kind=kreal) :: next_time, DTIME, beta
+    real(kind=kreal) :: next_time, delta_time, beta
 
     beta = fstrHEAT%beta
 
     !> !CFLUX
-    call heat_mat_ass_bc_CFLUX(hecMAT, fstrHEAT, next_time, DTIME, beta)
+    call heat_mat_ass_bc_CFLUX(hecMAT, fstrHEAT, next_time, delta_time, beta)
 
     !> !DFLUX
-    call heat_mat_ass_bc_DFLUX(hecMESH, hecMAT, fstrHEAT, next_time, DTIME, beta)
+    call heat_mat_ass_bc_DFLUX(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
 
     !> !FILM
-    call heat_mat_ass_bc_FILM(hecMESH, hecMAT, fstrHEAT, next_time, DTIME, beta)
+    call heat_mat_ass_bc_FILM(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
 
     !> !RADIATE
-    call heat_mat_ass_bc_RADIATE(hecMESH, hecMAT, fstrHEAT, next_time, DTIME, beta)
+    call heat_mat_ass_bc_RADIATE(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
 
     !> MPC
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
 
     !> !BOUNDARY
-    call heat_mat_ass_bc_FIXT(hecMATmpc, fstrHEAT, next_time, DTIME, beta)
+    call heat_mat_ass_bc_FIXT(hecMATmpc, fstrHEAT, next_time, delta_time, beta)
 
   end subroutine heat_mat_ass_boundary
 end module m_heat_mat_ass_boundary

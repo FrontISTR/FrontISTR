@@ -18,7 +18,6 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/heat_mat_ass_capacity.f90
   ${CMAKE_CURRENT_LIST_DIR}/heat_mat_ass_conductivity.f90
   ${CMAKE_CURRENT_LIST_DIR}/heat_solve_main.f90
-  ${CMAKE_CURRENT_LIST_DIR}/heat_solve_SS.f90
   ${CMAKE_CURRENT_LIST_DIR}/heat_solve_TRAN.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_heat.f90
 )

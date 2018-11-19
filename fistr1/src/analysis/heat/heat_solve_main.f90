@@ -6,7 +6,7 @@
 module m_heat_solve_main
 contains
 
-  subroutine heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, next_time, DTIME)
+  subroutine heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, next_time, delta_time)
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -14,7 +14,7 @@ contains
     use m_solve_lineq
     implicit none
     integer(kind=kint) :: i, iterALL, ISTEP, bup_n_dof
-    real(kind=kreal)   :: DTIME, next_time
+    real(kind=kreal)   :: delta_time, next_time
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
     type(fstr_heat)           :: fstrHEAT
@@ -28,8 +28,8 @@ contains
       hecMAT%X = 0.0d0
 
       call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrHEAT, fstrHEAT%beta)
-      if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, DTIME)
-      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMATmpc, fstrHEAT, next_time, DTIME)
+      if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, delta_time)
+      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMATmpc, fstrHEAT, next_time, delta_time)
 
       hecMATmpc%Iarray(97) = 1 !Need numerical factorization
       bup_n_dof = hecMESH%n_dof

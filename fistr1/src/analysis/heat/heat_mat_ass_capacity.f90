@@ -6,7 +6,7 @@
 module m_heat_mat_ass_capacity
 contains
 
-  subroutine heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, DTIME)
+  subroutine heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, delta_time)
     use m_fstr
     use m_heat_LIB_CAPACITY
     implicit none
@@ -16,7 +16,7 @@ contains
     integer(kind=kint) :: i, in, j, nodLOCAL(20), ip, inod
     integer(kind=kint) :: itype, iS, iE, ic_type, icel, isect, IMAT, in0, nn, NDOF
     real(kind=kreal) :: temp(20), lumped(120), mass(20*6, 20*6), ecoord(3,20)
-    real(kind=kreal) :: DTIME, surf, THICK, ALFA, BETA
+    real(kind=kreal) :: delta_time, surf, THICK, ALFA, BETA
 
     NDOF = hecMESH%n_dof
     beta = fstrHEAT%beta
@@ -83,8 +83,8 @@ contains
 
         do ip = 1, nn
           inod = nodLOCAL(ip)
-          hecMAT%D(inod) = hecMAT%D(inod) + lumped(ip) / DTIME
-          hecMAT%B(inod) = hecMAT%B(inod) + lumped(ip)*temp(ip) / DTIME
+          hecMAT%D(inod) = hecMAT%D(inod) + lumped(ip) / delta_time
+          hecMAT%B(inod) = hecMAT%B(inod) + lumped(ip)*temp(ip) / delta_time
         enddo
       enddo
     enddo

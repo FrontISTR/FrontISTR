@@ -5,7 +5,7 @@
 module m_heat_mat_ass_conductivity
 contains
 
-  subroutine heat_mat_ass_conductivity( hecMESH,hecMAT,fstrHEAT,BETA )
+  subroutine heat_mat_ass_conductivity( hecMESH,hecMAT,fstrHEAT,beta )
     use hecmw
     use m_fstr
     use m_heat_lib
@@ -15,18 +15,15 @@ contains
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab, NDOF
-    integer(kind=kint) :: in0, nn, i, in, j, nodLOCAL, jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL
-    real(kind=kreal)   :: BETA, TZERO, ALFA, temp, funcA, funcB, XX, YY, ZZ, TT, T0, SS
+    integer(kind=kint) :: in0, nn, i, in, j, nodLOCAL(20), jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL
+    real(kind=kreal)   :: beta, TZERO, ALFA, temp(1000), funcA(1000), funcB(1000), TT(20), T0(20), SS(400)
     real(kind=kreal)   :: asect, thick, GTH, GHH, GR1, GR2
     real(kind=kreal) :: lumped(20), stiff(20, 20), ecoord(3,20)
     real(kind=kreal), allocatable :: S(:)
 
-    dimension nodLOCAL(20),XX(20),YY(20),ZZ(20),TT(20),T0(20)                &
-      ,SS(400),temp(1000),funcA(1000),funcB(1000)
-
     NDOF = hecMESH%n_dof
     TZERO = hecMESH%zero_temp
-    ALFA = 1.0 - BETA
+    ALFA = 1.0 - beta
 
     call hecmw_mat_clear(hecMAT)
     call hecmw_mat_clear_b(hecMAT)
@@ -53,15 +50,11 @@ contains
         endif
 
         in0 = hecMESH%elem_node_index(icel-1)
-
         nn = hecmw_get_max_node(ic_type)
         do i = 1, nn
           nodLOCAL(i) = hecMESH%elem_node_item(in0+i)
-          XX(i) = hecMESH%node  ( 3*nodLOCAL(i)-2 )
-          YY(i) = hecMESH%node  ( 3*nodLOCAL(i)-1 )
-          ZZ(i) = hecMESH%node  ( 3*nodLOCAL(i)   )
           TT(i) = fstrHEAT%TEMP (   nodLOCAL(i)   )
-          T0(i) = fstrHEAT%TEMP0(   nodLOCAL(i)   )
+          !T0(i) = fstrHEAT%TEMP0(   nodLOCAL(i)   )
           do j = 1, 3
             ecoord(j,i) = hecMESH%node(3*(nodLOCAL(i)-1)+j)
           enddo
@@ -135,9 +128,9 @@ contains
 
     call hecmw_matvec(hecMESH, hecMAT, fstrHEAT%TEMP0, S)
 
-    hecMAT%D  = BETA*hecMAT%D
-    hecMAT%AU = BETA*hecMAT%AU
-    hecMAT%AL = BETA*hecMAT%AL
+    hecMAT%D  = beta*hecMAT%D
+    hecMAT%AU = beta*hecMAT%AU
+    hecMAT%AL = beta*hecMAT%AL
     hecMAT%B  = hecMAT%B - ALFA*S
 
     deallocate(S)

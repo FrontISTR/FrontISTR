@@ -8,9 +8,8 @@ contains
 
   subroutine fstr_solve_heat(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT)
     use m_fstr
-    use m_heat_solve_SS
-    use m_heat_solve_TRAN
     use m_heat_init
+    use m_heat_solve_TRAN
     implicit none
     integer(kind=kint) :: i, in, ISTEP
     type(hecmwST_local_mesh)  :: hecMESH
@@ -36,11 +35,7 @@ contains
         endif
       endif
 
-      if(fstrHEAT%is_steady == 1)then
-        call heat_solve_SS(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT, ISTEP)
-      else
-        call heat_solve_TRAN(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT, ISTEP)
-      endif
+      call heat_solve_TRAN(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT, ISTEP)
     enddo
 
     call heat_finalize(fstrHEAT)
