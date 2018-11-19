@@ -34,7 +34,7 @@ contains
     call fstr_solid_phys_clear(fstrSOLID)
 
     allocate( nnumber(hecMESH%n_node) )
-    allocate( fstrSOLID%is_rot(hecMESH%n_node) )
+    if( .not. associated(fstrSOLID%is_rot) ) allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     !allocate( fstrSOLID%yield_ratio(hecMESH%n_elem) )
     nnumber = 0
     fstrSOLID%is_rot = 0
@@ -524,7 +524,7 @@ contains
     call fstr_solid_phys_clear(fstrSOLID)
 
     allocate( nnumber(hecMESH%n_node) )
-    allocate( fstrSOLID%is_rot(hecMESH%n_node) )
+    if( .not. associated(fstrSOLID%is_rot) ) allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
     fstrSOLID%is_rot = 0
 
@@ -773,7 +773,7 @@ contains
     n_totlyr = fstrSOLID%max_lyr
 
     allocate( nnumber(hecMESH%n_node) )
-    allocate( fstrSOLID%is_rot(hecMESH%n_node) )
+    if( .not. associated(fstrSOLID%is_rot) ) allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
     fstrSOLID%is_rot = 0
 

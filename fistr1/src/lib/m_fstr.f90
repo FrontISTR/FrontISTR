@@ -334,7 +334,7 @@ module m_fstr
     integer(kind=kint) :: is_33shell
     integer(kind=kint) :: is_33beam
     integer(kind=kint) :: is_heat
-    integer(kind=kint), pointer :: is_rot(:)
+    integer(kind=kint), pointer :: is_rot(:) => null()
     integer(kind=kint) :: elemopt361
     real(kind=kreal)   :: FACTOR     (2)      !< factor of incrementation
     !< 1:time t  2: time t+dt
