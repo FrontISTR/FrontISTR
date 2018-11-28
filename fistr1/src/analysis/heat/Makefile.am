@@ -80,6 +80,7 @@ OBJS =
 
 OBJSF = \
 	heat_init.@f90objfilepostfix@ \
+	heat_io.@f90objfilepostfix@ \
 	heat_get_amplitude.@f90objfilepostfix@ \
 	heat_echo.@f90objfilepostfix@ \
 	heat_mat_ass_bc_CFLUX.@f90objfilepostfix@ \
@@ -90,7 +91,7 @@ OBJSF = \
 	heat_mat_ass_boundary.@f90objfilepostfix@ \
 	heat_mat_ass_capacity.@f90objfilepostfix@ \
 	heat_mat_ass_conductivity.@f90objfilepostfix@ \
-	heat_solve_SS.@f90objfilepostfix@ \
+	heat_solve_main.@f90objfilepostfix@ \
 	heat_solve_TRAN.@f90objfilepostfix@ \
 	fstr_solve_heat.@f90objfilepostfix@
 
