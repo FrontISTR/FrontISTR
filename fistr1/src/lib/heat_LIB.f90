@@ -5,7 +5,7 @@
 !> This modules just summarizes all modules used in heat analysis
 module m_heat_LIB
 
-  use m_heat_lib_thermal
+  use m_heat_LIB_conductivity
   use m_heat_lib_capacity
   use m_heat_lib_dflux
   use m_heat_lib_film
