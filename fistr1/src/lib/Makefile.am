@@ -111,6 +111,7 @@ OBJSF = \
         m_common_struct.@f90objfilepostfix@ \
         m_fstr.@f90objfilepostfix@ \
         GaussM.@f90objfilepostfix@ \
+        dynamic_mass.@f90objfilepostfix@ \
         static_LIB_1d.@f90objfilepostfix@ \
         static_LIB_2d.@f90objfilepostfix@ \
         static_LIB_3d.@f90objfilepostfix@ \
@@ -121,15 +122,11 @@ OBJSF = \
         static_LIB_beam.@f90objfilepostfix@ \
         static_LIB_shell.@f90objfilepostfix@ \
         heat_LIB_CAPACITY.@f90objfilepostfix@ \
+        heat_LIB_CONDUCTIVITY.@f90objfilepostfix@ \
         heat_LIB_DFLUX.@f90objfilepostfix@ \
         heat_LIB_FILM.@f90objfilepostfix@ \
         heat_LIB_NEUTRAL.@f90objfilepostfix@ \
         heat_LIB_RADIATE.@f90objfilepostfix@ \
-        heat_LIB_THERMAL.@f90objfilepostfix@ \
-        eigen_LIB_2d1mass.@f90objfilepostfix@ \
-        eigen_LIB_2d2mass.@f90objfilepostfix@ \
-        eigen_LIB_3d1mass.@f90objfilepostfix@ \
-        eigen_LIB_3d2mass.@f90objfilepostfix@ \
         precheck_LIB_2d.@f90objfilepostfix@ \
         precheck_LIB_3d.@f90objfilepostfix@ \
         precheck_LIB_shell.@f90objfilepostfix@ \

@@ -846,13 +846,6 @@ contains
       enddo
     endif
 
-    if( fstrSOLID%elemopt361==0 ) then
-      if( P%PARAM%nlgeom ) then
-        write(idbg,*) 'INFO: nonlinear analysis not supported with 361 IC element: using B-bar'
-        fstrSOLID%elemopt361 = 1
-      endif
-    endif
-
     if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
@@ -1057,8 +1050,12 @@ contains
   subroutine fstr_solid_finalize( fstrSOLID )
     type(fstr_solid) :: fstrSOLID
     integer :: i, j, ierror
-    if( associated(fstrSOLID%materials) )    &
+    if( associated(fstrSOLID%materials) ) then
+      do j=1,size(fstrSOLID%materials)
+        call finalizeMaterial(fstrSOLID%materials(j))
+      enddo
       deallocate( fstrSOLID%materials )
+    endif
     if( .not. associated(fstrSOLID%elements ) ) return
     do i=1,size(fstrSOLID%elements)
       if( associated(fstrSOLID%elements(i)%gausses) ) then

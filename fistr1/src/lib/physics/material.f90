@@ -163,6 +163,13 @@ contains
     call dict_create( material%dict, 'INIT', DICT_NULL )
   end subroutine
 
+  !> Finalizer
+  subroutine finalizeMaterial( material )
+    type( tMaterial ), intent(inout) :: material
+    if( associated(material%table) ) deallocate( material%table )
+    call dict_destroy( material%dict )
+  end subroutine finalizeMaterial
+
   !> Initializer
   subroutine initializeMatls( nm )
     integer, intent(in) :: nm
@@ -179,7 +186,7 @@ contains
     integer :: i
     if( allocated( materials ) ) then
       do i=1,size(materials)
-        if( associated(materials(i)%table) ) deallocate( materials(i)%table )
+        call finalizeMaterial( materials(i) )
       enddo
       deallocate( materials )
     endif

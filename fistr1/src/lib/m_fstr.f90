@@ -124,7 +124,6 @@ module m_fstr
   real(kind=kreal)   :: ETIME ! /=fstr_param%etime
   integer(kind=kint) :: ITMAX
   real(kind=kreal)   :: EPS   ! /=fstr_param%eps
-  real(kind=kreal)   :: TEMTOL
 
   !>  FSTR INNER CONTROL PARAMETERS  (fstrPARAM)
   type fstr_param
@@ -335,7 +334,7 @@ module m_fstr
     integer(kind=kint) :: is_33shell
     integer(kind=kint) :: is_33beam
     integer(kind=kint) :: is_heat
-    integer(kind=kint), pointer :: is_rot(:)
+    integer(kind=kint), pointer :: is_rot(:) => null()
     integer(kind=kint) :: elemopt361
     real(kind=kreal)   :: FACTOR     (2)      !< factor of incrementation
     !< 1:time t  2: time t+dt
@@ -378,29 +377,32 @@ module m_fstr
 
   !> Data for HEAT ANSLYSIS  (fstrHEAT)
   type fstr_heat
+    !> Crank-Nicolson parameter
+    integer(kind=kint) :: is_steady
+    real(kind=kreal)   :: beta
+    logical :: is_iter_max_limit
+
     !> TIME CONTROL
-    real(kind=kreal) :: TEMTOL
-    integer :: STEPtot
+    integer(kind=kint) :: STEPtot
     integer(kind=kint) :: restart_nout
-    real(kind=kreal), pointer :: STEP_DLTIME(:),STEP_EETIME(:)
-    real(kind=kreal), pointer :: STEP_DELMIN(:),STEP_DELMAX(:)
+    real(kind=kreal), pointer :: STEP_DLTIME(:), STEP_EETIME(:)
+    real(kind=kreal), pointer :: STEP_DELMIN(:), STEP_DELMAX(:)
 
     !> MATERIAL
-    integer :: MATERIALtot
+    integer(kind=kint) :: MATERIALtot
+    integer(kind=kint), pointer :: RHOtab(:), CPtab(:), CONDtab(:)
     real(kind=kreal), pointer :: RHO(:,:), RHOtemp (:,:)
     real(kind=kreal), pointer :: CP(:,:),  CPtemp (:,:)
     real(kind=kreal), pointer :: COND(:,:),CONDtemp (:,:)
-
-    integer, pointer :: RHOtab(:), CPtab(:), CONDtab(:)
 
     real(kind=kreal), pointer :: RHOfuncA(:,:),  RHOfuncB(:,:)
     real(kind=kreal), pointer :: CPfuncA (:,:),  CPfuncB(:,:)
     real(kind=kreal), pointer :: CONDfuncA (:,:),CONDfuncB(:,:)
 
     !> AMPLITUDE
-    integer :: AMPLITUDEtot
+    integer(kind=kint) :: AMPLITUDEtot
+    integer(kind=kint), pointer :: AMPLtab(:)
     real(kind=kreal), pointer :: AMPL(:,:), AMPLtime (:,:)
-    integer, pointer :: AMPLtab(:)
     real(kind=kreal), pointer :: AMPLfuncA(:,:),  AMPLfuncB(:,:)
 
     !> VALUE
@@ -409,45 +411,45 @@ module m_fstr
     real(kind=kreal), pointer :: TEMP (:)
 
     !> FIXTEMP
-    integer :: T_FIX_tot
-    integer, pointer          :: T_FIX_node(:)
-    integer, pointer          :: T_FIX_ampl(:)
+    integer(kind=kint) :: T_FIX_tot
+    integer(kind=kint), pointer :: T_FIX_node(:)
+    integer(kind=kint), pointer :: T_FIX_ampl(:)
     real(kind=kreal), pointer :: T_FIX_val(:)
 
     !> CFLUX
-    integer :: Q_NOD_tot
-    integer, pointer          :: Q_NOD_node(:)
-    integer, pointer          :: Q_NOD_ampl(:)
+    integer(kind=kint) :: Q_NOD_tot
+    integer(kind=kint), pointer :: Q_NOD_node(:)
+    integer(kind=kint), pointer :: Q_NOD_ampl(:)
     real(kind=kreal), pointer :: Q_NOD_val(:)
 
     !> DFLUX (not used)
-    integer :: Q_VOL_tot
-    integer, pointer          :: Q_VOL_elem(:)
-    integer, pointer          :: Q_VOL_ampl(:)
+    integer(kind=kint) :: Q_VOL_tot
+    integer(kind=kint), pointer :: Q_VOL_elem(:)
+    integer(kind=kint), pointer :: Q_VOL_ampl(:)
     real(kind=kreal), pointer :: Q_VOL_val(:)
 
     !> DFLUX, !SFLUX
-    integer :: Q_SUF_tot
-    integer, pointer          :: Q_SUF_elem(:)
-    integer, pointer          :: Q_SUF_ampl(:)
-    integer, pointer          :: Q_SUF_surf(:)
+    integer(kind=kint) :: Q_SUF_tot
+    integer(kind=kint), pointer :: Q_SUF_elem(:)
+    integer(kind=kint), pointer :: Q_SUF_ampl(:)
+    integer(kind=kint), pointer :: Q_SUF_surf(:)
     real(kind=kreal), pointer :: Q_SUF_val(:)
 
     !> RADIATE, !SRADIATE
-    integer :: R_SUF_tot
-    integer, pointer          :: R_SUF_elem(:)
-    integer, pointer          :: R_SUF_ampl(:,:)
-    integer, pointer          :: R_SUF_surf(:)
+    integer(kind=kint) :: R_SUF_tot
+    integer(kind=kint), pointer :: R_SUF_elem(:)
+    integer(kind=kint), pointer :: R_SUF_ampl(:,:)
+    integer(kind=kint), pointer :: R_SUF_surf(:)
     real(kind=kreal), pointer :: R_SUF_val(:,:)
 
     !> FILM, SFILM
-    integer :: H_SUF_tot
-    integer, pointer          :: H_SUF_elem(:)
-    integer, pointer          :: H_SUF_ampl(:,:)
-    integer, pointer          :: H_SUF_surf(:)
+    integer(kind=kint) :: H_SUF_tot
+    integer(kind=kint), pointer :: H_SUF_elem(:)
+    integer(kind=kint), pointer :: H_SUF_ampl(:,:)
+    integer(kind=kint), pointer :: H_SUF_surf(:)
     real(kind=kreal), pointer :: H_SUF_val(:,:)
 
-    integer  :: WL_tot
+    integer(kind=kint)  :: WL_tot
     type(tWeldLine), pointer :: weldline(:) => null()
   end type fstr_heat
 

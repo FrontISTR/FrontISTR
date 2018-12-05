@@ -11,14 +11,14 @@ contains
   !C*** MAT_ASS_BC_CFLUX
   !C***
   !C
-  subroutine heat_mat_ass_bc_CFLUX( hecMAT, fstrHEAT, CTIME )
+  subroutine heat_mat_ass_bc_CFLUX( hecMAT, fstrHEAT, CTIME, DTIME, beta )
 
     use m_fstr
     use m_heat_get_amplitude
 
     implicit none
     integer(kind=kint)   :: ib, in, ia
-    real(kind=kreal)     :: CTIME, QQ
+    real(kind=kreal)     :: CTIME, DTIME, QQ, beta
     type(fstr_heat)      :: fstrHEAT
     type(hecmwST_matrix) :: hecMAT
 

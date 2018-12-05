@@ -11,7 +11,7 @@ contains
   !C*** MAT_ASS_RADIATE
   !C***
   !C
-  subroutine heat_mat_ass_bc_RADIATE( hecMESH, hecMAT, fstrHEAT, CTIME )
+  subroutine heat_mat_ass_bc_RADIATE( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME, beta )
 
     use m_fstr
     use m_heat_get_amplitude
@@ -20,7 +20,7 @@ contains
     implicit none
     integer(kind=kint) :: k, icel, isuf, iam1, iam2, ic_type, isect, nn, is, j, mm, m, ic, ip
     integer(kind=kint) :: inod, jp, jnod, isU, ieU, ik, isL, ieL
-    real(kind=kreal)   :: CTIME, TZERO, QQ, RR, SINK, thick
+    real(kind=kreal)   :: CTIME, DTIME, TZERO, QQ, RR, SINK, thick, beta
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH

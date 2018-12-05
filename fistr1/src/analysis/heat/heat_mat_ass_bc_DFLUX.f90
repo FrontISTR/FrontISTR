@@ -14,12 +14,12 @@ contains
   !C*** MAT_ASS_DFLUX
   !C***
   !C
-  subroutine heat_mat_ass_bc_DFLUX( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME )
+  subroutine heat_mat_ass_bc_DFLUX( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME, beta )
     use m_heat_get_amplitude
     use m_heat_LIB_DFLUX
     use m_static_LIB_3d
     integer(kind=kint) :: k, icel, ic_type, isect, isuf, iamp, nn, is, j
-    real(kind=kreal)   :: CTIME, DTIME, QQ, val, asect, thick, vol
+    real(kind=kreal)   :: CTIME, DTIME, QQ, val, asect, thick, vol, beta
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH

@@ -1,5762 +1,2018 @@
  fstr_setup: OK
   Initial condition of temperatures: OK
 
- STEP =     1 Time  =   120.000
-
- STEP =     2 Time  =   240.000
-
- STEP =     3 Time  =   360.000
-
- STEP =     4 Time  =   480.000
-
- STEP =     5 Time  =   600.000
-
- STEP =     6 Time  =   720.000
-
- STEP =     7 Time  =   840.000
-
- STEP =     8 Time  =   960.000
-
- STEP =     9 Time  =  1080.000
-
- STEP =    10 Time  =  1200.000
-
- STEP =    11 Time  =  1320.000
-
- STEP =    12 Time  =  1440.000
-
- STEP =    13 Time  =  1560.000
-
- STEP =    14 Time  =  1680.000
-
- STEP =    15 Time  =  1800.000
-
- STEP =    16 Time  =  1920.000
-
- STEP =    17 Time  =  2040.000
-
- STEP =    18 Time  =  2160.000
-
- STEP =    19 Time  =  2280.000
-
- STEP =    20 Time  =  2400.000
-
- STEP =    21 Time  =  2520.000
-
- STEP =    22 Time  =  2640.000
-
- STEP =    23 Time  =  2760.000
-
- STEP =    24 Time  =  2880.000
-
- STEP =    25 Time  =  3000.000
-
- STEP =    26 Time  =  3120.000
-
- STEP =    27 Time  =  3240.000
-
- STEP =    28 Time  =  3360.000
-
- STEP =    29 Time  =  3480.000
-
- STEP =    30 Time  =  3600.000
-
- STEP =    31 Time  =  3720.000
-
- STEP =    32 Time  =  3840.000
-
- STEP =    33 Time  =  3960.000
-
- STEP =    34 Time  =  4080.000
-
- STEP =    35 Time  =  4200.000
-
- STEP =    36 Time  =  4320.000
-
- STEP =    37 Time  =  4440.000
-
- STEP =    38 Time  =  4560.000
-
- STEP =    39 Time  =  4680.000
-
- STEP =    40 Time  =  4800.000
-
- STEP =    41 Time  =  4920.000
-
- STEP =    42 Time  =  5040.000
-
- STEP =    43 Time  =  5160.000
-
- STEP =    44 Time  =  5280.000
-
- STEP =    45 Time  =  5400.000
-
- STEP =    46 Time  =  5520.000
-
- STEP =    47 Time  =  5640.000
-
- STEP =    48 Time  =  5760.000
-
- STEP =    49 Time  =  5880.000
-
- STEP =    50 Time  =  6000.000
-
- STEP =    51 Time  =  6120.000
-
- STEP =    52 Time  =  6240.000
-
- STEP =    53 Time  =  6360.000
-
- STEP =    54 Time  =  6480.000
-
- STEP =    55 Time  =  6600.000
-
- STEP =    56 Time  =  6720.000
-
- STEP =    57 Time  =  6840.000
-
- STEP =    58 Time  =  6960.000
-
- STEP =    59 Time  =  7080.000
-
- STEP =    60 Time  =  7200.000
-
- STEP =    61 Time  =  7320.000
-
- STEP =    62 Time  =  7440.000
-
- STEP =    63 Time  =  7560.000
-
- STEP =    64 Time  =  7680.000
-
- STEP =    65 Time  =  7800.000
-
- STEP =    66 Time  =  7920.000
-
- STEP =    67 Time  =  8040.000
-
- STEP =    68 Time  =  8160.000
-
- STEP =    69 Time  =  8280.000
-
- STEP =    70 Time  =  8400.000
-
- STEP =    71 Time  =  8520.000
-
- STEP =    72 Time  =  8640.000
-
- STEP =    73 Time  =  8760.000
-
- STEP =    74 Time  =  8880.000
-
- STEP =    75 Time  =  9000.000
-
- STEP =    76 Time  =  9120.000
-
- STEP =    77 Time  =  9240.000
-
- STEP =    78 Time  =  9360.000
-
- STEP =    79 Time  =  9480.000
-
- STEP =    80 Time  =  9600.000
-
- STEP =    81 Time  =  9720.000
-
- STEP =    82 Time  =  9840.000
-
- STEP =    83 Time  =  9960.000
-
- STEP =    84 Time  = 10080.000
-
- STEP =    85 Time  = 10200.000
-
- STEP =    86 Time  = 10320.000
-
- STEP =    87 Time  = 10440.000
-
- STEP =    88 Time  = 10560.000
-
- STEP =    89 Time  = 10680.000
-
- STEP =    90 Time  = 10800.000
-
- STEP =    91 Time  = 10920.000
-
- STEP =    92 Time  = 11040.000
-
- STEP =    93 Time  = 11160.000
-
- STEP =    94 Time  = 11280.000
-
- STEP =    95 Time  = 11400.000
-
- STEP =    96 Time  = 11520.000
-
- STEP =    97 Time  = 11640.000
-
- STEP =    98 Time  = 11760.000
-
- STEP =    99 Time  = 11880.000
-
- STEP =   100 Time  = 12000.000
-
- STEP =   101 Time  = 12120.000
-
- STEP =   102 Time  = 12240.000
-
- STEP =   103 Time  = 12360.000
-
- STEP =   104 Time  = 12480.000
-
- STEP =   105 Time  = 12600.000
-
- STEP =   106 Time  = 12720.000
-
- STEP =   107 Time  = 12840.000
-
- STEP =   108 Time  = 12960.000
-
- STEP =   109 Time  = 13080.000
-
- STEP =   110 Time  = 13200.000
-
- STEP =   111 Time  = 13320.000
-
- STEP =   112 Time  = 13440.000
-
- STEP =   113 Time  = 13560.000
-
- STEP =   114 Time  = 13680.000
-
- STEP =   115 Time  = 13800.000
-
- STEP =   116 Time  = 13920.000
-
- STEP =   117 Time  = 14040.000
-
- STEP =   118 Time  = 14160.000
-
- STEP =   119 Time  = 14280.000
-
- STEP =   120 Time  = 14400.000
-
- STEP =   121 Time  = 14520.000
-
- STEP =   122 Time  = 14640.000
-
- STEP =   123 Time  = 14760.000
-
- STEP =   124 Time  = 14880.000
-
- STEP =   125 Time  = 15000.000
-
- STEP =   126 Time  = 15120.000
-
- STEP =   127 Time  = 15240.000
-
- STEP =   128 Time  = 15360.000
-
- STEP =   129 Time  = 15480.000
-
- STEP =   130 Time  = 15600.000
-
- STEP =   131 Time  = 15720.000
-
- STEP =   132 Time  = 15840.000
-
- STEP =   133 Time  = 15960.000
-
- STEP =   134 Time  = 16080.000
-
- STEP =   135 Time  = 16200.000
-
- STEP =   136 Time  = 16320.000
-
- STEP =   137 Time  = 16440.000
-
- STEP =   138 Time  = 16560.000
-
- STEP =   139 Time  = 16680.000
-
- STEP =   140 Time  = 16800.000
-
- STEP =   141 Time  = 16920.000
-
- STEP =   142 Time  = 17040.000
-
- STEP =   143 Time  = 17160.000
-
- STEP =   144 Time  = 17280.000
-
- STEP =   145 Time  = 17400.000
-
- STEP =   146 Time  = 17520.000
-
- STEP =   147 Time  = 17640.000
-
- STEP =   148 Time  = 17760.000
-
- STEP =   149 Time  = 17880.000
-
- STEP =   150 Time  = 18000.000
-
- STEP =   151 Time  = 18120.000
-
- STEP =   152 Time  = 18240.000
-
- STEP =   153 Time  = 18360.000
-
- STEP =   154 Time  = 18480.000
-
- STEP =   155 Time  = 18600.000
-
- STEP =   156 Time  = 18720.000
-
- STEP =   157 Time  = 18840.000
-
- STEP =   158 Time  = 18960.000
-
- STEP =   159 Time  = 19080.000
-
- STEP =   160 Time  = 19200.000
-
- STEP =   161 Time  = 19320.000
-
- STEP =   162 Time  = 19440.000
-
- STEP =   163 Time  = 19560.000
-
- STEP =   164 Time  = 19680.000
-
- STEP =   165 Time  = 19800.000
-
- STEP =   166 Time  = 19920.000
-
- STEP =   167 Time  = 20040.000
-
- STEP =   168 Time  = 20160.000
-
- STEP =   169 Time  = 20280.000
-
- STEP =   170 Time  = 20400.000
-
- STEP =   171 Time  = 20520.000
-
- STEP =   172 Time  = 20640.000
-
- STEP =   173 Time  = 20760.000
-
- STEP =   174 Time  = 20880.000
-
- STEP =   175 Time  = 21000.000
-
- STEP =   176 Time  = 21120.000
-
- STEP =   177 Time  = 21240.000
-
- STEP =   178 Time  = 21360.000
-
- STEP =   179 Time  = 21480.000
-
- STEP =   180 Time  = 21600.000
-
- STEP =   181 Time  = 21720.000
-
- STEP =   182 Time  = 21840.000
-
- STEP =   183 Time  = 21960.000
-
- STEP =   184 Time  = 22080.000
-
- STEP =   185 Time  = 22200.000
-
- STEP =   186 Time  = 22320.000
-
- STEP =   187 Time  = 22440.000
-
- STEP =   188 Time  = 22560.000
-
- STEP =   189 Time  = 22680.000
-
- STEP =   190 Time  = 22800.000
-
- STEP =   191 Time  = 22920.000
-
- STEP =   192 Time  = 23040.000
-
- STEP =   193 Time  = 23160.000
-
- STEP =   194 Time  = 23280.000
-
- STEP =   195 Time  = 23400.000
-
- STEP =   196 Time  = 23520.000
-
- STEP =   197 Time  = 23640.000
-
- STEP =   198 Time  = 23760.000
-
- STEP =   199 Time  = 23880.000
-
- STEP =   200 Time  = 24000.000
-
- STEP =   201 Time  = 24120.000
-
- STEP =   202 Time  = 24240.000
-
- STEP =   203 Time  = 24360.000
-
- STEP =   204 Time  = 24480.000
-
- STEP =   205 Time  = 24600.000
-
- STEP =   206 Time  = 24720.000
-
- STEP =   207 Time  = 24840.000
-
- STEP =   208 Time  = 24960.000
-
- STEP =   209 Time  = 25080.000
-
- STEP =   210 Time  = 25200.000
-
- STEP =   211 Time  = 25320.000
-
- STEP =   212 Time  = 25440.000
-
- STEP =   213 Time  = 25560.000
-
- STEP =   214 Time  = 25680.000
-
- STEP =   215 Time  = 25800.000
-
- STEP =   216 Time  = 25920.000
-
- STEP =   217 Time  = 26040.000
-
- STEP =   218 Time  = 26160.000
-
- STEP =   219 Time  = 26280.000
-
- STEP =   220 Time  = 26400.000
-
- STEP =   221 Time  = 26520.000
-
- STEP =   222 Time  = 26640.000
-
- STEP =   223 Time  = 26760.000
-
- STEP =   224 Time  = 26880.000
-
- STEP =   225 Time  = 27000.000
-
- STEP =   226 Time  = 27120.000
-
- STEP =   227 Time  = 27240.000
-
- STEP =   228 Time  = 27360.000
-
- STEP =   229 Time  = 27480.000
-
- STEP =   230 Time  = 27600.000
-
- STEP =   231 Time  = 27720.000
-
- STEP =   232 Time  = 27840.000
-
- STEP =   233 Time  = 27960.000
-
- STEP =   234 Time  = 28080.000
-
- STEP =   235 Time  = 28200.000
-
- STEP =   236 Time  = 28320.000
-
- STEP =   237 Time  = 28440.000
-
- STEP =   238 Time  = 28560.000
-
- STEP =   239 Time  = 28680.000
-
- STEP =   240 Time  = 28800.000
-
- STEP =   241 Time  = 28920.000
-
- STEP =   242 Time  = 29040.000
-
- STEP =   243 Time  = 29160.000
-
- STEP =   244 Time  = 29280.000
-
- STEP =   245 Time  = 29400.000
-
- STEP =   246 Time  = 29520.000
-
- STEP =   247 Time  = 29640.000
-
- STEP =   248 Time  = 29760.000
-
- STEP =   249 Time  = 29880.000
-
- STEP =   250 Time  = 30000.000
-
- STEP =   251 Time  = 30120.000
-
- STEP =   252 Time  = 30240.000
-
- STEP =   253 Time  = 30360.000
-
- STEP =   254 Time  = 30480.000
-
- STEP =   255 Time  = 30600.000
-
- STEP =   256 Time  = 30720.000
-
- STEP =   257 Time  = 30840.000
-
- STEP =   258 Time  = 30960.000
-
- STEP =   259 Time  = 31080.000
-
- STEP =   260 Time  = 31200.000
-
- STEP =   261 Time  = 31320.000
-
- STEP =   262 Time  = 31440.000
-
- STEP =   263 Time  = 31560.000
-
- STEP =   264 Time  = 31680.000
-
- STEP =   265 Time  = 31800.000
-
- STEP =   266 Time  = 31920.000
-
- STEP =   267 Time  = 32040.000
-
- STEP =   268 Time  = 32160.000
-
- STEP =   269 Time  = 32280.000
-
- STEP =   270 Time  = 32400.000
-
- STEP =   271 Time  = 32520.000
-
- STEP =   272 Time  = 32640.000
-
- STEP =   273 Time  = 32760.000
-
- STEP =   274 Time  = 32880.000
-
- STEP =   275 Time  = 33000.000
-
- STEP =   276 Time  = 33120.000
-
- STEP =   277 Time  = 33240.000
-
- STEP =   278 Time  = 33360.000
-
- STEP =   279 Time  = 33480.000
-
- STEP =   280 Time  = 33600.000
-
- STEP =   281 Time  = 33720.000
-
- STEP =   282 Time  = 33840.000
-
- STEP =   283 Time  = 33960.000
-
- STEP =   284 Time  = 34080.000
-
- STEP =   285 Time  = 34200.000
-
- STEP =   286 Time  = 34320.000
-
- STEP =   287 Time  = 34440.000
-
- STEP =   288 Time  = 34560.000
-
- STEP =   289 Time  = 34680.000
-
- STEP =   290 Time  = 34800.000
-
- STEP =   291 Time  = 34920.000
-
- STEP =   292 Time  = 35040.000
-
- STEP =   293 Time  = 35160.000
-
- STEP =   294 Time  = 35280.000
-
- STEP =   295 Time  = 35400.000
-
- STEP =   296 Time  = 35520.000
-
- STEP =   297 Time  = 35640.000
-
- STEP =   298 Time  = 35760.000
-
- STEP =   299 Time  = 35880.000
-
- STEP =   300 Time  = 36000.000
-
- STEP =   301 Time  = 36120.000
-
- STEP =   302 Time  = 36240.000
-
- STEP =   303 Time  = 36360.000
-
- STEP =   304 Time  = 36480.000
-
- STEP =   305 Time  = 36600.000
-
- STEP =   306 Time  = 36720.000
-
- STEP =   307 Time  = 36840.000
-
- STEP =   308 Time  = 36960.000
-
- STEP =   309 Time  = 37080.000
-
- STEP =   310 Time  = 37200.000
-
- STEP =   311 Time  = 37320.000
-
- STEP =   312 Time  = 37440.000
-
- STEP =   313 Time  = 37560.000
-
- STEP =   314 Time  = 37680.000
-
- STEP =   315 Time  = 37800.000
-
- STEP =   316 Time  = 37920.000
-
- STEP =   317 Time  = 38040.000
-
- STEP =   318 Time  = 38160.000
-
- STEP =   319 Time  = 38280.000
-
- STEP =   320 Time  = 38400.000
-
- STEP =   321 Time  = 38520.000
-
- STEP =   322 Time  = 38640.000
-
- STEP =   323 Time  = 38760.000
-
- STEP =   324 Time  = 38880.000
-
- STEP =   325 Time  = 39000.000
-
- STEP =   326 Time  = 39120.000
-
- STEP =   327 Time  = 39240.000
-
- STEP =   328 Time  = 39360.000
-
- STEP =   329 Time  = 39480.000
-
- STEP =   330 Time  = 39600.000
-
- STEP =   331 Time  = 39720.000
-
- STEP =   332 Time  = 39840.000
-
- STEP =   333 Time  = 39960.000
-
- STEP =   334 Time  = 40080.000
-
- STEP =   335 Time  = 40200.000
-
- STEP =   336 Time  = 40320.000
-
- STEP =   337 Time  = 40440.000
-
- STEP =   338 Time  = 40560.000
-
- STEP =   339 Time  = 40680.000
-
- STEP =   340 Time  = 40800.000
-
- STEP =   341 Time  = 40920.000
-
- STEP =   342 Time  = 41040.000
-
- STEP =   343 Time  = 41160.000
-
- STEP =   344 Time  = 41280.000
-
- STEP =   345 Time  = 41400.000
-
- STEP =   346 Time  = 41520.000
-
- STEP =   347 Time  = 41640.000
-
- STEP =   348 Time  = 41760.000
-
- STEP =   349 Time  = 41880.000
-
- STEP =   350 Time  = 42000.000
-
- STEP =   351 Time  = 42120.000
-
- STEP =   352 Time  = 42240.000
-
- STEP =   353 Time  = 42360.000
-
- STEP =   354 Time  = 42480.000
-
- STEP =   355 Time  = 42600.000
-
- STEP =   356 Time  = 42720.000
-
- STEP =   357 Time  = 42840.000
-
- STEP =   358 Time  = 42960.000
-
- STEP =   359 Time  = 43080.000
-
- STEP =   360 Time  = 43200.000
-
- STEP =   361 Time  = 43320.000
-
- STEP =   362 Time  = 43440.000
-
- STEP =   363 Time  = 43560.000
-
- STEP =   364 Time  = 43680.000
-
- STEP =   365 Time  = 43800.000
-
- STEP =   366 Time  = 43920.000
-
- STEP =   367 Time  = 44040.000
-
- STEP =   368 Time  = 44160.000
-
- STEP =   369 Time  = 44280.000
-
- STEP =   370 Time  = 44400.000
-
- STEP =   371 Time  = 44520.000
-
- STEP =   372 Time  = 44640.000
-
- STEP =   373 Time  = 44760.000
-
- STEP =   374 Time  = 44880.000
-
- STEP =   375 Time  = 45000.000
-
- STEP =   376 Time  = 45120.000
-
- STEP =   377 Time  = 45240.000
-
- STEP =   378 Time  = 45360.000
-
- STEP =   379 Time  = 45480.000
-
- STEP =   380 Time  = 45600.000
-
- STEP =   381 Time  = 45720.000
-
- STEP =   382 Time  = 45840.000
-
- STEP =   383 Time  = 45960.000
-
- STEP =   384 Time  = 46080.000
-
- STEP =   385 Time  = 46200.000
-
- STEP =   386 Time  = 46320.000
-
- STEP =   387 Time  = 46440.000
-
- STEP =   388 Time  = 46560.000
-
- STEP =   389 Time  = 46680.000
-
- STEP =   390 Time  = 46800.000
-
- STEP =   391 Time  = 46920.000
-
- STEP =   392 Time  = 47040.000
-
- STEP =   393 Time  = 47160.000
-
- STEP =   394 Time  = 47280.000
-
- STEP =   395 Time  = 47400.000
-
- STEP =   396 Time  = 47520.000
-
- STEP =   397 Time  = 47640.000
-
- STEP =   398 Time  = 47760.000
-
- STEP =   399 Time  = 47880.000
-
- STEP =   400 Time  = 48000.000
-
- STEP =   401 Time  = 48120.000
-
- STEP =   402 Time  = 48240.000
-
- STEP =   403 Time  = 48360.000
-
- STEP =   404 Time  = 48480.000
-
- STEP =   405 Time  = 48600.000
-
- STEP =   406 Time  = 48720.000
-
- STEP =   407 Time  = 48840.000
-
- STEP =   408 Time  = 48960.000
-
- STEP =   409 Time  = 49080.000
-
- STEP =   410 Time  = 49200.000
-
- STEP =   411 Time  = 49320.000
-
- STEP =   412 Time  = 49440.000
-
- STEP =   413 Time  = 49560.000
-
- STEP =   414 Time  = 49680.000
-
- STEP =   415 Time  = 49800.000
-
- STEP =   416 Time  = 49920.000
-
- STEP =   417 Time  = 50040.000
-
- STEP =   418 Time  = 50160.000
-
- STEP =   419 Time  = 50280.000
-
- STEP =   420 Time  = 50400.000
-
- STEP =   421 Time  = 50520.000
-
- STEP =   422 Time  = 50640.000
-
- STEP =   423 Time  = 50760.000
-
- STEP =   424 Time  = 50880.000
-
- STEP =   425 Time  = 51000.000
-
- STEP =   426 Time  = 51120.000
-
- STEP =   427 Time  = 51240.000
-
- STEP =   428 Time  = 51360.000
-
- STEP =   429 Time  = 51480.000
-
- STEP =   430 Time  = 51600.000
-
- STEP =   431 Time  = 51720.000
-
- STEP =   432 Time  = 51840.000
-
- STEP =   433 Time  = 51960.000
-
- STEP =   434 Time  = 52080.000
-
- STEP =   435 Time  = 52200.000
-
- STEP =   436 Time  = 52320.000
-
- STEP =   437 Time  = 52440.000
-
- STEP =   438 Time  = 52560.000
-
- STEP =   439 Time  = 52680.000
-
- STEP =   440 Time  = 52800.000
-
- STEP =   441 Time  = 52920.000
-
- STEP =   442 Time  = 53040.000
-
- STEP =   443 Time  = 53160.000
-
- STEP =   444 Time  = 53280.000
-
- STEP =   445 Time  = 53400.000
-
- STEP =   446 Time  = 53520.000
-
- STEP =   447 Time  = 53640.000
-
- STEP =   448 Time  = 53760.000
-
- STEP =   449 Time  = 53880.000
-
- STEP =   450 Time  = 54000.000
-
- STEP =   451 Time  = 54120.000
-
- STEP =   452 Time  = 54240.000
-
- STEP =   453 Time  = 54360.000
-
- STEP =   454 Time  = 54480.000
-
- STEP =   455 Time  = 54600.000
-
- STEP =   456 Time  = 54720.000
-
- STEP =   457 Time  = 54840.000
-
- STEP =   458 Time  = 54960.000
-
- STEP =   459 Time  = 55080.000
-
- STEP =   460 Time  = 55200.000
-
- STEP =   461 Time  = 55320.000
-
- STEP =   462 Time  = 55440.000
-
- STEP =   463 Time  = 55560.000
-
- STEP =   464 Time  = 55680.000
-
- STEP =   465 Time  = 55800.000
-
- STEP =   466 Time  = 55920.000
-
- STEP =   467 Time  = 56040.000
-
- STEP =   468 Time  = 56160.000
-
- STEP =   469 Time  = 56280.000
-
- STEP =   470 Time  = 56400.000
-
- STEP =   471 Time  = 56520.000
-
- STEP =   472 Time  = 56640.000
-
- STEP =   473 Time  = 56760.000
-
- STEP =   474 Time  = 56880.000
-
- STEP =   475 Time  = 57000.000
-
- STEP =   476 Time  = 57120.000
-
- STEP =   477 Time  = 57240.000
-
- STEP =   478 Time  = 57360.000
-
- STEP =   479 Time  = 57480.000
-
- STEP =   480 Time  = 57600.000
-
- STEP =   481 Time  = 57720.000
-
- STEP =   482 Time  = 57840.000
-
- STEP =   483 Time  = 57960.000
-
- STEP =   484 Time  = 58080.000
-
- STEP =   485 Time  = 58200.000
-
- STEP =   486 Time  = 58320.000
-
- STEP =   487 Time  = 58440.000
-
- STEP =   488 Time  = 58560.000
-
- STEP =   489 Time  = 58680.000
-
- STEP =   490 Time  = 58800.000
-
- STEP =   491 Time  = 58920.000
-
- STEP =   492 Time  = 59040.000
-
- STEP =   493 Time  = 59160.000
-
- STEP =   494 Time  = 59280.000
-
- STEP =   495 Time  = 59400.000
-
- STEP =   496 Time  = 59520.000
-
- STEP =   497 Time  = 59640.000
-
- STEP =   498 Time  = 59760.000
-
- STEP =   499 Time  = 59880.000
-
- STEP =   500 Time  = 60000.000
-
- STEP =   501 Time  = 60120.000
-
- STEP =   502 Time  = 60240.000
-
- STEP =   503 Time  = 60360.000
-
- STEP =   504 Time  = 60480.000
-
- STEP =   505 Time  = 60600.000
-
- STEP =   506 Time  = 60720.000
-
- STEP =   507 Time  = 60840.000
-
- STEP =   508 Time  = 60960.000
-
- STEP =   509 Time  = 61080.000
-
- STEP =   510 Time  = 61200.000
-
- STEP =   511 Time  = 61320.000
-
- STEP =   512 Time  = 61440.000
-
- STEP =   513 Time  = 61560.000
-
- STEP =   514 Time  = 61680.000
-
- STEP =   515 Time  = 61800.000
-
- STEP =   516 Time  = 61920.000
-
- STEP =   517 Time  = 62040.000
-
- STEP =   518 Time  = 62160.000
-
- STEP =   519 Time  = 62280.000
-
- STEP =   520 Time  = 62400.000
-
- STEP =   521 Time  = 62520.000
-
- STEP =   522 Time  = 62640.000
-
- STEP =   523 Time  = 62760.000
-
- STEP =   524 Time  = 62880.000
-
- STEP =   525 Time  = 63000.000
-
- STEP =   526 Time  = 63120.000
-
- STEP =   527 Time  = 63240.000
-
- STEP =   528 Time  = 63360.000
-
- STEP =   529 Time  = 63480.000
-
- STEP =   530 Time  = 63600.000
-
- STEP =   531 Time  = 63720.000
-
- STEP =   532 Time  = 63840.000
-
- STEP =   533 Time  = 63960.000
-
- STEP =   534 Time  = 64080.000
-
- STEP =   535 Time  = 64200.000
-
- STEP =   536 Time  = 64320.000
-
- STEP =   537 Time  = 64440.000
-
- STEP =   538 Time  = 64560.000
-
- STEP =   539 Time  = 64680.000
-
- STEP =   540 Time  = 64800.000
-
- STEP =   541 Time  = 64920.000
-
- STEP =   542 Time  = 65040.000
-
- STEP =   543 Time  = 65160.000
-
- STEP =   544 Time  = 65280.000
-
- STEP =   545 Time  = 65400.000
-
- STEP =   546 Time  = 65520.000
-
- STEP =   547 Time  = 65640.000
-
- STEP =   548 Time  = 65760.000
-
- STEP =   549 Time  = 65880.000
-
- STEP =   550 Time  = 66000.000
-
- STEP =   551 Time  = 66120.000
-
- STEP =   552 Time  = 66240.000
-
- STEP =   553 Time  = 66360.000
-
- STEP =   554 Time  = 66480.000
-
- STEP =   555 Time  = 66600.000
-
- STEP =   556 Time  = 66720.000
-
- STEP =   557 Time  = 66840.000
-
- STEP =   558 Time  = 66960.000
-
- STEP =   559 Time  = 67080.000
-
- STEP =   560 Time  = 67200.000
-
- STEP =   561 Time  = 67320.000
-
- STEP =   562 Time  = 67440.000
-
- STEP =   563 Time  = 67560.000
-
- STEP =   564 Time  = 67680.000
-
- STEP =   565 Time  = 67800.000
-
- STEP =   566 Time  = 67920.000
-
- STEP =   567 Time  = 68040.000
-
- STEP =   568 Time  = 68160.000
-
- STEP =   569 Time  = 68280.000
-
- STEP =   570 Time  = 68400.000
-
- STEP =   571 Time  = 68520.000
-
- STEP =   572 Time  = 68640.000
-
- STEP =   573 Time  = 68760.000
-
- STEP =   574 Time  = 68880.000
-
- STEP =   575 Time  = 69000.000
-
- STEP =   576 Time  = 69120.000
-
- STEP =   577 Time  = 69240.000
-
- STEP =   578 Time  = 69360.000
-
- STEP =   579 Time  = 69480.000
-
- STEP =   580 Time  = 69600.000
-
- STEP =   581 Time  = 69720.000
-
- STEP =   582 Time  = 69840.000
-
- STEP =   583 Time  = 69960.000
-
- STEP =   584 Time  = 70080.000
-
- STEP =   585 Time  = 70200.000
-
- STEP =   586 Time  = 70320.000
-
- STEP =   587 Time  = 70440.000
-
- STEP =   588 Time  = 70560.000
-
- STEP =   589 Time  = 70680.000
-
- STEP =   590 Time  = 70800.000
-
- STEP =   591 Time  = 70920.000
-
- STEP =   592 Time  = 71040.000
-
- STEP =   593 Time  = 71160.000
-
- STEP =   594 Time  = 71280.000
-
- STEP =   595 Time  = 71400.000
-
- STEP =   596 Time  = 71520.000
-
- STEP =   597 Time  = 71640.000
-
- STEP =   598 Time  = 71760.000
-
- STEP =   599 Time  = 71880.000
-
- STEP =   600 Time  = 72000.000
-
- STEP =   601 Time  = 72120.000
-
- STEP =   602 Time  = 72240.000
-
- STEP =   603 Time  = 72360.000
-
- STEP =   604 Time  = 72480.000
-
- STEP =   605 Time  = 72600.000
-
- STEP =   606 Time  = 72720.000
-
- STEP =   607 Time  = 72840.000
-
- STEP =   608 Time  = 72960.000
-
- STEP =   609 Time  = 73080.000
-
- STEP =   610 Time  = 73200.000
-
- STEP =   611 Time  = 73320.000
-
- STEP =   612 Time  = 73440.000
-
- STEP =   613 Time  = 73560.000
-
- STEP =   614 Time  = 73680.000
-
- STEP =   615 Time  = 73800.000
-
- STEP =   616 Time  = 73920.000
-
- STEP =   617 Time  = 74040.000
-
- STEP =   618 Time  = 74160.000
-
- STEP =   619 Time  = 74280.000
-
- STEP =   620 Time  = 74400.000
-
- STEP =   621 Time  = 74520.000
-
- STEP =   622 Time  = 74640.000
-
- STEP =   623 Time  = 74760.000
-
- STEP =   624 Time  = 74880.000
-
- STEP =   625 Time  = 75000.000
-
- STEP =   626 Time  = 75120.000
-
- STEP =   627 Time  = 75240.000
-
- STEP =   628 Time  = 75360.000
-
- STEP =   629 Time  = 75480.000
-
- STEP =   630 Time  = 75600.000
-
- STEP =   631 Time  = 75720.000
-
- STEP =   632 Time  = 75840.000
-
- STEP =   633 Time  = 75960.000
-
- STEP =   634 Time  = 76080.000
-
- STEP =   635 Time  = 76200.000
-
- STEP =   636 Time  = 76320.000
-
- STEP =   637 Time  = 76440.000
-
- STEP =   638 Time  = 76560.000
-
- STEP =   639 Time  = 76680.000
-
- STEP =   640 Time  = 76800.000
-
- STEP =   641 Time  = 76920.000
-
- STEP =   642 Time  = 77040.000
-
- STEP =   643 Time  = 77160.000
-
- STEP =   644 Time  = 77280.000
-
- STEP =   645 Time  = 77400.000
-
- STEP =   646 Time  = 77520.000
-
- STEP =   647 Time  = 77640.000
-
- STEP =   648 Time  = 77760.000
-
- STEP =   649 Time  = 77880.000
-
- STEP =   650 Time  = 78000.000
-
- STEP =   651 Time  = 78120.000
-
- STEP =   652 Time  = 78240.000
-
- STEP =   653 Time  = 78360.000
-
- STEP =   654 Time  = 78480.000
-
- STEP =   655 Time  = 78600.000
-
- STEP =   656 Time  = 78720.000
-
- STEP =   657 Time  = 78840.000
-
- STEP =   658 Time  = 78960.000
-
- STEP =   659 Time  = 79080.000
-
- STEP =   660 Time  = 79200.000
-
- STEP =   661 Time  = 79320.000
-
- STEP =   662 Time  = 79440.000
-
- STEP =   663 Time  = 79560.000
-
- STEP =   664 Time  = 79680.000
-
- STEP =   665 Time  = 79800.000
-
- STEP =   666 Time  = 79920.000
-
- STEP =   667 Time  = 80040.000
-
- STEP =   668 Time  = 80160.000
-
- STEP =   669 Time  = 80280.000
-
- STEP =   670 Time  = 80400.000
-
- STEP =   671 Time  = 80520.000
-
- STEP =   672 Time  = 80640.000
-
- STEP =   673 Time  = 80760.000
-
- STEP =   674 Time  = 80880.000
-
- STEP =   675 Time  = 81000.000
-
- STEP =   676 Time  = 81120.000
-
- STEP =   677 Time  = 81240.000
-
- STEP =   678 Time  = 81360.000
-
- STEP =   679 Time  = 81480.000
-
- STEP =   680 Time  = 81600.000
-
- STEP =   681 Time  = 81720.000
-
- STEP =   682 Time  = 81840.000
-
- STEP =   683 Time  = 81960.000
-
- STEP =   684 Time  = 82080.000
-
- STEP =   685 Time  = 82200.000
-
- STEP =   686 Time  = 82320.000
-
- STEP =   687 Time  = 82440.000
-
- STEP =   688 Time  = 82560.000
-
- STEP =   689 Time  = 82680.000
-
- STEP =   690 Time  = 82800.000
-
- STEP =   691 Time  = 82920.000
-
- STEP =   692 Time  = 83040.000
-
- STEP =   693 Time  = 83160.000
-
- STEP =   694 Time  = 83280.000
-
- STEP =   695 Time  = 83400.000
-
- STEP =   696 Time  = 83520.000
-
- STEP =   697 Time  = 83640.000
-
- STEP =   698 Time  = 83760.000
-
- STEP =   699 Time  = 83880.000
-
- STEP =   700 Time  = 84000.000
-
- STEP =   701 Time  = 84120.000
-
- STEP =   702 Time  = 84240.000
-
- STEP =   703 Time  = 84360.000
-
- STEP =   704 Time  = 84480.000
-
- STEP =   705 Time  = 84600.000
-
- STEP =   706 Time  = 84720.000
-
- STEP =   707 Time  = 84840.000
-
- STEP =   708 Time  = 84960.000
-
- STEP =   709 Time  = 85080.000
-
- STEP =   710 Time  = 85200.000
-
- STEP =   711 Time  = 85320.000
-
- STEP =   712 Time  = 85440.000
-
- STEP =   713 Time  = 85560.000
-
- STEP =   714 Time  = 85680.000
-
- STEP =   715 Time  = 85800.000
-
- STEP =   716 Time  = 85920.000
-
- STEP =   717 Time  = 86040.000
-
- STEP =   718 Time  = 86160.000
-
- STEP =   719 Time  = 86280.000
-
- STEP =   720 Time  = 86400.000
-
- STEP =   721 Time  = 86520.000
-
- STEP =   722 Time  = 86640.000
-
- STEP =   723 Time  = 86760.000
-
- STEP =   724 Time  = 86880.000
-
- STEP =   725 Time  = 87000.000
-
- STEP =   726 Time  = 87120.000
-
- STEP =   727 Time  = 87240.000
-
- STEP =   728 Time  = 87360.000
-
- STEP =   729 Time  = 87480.000
-
- STEP =   730 Time  = 87600.000
-
- STEP =   731 Time  = 87720.000
-
- STEP =   732 Time  = 87840.000
-
- STEP =   733 Time  = 87960.000
-
- STEP =   734 Time  = 88080.000
-
- STEP =   735 Time  = 88200.000
-
- STEP =   736 Time  = 88320.000
-
- STEP =   737 Time  = 88440.000
-
- STEP =   738 Time  = 88560.000
-
- STEP =   739 Time  = 88680.000
-
- STEP =   740 Time  = 88800.000
-
- STEP =   741 Time  = 88920.000
-
- STEP =   742 Time  = 89040.000
-
- STEP =   743 Time  = 89160.000
-
- STEP =   744 Time  = 89280.000
-
- STEP =   745 Time  = 89400.000
-
- STEP =   746 Time  = 89520.000
-
- STEP =   747 Time  = 89640.000
-
- STEP =   748 Time  = 89760.000
-
- STEP =   749 Time  = 89880.000
-
- STEP =   750 Time  = 90000.000
-
- STEP =   751 Time  = 90120.000
-
- STEP =   752 Time  = 90240.000
-
- STEP =   753 Time  = 90360.000
-
- STEP =   754 Time  = 90480.000
-
- STEP =   755 Time  = 90600.000
-
- STEP =   756 Time  = 90720.000
-
- STEP =   757 Time  = 90840.000
-
- STEP =   758 Time  = 90960.000
-
- STEP =   759 Time  = 91080.000
-
- STEP =   760 Time  = 91200.000
-
- STEP =   761 Time  = 91320.000
-
- STEP =   762 Time  = 91440.000
-
- STEP =   763 Time  = 91560.000
-
- STEP =   764 Time  = 91680.000
-
- STEP =   765 Time  = 91800.000
-
- STEP =   766 Time  = 91920.000
-
- STEP =   767 Time  = 92040.000
-
- STEP =   768 Time  = 92160.000
-
- STEP =   769 Time  = 92280.000
-
- STEP =   770 Time  = 92400.000
-
- STEP =   771 Time  = 92520.000
-
- STEP =   772 Time  = 92640.000
-
- STEP =   773 Time  = 92760.000
-
- STEP =   774 Time  = 92880.000
-
- STEP =   775 Time  = 93000.000
-
- STEP =   776 Time  = 93120.000
-
- STEP =   777 Time  = 93240.000
-
- STEP =   778 Time  = 93360.000
-
- STEP =   779 Time  = 93480.000
-
- STEP =   780 Time  = 93600.000
-
- STEP =   781 Time  = 93720.000
-
- STEP =   782 Time  = 93840.000
-
- STEP =   783 Time  = 93960.000
-
- STEP =   784 Time  = 94080.000
-
- STEP =   785 Time  = 94200.000
-
- STEP =   786 Time  = 94320.000
-
- STEP =   787 Time  = 94440.000
-
- STEP =   788 Time  = 94560.000
-
- STEP =   789 Time  = 94680.000
-
- STEP =   790 Time  = 94800.000
-
- STEP =   791 Time  = 94920.000
-
- STEP =   792 Time  = 95040.000
-
- STEP =   793 Time  = 95160.000
-
- STEP =   794 Time  = 95280.000
-
- STEP =   795 Time  = 95400.000
-
- STEP =   796 Time  = 95520.000
-
- STEP =   797 Time  = 95640.000
-
- STEP =   798 Time  = 95760.000
-
- STEP =   799 Time  = 95880.000
-
- STEP =   800 Time  = 96000.000
-
- STEP =   801 Time  = 96120.000
-
- STEP =   802 Time  = 96240.000
-
- STEP =   803 Time  = 96360.000
-
- STEP =   804 Time  = 96480.000
-
- STEP =   805 Time  = 96600.000
-
- STEP =   806 Time  = 96720.000
-
- STEP =   807 Time  = 96840.000
-
- STEP =   808 Time  = 96960.000
-
- STEP =   809 Time  = 97080.000
-
- STEP =   810 Time  = 97200.000
-
- STEP =   811 Time  = 97320.000
-
- STEP =   812 Time  = 97440.000
-
- STEP =   813 Time  = 97560.000
-
- STEP =   814 Time  = 97680.000
-
- STEP =   815 Time  = 97800.000
-
- STEP =   816 Time  = 97920.000
-
- STEP =   817 Time  = 98040.000
-
- STEP =   818 Time  = 98160.000
-
- STEP =   819 Time  = 98280.000
-
- STEP =   820 Time  = 98400.000
-
- STEP =   821 Time  = 98520.000
-
- STEP =   822 Time  = 98640.000
-
- STEP =   823 Time  = 98760.000
-
- STEP =   824 Time  = 98880.000
-
- STEP =   825 Time  = 99000.000
-
- STEP =   826 Time  = 99120.000
-
- STEP =   827 Time  = 99240.000
-
- STEP =   828 Time  = 99360.000
-
- STEP =   829 Time  = 99480.000
-
- STEP =   830 Time  = 99600.000
-
- STEP =   831 Time  = 99720.000
-
- STEP =   832 Time  = 99840.000
-
- STEP =   833 Time  = 99960.000
-
- STEP =   834 Time  =100080.000
-
- STEP =   835 Time  =100200.000
-
- STEP =   836 Time  =100320.000
-
- STEP =   837 Time  =100440.000
-
- STEP =   838 Time  =100560.000
-
- STEP =   839 Time  =100680.000
-
- STEP =   840 Time  =100800.000
-
- STEP =   841 Time  =100920.000
-
- STEP =   842 Time  =101040.000
-
- STEP =   843 Time  =101160.000
-
- STEP =   844 Time  =101280.000
-
- STEP =   845 Time  =101400.000
-
- STEP =   846 Time  =101520.000
-
- STEP =   847 Time  =101640.000
-
- STEP =   848 Time  =101760.000
-
- STEP =   849 Time  =101880.000
-
- STEP =   850 Time  =102000.000
-
- STEP =   851 Time  =102120.000
-
- STEP =   852 Time  =102240.000
-
- STEP =   853 Time  =102360.000
-
- STEP =   854 Time  =102480.000
-
- STEP =   855 Time  =102600.000
-
- STEP =   856 Time  =102720.000
-
- STEP =   857 Time  =102840.000
-
- STEP =   858 Time  =102960.000
-
- STEP =   859 Time  =103080.000
-
- STEP =   860 Time  =103200.000
-
- STEP =   861 Time  =103320.000
-
- STEP =   862 Time  =103440.000
-
- STEP =   863 Time  =103560.000
-
- STEP =   864 Time  =103680.000
-
- STEP =   865 Time  =103800.000
-
- STEP =   866 Time  =103920.000
-
- STEP =   867 Time  =104040.000
-
- STEP =   868 Time  =104160.000
-
- STEP =   869 Time  =104280.000
-
- STEP =   870 Time  =104400.000
-
- STEP =   871 Time  =104520.000
-
- STEP =   872 Time  =104640.000
-
- STEP =   873 Time  =104760.000
-
- STEP =   874 Time  =104880.000
-
- STEP =   875 Time  =105000.000
-
- STEP =   876 Time  =105120.000
-
- STEP =   877 Time  =105240.000
-
- STEP =   878 Time  =105360.000
-
- STEP =   879 Time  =105480.000
-
- STEP =   880 Time  =105600.000
-
- STEP =   881 Time  =105720.000
-
- STEP =   882 Time  =105840.000
-
- STEP =   883 Time  =105960.000
-
- STEP =   884 Time  =106080.000
-
- STEP =   885 Time  =106200.000
-
- STEP =   886 Time  =106320.000
-
- STEP =   887 Time  =106440.000
-
- STEP =   888 Time  =106560.000
-
- STEP =   889 Time  =106680.000
-
- STEP =   890 Time  =106800.000
-
- STEP =   891 Time  =106920.000
-
- STEP =   892 Time  =107040.000
-
- STEP =   893 Time  =107160.000
-
- STEP =   894 Time  =107280.000
-
- STEP =   895 Time  =107400.000
-
- STEP =   896 Time  =107520.000
-
- STEP =   897 Time  =107640.000
-
- STEP =   898 Time  =107760.000
-
- STEP =   899 Time  =107880.000
-
- STEP =   900 Time  =108000.000
-
- STEP =   901 Time  =108120.000
-
- STEP =   902 Time  =108240.000
-
- STEP =   903 Time  =108360.000
-
- STEP =   904 Time  =108480.000
-
- STEP =   905 Time  =108600.000
-
- STEP =   906 Time  =108720.000
-
- STEP =   907 Time  =108840.000
-
- STEP =   908 Time  =108960.000
-
- STEP =   909 Time  =109080.000
-
- STEP =   910 Time  =109200.000
-
- STEP =   911 Time  =109320.000
-
- STEP =   912 Time  =109440.000
-
- STEP =   913 Time  =109560.000
-
- STEP =   914 Time  =109680.000
-
- STEP =   915 Time  =109800.000
-
- STEP =   916 Time  =109920.000
-
- STEP =   917 Time  =110040.000
-
- STEP =   918 Time  =110160.000
-
- STEP =   919 Time  =110280.000
-
- STEP =   920 Time  =110400.000
-
- STEP =   921 Time  =110520.000
-
- STEP =   922 Time  =110640.000
-
- STEP =   923 Time  =110760.000
-
- STEP =   924 Time  =110880.000
-
- STEP =   925 Time  =111000.000
-
- STEP =   926 Time  =111120.000
-
- STEP =   927 Time  =111240.000
-
- STEP =   928 Time  =111360.000
-
- STEP =   929 Time  =111480.000
-
- STEP =   930 Time  =111600.000
-
- STEP =   931 Time  =111720.000
-
- STEP =   932 Time  =111840.000
-
- STEP =   933 Time  =111960.000
-
- STEP =   934 Time  =112080.000
-
- STEP =   935 Time  =112200.000
-
- STEP =   936 Time  =112320.000
-
- STEP =   937 Time  =112440.000
-
- STEP =   938 Time  =112560.000
-
- STEP =   939 Time  =112680.000
-
- STEP =   940 Time  =112800.000
-
- STEP =   941 Time  =112920.000
-
- STEP =   942 Time  =113040.000
-
- STEP =   943 Time  =113160.000
-
- STEP =   944 Time  =113280.000
-
- STEP =   945 Time  =113400.000
-
- STEP =   946 Time  =113520.000
-
- STEP =   947 Time  =113640.000
-
- STEP =   948 Time  =113760.000
-
- STEP =   949 Time  =113880.000
-
- STEP =   950 Time  =114000.000
-
- STEP =   951 Time  =114120.000
-
- STEP =   952 Time  =114240.000
-
- STEP =   953 Time  =114360.000
-
- STEP =   954 Time  =114480.000
-
- STEP =   955 Time  =114600.000
-
- STEP =   956 Time  =114720.000
-
- STEP =   957 Time  =114840.000
-
- STEP =   958 Time  =114960.000
-
- STEP =   959 Time  =115080.000
-
- STEP =   960 Time  =115200.000
-
- STEP =   961 Time  =115320.000
-
- STEP =   962 Time  =115440.000
-
- STEP =   963 Time  =115560.000
-
- STEP =   964 Time  =115680.000
-
- STEP =   965 Time  =115800.000
-
- STEP =   966 Time  =115920.000
-
- STEP =   967 Time  =116040.000
-
- STEP =   968 Time  =116160.000
-
- STEP =   969 Time  =116280.000
-
- STEP =   970 Time  =116400.000
-
- STEP =   971 Time  =116520.000
-
- STEP =   972 Time  =116640.000
-
- STEP =   973 Time  =116760.000
-
- STEP =   974 Time  =116880.000
-
- STEP =   975 Time  =117000.000
-
- STEP =   976 Time  =117120.000
-
- STEP =   977 Time  =117240.000
-
- STEP =   978 Time  =117360.000
-
- STEP =   979 Time  =117480.000
-
- STEP =   980 Time  =117600.000
-
- STEP =   981 Time  =117720.000
-
- STEP =   982 Time  =117840.000
-
- STEP =   983 Time  =117960.000
-
- STEP =   984 Time  =118080.000
-
- STEP =   985 Time  =118200.000
-
- STEP =   986 Time  =118320.000
-
- STEP =   987 Time  =118440.000
-
- STEP =   988 Time  =118560.000
-
- STEP =   989 Time  =118680.000
-
- STEP =   990 Time  =118800.000
-
- STEP =   991 Time  =118920.000
-
- STEP =   992 Time  =119040.000
-
- STEP =   993 Time  =119160.000
-
- STEP =   994 Time  =119280.000
-
- STEP =   995 Time  =119400.000
-
- STEP =   996 Time  =119520.000
-
- STEP =   997 Time  =119640.000
-
- STEP =   998 Time  =119760.000
-
- STEP =   999 Time  =119880.000
-
- STEP =  1000 Time  =120000.000
-
- STEP =  1001 Time  =120120.000
-
- STEP =  1002 Time  =120240.000
-
- STEP =  1003 Time  =120360.000
-
- STEP =  1004 Time  =120480.000
-
- STEP =  1005 Time  =120600.000
-
- STEP =  1006 Time  =120720.000
-
- STEP =  1007 Time  =120840.000
-
- STEP =  1008 Time  =120960.000
-
- STEP =  1009 Time  =121080.000
-
- STEP =  1010 Time  =121200.000
-
- STEP =  1011 Time  =121320.000
-
- STEP =  1012 Time  =121440.000
-
- STEP =  1013 Time  =121560.000
-
- STEP =  1014 Time  =121680.000
-
- STEP =  1015 Time  =121800.000
-
- STEP =  1016 Time  =121920.000
-
- STEP =  1017 Time  =122040.000
-
- STEP =  1018 Time  =122160.000
-
- STEP =  1019 Time  =122280.000
-
- STEP =  1020 Time  =122400.000
-
- STEP =  1021 Time  =122520.000
-
- STEP =  1022 Time  =122640.000
-
- STEP =  1023 Time  =122760.000
-
- STEP =  1024 Time  =122880.000
-
- STEP =  1025 Time  =123000.000
-
- STEP =  1026 Time  =123120.000
-
- STEP =  1027 Time  =123240.000
-
- STEP =  1028 Time  =123360.000
-
- STEP =  1029 Time  =123480.000
-
- STEP =  1030 Time  =123600.000
-
- STEP =  1031 Time  =123720.000
-
- STEP =  1032 Time  =123840.000
-
- STEP =  1033 Time  =123960.000
-
- STEP =  1034 Time  =124080.000
-
- STEP =  1035 Time  =124200.000
-
- STEP =  1036 Time  =124320.000
-
- STEP =  1037 Time  =124440.000
-
- STEP =  1038 Time  =124560.000
-
- STEP =  1039 Time  =124680.000
-
- STEP =  1040 Time  =124800.000
-
- STEP =  1041 Time  =124920.000
-
- STEP =  1042 Time  =125040.000
-
- STEP =  1043 Time  =125160.000
-
- STEP =  1044 Time  =125280.000
-
- STEP =  1045 Time  =125400.000
-
- STEP =  1046 Time  =125520.000
-
- STEP =  1047 Time  =125640.000
-
- STEP =  1048 Time  =125760.000
-
- STEP =  1049 Time  =125880.000
-
- STEP =  1050 Time  =126000.000
-
- STEP =  1051 Time  =126120.000
-
- STEP =  1052 Time  =126240.000
-
- STEP =  1053 Time  =126360.000
-
- STEP =  1054 Time  =126480.000
-
- STEP =  1055 Time  =126600.000
-
- STEP =  1056 Time  =126720.000
-
- STEP =  1057 Time  =126840.000
-
- STEP =  1058 Time  =126960.000
-
- STEP =  1059 Time  =127080.000
-
- STEP =  1060 Time  =127200.000
-
- STEP =  1061 Time  =127320.000
-
- STEP =  1062 Time  =127440.000
-
- STEP =  1063 Time  =127560.000
-
- STEP =  1064 Time  =127680.000
-
- STEP =  1065 Time  =127800.000
-
- STEP =  1066 Time  =127920.000
-
- STEP =  1067 Time  =128040.000
-
- STEP =  1068 Time  =128160.000
-
- STEP =  1069 Time  =128280.000
-
- STEP =  1070 Time  =128400.000
-
- STEP =  1071 Time  =128520.000
-
- STEP =  1072 Time  =128640.000
-
- STEP =  1073 Time  =128760.000
-
- STEP =  1074 Time  =128880.000
-
- STEP =  1075 Time  =129000.000
-
- STEP =  1076 Time  =129120.000
-
- STEP =  1077 Time  =129240.000
-
- STEP =  1078 Time  =129360.000
-
- STEP =  1079 Time  =129480.000
-
- STEP =  1080 Time  =129600.000
-
- STEP =  1081 Time  =129720.000
-
- STEP =  1082 Time  =129840.000
-
- STEP =  1083 Time  =129960.000
-
- STEP =  1084 Time  =130080.000
-
- STEP =  1085 Time  =130200.000
-
- STEP =  1086 Time  =130320.000
-
- STEP =  1087 Time  =130440.000
-
- STEP =  1088 Time  =130560.000
-
- STEP =  1089 Time  =130680.000
-
- STEP =  1090 Time  =130800.000
-
- STEP =  1091 Time  =130920.000
-
- STEP =  1092 Time  =131040.000
-
- STEP =  1093 Time  =131160.000
-
- STEP =  1094 Time  =131280.000
-
- STEP =  1095 Time  =131400.000
-
- STEP =  1096 Time  =131520.000
-
- STEP =  1097 Time  =131640.000
-
- STEP =  1098 Time  =131760.000
-
- STEP =  1099 Time  =131880.000
-
- STEP =  1100 Time  =132000.000
-
- STEP =  1101 Time  =132120.000
-
- STEP =  1102 Time  =132240.000
-
- STEP =  1103 Time  =132360.000
-
- STEP =  1104 Time  =132480.000
-
- STEP =  1105 Time  =132600.000
-
- STEP =  1106 Time  =132720.000
-
- STEP =  1107 Time  =132840.000
-
- STEP =  1108 Time  =132960.000
-
- STEP =  1109 Time  =133080.000
-
- STEP =  1110 Time  =133200.000
-
- STEP =  1111 Time  =133320.000
-
- STEP =  1112 Time  =133440.000
-
- STEP =  1113 Time  =133560.000
-
- STEP =  1114 Time  =133680.000
-
- STEP =  1115 Time  =133800.000
-
- STEP =  1116 Time  =133920.000
-
- STEP =  1117 Time  =134040.000
-
- STEP =  1118 Time  =134160.000
-
- STEP =  1119 Time  =134280.000
-
- STEP =  1120 Time  =134400.000
-
- STEP =  1121 Time  =134520.000
-
- STEP =  1122 Time  =134640.000
-
- STEP =  1123 Time  =134760.000
-
- STEP =  1124 Time  =134880.000
-
- STEP =  1125 Time  =135000.000
-
- STEP =  1126 Time  =135120.000
-
- STEP =  1127 Time  =135240.000
-
- STEP =  1128 Time  =135360.000
-
- STEP =  1129 Time  =135480.000
-
- STEP =  1130 Time  =135600.000
-
- STEP =  1131 Time  =135720.000
-
- STEP =  1132 Time  =135840.000
-
- STEP =  1133 Time  =135960.000
-
- STEP =  1134 Time  =136080.000
-
- STEP =  1135 Time  =136200.000
-
- STEP =  1136 Time  =136320.000
-
- STEP =  1137 Time  =136440.000
-
- STEP =  1138 Time  =136560.000
-
- STEP =  1139 Time  =136680.000
-
- STEP =  1140 Time  =136800.000
-
- STEP =  1141 Time  =136920.000
-
- STEP =  1142 Time  =137040.000
-
- STEP =  1143 Time  =137160.000
-
- STEP =  1144 Time  =137280.000
-
- STEP =  1145 Time  =137400.000
-
- STEP =  1146 Time  =137520.000
-
- STEP =  1147 Time  =137640.000
-
- STEP =  1148 Time  =137760.000
-
- STEP =  1149 Time  =137880.000
-
- STEP =  1150 Time  =138000.000
-
- STEP =  1151 Time  =138120.000
-
- STEP =  1152 Time  =138240.000
-
- STEP =  1153 Time  =138360.000
-
- STEP =  1154 Time  =138480.000
-
- STEP =  1155 Time  =138600.000
-
- STEP =  1156 Time  =138720.000
-
- STEP =  1157 Time  =138840.000
-
- STEP =  1158 Time  =138960.000
-
- STEP =  1159 Time  =139080.000
-
- STEP =  1160 Time  =139200.000
-
- STEP =  1161 Time  =139320.000
-
- STEP =  1162 Time  =139440.000
-
- STEP =  1163 Time  =139560.000
-
- STEP =  1164 Time  =139680.000
-
- STEP =  1165 Time  =139800.000
-
- STEP =  1166 Time  =139920.000
-
- STEP =  1167 Time  =140040.000
-
- STEP =  1168 Time  =140160.000
-
- STEP =  1169 Time  =140280.000
-
- STEP =  1170 Time  =140400.000
-
- STEP =  1171 Time  =140520.000
-
- STEP =  1172 Time  =140640.000
-
- STEP =  1173 Time  =140760.000
-
- STEP =  1174 Time  =140880.000
-
- STEP =  1175 Time  =141000.000
-
- STEP =  1176 Time  =141120.000
-
- STEP =  1177 Time  =141240.000
-
- STEP =  1178 Time  =141360.000
-
- STEP =  1179 Time  =141480.000
-
- STEP =  1180 Time  =141600.000
-
- STEP =  1181 Time  =141720.000
-
- STEP =  1182 Time  =141840.000
-
- STEP =  1183 Time  =141960.000
-
- STEP =  1184 Time  =142080.000
-
- STEP =  1185 Time  =142200.000
-
- STEP =  1186 Time  =142320.000
-
- STEP =  1187 Time  =142440.000
-
- STEP =  1188 Time  =142560.000
-
- STEP =  1189 Time  =142680.000
-
- STEP =  1190 Time  =142800.000
-
- STEP =  1191 Time  =142920.000
-
- STEP =  1192 Time  =143040.000
-
- STEP =  1193 Time  =143160.000
-
- STEP =  1194 Time  =143280.000
-
- STEP =  1195 Time  =143400.000
-
- STEP =  1196 Time  =143520.000
-
- STEP =  1197 Time  =143640.000
-
- STEP =  1198 Time  =143760.000
-
- STEP =  1199 Time  =143880.000
-
- STEP =  1200 Time  =144000.000
-
- STEP =  1201 Time  =144120.000
-
- STEP =  1202 Time  =144240.000
-
- STEP =  1203 Time  =144360.000
-
- STEP =  1204 Time  =144480.000
-
- STEP =  1205 Time  =144600.000
-
- STEP =  1206 Time  =144720.000
-
- STEP =  1207 Time  =144840.000
-
- STEP =  1208 Time  =144960.000
-
- STEP =  1209 Time  =145080.000
-
- STEP =  1210 Time  =145200.000
-
- STEP =  1211 Time  =145320.000
-
- STEP =  1212 Time  =145440.000
-
- STEP =  1213 Time  =145560.000
-
- STEP =  1214 Time  =145680.000
-
- STEP =  1215 Time  =145800.000
-
- STEP =  1216 Time  =145920.000
-
- STEP =  1217 Time  =146040.000
-
- STEP =  1218 Time  =146160.000
-
- STEP =  1219 Time  =146280.000
-
- STEP =  1220 Time  =146400.000
-
- STEP =  1221 Time  =146520.000
-
- STEP =  1222 Time  =146640.000
-
- STEP =  1223 Time  =146760.000
-
- STEP =  1224 Time  =146880.000
-
- STEP =  1225 Time  =147000.000
-
- STEP =  1226 Time  =147120.000
-
- STEP =  1227 Time  =147240.000
-
- STEP =  1228 Time  =147360.000
-
- STEP =  1229 Time  =147480.000
-
- STEP =  1230 Time  =147600.000
-
- STEP =  1231 Time  =147720.000
-
- STEP =  1232 Time  =147840.000
-
- STEP =  1233 Time  =147960.000
-
- STEP =  1234 Time  =148080.000
-
- STEP =  1235 Time  =148200.000
-
- STEP =  1236 Time  =148320.000
-
- STEP =  1237 Time  =148440.000
-
- STEP =  1238 Time  =148560.000
-
- STEP =  1239 Time  =148680.000
-
- STEP =  1240 Time  =148800.000
-
- STEP =  1241 Time  =148920.000
-
- STEP =  1242 Time  =149040.000
-
- STEP =  1243 Time  =149160.000
-
- STEP =  1244 Time  =149280.000
-
- STEP =  1245 Time  =149400.000
-
- STEP =  1246 Time  =149520.000
-
- STEP =  1247 Time  =149640.000
-
- STEP =  1248 Time  =149760.000
-
- STEP =  1249 Time  =149880.000
-
- STEP =  1250 Time  =150000.000
-
- STEP =  1251 Time  =150120.000
-
- STEP =  1252 Time  =150240.000
-
- STEP =  1253 Time  =150360.000
-
- STEP =  1254 Time  =150480.000
-
- STEP =  1255 Time  =150600.000
-
- STEP =  1256 Time  =150720.000
-
- STEP =  1257 Time  =150840.000
-
- STEP =  1258 Time  =150960.000
-
- STEP =  1259 Time  =151080.000
-
- STEP =  1260 Time  =151200.000
-
- STEP =  1261 Time  =151320.000
-
- STEP =  1262 Time  =151440.000
-
- STEP =  1263 Time  =151560.000
-
- STEP =  1264 Time  =151680.000
-
- STEP =  1265 Time  =151800.000
-
- STEP =  1266 Time  =151920.000
-
- STEP =  1267 Time  =152040.000
-
- STEP =  1268 Time  =152160.000
-
- STEP =  1269 Time  =152280.000
-
- STEP =  1270 Time  =152400.000
-
- STEP =  1271 Time  =152520.000
-
- STEP =  1272 Time  =152640.000
-
- STEP =  1273 Time  =152760.000
-
- STEP =  1274 Time  =152880.000
-
- STEP =  1275 Time  =153000.000
-
- STEP =  1276 Time  =153120.000
-
- STEP =  1277 Time  =153240.000
-
- STEP =  1278 Time  =153360.000
-
- STEP =  1279 Time  =153480.000
-
- STEP =  1280 Time  =153600.000
-
- STEP =  1281 Time  =153720.000
-
- STEP =  1282 Time  =153840.000
-
- STEP =  1283 Time  =153960.000
-
- STEP =  1284 Time  =154080.000
-
- STEP =  1285 Time  =154200.000
-
- STEP =  1286 Time  =154320.000
-
- STEP =  1287 Time  =154440.000
-
- STEP =  1288 Time  =154560.000
-
- STEP =  1289 Time  =154680.000
-
- STEP =  1290 Time  =154800.000
-
- STEP =  1291 Time  =154920.000
-
- STEP =  1292 Time  =155040.000
-
- STEP =  1293 Time  =155160.000
-
- STEP =  1294 Time  =155280.000
-
- STEP =  1295 Time  =155400.000
-
- STEP =  1296 Time  =155520.000
-
- STEP =  1297 Time  =155640.000
-
- STEP =  1298 Time  =155760.000
-
- STEP =  1299 Time  =155880.000
-
- STEP =  1300 Time  =156000.000
-
- STEP =  1301 Time  =156120.000
-
- STEP =  1302 Time  =156240.000
-
- STEP =  1303 Time  =156360.000
-
- STEP =  1304 Time  =156480.000
-
- STEP =  1305 Time  =156600.000
-
- STEP =  1306 Time  =156720.000
-
- STEP =  1307 Time  =156840.000
-
- STEP =  1308 Time  =156960.000
-
- STEP =  1309 Time  =157080.000
-
- STEP =  1310 Time  =157200.000
-
- STEP =  1311 Time  =157320.000
-
- STEP =  1312 Time  =157440.000
-
- STEP =  1313 Time  =157560.000
-
- STEP =  1314 Time  =157680.000
-
- STEP =  1315 Time  =157800.000
-
- STEP =  1316 Time  =157920.000
-
- STEP =  1317 Time  =158040.000
-
- STEP =  1318 Time  =158160.000
-
- STEP =  1319 Time  =158280.000
-
- STEP =  1320 Time  =158400.000
-
- STEP =  1321 Time  =158520.000
-
- STEP =  1322 Time  =158640.000
-
- STEP =  1323 Time  =158760.000
-
- STEP =  1324 Time  =158880.000
-
- STEP =  1325 Time  =159000.000
-
- STEP =  1326 Time  =159120.000
-
- STEP =  1327 Time  =159240.000
-
- STEP =  1328 Time  =159360.000
-
- STEP =  1329 Time  =159480.000
-
- STEP =  1330 Time  =159600.000
-
- STEP =  1331 Time  =159720.000
-
- STEP =  1332 Time  =159840.000
-
- STEP =  1333 Time  =159960.000
-
- STEP =  1334 Time  =160080.000
-
- STEP =  1335 Time  =160200.000
-
- STEP =  1336 Time  =160320.000
-
- STEP =  1337 Time  =160440.000
-
- STEP =  1338 Time  =160560.000
-
- STEP =  1339 Time  =160680.000
-
- STEP =  1340 Time  =160800.000
-
- STEP =  1341 Time  =160920.000
-
- STEP =  1342 Time  =161040.000
-
- STEP =  1343 Time  =161160.000
-
- STEP =  1344 Time  =161280.000
-
- STEP =  1345 Time  =161400.000
-
- STEP =  1346 Time  =161520.000
-
- STEP =  1347 Time  =161640.000
-
- STEP =  1348 Time  =161760.000
-
- STEP =  1349 Time  =161880.000
-
- STEP =  1350 Time  =162000.000
-
- STEP =  1351 Time  =162120.000
-
- STEP =  1352 Time  =162240.000
-
- STEP =  1353 Time  =162360.000
-
- STEP =  1354 Time  =162480.000
-
- STEP =  1355 Time  =162600.000
-
- STEP =  1356 Time  =162720.000
-
- STEP =  1357 Time  =162840.000
-
- STEP =  1358 Time  =162960.000
-
- STEP =  1359 Time  =163080.000
-
- STEP =  1360 Time  =163200.000
-
- STEP =  1361 Time  =163320.000
-
- STEP =  1362 Time  =163440.000
-
- STEP =  1363 Time  =163560.000
-
- STEP =  1364 Time  =163680.000
-
- STEP =  1365 Time  =163800.000
-
- STEP =  1366 Time  =163920.000
-
- STEP =  1367 Time  =164040.000
-
- STEP =  1368 Time  =164160.000
-
- STEP =  1369 Time  =164280.000
-
- STEP =  1370 Time  =164400.000
-
- STEP =  1371 Time  =164520.000
-
- STEP =  1372 Time  =164640.000
-
- STEP =  1373 Time  =164760.000
-
- STEP =  1374 Time  =164880.000
-
- STEP =  1375 Time  =165000.000
-
- STEP =  1376 Time  =165120.000
-
- STEP =  1377 Time  =165240.000
-
- STEP =  1378 Time  =165360.000
-
- STEP =  1379 Time  =165480.000
-
- STEP =  1380 Time  =165600.000
-
- STEP =  1381 Time  =165720.000
-
- STEP =  1382 Time  =165840.000
-
- STEP =  1383 Time  =165960.000
-
- STEP =  1384 Time  =166080.000
-
- STEP =  1385 Time  =166200.000
-
- STEP =  1386 Time  =166320.000
-
- STEP =  1387 Time  =166440.000
-
- STEP =  1388 Time  =166560.000
-
- STEP =  1389 Time  =166680.000
-
- STEP =  1390 Time  =166800.000
-
- STEP =  1391 Time  =166920.000
-
- STEP =  1392 Time  =167040.000
-
- STEP =  1393 Time  =167160.000
-
- STEP =  1394 Time  =167280.000
-
- STEP =  1395 Time  =167400.000
-
- STEP =  1396 Time  =167520.000
-
- STEP =  1397 Time  =167640.000
-
- STEP =  1398 Time  =167760.000
-
- STEP =  1399 Time  =167880.000
-
- STEP =  1400 Time  =168000.000
-
- STEP =  1401 Time  =168120.000
-
- STEP =  1402 Time  =168240.000
-
- STEP =  1403 Time  =168360.000
-
- STEP =  1404 Time  =168480.000
-
- STEP =  1405 Time  =168600.000
-
- STEP =  1406 Time  =168720.000
-
- STEP =  1407 Time  =168840.000
-
- STEP =  1408 Time  =168960.000
-
- STEP =  1409 Time  =169080.000
-
- STEP =  1410 Time  =169200.000
-
- STEP =  1411 Time  =169320.000
-
- STEP =  1412 Time  =169440.000
-
- STEP =  1413 Time  =169560.000
-
- STEP =  1414 Time  =169680.000
-
- STEP =  1415 Time  =169800.000
-
- STEP =  1416 Time  =169920.000
-
- STEP =  1417 Time  =170040.000
-
- STEP =  1418 Time  =170160.000
-
- STEP =  1419 Time  =170280.000
-
- STEP =  1420 Time  =170400.000
-
- STEP =  1421 Time  =170520.000
-
- STEP =  1422 Time  =170640.000
-
- STEP =  1423 Time  =170760.000
-
- STEP =  1424 Time  =170880.000
-
- STEP =  1425 Time  =171000.000
-
- STEP =  1426 Time  =171120.000
-
- STEP =  1427 Time  =171240.000
-
- STEP =  1428 Time  =171360.000
-
- STEP =  1429 Time  =171480.000
-
- STEP =  1430 Time  =171600.000
-
- STEP =  1431 Time  =171720.000
-
- STEP =  1432 Time  =171840.000
-
- STEP =  1433 Time  =171960.000
-
- STEP =  1434 Time  =172080.000
-
- STEP =  1435 Time  =172200.000
-
- STEP =  1436 Time  =172320.000
-
- STEP =  1437 Time  =172440.000
-
- STEP =  1438 Time  =172560.000
-
- STEP =  1439 Time  =172680.000
-
- STEP =  1440 Time  =172800.000
-
- STEP =  1441 Time  =172920.000
-
- STEP =  1442 Time  =173040.000
-
- STEP =  1443 Time  =173160.000
-
- STEP =  1444 Time  =173280.000
-
- STEP =  1445 Time  =173400.000
-
- STEP =  1446 Time  =173520.000
-
- STEP =  1447 Time  =173640.000
-
- STEP =  1448 Time  =173760.000
-
- STEP =  1449 Time  =173880.000
-
- STEP =  1450 Time  =174000.000
-
- STEP =  1451 Time  =174120.000
-
- STEP =  1452 Time  =174240.000
-
- STEP =  1453 Time  =174360.000
-
- STEP =  1454 Time  =174480.000
-
- STEP =  1455 Time  =174600.000
-
- STEP =  1456 Time  =174720.000
-
- STEP =  1457 Time  =174840.000
-
- STEP =  1458 Time  =174960.000
-
- STEP =  1459 Time  =175080.000
-
- STEP =  1460 Time  =175200.000
-
- STEP =  1461 Time  =175320.000
-
- STEP =  1462 Time  =175440.000
-
- STEP =  1463 Time  =175560.000
-
- STEP =  1464 Time  =175680.000
-
- STEP =  1465 Time  =175800.000
-
- STEP =  1466 Time  =175920.000
-
- STEP =  1467 Time  =176040.000
-
- STEP =  1468 Time  =176160.000
-
- STEP =  1469 Time  =176280.000
-
- STEP =  1470 Time  =176400.000
-
- STEP =  1471 Time  =176520.000
-
- STEP =  1472 Time  =176640.000
-
- STEP =  1473 Time  =176760.000
-
- STEP =  1474 Time  =176880.000
-
- STEP =  1475 Time  =177000.000
-
- STEP =  1476 Time  =177120.000
-
- STEP =  1477 Time  =177240.000
-
- STEP =  1478 Time  =177360.000
-
- STEP =  1479 Time  =177480.000
-
- STEP =  1480 Time  =177600.000
-
- STEP =  1481 Time  =177720.000
-
- STEP =  1482 Time  =177840.000
-
- STEP =  1483 Time  =177960.000
-
- STEP =  1484 Time  =178080.000
-
- STEP =  1485 Time  =178200.000
-
- STEP =  1486 Time  =178320.000
-
- STEP =  1487 Time  =178440.000
-
- STEP =  1488 Time  =178560.000
-
- STEP =  1489 Time  =178680.000
-
- STEP =  1490 Time  =178800.000
-
- STEP =  1491 Time  =178920.000
-
- STEP =  1492 Time  =179040.000
-
- STEP =  1493 Time  =179160.000
-
- STEP =  1494 Time  =179280.000
-
- STEP =  1495 Time  =179400.000
-
- STEP =  1496 Time  =179520.000
-
- STEP =  1497 Time  =179640.000
-
- STEP =  1498 Time  =179760.000
-
- STEP =  1499 Time  =179880.000
-
- STEP =  1500 Time  =180000.000
-
- STEP =  1501 Time  =180120.000
-
- STEP =  1502 Time  =180240.000
-
- STEP =  1503 Time  =180360.000
-
- STEP =  1504 Time  =180480.000
-
- STEP =  1505 Time  =180600.000
-
- STEP =  1506 Time  =180720.000
-
- STEP =  1507 Time  =180840.000
-
- STEP =  1508 Time  =180960.000
-
- STEP =  1509 Time  =181080.000
-
- STEP =  1510 Time  =181200.000
-
- STEP =  1511 Time  =181320.000
-
- STEP =  1512 Time  =181440.000
-
- STEP =  1513 Time  =181560.000
-
- STEP =  1514 Time  =181680.000
-
- STEP =  1515 Time  =181800.000
-
- STEP =  1516 Time  =181920.000
-
- STEP =  1517 Time  =182040.000
-
- STEP =  1518 Time  =182160.000
-
- STEP =  1519 Time  =182280.000
-
- STEP =  1520 Time  =182400.000
-
- STEP =  1521 Time  =182520.000
-
- STEP =  1522 Time  =182640.000
-
- STEP =  1523 Time  =182760.000
-
- STEP =  1524 Time  =182880.000
-
- STEP =  1525 Time  =183000.000
-
- STEP =  1526 Time  =183120.000
-
- STEP =  1527 Time  =183240.000
-
- STEP =  1528 Time  =183360.000
-
- STEP =  1529 Time  =183480.000
-
- STEP =  1530 Time  =183600.000
-
- STEP =  1531 Time  =183720.000
-
- STEP =  1532 Time  =183840.000
-
- STEP =  1533 Time  =183960.000
-
- STEP =  1534 Time  =184080.000
-
- STEP =  1535 Time  =184200.000
-
- STEP =  1536 Time  =184320.000
-
- STEP =  1537 Time  =184440.000
-
- STEP =  1538 Time  =184560.000
-
- STEP =  1539 Time  =184680.000
-
- STEP =  1540 Time  =184800.000
-
- STEP =  1541 Time  =184920.000
-
- STEP =  1542 Time  =185040.000
-
- STEP =  1543 Time  =185160.000
-
- STEP =  1544 Time  =185280.000
-
- STEP =  1545 Time  =185400.000
-
- STEP =  1546 Time  =185520.000
-
- STEP =  1547 Time  =185640.000
-
- STEP =  1548 Time  =185760.000
-
- STEP =  1549 Time  =185880.000
-
- STEP =  1550 Time  =186000.000
-
- STEP =  1551 Time  =186120.000
-
- STEP =  1552 Time  =186240.000
-
- STEP =  1553 Time  =186360.000
-
- STEP =  1554 Time  =186480.000
-
- STEP =  1555 Time  =186600.000
-
- STEP =  1556 Time  =186720.000
-
- STEP =  1557 Time  =186840.000
-
- STEP =  1558 Time  =186960.000
-
- STEP =  1559 Time  =187080.000
-
- STEP =  1560 Time  =187200.000
-
- STEP =  1561 Time  =187320.000
-
- STEP =  1562 Time  =187440.000
-
- STEP =  1563 Time  =187560.000
-
- STEP =  1564 Time  =187680.000
-
- STEP =  1565 Time  =187800.000
-
- STEP =  1566 Time  =187920.000
-
- STEP =  1567 Time  =188040.000
-
- STEP =  1568 Time  =188160.000
-
- STEP =  1569 Time  =188280.000
-
- STEP =  1570 Time  =188400.000
-
- STEP =  1571 Time  =188520.000
-
- STEP =  1572 Time  =188640.000
-
- STEP =  1573 Time  =188760.000
-
- STEP =  1574 Time  =188880.000
-
- STEP =  1575 Time  =189000.000
-
- STEP =  1576 Time  =189120.000
-
- STEP =  1577 Time  =189240.000
-
- STEP =  1578 Time  =189360.000
-
- STEP =  1579 Time  =189480.000
-
- STEP =  1580 Time  =189600.000
-
- STEP =  1581 Time  =189720.000
-
- STEP =  1582 Time  =189840.000
-
- STEP =  1583 Time  =189960.000
-
- STEP =  1584 Time  =190080.000
-
- STEP =  1585 Time  =190200.000
-
- STEP =  1586 Time  =190320.000
-
- STEP =  1587 Time  =190440.000
-
- STEP =  1588 Time  =190560.000
-
- STEP =  1589 Time  =190680.000
-
- STEP =  1590 Time  =190800.000
-
- STEP =  1591 Time  =190920.000
-
- STEP =  1592 Time  =191040.000
-
- STEP =  1593 Time  =191160.000
-
- STEP =  1594 Time  =191280.000
-
- STEP =  1595 Time  =191400.000
-
- STEP =  1596 Time  =191520.000
-
- STEP =  1597 Time  =191640.000
-
- STEP =  1598 Time  =191760.000
-
- STEP =  1599 Time  =191880.000
-
- STEP =  1600 Time  =192000.000
-
- STEP =  1601 Time  =192120.000
-
- STEP =  1602 Time  =192240.000
-
- STEP =  1603 Time  =192360.000
-
- STEP =  1604 Time  =192480.000
-
- STEP =  1605 Time  =192600.000
-
- STEP =  1606 Time  =192720.000
-
- STEP =  1607 Time  =192840.000
-
- STEP =  1608 Time  =192960.000
-
- STEP =  1609 Time  =193080.000
-
- STEP =  1610 Time  =193200.000
-
- STEP =  1611 Time  =193320.000
-
- STEP =  1612 Time  =193440.000
-
- STEP =  1613 Time  =193560.000
-
- STEP =  1614 Time  =193680.000
-
- STEP =  1615 Time  =193800.000
-
- STEP =  1616 Time  =193920.000
-
- STEP =  1617 Time  =194040.000
-
- STEP =  1618 Time  =194160.000
-
- STEP =  1619 Time  =194280.000
-
- STEP =  1620 Time  =194400.000
-
- STEP =  1621 Time  =194520.000
-
- STEP =  1622 Time  =194640.000
-
- STEP =  1623 Time  =194760.000
-
- STEP =  1624 Time  =194880.000
-
- STEP =  1625 Time  =195000.000
-
- STEP =  1626 Time  =195120.000
-
- STEP =  1627 Time  =195240.000
-
- STEP =  1628 Time  =195360.000
-
- STEP =  1629 Time  =195480.000
-
- STEP =  1630 Time  =195600.000
-
- STEP =  1631 Time  =195720.000
-
- STEP =  1632 Time  =195840.000
-
- STEP =  1633 Time  =195960.000
-
- STEP =  1634 Time  =196080.000
-
- STEP =  1635 Time  =196200.000
-
- STEP =  1636 Time  =196320.000
-
- STEP =  1637 Time  =196440.000
-
- STEP =  1638 Time  =196560.000
-
- STEP =  1639 Time  =196680.000
-
- STEP =  1640 Time  =196800.000
-
- STEP =  1641 Time  =196920.000
-
- STEP =  1642 Time  =197040.000
-
- STEP =  1643 Time  =197160.000
-
- STEP =  1644 Time  =197280.000
-
- STEP =  1645 Time  =197400.000
-
- STEP =  1646 Time  =197520.000
-
- STEP =  1647 Time  =197640.000
-
- STEP =  1648 Time  =197760.000
-
- STEP =  1649 Time  =197880.000
-
- STEP =  1650 Time  =198000.000
-
- STEP =  1651 Time  =198120.000
-
- STEP =  1652 Time  =198240.000
-
- STEP =  1653 Time  =198360.000
-
- STEP =  1654 Time  =198480.000
-
- STEP =  1655 Time  =198600.000
-
- STEP =  1656 Time  =198720.000
-
- STEP =  1657 Time  =198840.000
-
- STEP =  1658 Time  =198960.000
-
- STEP =  1659 Time  =199080.000
-
- STEP =  1660 Time  =199200.000
-
- STEP =  1661 Time  =199320.000
-
- STEP =  1662 Time  =199440.000
-
- STEP =  1663 Time  =199560.000
-
- STEP =  1664 Time  =199680.000
-
- STEP =  1665 Time  =199800.000
-
- STEP =  1666 Time  =199920.000
-
- STEP =  1667 Time  =200040.000
-
- STEP =  1668 Time  =200160.000
-
- STEP =  1669 Time  =200280.000
-
- STEP =  1670 Time  =200400.000
-
- STEP =  1671 Time  =200520.000
-
- STEP =  1672 Time  =200640.000
-
- STEP =  1673 Time  =200760.000
-
- STEP =  1674 Time  =200880.000
-
- STEP =  1675 Time  =201000.000
-
- STEP =  1676 Time  =201120.000
-
- STEP =  1677 Time  =201240.000
-
- STEP =  1678 Time  =201360.000
-
- STEP =  1679 Time  =201480.000
-
- STEP =  1680 Time  =201600.000
-
- STEP =  1681 Time  =201720.000
-
- STEP =  1682 Time  =201840.000
-
- STEP =  1683 Time  =201960.000
-
- STEP =  1684 Time  =202080.000
-
- STEP =  1685 Time  =202200.000
-
- STEP =  1686 Time  =202320.000
-
- STEP =  1687 Time  =202440.000
-
- STEP =  1688 Time  =202560.000
-
- STEP =  1689 Time  =202680.000
-
- STEP =  1690 Time  =202800.000
-
- STEP =  1691 Time  =202920.000
-
- STEP =  1692 Time  =203040.000
-
- STEP =  1693 Time  =203160.000
-
- STEP =  1694 Time  =203280.000
-
- STEP =  1695 Time  =203400.000
-
- STEP =  1696 Time  =203520.000
-
- STEP =  1697 Time  =203640.000
-
- STEP =  1698 Time  =203760.000
-
- STEP =  1699 Time  =203880.000
-
- STEP =  1700 Time  =204000.000
-
- STEP =  1701 Time  =204120.000
-
- STEP =  1702 Time  =204240.000
-
- STEP =  1703 Time  =204360.000
-
- STEP =  1704 Time  =204480.000
-
- STEP =  1705 Time  =204600.000
-
- STEP =  1706 Time  =204720.000
-
- STEP =  1707 Time  =204840.000
-
- STEP =  1708 Time  =204960.000
-
- STEP =  1709 Time  =205080.000
-
- STEP =  1710 Time  =205200.000
-
- STEP =  1711 Time  =205320.000
-
- STEP =  1712 Time  =205440.000
-
- STEP =  1713 Time  =205560.000
-
- STEP =  1714 Time  =205680.000
-
- STEP =  1715 Time  =205800.000
-
- STEP =  1716 Time  =205920.000
-
- STEP =  1717 Time  =206040.000
-
- STEP =  1718 Time  =206160.000
-
- STEP =  1719 Time  =206280.000
-
- STEP =  1720 Time  =206400.000
-
- STEP =  1721 Time  =206520.000
-
- STEP =  1722 Time  =206640.000
-
- STEP =  1723 Time  =206760.000
-
- STEP =  1724 Time  =206880.000
-
- STEP =  1725 Time  =207000.000
-
- STEP =  1726 Time  =207120.000
-
- STEP =  1727 Time  =207240.000
-
- STEP =  1728 Time  =207360.000
-
- STEP =  1729 Time  =207480.000
-
- STEP =  1730 Time  =207600.000
-
- STEP =  1731 Time  =207720.000
-
- STEP =  1732 Time  =207840.000
-
- STEP =  1733 Time  =207960.000
-
- STEP =  1734 Time  =208080.000
-
- STEP =  1735 Time  =208200.000
-
- STEP =  1736 Time  =208320.000
-
- STEP =  1737 Time  =208440.000
-
- STEP =  1738 Time  =208560.000
-
- STEP =  1739 Time  =208680.000
-
- STEP =  1740 Time  =208800.000
-
- STEP =  1741 Time  =208920.000
-
- STEP =  1742 Time  =209040.000
-
- STEP =  1743 Time  =209160.000
-
- STEP =  1744 Time  =209280.000
-
- STEP =  1745 Time  =209400.000
-
- STEP =  1746 Time  =209520.000
-
- STEP =  1747 Time  =209640.000
-
- STEP =  1748 Time  =209760.000
-
- STEP =  1749 Time  =209880.000
-
- STEP =  1750 Time  =210000.000
-
- STEP =  1751 Time  =210120.000
-
- STEP =  1752 Time  =210240.000
-
- STEP =  1753 Time  =210360.000
-
- STEP =  1754 Time  =210480.000
-
- STEP =  1755 Time  =210600.000
-
- STEP =  1756 Time  =210720.000
-
- STEP =  1757 Time  =210840.000
-
- STEP =  1758 Time  =210960.000
-
- STEP =  1759 Time  =211080.000
-
- STEP =  1760 Time  =211200.000
-
- STEP =  1761 Time  =211320.000
-
- STEP =  1762 Time  =211440.000
-
- STEP =  1763 Time  =211560.000
-
- STEP =  1764 Time  =211680.000
-
- STEP =  1765 Time  =211800.000
-
- STEP =  1766 Time  =211920.000
-
- STEP =  1767 Time  =212040.000
-
- STEP =  1768 Time  =212160.000
-
- STEP =  1769 Time  =212280.000
-
- STEP =  1770 Time  =212400.000
-
- STEP =  1771 Time  =212520.000
-
- STEP =  1772 Time  =212640.000
-
- STEP =  1773 Time  =212760.000
-
- STEP =  1774 Time  =212880.000
-
- STEP =  1775 Time  =213000.000
-
- STEP =  1776 Time  =213120.000
-
- STEP =  1777 Time  =213240.000
-
- STEP =  1778 Time  =213360.000
-
- STEP =  1779 Time  =213480.000
-
- STEP =  1780 Time  =213600.000
-
- STEP =  1781 Time  =213720.000
-
- STEP =  1782 Time  =213840.000
-
- STEP =  1783 Time  =213960.000
-
- STEP =  1784 Time  =214080.000
-
- STEP =  1785 Time  =214200.000
-
- STEP =  1786 Time  =214320.000
-
- STEP =  1787 Time  =214440.000
-
- STEP =  1788 Time  =214560.000
-
- STEP =  1789 Time  =214680.000
-
- STEP =  1790 Time  =214800.000
-
- STEP =  1791 Time  =214920.000
-
- STEP =  1792 Time  =215040.000
-
- STEP =  1793 Time  =215160.000
-
- STEP =  1794 Time  =215280.000
-
- STEP =  1795 Time  =215400.000
-
- STEP =  1796 Time  =215520.000
-
- STEP =  1797 Time  =215640.000
-
- STEP =  1798 Time  =215760.000
-
- STEP =  1799 Time  =215880.000
-
- STEP =  1800 Time  =216000.000
-
- STEP =  1801 Time  =216120.000
-
- STEP =  1802 Time  =216240.000
-
- STEP =  1803 Time  =216360.000
-
- STEP =  1804 Time  =216480.000
-
- STEP =  1805 Time  =216600.000
-
- STEP =  1806 Time  =216720.000
-
- STEP =  1807 Time  =216840.000
-
- STEP =  1808 Time  =216960.000
-
- STEP =  1809 Time  =217080.000
-
- STEP =  1810 Time  =217200.000
-
- STEP =  1811 Time  =217320.000
-
- STEP =  1812 Time  =217440.000
-
- STEP =  1813 Time  =217560.000
-
- STEP =  1814 Time  =217680.000
-
- STEP =  1815 Time  =217800.000
-
- STEP =  1816 Time  =217920.000
-
- STEP =  1817 Time  =218040.000
-
- STEP =  1818 Time  =218160.000
-
- STEP =  1819 Time  =218280.000
-
- STEP =  1820 Time  =218400.000
-
- STEP =  1821 Time  =218520.000
-
- STEP =  1822 Time  =218640.000
-
- STEP =  1823 Time  =218760.000
-
- STEP =  1824 Time  =218880.000
-
- STEP =  1825 Time  =219000.000
-
- STEP =  1826 Time  =219120.000
-
- STEP =  1827 Time  =219240.000
-
- STEP =  1828 Time  =219360.000
-
- STEP =  1829 Time  =219480.000
-
- STEP =  1830 Time  =219600.000
-
- STEP =  1831 Time  =219720.000
-
- STEP =  1832 Time  =219840.000
-
- STEP =  1833 Time  =219960.000
-
- STEP =  1834 Time  =220080.000
-
- STEP =  1835 Time  =220200.000
-
- STEP =  1836 Time  =220320.000
-
- STEP =  1837 Time  =220440.000
-
- STEP =  1838 Time  =220560.000
-
- STEP =  1839 Time  =220680.000
-
- STEP =  1840 Time  =220800.000
-
- STEP =  1841 Time  =220920.000
-
- STEP =  1842 Time  =221040.000
-
- STEP =  1843 Time  =221160.000
-
- STEP =  1844 Time  =221280.000
-
- STEP =  1845 Time  =221400.000
-
- STEP =  1846 Time  =221520.000
-
- STEP =  1847 Time  =221640.000
-
- STEP =  1848 Time  =221760.000
-
- STEP =  1849 Time  =221880.000
-
- STEP =  1850 Time  =222000.000
-
- STEP =  1851 Time  =222120.000
-
- STEP =  1852 Time  =222240.000
-
- STEP =  1853 Time  =222360.000
-
- STEP =  1854 Time  =222480.000
-
- STEP =  1855 Time  =222600.000
-
- STEP =  1856 Time  =222720.000
-
- STEP =  1857 Time  =222840.000
-
- STEP =  1858 Time  =222960.000
-
- STEP =  1859 Time  =223080.000
-
- STEP =  1860 Time  =223200.000
-
- STEP =  1861 Time  =223320.000
-
- STEP =  1862 Time  =223440.000
-
- STEP =  1863 Time  =223560.000
-
- STEP =  1864 Time  =223680.000
-
- STEP =  1865 Time  =223800.000
-
- STEP =  1866 Time  =223920.000
-
- STEP =  1867 Time  =224040.000
-
- STEP =  1868 Time  =224160.000
-
- STEP =  1869 Time  =224280.000
-
- STEP =  1870 Time  =224400.000
-
- STEP =  1871 Time  =224520.000
-
- STEP =  1872 Time  =224640.000
-
- STEP =  1873 Time  =224760.000
-
- STEP =  1874 Time  =224880.000
-
- STEP =  1875 Time  =225000.000
-
- STEP =  1876 Time  =225120.000
-
- STEP =  1877 Time  =225240.000
-
- STEP =  1878 Time  =225360.000
-
- STEP =  1879 Time  =225480.000
-
- STEP =  1880 Time  =225600.000
-
- STEP =  1881 Time  =225720.000
-
- STEP =  1882 Time  =225840.000
-
- STEP =  1883 Time  =225960.000
-
- STEP =  1884 Time  =226080.000
-
- STEP =  1885 Time  =226200.000
-
- STEP =  1886 Time  =226320.000
-
- STEP =  1887 Time  =226440.000
-
- STEP =  1888 Time  =226560.000
-
- STEP =  1889 Time  =226680.000
-
- STEP =  1890 Time  =226800.000
-
- STEP =  1891 Time  =226920.000
-
- STEP =  1892 Time  =227040.000
-
- STEP =  1893 Time  =227160.000
-
- STEP =  1894 Time  =227280.000
-
- STEP =  1895 Time  =227400.000
-
- STEP =  1896 Time  =227520.000
-
- STEP =  1897 Time  =227640.000
-
- STEP =  1898 Time  =227760.000
-
- STEP =  1899 Time  =227880.000
-
- STEP =  1900 Time  =228000.000
-
- STEP =  1901 Time  =228120.000
-
- STEP =  1902 Time  =228240.000
-
- STEP =  1903 Time  =228360.000
-
- STEP =  1904 Time  =228480.000
-
- STEP =  1905 Time  =228600.000
-
- STEP =  1906 Time  =228720.000
-
- STEP =  1907 Time  =228840.000
-
- STEP =  1908 Time  =228960.000
-
- STEP =  1909 Time  =229080.000
-
- STEP =  1910 Time  =229200.000
-
- STEP =  1911 Time  =229320.000
-
- STEP =  1912 Time  =229440.000
-
- STEP =  1913 Time  =229560.000
-
- STEP =  1914 Time  =229680.000
-
- STEP =  1915 Time  =229800.000
-
- STEP =  1916 Time  =229920.000
-
- STEP =  1917 Time  =230040.000
-
- STEP =  1918 Time  =230160.000
-
- STEP =  1919 Time  =230280.000
-
- STEP =  1920 Time  =230400.000
-
- STEP =  1921 Time  =230520.000
-
- STEP =  1922 Time  =230640.000
-
- STEP =  1923 Time  =230760.000
-
- STEP =  1924 Time  =230880.000
-
- STEP =  1925 Time  =231000.000
-
- STEP =  1926 Time  =231120.000
-
- STEP =  1927 Time  =231240.000
-
- STEP =  1928 Time  =231360.000
-
- STEP =  1929 Time  =231480.000
-
- STEP =  1930 Time  =231600.000
-
- STEP =  1931 Time  =231720.000
-
- STEP =  1932 Time  =231840.000
-
- STEP =  1933 Time  =231960.000
-
- STEP =  1934 Time  =232080.000
-
- STEP =  1935 Time  =232200.000
-
- STEP =  1936 Time  =232320.000
-
- STEP =  1937 Time  =232440.000
-
- STEP =  1938 Time  =232560.000
-
- STEP =  1939 Time  =232680.000
-
- STEP =  1940 Time  =232800.000
-
- STEP =  1941 Time  =232920.000
-
- STEP =  1942 Time  =233040.000
-
- STEP =  1943 Time  =233160.000
-
- STEP =  1944 Time  =233280.000
-
- STEP =  1945 Time  =233400.000
-
- STEP =  1946 Time  =233520.000
-
- STEP =  1947 Time  =233640.000
-
- STEP =  1948 Time  =233760.000
-
- STEP =  1949 Time  =233880.000
-
- STEP =  1950 Time  =234000.000
-
- STEP =  1951 Time  =234120.000
-
- STEP =  1952 Time  =234240.000
-
- STEP =  1953 Time  =234360.000
-
- STEP =  1954 Time  =234480.000
-
- STEP =  1955 Time  =234600.000
-
- STEP =  1956 Time  =234720.000
-
- STEP =  1957 Time  =234840.000
-
- STEP =  1958 Time  =234960.000
-
- STEP =  1959 Time  =235080.000
-
- STEP =  1960 Time  =235200.000
-
- STEP =  1961 Time  =235320.000
-
- STEP =  1962 Time  =235440.000
-
- STEP =  1963 Time  =235560.000
-
- STEP =  1964 Time  =235680.000
-
- STEP =  1965 Time  =235800.000
-
- STEP =  1966 Time  =235920.000
-
- STEP =  1967 Time  =236040.000
-
- STEP =  1968 Time  =236160.000
-
- STEP =  1969 Time  =236280.000
-
- STEP =  1970 Time  =236400.000
-
- STEP =  1971 Time  =236520.000
-
- STEP =  1972 Time  =236640.000
-
- STEP =  1973 Time  =236760.000
-
- STEP =  1974 Time  =236880.000
-
- STEP =  1975 Time  =237000.000
-
- STEP =  1976 Time  =237120.000
-
- STEP =  1977 Time  =237240.000
-
- STEP =  1978 Time  =237360.000
-
- STEP =  1979 Time  =237480.000
-
- STEP =  1980 Time  =237600.000
-
- STEP =  1981 Time  =237720.000
-
- STEP =  1982 Time  =237840.000
-
- STEP =  1983 Time  =237960.000
-
- STEP =  1984 Time  =238080.000
-
- STEP =  1985 Time  =238200.000
-
- STEP =  1986 Time  =238320.000
-
- STEP =  1987 Time  =238440.000
-
- STEP =  1988 Time  =238560.000
-
- STEP =  1989 Time  =238680.000
-
- STEP =  1990 Time  =238800.000
-
- STEP =  1991 Time  =238920.000
-
- STEP =  1992 Time  =239040.000
-
- STEP =  1993 Time  =239160.000
-
- STEP =  1994 Time  =239280.000
-
- STEP =  1995 Time  =239400.000
-
- STEP =  1996 Time  =239520.000
-
- STEP =  1997 Time  =239640.000
-
- STEP =  1998 Time  =239760.000
-
- STEP =  1999 Time  =239880.000
-
- STEP =  2000 Time  =240000.000
-
- STEP =  2001 Time  =240120.000
-
- STEP =  2002 Time  =240240.000
-
- STEP =  2003 Time  =240360.000
-
- STEP =  2004 Time  =240480.000
-
- STEP =  2005 Time  =240600.000
-
- STEP =  2006 Time  =240720.000
-
- STEP =  2007 Time  =240840.000
-
- STEP =  2008 Time  =240960.000
-
- STEP =  2009 Time  =241080.000
-
- STEP =  2010 Time  =241200.000
-
- STEP =  2011 Time  =241320.000
-
- STEP =  2012 Time  =241440.000
-
- STEP =  2013 Time  =241560.000
-
- STEP =  2014 Time  =241680.000
-
- STEP =  2015 Time  =241800.000
-
- STEP =  2016 Time  =241920.000
-
- STEP =  2017 Time  =242040.000
-
- STEP =  2018 Time  =242160.000
-
- STEP =  2019 Time  =242280.000
-
- STEP =  2020 Time  =242400.000
-
- STEP =  2021 Time  =242520.000
-
- STEP =  2022 Time  =242640.000
-
- STEP =  2023 Time  =242760.000
-
- STEP =  2024 Time  =242880.000
-
- STEP =  2025 Time  =243000.000
-
- STEP =  2026 Time  =243120.000
-
- STEP =  2027 Time  =243240.000
-
- STEP =  2028 Time  =243360.000
-
- STEP =  2029 Time  =243480.000
-
- STEP =  2030 Time  =243600.000
-
- STEP =  2031 Time  =243720.000
-
- STEP =  2032 Time  =243840.000
-
- STEP =  2033 Time  =243960.000
-
- STEP =  2034 Time  =244080.000
-
- STEP =  2035 Time  =244200.000
-
- STEP =  2036 Time  =244320.000
-
- STEP =  2037 Time  =244440.000
-
- STEP =  2038 Time  =244560.000
-
- STEP =  2039 Time  =244680.000
-
- STEP =  2040 Time  =244800.000
-
- STEP =  2041 Time  =244920.000
-
- STEP =  2042 Time  =245040.000
-
- STEP =  2043 Time  =245160.000
-
- STEP =  2044 Time  =245280.000
-
- STEP =  2045 Time  =245400.000
-
- STEP =  2046 Time  =245520.000
-
- STEP =  2047 Time  =245640.000
-
- STEP =  2048 Time  =245760.000
-
- STEP =  2049 Time  =245880.000
-
- STEP =  2050 Time  =246000.000
-
- STEP =  2051 Time  =246120.000
-
- STEP =  2052 Time  =246240.000
-
- STEP =  2053 Time  =246360.000
-
- STEP =  2054 Time  =246480.000
-
- STEP =  2055 Time  =246600.000
-
- STEP =  2056 Time  =246720.000
-
- STEP =  2057 Time  =246840.000
-
- STEP =  2058 Time  =246960.000
-
- STEP =  2059 Time  =247080.000
-
- STEP =  2060 Time  =247200.000
-
- STEP =  2061 Time  =247320.000
-
- STEP =  2062 Time  =247440.000
-
- STEP =  2063 Time  =247560.000
-
- STEP =  2064 Time  =247680.000
-
- STEP =  2065 Time  =247800.000
-
- STEP =  2066 Time  =247920.000
-
- STEP =  2067 Time  =248040.000
-
- STEP =  2068 Time  =248160.000
-
- STEP =  2069 Time  =248280.000
-
- STEP =  2070 Time  =248400.000
-
- STEP =  2071 Time  =248520.000
-
- STEP =  2072 Time  =248640.000
-
- STEP =  2073 Time  =248760.000
-
- STEP =  2074 Time  =248880.000
-
- STEP =  2075 Time  =249000.000
-
- STEP =  2076 Time  =249120.000
-
- STEP =  2077 Time  =249240.000
-
- STEP =  2078 Time  =249360.000
-
- STEP =  2079 Time  =249480.000
-
- STEP =  2080 Time  =249600.000
-
- STEP =  2081 Time  =249720.000
-
- STEP =  2082 Time  =249840.000
-
- STEP =  2083 Time  =249960.000
-
- STEP =  2084 Time  =250080.000
-
- STEP =  2085 Time  =250200.000
-
- STEP =  2086 Time  =250320.000
-
- STEP =  2087 Time  =250440.000
-
- STEP =  2088 Time  =250560.000
-
- STEP =  2089 Time  =250680.000
-
- STEP =  2090 Time  =250800.000
-
- STEP =  2091 Time  =250920.000
-
- STEP =  2092 Time  =251040.000
-
- STEP =  2093 Time  =251160.000
-
- STEP =  2094 Time  =251280.000
-
- STEP =  2095 Time  =251400.000
-
- STEP =  2096 Time  =251520.000
-
- STEP =  2097 Time  =251640.000
-
- STEP =  2098 Time  =251760.000
-
- STEP =  2099 Time  =251880.000
-
- STEP =  2100 Time  =252000.000
-
- STEP =  2101 Time  =252120.000
-
- STEP =  2102 Time  =252240.000
-
- STEP =  2103 Time  =252360.000
-
- STEP =  2104 Time  =252480.000
-
- STEP =  2105 Time  =252600.000
-
- STEP =  2106 Time  =252720.000
-
- STEP =  2107 Time  =252840.000
-
- STEP =  2108 Time  =252960.000
-
- STEP =  2109 Time  =253080.000
-
- STEP =  2110 Time  =253200.000
-
- STEP =  2111 Time  =253320.000
-
- STEP =  2112 Time  =253440.000
-
- STEP =  2113 Time  =253560.000
-
- STEP =  2114 Time  =253680.000
-
- STEP =  2115 Time  =253800.000
-
- STEP =  2116 Time  =253920.000
-
- STEP =  2117 Time  =254040.000
-
- STEP =  2118 Time  =254160.000
-
- STEP =  2119 Time  =254280.000
-
- STEP =  2120 Time  =254400.000
-
- STEP =  2121 Time  =254520.000
-
- STEP =  2122 Time  =254640.000
-
- STEP =  2123 Time  =254760.000
-
- STEP =  2124 Time  =254880.000
-
- STEP =  2125 Time  =255000.000
-
- STEP =  2126 Time  =255120.000
-
- STEP =  2127 Time  =255240.000
-
- STEP =  2128 Time  =255360.000
-
- STEP =  2129 Time  =255480.000
-
- STEP =  2130 Time  =255600.000
-
- STEP =  2131 Time  =255720.000
-
- STEP =  2132 Time  =255840.000
-
- STEP =  2133 Time  =255960.000
-
- STEP =  2134 Time  =256080.000
-
- STEP =  2135 Time  =256200.000
-
- STEP =  2136 Time  =256320.000
-
- STEP =  2137 Time  =256440.000
-
- STEP =  2138 Time  =256560.000
-
- STEP =  2139 Time  =256680.000
-
- STEP =  2140 Time  =256800.000
-
- STEP =  2141 Time  =256920.000
-
- STEP =  2142 Time  =257040.000
-
- STEP =  2143 Time  =257160.000
-
- STEP =  2144 Time  =257280.000
-
- STEP =  2145 Time  =257400.000
-
- STEP =  2146 Time  =257520.000
-
- STEP =  2147 Time  =257640.000
-
- STEP =  2148 Time  =257760.000
-
- STEP =  2149 Time  =257880.000
-
- STEP =  2150 Time  =258000.000
-
- STEP =  2151 Time  =258120.000
-
- STEP =  2152 Time  =258240.000
-
- STEP =  2153 Time  =258360.000
-
- STEP =  2154 Time  =258480.000
-
- STEP =  2155 Time  =258600.000
-
- STEP =  2156 Time  =258720.000
-
- STEP =  2157 Time  =258840.000
-
- STEP =  2158 Time  =258960.000
-
- STEP =  2159 Time  =259080.000
-
- STEP =  2160 Time  =259200.000
-
- STEP =  2161 Time  =259320.000
-
- STEP =  2162 Time  =259440.000
-
- STEP =  2163 Time  =259560.000
-
- STEP =  2164 Time  =259680.000
-
- STEP =  2165 Time  =259800.000
-
- STEP =  2166 Time  =259920.000
-
- STEP =  2167 Time  =260040.000
-
- STEP =  2168 Time  =260160.000
-
- STEP =  2169 Time  =260280.000
-
- STEP =  2170 Time  =260400.000
-
- STEP =  2171 Time  =260520.000
-
- STEP =  2172 Time  =260640.000
-
- STEP =  2173 Time  =260760.000
-
- STEP =  2174 Time  =260880.000
-
- STEP =  2175 Time  =261000.000
-
- STEP =  2176 Time  =261120.000
-
- STEP =  2177 Time  =261240.000
-
- STEP =  2178 Time  =261360.000
-
- STEP =  2179 Time  =261480.000
-
- STEP =  2180 Time  =261600.000
-
- STEP =  2181 Time  =261720.000
-
- STEP =  2182 Time  =261840.000
-
- STEP =  2183 Time  =261960.000
-
- STEP =  2184 Time  =262080.000
-
- STEP =  2185 Time  =262200.000
-
- STEP =  2186 Time  =262320.000
-
- STEP =  2187 Time  =262440.000
-
- STEP =  2188 Time  =262560.000
-
- STEP =  2189 Time  =262680.000
-
- STEP =  2190 Time  =262800.000
-
- STEP =  2191 Time  =262920.000
-
- STEP =  2192 Time  =263040.000
-
- STEP =  2193 Time  =263160.000
-
- STEP =  2194 Time  =263280.000
-
- STEP =  2195 Time  =263400.000
-
- STEP =  2196 Time  =263520.000
-
- STEP =  2197 Time  =263640.000
-
- STEP =  2198 Time  =263760.000
-
- STEP =  2199 Time  =263880.000
-
- STEP =  2200 Time  =264000.000
-
- STEP =  2201 Time  =264120.000
-
- STEP =  2202 Time  =264240.000
-
- STEP =  2203 Time  =264360.000
-
- STEP =  2204 Time  =264480.000
-
- STEP =  2205 Time  =264600.000
-
- STEP =  2206 Time  =264720.000
-
- STEP =  2207 Time  =264840.000
-
- STEP =  2208 Time  =264960.000
-
- STEP =  2209 Time  =265080.000
-
- STEP =  2210 Time  =265200.000
-
- STEP =  2211 Time  =265320.000
-
- STEP =  2212 Time  =265440.000
-
- STEP =  2213 Time  =265560.000
-
- STEP =  2214 Time  =265680.000
-
- STEP =  2215 Time  =265800.000
-
- STEP =  2216 Time  =265920.000
-
- STEP =  2217 Time  =266040.000
-
- STEP =  2218 Time  =266160.000
-
- STEP =  2219 Time  =266280.000
-
- STEP =  2220 Time  =266400.000
-
- STEP =  2221 Time  =266520.000
-
- STEP =  2222 Time  =266640.000
-
- STEP =  2223 Time  =266760.000
-
- STEP =  2224 Time  =266880.000
-
- STEP =  2225 Time  =267000.000
-
- STEP =  2226 Time  =267120.000
-
- STEP =  2227 Time  =267240.000
-
- STEP =  2228 Time  =267360.000
-
- STEP =  2229 Time  =267480.000
-
- STEP =  2230 Time  =267600.000
-
- STEP =  2231 Time  =267720.000
-
- STEP =  2232 Time  =267840.000
-
- STEP =  2233 Time  =267960.000
-
- STEP =  2234 Time  =268080.000
-
- STEP =  2235 Time  =268200.000
-
- STEP =  2236 Time  =268320.000
-
- STEP =  2237 Time  =268440.000
-
- STEP =  2238 Time  =268560.000
-
- STEP =  2239 Time  =268680.000
-
- STEP =  2240 Time  =268800.000
-
- STEP =  2241 Time  =268920.000
-
- STEP =  2242 Time  =269040.000
-
- STEP =  2243 Time  =269160.000
-
- STEP =  2244 Time  =269280.000
-
- STEP =  2245 Time  =269400.000
-
- STEP =  2246 Time  =269520.000
-
- STEP =  2247 Time  =269640.000
-
- STEP =  2248 Time  =269760.000
-
- STEP =  2249 Time  =269880.000
-
- STEP =  2250 Time  =270000.000
-
- STEP =  2251 Time  =270120.000
-
- STEP =  2252 Time  =270240.000
-
- STEP =  2253 Time  =270360.000
-
- STEP =  2254 Time  =270480.000
-
- STEP =  2255 Time  =270600.000
-
- STEP =  2256 Time  =270720.000
-
- STEP =  2257 Time  =270840.000
-
- STEP =  2258 Time  =270960.000
-
- STEP =  2259 Time  =271080.000
-
- STEP =  2260 Time  =271200.000
-
- STEP =  2261 Time  =271320.000
-
- STEP =  2262 Time  =271440.000
-
- STEP =  2263 Time  =271560.000
-
- STEP =  2264 Time  =271680.000
-
- STEP =  2265 Time  =271800.000
-
- STEP =  2266 Time  =271920.000
-
- STEP =  2267 Time  =272040.000
-
- STEP =  2268 Time  =272160.000
-
- STEP =  2269 Time  =272280.000
-
- STEP =  2270 Time  =272400.000
-
- STEP =  2271 Time  =272520.000
-
- STEP =  2272 Time  =272640.000
-
- STEP =  2273 Time  =272760.000
-
- STEP =  2274 Time  =272880.000
-
- STEP =  2275 Time  =273000.000
-
- STEP =  2276 Time  =273120.000
-
- STEP =  2277 Time  =273240.000
-
- STEP =  2278 Time  =273360.000
-
- STEP =  2279 Time  =273480.000
-
- STEP =  2280 Time  =273600.000
-
- STEP =  2281 Time  =273720.000
-
- STEP =  2282 Time  =273840.000
-
- STEP =  2283 Time  =273960.000
-
- STEP =  2284 Time  =274080.000
-
- STEP =  2285 Time  =274200.000
-
- STEP =  2286 Time  =274320.000
-
- STEP =  2287 Time  =274440.000
-
- STEP =  2288 Time  =274560.000
-
- STEP =  2289 Time  =274680.000
-
- STEP =  2290 Time  =274800.000
-
- STEP =  2291 Time  =274920.000
-
- STEP =  2292 Time  =275040.000
-
- STEP =  2293 Time  =275160.000
-
- STEP =  2294 Time  =275280.000
-
- STEP =  2295 Time  =275400.000
-
- STEP =  2296 Time  =275520.000
-
- STEP =  2297 Time  =275640.000
-
- STEP =  2298 Time  =275760.000
-
- STEP =  2299 Time  =275880.000
-
- STEP =  2300 Time  =276000.000
-
- STEP =  2301 Time  =276120.000
-
- STEP =  2302 Time  =276240.000
-
- STEP =  2303 Time  =276360.000
-
- STEP =  2304 Time  =276480.000
-
- STEP =  2305 Time  =276600.000
-
- STEP =  2306 Time  =276720.000
-
- STEP =  2307 Time  =276840.000
-
- STEP =  2308 Time  =276960.000
-
- STEP =  2309 Time  =277080.000
-
- STEP =  2310 Time  =277200.000
-
- STEP =  2311 Time  =277320.000
-
- STEP =  2312 Time  =277440.000
-
- STEP =  2313 Time  =277560.000
-
- STEP =  2314 Time  =277680.000
-
- STEP =  2315 Time  =277800.000
-
- STEP =  2316 Time  =277920.000
-
- STEP =  2317 Time  =278040.000
-
- STEP =  2318 Time  =278160.000
-
- STEP =  2319 Time  =278280.000
-
- STEP =  2320 Time  =278400.000
-
- STEP =  2321 Time  =278520.000
-
- STEP =  2322 Time  =278640.000
-
- STEP =  2323 Time  =278760.000
-
- STEP =  2324 Time  =278880.000
-
- STEP =  2325 Time  =279000.000
-
- STEP =  2326 Time  =279120.000
-
- STEP =  2327 Time  =279240.000
-
- STEP =  2328 Time  =279360.000
-
- STEP =  2329 Time  =279480.000
-
- STEP =  2330 Time  =279600.000
-
- STEP =  2331 Time  =279720.000
-
- STEP =  2332 Time  =279840.000
-
- STEP =  2333 Time  =279960.000
-
- STEP =  2334 Time  =280080.000
-
- STEP =  2335 Time  =280200.000
-
- STEP =  2336 Time  =280320.000
-
- STEP =  2337 Time  =280440.000
-
- STEP =  2338 Time  =280560.000
-
- STEP =  2339 Time  =280680.000
-
- STEP =  2340 Time  =280800.000
-
- STEP =  2341 Time  =280920.000
-
- STEP =  2342 Time  =281040.000
-
- STEP =  2343 Time  =281160.000
-
- STEP =  2344 Time  =281280.000
-
- STEP =  2345 Time  =281400.000
-
- STEP =  2346 Time  =281520.000
-
- STEP =  2347 Time  =281640.000
-
- STEP =  2348 Time  =281760.000
-
- STEP =  2349 Time  =281880.000
-
- STEP =  2350 Time  =282000.000
-
- STEP =  2351 Time  =282120.000
-
- STEP =  2352 Time  =282240.000
-
- STEP =  2353 Time  =282360.000
-
- STEP =  2354 Time  =282480.000
-
- STEP =  2355 Time  =282600.000
-
- STEP =  2356 Time  =282720.000
-
- STEP =  2357 Time  =282840.000
-
- STEP =  2358 Time  =282960.000
-
- STEP =  2359 Time  =283080.000
-
- STEP =  2360 Time  =283200.000
-
- STEP =  2361 Time  =283320.000
-
- STEP =  2362 Time  =283440.000
-
- STEP =  2363 Time  =283560.000
-
- STEP =  2364 Time  =283680.000
-
- STEP =  2365 Time  =283800.000
-
- STEP =  2366 Time  =283920.000
-
- STEP =  2367 Time  =284040.000
-
- STEP =  2368 Time  =284160.000
-
- STEP =  2369 Time  =284280.000
-
- STEP =  2370 Time  =284400.000
-
- STEP =  2371 Time  =284520.000
-
- STEP =  2372 Time  =284640.000
-
- STEP =  2373 Time  =284760.000
-
- STEP =  2374 Time  =284880.000
-
- STEP =  2375 Time  =285000.000
-
- STEP =  2376 Time  =285120.000
-
- STEP =  2377 Time  =285240.000
-
- STEP =  2378 Time  =285360.000
-
- STEP =  2379 Time  =285480.000
-
- STEP =  2380 Time  =285600.000
-
- STEP =  2381 Time  =285720.000
-
- STEP =  2382 Time  =285840.000
-
- STEP =  2383 Time  =285960.000
-
- STEP =  2384 Time  =286080.000
-
- STEP =  2385 Time  =286200.000
-
- STEP =  2386 Time  =286320.000
-
- STEP =  2387 Time  =286440.000
-
- STEP =  2388 Time  =286560.000
-
- STEP =  2389 Time  =286680.000
-
- STEP =  2390 Time  =286800.000
-
- STEP =  2391 Time  =286920.000
-
- STEP =  2392 Time  =287040.000
-
- STEP =  2393 Time  =287160.000
-
- STEP =  2394 Time  =287280.000
-
- STEP =  2395 Time  =287400.000
-
- STEP =  2396 Time  =287520.000
-
- STEP =  2397 Time  =287640.000
-
- STEP =  2398 Time  =287760.000
-
- STEP =  2399 Time  =287880.000
-
- STEP =  2400 Time  =288000.000
-
- STEP =  2401 Time  =288120.000
-
- STEP =  2402 Time  =288240.000
-
- STEP =  2403 Time  =288360.000
-
- STEP =  2404 Time  =288480.000
-
- STEP =  2405 Time  =288600.000
-
- STEP =  2406 Time  =288720.000
-
- STEP =  2407 Time  =288840.000
-
- STEP =  2408 Time  =288960.000
-
- STEP =  2409 Time  =289080.000
-
- STEP =  2410 Time  =289200.000
-
- STEP =  2411 Time  =289320.000
-
- STEP =  2412 Time  =289440.000
-
- STEP =  2413 Time  =289560.000
-
- STEP =  2414 Time  =289680.000
-
- STEP =  2415 Time  =289800.000
-
- STEP =  2416 Time  =289920.000
-
- STEP =  2417 Time  =290040.000
-
- STEP =  2418 Time  =290160.000
-
- STEP =  2419 Time  =290280.000
-
- STEP =  2420 Time  =290400.000
-
- STEP =  2421 Time  =290520.000
-
- STEP =  2422 Time  =290640.000
-
- STEP =  2423 Time  =290760.000
-
- STEP =  2424 Time  =290880.000
-
- STEP =  2425 Time  =291000.000
-
- STEP =  2426 Time  =291120.000
-
- STEP =  2427 Time  =291240.000
-
- STEP =  2428 Time  =291360.000
-
- STEP =  2429 Time  =291480.000
-
- STEP =  2430 Time  =291600.000
-
- STEP =  2431 Time  =291720.000
-
- STEP =  2432 Time  =291840.000
-
- STEP =  2433 Time  =291960.000
-
- STEP =  2434 Time  =292080.000
-
- STEP =  2435 Time  =292200.000
-
- STEP =  2436 Time  =292320.000
-
- STEP =  2437 Time  =292440.000
-
- STEP =  2438 Time  =292560.000
-
- STEP =  2439 Time  =292680.000
-
- STEP =  2440 Time  =292800.000
-
- STEP =  2441 Time  =292920.000
-
- STEP =  2442 Time  =293040.000
-
- STEP =  2443 Time  =293160.000
-
- STEP =  2444 Time  =293280.000
-
- STEP =  2445 Time  =293400.000
-
- STEP =  2446 Time  =293520.000
-
- STEP =  2447 Time  =293640.000
-
- STEP =  2448 Time  =293760.000
-
- STEP =  2449 Time  =293880.000
-
- STEP =  2450 Time  =294000.000
-
- STEP =  2451 Time  =294120.000
-
- STEP =  2452 Time  =294240.000
-
- STEP =  2453 Time  =294360.000
-
- STEP =  2454 Time  =294480.000
-
- STEP =  2455 Time  =294600.000
-
- STEP =  2456 Time  =294720.000
-
- STEP =  2457 Time  =294840.000
-
- STEP =  2458 Time  =294960.000
-
- STEP =  2459 Time  =295080.000
-
- STEP =  2460 Time  =295200.000
-
- STEP =  2461 Time  =295320.000
-
- STEP =  2462 Time  =295440.000
-
- STEP =  2463 Time  =295560.000
-
- STEP =  2464 Time  =295680.000
-
- STEP =  2465 Time  =295800.000
-
- STEP =  2466 Time  =295920.000
-
- STEP =  2467 Time  =296040.000
-
- STEP =  2468 Time  =296160.000
-
- STEP =  2469 Time  =296280.000
-
- STEP =  2470 Time  =296400.000
-
- STEP =  2471 Time  =296520.000
-
- STEP =  2472 Time  =296640.000
-
- STEP =  2473 Time  =296760.000
-
- STEP =  2474 Time  =296880.000
-
- STEP =  2475 Time  =297000.000
-
- STEP =  2476 Time  =297120.000
-
- STEP =  2477 Time  =297240.000
-
- STEP =  2478 Time  =297360.000
-
- STEP =  2479 Time  =297480.000
-
- STEP =  2480 Time  =297600.000
-
- STEP =  2481 Time  =297720.000
-
- STEP =  2482 Time  =297840.000
-
- STEP =  2483 Time  =297960.000
-
- STEP =  2484 Time  =298080.000
-
- STEP =  2485 Time  =298200.000
-
- STEP =  2486 Time  =298320.000
-
- STEP =  2487 Time  =298440.000
-
- STEP =  2488 Time  =298560.000
-
- STEP =  2489 Time  =298680.000
-
- STEP =  2490 Time  =298800.000
-
- STEP =  2491 Time  =298920.000
-
- STEP =  2492 Time  =299040.000
-
- STEP =  2493 Time  =299160.000
-
- STEP =  2494 Time  =299280.000
-
- STEP =  2495 Time  =299400.000
-
- STEP =  2496 Time  =299520.000
-
- STEP =  2497 Time  =299640.000
-
- STEP =  2498 Time  =299760.000
-
- STEP =  2499 Time  =299880.000
-
- STEP =  2500 Time  =300000.000
-
- STEP =  2501 Time  =300120.000
-
- STEP =  2502 Time  =300240.000
-
- STEP =  2503 Time  =300360.000
-
- STEP =  2504 Time  =300480.000
-
- STEP =  2505 Time  =300600.000
-
- STEP =  2506 Time  =300720.000
-
- STEP =  2507 Time  =300840.000
-
- STEP =  2508 Time  =300960.000
-
- STEP =  2509 Time  =301080.000
-
- STEP =  2510 Time  =301200.000
-
- STEP =  2511 Time  =301320.000
-
- STEP =  2512 Time  =301440.000
-
- STEP =  2513 Time  =301560.000
-
- STEP =  2514 Time  =301680.000
-
- STEP =  2515 Time  =301800.000
-
- STEP =  2516 Time  =301920.000
-
- STEP =  2517 Time  =302040.000
-
- STEP =  2518 Time  =302160.000
-
- STEP =  2519 Time  =302280.000
-
- STEP =  2520 Time  =302400.000
-
- STEP =  2521 Time  =302520.000
-
- STEP =  2522 Time  =302640.000
-
- STEP =  2523 Time  =302760.000
-
- STEP =  2524 Time  =302880.000
-
- STEP =  2525 Time  =303000.000
-
- STEP =  2526 Time  =303120.000
-
- STEP =  2527 Time  =303240.000
-
- STEP =  2528 Time  =303360.000
-
- STEP =  2529 Time  =303480.000
-
- STEP =  2530 Time  =303600.000
-
- STEP =  2531 Time  =303720.000
-
- STEP =  2532 Time  =303840.000
-
- STEP =  2533 Time  =303960.000
-
- STEP =  2534 Time  =304080.000
-
- STEP =  2535 Time  =304200.000
-
- STEP =  2536 Time  =304320.000
-
- STEP =  2537 Time  =304440.000
-
- STEP =  2538 Time  =304560.000
-
- STEP =  2539 Time  =304680.000
-
- STEP =  2540 Time  =304800.000
-
- STEP =  2541 Time  =304920.000
-
- STEP =  2542 Time  =305040.000
-
- STEP =  2543 Time  =305160.000
-
- STEP =  2544 Time  =305280.000
-
- STEP =  2545 Time  =305400.000
-
- STEP =  2546 Time  =305520.000
-
- STEP =  2547 Time  =305640.000
-
- STEP =  2548 Time  =305760.000
-
- STEP =  2549 Time  =305880.000
-
- STEP =  2550 Time  =306000.000
-
- STEP =  2551 Time  =306120.000
-
- STEP =  2552 Time  =306240.000
-
- STEP =  2553 Time  =306360.000
-
- STEP =  2554 Time  =306480.000
-
- STEP =  2555 Time  =306600.000
-
- STEP =  2556 Time  =306720.000
-
- STEP =  2557 Time  =306840.000
-
- STEP =  2558 Time  =306960.000
-
- STEP =  2559 Time  =307080.000
-
- STEP =  2560 Time  =307200.000
-
- STEP =  2561 Time  =307320.000
-
- STEP =  2562 Time  =307440.000
-
- STEP =  2563 Time  =307560.000
-
- STEP =  2564 Time  =307680.000
-
- STEP =  2565 Time  =307800.000
-
- STEP =  2566 Time  =307920.000
-
- STEP =  2567 Time  =308040.000
-
- STEP =  2568 Time  =308160.000
-
- STEP =  2569 Time  =308280.000
-
- STEP =  2570 Time  =308400.000
-
- STEP =  2571 Time  =308520.000
-
- STEP =  2572 Time  =308640.000
-
- STEP =  2573 Time  =308760.000
-
- STEP =  2574 Time  =308880.000
-
- STEP =  2575 Time  =309000.000
-
- STEP =  2576 Time  =309120.000
-
- STEP =  2577 Time  =309240.000
-
- STEP =  2578 Time  =309360.000
-
- STEP =  2579 Time  =309480.000
-
- STEP =  2580 Time  =309600.000
-
- STEP =  2581 Time  =309720.000
-
- STEP =  2582 Time  =309840.000
-
- STEP =  2583 Time  =309960.000
-
- STEP =  2584 Time  =310080.000
-
- STEP =  2585 Time  =310200.000
-
- STEP =  2586 Time  =310320.000
-
- STEP =  2587 Time  =310440.000
-
- STEP =  2588 Time  =310560.000
-
- STEP =  2589 Time  =310680.000
-
- STEP =  2590 Time  =310800.000
-
- STEP =  2591 Time  =310920.000
-
- STEP =  2592 Time  =311040.000
-
- STEP =  2593 Time  =311160.000
-
- STEP =  2594 Time  =311280.000
-
- STEP =  2595 Time  =311400.000
-
- STEP =  2596 Time  =311520.000
-
- STEP =  2597 Time  =311640.000
-
- STEP =  2598 Time  =311760.000
-
- STEP =  2599 Time  =311880.000
-
- STEP =  2600 Time  =312000.000
-
- STEP =  2601 Time  =312120.000
-
- STEP =  2602 Time  =312240.000
-
- STEP =  2603 Time  =312360.000
-
- STEP =  2604 Time  =312480.000
-
- STEP =  2605 Time  =312600.000
-
- STEP =  2606 Time  =312720.000
-
- STEP =  2607 Time  =312840.000
-
- STEP =  2608 Time  =312960.000
-
- STEP =  2609 Time  =313080.000
-
- STEP =  2610 Time  =313200.000
-
- STEP =  2611 Time  =313320.000
-
- STEP =  2612 Time  =313440.000
-
- STEP =  2613 Time  =313560.000
-
- STEP =  2614 Time  =313680.000
-
- STEP =  2615 Time  =313800.000
-
- STEP =  2616 Time  =313920.000
-
- STEP =  2617 Time  =314040.000
-
- STEP =  2618 Time  =314160.000
-
- STEP =  2619 Time  =314280.000
-
- STEP =  2620 Time  =314400.000
-
- STEP =  2621 Time  =314520.000
-
- STEP =  2622 Time  =314640.000
-
- STEP =  2623 Time  =314760.000
-
- STEP =  2624 Time  =314880.000
-
- STEP =  2625 Time  =315000.000
-
- STEP =  2626 Time  =315120.000
-
- STEP =  2627 Time  =315240.000
-
- STEP =  2628 Time  =315360.000
-
- STEP =  2629 Time  =315480.000
-
- STEP =  2630 Time  =315600.000
-
- STEP =  2631 Time  =315720.000
-
- STEP =  2632 Time  =315840.000
-
- STEP =  2633 Time  =315960.000
-
- STEP =  2634 Time  =316080.000
-
- STEP =  2635 Time  =316200.000
-
- STEP =  2636 Time  =316320.000
-
- STEP =  2637 Time  =316440.000
-
- STEP =  2638 Time  =316560.000
-
- STEP =  2639 Time  =316680.000
-
- STEP =  2640 Time  =316800.000
-
- STEP =  2641 Time  =316920.000
-
- STEP =  2642 Time  =317040.000
-
- STEP =  2643 Time  =317160.000
-
- STEP =  2644 Time  =317280.000
-
- STEP =  2645 Time  =317400.000
-
- STEP =  2646 Time  =317520.000
-
- STEP =  2647 Time  =317640.000
-
- STEP =  2648 Time  =317760.000
-
- STEP =  2649 Time  =317880.000
-
- STEP =  2650 Time  =318000.000
-
- STEP =  2651 Time  =318120.000
-
- STEP =  2652 Time  =318240.000
-
- STEP =  2653 Time  =318360.000
-
- STEP =  2654 Time  =318480.000
-
- STEP =  2655 Time  =318600.000
-
- STEP =  2656 Time  =318720.000
-
- STEP =  2657 Time  =318840.000
-
- STEP =  2658 Time  =318960.000
-
- STEP =  2659 Time  =319080.000
-
- STEP =  2660 Time  =319200.000
-
- STEP =  2661 Time  =319320.000
-
- STEP =  2662 Time  =319440.000
-
- STEP =  2663 Time  =319560.000
-
- STEP =  2664 Time  =319680.000
-
- STEP =  2665 Time  =319800.000
-
- STEP =  2666 Time  =319920.000
-
- STEP =  2667 Time  =320040.000
-
- STEP =  2668 Time  =320160.000
-
- STEP =  2669 Time  =320280.000
-
- STEP =  2670 Time  =320400.000
-
- STEP =  2671 Time  =320520.000
-
- STEP =  2672 Time  =320640.000
-
- STEP =  2673 Time  =320760.000
-
- STEP =  2674 Time  =320880.000
-
- STEP =  2675 Time  =321000.000
-
- STEP =  2676 Time  =321120.000
-
- STEP =  2677 Time  =321240.000
-
- STEP =  2678 Time  =321360.000
-
- STEP =  2679 Time  =321480.000
-
- STEP =  2680 Time  =321600.000
-
- STEP =  2681 Time  =321720.000
-
- STEP =  2682 Time  =321840.000
-
- STEP =  2683 Time  =321960.000
-
- STEP =  2684 Time  =322080.000
-
- STEP =  2685 Time  =322200.000
-
- STEP =  2686 Time  =322320.000
-
- STEP =  2687 Time  =322440.000
-
- STEP =  2688 Time  =322560.000
-
- STEP =  2689 Time  =322680.000
-
- STEP =  2690 Time  =322800.000
-
- STEP =  2691 Time  =322920.000
-
- STEP =  2692 Time  =323040.000
-
- STEP =  2693 Time  =323160.000
-
- STEP =  2694 Time  =323280.000
-
- STEP =  2695 Time  =323400.000
-
- STEP =  2696 Time  =323520.000
-
- STEP =  2697 Time  =323640.000
-
- STEP =  2698 Time  =323760.000
-
- STEP =  2699 Time  =323880.000
-
- STEP =  2700 Time  =324000.000
-
- STEP =  2701 Time  =324120.000
-
- STEP =  2702 Time  =324240.000
-
- STEP =  2703 Time  =324360.000
-
- STEP =  2704 Time  =324480.000
-
- STEP =  2705 Time  =324600.000
-
- STEP =  2706 Time  =324720.000
-
- STEP =  2707 Time  =324840.000
-
- STEP =  2708 Time  =324960.000
-
- STEP =  2709 Time  =325080.000
-
- STEP =  2710 Time  =325200.000
-
- STEP =  2711 Time  =325320.000
-
- STEP =  2712 Time  =325440.000
-
- STEP =  2713 Time  =325560.000
-
- STEP =  2714 Time  =325680.000
-
- STEP =  2715 Time  =325800.000
-
- STEP =  2716 Time  =325920.000
-
- STEP =  2717 Time  =326040.000
-
- STEP =  2718 Time  =326160.000
-
- STEP =  2719 Time  =326280.000
-
- STEP =  2720 Time  =326400.000
-
- STEP =  2721 Time  =326520.000
-
- STEP =  2722 Time  =326640.000
-
- STEP =  2723 Time  =326760.000
-
- STEP =  2724 Time  =326880.000
-
- STEP =  2725 Time  =327000.000
-
- STEP =  2726 Time  =327120.000
-
- STEP =  2727 Time  =327240.000
-
- STEP =  2728 Time  =327360.000
-
- STEP =  2729 Time  =327480.000
-
- STEP =  2730 Time  =327600.000
-
- STEP =  2731 Time  =327720.000
-
- STEP =  2732 Time  =327840.000
-
- STEP =  2733 Time  =327960.000
-
- STEP =  2734 Time  =328080.000
-
- STEP =  2735 Time  =328200.000
-
- STEP =  2736 Time  =328320.000
-
- STEP =  2737 Time  =328440.000
-
- STEP =  2738 Time  =328560.000
-
- STEP =  2739 Time  =328680.000
-
- STEP =  2740 Time  =328800.000
-
- STEP =  2741 Time  =328920.000
-
- STEP =  2742 Time  =329040.000
-
- STEP =  2743 Time  =329160.000
-
- STEP =  2744 Time  =329280.000
-
- STEP =  2745 Time  =329400.000
-
- STEP =  2746 Time  =329520.000
-
- STEP =  2747 Time  =329640.000
-
- STEP =  2748 Time  =329760.000
-
- STEP =  2749 Time  =329880.000
-
- STEP =  2750 Time  =330000.000
-
- STEP =  2751 Time  =330120.000
-
- STEP =  2752 Time  =330240.000
-
- STEP =  2753 Time  =330360.000
-
- STEP =  2754 Time  =330480.000
-
- STEP =  2755 Time  =330600.000
-
- STEP =  2756 Time  =330720.000
-
- STEP =  2757 Time  =330840.000
-
- STEP =  2758 Time  =330960.000
-
- STEP =  2759 Time  =331080.000
-
- STEP =  2760 Time  =331200.000
-
- STEP =  2761 Time  =331320.000
-
- STEP =  2762 Time  =331440.000
-
- STEP =  2763 Time  =331560.000
-
- STEP =  2764 Time  =331680.000
-
- STEP =  2765 Time  =331800.000
-
- STEP =  2766 Time  =331920.000
-
- STEP =  2767 Time  =332040.000
-
- STEP =  2768 Time  =332160.000
-
- STEP =  2769 Time  =332280.000
-
- STEP =  2770 Time  =332400.000
-
- STEP =  2771 Time  =332520.000
-
- STEP =  2772 Time  =332640.000
-
- STEP =  2773 Time  =332760.000
-
- STEP =  2774 Time  =332880.000
-
- STEP =  2775 Time  =333000.000
-
- STEP =  2776 Time  =333120.000
-
- STEP =  2777 Time  =333240.000
-
- STEP =  2778 Time  =333360.000
-
- STEP =  2779 Time  =333480.000
-
- STEP =  2780 Time  =333600.000
-
- STEP =  2781 Time  =333720.000
-
- STEP =  2782 Time  =333840.000
-
- STEP =  2783 Time  =333960.000
-
- STEP =  2784 Time  =334080.000
-
- STEP =  2785 Time  =334200.000
-
- STEP =  2786 Time  =334320.000
-
- STEP =  2787 Time  =334440.000
-
- STEP =  2788 Time  =334560.000
-
- STEP =  2789 Time  =334680.000
-
- STEP =  2790 Time  =334800.000
-
- STEP =  2791 Time  =334920.000
-
- STEP =  2792 Time  =335040.000
-
- STEP =  2793 Time  =335160.000
-
- STEP =  2794 Time  =335280.000
-
- STEP =  2795 Time  =335400.000
-
- STEP =  2796 Time  =335520.000
-
- STEP =  2797 Time  =335640.000
-
- STEP =  2798 Time  =335760.000
-
- STEP =  2799 Time  =335880.000
-
- STEP =  2800 Time  =336000.000
-
- STEP =  2801 Time  =336120.000
-
- STEP =  2802 Time  =336240.000
-
- STEP =  2803 Time  =336360.000
-
- STEP =  2804 Time  =336480.000
-
- STEP =  2805 Time  =336600.000
-
- STEP =  2806 Time  =336720.000
-
- STEP =  2807 Time  =336840.000
-
- STEP =  2808 Time  =336960.000
-
- STEP =  2809 Time  =337080.000
-
- STEP =  2810 Time  =337200.000
-
- STEP =  2811 Time  =337320.000
-
- STEP =  2812 Time  =337440.000
-
- STEP =  2813 Time  =337560.000
-
- STEP =  2814 Time  =337680.000
-
- STEP =  2815 Time  =337800.000
-
- STEP =  2816 Time  =337920.000
-
- STEP =  2817 Time  =338040.000
-
- STEP =  2818 Time  =338160.000
-
- STEP =  2819 Time  =338280.000
-
- STEP =  2820 Time  =338400.000
-
- STEP =  2821 Time  =338520.000
-
- STEP =  2822 Time  =338640.000
-
- STEP =  2823 Time  =338760.000
-
- STEP =  2824 Time  =338880.000
-
- STEP =  2825 Time  =339000.000
-
- STEP =  2826 Time  =339120.000
-
- STEP =  2827 Time  =339240.000
-
- STEP =  2828 Time  =339360.000
-
- STEP =  2829 Time  =339480.000
-
- STEP =  2830 Time  =339600.000
-
- STEP =  2831 Time  =339720.000
-
- STEP =  2832 Time  =339840.000
-
- STEP =  2833 Time  =339960.000
-
- STEP =  2834 Time  =340080.000
-
- STEP =  2835 Time  =340200.000
-
- STEP =  2836 Time  =340320.000
-
- STEP =  2837 Time  =340440.000
-
- STEP =  2838 Time  =340560.000
-
- STEP =  2839 Time  =340680.000
-
- STEP =  2840 Time  =340800.000
-
- STEP =  2841 Time  =340920.000
-
- STEP =  2842 Time  =341040.000
-
- STEP =  2843 Time  =341160.000
-
- STEP =  2844 Time  =341280.000
-
- STEP =  2845 Time  =341400.000
-
- STEP =  2846 Time  =341520.000
-
- STEP =  2847 Time  =341640.000
-
- STEP =  2848 Time  =341760.000
-
- STEP =  2849 Time  =341880.000
-
- STEP =  2850 Time  =342000.000
-
- STEP =  2851 Time  =342120.000
-
- STEP =  2852 Time  =342240.000
-
- STEP =  2853 Time  =342360.000
-
- STEP =  2854 Time  =342480.000
-
- STEP =  2855 Time  =342600.000
-
- STEP =  2856 Time  =342720.000
-
- STEP =  2857 Time  =342840.000
-
- STEP =  2858 Time  =342960.000
-
- STEP =  2859 Time  =343080.000
-
- STEP =  2860 Time  =343200.000
-
- STEP =  2861 Time  =343320.000
-
- STEP =  2862 Time  =343440.000
-
- STEP =  2863 Time  =343560.000
-
- STEP =  2864 Time  =343680.000
-
- STEP =  2865 Time  =343800.000
-
- STEP =  2866 Time  =343920.000
-
- STEP =  2867 Time  =344040.000
-
- STEP =  2868 Time  =344160.000
-
- STEP =  2869 Time  =344280.000
-
- STEP =  2870 Time  =344400.000
-
- STEP =  2871 Time  =344520.000
-
- STEP =  2872 Time  =344640.000
-
- STEP =  2873 Time  =344760.000
-
- STEP =  2874 Time  =344880.000
-
- STEP =  2875 Time  =345000.000
-
- STEP =  2876 Time  =345120.000
-
- STEP =  2877 Time  =345240.000
-
- STEP =  2878 Time  =345360.000
-
- STEP =  2879 Time  =345480.000
-
- STEP =  2880 Time  =345600.000
+ ISTEP =     1
+ Time  =   120.000
+ Maximum Temperature :   100.479
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =     2
+ Time  =   240.000
+ Maximum Temperature :   100.957
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =     3
+ Time  =   360.000
+ Maximum Temperature :   101.434
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =     4
+ Time  =   480.000
+ Maximum Temperature :   101.909
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =     5
+ Time  =   600.000
+ Maximum Temperature :   102.383
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =     6
+ Time  =   720.000
+ Maximum Temperature :   102.855
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =     7
+ Time  =   840.000
+ Maximum Temperature :   103.327
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =     8
+ Time  =   960.000
+ Maximum Temperature :   103.796
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =     9
+ Time  =  1080.000
+ Maximum Temperature :   104.265
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    10
+ Time  =  1200.000
+ Maximum Temperature :   104.732
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    11
+ Time  =  1320.000
+ Maximum Temperature :   105.198
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    12
+ Time  =  1440.000
+ Maximum Temperature :   105.662
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    13
+ Time  =  1560.000
+ Maximum Temperature :   106.126
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    14
+ Time  =  1680.000
+ Maximum Temperature :   106.588
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    15
+ Time  =  1800.000
+ Maximum Temperature :   107.048
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    16
+ Time  =  1920.000
+ Maximum Temperature :   107.508
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    17
+ Time  =  2040.000
+ Maximum Temperature :   107.966
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    18
+ Time  =  2160.000
+ Maximum Temperature :   108.423
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    19
+ Time  =  2280.000
+ Maximum Temperature :   108.878
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    20
+ Time  =  2400.000
+ Maximum Temperature :   109.332
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    21
+ Time  =  2520.000
+ Maximum Temperature :   109.785
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    22
+ Time  =  2640.000
+ Maximum Temperature :   110.237
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    23
+ Time  =  2760.000
+ Maximum Temperature :   110.688
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    24
+ Time  =  2880.000
+ Maximum Temperature :   111.137
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    25
+ Time  =  3000.000
+ Maximum Temperature :   111.585
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    26
+ Time  =  3120.000
+ Maximum Temperature :   112.032
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    27
+ Time  =  3240.000
+ Maximum Temperature :   112.477
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    28
+ Time  =  3360.000
+ Maximum Temperature :   112.922
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    29
+ Time  =  3480.000
+ Maximum Temperature :   113.365
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    30
+ Time  =  3600.000
+ Maximum Temperature :   113.807
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    31
+ Time  =  3720.000
+ Maximum Temperature :   114.248
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    32
+ Time  =  3840.000
+ Maximum Temperature :   114.687
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    33
+ Time  =  3960.000
+ Maximum Temperature :   115.125
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    34
+ Time  =  4080.000
+ Maximum Temperature :   115.563
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    35
+ Time  =  4200.000
+ Maximum Temperature :   115.999
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    36
+ Time  =  4320.000
+ Maximum Temperature :   116.433
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    37
+ Time  =  4440.000
+ Maximum Temperature :   116.867
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1019
+
+ ISTEP =    38
+ Time  =  4560.000
+ Maximum Temperature :   117.300
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    39
+ Time  =  4680.000
+ Maximum Temperature :   117.731
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    40
+ Time  =  4800.000
+ Maximum Temperature :   118.161
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    41
+ Time  =  4920.000
+ Maximum Temperature :   118.590
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    42
+ Time  =  5040.000
+ Maximum Temperature :   119.018
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    43
+ Time  =  5160.000
+ Maximum Temperature :   119.445
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    44
+ Time  =  5280.000
+ Maximum Temperature :   119.870
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    45
+ Time  =  5400.000
+ Maximum Temperature :   120.295
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    46
+ Time  =  5520.000
+ Maximum Temperature :   120.718
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    47
+ Time  =  5640.000
+ Maximum Temperature :   121.140
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    48
+ Time  =  5760.000
+ Maximum Temperature :   121.561
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    49
+ Time  =  5880.000
+ Maximum Temperature :   121.981
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    50
+ Time  =  6000.000
+ Maximum Temperature :   122.400
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    51
+ Time  =  6120.000
+ Maximum Temperature :   122.818
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    52
+ Time  =  6240.000
+ Maximum Temperature :   123.235
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    53
+ Time  =  6360.000
+ Maximum Temperature :   123.650
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    54
+ Time  =  6480.000
+ Maximum Temperature :   124.065
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    55
+ Time  =  6600.000
+ Maximum Temperature :   124.478
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    56
+ Time  =  6720.000
+ Maximum Temperature :   124.891
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    57
+ Time  =  6840.000
+ Maximum Temperature :   125.302
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    58
+ Time  =  6960.000
+ Maximum Temperature :   125.712
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    59
+ Time  =  7080.000
+ Maximum Temperature :   126.121
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    60
+ Time  =  7200.000
+ Maximum Temperature :   126.529
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    61
+ Time  =  7320.000
+ Maximum Temperature :   126.936
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    62
+ Time  =  7440.000
+ Maximum Temperature :   127.342
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    63
+ Time  =  7560.000
+ Maximum Temperature :   127.747
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    64
+ Time  =  7680.000
+ Maximum Temperature :   128.151
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    65
+ Time  =  7800.000
+ Maximum Temperature :   128.554
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    66
+ Time  =  7920.000
+ Maximum Temperature :   128.956
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    67
+ Time  =  8040.000
+ Maximum Temperature :   129.357
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    68
+ Time  =  8160.000
+ Maximum Temperature :   129.757
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    69
+ Time  =  8280.000
+ Maximum Temperature :   130.155
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    70
+ Time  =  8400.000
+ Maximum Temperature :   130.553
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    71
+ Time  =  8520.000
+ Maximum Temperature :   130.950
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    72
+ Time  =  8640.000
+ Maximum Temperature :   131.346
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    73
+ Time  =  8760.000
+ Maximum Temperature :   131.741
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    74
+ Time  =  8880.000
+ Maximum Temperature :   132.134
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    75
+ Time  =  9000.000
+ Maximum Temperature :   132.527
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    76
+ Time  =  9120.000
+ Maximum Temperature :   132.919
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    77
+ Time  =  9240.000
+ Maximum Temperature :   133.310
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    78
+ Time  =  9360.000
+ Maximum Temperature :   133.700
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    79
+ Time  =  9480.000
+ Maximum Temperature :   134.089
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    80
+ Time  =  9600.000
+ Maximum Temperature :   134.477
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    81
+ Time  =  9720.000
+ Maximum Temperature :   134.864
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    82
+ Time  =  9840.000
+ Maximum Temperature :   135.250
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    83
+ Time  =  9960.000
+ Maximum Temperature :   135.635
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    84
+ Time  = 10080.000
+ Maximum Temperature :   136.019
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1013
+
+ ISTEP =    85
+ Time  = 10200.000
+ Maximum Temperature :   136.402
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    86
+ Time  = 10320.000
+ Maximum Temperature :   136.784
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    87
+ Time  = 10440.000
+ Maximum Temperature :   137.165
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    88
+ Time  = 10560.000
+ Maximum Temperature :   137.546
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    89
+ Time  = 10680.000
+ Maximum Temperature :   137.925
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    90
+ Time  = 10800.000
+ Maximum Temperature :   138.303
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    91
+ Time  = 10920.000
+ Maximum Temperature :   138.681
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    92
+ Time  = 11040.000
+ Maximum Temperature :   139.058
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    93
+ Time  = 11160.000
+ Maximum Temperature :   139.433
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    94
+ Time  = 11280.000
+ Maximum Temperature :   139.808
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    95
+ Time  = 11400.000
+ Maximum Temperature :   140.182
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    96
+ Time  = 11520.000
+ Maximum Temperature :   140.555
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    97
+ Time  = 11640.000
+ Maximum Temperature :   140.927
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    98
+ Time  = 11760.000
+ Maximum Temperature :   141.298
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =    99
+ Time  = 11880.000
+ Maximum Temperature :   141.669
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   100
+ Time  = 12000.000
+ Maximum Temperature :   142.038
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   101
+ Time  = 12120.000
+ Maximum Temperature :   142.407
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   102
+ Time  = 12240.000
+ Maximum Temperature :   142.774
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   103
+ Time  = 12360.000
+ Maximum Temperature :   143.141
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   104
+ Time  = 12480.000
+ Maximum Temperature :   143.507
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   105
+ Time  = 12600.000
+ Maximum Temperature :   143.872
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   106
+ Time  = 12720.000
+ Maximum Temperature :   144.236
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   107
+ Time  = 12840.000
+ Maximum Temperature :   144.600
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   108
+ Time  = 12960.000
+ Maximum Temperature :   144.962
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   109
+ Time  = 13080.000
+ Maximum Temperature :   145.324
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   110
+ Time  = 13200.000
+ Maximum Temperature :   145.684
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   111
+ Time  = 13320.000
+ Maximum Temperature :   146.044
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   112
+ Time  = 13440.000
+ Maximum Temperature :   146.403
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   113
+ Time  = 13560.000
+ Maximum Temperature :   146.762
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   114
+ Time  = 13680.000
+ Maximum Temperature :   147.119
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   115
+ Time  = 13800.000
+ Maximum Temperature :   147.475
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   116
+ Time  = 13920.000
+ Maximum Temperature :   147.831
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   117
+ Time  = 14040.000
+ Maximum Temperature :   148.186
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   118
+ Time  = 14160.000
+ Maximum Temperature :   148.540
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   119
+ Time  = 14280.000
+ Maximum Temperature :   148.893
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   120
+ Time  = 14400.000
+ Maximum Temperature :   149.246
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   121
+ Time  = 14520.000
+ Maximum Temperature :   149.597
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   122
+ Time  = 14640.000
+ Maximum Temperature :   149.948
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   123
+ Time  = 14760.000
+ Maximum Temperature :   150.298
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   124
+ Time  = 14880.000
+ Maximum Temperature :   150.648
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   125
+ Time  = 15000.000
+ Maximum Temperature :   150.996
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   126
+ Time  = 15120.000
+ Maximum Temperature :   151.344
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   127
+ Time  = 15240.000
+ Maximum Temperature :   151.690
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   128
+ Time  = 15360.000
+ Maximum Temperature :   152.036
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   129
+ Time  = 15480.000
+ Maximum Temperature :   152.382
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   130
+ Time  = 15600.000
+ Maximum Temperature :   152.726
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   131
+ Time  = 15720.000
+ Maximum Temperature :   153.070
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   132
+ Time  = 15840.000
+ Maximum Temperature :   153.413
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   133
+ Time  = 15960.000
+ Maximum Temperature :   153.755
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   134
+ Time  = 16080.000
+ Maximum Temperature :   154.096
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   135
+ Time  = 16200.000
+ Maximum Temperature :   154.437
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   136
+ Time  = 16320.000
+ Maximum Temperature :   154.777
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   137
+ Time  = 16440.000
+ Maximum Temperature :   155.116
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   138
+ Time  = 16560.000
+ Maximum Temperature :   155.454
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   139
+ Time  = 16680.000
+ Maximum Temperature :   155.792
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   140
+ Time  = 16800.000
+ Maximum Temperature :   156.129
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   141
+ Time  = 16920.000
+ Maximum Temperature :   156.465
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   142
+ Time  = 17040.000
+ Maximum Temperature :   156.800
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   143
+ Time  = 17160.000
+ Maximum Temperature :   157.135
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   144
+ Time  = 17280.000
+ Maximum Temperature :   157.469
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   145
+ Time  = 17400.000
+ Maximum Temperature :   157.802
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   146
+ Time  = 17520.000
+ Maximum Temperature :   158.134
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   147
+ Time  = 17640.000
+ Maximum Temperature :   158.466
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   148
+ Time  = 17760.000
+ Maximum Temperature :   158.797
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   149
+ Time  = 17880.000
+ Maximum Temperature :   159.127
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   150
+ Time  = 18000.000
+ Maximum Temperature :   159.456
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   151
+ Time  = 18120.000
+ Maximum Temperature :   159.785
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   152
+ Time  = 18240.000
+ Maximum Temperature :   160.113
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   153
+ Time  = 18360.000
+ Maximum Temperature :   160.441
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   154
+ Time  = 18480.000
+ Maximum Temperature :   160.767
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   155
+ Time  = 18600.000
+ Maximum Temperature :   161.093
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   156
+ Time  = 18720.000
+ Maximum Temperature :   161.419
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   157
+ Time  = 18840.000
+ Maximum Temperature :   161.743
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   158
+ Time  = 18960.000
+ Maximum Temperature :   162.067
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   159
+ Time  = 19080.000
+ Maximum Temperature :   162.390
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   160
+ Time  = 19200.000
+ Maximum Temperature :   162.713
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   161
+ Time  = 19320.000
+ Maximum Temperature :   163.034
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   162
+ Time  = 19440.000
+ Maximum Temperature :   163.355
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   163
+ Time  = 19560.000
+ Maximum Temperature :   163.676
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   164
+ Time  = 19680.000
+ Maximum Temperature :   163.996
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   165
+ Time  = 19800.000
+ Maximum Temperature :   164.315
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   166
+ Time  = 19920.000
+ Maximum Temperature :   164.633
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   167
+ Time  = 20040.000
+ Maximum Temperature :   164.951
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   168
+ Time  = 20160.000
+ Maximum Temperature :   165.268
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   169
+ Time  = 20280.000
+ Maximum Temperature :   165.584
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   170
+ Time  = 20400.000
+ Maximum Temperature :   165.900
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   171
+ Time  = 20520.000
+ Maximum Temperature :   166.215
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   172
+ Time  = 20640.000
+ Maximum Temperature :   166.529
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   173
+ Time  = 20760.000
+ Maximum Temperature :   166.843
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   174
+ Time  = 20880.000
+ Maximum Temperature :   167.156
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   175
+ Time  = 21000.000
+ Maximum Temperature :   167.469
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   176
+ Time  = 21120.000
+ Maximum Temperature :   167.781
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   177
+ Time  = 21240.000
+ Maximum Temperature :   168.092
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   178
+ Time  = 21360.000
+ Maximum Temperature :   168.402
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   179
+ Time  = 21480.000
+ Maximum Temperature :   168.712
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   180
+ Time  = 21600.000
+ Maximum Temperature :   169.021
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   181
+ Time  = 21720.000
+ Maximum Temperature :   169.330
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   182
+ Time  = 21840.000
+ Maximum Temperature :   169.638
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   183
+ Time  = 21960.000
+ Maximum Temperature :   169.945
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   184
+ Time  = 22080.000
+ Maximum Temperature :   170.252
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   185
+ Time  = 22200.000
+ Maximum Temperature :   170.558
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   186
+ Time  = 22320.000
+ Maximum Temperature :   170.864
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   187
+ Time  = 22440.000
+ Maximum Temperature :   171.168
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   188
+ Time  = 22560.000
+ Maximum Temperature :   171.473
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   189
+ Time  = 22680.000
+ Maximum Temperature :   171.776
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   190
+ Time  = 22800.000
+ Maximum Temperature :   172.079
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   191
+ Time  = 22920.000
+ Maximum Temperature :   172.382
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   192
+ Time  = 23040.000
+ Maximum Temperature :   172.683
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   193
+ Time  = 23160.000
+ Maximum Temperature :   172.985
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1015
+
+ ISTEP =   194
+ Time  = 23280.000
+ Maximum Temperature :   173.285
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   195
+ Time  = 23400.000
+ Maximum Temperature :   173.585
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   196
+ Time  = 23520.000
+ Maximum Temperature :   173.885
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   197
+ Time  = 23640.000
+ Maximum Temperature :   174.183
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   198
+ Time  = 23760.000
+ Maximum Temperature :   174.482
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   199
+ Time  = 23880.000
+ Maximum Temperature :   174.779
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   200
+ Time  = 24000.000
+ Maximum Temperature :   175.076
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   201
+ Time  = 24120.000
+ Maximum Temperature :   175.373
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   202
+ Time  = 24240.000
+ Maximum Temperature :   175.669
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   203
+ Time  = 24360.000
+ Maximum Temperature :   175.964
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   204
+ Time  = 24480.000
+ Maximum Temperature :   176.259
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   205
+ Time  = 24600.000
+ Maximum Temperature :   176.553
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   206
+ Time  = 24720.000
+ Maximum Temperature :   176.846
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   207
+ Time  = 24840.000
+ Maximum Temperature :   177.139
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   208
+ Time  = 24960.000
+ Maximum Temperature :   177.432
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   209
+ Time  = 25080.000
+ Maximum Temperature :   177.723
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   210
+ Time  = 25200.000
+ Maximum Temperature :   178.015
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   211
+ Time  = 25320.000
+ Maximum Temperature :   178.305
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   212
+ Time  = 25440.000
+ Maximum Temperature :   178.596
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   213
+ Time  = 25560.000
+ Maximum Temperature :   178.885
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   214
+ Time  = 25680.000
+ Maximum Temperature :   179.174
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   215
+ Time  = 25800.000
+ Maximum Temperature :   179.463
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   216
+ Time  = 25920.000
+ Maximum Temperature :   179.751
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   217
+ Time  = 26040.000
+ Maximum Temperature :   180.038
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   218
+ Time  = 26160.000
+ Maximum Temperature :   180.325
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   219
+ Time  = 26280.000
+ Maximum Temperature :   180.611
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   220
+ Time  = 26400.000
+ Maximum Temperature :   180.897
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   221
+ Time  = 26520.000
+ Maximum Temperature :   181.182
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   222
+ Time  = 26640.000
+ Maximum Temperature :   181.467
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   223
+ Time  = 26760.000
+ Maximum Temperature :   181.751
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   224
+ Time  = 26880.000
+ Maximum Temperature :   182.034
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   225
+ Time  = 27000.000
+ Maximum Temperature :   182.317
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   226
+ Time  = 27120.000
+ Maximum Temperature :   182.600
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   227
+ Time  = 27240.000
+ Maximum Temperature :   182.882
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   228
+ Time  = 27360.000
+ Maximum Temperature :   183.163
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   229
+ Time  = 27480.000
+ Maximum Temperature :   183.444
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   230
+ Time  = 27600.000
+ Maximum Temperature :   183.725
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   231
+ Time  = 27720.000
+ Maximum Temperature :   184.005
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   232
+ Time  = 27840.000
+ Maximum Temperature :   184.284
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   233
+ Time  = 27960.000
+ Maximum Temperature :   184.563
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   234
+ Time  = 28080.000
+ Maximum Temperature :   184.841
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   235
+ Time  = 28200.000
+ Maximum Temperature :   185.119
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   236
+ Time  = 28320.000
+ Maximum Temperature :   185.396
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   237
+ Time  = 28440.000
+ Maximum Temperature :   185.673
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   238
+ Time  = 28560.000
+ Maximum Temperature :   185.949
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   239
+ Time  = 28680.000
+ Maximum Temperature :   186.225
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   240
+ Time  = 28800.000
+ Maximum Temperature :   186.501
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   241
+ Time  = 28920.000
+ Maximum Temperature :   186.775
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   242
+ Time  = 29040.000
+ Maximum Temperature :   187.050
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   243
+ Time  = 29160.000
+ Maximum Temperature :   187.323
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   244
+ Time  = 29280.000
+ Maximum Temperature :   187.597
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   245
+ Time  = 29400.000
+ Maximum Temperature :   187.870
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   246
+ Time  = 29520.000
+ Maximum Temperature :   188.142
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   247
+ Time  = 29640.000
+ Maximum Temperature :   188.414
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   248
+ Time  = 29760.000
+ Maximum Temperature :   188.685
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   249
+ Time  = 29880.000
+ Maximum Temperature :   188.956
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   250
+ Time  = 30000.000
+ Maximum Temperature :   189.226
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   251
+ Time  = 30120.000
+ Maximum Temperature :   189.496
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   252
+ Time  = 30240.000
+ Maximum Temperature :   189.766
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   253
+ Time  = 30360.000
+ Maximum Temperature :   190.034
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   254
+ Time  = 30480.000
+ Maximum Temperature :   190.303
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   255
+ Time  = 30600.000
+ Maximum Temperature :   190.571
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   256
+ Time  = 30720.000
+ Maximum Temperature :   190.838
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   257
+ Time  = 30840.000
+ Maximum Temperature :   191.105
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   258
+ Time  = 30960.000
+ Maximum Temperature :   191.372
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   259
+ Time  = 31080.000
+ Maximum Temperature :   191.638
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   260
+ Time  = 31200.000
+ Maximum Temperature :   191.904
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   261
+ Time  = 31320.000
+ Maximum Temperature :   192.169
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   262
+ Time  = 31440.000
+ Maximum Temperature :   192.434
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   263
+ Time  = 31560.000
+ Maximum Temperature :   192.698
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   264
+ Time  = 31680.000
+ Maximum Temperature :   192.962
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   265
+ Time  = 31800.000
+ Maximum Temperature :   193.225
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   266
+ Time  = 31920.000
+ Maximum Temperature :   193.488
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   267
+ Time  = 32040.000
+ Maximum Temperature :   193.750
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   268
+ Time  = 32160.000
+ Maximum Temperature :   194.012
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   269
+ Time  = 32280.000
+ Maximum Temperature :   194.274
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   270
+ Time  = 32400.000
+ Maximum Temperature :   194.535
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   271
+ Time  = 32520.000
+ Maximum Temperature :   194.795
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   272
+ Time  = 32640.000
+ Maximum Temperature :   195.055
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   273
+ Time  = 32760.000
+ Maximum Temperature :   195.315
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   274
+ Time  = 32880.000
+ Maximum Temperature :   195.574
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   275
+ Time  = 33000.000
+ Maximum Temperature :   195.833
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   276
+ Time  = 33120.000
+ Maximum Temperature :   196.092
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   277
+ Time  = 33240.000
+ Maximum Temperature :   196.349
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   278
+ Time  = 33360.000
+ Maximum Temperature :   196.607
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   279
+ Time  = 33480.000
+ Maximum Temperature :   196.864
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   280
+ Time  = 33600.000
+ Maximum Temperature :   197.121
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   281
+ Time  = 33720.000
+ Maximum Temperature :   197.377
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   282
+ Time  = 33840.000
+ Maximum Temperature :   197.633
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   283
+ Time  = 33960.000
+ Maximum Temperature :   197.888
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   284
+ Time  = 34080.000
+ Maximum Temperature :   198.143
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   285
+ Time  = 34200.000
+ Maximum Temperature :   198.397
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   286
+ Time  = 34320.000
+ Maximum Temperature :   198.652
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   287
+ Time  = 34440.000
+ Maximum Temperature :   198.905
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
+
+ ISTEP =   288
+ Time  = 34560.000
+ Maximum Temperature :   199.158
+ Maximum Node No.    :      5201
+ Minimum Temperature :   100.000
+ Minimum Node No.    :      1021
