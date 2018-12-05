@@ -1970,15 +1970,14 @@ contains
     j = 1
     jrank = new_nbpe(j)
     do i = 1, org_nnb
+      if (org_index(i) - org_index(i-1) == 0) cycle
       irank = org_nbpe(i)
       do while (jrank < irank)
         j = j + 1
+        if (j > new_nnb) exit
         jrank = new_nbpe(j)
       enddo
-      if (jrank /= irank) then
-        if (org_index(i)-org_index(i-1) > 0) stop 'ERROR: merging comm table: org into new'
-        cycle
-      endif
+      if (jrank /= irank) stop 'ERROR: merging comm table: org into new'
       i0 = org_index(i-1)
       len = org_index(i) - i0
       j0 = new_index(j-1)
