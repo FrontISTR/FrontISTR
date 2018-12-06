@@ -81,7 +81,7 @@ contains
       JLOOP: do j=1,nsurf
         if( i==j ) cycle
         if( associated(surf(i)%neighbor) ) then
-          if ( any( surf(i)%neighbor==j ) ) cycle
+          if ( any( surf(i)%neighbor(1:surf(i)%n_neighbor)==j ) ) cycle
         endif
         do ii=1, size(surf(i)%nodes)
           nd1 = surf(i)%nodes(ii)
