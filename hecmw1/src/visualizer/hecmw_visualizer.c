@@ -166,6 +166,7 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
       }
     }
   }
+  HECMW_free(buf1);
   HECMW_free(outfile);
   HECMW_Comm_free(&VIS_COMM);
 
