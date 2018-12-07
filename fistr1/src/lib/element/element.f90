@@ -781,7 +781,7 @@ contains
   end subroutine
 
   !> Calculate shape derivative in global coordinate system
-  real(kind=kreal) function getDetermiant( fetype, nn, localcoord, elecoord )
+  real(kind=kreal) function getDeterminant( fetype, nn, localcoord, elecoord )
     integer, intent(in)           :: fetype          !< element type
     integer, intent(in)           :: nn              !< number of elemental nodes
     real(kind=kreal), intent(in)  :: localcoord(:)   !< curr position with natural coord
@@ -795,10 +795,10 @@ contains
 
     if( nspace==2 ) then
       XJ(1:2,1:2)=matmul( elecoord(1:2,1:nn), deriv(1:nn,1:2) )
-      getDetermiant=XJ(1,1)*XJ(2,2)-XJ(2,1)*XJ(1,2)
+      getDeterminant=XJ(1,1)*XJ(2,2)-XJ(2,1)*XJ(1,2)
     else
       XJ(1:3,1:3)= matmul( elecoord(1:3,1:nn), deriv(1:nn,1:3) )
-      getDetermiant=XJ(1,1)*XJ(2,2)*XJ(3,3)                                             &
+      getDeterminant=XJ(1,1)*XJ(2,2)*XJ(3,3)                                             &
         +XJ(2,1)*XJ(3,2)*XJ(1,3)                                             &
         +XJ(3,1)*XJ(1,2)*XJ(2,3)                                             &
         -XJ(3,1)*XJ(2,2)*XJ(1,3)                                             &

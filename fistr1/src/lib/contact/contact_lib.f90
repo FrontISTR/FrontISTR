@@ -239,7 +239,7 @@ contains
     real(kind=kreal)  ::  tangent(3,2)                 ! base vectors in tangent space
     real(kind=kreal)  ::  dF(2),d2F(2,2),normal(3)
     real(kind=kreal),parameter :: eps = 1.0D-8
-    real(kind=kreal)  ::  clr, tol, factor
+    real(kind=kreal)  ::  clr, tol, factor, reflen
 
     initstate = cstate%state
     clr = 1.d-4
@@ -297,6 +297,8 @@ contains
       if( tol<eps ) exit
     enddo
 
+    reflen = get_reference_length( etype, nn, r, elemt )
+
     isin = .false.
     cstate%state = CONTACTFREE
     if( isInsideElement( etype, r, clr )>=0 ) then
@@ -309,7 +311,7 @@ contains
       enddo
       cstate%distance = dot_product( dxyz, normal )
 
-      if( cstate%distance < distclr .and. cstate%distance > -5.0d-01 ) isin = .true.
+      if( cstate%distance < distclr*reflen .and. cstate%distance > -5.0d-01*reflen ) isin = .true.
 
       if( isin ) then
         if( initstate== CONTACTFREE ) then
@@ -324,6 +326,21 @@ contains
       endif
     endif
   end subroutine project_Point2Element
+
+  !> This function calculates reference length at a point in master surface for nondimensionalizing distclr
+  real(kind=kreal) function get_reference_length( etype, nn, r, elemt )
+    integer, intent(in)         :: etype                 !< surface element type
+    integer, intent(in)         :: nn                    !< number of elemental nodes
+    real(kind=kreal),intent(in) :: r(2)                  !< natural coordinates
+    real(kind=kreal),intent(in) :: elemt(3,nn)           !< nodes coordinates of surface element
+    real(kind=kreal) :: detJxy, detJyz, detJxz, detJ
+    detJxy = getDeterminant( etype, nn, r, elemt(1:2,1:nn) )
+    detJyz = getDeterminant( etype, nn, r, elemt(2:3,1:nn) )
+    detJxz = getDeterminant( etype, nn, r, elemt(1:3:2,1:nn) )
+    detJ = dsqrt( detJxy **2 + detJyz **2 + detJxz **2 )
+    get_reference_length = dsqrt( detJ )
+    !write(0,*) 'DEBUG: reflen',get_reference_length
+  end function get_reference_length
 
   !> This subroutine find the projection of a slave point onto master surface
   subroutine update_TangentForce(etype,nn,elemt0,elemt,cstate)
