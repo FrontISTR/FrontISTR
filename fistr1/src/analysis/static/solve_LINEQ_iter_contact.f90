@@ -118,8 +118,8 @@ contains
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     type (hecmwST_matrix), intent(in),optional :: conMAT
-    integer :: ndof
-    integer, allocatable :: iw2(:), iwS(:)
+    integer(kind=kint) :: ndof
+    integer(kind=kint), allocatable :: iw2(:), iwS(:)
     real(kind=kreal), allocatable :: wSL(:), wSU(:)
     type(hecmwST_local_matrix), target :: BTmat
     type(hecmwST_local_matrix) :: BTtmat
