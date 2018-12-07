@@ -1974,15 +1974,14 @@ contains
     j = 1
     jrank = new_nbpe(j)
     do i = 1, org_nnb
+      if (org_index(i) - org_index(i-1) == 0) cycle
       irank = org_nbpe(i)
       do while (jrank < irank)
         j = j + 1
+        if (j > new_nnb) exit
         jrank = new_nbpe(j)
       enddo
-      if (jrank /= irank) then
-        if (org_index(i)-org_index(i-1) > 0) stop 'ERROR: merging comm table: org into new'
-        cycle
-      endif
+      if (jrank /= irank) stop 'ERROR: merging comm table: org into new'
       i0 = org_index(i-1)
       len = org_index(i) - i0
       j0 = new_index(j-1)
@@ -2435,6 +2434,7 @@ contains
     !
     call send_BT_exp_and_recv_BT_imp(hecMESH, hecCOMM, BT_exp, exp_cols_index, exp_cols_item, BT_imp, hecMESHnew)
     if (DEBUG >= 1) write(0,*) 'DEBUG: send BT_exp and recv BT_imp done',hecmw_wtime()-t1
+    call free_comm_table(hecCOMM)
     !
     call concat_BTmat_and_BT_imp(BTmat, BT_imp, BT_all)
     if (DEBUG >= 1) write(0,*) 'DEBUG: concat BTmat and BT_imp into BT_all done',hecmw_wtime()-t1
@@ -2489,6 +2489,7 @@ contains
     !
     ! check_external_nz_cols (by profile (not number))
     allocate(is_nz_col(nn_ext))
+    is_nz_col(:) = 0
     do i = 1, BKmat%index(BKmat%nr)
       icol = BKmat%item(i)
       if (icol > nn_int) is_nz_col(icol - nn_int) = 1

@@ -1914,7 +1914,7 @@ static void strcpy_c2f(char *dest, int len, const char *src) {
   int fg = 0;
 
   for (i = 0; i < len; i++) {
-    if (src[i] == 0) {
+    if (fg == 0 && src[i] == 0) {
       fg = 1;
     }
 
