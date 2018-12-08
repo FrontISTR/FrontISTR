@@ -301,7 +301,7 @@ contains
     logical :: is_cand
     !#endif
 
-    clearance = 1.d-6
+    clearance = 1.d-4
     distclr = -1.0d-6  ! wait until little penetration for free nodes to be judged as new contact
     if( contact%algtype<=2 ) return
 
@@ -385,7 +385,8 @@ contains
             iSS = contact%master(id)%nodes(j)
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, distclr )
+          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, distclr, &
+            localclr=clearance )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
@@ -480,15 +481,16 @@ contains
     integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
     real(kind=kreal), intent(inout)                  :: B(:)         !< nodal force residual
 
-    real(kind=kreal)    :: distclr, clearance
+    real(kind=kreal)    :: distclr, clearance, clearance_same_elem
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
     logical            :: isin, is_cand
     real(kind=kreal)    :: opos(2), odirec(3)
 
-    distclr = 1.0d0          !1.d-1
-    clearance = 1.d-6
+    distclr = 1.0d0   !1.d-1     ! big value to keep contact because contact-to-free is judged by tensile force
+    clearance = 1.d-4            ! ordinary clearance
+    clearance_same_elem = 1.d-2  ! looser clearance for already-in-contct elems to avoid moving too easily
     sid = 0
 
     slave = contact%slave(nslave)
@@ -505,7 +507,7 @@ contains
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
-      contact%states(nslave)%lpos, clearance )
+      contact%states(nslave)%lpos, clearance_same_elem )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -515,7 +517,8 @@ contains
           iSS = contact%master(sid)%nodes(j)
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
-        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
+        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
+          localclr=clearance)
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -536,7 +539,8 @@ contains
         enddo
         call check_contact_candidate(elem(1:3,1:nn), coord(1:3), is_cand)
         if (.not. is_cand) cycle
-        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
+        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
+          localclr=clearance)
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
