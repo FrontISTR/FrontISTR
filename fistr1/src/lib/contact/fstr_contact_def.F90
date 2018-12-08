@@ -483,7 +483,7 @@ contains
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
-    logical            :: isin
+    logical            :: isin, is_cand
     real(kind=kreal)    :: opos(2), odirec(3)
 
     distclr = 1.0d0          !1.d-1
@@ -523,6 +523,7 @@ contains
     endif
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
+      write(*,*) 'Warning: contact moved beyond neighbor elements (time step might be too big)'
       do sid= 1, size(contact%master)
         if( sid==sid0 ) cycle
         if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
@@ -532,6 +533,8 @@ contains
           iSS = contact%master(sid)%nodes(j)
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
+        call check_contact_candidate(elem(1:3,1:nn), coord(1:3), is_cand)
+        if (.not. is_cand) cycle
         call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
         if( isin ) then
           contact%states(nslave)%surface = sid
