@@ -297,8 +297,8 @@ contains
     !#ifdef CONTACT_FILTER
     !integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
     integer, pointer :: indexMaster(:),itmp(:)
-    integer   ::  nMaster=0,minID(3),maxID(3),idm,nMasterMax=100
-    real(kreal) :: width = 4.0D0,x0(3)
+    integer   ::  nMaster=0,idm,nMasterMax=100
+    logical :: is_cand
     !#endif
 
     clearance = 1.d-6
@@ -313,9 +313,9 @@ contains
 
     !$omp parallel do &
       !$omp& default(none) &
-      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,x0,minID,maxID,itmp,idm,etype,isin) &
+      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,itmp,idm,etype,isin) &
       !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,width,clearance,contact_surf) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,clearance,contact_surf) &
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -355,12 +355,8 @@ contains
             iSS = contact%master(id)%nodes(j)
             elem(1:3,j) = currpos(3*iSS-2:3*iSS)
           enddo
-          x0(:) = coord(:)
-          call getMinMaxBoxIDPassedByMultiPoint(elem(1:3,1:nn),x0,width,minID,maxID)
-          !if(minID(1) <= 1.and.maxID(1) >= 1.and. &
-            !   minID(2) <= 1.and.maxID(2) >= 1.and. &
-            !   minID(3) <= 1.and.maxID(3) >= 1) then
-          if(any(minID > 1).or.any(maxID < 0)) cycle
+          call check_contact_candidate(elem(1:3,1:nn), coord(1:3), is_cand)
+          if (.not. is_cand) cycle
           nMaster = nMaster + 1
           if(nMaster > size(indexMaster)) then
             !stop 'Error: Too many master faces are possibly in contact!'
@@ -372,7 +368,6 @@ contains
             write(*,*) 'Info: increased nMasterMax to ', nMasterMax
           endif
           indexMaster(nMaster) = id
-          !endif
         enddo
 
         if(nMaster == 0) then
@@ -885,28 +880,28 @@ contains
 
   end subroutine ass_contact_force
 
-  subroutine getMinMaxBoxIDPassedByMultiPoint(x,x0,width,minID,maxID)
-    real(kreal),intent(in)      ::  x(:,:)  ! Multi-Points' coordinate in space
-    real(kreal),intent(in)      ::  x0(3)
-    real(kreal),intent(in)      ::  width
-    integer(kint),intent(out)   ::  minID(3)
-    integer(kint),intent(out)   ::  maxID(3)
+  subroutine check_contact_candidate(x, x0, is_cand)
+    real(kind=kreal), intent(in) :: x(:,:)  ! Multi-Points' coordinate in space
+    real(kind=kreal), intent(in) :: x0(3)
+    logical, intent(out) :: is_cand
     !
-    integer(kint) ::  i,j,boxID(3)
-    !
-    do i=1,size(x,2)
-      !boxID(:) = (x(:,i)-x0(:))/width + 1
-      boxID(:) = ceiling((x(:,i)-x0(:))/width)
-      if(i == 1) then
-        minID(:) = boxID(:)
-        maxID(:) = boxID(:)
-      endif
-      do j=1,3
-        if(boxID(j) < minID(j)) minID(j) = boxID(j)
-        if(boxID(j) > maxID(j)) maxID(j) = boxID(j)
-      enddo
+    real(kind=kreal) :: xmin(3), xmax(3), xavg(3), lx(3), dist(3)
+    real(kind=kreal) :: lmax
+    real(kind=kreal) :: factor = 0.51d0  ! recommended: (0.5..1.0] (the smaller the faster, the bigger the safer)
+    integer(kind=kint) :: i
+    is_cand = .false.
+    do i = 1,3
+      xmin(i) = minval(x(i,:))
+      xmax(i) = maxval(x(i,:))
+      xavg(i) = sum(x(i,:))
     enddo
-  end subroutine getMinMaxBoxIDPassedByMultiPoint
+    xavg(:) = xavg(:) / size(x,2)
+    dist(:) = abs(x0(:) - xavg(:))
+    lx(:) = xmax(:) - xmin(:)
+    lmax = maxval(lx)
+    if ( maxval(dist(:)) < lmax * factor ) is_cand = .true.
+    !write(0,*) 'DEBUG: lx(1:3),dist(1:3),is_cand',lx(:),dist(:),is_cand
+  end subroutine check_contact_candidate
 
   !>\brief This subroutine setup contact output nodal vectors
   subroutine set_contact_state_vector( contact, dt, relvel_vec, state_vec )
