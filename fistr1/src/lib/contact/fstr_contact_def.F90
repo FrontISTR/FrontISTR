@@ -286,7 +286,7 @@ contains
     real(kind=kreal), intent(in)                     :: mu            !< penalty
     real(kind=kreal), optional                       :: B(:)          !< nodal force residual
 
-    real(kind=kreal)    :: clearance
+    real(kind=kreal)    :: clearance, distclr
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
@@ -302,6 +302,7 @@ contains
     !#endif
 
     clearance = 1.d-6
+    distclr = -1.0d-6  ! wait until little penetration for free nodes to be judged as new contact
     if( contact%algtype<=2 ) return
 
     allocate(contact_surf(size(nodeID)))
@@ -315,7 +316,7 @@ contains
       !$omp& default(none) &
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,itmp,idm,etype,isin) &
       !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,clearance,contact_surf) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,clearance,distclr,contact_surf) &
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -384,7 +385,7 @@ contains
             iSS = contact%master(id)%nodes(j)
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, clearance )
+          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, distclr )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
