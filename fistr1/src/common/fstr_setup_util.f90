@@ -1338,7 +1338,7 @@ contains
     integer(kind=kint), intent(in) :: old_size  !< current array size
     integer(kind=kint), intent(in) :: nitem     !< number of items to be deleted
     integer(kind=kint) :: i
-    integer(kind=kint), pointer :: temp(:)
+    real(kind=kreal), pointer :: temp(:)
 
     if( old_size < nitem ) then
       return
