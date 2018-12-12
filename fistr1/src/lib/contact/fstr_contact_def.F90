@@ -20,7 +20,6 @@ module mContactDef
 
   include 'fstr_ctrl_util_f.inc'
 
-
   !> Structure to includes all info needed by contact calculation
   type tContact
     ! following contact definition
@@ -60,9 +59,29 @@ module mContactDef
     integer(kind=kint) :: contactNode_current    !< current number of nodes in contact
   end type fstr_info_contactChange
 
+  real(kind=kreal), parameter :: CLEARANCE     = 1.d-4 ! ordinary clearance
+  real(kind=kreal), parameter :: CLR_SAME_ELEM = 5.d-3 ! clearance for already-in-contct elems (loosen to avoid moving too easily)
+  real(kind=kreal), parameter :: CLR_DIFFLPOS  = 1.d-2 ! clearance to be recognized as different position (loosen to avoid oscillation)
+  real(kind=kreal), parameter :: CLR_CAL_NORM  = 1.d-4 ! clearance used when calculating surface normal
+  real(kind=kreal), parameter :: DISTCLR_FREE  =-1.d-6 ! dist clearance for free nodes (wait until little penetration to be judged as contact)
+  real(kind=kreal), parameter :: DISTCLR_CONT  = 1.d0  ! dist clearance for contact nodes
+                                                       ! (big value to keep contact because contact-to-free is judged by tensile force)
+
+  private :: is_MPC_available
+  private :: is_active_contact
+  private :: cal_node_normal
+  private :: track_contact_position
+  private :: reset_contact_force
+  private :: check_contact_candidate
+
+  private :: CLEARANCE
+  private :: CLR_SAME_ELEM
+  private :: CLR_DIFFLPOS
+  private :: CLR_CAL_NORM
+  private :: DISTCLR_FREE
+  private :: DISTCLR_CONT
+
 contains
-
-
 
   !> If contact to mpc condiitions
   logical function is_MPC_available( contact )
@@ -286,7 +305,6 @@ contains
     real(kind=kreal), intent(in)                     :: mu            !< penalty
     real(kind=kreal), optional                       :: B(:)          !< nodal force residual
 
-    real(kind=kreal)    :: clearance, distclr, clearance_norm
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
@@ -301,10 +319,6 @@ contains
     logical :: is_cand
     !#endif
 
-    clearance = 1.d-4       ! ordinary clearance
-    clearance_norm = 1.d-4  ! clearance for calculating surface normal
-    distclr = -1.0d-6       ! wait until little penetration for free nodes to be judged as new contact
-
     if( contact%algtype<=2 ) return
 
     allocate(contact_surf(size(nodeID)))
@@ -318,8 +332,7 @@ contains
       !$omp& default(none) &
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,itmp,idm,etype,isin) &
       !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,clearance,distclr,contact_surf, &
-      !$omp&        clearance_norm) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,contact_surf) &
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -388,12 +401,12 @@ contains
             iSS = contact%master(id)%nodes(j)
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, distclr, &
-            localclr=clearance )
+          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, DISTCLR_FREE, &
+            localclr=CLEARANCE )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
-          iSS = isInsideElement( etype, contact%states(i)%lpos, clearance_norm )
+          iSS = isInsideElement( etype, contact%states(i)%lpos, CLR_CAL_NORM )
           if( iSS>0 ) &
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos, &
               contact%states(i)%direction(:) )
@@ -562,18 +575,12 @@ contains
     integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
     real(kind=kreal), intent(inout)                  :: B(:)         !< nodal force residual
 
-    real(kind=kreal)    :: distclr, clearance, clearance_same_elem, difflpos_clr, clearance_norm
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
     logical            :: isin, is_cand
     real(kind=kreal)    :: opos(2), odirec(3)
 
-    distclr = 1.0d0   !1.d-1     ! big value to keep contact because contact-to-free is judged by tensile force
-    clearance = 1.d-4            ! ordinary clearance
-    clearance_same_elem = 5.d-3  ! clearance for already-in-contct elems (loosen to avoid moving too easily)
-    difflpos_clr = 1.0d-2        ! clearance to be recognized as different position (loosen to avoid oscillation)
-    clearance_norm = 1.d-4       ! clearance for calculating surface normal
     sid = 0
 
     slave = contact%slave(nslave)
@@ -589,8 +596,8 @@ contains
       elem(1:3,j)=currpos(3*iSS-2:3*iSS)
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
-    call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
-      contact%states(nslave)%lpos, clearance_same_elem )
+    call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, DISTCLR_CONT, &
+      contact%states(nslave)%lpos, CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -600,8 +607,8 @@ contains
           iSS = contact%master(sid)%nodes(j)
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
-        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
-          localclr=clearance)
+        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, DISTCLR_CONT, &
+          localclr=CLEARANCE)
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -622,8 +629,8 @@ contains
         enddo
         call check_contact_candidate(elem(1:3,1:nn), coord(1:3), is_cand)
         if (.not. is_cand) cycle
-        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
-          localclr=clearance)
+        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, DISTCLR_CONT, &
+          localclr=CLEARANCE)
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -633,7 +640,7 @@ contains
 
     if( isin ) then
       if( contact%states(nslave)%surface==sid0 ) then
-        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= difflpos_clr))  then
+        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= CLR_DIFFLPOS))  then
           !$omp atomic
           infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         endif
@@ -647,7 +654,7 @@ contains
           call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
       endif
       if( flag_ctAlgo=='SLagrange' ) call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
-      iSS = isInsideElement( etype, contact%states(nslave)%lpos, clearance_norm )
+      iSS = isInsideElement( etype, contact%states(nslave)%lpos, CLR_CAL_NORM )
       if( iSS>0 ) &
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
           contact%states(nslave)%lpos, contact%states(nslave)%direction(:) )
