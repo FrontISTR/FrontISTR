@@ -1048,6 +1048,12 @@ contains
             isInsideElement = 2
           elseif( coord3==1.d0 ) then
             isInsideElement = 3
+          elseif( coord3==0.d0 ) then
+            isInsideElement = 12
+          elseif( localcoord(1)==0.d0 ) then
+            isInsideElement = 23
+          elseif( localcoord(2)==0.d0 ) then
+            isInsideElement = 31
           endif
         endif
       case (fe_quad4n, fe_quad8n)
@@ -1062,6 +1068,14 @@ contains
             isInsideElement = 3
           elseif( localcoord(1)==-1.d0 .and. localcoord(2)==1.d0 ) then
             isInsideElement = 4
+          elseif( localcoord(2)==-1.d0 ) then
+            isInsideElement = 12
+          elseif( localcoord(1)==1.d0 ) then
+            isInsideElement = 23
+          elseif( localcoord(2)==1.d0 ) then
+            isInsideElement = 34
+          elseif( localcoord(1)==-1.d0 ) then
+            isInsideElement = 41
           endif
         endif
     end select
