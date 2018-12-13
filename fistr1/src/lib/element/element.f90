@@ -1204,5 +1204,19 @@ contains
     end select
   end subroutine
 
+  !> This function calculates reference length at a point in surface
+  real(kind=kreal) function getReferenceLength( fetype, nn, localcoord, elecoord )
+    integer, intent(in)         :: fetype           !< surface element type
+    integer, intent(in)         :: nn               !< number of elemental nodes
+    real(kind=kreal),intent(in) :: localcoord(2)    !< natural coordinates
+    real(kind=kreal),intent(in) :: elecoord(3,nn)   !< nodes coordinates of surface element
+    real(kind=kreal) :: detJxy, detJyz, detJxz, detJ
+    detJxy = getDeterminant( fetype, nn, localcoord, elecoord(1:2,1:nn) )
+    detJyz = getDeterminant( fetype, nn, localcoord, elecoord(2:3,1:nn) )
+    detJxz = getDeterminant( fetype, nn, localcoord, elecoord(1:3:2,1:nn) )
+    detJ = dsqrt( detJxy **2 + detJyz **2 + detJxz **2 )
+    getReferenceLength = dsqrt( detJ )
+  end function getReferenceLength
+
 
 end module

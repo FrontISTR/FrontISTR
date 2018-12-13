@@ -66,13 +66,13 @@ module mContactDef
   real(kind=kreal), parameter :: DISTCLR_FREE  =-1.d-6 ! dist clearance for free nodes (wait until little penetration to be judged as contact)
   real(kind=kreal), parameter :: DISTCLR_CONT  = 1.d0  ! dist clearance for contact nodes
                                                        ! (big value to keep contact because contact-to-free is judged by tensile force)
+  real(kind=kreal), parameter :: BOX_EXP_RATE = 1.05d0 ! recommended: (1.0..2.0] (the smaller the faster, the bigger the safer)
 
   private :: is_MPC_available
   private :: is_active_contact
   private :: cal_node_normal
   private :: track_contact_position
   private :: reset_contact_force
-  private :: check_contact_candidate
 
   private :: CLEARANCE
   private :: CLR_SAME_ELEM
@@ -80,6 +80,7 @@ module mContactDef
   private :: CLR_CAL_NORM
   private :: DISTCLR_FREE
   private :: DISTCLR_CONT
+  private :: BOX_EXP_RATE
 
 contains
 
@@ -193,6 +194,7 @@ contains
           nn = contact%master(count)%nodes(j)
           contact%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
+        call initialize_surf_reflen( contact%master(count), hecMESH%node )
       enddo
 
     else
@@ -208,6 +210,7 @@ contains
           nn = contact%master(i-is+1)%nodes(j)
           contact%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
+        call initialize_surf_reflen( contact%master(i-is+1), hecMESH%node )
       enddo
 
     endif
@@ -328,6 +331,12 @@ contains
       states_prev(i) = contact%states(i)%state
     enddo
 
+    !$omp parallel do default(none) private(i) shared(contact,currpos)
+    do i=1, size(contact%master)
+      call update_surface_box_info( contact%master(i), currpos )
+    enddo
+    !$omp end parallel do
+
     !$omp parallel do &
       !$omp& default(none) &
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,itmp,idm,etype,isin) &
@@ -361,19 +370,10 @@ contains
       else if( contact%states(i)%state==CONTACTFREE ) then
         coord(:) = currpos(3*slave-2:3*slave)
         allocate(indexMaster(nMasterMax))
-        !#ifdef CONTACT_FILTER
         nMaster = 0
-        !#endif
-        do id= 1, size(contact%master)
 
-          !#ifdef CONTACT_FILTER
-          nn = size( contact%master(id)%nodes )
-          do j=1,nn
-            iSS = contact%master(id)%nodes(j)
-            elem(1:3,j) = currpos(3*iSS-2:3*iSS)
-          enddo
-          call check_contact_candidate(elem(1:3,1:nn), coord(1:3), is_cand)
-          if (.not. is_cand) cycle
+        do id= 1, size(contact%master)
+          if (.not. is_in_surface_box( contact%master(id), coord(1:3), BOX_EXP_RATE )) cycle
           nMaster = nMaster + 1
           if(nMaster > size(indexMaster)) then
             !stop 'Error: Too many master faces are possibly in contact!'
@@ -391,18 +391,17 @@ contains
           deallocate(indexMaster)
           cycle
         endif
-        !          do id= 1, size(contact%master)
+
         do idm = 1,nMaster
           id = indexMaster(idm)
-          !#endif
           etype = contact%master(id)%etype
           nn = size( contact%master(id)%nodes )
           do j=1,nn
             iSS = contact%master(id)%nodes(j)
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, DISTCLR_FREE, &
-            localclr=CLEARANCE )
+          call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,contact%states(i), &
+            isin,DISTCLR_FREE,localclr=CLEARANCE )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
@@ -596,8 +595,8 @@ contains
       elem(1:3,j)=currpos(3*iSS-2:3*iSS)
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
-    call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, DISTCLR_CONT, &
-      contact%states(nslave)%lpos, CLR_SAME_ELEM )
+    call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
+      isin,DISTCLR_CONT,contact%states(nslave)%lpos,CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -607,8 +606,8 @@ contains
           iSS = contact%master(sid)%nodes(j)
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
-        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, DISTCLR_CONT, &
-          localclr=CLEARANCE)
+        call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
+          isin,DISTCLR_CONT,localclr=CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -621,16 +620,15 @@ contains
       do sid= 1, size(contact%master)
         if( sid==sid0 ) cycle
         if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+        if (.not. is_in_surface_box( contact%master(sid), coord(1:3), BOX_EXP_RATE )) cycle
         etype = contact%master(sid)%etype
         nn = size( contact%master(sid)%nodes )
         do j=1,nn
           iSS = contact%master(sid)%nodes(j)
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
-        call check_contact_candidate(elem(1:3,1:nn), coord(1:3), is_cand)
-        if (.not. is_cand) cycle
-        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, DISTCLR_CONT, &
-          localclr=CLEARANCE)
+        call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
+          isin,DISTCLR_CONT,localclr=CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -978,29 +976,6 @@ contains
     enddo
 
   end subroutine ass_contact_force
-
-  subroutine check_contact_candidate(x, x0, is_cand)
-    real(kind=kreal), intent(in) :: x(:,:)  ! Multi-Points' coordinate in space
-    real(kind=kreal), intent(in) :: x0(3)
-    logical, intent(out) :: is_cand
-    !
-    real(kind=kreal) :: xmin(3), xmax(3), xavg(3), lx(3), dist(3)
-    real(kind=kreal) :: lmax
-    real(kind=kreal) :: factor = 0.51d0  ! recommended: (0.5..1.0] (the smaller the faster, the bigger the safer)
-    integer(kind=kint) :: i
-    is_cand = .false.
-    do i = 1,3
-      xmin(i) = minval(x(i,:))
-      xmax(i) = maxval(x(i,:))
-      xavg(i) = sum(x(i,:))
-    enddo
-    xavg(:) = xavg(:) / size(x,2)
-    dist(:) = abs(x0(:) - xavg(:))
-    lx(:) = xmax(:) - xmin(:)
-    lmax = maxval(lx)
-    if ( maxval(dist(:)) < lmax * factor ) is_cand = .true.
-    !write(0,*) 'DEBUG: lx(1:3),dist(1:3),is_cand',lx(:),dist(:),is_cand
-  end subroutine check_contact_candidate
 
   !>\brief This subroutine setup contact output nodal vectors
   subroutine set_contact_state_vector( contact, dt, relvel_vec, state_vec )
