@@ -223,7 +223,7 @@ contains
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
-      call fstr_scan_contact_state( cstep, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
       if(hecMESH%my_rank==0) write(*,*)
     endif
 
@@ -363,7 +363,7 @@ contains
       ctchange = .false.
       if( associated(fstrSOLID%contacts) ) then
         call fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchange )
-        call fstr_scan_contact_state( cstep, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+        call fstr_scan_contact_state( cstep, sub_step, al_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
         if( infoCTChange%contact2free+infoCTChange%contact2neighbor+infoCTChange%free2contact > 0 ) &
           ctchange = .true.
       endif
@@ -468,7 +468,7 @@ contains
 
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
-      call fstr_scan_contact_state( cstep, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
       if(paraContactFlag.and.present(conMAT)) then
         call hecmw_mat_copy_profile( hecMAT, conMAT )
       endif
@@ -661,7 +661,7 @@ contains
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
-      call fstr_scan_contact_state( cstep, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+      call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
       if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_contact_active() ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '

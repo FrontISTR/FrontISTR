@@ -63,6 +63,7 @@ module mContactDef
   real(kind=kreal), parameter :: CLR_SAME_ELEM = 5.d-3 ! clearance for already-in-contct elems (loosen to avoid moving too easily)
   real(kind=kreal), parameter :: CLR_DIFFLPOS  = 1.d-2 ! clearance to be recognized as different position (loosen to avoid oscillation)
   real(kind=kreal), parameter :: CLR_CAL_NORM  = 1.d-4 ! clearance used when calculating surface normal
+  real(kind=kreal), parameter :: DISTCLR_INIT  = 1.d-6 ! dist clearance for initial scan
   real(kind=kreal), parameter :: DISTCLR_FREE  =-1.d-6 ! dist clearance for free nodes (wait until little penetration to be judged as contact)
   real(kind=kreal), parameter :: DISTCLR_CONT  = 1.d0  ! dist clearance for contact nodes
                                                        ! (big value to keep contact because contact-to-free is judged by tensile force)
@@ -295,7 +296,7 @@ contains
   !!-# Free to contact ot contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
   subroutine scan_contact_state( flag_ctAlgo, contact, currpos, currdisp, ndforce, infoCTChange, &
-      nodeID, elemID, active, mu, B )
+      nodeID, elemID, is_init, active, mu, B )
     character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
@@ -304,10 +305,12 @@ contains
     real(kind=kreal), intent(in)                     :: ndforce(:)    !< nodal force
     integer(kind=kint), intent(in)                  :: nodeID(:)     !< global nodal ID, just for print out
     integer(kind=kint), intent(in)                  :: elemID(:)     !< global elemental ID, just for print out
+    logical, intent(in)                              :: is_init       !< wheather initial scan or not
     logical, intent(out)                            :: active        !< if any in contact
     real(kind=kreal), intent(in)                     :: mu            !< penalty
     real(kind=kreal), optional                       :: B(:)          !< nodal force residual
 
+    real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
@@ -323,6 +326,12 @@ contains
     !#endif
 
     if( contact%algtype<=2 ) return
+
+    if( is_init ) then
+      distclr = DISTCLR_INIT
+    else
+      distclr = DISTCLR_FREE
+    endif
 
     allocate(contact_surf(size(nodeID)))
     allocate(states_prev(size(contact%slave)))
@@ -341,7 +350,7 @@ contains
       !$omp& default(none) &
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,itmp,idm,etype,isin) &
       !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,contact_surf) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,distclr,contact_surf) &
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -401,7 +410,7 @@ contains
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
           call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,contact%states(i), &
-            isin,DISTCLR_FREE,localclr=CLEARANCE )
+            isin,distclr,localclr=CLEARANCE )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
