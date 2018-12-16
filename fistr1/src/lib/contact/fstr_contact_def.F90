@@ -68,6 +68,7 @@ module mContactDef
   real(kind=kreal), parameter :: DISTCLR_CONT  = 1.d0  ! dist clearance for contact nodes
                                                        ! (big value to keep contact because contact-to-free is judged by tensile force)
   real(kind=kreal), parameter :: BOX_EXP_RATE = 1.05d0 ! recommended: (1.0..2.0] (the smaller the faster, the bigger the safer)
+  real(kind=kreal), parameter :: TENSILE_FORCE =-1.d-8 ! tensile force to be judged as free node
 
   private :: is_MPC_available
   private :: is_active_contact
@@ -82,6 +83,7 @@ module mContactDef
   private :: DISTCLR_FREE
   private :: DISTCLR_CONT
   private :: BOX_EXP_RATE
+  private :: TENSILE_FORCE
 
 contains
 
@@ -360,7 +362,7 @@ contains
         id = contact%states(i)%surface
         nlforce = contact%states(i)%multiplier(1)
 
-        if( nlforce < -1.0d-8 ) then
+        if( nlforce < TENSILE_FORCE ) then
           contact%states(i)%state = CONTACTFREE
           contact%states(i)%multiplier(:) = 0.d0
           write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
