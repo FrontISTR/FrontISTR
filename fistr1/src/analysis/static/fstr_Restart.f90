@@ -51,6 +51,8 @@ contains
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         call hecmw_restart_read_int(nif)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain)
@@ -164,6 +166,8 @@ contains
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         nif = 0
         if( associated(fstrSOLID%elements(i)%gausses(j)%istatus) ) nif(1)=size(fstrSOLID%elements(i)%gausses(j)%istatus)
@@ -225,6 +229,8 @@ contains
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         call hecmw_restart_read_int(nif)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain)
@@ -292,6 +298,8 @@ contains
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         nif = 0
         if( associated(fstrSOLID%elements(i)%gausses(j)%istatus) ) nif(1)=size(fstrSOLID%elements(i)%gausses(j)%istatus)
