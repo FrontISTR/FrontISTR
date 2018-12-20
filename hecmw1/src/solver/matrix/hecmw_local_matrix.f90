@@ -1675,7 +1675,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
     integer(kind=kint), intent(in) :: n_add_node
-    integer(kind=kint), intent(in) :: add_nodes(cNCOL_ITEM,n_add_node)
+    integer(kind=kint), intent(in) :: add_nodes(:,:)
     integer(kind=kint), intent(out) :: i0
     integer(kind=kint) :: n_node, i, ii
     integer(kind=kint), pointer :: node_ID(:), global_node_ID(:)
