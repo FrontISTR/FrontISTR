@@ -1847,8 +1847,8 @@ contains
 
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(*,*) 'fstr contol file error : !BOUNDRAY : range of dof_ids and dof_ide is from 1 to 6'
-        write(ILOG,*) 'fstr contol file error : !BOUNDRAY : range of dof_ids and dof_ide is from 1 to 6'
+        write(*,*) 'fstr contol file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
+        write(ILOG,*) 'fstr contol file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
         call fstr_ctrl_err_stop
       end if
       P%SOLID%BOUNDARY_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
