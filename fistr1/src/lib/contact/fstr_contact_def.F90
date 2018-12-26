@@ -627,7 +627,7 @@ contains
     endif
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
-      write(*,*) 'Warning: contact moved beyond neighbor elements (time step might be too big)'
+      write(*,*) 'Warning: contact moved beyond neighbor elements'
       do sid= 1, size(contact%master)
         if( sid==sid0 ) cycle
         if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
