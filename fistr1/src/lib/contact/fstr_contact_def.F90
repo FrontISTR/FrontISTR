@@ -15,6 +15,7 @@ module mContactDef
   use mSurfElement
   use m_contact_lib
   use m_fstr_contact_comm
+  use bucket_search
 
   implicit none
 
@@ -48,6 +49,7 @@ module mContactDef
     type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes
 
     type(fstrST_contact_comm)     :: comm                    !< contact communication table
+    type(bucketDB)                :: master_bktDB            !< bucket DB for master surface
   end type tContact
 
   type fstr_info_contactChange
@@ -129,6 +131,7 @@ contains
     endif
     if( associated(contact%states) ) deallocate(contact%states)
     call fstr_contact_comm_finalize(contact%comm)
+    call bucketDB_finalize( contact%master_bktDB )
   end subroutine
 
   !>  Check the consistency with given mesh of contact defintiion
@@ -264,7 +267,10 @@ contains
     enddo
 
     ! neighborhood of surface group
-    call find_surface_neighbor( contact%master )
+    call update_surface_box_info( contact%master, hecMESH%node )
+    call bucketDB_init( contact%master_bktDB )
+    call update_surface_bucket_info( contact%master, contact%master_bktDB )
+    call find_surface_neighbor( contact%master, contact%master_bktDB )
 
     ! initialize contact communication table
     call fstr_contact_comm_init( contact%comm, hecMESH, 1, nslave, contact%slave )
@@ -320,12 +326,9 @@ contains
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
-    !#ifdef CONTACT_FILTER
-    !integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
-    integer, pointer :: indexMaster(:),itmp(:)
-    integer   ::  nMaster=0,idm,nMasterMax=100
+    integer, pointer :: indexMaster(:),indexCand(:)
+    integer   ::  nMaster,idm,nMasterMax,bktID,nCand
     logical :: is_cand
-    !#endif
 
     if( contact%algtype<=2 ) return
 
@@ -342,15 +345,13 @@ contains
       states_prev(i) = contact%states(i)%state
     enddo
 
-    !$omp parallel do default(none) private(i) shared(contact,currpos)
-    do i=1, size(contact%master)
-      call update_surface_box_info( contact%master(i), currpos )
-    enddo
-    !$omp end parallel do
+    call update_surface_box_info( contact%master, currpos )
+    call update_surface_bucket_info( contact%master, contact%master_bktDB )
 
     !$omp parallel do &
       !$omp& default(none) &
-      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,itmp,idm,etype,isin) &
+      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+      !$omp&         bktID,nCand,indexCand) &
       !$omp& firstprivate(nMasterMax) &
       !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,distclr,contact_surf) &
       !$omp& reduction(.or.:active) &
@@ -380,23 +381,26 @@ contains
 
       else if( contact%states(i)%state==CONTACTFREE ) then
         coord(:) = currpos(3*slave-2:3*slave)
+
+        ! get master candidates from bucketDB
+        bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
+        nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
+        if (nCand == 0) cycle
+        allocate(indexCand(nCand))
+        call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+
+        nMasterMax = nCand
         allocate(indexMaster(nMasterMax))
         nMaster = 0
 
-        do id= 1, size(contact%master)
+        ! narrow down candidates
+        do idm= 1, nCand
+          id = indexCand(idm)
           if (.not. is_in_surface_box( contact%master(id), coord(1:3), BOX_EXP_RATE )) cycle
           nMaster = nMaster + 1
-          if(nMaster > size(indexMaster)) then
-            !stop 'Error: Too many master faces are possibly in contact!'
-            itmp => indexMaster
-            allocate(indexMaster(nMasterMax*2))
-            indexMaster(1:nMasterMax) = itmp(1:nMasterMax)
-            deallocate(itmp)
-            nMasterMax = nMasterMax*2
-            write(*,*) 'Info: increased nMasterMax to ', nMasterMax
-          endif
           indexMaster(nMaster) = id
         enddo
+        deallocate(indexCand)
 
         if(nMaster == 0) then
           deallocate(indexMaster)
@@ -590,6 +594,8 @@ contains
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
     logical            :: isin, is_cand
     real(kind=kreal)    :: opos(2), odirec(3)
+    integer(kind=kint) :: bktID, nCand, idm
+    integer(kind=kint), allocatable :: indexCand(:)
 
     sid = 0
 
@@ -628,23 +634,32 @@ contains
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
       write(*,*) 'Warning: contact moved beyond neighbor elements'
-      do sid= 1, size(contact%master)
-        if( sid==sid0 ) cycle
-        if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
-        if (.not. is_in_surface_box( contact%master(sid), coord(1:3), BOX_EXP_RATE )) cycle
-        etype = contact%master(sid)%etype
-        nn = size( contact%master(sid)%nodes )
-        do j=1,nn
-          iSS = contact%master(sid)%nodes(j)
-          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+      ! get master candidates from bucketDB
+      bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
+      nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
+      if (nCand > 0) then
+        allocate(indexCand(nCand))
+        call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+        do idm= 1, nCand
+          sid = indexCand(idm)
+          if( sid==sid0 ) cycle
+          if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+          if (.not. is_in_surface_box( contact%master(sid), coord(1:3), BOX_EXP_RATE )) cycle
+          etype = contact%master(sid)%etype
+          nn = size( contact%master(sid)%nodes )
+          do j=1,nn
+            iSS = contact%master(sid)%nodes(j)
+            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+          enddo
+          call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
+               isin,DISTCLR_CONT,localclr=CLEARANCE )
+          if( isin ) then
+            contact%states(nslave)%surface = sid
+            exit
+          endif
         enddo
-        call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-          isin,DISTCLR_CONT,localclr=CLEARANCE )
-        if( isin ) then
-          contact%states(nslave)%surface = sid
-          exit
-        endif
-      enddo
+        deallocate(indexCand)
+      endif
     endif
 
     if( isin ) then

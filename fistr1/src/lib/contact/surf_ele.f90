@@ -25,7 +25,10 @@ module mSurfElement
     real(kind=kreal)                :: reflen               !< reference length
     real(kind=kreal)                :: xavg(3)              !< current coordinate of element center
     real(kind=kreal)                :: dmax                 !< half length of edge of cube that include surf
+    integer(kind=kint)              :: bktID                !< bucket ID
   end type tSurfElement
+
+  integer(kind=kint), parameter, private :: DEBUG = 0
 
 contains
 
@@ -49,6 +52,7 @@ contains
     surf%reflen  = -1.d0
     surf%xavg(:) =  0.d0
     surf%dmax    = -1.d0
+    surf%bktID   = -1
   end subroutine
 
   subroutine initialize_surf_reflen( surf, coord )
@@ -86,20 +90,32 @@ contains
   end subroutine
 
   !> Find neighboring surface elements
-  subroutine find_surface_neighbor( surf )
+  subroutine find_surface_neighbor( surf, bktDB )
     use m_utilities
     use hecmw_util
+    use bucket_search
     type(tSurfElement), intent(inout) :: surf(:)
+    type(bucketDB), intent(in) :: bktDB
     integer(kind=kint) :: i, j, ii,jj, nd1, nd2, nsurf
     integer(kind=kint) :: k, oldsize, newsize
     integer(kind=kint), pointer :: dumarray(:) => null()
+    integer(kind=kint) :: bktID, ncand, js
+    integer(kind=kint), allocatable :: indexSurf(:)
+    if (DEBUG >= 1) write(0,*) 'DEBUG: find_surface_neighbor: start'
 
     nsurf = size(surf)
 
-    !$omp parallel do default(none),private(i,ii,nd1,j,jj,nd2,oldsize,newsize,dumarray,k), &
-      !$omp&shared(nsurf,surf)
+    !$omp parallel do default(none), &
+      !$omp&private(i,ii,nd1,j,jj,nd2,oldsize,newsize,dumarray,k,bktID,ncand,indexSurf,js), &
+      !$omp&shared(nsurf,surf,bktDB)
     do i=1,nsurf
-      JLOOP: do j=1,nsurf
+      bktID = bucketDB_getBucketID(bktDB, surf(i)%xavg)
+      ncand = bucketDB_getNumCand(bktDB, bktID)
+      if (ncand == 0) cycle
+      allocate(indexSurf(ncand))
+      call bucketDB_getCand(bktDB, bktID, ncand, indexSurf)
+      JLOOP: do js=1,ncand
+        j = indexSurf(js)
         if( i==j ) cycle
         if( associated(surf(i)%neighbor) ) then
           if ( any( surf(i)%neighbor(1:surf(i)%n_neighbor)==j ) ) cycle
@@ -135,9 +151,11 @@ contains
           enddo
         enddo
       enddo JLOOP
+      deallocate(indexSurf)
     enddo
     !$omp end parallel do
 
+    if (DEBUG >= 1) write(0,*) 'DEBUG: find_surface_neighbor: end'
   end subroutine
 
   !> Tracing next contact position
@@ -204,23 +222,27 @@ contains
   end function next_position
 
   subroutine update_surface_box_info( surf, currpos )
-    type(tSurfElement), intent(inout) :: surf    !< current surface element
-    real(kind=kreal), intent(in) :: currpos(:)   !< current coordinate of all nodes
-    integer(kind=kint) :: nn, i, iss
+    type(tSurfElement), intent(inout) :: surf(:)    !< current surface element
+    real(kind=kreal), intent(in) :: currpos(:)      !< current coordinate of all nodes
+    integer(kind=kint) :: nn, i, j, iss
     real(kind=kreal) :: elem(3,l_max_surface_node),xmin(3), xmax(3), xsum(3), lx(3)
-    nn = size(surf%nodes)
-    do i=1,nn
-      iss = surf%nodes(i)
-      elem(1:3,i) = currpos(3*iss-2:3*iss)
+    !$omp parallel do default(none) private(i,nn,iss,elem,xmin,xmax,xsum,lx) shared(surf,currpos)
+    do j=1, size(surf)
+      nn = size(surf(j)%nodes)
+      do i=1,nn
+        iss = surf(j)%nodes(i)
+        elem(1:3,i) = currpos(3*iss-2:3*iss)
+      enddo
+      do i=1,3
+        xmin(i) = minval(elem(i,1:nn))
+        xmax(i) = maxval(elem(i,1:nn))
+        xsum(i) = sum(elem(i,1:nn))
+      enddo
+      surf(j)%xavg(:) = xsum(:) / nn
+      lx(:) = xmax(:) - xmin(:)
+      surf(j)%dmax = maxval(lx) * 0.5d0
     enddo
-    do i=1,3
-      xmin(i) = minval(elem(i,1:nn))
-      xmax(i) = maxval(elem(i,1:nn))
-      xsum(i) = sum(elem(i,1:nn))
-    enddo
-    surf%xavg(:) = xsum(:) / nn
-    lx(:) = xmax(:) - xmin(:)
-    surf%dmax = maxval(lx) * 0.5d0
+    !$omp end parallel do
   end subroutine update_surface_box_info
 
   logical function is_in_surface_box(surf, x0, exp_rate)
@@ -237,5 +259,40 @@ contains
       is_in_surface_box = .false.
     endif
   end function is_in_surface_box
+
+  subroutine update_surface_bucket_info(surf, bktDB)
+    use bucket_search
+    type(tSurfElement), intent(inout) :: surf(:)
+    type(bucketDB), intent(inout) :: bktDB
+    real(kind=kreal) :: x_min(3), x_max(3), d_max
+    integer(kind=kint) :: nsurf, i, j
+    if (DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: start'
+    nsurf = size(surf)
+    if (nsurf == 0) return
+    x_min(:) = surf(1)%xavg(:)
+    x_max(:) = surf(1)%xavg(:)
+    d_max = surf(1)%dmax
+    do i = 2, nsurf
+      do j = 1, 3
+        if (surf(i)%xavg(j) < x_min(j)) x_min(j) = surf(i)%xavg(j)
+        if (surf(i)%xavg(j) > x_max(j)) x_max(j) = surf(i)%xavg(j)
+        if (surf(i)%dmax > d_max) d_max = surf(i)%dmax
+      enddo
+    enddo
+    do j = 1, 3
+      x_min(j) = x_min(j) - d_max
+      x_max(j) = x_max(j) + d_max
+    enddo
+    call bucketDB_setup(bktDB, x_min, x_max, d_max*2.d0, nsurf)
+    do i = 1, nsurf
+      surf(i)%bktID = bucketDB_getBucketID(bktDB, surf(i)%xavg)
+      call bucketDB_registerPre(bktDB, surf(i)%bktID)
+    enddo
+    call bucketDB_allocate(bktDB)
+    do i = 1, nsurf
+      call bucketDB_register(bktDB, surf(i)%bktID, i)
+    enddo
+    if (DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: end'
+  end subroutine update_surface_bucket_info
 
 end module mSurfElement
