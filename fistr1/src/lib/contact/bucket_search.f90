@@ -70,6 +70,7 @@ contains
   subroutine bucket_incr_count(bkt)
     implicit none
     type(bucket), intent(inout) :: bkt
+    !$omp atomic
     bkt%n = bkt%n + 1
   end subroutine bucket_incr_count
 
@@ -97,6 +98,7 @@ contains
     implicit none
     type(bucket), intent(inout) :: bkt
     integer(kind=kint), intent(in) :: sid
+    !$omp atomic
     bkt%n = bkt%n + 1
     call assert(bkt%n <= bkt%n_max, 'bucket_register: too many members')
     bkt%member(bkt%n) = sid

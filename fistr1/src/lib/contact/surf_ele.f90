@@ -284,10 +284,12 @@ contains
       x_max(j) = x_max(j) + d_max
     enddo
     call bucketDB_setup(bktDB, x_min, x_max, d_max*2.d0, nsurf)
+    !$omp parallel do default(none) private(i) shared(nsurf,surf,bktDB)
     do i = 1, nsurf
       surf(i)%bktID = bucketDB_getBucketID(bktDB, surf(i)%xavg)
       call bucketDB_registerPre(bktDB, surf(i)%bktID)
     enddo
+    !$omp end parallel do
     call bucketDB_allocate(bktDB)
     do i = 1, nsurf
       call bucketDB_register(bktDB, surf(i)%bktID, i)
