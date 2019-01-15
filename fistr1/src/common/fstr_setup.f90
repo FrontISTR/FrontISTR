@@ -1505,6 +1505,7 @@ contains
     !   mpc_method => svIarray(13)
     !   estcond    => svIarray(14)
     !   method2    => svIarray(8)
+    !   recyclepre => svIarray(35)
 
     !   resid      => svRarray(1)
     !   sigma_diag => svRarray(2)
@@ -1516,6 +1517,7 @@ contains
       svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
       svIarray(1), svIarray(5), svIarray(6), svIarray(7), &
       svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
+      svIarray(35),                                         &
       svRarray(1), svRarray(2), svRarray(3),                &
       svRarray(4), svRarray(5) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
