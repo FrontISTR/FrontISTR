@@ -35,10 +35,10 @@ contains
   !> Initializer
   subroutine initialize_surf( eid, etype, nsurf, surf )
     use elementInfo
-    integer(kind=kint), intent(in)               :: eid
-    integer(kind=kint), intent(in)               :: etype
-    integer(kind=kint), intent(in)               :: nsurf
-    type(tSurfElement), intent(inout) :: surf
+    integer(kind=kint), intent(in)    :: eid    !< element ID
+    integer(kind=kint), intent(in)    :: etype  !< element type
+    integer(kind=kint), intent(in)    :: nsurf  !< surface ID
+    type(tSurfElement), intent(inout) :: surf   !< surface element
     integer(kind=kint) :: n, outtype, nodes(100)
     surf%eid = eid
     call getSubFace( etype, nsurf, outtype, nodes )
@@ -57,7 +57,7 @@ contains
 
   !> Memeory management subroutine
   subroutine finalize_surf( surf )
-    type(tSurfElement), intent(inout) :: surf
+    type(tSurfElement), intent(inout) :: surf   !< surface element
     if( associated(surf%nodes) ) deallocate( surf%nodes )
     if( associated(surf%neighbor) ) deallocate( surf%neighbor )
   end subroutine
@@ -79,8 +79,8 @@ contains
     use m_utilities
     use hecmw_util
     use bucket_search
-    type(tSurfElement), intent(inout) :: surf(:)
-    type(bucketDB), intent(in) :: bktDB
+    type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
+    type(bucketDB), intent(in) :: bktDB            !< bucket info
     integer(kind=kint) :: i, j, ii,jj, nd1, nd2, nsurf
     integer(kind=kint) :: k, oldsize, newsize
     integer(kind=kint), pointer :: dumarray(:) => null()
@@ -206,6 +206,7 @@ contains
 
   end function next_position
 
+  !> Compute reference length of surface elements
   subroutine update_surface_reflen( surf, coord )
     use elementInfo
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
@@ -225,8 +226,9 @@ contains
     !$omp end parallel do
   end subroutine update_surface_reflen
 
+  !>  Update info of cubic box including surface elements
   subroutine update_surface_box_info( surf, currpos )
-    type(tSurfElement), intent(inout) :: surf(:)    !< current surface element
+    type(tSurfElement), intent(inout) :: surf(:)    !< surface elements
     real(kind=kreal), intent(in) :: currpos(:)      !< current coordinate of all nodes
     integer(kind=kint) :: nn, i, j, iss
     real(kind=kreal) :: elem(3,l_max_surface_node),xmin(3), xmax(3), xsum(3), lx(3)
@@ -249,6 +251,7 @@ contains
     !$omp end parallel do
   end subroutine update_surface_box_info
 
+  !> Check if given point is within cubic box including surface element
   logical function is_in_surface_box(surf, x0, exp_rate)
     type(tSurfElement), intent(inout) :: surf  !< current surface element
     real(kind=kreal), intent(in) :: x0(3)      !< coordinate of slave node
@@ -264,10 +267,11 @@ contains
     endif
   end function is_in_surface_box
 
+  !> Update bucket info for searching surface elements
   subroutine update_surface_bucket_info(surf, bktDB)
     use bucket_search
-    type(tSurfElement), intent(inout) :: surf(:)
-    type(bucketDB), intent(inout) :: bktDB
+    type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
+    type(bucketDB), intent(inout) :: bktDB         !< bucket info
     real(kind=kreal) :: x_min(3), x_max(3), d_max
     integer(kind=kint) :: nsurf, i, j
     if (DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: start'

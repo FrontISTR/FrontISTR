@@ -1,3 +1,5 @@
+!> \brief  This module provides bucket-search functionality
+!>  It prodes definition of bucket info and its access routines
 module bucket_search
   use hecmw
   implicit none
@@ -16,28 +18,32 @@ module bucket_search
 
   integer(kind=kint), parameter :: DEBUG = 0
 
+  !> Structure for a single bucket (private to this module)
   type bucket
-    integer(kind=kint) :: n, n_max
-    integer(kind=kint), pointer :: member(:) => null()
+    integer(kind=kint) :: n                             !< number of members stored in this bucket
+    integer(kind=kint) :: n_max                         !< number of maximum members that can be stored in this bucket
+    integer(kind=kint), pointer :: member(:) => null()  !< array pointer of members
   end type bucket
 
+  !> Structure for bucket search
   type bucketDB
     private
-    real(kind=kreal) :: x_min(3)
-    real(kind=kreal) :: x_max(3)
-    real(kind=kreal) :: d(3)
-    integer(kind=kint) :: ndiv(3)
-    type(bucket), pointer :: buckets(:,:,:) => null()
-    integer(kind=kint) :: n_max
-    integer(kind=kint), pointer :: member_all(:) => null()
+    real(kind=kreal) :: x_min(3)                           !< min coordinate of rectangular area
+    real(kind=kreal) :: x_max(3)                           !< max coordinate of rectangular area
+    real(kind=kreal) :: d(3)                               !< bucket sizes in x,y,z direction
+    integer(kind=kint) :: ndiv(3)                          !< divisions in x,y,z direction
+    type(bucket), pointer :: buckets(:,:,:) => null()      !< 3D array of buckets
+    integer(kind=kint) :: n_tot                            !< total number of members
+    integer(kind=kint), pointer :: member_all(:) => null() !< array of members (referenced by each bucket)
   end type bucketDB
 
 contains
 
+  !> Assertion routine for debugging
   subroutine assert(cond, mesg)
     implicit none
-    logical, intent(in) :: cond
-    character(len=*) :: mesg
+    logical, intent(in) :: cond  !< condition statement that should be true
+    character(len=*) :: mesg     !< error message when the condition is false
     if (DEBUG > 0) then
       if (.not. cond) then
         write(0,*) 'ASSERTION FAILED: ',mesg
@@ -50,72 +56,68 @@ contains
 !!! routines for type(bucket)
 !!!
 
+  !> Initializer
   subroutine bucket_init(bkt)
     implicit none
-    type(bucket), intent(inout) :: bkt
+    type(bucket), intent(inout) :: bkt  !< bucket
     bkt%n = 0
     bkt%n_max = 0
     nullify(bkt%member)
   end subroutine bucket_init
 
+  !> Finalizer
   subroutine bucket_finalize(bkt)
     implicit none
-    type(bucket), intent(inout) :: bkt
+    type(bucket), intent(inout) :: bkt  !< bucket
     !if (bkt%n > 0) deallocate(bkt%member)
     nullify(bkt%member)
     bkt%n = 0
     bkt%n_max = 0
   end subroutine bucket_finalize
 
+  !> Just increment count before actual registration of member
   subroutine bucket_incr_count(bkt)
     implicit none
-    type(bucket), intent(inout) :: bkt
+    type(bucket), intent(inout) :: bkt  !< bucket
     !$omp atomic
     bkt%n = bkt%n + 1
   end subroutine bucket_incr_count
 
-  ! subroutine bucket_allocate(bkt)
-  !   implicit none
-  !   type(bucket), intent(inout) :: bkt
-  !   if (bkt%n /= bkt%n_max) then
-  !     if (associated(bkt%member)) deallocate(bkt%member)
-  !   endif
-  !   if (bkt%n > 0) allocate(bkt%member(bkt%n))
-  !   bkt%n_max = bkt%n
-  !   bkt%n = 0
-  ! end subroutine bucket_allocate
-
-  subroutine bucket_assign(bkt, memb)
+  !> Assign memory to member array pointer
+  subroutine bucket_assign(bkt, mem)
     implicit none
-    type(bucket), intent(inout) :: bkt
-    integer(kind=kint), pointer :: memb(:)
-    bkt%member => memb
+    type(bucket), intent(inout) :: bkt     !< bucket
+    integer(kind=kint), pointer :: mem(:)  !< pointer to integer array
+    bkt%member => mem
     bkt%n_max = bkt%n
     bkt%n = 0
   end subroutine bucket_assign
 
+  !> Register member
   subroutine bucket_register(bkt, sid)
     implicit none
-    type(bucket), intent(inout) :: bkt
-    integer(kind=kint), intent(in) :: sid
+    type(bucket), intent(inout) :: bkt     !< bucket
+    integer(kind=kint), intent(in) :: sid  !< member ID
     !$omp atomic
     bkt%n = bkt%n + 1
     call assert(bkt%n <= bkt%n_max, 'bucket_register: too many members')
     bkt%member(bkt%n) = sid
   end subroutine bucket_register
 
+  !> Get number of members
   function bucket_get_n(bkt)
     implicit none
-    integer(kind=kint) :: bucket_get_n
-    type(bucket), intent(in) :: bkt
+    integer(kind=kint) :: bucket_get_n  !< number of members
+    type(bucket), intent(in) :: bkt     !< bucket
     bucket_get_n = bkt%n
   end function bucket_get_n
 
+  !> Get members
   subroutine bucket_get_member(bkt, n, memb)
     implicit none
-    type(bucket), intent(in) :: bkt
-    integer(kind=kint), intent(in) :: n
-    integer(kind=kint), intent(out) :: memb(n)
+    type(bucket), intent(in) :: bkt             !< bucket
+    integer(kind=kint), intent(in) :: n         !< number of members
+    integer(kind=kint), intent(out) :: memb(n)  !< array to store members
     call assert(n == bkt%n, 'bucket_get_member: wrong n')
     memb(1:n) = bkt%member(1:n)
   end subroutine bucket_get_member
@@ -124,25 +126,27 @@ contains
 !!! routines for type(bucketDB)
 !!!
 
+  !> Initializer
   subroutine bucketDB_init(bktdb)
     implicit none
-    type(bucketDB), intent(inout) :: bktdb
+    type(bucketDB), intent(inout) :: bktdb  !< bucket info
     bktdb%x_min(:) = 0.d0
     bktdb%x_max(:) = 0.d0
     bktdb%d(:) = 0.d0
     bktdb%ndiv(:) = 0
     nullify(bktdb%buckets)
-    bktdb%n_max = 0
+    bktdb%n_tot = 0
     nullify(bktdb%member_all)
   end subroutine bucketDB_init
 
+  !> Finalizer
   subroutine bucketDB_finalize(bktdb)
     implicit none
-    type(bucketDB), intent(inout) :: bktdb
+    type(bucketDB), intent(inout) :: bktdb  !< bucket info
     integer(kind=kint) :: i, j, k
-    if (bktdb%n_max > 0) then
+    if (bktdb%n_tot > 0) then
       deallocate(bktdb%member_all)
-      bktdb%n_max = 0
+      bktdb%n_tot = 0
     endif
     if (any(bktdb%ndiv == 0)) then
       bktdb%ndiv(:) = 0
@@ -159,17 +163,18 @@ contains
     bktdb%ndiv(:) = 0
   end subroutine bucketDB_finalize
 
-  subroutine bucketDB_setup(bktdb, x_min, x_max, dmin, n_max)
+  !> Setup basic info of buckets
+  subroutine bucketDB_setup(bktdb, x_min, x_max, dmin, n_tot)
     implicit none
-    type(bucketDB), intent(inout) :: bktdb
-    real(kind=kreal), intent(in) :: x_min(3)
-    real(kind=kreal), intent(in) :: x_max(3)
-    real(kind=kreal), intent(in) :: dmin
-    integer(kind=kint), intent(in) :: n_max
+    type(bucketDB), intent(inout) :: bktdb    !< bucket info
+    real(kind=kreal), intent(in) :: x_min(3)  !< min coordinate of rectangle area covered by buckets
+    real(kind=kreal), intent(in) :: x_max(3)  !< max coordinate of rectangle area covered by buckets
+    real(kind=kreal), intent(in) :: dmin      !< minimal size of bucket
+    integer(kind=kint), intent(in) :: n_tot   !< total number of members to be stored
     real(kind=kreal) :: xrange(3)
     integer(kind=kint) :: i, j, k
     real(kind=kreal), parameter :: EPS = 1.d-6
-    if (DEBUG >= 1) write(0,*) 'DEBUG: bucketDB_setup', x_min, x_max, dmin, n_max
+    if (DEBUG >= 1) write(0,*) 'DEBUG: bucketDB_setup', x_min, x_max, dmin, n_tot
     if (associated(bktdb%buckets)) deallocate(bktdb%buckets)
     bktdb%x_min(:) = x_min(:)
     bktdb%x_max(:) = x_max(:)
@@ -187,70 +192,77 @@ contains
         enddo
       enddo
     enddo
-    if (bktdb%n_max /= n_max) then
+    if (bktdb%n_tot /= n_tot) then
       if (associated(bktdb%member_all)) deallocate(bktdb%member_all)
-      allocate(bktdb%member_all(n_max))
-      bktdb%n_max = n_max
+      allocate(bktdb%member_all(n_tot))
+      bktdb%n_tot = n_tot
     endif
   end subroutine bucketDB_setup
 
-  function encode_bid(bktdb, bid)
+  !> Encode 3D address of bucket into integer ID
+  function encode_bid(bktdb, baddr)
     implicit none
-    integer(kind=kint) :: encode_bid
-    type(bucketDB), intent(in) :: bktdb
-    integer(kind=kint), intent(in) :: bid(3)
-    if (any(bid <= 0) .or. any(bid > bktdb%ndiv)) then
+    integer(kind=kint) :: encode_bid            !< bucket ID
+    type(bucketDB), intent(in) :: bktdb         !< bucket info
+    integer(kind=kint), intent(in) :: baddr(3)  !< 3D bucket address of bucket
+    if (any(baddr <= 0) .or. any(baddr > bktdb%ndiv)) then
       encode_bid = -1
     else
       encode_bid = &
-           (bid(3)-1) * bktdb%ndiv(1) * bktdb%ndiv(2) + (bid(2)-1) * bktdb%ndiv(1) + bid(1)
+           (baddr(3)-1) * bktdb%ndiv(1) * bktdb%ndiv(2) + (baddr(2)-1) * bktdb%ndiv(1) + baddr(1)
     endif
   end function encode_bid
 
-  function decode_bid(bktdb, bidenc)
+  !> Decode integer ID of bucket into 3D address
+  function decode_bid(bktdb, bid)
     implicit none
-    integer(kind=kint) :: decode_bid(3)
-    type(bucketDB), intent(in) :: bktdb
-    integer(kind=kint), intent(in) :: bidenc
-    call assert(bidenc <= bktdb%ndiv(1)*bktdb%ndiv(2)*bktdb%ndiv(3), 'decode_bid: out of range')
-    if (bidenc < 0) then
+    integer(kind=kint) :: decode_bid(3)    !< 3D address of bucket
+    type(bucketDB), intent(in) :: bktdb    !< bucket info
+    integer(kind=kint), intent(in) :: bid  !< bucket ID
+    call assert(bid <= bktdb%ndiv(1)*bktdb%ndiv(2)*bktdb%ndiv(3), 'decode_bid: out of range')
+    if (bid < 0) then
       decode_bid(:) = -1
     else
-      decode_bid(1) = mod(bidenc-1, bktdb%ndiv(1)) + 1
-      decode_bid(2) = mod((bidenc-1)/bktdb%ndiv(1), bktdb%ndiv(2)) + 1
-      decode_bid(3) = (bidenc-1)/(bktdb%ndiv(1) * bktdb%ndiv(2)) + 1
-      call assert(encode_bid(bktdb, decode_bid) == bidenc, 'decode_bid')
+      decode_bid(1) = mod(bid-1, bktdb%ndiv(1)) + 1
+      decode_bid(2) = mod((bid-1)/bktdb%ndiv(1), bktdb%ndiv(2)) + 1
+      decode_bid(3) = (bid-1)/(bktdb%ndiv(1) * bktdb%ndiv(2)) + 1
+      call assert(encode_bid(bktdb, decode_bid) == bid, 'decode_bid')
     endif
   end function decode_bid
 
+  !> Get bucket ID that includes given point
   function bucketDB_getBucketID(bktdb, x)
     implicit none
-    integer(kind=kint) :: bucketDB_getBucketID
-    type(bucketDB), intent(in) :: bktdb
-    real(kind=kreal), intent(in) :: x(3)
-    integer(kind=kint) :: bid(3)
+    integer(kind=kint) :: bucketDB_getBucketID  !< bucket ID
+    type(bucketDB), intent(in) :: bktdb         !< bucket info
+    real(kind=kreal), intent(in) :: x(3)        !< coordinate of point
+    integer(kind=kint) :: baddr(3)
     integer(kind=kint) :: i
     do i = 1, 3
-      bid(i) = floor((x(i) - bktdb%x_min(i)) / bktdb%d(i)) + 1
+      baddr(i) = floor((x(i) - bktdb%x_min(i)) / bktdb%d(i)) + 1
     enddo
-    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_getBucketID: ',x,bid
-    bucketDB_getBucketID = encode_bid(bktdb, bid)
+    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_getBucketID: ',x,baddr
+    bucketDB_getBucketID = encode_bid(bktdb, baddr)
   end function bucketDB_getBucketID
 
-  subroutine bucketDB_registerPre(bktdb, bidenc)
+  !> Pre-register for just counting members to be actually registered
+  !! Bucket ID has to be obtained with bucketDB_getBucketID
+  subroutine bucketDB_registerPre(bktdb, bid)
     implicit none
-    type(bucketDB), intent(inout) :: bktdb
-    integer(kind=kint), intent(in) :: bidenc
-    integer(kind=kint) :: bid(3)
-    bid = decode_bid(bktdb, bidenc)
-    call assert(all(bid > 0) .and. all(bid <= bktdb%ndiv), 'bucketDB_register_pre: block ID our of range')
-    call bucket_incr_count(bktdb%buckets(bid(1),bid(2),bid(3)))
-    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_registerPre: ', bid
+    type(bucketDB), intent(inout) :: bktdb  !< bucket info
+    integer(kind=kint), intent(in) :: bid   !< bucket ID
+    integer(kind=kint) :: baddr(3)
+    baddr = decode_bid(bktdb, bid)
+    call assert(all(baddr > 0) .and. all(baddr <= bktdb%ndiv), 'bucketDB_register_pre: block ID our of range')
+    call bucket_incr_count(bktdb%buckets(baddr(1),baddr(2),baddr(3)))
+    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_registerPre: ', baddr
   end subroutine bucketDB_registerPre
 
+  !> Allocate memory before actually registering members
+  !! Before allocating memory, bucketDB_registerPre has to be called for all members to be registered
   subroutine bucketDB_allocate(bktdb)
     implicit none
-    type(bucketDB), intent(inout) :: bktdb
+    type(bucketDB), intent(inout) :: bktdb  !< bucket info
     integer(kind=kint) :: i, j, k, count, n
     integer(kind=kint), pointer :: pmemb(:)
     count = 0
@@ -267,31 +279,35 @@ contains
     enddo
   end subroutine bucketDB_allocate
 
-  subroutine bucketDB_register(bktdb, bidenc, sid)
+  !> Register member
+  !! Before actually register, bucketDB_allocate has to be called
+  subroutine bucketDB_register(bktdb, bid, sid)
     implicit none
-    type(bucketDB), intent(inout) :: bktdb
-    integer(kind=kint), intent(in) :: bidenc
-    integer(kind=kint), intent(in) :: sid
-    integer(kind=kint) :: bid(3)
-    bid = decode_bid(bktdb, bidenc)
-    call assert(all(bid > 0) .and. all(bid <= bktdb%ndiv), 'bucketDB_register: block ID our of range')
-    call bucket_register(bktdb%buckets(bid(1),bid(2),bid(3)), sid)
-    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_register: ', bid, sid
+    type(bucketDB), intent(inout) :: bktdb  !< bucket info
+    integer(kind=kint), intent(in) :: bid   !< bucket ID
+    integer(kind=kint), intent(in) :: sid   !< member ID
+    integer(kind=kint) :: baddr(3)
+    baddr = decode_bid(bktdb, bid)
+    call assert(all(baddr > 0) .and. all(baddr <= bktdb%ndiv), 'bucketDB_register: block ID our of range')
+    call bucket_register(bktdb%buckets(baddr(1),baddr(2),baddr(3)), sid)
+    if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_register: ', baddr, sid
   end subroutine bucketDB_register
 
-  function bucketDB_getNumCand(bktdb, bidenc)
+  !> Get number of candidates within neighboring buckets of a given bucket
+  !! Bucket ID has to be obtained with bucketDB_getBucketID
+  function bucketDB_getNumCand(bktdb, bid)
     implicit none
-    integer(kind=kint) :: bucketDB_getNumCand
-    type(bucketDB), intent(in) :: bktdb
-    integer(kind=kint), intent(in) :: bidenc
-    integer(kind=kint) :: bid(3), ncand, i, j, k
-    bid = decode_bid(bktdb, bidenc)
+    integer(kind=kint) :: bucketDB_getNumCand  !< number of candidates
+    type(bucketDB), intent(in) :: bktdb        !< bucket info
+    integer(kind=kint), intent(in) :: bid      !< bucket ID
+    integer(kind=kint) :: baddr(3), ncand, i, j, k
+    baddr = decode_bid(bktdb, bid)
     ncand = 0
-    do k = bid(3)-1, bid(3)+1
+    do k = baddr(3)-1, baddr(3)+1
       if (k <= 0 .or. k > bktdb%ndiv(3)) cycle
-      do j = bid(2)-1, bid(2)+1
+      do j = baddr(2)-1, baddr(2)+1
         if (j <= 0 .or. j > bktdb%ndiv(2)) cycle
-        do i = bid(1)-1, bid(1)+1
+        do i = baddr(1)-1, baddr(1)+1
           if (i <= 0 .or. i > bktdb%ndiv(1)) cycle
           ncand = ncand + bucket_get_n(bktdb%buckets(i,j,k))
         enddo
@@ -301,21 +317,23 @@ contains
     if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_getNumCand: ',ncand
   end function bucketDB_getNumCand
 
-  subroutine bucketDB_getCand(bktdb, bidenc, ncand, cand)
+  !> Get candidates within neighboring buckets of a given bucket
+  !! Number of candidates has to be obtained with bucketDB_getNumCand beforehand
+  subroutine bucketDB_getCand(bktdb, bid, ncand, cand)
     implicit none
-    type(bucketDB), intent(in) :: bktdb
-    integer(kind=kint), intent(in) :: bidenc
-    integer(kind=kint), intent(in) :: ncand
-    integer(kind=kint), intent(out), target :: cand(ncand)
-    integer(kind=kint) :: bid(3), i, j, k, n, cnt
+    type(bucketDB), intent(in) :: bktdb                     !< bucket info
+    integer(kind=kint), intent(in) :: bid                   !< bucket ID
+    integer(kind=kint), intent(in) :: ncand                 !< number of candidates
+    integer(kind=kint), intent(out), target :: cand(ncand)  !< array to store candidates
+    integer(kind=kint) :: baddr(3), i, j, k, n, cnt
     integer(kind=kint), pointer :: pcand(:)
-    bid = decode_bid(bktdb, bidenc)
+    baddr = decode_bid(bktdb, bid)
     cnt = 0
-    do k = bid(3)-1, bid(3)+1
+    do k = baddr(3)-1, baddr(3)+1
       if (k <= 0 .or. k > bktdb%ndiv(3)) cycle
-      do j = bid(2)-1, bid(2)+1
+      do j = baddr(2)-1, baddr(2)+1
         if (j <= 0 .or. j > bktdb%ndiv(2)) cycle
-        do i = bid(1)-1, bid(1)+1
+        do i = baddr(1)-1, baddr(1)+1
           if (i <= 0 .or. i > bktdb%ndiv(1)) cycle
           n = bucket_get_n(bktdb%buckets(i,j,k))
           pcand => cand(cnt+1:cnt+n)
