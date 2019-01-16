@@ -200,7 +200,6 @@ contains
           nn = contact%master(count)%nodes(j)
           contact%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
-        call initialize_surf_reflen( contact%master(count), hecMESH%node )
       enddo
 
     else
@@ -216,10 +215,11 @@ contains
           nn = contact%master(i-is+1)%nodes(j)
           contact%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
-        call initialize_surf_reflen( contact%master(i-is+1), hecMESH%node )
       enddo
 
     endif
+
+    call update_surface_reflen( contact%master, hecMESH%node )
 
     ! slave surface
     !    if( contact%ctype==1 ) then

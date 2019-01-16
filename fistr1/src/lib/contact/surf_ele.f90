@@ -55,21 +55,6 @@ contains
     surf%bktID   = -1
   end subroutine
 
-  subroutine initialize_surf_reflen( surf, coord )
-    use elementInfo
-    type(tSurfElement), intent(inout) :: surf
-    real(kind=kreal), intent(in)      :: coord(:)
-    real(kind=kreal) :: elem(3, l_max_surface_node), r0(2)
-    integer(kind=kint) :: nn, i, iss
-    nn = size(surf%nodes)
-    do i=1,nn
-      iss = surf%nodes(i)
-      elem(1:3,i) = coord(3*iss-2:3*iss)
-    enddo
-    call getElementCenter( surf%etype, r0 )
-    surf%reflen = getReferenceLength( surf%etype, nn, r0, elem )
-  end subroutine initialize_surf_reflen
-
   !> Memeory management subroutine
   subroutine finalize_surf( surf )
     type(tSurfElement), intent(inout) :: surf
@@ -220,6 +205,25 @@ contains
     next_position = surf%neighbor( next_position )
 
   end function next_position
+
+  subroutine update_surface_reflen( surf, coord )
+    use elementInfo
+    type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
+    real(kind=kreal), intent(in)      :: coord(:)  !< current coordinate of all nodes
+    real(kind=kreal) :: elem(3, l_max_surface_node), r0(2)
+    integer(kind=kint) :: nn, i, j, iss
+    !$omp parallel do default(none) private(j,nn,i,iss,elem,r0) shared(surf,coord)
+    do j=1,size(surf)
+      nn = size(surf(j)%nodes)
+      do i=1,nn
+        iss = surf(j)%nodes(i)
+        elem(1:3,i) = coord(3*iss-2:3*iss)
+      enddo
+      call getElementCenter( surf(j)%etype, r0 )
+      surf(j)%reflen = getReferenceLength( surf(j)%etype, nn, r0, elem )
+    enddo
+    !$omp end parallel do
+  end subroutine update_surface_reflen
 
   subroutine update_surface_box_info( surf, currpos )
     type(tSurfElement), intent(inout) :: surf(:)    !< current surface element
