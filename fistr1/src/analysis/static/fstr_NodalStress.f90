@@ -983,5 +983,4 @@ contains
     end if
   end subroutine make_principal
 
-
 end module m_fstr_NodalStress
