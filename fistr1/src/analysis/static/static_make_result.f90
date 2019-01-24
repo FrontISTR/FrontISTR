@@ -593,22 +593,22 @@ contains
     ! --- Principal Stress @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(20) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(19), ndof )
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(20), ndof )
     endif
     ! --- Principal Strain @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(22) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(21), ndof )
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(22), ndof )
     endif
     ! --- Principal Stress Vector @element
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(23) ) then
-      ecomp = ecomp + 3
-      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(23), ndof )
-    endif
-    ! --- Principal Strain Vector @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(24) ) then
       ecomp = ecomp + 3
-      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(25), ndof )
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(24), ndof )
+    endif
+    ! --- Principal Strain Vector @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(26) ) then
+      ecomp = ecomp + 3
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
     endif
     ! --- MATERIAL @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
