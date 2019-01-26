@@ -190,12 +190,12 @@ int main(int argc, char** argv) {
     fprintf(log_fp, "end\n");
 
     if (nrank == 0) {
-      if ((fileheader = HECMW_ctrl_get_result_fileheader("fstrRES", endid, step,
+      if ((fileheader = HECMW_ctrl_get_result_fileheader("fstrRES", step,
                                                          &fg_text)) == NULL)
         return 0;
     } else {
       if ((fileheader = HECMW_ctrl_get_result_fileheader_sub(
-               "fstrRES", endid, step, nrank, 0, &fg_text)) == NULL)
+               "fstrRES", step, nrank, 0, &fg_text)) == NULL)
         return 0;
     }
     strcpy(buff, fileheader);

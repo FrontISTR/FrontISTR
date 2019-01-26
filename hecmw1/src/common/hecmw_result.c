@@ -446,7 +446,7 @@ int HECMW_result_write_by_name(char *name_ID) {
   int fg_text, ret;
 
   if ((basename =
-           HECMW_ctrl_get_result_file(name_ID, nstep, istep, &fg_text)) == NULL)
+           HECMW_ctrl_get_result_file(name_ID, istep, &fg_text)) == NULL)
     return -1;
 
   ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, istep);
@@ -469,7 +469,7 @@ int HECMW_result_write_ST_by_name(char *name_ID,
   int fg_text, ret;
 
   if ((basename =
-           HECMW_ctrl_get_result_file(name_ID, nstep, istep, &fg_text)) == NULL)
+           HECMW_ctrl_get_result_file(name_ID, istep, &fg_text)) == NULL)
     return -1;
 
   ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, istep);
@@ -493,7 +493,7 @@ int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
   char *basename, filename[HECMW_FILENAME_LEN + 1];
   int fg_text, myrank, ret;
 
-  if ((basename = HECMW_ctrl_get_result_fileheader(name_ID, nstep, istep,
+  if ((basename = HECMW_ctrl_get_result_fileheader(name_ID, istep,
                                                    &fg_text)) == NULL)
     return -1;
 
@@ -530,7 +530,7 @@ struct hecmwST_result_data *HECMW_result_read_by_name(char *name_ID, int n_step,
   struct hecmwST_result_data *result;
   int fg_text, ret;
 
-  if ((basename = HECMW_ctrl_get_result_file(name_ID, n_step, i_step,
+  if ((basename = HECMW_ctrl_get_result_file(name_ID, i_step,
                                              &fg_text)) == NULL)
     return NULL;
 

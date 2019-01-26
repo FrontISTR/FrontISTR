@@ -69,7 +69,7 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
   HECMW_Comm_size(VIS_COMM, &pesize);
   HECMW_Comm_rank(VIS_COMM, &mynode);
 
-  outfile = HECMW_ctrl_get_result_fileheader("vis_out", max_timestep, timestep, &fg_text);
+  outfile = HECMW_ctrl_get_result_fileheader("vis_out", timestep, &fg_text);
   buf1 = HECMW_ctrl_get_result_filebody("vis_out");
 
   if (HECMW_ctrl_is_subdir()) {
