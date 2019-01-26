@@ -87,24 +87,22 @@ static int alloc_result(void) {
 }
 
 /*----------------------------------------------------------------------------*/
-void hecmw_visualize_if(int *step, int *max_timestep, int *interval, int *err) {
+void hecmw_visualize_if(int *step, int *interval, int *err) {
   *err = 1;
-  if (HECMW_visualize(mesh, result, *step, *max_timestep, *interval)) return;
+  if (HECMW_visualize(mesh, result, *step, *interval)) return;
   *err = 0;
 }
 
-void hecmw_visualize_if_(int *step, int *max_timestep, int *interval,
-                         int *err) {
-  hecmw_visualize_if(step, max_timestep, interval, err);
+void hecmw_visualize_if_(int *step, int *interval, int *err) {
+  hecmw_visualize_if(step, interval, err);
 }
 
-void hecmw_visualize_if__(int *step, int *max_timestep, int *interval,
-                          int *err) {
-  hecmw_visualize_if(step, max_timestep, interval, err);
+void hecmw_visualize_if__(int *step, int *interval, int *err) {
+  hecmw_visualize_if(step, interval, err);
 }
 
-void HECMW_VISUALIZE_IF(int *step, int *max_timestep, int *interval, int *err) {
-  hecmw_visualize_if(step, max_timestep, interval, err);
+void HECMW_VISUALIZE_IF(int *step, int *interval, int *err) {
+  hecmw_visualize_if(step, interval, err);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -118,7 +118,7 @@ contains
       fstrRESULT%node_val_item = fstrHEAT%TEMP
       call fstr2hecmw_mesh_conv(hecMESH)
       call hecmw_visualize_init
-      call hecmw_visualize (hecMESH, fstrRESULT, tstep, max_step, interval)
+      call hecmw_visualize (hecMESH, fstrRESULT, tstep, interval)
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv(hecMESH)
       call hecmw_result_free(fstrRESULT)

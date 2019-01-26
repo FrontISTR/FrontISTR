@@ -178,7 +178,7 @@ contains
         fstrRESULT%node_val_item = X
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
-        call hecmw_visualize(hecMESH,fstrRESULT,istep,nget,1)
+        call hecmw_visualize(hecMESH,fstrRESULT,istep,1)
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
         call hecmw_result_free(fstrRESULT)

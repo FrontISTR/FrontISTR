@@ -54,14 +54,14 @@ contains
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
           (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
-        call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, maxstep, istep, 1 )
+        call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, 1 )
       endif
       return
     endif
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep .or. outflag) ) then
-      call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, maxstep, istep, 0 )
+      call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, 0 )
     endif
 
     if( IVISUAL==1 .and. &
@@ -72,7 +72,7 @@ contains
       call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
-      call hecmw_visualize( hecMESH, fstrRESULT, istep, maxstep, interval )
+      call hecmw_visualize( hecMESH, fstrRESULT, istep, interval )
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv( hecMESH )
       call hecmw_result_free( fstrRESULT )

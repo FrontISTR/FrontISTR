@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     data = HECMW_result_read_by_fname(resultfile1);
     if (data == NULL) HECMW_abort(HECMW_comm_get_comm());
 
-    HECMW_visualize(mesh, data, timestep, max_step, interval);
+    HECMW_visualize(mesh, data, timestep, interval);
 
     HECMW_result_free(data);
   }

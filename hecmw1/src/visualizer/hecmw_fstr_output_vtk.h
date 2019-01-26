@@ -7,10 +7,10 @@
 
 void
 HECMW_vtk_output (struct hecmwST_local_mesh *mesh,
-		struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM);
+		struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM);
 
 void
 HECMW_bin_vtk_output (struct hecmwST_local_mesh *mesh,
-		struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM);
+		struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM);
 
 #endif /* HECMW_FSTR_OUTPUT_VKT_H_INCLUDED */

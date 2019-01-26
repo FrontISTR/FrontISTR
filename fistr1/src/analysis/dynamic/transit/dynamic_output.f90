@@ -84,7 +84,7 @@ contains
       call fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
-      call hecmw_visualize( hecMESH, fstrRESULT, istep, maxstep, interval )
+      call hecmw_visualize( hecMESH, fstrRESULT, istep, interval )
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv( hecMESH )
       call hecmw_result_free( fstrRESULT )

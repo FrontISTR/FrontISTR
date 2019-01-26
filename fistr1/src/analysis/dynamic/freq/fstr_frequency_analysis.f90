@@ -538,7 +538,7 @@ contains
 
     call fstr2hecmw_mesh_conv(hecMESH)
     call hecmw_visualize_init
-    call hecmw_visualize(hecMESH, fstrRESULT, ifreq, numfreq, 1)
+    call hecmw_visualize(hecMESH, fstrRESULT, ifreq, 1)
     call hecmw2fstr_mesh_conv(hecMESH)
     call hecmw_result_free(fstrRESULT)
   end subroutine
@@ -1139,7 +1139,7 @@ contains
 
     call fstr2hecmw_mesh_conv(hecMESH)
     call hecmw_visualize_init
-    call hecmw_visualize(hecMESH, fstrRESULT, istp, numstep, 1)
+    call hecmw_visualize(hecMESH, fstrRESULT, istp, 1)
     call hecmw2fstr_mesh_conv(hecMESH)
     call hecmw_result_free(fstrRESULT)
 

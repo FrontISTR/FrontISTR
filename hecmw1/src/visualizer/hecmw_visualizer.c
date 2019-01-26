@@ -51,7 +51,7 @@ int HECMW_visualize_init_by_comm(HECMW_Comm VIS_COMM) {
 
 int HECMW_visualize(struct hecmwST_local_mesh *mesh,
                     struct hecmwST_result_data *data, int timestep,
-                    int max_timestep, int interval) {
+                    int interval) {
   int ii;
   char *outfile, *buf1, outfile1[HECMW_FILENAME_LEN];
   char body[HECMW_FILENAME_LEN];
@@ -82,7 +82,7 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
     init_flag = 1;
     tp1       = psf->next_psf;
     for (visual_id = 0; visual_id < psf->num_of_psf; visual_id++) {
-      if (((timestep % interval) == 0) || (timestep == max_timestep)) {
+      if ( (timestep % interval) == 0 ) {
         if (mynode == 0)
           fprintf(stderr, " Start visualize PSF %d at timestep %d\n",
                   visual_id + 1, timestep);
@@ -120,7 +120,7 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
             sprintf(body, "%s_psf.000%d", buf1, timestep);
           }
         }
-        HECMW_vis_psf_rendering(mesh, data, &timestep, &max_timestep, sf, sr, stat_para_sf,
+        HECMW_vis_psf_rendering(mesh, data, &timestep, sf, sr, stat_para_sf,
                                 outfile1, body, VIS_COMM);
         init_flag = 0;
       }
@@ -130,7 +130,7 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
     tv1       = pvr->next_pvr;
     init_flag = 1;
     for (visual_id = 0; visual_id < pvr->num_of_pvr; visual_id++) {
-      if (((timestep % interval) == 0) || (timestep == max_timestep)) {
+      if ( (timestep % interval) == 0 ) {
         if (mynode == 0)
           fprintf(stderr, " Start visualize PVR %d at timestep %d\n",
                   visual_id + 1, timestep);
