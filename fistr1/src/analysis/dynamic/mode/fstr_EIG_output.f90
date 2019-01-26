@@ -158,7 +158,7 @@ contains
 
       if( IRESULT.eq.1 ) then
         header = "*fstrresult"
-        call hecmw_result_init(hecMESH,nget,istep,header)
+        call hecmw_result_init(hecMESH,istep,header)
         label = "DISPLACEMENT"
         call hecmw_result_add(1,NDOF,label,X)
         nameID = "fstrRES"

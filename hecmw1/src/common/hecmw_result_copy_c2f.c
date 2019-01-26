@@ -243,7 +243,7 @@ void HECMW_RESULT_COPY_C2F_SET_IF(char *struct_name, char *var_name, void *dst,
 
 /*----------------------------------------------------------------------------*/
 
-void hecmw_result_read_by_name_if(char *name_ID, int *n_step, int *i_step,
+void hecmw_result_read_by_name_if(char *name_ID, int *i_step,
                                   int *n_node, int *n_elem, int *err, int len) {
   char name_ID_str[HECMW_NAME_LEN + 1];
 
@@ -253,7 +253,7 @@ void hecmw_result_read_by_name_if(char *name_ID, int *n_step, int *i_step,
       NULL)
     return;
 
-  result = HECMW_result_read_by_name(name_ID_str, *n_step, *i_step);
+  result = HECMW_result_read_by_name(name_ID_str, *i_step);
   if (result == NULL) return;
 
   nnode   = HECMW_result_get_nnode();
@@ -264,23 +264,23 @@ void hecmw_result_read_by_name_if(char *name_ID, int *n_step, int *i_step,
   *err = 0;
 }
 
-void hecmw_result_read_by_name_if_(char *name_ID, int *n_step, int *i_step,
+void hecmw_result_read_by_name_if_(char *name_ID, int *i_step,
                                    int *n_node, int *n_elem, int *err,
                                    int len) {
-  hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, err,
+  hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, err,
                                len);
 }
 
-void hecmw_result_read_by_name_if__(char *name_ID, int *n_step, int *i_step,
+void hecmw_result_read_by_name_if__(char *name_ID, int *i_step,
                                     int *n_node, int *n_elem, int *err,
                                     int len) {
-  hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, err,
+  hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, err,
                                len);
 }
 
-void HECMW_RESULT_READ_BY_NAME_IF(char *name_ID, int *n_step, int *i_step,
+void HECMW_RESULT_READ_BY_NAME_IF(char *name_ID, int *i_step,
                                   int *n_node, int *n_elem, int *err, int len) {
-  hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, err,
+  hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, err,
                                len);
 }
 

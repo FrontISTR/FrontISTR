@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
     sprintf(out_fname, "%s%s.%d", dirname, out_fheader, step);
     fprintf(log_fp, "output to %s .. ", out_fname);
     HECMW_result_get_header(header);
-    HECMW_result_init(glmesh, step_n, step, header);
+    HECMW_result_init(glmesh, step, header);
     if (binary) {
       rcode = HECMW_result_write_bin_ST_by_fname(out_fname, data, glt->node_n,
                                                  glt->elem_n, header);

@@ -60,7 +60,7 @@ contains
 
     ! --- INITIALIZE
     header = '*fstrresult'
-    call hecmw_result_init( hecMESH, maxstep, istep, header )
+    call hecmw_result_init( hecMESH, istep, header )
 
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1)) then

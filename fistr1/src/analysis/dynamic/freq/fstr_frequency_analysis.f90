@@ -381,16 +381,15 @@ contains
     real(kind=kreal), intent(inout)      :: eigenvector(:, :) !intend (numdof*NN,nmode)
     !---- vals
     integer(kind=kint), parameter :: compidx = 1 !Component index of displacement
-    integer(kind=kint)            :: imode, idx, ind, a, b, nallcomp, j, nmode
+    integer(kind=kint)            :: imode, idx, ind, a, b, nallcomp, j
     type(hecmwST_result_data)     :: eigenres
     character(len=HECMW_NAME_LEN) :: name
     !---- body
 
     name = 'result-in'
-    nmode = (endmode-startmode)+1
     do imode=startmode, endmode
       call nullify_result_data(eigenres)
-      call hecmw_result_read_by_name(hecMESH, name, nmode, imode, eigenres)
+      call hecmw_result_read_by_name(hecMESH, name, imode, eigenres)
 
       nallcomp = 0
       do ind=1,eigenres%nn_component
@@ -480,7 +479,7 @@ contains
 
     nameid='fstrRES'
     header='*fstrresult'
-    call hecmw_result_init(hecMESH, numfreq, ifreq, header)
+    call hecmw_result_init(hecMESH, ifreq, header)
     if(iout(1) == 1) then
       label='displacement'
       call hecmw_result_add(1, 3, label, disp) !mode=node, ndof=3
@@ -1021,7 +1020,7 @@ contains
     nameid='fstrDYNA'
     header='*fstrresult'
 
-    call hecmw_result_init(hecMESH, numfreq, istp, header)
+    call hecmw_result_init(hecMESH, istp, header)
 
     if(iout(1) == 1) then
       label='displacement_real'

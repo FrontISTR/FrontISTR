@@ -87,7 +87,7 @@ contains
 
     if(IRESULT == 1 .and. (mod(tstep, IRRES) == 0 .or. tstep == max_step))then
       header = '*fstrresult'
-      call hecmw_result_init(hecMESH, max_step, tstep, header)
+      call hecmw_result_init(hecMESH, tstep, header)
       label = 'TEMPERATURE'
       call hecmw_result_add(1, 1, label, fstrHEAT%TEMP)
       nameID = 'fstrRES'
