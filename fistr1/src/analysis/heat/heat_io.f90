@@ -104,13 +104,10 @@ contains
     type(hecmwST_local_mesh)  :: hecMESH
     type(fstr_heat)           :: fstrHEAT
     type(hecmwST_result_data) :: fstrRESULT
-    integer(kind=kint) :: i, tstep, interval
+    integer(kind=kint) :: i, tstep
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
 
     if(IVISUAL == 1 .and. (mod(tstep, IWRES) == 0 .or. outflag))then
-      write(*,*) 'outflag',outflag
-      interval = IWRES
-      if( outflag ) interval = 1
       call hecmw_nullify_result_data(fstrRESULT)
       fstrRESULT%nn_component = 1
       fstrRESULT%ne_component = 0
@@ -122,7 +119,7 @@ contains
       fstrRESULT%node_val_item = fstrHEAT%TEMP
       call fstr2hecmw_mesh_conv(hecMESH)
       call hecmw_visualize_init
-      call hecmw_visualize (hecMESH, fstrRESULT, tstep, interval)
+      call hecmw_visualize( hecMESH, fstrRESULT, tstep )
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv(hecMESH)
       call hecmw_result_free(fstrRESULT)

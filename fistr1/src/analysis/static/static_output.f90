@@ -24,7 +24,7 @@ contains
     logical, intent(in)                   :: outflag     !< if true, result will be output regardless of istep
 
     type ( hecmwST_result_data ) :: fstrRESULT
-    integer(kind=kint) :: i, j, ndof, interval, fnum, is, iE, gid
+    integer(kind=kint) :: i, j, ndof, fnum, is, iE, gid
 
     ndof = hecMESH%n_dof
 
@@ -61,13 +61,11 @@ contains
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. outflag) ) then
-      interval = fstrSOLID%output_ctrl(4)%freqency
-      if( outflag ) interval = 1
 
       call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
-      call hecmw_visualize( hecMESH, fstrRESULT, istep, interval )
+      call hecmw_visualize( hecMESH, fstrRESULT, istep )
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv( hecMESH )
       call hecmw_result_free( fstrRESULT )
