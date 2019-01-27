@@ -191,12 +191,12 @@ contains
       if(IRESULT==1) then
         write(*,   *) freq, "[Hz] : ", im, ".res"
         write(ilog,*) freq, "[Hz] : ", im, ".res"
-        call output_resfile(hecMESH, im, numfreq, disp, vel, acc, freqiout)
+        call output_resfile(hecMESH, im, disp, vel, acc, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==1) then
         write(*,   *) freq, "[Hz] : ", im, ".vis"
         write(ilog,*) freq, "[Hz] : ", im, ".vis"
-        call output_visfile(hecMESH, im, numfreq, disp, vel, acc, freqiout)
+        call output_visfile(hecMESH, im, disp, vel, acc, freqiout)
       end if
     end do
 
@@ -231,12 +231,12 @@ contains
       if(IRESULT==1) then
         write(*,   *) "time=", time, " : ", im, ".res"
         write(ilog,*) "time=", time, " : ", im, ".res"
-        call outputdyna_resfile(hecMESH, im, numdisp, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
+        call outputdyna_resfile(hecMESH, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==2) then
         write(*,   *) "time=", time, " : ", im, ".vis"
         write(ilog,*) "time=", time, " : ", im, ".vis"
-        call outputdyna_visfile(hecMESH, im, numdisp, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
+        call outputdyna_visfile(hecMESH, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
       end if
     end do
 
@@ -438,35 +438,10 @@ contains
 
   end subroutine
 
-  !  subroutine output_resfile(hecMESH, nummode, eigenval, eigenvec)
-  !  !---- args
-  !    type( hecmwST_local_mesh ), intent(in) :: hecMESH
-  !    integer(kind=kint),        intent(in) :: nummode
-  !    real(kind=kreal),           intent(in) :: eigenval(:)   !intend (nummode)
-  !    real(kind=kreal),           intent(in) :: eigenvec(:,:) !intend (numnode, nummode)
-  !  !---- vals
-  !    integer(kind=kint) :: im
-  !    character(len=HECMW_HEADER_LEN) :: header
-  !    character(len=HECMW_NAME_LEN) :: label, nameid
-  !  !---- body
-  !
-  !    label='displacement'
-  !    nameid='fstrRES'
-  !    header='*fstrresult'
-  !    do im=1, nummode
-  !      call hecmw_result_init(hecMESH, im, header)
-  !      call hecmw_result_add(1, 3, label, eigenvec(:,im)) !mode=node, ndof=3
-  !      call hecmw_result_write_by_name(nameid)
-  !      call hecmw_result_finalize()
-  !    end do
-  !    return
-  !  end subroutine
-
-  subroutine output_resfile(hecMESH, ifreq, numfreq, disp, vel, acc, iout)
+  subroutine output_resfile(hecMESH, ifreq, disp, vel, acc, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in)       :: ifreq
-    integer(kind=kint), intent(in)       :: numfreq
     real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: acc(:) !intend (numnodeDOF)
@@ -497,11 +472,10 @@ contains
     return
   end subroutine
 
-  subroutine output_visfile(hecMESH, ifreq, numfreq, disp, vel, acc, iout)
+  subroutine output_visfile(hecMESH, ifreq, disp, vel, acc, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in)       :: ifreq
-    integer(kind=kint), intent(in)       :: numfreq
     real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: acc(:) !intend (numnodeDOF)
@@ -995,11 +969,10 @@ contains
     return
   end subroutine
 
-  subroutine outputdyna_resfile(hecMESH, istp, numfreq, dispre, dispim, velre, velim, accre, accim, iout)
+  subroutine outputdyna_resfile(hecMESH, istp, dispre, dispim, velre, velim, accre, accim, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: istp
-    integer(kind=kint), intent(in) :: numfreq
     real(kind=kreal), intent(in)   :: dispre(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)   :: dispim(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)   :: velre(:) !intend (numnodeDOF)
@@ -1059,11 +1032,10 @@ contains
     return
   end subroutine
 
-  subroutine outputdyna_visfile(hecMESH, istp, numstep, dispre, dispim, velre, velim, accre, accim, iout)
+  subroutine outputdyna_visfile(hecMESH, istp, dispre, dispim, velre, velim, accre, accim, iout)
     !---- args
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     integer(kind=kint), intent(in)          :: istp
-    integer(kind=kint), intent(in)          :: numstep
     real(kind=kreal), intent(in)            :: dispre(:)
     real(kind=kreal), intent(in)            :: dispim(:)
     real(kind=kreal), intent(in)            :: velre(:)
