@@ -181,29 +181,29 @@ module m_fstr
 
   !> Data for STATIC ANSLYSIS  (fstrSOLID)
   type fstr_solid_physic_val
-    real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
-    real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
-    real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+    real(kind=kreal), pointer :: STRESS(:) => null()   !< nodal stress
+    real(kind=kreal), pointer :: STRAIN(:) => null()   !< nodal strain
+    real(kind=kreal), pointer :: MISES(:) => null()    !< nodal MISES
 
-    real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
-    real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain
-    real(kind=kreal), pointer :: PSTRESS_VECT(:,:)   !< nodal principal stress vector
-    real(kind=kreal), pointer :: PSTRAIN_VECT(:,:)   !< nodal principal strain vector
+    real(kind=kreal), pointer :: PSTRESS(:) => null()   !< nodal principal stress
+    real(kind=kreal), pointer :: PSTRAIN(:) => null()   !< nodal principal strain
+    real(kind=kreal), pointer :: PSTRESS_VECT(:,:) => null()  !< nodal principal stress vector
+    real(kind=kreal), pointer :: PSTRAIN_VECT(:,:) => null()  !< nodal principal strain vector
 
-    real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
-    real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
-    real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+    real(kind=kreal), pointer :: ESTRESS(:) => null()  !< elemental stress
+    real(kind=kreal), pointer :: ESTRAIN(:) => null()  !< elemental strain
+    real(kind=kreal), pointer :: EMISES(:) => null()   !< elemental MISES
 
-    real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
-    real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
-    real(kind=kreal), pointer :: EPSTRESS_VECT(:,:)   !< elemental principal stress vector
-    real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:)   !< elemental principal strain vector
-    real(kind=kreal), pointer :: ENQM(:)      !< elemental NQM
+    real(kind=kreal), pointer :: EPSTRESS(:) => null()  !< elemental principal stress
+    real(kind=kreal), pointer :: EPSTRAIN(:) => null()  !< elemental principal strain
+    real(kind=kreal), pointer :: EPSTRESS_VECT(:,:) => null()  !< elemental principal stress vector
+    real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:) => null()  !< elemental principal strain vector
+    real(kind=kreal), pointer :: ENQM(:) => null()     !< elemental NQM
 
 
-    type(fstr_solid_physic_val), pointer :: LAYER(:)    !< Laminated Shell's layer (1,2,3,4,5,...)
-    type(fstr_solid_physic_val), pointer :: PLUS    !< for SHELL PLUS
-    type(fstr_solid_physic_val), pointer :: MINUS    !< for SHELL MINUS
+    type(fstr_solid_physic_val), pointer :: LAYER(:) => null()   !< Laminated Shell's layer (1,2,3,4,5,...)
+    type(fstr_solid_physic_val), pointer :: PLUS => null()   !< for SHELL PLUS
+    type(fstr_solid_physic_val), pointer :: MINUS => null()  !< for SHELL MINUS
   end type fstr_solid_physic_val
 
   type fstr_solid
@@ -649,10 +649,18 @@ contains
     nullify( S%STRESS )
     nullify( S%STRAIN )
     nullify( S%MISES )
+    nullify( S%PSTRESS )
+    nullify( S%PSTRAIN )
+    nullify( S%PSTRESS_VECT )
+    nullify( S%PSTRAIN_VECT )
     nullify( S%REACTION )
     nullify( S%ESTRESS )
     nullify( S%ESTRAIN )
     nullify( S%EMISES )
+    nullify( S%EPSTRESS )
+    nullify( S%EPSTRAIN )
+    nullify( S%EPSTRESS_VECT )
+    nullify( S%EPSTRAIN_VECT )
     nullify( S%ENQM )
     nullify( S%GL          )
     nullify( S%QFORCE      )

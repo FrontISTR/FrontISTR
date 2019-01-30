@@ -578,17 +578,37 @@ contains
     ! --- STRAIN @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(6) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )
     endif
     ! --- STRESS @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(7) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )
     endif
     ! --- MISES @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(8) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )
+    endif
+    ! --- Principal Stress @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(20) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(20), ndof )
+    endif
+    ! --- Principal Strain @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(22) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(22), ndof )
+    endif
+    ! --- Principal Stress Vector @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(24) ) then
+      ecomp = ecomp + 3
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(24), ndof )
+    endif
+    ! --- Principal Strain Vector @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(26) ) then
+      ecomp = ecomp + 3
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
     endif
     ! --- MATERIAL @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
@@ -801,6 +821,68 @@ contains
         fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = fstrSOLID%SOLID%EMISES(i)
       enddo
       jitem = jitem + nn
+    endif
+
+    ! --- Principal_STRESS @element
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(20)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(20), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRESS'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRESS((nn)*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- Principal_STRAIN @element
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(22)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(22), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRAIN'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRAIN((nn)*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- ELEM PRINC STRESS VECTOR
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(24)) then
+      do k = 1, 3
+        write(cnum,'(i0)')k
+        ecomp = ecomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(24), ndof )
+        fstrRESULT%ne_dof(ecomp) = nn
+        fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRESSVector'//trim(cnum)
+        do i = 1, hecMESH%n_elem
+          do j = 1, nn
+            fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRESS_VECT((nn)*(i-1)+j,k)
+          enddo
+        enddo
+        jitem = jitem + nn
+      enddo
+    endif
+
+    ! --- ELEM PRINC STRAIN VECTOR
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(26)) then
+      do k = 1, 3
+        write(cnum,'(i0)')k
+        ecomp = ecomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
+        fstrRESULT%ne_dof(ecomp) = nn
+        fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRAINVector'//trim(cnum)
+        do i = 1, hecMESH%n_elem
+          do j = 1, nn
+            fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRAIN_VECT((nn)*(i-1)+j,k)
+          enddo
+        enddo
+        jitem = jitem + nn
+      enddo
     endif
 
     ! --- MATERIAL @elem
