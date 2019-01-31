@@ -19,7 +19,7 @@ contains
   !C***
   !>  OUTPUT result file for static analysis
   !C***
-  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, maxstep, istep, flag )
+  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, flag )
     use m_fstr
     use m_out
     use m_static_lib
@@ -30,7 +30,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (fstr_param       )  :: fstrPARAM    !< analysis control parameters
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
     integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
     real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
@@ -60,7 +60,7 @@ contains
 
     ! --- INITIALIZE
     header = '*fstrresult'
-    call hecmw_result_init( hecMESH, maxstep, istep, header )
+    call hecmw_result_init( hecMESH, istep, header )
 
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1)) then
@@ -306,7 +306,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
     integer(kind=kint)        :: n_lyr, cid
 
     character(len=HECMW_HEADER_LEN) :: header
@@ -911,7 +911,7 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
     integer(kind=kint)        :: n_lyr, cid
 
     character(len=HECMW_HEADER_LEN) :: header

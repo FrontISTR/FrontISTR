@@ -190,12 +190,12 @@ int main(int argc, char** argv) {
     fprintf(log_fp, "end\n");
 
     if (nrank == 0) {
-      if ((fileheader = HECMW_ctrl_get_result_fileheader("fstrRES", endid, step,
+      if ((fileheader = HECMW_ctrl_get_result_fileheader("fstrRES", step,
                                                          &fg_text)) == NULL)
         return 0;
     } else {
       if ((fileheader = HECMW_ctrl_get_result_fileheader_sub(
-               "fstrRES", endid, step, nrank, 0, &fg_text)) == NULL)
+               "fstrRES", step, nrank, 0, &fg_text)) == NULL)
         return 0;
     }
     strcpy(buff, fileheader);
@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
     sprintf(out_fname, "%s%s.%d", dirname, out_fheader, step);
     fprintf(log_fp, "output to %s .. ", out_fname);
     HECMW_result_get_header(header);
-    HECMW_result_init(glmesh, step_n, step, header);
+    HECMW_result_init(glmesh, step, header);
     if (binary) {
       rcode = HECMW_result_write_bin_ST_by_fname(out_fname, data, glt->node_n,
                                                  glt->elem_n, header);

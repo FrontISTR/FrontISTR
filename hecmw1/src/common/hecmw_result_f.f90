@@ -60,15 +60,15 @@ contains
   !C Write result data to file
   !C=============================================================================
 
-  subroutine hecmw_result_init(hecMESH, n_step, i_step, header)
+  subroutine hecmw_result_init(hecMESH, i_step, header)
     type(hecmwST_local_mesh):: hecMESH
-    integer(kind=kint) :: nnode, nelem, n_step, i_step, ierr
+    integer(kind=kint) :: nnode, nelem, i_step, ierr
     character(len=HECMW_HEADER_LEN) :: header
 
     nnode = hecMESH%n_node
     nelem = hecMESH%n_elem
 
-    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, n_step, i_step, header, ierr)
+    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, i_step, header, ierr)
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_init
 
@@ -190,14 +190,14 @@ contains
   !C Read result data from file
   !C=============================================================================
 
-  subroutine hecmw_result_read_by_name(hecMESH, name_ID, n_step, i_step, result)
+  subroutine hecmw_result_read_by_name(hecMESH, name_ID, i_step, result)
     type(hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: n_node, n_elem, n_step, i_step, ierr
+    integer(kind=kint) :: n_node, n_elem, i_step, ierr
     character(len=HECMW_NAME_LEN) :: name_ID
     type(hecmwST_result_data) :: result
     real(kind=kreal), pointer :: tmp_val(:)
 
-    call hecmw_result_read_by_name_if(name_ID, n_step, i_step, n_node, n_elem, ierr)
+    call hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, ierr)
     if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
     call hecmw_result_copy_c2f(result, n_node, n_elem, ierr)

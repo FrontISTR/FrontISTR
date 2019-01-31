@@ -2159,7 +2159,7 @@ struct hecmw_ctrl_meshfiles *HECMW_ctrl_get_meshfiles_header_sub(char *name_ID,
   return get_meshfiles(name_ID, n_rank, i_rank, 1);
 }
 
-static char *get_result_file(char *name_ID, int nstep, int istep, int n_rank,
+static char *get_result_file(char *name_ID, int istep, int n_rank,
                              int i_rank, int *fg_text, int flag_rank_none) {
   int nrank, myrank, irank;
   char *fname, *retfname;
@@ -2186,26 +2186,16 @@ static char *get_result_file(char *name_ID, int nstep, int istep, int n_rank,
     fname = make_filename(name_ID, NULL, NULL, result->filename, "", myrank,
                           flag_rank_none);
 
-  } else if (subdir_on && nstep > 1 && nrank > nlimit) {
+  } else if (subdir_on && nrank > nlimit) {
     sprintf(subname, "STEP%d", istep);
     irank = myrank / nlimit;
     sprintf(prefix, "TRUNK%d", irank);
     fname = make_filename(name_ID, subname, prefix, result->filename, "",
                           myrank, flag_rank_none);
 
-  } else if (subdir_on && nstep > 1) {
+  } else if (subdir_on) {
     sprintf(subname, "STEP%d", istep);
     fname = make_filename(name_ID, subname, NULL, result->filename, "", myrank,
-                          flag_rank_none);
-
-  } else if (subdir_on && nrank > nlimit) {
-    irank = myrank / nlimit;
-    sprintf(prefix, "TRUNK%d", irank);
-    fname = make_filename(name_ID, NULL, prefix, result->filename, "", myrank,
-                          flag_rank_none);
-
-  } else if (subdir_on) {
-    fname = make_filename(name_ID, NULL, NULL, result->filename, "", myrank,
                           flag_rank_none);
 
   } else {
@@ -2260,25 +2250,25 @@ static char *get_result_filebody(char *name_ID) {
   return retfname;
 }
 
-char *HECMW_ctrl_get_result_file(char *name_ID, int nstep, int istep,
+char *HECMW_ctrl_get_result_file(char *name_ID, int istep,
                                  int *fg_text) {
-  return get_result_file(name_ID, nstep, istep, 0, 0, fg_text, 1);
+  return get_result_file(name_ID, istep, 0, 0, fg_text, 1);
 }
 
-char *HECMW_ctrl_get_result_fileheader(char *name_ID, int nstep, int istep,
+char *HECMW_ctrl_get_result_fileheader(char *name_ID, int istep,
                                        int *fg_text) {
-  return get_result_file(name_ID, nstep, istep, 0, 0, fg_text, 0);
+  return get_result_file(name_ID, istep, 0, 0, fg_text, 0);
 }
 
-char *HECMW_ctrl_get_result_file_sub(char *name_ID, int nstep, int istep,
+char *HECMW_ctrl_get_result_file_sub(char *name_ID, int istep,
                                      int n_rank, int i_rank, int *fg_text) {
-  return get_result_file(name_ID, nstep, istep, n_rank, i_rank, fg_text, 1);
+  return get_result_file(name_ID, istep, n_rank, i_rank, fg_text, 1);
 }
 
-char *HECMW_ctrl_get_result_fileheader_sub(char *name_ID, int nstep, int istep,
+char *HECMW_ctrl_get_result_fileheader_sub(char *name_ID, int istep,
                                            int n_rank, int i_rank,
                                            int *fg_text) {
-  return get_result_file(name_ID, nstep, istep, n_rank, i_rank, fg_text, 0);
+  return get_result_file(name_ID, istep, n_rank, i_rank, fg_text, 0);
 }
 
 char *HECMW_ctrl_get_result_filebody(char *name_ID) {

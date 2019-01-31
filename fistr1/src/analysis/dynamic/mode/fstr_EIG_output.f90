@@ -158,7 +158,7 @@ contains
 
       if( IRESULT.eq.1 ) then
         header = "*fstrresult"
-        call hecmw_result_init(hecMESH,nget,istep,header)
+        call hecmw_result_init(hecMESH,istep,header)
         label = "DISPLACEMENT"
         call hecmw_result_add(1,NDOF,label,X)
         nameID = "fstrRES"
@@ -178,7 +178,7 @@ contains
         fstrRESULT%node_val_item = X
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
-        call hecmw_visualize(hecMESH,fstrRESULT,istep,nget,1)
+        call hecmw_visualize( hecMESH, fstrRESULT, istep )
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
         call hecmw_result_free(fstrRESULT)

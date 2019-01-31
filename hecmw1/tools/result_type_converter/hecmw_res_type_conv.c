@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     if ((i % intid) != 0 && i != endid) continue;
 
     fileheader =
-        HECMW_ctrl_get_result_fileheader("fstrRES", endid, i, &fg_text);
+        HECMW_ctrl_get_result_fileheader("fstrRES", i, &fg_text);
     sprintf(resultfile, "%s.%d.%d", fileheader, mynode, i);
     fprintf(stdout, "Input file : %s\n", resultfile);
     data = HECMW_result_read_by_fname(resultfile);
