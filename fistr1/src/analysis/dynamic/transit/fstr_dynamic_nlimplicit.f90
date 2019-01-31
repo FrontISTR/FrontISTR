@@ -574,6 +574,12 @@ contains
       stepcnt = 0
       loopFORcontactAnalysis: do while( .TRUE. )
         count_step = count_step + 1
+
+        ! ----- Inner Iteration
+        res0   = 0.d0
+        res1   = 0.d0
+        relres = 1.d0
+
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
           call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
