@@ -152,6 +152,67 @@ static char *make_filename(char *dir, char *subdir, char *prefix, char *file,
   return filename;
 }
 
+/* return dir + subdir + prefix + file + suffix + .rank (thread-safe version) */
+static char *make_filename_r(char *dir, char *subdir, char *prefix, char *file,
+                             char *suffix, int myrank, int flag_rank,
+                             char *filename, int filename_len) {
+  char rank[10];
+  char separator[10];
+  strcpy(filename, "");
+
+  HECMW_assert( filename );
+
+  if (dir && strlen(dir) > 0) {
+    sprintf(separator, "%c", HECMW_get_path_separator());
+
+    if ((strlen(dir) + strlen(separator)) > filename_len) return NULL;
+
+    sprintf(filename, "%s%s", dir, separator);
+  }
+
+  if (subdir && strlen(subdir) > 0) {
+    sprintf(separator, "%c", HECMW_get_path_separator());
+
+    if ((strlen(filename) + strlen(subdir) + strlen(separator)) >
+        filename_len)
+      return NULL;
+
+    strcat(filename, subdir);
+    strcat(filename, separator);
+  }
+
+  if (prefix && strlen(prefix) > 0) {
+    sprintf(separator, "%c", HECMW_get_path_separator());
+
+    if ((strlen(filename) + strlen(prefix) + strlen(separator)) >
+        filename_len)
+      return NULL;
+
+    strcat(filename, prefix);
+    strcat(filename, separator);
+  }
+
+  if ((strlen(filename) + strlen(file)) > filename_len) return NULL;
+
+  strcat(filename, file);
+
+  if (suffix) {
+    if ((strlen(filename) + strlen(suffix)) > filename_len) return NULL;
+
+    strcat(filename, suffix);
+  }
+
+  if (flag_rank) {
+    sprintf(rank, ".%d", myrank);
+
+    if ((strlen(filename) + strlen(rank)) > filename_len) return NULL;
+
+    strcat(filename, rank);
+  }
+
+  return filename;
+}
+
 /*----------------------------------------------------------------------------*/
 
 static void free_mesh_entry(void) {
@@ -2020,6 +2081,7 @@ static struct hecmw_ctrl_meshfiles *make_meshfiles_struct(
     int flag_rank_none) {
   int i, flag_rank, nrank, myrank, irank;
   char *fname;
+  char *retval;
   struct hecmw_ctrl_meshfiles *files;
   char prefix[10];
   files = HECMW_malloc(sizeof(*files));
@@ -2041,7 +2103,7 @@ static struct hecmw_ctrl_meshfiles *make_meshfiles_struct(
   files->n_mesh    = n_mesh;
   files->meshfiles = HECMW_malloc(sizeof(*files->meshfiles) * n_mesh);
 
-  if (files == NULL) {
+  if (files->meshfiles == NULL) {
     HECMW_set_error(errno, "");
     return NULL;
   }
@@ -2065,42 +2127,45 @@ static struct hecmw_ctrl_meshfiles *make_meshfiles_struct(
       }
     }
 
+    fname = HECMW_malloc(sizeof(char) * (HECMW_FILENAME_LEN + 1));
+
+    if (fname == NULL) {
+      HECMW_set_error(errno, "");
+      return NULL;
+    }
+
     if (ment->type == HECMW_CTRL_FTYPE_HECMW_ENTIRE) {
-      fname = make_filename(NULL, NULL, NULL, ment->filename, "", myrank,
-                            flag_rank);
+      retval = make_filename_r(NULL, NULL, NULL, ment->filename, "", myrank,
+                               flag_rank, fname, HECMW_FILENAME_LEN);
 
     } else {
       if (subdir_on && nrank > nlimit) {
         irank = myrank / nlimit;
         sprintf(prefix, "TRUNK%d", irank);
-        fname = make_filename("MESH", NULL, prefix, ment->filename, "", myrank,
-                              flag_rank);
+        retval = make_filename_r("MESH", NULL, prefix, ment->filename, "", myrank,
+                                 flag_rank, fname, HECMW_FILENAME_LEN);
 
       } else if (subdir_on && ment->type == HECMW_CTRL_FTYPE_HECMW_DIST) {
-        fname = make_filename("MESH", NULL, NULL, ment->filename, "", myrank,
-                              flag_rank);
+        retval = make_filename_r("MESH", NULL, NULL, ment->filename, "", myrank,
+                                 flag_rank, fname, HECMW_FILENAME_LEN);
 
       } else if (subdir_on && nrank > 1) {
-        fname = make_filename("MESH", NULL, NULL, ment->filename, "", myrank,
-                              flag_rank);
+        retval = make_filename_r("MESH", NULL, NULL, ment->filename, "", myrank,
+                                 flag_rank, fname, HECMW_FILENAME_LEN);
 
       } else {
-        fname = make_filename(NULL, NULL, NULL, ment->filename, "", myrank,
-                              flag_rank);
+        retval = make_filename_r(NULL, NULL, NULL, ment->filename, "", myrank,
+                                 flag_rank, fname, HECMW_FILENAME_LEN);
       }
     }
 
-    if (fname == NULL) {
+    if (retval == NULL) {
       HECMW_set_error(HECMW_IO_E0002, "Cannot create mesh filename");
+      HECMW_free(fname);
       return NULL;
     }
 
-    file->filename = HECMW_strdup(fname);
-
-    if (file->filename == NULL) {
-      HECMW_set_error(errno, "");
-      return NULL;
-    }
+    file->filename = fname;
   }
 
   return files;
