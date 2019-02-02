@@ -2320,7 +2320,6 @@ static int copy_global_info(const struct hecmwST_local_mesh *mesh,
   ref_mesh->hecmw_flag_partcontact = mesh->hecmw_flag_partcontact;
   strcpy(ref_mesh->gridfile, mesh->gridfile);
   ref_mesh->hecmw_n_file       = mesh->hecmw_n_file;
-  ref_mesh->n_node_refine_hist = mesh->n_node_refine_hist;
 
   /* files */
   if (mesh->hecmw_n_file > 0) {
@@ -3548,11 +3547,11 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
     }
 
     if (i == 0) {
-      temp                         = (int *)malloc(sizeof(int));
+      temp                         = (int *)HECMW_malloc(sizeof(int));
       *temp                        = ref_mesh->n_node_gross;
       ref_mesh->n_node_refine_hist = temp;
     } else {
-      temp = (int *)realloc((*mesh)->n_node_refine_hist, (i + 1) * sizeof(int));
+      temp = (int *)HECMW_realloc((*mesh)->n_node_refine_hist, (i + 1) * sizeof(int));
       (*mesh)->n_node_refine_hist  = NULL;
       ref_mesh->n_node_refine_hist = temp;
       *(temp + i)                  = ref_mesh->n_node_gross;
