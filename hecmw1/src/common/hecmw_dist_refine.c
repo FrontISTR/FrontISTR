@@ -1125,48 +1125,51 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
 
     /* 1st surface of shells/patches */
     n_elem        = HECMW_varray_int_nval(&sh1);
-    elem_list     = HECMW_varray_int_get_v(&sh1);
-    n_elem_ref    = n_elem * NDIV_SURF;
-    elem_list_ref = (int *)HECMW_calloc(n_elem_ref, sizeof(int));
-    if (elem_list_ref == NULL) {
-      HECMW_set_error(errno, "");
-      return HECMW_ERROR;
-    }
-    ret =
-        get_refined_elem_list(mesh, ref_mesh, n_elem, elem_list, elem_list_ref);
-    HECMW_assert(ret == n_elem_ref);
-    for (j = 0; j < n_elem_ref; j++) {
-      array_ref[j * 2]     = elem_list_ref[j];
-      array_ref[j * 2 + 1] = 1;
-    }
-    HECMW_free(elem_list_ref);
+    if (n_elem > 0) {
+      elem_list     = HECMW_varray_int_get_v(&sh1);
+      n_elem_ref    = n_elem * NDIV_SURF;
+      elem_list_ref = (int *)HECMW_calloc(n_elem_ref, sizeof(int));
+      if (elem_list_ref == NULL) {
+        HECMW_set_error(errno, "");
+        return HECMW_ERROR;
+      }
+      ret = get_refined_elem_list(mesh, ref_mesh, n_elem, elem_list, elem_list_ref);
+      HECMW_assert(ret == n_elem_ref);
+      for (j = 0; j < n_elem_ref; j++) {
+        array_ref[j * 2]     = elem_list_ref[j];
+        array_ref[j * 2 + 1] = 1;
+      }
+      HECMW_free(elem_list_ref);
 
-    num_tot_ref -= n_elem_ref;
-    if (num_tot_ref == 0) continue;
-    array_ref += n_elem_ref * 2;
+      num_tot_ref -= n_elem_ref;
+      array_ref += n_elem_ref * 2;
+    }
 
     /* 2nd surface of shells */
     n_elem        = HECMW_varray_int_nval(&sh2);
-    elem_list     = HECMW_varray_int_get_v(&sh2);
-    n_elem_ref    = n_elem * NDIV_SURF;
-    elem_list_ref = (int *)HECMW_calloc(n_elem_ref, sizeof(int));
-    if (elem_list_ref == NULL) {
-      HECMW_set_error(errno, "");
-      return HECMW_ERROR;
+    if (n_elem > 0) {
+      elem_list     = HECMW_varray_int_get_v(&sh2);
+      n_elem_ref    = n_elem * NDIV_SURF;
+      elem_list_ref = (int *)HECMW_calloc(n_elem_ref, sizeof(int));
+      if (elem_list_ref == NULL) {
+        HECMW_set_error(errno, "");
+        return HECMW_ERROR;
+      }
+      ret = get_refined_elem_list(mesh, ref_mesh, n_elem, elem_list, elem_list_ref);
+      HECMW_assert(ret == n_elem_ref);
+      for (j = 0; j < n_elem_ref; j++) {
+        array_ref[j * 2]     = elem_list_ref[j];
+        array_ref[j * 2 + 1] = 2;
+      }
+      HECMW_free(elem_list_ref);
+
+      num_tot_ref -= n_elem_ref;
     }
-    ret =
-        get_refined_elem_list(mesh, ref_mesh, n_elem, elem_list, elem_list_ref);
-    HECMW_assert(ret == n_elem_ref);
-    for (j = 0; j < n_elem_ref; j++) {
-      array_ref[j * 2]     = elem_list_ref[j];
-      array_ref[j * 2 + 1] = 2;
-    }
-    HECMW_free(elem_list_ref);
 
     HECMW_varray_int_finalize(&sh1);
     HECMW_varray_int_finalize(&sh2);
 
-    HECMW_assert((num_tot_ref -= n_elem_ref) == 0);
+    HECMW_assert(num_tot_ref == 0);
   }
   return HECMW_SUCCESS;
 }
@@ -2195,7 +2198,7 @@ static int rebuild_refine_origin(const struct hecmwST_local_mesh *mesh,
 
   ref_reforg->item_index =
       (int *)HECMW_malloc(sizeof(int) * (ref_reforg->index[n_refine] + 1));
-  if (ref_reforg->index == NULL) {
+  if (ref_reforg->item_index == NULL) {
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
