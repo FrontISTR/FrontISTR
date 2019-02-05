@@ -2392,7 +2392,7 @@ static int copy_elem_etype(const struct hecmwST_local_mesh *mesh,
     /* elem_type_index */
     ref_mesh->elem_type_index =
         (int *)HECMW_malloc(sizeof(int) * (mesh->n_elem_type + 1));
-    if (ref_mesh == NULL) {
+    if (ref_mesh->elem_type_index == NULL) {
       HECMW_set_error(errno, "");
       return HECMW_ERROR;
     }
@@ -3550,14 +3550,22 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
     }
 
     if (i == 0) {
-      temp                         = (int *)HECMW_malloc(sizeof(int));
-      *temp                        = ref_mesh->n_node_gross;
+      temp = (int *)HECMW_malloc(sizeof(int));
+      if (temp == NULL) {
+        HECMW_set_error(errno, "");
+        return HECMW_ERROR;
+      }
+      temp[0] = ref_mesh->n_node_gross;
       ref_mesh->n_node_refine_hist = temp;
     } else {
       temp = (int *)HECMW_realloc((*mesh)->n_node_refine_hist, (i + 1) * sizeof(int));
-      (*mesh)->n_node_refine_hist  = NULL;
+      if (temp == NULL) {
+        HECMW_set_error(errno, "");
+        return HECMW_ERROR;
+      }
+      temp[i] = ref_mesh->n_node_gross;
       ref_mesh->n_node_refine_hist = temp;
-      *(temp + i)                  = ref_mesh->n_node_gross;
+      (*mesh)->n_node_refine_hist = NULL;
     }
 
     HECMW_dist_free(*mesh);
