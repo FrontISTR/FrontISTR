@@ -419,8 +419,7 @@ static int get_elem_ndiv(int etype, int *ierror) {
 /*                                                                            */
 /*============================================================================*/
 static void register_node(struct hecmwST_local_mesh *mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Original Node Count = %d\n",
-            mesh->my_rank, mesh->n_node_gross);
+  HECMW_log(HECMW_LOG_DEBUG, "Original Node Count = %d\n", mesh->n_node_gross);
 
   rcapSetNode64(mesh->n_node_gross, mesh->node, mesh->global_node_ID, NULL);
 
@@ -483,8 +482,7 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
 static int prepare_refiner(struct hecmwST_local_mesh *mesh,
                            const char *cad_filename,
                            const char *part_filename) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started preparing refiner...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started preparing refiner...\n");
 
   if (elem_node_item_hecmw2rcap(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (surf_ID_hecmw2rcap(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -506,8 +504,7 @@ static int prepare_refiner(struct hecmwST_local_mesh *mesh,
   /* surface groups are refined by REVOCAP_Refiner except for shell/patch surface */
   if (register_surf_groups(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished preparing refiner.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished preparing refiner.\n");
   return HECMW_SUCCESS;
 }
 
@@ -633,8 +630,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
   int *elem_node_index_ref;
   int *elem_node_item_ref;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Original Element Count = %d\n",
-            mesh->my_rank, mesh->n_elem_gross);
+  HECMW_log(HECMW_LOG_DEBUG, "Original Element Count = %d\n", mesh->n_elem_gross);
 
   /*
    * count num of elems after refinement
@@ -673,8 +669,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
   }
   ref_mesh->n_elem_gross = n_elem_ref_tot;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refined Element Count will be %d\n",
-            mesh->my_rank, ref_mesh->n_elem_gross);
+  HECMW_log(HECMW_LOG_DEBUG, "Refined Element Count will be %d\n", ref_mesh->n_elem_gross);
 
   /*
    * allocate memory
@@ -737,8 +732,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
     n_elem_ref_tot += n_elem_ref;
   }
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refined Element Count = %d\n",
-            mesh->my_rank, n_elem_ref_tot);
+  HECMW_log(HECMW_LOG_DEBUG, "Refined Element Count = %d\n", n_elem_ref_tot);
 
   HECMW_assert(n_elem_ref_tot == ref_mesh->n_elem_gross);
 
@@ -751,8 +745,7 @@ static int refine_node(struct hecmwST_local_mesh *mesh,
   /* n_node_gross */
   ref_mesh->n_node_gross = rcapGetNodeCount();
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refined Node Count = %d\n",
-            mesh->my_rank, ref_mesh->n_node_gross);
+  HECMW_log(HECMW_LOG_DEBUG, "Refined Node Count = %d\n", ref_mesh->n_node_gross);
 
   HECMW_assert(ref_mesh->n_node_gross > mesh->n_node_gross);
 
@@ -1176,8 +1169,7 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
 
 static int call_refiner(struct hecmwST_local_mesh *mesh,
                         struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started calling refiner...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started calling refiner...\n");
 
   if (refine_element(mesh, ref_mesh) != HECMW_SUCCESS) {
     return HECMW_ERROR;
@@ -1195,8 +1187,7 @@ static int call_refiner(struct hecmwST_local_mesh *mesh,
   if (refine_surf_group_info(mesh, ref_mesh) != HECMW_SUCCESS) {
     return HECMW_ERROR;
   }
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished calling refiner.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished calling refiner.\n");
   return HECMW_SUCCESS;
 }
 
@@ -1429,8 +1420,7 @@ static int rebuild_elem_mat_ID_item(const struct hecmwST_local_mesh *mesh,
 
 static int rebuild_elem_info(const struct hecmwST_local_mesh *mesh,
                              struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding element info...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding element info...\n");
 
   if (rebuild_elem_ID(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_global_elem_ID(mesh, ref_mesh) != HECMW_SUCCESS)
@@ -1444,8 +1434,7 @@ static int rebuild_elem_info(const struct hecmwST_local_mesh *mesh,
 
   ref_mesh->n_elem_mat_ID = ref_mesh->elem_mat_ID_index[ref_mesh->n_elem_gross];
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding element info.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding element info.\n");
   return HECMW_SUCCESS;
 }
 
@@ -1454,8 +1443,7 @@ static int rebuild_node_info(const struct hecmwST_local_mesh *mesh,
   int i;
   int count, min_ID;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding node info...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding node info...\n");
 
   /* allocate node_ID */
   ref_mesh->node_ID =
@@ -1527,8 +1515,7 @@ static int rebuild_node_info(const struct hecmwST_local_mesh *mesh,
     }
   }
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding node info.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding node info.\n");
   return HECMW_SUCCESS;
 }
 
@@ -1604,8 +1591,7 @@ static int determine_node_rank(const struct hecmwST_local_mesh *mesh,
   struct hecmw_set_int boundary_nodes;
   int bnode;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started determine_node_rank...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started determine_node_rank...\n");
 
   HECMW_set_int_init(&boundary_nodes);
 
@@ -1667,8 +1653,7 @@ static int determine_node_rank(const struct hecmwST_local_mesh *mesh,
 
   HECMW_set_int_finalize(&boundary_nodes);
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished determine_node_rank.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished determine_node_rank.\n");
   return HECMW_SUCCESS;
 }
 
@@ -1931,9 +1916,7 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
   }
 
   /* PARALLEL */
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Started rebuilding communication tables...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding communication tables...\n");
 
   /* check part-type */
   if (mesh->hecmw_flag_parttype != HECMW_FLAG_PARTTYPE_NODEBASED) {
@@ -2007,9 +1990,7 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
       count_purely_external(ref_mesh->n_node_gross, ref_mesh->node_ID);
   ref_mesh->nn_middle = ref_mesh->n_node;  /* not set properly (since it's never used) */
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Finished rebuilding communication tables.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding communication tables.\n");
   return HECMW_SUCCESS;
 }
 
@@ -2024,8 +2005,7 @@ static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
 
   if (ref_mesh->n_neighbor_pe == 0) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding external IDs...\n",
-            ref_mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding external IDs...\n");
 
   comm = HECMW_comm_get_comm();
 
@@ -2161,8 +2141,7 @@ static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
   HECMW_free(requests);
   HECMW_free(statuses);
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding external IDs.\n",
-            ref_mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding external IDs.\n");
   return HECMW_SUCCESS;
 }
 
@@ -2285,8 +2264,7 @@ static int renumber_elements_generate_tables(struct hecmwST_local_mesh *mesh);
 
 static int rebuild_info(const struct hecmwST_local_mesh *mesh,
                         struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding info...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding info...\n");
 
   if (rebuild_elem_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_node_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -2301,8 +2279,7 @@ static int rebuild_info(const struct hecmwST_local_mesh *mesh,
   if (rebuild_refine_origin(mesh, ref_mesh) != HECMW_SUCCESS)
     return HECMW_ERROR;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding info.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding info.\n");
   return HECMW_SUCCESS;
 }
 
@@ -2722,8 +2699,7 @@ static int copy_mpc_info(const struct hecmwST_mpc *mpc,
   }
 
 #if 0
-  HECMW_log(HECMW_LOG_ERROR,
-            "refinement of MPC information is not supported\n");
+  HECMW_log(HECMW_LOG_ERROR, "refinement of MPC information is not supported\n");
   return HECMW_ERROR;
 
 #else
@@ -2939,8 +2915,7 @@ static int copy_contact_pair(const struct hecmwST_contact_pair *cp,
 
 static int copy_unchanging_info(const struct hecmwST_local_mesh *mesh,
                                 struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started copying unchanging info...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started copying unchanging info...\n");
 
   if (copy_global_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (copy_node_ndof(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -2959,8 +2934,7 @@ static int copy_unchanging_info(const struct hecmwST_local_mesh *mesh,
       HECMW_SUCCESS)
     return HECMW_ERROR;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished copying unchanging info.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished copying unchanging info.\n");
   return HECMW_SUCCESS;
 }
 
@@ -2976,9 +2950,7 @@ static int renumber_nodes_generate_tables(struct hecmwST_local_mesh *mesh) {
 
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Started generating renumbering tables...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started generating renumbering tables...\n");
 
   old2new = (int *)HECMW_malloc(sizeof(int) * mesh->n_node_gross);
   if (old2new == NULL) {
@@ -3012,9 +2984,7 @@ static int renumber_nodes_generate_tables(struct hecmwST_local_mesh *mesh) {
   mesh->node_old2new = old2new;
   mesh->node_new2old = new2old;
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Finished generating renumbering tables.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished generating renumbering tables.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3182,8 +3152,7 @@ static int delete_external_items(int n_elem, int n_grp, int *index, int *item,
 static int renumber_nodes(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering nodes...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started renumbering nodes...\n");
 
   if (reorder_nodes(mesh, mesh->node_old2new, mesh->node_new2old) !=
       HECMW_SUCCESS) {
@@ -3194,24 +3163,21 @@ static int renumber_nodes(struct hecmwST_local_mesh *mesh) {
                         mesh->node_group->grp_index, mesh->node_group->grp_item,
                         1);
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished renumbering nodes.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering nodes.\n");
   return HECMW_SUCCESS;
 }
 
 static int renumber_back_nodes(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering back nodes...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started renumbering back nodes...\n");
 
   if (reorder_nodes(mesh, mesh->node_new2old, mesh->node_old2new) !=
       HECMW_SUCCESS) {
     return HECMW_ERROR;
   }
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished renumbering back nodes.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering back nodes.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3227,9 +3193,7 @@ static int renumber_elements_generate_tables(struct hecmwST_local_mesh *mesh) {
 
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Started generating renumbering tables...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started generating renumbering tables...\n");
 
   old2new = (int *)HECMW_malloc(sizeof(int) * mesh->n_elem_gross);
   if (old2new == NULL) {
@@ -3258,9 +3222,7 @@ static int renumber_elements_generate_tables(struct hecmwST_local_mesh *mesh) {
   mesh->elem_old2new = old2new;
   mesh->elem_new2old = new2old;
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Finished generating renumbering tables.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished generating renumbering tables.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3445,8 +3407,7 @@ static int reorder_elems(struct hecmwST_local_mesh *mesh, int *old2new,
 static int renumber_elements(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_elem_gross == mesh->n_elem) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering elements...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started renumbering elements...\n");
 
   if (reorder_elems(mesh, mesh->elem_old2new, mesh->elem_new2old) !=
       HECMW_SUCCESS) {
@@ -3462,24 +3423,21 @@ static int renumber_elements(struct hecmwST_local_mesh *mesh) {
                         mesh->surf_group->grp_index, mesh->surf_group->grp_item,
                         2);
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished renumbering elements.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering elements.\n");
   return HECMW_SUCCESS;
 }
 
 static int renumber_back_elements(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_elem_gross == mesh->n_elem) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering back elements...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started renumbering back elements...\n");
 
   if (reorder_elems(mesh, mesh->elem_new2old, mesh->elem_old2new) !=
       HECMW_SUCCESS) {
     return HECMW_ERROR;
   }
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished renumbering back elements.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering back elements.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3490,8 +3448,7 @@ static int renumber_back_elements(struct hecmwST_local_mesh *mesh) {
 /*============================================================================*/
 static int refine_dist_mesh(struct hecmwST_local_mesh *mesh,
                             struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started refining mesh...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started refining mesh...\n");
 
   if (copy_unchanging_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (call_refiner(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -3499,8 +3456,7 @@ static int refine_dist_mesh(struct hecmwST_local_mesh *mesh,
 
   ref_mesh->n_refine = mesh->n_refine + 1;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished refining mesh.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished refining mesh.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3516,8 +3472,7 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
 
   if (refine <= 0) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refinement requested; starting...\n",
-            (*mesh)->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Refinement requested; starting...\n");
 
   if ((*mesh)->n_refine > 0) {
     if (renumber_back_elements(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -3539,12 +3494,10 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
       clear_refiner();
     }
 
-    HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refining(%d)...\n", (*mesh)->my_rank,
-              i + 1);
+    HECMW_log(HECMW_LOG_DEBUG, "Refining(%d)...\n", i + 1);
 
     if (refine_dist_mesh(*mesh, ref_mesh) != HECMW_SUCCESS) {
-      HECMW_log(HECMW_LOG_ERROR, "rank=%d: Refinement failed\n",
-                (*mesh)->my_rank);
+      HECMW_log(HECMW_LOG_ERROR, "Refinement failed\n");
       error_flag = HECMW_ERROR;
       break;
     }
@@ -3577,8 +3530,7 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
   if (renumber_nodes(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (renumber_elements(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refinement finished.\n",
-            (*mesh)->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Refinement finished.\n");
 
   return error_flag;
 }
