@@ -8735,14 +8735,14 @@ static int init_partition(struct hecmwST_local_mesh *global_mesh,
         global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_AGGREGATE;
         break;
 
-      case HECMW_PART_CONTACT_SIMPLE:
-        global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_SIMPLE;
+      case HECMW_PART_CONTACT_DISTRIBUTE:
+        global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_DISTRIBUTE;
         break;
 
-      case HECMW_PART_CONTACT_DISTRIBUTE:
+      case HECMW_PART_CONTACT_SIMPLE:
       case HECMW_PART_CONTACT_DEFAULT:
       default:
-        global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_DISTRIBUTE;
+        global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_SIMPLE;
         break;
     }
   }

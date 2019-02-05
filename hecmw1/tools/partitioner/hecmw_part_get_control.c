@@ -242,7 +242,7 @@ static int part_cont_contact(void) {
     return -1;
   }
 
-  /* { DEFAULT | AGGREGATE } */
+  /* { DEFAULT | AGGREGATE | DISTRIBUTE | SIMPLE } */
   token = HECMW_partlex_next_token();
   switch (token) {
     case HECMW_PARTLEX_V_DEFAULT: /* CONTACT=DEFAULT */
