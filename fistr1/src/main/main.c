@@ -9,15 +9,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <FrontISTRConfig.h>
+#include "hecmw_log.h"
 
 extern void fstr_main();
 
 void help() {
   printf("usage: [ mpirun -np <mpiprocs> ] fistr1 [options] \n");
   printf("-h: Show this help message.\n");
-  printf(
-      "-c <Path of control file>: Use this control file. Default "
-      "./hecmw_ctrl.dat\n");
+  printf("-c <Path of control file>: Use this control file. Default "
+         "./hecmw_ctrl.dat\n");
+  printf("-d: Show debug messages.\n");
   printf("-v: Show version.\n");
   exit(0);
 }
@@ -94,6 +95,10 @@ int main(int argc, char *argv[]) {
           i++;
           printf("Sorry this option cannot work yet. (%s)\n", argv[i]);
           exit(0);
+          break;
+
+        case 'd':
+          HECMW_setloglv(HECMW_LOG_DEBUG);
           break;
       }
     }
