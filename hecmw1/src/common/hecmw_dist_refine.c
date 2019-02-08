@@ -726,6 +726,11 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
     }
     for (j = 0; j < n_elem_ref; j++) {
       elem_node_index_ref[j + 1] = elem_node_index_ref[j] + nn;
+      if (elem_node_index_ref[j + 1] < elem_node_index_ref[j]) {
+        HECMW_log(HECMW_LOG_ERROR,
+                  "Integer overflow detected while creating elem_node_index\n");
+        return HECMW_ERROR;
+      }
     }
     elem_node_index_ref += n_elem_ref;
     elem_node_item_ref += nn * n_elem_ref;
@@ -1709,6 +1714,11 @@ static int create_index_item(int n, const struct hecmw_varray_int *arrays,
   (*index)[0] = 0;
   for (i = 0; i < n; i++) {
     (*index)[i + 1] = (*index)[i] + HECMW_varray_int_nval(arrays + i);
+    if ((*index)[i + 1] < (*index)[i]) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "Integer overflow detected while creating index array\n");
+      return HECMW_ERROR;
+    }
   }
 
   /* item */
@@ -1822,12 +1832,21 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
     HECMW_varray_int_rmdup(new_import + i);
   }
 
-  create_index_item(mesh->n_neighbor_pe, shared, &(ref_mesh->shared_index),
-                    &(ref_mesh->shared_item));
-  create_index_item(mesh->n_neighbor_pe, new_export, &(ref_mesh->export_index),
-                    &(ref_mesh->export_item));
-  create_index_item(mesh->n_neighbor_pe, new_import, &(ref_mesh->import_index),
-                    &(ref_mesh->import_item));
+  if (create_index_item(mesh->n_neighbor_pe, new_shared, &(ref_mesh->shared_index),
+                        &(ref_mesh->shared_item)) != HECMW_SUCCESS) {
+    HECMW_log(HECMW_LOG_ERROR, "Create shared_index and shared_item failed\n");
+    return HECMW_ERROR;
+  }
+  if (create_index_item(mesh->n_neighbor_pe, new_export, &(ref_mesh->export_index),
+                        &(ref_mesh->export_item)) != HECMW_SUCCESS) {
+    HECMW_log(HECMW_LOG_ERROR, "Create export_index and export_item failed\n");
+    return HECMW_ERROR;
+  }
+  if (create_index_item(mesh->n_neighbor_pe, new_import, &(ref_mesh->import_index),
+                        &(ref_mesh->import_item)) != HECMW_SUCCESS) {
+    HECMW_log(HECMW_LOG_ERROR, "Create import_index and import_item failed\n");
+    return HECMW_ERROR;
+  }
 
   /* deallocate new shared, import and export lists */
   for (i = 0; i < mesh->n_neighbor_pe; i++) {
