@@ -2024,13 +2024,13 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
   return HECMW_SUCCESS;
 }
 
-static int check_comm_table_len(struct hecmwST_local_mesh *ref_mesh) {
+static int check_comm_table_len(const struct hecmwST_local_mesh *ref_mesh) {
   int len_tot;
   int i, j, irank, js, je, len, tag, nsend;
   HECMW_Request *requests;
   HECMW_Status *statuses;
   HECMW_Comm comm;
-  int error_flag = HECMW_SUCCESS;
+  int n_error = 0, n_error_g;
 
   if (ref_mesh->n_neighbor_pe == 0) return HECMW_SUCCESS;
 
@@ -2042,13 +2042,13 @@ static int check_comm_table_len(struct hecmwST_local_mesh *ref_mesh) {
                                            ref_mesh->n_neighbor_pe);
   if (requests == NULL) {
     HECMW_set_error(errno, "");
-    return HECMW_ERROR;
+    HECMW_abort(comm);
   }
   statuses = (HECMW_Status *)HECMW_malloc(sizeof(HECMW_Status) *
                                           ref_mesh->n_neighbor_pe);
   if (statuses == NULL) {
     HECMW_set_error(errno, "");
-    return HECMW_ERROR;
+    HECMW_abort(comm);
   }
 
   /* export and import */
@@ -2074,7 +2074,7 @@ static int check_comm_table_len(struct hecmwST_local_mesh *ref_mesh) {
       HECMW_log(HECMW_LOG_ERROR,
                 "inconsistent length of import (%d) with export on rank %d (%d)\n",
                 je-js, irank, len);
-      error_flag = HECMW_ERROR;
+      n_error++;
     }
   }
   HECMW_Waitall(ref_mesh->n_neighbor_pe, requests, statuses);
@@ -2106,7 +2106,7 @@ static int check_comm_table_len(struct hecmwST_local_mesh *ref_mesh) {
       HECMW_log(HECMW_LOG_ERROR,
                 "inconsistent length of shared (%d) with rank %d (%d)\n",
                 je-js, irank, len);
-      error_flag = HECMW_ERROR;
+      n_error++;
     }
   }
   HECMW_Waitall(nsend, requests, statuses);
@@ -2114,8 +2114,11 @@ static int check_comm_table_len(struct hecmwST_local_mesh *ref_mesh) {
   HECMW_free(requests);
   HECMW_free(statuses);
 
+  HECMW_Allreduce(&n_error, &n_error_g, 1, HECMW_INT, HECMW_SUM, comm);
+  if (n_error_g > 0) return HECMW_ERROR;
+
   HECMW_log(HECMW_LOG_DEBUG, "Finished checking communication tables.\n");
-  return error_flag;
+  return HECMW_SUCCESS;
 }
 
 static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
@@ -2424,7 +2427,15 @@ static int rebuild_info(const struct hecmwST_local_mesh *mesh,
   if (rebuild_elem_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_node_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_comm_tables(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
-  if (check_comm_table_len(ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
+  if (check_comm_table_len(ref_mesh) != HECMW_SUCCESS) {
+    HECMW_log(HECMW_LOG_ERROR, "Check communication table failed. Checking original mesh...\n");
+    if (check_comm_table_len(mesh) != HECMW_SUCCESS) {
+      HECMW_log(HECMW_LOG_ERROR, "Original mesh has error\n");
+    } else {
+      HECMW_log(HECMW_LOG_ERROR, "Original mesh is OK\n");
+    }
+    return HECMW_ERROR;
+  }
   if (rebuild_ID_external(ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
   if (renumber_nodes_generate_tables(ref_mesh) != HECMW_SUCCESS)
