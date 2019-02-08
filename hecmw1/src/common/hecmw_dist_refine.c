@@ -3647,12 +3647,11 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
     return HECMW_ERROR;
 
   for (i = 0; i < refine; i++) {
-    int *temp;
     struct hecmwST_local_mesh *ref_mesh = HECMW_dist_alloc();
     if (ref_mesh == NULL) {
       error_flag = HECMW_ERROR;
       break;
-    };
+    }
 
     if (i > 0) {
       clear_refiner();
@@ -3672,12 +3671,14 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
 
   if (terminate_refiner(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
+  if (error_flag != HECMW_SUCCESS) return HECMW_ERROR;
+
   if (renumber_nodes(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (renumber_elements(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
   HECMW_log(HECMW_LOG_DEBUG, "Refinement finished.\n");
 
-  return error_flag;
+  return HECMW_SUCCESS;
 }
 
 #else  /* HECMW_WITH_REFINER */
