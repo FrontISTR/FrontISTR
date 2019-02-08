@@ -2353,6 +2353,37 @@ static int rebuild_refine_origin(const struct hecmwST_local_mesh *mesh,
   return HECMW_SUCCESS;
 }
 
+static int rebuild_n_node_refine_hist(const struct hecmwST_local_mesh *mesh,
+                                      struct hecmwST_local_mesh *ref_mesh) {
+  int i;
+
+  ref_mesh->n_node_refine_hist =
+    (int *)HECMW_malloc((mesh->n_refine + 1) * sizeof(int));
+  if (ref_mesh->n_node_refine_hist == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  for (i = 0; i < mesh->n_refine; i++) {
+    ref_mesh->n_node_refine_hist[i] = mesh->n_node_refine_hist[i];
+  }
+  ref_mesh->n_node_refine_hist[mesh->n_refine] = ref_mesh->n_node_gross;
+
+  return HECMW_SUCCESS;
+}
+
+static int rebuild_refine_info(const struct hecmwST_local_mesh *mesh,
+                               struct hecmwST_local_mesh *ref_mesh) {
+  ref_mesh->n_refine = mesh->n_refine + 1;
+
+  if (rebuild_refine_origin(mesh, ref_mesh) != HECMW_SUCCESS)
+    return HECMW_ERROR;
+  if (rebuild_n_node_refine_hist(mesh, ref_mesh) != HECMW_SUCCESS)
+    return HECMW_ERROR;
+
+  return HECMW_SUCCESS;
+}
+
 static int renumber_nodes_generate_tables(struct hecmwST_local_mesh *mesh);
 static int renumber_elements_generate_tables(struct hecmwST_local_mesh *mesh);
 
@@ -2371,8 +2402,7 @@ static int rebuild_info(const struct hecmwST_local_mesh *mesh,
   if (renumber_elements_generate_tables(ref_mesh) != HECMW_SUCCESS)
     return HECMW_ERROR;
 
-  if (rebuild_refine_origin(mesh, ref_mesh) != HECMW_SUCCESS)
-    return HECMW_ERROR;
+  if (rebuild_refine_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
   HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding info.\n");
   return HECMW_SUCCESS;
@@ -3549,8 +3579,6 @@ static int refine_dist_mesh(struct hecmwST_local_mesh *mesh,
   if (call_refiner(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
-  ref_mesh->n_refine = mesh->n_refine + 1;
-
   HECMW_log(HECMW_LOG_DEBUG, "Finished refining mesh.\n");
   return HECMW_SUCCESS;
 }
@@ -3595,25 +3623,6 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
       HECMW_log(HECMW_LOG_ERROR, "Refinement failed\n");
       error_flag = HECMW_ERROR;
       break;
-    }
-
-    if (i == 0) {
-      temp = (int *)HECMW_malloc(sizeof(int));
-      if (temp == NULL) {
-        HECMW_set_error(errno, "");
-        return HECMW_ERROR;
-      }
-      temp[0] = ref_mesh->n_node_gross;
-      ref_mesh->n_node_refine_hist = temp;
-    } else {
-      temp = (int *)HECMW_realloc((*mesh)->n_node_refine_hist, (i + 1) * sizeof(int));
-      if (temp == NULL) {
-        HECMW_set_error(errno, "");
-        return HECMW_ERROR;
-      }
-      temp[i] = ref_mesh->n_node_gross;
-      ref_mesh->n_node_refine_hist = temp;
-      (*mesh)->n_node_refine_hist = NULL;
     }
 
     HECMW_dist_free(*mesh);
