@@ -75,7 +75,7 @@ contains
 
     ! counters
     integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo
-    integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
+    integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring, c_dummy
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
     integer(kind=kint) :: c_eigen, c_contact
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
@@ -104,6 +104,7 @@ contains
 
     c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0;
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
+    c_dummy = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
     c_eigen    = 0; c_contact  = 0
@@ -167,6 +168,9 @@ contains
         call fstr_setup_OUTPUT_SSTYPE( ctrl, P )
       else if( header_name == '!INITIAL_CONDITION' ) then
         c_initial = c_initial + 1
+      else if( header_name == '!DUMMY' ) then
+        c_dummy = c_dummy + 1
+        call fstr_setup_DUMMY( ctrl, c_dummy, P )
 
         !--------------- for static -------------------------
 
@@ -858,9 +862,14 @@ contains
         n = n + 1
         fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%SPRING_ngrp_GRPID(i)
       enddo
+      n = fstrSOLID%dummy%DUMMY_egrp_tot
+      if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Dummy(n) )
+      do i = 1, n
+        fstrSOLID%step_ctrl(1)%Dummy(i) = fstrSOLID%dummy%DUMMY_egrp_GRPID(i)
+      enddo
     endif
 
-    if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
+    call fstr_element_init( hecMESH, fstrSOLID )
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
       call fstr_solid_alloc( hecMESH, fstrSOLID )
@@ -868,6 +877,7 @@ contains
     if( p%PARAM%solution_type == kstHEAT) then
       p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%freqency
       p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
+      p%HEAT%dummy = p%SOLID%dummy
     endif
 
     n_totlyr = 1
@@ -1015,6 +1025,7 @@ contains
 
     allocate( fstrSOLID%elements(hecMESH%n_elem) )
     do i=1,hecMESH%n_elem
+      fstrSOLID%elements(i)%dummy_flag = kDUM_UNDEFINED
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
@@ -1943,6 +1954,53 @@ end function fstr_setup_INITIAL
     P%PARAM%fg_couple = 1
 
   end subroutine fstr_setup_COUPLE
+
+  !> Read in !DUMMY
+  subroutine fstr_setup_DUMMY( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp
+    integer(kind=kint) :: amp_id
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint) :: i, n, old_size, new_size
+    integer(kind=kint) :: gid
+    real(kind=kreal)   :: eps
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+    old_size = P%SOLID%dummy%DUMMY_egrp_tot
+    new_size = old_size + n
+    P%SOLID%dummy%DUMMY_egrp_tot = new_size
+
+    call fstr_expand_integer_array ( P%SOLID%dummy%DUMMY_egrp_GRPID, old_size, new_size )
+    call fstr_expand_integer_array ( P%SOLID%dummy%DUMMY_egrp_ID,  old_size, new_size )
+    call fstr_expand_integer_array ( P%SOLID%dummy%DUMMY_egrp_amp, old_size, new_size )
+    call fstr_expand_real_array ( P%SOLID%dummy%DUMMY_egrp_eps, old_size, new_size )
+
+    allocate( grp_id_name(n))
+    amp = ' '
+    eps = 1.d-3
+    rcode = fstr_ctrl_get_DUMMY( ctrl, amp, eps, grp_id_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call amp_name_to_id( P%MESH, '!DUMMY', amp, amp_id )
+    do i=1,n
+      P%SOLID%dummy%DUMMY_egrp_amp(old_size+i) = amp_id
+      P%SOLID%dummy%DUMMY_egrp_eps(old_size+i) = eps
+    end do
+    P%SOLID%dummy%DUMMY_egrp_GRPID(old_size+1:new_size) = gid
+
+    call elem_grp_name_to_id_ex( P%MESH, '!DUMMY', n, grp_id_name, P%SOLID%dummy%DUMMY_egrp_ID(old_size+1:))
+
+    deallocate( grp_id_name )
+  end subroutine fstr_setup_DUMMY
 
 
   !*****************************************************************************!

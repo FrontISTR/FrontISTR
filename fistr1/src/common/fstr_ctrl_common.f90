@@ -219,7 +219,7 @@ contains
     character(len=HECMW_NAME_LEN) :: header_name
     integer(kind=kint) :: bcid
     integer(kind=kint) :: i, n, sn, ierr
-    integer(kind=kint) :: bc_n, load_n, contact_n
+    integer(kind=kint) :: bc_n, load_n, contact_n, dummy_n
     real(kind=kreal) :: fn, f1, f2, f3
 
     fstr_ctrl_get_ISTEP = .false.
@@ -275,6 +275,7 @@ contains
     bc_n = 0
     load_n = 0
     contact_n = 0
+    dummy_n = 0
     do i=sn,n
       if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, header_name, bcid  )/= 0) return
       if( trim(header_name) == 'BOUNDARY' ) then
@@ -283,6 +284,8 @@ contains
         load_n = load_n +1
       else if( trim(header_name) == 'CONTACT' ) then
         contact_n = contact_n+1
+      else if( trim(header_name) == 'DUMMY' ) then
+        dummy_n = dummy_n+1
       else if( trim(header_name) == 'TEMPERATURE' ) then
         !   steps%Temperature = .true.
       endif
@@ -291,10 +294,12 @@ contains
     if( bc_n>0 ) allocate( steps%Boundary(bc_n) )
     if( load_n>0 ) allocate( steps%Load(load_n) )
     if( contact_n>0 ) allocate( steps%Contact(contact_n) )
+    if( dummy_n>0 ) allocate( steps%Dummy(dummy_n) )
 
     bc_n = 0
     load_n = 0
     contact_n = 0
+    dummy_n = 0
     do i=sn,n
       if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, header_name, bcid  )/= 0) return
       if( trim(header_name) == 'BOUNDARY' ) then
@@ -306,6 +311,9 @@ contains
       else if( trim(header_name) == 'CONTACT' ) then
         contact_n = contact_n+1
         steps%Contact(contact_n) = bcid
+      else if( trim(header_name) == 'DUMMY' ) then
+        dummy_n = dummy_n+1
+        steps%Dummy(dummy_n) = bcid
       endif
     end do
 
@@ -701,6 +709,45 @@ contains
 
     fstr_ctrl_get_TIMEPOINTS = 0
   end function fstr_ctrl_get_TIMEPOINTS
+
+  !* ----------------------------------------------------------------------------------------------- *!
+  !> Read in !DUMMY
+  !* ----------------------------------------------------------------------------------------------- *!
+
+  function fstr_ctrl_get_DUMMY( ctrl, amp, eps, grp_id_name )
+    implicit none
+    integer(kind=kint) :: ctrl
+    character(len=HECMW_NAME_LEN) :: amp
+    real(kind=kreal) :: eps
+    character(len=HECMW_NAME_LEN),target :: grp_id_name(:)
+    integer(kind=kint) :: fstr_ctrl_get_DUMMY
+
+    character(len=HECMW_NAME_LEN),pointer :: element_id_p
+
+    integer(kind=kint) :: i, n
+    integer(kind=kint) :: rcode
+    character(len=HECMW_NAME_LEN) :: data_fmt,s1
+    integer(kind=kint) :: lid
+
+    fstr_ctrl_get_DUMMY = -1
+    if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'EPSILON ',  '# ',  0, 'R', eps ) /= 0 ) return
+
+    write(s1,*)  HECMW_NAME_LEN
+    write( data_fmt, '(a,a)') 'S', trim(adjustl(s1))
+
+    n = fstr_ctrl_get_data_line_n(ctrl)
+    !!
+    !! for avoiding stack overflow with intel 9 complier
+    !!
+    element_id_p => grp_id_name(1)
+
+    rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p )
+
+
+      fstr_ctrl_get_DUMMY = 0
+
+  end function fstr_ctrl_get_DUMMY
 
 
 end module fstr_ctrl_common

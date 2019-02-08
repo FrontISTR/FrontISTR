@@ -42,6 +42,7 @@ module m_step
     integer, pointer :: Boundary(:)=>null()   !< active group of boundary conditions of current step
     integer, pointer :: Load(:)=>null()       !< active group of external load conditions of current step
     integer, pointer :: Contact(:)=>null()    !< active group of contact conditions of current step
+    integer, pointer :: Dummy(:)=>null()      !< active group of dummy conditions of current step
     integer :: timepoint_id                   !< id of timepoint
     integer :: AincParam_id                   !< id of auto increment paramter
   end type
@@ -118,12 +119,22 @@ contains
     if( any( stepinfo%Contact== bnd ) ) isContactActive = .true.
   end function
 
+  !> Is dummy condition in this step active
+  logical function isDummyActive( bnd, stepinfo )
+    integer, intent(in)           :: bnd      !< group number of boundary condition
+    type( step_info ), intent(in) :: stepinfo !< current step info
+    isDummyActive = .false.
+    if( .not. associated( stepinfo%Dummy ) ) return
+    if( any( stepinfo%Dummy== bnd ) ) isDummyActive = .true.
+  end function
+
   !> Finalizer
   subroutine free_stepInfo( step )
     type(step_info), intent(inout) :: step  !< step info
     if( associated( step%Boundary ) ) deallocate( step%Boundary )
     if( associated( step%Load ) )     deallocate( step%Load )
     if( associated( step%Contact ) )  deallocate( step%Contact )
+    if( associated( step%Dummy ) )    deallocate( step%Dummy )
   end subroutine
 
   !> Print out step control
@@ -153,6 +164,11 @@ contains
         nbc = size( steps(i)%Contact )
         write(nfile,*) "  Contact conditions"
         write(nfile,*) ( steps(i)%Contact(j),j=1,nbc )
+      endif
+      if( associated( steps(i)%Dummy ) ) then
+        nbc = size( steps(i)%Dummy )
+        write(nfile,*) "  Dummy conditions"
+        write(nfile,*) ( steps(i)%Dummy(j),j=1,nbc )
       endif
     enddo
   end subroutine

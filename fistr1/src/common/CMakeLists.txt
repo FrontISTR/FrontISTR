@@ -4,7 +4,7 @@
 ###############################################################################
 cmake_minimum_required(VERSION 2.8.11)
 
-list(APPEND fistr_SOURCES 
+list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw2fstr_connect_conv.c
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_util.c
   ${CMAKE_CURRENT_LIST_DIR}/fstr_sort_index.c
@@ -23,6 +23,7 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/fstr_debug_dump.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_precheck.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_rcap_io.F90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_dummy.f90
 )
 
 list(APPEND fistr_INCLUDE_DIRS
