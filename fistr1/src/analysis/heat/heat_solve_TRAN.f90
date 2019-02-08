@@ -32,10 +32,10 @@ contains
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
-    start_time = 0.0d0
-    do i = 1, ISTEP - 1
-      start_time = start_time + fstrHEAT%STEP_EETIME(i)
-    enddo
+      start_time = 0.0d0
+      do i = 1, ISTEP - 1
+        start_time = start_time + fstrHEAT%STEP_EETIME(i)
+      enddo
 
     total_time = start_time + current_time
 
@@ -50,11 +50,11 @@ contains
     hecMAT%X = 0.0d0
 
     if(fstrHEAT%beta == -1.0d0)then
-      if(fstrHEAT%is_steady == 1)then
-        fstrHEAT%beta = 1.0d0
-      else
-        fstrHEAT%beta = 0.5d0
-      endif
+    if(fstrHEAT%is_steady == 1)then
+      fstrHEAT%beta = 1.0d0
+    else
+      fstrHEAT%beta = 0.5d0
+    endif
     endif
 
     if(fstrHEAT%is_steady /= 1 .and. total_step == 1) then
@@ -138,9 +138,9 @@ contains
       enddo
 
       call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, total_time)
-      call heat_output_result(hecMESH, fstrHEAT, total_step, total_time, outflag)
-      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, total_time, outflag)
-      call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, next_time, is_end)
+      call heat_output_result(hecMESH, fstrHEAT, fstrSOLID, total_step, total_time, is_end)
+      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, total_step, total_time, is_end)
+      call heat_output_restart(hecMESH, fstrHEAT, total_step, is_end, next_time)
 
       total_step = total_step + 1
       current_time = next_time
