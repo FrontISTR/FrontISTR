@@ -61,6 +61,7 @@ contains
 
   end subroutine
 
+<<<<<<< HEAD
   subroutine fstr_updatedof_dummy( ndof, hecMESH, dummy, elements, vec_old, vec_new )
     integer(kind=kint), intent(in)            :: ndof
     type(hecmwST_local_mesh), intent(in)      :: hecMESH      !< mesh information
@@ -120,6 +121,8 @@ contains
 
   end subroutine
 
+=======
+>>>>>>> 6b55241c ([dummy element] Added dummy data and reading !DUMMY keyword)
   subroutine activate_dummy_flag( hecMESH, dummy, dumid, elements )
     type(hecmwST_local_mesh), intent(in)   :: hecMESH      !< mesh information
     type(tDummy), intent(in)               :: dummy        !< dummy info
@@ -156,7 +159,11 @@ contains
 
       do ik=iS0,iE0
         icel = hecMESH%elem_group%grp_item(ik)
+<<<<<<< HEAD
         elements(icel)%dummy_flag = kDUM_INACTIVE
+=======
+        elements(ik)%dummy_flag = kDUM_INACTIVE
+>>>>>>> 6b55241c ([dummy element] Added dummy data and reading !DUMMY keyword)
       end do
     end do
 
