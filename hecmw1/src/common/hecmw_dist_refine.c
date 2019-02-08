@@ -1994,6 +1994,100 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
   return HECMW_SUCCESS;
 }
 
+static int check_comm_table_len(struct hecmwST_local_mesh *ref_mesh) {
+  int len_tot;
+  int i, j, irank, js, je, len, tag, nsend;
+  HECMW_Request *requests;
+  HECMW_Status *statuses;
+  HECMW_Comm comm;
+  int error_flag = HECMW_SUCCESS;
+
+  if (ref_mesh->n_neighbor_pe == 0) return HECMW_SUCCESS;
+
+  HECMW_log(HECMW_LOG_DEBUG, "Started checking communication tables...\n");
+
+  comm = HECMW_comm_get_comm();
+
+  requests = (HECMW_Request *)HECMW_malloc(sizeof(HECMW_Request) *
+                                           ref_mesh->n_neighbor_pe);
+  if (requests == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  statuses = (HECMW_Status *)HECMW_malloc(sizeof(HECMW_Status) *
+                                          ref_mesh->n_neighbor_pe);
+  if (statuses == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  /* export and import */
+
+  for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
+    irank     = ref_mesh->neighbor_pe[i];
+    js        = ref_mesh->export_index[i];
+    je        = ref_mesh->export_index[i + 1];
+    len       = je - js;
+    /* isend number of export nodes */
+    tag = 0;
+    HECMW_Isend(&len, 1, HECMW_INT, irank, tag, comm, requests + i);
+  }
+  for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
+    irank     = ref_mesh->neighbor_pe[i];
+    js        = ref_mesh->import_index[i];
+    je        = ref_mesh->import_index[i + 1];
+    /* len       = je - js; */
+    /* recv number of import nodes */
+    tag = 0;
+    HECMW_Recv(&len, 1, HECMW_INT, irank, tag, comm, statuses + i);
+    if (len != je - js) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "inconsistent length of import (%d) with export on rank %d (%d)\n",
+                je-js, irank, len);
+      error_flag = HECMW_ERROR;
+    }
+  }
+  HECMW_Waitall(ref_mesh->n_neighbor_pe, requests, statuses);
+
+  /* shared */
+
+  nsend = 0;
+  for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
+    irank   = ref_mesh->neighbor_pe[i];
+    js      = ref_mesh->shared_index[i];
+    je      = ref_mesh->shared_index[i + 1];
+    len     = je - js;
+    if (irank < ref_mesh->my_rank) continue;
+    /* isend number of shared elems */
+    tag = 1;
+    HECMW_Isend(&len, 1, HECMW_INT, irank, tag, comm, requests + nsend);
+    nsend++;
+  }
+  for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
+    irank   = ref_mesh->neighbor_pe[i];
+    js      = ref_mesh->shared_index[i];
+    je      = ref_mesh->shared_index[i + 1];
+    /* len     = je - js; */
+    if (ref_mesh->my_rank < irank) continue;
+    /* recv number of shared elems */
+    tag = 1;
+    HECMW_Recv(&len, 1, HECMW_INT, irank, tag, comm, statuses);
+    if (len != je - js) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "inconsistent length of shared (%d) with rank %d (%d)\n",
+                je-js, irank, len);
+      error_flag = HECMW_ERROR;
+    }
+  }
+  HECMW_Waitall(nsend, requests, statuses);
+
+  HECMW_free(requests);
+  HECMW_free(statuses);
+
+  HECMW_log(HECMW_LOG_DEBUG, "Finished checking communication tables.\n");
+  return error_flag;
+}
+
 static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
   int len_tot;
   int *sendbuf, *recvbuf, *srbuf;
@@ -2269,6 +2363,7 @@ static int rebuild_info(const struct hecmwST_local_mesh *mesh,
   if (rebuild_elem_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_node_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_comm_tables(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
+  if (check_comm_table_len(ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_ID_external(ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
   if (renumber_nodes_generate_tables(ref_mesh) != HECMW_SUCCESS)
