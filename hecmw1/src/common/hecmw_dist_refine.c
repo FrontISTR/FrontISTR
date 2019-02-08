@@ -1744,10 +1744,16 @@ static int create_index_item(int n, const struct hecmw_varray_int *arrays,
 static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
                                     const struct hecmw_varray_int *shared,
                                     struct hecmwST_local_mesh *ref_mesh) {
-  struct hecmw_varray_int *new_export, *new_import;
+  struct hecmw_varray_int *new_shared, *new_export, *new_import;
   int i;
 
   /* prepare new shared, import and export lists */
+  new_shared = (struct hecmw_varray_int *)HECMW_malloc(
+      sizeof(struct hecmw_varray_int) * mesh->n_neighbor_pe);
+  if (new_shared == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
   new_export = (struct hecmw_varray_int *)HECMW_malloc(
       sizeof(struct hecmw_varray_int) * mesh->n_neighbor_pe);
   if (new_export == NULL) {
@@ -1766,6 +1772,7 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
     int j;
     int rank_i = mesh->neighbor_pe[i];
 
+    HECMW_varray_int_init(new_shared + i);
     HECMW_varray_int_init(new_export + i);
     HECMW_varray_int_init(new_import + i);
 
@@ -1811,10 +1818,12 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
       ref_mesh->elem_ID[2 * (eid - 1) + 1] = min_rank;
 
       if (HECMW_is_etype_patch(etype)) {
+        if (myrank_included || rank_i_included) HECMW_varray_int_append(new_shared + i, eid);
         if (myrank_included) HECMW_varray_int_cat(new_export + i, &exp_cand);
         if (rank_i_included) HECMW_varray_int_cat(new_import + i, &imp_cand);
       } else {
         if (myrank_included && rank_i_included) { /* the element is shared */
+          HECMW_varray_int_append(new_shared + i, eid);
           HECMW_varray_int_cat(new_export + i, &exp_cand);
           HECMW_varray_int_cat(new_import + i, &imp_cand);
         } else if (myrank_included == 0) {
@@ -1850,9 +1859,11 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
 
   /* deallocate new shared, import and export lists */
   for (i = 0; i < mesh->n_neighbor_pe; i++) {
+    HECMW_varray_int_finalize(new_shared + i);
     HECMW_varray_int_finalize(new_export + i);
     HECMW_varray_int_finalize(new_import + i);
   }
+  HECMW_free(new_shared);
   HECMW_free(new_export);
   HECMW_free(new_import);
 
