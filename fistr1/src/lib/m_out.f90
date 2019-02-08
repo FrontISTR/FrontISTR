@@ -152,6 +152,9 @@ contains
     outinfo%keyWord(35) = "BEAM_NQM"
     outinfo%vtype(35)   = -5
 
+    outinfo%keyWord(35) = "DUMMY"
+    outinfo%vtype(35)   = -1
+
   end subroutine initOutInfo
 
 

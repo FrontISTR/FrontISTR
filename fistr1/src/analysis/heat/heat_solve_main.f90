@@ -12,6 +12,7 @@ contains
     use m_heat_mat_ass_capacity
     use m_heat_mat_ass_boundary
     use m_solve_lineq
+    use m_fstr_dummy
     implicit none
     integer(kind=kint) :: i, iterALL, ISTEP, bup_n_dof
     real(kind=kreal)   :: delta_time, next_time
@@ -22,6 +23,9 @@ contains
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_matrix), pointer :: hecMATmpc
     logical :: is_congerged
+
+    if( fstrHEAT%dummy%DUMMY_egrp_tot>0 ) &
+      &  call fstr_update_dummy_heat( hecMESH, fstrHEAT%dummy, next_time, fstrSOLID%elements )
 
     iterALL = 0
     do

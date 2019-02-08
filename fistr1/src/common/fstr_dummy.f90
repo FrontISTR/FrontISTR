@@ -61,6 +61,20 @@ contains
 
   end subroutine
 
+  subroutine output_dummy_flag( hecMESH, elements, outval )
+    type(hecmwST_local_mesh), intent(in)   :: hecMESH      !< mesh information
+    type(tElement), pointer, intent(in)    :: elements(:)  !< elements info(dummy flags will be updated)
+    real(kind=kreal), pointer, intent(out) :: outval(:)    !< active dummy flag
+
+    integer(kind=kint) :: icel
+
+    outval = 0.d0
+    do icel = 1, hecMESH%n_elem
+      if( elements(icel)%dummy_flag > 0 ) outval(icel) = 1.d0
+    end do
+
+  end subroutine
+
   subroutine activate_dummy_flag( hecMESH, dummy, dumid, elements )
     type(hecmwST_local_mesh), intent(in)   :: hecMESH      !< mesh information
     type(tDummy), intent(in)               :: dummy        !< dummy info
@@ -97,7 +111,7 @@ contains
 
       do ik=iS0,iE0
         icel = hecMESH%elem_group%grp_item(ik)
-        elements(ik)%dummy_flag = kDUM_INACTIVE
+        elements(icel)%dummy_flag = kDUM_INACTIVE
       end do
     end do
 
