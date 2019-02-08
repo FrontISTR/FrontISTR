@@ -28,7 +28,11 @@ contains
   subroutine print_dummy_info( dum )
     type(tDummy), intent(in) :: dum  !< dummy info
 
+<<<<<<< HEAD
     integer(kind=kint) :: i
+=======
+    integer(kind=kint) :: i, j
+>>>>>>> 6b55241c ([dummy element] Added dummy data and reading !DUMMY keyword)
 
     write(*,'(A,I0)') 'DUMMY_egrp_tot: ', dum%DUMMY_egrp_tot
     do i=1,dum%DUMMY_egrp_tot
@@ -40,6 +44,7 @@ contains
     end do
   end subroutine
 
+<<<<<<< HEAD
   !< stiff matrix of a dummy element
   subroutine STF_DUMMY( ndof, nn, ecoord, u, stiff, element )
     use mMechGauss
@@ -138,4 +143,6 @@ contains
   end subroutine
 
 
+=======
+>>>>>>> 6b55241c ([dummy element] Added dummy data and reading !DUMMY keyword)
 end module m_dummy
