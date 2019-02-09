@@ -1872,21 +1872,32 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
     HECMW_varray_int_rmdup(new_import + i);
   }
 
+  /* new shared */
   if (create_index_item(mesh->n_neighbor_pe, new_shared, &(ref_mesh->shared_index),
                         &(ref_mesh->shared_item)) != HECMW_SUCCESS) {
     HECMW_log(HECMW_LOG_ERROR, "Create shared_index and shared_item failed\n");
     return HECMW_ERROR;
   }
+  HECMW_log(HECMW_LOG_DEBUG, "Total number of shared elements = %d\n",
+            ref_mesh->shared_index[mesh->n_neighbor_pe]);
+
+  /* new export */
   if (create_index_item(mesh->n_neighbor_pe, new_export, &(ref_mesh->export_index),
                         &(ref_mesh->export_item)) != HECMW_SUCCESS) {
     HECMW_log(HECMW_LOG_ERROR, "Create export_index and export_item failed\n");
     return HECMW_ERROR;
   }
+  HECMW_log(HECMW_LOG_DEBUG, "Total number of export nodes = %d\n",
+            ref_mesh->export_index[mesh->n_neighbor_pe]);
+
+  /* new import */
   if (create_index_item(mesh->n_neighbor_pe, new_import, &(ref_mesh->import_index),
                         &(ref_mesh->import_item)) != HECMW_SUCCESS) {
     HECMW_log(HECMW_LOG_ERROR, "Create import_index and import_item failed\n");
     return HECMW_ERROR;
   }
+  HECMW_log(HECMW_LOG_DEBUG, "Total number of import nodes = %d\n",
+            ref_mesh->import_index[mesh->n_neighbor_pe]);
 
   /* deallocate new shared, import and export lists */
   for (i = 0; i < mesh->n_neighbor_pe; i++) {
@@ -1913,6 +1924,9 @@ static int rebuild_comm_tables_serial(const struct hecmwST_local_mesh *mesh,
   ref_mesh->n_node = ref_mesh->n_node_gross;
   ref_mesh->nn_middle = ref_mesh->n_node;
 
+  HECMW_log(HECMW_LOG_DEBUG, "nn_internal = %d, n_node = %d, nn_middle = %d\n",
+            ref_mesh->nn_internal, ref_mesh->n_node, ref_mesh->nn_middle);
+
   /* node_internal_list */
   ref_mesh->node_internal_list =
       (int *)HECMW_malloc(sizeof(int) * ref_mesh->nn_internal);
@@ -1927,6 +1941,9 @@ static int rebuild_comm_tables_serial(const struct hecmwST_local_mesh *mesh,
   /* ne_internal, n_elem */
   ref_mesh->ne_internal = count_internal(mesh->my_rank, ref_mesh->n_elem_gross, ref_mesh->elem_ID);
   ref_mesh->n_elem = ref_mesh->n_elem_gross;
+
+  HECMW_log(HECMW_LOG_DEBUG, "ne_internal = %d, n_elem = %d\n",
+            ref_mesh->ne_internal, ref_mesh->n_elem);
 
   /* elem_internal_list */
   ref_mesh->elem_internal_list =
@@ -2050,6 +2067,11 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
       ref_mesh->n_node_gross -
       count_purely_external(ref_mesh->n_node_gross, ref_mesh->node_ID);
   ref_mesh->nn_middle = ref_mesh->n_node;  /* not set properly (since it's never used) */
+
+  HECMW_log(HECMW_LOG_DEBUG, "nn_internal = %d, n_node = %d nn_middle = %d, \n",
+            ref_mesh->nn_internal, ref_mesh->n_node, ref_mesh->nn_middle);
+  HECMW_log(HECMW_LOG_DEBUG, "ne_internal = %d, nelem = %d\n",
+            ref_mesh->ne_internal, ref_mesh->n_elem);
 
   HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding communication tables.\n");
   return HECMW_SUCCESS;
