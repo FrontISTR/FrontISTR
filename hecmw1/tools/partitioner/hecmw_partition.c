@@ -2337,12 +2337,16 @@ static int contact_agg_mark_node_group(int *mark,
 static int HECMW_get_num_surf_node(int etype, int sid) {
   switch (etype) {
     case HECMW_ETYPE_TET1:
+    case HECMW_ETYPE_PTT1:
       return 3;
     case HECMW_ETYPE_TET2:
+    case HECMW_ETYPE_PTT2:
       return 6;
     case HECMW_ETYPE_HEX1:
+    case HECMW_ETYPE_PTQ1:
       return 4;
     case HECMW_ETYPE_HEX2:
+    case HECMW_ETYPE_PTQ2:
       return 8;
     case HECMW_ETYPE_PRI1:
       if (1 <= sid && sid <= 3) return 4;
@@ -2383,6 +2387,10 @@ static const int *HECMW_get_surf_node(int etype, int sid) {
                                            {0, 8, 1, 13, 4, 11, 3, 12},
                                            {2, 6, 1, 8, 0, 7, -1, -1},
                                            {3, 11, 4, 9, 5, 10, -1, -1}};
+  static const int elem_surf_ptt1[3] = {0, 1, 2};
+  static const int elem_surf_ptt2[6] = {0, 1, 2, 3, 4, 5};
+  static const int elem_surf_ptq1[4] = {0, 1, 2, 3};
+  static const int elem_surf_ptq2[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   switch (etype) {
     case HECMW_ETYPE_TET1:
       return elem_surf_tet1[sid - 1];
@@ -2396,6 +2404,14 @@ static const int *HECMW_get_surf_node(int etype, int sid) {
       return elem_surf_pri1[sid - 1];
     case HECMW_ETYPE_PRI2:
       return elem_surf_pri2[sid - 1];
+    case HECMW_ETYPE_PTT1:
+      return elem_surf_ptt1;
+    case HECMW_ETYPE_PTT2:
+      return elem_surf_ptt2;
+    case HECMW_ETYPE_PTQ1:
+      return elem_surf_ptq1;
+    case HECMW_ETYPE_PTQ2:
+      return elem_surf_ptq2;
   }
   fprintf(stderr,
           "ERROR: parallel contact analysis of element type %d not supported\n",
@@ -2406,12 +2422,16 @@ static const int *HECMW_get_surf_node(int etype, int sid) {
 static int HECMW_fistr_get_num_surf_node(int etype, int sid) {
   switch (etype) {
     case HECMW_ETYPE_TET1:
+    case HECMW_ETYPE_PTT1:
       return 3;
     case HECMW_ETYPE_TET2:
+    case HECMW_ETYPE_PTT2:
       return 6;
     case HECMW_ETYPE_HEX1:
+    case HECMW_ETYPE_PTQ1:
       return 4;
     case HECMW_ETYPE_HEX2:
+    case HECMW_ETYPE_PTQ2:
       return 8;
     case HECMW_ETYPE_PRI1:
       if (1 <= sid && sid <= 2) return 3;
@@ -2452,6 +2472,10 @@ static const int *HECMW_fistr_get_surf_node(int etype, int sid) {
                                            {0, 8, 1, 13, 4, 11, 3, 12},
                                            {1, 6, 2, 14, 5, 9, 4, 13},
                                            {2, 7, 0, 12, 3, 10, 5, 14}};
+  static const int elem_surf_ptt1[3] = {0, 1, 2};
+  static const int elem_surf_ptt2[6] = {0, 1, 2, 3, 4, 5};
+  static const int elem_surf_ptq1[4] = {0, 1, 2, 3};
+  static const int elem_surf_ptq2[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   switch (etype) {
     case HECMW_ETYPE_TET1:
       return elem_surf_tet1[sid - 1];
@@ -2465,6 +2489,14 @@ static const int *HECMW_fistr_get_surf_node(int etype, int sid) {
       return elem_surf_pri1[sid - 1];
     case HECMW_ETYPE_PRI2:
       return elem_surf_pri2[sid - 1];
+    case HECMW_ETYPE_PTT1:
+      return elem_surf_ptt1;
+    case HECMW_ETYPE_PTT2:
+      return elem_surf_ptt2;
+    case HECMW_ETYPE_PTQ1:
+      return elem_surf_ptq1;
+    case HECMW_ETYPE_PTQ2:
+      return elem_surf_ptq2;
   }
   fprintf(stderr,
           "ERROR: parallel contact analysis of element type %d not supported\n",
