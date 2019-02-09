@@ -8740,8 +8740,12 @@ static int init_partition(struct hecmwST_local_mesh *global_mesh,
         break;
 
       case HECMW_PART_CONTACT_SIMPLE:
+        global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_SIMPLE;
+        break;
+
       case HECMW_PART_CONTACT_DEFAULT:
       default:
+        cont_data->contact = HECMW_PART_CONTACT_SIMPLE;
         global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_SIMPLE;
         break;
     }
@@ -8774,8 +8778,8 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
   int *node_global2local                = NULL;
   int *elem_global2local                = NULL;
   char ofname[HECMW_FILENAME_LEN + 1];
-  int *num_elem, *num_node, *num_ielem, *num_inode;
-  int *sum_elem, *sum_node, *sum_ielem, *sum_inode;
+  int *num_elem, *num_node, *num_ielem, *num_inode, *num_nbpe;
+  int *sum_elem, *sum_node, *sum_ielem, *sum_inode, *sum_nbpe;
   int current_domain, nrank, iS, iE;
   int rtc;
   int i;
@@ -8802,6 +8806,8 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
     rtc = HECMW_part_set_log_part_method(cont_data->method);
     if (rtc != RTC_NORMAL) goto error;
     rtc = HECMW_part_set_log_part_depth(cont_data->depth);
+    if (rtc != RTC_NORMAL) goto error;
+    rtc = HECMW_part_set_log_part_contact(cont_data->contact);
     if (rtc != RTC_NORMAL) goto error;
 
     rtc = HECMW_part_set_log_n_node_g(global_mesh->n_node);
@@ -8880,6 +8886,11 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
     HECMW_set_error(errno, "");
     goto error;
   }
+  num_nbpe = (int *)HECMW_calloc(global_mesh->n_subdomain, sizeof(int));
+  if (num_nbpe == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
   sum_elem = (int *)HECMW_calloc(global_mesh->n_subdomain, sizeof(int));
   if (sum_elem == NULL) {
     HECMW_set_error(errno, "");
@@ -8900,6 +8911,11 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
     HECMW_set_error(errno, "");
     goto error;
   }
+  sum_nbpe = (int *)HECMW_calloc(global_mesh->n_subdomain, sizeof(int));
+  if (sum_nbpe == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
 
   rtc = wnumbering(global_mesh, cont_data);
   if (rtc != RTC_NORMAL) goto error;
@@ -8909,13 +8925,13 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
   if (rtc != RTC_NORMAL) goto error;
 
 #ifdef _OPENMP
-#pragma omp parallel default(                                                 \
-    none), private(node_flag, elem_flag, local_mesh, nrank, iS, iE, i,        \
-                   current_domain, rtc, ofheader, ofname),                    \
-                   private(node_global2local, elem_global2local,              \
-                           node_flag_neighbor, elem_flag_neighbor),           \
-                           shared(global_mesh, cont_data, num_elem, num_node, \
-                                  num_ielem, num_inode, error_in_ompsection)
+#pragma omp parallel default(none), \
+    private(node_flag, elem_flag, local_mesh, nrank, iS, iE, i,         \
+            current_domain, rtc, ofheader, ofname),                     \
+    private(node_global2local, elem_global2local,                       \
+            node_flag_neighbor, elem_flag_neighbor),                    \
+    shared(global_mesh, cont_data, num_elem, num_node,                  \
+           num_ielem, num_inode, num_nbpe, error_in_ompsection)
   {
 #endif /* _OPENMP */
 
@@ -9014,6 +9030,7 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
       num_node[i]  = local_mesh->n_node;
       num_ielem[i] = local_mesh->ne_internal;
       num_inode[i] = local_mesh->nn_internal;
+      num_nbpe[i]  = local_mesh->n_neighbor_pe;
 
       ofheader = HECMW_ctrl_get_meshfiles_header_sub(
           "part_out", global_mesh->n_subdomain, current_domain);
@@ -9098,6 +9115,9 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
   rtc = HECMW_Allreduce(num_inode, sum_inode, global_mesh->n_subdomain,
                         HECMW_INT, HECMW_SUM, HECMW_comm_get_comm());
   if (rtc != 0) goto error;
+  rtc = HECMW_Allreduce(num_nbpe, sum_nbpe, global_mesh->n_subdomain,
+                        HECMW_INT, HECMW_SUM, HECMW_comm_get_comm());
+  if (rtc != 0) goto error;
 
   if (global_mesh->my_rank == 0) {
     for (i = 0; i < global_mesh->n_subdomain; i++) {
@@ -9109,6 +9129,8 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
       if (rtc != 0) goto error;
       rtc = HECMW_part_set_log_nn_internal(i, sum_inode[i]);
       if (rtc != 0) goto error;
+      rtc = HECMW_part_set_log_n_neighbor_pe(i, sum_nbpe[i]);
+      if (rtc != 0) goto error;
     }
     rtc = HECMW_part_print_log();
     if (rtc) goto error;
@@ -9119,10 +9141,12 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
   HECMW_free(num_node);
   HECMW_free(num_ielem);
   HECMW_free(num_inode);
+  HECMW_free(num_nbpe);
   HECMW_free(sum_elem);
   HECMW_free(sum_node);
   HECMW_free(sum_ielem);
   HECMW_free(sum_inode);
+  HECMW_free(sum_nbpe);
 
   /*K. Inagaki */
   spdup_freelist(global_mesh);
@@ -9136,10 +9160,12 @@ error:
   HECMW_free(num_node);
   HECMW_free(num_ielem);
   HECMW_free(num_inode);
+  HECMW_free(num_nbpe);
   HECMW_free(sum_elem);
   HECMW_free(sum_node);
   HECMW_free(sum_ielem);
   HECMW_free(sum_inode);
+  HECMW_free(sum_nbpe);
   HECMW_dist_free(local_mesh);
   if (ofheader) {
     HECMW_ctrl_free_meshfiles(ofheader);
