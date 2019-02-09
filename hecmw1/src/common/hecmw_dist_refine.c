@@ -1589,6 +1589,33 @@ static int get_rcap_elem_max_node(int etype_rcap) {
   return HECMW_get_max_node(etype_hecmw);
 }
 
+static int determine_node_rank_of_purely_external_elems(
+  const struct hecmwST_local_mesh *mesh,
+  struct hecmwST_local_mesh *ref_mesh) {
+  int eid, rank, nn, k, nid;
+  int *elem_nodes;
+
+  for (eid = 1; eid <= ref_mesh->n_elem_gross; eid++) {
+    rank = ref_mesh->elem_ID[2 * (eid - 1) + 1];
+
+    if (rank >= 0) continue; /* purely external elems have rank < 0 */
+
+    nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid - 1];
+    elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid - 1];
+    for (k = 0; k < nn; k++) {
+      nid = elem_nodes[k];
+      if (nid <= mesh->n_node_gross) continue; /* skip old nodes */
+
+      /* new nodes that have not been assigned new rank have default rank = my_rank */
+      if (ref_mesh->node_ID[2 * (nid - 1) + 1] == ref_mesh->my_rank) {
+        /* assign out-of-range rank = n_subdomain as purely external number = -rank-1 */
+        ref_mesh->node_ID[2 * (nid - 1) + 1] = - ref_mesh->n_subdomain - 1;
+      }
+    }
+  }
+  return HECMW_SUCCESS;
+}
+
 static int determine_node_rank(const struct hecmwST_local_mesh *mesh,
                                const struct hecmw_varray_int *shared,
                                struct hecmwST_local_mesh *ref_mesh) {
@@ -1657,6 +1684,10 @@ static int determine_node_rank(const struct hecmwST_local_mesh *mesh,
   }
 
   HECMW_set_int_finalize(&boundary_nodes);
+
+  /* new nodes in purely external elems */
+  if (determine_node_rank_of_purely_external_elems(mesh, ref_mesh) != HECMW_SUCCESS)
+    return HECMW_ERROR;
 
   HECMW_log(HECMW_LOG_DEBUG, "Finished determine_node_rank.\n");
   return HECMW_SUCCESS;
