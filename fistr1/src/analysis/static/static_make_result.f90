@@ -288,6 +288,18 @@ contains
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_STATE )
     endif
 
+    ! --- DUMMY flag @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(36) ) then
+      id = 2
+      nitem = 1
+      label = 'DUMMY'
+      work(:) = 0.d0
+      do i = 1, hecMESH%n_elem
+        if( fstrSOLID%elements(i)%dummy_flag > 0 ) work(i) = 1.d0
+      enddo
+      call hecmw_result_add( id, nitem, label, work )
+    endif
+
     ! --- WRITE
     nameID = 'fstrRES'
     if( flag==0 ) then
@@ -628,6 +640,11 @@ contains
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(34), ndof )
     endif
+    ! --- DUMMY flag @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(36) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(36), ndof )
+    endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     fstrRESULT%ng_component = gcomp
@@ -915,6 +932,22 @@ contains
       fstrRESULT%elem_label(ecomp) = 'Material_ID'
       do i = 1, hecMESH%n_elem
         fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = hecMESH%section_ID(i)
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- DUMMY flag @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(36) ) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(36), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'DUMMY'
+      do i = 1, hecMESH%n_elem
+        if( fstrSOLID%elements(i)%dummy_flag > 0 ) then
+          fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 1.d0
+        else
+          fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 0.d0
+        end if
       enddo
       jitem = jitem + nn
     endif

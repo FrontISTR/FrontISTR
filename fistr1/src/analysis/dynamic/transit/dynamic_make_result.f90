@@ -306,6 +306,18 @@ contains
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_STATE )
     endif
 
+    ! --- DUMMY flag @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(36) ) then
+      id = 2
+      nitem = 1
+      label = 'DUMMY'
+      work(:) = 0.d0
+      do i = 1, hecMESH%n_elem
+        if( fstrSOLID%elements(i)%dummy_flag > 0 ) work(i) = 1.d0
+      enddo
+      call hecmw_result_add( id, nitem, label, work )
+    endif
+
     ! --- WRITE
     nameID = 'fstrRES'
     call hecmw_result_write_by_name( nameID )

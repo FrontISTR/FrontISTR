@@ -42,7 +42,7 @@ contains
     outinfo%grp_id_name = "ALL"
     outinfo%grp_id      = -1
     outinfo%on(:)       = .false.
-    outinfo%num_items   = 35
+    outinfo%num_items   = 36
 
     outinfo%keyWord(1)  = "DISP"
     outinfo%vtype(1)    = -2
@@ -152,8 +152,8 @@ contains
     outinfo%keyWord(35) = "BEAM_NQM"
     outinfo%vtype(35)   = -5
 
-    outinfo%keyWord(35) = "DUMMY"
-    outinfo%vtype(35)   = -1
+    outinfo%keyWord(36) = "DUMMY"
+    outinfo%vtype(36)   = -1
 
   end subroutine initOutInfo
 

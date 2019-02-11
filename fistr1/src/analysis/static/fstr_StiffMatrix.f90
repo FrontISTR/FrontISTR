@@ -209,6 +209,10 @@ contains
         else
           call StiffMat_abort( ic_type, 1 )
         endif
+
+        if( fstrSOLID%elements(icel)%dummy_flag > 0 ) then
+          stiffness(:,:) = fstrSOLID%elements(icel)%dummy_coeff*stiffness(:,:)
+        end if
         !
         ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
         call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiffness)

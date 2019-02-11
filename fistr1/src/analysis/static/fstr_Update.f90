@@ -264,6 +264,11 @@ contains
 
         endif
 
+        ! dummy element
+        if( fstrSOLID%elements(icel)%dummy_flag > 0 ) then
+          qf(:) = fstrSOLID%elements(icel)%dummy_coeff*qf(:)
+        end if
+
         ! ----- calculate the global internal force ( Q(u_{n+1}^{k-1}) )
         do j = 1, nn
           do i = 1, ndof
