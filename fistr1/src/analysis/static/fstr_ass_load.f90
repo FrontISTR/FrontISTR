@@ -20,14 +20,15 @@ contains
     use m_fstr
     use m_static_lib
     use m_fstr_precheck
+    use m_fstr_dummy
     use mMechGauss
     use mReadTemp
     use mULoad
     use m_fstr_spring
     use m_common_struct
     use m_utilities
-    integer(kind=kint), intent(in)       :: cstep !< current step
-    real(kind=kreal), intent(in)         :: ctime !< current time
+    integer, intent(in)                  :: cstep !< current step
+    real(kind=kreal), intent(in)         :: ctime  !< target time
     type(hecmwST_matrix), intent(inout)  :: hecMAT !< hecmw matrix
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< hecmw mesh
     type(fstr_solid), intent(inout)      :: fstrSOLID !< fstr_solid
@@ -55,6 +56,11 @@ contains
     real(kind=kreal)   :: tval, normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
 
     ndof = hecMAT%NDOF
+
+    ! ----- dummy element
+    if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) &
+      &  call fstr_update_dummy_solid( hecMESH, fstrSOLID, cstep, ctime )
+
 
     ! -------------------------------------------------------------------
     !  CLOAD
@@ -166,6 +172,10 @@ contains
           icel    = hecMESH%elem_group%grp_item(ik)
           ic_type = hecMESH%elem_type(icel)
         endif
+
+        !DUMMY
+        if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
+
         if( hecmw_is_etype_link(ic_type) ) cycle
         if( hecmw_is_etype_patch(ic_type) ) cycle
         ! if( ic_type==3422 ) ic_type=342
@@ -320,6 +330,9 @@ contains
 
         ! ----- element loop
         do icel = is, iE
+
+          !DUMMY
+          if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
 
           ! ----- node ID
           is= hecMESH%elem_node_index(icel-1)

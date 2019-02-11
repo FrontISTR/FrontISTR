@@ -107,7 +107,7 @@ contains
 
       ! ----- Set residual
       if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-        & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
+        &  call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
@@ -252,7 +252,7 @@ contains
 
     if( fstr_is_contact_active() ) call fstr_ass_load_contactAlag( hecMESH, fstrSOLID, conMAT%B )
 
-    ! ----- Augmentation loop. In case of no contact, it is inactive
+     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
     if( .not. fstr_is_contact_active() ) n_al_step = 1
 
@@ -284,7 +284,7 @@ contains
           maxv = hecmw_mat_diag_max( hecMAT, hecMESH )
           call fstr_set_contact_penalty( maxv )
         endif
-        if( fstr_is_contact_active() )  then
+        if( fstr_is_contact_active() ) then
           call fstr_contactBC( cstep, iter, hecMESH, conMAT, fstrSOLID )
         endif
 
@@ -311,7 +311,7 @@ contains
         call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
         ! ----- Set residual
-        if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
+        if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 )                                 &
           call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, conMAT)
@@ -323,7 +323,7 @@ contains
         !    Consider SPC condition
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
-    
+
         !res = fstr_get_residual(hecMAT%B, hecMESH)
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
         ! ----- Gather global residual
@@ -365,8 +365,8 @@ contains
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
       ! ----- deal with contact boundary
-      call fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchange )
-      call fstr_scan_contact_state( cstep, sub_step, al_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+        call fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchange )
+        call fstr_scan_contact_state( cstep, sub_step, al_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
       contact_changed_global = 0
       if( fstr_is_matrixStructure_changed(infoCTChange) ) then
@@ -482,7 +482,7 @@ contains
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
       call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
-      call hecmw_mat_copy_profile( hecMAT, conMAT )
+        call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
         call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
       elseif( hecMAT%Iarray(99)==4 ) then
@@ -498,7 +498,7 @@ contains
 
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-    call hecmw_mat_clear_b(conMAT)
+      call hecmw_mat_clear_b(conMAT)
 
     if( fstr_is_contact_active() )  then
       call fstr_ass_load_contact(cstep, hecMESH, conMAT, fstrSOLID, hecLagMAT)
@@ -525,8 +525,8 @@ contains
         call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, ctime, tincr)
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-        call hecmw_mat_clear( conMAT )
-        conMAT%X = 0.0d0
+          call hecmw_mat_clear( conMAT )
+          conMAT%X = 0.0d0
 
         if( fstr_is_contact_active() ) then
           call fstr_AddContactStiffness(cstep,iter,conMAT,hecLagMAT,fstrSOLID)
@@ -584,10 +584,10 @@ contains
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
           call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
+          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
 
         if( fstr_is_contact_active() )  then
-          call hecmw_mat_clear_b( conMAT )
+            call hecmw_mat_clear_b( conMAT )
           call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
         endif
 
@@ -649,7 +649,7 @@ contains
       call hecmw_allreduce_I1(hecMESH, contact_changed_global, HECMW_MAX)
       if (contact_changed_global > 0) then
         call hecmw_mat_clear_b( hecMAT )
-        call hecmw_mat_clear_b( conMAT )
+          call hecmw_mat_clear_b( conMAT )
         call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, is_mat_symmetric)
       endif
 
@@ -665,10 +665,10 @@ contains
       end if
 
       ! ----- Set residual for next newton iteration
-      call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
+        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
 
       if( fstr_is_contact_active() )  then
-        call hecmw_mat_clear_b( conMAT )
+          call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
       endif
 
