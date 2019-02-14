@@ -64,6 +64,12 @@ use m_fstr_freqdata
         name_ID = 'fstrMSH'
         call hecmw_get_mesh( name_ID , hecMESH )
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        call hecmw_tuning_reorder_do(hecMESH, 20, 20, 20, 0.1d0)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         paraContactFlag = .false.
 
         call hecmw2fstr_mesh_conv( hecMESH )

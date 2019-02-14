@@ -23,6 +23,7 @@ module hecmw_io
     use hecmw_dist_print_f
     use hecmw_result
     use hecmw_restart
+    use hecmw_tuning_node_block_reorder
     implicit none
 
     public :: hecmw_get_mesh
@@ -48,6 +49,9 @@ module hecmw_io
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
         call hecmw_get_mesh_finalize_if(ierr)
+        if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
+
+        call hecmw_tuning_reorder_init(mesh, ierr)
         if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())
 
     end subroutine hecmw_get_mesh

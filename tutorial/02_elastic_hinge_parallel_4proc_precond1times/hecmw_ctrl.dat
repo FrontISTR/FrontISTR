@@ -1,0 +1,18 @@
+#
+# for partitioner
+#
+!MESH, NAME=part_in,TYPE=HECMW-ENTIRE
+ hinge.msh
+!MESH, NAME=part_out,TYPE=HECMW-DIST
+ hinge_4
+#
+# for solver
+#
+!MESH, NAME=fstrMSH, TYPE=HECMW-DIST
+ hinge_4
+!CONTROL, NAME=fstrCNT
+ hinge.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ hinge.res
+!RESULT, NAME=vis_out, IO=OUT
+ hinge_vis

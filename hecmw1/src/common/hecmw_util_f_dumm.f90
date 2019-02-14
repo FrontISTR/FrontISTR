@@ -365,6 +365,38 @@
           integer(kind=kint),pointer :: elem_old2new(:)
           integer(kind=kint),pointer :: elem_new2old(:)
           integer(kind=kint),pointer :: n_node_refine_hist(:)
+!C
+!C-- PERFORMANCE TUNING (BLOCK REORDERED NODE ID)
+!C
+!
+! Variables:
+!
+! tuning_block_reorder_on
+!   .TRUE. if node ID block reorder is used.
+!
+! tuning_block_reorder_old2new(:)
+! size: Number of nodes. Including external node. 
+! meaning: 
+! Permtation table for node reordering, old ID to new ID. 
+! The value of old2new(1) gives new local node ID for the 1st local node, 
+! in original node numbering. 
+! The valur of old2new(2) gives new local node ID for the 2nd local node, 
+! in original node numbering. 
+! And so on. 
+!
+! tuning_block_reorder_new2old(:)
+! size: Number of nodes. Including external node. 
+! meaning: 
+! Permtation table for node reordering, new ID to old ID. 
+! The value of new2old(1) gives old local node ID for the 1st local node, 
+! in new node numbering. 
+! The valur of new2old(2) gives old local node ID for the 2nd local node, 
+! in new node numbering. 
+! And so on. 
+
+          logical :: tuning_block_reorder_on
+          integer(kind=kint),pointer :: tuning_block_reorder_old2new(:)
+          integer(kind=kint),pointer :: tuning_block_reorder_new2old(:)
 
 !C
 !C-- ETC.

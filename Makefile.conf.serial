@@ -1,0 +1,83 @@
+##################################################
+#                                                #
+#     Setup Configulation File for FrontISTR     #
+#                                                #
+##################################################
+
+# MPI
+MPIDIR         =
+MPIBINDIR      =
+MPILIBDIR      =
+MPIINCDIR      =
+MPILIBS        =
+
+# for install option only
+PREFIX         = $(HOME)/FrontISTR
+BINDIR         = $(PREFIX)/bin
+LIBDIR         = $(PREFIX)/lib
+INCLUDEDIR     = $(PREFIX)/include
+
+# Metis
+METISDIR       = $(HOME)/metis-4.0.3
+METISLIBDIR    = $(METISDIR)
+METISINCDIR    = $(METISDIR)/Lib
+HECMW_METIS_VER= 4
+
+# ParMetis
+PARMETISDIR    = $(HOME)/ParMetis-3.1
+PARMETISLIBDIR = $(PARMETISDIR)
+PARMETISINCDIR = $(PARMETISDIR)/ParMETISLib
+
+# Refiner
+REFINERDIR     = $(HOME)/REVOCAP_Refiner
+REFINERINCDIR  = $(REFINERDIR)/Refiner
+REFINERLIBDIR  = $(REFINERDIR)/lib
+
+# Coupler
+REVOCAPDIR     = $(HOME)/REVOCAP_Coupler
+REVOCAPINCDIR  = $(REVOCAPDIR)/librcap
+REVOCAPLIBDIR  = $(REVOCAPDIR)/librcap
+
+# MUMPS
+MUMPSDIR       = $(HOME)/MUMPS_4.10.0
+MUMPSINCDIR    = $(MUMPSDIR)/include
+MUMPSLIBDIR    = $(MUMPSDIR)/lib
+
+# MKL PARDISO
+MKLDIR     = $(HOME)/
+MKLINCDIR  = $(MKLDIR)/include
+MKLLIBDIR  = $(MKLDIR)/lib
+
+# ML
+MLDIR          = $(HOME)/trilinos/11.8.1/ml
+MLINCDIR       = $(MLDIR)/include
+MLLIBDIR       = $(MLDIR)/lib
+
+# C compiler settings
+CC             = icc
+CFLAGS         =
+LDFLAGS        = -lm
+OPTFLAGS       = -O3
+
+# C++ compiler settings
+CPP            = icpc
+CPPFLAGS       =
+CPPLDFLAGS     =
+CPPOPTFLAGS    = -O3
+
+# Fortran compiler settings
+F90            = ifort
+#F90FLAGS       = -traceback -check all
+F90FLAGS       = 
+F90LDFLAGS     = 
+F90OPTFLAGS    = -O2 -qopenmp
+#F90OPTFLAGS    =
+F90FPP         = -fpp
+F90LINKER      = ifort
+
+MAKE           = make
+AR             = ar ruv
+MV             = mv -f
+CP             = cp -f
+RM             = rm -f
+MKDIR          = mkdir -p

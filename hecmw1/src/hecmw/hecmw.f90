@@ -57,4 +57,5 @@ use hecmw_visualizer
 use m_hecmw_comm_f
 use m_hecmw_solve_error
 use m_hecmw_solve_init
+use hecmw_tuning_node_block_reorder
 end module hecmw
