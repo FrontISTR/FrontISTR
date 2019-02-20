@@ -1364,7 +1364,8 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_local_matrix), intent(in) :: BT_ext(:)
     integer(kind=kint), allocatable, intent(out) :: imp_rows_index(:), imp_cols_index(:)
-    integer(kind=kint) :: nnb, idom, irank, sendbuf(2), tag, recvbuf(2)
+    integer(kind=kint) :: nnb, idom, irank, tag, recvbuf(2)
+    integer(kind=kint), allocatable :: sendbuf(:,:)
     integer(kind=kint), allocatable :: requests(:)
     integer(kind=kint), allocatable :: statuses(:,:)
     nnb = hecMESH%n_neighbor_pe
@@ -1372,13 +1373,14 @@ contains
     allocate(imp_cols_index(0:nnb))
     allocate(requests(nnb))
     allocate(statuses(HECMW_STATUS_SIZE, nnb))
+    allocate(sendbuf(2,nnb))
     do idom = 1, nnb
       irank = hecMESH%neighbor_pe(idom)
       ! nr = exp_rows_per_rank(idom)
-      sendbuf(1) = BT_ext(idom)%nr
-      sendbuf(2) = BT_ext(idom)%nnz
+      sendbuf(1,idom) = BT_ext(idom)%nr
+      sendbuf(2,idom) = BT_ext(idom)%nnz
       tag=2001
-      call HECMW_ISEND_INT(sendbuf, 2, irank, tag, hecMESH%MPI_COMM, &
+      call HECMW_ISEND_INT(sendbuf(1,idom), 2, irank, tag, hecMESH%MPI_COMM, &
            requests(idom))
     enddo
     imp_rows_index(0) = 0
@@ -1392,6 +1394,9 @@ contains
       imp_cols_index(idom) = imp_cols_index(idom-1) + recvbuf(2)
     enddo
     call HECMW_Waitall(nnb, requests, statuses)
+    deallocate(requests)
+    deallocate(statuses)
+    deallocate(sendbuf)
   end subroutine send_recv_BT_ext_nr_nnz
 
   subroutine send_recv_BT_ext_contents(hecMESH, BT_ext, &
