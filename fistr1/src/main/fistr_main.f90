@@ -52,6 +52,8 @@ contains
     name_ID = 'fstrMSH'
     call hecmw_get_mesh( name_ID , hecMESH )
 
+    call hecmw_tuning_reorder_do(hecMESH, 20, 20, 20, 0.1d0)
+
     if( hecMESH%contact_pair%n_pair > 0 ) then
       if( nprocs > 1 .and. &
           hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
