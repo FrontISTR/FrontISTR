@@ -44,6 +44,12 @@ module hecmw_result
   private
   character(len=HECMW_NAME_LEN) :: sname,vname
 
+  ! for PERFORMANCE TUNING (BLOCK REORDERED NODE ID)
+  logical :: tuning_block_reorder_on
+  integer(kind=kint), pointer :: nid_new2org(:) ! logical node ID reorder table (reordered => original)
+  integer(kind=kint), pointer :: org_order_global_node_ID(:)
+  integer(kind=kint) :: nnode, nelem
+
 contains
 
   !C=============================================================================
@@ -70,13 +76,26 @@ contains
   subroutine hecmw_result_init(hecMESH, i_step, header, comment)
     type(hecmwST_local_mesh):: hecMESH
     integer(kind=kint) :: nnode, nelem, i_step, ierr
+    integer :: i, org_id
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN) :: comment
 
     nnode = hecMESH%n_node
     nelem = hecMESH%n_elem
 
-    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, i_step, header, comment, ierr)
+    ! TUNING BLOCK NODE REORDER
+    tuning_block_reorder_on = hecMESH%tuning_block_reorder_on
+
+    allocate(nid_new2org(nnode))
+    nid_new2org(:) = hecMESH%tuning_block_reorder_new2old(:)
+
+    allocate(org_order_global_node_ID(nnode))
+    do i = 1, nnode
+      org_id = nid_new2org(i)
+      org_order_global_node_ID(org_id) = hecMESH%global_node_ID(i)
+    end do
+
+    call hecmw_result_init_if(nnode, nelem, org_order_global_node_ID, hecMESH%global_elem_ID, i_step, header, comment, ierr)
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_init
 
@@ -85,9 +104,43 @@ contains
     integer(kind=kint) :: dtype, n_dof, ierr
     character(len=HECMW_NAME_LEN) :: label
     real(kind=kreal) :: data(:)
+    real(kind=kreal), allocatable :: org_order_data(:)
+    integer :: i, j, ofset_org, ofset_new, org_id
 
-    call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
+    if (dtype == 1) then ! node
+      if (tuning_block_reorder_on) then ! reorderd node ID
+        allocate(org_order_data(size(data)))
+
+        do i = 1, nnode
+          org_id = nid_new2org(i)
+          ofset_org = (org_id - 1) * n_dof
+          ofset_new = (i      - 1) * n_dof
+          do j = 1, n_dof
+            org_order_data(ofset_org + j) = data(ofset_new + j)
+          end do
+        end do
+
+        call hecmw_result_add_if(dtype, n_dof, label, org_order_data, ierr)
+        if (ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+        deallocate(org_order_data)
+
+      else ! original node ID
+        call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
+        if (ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+      end if
+
+
+
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+      end if
+
+    else if (node_or_elem == 2) then !elem
+      call hecmw_result_add_if(node_or_elem, n_dof, label, data, ierr)
+      if (ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
+    else
+      return ! NEVER COME HERE (not node, not elem)
+    end if
+
   end subroutine hecmw_result_add
 
 
