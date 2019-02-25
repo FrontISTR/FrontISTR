@@ -159,7 +159,9 @@ OBJSF = \
 	hecmw_dist_free_f.@f90objfilepostfix@ \
 	hecmw_dist_print_f.@f90objfilepostfix@ \
 	hecmw_visualizer_f.@f90objfilepostfix@ \
-	hecmw_io.@f90objfilepostfix@
+	hecmw_etype_f.@f90objfilepostfix@ \
+	hecmw_io.@f90objfilepostfix@ \
+    hecmw_tuning_node_block_reorder_f.@f90objfilepostfix@
 
 HEADERS = \
 	hecmw_hash.h\

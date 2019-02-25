@@ -367,6 +367,13 @@ module hecmw_util
     integer(kind=kint),pointer :: n_node_refine_hist(:)
 
     !C
+    !C-- BLOCK REORDERED NODE ID (PERFORMANCE TUNING)
+    !C
+    logical :: tuning_block_reorder_on
+    integer(kind=kint), pointer :: tuning_block_reorder_old2new(:)
+    integer(kind=kint), pointer :: tuning_block_reorder_new2old(:)
+
+    !C
     !C-- ETC.
     !C
     type (hecmwST_section)   :: section
@@ -800,6 +807,8 @@ contains
     nullify( P%elem_old2new )
     nullify( P%elem_new2old )
     nullify( P%n_node_refine_hist )
+    nullify( P%tuning_block_reorder_old2new )
+    nullify( P%tuning_block_reorder_new2old )
 
     call hecmw_nullify_section( P%section )
     call hecmw_nullify_material( P%material )
