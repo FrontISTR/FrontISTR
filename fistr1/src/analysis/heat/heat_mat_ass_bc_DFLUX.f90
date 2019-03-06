@@ -43,6 +43,7 @@ contains
 
       call heat_get_amplitude( fstrHEAT,iamp,CTIME,QQ )
       val     = fstrHEAT%Q_SUF_val (k) * QQ
+      if( dabs(val) < 1.d-16 ) cycle
       !C**
       nn = hecmw_get_max_node(ic_type)
       !C**
