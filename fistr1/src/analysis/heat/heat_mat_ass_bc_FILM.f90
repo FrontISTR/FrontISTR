@@ -42,6 +42,7 @@ contains
       iam2    = fstrHEAT%H_SUF_ampl(k,2)
       call heat_get_amplitude ( fstrHEAT, iam1, CTIME, QQ )
       HH      = fstrHEAT%H_SUF_val (k,1) * QQ
+      if( dabs(HH) < 1.d-16 ) cycle
       call heat_get_amplitude ( fstrHEAT, iam2, CTIME, QQ )
       SINK    = fstrHEAT%H_SUF_val (k,2) * QQ
       ic_type = hecMESH%elem_type(icel)
