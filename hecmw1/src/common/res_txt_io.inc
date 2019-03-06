@@ -9,21 +9,12 @@ output_result_header(FILE *fp)
 	int rc;
 
 	/* header */
+	if( filever_major > 1 ){
+        sprintf(head,"%s %d.%d",head,filever_major,filever_minor);
+    }
 	rc = fprintf(fp, "%s\n", head);
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "head");
-		return -1;
-	}
-
-	/* comment */
-	rc = fprintf(fp, "*comment\n");
-	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "*comment");
-		return -1;
-	}
-	rc = fprintf(fp, "%s\n", comment_line);
-	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "comment");
 		return -1;
 	}
 
@@ -36,6 +27,18 @@ output_result_global(FILE *fp)
 {
 	int i,j,k,n,rc,ng_comp;
 	struct result_list *p,**data;
+
+	/* comment */
+	rc = fprintf(fp, "*comment\n");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*comment");
+		return -1;
+	}
+	rc = fprintf(fp, "%s\n", comment_line);
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "comment");
+		return -1;
+	}
 
 	/* global header */
 	rc = fprintf(fp, "*global\n");
@@ -111,6 +114,13 @@ output_result_global(FILE *fp)
 	}
 	HECMW_free(data);
 
+	/* data header */
+	rc = fprintf(fp, "*data\n");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*data");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -119,13 +129,6 @@ static int
 output_result_dataheader(FILE *fp)
 {
 	int rc;
-
-	/* dataheader */
-	rc = fprintf(fp, "*data\n");
-	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "*data");
-		return -1;
-	}
 
 	/* n_node, n_elem */
 	rc = fprintf(fp, "%d %d\n", nnode, nelem);
@@ -307,9 +310,11 @@ output_result_data(FILE *fp)
 	if(output_result_header(fp)) {
 		return -1;
 	}
-	if(output_result_global(fp)) {
-		return -1;
-	}
+	if( filever_major > 1 ){
+		if(output_result_global(fp)) {
+			return -1;
+		}
+    }
 	if(output_result_dataheader(fp)) {
 		return -1;
 	}
@@ -330,13 +335,11 @@ output_result_data(FILE *fp)
 
 
 static int
-output_result_header_ST(struct hecmwST_result_data *result, char *header,
-		char *comment, FILE *fp)
+output_result_header_ST(struct hecmwST_result_data *result, char *header, FILE *fp)
 {
 	int rc,len;
 	char *p,*q;
 	char head[HECMW_HEADER_LEN+1];
-	char comment_line[HECMW_MSG_LEN+1];
 
 	if(header == NULL) {
 		head[0] = '\0';
@@ -352,11 +355,25 @@ output_result_header_ST(struct hecmwST_result_data *result, char *header,
 	}
 
 	/* header */
+	if( filever_major > 1 ){
+        sprintf(head,"%s %d.%d",head,filever_major,filever_minor);
+    }
 	rc = fprintf(fp, "%s\n", header);
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "header");
 		return -1;
 	}
+
+	return 0;
+}
+
+
+static int
+output_result_global_ST(struct hecmwST_result_data *result, char *comment, FILE *fp)
+{
+	int i,j,k,n,m,rc,len;
+	char *p,*q;
+	char comment_line[HECMW_MSG_LEN+1];
 
 	if(comment == NULL) {
 		comment_line[0] = '\0';
@@ -383,14 +400,6 @@ output_result_header_ST(struct hecmwST_result_data *result, char *header,
 		return -1;
 	}
 
-	return 0;
-}
-
-
-static int
-output_result_global_ST(struct hecmwST_result_data *result, FILE *fp)
-{
-	int i,j,k,n,m,rc;
 
 	/* global header */
 	rc = fprintf(fp, "*global\n");
@@ -454,6 +463,13 @@ output_result_global_ST(struct hecmwST_result_data *result, FILE *fp)
 		}
 	}
 
+	/* dataheader */
+	rc = fprintf(fp, "*data\n");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*data");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -465,13 +481,6 @@ output_result_dataheader_ST(struct hecmwST_result_data *result,
 	int rc,len;
 	char *p,*q;
 	char head[HECMW_HEADER_LEN+1];
-
-	/* dataheader */
-	rc = fprintf(fp, "*data\n");
-	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "*data");
-		return -1;
-	}
 
 	/* n_node, n_elem */
 	rc = fprintf(fp, "%d %d\n", n_node, n_elem);
@@ -628,12 +637,14 @@ output_result_data_ST(struct hecmwST_result_data *result, int n_node, int n_elem
 {
 	HECMW_assert(fp);
 
-	if(output_result_header_ST(result, header, comment, fp)) {
+	if(output_result_header_ST(result, header, fp)) {
 		return -1;
 	}
-	if(output_result_global_ST(result, fp)) {
-		return -1;
-	}
+	if( filever_major > 1 ){
+		if(output_result_global_ST(result, comment, fp)) {
+			return -1;
+		}
+    }
 	if(output_result_dataheader_ST(result, n_node, n_elem, fp)) {
 		return -1;
 	}
@@ -667,22 +678,18 @@ get_line(char *buf, int bufsize, FILE *fp)
 static int
 input_result_header(struct hecmwST_result_data *result, FILE *fp)
 {
+    char *ptr;
+
 	/* header */
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
 		return -1;
 	}
 	line_buf[ strlen(line_buf)-1 ] = 0;/* remove CR/LF*/
+	if( filever_major > 1 ){
+	    ptr = strtok(line_buf, " ");
+	    sprintf(line_buf, "%s", ptr);
+    }
 	strcpy( head, line_buf );
-
-	/* comment */
-	if(get_line(line_buf, sizeof(line_buf), fp) < 0) { //skip comment header
-		return -1;
-	}
-	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
-		return -1;
-	}
-	line_buf[ strlen(line_buf)-1 ] = 0;/* remove CR/LF*/
-	strcpy( comment_line, line_buf );
 
 	return 0;
 }
@@ -695,6 +702,17 @@ input_result_global(struct hecmwST_result_data *result, FILE *fp)
 	int i,rc,n;
 	int label_counter;
 	char *p,*buf;
+
+	/* comment */
+	if(get_line(line_buf, sizeof(line_buf), fp) < 0) { //skip comment header
+		return -1;
+	}
+	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
+		return -1;
+	}
+	line_buf[ strlen(line_buf)-1 ] = 0;/* remove CR/LF*/
+	strcpy( comment_line, line_buf );
+
 
 	/* skip global header */
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
@@ -810,6 +828,11 @@ input_result_global(struct hecmwST_result_data *result, FILE *fp)
 		i++;
 	}
 
+	/* skip data header */
+	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -818,10 +841,6 @@ static int
 input_result_dataheader(struct hecmwST_result_data *result,
 		int *n_node, int *n_elem, FILE *fp)
 {
-	/* skip data header */
-	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
-		return -1;
-	}
 
 	/* n_node, n_elem */
 	if(get_line(line_buf, sizeof(line_buf), fp) < 0) {
@@ -1111,9 +1130,11 @@ input_result_data(FILE *fp)
 	if(input_result_header(result, fp)) {
 		return NULL;
 	}
-	if(input_result_global(result, fp)) {
-		return NULL;
-	}
+	if( filever_major > 1 ){
+		if(input_result_global(result, fp)) {
+			return NULL;
+		}
+    }
 	if(input_result_dataheader(result, &n_node, &n_elem, fp)) {
 		return NULL;
 	}

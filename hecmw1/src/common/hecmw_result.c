@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <string.h>
 #include <errno.h>
 #include <ctype.h>
 #include "hecmw_util.h"
@@ -27,6 +28,13 @@ struct result_list {
 static int istep;
 static int nnode;
 static int nelem;
+#ifdef OLD_RES_FORMAT
+static int filever_major=1;
+static int filever_minor=0;
+#else
+static int filever_major=2;
+static int filever_minor=0;
+#endif // OLD_RES_FORMAT
 static char head[HECMW_HEADER_LEN + 1];
 static char comment_line[HECMW_MSG_LEN + 1];
 static char line_buf[LINEBUF_SIZE + 1];
@@ -148,11 +156,11 @@ int HECMW_result_init(struct hecmwST_local_mesh *hecMESH,
                       int i_step, char *header, char *comment) {
   return HECMW_result_init_body(
       hecMESH->n_node, hecMESH->n_elem, hecMESH->global_node_ID,
-      hecMESH->global_elem_ID, i_step, header);
+      hecMESH->global_elem_ID, i_step, header, comment);
 }
 
 int HECMW_result_init_body(int n_node, int n_elem, int *nodeID, int *elemID,
-                           int i_step, char *header) {
+                           int i_step, char *header, char *comment) {
   int len;
   char *p, *q;
 
@@ -660,6 +668,8 @@ void hecmw_result_init_if(int *n_node, int *n_elem, int *nodeID, int *elemID,
   *err = 1;
   if (HECMW_strcpy_f2c_r(header, len, header_str, sizeof(header_str)) == NULL)
     return;
+  if (HECMW_strcpy_f2c_r(comment, len, comment_str, sizeof(comment_str)) == NULL)
+    return;
   if (HECMW_result_init_body(*n_node, *n_elem, nodeID, elemID, *i_step,
                              header_str, comment_str))
     return;
@@ -667,21 +677,21 @@ void hecmw_result_init_if(int *n_node, int *n_elem, int *nodeID, int *elemID,
 }
 
 void hecmw_result_init_if_(int *n_node, int *n_elem, int *nodeID, int *elemID,
-                           int *i_step, char *header, int *err,
+                           int *i_step, char *header, char *comment, int *err,
                            int len) {
   hecmw_result_init_if(n_node, n_elem, nodeID, elemID, i_step, header, comment,
                        err, len);
 }
 
 void hecmw_result_init_if__(int *n_node, int *n_elem, int *nodeID, int *elemID,
-                            int *i_step, char *header, int *err,
+                            int *i_step, char *header, char *comment, int *err,
                             int len) {
   hecmw_result_init_if(n_node, n_elem, nodeID, elemID, i_step, header, comment,
                        err, len);
 }
 
 void HECMW_RESULT_INIT_IF(int *n_node, int *n_elem, int *nodeID, int *elemID,
-                          int *i_step, char *header, int *err,
+                          int *i_step, char *header, char *comment, int *err,
                           int len) {
   hecmw_result_init_if(n_node, n_elem, nodeID, elemID, i_step, header, comment,
                        err, len);
