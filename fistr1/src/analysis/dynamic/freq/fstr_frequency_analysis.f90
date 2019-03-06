@@ -995,7 +995,7 @@ contains
     allocate(absval(s))
 
     nameid='fstrDYNA'
-    header='*fstrresult 2.0'
+    header='*fstrresult'
     comment='frequency_result'
 
     call hecmw_result_init(hecMESH, istp, header, comment)
