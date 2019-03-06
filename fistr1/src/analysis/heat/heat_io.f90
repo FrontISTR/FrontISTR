@@ -71,6 +71,16 @@ contains
     write(ILOG,'(a,i10)')       ' Maximum Node No.    :', nmax
     write(ILOG,'(a,f10.3,i10)') ' Minimum Temperature :', tmin
     write(ILOG,'(a,i10)')       ' Minimum Node No.    :', nmin
+
+    !global temperature
+    call hecmw_allreduce_R1 (hecMESH, tmax, hecmw_max)
+    call hecmw_allreduce_R1 (hecMESH, tmin, hecmw_min)
+    if( myrank == 0 ) then
+      write(ILOG,'(a,f10.3,i10)') ' Maximum Temperature(global) :', tmax
+      write(ILOG,'(a,f10.3,i10)') ' Minimum Temperature(global) :', tmin
+    end if
+
+
   end subroutine heat_output_log
 
   subroutine heat_output_result(hecMESH, fstrHEAT, tstep, ctime, outflag)
