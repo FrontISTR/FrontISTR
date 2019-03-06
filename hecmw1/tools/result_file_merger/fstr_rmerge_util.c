@@ -147,7 +147,7 @@ int fstr_get_step_n(char* name_ID) {
   char* fheader;
   char fname[HECMW_FILENAME_LEN + 1];
 
-  if (endid != 0) return endid;
+  if (endid > -1) return endid;
 
   if (nrank == 0) {
     if ((fheader = HECMW_ctrl_get_result_fileheader(name_ID, 1, &fg_text)) ==
