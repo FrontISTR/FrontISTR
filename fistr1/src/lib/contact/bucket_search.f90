@@ -300,15 +300,18 @@ contains
     integer(kind=kint) :: bucketDB_getNumCand  !< number of candidates
     type(bucketDB), intent(in) :: bktdb        !< bucket info
     integer(kind=kint), intent(in) :: bid      !< bucket ID
-    integer(kind=kint) :: baddr(3), ncand, i, j, k
+    integer(kind=kint) :: baddr(3), ncand, i, j, k, is, ie, js, je, ks, ke
     baddr = decode_bid(bktdb, bid)
     ncand = 0
-    do k = baddr(3)-1, baddr(3)+1
-      if (k <= 0 .or. k > bktdb%ndiv(3)) cycle
-      do j = baddr(2)-1, baddr(2)+1
-        if (j <= 0 .or. j > bktdb%ndiv(2)) cycle
-        do i = baddr(1)-1, baddr(1)+1
-          if (i <= 0 .or. i > bktdb%ndiv(1)) cycle
+    is = max(baddr(1)-1, 1)
+    ie = min(baddr(1)+1, bktdb%ndiv(1))
+    js = max(baddr(2)-1, 1)
+    je = min(baddr(2)+1, bktdb%ndiv(2))
+    ks = max(baddr(3)-1, 1)
+    ke = min(baddr(3)+1, bktdb%ndiv(3))
+    do k = ks, ke
+      do j = js, je
+        do i = is, ie
           ncand = ncand + bucket_get_n(bktdb%buckets(i,j,k))
         enddo
       enddo
@@ -325,16 +328,19 @@ contains
     integer(kind=kint), intent(in) :: bid                   !< bucket ID
     integer(kind=kint), intent(in) :: ncand                 !< number of candidates
     integer(kind=kint), intent(out), target :: cand(ncand)  !< array to store candidates
-    integer(kind=kint) :: baddr(3), i, j, k, n, cnt
+    integer(kind=kint) :: baddr(3), i, j, k, n, cnt, is, ie, js, je, ks, ke
     integer(kind=kint), pointer :: pcand(:)
     baddr = decode_bid(bktdb, bid)
     cnt = 0
-    do k = baddr(3)-1, baddr(3)+1
-      if (k <= 0 .or. k > bktdb%ndiv(3)) cycle
-      do j = baddr(2)-1, baddr(2)+1
-        if (j <= 0 .or. j > bktdb%ndiv(2)) cycle
-        do i = baddr(1)-1, baddr(1)+1
-          if (i <= 0 .or. i > bktdb%ndiv(1)) cycle
+    is = max(baddr(1)-1, 1)
+    ie = min(baddr(1)+1, bktdb%ndiv(1))
+    js = max(baddr(2)-1, 1)
+    je = min(baddr(2)+1, bktdb%ndiv(2))
+    ks = max(baddr(3)-1, 1)
+    ke = min(baddr(3)+1, bktdb%ndiv(3))
+    do k = ks, ke
+      do j = js, je
+        do i = is, ie
           n = bucket_get_n(bktdb%buckets(i,j,k))
           pcand => cand(cnt+1:cnt+n)
           call bucket_get_member(bktdb%buckets(i,j,k), n, pcand)
