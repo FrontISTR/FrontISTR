@@ -6,7 +6,7 @@
 module m_heat_solve_TRAN
 contains
 
-  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
+  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,total_step )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -46,7 +46,6 @@ contains
     DELMAX = fstrHEAT%STEP_DELMAX(ISTEP)
 
     is_end = .false.
-    total_step = 0
     hecMAT%NDOF = 1
     hecMAT%Iarray(98) = 1 !Assmebly complete
     hecMAT%X = 0.0d0
@@ -63,7 +62,6 @@ contains
 
     !C--------------------   START TRANSIET LOOP   ------------------------
     tr_loop: do
-      total_step = total_step + 1
 
       if(end_time <= current_time + delta_time + delta_time*1.0d-6) then
         delta_time = end_time - current_time
@@ -129,6 +127,7 @@ contains
       call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, next_time, is_end)
       call heat_output_restart(hecMESH, fstrHEAT, total_step, is_end, next_time)
 
+      total_step = total_step + 1
       current_time = next_time
       if( is_end ) exit
     enddo tr_loop
