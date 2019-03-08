@@ -61,10 +61,53 @@ contains
 
   end subroutine
 
+  subroutine fstr_updatedof_dummy( ndof, hecMESH, dummy, elements, vec_old, vec_new )
+    integer(kind=kint), intent(in)            :: ndof
+    type(hecmwST_local_mesh), intent(in)      :: hecMESH      !< mesh information
+    type(tDummy), intent(in)                  :: dummy        !< dummy info
+    type(tElement), pointer, intent(inout)    :: elements(:)  !< elements info(dummy flags will be updated)
+    real(kind=kreal), pointer, intent(in)     :: vec_old(:)
+    real(kind=kreal), pointer, intent(inout)  :: vec_new(:)
+
+    integer(kind=kint) :: icel, in0
+    integer(kind=kint) :: iS, iE, ic_type, nodlocal, i
+    logical, pointer   :: active(:)
+
+    allocate(active(hecMESH%n_node))
+    active = .false.
+
+    do itype = 1, hecMESH%n_elem_type
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+      ic_type = hecMESH%elem_type_item(itype)
+
+      if (hecmw_is_etype_link(ic_type)) cycle
+      if(ic_type == 3414) cycle
+
+      do icel = iS, iE
+        if( elements(icel)%dummy_flag > 0 ) cycle
+        in0 = hecMESH%elem_node_index(icel-1)
+        nn = hecmw_get_max_node(ic_type)
+        do i = 1, nn
+          nodlocal = hecMESH%elem_node_item(in0+i)
+          active(nodlocal) = .true.
+        enddo
+      enddo
+    enddo
+
+    do i = 1, hecMESH%n_node
+      if( active(i) ) cycle
+      vec_new(ndof*(i-1)+1:ndof*i) = vec_old(ndof*(i-1)+1:ndof*i)
+    end do
+
+    deallocate(active)
+
+  end subroutine
+
   subroutine output_dummy_flag( hecMESH, elements, outval )
-    type(hecmwST_local_mesh), intent(in)   :: hecMESH      !< mesh information
-    type(tElement), pointer, intent(in)    :: elements(:)  !< elements info(dummy flags will be updated)
-    real(kind=kreal), pointer, intent(out) :: outval(:)    !< active dummy flag
+    type(hecmwST_local_mesh), intent(in)     :: hecMESH      !< mesh information
+    type(tElement), pointer, intent(in)      :: elements(:)  !< elements info(dummy flags will be updated)
+    real(kind=kreal), pointer, intent(inout) :: outval(:)    !< active dummy flag
 
     integer(kind=kint) :: icel
 
