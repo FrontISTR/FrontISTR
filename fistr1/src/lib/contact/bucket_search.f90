@@ -98,10 +98,13 @@ contains
     implicit none
     type(bucket), intent(inout) :: bkt     !< bucket
     integer(kind=kint), intent(in) :: sid  !< member ID
-    !$omp atomic
+    integer(kind=kint) :: idx
+    !$omp atomic capture
     bkt%n = bkt%n + 1
-    call assert(bkt%n <= bkt%n_max, 'bucket_register: too many members')
-    bkt%member(bkt%n) = sid
+    idx = bkt%n
+    !$omp end atomic
+    call assert(idx <= bkt%n_max, 'bucket_register: too many members')
+    bkt%member(idx) = sid
   end subroutine bucket_register
 
   !> Get number of members
