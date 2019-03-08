@@ -48,6 +48,9 @@ contains
         fstrHEAT%TEMP (i) = hecMAT%X(i)
       enddo
 
+      if( fstrHEAT%dummy%DUMMY_egrp_tot>0 ) &
+        &  call fstr_updatedof_dummy( 1, hecMESH, fstrHEAT%dummy, fstrSOLID%elements, fstrHEAT%TEMP0, fstrHEAT%TEMP )
+
       call heat_check_convergence(hecMESH, fstrHEAT, fstrPARAM, ISTEP, iterALL, is_congerged)
 
       if(is_congerged .or. fstrHEAT%is_iter_max_limit) exit
