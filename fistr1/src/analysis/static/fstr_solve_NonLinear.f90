@@ -135,7 +135,7 @@ contains
           write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
         endif
       endif
-      if( hecmw_mat_get_flag_converged(hecMAT) == kYES ) then
+      if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
         if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
         if( rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) exit
       endif
