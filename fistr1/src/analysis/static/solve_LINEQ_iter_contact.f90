@@ -43,11 +43,12 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_iter_contact_init
 
-  subroutine solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+  subroutine solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(in),optional :: conMAT
     integer :: method_org, precond_org
     logical :: fg_eliminate
@@ -106,6 +107,8 @@ contains
     if (precond_org >= 30) then
       call hecmw_mat_set_precond(hecMAT, precond_org)
     endif
+
+    istat = hecmw_mat_get_flag_diverged(hecMAT)
   end subroutine solve_LINEQ_iter_contact
 
   !!
