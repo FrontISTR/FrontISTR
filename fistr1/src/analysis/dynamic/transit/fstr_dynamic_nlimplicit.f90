@@ -56,7 +56,7 @@ contains
     real(kind=kreal) :: bsize, res, resb
     real(kind=kreal) :: time_1, time_2
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
 
     iexit = 0
     resb = 0.0d0
@@ -440,7 +440,7 @@ contains
     integer(kind=kint) ::  nndof,npdof
     real(kind=kreal),allocatable :: tmp_conB(:)
     integer :: istat
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 

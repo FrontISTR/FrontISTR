@@ -1026,7 +1026,7 @@ contains
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type (fstr_solid), intent(in) :: fstrSOLID
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), intent(out) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
     do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
@@ -1039,7 +1039,7 @@ contains
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type (fstr_solid), intent(in) :: fstrSOLID
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), intent(in) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
     do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)

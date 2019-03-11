@@ -45,7 +45,7 @@ contains
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
     real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm
-    real(kind=kreal), pointer :: coord(:), P(:)
+    real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
@@ -201,7 +201,7 @@ contains
     integer(kind=kint) :: restart_step_num, restart_substep_num
     logical            :: convg, ctchange
     integer(kind=kint) :: n_node_global
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
@@ -437,7 +437,7 @@ contains
     integer(kind=kint) :: contact_changed_global
     integer(kint)      :: nndof
     real(kreal)        :: q_residual,x_residual
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
