@@ -425,6 +425,7 @@ contains
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
+    if (associated(ALU)) deallocate(ALU)
     if (nthreads >= 1) then
       if (associated(D)) deallocate(D)
       if (associated(AL)) deallocate(AL)
