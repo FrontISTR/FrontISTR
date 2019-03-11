@@ -98,6 +98,7 @@ contains
       do j=1,ng
         call fstr_finalize_gauss( fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
+      deallocate( fstrSOLID%elements_bkup(i)%gausses )
       if( associated( fstrSOLID%elements_bkup(i)%aux ) ) then
         deallocate( fstrSOLID%elements_bkup(i)%aux )
       endif
