@@ -360,7 +360,7 @@ bin_output_result_header_ST(struct hecmwST_result_data *result, char *header, FI
 			*q++ = *p++;
 			len++;
 		}
-		*++q = '\0';
+		*q++ = '\0';
 	}
 
 	/* header */
@@ -394,7 +394,7 @@ bin_output_result_global_ST(struct hecmwST_result_data *result, char *comment, F
 			*q++ = *p++;
 			len++;
 		}
-		*++q = '\0';
+		*q++ = '\0';
 	}
 
 	/* comment */

@@ -183,7 +183,7 @@ int HECMW_result_init_body(int n_node, int n_elem, int *nodeID, int *elemID,
     *q++ = *p++;
     len++;
   }
-  *++q = '\0';
+  *q++ = '\0';
 
   if (comment == NULL) {
     comment_line[0] = '\0';
@@ -197,7 +197,7 @@ int HECMW_result_init_body(int n_node, int n_elem, int *nodeID, int *elemID,
     *q++ = *p++;
     len++;
   }
-  *++q = '\0';
+  *q++ = '\0';
 
   return 0;
 }

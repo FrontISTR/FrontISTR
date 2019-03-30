@@ -351,14 +351,14 @@ output_result_header_ST(struct hecmwST_result_data *result, char *header, FILE *
 			*q++ = *p++;
 			len++;
 		}
-		*++q = '\0';
+		*q++ = '\0';
 	}
 
 	/* header */
 	if( filever_major > 1 ){
         sprintf(head,"%s %d.%d",head,filever_major,filever_minor);
     }
-	rc = fprintf(fp, "%s\n", header);
+	rc = fprintf(fp, "%s\n", head);
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "header");
 		return -1;
@@ -385,7 +385,7 @@ output_result_global_ST(struct hecmwST_result_data *result, char *comment, FILE 
 			*q++ = *p++;
 			len++;
 		}
-		*++q = '\0';
+		*q++ = '\0';
 	}
 
 	/* comment */
