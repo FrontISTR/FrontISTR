@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2016 FrontISTR Forum, The University of Tokyo
+# Copyright (c) 2019 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
