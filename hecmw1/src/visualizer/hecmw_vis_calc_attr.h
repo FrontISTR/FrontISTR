@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -9,10 +9,9 @@
 #include "hecmw_vis_SF_geom.h"
 
 /*----------------------------------------------------------------------
-#     Subroutines in this file on isosurface generation by Marching Cubes is
-based
-          on the revision of Dr. Yuriko Takeshima's codes when she was working
-part time in RIST
+# Subroutines in this file on isosurface generation by Marching Cubes is
+# based on the revision of Dr. Yuriko Takeshima's codes when she was working
+# part time in RIST
 #---------------------------------------------------------------------- */
 
 int get_point_geom(int point_index, Cell *cell, double fvalue,
