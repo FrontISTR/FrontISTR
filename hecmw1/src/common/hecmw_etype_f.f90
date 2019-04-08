@@ -1,19 +1,8 @@
-!======================================================================!
-!                                                                      !
-!   Software Name : HEC-MW Library for PC-cluster                      !
-!         Version : 2.8                                                !
-!                                                                      !
-!     Last Update : 2007/07/04                                         !
-!        Category : I/O and Utility                                    !
-!                                                                      !
-!            Written by Kazuya Goto (AdvanceSoft)                      !
-!                                                                      !
-!     Contact address :  IIS,The University of Tokyo RSS21 project     !
-!                                                                      !
-!     "Structural Analysis System for General-purpose Coupling         !
-!      Simulations Using High End Computing Middleware (HEC-MW)"       !
-!                                                                      !
-!======================================================================!
+!-------------------------------------------------------------------------------
+! Copyright (c) 2019 FrontISTR Commons
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+!> \brief I/O and Utility
 
 module hecmw_etype
   use hecmw_util

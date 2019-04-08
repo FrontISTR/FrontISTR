@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -54,14 +54,14 @@ extern struct hecmw_ctrl_meshfiles *HECMW_ctrl_get_meshfiles_sub(char *name_ID,
 extern struct hecmw_ctrl_meshfiles *HECMW_ctrl_get_meshfiles_header_sub(
     char *name_ID, int n_rank, int i_rank);
 extern void HECMW_ctrl_free_meshfiles(struct hecmw_ctrl_meshfiles *meshfiles);
-extern char *HECMW_ctrl_get_result_file(char *name_ID, int nstep, int istep,
+extern char *HECMW_ctrl_get_result_file(char *name_ID, int istep,
                                         int *fg_text);
-extern char *HECMW_ctrl_get_result_fileheader(char *name_ID, int nstep,
+extern char *HECMW_ctrl_get_result_fileheader(char *name_ID,
                                               int istep, int *fg_text);
-extern char *HECMW_ctrl_get_result_file_sub(char *name_ID, int nstep, int istep,
+extern char *HECMW_ctrl_get_result_file_sub(char *name_ID, int istep,
                                             int n_rank, int i_rank,
                                             int *fg_text);
-extern char *HECMW_ctrl_get_result_fileheader_sub(char *name_ID, int nstep,
+extern char *HECMW_ctrl_get_result_fileheader_sub(char *name_ID,
                                                   int istep, int n_rank,
                                                   int i_rank, int *fg_text);
 extern char *HECMW_ctrl_get_result_filebody(char *name_ID);

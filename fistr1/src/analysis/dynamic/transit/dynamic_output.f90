@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions to output result.
@@ -80,11 +80,10 @@ contains
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
-      interval = fstrSOLID%output_ctrl(4)%freqency
       call fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
-      call hecmw_visualize( hecMESH, fstrRESULT, istep, maxstep, interval )
+      call hecmw_visualize( hecMESH, fstrRESULT, istep )
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv( hecMESH )
       call hecmw_result_free( fstrRESULT )

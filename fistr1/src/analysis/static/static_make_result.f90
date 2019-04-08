@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provide a function to prepare output of static analysis
@@ -19,7 +19,7 @@ contains
   !C***
   !>  OUTPUT result file for static analysis
   !C***
-  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, maxstep, istep, flag )
+  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, flag )
     use m_fstr
     use m_out
     use m_static_lib
@@ -30,7 +30,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (fstr_param       )  :: fstrPARAM    !< analysis control parameters
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
     integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
     real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
@@ -60,7 +60,7 @@ contains
 
     ! --- INITIALIZE
     header = '*fstrresult'
-    call hecmw_result_init( hecMESH, maxstep, istep, header )
+    call hecmw_result_init( hecMESH, istep, header )
 
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1)) then
@@ -306,7 +306,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
     integer(kind=kint)        :: n_lyr, cid
 
     character(len=HECMW_HEADER_LEN) :: header
@@ -578,17 +578,37 @@ contains
     ! --- STRAIN @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(6) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )
     endif
     ! --- STRESS @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(7) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )
     endif
     ! --- MISES @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(8) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )
+    endif
+    ! --- Principal Stress @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(20) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(20), ndof )
+    endif
+    ! --- Principal Strain @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(22) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(22), ndof )
+    endif
+    ! --- Principal Stress Vector @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(24) ) then
+      ecomp = ecomp + 3
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(24), ndof )
+    endif
+    ! --- Principal Strain Vector @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(26) ) then
+      ecomp = ecomp + 3
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
     endif
     ! --- MATERIAL @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
@@ -803,6 +823,68 @@ contains
       jitem = jitem + nn
     endif
 
+    ! --- Principal_STRESS @element
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(20)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(20), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRESS'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRESS((nn)*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- Principal_STRAIN @element
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(22)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(22), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRAIN'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRAIN((nn)*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- ELEM PRINC STRESS VECTOR
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(24)) then
+      do k = 1, 3
+        write(cnum,'(i0)')k
+        ecomp = ecomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(24), ndof )
+        fstrRESULT%ne_dof(ecomp) = nn
+        fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRESSVector'//trim(cnum)
+        do i = 1, hecMESH%n_elem
+          do j = 1, nn
+            fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRESS_VECT((nn)*(i-1)+j,k)
+          enddo
+        enddo
+        jitem = jitem + nn
+      enddo
+    endif
+
+    ! --- ELEM PRINC STRAIN VECTOR
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(26)) then
+      do k = 1, 3
+        write(cnum,'(i0)')k
+        ecomp = ecomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
+        fstrRESULT%ne_dof(ecomp) = nn
+        fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRAINVector'//trim(cnum)
+        do i = 1, hecMESH%n_elem
+          do j = 1, nn
+            fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRAIN_VECT((nn)*(i-1)+j,k)
+          enddo
+        enddo
+        jitem = jitem + nn
+      enddo
+    endif
+
     ! --- MATERIAL @elem
     if(fstrSOLID%output_ctrl(4)%outinfo%on(34)) then
       ecomp = ecomp + 1
@@ -829,7 +911,7 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
     integer(kind=kint)        :: n_lyr, cid
 
     character(len=HECMW_HEADER_LEN) :: header

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 #include "hecmw_fstr_output_vtk.h"
@@ -16,7 +16,7 @@
 #include "hecmw_vis_combine.h"
 #include "hecmw_fstr_endian.h"
 
-void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
+void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
 	int i, j, k;
 	int jS, jE;
@@ -47,22 +47,6 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	if(HECMW_ctrl_make_subdir(file_vtu)) {
 		HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output directory");
 	}
-
-	/* outpu pvd file */
-	/* if (myrank == 0 && is_first == 0) {
-		sprintf(file_pvd, "%s.pvd", outfile1);
-		outfp = fopen (file_pvd, "w");
-		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
-		fprintf (outfp, "<VTKFile type=\"Collection\" version=\"1.0\">\n");
-		fprintf (outfp, "<Collection>\n");
-		for(i=0; i < *max_timestep+1 ;i++){
-			fprintf (outfp, "<DataSet part=\"0\" timestep=\"%d\" file=\"%s.%04d.pvtu\"/>\n", i, outfile, i);
-		}
-		fprintf (outfp, "</Collection>\n");
-		fprintf (outfp, "</VTKFile>\n");
-		fclose (outfp);
-		is_first = 1;
-	}*/
 
 	if (myrank == 0) {
 		/* outpu pvtu file */
@@ -194,7 +178,7 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	fclose (outfp);
 }
 
-void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
+void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
 	int i, j, k;
 	int jS, jE;
@@ -231,21 +215,6 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	if(HECMW_ctrl_make_subdir(file_vtu)) {
 		HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output directory");
 	}
-
-	/* output pvd file */
-	/* if (myrank == 0 && is_first == 0) {
-		sprintf(file_pvd,  "%s.pvd",  outfile1);
-		outfp = fopen (file_pvd, "w");
-		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
-		fprintf (outfp, "<VTKFile type=\"Collection\" version=\"1.0\" byte_order=\"%s\" header_type=\"UInt32\">\n", HECMW_endian_str());
-		fprintf (outfp, "<Collection>\n");
-		for(i=0; i<*max_timestep ;i++){
-			fprintf (outfp, "<DataSet part=\"0\" timestep=\"%d\" file=\"mesh_vis_psf.%04d.pvtu\"/>\n", i+1, i+1);
-		}
-		fprintf (outfp, "</Collection>\n");
-		fprintf (outfp, "</VTKFile>\n");
-		fclose (outfp);
-	} */
 
 	if (myrank == 0) {
 		/* outpu pvtu file */
@@ -448,12 +417,12 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	fclose (outfp);
 }
 
-void HECMW_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
+void HECMW_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
-	vtk_output (mesh, data, outfile, outfile1, max_timestep, VIS_COMM);
+	vtk_output (mesh, data, outfile, outfile1, VIS_COMM);
 }
 
-void HECMW_bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, int *max_timestep, HECMW_Comm VIS_COMM)
+void HECMW_bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
-	bin_vtk_output (mesh, data, outfile, outfile1, max_timestep, VIS_COMM);
+	bin_vtk_output (mesh, data, outfile, outfile1, VIS_COMM);
 }

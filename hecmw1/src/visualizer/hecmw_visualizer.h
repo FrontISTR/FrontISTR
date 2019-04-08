@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -20,8 +20,7 @@ int HECMW_visualize_init(void);
 int HECMW_visualize_init_by_comm(HECMW_Comm comm);
 
 int HECMW_visualize(struct hecmwST_local_mesh *mesh,
-                    struct hecmwST_result_data *result, int timestep,
-                    int max_timestep, int interval);
+                    struct hecmwST_result_data *result, int timestep);
 
 int HECMW_visualize_finalize(void);
 

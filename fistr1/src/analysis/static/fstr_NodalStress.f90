@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions to caluclation nodal stress
@@ -900,7 +900,7 @@ contains
     type(hecmwST_local_mesh)    :: hecMESH
     type(fstr_solid_physic_val) :: RES
     integer(kind=kint) :: i, flag
-    real(kind=kreal)   :: tmat(3, 3), tvec(3)
+    real(kind=kreal)   :: tmat(3, 3), tvec(3), strain(6)
 
     flag=ieor(flag,flag)
     if( fstrSOLID%output_ctrl(3)%outinfo%on(19) .or. fstrSOLID%output_ctrl(4)%outinfo%on(19) ) then
@@ -954,14 +954,16 @@ contains
 
     if (iand(flag,B'00000011') /= 0) then
       do i = 1, hecMESH%n_node
-        call get_principal( RES%STRESS(6*(i-1)+1:6*(i-1)+6), tvec, tmat)
+        call get_principal(RES%STRESS(6*i-5:6*i), tvec, tmat)
         if (iand(flag,B'00000001') /= 0) RES%PSTRESS(3*(i-1)+1:3*(i-1)+3)=tvec
         if (iand(flag,B'00000010') /= 0) RES%PSTRESS_VECT(3*(i-1)+1:3*(i-1)+3,1:3)=tmat
       end do
     end if
     if (iand(flag,B'00001100') /= 0) then
       do i = 1, hecMESH%n_node
-        call get_principal( RES%STRAIN(6*(i-1)+1:6*(i-1)+6), tvec, tmat)
+        strain(1:6) = RES%STRAIN(6*i-5:6*i)
+        strain(4:6) = 0.5d0*strain(4:6)
+        call get_principal(strain, tvec, tmat)
         if (iand(flag,B'00000100') /= 0) RES%PSTRAIN(3*(i-1)+1:3*(i-1)+3)=tvec
         if (iand(flag,B'00001000') /= 0) RES%PSTRAIN_VECT(3*(i-1)+1:3*(i-1)+3,1:3)=tmat
       end do
@@ -969,19 +971,20 @@ contains
 
     if (iand(flag,B'00110000') /= 0) then
       do i = 1, hecMESH%n_elem
-        call get_principal( RES%ESTRESS(6*(i-1)+1:6*(i-1)+6), tvec, tmat)
+        call get_principal( RES%ESTRESS(6*i-5:6*i), tvec, tmat)
         if (iand(flag,B'00010000') /= 0) RES%EPSTRESS(3*(i-1)+1:3*(i-1)+3)=tvec
         if (iand(flag,B'00100000') /= 0) RES%EPSTRESS_VECT(3*(i-1)+1:3*(i-1)+3,1:3)=tmat
       end do
     end if
     if (iand(flag,B'11000000') /= 0) then
       do i = 1, hecMESH%n_elem
-        call get_principal( RES%ESTRAIN(6*(i-1)+1:6*(i-1)+6), tvec, tmat)
+        strain(1:6) = RES%ESTRAIN(6*i-5:6*i)
+        strain(4:6) = 0.5d0*strain(4:6)
+        call get_principal(strain, tvec, tmat)
         if (iand(flag,B'01000000') /= 0) RES%EPSTRAIN(3*(i-1)+1:3*(i-1)+3)=tvec
         if (iand(flag,B'10000000') /= 0) RES%EPSTRAIN_VECT(3*(i-1)+1:3*(i-1)+3,1:3)=tmat
       end do
     end if
   end subroutine make_principal
-
 
 end module m_fstr_NodalStress

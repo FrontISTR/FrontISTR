@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -150,11 +150,11 @@ int fstr_get_step_n(char* name_ID) {
   if (endid != 0) return endid;
 
   if (nrank == 0) {
-    if ((fheader = HECMW_ctrl_get_result_fileheader(name_ID, 1, 1, &fg_text)) ==
+    if ((fheader = HECMW_ctrl_get_result_fileheader(name_ID, 1, &fg_text)) ==
         NULL)
       return 0;
   } else {
-    if ((fheader = HECMW_ctrl_get_result_fileheader_sub(name_ID, 1, 1, nrank, 0,
+    if ((fheader = HECMW_ctrl_get_result_fileheader_sub(name_ID, 1, nrank, 0,
                                                         &fg_text)) == NULL)
       return 0;
   }
@@ -191,7 +191,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
   int refine_nnode = 0;
 
   if (nrank == 0) {
-    if ((fheader = HECMW_ctrl_get_result_fileheader(name_ID, endid, step,
+    if ((fheader = HECMW_ctrl_get_result_fileheader(name_ID, step,
                                                     &fg_text)) == NULL)
       return 0;
   }
@@ -205,7 +205,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
 
     if (nrank != 0) {
       if ((fheader = HECMW_ctrl_get_result_fileheader_sub(
-               name_ID, endid, step, nrank, i, &fg_text)) == NULL)
+               name_ID, step, nrank, i, &fg_text)) == NULL)
         return 0;
     }
     sprintf(fname, "%s.%d.%d", fheader, i, step);
