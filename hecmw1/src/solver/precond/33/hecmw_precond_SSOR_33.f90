@@ -434,6 +434,7 @@ contains
       if (associated(indexU)) deallocate(indexU)
       if (associated(itemL)) deallocate(itemL)
       if (associated(itemU)) deallocate(itemU)
+      if (associated(ALU)) deallocate(ALU)
       if (NContact.ne.0) then
         if (associated(CAL)) deallocate(CAL)
         if (associated(CAU)) deallocate(CAU)
@@ -446,12 +447,12 @@ contains
     nullify(COLORindex)
     nullify(perm)
     nullify(iperm)
-    nullify(ALU)
     nullify(D)
     nullify(AL)
     nullify(AU)
     nullify(indexL)
     nullify(indexU)
+    nullify(ALU)
     nullify(itemL)
     nullify(itemU)
     if (NContact.ne.0) then
