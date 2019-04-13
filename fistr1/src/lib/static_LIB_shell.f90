@@ -3407,7 +3407,6 @@ contains
 
           !--------------------------------------------------
 
-
           sumlyr = 0.0D0
           do m = 1, n_layer
             sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%weight
