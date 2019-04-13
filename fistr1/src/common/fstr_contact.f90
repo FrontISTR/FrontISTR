@@ -272,7 +272,46 @@ contains
 
   end subroutine
 
+  !> Scanning contact state
+  subroutine fstr_scan_contact_state_exp( cstep, hecMESH, fstrSOLID, infoCTChange )
+    integer, intent(in)                          :: cstep         !< current step number
+    type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
+    type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
+    type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
+    integer :: i, grpid
+    logical :: iactive
+
+
+    ! P.A. We redefine fstrSOLID%ddunode as current coordinate of every nodes
+    !  fstrSOLID%ddunode(:) = fstrSOLID%unode(:) + fstrSOLID%dunode(:)
+    do i = 1, size(hecMESH%node)
+      fstrSOLID%ddunode(i) = hecMESH%node(i) + fstrSOLID%unode(i) + fstrSOLID%dunode(i)
+    enddo
+    infoCTChange%active = .false.
+
+    infoCTChange%contact2free = 0
+    infoCTChange%contact2neighbor = 0
+    infoCTChange%contact2diffLpos = 0
+    infoCTChange%free2contact = 0
+    infoCTChange%contactNode_current = 0
+
+    do i=1,size(fstrSOLID%contacts)
+   !   grpid = fstrSOLID%contacts(i)%group
+   !   if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
+   !     call clear_contact_state(fstrSOLID%contacts(i));  cycle
+   !   endif
+
+      call scan_contact_state_exp( fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+           & infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive )
+
+      infoCTChange%active = infoCTChange%active .or. iactive
+    enddo
+
+    infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
+    infoCTChange%contactNode_previous = infoCTChange%contactNode_current
+    fstrSOLID%ddunode = 0.d0
+  end subroutine
 
   !> Update lagrangian multiplier
   subroutine fstr_update_contact0( hecMESH, fstrSOLID, B )
@@ -287,7 +326,6 @@ contains
         , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, B )
     enddo
   end subroutine
-
 
   !> Update lagrangian multiplier
   subroutine fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchanged )
@@ -337,7 +375,7 @@ contains
     !   call fstr_contact2mpc( fstrSOLID%contacts, hecMESH%mpc )
     ! temp. need modification
     !   do i=1,size(fstrSOLID%contacts)
-    !	    fstrSOLID%contacts(i)%mpced = .true.
+    !     fstrSOLID%contacts(i)%mpced = .true.
     !     enddo
     !    call fstr_write_mpc( 6, hecMESH%mpc )
     !print *,"Contact to mpc ok!",n_contact_mpc,"equations generated"

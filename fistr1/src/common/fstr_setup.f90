@@ -22,7 +22,6 @@ module m_fstr_setup
 
   include 'fstr_ctrl_util_f.inc'
 
-
   !> Package of all data needs to initilize
   type fstr_param_pack
     type(hecmwST_local_mesh), pointer :: MESH
@@ -82,7 +81,7 @@ contains
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
     integer(kind=kint) :: c_fload, c_eigenread
     integer(kind=kint) :: c_couple, c_material
-    integer(kind=kint) :: c_mpc, c_weldline
+    integer(kind=kint) :: c_mpc, c_weldline, c_initial
     integer(kind=kint) :: c_istep, c_localcoord, c_section
     integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints
     integer(kind=kint) :: c_output, islog
@@ -110,7 +109,7 @@ contains
     c_eigen    = 0; c_contact  = 0
     c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
     c_couple   = 0; c_material = 0; c_section =0
-    c_mpc      = 0; c_weldline = 0
+    c_mpc      = 0; c_weldline = 0; c_initial = 0
     c_istep    = 0; c_localcoord = 0
     c_fload    = 0; c_eigenread = 0
     c_elemopt  = 0;
@@ -166,6 +165,8 @@ contains
         c_timepoints = c_timepoints + 1
       else if( header_name == '!OUTPUT_SSTYPE' ) then
         call fstr_setup_OUTPUT_SSTYPE( ctrl, P )
+      else if( header_name == '!INITIAL_CONDITION' ) then
+        c_initial = c_initial + 1
 
         !--------------- for static -------------------------
 
@@ -304,6 +305,7 @@ contains
     ! -----
     if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )
     if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
+    if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
     if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
     if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
     allocate( fstrPARAM%ainc(0:c_aincparam) )
@@ -395,6 +397,7 @@ contains
     c_material = 0
     c_output = 0
     c_contact  = 0
+    c_initial = 0
     c_localcoord = 0
     c_section = 0
     fstrHEAT%WL_tot = 0
@@ -490,12 +493,21 @@ contains
             endif
           enddo
         endif
+
       else if( header_name == '!WELD_LINE'  ) then
         fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
         if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
           write(*,*) '### Error: Fail in read in Weld Line definition : ' , fstrHEAT%WL_tot
           write(ILOG,*) '### Error: Fail in read in Weld Line definition : ', fstrHEAT%WL_tot
           stop
+        endif
+
+      else if( header_name == '!INITIAL_CONDITION' .or. header_name == '!INITIAL CONDITION' ) then
+        c_initial = c_initial+1
+        if( fstr_setup_INITIAL( ctrl, g_InitialCnd(c_initial), P%MESH )/=0 ) then
+           write(*,*) '### Error: Fail in read in INITIAL CONDITION definition : ' ,c_initial
+           write(ILOG,*) '### Error: Fail in read in INITIAL CONDITION definition : ', c_initial
+           stop
         endif
 
       else if( header_name == '!SECTION'  ) then
@@ -1628,6 +1640,80 @@ contains
 
   end subroutine fstr_setup_STEP
 
+  integer(kind=kint) function fstr_setup_INITIAL( ctrl, cond, hecMESH )
+    implicit none
+    integer(kind=kint)        :: ctrl
+    type( tInitialCondition ) :: cond
+    type(hecmwST_local_mesh)  :: hecMESH
+    integer, pointer          :: grp_id(:), dof(:)
+    real(kind=kreal), pointer :: temp(:)
+    character(len=HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    character(len=HECMW_NAME_LEN) :: data_fmt, ss
+    integer :: i,j,n, iS, iE, gid, nid, rcode
+
+    fstr_setup_INITIAL = -1
+
+    ss = 'TEMPERATURE,VELOCITY,ACCELERATION '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', ss, 1, 'P', nid )
+    if( nid==1 ) then
+      cond%cond_name = "temperature"
+      allocate( cond%intval(hecMESH%n_node) )
+      allocate( cond%realval(hecMESH%n_node) )
+    elseif( nid==2 ) then
+      cond%cond_name = "velocity"
+      allocate( cond%intval(hecMESH%n_node) )
+      allocate( cond%realval(hecMESH%n_node) )
+    elseif( nid==3 ) then
+      cond%cond_name = "acceleration"
+      allocate( cond%intval(hecMESH%n_node) )
+      allocate( cond%realval(hecMESH%n_node) )
+    else
+      return
+    endif
+
+    cond%intval = -1
+    cond%realval = 0.d0
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n<=0 ) return
+    allocate( temp(n), grp_id_name(n), grp_id(n), dof(n) )
+    dof = 0
+    write(ss,*)  HECMW_NAME_LEN
+    if( nid==1 ) then
+      write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'R '
+      fstr_setup_INITIAL = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, grp_id_name, temp )
+    else
+        write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'IR '
+        fstr_setup_INITIAL = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, grp_id_name, dof, temp )
+    endif
+
+    if( fstr_setup_INITIAL /= 0 ) then
+        if( associated(grp_id) )    deallocate( grp_id )
+        if( associated(temp) )    deallocate( temp )
+        if( associated(dof) )       deallocate( dof )
+        if( associated(grp_id_name) )    deallocate( grp_id_name )
+        return
+    end if
+
+    call node_grp_name_to_id_ex( hecMESH, '!INITIAL CONDITION', n, grp_id_name, grp_id )
+    do i=1,n
+      gid = grp_id(i)
+      iS = hecMESH%node_group%grp_index(gid-1) + 1
+      iE = hecMESH%node_group%grp_index(gid  )
+      do j=iS, iE
+        nid = hecMESH%node_group%grp_item(j)
+        cond%realval(nid) = temp(i)
+        cond%intval(nid) = dof(i)
+      enddo
+    enddo
+
+    if( associated(grp_id) )    deallocate( grp_id )
+    if( associated(temp) )      deallocate( temp )
+    if( associated(dof) )       deallocate( dof )
+    if( associated(grp_id_name) )    deallocate( grp_id_name )
+end function fstr_setup_INITIAL
 
   !-----------------------------------------------------------------------------!
   !> Read in !WRITE                                                          !

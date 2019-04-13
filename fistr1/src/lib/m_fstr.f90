@@ -125,6 +125,15 @@ module m_fstr
   integer(kind=kint) :: ITMAX
   real(kind=kreal)   :: EPS   ! /=fstr_param%eps
 
+  type tInitialCondition
+     character(len=HECMW_FILENAME_LEN)          :: cond_name
+     integer                    :: node_elem                    !< node =0;  element =1
+     integer                    :: grpid
+     integer, pointer           :: intval(:)     => null()      !< if -1, not initialized, otherwise dof number
+     real(kind=kreal), pointer  :: realval(:)    => null()      !< initial value
+  end type
+  type( tInitialCondition ), pointer, save :: g_InitialCnd(:) => null()
+
   !>  FSTR INNER CONTROL PARAMETERS  (fstrPARAM)
   type fstr_param
     integer(kind=kint) :: solution_type !< solution type number
@@ -518,6 +527,7 @@ module m_fstr
     integer(kind=kint) :: dynamic_IW7        =   207
     integer(kind=kint) :: dynamic_IW8        =   208
     integer(kind=kint) :: dynamic_IW9        =   209
+    integer(kind=kint) :: dynamic_IW10       =   210
   end type fstr_dynamic
 
   type fstr_freqanalysis

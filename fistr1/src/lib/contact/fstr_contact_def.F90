@@ -52,6 +52,7 @@ module mContactDef
   end type tContact
 
   type fstr_info_contactChange
+    logical            :: active
     integer(kind=kint) :: contact2free           !< counter: contact to free state change
     integer(kind=kint) :: contact2neighbor       !< counter: contact to neighbor state change
     integer(kind=kint) :: contact2diffLpos       !< counter: contact to different local position state change
@@ -949,5 +950,239 @@ contains
       contact%states(i)%tangentForce1(1:3) = contact%states(i)%tangentForce(1:3)
     enddo
   end subroutine update_contact_TangentForce
+
+  !> This subroutine tracks down next contact position after a finite slide
+  subroutine track_contact_position_exp( nslave, contact, currpos, currdisp, infoCTChange, nodeID, elemID )
+    integer, intent(in)                             :: nslave       !< slave node
+    type( tContact ), intent(inout)                 :: contact      !< contact info
+    type( fstr_info_contactChange ), intent(inout)  :: infoCTChange !< contact change info
+    real(kind=kreal), intent(in)                    :: currpos(:)   !< current coordinate of each nodes
+    real(kind=kreal), intent(in)                    :: currdisp(:)  !< current displacement of each nodes
+    integer(kind=kint), intent(in)                  :: nodeID(:)    !< global nodal ID, just for print out
+    integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
+    real(kind=kreal)    :: distclr, clearance
+    integer(kind=kint) :: slave, sid0, sid, etype
+    integer(kind=kint) :: nn, i, j, iSS
+    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
+    logical            :: isin
+    real(kind=kreal)    :: opos(2), odirec(3)
+
+    distclr = 1.0d0          !1.d-1
+    clearance = 1.d-6
+    sid = 0
+
+    slave = contact%slave(nslave)
+    coord(:) = currpos(3*slave-2:3*slave)
+    !> checking the contact element of last step
+    sid0 = contact%states(nslave)%surface
+    opos = contact%states(nslave)%lpos
+    odirec = contact%states(nslave)%direction
+    etype = contact%master(sid0)%etype
+    nn = getNumberOfNodes( etype )
+    do j=1,nn
+      iSS = contact%master(sid0)%nodes(j)
+      elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+      elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
+    enddo
+    call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
+      contact%states(nslave)%lpos, clearance )
+      if( .not. isin ) then
+      do i=1, contact%master(sid0)%n_neighbor
+        sid = contact%master(sid0)%neighbor(i)
+        etype = contact%master(sid)%etype
+        nn = getNumberOfNodes( etype )
+        do j=1,nn
+          iSS = contact%master(sid)%nodes(j)
+          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+        enddo
+        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
+        if( isin ) then
+          contact%states(nslave)%surface = sid
+          exit
+        endif
+      enddo
+    endif
+
+    if( .not. isin ) then   ! such case is considered to rarely or never occur
+      do sid= 1, size(contact%master)
+        if( sid==sid0 ) cycle
+        if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+        etype = contact%master(sid)%etype
+        nn = size( contact%master(sid)%nodes )
+        do j=1,nn
+          iSS = contact%master(sid)%nodes(j)
+          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+        enddo
+        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
+        if( isin ) then
+          contact%states(nslave)%surface = sid
+          exit
+        endif
+      enddo
+    endif
+
+    if( isin ) then
+      if( contact%states(nslave)%surface==sid0 ) then
+        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= 1.0d-3))  then
+          !$omp atomic
+          infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
+        endif
+      else
+        write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
+        elemID(contact%master(sid)%eid), " with distance ",      &
+        contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(:)
+        !$omp atomic
+        infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
+      endif
+      iSS = isInsideElement( etype, contact%states(nslave)%lpos, clearance )
+      if( iSS>0 )then
+        call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) )
+      endif
+    else if( .not. isin ) then
+      write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
+      contact%states(nslave)%state = CONTACTFREE
+      contact%states(nslave)%multiplier(:) = 0.d0
+    endif
+
+  end subroutine track_contact_position_exp
+
+  !> This subroutine update contact states, which include
+  !!-# Free to contact or contact to free state changes
+  !!-# Clear lagrangian multipliers when free to contact
+  subroutine scan_contact_state_exp( contact, currpos, currdisp, infoCTChange, &
+      nodeID, elemID, active )
+    type( tContact ), intent(inout)                 :: contact      !< contact info
+    type( fstr_info_contactChange ), intent(inout)  :: infoCTChange !< contact change info
+    real(kind=kreal), intent(in)                    :: currpos(:)   !< current coordinate of each nodes
+    real(kind=kreal), intent(in)                    :: currdisp(:)  !< current displacement of each nodes
+    integer(kind=kint), intent(in)                  :: nodeID(:)    !< global nodal ID, just for print out
+    integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
+    logical, intent(out)                            :: active       !< if any in contact
+
+    real(kind=kreal)    :: clearance
+    integer(kind=kint)  :: slave, id, etype
+    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
+    real(kind=kreal)    :: nlforce
+    logical             :: isin
+    integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
+    !
+    !#ifdef CONTACT_FILTER
+    !integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
+    integer, pointer :: indexMaster(:),itmp(:)
+    integer   ::  nMaster=0,minID(3),maxID(3),idm,nMasterMax=100
+    real(kreal) :: width = 4.0D0,x0(3)
+    !#endif
+
+    clearance = 1.d-6
+
+    allocate(contact_surf(size(nodeID)))
+    allocate(states_prev(size(contact%slave)))
+    contact_surf(:) = size(elemID)+1
+    do i = 1, size(contact%slave)
+      states_prev(i) = contact%states(i)%state
+    enddo
+
+    !$omp parallel do &
+      !$omp& default(none) &
+      !$omp& private(i,slave,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,x0,minID,maxID,itmp,idm,etype,isin) &
+      !$omp& firstprivate(nMasterMax) &
+      !$omp& shared(contact,infoCTChange,currpos,currdisp,nodeID,elemID,width,clearance,contact_surf) &
+      !$omp& reduction(.or.:active) &
+      !$omp& schedule(dynamic,1)
+    do i= 1, size(contact%slave)
+      slave = contact%slave(i)
+      if( contact%states(i)%state==CONTACTSTICK .or. contact%states(i)%state==CONTACTSLIP ) then
+        call track_contact_position_exp( i, contact, currpos, currdisp, infoCTChange, nodeID, elemID )
+        if( contact%states(i)%state /= CONTACTFREE ) then
+          contact_surf(contact%slave(i)) = -contact%states(i)%surface
+        endif
+      else if( contact%states(i)%state==CONTACTFREE ) then
+        coord(:) = currpos(3*slave-2:3*slave)
+        allocate(indexMaster(nMasterMax))
+        !#ifdef CONTACT_FILTER
+        nMaster = 0
+        !#endif
+        do id= 1, size(contact%master)
+          !#ifdef CONTACT_FILTER
+          nn = size( contact%master(id)%nodes )
+          do j=1,nn
+            iSS = contact%master(id)%nodes(j)
+            elem(1:3,j) = currpos(3*iSS-2:3*iSS)
+          enddo
+          x0(:) = coord(:)
+          call getMinMaxBoxIDPassedByMultiPoint(elem(1:3,1:nn),x0,width,minID,maxID)
+          !if(minID(1) <= 1.and.maxID(1) >= 1.and. &
+            !   minID(2) <= 1.and.maxID(2) >= 1.and. &
+            !   minID(3) <= 1.and.maxID(3) >= 1) then
+          if(any(minID > 1).or.any(maxID < 0)) cycle
+          nMaster = nMaster + 1
+          if(nMaster > size(indexMaster)) then
+            !stop 'Error: Too many master faces are possibly in contact!'
+            itmp => indexMaster
+            allocate(indexMaster(nMasterMax*2))
+            indexMaster(1:nMasterMax) = itmp(1:nMasterMax)
+            deallocate(itmp)
+            nMasterMax = nMasterMax*2
+            write(*,*) 'Info: increased nMasterMax to ', nMasterMax
+          endif
+          indexMaster(nMaster) = id
+          !endif
+        enddo
+
+        if(nMaster == 0) then
+          deallocate(indexMaster)
+          cycle
+        endif
+        !          do id= 1, size(contact%master)
+        do idm = 1,nMaster
+          id = indexMaster(idm)
+          !#endif
+          etype = contact%master(id)%etype
+          nn = size( contact%master(id)%nodes )
+          do j=1,nn
+            iSS = contact%master(id)%nodes(j)
+            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+          enddo
+          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, clearance )
+          if( .not. isin ) cycle
+          contact%states(i)%surface = id
+          contact%states(i)%multiplier(:) = 0.d0
+          iSS = isInsideElement( etype, contact%states(i)%lpos, clearance )
+          if( iSS>0 ) call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%direction(:) )
+          contact_surf(contact%slave(i)) = id
+          write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
+            elemID(contact%master(id)%eid),       &
+            " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(:), &
+            " along direction ", contact%states(i)%direction
+          exit
+        enddo
+        deallocate(indexMaster)
+      endif
+    enddo
+    !$omp end parallel do
+
+    call fstr_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
+    nactive = 0
+    do i = 1, size(contact%slave)
+      if (contact%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
+        if (abs(contact_surf(contact%slave(i))) /= contact%states(i)%surface) then ! that is in contact with other surface
+          contact%states(i)%state = CONTACTFREE                           ! should be freed
+          write(*,'(A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i)), &
+            " in rank",hecmw_comm_get_rank()," freed due to duplication"
+        else
+          nactive = nactive + 1
+        endif
+      endif
+      if (states_prev(i) == CONTACTFREE .and. contact%states(i)%state /= CONTACTFREE) then
+        infoCTChange%free2contact = infoCTChange%free2contact + 1
+      elseif (states_prev(i) /= CONTACTFREE .and. contact%states(i)%state == CONTACTFREE) then
+        infoCTChange%contact2free = infoCTChange%contact2free + 1
+      endif
+    enddo
+    active = (nactive > 0)
+    deallocate(contact_surf)
+    deallocate(states_prev)
+  end subroutine scan_contact_state_exp
 
 end module mContactDef
