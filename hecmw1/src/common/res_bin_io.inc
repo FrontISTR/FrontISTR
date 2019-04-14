@@ -86,7 +86,7 @@ bin_output_result_global(FILE *fp)
 	struct result_list *p,**data;
 
 	/* comment */
-	rc = hecmw_write_bin(fp,"*comment");
+	rc = hecmw_write_bin(fp,"S","*comment");
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "*comment");
 		return -1;
@@ -98,7 +98,7 @@ bin_output_result_global(FILE *fp)
 	}
 
 	/* global header */
-	rc = hecmw_write_bin(fp,"*global");
+	rc = hecmw_write_bin(fp,"S","*global");
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "*global");
 		return -1;
@@ -156,7 +156,7 @@ bin_output_result_global(FILE *fp)
 	HECMW_free(data);
 
 	/* data header */
-	rc = hecmw_write_bin(fp,"*data");
+	rc = hecmw_write_bin(fp,"S","*data");
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "head");
 		return -1;
@@ -398,7 +398,7 @@ bin_output_result_global_ST(struct hecmwST_result_data *result, char *comment, F
 	}
 
 	/* comment */
-	rc = hecmw_write_bin(fp,"*comment");
+	rc = hecmw_write_bin(fp,"S","*comment");
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "*comment");
 		return -1;
@@ -410,7 +410,7 @@ bin_output_result_global_ST(struct hecmwST_result_data *result, char *comment, F
 	}
 
 	/* global header */
-	rc = hecmw_write_bin(fp,"*global");
+	rc = hecmw_write_bin(fp,"S","*global");
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "*global");
 		return -1;
@@ -458,7 +458,7 @@ bin_output_result_global_ST(struct hecmwST_result_data *result, char *comment, F
 	}
 
 	/* data header */
-	rc = hecmw_write_bin(fp,"*data");
+	rc = hecmw_write_bin(fp,"S","*data");
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "*data");
 		return -1;
