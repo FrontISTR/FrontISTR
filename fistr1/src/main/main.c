@@ -61,7 +61,7 @@ void help(char *arg) {
 #endif
   printf(" -c <Path of control file>: Use this control file. Default "
          "./hecmw_ctrl.dat\n");
-  printf("-d: Show debug messages.\n");
+  printf("--debug: Show debug messages.\n");
   exit(0);
 }
 
