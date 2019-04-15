@@ -1,0 +1,47 @@
+!HEADER
+ mpc test
+!NODE
+  1, 0.0, 0.0, 0.0
+  2, 1.0, 0.0, 0.0
+  4, 0.0, 1.0, 0.0
+  3, 1.0, 1.0, 0.0
+  5, 0.0, 0.0, 1.0
+  6, 1.0, 0.0, 1.0
+  8, 0.0, 1.0, 1.0
+  7, 1.0, 1.0, 1.0
+#
+101, 0.0, 0.0, 1.0
+102, 1.0, 0.0, 1.0
+104, 0.0, 1.0, 1.0
+103, 1.0, 1.0, 1.0
+105, 0.0, 0.0, 2.0
+106, 1.0, 0.0, 2.0
+108, 0.0, 1.0, 2.0
+107, 1.0, 1.0, 2.0
+!ELEMENT, TYPE=361, EGRP=element1
+ 1,1,2,3,4,5,6,7,8
+!ELEMENT, TYPE=361, EGRP=element2
+ 101, 101, 102, 103, 104, 105, 106, 107, 108
+!SECTION, TYPE=SOLID, EGRP=element1, MATERIAL=material1
+!SECTION, TYPE=SOLID, EGRP=element2, MATERIAL=material2
+!MATERIAL, NAME=material1, ITEM=2
+!ITEM=1, SUBITEM=2
+   4.50e+04,  0.33
+!ITEM=2, SUBITEM=1
+    1.9
+!MATERIAL, NAME=material2, ITEM=2
+!ITEM=1, SUBITEM=2
+   2.30e+07,  0.2
+!ITEM=2, SUBITEM=1
+    2.4
+!NGROUP, NGRP=bottom
+1
+2
+3
+4
+!NGROUP, NGRP=top
+105
+106
+107
+108
+!INCLUDE, INPUT=2elem_mpc.dat
