@@ -1,5 +1,9 @@
+!-------------------------------------------------------------------------------
+! Copyright (c) 2019 FrontISTR Commons
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
 !> \brief  This module provides bucket-search functionality
-!>  It prodes definition of bucket info and its access routines
+!>  It provides definition of bucket info and its access routines
 module bucket_search
   use hecmw
   implicit none
