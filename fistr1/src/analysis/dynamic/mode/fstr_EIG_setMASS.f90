@@ -154,7 +154,7 @@ contains
 
           else
             do k = 1, NDOF
-              fstrEIG%mass(js+k) = fstrEIG%mass(js+k) + lumped(k)
+              fstrEIG%mass(js+k) = fstrEIG%mass(js+k) + lumped(NDOF*(j-1)+k)
             enddo
           endif
         enddo
