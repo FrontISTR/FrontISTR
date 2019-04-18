@@ -33,10 +33,6 @@ module m_hecmw_ClusterMKL_wrapper
   integer, parameter :: imsg=51
 
   integer :: iparm(64)
-  integer, allocatable, dimension(:) :: ia
-  integer, allocatable, dimension(:) :: ja
-  real*8, allocatable, dimension(:) :: a
-  real*8, allocatable, dimension(:) :: b
   real*8, allocatable, dimension(:) :: x
 
   integer myrank0
@@ -69,10 +65,6 @@ contains
         stop
       endif
       call sparse_matrix_finalize(spMAT)
-      if(allocated(a)) deallocate(a)
-      if(allocated(ia)) deallocate(ia)
-      if(allocated(ja)) deallocate(ja)
-      if(allocated(b)) deallocate(b)
       if(allocated(x)) deallocate(x)
       INITIALIZED = .false.
     endif
@@ -100,7 +92,7 @@ contains
       phase = 11
       call cluster_sparse_solver ( &
         pt, maxfct, mnum, mtype, phase, n, spMAT%A, spMAT%IRN, spMAT%JCN, &
-        idum, nrhs, iparm, msglvl, spMAT%rhs, x, hecmw_comm_get_comm(), istat )
+        idum, nrhs, iparm, msglvl, ddum, ddum, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
         write(*,*) 'ERROR: MKL returned with error', istat, myrank
         stop
@@ -109,7 +101,7 @@ contains
       phase = 22
       call cluster_sparse_solver ( &
         pt, maxfct, mnum, mtype, phase, n, spMAT%A, spMAT%IRN, spMAT%JCN, &
-        idum, nrhs, iparm, msglvl, spMAT%rhs, x, hecmw_comm_get_comm(), istat )
+        idum, nrhs, iparm, msglvl, ddum, ddum, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
         write(*,*) 'ERROR: MKL returned with error', istat
         stop
@@ -117,6 +109,7 @@ contains
       !if (myrank==0) write(*,*) ' [MKL]: Analysis and Factorization completed.'
       hecMAT%Iarray(98) = 0
       hecMAT%Iarray(97) = 0
+      allocate(x(nloc))
     endif
     if (hecMAT%Iarray(97) .eq. 1) then
       ! FACTORIZATION
@@ -129,7 +122,7 @@ contains
       phase = 22
       call cluster_sparse_solver ( &
         pt, maxfct, mnum, mtype, phase, n, spMAT%A, spMAT%IRN, spMAT%JCN, &
-        idum, nrhs, iparm, msglvl, spMAT%rhs, x, hecmw_comm_get_comm(), istat )
+        idum, nrhs, iparm, msglvl, ddum, ddum, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
         write(*,*) 'ERROR: MKL returned with error', istat
         stop
