@@ -302,7 +302,11 @@ contains
     end do
 
     ! -----
-    if( c_contact>0 ) allocate( fstrSOLID%contacts( c_contact ) )
+    if( c_contact>0 ) then
+      allocate( fstrSOLID%contacts( c_contact ) )
+      ! convert SURF_SURF contact to NODE_SURF contact
+      call fstr_convert_contact_type( P%MESH )
+    endif
     if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
     if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
     if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
@@ -1000,6 +1004,7 @@ contains
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
+      if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
@@ -1500,6 +1505,7 @@ contains
     !   mpc_method => svIarray(13)
     !   estcond    => svIarray(14)
     !   method2    => svIarray(8)
+    !   recyclepre => svIarray(35)
 
     !   resid      => svRarray(1)
     !   sigma_diag => svRarray(2)
@@ -1511,6 +1517,7 @@ contains
       svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
       svIarray(1), svIarray(5), svIarray(6), svIarray(7), &
       svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
+      svIarray(35),                                         &
       svRarray(1), svRarray(2), svRarray(3),                &
       svRarray(4), svRarray(5) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
@@ -3234,6 +3241,33 @@ contains
 
   end subroutine fstr_setup_OUTPUT_SSTYPE
 
+  !-----------------------------------------------------------------------------!
+  !> Convert SURF-SURF contact to NODE-SURF contact                             !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_convert_contact_type( hecMESH )
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    integer(kind=kint) :: n, i, sgrp_id, ngrp_id, ngrp_id2
+    ! convert SURF_SURF to NODE_SURF
+    n = hecMESH%contact_pair%n_pair
+    do i = 1,n
+      if( hecMESH%contact_pair%type(i) /= HECMW_CONTACT_TYPE_SURF_SURF ) cycle
+      sgrp_id = hecMESH%contact_pair%slave_grp_id(i)
+      call append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id )
+      ! change type of contact and slave group ID
+      hecMESH%contact_pair%type(i) = HECMW_CONTACT_TYPE_NODE_SURF
+      hecMESH%contact_pair%slave_grp_id(i) = ngrp_id
+      ! ! for DEBUG
+      ! sgrp_id = hecMESH%contact_pair%master_grp_id(i)
+      ! call append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id2 )
+      ! ! intersection node group of slave and master
+      ! call append_intersection_node_grp( hecMESH, ngrp_id, ngrp_id2 )
+      ! ! intersection node_group of original slave and patch-slave
+      ! ngrp_id=get_grp_id( hecMESH, 'node_grp', 'SLAVE' )
+      ! ngrp_id2=get_grp_id( hecMESH, 'node_grp', '_PT_SLAVE_S' )
+      ! call append_intersection_node_grp( hecMESH, ngrp_id, ngrp_id2 )
+    enddo
+  end subroutine fstr_convert_contact_type
+
 end module m_fstr_setup
-
-

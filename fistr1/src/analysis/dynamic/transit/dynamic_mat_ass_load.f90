@@ -361,6 +361,7 @@ contains
         iE = hecMESH%elem_type_index(itype  )
         ic_type = hecMESH%elem_type_item(itype)
         if( hecmw_is_etype_link(ic_type) ) cycle
+        if( hecmw_is_etype_patch(ic_type) ) cycle
         !C** Set number of nodes
         nn = hecmw_get_max_node(ic_type)
         !C element loop

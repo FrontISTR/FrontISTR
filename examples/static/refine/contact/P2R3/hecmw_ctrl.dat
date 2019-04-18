@@ -1,0 +1,8 @@
+!MESH, NAME=fstrMSH, TYPE=HECMW-DIST, REFINE=3
+ ../P2/FistrModel.dist
+!CONTROL, NAME=fstrCNT
+ ../FistrModel.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ FistrModel.res
+!RESULT, NAME=vis_out, IO=OUT
+ FistrModel_vis

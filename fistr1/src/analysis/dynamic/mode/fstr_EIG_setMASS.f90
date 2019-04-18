@@ -49,6 +49,7 @@ contains
       nn = hecmw_get_max_node(ic_type)
 
       if(hecmw_is_etype_link(ic_type)) cycle
+      if(hecmw_is_etype_patch(ic_type)) cycle
       if(ic_type == 3414) cycle
 
       do icel = iS, iE

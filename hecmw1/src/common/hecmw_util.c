@@ -37,6 +37,18 @@ char *HECMW_get_date(void) {
   return rc ? static_buf : NULL;
 }
 
+/* thread-save version of HECMW_get_date */
+char *HECMW_get_date_r(char *buf, int len) {
+  int rc;
+  time_t now;
+  struct tm result;
+
+  if (time(&now) == (time_t)-1) return NULL;
+  if (localtime_r(&now, &result) == NULL) return NULL;
+  rc = strftime(buf, len, "%b %d %H:%M:%S", &result);
+  return rc ? buf : NULL;
+}
+
 void HECMW_assert_(int cond, char *cond_str, char *file, int line) {
   if (!cond) {
     fprintf(stderr, "%s:%d: Assersion `%s' failed.\n", file, line, cond_str);

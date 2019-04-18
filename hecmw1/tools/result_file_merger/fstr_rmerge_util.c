@@ -9,11 +9,11 @@
 
 #include "fstr_rmerge_util.h"
 
-FILE* log_fp;
-int nrank;
-int strid;
-int endid;
-int intid;
+extern FILE* log_fp;
+extern int nrank;
+extern int strid;
+extern int endid;
+extern int intid;
 
 static void out_log(const char* fmt, ...) {
   va_list arg;

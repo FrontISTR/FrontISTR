@@ -2864,6 +2864,10 @@ static int setup_elem_mat(struct hecmwST_local_mesh *mesh) {
       n = 1;
       HECMW_assert(elem->mpc_matid != -1);
       start = &elem->mpc_matid;
+    } else if (mesh->elem_type[i] >= 1000 && mesh->elem_type[i] < 1100) {
+      n = 1;
+      HECMW_assert(elem->mpc_matid != -1);
+      start = &elem->mpc_matid;
     } else {
       if (elem->nmatitem > 0) {
         HECMW_assert(mesh->material);
@@ -3032,6 +3036,24 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
 
 error:
   return -1;
+}
+
+static int setup_contact_sectid(struct hecmwST_local_mesh *mesh) {
+  int i;
+  struct hecmw_io_element *elem;
+
+  HECMW_assert(mesh);
+
+  for (i = 0; i < mesh->n_elem; i++) {
+    /* depends on setup_elem() */
+    if (mesh->elem_type[i] < 1000) continue;
+    if (mesh->elem_type[i] >= 1100) continue;
+    elem = HECMW_io_get_elem(mesh->global_elem_ID[i]);
+    HECMW_assert(elem);
+    HECMW_assert(elem->mpc_sectid != -1);
+    mesh->section_ID[i] = elem->mpc_sectid;
+  }
+  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3796,8 +3818,103 @@ error:
   return -1;
 }
 
+static int post_contact_convert_sgroup(void)
+{
+  struct hecmw_io_contact *p;
+  int elem_id, contact_id;
+
+  elem_id = HECMW_io_get_elem_max_id();
+  elem_id++;
+
+  for (p = _contact, contact_id = 1; p; p = p->next, contact_id++) {
+    struct hecmw_io_sgrp *sgrp;
+    int n_item, i, id, ret;
+    int *elem, *surf;
+    char new_sgrp_name[HECMW_NAME_LEN+1];
+
+    if (p->type != HECMW_CONTACT_TYPE_SURF_SURF) continue;
+
+    sgrp = HECMW_io_get_sgrp(p->slave_grp);
+    HECMW_assert(sgrp);
+
+    n_item = HECMW_set_int_nval(sgrp->item);
+    if (n_item == 0) continue;
+
+    elem = (int *) malloc(sizeof(int) * n_item);
+    surf = (int *) malloc(sizeof(int) * n_item);
+    if (!elem || !surf) {
+      set_err(errno, "");
+      return -1;
+    }
+
+    HECMW_set_int_iter_init(sgrp->item);
+    for (i = 0; HECMW_set_int_iter_next(sgrp->item, &id); i++) {
+      int eid, sid, etype, surf_etype, surf_nnode, j;
+      struct hecmw_io_element *element, *ptelem;
+      const int *surf_nodes;
+      int nodes[8];
+
+      decode_surf_key(id, &eid, &sid);
+
+      element = HECMW_io_get_elem(eid);
+      HECMW_assert(element);
+      etype = element->type;
+
+      /* extract surface */
+      surf_nodes = HECMW_get_surf_nodes(etype, sid, &surf_etype);
+      HECMW_assert( HECMW_is_etype_patch(surf_etype) );
+
+      surf_nnode = HECMW_get_max_node(surf_etype);
+
+      for (j = 0; j < surf_nnode; j++) {
+        nodes[j] = element->node[surf_nodes[j] - 1];
+      }
+
+      /* add surface patch elem */
+      ptelem = HECMW_io_add_elem(elem_id, surf_etype, nodes, 0, NULL);
+      if (ptelem == NULL) {
+        return -1;
+      }
+
+      ptelem->mpc_matid = surf_etype % 100;
+      ptelem->mpc_sectid = contact_id;
+
+      elem[i] = elem_id;
+      surf[i] = 1;
+
+      elem_id++;
+    }
+
+    /* add newly added patch elems to egrp "ALL" */
+    if (HECMW_io_add_egrp("ALL", n_item, elem) < 0)
+      return -1;
+
+    /* generate name for new sgrp with patch elems */
+    ret = snprintf(new_sgrp_name, sizeof(new_sgrp_name), "_PT_%s", sgrp->name);
+    if (ret >= sizeof(new_sgrp_name)) {
+      set_err(HECMW_IO_E0001, "Surface group name: %s", sgrp->name);
+      return -1;
+    } else if (HECMW_io_get_sgrp(new_sgrp_name) != NULL) {
+      set_err(HECMW_IO_E0003, "Surface group name: %s", new_sgrp_name);
+      return -1;
+    }
+
+    /* add sgrp with patch elems */
+    if (HECMW_io_add_sgrp(new_sgrp_name, n_item, elem, surf) < 0)
+      return -1;
+
+    free(elem);
+    free(surf);
+
+    /* replace slave group by newly added sgrp with patch elems */
+    strcpy(p->slave_grp, new_sgrp_name);
+  }
+  return 0;
+}
+
 static int post_contact(void) {
   if (post_contact_check_grp()) return -1;
+  if (post_contact_convert_sgroup()) return -1;
 
   return 0;
 }
@@ -3956,6 +4073,8 @@ struct hecmwST_local_mesh *HECMW_io_make_local_mesh(void) {
   HECMW_log(HECMW_LOG_DEBUG, "setup_sect done");
   if (setup_mpc_sectid(mesh)) goto error;
   HECMW_log(HECMW_LOG_DEBUG, "setup_mpc_sectid done");
+  if (setup_contact_sectid(mesh)) goto error;
+  HECMW_log(HECMW_LOG_DEBUG, "setup_contact_sectid done");
   if (setup_elem_check_sectid(mesh)) goto error;
   HECMW_log(HECMW_LOG_DEBUG, "setup_elem_check_sectid done");
   if (setup_elem_mat(mesh)) goto error;

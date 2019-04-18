@@ -219,12 +219,13 @@ contains
   end subroutine
 
   !> This subroutine find the projection of a slave point onto master surface
-  subroutine project_Point2Element(xyz,etype,nn,elemt,cstate,isin,distclr,ctpos,localclr)
+  subroutine project_Point2Element(xyz,etype,nn,elemt,reflen,cstate,isin,distclr,ctpos,localclr)
     real(kind=kreal),intent(in)       :: xyz(3)        !< Coordinates of a spacial point, whose projecting point is to be computed
     integer, intent(in)               :: etype         !< surface element type
     integer, intent(in)               :: nn            !< number of elemental nodes
     real(kind=kreal),intent(in)       :: elemt(3,nn)   !< nodes coordinates of surface element
-    type(tContactState), intent(out)  :: cstate        !< Recorde of contact information
+    real(kind=kreal),intent(in)       :: reflen        !< reference length of surface element
+    type(tContactState),intent(inout) :: cstate        !< Recorde of contact information
     logical, intent(out)              :: isin          !< in contact or not
     real(kind=kreal), intent(in)      :: distclr       !< clearance of contact distance
     real(kind=kreal), optional        :: ctpos(2)      !< curr contact position( natural coord )
@@ -309,7 +310,7 @@ contains
       enddo
       cstate%distance = dot_product( dxyz, normal )
 
-      if( cstate%distance < distclr .and. cstate%distance > -5.0d-01 ) isin = .true.
+      if( cstate%distance < distclr*reflen .and. cstate%distance > -5.0d-01*reflen ) isin = .true.
 
       if( isin ) then
         if( initstate== CONTACTFREE ) then

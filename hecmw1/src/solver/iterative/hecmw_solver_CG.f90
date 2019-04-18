@@ -180,6 +180,9 @@ contains
           error = HECMW_SOLVER_ERROR_DIVERGE_PC
           exit
         endif
+      elseif (RHO /= RHO) then  ! RHO is NaN
+        error = HECMW_SOLVER_ERROR_DIVERGE_NAN
+        exit
       endif
 
       !C===
@@ -216,6 +219,9 @@ contains
       if (C1 <= 0) then
         ! diverged due to indefinite or negative definite matrix
         error = HECMW_SOLVER_ERROR_DIVERGE_MAT
+        exit
+      elseif (C1 /= C1) then  ! C1 is NaN
+        error = HECMW_SOLVER_ERROR_DIVERGE_NAN
         exit
       endif
 
