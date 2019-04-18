@@ -33,6 +33,7 @@ contains
       iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
       if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_patch(ic_type)) cycle
 
       do icel = iS, iE
         isect = hecMESH%section_ID(icel)

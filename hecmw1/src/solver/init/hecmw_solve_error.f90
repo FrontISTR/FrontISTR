@@ -12,7 +12,8 @@ module m_hecmw_solve_error
     HECMW_SOLVER_ERROR_ZERO_RHS = 2002, &
     HECMW_SOLVER_ERROR_NOCONV_MAXIT = 3001, &
     HECMW_SOLVER_ERROR_DIVERGE_MAT = 3002, &
-    HECMW_SOLVER_ERROR_DIVERGE_PC = 3003
+    HECMW_SOLVER_ERROR_DIVERGE_PC = 3003, &
+    HECMW_SOLVER_ERROR_DIVERGE_NAN = 3004
 
 contains
 
@@ -78,9 +79,15 @@ contains
       endif
     endif
 
+    if (IFLAG.eq.HECMW_SOLVER_ERROR_DIVERGE_NAN) then
+      if (hecMESH%zero.eq.1) then
+        write (*,'(/a )')'  #### HEC-MW-SOLVER-W-3004: '
+        write (*,'( a/)')'    diverged due to NaN'
+      endif
+    endif
+
     !stop " PROGRAM STOP:"
 
   end subroutine hecmw_solve_error
 
 end module m_hecmw_solve_error
-

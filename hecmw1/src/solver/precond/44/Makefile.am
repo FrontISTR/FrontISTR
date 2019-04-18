@@ -74,7 +74,6 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_solver_scaling_44.@f90objfilepostfix@ \
 	hecmw_precond_BILU_44.@f90objfilepostfix@ \
 	hecmw_precond_DIAG_44.@f90objfilepostfix@ \
 	hecmw_precond_SSOR_44.@f90objfilepostfix@ \

@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <FrontISTRConfig.h>
+#include "hecmw_log.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -60,6 +61,7 @@ void help(char *arg) {
 #endif
   printf(" -c <Path of control file>: Use this control file. Default "
          "./hecmw_ctrl.dat\n");
+  printf("--debug: Show debug messages.\n");
   exit(0);
 }
 
@@ -128,6 +130,13 @@ void load_hecmw_ctrl(char *arg) {
 }
 
 /**
+ * \brief set log level to HECMW_LOG_DEBUG
+ */
+void set_loglevel_debug(char *arg) {
+  HECMW_setloglv(HECMW_LOG_DEBUG);
+}
+
+/**
  * \brief specify command line option name and executing function name.
  * \attension list must be terminated with NULL value.
  */
@@ -142,6 +151,7 @@ struct option_rec options[] = {
 #endif /* _OPENMP */
   {"-c", load_hecmw_ctrl},
   {"-C", load_hecmw_ctrl},
+  {"--debug", set_loglevel_debug},
   {NULL, NULL}
 };
 

@@ -151,15 +151,14 @@ int HECMW_closelog(int id) {
 
 static void output_log(int loglv, const char *fmt, va_list ap, FILE *fp) {
   int i, len;
-  char *p;
+  char p[HECMW_MSG_LEN + 1];
   char buf[HECMW_LINE_MAX + 1];
 
   HECMW_assert(fp);
 
   /* date */
-  p = HECMW_get_date();
-  if (p == NULL) {
-    p = "Could not get date";
+  if (HECMW_get_date_r(p, HECMW_MSG_LEN) == NULL) {
+    strncpy(p, "Could not get date", HECMW_MSG_LEN);
   }
   strcpy(buf, p);
 
@@ -193,7 +192,7 @@ static void output_log(int loglv, const char *fmt, va_list ap, FILE *fp) {
   for (i = 0; i < sizeof(hecmw_loglv_table) / sizeof(hecmw_loglv_table[0]);
        i++) {
     if (hecmw_loglv_table[i].loglv == loglv) {
-      p = hecmw_loglv_table[i].str;
+      strncpy(p, hecmw_loglv_table[i].str, HECMW_MSG_LEN);
       break;
     }
   }

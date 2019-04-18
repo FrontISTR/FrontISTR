@@ -11,7 +11,7 @@ module mContact
   implicit none
 
   private :: l_contact2mpc, l_tied2mpc
-  integer, save :: n_contact_mpc
+  integer(kind=kint), save :: n_contact_mpc
   logical, private :: active
 
   real(kind=kreal), save :: mu=1.d10  !< penalty, default value
@@ -30,10 +30,10 @@ contains
 
   !> Write out the contact definition read from mesh file
   subroutine print_contatct_pair( file, pair )
-    integer, intent(in)                      :: file
+    integer(kind=kint), intent(in)           :: file
     type( hecmwST_contact_pair ), intent(in) :: pair
 
-    integer :: i
+    integer(kind=kint) :: i
     write(file,*) "Number of contact pair", pair%n_pair
     do i=1,pair%n_pair
       write(file,*) trim(pair%name(i)), pair%type(i), pair%slave_grp_id(i)  &
@@ -96,11 +96,11 @@ contains
     use fstr_ctrl_modifier
     type( tContact ), intent(in)         :: contact  !< current contact state
     type( hecmwST_mpc ), intent(inout)   :: mpcs     !< to who mpc be appended
-    integer, intent(out)                 :: nmpc     !< number of mpc conditions appended
-    integer, parameter          :: ndof = 3          ! 3D problem only, currently
-    real(kind=kreal), parameter :: tol =1.d-10
-    integer :: i, j, k, nn, csurf, nenode, etype, tdof
-    integer :: nodes(l_max_surface_node*ndof+ndof), dofs(l_max_surface_node*ndof+ndof)
+    integer(kind=kint), intent(out)      :: nmpc     !< number of mpc conditions appended
+    integer(kind=kint), parameter :: ndof = 3        ! 3D problem only, currently
+    real(kind=kreal), parameter   :: tol =1.d-10
+    integer(kind=kint) :: i, j, k, nn, csurf, nenode, etype, tdof
+    integer(kind=kint) :: nodes(l_max_surface_node*ndof+ndof), dofs(l_max_surface_node*ndof+ndof)
     real(kind=kreal) :: values(l_max_surface_node*ndof+ndof+1),val(l_max_surface_node*ndof+ndof+1)
     nmpc=0
     do i=1,size(contact%states)
@@ -142,9 +142,9 @@ contains
     use fstr_ctrl_modifier
     type( tContact ), intent(in)         :: contact  !< current contact state
     type( hecmwST_mpc ), intent(inout)   :: mpcs     !< to who mpc be appended
-    integer, intent(out)                 :: nmpc     !< number of mpc conditions appended
-    integer :: i, j, csurf, nenode, etype, tdof
-    integer :: nodes(l_max_surface_node+1), dofs(l_max_surface_node+1)
+    integer(kind=kint), intent(out)      :: nmpc     !< number of mpc conditions appended
+    integer(kind=kint) :: i, j, csurf, nenode, etype, tdof
+    integer(kind=kint) :: nodes(l_max_surface_node+1), dofs(l_max_surface_node+1)
     real(kind=kreal) :: values(l_max_surface_node+2)
     nmpc=0
     do i=1,size(contact%slave)
@@ -170,7 +170,7 @@ contains
   subroutine fstr_contact2mpc( contacts, mpcs )
     type( tContact ), intent(in)       :: contacts(:)  !< current contact state
     type( hecmwST_mpc ), intent(inout) :: mpcs         !< to who mpc be appended
-    integer :: i, nmpc
+    integer(kind=kint) :: i, nmpc
     n_contact_mpc = 0
     do i=1,size(contacts)
       if( contacts(i)%algtype == CONTACTUNKNOWN ) cycle     ! not initialized
@@ -197,10 +197,10 @@ contains
 
   !> Print out mpc conditions
   subroutine fstr_write_mpc( file, mpcs )
-    integer, intent(in)  :: file                  !<  file number
+    integer(kind=kint), intent(in)  :: file       !<  file number
     type( hecmwST_mpc ), intent(in) :: mpcs       !<  mpcs to be printed
 
-    integer :: i,j,n0,n1
+    integer(kind=kint) :: i,j,n0,n1
     write(file, *) "Number of equation", mpcs%n_mpc
     do i=1,mpcs%n_mpc
       write(file,*) "--Equation",i
@@ -214,21 +214,23 @@ contains
   end subroutine
 
   !> Scanning contact state
-  subroutine fstr_scan_contact_state( cstep, dt, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )
-    integer, intent(in)                    :: cstep      !< current step number
-      real(kind=kreal), intent(in)           :: dt
-    integer, intent(in)                    :: ctAlgo     !< contact analysis algorithm
+  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )
+    integer(kind=kint), intent(in)         :: cstep      !< current step number
+    integer(kind=kint), intent(in)         :: sub_step   !< current sub-step number
+    integer(kind=kint), intent(in)         :: cont_step  !< current contact step number
+    real(kind=kreal), intent(in)           :: dt
+    integer(kind=kint), intent(in)         :: ctAlgo     !< contact analysis algorithm
     type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
     !      logical, intent(inout)                 :: changed     !< if contact state changed
     real(kind=kreal), optional             :: B(:)        !< nodal force residual
     character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag
-    integer :: i, grpid
-    logical :: iactive
+    integer(kind=kint) :: i, grpid
+    logical :: iactive, is_init
 
-      fstrSOLID%CONT_RELVEL(:) = 0.d0
-      fstrSOLID%CONT_STATE(:) = 0.d0
+    fstrSOLID%CONT_RELVEL(:) = 0.d0
+    fstrSOLID%CONT_STATE(:) = 0.d0
 
     if( ctAlgo == kcaSLAGRANGE ) then
       flag_ctAlgo = 'SLagrange'
@@ -238,7 +240,7 @@ contains
 
     ! P.A. We redefine fstrSOLID%ddunode as current coordinate of every nodes
     !  fstrSOLID%ddunode(:) = fstrSOLID%unode(:) + fstrSOLID%dunode(:)
-    do i = 1, size(hecMESH%node)
+    do i = 1, size(fstrSOLID%unode)
       fstrSOLID%ddunode(i) = hecMESH%node(i) + fstrSOLID%unode(i) + fstrSOLID%dunode(i)
     enddo
     active = .false.
@@ -249,6 +251,8 @@ contains
     infoCTChange%free2contact = 0
     infoCTChange%contactNode_current = 0
 
+    is_init = ( cstep == 1 .and. sub_step == 1 .and. cont_step == 0 )
+
     do i=1,size(fstrSOLID%contacts)
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
@@ -256,10 +260,10 @@ contains
       endif
       if( present(B) ) then
         call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu, B )
+           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu, B )
       else
         call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive, mu )
+           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu )
       endif
       if( .not. active ) active = iactive
 
@@ -319,7 +323,7 @@ contains
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     real(kind=kreal), intent(inout)        :: B(:)        !< nodal force residual
 
-    integer :: i
+    integer(kind=kint) :: i
     do i=1, size(fstrSOLID%contacts)
       !   if( contacts(i)%mpced ) cycle
       call calcu_contact_force0( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
@@ -333,7 +337,7 @@ contains
     type(fstr_solid), intent(inout)        :: fstrSOLID
     logical, intent(out)                   :: ctchanged
 
-    integer :: i, nc
+    integer(kind=kint) :: i, nc
     gnt = 0.d0;  ctchanged = .false.
     nc = size(fstrSOLID%contacts)
     do i=1, nc
@@ -348,7 +352,7 @@ contains
   subroutine fstr_update_contact_TangentForce( fstrSOLID )
     type(fstr_solid), intent(inout)        :: fstrSOLID
 
-    integer :: i, nc
+    integer(kind=kint) :: i, nc
 
     nc = size(fstrSOLID%contacts)
     do i=1, nc
@@ -364,10 +368,10 @@ contains
     type (hecmwST_matrix), intent(inout)     :: hecMAT    !< type matrix
     type(fstr_solid), intent(inout)          :: fstrSOLID !< type fstr_solid
 
-    integer, parameter :: NDOF=3
+    integer(kind=kint), parameter :: NDOF=3
 
-    integer :: i, j, k, m, nnode, nd, etype
-    integer :: ctsurf, ndLocal(l_max_surface_node+1)
+    integer(kind=kint) :: i, j, k, m, nnode, nd, etype
+    integer(kind=kint) :: ctsurf, ndLocal(l_max_surface_node+1)
     real(kind=kreal) :: factor, elecoord( 3, l_max_surface_node)
     real(kind=kreal) :: stiff(l_max_surface_node*3+3, l_max_surface_node*3+3)
     real(kind=kreal) :: nrlforce, force(l_max_surface_node*3+3)

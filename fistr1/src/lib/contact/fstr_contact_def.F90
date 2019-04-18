@@ -15,11 +15,11 @@ module mContactDef
   use mSurfElement
   use m_contact_lib
   use m_fstr_contact_comm
+  use bucket_search
 
   implicit none
 
   include 'fstr_ctrl_util_f.inc'
-
 
   !> Structure to includes all info needed by contact calculation
   type tContact
@@ -49,6 +49,7 @@ module mContactDef
     type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes
 
     type(fstrST_contact_comm)     :: comm                    !< contact communication table
+    type(bucketDB)                :: master_bktDB            !< bucket DB for master surface
   end type tContact
 
   type fstr_info_contactChange
@@ -61,9 +62,33 @@ module mContactDef
     integer(kind=kint) :: contactNode_current    !< current number of nodes in contact
   end type fstr_info_contactChange
 
+  real(kind=kreal), parameter :: CLEARANCE     = 1.d-4 ! ordinary clearance
+  real(kind=kreal), parameter :: CLR_SAME_ELEM = 5.d-3 ! clearance for already-in-contct elems (loosen to avoid moving too easily)
+  real(kind=kreal), parameter :: CLR_DIFFLPOS  = 1.d-2 ! clearance to be recognized as different position (loosen to avoid oscillation)
+  real(kind=kreal), parameter :: CLR_CAL_NORM  = 1.d-4 ! clearance used when calculating surface normal
+  real(kind=kreal), parameter :: DISTCLR_INIT  = 1.d-6 ! dist clearance for initial scan
+  real(kind=kreal), parameter :: DISTCLR_FREE  =-1.d-6 ! dist clearance for free nodes (wait until little penetration to be judged as contact)
+  real(kind=kreal), parameter :: DISTCLR_CONT  = 1.d0  ! dist clearance for contact nodes
+                                                       ! (big value to keep contact because contact-to-free is judged by tensile force)
+  real(kind=kreal), parameter :: BOX_EXP_RATE = 1.05d0 ! recommended: (1.0..2.0] (the smaller the faster, the bigger the safer)
+  real(kind=kreal), parameter :: TENSILE_FORCE =-1.d-8 ! tensile force to be judged as free node
+
+  private :: is_MPC_available
+  private :: is_active_contact
+  private :: cal_node_normal
+  private :: track_contact_position
+  private :: reset_contact_force
+
+  private :: CLEARANCE
+  private :: CLR_SAME_ELEM
+  private :: CLR_DIFFLPOS
+  private :: CLR_CAL_NORM
+  private :: DISTCLR_FREE
+  private :: DISTCLR_CONT
+  private :: BOX_EXP_RATE
+  private :: TENSILE_FORCE
+
 contains
-
-
 
   !> If contact to mpc condiitions
   logical function is_MPC_available( contact )
@@ -79,12 +104,14 @@ contains
     integer :: i
     write(file,*) "CONTACT:", contact%ctype,contact%group,trim(contact%pair_name),contact%fcoeff
     write(file,*) "---Slave----"
+    write(file,*) "num.slave",size(contact%slave)
     if( associated(contact%slave) ) then
       do i=1,size(contact%slave)
         write(file, *) contact%slave(i)
       enddo
     endif
     write(file,*) "----master---"
+    write(file,*) "num.master",size(contact%master)
     if( associated(contact%master) ) then
       do i=1,size(contact%master)
         call write_surf( file, contact%master(i) )
@@ -105,6 +132,7 @@ contains
     endif
     if( associated(contact%states) ) deallocate(contact%states)
     call fstr_contact_comm_finalize(contact%comm)
+    call bucketDB_finalize( contact%master_bktDB )
   end subroutine
 
   !>  Check the consistency with given mesh of contact defintiion
@@ -192,6 +220,8 @@ contains
 
     endif
 
+    call update_surface_reflen( contact%master, hecMESH%node )
+
     ! slave surface
     !    if( contact%ctype==1 ) then
     cgrp = contact%surf_id1
@@ -238,7 +268,10 @@ contains
     enddo
 
     ! neighborhood of surface group
-    call find_surface_neighbor( contact%master )
+    call update_surface_box_info( contact%master, hecMESH%node )
+    call bucketDB_init( contact%master_bktDB )
+    call update_surface_bucket_info( contact%master, contact%master_bktDB )
+    call find_surface_neighbor( contact%master, contact%master_bktDB )
 
     ! initialize contact communication table
     call fstr_contact_comm_init( contact%comm, hecMESH, 1, nslave, contact%slave )
@@ -272,7 +305,7 @@ contains
   !!-# Free to contact ot contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
   subroutine scan_contact_state( flag_ctAlgo, contact, currpos, currdisp, ndforce, infoCTChange, &
-      nodeID, elemID, active, mu, B )
+      nodeID, elemID, is_init, active, mu, B )
     character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
@@ -281,11 +314,12 @@ contains
     real(kind=kreal), intent(in)                     :: ndforce(:)    !< nodal force
     integer(kind=kint), intent(in)                  :: nodeID(:)     !< global nodal ID, just for print out
     integer(kind=kint), intent(in)                  :: elemID(:)     !< global elemental ID, just for print out
+    logical, intent(in)                              :: is_init       !< wheather initial scan or not
     logical, intent(out)                            :: active        !< if any in contact
     real(kind=kreal), intent(in)                     :: mu            !< penalty
     real(kind=kreal), optional                       :: B(:)          !< nodal force residual
 
-    real(kind=kreal)    :: clearance
+    real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
@@ -293,15 +327,17 @@ contains
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
-    !#ifdef CONTACT_FILTER
-    !integer   ::  indexMaster(100),nMaster=0,minID(3),maxID(3),idm
-    integer, pointer :: indexMaster(:),itmp(:)
-    integer   ::  nMaster=0,minID(3),maxID(3),idm,nMasterMax=100
-    real(kreal) :: width = 4.0D0,x0(3)
-    !#endif
+    integer, pointer :: indexMaster(:),indexCand(:)
+    integer   ::  nMaster,idm,nMasterMax,bktID,nCand
+    logical :: is_cand
 
-    clearance = 1.d-6
     if( contact%algtype<=2 ) return
+
+    if( is_init ) then
+      distclr = DISTCLR_INIT
+    else
+      distclr = DISTCLR_FREE
+    endif
 
     allocate(contact_surf(size(nodeID)))
     allocate(states_prev(size(contact%slave)))
@@ -310,11 +346,15 @@ contains
       states_prev(i) = contact%states(i)%state
     enddo
 
+    call update_surface_box_info( contact%master, currpos )
+    call update_surface_bucket_info( contact%master, contact%master_bktDB )
+
     !$omp parallel do &
       !$omp& default(none) &
-      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,x0,minID,maxID,itmp,idm,etype,isin) &
+      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+      !$omp&         bktID,nCand,indexCand) &
       !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,width,clearance,contact_surf) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,distclr,contact_surf) &
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -324,7 +364,7 @@ contains
         id = contact%states(i)%surface
         nlforce = contact%states(i)%multiplier(1)
 
-        if( nlforce < -1.0d-8 ) then
+        if( nlforce < TENSILE_FORCE ) then
           contact%states(i)%state = CONTACTFREE
           contact%states(i)%multiplier(:) = 0.d0
           write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
@@ -342,58 +382,49 @@ contains
 
       else if( contact%states(i)%state==CONTACTFREE ) then
         coord(:) = currpos(3*slave-2:3*slave)
-        allocate(indexMaster(nMasterMax))
-        !#ifdef CONTACT_FILTER
-        nMaster = 0
-        !#endif
-        do id= 1, size(contact%master)
 
-          !#ifdef CONTACT_FILTER
-          nn = size( contact%master(id)%nodes )
-          do j=1,nn
-            iSS = contact%master(id)%nodes(j)
-            elem(1:3,j) = currpos(3*iSS-2:3*iSS)
-          enddo
-          x0(:) = coord(:)
-          call getMinMaxBoxIDPassedByMultiPoint(elem(1:3,1:nn),x0,width,minID,maxID)
-          !if(minID(1) <= 1.and.maxID(1) >= 1.and. &
-            !   minID(2) <= 1.and.maxID(2) >= 1.and. &
-            !   minID(3) <= 1.and.maxID(3) >= 1) then
-          if(any(minID > 1).or.any(maxID < 0)) cycle
+        ! get master candidates from bucketDB
+        bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
+        nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
+        if (nCand == 0) cycle
+        allocate(indexCand(nCand))
+        call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+
+        nMasterMax = nCand
+        allocate(indexMaster(nMasterMax))
+        nMaster = 0
+
+        ! narrow down candidates
+        do idm= 1, nCand
+          id = indexCand(idm)
+          if (.not. is_in_surface_box( contact%master(id), coord(1:3), BOX_EXP_RATE )) cycle
           nMaster = nMaster + 1
-          if(nMaster > size(indexMaster)) then
-            !stop 'Error: Too many master faces are possibly in contact!'
-            itmp => indexMaster
-            allocate(indexMaster(nMasterMax*2))
-            indexMaster(1:nMasterMax) = itmp(1:nMasterMax)
-            deallocate(itmp)
-            nMasterMax = nMasterMax*2
-            write(*,*) 'Info: increased nMasterMax to ', nMasterMax
-          endif
           indexMaster(nMaster) = id
-          !endif
         enddo
+        deallocate(indexCand)
 
         if(nMaster == 0) then
           deallocate(indexMaster)
           cycle
         endif
-        !          do id= 1, size(contact%master)
+
         do idm = 1,nMaster
           id = indexMaster(idm)
-          !#endif
           etype = contact%master(id)%etype
           nn = size( contact%master(id)%nodes )
           do j=1,nn
             iSS = contact%master(id)%nodes(j)
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2Element(coord,etype,nn,elem,contact%states(i), isin, clearance )
+          call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,contact%states(i), &
+            isin,distclr,localclr=CLEARANCE )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
-          iSS = isInsideElement( etype, contact%states(i)%lpos, clearance )
-          if( iSS>0 ) call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%direction(:) )
+          iSS = isInsideElement( etype, contact%states(i)%lpos, CLR_CAL_NORM )
+          if( iSS>0 ) &
+            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos, &
+              contact%states(i)%direction(:) )
           contact_surf(contact%slave(i)) = id
           write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
             elemID(contact%master(id)%eid),       &
@@ -430,45 +461,121 @@ contains
   end subroutine scan_contact_state
 
   !> Calculate averaged nodal normal
-  subroutine cal_node_normal( csurf,cnode, surf, currpos, normal )
+  subroutine cal_node_normal( csurf, isin, surf, currpos, lpos, normal )
     use elementInfo, only:getVertexCoord, SurfaceNormal
     integer, intent(in)            :: csurf       !< current surface element
-    integer, intent(in)            :: cnode       !< current node position
+    integer, intent(in)            :: isin        !< return value from isInsideElement()
     type(tSurfElement), intent(in) :: surf(:)     !< surface elements
     real(kind=kreal), intent(in)   :: currpos(:)  !< current coordinate of each nodes
+    real(kind=kreal), intent(in)   :: lpos(:)     !< local coordinate of contact position
     real(kind=kreal), intent(out)  :: normal(3)   !< averaged node nomral
-    integer :: i, j, cnt, nd1, gn, etype, iSS, nn,cgn
+    integer(kind=kint) :: cnode, i, j, cnt, nd1, gn, etype, iSS, nn,cgn
     real(kind=kreal) :: cnpos(2), elem(3, l_max_elem_node )
+    integer(kind=kint) :: cnode1, cnode2, gn1, gn2, nsurf, cgn1, cgn2, isin_n
+    real(kind=kreal) :: x, normal_n(3), lpos_n(2)
 
-    gn = surf(csurf)%nodes(cnode)
-    etype = surf(csurf)%etype
-    call getVertexCoord( etype, cnode, cnpos )
-    nn = size( surf(csurf)%nodes )
-    do j=1,nn
-      iSS = surf(csurf)%nodes(j)
-      elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-    enddo
-    normal = SurfaceNormal( etype, nn, cnpos, elem )
-    cnt = 1
-    do i=1,surf(csurf)%n_neighbor
-      nd1 = surf(csurf)%neighbor(i)
-      nn = size( surf(nd1)%nodes )
-      etype = surf(nd1)%etype
-      cgn = 0
+    if( 1 <= isin .and. isin <= 4 ) then  ! corner
+      cnode = isin
+      gn = surf(csurf)%nodes(cnode)
+      etype = surf(csurf)%etype
+      call getVertexCoord( etype, cnode, cnpos )
+      nn = size( surf(csurf)%nodes )
       do j=1,nn
-        iSS = surf(nd1)%nodes(j)
+        iSS = surf(csurf)%nodes(j)
         elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-        if( iSS==gn ) cgn=iSS
       enddo
-      if( cgn>0 ) then
-        call getVertexCoord( etype, cgn, cnpos )
-        normal = normal+SurfaceNormal( etype, nn, cnpos, elem )
-        cnt = cnt+1
-      endif
-    enddo
-    normal = normal/cnt                                        !!-???
+      normal = SurfaceNormal( etype, nn, cnpos, elem )
+      cnt = 1
+      do i=1,surf(csurf)%n_neighbor
+        nd1 = surf(csurf)%neighbor(i)
+        nn = size( surf(nd1)%nodes )
+        etype = surf(nd1)%etype
+        cgn = 0
+        do j=1,nn
+          iSS = surf(nd1)%nodes(j)
+          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+          if( iSS==gn ) cgn=j
+        enddo
+        if( cgn>0 ) then
+          call getVertexCoord( etype, cgn, cnpos )
+          !normal = normal+SurfaceNormal( etype, nn, cnpos, elem )
+          normal_n = SurfaceNormal( etype, nn, cnpos, elem )
+          normal = normal+normal_n
+          cnt = cnt+1
+        endif
+      enddo
+      !normal = normal/cnt                                        !!-???
+    elseif( 12 <= isin .and. isin <= 41 ) then  ! edge
+      cnode1 = isin / 10
+      cnode2 = mod(isin, 10)
+      gn1 = surf(csurf)%nodes(cnode1)
+      gn2 = surf(csurf)%nodes(cnode2)
+      etype = surf(csurf)%etype
+      nn = size( surf(csurf)%nodes )
+      do j=1,nn
+        iSS = surf(csurf)%nodes(j)
+        elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+      enddo
+      normal = SurfaceNormal( etype, nn, lpos, elem )
+      select case (etype)
+      case (fe_tri3n, fe_tri6n, fe_tri6nc)
+        if    ( isin==12 ) then; x=lpos(2)-lpos(1)
+        elseif( isin==23 ) then; x=1.d0-2.d0*lpos(2)
+        elseif( isin==31 ) then; x=2.d0*lpos(1)-1.d0
+        else; stop "Error: cal_node_normal: invalid isin"
+        endif
+      case (fe_quad4n, fe_quad8n)
+        if    ( isin==12 ) then; x=lpos(1)
+        elseif( isin==23 ) then; x=lpos(2)
+        elseif( isin==34 ) then; x=-lpos(1)
+        elseif( isin==41 ) then; x=-lpos(2)
+        else; stop "Error: cal_node_normal: invalid isin"
+        endif
+      end select
+      ! find neighbor surf that includes cnode1 and cnode2
+      nsurf = 0
+      NEIB_LOOP: do i=1, surf(csurf)%n_neighbor
+        nd1 = surf(csurf)%neighbor(i)
+        nn = size( surf(nd1)%nodes )
+        etype = surf(nd1)%etype
+        cgn1 = 0
+        cgn2 = 0
+        do j=1,nn
+          iSS = surf(nd1)%nodes(j)
+          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+          if( iSS==gn1 ) cgn1=j
+          if( iSS==gn2 ) cgn2=j
+        enddo
+        if( cgn1>0 .and. cgn2>0 ) then
+          nsurf = nd1
+          isin_n = 10*cgn2 + cgn1
+          x = -x
+          select case (etype)
+          case (fe_tri3n, fe_tri6n, fe_tri6nc)
+            if    ( isin_n==12 ) then; lpos_n(1)=0.5d0*(1.d0-x); lpos_n(2)=0.5d0*(1.d0+x)
+            elseif( isin_n==23 ) then; lpos_n(1)=0.d0;           lpos_n(2)=0.5d0*(1.d0-x)
+            elseif( isin_n==31 ) then; lpos_n(1)=0.5d0*(1.d0+x); lpos_n(2)=0.d0
+            else; stop "Error: cal_node_normal: invalid isin_n"
+            endif
+          case (fe_quad4n, fe_quad8n)
+            if    ( isin_n==12 ) then; lpos_n(1)= x;    lpos_n(2)=-1.d0
+            elseif( isin_n==23 ) then; lpos_n(1)= 1.d0; lpos_n(2)= x
+            elseif( isin_n==34 ) then; lpos_n(1)=-x;    lpos_n(2)= 1.d0
+            elseif( isin_n==41 ) then; lpos_n(1)=-1.d0; lpos_n(2)=-x
+            else; stop "Error: cal_node_normal: invalid isin_n"
+            endif
+          end select
+          !normal = normal + SurfaceNormal( etype, nn, lpos_n, elem )
+          normal_n = SurfaceNormal( etype, nn, lpos_n, elem )
+          normal = normal+normal_n
+          exit NEIB_LOOP
+        endif
+      enddo NEIB_LOOP
+      !if( nsurf==0 ) write(0,*) "Warning: cal_node_normal: neighbor surf not found"
+      !normal = normal/2
+    endif
     normal = normal/ dsqrt( dot_product( normal, normal ) )
-  end subroutine
+  end subroutine cal_node_normal
 
   !> This subroutine tracks down next contact position after a finite slide
   subroutine track_contact_position( flag_ctAlgo, nslave, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, B )
@@ -483,15 +590,14 @@ contains
     integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
     real(kind=kreal), intent(inout)                  :: B(:)         !< nodal force residual
 
-    real(kind=kreal)    :: distclr, clearance
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
-    logical            :: isin
+    logical            :: isin, is_cand
     real(kind=kreal)    :: opos(2), odirec(3)
+    integer(kind=kint) :: bktID, nCand, idm
+    integer(kind=kint), allocatable :: indexCand(:)
 
-    distclr = 1.0d0          !1.d-1
-    clearance = 1.d-6
     sid = 0
 
     slave = contact%slave(nslave)
@@ -507,8 +613,8 @@ contains
       elem(1:3,j)=currpos(3*iSS-2:3*iSS)
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
-    call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr, &
-      contact%states(nslave)%lpos, clearance )
+    call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
+      isin,DISTCLR_CONT,contact%states(nslave)%lpos,CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -518,7 +624,8 @@ contains
           iSS = contact%master(sid)%nodes(j)
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
-        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
+        call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
+          isin,DISTCLR_CONT,localclr=CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -527,26 +634,38 @@ contains
     endif
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
-      do sid= 1, size(contact%master)
-        if( sid==sid0 ) cycle
-        if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
-        etype = contact%master(sid)%etype
-        nn = size( contact%master(sid)%nodes )
-        do j=1,nn
-          iSS = contact%master(sid)%nodes(j)
-          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+      write(*,*) 'Warning: contact moved beyond neighbor elements'
+      ! get master candidates from bucketDB
+      bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
+      nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
+      if (nCand > 0) then
+        allocate(indexCand(nCand))
+        call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+        do idm= 1, nCand
+          sid = indexCand(idm)
+          if( sid==sid0 ) cycle
+          if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+          if (.not. is_in_surface_box( contact%master(sid), coord(1:3), BOX_EXP_RATE )) cycle
+          etype = contact%master(sid)%etype
+          nn = size( contact%master(sid)%nodes )
+          do j=1,nn
+            iSS = contact%master(sid)%nodes(j)
+            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+          enddo
+          call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
+               isin,DISTCLR_CONT,localclr=CLEARANCE )
+          if( isin ) then
+            contact%states(nslave)%surface = sid
+            exit
+          endif
         enddo
-        call project_Point2Element(coord,etype,nn,elem,contact%states(nslave), isin, distclr )
-        if( isin ) then
-          contact%states(nslave)%surface = sid
-          exit
-        endif
-      enddo
+        deallocate(indexCand)
+      endif
     endif
 
     if( isin ) then
       if( contact%states(nslave)%surface==sid0 ) then
-        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= 1.0d-3))  then
+        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= CLR_DIFFLPOS))  then
           !$omp atomic
           infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         endif
@@ -560,9 +679,10 @@ contains
           call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
       endif
       if( flag_ctAlgo=='SLagrange' ) call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
-      iSS = isInsideElement( etype, contact%states(nslave)%lpos, clearance )
+      iSS = isInsideElement( etype, contact%states(nslave)%lpos, CLR_CAL_NORM )
       if( iSS>0 ) &
-        call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, contact%states(nslave)%direction(:) )
+        call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
+          contact%states(nslave)%lpos, contact%states(nslave)%direction(:) )
     else if( .not. isin ) then
       write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
       contact%states(nslave)%state = CONTACTFREE
@@ -883,29 +1003,6 @@ contains
     enddo
 
   end subroutine ass_contact_force
-
-  subroutine getMinMaxBoxIDPassedByMultiPoint(x,x0,width,minID,maxID)
-    real(kreal),intent(in)      ::  x(:,:)  ! Multi-Points' coordinate in space
-    real(kreal),intent(in)      ::  x0(3)
-    real(kreal),intent(in)      ::  width
-    integer(kint),intent(out)   ::  minID(3)
-    integer(kint),intent(out)   ::  maxID(3)
-    !
-    integer(kint) ::  i,j,boxID(3)
-    !
-    do i=1,size(x,2)
-      !boxID(:) = (x(:,i)-x0(:))/width + 1
-      boxID(:) = ceiling((x(:,i)-x0(:))/width)
-      if(i == 1) then
-        minID(:) = boxID(:)
-        maxID(:) = boxID(:)
-      endif
-      do j=1,3
-        if(boxID(j) < minID(j)) minID(j) = boxID(j)
-        if(boxID(j) > maxID(j)) maxID(j) = boxID(j)
-      enddo
-    enddo
-  end subroutine getMinMaxBoxIDPassedByMultiPoint
 
   !>\brief This subroutine setup contact output nodal vectors
   subroutine set_contact_state_vector( contact, dt, relvel_vec, state_vec )

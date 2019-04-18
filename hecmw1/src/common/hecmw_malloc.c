@@ -27,66 +27,95 @@ static long mem_size;
 
 static int auto_check = 1;
 
+static int n_ptr;
+
 static int add_info(void *ptr, size_t size, char *file, int line) {
   static struct malloc_info *info;
+  int rtc;
 
   HECMW_assert(ptr);
 
-  info = malloc(sizeof(*info));
-  if (info == NULL) return -1;
+  #pragma omp critical
+  {
+    info = malloc(sizeof(*info));
+    if (info == NULL) {
+      rtc = -1;
+    } else {
+      mem_size += size;
 
-  mem_size += size;
+      info->ptr  = ptr;
+      info->size = size;
+      info->file = file;
+      info->line = line;
+      info->next = mainfo;
 
-  info->ptr  = ptr;
-  info->size = size;
-  info->file = file;
-  info->line = line;
-  info->next = mainfo;
+      mainfo = info;
 
-  mainfo = info;
+      n_ptr++;
+      rtc = 0;
+    }
+  }
 
-  return 0;
+  return rtc;
 }
 
 static int del_info(void *ptr) {
   struct malloc_info *p, *q;
+  int rtc, i;
 
   HECMW_assert(ptr);
 
-  q = NULL;
-  for (p = mainfo; p && p->ptr != ptr; p = (q = p)->next)
-    ;
-  if (p == NULL) return -1; /* not found */
+  #pragma omp critical
+  {
+    q = NULL;
+    for (p = mainfo, i = 0; p && p->ptr != ptr; p = (q = p)->next, i++) {
+      HECMW_assert(i < n_ptr);
+    }
+    if (p == NULL) {
+      rtc = -1; /* not found */
+    } else {
+      if (q == NULL) {
+        mainfo = p->next;
+      } else {
+        q->next = p->next;
+      }
+      mem_size -= p->size;
+      free(p);
 
-  if (q == NULL) {
-    mainfo = p->next;
-  } else {
-    q->next = p->next;
+      n_ptr--;
+      rtc = 0;
+    }
   }
-  mem_size -= p->size;
-  free(p);
-  return 0;
+  return rtc;
 }
 
 static int change_info(void *ptrold, void *ptrnew, size_t sizenew, char *file,
                        int line) {
   struct malloc_info *p;
-  size_t size;
+  long size;
+  int rtc, i;
 
   HECMW_assert(ptrold);
   HECMW_assert(ptrnew);
 
-  for (p = mainfo; p && p->ptr != ptrold; p = p->next)
-    ;
-  if (p == NULL) return -1;
-
-  size = sizenew - p->size;
-  mem_size += size;
-  p->ptr  = ptrnew;
-  p->size = sizenew;
-  p->file = file;
-  p->line = line;
-  return 0;
+  #pragma omp critical
+  {
+    for (p = mainfo, i = 0; p && p->ptr != ptrold; p = p->next, i++) {
+      HECMW_assert(i < n_ptr);
+    }
+    if (p == NULL) {
+      rtc = -1;
+    } else {
+      size = sizenew - p->size;
+      mem_size += size;
+      p->ptr  = ptrnew;
+      p->size = sizenew;
+      p->file = file;
+      p->line = line;
+      rtc = 0;
+    }
+  }
+  return rtc;
 }
 
 int HECMW_list_meminfo(FILE *fp) {

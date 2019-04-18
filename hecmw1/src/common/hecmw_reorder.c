@@ -909,6 +909,14 @@ static int mask_node_dof(struct hecmwST_local_mesh *local_mesh,
         n_dof = BIT_DOF_THREE;
         break;
 
+      /* patch element */
+      case HECMW_ETYPE_PTT1:
+      case HECMW_ETYPE_PTT2:
+      case HECMW_ETYPE_PTQ1:
+      case HECMW_ETYPE_PTQ2:
+        n_dof = BIT_DOF_THREE;
+        break;
+
       /* link element for MPC */
       case HECMW_ETYPE_LN11:
       case HECMW_ETYPE_LN12:

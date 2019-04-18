@@ -49,6 +49,8 @@ extern void HECMW_printerr(char *fmt, ...);
 
 extern char *HECMW_get_date(void);
 
+extern char *HECMW_get_date_r(char *buf, int len);
+
 extern void HECMW_assert_(int cond, char *cond_str, char *file, int line);
 
 extern int HECMW_check_condition_(int cond, char *cond_str, int isabort,
