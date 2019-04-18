@@ -1,0 +1,13 @@
+##
+## HEC-MW control file for FrontISTR
+##
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+2elem.msh
+!CONTROL, NAME=fstrCNT
+2elem_nl.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+2elem_nl.res
+!RESULT, NAME=vis_out, IO=OUT
+2elem_nl.vis
+!RESTART,NAME=fstrRST, IO=OUT
+2elem_nl.rst

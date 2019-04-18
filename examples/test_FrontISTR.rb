@@ -17,7 +17,7 @@ def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
   base = File.basename(mesh,".*")
   res = base + ".res" if res == nil
   vis = base + ".vis" if vis == nil
-  if $np then 
+  if $np then
   File.open("hecmw_ctrl.dat","w"){|aFile|
     aFile.print <<END_OF_HECMW_CTRL
 ##
@@ -44,7 +44,7 @@ END_OF_HECMW_CTRL
 !PARTITION,TYPE=NODE-BASED,METHOD=KMETIS,DOMAIN=#{$np}
 END_OF_HECMW_CTRL
 }
-  else 
+  else
     File.open("hecmw_ctrl.dat","w"){|aFile|
     aFile.print <<END_OF_HECMW_CTRL
 ##
@@ -62,9 +62,9 @@ END_OF_HECMW_CTRL
 #{vis}
 END_OF_HECMW_CTRL
   }
-  
-  end 
-  
+
+  end
+
 end
 
 #
@@ -84,11 +84,11 @@ def exec_test(dirname,mesh,cnt,name,correctLog=nil)
       execcmd = "mpirun -np " + $np + " -x OMP_NUM_THREADS=1 " + $fistr
       puts execcmd
       system(execcmd)
-    else 
+    else
       puts $fistr
       system($fistr)
-    end 
-    
+    end
+
     puts "return value = #{$?.exitstatus}"
     return 1 if $?.exitstatus != 0
     currentLog = name+".log"
@@ -596,9 +596,9 @@ when("dynamic/exW")
 }
 when("dynamic/exX")
 [
-["dynamic/exX","W342_step.msh","W342_c0_ex_m2_t1.cnt","W342_c0_ex_m2_t1_MUMP_V4_5.log"],
+["dynamic/exX","W342_step.msh","W342_c0_ex_m2_t1.cnt","W342_c0_ex_m2_t1_MUMPS_V4_5.log"],
 ["dynamic/exX","W342_step.msh","W342_c0_im_m2_t1.cnt","W342_c0_im_m2_t1_MUMPS_V4_5.log"],
-["dynamic/exX","W361_step.msh","W361_c0_ex_m2_t1.cnt","W361_c0_ex_m2_t1_MUMP_V4_5.log"],
+["dynamic/exX","W361_step.msh","W361_c0_ex_m2_t1.cnt","W361_c0_ex_m2_t1_MUMPS_V4_5.log"],
 ["dynamic/exX","W361_step.msh","W361_c0_im_m2_t1.cnt","W361_c0_im_m2_t1_CG_V4_5.log"],
 ].each{|param|
 	res = exec_test(param[0],param[1],param[2],File.basename(param[2],".*"),param[3])

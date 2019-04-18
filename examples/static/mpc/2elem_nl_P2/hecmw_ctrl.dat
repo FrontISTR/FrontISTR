@@ -1,0 +1,17 @@
+##
+## HEC-MW control file for FrontISTR
+##
+!MESH, NAME=part_in, TYPE=HECMW-ENTIRE, IO=IN
+../2elem.msh
+!MESH, NAME=part_out, TYPE=HECMW-DIST, IO=OUT
+2elem
+!MESH, NAME=fstrMSH, TYPE=HECMW-DIST
+2elem
+!CONTROL, NAME=fstrCNT
+../2elem_nl.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+2elem_nl.res
+!RESULT, NAME=vis_out, IO=OUT
+2elem_nl.vis
+!RESTART,NAME=fstrRST, IO=OUT
+2elem_nl.rst

@@ -125,8 +125,8 @@ contains
       enddo
 
       call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, next_time)
-      call heat_output_result(hecMESH, fstrHEAT, total_step, is_end)
-      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, is_end)
+      call heat_output_result(hecMESH, fstrHEAT, total_step, next_time, is_end)
+      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, next_time, is_end)
       call heat_output_restart(hecMESH, fstrHEAT, total_step, is_end, next_time)
 
       current_time = next_time
