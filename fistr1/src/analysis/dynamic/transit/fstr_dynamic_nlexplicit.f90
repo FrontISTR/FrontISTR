@@ -346,7 +346,6 @@ contains
     real(kind=kreal), intent(out)          :: wkarray(:)
     real(kind=kreal), intent(out)          :: uc(:)
     integer :: i, j, k, m, grpid, slave, nn, iSS, sid, etype, iter
-    integer(kind=16) :: i16
     real(kind=kreal) :: fdum, conv, dlambda, shapefunc(l_max_surface_node), lambda(3)
 
     call fstr_scan_contact_state_exp( cstep, hecMESH, fstrSOLID, infoCTChange )

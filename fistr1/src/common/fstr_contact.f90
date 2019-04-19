@@ -278,18 +278,18 @@ contains
 
   !> Scanning contact state
   subroutine fstr_scan_contact_state_exp( cstep, hecMESH, fstrSOLID, infoCTChange )
-    integer, intent(in)                          :: cstep         !< current step number
+    integer(kind=kint), intent(in)               :: cstep         !< current step number
     type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
     type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
     type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
-    integer :: i, grpid
-    logical :: iactive
+    integer(kind=kint) :: i, grpid
+    logical :: iactive, is_init
 
 
     ! P.A. We redefine fstrSOLID%ddunode as current coordinate of every nodes
     !  fstrSOLID%ddunode(:) = fstrSOLID%unode(:) + fstrSOLID%dunode(:)
-    do i = 1, size(hecMESH%node)
+    do i = 1, size(fstrSOLID%unode)
       fstrSOLID%ddunode(i) = hecMESH%node(i) + fstrSOLID%unode(i) + fstrSOLID%dunode(i)
     enddo
     infoCTChange%active = .false.
@@ -300,6 +300,8 @@ contains
     infoCTChange%free2contact = 0
     infoCTChange%contactNode_current = 0
 
+    is_init = ( cstep == 1 )
+
     do i=1,size(fstrSOLID%contacts)
    !   grpid = fstrSOLID%contacts(i)%group
    !   if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
@@ -307,7 +309,7 @@ contains
    !   endif
 
       call scan_contact_state_exp( fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-           & infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), iactive )
+           & infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
 
       infoCTChange%active = infoCTChange%active .or. iactive
     enddo
