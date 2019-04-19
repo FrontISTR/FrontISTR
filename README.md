@@ -11,6 +11,11 @@ e-mail : support@frontistr.com
 ### Programs in this archive
 FrontISTR : Open-Source Large-Scale Parallel FEM Program for Nonlinear Structural Analysis
 
+### Detailed manuals
+
+  - [English](http://frontistr-commons.gitlab.io/FrontISTR_manual/v5.0b/en/)
+  - [Japanese](http://frontistr-commons.gitlab.io/FrontISTR_manual/v5.0b/ja/)
+
 ### Files in this directory
 README.md                   : README (in English : this file)  
 README.ja.md                : README (in Japanese)  
