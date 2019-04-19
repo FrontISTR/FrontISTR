@@ -1,0 +1,13 @@
+##
+## HEC-MW control file for FrontSTR
+## Auto created by fstr_srun.sh
+## 2019年 1月 14日 月曜日 15:01:05 JST
+##
+!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+rigidslide.msh
+!CONTROL,NAME=fstrCNT
+rigidslide.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+rigidslide.res
+!RESULT,NAME=vis_out,IO=OUT
+rigidslide.vis

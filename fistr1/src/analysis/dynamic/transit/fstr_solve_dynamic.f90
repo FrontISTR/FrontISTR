@@ -37,7 +37,7 @@ contains
     type(hecmwST_matrix), optional       :: conMAT
     integer(kind=kint) :: i, j, num_monit, ig, is, iE, ik, in, ing, iunitS, iunit, ierror, flag, limit
     character(len=HECMW_FILENAME_LEN) :: fname, header
-    integer(kind=kint) :: restrt_step_num
+    integer(kind=kint) :: restrt_step_num, ndof
     integer(kind=kint) :: restrt_step(1)
 
     num_monit = 0
@@ -106,6 +106,17 @@ contains
           call hecmw_abort( hecmw_comm_get_comm())
         end if
 
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW7
+        write(fname,'(a,i0,a)') trim(header)//'dyna_force_',ing,'.txt'
+        if(fstrDYNAMIC%restart_nout < 0 ) then
+          open(iunit,file=fname, position = 'append', iostat=ierror)
+        else
+          open(iunit,file=fname, status = 'replace', iostat=ierror)
+        endif
+        if( ierror /= 0 ) then
+          write(*,*) 'stop due to file opening error',trim(fname)
+          call hecmw_abort( hecmw_comm_get_comm())
+        end if
         iunit = iunitS + fstrDYNAMIC%dynamic_IW8
         write(fname,'(a,i0,a)') trim(header)//'dyna_strain_',ing,'.txt'
         if(fstrDYNAMIC%restart_nout < 0 ) then
@@ -151,6 +162,29 @@ contains
     fstrDYNAMIC%i_step = 0
     infoCTChange%contactNode_previous = 0
 
+    if(associated(g_InitialCnd))then
+      ndof = HECMAT%NDOF
+      do j = 1, size(g_InitialCnd)
+        !is = hecMESH%node_group%grp_index(g_InitialCnd(j)%grpid-1) + 1
+        !ie = hecMESH%node_group%grp_index(g_InitialCnd(j)%grpid  )
+        if(g_InitialCnd(j)%cond_name == "velocity")then
+          do i= 1, hecMESH%n_node
+            ing = g_InitialCnd(j)%intval(i)
+            if(ing <= 0) cycle
+            !ik = hecMESH%node_group%grp_item(i)
+            fstrDYNAMIC%VEL(ndof*i-(ndof-ing),1) = g_InitialCnd(j)%realval(i)
+          end do
+        elseif(g_InitialCnd(j)%cond_name == "acceleration")then
+          do i = 1, hecMESH%n_node
+            ing = g_InitialCnd(j)%intval(i)
+            if(ing <= 0) cycle
+              !ik = hecMESH%node_group%grp_item(i)
+              fstrDYNAMIC%ACC(ndof*i-(ndof-ing),1) = g_InitialCnd(j)%realval(i)
+          enddo
+        endif
+      enddo
+    endif
+
     if(fstrDYNAMIC%restart_nout >= 0 ) then
       call dynamic_bc_init   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
       call dynamic_bc_init_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
@@ -193,7 +227,7 @@ contains
 
       else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
         call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-          ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+          ,fstrDYNAMIC,fstrRESULT,fstrPARAM,infoCTChange &
           ,fstrCPL, restrt_step_num )
       endif
 
@@ -220,6 +254,7 @@ contains
         close(iunitS + fstrDYNAMIC%dynamic_IW4)
         close(iunitS + fstrDYNAMIC%dynamic_IW5)
         close(iunitS + fstrDYNAMIC%dynamic_IW6)
+        close(iunitS + fstrDYNAMIC%dynamic_IW7)
         close(iunitS + fstrDYNAMIC%dynamic_IW8)
         close(iunitS + fstrDYNAMIC%dynamic_IW9)
       enddo
