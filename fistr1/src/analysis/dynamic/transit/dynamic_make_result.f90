@@ -449,6 +449,11 @@ contains
     ecomp = 0
     jitem = 0
 
+    ! --- TIME
+    fstrRESULT%ng_dof(1) = 1
+    fstrRESULT%global_label(1) = "TOTALTIME"
+    fstrRESULT%global_val_item(1) = fstrDYNAMIC%t_curr
+
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
       if(ndof /= 4) then
