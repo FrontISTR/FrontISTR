@@ -601,6 +601,9 @@ contains
         call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
         ! ----- Set residual
+        if( fstrSOLID%DLOAD_follow /= 0 )                                 &
+          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
         else
