@@ -103,6 +103,7 @@ contains
       do idof = 1, ndof
         ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
         cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
+        cdisp(idof) = cdisp(idof) + hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%dunode)
       enddo
       ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
 
@@ -119,7 +120,8 @@ contains
       iE0 = hecMESH%node_group%grp_index(ig  )
       do ik = iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
-        cdiff(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in)+fstrSOLID%unode(ndof*(in-1)+1:ndof*in)-ccoord(1:ndof)
+        cdiff(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in)+fstrSOLID%unode(ndof*(in-1)+1:ndof*in) &
+          &  +fstrSOLID%dunode(ndof*(in-1)+1:ndof*in)-ccoord(1:ndof)
         call cross_product(normal,cdiff,vect(1:ndof))
         fval = dot_product(vect(1:ndof),vect(1:ndof))
         if( fval < 1.d-16 ) then
