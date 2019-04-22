@@ -191,6 +191,8 @@ contains
       bktdb%ndiv(i) = max(floor(xrange(i) / dmin), 1)
       bktdb%d(i) = xrange(i) / bktdb%ndiv(i) * (1.d0 + EPS)
     enddo
+    if (DEBUG >= 1) write(0,*) 'DEBUG: bucketDB_setup: ndiv, d: ', bktdb%ndiv, bktdb%d
+    call assert(all(bktdb%d > 0.d0), 'bucketDB_setup: invalid bktdb%d')
     allocate(bktdb%buckets(bktdb%ndiv(1), bktdb%ndiv(2), bktdb%ndiv(3)))
     do k = 1, bktdb%ndiv(3)
       do j = 1, bktdb%ndiv(2)
@@ -245,7 +247,12 @@ contains
     real(kind=kreal), intent(in) :: x(3)        !< coordinate of point
     integer(kind=kint) :: baddr(3)
     integer(kind=kint) :: i
+    if (bktdb%n_tot == 0) then
+      bucketDB_getBucketID = -1
+      return
+    endif
     do i = 1, 3
+      call assert(bktdb%d(i) > 0.d0, 'bucketDB_getBucketID: bktdb%d(i) is zero')
       baddr(i) = floor((x(i) - bktdb%x_min(i)) / bktdb%d(i)) + 1
     enddo
     if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_getBucketID: ',x,baddr
@@ -260,7 +267,7 @@ contains
     integer(kind=kint), intent(in) :: bid   !< bucket ID
     integer(kind=kint) :: baddr(3)
     baddr = decode_bid(bktdb, bid)
-    call assert(all(baddr > 0) .and. all(baddr <= bktdb%ndiv), 'bucketDB_register_pre: block ID our of range')
+    call assert(all(baddr > 0) .and. all(baddr <= bktdb%ndiv), 'bucketDB_register_pre: block ID out of range')
     call bucket_incr_count(bktdb%buckets(baddr(1),baddr(2),baddr(3)))
     if (DEBUG >= 2) write(0,*) '  DEBUG: bucketDB_registerPre: ', baddr
   end subroutine bucketDB_registerPre
@@ -308,6 +315,10 @@ contains
     type(bucketDB), intent(in) :: bktdb        !< bucket info
     integer(kind=kint), intent(in) :: bid      !< bucket ID
     integer(kind=kint) :: baddr(3), ncand, i, j, k, is, ie, js, je, ks, ke
+    if (bid < 0) then
+      bucketDB_getNumCand = 0
+      return
+    endif
     baddr = decode_bid(bktdb, bid)
     ncand = 0
     is = max(baddr(1)-1, 1)
@@ -337,6 +348,7 @@ contains
     integer(kind=kint), intent(out), target :: cand(ncand)  !< array to store candidates
     integer(kind=kint) :: baddr(3), i, j, k, n, cnt, is, ie, js, je, ks, ke
     integer(kind=kint), pointer :: pcand(:)
+    if (bid < 0 .or. ncand == 0) return
     baddr = decode_bid(bktdb, bid)
     cnt = 0
     is = max(baddr(1)-1, 1)
