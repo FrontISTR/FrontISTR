@@ -35,7 +35,7 @@ contains
     type (hecmwST_matrix    ),optional     :: conMAT
 
     integer(kind=kint) :: ndof, nn
-    integer(kind=kint) :: j, in, tot_step, step_count, tot_step_print, CBbound
+    integer(kind=kint) :: j, i, tot_step, step_count, tot_step_print, CBbound
     integer(kind=kint) :: sub_step
     integer(kind=kint) :: restart_step_num, restart_substep_num
     real(kind=kreal)   :: ctime, dtime, endtime, factor
@@ -49,14 +49,27 @@ contains
     ndof = hecMAT%NDOF
     nn = ndof*ndof
 
-    if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
+    if( fstrSOLID%TEMP_ngrp_tot>0 .and. associated(g_InitialCnd) ) then
       fstrSOLID%last_temp = 0.0d0
       fstrSOLID%temperature = 0.0d0
-      do j=1, size(hecMESH%node_init_val_item)
-        in = hecMESH%node_init_val_index(j)
-        fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(in)
-        fstrSOLID%temperature(j) = hecMESH%node_init_val_item(in)
+	  do j=1,size(g_InitialCnd)
+          if( g_InitialCnd(j)%cond_name=="temperature" ) then
+            if( .not. associated(fstrSOLID%temperature) ) then
+                allocate( fstrSOLID%temperature( hecMESH%n_node ) )
+                allocate( fstrSOLID%temp_bak( hecMESH%n_node ) )
+                allocate( fstrSOLID%last_temp( hecMESH%n_node ) )
+            endif 
+            do i= 1, hecMESH%n_node
+              fstrSOLID%last_temp(i) = g_InitialCnd(j)%realval(i)
+              fstrSOLID%temperature(i) = fstrSOLID%last_temp(i)
+            enddo
+          endif
       end do
+    !  do j=1, size(hecMESH%node_init_val_item)
+    !    in = hecMESH%node_init_val_index(j)
+    !    fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(in)
+    !    fstrSOLID%temperature(j) = hecMESH%node_init_val_item(in)
+    !  end do
     endif
 
     if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
