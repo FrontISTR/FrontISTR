@@ -65,11 +65,6 @@ contains
             enddo
           endif
       end do
-    !  do j=1, size(hecMESH%node_init_val_item)
-    !    in = hecMESH%node_init_val_index(j)
-    !    fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(in)
-    !    fstrSOLID%temperature(j) = hecMESH%node_init_val_item(in)
-    !  end do
     endif
 
     if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
