@@ -44,7 +44,7 @@ char *HECMW_get_date_r(char *buf, int len) {
   struct tm result;
 
   if (time(&now) == (time_t)-1) return NULL;
-  if (localtime_r(&now, &result) == NULL) return NULL;
+  if (localtime_s(&now, &result) == NULL) return NULL;
   rc = strftime(buf, len, "%b %d %H:%M:%S", &result);
   return rc ? buf : NULL;
 }
