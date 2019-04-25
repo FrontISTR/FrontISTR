@@ -14,6 +14,7 @@ contains
     use hecmw_solver_direct
     use hecmw_solver_direct_parallel
     use hecmw_solver_direct_MUMPS
+    use hecmw_solver_direct_MKL
     use hecmw_solver_direct_clusterMKL
     use hecmw_matrix_misc
     implicit none
@@ -48,10 +49,14 @@ contains
         call hecmw_mat_set_flag_converged(hecMAT, 0)
         call hecmw_mat_set_flag_diverged(hecMAT, 0)
 
-        if (hecMAT%Iarray(2) .eq. 104) then
+        if (hecMAT%Iarray(2) .eq. 102) then
+          if(hecMESH%PETOT.GT.1) then
+            call hecmw_solve_direct_ClusterMKL(hecMESH, hecMAT)
+          else
+            !call hecmw_solve_direct_MKL(hecMESH,hecMAT)
+          endif
+        elseif (hecMAT%Iarray(2) .eq. 104) then
           call hecmw_solve_direct_MUMPS(hecMESH, hecMAT)
-        elseif (hecMAT%Iarray(2) .eq. 105) then
-          call hecmw_solve_direct_ClusterMKL(hecMESH, hecMAT)
         else
           if(hecMESH%PETOT.GT.1) then
             call hecmw_solve_direct_parallel(hecMESH,hecMAT,imsg)
