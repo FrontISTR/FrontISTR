@@ -53,7 +53,7 @@ contains
           if(hecMESH%PETOT.GT.1) then
             call hecmw_solve_direct_ClusterMKL(hecMESH, hecMAT)
           else
-            !call hecmw_solve_direct_MKL(hecMESH,hecMAT)
+            call hecmw_solve_direct_MKL(hecMESH,hecMAT)
           endif
         elseif (hecMAT%Iarray(2) .eq. 104) then
           call hecmw_solve_direct_MUMPS(hecMESH, hecMAT)

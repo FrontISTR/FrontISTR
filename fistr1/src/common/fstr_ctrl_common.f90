@@ -134,6 +134,8 @@ contains
       if( method > indirect_number ) then
         ! JP-3
         method = method - indirect_number + 100
+        if( method == 103 ) method = 101 ! DIRECTlag => DIRECT
+        if( method == 105 ) method = 102 ! MKL => DIRECTmkl
       end if
     end if
     if( method2 > number_number ) then  ! JP-2
