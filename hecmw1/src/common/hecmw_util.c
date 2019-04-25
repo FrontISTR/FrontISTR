@@ -44,8 +44,18 @@ char *HECMW_get_date_r(char *buf, int len) {
   struct tm result;
 
   if (time(&now) == (time_t)-1) return NULL;
+
+#if defined(__WIN32__) || defined(__WIN64__)
+  /* localtime_r is not available on Windows */
+  #pragma omp critical
+  {
+    rc = strftime(buf, len, "%b %d %H:%M:%S", localtime(&now));
+  }
+#else
   if (localtime_r(&now, &result) == NULL) return NULL;
   rc = strftime(buf, len, "%b %d %H:%M:%S", &result);
+#endif
+
   return rc ? buf : NULL;
 }
 
