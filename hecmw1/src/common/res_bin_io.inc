@@ -66,11 +66,110 @@ bin_output_result_header(FILE *fp)
 	int rc;
 
 	/* header */
+	if( filever_major > 1 ){
+        sprintf(head,"%s %d.%d",head,filever_major,filever_minor);
+    }
 	rc = hecmw_write_bin(fp,"S", head);
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "head");
 		return -1;
 	}
+
+	return 0;
+}
+
+
+static int
+bin_output_result_global(FILE *fp)
+{
+	int i,j,k,n,rc,ng_comp;
+	struct result_list *p,**data;
+
+	/* comment */
+	rc = hecmw_write_bin(fp,"S","*comment");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*comment");
+		return -1;
+	}
+	rc = hecmw_write_bin(fp,"S", comment_line);
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "head");
+		return -1;
+	}
+
+	/* global header */
+	rc = hecmw_write_bin(fp,"S","*global");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*global");
+		return -1;
+	}
+
+	/* ng_component */
+	rc = hecmw_write_bin(fp, "II", count_ng_comp());
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "ng_comp");
+		return -1;
+	}
+
+	/* ng_dof */
+	n = 0;
+	for(p=global_list; p; p=p->next) {
+		rc = hecmw_write_bin(fp, "I", p->n_dof );
+		if(rc < 0) {
+			HECMW_set_error(HECMW_UTIL_E0205, "ng_dof");
+			return -1;
+		}
+		n++;
+	}
+
+	/* global_label */
+	for(p=global_list; p; p=p->next) {
+		rc = hecmw_write_bin(fp, "S", p->label);
+		if(rc < 0) {
+			HECMW_set_error(HECMW_UTIL_E0205, "global_label");
+			return -1;
+		}
+	}
+
+	/* global_val_item */
+	ng_comp = count_ng_comp();
+	if(ng_comp == 0) return 0;
+	data = HECMW_malloc(sizeof(*data) * ng_comp);
+	if(data == NULL) {
+		HECMW_set_error(errno, "");
+		return -1;
+	}
+	i = 0;
+	for(p=global_list; p; p=p->next) {
+		data[i++] = p;
+	}
+	for(j=0; j < ng_comp; j++) {
+		p = data[j];
+		for(k=0; k < p->n_dof; k++) {
+			rc = hecmw_write_bin(fp, "F", p->ptr[k] );
+			if(rc < 0) {
+				HECMW_set_error(HECMW_UTIL_E0205, "global_val_item");
+				return -1;
+			}
+		}
+	}
+	HECMW_free(data);
+
+	/* data header */
+	rc = hecmw_write_bin(fp,"S","*data");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "head");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+static int
+bin_output_result_dataheader(FILE *fp)
+{
+	int rc;
 
 	/* n_node, n_elem */
 	rc = hecmw_write_bin(fp, "II", nnode, nelem);
@@ -220,6 +319,14 @@ bin_output_result_data(FILE *fp)
 	if(bin_output_result_header(fp)) {
 		return -1;
 	}
+	if( filever_major > 1 ){
+		if(bin_output_result_global(fp)) {
+			return -1;
+		}
+    }
+	if(bin_output_result_dataheader(fp)) {
+		return -1;
+	}
 	if(bin_output_result_node(fp)) {
 		return -1;
 	}
@@ -237,8 +344,7 @@ bin_output_result_data(FILE *fp)
 
 
 static int
-bin_output_result_header_ST(struct hecmwST_result_data *result, char *header,
-		int n_node, int n_elem, FILE *fp)
+bin_output_result_header_ST(struct hecmwST_result_data *result, char *header, FILE *fp)
 {
 	int rc,len;
 	char *p,*q;
@@ -254,15 +360,119 @@ bin_output_result_header_ST(struct hecmwST_result_data *result, char *header,
 			*q++ = *p++;
 			len++;
 		}
-		*++q = '\0';
+		*q++ = '\0';
 	}
 
 	/* header */
+	if( filever_major > 1 ){
+        sprintf(head,"%s %d.%d",head,filever_major,filever_minor);
+    }
 	rc = hecmw_write_bin(fp, "S", header);
 	if(rc < 0) {
 		HECMW_set_error(HECMW_UTIL_E0205, "header");
 		return -1;
 	}
+
+	return 0;
+}
+
+
+static int
+bin_output_result_global_ST(struct hecmwST_result_data *result, char *comment, FILE *fp)
+{
+	int i,j,k,n,m,rc,len;
+	char *p,*q;
+	char comment_line[HECMW_MSG_LEN+1];
+
+	if(comment == NULL) {
+		comment_line[0] = '\0';
+	} else {
+		len = 0;
+		p = comment;
+		q = comment_line;
+		while(len < sizeof(comment_line)-1 && *p && *p != '\n') {
+			*q++ = *p++;
+			len++;
+		}
+		*q++ = '\0';
+	}
+
+	/* comment */
+	rc = hecmw_write_bin(fp,"S","*comment");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*comment");
+		return -1;
+	}
+	rc = hecmw_write_bin(fp, "S", comment);
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "comment");
+		return -1;
+	}
+
+	/* global header */
+	rc = hecmw_write_bin(fp,"S","*global");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*global");
+		return -1;
+	}
+
+	/* ng_component */
+	rc = hecmw_write_bin(fp, "II", result->ng_component);
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "ng_comp");
+		return -1;
+	}
+
+	/* ng_dof */
+	n = 0;
+	for(i=0; i < result->ng_component; i++) {
+		rc = hecmw_write_bin(fp, "I", result->ng_dof[i] );
+		if(rc < 0) {
+			HECMW_set_error(HECMW_UTIL_E0205, "ng_dof");
+			return -1;
+		}
+		n++;
+	}
+
+	/* global_label */
+	for(i=0; i < result->ng_component; i++) {
+		rc = hecmw_write_bin(fp, "S", result->global_label[i]);
+		if(rc < 0) {
+			HECMW_set_error(HECMW_UTIL_E0205, "global_label");
+			return -1;
+		}
+	}
+
+	/* global_val_item */
+	if(result->ng_component == 0) return 0;
+	m = 0;
+	for(j=0; j < result->ng_component; j++) {
+		for(k=0; k < result->ng_dof[j]; k++) {
+			rc = hecmw_write_bin(fp, "F", result->global_val_item[m] );
+			if(rc < 0) {
+				HECMW_set_error(HECMW_UTIL_E0205, "global_val_item");
+				return -1;
+			}
+			m++;
+		}
+	}
+
+	/* data header */
+	rc = hecmw_write_bin(fp,"S","*data");
+	if(rc < 0) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*data");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+static int
+bin_output_result_dataheader_ST(struct hecmwST_result_data *result,
+		int n_node, int n_elem, FILE *fp)
+{
+	int rc;
 
 	/* n_node, n_elem */
 	rc = hecmw_write_bin(fp, "II", n_node, n_elem);
@@ -383,11 +593,19 @@ bin_output_result_elem_ST(struct hecmwST_result_data *result, int n_elem, FILE *
 
 
 static int
-bin_output_result_data_ST(struct hecmwST_result_data *result, int n_node, int n_elem, char *header, FILE *fp)
+bin_output_result_data_ST(struct hecmwST_result_data *result, int n_node, int n_elem, char *header, char *comment, FILE *fp)
 {
 	HECMW_assert(fp);
 
-	if(bin_output_result_header_ST(result, header, n_node, n_elem, fp)) {
+	if(bin_output_result_header_ST(result, header, fp)) {
+		return -1;
+	}
+	if( filever_major > 1 ){
+		if(bin_output_result_global_ST(result, comment, fp)) {
+			return -1;
+		}
+    }
+	if(bin_output_result_dataheader_ST(result, n_node, n_elem, fp)) {
 		return -1;
 	}
 	if(bin_output_result_node_ST(result, n_node, fp)) {
@@ -407,17 +625,126 @@ bin_output_result_data_ST(struct hecmwST_result_data *result, int n_node, int n_
 
 
 static int
-bin_input_result_header(struct hecmwST_result_data *result,
-		int *n_node, int *n_elem, FILE *fp)
+bin_input_result_header(struct hecmwST_result_data *result, FILE *fp)
 {
-	int nn, ne;
+    char *ptr;
 
 	/* header */
 	if(hecmw_read_bin(fp, "S", line_buf)) {
 		HECMW_set_error(HECMW_UTIL_E0205, "header");
 		return -1;
 	}
+	if( filever_major > 1 ){
+	    ptr = strtok(line_buf, " ");
+	    sprintf(line_buf, "%s", ptr);
+    }
 	strcpy( head, line_buf );
+
+	return 0;
+}
+
+
+static int
+bin_input_result_global(struct hecmwST_result_data *result, FILE *fp)
+{
+	int i,j,k,n,m;
+	/* comment */
+	if(hecmw_read_bin(fp, "S", line_buf)) { //skip comment header
+		HECMW_set_error(HECMW_UTIL_E0205, "comment");
+		return -1;
+	}
+	if(hecmw_read_bin(fp, "S", line_buf)) {
+		HECMW_set_error(HECMW_UTIL_E0205, "comment");
+		return -1;
+	}
+	strcpy( comment_line, line_buf );
+
+	/* skip global header */
+	if(hecmw_read_bin(fp, "S", line_buf)) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*global");
+		return -1;
+	}
+
+	/* ng_component */
+	if(hecmw_read_bin(fp, "II", &result->ng_component)) {
+		HECMW_set_error(HECMW_UTIL_E0205, "ng_component");
+		return -1;
+	}
+
+	if(result->ng_component <= 0) {
+		return 0;
+	}
+
+	/* ng_dof */
+	result->ng_dof = HECMW_malloc(sizeof(*result->ng_dof)*result->ng_component);
+	if(result->ng_dof == NULL) {
+		HECMW_set_error(errno, "");
+		return -1;
+	}
+
+	n = 0;
+	for(i=0; i<result->ng_component; i++){
+		if(hecmw_read_bin( fp, "I", &result->ng_dof[i] )) {
+			HECMW_set_error(HECMW_UTIL_E0205, "ng_dof");
+			return -1;
+		}
+		n += result->ng_dof[i];
+	}
+
+	/* global_label */
+	result->global_label = HECMW_malloc(sizeof(*result->global_label)*result->ng_component);
+	if(result->global_label == NULL) {
+		HECMW_set_error(errno, "(global_label)");
+		return -1;
+	}
+
+	for(i=0; i < result->ng_component; i++) {
+		char label[HECMW_NAME_LEN+1];
+		if(hecmw_read_bin( fp, "S", label )) {
+			HECMW_set_error(HECMW_UTIL_E0205, "global_label");
+			return -1;
+		}
+		result->global_label[i] = HECMW_strdup(label);
+		if(result->global_label[i] == NULL) {
+			HECMW_set_error(errno, "(label)");
+			return -1;
+		}
+	}
+
+	/* global_val_item */
+	result->global_val_item = HECMW_malloc(sizeof(*result->global_val_item)*n);
+	if(result->global_val_item == NULL) {
+		HECMW_set_error(errno, "(global_val_item)");
+		return -1;
+	}
+
+	m = 0;
+	for(j=0; j < result->ng_component; j++) {
+		for(k=0; k < result->ng_dof[j]; k++) {
+			if(hecmw_read_bin( fp, "F", &result->global_val_item[m] )) {
+				HECMW_set_error(HECMW_UTIL_E0205, "global_val_item");
+				return -1;
+			}
+			m++;
+		}
+	}
+
+	/* skip data header */
+	if(hecmw_read_bin(fp, "S", line_buf)) {
+		HECMW_set_error(HECMW_UTIL_E0205, "*data");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+static int
+bin_input_result_dataheader(struct hecmwST_result_data *result,
+		int *n_node, int *n_elem, FILE *fp)
+{
+	int nn, ne;
+
 	/* n_node, n_elem */
 	if(hecmw_read_bin(fp, "II", &nn, &ne)) {
 		HECMW_set_error(HECMW_UTIL_E0205, "n_node,n_elem");
@@ -608,7 +935,16 @@ bin_input_result_data(FILE *fp)
 		return NULL;
 	}
 
-	if(bin_input_result_header(result, &n_node, &n_elem, fp)) {
+	if(bin_input_result_header(result, fp)) {
+		return NULL;
+	}
+
+	if( filever_major > 1 ){
+		if(bin_input_result_global(result, fp)) {
+			return NULL;
+		}
+    }
+	if(bin_input_result_dataheader(result, &n_node, &n_elem, fp)) {
 		return NULL;
 	}
 	nnode = n_node;

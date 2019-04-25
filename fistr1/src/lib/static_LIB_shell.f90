@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 module m_static_LIB_shell
@@ -37,6 +37,13 @@ module m_static_LIB_shell
   !     "Development of MITC Isotropic Triangular Shell Finite
   !     Elements,"
   !     Computers & Structures, Vol.82, pp.945-962, (2004).
+  !
+  ! Xi YUAN
+  !   Apr. 13, 2019: Introduce mass matrix calculation
+  ! (Ref.)
+  ! [5] E.Hinton, T.A.Rock, O.C.Zienkiewicz(1976): A Note on Mass Lumping
+  ! and Related Process in FEM. International Journal on Earthquake Eng
+  ! and structural dynamics, 4, pp245-249
   !
   !--------------------------------------------------------------
 
@@ -3195,5 +3202,346 @@ contains
     qf = matmul(stiff,totaldisp)
 
   end subroutine UpdateST_Shell_MITC33
+  
+  !####################################################################
+  subroutine mass_Shell(etype, nn, elem, rho, thick, gausses, mass, lumped)
+  !####################################################################
+    use hecmw
+    use m_utilities
+    use mMechGauss
+    use gauss_integration
+    integer(kind = kint), intent(in) :: etype
+    integer(kind = kint), intent(in) :: nn
+    real(kind = kreal), intent(in)   :: elem(3,nn)
+    real(kind = kreal), intent(in)   :: rho
+    real(kind = kreal), intent(in)   :: thick
+    type(tGaussStatus), intent(in)   :: gausses(:)
+    real(kind=kreal), intent(out)    :: mass(:,:)      !< mass matrix
+    real(kind=kreal), intent(out)    :: lumped(:)      !< lumped mass matrix
+
+    !--------------------------------------------------------------------
+
+    integer :: lx, ly, nsize, ndof
+    integer :: fetype
+    integer :: ny
+    integer :: i, m
+    integer :: na, nb
+    integer :: isize
+    integer :: jsize1, jsize2, jsize3, jsize4, jsize5, jsize6
+    integer :: n_totlyr, n_layer, shellmatl
+
+    real(kind = kreal) :: xi_lx, eta_lx, zeta_ly
+    real(kind = kreal) :: w_w_lx, w_ly
+    real(kind = kreal) :: naturalcoord(2)
+    real(kind = kreal) :: nncoord(nn, 2)
+    real(kind = kreal) :: shapefunc(nn)
+    real(kind = kreal) :: shapederiv(nn, 2)
+    real(kind = kreal) :: v1(3, nn), v2(3, nn), v3(3, nn)
+    real(kind = kreal) :: v1_abs, v2_abs, v3_abs
+    real(kind = kreal) :: a_over_2_v3(3, nn)
+    real(kind = kreal) :: u_rot(3, nn)
+    real(kind = kreal) :: dudxi_rot(3, nn), dudeta_rot(3, nn), dudzeta_rot(3, nn)
+    real(kind = kreal) :: g1(3), g2(3), g3(3)
+    real(kind = kreal) :: g1_abs, g2_abs, g3_abs
+    real(kind = kreal) :: g1_cross_g2(3)
+    real(kind = kreal) :: e_0(3)
+    real(kind = kreal) :: cg1(3), cg2(3), cg3(3)
+    real(kind = kreal) :: det
+    real(kind = kreal) :: det_cg3(3)
+    real(kind = kreal) :: det_inv
+    real(kind = kreal) :: det_cg3_abs
+    real(kind = kreal) :: w_w_w_det
+    real(kind = kreal) :: e3_hat(3)
+    real(kind = kreal) :: N(3, 6*nn)
+    real(kind = kreal) :: hx, hy, hz
+    real(kind = kreal) :: x, y, z
+    real(kind = kreal) :: sumlyr, totalmass, totdiag
+
+    ny = 0; ndof=6
+    nsize = ndof*nn
+
+    !--------------------------------------------------------------------
+
+    ! MITC4
+    if( etype == fe_mitc4_shell ) then
+      fetype = fe_mitc4_shell
+      ny = 2
+
+      ! MITC9
+    else if( etype == fe_mitc9_shell ) then
+      fetype = fe_mitc9_shell
+      ny = 3
+
+      ! MITC3
+    else if( etype == fe_mitc3_shell ) then
+      fetype = fe_mitc3_shell
+      ny = 2
+
+    end if
+
+    !-------------------------------------------------------------------
+
+    ! xi-coordinate at a node in a local element
+    ! eta-coordinate at a node in a local element
+    call getNodalNaturalCoord(fetype, nncoord)
+
+    ! xi-coordinate at the center point in a local element
+    ! eta-coordinate at the center point in a local element
+    naturalcoord(1) = 0.0D0
+    naturalcoord(2) = 0.0D0
+
+    call getShapeDeriv(fetype, naturalcoord, shapederiv)
+
+    !--------------------------------------------------------------
+
+    ! Covariant basis vector
+    g1(:) = matmul( elem, shapederiv(:,1) )
+
+    e_0(:) = g1(:)
+
+    !--------------------------------------------------------------
+
+    do nb = 1, nn
+
+      !--------------------------------------------------------
+
+      naturalcoord(1) = nncoord(nb, 1)
+      naturalcoord(2) = nncoord(nb, 2)
+      call getShapeDeriv(fetype, naturalcoord, shapederiv)
+
+      !--------------------------------------------------------
+
+      ! Covariant basis vector
+      g1(:) = matmul( elem, shapederiv(:,1) )
+      g2(:) = matmul( elem, shapederiv(:,2) )
+
+      !--------------------------------------------------------
+
+      det_cg3(1) = g1(2)*g2(3)-g1(3)*g2(2)
+      det_cg3(2) = g1(3)*g2(1)-g1(1)*g2(3)
+      det_cg3(3) = g1(1)*g2(2)-g1(2)*g2(1)
+
+      det_cg3_abs = dsqrt( det_cg3(1)*det_cg3(1)   &
+        +det_cg3(2)*det_cg3(2)   &
+        +det_cg3(3)*det_cg3(3) )
+
+      v3(:, nb) = det_cg3(:)/det_cg3_abs
+
+      !--------------------------------------------------------
+
+      v2(1, nb) = v3(2, nb)*e_0(3)-v3(3, nb)*e_0(2)
+      v2(2, nb) = v3(3, nb)*e_0(1)-v3(1, nb)*e_0(3)
+      v2(3, nb) = v3(1, nb)*e_0(2)-v3(2, nb)*e_0(1)
+
+      v2_abs = dsqrt( v2(1, nb)*v2(1, nb)   &
+        +v2(2, nb)*v2(2, nb)   &
+        +v2(3, nb)*v2(3, nb) )
+
+      if( v2_abs > 1.0D-15 ) then
+
+        v2(1, nb) = v2(1, nb)/v2_abs
+        v2(2, nb) = v2(2, nb)/v2_abs
+        v2(3, nb) = v2(3, nb)/v2_abs
+
+        v1(1, nb) = v2(2, nb)*v3(3, nb) &
+          -v2(3, nb)*v3(2, nb)
+        v1(2, nb) = v2(3, nb)*v3(1, nb) &
+          -v2(1, nb)*v3(3, nb)
+        v1(3, nb) = v2(1, nb)*v3(2, nb) &
+          -v2(2, nb)*v3(1, nb)
+
+        v1_abs = dsqrt( v1(1, nb)*v1(1, nb)   &
+          +v1(2, nb)*v1(2, nb)   &
+          +v1(3, nb)*v1(3, nb) )
+
+        v1(1, nb) = v1(1, nb)/v1_abs
+        v1(2, nb) = v1(2, nb)/v1_abs
+        v1(3, nb) = v1(3, nb)/v1_abs
+
+      else
+
+        v1(1, nb) =  0.0D0
+        v1(2, nb) =  0.0D0
+        v1(3, nb) = -1.0D0
+
+        v2(1, nb) = 0.0D0
+        v2(2, nb) = 1.0D0
+        v2(3, nb) = 0.0D0
+
+      end if
+
+      !--------------------------------------------------------
+
+      v3(1, nb) = v1(2, nb)*v2(3, nb) &
+        -v1(3, nb)*v2(2, nb)
+      v3(2, nb) = v1(3, nb)*v2(1, nb) &
+        -v1(1, nb)*v2(3, nb)
+      v3(3, nb) = v1(1, nb)*v2(2, nb) &
+        -v1(2, nb)*v2(1, nb)
+
+      v3_abs = dsqrt( v3(1, nb)*v3(1, nb)   &
+        +v3(2, nb)*v3(2, nb)   &
+        +v3(3, nb)*v3(3, nb) )
+
+      v3(1, nb) = v3(1, nb)/v3_abs
+      v3(2, nb) = v3(2, nb)/v3_abs
+      v3(3, nb) = v3(3, nb)/v3_abs
+
+      !--------------------------------------------------------
+
+      a_over_2_v3(1, nb) = 0.5D0*thick*v3(1, nb)
+      a_over_2_v3(2, nb) = 0.5D0*thick*v3(2, nb)
+      a_over_2_v3(3, nb) = 0.5D0*thick*v3(3, nb)
+
+      !--------------------------------------------------------
+
+    end do
+
+    !--------------------------------------------------------------------
+
+    mass(:,:) = 0.0D0
+    totalmass  = 0.d0
+    n_totlyr =  gausses(1)%pMaterial%totallyr
+    do n_layer=1,n_totlyr
+        do ly = 1, ny
+
+          !--------------------------------------------------
+
+          sumlyr = 0.0D0
+          do m = 1, n_layer
+            sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%weight
+          end do
+          zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg(ny, ly))
+
+          !zeta_ly = xg(ny, ly)
+          w_ly    = wgt(ny, ly)
+
+          !--------------------------------------------------
+
+          do lx = 1, NumOfQuadPoints(fetype)
+
+            !--------------------------------------------
+
+            call getQuadPoint(fetype, lx, naturalcoord)
+
+            xi_lx  = naturalcoord(1)
+            eta_lx = naturalcoord(2)
+
+            w_w_lx = getWeight(fetype, lx)
+
+            call getShapeFunc(fetype, naturalcoord, shapefunc)
+            call getShapeDeriv(fetype, naturalcoord, shapederiv)
+
+            !--------------------------------------------
+
+            do na = 1, nn
+
+              do i = 1, 3
+
+                u_rot(i, na) = shapefunc(na)*( zeta_ly*a_over_2_v3(i, na) )
+
+                dudxi_rot(i, na) = shapederiv(na, 1)               &
+                  *( zeta_ly*a_over_2_v3(i, na) )
+                dudeta_rot(i, na) = shapederiv(na, 2)               &
+                  *( zeta_ly*a_over_2_v3(i, na) )
+                dudzeta_rot(i, na) = shapefunc(na)                   &
+                  *( a_over_2_v3(i, na) )
+
+              end do
+
+            end do
+
+            !--------------------------------------------
+
+            ! Covariant basis vector
+            do i = 1, 3
+              g1(i) = 0.0D0
+              g2(i) = 0.0D0
+              g3(i) = 0.0D0
+              do na = 1, nn
+                g1(i) = g1(i)+shapederiv(na, 1) *elem(i, na)       &
+                  +dudxi_rot(i, na)
+                g2(i) = g2(i)+shapederiv(na, 2) *elem(i, na)       &
+                  +dudeta_rot(i, na)
+                g3(i) = g3(i)+dudzeta_rot(i, na)
+              end do
+            end do
+
+            !--------------------------------------------
+
+            ! Jacobian
+            det = g1(1)*( g2(2)*g3(3)-g2(3)*g3(2) ) &
+              +g1(2)*( g2(3)*g3(1)-g2(1)*g3(3) ) &
+              +g1(3)*( g2(1)*g3(2)-g2(2)*g3(1) )
+
+            !--------------------------------------------
+
+            ! [ N ] matrix
+            do nb = 1, nn
+
+              jsize1 = ndof*(nb-1)+1
+              jsize2 = ndof*(nb-1)+2
+              jsize3 = ndof*(nb-1)+3
+              jsize4 = ndof*(nb-1)+4
+              jsize5 = ndof*(nb-1)+5
+              jsize6 = ndof*(nb-1)+6
+
+              N(1, jsize1) =  shapefunc(nb)
+              N(2, jsize1) =  0.0D0
+              N(3, jsize1) =  0.0D0
+              N(1, jsize2) =  0.0D0
+              N(2, jsize2) =  shapefunc(nb)
+              N(3, jsize2) =  0.0D0
+              N(1, jsize3) =  0.0D0
+              N(2, jsize3) =  0.0D0
+              N(3, jsize3) =  shapefunc(nb)
+              N(1, jsize4) =  0.0D0
+              N(2, jsize4) = -u_rot(3, nb)
+              N(3, jsize4) =  u_rot(2, nb)
+              N(1, jsize5) =  u_rot(3, nb)
+              N(2, jsize5) =  0.0D0
+              N(3, jsize5) = -u_rot(1, nb)
+              N(1, jsize6) = -u_rot(2, nb)
+              N(2, jsize6) =  u_rot(1, nb)
+              N(3, jsize6) =  0.0D0
+
+            enddo
+
+            !--------------------------------------------
+
+            w_w_w_det = w_w_lx*w_ly*det
+            mass = mass+ matmul( transpose(N), N )*w_w_w_det*rho	
+            totalmass = totalmass + w_w_w_det*rho
+            !--------------------------------------------
+
+          end do
+
+          !----------------------------------------------
+
+        end do
+
+        !----------------------------------------------
+
+    end do
+    totalmass = totalmass*3.d0
+
+    totdiag=0.d0
+    do nb = 1, nn
+        DO i = 1, 6
+          lx = (nb-1)*ndof+i
+		  totdiag = totdiag + mass(lx,lx)
+        END DO
+    ENDDO
+	lumped(:)=0.d0
+    do nb = 1, nn
+        DO i = 1, 6
+          lx = (nb-1)*ndof+i
+		  lumped(lx) = mass(lx,lx)/totdiag* totalmass
+        END DO
+    ENDDO
+
+  !####################################################################
+  end subroutine mass_Shell
+  !####################################################################
 
 end module m_static_LIB_shell

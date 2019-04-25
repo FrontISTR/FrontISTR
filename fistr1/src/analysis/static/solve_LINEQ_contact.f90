@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides functions to solve sparse system of
@@ -64,9 +64,9 @@ contains
     istat = 0
     if( hecMAT%Iarray(99)==1 )then
       if(paraContactFlag.and.present(conMAT)) then
-        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
       else
-        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT)
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,istat)
       endif
     elseif( hecMAT%Iarray(99)==3 )then
       call solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT,istat)

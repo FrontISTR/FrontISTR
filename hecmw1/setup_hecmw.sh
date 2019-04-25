@@ -21,6 +21,7 @@ WITHMUMPS=0
 WITHMKL=0
 WITHML=0
 WITHLAPACK=0
+OLDRESFORMAT=0
 
 #
 # Targets
@@ -135,6 +136,8 @@ do
 		WITHML=1
 	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
 		WITHLAPACK=1
+	elif [ "\"$i\"" = "\"-old-res-format\"" -o "\"$i\"" = "\"--old-res-format\"" ]; then
+		OLDRESFORMAT=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 		GATHERMAKEFILES=0
@@ -410,6 +413,13 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	if [ ${WITHLAPACK} -eq 1 ]; then
 		F90FLAGS="${F90FLAGS} -DHECMW_WITH_LAPACK"
+	fi
+
+	#
+	# old res format
+	#
+	if [ ${OLDRESFORMAT} -eq 1 ]; then
+		HECMW_CFLAGS="${HECMW_CFLAGS} -DOLD_RES_FORMAT"
 	fi
 
 	#

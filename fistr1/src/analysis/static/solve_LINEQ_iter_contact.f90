@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides interface of iteratie linear equation solver for
@@ -43,11 +43,12 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_iter_contact_init
 
-  subroutine solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+  subroutine solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(in),optional :: conMAT
     integer :: method_org, precond_org
     logical :: fg_eliminate
@@ -106,6 +107,8 @@ contains
     if (precond_org >= 30) then
       call hecmw_mat_set_precond(hecMAT, precond_org)
     endif
+
+    istat = hecmw_mat_get_flag_diverged(hecMAT)
   end subroutine solve_LINEQ_iter_contact
 
   !!
@@ -118,8 +121,8 @@ contains
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     type (hecmwST_matrix), intent(in),optional :: conMAT
-    integer :: ndof
-    integer, allocatable :: iw2(:), iwS(:)
+    integer(kind=kint) :: ndof
+    integer(kind=kint), allocatable :: iw2(:), iwS(:)
     real(kind=kreal), allocatable :: wSL(:), wSU(:)
     type(hecmwST_local_matrix), target :: BTmat
     type(hecmwST_local_matrix) :: BTtmat
@@ -1915,7 +1918,7 @@ contains
       allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
       dst%export_item(:) = src%export_item(:)
       allocate(dst%global_node_ID(dst%n_node))
-      dst%global_node_ID(:) = src%global_node_ID(:)
+      dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
     else
       dst%import_index(:)= 0
       dst%export_index(:)= 0
@@ -1923,7 +1926,7 @@ contains
       dst%export_item => null()
     endif
     allocate(dst%node_ID(2*dst%n_node))
-    dst%node_ID(:)     = src%node_ID(:)
+    dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*dst%n_node)
     allocate(dst%elem_type_item(dst%n_elem_type))
     dst%elem_type_item(:) = src%elem_type_item(:)
     !dst%mpc            = src%mpc

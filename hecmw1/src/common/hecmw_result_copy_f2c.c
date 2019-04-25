@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -18,6 +18,11 @@ static int nnode, nelem;
  * SetFunc
  */
 
+static int set_ng_component(void *src) {
+  result->ng_component = *((int *)src);
+  return 0;
+}
+
 static int set_nn_component(void *src) {
   result->nn_component = *((int *)src);
   return 0;
@@ -25,6 +30,20 @@ static int set_nn_component(void *src) {
 
 static int set_ne_component(void *src) {
   result->ne_component = *((int *)src);
+  return 0;
+}
+
+static int set_ng_dof(void *src) {
+  int size;
+
+  if (result->ng_component <= 0) return 0;
+  size           = sizeof(*result->ng_dof) * result->ng_component;
+  result->ng_dof = HECMW_malloc(size);
+  if (result->ng_dof == NULL) {
+    HECMW_set_error(errno, "");
+    return -1;
+  }
+  memcpy(result->ng_dof, src, size);
   return 0;
 }
 
@@ -53,6 +72,25 @@ static int set_ne_dof(void *src) {
     return -1;
   }
   memcpy(result->ne_dof, src, size);
+  return 0;
+}
+
+static int set_global_label(void *src) {
+  int i;
+
+  if (result->ng_component <= 0) return 0;
+
+  result->global_label =
+      HECMW_malloc(sizeof(*result->global_label) * result->ng_component);
+  if (result->global_label == NULL) {
+    HECMW_set_error(errno, "");
+    return -1;
+  }
+  for (i = 0; i < result->ng_component; i++) {
+    char *src_point       = (char *)src + HECMW_NAME_LEN * i;
+    result->global_label[i] = HECMW_strcpy_f2c(src_point, HECMW_NAME_LEN);
+  }
+
   return 0;
 }
 
@@ -91,6 +129,24 @@ static int set_elem_label(void *src) {
     result->elem_label[i] = HECMW_strcpy_f2c(src_point, HECMW_NAME_LEN);
   }
 
+  return 0;
+}
+
+static int set_global_val_item(void *src) {
+  int i, size;
+  int n = 0;
+
+  if (result->ng_component <= 0) return 0;
+  for (i = 0; i < result->ng_component; i++) {
+    n += result->ng_dof[i];
+  }
+  size                  = sizeof(*result->global_val_item) * n;
+  result->global_val_item = HECMW_malloc(size);
+  if (result->global_val_item == NULL) {
+    HECMW_set_error(errno, "");
+    return -1;
+  }
+  memcpy(result->global_val_item, src, size);
   return 0;
 }
 
@@ -142,12 +198,16 @@ static struct func_table {
   SetFunc set_func;
 } functions[] = {
     /*  { Struct name, Variable name, memcpy function } */
+    {"hecmwST_result_data", "ng_component", set_ng_component},
     {"hecmwST_result_data", "nn_component", set_nn_component},
     {"hecmwST_result_data", "ne_component", set_ne_component},
+    {"hecmwST_result_data", "ng_dof", set_ng_dof},
     {"hecmwST_result_data", "nn_dof", set_nn_dof},
     {"hecmwST_result_data", "ne_dof", set_ne_dof},
+    {"hecmwST_result_data", "global_label", set_global_label},
     {"hecmwST_result_data", "node_label", set_node_label},
     {"hecmwST_result_data", "elem_label", set_elem_label},
+    {"hecmwST_result_data", "global_val_item", set_global_val_item},
     {"hecmwST_result_data", "node_val_item", set_node_val_item},
     {"hecmwST_result_data", "elem_val_item", set_elem_val_item},
 };
@@ -299,6 +359,7 @@ void HECMW_RESULT_WRITE_ST_FINALIZE_IF(int *err) {
 void hecmw_result_write_st_by_name_if(char *name_ID, int *err, int len) {
   char name_ID_str[HECMW_NAME_LEN + 1];
   char head[HECMW_HEADER_LEN + 1];
+  char comment[HECMW_MSG_LEN + 1];
 
   *err = 1;
 
@@ -307,7 +368,8 @@ void hecmw_result_write_st_by_name_if(char *name_ID, int *err, int len) {
     return;
 
   HECMW_result_get_header(head);
-  if (HECMW_result_write_ST_by_name(name_ID_str, result, nnode, nelem, head))
+  HECMW_result_get_comment(comment);
+  if (HECMW_result_write_ST_by_name(name_ID_str, result, nnode, nelem, head, comment))
     return;
 
   *err = 0;

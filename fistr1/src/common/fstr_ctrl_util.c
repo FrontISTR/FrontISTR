@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -1914,7 +1914,7 @@ static void strcpy_c2f(char *dest, int len, const char *src) {
   int fg = 0;
 
   for (i = 0; i < len; i++) {
-    if (src[i] == 0) {
+    if (fg == 0 && src[i] == 0) {
       fg = 1;
     }
 

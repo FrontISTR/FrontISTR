@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 module m_heat_mat_ass_conductivity
@@ -33,6 +33,7 @@ contains
       iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
       if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_patch(ic_type)) cycle
 
       do icel = iS, iE
         isect = hecMESH%section_ID(icel)

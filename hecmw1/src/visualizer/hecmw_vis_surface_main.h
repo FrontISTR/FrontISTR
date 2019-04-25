@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -13,7 +13,7 @@
 #include "hecmw_vis_psf_rendering.h"
 
 void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
-                             struct hecmwST_result_data *data, int *timestep, int *max_timestep,
+                             struct hecmwST_result_data *data, int *timestep,
                              struct surface_module *sf, Parameter_rendering *sr,
                              int stat_para[NUM_CONTROL_PSF], char *outfile1, char *body,
                              HECMW_Comm VIS_COMM);

@@ -1,11 +1,12 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <string.h>
 #include <errno.h>
 #include <ctype.h>
 #include "hecmw_util.h"
@@ -24,12 +25,21 @@ struct result_list {
   struct result_list *next;
 };
 
-static int nstep, istep;
+static int istep;
 static int nnode;
 static int nelem;
+#ifdef OLD_RES_FORMAT
+static int filever_major=1;
+static int filever_minor=0;
+#else
+static int filever_major=2;
+static int filever_minor=0;
+#endif // OLD_RES_FORMAT
 static char head[HECMW_HEADER_LEN + 1];
+static char comment_line[HECMW_MSG_LEN + 1];
 static char line_buf[LINEBUF_SIZE + 1];
 
+static struct result_list *global_list;
 static struct result_list *node_list;
 static struct result_list *elem_list;
 
@@ -82,6 +92,13 @@ static int is_valid_label(char *label) {
 static void clear() {
   struct result_list *p, *q;
 
+  for (p = global_list; p; p = q) {
+    q = p->next;
+    HECMW_free(p->label);
+    HECMW_free(p);
+  }
+  global_list = NULL;
+
   for (p = node_list; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
@@ -105,6 +122,15 @@ void HECMW_result_free(struct hecmwST_result_data *result) {
 
   if (result == NULL) return;
 
+  if (result->ng_component > 0) {
+    HECMW_free(result->ng_dof);
+    HECMW_free(result->global_val_item);
+    for (i = 0; i < result->ng_component; i++) {
+      HECMW_free(result->global_label[i]);
+    }
+    HECMW_free(result->global_label);
+  }
+
   if (result->nn_component > 0) {
     HECMW_free(result->nn_dof);
     HECMW_free(result->node_val_item);
@@ -126,21 +152,20 @@ void HECMW_result_free(struct hecmwST_result_data *result) {
   HECMW_free(result);
 }
 
-int HECMW_result_init(struct hecmwST_local_mesh *hecMESH, int n_step,
-                      int i_step, char *header) {
+int HECMW_result_init(struct hecmwST_local_mesh *hecMESH,
+                      int i_step, char *header, char *comment) {
   return HECMW_result_init_body(
       hecMESH->n_node, hecMESH->n_elem, hecMESH->global_node_ID,
-      hecMESH->global_elem_ID, n_step, i_step, header);
+      hecMESH->global_elem_ID, i_step, header, comment);
 }
 
 int HECMW_result_init_body(int n_node, int n_elem, int *nodeID, int *elemID,
-                           int n_step, int i_step, char *header) {
+                           int i_step, char *header, char *comment) {
   int len;
   char *p, *q;
 
   nnode = n_node;
   nelem = n_elem;
-  nstep = n_step;
   istep = i_step;
 
   node_global_ID = nodeID;
@@ -158,13 +183,42 @@ int HECMW_result_init_body(int n_node, int n_elem, int *nodeID, int *elemID,
     *q++ = *p++;
     len++;
   }
-  *++q = '\0';
+  *q++ = '\0';
+
+  if (comment == NULL) {
+    comment_line[0] = '\0';
+    return 0;
+  }
+
+  len = 0;
+  p   = comment;
+  q   = comment_line;
+  while (len < sizeof(comment_line) - 1 && *p && *p != '\n') {
+    *q++ = *p++;
+    len++;
+  }
+  *q++ = '\0';
 
   return 0;
 }
 
 int HECMW_result_finalize(void) {
   clear();
+  return 0;
+}
+
+static int add_to_global_list(struct result_list *result) {
+  struct result_list *p, *q;
+
+  q = NULL;
+  for (p = global_list; p; p = (q = p)->next)
+    ;
+
+  if (q == NULL) {
+    global_list = result;
+  } else {
+    q->next = result;
+  }
   return 0;
 }
 
@@ -227,10 +281,10 @@ error:
   return NULL;
 }
 
-int HECMW_result_add(int node_or_elem, int n_dof, char *label, double *ptr) {
+int HECMW_result_add(int dtype, int n_dof, char *label, double *ptr) {
   struct result_list *result;
 
-  if (node_or_elem != 1 && node_or_elem != 2) {
+  if (dtype < 1 && dtype > 3) {
     HECMW_set_error(HECMW_UTIL_E0206, "");
     goto error;
   }
@@ -245,18 +299,32 @@ int HECMW_result_add(int node_or_elem, int n_dof, char *label, double *ptr) {
     goto error;
   }
 
-  if (node_or_elem == 1) {
+  if (dtype == 1) {
     /* node */
     if (add_to_node_list(result)) goto error;
-  } else {
+  } else if (dtype == 2)  {
     /* elem */
     if (add_to_elem_list(result)) goto error;
+  } else {
+    /* global */
+    if (add_to_global_list(result)) goto error;
   }
 
   return 0;
 error:
   HECMW_free(result);
   return -1;
+}
+
+static int count_ng_comp(void) {
+  int ng_comp;
+  struct result_list *p;
+
+  ng_comp = 0;
+  for (p = global_list; p; p = p->next) {
+    ng_comp++;
+  }
+  return ng_comp;
 }
 
 static int count_nn_comp(void) {
@@ -332,7 +400,7 @@ error:
 
 int HECMW_result_write_txt_ST_by_fname(char *filename,
                                        struct hecmwST_result_data *result,
-                                       int n_node, int n_elem, char *header) {
+                                       int n_node, int n_elem, char *header, char *comment) {
   FILE *fp;
 
   if (HECMW_ctrl_is_subdir()) {
@@ -349,7 +417,7 @@ int HECMW_result_write_txt_ST_by_fname(char *filename,
     goto error;
   }
 
-  if (output_result_data_ST(result, n_node, n_elem, header, fp)) {
+  if (output_result_data_ST(result, n_node, n_elem, header, comment, fp)) {
     goto error;
   }
 
@@ -404,7 +472,7 @@ error:
 
 int HECMW_result_write_bin_ST_by_fname(char *filename,
                                        struct hecmwST_result_data *result,
-                                       int n_node, int n_elem, char *header) {
+                                       int n_node, int n_elem, char *header, char *comment) {
   FILE *fp;
 
   if (HECMW_ctrl_is_subdir()) {
@@ -423,7 +491,7 @@ int HECMW_result_write_bin_ST_by_fname(char *filename,
 
   hecmw_set_endian_info();
   if (write_bin_header(fp)) goto error;
-  if (bin_output_result_data_ST(result, n_node, n_elem, header, fp)) goto error;
+  if (bin_output_result_data_ST(result, n_node, n_elem, header, comment, fp)) goto error;
 
   if (fclose(fp)) {
     HECMW_set_error(HECMW_UTIL_E0202, HECMW_strmsg(errno));
@@ -446,7 +514,7 @@ int HECMW_result_write_by_name(char *name_ID) {
   int fg_text, ret;
 
   if ((basename =
-           HECMW_ctrl_get_result_file(name_ID, nstep, istep, &fg_text)) == NULL)
+           HECMW_ctrl_get_result_file(name_ID, istep, &fg_text)) == NULL)
     return -1;
 
   ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, istep);
@@ -464,12 +532,12 @@ int HECMW_result_write_by_name(char *name_ID) {
 
 int HECMW_result_write_ST_by_name(char *name_ID,
                                   struct hecmwST_result_data *result,
-                                  int n_node, int n_elem, char *header) {
+                                  int n_node, int n_elem, char *header, char *comment) {
   char *basename, filename[HECMW_FILENAME_LEN + 1];
   int fg_text, ret;
 
   if ((basename =
-           HECMW_ctrl_get_result_file(name_ID, nstep, istep, &fg_text)) == NULL)
+           HECMW_ctrl_get_result_file(name_ID, istep, &fg_text)) == NULL)
     return -1;
 
   ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, istep);
@@ -478,11 +546,11 @@ int HECMW_result_write_ST_by_name(char *name_ID,
 
   if (fg_text) {
     if (HECMW_result_write_txt_ST_by_fname(filename, result, n_node, n_elem,
-                                           header))
+                                           header, comment))
       return -1;
   } else {
     if (HECMW_result_write_bin_ST_by_fname(filename, result, n_node, n_elem,
-                                           header))
+                                           header, comment))
       return -1;
   }
 
@@ -493,7 +561,7 @@ int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
   char *basename, filename[HECMW_FILENAME_LEN + 1];
   int fg_text, myrank, ret;
 
-  if ((basename = HECMW_ctrl_get_result_fileheader(name_ID, nstep, istep,
+  if ((basename = HECMW_ctrl_get_result_fileheader(name_ID, istep,
                                                    &fg_text)) == NULL)
     return -1;
 
@@ -524,13 +592,13 @@ struct hecmwST_result_data *HECMW_result_read_by_fname(char *filename) {
   return result;
 }
 
-struct hecmwST_result_data *HECMW_result_read_by_name(char *name_ID, int n_step,
+struct hecmwST_result_data *HECMW_result_read_by_name(char *name_ID,
                                                       int i_step) {
   char *basename, filename[HECMW_FILENAME_LEN + 1];
   struct hecmwST_result_data *result;
   int fg_text, ret;
 
-  if ((basename = HECMW_ctrl_get_result_file(name_ID, n_step, i_step,
+  if ((basename = HECMW_ctrl_get_result_file(name_ID, i_step,
                                              &fg_text)) == NULL)
     return NULL;
 
@@ -553,6 +621,11 @@ int HECMW_result_get_nelem(void) { return nelem; }
 
 char *HECMW_result_get_header(char *buff) {
   strcpy(buff, head);
+  return buff;
+}
+
+char *HECMW_result_get_comment(char *buff) {
+  strcpy(buff, comment_line);
   return buff;
 }
 
@@ -587,37 +660,40 @@ void HECMW_result_free_elemID(void) {
 /*---------------------------------------------------------------------------*/
 
 void hecmw_result_init_if(int *n_node, int *n_elem, int *nodeID, int *elemID,
-                          int *n_step, int *i_step, char *header, int *err,
+                          int *i_step, char *header, char *comment, int *err,
                           int len) {
   char header_str[HECMW_HEADER_LEN + 1];
+  char comment_str[HECMW_MSG_LEN + 1];
 
   *err = 1;
   if (HECMW_strcpy_f2c_r(header, len, header_str, sizeof(header_str)) == NULL)
     return;
-  if (HECMW_result_init_body(*n_node, *n_elem, nodeID, elemID, *n_step, *i_step,
-                             header_str))
+  if (HECMW_strcpy_f2c_r(comment, len, comment_str, sizeof(comment_str)) == NULL)
+    return;
+  if (HECMW_result_init_body(*n_node, *n_elem, nodeID, elemID, *i_step,
+                             header_str, comment_str))
     return;
   *err = 0;
 }
 
 void hecmw_result_init_if_(int *n_node, int *n_elem, int *nodeID, int *elemID,
-                           int *n_step, int *i_step, char *header, int *err,
+                           int *i_step, char *header, char *comment, int *err,
                            int len) {
-  hecmw_result_init_if(n_node, n_elem, nodeID, elemID, n_step, i_step, header,
+  hecmw_result_init_if(n_node, n_elem, nodeID, elemID, i_step, header, comment,
                        err, len);
 }
 
 void hecmw_result_init_if__(int *n_node, int *n_elem, int *nodeID, int *elemID,
-                            int *n_step, int *i_step, char *header, int *err,
+                            int *i_step, char *header, char *comment, int *err,
                             int len) {
-  hecmw_result_init_if(n_node, n_elem, nodeID, elemID, n_step, i_step, header,
+  hecmw_result_init_if(n_node, n_elem, nodeID, elemID, i_step, header, comment,
                        err, len);
 }
 
 void HECMW_RESULT_INIT_IF(int *n_node, int *n_elem, int *nodeID, int *elemID,
-                          int *n_step, int *i_step, char *header, int *err,
+                          int *i_step, char *header, char *comment, int *err,
                           int len) {
-  hecmw_result_init_if(n_node, n_elem, nodeID, elemID, n_step, i_step, header,
+  hecmw_result_init_if(n_node, n_elem, nodeID, elemID, i_step, header, comment,
                        err, len);
 }
 
@@ -639,7 +715,7 @@ void HECMW_RESULT_FINALIZE_IF(int *err) { hecmw_result_finalize_if(err); }
 
 /*---------------------------------------------------------------------------*/
 
-void hecmw_result_add_if(int *node_or_elem, int *n_dof, char *label,
+void hecmw_result_add_if(int *dtype, int *n_dof, char *label,
                          double *ptr, int *err, int len) {
   char label_str[HECMW_NAME_LEN + 1];
   int n, size;
@@ -651,10 +727,12 @@ void hecmw_result_add_if(int *node_or_elem, int *n_dof, char *label,
   if (HECMW_strcpy_f2c_r(label, len, label_str, sizeof(label_str)) == NULL)
     return;
 
-  if (*node_or_elem == 1) {
+  if (*dtype == 1) { //node
     n = nnode;
-  } else {
+  } else if (*dtype == 2) { //element
     n = nelem;
+  } else { // global
+    n = 1;
   }
   size = sizeof(double) * n * (*n_dof);
   data = HECMW_malloc(size);
@@ -673,24 +751,24 @@ void hecmw_result_add_if(int *node_or_elem, int *n_dof, char *label,
   remain->next = remainder;
   remainder    = remain;
 
-  if (HECMW_result_add(*node_or_elem, *n_dof, label_str, data)) return;
+  if (HECMW_result_add(*dtype, *n_dof, label_str, data)) return;
 
   *err = 0;
 }
 
-void hecmw_result_add_if_(int *node_or_elem, int *n_dof, char *label,
+void hecmw_result_add_if_(int *dtype, int *n_dof, char *label,
                           double *ptr, int *err, int len) {
-  hecmw_result_add_if(node_or_elem, n_dof, label, ptr, err, len);
+  hecmw_result_add_if(dtype, n_dof, label, ptr, err, len);
 }
 
-void hecmw_result_add_if__(int *node_or_elem, int *n_dof, char *label,
+void hecmw_result_add_if__(int *dtype, int *n_dof, char *label,
                            double *ptr, int *err, int len) {
-  hecmw_result_add_if(node_or_elem, n_dof, label, ptr, err, len);
+  hecmw_result_add_if(dtype, n_dof, label, ptr, err, len);
 }
 
-void HECMW_RESULT_ADD_IF(int *node_or_elem, int *n_dof, char *label,
+void HECMW_RESULT_ADD_IF(int *dtype, int *n_dof, char *label,
                          double *ptr, int *err, int len) {
-  hecmw_result_add_if(node_or_elem, n_dof, label, ptr, err, len);
+  hecmw_result_add_if(dtype, n_dof, label, ptr, err, len);
 }
 
 /*----------------------------------------------------------------------------*/

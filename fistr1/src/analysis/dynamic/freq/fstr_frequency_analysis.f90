@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module contains steady state frequency analysis
@@ -17,6 +17,7 @@ contains
     !---- body
 
     call hecmw_nullify_result_data(fstrRESULT)
+    fstrRESULT%ng_component = 0
     fstrRESULT%nn_component = numcomp
     fstrRESULT%ne_component = 0
     allocate( fstrRESULT%nn_dof(numcomp) )
@@ -191,12 +192,12 @@ contains
       if(IRESULT==1) then
         write(*,   *) freq, "[Hz] : ", im, ".res"
         write(ilog,*) freq, "[Hz] : ", im, ".res"
-        call output_resfile(hecMESH, im, numfreq, disp, vel, acc, freqiout)
+        call output_resfile(hecMESH, im, disp, vel, acc, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==1) then
         write(*,   *) freq, "[Hz] : ", im, ".vis"
         write(ilog,*) freq, "[Hz] : ", im, ".vis"
-        call output_visfile(hecMESH, im, numfreq, disp, vel, acc, freqiout)
+        call output_visfile(hecMESH, im, disp, vel, acc, freqiout)
       end if
     end do
 
@@ -231,12 +232,12 @@ contains
       if(IRESULT==1) then
         write(*,   *) "time=", time, " : ", im, ".res"
         write(ilog,*) "time=", time, " : ", im, ".res"
-        call outputdyna_resfile(hecMESH, im, numdisp, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
+        call outputdyna_resfile(hecMESH, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==2) then
         write(*,   *) "time=", time, " : ", im, ".vis"
         write(ilog,*) "time=", time, " : ", im, ".vis"
-        call outputdyna_visfile(hecMESH, im, numdisp, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
+        call outputdyna_visfile(hecMESH, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
       end if
     end do
 
@@ -381,16 +382,15 @@ contains
     real(kind=kreal), intent(inout)      :: eigenvector(:, :) !intend (numdof*NN,nmode)
     !---- vals
     integer(kind=kint), parameter :: compidx = 1 !Component index of displacement
-    integer(kind=kint)            :: imode, idx, ind, a, b, nallcomp, j, nmode
+    integer(kind=kint)            :: imode, idx, ind, a, b, nallcomp, j
     type(hecmwST_result_data)     :: eigenres
     character(len=HECMW_NAME_LEN) :: name
     !---- body
 
     name = 'result-in'
-    nmode = (endmode-startmode)+1
     do imode=startmode, endmode
       call nullify_result_data(eigenres)
-      call hecmw_result_read_by_name(hecMESH, name, nmode, imode, eigenres)
+      call hecmw_result_read_by_name(hecMESH, name, imode, eigenres)
 
       nallcomp = 0
       do ind=1,eigenres%nn_component
@@ -439,35 +439,10 @@ contains
 
   end subroutine
 
-  !  subroutine output_resfile(hecMESH, nummode, eigenval, eigenvec)
-  !  !---- args
-  !    type( hecmwST_local_mesh ), intent(in) :: hecMESH
-  !    integer(kind=kint),        intent(in) :: nummode
-  !    real(kind=kreal),           intent(in) :: eigenval(:)   !intend (nummode)
-  !    real(kind=kreal),           intent(in) :: eigenvec(:,:) !intend (numnode, nummode)
-  !  !---- vals
-  !    integer(kind=kint) :: im
-  !    character(len=HECMW_HEADER_LEN) :: header
-  !    character(len=HECMW_NAME_LEN) :: label, nameid
-  !  !---- body
-  !
-  !    label='displacement'
-  !    nameid='fstrRES'
-  !    header='*fstrresult'
-  !    do im=1, nummode
-  !      call hecmw_result_init(hecMESH, im, header)
-  !      call hecmw_result_add(1, 3, label, eigenvec(:,im)) !mode=node, ndof=3
-  !      call hecmw_result_write_by_name(nameid)
-  !      call hecmw_result_finalize()
-  !    end do
-  !    return
-  !  end subroutine
-
-  subroutine output_resfile(hecMESH, ifreq, numfreq, disp, vel, acc, iout)
+  subroutine output_resfile(hecMESH, ifreq, disp, vel, acc, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in)       :: ifreq
-    integer(kind=kint), intent(in)       :: numfreq
     real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: acc(:) !intend (numnodeDOF)
@@ -475,12 +450,14 @@ contains
     !---- vals
     integer(kind=kint)              :: im
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label, nameid
     !---- body
 
     nameid='fstrRES'
     header='*fstrresult'
-    call hecmw_result_init(hecMESH, numfreq, ifreq, header)
+    comment='frequency_result'
+    call hecmw_result_init(hecMESH, ifreq, header, comment)
     if(iout(1) == 1) then
       label='displacement'
       call hecmw_result_add(1, 3, label, disp) !mode=node, ndof=3
@@ -498,11 +475,10 @@ contains
     return
   end subroutine
 
-  subroutine output_visfile(hecMESH, ifreq, numfreq, disp, vel, acc, iout)
+  subroutine output_visfile(hecMESH, ifreq, disp, vel, acc, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in)       :: ifreq
-    integer(kind=kint), intent(in)       :: numfreq
     real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: acc(:) !intend (numnodeDOF)
@@ -539,7 +515,7 @@ contains
 
     call fstr2hecmw_mesh_conv(hecMESH)
     call hecmw_visualize_init
-    call hecmw_visualize(hecMESH, fstrRESULT, ifreq, numfreq, 1)
+    call hecmw_visualize( hecMESH, fstrRESULT, ifreq )
     call hecmw2fstr_mesh_conv(hecMESH)
     call hecmw_result_free(fstrRESULT)
   end subroutine
@@ -996,11 +972,10 @@ contains
     return
   end subroutine
 
-  subroutine outputdyna_resfile(hecMESH, istp, numfreq, dispre, dispim, velre, velim, accre, accim, iout)
+  subroutine outputdyna_resfile(hecMESH, istp, dispre, dispim, velre, velim, accre, accim, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: istp
-    integer(kind=kint), intent(in) :: numfreq
     real(kind=kreal), intent(in)   :: dispre(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)   :: dispim(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)   :: velre(:) !intend (numnodeDOF)
@@ -1011,6 +986,7 @@ contains
     !---- vals
     integer(kind=kint)              :: im, s
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label, nameid
     real(kind=kreal), allocatable   :: absval(:)
     !---- body
@@ -1020,8 +996,9 @@ contains
 
     nameid='fstrDYNA'
     header='*fstrresult'
+    comment='frequency_result'
 
-    call hecmw_result_init(hecMESH, numfreq, istp, header)
+    call hecmw_result_init(hecMESH, istp, header, comment)
 
     if(iout(1) == 1) then
       label='displacement_real'
@@ -1060,11 +1037,10 @@ contains
     return
   end subroutine
 
-  subroutine outputdyna_visfile(hecMESH, istp, numstep, dispre, dispim, velre, velim, accre, accim, iout)
+  subroutine outputdyna_visfile(hecMESH, istp, dispre, dispim, velre, velim, accre, accim, iout)
     !---- args
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     integer(kind=kint), intent(in)          :: istp
-    integer(kind=kint), intent(in)          :: numstep
     real(kind=kreal), intent(in)            :: dispre(:)
     real(kind=kreal), intent(in)            :: dispim(:)
     real(kind=kreal), intent(in)            :: velre(:)
@@ -1140,7 +1116,7 @@ contains
 
     call fstr2hecmw_mesh_conv(hecMESH)
     call hecmw_visualize_init
-    call hecmw_visualize(hecMESH, fstrRESULT, istp, numstep, 1)
+    call hecmw_visualize( hecMESH, fstrRESULT, istp )
     call hecmw2fstr_mesh_conv(hecMESH)
     call hecmw_result_free(fstrRESULT)
 

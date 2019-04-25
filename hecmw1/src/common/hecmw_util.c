@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -35,6 +35,18 @@ char *HECMW_get_date(void) {
   rc = strftime(static_buf, sizeof(static_buf), "%b %d %H:%M:%S",
                 localtime(&now));
   return rc ? static_buf : NULL;
+}
+
+/* thread-save version of HECMW_get_date */
+char *HECMW_get_date_r(char *buf, int len) {
+  int rc;
+  time_t now;
+  struct tm result;
+
+  if (time(&now) == (time_t)-1) return NULL;
+  if (localtime_r(&now, &result) == NULL) return NULL;
+  rc = strftime(buf, len, "%b %d %H:%M:%S", &result);
+  return rc ? buf : NULL;
 }
 
 void HECMW_assert_(int cond, char *cond_str, char *file, int line) {

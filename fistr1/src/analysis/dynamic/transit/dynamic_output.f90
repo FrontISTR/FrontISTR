@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions to output result.
@@ -75,16 +75,15 @@ contains
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
-      call fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep )
+      call fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep, fstrDYNAMIC%t_curr )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
-      interval = fstrSOLID%output_ctrl(4)%freqency
       call fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
-      call hecmw_visualize( hecMESH, fstrRESULT, istep, maxstep, interval )
+      call hecmw_visualize( hecMESH, fstrRESULT, istep )
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv( hecMESH )
       call hecmw_result_free( fstrRESULT )
@@ -403,7 +402,13 @@ contains
           fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
           fstrDYNAMIC%ACC( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , idx )
       end if
-
+      !C-- nodal force
+      if( fstrDYNAMIC%iout_list(4)==1 ) then
+        iunit = iunitS + fstrDYNAMIC%dynamic_IW7
+        write( iunit, '(i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
+          fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, jj, &
+          fstrSOLID%QFORCE( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii )
+      end if
       !C-- strain
       if( fstrDYNAMIC%iout_list(5) > 0 ) then
         if (hecMESH%n_dof == 2 .or. hecMESH%n_dof == 3 .or. hecMESH%n_dof == 4) then
@@ -434,12 +439,12 @@ contains
       if( any(fstrDYNAMIC%iout_list(1:3)==1) ) then
         inquire( file='dyna_energy.txt', opened=yes )
         if( .not. yes ) then
-          open( fstrDYNAMIC%dynamic_IW7, file='dyna_energy.txt', status='replace', iostat=ierr )
+          open( fstrDYNAMIC%dynamic_IW10, file='dyna_energy.txt', status='replace', iostat=ierr )
           if( ierr/=0 ) then
             write(*,*) 'stop due to file opening error <dyna_enrgy.txt>'
             call hecmw_abort( hecmw_comm_get_comm() )
           endif
-          write( fstrDYNAMIC%dynamic_IW7, * ) &
+          write( fstrDYNAMIC%dynamic_IW10, * ) &
             ' time step', '     time    ', '  kinetic energy', '   strain energy', '   total energy'
         endif
         if(fstrDYNAMIC%i_step==0) then
@@ -450,11 +455,11 @@ contains
           enddo
         endif
         fstrDYNAMIC%totalEnergy = fstrDYNAMIC%kineticEnergy + fstrDYNAMIC%strainEnergy
-        write( fstrDYNAMIC%dynamic_IW7, '(i10,1pe13.4e3,1p3e16.4e3)' ) &
+        write( fstrDYNAMIC%dynamic_IW10, '(i10,1pe13.4e3,1p3e16.4e3)' ) &
           fstrDYNAMIC%i_step, fstrDYNAMIC%t_curr, &
           fstrDYNAMIC%kineticEnergy, fstrDYNAMIC%strainEnergy, fstrDYNAMIC%totalEnergy
       endif
-      if( fstrDYNAMIC%i_step==fstrDYNAMIC%n_step ) close(fstrDYNAMIC%dynamic_IW7)
+      if( fstrDYNAMIC%i_step==fstrDYNAMIC%n_step ) close(fstrDYNAMIC%dynamic_IW10)
     endif
   end subroutine dynamic_output_monit
 

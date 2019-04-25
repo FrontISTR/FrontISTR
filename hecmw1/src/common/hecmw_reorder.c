@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -906,6 +906,14 @@ static int mask_node_dof(struct hecmwST_local_mesh *local_mesh,
       case HECMW_ETYPE_SHT6:
       case HECMW_ETYPE_SHQ8:
       case HECMW_ETYPE_BEM3:
+        n_dof = BIT_DOF_THREE;
+        break;
+
+      /* patch element */
+      case HECMW_ETYPE_PTT1:
+      case HECMW_ETYPE_PTT2:
+      case HECMW_ETYPE_PTQ1:
+      case HECMW_ETYPE_PTQ2:
         n_dof = BIT_DOF_THREE;
         break;
 

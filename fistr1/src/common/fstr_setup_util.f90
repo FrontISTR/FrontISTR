@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module contains auxiliary functions in calculation setup
@@ -284,6 +284,124 @@ contains
     append_single_group = exist_n
   end function append_single_group
 
+  subroutine append_new_group(hecMESH, grp_type_name, name, count, list, grp_id)
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    character(len=*), intent(in) :: grp_type_name
+    character(len=HECMW_NAME_LEN), intent(in) :: name
+    integer(kind=kint), intent(in) :: count
+    integer(kind=kint), intent(in) :: list(:)
+    integer(kind=kint), intent(out) :: grp_id
+    integer(kind=kint) :: id, old_grp_number, new_grp_number, old_item_number, new_item_number, k
+
+    call set_group_pointers( hecMESH, grp_type_name )
+    do id = 1, n_grp
+      if( fstr_streqr(grp_name%s(id), name) ) then
+        write(*,*) '### Error: Group already exists: ', name
+        stop
+      endif
+    enddo
+
+    old_grp_number = n_grp
+    new_grp_number = old_grp_number + 1
+
+    old_item_number = grp_index(n_grp)
+    new_item_number = old_item_number + count
+
+    call fstr_expand_name_array( grp_name, old_grp_number, new_grp_number )
+    call fstr_expand_index_array( grp_index, old_grp_number + 1, new_grp_number + 1)
+    call fstr_expand_integer_array( grp_item, old_item_number, new_item_number )
+
+    n_grp = new_grp_number
+    grp_id = new_grp_number
+    grp_name%s(grp_id) = name
+    do k = 1, count
+      grp_item(old_item_number + k) = list(k)
+    enddo
+    grp_index(grp_id) = grp_index(grp_id-1) + count
+    call backset_group_pointers( hecMESH, grp_type_name )
+  end subroutine append_new_group
+
+  subroutine append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id )
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    integer(kind=kint), intent(in) :: sgrp_id
+    integer(kind=kint), intent(out) :: ngrp_id
+    integer(kind=kint) :: is, ie, nnode, i, ic, isurf, ic_type, stype, nn, j0, j, new_nnode
+    integer(kind=kint) :: snode(20)
+    integer(kind=kint), allocatable :: node(:)
+    type(tSurfElement) :: surf
+    character(len=HECMW_NAME_LEN) :: grp_name
+    is= hecMESH%surf_group%grp_index(sgrp_id-1) + 1
+    ie= hecMESH%surf_group%grp_index(sgrp_id  )
+    ! count num of nodes on surface incl duplication
+    nnode = 0
+    do i=is,ie
+      ic   = hecMESH%surf_group%grp_item(2*i-1)
+      isurf = hecMESH%surf_group%grp_item(2*i)
+      ic_type = hecMESH%elem_type(ic)
+      call getSubFace( ic_type, isurf, stype, snode )
+      nnode = nnode + getNumberOfNodes( stype )
+    enddo
+    ! extract nodes on surface incl duplication
+    allocate( node(nnode) )
+    nnode = 0
+    do i=is,ie
+      ic   = hecMESH%surf_group%grp_item(2*i-1)
+      isurf = hecMESH%surf_group%grp_item(2*i)
+      ic_type = hecMESH%elem_type(ic)
+      call getSubFace( ic_type, isurf, stype, snode )
+      nn = getNumberOfNodes( stype )
+      j0 = hecMESH%elem_node_index(ic-1)
+      do j=1,nn
+        node(nnode+j) = hecMESH%elem_node_item(j0+snode(j))
+      enddo
+      nnode = nnode + nn
+    enddo
+    ! sort and uniq node list
+    call qsort_int_array(node, 1, nnode)
+    call uniq_int_array(node, nnode, new_nnode)
+    ! append node group
+    write( grp_name, '(a,a)') trim(hecMESH%surf_group%grp_name(sgrp_id)), '_S'
+    call append_new_group(hecMESH, 'node_grp', grp_name, new_nnode, node, ngrp_id)
+    deallocate(node)
+  end subroutine append_node_grp_from_surf_grp
+
+  subroutine append_intersection_node_grp( hecMESH, ngrp_id1, ngrp_id2 )
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    integer(kind=kint), intent(in) :: ngrp_id1, ngrp_id2
+    integer(kind=kint) :: nnode1, nnode2, nnode, is, i, nisect, ngrp_id
+    integer(kind=kint), allocatable :: node(:), isect(:)
+    character(len=HECMW_NAME_LEN) :: grp_name
+    nnode1 = hecMESH%node_group%grp_index(ngrp_id1) - hecMESH%node_group%grp_index(ngrp_id1-1)
+    nnode2 = hecMESH%node_group%grp_index(ngrp_id2) - hecMESH%node_group%grp_index(ngrp_id2-1)
+    nnode = nnode1 + nnode2
+    allocate( node(nnode) )
+    is= hecMESH%node_group%grp_index(ngrp_id1-1)
+    do i=1,nnode1
+      node(i) = hecMESH%node_group%grp_item(is+i)
+    enddo
+    is= hecMESH%node_group%grp_index(ngrp_id2-1)
+    do i=1,nnode2
+      node(nnode1+i) = hecMESH%node_group%grp_item(is+i)
+    enddo
+    call qsort_int_array(node, 1, nnode)
+    allocate( isect(nnode) )
+    nisect = 0
+    do i=1,nnode-1
+      if( node(i) == node(i+1) ) then
+        nisect = nisect + 1
+        isect(nisect) = node(i)
+      endif
+    enddo
+    write( grp_name, '(a,a,a)') &
+         trim(hecMESH%node_group%grp_name(ngrp_id1)),'_AND_',trim(hecMESH%node_group%grp_name(ngrp_id2))
+    call append_new_group(hecMESH, 'node_grp', grp_name, nisect, isect, ngrp_id)
+    deallocate(node)
+    deallocate(isect)
+  end subroutine append_intersection_node_grp
+
   !------------------------------------------------------------------------------
   ! JP-0
   ! grp_type_name : 'node_grp', 'elem_grp' or 'surf_grp'
@@ -509,6 +627,53 @@ contains
       end if
     end do
   end subroutine bsearch_int_array
+
+  recursive subroutine qsort_int_array(array, istart, iend)
+    implicit none
+    integer(kind=kint), intent(inout) :: array(:)
+    integer(kind=kint), intent(in) :: istart, iend
+    integer(kind=kint) :: pivot, center, left, right, tmp
+    if (istart >= iend) return
+    center = (istart + iend) / 2
+    pivot = array(center)
+    left = istart
+    right = iend
+    do
+      do while (array(left) < pivot)
+        left = left + 1
+      end do
+      do while (pivot < array(right))
+        right = right - 1
+      end do
+      if (left >= right) exit
+      tmp = array(left)
+      array(left) = array(right)
+      array(right) = tmp
+      left = left + 1
+      right = right - 1
+    end do
+    if (istart < left-1) call qsort_int_array(array, istart, left-1)
+    if (right+1 < iend) call qsort_int_array(array, right+1, iend)
+    return
+  end subroutine qsort_int_array
+
+  subroutine uniq_int_array(array, len, newlen)
+    implicit none
+    integer(kind=kint), intent(inout) :: array(:)
+    integer(kind=kint), intent(in) :: len
+    integer(kind=kint), intent(out) :: newlen
+    integer(kind=kint) :: i, ndup
+    ndup = 0
+    do i=2,len
+      if (array(i) == array(i - 1 - ndup)) then
+        ndup = ndup + 1
+      else if (ndup > 0) then
+        array(i - ndup) = array(i)
+      endif
+    end do
+    newlen = len - ndup
+  end subroutine uniq_int_array
+
   !-----------------------------------------------------------------------------!
 
   subroutine node_grp_name_to_id( hecMESH, header_name, n, grp_id_name, grp_ID )
@@ -1173,7 +1338,7 @@ contains
     integer(kind=kint), intent(in) :: old_size  !< current array size
     integer(kind=kint), intent(in) :: nitem     !< number of items to be deleted
     integer(kind=kint) :: i
-    integer(kind=kint), pointer :: temp(:)
+    real(kind=kreal), pointer :: temp(:)
 
     if( old_size < nitem ) then
       return

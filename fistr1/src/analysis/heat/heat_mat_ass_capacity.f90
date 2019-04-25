@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides a subroutine to assemble heat capacity matrix
@@ -27,6 +27,7 @@ contains
       ic_type = hecMESH%elem_type_item(itype)
 
       if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_patch(ic_type)) cycle
       if(ic_type == 3414) cycle
 
       do icel = iS, iE

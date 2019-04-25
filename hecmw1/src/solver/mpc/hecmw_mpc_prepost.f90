@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2017 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
@@ -477,6 +477,14 @@ contains
     !$omp end parallel
 
     deallocate(W)
+
+    if (ndof == 3) then
+      call hecmw_update_3_R(hecMESH, X, hecMESH%n_node)
+    else if (ndof == 2) then
+      call hecmw_update_2_R(hecMESH, X, hecMESH%n_node)
+    else
+      call hecmw_update_m_R(hecMESH, X, hecMESH%n_node, ndof)
+    endif
   end subroutine hecmw_tback_x
 
 end module hecmw_mpc_prepost

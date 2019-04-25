@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -63,13 +63,13 @@ int main(int argc, char **argv) {
   for (timestep = min_step; timestep <= max_step; timestep++) {
     if ((timestep % interval) != 0 && timestep != max_step) continue;
 
-    resultfile = HECMW_ctrl_get_result_fileheader("fstrRES", max_step, timestep,
+    resultfile = HECMW_ctrl_get_result_fileheader("fstrRES", timestep,
                                                   &fg_text);
     sprintf(resultfile1, "%s.%d.%d", resultfile, mynode, timestep);
     data = HECMW_result_read_by_fname(resultfile1);
     if (data == NULL) HECMW_abort(HECMW_comm_get_comm());
 
-    HECMW_visualize(mesh, data, timestep, max_step, interval);
+    HECMW_visualize(mesh, data, timestep);
 
     HECMW_result_free(data);
   }
