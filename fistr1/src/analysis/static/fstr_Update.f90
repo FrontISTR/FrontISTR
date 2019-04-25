@@ -54,8 +54,8 @@ contains
     ttn = 0.d0
     tt = 0.d0
 
-    ! if initial temperature exists	
-	initt = 0
+    ! if initial temperature exists
+    initt = 0
     if( associated(g_InitialCnd) ) then
         do j=1,size(g_InitialCnd)
           if( g_InitialCnd(j)%cond_name=="temperature" ) then
@@ -89,7 +89,7 @@ contains
         !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,ddu,du,total_disp, &
         !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux), &
         !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
-        !$omp&         strainEnergy,iter,time,tincr), &
+        !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
       !$omp do
       do icel = is, iE
@@ -108,7 +108,7 @@ contains
               tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) )
             else
               tt0(j) = 0.d0
-              if( initt>0 ) tt0(j) = g_InitialCnd(initt)%realval(nodLOCAL(j)) 
+              if( initt>0 ) tt0(j) = g_InitialCnd(initt)%realval(nodLOCAL(j))
             endif
             ttn(j) = fstrSOLID%last_temp( nodLOCAL(j) )
             tt(j)  = fstrSOLID%temperature( nodLOCAL(j) )
