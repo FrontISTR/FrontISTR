@@ -9,7 +9,7 @@
 module m_solve_LINEQ_contact
 
   use m_fstr
-  use m_solve_LINEQ_mkl
+  use m_solve_LINEQ_MKL_contact
   use m_solve_LINEQ_direct_serial_lag
   use m_solve_LINEQ_MUMPS_contact
   use m_solve_LINEQ_iter_contact
@@ -35,7 +35,7 @@ contains
     elseif( hecMAT%Iarray(99)==2 )then
       call solve_LINEQ_serial_lag_hecmw_init(hecMAT,fstrMAT,is_sym)
     else if( hecMAT%Iarray(99)==3 )then
-      call solve_LINEQ_mkl_init(hecMAT,fstrMAT,is_sym)
+      call solve_LINEQ_MKL_contact_init(is_sym)
     elseif( hecMAT%Iarray(99)==5 ) then
       call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
     endif
@@ -71,7 +71,7 @@ contains
     elseif( hecMAT%Iarray(99)==2 )then
       call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
     elseif( hecMAT%Iarray(99)==3 )then
-      call solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT,istat)
+      call solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat)
     elseif( hecMAT%Iarray(99)==5 ) then
       ! ----  For Parallel Contact with Multi-Partition Domains
       if(paraContactFlag.and.present(conMAT)) then
