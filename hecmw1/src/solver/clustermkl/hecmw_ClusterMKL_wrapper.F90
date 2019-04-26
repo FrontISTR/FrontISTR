@@ -2,249 +2,183 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
+!> This module provides linear equation solver interface for Cluster Pardiso
 #ifdef WITH_MKL
 include 'mkl_cluster_sparse_solver.f90'
 #endif
 
 module m_hecmw_ClusterMKL_wrapper
   use hecmw_util
+  use m_sparse_matrix
 
 #ifdef WITH_MKL
-  use m_sparse_matrix
-  use m_sparse_matrix_hec
-  use hecmw_matrix_ass
-  use hecmw_matrix_dump
   use mkl_cluster_sparse_solver
 #endif
 
   implicit none
 
-  private                            ! default
+  private                         ! default
   public hecmw_clustermkl_wrapper ! only entry point of Parallel Direct Solver is public
 
-#ifdef WITH_MKL
   logical, save :: INITIALIZED = .false.
-  type (sparse_matrix), save :: spMAT
+#ifdef WITH_MKL
   type(MKL_CLUSTER_SPARSE_SOLVER_HANDLE) :: pt(64)
-  integer maxfct, mnum, mtype, phase, nrhs, error, msglvl
-  integer idum(1), n, nnz, nloc
-  real(kind=kreal)  ddum(1)
-  data nrhs /1/, maxfct /1/, mnum /1/
-  integer, parameter :: imsg=51
-
-  integer :: iparm(64)
-  real*8, allocatable, dimension(:) :: x
-
-  integer myrank0
 #endif
+  integer maxfct, mnum, mtype, nrhs, msglvl
+  integer idum(1), i
+  data nrhs /1/, maxfct /1/, mnum /1/
+
+  integer, save :: iparm(64)
 
 contains
 
-  subroutine hecmw_clustermkl_wrapper(hecMESH, hecMAT)
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix    ), intent(inout) :: hecMAT
+  subroutine hecmw_clustermkl_wrapper(spMAT, phase_start, solx, istat)
+    implicit none
+    type (sparse_matrix), intent(inout)      :: spMAT
+    integer(kind=kint), intent(in)           :: phase_start
+    integer(kind=kint), intent(out)          :: istat
+    real(kind=kreal), pointer, intent(inout) :: solx(:)
+
+    integer(kind=kint) :: myrank, phase
+    real(kind=kreal)   :: t1,t2,t3,t4,t5
 
 #ifdef WITH_MKL
-    integer(kind=kint) :: spmat_type
-    integer(kind=kint) :: spmat_symtype
-    integer(kind=kint) :: istat,myrank
-    real(kind=kreal) :: t1,t2,t3,t4,t5
 
-    call hecmw_mat_dump(hecMAT, hecMESH)
-
-    t1=hecmw_wtime()
     myrank=hecmw_comm_get_rank()
 
-    if (INITIALIZED .and. hecMAT%Iarray(98) .eq. 1) then
-      phase = -1
-      call cluster_sparse_solver ( &
-        pt, maxfct, mnum, mtype, phase, n, ddum, idum, idum, &
-        idum, nrhs, iparm, msglvl, ddum, ddum, hecmw_comm_get_comm(), istat )
-      if (istat < 0) then
-        write(*,*) 'ERROR: MKL returned with error', istat
-        stop
-      endif
-      call sparse_matrix_finalize(spMAT)
-      if(allocated(x)) deallocate(x)
-      INITIALIZED = .false.
-    endif
-
     if (.not. INITIALIZED) then
-      spmat_type = SPARSE_MATRIX_TYPE_CSR
-      spmat_symtype = SPARSE_MATRIX_SYMTYPE_SYM
-      !spmat_symtype = SPARSE_MATRIX_SYMTYPE_ASYM
-      call sparse_matrix_set_type(spMAT, spmat_type, spmat_symtype)
+      do i=1,64
+        pt(i)%dummy = 0
+      enddo
+      iparm(:) = 0
+      iparm(1) = 1 ! no solver default
+      iparm(2) = 3 ! fill-in reordering from METIS
+      iparm(3) = 1
+      iparm(10) = 13 ! perturbe the pivot elements with 1E-13
+      iparm(11) = 0 ! use nonsymmetric permutation and scaling MPS
+      iparm(13) = 0 ! maximum weighted matching algorithm is switched-off
+      iparm(18) = -1
+      iparm(19) = -1
+      msglvl = 0 ! print statistical information
       INITIALIZED = .true.
-      hecMAT%Iarray(98) = 1
+    else
+      if( phase_start == 1 ) then
+        phase = -1
+        call cluster_sparse_solver ( &
+          pt, maxfct, mnum, mtype, phase, spMAT%N, spMAT%A, spMAT%IRN, spMAT%JCN, &
+          idum, nrhs, iparm, msglvl, spMAT%RHS, solx, hecmw_comm_get_comm(), istat )
+        if (istat < 0) then
+          write(*,*) 'ERROR: MKL returned with error in phase -1', istat
+          return
+        endif
+      end if
     endif
 
-    !* Flag to activate symbolic factorization: 1(yes) 0(no)  hecMESH%Iarray(98)
-    !* Flag to activate numeric  factorization: 1(yes) 0(no)  hecMESH%Iarray(97)
+    iparm(40) = 2 ! Input: distributed matrix/rhs/solution format
+    iparm(41) = spMAT%DISPLS(myrank+1)+1
+    iparm(42) = spMAT%DISPLS(myrank+1)+spMAT%N_COUNTS(myrank+1)
 
-    if (hecMAT%Iarray(98) .eq. 1) then
-      ! ANALYSIS and FACTORIZATION
-      call sparse_matrix_hec_init_prof(spMAT, hecMAT, hecMESH)
-      call sparse_matrix_hec_set_vals(spMAT, hecMAT)
-      !call sparse_matrix_dump(spMAT)
-      call setup_mkl_parameters(spMAT,myrank)
-      call setup_mkl_set_val(spMAT,myrank,.false.)
+    ! Additional setup
+    t1=hecmw_wtime()
+    if ( phase_start == 1 ) then
+      if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_SPD) then
+        mtype = 2
+      else if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_SYM) then
+        mtype = -2
+      else
+        mtype = 11
+      endif
+    endif
+
+    call sort_column_ascending_order(spMAT,myrank)
+
+    t2=hecmw_wtime()
+    if (myrank==0 .and. spMAT%timelog > 0) &
+      write(*,'(A,f10.3)') ' [Cluster Pardiso]: Additional Setup completed. time(sec)=',t2-t1
+
+    if ( phase_start == 1 ) then
+      ! ANALYSIS
       t2=hecmw_wtime()
+
       phase = 11
       call cluster_sparse_solver ( &
-        pt, maxfct, mnum, mtype, phase, n, spMAT%A, spMAT%IRN, spMAT%JCN, &
-        idum, nrhs, iparm, msglvl, ddum, ddum, hecmw_comm_get_comm(), istat )
+        pt, maxfct, mnum, mtype, phase, spMAT%N, spMAT%A, spMAT%IRN, spMAT%JCN, &
+        idum, nrhs, iparm, msglvl, spMAT%RHS, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
-        write(*,*) 'ERROR: MKL returned with error', istat, myrank
-        stop
+        write(*,*) 'ERROR: MKL returned with error in phase 1', istat
+        return
       endif
+
       t3=hecmw_wtime()
-      phase = 22
-      call cluster_sparse_solver ( &
-        pt, maxfct, mnum, mtype, phase, n, spMAT%A, spMAT%IRN, spMAT%JCN, &
-        idum, nrhs, iparm, msglvl, ddum, ddum, hecmw_comm_get_comm(), istat )
-      if (istat < 0) then
-        write(*,*) 'ERROR: MKL returned with error', istat
-        stop
-      endif
-      !if (myrank==0) write(*,*) ' [MKL]: Analysis and Factorization completed.'
-      hecMAT%Iarray(98) = 0
-      hecMAT%Iarray(97) = 0
-      allocate(x(nloc))
+      if (myrank==0 .and. spMAT%timelog > 0) &
+        write(*,'(A,f10.3)') ' [Cluster Pardiso]: Analysis completed.         time(sec)=',t3-t2
     endif
-    if (hecMAT%Iarray(97) .eq. 1) then
-      ! FACTORIZATION
-      call sparse_matrix_hec_set_prof(spMAT, hecMAT)
-      call sparse_matrix_hec_set_vals(spMAT, hecMAT)
-      call setup_mkl_set_val(spMAT,myrank,.true.)
-      !call sparse_matrix_dump(spMAT)
-      t2=hecmw_wtime()
+
+    ! FACTORIZATION
+    if ( phase_start .le. 2 ) then
       t3=hecmw_wtime()
+
       phase = 22
       call cluster_sparse_solver ( &
-        pt, maxfct, mnum, mtype, phase, n, spMAT%A, spMAT%IRN, spMAT%JCN, &
-        idum, nrhs, iparm, msglvl, ddum, ddum, hecmw_comm_get_comm(), istat )
+        pt, maxfct, mnum, mtype, phase, spMAT%N, spMAT%A, spMAT%IRN, spMAT%JCN, &
+        idum, nrhs, iparm, msglvl, spMAT%RHS, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
-        write(*,*) 'ERROR: MKL returned with error', istat
+        write(*,*) 'ERROR: MKL returned with error in phase 2', istat
         stop
       endif
-      !if (myrank==0) write(*,*) ' [MKL]: Factorization completed.'
-      hecMAT%Iarray(97) = 0
+      t4=hecmw_wtime()
+      if (myrank==0 .and. spMAT%timelog > 0) &
+        write(*,'(A,f10.3)') ' [Cluster Pardiso]: Factorization completed.    time(sec)=',t4-t3
     endif
 
     t4=hecmw_wtime()
 
     ! SOLUTION
-    call sparse_matrix_hec_set_rhs(spMAT, hecMAT)
     phase = 33
     call cluster_sparse_solver ( &
-      pt, maxfct, mnum, mtype, phase, n, spMAT%A, spMAT%IRN, spMAT%JCN, &
-      idum, nrhs, iparm, msglvl, spMAT%rhs, x, hecmw_comm_get_comm(), istat )
+      pt, maxfct, mnum, mtype, phase, spMAT%N, spMAT%A, spMAT%IRN, spMAT%JCN, &
+      idum, nrhs, iparm, msglvl, spMAT%RHS, solx, hecmw_comm_get_comm(), istat )
     if (istat < 0) then
-      write(*,*) 'ERROR: MKL returned with error', istat
+      write(*,*) 'ERROR: MKL returned with error in phase 3', istat
       stop
     endif
-    call sparse_matrix_hec_get_rhs(spMAT, hecMAT)
-    ! if (myrank==0) write(*,*) ' [MKL]: Solution completed.'
+
     ! solution is written to hecMAT%X. you have to edit lib/solve_LINEQ.f90
     ! to use this routine properly.
 
     t5=hecmw_wtime()
-    if (myrank==0 .and. spMAT%timelog > 0) then
-      write(imsg,'(A)') '############## MATRIX SOLVER TIME INFORMATION ##############'
-      write(imsg,*) ' setup time         : ',t2-t1
-      write(imsg,*) ' ordering time      : ',t3-t2
-      write(imsg,*) ' factorization time : ',t4-t3
-      write(imsg,*) ' solve time         : ',t5-t4
-      write(imsg,'(A,i2)') 'number of performed iterative refinement steps',iparm(7)
-      write(imsg,'(A,i8)') 'number of positive eigenvalues',iparm(22)
-      write(imsg,'(A,i8)') 'number of negative eigenvalues',iparm(23)
-      write(imsg,'(A,i8)') 'number of perturbed pivots',iparm(14)
-      write(imsg,'(A)') '############ END MATRIX SOLVER TIME INFORMATION ############'
-    endif
-
-    call hecmw_mat_dump_solution(hecMAT)
+    if (myrank==0 .and. spMAT%timelog > 0) &
+       write(*,'(A,f10.3)') ' [Cluster Pardiso]: Solution completed.         time(sec)=',t5-t4
 
 #else
-    stop "PARADISO not available"
+    stop "MKL Pardiso not available"
 #endif
   end subroutine hecmw_clustermkl_wrapper
 
 #ifdef WITH_MKL
-
-  subroutine hecmw_MKL_wrapper(spMAT, job, istat)
-    type (sparse_matrix), intent(inout) :: spMAT
-    integer(kind=kint), intent(in) :: job
-    integer(kind=kint), intent(inout) :: istat
-    integer(kind=kint) :: ierr,myrank
-
-    integer(kind=kint) :: phase
-
-    myrank=hecmw_comm_get_rank()
-
-  end subroutine hecmw_MKL_wrapper
-
-  subroutine setup_mkl_parameters(spMAT,myrank)
-    type (sparse_matrix), intent(in) :: spMAT
-    integer(kind=kint), intent(in)   :: myrank
-
-    integer(kind=kint) :: i, j
-
-    n = spMAT%N
-    nnz = spMAT%NZ
-    nloc = spMAT%N_loc
-    nrhs = 1
-    do i=1,64
-      pt(i)%dummy = 0
-    enddo
-    iparm(:) = 0
-    iparm(1) = 1 ! no solver default
-    iparm(2) = 3 ! fill-in reordering from METIS
-    iparm(6) = 1 ! =0 solution on the first n compoments of x
-    iparm(8) = 2 ! numbers of iterative refinement steps
-    iparm(10) = 13 ! perturbe the pivot elements with 1E-13
-    iparm(11) = 0 ! use nonsymmetric permutation and scaling MPS
-    iparm(13) = 0 ! maximum weighted matching algorithm is switched-off
-    iparm(27) = 0 ! check matrix(temp)
-    iparm(40) = 2 ! Input: distributed matrix/rhs/solution format
-    error = 0  ! initialize error flag
-    msglvl = 0 ! print statistical information
-
-    if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_SPD) then
-      mtype = 2
-    else if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_SYM) then
-      mtype = -2
-    else
-      mtype = 11
-    endif
-    iparm(41) = spMAT%DISPLS(myrank+1)+1
-    iparm(42) = spMAT%DISPLS(myrank+1)+spMAT%N_COUNTS(myrank+1)
-
-  end subroutine setup_mkl_parameters
-
-  subroutine setup_mkl_set_val(spMAT,myrank,ordered)
+  subroutine sort_column_ascending_order(spMAT,myrank)
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in)   :: myrank
-    logical, intent(in)   :: ordered
 
     integer(kind=kint) :: i, j, is, iE
 
-    do i=2,nloc+1
+    do i=2,spMAT%N_loc+1
       if(spMAT%IRN(i)-spMAT%IRN(i-1)>10000) &
         &  write(*,*) 'warning: n may be too large for set_mkl_set_prof0 for row ',i-1
     enddo
 
     !!$omp parallel private(i, iS, iE)
     !!$omp do
-    do i=1,nloc
+    do i=1,spMAT%N_loc
       is = spMAT%IRN(i)
       iE = spMAT%IRN(i+1)-1
-      call set_mkl_set_val0(iE-is+1,spMAT%JCN(is:iE),spMAT%A(is:iE))
+      call sort_column_ascending_order0(iE-is+1,spMAT%JCN(is:iE),spMAT%A(is:iE))
     enddo
     !!$omp end do
     !!$omp end parallel
-  end subroutine setup_mkl_set_val
+  end subroutine sort_column_ascending_order
 
-  subroutine set_mkl_set_val0(n,ja,a)
+  subroutine sort_column_ascending_order0(n,ja,a)
     integer(kind=kint), intent(in) :: n
     integer(kind=kint), intent(inout) :: ja(:)
     real(kind=kreal), intent(inout) :: a(:)
@@ -265,7 +199,7 @@ contains
       a(i) = oa(work(2,i))
     enddo
 
-  end subroutine set_mkl_set_val0
+  end subroutine sort_column_ascending_order0
 
   recursive subroutine myqsort(n,work)
     integer(kind=kint), intent(in) :: n
