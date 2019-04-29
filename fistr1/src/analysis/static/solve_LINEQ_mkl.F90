@@ -12,6 +12,7 @@ module m_solve_LINEQ_MKL_contact
   use m_sparse_matrix_contact
   use fstr_matrix_con_contact
   use m_hecmw_MKL_wrapper
+  use m_hecmw_ClusterMKL_wrapper
 
   implicit none
 
@@ -24,7 +25,8 @@ module m_solve_LINEQ_MKL_contact
 
 contains
 
-  subroutine solve_LINEQ_MKL_contact_init(is_sym)
+  subroutine solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
     logical, intent(in) :: is_sym
 
     integer(kind=kint) :: spmat_type
@@ -38,7 +40,11 @@ contains
     else
       spmat_symtype = SPARSE_MATRIX_SYMTYPE_ASYM
     end if
-    spmat_type = SPARSE_MATRIX_TYPE_CSR
+    if(hecMESH%PETOT.GT.1) then
+      spmat_type = SPARSE_MATRIX_TYPE_COO
+    else
+      spmat_type = SPARSE_MATRIX_TYPE_CSR
+    endif
     call sparse_matrix_set_type(spMAT, spmat_type, spmat_symtype)
 
     NEED_ANALYSIS = .true.
@@ -74,8 +80,13 @@ contains
     endif
 
     t2=hecmw_wtime()
-    if (myrank==0 .and. (spMAT%iterlog > 0 .or. spMAT%timelog > 0)) &
-       write(*,'(A,f10.3)') ' [Pardiso]: Setup completed.          time(sec)=',t2-t1
+    if (myrank==0 .and. spMAT%timelog > 0) then
+      if( hecMESH%PETOT .GT. 1 ) then
+         write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup completed.          time(sec)=',t2-t1
+      else
+         write(*,'(A,f10.3)') ' [Pardiso]: Setup completed.          time(sec)=',t2-t1
+      end if
+    endif
 
     phase_start = 2
     if (NEED_ANALYSIS) then
@@ -84,7 +95,11 @@ contains
     endif
 
     ! SOLVE
-    call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+    if( hecMESH%PETOT.GT.1 ) then
+      call hecmw_clustermkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+    else
+      call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+    endif
 
     call hecmw_mat_dump_solution(hecMAT)
   end subroutine solve_LINEQ_MKL_contact
