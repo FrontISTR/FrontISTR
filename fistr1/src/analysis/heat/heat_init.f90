@@ -19,7 +19,7 @@ contains
     fstrHEAT%TEMP0 = 0.0d0
     fstrHEAT%TEMPC = 0.0d0
     fstrHEAT%TEMP  = 0.0d0
-	
+
     if(hecMESH%hecmw_flag_initcon == 1)then
       do i = 1, hecMESH%n_node
         j = hecMESH%node_init_val_index(i)
