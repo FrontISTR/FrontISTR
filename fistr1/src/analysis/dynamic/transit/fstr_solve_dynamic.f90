@@ -165,21 +165,17 @@ contains
     if(associated(g_InitialCnd))then
       ndof = HECMAT%NDOF
       do j = 1, size(g_InitialCnd)
-        !is = hecMESH%node_group%grp_index(g_InitialCnd(j)%grpid-1) + 1
-        !ie = hecMESH%node_group%grp_index(g_InitialCnd(j)%grpid  )
         if(g_InitialCnd(j)%cond_name == "velocity")then
           do i= 1, hecMESH%n_node
             ing = g_InitialCnd(j)%intval(i)
             if(ing <= 0) cycle
-            !ik = hecMESH%node_group%grp_item(i)
             fstrDYNAMIC%VEL(ndof*i-(ndof-ing),1) = g_InitialCnd(j)%realval(i)
           end do
         elseif(g_InitialCnd(j)%cond_name == "acceleration")then
           do i = 1, hecMESH%n_node
             ing = g_InitialCnd(j)%intval(i)
             if(ing <= 0) cycle
-              !ik = hecMESH%node_group%grp_item(i)
-              fstrDYNAMIC%ACC(ndof*i-(ndof-ing),1) = g_InitialCnd(j)%realval(i)
+            fstrDYNAMIC%ACC(ndof*i-(ndof-ing),1) = g_InitialCnd(j)%realval(i)
           enddo
         endif
       enddo
