@@ -19,7 +19,16 @@ contains
     fstrHEAT%TEMP0 = 0.0d0
     fstrHEAT%TEMPC = 0.0d0
     fstrHEAT%TEMP  = 0.0d0
-
+	
+    if(hecMESH%hecmw_flag_initcon == 1)then
+      do i = 1, hecMESH%n_node
+        j = hecMESH%node_init_val_index(i)
+        fstrHEAT%TEMP0(i) = hecMESH%node_init_val_item(j)
+        fstrHEAT%TEMPC(i) = fstrHEAT%TEMP0(i)
+        fstrHEAT%TEMP (i) = fstrHEAT%TEMP0(i)
+      enddo
+      write(ILOG,*) ' Initial condition of temperatures: OK'
+    endif
     if( associated(g_InitialCnd) ) then
         do j=1,size(g_InitialCnd)
           if( g_InitialCnd(j)%cond_name=="temperature" ) then

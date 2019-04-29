@@ -108,6 +108,7 @@ contains
               tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) )
             else
               tt0(j) = 0.d0
+              if( hecMESH%hecmw_flag_initcon == 1 ) tt0(j) = hecMESH%node_init_val_item(nodLOCAL(j))
               if( initt>0 ) tt0(j) = g_InitialCnd(initt)%realval(nodLOCAL(j))
             endif
             ttn(j) = fstrSOLID%last_temp( nodLOCAL(j) )

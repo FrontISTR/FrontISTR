@@ -49,6 +49,15 @@ contains
     ndof = hecMAT%NDOF
     nn = ndof*ndof
 
+    if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
+      fstrSOLID%last_temp = 0.0d0
+      fstrSOLID%temperature = 0.0d0
+      do j=1, size(hecMESH%node_init_val_item)
+        i = hecMESH%node_init_val_index(j)
+        fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(i)
+        fstrSOLID%temperature(j) = hecMESH%node_init_val_item(i)
+      end do
+    endif
     if( fstrSOLID%TEMP_ngrp_tot>0 .and. associated(g_InitialCnd) ) then
       fstrSOLID%last_temp = 0.0d0
       fstrSOLID%temperature = 0.0d0
