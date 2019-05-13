@@ -71,7 +71,11 @@ contains
     elseif( hecMAT%Iarray(99)==2 )then
       call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
     elseif( hecMAT%Iarray(99)==3 )then
-      call solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat)
+      if(paraContactFlag.and.present(conMAT)) then
+        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
+      else
+        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat)
+      endif
     elseif( hecMAT%Iarray(99)==5 ) then
       ! ----  For Parallel Contact with Multi-Partition Domains
       if(paraContactFlag.and.present(conMAT)) then

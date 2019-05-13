@@ -82,7 +82,7 @@ contains
     t2=hecmw_wtime()
     if (myrank==0 .and. spMAT%timelog > 0) then
       if( hecMESH%PETOT .GT. 1 ) then
-         write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup completed.          time(sec)=',t2-t1
+         write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup completed.            time(sec)=',t2-t1
       else
          write(*,'(A,f10.3)') ' [Pardiso]: Setup completed.          time(sec)=',t2-t1
       end if
@@ -100,6 +100,7 @@ contains
     else
       call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
     endif
+    call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
 
     call hecmw_mat_dump_solution(hecMAT)
   end subroutine solve_LINEQ_MKL_contact

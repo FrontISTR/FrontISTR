@@ -9,6 +9,7 @@ include 'mkl_cluster_sparse_solver.f90'
 
 module m_hecmw_ClusterMKL_wrapper
   use hecmw_util
+  use m_hecmw_comm_f
   use m_sparse_matrix
 
 #ifdef WITH_MKL
@@ -29,15 +30,20 @@ module m_hecmw_ClusterMKL_wrapper
   data nrhs /1/, maxfct /1/, mnum /1/
 
   integer, save :: iparm(64)
+  integer(kind=kint), save          :: nn
+  integer(kind=kint), pointer, save :: irow(:), jcol(:)
+  real(kind=kreal), pointer, save   :: aval(:), rhs(:), solx(:)
+
+  integer(kind=kint), parameter :: debug=0
 
 contains
 
-  subroutine hecmw_clustermkl_wrapper(spMAT, phase_start, solx, istat)
+  subroutine hecmw_clustermkl_wrapper(spMAT, phase_start, solution, istat)
     implicit none
     type (sparse_matrix), intent(inout)      :: spMAT
     integer(kind=kint), intent(in)           :: phase_start
     integer(kind=kint), intent(out)          :: istat
-    real(kind=kreal), pointer, intent(inout) :: solx(:)
+    real(kind=kreal), pointer, intent(inout) :: solution(:)
 
     integer(kind=kint) :: myrank, phase
     real(kind=kreal)   :: t1,t2,t3,t4,t5
@@ -65,18 +71,15 @@ contains
       if( phase_start == 1 ) then
         phase = -1
         call cluster_sparse_solver ( &
-          pt, maxfct, mnum, mtype, phase, spMAT%N, spMAT%A, spMAT%IRN, spMAT%JCN, &
-          idum, nrhs, iparm, msglvl, spMAT%RHS, solx, hecmw_comm_get_comm(), istat )
+          pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
+          idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
         if (istat < 0) then
           write(*,*) 'ERROR: MKL returned with error in phase -1', istat
           return
         endif
+        if( spMAT%type == SPARSE_MATRIX_TYPE_COO ) deallocate(irow,jcol,aval,rhs,solx)
       end if
     endif
-
-    iparm(40) = 2 ! Input: distributed matrix/rhs/solution format
-    iparm(41) = spMAT%DISPLS(myrank+1)+1
-    iparm(42) = spMAT%DISPLS(myrank+1)+spMAT%N_COUNTS(myrank+1)
 
     ! Additional setup
     t1=hecmw_wtime()
@@ -90,7 +93,22 @@ contains
       endif
     endif
 
-    call sort_column_ascending_order(spMAT,myrank)
+    if( spMAT%type == SPARSE_MATRIX_TYPE_CSR ) then
+      iparm(40) = 2 ! Input: distributed matrix/rhs/solution format
+      iparm(41) = spMAT%DISPLS(myrank+1)+1
+      iparm(42) = spMAT%DISPLS(myrank+1)+spMAT%N_COUNTS(myrank+1)
+      call sort_column_ascending_order(spMAT,myrank)
+      nn = spMAT%N
+      irow => spMAT%IRN
+      jcol => spMAT%JCN
+      aval => spMAT%A
+      rhs  => spMAT%rhs
+      solx => solution
+    else if( spMAT%type == SPARSE_MATRIX_TYPE_COO ) then
+      iparm(40) = 0 ! Input: centralized input format( mkl don't have distributed nonsymmetric matrix input...)
+      !input matrix is gathered to rank0 if matrix is given in COO format
+      call export_spMAT_to_CentralizedCRS(spMAT,myrank,nn,irow,jcol,aval,rhs,solx)
+    end if
 
     t2=hecmw_wtime()
     if (myrank==0 .and. spMAT%timelog > 0) &
@@ -102,8 +120,8 @@ contains
 
       phase = 11
       call cluster_sparse_solver ( &
-        pt, maxfct, mnum, mtype, phase, spMAT%N, spMAT%A, spMAT%IRN, spMAT%JCN, &
-        idum, nrhs, iparm, msglvl, spMAT%RHS, solx, hecmw_comm_get_comm(), istat )
+        pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
+        idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
         write(*,*) 'ERROR: MKL returned with error in phase 1', istat
         return
@@ -120,8 +138,8 @@ contains
 
       phase = 22
       call cluster_sparse_solver ( &
-        pt, maxfct, mnum, mtype, phase, spMAT%N, spMAT%A, spMAT%IRN, spMAT%JCN, &
-        idum, nrhs, iparm, msglvl, spMAT%RHS, solx, hecmw_comm_get_comm(), istat )
+        pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
+        idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
         write(*,*) 'ERROR: MKL returned with error in phase 2', istat
         stop
@@ -136,11 +154,18 @@ contains
     ! SOLUTION
     phase = 33
     call cluster_sparse_solver ( &
-      pt, maxfct, mnum, mtype, phase, spMAT%N, spMAT%A, spMAT%IRN, spMAT%JCN, &
-      idum, nrhs, iparm, msglvl, spMAT%RHS, solx, hecmw_comm_get_comm(), istat )
+      pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
+      idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
     if (istat < 0) then
       write(*,*) 'ERROR: MKL returned with error in phase 3', istat
       stop
+    endif
+
+    if( spMAT%type == SPARSE_MATRIX_TYPE_COO ) then !scatter global solution
+      call sparse_matrix_scatter_rhs(spMAT, solx)
+      do i=1,spMAT%N_loc
+        solution(i) = spMAT%rhs(i)
+      end do
     endif
 
     ! solution is written to hecMAT%X. you have to edit lib/solve_LINEQ.f90
@@ -156,6 +181,162 @@ contains
   end subroutine hecmw_clustermkl_wrapper
 
 #ifdef WITH_MKL
+  subroutine export_spMAT_to_CentralizedCRS(spMAT,myrank,n,ia,ja,a,b,x)
+    type (sparse_matrix), intent(in)           :: spMAT
+    integer(kind=kint), intent(in)             :: myrank
+    integer(kind=kint), intent(out)            :: n
+    integer(kind=kint), pointer, intent(inout) :: ia(:), ja(:)
+    real(kind=kreal), pointer, intent(inout)   :: a(:), b(:), x(:)
+
+    integer(kind=kint) :: i,k
+    integer(kind=kint) :: nprocs, ierr, nnz, info
+    integer(kind=kint), allocatable :: DISPMAT(:), NCOUNTS(:)
+    real(kind=kreal)   :: t1,t2,t3,t4,t5
+
+    t1=hecmw_wtime()
+
+    nprocs = hecmw_comm_get_size()
+    allocate(DISPMAT(nprocs),NCOUNTS(nprocs))
+    if (nprocs > 1) then
+      call HECMW_ALLGATHER_INT_1(spMAT%NZ, NCOUNTS, hecmw_comm_get_comm())
+    endif
+    n = spMAT%N
+    nnz = 0
+    DISPMAT(1)=0
+    do i=1,nprocs-1
+      DISPMAT(i+1)=DISPMAT(i)+NCOUNTS(i)
+      nnz = nnz + NCOUNTS(i)
+    enddo
+    nnz = nnz + NCOUNTS(nprocs)
+
+    if( myrank == 0 ) then
+      ierr = 0
+      if( .not. associated(ia) ) allocate(ia(nnz), stat=ierr)
+      if (ierr /= 0) then
+        write(*,*) " Allocation error in Setup Cluster MKL, ia",ierr,nnz
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      if( .not. associated(ja) ) allocate(ja(nnz), stat=ierr)
+      if (ierr /= 0) then
+        write(*,*) " Allocation error in Setup Cluster MKL, ja",ierr,nnz
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      if( .not. associated(a) ) allocate(a(nnz), stat=ierr)
+      if (ierr /= 0) then
+        write(*,*) " Allocation error in Setup Cluster MKL, a",ierr,nnz
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      if( .not. associated(b) ) allocate(b(n), stat=ierr)
+      if (ierr /= 0) then
+        write(*,*) " Allocation error in Setup Cluster MKL, b",ierr,n
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      if( .not. associated(x) ) allocate(x(n), stat=ierr)
+      if (ierr /= 0) then
+        write(*,*) " Allocation error in Setup Cluster MKL, x",ierr,n
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+    else !dummy
+      allocate(ia(1),ja(1),a(1),b(1),x(1))
+    end if
+
+    t2=hecmw_wtime()
+    if (myrank==0 .and. spMAT%timelog > 0 .and. debug > 0 ) &
+       write(*,'(A,f10.3)') ' [Cluster Pardiso]:   - Allocate Matrix         time(sec)=',t2-t1
+
+    !gather matrix components to rank 0
+
+    call hecmw_gatherv_int(spMAT%IRN, spMAT%NZ, ia, NCOUNTS, DISPMAT, 0, hecmw_comm_get_comm())
+    call hecmw_gatherv_int(spMAT%JCN, spMAT%NZ, ja, NCOUNTS, DISPMAT, 0, hecmw_comm_get_comm())
+    call hecmw_gatherv_real(spMAT%A, spMAT%NZ, a, NCOUNTS, DISPMAT, 0, hecmw_comm_get_comm())
+    call sparse_matrix_gather_rhs(spMAT, b)
+
+    t3=hecmw_wtime()
+    if (myrank==0 .and. spMAT%timelog > 0 .and. debug > 0 ) &
+       write(*,'(A,f10.3)') ' [Cluster Pardiso]:   - Gather Matrix           time(sec)=',t3-t2
+
+    !convert COO to CRS with mkl library
+    if( myrank == 0 ) call coo2csr(n, nnz, ia, ja, a)
+
+    t4=hecmw_wtime()
+    if (myrank==0 .and. spMAT%timelog > 0 .and. debug > 0 ) &
+       write(*,'(A,f10.3)') ' [Cluster Pardiso]:   - Convert Matrix Format   time(sec)=',t4-t3
+
+    deallocate(DISPMAT,NCOUNTS)
+  end subroutine
+
+  subroutine coo2csr(n, nnz, ia, ja, a)
+    integer(kind=kint), intent(in)             :: n
+    integer(kind=kint), intent(inout)          :: nnz
+    integer(kind=kint), pointer, intent(inout) :: ia(:)
+    integer(kind=kint), pointer, intent(inout) :: ja(:)
+    real(kind=kreal), pointer, intent(inout)   :: a(:)
+
+    integer(kind=kint) :: i, k, idx, iS, iE, nnz_new, prev
+    integer(kind=kint), allocatable :: counter(:), counter_curr(:), ia0(:), ja0(:)
+    real(kind=kreal), allocatable   :: a0(:)
+
+    allocate(counter(0:n),counter_curr(n),ia0(n+1),ja0(nnz),a0(nnz))
+
+    counter(:) = 0
+    do i=1,nnz
+      idx = ia(i)
+      counter(idx) = counter(idx) + 1
+    end do
+    ia0(:)=0
+    do i=1,n-1
+      ia0(i+1) = ia0(i)+counter(i)
+    end do
+
+    counter_curr(:) = 0
+    do i=1,nnz
+      idx = ia(i)
+      counter_curr(idx) = counter_curr(idx) + 1
+      idx = ia0(idx)+counter_curr(idx)
+      ja0(idx) = ja(i)
+      a0(idx) = a(i)
+    end do
+
+    !$omp parallel private(i, iS, iE)
+    !$omp do
+    do i=1,n
+      iS = ia0(i)+1
+      iE = ia0(i+1)
+      call sort_column_ascending_order0(iE-iS+1,ja0(iS:iE),a0(iS:iE))
+    enddo
+    !$omp end do
+    !$omp end parallel
+
+    ia(1)=1
+    do i=1,n
+      ia(i+1) = ia(i)+counter(i)
+    end do
+
+    prev = 0
+    nnz_new = 0
+    ia(1) = 1
+    do i=1,n
+      do k=ia0(i)+1,ia0(i+1)
+        if( ja0(k) == prev ) then
+          a(nnz_new) = a(nnz_new) + a0(k)
+        else
+          nnz_new = nnz_new + 1
+          ja(nnz_new) = ja0(k)
+          a(nnz_new) = a0(k)
+        end if
+        prev = ja0(k)
+      end do
+      ia(i+1) = nnz_new + 1
+      prev = 0
+    end do
+
+    nnz = nnz_new
+
+    deallocate(counter,counter_curr,ia0,ja0,a0)
+
+  end subroutine
+
+
   subroutine sort_column_ascending_order(spMAT,myrank)
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in)   :: myrank
@@ -205,24 +386,28 @@ contains
     integer(kind=kint), intent(in) :: n
     integer(kind=kint), intent(inout) :: work(:,:)
 
-    integer(kind=kint) :: i, j, key, work1(2,n), n_low, n_high
+    integer(kind=kint) :: i, key, work1(2,n), n_low, n_high, next, minidx, maxidx
     logical :: sorted
 
     if(n<2) return
     !return if work is already sorted
     sorted = .true.
+    minidx = work(1,1)
+    maxidx = work(1,1)
     do i=1,n-1
-      if(work(1,i)>work(1,i+1)) then
-        sorted = .false.
-        key = (work(1,i)+work(1,i+1))/2
-        exit
-      endif
+      next = work(1,i+1)
+      if( work(1,i) > next ) sorted = .false.
+      if( next < minidx ) minidx = next
+      if( next > maxidx ) maxidx = next
     enddo
     if(sorted) return
-    if(n<5) then
+
+    if( n<5 .or. maxidx-minidx < 2) then
       call myinssort(n,work)
       return
     endif
+
+    key = (minidx+maxidx)/2
 
     n_low=0
     do i=1,n
