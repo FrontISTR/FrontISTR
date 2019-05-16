@@ -97,10 +97,10 @@ contains
     ! SOLVE
     if( hecMESH%PETOT.GT.1 ) then
       call hecmw_clustermkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+      call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
     else
       call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
     endif
-    call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
 
     call hecmw_mat_dump_solution(hecMAT)
   end subroutine solve_LINEQ_MKL_contact
