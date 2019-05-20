@@ -63,8 +63,8 @@ contains
       iparm(10) = 13 ! perturbe the pivot elements with 1E-13
       iparm(11) = 0 ! use nonsymmetric permutation and scaling MPS
       iparm(13) = 0 ! maximum weighted matching algorithm is switched-off
-      iparm(18) = -1
-      iparm(19) = -1
+      iparm(18) = 0
+      iparm(19) = 0
       msglvl = 0 ! print statistical information
       INITIALIZED = .true.
     else
@@ -211,17 +211,17 @@ contains
 
     if( myrank == 0 ) then
       ierr = 0
-      if( .not. associated(ia) ) allocate(ia(nnz), stat=ierr)
+      if( .not. associated(ia) ) allocate(ia(nnz+n), stat=ierr)
       if (ierr /= 0) then
         write(*,*) " Allocation error in Setup Cluster MKL, ia",ierr,nnz
         call hecmw_abort(hecmw_comm_get_comm())
       endif
-      if( .not. associated(ja) ) allocate(ja(nnz), stat=ierr)
+      if( .not. associated(ja) ) allocate(ja(nnz+n), stat=ierr)
       if (ierr /= 0) then
         write(*,*) " Allocation error in Setup Cluster MKL, ja",ierr,nnz
         call hecmw_abort(hecmw_comm_get_comm())
       endif
-      if( .not. associated(a) ) allocate(a(nnz), stat=ierr)
+      if( .not. associated(a) ) allocate(a(nnz+n), stat=ierr)
       if (ierr /= 0) then
         write(*,*) " Allocation error in Setup Cluster MKL, a",ierr,nnz
         call hecmw_abort(hecmw_comm_get_comm())
@@ -249,6 +249,14 @@ contains
     call hecmw_gatherv_int(spMAT%IRN, spMAT%NZ, ia, NCOUNTS, DISPMAT, 0, hecmw_comm_get_comm())
     call hecmw_gatherv_int(spMAT%JCN, spMAT%NZ, ja, NCOUNTS, DISPMAT, 0, hecmw_comm_get_comm())
     call hecmw_gatherv_real(spMAT%A, spMAT%NZ, a, NCOUNTS, DISPMAT, 0, hecmw_comm_get_comm())
+    if( myrank == 0 ) then !cluster pardiso must be given diagonal components even if they are zero.
+      do i=1,n
+        ia(nnz+i) = i
+        ja(nnz+i) = i
+        a(nnz+i) = 0.d0
+      end do
+      nnz = nnz + n
+    endif
     call sparse_matrix_gather_rhs(spMAT, b)
 
     t3=hecmw_wtime()
@@ -284,7 +292,7 @@ contains
       counter(idx) = counter(idx) + 1
     end do
     ia0(:)=0
-    do i=1,n-1
+    do i=1,n
       ia0(i+1) = ia0(i)+counter(i)
     end do
 
