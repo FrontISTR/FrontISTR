@@ -142,7 +142,7 @@ contains
         idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
         write(*,*) 'ERROR: MKL returned with error in phase 2', istat
-        stop
+        return
       endif
       t4=hecmw_wtime()
       if (myrank==0 .and. spMAT%timelog > 0) &
@@ -158,7 +158,7 @@ contains
       idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
     if (istat < 0) then
       write(*,*) 'ERROR: MKL returned with error in phase 3', istat
-      stop
+      return
     endif
 
     if( spMAT%type == SPARSE_MATRIX_TYPE_COO ) then !scatter global solution
