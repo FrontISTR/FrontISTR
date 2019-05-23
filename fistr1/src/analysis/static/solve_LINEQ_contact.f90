@@ -55,6 +55,7 @@ contains
     real(kind=kreal)                         :: factor
     real(kind=kreal) :: resid
     real(kind=kreal) :: t1, t2
+    integer(kind=kint) :: ndof
 
     factor = 1.0d0
     if( present(rf) )factor = rf
@@ -83,6 +84,17 @@ contains
       else
         call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,istat)
       endif
+    endif
+
+    ndof = hecMAT%NDOF
+    if( ndof==3 ) then
+      call hecmw_update_3_R(hecMESH,hecMAT%X,hecMESH%n_node)
+    else if( ndof==2 ) then
+      call hecmw_update_2_R(hecMESH,hecMAT%X,hecMESH%n_node)
+    else if( ndof==4 ) then
+      call hecmw_update_4_R(hecMESH,hecMAT%X,hecMESH%n_node)
+    else if( ndof==6 ) then
+      call hecmw_update_m_R(hecMESH,hecMAT%X,hecMESH%n_node,6)
     endif
 
     t2 = hecmw_wtime()

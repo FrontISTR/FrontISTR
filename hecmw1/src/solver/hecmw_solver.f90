@@ -17,6 +17,7 @@ contains
     use hecmw_solver_direct_MKL
     use hecmw_solver_direct_clusterMKL
     use hecmw_matrix_misc
+    use m_hecmw_comm_f
     implicit none
 
     type (hecmwST_matrix), target :: hecMAT
@@ -67,6 +68,16 @@ contains
           do i=1,hecMAT%NP*hecMESH%n_dof
             hecMAT%X(i) = hecMAT%B(i)
           end do
+
+          if( NDOF==3 ) then
+            call hecmw_update_3_R(hecMESH,hecMAT%X,hecMESH%n_node)
+          else if( NDOF==2 ) then
+            call hecmw_update_2_R(hecMESH,hecMAT%X,hecMESH%n_node)
+          else if( NDOF==4 ) then
+            call hecmw_update_4_R(hecMESH,hecMAT%X,hecMESH%n_node)
+          else if( NDOF==6 ) then
+            call hecmw_update_m_R(hecMESH,hecMAT%X,hecMESH%n_node,6)
+          endif
         endif
 
         resid=hecmw_rel_resid_L2_nn(hecMESH,hecMAT)
