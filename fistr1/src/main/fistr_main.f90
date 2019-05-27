@@ -19,6 +19,7 @@ module m_fstr_main
   use fstr_solver_dynamic
   use fstr_debug_dump
   use fstr_matrix_con_contact
+  use hecmw_dist_free_f
 
   type(hecmwST_local_mesh), save             :: hecMESH
   type(hecmwST_matrix), save                 :: hecMAT
@@ -108,6 +109,7 @@ contains
 
     call fstr_rcap_finalize( fstrPR, fstrCPL )
     call fstr_finalize()
+    call hecmw_dist_free(hecMESH)
     call hecmw_finalize
     if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
 

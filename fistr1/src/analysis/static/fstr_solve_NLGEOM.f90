@@ -14,7 +14,8 @@ module m_fstr_solve_NLGEOM
   use m_fstr_TimeInc
   use m_fstr_Cutback
   use m_solve_LINEQ_contact
-
+  use hecmw_precond
+  
   implicit none
 
 contains
@@ -260,7 +261,8 @@ contains
     enddo      !--- end of tot_step loop
 
     call fstr_cutback_finalize( fstrSOLID )
-
+    call hecmw_precond_clear(hecMAT)
+    
     !  message
     if(myrank == 0)then
       call fstr_TimeInc_PrintSTATUS_final(.true.)

@@ -1179,6 +1179,122 @@ contains
       end if
     endif
 
+    ! Allocated in in f str_setup_BOUNDARY */
+    if( associated(fstrSOLID%BOUNDARY_ngrp_GRPID) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_GRPID, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_GRPID>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%BOUNDARY_ngrp_ID) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_ID, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_ID>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%BOUNDARY_ngrp_type) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_type, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_type>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%BOUNDARY_ngrp_val) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_val, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_val>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%BOUNDARY_ngrp_amp) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_amp, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_amp>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%BOUNDARY_ngrp_rotID) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_rotID, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_rotID>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%BOUNDARY_ngrp_centerID) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_centerID, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_centerID>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    
+    ! Allocated in in fstr_setup_CLOAD
+    if( associated(fstrSOLID%CLOAD_ngrp_GRPID) ) then
+       deallocate(fstrSOLID%CLOAD_ngrp_GRPID, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, CLOAD_ngrp_GRPID>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%CLOAD_ngrp_ID) ) then
+       deallocate(fstrSOLID%CLOAD_ngrp_ID, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, CLOAD_ngrp_ID>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%CLOAD_ngrp_DOF) ) then
+       deallocate(fstrSOLID%CLOAD_ngrp_DOF, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, CLOAD_ngrp_DOF>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%CLOAD_ngrp_val) ) then
+       deallocate(fstrSOLID%CLOAD_ngrp_val, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, CLOAD_ngrp_val>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%CLOAD_ngrp_amp) ) then
+       deallocate(fstrSOLID%CLOAD_ngrp_amp, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, CLOAD_ngrp_amp>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%CLOAD_ngrp_rotID) ) then
+       deallocate(fstrSOLID%CLOAD_ngrp_rotID, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, CLOAD_ngrp_rotID>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%CLOAD_ngrp_centerID) ) then
+       deallocate(fstrSOLID%CLOAD_ngrp_centerID, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, CLOAD_ngrp_centerID>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    
   end subroutine
 
   !> Initial setting of heat analysis
