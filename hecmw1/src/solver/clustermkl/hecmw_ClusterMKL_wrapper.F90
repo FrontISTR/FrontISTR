@@ -128,6 +128,7 @@ contains
         pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
         idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
+        if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_paramters()
         write(*,*) 'ERROR: MKL returned with error in phase 1', istat
         return
       endif
@@ -146,6 +147,7 @@ contains
         pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
         idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
+        if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_paramters()
         write(*,*) 'ERROR: MKL returned with error in phase 2', istat
         return
       endif
@@ -162,6 +164,7 @@ contains
       pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
       idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
     if (istat < 0) then
+      if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_paramters()
       write(*,*) 'ERROR: MKL returned with error in phase 3', istat
       return
     endif
@@ -177,8 +180,10 @@ contains
     ! to use this routine properly.
 
     t5=hecmw_wtime()
-    if (myrank==0 .and. spMAT%timelog > 0) &
-       write(*,'(A,f10.3)') ' [Cluster Pardiso]: Solution completed.         time(sec)=',t5-t4
+    if (myrank==0 .and. spMAT%timelog > 0) then
+      write(*,'(A,f10.3)') ' [Cluster Pardiso]: Solution completed.         time(sec)=',t5-t4
+    end if
+    if( debug > 0 ) call print_iparm_paramters()
 
 #else
     stop "MKL Pardiso not available"
@@ -186,6 +191,19 @@ contains
   end subroutine hecmw_clustermkl_wrapper
 
 #ifdef WITH_MKL
+  subroutine print_iparm_paramters()
+    write(*,'(A60,I8)') 'Number of iterative refinement steps performed: ',iparm(7)
+    write(*,'(A60,I8)') 'Number of perturbed pivots: ',iparm(14)
+    write(*,'(A60,I8)') 'Peak memory on symbolic factorization: ',iparm(15)
+    write(*,'(A60,I8)') 'Permanent memory on symbolic factorization: ',iparm(16)
+    write(*,'(A60,I8)') 'Size of factors/Peak memory on num. fact. and sol: ',iparm(17)
+    write(*,'(A60,I8)') 'The number of non-zero elements in the factors: ',iparm(18)
+    if( mtype < 11 ) then
+      write(*,'(A60,I8)') 'Number of positive eigenvalues: ',iparm(22)
+      write(*,'(A60,I8)') 'Number of negative eigenvalues: ',iparm(23)
+    end if
+  end subroutine
+
   subroutine export_spMAT_to_CentralizedCRS(spMAT,myrank,n,ia,ja,a,b,x)
     type (sparse_matrix), intent(in)           :: spMAT
     integer(kind=kint), intent(in)             :: myrank
@@ -268,8 +286,11 @@ contains
     if (myrank==0 .and. spMAT%timelog > 0 .and. debug > 0 ) &
        write(*,'(A,f10.3)') ' [Cluster Pardiso]:   - Gather Matrix           time(sec)=',t3-t2
 
-    !convert COO to CRS with mkl library
-    if( myrank == 0 ) call coo2csr(n, nnz, ia, ja, a)
+    !convert COO to CRS
+    if( myrank==0 ) then
+      call coo2csr(n, nnz, ia, ja, a)
+      if( debug>0 ) call check_csr(n, nnz, ia, ja, a)
+    endif
 
     t4=hecmw_wtime()
     if (myrank==0 .and. spMAT%timelog > 0 .and. debug > 0 ) &
@@ -349,6 +370,40 @@ contains
 
   end subroutine
 
+  subroutine check_csr(n, nnz, ia, ja, a)
+    integer(kind=kint), intent(in)            :: n
+    integer(kind=kint), intent(in)            :: nnz
+    integer(kind=kint), pointer, intent(in)   :: ia(:)
+    integer(kind=kint), pointer, intent(in)   :: ja(:)
+    real(kind=kreal), pointer, intent(in)     :: a(:)
+
+    integer :: i,k
+
+    if( ia(n+1)-1 /= nnz ) then
+      write(*,*) "Error in check_csr(1): ia(n+1)-1 /= nnz"
+      call hecmw_abort(hecmw_comm_get_comm())
+    end if
+
+    do i=1,n
+      do k=ia(i),ia(i+1)-1
+        if( ja(k) <= 0 ) then
+          write(*,*) "Error in check_csr(2): ja(k) <= 0"
+          call hecmw_abort(hecmw_comm_get_comm())
+        end if
+        if( ja(k) > n ) then
+          write(*,*) "Error in check_csr(3): ja(k) > n"
+          call hecmw_abort(hecmw_comm_get_comm())
+        end if
+        if( k > ia(i) ) then
+          if( ja(k) <= ja(k-1) ) then
+            write(*,*) "Error in check_csr(4): ja(k) <= ja(k-1)"
+            call hecmw_abort(hecmw_comm_get_comm())
+          end if
+        end if
+      end do
+    end do
+
+  end subroutine
 
   subroutine sort_column_ascending_order(spMAT,myrank)
     type (sparse_matrix), intent(inout) :: spMAT
