@@ -30,6 +30,10 @@ contains
       if (hecmw_is_etype_patch(ic_type)) cycle
       if(ic_type == 3414) cycle
 
+      !$omp parallel default(none), &
+        !$omp&  private(icel,isect,IMAT,nn,temp,in0,i,j,nodLOCAL,ecoord,in,thick,surf,inod,lumped,mass), &
+        !$omp&  shared(iS,iE,hecMESH,ic_type,hecMAT,fstrHEAT,ndof,delta_time)
+      !$omp do
       do icel = iS, iE
         isect = hecMESH%section_ID(icel)
         IMAT = hecMESH%section%sect_mat_ID_item(isect)
@@ -84,10 +88,14 @@ contains
 
         do ip = 1, nn
           inod = nodLOCAL(ip)
+          !$omp atomic
           hecMAT%D(inod) = hecMAT%D(inod) + lumped(ip) / delta_time
+          !$omp atomic
           hecMAT%B(inod) = hecMAT%B(inod) + lumped(ip)*temp(ip) / delta_time
         enddo
       enddo
+      !$omp end do
+      !$omp end parallel
     enddo
   end subroutine heat_mat_ass_capacity
 end module m_heat_mat_ass_capacity
