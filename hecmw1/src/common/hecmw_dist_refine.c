@@ -421,6 +421,24 @@ static int get_elem_ndiv(int etype, int *ierror) {
 static void register_node(struct hecmwST_local_mesh *mesh) {
   HECMW_log(HECMW_LOG_DEBUG, "Original Node Count = %d\n", mesh->n_node_gross);
 
+#ifdef DEBUG_REFINER
+  HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapSetNode64(num=%d, coords, globalIds, NULL)\n", mesh->n_node_gross);
+  {
+    char fname[256];
+    FILE *fp_dump;
+    sprintf(fname, "dump_rcapSetNode64.%d", HECMW_comm_get_rank());
+    fp_dump = fopen(fname, "w");
+    if (fp_dump == NULL) {
+      fprintf(stderr, "Error: cannot open file %s\n", fname);
+    } else {
+      HECMW_log(HECMW_LOG_DEBUG, "RCAP: writing num, coords[0..3*num-1], globalIds[0..num-1] to %s\n", fname);
+      fwrite(&(mesh->n_node_gross), sizeof(int), 1, fp_dump);
+      fwrite(mesh->node, sizeof(double), 3*mesh->n_node_gross, fp_dump);
+      fwrite(mesh->global_node_ID, sizeof(int), mesh->n_node_gross, fp_dump);
+      fclose(fp_dump);
+    }
+  }
+#endif
   rcapSetNode64(mesh->n_node_gross, mesh->node, mesh->global_node_ID, NULL);
 
   HECMW_assert(rcapGetNodeCount() == mesh->n_node_gross);
@@ -437,6 +455,27 @@ static void register_node_groups(struct hecmwST_node_grp *grp) {
     int num    = grp->grp_index[i + 1] - start;
     int *array = grp->grp_item + start;
     sprintf(rcap_name, "NG_%s", grp->grp_name[i]);
+
+#ifdef DEBUG_REFINER
+    HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapAppendNodeGroup(dataname=%s, num=%d, nodeArray)\n", rcap_name, num);
+    {
+      char fname[256];
+      FILE *fp_dump;
+      sprintf(fname, "dump_rcapAppendNodeGroup_%s.%d", grp->grp_name[i], HECMW_comm_get_rank());
+      fp_dump = fopen(fname, "w");
+      if (fp_dump == NULL) {
+        fprintf(stderr, "Error: cannot open file %s\n", fname);
+      } else {
+        int len = strlen(rcap_name);
+        HECMW_log(HECMW_LOG_DEBUG, "RCAP: writing strlen(dataname), dataname[], num, nodeArray[0..num-1] to %s\n", fname);
+        fwrite(&len, sizeof(int), 1, fp_dump);
+        fwrite(rcap_name, sizeof(char), len, fp_dump);
+        fwrite(&num, sizeof(int), 1, fp_dump);
+        fwrite(array, sizeof(int), num, fp_dump);
+        fclose(fp_dump);
+      }
+    }
+#endif
     rcapAppendNodeGroup(rcap_name, num, array);
   }
 }
@@ -472,6 +511,27 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
     sprintf(rcap_name, "SG_%s", grp->grp_name[i]);
     num   = HECMW_varray_int_nval(&other) / 2;
     array = HECMW_varray_int_get_v(&other);
+
+#ifdef DEBUG_REFINER
+    HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapAppendFaceGroup(dataname=%s, num=%d, faceArray)\n", rcap_name, num);
+    {
+      char fname[256];
+      FILE *fp_dump;
+      sprintf(fname, "dump_rcapAppendFaceGroup_%s.%d", grp->grp_name[i], HECMW_comm_get_rank());
+      fp_dump = fopen(fname, "w");
+      if (fp_dump == NULL) {
+        fprintf(stderr, "Error: cannot open file %s\n", fname);
+      } else {
+        int len = strlen(rcap_name);
+        HECMW_log(HECMW_LOG_DEBUG, "RCAP: writing strlen(dataname), dataname[], num, faceArray[0..2*num-1] to %s\n", fname);
+        fwrite(&len, sizeof(int), 1, fp_dump);
+        fwrite(rcap_name, sizeof(char), len, fp_dump);
+        fwrite(&num, sizeof(int), 1, fp_dump);
+        fwrite(array, sizeof(int), num*2, fp_dump);
+        fclose(fp_dump);
+      }
+    }
+#endif
     rcapAppendFaceGroup(rcap_name, num, array);
 
     HECMW_varray_int_finalize(&other);
@@ -487,11 +547,20 @@ static int prepare_refiner(struct hecmwST_local_mesh *mesh,
   if (elem_node_item_hecmw2rcap(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (surf_ID_hecmw2rcap(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
+#ifdef DEBUG_REFINER
+  HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapInitRefiner(nodeOffset=1, elementOffset=1)\n");
+#endif
   rcapInitRefiner(1, 1);
   if (cad_filename != NULL) {
+#ifdef DEBUG_REFINER
+    HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapSetCADFilename(filename=%s)\n", cad_filename);
+#endif
     rcapSetCADFilename(cad_filename);
   }
   if (part_filename != NULL) {
+#ifdef DEBUG_REFINER
+    HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapSetPartitionFilename(filename=%s)\n", part_filename);
+#endif
     rcapSetPartitionFilename(part_filename);
   }
   register_node(mesh);
@@ -508,9 +577,17 @@ static int prepare_refiner(struct hecmwST_local_mesh *mesh,
   return HECMW_SUCCESS;
 }
 
-static void clear_refiner(void) { rcapClearRefiner(); }
+static void clear_refiner(void) {
+#ifdef DEBUG_REFINER
+  HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapClearRefiner()\n");
+#endif
+  rcapClearRefiner();
+}
 
 static int terminate_refiner(struct hecmwST_local_mesh *mesh) {
+#ifdef DEBUG_REFINER
+  HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapTermRefiner()\n");
+#endif
   rcapTermRefiner();
   if (surf_ID_rcap2hecmw(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (elem_node_item_rcap2hecmw(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -656,7 +733,30 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
       etype_rcap = elem_type_hecmw2rcap(etype);
       HECMW_assert(etype_rcap != RCAP_UNKNOWNTYPE);
       elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
+
+#ifdef DEBUG_REFINER
+      HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapRefineElement(num=%d, etype=%d, nodeArray, NULL)\n", n_elem, etype_rcap);
+      {
+        char fname[256];
+        FILE *fp_dump;
+        sprintf(fname, "dump_rcapRefineElement_pre_%d.%d", etype, HECMW_comm_get_rank());
+        fp_dump = fopen(fname, "w");
+        if (fp_dump == NULL) {
+          fprintf(stderr, "Error: cannot open file %s\n", fname);
+        } else {
+          int nn = HECMW_get_max_node(etype);
+          HECMW_log(HECMW_LOG_DEBUG, "RCAP: writing num, etype, nodeArray[0..%d*num-1] to %s\n", nn, fname);
+          fwrite(&n_elem, sizeof(int), 1, fp_dump);
+          fwrite(&etype_rcap, sizeof(int), 1, fp_dump);
+          fwrite(elem_node_item, sizeof(int), nn * n_elem, fp_dump);
+          fclose(fp_dump);
+        }
+      }
+#endif
       n_elem_ref = rcapRefineElement(n_elem, etype_rcap, elem_node_item, NULL);
+#ifdef DEBUG_REFINER
+      HECMW_log(HECMW_LOG_DEBUG, "RCAP: return value was %d\n", n_elem_ref);
+#endif
       if (is33) {
         n_elem_ref /= 2;
         n_elem /= 2;
@@ -716,8 +816,35 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
       if (is33) n_elem *= 2;
       etype_rcap     = elem_type_hecmw2rcap(etype);
       elem_node_item = mesh->elem_node_item + mesh->elem_node_index[istart];
+
+#ifdef DEBUG_REFINER
+      HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapRefineElement(num=%d, etype=%d, nodeArray, resultNodeArray)\n", n_elem, etype_rcap);
+#endif
       n_elem_ref     = rcapRefineElement(n_elem, etype_rcap, elem_node_item,
                                      elem_node_item_ref);
+#ifdef DEBUG_REFINER
+      {
+        char fname[256];
+        FILE *fp_dump;
+        sprintf(fname, "dump_rcapRefineElement_%d.%d", etype, HECMW_comm_get_rank());
+        fp_dump = fopen(fname, "w");
+        if (fp_dump == NULL) {
+          fprintf(stderr, "Error: cannot open file %s\n", fname);
+        } else {
+          int nn = HECMW_get_max_node(etype);
+          HECMW_log(HECMW_LOG_DEBUG,
+                    "RCAP: writing num, etype, nodeArray[0..%d*num-1], num_ref, resultNodeArray[0..%d*num_ref-1] to %s\n",
+                    nn, nn, fname);
+          fwrite(&n_elem, sizeof(int), 1, fp_dump);
+          fwrite(&etype_rcap, sizeof(int), 1, fp_dump);
+          fwrite(elem_node_item, sizeof(int), nn * n_elem, fp_dump);
+          fwrite(&n_elem_ref, sizeof(int), 1, fp_dump);
+          fwrite(elem_node_item_ref, sizeof(int), nn * n_elem_ref, fp_dump);
+          fclose(fp_dump);
+        }
+      }
+#endif
+
       if (is33) {
         n_elem /= 2;
         n_elem_ref /= 2;
@@ -741,6 +868,9 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
 
   HECMW_assert(n_elem_ref_tot == ref_mesh->n_elem_gross);
 
+#ifdef DEBUG_REFINER
+  HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapCommit()\n");
+#endif
   rcapCommit();
   return HECMW_SUCCESS;
 }
@@ -748,7 +878,13 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
 static int refine_node(struct hecmwST_local_mesh *mesh,
                        struct hecmwST_local_mesh *ref_mesh) {
   /* n_node_gross */
+#ifdef DEBUG_REFINER
+  HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapGetNodeCount()\n");
+#endif
   ref_mesh->n_node_gross = rcapGetNodeCount();
+#ifdef DEBUG_REFINER
+  HECMW_log(HECMW_LOG_DEBUG, "RCAP: return value was %d\n", ref_mesh->n_node_gross);
+#endif
 
   HECMW_log(HECMW_LOG_DEBUG, "Refined Node Count = %d\n", ref_mesh->n_node_gross);
 
@@ -761,7 +897,28 @@ static int refine_node(struct hecmwST_local_mesh *mesh,
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
+#ifdef DEBUG_REFINER
+  HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapGetNodeSeq64(num=%d, initId=1, coords)\n", ref_mesh->n_node_gross);
+#endif
   rcapGetNodeSeq64(ref_mesh->n_node_gross, 1, ref_mesh->node);
+#ifdef DEBUG_REFINER
+  {
+    char fname[256];
+    FILE *fp_dump;
+    sprintf(fname, "dump_rcapGetNodeSeq64.%d", HECMW_comm_get_rank());
+    fp_dump = fopen(fname, "w");
+    if (fp_dump == NULL) {
+      fprintf(stderr, "Error: cannot open file %s\n", fname);
+    } else {
+      int one = 1;
+      HECMW_log(HECMW_LOG_DEBUG, "RCAP: writing num, initId, coords[0..3*num-1] to %s\n", fname);
+      fwrite(&(ref_mesh->n_node_gross), sizeof(int), 1, fp_dump);
+      fwrite(&one, sizeof(int), 1, fp_dump);
+      fwrite(ref_mesh->node, sizeof(int), 3 * ref_mesh->n_node_gross, fp_dump);
+      fclose(fp_dump);
+    }
+  }
+#endif
 
   return HECMW_SUCCESS;
 }
@@ -1826,7 +1983,137 @@ static int *conv_index_ucd2hec(int etype)
   }
 }
 
-static int write_refined_shared_in_ucd(const struct hecmwST_local_mesh *mesh,
+static void write_elem_with_mismatching_refinement(const struct hecmwST_local_mesh *mesh,
+                                                  const struct hecmwST_local_mesh *ref_mesh,
+                                                  const struct hecmw_varray_int *shared,
+                                                  const struct hecmw_varray_int *shared_nodes,
+                                                  int i)
+{
+  int irank = mesh->neighbor_pe[i];
+  int j, k, l, nid;
+  int n_shared_elem = HECMW_varray_int_nval(shared + i);
+  int n_shared_node = HECMW_varray_int_nval(shared_nodes + i);
+  struct hecmw_varray_int shared_elem_node_index;
+  struct hecmw_varray_int shared_elem_node_item;
+  int n_shared_elem_node;
+  int n_shared_elem_r;
+  int n_shared_elem_node_r;
+  int *shared_elem_node_index_l = NULL;
+  int *shared_elem_node_item_l = NULL;
+  int *shared_elem_node_index_r = NULL;
+  int *shared_elem_node_item_r = NULL;
+  { /* create elem_node_index/item for shared elements */
+    if (HECMW_varray_int_init(&shared_elem_node_index) != HECMW_SUCCESS) goto exit;
+    if (HECMW_varray_int_init(&shared_elem_node_item) != HECMW_SUCCESS) goto exit;
+    if (HECMW_varray_int_append(&shared_elem_node_index, 0) != HECMW_SUCCESS) goto exit;
+    n_shared_elem_node = 0;
+    for (j = 0; j < n_shared_elem; j++) {
+      int eid = HECMW_varray_int_get(shared + i, j);
+      int etype = ref_mesh->elem_type[eid-1];
+      int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid-1];
+      int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
+      for (k = 0; k < nn; k++) {
+        nid = elem_nodes[k];
+        /* find local ID within shared_nodes */
+        for (l = 0; l < n_shared_node; l++) {
+          if (HECMW_varray_int_get(shared_nodes + i, l) == nid) break;
+        }
+        if (HECMW_varray_int_append(&shared_elem_node_item, l+1) != HECMW_SUCCESS) goto exit;
+      }
+      n_shared_elem_node += nn;
+      if (HECMW_varray_int_append(&shared_elem_node_index, n_shared_elem_node) != HECMW_SUCCESS) goto exit;
+    }
+  }
+  shared_elem_node_index_l = HECMW_varray_int_get_v(&shared_elem_node_index);
+  shared_elem_node_item_l = HECMW_varray_int_get_v(&shared_elem_node_item);
+  { /* send/receive shared_elem_node_index/item */
+    HECMW_Comm comm;
+    HECMW_Request requests[3];
+    HECMW_Status statuses[3];
+    int tag;
+    { /* send elem_node_index, elem_node_item */
+      int send_buf[2];
+      comm = HECMW_comm_get_comm();
+      send_buf[0] = n_shared_elem;
+      send_buf[1] = n_shared_elem_node;
+      tag = 9801;
+      HECMW_Isend(send_buf, 2, HECMW_INT, irank, tag, comm, &requests[0]);
+      tag = 9802;
+      HECMW_Isend(shared_elem_node_index_l, n_shared_elem + 1, HECMW_INT, irank, tag, comm, &requests[1]);
+      tag = 9803;
+      HECMW_Isend(shared_elem_node_item_l, n_shared_elem_node, HECMW_INT, irank, tag, comm, &requests[2]);
+    }
+    { /* receiv elem_node_index, elem_node_item */
+      int recv_buf[2];
+      /* receive n_shared_elem/n_shared_elem_node */
+      tag = 9801;
+      HECMW_Recv(recv_buf, 2, HECMW_INT, irank, tag, comm, &statuses[0]);
+      n_shared_elem_r = recv_buf[0];
+      n_shared_elem_node_r = recv_buf[1];
+      /* allocate */
+      shared_elem_node_index_r = (int *)HECMW_malloc(sizeof(int) * (n_shared_elem_r + 1));
+      if (shared_elem_node_index_r == NULL) {
+        HECMW_set_error(errno, "");
+        goto exit;
+      }
+      shared_elem_node_item_r = (int *)HECMW_malloc(sizeof(int) * n_shared_elem_node_r);
+      if (shared_elem_node_item_r == NULL) {
+        HECMW_set_error(errno, "");
+        goto exit;
+      }
+      /* receive index/item */
+      tag = 9802;
+      HECMW_Recv(shared_elem_node_index_r, n_shared_elem_r + 1, HECMW_INT, irank, tag, comm, &statuses[1]);
+      tag = 9803;
+      HECMW_Recv(shared_elem_node_item_r, n_shared_elem_node_r, HECMW_INT, irank, tag, comm, &statuses[2]);
+    }
+    HECMW_Waitall(3, requests, statuses);
+  }
+  { /* compare */
+    if (n_shared_elem != n_shared_elem_r) {
+      HECMW_log(HECMW_LOG_ERROR, "rank %d has different number of shared elements\n", irank);
+      goto exit;
+    }
+    for (j = 0; j < n_shared_elem; j++) {
+      int is_error = 0;
+      if (shared_elem_node_index_l[j+1] != shared_elem_node_index_r[j+1]) {
+        HECMW_log(HECMW_LOG_ERROR, "rank %d has different number of nodes for %dth shared element\n", irank, j+1);
+        goto exit;
+      }
+      for (k = shared_elem_node_index_l[j]; k < shared_elem_node_index_l[j+1]; k++) {
+        if (shared_elem_node_item_l[k] != shared_elem_node_item_r[k]) {
+          HECMW_log(HECMW_LOG_ERROR, "rank %d has different node for %dth node of %dth shared element\n", irank,
+                    k - shared_elem_node_index_l[j] + 1, j+1);
+          is_error = 1;
+          break;
+        }
+      }
+      if (is_error) {
+        int eid = HECMW_varray_int_get(shared + i, j);
+        int etype = ref_mesh->elem_type[eid-1];
+        int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid-1];
+        int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
+        HECMW_log(HECMW_LOG_ERROR, "elem local ID: %d\n", eid);
+        for (k = 0; k < nn; k++) {
+          nid = elem_nodes[k];
+          HECMW_log(HECMW_LOG_ERROR, "elem node (%2d) local ID: %10d, coordinates: %14.6e, %14.6e, %14.6e\n", k+1, nid,
+                    ref_mesh->node[3*(nid-1)], ref_mesh->node[3*(nid-1)+1], ref_mesh->node[3*(nid-1)+2]);
+        }
+        /* TODO: original element */
+        /* TODO: origin of the node */
+        goto exit;
+      }
+    }
+  }
+
+exit:
+  if (shared_elem_node_index_r != NULL) HECMW_free(shared_elem_node_index_r);
+  if (shared_elem_node_item_r != NULL) HECMW_free(shared_elem_node_item_r);
+  HECMW_varray_int_finalize(&shared_elem_node_index);
+  HECMW_varray_int_finalize(&shared_elem_node_item);
+}
+
+static void write_refined_shared_in_ucd(const struct hecmwST_local_mesh *mesh,
                                        const struct hecmwST_local_mesh *ref_mesh,
                                        const struct hecmw_varray_int *shared,
                                        const struct hecmw_varray_int *shared_nodes,
@@ -1999,6 +2286,7 @@ static int check_node_rank(const struct hecmwST_local_mesh *mesh,
                 "number of new shared nodes %d not match with %d in rank %d\n",
                 send_buf[4*i+3], recv_buf[3], irank);
       n_error++;
+      write_elem_with_mismatching_refinement(mesh, ref_mesh, shared, shared_nodes, i);
       write_refined_shared_in_ucd(mesh, ref_mesh, shared, shared_nodes, i);
     }
   }
