@@ -60,9 +60,14 @@ contains
       iparm(1) = 1 ! no solver default
       iparm(2) = 3 ! fill-in reordering from METIS
       iparm(3) = 1
-      iparm(10) = 13 ! perturbe the pivot elements with 1E-13
-      iparm(11) = 0 ! use nonsymmetric permutation and scaling MPS
-      iparm(13) = 0 ! maximum weighted matching algorithm is switched-off
+      iparm(8) = 2
+      if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_ASYM) then
+        iparm(10) = 13 ! perturbe the pivot elements with 1E-13
+      else
+        iparm(10) = 8 ! perturbe the pivot elements with 1E-8
+      endif
+      iparm(11) = 1 ! Enable scaling
+      iparm(13) = 1 ! Enable matching
       iparm(18) = 0
       iparm(19) = 0
       msglvl = 0 ! print statistical information
