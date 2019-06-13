@@ -183,7 +183,7 @@ contains
     if (myrank==0 .and. spMAT%timelog > 0) then
       write(*,'(A,f10.3)') ' [Cluster Pardiso]: Solution completed.         time(sec)=',t5-t4
     end if
-    if( debug > 0 ) call print_iparm_paramters()
+    if( debug>0 .and. myrank==0 ) call print_iparm_paramters()
 
 #else
     stop "MKL Pardiso not available"
