@@ -86,7 +86,7 @@ contains
         call hecmw_abort(hecmw_comm_get_comm())
       endif
 
-      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, total_time, delta_time)
+      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, total_time, delta_time)
 
       if(0.0d0 < DELMIN)then
         tmpmax = 0.0d0
