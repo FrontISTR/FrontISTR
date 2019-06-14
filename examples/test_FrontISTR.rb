@@ -70,6 +70,7 @@ end
 #
 # FrontISTR をテスト実行する
 # 回答の名前を name で与える
+# correctLog を与えたらそれと比較、なければ #{name}_correct.log と比較する
 # 回答がなければ今回の結果を回答にする
 #
 def exec_test(dirname,mesh,cnt,name,correctLog=nil)
@@ -397,6 +398,27 @@ when("static/exI")
 when("static/spring_boundary")
 	res = exec_test_original("static/spring_boundary","SB")
 	exit res if res != 0
+when("static/1elem")
+[
+  ["static/1elem","arruda.msh","arruda.cnt"],
+  ["static/1elem","creep.msh","creep.cnt"],
+  ["static/1elem","drucker.msh","drucker.cnt"],
+  ["static/1elem","mises.msh","mises.cnt"],
+  ["static/1elem","mohr.msh","mohr.cnt"],
+  ["static/1elem","mohr.msh","mohrshear.cnt"],
+  ["static/1elem","neohooke.msh","neohooke.cnt"],
+  ["static/1elem","quad001.msh","quad001.cnt"],
+  ["static/1elem","ramberg.msh","ramberg.cnt"],
+  ["static/1elem","relax.msh","relax.cnt"],
+  ["static/1elem","rivlin.msh","rivlin.cnt"],
+  ["static/1elem","swift.msh","swift.cnt"],
+  ["static/1elem","viscoe.msh","viscoe.cnt"],
+  ["static/1elem","viscoe.msh","viscof.cnt"],
+].each{|param|
+  # この系列は cnt ファイル名を回答名にしていることに注意
+  res = exec_test(param[0],param[1],param[2],File.basename(param[2],".*"))
+  exit res if res != 0
+}
 when("eigen/exJ")
 [
 ["eigen/exJ","A231.msh","J200.cnt"],
