@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -835,7 +835,6 @@ int c_fstr_ctrl_get_data_v(fstr_ctrl_data *ctrl, int line_no,
   error_pos = -1;
   err       = c_fstr_ctrl_copy_data_line(ctrl, line_no, data_line);
 
-  
   if (err) {
     int i = 0;
 
@@ -849,7 +848,7 @@ int c_fstr_ctrl_get_data_v(fstr_ctrl_data *ctrl, int line_no,
 
     return 0;
   }
-  
+
   len     = strlen(format_c);
   counter = 0;
 
@@ -1915,7 +1914,7 @@ static void strcpy_c2f(char *dest, int len, const char *src) {
   int fg = 0;
 
   for (i = 0; i < len; i++) {
-    if (src[i] == 0) {
+    if (fg == 0 && src[i] == 0) {
       fg = 1;
     }
 

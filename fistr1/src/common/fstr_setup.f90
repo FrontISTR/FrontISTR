@@ -1236,7 +1236,7 @@ contains
           call hecmw_abort( hecmw_comm_get_comm())
        end if
     endif
-    
+
     ! Allocated in in fstr_setup_CLOAD
     if( associated(fstrSOLID%CLOAD_ngrp_GRPID) ) then
        deallocate(fstrSOLID%CLOAD_ngrp_GRPID, stat=ierror)
@@ -1294,7 +1294,7 @@ contains
           call hecmw_abort( hecmw_comm_get_comm())
        end if
     endif
-    
+
   end subroutine
 
   !> Initial setting of heat analysis
