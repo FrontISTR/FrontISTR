@@ -30,6 +30,11 @@ contains
     integer(kind=kint) :: nodLocal(20), nsuf(8)
 
 !C
+    !$omp parallel default(none), &
+      !$omp&  private(k,icel,isuf,iam1,iam2,QQ,HH,SINK,ic_type,isect,nn, &
+      !$omp&  is,j,nodLOCAL,xx,yy,zz,thick,mm,term1,term2,nsuf,ip,inod,jnod,ic,isU,ieU,ik,jp,isL,ieL), &
+      !$omp&  shared(fstrHEAT,CTIME,hecMAT,hecMESH)
+    !$omp do
     do k = 1, fstrHEAT%H_SUF_tot
       icel    = fstrHEAT%H_SUF_elem(k)
       isuf    = fstrHEAT%H_SUF_surf(k)
@@ -120,18 +125,24 @@ contains
             isU = hecMAT%indexU(inod-1) + 1
             ieU = hecMAT%indexU(inod)
             do ik = isU, ieU
-              if( hecMAT%itemU(ik).eq.jnod ) hecMAT%AU(ik) = hecMAT%AU(ik) - term1(ic)
+              if( hecMAT%itemU(ik).ne.jnod ) cycle
+              !$omp atomic
+              hecMAT%AU(ik) = hecMAT%AU(ik) - term1(ic)
             enddo
 
           elseif( jnod.lt.inod ) then
             isL = hecMAT%indexL(inod-1) + 1
             ieL = hecMAT%indexL(inod)
             do ik = isL, ieL
-              if( hecMAT%itemL(ik).eq.jnod ) hecMAT%AL(ik) = hecMAT%AL(ik) - term1(ic)
+              if( hecMAT%itemL(ik).ne.jnod ) cycle
+              !$omp atomic
+              hecMAT%AL(ik) = hecMAT%AL(ik) - term1(ic)
             enddo
 
           else
+            !$omp atomic
             hecMAT%D(inod) = hecMAT%D(inod) - term1(ic)
+            !$omp atomic
             hecMAT%B(jnod) = hecMAT%B(jnod) - term2(jp)
           endif
 
@@ -140,6 +151,8 @@ contains
       !C
       !C
     enddo
+    !$omp end do
+    !$omp end parallel
 
   end subroutine  heat_mat_ass_bc_FILM
 end module m_heat_mat_ass_bc_FILM
