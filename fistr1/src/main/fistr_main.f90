@@ -108,6 +108,7 @@ contains
 
     call fstr_rcap_finalize( fstrPR, fstrCPL )
     call fstr_finalize()
+    call hecmw_dist_free(hecMESH)
     call hecmw_finalize
     if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
 
