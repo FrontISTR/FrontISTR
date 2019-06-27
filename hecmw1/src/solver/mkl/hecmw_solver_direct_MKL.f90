@@ -2,25 +2,25 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This module provides linear equation solver interface for Cluster Pardiso
+!> This module provides linear equation solver interface for Pardiso
 
-module hecmw_solver_direct_ClusterMKL
+module hecmw_solver_direct_MKL
   use hecmw_util
   use m_sparse_matrix
   use m_sparse_matrix_hec
-  use m_hecmw_ClusterMKL_wrapper
+  use m_hecmw_MKL_wrapper
   use hecmw_matrix_ass
   use hecmw_matrix_dump
 
   private
-  public :: hecmw_solve_direct_ClusterMKL
+  public :: hecmw_solve_direct_MKL
 
   logical, save :: INITIALIZED = .false.
   type (sparse_matrix), save :: spMAT
 
 contains
 
-  subroutine hecmw_solve_direct_ClusterMKL(hecMESH,hecMAT)
+  subroutine hecmw_solve_direct_MKL(hecMESH,hecMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
@@ -76,14 +76,14 @@ contains
     call sparse_matrix_hec_set_rhs(spMAT, hecMAT)
 
     t2=hecmw_wtime()
-    if (myrank==0 .and. spMAT%timelog > 0) &
-       write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup completed.            time(sec)=',t2-t1
+    if (myrank==0 .and. (spMAT%iterlog > 0 .or. spMAT%timelog > 0)) &
+       write(*,'(A,f10.3)') ' [Pardiso]: Setup completed.          time(sec)=',t2-t1
 
     ! SOLVE
-    call hecmw_clustermkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+    call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
 
     call hecmw_mat_dump_solution(hecMAT)
 
-  end subroutine hecmw_solve_direct_ClusterMKL
+  end subroutine hecmw_solve_direct_MKL
 
-end module hecmw_solver_direct_ClusterMKL
+end module hecmw_solver_direct_MKL

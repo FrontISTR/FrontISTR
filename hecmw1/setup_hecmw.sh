@@ -86,6 +86,7 @@ LIBSRCDIRS="\
 	src/solver/solver_direct_lag \
 	src/solver/sparse_matrix \
 	src/solver/mumps \
+	src/solver/mkl \
 	src/solver/clustermkl \
 	src/solver/communication \
 	src/solver/init \

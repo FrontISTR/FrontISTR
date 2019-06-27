@@ -576,10 +576,7 @@ contains
 
         x_residual = fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH)
 
-        ! ----- update external nodal displacement increments
-        call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
         call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%X,hecMAT%X,resX)
-
         resX = sqrt(resX)/n_node_global
 
         if( hecMESH%my_rank==0 ) then

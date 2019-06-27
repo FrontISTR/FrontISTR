@@ -111,6 +111,7 @@ install-module:
 	@cd sparse_matrix && $(MAKE) @build_target@
 	@cd las           && $(MAKE) @build_target@
 	@cd mumps         && $(MAKE) @build_target@
+	@cd mkl           && $(MAKE) @build_target@
 	@cd clustermkl    && $(MAKE) @build_target@
 	@cd precond       && $(MAKE) @build_target@
 	@cd iterative     && $(MAKE) @build_target@
@@ -126,6 +127,7 @@ install:
 	@cd sparse_matrix && $(MAKE) install
 	@cd las           && $(MAKE) install
 	@cd mumps         && $(MAKE) install
+	@cd mkl           && $(MAKE) install
 	@cd clustermkl    && $(MAKE) install
 	@cd precond       && $(MAKE) install
 	@cd iterative     && $(MAKE) install
@@ -142,6 +144,7 @@ clean:
 	@cd sparse_matrix && $(MAKE) clean
 	@cd las           && $(MAKE) clean
 	@cd mumps         && $(MAKE) clean
+	@cd mkl           && $(MAKE) clean
 	@cd clustermkl    && $(MAKE) clean
 	@cd precond       && $(MAKE) clean
 	@cd iterative     && $(MAKE) clean
@@ -157,6 +160,7 @@ distclean: clean
 	@cd sparse_matrix && $(MAKE) distclean
 	@cd las           && $(MAKE) distclean
 	@cd mumps         && $(MAKE) distclean
+	@cd mkl           && $(MAKE) distclean
 	@cd clustermkl    && $(MAKE) distclean
 	@cd precond       && $(MAKE) distclean
 	@cd iterative     && $(MAKE) distclean
@@ -172,6 +176,7 @@ maintainer-clean:
 	@cd sparse_matrix && $(MAKE) maintainer_clean
 	@cd las           && $(MAKE) maintainer-clean
 	@cd mumps         && $(MAKE) maintainer_clean
+	@cd mkl           && $(MAKE) maintainer_clean
 	@cd clustermkl    && $(MAKE) maintainer_clean
 	@cd precond       && $(MAKE) maintainer-clean
 	@cd iterative     && $(MAKE) maintainer-clean
