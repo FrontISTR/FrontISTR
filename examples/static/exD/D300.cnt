@@ -1,8 +1,6 @@
 ##
 ## Control File for FSTR solver
 ##
-!REFTEMP
- 20.0
 !BOUNDARY
  FIX, 1, 3, 0.0
 !DLOAD

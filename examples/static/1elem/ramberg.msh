@@ -10,13 +10,6 @@
 !ELEMENT, TYPE = 361, EGRP = E1
         1,        1,        2,        3,        4,        5,        6,        7,        8
 !SECTION, TYPE = SOLID, EGRP = E1, MATERIAL = M1
-!MATERIAL, NAME = M2, ITEM = 3
-!ITEM = 1, SUBITEM = 2
-21.0E+04,   0.3
-!ITEM = 2, SUBITEM = 1
-0.0
-!ITEM = 3, SUBITEM = 1
-0.0
 !MATERIAL, NAME = M1, ITEM = 3
 !ITEM = 1, SUBITEM = 2
 21.0E+04,   0.3

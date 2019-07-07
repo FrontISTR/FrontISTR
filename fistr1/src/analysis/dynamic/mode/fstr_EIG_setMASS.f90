@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> Set up lumped mass matrix
@@ -16,6 +16,7 @@ contains
     use hecmw_util
     use m_fstr
     use mMaterial
+	use m_static_LIB_shell
     implicit none
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
@@ -48,6 +49,7 @@ contains
       nn = hecmw_get_max_node(ic_type)
 
       if(hecmw_is_etype_link(ic_type)) cycle
+      if(hecmw_is_etype_patch(ic_type)) cycle
       if(ic_type == 3414) cycle
 
       do icel = iS, iE
@@ -73,14 +75,19 @@ contains
         elseif(ic_type == 341 .or. ic_type == 342 .or. ic_type == 351 .or. ic_type == 352 .or. &
              & ic_type == 361 .or. ic_type == 362 )then
           call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass, lumped)
+		  
+        elseif(ic_type==731 .or. ic_type==741 .or. ic_type==743) then
+          rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
+          thick = fstrSOLID%materials(cid)%variables(M_THICK)
+          call mass_shell(ic_type, nn, ecoord(1:3,1:nn), rho, thick, fstrSOLID%elements(icel)%gausses, mass, lumped)
 
-        elseif(ic_type == 731 .or. ic_type == 761)then
+        elseif(ic_type == 761)then
           surf = get_face3(ecoord(1:3,1:nn))
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           thick = fstrSOLID%materials(cid)%variables(M_THICK)
           val = surf*thick*rho/3.0d0
 
-        elseif(ic_type == 741 .or. ic_type == 781)then
+        elseif(ic_type == 781)then
           surf = get_face4(ecoord(1:3,1:nn))
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           thick = fstrSOLID%materials(cid)%variables(M_THICK)
@@ -106,7 +113,7 @@ contains
           jn = nodLOCAL(j)
           js = NDOF*(jn-1)
 
-          if(ic_type == 611 .or. ic_type == 731 .or. ic_type == 741)then
+          if(ic_type == 611)then
             fstrEIG%mass(js+1) = fstrEIG%mass(js+1) + val
             fstrEIG%mass(js+2) = fstrEIG%mass(js+2) + val
             fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val
@@ -154,7 +161,7 @@ contains
 
           else
             do k = 1, NDOF
-              fstrEIG%mass(js+k) = fstrEIG%mass(js+k) + lumped(k)
+              fstrEIG%mass(js+k) = fstrEIG%mass(js+k) + lumped(NDOF*(j-1)+k)
             enddo
           endif
         enddo

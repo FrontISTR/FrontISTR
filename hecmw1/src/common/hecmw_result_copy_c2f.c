@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -15,6 +15,55 @@ static int nnode, nelem;
 /*-----------------------------------------------------------------------------
  * SetFunc
  */
+
+static int set_ng_component(void *dst) {
+  *((int *)dst) = result->ng_component;
+  return 0;
+}
+
+static int set_ng_dof(void *dst) {
+  void *src;
+  int size;
+
+  if (result->ng_component <= 0) return 0;
+
+  src  = result->ng_dof;
+  size = sizeof(*result->ng_dof) * result->ng_component;
+  memcpy(dst, src, size);
+
+  return 0;
+}
+
+static int set_global_label(void *dst) {
+  int i;
+
+  if (result->ng_component <= 0) return 0;
+
+  for (i = 0; i < result->ng_component; i++) {
+    char *dst_point = (char *)dst + HECMW_NAME_LEN * i;
+    char *src       = result->global_label[i];
+    HECMW_strcpy_c2f(src, dst_point, HECMW_NAME_LEN);
+  }
+
+  return 0;
+}
+
+static int set_global_val_item(void *dst) {
+  void *src;
+  int i, n, size;
+
+  if (result->ng_component <= 0) return 0;
+
+  n = 0;
+  for (i = 0; i < result->ng_component; i++) {
+    n += result->ng_dof[i];
+  }
+  src  = result->global_val_item;
+  size = sizeof(*result->global_val_item) * n;
+  memcpy(dst, src, size);
+
+  return 0;
+}
 
 static int set_nn_component(void *dst) {
   *((int *)dst) = result->nn_component;
@@ -128,6 +177,11 @@ static struct func_table {
     {
         /*  { Struct name, Variable name, memcpy function, check allocation
            function }*/
+        {"hecmwST_result_data", "ng_component", set_ng_component},
+        {"hecmwST_result_data", "ng_dof", set_ng_dof},
+        {"hecmwST_result_data", "global_label", set_global_label},
+        {"hecmwST_result_data", "global_val_item", set_global_val_item},
+
         {"hecmwST_result_data", "nn_component", set_nn_component},
         {"hecmwST_result_data", "nn_dof", set_nn_dof},
         {"hecmwST_result_data", "node_label", set_node_label},

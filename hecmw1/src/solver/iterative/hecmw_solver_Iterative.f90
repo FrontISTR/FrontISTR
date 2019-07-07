@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
@@ -117,7 +117,8 @@ contains
           call hecmw_solve_error (hecMESH, error)
       end select
 
-      if (error==HECMW_SOLVER_ERROR_DIVERGE_PC .or. error==HECMW_SOLVER_ERROR_DIVERGE_MAT) then
+      if (error==HECMW_SOLVER_ERROR_DIVERGE_PC .or. error==HECMW_SOLVER_ERROR_DIVERGE_MAT &
+           .or. error==HECMW_SOLVER_ERROR_DIVERGE_NAN) then
         call hecmw_mat_set_flag_diverged(hecMAT, 1)
         if ((PRECOND>=10 .and. PRECOND<20) .and. auto_sigma_diag==1 .and. SIGMA_DIAG<2.d0) then
           SIGMA_DIAG = SIGMA_DIAG + 0.1

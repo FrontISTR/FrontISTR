@@ -1,12 +1,12 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provide a function to control nonsteady heat analysis
 module m_heat_solve_TRAN
 contains
 
-  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP )
+  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,total_step )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -47,7 +47,6 @@ contains
     DELMAX = fstrHEAT%STEP_DELMAX(ISTEP)
 
     is_end = .false.
-    total_step = 0
     hecMAT%NDOF = 1
     hecMAT%Iarray(98) = 1 !Assmebly complete
     hecMAT%X = 0.0d0
@@ -64,7 +63,6 @@ contains
 
     !C--------------------   START TRANSIET LOOP   ------------------------
     tr_loop: do
-      total_step = total_step + 1
 
       if(end_time <= current_time + delta_time + delta_time*1.0d-6) then
         delta_time = end_time - current_time
@@ -89,7 +87,7 @@ contains
         call hecmw_abort(hecmw_comm_get_comm())
       endif
 
-      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrPARAM, fstrHEAT, ISTEP, total_time, delta_time)
+      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrPARAM, fstrHEAT, ISTEP, iterALL, total_time, delta_time)
 
       if(0.0d0 < DELMIN)then
         tmpmax = 0.0d0
@@ -126,10 +124,11 @@ contains
       enddo
 
       call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, next_time)
-      call heat_output_result(hecMESH, fstrHEAT, total_step, is_end)
-      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, is_end)
+      call heat_output_result(hecMESH, fstrHEAT, total_step, next_time, is_end)
+      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, next_time, is_end)
       call heat_output_restart(hecMESH, fstrHEAT, total_step, is_end, next_time)
 
+      total_step = total_step + 1
       current_time = next_time
       if( is_end ) exit
     enddo tr_loop

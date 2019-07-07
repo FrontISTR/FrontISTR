@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 ! If new header is supported, change according to following method.    !
@@ -124,6 +124,15 @@ module m_fstr
   real(kind=kreal)   :: ETIME ! /=fstr_param%etime
   integer(kind=kint) :: ITMAX
   real(kind=kreal)   :: EPS   ! /=fstr_param%eps
+
+  type tInitialCondition
+     character(len=HECMW_FILENAME_LEN)          :: cond_name
+     integer                    :: node_elem                    !< node =0;  element =1
+     integer                    :: grpid
+     integer, pointer           :: intval(:)     => null()      !< if -1, not initialized, otherwise dof number
+     real(kind=kreal), pointer  :: realval(:)    => null()      !< initial value
+  end type
+  type( tInitialCondition ), pointer, save :: g_InitialCnd(:) => null()
 
   !>  FSTR INNER CONTROL PARAMETERS  (fstrPARAM)
   type fstr_param
@@ -518,6 +527,7 @@ module m_fstr
     integer(kind=kint) :: dynamic_IW7        =   207
     integer(kind=kint) :: dynamic_IW8        =   208
     integer(kind=kint) :: dynamic_IW9        =   209
+    integer(kind=kint) :: dynamic_IW10       =   210
   end type fstr_dynamic
 
   type fstr_freqanalysis
@@ -1034,7 +1044,7 @@ contains
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type (fstr_solid), intent(in) :: fstrSOLID
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), intent(out) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
     do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
@@ -1047,7 +1057,7 @@ contains
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type (fstr_solid), intent(in) :: fstrSOLID
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), intent(in) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
     do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)

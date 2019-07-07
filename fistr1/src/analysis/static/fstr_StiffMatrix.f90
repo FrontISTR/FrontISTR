@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides function to calcualte tangent stiffness matrix.
@@ -44,8 +44,9 @@ contains
       is= hecMESH%elem_type_index(itype-1) + 1
       iE= hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
-      ! ----- Ignore link elements
+      ! ----- Ignore link and patch elements
       if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_patch(ic_type)) cycle
       ! ----- Set number of nodes
       nn = hecmw_get_max_node(ic_type)
 

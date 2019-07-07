@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides a function to control heat analysis
@@ -71,9 +71,19 @@ contains
     write(ILOG,'(a,i10)')       ' Maximum Node No.    :', nmax
     write(ILOG,'(a,f10.3,i10)') ' Minimum Temperature :', tmin
     write(ILOG,'(a,i10)')       ' Minimum Node No.    :', nmin
+
+    !global temperature
+    call hecmw_allreduce_R1 (hecMESH, tmax, hecmw_max)
+    call hecmw_allreduce_R1 (hecMESH, tmin, hecmw_min)
+    if( myrank == 0 ) then
+      write(ILOG,'(a,f10.3,i10)') ' Maximum Temperature(global) :', tmax
+      write(ILOG,'(a,f10.3,i10)') ' Minimum Temperature(global) :', tmin
+    end if
+
+
   end subroutine heat_output_log
 
-  subroutine heat_output_result(hecMESH, fstrHEAT, tstep, outflag)
+  subroutine heat_output_result(hecMESH, fstrHEAT, tstep, ctime, outflag)
     use m_fstr
     implicit none
     type(hecmwST_local_mesh)  :: hecMESH
@@ -81,14 +91,20 @@ contains
     integer(kind=kint) :: restart_step(1)
     real(kind=kreal)   :: restart_time(1)
     integer(kind=kint) :: i, tstep
+    real(kind=kreal)   :: ctime, work(1)
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
 
     if(IRESULT == 1 .and. (mod(tstep, IRRES) == 0 .or. outflag))then
       header = '*fstrresult'
-      call hecmw_result_init(hecMESH, tstep, header)
+      comment = 'nonsteady_heat_result'
+      call hecmw_result_init(hecMESH, tstep, header, comment)
+      work(1) = ctime
+      label = 'TOTALTIME'
+      call hecmw_result_add(3, 1, label, work)
       label = 'TEMPERATURE'
       call hecmw_result_add(1, 1, label, fstrHEAT%TEMP)
       nameID = 'fstrRES'
@@ -97,7 +113,7 @@ contains
     endif
   end subroutine heat_output_result
 
-  subroutine heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, tstep, outflag)
+  subroutine heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, tstep, ctime, outflag)
     use m_fstr
     use m_hecmw2fstr_mesh_conv
     implicit none
@@ -105,12 +121,20 @@ contains
     type(fstr_heat)           :: fstrHEAT
     type(hecmwST_result_data) :: fstrRESULT
     integer(kind=kint) :: i, tstep
+    real(kind=kreal)   :: ctime
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
 
     if(IVISUAL == 1 .and. (mod(tstep, IWRES) == 0 .or. outflag))then
       call hecmw_nullify_result_data(fstrRESULT)
+      fstrRESULT%ng_component = 1
       fstrRESULT%nn_component = 1
       fstrRESULT%ne_component = 0
+      allocate(fstrRESULT%ng_dof(1))
+      allocate(fstrRESULT%global_label(1))
+      allocate(fstrRESULT%global_val_item(1))
+      fstrRESULT%ng_dof(1) = 1
+      fstrRESULT%global_label(1) = 'TOTALTIME'
+      fstrRESULT%global_val_item(1) = ctime
       allocate(fstrRESULT%nn_dof(1))
       allocate(fstrRESULT%node_label(1))
       allocate(fstrRESULT%node_val_item(hecMESH%n_node))

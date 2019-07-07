@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
   struct hecmwST_result_data *data;
   char *fileheader, resultfile[HECMW_FILENAME_LEN + 1];
   char header[HECMW_HEADER_LEN + 1];
+  char comment[HECMW_MSG_LEN + 1];
   char dirname[HECMW_HEADER_LEN + 1];
   char buff[HECMW_HEADER_LEN + 1];
   char *ptoken, *ntoken;
@@ -139,8 +140,9 @@ int main(int argc, char **argv) {
     n_node = HECMW_result_get_nnode();
     n_elem = HECMW_result_get_nelem();
     HECMW_result_get_header(header);
+    HECMW_result_get_comment(comment);
     rcode = HECMW_result_write_txt_ST_by_fname(resultfile, data, n_node, n_elem,
-                                               header);
+                                               header, comment);
     if (rcode) {
       HECMW_abort(HECMW_comm_get_comm());
     }

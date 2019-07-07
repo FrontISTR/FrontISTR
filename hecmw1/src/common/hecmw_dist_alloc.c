@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -163,7 +163,6 @@ static int init_struct_refine(struct hecmwST_local_mesh *mesh) {
   mesh->elem_old2new       = NULL;
   mesh->elem_new2old       = NULL;
   mesh->n_node_refine_hist = NULL;
-  mesh->refine_origin      = NULL;
 
   return 0;
 }
@@ -464,6 +463,10 @@ struct hecmwST_local_mesh *HECMW_dist_alloc() {
     HECMW_set_error(errno, "");
     return NULL;
   }
+
+  /* origin of refined nodes < hecmwST_refine_origin > */
+  /* allocated only when refinement is performed */
+  mesh->refine_origin = NULL;
 
   /* initialization */
   if (HECMW_dist_init(mesh)) {

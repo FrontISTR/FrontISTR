@@ -17,7 +17,7 @@ def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
   base = File.basename(mesh,".*")
   res = base + ".res" if res == nil
   vis = base + ".vis" if vis == nil
-  if $np then 
+  if $np then
   File.open("hecmw_ctrl.dat","w"){|aFile|
     aFile.print <<END_OF_HECMW_CTRL
 ##
@@ -44,7 +44,7 @@ END_OF_HECMW_CTRL
 !PARTITION,TYPE=NODE-BASED,METHOD=KMETIS,DOMAIN=#{$np}
 END_OF_HECMW_CTRL
 }
-  else 
+  else
     File.open("hecmw_ctrl.dat","w"){|aFile|
     aFile.print <<END_OF_HECMW_CTRL
 ##
@@ -62,14 +62,15 @@ END_OF_HECMW_CTRL
 #{vis}
 END_OF_HECMW_CTRL
   }
-  
-  end 
-  
+
+  end
+
 end
 
 #
 # FrontISTR をテスト実行する
 # 回答の名前を name で与える
+# correctLog を与えたらそれと比較、なければ #{name}_correct.log と比較する
 # 回答がなければ今回の結果を回答にする
 #
 def exec_test(dirname,mesh,cnt,name,correctLog=nil)
@@ -84,11 +85,11 @@ def exec_test(dirname,mesh,cnt,name,correctLog=nil)
       execcmd = "mpirun -np " + $np + " -x OMP_NUM_THREADS=1 " + $fistr
       puts execcmd
       system(execcmd)
-    else 
+    else
       puts $fistr
       system($fistr)
-    end 
-    
+    end
+
     puts "return value = #{$?.exitstatus}"
     return 1 if $?.exitstatus != 0
     currentLog = name+".log"
@@ -397,6 +398,27 @@ when("static/exI")
 when("static/spring_boundary")
 	res = exec_test_original("static/spring_boundary","SB")
 	exit res if res != 0
+when("static/1elem")
+[
+  ["static/1elem","arruda.msh","arruda.cnt"],
+  ["static/1elem","creep.msh","creep.cnt"],
+  ["static/1elem","drucker.msh","drucker.cnt"],
+  ["static/1elem","mises.msh","mises.cnt"],
+  ["static/1elem","mohr.msh","mohr.cnt"],
+  ["static/1elem","mohr.msh","mohrshear.cnt"],
+  ["static/1elem","neohooke.msh","neohooke.cnt"],
+  ["static/1elem","quad001.msh","quad001.cnt"],
+  ["static/1elem","ramberg.msh","ramberg.cnt"],
+  ["static/1elem","relax.msh","relax.cnt"],
+  ["static/1elem","rivlin.msh","rivlin.cnt"],
+  ["static/1elem","swift.msh","swift.cnt"],
+  ["static/1elem","viscoe.msh","viscoe.cnt"],
+  ["static/1elem","viscoe.msh","viscof.cnt"],
+].each{|param|
+  # この系列は cnt ファイル名を回答名にしていることに注意
+  res = exec_test(param[0],param[1],param[2],File.basename(param[2],".*"))
+  exit res if res != 0
+}
 when("eigen/exJ")
 [
 ["eigen/exJ","A231.msh","J200.cnt"],
@@ -596,9 +618,9 @@ when("dynamic/exW")
 }
 when("dynamic/exX")
 [
-["dynamic/exX","W342_step.msh","W342_c0_ex_m2_t1.cnt","W342_c0_ex_m2_t1_MUMP_V4_5.log"],
+["dynamic/exX","W342_step.msh","W342_c0_ex_m2_t1.cnt","W342_c0_ex_m2_t1_MUMPS_V4_5.log"],
 ["dynamic/exX","W342_step.msh","W342_c0_im_m2_t1.cnt","W342_c0_im_m2_t1_MUMPS_V4_5.log"],
-["dynamic/exX","W361_step.msh","W361_c0_ex_m2_t1.cnt","W361_c0_ex_m2_t1_MUMP_V4_5.log"],
+["dynamic/exX","W361_step.msh","W361_c0_ex_m2_t1.cnt","W361_c0_ex_m2_t1_MUMPS_V4_5.log"],
 ["dynamic/exX","W361_step.msh","W361_c0_im_m2_t1.cnt","W361_c0_im_m2_t1_CG_V4_5.log"],
 ].each{|param|
 	res = exec_test(param[0],param[1],param[2],File.basename(param[2],".*"),param[3])

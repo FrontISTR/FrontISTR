@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions to deal with cutback
@@ -48,6 +48,7 @@ contains
     allocate(fstrSOLID%elements_bkup(hecMESH%n_elem))
     do i=1,hecMESH%n_elem
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       allocate( fstrSOLID%elements_bkup(i)%gausses(ng) )
       do j=1,ng
@@ -92,10 +93,12 @@ contains
     !(2)elemental values
     do i=1,size(fstrSOLID%elements)
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       do j=1,ng
         call fstr_finalize_gauss( fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
+      deallocate( fstrSOLID%elements_bkup(i)%gausses )
       if( associated( fstrSOLID%elements_bkup(i)%aux ) ) then
         deallocate( fstrSOLID%elements_bkup(i)%aux )
       endif
@@ -140,6 +143,7 @@ contains
     !(2)elemental values
     do i=1,size(fstrSOLID%elements)
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements(i)%gausses(j), fstrSOLID%elements_bkup(i)%gausses(j) )
@@ -190,6 +194,7 @@ contains
     !(2)elemental values
     do i=1,size(fstrSOLID%elements)
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements_bkup(i)%gausses(j), fstrSOLID%elements(i)%gausses(j) )

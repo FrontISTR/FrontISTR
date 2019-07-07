@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 module m_fstr_main
@@ -108,6 +108,7 @@ contains
 
     call fstr_rcap_finalize( fstrPR, fstrCPL )
     call fstr_finalize()
+    call hecmw_dist_free(hecMESH)
     call hecmw_finalize
     if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
 

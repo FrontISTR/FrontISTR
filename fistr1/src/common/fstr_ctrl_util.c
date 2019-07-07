@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -828,9 +828,9 @@ int c_fstr_ctrl_get_data_v(fstr_ctrl_data *ctrl, int line_no,
   char fmt_double[]  = "%lf";
   char fmt_string[]  = "%s";
   char fmt_char[]    = "%c";
-  char format_c[buffsize];
-  int array_size[buffsize];
-  char buff[buffsize * 2];
+  char format_c[buffsize]  = { '\0' };
+  int array_size[buffsize] = { '\0' };
+  char buff[buffsize * 2]  = { '\0' };
   format_conv(format, format_c, array_size);
   error_pos = -1;
   err       = c_fstr_ctrl_copy_data_line(ctrl, line_no, data_line);
@@ -934,7 +934,7 @@ int c_fstr_ctrl_get_data_array_v(fstr_ctrl_data *ctrl, const char *format,
   int column_n;
   int type;
   int r;
-  char buff[buffsize * 2];
+  char buff[buffsize * 2] = { '\0' };
   line_n = c_fstr_ctrl_get_data_line_n(ctrl);
 
   if (line_n < 0) {
@@ -1165,7 +1165,7 @@ int FSTR_CTRL_GET_REC_NUMBER__(int *ctrl) {
 /*-----------------------------------------------------------------------------------*/
 
 int fstr_ctrl_get_line(int *ctrl, int *rec_no, char *buff, int *buff_size) {
-  char c_buff[STR_SIZE];
+  char c_buff[STR_SIZE] = { '\0' };
 
   if (c_fstr_ctrl_get_line(ctrl_list[*ctrl], *rec_no, c_buff)) {
     return -1;
@@ -1258,7 +1258,7 @@ int FSTR_CTRL_SEEK_NEXT_HEADER__(int *ctrl) {
 /*-----------------------------------------------------------------------------------*/
 
 int fstr_ctrl_get_c_h_name(int *ctrl, char *header_name, int *buff_size) {
-  char c_buff[STR_SIZE];
+  char c_buff[STR_SIZE] = { '\0' };
 
   if (c_fstr_ctrl_get_current_header_name(ctrl_list[*ctrl], c_buff)) {
     return -1;
@@ -1402,7 +1402,7 @@ int fstr_ctrl_get_param_ex(int *ctrl, const char *param_name,
 
   if (rcode_of_get_param == FSTR_CTRL_RCODE_PARAM_SUCCESS &&
       (*type == 'S' || *type == 's')) {
-    char buff[HECMW_NAME_LEN + 1];
+    char buff[HECMW_NAME_LEN + 1] = { '\0' };
     strcpy(buff, (char *)val);
     strcpy_c2f((char *)val, HECMW_NAME_LEN, buff);
   }
@@ -1601,7 +1601,7 @@ int FSTR_CTRL_GET_DATA__(int *ctrl, int *line_no, const char *format, ...) {
 int fstr_ctrl_get_data_ex_v_f(fstr_ctrl_data *ctrl, int line_no,
                               const char *format, va_list va) {
   int r;
-  char fmt_c[STR_SIZE];
+  char fmt_c[STR_SIZE] = { '\0' };
   strcpy_f2c(fmt_c, format, STR_SIZE);
   r = c_fstr_ctrl_get_data_v(ctrl, line_no, fmt_c, va);
 
@@ -2017,7 +2017,7 @@ static void format_conv(const char *format, char *fmt, int *array_size) {
   char *p    = (char *)format;
   int i      = 0;
   int num_fg = 0;
-  char num_str[buffsize];
+  char num_str[buffsize] = { '\0' } ;
   int num_index = 0;
   int n;
 

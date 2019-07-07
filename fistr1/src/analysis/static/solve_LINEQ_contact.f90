@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides functions to solve sparse system of
@@ -9,7 +9,7 @@
 module m_solve_LINEQ_contact
 
   use m_fstr
-  use m_solve_LINEQ_mkl
+  use m_solve_LINEQ_MKL_contact
   use m_solve_LINEQ_direct_serial_lag
   use m_solve_LINEQ_MUMPS_contact
   use m_solve_LINEQ_iter_contact
@@ -32,10 +32,10 @@ contains
 
     if( hecMAT%Iarray(99)==1 )then
       call solve_LINEQ_iter_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
-    else if( hecMAT%Iarray(99)==3 )then
-      call solve_LINEQ_mkl_init(hecMAT,fstrMAT,is_sym)
-    elseif( hecMAT%Iarray(99)==4 )then
+    elseif( hecMAT%Iarray(99)==2 )then
       call solve_LINEQ_serial_lag_hecmw_init(hecMAT,fstrMAT,is_sym)
+    else if( hecMAT%Iarray(99)==3 )then
+      call solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
     elseif( hecMAT%Iarray(99)==5 ) then
       call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
     endif
@@ -55,6 +55,7 @@ contains
     real(kind=kreal)                         :: factor
     real(kind=kreal) :: resid
     real(kind=kreal) :: t1, t2
+    integer(kind=kint) :: ndof
 
     factor = 1.0d0
     if( present(rf) )factor = rf
@@ -64,14 +65,18 @@ contains
     istat = 0
     if( hecMAT%Iarray(99)==1 )then
       if(paraContactFlag.and.present(conMAT)) then
-        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,conMAT)
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
       else
-        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT)
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,istat)
       endif
-    elseif( hecMAT%Iarray(99)==3 )then
-      call solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT,istat)
-    elseif( hecMAT%Iarray(99)==4 )then
+    elseif( hecMAT%Iarray(99)==2 )then
       call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
+    elseif( hecMAT%Iarray(99)==3 )then
+      if(paraContactFlag.and.present(conMAT)) then
+        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
+      else
+        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat)
+      endif
     elseif( hecMAT%Iarray(99)==5 ) then
       ! ----  For Parallel Contact with Multi-Partition Domains
       if(paraContactFlag.and.present(conMAT)) then
@@ -79,6 +84,17 @@ contains
       else
         call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,istat)
       endif
+    endif
+
+    ndof = hecMAT%NDOF
+    if( ndof==3 ) then
+      call hecmw_update_3_R(hecMESH,hecMAT%X,hecMESH%n_node)
+    else if( ndof==2 ) then
+      call hecmw_update_2_R(hecMESH,hecMAT%X,hecMESH%n_node)
+    else if( ndof==4 ) then
+      call hecmw_update_4_R(hecMESH,hecMAT%X,hecMESH%n_node)
+    else if( ndof==6 ) then
+      call hecmw_update_m_R(hecMESH,hecMAT%X,hecMESH%n_node,6)
     endif
 
     t2 = hecmw_wtime()

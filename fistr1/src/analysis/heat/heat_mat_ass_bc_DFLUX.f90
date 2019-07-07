@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides a subroutine for setting distributed
@@ -29,6 +29,10 @@ contains
     real(kind=kreal), allocatable :: Bbak(:)
 
     !C
+    !$omp parallel default(none), &
+      !$omp&  private(k,icel,ic_type,isect,isuf,iamp,QQ,val,nn,is,j,nodLOCAL,xx,yy,zz,asect,vect,thick), &
+      !$omp&  shared(fstrHEAT,CTIME,hecMAT,hecMESH)
+    !$omp do
     do k = 1, fstrHEAT%Q_SUF_tot
 
       icel    = fstrHEAT%Q_SUF_elem(k)
@@ -39,6 +43,7 @@ contains
 
       call heat_get_amplitude( fstrHEAT,iamp,CTIME,QQ )
       val     = fstrHEAT%Q_SUF_val (k) * QQ
+      if( dabs(val) < 1.d-16 ) cycle
       !C**
       nn = hecmw_get_max_node(ic_type)
       !C**
@@ -106,9 +111,12 @@ contains
       endif
 
       do j = 1, nn
+        !$omp atomic
         hecMAT%B( nodLOCAL(j) ) = hecMAT%B( nodLOCAL(j) ) - vect(j)
       enddo
     enddo
+    !$omp end do
+    !$omp end parallel
 
     if( fstrHEAT%WL_tot>0 ) then
       allocate( Bbak(size(hecMAT%B)) )

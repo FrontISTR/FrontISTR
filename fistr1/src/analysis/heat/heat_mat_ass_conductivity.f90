@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 module m_heat_mat_ass_conductivity
@@ -34,7 +34,13 @@ contains
       iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
       if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_patch(ic_type)) cycle
 
+      !$omp parallel default(none), &
+        !$omp&  private(icel,isect,IMAT,ntab,itab,temp,funcA,funcB,in0,i,j,nodLOCAL,SS,TT,GTH,GHH,GR1,GR2,ecoord,&
+        !$omp&          stiff,in,ASECT,thick,jsect), &
+        !$omp&  shared(iS,iE,hecMESH,nn,ic_type,hecMAT,fstrHEAT,TZERO)
+      !$omp do
       do icel = iS, iE
         isect = hecMESH%section_ID(icel)
         IMAT = hecMESH%section%sect_mat_ID_item(isect)
@@ -122,6 +128,8 @@ contains
         call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiff)
 
       enddo
+      !$omp end do
+      !$omp end parallel
     enddo
 
     allocate(S(hecMAT%NP))

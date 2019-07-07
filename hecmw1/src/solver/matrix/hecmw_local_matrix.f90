@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
@@ -30,9 +30,10 @@ module hecmw_local_matrix
     real(kind=kreal), pointer :: A(:)
   end type hecmwST_local_matrix
 
-  integer(kind=kint), parameter :: cLID = 1
-  integer(kind=kint), parameter :: cRANK = 2
-  integer(kind=kint), parameter :: cGID = 3
+  integer(kind=kint), parameter :: cNCOL_ITEM = 2 !< num of column items to be migrated (2 or 3)
+  integer(kind=kint), parameter :: cLID = 1       !< index for local ID in belonging rank (node_ID(2*i-1))
+  integer(kind=kint), parameter :: cRANK = 2      !< index for belonging rank (node_ID(2*i))
+  integer(kind=kint), parameter :: cGID = 3       !< index for global ID (used only when cNCOL_ITEM==3)
 
   integer(kind=kint), parameter :: DEBUG = 0
 
@@ -1238,7 +1239,7 @@ contains
     !
     call make_exp_cols_item(hecMESH, BT_ext, exp_cols_index, exp_cols_item)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: make exp_cols_item done'
-    ! if (DEBUG >= 3) write(0,*) '    DEBUG3: exp_cols_item', exp_cols_item(1:3,1:exp_cols_index(hecMESH%n_neighbor_pe))
+    ! if (DEBUG >= 3) write(0,*) '    DEBUG3: exp_cols_item', exp_cols_item(1:cNCOL_ITEM,1:exp_cols_index(hecMESH%n_neighbor_pe))
   end subroutine prepare_column_info
 
   subroutine make_exp_cols_index(nnb, BT_ext, exp_cols_index)
@@ -1261,7 +1262,7 @@ contains
     integer(kind=kint), allocatable, intent(in) :: exp_cols_index(:)
     integer(kind=kint), allocatable, intent(out) :: exp_cols_item(:,:)
     integer(kind=kint) :: cnt, idom, j, jcol
-    allocate(exp_cols_item(3,exp_cols_index(hecMESH%n_neighbor_pe)))
+    allocate(exp_cols_item(cNCOL_ITEM,exp_cols_index(hecMESH%n_neighbor_pe)))
     cnt = 0
     do idom = 1, hecMESH%n_neighbor_pe
       do j = 1, BT_ext(idom)%nnz
@@ -1274,8 +1275,8 @@ contains
         ! if (DEBUG >= 3) write(0,*) '    DEBUG3: size of global_node_ID',size(hecMESH%global_node_ID)
         exp_cols_item(cLID,cnt) = hecMESH%node_ID(2*jcol-1)
         exp_cols_item(cRANK,cnt) = hecMESH%node_ID(2*jcol)
-        exp_cols_item(cGID,cnt) = hecMESH%global_node_ID(jcol)
-        ! if (DEBUG >= 3) write(0,*) '    DEBUG3: lid,rank,gid',exp_cols_item(1:3,cnt)
+        if (cNCOL_ITEM >= 3) exp_cols_item(cGID,cnt) = hecMESH%global_node_ID(jcol)
+        ! if (DEBUG >= 3) write(0,*) '    DEBUG3: lid,rank(,gid)',exp_cols_item(1:cNCOL_ITEM,cnt)
       enddo
       if (cnt /= exp_cols_index(idom)) stop 'ERROR: make exp_cols_item'
     enddo
@@ -1363,7 +1364,8 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_local_matrix), intent(in) :: BT_ext(:)
     integer(kind=kint), allocatable, intent(out) :: imp_rows_index(:), imp_cols_index(:)
-    integer(kind=kint) :: nnb, idom, irank, sendbuf(2), tag, recvbuf(2)
+    integer(kind=kint) :: nnb, idom, irank, tag, recvbuf(2)
+    integer(kind=kint), allocatable :: sendbuf(:,:)
     integer(kind=kint), allocatable :: requests(:)
     integer(kind=kint), allocatable :: statuses(:,:)
     nnb = hecMESH%n_neighbor_pe
@@ -1371,13 +1373,14 @@ contains
     allocate(imp_cols_index(0:nnb))
     allocate(requests(nnb))
     allocate(statuses(HECMW_STATUS_SIZE, nnb))
+    allocate(sendbuf(2,nnb))
     do idom = 1, nnb
       irank = hecMESH%neighbor_pe(idom)
       ! nr = exp_rows_per_rank(idom)
-      sendbuf(1) = BT_ext(idom)%nr
-      sendbuf(2) = BT_ext(idom)%nnz
+      sendbuf(1,idom) = BT_ext(idom)%nr
+      sendbuf(2,idom) = BT_ext(idom)%nnz
       tag=2001
-      call HECMW_ISEND_INT(sendbuf, 2, irank, tag, hecMESH%MPI_COMM, &
+      call HECMW_ISEND_INT(sendbuf(1,idom), 2, irank, tag, hecMESH%MPI_COMM, &
            requests(idom))
     enddo
     imp_rows_index(0) = 0
@@ -1391,6 +1394,9 @@ contains
       imp_cols_index(idom) = imp_cols_index(idom-1) + recvbuf(2)
     enddo
     call HECMW_Waitall(nnb, requests, statuses)
+    deallocate(requests)
+    deallocate(statuses)
+    deallocate(sendbuf)
   end subroutine send_recv_BT_ext_nr_nnz
 
   subroutine send_recv_BT_ext_contents(hecMESH, BT_ext, &
@@ -1413,7 +1419,7 @@ contains
     if (nnb < 1) return
     ndof2 = BT_ext(1)%ndof ** 2
     allocate(imp_rows_item(2,imp_rows_index(nnb)))
-    allocate(imp_cols_item(3,imp_cols_index(nnb)))
+    allocate(imp_cols_item(cNCOL_ITEM,imp_cols_index(nnb)))
     allocate(imp_vals_item(ndof2*imp_cols_index(nnb)))
     allocate(requests(3*nnb))
     allocate(statuses(HECMW_STATUS_SIZE, 3*nnb))
@@ -1429,7 +1435,7 @@ contains
         n_send = n_send + 1
         tag = 2003
         call HECMW_ISEND_INT(exp_cols_item(1,exp_cols_index(idom-1)+1), &
-             3*BT_ext(idom)%nnz, irank, tag, hecMESH%MPI_COMM, &
+             cNCOL_ITEM*BT_ext(idom)%nnz, irank, tag, hecMESH%MPI_COMM, &
              requests(n_send))
         n_send = n_send + 1
         tag = 2004
@@ -1447,7 +1453,7 @@ contains
              2*nr, irank, tag, hecMESH%MPI_COMM, statuses(:,1))
         tag = 2003
         call HECMW_RECV_INT(imp_cols_item(1,imp_cols_index(idom-1)+1), &
-             3*nnz, irank, tag, hecMESH%MPI_COMM, statuses(:,1))
+             cNCOL_ITEM*nnz, irank, tag, hecMESH%MPI_COMM, statuses(:,1))
         tag = 2004
         call HECMW_RECV_R(imp_vals_item(ndof2*imp_cols_index(idom-1)+1), &
              ndof2*nnz, irank, tag, hecMESH%MPI_COMM, statuses(:,1))
@@ -1531,7 +1537,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
     integer(kind=kint), intent(in) :: ncols
-    integer(kind=kint), intent(in) :: cols(3,ncols)
+    integer(kind=kint), intent(in) :: cols(cNCOL_ITEM,ncols)
     integer(kind=kint), allocatable, intent(out) :: map(:)
     integer(kind=kint), intent(out) :: n_add_node
     integer(kind=kint), allocatable, intent(out) :: add_nodes(:,:)
@@ -1553,21 +1559,20 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: ncols
-    integer(kind=kint), intent(in) :: cols(3,ncols)
+    integer(kind=kint), intent(in) :: cols(cNCOL_ITEM,ncols)
     integer(kind=kint), intent(out) :: map(ncols)
     integer(kind=kint), intent(out) :: n_add_node
-    integer(kind=kint) :: i, lid, rank, gid, llid
+    integer(kind=kint) :: i, lid, rank, llid
     n_add_node = 0
     do i = 1, ncols
       lid = cols(cLID,i)
       rank = cols(cRANK,i)
-      gid = cols(cGID,i)
       !   check rank
       if (rank == hecMESH%my_rank) then  !   internal: set mapping
         map(i) = lid
       else                               !   external
-        !     search global_ID in external nodes
-        llid = find_external_gid(hecMESH, gid)
+        !     search node_ID in external nodes
+        llid = find_external_node_ID(hecMESH, lid, rank)
         if (llid > 0) then  !     found: set mapping
           map(i) = llid
         else                !     not found
@@ -1578,34 +1583,34 @@ contains
     enddo
   end subroutine map_present_nodes
 
-  function find_external_gid(hecMESH, gid)
+  function find_external_node_ID(hecMESH, lid, rank)
     implicit none
-    integer(kind=kint) :: find_external_gid
+    integer(kind=kint) :: find_external_node_ID
     type (hecmwST_local_mesh), intent(in) :: hecMESH
-    integer(kind=kint), intent(in) :: gid
+    integer(kind=kint), intent(in) :: lid, rank
     integer(kind=kint) :: i
-    find_external_gid = -1
+    find_external_node_ID = -1
     do i = hecMESH%nn_internal+1, hecMESH%n_node
-      if (hecMESH%global_node_ID(i) == gid) then
-        find_external_gid = i
+      if (hecMESH%node_ID(2*i-1) == lid .and. hecMESH%node_ID(2*i) == rank) then
+        find_external_node_ID = i
         return
       endif
     enddo
-  end function find_external_gid
+  end function find_external_node_ID
 
   subroutine extract_add_nodes(ncols, cols, map, n_add_node, add_nodes)
     implicit none
     integer(kind=kint), intent(in) :: ncols
-    integer(kind=kint), intent(in) :: cols(3,ncols), map(ncols)
+    integer(kind=kint), intent(in) :: cols(cNCOL_ITEM,ncols), map(ncols)
     integer(kind=kint), intent(inout) :: n_add_node
     integer(kind=kint), allocatable, intent(out) :: add_nodes(:,:)
     integer(kind=kint) :: cnt, i
-    allocate(add_nodes(3,n_add_node))
+    allocate(add_nodes(cNCOL_ITEM,n_add_node))
     cnt = 0
     do i = 1, ncols
       if (map(i) == -1) then
         cnt = cnt + 1
-        add_nodes(1:3,cnt) = cols(1:3,i)
+        add_nodes(1:cNCOL_ITEM,cnt) = cols(1:cNCOL_ITEM,i)
       endif
     enddo
     if (cnt /= n_add_node) stop 'ERROR: extract add_nodes'
@@ -1615,7 +1620,7 @@ contains
   subroutine sort_and_uniq_add_nodes(n_add_node, add_nodes)
     implicit none
     integer(kind=kint), intent(inout) :: n_add_node
-    integer(kind=kint), intent(inout) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(inout) :: add_nodes(cNCOL_ITEM,n_add_node)
     integer(kind=kint) :: ndup
     call sort_add_nodes(add_nodes, 1, n_add_node)
     call uniq_add_nodes(add_nodes, n_add_node, ndup)
@@ -1627,10 +1632,10 @@ contains
     integer(kind=kint), intent(inout) :: add_nodes(:,:)
     integer(kind=kint), intent(in) :: id1, id2
     integer(kind=kint) :: center, left, right
-    integer(kind=kint) :: pivot(3), tmp(3)
+    integer(kind=kint) :: pivot(cNCOL_ITEM), tmp(cNCOL_ITEM)
     if (id1 >= id2) return
     center = (id1 + id2) / 2
-    pivot(1:3) = add_nodes(1:3,center)
+    pivot(1:cNCOL_ITEM) = add_nodes(1:cNCOL_ITEM,center)
     left = id1
     right = id2
     do
@@ -1643,9 +1648,9 @@ contains
         right = right - 1
       enddo
       if (left >= right) exit
-      tmp(1:3) = add_nodes(1:3,left)
-      add_nodes(1:3,left) = add_nodes(1:3,right)
-      add_nodes(1:3,right) = tmp(1:3)
+      tmp(1:cNCOL_ITEM) = add_nodes(1:cNCOL_ITEM,left)
+      add_nodes(1:cNCOL_ITEM,left) = add_nodes(1:cNCOL_ITEM,right)
+      add_nodes(1:cNCOL_ITEM,right) = tmp(1:cNCOL_ITEM)
       left = left + 1
       right = right - 1
     enddo
@@ -1666,7 +1671,7 @@ contains
            add_nodes(cRANK,i) == add_nodes(cRANK,i-1-ndup)) then
         ndup = ndup + 1
       else if (ndup > 0) then
-        add_nodes(1:3,i-ndup) = add_nodes(1:3,i)
+        add_nodes(1:cNCOL_ITEM,i-ndup) = add_nodes(1:cNCOL_ITEM,i)
       endif
     enddo
   end subroutine uniq_add_nodes
@@ -1675,7 +1680,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
     integer(kind=kint), intent(in) :: n_add_node
-    integer(kind=kint), intent(in) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(in) :: add_nodes(:,:)
     integer(kind=kint), intent(out) :: i0
     integer(kind=kint) :: n_node, i, ii
     integer(kind=kint), pointer :: node_ID(:), global_node_ID(:)
@@ -1692,7 +1697,11 @@ contains
       ii = hecMESHnew%n_node + i
       node_ID(2*ii-1) = add_nodes(cLID,i)
       node_ID(2*ii  ) = add_nodes(cRANK,i)
-      global_node_ID(ii) = add_nodes(cGID,i)
+      if (cNCOL_ITEM >= 3) then
+        global_node_ID(i) = add_nodes(cGID,i)
+      else
+        global_node_ID(i) = -1
+      endif
     enddo
     deallocate(hecMESHnew%node_ID)
     deallocate(hecMESHnew%global_node_ID)
@@ -1704,9 +1713,9 @@ contains
   subroutine map_additional_nodes(ncols, cols, n_add_node, add_nodes, i0, map)
     implicit none
     integer(kind=kint), intent(in) :: ncols
-    integer(kind=kint), intent(in) :: cols(3,ncols)
+    integer(kind=kint), intent(in) :: cols(cNCOL_ITEM,ncols)
     integer(kind=kint), intent(in) :: n_add_node
-    integer(kind=kint), intent(in) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(in) :: add_nodes(cNCOL_ITEM,n_add_node)
     integer(kind=kint), intent(in) :: i0
     integer(kind=kint), intent(inout) :: map(ncols)
     integer(kind=kint) :: i, j
@@ -1825,7 +1834,7 @@ contains
   subroutine count_add_imp_per_rank(n_add_node, add_nodes, npe, n_add_imp)
     implicit none
     integer(kind=kint), intent(in) :: n_add_node
-    integer(kind=kint), intent(in) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(in) :: add_nodes(cNCOL_ITEM,n_add_node)
     integer(kind=kint), intent(in) :: npe
     integer(kind=kint), allocatable, intent(out) :: n_add_imp(:)
     integer(kind=kint) :: i, rank
@@ -1841,7 +1850,7 @@ contains
        add_imp_item_remote, add_imp_item_local)
     implicit none
     integer(kind=kint), intent(in) :: n_add_node
-    integer(kind=kint), intent(in) :: add_nodes(3,n_add_node)
+    integer(kind=kint), intent(in) :: add_nodes(cNCOL_ITEM,n_add_node)
     integer(kind=kint), intent(in) :: npe, i0
     integer(kind=kint), allocatable, intent(in) :: add_imp_index(:)
     integer(kind=kint), allocatable, intent(out) :: add_imp_item_remote(:), add_imp_item_local(:)
@@ -2669,7 +2678,7 @@ contains
       n_send = n_send + 1
       tag = 3002
       call HECMW_ISEND_INT(exp_cols_item(1,exp_cols_index(idom-1)+1), &
-           3 * BT_exp(idom)%nnz, irank, tag, hecCOMM%HECMW_COMM, requests(n_send))
+           cNCOL_ITEM * BT_exp(idom)%nnz, irank, tag, hecCOMM%HECMW_COMM, requests(n_send))
       n_send = n_send + 1
       tag = 3003
       call HECMW_ISEND_R(BT_exp(idom)%A, ndof2 * BT_exp(idom)%nnz, &
@@ -2721,7 +2730,7 @@ contains
     if (BT_imp%nnz /= imp_cols_index(nnb)) &
          stop 'ERROR: total num of nonzero of BT_imp'
     !
-    allocate(imp_cols_item(3, BT_imp%nnz))
+    allocate(imp_cols_item(cNCOL_ITEM, BT_imp%nnz))
     allocate(imp_vals_item(ndof2 * BT_imp%nnz))
     !
     do idom = 1, nnb
@@ -2731,7 +2740,7 @@ contains
       nnz = idx_n - idx_0
       if (nnz == 0) cycle
       tag = 3002
-      call HECMW_RECV_INT(imp_cols_item(1, idx_0 + 1), 3 * nnz, &
+      call HECMW_RECV_INT(imp_cols_item(1, idx_0 + 1), cNCOL_ITEM * nnz, &
            irank, tag, hecCOMM%HECMW_COMM, statuses(:,1))
       tag = 3003
       call HECMW_RECV_R(imp_vals_item(ndof2*idx_0 + 1), ndof2 * nnz, &

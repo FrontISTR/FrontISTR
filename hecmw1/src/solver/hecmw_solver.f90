@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
@@ -14,8 +14,10 @@ contains
     use hecmw_solver_direct
     use hecmw_solver_direct_parallel
     use hecmw_solver_direct_MUMPS
+    use hecmw_solver_direct_MKL
     use hecmw_solver_direct_clusterMKL
     use hecmw_matrix_misc
+    use m_hecmw_comm_f
     implicit none
 
     type (hecmwST_matrix), target :: hecMAT
@@ -48,10 +50,14 @@ contains
         call hecmw_mat_set_flag_converged(hecMAT, 0)
         call hecmw_mat_set_flag_diverged(hecMAT, 0)
 
-        if (hecMAT%Iarray(2) .eq. 104) then
+        if (hecMAT%Iarray(2) .eq. 102) then
+          if(hecMESH%PETOT.GT.1) then
+            call hecmw_solve_direct_ClusterMKL(hecMESH, hecMAT)
+          else
+            call hecmw_solve_direct_MKL(hecMESH,hecMAT)
+          endif
+        elseif (hecMAT%Iarray(2) .eq. 104) then
           call hecmw_solve_direct_MUMPS(hecMESH, hecMAT)
-        elseif (hecMAT%Iarray(2) .eq. 105) then
-          call hecmw_solve_direct_ClusterMKL(hecMESH, hecMAT)
         else
           if(hecMESH%PETOT.GT.1) then
             call hecmw_solve_direct_parallel(hecMESH,hecMAT,imsg)
@@ -62,6 +68,16 @@ contains
           do i=1,hecMAT%NP*hecMESH%n_dof
             hecMAT%X(i) = hecMAT%B(i)
           end do
+
+          if( NDOF==3 ) then
+            call hecmw_update_3_R(hecMESH,hecMAT%X,hecMESH%n_node)
+          else if( NDOF==2 ) then
+            call hecmw_update_2_R(hecMESH,hecMAT%X,hecMESH%n_node)
+          else if( NDOF==4 ) then
+            call hecmw_update_4_R(hecMESH,hecMAT%X,hecMESH%n_node)
+          else if( NDOF==6 ) then
+            call hecmw_update_m_R(hecMESH,hecMAT%X,hecMESH%n_node,6)
+          endif
         endif
 
         resid=hecmw_rel_resid_L2_nn(hecMESH,hecMAT)
