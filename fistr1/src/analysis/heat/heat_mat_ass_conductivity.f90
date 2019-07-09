@@ -37,9 +37,9 @@ contains
       if (hecmw_is_etype_patch(ic_type)) cycle
 
       !$omp parallel default(none), &
-        !$omp&  private(icel,isect,IMAT,ntab,itab,temp,funcA,funcB,in0,i,j,nodLOCAL,SS,TT,GTH,GHH,GR1,GR2,ecoord,&
+        !$omp&  private(icel,isect,IMAT,ntab,itab,temp,funcA,funcB,in0,nn,i,j,nodLOCAL,SS,TT,GTH,GHH,GR1,GR2,ecoord,&
         !$omp&          stiff,in,ASECT,thick,jsect), &
-        !$omp&  shared(iS,iE,hecMESH,nn,ic_type,hecMAT,fstrHEAT,TZERO)
+        !$omp&  shared(iS,iE,hecMESH,ic_type,hecMAT,fstrHEAT,TZERO)
       !$omp do
       do icel = iS, iE
         isect = hecMESH%section_ID(icel)
