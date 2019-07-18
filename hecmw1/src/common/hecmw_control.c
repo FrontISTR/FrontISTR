@@ -2451,6 +2451,7 @@ int HECMW_ctrl_make_subdir(char *filename) {
   char dirname[HECMW_FILENAME_LEN + 1];
   char *token;
   char separator[10];
+  char *saveptr;
   mode_t mode;
   DIR *dp;
 #ifndef _WINDOWS
@@ -2458,9 +2459,16 @@ int HECMW_ctrl_make_subdir(char *filename) {
 #endif
   strcpy(fname, filename);
   sprintf(separator, "%c", HECMW_get_path_separator());
+#if defined(__WIN32__) || defined(__WIN64__)
+  /* strtok is thread-safe on Windows */
   token = strtok(fname, separator);
   sprintf(dirname, "%s", token);
   token = strtok(NULL, separator);
+#else
+  token = strtok_r(fname, separator, &saveptr);
+  sprintf(dirname, "%s", token);
+  token = strtok_r(NULL, separator, &saveptr);
+#endif
 
   while (token) {
     if ((dp = opendir(dirname)) == NULL) {
@@ -2481,7 +2489,11 @@ int HECMW_ctrl_make_subdir(char *filename) {
 
     strcat(dirname, separator);
     strcat(dirname, token);
+#if defined(__WIN32__) || defined(__WIN64__)
     token = strtok(NULL, separator);
+#else
+    token = strtok_r(NULL, separator, &saveptr);
+#endif
   }
 
   return 0;
