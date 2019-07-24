@@ -8877,7 +8877,11 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
                 current_domain);
 
       rtc = HECMW_put_dist_mesh(global_mesh, ofname);
-      if (rtc != 0) goto error;
+      if (rtc != 0) {
+        HECMW_log(HECMW_LOG_ERROR, "Failed to write local mesh for domain #%d",
+                  current_domain);
+        goto error;
+      }
 
       HECMW_log(HECMW_LOG_DEBUG, "Writing local mesh for domain #%d done",
                 current_domain);
