@@ -3,13 +3,11 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provide a function to prepare output of static analysis
-module m_static_make_result
+module m_make_result
   private
 
-  public:: fstr_write_static_result
-  public:: fstr_write_static_result_main !temporaly
-  public:: fstr_make_static_result
-  public:: fstr_make_static_result_main !temporarly
+  public:: fstr_write_result
+  public:: fstr_make_result
   public:: fstr_reorder_node_shell
   public:: fstr_reorder_rot_shell
   public:: fstr_reorder_node_beam
@@ -19,9 +17,9 @@ module m_static_make_result
 contains
 
   !C***
-  !>  OUTPUT result file for static analysis
+  !>  OUTPUT result file for static and dynamic analysis
   !C***
-  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, flag, fstrDYNAMIC)
+  subroutine fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, flag, fstrDYNAMIC)
     use m_fstr
     use m_out
     use m_static_lib
@@ -176,9 +174,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if(is_33shell == 1 .or. ndof == 6)then
-      call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "      " )
+      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "      " )
     else
-      call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "      " )
+      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "      " )
     endif
 
     !laminated shell
@@ -190,8 +188,8 @@ contains
         clyr(2*i  )="_L"//trim(cnum)//"-"
       enddo
       do i=1,ntot_lyr
-        call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%PLUS,  clyr(2*i-1) )
-        call fstr_write_static_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%MINUS, clyr(2*i  ) )
+        call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%PLUS,  clyr(2*i-1) )
+        call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%MINUS, clyr(2*i  ) )
       enddo
       deallocate(clyr)
     endif
@@ -364,9 +362,9 @@ contains
     call hecmw_result_finalize
 
     deallocate( work )
-  end subroutine fstr_write_static_result
+  end subroutine fstr_write_result
 
-  subroutine fstr_write_static_result_main( hecMESH, fstrSOLID, RES, clyr )
+  subroutine fstr_write_result_main( hecMESH, fstrSOLID, RES, clyr )
     use m_fstr
     use m_out
     use m_static_lib
@@ -522,12 +520,12 @@ contains
       end do
     endif
 
-  end subroutine fstr_write_static_result_main
+  end subroutine fstr_write_result_main
 
   !C***
-  !>  MAKE RESULT for static analysis (WITHOUT ELEMENTAL RESULTS) --------------------------------------------------------------
+  !>  MAKE RESULT for static and dynamic analysis (WITHOUT ELEMENTAL RESULTS) --------------------------------------------------------------
   !C***
-  subroutine fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT, time, fstrDYNAMIC )
+  subroutine fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, time, fstrDYNAMIC )
     use m_fstr
     use hecmw_util
 
@@ -856,10 +854,10 @@ contains
     endif
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(is_33shell == 1 .or. ndof == 6)then
-      call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
+      call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
         & fstrSOLID%SHELL, nitem, iitem, ncomp, 1, "      " )
     else
-      call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
+      call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
         & fstrSOLID%SOLID, nitem, iitem, ncomp, 1, "      " )
     endif
 
@@ -872,9 +870,9 @@ contains
         clyr(2*i  )="_L"//trim(cnum)//"-"
       enddo
       do i=1,ntot_lyr
-        call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
+        call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
           & fstrSOLID%SHELL%LAYER(i)%PLUS,  nitem, iitem, ncomp, i+1, clyr(2*i-1) )
-        call fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, &
+        call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
           & fstrSOLID%SHELL%LAYER(i)%MINUS, nitem, iitem, ncomp, i+1, clyr(2*i  ) )
       enddo
       deallocate(clyr)
@@ -1068,9 +1066,9 @@ contains
       jitem = jitem + nn
     endif
 
-  end subroutine fstr_make_static_result
+  end subroutine fstr_make_result
 
-  subroutine fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, iitem, ncomp, nlyr, clyr )
+  subroutine fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, iitem, ncomp, nlyr, clyr )
     use m_fstr
     use m_out
     use m_static_lib
@@ -1196,7 +1194,7 @@ contains
       enddo
     endif
 
-  end subroutine fstr_make_static_result_main
+  end subroutine fstr_make_result_main
 
   subroutine fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
     use m_fstr
@@ -1388,4 +1386,4 @@ contains
   end subroutine
 
 
-end module m_static_make_result
+end module m_make_result

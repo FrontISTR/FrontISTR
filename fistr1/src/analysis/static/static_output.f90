@@ -13,7 +13,7 @@ contains
     !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
-    use m_static_make_result
+    use m_make_result
     use m_hecmw2fstr_mesh_conv
     integer, intent(in)                   :: cstep       !< current step number
     integer, intent(in)                   :: istep       !< current substep number
@@ -50,20 +50,20 @@ contains
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
           (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
-        call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 1 )
+        call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 1 )
       endif
       return
     endif
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
-      call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
+      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. outflag) ) then
 
-      call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT, time )
+      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, time )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, istep )

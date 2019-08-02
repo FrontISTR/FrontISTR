@@ -13,7 +13,7 @@ contains
     !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
-    use m_static_make_result
+    use m_make_result
     use m_hecmw2fstr_mesh_conv
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
@@ -74,12 +74,12 @@ contains
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
-      call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, fstrDYNAMIC%t_curr, 0, fstrDYNAMIC )
+      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, fstrDYNAMIC%t_curr, 0, fstrDYNAMIC )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
-      call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT, fstrDYNAMIC%t_curr, fstrDYNAMIC )
+      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, fstrDYNAMIC%t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, istep )
