@@ -138,7 +138,7 @@ contains
             &     hecMESH%section%sect_R_item(ihead+1:), edisp,                               &
             &     ndstrain(1:nn,1:6), ndstress(1:nn,1:6), tt(1:nn), t0(1:nn), ntemp )
           call ElementalStress_Beam_641( fstrSOLID%elements(icel)%gausses, estrain, estress, enqm )
-          fstrSOLID%SOLID%ENQM(icel*12-11:icel*12) = enqm(1:12)
+          fstrSOLID%ENQM(icel*12-11:icel*12) = enqm(1:12)
 
 
         elseif( ic_type == 781) then !<3*3 shell section
