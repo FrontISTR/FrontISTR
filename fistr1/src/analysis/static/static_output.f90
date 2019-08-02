@@ -63,7 +63,7 @@ contains
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. outflag) ) then
 
-      call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
+      call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT, time )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, istep )
