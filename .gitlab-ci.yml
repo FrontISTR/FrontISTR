@@ -73,4 +73,4 @@ pages:
             - public
         expire_in: 20min
     only:
-        - ci-master
+        - master
