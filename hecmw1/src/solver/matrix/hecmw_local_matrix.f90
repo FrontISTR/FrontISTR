@@ -66,6 +66,27 @@ contains
     enddo
   end subroutine hecmw_localmat_write
 
+  subroutine hecmw_localmat_write_ij(Tmat,iunit)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: Tmat
+    integer(kind=kint), intent(in) :: iunit
+    integer(kind=kint) :: nr, nc, nnz, ndof, i, js, je, j, jj
+    nr=Tmat%nr
+    nc=Tmat%nc
+    nnz=Tmat%nnz
+    ndof=Tmat%ndof
+    write(iunit,*) 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
+    write(iunit,*) 'i, j'
+    do i=1,nr
+      js=Tmat%index(i-1)+1
+      je=Tmat%index(i)
+      do j=js,je
+        jj=Tmat%item(j)
+        write(iunit,*) i, jj
+      enddo
+    enddo
+  end subroutine hecmw_localmat_write_ij
+
   subroutine hecmw_localmat_blocking(Tmat, ndof, BTmat)
     implicit none
     type (hecmwST_local_matrix), intent(in) :: Tmat
@@ -230,25 +251,37 @@ contains
     real(kind=kreal) :: num
 
     ! perform three matrices multiplication for elimination
-    call hecmw_localmat_init_with_hecmat(BKmat, hecMAT, num_lagrange)
-    if (DEBUG >= 4) then
+    call hecmw_localmat_init_with_hecmat(BKmat, hecMAT)
+    if (DEBUG >= 3) then
       write(700+hecmw_comm_get_rank(),*) 'BKmat (hecMAT)'
-      call hecmw_localmat_write(BKmat, 700+hecmw_comm_get_rank())
+      if (DEBUG == 3) then
+        call hecmw_localmat_write_ij(BKmat, 700+hecmw_comm_get_rank())
+      else
+        call hecmw_localmat_write(BKmat, 700+hecmw_comm_get_rank())
+      endif
     endif
 
     call hecmw_localmat_multmat(BTtmat, BKmat, hecMESH, BTtKmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply Tt and K done'
-    if (DEBUG >= 4) then
+    if (DEBUG >= 3) then
       write(700+hecmw_comm_get_rank(),*) 'BTtKmat'
-      call hecmw_localmat_write(BTtKmat, 700+hecmw_comm_get_rank())
+      if (DEBUG == 3) then
+        call hecmw_localmat_write_ij(BTtKmat, 700+hecmw_comm_get_rank())
+      else
+        call hecmw_localmat_write(BTtKmat, 700+hecmw_comm_get_rank())
+      endif
     endif
     call hecmw_localmat_free(BKmat)
 
     call hecmw_localmat_multmat(BTtKmat, BTmat, hecMESH, BTtKTmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply TtK and T done'
-    if (DEBUG >= 4) then
+    if (DEBUG >= 3) then
       write(700+hecmw_comm_get_rank(),*) 'BTtKTmat'
-      call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
+      if (DEBUG == 3) then
+        call hecmw_localmat_write_ij(BTtKTmat, 700+hecmw_comm_get_rank())
+      else
+        call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
+      endif
     endif
     call hecmw_localmat_free(BTtKmat)
 
@@ -256,12 +289,16 @@ contains
     !num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-10
     num = 1.d0
     call place_num_on_diag(BTtKTmat, iwS, num_lagrange, num)
-    if (DEBUG >= 4) then
+    if (DEBUG >= 3) then
       write(700+hecmw_comm_get_rank(),*) 'num_lagrange =', num_lagrange
       write(700+hecmw_comm_get_rank(),*) 'iwS(1:num_lagrange)'
       write(700+hecmw_comm_get_rank(),*) iwS(1:num_lagrange)
       write(700+hecmw_comm_get_rank(),*) 'BTtKTmat (place 1.0 on slave diag)'
-      call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
+      if (DEBUG == 3) then
+        call hecmw_localmat_write_ij(BTtKTmat, 700+hecmw_comm_get_rank())
+      else
+        call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
+      endif
     endif
 
     ! make_new HECMW matrix
@@ -821,10 +858,17 @@ contains
       kk=ndof*(hecMESH%mpc%mpc_item(k)-1)+hecMESH%mpc%mpc_dof(k)
       iwS(i_mpc)=kk
     enddo OUTER2
+    if (DEBUG >= 2) then
+      write(700+hecmw_comm_get_rank(),*) 'DEBUG: n_mpc, slaves',n_mpc,iwS(1:n_mpc)
+    endif
     call make_BTmat_mpc(hecMESH, ndof, BTmat)
-    if (DEBUG >= 4) then
+    if (DEBUG >= 3) then
       write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTmat(MPC)'
-      call hecmw_localmat_write(BTmat,700+hecmw_comm_get_rank())
+      if (DEBUG == 3) then
+        call hecmw_localmat_write_ij(BTmat,700+hecmw_comm_get_rank())
+      else
+        call hecmw_localmat_write(BTmat,700+hecmw_comm_get_rank())
+      endif
     endif
     ! call make_BTtmat_mpc(hecMESH, ndof, BTtmat)
     call hecmw_localmat_transpose(BTmat, BTtmat)
@@ -833,9 +877,13 @@ contains
     ! else
     !   write(0,*) 'DEBUG: BTtmat2 is correct'
     ! endif
-    if (DEBUG >= 4) then
+    if (DEBUG >= 3) then
       write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtmat(MPC)'
-      call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
+      if (DEBUG == 3) then
+        call hecmw_localmat_write_ij(BTtmat,700+hecmw_comm_get_rank())
+      else
+        call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
+      endif
     endif
     call hecmw_trimatmul_TtKT(hecMESH, BTtmat, hecMAT, BTmat, iwS, n_mpc, hecTKT)
 
@@ -2528,7 +2576,11 @@ contains
     call hecmw_localmat_init_with_hecmat(W1mat, hecMAT)
     if (DEBUG >= 3) then
       write(700+hecmw_comm_get_rank(),*) 'BKmat (hecMAT)'
-      call hecmw_localmat_write(W1mat, 700+hecmw_comm_get_rank())
+      if (DEBUG == 3) then
+        call hecmw_localmat_write_ij(W1mat, 700+hecmw_comm_get_rank())
+      else
+        call hecmw_localmat_write(W1mat, 700+hecmw_comm_get_rank())
+      endif
     endif
     call hecmw_localmat_add(BKmat, W1mat, W2mat)
     call hecmw_localmat_free(BKmat)
