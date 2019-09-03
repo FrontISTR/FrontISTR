@@ -1047,7 +1047,7 @@ contains
     real(kind=kreal), intent(out) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
-    do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
+    do i = 1, hecMESH%nn_internal*min(hecMESH%n_dof,3)
       coord(i) = hecMESH%node(i)
       hecMESH%node(i) = coord(i)+fstrSOLID%unode(i)+fstrSOLID%dunode(i)
     enddo
@@ -1060,7 +1060,7 @@ contains
     real(kind=kreal), intent(in) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
-    do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
+    do i = 1, hecMESH%nn_internal*min(hecMESH%n_dof,3)
       hecMESH%node(i) = coord(i)
     enddo
   end subroutine fstr_recover_initial_config_to_mesh

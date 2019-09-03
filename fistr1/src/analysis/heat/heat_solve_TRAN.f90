@@ -25,11 +25,12 @@ contains
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
+    type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint), parameter :: miniter = 4
     logical :: is_end, outflag
 
-    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     if(ISTEP == 1)then
       start_time = 0.0d0
@@ -86,7 +87,7 @@ contains
         call hecmw_abort(hecmw_comm_get_comm())
       endif
 
-      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, total_time, delta_time)
+      call heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, total_time, delta_time)
 
       if(0.0d0 < DELMIN)then
         tmpmax = 0.0d0
@@ -133,7 +134,7 @@ contains
     enddo tr_loop
     !C--------------------   END TRANSIET LOOP   ------------------------
 
-    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
   end subroutine heat_solve_TRAN
 end module m_heat_solve_TRAN

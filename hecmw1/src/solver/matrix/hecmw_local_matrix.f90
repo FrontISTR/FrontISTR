@@ -889,8 +889,8 @@ contains
 
     if (associated(hecTKT%B)) deallocate(hecTKT%B)
     if (associated(hecTKT%X)) deallocate(hecTKT%X)
-    allocate(hecTKT%B(size(hecMAT%B)))
-    allocate(hecTKT%X(size(hecMAT%X)))
+    allocate(hecTKT%B(ndof*hecTKT%NP))
+    allocate(hecTKT%X(ndof*hecTKT%NP))
     do i=1, size(hecMAT%B)
       hecTKT%B(i) = hecMAT%B(i)
     enddo

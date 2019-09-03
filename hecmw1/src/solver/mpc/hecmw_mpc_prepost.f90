@@ -16,6 +16,7 @@ module hecmw_mpc_prepost
   public :: hecmw_mpc_mat_init
   public :: hecmw_mpc_mat_init_explicit
   public :: hecmw_mpc_mat_finalize
+  public :: hecmw_mpc_mat_finalize_explicit
   public :: hecmw_mpc_mat_ass
   public :: hecmw_mpc_trans_rhs
   public :: hecmw_mpc_tback_sol
@@ -87,11 +88,10 @@ contains
   !C*** hecmw_mpc_mat_init_explicit
   !C***
   !C
-  subroutine hecmw_mpc_mat_init_explicit(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  subroutine hecmw_mpc_mat_init_explicit(hecMESH, hecMAT, hecMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(inout), target :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
-    type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD
 
@@ -109,8 +109,6 @@ contains
     MPC_METHOD = 3
     call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
 
-    allocate(hecMESHmpc)
-    call hecmw_mpc_mesh_copy(hecMESH, hecMESHmpc)
     allocate(hecMATmpc)
     call hecmw_mat_init(hecMATmpc)
 
@@ -162,6 +160,41 @@ contains
     end select
 
   end subroutine hecmw_mpc_mat_finalize
+
+  !C
+  !C***
+  !C*** hecmw_mpc_mat_finalize_explicit
+  !C***
+  !C
+  subroutine hecmw_mpc_mat_finalize_explicit(hecMESH, hecMAT, hecMATmpc)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_matrix), pointer :: hecMATmpc
+    integer(kind=kint) :: totalmpc, MPC_METHOD
+
+    totalmpc = hecMESH%mpc%n_mpc
+    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+
+    if (totalmpc == 0) then
+      nullify(hecMATmpc)
+      return
+    endif
+
+    MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
+
+    select case (MPC_METHOD)
+    case (1)  ! penalty
+      nullify(hecMATmpc)
+    case (2) ! MPCCG
+      nullify(hecMATmpc)
+    case (3) ! elimination
+      call hecmw_mat_finalize(hecMATmpc)
+      deallocate(hecMATmpc)
+      nullify(hecMATmpc)
+    end select
+
+  end subroutine hecmw_mpc_mat_finalize_explicit
 
   !C
   !C***
@@ -537,8 +570,25 @@ contains
     dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*dst%n_node)
     allocate(dst%elem_type_item(dst%n_elem_type))
     dst%elem_type_item(:) = src%elem_type_item(:)
-    dst%mpc%n_mpc =  src%n_mpc
-    dst%mpc       => src%mpc
+    !
+    dst%mpc%n_mpc =  src%mpc%n_mpc
+    dst%mpc%mpc_index => src%mpc%mpc_index
+    dst%mpc%mpc_item => src%mpc%mpc_item
+    dst%mpc%mpc_dof => src%mpc%mpc_dof
+    dst%mpc%mpc_val => src%mpc%mpc_val
+    dst%mpc%mpc_const => src%mpc%mpc_const
+    !
+    dst%node_group%n_grp = src%node_group%n_grp
+    dst%node_group%n_bc = src%node_group%n_bc
+    dst%node_group%grp_name => src%node_group%grp_name
+    dst%node_group%grp_index => src%node_group%grp_index
+    dst%node_group%grp_item => src%node_group%grp_item
+    dst%node_group%bc_grp_ID => src%node_group%bc_grp_ID
+    dst%node_group%bc_grp_type => src%node_group%bc_grp_type
+    dst%node_group%bc_grp_index => src%node_group%bc_grp_index
+    dst%node_group%bc_grp_dof => src%node_group%bc_grp_dof
+    dst%node_group%bc_grp_val => src%node_group%bc_grp_val
+    !
     dst%node      => src%node
   end subroutine hecmw_mpc_mesh_copy
 
