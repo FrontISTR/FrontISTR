@@ -91,9 +91,16 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
   /* Null Space (Rigid Body Mode) */
   {
     int num_PDE_eqns = *Ndof;
-    int null_dim     = 6;
+    int null_dim;
     double *null_vect;
     int leng  = nlocal;
+    if (*Ndof == 1) {
+      null_dim = 1;
+    } else if (*Ndof == 2) {
+      null_dim = 3;
+    } else {
+      null_dim = 6;
+    }
     null_vect = (double *)HECMW_malloc(sizeof(double) * null_dim * leng);
     if (!null_vect) {
       HECMW_set_error(errno, "");
