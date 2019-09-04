@@ -2,9 +2,9 @@
 !! Control File for FSTR solver
 !!
 !VERSION
-    1
-!SOLUTION, TYPE = STATIC
-!STATIC,   TYPE = NLGEOM
+    3
+!SOLUTION, TYPE = NLSTATIC
+!STATIC
 !BOUNDARY
     FIX,  1,  3, 0.0
 !DLOAD

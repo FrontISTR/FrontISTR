@@ -1,167 +1,108 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides functions to solve sparse system of
 !> \linear equitions using intel MKL direct sparse solver
-module m_solve_LINEQ_mkl
 
+module m_solve_LINEQ_MKL_contact
+  use hecmw_util
   use m_fstr
-  use m_set_arrays_directsolver_contact
+  use m_sparse_matrix
+  use m_sparse_matrix_contact
+  use fstr_matrix_con_contact
+  use m_hecmw_MKL_wrapper
+  use m_hecmw_ClusterMKL_wrapper
 
   implicit none
-  !< ------------------------------------------------ input parameters for MKL solver(see Intel(R) MKL Reference Manual)
-  integer(kind=8)               :: pt(64)
-  integer (kind=kint)           :: maxfct
-  integer (kind=kint)           :: mnum
-  integer (kind=kint)           :: mtype
-  integer (kind=kint)           :: phase
-  integer (kind=kint)           :: nrhs
-  integer (kind=kint)           :: msglvl
-  integer (kind=kint)           :: iparm(64)
-  real     (kind=kreal)          :: dparm(64)
-  !< ----------------------------------------------- input parameters for MKL solver
 
-  integer (kind=kint)           :: ntdf_previous
+  private
+  public :: solve_LINEQ_MKL_contact_init
+  public :: solve_LINEQ_MKL_contact
+
+  logical, save :: NEED_ANALYSIS = .true.
+  type (sparse_matrix), save :: spMAT
 
 contains
 
+  subroutine solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    logical, intent(in) :: is_sym
 
-  subroutine solve_LINEQ_mkl_init(hecMAT,fstrMAT,is_sym)
+    integer(kind=kint) :: spmat_type
+    integer(kind=kint) :: spmat_symtype
+    integer(kind=kint) :: i
 
-    type (hecmwST_matrix)                    :: hecMAT       !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT      !< type fstrST_matrix_contact_lagrange
-    logical                                  :: is_sym       !< symmetry of matrix
+    call sparse_matrix_finalize(spMAT)
 
-    call set_pointersANDindices_directsolver(hecMAT,fstrMAT,is_sym)
-    phase = -1
-
-  end subroutine solve_LINEQ_mkl_init
-
-  !> \brief This subroutine executes phase 11 of intel MKL solver
-  !> \(see Intel(R) MKL Reference Manual)
-  subroutine initialize_solver_mkl(hecMAT,fstrMAT)
-
-    type (hecmwST_matrix)                    :: hecMAT       !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT      !< type fstrST_matrix_contact_lagrange
-
-    integer(kind=kint)                       :: ntdf         !< total degree of freedom
-    integer(kind=kint)                       :: idum(1), ierr
-    real(kind=kreal)                          :: ddum(1)
-
-    ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
-    ntdf_previous = ntdf
-
-    maxfct = 1; mnum = 1; nrhs = 1; msglvl = 0; ierr = 0
-    iparm = 0
-    iparm(1)  = 1; iparm(2)  = 2; iparm(3)  = 1; iparm(10) = 13
-    iparm(11) = 1; iparm(13) = 1; iparm(18) =-1; iparm(19) =-1
-    !        iparm(21) = 1
-
-    if(phase==-1)then
-      call pardiso(pt, maxfct, mnum, mtype, phase, ntdf_previous, ddum, idum, idum, &
-        idum, nrhs, iparm, msglvl, ddum, ddum, ierr)
-    endif
-
-    if( symmetricMatrixStruc )then
-      mtype = -2
+    if (is_sym) then
+      spmat_symtype = SPARSE_MATRIX_SYMTYPE_SYM
     else
-      mtype = 11
+      spmat_symtype = SPARSE_MATRIX_SYMTYPE_ASYM
+    end if
+    if(hecMESH%PETOT.GT.1) then
+      spmat_type = SPARSE_MATRIX_TYPE_COO
+    else
+      spmat_type = SPARSE_MATRIX_TYPE_CSR
     endif
+    call sparse_matrix_set_type(spMAT, spmat_type, spmat_symtype)
 
-    phase = 11
-    call pardiso(pt, maxfct, mnum, mtype, phase, ntdf, values, pointers, indices, &
-      idum, nrhs, iparm, msglvl, ddum, ddum, ierr)
-    if(ierr /= 0) then
-      write(*,'(" initialize_solver_mkl: ERROR was detected in phase", 2I2)') phase,ierr
-      stop
-    endif
-    write(*,*) ' [Pardiso_MKL]: Initialization completed ! '
+    NEED_ANALYSIS = .true.
+  end subroutine solve_LINEQ_MKL_contact_init
 
-  end subroutine initialize_solver_mkl
+  !> \brief This subroutine executes the MKL solver
+  subroutine solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix    ), intent(inout) :: hecMAT
+    type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    integer(kind=kint), intent(out) :: istat
+    type (hecmwST_matrix), intent(in),optional :: conMAT
 
+    integer(kind=kint)  :: phase_start
+    real(kind=kreal)    :: t1,t2
 
-  !> \brief This subroutine executes phase 22 and phase 33 of the MKL solver
-  !> \(see Intel(R) MKL Reference Manual)
-  subroutine solve_LINEQ_mkl(hecMESH,hecMAT,fstrMAT,ierr)
-
-    type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
-    type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
-    integer(kind=kint), intent(out)          :: ierr
-    integer(kind=kint)                       :: ntdf           !< total degree of freedom
-    integer(kind=kint)                       :: idum(1)
-    real(kind=kreal)                          :: ddum(1)
-    real(kind=kreal), allocatable            :: x(:)           !< solution vector
-
+    t1=hecmw_wtime()
     call hecmw_mat_dump(hecMAT, hecMESH)
 
-    call set_values_directsolver(hecMAT,fstrMAT)
-    if( phase == -1 ) call initialize_solver_mkl(hecMAT,fstrMAT)
-
-    ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
-
-    phase = 22
-    call pardiso(pt, maxfct, mnum, mtype, phase, ntdf, values, pointers, indices,idum,   &
-      nrhs, iparm, msglvl, ddum, ddum, ierr)
-    if(ierr /= 0) then
-      write(*,'(" solve_LINEQ_mkl: [Error] was detected in phase ", 2I2)')phase,ierr
-      return
+    if (NEED_ANALYSIS) then
+      !constrtuct new structure
+      call sparse_matrix_contact_init_prof(spMAT, hecMAT, fstrMAT, hecMESH)
     endif
-    write(*,*) ' [Pardiso_MKL]: Factorization completed ! '
 
-    allocate(x(size(hecMAT%X)))
-    x = 0.0d0
-
-    iparm(8) = 6
-    phase = 33
-    call pardiso(pt, maxfct, mnum, mtype, phase, ntdf, values, pointers, indices, idum,  &
-      nrhs, iparm, msglvl, hecMAT%B, X, ierr)
-    if(ierr /= 0) then
-      write(*,'(" solve_LINEQ_mkl: [Error] was detected in phase ", 2I2)')phase,ierr
-      deallocate(x)
-      return
+    !  ----  For Parallel Contact with Multi-Partition Domains
+    if(paraContactFlag.and.present(conMAT)) then
+      call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, fstrMAT, conMAT)
+      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, fstrMAT, conMAT)
+    else
+      call sparse_matrix_contact_set_vals(spMAT, hecMAT, fstrMAT)
+      !call sparse_matrix_dump(spMAT)
+      call sparse_matrix_contact_set_rhs(spMAT, hecMAT, fstrMAT)
     endif
-    write(*,*) ' [Pardiso_MKL]: Solve completed ... '
 
-    hecMAT%X = x
+    t2=hecmw_wtime()
+    if (myrank==0 .and. spMAT%timelog > 0) then
+      if( hecMESH%PETOT .GT. 1 ) then
+         write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup completed.            time(sec)=',t2-t1
+      else
+         write(*,'(A,f10.3)') ' [Pardiso]: Setup completed.          time(sec)=',t2-t1
+      end if
+    endif
 
-    deallocate(x)
+    phase_start = 2
+    if (NEED_ANALYSIS) then
+      phase_start = 1
+      NEED_ANALYSIS = .false.
+    endif
+
+    ! SOLVE
+    if( hecMESH%PETOT.GT.1 ) then
+      call hecmw_clustermkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+      call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
+    else
+      call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+    endif
 
     call hecmw_mat_dump_solution(hecMAT)
+  end subroutine solve_LINEQ_MKL_contact
 
-  end subroutine solve_LINEQ_mkl
-
-
-#ifndef WITH_MKL
-
-  subroutine pardiso(pt, maxfct, mnum, mtype, phase, ntdf, values, pointers, indices, &
-      idum, nrhs, iparm, msglvl, ddum1, ddum2, ierr)
-
-    use m_fstr
-
-    !< ------------------------------------------------ input parameters for MKL solver(see Intel(R) MKL Reference Manual)
-    integer (kind=8)              :: pt(64)
-    integer (kind=kint)           :: maxfct
-    integer (kind=kint)           :: mnum
-    integer (kind=kint)           :: mtype
-    integer (kind=kint)           :: phase
-    integer (kind=kint)           :: ntdf
-    integer (kind=kint)           :: pointers(:)        !< ia
-    integer (kind=kint)           :: indices(:)         !< ja
-    real     (kind=kreal)          :: values(:)          !< a
-    integer (kind=kint)           :: idum(:)
-    integer (kind=kint)           :: nrhs
-    integer (kind=kint)           :: iparm(64)
-    integer (kind=kint)           :: msglvl
-    real(kind=kreal)               :: ddum1(:), ddum2(:)
-    integer (kind=kint)           :: ierr
-
-    write(*,*) "pardiso: ERROR was detected. Please install MKL library and try again."
-    stop
-
-  end subroutine
-
-#endif
-
-end module m_solve_LINEQ_mkl
+end module m_solve_LINEQ_MKL_contact

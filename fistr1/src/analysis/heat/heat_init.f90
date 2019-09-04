@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides functions to initialize heat analysis
@@ -11,7 +11,7 @@ contains
     implicit none
     type(fstr_heat) :: fstrHEAT
     type(hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: i, in
+    integer(kind=kint) :: i, j
 
     allocate(fstrHEAT%TEMP0(hecMESH%n_node))
     allocate(fstrHEAT%TEMPC(hecMESH%n_node))
@@ -22,12 +22,25 @@ contains
 
     if(hecMESH%hecmw_flag_initcon == 1)then
       do i = 1, hecMESH%n_node
-        in = hecMESH%node_init_val_index(i)
-        fstrHEAT%TEMP0(i) = hecMESH%node_init_val_item(in)
+        j = hecMESH%node_init_val_index(i)
+        fstrHEAT%TEMP0(i) = hecMESH%node_init_val_item(j)
         fstrHEAT%TEMPC(i) = fstrHEAT%TEMP0(i)
         fstrHEAT%TEMP (i) = fstrHEAT%TEMP0(i)
       enddo
       write(ILOG,*) ' Initial condition of temperatures: OK'
+    endif
+    if( associated(g_InitialCnd) ) then
+        do j=1,size(g_InitialCnd)
+          if( g_InitialCnd(j)%cond_name=="temperature" ) then
+            do i= 1, hecMESH%n_node
+              fstrHEAT%TEMP0(i)= g_InitialCnd(j)%realval(i)
+              fstrHEAT%TEMPC(i)= fstrHEAT%TEMP0(i)
+              fstrHEAT%TEMP (i)= fstrHEAT%TEMP0(i)
+            enddo
+            exit
+          endif
+        enddo
+        write(ILOG,*) ' Initial condition of temperatures: OK'
     endif
   end subroutine heat_init
 

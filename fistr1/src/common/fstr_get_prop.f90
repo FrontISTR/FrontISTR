@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provide a function to fetch material properties from hecmw
@@ -194,8 +194,8 @@ contains
           stop
         endif
       elseif(flag == 1)then
-        if(mod(n_subitem-1, 9) == 0)then
-          n_totlyr=(n_subitem-1)/9
+        if(mod(n_subitem-1, 8) == 0)then
+          n_totlyr=(n_subitem-1)/8
         else
           write(IMSG,*) '###Error: Shell property invalid'
           write(*,*) '###Error: Shell property invalid'

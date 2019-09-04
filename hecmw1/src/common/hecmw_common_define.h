@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -88,6 +88,10 @@
 #define HECMW_ETYPE_LN64 964
 #define HECMW_ETYPE_LN65 965
 #define HECMW_ETYPE_LN66 966
+#define HECMW_ETYPE_PTT1 1031
+#define HECMW_ETYPE_PTT2 1032
+#define HECMW_ETYPE_PTQ1 1041
+#define HECMW_ETYPE_PTQ2 1042
 
 /*
  *   element types in GeoFEM
@@ -128,7 +132,7 @@
 /*
  *   element types in mesh utility
  */
-#define HECMW_MESH_ETYPE_MAX 74
+#define HECMW_MESH_ETYPE_MAX 78
 
 #define HECMW_MESH_ETYPE_PNT 0
 #define HECMW_MESH_ETYPE_ROD1 1
@@ -205,6 +209,10 @@
 #define HECMW_MESH_ETYPE_ROD31 67
 #define HECMW_MESH_ETYPE_TET1_4 72
 #define HECMW_MESH_ETYPE_HEX1_4 73
+#define HECMW_MESH_ETYPE_PTT1 75
+#define HECMW_MESH_ETYPE_PTT2 76
+#define HECMW_MESH_ETYPE_PTQ1 77
+#define HECMW_MESH_ETYPE_PTQ2 78
 
 /*
  *   UCD labels
@@ -281,6 +289,10 @@
 #define HECMW_UCD_LABEL_LN64 "line"
 #define HECMW_UCD_LABEL_LN65 "line"
 #define HECMW_UCD_LABEL_LN66 "line"
+#define HECMW_UCD_LABEL_PTT1 "tri"
+#define HECMW_UCD_LABEL_PTT2 "tri2"
+#define HECMW_UCD_LABEL_PTQ1 "quad"
+#define HECMW_UCD_LABEL_PTQ2 "quad2"
 
 /*
  *   number of component nodes on finite element
@@ -360,6 +372,10 @@
 #define HECMW_MAX_NODE_LN64 2
 #define HECMW_MAX_NODE_LN65 2
 #define HECMW_MAX_NODE_LN66 2
+#define HECMW_MAX_NODE_PTT1 3
+#define HECMW_MAX_NODE_PTT2 6
+#define HECMW_MAX_NODE_PTQ1 4
+#define HECMW_MAX_NODE_PTQ2 8
 
 /*
  *   number of component edges on finite element
@@ -437,6 +453,10 @@
 #define HECMW_MAX_EDGE_LN64 1
 #define HECMW_MAX_EDGE_LN65 1
 #define HECMW_MAX_EDGE_LN66 1
+#define HECMW_MAX_EDGE_PTT1 3
+#define HECMW_MAX_EDGE_PTT2 6
+#define HECMW_MAX_EDGE_PTQ1 4
+#define HECMW_MAX_EDGE_PTQ2 8
 
 /*
  *   number of component surfaces on finite element
@@ -514,6 +534,10 @@
 #define HECMW_MAX_SURF_LN64 0
 #define HECMW_MAX_SURF_LN65 0
 #define HECMW_MAX_SURF_LN66 0
+#define HECMW_MAX_SURF_PTT1 1
+#define HECMW_MAX_SURF_PTT2 1
+#define HECMW_MAX_SURF_PTQ1 1
+#define HECMW_MAX_SURF_PTQ2 1
 
 /*
  *   number of component triangular surfaces on finite element
@@ -591,6 +615,10 @@
 #define HECMW_MAX_TSUF_LN64 0
 #define HECMW_MAX_TSUF_LN65 0
 #define HECMW_MAX_TSUF_LN66 0
+#define HECMW_MAX_TSUF_PTT1 1
+#define HECMW_MAX_TSUF_PTT2 1
+#define HECMW_MAX_TSUF_PTQ1 0
+#define HECMW_MAX_TSUF_PTQ2 0
 
 /*
  *   number of component quadrilateral surfaces on finite element
@@ -668,6 +696,10 @@
 #define HECMW_MAX_QSUF_LN64 0
 #define HECMW_MAX_QSUF_LN65 0
 #define HECMW_MAX_QSUF_LN66 0
+#define HECMW_MAX_QSUF_PTT1 0
+#define HECMW_MAX_QSUF_PTT2 0
+#define HECMW_MAX_QSUF_PTQ1 1
+#define HECMW_MAX_QSUF_PTQ2 1
 
 #define HECMW_CLASS_LINE 1
 #define HECMW_CLASS_SURF 2

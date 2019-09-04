@@ -1,12 +1,12 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides a function for stationary heat analysis
 module m_heat_solve_main
 contains
 
-  subroutine heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, next_time, delta_time)
+  subroutine heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, next_time, delta_time)
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity

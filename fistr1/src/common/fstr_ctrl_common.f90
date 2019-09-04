@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module contains fstr control file data obtaining functions
@@ -68,7 +68,7 @@ contains
   !> Read in !SOLVER
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
       iterpremax, nrest, scaling, &
-      dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, &
+      dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       resid, singma_diag, sigma, thresh, filter )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
@@ -88,6 +88,7 @@ contains
     integer(kind=kint) :: mpc_method
     integer(kind=kint) :: estcond
     integer(kind=kint) :: method2
+    integer(kind=kint) :: recyclepre
     real(kind=kreal) :: resid
     real(kind=kreal) :: singma_diag
     real(kind=kreal) :: sigma
@@ -133,6 +134,8 @@ contains
       if( method > indirect_number ) then
         ! JP-3
         method = method - indirect_number + 100
+        if( method == 103 ) method = 101 ! DIRECTlag => DIRECT
+        if( method == 105 ) method = 102 ! MKL => DIRECTmkl
       end if
     end if
     if( method2 > number_number ) then  ! JP-2
@@ -150,7 +153,7 @@ contains
 
     !* data --------------------------------------------------------------------------------------- *!
     ! JP-4
-    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiii ', nier, iterpremax, nrest, ncolor_in )/= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre )/= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
 
     if( precond == 20 .or. precond == 21) then

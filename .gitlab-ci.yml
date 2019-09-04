@@ -1,0 +1,76 @@
+image: registry.gitlab.com/frontistr-commons/frontistr/build:latest
+
+stages:
+    - build
+    - test
+    - deploy
+
+make:
+    stage: build
+    script:
+        - cmake -Bbuild -H.
+        - cmake --build build -- -j $(nproc)
+    artifacts:
+        paths:
+            - build/
+        expire_in: 100min
+
+test_static:
+    stage: test
+    dependencies:
+        - make
+    script:
+        - cd build
+        - ctest -L static --output-on-failure
+
+test_fragile:
+    stage: test
+    dependencies:
+        - make
+    allow_failure: true
+    script:
+        - cd build
+        - ctest -L "(eigen|heat|dynamic)" --output-on-failure
+
+document:
+    image: registry.gitlab.com/frontistr-commons/frontistr/document:latest
+    stage: build
+    before_script:
+        - pip3 install -r doc/requirements.txt
+    script:
+        - ./doc/create_docs.sh
+        - rm -rf public/manual*
+        - mv doc/manuals/* public/
+    artifacts:
+        paths:
+            - public
+        expire_in: 100min
+    variables:
+        GIT_SUBMODULE_STRATEGY: recursive
+
+doxygen:
+    image: registry.gitlab.com/frontistr-commons/frontistr/document:latest
+    stage: build
+    script:
+        - cmake -Bbuild_doc -H. -DWITH_DOC=ON
+        - make -C build_doc doc
+        - rm -rf public/doxygen
+        - mv build_doc/doc/html public/doxygen
+    artifacts:
+        paths:
+            - public
+        expire_in: 100min
+
+pages:
+    stage: deploy
+    dependencies:
+        - document
+        - doxygen
+    script:
+        - ls public
+    artifacts:
+        paths:
+            - public
+        expire_in: 20min
+    only:
+        - master

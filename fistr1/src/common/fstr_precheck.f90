@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides function to check input data of IFSTR solver
@@ -101,10 +101,11 @@ contains
       jS = hecMESH%elem_type_index(itype-1)
       jE = hecMESH%elem_type_index(itype  )
       ic_type = hecMESH%elem_type_item(itype)
-      if(.not. hecmw_is_etype_link(ic_type)) nelem_wo_mpc = nelem_wo_mpc + jE-jS
+      if(.not. (hecmw_is_etype_link(ic_type) .or. hecmw_is_etype_patch(ic_type))) &
+           nelem_wo_mpc = nelem_wo_mpc + jE-jS
     enddo
-    write(ILOG,"(a,i12)") '   ** w/o MPC:',nelem_wo_mpc
-    write(*   ,"(a,i12)") '   ** w/o MPC:',nelem_wo_mpc
+    write(ILOG,"(a,i12)") '   ** w/o MPC/Patch:',nelem_wo_mpc
+    write(*   ,"(a,i12)") '   ** w/o MPC/Patch:',nelem_wo_mpc
     do itype = 1, hecMESH%n_elem_type
       jS = hecMESH%elem_type_index(itype-1)
       jE = hecMESH%elem_type_index(itype  )

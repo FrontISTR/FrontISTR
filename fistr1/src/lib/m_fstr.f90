@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 ! If new header is supported, change according to following method.    !
@@ -125,6 +125,15 @@ module m_fstr
   integer(kind=kint) :: ITMAX
   real(kind=kreal)   :: EPS   ! /=fstr_param%eps
 
+  type tInitialCondition
+     character(len=HECMW_FILENAME_LEN)          :: cond_name
+     integer                    :: node_elem                    !< node =0;  element =1
+     integer                    :: grpid
+     integer, pointer           :: intval(:)     => null()      !< if -1, not initialized, otherwise dof number
+     real(kind=kreal), pointer  :: realval(:)    => null()      !< initial value
+  end type
+  type( tInitialCondition ), pointer, save :: g_InitialCnd(:) => null()
+
   !>  FSTR INNER CONTROL PARAMETERS  (fstrPARAM)
   type fstr_param
     integer(kind=kint) :: solution_type !< solution type number
@@ -181,29 +190,29 @@ module m_fstr
 
   !> Data for STATIC ANSLYSIS  (fstrSOLID)
   type fstr_solid_physic_val
-    real(kind=kreal), pointer :: STRESS(:)    !< nodal stress
-    real(kind=kreal), pointer :: STRAIN(:)    !< nodal strain
-    real(kind=kreal), pointer :: MISES(:)    !< nodal MISES
+    real(kind=kreal), pointer :: STRESS(:) => null()   !< nodal stress
+    real(kind=kreal), pointer :: STRAIN(:) => null()   !< nodal strain
+    real(kind=kreal), pointer :: MISES(:) => null()    !< nodal MISES
 
-    real(kind=kreal), pointer :: PSTRESS(:)   !< nodal principal stress
-    real(kind=kreal), pointer :: PSTRAIN(:)   !< nodal principal strain
-    real(kind=kreal), pointer :: PSTRESS_VECT(:,:)   !< nodal principal stress vector
-    real(kind=kreal), pointer :: PSTRAIN_VECT(:,:)   !< nodal principal strain vector
+    real(kind=kreal), pointer :: PSTRESS(:) => null()   !< nodal principal stress
+    real(kind=kreal), pointer :: PSTRAIN(:) => null()   !< nodal principal strain
+    real(kind=kreal), pointer :: PSTRESS_VECT(:,:) => null()  !< nodal principal stress vector
+    real(kind=kreal), pointer :: PSTRAIN_VECT(:,:) => null()  !< nodal principal strain vector
 
-    real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
-    real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
-    real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+    real(kind=kreal), pointer :: ESTRESS(:) => null()  !< elemental stress
+    real(kind=kreal), pointer :: ESTRAIN(:) => null()  !< elemental strain
+    real(kind=kreal), pointer :: EMISES(:) => null()   !< elemental MISES
 
-    real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
-    real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
-    real(kind=kreal), pointer :: EPSTRESS_VECT(:,:)   !< elemental principal stress vector
-    real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:)   !< elemental principal strain vector
-    real(kind=kreal), pointer :: ENQM(:)      !< elemental NQM
+    real(kind=kreal), pointer :: EPSTRESS(:) => null()  !< elemental principal stress
+    real(kind=kreal), pointer :: EPSTRAIN(:) => null()  !< elemental principal strain
+    real(kind=kreal), pointer :: EPSTRESS_VECT(:,:) => null()  !< elemental principal stress vector
+    real(kind=kreal), pointer :: EPSTRAIN_VECT(:,:) => null()  !< elemental principal strain vector
+    real(kind=kreal), pointer :: ENQM(:) => null()     !< elemental NQM
 
 
-    type(fstr_solid_physic_val), pointer :: LAYER(:)    !< Laminated Shell's layer (1,2,3,4,5,...)
-    type(fstr_solid_physic_val), pointer :: PLUS    !< for SHELL PLUS
-    type(fstr_solid_physic_val), pointer :: MINUS    !< for SHELL MINUS
+    type(fstr_solid_physic_val), pointer :: LAYER(:) => null()   !< Laminated Shell's layer (1,2,3,4,5,...)
+    type(fstr_solid_physic_val), pointer :: PLUS => null()   !< for SHELL PLUS
+    type(fstr_solid_physic_val), pointer :: MINUS => null()  !< for SHELL MINUS
   end type fstr_solid_physic_val
 
   type fstr_solid
@@ -518,6 +527,7 @@ module m_fstr
     integer(kind=kint) :: dynamic_IW7        =   207
     integer(kind=kint) :: dynamic_IW8        =   208
     integer(kind=kint) :: dynamic_IW9        =   209
+    integer(kind=kint) :: dynamic_IW10       =   210
   end type fstr_dynamic
 
   type fstr_freqanalysis
@@ -649,10 +659,18 @@ contains
     nullify( S%STRESS )
     nullify( S%STRAIN )
     nullify( S%MISES )
+    nullify( S%PSTRESS )
+    nullify( S%PSTRAIN )
+    nullify( S%PSTRESS_VECT )
+    nullify( S%PSTRAIN_VECT )
     nullify( S%REACTION )
     nullify( S%ESTRESS )
     nullify( S%ESTRAIN )
     nullify( S%EMISES )
+    nullify( S%EPSTRESS )
+    nullify( S%EPSTRAIN )
+    nullify( S%EPSTRESS_VECT )
+    nullify( S%EPSTRAIN_VECT )
     nullify( S%ENQM )
     nullify( S%GL          )
     nullify( S%QFORCE      )
@@ -1026,7 +1044,7 @@ contains
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type (fstr_solid), intent(in) :: fstrSOLID
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), intent(out) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
     do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
@@ -1039,7 +1057,7 @@ contains
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type (fstr_solid), intent(in) :: fstrSOLID
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), intent(in) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
     do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)

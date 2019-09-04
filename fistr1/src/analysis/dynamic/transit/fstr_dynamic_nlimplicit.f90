@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module contains subroutines for nonlinear implicit dynamic analysis
@@ -56,7 +56,7 @@ contains
     real(kind=kreal) :: bsize, res, resb
     real(kind=kreal) :: time_1, time_2
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
 
     iexit = 0
     resb = 0.0d0
@@ -440,7 +440,7 @@ contains
     integer(kind=kint) ::  nndof,npdof
     real(kind=kreal),allocatable :: tmp_conB(:)
     integer :: istat
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
@@ -526,7 +526,7 @@ contains
     hecMAT%X(:) =0.d0
 
     call fstr_save_originalMatrixStructure(hecMAT)
-    call fstr_scan_contact_state( cstep, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+    call fstr_scan_contact_state(cstep, restrt_step_num, 0, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
 
     if(paraContactFlag.and.present(conMAT)) then
       call hecmw_mat_copy_profile( hecMAT, conMAT )
@@ -574,6 +574,12 @@ contains
       stepcnt = 0
       loopFORcontactAnalysis: do while( .TRUE. )
         count_step = count_step + 1
+
+        ! ----- Inner Iteration
+        res0   = 0.d0
+        res1   = 0.d0
+        relres = 1.d0
+
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
           call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
@@ -742,7 +748,7 @@ contains
           stop
         endif
 
-        call fstr_scan_contact_state( cstep, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+        call fstr_scan_contact_state(cstep, i, count_step, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
 
         if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then
           write(*,*) ' This type of direct solver is not yet available in such case ! '

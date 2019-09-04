@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides function to calcualte to do updates
@@ -41,7 +41,7 @@ contains
     real(kind=kreal)   :: total_disp(6, 20), du(6, 20), ddu(6, 20)
     real(kind=kreal)   :: tt(20), tt0(20), ttn(20), qf(20*6), coords(3, 3)
     integer            :: ig0, ig, ik, in, ierror, isect, ihead, cdsys_ID
-    integer            :: ndim
+    integer            :: ndim, initt
 
     real(kind=kreal), optional :: strainEnergy
     real(kind=kreal) :: tmp
@@ -53,6 +53,17 @@ contains
     tt0 = 0.d0
     ttn = 0.d0
     tt = 0.d0
+
+    ! if initial temperature exists
+    initt = 0
+    if( associated(g_InitialCnd) ) then
+        do j=1,size(g_InitialCnd)
+          if( g_InitialCnd(j)%cond_name=="temperature" ) then
+            initt=j
+            exit
+          endif
+        end do
+    endif
 
     ! --------------------------------------------------------------------
     !      updated
@@ -69,6 +80,7 @@ contains
       iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
       if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_patch(ic_type)) cycle
       nn = hecmw_get_max_node(ic_type)
       if( nn>20 ) stop "Elemental nodes>20!"
 
@@ -77,7 +89,7 @@ contains
         !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,ddu,du,total_disp, &
         !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux), &
         !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
-        !$omp&         strainEnergy,iter,time,tincr), &
+        !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
       !$omp do
       do icel = is, iE
@@ -97,6 +109,7 @@ contains
             else
               tt0(j) = 0.d0
               if( hecMESH%hecmw_flag_initcon == 1 ) tt0(j) = hecMESH%node_init_val_item(nodLOCAL(j))
+              if( initt>0 ) tt0(j) = g_InitialCnd(initt)%realval(nodLOCAL(j))
             endif
             ttn(j) = fstrSOLID%last_temp( nodLOCAL(j) )
             tt(j)  = fstrSOLID%temperature( nodLOCAL(j) )
@@ -317,6 +330,7 @@ contains
       ic_type= hecMESH%elem_type_item(itype)
       if( ic_type == 301 ) ic_type = 111
       if( hecmw_is_etype_link(ic_type) ) cycle
+      if( hecmw_is_etype_patch(ic_type) ) cycle
 
       ngauss = NumOfQuadPoints( ic_type )
       do icel = is, iE

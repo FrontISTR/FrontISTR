@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions on nonlinear analysis
@@ -45,7 +45,7 @@ contains
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
     real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm
-    real(kind=kreal), pointer :: coord(:), P(:)
+    real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
@@ -106,7 +106,8 @@ contains
       call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
       ! ----- Set residual
-      if( fstrSOLID%DLOAD_follow /= 0 ) call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
+      if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
+        & call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
@@ -135,7 +136,7 @@ contains
           write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
         endif
       endif
-      if( hecmw_mat_get_flag_converged(hecMAT) == kYES ) then
+      if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
         if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
         if( rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) exit
       endif
@@ -201,7 +202,7 @@ contains
     integer(kind=kint) :: restart_step_num, restart_substep_num
     logical            :: convg, ctchange
     integer(kind=kint) :: n_node_global
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
 
@@ -223,7 +224,7 @@ contains
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
-      call fstr_scan_contact_state( cstep, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
       if(hecMESH%my_rank==0) write(*,*)
     endif
 
@@ -309,7 +310,7 @@ contains
         call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
         ! ----- Set residual
-        if( fstrSOLID%DLOAD_follow /= 0 )                                 &
+        if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
           call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
@@ -363,7 +364,7 @@ contains
       ctchange = .false.
       if( associated(fstrSOLID%contacts) ) then
         call fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchange )
-        call fstr_scan_contact_state( cstep, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+        call fstr_scan_contact_state( cstep, sub_step, al_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
         if( infoCTChange%contact2free+infoCTChange%contact2neighbor+infoCTChange%free2contact > 0 ) &
           ctchange = .true.
       endif
@@ -437,7 +438,7 @@ contains
     integer(kind=kint) :: contact_changed_global
     integer(kint)      :: nndof
     real(kreal)        :: q_residual,x_residual
-    real(kind=kreal), pointer :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
@@ -468,7 +469,7 @@ contains
 
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
-      call fstr_scan_contact_state( cstep, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
       if(paraContactFlag.and.present(conMAT)) then
         call hecmw_mat_copy_profile( hecMAT, conMAT )
       endif
@@ -576,10 +577,7 @@ contains
 
         x_residual = fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH)
 
-        ! ----- update external nodal displacement increments
-        call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
         call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%X,hecMAT%X,resX)
-
         resX = sqrt(resX)/n_node_global
 
         if( hecMESH%my_rank==0 ) then
@@ -604,6 +602,9 @@ contains
         call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
         ! ----- Set residual
+        if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
+          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
         else
@@ -661,7 +662,7 @@ contains
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
-      call fstr_scan_contact_state( cstep, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+      call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
 
       if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_contact_active() ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '

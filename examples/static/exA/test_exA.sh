@@ -22,10 +22,14 @@ export model_shell33="\
 	A761\
 	A781"
 
+export model_beam33="\
+	A641"
+
 export cnt_2d=A200.cnt
 export cnt_3d=A300.cnt
 export cnt_shell=A700.cnt
 export cnt_shell33=A700_33.cnt
+export cnt_beam33=A600_33.cnt
 
 ../test_static_sub.sh $*
 

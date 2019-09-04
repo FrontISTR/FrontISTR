@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !>   This module manages step infomation
@@ -64,7 +64,7 @@ contains
   subroutine init_stepInfo( stepinfo )
     type( step_info ), intent(out) :: stepinfo !< step info
     stepinfo%solution = stepStatic
-    stepinfo%solution = stepFixedInc
+    stepinfo%inc_type = stepFixedInc
     stepinfo%num_substep = 1
     stepinfo%max_iter = 50
     stepinfo%max_contiter = 10

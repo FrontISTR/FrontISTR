@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides a function to control heat analysis
@@ -18,9 +18,12 @@ contains
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
 
+    integer(kind=kint) :: total_step
+
     call heat_init(hecMESH, fstrHEAT)
     call heat_init_log(hecMESH)
 
+    total_step = 1
     do ISTEP = 1, fstrHEAT%STEPtot
       fstrHEAT%is_steady = 0
       if(fstrHEAT%STEP_DLTIME(ISTEP) <= 0.0d0) fstrHEAT%is_steady = 1
@@ -35,7 +38,7 @@ contains
         endif
       endif
 
-      call heat_solve_TRAN(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT, ISTEP)
+      call heat_solve_TRAN(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT, ISTEP, total_step)
     enddo
 
     call heat_finalize(fstrHEAT)

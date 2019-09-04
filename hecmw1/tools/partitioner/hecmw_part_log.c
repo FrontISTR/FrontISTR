@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -28,6 +28,8 @@ static int *n_elem = NULL;
 
 static int *ne_internal = NULL;
 
+static int *n_neighbor_pe = NULL;
+
 static int n_domain = 0;
 
 static int depth = 0;
@@ -40,6 +42,8 @@ static char part_type[HECMW_NAME_LEN] = "";
 
 static char part_method[HECMW_NAME_LEN] = "";
 
+static char part_contact[HECMW_NAME_LEN] = "";
+
 /*================================================================================================*/
 
 static void clean_log(void) {
@@ -47,6 +51,7 @@ static void clean_log(void) {
   HECMW_free(n_elem);
   HECMW_free(nn_internal);
   HECMW_free(ne_internal);
+  HECMW_free(n_neighbor_pe);
 
   n_node      = NULL;
   n_elem      = NULL;
@@ -99,6 +104,12 @@ extern int HECMW_part_init_log(int _n_domain) {
 
   ne_internal = (int *)HECMW_calloc(n_domain, sizeof(int));
   if (ne_internal == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
+
+  n_neighbor_pe = (int *)HECMW_calloc(n_domain, sizeof(int));
+  if (n_neighbor_pe == NULL) {
     HECMW_set_error(errno, "");
     goto error;
   }
@@ -176,6 +187,37 @@ extern int HECMW_part_set_log_part_depth(int _depth) {
   }
 
   depth = _depth;
+
+  return 0;
+}
+
+extern int HECMW_part_set_log_part_contact(int _part_contact) {
+  if (is_init == 0) {
+    HECMW_set_error(HECMW_PART_E_LOG_INIT_NOT_YET, "");
+    return -1;
+  }
+
+  switch (_part_contact) {
+    case HECMW_PART_CONTACT_AGGREGATE:
+      strcpy(part_contact, "AGGREGATE");
+      break;
+
+    case HECMW_PART_CONTACT_DISTRIBUTE:
+      strcpy(part_contact, "DISTRIBUTE");
+      break;
+
+    case HECMW_PART_CONTACT_SIMPLE:
+      strcpy(part_contact, "SIMPLE");
+      break;
+
+    case HECMW_PART_CONTACT_DEFAULT:
+      strcpy(part_contact, "DEFAULT");
+      break;
+
+    default:
+      strcpy(part_contact, "not set");
+      break;
+  }
 
   return 0;
 }
@@ -329,7 +371,7 @@ extern int HECMW_part_set_log_ne_internal(int domain, int _ne_internal) {
   }
 
   if (_ne_internal < 0) {
-    HECMW_set_error(HECMW_PART_E_NNODE_MIN, "%d", _ne_internal);
+    HECMW_set_error(HECMW_PART_E_NEINT_MIN, "%d", _ne_internal);
     return -1;
   }
 
@@ -339,6 +381,31 @@ extern int HECMW_part_set_log_ne_internal(int domain, int _ne_internal) {
   }
 
   ne_internal[domain] = _ne_internal;
+
+  return 0;
+}
+
+extern int HECMW_part_set_log_n_neighbor_pe(int domain, int _n_neighbor_pe) {
+  if (is_init == 0) {
+    HECMW_set_error(HECMW_PART_E_LOG_INIT_NOT_YET, "");
+    return -1;
+  }
+
+  if (domain < 0) {
+    HECMW_set_error(HECMW_PART_E_DOMAIN_MIN, "domain");
+    return -1;
+  }
+  if (domain >= n_domain) {
+    HECMW_set_error(HECMW_PART_E_DOMAIN_MAX, "domain");
+    return -1;
+  }
+
+  if (_n_neighbor_pe < 0) {
+    HECMW_set_error(HECMW_PART_E_NNEIGHBORPE_LOWER, "_n_neighbor_pe");
+    return -1;
+  }
+
+  n_neighbor_pe[domain] = _n_neighbor_pe;
 
   return 0;
 }
@@ -368,6 +435,7 @@ extern int HECMW_part_print_log(void) {
   fprintf(fp, "partitioning type     : %s\n", part_type);
   fprintf(fp, "partitioning method   : %s\n", part_method);
   fprintf(fp, "depth of overlapping  : %d\n", depth);
+  fprintf(fp, "contact partitioning  : %s\n", part_contact);
   if (n_domain == 1) {
     fprintf(fp, "number of edgecut     : ----- / -----\n");
   } else {
@@ -385,11 +453,11 @@ extern int HECMW_part_print_log(void) {
 
   /* information of distributed mesh */
   fprintf(fp, "# information of distributed mesh\n");
-  fprintf(fp, "domain,       nodes,  int. nodes,       elems,  int. elems\n");
+  fprintf(fp, "domain,       nodes,  int. nodes,       elems,  int. elems, neighbor PE\n");
 
   for (i = 0; i < n_domain; i++) {
-    fprintf(fp, "%6d %12d %12d %12d %12d\n", i, n_node[i], nn_internal[i],
-            n_elem[i], ne_internal[i]);
+    fprintf(fp, "%6d %12d %12d %12d %12d %12d\n", i, n_node[i], nn_internal[i],
+            n_elem[i], ne_internal[i], n_neighbor_pe[i]);
   }
 
   /* close file */

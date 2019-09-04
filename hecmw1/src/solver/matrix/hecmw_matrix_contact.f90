@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 module hecmw_matrix_contact
@@ -83,9 +83,11 @@ contains
         temp(i)%val = cmat%pair(i)%val
       enddo
       deallocate( cmat%pair )
+    endif
 
-      allocate( cmat%pair( newlen ) )
+    allocate( cmat%pair( newlen ) )
 
+    if( cmat%max_val > 0 ) then
       do i = 1, cmat%n_val
         cmat%pair(i)%i = temp(i)%i
         cmat%pair(i)%j = temp(i)%j

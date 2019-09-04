@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -87,24 +87,22 @@ static int alloc_result(void) {
 }
 
 /*----------------------------------------------------------------------------*/
-void hecmw_visualize_if(int *step, int *max_timestep, int *interval, int *err) {
+void hecmw_visualize_if(int *step, int *err) {
   *err = 1;
-  if (HECMW_visualize(mesh, result, *step, *max_timestep, *interval)) return;
+  if (HECMW_visualize(mesh, result, *step)) return;
   *err = 0;
 }
 
-void hecmw_visualize_if_(int *step, int *max_timestep, int *interval,
-                         int *err) {
-  hecmw_visualize_if(step, max_timestep, interval, err);
+void hecmw_visualize_if_(int *step, int *err) {
+  hecmw_visualize_if(step, err);
 }
 
-void hecmw_visualize_if__(int *step, int *max_timestep, int *interval,
-                          int *err) {
-  hecmw_visualize_if(step, max_timestep, interval, err);
+void hecmw_visualize_if__(int *step, int *err) {
+  hecmw_visualize_if(step, err);
 }
 
-void HECMW_VISUALIZE_IF(int *step, int *max_timestep, int *interval, int *err) {
-  hecmw_visualize_if(step, max_timestep, interval, err);
+void HECMW_VISUALIZE_IF(int *step, int *err) {
+  hecmw_visualize_if(step, err);
 }
 
 /*----------------------------------------------------------------------------*/

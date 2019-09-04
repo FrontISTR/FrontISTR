@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -55,7 +55,7 @@ static int varray_resize(struct hecmw_varray_int *varray, size_t new_max_val) {
   if (new_max_val == 0) {
     HECMW_assert(varray->vals);
 
-    free(varray->vals);
+    HECMW_free(varray->vals);
     varray->vals    = NULL;
     varray->max_val = 0;
 

@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
@@ -146,6 +146,26 @@ contains
     rbuf(1:sc)=sbuf(1:sc)
 #endif
   end subroutine hecmw_gatherv_real
+
+  subroutine hecmw_gatherv_int(sbuf, sc, &
+      &     rbuf, rcs, disp, root, comm)
+    use hecmw_util
+    implicit none
+    integer(kind=kint) :: sbuf(*) !send buffer
+    integer(kind=kint) :: sc  !send counts
+    integer(kind=kint) :: rbuf(*) !receive buffer
+    integer(kind=kint) :: rcs(*) !receive counts
+    integer(kind=kint) :: disp(*) !displacement
+    integer(kind=kint) :: root
+    integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    call MPI_gatherv( sbuf, sc, MPI_INTEGER, &
+      &     rbuf, rcs, disp, MPI_INTEGER, root, comm, ierr )
+#else
+    rbuf(1:sc)=sbuf(1:sc)
+#endif
+  end subroutine hecmw_gatherv_int
 
   subroutine hecmw_allreduce_int_1(sval, rval, op, comm)
     use hecmw_util

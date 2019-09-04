@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief I/O and Utility
@@ -21,11 +21,11 @@ module  hecmw_visualizer
 
 contains
 
-  subroutine  hecmw_visualize( mesh, result_data, step, max_step, interval )
+  subroutine  hecmw_visualize( mesh, result_data, step )
     implicit none
     type(hecmwST_local_mesh),  intent(in) :: mesh
     type(hecmwST_result_data), intent(in) :: result_data
-    integer(kind=kint),        intent(in) :: step, max_step, interval
+    integer(kind=kint),        intent(in) :: step
     integer(kind=kint)                    :: ierr
 
     call  hecmw_visualize_init_if( mesh%n_node, mesh%n_elem, ierr )
@@ -43,7 +43,7 @@ contains
       call  hecmw_abort( hecmw_comm_get_comm( ) )
     endif
 
-    call  hecmw_visualize_if( step, max_step, interval, ierr )
+    call  hecmw_visualize_if( step, ierr )
     if( ierr /= 0 )  then
       call  hecmw_abort( hecmw_comm_get_comm( ) )
     endif

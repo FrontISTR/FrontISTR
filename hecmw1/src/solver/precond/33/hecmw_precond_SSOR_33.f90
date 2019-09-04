@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
@@ -425,6 +425,7 @@ contains
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
+    if (associated(ALU)) deallocate(ALU)
     if (nthreads >= 1) then
       if (associated(D)) deallocate(D)
       if (associated(AL)) deallocate(AL)

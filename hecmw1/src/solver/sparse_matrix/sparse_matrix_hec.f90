@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides conversion routines between HEC data structure
@@ -177,6 +177,7 @@ contains
               if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
                 if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a2"
               endif
+              if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) spMAT%JCN(m)=j0+jdof
               if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_set_a3"
               spMAT%A(m)=hecMAT%AL(offset_l+jdof)
               m=m+1
@@ -190,6 +191,7 @@ contains
           if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
             if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a4"
           endif
+          if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) spMAT%JCN(m)=i0+jdof
           if (spMAT%JCN(m)/=i0+jdof) stop "ERROR: sparse_matrix_set_a5"
           spMAT%A(m)=hecMAT%D(offset_d+jdof)
           m=m+1
@@ -210,6 +212,7 @@ contains
             if (spMAT%type==SPARSE_MATRIX_TYPE_COO) then
               if (spMAT%IRN(m)/=ii) stop "ERROR: sparse_matrix_set_a6"
             endif
+            if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) spMAT%JCN(m)=j0+jdof
             if (spMAT%JCN(m)/=j0+jdof) stop "ERROR: sparse_matrix_set_a7"
             spMAT%A(m)=hecMAT%AU(offset_u+jdof)
             m=m+1

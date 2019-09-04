@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -84,7 +84,7 @@ void hecmw_ML_wrapper_setup_33(int *id, int *sym, int *ierr) {
                         nlocal_allcolumns);
   ML_Set_Amatrix_Matvec(ml_object, 0, hecmw_ML_matvec_33);
 
-  if (*sym) ML_Set_Symmetrize(ml_object, ML_YES);
+  /* if (!(*sym)) ML_Set_Symmetrize(ml_object, ML_YES); */
 
   /* Aggregate */
   ML_Aggregate_Create(&agg_object);

@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides main suboruitne for nonliear calculation.
@@ -35,7 +35,7 @@ contains
     type (hecmwST_matrix    ),optional     :: conMAT
 
     integer(kind=kint) :: ndof, nn
-    integer(kind=kint) :: j, in, tot_step, step_count, tot_step_print, CBbound
+    integer(kind=kint) :: j, i, tot_step, step_count, tot_step_print, CBbound
     integer(kind=kint) :: sub_step
     integer(kind=kint) :: restart_step_num, restart_substep_num
     real(kind=kreal)   :: ctime, dtime, endtime, factor
@@ -53,9 +53,26 @@ contains
       fstrSOLID%last_temp = 0.0d0
       fstrSOLID%temperature = 0.0d0
       do j=1, size(hecMESH%node_init_val_item)
-        in = hecMESH%node_init_val_index(j)
-        fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(in)
-        fstrSOLID%temperature(j) = hecMESH%node_init_val_item(in)
+        i = hecMESH%node_init_val_index(j)
+        fstrSOLID%last_temp(j) = hecMESH%node_init_val_item(i)
+        fstrSOLID%temperature(j) = hecMESH%node_init_val_item(i)
+      end do
+    endif
+    if( fstrSOLID%TEMP_ngrp_tot>0 .and. associated(g_InitialCnd) ) then
+      fstrSOLID%last_temp = 0.0d0
+      fstrSOLID%temperature = 0.0d0
+	  do j=1,size(g_InitialCnd)
+          if( g_InitialCnd(j)%cond_name=="temperature" ) then
+            if( .not. associated(fstrSOLID%temperature) ) then
+                allocate( fstrSOLID%temperature( hecMESH%n_node ) )
+                allocate( fstrSOLID%temp_bak( hecMESH%n_node ) )
+                allocate( fstrSOLID%last_temp( hecMESH%n_node ) )
+            endif 
+            do i= 1, hecMESH%n_node
+              fstrSOLID%last_temp(i) = g_InitialCnd(j)%realval(i)
+              fstrSOLID%temperature(i) = fstrSOLID%last_temp(i)
+            enddo
+          endif
       end do
     endif
 
@@ -75,7 +92,7 @@ contains
       call fstr_set_timeinc_base( dtime )
       fstrSOLID%restart_nout = - fstrSOLID%restart_nout
     else
-      call fstr_static_Output( 1, 0, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, .true. )
+      call fstr_static_Output( 1, 0, 0.d0, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, .true. )
     endif
 
     fstrSOLID%FACTOR = 0.0d0
@@ -209,7 +226,8 @@ contains
         ! ----- Result output (include visualize output)
         is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
           & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
-        call fstr_static_Output( tot_step, step_count, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, is_OutPoint )
+        call fstr_static_Output( tot_step, step_count, fstr_get_time(), hecMESH, fstrSOLID, fstrPARAM, &
+          &                      fstrPR%solution_type, is_OutPoint )
 
         time_2 = hecmw_Wtime()
         if( hecMESH%my_rank==0 ) then

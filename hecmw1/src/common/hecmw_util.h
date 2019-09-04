@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -48,6 +48,8 @@ extern void HECMW_fprintf(FILE *fp, char *fmt, ...);
 extern void HECMW_printerr(char *fmt, ...);
 
 extern char *HECMW_get_date(void);
+
+extern char *HECMW_get_date_r(char *buf, int len);
 
 extern void HECMW_assert_(int cond, char *cond_str, char *file, int line);
 

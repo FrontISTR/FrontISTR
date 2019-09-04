@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provide a function to prepare output of static analysis
@@ -19,7 +19,7 @@ contains
   !C***
   !>  OUTPUT result file for static analysis
   !C***
-  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, maxstep, istep, flag )
+  subroutine fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, flag )
     use m_fstr
     use m_out
     use m_static_lib
@@ -30,12 +30,14 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (fstr_param       )  :: fstrPARAM    !< analysis control parameters
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
+    real(kind=kreal)          :: time        !< current time
     integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
     real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
     real(kind=kreal), allocatable   :: work(:), unode(:), rnode(:)
     character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname, cnum
     character(len=6), allocatable   :: clyr(:)
 
@@ -60,8 +62,14 @@ contains
 
     ! --- INITIALIZE
     header = '*fstrresult'
-    call hecmw_result_init( hecMESH, maxstep, istep, header )
+    comment = 'static_result'
+    call hecmw_result_init( hecMESH, istep, header, comment )
 
+    ! --- TIME
+    id = 3 !global data
+    label = 'TOTALTIME'
+    work(1) = time
+    call hecmw_result_add( id, 1, label, work )
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1)) then
       id = 1
@@ -306,7 +314,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
     integer(kind=kint)        :: n_lyr, cid
 
     character(len=HECMW_HEADER_LEN) :: header
@@ -397,9 +405,9 @@ contains
     endif
 
     ! --- NQM @element
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(30) ) then
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(35) ) then
       id = 2
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(30), ndof )
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(35), ndof )
       label = 'ElementalNQM'//trim(clyr)
 !      write (6,*) 'RES%ENQM',RES%ENQM(1)
       call hecmw_result_add( id, nitem, label, RES%ENQM )
@@ -465,7 +473,7 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
     integer(kind=kint) :: n_lyr, ntot_lyr, it, coef33, is_33shell, is_33beam
-    integer(kind=kint) :: i, j, k, ndof, mdof, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
+    integer(kind=kint) :: i, j, k, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
     real(kind=kreal), allocatable   ::unode(:)
     character(len=4) :: cnum
@@ -493,12 +501,17 @@ contains
     endif
 
     call hecmw_nullify_result_data( fstrRESULT )
+    gcomp = 0
+    gitem = 0
     ncomp = 0
     nitem = 0
     ecomp = 0
     eitem = 0
 
     ! --- COUNT SUM OF ALL NITEM
+    ! --- TIME
+    gcomp = gcomp + 1
+    gitem = gitem + 1
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
       ncomp = ncomp + 1
@@ -578,17 +591,37 @@ contains
     ! --- STRAIN @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(6) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(6), ndof )
     endif
     ! --- STRESS @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(7) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(7), ndof )
     endif
     ! --- MISES @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(8) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )*coef33
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(8), ndof )
+    endif
+    ! --- Principal Stress @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(20) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(20), ndof )
+    endif
+    ! --- Principal Strain @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(22) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(22), ndof )
+    endif
+    ! --- Principal Stress Vector @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(24) ) then
+      ecomp = ecomp + 3
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(24), ndof )
+    endif
+    ! --- Principal Strain Vector @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(26) ) then
+      ecomp = ecomp + 3
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
     endif
     ! --- MATERIAL @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
@@ -597,8 +630,12 @@ contains
     endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    fstrRESULT%ng_component = gcomp
     fstrRESULT%nn_component = ncomp
     fstrRESULT%ne_component = ecomp
+    allocate( fstrRESULT%ng_dof(gcomp) )
+    allocate( fstrRESULT%global_label(gcomp) )
+    allocate( fstrRESULT%global_val_item(gitem) )
     allocate( fstrRESULT%nn_dof(ncomp) )
     allocate( fstrRESULT%node_label(ncomp) )
     allocate( fstrRESULT%node_val_item(nitem*hecMESH%n_node) )
@@ -609,6 +646,11 @@ contains
     iitem = 0
     ecomp = 0
     jitem = 0
+
+    ! --- TIME
+    fstrRESULT%ng_dof(1) = 1
+    fstrRESULT%global_label(1) = "TOTALTIME"
+    fstrRESULT%global_val_item(1) = 1.d0
 
     ! --- DISPLACEMENT
     if (fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
@@ -803,6 +845,68 @@ contains
       jitem = jitem + nn
     endif
 
+    ! --- Principal_STRESS @element
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(20)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(20), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRESS'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRESS((nn)*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- Principal_STRAIN @element
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(22)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(22), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRAIN'
+      do i = 1, hecMESH%n_elem
+        do j = 1, nn
+          fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRAIN((nn)*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- ELEM PRINC STRESS VECTOR
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(24)) then
+      do k = 1, 3
+        write(cnum,'(i0)')k
+        ecomp = ecomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(24), ndof )
+        fstrRESULT%ne_dof(ecomp) = nn
+        fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRESSVector'//trim(cnum)
+        do i = 1, hecMESH%n_elem
+          do j = 1, nn
+            fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRESS_VECT((nn)*(i-1)+j,k)
+          enddo
+        enddo
+        jitem = jitem + nn
+      enddo
+    endif
+
+    ! --- ELEM PRINC STRAIN VECTOR
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(26)) then
+      do k = 1, 3
+        write(cnum,'(i0)')k
+        ecomp = ecomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
+        fstrRESULT%ne_dof(ecomp) = nn
+        fstrRESULT%elem_label(ecomp) = 'ElementalPrincipalSTRAINVector'//trim(cnum)
+        do i = 1, hecMESH%n_elem
+          do j = 1, nn
+            fstrRESULT%elem_val_item(eitem*(i-1)+j+jitem) = fstrSOLID%SOLID%EPSTRAIN_VECT((nn)*(i-1)+j,k)
+          enddo
+        enddo
+        jitem = jitem + nn
+      enddo
+    endif
+
     ! --- MATERIAL @elem
     if(fstrSOLID%output_ctrl(4)%outinfo%on(34)) then
       ecomp = ecomp + 1
@@ -829,7 +933,7 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
     type (fstr_solid_physic_val) :: RES
-    integer(kind=kint)        :: maxstep, istep, flag
+    integer(kind=kint)        :: istep, flag
     integer(kind=kint)        :: n_lyr, cid
 
     character(len=HECMW_HEADER_LEN) :: header

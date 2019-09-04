@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2016 The University of Tokyo
+# Copyright (c) 2019 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
@@ -21,6 +21,8 @@ endif()
 if($ENV{MUMPS_ROOT})
 set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} $ENV{MUMPS_ROOT}/lib)
 endif()
+set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} ${CMAKE_SOURCE_DIR}/../MUMPS_5.2.1/lib)
+set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} ${CMAKE_SOURCE_DIR}/../MUMPS_5.2.0/lib)
 set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.2/lib)
 set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.1/lib)
 set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.0/lib)
@@ -48,6 +50,8 @@ find_library(MUMPS_PORD_LIB
 find_path(MUMPS_INCLUDE_PATH
   NAMES mumps_compat.h
   HINTS $ENV{MUMPS_ROOT}/include
+    ${CMAKE_SOURCE_DIR}/../MUMPS_5.2.1/include
+    ${CMAKE_SOURCE_DIR}/../MUMPS_5.2.0/include
     ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.2/include
     ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.1/include
     ${CMAKE_SOURCE_DIR}/../MUMPS_5.1.0/include

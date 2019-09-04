@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------------
-! Copyright (c) 2016 The University of Tokyo
+! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions to read in and write out
@@ -33,13 +33,13 @@ contains
 
     call hecmw_restart_read_int(restrt_step)
     if( fstrPARAM%restart_version >= 5 ) then
-      write(*,*) 'Reading restart file as new format(>=ver5.0)'
+      if( myrank == 0 ) write(*,*) 'Reading restart file as new format(>=ver5.0)'
       call hecmw_restart_read_real(times)
       call hecmw_restart_read_int(fstrSOLID%NRstat_i)
       call hecmw_restart_read_real(fstrSOLID%NRstat_r)
       call hecmw_restart_read_int(istat)
     else
-      write(*,*) 'Reading restart file as old format(<ver5.0)'
+      if( myrank == 0 ) write(*,*) 'Reading restart file as old format(<ver5.0)'
     endif
     call hecmw_restart_read_int(nload_prev) !load info at previous step
     if( nload_prev(1)>0 ) then
@@ -51,6 +51,8 @@ contains
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         call hecmw_restart_read_int(nif)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain)
@@ -164,6 +166,8 @@ contains
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         nif = 0
         if( associated(fstrSOLID%elements(i)%gausses(j)%istatus) ) nif(1)=size(fstrSOLID%elements(i)%gausses(j)%istatus)
@@ -225,6 +229,8 @@ contains
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         call hecmw_restart_read_int(nif)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain)
@@ -292,6 +298,8 @@ contains
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         nif = 0
         if( associated(fstrSOLID%elements(i)%gausses(j)%istatus) ) nif(1)=size(fstrSOLID%elements(i)%gausses(j)%istatus)

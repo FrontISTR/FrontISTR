@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2016 FrontISTR Forum, The University of Tokyo
+# Copyright (c) 2019 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
@@ -56,7 +56,7 @@ if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   # Enable debug options
   find_package(Backtrace)
   if(Backtrace_FOUND)
-    list(APPEND FrontISTR_LIBRARIES ${Backtrace_LIBRARY}) 
+    list(APPEND FrontISTR_LIBRARIES ${Backtrace_LIBRARY})
     list(APPEND FrontISTR_INCLUDE_DIR ${Backtrace_INCLUDE_DIR})
     set(CMAKE_VERBOSE_MAKEFILE ON)
     # GNU Compiler
@@ -125,7 +125,8 @@ endif()
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
-# -DWITH_DOC        : generate API documents
+# -DWITH_DOC         : generate API documents
+# -DOLD_RES_FORMAT   : use old style result file( comment and global output disabled)
 
 ###################
 # Find external packages
@@ -156,6 +157,7 @@ option(PARMETIS_VER_3 "uses METIS-3" OFF)
 option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
+option(OLD_RES_FORMAT "use old style result file" ${OLD_RES_FORMAT})
 option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
 
@@ -186,7 +188,7 @@ mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
 if(WITH_OPENMP AND OPENMP_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
 else()
   set(WITH_OPENMP OFF)
@@ -296,6 +298,13 @@ if(WITH_MKL)
   set(WITH_LAPACK ON)
 else()
   set(WITH_MKL OFF)
+endif()
+
+###################
+# -DOLD_RES_FORMAT
+###################
+if(OLD_RES_FORMAT)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOLD_RES_FORMAT")
 endif()
 
 #############################################

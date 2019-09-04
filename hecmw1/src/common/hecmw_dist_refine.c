@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2016 The University of Tokyo
+ * Copyright (c) 2019 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -62,6 +62,10 @@ static const int *get_enode_h2r(int etype, int *ierror) {
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
     case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_PTT1:
+    case HECMW_ETYPE_PTT2:
+    case HECMW_ETYPE_PTQ1:
+    case HECMW_ETYPE_PTQ2:
       enode_h2r = NULL;
       break;
     case HECMW_ETYPE_PYR1:
@@ -117,6 +121,10 @@ static const int *get_enode_r2h(int etype, int *ierror) {
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
     case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_PTT1:
+    case HECMW_ETYPE_PTT2:
+    case HECMW_ETYPE_PTQ1:
+    case HECMW_ETYPE_PTQ2:
       enode_r2h = NULL;
       break;
     case HECMW_ETYPE_PYR1:
@@ -245,6 +253,10 @@ static const int *get_sid_h2r(int etype, int *ierror) {
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
     case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_PTT1:
+    case HECMW_ETYPE_PTT2:
+    case HECMW_ETYPE_PTQ1:
+    case HECMW_ETYPE_PTQ2:
       sid_h2r = NULL;
       break;
     default:
@@ -310,6 +322,10 @@ static const int *get_sid_r2h(int etype, int *ierror) {
     case HECMW_ETYPE_SHQ1:
     case HECMW_ETYPE_SHQ2:
     case HECMW_ETYPE_SHQ8:
+    case HECMW_ETYPE_PTT1:
+    case HECMW_ETYPE_PTT2:
+    case HECMW_ETYPE_PTQ1:
+    case HECMW_ETYPE_PTQ2:
       sid_r2h = NULL;
       break;
     default:
@@ -381,7 +397,8 @@ static int get_elem_ndiv(int etype, int *ierror) {
     ndiv = NDIV_OTHER;
   } else if (HECMW_is_etype_rod(etype) || HECMW_is_etype_beam(etype)) {
     ndiv = NDIV_SEG;
-  } else if (HECMW_is_etype_surface(etype) || HECMW_is_etype_shell(etype)) {
+  } else if (HECMW_is_etype_surface(etype) || HECMW_is_etype_shell(etype)
+             || HECMW_is_etype_patch(etype)) {
     ndiv = NDIV_SURF;
   } else if (HECMW_is_etype_solid(etype)) {
     ndiv = NDIV_BODY;
@@ -402,8 +419,7 @@ static int get_elem_ndiv(int etype, int *ierror) {
 /*                                                                            */
 /*============================================================================*/
 static void register_node(struct hecmwST_local_mesh *mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Original Node Count = %d\n",
-            mesh->my_rank, mesh->n_node_gross);
+  HECMW_log(HECMW_LOG_DEBUG, "Original Node Count = %d\n", mesh->n_node_gross);
 
   rcapSetNode64(mesh->n_node_gross, mesh->node, mesh->global_node_ID, NULL);
 
@@ -444,8 +460,8 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
       int surf  = array[j * 2 + 1];
       int etype = mesh->elem_type[elem - 1];
 
-      /* ignore shell surface */
-      if (HECMW_is_etype_shell(etype)) continue;
+      /* ignore shell/patch surface */
+      if (HECMW_is_etype_shell(etype) || HECMW_is_etype_patch(etype)) continue;
 
       if (HECMW_varray_int_append(&other, elem) != HECMW_SUCCESS)
         return HECMW_ERROR;
@@ -454,7 +470,7 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
     }
 
     sprintf(rcap_name, "SG_%s", grp->grp_name[i]);
-    num   = HECMW_varray_int_nval(&other);
+    num   = HECMW_varray_int_nval(&other) / 2;
     array = HECMW_varray_int_get_v(&other);
     rcapAppendFaceGroup(rcap_name, num, array);
 
@@ -466,8 +482,7 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
 static int prepare_refiner(struct hecmwST_local_mesh *mesh,
                            const char *cad_filename,
                            const char *part_filename) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started preparing refiner...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started preparing refiner...\n");
 
   if (elem_node_item_hecmw2rcap(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (surf_ID_hecmw2rcap(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -486,11 +501,10 @@ static int prepare_refiner(struct hecmwST_local_mesh *mesh,
 
   /* element groups are refined by myself */
 
-  /* surface groups are refined by REVOCAP_Refiner except for shell surface */
+  /* surface groups are refined by REVOCAP_Refiner except for shell/patch surface */
   if (register_surf_groups(mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished preparing refiner.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished preparing refiner.\n");
   return HECMW_SUCCESS;
 }
 
@@ -562,6 +576,14 @@ static int elem_type_hecmw2rcap(int etype) {
       return RCAP_QUAD2;
     case HECMW_ETYPE_SHQ8:
       return RCAP_QUAD;
+    case HECMW_ETYPE_PTT1:
+      return RCAP_TRIANGLE;
+    case HECMW_ETYPE_PTT2:
+      return RCAP_TRIANGLE2;
+    case HECMW_ETYPE_PTQ1:
+      return RCAP_QUAD;
+    case HECMW_ETYPE_PTQ2:
+      return RCAP_QUAD2;
   }
   return RCAP_UNKNOWNTYPE;
 }
@@ -608,8 +630,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
   int *elem_node_index_ref;
   int *elem_node_item_ref;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Original Element Count = %d\n",
-            mesh->my_rank, mesh->n_elem_gross);
+  HECMW_log(HECMW_LOG_DEBUG, "Original Element Count = %d\n", mesh->n_elem_gross);
 
   /*
    * count num of elems after refinement
@@ -648,8 +669,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
   }
   ref_mesh->n_elem_gross = n_elem_ref_tot;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refined Element Count will be %d\n",
-            mesh->my_rank, ref_mesh->n_elem_gross);
+  HECMW_log(HECMW_LOG_DEBUG, "Refined Element Count will be %d\n", ref_mesh->n_elem_gross);
 
   /*
    * allocate memory
@@ -706,14 +726,18 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
     }
     for (j = 0; j < n_elem_ref; j++) {
       elem_node_index_ref[j + 1] = elem_node_index_ref[j] + nn;
+      if (elem_node_index_ref[j + 1] < elem_node_index_ref[j]) {
+        HECMW_log(HECMW_LOG_ERROR,
+                  "Integer overflow detected while creating elem_node_index\n");
+        return HECMW_ERROR;
+      }
     }
     elem_node_index_ref += n_elem_ref;
     elem_node_item_ref += nn * n_elem_ref;
     n_elem_ref_tot += n_elem_ref;
   }
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refined Element Count = %d\n",
-            mesh->my_rank, n_elem_ref_tot);
+  HECMW_log(HECMW_LOG_DEBUG, "Refined Element Count = %d\n", n_elem_ref_tot);
 
   HECMW_assert(n_elem_ref_tot == ref_mesh->n_elem_gross);
 
@@ -726,8 +750,7 @@ static int refine_node(struct hecmwST_local_mesh *mesh,
   /* n_node_gross */
   ref_mesh->n_node_gross = rcapGetNodeCount();
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refined Node Count = %d\n",
-            mesh->my_rank, ref_mesh->n_node_gross);
+  HECMW_log(HECMW_LOG_DEBUG, "Refined Node Count = %d\n", ref_mesh->n_node_gross);
 
   HECMW_assert(ref_mesh->n_node_gross > mesh->n_node_gross);
 
@@ -981,9 +1004,9 @@ static int refine_elem_group_info(struct hecmwST_local_mesh *mesh,
 }
 
 /*
- * refinement of surface groups except for shell surface is done by
- * REVOCAP_Refiner
- * refinement of shell surfaces is done by myself
+ * refinement of surface groups except for shell/patch surface is done
+ * by REVOCAP_Refiner
+ * refinement of shell/patch surfaces is done by myself
  */
 
 static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
@@ -1022,16 +1045,16 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
     int *array = grp->grp_item + start * 2;
     int num_sh, num_other;
 
-    /* count surfaces except for shell */
+    /* count surfaces except for shell/patch */
     sprintf(rcap_name, "SG_%s", grp->grp_name[i]);
     num_other = rcapGetFaceGroupCount(rcap_name);
 
-    /* count shell surfaces */
+    /* count shell/patch surfaces */
     num_sh = 0;
     for (j = 0; j < num; j++) {
       int elem  = array[j * 2];
       int etype = mesh->elem_type[elem - 1];
-      if (!HECMW_is_etype_shell(etype)) continue;
+      if (!(HECMW_is_etype_shell(etype) || HECMW_is_etype_patch(etype))) continue;
       num_sh += 1;
     }
     num_sh *= NDIV_SURF;
@@ -1072,13 +1095,13 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
     array_ref += num_ref * 2;
 
     /*
-     * make refined shell surfaces by myself
+     * make refined shell/patch surfaces by myself
      */
 
     if (HECMW_varray_int_init(&sh1) != HECMW_SUCCESS) return HECMW_ERROR;
     if (HECMW_varray_int_init(&sh2) != HECMW_SUCCESS) return HECMW_ERROR;
 
-    /* collect shell surface */
+    /* collect shell/patch surface */
     start   = grp->grp_index[i];
     num_tot = grp->grp_index[i + 1] - start;
     array   = grp->grp_item + start * 2;
@@ -1087,7 +1110,7 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
       elem  = array[j * 2];
       surf  = array[j * 2 + 1];
       etype = mesh->elem_type[elem - 1];
-      if (!HECMW_is_etype_shell(etype)) continue;
+      if (!(HECMW_is_etype_shell(etype) || HECMW_is_etype_patch(etype))) continue;
       if (surf == 1) {
         if (HECMW_varray_int_append(&sh1, elem) != HECMW_SUCCESS)
           return HECMW_ERROR;
@@ -1098,58 +1121,60 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
       }
     }
 
-    /* 1st surface of shells */
+    /* 1st surface of shells/patches */
     n_elem        = HECMW_varray_int_nval(&sh1);
-    elem_list     = HECMW_varray_int_get_v(&sh1);
-    n_elem_ref    = n_elem * NDIV_SURF;
-    elem_list_ref = (int *)HECMW_calloc(n_elem_ref, sizeof(int));
-    if (elem_list_ref == NULL) {
-      HECMW_set_error(errno, "");
-      return HECMW_ERROR;
-    }
-    ret =
-        get_refined_elem_list(mesh, ref_mesh, n_elem, elem_list, elem_list_ref);
-    HECMW_assert(ret == n_elem_ref);
-    for (j = 0; j < n_elem_ref; j++) {
-      array_ref[j * 2]     = elem_list_ref[j];
-      array_ref[j * 2 + 1] = 1;
-    }
-    HECMW_free(elem_list_ref);
+    if (n_elem > 0) {
+      elem_list     = HECMW_varray_int_get_v(&sh1);
+      n_elem_ref    = n_elem * NDIV_SURF;
+      elem_list_ref = (int *)HECMW_calloc(n_elem_ref, sizeof(int));
+      if (elem_list_ref == NULL) {
+        HECMW_set_error(errno, "");
+        return HECMW_ERROR;
+      }
+      ret = get_refined_elem_list(mesh, ref_mesh, n_elem, elem_list, elem_list_ref);
+      HECMW_assert(ret == n_elem_ref);
+      for (j = 0; j < n_elem_ref; j++) {
+        array_ref[j * 2]     = elem_list_ref[j];
+        array_ref[j * 2 + 1] = 1;
+      }
+      HECMW_free(elem_list_ref);
 
-    num_tot_ref -= n_elem_ref;
-    if (num_tot_ref == 0) continue;
-    array_ref += n_elem_ref * 2;
+      num_tot_ref -= n_elem_ref;
+      array_ref += n_elem_ref * 2;
+    }
 
     /* 2nd surface of shells */
     n_elem        = HECMW_varray_int_nval(&sh2);
-    elem_list     = HECMW_varray_int_get_v(&sh2);
-    n_elem_ref    = n_elem * NDIV_SURF;
-    elem_list_ref = (int *)HECMW_calloc(n_elem_ref, sizeof(int));
-    if (elem_list_ref == NULL) {
-      HECMW_set_error(errno, "");
-      return HECMW_ERROR;
+    if (n_elem > 0) {
+      elem_list     = HECMW_varray_int_get_v(&sh2);
+      n_elem_ref    = n_elem * NDIV_SURF;
+      elem_list_ref = (int *)HECMW_calloc(n_elem_ref, sizeof(int));
+      if (elem_list_ref == NULL) {
+        HECMW_set_error(errno, "");
+        return HECMW_ERROR;
+      }
+      ret = get_refined_elem_list(mesh, ref_mesh, n_elem, elem_list, elem_list_ref);
+      HECMW_assert(ret == n_elem_ref);
+      for (j = 0; j < n_elem_ref; j++) {
+        array_ref[j * 2]     = elem_list_ref[j];
+        array_ref[j * 2 + 1] = 2;
+      }
+      HECMW_free(elem_list_ref);
+
+      num_tot_ref -= n_elem_ref;
     }
-    ret =
-        get_refined_elem_list(mesh, ref_mesh, n_elem, elem_list, elem_list_ref);
-    HECMW_assert(ret == n_elem_ref);
-    for (j = 0; j < n_elem_ref; j++) {
-      array_ref[j * 2]     = elem_list_ref[j];
-      array_ref[j * 2 + 1] = 2;
-    }
-    HECMW_free(elem_list_ref);
 
     HECMW_varray_int_finalize(&sh1);
     HECMW_varray_int_finalize(&sh2);
 
-    HECMW_assert((num_tot_ref -= n_elem_ref) == 0);
+    HECMW_assert(num_tot_ref == 0);
   }
   return HECMW_SUCCESS;
 }
 
 static int call_refiner(struct hecmwST_local_mesh *mesh,
                         struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started calling refiner...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started calling refiner...\n");
 
   if (refine_element(mesh, ref_mesh) != HECMW_SUCCESS) {
     return HECMW_ERROR;
@@ -1167,8 +1192,7 @@ static int call_refiner(struct hecmwST_local_mesh *mesh,
   if (refine_surf_group_info(mesh, ref_mesh) != HECMW_SUCCESS) {
     return HECMW_ERROR;
   }
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished calling refiner.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished calling refiner.\n");
   return HECMW_SUCCESS;
 }
 
@@ -1219,7 +1243,7 @@ static int rebuild_elem_ID(const struct hecmwST_local_mesh *mesh,
 static int rebuild_global_elem_ID(const struct hecmwST_local_mesh *mesh,
                                   struct hecmwST_local_mesh *ref_mesh) {
   int i, j, k;
-  int count;
+  int min_ID;
   int *global_elem_ID_org;
   int *global_elem_ID_ref;
 
@@ -1229,8 +1253,12 @@ static int rebuild_global_elem_ID(const struct hecmwST_local_mesh *mesh,
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
-  count              = 0;
+  min_ID = 0;
   global_elem_ID_org = mesh->global_elem_ID;
+  for (i = 0; i < mesh->n_elem_gross; i++) {
+    if (global_elem_ID_org[i] < min_ID)
+      min_ID = global_elem_ID_org[i];
+  }
   global_elem_ID_ref = ref_mesh->global_elem_ID;
   for (i = 0; i < mesh->n_elem_type; i++) {
     int etype, istart, iend, n_elem, ierror, ndiv;
@@ -1244,8 +1272,8 @@ static int rebuild_global_elem_ID(const struct hecmwST_local_mesh *mesh,
     for (j = 0; j < n_elem; j++) {
       global_elem_ID_ref[0] = global_elem_ID_org[0];
       for (k = 1; k < ndiv; k++) {
-        count++;
-        global_elem_ID_ref[k] = -count;
+        min_ID--;
+        global_elem_ID_ref[k] = min_ID;
       }
       global_elem_ID_org += 1;
       global_elem_ID_ref += ndiv;
@@ -1397,8 +1425,7 @@ static int rebuild_elem_mat_ID_item(const struct hecmwST_local_mesh *mesh,
 
 static int rebuild_elem_info(const struct hecmwST_local_mesh *mesh,
                              struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding element info...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding element info...\n");
 
   if (rebuild_elem_ID(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_global_elem_ID(mesh, ref_mesh) != HECMW_SUCCESS)
@@ -1412,18 +1439,16 @@ static int rebuild_elem_info(const struct hecmwST_local_mesh *mesh,
 
   ref_mesh->n_elem_mat_ID = ref_mesh->elem_mat_ID_index[ref_mesh->n_elem_gross];
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding element info.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding element info.\n");
   return HECMW_SUCCESS;
 }
 
 static int rebuild_node_info(const struct hecmwST_local_mesh *mesh,
                              struct hecmwST_local_mesh *ref_mesh) {
   int i;
-  int count;
+  int count, min_ID;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding node info...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding node info...\n");
 
   /* allocate node_ID */
   ref_mesh->node_ID =
@@ -1452,13 +1477,15 @@ static int rebuild_node_info(const struct hecmwST_local_mesh *mesh,
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
+  min_ID = 0;
   for (i = 0; i < mesh->n_node_gross; i++) {
     ref_mesh->global_node_ID[i] = mesh->global_node_ID[i];
+    if (mesh->global_node_ID[i] < min_ID)
+      min_ID = mesh->global_node_ID[i];
   }
-  count = 0;
   for (i = mesh->n_node_gross; i < ref_mesh->n_node_gross; i++) {
-    count++;
-    ref_mesh->global_node_ID[i] = -count;
+    min_ID--;
+    ref_mesh->global_node_ID[i] = min_ID;
   }
 
   if (mesh->hecmw_flag_initcon && mesh->n_node_gross > 0) {
@@ -1493,8 +1520,7 @@ static int rebuild_node_info(const struct hecmwST_local_mesh *mesh,
     }
   }
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding node info.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding node info.\n");
   return HECMW_SUCCESS;
 }
 
@@ -1563,6 +1589,33 @@ static int get_rcap_elem_max_node(int etype_rcap) {
   return HECMW_get_max_node(etype_hecmw);
 }
 
+static int determine_node_rank_of_purely_external_elems(
+  const struct hecmwST_local_mesh *mesh,
+  struct hecmwST_local_mesh *ref_mesh) {
+  int eid, rank, nn, k, nid;
+  int *elem_nodes;
+
+  for (eid = 1; eid <= ref_mesh->n_elem_gross; eid++) {
+    rank = ref_mesh->elem_ID[2 * (eid - 1) + 1];
+
+    if (rank >= 0) continue; /* purely external elems have rank < 0 */
+
+    nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid - 1];
+    elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid - 1];
+    for (k = 0; k < nn; k++) {
+      nid = elem_nodes[k];
+      if (nid <= mesh->n_node_gross) continue; /* skip old nodes */
+
+      /* new nodes that have not been assigned new rank have default rank = my_rank */
+      if (ref_mesh->node_ID[2 * (nid - 1) + 1] == ref_mesh->my_rank) {
+        /* assign out-of-range rank = n_subdomain as purely external number = -rank-1 */
+        ref_mesh->node_ID[2 * (nid - 1) + 1] = - ref_mesh->n_subdomain - 1;
+      }
+    }
+  }
+  return HECMW_SUCCESS;
+}
+
 static int determine_node_rank(const struct hecmwST_local_mesh *mesh,
                                const struct hecmw_varray_int *shared,
                                struct hecmwST_local_mesh *ref_mesh) {
@@ -1570,8 +1623,7 @@ static int determine_node_rank(const struct hecmwST_local_mesh *mesh,
   struct hecmw_set_int boundary_nodes;
   int bnode;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started determine_node_rank...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started determine_node_rank...\n");
 
   HECMW_set_int_init(&boundary_nodes);
 
@@ -1633,8 +1685,392 @@ static int determine_node_rank(const struct hecmwST_local_mesh *mesh,
 
   HECMW_set_int_finalize(&boundary_nodes);
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished determine_node_rank.\n",
-            mesh->my_rank);
+  /* new nodes in purely external elems */
+  if (determine_node_rank_of_purely_external_elems(mesh, ref_mesh) != HECMW_SUCCESS)
+    return HECMW_ERROR;
+
+  HECMW_log(HECMW_LOG_DEBUG, "Finished determine_node_rank.\n");
+  return HECMW_SUCCESS;
+}
+
+static int *conv_index_ucd2hec(int etype)
+{
+  static int conv_index_ucd2hec_rod1[] = {0, 1};
+  static int conv_index_ucd2hec_rod2[] = {0, -1, 2};
+  static int conv_index_ucd2hec_tri1[] = {0, 1, 2};
+  static int conv_index_ucd2hec_tri2[] = {0, 1, 2, -1, -1, -1};
+  static int conv_index_ucd2hec_qua1[] = {0, 1, 2, 3};
+  static int conv_index_ucd2hec_qua2[] = {0, 1, 2, 3, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_tet1[] = {0, 3, 2, 1};
+  static int conv_index_ucd2hec_tet2[] = {0, 3, 2, 1, -1, -1, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_pri1[] = {3, 4, 5, 0, 1, 2};
+  static int conv_index_ucd2hec_pri2[] = {3,  4,  5,  0,  1,  2,  -1, -1,
+                                          -1, -1, -1, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_hex1[] = {4, 5, 6, 7, 0, 1, 2, 3};
+  static int conv_index_ucd2hec_hex2[] = {4,  5,  6,  7,  0,  1,  2,  3,  -1, -1,
+                                          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_pyr1[] = {4, 0, 1, 2, 3};
+  static int conv_index_ucd2hec_pyr2[] = {4,  0,  1,  2,  3,  -1, -1,
+                                          -1, -1, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_mst1[] = {0, 1, 2, 3};
+  static int conv_index_ucd2hec_mst2[] = {0, 1, 2, 3, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_msq1[] = {0, 1, 2, 3, 4};
+  static int conv_index_ucd2hec_msq2[] = {0, 1, 2, 3, 4, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_jtt1[] = {3, 4, 5, 0, 1, 2};
+  static int conv_index_ucd2hec_jtt2[] = {3,  4,  5,  0,  1,  2,
+                                          -1, -1, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_jtq1[] = {4, 5, 6, 7, 0, 1, 2, 3};
+  static int conv_index_ucd2hec_jtq2[] = {4,  5,  6,  7,  0,  1,  2,  3,
+                                          -1, -1, -1, -1, -1, -1, -1, -1};
+#if 0
+  static int conv_index_ucd2hec_bem1[] = {0, 1};
+  static int conv_index_ucd2hec_bem2[] = {0, -1, 1};
+#endif
+  static int conv_index_ucd2hec_sht1[] = {0, 1, 2};
+  static int conv_index_ucd2hec_sht2[] = {0, 1, 2, -1, -1, -1};
+  static int conv_index_ucd2hec_shq1[] = {0, 1, 2, 3};
+  static int conv_index_ucd2hec_shq2[] = {0, 1, 2, 3, -1, -1, -1, -1};
+  static int conv_index_ucd2hec_ln[] = {0, 1};
+  switch (etype) {
+  case HECMW_ETYPE_ROD1:
+    return conv_index_ucd2hec_rod1;
+  case HECMW_ETYPE_ROD2:
+    return conv_index_ucd2hec_rod2;
+  case HECMW_ETYPE_TRI1:
+    return conv_index_ucd2hec_tri1;
+  case HECMW_ETYPE_TRI2:
+    return conv_index_ucd2hec_tri2;
+  case HECMW_ETYPE_QUA1:
+    return conv_index_ucd2hec_qua1;
+  case HECMW_ETYPE_QUA2:
+    return conv_index_ucd2hec_qua2;
+  case HECMW_ETYPE_TET1:
+    return conv_index_ucd2hec_tet1;
+  case HECMW_ETYPE_TET2:
+    return conv_index_ucd2hec_tet2;
+  case HECMW_ETYPE_PRI1:
+    return conv_index_ucd2hec_pri1;
+  case HECMW_ETYPE_PRI2:
+    return conv_index_ucd2hec_pri2;
+  case HECMW_ETYPE_HEX1:
+    return conv_index_ucd2hec_hex1;
+  case HECMW_ETYPE_HEX2:
+    return conv_index_ucd2hec_hex2;
+  case HECMW_ETYPE_PYR1:
+    return conv_index_ucd2hec_pyr1;
+  case HECMW_ETYPE_PYR2:
+    return conv_index_ucd2hec_pyr2;
+  case HECMW_ETYPE_MST1:
+    return conv_index_ucd2hec_mst1;
+  case HECMW_ETYPE_MST2:
+    return conv_index_ucd2hec_mst2;
+  case HECMW_ETYPE_MSQ1:
+    return conv_index_ucd2hec_msq1;
+  case HECMW_ETYPE_MSQ2:
+    return conv_index_ucd2hec_msq2;
+  case HECMW_ETYPE_JTT1:
+    return conv_index_ucd2hec_jtt1;
+  case HECMW_ETYPE_JTT2:
+    return conv_index_ucd2hec_jtt2;
+  case HECMW_ETYPE_JTQ1:
+    return conv_index_ucd2hec_jtq1;
+  case HECMW_ETYPE_JTQ2:
+    return conv_index_ucd2hec_jtq2;
+  case HECMW_ETYPE_SHT1:
+    return conv_index_ucd2hec_sht1;
+  case HECMW_ETYPE_SHT2:
+    return conv_index_ucd2hec_sht2;
+  case HECMW_ETYPE_SHQ1:
+    return conv_index_ucd2hec_shq1;
+  case HECMW_ETYPE_SHQ2:
+    return conv_index_ucd2hec_shq2;
+  case HECMW_ETYPE_LN11:
+  case HECMW_ETYPE_LN12:
+  case HECMW_ETYPE_LN13:
+  case HECMW_ETYPE_LN14:
+  case HECMW_ETYPE_LN15:
+  case HECMW_ETYPE_LN16:
+  case HECMW_ETYPE_LN21:
+  case HECMW_ETYPE_LN22:
+  case HECMW_ETYPE_LN23:
+  case HECMW_ETYPE_LN24:
+  case HECMW_ETYPE_LN25:
+  case HECMW_ETYPE_LN26:
+  case HECMW_ETYPE_LN31:
+  case HECMW_ETYPE_LN32:
+  case HECMW_ETYPE_LN33:
+  case HECMW_ETYPE_LN34:
+  case HECMW_ETYPE_LN35:
+  case HECMW_ETYPE_LN36:
+  case HECMW_ETYPE_LN41:
+  case HECMW_ETYPE_LN42:
+  case HECMW_ETYPE_LN43:
+  case HECMW_ETYPE_LN44:
+  case HECMW_ETYPE_LN45:
+  case HECMW_ETYPE_LN46:
+  case HECMW_ETYPE_LN51:
+  case HECMW_ETYPE_LN52:
+  case HECMW_ETYPE_LN53:
+  case HECMW_ETYPE_LN54:
+  case HECMW_ETYPE_LN55:
+  case HECMW_ETYPE_LN56:
+  case HECMW_ETYPE_LN61:
+  case HECMW_ETYPE_LN62:
+  case HECMW_ETYPE_LN63:
+  case HECMW_ETYPE_LN64:
+  case HECMW_ETYPE_LN65:
+  case HECMW_ETYPE_LN66:
+    return conv_index_ucd2hec_ln;
+  default:
+    return NULL;
+  }
+}
+
+static int write_refined_shared_in_ucd(const struct hecmwST_local_mesh *mesh,
+                                       const struct hecmwST_local_mesh *ref_mesh,
+                                       const struct hecmw_varray_int *shared,
+                                       const struct hecmw_varray_int *shared_nodes,
+                                       int i)
+{
+  char fname[64];
+  FILE *fp;
+  int irank = mesh->neighbor_pe[i];
+  int j, k, l, nid;
+  int n_shared_elem = HECMW_varray_int_nval(shared + i);
+  int n_shared_node = HECMW_varray_int_nval(shared_nodes + i);
+  sprintf(fname, "shared_%d_%d.inp", mesh->my_rank, irank);
+  HECMW_log(HECMW_LOG_DEBUG, "writing refined shared elements to %s\n", fname);
+  fp = fopen(fname, "w");
+  if (fp == NULL) {
+    HECMW_log(HECMW_LOG_ERROR, "failed to open file %s\n", fname);
+  } else {
+    fprintf(fp, "%d %d 1 1 0\n", n_shared_node, n_shared_elem);
+    for (j = 0; j < n_shared_node; j++) {
+      nid = HECMW_varray_int_get(shared_nodes + i, j);
+      fprintf(fp, "%d %e %e %e\n", j+1, ref_mesh->node[3*(nid-1)], ref_mesh->node[3*(nid-1)+1], ref_mesh->node[3*(nid-1)+2]);
+    }
+    for (j = 0; j < n_shared_elem; j++) {
+      int eid = HECMW_varray_int_get(shared + i, j);
+      int etype = ref_mesh->elem_type[eid-1];
+      int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid-1];
+      int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
+      int *index_ucd = conv_index_ucd2hec(etype);
+      HECMW_assert(index_ucd);
+      fprintf(fp, "%d 0 %s", j+1, HECMW_get_ucd_label(etype));
+      for (k = 0; k < nn; k++) {
+        if (index_ucd[k] < 0) continue;
+        nid = elem_nodes[index_ucd[k]];
+        for (l = 0; l < n_shared_node; l++) {
+          if (HECMW_varray_int_get(shared_nodes + i, l) == nid) break;
+        }
+        fprintf(fp, " %d", l+1);
+      }
+      fprintf(fp, "\n");
+    }
+    fclose(fp);
+  }
+}
+
+static int check_node_rank(const struct hecmwST_local_mesh *mesh,
+                           const struct hecmw_varray_int *shared,
+                           const struct hecmwST_local_mesh *ref_mesh)
+{
+  int *n_shared_nodes;
+  struct hecmw_varray_int *shared_nodes, *shared_ranks;
+  HECMW_Request *requests;
+  HECMW_Status *statuses;
+  HECMW_Comm comm;
+  int *send_buf;
+  int recv_buf[4];
+  int n_error = 0, n_error_g;
+  int i, j, k, irank, tag, nid, rank;
+
+  HECMW_log(HECMW_LOG_DEBUG, "Started check_node_rank...\n");
+
+  /* alloc memory */
+  n_shared_nodes = (int *)HECMW_malloc(sizeof(int) * mesh->n_neighbor_pe);
+  if (n_shared_nodes == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  shared_nodes = (struct hecmw_varray_int *)HECMW_malloc(
+    sizeof(struct hecmw_varray_int) * mesh->n_neighbor_pe);
+  if (shared_nodes == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  shared_ranks = (struct hecmw_varray_int *)HECMW_malloc(
+    sizeof(struct hecmw_varray_int) * mesh->n_neighbor_pe);
+  if (shared_ranks == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  send_buf = (int *)HECMW_malloc(sizeof(int) * 4 * mesh->n_neighbor_pe);
+  if (send_buf == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  comm = HECMW_comm_get_comm();
+
+  requests = (HECMW_Request *)HECMW_malloc(sizeof(HECMW_Request) * mesh->n_neighbor_pe);
+  if (requests == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  statuses = (HECMW_Status *)HECMW_malloc(sizeof(HECMW_Status) * mesh->n_neighbor_pe);
+  if (statuses == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  /*
+   * check number of refined shared nodes
+   */
+
+  /* Collect nodes of the shared elements, and send size */
+  for (i = 0; i < mesh->n_neighbor_pe; i++) {
+    /* numver of shared elements in original mesh */
+    send_buf[4*i] = mesh->shared_index[i+1] - mesh->shared_index[i];
+
+    /* number of refined shared elements */
+    send_buf[4*i+1] = HECMW_varray_int_nval(shared + i);
+
+    HECMW_varray_int_init(shared_nodes + i);
+    for (j = 0; j < HECMW_varray_int_nval(shared + i); j++) {
+      int eid = HECMW_varray_int_get(shared + i, j);
+      int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid - 1];
+      int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid - 1];
+
+      for (k = 0; k < nn; k++) {
+#if 0  /* keep old nodes for plotting */
+        if (elem_nodes[k] <= mesh->n_node_gross) continue; /* skip old nodes */
+#endif
+
+        HECMW_varray_int_append(shared_nodes + i, elem_nodes[k]);
+      }
+    }
+    /* number of shared nodes before removing duplication */
+    send_buf[4*i+2] = HECMW_varray_int_nval(shared_nodes + i);
+
+#if 1
+    HECMW_varray_int_rmdup(shared_nodes + i);
+#endif
+    n_shared_nodes[i] = HECMW_varray_int_nval(shared_nodes + i);
+
+    /* number of shared nodes after removing duplication */
+    send_buf[4*i+3] = n_shared_nodes[i];
+
+    /* send sizes */
+    irank = mesh->neighbor_pe[i];
+    tag = 9901;
+    HECMW_Isend(send_buf + 4*i, 4, HECMW_INT, irank, tag, comm, requests + i);
+  }
+
+  /* recieve size and check */
+  for (i = 0; i < mesh->n_neighbor_pe; i++) {
+    irank = mesh->neighbor_pe[i];
+    tag = 9901;
+    HECMW_Recv(recv_buf, 4, HECMW_INT, irank, tag, comm, statuses + i);
+
+    if (recv_buf[0] != send_buf[4*i]) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "number of shared elements %d not match with %d in rank %d\n",
+                send_buf[4*i], recv_buf[0], irank);
+      n_error++;
+    }
+    if (recv_buf[1] != send_buf[4*i+1]) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "number of refined shared elements %d not match with %d in rank %d\n",
+                send_buf[4*i+1], recv_buf[1], irank);
+    }
+    if (recv_buf[2] != send_buf[4*i+2]) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "number of new shared nodes before rmdup %d not match with %d in rank %d\n",
+                send_buf[4*i+2], recv_buf[2], irank);
+      n_error++;
+    }
+    if (recv_buf[3] != send_buf[4*i+3]) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "number of new shared nodes %d not match with %d in rank %d\n",
+                send_buf[4*i+3], recv_buf[3], irank);
+      n_error++;
+      write_refined_shared_in_ucd(mesh, ref_mesh, shared, shared_nodes, i);
+    }
+  }
+  HECMW_Waitall(mesh->n_neighbor_pe, requests, statuses);
+
+  HECMW_Allreduce(&n_error, &n_error_g, 1, HECMW_INT, HECMW_SUM, comm);
+  if (n_error_g > 0) return HECMW_ERROR;
+
+  /*
+   * check rank of new shared nodes
+   */
+
+  n_error = 0;
+
+  /* send rank of new shared nodes */
+  for (i = 0; i < mesh->n_neighbor_pe; i++) {
+    HECMW_varray_int_init(shared_ranks + i);
+    /* HECMW_varray_int_resize(shared_ranks + i, n_shared_nodes[i]); */
+    for (j = 0; j < n_shared_nodes[i]; j++) {
+      nid = HECMW_varray_int_get(shared_nodes + i, j);
+      rank = ref_mesh->node_ID[2 * (nid - 1) + 1];
+      /* HECMW_varray_int_set(shared_ranks + i, j, rank); */
+      HECMW_varray_int_append(shared_ranks + i, rank);
+    }
+
+    irank = mesh->neighbor_pe[i];
+    tag = 9902;
+    int *send_ranks = HECMW_varray_int_get_v(shared_ranks + i);
+    HECMW_Isend(send_ranks, n_shared_nodes[i], HECMW_INT, irank, tag, comm, requests + i);
+  }
+
+  /* recieve rank of new shared nodes */
+  for (i = 0; i < mesh->n_neighbor_pe; i++) {
+    int *recv_ranks = (int *)HECMW_malloc(sizeof(int) * n_shared_nodes[i]);
+    if (recv_ranks == NULL) {
+      HECMW_set_error(errno, "");
+      return HECMW_ERROR;
+    }
+
+    irank = mesh->neighbor_pe[i];
+    tag = 9902;
+    HECMW_Recv(recv_ranks, n_shared_nodes[i], HECMW_INT, irank, tag, comm, statuses + i);
+
+    for (j = 0; j < n_shared_nodes[i]; j++) {
+      if (recv_ranks[j] != HECMW_varray_int_get(shared_ranks + i, j)) {
+        HECMW_log(HECMW_LOG_ERROR,
+                  "rank of new shared node %d: %d not match with %d in rank %d\n",
+                  HECMW_varray_int_get(shared_nodes + i, j),
+                  HECMW_varray_int_get(shared_ranks + i, j), recv_ranks[j], irank);
+        n_error++;
+      }
+    }
+    HECMW_free(recv_ranks);
+  }
+  HECMW_Waitall(mesh->n_neighbor_pe, requests, statuses);
+
+  HECMW_Allreduce(&n_error, &n_error_g, 1, HECMW_INT, HECMW_SUM, comm);
+  if (n_error_g > 0) return HECMW_ERROR;
+
+  /* free memory */
+  for (i = 0; i < mesh->n_neighbor_pe; i++) {
+    HECMW_varray_int_finalize(shared_nodes + i);
+    HECMW_varray_int_finalize(shared_ranks + i);
+  }
+  HECMW_free(shared_nodes);
+  HECMW_free(shared_ranks);
+  HECMW_free(n_shared_nodes);
+  HECMW_free(requests);
+  HECMW_free(statuses);
+
+  HECMW_log(HECMW_LOG_DEBUG, "Finished check_node_rank.\n");
+
   return HECMW_SUCCESS;
 }
 
@@ -1690,6 +2126,11 @@ static int create_index_item(int n, const struct hecmw_varray_int *arrays,
   (*index)[0] = 0;
   for (i = 0; i < n; i++) {
     (*index)[i + 1] = (*index)[i] + HECMW_varray_int_nval(arrays + i);
+    if ((*index)[i + 1] < (*index)[i]) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "Integer overflow detected while creating index array\n");
+      return HECMW_ERROR;
+    }
   }
 
   /* item */
@@ -1715,10 +2156,16 @@ static int create_index_item(int n, const struct hecmw_varray_int *arrays,
 static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
                                     const struct hecmw_varray_int *shared,
                                     struct hecmwST_local_mesh *ref_mesh) {
-  struct hecmw_varray_int *new_export, *new_import;
+  struct hecmw_varray_int *new_shared, *new_export, *new_import;
   int i;
 
   /* prepare new shared, import and export lists */
+  new_shared = (struct hecmw_varray_int *)HECMW_malloc(
+      sizeof(struct hecmw_varray_int) * mesh->n_neighbor_pe);
+  if (new_shared == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
   new_export = (struct hecmw_varray_int *)HECMW_malloc(
       sizeof(struct hecmw_varray_int) * mesh->n_neighbor_pe);
   if (new_export == NULL) {
@@ -1737,6 +2184,7 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
     int j;
     int rank_i = mesh->neighbor_pe[i];
 
+    HECMW_varray_int_init(new_shared + i);
     HECMW_varray_int_init(new_export + i);
     HECMW_varray_int_init(new_import + i);
 
@@ -1749,6 +2197,7 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
           ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid - 1];
       int *elem_nodes =
           ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid - 1];
+      int etype = ref_mesh->elem_type[eid - 1];
 
       int min_rank        = mesh->n_subdomain;
       int myrank_included = 0;
@@ -1780,15 +2229,20 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
 
       ref_mesh->elem_ID[2 * (eid - 1) + 1] = min_rank;
 
-      if (myrank_included && rank_i_included) { /* the element is shared */
-        HECMW_varray_int_cat(new_export + i, &exp_cand);
-        HECMW_varray_int_cat(new_import + i, &imp_cand);
-      }
-
-      if (myrank_included == 0) { /* the element is external */
-        /* for purely external elements, rank (0, 1, ...) is stored as -rank-1
-         * (-1, -2, ...) */
-        ref_mesh->elem_ID[2 * (eid - 1) + 1] = -min_rank - 1;
+      if (HECMW_is_etype_patch(etype)) {
+        if (myrank_included || rank_i_included) HECMW_varray_int_append(new_shared + i, eid);
+        if (myrank_included) HECMW_varray_int_cat(new_export + i, &exp_cand);
+        if (rank_i_included) HECMW_varray_int_cat(new_import + i, &imp_cand);
+      } else {
+        if (myrank_included && rank_i_included) { /* the element is shared */
+          HECMW_varray_int_append(new_shared + i, eid);
+          HECMW_varray_int_cat(new_export + i, &exp_cand);
+          HECMW_varray_int_cat(new_import + i, &imp_cand);
+        } else if (myrank_included == 0) {
+          /* for purely external elements, rank (0, 1, ...) is stored as -rank-1
+           * (-1, -2, ...) */
+          ref_mesh->elem_ID[2 * (eid - 1) + 1] = -min_rank - 1;
+        }
       }
 
       HECMW_varray_int_finalize(&exp_cand);
@@ -1799,18 +2253,40 @@ static int new_shared_export_import(const struct hecmwST_local_mesh *mesh,
     HECMW_varray_int_rmdup(new_import + i);
   }
 
-  create_index_item(mesh->n_neighbor_pe, shared, &(ref_mesh->shared_index),
-                    &(ref_mesh->shared_item));
-  create_index_item(mesh->n_neighbor_pe, new_export, &(ref_mesh->export_index),
-                    &(ref_mesh->export_item));
-  create_index_item(mesh->n_neighbor_pe, new_import, &(ref_mesh->import_index),
-                    &(ref_mesh->import_item));
+  /* new shared */
+  if (create_index_item(mesh->n_neighbor_pe, new_shared, &(ref_mesh->shared_index),
+                        &(ref_mesh->shared_item)) != HECMW_SUCCESS) {
+    HECMW_log(HECMW_LOG_ERROR, "Create shared_index and shared_item failed\n");
+    return HECMW_ERROR;
+  }
+  HECMW_log(HECMW_LOG_DEBUG, "Total number of shared elements = %d\n",
+            ref_mesh->shared_index[mesh->n_neighbor_pe]);
+
+  /* new export */
+  if (create_index_item(mesh->n_neighbor_pe, new_export, &(ref_mesh->export_index),
+                        &(ref_mesh->export_item)) != HECMW_SUCCESS) {
+    HECMW_log(HECMW_LOG_ERROR, "Create export_index and export_item failed\n");
+    return HECMW_ERROR;
+  }
+  HECMW_log(HECMW_LOG_DEBUG, "Total number of export nodes = %d\n",
+            ref_mesh->export_index[mesh->n_neighbor_pe]);
+
+  /* new import */
+  if (create_index_item(mesh->n_neighbor_pe, new_import, &(ref_mesh->import_index),
+                        &(ref_mesh->import_item)) != HECMW_SUCCESS) {
+    HECMW_log(HECMW_LOG_ERROR, "Create import_index and import_item failed\n");
+    return HECMW_ERROR;
+  }
+  HECMW_log(HECMW_LOG_DEBUG, "Total number of import nodes = %d\n",
+            ref_mesh->import_index[mesh->n_neighbor_pe]);
 
   /* deallocate new shared, import and export lists */
   for (i = 0; i < mesh->n_neighbor_pe; i++) {
+    HECMW_varray_int_finalize(new_shared + i);
     HECMW_varray_int_finalize(new_export + i);
     HECMW_varray_int_finalize(new_import + i);
   }
+  HECMW_free(new_shared);
   HECMW_free(new_export);
   HECMW_free(new_import);
 
@@ -1825,7 +2301,12 @@ static int rebuild_comm_tables_serial(const struct hecmwST_local_mesh *mesh,
                mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_NODEBASED);
 
   /* nn_internal, n_node */
-  ref_mesh->nn_internal = ref_mesh->n_node = ref_mesh->n_node_gross;
+  ref_mesh->nn_internal = count_internal(mesh->my_rank, ref_mesh->n_node_gross, ref_mesh->node_ID);
+  ref_mesh->n_node = ref_mesh->n_node_gross;
+  ref_mesh->nn_middle = ref_mesh->n_node;
+
+  HECMW_log(HECMW_LOG_DEBUG, "nn_internal = %d, n_node = %d, nn_middle = %d\n",
+            ref_mesh->nn_internal, ref_mesh->n_node, ref_mesh->nn_middle);
 
   /* node_internal_list */
   ref_mesh->node_internal_list =
@@ -1839,7 +2320,11 @@ static int rebuild_comm_tables_serial(const struct hecmwST_local_mesh *mesh,
   }
 
   /* ne_internal, n_elem */
-  ref_mesh->ne_internal = ref_mesh->n_elem = ref_mesh->n_elem_gross;
+  ref_mesh->ne_internal = count_internal(mesh->my_rank, ref_mesh->n_elem_gross, ref_mesh->elem_ID);
+  ref_mesh->n_elem = ref_mesh->n_elem_gross;
+
+  HECMW_log(HECMW_LOG_DEBUG, "ne_internal = %d, n_elem = %d\n",
+            ref_mesh->ne_internal, ref_mesh->n_elem);
 
   /* elem_internal_list */
   ref_mesh->elem_internal_list =
@@ -1890,9 +2375,7 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
   }
 
   /* PARALLEL */
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Started rebuilding communication tables...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding communication tables...\n");
 
   /* check part-type */
   if (mesh->hecmw_flag_parttype != HECMW_FLAG_PARTTYPE_NODEBASED) {
@@ -1917,6 +2400,11 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
 
   /* Determine rank of new nodes */
   if (determine_node_rank(mesh, shared, ref_mesh) != HECMW_SUCCESS) {
+    return HECMW_ERROR;
+  }
+
+  /* Check rank of new nodes with neighbor processes */
+  if (check_node_rank(mesh, shared, ref_mesh) != HECMW_SUCCESS) {
     return HECMW_ERROR;
   }
 
@@ -1964,10 +2452,117 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
   ref_mesh->n_node =
       ref_mesh->n_node_gross -
       count_purely_external(ref_mesh->n_node_gross, ref_mesh->node_ID);
+  ref_mesh->nn_middle = ref_mesh->n_node;  /* not set properly (since it's never used) */
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Finished rebuilding communication tables.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "nn_internal = %d, n_node = %d nn_middle = %d, \n",
+            ref_mesh->nn_internal, ref_mesh->n_node, ref_mesh->nn_middle);
+  HECMW_log(HECMW_LOG_DEBUG, "ne_internal = %d, nelem = %d\n",
+            ref_mesh->ne_internal, ref_mesh->n_elem);
+
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding communication tables.\n");
+  return HECMW_SUCCESS;
+}
+
+static int check_comm_table_len(const struct hecmwST_local_mesh *ref_mesh) {
+  int len_tot;
+  int i, j, irank, js, je, len, tag, nsend;
+  HECMW_Request *requests;
+  HECMW_Status *statuses;
+  HECMW_Comm comm;
+  int *send_buf;
+  int n_error = 0, n_error_g;
+
+  if (ref_mesh->n_neighbor_pe == 0) return HECMW_SUCCESS;
+
+  HECMW_log(HECMW_LOG_DEBUG, "Started checking communication tables...\n");
+
+  send_buf = (int *)HECMW_malloc(sizeof(int) * ref_mesh->n_neighbor_pe);
+  if (send_buf == 0) {
+    HECMW_set_error(errno, "");
+    HECMW_abort(comm);
+  }
+
+  comm = HECMW_comm_get_comm();
+
+  requests = (HECMW_Request *)HECMW_malloc(sizeof(HECMW_Request) *
+                                           ref_mesh->n_neighbor_pe);
+  if (requests == NULL) {
+    HECMW_set_error(errno, "");
+    HECMW_abort(comm);
+  }
+  statuses = (HECMW_Status *)HECMW_malloc(sizeof(HECMW_Status) *
+                                          ref_mesh->n_neighbor_pe);
+  if (statuses == NULL) {
+    HECMW_set_error(errno, "");
+    HECMW_abort(comm);
+  }
+
+  /* export and import */
+
+  for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
+    irank     = ref_mesh->neighbor_pe[i];
+    js        = ref_mesh->export_index[i];
+    je        = ref_mesh->export_index[i + 1];
+    send_buf[i] = je - js;
+    /* isend number of export nodes */
+    tag = 0;
+    HECMW_Isend(send_buf + i, 1, HECMW_INT, irank, tag, comm, requests + i);
+  }
+  for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
+    irank     = ref_mesh->neighbor_pe[i];
+    js        = ref_mesh->import_index[i];
+    je        = ref_mesh->import_index[i + 1];
+    /* recv number of import nodes */
+    tag = 0;
+    HECMW_Recv(&len, 1, HECMW_INT, irank, tag, comm, statuses + i);
+    if (len != je - js) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "inconsistent length of import (%d) with export on rank %d (%d)\n",
+                je-js, irank, len);
+      n_error++;
+    }
+  }
+  HECMW_Waitall(ref_mesh->n_neighbor_pe, requests, statuses);
+
+  /* shared */
+
+  nsend = 0;
+  for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
+    irank   = ref_mesh->neighbor_pe[i];
+    if (irank < ref_mesh->my_rank) continue;
+    js      = ref_mesh->shared_index[i];
+    je      = ref_mesh->shared_index[i + 1];
+    send_buf[i] = je - js;
+    /* isend number of shared elems */
+    tag = 1;
+    HECMW_Isend(send_buf + i, 1, HECMW_INT, irank, tag, comm, requests + nsend);
+    nsend++;
+  }
+  for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
+    irank   = ref_mesh->neighbor_pe[i];
+    if (ref_mesh->my_rank < irank) continue;
+    js      = ref_mesh->shared_index[i];
+    je      = ref_mesh->shared_index[i + 1];
+    /* recv number of shared elems */
+    tag = 1;
+    HECMW_Recv(&len, 1, HECMW_INT, irank, tag, comm, statuses);
+    if (len != je - js) {
+      HECMW_log(HECMW_LOG_ERROR,
+                "inconsistent length of shared (%d) with rank %d (%d)\n",
+                je-js, irank, len);
+      n_error++;
+    }
+  }
+  HECMW_Waitall(nsend, requests, statuses);
+
+  HECMW_free(send_buf);
+  HECMW_free(requests);
+  HECMW_free(statuses);
+
+  HECMW_Allreduce(&n_error, &n_error_g, 1, HECMW_INT, HECMW_SUM, comm);
+  if (n_error_g > 0) return HECMW_ERROR;
+
+  HECMW_log(HECMW_LOG_DEBUG, "Finished checking communication tables.\n");
   return HECMW_SUCCESS;
 }
 
@@ -1982,8 +2577,7 @@ static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
 
   if (ref_mesh->n_neighbor_pe == 0) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding external IDs...\n",
-            ref_mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding external IDs...\n");
 
   comm = HECMW_comm_get_comm();
 
@@ -2069,12 +2663,12 @@ static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
   nsend = 0;
   for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
     irank   = ref_mesh->neighbor_pe[i];
+    if (irank < ref_mesh->my_rank) continue;
     js      = ref_mesh->shared_index[i];
     je      = ref_mesh->shared_index[i + 1];
     len     = je - js;
     srbuf_p = srbuf + js;
     item_p  = ref_mesh->shared_item + js;
-    if (irank < ref_mesh->my_rank) continue;
     for (j = 0; j < len; j++) {
       nid  = item_p[j] - 1;
       rank = ref_mesh->elem_ID[2 * nid + 1];
@@ -2093,12 +2687,12 @@ static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
   }
   for (i = 0; i < ref_mesh->n_neighbor_pe; i++) {
     irank   = ref_mesh->neighbor_pe[i];
+    if (ref_mesh->my_rank < irank) continue;
     js      = ref_mesh->shared_index[i];
     je      = ref_mesh->shared_index[i + 1];
     len     = je - js;
     srbuf_p = srbuf + js;
     item_p  = ref_mesh->shared_item + js;
-    if (ref_mesh->my_rank < irank) continue;
     /* recv list of local_ID of those elems */
     tag = 1;
     HECMW_Recv(srbuf_p, len, HECMW_INT, irank, tag, comm, statuses);
@@ -2119,8 +2713,7 @@ static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
   HECMW_free(requests);
   HECMW_free(statuses);
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding external IDs.\n",
-            ref_mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding external IDs.\n");
   return HECMW_SUCCESS;
 }
 
@@ -2156,7 +2749,7 @@ static int rebuild_refine_origin(const struct hecmwST_local_mesh *mesh,
 
   ref_reforg->item_index =
       (int *)HECMW_malloc(sizeof(int) * (ref_reforg->index[n_refine] + 1));
-  if (ref_reforg->index == NULL) {
+  if (ref_reforg->item_index == NULL) {
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
@@ -2238,17 +2831,56 @@ static int rebuild_refine_origin(const struct hecmwST_local_mesh *mesh,
   return HECMW_SUCCESS;
 }
 
+static int rebuild_n_node_refine_hist(const struct hecmwST_local_mesh *mesh,
+                                      struct hecmwST_local_mesh *ref_mesh) {
+  int i;
+
+  ref_mesh->n_node_refine_hist =
+    (int *)HECMW_malloc((mesh->n_refine + 1) * sizeof(int));
+  if (ref_mesh->n_node_refine_hist == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+
+  for (i = 0; i < mesh->n_refine; i++) {
+    ref_mesh->n_node_refine_hist[i] = mesh->n_node_refine_hist[i];
+  }
+  ref_mesh->n_node_refine_hist[mesh->n_refine] = ref_mesh->n_node_gross;
+
+  return HECMW_SUCCESS;
+}
+
+static int rebuild_refine_info(const struct hecmwST_local_mesh *mesh,
+                               struct hecmwST_local_mesh *ref_mesh) {
+  ref_mesh->n_refine = mesh->n_refine + 1;
+
+  if (rebuild_refine_origin(mesh, ref_mesh) != HECMW_SUCCESS)
+    return HECMW_ERROR;
+  if (rebuild_n_node_refine_hist(mesh, ref_mesh) != HECMW_SUCCESS)
+    return HECMW_ERROR;
+
+  return HECMW_SUCCESS;
+}
+
 static int renumber_nodes_generate_tables(struct hecmwST_local_mesh *mesh);
 static int renumber_elements_generate_tables(struct hecmwST_local_mesh *mesh);
 
 static int rebuild_info(const struct hecmwST_local_mesh *mesh,
                         struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started rebuilding info...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started rebuilding info...\n");
 
   if (rebuild_elem_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_node_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_comm_tables(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
+  if (check_comm_table_len(ref_mesh) != HECMW_SUCCESS) {
+    HECMW_log(HECMW_LOG_ERROR, "Check communication table failed. Checking original mesh...\n");
+    if (check_comm_table_len(mesh) != HECMW_SUCCESS) {
+      HECMW_log(HECMW_LOG_ERROR, "Original mesh has error\n");
+    } else {
+      HECMW_log(HECMW_LOG_ERROR, "Original mesh is OK\n");
+    }
+    return HECMW_ERROR;
+  }
   if (rebuild_ID_external(ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
   if (renumber_nodes_generate_tables(ref_mesh) != HECMW_SUCCESS)
@@ -2256,11 +2888,9 @@ static int rebuild_info(const struct hecmwST_local_mesh *mesh,
   if (renumber_elements_generate_tables(ref_mesh) != HECMW_SUCCESS)
     return HECMW_ERROR;
 
-  if (rebuild_refine_origin(mesh, ref_mesh) != HECMW_SUCCESS)
-    return HECMW_ERROR;
+  if (rebuild_refine_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished rebuilding info.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished rebuilding info.\n");
   return HECMW_SUCCESS;
 }
 
@@ -2281,7 +2911,6 @@ static int copy_global_info(const struct hecmwST_local_mesh *mesh,
   ref_mesh->hecmw_flag_partcontact = mesh->hecmw_flag_partcontact;
   strcpy(ref_mesh->gridfile, mesh->gridfile);
   ref_mesh->hecmw_n_file       = mesh->hecmw_n_file;
-  ref_mesh->n_node_refine_hist = mesh->n_node_refine_hist;
 
   /* files */
   if (mesh->hecmw_n_file > 0) {
@@ -2351,7 +2980,7 @@ static int copy_elem_etype(const struct hecmwST_local_mesh *mesh,
     /* elem_type_index */
     ref_mesh->elem_type_index =
         (int *)HECMW_malloc(sizeof(int) * (mesh->n_elem_type + 1));
-    if (ref_mesh == NULL) {
+    if (ref_mesh->elem_type_index == NULL) {
       HECMW_set_error(errno, "");
       return HECMW_ERROR;
     }
@@ -2680,63 +3309,64 @@ static int copy_mpc_info(const struct hecmwST_mpc *mpc,
     return HECMW_SUCCESS;
   }
 
-  HECMW_log(HECMW_LOG_ERROR,
-            "refinement of MPC information is not supported\n");
-  return HECMW_ERROR;
 #if 0
-	HECMW_log(HECMW_LOG_WARN, "MPC information is not refined\n");
+  HECMW_log(HECMW_LOG_ERROR, "refinement of MPC information is not supported\n");
+  return HECMW_ERROR;
 
-	/* mpc_index */
-	ref_mpc->mpc_index = (int *) HECMW_malloc( sizeof(int) * (mpc->n_mpc+1) );
-	if( ref_mpc->mpc_index == NULL ) {
-		HECMW_set_error(errno, "");
-		return HECMW_ERROR;
-	}
-	for ( i = 0; i < mpc->n_mpc + 1; i++ ) {
-		ref_mpc->mpc_index[i] = mpc->mpc_index[i];
-	}
+#else
+  HECMW_log(HECMW_LOG_WARN, "MPC information is not refined\n");
 
-	/* mpc_item */
-	ref_mpc->mpc_item = (int *) HECMW_malloc( sizeof(int) * mpc->mpc_index[mpc->n_mpc] );
-	if( ref_mpc->mpc_item == NULL ) {
-		HECMW_set_error(errno, "");
-		return HECMW_ERROR;
-	}
-	for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
-		ref_mpc->mpc_item[i] = mpc->mpc_item[i];
-	}
+  /* mpc_index */
+  ref_mpc->mpc_index = (int *) HECMW_malloc( sizeof(int) * (mpc->n_mpc+1) );
+  if( ref_mpc->mpc_index == NULL ) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  for ( i = 0; i < mpc->n_mpc + 1; i++ ) {
+    ref_mpc->mpc_index[i] = mpc->mpc_index[i];
+  }
 
-	/* mpc_dof */
-	ref_mpc->mpc_dof = (int *) HECMW_malloc( sizeof(int) * mpc->mpc_index[mpc->n_mpc] );
-	if( ref_mpc->mpc_dof == NULL ) {
-		HECMW_set_error(errno, "");
-		return HECMW_ERROR;
-	}
-	for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
-		ref_mpc->mpc_dof[i] = mpc->mpc_dof[i];
-	}
+  /* mpc_item */
+  ref_mpc->mpc_item = (int *) HECMW_malloc( sizeof(int) * mpc->mpc_index[mpc->n_mpc] );
+  if( ref_mpc->mpc_item == NULL ) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
+    ref_mpc->mpc_item[i] = mpc->mpc_item[i];
+  }
 
-	/* mpc_val */
-	ref_mpc->mpc_val = (double *) HECMW_malloc( sizeof(double) * mpc->mpc_index[mpc->n_mpc] );
-	if( ref_mpc->mpc_val == NULL ) {
-		HECMW_set_error(errno, "");
-		return HECMW_ERROR;
-	}
-	for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
-		ref_mpc->mpc_val[i] = mpc->mpc_val[i];
-	}
+  /* mpc_dof */
+  ref_mpc->mpc_dof = (int *) HECMW_malloc( sizeof(int) * mpc->mpc_index[mpc->n_mpc] );
+  if( ref_mpc->mpc_dof == NULL ) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
+    ref_mpc->mpc_dof[i] = mpc->mpc_dof[i];
+  }
 
-	/* mpc_const */
-	ref_mpc->mpc_const = (double *) HECMW_malloc( sizeof(double) * mpc->mpc_index[mpc->n_mpc] );
-	if( ref_mpc->mpc_const == NULL ) {
-		HECMW_set_error(errno, "");
-		return HECMW_ERROR;
-	}
-	for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
-		ref_mpc->mpc_const[i] = mpc->mpc_const[i];
-	}
+  /* mpc_val */
+  ref_mpc->mpc_val = (double *) HECMW_malloc( sizeof(double) * mpc->mpc_index[mpc->n_mpc] );
+  if( ref_mpc->mpc_val == NULL ) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
+    ref_mpc->mpc_val[i] = mpc->mpc_val[i];
+  }
 
-	return HECMW_SUCCESS;
+  /* mpc_const */
+  ref_mpc->mpc_const = (double *) HECMW_malloc( sizeof(double) * mpc->mpc_index[mpc->n_mpc] );
+  if( ref_mpc->mpc_const == NULL ) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
+    ref_mpc->mpc_const[i] = mpc->mpc_const[i];
+  }
+
+  return HECMW_SUCCESS;
 #endif
 }
 
@@ -2896,8 +3526,7 @@ static int copy_contact_pair(const struct hecmwST_contact_pair *cp,
 
 static int copy_unchanging_info(const struct hecmwST_local_mesh *mesh,
                                 struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started copying unchanging info...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started copying unchanging info...\n");
 
   if (copy_global_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (copy_node_ndof(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -2916,8 +3545,7 @@ static int copy_unchanging_info(const struct hecmwST_local_mesh *mesh,
       HECMW_SUCCESS)
     return HECMW_ERROR;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished copying unchanging info.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished copying unchanging info.\n");
   return HECMW_SUCCESS;
 }
 
@@ -2933,9 +3561,7 @@ static int renumber_nodes_generate_tables(struct hecmwST_local_mesh *mesh) {
 
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Started generating renumbering tables...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started generating renumbering tables...\n");
 
   old2new = (int *)HECMW_malloc(sizeof(int) * mesh->n_node_gross);
   if (old2new == NULL) {
@@ -2969,9 +3595,7 @@ static int renumber_nodes_generate_tables(struct hecmwST_local_mesh *mesh) {
   mesh->node_old2new = old2new;
   mesh->node_new2old = new2old;
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Finished generating renumbering tables.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished generating renumbering tables.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3139,8 +3763,7 @@ static int delete_external_items(int n_elem, int n_grp, int *index, int *item,
 static int renumber_nodes(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering nodes...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started renumbering nodes...\n");
 
   if (reorder_nodes(mesh, mesh->node_old2new, mesh->node_new2old) !=
       HECMW_SUCCESS) {
@@ -3151,24 +3774,21 @@ static int renumber_nodes(struct hecmwST_local_mesh *mesh) {
                         mesh->node_group->grp_index, mesh->node_group->grp_item,
                         1);
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished renumbering nodes.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering nodes.\n");
   return HECMW_SUCCESS;
 }
 
 static int renumber_back_nodes(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering back nodes...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started renumbering back nodes...\n");
 
   if (reorder_nodes(mesh, mesh->node_new2old, mesh->node_old2new) !=
       HECMW_SUCCESS) {
     return HECMW_ERROR;
   }
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished renumbering back nodes.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering back nodes.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3184,9 +3804,7 @@ static int renumber_elements_generate_tables(struct hecmwST_local_mesh *mesh) {
 
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Started generating renumbering tables...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started generating renumbering tables...\n");
 
   old2new = (int *)HECMW_malloc(sizeof(int) * mesh->n_elem_gross);
   if (old2new == NULL) {
@@ -3215,9 +3833,7 @@ static int renumber_elements_generate_tables(struct hecmwST_local_mesh *mesh) {
   mesh->elem_old2new = old2new;
   mesh->elem_new2old = new2old;
 
-  HECMW_log(HECMW_LOG_DEBUG,
-            "rank=%d: Finished generating renumbering tables.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished generating renumbering tables.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3402,8 +4018,7 @@ static int reorder_elems(struct hecmwST_local_mesh *mesh, int *old2new,
 static int renumber_elements(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_elem_gross == mesh->n_elem) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering elements...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started renumbering elements...\n");
 
   if (reorder_elems(mesh, mesh->elem_old2new, mesh->elem_new2old) !=
       HECMW_SUCCESS) {
@@ -3419,24 +4034,21 @@ static int renumber_elements(struct hecmwST_local_mesh *mesh) {
                         mesh->surf_group->grp_index, mesh->surf_group->grp_item,
                         2);
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished renumbering elements.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering elements.\n");
   return HECMW_SUCCESS;
 }
 
 static int renumber_back_elements(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_elem_gross == mesh->n_elem) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started renumbering back elements...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started renumbering back elements...\n");
 
   if (reorder_elems(mesh, mesh->elem_new2old, mesh->elem_old2new) !=
       HECMW_SUCCESS) {
     return HECMW_ERROR;
   }
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished renumbering back elements.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering back elements.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3447,17 +4059,13 @@ static int renumber_back_elements(struct hecmwST_local_mesh *mesh) {
 /*============================================================================*/
 static int refine_dist_mesh(struct hecmwST_local_mesh *mesh,
                             struct hecmwST_local_mesh *ref_mesh) {
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Started refining mesh...\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Started refining mesh...\n");
 
   if (copy_unchanging_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (call_refiner(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (rebuild_info(mesh, ref_mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
-  ref_mesh->n_refine = mesh->n_refine + 1;
-
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Finished refining mesh.\n",
-            mesh->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Finished refining mesh.\n");
   return HECMW_SUCCESS;
 }
 
@@ -3473,8 +4081,7 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
 
   if (refine <= 0) return HECMW_SUCCESS;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refinement requested; starting...\n",
-            (*mesh)->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Refinement requested; starting...\n");
 
   if ((*mesh)->n_refine > 0) {
     if (renumber_back_elements(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
@@ -3485,36 +4092,22 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
     return HECMW_ERROR;
 
   for (i = 0; i < refine; i++) {
-    int *temp;
     struct hecmwST_local_mesh *ref_mesh = HECMW_dist_alloc();
     if (ref_mesh == NULL) {
       error_flag = HECMW_ERROR;
       break;
-    };
+    }
 
     if (i > 0) {
       clear_refiner();
     }
 
-    HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refining(%d)...\n", (*mesh)->my_rank,
-              i + 1);
+    HECMW_log(HECMW_LOG_DEBUG, "Refining(%d)...\n", i + 1);
 
     if (refine_dist_mesh(*mesh, ref_mesh) != HECMW_SUCCESS) {
-      HECMW_log(HECMW_LOG_ERROR, "rank=%d: Refinement failed\n",
-                (*mesh)->my_rank);
+      HECMW_log(HECMW_LOG_ERROR, "Refinement failed\n");
       error_flag = HECMW_ERROR;
       break;
-    }
-
-    if (i == 0) {
-      temp                         = (int *)malloc(sizeof(int));
-      *temp                        = ref_mesh->n_node_gross;
-      ref_mesh->n_node_refine_hist = temp;
-    } else {
-      temp = (int *)realloc((*mesh)->n_node_refine_hist, (i + 1) * sizeof(int));
-      (*mesh)->n_node_refine_hist  = NULL;
-      ref_mesh->n_node_refine_hist = temp;
-      *(temp + i)                  = ref_mesh->n_node_gross;
     }
 
     HECMW_dist_free(*mesh);
@@ -3523,13 +4116,14 @@ int HECMW_dist_refine(struct hecmwST_local_mesh **mesh, int refine,
 
   if (terminate_refiner(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
+  if (error_flag != HECMW_SUCCESS) return HECMW_ERROR;
+
   if (renumber_nodes(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
   if (renumber_elements(*mesh) != HECMW_SUCCESS) return HECMW_ERROR;
 
-  HECMW_log(HECMW_LOG_DEBUG, "rank=%d: Refinement finished.\n",
-            (*mesh)->my_rank);
+  HECMW_log(HECMW_LOG_DEBUG, "Refinement finished.\n");
 
-  return error_flag;
+  return HECMW_SUCCESS;
 }
 
 #else  /* HECMW_WITH_REFINER */
