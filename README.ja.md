@@ -2,7 +2,7 @@
 
   README of FrontISTR on HEC-MW
 
-  2018.10.01  Version 5.0b
+  2019.09.02  Version 5.0rc
 
   一般社団法人FrontISTR Commons
 
@@ -15,8 +15,8 @@
   - オープンソース大規模並列FEM非線形構造解析プログラム FrontISTR
 
 (2)詳細マニュアル
-  - [日本語](http://frontistr-commons.gitlab.io/FrontISTR_manual/v5.0b/ja/)
-  - [英語](http://frontistr-commons.gitlab.io/FrontISTR_manual/v5.0b/en/)
+  - [日本語](https://frontistr-commons.gitlab.io/FrontISTR/manual_ja/index.html)
+  - [英語](https://frontistr-commons.gitlab.io/FrontISTR/manual_en/index.html)
 
 (3)ディレクトリ構成
   README.md                   : README (英語版)
