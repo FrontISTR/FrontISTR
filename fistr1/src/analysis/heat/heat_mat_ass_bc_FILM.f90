@@ -37,6 +37,8 @@ contains
     !$omp do
     do k = 1, fstrHEAT%H_SUF_tot
       icel    = fstrHEAT%H_SUF_elem(k)
+      if( fstrHEAT%elements(icel)%dummy_flag > 0 ) cycle
+
       isuf    = fstrHEAT%H_SUF_surf(k)
       iam1    = fstrHEAT%H_SUF_ampl(k,1)
       iam2    = fstrHEAT%H_SUF_ampl(k,2)

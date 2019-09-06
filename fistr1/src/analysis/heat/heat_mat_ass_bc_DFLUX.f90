@@ -41,6 +41,8 @@ contains
       isuf    = fstrHEAT%Q_SUF_surf(k)
       iamp    = fstrHEAT%Q_SUF_ampl(k)
 
+      if( fstrHEAT%elements(icel)%dummy_flag > 0 ) cycle
+
       call heat_get_amplitude( fstrHEAT,iamp,CTIME,QQ )
       val     = fstrHEAT%Q_SUF_val (k) * QQ
       if( dabs(val) < 1.d-16 ) cycle
