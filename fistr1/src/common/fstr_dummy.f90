@@ -71,10 +71,10 @@ contains
 
     integer(kind=kint) :: icel, in0
     integer(kind=kint) :: iS, iE, ic_type, nodlocal, i
-    logical, pointer   :: active(:)
+    real(kind=kreal), pointer   :: active(:)
 
     allocate(active(hecMESH%n_node))
-    active = .false.
+    active = -1.d0
 
     do itype = 1, hecMESH%n_elem_type
       iS = hecMESH%elem_type_index(itype-1) + 1
@@ -90,13 +90,15 @@ contains
         nn = hecmw_get_max_node(ic_type)
         do i = 1, nn
           nodlocal = hecMESH%elem_node_item(in0+i)
-          active(nodlocal) = .true.
+          active(nodlocal) = 1.d0
         enddo
       enddo
     enddo
 
+    call hecmw_update_1_R(hecMESH,active,hecMESH%n_node)
+
     do i = 1, hecMESH%n_node
-      if( active(i) ) cycle
+      if( active(i) > 0.d0 ) cycle
       vec_new(ndof*(i-1)+1:ndof*i) = vec_old(ndof*(i-1)+1:ndof*i)
     end do
 
