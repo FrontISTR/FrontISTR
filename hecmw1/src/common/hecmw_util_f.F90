@@ -1033,7 +1033,7 @@ contains
     hecMAT%NP   = NP
     hecMAT%NPL  = NPL
     hecMAT%NPU  = NPU
-
+    hecMAT%NDOF = NDOF
     allocate(hecMAT%B(NDOF*NP))
     allocate(hecMAT%X(NDOF*NP))
     allocate(hecMAT%D(NDOF2*NP))
