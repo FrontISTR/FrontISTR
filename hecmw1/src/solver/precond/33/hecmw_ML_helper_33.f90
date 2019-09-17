@@ -309,24 +309,23 @@ subroutine hecmw_ML_smoother_apply_33(id, x_length, x, rhs_length, rhs, ierr)
   type(hecmwST_matrix), pointer :: hecMAT
   type(hecmwST_local_mesh), pointer :: hecMESH
 
-  ! real(kind=kreal), allocatable :: resid(:)
-  ! integer(kind=kint) :: i
-  ! real(kind=kreal) :: COMMtime
+  real(kind=kreal), allocatable :: resid(:)
+  integer(kind=kint) :: i
+  real(kind=kreal) :: COMMtime
 
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
 
-  ! allocate(resid(hecMAT%NP * hecMAT%NDOF))
-  ! ! {resid} = {rhs} - [A] {x}
-  ! call hecmw_matresid_33 (hecMESH, hecMAT, x, rhs, resid, COMMtime)
-  ! ! {delta_x} = [M]^-1 {resid}
-  ! call hecmw_precond_SSOR_33_apply(resid)
-  ! ! {x} = {x} + {delta_x}
-  ! do i=1,x_length
-  !   x(i) = x(i) + resid(i)
-  ! enddo
-  ! deallocate(resid)
+  allocate(resid(hecMAT%NP * hecMAT%NDOF))
+  ! {resid} = {rhs} - [A] {x}
+  call hecmw_matresid_33 (hecMESH, hecMAT, x, rhs, resid, COMMtime)
+  ! {delta_x} = [M]^-1 {resid}
+  call hecmw_precond_SSOR_33_apply(resid)
+  ! {x} = {x} + {delta_x}
+  do i=1,x_length
+    x(i) = x(i) + resid(i)
+  enddo
+  deallocate(resid)
 
-  call hecmw_precond_SSOR_33_smoother(x, rhs)
   ierr = 0
 end subroutine hecmw_ML_smoother_apply_33
 
