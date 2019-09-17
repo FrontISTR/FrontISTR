@@ -69,6 +69,7 @@ contains
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
       iterpremax, nrest, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
+      solver_opt1, solver_opt2, solver_opt3, &
       resid, singma_diag, sigma, thresh, filter )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
@@ -89,6 +90,9 @@ contains
     integer(kind=kint) :: estcond
     integer(kind=kint) :: method2
     integer(kind=kint) :: recyclepre
+    integer(kind=kint) :: solver_opt1
+    integer(kind=kint) :: solver_opt2
+    integer(kind=kint) :: solver_opt3
     real(kind=kreal) :: resid
     real(kind=kreal) :: singma_diag
     real(kind=kreal) :: sigma
@@ -158,6 +162,8 @@ contains
 
     if( precond == 20 .or. precond == 21) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ', thresh, filter)/= 0) return
+    else if( precond == 5 ) then
+      if( fstr_ctrl_get_data_ex( ctrl, 3, 'iii ', solver_opt1, solver_opt2, solver_opt3 )/= 0) return
     end if
 
     iterlog = iter -1

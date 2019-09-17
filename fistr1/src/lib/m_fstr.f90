@@ -802,6 +802,9 @@ contains
     hecMAT%Iarray(13)=    0    ! = mpc_method
     hecMAT%Iarray(14)=    0    ! = estcond
     hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
+    hecMAT%Iarray(41)=    1    ! = solver_opt1
+    hecMAT%Iarray(42)=    1    ! = solver_opt2
+    hecMAT%Iarray(43)=    1    ! = solver_opt3
 
     hecMAT%Rarray(1) =  1.0e-8 ! = resid
     hecMAT%Rarray(2) =  1.0    ! = sigma_diag

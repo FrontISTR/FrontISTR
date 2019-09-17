@@ -32,6 +32,9 @@ extern void hecmw_ml_smoother_setup_33_(int *id, int *ierr);
 extern void hecmw_ml_smoother_apply_33_(int *id, int *x_length, double x[],
                                         int *rhs_length, double rhs[], int *ierr);
 extern void hecmw_ml_smoother_clear_33_(int *id, int *ierr);
+extern void hecmw_ml_get_opt1_(int *id, int *opt1, int *ierr);
+extern void hecmw_ml_get_opt2_(int *id, int *opt2, int *ierr);
+extern void hecmw_ml_get_opt3_(int *id, int *opt3, int *ierr);
 
 /*
  * static functions
@@ -93,14 +96,14 @@ static struct ml_info MLInfo[MAX_MI];
  * If not, a few sweeps of smoother is applied.
  * (Note: Trilinos must be build with Amesos package enabled)
  */
-static const int FlgDirectSolveCoarsest = 1;
+static int FlgDirectSolveCoarsest = 1;
 
 /* Direct solver for the coarsest level
  *  available types: KLU, MUMPS
  * (KLU is a serial direct solver that comes with Trilinos/Amesos)
  */
 enum direct_solver {KLU, MUMPS};
-static const enum direct_solver DirectSolver = KLU;
+static enum direct_solver DirectSolver = KLU;
 
 /* Smoother type
  *  available types: Jacobi, GaussSeidel, BlockGaussSeidel, SymGaussSeidel,
@@ -108,16 +111,16 @@ static const enum direct_solver DirectSolver = KLU;
  * However, the following three types are currently available from this interface
  */
 enum smoother_type {SymGaussSeidel, SymBlockGaussSeidel, Cheby};
-static const enum smoother_type SmootherType = Cheby;
+static enum smoother_type SmootherType = Cheby;
 
 /* Whether HEC-MW smoother is used at finest level when SmootherType is SymBlockGaussSeidel
  */
-static const int flgUseHECMWSmoother = 1;
+static int FlgUseHECMWSmoother = 1;
 
 /* Solver cycle
  *  available types: ML_MGV (V-cycle), ML_MGW (W-cycle), ML_MGFULLV (Full V-Cycle), etc.
  */
-static const int MGType = ML_MGW;
+static int MGType = ML_MGW;
 
 
 /*
@@ -139,6 +142,74 @@ void hecmw_ML_wrapper_setup_33(int *id, int *sym, int *ierr) {
 
   hecmw_ml_get_loglevel_33_(id, &loglevel);
   ML_Set_PrintLevel(loglevel);
+
+  /* Get options */
+  {
+    int opt1, opt2, opt3;
+
+    hecmw_ml_get_opt1_(id, &opt1, ierr);
+    if (*ierr != HECMW_SUCCESS) return;
+
+    switch (opt1) {
+    case 1:
+      FlgDirectSolveCoarsest = 0;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML coarse solver is smoother\n");
+      break;
+    case 2:
+      FlgDirectSolveCoarsest = 1;
+      DirectSolver = KLU;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML coarse solver is KLU\n");
+      break;
+    case 3:
+      FlgDirectSolveCoarsest = 1;
+      DirectSolver = MUMPS;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML coarse solver is MUMPS\n");
+      break;
+    default:
+      fprintf(stderr, "WARNING: invalid solver_opt1=%d (ignored)\n", opt1);
+    }
+
+    hecmw_ml_get_opt2_(id, &opt2, ierr);
+    if (*ierr != HECMW_SUCCESS) return;
+
+    switch (opt2) {
+    case 1:
+      SmootherType = Cheby;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML smoother is Cheby\n");
+      break;
+    case 2:
+      SmootherType = SymBlockGaussSeidel;
+      FlgUseHECMWSmoother = 1;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML smoother is SymBlockGaussSeidel\n");
+      break;
+    case 3:
+      SmootherType = SymGaussSeidel;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML smoother is SymGaussSeidel\n");
+      break;
+    default:
+      fprintf(stderr, "WARNING: invalid solver_opt2=%d (ignored)\n", opt2);
+    }
+
+    hecmw_ml_get_opt3_(id, &opt3, ierr);
+    if (*ierr != HECMW_SUCCESS) return;
+
+    switch (opt3) {
+    case 1:
+      MGType = ML_MGV;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML multigrid type is V-cycle\n");
+      break;
+    case 2:
+      MGType = ML_MGW;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML multigrid type is W-cycle\n");
+      break;
+    case 3:
+      MGType = ML_MGFULLV;
+      if (loglevel > 0) fprintf(stderr, "INFO: ML multigrid type is Full-V-cycle\n");
+      break;
+    default:
+      fprintf(stderr, "WARNING: invalid solver_opt3=%d (ignored)\n", opt3);
+    }
+  }
 
   /* ML object */
   N_grids = 4;
@@ -227,7 +298,7 @@ void hecmw_ML_wrapper_setup_33(int *id, int *sym, int *ierr) {
       }
     } else if (SmootherType == SymBlockGaussSeidel) {
       level = 0;
-      if (flgUseHECMWSmoother) {
+      if (FlgUseHECMWSmoother) {
         /* use HEC-MW's Block-SSOR preconditioner at the finest level */
         hecmw_ml_smoother_setup_33_(id, ierr);
         if (*ierr != HECMW_SUCCESS) return;
@@ -310,7 +381,7 @@ void hecmw_ML_wrapper_clear_33(int *id, int *ierr) {
   ML_Destroy(&(MLInfo[*id - 1].ml_object));
 
   if (SmootherType == SymBlockGaussSeidel) {
-    if (flgUseHECMWSmoother) {
+    if (FlgUseHECMWSmoother) {
       hecmw_ml_smoother_clear_33_(id, ierr);
     }
   }

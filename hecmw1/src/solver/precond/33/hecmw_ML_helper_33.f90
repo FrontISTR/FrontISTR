@@ -342,3 +342,48 @@ subroutine hecmw_ML_smoother_clear_33(id, ierr)
   call hecmw_precond_SSOR_33_clear(hecMAT)
   ierr = 0
 end subroutine hecmw_ML_smoother_clear_33
+
+subroutine hecmw_ml_get_opt1(id, opt1, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_matrix_misc
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: opt1
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  opt1 = hecmw_mat_get_solver_opt1(hecMAT)
+  ierr = 0
+end subroutine hecmw_ml_get_opt1
+
+subroutine hecmw_ml_get_opt2(id, opt2, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_matrix_misc
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: opt2
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  opt2 = hecmw_mat_get_solver_opt2(hecMAT)
+  ierr = 0
+end subroutine hecmw_ml_get_opt2
+
+subroutine hecmw_ml_get_opt3(id, opt3, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_matrix_misc
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: opt3
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  opt3 = hecmw_mat_get_solver_opt3(hecMAT)
+  ierr = 0
+end subroutine hecmw_ml_get_opt3
