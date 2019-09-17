@@ -279,3 +279,67 @@ subroutine hecmw_ML_get_loglevel_33(id, level)
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
   level = hecmw_mat_get_timelog(hecMAT)
 end subroutine hecmw_ML_get_loglevel_33
+
+subroutine hecmw_ML_smoother_setup_33(id, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_precond_SSOR_33
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  call hecmw_precond_SSOR_33_setup(hecMAT)
+  ierr = 0
+end subroutine hecmw_ML_smoother_setup_33
+
+subroutine hecmw_ML_smoother_apply_33(id, x_length, x, rhs_length, rhs, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_solver_las_33
+  use hecmw_precond_SSOR_33
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(in) :: x_length
+  real(kind=kreal), intent(inout) :: x(x_length)
+  integer(kind=kint), intent(in) :: rhs_length
+  real(kind=kreal), intent(in) :: rhs(rhs_length)
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+
+  ! real(kind=kreal), allocatable :: resid(:)
+  ! integer(kind=kint) :: i
+  ! real(kind=kreal) :: COMMtime
+
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+
+  ! allocate(resid(hecMAT%NP * hecMAT%NDOF))
+  ! ! {resid} = {rhs} - [A] {x}
+  ! call hecmw_matresid_33 (hecMESH, hecMAT, x, rhs, resid, COMMtime)
+  ! ! {delta_x} = [M]^-1 {resid}
+  ! call hecmw_precond_SSOR_33_apply(resid)
+  ! ! {x} = {x} + {delta_x}
+  ! do i=1,x_length
+  !   x(i) = x(i) + resid(i)
+  ! enddo
+  ! deallocate(resid)
+
+  call hecmw_precond_SSOR_33_smoother(x, rhs)
+  ierr = 0
+end subroutine hecmw_ML_smoother_apply_33
+
+subroutine hecmw_ML_smoother_clear_33(id, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_precond_SSOR_33
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  call hecmw_precond_SSOR_33_clear(hecMAT)
+  ierr = 0
+end subroutine hecmw_ML_smoother_clear_33
