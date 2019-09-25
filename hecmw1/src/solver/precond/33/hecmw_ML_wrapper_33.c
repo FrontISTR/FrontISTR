@@ -145,25 +145,27 @@ void hecmw_ML_wrapper_setup_33(int *id, int *sym, int *ierr) {
 
   /* Get options */
   {
-    int opt1, opt2, opt3;
+    int opt1, opt2, opt3, myrank;
 
     hecmw_ml_get_opt1_(id, &opt1, ierr);
     if (*ierr != HECMW_SUCCESS) return;
 
+    HECMW_Comm_rank(HECMW_comm_get_comm(), &myrank);
+
     switch (opt1) {
     case 1:
       FlgDirectSolveCoarsest = 0;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML coarse solver is smoother\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarse solver is smoother\n");
       break;
     case 2:
       FlgDirectSolveCoarsest = 1;
       DirectSolver = KLU;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML coarse solver is KLU\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarse solver is KLU\n");
       break;
     case 3:
       FlgDirectSolveCoarsest = 1;
       DirectSolver = MUMPS;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML coarse solver is MUMPS\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarse solver is MUMPS\n");
       break;
     default:
       fprintf(stderr, "WARNING: invalid solver_opt1=%d (ignored)\n", opt1);
@@ -175,16 +177,16 @@ void hecmw_ML_wrapper_setup_33(int *id, int *sym, int *ierr) {
     switch (opt2) {
     case 1:
       SmootherType = Cheby;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML smoother is Cheby\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML smoother is Cheby\n");
       break;
     case 2:
       SmootherType = SymBlockGaussSeidel;
       FlgUseHECMWSmoother = 1;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML smoother is SymBlockGaussSeidel\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML smoother is SymBlockGaussSeidel\n");
       break;
     case 3:
       SmootherType = SymGaussSeidel;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML smoother is SymGaussSeidel\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML smoother is SymGaussSeidel\n");
       break;
     default:
       fprintf(stderr, "WARNING: invalid solver_opt2=%d (ignored)\n", opt2);
@@ -196,15 +198,15 @@ void hecmw_ML_wrapper_setup_33(int *id, int *sym, int *ierr) {
     switch (opt3) {
     case 1:
       MGType = ML_MGV;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML multigrid type is V-cycle\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML multigrid type is V-cycle\n");
       break;
     case 2:
       MGType = ML_MGW;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML multigrid type is W-cycle\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML multigrid type is W-cycle\n");
       break;
     case 3:
       MGType = ML_MGFULLV;
-      if (loglevel > 0) fprintf(stderr, "INFO: ML multigrid type is Full-V-cycle\n");
+      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML multigrid type is Full-V-cycle\n");
       break;
     default:
       fprintf(stderr, "WARNING: invalid solver_opt3=%d (ignored)\n", opt3);
