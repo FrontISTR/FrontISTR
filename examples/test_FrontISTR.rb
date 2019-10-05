@@ -400,24 +400,24 @@ when("static/spring_boundary")
 	exit res if res != 0
 when("static/1elem")
 [
-  ["static/1elem","arruda.msh","arruda.cnt"],
-  ["static/1elem","creep.msh","creep.cnt"],
-  ["static/1elem","drucker.msh","drucker.cnt"],
-  ["static/1elem","mises.msh","mises.cnt"],
-  ["static/1elem","mohr.msh","mohr.cnt"],
-  ["static/1elem","mohr.msh","mohrshear.cnt"],
-  ["static/1elem","neohooke.msh","neohooke.cnt"],
-  ["static/1elem","quad001.msh","quad001.cnt"],
-  ["static/1elem","ramberg.msh","ramberg.cnt"],
-  ["static/1elem","relax.msh","relax.cnt"],
-  ["static/1elem","rivlin.msh","rivlin.cnt"],
-  ["static/1elem","swift.msh","swift.cnt"],
-  ["static/1elem","viscoe.msh","viscoe.cnt"],
-  ["static/1elem","viscoe.msh","viscof.cnt"],
+	["static/1elem","arruda.msh","arruda.cnt"],
+	["static/1elem","creep.msh","creep.cnt"],
+#	["static/1elem","drucker.msh","drucker.cnt"],
+	["static/1elem","mises.msh","mises.cnt"],
+#	["static/1elem","mohr.msh","mohr.cnt"],
+#	["static/1elem","mohr.msh","mohrshear.cnt"],
+	["static/1elem","neohooke.msh","neohooke.cnt"],
+#	["static/1elem","quad001.msh","quad001.cnt"],
+#	["static/1elem","ramberg.msh","ramberg.cnt"],
+	["static/1elem","relax.msh","relax.cnt"],
+#	["static/1elem","rivlin.msh","rivlin.cnt"],
+	["static/1elem","swift.msh","swift.cnt"],
+#	["static/1elem","viscoe.msh","viscoe.cnt"],
+	["static/1elem","viscoe.msh","viscof.cnt"],
 ].each{|param|
-  # この系列は cnt ファイル名を回答名にしていることに注意
-  res = exec_test(param[0],param[1],param[2],File.basename(param[2],".*"))
-  exit res if res != 0
+	# この系列は cnt ファイル名を回答名にしていることに注意
+	res = exec_test(param[0],param[1],param[2],File.basename(param[2],".*"))
+	exit res if res != 0
 }
 when("eigen/exJ")
 [

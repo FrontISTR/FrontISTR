@@ -8,7 +8,7 @@ project(Fistr_Test)
 
 find_program(BASH_PROGRAM bash)
 
-foreach(case exA exB exC exD exE exF exG exI spring_boundary)
+foreach(case exA exB exC exD exE exF exG exI spring_boundary 1elem)
   add_test(
     NAME Static_${case}_Test
    COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} static/${case}
