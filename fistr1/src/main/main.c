@@ -7,11 +7,16 @@
  */
 
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <FrontISTRConfig.h>
 #include "hecmw_log.h"
-
+#ifndef HECMW_SERIAL
+#include "mpi.h"
+#else
+#include <unistd.h>
+#endif
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
@@ -25,6 +30,47 @@ struct option_rec {
   char *option_name;
   void (*func)(char *);
 };
+
+int get_procs_num(){
+#ifndef HECMW_SERIAL
+  int proc;
+  MPI_Comm_size(MPI_COMM_WORLD, &proc);
+  return proc;
+#else
+  return 1;
+#endif
+}
+void print_hostname(){
+  int rank,proc;
+  int name_length = 256;
+  char name[name_length];
+  int ret,i;
+#ifndef HECMW_SERIAL
+  MPI_Status status;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &proc);
+  MPI_Get_processor_name(name, &name_length);
+    if (rank == 0){
+      printf("    %d: %s\n",0,name);
+      for (i=1;i<proc;i++){
+        ret = MPI_Recv(&name, name_length, MPI_CHAR, i, 0, MPI_COMM_WORLD, &status);
+        printf("    %d: %s\n",i,name);
+      }
+    }else{
+      ret = MPI_Send(&name, name_length, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+    }
+#else
+  gethostname(name, name_length);
+  printf("    %d: %s\n",0,name);
+#endif
+}
+int get_threads_num(){
+#ifdef _OPENMP
+  return omp_get_max_threads();
+#else
+  return 1;
+#endif /* _OPENMP */
+}
 
 #ifdef _OPENMP
 /**
@@ -60,7 +106,7 @@ void help(char *arg) {
   printf(" -t <n>: Set number of OpenMP threads\n");
 #endif
   printf(" -c <Path of control file>: Use this control file. Default "
-         "./hecmw_ctrl.dat\n");
+      "./hecmw_ctrl.dat\n");
   printf("--debug: Show debug messages.\n");
   exit(0);
 }
@@ -69,8 +115,6 @@ void help(char *arg) {
  * \brief show version and revision of FrontISTR
  */
 void version(char *arg) {
-  printf("FrontISTR version %d.%d.%d (%s) \n", VERSION_MAJOR, VERSION_MINOR,
-         VERSION_PATCH, GIT_HASH);
 #ifdef WITH_MPI
   printf("MPI: Enabled\n");
 #else
@@ -88,7 +132,7 @@ void version(char *arg) {
 #ifdef HECMW_METIS_VER
   printf("HECMW_METIS_VER: %d\n", HECMW_METIS_VER);
 #endif
-  printf("Compile Option: ");
+  printf("CompileOption: ");
 #ifdef WITH_MPI
   printf("-p ");
 #endif
@@ -160,8 +204,75 @@ struct option_rec options[] = {
  */
 int main(int argc, char *argv[])
 {
+  char date[64];
   struct option_rec *p;
   unsigned int i;
+  int rank=0;
+  time_t t = time(NULL);
+
+#ifndef HECMW_SERIAL
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+  if ( rank==0 ){
+    printf("##################################################################\n");
+    printf("#                         FrontISTR                              #\n");
+    printf("##################################################################\n");
+    printf("---\n");
+    printf("version:    %d.%d.%d\n", VERSION_MAJOR,VERSION_MINOR, VERSION_PATCH);
+    printf("git_hash:   %s\n", GIT_HASH );
+    printf("build:\n");
+    printf("  MPI:      ");
+#ifdef WITH_MPI
+    printf("enabled\n");
+#else
+    printf("disabled\n");
+#endif
+    printf("  OpenMP:   ");
+#ifndef OPENMP_UNKNOWN
+#ifdef WITH_OPENMP
+    printf("enabled\n");
+#else
+    printf("disabled\n");
+#endif
+#else
+    printf("unknown\n");
+#endif
+    printf("  option:   ");
+    printf("\"");
+#ifdef WITH_MPI
+    printf("-p ");
+#endif
+#ifdef WITH_TOOLS
+    printf("--with-tools ");
+#endif
+#ifdef WITH_REFINER
+    printf("--with-refiner ");
+#endif
+#ifdef WITH_METIS
+    printf("--with-metis ");
+#endif
+#ifdef WITH_MUMPS
+    printf("--with-mumps ");
+#endif
+#ifdef WITH_LAPACK
+    printf("--with-lapack ");
+#endif
+#ifdef WITH_ML
+    printf("--with-ml ");
+#endif
+#ifdef WITH_PARMETIS
+    printf("--with-parmetis ");
+#endif
+#ifdef WITH_MKL
+    printf("--with-mkl ");
+#endif
+    printf("\"");
+#ifdef HECMW_METIS_VER
+#endif
+    printf("\n");
+    printf("  HECMW_METIS_VER: %d\n", HECMW_METIS_VER);
+  }
 
   for (i = 0; i < argc; i++) {
     for (p = options; p->option_name != NULL; p++) {
@@ -170,7 +281,23 @@ int main(int argc, char *argv[])
       }
     }
   }
-
+  if ( rank==0 ){
+    printf("execute:  \n");
+    strftime(date, sizeof(date), "%Y-%m-%dT%H:%M:%S%z", localtime(&t));
+    printf("  date:       %s\n", date);
+    printf("  processes:  %d\n", get_procs_num());
+    printf("  threads:    %d\n", get_threads_num());
+    printf("  cores:      %d\n", get_threads_num()*get_procs_num());
+    printf("  host:\n");
+  }
+  print_hostname();
+  if ( rank==0 ){
+    printf("---\n");
+    printf("...\n");
+  }
+#ifndef HECMW_SERIAL
+  MPI_Barrier( MPI_COMM_WORLD );
+#endif
   fstr_main();
   return 0;
 }
