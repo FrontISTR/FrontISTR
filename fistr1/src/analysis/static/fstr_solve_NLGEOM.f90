@@ -41,7 +41,6 @@ contains
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
     logical            :: ctchanged, is_OutPoint
-
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 
     hecMAT%NDOF = hecMESH%n_dof
@@ -77,6 +76,7 @@ contains
     endif
 
     if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+    if(hecMESH%my_rank==0) write(*,'(2x,a)') "step: "
 
     restart_step_num    = 1
     restart_substep_num = 1
@@ -92,6 +92,9 @@ contains
       call fstr_set_timeinc_base( dtime )
       fstrSOLID%restart_nout = - fstrSOLID%restart_nout
     else
+      if(hecMESH%my_rank==0) write(*,'(4x,a)') "0: "    
+      if(hecMESH%my_rank==0) write(*,'(6x,a)') "substep: "    
+      if(hecMESH%my_rank==0) write(*,'(8x,a)') "0: "    
       call fstr_static_Output( 1, 0, 0.d0, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, .true. )
     endif
 
@@ -100,9 +103,11 @@ contains
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
 
     do tot_step=1, fstrSOLID%nstep_tot
+
       tot_step_print = tot_step+restart_step_num-1
-      if(hecMESH%my_rank==0) write(*,*) ''
-      if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step_print
+      if(hecMESH%my_rank==0) write(*,'(4x,i0,":")') tot_step_print
+      !if(hecMESH%my_rank==0) write(*,*) ''
+      !if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step_print
 
       if( fstrSOLID%TEMP_ngrp_tot>0 ) then
         do j=1, hecMESH%n_node
@@ -115,7 +120,9 @@ contains
       !      STEP LOOP
       ! -------------------------------------------------------------------------
       sub_step = restart_substep_num
+      if(hecMESH%my_rank==0) write(*,'(6x,a,i0)') "restart_substep_num: ",restart_substep_num
       do while(.true.)
+        if(hecMESH%my_rank==0) write(*,'(6x,a)') "substep: "
 
         ! ----- time history of factor
         call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
@@ -133,10 +140,17 @@ contains
         endif
 
         if(hecMESH%my_rank==0) then
-          write(*,'(A,I0,2(A,E12.4))') ' sub_step= ',sub_step,', &
-            &  current_time=',fstr_get_time(), ', time_inc=',fstr_get_timeinc()
-          write(*,'(A,2f12.7)') ' loading_factor= ', fstrSOLID%FACTOR
-          if( fstrSOLID%TEMP_irres > 0 ) write(*,'(A,2f12.7)') ' readtemp_factor= ', fstrSOLID%TEMP_FACTOR
+          write(*,'(10x,a,i0)') "substep: ",sub_step
+          write(*,'(10x,a,E12.4)') "current_time    : ",fstr_get_time()
+          write(*,'(10x,a,E12.4)') "time_inc        : ",fstr_get_timeinc()
+          write(*,'(10x,a,f12.7)') "loading_factor1 : ",fstrSOLID%FACTOR(1)
+          write(*,'(10x,a,f12.7)') "loading_factor2 : ",fstrSOLID%FACTOR(2)
+!          write(*,'(A,I0,2(A,E12.4))') ' sub_step= ',sub_step,', &
+!            &  current_time=',fstr_get_time(), ', time_inc=',fstr_get_timeinc()
+!          write(*,'(A,2f12.7)') ' loading_factor= ', fstrSOLID%FACTOR
+
+!          if( fstrSOLID%TEMP_irres > 0 ) write(*,'(A,2f12.7)') ' readtemp_factor= ', fstrSOLID%TEMP_FACTOR
+          if( fstrSOLID%TEMP_irres > 0 ) write(*,'(8x,a,f12.7)') "readtemp_factor : ", fstrSOLID%TEMP_FACTOR
         endif
 
         time_1 = hecmw_Wtime()

@@ -69,10 +69,12 @@ contains
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
     call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    write(*,"(10x,a)") "Newton-Raphson:"
 
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt = stepcnt+1
+      write(*,'(12x,i0,":")') iter
 
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
@@ -131,12 +133,20 @@ contains
       rxnrm = xnrm/dunrm
       if( hecMESH%my_rank == 0 ) then
         if (qnrm == 1.0d0) then
-          write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
+          write(*,"(14x,a,1pe11.4)") "abs        : yes"
+          !write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")"# iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
         else
-          write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
+!          write(*,"(14x,a,1pe11.4)") "abs        : no"
+          !write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")"# iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
         endif
+          write(*,"(14x,a,1pe11.4)") "residual   : ",rres
+          write(*,"(14x,a,1pe11.4)") "disp.corr. : ",rxnrm        
       endif
       if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
+        if( rres < fstrSOLID%step_ctrl(cstep)%converg .or. rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) then
+          write(*,"(14x,a)") "converged  : yes"
+        endif
+
         if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
         if( rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) exit
       endif
@@ -146,6 +156,7 @@ contains
         if( hecMESH%my_rank == 0) then
           write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
           write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+          write(*,"(14x,a)") "failure    : yes"
         end if
         fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
         fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)

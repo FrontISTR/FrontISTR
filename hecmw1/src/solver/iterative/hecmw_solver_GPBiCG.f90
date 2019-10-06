@@ -95,6 +95,7 @@ contains
     allocate (WW(NDOF*NP,14))
     WW= 0.d0
 
+    if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(12x,a)') "residual:"
     !C
     !C-- SCALING
     call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
@@ -306,9 +307,7 @@ contains
       RHO  = COEF1
 
       !C##### ITERATION HISTORY
-      if (my_rank.eq.0 .and. ITERlog.eq.1)                              &
-        &    write (*, 1000) ITER, RESID
-      1000   format (i5, 1pe16.6)
+      if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(14x,i0,":", 1pe16.6)') ITER, RESID
       !C#####
 
       if (RESID.le.TOL   ) then

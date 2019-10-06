@@ -88,6 +88,8 @@ contains
     TOL   = hecmw_mat_get_resid( hecMAT )
     NREST  = hecmw_mat_get_nrest( hecMAT )
     ESTCOND = hecmw_mat_get_estcond( hecMAT )
+    if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(12x,"m:",i3)') NREST
+    if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(12x,a)') "residual:"
 
     if (NREST >= NDOF*NP-1) NREST = NDOF*NP-2
 
@@ -279,8 +281,9 @@ contains
 
         RESID = dabs ( WW(I+1,S))/dsqrt(BNRM2)
 
-        if (my_rank.eq.0 .and. ITERlog.eq.1)                              &
-          &    write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
+        !if (my_rank.eq.0 .and. ITERlog.eq.1)                              &
+        !  &    write (*, '(2i8, 1pe16.6)') iter,I+1, RESID
+        if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(14x,i0,":", 1pe16.6)') ITER, RESID
 
         if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
           if (mod(ITER,ESTCOND) == 0) call hecmw_estimate_condition_GMRES(I, H)

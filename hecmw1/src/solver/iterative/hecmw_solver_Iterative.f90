@@ -91,6 +91,7 @@ contains
     error=0
     !! Auto Sigma_diag loop
     do
+      if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) write(*,"(10x,a)") "LinearEquationSolver:"
       call hecmw_mat_set_flag_converged(hecMAT, 0)
       call hecmw_mat_set_flag_diverged(hecMAT, 0)
       if (auto_sigma_diag.eq.1) call hecmw_mat_set_sigma_diag(hecMAT, SIGMA_DIAG)
@@ -113,7 +114,7 @@ contains
           hecMAT%symmetric = .false.
           call hecmw_solve_GPBiCG( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
-          error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
+          error = HECMW_SOLVER_ERROR_INCONS_PC  !!譛ｪ螳夂ｾｩ縺ｪMETHOD!!
           call hecmw_solve_error (hecMESH, error)
       end select
 
@@ -141,7 +142,7 @@ contains
 
     resid2=hecmw_rel_resid_L2(hecMESH,hecMAT)
     if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
-      write(*,"(a,1pe12.5)")'### Relative residual =', resid2
+      !write(*,"(a,1pe12.5)")'### Relative residual =', resid2
     endif
     if (resid2 < hecmw_mat_get_resid(hecMAT)) call hecmw_mat_set_flag_converged(hecMAT, 1)
 
@@ -158,16 +159,19 @@ contains
 
     if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) then
       TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
-      write (*,'(/a)')          '### summary of linear solver'
-      write (*,'(i10,a, 1pe16.6)')      ITER, ' iterations  ', RESID
-      write (*,'(a, 1pe16.6 )') '    set-up time      : ', TIME_setup
-      write (*,'(a, 1pe16.6 )') '    solver time      : ', TIME_sol
-      write (*,'(a, 1pe16.6 )') '    solver/comm time : ', TIME_comm
-      write (*,'(a, 1pe16.6 )') '    solver/matvec    : ', time_Ax
-      write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
+      !write (*,'(a)')          '### summary of linear solver'
+      write (*,'(12x,a)')          'summary:'
+      write (*,'(12x,a, i12 )')     '  iterations: ', ITER
+      write (*,'(12x,a, 1pe12.6 )') '  residual  : ', RESID
+      write (*,'(12x,a)')           '  time:'
+      write (*,'(12x,a, 1pe12.6 )') '    total   : ', TIME_sol
+      write (*,'(12x,a, 1pe12.6 )') '    setup   : ', TIME_setup
+      write (*,'(12x,a, 1pe12.6 )') '    comm    : ', TIME_comm
+      write (*,'(12x,a, 1pe12.6 )') '    matvec  : ', time_Ax
+      write (*,'(12x,a, 1pe12.6 )') '    precond : ', time_precond
       if (ITER > 0) &
-        write (*,'(a, 1pe16.6 )') '    solver/1 iter    : ', TIME_sol / ITER
-      write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
+      write (*,'(12x,a, 1pe12.6 )') '    1iter   : ', TIME_sol / ITER
+      write (*,'(12x,a, 1pe12.6 )') '  workratio : ', TR
     endif
 
   end subroutine hecmw_solve_iterative
@@ -298,8 +302,14 @@ contains
         msg_precond="Unlabeled"
     end select
     if (hecMESH%my_rank.eq.0 .and. (ITERlog.eq.1 .or. TIMElog.ge.1)) then
-      write (*,'(a,i0,a,i0,a,a,a,a,a,i0)') '### ',hecMAT%NDOF,'x',hecMAT%NDOF,' BLOCK ', &
-        &   trim(msg_method),", ",trim(msg_precond),", ", iterPREmax
+      !write (*,'(a,i0,a,i0,a,a,a,a,a,i0)') '### ',hecMAT%NDOF,'x',hecMAT%NDOF,' BLOCK ', &
+      !  &   trim(msg_method),", ",trim(msg_precond),", ", iterPREmax
+      write (*,'(12x,a,a)')          "method           :  ", trim(msg_method)
+      write (*,'(12x,a,i0,"x",i0)')  "block            :  ", hecMAT%NDOF,hecMAT%NDOF
+      write (*,'(12x,a,i0)')         "precond          :  ", PRECOND
+      write (*,'(12x,a,a)')          "precond_name     :  ", trim(msg_precond)
+      write (*,'(12x,a,i0)')         "additive_schwarz :  ", iterPREmax
+
     end if
   end subroutine hecmw_solve_iterative_printmsg
 
