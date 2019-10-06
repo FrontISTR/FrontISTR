@@ -71,31 +71,35 @@ contains
     T2 = hecmw_Wtime()
 
     ! =============== ANALYSIS =====================
-
+    write(*,'(a)')"analysis:"
     select case( fstrPR%solution_type )
       case( kstSTATIC )
+        write(*,'(a)')"  type: static"
         call fstr_static_analysis
       case( kstDYNAMIC )
+        write(*,'(a)')"  type: dynamic"
         call fstr_dynamic_analysis
       case( kstEIGEN )
+        write(*,'(a)')"  type: eigen"
         call fstr_eigen_analysis
       case( kstHEAT )
+        write(*,'(a)')"  type: heat"
         call fstr_heat_analysis
       case( kstSTATICEIGEN )
+        write(*,'(a)')"  type: staticeigen"
         call fstr_static_eigen_analysis
       case( kstPRECHECK, kstNZPROF )
+        write(*,'(a)')"  type: precheck"
         call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
     end select
 
     T3 = hecmw_Wtime()
 
     if(hecMESH%my_rank==0) then
-      write(*,*)
-      write(*,*)           '===================================='
-      write(*,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
-      write(*,'(a,f10.2)') '           pre (sec) :', T2 - T1
-      write(*,'(a,f10.2)') '         solve (sec) :', T3 - T2
-      write(*,*)           '===================================='
+      write(*,'(a)')       'time: '
+      write(*,'(a,f10.2)') '  total:', T3 - T1
+      write(*,'(a,f10.2)') '  pre  :', T2 - T1
+      write(*,'(a,f10.2)') '  solve:', T3 - T2
 
       write(IMSG,*)           '===================================='
       write(IMSG,'(a,f10.2)') '    TOTAL TIME (sec) :', T3 - T1
@@ -110,7 +114,7 @@ contains
     call fstr_finalize()
     call hecmw_dist_free(hecMESH)
     call hecmw_finalize
-    if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
+    if(hecMESH%my_rank==0) write(*,"(a)") 'end: yes'
 
   end subroutine fstr_main
 
@@ -276,7 +280,7 @@ contains
     hecMAT%Rarray(:) = svRarray(:)
     hecMAT%Iarray(:) = svIarray(:)
 
-    if( myrank == 0) write(*,*) 'fstr_setup: OK'
+    if( myrank == 0) write(*,'(a)') 'setup: OK'
     write(ILOG,*) 'fstr_setup: OK'
     call flush(6)
 

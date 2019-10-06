@@ -82,7 +82,7 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
     tp1       = psf->next_psf;
     for (visual_id = 0; visual_id < psf->num_of_psf; visual_id++) {
       if (mynode == 0)
-        fprintf(stdout, "          visualized : yes\n");
+        fprintf(stdout, "          visualized : \n");
         fprintf(stdout, "            PSF      : %d\n",visual_id+1);
         fprintf(stdout, "            timestep : %d\n",timestep);
         /*fprintf(stderr, " Start visualize PSF %d at timestep %d\n",

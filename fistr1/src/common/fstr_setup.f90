@@ -828,7 +828,7 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       endif
 
-      if( myrank==0 ) write(*,*)"Step control not defined! Using default step=1"
+      if( myrank==0 ) write(*,*)"# Step control not defined! Using default step=1"
       fstrSOLID%nstep_tot = 1
       allocate( fstrSOLID%step_ctrl(1) )
       call init_stepInfo( fstrSOLID%step_ctrl(1) )

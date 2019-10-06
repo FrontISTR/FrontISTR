@@ -97,7 +97,7 @@ contains
     allocate (WW(NDOF*NP, 4))
     WW = 0.d0
 
-    if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(12x,a)') "residual:"
+    if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(16x,a)') "residual:"
     !C
     !C-- SCALING
     call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
@@ -252,7 +252,7 @@ contains
       RESID= dsqrt(DNRM2/BNRM2)
 
       !C##### ITERATION HISTORY
-      if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(14x,i0,":  ", 1pe12.6)') ITER, RESID
+      if (my_rank.eq.0.and.ITERLog.eq.1) write (*,'(18x,i0,":  ", 1pe12.6)') ITER, RESID
       !C#####
 
       if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then

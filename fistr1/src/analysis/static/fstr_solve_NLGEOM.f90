@@ -121,8 +121,9 @@ contains
       ! -------------------------------------------------------------------------
       sub_step = restart_substep_num
       if(hecMESH%my_rank==0) write(*,'(6x,a,i0)') "restart_substep_num: ",restart_substep_num
+      if(hecMESH%my_rank==0) write(*,'(6x,a,i0)') "substep:"
       do while(.true.)
-        if(hecMESH%my_rank==0) write(*,'(6x,a)') "substep: "
+        if(hecMESH%my_rank==0) write(*,'(8x,i0,":")') sub_step
 
         ! ----- time history of factor
         call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
@@ -140,7 +141,6 @@ contains
         endif
 
         if(hecMESH%my_rank==0) then
-          write(*,'(10x,a,i0)') "substep: ",sub_step
           write(*,'(10x,a,E12.4)') "current_time    : ",fstr_get_time()
           write(*,'(10x,a,E12.4)') "time_inc        : ",fstr_get_timeinc()
           write(*,'(10x,a,f12.7)') "loading_factor1 : ",fstrSOLID%FACTOR(1)
