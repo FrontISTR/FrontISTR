@@ -1,0 +1,56 @@
+!!
+!BOUNDARY
+ FIX,1,3,0.0
+ DISP,2,2,1.0
+!!
+!! comments
+!!
+!! SOLVER CONTROL
+!!
+!MATERIAL, NAME=M1
+!ELASTIC
+2.1e+8, 0.3
+!SOLUTION, TYPE=static
+!SOLVER,METHOD=CG,PRECOND=3,ITERLOG=YES,TIMELOG=YES
+   50000, 1
+   1.0e-8, 1.0, 0.0
+!!
+!! POST CONTROL
+!!
+!WRITE,RESULT
+!WRITE,VISUAL,
+!VISUAL, method=PSR
+!surface_num = 1
+!surface 1
+!surface_style = 1
+!group_name = boundary
+#!deform_display_on = 1
+#!deform_num_of_frames = 1
+!display_method  1
+!color_comp_name   =   STRESS 
+!color_subcomp       7
+!initial_style = 1
+!deform_style = 3 
+!!output_type  = BMP
+!!output_type  = AVS
+!!output_type  = COMPLETE_AVS
+!output_type  = COMPLETE_MICROAVS
+!x_resolution = 500
+!y_resolution = 500
+!num_of_lights = 1
+!position_of_lights = 100  100  50 
+!viewpoint =  100  100 100 
+!up_direction = 0.0  0.0  1.0
+!ambient_coef= 0.3
+!diffuse_coef=  0.7
+!specular_coef=  0.5
+!color_mapping_style= 1
+!!interval_mapping= -0.01, 0.02 
+!color_mapping_bar_on = 1
+!scale_marking_on = 1
+!num_of_scale = 5
+!font_size = 1.5
+!font_color  =        1.0  1.0  1.0
+!!fixed_range_on  = 1
+!!range_value = -160.0 , 200.0
+!END

@@ -1,0 +1,20 @@
+# for solver
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+conrod.msh
+!CONTROL, NAME=fstrCNT
+conrod.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+conrod.res
+# for partitioner
+!MESH, NAME=part_in,TYPE=HECMW-ENTIRE
+conrod.msh
+!MESH, NAME=part_out,TYPE=HECMW-DIST
+conrod.msh
+# for visualizer
+!MESH, NAME=mesh, TYPE=HECMW-ENTIRE
+conrod.msh
+!RESULT, NAME=result, IO=IN
+conrod.res
+!RESULT, NAME=vis_out, IO=OUT
+conrod
+!SUBDIR,ON
