@@ -12,7 +12,7 @@ MAKEFILE_NAME="Makefile"
 MAKEFILE_SETUPFILE="Makefile.am"
 
 LIBSRCDIRS="\
-    fistr"
+"
 
 BUILDDIRS="${LIBSRCDIRS} ."
 
@@ -77,3 +77,4 @@ do
 done
 
 ${RM} ${INTERMED_CONFIGFILE}
+
