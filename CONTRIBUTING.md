@@ -1,6 +1,6 @@
 # Contribution Guides
 ## Bug reports 
-- support(atma rk)frontistr.com
+- support(atmark)frontistr.org
 
 ## Bug fix
 -   Folking repository from official repository.
