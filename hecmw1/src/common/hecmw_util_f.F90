@@ -493,7 +493,7 @@ contains
     integer(kind=kint) :: ierr
 
 #ifndef HECMW_SERIAL
-    call MPI_INIT (ierr)
+    !call MPI_INIT (ierr)
     call MPI_COMM_SIZE (MPI_COMM_WORLD, hecmw_PETOT, ierr)
     call MPI_COMM_RANK (MPI_COMM_WORLD, hecmw_rank,  ierr)
     call MPI_COMM_DUP  (MPI_COMM_WORLD, hecmw_comm,  ierr)
