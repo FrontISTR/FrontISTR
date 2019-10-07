@@ -5,33 +5,72 @@ stages:
     - test
     - deploy
 
-make:
+make_serial:
     stage: build
     script:
-        - cmake -Bbuild -H.
-        - cmake --build build -- -j $(nproc)
+        - cmake -Bbuild_serial -DWITH_MPI=OFF -DWITH_OPENMP=OFF -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
+        - cmake --build build_serial -- -j $(nproc)
     artifacts:
         paths:
-            - build/
+            - build_serial/
         expire_in: 100min
 
-test_static:
+make_openmp:
+    stage: build
+    script:
+        - cmake -Bbuild_openmp -DWITH_MPI=OFF -DWITH_OPENMP=ON -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
+        - cmake --build build_openmp -- -j $(nproc)
+    artifacts:
+        paths:
+            - build_openmp/
+        expire_in: 100min
+make_mpi:
+    stage: build
+    script:
+        - cmake -Bbuild_mpi -DWITH_MPI=ON -DWITH_OPENMP=OFF -H.
+        - cmake --build build_mpi -- -j $(nproc)
+    artifacts:
+        paths:
+            - build_mpi/
+        expire_in: 100min
+make_hybrid:
+    stage: build
+    script:
+        - cmake -Bbuild_hybrid -DWITH_MPI=ON -DWITH_OPENMP=ON -H.
+        - cmake --build build_hybrid -- -j $(nproc)
+    artifacts:
+        paths:
+            - build_hybrid/
+        expire_in: 100min
+
+test_serial:
     stage: test
     dependencies:
-        - make
+        - make_serial
     script:
-        - cd build
-        - ctest -L static --output-on-failure
-
-test_fragile:
+        - cd build_serial
+        - ctest -L serial --output-on-failure
+test_openmp:
     stage: test
     dependencies:
-        - make
-    allow_failure: true
+        - make_openmp
     script:
-        - cd build
-        - ctest -L "(eigen|heat|dynamic)" --output-on-failure
-
+        - cd build_openmp
+        - ctest -L openmp --output-on-failure
+test_mpi:
+    stage: test
+    dependencies:
+        - make_mpi
+    script:
+        - cd build_mpi
+        - ctest -L mpi --output-on-failure
+test_hybrid:
+    stage: test
+    dependencies:
+        - make_hybrid
+    script:
+        - cd build_hybrid
+        - ctest -L hybrid --output-on-failure
 document:
     image: registry.gitlab.com/frontistr-commons/frontistr/document:latest
     stage: build
