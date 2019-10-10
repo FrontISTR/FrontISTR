@@ -8,6 +8,7 @@ require 'fileutils'
 $part = File.join(File.expand_path(ARGV[0]),'/hecmw1/tools/hecmw_part1')
 $fistr = File.join(File.expand_path(ARGV[0]),'/fistr1/fistr1')
 $threshold = 1.0e-4
+$eps = 1.0e-8
 $np = ARGV[2]
 $nt = ARGV[3]
 if $nt.nil? then
@@ -230,15 +231,23 @@ def read_log(filename)
 end
 
 def compare_item(actual_g,correct_g,itemname)
+  
   actual_g.each{|k,v|
-    if( correct_g.has_key?(k) && (correct_g[k][0] - v[0]).abs > $threshold )
-      puts "#{itemname} #{k} max value not coincident actual #{v[0]} : correct #{correct_g[k][0]}"
+    if( correct_g.has_key?(k) && ((correct_g[k][0] - correct_g[k][1]) - (v[0] - v[1])).abs > $threshold  )
+      puts "#{itemname} #{k} max-min value not coincident actual max:#{v[0]} - min:#{v[1]} : correct max:#{correct_g[k][0]} - min:#{correct_g[k][1]}"
+      puts ((correct_g[k][0] - correct_g[k][1]) - (v[0] - v[1])).abs
       return 1
     end
-    if( correct_g.has_key?(k) && (correct_g[k][1] - v[1]).abs > $threshold )
-      puts "#{itemname} #{k} min value not coincident actual #{v[1]} : correct #{correct_g[k][1]}"
-      return 1
-    end
+#    if( correct_g.has_key?(k) && ((correct_g[k][0] - v[0])/(correct_g[k][0].abs)).abs > $threshold && ((correct_g[k][0] - v[0]).abs > $eps) )
+#      puts "#{itemname} #{k} max value not coincident actual #{v[0]} : correct #{correct_g[k][0]}"
+#      puts ((correct_g[k][0] - v[0])/(correct_g[k][0].abs+$threshold)).abs
+#      return 1
+#    end
+#    if( correct_g.has_key?(k) && ((correct_g[k][1] - v[1])/(correct_g[k][1].abs)).abs > $threshold && ((correct_g[k][1] - v[1]).abs > $eps) )
+#      puts "#{itemname} #{k} min value not coincident actual #{v[1]} : correct #{correct_g[k][1]}"
+#      puts ((correct_g[k][1] - v[1])/(correct_g[k][1].abs+$threshold)).abs
+#      return 1
+#    end
   }
   return 0
 end
