@@ -173,9 +173,6 @@ contains
         call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
         if (ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
       end if
-
-      if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-
     else if( dtype == 2 .and. MPC_exist ) then !element output without patch element
 
       allocate(data_wo_MPC(n_dof*nelem_wo_MPC))
@@ -189,7 +186,6 @@ contains
       call hecmw_result_add_if(dtype, n_dof, label, data_wo_MPC, ierr)
 
       deallocate(data_wo_MPC)
-
       if (ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
     else
       return ! NEVER COME HERE (not node, not elem)
