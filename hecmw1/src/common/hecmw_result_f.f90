@@ -128,14 +128,8 @@ contains
         call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
         if (ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
       end if
-
-
-
-    if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-      end if
-
-    else if (node_or_elem == 2) then !elem
-      call hecmw_result_add_if(node_or_elem, n_dof, label, data, ierr)
+    else if (dtype == 2) then !elem
+      call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
       if (ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
     else
       return ! NEVER COME HERE (not node, not elem)
