@@ -14,17 +14,14 @@ MKDIR      = @mkdir@
 all:
 	@cd hecmw1 && $(MAKE)
 	@cd fistr1 && $(MAKE)
-	@cd fistr  && $(MAKE)
 
 clean:
 	@cd hecmw1 && $(MAKE) clean
 	@cd fistr1 && $(MAKE) clean
-	@cd fistr  && $(MAKE) clean
 
 distclean:
 	@cd hecmw1 && $(MAKE) distclean
 	@cd fistr1 && $(MAKE) distclean
-	@cd fistr  && $(MAKE) distclean
 	- $(RM) ./bin/*
 
 install:
@@ -36,4 +33,3 @@ install:
 	fi
 	@cd hecmw1 && $(MAKE) install
 	@cd fistr1 && $(MAKE) install
-	@cd fistr  && $(MAKE) install
