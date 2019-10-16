@@ -269,9 +269,9 @@ int main(int argc, char *argv[])
 #endif
     printf("\"");
 #ifdef HECMW_METIS_VER
-#endif
     printf("\n");
     printf("  HECMW_METIS_VER: %d\n", HECMW_METIS_VER);
+#endif
   }
 
   for (i = 0; i < argc; i++) {
