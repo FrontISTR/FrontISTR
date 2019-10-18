@@ -2,8 +2,6 @@
 
   README of HEC-MW (日本語版)
 
-  2016.07.22  Version 2.8
-
   FrontISTR Commons
 
   お問い合わせ先
@@ -24,7 +22,6 @@
   Makefile.dev           : 環境設定ファイル (開発者用)
   README                 : README (英語版)
   README.ja              : README (日本語版:このファイル)
-  VERSION                : バージョン情報
   setup_hecmw.sh         : makefile作成用シェルスクリプト
 
   doc/                           : マニュアル
