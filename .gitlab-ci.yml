@@ -122,6 +122,6 @@ docker:fistr1:
   script:
     - apk add make
     - cd docker
-    - make fistr1
+    - make push_fistr1
   tags:
     - docker

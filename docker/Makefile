@@ -1,5 +1,5 @@
 REGISTORY := registry.ritc.jp/ricos/frontistr
-CI_COMMIT_REF_NAME ?= manual_deploy
+CI_COMMIT_REF_NAME ?= _manual
 
 all: build document
 
