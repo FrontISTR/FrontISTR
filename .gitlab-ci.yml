@@ -121,6 +121,7 @@ docker:fistr1:
     - docker:dind
   script:
     - apk add make
-    - make -C docker fistr1
+    - cd docker
+    - make fistr1
   tags:
     - docker
