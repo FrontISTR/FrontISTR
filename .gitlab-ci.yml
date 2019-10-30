@@ -113,3 +113,14 @@ pages:
         expire_in: 20min
     only:
         - master
+
+docker:fistr1:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  script:
+    - apk add make
+    - make -C docker fistr1
+  tags:
+    - docker
