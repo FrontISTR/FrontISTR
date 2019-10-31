@@ -105,6 +105,7 @@ pages:
     dependencies:
         - document
         - doxygen
+        - make_w64_withlib
     script:
         - ls public
     artifacts:
@@ -113,44 +114,39 @@ pages:
         expire_in: 20min
     only:
         - master
-windows_exe:
+
+make_w64_withlib:
     image: registry.gitlab.com/frontistr-commons/frontistr/mingw64lib:latest
-    stage: deploy
+    stage: build
     script:
         - LIB_ROOT=/usr/local/mingw64
-        - cmake  -Bbuild -H. \
-            -DCMAKE_TOOLCHAIN_FILE=$LIB_ROOT/mingw64.cmake \
-            -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
-            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libstdc++ -static-libgcc -lstdc++ -lgcc -lwinpthread" \
-            -DMUMPS_INCLUDE_PATH=${LIB_ROOT}/include \
-            -DMUMPS_D_LIB=${LIB_ROOT}/lib/libdmumps.a\;${LIB_ROOT}/lib/libmpiseq.a \
-            -DMUMPS_PORD_LIB=${LIB_ROOT}/lib/libpord.a \
-            -DMUMPS_COMMON_LIB=${LIB_ROOT}/lib/libmumps_common.a \
-            -DMETIS_INCLUDE_PATH=${LIB_ROOT}/include \
-            -DMETIS_LIBRARIES=${LIB_ROOT}/lib/libmetis.a \
-            -DREFINER_INCLUDE_PATH=${LIB_ROOT}/include \
-            -DREFINER_LIBRARIES=${LIB_ROOT}/lib/libRcapRefiner.a \
-            -DBLAS_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a \
-            -DLAPACK_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a \
-            -DSCALAPACK_LIBRARIES=${LIB_ROOT}/lib/libdmumps.a \
-            -DWITH_METIS=ON \
-            -DWITH_MUMPS=ON \
-            -DWITH_SCALAPACK=ON \
-            -DWITH_LAPACK=ON \
-            -DWITH_REFINER=ON \
-            -DWITH_ML=ON \
-            -DWITH_MPI=OFF \
+        - cmake  -Bbuild -H.
+            -DCMAKE_TOOLCHAIN_FILE=$LIB_ROOT/mingw64.cmake
+            -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libstdc++ -static-libgcc -lstdc++ -lgcc -lwinpthread"
+            -DMUMPS_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMUMPS_D_LIB=${LIB_ROOT}/lib/libdmumps.a\;${LIB_ROOT}/lib/libmpiseq.a
+            -DMUMPS_PORD_LIB=${LIB_ROOT}/lib/libpord.a
+            -DMUMPS_COMMON_LIB=${LIB_ROOT}/lib/libmumps_common.a
+            -DMETIS_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMETIS_LIBRARIES=${LIB_ROOT}/lib/libmetis.a
+            -DREFINER_INCLUDE_PATH=${LIB_ROOT}/include
+            -DREFINER_LIBRARIES=${LIB_ROOT}/lib/libRcapRefiner.a
+            -DBLAS_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a
+            -DLAPACK_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a
+            -DSCALAPACK_LIBRARIES=${LIB_ROOT}/lib/libdmumps.a
+            -DWITH_METIS=ON
+            -DWITH_MUMPS=ON
+            -DWITH_SCALAPACK=ON
+            -DWITH_LAPACK=ON
+            -DWITH_REFINER=ON
+            -DWITH_ML=ON
+            -DWITH_MPI=OFF
             -DWINDOWS=ON
         - cmake --build build -- -j $(nproc)
+        - mkdir public/win64
+        - tar zcvf public/win64/FrontISTR-latest.tar.gz -C build/fistr1/ fistr1.exe -C tools/ neu2fstr.exe -C ../../hecmw1/tools/ hecmw_part1.exe hecmw_vis1.exe rmerge.exe hec2rcap.exe rconv.exe
     artifacts:
         paths:
-            - build/fistr1/fistr1.exe
-            - build/fistr1/tools/neu2fstr.exe
-            - build/hecmw1/tools/hecmw_part1.exe
-            - build/hecmw1/tools/hec2rcap.exe
-            - build/hecmw1/tools/hecmw_vis1.exe
-            - build/hecmw1/tools/rconv.exe
-            - build/hecmw1/tools/rmerge.exe
-        expire_in: 20min
-#    only:
-#        - master
+            - public
+        expire_in: 100min
