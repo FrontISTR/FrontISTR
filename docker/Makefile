@@ -1,6 +1,6 @@
-REGISTORY := registry.ritc.jp/ricos/frontistr
+REGISTORY := registry.gitlab.com/frontistr-commons/frontistr
 
-all: build document
+all: build document crossmake
 
 login:
 	docker login $(REGISTORY)
@@ -11,6 +11,10 @@ build:
 document:
 	docker build -t $(REGISTORY)/document . --target document
 
+cross:
+	docker build -t $(REGISTORY)/cross . --target cross
+
 push: build document
 	docker push $(REGISTORY)/build
 	docker push $(REGISTORY)/document
+	docker push $(REGISTORY)/cross
