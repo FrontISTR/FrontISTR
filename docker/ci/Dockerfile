@@ -30,12 +30,3 @@ RUN apt-get update \
  && apt-get clean      \
  && rm -rf /var/lib/apt/lists/*
 
-# docker build *MUST* run on the top of this project. see Makefile
-FROM build AS fistr1-build
-COPY . /src
-WORKDIR /src
-RUN cmake -B/build -H. -DCMAKE_INSTALL_PREFIX=/src/bin \
- && cmake --build /build --target install -- -j $(nproc)
-
-FROM build AS fistr1
-COPY --from=fistr1-build /src/bin /usr
