@@ -1,16 +1,17 @@
 REGISTORY := registry.gitlab.com/frontistr-commons/frontistr
 
-all: cross mingw64lib
+all: x86_64-w64-mingw32-build x86_64-w64-mingw32-lib
 
 login:
 	docker login $(REGISTORY)
 
-cross:
-	docker build -t $(REGISTORY)/cross . --target cross
+x86_64-w64-mingw32-build:
+	docker build -t $(REGISTORY)/x86_64-w64-mingw32-build . --target x86_64-w64-mingw32-build
 
-mingw64lib:
-	docker build -t $(REGISTORY)/mingw64lib . --target mingw64lib
+x86_64-w64-mingw32-lib:
+	docker build -t $(REGISTORY)/x86_64-w64-mingw32-lib . --target x86_64-w64-mingw32-lib
 
-push: cross mingw64lib
-	docker push $(REGISTORY)/cross
-	docker push $(REGISTORY)/mingw64lib
+push: x86_64-w64-mingw32-build x86_64-w64-mingw32-lib
+	docker push $(REGISTORY)/x86_64-w64-mingw32-build
+	docker push $(REGISTORY)/x86_64-w64-mingw32-lib
+
