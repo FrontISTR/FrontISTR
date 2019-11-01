@@ -115,6 +115,18 @@ pages:
     only:
         - master
 
+docker:fistr1:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  script:
+    - apk add make
+    - cd docker/release
+    - make push_fistr1
+  tags:
+    - docker
+
 make_w64_withlib:
     image: registry.gitlab.com/frontistr-commons/frontistr/mingw64lib:latest
     stage: build

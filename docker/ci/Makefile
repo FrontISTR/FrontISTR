@@ -1,16 +1,16 @@
-REGISTORY := registry.gitlab.com/frontistr-commons/frontistr
+REGISTRY := registry.gitlab.com/frontistr-commons/frontistr
 
 all: build document
 
 login:
-	docker login $(REGISTORY)
+	docker login $(REGISTRY)
 
 build:
-	docker build -t $(REGISTORY)/build . --target build
+	docker build -t $(REGISTRY)/build . --target build
 
 document:
-	docker build -t $(REGISTORY)/document . --target document
+	docker build -t $(REGISTRY)/document . --target document
 
 push: build document
-	docker push $(REGISTORY)/build
-	docker push $(REGISTORY)/document
+	docker push $(REGISTRY)/build
+	docker push $(REGISTRY)/document
