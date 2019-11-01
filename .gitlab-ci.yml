@@ -122,7 +122,7 @@ docker:fistr1:
     - docker:dind
   script:
     - apk add make
-    - cd docker
+    - cd docker/release
     - make push_fistr1
   tags:
     - docker
