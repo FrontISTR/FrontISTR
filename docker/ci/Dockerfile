@@ -1,5 +1,5 @@
 FROM ubuntu:18.04 AS build
-LABEL maintainer="yu"
+LABEL maintainer="FrontISTR Commons"
 
 RUN apt-get update \
  && apt-get -y install \

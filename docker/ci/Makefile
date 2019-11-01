@@ -1,4 +1,4 @@
-REGISTRY := registry.ritc.jp/ricos/frontistr
+REGISTRY := registry.gitlab.com/frontistr-commons/frontistr
 CI_COMMIT_REF_NAME ?= _manual
 
 all: build document

@@ -2,8 +2,6 @@
 
   README of FrontISTR on HEC-MW (in English)
 
-  2018.11.01  Version 5.0b
-
   FrontISTR Commons
 
   Comments, Questions, Problems etc.
@@ -17,7 +15,6 @@
 (2) Files in this directory
   README                      : README (in English : this file)
   README.ja                   : README (in Japanese)
-  VERSION                     : version information
   setup_fistr.sh              : shell script to create makefiles
   Makefile.am                 : base file of makefile for installation
   Makefile.dev                : setting file for developers
