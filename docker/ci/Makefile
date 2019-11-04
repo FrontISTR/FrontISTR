@@ -1,16 +1,20 @@
-REGISTRY := registry.gitlab.com/frontistr-commons/frontistr
+CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr
 
 all: build document
 
 login:
-	docker login $(REGISTRY)
+ifeq ($(CI_BUILD_TOKEN),)
+	docker login $(CI_REGISTRY_IMAGE)
+else
+	docker login -u gitlab-ci-token -p $(CI_BUILD_TOKEN) $(CI_REGISTRY_IMAGE)
+endif
 
 build:
-	docker build -t $(REGISTRY)/build . --target build
+	docker build -t $(CI_REGISTRY_IMAGE)/build . --target build
 
 document:
-	docker build -t $(REGISTRY)/document . --target document
+	docker build -t $(CI_REGISTRY_IMAGE)/document . --target document
 
-push: build document
-	docker push $(REGISTRY)/build
-	docker push $(REGISTRY)/document
+push: login build document
+	docker push $(CI_REGISTRY_IMAGE)/build
+	docker push $(CI_REGISTRY_IMAGE)/document

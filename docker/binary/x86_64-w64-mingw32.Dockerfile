@@ -11,7 +11,7 @@ RUN export target=x86_64-w64-mingw32 \
  && export LIB_ROOT=/usr/local/$target \
  && mkdir $LIB_ROOT/include && mkdir $LIB_ROOT/lib \
  && cd /tmp \
- && git clone -b v0.3.7 https://github.com/xianyi/OpenBLAS.git \
+ && git clone --depth 1 -b v0.3.7 https://github.com/xianyi/OpenBLAS.git \
  && pushd OpenBLAS \
  && CC=${target}-gcc FC=${target}-gfortran RANLIB=${target}-ranlib HOSTCC=gcc make USE_OPENMP=1 BINARY=64 DYNAMIC_ARCH=1 NO_SHARED=1 -j \
  && make PREFIX=${LIB_ROOT} install \
@@ -47,7 +47,7 @@ RUN export target=x86_64-w64-mingw32 \
  && cp libseq/*.h ${LIB_ROOT}/include \
  && cp libseq/*.a ${LIB_ROOT}/lib \
  && popd \
- && git clone -b trilinos-release-12-12-1 https://github.com/trilinos/Trilinos.git \
+ && git clone --depth 1 -b trilinos-release-12-12-1 https://github.com/trilinos/Trilinos.git \
  && pushd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
  && mkdir build; cd build \
@@ -82,7 +82,7 @@ RUN export target=x86_64-w64-mingw32 \
  && make -j \
  && make install \
  && popd \
- && git clone https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
+ && git clone --depth 1 https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
  && cd REVOCAP_Mesh \
  && sed  -i -e "s/ g++/ ${target}-g++/" -e "s/AR = ar/AR = ${target}-ar/" MakefileConfig.in  \
  && make Refiner -j \

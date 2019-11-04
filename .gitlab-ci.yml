@@ -1,4 +1,7 @@
-image: registry.gitlab.com/frontistr-commons/frontistr/build:latest
+variables:
+  REGISTRY: registry.gitlab.com/frontistr-commons/frontistr
+
+image: ${REGISTRY}/build:latest
 
 stages:
     - build
@@ -72,7 +75,7 @@ test_hybrid:
         - cd build_hybrid
         - ctest -L hybrid --output-on-failure
 document:
-    image: registry.gitlab.com/frontistr-commons/frontistr/document:latest
+    image: ${REGISTRY}/document:latest
     stage: build
     before_script:
         - pip3 install -r doc/requirements.txt
@@ -88,7 +91,7 @@ document:
         GIT_SUBMODULE_STRATEGY: recursive
 
 doxygen:
-    image: registry.gitlab.com/frontistr-commons/frontistr/document:latest
+    image: ${REGISTRY}/document:latest
     stage: build
     script:
         - cmake -Bbuild_doc -H. -DWITH_DOC=ON
@@ -105,7 +108,7 @@ pages:
     dependencies:
         - document
         - doxygen
-        - make_w64_withlib
+        - binary:x86_64-w64-mingw32
     script:
         - ls public
     artifacts:
@@ -113,7 +116,7 @@ pages:
             - public
         expire_in: 20min
     only:
-        - master
+      - master
 
 docker:fistr1:
   image: docker:latest
@@ -122,18 +125,18 @@ docker:fistr1:
     - docker:dind
   script:
     - apk add make
-    - cd docker/release
-    - make push_fistr1
+    - cd docker/container
+    - make push
   tags:
     - docker
 
-make_w64_withlib:
-    image: registry.gitlab.com/frontistr-commons/frontistr/mingw64lib:latest
+binary:x86_64-w64-mingw32:
+    image: ${REGISTRY}/x86_64-w64-mingw32-lib
     stage: build
     script:
-        - LIB_ROOT=/usr/local/mingw64
+        - LIB_ROOT=/usr/local/x86_64-w64-mingw32
         - cmake  -Bbuild -H.
-            -DCMAKE_TOOLCHAIN_FILE=$LIB_ROOT/mingw64.cmake
+            -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/x86_64-w64-mingw32.cmake
             -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
             -DCMAKE_EXE_LINKER_FLAGS="-static -static-libstdc++ -static-libgcc -lstdc++ -lgcc -lwinpthread"
             -DMUMPS_INCLUDE_PATH=${LIB_ROOT}/include
@@ -156,8 +159,8 @@ make_w64_withlib:
             -DWITH_MPI=OFF
             -DWINDOWS=ON
         - cmake --build build -- -j $(nproc)
-        - mkdir public/win64
-        - tar zcvf public/win64/FrontISTR-latest.tar.gz -C build/fistr1/ fistr1.exe -C tools/ neu2fstr.exe -C ../../hecmw1/tools/ hecmw_part1.exe hecmw_vis1.exe rmerge.exe hec2rcap.exe rconv.exe
+        - mkdir -p public/release/x86_64-w64-mingw32/
+        - tar zcvf public/release/x86_64-w64-mingw32/FrontISTR-latest.tar.gz -C build/fistr1/ fistr1.exe -C tools/ neu2fstr.exe -C ../../hecmw1/tools/ hecmw_part1.exe hecmw_vis1.exe rmerge.exe hec2rcap.exe rconv.exe
     artifacts:
         paths:
             - public
