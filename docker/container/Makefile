@@ -1,5 +1,6 @@
 CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr
 CI_COMMIT_REF_NAME ?= _no_branch
+CI_COMMIT_REF_NAME := $(shell echo $(CI_COMMIT_REF_NAME) | sed -e 's/\//__/')
 
 all: build
 
