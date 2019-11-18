@@ -78,6 +78,12 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_solver_opt2
   public :: hecmw_mat_set_solver_opt3
   public :: hecmw_mat_get_solver_opt3
+  public :: hecmw_mat_set_solver_opt4
+  public :: hecmw_mat_get_solver_opt4
+  public :: hecmw_mat_set_solver_opt5
+  public :: hecmw_mat_get_solver_opt5
+  public :: hecmw_mat_set_solver_opt6
+  public :: hecmw_mat_get_solver_opt6
 
   public :: hecmw_mat_set_resid
   public :: hecmw_mat_get_resid
@@ -128,6 +134,9 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_SOLVER_OPT1        = 41
   integer, parameter :: IDX_I_SOLVER_OPT2        = 42
   integer, parameter :: IDX_I_SOLVER_OPT3        = 43
+  integer, parameter :: IDX_I_SOLVER_OPT4        = 44
+  integer, parameter :: IDX_I_SOLVER_OPT5        = 45
+  integer, parameter :: IDX_I_SOLVER_OPT6        = 46
 
   integer, parameter :: IDX_R_RESID         = 1
   integer, parameter :: IDX_R_SIGMA_DIAG    = 2
@@ -197,9 +206,12 @@ contains
     call hecmw_mat_set_flag_symbfact( hecMAT, 1 )
     call hecmw_mat_set_solver_type( hecMAT, 1 )
 
-    call hecmw_mat_set_solver_opt1( hecMAT, 1 )
-    call hecmw_mat_set_solver_opt2( hecMAT, 1 )
-    call hecmw_mat_set_solver_opt3( hecMAT, 1 )
+    call hecmw_mat_set_solver_opt1( hecMAT, 0 )
+    call hecmw_mat_set_solver_opt2( hecMAT, 0 )
+    call hecmw_mat_set_solver_opt3( hecMAT, 0 )
+    call hecmw_mat_set_solver_opt4( hecMAT, 0 )
+    call hecmw_mat_set_solver_opt5( hecMAT, 0 )
+    call hecmw_mat_set_solver_opt6( hecMAT, 0 )
 
     call hecmw_cmat_init( hecMAT%cmat )
   end subroutine hecmw_mat_init
@@ -633,6 +645,42 @@ contains
     type(hecmwST_matrix) :: hecMAT
     hecmw_mat_get_solver_opt3 = hecMAT%Iarray(IDX_I_SOLVER_OPT3)
   end function hecmw_mat_get_solver_opt3
+
+  subroutine hecmw_mat_set_solver_opt4( hecMAT, solver_opt4 )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: solver_opt4
+    hecMAT%Iarray(IDX_I_SOLVER_OPT4) = solver_opt4
+  end subroutine hecmw_mat_set_solver_opt4
+
+  function hecmw_mat_get_solver_opt4( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_solver_opt4
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_solver_opt4 = hecMAT%Iarray(IDX_I_SOLVER_OPT4)
+  end function hecmw_mat_get_solver_opt4
+
+  subroutine hecmw_mat_set_solver_opt5( hecMAT, solver_opt5 )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: solver_opt5
+    hecMAT%Iarray(IDX_I_SOLVER_OPT5) = solver_opt5
+  end subroutine hecmw_mat_set_solver_opt5
+
+  function hecmw_mat_get_solver_opt5( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_solver_opt5
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_solver_opt5 = hecMAT%Iarray(IDX_I_SOLVER_OPT5)
+  end function hecmw_mat_get_solver_opt5
+
+  subroutine hecmw_mat_set_solver_opt6( hecMAT, solver_opt6 )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: solver_opt6
+    hecMAT%Iarray(IDX_I_SOLVER_OPT6) = solver_opt6
+  end subroutine hecmw_mat_set_solver_opt6
+
+  function hecmw_mat_get_solver_opt6( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_solver_opt6
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_solver_opt6 = hecMAT%Iarray(IDX_I_SOLVER_OPT6)
+  end function hecmw_mat_get_solver_opt6
 
   subroutine hecmw_mat_set_resid( hecMAT, resid )
     type(hecmwST_matrix) :: hecMAT

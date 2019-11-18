@@ -32,11 +32,19 @@ int hecmw_ML_comm_nn(double x[], void *A_data) {
   return ierr;
 }
 
-int hecmw_ML_smoother_apply_nn(ML_Smoother *data, int x_length, double x[],
-                               int rhs_length, double rhs[]) {
+int hecmw_ML_smoother_diag_apply_nn(ML_Smoother *data, int x_length, double x[],
+                                    int rhs_length, double rhs[]) {
   int *id, ierr;
   id = (int *)ML_Get_MySmootherData(data);
-  hecmw_ml_smoother_apply_nn_(id, &x_length, x, &rhs_length, rhs, &ierr);
+  hecmw_ml_smoother_diag_apply_nn_(id, &x_length, x, &rhs_length, rhs, &ierr);
+  return ierr;
+}
+
+int hecmw_ML_smoother_ssor_apply_nn(ML_Smoother *data, int x_length, double x[],
+                                    int rhs_length, double rhs[]) {
+  int *id, ierr;
+  id = (int *)ML_Get_MySmootherData(data);
+  hecmw_ml_smoother_ssor_apply_nn_(id, &x_length, x, &rhs_length, rhs, &ierr);
   return ierr;
 }
 

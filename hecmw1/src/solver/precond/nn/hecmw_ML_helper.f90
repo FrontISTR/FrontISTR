@@ -259,3 +259,63 @@ subroutine hecmw_ml_get_opt3(id, opt3, ierr)
   opt3 = hecmw_mat_get_solver_opt3(hecMAT)
   ierr = 0
 end subroutine hecmw_ml_get_opt3
+
+subroutine hecmw_ml_get_opt4(id, opt4, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_matrix_misc
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: opt4
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  opt4 = hecmw_mat_get_solver_opt4(hecMAT)
+  ierr = 0
+end subroutine hecmw_ml_get_opt4
+
+subroutine hecmw_ml_get_opt5(id, opt5, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_matrix_misc
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: opt5
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  opt5 = hecmw_mat_get_solver_opt5(hecMAT)
+  ierr = 0
+end subroutine hecmw_ml_get_opt5
+
+subroutine hecmw_ml_get_opt6(id, opt6, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_matrix_misc
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: opt6
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  opt6 = hecmw_mat_get_solver_opt6(hecMAT)
+  ierr = 0
+end subroutine hecmw_ml_get_opt6
+
+subroutine hecmw_ml_set_opt6(id, opt6, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_matrix_misc
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(in) :: opt6
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  call hecmw_mat_set_solver_opt6(hecMAT, opt6)
+  ierr = 0
+end subroutine hecmw_ml_set_opt6

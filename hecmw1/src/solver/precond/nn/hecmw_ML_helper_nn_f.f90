@@ -102,7 +102,73 @@ subroutine hecmw_ML_comm_nn(id, x, ierr)
   ierr = 0
 end subroutine hecmw_ML_comm_nn
 
-subroutine hecmw_ML_smoother_setup_nn(id, ierr)
+subroutine hecmw_ML_smoother_diag_setup_nn(id, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_precond_DIAG_nn
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  call hecmw_precond_DIAG_nn_setup(hecMAT)
+  ierr = 0
+end subroutine hecmw_ML_smoother_diag_setup_nn
+
+subroutine hecmw_ML_smoother_diag_apply_nn(id, x_length, x, rhs_length, rhs, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_matrix_misc
+  use hecmw_solver_las_nn
+  use hecmw_precond_DIAG_nn
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(in) :: x_length
+  real(kind=kreal), intent(inout) :: x(x_length)
+  integer(kind=kint), intent(in) :: rhs_length
+  real(kind=kreal), intent(in) :: rhs(rhs_length)
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+
+  real(kind=kreal), allocatable :: resid(:)
+  integer(kind=kint) :: i
+  real(kind=kreal) :: COMMtime
+  integer(kind=kint) :: num_sweeps, i_sweep
+
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  num_sweeps = hecmw_mat_get_solver_opt6(hecMAT)
+  allocate(resid(hecMAT%NP * hecMAT%NDOF))
+  do i_sweep = 1, num_sweeps
+    ! {resid} = {rhs} - [A] {x}
+    call hecmw_matresid_nn(hecMESH, hecMAT, x, rhs, resid, COMMtime)
+    ! {delta_x} = [M]^-1 {resid}
+    call hecmw_precond_DIAG_nn_apply(resid, hecMAT%NDOF)
+    ! {x} = {x} + {delta_x}
+    do i=1,x_length
+      x(i) = x(i) + resid(i)
+    enddo
+  enddo
+  deallocate(resid)
+  ierr = 0
+end subroutine hecmw_ML_smoother_diag_apply_nn
+
+subroutine hecmw_ML_smoother_diag_clear_nn(id, ierr)
+  use hecmw_util
+  use hecmw_mat_id
+  use hecmw_precond_DIAG_nn
+  implicit none
+  integer(kind=kint), intent(in) :: id
+  integer(kind=kint), intent(out) :: ierr
+  type(hecmwST_matrix), pointer :: hecMAT
+  type(hecmwST_local_mesh), pointer :: hecMESH
+  call hecmw_mat_id_get(id, hecMAT, hecMESH)
+  call hecmw_precond_DIAG_nn_clear()
+  ierr = 0
+end subroutine hecmw_ML_smoother_diag_clear_nn
+
+subroutine hecmw_ML_smoother_ssor_setup_nn(id, ierr)
   use hecmw_util
   use hecmw_mat_id
   use hecmw_precond_SSOR_nn
@@ -114,11 +180,12 @@ subroutine hecmw_ML_smoother_setup_nn(id, ierr)
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
   call hecmw_precond_SSOR_nn_setup(hecMAT)
   ierr = 0
-end subroutine hecmw_ML_smoother_setup_nn
+end subroutine hecmw_ML_smoother_ssor_setup_nn
 
-subroutine hecmw_ML_smoother_apply_nn(id, x_length, x, rhs_length, rhs, ierr)
+subroutine hecmw_ML_smoother_ssor_apply_nn(id, x_length, x, rhs_length, rhs, ierr)
   use hecmw_util
   use hecmw_mat_id
+  use hecmw_matrix_misc
   use hecmw_solver_las_nn
   use hecmw_precond_SSOR_nn
   implicit none
@@ -134,25 +201,26 @@ subroutine hecmw_ML_smoother_apply_nn(id, x_length, x, rhs_length, rhs, ierr)
   real(kind=kreal), allocatable :: resid(:)
   integer(kind=kint) :: i
   real(kind=kreal) :: COMMtime
+  integer(kind=kint) :: num_sweeps, i_sweep
 
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-
+  num_sweeps = hecmw_mat_get_solver_opt6(hecMAT)
   allocate(resid(hecMAT%NP * hecMAT%NDOF))
-
-  ! {resid} = {rhs} - [A] {x}
-  call hecmw_matresid_nn(hecMESH, hecMAT, x, rhs, resid, COMMtime)
-  ! {delta_x} = [M]^-1 {resid}
-  call hecmw_precond_SSOR_nn_apply(resid, hecMAT%NDOF)
-  ! {x} = {x} + {delta_x}
-  do i=1,x_length
-    x(i) = x(i) + resid(i)
+  do i_sweep = 1, num_sweeps
+    ! {resid} = {rhs} - [A] {x}
+    call hecmw_matresid_nn(hecMESH, hecMAT, x, rhs, resid, COMMtime)
+    ! {delta_x} = [M]^-1 {resid}
+    call hecmw_precond_SSOR_nn_apply(resid, hecMAT%NDOF)
+    ! {x} = {x} + {delta_x}
+    do i=1,x_length
+      x(i) = x(i) + resid(i)
+    enddo
   enddo
   deallocate(resid)
-
   ierr = 0
-end subroutine hecmw_ML_smoother_apply_nn
+end subroutine hecmw_ML_smoother_ssor_apply_nn
 
-subroutine hecmw_ML_smoother_clear_nn(id, ierr)
+subroutine hecmw_ML_smoother_ssor_clear_nn(id, ierr)
   use hecmw_util
   use hecmw_mat_id
   use hecmw_precond_SSOR_nn
@@ -164,4 +232,4 @@ subroutine hecmw_ML_smoother_clear_nn(id, ierr)
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
   call hecmw_precond_SSOR_nn_clear(hecMAT)
   ierr = 0
-end subroutine hecmw_ML_smoother_clear_nn
+end subroutine hecmw_ML_smoother_ssor_clear_nn

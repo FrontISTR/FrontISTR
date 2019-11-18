@@ -18,5 +18,9 @@ extern void hecmw_ml_get_loglevel_(int *id, int *level);
 extern void hecmw_ml_get_opt1_(int *id, int *opt1, int *ierr);
 extern void hecmw_ml_get_opt2_(int *id, int *opt2, int *ierr);
 extern void hecmw_ml_get_opt3_(int *id, int *opt3, int *ierr);
+extern void hecmw_ml_get_opt4_(int *id, int *opt3, int *ierr);
+extern void hecmw_ml_get_opt5_(int *id, int *opt3, int *ierr);
+extern void hecmw_ml_get_opt6_(int *id, int *opt3, int *ierr);
+extern void hecmw_ml_set_opt6_(int *id, int *opt3, int *ierr);
 
 #endif
