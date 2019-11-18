@@ -2,8 +2,6 @@
 
   README of FrontISTR on HEC-MW (日本語版)
 
-  2018.11.01  Version 5.0b
-
   FrontISTR Commons
 
   お問い合わせ先
@@ -17,7 +15,6 @@
 (2)ディレクトリ構成
   README                      : README (英語版)
   README.ja                   : README (日本語版:このファイル)
-  VERSION                     : バージョン情報
   setup_fistr.sh              : makefile作成用シェルスクリプト
   Makefile.am                 : makefileベースファイル
   Makefile.dev                : 環境設定ファイル (開発者用)

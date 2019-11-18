@@ -135,8 +135,8 @@ find_package(MPI)
 find_package(OpenMP)
 find_package(LAPACK)
 find_package(Metis)
-find_package(Mumps)
 find_package(Parmetis)
+find_package(Mumps)
 find_package(Refiner)
 find_package(Revocap)
 find_package(Scalapack)
@@ -231,17 +231,6 @@ endif()
 mark_as_advanced(Trilinos_DIR)
 
 ###################
-# -DWITH_PARMETIS
-###################
-if(WITH_PARMETIS AND PARMETIS_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
-  if(NOT PARMETIS_VER_3)
-  else()
-  endif()
-endif()
-
-###################
 # -DWITH_MUMPS
 ###################
 if(WITH_MUMPS)
@@ -256,6 +245,17 @@ if(WITH_MUMPS)
   endif()
 else()
   set(WITH_MUMPS OFF)
+endif()
+
+###################
+# -DWITH_PARMETIS
+###################
+if(WITH_PARMETIS AND PARMETIS_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
+  if(NOT PARMETIS_VER_3)
+  else()
+  endif()
 endif()
 
 ###################

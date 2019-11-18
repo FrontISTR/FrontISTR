@@ -70,7 +70,7 @@ F90            = mpif90
 F90FLAGS       =
 F90LDFLAGS     =
 F90OPTFLAGS    = -O2
-F90FPP         = -fpp
+F90FPP         = -cpp
 F90LINKER      = mpif90
 
 MAKE           = make

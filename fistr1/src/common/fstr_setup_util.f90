@@ -362,7 +362,7 @@ contains
     call qsort_int_array(node, 1, nnode)
     call uniq_int_array(node, nnode, new_nnode)
     ! append node group
-    write( grp_name, '(a,a)') trim(hecMESH%surf_group%grp_name(sgrp_id)), '_S'
+    write( grp_name, '(a,a)') 'FSTR_S2N_',trim(hecMESH%surf_group%grp_name(sgrp_id))
     call append_new_group(hecMESH, 'node_grp', grp_name, new_nnode, node, ngrp_id)
     deallocate(node)
   end subroutine append_node_grp_from_surf_grp
@@ -395,8 +395,8 @@ contains
         isect(nisect) = node(i)
       endif
     enddo
-    write( grp_name, '(a,a,a)') &
-         trim(hecMESH%node_group%grp_name(ngrp_id1)),'_AND_',trim(hecMESH%node_group%grp_name(ngrp_id2))
+    write( grp_name, '(a,a,a,a)') &
+         'FSTR_ISCT_',trim(hecMESH%node_group%grp_name(ngrp_id1)),'_AND_',trim(hecMESH%node_group%grp_name(ngrp_id2))
     call append_new_group(hecMESH, 'node_grp', grp_name, nisect, isect, ngrp_id)
     deallocate(node)
     deallocate(isect)

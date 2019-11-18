@@ -2,3 +2,4 @@ mkdocs
 mkdocs-bootstrap
 mkdocs-windmill
 python-markdown-math
+mkdocs-material

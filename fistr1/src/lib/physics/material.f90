@@ -167,7 +167,7 @@ contains
   subroutine finalizeMaterial( material )
     type( tMaterial ), intent(inout) :: material
     if( associated(material%table) ) deallocate( material%table )
-    call dict_destroy( material%dict )
+    if( associated(material%dict) ) call dict_destroy( material%dict )
   end subroutine finalizeMaterial
 
   !> Initializer

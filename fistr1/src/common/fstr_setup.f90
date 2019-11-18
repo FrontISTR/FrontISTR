@@ -334,12 +334,14 @@ contains
     if( hecMESH%material%n_mat>n ) n= hecMESH%material%n_mat
     if( n==0 ) stop "material property not defined!"
     allocate( fstrSOLID%materials( n ) )
+    do i = 1, n
+      call initMaterial(fstrSOLID%materials(i))
+    enddo
     if( hecMESH%section%n_sect >0 ) then
       do i=1,hecMESH%section%n_sect
         if( hecMESH%section%sect_type(i) == 4 ) cycle
         cid = hecMESH%section%sect_mat_ID_item(i)
         if( cid>n ) stop "Error in material property definition!"
-        call initMaterial(  fstrSOLID%materials(cid) )
         if( fstrPARAM%nlgeom .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
           fstrSOLID%materials(cid)%nlgeom_flag = 1
         nullify(shmat)

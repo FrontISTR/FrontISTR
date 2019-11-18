@@ -8,38 +8,67 @@ project(Fistr_Test)
 
 find_program(BASH_PROGRAM bash)
 
-foreach(case exA exB exC exD exE exF exG exI spring_boundary)
-  add_test(
-    NAME Static_${case}_Test
-   COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} static/${case}
-   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  )
-  set_tests_properties(Static_${case}_Test PROPERTIES LABELS static)
+function(GetProcThreads type np nt)
+  if(type STREQUAL "serial")
+    set(np 1 PARENT_SCOPE)
+    set(nt 1 PARENT_SCOPE)
+  elseif(type STREQUAL "openmp")
+    set(np 1 PARENT_SCOPE)
+    set(nt 2 PARENT_SCOPE)
+  elseif(type STREQUAL "mpi")
+    set(np 2 PARENT_SCOPE)
+    set(nt 1 PARENT_SCOPE)
+  elseif(type STREQUAL "hybrid")
+    set(np 2 PARENT_SCOPE)
+    set(nt 2 PARENT_SCOPE)
+  endif()
+endfunction(GetProcThreads)
+set(parallels serial)
+IF(WITH_MPI)
+  list(APPEND parallels mpi)
+endif()
+IF(WITH_OPENMP)
+  list(APPEND parallels openmp)
+endif()
+IF(WITH_OPENMP AND WITH_MPI)
+  list(APPEND parallels hybrid)
+endif()
+foreach(parallel IN LISTS parallels)
+  GetProcThreads(${parallel} np nt)
+
+  foreach(case exA exB exC exD exE exF exG exI spring_boundary)
+    set(type static)
+    add_test(NAME Test_${type}_${case}_${parallel}
+     COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} ${type}/${case} ${np} ${nt}
+     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(Test_${type}_${case}_${parallel} PROPERTIES LABELS ${type},${case},${parallel})
+  endforeach()  
+
+  foreach(case exJ exK)
+    set(type eigen)
+    add_test(NAME Test_${type}_${case}_${parallel}
+     COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} ${type}/${case} ${np} ${nt}
+     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(Test_${type}_${case}_${parallel} PROPERTIES LABELS ${type},${case},${parallel})
+  endforeach()  
+
+  foreach(case exM exN exO exP exQ exR exS exT exU exV)
+    set(type heat)
+    add_test(NAME Test_${type}_${case}_${parallel}
+     COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} ${type}/${case} ${np} ${nt}
+     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(Test_${type}_${case}_${parallel} PROPERTIES LABELS ${type},${case},${parallel})
+  endforeach()  
+
+  foreach(case exW exX)
+    set(type dynamic)
+    add_test(NAME Test_${type}_${case}_${parallel}
+     COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} ${type}/${case} ${np} ${nt}
+     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    set_tests_properties(Test_${type}_${case}_${parallel} PROPERTIES LABELS ${type},${case},${parallel})
+  endforeach()  
+
 endforeach()
 
-foreach(case exJ exK)
-  add_test(
-    NAME Eigen_${case}_Test
-   COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} eigen/${case}
-   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  )
-  set_tests_properties(Eigen_${case}_Test PROPERTIES LABELS eigen)
-endforeach()
 
-foreach(case exM exN exO exP exQ exR exS exT exU exV)
-  add_test(
-   NAME Heat_${case}_Test
-   COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} heat/${case}
-   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  )
-  set_tests_properties(Heat_${case}_Test PROPERTIES LABELS heat)
-endforeach()
 
-foreach(case exW exX)
-  add_test(
-   NAME Dynamic_${case}_Test
-   COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} dynamic/${case}
-   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  )
-  set_tests_properties(Dynamic_${case}_Test PROPERTIES LABELS dynamic)
-endforeach()

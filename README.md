@@ -1,6 +1,6 @@
 # README of FrontISTR on HEC-MW
 
-2019.09.02  Version 5.0rc
+2019.10.18  Version 5.0
 
 FrontISTR Commons
 

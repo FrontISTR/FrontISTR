@@ -1,39 +1,81 @@
-image: registry.gitlab.com/frontistr-commons/frontistr/build:latest
+variables:
+  REGISTRY: registry.gitlab.com/frontistr-commons/frontistr
+
+image: ${REGISTRY}/build:latest
 
 stages:
     - build
     - test
     - deploy
 
-make:
+make_serial:
     stage: build
     script:
-        - cmake -Bbuild -H.
-        - cmake --build build -- -j $(nproc)
+        - cmake -Bbuild_serial -DWITH_MPI=OFF -DWITH_OPENMP=OFF -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
+        - cmake --build build_serial -- -j $(nproc)
     artifacts:
         paths:
-            - build/
+            - build_serial/
         expire_in: 100min
 
-test_static:
+make_openmp:
+    stage: build
+    script:
+        - cmake -Bbuild_openmp -DWITH_MPI=OFF -DWITH_OPENMP=ON -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
+        - cmake --build build_openmp -- -j $(nproc)
+    artifacts:
+        paths:
+            - build_openmp/
+        expire_in: 100min
+make_mpi:
+    stage: build
+    script:
+        - cmake -Bbuild_mpi -DWITH_MPI=ON -DWITH_OPENMP=OFF -H.
+        - cmake --build build_mpi -- -j $(nproc)
+    artifacts:
+        paths:
+            - build_mpi/
+        expire_in: 100min
+make_hybrid:
+    stage: build
+    script:
+        - cmake -Bbuild_hybrid -DWITH_MPI=ON -DWITH_OPENMP=ON -H.
+        - cmake --build build_hybrid -- -j $(nproc)
+    artifacts:
+        paths:
+            - build_hybrid/
+        expire_in: 100min
+
+test_serial:
     stage: test
     dependencies:
-        - make
+        - make_serial
     script:
-        - cd build
-        - ctest -L static --output-on-failure
-
-test_fragile:
+        - cd build_serial
+        - ctest -L serial --output-on-failure
+test_openmp:
     stage: test
     dependencies:
-        - make
-    allow_failure: true
+        - make_openmp
     script:
-        - cd build
-        - ctest -L "(eigen|heat|dynamic)" --output-on-failure
-
+        - cd build_openmp
+        - ctest -L openmp --output-on-failure
+test_mpi:
+    stage: test
+    dependencies:
+        - make_mpi
+    script:
+        - cd build_mpi
+        - ctest -L mpi --output-on-failure
+test_hybrid:
+    stage: test
+    dependencies:
+        - make_hybrid
+    script:
+        - cd build_hybrid
+        - ctest -L hybrid --output-on-failure
 document:
-    image: registry.gitlab.com/frontistr-commons/frontistr/document:latest
+    image: ${REGISTRY}/document:latest
     stage: build
     before_script:
         - pip3 install -r doc/requirements.txt
@@ -49,7 +91,7 @@ document:
         GIT_SUBMODULE_STRATEGY: recursive
 
 doxygen:
-    image: registry.gitlab.com/frontistr-commons/frontistr/document:latest
+    image: ${REGISTRY}/document:latest
     stage: build
     script:
         - cmake -Bbuild_doc -H. -DWITH_DOC=ON
@@ -66,6 +108,7 @@ pages:
     dependencies:
         - document
         - doxygen
+        - binary:x86_64-w64-mingw32
     script:
         - ls public
     artifacts:
@@ -73,4 +116,52 @@ pages:
             - public
         expire_in: 20min
     only:
-        - master
+      - master
+
+docker:fistr1:
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  script:
+    - apk add make
+    - cd docker/container
+    - make push
+  tags:
+    - docker
+
+binary:x86_64-w64-mingw32:
+    image: ${REGISTRY}/x86_64-w64-mingw32-lib
+    stage: build
+    script:
+        - LIB_ROOT=/usr/local/x86_64-w64-mingw32
+        - cmake  -Bbuild -H.
+            -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/x86_64-w64-mingw32.cmake
+            -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libstdc++ -static-libgcc -lstdc++ -lgcc -lwinpthread"
+            -DMUMPS_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMUMPS_D_LIB=${LIB_ROOT}/lib/libdmumps.a\;${LIB_ROOT}/lib/libmpiseq.a
+            -DMUMPS_PORD_LIB=${LIB_ROOT}/lib/libpord.a
+            -DMUMPS_COMMON_LIB=${LIB_ROOT}/lib/libmumps_common.a
+            -DMETIS_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMETIS_LIBRARIES=${LIB_ROOT}/lib/libmetis.a
+            -DREFINER_INCLUDE_PATH=${LIB_ROOT}/include
+            -DREFINER_LIBRARIES=${LIB_ROOT}/lib/libRcapRefiner.a
+            -DBLAS_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a
+            -DLAPACK_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a
+            -DSCALAPACK_LIBRARIES=${LIB_ROOT}/lib/libdmumps.a
+            -DWITH_METIS=ON
+            -DWITH_MUMPS=ON
+            -DWITH_SCALAPACK=ON
+            -DWITH_LAPACK=ON
+            -DWITH_REFINER=ON
+            -DWITH_ML=ON
+            -DWITH_MPI=OFF
+            -DWINDOWS=ON
+        - cmake --build build -- -j $(nproc)
+        - mkdir -p public/release/x86_64-w64-mingw32/
+        - tar zcvf public/release/x86_64-w64-mingw32/FrontISTR-latest.tar.gz -C build/fistr1/ fistr1.exe -C tools/ neu2fstr.exe -C ../../hecmw1/tools/ hecmw_part1.exe hecmw_vis1.exe rmerge.exe hec2rcap.exe rconv.exe
+    artifacts:
+        paths:
+            - public
+        expire_in: 100min
