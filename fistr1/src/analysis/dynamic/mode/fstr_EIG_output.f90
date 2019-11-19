@@ -141,7 +141,7 @@ contains
     allocate(egval(1))
 
     do istep = 1, nget
-      egval(1) = fstrEIG%eigval(1)
+      egval(1) = fstrEIG%eigval(istep)
       do i=1,NPNDOF
         X(i) = eigvec(i,istep)
       enddo
