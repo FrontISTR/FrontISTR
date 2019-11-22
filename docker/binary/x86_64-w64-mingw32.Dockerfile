@@ -5,7 +5,8 @@ RUN yum -y install cmake gcc git gcc-gfortran gcc-c++ binutils.x86_64 glibc-stat
  && yum -y clean all       \
  && rm -rf /var/cache/yum/*
 
-FROM x86_64-w64-mingw32-build AS x86_64-w64-mingw32-lib
+
+FROM x86_64-w64-mingw32-build AS x86_64-w64-mingw32-lib1
 COPY x86_64-w64-mingw32.cmake /usr/local/x86_64-w64-mingw32/
 RUN export target=x86_64-w64-mingw32 \
  && export LIB_ROOT=/usr/local/$target \
@@ -28,6 +29,19 @@ RUN export target=x86_64-w64-mingw32 \
  && make install \
  && popd \
  && popd \
+ && git clone --depth 1 https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
+ && cd REVOCAP_Mesh \
+ && sed  -i -e "s/ g++/ ${target}-g++/" -e "s/AR = ar/AR = ${target}-ar/" MakefileConfig.in  \
+ && make Refiner -j \
+ && find lib -type f -name "libRcapRefiner*" -exec cp {} ${LIB_ROOT}/lib/ \; \
+ && find . -type f -name "rcapRefiner.h" -exec cp {} ${LIB_ROOT}/include/ \; \
+ && rm -fr /tmp/*
+
+
+FROM x86_64-w64-mingw32-lib1 AS x86_64-w64-mingw32-lib
+RUN export target=x86_64-w64-mingw32 \
+ && export LIB_ROOT=/usr/local/$target \
+ && cd /tmp \
  && curl -L -O http://mumps.enseeiht.fr/MUMPS_5.1.2.tar.gz \
  && tar xvf MUMPS_5.1.2.tar.gz \
  && pushd MUMPS_5.1.2 \
@@ -82,39 +96,15 @@ RUN export target=x86_64-w64-mingw32 \
  && make -j \
  && make install \
  && popd \
- && git clone --depth 1 https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
- && cd REVOCAP_Mesh \
- && sed  -i -e "s/ g++/ ${target}-g++/" -e "s/AR = ar/AR = ${target}-ar/" MakefileConfig.in  \
- && make Refiner -j \
- && find lib -type f -name "libRcapRefiner*" -exec cp {} ${LIB_ROOT}/lib/ \; \
- && find . -type f -name "rcapRefiner.h" -exec cp {} ${LIB_ROOT}/include/ \; \
  && rm -fr /tmp/*
 
-FROM x86_64-w64-mingw32-build AS x86_64-w64-mingw32-mpilib
-COPY x86_64-w64-mingw32.cmake /usr/local/x86_64-w64-mingw32/
+FROM x86_64-w64-mingw32-lib1 AS x86_64-w64-mingw32-mpilib
 RUN export target=x86_64-w64-mingw32 \
  && export LIB_ROOT=/usr/local/$target \
- && mkdir $LIB_ROOT/include && mkdir $LIB_ROOT/lib \
  && cd /tmp \
- && curl -L -O https://www.frontistr.com/files/msmpi.tar.gz \
- && tar xvf msmpi.tar.gz && mv ./msmpi/*.h ./msmpi/*.f90 ${LIB_ROOT}/include && mv ./msmpi/*.dll ${LIB_ROOT}/lib  \
- && git clone --depth 1 -b v0.3.7 https://github.com/xianyi/OpenBLAS.git \
- && pushd OpenBLAS \
- && CC=${target}-gcc FC=${target}-gfortran RANLIB=${target}-ranlib HOSTCC=gcc make USE_OPENMP=1 BINARY=64 DYNAMIC_ARCH=1 NO_SHARED=1 -j \
- && make PREFIX=${LIB_ROOT} install \
- && popd \
- && curl -L -O http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz \
- && tar xvf metis-5.1.0.tar.gz \
- && pushd metis-5.1.0 \
- && sed -i -e "/#include <sys\/resource.h>/d" ./GKlib/gk_arch.h \
- && sed -i -e "/extern int gk_getopt/d" -e "/longopts/d" ./GKlib/gk_getopt.h \
- && mkdir build-static \
- && pushd build-static \
- && cmake  -DCMAKE_TOOLCHAIN_FILE=$LIB_ROOT/${target}.cmake -DOPENMP=ON -DGKRAND=ON -DCMAKE_BUILD_TYPE="Release" -DCMAKE_VERBOSE_MAKEFILE=1  -DGKLIB_PATH=../GKlib -DCMAKE_INSTALL_PREFIX="${LIB_ROOT} " .. \
- && make -j \
- && make install \
- && popd \
- && popd \
+ && curl -L -O https://www.frontistr.com/files/MS-MPI_v10.1.2.tar.gz \
+ && tar xvf MS-MPI_v10.1.2.tar.gz && cp -r ./msmpi/bin ./msmpi/include ./msmpi/lib ${LIB_ROOT} \
+ && pushd ${LIB_ROOT}/lib/ && gendef msmpi.dll && x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll && rm msmpi.def && popd \
  && curl -L -O http://www.netlib.org/scalapack/scalapack-2.0.2.tgz \
  && tar xvf scalapack-2.0.2.tgz \
  && pushd scalapack-2.0.2 \
@@ -173,11 +163,5 @@ RUN export target=x86_64-w64-mingw32 \
  && make -j \
  && make install \
  && popd \
- && git clone --depth 1 https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
- && cd REVOCAP_Mesh \
- && sed  -i -e "s/ g++/ ${target}-g++/" -e "s/AR = ar/AR = ${target}-ar/" MakefileConfig.in  \
- && make Refiner -j \
- && find lib -type f -name "libRcapRefiner*" -exec cp {} ${LIB_ROOT}/lib/ \; \
- && find . -type f -name "rcapRefiner.h" -exec cp {} ${LIB_ROOT}/include/ \; \
  && rm -fr /tmp/*
 
