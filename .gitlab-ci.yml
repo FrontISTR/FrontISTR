@@ -109,6 +109,7 @@ pages:
         - document
         - doxygen
         - binary:x86_64-w64-mingw32
+        - binary:x86_64-w64-mingw32-msmpi
     script:
         - ls public
     artifacts:
@@ -116,7 +117,7 @@ pages:
             - public
         expire_in: 20min
     only:
-      - master
+      - msmpi
 
 docker:fistr1:
   image: docker:latest
