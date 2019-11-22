@@ -201,8 +201,8 @@ binary:x86_64-w64-mingw32-msmpi:
             -DWITH_MPI=ON
             -DWINDOWS=ON
         - cmake --build build -- -j $(nproc)
-        - mkdir -p public/release/x86_64-w64-mingw32/
-        - tar zcvf public/release/x86_64-w64-mingw32/FrontISTR-latest.tar.gz -C build/fistr1/ fistr1.exe -C tools/ neu2fstr.exe -C ../../hecmw1/tools/ hecmw_part1.exe hecmw_vis1.exe rmerge.exe hec2rcap.exe rconv.exe
+        - mkdir -p public/release/x86_64-w64-mingw32-msmpi/
+        - tar zcvf public/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.tar.gz -C build/fistr1/ fistr1.exe -C tools/ neu2fstr.exe -C ../../hecmw1/tools/ hecmw_part1.exe hecmw_vis1.exe rmerge.exe hec2rcap.exe rconv.exe
     artifacts:
         paths:
             - public
