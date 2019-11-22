@@ -155,13 +155,6 @@ bin_output_result_global(FILE *fp)
 	}
 	HECMW_free(data);
 
-	/* data header */
-	rc = hecmw_write_bin(fp,"S","*data");
-	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "head");
-		return -1;
-	}
-
 	return 0;
 }
 
@@ -314,6 +307,7 @@ bin_output_result_elem(FILE *fp)
 static int
 bin_output_result_data(FILE *fp)
 {
+  int rc;
 	HECMW_assert(fp);
 
 	if(bin_output_result_header(fp)) {
@@ -323,7 +317,13 @@ bin_output_result_data(FILE *fp)
 		if(bin_output_result_global(fp)) {
 			return -1;
 		}
+    /* data header */
+    rc = hecmw_write_bin(fp,"S","*data");
+    if(rc < 0) {
+      HECMW_set_error(HECMW_UTIL_E0205, "head");
+      return -1;
     }
+  }
 	if(bin_output_result_dataheader(fp)) {
 		return -1;
 	}
