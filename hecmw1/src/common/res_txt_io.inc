@@ -114,13 +114,6 @@ output_result_global(FILE *fp)
 	}
 	HECMW_free(data);
 
-	/* data header */
-	rc = fprintf(fp, "*data\n");
-	if(rc < 0) {
-		HECMW_set_error(HECMW_UTIL_E0205, "*data");
-		return -1;
-	}
-
 	return 0;
 }
 
@@ -305,6 +298,7 @@ output_result_elem(FILE *fp)
 static int
 output_result_data(FILE *fp)
 {
+	int rc;
 	HECMW_assert(fp);
 
 	if(output_result_header(fp)) {
@@ -314,7 +308,13 @@ output_result_data(FILE *fp)
 		if(output_result_global(fp)) {
 			return -1;
 		}
+    /* data header */
+    rc = fprintf(fp, "*data\n");
+    if(rc < 0) {
+      HECMW_set_error(HECMW_UTIL_E0205, "*data");
+      return -1;
     }
+  }
 	if(output_result_dataheader(fp)) {
 		return -1;
 	}
