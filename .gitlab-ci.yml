@@ -117,7 +117,8 @@ pages:
             - public
         expire_in: 20min
     only:
-      - msmpi
+      - master
+      - release
 
 docker:fistr1:
   image: docker:latest
