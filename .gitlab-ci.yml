@@ -165,3 +165,45 @@ binary:x86_64-w64-mingw32:
         paths:
             - public
         expire_in: 100min
+
+binary:x86_64-w64-mingw32-msmpi:
+    image: ${REGISTRY}/x86_64-w64-mingw32-mpilib
+    stage: build
+    script:
+        - LIB_ROOT=/usr/local/x86_64-w64-mingw32
+        - cmake  -Bbuild -H.
+            -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/x86_64-w64-mingw32.cmake
+            -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
+            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libstdc++ -static-libgcc -lstdc++ -lgcc -lwinpthread"
+            -DMPI_C_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMPI_C_LIBRARIES=${LIB_ROOT}/lib/libmsmpi.a
+            -DMPI_CXX_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMPI_CXX_LIBRARIES=${LIB_ROOT}/lib/libmsmpi.a
+            -DMPI_Fortran_LIBRARIES=${LIB_ROOT}/lib/libmsmpi.a
+            -DMPI_Fortran_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMUMPS_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMUMPS_D_LIB=${LIB_ROOT}/lib/libdmumps.a
+            -DMUMPS_PORD_LIB=${LIB_ROOT}/lib/libpord.a
+            -DMUMPS_COMMON_LIB=${LIB_ROOT}/lib/libmumps_common.a
+            -DMETIS_INCLUDE_PATH=${LIB_ROOT}/include
+            -DMETIS_LIBRARIES=${LIB_ROOT}/lib/libmetis.a
+            -DREFINER_INCLUDE_PATH=${LIB_ROOT}/include
+            -DREFINER_LIBRARIES=${LIB_ROOT}/lib/libRcapRefiner.a
+            -DBLAS_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a
+            -DLAPACK_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a
+            -DSCALAPACK_LIBRARIES=${LIB_ROOT}/lib/libscalapack.a
+            -DWITH_METIS=ON
+            -DWITH_MUMPS=ON
+            -DWITH_SCALAPACK=ON
+            -DWITH_LAPACK=ON
+            -DWITH_REFINER=ON
+            -DWITH_ML=ON
+            -DWITH_MPI=ON
+            -DWINDOWS=ON
+        - cmake --build build -- -j $(nproc)
+        - mkdir -p public/release/x86_64-w64-mingw32/
+        - tar zcvf public/release/x86_64-w64-mingw32/FrontISTR-latest.tar.gz -C build/fistr1/ fistr1.exe -C tools/ neu2fstr.exe -C ../../hecmw1/tools/ hecmw_part1.exe hecmw_vis1.exe rmerge.exe hec2rcap.exe rconv.exe
+    artifacts:
+        paths:
+            - public
+        expire_in: 100min
