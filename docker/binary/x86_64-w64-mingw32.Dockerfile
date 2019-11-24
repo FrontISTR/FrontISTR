@@ -109,7 +109,8 @@ RUN export target=x86_64-w64-mingw32 \
  && tar xvf scalapack-2.0.2.tgz \
  && pushd scalapack-2.0.2 \
  && sed -e "s/mpif90/x86_64-w64-mingw32-gfortran/g" -e "s/mpicc/x86_64-w64-mingw32-gcc/"  -e "s/ranlib/x86_64-w64-mingw32-ranlib/" -e "s/ar/x86_64-w64-mingw32-ar/" -e "s|-O3|-O3 -I${LIB_ROOT}/include|g" SLmake.inc.example > SLmake.inc \
- && make lib -j && cp libscalapack.a ${LIB_ROOT}/lib \
+ && make lib && cp libscalapack.a ${LIB_ROOT}/lib \
+ && popd \
  && curl -L -O http://mumps.enseeiht.fr/MUMPS_5.1.2.tar.gz \
  && tar xvf MUMPS_5.1.2.tar.gz \
  && pushd MUMPS_5.1.2 \
