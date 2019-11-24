@@ -1,6 +1,10 @@
-FROM ubuntu:18.04 AS build
-LABEL maintainer="FrontISTR Commons"
+FROM ubuntu:18.04 AS runtime
+RUN apt-get update \
+ && apt-get -y install libmumps-5.1.2 libgomp1 libtrilinos-ml12 libopenmpi2 libmetis5 openssh-client \
+ && apt-get clean      \
+ && rm -rf /var/lib/apt/lists/*
 
+FROM runtime AS build
 RUN apt-get update \
  && apt-get -y install \
     build-essential    \

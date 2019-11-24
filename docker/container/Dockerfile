@@ -5,5 +5,5 @@ WORKDIR /src
 RUN cmake -B/build -H. -DCMAKE_INSTALL_PREFIX=/src/bin \
  && cmake --build /build --target install -- -j $(nproc)
 
-FROM registry.gitlab.com/frontistr-commons/frontistr/build:latest AS fistr1
+FROM registry.gitlab.com/frontistr-commons/frontistr/runtime:latest AS fistr1
 COPY --from=fistr1-build /src/bin /usr
