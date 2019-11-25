@@ -31,11 +31,11 @@ contains
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
       if( ndof==3 ) then
-        allocate( fstrSOLID%tnstrain(hecMESH%n_node*6) )
-        allocate( fstrSOLID%testrain(hecMESH%n_elem*6) )
+        if( .not. associated(fstrSOLID%tnstrain) ) allocate( fstrSOLID%tnstrain(hecMESH%n_node*6) )
+        if( .not. associated(fstrSOLID%testrain) ) allocate( fstrSOLID%testrain(hecMESH%n_elem*6) )
       else if( ndof==2 ) then
-        allocate( fstrSOLID%tnstrain(hecMESH%n_node*3) )
-        allocate( fstrSOLID%testrain(hecMESH%n_elem*3) )
+        if( .not. associated(fstrSOLID%tnstrain) ) allocate( fstrSOLID%tnstrain(hecMESH%n_node*3) )
+        if( .not. associated(fstrSOLID%testrain) ) allocate( fstrSOLID%testrain(hecMESH%n_elem*3) )
       endif
     endif
 

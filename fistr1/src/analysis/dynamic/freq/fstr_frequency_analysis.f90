@@ -192,7 +192,7 @@ contains
       if(IRESULT==1) then
         write(*,   *) freq, "[Hz] : ", im, ".res"
         write(ilog,*) freq, "[Hz] : ", im, ".res"
-        call output_resfile(hecMESH, im, disp, vel, acc, freqiout)
+        call output_resfile(hecMESH, freq, im, disp, vel, acc, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==1) then
         write(*,   *) freq, "[Hz] : ", im, ".vis"
@@ -232,7 +232,7 @@ contains
       if(IRESULT==1) then
         write(*,   *) "time=", time, " : ", im, ".res"
         write(ilog,*) "time=", time, " : ", im, ".res"
-        call outputdyna_resfile(hecMESH, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
+        call outputdyna_resfile(hecMESH, time, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==2) then
         write(*,   *) "time=", time, " : ", im, ".vis"
@@ -439,9 +439,10 @@ contains
 
   end subroutine
 
-  subroutine output_resfile(hecMESH, ifreq, disp, vel, acc, iout)
+  subroutine output_resfile(hecMESH, freq, ifreq, disp, vel, acc, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
+    real(kind=kreal), intent(in)         :: freq
     integer(kind=kint), intent(in)       :: ifreq
     real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
@@ -452,12 +453,18 @@ contains
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label, nameid
+    real(kind=kreal)                :: freqval(1)
     !---- body
 
     nameid='fstrRES'
     header='*fstrresult'
     comment='frequency_result'
     call hecmw_result_init(hecMESH, ifreq, header, comment)
+
+    label = "frequency"
+    freqval(1) = freq
+    call hecmw_result_add(3, 1, label, freqval)
+
     if(iout(1) == 1) then
       label='displacement'
       call hecmw_result_add(1, 3, label, disp) !mode=node, ndof=3
@@ -972,9 +979,10 @@ contains
     return
   end subroutine
 
-  subroutine outputdyna_resfile(hecMESH, istp, dispre, dispim, velre, velim, accre, accim, iout)
+  subroutine outputdyna_resfile(hecMESH, time, istp, dispre, dispim, velre, velim, accre, accim, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
+    real(kind=kreal), intent(in)   :: time
     integer(kind=kint), intent(in) :: istp
     real(kind=kreal), intent(in)   :: dispre(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)   :: dispim(:) !intend (numnodeDOF)
@@ -999,6 +1007,10 @@ contains
     comment='frequency_result'
 
     call hecmw_result_init(hecMESH, istp, header, comment)
+
+    label = "time"
+    absval(1) = time
+    call hecmw_result_add(3, 1, label, absval)
 
     if(iout(1) == 1) then
       label='displacement_real'
