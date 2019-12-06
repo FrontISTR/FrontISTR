@@ -8,7 +8,7 @@ module m_out
   implicit none
 
   integer, parameter, private :: MAXOUT = 256
-  integer, parameter, private :: MAXNAMELEN = 16
+  integer, parameter, private :: MAXNAMELEN = 24
   character(len=20), parameter, private :: OUTFILENAME = "ifstr.out"
 
   include 'fstr_ctrl_util_f.inc'
@@ -42,7 +42,7 @@ contains
     outinfo%grp_id_name = "ALL"
     outinfo%grp_id      = -1
     outinfo%on(:)       = .false.
-    outinfo%num_items   = 35
+    outinfo%num_items   = 37
 
     outinfo%keyWord(1)  = "DISP"
     outinfo%vtype(1)    = -2
@@ -152,6 +152,11 @@ contains
     outinfo%keyWord(35) = "BEAM_NQM"
     outinfo%vtype(35)   = -5
 
+    outinfo%keyWord(36) = "CONTACT_NTRACTION"
+    outinfo%vtype(36)   = -2
+
+    outinfo%keyWord(37) = "CONTACT_FTRACTION"
+    outinfo%vtype(37)   = -2
   end subroutine initOutInfo
 
 
