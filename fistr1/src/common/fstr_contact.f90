@@ -446,6 +446,22 @@ contains
       allocate( fstrSOLID%CONT_STATE(hecMAT%NP*1) )
       fstrSOLID%CONT_STATE(:) = 0.d0
     end if
+
+    if( .not. associated(fstrSOLID%CONT_AREA) ) then
+      allocate( fstrSOLID%CONT_AREA(hecMAT%NP) )
+      fstrSOLID%CONT_AREA(:) = 0.d0
+    end if
+
+    if( .not. associated(fstrSOLID%CONT_NTRAC) ) then
+      allocate( fstrSOLID%CONT_NTRAC(hecMAT%NP*3) )
+      fstrSOLID%CONT_NTRAC(:) = 0.d0
+    end if
+
+    if( .not. associated(fstrSOLID%CONT_FTRAC) ) then
+      allocate( fstrSOLID%CONT_FTRAC(hecMAT%NP*3) )
+      fstrSOLID%CONT_FTRAC(:) = 0.d0
+    end if
+
   end subroutine
 
 
