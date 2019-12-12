@@ -1750,6 +1750,11 @@ contains
     call hecmw_pair_array_sort(parray)
     !
     n_add_node = 0
+    !$omp parallel default(none), &
+      !$omp& private(i,lid,rank,llid), &
+      !$omp& shared(ncols,cols,hecMESH,map,parray), &
+      !$omp& reduction(+:n_add_node)
+    !$omp do
     do i = 1, ncols
       lid = cols(cLID,i)
       rank = cols(cRANK,i)
@@ -1767,6 +1772,8 @@ contains
         endif
       endif
     enddo
+    !$omp end do
+    !$omp end parallel
     !
     call hecmw_pair_array_finalize(parray)
   end subroutine map_present_nodes
