@@ -3098,6 +3098,10 @@ contains
     allocate(Cmat%item(nnz))
     allocate(Cmat%A(ndof2 * nnz))
     Cmat%A(:) = 0.0d0
+    !$omp parallel default(none), &
+    !$omp& private(i,icnt,l0,js,je,j,jj,Ap,ks,ke,k,kk,Bp,ll,l,Cp), &
+    !$omp& shared(nr,Cmat,Amat,Bmat,ndof2,ndof)
+    !$omp do
     do i = 1, nr
       icnt = 0
       l0 = Cmat%index(i-1)
@@ -3131,6 +3135,8 @@ contains
       !write(0,*) 'l0,icnt,index(i)',Cmat%index(i-1),icnt,Cmat%index(i)
       if (l0+icnt /= Cmat%index(i)) stop 'ERROR: multiply_mat_mat: unknown error'
     enddo
+    !$omp end do
+    !$omp end parallel
     call sort_and_uniq_rows(Cmat)
   end subroutine multiply_mat_mat
 
@@ -3149,6 +3155,7 @@ contains
         do k=1,ndof
           ik=i0+k
           jk=j0+k
+          !$omp atomic
           AB(ik)=AB(ik)+A(ij)*B(jk)
         enddo
       enddo
