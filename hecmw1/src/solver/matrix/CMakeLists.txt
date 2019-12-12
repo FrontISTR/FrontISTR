@@ -17,5 +17,6 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_ordering_CM.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_ordering_MC.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_reorder.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_pair_array.f90
 )
 

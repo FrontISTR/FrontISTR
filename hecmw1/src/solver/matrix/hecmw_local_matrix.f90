@@ -5,6 +5,7 @@
 
 module hecmw_local_matrix
   use hecmw_util
+  use hecmw_pair_array
 
   private
   public :: hecmwST_local_matrix
@@ -1740,6 +1741,14 @@ contains
     integer(kind=kint), intent(out) :: map(ncols)
     integer(kind=kint), intent(out) :: n_add_node
     integer(kind=kint) :: i, lid, rank, llid
+    type (hecmwST_pair_array) :: parray
+    !
+    call hecmw_pair_array_init(parray, hecMESH%n_node - hecMESH%nn_internal)
+    do i = hecMESH%nn_internal + 1, hecMESH%n_node
+      call hecmw_pair_array_append(parray, i, hecMESH%node_ID(2*i-1), hecMESH%node_ID(2*i))
+    enddo
+    call hecmw_pair_array_sort(parray)
+    !
     n_add_node = 0
     do i = 1, ncols
       lid = cols(cLID,i)
@@ -1749,7 +1758,7 @@ contains
         map(i) = lid
       else                               !   external
         !     search node_ID in external nodes
-        llid = find_external_node_ID(hecMESH, lid, rank)
+        llid = hecmw_pair_array_find_id(parray, lid, rank)
         if (llid > 0) then  !     found: set mapping
           map(i) = llid
         else                !     not found
@@ -1758,22 +1767,9 @@ contains
         endif
       endif
     enddo
+    !
+    call hecmw_pair_array_finalize(parray)
   end subroutine map_present_nodes
-
-  function find_external_node_ID(hecMESH, lid, rank)
-    implicit none
-    integer(kind=kint) :: find_external_node_ID
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    integer(kind=kint), intent(in) :: lid, rank
-    integer(kind=kint) :: i
-    find_external_node_ID = -1
-    do i = hecMESH%nn_internal+1, hecMESH%n_node
-      if (hecMESH%node_ID(2*i-1) == lid .and. hecMESH%node_ID(2*i) == rank) then
-        find_external_node_ID = i
-        return
-      endif
-    enddo
-  end function find_external_node_ID
 
   subroutine extract_add_nodes(ncols, cols, map, n_add_node, add_nodes)
     implicit none
