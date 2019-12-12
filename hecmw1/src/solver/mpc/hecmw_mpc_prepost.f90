@@ -554,16 +554,18 @@ contains
     dst%n_elem_type   = src%n_elem_type
     dst%n_dof         = src%n_dof
     dst%n_neighbor_pe = src%n_neighbor_pe
-    allocate(dst%neighbor_pe(dst%n_neighbor_pe))
-    dst%neighbor_pe(:) = src%neighbor_pe(:)
-    allocate(dst%import_index(0:dst%n_neighbor_pe))
-    dst%import_index(:)= src%import_index(:)
-    allocate(dst%export_index(0:dst%n_neighbor_pe))
-    dst%export_index(:)= src%export_index(:)
-    allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
-    dst%import_item(:) = src%import_item(:)
-    allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
-    dst%export_item(:) = src%export_item(:)
+    if (src%n_neighbor_pe > 1) then
+      allocate(dst%neighbor_pe(dst%n_neighbor_pe))
+      dst%neighbor_pe(:) = src%neighbor_pe(:)
+      allocate(dst%import_index(0:dst%n_neighbor_pe))
+      dst%import_index(:)= src%import_index(:)
+      allocate(dst%export_index(0:dst%n_neighbor_pe))
+      dst%export_index(:)= src%export_index(:)
+      allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
+      dst%import_item(:) = src%import_item(:)
+      allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
+      dst%export_item(:) = src%export_item(:)
+    endif
     allocate(dst%global_node_ID(dst%n_node))
     dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
     allocate(dst%node_ID(2*dst%n_node))
@@ -595,11 +597,13 @@ contains
   subroutine hecmw_mpc_mesh_free(hecMESH)
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
-    deallocate(hecMESH%neighbor_pe)
-    deallocate(hecMESH%import_index)
-    deallocate(hecMESH%export_index)
-    deallocate(hecMESH%import_item)
-    deallocate(hecMESH%export_item)
+    if (hecMESH%n_neighbor_pe > 1) then
+      deallocate(hecMESH%neighbor_pe)
+      deallocate(hecMESH%import_index)
+      deallocate(hecMESH%export_index)
+      deallocate(hecMESH%import_item)
+      deallocate(hecMESH%export_item)
+    endif
     deallocate(hecMESH%global_node_ID)
     deallocate(hecMESH%node_ID)
     deallocate(hecMESH%elem_type_item)
