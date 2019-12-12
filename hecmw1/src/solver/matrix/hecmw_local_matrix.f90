@@ -3072,7 +3072,11 @@ contains
     Cmat%nc = nc
     allocate(Cmat%index(0:nr))
     Cmat%index(0) = 0
+    !$omp parallel default(none), &
+    !$omp& private(iw,i,icnt,js,je,j,jj,ks,ke,k,kk,l), &
+    !$omp& shared(nr,nc,Amat,Bmat,Cmat)
     allocate(iw(nc))
+    !$omp do
     do i = 1, nr
       icnt = 0
       js = Amat%index(i-1)+1
@@ -3090,7 +3094,13 @@ contains
           iw(icnt) = kk
         enddo kl1
       enddo
-      Cmat%index(i) = Cmat%index(i-1) + icnt
+      Cmat%index(i) = icnt
+    enddo
+    !$omp end do
+    deallocate(iw)
+    !$omp end parallel
+    do i = 1, nr
+      Cmat%index(i) = Cmat%index(i-1) + Cmat%index(i)
     enddo
     nnz = Cmat%index(nr)
     Cmat%nnz = nnz
