@@ -98,7 +98,7 @@ subroutine hecmw_ML_comm_nn(id, x, ierr)
   type(hecmwST_matrix), pointer :: hecMAT
   type(hecmwST_local_mesh), pointer :: hecMESH
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  call hecmw_update_m_R (hecMESH, x, hecMESH%n_node,hecMESH%n_dof)
+  call hecmw_update_m_R (hecMESH, x, hecMAT%NP, hecMAT%NDOF)
   ierr = 0
 end subroutine hecmw_ML_comm_nn
 
