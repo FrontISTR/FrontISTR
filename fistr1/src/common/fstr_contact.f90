@@ -37,7 +37,7 @@ contains
     write(file,*) "Number of contact pair", pair%n_pair
     do i=1,pair%n_pair
       write(file,*) trim(pair%name(i)), pair%type(i), pair%slave_grp_id(i)  &
-        ,pair%master_grp_id(i)
+        ,pair%master_grp_id(i), pair%slave_orisgrp_id(i)
     enddo
   end subroutine
 
@@ -464,5 +464,78 @@ contains
 
   end subroutine
 
+  subroutine setup_contact_elesurf_for_area( cstep, hecMESH, fstrSOLID )
+    integer(kind=kint), intent(in)               :: cstep         !< current step number
+    type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
+    type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
+
+    integer(kind=kint) :: i, j, k, sgrp_id, iS, iE, eid, sid, n_cdsurfs
+    logical, pointer :: cdef_surf(:,:)
+    real(kind=kreal), pointer   :: coord(:)
+
+    allocate(cdef_surf(l_max_elem_surf,hecMESH%n_elem))
+    cdef_surf(:,:) = .false.
+
+    ! label contact defined surfaces
+    n_cdsurfs = 0
+    do i=1, size(fstrSOLID%contacts)
+      !grpid = fstrSOLID%contacts(i)%group
+      !if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
+      !  call clear_contact_state(fstrSOLID%contacts(i));  cycle
+      !endif
+
+      do k=1,2 !slave,master
+        if( k==1 ) then !slave
+          sgrp_id = fstrSOLID%contacts(i)%surf_id1_sgrp
+        else if( k==2 ) then !master
+          sgrp_id = fstrSOLID%contacts(i)%surf_id2
+        end if
+
+        if( sgrp_id <= 0 ) cycle
+
+        iS = hecMESH%surf_group%grp_index(sgrp_id-1) + 1
+        iE = hecMESH%surf_group%grp_index(sgrp_id  )
+        do j=iS,iE
+          eid = hecMESH%surf_group%grp_item(2*j-1)
+          sid = hecMESH%surf_group%grp_item(2*j)
+          ! only internal and boundary element should be added
+          if( .not. cdef_surf(sid,eid) ) n_cdsurfs = n_cdsurfs + 1
+          cdef_surf(sid,eid) = .true.
+        enddo
+      end do
+    enddo
+
+    !gather info of contact defined surfaces
+    allocate(fstrSOLID%CONT_SGRP_ID(2*n_cdsurfs))
+    n_cdsurfs = 0
+    do i=1,hecMESH%n_elem
+      do j=1,l_max_elem_surf
+        if( cdef_surf(j,i) ) then
+          n_cdsurfs = n_cdsurfs + 1
+          fstrSOLID%CONT_SGRP_ID(2*n_cdsurfs-1) = i
+          fstrSOLID%CONT_SGRP_ID(2*n_cdsurfs  ) = j
+        endif
+      end do
+    end do
+    deallocate(cdef_surf)
+
+  end subroutine
+
+  subroutine calc_contact_area( hecMESH, fstrSOLID )
+    type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
+    type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
+
+    integer(kind=kint) :: i
+    real(kind=kreal), pointer   :: coord(:)
+
+    allocate(coord(hecMESH%n_node))
+    do i=1,hecMESH%n_node
+      coord(i) = hecMESH%node(i)+fstrSOLID%unode(i)!+fstrSOLID%dunode(i)
+    end do
+
+    deallocate(coord)
+    stop
+
+  end subroutine
 
 end module mContact

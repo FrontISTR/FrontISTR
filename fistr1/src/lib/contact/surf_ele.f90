@@ -11,6 +11,7 @@ module mSurfElement
 
   integer(kind=kint), parameter       :: l_max_surface_node =20
   integer(kind=kint), parameter       :: l_max_elem_node = 100
+  integer(kind=kint), parameter       :: l_max_elem_surf = 6
 
   integer(kind=kint), parameter       :: N_NEIGHBOR_MAX_INIT = 8
 
