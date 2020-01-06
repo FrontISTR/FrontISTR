@@ -128,6 +128,7 @@ static void free_contact_pair(struct hecmwST_contact_pair *cpair) {
   HECMW_free(cpair->type);
   HECMW_free(cpair->name);
   HECMW_free(cpair->slave_grp_id);
+  HECMW_free(cpair->slave_orisgrp_id);
   HECMW_free(cpair->master_grp_id);
 }
 

@@ -311,6 +311,7 @@ static int init_struct_contact_pair(struct hecmwST_local_mesh *mesh) {
   mesh->contact_pair->name          = NULL;
   mesh->contact_pair->type          = NULL;
   mesh->contact_pair->slave_grp_id  = NULL;
+  mesh->contact_pair->slave_orisgrp_id  = NULL;
   mesh->contact_pair->master_grp_id = NULL;
 
   return 0;

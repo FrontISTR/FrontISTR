@@ -1498,6 +1498,7 @@ static int get_contact_info(struct hecmwST_contact_pair *cpair, FILE *fp,
     cpair->n_pair        = 0;
     cpair->type          = NULL;
     cpair->slave_grp_id  = NULL;
+    cpair->slave_orisgrp_id  = NULL;
     cpair->master_grp_id = NULL;
     return 0;
   }
@@ -1511,6 +1512,7 @@ static int get_contact_info(struct hecmwST_contact_pair *cpair, FILE *fp,
     cpair->name          = NULL;
     cpair->type          = NULL;
     cpair->slave_grp_id  = NULL;
+    cpair->slave_orisgrp_id  = NULL;
     cpair->master_grp_id = NULL;
     return 0;
   }
@@ -1542,6 +1544,16 @@ static int get_contact_info(struct hecmwST_contact_pair *cpair, FILE *fp,
     return -1;
   }
   if (get_int_ary(cpair->slave_grp_id, cpair->n_pair, fp)) {
+    return -1;
+  }
+
+  /* slave_orisgrp_id */
+  if ((cpair->slave_orisgrp_id =
+           (int *)HECMW_malloc(sizeof(int) * (cpair->n_pair))) == NULL) {
+    HECMW_set_error(errno, "");
+    return -1;
+  }
+  if (get_int_ary(cpair->slave_orisgrp_id, cpair->n_pair, fp)) {
     return -1;
   }
 
@@ -2729,6 +2741,11 @@ static int print_contact_info(const struct hecmwST_contact_pair *cpair,
 
   /* slave_grp_id */
   if (print_int_ary(cpair->slave_grp_id, cpair->n_pair, COLS_INT_DEF, fp)) {
+    return -1;
+  }
+
+  /* slave_orisgrp_id */
+  if (print_int_ary(cpair->slave_orisgrp_id, cpair->n_pair, COLS_INT_DEF, fp)) {
     return -1;
   }
 

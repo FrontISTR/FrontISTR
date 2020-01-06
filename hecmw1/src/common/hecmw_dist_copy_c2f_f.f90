@@ -1095,6 +1095,11 @@ contains
       call hecmw_dist_copy_c2f_set_if(sname, vname, cpair%slave_grp_id, ierr)
       if(ierr /= 0) return
 
+      vname = 'slave_orisgrp_id'
+      allocate(cpair%slave_orisgrp_id(cpair%n_pair))
+      call hecmw_dist_copy_c2f_set_if(sname, vname, cpair%slave_orisgrp_id, ierr)
+      if(ierr /= 0) return
+
       vname = 'master_grp_id'
       allocate(cpair%master_grp_id(cpair%n_pair))
       call hecmw_dist_copy_c2f_set_if(sname, vname, cpair%master_grp_id, ierr)
