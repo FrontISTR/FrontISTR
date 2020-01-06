@@ -110,6 +110,7 @@ contains
         end do
       endif
       call fstr_UpdateState( hecMESH, fstrSOLID, 0.0d0 )
+      if( associated( fstrSOLID%contacts ) ) call setup_contact_elesurf_for_area( tot_step, hecMESH, fstrSOLID )
 
       ! -------------------------------------------------------------------------
       !      STEP LOOP
