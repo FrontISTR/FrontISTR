@@ -1497,6 +1497,7 @@ struct hecmw_io_contact *HECMW_io_add_contact(const char *name, int type,
   strcpy(p->name, name);
   p->type = type;
   strcpy(p->slave_grp, slave_grp);
+  strcpy(p->slave_orisgrp, slave_grp);
   strcpy(p->master_grp, master_grp);
   p->next = NULL;
 
@@ -2934,10 +2935,11 @@ static int setup_elem_mat(struct hecmwST_local_mesh *mesh) {
 }
 
 static int setup_contact(struct hecmwST_local_mesh *mesh) {
-  int i, npair, slave_gid, master_gid;
+  int i, npair, slave_gid, master_gid, orislave_sgid;
   size_t size;
   struct hecmwST_contact_pair *cpair;
   struct hecmw_io_contact *p;
+  orislave_sgid = 0;
   slave_gid = 0;
 
   HECMW_assert(mesh);
@@ -2952,6 +2954,7 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
   cpair->type          = NULL;
   cpair->name          = NULL;
   cpair->slave_grp_id  = NULL;
+  cpair->slave_orisgrp_id  = NULL;
   cpair->master_grp_id = NULL;
 
   if (_contact == NULL) {
@@ -2991,6 +2994,14 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
     goto error;
   }
 
+  /* slave_orisgrp_id */
+  size                = sizeof(*cpair->slave_orisgrp_id) * (cpair->n_pair);
+  cpair->slave_orisgrp_id = HECMW_malloc(size);
+  if (cpair->slave_orisgrp_id == NULL) {
+    set_err(errno, "");
+    goto error;
+  }
+
   /* master_grp_id */
   size                 = sizeof(*cpair->master_grp_id) * (cpair->n_pair);
   cpair->master_grp_id = HECMW_malloc(size);
@@ -3014,14 +3025,17 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
 
     if (p->type == HECMW_CONTACT_TYPE_NODE_SURF) {
       slave_gid = HECMW_dist_get_ngrp_id(mesh->node_group, p->slave_grp);
+      orislave_sgid = -1;
     } else if (p->type == HECMW_CONTACT_TYPE_SURF_SURF) {
       slave_gid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->slave_grp);
+      orislave_sgid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->slave_orisgrp);
     } else {
       HECMW_assert(0);
     }
     HECMW_assert(slave_gid > 0);
 
     cpair->slave_grp_id[i] = slave_gid;
+    cpair->slave_orisgrp_id[i] = orislave_sgid;
 
     master_gid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->master_grp);
     HECMW_assert(master_gid > 0);

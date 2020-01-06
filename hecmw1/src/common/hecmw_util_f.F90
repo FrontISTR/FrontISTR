@@ -205,6 +205,7 @@ module hecmw_util
     integer(kind=kint),pointer :: type(:)
     integer(kind=kint),pointer :: slave_grp_id(:)
     integer(kind=kint),pointer :: master_grp_id(:)
+    integer(kind=kint),pointer :: slave_orisgrp_id(:)
   end type hecmwST_contact_pair
 
   !C      for hecmwST_contact_pair%type
@@ -714,6 +715,7 @@ contains
     nullify( P%name )
     nullify( P%type )
     nullify( P%slave_grp_id )
+    nullify( P%slave_orisgrp_id )
     nullify( P%master_grp_id )
   end subroutine hecmw_nullify_contact_pair
 

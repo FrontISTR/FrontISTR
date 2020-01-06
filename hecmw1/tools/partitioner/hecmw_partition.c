@@ -1176,6 +1176,7 @@ static int init_struct_contact_pair(struct hecmwST_local_mesh *local_mesh) {
   local_mesh->contact_pair->name          = NULL;
   local_mesh->contact_pair->type          = NULL;
   local_mesh->contact_pair->slave_grp_id  = NULL;
+  local_mesh->contact_pair->slave_orisgrp_id  = NULL;
   local_mesh->contact_pair->master_grp_id = NULL;
 
   return RTC_NORMAL;
@@ -1376,6 +1377,9 @@ static void clean_struct_contact_pair(struct hecmwST_local_mesh *local_mesh) {
   }
   if (local_mesh->contact_pair->slave_grp_id) {
     HECMW_free(local_mesh->contact_pair->slave_grp_id);
+  }
+  if (local_mesh->contact_pair->slave_orisgrp_id) {
+    HECMW_free(local_mesh->contact_pair->slave_orisgrp_id);
   }
   if (local_mesh->contact_pair->master_grp_id) {
     HECMW_free(local_mesh->contact_pair->master_grp_id);
@@ -8326,6 +8330,30 @@ error:
   return RTC_ERROR;
 }
 
+static int const_contact_pair_slave_orisgrp_id(
+    const struct hecmwST_local_mesh *global_mesh,
+    struct hecmwST_local_mesh *local_mesh) {
+  struct hecmwST_contact_pair *cpair_global = global_mesh->contact_pair;
+  struct hecmwST_contact_pair *cpair_local  = local_mesh->contact_pair;
+  int i;
+
+  cpair_local->slave_orisgrp_id =
+      (int *)HECMW_calloc(cpair_local->n_pair, sizeof(int));
+  if (cpair_local->slave_orisgrp_id == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
+
+  for (i = 0; i < cpair_global->n_pair; i++) {
+    cpair_local->slave_orisgrp_id[i] = cpair_global->slave_orisgrp_id[i];
+  }
+
+  return RTC_NORMAL;
+
+error:
+  return RTC_ERROR;
+}
+
 static int const_contact_pair_master_grp_id(
     const struct hecmwST_local_mesh *global_mesh,
     struct hecmwST_local_mesh *local_mesh) {
@@ -8374,6 +8402,9 @@ static int const_contact_pair_info(const struct hecmwST_local_mesh *global_mesh,
   if (rtc != RTC_NORMAL) goto error;
 
   rtc = const_contact_pair_slave_grp_id(global_mesh, local_mesh);
+  if (rtc != RTC_NORMAL) goto error;
+
+  rtc = const_contact_pair_slave_orisgrp_id(global_mesh, local_mesh);
   if (rtc != RTC_NORMAL) goto error;
 
   rtc = const_contact_pair_master_grp_id(global_mesh, local_mesh);

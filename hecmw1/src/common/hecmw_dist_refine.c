@@ -3511,6 +3511,16 @@ static int copy_contact_pair(const struct hecmwST_contact_pair *cp,
     ref_cp->slave_grp_id[i] = cp->slave_grp_id[i];
   }
 
+  /* slave_orisgrp_id */
+  ref_cp->slave_orisgrp_id = (int *)HECMW_malloc(sizeof(int) * cp->n_pair);
+  if (ref_cp->slave_orisgrp_id == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  for (i = 0; i < cp->n_pair; i++) {
+    ref_cp->slave_orisgrp_id[i] = cp->slave_orisgrp_id[i];
+  }
+
   /* master_grp_id */
   ref_cp->master_grp_id = (int *)HECMW_malloc(sizeof(int) * cp->n_pair);
   if (ref_cp->master_grp_id == NULL) {
