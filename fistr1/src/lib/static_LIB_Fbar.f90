@@ -90,7 +90,7 @@ contains
       else
         gdispderiv(1:3, 1:3) = matmul( u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
         jacob = Determinant33( I33(1:ndof,1:ndof) + gdispderiv(1:ndof, 1:ndof) )
-        Jratio(LX) = jacob**(-1.d0/3.d0)
+        Jratio(LX) = dsign(dabs(jacob)**(-1.d0/3.d0),jacob)
         call getGlobalDeriv( etype, nn, naturalcoord, elem1, det, gderiv1)
         gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof) + jacob*wg*gderiv1(1:nn, 1:ndof)
         do p=1,nn
@@ -110,7 +110,7 @@ contains
     if( dabs(V0) > 1.d-12 ) then
       if( dabs(jacob_ave) < 1.d-12 ) stop 'Error in Update_C3D8Fbar: too small average jacob'
       jacob_ave = jacob_ave/V0
-      Jratio(1:8) = (jacob_ave**(1.d0/3.d0))*Jratio(1:8)
+      Jratio(1:8) = (dsign(dabs(jacob_ave)**(1.d0/3.d0),jacob_ave))*Jratio(1:8) !Jratio(1:8) = (jacob_ave**(1.d0/3.d0))*Jratio(1:8)
       gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof)/(V0*jacob_ave)
       gderiv2_ave(1:ndof*nn,1:ndof*nn) = gderiv2_ave(1:ndof*nn,1:ndof*nn)/(V0*jacob_ave)
     else
