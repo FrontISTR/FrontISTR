@@ -15,6 +15,7 @@ contains
     use m_fstr_NodalStress
     use m_static_make_result
     use m_hecmw2fstr_mesh_conv
+    use mContact
     integer, intent(in)                   :: cstep       !< current step number
     integer, intent(in)                   :: istep       !< current substep number
     real(kind=kreal), intent(in)          :: time        !< current time
@@ -47,6 +48,10 @@ contains
       call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
 
+    if( associated( fstrSOLID%contacts ) ) then
+      call setup_contact_output_variables( hecMESH, fstrSOLID, -1 )
+    endif
+
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
           (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
@@ -57,12 +62,14 @@ contains
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
+      call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
       call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. outflag) ) then
 
+      call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
       call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
