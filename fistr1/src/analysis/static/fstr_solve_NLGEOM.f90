@@ -67,7 +67,7 @@ contains
                 allocate( fstrSOLID%temperature( hecMESH%n_node ) )
                 allocate( fstrSOLID%temp_bak( hecMESH%n_node ) )
                 allocate( fstrSOLID%last_temp( hecMESH%n_node ) )
-            endif 
+            endif
             do i= 1, hecMESH%n_node
               fstrSOLID%last_temp(i) = g_InitialCnd(j)%realval(i)
               fstrSOLID%temperature(i) = fstrSOLID%last_temp(i)
@@ -76,7 +76,10 @@ contains
       end do
     endif
 
-    if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+    if( associated( fstrSOLID%contacts ) ) then
+      call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
+    endif
 
     restart_step_num    = 1
     restart_substep_num = 1
@@ -110,7 +113,6 @@ contains
         end do
       endif
       call fstr_UpdateState( hecMESH, fstrSOLID, 0.0d0 )
-      if( associated( fstrSOLID%contacts ) ) call setup_contact_elesurf_for_area( tot_step, hecMESH, fstrSOLID )
 
       ! -------------------------------------------------------------------------
       !      STEP LOOP

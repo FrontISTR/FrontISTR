@@ -473,6 +473,8 @@ contains
     logical, pointer :: cdef_surf(:,:)
     real(kind=kreal), pointer   :: coord(:)
 
+    if( associated(fstrSOLID%CONT_SGRP_ID) ) deallocate(fstrSOLID%CONT_SGRP_ID)
+
     allocate(cdef_surf(l_max_elem_surf,hecMESH%n_elem))
     cdef_surf(:,:) = .false.
 
@@ -521,20 +523,92 @@ contains
 
   end subroutine
 
-  subroutine calc_contact_area( hecMESH, fstrSOLID )
+  subroutine calc_contact_area( hecMESH, fstrSOLID, flag )
     type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
     type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
+    integer(kind=kint), intent(in)               :: flag          !< set 1 if called in NR iteration
 
-    integer(kind=kint) :: i
+    integer(kind=kint), parameter :: NDOF=3
+    integer(kind=kint) :: i, isuf, icel, sid, etype, nn, iS, stype, idx
+    integer(kind=kint) :: ndlocal(l_max_elem_node)
     real(kind=kreal), pointer   :: coord(:)
+    real(kind=kreal)   :: ecoord(NDOF,l_max_elem_node), vect(l_max_elem_node)
 
-    allocate(coord(hecMESH%n_node))
-    do i=1,hecMESH%n_node
-      coord(i) = hecMESH%node(i)+fstrSOLID%unode(i)!+fstrSOLID%dunode(i)
+    fstrSOLID%CONT_AREA(:) = 0.d0
+
+    if( .not. associated(fstrSOLID%CONT_SGRP_ID) ) return
+
+    allocate(coord(NDOF*hecMESH%n_node))
+    do i=1,NDOF*hecMESH%n_node
+      coord(i) = hecMESH%node(i)+fstrSOLID%unode(i)
+    end do
+    if( flag == 1 ) then
+      do i=1,NDOF*hecMESH%n_node
+        coord(i) = coord(i)+fstrSOLID%dunode(i)
+      end do
+    end if
+
+    do isuf=1,size(fstrSOLID%CONT_SGRP_ID)/2
+      icel = hecMESH%surf_group%grp_item(2*isuf-1)
+      sid  = hecMESH%surf_group%grp_item(2*isuf  )
+
+      etype = hecMESH%elem_type(icel)
+      nn = hecmw_get_max_node(etype)
+      iS = hecMESH%elem_node_index(icel-1)
+      ndlocal(1:nn) = hecMESH%elem_node_item (iS+1:iS+nn)
+
+      do i=1,nn
+        idx = NDOF*(ndlocal(i)-1)
+        ecoord(1:NDOF,i) = coord(idx+1:idx+NDOF)
+      end do
+
+      call calc_nodalarea_surfelement( etype, nn, ecoord, sid, vect )
+
+      do i=1,nn
+        idx = ndlocal(i)
+        fstrSOLID%CONT_AREA(idx) = fstrSOLID%CONT_AREA(idx) + vect(i)
+      end do
+
     end do
 
     deallocate(coord)
-    stop
+  end subroutine
+
+  subroutine calc_nodalarea_surfelement( etype, nn, ecoord, sid, vect )
+    integer(kind=kint), intent(in)   :: etype
+    integer(kind=kint), intent(in)   :: nn
+    real(kind=kreal), intent(in)     :: ecoord(:,:)
+    integer(kind=kint), intent(in)   :: sid
+    real(kind=kreal), intent(out)    :: vect(:)
+
+    integer(kind=kint), parameter :: NDOF=3
+    integer(kind=kint) :: nod(l_max_surface_node)
+    integer(kind=kint) :: nsur, stype, ig0, i
+    real(kind=kreal)   :: localcoord(2), normal(3), area, wg
+    real(kind=kreal)   :: scoord(NDOF,l_max_surface_node), H(l_max_surface_node)
+
+    vect(:) = 0.d0
+
+    call getSubFace( etype, sid, stype, nod )
+    nsur = getNumberOfNodes( stype )
+    do i=1,nsur
+      scoord(1:NDOF,i) = ecoord(1:NDOF,nod(i))
+    end do
+
+    area = 0.d0
+    do ig0=1,NumOfQuadPoints( stype )
+      call getQuadPoint( stype, ig0, localcoord(1:2) )
+      call getShapeFunc( stype, localcoord(1:2), H(1:nsur) )
+
+      wg=getWeight( stype, ig0 )
+      ! normal = dx/dr_1 \times dx/dr_2
+      normal(1:3) = SurfaceNormal( stype, nsur, localcoord(1:2), scoord(1:NDOF,1:nsur) )
+      area = area + dsqrt(dot_product(normal,normal))*wg
+    enddo
+    area = area/dble(nsur)
+    do i=1,nsur
+      vect(nod(i)) = area
+    end do
 
   end subroutine
 
