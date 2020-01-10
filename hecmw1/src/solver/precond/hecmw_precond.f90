@@ -76,8 +76,9 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_matrix), intent(inout)     :: hecMAT
-    real(kind=kreal), intent(inout) :: R(:)
-    real(kind=kreal), intent(inout) :: Z(:), ZP(:)
+    real(kind=kreal), intent(in)    :: R(hecMAT%N*hecMAT%NDOF)
+    real(kind=kreal), intent(inout) :: Z(hecMAT%NP*hecMAT%NDOF)
+    real(kind=kreal), intent(inout) :: ZP(hecMAT%NP*hecMAT%NDOF)
     real(kind=kreal), intent(inout) :: COMMtime
     integer(kind=kint ) :: N, NP, NNDOF, NPNDOF
     integer(kind=kint ) :: i, iterPRE
