@@ -42,7 +42,7 @@ contains
     integer(kind=kint ) :: ITERlog, TIMElog
     real(kind=kreal), pointer :: B(:), X(:)
 
-    real(kind=kreal), dimension(:,:), allocatable :: WW
+    real(kind=kreal), allocatable :: WR(:), WZ(:), WP(:), WWK(:)
 
     integer(kind=kint), parameter ::  R= 1
     integer(kind=kint), parameter ::  Z= 2
@@ -94,8 +94,11 @@ contains
     ALPHA1 = 0.0d0
     BETA = 0.0d0
 
-    allocate (WW(NDOF*NP, 4))
-    WW = 0.d0
+    allocate( WR(NDOF*NP), WZ(NDOF*NP), WP(NDOF*NP), WWK(NDOF*NP) )
+    WR(1:NDOF*NP) = 0.d0
+    WZ(1:NDOF*NP) = 0.d0
+    WP(1:NDOF*NP) = 0.d0
+    WWK(1:NDOF*NP) = 0.d0
 
     !C
     !C-- SCALING
@@ -120,7 +123,7 @@ contains
     !C | {r0}= {b} - [A]{x0} |
     !C +---------------------+
     !C===
-    call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+    call hecmw_matresid(hecMESH, hecMAT, X, B, WR, Tcomm)
 
     !C-- compute ||{b}||
     call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
@@ -160,7 +163,7 @@ contains
       !C | {z}= [Minv]{r} |
       !C +----------------+
       !C===
-      call hecmw_precond_apply(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
+      call hecmw_precond_apply(hecMESH, hecMAT, WR, WZ, WWK, Tcomm)
 
 
       !C===
@@ -168,7 +171,7 @@ contains
       !C | {RHO}= {r}{z} |
       !C +---------------+
       !C===
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,Z), RHO, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WR, WZ, RHO, Tcomm)
       ! if RHO is NaN or Inf then no converge
       if (RHO == 0.d0) then
         ! converged due to RHO==0
@@ -193,12 +196,12 @@ contains
       !C===
       if ( ITER.eq.1 ) then
         do i = 1, NNDOF
-          WW(i,P) = WW(i,Z)
+          WP(i) = WZ(i)
         enddo
       else
         BETA = RHO / RHO1
         do i = 1, NNDOF
-          WW(i,P) = WW(i,Z) + BETA*WW(i,P)
+          WP(i) = WZ(i) + BETA*WP(i)
         enddo
       endif
 
@@ -207,14 +210,14 @@ contains
       !C | {q}= [A] {p} |
       !C +--------------+
       !C===
-      call hecmw_matvec(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
+      call hecmw_matvec(hecMESH, hecMAT, WP, WZ, Tcomm)
 
       !C===
       !C +---------------------+
       !C | ALPHA= RHO / {p}{q} |
       !C +---------------------+
       !C===
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,P), WW(:,Q), C1, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WP, WZ, C1, Tcomm)
       ! if C1 is NaN or Inf, no converge
       if (C1 <= 0) then
         ! diverged due to indefinite or negative definite matrix
@@ -234,19 +237,19 @@ contains
       !C +----------------------+
       !C===
       do i = 1, NNDOF
-        X(i)  = X(i)    + ALPHA * WW(i,P)
+        X(i)  = X(i)    + ALPHA * WP(i)
         ! WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
       enddo
 
       if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
-        call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+        call hecmw_matresid(hecMESH, hecMAT, X, B, WR, Tcomm)
       else
         do i = 1, NNDOF
-          WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
+          WR(i)= WR(i) - ALPHA * WZ(i)
         enddo
       endif
 
-      call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
+      call hecmw_InnerProduct_R(hecMESH, NDOF, WR, WR, DNRM2, Tcomm)
 
       RESID= dsqrt(DNRM2/BNRM2)
 
@@ -268,8 +271,8 @@ contains
       if ( RESID.le.TOL   ) then
         if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) exit
         !C----- recompute R to make sure it is really converged
-        call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
-        call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
+        call hecmw_matresid(hecMESH, hecMAT, X, B, WR, Tcomm)
+        call hecmw_InnerProduct_R(hecMESH, NDOF, WR, WR, DNRM2, Tcomm)
         RESID= dsqrt(DNRM2/BNRM2)
         if ( RESID.le.TOL ) exit
       endif
@@ -290,7 +293,7 @@ contains
     END_TIME = HECMW_WTIME()
     Tcomm = Tcomm + END_TIME - START_TIME
 
-    deallocate (WW)
+    deallocate (WR,WZ,WP,WWK)
     !call hecmw_precond_clear(hecMAT)
 
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
