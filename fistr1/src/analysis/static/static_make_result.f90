@@ -191,15 +191,13 @@ contains
         write(s,*) k
         write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
-        if( k > size(fstrSOLID%elements(i)%gausses) ) then
-          do i = 1, hecMESH%n_elem
+        do i = 1, hecMESH%n_elem
+          if( k > size(fstrSOLID%elements(i)%gausses) ) then
             work(i) = 0.d0
-          enddo
-        else
-          do i = 1, hecMESH%n_elem
+          else
             work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
-          enddo
-        endif
+          endif
+        enddo
         call hecmw_result_add( id, nitem, label, work )
       enddo
     endif
