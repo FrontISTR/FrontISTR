@@ -100,6 +100,7 @@ contains
       call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
     else
       call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
+      deallocate(spMAT%rhs)
     endif
 
     call hecmw_mat_dump_solution(hecMAT)
