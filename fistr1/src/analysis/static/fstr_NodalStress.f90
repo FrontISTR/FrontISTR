@@ -784,7 +784,10 @@ contains
       is = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype  )
       ic_type = hecMESH%elem_type_item(itype)
-      if( .not. hecmw_is_etype_shell(ic_type) ) cycle
+      if( .not. hecmw_is_etype_shell(ic_type) ) then
+        ntot_lyr = 0
+        cycle
+      end if
       nn = hecmw_get_max_node( ic_type )
       !C** element loop
       do icel = is, iE
