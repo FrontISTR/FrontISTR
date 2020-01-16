@@ -2397,6 +2397,8 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     integer(kind=kint) :: n
+    character(len=HECMW_NAME_LEN) :: mName
+    integer(kind=kint) :: i
 
     n = fstr_ctrl_get_data_line_n( ctrl )
 
@@ -2416,6 +2418,7 @@ end function fstr_setup_INITIAL
     P%PARAM%delmax = 0
     P%PARAM%itmax = 20
     P%PARAM%eps = 1.0e-6
+    P%PARAM%timepoint_id = 0
 
     rcode = fstr_ctrl_get_HEAT(   ctrl,        &
       P%PARAM%dtime,     &
@@ -2423,10 +2426,19 @@ end function fstr_setup_INITIAL
       P%PARAM%dtmin,     &
       P%PARAM%delmax,    &
       P%PARAM%itmax,     &
-      P%PARAM%eps )
+      P%PARAM%eps,       &
+      mName )
     if( rcode /= 0 ) then
       call fstr_ctrl_err_stop
     end if
+
+    if( associated(P%PARAM%timepoints) ) then
+      do i=1,size(P%PARAM%timepoints)
+        if( fstr_streqr( P%PARAM%timepoints(i)%name, mName ) ) then
+          P%PARAM%timepoint_id = i; exit
+        endif
+      enddo
+    endif
 
     call reallocate_real( P%HEAT%STEP_DLTIME, n)
     call reallocate_real( P%HEAT%STEP_EETIME, n)
@@ -2438,6 +2450,7 @@ end function fstr_setup_INITIAL
     P%HEAT%STEP_EETIME = P%PARAM%etime
     P%HEAT%STEP_DELMIN = P%PARAM%dtmin
     P%HEAT%STEP_DELMAX = P%PARAM%delmax
+    P%HEAT%timepoint_id = P%PARAM%timepoint_id
 
   end subroutine fstr_setup_HEAT
 
