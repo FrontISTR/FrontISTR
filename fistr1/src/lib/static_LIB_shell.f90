@@ -3202,7 +3202,7 @@ contains
     qf = matmul(stiff,totaldisp)
 
   end subroutine UpdateST_Shell_MITC33
-  
+
   !####################################################################
   subroutine mass_Shell(etype, nn, elem, rho, thick, gausses, mass, lumped)
   !####################################################################
@@ -3510,7 +3510,7 @@ contains
             !--------------------------------------------
 
             w_w_w_det = w_w_lx*w_ly*det
-            mass = mass+ matmul( transpose(N), N )*w_w_w_det*rho	
+            mass(1:6*nn,1:6*nn) = mass(1:6*nn,1:6*nn) + matmul( transpose(N), N )*w_w_w_det*rho
             totalmass = totalmass + w_w_w_det*rho
             !--------------------------------------------
 
