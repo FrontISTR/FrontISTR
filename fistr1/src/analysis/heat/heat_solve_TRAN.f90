@@ -56,6 +56,11 @@ contains
 
     call heat_input_restart(fstrHEAT, hecMESH, total_step, start_time)
 
+    if(fstrHEAT%is_steady /= 1 .and. total_step == 1) then
+      call heat_output_result(hecMESH, fstrHEAT, 0, current_time, .true.)
+      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, 0, current_time, .true.)
+    endif
+
     !C--------------------   START TRANSIET LOOP   ------------------------
     tr_loop: do
 
