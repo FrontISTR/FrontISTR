@@ -204,7 +204,6 @@ contains
 
       else if( header_name == '!HEAT' ) then
         c_heat = c_heat + 1
-        call fstr_setup_HEAT( ctrl, c_heat, P )
       else if( header_name == '!FIXTEMP' ) then
         c_fixtemp = c_fixtemp + 1
         call fstr_setup_FIXTEMP( ctrl, c_fixtemp, P )
@@ -400,6 +399,7 @@ contains
     rcode = fstr_ctrl_rewind( ctrl )
 
     c_istep    = 0
+    c_heat     = 0
     c_material = 0
     c_output = 0
     c_contact  = 0
@@ -499,6 +499,10 @@ contains
             endif
           enddo
         endif
+
+      else if( header_name == '!HEAT'  ) then
+        c_heat = c_heat + 1
+        call fstr_setup_HEAT( ctrl, c_heat, P )
 
       else if( header_name == '!WELD_LINE'  ) then
         fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
