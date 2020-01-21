@@ -278,6 +278,7 @@ module m_fstr
     integer(kind=kint) :: TEMP_irres
     integer(kind=kint) :: TEMP_tstep
     integer(kind=kint) :: TEMP_interval
+    integer(kind=kint) :: TEMP_rtype      ! type of reading result; 1: step-based; 2: time-based
     real(kind=kreal)   :: TEMP_FACTOR
     integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
     integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)

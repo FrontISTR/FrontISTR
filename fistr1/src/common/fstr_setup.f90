@@ -911,6 +911,7 @@ contains
     fstrSOLID%TEMP_irres        = 0
     fstrSOLID%TEMP_tstep        = 1
     fstrSOLID%TEMP_interval     = 1
+    fstrSOLID%TEMP_rtype        = 1
     fstrSOLID%TEMP_factor       = 1.d0
     fstrSOLID%VELOCITY_ngrp_tot = 0
     fstrSOLID%ACCELERATION_ngrp_tot = 0
@@ -2297,6 +2298,7 @@ end function fstr_setup_INITIAL
       P%SOLID%TEMP_irres,           &
       P%SOLID%TEMP_tstep,           &
       P%SOLID%TEMP_interval,        &
+      P%SOLID%TEMP_rtype,           &
       grp_id_name, HECMW_NAME_LEN,  &
       val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
