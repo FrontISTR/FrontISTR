@@ -549,8 +549,8 @@ contains
     end if
 
     do isuf=1,size(fstrSOLID%CONT_SGRP_ID)/2
-      icel = hecMESH%surf_group%grp_item(2*isuf-1)
-      sid  = hecMESH%surf_group%grp_item(2*isuf  )
+      icel = fstrSOLID%CONT_SGRP_ID(2*isuf-1)
+      sid  = fstrSOLID%CONT_SGRP_ID(2*isuf  )
 
       etype = hecMESH%elem_type(icel)
       nn = hecmw_get_max_node(etype)
