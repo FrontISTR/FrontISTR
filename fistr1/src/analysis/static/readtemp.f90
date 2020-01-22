@@ -99,7 +99,7 @@ contains
     integer(kind=kint), save ::  tstep1, tstep2
     real(kind=kreal), save :: ttime1, ttime2
 
-    integer(kind=kint) :: ierr
+    integer(kind=kint) :: ierr, i
     real(kind=kreal) :: w
     logical :: flg_read1, flg_read2
     real(kind=kreal), allocatable :: temp0(:,:)
@@ -125,13 +125,17 @@ contains
     ! when temperature is assumed constant
     if (flg_constant) then
       if (.not. flg_read1) call read_result_at(hecMESH, tstep1, ttime1, temp0(1,:))
-      temp(:) = temp0(1,:)
+      do i=1, hecMESH%n_node
+        temp(i) = temp0(1,i)
+      enddo
       return
     endif
     ! when ctime is out-of-range (left side)
     if (ctime <= ttime1) then
       if (.not. flg_read1) call read_result_at(hecMESH, tstep1, ttime1, temp0(1,:))
-      temp(:) = temp0(1,:)
+      do i=1, hecMESH%n_node
+        temp(i) = temp0(1,i)
+      enddo
       return
     endif
     ! proceed until ctime is within [ttime1, ttime2]
@@ -139,7 +143,9 @@ contains
       tstep1 = tstep2
       ttime1 = ttime2
       if (flg_read2) then
-        temp0(1,:) = temp0(2,:)
+        do i=1, hecMESH%n_node
+          temp0(1,i) = temp0(2,i)
+        enddo
         flg_read1 = .true.
       endif
       flg_read2 = .false.
@@ -154,14 +160,18 @@ contains
     ! when ctime is out-of-range (right side)
     if (flg_finished) then
       if (.not. flg_read1) call read_result_at(hecMESH, tstep1, ttime1, temp0(1,:))
-      temp(:) = temp0(1,:)
+      do i=1, hecMESH%n_node
+        temp(i) = temp0(1,i)
+      enddo
       return
     endif
     ! now, ttime1 <= ctime <= ttime2
     if (.not. flg_read1) call read_result_at(hecMESH, tstep1, ttime1, temp0(1,:))
     if (.not. flg_read2) call read_result_at(hecMESH, tstep2, ttime2, temp0(2,:))
     w = (ctime - ttime1) / (ttime2 - ttime1)
-    temp(:) = (1-w)*temp0(1,:) + w*temp0(2,:)
+    do i=1, hecMESH%n_node
+      temp(i) = (1-w)*temp0(1,i) + w*temp0(2,i)
+    enddo
     !write(IDBG,'(a,f10.2,a,i0,a,f10.2,a,i0,a,f10.2,a)') &
     !     ' Interpolated temp at',ctime,' from step ',tstep1,' (time',ttime1,') and step ',tstep2,' (time',ttime2,')'
     return
