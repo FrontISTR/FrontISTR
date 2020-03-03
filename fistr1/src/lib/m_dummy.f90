@@ -138,6 +138,8 @@ contains
       element%gausses(i)%stress = 0.d0
       element%gausses(i)%strain_out = 0.d0
       element%gausses(i)%stress_out = 0.d0
+      if( associated(element%gausses(i)%istatus) ) element%gausses(i)%istatus = 0
+      if( associated(element%gausses(i)%fstatus) ) element%gausses(i)%fstatus = 0.d0
     end do
 
   end subroutine
