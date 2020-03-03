@@ -98,6 +98,18 @@ contains
         ! ----- nodal coordinate
         iiS = hecMESH%elem_node_index(icel-1)
 
+        thick = 0.d0
+        do j = 1, size(fstrSOLID%elements(icel)%gausses)
+          tt0(1:6) = fstrSOLID%elements(icel)%gausses(j)%stress(1:6)
+          thick = thick + dsqrt(dot_product(tt0(1:6),tt0(1:6)))
+        enddo
+        if( thick < 1.d-10 ) then
+          do j = 1, size(fstrSOLID%elements(icel)%gausses)
+            if( associated(fstrSOLID%elements(icel)%gausses(j)%fstatus) ) &
+              &  fstrSOLID%elements(icel)%gausses(j)%fstatus = 0.d0
+          enddo
+        end if
+
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item (iiS+j)
           do i = 1, 3
