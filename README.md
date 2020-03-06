@@ -8,6 +8,8 @@ Comments, Questions, Problems etc.
 
 e-mail : support@frontistr.com
 
+[![Twitter Follow](https://img.shields.io/twitter/follow/FrontISTR_.svg?style=social)](https://twitter.com/FrontISTR_) 
+
 ### Programs in this archive
 FrontISTR : Open-Source Large-Scale Parallel FEM Program for Nonlinear Structural Analysis
 
