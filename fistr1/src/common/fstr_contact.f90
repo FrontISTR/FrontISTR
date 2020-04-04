@@ -274,6 +274,11 @@ contains
     infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
 
+    if( .not. active ) then
+      fstrSOLID%CONT_NFORCE(:) = 0.d0
+      fstrSOLID%CONT_FRIC(:) = 0.d0
+    end if
+
   end subroutine
 
   !> Scanning contact state
