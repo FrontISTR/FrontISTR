@@ -23,7 +23,7 @@ module hecmw_precond_SSOR_33
   public:: hecmw_precond_SSOR_33_apply
   public:: hecmw_precond_SSOR_33_clear
 
-  integer(kind=kint) :: N
+  integer(kind=kint) :: N,NP
   real(kind=kreal), pointer :: D(:) => null()
   real(kind=kreal), pointer :: AL(:) => null()
   real(kind=kreal), pointer :: AU(:) => null()
@@ -92,7 +92,7 @@ contains
     !$ nthreads = omp_get_max_threads()
 
     N = hecMAT%N
-    ! N = hecMAT%NP
+    NP = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
     NContact = hecMAT%cmat%n_val
@@ -161,6 +161,13 @@ contains
 
       call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
       call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
+    else
+      NPCL = 1
+      NPCU = 1
+      allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
+      indexCL(0:N) = 1
+      indexCU(0:N) = 1
+      allocate(CAL(9*NPCL), CAU(9*NPCU))
     end if
 
     allocate(ALU(9*N))
@@ -283,11 +290,13 @@ contains
          sectorCacheSize0, sectorCacheSize1 )
   end subroutine setup_tuning_parameters
 
+
+
   subroutine hecmw_precond_SSOR_33_apply(ZP)
+    use hecmw_tuning_fx
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
-    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
-    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
+    integer(kind=kint) :: ic, i
 
     ! added for turning >>>
     integer(kind=kint) :: blockIndex
@@ -297,6 +306,48 @@ contains
       isFirst = .false.
     endif
     ! <<< added for turning
+
+    call hecmw_precond_SSOR_33_apply_inner( &
+    N,NP,ZP,AL,AU,D,ALU,itemL,itemU,indexL,indexU,perm,icToBlockIndex,blockIndexToColorIndex, &
+    indexL(N),indexU(N),NColor,numOfBlock, &
+    NContact,indexCL(N),indexCU(N),indexCL,itemCL,indexCU,itemCU,CAL,CAU)
+
+  end subroutine hecmw_precond_SSOR_33_apply
+
+  subroutine hecmw_precond_SSOR_33_apply_inner( &
+    N,NP,ZP,AL,AU,D,ALU,itemL,itemU,indexL,indexU,perm,icToBlockIndex,blockIndexToColorIndex, &
+    NPL,NPU,NColor,numOfBlock,NContact,NPCL,NPCU,indexCL,itemCL,indexCU,itemCU,CAL,CAU)
+    integer(kind=kint), intent(in)  :: N
+    integer(kind=kint), intent(in)  :: NP
+    real(kind=kreal), intent(inout) :: ZP(3*NP)
+    real(kind=kreal), intent(in)    :: AL(9*NPL)
+    real(kind=kreal), intent(in)    :: AU(9*NPU)
+    real(kind=kreal), intent(in)    :: D(9*N)
+    real(kind=kreal), intent(in)    :: ALU(9*N)
+    integer(kind=kint), intent(in)  :: itemL(NPL)
+    integer(kind=kint), intent(in)  :: itemU(NPU)
+    integer(kind=kint), intent(in)  :: indexL(0:N)
+    integer(kind=kint), intent(in)  :: indexU(0:N)
+    integer(kind=kint), intent(in)  :: perm(N)
+    integer(kind=kint), intent(in)  :: icToBlockIndex(0:NColor)
+    integer(kind=kint), intent(in)  :: blockIndexToColorIndex(0:numOfBlock+NColor)
+    integer(kind=kint), intent(in)  :: NPL
+    integer(kind=kint), intent(in)  :: NPU
+    integer(kind=kint), intent(in)  :: NColor
+    integer(kind=kint), intent(in)  :: numOfBlock
+    integer(kind=kint), intent(in)  :: NContact
+    integer(kind=kint), intent(in)  :: NPCL
+    integer(kind=kint), intent(in)  :: NPCU
+    integer(kind=kint), intent(in)  :: indexCL(0:NPCL)
+    integer(kind=kint), intent(in)  :: itemCL(N)
+    integer(kind=kint), intent(in)  :: indexCU(0:NPCU)
+    integer(kind=kint), intent(in)  :: itemCU(N)
+    real(kind=kreal), intent(in)    :: CAL(9*NPL)
+    real(kind=kreal), intent(in)    :: CAU(9*NPU)
+
+    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
+    integer(kind=kint) :: blockIndex
+    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
 
     !call start_collection("loopInPrecond33")
 
@@ -428,7 +479,7 @@ contains
 
     !call stop_collection("loopInPrecond33")
 
-  end subroutine hecmw_precond_SSOR_33_apply
+  end subroutine
 
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)
     implicit none

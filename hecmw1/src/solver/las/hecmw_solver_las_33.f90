@@ -24,6 +24,8 @@ module hecmw_solver_las_33
   ! real(kind=kreal), save, allocatable :: A_o(:)
   logical, save :: async_matvec_flg = .false.
 
+  integer, parameter :: numOfBlockPerThread = 100
+
 contains
 
   !C
@@ -112,6 +114,89 @@ contains
     ! async_matvec_flg = .false.
   end subroutine hecmw_matvec_33_unset_async
 
+  subroutine hecmw_matvec_33_core(N,NP,X,Y,AL,AU,D, &
+    itemL,itemU,indexL,indexU,NPL,NPU,numOfBlock,numOfThread,startPos,endPos,async_matvec_flg)
+    !$ use omp_lib
+    integer(kind=kint), intent(in)  :: N
+    integer(kind=kint), intent(in)  :: NP
+    real(kind=kreal), intent(in)    :: X(3*NP)
+    real(kind=kreal), intent(inout) :: Y(3*N)
+    real(kind=kreal), intent(in)    :: AL(9*NPL)
+    real(kind=kreal), intent(in)    :: AU(9*NPU)
+    real(kind=kreal), intent(in)    :: D(9*N)
+    integer(kind=kint), intent(in)  :: itemL(NPL)
+    integer(kind=kint), intent(in)  :: itemU(NPU)
+    integer(kind=kint), intent(in)  :: indexL(0:N)
+    integer(kind=kint), intent(in)  :: indexU(0:N)
+    integer(kind=kint), intent(in)  :: NPL
+    integer(kind=kint), intent(in)  :: NPU
+    integer(kind=kint), intent(in)  :: numOfBlock
+    integer(kind=kint), intent(in)  :: numOfThread
+    integer(kind=kint), intent(in)  :: startPos(0:numOfBlock)
+    integer(kind=kint), intent(in)  :: endPos(0:numOfBlock)
+    logical, intent(in)             :: async_matvec_flg
+
+    integer(kind=kint) :: i, j, jS, jE, in
+    real(kind=kreal) :: YV1, YV2, YV3, X1, X2, X3
+    integer(kind=kint) :: threadNum, blockNum, blockIndex
+
+    !call fapp_start("loopInMatvec33", 1, 0)
+    !call start_collection("loopInMatvec33")
+
+    !OCL CACHE_SUBSECTOR_ASSIGN(X)
+
+    !$OMP PARALLEL DEFAULT(NONE) &
+      !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
+      !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
+    threadNum = 0
+    !$ threadNum = omp_get_thread_num()
+    do blockNum = 0 , numOfBlockPerThread - 1
+      blockIndex = blockNum * numOfThread  + threadNum
+      do i = startPos(blockIndex), endPos(blockIndex)
+        X1= X(3*i-2)
+        X2= X(3*i-1)
+        X3= X(3*i  )
+        YV1= D(9*i-8)*X1 + D(9*i-7)*X2 + D(9*i-6)*X3
+        YV2= D(9*i-5)*X1 + D(9*i-4)*X2 + D(9*i-3)*X3
+        YV3= D(9*i-2)*X1 + D(9*i-1)*X2 + D(9*i  )*X3
+
+        jS= indexL(i-1) + 1
+        jE= indexL(i  )
+        do j= jS, jE
+          in  = itemL(j)
+          X1= X(3*in-2)
+          X2= X(3*in-1)
+          X3= X(3*in  )
+          YV1= YV1 + AL(9*j-8)*X1 + AL(9*j-7)*X2 + AL(9*j-6)*X3
+          YV2= YV2 + AL(9*j-5)*X1 + AL(9*j-4)*X2 + AL(9*j-3)*X3
+          YV3= YV3 + AL(9*j-2)*X1 + AL(9*j-1)*X2 + AL(9*j  )*X3
+        enddo
+        jS= indexU(i-1) + 1
+        jE= indexU(i  )
+        do j= jS, jE
+          in  = itemU(j)
+          ! if (async_matvec_flg .and. in > N) cycle
+          X1= X(3*in-2)
+          X2= X(3*in-1)
+          X3= X(3*in  )
+          YV1= YV1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
+          YV2= YV2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
+          YV3= YV3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+        enddo
+        Y(3*i-2)= YV1
+        Y(3*i-1)= YV2
+        Y(3*i  )= YV3
+      enddo
+    enddo
+    !$OMP END PARALLEL
+
+    !OCL END_CACHE_SUBSECTOR
+
+    !call stop_collection("loopInMatvec33")
+    !call fapp_stop("loopInMatvec33", 1, 0)
+
+  end subroutine
+
   !C
   !C***
   !C*** hecmw_matvec_33_inner ( private subroutine )
@@ -143,7 +228,6 @@ contains
     real(kind=kreal), pointer :: AL(:), AU(:), D(:)
 
     ! added for turning >>>
-    integer, parameter :: numOfBlockPerThread = 100
     logical, save :: isFirst = .true.
     integer, save :: numOfThread = 1
     integer, save, allocatable :: startPos(:), endPos(:)
@@ -231,62 +315,12 @@ contains
 
       START_TIME = hecmw_Wtime()
 
-      !call fapp_start("loopInMatvec33", 1, 0)
-      !call start_collection("loopInMatvec33")
-
       !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-      !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
-      !$OMP PARALLEL DEFAULT(NONE) &
-        !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
-      threadNum = 0
-      !$ threadNum = omp_get_thread_num()
-      do blockNum = 0 , numOfBlockPerThread - 1
-        blockIndex = blockNum * numOfThread  + threadNum
-        do i = startPos(blockIndex), endPos(blockIndex)
-          X1= X(3*i-2)
-          X2= X(3*i-1)
-          X3= X(3*i  )
-          YV1= D(9*i-8)*X1 + D(9*i-7)*X2 + D(9*i-6)*X3
-          YV2= D(9*i-5)*X1 + D(9*i-4)*X2 + D(9*i-3)*X3
-          YV3= D(9*i-2)*X1 + D(9*i-1)*X2 + D(9*i  )*X3
+      call hecmw_matvec_33_core(N,NP,X,Y,AL,AU,D,itemL,itemU,indexL,indexU, &
+        indexL(N),indexU(N),numOfBlock,numOfThread,startPos,endPos,async_matvec_flg)
 
-          jS= indexL(i-1) + 1
-          jE= indexL(i  )
-          do j= jS, jE
-            in  = itemL(j)
-            X1= X(3*in-2)
-            X2= X(3*in-1)
-            X3= X(3*in  )
-            YV1= YV1 + AL(9*j-8)*X1 + AL(9*j-7)*X2 + AL(9*j-6)*X3
-            YV2= YV2 + AL(9*j-5)*X1 + AL(9*j-4)*X2 + AL(9*j-3)*X3
-            YV3= YV3 + AL(9*j-2)*X1 + AL(9*j-1)*X2 + AL(9*j  )*X3
-          enddo
-          jS= indexU(i-1) + 1
-          jE= indexU(i  )
-          do j= jS, jE
-            in  = itemU(j)
-            ! if (async_matvec_flg .and. in > N) cycle
-            X1= X(3*in-2)
-            X2= X(3*in-1)
-            X3= X(3*in  )
-            YV1= YV1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
-            YV2= YV2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
-            YV3= YV3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
-          enddo
-          Y(3*i-2)= YV1
-          Y(3*i-1)= YV2
-          Y(3*i  )= YV3
-        enddo
-      enddo
-      !$OMP END PARALLEL
-
-      !OCL END_CACHE_SUBSECTOR
       !OCL END_CACHE_SECTOR_SIZE
-
-      !call stop_collection("loopInMatvec33")
-      !call fapp_stop("loopInMatvec33", 1, 0)
 
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME
