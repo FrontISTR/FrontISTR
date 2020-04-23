@@ -115,7 +115,7 @@ contains
 
     NPL = hecMAT%indexL(N)
     NPU = hecMAT%indexU(N)
-    allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
+    allocate(indexL(0:N), indexU(0:N), itemL(3*NPL), itemU(3*NPU))
     call hecmw_matrix_reorder_profile(N, perm, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       indexL, indexU, itemL, itemU)
@@ -248,6 +248,36 @@ contains
 
     !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
+    do ii=1,N
+      indexL(ii) = 3*indexL(ii)
+      indexU(ii) = 3*indexU(ii)
+    end do
+    do ii=NPL,1,-1
+      itemL(3*ii  ) = 3*itemL(ii)
+      itemL(3*ii-1) = 3*itemL(ii)-1
+      itemL(3*ii-2) = 3*itemL(ii)-2
+    end do
+    do ii=NPU,1,-1
+      itemU(3*ii  ) = 3*itemU(ii)
+      itemU(3*ii-1) = 3*itemU(ii)-1
+      itemU(3*ii-2) = 3*itemU(ii)-2
+    end do
+
+    !$omp parallel default(none),private(ii),shared(NPL,AL)
+    !$omp do
+    do ii=1,NPL
+      call hecmw_mat_block_transpose_33(AL(9*ii-8:9*ii))
+    end do
+    !$omp end do
+    !$omp end parallel
+    !$omp parallel default(none),private(ii),shared(NPU,AU)
+    !$omp do
+    do ii=1,NPU
+      call hecmw_mat_block_transpose_33(AU(9*ii-8:9*ii))
+    end do
+    !$omp end do
+    !$omp end parallel
+
   end subroutine hecmw_precond_SSOR_33_setup
 
   subroutine hecmw_precond_SSOR_33_apply_inner( &
@@ -310,13 +340,10 @@ contains
           ieL= indexL(i)
           do j= isL, ieL
             !k= perm(itemL(j))
-            k= itemL(j)
-            X1= ZP(3*k-2)
-            X2= ZP(3*k-1)
-            X3= ZP(3*k  )
-            SW1= SW1 - AL(9*j-8)*X1 - AL(9*j-7)*X2 - AL(9*j-6)*X3
-            SW2= SW2 - AL(9*j-5)*X1 - AL(9*j-4)*X2 - AL(9*j-3)*X3
-            SW3= SW3 - AL(9*j-2)*X1 - AL(9*j-1)*X2 - AL(9*j  )*X3
+            X1= ZP(itemL(j))
+            SW1= SW1 - AL(3*j-2)*X1
+            SW2= SW2 - AL(3*j-1)*X1
+            SW3= SW3 - AL(3*j  )*X1
           enddo ! j
 
           if (NContact.ne.0) then
@@ -359,13 +386,10 @@ contains
           ieU= indexU(i)
           do j= ieU, isU, -1
             !k= perm(itemU(j))
-            k= itemU(j)
-            X1= ZP(3*k-2)
-            X2= ZP(3*k-1)
-            X3= ZP(3*k  )
-            SW1= SW1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
-            SW2= SW2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
-            SW3= SW3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+            X1= ZP(itemU(j))
+            SW1= SW1 + AU(3*j-2)*X1
+            SW2= SW2 + AU(3*j-1)*X1
+            SW3= SW3 + AU(3*j  )*X1
           enddo ! j
 
           if (NContact.gt.0) then
@@ -405,13 +429,10 @@ contains
         ieL= indexL(i)
         do j= isL, ieL
           !k= perm(itemL(j))
-          k= itemL(j)
-          X1= ZP(3*k-2)
-          X2= ZP(3*k-1)
-          X3= ZP(3*k  )
-          SW1= SW1 - AL(9*j-8)*X1 - AL(9*j-7)*X2 - AL(9*j-6)*X3
-          SW2= SW2 - AL(9*j-5)*X1 - AL(9*j-4)*X2 - AL(9*j-3)*X3
-          SW3= SW3 - AL(9*j-2)*X1 - AL(9*j-1)*X2 - AL(9*j  )*X3
+          X1= ZP(itemL(j))
+          SW1= SW1 - AL(3*j-2)*X1
+          SW2= SW2 - AL(3*j-1)*X1
+          SW3= SW3 - AL(3*j  )*X1
         enddo ! j
 
         ZP(3*iold-2)= ALU(9*i-8)*SW1+ALU(9*i-7)*SW2+ALU(9*i-6)*SW3
@@ -427,14 +448,10 @@ contains
         isU= indexU(i-1) + 1
         ieU= indexU(i)
         do j= ieU, isU, -1
-          !k= perm(itemU(j))
-          k= itemU(j)
-          X1= ZP(3*k-2)
-          X2= ZP(3*k-1)
-          X3= ZP(3*k  )
-          SW1= SW1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
-          SW2= SW2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
-          SW3= SW3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+          X1= ZP(itemU(j))
+          SW1= SW1 + AU(3*j-2)*X1
+          SW2= SW2 + AU(3*j-1)*X1
+          SW3= SW3 + AU(3*j  )*X1
         enddo ! j
 
         iold = perm(i)

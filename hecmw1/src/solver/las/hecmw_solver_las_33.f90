@@ -35,6 +35,7 @@ contains
 
   subroutine hecmw_matvec_setup_33 (hecMESH, hecMAT)
     use hecmw_jad_type
+    use hecmw_matrix_misc
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
@@ -48,6 +49,9 @@ contains
     if( allocated(index_i) ) deallocate(index_i)
     if( allocated(item_i) ) deallocate(item_i)
     if( allocated(A_i) ) deallocate(A_i)
+    !if( allocated(index_o) ) deallocate(index_o)
+    !if( allocated(item_o) ) deallocate(item_o)
+    !if( allocated(A_o) ) deallocate(A_o)
 
     !count nonzero elements
     NZIN = hecMAT%indexL(N) + N + hecMAT%indexU(N)
@@ -61,8 +65,8 @@ contains
     !end do
     !NZIN = NZIN - NZOUT
 
-    allocate(index_i(0:N),item_i(NZIN),A_i(9*NZIN))
-    !allocate(index_o(0:N),item_o(NZOUT),A_o(9*NZOUT))
+    allocate(index_i(0:N),item_i(3*NZIN),A_i(9*NZIN))
+    !allocate(index_o(0:N),item_o(3*NZOUT),A_o(9*NZOUT))
 
     ! set value
     NZIN = 0
@@ -72,27 +76,38 @@ contains
     do i=1,N
       ! lower
       do k=hecMAT%indexL(i-1)+1,hecMAT%indexL(i)
-        NZIN = NZIN + 1
         j = hecMAT%itemL(k)
-        item_i(NZIN) = j
-        A_i(9*NZIN-8:9*NZIN) = hecMAT%AL(9*k-8:9*k)
+        item_i(NZIN+1) = 3*j-2
+        item_i(NZIN+2) = 3*j-1
+        item_i(NZIN+3) = 3*j
+        NZIN = NZIN + 3
+        A_i(3*NZIN-8:3*NZIN) = hecMAT%AL(9*k-8:9*k)
+        call hecmw_mat_block_transpose_33(A_i(3*NZIN-8:3*NZIN))
       end do
       ! diag
-      NZIN = NZIN + 1
-      item_i(NZIN) = i
-      A_i(9*NZIN-8:9*NZIN) = hecMAT%D(9*i-8:9*i)
+      item_i(NZIN+1) = 3*i-2
+      item_i(NZIN+2) = 3*i-1
+      item_i(NZIN+3) = 3*i
+      NZIN = NZIN + 3
+      A_i(3*NZIN-8:3*NZIN) = hecMAT%D(9*i-8:9*i)
+      call hecmw_mat_block_transpose_33(A_i(3*NZIN-8:3*NZIN))
       ! upper
       do k=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
         j = hecMAT%itemU(k)
         !if( j > N ) then
-        !  NZOUT = NZOUT + 1
-        !  if( OUT_TYPE == 1 ) index_out(NZOUT) = i
-        !  item_out(NZOUT) = j
-        !  aval_out(9*NZOUT-8:9*NZOUT) = hecMAT%AU(9*k-8:9*k)
+        !  item_o(NZOUT+1) = 3*j-2
+        !  item_o(NZOUT+2) = 3*j-1
+        !  item_o(NZOUT+3) = 3*j
+        !  NZOUT = NZOUT + 3
+        !  A_o(3*NZOUT-8:3*NZOUT) = hecMAT%AU(9*k-8:9*k)
+        !  call hecmw_mat_block_transpose_33(A_o(3*NZOUT-8:3*NZOUT))
         !else
-          NZIN = NZIN + 1
-          item_i(NZIN) = j
-          A_i(9*NZIN-8:9*NZIN) = hecMAT%AU(9*k-8:9*k)
+          item_i(NZIN+1) = 3*j-2
+          item_i(NZIN+2) = 3*j-1
+          item_i(NZIN+3) = 3*j
+          NZIN = NZIN + 3
+          A_i(3*NZIN-8:3*NZIN) = hecMAT%AU(9*k-8:9*k)
+          call hecmw_mat_block_transpose_33(A_i(3*NZIN-8:3*NZIN))
         !end if
       end do
 
@@ -205,7 +220,7 @@ contains
     logical, intent(in)             :: async_matvec_flg
 
     integer(kind=kint) :: i, j, jS, jE, in
-    real(kind=kreal) :: YV1, YV2, YV3, X1, X2, X3
+    real(kind=kreal) :: YV1, YV2, YV3, X1
     integer(kind=kint) :: threadNum, blockNum, blockIndex
 
     !call fapp_start("loopInMatvec33", 1, 0)
@@ -216,7 +231,7 @@ contains
     if( numOfThread > 1 ) then
 
     !$OMP PARALLEL DEFAULT(NONE) &
-      !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,j,in,threadNum,blockNum,blockIndex) &
+      !$OMP&PRIVATE(i,X1,YV1,YV2,YV3,j,threadNum,blockNum,blockIndex) &
       !$OMP&SHARED(aval,item,idx,X,Y,startPos,endPos,numOfThread,async_matvec_flg)
     threadNum = 0
     !$ threadNum = omp_get_thread_num()
@@ -228,18 +243,15 @@ contains
         YV3= 0.d0
 
         do j= idx(i-1)+1, idx(i)
-          in  = item(j)
-          X1= X(3*in-2)
-          X2= X(3*in-1)
-          X3= X(3*in  )
-          YV1= YV1 + aval(9*j-8)*X1 + aval(9*j-7)*X2 + aval(9*j-6)*X3
-          YV2= YV2 + aval(9*j-5)*X1 + aval(9*j-4)*X2 + aval(9*j-3)*X3
-          YV3= YV3 + aval(9*j-2)*X1 + aval(9*j-1)*X2 + aval(9*j  )*X3
+          X1= X(item(j))
+          YV1= YV1 + aval(3*j-2)*X1
+          YV2= YV2 + aval(3*j-1)*X1
+          YV3= YV3 + aval(3*j  )*X1
         enddo
 
-        Y(3*i-2)= YV1
-        Y(3*i-1)= YV2
-        Y(3*i  )= YV3
+        Y(3*i-2) = YV1
+        Y(3*i-1) = YV2
+        Y(3*i  ) = YV3
       enddo
     enddo
     !$OMP END PARALLEL
@@ -252,13 +264,10 @@ contains
         YV3= 0.d0
 
         do j= idx(i-1)+1, idx(i)
-          in  = item(j)
-          X1= X(3*in-2)
-          X2= X(3*in-1)
-          X3= X(3*in  )
-          YV1= YV1 + aval(9*j-8)*X1 + aval(9*j-7)*X2 + aval(9*j-6)*X3
-          YV2= YV2 + aval(9*j-5)*X1 + aval(9*j-4)*X2 + aval(9*j-3)*X3
-          YV3= YV3 + aval(9*j-2)*X1 + aval(9*j-1)*X2 + aval(9*j  )*X3
+          X1= X(item(j))
+          YV1= YV1 + aval(3*j-2)*X1
+          YV2= YV2 + aval(3*j-1)*X1
+          YV3= YV3 + aval(3*j  )*X1
         enddo
 
         Y(3*i-2)= YV1
@@ -398,7 +407,6 @@ contains
       START_TIME = hecmw_Wtime()
 
       !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-
       call hecmw_matvec_33_core(N,NP,NZIN,X,Y,A_i,item_i,index_i, &
         numOfBlock,numOfThread,startPos,endPos,async_matvec_flg)
 
