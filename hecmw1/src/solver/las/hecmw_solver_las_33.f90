@@ -9,6 +9,7 @@ module hecmw_solver_las_33
 
   private
 
+  public :: hecmw_matvec_setup_33
   public :: hecmw_matvec_33
   public :: hecmw_matvec_33_set_async
   public :: hecmw_matvec_33_unset_async
@@ -19,7 +20,11 @@ module hecmw_solver_las_33
   public :: hecmw_TtmatTvec_33
   public :: hecmw_mat_diag_sr_33
 
+  integer(kind=kint), save :: N, NP, NZIN
+  integer(kind=kint), allocatable, save :: index_i(:), item_i(:)
+  real(kind=kreal), allocatable, save   :: A_i(:)
   ! ! for communication hiding in matvec
+  !integer(kind=kint), save :: NZOUT
   ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
   ! real(kind=kreal), save, allocatable :: A_o(:)
   logical, save :: async_matvec_flg = .false.
@@ -27,6 +32,75 @@ module hecmw_solver_las_33
   integer, parameter :: numOfBlockPerThread = 100
 
 contains
+
+  subroutine hecmw_matvec_setup_33 (hecMESH, hecMAT)
+    use hecmw_jad_type
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+
+    integer(kind=kint) :: i, j, k
+
+    if (hecmw_JAD_IS_INITIALIZED().ne.0) return
+
+    N = hecMAT%N
+    NP = hecMAT%NP
+    if( allocated(index_i) ) deallocate(index_i)
+    if( allocated(item_i) ) deallocate(item_i)
+    if( allocated(A_i) ) deallocate(A_i)
+
+    !count nonzero elements
+    NZIN = hecMAT%indexL(N) + N + hecMAT%indexU(N)
+    !NZOUT = 0
+    !! upper
+    !do i=1,N
+    !  do k=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
+    !    j = hecMAT%itemU(k)
+    !    if( j > N ) NZOUT = NZOUT + 1
+    !  end do
+    !end do
+    !NZIN = NZIN - NZOUT
+
+    allocate(index_i(0:N),item_i(NZIN),A_i(9*NZIN))
+    !allocate(index_o(0:N),item_o(NZOUT),A_o(9*NZOUT))
+
+    ! set value
+    NZIN = 0
+    !NZOUT = 0
+    index_i(0) = 0
+    !index_o(0) = 0
+    do i=1,N
+      ! lower
+      do k=hecMAT%indexL(i-1)+1,hecMAT%indexL(i)
+        NZIN = NZIN + 1
+        j = hecMAT%itemL(k)
+        item_i(NZIN) = j
+        A_i(9*NZIN-8:9*NZIN) = hecMAT%AL(9*k-8:9*k)
+      end do
+      ! diag
+      NZIN = NZIN + 1
+      item_i(NZIN) = i
+      A_i(9*NZIN-8:9*NZIN) = hecMAT%D(9*i-8:9*i)
+      ! upper
+      do k=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
+        j = hecMAT%itemU(k)
+        !if( j > N ) then
+        !  NZOUT = NZOUT + 1
+        !  if( OUT_TYPE == 1 ) index_out(NZOUT) = i
+        !  item_out(NZOUT) = j
+        !  aval_out(9*NZOUT-8:9*NZOUT) = hecMAT%AU(9*k-8:9*k)
+        !else
+          NZIN = NZIN + 1
+          item_i(NZIN) = j
+          A_i(9*NZIN-8:9*NZIN) = hecMAT%AU(9*k-8:9*k)
+        !end if
+      end do
+
+      index_i(i) = NZIN
+      !index_o(i) = NZOUT
+    end do
+
+  end subroutine hecmw_matvec_setup_33
 
   !C
   !C***
@@ -114,22 +188,16 @@ contains
     ! async_matvec_flg = .false.
   end subroutine hecmw_matvec_33_unset_async
 
-  subroutine hecmw_matvec_33_core(N,NP,X,Y,AL,AU,D, &
-    itemL,itemU,indexL,indexU,NPL,NPU,numOfBlock,numOfThread,startPos,endPos,async_matvec_flg)
+  subroutine hecmw_matvec_33_core(N,NP,NNZ,X,Y,aval,item,idx,numOfBlock,numOfThread,startPos,endPos,async_matvec_flg)
     !$ use omp_lib
     integer(kind=kint), intent(in)  :: N
     integer(kind=kint), intent(in)  :: NP
+    integer(kind=kint), intent(in)  :: NNZ
     real(kind=kreal), intent(in)    :: X(3*NP)
     real(kind=kreal), intent(inout) :: Y(3*N)
-    real(kind=kreal), intent(in)    :: AL(9*NPL)
-    real(kind=kreal), intent(in)    :: AU(9*NPU)
-    real(kind=kreal), intent(in)    :: D(9*N)
-    integer(kind=kint), intent(in)  :: itemL(NPL)
-    integer(kind=kint), intent(in)  :: itemU(NPU)
-    integer(kind=kint), intent(in)  :: indexL(0:N)
-    integer(kind=kint), intent(in)  :: indexU(0:N)
-    integer(kind=kint), intent(in)  :: NPL
-    integer(kind=kint), intent(in)  :: NPU
+    real(kind=kreal), intent(in)    :: aval(9*NNZ)
+    integer(kind=kint), intent(in)  :: item(NNZ)
+    integer(kind=kint), intent(in)  :: idx(0:N)
     integer(kind=kint), intent(in)  :: numOfBlock
     integer(kind=kint), intent(in)  :: numOfThread
     integer(kind=kint), intent(in)  :: startPos(0:numOfBlock)
@@ -146,43 +214,27 @@ contains
     !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
     !$OMP PARALLEL DEFAULT(NONE) &
-      !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-      !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
+      !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,j,in,threadNum,blockNum,blockIndex) &
+      !$OMP&SHARED(aval,item,idx,X,Y,startPos,endPos,numOfThread,async_matvec_flg)
     threadNum = 0
     !$ threadNum = omp_get_thread_num()
     do blockNum = 0 , numOfBlockPerThread - 1
       blockIndex = blockNum * numOfThread  + threadNum
       do i = startPos(blockIndex), endPos(blockIndex)
-        X1= X(3*i-2)
-        X2= X(3*i-1)
-        X3= X(3*i  )
-        YV1= D(9*i-8)*X1 + D(9*i-7)*X2 + D(9*i-6)*X3
-        YV2= D(9*i-5)*X1 + D(9*i-4)*X2 + D(9*i-3)*X3
-        YV3= D(9*i-2)*X1 + D(9*i-1)*X2 + D(9*i  )*X3
+        YV1= 0.d0
+        YV2= 0.d0
+        YV3= 0.d0
 
-        jS= indexL(i-1) + 1
-        jE= indexL(i  )
-        do j= jS, jE
-          in  = itemL(j)
+        do j= idx(i-1)+1, idx(i)
+          in  = item(j)
           X1= X(3*in-2)
           X2= X(3*in-1)
           X3= X(3*in  )
-          YV1= YV1 + AL(9*j-8)*X1 + AL(9*j-7)*X2 + AL(9*j-6)*X3
-          YV2= YV2 + AL(9*j-5)*X1 + AL(9*j-4)*X2 + AL(9*j-3)*X3
-          YV3= YV3 + AL(9*j-2)*X1 + AL(9*j-1)*X2 + AL(9*j  )*X3
+          YV1= YV1 + aval(9*j-8)*X1 + aval(9*j-7)*X2 + aval(9*j-6)*X3
+          YV2= YV2 + aval(9*j-5)*X1 + aval(9*j-4)*X2 + aval(9*j-3)*X3
+          YV3= YV3 + aval(9*j-2)*X1 + aval(9*j-1)*X2 + aval(9*j  )*X3
         enddo
-        jS= indexU(i-1) + 1
-        jE= indexU(i  )
-        do j= jS, jE
-          in  = itemU(j)
-          ! if (async_matvec_flg .and. in > N) cycle
-          X1= X(3*in-2)
-          X2= X(3*in-1)
-          X3= X(3*in  )
-          YV1= YV1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
-          YV2= YV2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
-          YV3= YV3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
-        enddo
+
         Y(3*i-2)= YV1
         Y(3*i-1)= YV2
         Y(3*i  )= YV3
@@ -317,8 +369,8 @@ contains
 
       !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
 
-      call hecmw_matvec_33_core(N,NP,X,Y,AL,AU,D,itemL,itemU,indexL,indexU, &
-        indexL(N),indexU(N),numOfBlock,numOfThread,startPos,endPos,async_matvec_flg)
+      call hecmw_matvec_33_core(N,NP,NZIN,X,Y,A_i,item_i,index_i, &
+        numOfBlock,numOfThread,startPos,endPos,async_matvec_flg)
 
       !OCL END_CACHE_SECTOR_SIZE
 
