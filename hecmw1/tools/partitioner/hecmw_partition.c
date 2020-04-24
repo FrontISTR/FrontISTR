@@ -2956,6 +2956,102 @@ error:
   return -1;
 }
 
+static int metis_partition_nb_ndweight(
+    struct hecmwST_local_mesh *global_mesh,
+    const struct hecmw_part_cont_data *cont_data,
+    const struct hecmw_part_edge_data *edge_data) {
+  int n_edgecut;
+  int *node_graph_index = NULL; /* index for nodal graph */
+  int *node_graph_item  = NULL; /* member of nodal graph */
+  int *belong_domain    = NULL;
+  int rtc;
+  int i, j, node, nn;
+  int ncon;
+  int *node_weight = NULL;
+  int *mark        = NULL;
+
+  int *count    = NULL; /* tmp */
+
+  node_graph_index = (int *)HECMW_calloc(global_mesh->n_node + 1, sizeof(int));
+  if (node_graph_index == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
+  node_graph_item = (int *)HECMW_malloc(sizeof(int) * edge_data->n_edge * 2);
+  if (node_graph_item == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
+
+  HECMW_log(HECMW_LOG_DEBUG, "Starting creation of node graph...\n");
+
+  rtc = create_node_graph(global_mesh, edge_data, node_graph_index,
+                          node_graph_item);
+  if (rtc != RTC_NORMAL) goto error;
+
+  HECMW_log(HECMW_LOG_DEBUG, "Creation of node graph done\n");
+
+  ncon = 1;
+  node_weight = (int *)HECMW_calloc(global_mesh->n_node * ncon, sizeof(int));
+  if (node_weight == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
+
+  for (i = 0; i < global_mesh->n_node; i++) {
+    node_weight[i] = 1;
+  }
+  for (i = 0; i < edge_data->n_edge * 2; i++) {
+    node_weight[node_graph_item[i]] += 1;
+  }
+
+  belong_domain = (int *)HECMW_calloc(global_mesh->n_node, sizeof(int));
+  if (belong_domain == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
+
+  switch (cont_data->method) {
+    case HECMW_PART_METHOD_PMETIS: /* pMETIS */
+      n_edgecut = pmetis_interface_with_weight(
+          global_mesh->n_node, ncon, global_mesh->n_subdomain, node_graph_index,
+          node_graph_item, node_weight, belong_domain);
+      if (n_edgecut < 0) goto error;
+      break;
+
+    case HECMW_PART_METHOD_KMETIS: /* kMETIS */
+      n_edgecut = kmetis_interface_with_weight(
+          global_mesh->n_node, ncon, global_mesh->n_subdomain, node_graph_index,
+          node_graph_item, node_weight, belong_domain);
+      if (n_edgecut < 0) goto error;
+      break;
+
+    default:
+      HECMW_set_error(HECMW_PART_E_INVALID_PMETHOD, "");
+      goto error;
+  }
+
+  for (i = 0; i < global_mesh->n_node; i++) {
+    global_mesh->node_ID[2 * i + 1] = belong_domain[i];
+  }
+
+  HECMW_free(node_graph_index);
+  HECMW_free(node_graph_item);
+  HECMW_free(belong_domain);
+  if (node_weight) HECMW_free(node_weight);
+
+  return n_edgecut;
+
+error:
+  HECMW_free(node_graph_index);
+  HECMW_free(node_graph_item);
+  HECMW_free(belong_domain);
+  if (node_weight) HECMW_free(node_weight);
+  if (mark) HECMW_free(mark);
+
+  return -1;
+}
+
 static int metis_partition_nb(struct hecmwST_local_mesh *global_mesh,
                               const struct hecmw_part_cont_data *cont_data,
                               const struct hecmw_part_edge_data *edge_data) {
@@ -2974,7 +3070,8 @@ static int metis_partition_nb(struct hecmwST_local_mesh *global_mesh,
         return -1;
     }
   } else {
-    return metis_partition_nb_default(global_mesh, cont_data, edge_data);
+    //return metis_partition_nb_default(global_mesh, cont_data, edge_data);
+    return metis_partition_nb_ndweight(global_mesh, cont_data, edge_data);
   }
 }
 
@@ -3047,7 +3144,7 @@ static int set_node_belong_domain_nb(
 
   HECMW_log(HECMW_LOG_DEBUG, "Starting creation of mesh edge info...\n");
 
-  rtc = HECMW_mesh_edge_info(global_mesh, edge_data);
+  rtc = HECMW_mesh_edge_info(global_mesh, edge_data, 1);
   if (rtc != 0) goto error;
 
   HECMW_log(HECMW_LOG_DEBUG, "Creation of mesh edge info done\n");
