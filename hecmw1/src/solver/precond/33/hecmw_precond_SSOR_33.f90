@@ -68,7 +68,7 @@ contains
     real   (kind=kreal), allocatable :: CD(:)
     integer(kind=kint ) :: NCOLOR_IN
     real   (kind=kreal) :: SIGMA_DIAG
-    real   (kind=kreal) :: ALUtmp(3,3), PW(3)
+    real   (kind=kreal) :: ALUtmp(3,3), PW(3), Atmp(9)
     integer(kind=kint ) :: ii, i, j, k
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
@@ -193,7 +193,7 @@ contains
       enddo
     endif
 
-    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW,Atmp),shared(N,ALU,SIGMA_DIAG)
     !$omp do
     do ii= 1, N
       ALUtmp(1,1)= ALU(9*ii-8) * SIGMA_DIAG
@@ -217,15 +217,35 @@ contains
           enddo
         enddo
       enddo
-      ALU(9*ii-8)= ALUtmp(1,1)
-      ALU(9*ii-7)= ALUtmp(1,2)
-      ALU(9*ii-6)= ALUtmp(1,3)
-      ALU(9*ii-5)= ALUtmp(2,1)
-      ALU(9*ii-4)= ALUtmp(2,2)
-      ALU(9*ii-3)= ALUtmp(2,3)
-      ALU(9*ii-2)= ALUtmp(3,1)
-      ALU(9*ii-1)= ALUtmp(3,2)
-      ALU(9*ii  )= ALUtmp(3,3)
+      Atmp(1)= ALUtmp(1,1)
+      Atmp(2)= ALUtmp(1,2)
+      Atmp(3)= ALUtmp(1,3)
+      Atmp(4)= ALUtmp(2,1)
+      Atmp(5)= ALUtmp(2,2)
+      Atmp(6)= ALUtmp(2,3)
+      Atmp(7)= ALUtmp(3,1)
+      Atmp(8)= ALUtmp(3,2)
+      Atmp(9)= ALUtmp(3,3)
+
+      ALU(9*ii  )= Atmp(9)
+      ALU(9*ii-1)= -Atmp(8)*Atmp(9)
+      ALU(9*ii-2)= (Atmp(4)*Atmp(8)-Atmp(7))*Atmp(9)
+      ALU(9*ii-3)= -Atmp(5)*Atmp(6)*ALU(9*ii)
+      ALU(9*ii-4)= Atmp(5)*(1.d0-Atmp(6)*ALU(9*ii-1))
+      ALU(9*ii-5)= -Atmp(5)*(Atmp(4)+Atmp(6)*ALU(9*ii-2))
+      ALU(9*ii-6)= -Atmp(1)*(Atmp(3)*ALU(9*ii)+Atmp(2)*ALU(9*ii-3))
+      ALU(9*ii-7)= -Atmp(1)*(Atmp(3)*ALU(9*ii-1)+Atmp(2)*ALU(9*ii-4))
+      ALU(9*ii-8)= Atmp(1)*(1.d0-Atmp(3)*ALU(9*ii-2)-Atmp(2)*ALU(9*ii-5))
+
+      !ALU(9*ii-8)= ALUtmp(1,1)
+      !ALU(9*ii-7)= ALUtmp(1,2)
+      !ALU(9*ii-6)= ALUtmp(1,3)
+      !ALU(9*ii-5)= ALUtmp(2,1)
+      !ALU(9*ii-4)= ALUtmp(2,2)
+      !ALU(9*ii-3)= ALUtmp(2,3)
+      !ALU(9*ii-2)= ALUtmp(3,1)
+      !ALU(9*ii-1)= ALUtmp(3,2)
+      !ALU(9*ii  )= ALUtmp(3,3)
     enddo
     !$omp end do
     !$omp end parallel
@@ -399,17 +419,17 @@ contains
             enddo ! j
           endif
 
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - ALU(9*i-5)*X1
-          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
-          X3= ALU(9*i  )*  X3
-          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
-          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
-          ZP(3*iold-2)= X1
-          ZP(3*iold-1)= X2
-          ZP(3*iold  )= X3
+          !X1= SW1
+          !X2= SW2
+          !X3= SW3
+          !X2= X2 - ALU(9*i-5)*X1
+          !X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
+          !X3= ALU(9*i  )*  X3
+          !X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
+          !X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
+          ZP(3*iold-2)= ALU(9*i-8)*SW1+ALU(9*i-7)*SW2+ALU(9*i-6)*SW3
+          ZP(3*iold-1)= ALU(9*i-5)*SW1+ALU(9*i-4)*SW2+ALU(9*i-3)*SW3
+          ZP(3*iold  )= ALU(9*i-2)*SW1+ALU(9*i-1)*SW2+ALU(9*i  )*SW3
         enddo ! i
       enddo ! blockIndex
       !$omp end do
@@ -456,18 +476,21 @@ contains
             enddo ! j
           endif
 
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - ALU(9*i-5)*X1
-          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
-          X3= ALU(9*i  )*  X3
-          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
-          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
+          !X1= SW1
+          !X2= SW2
+          !X3= SW3
+          !X2= X2 - ALU(9*i-5)*X1
+          !X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
+          !X3= ALU(9*i  )*  X3
+          !X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
+          !X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
           iold = perm(i)
-          ZP(3*iold-2)=  ZP(3*iold-2) - X1
-          ZP(3*iold-1)=  ZP(3*iold-1) - X2
-          ZP(3*iold  )=  ZP(3*iold  ) - X3
+          !ZP(3*iold-2)=  ZP(3*iold-2) - X1
+          !ZP(3*iold-1)=  ZP(3*iold-1) - X2
+          !ZP(3*iold  )=  ZP(3*iold  ) - X3
+          ZP(3*iold-2)= ZP(3*iold-2) - ALU(9*i-8)*SW1 - ALU(9*i-7)*SW2 - ALU(9*i-6)*SW3
+          ZP(3*iold-1)= ZP(3*iold-1) - ALU(9*i-5)*SW1 - ALU(9*i-4)*SW2 - ALU(9*i-3)*SW3
+          ZP(3*iold  )= ZP(3*iold  ) - ALU(9*i-2)*SW1 - ALU(9*i-1)*SW2 - ALU(9*i  )*SW3
         enddo ! i
       enddo ! blockIndex
       !$omp end do
