@@ -133,17 +133,17 @@ contains
           fstrSOLID%FACTOR(2) = factor
         endif
 
-        !> heat conduction analyis
-        if(present(fstrHEAT))then
-          call fstr_hs_heat_main(hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrHEAT, &
-            & tot_step, fstr_get_time(), fstr_get_timeinc())
-        endif
-
         if(hecMESH%my_rank==0) then
           write(*,'(A,I0,2(A,E12.4))') ' sub_step= ',sub_step,', &
             &  current_time=',fstr_get_time(), ', time_inc=',fstr_get_timeinc()
           write(*,'(A,2f12.7)') ' loading_factor= ', fstrSOLID%FACTOR
           if( fstrSOLID%TEMP_irres > 0 ) write(*,'(A,2f12.7)') ' readtemp_factor= ', fstrSOLID%TEMP_FACTOR
+        endif
+
+        !> heat conduction analyis
+        if(present(fstrHEAT))then
+          call fstr_hs_heat_main(hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrHEAT, &
+            & tot_step, fstr_get_time(), fstr_get_timeinc())
         endif
 
         time_1 = hecmw_Wtime()
@@ -343,16 +343,51 @@ contains
 
   subroutine fstr_hs_heat_main(hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrHEAT, tot_step, time, dtime)
     use m_fstr
+    use m_heat_solve_main
     implicit none
     type (hecmwST_local_mesh)  :: hecMESH
     type (hecmwST_matrix)      :: hecMAT
     type (fstr_param)          :: fstrPARAM
     type (fstr_solid)          :: fstrSOLID
     type (fstr_heat), optional :: fstrHEAT
-    integer(kind=kint) :: tot_step
-    real(kind=kreal)   :: time, dtime
+    type (hecmwST_matrix), save :: hecMAT_HEAT
+    type(hecmwST_matrix), pointer :: hecMATmpc
+    integer(kind=kint) :: tot_step, iterALL
+    real(kind=kreal)   :: time, dtime, next_time
+    logical, save :: is_first = .true.
 
-    write(*,*)"fstr_hs_heat_main"
+    next_time = time + dtime
+
+    !> heat section
+    if(is_first)then
+      hecMAT_HEAT%NDOF = 1
+      hecMAT_HEAT%N   = hecMAT%N
+      hecMAT_HEAT%NP  = hecMAT%NP
+      hecMAT_HEAT%NPL = hecMAT%NPL
+      hecMAT_HEAT%NPU = hecMAT%NPU
+      hecMAT_HEAT%Iarray = hecMAT%Iarray
+      hecMAT_HEAT%Rarray = hecMAT%Rarray
+
+      allocate(hecMAT_HEAT%indexL(0:hecMAT%NP))
+      allocate(hecMAT_HEAT%indexU(0:hecMAT%NP))
+      allocate(hecMAT_HEAT%itemL(hecMAT%NPL))
+      allocate(hecMAT_HEAT%itemU(hecMAT%NPU))
+      hecMAT_HEAT%indexL = hecMAT%indexL
+      hecMAT_HEAT%indexU = hecMAT%indexU
+      hecMAT_HEAT%itemL  = hecMAT%itemL
+      hecMAT_HEAT%itemU  = hecMAT%itemU
+      allocate(hecMAT_HEAT%D (hecMAT_HEAT%NP ))
+      allocate(hecMAT_HEAT%AU(hecMAT_HEAT%NPU))
+      allocate(hecMAT_HEAT%AL(hecMAT_HEAT%NPL))
+      allocate(hecMAT_HEAT%X (hecMAT_HEAT%NP ))
+      allocate(hecMAT_HEAT%B (hecMAT_HEAT%NP ))
+      is_first = .false.
+    endif
+
+    iterALL = 0
+    call hecmw_mpc_mat_init(hecMESH, hecMAT_HEAT, hecMATmpc)
+    call heat_solve_main(hecMESH, hecMAT_HEAT, hecMATmpc, fstrPARAM, fstrHEAT, tot_step, iterALL, next_time, dtime)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
   end subroutine fstr_hs_heat_main
 
 end module m_fstr_solve_NLGEOM
