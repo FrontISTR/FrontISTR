@@ -373,7 +373,8 @@ contains
     allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
     do i=1,hecMESH%section%n_sect
       ! set default 361 element formulation
-      if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
+      if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC &
+        & .or. p%PARAM%solution_type==kstHEATSTATIC) then
         if( p%PARAM%nlgeom ) then
           fstrSOLID%sections(i)%elemopt361 = kel361FBAR
         else
@@ -791,7 +792,8 @@ contains
       enddo
     endif
 
-    if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+    if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 &
+      & .or. fstrPARAM%solution_type == kstHEATSTATIC) then
       allocate ( fstrSOLID%temperature( hecMESH%n_node )      ,stat=ierror )
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to allocation error <FSTR_SOLID, TEMPERATURE>'
@@ -823,7 +825,7 @@ contains
       call setup_stepInfo_starttime( fstrSOLID%step_ctrl )
       !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
     else
-      if( p%PARAM%solution_type==kstSTATIC .and. P%PARAM%nlgeom ) then
+      if((p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstHEATSTATIC) .and. P%PARAM%nlgeom)then
         write( *,* ) " ERROR: STEP not defined!"
         write( idbg,* ) "ERROR: STEP not defined!"
         call flush(idbg)
@@ -862,7 +864,8 @@ contains
 
     if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
-      p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
+      p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN .or. &
+      p%PARAM%solution_type==kstHEATSTATIC)  &
       call fstr_solid_alloc( hecMESH, fstrSOLID )
 
     if( p%PARAM%solution_type == kstHEAT) then
@@ -1518,7 +1521,8 @@ contains
     if( P%PARAM%solution_type == kstSTATIC &
         .or. P%PARAM%solution_type == kstEIGEN  &
         .or. P%PARAM%solution_type == kstDYNAMIC &
-        .or. P%PARAM%solution_type == kstSTATICEIGEN ) then
+        .or. P%PARAM%solution_type == kstSTATICEIGEN &
+        .or. P%PARAM%solution_type == kstHEATSTATIC ) then
       ! Memory Allocation for Result Vectors ------------
       if( P%MESH%n_dof == 6 .or. P%SOLID%is_33shell == 1 ) then
         allocate ( P%SOLID%SHELL )

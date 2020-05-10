@@ -133,6 +133,12 @@ contains
           fstrSOLID%FACTOR(2) = factor
         endif
 
+        !> heat conduction analyis
+        if(present(fstrHEAT))then
+          call fstr_hs_heat_main(hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrHEAT, &
+            & tot_step, fstr_get_time(), fstr_get_timeinc())
+        endif
+
         if(hecMESH%my_rank==0) then
           write(*,'(A,I0,2(A,E12.4))') ' sub_step= ',sub_step,', &
             &  current_time=',fstr_get_time(), ', time_inc=',fstr_get_timeinc()
@@ -332,5 +338,18 @@ contains
     endif
 
   end subroutine table_nlsta
+
+  subroutine fstr_hs_heat_main(hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrHEAT, tot_step, time, dtime)
+    use m_fstr
+    implicit none
+    type (hecmwST_local_mesh)  :: hecMESH
+    type (hecmwST_matrix)      :: hecMAT
+    type (fstr_param)          :: fstrPARAM
+    type (fstr_solid)          :: fstrSOLID
+    type (fstr_heat), optional :: fstrHEAT
+    integer(kind=kint) :: tot_step
+    real(kind=kreal)   :: time, dtime
+
+  end subroutine fstr_hs_heat_main
 
 end module m_fstr_solve_NLGEOM

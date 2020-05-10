@@ -6,7 +6,7 @@
 module m_heat_solve_TRAN
 contains
 
-  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrPARAM,fstrHEAT,ISTEP,total_step )
+  subroutine heat_solve_TRAN ( hecMESH, hecMAT, fstrPARAM, fstrHEAT, ISTEP, total_step )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity

@@ -168,10 +168,10 @@ contains
 
     call fstr_init_condition
     hecMAT%NDOF = hecMESH%n_dof
-    if( kstHEAT == fstrPR%solution_type ) then
+    if( kstHEAT == fstrPR%solution_type .or. kstHEATSTATIC == fstrPR%solution_type ) then
       call heat_init_material (hecMESH,fstrHEAT)
       call heat_init_amplitude(hecMESH,fstrHEAT)
-      hecMAT%NDOF = 1
+      if(kstHEAT == fstrPR%solution_type) hecMAT%NDOF = 1
     endif
     call hecMAT_init( hecMAT )
 
