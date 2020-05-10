@@ -113,7 +113,7 @@ contains
     endif
   end subroutine heat_output_result
 
-  subroutine heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, tstep, ctime, outflag)
+  subroutine heat_output_visual(hecMESH, fstrHEAT, tstep, ctime, outflag)
     use m_fstr
     use m_hecmw2fstr_mesh_conv
     implicit none

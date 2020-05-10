@@ -39,6 +39,7 @@ LIBSRCDIRS="\
     src/analysis \
     src/analysis/static \
     src/analysis/heat \
+    src/analysis/staggered \
     src/analysis/dynamic \
     src/analysis/dynamic/mode \
     src/analysis/dynamic/transit \

@@ -41,6 +41,7 @@ module m_fstr
   !integer(kind=kint), parameter :: kstNLSTATIC  =   5
   integer(kind=kint), parameter :: kstSTATICEIGEN = 6
   integer(kind=kint), parameter :: kstNZPROF      = 7
+  integer(kind=kint), parameter :: kstHEATSTATIC  = 8
 
   !> solver method (sm)    !CAUTION : (<=100):indirect, (>100):direct
   integer(kind=kint), parameter :: ksmCG       = 1

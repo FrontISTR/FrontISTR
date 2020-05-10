@@ -6,7 +6,7 @@
 module m_heat_solve_TRAN
 contains
 
-  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,total_step )
+  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrPARAM,fstrHEAT,ISTEP,total_step )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -22,7 +22,6 @@ contains
     real(kind=kreal)   :: val, CHK, tmpmax, dltmp, tmpmax_myrank
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
-    type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
     type(hecmwST_matrix), pointer :: hecMATmpc
@@ -124,7 +123,7 @@ contains
 
       call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, next_time)
       call heat_output_result(hecMESH, fstrHEAT, total_step, next_time, is_end)
-      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, next_time, is_end)
+      call heat_output_visual(hecMESH, fstrHEAT, total_step, next_time, is_end)
       call heat_output_restart(hecMESH, fstrHEAT, total_step, is_end, next_time)
 
       total_step = total_step + 1

@@ -25,14 +25,15 @@ contains
   !>              Z. Sun(ASTOM)/2010/11
   !>  \date       2009/08/31
   !>  \version    0.00
-  subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM,conMAT)
+  subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM,conMAT,fstrHEAT)
     type (hecmwST_local_mesh)              :: hecMESH      !< mesh information
     type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
     type (fstr_param       )               :: fstrPARAM    !< analysis control parameters
     type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
     type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
     type (fstr_info_contactChange)         :: infoCTChange, infoCTChange_bak !< type fstr_info_contactChange
-    type (hecmwST_matrix    ),optional     :: conMAT
+    type (hecmwST_matrix    ), optional    :: conMAT
+    type (fstr_heat), optional             :: fstrHEAT
 
     integer(kind=kint) :: ndof, nn
     integer(kind=kint) :: j, i, tot_step, step_count, tot_step_print, CBbound
@@ -61,13 +62,13 @@ contains
     if( fstrSOLID%TEMP_ngrp_tot>0 .and. associated(g_InitialCnd) ) then
       fstrSOLID%last_temp = 0.0d0
       fstrSOLID%temperature = 0.0d0
-	  do j=1,size(g_InitialCnd)
+      do j=1,size(g_InitialCnd)
           if( g_InitialCnd(j)%cond_name=="temperature" ) then
             if( .not. associated(fstrSOLID%temperature) ) then
                 allocate( fstrSOLID%temperature( hecMESH%n_node ) )
                 allocate( fstrSOLID%temp_bak( hecMESH%n_node ) )
                 allocate( fstrSOLID%last_temp( hecMESH%n_node ) )
-            endif 
+            endif
             do i= 1, hecMESH%n_node
               fstrSOLID%last_temp(i) = g_InitialCnd(j)%realval(i)
               fstrSOLID%temperature(i) = fstrSOLID%last_temp(i)

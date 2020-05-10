@@ -47,13 +47,13 @@ contains
 
     fstr_ctrl_get_SOLUTION = -1
 
-    s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN,NZPROF '
+    s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN,NZPROF,HEATSTATIC '
     if( fstr_ctrl_get_param_ex( ctrl,      'TYPE ',     s,    1,   'P',  type )/= 0) return
     type = type -1
 
     ipt=0
     if( fstr_ctrl_get_param_ex( ctrl,    'NONLINEAR ',  '# ',    0,   'E',   ipt )/= 0) return
-    if( ipt/=0 .and. ( type == kstSTATIC .or. type == kstDYNAMIC )) nlgeom = .true.
+    if( ipt/=0 .and. ( type == kstSTATIC .or. type == kstDYNAMIC .or. type == kstHEATSTATIC)) nlgeom = .true.
 
     if( type == 5 ) then !if type == NLSTATIC
       type = kstSTATIC

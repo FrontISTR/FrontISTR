@@ -11,6 +11,7 @@ module m_fstr_main
   use m_fstr_solve_heat
   use m_fstr_solve_nlgeom
   use m_fstr_solve_eigen
+  use m_fstr_solve_heat_static
   use m_static_echo
   use m_heat_init
   use m_heat_echo
@@ -85,6 +86,8 @@ contains
         call fstr_static_eigen_analysis
       case( kstPRECHECK, kstNZPROF )
         call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
+      case( kstHEATSTATIC )
+        call fstr_heat_static_analysis
     end select
 
     T3 = hecmw_Wtime()
@@ -349,7 +352,7 @@ contains
       write(IMSG,*) ' ***   STAGE Heat analysis    **'
     endif
 
-    call fstr_solve_HEAT( hecMESH, hecMAT, fstrRESULT, fstrPR, fstrHEAT )
+    call fstr_solve_HEAT( hecMESH, hecMAT, fstrPR, fstrHEAT )
 
   end subroutine fstr_heat_analysis
 
@@ -418,6 +421,29 @@ contains
     call fstr_solid_finalize( fstrSOLID )
 
   end subroutine fstr_static_eigen_analysis
+
+  !=============================================================================!
+  !> Master subroutine of heat -> static anaylsis                              !
+  !=============================================================================!
+
+  subroutine fstr_heat_static_analysis
+    implicit none
+
+    if( IECHO==1 ) call fstr_echo(hecMESH)
+
+    if(myrank == 0) then
+      write(IMSG,*) ' ***   STAGE heat -> static analysis   **'
+    endif
+
+    if( paraContactFlag ) then
+      call fstr_solve_heat_static(hecMESH, hecMAT, fstrSOLID, fstrHEAT, fstrMAT, fstrPR, conMAT)
+    else
+      call fstr_solve_heat_static(hecMESH, hecMAT, fstrSOLID, fstrHEAT, fstrMAT, fstrPR)
+    endif
+
+    call fstr_solid_finalize( fstrSOLID )
+
+  end subroutine fstr_heat_static_analysis
 
   !=============================================================================!
   !> Finalizer                                                                  !
