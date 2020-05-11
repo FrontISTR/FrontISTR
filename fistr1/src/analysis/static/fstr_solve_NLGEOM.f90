@@ -336,9 +336,7 @@ contains
         endif
         f_t = ((t_2*f_1 - t_1*f_2) + (f_2 - f_1)*t_t) / (t_2 - t_1)
       endif
-
     endif
-
   end subroutine table_nlsta
 
   subroutine fstr_hs_heat_main(hecMESH, hecMAT, fstrPARAM, fstrSOLID, fstrHEAT, tot_step, time, dtime)
@@ -384,10 +382,21 @@ contains
       is_first = .false.
     endif
 
+    if(hecMESH%my_rank == 0) write(*,'(a)')" ** heat transfer section"
+
     iterALL = 0
+    hecMAT_HEAT%Iarray(98) = 1
     call hecmw_mpc_mat_init(hecMESH, hecMAT_HEAT, hecMATmpc)
-    call heat_solve_main(hecMESH, hecMAT_HEAT, hecMATmpc, fstrPARAM, fstrHEAT, tot_step, iterALL, next_time, dtime)
+    call heat_solve_main(hecMESH, hecMAT_HEAT, hecMATmpc, fstrPARAM, fstrHEAT, &
+         tot_step, iterALL, next_time, dtime)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
+
+    fstrSOLID%last_temp = fstrSOLID%temperature
+    fstrSOLID%temperature = fstrHEAT%TEMP
+    fstrHEAT%TEMP0 = fstrHEAT%TEMP
+
+    if(hecMESH%my_rank == 0) write(*,'(a)')" ** solid mechanics section"
+    hecMAT%Iarray(98) = 1
   end subroutine fstr_hs_heat_main
 
 end module m_fstr_solve_NLGEOM

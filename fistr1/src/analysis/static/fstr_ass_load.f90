@@ -287,7 +287,8 @@ contains
     !C
     !C Set Temperature
     !C
-    if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+    if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 .or. &
+        fstrPARAM%solution_type == kstHEATSTATIC) then
       do ig0 = 1, fstrSOLID%TEMP_ngrp_tot
         grpid = fstrSOLID%TEMP_ngrp_GRPID(ig0)
         if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle

@@ -23,6 +23,7 @@ contains
     logical :: is_congerged
 
     iterALL = 0
+    fstrHEAT%beta = 1.0d0
     do
       iterALL = iterALL + 1
       hecMAT%X = 0.0d0

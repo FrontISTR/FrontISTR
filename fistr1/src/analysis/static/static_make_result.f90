@@ -462,7 +462,7 @@ contains
   !C***
   !>  MAKE RESULT for static analysis (WITHOUT ELEMENTAL RESULTS) --------------------------------------------------------------
   !C***
-  subroutine fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
+  subroutine fstr_make_static_result( hecMESH, fstrSOLID, fstrPARAM, fstrRESULT )
     use m_fstr
     use hecmw_util
 
@@ -470,6 +470,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type (hecmwST_result_data):: fstrRESULT
+    type(fstr_param)          :: fstrPARAM
     integer(kind=kint) :: n_lyr, ntot_lyr, it, coef33, is_33shell, is_33beam
     integer(kind=kint) :: i, j, k, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
@@ -584,6 +585,11 @@ contains
     if( fstrSOLID%output_ctrl(4)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(33), ndof )
+    endif
+    ! --- TEMPERATURE @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(36) .and. fstrPARAM%solution_type == kstHEATSTATIC) then
+      ncomp = ncomp + 1
+      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(36), ndof )
     endif
 
     ! --- STRAIN @element
@@ -798,6 +804,20 @@ contains
       do i = 1, hecMESH%n_node
         do j = 1, nn
           fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%CONT_STATE(nn*(i-1)+j)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- TEMPERATURE @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(36) .and. fstrPARAM%solution_type == kstHEATSTATIC)then
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(36), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'TEMPERATURE'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%temperature(nn*(i-1)+j)
         enddo
       enddo
       iitem = iitem + nn
