@@ -205,8 +205,8 @@ contains
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
-          !CALL STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
-            !     &   material%variables(M_YOUNGS), material%variables(M_POISSON), stiffness(1:nn*ndof,1:nn*ndof))
+          CALL UpdateST_Beam(ic_type, nn, ecoord, total_disp(1:6,1:nn), du(1:6,1:nn), &
+                 &   hecMESH%section%sect_R_item(ihead+1:), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof))
 
         else if( ic_type == 641 ) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
