@@ -8,6 +8,7 @@
 #define VERSION_MINOR @VERSION_MINOR@
 #define VERSION_PATCH @VERSION_PATCH@
 #define GIT_HASH @GIT_HASH@
+#define BUILD_DATE "@BUILD_DATE@"
 
 #cmakedefine _WINDOWS
 #cmakedefine NDEBUG
