@@ -61,6 +61,9 @@ contains
             fstrHEAT%CPtab(IMAT), fstrHEAT%CPtemp(IMAT,:), fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:), &
             fstrHEAT%RHOtab(IMAT), fstrHEAT%RHOtemp(IMAT,:), fstrHEAT%RHOfuncA(IMAT,:), fstrHEAT%RHOfuncB(IMAT,:))
 
+        elseif (ic_type == 541) then
+          ! skip warning
+
         elseif(ic_type == 731)then
           in = hecMesh%section%sect_R_index(isect)
           thick = hecMESH%section%sect_R_item(in)

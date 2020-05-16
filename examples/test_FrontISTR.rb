@@ -9,6 +9,11 @@ $part = File.join(File.expand_path(ARGV[0]),'/hecmw1/tools/hecmw_part1')
 $fistr = File.join(File.expand_path(ARGV[0]),'/fistr1/fistr1')
 $threshold = 1.0e-4
 $np = ARGV[2]
+$nt = ARGV[3]
+if $nt.nil? then
+  $nt = "1"
+end
+
 
 #
 # mesh と cnt ファイルを与えて自動的に hecmw_ctrl.dat を生成する
@@ -17,7 +22,7 @@ def create_hecmw_ctrl(mesh,cnt,res=nil,vis=nil)
   base = File.basename(mesh,".*")
   res = base + ".res" if res == nil
   vis = base + ".vis" if vis == nil
-  if $np then
+  if $np.to_i > 1 then
   File.open("hecmw_ctrl.dat","w"){|aFile|
     aFile.print <<END_OF_HECMW_CTRL
 ##
@@ -79,15 +84,16 @@ def exec_test(dirname,mesh,cnt,name,correctLog=nil)
     print dirname,"/",mesh,", "
     print dirname,"/",cnt,"\n"
     FileUtils.rm('0.log') if File.exists?('0.log')
-    if $np then
+    if $np.to_i > 1 then
       puts $part
       system($part)
-      execcmd = "mpirun -np " + $np + " -x OMP_NUM_THREADS=1 " + $fistr
+      execcmd = "mpirun --oversubscribe --allow-run-as-root -np " + $np + " " + $fistr + " -t " + $nt
       puts execcmd
       system(execcmd)
     else
-      puts $fistr
-      system($fistr)
+      execcmd = $fistr + " -t " + $nt
+      puts execcmd
+      system(execcmd)
     end
 
     puts "return value = #{$?.exitstatus}"
@@ -269,6 +275,8 @@ when("static/exA")
 ["static/exA","A352.msh","A300.cnt"],
 ["static/exA","A361.msh","A300.cnt","A361_MUMPS_V4_5.log"],
 ["static/exA","A362.msh","A300.cnt"],
+["static/exA","A611.msh","A600.cnt"],
+["static/exA","A641.msh","A600_33.cnt"],
 ["static/exA","A731.msh","A700.cnt","A731_MUMPS_V4_5.log"],
 ["static/exA","A741.msh","A700.cnt","A741_MUMPS_V4_5.log"],
 ["static/exA","A761.msh","A700_33.cnt","A761_MUMPS_V4_5.log"],

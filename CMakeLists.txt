@@ -98,8 +98,9 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
 set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
 set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
+string(TIMESTAMP BUILD_DATE "%Y-%m-%dT%H:%M:%SZ" UTC)
 set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
-mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH GIT_HASH)
+mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH BUILD_DATE GIT_HASH)
 
 #############################################
 # Archtecture and compiler dependent options
@@ -135,8 +136,8 @@ find_package(MPI)
 find_package(OpenMP)
 find_package(LAPACK)
 find_package(Metis)
-find_package(Mumps)
 find_package(Parmetis)
+find_package(Mumps)
 find_package(Refiner)
 find_package(Revocap)
 find_package(Scalapack)
@@ -162,33 +163,12 @@ option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
 
 ###################
-# -DWITH_MPI
-###################
-if(WITH_MPI AND MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS
-    ${MPI_C_INCLUDE_PATH}
-    ${MPI_CXX_INCLUDE_PATH}
-    ${MPI_Fortran_INCLUDE_PATH})
-
-  list(APPEND FrontISTR_LIBRARIES
-    ${MPI_C_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${MPI_Fortran_LIBRARIES})
-
-else()
-  set(WITH_MPI OFF)
-  set(HECMW_SERIAL ON)
-  list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
-endif()
-mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
-
-###################
 # -DWITH_OPENMP
 ###################
 if(WITH_OPENMP AND OPENMP_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
 else()
   set(WITH_OPENMP OFF)
@@ -231,17 +211,6 @@ endif()
 mark_as_advanced(Trilinos_DIR)
 
 ###################
-# -DWITH_PARMETIS
-###################
-if(WITH_PARMETIS AND PARMETIS_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
-  if(NOT PARMETIS_VER_3)
-  else()
-  endif()
-endif()
-
-###################
 # -DWITH_MUMPS
 ###################
 if(WITH_MUMPS)
@@ -256,6 +225,17 @@ if(WITH_MUMPS)
   endif()
 else()
   set(WITH_MUMPS OFF)
+endif()
+
+###################
+# -DWITH_PARMETIS
+###################
+if(WITH_PARMETIS AND PARMETIS_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
+  if(NOT PARMETIS_VER_3)
+  else()
+  endif()
 endif()
 
 ###################
@@ -306,6 +286,27 @@ endif()
 if(OLD_RES_FORMAT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOLD_RES_FORMAT")
 endif()
+
+###################
+# -DWITH_MPI
+###################
+if(WITH_MPI AND MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS
+    ${MPI_C_INCLUDE_PATH}
+    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_Fortran_INCLUDE_PATH})
+
+  list(APPEND FrontISTR_LIBRARIES
+    ${MPI_C_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+    ${MPI_Fortran_LIBRARIES})
+
+else()
+  set(WITH_MPI OFF)
+  set(HECMW_SERIAL ON)
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
+endif()
+mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
 
 #############################################
 # Archtecture and compiler dependent options

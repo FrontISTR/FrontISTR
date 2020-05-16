@@ -53,7 +53,7 @@ contains
     else if( isElastoplastic(gauss%pMaterial%mtype) ) then
       allocate( gauss%istatus(1) )    ! 0:elastic 1:plastic
       if( isKinematicHarden( gauss%pMaterial%mtype ) ) then
-        allocate( gauss%fstatus(7) )  ! plastic strain, back stress
+        allocate( gauss%fstatus(7+6) )  ! plastic strain, back stress
       else
         allocate( gauss%fstatus(2) )    ! plastic strain
       endif

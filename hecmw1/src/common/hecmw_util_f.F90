@@ -493,7 +493,7 @@ contains
     integer(kind=kint) :: ierr
 
 #ifndef HECMW_SERIAL
-    call MPI_INIT (ierr)
+    !call MPI_INIT (ierr)
     call MPI_COMM_SIZE (MPI_COMM_WORLD, hecmw_PETOT, ierr)
     call MPI_COMM_RANK (MPI_COMM_WORLD, hecmw_rank,  ierr)
     call MPI_COMM_DUP  (MPI_COMM_WORLD, hecmw_comm,  ierr)
@@ -1033,7 +1033,7 @@ contains
     hecMAT%NP   = NP
     hecMAT%NPL  = NPL
     hecMAT%NPU  = NPU
-
+    hecMAT%NDOF = NDOF
     allocate(hecMAT%B(NDOF*NP))
     allocate(hecMAT%X(NDOF*NP))
     allocate(hecMAT%D(NDOF2*NP))

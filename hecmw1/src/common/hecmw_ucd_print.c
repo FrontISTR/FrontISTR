@@ -82,6 +82,14 @@ static int conv_index_ucd2hec_shq2[] = {0, 1, 2, 3, -1, -1, -1, -1};
 
 static int conv_index_ucd2hec_ln[] = {0, 1};
 
+static int conv_index_ucd2hec_ptt1[] = {0, 1, 2};
+
+static int conv_index_ucd2hec_ptt2[] = {0, 1, 2, -1, -1, -1};
+
+static int conv_index_ucd2hec_ptq1[] = {0, 1, 2, 3};
+
+static int conv_index_ucd2hec_ptq2[] = {0, 1, 2, 3, -1, -1, -1, -1};
+
 static int ucd_print(const struct hecmwST_local_mesh *mesh,
                      const struct hecmwST_result_data *result,
                      const char *ofname, int flag_oldUCD) {
@@ -535,6 +543,58 @@ static int ucd_print(const struct hecmwST_local_mesh *mesh,
             fprintf(
                 fp, " %d",
                 mesh->elem_node_item[node_index + conv_index_ucd2hec_ln[j]]);
+          }
+        }
+        break;
+
+      case HECMW_ETYPE_PTT1:
+        fprintf(fp, "%d %d %s", i + 1, 0,
+                HECMW_get_ucd_label(HECMW_ETYPE_PTT1));
+        node_index = mesh->elem_node_index[i];
+        for (j = 0; j < HECMW_MAX_NODE_PTT1; j++) {
+          if (conv_index_ucd2hec_ptt1[j] >= 0) {
+            fprintf(
+                fp, " %d",
+                mesh->elem_node_item[node_index + conv_index_ucd2hec_ptt1[j]]);
+          }
+        }
+        break;
+
+      case HECMW_ETYPE_PTT2:
+        fprintf(fp, "%d %d %s", i + 1, 0,
+                HECMW_get_ucd_label(HECMW_ETYPE_PTT1));
+        node_index = mesh->elem_node_index[i];
+        for (j = 0; j < HECMW_MAX_NODE_PTT2; j++) {
+          if (conv_index_ucd2hec_ptt2[j] >= 0) {
+            fprintf(
+                fp, " %d",
+                mesh->elem_node_item[node_index + conv_index_ucd2hec_ptt2[j]]);
+          }
+        }
+        break;
+
+      case HECMW_ETYPE_PTQ1:
+        fprintf(fp, "%d %d %s", i + 1, 0,
+                HECMW_get_ucd_label(HECMW_ETYPE_PTQ1));
+        node_index = mesh->elem_node_index[i];
+        for (j = 0; j < HECMW_MAX_NODE_PTQ1; j++) {
+          if (conv_index_ucd2hec_ptq1[j] >= 0) {
+            fprintf(
+                fp, " %d",
+                mesh->elem_node_item[node_index + conv_index_ucd2hec_ptq1[j]]);
+          }
+        }
+        break;
+
+      case HECMW_ETYPE_PTQ2:
+        fprintf(fp, "%d %d %s", i + 1, 0,
+                HECMW_get_ucd_label(HECMW_ETYPE_PTQ1));
+        node_index = mesh->elem_node_index[i];
+        for (j = 0; j < HECMW_MAX_NODE_PTQ2; j++) {
+          if (conv_index_ucd2hec_ptq2[j] >= 0) {
+            fprintf(
+                fp, " %d",
+                mesh->elem_node_item[node_index + conv_index_ucd2hec_ptq2[j]]);
           }
         }
         break;

@@ -62,16 +62,16 @@ module mContactDef
     integer(kind=kint) :: contactNode_current    !< current number of nodes in contact
   end type fstr_info_contactChange
 
-  real(kind=kreal), parameter :: CLEARANCE     = 1.d-4 ! ordinary clearance
-  real(kind=kreal), parameter :: CLR_SAME_ELEM = 5.d-3 ! clearance for already-in-contct elems (loosen to avoid moving too easily)
-  real(kind=kreal), parameter :: CLR_DIFFLPOS  = 1.d-2 ! clearance to be recognized as different position (loosen to avoid oscillation)
-  real(kind=kreal), parameter :: CLR_CAL_NORM  = 1.d-4 ! clearance used when calculating surface normal
-  real(kind=kreal), parameter :: DISTCLR_INIT  = 1.d-6 ! dist clearance for initial scan
-  real(kind=kreal), parameter :: DISTCLR_FREE  =-1.d-6 ! dist clearance for free nodes (wait until little penetration to be judged as contact)
-  real(kind=kreal), parameter :: DISTCLR_CONT  = 1.d0  ! dist clearance for contact nodes
-                                                       ! (big value to keep contact because contact-to-free is judged by tensile force)
-  real(kind=kreal), parameter :: BOX_EXP_RATE = 1.05d0 ! recommended: (1.0..2.0] (the smaller the faster, the bigger the safer)
-  real(kind=kreal), parameter :: TENSILE_FORCE =-1.d-8 ! tensile force to be judged as free node
+  real(kind=kreal), parameter :: CLEARANCE       = 1.d-4  !< ordinary clearance
+  real(kind=kreal), parameter :: CLR_SAME_ELEM   = 5.d-3  !< clearance for already-in-contct elems (loosen to avoid moving too easily)
+  real(kind=kreal), parameter :: CLR_DIFFLPOS    = 1.d-2  !< clearance to be recognized as different position (loosen to avoid oscillation)
+  real(kind=kreal), parameter :: CLR_CAL_NORM    = 1.d-4  !< clearance used when calculating surface normal
+  real(kind=kreal), parameter :: DISTCLR_INIT    = 1.d-6  !< dist clearance for initial scan
+  real(kind=kreal), parameter :: DISTCLR_FREE    =-1.d-6  !< dist clearance for free nodes (wait until little penetration to be judged as contact)
+  real(kind=kreal), parameter :: DISTCLR_NOCHECK = 1.d0   !< dist clearance for skipping distance check for nodes already in contact
+                                                          !< (big value to keep contact because contact-to-free is judged by tensile force)
+  real(kind=kreal), parameter :: BOX_EXP_RATE    = 1.05d0 !< recommended: (1.0..2.0] (the smaller the faster, the bigger the safer)
+  real(kind=kreal), parameter :: TENSILE_FORCE   =-1.d-8  !< tensile force to be judged as free node
 
   private :: is_MPC_available
   private :: is_active_contact
@@ -84,7 +84,7 @@ module mContactDef
   private :: CLR_DIFFLPOS
   private :: CLR_CAL_NORM
   private :: DISTCLR_FREE
-  private :: DISTCLR_CONT
+  private :: DISTCLR_NOCHECK
   private :: BOX_EXP_RATE
   private :: TENSILE_FORCE
 
@@ -614,7 +614,7 @@ contains
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
-      isin,DISTCLR_CONT,contact%states(nslave)%lpos,CLR_SAME_ELEM )
+      isin,DISTCLR_NOCHECK,contact%states(nslave)%lpos,CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -625,7 +625,7 @@ contains
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
         call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-          isin,DISTCLR_CONT,localclr=CLEARANCE )
+          isin,DISTCLR_NOCHECK,localclr=CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -653,7 +653,7 @@ contains
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
           call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-               isin,DISTCLR_CONT,localclr=CLEARANCE )
+               isin,DISTCLR_NOCHECK,localclr=CLEARANCE )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -1082,7 +1082,7 @@ contains
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
-      isin,DISTCLR_CONT,contact%states(nslave)%lpos,CLR_SAME_ELEM )
+      isin,DISTCLR_NOCHECK,contact%states(nslave)%lpos,CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -1093,7 +1093,7 @@ contains
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
         call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-          isin,DISTCLR_CONT,localclr=CLEARANCE )
+          isin,DISTCLR_NOCHECK,localclr=CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -1121,7 +1121,7 @@ contains
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
           call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-               isin,DISTCLR_CONT,localclr=CLEARANCE )
+               isin,DISTCLR_NOCHECK,localclr=CLEARANCE )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
