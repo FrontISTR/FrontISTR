@@ -21,17 +21,12 @@ contains
     type(fstr_param), intent(in)         :: fstrPARAM
 
     type(hecmwST_result_data) :: fstrRESULT
-    integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid, istep, idx
+    integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid, istep
 
     ndof = hecMESH%n_dof
 
     !C-- SET DISPLACEMENT etc.
     istep = fstrDYNAMIC%i_step
-    if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
-      idx = 2
-    else
-      idx = 1
-    endif
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
       if( ndof==3 ) then
@@ -79,7 +74,7 @@ contains
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
-      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, fstrDYNAMIC%t_curr, fstrDYNAMIC )
+      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, fstrDYNAMIC%t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, istep )

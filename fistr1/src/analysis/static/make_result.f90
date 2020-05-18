@@ -523,7 +523,7 @@ contains
   !C***
   !>  MAKE RESULT for static and dynamic analysis (WITHOUT ELEMENTAL RESULTS) --------------------------------------------------------------
   !C***
-  subroutine fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, time, fstrDYNAMIC )
+  subroutine fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time, fstrDYNAMIC )
     use m_fstr
     use hecmw_util
 
@@ -531,6 +531,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
+    integer(kind=kint)        :: istep
     real(kind=kreal) :: time
     type(fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
     integer(kind=kint) :: n_lyr, ntot_lyr, it, coef33, is_33shell, is_33beam
@@ -556,7 +557,7 @@ contains
 
     if( is_dynamic ) then
       idx = 1
-      if( fstrDYNAMIC%idx_eqa==1 ) idx = 2
+      if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) idx = 2
     endif
 
     ndof = hecMESH%n_dof
