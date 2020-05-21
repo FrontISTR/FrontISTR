@@ -374,6 +374,8 @@ contains
     !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
     !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
+    if( NColor > 1 .or. NContact > 0 ) then
+
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
       !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
@@ -419,14 +421,6 @@ contains
             enddo ! j
           endif
 
-          !X1= SW1
-          !X2= SW2
-          !X3= SW3
-          !X2= X2 - ALU(9*i-5)*X1
-          !X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
-          !X3= ALU(9*i  )*  X3
-          !X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
-          !X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
           ZP(3*iold-2)= ALU(9*i-8)*SW1+ALU(9*i-7)*SW2+ALU(9*i-6)*SW3
           ZP(3*iold-1)= ALU(9*i-5)*SW1+ALU(9*i-4)*SW2+ALU(9*i-3)*SW3
           ZP(3*iold  )= ALU(9*i-2)*SW1+ALU(9*i-1)*SW2+ALU(9*i  )*SW3
@@ -476,18 +470,7 @@ contains
             enddo ! j
           endif
 
-          !X1= SW1
-          !X2= SW2
-          !X3= SW3
-          !X2= X2 - ALU(9*i-5)*X1
-          !X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
-          !X3= ALU(9*i  )*  X3
-          !X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
-          !X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
           iold = perm(i)
-          !ZP(3*iold-2)=  ZP(3*iold-2) - X1
-          !ZP(3*iold-1)=  ZP(3*iold-1) - X2
-          !ZP(3*iold  )=  ZP(3*iold  ) - X3
           ZP(3*iold-2)= ZP(3*iold-2) - ALU(9*i-8)*SW1 - ALU(9*i-7)*SW2 - ALU(9*i-6)*SW3
           ZP(3*iold-1)= ZP(3*iold-1) - ALU(9*i-5)*SW1 - ALU(9*i-4)*SW2 - ALU(9*i-3)*SW3
           ZP(3*iold  )= ZP(3*iold  ) - ALU(9*i-2)*SW1 - ALU(9*i-1)*SW2 - ALU(9*i  )*SW3
@@ -497,10 +480,58 @@ contains
     enddo ! ic
     !$omp end parallel
 
-    !OCL END_CACHE_SUBSECTOR
-    !OCL END_CACHE_SECTOR_SIZE
+    else
 
-    !call stop_collection("loopInPrecond33")
+      !C-- FORWARD
+      do i = 1, N
+        iold = perm(i)
+        SW1= ZP(3*iold-2)
+        SW2= ZP(3*iold-1)
+        SW3= ZP(3*iold  )
+        isL= indexL(i-1)+1
+        ieL= indexL(i)
+        do j= isL, ieL
+          !k= perm(itemL(j))
+          k= itemL(j)
+          X1= ZP(3*k-2)
+          X2= ZP(3*k-1)
+          X3= ZP(3*k  )
+          SW1= SW1 - AL(9*j-8)*X1 - AL(9*j-7)*X2 - AL(9*j-6)*X3
+          SW2= SW2 - AL(9*j-5)*X1 - AL(9*j-4)*X2 - AL(9*j-3)*X3
+          SW3= SW3 - AL(9*j-2)*X1 - AL(9*j-1)*X2 - AL(9*j  )*X3
+        enddo ! j
+
+        ZP(3*iold-2)= ALU(9*i-8)*SW1+ALU(9*i-7)*SW2+ALU(9*i-6)*SW3
+        ZP(3*iold-1)= ALU(9*i-5)*SW1+ALU(9*i-4)*SW2+ALU(9*i-3)*SW3
+        ZP(3*iold  )= ALU(9*i-2)*SW1+ALU(9*i-1)*SW2+ALU(9*i  )*SW3
+      enddo ! i
+
+      !C-- BACKWARD
+      do i = N, 1, -1
+        SW1= 0.d0
+        SW2= 0.d0
+        SW3= 0.d0
+        isU= indexU(i-1) + 1
+        ieU= indexU(i)
+        do j= ieU, isU, -1
+          !k= perm(itemU(j))
+          k= itemU(j)
+          X1= ZP(3*k-2)
+          X2= ZP(3*k-1)
+          X3= ZP(3*k  )
+          SW1= SW1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
+          SW2= SW2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
+          SW3= SW3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+        enddo ! j
+
+        iold = perm(i)
+        ZP(3*iold-2)= ZP(3*iold-2) - ALU(9*i-8)*SW1 - ALU(9*i-7)*SW2 - ALU(9*i-6)*SW3
+        ZP(3*iold-1)= ZP(3*iold-1) - ALU(9*i-5)*SW1 - ALU(9*i-4)*SW2 - ALU(9*i-3)*SW3
+        ZP(3*iold  )= ZP(3*iold  ) - ALU(9*i-2)*SW1 - ALU(9*i-1)*SW2 - ALU(9*i  )*SW3
+      enddo ! i
+
+    end if
+
 
   end subroutine
 
