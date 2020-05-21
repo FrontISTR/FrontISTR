@@ -213,6 +213,8 @@ contains
 
     !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
+    if( numOfThread > 1 ) then
+
     !$OMP PARALLEL DEFAULT(NONE) &
       !$OMP&PRIVATE(i,X1,X2,X3,YV1,YV2,YV3,j,in,threadNum,blockNum,blockIndex) &
       !$OMP&SHARED(aval,item,idx,X,Y,startPos,endPos,numOfThread,async_matvec_flg)
@@ -241,6 +243,31 @@ contains
       enddo
     enddo
     !$OMP END PARALLEL
+
+    else
+
+      do i = 1, N
+        YV1= 0.d0
+        YV2= 0.d0
+        YV3= 0.d0
+
+        do j= idx(i-1)+1, idx(i)
+          in  = item(j)
+          X1= X(3*in-2)
+          X2= X(3*in-1)
+          X3= X(3*in  )
+          YV1= YV1 + aval(9*j-8)*X1 + aval(9*j-7)*X2 + aval(9*j-6)*X3
+          YV2= YV2 + aval(9*j-5)*X1 + aval(9*j-4)*X2 + aval(9*j-3)*X3
+          YV3= YV3 + aval(9*j-2)*X1 + aval(9*j-1)*X2 + aval(9*j  )*X3
+        enddo
+
+        Y(3*i-2)= YV1
+        Y(3*i-1)= YV2
+        Y(3*i  )= YV3
+      enddo
+
+    end if
+
 
     !OCL END_CACHE_SUBSECTOR
 
