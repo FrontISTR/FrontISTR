@@ -13,7 +13,6 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_mat_ass_bc_ac.f90
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_mat_ass_couple.f90
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_var_init.f90
-  ${CMAKE_CURRENT_LIST_DIR}/dynamic_make_result.f90
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_output.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_dynamic_nlexplicit.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_dynamic_nlimplicit.f90
