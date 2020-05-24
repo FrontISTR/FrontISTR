@@ -12,9 +12,8 @@ contains
   subroutine fstr_dynamic_Output( hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM )
     !----------------------------------------------------------------------*
     use m_fstr
-    use m_fstr_Update
     use m_fstr_NodalStress
-    use m_dynamic_make_result
+    use m_make_result
     use m_hecmw2fstr_mesh_conv
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
@@ -22,17 +21,12 @@ contains
     type(fstr_param), intent(in)         :: fstrPARAM
 
     type(hecmwST_result_data) :: fstrRESULT
-    integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid, istep, idx
+    integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid, istep
 
     ndof = hecMESH%n_dof
 
     !C-- SET DISPLACEMENT etc.
     istep = fstrDYNAMIC%i_step
-    if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
-      idx = 2
-    else
-      idx = 1
-    endif
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
       if( ndof==3 ) then
@@ -75,12 +69,12 @@ contains
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
-      call fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep, fstrDYNAMIC%t_curr )
+      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, fstrDYNAMIC%t_curr, 0, fstrDYNAMIC )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
-      call fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT )
+      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, fstrDYNAMIC%t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, istep )

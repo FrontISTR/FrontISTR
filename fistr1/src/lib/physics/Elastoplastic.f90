@@ -10,21 +10,31 @@ module m_ElastoPlastic
 
   implicit none
 
+  real(kind=kreal), private, parameter :: Id(6,6) = reshape( &
+    & (/  2.d0/3.d0, -1.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
+    &    -1.d0/3.d0,  2.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
+    &    -1.d0/3.d0, -1.d0/3.d0,  2.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
+    &          0.d0,       0.d0,       0.d0, 0.5d0,  0.d0,  0.d0,   &
+    &          0.d0,       0.d0,       0.d0,  0.d0, 0.5d0,  0.d0,   &
+    &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0, 0.5d0/), &
+    & (/6, 6/))
+
 contains
 
   !> This subroutine calculates elastoplastic constitutive relation
-  subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, D, temperature )
+  subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, plstrain, D, temperature )
     type( tMaterial ), intent(in) :: matl      !< material properties
     integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: stress(6) !< stress
     real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
+    real(kind=kreal), INTENT(IN)  :: plstrain  !< plastic strain
     integer, intent(in)           :: istat     !< plastic state
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
     real(kind=kreal), optional    :: temperature   !> temprature
 
     integer :: i,j,ytype
     logical :: kinematic
-    real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6), De(6,6)
+    real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6), De(6,6), G, dlambda
     real(kind=kreal) :: C1,C2,C3, back(6)
     real(kind=kreal) :: J1,J2,J3, fai, sita, harden, khard, da(6), devia(6)
 
@@ -68,7 +78,21 @@ contains
 
     select case (yType)
       case (0)       ! Mises or. Isotropic
-        a(1:6) = dsqrt(3.d0) * dj2
+        a(1:6) = devia(1:6)/dsqrt(2.d0*J2)
+        G = De(4,4)
+        dlambda = extval(1)-plstrain
+        C3 = dsqrt(3.d0*J2)+3.d0*G*dlambda !trial mises stress
+        C1 = 6.d0*dlambda*G*G/C3
+        dum = 3.d0*G+khard+harden
+        C2 = 6.d0*G*G*(dlambda/C3-1.d0/dum)
+
+        do i=1,6
+          do j=1,6
+            D(i,j) = De(i,j) - C1*Id(i,j) + C2*a(i)*a(j)
+          enddo
+        enddo
+
+        return
       case (1)      ! Mohr-Coulomb
         fai = matl%variables(M_PLCONST3)
         J3 = devia(1)*devia(2)*devia(3)                    &

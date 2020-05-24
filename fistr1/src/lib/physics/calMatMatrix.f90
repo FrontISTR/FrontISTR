@@ -90,10 +90,10 @@ contains
     elseif( isElastoplastic(matl%mtype) )  then
       if( present( temperature ) ) then
         call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
-          gauss%istatus(1), gauss%fstatus, matrix, temperature  )
+          gauss%istatus(1), gauss%fstatus, gauss%plstrain, matrix, temperature  )
       else
         call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
-          gauss%istatus(1), gauss%fstatus, matrix  )
+          gauss%istatus(1), gauss%fstatus, gauss%plstrain, matrix  )
       endif
     elseif( matl%mtype==USERMATERIAL ) then
       call uMatlMatrix( matl%name, matl%variables(101:), gauss%strain,  &
