@@ -25,7 +25,7 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	int data_tot_n, data_tot_e;
 	int table342[10] = {0, 1, 2, 3, 6, 4, 5, 7, 8, 9};
 	char file_pvd[HECMW_FILENAME_LEN], file_pvtu[HECMW_FILENAME_LEN], file_vtu[HECMW_FILENAME_LEN], buf[HECMW_FILENAME_LEN];
-	char *data_label;
+	char *data_label, *p;
 	static int is_first=0;
 	FILE *outfp;
 	HECMW_Status stat;
@@ -41,6 +41,11 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	data_tot_e = 0;
 	for(i=0; i<data->ne_component; i++){
 		data_tot_e += data->ne_dof[i];
+	}
+
+	p = strrchr(outfile, (int)(unsigned char)'/');
+	if(NULL != p){
+		outfile = p+1;
 	}
 
 	sprintf(file_vtu, "%s/%s.%d.vtu", outfile1, outfile, myrank);
