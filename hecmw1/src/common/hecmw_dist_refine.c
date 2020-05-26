@@ -3645,12 +3645,12 @@ static int copy_mpc_info(const struct hecmwST_mpc *mpc,
   }
 
   /* mpc_const */
-  ref_mpc->mpc_const = (double *) HECMW_malloc( sizeof(double) * mpc->mpc_index[mpc->n_mpc] );
+  ref_mpc->mpc_const = (double *) HECMW_malloc( sizeof(double) * mpc->n_mpc );
   if( ref_mpc->mpc_const == NULL ) {
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
-  for ( i = 0; i < mpc->mpc_index[mpc->n_mpc]; i++ ) {
+  for ( i = 0; i < mpc->n_mpc; i++ ) {
     ref_mpc->mpc_const[i] = mpc->mpc_const[i];
   }
 
