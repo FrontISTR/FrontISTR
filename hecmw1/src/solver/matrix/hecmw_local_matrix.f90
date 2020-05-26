@@ -1856,6 +1856,32 @@ contains
     enddo
   end subroutine uniq_add_nodes
 
+  subroutine search_add_nodes(n_add_node, add_nodes, rank, lid, idx)
+    implicit none
+    integer(kind=kint), intent(in) :: n_add_node
+    integer(kind=kint), intent(in) :: add_nodes(cNCOL_ITEM,n_add_node)
+    integer(kind=kint), intent(in) :: rank
+    integer(kind=kint), intent(in) :: lid
+    integer(kind=kint), intent(out) :: idx
+    integer(kind=kint) :: left, right, center
+    left = 1
+    right = n_add_node
+    do while (left <= right)
+      center = (left + right) / 2
+      if ((rank == add_nodes(cRANK,center)) .and. (lid == add_nodes(cLID,center))) then
+        idx = center
+        return
+      else if ((rank < add_nodes(cRANK,center)) .or. &
+           (rank == add_nodes(cRANK,center) .and. lid < add_nodes(cLID,center))) then
+        right = center - 1
+      else if ((add_nodes(cRANK,center) < rank) .or. &
+           (add_nodes(cRANK,center) == rank .and. add_nodes(cLID,center) < lid)) then
+        left = center + 1
+      endif
+    end do
+    idx = -1
+  end subroutine search_add_nodes
+
   subroutine append_nodes(hecMESHnew, n_add_node, add_nodes, i0)
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESHnew
@@ -1901,13 +1927,9 @@ contains
     integer(kind=kint) :: i, j
     do i = 1, ncols
       if (map(i) > 0) cycle
-      do j = 1, n_add_node                                 !!! LINEAR SEARCH: MIGHT BE SLOW !!!
-        if (cols(cRANK,i) /= add_nodes(cRANK,j)) cycle
-        if (cols(cLID,i) /= add_nodes(cLID,j)) cycle
-        map(i) = i0 + j
-        exit
-      enddo
-      if (map(i) == -1) stop 'ERROR: map imported cols'
+      call search_add_nodes(n_add_node, add_nodes, cols(cRANK,i), cols(cLID,i), j)
+      if (j == -1) stop 'ERROR: map_additional_nodes'
+      map(i) = i0 + j
     enddo
   end subroutine map_additional_nodes
 
