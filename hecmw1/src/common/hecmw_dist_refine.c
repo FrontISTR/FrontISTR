@@ -2354,6 +2354,7 @@ static int check_node_rank(const struct hecmwST_local_mesh *mesh,
   HECMW_free(shared_nodes);
   HECMW_free(shared_ranks);
   HECMW_free(n_shared_nodes);
+  HECMW_free(send_buf);
   HECMW_free(requests);
   HECMW_free(statuses);
 
@@ -4048,6 +4049,92 @@ static int delete_external_items(int n_elem, int n_grp, int *index, int *item,
   return HECMW_SUCCESS;
 }
 
+static int delete_external_equations(int n_node, struct hecmwST_mpc *mpc) {
+  int iold, inew, jold, jnew;
+  int *active_eqn;
+  int n_mpc_new;
+  int *mpc_index_new, *mpc_item_new, *mpc_dof_new;
+  double *mpc_val_new, *mpc_const_new;
+  active_eqn = (int *) HECMW_malloc(sizeof(int) * mpc->n_mpc);
+  if (active_eqn == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  n_mpc_new = 0;
+  for (iold = 0; iold < mpc->n_mpc; iold++) {
+    int is_ext = 0;
+    for (jold = mpc->mpc_index[iold]; jold < mpc->mpc_index[iold+1]; jold++) {
+      if (mpc->mpc_item[jold] > n_node) {
+        is_ext = 1;
+        break;
+      }
+    }
+    if (is_ext == 0) {
+      active_eqn[n_mpc_new] = iold;
+      n_mpc_new++;
+    }
+  }
+  mpc_index_new = (int *) HECMW_malloc(sizeof(int) * (n_mpc_new + 1));
+  if (mpc_index_new == NULL) {
+    HECMW_set_error(errno, "");
+    return HECMW_ERROR;
+  }
+  mpc_index_new[0] = 0;
+  if (n_mpc_new == 0) {
+    mpc_item_new = NULL;
+    mpc_dof_new = NULL;
+    mpc_val_new = NULL;
+    mpc_const_new = NULL;
+  } else {
+    for (inew = 0; inew < n_mpc_new; inew++) {
+      iold = active_eqn[inew];
+      mpc_index_new[inew+1] = mpc_index_new[inew] + (mpc->mpc_index[iold+1] - mpc->mpc_index[iold]);
+    }
+    mpc_item_new = (int *) HECMW_malloc(sizeof(int) * mpc_index_new[n_mpc_new]);
+    if (mpc_item_new == NULL) {
+      HECMW_set_error(errno, "");
+      return HECMW_ERROR;
+    }
+    mpc_dof_new = (int *) HECMW_malloc(sizeof(int) * mpc_index_new[n_mpc_new]);
+    if (mpc_dof_new == NULL) {
+      HECMW_set_error(errno, "");
+      return HECMW_ERROR;
+    }
+    mpc_val_new = (double *) HECMW_malloc(sizeof(double) * mpc_index_new[n_mpc_new]);
+    if (mpc_val_new == NULL) {
+      HECMW_set_error(errno, "");
+      return HECMW_ERROR;
+    }
+    mpc_const_new = (double *) HECMW_malloc(sizeof(double) * n_mpc_new);
+    if (mpc_const_new == NULL) {
+      HECMW_set_error(errno, "");
+      return HECMW_ERROR;
+    }
+    for (inew = 0; inew < n_mpc_new; inew++) {
+      iold = active_eqn[inew];
+      for (jold = mpc->mpc_index[iold], jnew = mpc_index_new[inew]; jold < mpc->mpc_index[iold+1]; jold++, jnew++) {
+        mpc_item_new[jnew] = mpc->mpc_item[jold];
+        mpc_dof_new[jnew]  = mpc->mpc_dof[jold];
+        mpc_val_new[jnew]  = mpc->mpc_val[jold];
+      }
+      mpc_const_new[inew] = mpc->mpc_const[iold];
+    }
+  }
+  HECMW_free(active_eqn);
+  mpc->n_mpc = n_mpc_new;
+  HECMW_free(mpc->mpc_index);
+  HECMW_free(mpc->mpc_item);
+  HECMW_free(mpc->mpc_dof);
+  HECMW_free(mpc->mpc_val);
+  HECMW_free(mpc->mpc_const);
+  mpc->mpc_index = mpc_index_new;
+  mpc->mpc_item  = mpc_item_new;
+  mpc->mpc_dof   = mpc_dof_new;
+  mpc->mpc_val   = mpc_val_new;
+  mpc->mpc_const = mpc_const_new;
+  return HECMW_SUCCESS;
+}
+
 static int renumber_nodes(struct hecmwST_local_mesh *mesh) {
   if (mesh->n_node_gross == mesh->nn_internal) return HECMW_SUCCESS;
 
@@ -4061,6 +4148,10 @@ static int renumber_nodes(struct hecmwST_local_mesh *mesh) {
   delete_external_items(mesh->n_node, mesh->node_group->n_grp,
                         mesh->node_group->grp_index, mesh->node_group->grp_item,
                         1);
+
+  if (delete_external_equations(mesh->n_node, mesh->mpc) != HECMW_SUCCESS) {
+    return HECMW_ERROR;
+  }
 
   HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering nodes.\n");
   return HECMW_SUCCESS;
