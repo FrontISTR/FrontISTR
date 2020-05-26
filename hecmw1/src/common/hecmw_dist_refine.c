@@ -4145,9 +4145,11 @@ static int renumber_nodes(struct hecmwST_local_mesh *mesh) {
     return HECMW_ERROR;
   }
 
-  delete_external_items(mesh->n_node, mesh->node_group->n_grp,
-                        mesh->node_group->grp_index, mesh->node_group->grp_item,
-                        1);
+  if (delete_external_items(mesh->n_node, mesh->node_group->n_grp,
+                            mesh->node_group->grp_index, mesh->node_group->grp_item,
+                            1) != HECMW_SUCCESS) {
+    return HECMW_ERROR;
+  }
 
   if (delete_external_equations(mesh->n_node, mesh->mpc) != HECMW_SUCCESS) {
     return HECMW_ERROR;
@@ -4404,14 +4406,21 @@ static int renumber_elements(struct hecmwST_local_mesh *mesh) {
     return HECMW_ERROR;
   }
 
-  /* delete_external_items( mesh->n_elem, mesh->n_neighbor_pe,
-   * mesh->shared_index, mesh->shared_item, 1 ); */
-  delete_external_items(mesh->n_elem, mesh->elem_group->n_grp,
-                        mesh->elem_group->grp_index, mesh->elem_group->grp_item,
-                        1);
-  delete_external_items(mesh->n_elem, mesh->surf_group->n_grp,
-                        mesh->surf_group->grp_index, mesh->surf_group->grp_item,
-                        2);
+  /* if (delete_external_items( mesh->n_elem, mesh->n_neighbor_pe, */
+  /*                            mesh->shared_index, mesh->shared_item, 1 ) != */
+  /*     HECMW_SUCCESS) { */
+  /*   return HECMW_ERROR; */
+  /* } */
+  if (delete_external_items(mesh->n_elem, mesh->elem_group->n_grp,
+                            mesh->elem_group->grp_index, mesh->elem_group->grp_item,
+                            1) != HECMW_SUCCESS) {
+    return HECMW_ERROR;
+  }
+  if (delete_external_items(mesh->n_elem, mesh->surf_group->n_grp,
+                            mesh->surf_group->grp_index, mesh->surf_group->grp_item,
+                            2) != HECMW_SUCCESS) {
+    return HECMW_ERROR;
+  }
 
   HECMW_log(HECMW_LOG_DEBUG, "Finished renumbering elements.\n");
   return HECMW_SUCCESS;
