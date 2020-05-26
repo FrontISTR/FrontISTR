@@ -2250,110 +2250,121 @@ contains
   end subroutine copy_vals_to_BT_int
 
   subroutine sort_and_uniq_rows(BTmat)
+    use hecmw_array_util
     implicit none
     type (hecmwST_local_matrix), intent(inout) :: BTmat
-    integer(kind=kint) :: nr, ndof, ndof2, ndup_tot, irow, is, ie, ndup, new_nnz, i0, j0, k
+    integer(kind=kint) :: nr, ndof, ndof2
+    integer(kind=kint) :: irow, is, ie, is_new, ie_new, i, i_new
+    integer(kind=kint) :: ndup, ndup_tot
+    integer(kind=kint) :: js, je, js_new, je_new
+    integer(kind=kint) :: new_nnz
     integer(kind=kint), allocatable :: cnt(:)
-    integer(kind=kint), pointer :: new_index(:), new_item(:)
+    integer(kind=kint), pointer :: sort_item(:), new_index(:), new_item(:)
     real(kind=kreal), pointer :: new_A(:)
+    logical :: sorted
     nr = BTmat%nr
+    ! check if already sorted
+    sorted = .true.
+    OUTER: do irow = 1, nr
+      is = BTmat%index(irow-1)+1
+      ie = BTmat%index(irow)
+      do i = is, ie-1
+        if (BTmat%item(i) >= BTmat%item(i+1)) then
+          sorted = .false.
+          exit OUTER
+        endif
+      enddo
+    end do OUTER
+    if (sorted) return
+    ! perform sort
     ndof = BTmat%ndof
     ndof2 = ndof*ndof
-    allocate(cnt(BTmat%nr))
+    ! duplicate item array (sort_item)
+    allocate(sort_item(BTmat%nnz))
+    do i = 1, BTmat%nnz
+      sort_item(i) = BTmat%item(i)
+    enddo
+    ! sort and uniq item for each row
+    allocate(cnt(nr))
     ndup_tot = 0
+    !$omp parallel do default(none), &
+    !$omp& schedule(dynamic,1), &
+    !$omp& private(irow,is,ie,ndup), &
+    !$omp& shared(nr,BTmat,sort_item,cnt), &
+    !$omp& reduction(+:ndup_tot)
     do irow = 1, nr
       is = BTmat%index(irow-1)+1
       ie = BTmat%index(irow)
-      call sort_row(BTmat%item, BTmat%A, ndof2, is, ie)
-      call uniq_row(BTmat%item, BTmat%A, ndof2, is, ie, ndup)
+      call hecmw_qsort_int_array(sort_item, is, ie)
+      call hecmw_uniq_int_array(sort_item, is, ie, ndup)
       cnt(irow) = (ie-is+1) - ndup
       ndup_tot = ndup_tot + ndup
     enddo
+    !$omp end parallel do
+    ! make new index and item array (new_index, new_item)
     if (ndup_tot == 0) then
-      deallocate(cnt)
-      return
+      new_index => BTmat%index
+      new_nnz = BTmat%nnz
+      new_item => sort_item
+    else
+      allocate(new_index(0:nr))
+      call make_index(nr, cnt, new_index)
+      new_nnz = new_index(nr)
+      allocate(new_item(new_nnz))
+      do irow = 1, nr
+        is = BTmat%index(irow-1)+1
+        ie = is+cnt(irow)-1
+        is_new = new_index(irow-1)+1
+        ie_new = is_new+cnt(irow)-1
+        new_item(is_new:ie_new) = sort_item(is:ie)
+      enddo
+      deallocate(sort_item)
     endif
-    allocate(new_index(0:nr))
-    call make_index(nr, cnt, new_index)
-    new_nnz = new_index(nr)
-    allocate(new_item(new_nnz))
+    deallocate(cnt)
+    ! allocate and clear value array (new_A)
     allocate(new_A(ndof2*new_nnz))
+    new_A(:) = 0.d0
+    ! copy/add value from old A to new A
+    !$omp parallel do default(none), &
+    !$omp& schedule(dynamic,1), &
+    !$omp& private(irow,is,ie,is_new,ie_new,i,i_new,js,je,js_new,je_new), &
+    !$omp& shared(nr,BTmat,new_index,new_item,ndof2,new_A)
     do irow = 1, nr
-      i0 = BTmat%index(irow-1)
-      j0 = new_index(irow-1)
-      do k = 1, cnt(irow)
-        new_item(j0+k) = BTmat%item(i0+k)
-        new_A(ndof2*(j0+k-1)+1:ndof2*(j0+k)) = BTmat%A(ndof2*(i0+k-1)+1:ndof2*(i0+k))
+      is = BTmat%index(irow-1)+1
+      ie = BTmat%index(irow)
+      is_new = new_index(irow-1)+1
+      ie_new = new_index(irow)
+      ! for each item in row
+      do i = is, ie
+        ! find place in new item
+        call hecmw_bsearch_int_array(new_item, is_new, ie_new, BTmat%item(i), i_new)
+        if (i_new == -1) stop 'ERROR: sort_and_uniq_rows'
+        js = ndof2*(i-1)+1
+        je = ndof2*i
+        js_new = ndof2*(i_new-1)+1
+        je_new = ndof2*i_new
+        new_A(js_new:je_new) = new_A(js_new:je_new) + BTmat%A(js:je)
       enddo
     enddo
-    deallocate(BTmat%index)
-    deallocate(BTmat%item)
-    deallocate(BTmat%A)
-    BTmat%nnz = new_nnz
-    BTmat%index => new_index
-    BTmat%item => new_item
-    BTmat%A => new_A
-    deallocate(cnt)
+    !$omp end parallel do
+    ! deallocate/update nnz, index, item, A
+    if (ndup_tot == 0) then
+      deallocate(BTmat%item)
+      BTmat%item => new_item
+      deallocate(BTmat%A)
+      BTmat%A => new_A
+    else
+      BTmat%nnz = new_nnz
+      deallocate(BTmat%index)
+      BTmat%index => new_index
+      deallocate(BTmat%item)
+      BTmat%item => new_item
+      deallocate(BTmat%A)
+      BTmat%A => new_A
+    endif
   end subroutine sort_and_uniq_rows
 
-  recursive subroutine sort_row(item, vals, ndof2, is, ie)
-    implicit none
-    integer(kind=kint), intent(inout) :: item(:)
-    real(kind=kreal), intent(inout) :: vals(:)
-    integer(kind=kint), intent(in) :: ndof2, is, ie
-    integer(kind=kint) :: center, pivot, left, right, tmp_i
-    real(kind=kreal), allocatable :: tmp_v(:)
-    if (is >= ie) return
-    allocate(tmp_v(ndof2))
-    center = (is + ie) / 2
-    pivot = item(center)
-    left = is
-    right = ie
-    do
-      do while (item(left) < pivot)
-        left = left + 1
-      enddo
-      do while (pivot < item(right))
-        right = right - 1
-      enddo
-      if (left >= right) exit
-      tmp_i = item(left)
-      tmp_v(1:ndof2) = vals(ndof2*(left-1)+1:ndof2*left)
-      item(left) = item(right)
-      vals(ndof2*(left-1)+1:ndof2*left) = vals(ndof2*(right-1)+1:ndof2*right)
-      item(right) = tmp_i
-      vals(ndof2*(right-1)+1:ndof2*right) = tmp_v(1:ndof2)
-      left = left + 1
-      right = right - 1
-    enddo
-    if (is < left-1) call sort_row(item, vals, ndof2, is, left-1)
-    if (right+1 < ie) call sort_row(item, vals, ndof2, right+1, ie)
-    deallocate(tmp_v)
-  end subroutine sort_row
 
-  subroutine uniq_row(item, vals, ndof2, is, ie, ndup)
-    implicit none
-    integer(kind=kint), intent(inout) :: item(:)
-    real(kind=kreal), intent(inout) :: vals(:)
-    integer(kind=kint), intent(in) :: ndof2, is, ie
-    integer(kind=kint), intent(out) :: ndup
-    integer(kind=kint) :: i, j0, k0
-    ndup = 0
-    do i = is+1, ie
-      if (item(i) == item(i-1-ndup)) then
-        j0 = ndof2*(i-1-ndup-1)
-        k0 = ndof2*(i-1)
-        vals(j0+1:j0+ndof2) = vals(j0+1:j0+ndof2) + vals(k0+1:k0+ndof2)
-        !vals(k0+1:k0+ndof2) = 0.0d0
-        ndup = ndup + 1
-      elseif (ndup > 0) then
-        item(i-ndup) = item(i)
-        j0 = ndof2*(i-ndup-1)
-        k0 = ndof2*(i-1)
-        vals(j0+1:j0+ndof2) = vals(k0+1:k0+ndof2)
-      endif
-    enddo
-  end subroutine uniq_row
 
   subroutine hecmw_localmat_add(Amat, Bmat, Cmat)
     implicit none
