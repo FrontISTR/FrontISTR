@@ -151,6 +151,36 @@ contains
 
   end subroutine STF_Beam
 
+  !####################################################################
+  subroutine UpdateST_Beam(etype,nn,ecoord,u,du,section,gausses,QF)
+    integer, intent(in)            :: etype        !< element's type
+    integer, intent(in)            :: nn           !< number of element's nodes
+    real(kind=kreal), intent(in)   :: ecoord(3,nn) !< coordinates of elemental nodes
+    real(kind=kreal), intent(in)   :: u(6,nn)      !< displacement of elemental nodes
+    real(kind=kreal), intent(in)   :: du(6,nn)     !< coordinates of elemental nodes
+    real(kind=kreal), intent(in)   :: section(:)   !< section parameters
+    type(tGaussStatus), intent(in) :: gausses(:)         !< status of Gaussian qudrature points
+    real(kind=kreal), intent(out)  :: QF(nn*6)     !< elemental force matrix
+
+    real(kind=kreal)   :: stiff(nn*6, nn*6), totaldisp(nn*6)
+    integer(kind=kint) :: i, j
+    real(kind=kreal)   :: E,P   !< status of qudrature points
+
+    E = gausses(1)%pMaterial%variables(M_YOUNGS)
+    P = gausses(1)%pMaterial%variables(M_POISSON)
+
+    call STF_Beam(etype,nn,ecoord,section,E,P,STIFF)
+
+    do i=1,nn
+      do j=1,6
+        totaldisp(6*(i-1)+j) = u(j,i) + du(j,i)
+      end do
+    end do
+
+    qf = matmul(stiff,totaldisp)
+
+  end subroutine UpdateST_Beam
+
   ! (Gaku Hashimoto, The University of Tokyo, 2014/02/06) <
   !> Calculate stiff matrix of BEAM elements
   !####################################################################

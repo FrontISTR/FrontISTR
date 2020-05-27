@@ -14,7 +14,7 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Update.f90
   ${CMAKE_CURRENT_LIST_DIR}/readtemp.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_echo.f90
-  ${CMAKE_CURRENT_LIST_DIR}/static_make_result.f90
+  ${CMAKE_CURRENT_LIST_DIR}/make_result.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ass_load.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_output.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_mat_con_contact.f90

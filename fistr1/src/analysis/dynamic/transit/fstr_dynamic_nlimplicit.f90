@@ -44,6 +44,7 @@ contains
     !C-- local variable
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_matrix), pointer :: hecMATmpc
+    type(hecmwST_matrix), pointer :: hecMAT0
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
@@ -52,6 +53,7 @@ contains
     integer(kind=kint) :: kkk0, kkk1
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: n_node_global
+    integer(kind=kint) :: ierr
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: bsize, res, resb
@@ -63,6 +65,7 @@ contains
     resb = 0.0d0
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+    nullify(hecMAT0)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -150,7 +153,19 @@ contains
         endif
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
-          call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+          if (fstrPARAM%nlgeom) then
+            call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+          else
+            if (.not. associated(hecMAT0)) then
+              call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+              allocate(hecMAT0)
+              call hecmw_mat_init(hecMAT0)
+              call hecmw_mat_copy_profile(hecMAT, hecMAT0)
+              call hecmw_mat_copy_val(hecMAT, hecMAT0)
+            else
+              call hecmw_mat_copy_val(hecMAT0, hecMAT)
+            endif
+          endif
 
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
@@ -235,7 +250,7 @@ contains
 
           !res = dsqrt(bsize)/n_node_global
           res = dsqrt(bsize/resb)
-          if( ndof /= 4 ) then
+          if( fstrPARAM%nlgeom .and. ndof /= 4 ) then
             if(hecMESH%my_rank==0) write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
             if(hecMESH%my_rank==0) write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
             if( res<fstrSOLID%step_ctrl(cstep)%converg ) exit
@@ -244,14 +259,18 @@ contains
           !C-- linear solver [A]{X} = {B}
           hecMATmpc%X = 0.0d0
           if( iexit .ne. 1 ) then
-            if( iter == 1 ) then
-              hecMATmpc%Iarray(97) = 2   !Force numerical factorization
-            else
-              hecMATmpc%Iarray(97) = 1   !Need numerical factorization
+            if( fstrPARAM%nlgeom ) then
+              if( iter == 1 ) then
+                hecMATmpc%Iarray(97) = 2   !Force numerical factorization
+              else
+                hecMATmpc%Iarray(97) = 1   !Need numerical factorization
+              endif
+              call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
             endif
-            call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
             call solve_LINEQ(hecMESHmpc,hecMATmpc)
-            call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
+            if( fstrPARAM%nlgeom ) then
+              call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
+            endif
           endif
           call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
@@ -262,6 +281,7 @@ contains
           call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
             &  fstrDYNAMIC%t_delta, iter, fstrDYNAMIC%strainEnergy )
 
+          if(.not. fstrPARAM%nlgeom) exit
           if(ndof == 4) exit
         enddo
 
@@ -380,6 +400,10 @@ contains
 
     deallocate(coord)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+    if (associated(hecMAT0)) then
+      call hecmw_mat_finalize(hecMAT0)
+      deallocate(hecMAT0)
+    endif
   end subroutine fstr_solve_dynamic_nlimplicit
 
   !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.

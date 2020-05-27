@@ -15,6 +15,7 @@ module hecmw_matrix_misc
   public :: hecmw_mat_init
   public :: hecmw_mat_finalize
   public :: hecmw_mat_copy_profile
+  public :: hecmw_mat_copy_val
 
   public :: hecmw_mat_set_iter
   public :: hecmw_mat_get_iter
@@ -258,6 +259,32 @@ contains
     hecMAT%B  = 0.d0
     hecMAT%X  = 0.d0
   end subroutine hecmw_mat_copy_profile
+
+  subroutine hecmw_mat_copy_val( hecMATorg, hecMAT )
+    type(hecmwST_matrix), intent(in) :: hecMATorg
+    type(hecmwST_matrix), intent(inout) :: hecMAT
+    integer(kind=kint) :: ierr
+    integer(kind=kint) :: i
+    ierr = 0
+    if (hecMAT%N    /= hecMATorg%N) ierr = 1
+    if (hecMAT%NP   /= hecMATorg%NP) ierr = 1
+    if (hecMAT%NDOF /= hecMATorg%NDOF) ierr = 1
+    if (hecMAT%NPL  /= hecMATorg%NPL) ierr = 1
+    if (hecMAT%NPU  /= hecMATorg%NPU) ierr = 1
+    if (ierr /= 0) then
+      write(0,*) 'ERROR: hecmw_mat_copy_val: different profile'
+      stop
+    endif
+    do i = 1, size(hecMAT%D)
+      hecMAT%D(i)  = hecMATorg%D(i)
+    enddo
+    do i = 1, size(hecMAT%AL)
+      hecMAT%AL(i) = hecMATorg%AL(i)
+    enddo
+    do i = 1, size(hecMAT%AU)
+      hecMAT%AU(i) = hecMATorg%AU(i)
+    enddo
+  end subroutine hecmw_mat_copy_val
 
   subroutine hecmw_mat_set_iter( hecMAT, iter )
     type(hecmwST_matrix) :: hecMAT

@@ -10,21 +10,31 @@ module m_ElastoPlastic
 
   implicit none
 
+  real(kind=kreal), private, parameter :: Id(6,6) = reshape( &
+    & (/  2.d0/3.d0, -1.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
+    &    -1.d0/3.d0,  2.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
+    &    -1.d0/3.d0, -1.d0/3.d0,  2.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
+    &          0.d0,       0.d0,       0.d0, 0.5d0,  0.d0,  0.d0,   &
+    &          0.d0,       0.d0,       0.d0,  0.d0, 0.5d0,  0.d0,   &
+    &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0, 0.5d0/), &
+    & (/6, 6/))
+
 contains
 
   !> This subroutine calculates elastoplastic constitutive relation
-  subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, D, temperature )
+  subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, plstrain, D, temperature )
     type( tMaterial ), intent(in) :: matl      !< material properties
     integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: stress(6) !< stress
     real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
+    real(kind=kreal), INTENT(IN)  :: plstrain  !< plastic strain
     integer, intent(in)           :: istat     !< plastic state
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
     real(kind=kreal), optional    :: temperature   !> temprature
 
     integer :: i,j,ytype
     logical :: kinematic
-    real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6), De(6,6)
+    real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6), De(6,6), G, dlambda
     real(kind=kreal) :: C1,C2,C3, back(6)
     real(kind=kreal) :: J1,J2,J3, fai, sita, harden, khard, da(6), devia(6)
 
@@ -37,7 +47,7 @@ contains
     kinematic = isKinematicHarden( matl%mtype )
     khard = 0.d0
     if( kinematic ) then
-      back(1:6) = extval(1:6)
+      back(1:6) = extval(2:7)
       khard = calKinematicHarden( matl, extval(1) )
     endif
     if( present( temperature ) ) then
@@ -68,7 +78,21 @@ contains
 
     select case (yType)
       case (0)       ! Mises or. Isotropic
-        a(1:6) = dsqrt(3.d0) * dj2
+        a(1:6) = devia(1:6)/dsqrt(2.d0*J2)
+        G = De(4,4)
+        dlambda = extval(1)-plstrain
+        C3 = dsqrt(3.d0*J2)+3.d0*G*dlambda !trial mises stress
+        C1 = 6.d0*dlambda*G*G/C3
+        dum = 3.d0*G+khard+harden
+        C2 = 6.d0*G*G*(dlambda/C3-1.d0/dum)
+
+        do i=1,6
+          do j=1,6
+            D(i,j) = De(i,j) - C1*Id(i,j) + C2*a(i)*a(j)
+          enddo
+        enddo
+
+        return
       case (1)      ! Mohr-Coulomb
         fai = matl%variables(M_PLCONST3)
         J3 = devia(1)*devia(2)*devia(3)                    &
@@ -129,7 +153,7 @@ contains
     real(kind=kreal) :: eqvs, sita, fai, J1,J2,J3, devia(6)
     real(kind=kreal) :: back(6)
     kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) back(1:6) = extval(1:6)
+    if( kinematic ) back(1:6) = extval(2:7)
 
     ytype = getYieldFunction( matl%mtype )
     J1 = (stress(1)+stress(2)+stress(3))
@@ -308,7 +332,7 @@ contains
     f = 0.0d0
 
     kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) back(1:6) = extval(1:6)
+    if( kinematic ) back(1:6) = extval(2:7)
 
     pstrain = extval(1)
     ytype = getYieldFunction( matl%mtype )
@@ -368,7 +392,7 @@ contains
     real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
     real(kind=kreal) :: sita, fai, dep, trialprn(3)
     real(kind=kreal) :: a,b,siga,sigb,lamab(2),fab(2)
-    real(kind=kreal) :: resi(2,2), invd(2,2), fstat_bak(6)
+    real(kind=kreal) :: resi(2,2), invd(2,2), fstat_bak(7)
     logical          :: right, kinematic, ierr
     real(kind=kreal) :: ftrial, betan, back(6)
 
@@ -381,7 +405,8 @@ contains
     endif
 
     pstrain = plstrain
-    fstat_bak = plstrain
+    if(isKinematicHarden( matl%mtype ))fstat_bak(2:7)= fstat(8:13)
+    fstat_bak(1) = plstrain
     if( present(temp) ) then
       f = calYieldFunc( matl, stress, fstat_bak, temp )
     else
@@ -399,7 +424,7 @@ contains
 
     kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) then
-      back(1:6) = fstat(1:6)
+      back(1:6) = fstat(8:13)
       betan = calCurrKinematic( matl, pstrain )
     endif
 
@@ -456,7 +481,7 @@ contains
       pstrain = pstrain+dlambda
       if( kinematic ) then
         KK = calCurrKinematic( matl, pstrain )
-        fstat(1:6) = back(:)+(KK-betan)*devia(:)/yd
+        fstat(2:7) = back(:)+(KK-betan)*devia(:)/yd
       endif
       devia(:) = (1.d0-3.d0*dlambda*G/yd)*devia(:)
       stress(1:3) = devia(1:3)+J1
@@ -569,6 +594,9 @@ contains
     use mMechGauss
     type(tGaussStatus), intent(inout) :: gauss  ! status of curr gauss point
     gauss%plstrain= gauss%fstatus(1)
+    if(isKinematicHarden(gauss%pMaterial%mtype)) then
+      gauss%fstatus(8:13) =gauss%fstatus(2:7)
+    endif
   end subroutine
 
 end module m_ElastoPlastic

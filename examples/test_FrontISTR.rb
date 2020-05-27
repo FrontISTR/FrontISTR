@@ -275,6 +275,8 @@ when("static/exA")
 ["static/exA","A352.msh","A300.cnt"],
 ["static/exA","A361.msh","A300.cnt","A361_MUMPS_V4_5.log"],
 ["static/exA","A362.msh","A300.cnt"],
+["static/exA","A611.msh","A600.cnt"],
+["static/exA","A641.msh","A600_33.cnt"],
 ["static/exA","A731.msh","A700.cnt","A731_MUMPS_V4_5.log"],
 ["static/exA","A741.msh","A700.cnt","A741_MUMPS_V4_5.log"],
 ["static/exA","A761.msh","A700_33.cnt","A761_MUMPS_V4_5.log"],
@@ -600,6 +602,13 @@ when("heat/exU")
 ["heat/exU","U362.msh","U362.cnt"],
 ["heat/exU","U731.msh","U731.cnt"],
 ["heat/exU","U741.msh","U741.cnt"],
+].each{|param|
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	exit res if res != 0
+}
+when("heat/exU2")
+[
+["heat/exU2","eh1b.msh","eh1b.cnt"],
 ].each{|param|
 	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
 	exit res if res != 0

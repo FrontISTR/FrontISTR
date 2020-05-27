@@ -98,8 +98,9 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
 set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
 set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
+string(TIMESTAMP BUILD_DATE "%Y-%m-%dT%H:%M:%SZ" UTC)
 set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
-mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH GIT_HASH)
+mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH BUILD_DATE GIT_HASH)
 
 #############################################
 # Archtecture and compiler dependent options
@@ -160,27 +161,6 @@ option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
 option(OLD_RES_FORMAT "use old style result file" ${OLD_RES_FORMAT})
 option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
-
-###################
-# -DWITH_MPI
-###################
-if(WITH_MPI AND MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS
-    ${MPI_C_INCLUDE_PATH}
-    ${MPI_CXX_INCLUDE_PATH}
-    ${MPI_Fortran_INCLUDE_PATH})
-
-  list(APPEND FrontISTR_LIBRARIES
-    ${MPI_C_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${MPI_Fortran_LIBRARIES})
-
-else()
-  set(WITH_MPI OFF)
-  set(HECMW_SERIAL ON)
-  list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
-endif()
-mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
 
 ###################
 # -DWITH_OPENMP
@@ -306,6 +286,27 @@ endif()
 if(OLD_RES_FORMAT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOLD_RES_FORMAT")
 endif()
+
+###################
+# -DWITH_MPI
+###################
+if(WITH_MPI AND MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS
+    ${MPI_C_INCLUDE_PATH}
+    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_Fortran_INCLUDE_PATH})
+
+  list(APPEND FrontISTR_LIBRARIES
+    ${MPI_C_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+    ${MPI_Fortran_LIBRARIES})
+
+else()
+  set(WITH_MPI OFF)
+  set(HECMW_SERIAL ON)
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
+endif()
+mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
 
 #############################################
 # Archtecture and compiler dependent options
