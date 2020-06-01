@@ -1773,7 +1773,8 @@ contains
     integer(kind=kint), intent(in) :: cols(cNCOL_ITEM,ncols)
     integer(kind=kint), intent(out) :: map(ncols)
     integer(kind=kint), intent(out) :: n_add_node
-    integer(kind=kint) :: i, lid, rank, llid
+    integer(kind=kint) :: i, j, lid, rank, llid, n_ext_node, idx
+    integer(kind=kint), allocatable :: ext_node(:)
     type (hecmwST_pair_array) :: parray
     !
     call hecmw_pair_array_init(parray, hecMESH%n_node - hecMESH%nn_internal)
@@ -1783,9 +1784,11 @@ contains
     call hecmw_pair_array_sort(parray)
     !
     n_add_node = 0
+    n_ext_node = 0
+    allocate(ext_node(ncols))
     !$omp parallel default(none), &
-      !$omp& private(i,lid,rank,llid), &
-      !$omp& shared(ncols,cols,hecMESH,map,parray), &
+      !$omp& private(i,lid,rank,llid,idx,j), &
+      !$omp& shared(ncols,hecMESH,cols,map,n_ext_node,ext_node,parray), &
       !$omp& reduction(+:n_add_node)
     !$omp do
     do i = 1, ncols
@@ -1795,18 +1798,31 @@ contains
       if (rank == hecMESH%my_rank) then  !   internal: set mapping
         map(i) = lid
       else                               !   external
-        !     search node_ID in external nodes
-        llid = hecmw_pair_array_find_id(parray, lid, rank)
-        if (llid > 0) then  !     found: set mapping
-          map(i) = llid
-        else                !     not found
-          map(i) = -1
-          n_add_node = n_add_node + 1
-        endif
+        !$omp atomic capture
+        n_ext_node = n_ext_node + 1
+        idx = n_ext_node
+        !$omp end atomic
+        ext_node(idx) = i
+      endif
+    enddo
+    !$omp end do
+    !$omp do
+    do j = 1, n_ext_node
+      i = ext_node(j)
+      lid = cols(cLID,i)
+      rank = cols(cRANK,i)
+      !     search node_ID in external nodes
+      llid = hecmw_pair_array_find_id(parray, lid, rank)
+      if (llid > 0) then  !     found: set mapping
+        map(i) = llid
+      else                !     not found
+        map(i) = -1
+        n_add_node = n_add_node + 1
       endif
     enddo
     !$omp end do
     !$omp end parallel
+    deallocate(ext_node)
     !
     call hecmw_pair_array_finalize(parray)
   end subroutine map_present_nodes
