@@ -2342,10 +2342,10 @@ contains
     allocate(cnt(nr))
     ndup_tot = 0
     !$omp parallel do default(none), &
-    !$omp& schedule(dynamic,1), &
-    !$omp& private(irow,is,ie,ndup), &
-    !$omp& shared(nr,BTmat,sort_item,cnt), &
-    !$omp& reduction(+:ndup_tot)
+      !$omp& schedule(dynamic,1), &
+      !$omp& private(irow,is,ie,ndup), &
+      !$omp& shared(nr,BTmat,sort_item,cnt), &
+      !$omp& reduction(+:ndup_tot)
     do irow = 1, nr
       is = BTmat%index(irow-1)+1
       ie = BTmat%index(irow)
@@ -2386,9 +2386,9 @@ contains
     new_A(:) = 0.d0
     ! copy/add value from old A to new A
     !$omp parallel do default(none), &
-    !$omp& schedule(dynamic,1), &
-    !$omp& private(irow,is,ie,is_new,ie_new,i,i_new,js,je,js_new,je_new), &
-    !$omp& shared(nr,BTmat,new_index,new_item,ndof2,new_A)
+      !$omp& schedule(dynamic,1), &
+      !$omp& private(irow,is,ie,is_new,ie_new,i,i_new,js,je,js_new,je_new), &
+      !$omp& shared(nr,BTmat,new_index,new_item,ndof2,new_A)
     do irow = 1, nr
       is = BTmat%index(irow-1)+1
       ie = BTmat%index(irow)
@@ -3245,8 +3245,8 @@ contains
     allocate(Cmat%index(0:nr))
     Cmat%index(0) = 0
     !$omp parallel default(none), &
-    !$omp& private(iw,i,icnt,js,je,j,jj,ks,ke,k,kk,l), &
-    !$omp& shared(nr,nc,Amat,Bmat,Cmat)
+      !$omp& private(iw,i,icnt,js,je,j,jj,ks,ke,k,kk,l), &
+      !$omp& shared(nr,nc,Amat,Bmat,Cmat)
     allocate(iw(nc))
     !$omp do
     do i = 1, nr
@@ -3284,8 +3284,8 @@ contains
     allocate(Cmat%A(ndof2 * nnz))
     Cmat%A(:) = 0.0d0
     !$omp parallel default(none), &
-    !$omp& private(i,icnt,l0,js,je,j,jj,Ap,ks,ke,k,kk,Bp,ll,l,Cp), &
-    !$omp& shared(nr,Cmat,Amat,Bmat,ndof2,ndof)
+      !$omp& private(i,icnt,l0,js,je,j,jj,Ap,ks,ke,k,kk,Bp,ll,l,Cp), &
+      !$omp& shared(nr,Cmat,Amat,Bmat,ndof2,ndof)
     !$omp do
     do i = 1, nr
       icnt = 0
