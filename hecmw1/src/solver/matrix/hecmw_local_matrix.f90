@@ -2858,7 +2858,7 @@ contains
     ! check_external_nz_cols (by profile (not number))
     allocate(is_nz_col(nn_ext))
     is_nz_col(:) = 0
-    do i = 1, BKmat%index(BKmat%nr)
+    do i = 1, BKmat%index(nn_int)
       icol = BKmat%item(i)
       if (icol > nn_int) is_nz_col(icol - nn_int) = 1
     enddo
