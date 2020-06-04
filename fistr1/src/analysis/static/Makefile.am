@@ -92,7 +92,7 @@ OBJSF = \
         fstr_Update.@f90objfilepostfix@ \
         readtemp.@f90objfilepostfix@ \
         static_echo.@f90objfilepostfix@ \
-        static_make_result.@f90objfilepostfix@ \
+        make_result.@f90objfilepostfix@ \
         fstr_ass_load.@f90objfilepostfix@ \
         static_output.@f90objfilepostfix@ \
         fstr_mat_con_contact.@f90objfilepostfix@ \

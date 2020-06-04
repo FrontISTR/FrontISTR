@@ -22,6 +22,12 @@ RUN apt-get update \
     ruby               \
     trilinos-all-dev   \
  && apt-get clean      \
+ && git clone --depth=1  https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
+ && cd REVOCAP_Mesh \
+ && make -j4 Refiner \
+ && find lib -type f -name "libRcapRefiner*" -exec cp {} /usr/lib/ \; \
+ && find . -type f -name "rcapRefiner.h" -exec cp {} /usr/include/ \; \
+ && cd ../ && rm -fr ./REVOCAP_Mesh \
  && rm -rf /var/lib/apt/lists/*
 
 FROM build AS document

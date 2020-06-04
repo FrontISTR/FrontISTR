@@ -649,7 +649,7 @@ contains
     read_user_matl = -1
 
     fval =0.d0
-    if( fstr_ctrl_get_data_array_ex( ctrl, 1, 'rrrrrrrrrr ', fval(1,:), fval(2,:), fval(3,:),  &
+    if( fstr_ctrl_get_data_array_ex( ctrl, 'rrrrrrrrrr ', fval(1,:), fval(2,:), fval(3,:),  &
       fval(4,:), fval(5,:), fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) ) /= 0 ) return
     do i=1,10
       do j=1,10
