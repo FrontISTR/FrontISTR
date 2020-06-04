@@ -18,7 +18,7 @@ contains
     implicit none
     integer(kind=kint) :: ISTEP, ITM, incr, iterALL, i, inod, mnod, max_step, tstep, interval, bup_n_dof
     integer(kind=kint) :: total_step
-    real(kind=kreal)   :: start_time, delta_time_base, delta_time, current_time, next_time, end_time, DELMAX, DELMIN
+    real(kind=kreal)   :: start_time, delta_time_base, delta_time, current_time, next_time, total_time, end_time, DELMAX, DELMIN
     real(kind=kreal)   :: val, CHK, tmpmax, dltmp, tmpmax_myrank, remain_time
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
@@ -34,7 +34,10 @@ contains
     if(ISTEP == 1)then
       start_time = 0.0d0
     else
-      start_time = fstrHEAT%STEP_EETIME(ISTEP - 1)
+      start_time = 0.0d0
+      do i = 1, ISTEP - 1
+        start_time = start_time + fstrHEAT%STEP_EETIME(i)
+      enddo
     endif
 
     delta_time_base = fstrHEAT%STEP_DLTIME(ISTEP)
@@ -46,7 +49,8 @@ contains
     hecMAT%NDOF = 1
     hecMAT%Iarray(98) = 1 !Assmebly complete
     hecMAT%X = 0.0d0
-    current_time = start_time
+    current_time = 0.0d0
+    next_time = 0.0d0
 
     if(fstrHEAT%is_steady == 1)then
       fstrHEAT%beta = 1.0d0
@@ -77,19 +81,20 @@ contains
       if( fstrHEAT%is_steady == 1 ) then
         is_end = .true.
       else
-        if( (end_time - next_time) / (end_time - start_time) < 1.d-12 ) is_end = .true.
+        if( (end_time - next_time) / end_time < 1.d-12 ) is_end = .true.
       endif
       if( 0.0d0 < DELMIN .and. fstrHEAT%timepoint_id > 0 ) then
         outflag = is_end .or. is_at_timepoints(next_time, 0.0d0, fstrPARAM%timepoints(fstrHEAT%timepoint_id))
       else
         outflag = is_end
       endif
+      total_time = start_time + next_time
 
       if( hecMESH%my_rank.eq.0 ) then
-        write(IMSG,"(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", total time: ", &
-        & next_time, ", delta t: ", delta_time
-        write(*,   "(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", total time: ", &
-        & next_time, ", delta t: ", delta_time
+        write(IMSG,"(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", current time: ", &
+        & current_time, ", delta t: ", delta_time
+        write(*,   "(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", current time: ", &
+        & current_time, ", delta t: ", delta_time
       endif
 
       if(delta_time_base < DELMIN .and. (.not. outflag))then
@@ -97,7 +102,7 @@ contains
         call hecmw_abort(hecmw_comm_get_comm())
       endif
 
-      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, next_time, delta_time)
+      call heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, total_time, delta_time)
 
       if(0.0d0 < DELMIN)then
         tmpmax = 0.0d0
