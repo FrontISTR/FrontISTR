@@ -22,8 +22,6 @@
 
 #include "hecmw_control.h"
 #include "hecmw_result.h"
-#include "hecmw_result_io_bin.h"
-#include "hecmw_result_io_txt.h"
 #include "hecmw_io_dist.h"
 #include "hecmw_io_get_mesh.h"
 
