@@ -8,6 +8,7 @@
 #include <errno.h>
 #include "hecmw_struct.h"
 #include "hecmw_result.h"
+#include "hecmw_result_io_txt.h"
 #include "hecmw_util.h"
 #include "hecmw_io.h"
 
