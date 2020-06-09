@@ -24,7 +24,7 @@ contains
       call hecmw_restart_read_real(restart_time)
       call hecmw_restart_read_real(fstrHEAT%TEMP0)
       call hecmw_restart_close()
-      tstep = restart_step(1)
+      tstep = restart_step(1) + 1
       tt = restart_time(1)
 
       do i = 1, hecMESH%n_node
