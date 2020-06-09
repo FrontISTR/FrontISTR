@@ -51,6 +51,7 @@ contains
     hecMAT%X = 0.0d0
     current_time = 0.0d0
     next_time = 0.0d0
+    total_time = start_time + next_time
 
     if(fstrHEAT%is_steady == 1)then
       fstrHEAT%beta = 1.0d0
@@ -72,23 +73,23 @@ contains
         delta_time_base = end_time - current_time
       endif
       if( 0.0d0 < DELMIN .and. fstrHEAT%timepoint_id > 0 ) then
-        remain_time = get_remain_to_next_timepoints(current_time, 0.0d0, fstrPARAM%timepoints(fstrHEAT%timepoint_id))
+        remain_time = get_remain_to_next_timepoints(total_time, 0.0d0, fstrPARAM%timepoints(fstrHEAT%timepoint_id))
         delta_time = dmin1(delta_time_base, remain_time)
       else
         delta_time = delta_time_base
       endif
       next_time = current_time + delta_time
+      total_time = start_time + next_time
       if( fstrHEAT%is_steady == 1 ) then
         is_end = .true.
       else
         if( (end_time - next_time) / end_time < 1.d-12 ) is_end = .true.
       endif
       if( 0.0d0 < DELMIN .and. fstrHEAT%timepoint_id > 0 ) then
-        outflag = is_end .or. is_at_timepoints(next_time, 0.0d0, fstrPARAM%timepoints(fstrHEAT%timepoint_id))
+        outflag = is_end .or. is_at_timepoints(total_time, 0.0d0, fstrPARAM%timepoints(fstrHEAT%timepoint_id))
       else
         outflag = is_end
       endif
-      total_time = start_time + next_time
 
       if( hecMESH%my_rank.eq.0 ) then
         write(IMSG,"(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", current time: ", &
