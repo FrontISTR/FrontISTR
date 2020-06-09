@@ -6,7 +6,7 @@
 module m_heat_solve_TRAN
 contains
 
-  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,total_step )
+  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,total_step,current_time )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -16,10 +16,10 @@ contains
     use m_solve_lineq
     use m_heat_io
     implicit none
-    integer(kind=kint) :: ISTEP, ITM, incr, iterALL, i, inod, mnod, max_step, tstep, interval, bup_n_dof
+    integer(kind=kint) :: ISTEP, iterALL, i, inod, mnod
     integer(kind=kint) :: total_step
     real(kind=kreal)   :: start_time, delta_time_base, delta_time, current_time, next_time, total_time, end_time, DELMAX, DELMIN
-    real(kind=kreal)   :: val, CHK, tmpmax, dltmp, tmpmax_myrank, remain_time
+    real(kind=kreal)   :: tmpmax, dltmp, tmpmax_myrank, remain_time
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
     type(hecmwST_result_data) :: fstrRESULT
@@ -39,6 +39,7 @@ contains
         start_time = start_time + fstrHEAT%STEP_EETIME(i)
       enddo
     endif
+    total_time = start_time + current_time
 
     delta_time_base = fstrHEAT%STEP_DLTIME(ISTEP)
     end_time = fstrHEAT%STEP_EETIME(ISTEP)
@@ -49,9 +50,6 @@ contains
     hecMAT%NDOF = 1
     hecMAT%Iarray(98) = 1 !Assmebly complete
     hecMAT%X = 0.0d0
-    current_time = 0.0d0
-    next_time = 0.0d0
-    total_time = start_time + next_time
 
     if(fstrHEAT%is_steady == 1)then
       fstrHEAT%beta = 1.0d0
@@ -59,11 +57,9 @@ contains
       fstrHEAT%beta = 0.5d0
     endif
 
-    call heat_input_restart(fstrHEAT, hecMESH, total_step, start_time)
-
     if(fstrHEAT%is_steady /= 1 .and. total_step == 1) then
-      call heat_output_result(hecMESH, fstrHEAT, 0, current_time, .true.)
-      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, 0, current_time, .true.)
+      call heat_output_result(hecMESH, fstrHEAT, 0, total_time, .true.)
+      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, 0, total_time, .true.)
     endif
 
     !C--------------------   START TRANSIET LOOP   ------------------------
@@ -80,11 +76,13 @@ contains
       endif
       next_time = current_time + delta_time
       total_time = start_time + next_time
+
       if( fstrHEAT%is_steady == 1 ) then
         is_end = .true.
       else
         if( (end_time - next_time) / end_time < 1.d-12 ) is_end = .true.
       endif
+
       if( 0.0d0 < DELMIN .and. fstrHEAT%timepoint_id > 0 ) then
         outflag = is_end .or. is_at_timepoints(total_time, 0.0d0, fstrPARAM%timepoints(fstrHEAT%timepoint_id))
       else
@@ -98,7 +96,7 @@ contains
         & total_time, ", delta t: ", delta_time
       endif
 
-      if(delta_time_base < DELMIN .and. (.not. outflag))then
+      if(delta_time_base < DELMIN .and. (.not. is_end))then
         if(hecMESH%my_rank == 0) write(IMSG,*) ' !!! DELTA TIME EXCEEDED TOLERANCE OF TIME INCREMENT'
         call hecmw_abort(hecmw_comm_get_comm())
       endif
@@ -142,7 +140,7 @@ contains
       call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, total_time)
       call heat_output_result(hecMESH, fstrHEAT, total_step, total_time, outflag)
       call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, total_time, outflag)
-      call heat_output_restart(hecMESH, fstrHEAT, total_step, outflag, total_time)
+      call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, next_time, is_end)
 
       total_step = total_step + 1
       current_time = next_time
