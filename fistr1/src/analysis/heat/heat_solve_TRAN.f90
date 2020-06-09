@@ -92,10 +92,10 @@ contains
       endif
 
       if( hecMESH%my_rank.eq.0 ) then
-        write(IMSG,"(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", current time: ", &
-        & current_time, ", delta t: ", delta_time
-        write(*,   "(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", current time: ", &
-        & current_time, ", delta t: ", delta_time
+        write(IMSG,"(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", total time: ", &
+        & total_time, ", delta t: ", delta_time
+        write(*,   "(a,i8,a,1pe12.5,a,1pe12.5)") " ** Increment No. :", total_step, ", total time: ", &
+        & total_time, ", delta t: ", delta_time
       endif
 
       if(delta_time_base < DELMIN .and. (.not. outflag))then
@@ -139,10 +139,10 @@ contains
         fstrHEAT%TEMP0(i) = fstrHEAT%TEMP(i)
       enddo
 
-      call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, next_time)
-      call heat_output_result(hecMESH, fstrHEAT, total_step, next_time, outflag)
-      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, next_time, outflag)
-      call heat_output_restart(hecMESH, fstrHEAT, total_step, outflag, next_time)
+      call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, total_time)
+      call heat_output_result(hecMESH, fstrHEAT, total_step, total_time, outflag)
+      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, total_time, outflag)
+      call heat_output_restart(hecMESH, fstrHEAT, total_step, outflag, total_time)
 
       total_step = total_step + 1
       current_time = next_time
