@@ -337,7 +337,7 @@ static int bin_output_result_data(FILE *fp) {
 /*---------------------------------------------------------------------------*/
 
 int HECMW_result_write_bin_by_fname(char *filename) {
-  FILE *fp;
+  FILE *fp = NULL;
 
   if (HECMW_ctrl_is_subdir()) {
     if (HECMW_ctrl_make_subdir(filename)) {
@@ -649,7 +649,7 @@ static int bin_output_result_data_ST(struct hecmwST_result_data *result,
 int HECMW_result_write_bin_ST_by_fname(char *filename,
                                        struct hecmwST_result_data *result,
                                        int n_node, int n_elem, char *header, char *comment) {
-  FILE *fp;
+  FILE *fp = NULL;
 
   if (HECMW_ctrl_is_subdir()) {
     if (HECMW_ctrl_make_subdir(filename)) {

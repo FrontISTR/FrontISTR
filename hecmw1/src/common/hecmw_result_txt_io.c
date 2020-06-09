@@ -332,7 +332,7 @@ static int output_result_data(FILE *fp) {
 /*---------------------------------------------------------------------------*/
 
 int HECMW_result_write_txt_by_fname(char *filename) {
-  FILE *fp;
+  FILE *fp = NULL;
 
   if (HECMW_ctrl_is_subdir()) {
     if (HECMW_ctrl_make_subdir(filename)) {
@@ -403,7 +403,7 @@ static int output_result_header_ST(struct hecmwST_result_data *result, char *hea
 
 
 static int output_result_global_ST(struct hecmwST_result_data *result, char *comment, FILE *fp) {
-  int i,j,k,n,m,rc,len;
+  int i,j,k,n,rc,len;
   char *p,*q;
   char comment_line[HECMW_MSG_LEN+1];
 
@@ -508,9 +508,7 @@ static int output_result_global_ST(struct hecmwST_result_data *result, char *com
 
 static int output_result_dataheader_ST(struct hecmwST_result_data *result,
                                        int n_node, int n_elem, FILE *fp) {
-  int rc,len;
-  char *p,*q;
-  char head[HECMW_HEADER_LEN+1];
+  int rc;
 
   /* n_node, n_elem */
   rc = fprintf(fp, "%d %d\n", n_node, n_elem);
@@ -688,7 +686,7 @@ static int output_result_data_ST(struct hecmwST_result_data *result, int n_node,
 int HECMW_result_write_txt_ST_by_fname(char *filename,
                                        struct hecmwST_result_data *result,
                                        int n_node, int n_elem, char *header, char *comment) {
-  FILE *fp;
+  FILE *fp = NULL;
 
   if (HECMW_ctrl_is_subdir()) {
     if (HECMW_ctrl_make_subdir(filename)) {
@@ -756,7 +754,6 @@ static int input_result_header(struct hecmwST_result_data *result, FILE *fp) {
 static int input_result_global(struct hecmwST_result_data *result, FILE *fp) {
 #define DELIM " \n"
   int i,rc,n;
-  int label_counter;
   char *p,*buf;
 
   /* comment */
