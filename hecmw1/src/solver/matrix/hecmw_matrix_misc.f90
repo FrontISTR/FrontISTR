@@ -103,6 +103,7 @@ module hecmw_matrix_misc
 
   public :: hecmw_mat_diag_max
   public :: hecmw_mat_recycle_precond_setting
+  public :: hecmw_mat_substitute
 
   integer, parameter :: IDX_I_ITER               = 1
   integer, parameter :: IDX_I_METHOD             = 2

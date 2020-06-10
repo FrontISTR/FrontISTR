@@ -668,7 +668,7 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_matrix), intent(in) :: BTtKT
     integer :: nr, nc, ndof, ndof2, i, nl, nu, js, je, j, jj
-    integer :: ksl, ksu, k, idof, idx
+    integer :: ksl, ksu, k
 
     nr=BTtKT%nr
     nc=BTtKT%nc
@@ -2432,9 +2432,8 @@ contains
     type (hecmwST_local_matrix), intent(in) :: Amat
     type (hecmwST_local_matrix), intent(in) :: Bmat
     type (hecmwST_local_matrix), intent(out) :: Cmat
-    integer(kind=kint) :: ndof, ndof2, nr, nc, i, icnt, js, je, j, jcol, idx, i0, ks, ke, k, kcol
+    integer(kind=kint) :: ndof, ndof2, nr, nc, i, icnt, js, je, j, jcol, idx, i0, k
     integer(kind=kint), allocatable :: iw(:)
-    logical :: fg_found
     if (Amat%ndof /= Bmat%ndof) stop 'ERROR: hecmw_localmat_add: non-matching ndof'
     ndof = Amat%ndof
     ndof2 = ndof*ndof
@@ -3224,7 +3223,7 @@ contains
     type (hecmwST_local_matrix), intent(in) :: Bmat
     type (hecmwST_local_matrix), intent(out) :: Cmat
     integer(kind=kint) :: ndof, ndof2, nr, nc, nnz, i, icnt
-    integer(kind=kint) :: js, je, j, jj, ks, ke, k, kk, ls, le, l, ll, l0
+    integer(kind=kint) :: js, je, j, jj, ks, ke, k, kk, l, ll, l0
     integer(kind=kint), allocatable :: iw(:)
     real(kind=kreal), pointer :: Ap(:), Bp(:), Cp(:)
     real(kind=kreal) :: t0, t1

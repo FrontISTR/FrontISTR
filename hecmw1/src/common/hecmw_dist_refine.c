@@ -718,10 +718,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
     int etype, istart, iend, n_elem, etype_rcap, nn;
     size_t n_elem_ref;
     int *elem_node_item;
-    int ndiv, ierror;
     etype = mesh->elem_type_item[i];
-    ndiv  = get_elem_ndiv(etype, &ierror);
-    if (ierror) return HECMW_ERROR;
     istart = mesh->elem_type_index[i];
     iend   = mesh->elem_type_index[i + 1];
     n_elem = iend - istart;
@@ -762,7 +759,14 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
         n_elem /= 2;
       }
     }
-    HECMW_assert(n_elem_ref == n_elem * ndiv);
+#ifdef DEBUG
+    {
+      int ndiv, ierror;
+      ndiv  = get_elem_ndiv(etype, &ierror);
+      if (ierror) return HECMW_ERROR;
+      HECMW_assert(n_elem_ref == n_elem * ndiv);
+    }
+#endif
     n_elem_ref_tot += n_elem_ref;
     nn = HECMW_get_max_node(etype);
     n_enode_ref_tot += n_elem_ref * nn;
@@ -2009,7 +2013,6 @@ static void write_elem_with_mismatching_refinement(const struct hecmwST_local_me
     n_shared_elem_node = 0;
     for (j = 0; j < n_shared_elem; j++) {
       int eid = HECMW_varray_int_get(shared + i, j);
-      int etype = ref_mesh->elem_type[eid-1];
       int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid-1];
       int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
       for (k = 0; k < nn; k++) {
@@ -2090,7 +2093,6 @@ static void write_elem_with_mismatching_refinement(const struct hecmwST_local_me
       }
       if (is_error) {
         int eid = HECMW_varray_int_get(shared + i, j);
-        int etype = ref_mesh->elem_type[eid-1];
         int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid-1];
         int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
         HECMW_log(HECMW_LOG_ERROR, "elem local ID: %d\n", eid);
@@ -2753,8 +2755,7 @@ static int rebuild_comm_tables(const struct hecmwST_local_mesh *mesh,
 }
 
 static int check_comm_table_len(const struct hecmwST_local_mesh *ref_mesh) {
-  int len_tot;
-  int i, j, irank, js, je, len, tag, nsend;
+  int i, irank, js, je, len, tag, nsend;
   HECMW_Request *requests;
   HECMW_Status *statuses;
   HECMW_Comm comm;
@@ -2765,13 +2766,13 @@ static int check_comm_table_len(const struct hecmwST_local_mesh *ref_mesh) {
 
   HECMW_log(HECMW_LOG_DEBUG, "Started checking communication tables...\n");
 
+  comm = HECMW_comm_get_comm();
+
   send_buf = (int *)HECMW_malloc(sizeof(int) * ref_mesh->n_neighbor_pe);
   if (send_buf == 0) {
     HECMW_set_error(errno, "");
     HECMW_abort(comm);
   }
-
-  comm = HECMW_comm_get_comm();
 
   requests = (HECMW_Request *)HECMW_malloc(sizeof(HECMW_Request) *
                                            ref_mesh->n_neighbor_pe);
@@ -2858,7 +2859,7 @@ static int check_comm_table_len(const struct hecmwST_local_mesh *ref_mesh) {
 static int rebuild_ID_external(struct hecmwST_local_mesh *ref_mesh) {
   int len_tot;
   int *sendbuf, *recvbuf, *srbuf;
-  int i, j, irank, js, je, len, nid, cnt, tag, nsend, rank, lid;
+  int i, j, irank, js, je, len, nid, tag, nsend, rank, lid;
   int *item_p, *sendbuf_p, *recvbuf_p, *srbuf_p;
   HECMW_Request *requests;
   HECMW_Status *statuses;

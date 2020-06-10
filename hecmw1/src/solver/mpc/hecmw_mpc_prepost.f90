@@ -207,8 +207,7 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
-    real(kind=kreal) :: time_dumm
-    integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
+    integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
