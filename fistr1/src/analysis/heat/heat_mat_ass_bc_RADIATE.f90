@@ -26,8 +26,8 @@ contains
     type(hecmwST_local_mesh) :: hecMESH
 
     real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20)
-    real(kind=kreal)   :: term1(64), term2(8)
-    integer(kind=kint) :: nodLocal(20), nsuf(8)
+    real(kind=kreal)   :: term1(64), term2(20), stiff(8,8)
+    integer(kind=kint) :: nodLocal(20), nsuf(8), nodSurf(8)
 
     TZERO = hecMESH%zero_temp
     !C
@@ -108,30 +108,25 @@ contains
         enddo
       endif
       !C
-      ic = 0
       do ip = 1, mm
-        inod = nodLOCAL(nsuf(ip))
+        nodSurf(ip) = nodLOCAL(nsuf(ip))
+      end do
+      !C
+      ic = 0
+      stiff = 0.d0
+      do ip = 1, mm
         do jp = 1, mm
-          jnod = nodLOCAL(nsuf(jp))
           ic = ic + 1
-          if( jnod.gt.inod ) then
-            isU = hecMAT%indexU(inod-1) + 1
-            ieU = hecMAT%indexU(inod)
-            do ik = isU, ieU
-              if( hecMAT%itemU(ik).eq.jnod ) hecMAT%AU(ik) = hecMAT%AU(ik) - term1(ic)
-            enddo
-          elseif( jnod.lt.inod ) then
-            isL = hecMAT%indexL(inod-1) + 1
-            ieL = hecMAT%indexL(inod)
-            do ik = isL, ieL
-              if( hecMAT%itemL(ik).eq.jnod ) hecMAT%AL(ik) = hecMAT%AL(ik) - term1(ic)
-            enddo
-          else
-            hecMAT%D(inod) = hecMAT%D(inod) - term1(ic)
-            hecMAT%B(jnod) = hecMAT%B(jnod) - term2(jp)
-          endif
+          stiff(ip,jp) = -term1(ic)
         enddo
       enddo
+      !C
+      call hecmw_mat_ass_elem(hecMAT, mm, nodSurf, stiff)
+      !C
+      do ip = 1, mm
+        !$omp atomic
+        hecMAT%B(nodSurf(ip)) = hecMAT%B(nodSurf(ip)) - term2(ip)
+      end do
       !C
     enddo
 
