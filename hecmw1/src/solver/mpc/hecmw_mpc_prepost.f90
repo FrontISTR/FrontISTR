@@ -16,6 +16,7 @@ module hecmw_mpc_prepost
   public :: hecmw_mpc_mat_init
   public :: hecmw_mpc_mat_init_explicit
   public :: hecmw_mpc_mat_finalize
+  public :: hecmw_mpc_mat_finalize_explicit
   public :: hecmw_mpc_mat_ass
   public :: hecmw_mpc_trans_rhs
   public :: hecmw_mpc_tback_sol
@@ -30,10 +31,11 @@ contains
   !C*** hecmw_mpc_mat_init
   !C***
   !C
-  subroutine hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
+  subroutine hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     implicit none
-    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    type (hecmwST_local_mesh), intent(inout), target :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
 
@@ -41,6 +43,7 @@ contains
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
 
     if (totalmpc == 0) then
+      hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
       return
     endif
@@ -66,10 +69,14 @@ contains
 
     select case (MPC_METHOD)
     case (1)  ! penalty
+      hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
     case (2)  ! MPCCG
+      hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
     case (3)  ! elimination
+      allocate(hecMESHmpc)
+      call hecmw_mpc_mesh_copy(hecMESH, hecMESHmpc)
       allocate(hecMATmpc)
       call hecmw_mat_init(hecMATmpc)
     end select
@@ -83,7 +90,7 @@ contains
   !C
   subroutine hecmw_mpc_mat_init_explicit(hecMESH, hecMAT, hecMATmpc)
     implicit none
-    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    type (hecmwST_local_mesh), intent(inout), target :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
     type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD
@@ -117,7 +124,49 @@ contains
   !C*** hecmw_mpc_mat_finalize
   !C***
   !C
-  subroutine hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
+  subroutine hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
+    type (hecmwST_matrix), pointer :: hecMATmpc
+    integer(kind=kint) :: totalmpc, MPC_METHOD
+
+    totalmpc = hecMESH%mpc%n_mpc
+    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+
+    if (totalmpc == 0) then
+      nullify(hecMESHmpc)
+      nullify(hecMATmpc)
+      return
+    endif
+
+    MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
+
+    select case (MPC_METHOD)
+    case (1)  ! penalty
+      nullify(hecMESHmpc)
+      nullify(hecMATmpc)
+    case (2) ! MPCCG
+      nullify(hecMESHmpc)
+      nullify(hecMATmpc)
+    case (3) ! elimination
+      call hecmw_mpc_mesh_free(hecMESHmpc)
+      deallocate(hecMESHmpc)
+      nullify(hecMESHmpc)
+      call hecmw_mat_finalize(hecMATmpc)
+      deallocate(hecMATmpc)
+      nullify(hecMATmpc)
+    end select
+
+  end subroutine hecmw_mpc_mat_finalize
+
+  !C
+  !C***
+  !C*** hecmw_mpc_mat_finalize_explicit
+  !C***
+  !C
+  subroutine hecmw_mpc_mat_finalize_explicit(hecMESH, hecMAT, hecMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in) :: hecMAT
@@ -145,20 +194,20 @@ contains
       nullify(hecMATmpc)
     end select
 
-  end subroutine hecmw_mpc_mat_finalize
+  end subroutine hecmw_mpc_mat_finalize_explicit
 
   !C
   !C***
   !C*** hecmw_mpc_mat_ass
   !C***
   !C
-  subroutine hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+  subroutine hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     implicit none
-    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
-    real(kind=kreal) :: time_dumm
-    integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
+    integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
@@ -175,7 +224,7 @@ contains
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: MPC-CG"
     case (3)  ! elimination
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
-      call hecmw_trimatmul_TtKT_mpc(hecMESH, hecMAT, hecMATmpc)
+      call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, hecMAT, hecMATmpc)
     end select
 
   end subroutine hecmw_mpc_mat_ass
@@ -487,4 +536,75 @@ contains
     endif
   end subroutine hecmw_tback_x
 
+  subroutine hecmw_mpc_mesh_copy(src, dst)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: src
+    type (hecmwST_local_mesh), intent(out) :: dst
+    dst%zero          = src%zero
+    dst%MPI_COMM      = src%MPI_COMM
+    dst%PETOT         = src%PETOT
+    dst%PEsmpTOT      = src%PEsmpTOT
+    dst%my_rank       = src%my_rank
+    dst%n_subdomain   = src%n_subdomain
+    dst%n_node        = src%n_node
+    dst%nn_internal   = src%nn_internal
+    dst%n_elem        = src%n_elem
+    dst%ne_internal   = src%ne_internal
+    dst%n_elem_type   = src%n_elem_type
+    dst%n_dof         = src%n_dof
+    dst%n_neighbor_pe = src%n_neighbor_pe
+    if (src%n_neighbor_pe > 1) then
+      allocate(dst%neighbor_pe(dst%n_neighbor_pe))
+      dst%neighbor_pe(:) = src%neighbor_pe(:)
+      allocate(dst%import_index(0:dst%n_neighbor_pe))
+      dst%import_index(:)= src%import_index(:)
+      allocate(dst%export_index(0:dst%n_neighbor_pe))
+      dst%export_index(:)= src%export_index(:)
+      allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
+      dst%import_item(:) = src%import_item(:)
+      allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
+      dst%export_item(:) = src%export_item(:)
+    endif
+    allocate(dst%global_node_ID(dst%n_node))
+    dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
+    allocate(dst%node_ID(2*dst%n_node))
+    dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*dst%n_node)
+    allocate(dst%elem_type_item(dst%n_elem_type))
+    dst%elem_type_item(:) = src%elem_type_item(:)
+    !
+    dst%mpc%n_mpc =  src%mpc%n_mpc
+    dst%mpc%mpc_index => src%mpc%mpc_index
+    dst%mpc%mpc_item => src%mpc%mpc_item
+    dst%mpc%mpc_dof => src%mpc%mpc_dof
+    dst%mpc%mpc_val => src%mpc%mpc_val
+    dst%mpc%mpc_const => src%mpc%mpc_const
+    !
+    dst%node_group%n_grp = src%node_group%n_grp
+    dst%node_group%n_bc = src%node_group%n_bc
+    dst%node_group%grp_name => src%node_group%grp_name
+    dst%node_group%grp_index => src%node_group%grp_index
+    dst%node_group%grp_item => src%node_group%grp_item
+    dst%node_group%bc_grp_ID => src%node_group%bc_grp_ID
+    dst%node_group%bc_grp_type => src%node_group%bc_grp_type
+    dst%node_group%bc_grp_index => src%node_group%bc_grp_index
+    dst%node_group%bc_grp_dof => src%node_group%bc_grp_dof
+    dst%node_group%bc_grp_val => src%node_group%bc_grp_val
+    !
+    dst%node      => src%node
+  end subroutine hecmw_mpc_mesh_copy
+
+  subroutine hecmw_mpc_mesh_free(hecMESH)
+    implicit none
+    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    if (hecMESH%n_neighbor_pe > 1) then
+      deallocate(hecMESH%neighbor_pe)
+      deallocate(hecMESH%import_index)
+      deallocate(hecMESH%export_index)
+      deallocate(hecMESH%import_item)
+      deallocate(hecMESH%export_item)
+    endif
+    deallocate(hecMESH%global_node_ID)
+    deallocate(hecMESH%node_ID)
+    deallocate(hecMESH%elem_type_item)
+  end subroutine hecmw_mpc_mesh_free
 end module hecmw_mpc_prepost

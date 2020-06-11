@@ -6,7 +6,7 @@
 module m_heat_solve_main
 contains
 
-  subroutine heat_solve_main(hecMESH, hecMAT, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, next_time, delta_time)
+  subroutine heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, next_time, delta_time)
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -19,6 +19,7 @@ contains
     type(hecmwST_matrix)      :: hecMAT
     type(fstr_heat)           :: fstrHEAT
     type(fstr_param)          :: fstrPARAM
+    type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_matrix), pointer :: hecMATmpc
     logical :: is_congerged
 
@@ -29,12 +30,12 @@ contains
 
       call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrHEAT, fstrHEAT%beta)
       if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, delta_time)
-      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMATmpc, fstrHEAT, next_time, delta_time)
+      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrHEAT, next_time, delta_time)
 
       hecMATmpc%Iarray(97) = 1 !Need numerical factorization
       bup_n_dof = hecMESH%n_dof
       hecMESH%n_dof = 1
-      call solve_LINEQ(hecMESH, hecMATmpc)
+      call solve_LINEQ(hecMESHmpc, hecMATmpc)
       hecMESH%n_dof = bup_n_dof
       call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 

@@ -99,7 +99,7 @@ $(OBJS): $(HEADERS)
 $(OBJSF):
 
 install-header:
-
+	@cd precond       && $(MAKE) install-header
 
 install-module:
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.

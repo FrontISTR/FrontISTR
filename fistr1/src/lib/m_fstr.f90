@@ -802,6 +802,12 @@ contains
     hecMAT%Iarray(13)=    0    ! = mpc_method
     hecMAT%Iarray(14)=    0    ! = estcond
     hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
+    hecMAT%Iarray(41)=    0    ! = solver_opt1
+    hecMAT%Iarray(42)=    0    ! = solver_opt2
+    hecMAT%Iarray(43)=    0    ! = solver_opt3
+    hecMAT%Iarray(44)=    0    ! = solver_opt4
+    hecMAT%Iarray(45)=    0    ! = solver_opt5
+    hecMAT%Iarray(46)=    0    ! = solver_opt6
 
     hecMAT%Rarray(1) =  1.0e-8 ! = resid
     hecMAT%Rarray(2) =  1.0    ! = sigma_diag
@@ -1047,7 +1053,7 @@ contains
     real(kind=kreal), intent(out) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
-    do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
+    do i = 1, hecMESH%nn_internal*min(hecMESH%n_dof,3)
       coord(i) = hecMESH%node(i)
       hecMESH%node(i) = coord(i)+fstrSOLID%unode(i)+fstrSOLID%dunode(i)
     enddo
@@ -1060,7 +1066,7 @@ contains
     real(kind=kreal), intent(in) :: coord(:)
     integer(kind=kint) :: i
     if(hecMESH%n_dof == 4) return
-    do i = 1, hecMESH%n_node*min(hecMESH%n_dof,3)
+    do i = 1, hecMESH%nn_internal*min(hecMESH%n_dof,3)
       hecMESH%node(i) = coord(i)
     enddo
   end subroutine fstr_recover_initial_config_to_mesh

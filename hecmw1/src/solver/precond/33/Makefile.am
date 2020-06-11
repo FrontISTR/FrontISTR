@@ -85,7 +85,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 OBJS = \
-	hecmw_ML_wrapper_33.@cobjfilepostfix@ \
+	hecmw_ML_helper_33_c.@cobjfilepostfix@ \
 
 OBJSF = \
 	hecmw_precond_BILU_33.@f90objfilepostfix@ \
@@ -93,11 +93,12 @@ OBJSF = \
 	hecmw_precond_SSOR_33.@f90objfilepostfix@ \
 	hecmw_precond_SAINV_33.@f90objfilepostfix@ \
 	hecmw_precond_RIF_33.@f90objfilepostfix@ \
-	hecmw_ML_helper_33.@f90objfilepostfix@ \
+	hecmw_ML_helper_33_f.@f90objfilepostfix@ \
 	hecmw_precond_ML_33.@f90objfilepostfix@ \
 	hecmw_precond_33.@f90objfilepostfix@
 
-HEADERS =
+HEADERS = \
+	hecmw_ML_helper_33.h \
 
 #-----------------------------------------------------------------------------#
 all: @build_target@

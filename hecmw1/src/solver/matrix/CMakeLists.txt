@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_allocate.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_array_util.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_estimate_condition.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_local_matrix.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mat_ass.f90
@@ -17,5 +18,6 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_ordering_CM.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_ordering_MC.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_reorder.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_pair_array.f90
 )
 
