@@ -11,40 +11,9 @@
 #include <ctype.h>
 #include "hecmw_util.h"
 #include "hecmw_config.h"
-#include "hecmw_result.h"
 #include "hecmw_bin_io.h"
-
-#define COL_INT 10
-#define COL_DOUBLE 5
-#define LINEBUF_SIZE 1023
-
-struct result_list {
-  char *label;
-  double *ptr;
-  int n_dof;
-  struct result_list *next;
-};
-
-static int istep;
-static int nnode;
-static int nelem;
-#ifdef OLD_RES_FORMAT
-static int filever_major=1;
-static int filever_minor=0;
-#else
-static int filever_major=2;
-static int filever_minor=0;
-#endif // OLD_RES_FORMAT
-static char head[HECMW_HEADER_LEN + 1];
-static char comment_line[HECMW_MSG_LEN + 1];
-static char line_buf[LINEBUF_SIZE + 1];
-
-static struct result_list *global_list;
-static struct result_list *node_list;
-static struct result_list *elem_list;
-
-static int *node_global_ID = NULL;
-static int *elem_global_ID = NULL;
+#include "hecmw_result.h"
+#include "hecmw_result_io.h"
 
 struct fortran_remainder {
   double *ptr;
@@ -52,70 +21,6 @@ struct fortran_remainder {
 };
 
 static struct fortran_remainder *remainder; /* for Fortran */
-
-static int is_valid_label(char *label) {
-#define ALLOW_CHAR_FIRST "_" /* and alphabet */
-#define ALLOW_CHAR "_-+"     /* and alphabet, digit */
-  int c;
-  char *p, *q;
-
-  if (label == NULL) return 0;
-
-  c = label[0];
-
-  /* check first character */
-  if (!isalpha(c)) {
-    q = ALLOW_CHAR_FIRST;
-    while (*q) {
-      if (*q == c) break;
-      q++;
-    }
-    if (!*q) return 0;
-  }
-
-  /* check 2nd character or later */
-  p = &label[1];
-  while (*p) {
-    if (!isalnum(*p)) {
-      q = ALLOW_CHAR;
-      while (*q) {
-        if (*q == *p) break;
-        q++;
-      }
-      if (!*q) return 0;
-    }
-    p++;
-  }
-  return 1;
-}
-
-static void clear() {
-  struct result_list *p, *q;
-
-  for (p = global_list; p; p = q) {
-    q = p->next;
-    HECMW_free(p->label);
-    HECMW_free(p);
-  }
-  global_list = NULL;
-
-  for (p = node_list; p; p = q) {
-    q = p->next;
-    HECMW_free(p->label);
-    HECMW_free(p);
-  }
-  node_list = NULL;
-
-  for (p = elem_list; p; p = q) {
-    q = p->next;
-    HECMW_free(p->label);
-    HECMW_free(p);
-  }
-  elem_list = NULL;
-
-  nnode = nelem = 0;
-  strcpy(head, "");
-}
 
 void HECMW_result_free(struct hecmwST_result_data *result) {
   int i;
@@ -159,351 +64,11 @@ int HECMW_result_init(struct hecmwST_local_mesh *hecMESH,
       hecMESH->global_elem_ID, i_step, header, comment);
 }
 
-int HECMW_result_init_body(int n_node, int n_elem, int *nodeID, int *elemID,
-                           int i_step, char *header, char *comment) {
-  int len;
-  char *p, *q;
-
-  nnode = n_node;
-  nelem = n_elem;
-  istep = i_step;
-
-  node_global_ID = nodeID;
-  elem_global_ID = elemID;
-
-  if (header == NULL) {
-    head[0] = '\0';
-    return 0;
-  }
-
-  len = 0;
-  p   = header;
-  q   = head;
-  while (len < sizeof(head) - 1 && *p && *p != '\n') {
-    *q++ = *p++;
-    len++;
-  }
-  *q++ = '\0';
-
-  if (comment == NULL) {
-    comment_line[0] = '\0';
-    return 0;
-  }
-
-  len = 0;
-  p   = comment;
-  q   = comment_line;
-  while (len < sizeof(comment_line) - 1 && *p && *p != '\n') {
-    *q++ = *p++;
-    len++;
-  }
-  *q++ = '\0';
-
-  return 0;
-}
-
 int HECMW_result_finalize(void) {
-  clear();
+  HECMW_result_clear();
   return 0;
 }
 
-static int add_to_global_list(struct result_list *result) {
-  struct result_list *p, *q;
-
-  q = NULL;
-  for (p = global_list; p; p = (q = p)->next)
-    ;
-
-  if (q == NULL) {
-    global_list = result;
-  } else {
-    q->next = result;
-  }
-  return 0;
-}
-
-static int add_to_node_list(struct result_list *result) {
-  struct result_list *p, *q;
-
-  q = NULL;
-  for (p = node_list; p; p = (q = p)->next)
-    ;
-
-  if (q == NULL) {
-    node_list = result;
-  } else {
-    q->next = result;
-  }
-  return 0;
-}
-
-static int add_to_elem_list(struct result_list *result) {
-  struct result_list *p, *q;
-
-  q = NULL;
-  for (p = elem_list; p; p = (q = p)->next)
-    ;
-
-  if (q == NULL) {
-    elem_list = result;
-  } else {
-    q->next = result;
-  }
-  return 0;
-}
-
-static struct result_list *make_result_list(int n_dof, char *label,
-                                            double *ptr) {
-  struct result_list *result;
-  char *new_label;
-
-  result = HECMW_malloc(sizeof(*result));
-  if (result == NULL) {
-    HECMW_set_error(errno, "");
-    goto error;
-  }
-
-  new_label = HECMW_strdup(label);
-  if (new_label == NULL) {
-    HECMW_set_error(errno, "");
-    goto error;
-  }
-
-  result->label = new_label;
-  result->ptr   = ptr;
-  result->n_dof = n_dof;
-  result->next  = NULL;
-
-  return result;
-error:
-  HECMW_free(result);
-  HECMW_free(new_label);
-  return NULL;
-}
-
-int HECMW_result_add(int dtype, int n_dof, char *label, double *ptr) {
-  struct result_list *result;
-
-  if (dtype < 1 && dtype > 3) {
-    HECMW_set_error(HECMW_UTIL_E0206, "");
-    goto error;
-  }
-
-  if (!is_valid_label(label)) {
-    HECMW_set_error(HECMW_UTIL_E0207, "");
-    goto error;
-  }
-
-  result = make_result_list(n_dof, label, ptr);
-  if (result == NULL) {
-    goto error;
-  }
-
-  if (dtype == 1) {
-    /* node */
-    if (add_to_node_list(result)) goto error;
-  } else if (dtype == 2)  {
-    /* elem */
-    if (add_to_elem_list(result)) goto error;
-  } else {
-    /* global */
-    if (add_to_global_list(result)) goto error;
-  }
-
-  return 0;
-error:
-  HECMW_free(result);
-  return -1;
-}
-
-static int count_ng_comp(void) {
-  int ng_comp;
-  struct result_list *p;
-
-  ng_comp = 0;
-  for (p = global_list; p; p = p->next) {
-    ng_comp++;
-  }
-  return ng_comp;
-}
-
-static int count_nn_comp(void) {
-  int nn_comp;
-  struct result_list *p;
-
-  nn_comp = 0;
-  for (p = node_list; p; p = p->next) {
-    nn_comp++;
-  }
-  return nn_comp;
-}
-
-static int count_ne_comp(void) {
-  int ne_comp;
-  struct result_list *p;
-
-  ne_comp = 0;
-  for (p = elem_list; p; p = p->next) {
-    ne_comp++;
-  }
-  return ne_comp;
-}
-
-/*---------------------------------------------------------------------------*/
-/* TEXT MODE I/O (STATIC)                                                    */
-/*---------------------------------------------------------------------------*/
-
-#include "res_txt_io.inc"
-
-/*---------------------------------------------------------------------------*/
-/* BINARY MODE I/O (STATIC)                                                  */
-/*---------------------------------------------------------------------------*/
-
-#include "res_bin_io.inc"
-
-/*---------------------------------------------------------------------------*/
-/* TEXT MODE WRITE                                                           */
-/*---------------------------------------------------------------------------*/
-
-int HECMW_result_write_txt_by_fname(char *filename) {
-  FILE *fp;
-
-  if (HECMW_ctrl_is_subdir()) {
-    if (HECMW_ctrl_make_subdir(filename)) {
-      HECMW_set_error(HECMW_UTIL_E0201, "File: %s, %s", filename,
-                      HECMW_strmsg(errno));
-      goto error;
-    }
-  }
-
-  if ((fp = fopen(filename, "w")) == NULL) {
-    HECMW_set_error(HECMW_UTIL_E0201, "File: %s, %s", filename,
-                    HECMW_strmsg(errno));
-    goto error;
-  }
-
-  if (output_result_data(fp)) {
-    goto error;
-  }
-
-  if (fclose(fp)) {
-    HECMW_set_error(HECMW_UTIL_E0202, HECMW_strmsg(errno));
-    goto error;
-  }
-  fp = NULL;
-
-  return 0;
-error:
-  if (fp) fclose(fp);
-  return -1;
-}
-
-int HECMW_result_write_txt_ST_by_fname(char *filename,
-                                       struct hecmwST_result_data *result,
-                                       int n_node, int n_elem, char *header, char *comment) {
-  FILE *fp;
-
-  if (HECMW_ctrl_is_subdir()) {
-    if (HECMW_ctrl_make_subdir(filename)) {
-      HECMW_set_error(HECMW_UTIL_E0201, "File: %s, %s", filename,
-                      HECMW_strmsg(errno));
-      goto error;
-    }
-  }
-
-  if ((fp = fopen(filename, "w")) == NULL) {
-    HECMW_set_error(HECMW_UTIL_E0201, "File: %s, %s", filename,
-                    HECMW_strmsg(errno));
-    goto error;
-  }
-
-  if (output_result_data_ST(result, n_node, n_elem, header, comment, fp)) {
-    goto error;
-  }
-
-  if (fclose(fp)) {
-    HECMW_set_error(HECMW_UTIL_E0202, HECMW_strmsg(errno));
-    goto error;
-  }
-  fp = NULL;
-
-  return 0;
-error:
-  if (fp) fclose(fp);
-  return -1;
-}
-
-/*---------------------------------------------------------------------------*/
-/* BINARY MODE WRITE                                                         */
-/*---------------------------------------------------------------------------*/
-
-int HECMW_result_write_bin_by_fname(char *filename) {
-  FILE *fp;
-
-  if (HECMW_ctrl_is_subdir()) {
-    if (HECMW_ctrl_make_subdir(filename)) {
-      HECMW_set_error(HECMW_UTIL_E0201, "File: %s, %s", filename,
-                      HECMW_strmsg(errno));
-      goto error;
-    }
-  }
-
-  if ((fp = fopen(filename, "wb")) == NULL) {
-    HECMW_set_error(HECMW_UTIL_E0201, "File: %s, %s", filename,
-                    HECMW_strmsg(errno));
-    goto error;
-  }
-
-  hecmw_set_endian_info();
-  if (write_bin_header(fp)) goto error;
-  if (bin_output_result_data(fp)) goto error;
-
-  if (fclose(fp)) {
-    HECMW_set_error(HECMW_UTIL_E0202, HECMW_strmsg(errno));
-    goto error;
-  }
-  fp = NULL;
-
-  return 0;
-error:
-  if (fp) fclose(fp);
-  return -1;
-}
-
-int HECMW_result_write_bin_ST_by_fname(char *filename,
-                                       struct hecmwST_result_data *result,
-                                       int n_node, int n_elem, char *header, char *comment) {
-  FILE *fp;
-
-  if (HECMW_ctrl_is_subdir()) {
-    if (HECMW_ctrl_make_subdir(filename)) {
-      HECMW_set_error(HECMW_UTIL_E0201, "File: %s, %s", filename,
-                      HECMW_strmsg(errno));
-      goto error;
-    }
-  }
-
-  if ((fp = fopen(filename, "wb")) == NULL) {
-    HECMW_set_error(HECMW_UTIL_E0201, "File: %s, %s", filename,
-                    HECMW_strmsg(errno));
-    goto error;
-  }
-
-  hecmw_set_endian_info();
-  if (write_bin_header(fp)) goto error;
-  if (bin_output_result_data_ST(result, n_node, n_elem, header, comment, fp)) goto error;
-
-  if (fclose(fp)) {
-    HECMW_set_error(HECMW_UTIL_E0202, HECMW_strmsg(errno));
-    goto error;
-  }
-  fp = NULL;
-
-  return 0;
-error:
-  if (fp) fclose(fp);
-  return -1;
-}
 
 /*---------------------------------------------------------------------------*/
 /* UNIVERSAL I/O                                                             */
@@ -583,10 +148,10 @@ int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
 struct hecmwST_result_data *HECMW_result_read_by_fname(char *filename) {
   struct hecmwST_result_data *result;
 
-  if (judge_result_bin_file(filename)) {
-    result = result_read_bin_by_fname(filename);
+  if (HECMW_judge_result_bin_file(filename)) {
+    result = HECMW_result_read_bin_by_fname(filename);
   } else {
-    result = result_read_txt_by_fname(filename);
+    result = HECMW_result_read_txt_by_fname(filename);
   }
 
   return result;
@@ -806,6 +371,8 @@ void hecmw_result_write_by_name_if__(char *name_ID, int *err, int len) {
 void HECMW_RESULT_WRITE_BY_NAME_IF(char *name_ID, int *err, int len) {
   hecmw_result_write_by_name_if(name_ID, err, len);
 }
+
+/*---------------------------------------------------------------------------*/
 
 void hecmw_result_write_by_addfname_if(char *name_ID, char *addfname, int *err,
                                        int len1, int len2) {

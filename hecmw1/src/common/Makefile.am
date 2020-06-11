@@ -138,6 +138,9 @@ OBJS = \
 	hecmw_result.@cobjfilepostfix@ \
 	hecmw_result_copy_c2f.@cobjfilepostfix@ \
 	hecmw_result_copy_f2c.@cobjfilepostfix@ \
+	hecmw_result_io.@cobjfilepostfix@ \
+	hecmw_result_bin_io.@cobjfilepostfix@ \
+	hecmw_result_txt_io.@cobjfilepostfix@ \
 	hecmw_visual_if.@cobjfilepostfix@ \
 	hecmw_system.@cobjfilepostfix@ \
 	hecmw_time.@cobjfilepostfix@
@@ -211,6 +214,7 @@ HEADERS = \
 	hecmw_ucd_print.h \
 	hecmw_result_copy_c2f.h \
 	hecmw_result_copy_f2c.h \
+	hecmw_result_io.h \
 	hecmw_system.h \
 	hecmw_time.h
 
