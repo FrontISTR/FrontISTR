@@ -79,6 +79,7 @@ OBJS =
 
 OBJSF = \
 	hecmw_allocate.@f90objfilepostfix@ \
+	hecmw_array_util.@f90objfilepostfix@ \
 	hecmw_matrix_contact.@f90objfilepostfix@ \
 	hecmw_matrix_misc.@f90objfilepostfix@ \
 	hecmw_matrix_ordering_CM.@f90objfilepostfix@ \
@@ -87,6 +88,7 @@ OBJSF = \
 	hecmw_mat_con.@f90objfilepostfix@ \
 	hecmw_mat_ass.@f90objfilepostfix@ \
 	hecmw_matrix_dump.@f90objfilepostfix@ \
+	hecmw_pair_array.@f90objfilepostfix@ \
 	hecmw_local_matrix.@f90objfilepostfix@ \
 	hecmw_mat_id.@f90objfilepostfix@ \
 	hecmw_estimate_condition.@f90objfilepostfix@

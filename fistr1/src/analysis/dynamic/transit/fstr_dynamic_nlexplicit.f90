@@ -331,7 +331,7 @@ contains
       endif
     endif
 
-    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_finalize_explicit(hecMESH, hecMAT, hecMATmpc)
 
   end subroutine fstr_solve_dynamic_nlexplicit
 

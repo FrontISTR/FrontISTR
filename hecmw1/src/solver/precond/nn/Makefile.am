@@ -79,12 +79,13 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 .F90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
-  
+
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 
 #-----------------------------------------------------------------------------#
 OBJS = \
+	hecmw_ML_helper_nn_c.@cobjfilepostfix@ \
 	hecmw_ML_wrapper.@cobjfilepostfix@ \
 
 OBJSF = \
@@ -94,10 +95,13 @@ OBJSF = \
 	hecmw_precond_SAINV_nn.@f90objfilepostfix@ \
 	hecmw_precond_RIF_nn.@f90objfilepostfix@ \
 	hecmw_ML_helper.@f90objfilepostfix@ \
+	hecmw_ML_helper_nn_f.@f90objfilepostfix@ \
 	hecmw_precond_ML_nn.@f90objfilepostfix@ \
 	hecmw_precond_nn.@f90objfilepostfix@ \
-  
-HEADERS =
+
+HEADERS = \
+	hecmw_ML_helper.h \
+	hecmw_ML_helper_nn.h \
 
 #-----------------------------------------------------------------------------#
 all: @build_target@

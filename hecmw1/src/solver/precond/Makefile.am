@@ -98,8 +98,9 @@ $(OBJS): $(HEADERS)
 
 $(OBJSF):
 
-install-header: $(HEADERS)
-	$(CP) $(HEADERS) $(HECMWINCDIR)/.
+install-header:
+	@cd nn     && $(MAKE) install-header
+	@cd 33     && $(MAKE) install-header
 
 install-module:
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
