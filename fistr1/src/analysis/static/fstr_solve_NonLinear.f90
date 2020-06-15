@@ -69,7 +69,7 @@ contains
     fstrSOLID%dunode(:) = 0.0d0
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
-    call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
@@ -108,7 +108,7 @@ contains
 
       ! ----- Set residual
       if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-        & call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
+        & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
@@ -234,7 +234,7 @@ contains
 
     stepcnt = 0
 
-    call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
@@ -313,7 +313,7 @@ contains
 
         ! ----- Set residual
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+          call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
@@ -494,7 +494,7 @@ contains
 
     stepcnt = 0
 
-    call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     if( paraContactFlag.and.present(conMAT) ) then
       call hecmw_mat_clear_b(conMAT)
@@ -606,7 +606,7 @@ contains
 
         ! ----- Set residual
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+          call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )

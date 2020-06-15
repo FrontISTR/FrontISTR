@@ -204,7 +204,6 @@ contains
 
       else if( header_name == '!HEAT' ) then
         c_heat = c_heat + 1
-        call fstr_setup_HEAT( ctrl, c_heat, P )
       else if( header_name == '!FIXTEMP' ) then
         c_fixtemp = c_fixtemp + 1
         call fstr_setup_FIXTEMP( ctrl, c_fixtemp, P )
@@ -400,6 +399,7 @@ contains
     rcode = fstr_ctrl_rewind( ctrl )
 
     c_istep    = 0
+    c_heat     = 0
     c_material = 0
     c_output = 0
     c_contact  = 0
@@ -499,6 +499,10 @@ contains
             endif
           enddo
         endif
+
+      else if( header_name == '!HEAT'  ) then
+        c_heat = c_heat + 1
+        call fstr_setup_HEAT( ctrl, c_heat, P )
 
       else if( header_name == '!WELD_LINE'  ) then
         fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
@@ -907,6 +911,7 @@ contains
     fstrSOLID%TEMP_irres        = 0
     fstrSOLID%TEMP_tstep        = 1
     fstrSOLID%TEMP_interval     = 1
+    fstrSOLID%TEMP_rtype        = 1
     fstrSOLID%TEMP_factor       = 1.d0
     fstrSOLID%VELOCITY_ngrp_tot = 0
     fstrSOLID%ACCELERATION_ngrp_tot = 0
@@ -2299,6 +2304,7 @@ end function fstr_setup_INITIAL
       P%SOLID%TEMP_irres,           &
       P%SOLID%TEMP_tstep,           &
       P%SOLID%TEMP_interval,        &
+      P%SOLID%TEMP_rtype,           &
       grp_id_name, HECMW_NAME_LEN,  &
       val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
@@ -2403,6 +2409,8 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     integer(kind=kint) :: n
+    character(len=HECMW_NAME_LEN) :: mName
+    integer(kind=kint) :: i
 
     n = fstr_ctrl_get_data_line_n( ctrl )
 
@@ -2422,6 +2430,7 @@ end function fstr_setup_INITIAL
     P%PARAM%delmax = 0
     P%PARAM%itmax = 20
     P%PARAM%eps = 1.0e-6
+    P%PARAM%timepoint_id = 0
 
     rcode = fstr_ctrl_get_HEAT(   ctrl,        &
       P%PARAM%dtime,     &
@@ -2429,10 +2438,19 @@ end function fstr_setup_INITIAL
       P%PARAM%dtmin,     &
       P%PARAM%delmax,    &
       P%PARAM%itmax,     &
-      P%PARAM%eps )
+      P%PARAM%eps,       &
+      mName )
     if( rcode /= 0 ) then
       call fstr_ctrl_err_stop
     end if
+
+    if( associated(P%PARAM%timepoints) ) then
+      do i=1,size(P%PARAM%timepoints)
+        if( fstr_streqr( P%PARAM%timepoints(i)%name, mName ) ) then
+          P%PARAM%timepoint_id = i; exit
+        endif
+      enddo
+    endif
 
     call reallocate_real( P%HEAT%STEP_DLTIME, n)
     call reallocate_real( P%HEAT%STEP_EETIME, n)
@@ -2444,6 +2462,7 @@ end function fstr_setup_INITIAL
     P%HEAT%STEP_EETIME = P%PARAM%etime
     P%HEAT%STEP_DELMIN = P%PARAM%dtmin
     P%HEAT%STEP_DELMAX = P%PARAM%delmax
+    P%HEAT%timepoint_id = P%PARAM%timepoint_id
 
   end subroutine fstr_setup_HEAT
 

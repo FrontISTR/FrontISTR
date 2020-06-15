@@ -149,6 +149,7 @@ module m_fstr
     integer(kind=kint), pointer:: itmax(:) !< (/=ITMAX)
     real(kind=kreal), pointer  :: eps(:)   !< (/=ESP)
     real(kind=kreal)           :: ref_temp !< (=REF_TEMP)
+    integer(kind=kint)         :: timepoint_id !< time point ID for heat analysis
 
     !> output control
     integer(kind=kint) :: fg_echo       !< output echo   (kYES/kNO) (=IECHO)
@@ -277,6 +278,7 @@ module m_fstr
     integer(kind=kint) :: TEMP_irres
     integer(kind=kint) :: TEMP_tstep
     integer(kind=kint) :: TEMP_interval
+    integer(kind=kint) :: TEMP_rtype      ! type of reading result; 1: step-based; 2: time-based
     real(kind=kreal)   :: TEMP_FACTOR
     integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
     integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)
@@ -396,6 +398,7 @@ module m_fstr
     integer(kind=kint) :: restart_nout
     real(kind=kreal), pointer :: STEP_DLTIME(:), STEP_EETIME(:)
     real(kind=kreal), pointer :: STEP_DELMIN(:), STEP_DELMAX(:)
+    integer(kind=kint) :: timepoint_id
 
     !> MATERIAL
     integer(kind=kint) :: MATERIALtot
