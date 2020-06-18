@@ -67,6 +67,7 @@ contains
       case(21)
         call hecmw_precond_RIF_33_clear()
       case default
+        call hecmw_precond_nn_clear(hecMAT)
     end select
 
   end subroutine hecmw_precond_33_clear
@@ -99,6 +100,8 @@ contains
         case(21)
           call hecmw_precond_RIF_33_apply(ZP)
         case default
+          call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
+          return
       end select
       END_TIME = hecmw_Wtime()
       time_precond = time_precond + END_TIME - START_TIME

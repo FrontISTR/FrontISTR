@@ -44,7 +44,7 @@ contains
       endif
     endif
     call hecmw_mat_id_set(hecMAT, hecMESH, id)
-    call hecmw_ML_wrapper_setup_33(id, sym, ierr)
+    call hecmw_ML_wrapper_setup(id, sym, hecMAT%NDOF, ierr)
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0 ! symbolic setup done
     hecMAT%Iarray(97) = 0 ! numerical setup done
@@ -55,14 +55,14 @@ contains
     implicit none
     real(kind=kreal), intent(inout) :: WW(:)
     integer(kind=kint) :: ierr
-    call hecmw_ML_wrapper_apply_33(id, WW, ierr)
+    call hecmw_ML_wrapper_apply(id, WW, ierr)
   end subroutine hecmw_precond_ML_33_apply
 
   subroutine hecmw_precond_ML_33_clear()
     use hecmw_mat_id
     implicit none
     integer(kind=kint) :: ierr
-    call hecmw_ML_wrapper_clear_33(id, ierr)
+    call hecmw_ML_wrapper_clear(id, ierr)
     call hecmw_mat_id_clear(id)
     INITIALIZED = .false.
   end subroutine hecmw_precond_ML_33_clear

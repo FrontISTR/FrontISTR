@@ -3489,6 +3489,9 @@ static int mask_elem_by_domain_mod(char *elem_flag, int current_domain) {
   return RTC_NORMAL;
 }
 
+#if 0
+/* For Additional overlap for explicite DOF elimination for MPC */
+/* NO LONGER NEEDED because node-migration implemented */
 static int mask_slave_node(const struct hecmwST_local_mesh *global_mesh,
                            char *node_flag, int current_domain) {
   int i;
@@ -3517,6 +3520,7 @@ static int mask_slave_node(const struct hecmwST_local_mesh *global_mesh,
   }
   return RTC_NORMAL;
 }
+#endif
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * - - - - - - - - - */
@@ -3568,6 +3572,9 @@ static int mask_boundary_node_mod(const struct hecmwST_local_mesh *global_mesh,
   return RTC_NORMAL;
 }
 
+#if 0
+/* For Additional overlap for explicite DOF elimination for MPC */
+/* NO LONGER NEEDED because node-migration implemented */
 static int mask_boundary_elem_with_slave(
     const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
     char *elem_flag, int *added) {
@@ -3637,6 +3644,7 @@ static int mask_boundary_link_elem_with_slave(
 
   return RTC_NORMAL;
 }
+#endif
 
 static int mask_additional_overlap_elem(
     const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
@@ -3827,6 +3835,9 @@ static int mask_mesh_status_nb(const struct hecmwST_local_mesh *global_mesh,
       mask_boundary_node_mod(global_mesh, node_flag, elem_flag, current_domain);
   if (rtc != RTC_NORMAL) goto error;
 
+#if 0
+  /* Additional overlap for explicite DOF elimination for MPC */
+  /* NO LONGER NEEDED because node-migration implemented */
   if (global_mesh->mpc->n_mpc > 0) {
     int added = 0;
 
@@ -3857,6 +3868,7 @@ static int mask_mesh_status_nb(const struct hecmwST_local_mesh *global_mesh,
       CLEAR_BIT(node_flag[i], MARK);
     }
   }
+#endif
 
   for (i = 1; i < global_mesh->hecmw_flag_partdepth; i++) {
     rtc = mask_additional_overlap_elem(global_mesh, node_flag, elem_flag);

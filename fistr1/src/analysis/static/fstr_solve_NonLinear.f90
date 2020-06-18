@@ -39,6 +39,7 @@ contains
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     type (fstrST_matrix_contact_lagrange) :: fstrMAT   !< type fstrST_matrix_contact_lagrange
 
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: ndof
     integer(kind=kint) :: i, iter
@@ -48,7 +49,7 @@ contains
     real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
 
-    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     if(.not. fstrPR%nlgeom)then
       isLinear = .true.
@@ -68,7 +69,7 @@ contains
     fstrSOLID%dunode(:) = 0.0d0
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
-    call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
@@ -78,7 +79,7 @@ contains
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
       ! ----- Set Boundary condition
-      call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+      call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
       call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
       call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
 
@@ -90,9 +91,9 @@ contains
         hecMATmpc%Iarray(97) = 1   !Need numerical factorization
       endif
       hecMATmpc%X = 0.0d0
-      call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-      call solve_LINEQ(hecMESH,hecMATmpc)
-      call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+      call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
+      call solve_LINEQ(hecMESHmpc,hecMATmpc)
+      call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
       call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
       ! ----- update the small displacement and the displacement for 1step
@@ -107,7 +108,7 @@ contains
 
       ! ----- Set residual
       if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-        & call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
+        & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
@@ -171,7 +172,7 @@ contains
     fstrSOLID%CutBack_stat = 0
     deallocate(coord)
     deallocate(P)
-    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
   end subroutine fstr_Newton
 
 
@@ -193,6 +194,7 @@ contains
     type (fstr_info_contactChange)        :: infoCTChange  !< fstr_info_contactChange
     type (fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
 
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
@@ -204,7 +206,7 @@ contains
     integer(kind=kint) :: n_node_global
     real(kind=kreal), allocatable :: coord(:)
 
-    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -232,7 +234,7 @@ contains
 
     stepcnt = 0
 
-    call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
@@ -270,7 +272,7 @@ contains
         endif
 
         ! ----- Set Boundary condition
-        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
         call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
         call fstr_AddBC(cstep, hecMESH,hecMATmpc,fstrSOLID,fstrPARAM,fstrMAT,stepcnt)
 
@@ -282,9 +284,9 @@ contains
           hecMATmpc%Iarray(97) = 1   !Need numerical factorization
         endif
         hecMATmpc%X = 0.0d0
-        call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-        call solve_LINEQ(hecMESH,hecMATmpc)
-        call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
+        call solve_LINEQ(hecMESHmpc,hecMATmpc)
+        call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
         if( hecMESH%n_dof == 3 ) then
@@ -311,7 +313,7 @@ contains
 
         ! ----- Set residual
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+          call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
 
@@ -401,7 +403,7 @@ contains
 
     deallocate(coord)
     fstrSOLID%CutBack_stat = 0
-    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
   end subroutine fstr_Newton_contactALag
 
 
@@ -426,6 +428,7 @@ contains
     type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
     type (hecmwST_matrix), optional        :: conMAT
 
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
@@ -441,7 +444,7 @@ contains
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
 
-    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -491,7 +494,7 @@ contains
 
     stepcnt = 0
 
-    call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     if( paraContactFlag.and.present(conMAT) ) then
       call hecmw_mat_clear_b(conMAT)
@@ -542,7 +545,7 @@ contains
         endif
 
         ! ----- Set Boundary condition
-        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
         call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, fstrMAT, stepcnt, conMAT)
@@ -555,15 +558,15 @@ contains
         !----- SOLVE [Kt]{du}={R}
         ! ----  For Parallel Contact with Multi-Partition Domains
         hecMATmpc%X = 0.0d0
-        call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         if(paraContactFlag.and.present(conMAT)) then
           q_residual = fstr_get_norm_para_contact(hecMATmpc,fstrMAT,conMAT,hecMESH)
-          call solve_LINEQ_contact(hecMESH, hecMATmpc, fstrMAT, istat, 1.0D0, conMAT)
+          call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, fstrMAT, istat, 1.0D0, conMAT)
         else
           q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMATmpc,fstrSOLID,fstrMAT)
-          call solve_LINEQ_contact(hecMESH, hecMATmpc, fstrMAT, istat)
+          call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, fstrMAT, istat)
         endif
-        call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         ! ----- check matrix solver error
         if( istat /= 0 ) then
@@ -603,7 +606,7 @@ contains
 
         ! ----- Set residual
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-          call fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+          call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
         if(paraContactFlag.and.present(conMAT)) then
           call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
@@ -736,7 +739,7 @@ contains
 
     deallocate(coord)
     fstrSOLID%CutBack_stat = 0
-    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
   end subroutine fstr_Newton_contactSLag
 
 

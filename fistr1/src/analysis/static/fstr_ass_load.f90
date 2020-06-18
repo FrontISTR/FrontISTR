@@ -15,7 +15,7 @@ contains
   !>  -#  volume force
   !>  -#  thermal force
 
-  subroutine fstr_ass_load(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+  subroutine fstr_ass_load(cstep, ctime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
     !======================================================================!
     use m_fstr
     use m_static_lib
@@ -26,7 +26,8 @@ contains
     use m_fstr_spring
     use m_common_struct
     use m_utilities
-    integer, intent(in)                  :: cstep !< current step
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    real(kind=kreal), intent(in)         :: ctime !< current time
     type(hecmwST_matrix), intent(inout)  :: hecMAT !< hecmw matrix
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< hecmw mesh
     type(fstr_solid), intent(inout)      :: fstrSOLID !< fstr_solid
@@ -306,7 +307,8 @@ contains
 
       if( fstrSOLID%TEMP_irres > 0 ) then
         call read_temperature_result(hecMESH, fstrSOLID%TEMP_irres, fstrSOLID%TEMP_tstep, &
-          &  fstrSOLID%TEMP_interval, fstrSOLID%TEMP_factor, fstrSOLID%temperature, fstrSOLID%temp_bak)
+          &  fstrSOLID%TEMP_rtype, fstrSOLID%TEMP_interval, fstrSOLID%TEMP_factor, ctime, &
+          &  fstrSOLID%temperature, fstrSOLID%temp_bak)
       endif
 
       ! ----- element TYPE loop.
