@@ -343,18 +343,18 @@ contains
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_STATE )
     endif
 
-    ! --- CONTACT NORMAL FORCE @node
+    ! --- CONTACT NORMAL TRACTION @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(36) .and. associated(fstrSOLID%CONT_NTRAC) ) then
       id = 1
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(35), ndof )
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(36), ndof )
       label = 'CONTACT_NTRACTION'
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_NTRAC )
     endif
 
-    ! --- CONTACT FRICTION FORCE @node
+    ! --- CONTACT FRICTION TRACTION @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(37) .and. associated(fstrSOLID%CONT_FTRAC) ) then
       id = 1
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(36), ndof )
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(37), ndof )
       label = 'CONTACT_FTRACTION'
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_FTRAC )
     endif
