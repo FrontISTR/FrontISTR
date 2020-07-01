@@ -452,11 +452,13 @@ static int cmp_global_glt(const fstr_gl_rec* g1, const fstr_gl_rec* g2) {
 typedef int (*cmp_func)(const void*, const void*);
 
 fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n) {
-  int i, j, count;
+  int i, j, k, eid, count;
   int all_n, all_e;
+  int area_e;
   fstr_gl_rec* nrec;
   fstr_gl_rec* erec;
   fstr_glt* glt;
+  int* area_etype_list;
 
   all_n = 0;
   for (i = 0; i < area_n; i++) {
@@ -482,8 +484,23 @@ fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n) {
 
   all_e = 0;
   for (i = 0; i < area_n; i++) {
-    out_log("area:%d -- ne_internal:%d\n", i, mesh[i]->ne_internal);
-    all_e += mesh[i]->ne_internal;
+    area_e = 0;
+    area_etype_list = HECMW_malloc(sizeof(int) * mesh[i]->n_elem);
+    for (j = 0; j < mesh[i]->n_elem_type; j++) {
+      for (k = mesh[i]->elem_type_index[j]; k < mesh[i]->elem_type_index[j+1]; k++) {
+         area_etype_list[k] = mesh[i]->elem_type_item[j];
+      }
+    }
+
+    for (j = 0; j < mesh[i]->ne_internal; j++) {
+      eid = mesh[i]->elem_internal_list[j] - 1;
+      if ( HECMW_is_etype_patch(area_etype_list[eid]) ) continue;
+      area_e++;
+    }
+
+    HECMW_free(area_etype_list);
+    all_e += area_e;
+    out_log("area:%d -- ne_internal:%d\n", i, area_e);
   }
   out_log("total ne_internal:%d\n", all_e);
 
@@ -492,13 +509,25 @@ fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n) {
 
   count = 0;
   for (i = 0; i < area_n; i++) {
+
+    area_etype_list = HECMW_malloc(sizeof(int) * mesh[i]->n_elem);
+    for (j = 0; j < mesh[i]->n_elem_type; j++) {
+      for (k = mesh[i]->elem_type_index[j]; k < mesh[i]->elem_type_index[j+1]; k++) {
+         area_etype_list[k] = mesh[i]->elem_type_item[j];
+      }
+    }
+
     for (j = 0; j < mesh[i]->ne_internal; j++) {
-      erec[count].global =
-          mesh[i]->global_elem_ID[mesh[i]->elem_internal_list[j] - 1];
-      erec[count].local = mesh[i]->elem_internal_list[j] - 1;
+      eid = mesh[i]->elem_internal_list[j] - 1;
+      if ( HECMW_is_etype_patch(area_etype_list[eid]) ) continue;
+
+      erec[count].global = mesh[i]->global_elem_ID[eid];
+      erec[count].local = eid;
       erec[count].area  = i;
       count++;
     }
+
+    HECMW_free(area_etype_list);
   }
 
   qsort(erec, all_e, sizeof(fstr_gl_rec), (cmp_func)cmp_global_glt);
