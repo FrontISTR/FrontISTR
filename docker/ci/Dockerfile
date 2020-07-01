@@ -1,7 +1,7 @@
 FROM ubuntu:20.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
- && apt-get -y install libmumps-5.2.1 libgomp1 libtrilinos-ml12 libopenmpi3 libmetis5 openssh-client \
+ && apt-get -y install libmumps-5.2.1 libgomp1 libtrilinos-ml12 libopenmpi3 libmetis5 openssh-client time \
  && apt-get -y install libmkl-core libmkl-intel-lp64 libmkl-gnu-thread libmkl-scalapack-lp64 libmkl-blacs-openmpi-lp64 \
  && apt-get clean      \
  && rm -rf /var/lib/apt/lists/*
