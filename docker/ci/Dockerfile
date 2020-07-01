@@ -24,6 +24,7 @@ RUN apt-get update \
  && apt-get clean      \
  && git clone --depth=1  https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
  && cd REVOCAP_Mesh \
+ && cp config/MakefileConfig.LinuxCluster MakefileConfig.in \
  && make -j4 Refiner \
  && find lib -type f -name "libRcapRefiner*" -exec cp {} /usr/lib/ \; \
  && find . -type f -name "rcapRefiner.h" -exec cp {} /usr/include/ \; \
