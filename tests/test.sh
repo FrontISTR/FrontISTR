@@ -49,9 +49,9 @@ while getopts ":d:p:t:f:e:vch" optKey; do
   esac
 done
 
-test_dir=run_test
+test_dir=run_test/$$
 output=""
-
+compare_res=$(pwd)/compare_res.pl
 rm -fr $test_dir
 mkdir -p $test_dir
 tdir=$(pwd)/$test_dir
@@ -97,7 +97,7 @@ EOL
     TAGT=$PWD/$res.$t
     REF=$cdir/$res.0.$t
     [ $VERBOSE -le 1 ] && OUT3=" >/dev/null 2>&1"
-    sh -c "perl ../compare_res.pl $REF $TAGT $OUT3"
+    sh -c "perl $compare_res $REF $TAGT $OUT3"
     COMPARE=$(($COMPARE+$?))
     [ $VERBOSE -ge 1 ] && if [ $COMPARE -eq 0 ]; then echo "    result: sucess";else echo "    result: failure"; ((ERRORS++)); fi
   done
