@@ -53,28 +53,28 @@ test_serial:
         - make_serial
     script:
         - cd build_serial
-        - ctest -L serial --output-on-failure
+        - ctest -L serial --output-on-failure -j $(nproc)
 test_openmp:
     stage: test
     dependencies:
         - make_openmp
     script:
         - cd build_openmp
-        - ctest -L openmp --output-on-failure
+        - ctest -L openmp --output-on-failure -j $(nproc)
 test_mpi:
     stage: test
     dependencies:
         - make_mpi
     script:
         - cd build_mpi
-        - ctest -L mpi --output-on-failure
+        - ctest -L mpi --output-on-failure -j $(nproc)
 test_hybrid:
     stage: test
     dependencies:
         - make_hybrid
     script:
         - cd build_hybrid
-        - ctest -L hybrid --output-on-failure
+        - ctest -L hybrid --output-on-failure -j $(nproc)
 document:
     image: ${REGISTRY}/document:latest
     stage: build_for_deploy
