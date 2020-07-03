@@ -38,7 +38,7 @@ foreach(parallel IN LISTS parallels)
 
   foreach(target analysis/static analysis/eigen analysis/heat analysis/dynamic solver)
     add_test(NAME Test-${parallel}-${target}
-     COMMAND ./test.sh -f ${FrontISTR_BINARY_DIR}/fistr1/fistr1 -e ${hecmw_BINARY_DIR}/tools/hecmw_part1 -d ${target} -p ${np} -t ${nt} -vv
+     COMMAND ./test.sh -f ${FrontISTR_BINARY_DIR}/fistr1/fistr1 -e ${hecmw_BINARY_DIR}/tools/hecmw_part1 -r ${hecmw_BINARY_DIR}/tools/rmerge -d ${target} -p ${np} -t ${nt} -vv
      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     set_tests_properties(Test-${parallel}-${target} PROPERTIES LABELS ${target},${parallel})
   endforeach()

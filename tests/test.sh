@@ -9,6 +9,7 @@ Usage: $(basename "$0") [OPTION]...
   -t VALUE    OMP threads              (Default: 1)
   -f VALUE    fistr1 binary path       (Default: fistr1)
   -e VALUE    hecmw_part1 binary path  (Default: hecmw_part1)
+  -r VALUE    rmerge binary path       (Default: rmerge)
   -v          Verbose test message
   -c          Go ahead if test failed
 EOM
@@ -23,12 +24,13 @@ function die {
 target=.
 fistr1=fistr1
 hecmw_part1=hecmw_part1
+rmerge=rmerge
 np=1
 nt=1
 VERBOSE=0
 goahead=0
 ERRORS=0
-while getopts ":d:p:t:f:e:vch" optKey; do
+while getopts ":d:p:t:f:e:r:vch" optKey; do
   case "$optKey" in
     d)
       target=${OPTARG};;
@@ -40,6 +42,8 @@ while getopts ":d:p:t:f:e:vch" optKey; do
       fistr1=${OPTARG};;
     e)
       hecmw_part1=${OPTARG};;
+    r)
+      rmerge=${OPTARG};;
     v)
       VERBOSE=$(($VERBOSE+1));;
     c)
@@ -91,7 +95,7 @@ EOL
     sh -c "$fistr1 -t $nt $output $OUT1"
   fi
   COMPARE=0
-  find . -name "*.res.*"|awk -F. '{print $NF}'|sort|uniq|xargs -I{} rmerge -n $np -s {} -e {} ${res} >/dev/null 2>&1
+  find . -name "*.res.*"|awk -F. '{print $NF}'|sort|uniq|xargs -I{} $rmerge -n $np -s {} -e {} ${res} >/dev/null 2>&1
   for t in $(find . -name "*.res.*"|awk -F. '{print $NF}'|sort|uniq); do
     [ $VERBOSE -ge 1 ] && echo "  "$res.$t:
     TAGT=$PWD/$res.$t
