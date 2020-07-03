@@ -36,7 +36,7 @@ endif()
 foreach(parallel IN LISTS parallels)
   GetProcThreads(${parallel} np nt)
 
-  foreach(target analysis/static analysis/eigen analysis/heat analysis/dynamic)
+  foreach(target analysis/static analysis/eigen analysis/heat analysis/dynamic solver)
     add_test(NAME Test-${parallel}-${target}
      COMMAND ./test.sh -f ${FrontISTR_BINARY_DIR}/fistr1/fistr1 -e ${hecmw_BINARY_DIR}/tools/hecmw_part1 -d ${target} -p ${np} -t ${nt} -vv
      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
