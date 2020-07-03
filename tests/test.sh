@@ -86,7 +86,7 @@ EOL
   [ $VERBOSE -le 2 ] && OUT1=" >fistr1.log 2>&1" && OUT2=" >hecmw_part1.log 2>&1"
   if [ $np -gt 1 ]; then
     sh -c "$hecmw_part1 $OUT2"
-    sh -c "mpirun -n $np $fistr1 -t $nt $OUT1"
+    sh -c "mpirun --oversubscribe --allow-run-as-root -n $np $fistr1 -t $nt $OUT1"
   else
     sh -c "$fistr1 -t $nt $output $OUT1"
   fi
