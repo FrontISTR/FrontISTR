@@ -49,7 +49,7 @@ while getopts ":d:p:t:f:e:vch" optKey; do
   esac
 done
 
-test_dir=run_test
+test_dir=run_test/$$
 output=""
 
 rm -fr $test_dir
