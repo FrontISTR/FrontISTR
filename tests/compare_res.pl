@@ -10,7 +10,6 @@ my %t=func($path_test);
 #print Dumper {%t};
 my $return=0;
 
-
 foreach my $key(sort keys(%r)){
   my $res;
   if ($r{$key} == 0){
@@ -42,6 +41,7 @@ sub func{
   my @node_header_name, @elem_header_name;
   my %norm;
   $path = shift;
+  if (! -e $PATH) { print "    error: FILE_NOT_FOUND\n"; exit(127); }
   open(DF, "< $path") or die("Error");
   while(my $lin = <DF>){
     if ($lin =~ /\*global/) {

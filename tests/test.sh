@@ -96,7 +96,7 @@ EOL
   fi
   COMPARE=0
   find . -name "*.res.*"|awk -F. '{print $NF}'|sort|uniq|xargs -I{} $rmerge -n $np -s {} -e {} ${res} >/dev/null 2>&1
-  for t in $(find . -name "*.res.*"|awk -F. '{print $NF}'|sort|uniq); do
+  for t in $(find $cdir -name "${res}.*"|awk -F. '{print $NF}'|sort|uniq); do
     [ $VERBOSE -ge 1 ] && echo "  "$res.$t:
     TAGT=$PWD/$res.$t
     REF=$cdir/$res.0.$t
