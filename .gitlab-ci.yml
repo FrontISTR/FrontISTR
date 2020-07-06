@@ -13,7 +13,7 @@ make_serial:
     stage: build
     script:
         - cmake -Bbuild_serial -DWITH_MPI=OFF -DWITH_OPENMP=OFF -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
-        - cmake --build build_serial -- -j $(( p=($(nproc)/1),p?p:1 ))
+        - cmake --build build_serial -- -j $(nproc)
     artifacts:
         paths:
             - build_serial/
@@ -23,7 +23,7 @@ make_openmp:
     stage: build
     script:
         - cmake -Bbuild_openmp -DWITH_MPI=OFF -DWITH_OPENMP=ON -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
-        - cmake --build build_openmp -- -j $(( p=($(nproc)/2),p?p:1 ))
+        - cmake --build build_openmp -- -j $(nproc)
     artifacts:
         paths:
             - build_openmp/
@@ -32,7 +32,7 @@ make_mpi:
     stage: build
     script:
         - cmake -Bbuild_mpi -DWITH_MPI=ON -DWITH_OPENMP=OFF -H.
-        - cmake --build build_mpi -- -j $(( p=($(nproc)/2),p?p:1 ))
+        - cmake --build build_mpi -- -j $(nproc)
     artifacts:
         paths:
             - build_mpi/
@@ -41,7 +41,7 @@ make_hybrid:
     stage: build
     script:
         - cmake -Bbuild_hybrid -DWITH_MPI=ON -DWITH_OPENMP=ON -H.
-        - cmake --build build_hybrid -- -j $(( p=($(nproc)/4),p?p:1 ))
+        - cmake --build build_hybrid -- -j $(nproc)
     artifacts:
         paths:
             - build_hybrid/
@@ -53,28 +53,28 @@ test_serial:
         - make_serial
     script:
         - cd build_serial
-        - ctest -L serial --output-on-failure -j $(nproc)
+        - ctest -L serial --output-on-failure -j $(( p=($(nproc)/1),p?p:1 ))
 test_openmp:
     stage: test
     dependencies:
         - make_openmp
     script:
         - cd build_openmp
-        - ctest -L openmp --output-on-failure -j $(nproc)
+        - ctest -L openmp --output-on-failure -j $(( p=($(nproc)/2),p?p:1 ))
 test_mpi:
     stage: test
     dependencies:
         - make_mpi
     script:
         - cd build_mpi
-        - ctest -L mpi --output-on-failure -j $(nproc)
+        - ctest -L mpi --output-on-failure -j $(( p=($(nproc)/2),p?p:1 ))
 test_hybrid:
     stage: test
     dependencies:
         - make_hybrid
     script:
         - cd build_hybrid
-        - ctest -L hybrid --output-on-failure -j $(nproc)
+        - ctest -L hybrid --output-on-failure -j $(( p=($(nproc)/4),p?p:1 ))
 document:
     image: ${REGISTRY}/document:latest
     stage: build_for_deploy
