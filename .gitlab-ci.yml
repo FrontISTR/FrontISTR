@@ -60,6 +60,7 @@ test_openmp:
         - make_openmp
     script:
         - cd build_openmp
+        - ctest -L serial --output-on-failure -j $(( p=($(nproc)/1),p?p:1 ))
         - ctest -L openmp --output-on-failure -j $(( p=($(nproc)/2),p?p:1 ))
 test_mpi:
     stage: test
@@ -67,13 +68,17 @@ test_mpi:
         - make_mpi
     script:
         - cd build_mpi
-        - ctest -L mpi --output-on-failure -j $(( p=($(nproc)/2),p?p:1 ))
+        - ctest -L serial --output-on-failure -j $(( p=($(nproc)/1),p?p:1 ))
+        - ctest -L mpi    --output-on-failure -j $(( p=($(nproc)/2),p?p:1 ))
 test_hybrid:
     stage: test
     dependencies:
         - make_hybrid
     script:
         - cd build_hybrid
+        - ctest -L serial --output-on-failure -j $(( p=($(nproc)/1),p?p:1 ))
+        - ctest -L openmp --output-on-failure -j $(( p=($(nproc)/2),p?p:1 ))
+        - ctest -L mpi    --output-on-failure -j $(( p=($(nproc)/2),p?p:1 ))
         - ctest -L hybrid --output-on-failure -j $(( p=($(nproc)/4),p?p:1 ))
 document:
     image: ${REGISTRY}/document:latest
