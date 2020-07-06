@@ -20,7 +20,7 @@ ${res}
 !RESULT,NAME=vis_out,IO=OUT
 ${mesh}
 EOL
-  fistr1
+  docker run -it --sig-proxy=false --rm -u $UID -v $PWD:$PWD -w $PWD registry.gitlab.com/frontistr-commons/frontistr/fistr1:master fistr1 -t 1
   rm -f hecmw_ctrl.dat FSTR.msg 0.log FSTR.sta FSTR.dbg.0 hecmw_vis.ini dyna*.txt
   popd
 done
