@@ -105,7 +105,7 @@ EOL
     COMPARE=$(($COMPARE+$?))
     [ $VERBOSE -ge 1 ] && if [ $COMPARE -eq 0 ]; then echo "    result: sucess";else echo "    result: failure"; ((ERRORS++)); fi
   done
-  if [ $COMPARE -eq 0 ]; then echo "  result: sucess";else echo "  result: failure"; ((ERRORS++)); [ $goahead -eq 0 ] && die; fi
+  if [ $COMPARE -eq 0 ]; then echo "  result: sucess";else echo "  result: failure"; ((ERRORS++)); [ $goahead -eq 0 ] && echo "  workdir: $tdir" && die; fi
   [ $VERBOSE -ge 1 ] && echo "  time: ${SECONDS}s";
   rm -rf $tdir/*
   popd > /dev/null
