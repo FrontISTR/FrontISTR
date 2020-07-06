@@ -53,7 +53,7 @@ while getopts ":d:p:t:f:e:r:vch" optKey; do
   esac
 done
 
-test_dir=run_test/$$
+test_dir=../run_test/$$
 output=""
 compare_res=$(pwd)/compare_res.pl
 rm -fr $test_dir
