@@ -103,9 +103,9 @@ EOL
     [ $VERBOSE -le 1 ] && OUT3=" >/dev/null 2>&1"
     sh -c "perl $compare_res $REF $TAGT $OUT3"
     COMPARE=$(($COMPARE+$?))
-    [ $VERBOSE -ge 1 ] && if [ $COMPARE -eq 0 ]; then echo "    result: sucess";else echo "    result: failure"; ((ERRORS++)); fi
+    [ $VERBOSE -ge 1 ] && if [ $COMPARE -eq 0 ]; then echo "    result: success";else echo "    result: failure"; ((ERRORS++)); fi
   done
-  if [ $COMPARE -eq 0 ]; then echo "  result: sucess";else echo "  result: failure"; ((ERRORS++)); [ $goahead -eq 0 ] && echo "  workdir: $tdir" && die; fi
+  if [ $COMPARE -eq 0 ]; then echo "  result: success";else echo "  result: failure"; ((ERRORS++)); [ $goahead -eq 0 ] && echo "  workdir: $tdir" && die; fi
   [ $VERBOSE -ge 1 ] && echo "  time: ${SECONDS}s";
   rm -rf $tdir/*
   popd > /dev/null
