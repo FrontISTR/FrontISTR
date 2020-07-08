@@ -98,7 +98,7 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
 set(VERSION_MINOR 1 CACHE STRING "Minor version number of FrontISTR")
 set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
-string(TIMESTAMP BUILD_DATE "%Y-%m-%dT%H:%M:%SZ" UTC)
+execute_process(COMMAND date "+%Y-%m-%dT%H:%M:%S%z" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH BUILD_DATE GIT_HASH)
 

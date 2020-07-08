@@ -20,7 +20,7 @@ echo "" > ./fistr1/src/main/FrontISTRConfig.h
 echo "#define VERSION_MAJOR 5" >> ./fistr1/src/main/FrontISTRConfig.h
 echo "#define VERSION_MINOR 0" >> ./fistr1/src/main/FrontISTRConfig.h
 echo "#define VERSION_PATCH 0" >> ./fistr1/src/main/FrontISTRConfig.h
-echo '#define BUILD_DATE "'`date -u '+%Y-%m-%dT%H:%M:%SZ'`'"' >> ./fistr1/src/main/FrontISTRConfig.h
+echo '#define BUILD_DATE "'`date '+%Y-%m-%dT%H:%M:%S%z'`'"' >> ./fistr1/src/main/FrontISTRConfig.h
 
 if type "git" > /dev/null 2>&1
 then
