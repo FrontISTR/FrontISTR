@@ -27,7 +27,7 @@ static void print_usage(void) {
   fprintf(stderr, "  -v  print verbose messages\n");
   fprintf(stderr, "  -h  print usage\n");
   fprintf(stderr, "*** Following option is set parameter instead of hecmw_part_ctrl.dat ***\n");  
-  fprintf(stderr, "  -d  numbero of sub-domains \n");
+  fprintf(stderr, "  -d  number of sub-domains \n");
   fprintf(stderr, "  -t  partitioning type            (unimplemented, default: NODE-BASED) \n");
   fprintf(stderr, "  -m  partitioning method          (unimplemented, default: KMETIS) \n");
   fprintf(stderr, "  -e  depth of overlapping zone    (unimplemented, default: 1) \n");
