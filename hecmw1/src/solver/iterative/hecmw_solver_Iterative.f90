@@ -37,6 +37,9 @@ contains
     real(kind=kreal)   :: RESID, SIGMA_DIAG, THRESH, FILTER, resid2
     real(kind=kreal)   :: TIME_setup, TIME_comm, TIME_sol, TR
     real(kind=kreal)   :: time_Ax, time_precond
+    real(kind=kreal)   :: MATRIX, VECTOR, TMP
+    integer(kind=kint) :: N, NP, NDOF
+    character(2) :: SI(0:6) = ['  ',' K',' M',' G',' T',' P',' E']
 
     integer(kind=kint) :: NREST
     real(kind=kreal)   :: SIGMA
@@ -156,6 +159,12 @@ contains
     time_Ax = hecmw_matvec_get_timer()
     time_precond = hecmw_precond_get_timer()
 
+    N    = hecMAT%N
+    NP   = hecMAT%NPL+hecMAT%NPU
+    NDOF = hecMAT%NDOF
+    call hecmw_allreduce_I1 (hecMESH, N , hecmw_sum)
+    call hecmw_allreduce_I1 (hecMESH, NP, hecmw_sum)
+
     if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) then
       TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
       write (*,'(/a)')          '### summary of linear solver'
@@ -167,7 +176,31 @@ contains
       write (*,'(a, 1pe16.6 )') '    solver/precond   : ', time_precond
       if (ITER > 0) &
         write (*,'(a, 1pe16.6 )') '    solver/1 iter    : ', TIME_sol / ITER
-      write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
+      write (*,'(a, 1pe16.6 )') '    work ratio (%)   : ', TR
+      write (*,'(a,4x,i0    )') '    N                : ', N
+      MATRIX = kreal*(N+NP)*NDOF**2+kint*(N+NP)
+      VECTOR = 2*kreal*N*NDOF
+      do i = 0, 6
+        TMP=1.0d0/1024**i*(MATRIX)
+        if (TMP<1000d0) then
+          write (*,'(a,f11.3,a,a)') '    Matrix size      : ',TMP,SI(i),"B"
+          EXIT
+        endif
+      enddo
+      do i = 0, 6
+        TMP=1.0d0/1000**i/time_Ax* ITER*MATRIX
+        if (TMP<1000d0) then
+          write (*,'(a,f11.3,a,a)') '    matvec memory BW : ',TMP,SI(i),"B/s"
+          EXIT
+        endif
+      enddo
+      do i = 0, 6
+        TMP=1.0d0/1000**i/time_Ax* ITER*real(2*(N+NP)*NDOF**2)
+        if (TMP<1000d0) then
+          write (*,'(a,f11.3,a,a)') '    matvec FLOPS     : ',TMP,SI(i),"FLOPS"
+          EXIT
+        endif
+      enddo
     endif
 
   end subroutine hecmw_solve_iterative
