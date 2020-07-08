@@ -21,6 +21,8 @@ else
 endif
 
 build:
+	docker pull registry.gitlab.com/frontistr-commons/frontistr/build:latest
+	docker pull registry.gitlab.com/frontistr-commons/frontistr/runtime:latest
 	docker build \
 		-t $(CI_REGISTRY_IMAGE)/fistr1:$(TAG) \
 		-f Dockerfile \

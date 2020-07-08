@@ -1,6 +1,8 @@
-FROM ubuntu:18.04 AS runtime
+FROM ubuntu:20.04 AS runtime
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
- && apt-get -y install libmumps-5.1.2 libgomp1 libtrilinos-ml12 libopenmpi2 libmetis5 openssh-client \
+ && apt-get -y install libmumps-5.2.1 libgomp1 libtrilinos-ml12 libopenmpi3 libmetis5 openssh-client time \
+ && apt-get -y install libmkl-core libmkl-intel-lp64 libmkl-gnu-thread libmkl-scalapack-lp64 libmkl-blacs-openmpi-lp64 \
  && apt-get clean      \
  && rm -rf /var/lib/apt/lists/*
 
@@ -21,9 +23,11 @@ RUN apt-get update \
     libptscotch-dev    \
     ruby               \
     trilinos-all-dev   \
+    libmkl-dev         \
  && apt-get clean      \
  && git clone --depth=1  https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
  && cd REVOCAP_Mesh \
+ && cp config/MakefileConfig.LinuxCluster MakefileConfig.in \
  && make -j4 Refiner \
  && find lib -type f -name "libRcapRefiner*" -exec cp {} /usr/lib/ \; \
  && find . -type f -name "rcapRefiner.h" -exec cp {} /usr/include/ \; \
