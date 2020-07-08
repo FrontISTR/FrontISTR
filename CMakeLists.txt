@@ -134,10 +134,10 @@ endif()
 ###################
 find_package(MPI)
 find_package(OpenMP)
+find_package(MKL)
 find_package(LAPACK)
 find_package(Metis)
 find_package(Parmetis)
-find_package(MKL)
 find_package(Mumps)
 find_package(Refiner)
 find_package(Revocap)
@@ -173,6 +173,19 @@ if(WITH_OPENMP AND OPENMP_FOUND)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
 else()
   set(WITH_OPENMP OFF)
+endif()
+
+###################
+# -DWITH_MKL
+###################
+if(WITH_MKL)
+  set(BLA_VENDOR "Intel10_64lp")
+  list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+  list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
+  set(WITH_LAPACK ON)
+else()
+  set(WITH_MKL OFF)
 endif()
 
 ###################
@@ -267,18 +280,6 @@ if(WITH_LAPACK)
   endif()
 endif()
 
-###################
-# -DWITH_MKL
-###################
-if(WITH_MKL)
-  set(BLA_VENDOR "Intel10_64lp")
-  list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
-  list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
-  set(WITH_LAPACK ON)
-else()
-  set(WITH_MKL OFF)
-endif()
 
 ###################
 # -DOLD_RES_FORMAT
