@@ -37,8 +37,8 @@ contains
     real(kind=kreal)   :: RESID, SIGMA_DIAG, THRESH, FILTER, resid2
     real(kind=kreal)   :: TIME_setup, TIME_comm, TIME_sol, TR
     real(kind=kreal)   :: time_Ax, time_precond
-    real(kind=kreal)   :: MATRIX, VECTOR, TMP
-    integer(kind=kint) :: N, NP, NDOF
+    real(kind=kreal)   :: NP, MATRIX, VECTOR, TMP
+    integer(kind=kint) :: N, NDOF
     character(2) :: SI(0:6) = ['  ',' K',' M',' G',' T',' P',' E']
 
     integer(kind=kint) :: NREST
@@ -163,7 +163,7 @@ contains
     NP   = hecMAT%NPL+hecMAT%NPU
     NDOF = hecMAT%NDOF
     call hecmw_allreduce_I1 (hecMESH, N , hecmw_sum)
-    call hecmw_allreduce_I1 (hecMESH, NP, hecmw_sum)
+    call hecmw_allreduce_R1 (hecMESH, NP, hecmw_sum)
 
     if (hecMESH%my_rank.eq.0 .and. TIMElog.ge.1) then
       TR= (TIME_sol-TIME_comm)/(TIME_sol+1.d-24)*100.d0
@@ -195,7 +195,7 @@ contains
         endif
       enddo
       do i = 0, 6
-        TMP=1.0d0/1000**i/time_Ax* ITER*real(2*(N+NP)*NDOF**2)
+        TMP=1.0d0/1000**i/time_Ax* ITER*(2*(N+NP)*NDOF**2)
         if (TMP<1000d0) then
           write (*,'(a,f11.3,a,a)') '    matvec FLOPS     : ',TMP,SI(i),"FLOPS"
           EXIT
