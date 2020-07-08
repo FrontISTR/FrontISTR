@@ -26,7 +26,7 @@ static void print_usage(void) {
   fprintf(stderr, "  -f  specify control file name\n");
   fprintf(stderr, "  -v  print verbose messages\n");
   fprintf(stderr, "  -h  print usage\n");
-  fprintf(stderr, "*** Following option is set parameter instead of hecmw_part_ctrl.dat ***\n");  
+  fprintf(stderr, "*** If the following options are set, hecmw_part_ctrl.dat will be ignored. ***\n");
   fprintf(stderr, "  -d  number of sub-domains \n");
   fprintf(stderr, "  -t  partitioning type            (unimplemented, default: NODE-BASED) \n");
   fprintf(stderr, "  -m  partitioning method          (unimplemented, default: KMETIS) \n");
