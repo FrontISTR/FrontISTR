@@ -317,7 +317,7 @@ contains
     logical, intent(in)                              :: is_init       !< wheather initial scan or not
     logical, intent(out)                            :: active        !< if any in contact
     real(kind=kreal), intent(in)                     :: mu            !< penalty
-    real(kind=kreal), optional                       :: B(:)          !< nodal force residual
+    real(kind=kreal), optional, target               :: B(:)          !< nodal force residual
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
@@ -329,7 +329,8 @@ contains
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-    logical :: is_cand
+    logical :: is_cand, is_present_B
+    real(kind=kreal), pointer :: Bp(:)
 
     if( contact%algtype<=2 ) return
 
@@ -349,12 +350,16 @@ contains
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
 
+    ! for gfortran-10: optional parameter seems not allowed within omp parallel
+    is_present_B = present(B)
+    if( is_present_B ) Bp => B
+
     !$omp parallel do &
       !$omp& default(none) &
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
       !$omp&         bktID,nCand,indexCand) &
-      !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,distclr,contact_surf) &
+      !$omp& firstprivate(nMasterMax,is_present_B) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -371,10 +376,10 @@ contains
             elemID(contact%master(id)%eid), " with tensile force ", nlforce
           cycle
         endif
-        if( contact%algtype /= CONTACTFSLID .or. (.not. present(B)) ) then   ! small slide problem
+        if( contact%algtype /= CONTACTFSLID .or. (.not. is_present_B) ) then   ! small slide problem
           contact_surf(contact%slave(i)) = -id
         else
-          call track_contact_position( flag_ctAlgo, i, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, B )
+          call track_contact_position( flag_ctAlgo, i, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, Bp )
           if( contact%states(i)%state /= CONTACTFREE ) then
             contact_surf(contact%slave(i)) = -contact%states(i)%surface
           endif
