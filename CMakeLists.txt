@@ -166,7 +166,6 @@ feature_summary(WHAT ALL)
 # Provisional solution FOR GCC Fortran 10 compiling error
 if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 10)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
-  set(WITH_OPENMP OFF)
 endif()
 
 ###################
