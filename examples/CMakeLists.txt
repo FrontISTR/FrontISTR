@@ -52,7 +52,7 @@ foreach(parallel IN LISTS parallels)
     set_tests_properties(Test_${type}_${case}_${parallel} PROPERTIES LABELS ${type},${case},${parallel})
   endforeach()  
 
-  foreach(case exM exN exO exP exQ exR exS exT exU exV)
+  foreach(case exM exN exO exP exQ exR exS exT exU exU2 exV)
     set(type heat)
     add_test(NAME Test_${type}_${case}_${parallel}
      COMMAND ruby ./test_FrontISTR.rb ${FrontISTR_BINARY_DIR} ${type}/${case} ${np} ${nt}

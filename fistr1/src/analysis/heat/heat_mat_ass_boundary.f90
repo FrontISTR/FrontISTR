@@ -7,7 +7,7 @@
 module m_heat_mat_ass_boundary
 contains
 
-  subroutine heat_mat_ass_boundary(hecMESH, hecMAT, hecMATmpc, fstrHEAT, next_time, delta_time)
+  subroutine heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrHEAT, next_time, delta_time)
     use m_fstr
     use m_heat_mat_ass_bc_CFLUX
     use m_heat_mat_ass_bc_DFLUX
@@ -19,6 +19,7 @@ contains
     type(hecmwST_matrix) :: hecMAT
     type(hecmwST_matrix), pointer :: hecMATmpc
     type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_local_mesh), pointer :: hecMESHmpc
     real(kind=kreal) :: next_time, delta_time, beta
 
     beta = fstrHEAT%beta
@@ -36,7 +37,7 @@ contains
     call heat_mat_ass_bc_RADIATE(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
 
     !> MPC
-    call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
 
     !> !BOUNDARY

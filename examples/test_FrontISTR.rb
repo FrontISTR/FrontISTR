@@ -606,6 +606,13 @@ when("heat/exU")
 	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
 	exit res if res != 0
 }
+when("heat/exU2")
+[
+["heat/exU2","eh1b.msh","eh1b.cnt"],
+].each{|param|
+	res = exec_test(param[0],param[1],param[2],File.basename(param[1],".*"))
+	exit res if res != 0
+}
 when("heat/exV")
 [
 ["heat/exV","V342.msh","V342.cnt"],

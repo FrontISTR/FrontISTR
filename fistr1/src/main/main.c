@@ -222,6 +222,7 @@ int main(int argc, char *argv[])
     printf("version:    %d.%d.%d\n", VERSION_MAJOR,VERSION_MINOR, VERSION_PATCH);
     printf("git_hash:   %s\n", GIT_HASH );
     printf("build:\n");
+    printf("  date:     %s\n", BUILD_DATE );
     printf("  MPI:      ");
 #ifdef WITH_MPI
     printf("enabled\n");
@@ -268,8 +269,8 @@ int main(int argc, char *argv[])
     printf("--with-mkl ");
 #endif
     printf("\"");
-#ifdef HECMW_METIS_VER
     printf("\n");
+#ifdef HECMW_METIS_VER
     printf("  HECMW_METIS_VER: %d\n", HECMW_METIS_VER);
 #endif
   }

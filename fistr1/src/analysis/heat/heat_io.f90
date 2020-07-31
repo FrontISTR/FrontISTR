@@ -7,24 +7,27 @@ module m_heat_io
 
 contains
 
-  subroutine heat_input_restart(fstrHEAT, hecMESH, tstep, tt)
+  subroutine heat_input_restart(fstrHEAT, hecMESH, istep, tstep, tt)
     use m_fstr
     implicit none
     type(hecmwST_local_mesh)  :: hecMESH
     type(fstr_heat)           :: fstrHEAT
+    integer(kind=kint) :: restart_istep(1)
     integer(kind=kint) :: restart_step(1)
     real(kind=kreal)   :: restart_time(1)
-    integer(kind=kint) :: i, tstep
+    integer(kind=kint) :: i, istep, tstep
     real(kind=kreal)   :: tt
 
     if(fstrHEAT%restart_nout < 0)then
       fstrHEAT%restart_nout = -fstrHEAT%restart_nout
       call hecmw_restart_open()
+      call hecmw_restart_read_int(restart_istep)
       call hecmw_restart_read_int(restart_step)
       call hecmw_restart_read_real(restart_time)
       call hecmw_restart_read_real(fstrHEAT%TEMP0)
       call hecmw_restart_close()
-      tstep = restart_step(1)
+      istep = restart_istep(1)
+      tstep = restart_step(1) + 1
       tt = restart_time(1)
 
       do i = 1, hecMESH%n_node
@@ -150,21 +153,25 @@ contains
     endif
   end subroutine heat_output_visual
 
-  subroutine heat_output_restart(hecMESH, fstrHEAT, tstep, outflag, current_time)
+  subroutine heat_output_restart(hecMESH, fstrHEAT, istep, tstep, current_time, outflag)
     use m_fstr
     implicit none
     type(hecmwST_local_mesh)  :: hecMESH
     type(fstr_heat)           :: fstrHEAT
+    integer(kind=kint) :: restart_istep(1)
     integer(kind=kint) :: restart_step(1)
     real(kind=kreal)   :: restart_time(1)
     integer(kind=kint) :: restrt_data_size
-    integer(kind=kint) :: tstep
+    integer(kind=kint) :: istep, tstep
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
     real(kind=kreal)   :: current_time
 
     if(0 < fstrHEAT%restart_nout .and. (mod(tstep, fstrHEAT%restart_nout) == 0 .or. outflag))then
+      restart_istep(1) = istep
       restart_step(1) = tstep
       restart_time(1) = current_time
+      restrt_data_size = size(restart_istep)
+      call hecmw_restart_add_int(restart_istep, restrt_data_size)
       restrt_data_size = size(restart_step)
       call hecmw_restart_add_int(restart_step, restrt_data_size)
       restrt_data_size = size(restart_time)

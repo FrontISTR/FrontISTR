@@ -32,7 +32,7 @@ contains
 
 
   !> Read in !HEAT
-  function fstr_ctrl_get_HEAT( ctrl, dt, etime, dtmin, deltmx, itmax, eps )
+  function fstr_ctrl_get_HEAT( ctrl, dt, etime, dtmin, deltmx, itmax, eps, tpname )
     implicit none
     integer(kind=kint) :: ctrl
     real(kind=kreal),pointer :: dt(:)
@@ -41,11 +41,15 @@ contains
     real(kind=kreal),pointer :: deltmx(:)
     integer(kind=kint),pointer :: itmax(:)
     real(kind=kreal),pointer :: eps(:)
+    character(len=*), intent(out) :: tpname
     integer(kind=kint) :: fstr_ctrl_get_HEAT
 
     integer(kind=kint) :: result
 
     fstr_ctrl_get_HEAT = -1
+
+    tpname=""
+    if( fstr_ctrl_get_param_ex( ctrl, 'TIMEPOINTS ',  '# ',  0, 'S', tpname )/= 0) return
 
     ! JP-7
     if( fstr_ctrl_get_data_array_ex( ctrl, 'rrrrir ', dt, etime, dtmin, deltmx, itmax, eps )/= 0) return
