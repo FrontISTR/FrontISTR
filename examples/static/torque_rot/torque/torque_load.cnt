@@ -2,7 +2,7 @@
 #####   SOLVER INFORMATION    #####
 ###################################
 !VERSION
- 3
+ 5
 !SOLUTION, TYPE=STATIC
 !WRITE,LOG
 !NODE_OUTPUT
