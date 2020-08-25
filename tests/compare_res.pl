@@ -46,7 +46,6 @@ sub func{
   while(my $lin = <DF>){
     if ($lin =~ /\*global/) {
       ($global_header_cnt)=split(/\s+/,<DF>);
-      @global_header_num = split(/\s+/,<DF>);
       @global_header_num=(); @global_header_name=();
       for (my $i=0;$i<(int(($global_header_cnt-1)/10)+1);$i++){ push(@global_header_num,split(/\s+/,<DF>)) }
       for (my $i=0;$i<$global_header_cnt;$i++) { chomp($line=<DF>); push(@global_header_name,$line);}
