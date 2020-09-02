@@ -1553,8 +1553,10 @@ static int get_contact_info(struct hecmwST_contact_pair *cpair, FILE *fp,
     HECMW_set_error(errno, "");
     return -1;
   }
-  if (get_int_ary(cpair->slave_orisgrp_id, cpair->n_pair, fp)) {
-    return -1;
+  if (hecmw_flag_version >= 5) {
+    if (get_int_ary(cpair->slave_orisgrp_id, cpair->n_pair, fp)) {
+      return -1;
+    }
   }
 
   /* master_grp_id */
