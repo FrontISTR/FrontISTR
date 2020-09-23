@@ -332,6 +332,15 @@ contains
     if( itype==2 ) isElastoplastic = .true.
   end function
 
+  !> If it is a hyperelastic material?
+  logical function isHyperelastic( mtype )
+    integer, intent(in) :: mtype
+    integer :: itype
+    isHyperelastic = .false.
+    itype = fetchDigit( 2, mtype )
+    if( itype==3 ) isHyperelastic = .true.
+  end function
+
   !> If it is an viscoelastic material?
   logical function isViscoelastic( mtype )
     integer, intent(in) :: mtype

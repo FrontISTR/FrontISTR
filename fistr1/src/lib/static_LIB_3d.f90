@@ -633,8 +633,7 @@ contains
 
     else if( flag == TOTALLAG ) then
 
-      if( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.   &
-          mtype==USERELASTIC .OR. mtype==USERHYPERELASTIC .OR. mtype==USERMATERIAL ) then
+      if( isHyperelastic(mtype) .OR. mtype == USERELASTIC .OR. mtype == USERMATERIAL ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress )
       else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
         gauss%pMaterial%mtype=mtype
