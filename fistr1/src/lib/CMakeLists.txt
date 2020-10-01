@@ -34,6 +34,7 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_2d.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3d.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3dIC.f90
+  ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3d_up.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3d_vp.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_C3D4_selectiveESNS.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_C3D8.f90
