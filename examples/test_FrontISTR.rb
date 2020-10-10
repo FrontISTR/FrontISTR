@@ -210,13 +210,13 @@ def read_log(filename)
             break
           end
         end
-      when /Maximum Temperature/
+      when /Maximum Temperature(global)/
         g = data['Node'] || data['Node']={}
         g['Temperature'] = []
         ary = line.chomp.split(":")
         g['Temperature'] << ary[1].to_f
         line=aFile.gets
-      when /Minimum Temperature/
+      when /Minimum Temperature(global)/
         g = data['Node'] || data['Node']={}
         ary = line.chomp.split(":")
         g['Temperature'] << ary[1].to_f
