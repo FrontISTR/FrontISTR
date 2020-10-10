@@ -520,6 +520,7 @@ fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n) {
     for (j = 0; j < mesh[i]->ne_internal; j++) {
       eid = mesh[i]->elem_internal_list[j] - 1;
       if ( HECMW_is_etype_patch(area_etype_list[eid]) ) continue;
+      if ( HECMW_is_etype_link(area_etype_list[eid]) ) continue;
 
       erec[count].global = mesh[i]->global_elem_ID[eid];
       erec[count].local = eid;

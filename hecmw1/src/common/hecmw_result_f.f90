@@ -45,7 +45,7 @@ module hecmw_result
 
   private
   character(len=HECMW_NAME_LEN) :: sname,vname
-  logical :: patch_exist
+  logical :: MPC_exist
   integer(kind=kint) :: nelem_wo_MPC = 0
   integer(kind=kint), allocatable :: eid_wo_MPC(:)
   integer(kind=kint), allocatable :: elemID_wo_MPC(:)
@@ -81,16 +81,17 @@ contains
 
     integer(kind=kint) :: itype, iS, iE, ic_type, icel
 
-    patch_exist = .false.
+    MPC_exist = .false.
     do itype= 1, hecMESH%n_elem_type
       ic_type = hecMESH%elem_type_item(itype)
-      if (hecmw_is_etype_patch(ic_type)) patch_exist = .true.
+      if (hecmw_is_etype_patch(ic_type)) MPC_exist = .true.
+      if (hecmw_is_etype_link(ic_type)) MPC_exist = .true.
     end do
 
     nnode = hecMESH%n_node
     nelem = hecMESH%n_elem
 
-    if( patch_exist ) then
+    if( MPC_exist ) then
 
       if( nelem_wo_MPC == 0 ) then
         allocate(eid_wo_MPC(nelem))
@@ -105,6 +106,7 @@ contains
           ic_type= hecMESH%elem_type_item(itype)
 
           if (hecmw_is_etype_patch(ic_type)) cycle
+          if (hecmw_is_etype_link(ic_type)) cycle
 
           do icel= iS, iE
             nelem_wo_MPC = nelem_wo_MPC + 1
@@ -130,9 +132,8 @@ contains
 
     integer(kind=kint) :: i, icel
     real(kind=kreal), pointer :: data_wo_MPC(:)
-    logical :: patch_exist
 
-    if( dtype == 2 .and. patch_exist ) then !element output without patch element
+    if( dtype == 2 .and. MPC_exist ) then !element output without patch element
 
       allocate(data_wo_MPC(n_dof*nelem_wo_MPC))
       data_wo_MPC(:) = 0.d0
