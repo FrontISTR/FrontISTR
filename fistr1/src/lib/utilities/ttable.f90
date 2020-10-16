@@ -114,7 +114,6 @@ contains
   subroutine TableCopy( lhs, rhs )
     type(tTable), intent(out) :: lhs
     type(tTable), intent(in)  :: rhs
-    integer :: i,j
 
     lhs%ndepends = rhs%ndepends
     lhs%tbcol = rhs%tbcol
@@ -331,8 +330,7 @@ module Table_DICTS
     real(kind=kreal), intent(out)  :: outa(:)
 
     integer          :: i, j, na, nn, ccol, ddd, nval
-    real(kind=kreal) :: cval, lambda, val1(MAXINDEX), val2(MAXINDEX)
-    logical          :: isok
+    real(kind=kreal) :: lambda, val1(MAXINDEX), val2(MAXINDEX)
 
     ddd = dd / table%tbindex(cindex)
     ccol = table%tbcol-cindex+1
@@ -399,7 +397,6 @@ module Table_DICTS
     type(DICT_STRUCT), pointer     :: dict
     integer, intent(in)            :: fname
 
-    type(DICT_DATA)             :: dicval
     type(LINKED_LIST), pointer  :: current
     integer :: i
     do i = 1,size(dict%table)
