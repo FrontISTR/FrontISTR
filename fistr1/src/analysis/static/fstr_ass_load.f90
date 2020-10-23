@@ -400,6 +400,12 @@ contains
               call TLOAD_C3D8Fbar                                                            &
                 ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
                 fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+            else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then
+              !> temporary
+              !call TLOAD_C3                                                          &
+              !  ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+              !  fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
+              stop "FROM361=UP: TLOAD is not supported"
             endif
 
           else if( ic_type == 341 .or. ic_type == 351 .or.                       &

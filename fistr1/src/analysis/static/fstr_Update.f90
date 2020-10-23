@@ -44,7 +44,7 @@ contains
     integer            :: ndim, initt
 
     real(kind=kreal), optional :: strainEnergy
-    real(kind=kreal) :: tmp
+    real(kind=kreal) :: tmp, lambda(1), ddlambda(1)
     real(kind=kreal)   :: ddaux(3,3)
 
     ndof = hecMAT%NDOF
@@ -190,8 +190,22 @@ contains
               call Update_C3D8Fbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
                 qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
             endif
+          else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then ! UP element
+              lambda(1) = -0.5D0*fstrSOLID%elements(icel)%p(1)
+              if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+                CALL Update_C3_up                                                                      &
+                     ( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), &
+                       qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr,                &
+                       1, lambda, ddlambda, tt(1:nn), tt0(1:nn) )
+              else
+                CALL Update_C3_up                                                                      &
+                     ( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), &
+                       qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr,                &
+                       1, lambda, ddlambda  )
+              endif
+              lambda(1) = lambda(1) + ddlambda(1)
+              fstrSOLID%elements(icel)%p(1) = -2.0D0*lambda(1)
           endif
-
         else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
