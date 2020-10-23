@@ -113,6 +113,11 @@ contains
             call STF_C3D8Fbar                                                                        &
               ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
               stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
+          else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then ! UP element
+            call STF_C3_up                                   &
+               ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
+                 stiffness(1:nn*ndof, 1:nn*ndof), &
+                 tincr, 1, fstrSOLID%elements(icel)%p, u(1:3, 1:nn), tt(1:nn) )
           endif
 
         elseif (ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then

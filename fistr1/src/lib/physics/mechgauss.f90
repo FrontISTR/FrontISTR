@@ -37,6 +37,7 @@ module mMechGauss
     real(kind=kreal), pointer   :: aux(:,:) => null()    !< nodeless dof for incompatible element
     integer                     :: elemact_flag            !< -1:undefined, 0:active, 1:inactive
     real(kind=kreal)            :: elemact_coeff           !< coefficient to internal force of elemact element
+    real(kind=kreal)            :: p(1)                  !< pressure
   end type
 
 contains
