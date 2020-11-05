@@ -134,10 +134,10 @@ endif()
 ###################
 find_package(MPI)
 find_package(OpenMP)
+find_package(MKL)
 find_package(LAPACK)
 find_package(Metis)
 find_package(Parmetis)
-find_package(MKL)
 find_package(Mumps)
 find_package(Refiner)
 find_package(Revocap)
@@ -163,6 +163,11 @@ option(OLD_RES_FORMAT "use old style result file" ${OLD_RES_FORMAT})
 option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
 
+# Provisional solution FOR GCC Fortran 10 compiling error
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 10)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
+endif()
+
 ###################
 # -DWITH_OPENMP
 ###################
@@ -173,6 +178,19 @@ if(WITH_OPENMP AND OPENMP_FOUND)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
 else()
   set(WITH_OPENMP OFF)
+endif()
+
+###################
+# -DWITH_MKL
+###################
+if(WITH_MKL)
+  set(BLA_VENDOR "Intel10_64lp")
+  list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+  list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
+  set(WITH_LAPACK ON)
+else()
+  set(WITH_MKL OFF)
 endif()
 
 ###################
@@ -267,18 +285,6 @@ if(WITH_LAPACK)
   endif()
 endif()
 
-###################
-# -DWITH_MKL
-###################
-if(WITH_MKL)
-  set(BLA_VENDOR "Intel10_64lp")
-  list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
-  list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
-  set(WITH_LAPACK ON)
-else()
-  set(WITH_MKL OFF)
-endif()
 
 ###################
 # -DOLD_RES_FORMAT
@@ -420,4 +426,6 @@ else()
   set(CPACK_STRIP_FILES ON)
 endif()
 include(CPack)
+
+
 

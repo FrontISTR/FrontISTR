@@ -60,6 +60,9 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
+		for(i=0; i<data->ng_component; i++){
+			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"/>\n", data->global_label[i], data->ng_dof[i]);
+		}
 		fprintf (outfp, "<PPoints>\n");
 		fprintf (outfp, "<PDataArray type=\"Float32\" NumberOfComponents=\"3\"/>\n");
 		fprintf (outfp, "</PPoints>\n");
@@ -88,11 +91,25 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		fclose (outfp);
 	}
 
-	/* outpu vtu file */
+	/* output vtu file */
 	outfp = fopen (file_vtu, "w");
 	fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 	fprintf (outfp, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\">\n");
 	fprintf (outfp, "<UnstructuredGrid>\n");
+	fprintf (outfp, "<FieldData>\n");
+	for(i=0; i<data->ng_component; i++){
+		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"  >\n", data->global_label[i], data->ng_dof[i]);
+		shift=0;
+		for(j=0; j<i; j++){
+			shift += data->ng_dof[j];
+		}
+    for(k=0; k<data->ng_dof[i]; k++){
+      fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
+    }
+    fprintf (outfp, "\n");
+		fprintf (outfp, "</DataArray>\n");
+	}
+	fprintf (outfp, "</FieldData>\n");
 	fprintf (outfp, "<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", n_node, n_elem);
 	fprintf (outfp, "<Points>\n");
 	fprintf (outfp, "<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"ascii\">\n");
@@ -228,6 +245,9 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\" header_type=\"UInt32\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
+		for(i=0; i<data->ng_component; i++){
+			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"/>\n", data->global_label[i], data->ng_dof[i]);
+		}
 		fprintf (outfp, "<PPoints>\n");
 		fprintf (outfp, "<PDataArray type=\"Float32\" NumberOfComponents=\"3\"/>\n");
 		fprintf (outfp, "</PPoints>\n");
@@ -288,6 +308,20 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 	fprintf (outfp, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"%s\" header_type=\"UInt32\">\n", HECMW_endian_str());
 	fprintf (outfp, "<UnstructuredGrid>\n");
+	fprintf (outfp, "<FieldData>\n");
+	for(i=0; i<data->ng_component; i++){
+		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"  >\n", data->global_label[i], data->ng_dof[i]);
+		shift=0;
+		for(j=0; j<i; j++){
+			shift += data->ng_dof[j];
+		}
+    for(k=0; k<data->ng_dof[i]; k++){
+      fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
+    }
+    fprintf (outfp, "\n");
+		fprintf (outfp, "</DataArray>\n");
+	}
+	fprintf (outfp, "</FieldData>\n");
 	fprintf (outfp, "<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", n_node, n_elem);
 	fprintf (outfp, "<Points>\n");
 	fprintf (outfp, "<DataArray type=\"Float32\" NumberOfComponents=\"3\" format=\"appended\" offset=\"%d\">\n", offset[0]);

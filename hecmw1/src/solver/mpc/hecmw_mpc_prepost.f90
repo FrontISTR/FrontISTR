@@ -553,7 +553,7 @@ contains
     dst%n_elem_type   = src%n_elem_type
     dst%n_dof         = src%n_dof
     dst%n_neighbor_pe = src%n_neighbor_pe
-    if (src%n_neighbor_pe > 1) then
+    if (src%n_neighbor_pe > 0) then
       allocate(dst%neighbor_pe(dst%n_neighbor_pe))
       dst%neighbor_pe(:) = src%neighbor_pe(:)
       allocate(dst%import_index(0:dst%n_neighbor_pe))
