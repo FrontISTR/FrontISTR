@@ -235,7 +235,7 @@ contains
 
   subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )
     type(hecmwST_matrix), intent(in) :: hecMATorg
-    type(hecmwST_matrix), intent(out) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     hecMAT%N    = hecMATorg%N
     hecMAT%NP   = hecMATorg%NP
     hecMAT%NDOF = hecMATorg%NDOF
