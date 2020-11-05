@@ -42,6 +42,7 @@ examples/*/ex?/hecmw_part_ctrl.dat
 examples/*/ex?/*.msh.*
 examples/static/1elem/hecmw_ctrl.dat
 examples/static/thermal/hecmw_ctrl.dat
+run_test
 build/
 fistr/starter
 FrontISTRConfig.h
