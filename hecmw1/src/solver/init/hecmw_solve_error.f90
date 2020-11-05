@@ -61,7 +61,7 @@ contains
     if (IFLAG.eq.HECMW_SOLVER_ERROR_NOCONV_MAXIT) then
       if (hecMESH%zero.eq.1) then
         write (*,'(/a )')'  #### HEC-MW-SOLVER-W-3001: '
-        write (*,'( a/)')'    not converged within ceratin iterations'
+        write (*,'( a/)')'    not converged within certain iterations'
       endif
     endif
 
