@@ -1,0 +1,16 @@
+##
+## Control File for FSTR solver
+##
+!BOUNDARY
+ FIX, 1, 3, 0.0
+!DLOAD
+ ALL, GRAV,  9800.0, 0.0, 0.0, -1.0
+##
+## SOLVER CONTROL
+##
+!SOLVER,METHOD=1,PRECOND=3,ITERLOG=YES,TIMELOG=YES
+ 30000,  1, 10, 10
+ 1.0e-8, 1.0, 0.0
+#
+!WRITE,RESULT
+!END
