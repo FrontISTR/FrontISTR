@@ -23,6 +23,10 @@ for path in $(find . -type f -name "*.msh"); do
   cnt=${mesh%.msh}.cnt
   res=${mesh%.msh}.res
 
+  if ls $dir/${res}.* > /dev/null 2>&1; then
+    echo_err ${res}" exists. Skip this mesh file."
+    continue
+  fi
   # Remove previous results if exists
   rm -fr $dir/${mesh}_psf*
   rm -fr $dir/${res}*
@@ -42,6 +46,7 @@ ${cnt}
 ${res}
 !RESULT,NAME=vis_out,IO=OUT
 ${mesh}
+
 EOL
   docker run --rm        \
     -u $(id -u):$(id -g) \
