@@ -1089,7 +1089,6 @@ contains
   subroutine fstr_solid_phys_clear(fstrSOLID)
     implicit none
     type (fstr_solid)         :: fstrSOLID
-    type(fstr_solid_physic_val), pointer :: phys
     integer(kind=kint) :: i
 
     if (associated(fstrSOLID%SOLID)) then
