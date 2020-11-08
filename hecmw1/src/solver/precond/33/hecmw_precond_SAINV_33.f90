@@ -29,8 +29,6 @@ module hecmw_precond_SAINV_33
   integer(kind=kint), pointer :: indexU(:) => null()
   integer(kind=kint), pointer :: itemL(:)  => null()
   integer(kind=kint), pointer :: itemU(:)  => null()
-  integer(kind=kint), pointer :: perm(:)   => null()
-  integer(kind=kint), pointer :: iperm(:)  => null()
   real(kind=kreal), pointer :: D(:)  => null()
   real(kind=kreal), pointer :: AL(:) => null()
   real(kind=kreal), pointer :: AU(:) => null()
@@ -49,9 +47,7 @@ contains
     implicit none
     type(hecmwST_matrix) :: hecMAT
 
-    integer(kind=kint ) :: NPU, NPL, NP
-    integer(kind=kint ) :: rcm
-    integer(kind=kint ) :: ierror, PRECOND
+    integer(kind=kint ) :: PRECOND
 
     real(kind=krealp) :: FILTER
 
@@ -125,7 +121,7 @@ contains
     implicit none
     real(kind=kreal), intent(inout)  :: ZP(:)
     real(kind=kreal), intent(in)  :: R(:)
-    integer(kind=kint) :: in, i, j, isL, ieL, isU, ieU, k, iold, rcm
+    integer(kind=kint) :: in, i, j, isL, ieL, isU, ieU
     real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
 
     !$OMP PARALLEL DEFAULT(NONE) &
@@ -199,9 +195,9 @@ contains
     implicit none
     type (hecmwST_matrix)     :: hecMAT
 
-    integer(kind=kint) :: i, j, jS, jE, in, itr, iitr, ind(9), PRECOND
-    real(kind=krealp) :: YV1, YV2, YV3, X1, X2, X3, dd, dd1, dd2, dd3, dtemp(3)
-    real(kind=krealp) :: FILTER, SIGMA_DIAG
+    integer(kind=kint) :: i, j, jS, jE, in, itr
+    real(kind=krealp) :: X1, X2, X3, dd, dd1, dd2, dd3, dtemp(3)
+    real(kind=krealp) :: FILTER
     real(kind=krealp), allocatable :: zz(:), vv(:)
 
     FILTER= hecMAT%Rarray(5)
@@ -645,7 +641,7 @@ contains
   subroutine hecmw_sainv_make_u_33(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
-    integer(kind=kint) i,j,k,kk,n,m,o
+    integer(kind=kint) i,j,k,n,m,o
     integer(kind=kint) is,ie,js,je
 
     n = 1
@@ -710,7 +706,7 @@ contains
 
     integer(kind=kint),allocatable :: IWsL(:), IWsU(:), IW1(:), IW2(:)
     integer(kind=kint) :: NPLf1,NPUf1
-    integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
+    integer(kind=kint) :: i,jj,kk,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
     integer(kind=kint) :: j,k,iSL,iSU
     !C
