@@ -25,7 +25,7 @@ contains
     real(kind=kreal),   intent(in), optional :: u(:,:)     !< nodal displacemwent
     real(kind=kreal),   intent(in), optional :: temperature(nn)     !< temperature
 
-    real(kind=kreal) WG, llen, llen0, elem(3,nn)
+    real(kind=kreal) llen, llen0, elem(3,nn)
     logical :: ierr
     real(kind=kreal) ina(1), outa(1), direc(3), direc0(3), coeff, strain
     integer(kind=kint) :: i,j
