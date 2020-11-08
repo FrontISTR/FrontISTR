@@ -59,7 +59,7 @@ ctest -L analysis
 ```
 
 とすれば `${FRONTISTR_HOME}/tests/analysis` 以下の全てのテストを実行します。
-
+　
 ### 出力の調整
 
 `ctest` の一般的な使い方として、
@@ -75,7 +75,7 @@ ctest --output-on-failure
 ```
 
 は失敗したテストの結果のみ出力を表示します。詳しくは `ctest -h` を確認してください。
-
+　
 テストの追加方法
 -----------------
 
@@ -83,7 +83,8 @@ ctest --output-on-failure
 発見したものを自動的に登録します。
 このテストは信頼できるリファレンスと現在のソースコードに基づく `fistr1` での計算結果を比較して、
 それが十分に小さいかどうかを判定します。
-なのでテストを新たに追加するには
+
+したがって、テストを新たに追加するには
 
 1. `${FRONTISTR_HOME}/tests` 以下に新たにディレクトリを追加し
 2. `*.msh` ファイル、`*.cnt` ファイルを追加し
@@ -91,8 +92,11 @@ ctest --output-on-failure
 4. 計算結果が妥当かどうかを手動で確認する
 
 というプロセスを経ます。
-`create_reference.sh` の実行にはFrontISTRの公式リリースのコンテナイメージを用いるので
+
+`create_reference.sh` の実行には`${FRONTISTR_HOME}/build/fistr/fistr1`をデフォルトで利用しますので事前にビルドが必要です。
+`create_reference_docker.sh` の実行にはFrontISTRの公式リリースのコンテナイメージを用いるので
 [Docker][docker] の実行権限が必要です。
+
 
 [cmake]: https://cmake.org/cmake/help/latest/manual/cmake.1.html
 [ctest]: https://cmake.org/cmake/help/latest/manual/ctest.1.html
