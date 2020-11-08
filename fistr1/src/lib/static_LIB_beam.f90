@@ -21,8 +21,7 @@ contains
     real(kind=kreal), intent(out) :: le           !< length of the element
     real(kind=kreal), intent(out) :: t(3,3)       !< Transformation array
 
-    real(kind=kreal) ::       dl,theta
-
+    real(kind=kreal) ::       dl
     real(kind=kreal), parameter ::  tol = 1.d-08
 
     t(1,1) = xl(1,2) - xl(1,1)
@@ -65,10 +64,9 @@ contains
     real(kind=kreal), intent(in)   :: E,P   !< status of qudrature points
     real(kind=kreal), intent(out)  :: STIFF(nn*6,nn*6)   !< elemental stiff matrix
 
-    real(kind=kreal) :: le, outa(2), trans(3,3), refv(3), transt(3,3)
+    real(kind=kreal) :: le, trans(3,3), refv(3), transt(3,3)
     real(kind=kreal) :: G
     real(kind=kreal) :: L2, L3, A, Iy, Iz, Jx, EA, twoE, fourE, twelveE, sixE
-    logical  :: ierr
 
     refv = section(1:3)
     call framtr(refv, ecoord, le, trans)
@@ -418,7 +416,6 @@ contains
       REAL(kind=kreal), INTENT(OUT)  :: rnqm(nn*3)         !< elemental NQM
 
       REAL(kind=kreal)     :: tdisp1(nn*3)
-      INTEGER(KIND = kint) :: jj, kk
 
 !--------------------------------------------------------------------
 
@@ -641,17 +638,9 @@ contains
     ! LOCAL VARIABLES
     integer(kind = kint) :: ndof
     parameter(ndof = 3)
-    real(kind = kreal) :: h(nn)
-    real(kind = kreal) :: xj(3, 3), det, wg
-    integer(kind = kint) :: ivol, isuf
-    integer(kind = kint) :: nod(nn)
-    integer(kind = kint) :: ig2, lx, i ,surtype, nsur
-    real(kind = kreal) :: vx, vy, vz, xcod, ycod, zcod
-    real(kind = kreal) :: ax, ay, az, rx, ry, rz, hx, hy, hz, val
-    real(kind = kreal) :: phx, phy, phz
-    real(kind = kreal) :: coefx, coefy, coefz
-    real(kind = kreal) :: normal(3), localcoord(3), elecoord(3, nn), deriv(nn, 3)
-    real(kind = kreal) :: a, aa
+    integer(kind = kint) :: ivol, isuf, nod(nn)
+    integer(kind = kint) :: i ,surtype, nsur
+    real(kind = kreal) :: vx, vy, vz, val, a, aa
 
     !--------------------------------------------------------------------
 
@@ -770,7 +759,6 @@ contains
     real(kind = kreal) :: ee, pp
     real(kind = kreal) :: a
     real(kind = kreal) :: refv(3)
-    real(kind = kreal) :: alpha_bar
     real(kind = kreal) :: g
     real(kind = kreal) :: le
     real(kind = kreal) :: trans(3, 3), transt(3, 3)
@@ -912,12 +900,10 @@ contains
     real(kind=kreal) :: stiffx(12, 12)  !< elemental stiffness matrix
     real(kind=kreal) :: tdisp(12)  !< elemental stiffness matrix
     real(kind=kreal) :: rnqm(12)  !< elemental NQM
-    real(kind=kreal) :: temp
 
     !--------------------------------------------------------------------
 
-    integer(kind = kint) :: i, j, k
-    integer(kind = kint) :: jj,kk
+    integer(kind = kint) :: i, j, k, jj
 
     real(kind = kreal) :: tempc, temp0
     real(kind = kreal) :: ina1(1), outa1(2)
