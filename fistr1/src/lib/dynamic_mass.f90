@@ -21,13 +21,12 @@ contains
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
     type(tMaterial), pointer :: matl !< material information
     integer(kind=kint), parameter :: ndof = 2
-    integer(kind=kint) :: i, j, LX, serr, sec_opt
+    integer(kind=kint) :: i, j, LX, sec_opt
     real(kind=kreal) :: naturalCoord(2)
     real(kind=kreal) :: func(nn), thick
-    real(kind=kreal) :: det, wg, rho, diag_mass, total_mass
+    real(kind=kreal) :: det, wg, rho
     real(kind=kreal) :: D(2,2), N(2, nn*ndof), DN(2, nn*ndof)
     real(kind=kreal) :: gderiv(nn,2)
-    real(kind=kreal) :: coordsys(2,2)
     logical :: is_lumped
 
     mass(:,:) = 0.0d0
@@ -94,13 +93,12 @@ contains
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
     type(tMaterial), pointer :: matl !< material information
     integer(kind=kint), parameter :: ndof = 3
-    integer(kind=kint) :: i, j, LX, serr
+    integer(kind=kint) :: i, j, LX
     real(kind=kreal) :: naturalCoord(3)
     real(kind=kreal) :: func(nn)
-    real(kind=kreal) :: det, wg, rho, diag_mass, total_mass
+    real(kind=kreal) :: det, wg, rho
     real(kind=kreal) :: D(3, 3), N(3, nn*ndof), DN(3, nn*ndof)
     real(kind=kreal) :: gderiv(nn, 3)
-    real(kind=kreal) :: coordsys(3, 3)
     logical :: is_lumped
 
     mass(:,:) = 0.0d0
