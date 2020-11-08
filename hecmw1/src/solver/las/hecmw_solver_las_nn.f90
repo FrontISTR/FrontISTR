@@ -144,9 +144,6 @@ contains
     integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
     real(kind=kreal), pointer :: AL(:), AU(:), D(:)
 
-    ! for communication hiding
-    integer(kind=kint) :: ireq
-
     ! added for turning >>>
     integer, parameter :: numOfBlockPerThread = 100
     logical, save :: isFirst = .true.
@@ -511,7 +508,7 @@ contains
     real(kind=kreal), allocatable :: W(:,:)
     real(kind=kreal), pointer :: D(:)
     integer(kind=kint) :: ip, NDOF, i, j
-    real(kind=kreal) :: START_TIME, END_TIME, Tcomm
+    real(kind=kreal) :: START_TIME, END_TIME
     NDOF = hecMAT%NDOF
     allocate(W(NDOF*hecMAT%NP,NDOF))
     D => hecMAT%D
