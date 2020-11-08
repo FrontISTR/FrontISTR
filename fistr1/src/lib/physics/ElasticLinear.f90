@@ -187,7 +187,6 @@ contains
     !--------------------------------------------------------------------
 
     real(kind = kreal) :: ee, pp, ee2, g12, g23, g31, theta, pp2
-    real(kind = kreal) :: coef1, coef2
     real(kind = kreal) :: outa(2)
     real(kind = kreal) :: lambda1, lambda2, mu, k_correction
     real(kind = kreal) :: c_hat(3, 3, 3, 3), D(5,5), D_hat(5,5), D_temp(5,5), T(5,5)
