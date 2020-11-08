@@ -1,21 +1,41 @@
 #!/bin/bash
 #
-# Reference result creator using Docker
+# Reference result creator using built fistr1
 #
-# Requirements
-# -------------
-# - `docker` command works well, e.g. `docker ps` does not returns error
-#
-# Input environment variable
-# ---------------------------
-# - REFERENCE_IMAGE : Docker image tag which will be used for generating reference result
-#
-
-: ${REFERENCE_IMAGE:=registry.gitlab.com/frontistr-commons/frontistr/fistr1:master}
 
 echo_err () {
   echo -e "\e[31m$1\e[m" >&2
 }
+
+check_executable () {
+  if [[ ! -x $1 ]]; then
+    echo_err "$1 is not executable"
+    exit 1
+  fi
+}
+
+usage () {
+  cat <<EOM
+Usage: $(basename "$0") [OPTION]...
+  -h          Display this help
+  -f VALUE    fistr1 binary path       (Default: ../build/fistr1/fistr1)
+EOM
+}
+
+fistr1=`pwd`/../build/fistr1/fistr1
+errors=0
+while getopts ":d:p:t:f:e:r:h" optKey; do
+  case "$optKey" in
+    f)
+      fistr1=${OPTARG};;
+    h)
+      usage; exit 0;;
+    *)
+      usage; exit 1;;
+  esac
+done
+
+check_executable $fistr1
 
 for path in $(find . -type f -name "*.msh"); do
   dir=$(dirname $path)
@@ -48,12 +68,7 @@ ${res}
 ${mesh}
 
 EOL
-  docker run --rm        \
-    -u $(id -u):$(id -g) \
-    -v $PWD:$PWD         \
-    -w $PWD              \
-    ${REFERENCE_IMAGE}   \
-    fistr1 -t 1
+  $fistr1 -t 1
   rm -f hecmw_ctrl.dat FSTR.msg 0.log FSTR.sta FSTR.dbg.0 hecmw_vis.ini dyna*.txt
   popd
 done
