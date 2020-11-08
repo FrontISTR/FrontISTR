@@ -178,7 +178,7 @@ contains
     !** Local variables
     real(kind=kreal), pointer :: penalty
     real(kind=kreal) :: ALPHA, a1_2inv, ai, aj, factor
-    integer(kind=kint) :: NDIAG, impc, is, iE, i, j, inod, idof, jnod, jdof
+    integer(kind=kint) :: impc, is, iE, i, j, inod, idof, jnod, jdof
     logical :: is_internal_i, is_internal_j
 
     if( hecmw_mat_get_penalized(hecMAT) == 1 ) return
