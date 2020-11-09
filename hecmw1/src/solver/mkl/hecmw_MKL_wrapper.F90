@@ -6,6 +6,7 @@
 #ifdef WITH_MKL
 include 'mkl_pardiso.f90'
 #endif
+#define UNUSED(x) if(size( (/(x)/) ) < 0) continue
 
 module m_hecmw_MKL_wrapper
   use hecmw_util
@@ -20,15 +21,14 @@ module m_hecmw_MKL_wrapper
   private                         ! default
   public :: hecmw_mkl_wrapper     ! only entry point of Parallel Direct Solver is public
 
-  logical, save :: INITIALIZED = .false.
 #ifdef WITH_MKL
+  logical, save :: INITIALIZED = .false.
   type(MKL_PARDISO_HANDLE) :: pt(64)
-#endif
   integer maxfct, mnum, mtype, nrhs, msglvl
   integer idum(1), i
   data nrhs /1/, maxfct /1/, mnum /1/
-
   integer, save :: iparm(64)
+#endif
 
 contains
 
@@ -39,10 +39,10 @@ contains
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), pointer, intent(inout) :: solx(:)
 
+#ifdef WITH_MKL
+
     integer(kind=kint) :: myrank, phase
     real(kind=kreal)   :: t2,t3,t4,t5
-
-#ifdef WITH_MKL
 
     myrank=hecmw_comm_get_rank()
 
@@ -128,6 +128,10 @@ contains
        write(*,'(A,f10.3)') ' [Pardiso]: Solution completed.       time(sec)=',t5-t4
 
 #else
+    UNUSED(spMAT)
+    UNUSED(istat)
+    UNUSED(phase_start)
+    UNUSED(solx)
     stop "MKL Pardiso not available"
 #endif
   end subroutine hecmw_mkl_wrapper
