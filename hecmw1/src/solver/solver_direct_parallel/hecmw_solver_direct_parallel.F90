@@ -183,11 +183,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal), allocatable :: oldb(:,:)
     logical, save :: nusol_ready = .false.
     integer(kind=kint), save :: ndeg, nndeg, ndegt
-    integer(kind=kint), save :: neqns_c, iofst_a2, iofst_c, ndm
+    integer(kind=kint), save :: ndm
 
     ! misc !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: ierr
-    integer(kind=kint) :: i,j,k,l,m,n
+    integer(kind=kint) :: i,j,k
 
     ! for MPI
     integer(kind=kint) :: istatus(MPI_STATUS_SIZE)
@@ -480,8 +480,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     type (hecmwST_matrix    ), intent(in)  :: hecMAT
     type (irjc_square_matrix), intent(out) :: a0
 
-    integer(kind=kint) :: i,j,k,l,ierr,numnp,ndof,kk,ntotal
-    integer(kind=kint) :: iiS,iiE,kki,kkj,ndof2
+    integer(kind=kint) :: i,j,k,ierr,numnp,ndof,kk,ntotal
+    integer(kind=kint) :: ndof2
 
     NUMNP = hecMAT%NP
     NDOF  = hecMESH%n_dof
@@ -558,7 +558,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! for MPI
     integer(kind=kint) :: istatus(MPI_STATUS_SIZE)
     integer(kind=kint) :: imp, ierr
-    integer(kind=kint) :: i,j,k,l,m,n
+    integer(kind=kint) :: i
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -707,7 +707,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: npe, myid
     integer(kind=kint) :: ndiv
     integer(kind=kint) :: ierr
-    integer(kind=kint) :: i,j,k,l
+    integer(kind=kint) :: i
 
     m_pds_procinfo%isparent=.false.
     m_pds_procinfo%ischild=.false.
@@ -847,7 +847,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: lncol_a, lncol_c
     integer(kind=kint) :: neqnsz, nofsub, izz, izz0, lnleaf ! dummy variables
     integer(kind=kint) :: ir1
-    integer(kind=kint) :: i, j, k , ipass, ks, ke, ierr
+    integer(kind=kint) :: i, ierr
 
     ndeg    = cm%ndeg
 
@@ -1063,7 +1063,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(out) :: zln(:,:),diag(:,:) !zln(1,:), diag(1,:)
 
     integer(kind=kint) :: neqns_c
-    integer(kind=kint) :: i,j,k,l, ic,ierr,imp
+    integer(kind=kint) :: i,l, ic,ierr,imp
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
@@ -1133,7 +1133,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: neqns, nstop
     integer(kind=kint), intent(out) :: ir
 
-    integer(kind=kint) :: i,j,k,l, ic, imp, ierr, neqns_c
+    integer(kind=kint) :: i,l, ic, imp, ierr, neqns_c
     integer(kind=kint) :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
@@ -1219,7 +1219,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(out) :: zln(:,:),diag(:,:) !zln(9,*),diag(6,*)
     integer(kind=kint), intent(in)  :: neqns, nstop, ir
 
-    integer(kind=kint) :: i,j,k,l, ic, imp, ierr, neqns_c
+    integer(kind=kint) :: i,l, ic, imp, ierr, neqns_c
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal), pointer :: spdslnval(:,:)
@@ -1369,7 +1369,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: neqns, nstop, ndeg
     integer(kind=kint), intent(out) :: ir
 
-    integer(kind=kint) :: i,j,k,l, ic, neqns_c, ndeg2, ndegl, imp, ierr
+    integer(kind=kint) :: l, ic, neqns_c, ndeg2, ndegl, imp, ierr
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
@@ -1454,8 +1454,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(inout) :: b(:,:)
     type(dsinfo),       intent(inout) :: dsi
     integer(kind=kint), intent(out)   :: ir
-
-    integer(kind=kint) :: neqns, nstop, ndeg
 
     if(dsi%stage.ne.30 .and. dsi%stage.ne.40) then
       ir=50
@@ -1584,7 +1582,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     real(kind=kreal), allocatable :: wk(:,:), wk_d(:,:)
     integer(kind=kint) :: neqns_c, neqns_a, nstop, neqns, ks, ke
-    integer(kind=kint) :: i, j, k, l, imp, ierr
+    integer(kind=kint) :: i, j, k, imp, ierr
 
     include 'mpif.h'
 
@@ -1689,7 +1687,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     real(kind=kreal), allocatable :: wk(:,:), wk_d(:,:)
     integer(kind=kint) :: neqns_c, neqns_a, nstop, neqns, ks, ke
-    integer(kind=kint) :: i, j, k, l, imp, ierr
+    integer(kind=kint) :: i, j, k, imp, ierr
 
     include 'mpif.h'
 
@@ -1967,7 +1965,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(inout) :: b(:)    !(3,neqns)
     integer(kind=kint), intent(in)    :: neqns
 
-    integer(kind=kint) :: i,j,k,l,loc
+    integer(kind=kint) :: i,j,k,loc
 
     ! forward substitution
     do i=2,neqns
@@ -2004,7 +2002,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(inout) :: b(:,:) !(2,neqns)
     integer(kind=kint), intent(in)    :: neqns
 
-    integer(kind=kint) :: i,j,k,l,loc
+    integer(kind=kint) :: i,j,k,loc
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -2057,7 +2055,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(inout) :: b(:,:)    !(3,neqns)
     integer(kind=kint), intent(in)    :: neqns
 
-    integer(kind=kint) :: i,j,k,l,loc
+    integer(kind=kint) :: i,j,k,loc
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -2110,7 +2108,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(inout) :: b(:,:)
     integer(kind=kint), intent(in)    :: neqns, ndeg
 
-    integer(kind=kint) :: i,j,k,l,m,n,loc, locd, loc1
+    integer(kind=kint) :: i,j,k,m,n,loc, locd, loc1
 
     ! forward
     do i=2,neqns
@@ -2175,7 +2173,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   allocatable :: temp(:,:)
     integer(kind=kint), allocatable :: indx(:)
     logical :: ftflag
-    integer(kind=kint) :: i,j,k,l,m,n, ic,ks,ke,ii,jj,jc,j1,j2,loc,ispdsln, ierr
+    integer(kind=kint) :: j,k, ic,ks,ke,jj,jc,j1,j2,loc,ispdsln, ierr
 
     allocate(temp(neqns,9),indx(neqns), stat=ierr)
     if(ierr .ne. 0) then
@@ -2313,7 +2311,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: neqns,nttbr
     integer(kind=kint), intent(out) :: neqnsz,ir
 
-    integer(kind=kint) :: i,j,k,l
+    integer(kind=kint) :: i,j,l
 
     ir=0
     do 100 l=1,neqns
@@ -2440,7 +2438,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: ia(:),ja(:)
     integer(kind=kint), intent(in)  :: neqns, neqnsz
 
-    integer(kind=kint) :: i,j,k,l,ii,loc
+    integer(kind=kint) :: i,k,l,ii,loc
     !
 
     ia(1)=1
@@ -2498,7 +2496,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: nofsub
 
     integer(kind=kint) :: inode,ip,irch,mindeg,nhdsze,node,np,num,nump1,nxnode,rchsze,search,thresh,ndeg
-    integer(kind=kint) :: i,j,k,l
+    integer(kind=kint) :: i,j
 
     mindeg=neqns
     nofsub=0
@@ -2576,7 +2574,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: parent(:),ancstr(:)
     integer(kind=kint), intent(in)  :: neqns
 
-    integer(kind=kint) :: i,j,k,l,ip,it
+    integer(kind=kint) :: i,k,l,ip,it
 
     do 100 i=1,neqns
       parent(i)=0
@@ -2619,7 +2617,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: neqns
     integer(kind=kint), intent(out) :: izz
 
-    integer(kind=kint) :: i,j,k,l,ip,ib,inext
+    integer(kind=kint) :: i,ip,ib,inext
 
     do 10 i=1,neqns+1
       btree(1,i)=0
@@ -2663,7 +2661,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           6000 format(i6,'(',2i6,')')
           6010 format(' binary tree')
           6020 format(' the first zero pivot is ',i4)
-          6100 format(2i8)
           return
   end subroutine genbtq
 
@@ -2678,7 +2675,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: neqns,izz
     integer(kind=kint), intent(out) :: irr
 
-    integer(kind=kint) :: i,j,k,l,izzz,nanc,loc,locc,ll,kk,iy
+    integer(kind=kint) :: i,k,l,izzz,nanc,loc,locc,ll,kk,iy
 
     !----------------------------------------------------------------------
     !     irr return code irr=0 node izz is not a bottom node
@@ -2757,7 +2754,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 endif
                 320 continue
                 ! (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
-                330 continue
                 do 340 i=1,neqns
                   adjt(i)=0
                   340 continue
@@ -2824,7 +2820,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: neqns,izz
     integer(kind=kint), intent(out) :: irr
 
-    integer(kind=kint) :: i,j,k,l,ib0,ib,ibp,izzp
+    integer(kind=kint) :: i,ib0,ib,ibp,izzp
 
     !----------------------------------------------------------------------
     !
@@ -2879,7 +2875,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: pordr(:),invp(:),iperm(:),nch(:),iw(:),parent(:),mch(0:neqns+1)
     integer(kind=kint), intent(in)  :: neqns
 
-    integer(kind=kint) :: i,j,k,l,locc,loc,locp,invpos,ipinv,ii
+    integer(kind=kint) :: i,l,locc,loc,locp,invpos,ipinv,ii
 
     do 5 i=1,neqns
       mch(i)=0
@@ -2949,7 +2945,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: xleaf(:),leaf(:),adjncp(:)
     integer(kind=kint), intent(in)  :: neqns
 
-    integer(kind=kint) i,j,k,l,m,n,ik,istart,ip,iq,lnleaf,lc1,lc
+    integer(kind=kint) i,k,l,m,ik,istart,ip,iq,lnleaf,lc1,lc
 
     l=1
     ik=0
@@ -2978,7 +2974,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             leaf(l)=lc
             l=l+1
           endif
-          125       continue
           lc1=lc
           130    continue
           ik=1
@@ -3120,7 +3115,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: root
     integer(kind=kint), intent(out) :: nhdsze,rchsze
 
-    integer(kind=kint) :: i,j,k,l, istrt, istop, jstrt, jstop, nabor, node
+    integer(kind=kint) :: i,j, istrt, istop, jstrt, jstop, nabor, node
 
     nhdsze=0
     rchsze=0
@@ -3164,7 +3159,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: marker(:),nbrhd(:),rchset(:),deg(:),qsize(:),qlink(:)
     integer(kind=kint), intent(in)  :: nlist
 
-    integer(kind=kint) :: i,j,k,l, deg0,deg1,il,inhd,inode,irch,jstrt,jstop,mark,nabor,nhdsze,node,rchsze
+    integer(kind=kint) :: j, deg0,deg1,il,inhd,inode,irch,jstrt,jstop,mark,nabor,nhdsze,node,rchsze
 
     if(nlist.le.0) return
     deg0=0
@@ -3217,7 +3212,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: adjncy(:)
     integer(kind=kint), intent(in)  :: rchsze,root
 
-    integer(kind=kint) :: i,j,k,l,irch,inhd,node,jstrt,jstop,link,nabor
+    integer(kind=kint) :: j,irch,inhd,node,jstrt,jstop,link,nabor
 
     irch=0
     inhd=0
@@ -3263,7 +3258,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: deg(:),marker(:),rchset(:),ovrlp(:),qsize(:),qlink(:)
     integer(kind=kint), intent(in)  :: nhdsze
 
-    integer(kind=kint) :: i,j,k,l, deg0,deg1,head,inhd,iov,irch,jstrt,jstop,link,lnode,mark,mrgsze,nabor,node,novrlp,rchsze,root
+    integer(kind=kint) :: j, deg0,deg1,head,inhd,iov,irch,jstrt,jstop,link,lnode,mark,mrgsze,nabor,node,novrlp,rchsze,root
 
 
     if(nhdsze.le.0) return
@@ -3357,7 +3352,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: lncol_c
 
     ! internal
-    integer(kind=kint) :: i,j,k,l,m,n
+    integer(kind=kint) :: i,j,k
     integer(kind=kint) :: ks, ke, ipass, ierr
     logical, allocatable :: cnz(:)
     type(crs_matrix) :: crs_c
@@ -3468,7 +3463,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         iw(m)=itemp
         110    continue
         100 continue
-        200 continue
         return
   end subroutine qqsort
 
@@ -3550,7 +3544,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     else
       call addrx(isw,i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,ndeg,ndeg2,ndeg2l,ir)
     endif
-    1000 continue
     return
   end subroutine staij1
 
@@ -3582,7 +3575,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     isem = 0
 
-    2 continue
     ks=xlnzr(ic)
     ke=xlnzr(ic+1)
     t=0.0d0
@@ -3690,8 +3682,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   pointer       :: spdslnval(:,:)
     integer(kind=kint), intent(out)   :: nspdsln
 
-    real(kind=kreal) :: s, t
-    integer(kind=kint) :: ks, ke, kk, k, jc, jj, j, j1,j2
+    real(kind=kreal) :: s
+    integer(kind=kint) :: ks, ke, k, jc, jj, j, j1,j2
     integer(kind=kint) :: ic, i, loc, ierr
     integer(kind=kint) :: ispdsln
     logical :: ftflag
@@ -3984,7 +3976,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   allocatable :: temp(:,:)
     integer(kind=kint), allocatable :: indx(:)
     real(kind=kreal) :: zz(9),t(6)
-    integer(kind=kint) :: i,j,k,l,ks,ke,kk,jc,jj,ir, ierr
+    integer(kind=kint) :: j,k,l,ks,ke,kk,jc,jj,ir, ierr
 
     allocate(temp(9,neqns),indx(neqns), stat=ierr)
     if(ierr .ne. 0) then
@@ -4056,8 +4048,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(out) :: zln(:,:)
     integer(kind=kint), intent(in)  :: ic,neqns
 
-    integer(kind=kint) :: i,j,k,l,ks,ke,jc,jj,ierr
-    real(kind=kreal) :: s(9),zz(9)
+    integer(kind=kint) :: j,k,l,ks,ke,jc,jj,ierr
+    real(kind=kreal) :: s(9)
     real(kind=kreal),allocatable :: temp(:,:)
     integer(kind=kint),allocatable :: indx(:)
 
@@ -4113,7 +4105,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: n
 
     real(kind=kreal)   :: t(9)
-    integer(kind=kint) :: i,j,k,l,loc,ir, ierr
+    integer(kind=kint) :: i,j,loc,ir, ierr
     real(kind=kreal),   allocatable :: temp(:,:)
     integer(kind=kint), allocatable :: indx(:)
 
@@ -4509,7 +4501,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(out) :: zln(:,:),diag(:,:) ! zln(6,*), diag(3,*)
     integer(kind=kint), intent(in)  :: ic,neqns
 
-    integer(kind=kint) :: i,j,k,l,ks,ke,jj,jc,ir,kk, ierr
+    integer(kind=kint) :: j,k,l,ks,ke,jj,jc,ir,kk, ierr
     real(kind=kreal),   allocatable :: temp(:,:)
     integer(kind=kint), allocatable :: indx(:)
     real(kind=kreal) :: s(4),zz(4),t(3)
@@ -4569,8 +4561,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(out) :: zln(:,:)
     integer(kind=kint), intent(in)  :: ic,neqns
 
-    integer(kind=kint) :: i,j,k,l,ks,ke,jc,jj, ierr
-    real(kind=kreal) :: s(4),zz(4)
+    integer(kind=kint) :: j,k,l,ks,ke,jc,jj, ierr
+    real(kind=kreal) :: s(4)
     real(kind=kreal),   allocatable :: temp(:,:)
     integer(kind=kint), allocatable :: indx(:)
 
@@ -4618,7 +4610,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   pointer     :: spdslnval(:,:)
     integer(kind=kint), intent(out) :: nspdsln
 
-    integer(kind=kint) :: i,j,k,l,m,n, ic,ks,ke,ii,jj,jc,j1,j2,loc,ispdsln, ierr
+    integer(kind=kint) :: j,k, ic,ks,ke,jj,jc,j1,j2,loc,ispdsln, ierr
     real(kind=kreal),   allocatable :: temp(:,:)
     integer(kind=kint), allocatable :: indx(:)
     logical :: ftflag
@@ -5042,7 +5034,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(out) :: zln(ndeg,ndeg)
     integer(kind=kint), intent(in) :: ndeg
 
-    integer(kind=kint) :: i,j,k,l,m,n,loc,loc1
+    integer(kind=kint) :: l,m,n,loc,loc1
 
     zln=zz
     do 100 l=1,ndeg
@@ -5112,7 +5104,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: ic,neqns,ndeg,ndegl
 
     real(kind=kreal) :: zz(ndeg,ndeg),t(ndegl)
-    integer(kind=kint) :: i,j,k,l,m,n,ndeg22,ks,ke,jc,loc,jj,kk,ir, ierr
+    integer(kind=kint) :: j,k,m,n,ndeg22,ks,ke,jc,loc,jj,kk,ir, ierr
     real(kind=kreal),allocatable :: temp(:,:,:)
     integer(kind=kint),allocatable :: indx(:)
 
@@ -5171,7 +5163,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)  :: ic,neqns,ndeg,ndegl
 
     real(kind=kreal)   :: s(ndeg,ndeg)
-    integer(kind=kint) :: i,j,k,l,m,n,ks,ke,jc,jj,kk, ierr
+    integer(kind=kint) :: j,k,m,n,ks,ke,jc,jj,kk, ierr
     real(kind=kreal),allocatable :: temp(:,:,:)
     integer(kind=kint),allocatable :: indx(:)
 
@@ -5222,7 +5214,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(out) :: nspdsln
     integer(kind=kint), intent(in)  :: ndeg, ndegl
 
-    integer(kind=kint) :: i,j,k,l,m,n, ic,ks,ke,ii,jj,jc,j1,j2,loc,locd,kk, ierr
+    integer(kind=kint) :: j,k,m,n, ic,ks,ke,jj,jc,j1,j2,loc,locd,kk, ierr
     integer(kind=kint) :: ispdsln
     real(kind=kreal),   allocatable :: temp(:,:,:)
     integer(kind=kint), allocatable :: indx(:)
@@ -5419,7 +5411,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     &       'norm(Ax-b)            =  ',1pd20.10/&
                     &       'norm(b)               =  ',1pd20.10/&
                     &       'norm(Ax-b)/norm(b)    =  ',1pd20.10)
-                  6010 format(1p4d15.7)
                   return
   end subroutine verif0
 
