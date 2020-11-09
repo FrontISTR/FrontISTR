@@ -157,25 +157,6 @@ contains
     !$omp end parallel
   end subroutine hecmw_matrix_reorder_renum_item
 
-  subroutine reorder_diag(N, NDOF, perm, D, Dp)
-    implicit none
-    integer(kind=kint), intent(in) :: N, NDOF
-    integer(kind=kint), intent(in) :: perm(:)
-    real(kind=kreal), intent(in) :: D(:)
-    real(kind=kreal), intent(out) :: Dp(:)
-    integer(kind=kint) :: NDOF2, inew, iold, j0new, j0old, j
-    NDOF2 = NDOF*NDOF
-    ! diagonal
-    do inew=1,N
-      iold = perm(inew)
-      j0new = (inew-1)*NDOF2
-      j0old = (iold-1)*NDOF2
-      do j=1,NDOF2
-        Dp(j0new + j) = D(j0old + j)
-      end do
-    end do
-  end subroutine reorder_diag
-
   subroutine reorder_diag2(N, NDOF, iperm, D, Dp)
     implicit none
     integer(kind=kint), intent(in) :: N, NDOF
@@ -199,59 +180,6 @@ contains
     !$omp end do
     !$omp end parallel
   end subroutine reorder_diag2
-
-  subroutine reorder_off_diag(N, NDOF, perm, &
-      indexL, indexU, itemL, itemU, AL, AU, &
-      indexXp, itemXp, AXp)
-    implicit none
-    integer(kind=kint), intent(in) :: N, NDOF
-    integer(kind=kint), intent(in) :: perm(:)
-    integer(kind=kint), intent(in) :: indexL(0:), indexU(0:)
-    integer(kind=kint), intent(in) :: itemL(:), itemU(:)
-    real(kind=kreal), intent(in) :: AL(:), AU(:)
-    integer(kind=kint), intent(in) :: indexXp(0:)
-    integer(kind=kint), intent(in) :: itemXp(:)
-    real(kind=kreal), intent(out) :: AXp(:)
-    integer(kind=kint) :: NDOF2, inew, iold
-    integer(kind=kint) :: jsoldL, jeoldL, jsoldU, jeoldU
-    integer(kind=kint) :: jnew, knew, kold, jold, l0new, l0old, l
-    NDOF2 = NDOF*NDOF
-    ! new L
-    do inew=1,N
-      iold = perm(inew)
-      jsoldL = indexL(iold-1)+1
-      jeoldL = indexL(iold)
-      jsoldU = indexU(iold-1)+1
-      jeoldU = indexU(iold)
-      do jnew = indexXp(inew-1)+1, indexXp(inew)
-        knew = itemXp(jnew)
-        kold = perm(knew)
-        if (kold < iold) then
-          call hecmw_bsearch_int_array(itemL, jsoldL, jeoldL, kold, jold)
-          if (jold < 0) then
-            write(0,*) 'DEBUG:: jold < 0 in reorder_off_diag'
-            cycle
-          end if
-          l0new = (jnew-1)*NDOF2
-          l0old = (jold-1)*NDOF2
-          do l=1,NDOF2
-            AXp(l0new + l) = AL(l0old + l)
-          end do
-        else
-          call hecmw_bsearch_int_array(itemU, jsoldU, jeoldU, kold, jold)
-          if (jold < 0) then
-            write(0,*) 'DEBUG:: jold < 0 in reorder_off_diag'
-            cycle
-          end if
-          l0new = (jnew-1)*NDOF2
-          l0old = (jold-1)*NDOF2
-          do l=1,NDOF2
-            AXp(l0new + l) = AU(l0old + l)
-          end do
-        end if
-      end do
-    end do
-  end subroutine reorder_off_diag
 
   subroutine reorder_off_diag2(N, NDOF, iperm, &
       indexX, itemX, AX, &
