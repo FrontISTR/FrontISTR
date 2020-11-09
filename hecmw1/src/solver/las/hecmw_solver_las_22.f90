@@ -55,10 +55,9 @@ contains
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
   end subroutine hecmw_matvec_22
 
-  subroutine hecmw_matvec_22_set_async (hecMAT)
+  subroutine hecmw_matvec_22_set_async
     use hecmw_util
     implicit none
-    type (hecmwST_matrix), intent(in) :: hecMAT
   end subroutine hecmw_matvec_22_set_async
   subroutine hecmw_matvec_22_unset_async
     implicit none

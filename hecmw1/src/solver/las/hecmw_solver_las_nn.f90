@@ -54,7 +54,7 @@ contains
       call hecmw_TtmatTvec_nn(hecMESH, hecMAT, X, Y, WK, Tcomm)
       deallocate(WK)
     else
-      call hecmw_matvec_nn_inner(hecMESH, hecMAT, X, Y, Tcomm)
+      call hecmw_matvec_nn_inner(hecMESH, hecMAT, X, Y, time_Ax, Tcomm)
     endif
 
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
@@ -65,10 +65,9 @@ contains
   !C*** hecmw_matvec_nn_set_async
   !C***
   !C
-  subroutine hecmw_matvec_nn_set_async (hecMAT)
+  subroutine hecmw_matvec_nn_set_async
     use hecmw_util
     implicit none
-    type (hecmwST_matrix), intent(in) :: hecMAT
     ! integer(kind=kint) :: i, j, jS, jE, idx, in
 
     ! allocate(index_o(0:hecMAT%N))

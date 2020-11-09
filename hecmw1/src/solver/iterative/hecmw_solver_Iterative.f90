@@ -85,7 +85,7 @@ contains
 
     ! exchange diagonal elements of overlap region
     call hecmw_mat_dump(hecMAT, hecMESH)
-    call hecmw_matvec_set_async(hecMAT)
+    call hecmw_matvec_set_async()
 
     !C ITERATIVE solver
     error=0
@@ -113,7 +113,7 @@ contains
           hecMAT%symmetric = .false.
           call hecmw_solve_GPBiCG( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
-          error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
+          error = HECMW_SOLVER_ERROR_INCONS_PC  !!譛ｪ螳夂ｾｩ縺ｪMETHOD!!
           call hecmw_solve_error (hecMESH, error)
       end select
 

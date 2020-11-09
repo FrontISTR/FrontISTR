@@ -63,10 +63,9 @@ contains
   !C*** hecmw_matvec_33_set_async
   !C***
   !C
-  subroutine hecmw_matvec_33_set_async (hecMAT)
+  subroutine hecmw_matvec_33_set_async
     use hecmw_util
     implicit none
-    type (hecmwST_matrix), intent(in) :: hecMAT
     ! integer(kind=kint) :: i, j, jS, jE, idx, in
 
     ! allocate(index_o(0:hecMAT%N))

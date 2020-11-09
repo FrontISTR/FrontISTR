@@ -66,10 +66,9 @@ contains
   !C*** hecmw_matvec_set_async
   !C***
   !C
-  subroutine hecmw_matvec_set_async (hecMAT)
+  subroutine hecmw_matvec_set_async
     use hecmw_util
     implicit none
-    type (hecmwST_matrix), intent(in) :: hecMAT
 
   end subroutine hecmw_matvec_set_async
 
