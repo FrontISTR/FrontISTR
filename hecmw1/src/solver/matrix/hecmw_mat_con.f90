@@ -93,7 +93,7 @@ contains
           do j=1,nn
             do k=1,nn
               if( k .ne. j ) then
-                call hecmw_FIND_NODE( hecMAT,nid(j),nid(k), ierr  )
+                call hecmw_FIND_NODE( nid(j),nid(k), ierr  )
                 if( ierr.ne.0 ) then
                   call hecmw_mat_con0_clear (ierr)
                   exit
@@ -161,14 +161,13 @@ contains
   !C*** FIND_TS_NODE
   !C***
   !C
-  subroutine hecmw_FIND_NODE ( hecMAT, ip1,ip2, IERR )
+  subroutine hecmw_FIND_NODE ( ip1,ip2, IERR )
 
     use hecmw_util
 
     implicit none
     integer(kind=kint) ip1,ip2,IERR
     integer(kind=kint) kk,icou
-    type (hecmwST_matrix)     :: hecMAT
 
     if (ip1.gt.ip2) then
       do kk= 1, INL(ip1)

@@ -201,7 +201,7 @@ contains
     integer(kind=kint), intent(in) :: num_lagrange
     type (hecmwST_matrix), intent(inout) :: hecTKT
     if (hecMESH%n_neighbor_pe == 0) then
-      call hecmw_trimatmul_TtKT_serial(hecMESH, BTtmat, hecMAT, BTmat, &
+      call hecmw_trimatmul_TtKT_serial(BTtmat, hecMAT, BTmat, &
            iwS, num_lagrange, hecTKT)
     else
       call hecmw_trimatmul_TtKT_parallel(hecMESH, BTtmat, hecMAT, BTmat, &
@@ -209,11 +209,10 @@ contains
     endif
   end subroutine hecmw_trimatmul_TtKT
 
-  subroutine hecmw_trimatmul_TtKT_serial(hecMESH, BTtmat, hecMAT, BTmat, &
+  subroutine hecmw_trimatmul_TtKT_serial(BTtmat, hecMAT, BTmat, &
       iwS, num_lagrange, hecTKT)
     use hecmw_matrix_misc
     implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_local_matrix), intent(in) :: BTtmat, BTmat
     type (hecmwST_matrix), intent(in) :: hecMAT
     integer(kind=kint), intent(in) :: iwS(:)
