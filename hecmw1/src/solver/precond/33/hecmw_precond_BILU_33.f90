@@ -72,14 +72,11 @@ contains
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
     if (PRECOND.eq.10) call FORM_ILU0_33 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, SIGMA_DIAG)
     if (PRECOND.eq.11) call FORM_ILU1_33 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, SIGMA_DIAG)
     if (PRECOND.eq.12) call FORM_ILU2_33 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, SIGMA_DIAG)
 
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0 ! symbolic setup done
@@ -183,11 +180,11 @@ contains
   !C    form ILU(0) matrix
   !C
   subroutine FORM_ILU0_33                                   &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
-    real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
+    real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(9*NPL), intent(in):: AL
     real(kind=kreal), dimension(9*NPU), intent(in):: AU
@@ -369,11 +366,11 @@ contains
   !C    form ILU(1) matrix
   !C
   subroutine FORM_ILU1_33                                   &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
-    real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
+    real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(9*NPL), intent(in):: AL
     real(kind=kreal), dimension(9*NPU), intent(in):: AU
@@ -385,7 +382,7 @@ contains
 
     integer(kind=kint), dimension(:), allocatable :: IW1, IW2
     integer(kind=kint), dimension(:), allocatable :: IWsL, IWsU
-    real (kind=kreal),  dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
+    real (kind=kreal),  dimension(3,3) :: RHS_Aij, DkINV, Aik=0.d0, Akj=0.d0
     integer(kind=kint) :: NPLf1,NPUf1
     integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
@@ -746,11 +743,11 @@ contains
   !C    form ILU(2) matrix
   !C
   subroutine FORM_ILU2_33 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
-    real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
+    real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(9*NPL), intent(in):: AL
     real(kind=kreal), dimension(9*NPU), intent(in):: AU
