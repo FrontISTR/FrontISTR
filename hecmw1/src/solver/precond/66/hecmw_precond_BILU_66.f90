@@ -64,14 +64,11 @@ contains
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
     if (PRECOND.eq.10) call FORM_ILU0_66 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, SIGMA_DIAG)
     if (PRECOND.eq.11) call FORM_ILU1_66 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, SIGMA_DIAG)
     if (PRECOND.eq.12) call FORM_ILU2_66 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, SIGMA_DIAG)
 
     allocate(ALU(36*NP))
 
@@ -265,11 +262,11 @@ contains
   !C    form ILU(1) matrix
   !C
   subroutine FORM_ILU0_66                                   &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
-    real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
+    real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(36*NPL), intent(in):: AL
     real(kind=kreal), dimension(36*NPU), intent(in):: AU
@@ -596,11 +593,11 @@ contains
   !C    form ILU(1) matrix
   !C
   subroutine FORM_ILU1_66                                   &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
-    real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
+    real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(36*NPL), intent(in):: AL
     real(kind=kreal), dimension(36*NPU), intent(in):: AU
@@ -1172,11 +1169,11 @@ contains
   !C    form ILU(2) matrix
   !C
   subroutine FORM_ILU2_66 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
-      &    SIGMA, SIGMA_DIAG)
+      &   (NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &    SIGMA_DIAG)
     implicit none
-    integer(kind=kint ), intent(in):: N, NP, NPU, NPL
-    real   (kind=kreal), intent(in):: SIGMA, SIGMA_DIAG
+    integer(kind=kint ), intent(in):: NP, NPU, NPL
+    real   (kind=kreal), intent(in):: SIGMA_DIAG
 
     real(kind=kreal), dimension(36*NPL), intent(in):: AL
     real(kind=kreal), dimension(36*NPU), intent(in):: AU
