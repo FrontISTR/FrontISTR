@@ -90,7 +90,7 @@ contains
 
   !> This subroutine calculate contact stiff matrix and contact force
   subroutine contact2stiff( flag, cstate, etype, nnode, ele, mu, mut,  &
-      fcoeff, symm, stiff, force )
+      fcoeff, stiff, force )
     integer, intent(in)             :: flag            !< small slid or finite slide
     type(tContactState), intent(in) :: cstate          !< contact state
     integer, intent(in)             :: etype           !< type of contacting surface
@@ -99,7 +99,6 @@ contains
     real(kind=kreal), intent(in)    :: mu              !< penalty
     real(kind=kreal), intent(in)    :: mut             !< penalty along tangent
     real(kind=kreal), intent(in)    :: fcoeff          !< friction coefficient
-    logical, intent(in)             :: symm            !< symmtricalize
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
     real(kind=kreal), intent(out)   :: force(:)        !< contact force
 

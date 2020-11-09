@@ -402,7 +402,7 @@ contains
         enddo
         call contact2stiff( fstrSOLID%contacts(i)%algtype, fstrSOLID%contacts(i)%states(j),    &
           etype, nnode, elecoord(:,:), mu, mut, fstrSOLID%contacts(i)%fcoeff,    &
-          fstrSOLID%contacts(i)%symmetric, stiff(:,:), force(:) )
+          stiff(:,:), force(:) )
         call hecmw_mat_ass_contact( hecMAT,nnode+1,ndLocal,stiff )
 
         if( iter>1 ) cycle
