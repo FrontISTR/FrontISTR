@@ -175,7 +175,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     type(matrix_partition_node), pointer :: this, left, right
     integer(kind=kint), allocatable :: ip_left(:), ip_right(:), ip_d(:), part(:), iperm(:)
     integer(kind=kint) :: loc1, loc2, loc3, ipass
-    integer(kind=kint) :: i,j,k,l
+    integer(kind=kint) :: i,j,l
 
     allocate(ip_left(this%neqns_a), ip_right(this%neqns_a), ip_d(this%neqns_a)) ! local permtation index used by metis.
     allocate(part(this%neqns_a), iperm(this%neqns_a))
@@ -338,7 +338,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! internal
     type(child_matrix), pointer :: dmc
-    integer(kind=kint) :: ndeg, ipass, ipos, itmp
+    integer(kind=kint) :: ndeg, ipass, ipos
     integer(kind=kint) :: i,j,k,l,m,n, ii, jj
 
     ! set neqns for each divided matrix
@@ -479,7 +479,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal), allocatable, dimension(:,:) :: tmp
     integer(kind=kint) :: ndeg, neqns
     integer(kind=kint), dimension(2) :: ishape
-    integer(kind=kint) :: i,j,k,l
+    integer(kind=kint) :: i,j
 
     ishape = shape(r)
     ndeg   = ishape(1)
