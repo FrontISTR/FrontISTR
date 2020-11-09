@@ -6,6 +6,7 @@
 #ifdef WITH_MKL
 include 'mkl_cluster_sparse_solver.f90'
 #endif
+#define UNUSED(x) if(size( (/(x)/) ) < 0) continue
 
 module m_hecmw_ClusterMKL_wrapper
   use hecmw_util
@@ -21,20 +22,20 @@ module m_hecmw_ClusterMKL_wrapper
   private                         ! default
   public hecmw_clustermkl_wrapper ! only entry point of Parallel Direct Solver is public
 
-  logical, save :: INITIALIZED = .false.
 #ifdef WITH_MKL
+  logical, save :: INITIALIZED = .false.
   type(MKL_CLUSTER_SPARSE_SOLVER_HANDLE) :: pt(64)
-#endif
   integer maxfct, mnum, mtype, nrhs, msglvl
   integer idum(1), i
   data nrhs /1/, maxfct /1/, mnum /1/
-
   integer, save :: iparm(64)
   integer(kind=kint), save          :: nn
   integer(kind=kint), pointer, save :: irow(:), jcol(:)
   real(kind=kreal), pointer, save   :: aval(:), rhs(:), solx(:)
 
   integer(kind=kint), parameter :: debug=0
+#endif
+
 
 contains
 
@@ -45,10 +46,9 @@ contains
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), pointer, intent(inout) :: solution(:)
 
+#ifdef WITH_MKL
     integer(kind=kint) :: myrank, phase
     real(kind=kreal)   :: t1,t2,t3,t4,t5
-
-#ifdef WITH_MKL
 
     myrank=hecmw_comm_get_rank()
 
@@ -186,6 +186,10 @@ contains
     if( debug>0 .and. myrank==0 ) call print_iparm_paramters()
 
 #else
+    UNUSED(spMAT)
+    UNUSED(istat)
+    UNUSED(phase_start)
+    UNUSED(solution)
     stop "MKL Pardiso not available"
 #endif
   end subroutine hecmw_clustermkl_wrapper
