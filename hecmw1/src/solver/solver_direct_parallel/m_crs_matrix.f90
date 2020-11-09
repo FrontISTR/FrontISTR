@@ -43,7 +43,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), allocatable :: istat(:), jrapt(:), jcolno(:)
     integer(kind=kint) :: ntt
 
-    integer(kind=kint) :: i,j,l,n
+    integer(kind=kint) :: i,j,l
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -96,7 +96,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), allocatable :: istat(:), jrapt(:), jcolno(:)
     integer(kind=kint) :: ntt
 
-    integer(kind=kint) :: ipass, i,j,k,l
+    integer(kind=kint) :: ipass, i,j,l
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
