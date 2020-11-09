@@ -13,16 +13,15 @@ contains
   !C*** SOLVER_SEND_RECV
   !C
   subroutine  hecmw_solve_SEND_RECV_11                              &
-      &                ( N, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT, &
+      &                (NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT, &
       &                                        STACK_EXPORT, NOD_EXPORT, &
-      &                  WS, WR, X, SOLVER_COMM,my_rank)
+      &                  WS, WR, X, SOLVER_COMM)
 
     use hecmw_util
     implicit real*8 (A-H,O-Z)
     !      include  'mpif.h'
     !      include  'hecmw_config_f.h'
 
-    integer(kind=kint )                , intent(in)   ::  N
     integer(kind=kint )                , intent(in)   ::  NEIBPETOT
     integer(kind=kint ), pointer :: NEIBPE      (:)
     integer(kind=kint ), pointer :: STACK_IMPORT(:)
@@ -33,7 +32,6 @@ contains
     real   (kind=kreal), dimension(:)  , intent(inout):: WR
     real   (kind=kreal), dimension(:)  , intent(inout):: X
     integer(kind=kint)                 , intent(in)   ::SOLVER_COMM
-    integer(kind=kint)                 , intent(in)   :: my_rank
 
 #ifndef HECMW_SERIAL
     integer(kind=kint ), dimension(:,:), allocatable :: sta1

@@ -40,13 +40,12 @@ contains
   !C*** SOLVER_SEND_RECV
   !C
   subroutine  HECMW_SOLVE_SEND_RECV_33                              &
-      &                ( N, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT, &
+      &                ( NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT, &
       &                                        STACK_EXPORT, NOD_EXPORT, &
-      &                  WS, WR, X, SOLVER_COMM,my_rank)
+      &                  WS, WR, X, SOLVER_COMM)
 
     implicit none
 
-    integer(kind=kint )                , intent(in)   ::  N
     integer(kind=kint )                , intent(in)   ::  NEIBPETOT
     integer(kind=kint ), pointer :: NEIBPE      (:)
     integer(kind=kint ), pointer :: STACK_IMPORT(:)
@@ -57,7 +56,6 @@ contains
     real   (kind=kreal), dimension(:  ), intent(inout):: WR
     real   (kind=kreal), dimension(:  ), intent(inout):: X
     integer(kind=kint )                , intent(in)   ::SOLVER_COMM
-    integer(kind=kint )                , intent(in)   :: my_rank
 
 #ifndef HECMW_SERIAL
     integer(kind=kint ), dimension(:,:), allocatable :: sta1
@@ -127,11 +125,10 @@ contains
   !C*** SOLVER_ISEND_IRECV
   !C
   subroutine  HECMW_SOLVE_ISEND_IRECV_33                              &
-      &                ( N, NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT, &
+      &                ( NEIBPETOT, NEIBPE, STACK_IMPORT, NOD_IMPORT, &
       &                                        STACK_EXPORT, NOD_EXPORT, &
-      &                  X, SOLVER_COMM,my_rank,ireq)
+      &                  X, SOLVER_COMM,ireq)
     implicit none
-    integer(kind=kint )                , intent(in)   ::  N
     integer(kind=kint )                , intent(in)   ::  NEIBPETOT
     integer(kind=kint ), pointer :: NEIBPE      (:)
     integer(kind=kint ), pointer :: STACK_IMPORT(:)
@@ -140,7 +137,6 @@ contains
     integer(kind=kint ), pointer :: NOD_EXPORT  (:)
     real   (kind=kreal), target, intent(inout):: X (:)
     integer(kind=kint )        , intent(in)   ::SOLVER_COMM
-    integer(kind=kint )        , intent(in)   :: my_rank
     integer(kind=kint )        , intent(out)  :: ireq
 
 #ifndef HECMW_SERIAL
