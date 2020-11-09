@@ -43,7 +43,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), allocatable :: istat(:), jrapt(:), jcolno(:)
     integer(kind=kint) :: ntt
 
-    integer(kind=kint) :: ipass, i,j,k,l,m,n
+    integer(kind=kint) :: i,j,l,n
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -96,7 +96,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), allocatable :: istat(:), jrapt(:), jcolno(:)
     integer(kind=kint) :: ntt
 
-    integer(kind=kint) :: ipass, i,j,k,l,m,n
+    integer(kind=kint) :: ipass, i,j,k,l
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -147,7 +147,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: jrapt(:)
     integer(kind=kint) :: jcolno(:)
     integer(kind=kint) :: istat(:)
-    integer(kind=kint) :: i,j,k,l, locr, loc
+    integer(kind=kint) :: i,j,k, locr, loc
     locr=0
     loc=istat(i)
     110 continue
@@ -213,7 +213,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: istat(:)
     integer(kind=kint) :: jrapt(:)
     integer(kind=kint) :: jcolno(:)
-    integer(kind=kint) :: i,j,k,l, ii, loc, idbg
+    integer(kind=kint) :: i,k,l, ii, loc, idbg
 
     if (0 >= c%ncols) then
       call errtrp('set positive ncols')
