@@ -73,7 +73,6 @@ module HECMW_SOLVER_DIRECT
   !*QAZ
   integer, private:: ISEed
   integer, private:: ISEm
-  integer, private:: IXXx
   !*DEBUG
   integer, private:: IDBg
   integer, private:: IDBg1
