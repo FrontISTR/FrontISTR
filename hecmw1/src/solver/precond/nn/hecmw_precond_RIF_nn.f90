@@ -359,31 +359,6 @@ contains
   !C***
   !C*** FORM_ILU1_nn
   !C*** form ILU(1) matrix
-  subroutine FORM_ILU0_RIF_nn(hecMAT)
-    implicit none
-    type(hecmwST_matrix) :: hecMAT
-
-    allocate (inumFI1L(0:hecMAT%NP), inumFI1U(0:hecMAT%NP))
-    allocate (FI1L (hecMAT%NPL), FI1U (hecMAT%NPU))
-
-    inumFI1L = 0
-    inumFI1U = 0
-    FI1L = 0
-    FI1U = 0
-
-    inumFI1L(:) = hecMAT%indexL(:)
-    inumFI1U(:) = hecMAT%indexU(:)
-    FI1L(:) = hecMAT%itemL(:)
-    FI1U(:) = hecMAT%itemU(:)
-
-    NPFIU = hecMAT%NPU
-    NPFIL = hecMAT%NPL
-
-  end subroutine FORM_ILU0_RIF_nn
-
-  !C***
-  !C*** FORM_ILU1_nn
-  !C*** form ILU(1) matrix
   subroutine FORM_ILU1_RIF_nn(hecMAT)
     implicit none
     type(hecmwST_matrix) :: hecMAT
