@@ -6,6 +6,7 @@ image: ${REGISTRY}/build:latest
 stages:
     - build
     - test
+    - build_for_deploy
     - deploy
 
 make_serial:
@@ -46,37 +47,54 @@ make_hybrid:
             - build_hybrid/
         expire_in: 100min
 
-test_serial:
+.test:
     stage: test
+    artifacts:
+        paths:
+            - run_test
+        expire_in: 1week
+        when: on_failure
+test_serial:
+    extends: .test
+    needs: ["make_serial"]
     dependencies:
         - make_serial
     script:
         - cd build_serial
         - ctest -L serial --output-on-failure
 test_openmp:
-    stage: test
+    extends: .test
+    needs: ["make_openmp"]
     dependencies:
         - make_openmp
     script:
         - cd build_openmp
+        - ctest -L serial --output-on-failure
         - ctest -L openmp --output-on-failure
 test_mpi:
-    stage: test
+    extends: .test
+    needs: ["make_mpi"]
     dependencies:
         - make_mpi
     script:
         - cd build_mpi
-        - ctest -L mpi --output-on-failure
+        - ctest -L serial --output-on-failure
+        - ctest -L mpi    --output-on-failure
 test_hybrid:
-    stage: test
+    extends: .test
+    needs: ["make_hybrid"]
     dependencies:
         - make_hybrid
     script:
         - cd build_hybrid
+        - ctest -L serial --output-on-failure
+        - ctest -L openmp --output-on-failure
+        - ctest -L mpi    --output-on-failure
         - ctest -L hybrid --output-on-failure
 document:
     image: ${REGISTRY}/document:latest
-    stage: build
+    stage: build_for_deploy
+    needs: []
     before_script:
         - pip3 install -r doc/requirements.txt
     script:
@@ -92,7 +110,8 @@ document:
 
 doxygen:
     image: ${REGISTRY}/document:latest
-    stage: build
+    stage: build_for_deploy
+    needs: []
     script:
         - cmake -Bbuild_doc -H. -DWITH_DOC=ON
         - make -C build_doc doc
@@ -122,7 +141,8 @@ pages:
 
 docker:fistr1:
   image: docker:latest
-  stage: build
+  stage: build_for_deploy
+  needs: []
   services:
     - docker:dind
   script:
@@ -134,7 +154,8 @@ docker:fistr1:
 
 binary:x86_64-w64-mingw32:
     image: ${REGISTRY}/x86_64-w64-mingw32-lib
-    stage: build
+    stage: build_for_deploy
+    needs: []
     script:
         - LIB_ROOT=/usr/local/x86_64-w64-mingw32
         - cmake  -Bbuild -H.
@@ -169,7 +190,8 @@ binary:x86_64-w64-mingw32:
 
 binary:x86_64-w64-mingw32-msmpi:
     image: ${REGISTRY}/x86_64-w64-mingw32-mpilib
-    stage: build
+    stage: build_for_deploy
+    needs: []
     script:
         - LIB_ROOT=/usr/local/x86_64-w64-mingw32
         - cmake  -Bbuild -H.
@@ -208,3 +230,4 @@ binary:x86_64-w64-mingw32-msmpi:
         paths:
             - public
         expire_in: 100min
+
