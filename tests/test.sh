@@ -10,14 +10,17 @@
 set -eu
 
 # Where the FrontISTR project is checked out
-FRONTISTR_HOME=$(readlink -f $(dirname $BASH_SOURCE)/..)
+FRONTISTR_HOME=$(cd $(dirname $BASH_SOURCE)/..;pwd)
+CTEST_TEST_NAME=${CTEST_TEST_NAME:='.'}
 
 echo_err () {
-  echo -e "\e[31m$1\e[m" >&2
+  ESC=$(printf '\033')
+  echo "${ESC}[31m$1${ESC}[m" >&2
 }
 
 echo_success () {
-  echo -e "\e[32m$1\e[m" >&2
+  ESC=$(printf '\033')
+  echo "${ESC}[32m$1${ESC}[m" >&2
 }
 
 check_executable () {
@@ -81,7 +84,7 @@ mkdir -p $test_dir
 for mesh_path in $(find $target -type f -name "*.msh"); do
 
   SECONDS=0
-  ref_dir=$(readlink -f $(dirname $mesh_path))
+  ref_dir=$(cd $(dirname $mesh_path);pwd)
   mesh=$(basename $mesh_path)
   cnt=${mesh%.msh}.cnt
   res=${mesh%.msh}.res
