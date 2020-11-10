@@ -3492,7 +3492,7 @@ contains
             !--------------------------------------------
 
             w_w_w_det = w_w_lx*w_ly*det
-            mass = mass+ matmul( transpose(N), N )*w_w_w_det*rho
+            mass(1:nsize,1:nsize) = mass(1:nsize,1:nsize)+ matmul( transpose(N), N )*w_w_w_det*rho
             totalmass = totalmass + w_w_w_det*rho
             !--------------------------------------------
 
