@@ -113,7 +113,6 @@ contains
     real(kind=kreal), pointer :: D(:), AL(:), AU(:), B(:), X(:)
     integer(kind=kint), pointer :: INL(:), IAL(:), INU(:), IAU(:)
     integer(kind=kint) :: i,j,k,ii,ij, ip(hecMAT%NDOF),iq(hecMAT%NDOF)
-    integer(kind=kint) :: iq1, iq2, iq3, iq4, iq5, iq6
     integer(kind=kint) :: isL, ieL, isU, ieU, inod
 
     if (hecmw_mat_get_scaling(hecMAT).eq.0) return

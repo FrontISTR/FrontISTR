@@ -29,12 +29,12 @@ contains
     type( tMaterial ), pointer :: material     !< material information
 
     real(kind=kreal)   :: stiffness(20*6, 20*6)
-    integer(kind=kint) :: ierror, nodLOCAL(20)
+    integer(kind=kint) :: nodLOCAL(20)
     real(kind=kreal)   :: tt(20), ecoord(3,20)
-    real(kind=kreal)   :: thick, val, pa1
+    real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
     real(kind=kreal)   :: u(6,20), du(6,20), coords(3,3), u_prev(6,20)
-    integer            :: ig0, grpid, ig, iS0, iE0,ik, in, isect, ihead, cdsys_ID
+    integer            :: isect, ihead, cdsys_ID
 
     ! ----- initialize
     call hecmw_mat_clear( hecMAT )

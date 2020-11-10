@@ -257,7 +257,6 @@ contains
     real(kind=kreal), intent(in) :: x0(3)      !< coordinate of slave node
     real(kind=kreal), intent(in) :: exp_rate   !< expansion rate (>1.0)
     real(kind=kreal) :: dist(3), er
-    integer(kind=kint) :: i
     er = max(exp_rate, 1.d0)
     dist(:) = abs(x0(:) - surf%xavg(:))
     if ( maxval(dist(:)) < surf%dmax * er ) then

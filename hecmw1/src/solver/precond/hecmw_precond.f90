@@ -79,9 +79,7 @@ contains
     real(kind=kreal), intent(inout) :: R(:)
     real(kind=kreal), intent(inout) :: Z(:), ZP(:)
     real(kind=kreal), intent(inout) :: COMMtime
-    integer(kind=kint ) :: N, NP, NNDOF, NPNDOF
-    integer(kind=kint ) :: i, iterPRE
-    real(kind=kreal) :: START_TIME, END_TIME
+    integer(kind=kint ) :: i, N, NP, NNDOF, NPNDOF
     N = hecMAT%N
     NP = hecMAT%NP
     NNDOF = N * hecMAT%NDOF

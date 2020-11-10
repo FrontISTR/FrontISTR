@@ -739,7 +739,7 @@ contains
     real(kind=kreal), intent(out) :: gderiv(:,:)     !< shape deivative in global coordinate system
 
     real(kind=kreal) :: DUM, XJ(3,3), XJI(3,3), deriv(nn,3)
-    integer          :: nspace, i
+    integer          :: nspace
 
     nspace = getSpaceDimension( fetype )
     call getShapeDeriv( fetype, localCoord(:), deriv(1:nn,:) )

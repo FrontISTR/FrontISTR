@@ -179,7 +179,7 @@ contains
     real(kind=kreal), intent(out) :: dstress(6)   !> Cauchy-Green strain
     real(kind=kreal), intent(in)  :: dstrain(6)   !> 2nd Piola-Kirchhoff stress
 
-    integer :: i, j, k
+    integer :: i, j
     real(kind=kreal) :: ctn(3,3), itn(3,3)
     real(kind=kreal) :: inv1b, inv2b, inv3b
     real(kind=kreal) :: dibdc(3,3,3)
@@ -224,12 +224,12 @@ contains
     real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
     real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
 
-    integer :: i, j, k, l, m, n, jj
+    integer :: k, l, m, n
     real(kind=kreal) :: ctn(3,3), itn(3,3)
     real(kind=kreal) :: inv1b, inv2b, inv3b
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
-    real(kind=kreal) :: constant(3), coef
+    real(kind=kreal) :: constant(3)
 
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
@@ -261,7 +261,7 @@ contains
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3)
-    real(kind=kreal) :: CGstrain(3,3), dudc(3,3)
+    real(kind=kreal) :: dudc(3,3)
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &

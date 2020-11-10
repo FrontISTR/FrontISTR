@@ -272,8 +272,7 @@ contains
     real(kind=kreal)                        :: ctTForce(9*3+1)                           !< nodal tangential contact force vector
 
     integer(kind=kint) :: cstep !< current calculation step
-    integer(kind=kint) :: ig0, grpid, ig, ityp, is0, ie0, ik, in, idof1, idof2, idof, ndof
-    real(kind=kreal)   :: rhs !< value of prescribed displacement
+    integer(kind=kint) :: grpid
 
     id_lagrange = 0
     if( associated(fstrSOLID%CONT_NFORCE) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
@@ -432,7 +431,7 @@ contains
     integer(kind=kint) :: id_lagrange !< number of Lagrange multiplier
     real(kind=kreal)                        :: lagrange                        !< value of Lagrange multiplier
     integer(kind=kint) :: np, ndof !< total number of nodes; degree of freedom
-    integer (kind=kint)                     :: i, j, inod, idx
+    integer (kind=kint)                     :: i, inod, idx
     real(kind=kreal)                        :: ctNForce((nnode+1)*3+1)         !< contact force vector
     real(kind=kreal)                        :: ctTForce((nnode+1)*3+1)         !< contact force vector
 

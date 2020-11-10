@@ -810,10 +810,10 @@ contains
     ! LCOAL VARIAVLES
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
-    real(kind=kreal)   :: D(6,6), B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
-    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gdispderiv(3,3), F(3,3), det, det1, WG, ttc,tt0, ttn,outa(1)
-    integer(kind=kint) :: i, j, k, LX, serr
-    real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
+    real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
+    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gdispderiv(3,3), F(3,3), det, det1, WG, ttc,tt0, ttn
+    integer(kind=kint) :: j, LX, serr
+    real(kind=kreal)   :: naturalCoord(3), rot(3,3), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3)
     real(kind=kreal)   :: dstrain(6)
     real(kind=kreal)   :: alpo(3)
@@ -1078,8 +1078,8 @@ contains
 
     !---------------------------------------------------------------------
 
-    real(kind=kreal) :: XJ(3, 3), det, wg
-    integer(kind=kint) :: LX, i
+    real(kind=kreal) :: XJ(3, 3), det
+    integer(kind=kint) :: LX
     real(kind=kreal) :: localcoord(3), deriv(nn, 3)
 
     !---------------------------------------------------------------------

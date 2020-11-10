@@ -283,7 +283,7 @@ contains
     type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
     type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
-    integer(kind=kint) :: i, grpid
+    integer(kind=kint) :: i
     logical :: iactive, is_init
 
 

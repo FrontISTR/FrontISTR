@@ -370,20 +370,19 @@ contains
 
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
-    real(kind=kreal) :: D(6, 6), B(6, ndof*nn), B1(6, ndof*nn)
+    real(kind=kreal) :: B(6, ndof*nn), B1(6, ndof*nn)
     real(kind=kreal) :: gderiv(nn, 3), gdispderiv(3, 3), det, wg
-    integer(kind=kint) :: i, j, k, LX, mtype, serr
-    integer(kind=kint) :: isEp
-    real(kind=kreal) :: naturalCoord(3), rot(3, 3), R(3, 3), spfunc(nn)
+    integer(kind=kint) :: j, LX, serr
+    real(kind=kreal) :: naturalCoord(3), rot(3, 3), spfunc(nn)
     real(kind=kreal) :: totaldisp(3, nn), elem(3, nn), elem1(3, nn), coordsys(3, 3)
     real(kind=kreal) :: dstrain(6)
-    real(kind=kreal) :: dvol, derivdum(1:ndof, 1:ndof)
-    real(kind=kreal) :: ttc, tt0, ttn, alpo(3), outa(1), ina(1), EPSTH(6)
+    real(kind=kreal) :: dvol
+    real(kind=kreal) :: ttc, tt0, ttn, alpo(3), ina(1), EPSTH(6)
     logical :: ierr, matlaniso
 
     real(kind=kreal) :: elem0(3,nn), gderiv1(nn,ndof), B2(6, ndof*nn), Z1(3)
     real(kind=kreal) :: V0, jacob, jacob_ave, gderiv1_ave(nn,ndof)
-    real(kind=kreal) :: Fbar(3,3), Jratio(8), coeff, sff
+    real(kind=kreal) :: Fbar(3,3), Jratio(8)
     real(kind=kreal) :: jacob_ave05, gderiv05_ave(nn,ndof)
 
     !---------------------------------------------------------------------

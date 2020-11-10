@@ -29,8 +29,6 @@ module hecmw_precond_SAINV_nn
   integer(kind=kint), pointer :: indexU(:) => null()
   integer(kind=kint), pointer :: itemL(:)  => null()
   integer(kind=kint), pointer :: itemU(:)  => null()
-  integer(kind=kint), pointer :: perm(:)   => null()
-  integer(kind=kint), pointer :: iperm(:)  => null()
   real(kind=kreal), pointer :: D(:)  => null()
   real(kind=kreal), pointer :: AL(:) => null()
   real(kind=kreal), pointer :: AU(:) => null()
@@ -49,10 +47,7 @@ contains
     implicit none
     type(hecmwST_matrix) :: hecMAT
 
-    integer(kind=kint ) :: NPU, NPL, NP
-    integer(kind=kint ) :: rcm
-    integer(kind=kint ) :: ierror, PRECOND
-
+    integer(kind=kint ) :: PRECOND
     real(kind=krealp) :: FILTER
 
     N = hecMAT%N
@@ -94,7 +89,7 @@ contains
     implicit none
     real(kind=kreal), intent(inout)  :: ZP(:)
     real(kind=kreal), intent(in)  :: R(:)
-    integer(kind=kint) :: in, i, j, isL, ieL, isU, ieU, k, iold, rcm,idof,jdof
+    integer(kind=kint) :: in, i, j, isL, ieL, isU, ieU,idof,jdof
     real(kind=kreal) :: SW(NDOF),X(NDOF)
 
     !C-- FORWARD
@@ -168,10 +163,10 @@ contains
     implicit none
     type (hecmwST_matrix)     :: hecMAT
 
-    integer(kind=kint) :: i, j, k, jS, jE, in, itr, NP, idof, jdof, iitr
-    real(kind=krealp) :: dd, dtmp(hecMAT%NDOF), YV(hecMAT%NDOF), X(hecMAT%NDOF)
+    integer(kind=kint) :: i, j, k, jS, jE, in, itr, idof, jdof, iitr
+    real(kind=krealp) :: dd, dtmp(hecMAT%NDOF), X(hecMAT%NDOF)
 
-    real(kind=krealp) :: FILTER, SIGMA_DIAG
+    real(kind=krealp) :: FILTER
     real(kind=krealp), allocatable :: zz(:), vv(:)
 
     FILTER= hecMAT%Rarray(5)
@@ -326,7 +321,7 @@ contains
   subroutine hecmw_sainv_make_u_nn(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
-    integer(kind=kint) i,j,k,kk,n,m,o,idof,jdof
+    integer(kind=kint) i,j,k,n,m,o,idof,jdof
     integer(kind=kint) is,ie,js,je
 
     n = 1
@@ -387,7 +382,7 @@ contains
 
     integer(kind=kint),allocatable :: IWsL(:), IWsU(:), IW1(:), IW2(:)
     integer(kind=kint) :: NPLf1,NPUf1
-    integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
+    integer(kind=kint) :: i,jj,kk,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
     integer(kind=kint) :: j,k,iSL,iSU
     !C

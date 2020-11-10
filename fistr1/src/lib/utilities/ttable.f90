@@ -187,8 +187,7 @@ module Table_DICTS
     logical, intent(out)           :: ierr
 
     type(DICT_DATA), pointer       :: dicval
-    integer          :: i, j, na, dd, crow, cindex
-    integer          :: cindex1(MAXINDEX), cindex2(MAXINDEX)
+    integer          :: na, dd, crow, cindex
     dicval => dict_get_key( dict, key )
     ierr = .false.
     if( .not. associated(dicval) ) then
@@ -215,9 +214,8 @@ module Table_DICTS
     integer, intent(inout)         :: dd, crow
     real(kind=kreal), intent(out)  :: outa
 
-    integer          :: i, j, na, nn, ccol, ddd
-    real(kind=kreal) :: cval, val1, val2, lambda
-    logical          :: isok
+    integer          :: i, ccol, ddd
+    real(kind=kreal) :: val1, val2, lambda
 
     ddd = dd / table%tbindex(cindex)
     ccol = table%tbcol-cindex+1
@@ -329,7 +327,7 @@ module Table_DICTS
     integer, intent(inout)         :: dd, crow
     real(kind=kreal), intent(out)  :: outa(:)
 
-    integer          :: i, j, na, nn, ccol, ddd, nval
+    integer          :: i, ccol, ddd, nval
     real(kind=kreal) :: lambda, val1(MAXINDEX), val2(MAXINDEX)
 
     ddd = dd / table%tbindex(cindex)

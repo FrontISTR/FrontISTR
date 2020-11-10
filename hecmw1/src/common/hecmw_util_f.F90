@@ -1127,7 +1127,7 @@ contains
   subroutine hecmw_vector_contract(hecMATorig,hecMAT,NDOF)
     type (hecmwST_matrix    ) :: hecMATorig
     type (hecmwST_matrix    ),pointer :: hecMAT
-    integer(kind=kint) NDOF,NDOF2,oNDOF,oNDOF2,i,j,k
+    integer(kind=kint) NDOF,NDOF2,oNDOF,i,j
     NDOF2 = NDOF*NDOF
     oNDOF = hecMATorig%NDOF
     do i = 1, hecMATorig%NP

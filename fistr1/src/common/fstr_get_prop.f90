@@ -20,7 +20,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (tshellmat), pointer :: shell_var(:)
     integer(kind=kint) :: n_item, n_subitem, ihead, isect, mid, mpos
-    integer(kind=kint) :: shell_ortho, n_ls, n_mod, n_totlyr, section_type
+    integer(kind=kint) :: shell_ortho, n_totlyr, section_type
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
     real(kind=kreal) :: beam_radius,beam_angle1,beam_angle2,beam_angle3,beam_angle4,beam_angle5,beam_angle6
 
@@ -147,7 +147,7 @@ contains
     type (tshellmat),pointer :: shell_var(:)
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu, tmp
     integer(kind=kint) :: mid, count, i, j, flag
-    integer(kind=kint) :: shell_ortho, n_ls, n_mod, n_totlyr, section_type
+    integer(kind=kint) :: shell_ortho, n_totlyr
     integer(kind=kint) :: n_subitem, mpos
 
     if( n_subitem .lt. 1 ) then
