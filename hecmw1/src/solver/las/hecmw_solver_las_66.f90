@@ -291,7 +291,7 @@ contains
     real(kind=kreal), intent(inout) :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME
-    integer(kind=kint) :: i, j, jj, k, kk
+    integer(kind=kint) :: i
 
     START_TIME= HECMW_WTIME()
     call hecmw_update_6_R (hecMESH, X, hecMESH%n_node)
@@ -329,7 +329,7 @@ contains
     real(kind=kreal), intent(inout) :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME
-    integer(kind=kint) :: i, j, jj, k, kk
+    integer(kind=kint) :: i
 
     START_TIME= HECMW_WTIME()
     call hecmw_update_6_R (hecMESH, X, hecMESH%n_node)

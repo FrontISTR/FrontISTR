@@ -32,7 +32,7 @@ contains
 
     integer(kind=kint) :: error
     integer(kind=kint) :: ITER, METHOD, PRECOND, NSET, METHOD2
-    integer(kind=kint) :: iterPREmax, i, j
+    integer(kind=kint) :: iterPREmax
     integer(kind=kint) :: ITERlog, TIMElog
     real(kind=kreal)   :: RESID, SIGMA_DIAG, THRESH, FILTER, resid2
     real(kind=kreal)   :: TIME_setup, TIME_comm, TIME_sol, TR
@@ -180,7 +180,6 @@ contains
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
-    integer (kind=kint) :: IFLAG
     integer (kind=kint)::PRECOND,iterPREmax,i,j,error
     PRECOND   = hecmw_mat_get_precond(hecMAT)
     iterPREmax= hecmw_mat_get_iterpremax(hecMAT)

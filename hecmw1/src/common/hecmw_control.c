@@ -1866,7 +1866,6 @@ static int read_subdir_head(void) {
 
 static int read_subdir_head_param_limit(void) {
   int token;
-  char *p;
   token = HECMW_ctrllex_next_token();
 
   if (token != '=') {
@@ -1891,7 +1890,6 @@ static int read_subdir_head_param_limit(void) {
 static int read_subdir(void) {
   int token, state;
   int flag_name                 = 0; /* flag for NAME */
-  char name[HECMW_NAME_LEN + 1] = "";
   enum {
     ST_FINISHED,
     ST_HEADER_LINE,

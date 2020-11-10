@@ -28,13 +28,10 @@ module hecmw_precond_RIF_33
   integer(kind=kint), pointer :: indexU(:) => null()
   integer(kind=kint), pointer :: itemL(:)  => null()
   integer(kind=kint), pointer :: itemU(:)  => null()
-  integer(kind=kint), pointer :: perm(:)   => null()
-  integer(kind=kint), pointer :: iperm(:)  => null()
   real(kind=kreal), pointer :: D(:)  => null()
   real(kind=kreal), pointer :: AL(:) => null()
   real(kind=kreal), pointer :: AU(:) => null()
 
-  real(kind=krealp), pointer :: SAINVU(:) => null()
   real(kind=krealp), pointer :: SAINVL(:) => null()
   real(kind=krealp), pointer :: SAINVD(:) => null()
   real(kind=krealp), pointer :: RIFU(:)   => null()
@@ -50,11 +47,9 @@ contains
     implicit none
     type(hecmwST_matrix) :: hecMAT
 
-    integer(kind=kint ) :: NP, NPU, NPL
-    integer(kind=kint ) :: rcm
-    integer(kind=kint ) :: ii, i, j, k, ierror, itr, PRECOND
+    integer(kind=kint ) :: PRECOND
 
-    real(kind=krealp) :: THRESH, FILTER
+    real(kind=krealp) :: FILTER
 
     N = hecMAT%N
     PRECOND = hecmw_mat_get_precond(hecMAT)
@@ -94,7 +89,7 @@ contains
   subroutine hecmw_precond_RIF_33_apply(ZP)
     implicit none
     real(kind=kreal), intent(inout)  :: ZP(:)
-    integer(kind=kint) :: in, i, j, isL, ieL, isU, ieU, k, iold, rcm
+    integer(kind=kint) :: in, i, j, isL, ieL
     real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
 
     !C-- FORWARD
@@ -166,9 +161,9 @@ contains
   subroutine hecmw_rif_33(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
-    integer(kind=kint) :: i, j, jS, jE, in, itr, iitr, ind(9), PRECOND, NP
-    real(kind=krealp) :: YV1, YV2, YV3, X1, X2, X3, dd, dd1, dd2, dd3, dtemp(3)
-    real(kind=krealp) :: FILTER, SIGMA_DIAG
+    integer(kind=kint) :: i, j, jS, jE, in, itr, NP
+    real(kind=krealp) :: X1, X2, X3, dd, dd1, dd2, dd3, dtemp(3)
+    real(kind=krealp) :: FILTER
     real(kind=krealp), allocatable :: zz(:), vv(:)
 
     FILTER= hecMAT%Rarray(5)
@@ -616,7 +611,7 @@ contains
   subroutine hecmw_rif_make_u_33(hecMAT)
     implicit none
     type (hecmwST_matrix)     :: hecMAT
-    integer(kind=kint) i,j,k,kk,n,m,o
+    integer(kind=kint) i,j,k,n,m,o
     integer(kind=kint) is,ie,js,je
 
     n = 1
@@ -681,7 +676,7 @@ contains
 
     integer(kind=kint),allocatable :: IWsL(:), IWsU(:), IW1(:), IW2(:)
     integer(kind=kint) :: NPLf1,NPUf1
-    integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
+    integer(kind=kint) :: i,jj,kk,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
     integer(kind=kint) :: j,k,iSL,iSU
     !C

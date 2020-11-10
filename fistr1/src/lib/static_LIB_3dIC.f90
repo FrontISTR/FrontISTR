@@ -257,7 +257,7 @@ contains
     real(kind=kreal)   :: gderiv(nn+3,3), gderiv0(nn+3,3), gdispderiv(3,3), F(3,3), det, det0, WG, ttc, tt0, ttn
     integer(kind=kint) :: i, j, LX, mtype, serr
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
-    real(kind=kreal)   :: totaldisp(3,nn+3), elem(3,nn), elem1(3,nn), coordsys(3,3), tm(6,6)
+    real(kind=kreal)   :: totaldisp(3,nn+3), elem(3,nn), elem1(3,nn), coordsys(3,3)
     real(kind=kreal)   :: dstrain(6)
     real(kind=kreal)   :: alpo(3)
     logical            :: ierr, matlaniso

@@ -287,7 +287,7 @@ contains
     real(kind=kreal) :: D41,D42,D43,D44,D45,D46
     real(kind=kreal) :: D51,D52,D53,D54,D55,D56
     real(kind=kreal) :: D61,D62,D63,D64,D65,D66
-    integer(kind=kint) :: i,jj,jj1,ij0,kk,kk1
+    integer(kind=kint) :: i,jj,ij0,kk
     integer(kind=kint) :: j,k
     allocate (IW1(NP) , IW2(NP))
     allocate(Dlu0(36*NP), ALlu0(36*NPL), AUlu0(36*NPU))

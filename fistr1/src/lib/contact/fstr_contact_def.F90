@@ -477,7 +477,7 @@ contains
     integer(kind=kint) :: cnode, i, j, cnt, nd1, gn, etype, iSS, nn,cgn
     real(kind=kreal) :: cnpos(2), elem(3, l_max_elem_node )
     integer(kind=kint) :: cnode1, cnode2, gn1, gn2, nsurf, cgn1, cgn2, isin_n
-    real(kind=kreal) :: x, normal_n(3), lpos_n(2)
+    real(kind=kreal) :: x=0, normal_n(3), lpos_n(2)
 
     if( 1 <= isin .and. isin <= 4 ) then  ! corner
       cnode = isin
@@ -598,7 +598,7 @@ contains
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
-    logical            :: isin, is_cand
+    logical            :: isin
     real(kind=kreal)    :: opos(2), odirec(3)
     integer(kind=kint) :: bktID, nCand, idm
     integer(kind=kint), allocatable :: indexCand(:)
@@ -711,7 +711,7 @@ contains
     integer(kind=kint)  :: nn, j, iSS
     real(kind=kreal)    :: nrlforce, fcoeff, tangent(3,2)
     real(kind=kreal)    :: elemcrd(3, l_max_elem_node )
-    real(kind=kreal)    :: dum, dxi(2), shapefunc(l_max_surface_node)
+    real(kind=kreal)    :: shapefunc(l_max_surface_node)
     real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
     real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
     integer(kind=kint)  :: i, idx0
@@ -811,7 +811,7 @@ contains
     integer(kind=kint)  :: nn, i, j, iSS
     real(kind=kreal)    :: nrlforce, elemdisp(3,l_max_elem_node), tangent(3,2)
     real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
-    real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
+    real(kind=kreal)    :: dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
     real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
     real(kind=kreal)    :: fric(2), f3(3*l_max_elem_node+3), edisp(3*l_max_elem_node+3)
 
@@ -963,10 +963,10 @@ contains
     real(kind=kreal), intent(inout)   :: B(:)           !< nodal force residual
 
     integer(kind=kint)  :: slave,  etype, master
-    integer(kind=kint)  :: nn, i, j, k, iSS
+    integer(kind=kint)  :: nn, i, j, iSS
     real(kind=kreal)    :: fcoeff, nrlforce, tangent(3,2)
-    real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
-    real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
+    real(kind=kreal)    :: elemcrd(3, l_max_elem_node )
+    real(kind=kreal)    :: shapefunc(l_max_surface_node)
     real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
     real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
     fcoeff = contact%fcoeff
@@ -1016,13 +1016,7 @@ contains
       real(kind=kreal), intent(inout)   :: relvel_vec(:)       !< mesh coordinate
       real(kind=kreal), intent(inout)   :: state_vec(:)        !< disp till current now
 
-      integer(kind=kint)  :: slave,  etype, master
-      integer(kind=kint)  :: nn, i, j, k, iSS
-      real(kind=kreal)    :: fcoeff, nrlforce, tangent(3,2)
-      real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
-      real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
-      real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-      real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
+      integer(kind=kint)  :: i, slave
 
       do i= 1, size(contact%slave)
         slave = contact%slave(i)
@@ -1066,7 +1060,7 @@ contains
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
-    logical            :: isin, is_cand
+    logical            :: isin
     real(kind=kreal)    :: opos(2), odirec(3)
     integer(kind=kint) :: bktID, nCand, idm
     integer(kind=kint), allocatable :: indexCand(:)

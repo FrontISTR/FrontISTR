@@ -1070,7 +1070,7 @@ contains
 
 
   subroutine get_contact_pair(cpair, ierr)
-    integer(kind=kint) :: ierr,is_allocated
+    integer(kind=kint) :: ierr
     type(hecmwST_contact_pair) :: cpair
 
     sname = 'hecmwST_contact_pair'

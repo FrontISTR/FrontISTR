@@ -32,7 +32,7 @@ contains
     real(kind=kreal) :: ina(1), outa(3)
     real(kind=kreal) :: xxn, aa
 
-    real(kind=kreal) :: c3,e,un,G,ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
+    real(kind=kreal) :: c3,e,un,G,stri(6),p,dstri,c4,c5,f,df, eqvs
 
     aa = 0.0d0
     xxn = 0.0d0
@@ -134,7 +134,7 @@ contains
     real(kind=kreal) :: ina(1), outa(3)
     real(kind=kreal) :: xxn, aa
 
-    real(kind=kreal) :: c3,e,un,G,dg,ddg,stri(6),p,dstri,c4,c5,f,df, eqvs
+    real(kind=kreal) :: e,un,G,dg,ddg,stri(6),p,dstri,f,df, eqvs
 
     aa = 0.0d0
     xxn = 0.0d0

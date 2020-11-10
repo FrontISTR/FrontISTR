@@ -71,12 +71,10 @@ contains
   end subroutine
 
   !> Given symmetric 3x3 matrix M, compute the eigenvalues
-  subroutine tensor_eigen3( tensor, eigval, eigproj )
+  subroutine tensor_eigen3( tensor, eigval )
     real(kind=kreal), intent(in)  :: tensor(6)          !< tensor
     real(kind=kreal), intent(out) :: eigval(3)     !< eigenvalues
-    real(kind=kreal), intent(out) :: eigproj(3,3)  !< eigenprojectss
 
-    integer  :: i
     real(kind=kreal) :: I1,I2,I3,R,sita,Q, X(3,3), XX(3,3), II(3,3)
 
     II(:,:)=0.d0
@@ -341,7 +339,7 @@ contains
     real(kind=kreal),intent(in)  ::  jacob(3,3)   !< Jacobian
     real(kind=kreal),intent(out)  ::  tm(6,6)      !< transform matrix
 
-    integer    ::  i,j,k,m,nDim,nTensorDim
+    integer    ::  i,j
 
     do i=1,3
       do j=1,3
@@ -425,11 +423,10 @@ contains
     real(kind=kreal) :: eigval(3)     !< vector containing the eigvalches
     real(kind=kreal) :: princ(3,3)   !< matrix containing the three principal column vectors
 
-    real(kind=kreal) :: s11, s22, s33, s12, s23, s13, j1, j2, j3, s1 , s2 , s3
-    real(kind=kreal) :: p,q,ks1,ks2,ks3,a,b,c,d,pivot, ml,nl,l
+    real(kind=kreal) :: s11, s22, s33, s12, s23, s13, j1, j2, j3
+    real(kind=kreal) :: ml,nl
     complex(kind=kreal):: x1,x2,x3
     real(kind=kreal):: rtemp
-    real(kind=kreal) :: mat(3,4)
     integer :: i
     s11 = tensor(1)
     s22 = tensor(2)

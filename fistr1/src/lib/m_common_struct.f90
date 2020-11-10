@@ -75,8 +75,8 @@ contains
     real(kind=kreal), intent(out)    :: outsys(3, 3)
     integer, intent(out)             :: ierr
 
-    real(kind=kreal) :: dis,f, ff(3), xyza(3), xyzb(3), xyzc(3)
-    integer :: ftype, stype
+    real(kind=kreal) :: f, xyza(3), xyzb(3), xyzc(3)
+    integer :: stype
 
     ierr = 0
     stype = mod( coordsys%sys_type, 10 )

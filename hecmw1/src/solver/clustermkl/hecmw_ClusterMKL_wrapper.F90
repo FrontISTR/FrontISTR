@@ -211,10 +211,9 @@ contains
     integer(kind=kint), pointer, intent(inout) :: ia(:), ja(:)
     real(kind=kreal), pointer, intent(inout)   :: a(:), b(:), x(:)
 
-    integer(kind=kint) :: i,k
-    integer(kind=kint) :: nprocs, ierr, nnz, info
+    integer(kind=kint) :: i, nprocs, ierr, nnz
     integer(kind=kint), allocatable :: DISPMAT(:), NCOUNTS(:)
-    real(kind=kreal)   :: t1,t2,t3,t4,t5
+    real(kind=kreal)   :: t1,t2,t3,t4
 
     t1=hecmw_wtime()
 
@@ -409,7 +408,7 @@ contains
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in)   :: myrank
 
-    integer(kind=kint) :: i, j, is, iE
+    integer(kind=kint) :: i, is, iE
 
     do i=2,spMAT%N_loc+1
       if(spMAT%IRN(i)-spMAT%IRN(i-1)>10000) &
@@ -432,7 +431,7 @@ contains
     integer(kind=kint), intent(inout) :: ja(:)
     real(kind=kreal), intent(inout) :: a(:)
 
-    integer(kind=kint) :: i, j, work(2,n)
+    integer(kind=kint) :: i, work(2,n)
     real(kind=kreal)   :: oa(n)
 
     do i=1,n

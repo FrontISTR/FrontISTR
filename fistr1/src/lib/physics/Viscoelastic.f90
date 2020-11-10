@@ -190,8 +190,8 @@ contains
     real(kind=kreal), optional      :: temp      !> current temprature
     real(kind=kreal), optional      :: tempn     !> temperature at last step
 
-    integer   i,j, n
-    real(kind=kreal) :: G,Gg,K,Kg,Kth, exp_n,mu_0,mu_n,dq_n,dtau, theta
+    integer   i,n
+    real(kind=kreal) :: G,K,Kth, exp_n,mu_0,mu_n,dq_n,dtau, theta
     real(kind=kreal) :: ina(1), outa(2), EE, PP, ddt
 
     real(kind=kreal) :: devstrain(6), en(6), D(6,6)

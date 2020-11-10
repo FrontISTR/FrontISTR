@@ -31,8 +31,6 @@ module hecmw_solver_las
   public :: hecmw_mat_multiple
 
   real(kind=kreal), save :: time_Ax = 0.d0
-  logical, save :: mpcmatvec_flg = .false.
-  logical, save :: async_matvec_flg = .false.
 
 contains
 

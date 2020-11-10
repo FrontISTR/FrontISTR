@@ -21,12 +21,6 @@ module hecmw_JAD_TYPE
   public :: hecmw_JAD_MATVEC
 
   !C---------------------- AU&AL
-  real(kind=kreal), allocatable      :: AJAD(:)
-  integer(kind=kint), allocatable    :: JAJAD(:)
-  integer(kind=kint), allocatable    :: JADORD(:)
-  integer(kind=kint), allocatable    :: IAJAD(:)
-  integer(kind=kint) :: MJAD
-  real(kind=kreal), allocatable  :: WP(:,:)
   integer(kind=kint) :: INITIALIZED = 0
 
 contains
@@ -70,9 +64,6 @@ contains
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
-    real(kind=kreal) :: START_TIME, END_TIME
-    real(kind=kreal), pointer :: D(:)
-    integer(kind=kint) :: i,idof,jdof,NDOF,NDOF2
     select case(hecMAT%NDOF)
       case(3)
         call hecmw_JAD_MATVEC_33(hecMESH, hecMAT, X, Y, COMMtime)

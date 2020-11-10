@@ -86,7 +86,6 @@ contains
     type( tGaussStatus ), intent(in)    :: gauss1
     type( tGaussStatus ), intent(inout) :: gauss2
 
-    integer :: n
     gauss2%strain     = gauss1%strain
     gauss2%stress     = gauss1%stress
     gauss2%strain_bak = gauss1%strain_bak

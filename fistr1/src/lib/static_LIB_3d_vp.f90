@@ -600,11 +600,9 @@ contains
     integer(kind=kint) :: i, j, k
     integer(kind=kint) :: na, nb
     integer(kind=kint) :: isize, jsize
-    integer(kind=kint) :: isize1, isize2, isize3, isize4
     integer(kind=kint) :: LX
 
     real(kind=kreal) :: elem(3, nn)
-    real(kind=kreal) :: totalvelo(4, nn)
     real(kind=kreal) :: velo_new(4*nn)
     real(kind=kreal) :: stiff(4*nn, 4*nn)
     real(kind=kreal) :: b(4*nn)
@@ -613,7 +611,6 @@ contains
       MS(nn, nn), AS(nn, nn), CS(nn, nn, 3),    &
       MP(nn, nn, 3), AP(nn, nn, 3), CP(nn, nn)
     real(kind=kreal) :: spfunc(nn), gderiv(nn, 3)
-    real(kind=kreal) :: gveloderiv(3, 3)
     real(kind=kreal) :: naturalCoord(3)
     real(kind=kreal) :: dndx(nn, 3)
     real(kind=kreal) :: tincr_inv

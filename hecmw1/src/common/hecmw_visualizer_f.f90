@@ -16,9 +16,6 @@ module  hecmw_visualizer
   public  :: hecmw_visualize_init
   public  :: hecmw_visualize_finalize
 
-  private
-  character(len=100) :: sname, vname
-
 contains
 
   subroutine  hecmw_visualize( mesh, result_data, step )

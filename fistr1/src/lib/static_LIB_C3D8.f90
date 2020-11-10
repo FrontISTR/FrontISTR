@@ -57,7 +57,7 @@ contains
     real(kind=kreal) :: B1(6, ndof*nn), Bbar(nn, 3)
     real(kind=kreal) :: Smat(9, 9), elem(3, nn)
     real(kind=kreal) :: BN(9, ndof*nn), SBN(9, ndof*nn)
-    real(kind=kreal) :: B4, B6, B8, Vol, coordsys(3, 3)
+    real(kind=kreal) :: B4, B6, B8, coordsys(3, 3)
 
     !---------------------------------------------------------------------
 
@@ -236,15 +236,14 @@ contains
 
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
-    real(kind=kreal) :: D(6, 6), B(6, ndof*nn), B1(6, ndof*nn)
+    real(kind=kreal) :: B(6, ndof*nn), B1(6, ndof*nn)
     real(kind=kreal) :: gderiv(nn, 3), gderiv1(nn,3), gdispderiv(3, 3), F(3,3), det, det1, wg
-    integer(kind=kint) :: i, j, k, LX, mtype, serr
-    integer(kind=kint) :: isEp
-    real(kind=kreal) :: naturalCoord(3), rot(3, 3), R(3, 3), spfunc(nn)
+    integer(kind=kint) :: j, LX, mtype, serr
+    real(kind=kreal) :: naturalCoord(3), rot(3, 3), spfunc(nn)
     real(kind=kreal) :: totaldisp(3, nn), elem(3, nn), elem1(3, nn), coordsys(3, 3)
     real(kind=kreal) :: dstrain(6)
     real(kind=kreal) :: dvol, vol0, Bbar(nn, 3), derivdum(1:ndof, 1:ndof), BBar2(nn, 3)
-    real(kind=kreal) :: B4, B6, B8, ttc, tt0, ttn, alpo(3), outa(1), ina(1), EPSTH(6)
+    real(kind=kreal) :: B4, B6, B8, ttc, tt0, ttn, alpo(3), ina(1), EPSTH(6)
     logical :: ierr, matlaniso
 
     !---------------------------------------------------------------------

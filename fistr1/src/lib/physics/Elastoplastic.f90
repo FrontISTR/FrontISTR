@@ -202,7 +202,7 @@ contains
     real(kind=kreal), intent(in)           :: pstrain !< plastic strain
     real(kind=kreal), intent(in), optional :: temp !< temprature
 
-    integer :: i, nc, htype
+    integer :: htype
     logical :: ierr
     real(kind=kreal) :: s0, s1,s2, ef, ina(2)
 
@@ -279,7 +279,7 @@ contains
     real(kind=kreal), intent(in)  :: pstrain !< plastic strain
     real(kind=kreal), intent(in), optional :: temp  !< temperature
 
-    integer :: i, nc, htype
+    integer :: htype
     real(kind=kreal) :: s0, s1,s2, ina(2), outa(1)
     logical :: ierr
     calCurrYield = -1.d0
@@ -386,15 +386,14 @@ contains
     real(kind=kreal), parameter :: tol =1.d-3
     integer, parameter          :: MAXITER = 5
     real(kind=kreal) :: dlambda, f, mat(3,3)
-    integer :: i,j,ytype, maxp(1), minp(1), mm
+    integer :: i,ytype, maxp(1), minp(1), mm
     real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
     real(kind=kreal) :: J1,J2,J3, H, KH, KK, dd, yd, G, K, devia(6)
     real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
-    real(kind=kreal) :: sita, fai, dep, trialprn(3)
-    real(kind=kreal) :: a,b,siga,sigb,lamab(2),fab(2)
-    real(kind=kreal) :: resi(2,2), invd(2,2), fstat_bak(7)
-    logical          :: right, kinematic, ierr
-    real(kind=kreal) :: ftrial, betan, back(6)
+    real(kind=kreal) :: sita, fai, trialprn(3)
+    real(kind=kreal) :: fstat_bak(7)
+    logical          :: kinematic, ierr
+    real(kind=kreal) :: betan, back(6)
 
     f = 0.0d0
 

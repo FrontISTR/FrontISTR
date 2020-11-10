@@ -90,7 +90,7 @@ contains
       else
         gdispderiv(1:3, 1:3) = matmul( u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
         jacob = Determinant33( I33(1:ndof,1:ndof) + gdispderiv(1:ndof, 1:ndof) )
-        Jratio(LX) = jacob**(-1.d0/3.d0)
+        Jratio(LX) = dsign(dabs(jacob)**(-1.d0/3.d0),jacob)
         call getGlobalDeriv( etype, nn, naturalcoord, elem1, det, gderiv1)
         gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof) + jacob*wg*gderiv1(1:nn, 1:ndof)
         do p=1,nn
@@ -110,7 +110,7 @@ contains
     if( dabs(V0) > 1.d-12 ) then
       if( dabs(jacob_ave) < 1.d-12 ) stop 'Error in Update_C3D8Fbar: too small average jacob'
       jacob_ave = jacob_ave/V0
-      Jratio(1:8) = (jacob_ave**(1.d0/3.d0))*Jratio(1:8)
+      Jratio(1:8) = (dsign(dabs(jacob_ave)**(1.d0/3.d0),jacob_ave))*Jratio(1:8) !Jratio(1:8) = (jacob_ave**(1.d0/3.d0))*Jratio(1:8)
       gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof)/(V0*jacob_ave)
       gderiv2_ave(1:ndof*nn,1:ndof*nn) = gderiv2_ave(1:ndof*nn,1:ndof*nn)/(V0*jacob_ave)
     else
@@ -370,20 +370,19 @@ contains
 
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
-    real(kind=kreal) :: D(6, 6), B(6, ndof*nn), B1(6, ndof*nn)
+    real(kind=kreal) :: B(6, ndof*nn), B1(6, ndof*nn)
     real(kind=kreal) :: gderiv(nn, 3), gdispderiv(3, 3), det, wg
-    integer(kind=kint) :: i, j, k, LX, mtype, serr
-    integer(kind=kint) :: isEp
-    real(kind=kreal) :: naturalCoord(3), rot(3, 3), R(3, 3), spfunc(nn)
+    integer(kind=kint) :: j, LX, serr
+    real(kind=kreal) :: naturalCoord(3), rot(3, 3), spfunc(nn)
     real(kind=kreal) :: totaldisp(3, nn), elem(3, nn), elem1(3, nn), coordsys(3, 3)
     real(kind=kreal) :: dstrain(6)
-    real(kind=kreal) :: dvol, derivdum(1:ndof, 1:ndof)
-    real(kind=kreal) :: ttc, tt0, ttn, alpo(3), outa(1), ina(1), EPSTH(6)
+    real(kind=kreal) :: dvol
+    real(kind=kreal) :: ttc, tt0, ttn, alpo(3), ina(1), EPSTH(6)
     logical :: ierr, matlaniso
 
     real(kind=kreal) :: elem0(3,nn), gderiv1(nn,ndof), B2(6, ndof*nn), Z1(3)
     real(kind=kreal) :: V0, jacob, jacob_ave, gderiv1_ave(nn,ndof)
-    real(kind=kreal) :: Fbar(3,3), Jratio(8), coeff, sff
+    real(kind=kreal) :: Fbar(3,3), Jratio(8)
     real(kind=kreal) :: jacob_ave05, gderiv05_ave(nn,ndof)
 
     !---------------------------------------------------------------------

@@ -17,7 +17,6 @@ module fstr_setup_util
   !> private parameter and pointers to group members in hecMESH
   integer(kind=kint),private :: grp_type     ! 1:node_grp, 2:elem_grp, 3:surf_grp
   integer(kind=kint),pointer,private :: n_grp
-  integer(kind=kint),pointer,private :: n_index(:)
   integer(kind=kint),pointer,private :: grp_index(:)
   integer(kind=kint),pointer,private :: grp_item(:)
   type(fstr_str_arr),private :: grp_name
@@ -330,7 +329,6 @@ contains
     integer(kind=kint) :: is, ie, nnode, i, ic, isurf, ic_type, stype, nn, j0, j, new_nnode
     integer(kind=kint) :: snode(20)
     integer(kind=kint), allocatable :: node(:)
-    type(tSurfElement) :: surf
     character(len=HECMW_NAME_LEN) :: grp_name
     is= hecMESH%surf_group%grp_index(sgrp_id-1) + 1
     ie= hecMESH%surf_group%grp_index(sgrp_id  )
@@ -521,7 +519,7 @@ contains
     character(len=*) :: type_name
     character(len=*) :: name
     integer(kind=kint) :: local_id
-    integer(kind=kint) :: i, n, stat, no, fg
+    integer(kind=kint) :: i, n, no, fg
     integer(kind=kint),pointer :: global_item(:)
 
     if( .not. fstr_str2index(name, no) ) then
@@ -564,8 +562,7 @@ contains
     character(len=*) :: type_name
     character(len=*) :: name
     integer(kind=kint) :: local_id, idx
-    integer(kind=kint) :: i, n, stat, no, fg
-    integer(kind=kint),pointer :: item(:)
+    integer(kind=kint) :: n, no, fg
 
     if( .not. fstr_str2index(name, no) ) then
       get_sorted_local_member_index = -1

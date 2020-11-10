@@ -19,8 +19,6 @@ module hecmw_solver_las_44
   public :: hecmw_TtmatTvec_44
   public :: hecmw_mat_diag_sr_44
 
-  logical, save :: spikematvec_flg = .false.
-
   ! ! for communication hiding in matvec
   ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
   ! real(kind=kreal), save, allocatable :: A_o(:)
@@ -111,9 +109,6 @@ contains
     integer(kind=kint) :: N, NP
     integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
     real(kind=kreal), pointer :: AL(:), AU(:), D(:)
-
-    ! for communication hiding
-    integer(kind=kint) :: ireq
 
     ! added for turning >>>
     integer, parameter :: numOfBlockPerThread = 100
@@ -472,7 +467,7 @@ contains
     real(kind=kreal), allocatable :: W(:,:)
     real(kind=kreal), pointer :: D(:)
     integer(kind=kint) :: ip
-    real(kind=kreal) :: START_TIME, END_TIME, Tcomm
+    real(kind=kreal) :: START_TIME, END_TIME
     allocate(W(4*hecMAT%NP,4))
     D => hecMAT%D
     do ip= 1, hecMAT%N

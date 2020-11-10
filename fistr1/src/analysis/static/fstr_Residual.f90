@@ -36,7 +36,7 @@ contains
     type(fstr_solid), intent(inout)      :: fstrSOLID !< we need boundary conditions of curr step
     type(hecmwST_matrix), intent(inout), optional  :: conMAT
     !    Local variables
-    integer(kind=kint) :: ndof, idof, num
+    integer(kind=kint) :: ndof, idof
     real(kind=kreal)   :: factor
 
     factor = fstrSOLID%factor(2)
