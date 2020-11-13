@@ -14,7 +14,8 @@
 : ${REFERENCE_IMAGE:=registry.gitlab.com/frontistr-commons/frontistr/fistr1:master}
 
 echo_err () {
-  echo -e "\e[31m$1\e[m" >&2
+  ESC=$(printf '\033')
+  echo "${ESC}[31m$1${ESC}[m" >&2
 }
 
 for path in $(find . -type f -name "*.msh"); do
