@@ -95,12 +95,9 @@ document:
     image: ${REGISTRY}/document:latest
     stage: build_for_deploy
     needs: []
-    before_script:
-        - pip3 install -r doc/requirements.txt
     script:
-        - ./doc/create_docs.sh
-        - rm -rf public/manual*
-        - mv doc/manuals/* public/
+        - echo '/FrontISTR/manual_ja/ /FrontISTR_manual/ja/ 301' >> public/_redirects
+        - echo '/FrontISTR/manual_en/ /FrontISTR_manual/en/ 301' >> public/_redirects
     artifacts:
         paths:
             - public
