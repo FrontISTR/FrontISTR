@@ -4,7 +4,8 @@
 #
 
 echo_err () {
-  echo -e "\e[31m$1\e[m" >&2
+  ESC=$(printf '\033')
+  echo "${ESC}[31m$1${ESC}[m" >&2
 }
 
 check_executable () {
