@@ -13,8 +13,8 @@ FrontISTR : Open-Source Large-Scale Parallel FEM Program for Nonlinear Structura
 
 ### Detailed manuals
 
-  - [English](https://frontistr-commons.gitlab.io/FrontISTR/manual_en/index.html)
-  - [Japanese](https://frontistr-commons.gitlab.io/FrontISTR/manual_ja/index.html)
+  - [English](https://frontistr-commons.gitlab.io/FrontISTR_manual/en/)
+  - [Japanese](https://frontistr-commons.gitlab.io/FrontISTR_manual/ja/)
 
 ### Files in this directory
 README.md                   : README (in English : this file)  
