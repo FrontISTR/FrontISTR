@@ -15,8 +15,8 @@
   - オープンソース大規模並列FEM非線形構造解析プログラム FrontISTR
 
 (2)詳細マニュアル
-  - [日本語](https://frontistr-commons.gitlab.io/FrontISTR/manual_ja/index.html)
-  - [英語](https://frontistr-commons.gitlab.io/FrontISTR/manual_en/index.html)
+  - [日本語](https://frontistr-commons.gitlab.io/FrontISTR_manual/ja/)
+  - [英語](https://frontistr-commons.gitlab.io/FrontISTR_manual/en/)
 
 (3)ディレクトリ構成
   README.md                   : README (英語版)
