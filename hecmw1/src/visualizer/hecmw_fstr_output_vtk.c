@@ -104,7 +104,9 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
       shift += data->ng_dof[j];
     }
     for(k=0; k<data->ng_dof[i]; k++){
-      fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
+      float val = (float)data->global_val_item[k+shift];
+      if (fpclassify(val) == FP_SUBNORMAL) val = 0.0;
+      fprintf (outfp, "%e ", val);
     }
     fprintf (outfp, "\n");
     fprintf (outfp, "</DataArray>\n");
@@ -165,7 +167,9 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
     }
     for(j=0; j<n_node; j++){
       for(k=0; k<data->nn_dof[i]; k++){
-        fprintf (outfp, "%e ", (float)data->node_val_item[j*data_tot_n+k+shift]);
+        float val = (float)data->node_val_item[j*data_tot_n+k+shift];
+        if (fpclassify(val) == FP_SUBNORMAL) val = 0.0;
+        fprintf (outfp, "%e ", val);
       }
       fprintf (outfp, "\n");
     }
@@ -187,7 +191,9 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
     }
     for(j=0; j<n_elem; j++){
       for(k=0; k<data->ne_dof[i]; k++){
-        fprintf (outfp, "%e ", (float)data->elem_val_item[j*data_tot_e+k+shift]);
+        float val = (float)data->elem_val_item[j*data_tot_e+k+shift];
+        if (fpclassify(val) == FP_SUBNORMAL) val = 0.0;
+        fprintf (outfp, "%e ", val);
       }
       fprintf (outfp, "\n");
     }
@@ -316,7 +322,9 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
       shift += data->ng_dof[j];
     }
     for(k=0; k<data->ng_dof[i]; k++){
-      fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
+      float val = (float)data->global_val_item[k+shift];
+      if (fpclassify(val) == FP_SUBNORMAL) val = 0.0;
+      fprintf (outfp, "%e ", val);
     }
     fprintf (outfp, "\n");
     fprintf (outfp, "</DataArray>\n");
