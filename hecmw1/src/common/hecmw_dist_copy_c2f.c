@@ -1874,6 +1874,20 @@ static int set_contact_pair_slave_grp_id(void *dst) {
   return 0;
 }
 
+static int set_contact_pair_slave_orisgrp_id(void *dst) {
+  void *src;
+  int size;
+  struct hecmwST_contact_pair *cpair = mesh->contact_pair;
+
+  if (cpair->n_pair <= 0) return 0;
+
+  src  = cpair->slave_orisgrp_id;
+  size = sizeof(*cpair->slave_orisgrp_id) * (cpair->n_pair);
+  memcpy(dst, src, size);
+
+  return 0;
+}
+
 static int set_contact_pair_master_grp_id(void *dst) {
   void *src;
   int size;
@@ -2270,6 +2284,8 @@ static struct func_table {
         {"hecmwST_contact_pair", "name", set_contact_pair_name, NULL},
         {"hecmwST_contact_pair", "type", set_contact_pair_type, NULL},
         {"hecmwST_contact_pair", "slave_grp_id", set_contact_pair_slave_grp_id,
+         NULL},
+        {"hecmwST_contact_pair", "slave_orisgrp_id", set_contact_pair_slave_orisgrp_id,
          NULL},
         {"hecmwST_contact_pair", "master_grp_id",
          set_contact_pair_master_grp_id, NULL},

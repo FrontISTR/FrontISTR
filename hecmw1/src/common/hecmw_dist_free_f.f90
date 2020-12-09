@@ -198,6 +198,7 @@ contains
     if(associated(cpair%name)) deallocate(cpair%name)
     if(associated(cpair%type)) deallocate(cpair%type)
     if(associated(cpair%slave_grp_id)) deallocate(cpair%slave_grp_id)
+    if(associated(cpair%slave_orisgrp_id)) deallocate(cpair%slave_orisgrp_id)
     if(associated(cpair%master_grp_id)) deallocate(cpair%master_grp_id)
   end subroutine free_cpair
 

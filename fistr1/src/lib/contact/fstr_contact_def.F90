@@ -28,7 +28,8 @@ module mContactDef
     integer                       :: ctype                   !< 1:node-surface 2: surface-surface
     integer                       :: group                   !< group number
     character(len=HECMW_NAME_LEN) :: pair_name               !< name of contact pair
-    integer                       :: surf_id1, surf_id2      !< slave surafce, master surface
+    integer                       :: surf_id1, surf_id2      !< slave surface, master surface
+    integer                       :: surf_id1_sgrp           !< surface group id of slave surface
     type(tSurfElement), pointer   :: master(:)=>null()       !< master surface (element )
     integer, pointer              :: slave(:)=>null()        !< slave surface (node)
     real(kind=kreal)              :: fcoeff                  !< coeeficient of friction
@@ -152,6 +153,7 @@ contains
         contact%ctype = hecMESH%contact_pair%type(i)
         contact%surf_id1 = hecMESH%contact_pair%slave_grp_id(i)
         contact%surf_id2 = hecMESH%contact_pair%master_grp_id(i)
+        contact%surf_id1_sgrp = hecMESH%contact_pair%slave_orisgrp_id(i)
         isfind = .true.
       endif
     enddo

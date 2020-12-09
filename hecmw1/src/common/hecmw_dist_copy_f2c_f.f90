@@ -934,6 +934,10 @@ contains
       call hecmw_dist_copy_f2c_set_if(sname, vname, cpair%slave_grp_id, ierr)
       if(ierr /= 0) return
 
+      vname = 'slave_orisgrp_id'
+      call hecmw_dist_copy_f2c_set_if(sname, vname, cpair%slave_orisgrp_id, ierr)
+      if(ierr /= 0) return
+
       vname = 'master_grp_id'
       call hecmw_dist_copy_f2c_set_if(sname, vname, cpair%master_grp_id, ierr)
       if(ierr /= 0) return
