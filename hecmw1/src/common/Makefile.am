@@ -147,6 +147,7 @@ OBJS = \
 
 OBJSF = \
 	hecmw_util_f.@f90objfilepostfix@ \
+	hecmw_etype_f.@f90objfilepostfix@ \
 	hecmw_logging.@f90objfilepostfix@ \
 	hecmw_msgno_f.@f90objfilepostfix@ \
 	hecmw_msg_f.@f90objfilepostfix@ \
@@ -158,7 +159,6 @@ OBJSF = \
 	hecmw_dist_free_f.@f90objfilepostfix@ \
 	hecmw_dist_print_f.@f90objfilepostfix@ \
 	hecmw_visualizer_f.@f90objfilepostfix@ \
-	hecmw_etype_f.@f90objfilepostfix@ \
 	hecmw_io.@f90objfilepostfix@
 
 HEADERS = \
