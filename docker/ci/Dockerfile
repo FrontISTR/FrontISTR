@@ -6,6 +6,8 @@ RUN apt-get update \
  && apt-get clean      \
  && echo >> /etc/openmpi/openmpi-mca-params.conf \
  && echo btl_vader_single_copy_mechanism=none >> /etc/openmpi/openmpi-mca-params.conf \
+ && echo btl_openib_allow_ib=true >> /etc/openmpi/openmpi-mca-params.conf \
+ && echo btl_openib_warn_default_gid_prefix=0 >> /etc/openmpi/openmpi-mca-params.conf \
  && rm -rf /var/lib/apt/lists/*
 
 FROM runtime AS build
