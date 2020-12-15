@@ -103,6 +103,7 @@ contains
     integer:: i98
     integer:: i97
     integer:: ir
+    integer:: i
     real(kind=8):: t1
     real(kind=8):: t2
     real(kind=8):: t3
@@ -182,7 +183,10 @@ contains
 
     !* Solve
     !* Backsubstitute
-    call NUSOL0(hecMAT%B,ir)
+    do i=1,hecMAT%NP*hecMESH%n_dof
+      hecMAT%X(i) = hecMAT%B(i)
+    end do
+    call NUSOL0(hecMAT%X,ir)
     call PTIME(t5)
     !* Errors 4
     if ( ir/=0 ) then

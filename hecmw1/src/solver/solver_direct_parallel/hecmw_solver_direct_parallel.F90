@@ -134,7 +134,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       call hecmw_abort( hecmw_comm_get_comm())
     end if
 
-    call MPI_BCAST(hecMAT%b, hecMESH%n_dof*hecMAT%NP, MPI_REAL8, m_pds_procinfo%imp, MPI_COMM_WORLD, ierr)
+    call MPI_BCAST(hecMAT%x, hecMESH%n_dof*hecMAT%NP, MPI_REAL8, m_pds_procinfo%imp, MPI_COMM_WORLD, ierr)
 
     call hecmw_mat_dump_solution(hecMAT)
 
@@ -461,7 +461,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! set result to FEM data
     do i=1,a0%neqns
       do j=1,ndeg
-        hecMAT%b(ndeg*(i-1)+j)=b(j,i)
+        hecMAT%x(ndeg*(i-1)+j)=b(j,i)
       end do
     end do
 

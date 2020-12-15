@@ -64,20 +64,6 @@ contains
           else
             call hecmw_solve_direct(hecMESH,hecMAT,imsg)
           endif
-          !!!       hecMAT%X = hecMAT%B -- leading stack overflow (intel9)
-          do i=1,hecMAT%NP*hecMESH%n_dof
-            hecMAT%X(i) = hecMAT%B(i)
-          end do
-
-          if( NDOF==3 ) then
-            call hecmw_update_3_R(hecMESH,hecMAT%X,hecMESH%n_node)
-          else if( NDOF==2 ) then
-            call hecmw_update_2_R(hecMESH,hecMAT%X,hecMESH%n_node)
-          else if( NDOF==4 ) then
-            call hecmw_update_4_R(hecMESH,hecMAT%X,hecMESH%n_node)
-          else if( NDOF==6 ) then
-            call hecmw_update_m_R(hecMESH,hecMAT%X,hecMESH%n_node,6)
-          endif
         endif
 
         resid=hecmw_rel_resid_L2_nn(hecMESH,hecMAT)
