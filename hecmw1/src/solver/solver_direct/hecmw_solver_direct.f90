@@ -1394,25 +1394,28 @@ contains
     Ir = 0
     Zpiv(1:Neqns) = 1
 
-    do l = 1, Nttbr
-      i = Irow(l)
-      j = Jcol(l)
-      if ( i<=0 .or. j<=0 ) then
-        Ir = -1
-        goto 100
-      elseif ( i>Neqns .or. j>Neqns ) then
-        Ir = 1
-        goto 100
-      endif
-      if ( i==j ) Zpiv(i) = 0
-    enddo
-    do i = Neqns, 1, -1
-      if ( Zpiv(i)==0 ) then
-        Neqnsz = i
-        exit
-      endif
-    enddo
-    100 if ( IDBg/=0 ) write (6,"(20I3)") (Zpiv(i),i=1,Neqns)
+    loop1: do
+      do l = 1, Nttbr
+        i = Irow(l)
+        j = Jcol(l)
+        if ( i<=0 .or. j<=0 ) then
+          Ir = -1
+          exit loop1
+        elseif ( i>Neqns .or. j>Neqns ) then
+          Ir = 1
+          exit loop1
+        endif
+        if ( i==j ) Zpiv(i) = 0
+      enddo
+      do i = Neqns, 1, -1
+        if ( Zpiv(i)==0 ) then
+          Neqnsz = i
+          exit
+        endif
+      enddo
+      exit
+    enddo loop1
+    if ( IDBg/=0 ) write (6,"(20I3)") (Zpiv(i),i=1,Neqns)
   end subroutine ZPIVOT
 
   !======================================================================!
@@ -1434,6 +1437,7 @@ contains
     integer:: k
     integer:: l
     integer:: locr
+    logical:: found
 
     Jcpt(1:2*Nttbr) = 0
     Jcolno(1:2*Nttbr) = 0
@@ -1444,38 +1448,42 @@ contains
 
     k = 2*Neqns
 
-    do l = 1, Nttbr
+    loop1: do l = 1, Nttbr
       i = Irow(l)
       j = Jcol(l)
       if ( i/=j ) then
         joc = Jcpt(i)
         locr = i
+        found = .false.
         do while ( joc/=0 )
-          if ( Jcolno(joc)==j ) goto 100
+          if ( Jcolno(joc)==j ) cycle loop1
           if ( Jcolno(joc)>j ) then
             k = k + 1
             Jcpt(locr) = k
             Jcpt(k) = joc
             Jcolno(k) = j
-            goto 20
+            found = .true.
+            exit
           endif
           locr = joc
           joc = Jcpt(joc)
         enddo
-        k = k + 1
-        Jcpt(locr) = k
-        Jcolno(k) = j
+        if (.not. found) then
+          k = k + 1
+          Jcpt(locr) = k
+          Jcolno(k) = j
+        endif
 
-        20      joc = Jcpt(j)
+        joc = Jcpt(j)
         locr = j
         do while ( joc/=0 )
-          if ( Jcolno(joc)==i ) goto 100
+          if ( Jcolno(joc)==i ) cycle loop1
           if ( Jcolno(joc)>i ) then
             k = k + 1
             Jcpt(locr) = k
             Jcpt(k) = joc
             Jcolno(k) = i
-            goto 100
+            cycle loop1
           endif
           locr = joc
           joc = Jcpt(joc)
@@ -1484,13 +1492,13 @@ contains
         Jcpt(locr) = k
         Jcolno(k) = i
       endif
-      100 enddo
-      if ( IDBg/=0 ) then
-        write (6,*) 'jcolno'
-        write (6,"(10I7)") (Jcolno(i),i=1,k)
-        write (6,*) 'jcpt'
-        write (6,"(10I7)") (Jcpt(i),i=1,k)
-      endif
+    enddo loop1
+    if ( IDBg/=0 ) then
+      write (6,*) 'jcolno'
+      write (6,"(10I7)") (Jcolno(i),i=1,k)
+      write (6,*) 'jcpt'
+      write (6,"(10I7)") (Jcpt(i),i=1,k)
+    endif
   end subroutine STSMAT
 
   !======================================================================!
@@ -1569,6 +1577,7 @@ contains
     integer:: rchsze
     integer:: search
     integer:: thresh
+    logical:: found
 
     mindeg = Neqns
     Nofsub = 0
@@ -1585,59 +1594,69 @@ contains
     enddo
 
     num = 0
-    100 search = 1
-    thresh = mindeg
-    mindeg = Neqns
-    200 nump1 = num + 1
-    if ( nump1>search ) search = nump1
-    do j = search, Neqns
-      node = Perm(j)
-      if ( Marker(node)>=0 ) then
-        ndeg = Deg(node)
-        if ( ndeg<=thresh ) goto 300
-        if ( ndeg<mindeg ) mindeg = ndeg
-      endif
-    enddo
-    goto 100
-
-    300 search = j
-    Nofsub = Nofsub + Deg(node)
-    Marker(node) = 1
-    call QMDRCH(node,Xadj,Adjncy,Deg,Marker,rchsze,Rchset,nhdsze,Nbrhd)
-    nxnode = node
-    do
-      num = num + 1
-      np = Invp(nxnode)
-      ip = Perm(num)
-      Perm(np) = ip
-      Invp(ip) = np
-      Perm(num) = nxnode
-      Invp(nxnode) = num
-      Deg(nxnode) = -1
-      nxnode = Qlink(nxnode)
-      if ( nxnode<=0 ) then
-        if ( rchsze>0 ) then
-          call QMDUPD(Xadj,Adjncy,rchsze,Rchset,Deg,Qsize,Qlink,Marker,Rchset(rchsze+1),Nbrhd(nhdsze+1))
-          Marker(node) = 0
-          do irch = 1, rchsze
-            inode = Rchset(irch)
-            if ( Marker(inode)>=0 ) then
-              Marker(inode) = 0
-              ndeg = Deg(inode)
-              if ( ndeg<mindeg ) mindeg = ndeg
-              if ( ndeg<=thresh ) then
-                mindeg = thresh
-                thresh = ndeg
-                search = Invp(inode)
-              endif
+    loop1: do
+      search = 1
+      thresh = mindeg
+      mindeg = Neqns
+      loop2: do
+        nump1 = num + 1
+        if ( nump1>search ) search = nump1
+        found = .false.
+        do j = search, Neqns
+          node = Perm(j)
+          if ( Marker(node)>=0 ) then
+            ndeg = Deg(node)
+            if ( ndeg<=thresh ) then
+              found = .true.
+              exit
             endif
-          enddo
-          if ( nhdsze>0 ) call QMDOT(node,Xadj,Adjncy,Marker,rchsze,Rchset,Nbrhd)
-        endif
-        if ( num>=Neqns ) exit
-        goto 200
-      endif
-    enddo
+            if ( ndeg<mindeg ) mindeg = ndeg
+          endif
+        enddo
+        if (.not. found) cycle loop1
+
+        search = j
+        Nofsub = Nofsub + Deg(node)
+        Marker(node) = 1
+        call QMDRCH(node,Xadj,Adjncy,Deg,Marker,rchsze,Rchset,nhdsze,Nbrhd)
+        nxnode = node
+        do
+          num = num + 1
+          np = Invp(nxnode)
+          ip = Perm(num)
+          Perm(np) = ip
+          Invp(ip) = np
+          Perm(num) = nxnode
+          Invp(nxnode) = num
+          Deg(nxnode) = -1
+          nxnode = Qlink(nxnode)
+          if ( nxnode<=0 ) then
+            if ( rchsze>0 ) then
+              call QMDUPD(Xadj,Adjncy,rchsze,Rchset,Deg,Qsize,Qlink,Marker,Rchset(rchsze+1),Nbrhd(nhdsze+1))
+              Marker(node) = 0
+              do irch = 1, rchsze
+                inode = Rchset(irch)
+                if ( Marker(inode)>=0 ) then
+                  Marker(inode) = 0
+                  ndeg = Deg(inode)
+                  if ( ndeg<mindeg ) mindeg = ndeg
+                  if ( ndeg<=thresh ) then
+                    mindeg = thresh
+                    thresh = ndeg
+                    search = Invp(inode)
+                  endif
+                endif
+              enddo
+              if ( nhdsze>0 ) call QMDOT(node,Xadj,Adjncy,Marker,rchsze,Rchset,Nbrhd)
+            endif
+            if ( num>=Neqns ) exit
+            cycle loop2
+          endif
+        enddo
+        exit
+      enddo loop2
+      exit
+    enddo loop1
   end subroutine GENQMD
 
   !======================================================================!
@@ -1664,11 +1683,11 @@ contains
       Parent(i) = 0
       Ancstr(i) = 0
       ip = Iperm(i)
-      do k = Xadj(ip), Xadj(ip+1) - 1
+      loop1: do k = Xadj(ip), Xadj(ip+1) - 1
         l = Invp(Adjncy(k))
         if ( l<i ) then
           do while ( Ancstr(l)/=0 )
-            if ( Ancstr(l)==i ) goto 50
+            if ( Ancstr(l)==i ) cycle loop1
             it = Ancstr(l)
             Ancstr(l) = i
             l = it
@@ -1676,17 +1695,17 @@ contains
           Ancstr(l) = i
           Parent(l) = i
         endif
-        50    enddo
-      enddo
-      do i = 1, Neqns
-        if ( Parent(i)==0 ) Parent(i) = Neqns + 1
-      enddo
-      Parent(Neqns+1) = 0
+      enddo loop1
+    enddo
+    do i = 1, Neqns
+      if ( Parent(i)==0 ) Parent(i) = Neqns + 1
+    enddo
+    Parent(Neqns+1) = 0
 
-      if ( IDBg1/=0 ) then
-        write (6,"(' parent')")
-        write (6,"(2I6)") (i,Parent(i),i=1,Neqns)
-      endif
+    if ( IDBg1/=0 ) then
+      write (6,"(' parent')")
+      write (6,"(2I6)") (i,Parent(i),i=1,Neqns)
+    endif
   end subroutine GENPAQ
 
   !======================================================================!
@@ -1732,17 +1751,16 @@ contains
     !
     ! find zeropivot
     !
+    Izz = 0
     do i = 1, Neqns
       if ( Zpiv(i)/=0 ) then
         if ( Btree(1,Invp(i))==0 ) then
           Izz = i
-          goto 100
+          exit
         endif
       endif
     enddo
-    Izz = 0
 
-    100 continue
     if ( IDBg1/=0 ) then
       write (6,"(' binary tree')")
       write (6,"(i6,'(',2I6,')')") (i,Btree(1,i),Btree(2,i),i=1,Neqns)
@@ -1966,7 +1984,7 @@ contains
     nc = 0
     Ir = 0
     l = 1
-    do i = 1, Neqns
+    loop1: do i = 1, Neqns
       Xlnzr(i) = l
       ks = Xleaf(i)
       ke = Xleaf(i+1) - 1
@@ -1976,7 +1994,7 @@ contains
           j = nxleaf
           nxleaf = Leaf(k+1)
           do while ( j<nxleaf )
-            if ( j>=Nstop ) goto 100
+            if ( j>=Nstop ) cycle loop1
             l = l + 1
             j = Parent(j)
           enddo
@@ -1988,9 +2006,9 @@ contains
           j = Parent(j)
         enddo
       endif
-      100 enddo
-      Xlnzr(Neqns+1) = l
-      Lncol = l - 1
+    enddo loop1
+    Xlnzr(Neqns+1) = l
+    Lncol = l - 1
   end subroutine PRE_GNCLNO
 
   !======================================================================!
@@ -2021,7 +2039,7 @@ contains
     nc = 0
     Ir = 0
     l = 1
-    do i = 1, Neqns
+    loop1: do i = 1, Neqns
       Xlnzr(i) = l
       ks = Xleaf(i)
       ke = Xleaf(i+1) - 1
@@ -2031,7 +2049,7 @@ contains
           j = nxleaf
           nxleaf = Leaf(k+1)
           do while ( j<nxleaf )
-            if ( j>=Nstop ) goto 100
+            if ( j>=Nstop ) cycle loop1
             Colno(l) = j
             l = l + 1
             j = Parent(j)
@@ -2045,18 +2063,18 @@ contains
           j = Parent(j)
         enddo
       endif
-      100 enddo
-      Xlnzr(Neqns+1) = l
-      Lncol = l - 1
+    enddo loop1
+    Xlnzr(Neqns+1) = l
+    Lncol = l - 1
 
-      if ( IDBg1/=0 ) then
-        write (6,"(' xlnzr')")
-        write (6,"(' colno (lncol =',i10,')')") Lncol
-        do k = 1, Neqns
-          write (6,"(/' row = ',i6)") k
-          write (6,"(10I4)") (Colno(i),i=Xlnzr(k),Xlnzr(k+1)-1)
-        enddo
-      endif
+    if ( IDBg1/=0 ) then
+      write (6,"(' xlnzr')")
+      write (6,"(' colno (lncol =',i10,')')") Lncol
+      do k = 1, Neqns
+        write (6,"(/' row = ',i6)") k
+        write (6,"(10I4)") (Colno(i),i=Xlnzr(k),Xlnzr(k+1)-1)
+      enddo
+    endif
   end subroutine GNCLNO
 
   !======================================================================!
@@ -2168,99 +2186,101 @@ contains
       endif
     enddo
 
-    100 continue
-    Adjt(1:Neqns) = 0
-    locc = Anc(l)
-    do
-      joc = locc
-      locc = Btree(1,joc)
-      if ( locc==0 ) then
-        do
-          Adjt(Invp(Adjncy(Xadj(Iperm(joc)):Xadj(Iperm(joc)+1) - 1))) = 1
-          if ( joc>=Anc(l) ) then
-            do ll = l + 1, nanc
-              if ( Adjt(Anc(ll))==0 ) then
-                l = l + 1
-                goto 100
+    loop1: do
+      Adjt(1:Neqns) = 0
+      locc = Anc(l)
+      do
+        joc = locc
+        locc = Btree(1,joc)
+        if ( locc==0 ) then
+          do
+            Adjt(Invp(Adjncy(Xadj(Iperm(joc)):Xadj(Iperm(joc)+1) - 1))) = 1
+            if ( joc>=Anc(l) ) then
+              do ll = l + 1, nanc
+                if ( Adjt(Anc(ll))==0 ) then
+                  l = l + 1
+                  cycle loop1
+                endif
+              enddo
+              if ( l==1 ) then
+                !
+                ! izz can be numbered last
+                !
+                k = 0
+                do i = 1, Neqns
+                  if ( i/=izzz ) then
+                    k = k + 1
+                    Invp(Iperm(i)) = k
+                  endif
+                enddo
+                Invp(Iperm(izzz)) = Neqns
+              else
+                !
+                !  anc(l-1) is the eligible node
+                !
+                ! (1) number the node not in Ancestor(iy)
+                iy = Anc(l-1)
+                Adjt(1:Neqns) = 0
+                Adjt(Anc(l:nanc)) = 1
+                k = 0
+                do ll = 1, Neqns
+                  if ( Adjt(ll)==0 ) then
+                    k = k + 1
+                    Invp(Iperm(ll)) = k
+                  endif
+                enddo
+                ! (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
+                Adjt(1:Neqns) = 0
+                locc = iy
+                loop2: do
+                  joc = locc
+                  locc = Btree(1,joc)
+                  if ( locc==0 ) then
+                    do
+                      Adjt(Invp(Adjncy(Xadj(Iperm(joc)):Xadj(Iperm(joc)+1)-1))) = 1
+                      if ( joc>=iy ) then
+                        do ll = l, nanc
+                          if ( Adjt(Anc(ll))==0 ) then
+                            k = k + 1
+                            Invp(Iperm(Anc(ll))) = k
+                          endif
+                        enddo
+                        ! (3) and finally number the node in Adj(t(iy))
+                        do ll = l, nanc
+                          if ( Adjt(Anc(ll))/=0 ) then
+                            k = k + 1
+                            Invp(Iperm(Anc(ll))) = k
+                          endif
+                        enddo
+                        exit loop2
+                      else
+                        locc = Btree(2,joc)
+                        if ( locc/=0 ) exit
+                        joc = Parent(joc)
+                      endif
+                    enddo
+                  endif
+                enddo loop2
               endif
-            enddo
-            if ( l==1 ) then
               !
-              ! izz can be numbered last
+              ! set iperm
               !
-              k = 0
               do i = 1, Neqns
-                if ( i/=izzz ) then
-                  k = k + 1
-                  Invp(Iperm(i)) = k
-                endif
+                Iperm(Invp(i)) = i
               enddo
-              Invp(Iperm(izzz)) = Neqns
-            else
-              !
-              !  anc(l-1) is the eligible node
-              !
-              ! (1) number the node not in Ancestor(iy)
-              iy = Anc(l-1)
-              Adjt(1:Neqns) = 0
-              Adjt(Anc(l:nanc)) = 1
-              k = 0
-              do ll = 1, Neqns
-                if ( Adjt(ll)==0 ) then
-                  k = k + 1
-                  Invp(Iperm(ll)) = k
-                endif
-              enddo
-              ! (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
-              Adjt(1:Neqns) = 0
-              locc = iy
-              do
-                joc = locc
-                locc = Btree(1,joc)
-                if ( locc==0 ) then
-                  do
-                    Adjt(Invp(Adjncy(Xadj(Iperm(joc)):Xadj(Iperm(joc)+1)-1))) = 1
-                    if ( joc>=iy ) then
-                      do ll = l, nanc
-                        if ( Adjt(Anc(ll))==0 ) then
-                          k = k + 1
-                          Invp(Iperm(Anc(ll))) = k
-                        endif
-                      enddo
-                      ! (3) and finally number the node in Adj(t(iy))
-                      do ll = l, nanc
-                        if ( Adjt(Anc(ll))/=0 ) then
-                          k = k + 1
-                          Invp(Iperm(Anc(ll))) = k
-                        endif
-                      enddo
-                      goto 105
-                    else
-                      locc = Btree(2,joc)
-                      if ( locc/=0 ) exit
-                      joc = Parent(joc)
-                    endif
-                  enddo
-                endif
-              enddo
-            endif
-            !
-            ! set iperm
-            !
-            105         do i = 1, Neqns
-            Iperm(Invp(i)) = i
-        enddo
 
-        if ( IDBg1/=0 ) write (6,"(10I6)") (Invp(i),i=1,Neqns)
-        return
-      else
-        locc = Btree(2,joc)
-        if ( locc/=0 ) exit
-        joc = Parent(joc)
-      endif
-    enddo
-  endif
-enddo
+              if ( IDBg1/=0 ) write (6,"(10I6)") (Invp(i),i=1,Neqns)
+              return
+            else
+              locc = Btree(2,joc)
+              if ( locc/=0 ) exit
+              joc = Parent(joc)
+            endif
+          enddo
+        endif
+      enddo
+      exit
+    enddo loop1
   end subroutine ROTATE
 
   !======================================================================!
@@ -2974,24 +2994,26 @@ enddo
     real(kind=8):: t(2)
 
     Ir = 0
-    if ( dabs(Dsln(1))<RMIn ) goto 100
-    Dsln(1) = 1.0D0/Dsln(1)
-    t(1) = Dsln(2)*Dsln(1)
-    Dsln(3) = Dsln(3) - t(1)*Dsln(2)
-    Dsln(2) = t(1)
-    if ( dabs(Dsln(3))<RMIn ) goto 100
-    Dsln(3) = 1.0D0/Dsln(3)
-    t(1) = Dsln(4)*Dsln(1)
-    Dsln(5) = Dsln(5) - Dsln(2)*Dsln(4)
-    t(2) = Dsln(5)*Dsln(3)
-    Dsln(6) = Dsln(6) - t(1)*Dsln(4) - t(2)*Dsln(5)
-    Dsln(4) = t(1)
-    Dsln(5) = t(2)
-    if ( dabs(Dsln(6))<RMIn ) goto 100
-    Dsln(6) = 1.0D0/Dsln(6)
-    return
+    do
+      if ( dabs(Dsln(1))<RMIn ) exit
+      Dsln(1) = 1.0D0/Dsln(1)
+      t(1) = Dsln(2)*Dsln(1)
+      Dsln(3) = Dsln(3) - t(1)*Dsln(2)
+      Dsln(2) = t(1)
+      if ( dabs(Dsln(3))<RMIn ) exit
+      Dsln(3) = 1.0D0/Dsln(3)
+      t(1) = Dsln(4)*Dsln(1)
+      Dsln(5) = Dsln(5) - Dsln(2)*Dsln(4)
+      t(2) = Dsln(5)*Dsln(3)
+      Dsln(6) = Dsln(6) - t(1)*Dsln(4) - t(2)*Dsln(5)
+      Dsln(4) = t(1)
+      Dsln(5) = t(2)
+      if ( dabs(Dsln(6))<RMIn ) exit
+      Dsln(6) = 1.0D0/Dsln(6)
+      return
+    enddo
 
-    100 Dsln(1) = 1.0D0
+    Dsln(1) = 1.0D0
     Dsln(2) = 0.0D0
     Dsln(3) = 1.0D0
     Dsln(4) = 0.0D0
@@ -3274,13 +3296,13 @@ enddo
       rchsze = 0
       novrlp = 0
       deg1 = 0
-      do
+      loop1: do
         jstrt = Xadj(root)
         jstop = Xadj(root+1) - 1
         do j = jstrt, jstop
           nabor = Adjncy(j)
           root = -nabor
-          if ( nabor<0 ) goto 50
+          if ( nabor<0 ) cycle loop1
           if ( nabor==0 ) exit
           mark = Marker(nabor)
 
@@ -3298,48 +3320,48 @@ enddo
           endif
         enddo
         exit
-        50    enddo
-        head = 0
-        mrgsze = 0
-        do iov = 1, novrlp
-          node = Ovrlp(iov)
-          jstrt = Xadj(node)
-          jstop = Xadj(node+1) - 1
-          do j = jstrt, jstop
-            nabor = Adjncy(j)
-            if ( Marker(nabor)==0 ) then
-              Marker(node) = 1
-              goto 100
-            endif
-          enddo
-          mrgsze = mrgsze + Qsize(node)
-          Marker(node) = -1
-          lnode = node
-          do
-            link = Qlink(lnode)
-            if ( link<=0 ) then
-              Qlink(lnode) = head
-              head = node
-              exit
-            else
-              lnode = link
-            endif
-          enddo
-          100   enddo
-          if ( head>0 ) then
-            Qsize(head) = mrgsze
-            Deg(head) = Deg0 + deg1 - 1
-            Marker(head) = 2
-          endif
-          root = Nbrhd(inhd)
-          Marker(root) = 0
-          if ( rchsze>0 ) then
-            do irch = 1, rchsze
-              node = Rchset(irch)
-              Marker(node) = 0
-            enddo
+      enddo loop1
+      head = 0
+      mrgsze = 0
+      loop2: do iov = 1, novrlp
+        node = Ovrlp(iov)
+        jstrt = Xadj(node)
+        jstop = Xadj(node+1) - 1
+        do j = jstrt, jstop
+          nabor = Adjncy(j)
+          if ( Marker(nabor)==0 ) then
+            Marker(node) = 1
+            cycle loop2
           endif
         enddo
+        mrgsze = mrgsze + Qsize(node)
+        Marker(node) = -1
+        lnode = node
+        do
+          link = Qlink(lnode)
+          if ( link<=0 ) then
+            Qlink(lnode) = head
+            head = node
+            exit
+          else
+            lnode = link
+          endif
+        enddo
+      enddo loop2
+      if ( head>0 ) then
+        Qsize(head) = mrgsze
+        Deg(head) = Deg0 + deg1 - 1
+        Marker(head) = 2
+      endif
+      root = Nbrhd(inhd)
+      Marker(root) = 0
+      if ( rchsze>0 ) then
+        do irch = 1, rchsze
+          node = Rchset(irch)
+          Marker(node) = 0
+        enddo
+      endif
+    enddo
   end subroutine QMDMRG
 
   !======================================================================!
@@ -3368,25 +3390,26 @@ enddo
     irch = 0
     inhd = 0
     node = Root
-    100 jstrt = Xadj(node)
-    jstop = Xadj(node+1) - 2
-    if ( jstop>=jstrt ) then
-      do j = jstrt, jstop
-        irch = irch + 1
-        Adjncy(j) = Rchset(irch)
-        if ( irch>=Rchsze ) goto 200
-      enddo
-    endif
-    link = Adjncy(jstop+1)
-    node = -link
-    if ( link>=0 ) then
-      inhd = inhd + 1
-      node = Nbrhd(inhd)
-      Adjncy(jstop+1) = -node
-    endif
-    goto 100
+    loop1: do
+      jstrt = Xadj(node)
+      jstop = Xadj(node+1) - 2
+      if ( jstop>=jstrt ) then
+        do j = jstrt, jstop
+          irch = irch + 1
+          Adjncy(j) = Rchset(irch)
+          if ( irch>=Rchsze ) exit loop1
+        enddo
+      endif
+      link = Adjncy(jstop+1)
+      node = -link
+      if ( link>=0 ) then
+        inhd = inhd + 1
+        node = Nbrhd(inhd)
+        Adjncy(jstop+1) = -node
+      endif
+    enddo loop1
 
-    200 Adjncy(j+1) = 0
+    Adjncy(j+1) = 0
     do irch = 1, Rchsze
       node = Rchset(irch)
       if ( Marker(node)>=0 ) then
@@ -3441,13 +3464,13 @@ enddo
           Marker(nabor) = -1
           Nhdsze = Nhdsze + 1
           Nbrhd(Nhdsze) = nabor
-          do
+          loop1: do
             jstrt = Xadj(nabor)
             jstop = Xadj(nabor+1) - 1
             do j = jstrt, jstop
               node = Adjncy(j)
               nabor = -node
-              if ( node<0 ) goto 10
+              if ( node<0 ) cycle loop1
               if ( node==0 ) exit
               if ( Marker(node)==0 ) then
                 Rchsze = Rchsze + 1
@@ -3456,11 +3479,11 @@ enddo
               endif
             enddo
             exit
-            10        enddo
-          else
-            Rchsze = Rchsze + 1
-            Rchset(Rchsze) = nabor
-            Marker(nabor) = 1
+          enddo loop1
+        else
+          Rchsze = Rchsze + 1
+          Rchset(Rchsze) = nabor
+          Marker(nabor) = 1
         endif
       endif
     enddo
