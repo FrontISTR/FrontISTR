@@ -680,11 +680,11 @@ contains
     integer, intent(in):: Parent(*)
     integer, intent(out):: Ir
     integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Zln(*)
-    real(kind=8), intent(out):: Diag(*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Zln(*)
+    real(kind=8), intent(inout):: Diag(*)
     real(kind=8), intent(out):: Temp(*)
-    real(kind=8), intent(out):: Dsln(*)
+    real(kind=8), intent(inout):: Dsln(*)
     !------
     integer:: ic
     integer:: l
@@ -750,11 +750,11 @@ contains
     integer, intent(in):: Parent(*)
     integer, intent(out):: Ir
     integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Zln(4,*)
-    real(kind=8), intent(out):: Diag(3,*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Zln(4,*)
+    real(kind=8), intent(inout):: Diag(3,*)
     real(kind=8), intent(out):: Temp(4,*)
-    real(kind=8), intent(out):: Dsln(4,*)
+    real(kind=8), intent(inout):: Dsln(4,*)
     !------
     integer:: ic
     integer:: l
@@ -818,11 +818,11 @@ contains
     integer, intent(in):: Parent(*)
     integer, intent(out):: Ir
     integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Zln(9,*)
-    real(kind=8), intent(out):: Diag(6,*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Zln(9,*)
+    real(kind=8), intent(inout):: Diag(6,*)
     real(kind=8), intent(out):: Temp(*)
-    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(inout):: Dsln(9,*)
     !------
     integer:: ic
     integer:: l
@@ -884,11 +884,11 @@ contains
     integer, intent(in):: Colno(*)
     integer, intent(in):: Parent(*)
     integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Zln(36,*)
-    real(kind=8), intent(out):: Diag(21,*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Zln(36,*)
+    real(kind=8), intent(inout):: Diag(21,*)
     real(kind=8), intent(out):: Temp(*)
-    real(kind=8), intent(out):: Dsln(36,*)
+    real(kind=8), intent(inout):: Dsln(36,*)
     !------
     integer:: ic
     integer:: Ir
@@ -953,11 +953,11 @@ contains
     integer, intent(in):: Colno(*)
     integer, intent(in):: Parent(*)
     integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Zln(Ndeg*Ndeg,*)
-    real(kind=8), intent(out):: Diag(Ndegl,*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Zln(Ndeg*Ndeg,*)
+    real(kind=8), intent(inout):: Diag(Ndegl,*)
     real(kind=8), intent(out):: Temp(Ndeg*Ndeg,*)
-    real(kind=8), intent(out):: Dsln(Ndeg*Ndeg,*)
+    real(kind=8), intent(inout):: Dsln(Ndeg*Ndeg,*)
     !------
     integer:: ic
     integer:: Ir
@@ -1019,7 +1019,7 @@ contains
     implicit none
     !------
     integer, intent(out):: Ir
-    real(kind=8), intent(out):: R_h_s(*)
+    real(kind=8), intent(inout):: R_h_s(*)
     !------
     integer:: lwk
     integer:: ndegl
@@ -1073,7 +1073,7 @@ contains
     real(kind=8), intent(in):: Zln(*)
     real(kind=8), intent(in):: Diag(*)
     real(kind=8), intent(in):: Dsln(*)
-    real(kind=8), intent(out):: B(*)
+    real(kind=8), intent(inout):: B(*)
     real(kind=8), intent(out):: Wk(*)
     !------
     integer:: i
@@ -1137,7 +1137,7 @@ contains
     real(kind=8), intent(in):: Zln(4,*)
     real(kind=8), intent(in):: Diag(3,*)
     real(kind=8), intent(in):: Dsln(4,*)
-    real(kind=8), intent(out):: B(2,*)
+    real(kind=8), intent(inout):: B(2,*)
     real(kind=8), intent(out):: Wk(2,*)
     !------
     integer:: i
@@ -1208,7 +1208,7 @@ contains
     real(kind=8), intent(in):: Zln(9,*)
     real(kind=8), intent(in):: Diag(6,*)
     real(kind=8), intent(in):: Dsln(9,*)
-    real(kind=8), intent(out):: B(3,*)
+    real(kind=8), intent(inout):: B(3,*)
     real(kind=8), intent(out):: Wk(3,*)
     !------
     integer:: i
@@ -1288,7 +1288,7 @@ contains
     real(kind=8), intent(in):: Zln(Ndeg,Ndeg,*)
     real(kind=8), intent(in):: Diag(Ndegl,*)
     real(kind=8), intent(in):: Dsln(Ndeg,Ndeg,*)
-    real(kind=8), intent(out):: B(Ndeg,*)
+    real(kind=8), intent(inout):: B(Ndeg,*)
     real(kind=8), intent(out):: Wk(Ndeg,*)
     !------
     integer:: i
@@ -1762,7 +1762,7 @@ contains
     integer, intent(out):: Parent(*)
     integer, intent(out):: Pordr(*)
     integer, intent(out):: Nch(*)
-    integer, intent(out):: Invp(*)
+    integer, intent(inout):: Invp(*)
     integer, intent(out):: Iperm(*)
     integer, intent(out):: Iw(*)
     integer, intent(out):: Mch(0:Neqns+1)
@@ -2072,8 +2072,8 @@ contains
     integer, intent(in):: Zpiv(*)
     integer, intent(in):: Parent(*)
     integer, intent(out):: Irr
-    integer, intent(out):: Iperm(*)
-    integer, intent(out):: Invp(*)
+    integer, intent(inout):: Iperm(*)
+    integer, intent(inout):: Invp(*)
     !------
     integer:: i
     integer:: ib
@@ -2127,8 +2127,8 @@ contains
     integer, intent(in):: Parent(*)
     integer, intent(in):: Btree(2,*)
     integer, intent(out):: Irr
-    integer, intent(out):: Invp(*)
-    integer, intent(out):: Iperm(*)
+    integer, intent(inout):: Invp(*)
+    integer, intent(inout):: Iperm(*)
     integer, intent(out):: Anc(*)
     integer, intent(out):: Adjt(*)
     !------
@@ -2280,9 +2280,9 @@ enddo
     integer, intent(in):: Colno(*)
     real(kind=8), intent(in):: Aij(Ndeg2)
     integer, intent(out):: Ir
-    real(kind=8), intent(out):: Zln(Ndeg2,*)
-    real(kind=8), intent(out):: Diag(Ndeg2l,*)
-    real(kind=8), intent(out):: Dsln(Ndeg2,*)
+    real(kind=8), intent(inout):: Zln(Ndeg2,*)
+    real(kind=8), intent(inout):: Diag(Ndeg2l,*)
+    real(kind=8), intent(inout):: Dsln(Ndeg2,*)
     !------
     integer:: i0
     integer:: ii
@@ -2393,9 +2393,9 @@ enddo
     integer, intent(in):: Colno(*)
     real(kind=8), intent(in):: Aij(9)
     integer, intent(out):: Ir
-    real(kind=8), intent(out):: Zln(9,*)
-    real(kind=8), intent(out):: Diag(6,*)
-    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(inout):: Zln(9,*)
+    real(kind=8), intent(inout):: Diag(6,*)
+    real(kind=8), intent(inout):: Dsln(9,*)
     !------
     integer:: i0
     integer:: ii
@@ -2490,9 +2490,9 @@ enddo
     integer, intent(in):: Colno(*)
     real(kind=8), intent(in):: Aij(Ndeg,Ndeg)
     integer, intent(out):: Ir
-    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
-    real(kind=8), intent(out):: Diag(Ndeg2l,*)
-    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
+    real(kind=8), intent(inout):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(inout):: Diag(Ndeg2l,*)
+    real(kind=8), intent(inout):: Dsln(Ndeg,Ndeg,*)
     !------
     integer:: i0
     integer:: ii
@@ -2594,7 +2594,7 @@ enddo
     integer, intent(in):: N
     real(kind=8), intent(in):: A(2,*)
     real(kind=8), intent(in):: B(4,*)
-    real(kind=8), intent(out):: Wi(2)
+    real(kind=8), intent(inout):: Wi(2)
     !------
     integer:: jj
 
@@ -2668,7 +2668,7 @@ enddo
     integer, intent(in):: N
     real(kind=8), intent(in):: A(3,*)
     real(kind=8), intent(in):: B(9,*)
-    real(kind=8), intent(out):: Wi(3)
+    real(kind=8), intent(inout):: Wi(3)
     !------
     integer:: jj
 
@@ -2766,7 +2766,7 @@ enddo
     integer, intent(in):: Ndeg
     real(kind=8), intent(in):: A(Ndeg,*)
     real(kind=8), intent(in):: B(Ndeg,Ndeg,*)
-    real(kind=8), intent(out):: Wi(Ndeg)
+    real(kind=8), intent(inout):: Wi(Ndeg)
     integer, intent(inout):: N
     !------
     integer:: jj
@@ -2792,7 +2792,7 @@ enddo
     integer, intent(in):: Colno(*)
     real(kind=8), intent(in):: Zln(9,*)
     real(kind=8), intent(in):: B(3,*)
-    real(kind=8), intent(out):: Bi(3)
+    real(kind=8), intent(inout):: Bi(3)
     !------
     integer:: j
     integer:: jj
@@ -2816,7 +2816,7 @@ enddo
     integer, intent(in):: Colno(*)
     real(kind=8), intent(in):: Zln(4,*)
     real(kind=8), intent(in):: B(2,*)
-    real(kind=8), intent(out):: Bi(2)
+    real(kind=8), intent(inout):: Bi(2)
     !------
     integer:: j
     integer:: jj
@@ -2839,7 +2839,7 @@ enddo
     integer, intent(in):: Colno(*)
     real(kind=8), intent(in):: Zln(36,*)
     real(kind=8), intent(in):: B(6,*)
-    real(kind=8), intent(out):: Bi(6)
+    real(kind=8), intent(inout):: Bi(6)
     !------
     integer:: j
     integer:: jj
@@ -2897,7 +2897,7 @@ enddo
     integer, intent(in):: Colno(*)
     real(kind=8), intent(in):: Zln(Ndeg,Ndeg,*)
     real(kind=8), intent(in):: B(Ndeg,*)
-    real(kind=8), intent(out):: Bi(Ndeg)
+    real(kind=8), intent(inout):: Bi(Ndeg)
     !------
     integer:: j
     integer:: jj
@@ -2921,7 +2921,7 @@ enddo
     implicit none
     !------
     integer, intent(out):: Ir
-    real(kind=8), intent(out):: Dsln(3)
+    real(kind=8), intent(inout):: Dsln(3)
     !------
     real(kind=8):: t
 
@@ -2969,7 +2969,7 @@ enddo
     implicit none
     !------
     integer, intent(out):: Ir
-    real(kind=8), intent(out):: Dsln(6)
+    real(kind=8), intent(inout):: Dsln(6)
     !------
     real(kind=8):: t(2)
 
@@ -3041,7 +3041,7 @@ enddo
     implicit none
     !------
     integer, intent(out):: Ir
-    real(kind=8), intent(out):: Dsln(21)
+    real(kind=8), intent(inout):: Dsln(21)
     !------
     real(kind=8):: t(5)
 
@@ -3138,7 +3138,7 @@ enddo
     !------
     integer, intent(in):: Ndeg
     integer, intent(out):: Ir
-    real(kind=8), intent(out):: Dsln(*)
+    real(kind=8), intent(inout):: Dsln(*)
     !------
     integer:: i
     integer:: j
@@ -3238,10 +3238,10 @@ enddo
     integer, intent(in):: Adjncy(*)
     integer, intent(in):: Nbrhd(*)
     integer, intent(in):: Xadj(*)
-    integer, intent(out):: Deg(*)
-    integer, intent(out):: Qsize(*)
-    integer, intent(out):: Qlink(*)
-    integer, intent(out):: Marker(*)
+    integer, intent(inout):: Deg(*)
+    integer, intent(inout):: Qsize(*)
+    integer, intent(inout):: Qlink(*)
+    integer, intent(inout):: Marker(*)
     integer, intent(out):: Rchset(*)
     integer, intent(out):: Ovrlp(*)
     !------
@@ -3354,7 +3354,7 @@ enddo
     integer, intent(in):: Rchset(*)
     integer, intent(in):: Nbrhd(*)
     integer, intent(in):: Xadj(*)
-    integer, intent(out):: Adjncy(*)
+    integer, intent(inout):: Adjncy(*)
     !------
     integer:: inhd
     integer:: irch
@@ -3415,7 +3415,7 @@ enddo
     integer, intent(in):: Xadj(*)
     integer, intent(out):: Nhdsze
     integer, intent(out):: Rchsze
-    integer, intent(out):: Marker(*)
+    integer, intent(inout):: Marker(*)
     integer, intent(out):: Rchset(*)
     integer, intent(out):: Nbrhd(*)
     !------
@@ -3476,12 +3476,12 @@ enddo
     integer, intent(in):: Adjncy(*)
     integer, intent(in):: List(*)
     integer, intent(in):: Xadj(*)
-    integer, intent(out):: Deg(*)
-    integer, intent(out):: Marker(*)
+    integer, intent(inout):: Deg(*)
+    integer, intent(inout):: Marker(*)
     integer, intent(out):: Rchset(*)
     integer, intent(out):: Nbrhd(*)
-    integer, intent(out):: Qsize(*)
-    integer, intent(out):: Qlink(*)
+    integer, intent(inout):: Qsize(*)
+    integer, intent(inout):: Qlink(*)
     !------
     integer:: deg0
     integer:: deg1
@@ -3552,7 +3552,7 @@ enddo
     implicit none
     !------
     integer, intent(in):: Ik
-    integer, intent(out):: Iw(*)
+    integer, intent(inout):: Iw(*)
     !------
     integer:: itemp
     integer:: l
@@ -3580,11 +3580,11 @@ enddo
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
     integer, intent(in):: Par(*)
-    integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Diag(3,*)
-    real(kind=8), intent(out):: Temp(4,*)
-    real(kind=8), intent(out):: Zln(4,*)
+    integer, intent(inout):: Indx(*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Diag(3,*)
+    real(kind=8), intent(inout):: Temp(4,*)
+    real(kind=8), intent(inout):: Zln(4,*)
     !------
     integer:: ir
     integer:: j
@@ -3639,9 +3639,9 @@ enddo
     integer, intent(in):: Ic
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Temp(4,*)
-    real(kind=8), intent(out):: Zln(4,*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Temp(4,*)
+    real(kind=8), intent(inout):: Zln(4,*)
     !------
     integer:: j
     integer:: jc
@@ -3685,11 +3685,11 @@ enddo
     integer, intent(in):: Nstop
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(3,*)
-    real(kind=8), intent(out):: Dsln(4,*)
-    real(kind=8), intent(out):: Temp(4,*)
-    real(kind=8), intent(out):: Zln(4,*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Diag(3,*)
+    real(kind=8), intent(inout):: Dsln(4,*)
+    real(kind=8), intent(inout):: Temp(4,*)
+    real(kind=8), intent(inout):: Zln(4,*)
     !------
     integer:: ic
     integer:: j
@@ -3749,8 +3749,8 @@ enddo
     !------
     integer, intent(in):: N
     integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(3,*)
-    real(kind=8), intent(out):: Dsln(4,*)
+    real(kind=8), intent(inout):: Diag(3,*)
+    real(kind=8), intent(inout):: Dsln(4,*)
     real(kind=8), intent(out):: Temp(4,*)
     !------
     integer:: i
@@ -3794,11 +3794,11 @@ enddo
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
     integer, intent(in):: Par(*)
-    integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Diag(6,*)
-    real(kind=8), intent(out):: Temp(9,*)
-    real(kind=8), intent(out):: Zln(9,*)
+    integer, intent(inout):: Indx(*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Diag(6,*)
+    real(kind=8), intent(inout):: Temp(9,*)
+    real(kind=8), intent(inout):: Zln(9,*)
     !------
     integer:: ir
     integer:: j
@@ -3862,9 +3862,9 @@ enddo
     integer, intent(in):: Ic
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Temp(9,*)
-    real(kind=8), intent(out):: Zln(9,*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Temp(9,*)
+    real(kind=8), intent(inout):: Zln(9,*)
     !------
     integer:: j
     integer:: jc
@@ -3915,11 +3915,11 @@ enddo
     integer, intent(in):: Nstop
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(6,*)
-    real(kind=8), intent(out):: Dsln(9,*)
-    real(kind=8), intent(out):: Temp(Neqns,9)
-    real(kind=8), intent(out):: Zln(9,*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Diag(6,*)
+    real(kind=8), intent(inout):: Dsln(9,*)
+    real(kind=8), intent(inout):: Temp(Neqns,9)
+    real(kind=8), intent(inout):: Zln(9,*)
     !------
     integer:: ic
     integer:: j
@@ -4019,8 +4019,8 @@ enddo
     !------
     integer, intent(in):: N
     integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(6,*)
-    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(inout):: Diag(6,*)
+    real(kind=8), intent(inout):: Dsln(9,*)
     real(kind=8), intent(out):: Temp(9,*)
     !------
     integer:: i
@@ -4059,11 +4059,11 @@ enddo
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
     integer, intent(in):: Par(*)
-    integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Diag(21,*)
-    real(kind=8), intent(out):: Temp(36,*)
-    real(kind=8), intent(out):: Zln(36,*)
+    integer, intent(inout):: Indx(*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Diag(21,*)
+    real(kind=8), intent(inout):: Temp(36,*)
+    real(kind=8), intent(inout):: Zln(36,*)
     !------
     integer:: ir
     integer:: j
@@ -4261,9 +4261,9 @@ enddo
     integer, intent(in):: Ic
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Temp(9,*)
-    real(kind=8), intent(out):: Zln(9,*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Temp(9,*)
+    real(kind=8), intent(inout):: Zln(9,*)
     !------
     integer:: j
     integer:: jc
@@ -4314,11 +4314,11 @@ enddo
     integer, intent(in):: Nstop
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(21,*)
-    real(kind=8), intent(out):: Dsln(36,*)
-    real(kind=8), intent(out):: Temp(36,Neqns)
-    real(kind=8), intent(out):: Zln(36,*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Diag(21,*)
+    real(kind=8), intent(inout):: Dsln(36,*)
+    real(kind=8), intent(inout):: Temp(36,Neqns)
+    real(kind=8), intent(inout):: Zln(36,*)
     !------
     integer:: ic
     integer:: j
@@ -4387,8 +4387,8 @@ enddo
     !------
     integer, intent(in):: N
     integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(6,*)
-    real(kind=8), intent(out):: Dsln(9,*)
+    real(kind=8), intent(inout):: Diag(6,*)
+    real(kind=8), intent(inout):: Dsln(9,*)
     real(kind=8), intent(out):: Temp(9,*)
     !------
     integer:: i
@@ -4499,11 +4499,11 @@ enddo
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
     integer, intent(in):: Par(*)
-    integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Diag(*)
-    real(kind=8), intent(out):: Temp(*)
-    real(kind=8), intent(out):: Zln(*)
+    integer, intent(inout):: Indx(*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Diag(*)
+    real(kind=8), intent(inout):: Temp(*)
+    real(kind=8), intent(inout):: Zln(*)
     !------
     integer:: j
     integer:: jc
@@ -4554,9 +4554,9 @@ enddo
     integer, intent(in):: Ic
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Temp(*)
-    real(kind=8), intent(out):: Zln(*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Temp(*)
+    real(kind=8), intent(inout):: Zln(*)
     !------
     integer:: j
     integer:: jc
@@ -4597,11 +4597,11 @@ enddo
     integer, intent(in):: Nstop
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(*)
-    real(kind=8), intent(out):: Dsln(*)
-    real(kind=8), intent(out):: Temp(*)
-    real(kind=8), intent(out):: Zln(*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Diag(*)
+    real(kind=8), intent(inout):: Dsln(*)
+    real(kind=8), intent(inout):: Temp(*)
+    real(kind=8), intent(inout):: Zln(*)
     !------
     integer:: ic
     integer:: j
@@ -4646,8 +4646,8 @@ enddo
     !------
     integer, intent(in):: N
     integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(*)
-    real(kind=8), intent(out):: Dsln(*)
+    real(kind=8), intent(inout):: Diag(*)
+    real(kind=8), intent(inout):: Dsln(*)
     real(kind=8), intent(out):: Temp(*)
     !------
     integer:: i
@@ -4684,12 +4684,12 @@ enddo
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
     integer, intent(in):: Par(*)
-    integer, intent(out):: Indx(*)
-    integer, intent(out):: Nch(*)
-    real(kind=8), intent(out):: Diag(Ndegl,*)
+    integer, intent(inout):: Indx(*)
+    integer, intent(inout):: Nch(*)
+    real(kind=8), intent(inout):: Diag(Ndegl,*)
     real(kind=8), intent(out):: T(Ndegl)
-    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
-    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    real(kind=8), intent(inout):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(inout):: Zln(Ndeg,Ndeg,*)
     real(kind=8), intent(out):: Zz(Ndeg,Ndeg)
     !------
     integer:: ir
@@ -4758,10 +4758,10 @@ enddo
     integer, intent(in):: Ndeg
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: S(Ndeg,Ndeg)
-    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
-    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: S(Ndeg,Ndeg)
+    real(kind=8), intent(inout):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(inout):: Zln(Ndeg,Ndeg,*)
     !------
     integer:: Ic
     integer:: j
@@ -4815,11 +4815,11 @@ enddo
     integer, intent(in):: Nstop
     integer, intent(in):: Xlnzr(*)
     integer, intent(in):: Colno(*)
-    integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(Ndegl,*)
-    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
-    real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
-    real(kind=8), intent(out):: Zln(Ndeg,Ndeg,*)
+    integer, intent(inout):: Indx(*)
+    real(kind=8), intent(inout):: Diag(Ndegl,*)
+    real(kind=8), intent(inout):: Dsln(Ndeg,Ndeg,*)
+    real(kind=8), intent(inout):: Temp(Ndeg,Ndeg,*)
+    real(kind=8), intent(inout):: Zln(Ndeg,Ndeg,*)
     !------
     integer:: ic
     integer:: j
@@ -4894,8 +4894,8 @@ enddo
     integer, intent(in):: Ndegl
     integer, intent(in):: Nn
     integer, intent(out):: Indx(*)
-    real(kind=8), intent(out):: Diag(Ndegl,*)
-    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
+    real(kind=8), intent(inout):: Diag(Ndegl,*)
+    real(kind=8), intent(inout):: Dsln(Ndeg,Ndeg,*)
     real(kind=8), intent(out):: T(Ndeg,Ndeg)
     real(kind=8), intent(out):: Temp(Ndeg,Ndeg,*)
     !------
