@@ -98,7 +98,7 @@ contains
     !------
     type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
     integer, intent(in):: Ifmsg
-    type (HECMWST_MATRIX), intent(out)::hecMAT
+    type (HECMWST_MATRIX), intent(inout)::hecMAT
     !------
     integer:: i98
     integer:: i97
