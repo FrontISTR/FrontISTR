@@ -1287,9 +1287,9 @@ contains
     integer, intent(in):: Iperm(*)
     real(kind=8), intent(in):: Zln(Ndeg,Ndeg,*)
     real(kind=8), intent(in):: Diag(Ndegl,*)
+    real(kind=8), intent(in):: Dsln(Ndeg,Ndeg,*)
     real(kind=8), intent(out):: B(Ndeg,*)
     real(kind=8), intent(out):: Wk(Ndeg,*)
-    real(kind=8), intent(out):: Dsln(Ndeg,Ndeg,*)
     !------
     integer:: i
     integer:: j
@@ -5054,7 +5054,7 @@ enddo
     integer, intent(in):: Ndeg
     integer, intent(in):: Ndegl
     real(kind=8), intent(in):: Diag(Ndegl,N)
-    real(kind=8), intent(out):: Zln(Ndeg*Ndeg,N)
+    real(kind=8), intent(in):: Zln(Ndeg*Ndeg,N)
     real(kind=8), intent(out):: Zz(Ndeg*Ndeg,N)
     !------
     integer:: i
