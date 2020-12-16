@@ -13,70 +13,14 @@
 module HECMW_SOLVER_DIRECT
   implicit none
 
-  integer(kind=4), private :: len_colno
-  integer(kind=4), private :: nstop
-  integer(kind=4), private :: stage
-  integer(kind=4), private :: neqns
-  integer(kind=4), private :: nttbr
-  integer(kind=4), private :: isym
-  integer(kind=4), private :: ndeg
-  integer(kind=4), private :: irr
-  integer(kind=4), private :: len_dsln
-  integer(kind=4), private :: len_iv
-  integer(kind=4), private :: total
-
-  integer(kind=4), private, dimension(:), pointer :: jcol
-  integer(kind=4), private, dimension(:), pointer :: irow
-  integer(kind=4), private, dimension(:), pointer :: zpiv
-  integer(kind=4), private, dimension(:), pointer :: iperm
-  integer(kind=4), private, dimension(:), pointer :: invp
-  integer(kind=4), private, dimension(:), pointer :: parent
-  integer(kind=4), private, dimension(:), pointer :: nch
-  integer(kind=4), private, dimension(:), pointer :: xlnzr
-  integer(kind=4), private, dimension(:), pointer :: colno
-  !*Work arrays
-  integer(kind=4), private, dimension(:), pointer :: jcpt
-  integer(kind=4), private, dimension(:), pointer :: jcolno
-  integer(kind=4), private, dimension(:), pointer :: ia
-  integer(kind=4), private, dimension(:), pointer :: ja
-  integer(kind=4), private, dimension(:), pointer :: deg
-  integer(kind=4), private, dimension(:), pointer :: marker
-  integer(kind=4), private, dimension(:), pointer :: rchset
-  integer(kind=4), private, dimension(:), pointer :: nbrhd
-  integer(kind=4), private, dimension(:), pointer :: qsize
-  integer(kind=4), private, dimension(:), pointer :: qlink
-  integer(kind=4), private :: nofsub
-  integer(kind=4), private, dimension(:), pointer :: adjncy
-  integer(kind=4), private, dimension(:), pointer :: btree
-  integer(kind=4), private, dimension(:), pointer :: pordr
-  integer(kind=4), private, dimension(:), pointer :: adjncp
-  integer(kind=4), private, dimension(:), pointer :: xleaf
-  integer(kind=4), private, dimension(:), pointer :: leaf
-  integer(kind=4), private, dimension(:), pointer :: indx
-
-  real(kind=8), private, dimension(:), pointer :: val
-  real(kind=8), private, dimension(:), pointer :: temp
-  real(kind=8), private, dimension(:), pointer :: diag
-  real(kind=8), private, dimension(:), pointer :: zln
-  real(kind=8), private, dimension(:), pointer :: dsln
-  !*Timing
-  real(kind=8), private, dimension(10) :: tom
-  !*Allocation variables
-  integer(kind=4), private :: ialoc
-  integer(kind=4), private :: raloc
-  integer(kind=4), private :: ierror
   !*MCHDPN
-  integer:: LRAtio
-  real(kind=8), private:: EPSm
-  real(kind=8), private:: RMAx
-  real(kind=8), private:: RMIn
-  !*QAZ
-  integer, private:: ISEed
-  integer, private:: ISEm
-  integer, private:: IXXx
+  integer, private, parameter :: LRAtio = 2
+  !real(kind=8), private, parameter :: EPSm = 2.220D-16
+  !real(kind=8), private, parameter :: RMAx = 8.988D+307
+  real(kind=8), private, parameter :: RMIn = 4.941D-300
   !*DEBUG
-  integer, private:: IDBg
-  integer, private:: IDBg1
+  integer, private, parameter :: IDBg = 0
+  integer, private, parameter :: IDBg1 = 0
 
 contains
   !----------------------------------------------------------------------
@@ -100,6 +44,31 @@ contains
     integer, intent(in):: Ifmsg
     type (HECMWST_MATRIX), intent(inout)::hecMAT
     !------
+    integer(kind=4), save :: LEN_colno
+    integer(kind=4), save :: NSTop
+    integer(kind=4), save :: STAge
+    integer(kind=4), save :: NEQns
+    integer(kind=4), save :: NDEg
+    integer(kind=4), save :: NTTbr
+    integer(kind=4), save :: ISYm
+    integer(kind=4), save :: LEN_dsln
+    integer(kind=4), pointer, save :: JCOl(:)
+    integer(kind=4), pointer, save :: IROw(:)
+    integer(kind=4), pointer, save :: IPErm(:)
+    integer(kind=4), pointer, save :: INVp(:)
+    integer(kind=4), pointer, save :: PARent(:)
+    integer(kind=4), pointer, save :: NCH(:)
+    integer(kind=4), pointer, save :: XLNzr(:)
+    integer(kind=4), pointer, save :: COLno(:)
+    real(kind=8), pointer, save :: DIAg(:)
+    real(kind=8), pointer, save :: ZLN(:)
+    real(kind=8), pointer, save :: DSLn(:)
+    !*Allocation variables
+    integer(kind=4), save :: ialoc
+    integer(kind=4), save :: raloc
+    !*Timing
+    real(kind=8), save :: tom(10)
+    !------
     integer:: i98
     integer:: i97
     integer:: ir
@@ -110,11 +79,6 @@ contains
     real(kind=8):: t4
     real(kind=8):: t5
 
-    RMAx = 8.988D+307
-    RMIn = 4.941D-300
-    EPSm = 2.220D-16
-    LRAtio = 2
-    ISEed = 1
     ir = 0
 
     call HECMW_MAT_DUMP(hecMAT,hecMESH)
@@ -125,10 +89,10 @@ contains
     i98 = hecMAT%IARRAY(98)
     if ( hecMAT%IARRAY(98)==1 ) then
       !* Interface to symbolic factorization
-      call SETIJ(hecMESH,hecMAT)
+      call SETIJ(hecMESH,hecMAT,NEQns,NDEg,NTTbr,ISYm,JCOl,IROw)
 
       !* Symbolic factorization
-      call MATINI(ir)
+      call MATINI(NEQns,NTTbr,JCOl,IROw,LEN_colno,NSTop,LEN_dsln,IPErm,INVp,PARent,NCH,XLNzr,COLno,IALoc,RALoc,STAge,ir)
       hecMAT%IARRAY(98) = 0
       write (6,*) "symbolic fct done"
     endif
@@ -138,11 +102,11 @@ contains
     i97 = hecMAT%IARRAY(97)
     if ( hecMAT%IARRAY(97)==1 ) then
       !* Interface to numeric factorization
-      call NUFORM(hecMESH,hecMAT,ir)
+      call NUFORM(hecMESH,hecMAT,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,ir)
       call PTIME(t3)
 
       !* Numeric factorization
-      call NUFCT0(ir)
+      call NUFCT0(NEQns,NDEg,NSTop,PARent,NCH,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,ir)
       hecMAT%IARRAY(97) = 0
 
       !*Memory Details
@@ -186,7 +150,7 @@ contains
     do i=1,hecMAT%NP*hecMESH%n_dof
       hecMAT%X(i) = hecMAT%B(i)
     end do
-    call NUSOL0(hecMAT%X,ir)
+    call NUSOL0(hecMAT%X,NEQns,NDEg,NSTop,IPErm,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,ir)
     call PTIME(t5)
     !* Errors 4
     if ( ir/=0 ) then
@@ -213,12 +177,18 @@ contains
   !======================================================================!
   !> @brief SETIJ
   !======================================================================!
-  subroutine SETIJ(hecMESH,hecMAT)
+  subroutine SETIJ(hecMESH,hecMAT,NEQns,NDEg,NTTbr,ISYm,JCOl,IROw)
     use HECMW_UTIL
     implicit none
     !------
     type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
     type (HECMWST_MATRIX), intent(in)::hecMAT
+    integer(kind=kint), intent(out):: NEQns
+    integer(kind=kint), intent(out):: NDEg
+    integer(kind=kint), intent(out):: NTTbr
+    integer(kind=kint), intent(out):: ISYm
+    integer(kind=4), pointer :: JCOl(:)
+    integer(kind=4), pointer :: IROw(:)
     !------
     integer:: i
     integer:: ierr
@@ -243,8 +213,9 @@ contains
 
     !*Allocations
     allocate (IROw(NTTbr),stat=ierr)
+    if ( ierr/=0 ) stop "Allocation error: irow"
     allocate (JCOl(NTTbr),stat=ierr)
-    if ( ierr/=0 ) stop "Allocation error: irow/jcol"
+    if ( ierr/=0 ) stop "Allocation error: jcol"
 
     kk = 0
     ndof2 = ndof*ndof
@@ -296,12 +267,48 @@ contains
   !                30  after LU decomposition
   !                40  after solving
   !======================================================================!
-  subroutine MATINI(Ir)
+  subroutine MATINI(NEQns,NTTbr,JCOl,IROw,LEN_colno,NSTop,LEN_dsln,IPErm,INVp,PARent,NCH,XLNzr,COLno,IALoc,RALoc,STAge,Ir)
     implicit none
     !------
+    integer, intent(in):: NEQns
+    integer, intent(in):: NTTbr
+    integer(kind=4), intent(in) :: jcol(:)
+    integer(kind=4), intent(in) :: irow(:)
+    integer, intent(out):: LEN_colno
+    integer, intent(out):: NSTop
+    integer, intent(out):: LEN_dsln
+    integer, pointer :: IPErm(:)
+    integer, pointer :: INVp(:)
+    integer, pointer :: PARent(:)
+    integer, pointer :: NCH(:)
+    integer, pointer :: XLNzr(:)
+    integer, pointer :: COLno(:)
+    integer, intent(out):: IALoc
+    integer, intent(out):: RALoc
+    integer, intent(out):: STAge
     integer, intent(out):: Ir
     !------
+    !*Work arrays
+    integer(kind=4), allocatable :: zpiv(:)
+    integer(kind=4), allocatable :: jcpt(:)
+    integer(kind=4), allocatable :: jcolno(:)
+    integer(kind=4), allocatable :: ia(:)
+    integer(kind=4), allocatable :: ja(:)
+    integer(kind=4), allocatable :: deg(:)
+    integer(kind=4), allocatable :: marker(:)
+    integer(kind=4), allocatable :: rchset(:)
+    integer(kind=4), allocatable :: nbrhd(:)
+    integer(kind=4), allocatable :: qsize(:)
+    integer(kind=4), allocatable :: qlink(:)
+    integer(kind=4) :: nofsub
+    integer(kind=4), allocatable :: adjncy(:)
+    integer(kind=4), allocatable :: btree(:)
+    integer(kind=4), allocatable :: pordr(:)
+    integer(kind=4), allocatable :: adjncp(:)
+    integer(kind=4), allocatable :: xleaf(:)
+    integer(kind=4), allocatable :: leaf(:)
     integer:: ir1
+    integer:: irr
     integer:: iv1
     integer:: izz
     integer:: izz0
@@ -331,8 +338,8 @@ contains
     integer:: maxl
     integer:: neqns1
     integer:: neqnsz
+    integer:: ierror
 
-    IDBg = 0
     izz0 = 0
 
     Ir = 0
@@ -340,7 +347,6 @@ contains
     lenv2 = LRAtio*lenv
     neqns1 = NEQns + 2
     LEN_dsln = lenv2
-    LEN_iv = lenv2
     iv1 = 51
 
     !*Initialize allocation measure variables
@@ -479,17 +485,6 @@ contains
         deallocate (QLInk)
         deallocate (ADJncy)
         deallocate (ZPIv)
-        !*Nullify pointers
-        nullify (IA)
-        nullify (JA)
-        nullify (DEG)
-        nullify (MARker)
-        nullify (RCHset)
-        nullify (NBRhd)
-        nullify (QSIze)
-        nullify (QLInk)
-        nullify (ADJncy)
-        nullify (ZPIv)
         !
         !   build up xlnzr,colno  (this is the symbolic fct.)
         !
@@ -506,12 +501,6 @@ contains
         deallocate (XLEaf)
         deallocate (LEAf)
         deallocate (BTRee)
-        !*Nullify pointers
-        nullify (PORdr)
-        nullify (ADJncp)
-        nullify (XLEaf)
-        nullify (LEAf)
-        nullify (BTRee)
         !rmem
         left = (left+neqns1) + lncol
         !rmiv
@@ -524,9 +513,6 @@ contains
         !
         if ( mod(left,2)==0 ) left = left + 1
 
-        !rmiv
-        TOTal = left
-        !rmiv
         STAge = 10
         IALoc = 5*NEQns + lncol + 1
         exit
@@ -547,12 +533,25 @@ contains
   !======================================================================!
   !> @brief NUFORM
   !======================================================================!
-  subroutine NUFORM(hecMESH,hecMAT,Ir)
+  subroutine NUFORM(hecMESH,hecMAT,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,Ir)
     use HECMW_UTIL
     implicit none
     !------
     type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
     type (HECMWST_MATRIX), intent(in)::hecMAT
+    integer(kind=kint), intent(in):: NEQns
+    integer(kind=kint), intent(in):: NDEg
+    integer(kind=kint), intent(in):: LEN_colno
+    integer(kind=kint), intent(in):: NSTop
+    integer(kind=kint), intent(in):: LEN_dsln
+    integer(kind=kint), intent(in):: INVp(:)
+    integer(kind=kint), intent(in):: XLNzr(:)
+    integer(kind=kint), intent(in):: COLno(:)
+    real(kind=8), pointer :: DIAg(:)
+    real(kind=8), pointer :: ZLN(:)
+    real(kind=8), pointer :: DSLn(:)
+    integer(kind=kint), intent(inout):: RALoc
+    integer(kind=kint), intent(inout):: STAge
     integer(kind=kint), intent(out):: Ir
     !------
     integer:: i
@@ -565,18 +564,12 @@ contains
     integer(kind=kint):: numnp
     integer(kind=kint):: ndof
     integer(kind=kint):: ndof2
+    real(kind=8), allocatable :: val(:)
 
     idbg = 0
     numnp = hecMAT%NP
     ndof = hecMESH%N_DOF
     ntotal = numnp*ndof
-
-    !*NUFACT variables
-    NEQns = numnp
-    NDEg = ndof
-    NTTbr = hecMAT%NP + hecMAT%NPL
-    !+hecMAT%NPU if unsymmetric
-    ISYm = 0
 
     !*Allocations
     allocate (val(NDEg*NDEg),stat=ierr)
@@ -589,7 +582,7 @@ contains
       !*Diagonal
       kk = kk + 1
       call VLCPY(val,hecMAT%D(ndof2*(j-1)+1:ndof2*j),ndof)
-      call STAIJ1(0,j,j,val,Ir)
+      call STAIJ1(0,j,j,val,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,Ir)
 
       do i = 1, ndof
         if ( val((i-1)*ndof+i)<=0 ) write (idbg,*) 'j,j,val:', j, i, val((i-1)*ndof+i)
@@ -600,7 +593,7 @@ contains
         i = hecMAT%ITEML(k)
         kk = kk + 1
         call VLCPY(val,hecMAT%AL(ndof2*(k-1)+1:ndof2*k),ndof)
-        call STAIJ1(0,j,i,val,Ir)
+        call STAIJ1(0,j,i,val,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,Ir)
       enddo
     enddo
 
@@ -612,14 +605,28 @@ contains
   !          if(iv(22).eq.0)    normal type
   !          if(iv(22).gt.0)    code generation type
   !======================================================================!
-  subroutine NUFCT0(Ir)
+  subroutine NUFCT0(NEQns,NDEg,NSTop,PARent,NCH,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,Ir)
     use HECMW_UTIL
     implicit none
     !------
+    integer, intent(in):: NEQns
+    integer, intent(in):: NDEg
+    integer, intent(in):: NSTop
+    integer, intent(in):: XLNzr(:)
+    integer, intent(in):: COLno(:)
+    integer, intent(in):: PARent(:)
+    integer, intent(inout):: NCH(:)
+    real(kind=8), intent(inout):: DIAg(:)
+    real(kind=8), intent(inout):: ZLN(:)
+    real(kind=8), intent(inout):: DSLn(:)
+    integer, intent(inout):: STAge
     integer, intent(out):: Ir
     !------
+    integer:: irr
     integer:: ndeg2
     integer:: ndegl
+    integer(kind=4), allocatable :: INDx(:)
+    real(kind=8), allocatable :: TEMp(:)
 
     if ( STAge/=20 ) then
       print *, '*********Setting Stage 40!*********'
@@ -688,6 +695,7 @@ contains
     !------
     integer:: ic
     integer:: l
+    integer:: ISEm
     real(kind=8):: t1
     real(kind=8):: t2
     real(kind=8):: t3
@@ -705,7 +713,7 @@ contains
     Nch(l) = Nch(l) - 1
     Nch(1) = -1
     do ic = 2, Nstop - 1
-      call sum(ic,Xlnzr,Colno,Zln,Diag,Nch,Parent,Temp,Indx)
+      call sum(ic,Xlnzr,Colno,Zln,Diag,Nch,Parent,Temp,Indx,ISEm)
     enddo
     !
     ! phase II
@@ -1014,15 +1022,25 @@ contains
   !                    on exit      solution vector
   !           iv       communication array
   !======================================================================!
-  subroutine NUSOL0(R_h_s,Ir)
+  subroutine NUSOL0(R_h_s,NEQns,NDEg,NSTop,IPErm,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,Ir)
     use HECMW_UTIL
     implicit none
     !------
+    integer, intent(in):: NEQns
+    integer, intent(in):: NDEg
+    integer, intent(in):: NSTop
+    integer, intent(in):: IPErm(:)
+    integer, intent(in):: XLNzr(:)
+    integer, intent(in):: COLno(:)
+    real(kind=8), intent(in):: DIAg(:)
+    real(kind=8), intent(in):: ZLN(:)
+    real(kind=8), intent(in):: DSLn(:)
+    integer, intent(inout):: STAge
     integer, intent(out):: Ir
     real(kind=8), intent(inout):: R_h_s(*)
     !------
-    integer:: lwk
     integer:: ndegl
+    integer:: ierror
     real(kind=8), pointer :: wk(:)
 
     if ( STAge/=30 .and. STAge/=40 ) then
@@ -1031,7 +1049,6 @@ contains
     else
       Ir = 0
     endif
-    lwk = TOTal
 
     allocate (wk(NDEg*NEQns),stat=IERror)
     if ( IERror/=0 ) then
@@ -4457,17 +4474,31 @@ contains
   !      (o)
   !          iv       communication array
   !======================================================================!
-  subroutine STAIJ1(Isw,I,J,Aij,Ir)
+  subroutine STAIJ1(Isw,I,J,Aij,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,Ir)
     implicit none
     !------
     integer, intent(in):: I
     integer, intent(in):: Isw
     integer, intent(in):: J
     real(kind=8), intent(in):: Aij(NDEg*NDEg)
+    integer, intent(in):: NEQns
+    integer, intent(in):: NDEg
+    integer, intent(in):: LEN_colno
+    integer, intent(in):: NSTop
+    integer, intent(in):: LEN_dsln
+    integer, intent(in):: INVp(:)
+    integer, intent(in):: XLNzr(:)
+    integer, intent(in):: COLno(:)
+    real(kind=8), pointer :: DIAg(:)
+    real(kind=8), pointer :: ZLN(:)
+    real(kind=8), pointer :: DSLn(:)
+    integer, intent(inout):: RALoc
+    integer, intent(inout):: STAge
     integer, intent(out):: Ir
     !------
     integer:: ndeg2
     integer:: ndeg2l
+    integer:: ierror
 
     Ir = 0
     ndeg2 = NDEg*NDEg
@@ -4475,14 +4506,15 @@ contains
     if ( STAge==30 ) write (6,*) 'warning a matrix was build up '//'but never solved.'
     if ( STAge==10 ) then
       allocate (DIAg(NEQns*ndeg2l),stat=IERror)
+      if ( IERror/=0 ) stop "Allocation error diag"
       RALoc = RALoc + NEQns*ndeg2l
+
       allocate (ZLN(LEN_colno*ndeg2),stat=IERror)
-
+      if ( IERror/=0 ) stop "Allocation error zln"
       RALoc = RALoc + LEN_colno*ndeg2
+
       allocate (DSLn(LEN_dsln*ndeg2),stat=IERror)
-
       if ( IERror/=0 ) stop "Allocation error dsln"
-
       RALoc = RALoc + LEN_dsln*ndeg2
     endif
     if ( STAge/=20 ) then
@@ -4515,7 +4547,7 @@ contains
   !======================================================================!
   !> @brief SUM
   !======================================================================!
-  subroutine sum(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx)
+  subroutine sum(Ic,Xlnzr,Colno,Zln,Diag,Nch,Par,Temp,Indx,ISEm)
     implicit none
     !------
     integer, intent(in):: Ic
@@ -4524,6 +4556,7 @@ contains
     integer, intent(in):: Par(*)
     integer, intent(inout):: Indx(*)
     integer, intent(inout):: Nch(*)
+    integer, intent(inout):: ISEm
     real(kind=8), intent(inout):: Diag(*)
     real(kind=8), intent(inout):: Temp(*)
     real(kind=8), intent(inout):: Zln(*)
