@@ -14,7 +14,6 @@ module HECMW_SOLVER_DIRECT
   implicit none
 
   !*MCHDPN
-  integer, private, parameter :: LRAtio = 2
   !real(kind=8), private, parameter :: EPSm = 2.220D-16
   !real(kind=8), private, parameter :: RMAx = 8.988D+307
   real(kind=8), private, parameter :: RMIn = 4.941D-300
@@ -309,45 +308,16 @@ contains
     integer(kind=4), allocatable :: leaf(:)
     integer:: ir1
     integer:: irr
-    integer:: iv1
     integer:: izz
     integer:: izz0
-    integer:: ladp
-    integer:: last
-    integer:: lbtree
-    integer:: lcolno
-    integer:: lcpt
-    integer:: left
-    integer:: lenv
-    integer:: lenv2
-    integer:: lia
-    integer:: lja
-    integer:: lleaf
     integer:: lncol
     integer:: lnleaf
-    integer:: lpordr
-    integer:: lwk1
-    integer:: lwk2
-    integer:: lwk3
-    integer:: lwk4
-    integer:: lwk5
-    integer:: lwk6
-    integer:: lwk7
-    integer:: lwk8
-    integer:: lxleaf
-    integer:: maxl
-    integer:: neqns1
     integer:: neqnsz
     integer:: ierror
 
     izz0 = 0
 
     Ir = 0
-    lenv = 1000000000
-    lenv2 = LRAtio*lenv
-    neqns1 = NEQns + 2
-    LEN_dsln = lenv2
-    iv1 = 51
 
     !*Initialize allocation measure variables
     IALoc = 0
@@ -366,12 +336,6 @@ contains
     !
     !  build jcpt,jcolno
     !
-    !rmiv
-    lcpt = iv1 + neqns1
-    lcolno = lcpt + 2*NTTbr
-    left = lcolno + 2*NTTbr
-    last = lenv2
-    !rmem
     allocate (JCPt(2*NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, jcpt: SUB. matini"
     allocate (JCOlno(2*NTTbr),stat=IERror)
@@ -380,10 +344,6 @@ contains
     !
     !  build ia,ja
     !
-    lia = last - neqns1
-    lja = lia - NTTbr*2
-    last = lja
-    !rmem
     allocate (IA(NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, ia: SUB. matini"
     !WINDEBUG
@@ -397,18 +357,6 @@ contains
     !
     !  get permutation vector iperm,invp
     !
-    lwk1 = lja - neqns1
-    lwk2 = lwk1 - neqns1
-    lwk3 = lwk2 - neqns1
-    lwk4 = lwk3 - neqns1
-    lwk5 = lwk4 - neqns1
-    lwk6 = lwk5 - neqns1
-    lwk7 = lwk6 - neqns1
-    lwk8 = lwk7 - 2*NTTbr
-    last = lwk8
-
-    left = iv1 + 5*neqns1
-
     allocate (IPErm(NEQns),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, iperm: SUB. matini"
     allocate (INVp(NEQns),stat=IERror)
@@ -435,9 +383,6 @@ contains
       !
       !   build up the binary tree
       !
-      lbtree = lwk3 - 2*NEQns
-      last = lbtree
-      !rmem
       allocate (BTRee(2*(NEQns+1)),stat=IERror)
       if ( IERror/=0 ) stop "ALLOCATION ERROR, btree: SUB. matini"
       call GENBTQ(INVp,MARker,BTRee,ZPIv,izz,NEQns)
@@ -448,9 +393,6 @@ contains
         !
         !   post ordering
         !
-        lpordr = last - neqns1
-        last = lpordr
-        !rmem
         allocate (PARent(NEQns),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, parent: SUB. matini.f"
         allocate (NCH(NEQns+1),stat=IERror)
@@ -461,11 +403,6 @@ contains
         !
         !   generate skelton graph
         !
-        lleaf = last - NTTbr
-        lxleaf = lleaf - neqns1
-        ladp = lxleaf - neqns1
-        last = ladp
-        !rmem
         allocate (ADJncp(NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncp: SUB. matini.f"
         allocate (XLEaf(NEQns+1),stat=IERror)
@@ -488,7 +425,6 @@ contains
         !
         !   build up xlnzr,colno  (this is the symbolic fct.)
         !
-        maxl = lxleaf - (left+neqns1)
         allocate (XLNzr(NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, xlnzr: SUB. matini.f"
         call PRE_GNCLNO(PARent,XLEaf,LEAf,XLNzr,NEQns,NSTop,lncol,ir1)
@@ -501,17 +437,10 @@ contains
         deallocate (XLEaf)
         deallocate (LEAf)
         deallocate (BTRee)
-        !rmem
-        left = (left+neqns1) + lncol
-        !rmiv
         LEN_dsln = (NEQns-NSTop+1)*(NEQns-NSTop)/2
 
         !Scalar assignments
         LEN_colno = lncol
-        !
-        !   area for REAL(kind=8) values
-        !
-        if ( mod(left,2)==0 ) left = left + 1
 
         STAge = 10
         IALoc = 5*NEQns + lncol + 1
@@ -521,9 +450,6 @@ contains
         if ( izz0/=izz ) then
           call BRINGU(ZPIv,IPErm,INVp,MARker,izz,NEQns,IRR)
         else
-          lwk4 = last - neqns1
-          lwk5 = lwk4 - neqns1
-          last = lwk5
           call ROTATE(IA,JA,INVp,IPErm,MARker,BTRee,izz,NEQns,NBRhd,QSIze,IRR)
         endif
       endif
