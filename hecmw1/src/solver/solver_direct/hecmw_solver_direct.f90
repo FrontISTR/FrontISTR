@@ -14,13 +14,11 @@ module HECMW_SOLVER_DIRECT
   private
   public :: HECMW_SOLVE_DIRECT
 
-  !*MCHDPN
-  !real(kind=kreal), parameter :: EPSm = 2.220D-16
-  !real(kind=kreal), parameter :: RMAx = 8.988D+307
   real(kind=kreal), parameter :: RMIn = 4.941D-300
-  !*DEBUG
-  integer(kind=kint), parameter :: IDBg = 0
-  integer(kind=kint), parameter :: IDBg1 = 0
+
+  integer(kind=kint), parameter :: IDBg_ini = 0
+  integer(kind=kint), parameter :: IDBg_sym = 0
+  integer(kind=kint), parameter :: IDBg_num = 0
 
 contains
   !----------------------------------------------------------------------
@@ -40,8 +38,8 @@ contains
     implicit none
     !------
     type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
-    integer(kind=kint), intent(in):: Ifmsg
     type (HECMWST_MATRIX), intent(inout)::hecMAT
+    integer(kind=kint), intent(in):: Ifmsg
     !------
     integer(kind=kint), save :: LEN_colno
     integer(kind=kint), save :: NSTop
@@ -65,8 +63,6 @@ contains
     !*Allocation variables
     integer(kind=kint), save :: ialoc
     integer(kind=kint), save :: raloc
-    !*Timing
-    real(kind=kreal), save :: tom(10)
     !------
     integer(kind=kint):: i98
     integer(kind=kint):: i97
@@ -115,7 +111,7 @@ contains
       call NUFCT0(NEQns,NDEg,NSTop,PARent,NCH,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,ir)
       hecMAT%IARRAY(97) = 0
 
-      if ( timelog > 0 .or. iterlog > 0 ) write (6,*) "[DIRECT]: numeric fct done"
+      if ( timelog > 0 .or. iterlog > 0 ) write (*,*) "[DIRECT]: numeric fct done"
 
       !*Memory Details
       if ( timelog > 1 ) then
@@ -152,7 +148,6 @@ contains
     endif
 
     !* Solve
-    !* Backsubstitute
     do i=1,hecMAT%NP*hecMESH%n_dof
       hecMAT%X(i) = hecMAT%B(i)
     end do
@@ -160,7 +155,6 @@ contains
     call PTIME(t5)
     !* Errors 4
     if ( ir/=0 ) then
-      !WINDEBUG
       write (Ifmsg,*) 'error in nusol0. irr = ', ir
       stop
     endif
@@ -393,8 +387,8 @@ contains
     if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncy: SUB. matini"
     call GENQMD(neqnsz,IA,JA,IPErm,INVp,DEG,MARker,RCHset,NBRhd,QSIze,QLInk,NOFsub,ADJncy)
     do
-      !   build up the parent vector parent vector will be saved in
-      !   work2 for a while
+      !   build up the parent vector
+      !   parent vector will be saved in MARker for a while
       call GENPAQ(IA,JA,INVp,IPErm,MARker,NEQns,RCHset)
       !
       !   build up the binary tree
@@ -514,7 +508,7 @@ contains
       enddo
       exit
     enddo loop1
-    if ( IDBg/=0 ) write (6,"(20I3)") (Zpiv(i),i=1,Neqns)
+    if ( IDBg_ini/=0 ) write (6,"(20I3)") (Zpiv(i),i=1,Neqns)
   end subroutine ZPIVOT
 
   !======================================================================!
@@ -592,7 +586,7 @@ contains
         Jcolno(k) = i
       endif
     enddo loop1
-    if ( IDBg/=0 ) then
+    if ( IDBg_ini/=0 ) then
       write (6,*) 'jcolno'
       write (6,"(10I7)") (Jcolno(i),i=1,k)
       write (6,*) 'jcpt'
@@ -633,7 +627,7 @@ contains
       enddo
       Ia(k+1) = l + 1
     enddo
-    if ( IDBg/=0 ) then
+    if ( IDBg_ini/=0 ) then
       write (6,*) 'ia '
       write (6,"(10I7)") (Ia(i),i=1,Neqns)
       write (6,*) 'ja '
@@ -1116,7 +1110,7 @@ contains
     enddo
     Parent(Neqns+1) = 0
 
-    if ( IDBg1/=0 ) then
+    if ( IDBg_sym/=0 ) then
       write (6,"(' parent')")
       write (6,"(2I6)") (i,Parent(i),i=1,Neqns)
     endif
@@ -1175,7 +1169,7 @@ contains
       endif
     enddo
 
-    if ( IDBg1/=0 ) then
+    if ( IDBg_sym/=0 ) then
       write (6,"(' binary tree')")
       write (6,"(i6,'(',2I6,')')") (i,Btree(1,i),Btree(2,i),i=1,Neqns)
       write (6,"(' the first zero pivot is ',i4)") Izz
@@ -1237,7 +1231,7 @@ contains
                 Parent(i) = Qarent(invpos)
               endif
             enddo
-            if ( IDBg1/=0 ) then
+            if ( IDBg_sym/=0 ) then
               write (6,"(' post order')")
               write (6,"(10I6)") (Pordr(i),i=1,Neqns)
               write (6,"(/' invp ')")
@@ -1328,7 +1322,7 @@ contains
     Xleaf(Neqns+1) = l
     Lnleaf = l - 1
 
-    if ( IDBg1/=0 ) then
+    if ( IDBg_sym/=0 ) then
       write (6,"(' xleaf')")
       write (6,"(10I6)") (Xleaf(i),i=1,Neqns+1)
       write (6,"(' leaf (len = ',i6,')')") Lnleaf
@@ -1510,7 +1504,7 @@ contains
     Xlnzr(Neqns+1) = l
     Lncol = l - 1
 
-    if ( IDBg1/=0 ) then
+    if ( IDBg_sym/=0 ) then
       write (6,"(' xlnzr')")
       write (6,"(' colno (lncol =',i10,')')") Lncol
       do k = 1, Neqns
@@ -1712,7 +1706,7 @@ contains
                 Iperm(Invp(i)) = i
               enddo
 
-              if ( IDBg1/=0 ) write (6,"(10I6)") (Invp(i),i=1,Neqns)
+              if ( IDBg_sym/=0 ) write (6,"(10I6)") (Invp(i),i=1,Neqns)
               return
             else
               locc = Btree(2,joc)
@@ -1769,7 +1763,7 @@ contains
     !*Allocations
     allocate (val(NDEg*NDEg),stat=ierr)
     if ( ierr/=0 ) stop "Allocation error:val"
-    !write (6,*) "nuform:stage = ", STAge
+    if ( IDBg_num/= 0 ) write (6,*) "nuform:stage = ", STAge
     kk = 0
     ndof2 = ndof*ndof
 
