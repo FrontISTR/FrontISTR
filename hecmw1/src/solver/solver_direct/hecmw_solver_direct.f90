@@ -70,6 +70,8 @@ contains
     !------
     integer(kind=kint):: i98
     integer(kind=kint):: i97
+    integer(kind=kint):: timelog
+    integer(kind=kint):: iterlog
     integer(kind=kint):: ir
     integer(kind=kint):: i
     real(kind=kreal):: t1
@@ -80,9 +82,13 @@ contains
 
     ir = 0
 
+    timelog = hecMAT%IARRAY(22)
+    iterlog = hecMAT%IARRAY(21)
+
     call HECMW_MAT_DUMP(hecMAT,hecMESH)
 
     call PTIME(t1)
+    t2 = t1
 
     !*EHM HECMW June 7 2004
     i98 = hecMAT%IARRAY(98)
@@ -93,7 +99,8 @@ contains
       !* Symbolic factorization
       call MATINI(NEQns,NTTbr,JCOl,IROw,LEN_colno,NSTop,LEN_dsln,IPErm,INVp,PARent,NCH,XLNzr,COLno,IALoc,RALoc,STAge,ir)
       hecMAT%IARRAY(98) = 0
-      write (6,*) "symbolic fct done"
+
+      if ( timelog > 0 .or. iterlog > 0 ) write (*,*) "[DIRECT]: symbolic fct done"
     endif
     call PTIME(t2)
     t3 = t2
@@ -108,14 +115,18 @@ contains
       call NUFCT0(NEQns,NDEg,NSTop,PARent,NCH,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,ir)
       hecMAT%IARRAY(97) = 0
 
+      if ( timelog > 0 .or. iterlog > 0 ) write (6,*) "[DIRECT]: numeric fct done"
+
       !*Memory Details
-      write (*,*) '*-----------------------------------*'
-      write (*,*) '|   Direct  Solver  Memory  Usage   |'
-      write (*,*) '*-----------------------------------*'
-      write (*,*) 'INTEGER memory: ', real(IALoc*4)/real(1048576), 'MB'
-      write (*,*) 'REAL*8  memory: ', real(RALoc*8)/real(1048576), 'MB'
-      write (*,*) 'TOTAL   memory: ', real((RALoc*2+IALoc)*4)/real(1048576), 'MB'
-      write (*,*) '*-----------------------------------*'
+      if ( timelog > 1 ) then
+        write (*,*) '*-----------------------------------*'
+        write (*,*) '|   Direct  Solver  Memory  Usage   |'
+        write (*,*) '*-----------------------------------*'
+        write (*,*) 'INTEGER memory: ', real(IALoc*4)/real(1048576), 'MB'
+        write (*,*) 'REAL*8  memory: ', real(RALoc*8)/real(1048576), 'MB'
+        write (*,*) 'TOTAL   memory: ', real((RALoc*2+IALoc)*4)/real(1048576), 'MB'
+        write (*,*) '*-----------------------------------*'
+      endif
     endif
     call PTIME(t4)
 
@@ -140,10 +151,6 @@ contains
       stop
     endif
 
-    TOM(1) = t2-t1
-    TOM(2) = t3-t2
-    TOM(3) = t4-t3
-
     !* Solve
     !* Backsubstitute
     do i=1,hecMAT%NP*hecMESH%n_dof
@@ -157,6 +164,17 @@ contains
       write (Ifmsg,*) 'error in nusol0. irr = ', ir
       stop
     endif
+
+    if ( timelog > 1 ) then
+      write(*,*) 'sym fct time : ',t2-t1
+      write(*,*) 'nuform time  : ',t3-t2
+      write(*,*) 'num fct time : ',t4-t3
+      write(*,*) 'solve time   : ',t5-t4
+    elseif ( timelog > 0 ) then
+      write(*,*) 'setup time : ',t4-t1
+      write(*,*) 'solve time : ',t5-t4
+    endif
+
     call HECMW_MAT_DUMP_SOLUTION(hecMAT)
   end subroutine HECMW_SOLVE_DIRECT
 
@@ -1751,7 +1769,7 @@ contains
     !*Allocations
     allocate (val(NDEg*NDEg),stat=ierr)
     if ( ierr/=0 ) stop "Allocation error:val"
-    write (6,*) "nuform:stage = ", STAge
+    !write (6,*) "nuform:stage = ", STAge
     kk = 0
     ndof2 = ndof*ndof
 
