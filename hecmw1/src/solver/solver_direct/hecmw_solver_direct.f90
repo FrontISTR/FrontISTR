@@ -6,9 +6,6 @@
 !----------------------------------------------------------------------
 !> @brief HECMW_SOLVE_DIRECT is a program for the matrix direct solver
 !         SOLVER=DIRECT
-!
-!> @author coded by t.arakawa of RIST on 040316
-!>         Modified G. Prabhakar, RIST, June 7 2004
 !----------------------------------------------------------------------
 module HECMW_SOLVER_DIRECT
   use HECMW_UTIL
