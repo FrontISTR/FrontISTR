@@ -14,13 +14,16 @@ module HECMW_SOLVER_DIRECT
   use HECMW_UTIL
   implicit none
 
+  private
+  public :: HECMW_SOLVE_DIRECT
+
   !*MCHDPN
-  !real(kind=kreal), private, parameter :: EPSm = 2.220D-16
-  !real(kind=kreal), private, parameter :: RMAx = 8.988D+307
-  real(kind=kreal), private, parameter :: RMIn = 4.941D-300
+  !real(kind=kreal), parameter :: EPSm = 2.220D-16
+  !real(kind=kreal), parameter :: RMAx = 8.988D+307
+  real(kind=kreal), parameter :: RMIn = 4.941D-300
   !*DEBUG
-  integer(kind=kint), private, parameter :: IDBg = 0
-  integer(kind=kint), private, parameter :: IDBg1 = 0
+  integer(kind=kint), parameter :: IDBg = 0
+  integer(kind=kint), parameter :: IDBg1 = 0
 
 contains
   !----------------------------------------------------------------------
