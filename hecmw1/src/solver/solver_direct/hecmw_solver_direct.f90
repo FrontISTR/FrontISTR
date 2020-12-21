@@ -20,6 +20,31 @@ module HECMW_SOLVER_DIRECT
   integer(kind=kint), parameter :: IDBg_sym = 0
   integer(kind=kint), parameter :: IDBg_num = 0
 
+  type cholesky_factor
+    integer(kind=kint) :: LEN_colno
+    integer(kind=kint) :: NSTop
+    integer(kind=kint) :: STAge
+    integer(kind=kint) :: NEQns
+    integer(kind=kint) :: NDEg
+    integer(kind=kint) :: NTTbr
+    integer(kind=kint) :: ISYm
+    integer(kind=kint) :: LEN_dsln
+    integer(kind=kint), pointer :: JCOl(:)
+    integer(kind=kint), pointer :: IROw(:)
+    integer(kind=kint), pointer :: IPErm(:)
+    integer(kind=kint), pointer :: INVp(:)
+    integer(kind=kint), pointer :: PARent(:)
+    integer(kind=kint), pointer :: NCH(:)
+    integer(kind=kint), pointer :: XLNzr(:)
+    integer(kind=kint), pointer :: COLno(:)
+    real(kind=kreal), pointer :: DIAg(:)
+    real(kind=kreal), pointer :: ZLN(:)
+    real(kind=kreal), pointer :: DSLn(:)
+    !*Allocation variables
+    integer(kind=kint) :: ialoc
+    integer(kind=kint) :: raloc
+  end type cholesky_factor
+
 contains
   !----------------------------------------------------------------------
   !> @brief HECMW_SOLVE_DIRECT is a program for the matrix solver
@@ -41,28 +66,7 @@ contains
     type (HECMWST_MATRIX), intent(inout)::hecMAT
     integer(kind=kint), intent(in):: Ifmsg
     !------
-    integer(kind=kint), save :: LEN_colno
-    integer(kind=kint), save :: NSTop
-    integer(kind=kint), save :: STAge
-    integer(kind=kint), save :: NEQns
-    integer(kind=kint), save :: NDEg
-    integer(kind=kint), save :: NTTbr
-    integer(kind=kint), save :: ISYm
-    integer(kind=kint), save :: LEN_dsln
-    integer(kind=kint), pointer, save :: JCOl(:)
-    integer(kind=kint), pointer, save :: IROw(:)
-    integer(kind=kint), pointer, save :: IPErm(:)
-    integer(kind=kint), pointer, save :: INVp(:)
-    integer(kind=kint), pointer, save :: PARent(:)
-    integer(kind=kint), pointer, save :: NCH(:)
-    integer(kind=kint), pointer, save :: XLNzr(:)
-    integer(kind=kint), pointer, save :: COLno(:)
-    real(kind=kreal), pointer, save :: DIAg(:)
-    real(kind=kreal), pointer, save :: ZLN(:)
-    real(kind=kreal), pointer, save :: DSLn(:)
-    !*Allocation variables
-    integer(kind=kint), save :: ialoc
-    integer(kind=kint), save :: raloc
+    type (cholesky_factor), save :: FCT
     !------
     integer(kind=kint):: i98
     integer(kind=kint):: i97
@@ -90,10 +94,11 @@ contains
     i98 = hecMAT%IARRAY(98)
     if ( hecMAT%IARRAY(98)==1 ) then
       !* Interface to symbolic factorization
-      call SETIJ(hecMESH,hecMAT,NEQns,NDEg,NTTbr,ISYm,JCOl,IROw)
+      call SETIJ(hecMESH,hecMAT,FCT%NEQns,FCT%NDEg,FCT%NTTbr,FCT%ISYm,FCT%JCOl,FCT%IROw)
 
       !* Symbolic factorization
-      call MATINI(NEQns,NTTbr,JCOl,IROw,LEN_colno,NSTop,LEN_dsln,IPErm,INVp,PARent,NCH,XLNzr,COLno,IALoc,RALoc,STAge,ir)
+      call MATINI(FCT%NEQns,FCT%NTTbr,FCT%JCOl,FCT%IROw,FCT%LEN_colno,FCT%NSTop,FCT%LEN_dsln,FCT%IPErm,FCT%INVp,FCT%PARent,FCT%NCH,&
+           FCT%XLNzr,FCT%COLno,FCT%IALoc,FCT%RALoc,FCT%STAge,ir)
       hecMAT%IARRAY(98) = 0
 
       if ( timelog > 0 .or. iterlog > 0 ) write (*,*) "[DIRECT]: symbolic fct done"
@@ -104,11 +109,12 @@ contains
     i97 = hecMAT%IARRAY(97)
     if ( hecMAT%IARRAY(97)==1 ) then
       !* Interface to numeric factorization
-      call NUFORM(hecMESH,hecMAT,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,ir)
+      call NUFORM(hecMESH,hecMAT,FCT%NEQns,FCT%NDEg,FCT%LEN_colno,FCT%NSTop,FCT%LEN_dsln,FCT%INVp,FCT%XLNzr,FCT%COLno,FCT%DIAg,&
+           FCT%ZLN,FCT%DSLn,FCT%RALoc,FCT%STAge,ir)
       call PTIME(t3)
 
       !* Numeric factorization
-      call NUFCT0(NEQns,NDEg,NSTop,PARent,NCH,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,ir)
+      call NUFCT0(FCT%NEQns,FCT%NDEg,FCT%NSTop,FCT%PARent,FCT%NCH,FCT%XLNzr,FCT%COLno,FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%STAge,ir)
       hecMAT%IARRAY(97) = 0
 
       if ( timelog > 0 .or. iterlog > 0 ) write (*,*) "[DIRECT]: numeric fct done"
@@ -118,9 +124,9 @@ contains
         write (*,*) '*-----------------------------------*'
         write (*,*) '|   Direct  Solver  Memory  Usage   |'
         write (*,*) '*-----------------------------------*'
-        write (*,*) 'INTEGER memory: ', real(IALoc*4)/real(1048576), 'MB'
-        write (*,*) 'REAL*8  memory: ', real(RALoc*8)/real(1048576), 'MB'
-        write (*,*) 'TOTAL   memory: ', real((RALoc*2+IALoc)*4)/real(1048576), 'MB'
+        write (*,*) 'INTEGER memory: ', real(FCT%IALoc*4)/real(1048576), 'MB'
+        write (*,*) 'REAL*8  memory: ', real(FCT%RALoc*8)/real(1048576), 'MB'
+        write (*,*) 'TOTAL   memory: ', real((FCT%RALoc*2+FCT%IALoc)*4)/real(1048576), 'MB'
         write (*,*) '*-----------------------------------*'
       endif
     endif
@@ -151,7 +157,7 @@ contains
     do i=1,hecMAT%NP*hecMESH%n_dof
       hecMAT%X(i) = hecMAT%B(i)
     end do
-    call NUSOL0(hecMAT%X,NEQns,NDEg,NSTop,IPErm,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,ir)
+    call NUSOL0(hecMAT%X,FCT%NEQns,FCT%NDEg,FCT%NSTop,FCT%IPErm,FCT%XLNzr,FCT%COLno,FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%STAge,ir)
     call PTIME(t5)
     !* Errors 4
     if ( ir/=0 ) then
