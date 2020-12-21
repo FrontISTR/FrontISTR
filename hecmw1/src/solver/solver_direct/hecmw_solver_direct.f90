@@ -94,11 +94,10 @@ contains
     i98 = hecMAT%IARRAY(98)
     if ( hecMAT%IARRAY(98)==1 ) then
       !* Interface to symbolic factorization
-      call SETIJ(hecMESH,hecMAT,FCT%NEQns,FCT%NDEg,FCT%NTTbr,FCT%ISYm,FCT%JCOl,FCT%IROw)
+      call SETIJ(hecMESH,hecMAT,FCT)
 
       !* Symbolic factorization
-      call MATINI(FCT%NEQns,FCT%NTTbr,FCT%JCOl,FCT%IROw,FCT%LEN_colno,FCT%NSTop,FCT%LEN_dsln,FCT%IPErm,FCT%INVp,FCT%PARent,FCT%NCH,&
-           FCT%XLNzr,FCT%COLno,FCT%IALoc,FCT%RALoc,FCT%STAge,ir)
+      call MATINI(FCT,ir)
       hecMAT%IARRAY(98) = 0
 
       if ( timelog > 0 .or. iterlog > 0 ) write (*,*) "[DIRECT]: symbolic fct done"
@@ -109,12 +108,11 @@ contains
     i97 = hecMAT%IARRAY(97)
     if ( hecMAT%IARRAY(97)==1 ) then
       !* Interface to numeric factorization
-      call NUFORM(hecMESH,hecMAT,FCT%NEQns,FCT%NDEg,FCT%LEN_colno,FCT%NSTop,FCT%LEN_dsln,FCT%INVp,FCT%XLNzr,FCT%COLno,FCT%DIAg,&
-           FCT%ZLN,FCT%DSLn,FCT%RALoc,FCT%STAge,ir)
+      call NUFORM(hecMESH,hecMAT,FCT,ir)
       call PTIME(t3)
 
       !* Numeric factorization
-      call NUFCT0(FCT%NEQns,FCT%NDEg,FCT%NSTop,FCT%PARent,FCT%NCH,FCT%XLNzr,FCT%COLno,FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%STAge,ir)
+      call NUFCT0(FCT,ir)
       hecMAT%IARRAY(97) = 0
 
       if ( timelog > 0 .or. iterlog > 0 ) write (*,*) "[DIRECT]: numeric fct done"
@@ -157,7 +155,7 @@ contains
     do i=1,hecMAT%NP*hecMESH%n_dof
       hecMAT%X(i) = hecMAT%B(i)
     end do
-    call NUSOL0(hecMAT%X,FCT%NEQns,FCT%NDEg,FCT%NSTop,FCT%IPErm,FCT%XLNzr,FCT%COLno,FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%STAge,ir)
+    call NUSOL0(hecMAT%X,FCT,ir)
     call PTIME(t5)
     !* Errors 4
     if ( ir/=0 ) then
@@ -192,18 +190,14 @@ contains
 
   !======================================================================!
   !> @brief SETIJ
+  !  sets NEQns, NDEg, NTTbr, ISYm, JCOl, IROw
   !======================================================================!
-  subroutine SETIJ(hecMESH,hecMAT,NEQns,NDEg,NTTbr,ISYm,JCOl,IROw)
+  subroutine SETIJ(hecMESH,hecMAT,FCT)
     implicit none
     !------
     type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
     type (HECMWST_MATRIX), intent(in)::hecMAT
-    integer(kind=kint), intent(out):: NEQns
-    integer(kind=kint), intent(out):: NDEg
-    integer(kind=kint), intent(out):: NTTbr
-    integer(kind=kint), intent(out):: ISYm
-    integer(kind=kint), pointer :: JCOl(:)
-    integer(kind=kint), pointer :: IROw(:)
+    type (cholesky_factor), intent(inout) :: FCT
     !------
     integer(kind=kint):: i
     integer(kind=kint):: ierr
@@ -220,16 +214,16 @@ contains
     ntotal = numnp*ndof
 
     !*NUFACT variables
-    NEQns = numnp
-    NDEg = ndof
-    NTTbr = hecMAT%NP + hecMAT%NPL
+    FCT%NEQns = numnp
+    FCT%NDEg = ndof
+    FCT%NTTbr = hecMAT%NP + hecMAT%NPL
     !+hecMAT%NPU if unsymmetric
-    ISYm = 0
+    FCT%ISYm = 0
 
     !*Allocations
-    allocate (IROw(NTTbr),stat=ierr)
+    allocate (FCT%IROw(FCT%NTTbr),stat=ierr)
     if ( ierr/=0 ) stop "Allocation error: irow"
-    allocate (JCOl(NTTbr),stat=ierr)
+    allocate (FCT%JCOl(FCT%NTTbr),stat=ierr)
     if ( ierr/=0 ) stop "Allocation error: jcol"
 
     kk = 0
@@ -237,14 +231,14 @@ contains
     do j = 1, numnp
       !*Diagonal
       kk = kk + 1
-      IROw(kk) = j
-      JCOl(kk) = j
+      FCT%IROw(kk) = j
+      FCT%JCOl(kk) = j
       !*Lower
       do k = hecMAT%INDEXL(j-1) + 1, hecMAT%INDEXL(j)
         i = hecMAT%ITEML(k)
         kk = kk + 1
-        IROw(kk) = j
-        JCOl(kk) = i
+        FCT%IROw(kk) = j
+        FCT%JCOl(kk) = i
       enddo
     enddo
   end subroutine SETIJ
@@ -281,26 +275,14 @@ contains
   !                20  building up matrix
   !                30  after LU decomposition
   !                40  after solving
+  !
+  !  sets LEN_colno, NSTop, LEN_dsln, IPErm, INVp, PARent, NCH, XLNzr, COLno
+  !       IALoc, RALoc, STAge
   !======================================================================!
-  subroutine MATINI(NEQns,NTTbr,JCOl,IROw,LEN_colno,NSTop,LEN_dsln,IPErm,INVp,PARent,NCH,XLNzr,COLno,IALoc,RALoc,STAge,Ir)
+  subroutine MATINI(FCT,Ir)
     implicit none
     !------
-    integer(kind=kint), intent(in):: NEQns
-    integer(kind=kint), intent(in):: NTTbr
-    integer(kind=kint), intent(in) :: jcol(:)
-    integer(kind=kint), intent(in) :: irow(:)
-    integer(kind=kint), intent(out):: LEN_colno
-    integer(kind=kint), intent(out):: NSTop
-    integer(kind=kint), intent(out):: LEN_dsln
-    integer(kind=kint), pointer :: IPErm(:)
-    integer(kind=kint), pointer :: INVp(:)
-    integer(kind=kint), pointer :: PARent(:)
-    integer(kind=kint), pointer :: NCH(:)
-    integer(kind=kint), pointer :: XLNzr(:)
-    integer(kind=kint), pointer :: COLno(:)
-    integer(kind=kint), intent(out):: IALoc
-    integer(kind=kint), intent(out):: RALoc
-    integer(kind=kint), intent(out):: STAge
+    type (cholesky_factor), intent(inout) :: FCT
     integer(kind=kint), intent(out):: Ir
     !------
     !*Work arrays
@@ -336,14 +318,14 @@ contains
     Ir = 0
 
     !*Initialize allocation measure variables
-    IALoc = 0
-    RALoc = 0
+    FCT%IALoc = 0
+    FCT%RALoc = 0
     !
     !  set z pivot
     !
-    allocate (ZPIv(NEQns),stat=IERror)
+    allocate (ZPIv(FCT%NEQns),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, zpiv: SUB. matini"
-    call ZPIVOT(NEQns,neqnsz,NTTbr,JCOl,IROw,ZPIv,ir1)
+    call ZPIVOT(FCT%NEQns,neqnsz,FCT%NTTbr,FCT%JCOl,FCT%IROw,ZPIv,ir1)
     if ( ir1/=0 ) then
       Ir = ir1
       return
@@ -352,20 +334,20 @@ contains
     !
     !  build jcpt,jcolno
     !
-    allocate (JCPt(2*NTTbr),stat=IERror)
+    allocate (JCPt(2*FCT%NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, jcpt: SUB. matini"
-    allocate (JCOlno(2*NTTbr),stat=IERror)
+    allocate (JCOlno(2*FCT%NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, jcolno: SUB. matini"
-    call STSMAT(NEQns,NTTbr,IROw,JCOl,JCPt,JCOlno)
+    call STSMAT(FCT%NEQns,FCT%NTTbr,FCT%IROw,FCT%JCOl,JCPt,JCOlno)
     !
     !  build ia,ja
     !
-    allocate (IA(NEQns+1),stat=IERror)
+    allocate (IA(FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, ia: SUB. matini"
     !WINDEBUG
-    allocate (JA(2*NTTbr),stat=IERror)
+    allocate (JA(2*FCT%NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, ja: SUB. matini"
-    call STIAJA(NEQns,IA,JA,JCPt,JCOlno)
+    call STIAJA(FCT%NEQns,IA,JA,JCPt,JCOlno)
 
     !*Deallocation of work array
     deallocate (JCPt)
@@ -373,35 +355,35 @@ contains
     !
     !  get permutation vector iperm,invp
     !
-    allocate (IPErm(NEQns),stat=IERror)
+    allocate (FCT%IPErm(FCT%NEQns),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, iperm: SUB. matini"
-    allocate (INVp(NEQns),stat=IERror)
+    allocate (FCT%INVp(FCT%NEQns),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, invp: SUB. matini"
-    allocate (DEG(NEQns+1),stat=IERror)
+    allocate (DEG(FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, deg: SUB. matini"
-    allocate (MARker(NEQns+1),stat=IERror)
+    allocate (MARker(FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, marker: SUB. matini"
-    allocate (RCHset(0:NEQns+1),stat=IERror)
+    allocate (RCHset(0:FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, rchset: SUB. matini"
-    allocate (NBRhd(NEQns+1),stat=IERror)
+    allocate (NBRhd(FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, nbrhd: SUB. matini"
-    allocate (QSIze(NEQns+1),stat=IERror)
+    allocate (QSIze(FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, qsize: SUB. matini"
-    allocate (QLInk(NEQns+1),stat=IERror)
+    allocate (QLInk(FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, qlink: SUB. matini"
-    allocate (ADJncy(2*NTTbr),stat=IERror)
+    allocate (ADJncy(2*FCT%NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncy: SUB. matini"
-    call GENQMD(neqnsz,IA,JA,IPErm,INVp,DEG,MARker,RCHset,NBRhd,QSIze,QLInk,NOFsub,ADJncy)
+    call GENQMD(neqnsz,IA,JA,FCT%IPErm,FCT%INVp,DEG,MARker,RCHset,NBRhd,QSIze,QLInk,NOFsub,ADJncy)
     do
       !   build up the parent vector
       !   parent vector will be saved in MARker for a while
-      call GENPAQ(IA,JA,INVp,IPErm,MARker,NEQns,RCHset)
+      call GENPAQ(IA,JA,FCT%INVp,FCT%IPErm,MARker,FCT%NEQns,RCHset)
       !
       !   build up the binary tree
       !
-      allocate (BTRee(2*(NEQns+1)),stat=IERror)
+      allocate (BTRee(2*(FCT%NEQns+1)),stat=IERror)
       if ( IERror/=0 ) stop "ALLOCATION ERROR, btree: SUB. matini"
-      call GENBTQ(INVp,MARker,BTRee,ZPIv,izz,NEQns)
+      call GENBTQ(FCT%INVp,MARker,BTRee,ZPIv,izz,FCT%NEQns)
       !
       !   rotate the binary tree to avoid a zero pivot
       !
@@ -409,24 +391,24 @@ contains
         !
         !   post ordering
         !
-        allocate (PARent(NEQns),stat=IERror)
+        allocate (FCT%PARent(FCT%NEQns),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, parent: SUB. matini.f"
-        allocate (NCH(NEQns+1),stat=IERror)
+        allocate (FCT%NCH(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, nch: SUB. matini.f"
-        allocate (PORdr(NEQns+1),stat=IERror)
+        allocate (PORdr(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, pordr: SUB. matini.f"
-        call POSORD(PARent,BTRee,INVp,IPErm,PORdr,NCH,NEQns,DEG,MARker,RCHset)
+        call POSORD(FCT%PARent,BTRee,FCT%INVp,FCT%IPErm,PORdr,FCT%NCH,FCT%NEQns,DEG,MARker,RCHset)
         !
         !   generate skelton graph
         !
-        allocate (ADJncp(NEQns+1),stat=IERror)
+        allocate (ADJncp(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncp: SUB. matini.f"
-        allocate (XLEaf(NEQns+1),stat=IERror)
+        allocate (XLEaf(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, xleaf: SUB. matini.f"
-        allocate (LEAf(NTTbr),stat=IERror)
+        allocate (LEAf(FCT%NTTbr),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, leaf: SUB. matini.f"
-        call GNLEAF(IA,JA,INVp,IPErm,NCH,ADJncp,XLEaf,LEAf,NEQns,lnleaf)
-        call FORPAR(NEQns,PARent,NCH,NSTop)
+        call GNLEAF(IA,JA,FCT%INVp,FCT%IPErm,FCT%NCH,ADJncp,XLEaf,LEAf,FCT%NEQns,lnleaf)
+        call FORPAR(FCT%NEQns,FCT%PARent,FCT%NCH,FCT%NSTop)
         !*Deallocation of work arrays
         deallocate (IA)
         deallocate (JA)
@@ -441,32 +423,32 @@ contains
         !
         !   build up xlnzr,colno  (this is the symbolic fct.)
         !
-        allocate (XLNzr(NEQns+1),stat=IERror)
+        allocate (FCT%XLNzr(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, xlnzr: SUB. matini.f"
-        call PRE_GNCLNO(PARent,XLEaf,LEAf,XLNzr,NEQns,NSTop,lncol,ir1)
-        allocate (COLno(lncol),stat=IERror)
+        call PRE_GNCLNO(FCT%PARent,XLEaf,LEAf,FCT%XLNzr,FCT%NEQns,FCT%NSTop,lncol,ir1)
+        allocate (FCT%COLno(lncol),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, colno: SUB. matini.f"
-        call GNCLNO(PARent,XLEaf,LEAf,XLNzr,COLno,NEQns,NSTop,lncol,ir1)
+        call GNCLNO(FCT%PARent,XLEaf,LEAf,FCT%XLNzr,FCT%COLno,FCT%NEQns,FCT%NSTop,lncol,ir1)
         !*Deallocate work arrays
         deallocate (PORdr)
         deallocate (ADJncp)
         deallocate (XLEaf)
         deallocate (LEAf)
         deallocate (BTRee)
-        LEN_dsln = (NEQns-NSTop+1)*(NEQns-NSTop)/2
+        FCT%LEN_dsln = (FCT%NEQns-FCT%NSTop+1)*(FCT%NEQns-FCT%NSTop)/2
 
         !Scalar assignments
-        LEN_colno = lncol
+        FCT%LEN_colno = lncol
 
-        STAge = 10
-        IALoc = 5*NEQns + lncol + 1
+        FCT%STAge = 10
+        FCT%IALoc = 5*FCT%NEQns + lncol + 1
         exit
       else
         if ( izz0==0 ) izz0 = izz
         if ( izz0/=izz ) then
-          call BRINGU(ZPIv,IPErm,INVp,MARker,izz,NEQns,IRR)
+          call BRINGU(ZPIv,FCT%IPErm,FCT%INVp,MARker,izz,FCT%NEQns,IRR)
         else
-          call ROTATE(IA,JA,INVp,IPErm,MARker,BTRee,izz,NEQns,NBRhd,QSIze,IRR)
+          call ROTATE(IA,JA,FCT%INVp,FCT%IPErm,MARker,BTRee,izz,FCT%NEQns,NBRhd,QSIze,IRR)
         endif
       endif
     enddo
@@ -1728,25 +1710,15 @@ contains
 
   !======================================================================!
   !> @brief NUFORM
+  !  sets DIAg, ZLN, DSLn
+  !  updates RALoc, STAge
   !======================================================================!
-  subroutine NUFORM(hecMESH,hecMAT,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,Ir)
+  subroutine NUFORM(hecMESH,hecMAT,FCT,Ir)
     implicit none
     !------
     type (HECMWST_LOCAL_MESH), intent(in)::hecMESH
     type (HECMWST_MATRIX), intent(in)::hecMAT
-    integer(kind=kint), intent(in):: NEQns
-    integer(kind=kint), intent(in):: NDEg
-    integer(kind=kint), intent(in):: LEN_colno
-    integer(kind=kint), intent(in):: NSTop
-    integer(kind=kint), intent(in):: LEN_dsln
-    integer(kind=kint), intent(in):: INVp(:)
-    integer(kind=kint), intent(in):: XLNzr(:)
-    integer(kind=kint), intent(in):: COLno(:)
-    real(kind=kreal), pointer :: DIAg(:)
-    real(kind=kreal), pointer :: ZLN(:)
-    real(kind=kreal), pointer :: DSLn(:)
-    integer(kind=kint), intent(inout):: RALoc
-    integer(kind=kint), intent(inout):: STAge
+    type (cholesky_factor), intent(inout):: FCT
     integer(kind=kint), intent(out):: Ir
     !------
     integer(kind=kint):: i
@@ -1767,9 +1739,9 @@ contains
     ntotal = numnp*ndof
 
     !*Allocations
-    allocate (val(NDEg*NDEg),stat=ierr)
+    allocate (val(FCT%NDEg*FCT%NDEg),stat=ierr)
     if ( ierr/=0 ) stop "Allocation error:val"
-    if ( IDBg_num/= 0 ) write (6,*) "nuform:stage = ", STAge
+    if ( IDBg_num/= 0 ) write (6,*) "nuform:stage = ", FCT%STAge
     kk = 0
     ndof2 = ndof*ndof
 
@@ -1777,7 +1749,8 @@ contains
       !*Diagonal
       kk = kk + 1
       call VLCPY(val,hecMAT%D(ndof2*(j-1)+1:ndof2*j),ndof)
-      call STAIJ1(0,j,j,val,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,Ir)
+      call STAIJ1(0,j,j,val,FCT%NEQns,FCT%NDEg,FCT%LEN_colno,FCT%NSTop,FCT%LEN_dsln,FCT%INVp,FCT%XLNzr,FCT%COLno,&
+           FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%RALoc,FCT%STAge,Ir)
 
       do i = 1, ndof
         if ( val((i-1)*ndof+i)<=0 ) write (idbg,*) 'j,j,val:', j, i, val((i-1)*ndof+i)
@@ -1788,7 +1761,8 @@ contains
         i = hecMAT%ITEML(k)
         kk = kk + 1
         call VLCPY(val,hecMAT%AL(ndof2*(k-1)+1:ndof2*k),ndof)
-        call STAIJ1(0,j,i,val,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,Ir)
+        call STAIJ1(0,j,i,val,FCT%NEQns,FCT%NDEg,FCT%LEN_colno,FCT%NSTop,FCT%LEN_dsln,FCT%INVp,FCT%XLNzr,FCT%COLno,&
+             FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%RALoc,FCT%STAge,Ir)
       enddo
     enddo
 
@@ -2197,21 +2171,12 @@ contains
   !> @brief NUFCT0 performs Cholesky factorization
   !          if(iv(22).eq.0)    normal type
   !          if(iv(22).gt.0)    code generation type
+  !  updates NCH, DIAg, ZLN, DSLn, STAge
   !======================================================================!
-  subroutine NUFCT0(NEQns,NDEg,NSTop,PARent,NCH,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,Ir)
+  subroutine NUFCT0(FCT,Ir)
     implicit none
     !------
-    integer(kind=kint), intent(in):: NEQns
-    integer(kind=kint), intent(in):: NDEg
-    integer(kind=kint), intent(in):: NSTop
-    integer(kind=kint), intent(in):: XLNzr(:)
-    integer(kind=kint), intent(in):: COLno(:)
-    integer(kind=kint), intent(in):: PARent(:)
-    integer(kind=kint), intent(inout):: NCH(:)
-    real(kind=kreal), intent(inout):: DIAg(:)
-    real(kind=kreal), intent(inout):: ZLN(:)
-    real(kind=kreal), intent(inout):: DSLn(:)
-    integer(kind=kint), intent(inout):: STAge
+    type (cholesky_factor), intent(inout):: FCT
     integer(kind=kint), intent(out):: Ir
     !------
     integer(kind=kint):: irr
@@ -2220,7 +2185,7 @@ contains
     integer(kind=kint), allocatable :: INDx(:)
     real(kind=kreal), allocatable :: TEMp(:)
 
-    if ( STAge/=20 ) then
+    if ( FCT%STAge/=20 ) then
       print *, '*********Setting Stage 40!*********'
       Ir = 40
       return
@@ -2228,37 +2193,38 @@ contains
       Ir = 0
     endif
 
-    allocate (TEMp(NDEg*NDEg*NEQns),stat=IRR)
+    allocate (TEMp(FCT%NDEg*FCT%NDEg*FCT%NEQns),stat=IRR)
     if ( IRR/=0 ) then
       write (*,*) '##Error : Not enough memory'
       call HECMW_ABORT(HECMW_COMM_GET_COMM())
       !stop
     endif
-    allocate (INDx(NEQns),stat=IRR)
+    allocate (INDx(FCT%NEQns),stat=IRR)
     if ( IRR/=0 ) then
       write (*,*) '##Error : Not enough memory'
       call HECMW_ABORT(HECMW_COMM_GET_COMM())
       !stop
     endif
     !rmiv
-    ndegl = NDEg*(NDEg+1)
+    ndegl = FCT%NDEg*(FCT%NDEg+1)
     ndegl = ndegl/2
-    ndeg2 = NDEg*NDEg
+    ndeg2 = FCT%NDEg*FCT%NDEg
     !rmiv
-    select case (NDEg)
+    select case (FCT%NDEg)
       case (1)
-        call NUFCT(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+        call NUFCT(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,INDx,TEMp,FCT%NEQns,FCT%PARent,FCT%NCH,FCT%NSTop,Ir)
       case (2)
-        call NUFCT2(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+        call NUFCT2(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,INDx,TEMp,FCT%NEQns,FCT%PARent,FCT%NCH,FCT%NSTop,Ir)
       case (3)
-        call NUFCT3(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+        call NUFCT3(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,INDx,TEMp,FCT%NEQns,FCT%PARent,FCT%NCH,FCT%NSTop,Ir)
       case (6)
-        call NUFCT6(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,Ir)
+        call NUFCT6(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,INDx,TEMp,FCT%NEQns,FCT%PARent,FCT%NCH,FCT%NSTop,Ir)
       case default
-        call NUFCTX(XLNzr,COLno,DSLn,ZLN,DIAg,INDx,TEMp,NEQns,PARent,NCH,NSTop,NDEg,ndegl,Ir)
+        call NUFCTX(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,INDx,TEMp,FCT%NEQns,FCT%PARent,FCT%NCH,FCT%NSTop,&
+             FCT%NDEg,ndegl,Ir)
     endselect
 
-    STAge = 30
+    FCT%STAge = 30
     deallocate (TEMp)
     deallocate (INDx)
   end subroutine NUFCT0
@@ -4496,57 +4462,49 @@ contains
   !           r_h_s    on entry     right hand side vector
   !                    on exit      solution vector
   !           iv       communication array
+  !  updates STAge
   !======================================================================!
-  subroutine NUSOL0(R_h_s,NEQns,NDEg,NSTop,IPErm,XLNzr,COLno,DIAg,ZLN,DSLn,STAge,Ir)
+  subroutine NUSOL0(R_h_s,FCT,Ir)
     implicit none
     !------
-    integer(kind=kint), intent(in):: NEQns
-    integer(kind=kint), intent(in):: NDEg
-    integer(kind=kint), intent(in):: NSTop
-    integer(kind=kint), intent(in):: IPErm(:)
-    integer(kind=kint), intent(in):: XLNzr(:)
-    integer(kind=kint), intent(in):: COLno(:)
-    real(kind=kreal), intent(in):: DIAg(:)
-    real(kind=kreal), intent(in):: ZLN(:)
-    real(kind=kreal), intent(in):: DSLn(:)
-    integer(kind=kint), intent(inout):: STAge
-    integer(kind=kint), intent(out):: Ir
     real(kind=kreal), intent(inout):: R_h_s(:)
+    type (cholesky_factor), intent(inout):: FCT
+    integer(kind=kint), intent(out):: Ir
     !------
     integer(kind=kint):: ndegl
     integer(kind=kint):: ierror
     real(kind=kreal), pointer :: wk(:)
 
-    if ( STAge/=30 .and. STAge/=40 ) then
+    if ( FCT%STAge/=30 .and. FCT%STAge/=40 ) then
       Ir = 50
       return
     else
       Ir = 0
     endif
 
-    allocate (wk(NDEg*NEQns),stat=IERror)
+    allocate (wk(FCT%NDEg*FCT%NEQns),stat=IERror)
     if ( IERror/=0 ) then
       write (*,*) "##Error: not enough memory"
       call HECMW_ABORT(HECMW_COMM_GET_COMM())
     endif
     !rmiv
-    ndegl = NDEg*(NDEg+1)
+    ndegl = FCT%NDEg*(FCT%NDEg+1)
     ndegl = ndegl/2
 
-    select case( NDEg )
+    select case( FCT%NDEg )
       case (1)
-        call NUSOL1(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+        call NUSOL1(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,FCT%IPErm,R_h_s,wk,FCT%NEQns,FCT%NSTop)
       case (2)
-        call NUSOL2(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+        call NUSOL2(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,FCT%IPErm,R_h_s,wk,FCT%NEQns,FCT%NSTop)
       case (3)
-        call NUSOL3(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop)
+        call NUSOL3(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,FCT%IPErm,R_h_s,wk,FCT%NEQns,FCT%NSTop)
       case (6)
-        call NUSOLX(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop,NDEg,ndegl)
+        call NUSOLX(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,FCT%IPErm,R_h_s,wk,FCT%NEQns,FCT%NSTop,FCT%NDEg,ndegl)
       case default
-        call NUSOLX(XLNzr,COLno,DSLn,ZLN,DIAg,IPErm,R_h_s,wk,NEQns,NSTop,NDEg,ndegl)
+        call NUSOLX(FCT%XLNzr,FCT%COLno,FCT%DSLn,FCT%ZLN,FCT%DIAg,FCT%IPErm,R_h_s,wk,FCT%NEQns,FCT%NSTop,FCT%NDEg,ndegl)
     endselect
 
-    STAge = 40
+    FCT%STAge = 40
     deallocate (wk)
   end subroutine NUSOL0
 
