@@ -146,7 +146,6 @@ contains
     endif
     !*  Errors 2
     if ( ir/=0 ) then
-      !WINDEBUG
       write (Ifmsg,*) 'ERROR in nufct0. ir = ', ir
       stop
     endif
@@ -291,17 +290,8 @@ contains
     integer(kind=kint), allocatable :: jcolno(:)
     integer(kind=kint), allocatable :: ia(:)
     integer(kind=kint), allocatable :: ja(:)
-    integer(kind=kint), allocatable :: deg(:)
-    integer(kind=kint), allocatable :: marker(:)
-    integer(kind=kint), allocatable :: rchset(:)
-    integer(kind=kint), allocatable :: nbrhd(:)
-    integer(kind=kint), allocatable :: qsize(:)
-    integer(kind=kint), allocatable :: qlink(:)
-    integer(kind=kint) :: nofsub
-    integer(kind=kint), allocatable :: adjncy(:)
+    integer(kind=kint), allocatable :: quarent(:)
     integer(kind=kint), allocatable :: btree(:)
-    integer(kind=kint), allocatable :: pordr(:)
-    integer(kind=kint), allocatable :: adjncp(:)
     integer(kind=kint), allocatable :: xleaf(:)
     integer(kind=kint), allocatable :: leaf(:)
     integer(kind=kint):: ir1
@@ -309,7 +299,6 @@ contains
     integer(kind=kint):: izz
     integer(kind=kint):: izz0
     integer(kind=kint):: lncol
-    integer(kind=kint):: lnleaf
     integer(kind=kint):: neqnsz
     integer(kind=kint):: ierror
 
@@ -344,7 +333,6 @@ contains
     !
     allocate (IA(FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, ia: SUB. matini"
-    !WINDEBUG
     allocate (JA(2*FCT%NTTbr),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, ja: SUB. matini"
     call STIAJA(FCT%NEQns,IA,JA,JCPt,JCOlno)
@@ -359,31 +347,19 @@ contains
     if ( IERror/=0 ) stop "ALLOCATION ERROR, iperm: SUB. matini"
     allocate (FCT%INVp(FCT%NEQns),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, invp: SUB. matini"
-    allocate (DEG(FCT%NEQns+1),stat=IERror)
-    if ( IERror/=0 ) stop "ALLOCATION ERROR, deg: SUB. matini"
-    allocate (MARker(FCT%NEQns+1),stat=IERror)
-    if ( IERror/=0 ) stop "ALLOCATION ERROR, marker: SUB. matini"
-    allocate (RCHset(0:FCT%NEQns+1),stat=IERror)
-    if ( IERror/=0 ) stop "ALLOCATION ERROR, rchset: SUB. matini"
-    allocate (NBRhd(FCT%NEQns+1),stat=IERror)
-    if ( IERror/=0 ) stop "ALLOCATION ERROR, nbrhd: SUB. matini"
-    allocate (QSIze(FCT%NEQns+1),stat=IERror)
-    if ( IERror/=0 ) stop "ALLOCATION ERROR, qsize: SUB. matini"
-    allocate (QLInk(FCT%NEQns+1),stat=IERror)
-    if ( IERror/=0 ) stop "ALLOCATION ERROR, qlink: SUB. matini"
-    allocate (ADJncy(2*FCT%NTTbr),stat=IERror)
-    if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncy: SUB. matini"
-    call GENQMD(neqnsz,IA,JA,FCT%IPErm,FCT%INVp,DEG,MARker,RCHset,NBRhd,QSIze,QLInk,NOFsub,ADJncy)
+    allocate (Quarent(FCT%NEQns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, quarent: SUB. matini"
+    call GENQMD(neqnsz,FCT%NTTbr,IA,JA,FCT%IPErm,FCT%INVp)
     do
       !   build up the parent vector
-      !   parent vector will be saved in MARker for a while
-      call GENPAQ(IA,JA,FCT%INVp,FCT%IPErm,MARker,FCT%NEQns,RCHset)
+      !   parent vector will be saved in Quarent for a while
+      call GENPAQ(IA,JA,FCT%INVp,FCT%IPErm,Quarent,FCT%NEQns)
       !
       !   build up the binary tree
       !
       allocate (BTRee(2*(FCT%NEQns+1)),stat=IERror)
       if ( IERror/=0 ) stop "ALLOCATION ERROR, btree: SUB. matini"
-      call GENBTQ(FCT%INVp,MARker,BTRee,ZPIv,izz,FCT%NEQns)
+      call GENBTQ(FCT%INVp,Quarent,BTRee,ZPIv,izz,FCT%NEQns)
       !
       !   rotate the binary tree to avoid a zero pivot
       !
@@ -395,30 +371,20 @@ contains
         if ( IERror/=0 ) stop "ALLOCATION ERROR, parent: SUB. matini.f"
         allocate (FCT%NCH(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, nch: SUB. matini.f"
-        allocate (PORdr(FCT%NEQns+1),stat=IERror)
-        if ( IERror/=0 ) stop "ALLOCATION ERROR, pordr: SUB. matini.f"
-        call POSORD(FCT%PARent,BTRee,FCT%INVp,FCT%IPErm,PORdr,FCT%NCH,FCT%NEQns,DEG,MARker,RCHset)
+        call POSORD(FCT%PARent,BTRee,FCT%INVp,FCT%IPErm,FCT%NEQns,Quarent)
         !
         !   generate skelton graph
         !
-        allocate (ADJncp(FCT%NEQns+1),stat=IERror)
-        if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncp: SUB. matini.f"
         allocate (XLEaf(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, xleaf: SUB. matini.f"
         allocate (LEAf(FCT%NTTbr),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, leaf: SUB. matini.f"
-        call GNLEAF(IA,JA,FCT%INVp,FCT%IPErm,FCT%NCH,ADJncp,XLEaf,LEAf,FCT%NEQns,lnleaf)
+        call GNLEAF(IA,JA,FCT%INVp,FCT%IPErm,FCT%NCH,XLEaf,LEAf,FCT%NEQns)
         call FORPAR(FCT%NEQns,FCT%PARent,FCT%NCH,FCT%NSTop)
         !*Deallocation of work arrays
         deallocate (IA)
         deallocate (JA)
-        deallocate (DEG)
-        deallocate (MARker)
-        deallocate (RCHset)
-        deallocate (NBRhd)
-        deallocate (QSIze)
-        deallocate (QLInk)
-        deallocate (ADJncy)
+        deallocate (Quarent)
         deallocate (ZPIv)
         !
         !   build up xlnzr,colno  (this is the symbolic fct.)
@@ -430,8 +396,6 @@ contains
         if ( IERror/=0 ) stop "ALLOCATION ERROR, colno: SUB. matini.f"
         call GNCLNO(FCT%PARent,XLEaf,LEAf,FCT%XLNzr,FCT%COLno,FCT%NEQns,FCT%NSTop,lncol,ir1)
         !*Deallocate work arrays
-        deallocate (PORdr)
-        deallocate (ADJncp)
         deallocate (XLEaf)
         deallocate (LEAf)
         deallocate (BTRee)
@@ -446,9 +410,9 @@ contains
       else
         if ( izz0==0 ) izz0 = izz
         if ( izz0/=izz ) then
-          call BRINGU(ZPIv,FCT%IPErm,FCT%INVp,MARker,izz,FCT%NEQns,IRR)
+          call BRINGU(ZPIv,FCT%IPErm,FCT%INVp,Quarent,izz,FCT%NEQns,IRR)
         else
-          call ROTATE(IA,JA,FCT%INVp,FCT%IPErm,MARker,BTRee,izz,FCT%NEQns,NBRhd,QSIze,IRR)
+          call ROTATE(IA,JA,FCT%INVp,FCT%IPErm,Quarent,BTRee,izz,FCT%NEQns,IRR)
         endif
       endif
     enddo
@@ -626,23 +590,23 @@ contains
   !======================================================================!
   !> @brief GENQMD
   !======================================================================!
-  subroutine GENQMD(Neqns,Xadj,Adj0,Perm,Invp,Deg,Marker,Rchset,Nbrhd,Qsize,Qlink,Nofsub,Adjncy)
+  subroutine GENQMD(Neqns,Nttbr,Xadj,Adj0,Perm,Invp)
     implicit none
     !------
     integer(kind=kint), intent(in):: Neqns
+    integer(kind=kint), intent(in):: Nttbr
     integer(kind=kint), intent(in):: Adj0(:)
     integer(kind=kint), intent(in):: Xadj(:)
-    integer(kind=kint), intent(out):: Nofsub
-    integer(kind=kint), intent(out):: Adjncy(:)
     integer(kind=kint), intent(out):: Perm(:)
     integer(kind=kint), intent(out):: Invp(:)
-    integer(kind=kint), intent(out):: Deg(:)
-    integer(kind=kint), intent(out):: Marker(:)
-    integer(kind=kint), intent(out):: Rchset(:)
-    integer(kind=kint), intent(out):: Nbrhd(:)
-    integer(kind=kint), intent(out):: Qsize(:)
-    integer(kind=kint), intent(out):: Qlink(:)
     !------
+    integer(kind=kint), allocatable:: Deg(:)
+    integer(kind=kint), allocatable:: Marker(:)
+    integer(kind=kint), allocatable:: Rchset(:)
+    integer(kind=kint), allocatable:: Nbrhd(:)
+    integer(kind=kint), allocatable:: Qsize(:)
+    integer(kind=kint), allocatable:: Qlink(:)
+    integer(kind=kint), allocatable:: Adjncy(:)
     integer(kind=kint):: inode
     integer(kind=kint):: ip
     integer(kind=kint):: irch
@@ -658,10 +622,25 @@ contains
     integer(kind=kint):: rchsze
     integer(kind=kint):: search
     integer(kind=kint):: thresh
+    integer(kind=kint):: ierror
     logical:: found
 
+    allocate (DEG(NEQns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, deg: SUB. genqmd"
+    allocate (MARker(NEQns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, marker: SUB. genqmd"
+    allocate (RCHset(NEQns+2),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, rchset: SUB. genqmd"
+    allocate (NBRhd(NEQns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, nbrhd: SUB. genqmd"
+    allocate (QSIze(NEQns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, qsize: SUB. genqmd"
+    allocate (QLInk(NEQns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, qlink: SUB. genqmd"
+    allocate (ADJncy(2*NTTbr),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncy: SUB. genqmd"
+
     mindeg = Neqns
-    Nofsub = 0
     Adjncy(1:Xadj(Neqns+1) - 1) = Adj0(1:Xadj(Neqns+1) - 1)
     do node = 1, Neqns
       Perm(node) = node
@@ -697,7 +676,6 @@ contains
         if (.not. found) cycle loop1
 
         search = j
-        Nofsub = Nofsub + Deg(node)
         Marker(node) = 1
         call QMDRCH(node,Xadj,Adjncy,Deg,Marker,rchsze,Rchset,nhdsze,Nbrhd)
         nxnode = node
@@ -738,6 +716,14 @@ contains
       enddo loop2
       exit
     enddo loop1
+
+    deallocate (DEG)
+    deallocate (MARker)
+    deallocate (RCHset)
+    deallocate (NBRhd)
+    deallocate (QSIze)
+    deallocate (QLInk)
+    deallocate (ADJncy)
   end subroutine GENQMD
 
   !======================================================================!
@@ -1058,7 +1044,7 @@ contains
   !======================================================================!
   !> @brief GENPAQ
   !======================================================================!
-  subroutine GENPAQ(Xadj,Adjncy,Invp,Iperm,Parent,Neqns,Ancstr)
+  subroutine GENPAQ(Xadj,Adjncy,Invp,Iperm,Parent,Neqns)
     implicit none
     !------
     integer(kind=kint), intent(in):: Neqns
@@ -1067,13 +1053,17 @@ contains
     integer(kind=kint), intent(in):: Invp(:)
     integer(kind=kint), intent(in):: Iperm(:)
     integer(kind=kint), intent(out):: Parent(:)
-    integer(kind=kint), intent(out):: Ancstr(:)
     !------
+    integer(kind=kint), allocatable:: Ancstr(:)
     integer(kind=kint):: i
     integer(kind=kint):: ip
     integer(kind=kint):: it
     integer(kind=kint):: k
     integer(kind=kint):: l
+    integer(kind=kint):: ierror
+
+    allocate (Ancstr(Neqns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, ancstr: SUB. genpaq"
 
     do i = 1, Neqns
       Parent(i) = 0
@@ -1102,6 +1092,8 @@ contains
       write (6,"(' parent')")
       write (6,"(2I6)") (i,Parent(i),i=1,Neqns)
     endif
+
+    deallocate(Ancstr)
   end subroutine GENPAQ
 
   !======================================================================!
@@ -1167,20 +1159,20 @@ contains
   !======================================================================!
   !> @brief POSORD
   !======================================================================!
-  subroutine POSORD(Parent,Btree,Invp,Iperm,Pordr,Nch,Neqns,Iw,Qarent,Mch)
+  subroutine POSORD(Parent,Btree,Invp,Iperm,Neqns,Qarent)
     implicit none
     !------
     integer(kind=kint), intent(in):: Neqns
     integer(kind=kint), intent(in):: Btree(2,*)
     integer(kind=kint), intent(in):: Qarent(:)
     integer(kind=kint), intent(out):: Parent(:)
-    integer(kind=kint), intent(out):: Pordr(:)
-    integer(kind=kint), intent(out):: Nch(:)
     integer(kind=kint), intent(inout):: Invp(:)
     integer(kind=kint), intent(out):: Iperm(:)
-    integer(kind=kint), intent(out):: Iw(:)
-    integer(kind=kint), intent(out):: Mch(0:Neqns+1)
     !------
+    integer(kind=kint), allocatable:: Pordr(:)
+    integer(kind=kint), allocatable:: Nch(:)
+    integer(kind=kint), allocatable:: Iw(:)
+    integer(kind=kint), allocatable:: Mch(:)
     integer(kind=kint):: i
     integer(kind=kint):: ii
     integer(kind=kint):: invpos
@@ -1189,6 +1181,16 @@ contains
     integer(kind=kint):: l
     integer(kind=kint):: locc
     integer(kind=kint):: locp
+    integer(kind=kint):: ierror
+
+    allocate (Pordr(Neqns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, pordr: SUB. posord"
+    allocate (Nch(Neqns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, nch: SUB. posord"
+    allocate (Iw(Neqns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, iw: SUB. posord"
+    allocate (Mch(0:Neqns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, mch: SUB. posord"
 
     Mch(1:Neqns) = 0
     Pordr(1:Neqns) = 0
@@ -1243,12 +1245,17 @@ contains
         enddo
       endif
     enddo
+
+    deallocate (Pordr)
+    deallocate (Nch)
+    deallocate (Iw)
+    deallocate (Mch)
   end subroutine POSORD
 
   !======================================================================!
   !> @brief GNLEAF
   !======================================================================!
-  subroutine GNLEAF(Xadj,Adjncy,Invp,Iperm,Nch,Adjncp,Xleaf,Leaf,Neqns,Lnleaf)
+  subroutine GNLEAF(Xadj,Adjncy,Invp,Iperm,Nch,Xleaf,Leaf,Neqns)
     implicit none
     !------
     integer(kind=kint), intent(in):: Neqns
@@ -1257,11 +1264,11 @@ contains
     integer(kind=kint), intent(in):: Nch(:)
     integer(kind=kint), intent(in):: Invp(:)
     integer(kind=kint), intent(in):: Iperm(:)
-    integer(kind=kint), intent(out):: Lnleaf
-    integer(kind=kint), intent(out):: Adjncp(:)
     integer(kind=kint), intent(out):: Xleaf(:)
     integer(kind=kint), intent(out):: Leaf(:)
     !------
+    integer(kind=kint), allocatable:: Adjncp(:)
+    integer(kind=kint):: Lnleaf
     integer(kind=kint):: i
     integer(kind=kint):: ik
     integer(kind=kint):: ip
@@ -1272,6 +1279,10 @@ contains
     integer(kind=kint):: lc
     integer(kind=kint):: lc1
     integer(kind=kint):: m
+    integer(kind=kint):: ierror
+
+    allocate (Adjncp(Neqns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, adjncp: SUB. gnleaf"
 
     l = 1
     ik = 0
@@ -1317,6 +1328,7 @@ contains
       write (6,"(10I6)") (Leaf(i),i=1,Lnleaf)
     endif
 
+    deallocate (Adjncp)
     return
   end subroutine GNLEAF
 
@@ -1560,7 +1572,7 @@ contains
   !                     irr=1          is a bottom node then rotation is
   !                                    performed
   !======================================================================!
-  subroutine ROTATE(Xadj,Adjncy,Invp,Iperm,Parent,Btree,Izz,Neqns,Anc,Adjt,Irr)
+  subroutine ROTATE(Xadj,Adjncy,Invp,Iperm,Parent,Btree,Izz,Neqns,Irr)
     implicit none
     !------
     integer(kind=kint), intent(in):: Izz
@@ -1572,9 +1584,9 @@ contains
     integer(kind=kint), intent(out):: Irr
     integer(kind=kint), intent(inout):: Invp(:)
     integer(kind=kint), intent(inout):: Iperm(:)
-    integer(kind=kint), intent(out):: Anc(:)
-    integer(kind=kint), intent(out):: Adjt(:)
     !------
+    integer(kind=kint), allocatable:: Anc(:)
+    integer(kind=kint), allocatable:: Adjt(:)
     integer(kind=kint):: i
     integer(kind=kint):: iy
     integer(kind=kint):: izzz
@@ -1584,6 +1596,12 @@ contains
     integer(kind=kint):: ll
     integer(kind=kint):: locc
     integer(kind=kint):: nanc
+    integer(kind=kint):: ierror
+
+    allocate (Anc(Neqns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, anc: SUB. rotate"
+    allocate (Adjt(Neqns+1),stat=IERror)
+    if ( IERror/=0 ) stop "ALLOCATION ERROR, adjt: SUB. rotate"
 
     if ( Izz==0 ) then
       Irr = 0
@@ -1706,6 +1724,9 @@ contains
       enddo
       exit
     enddo loop1
+
+    deallocate (Anc)
+    deallocate (Adjt)
   end subroutine ROTATE
 
   !======================================================================!
