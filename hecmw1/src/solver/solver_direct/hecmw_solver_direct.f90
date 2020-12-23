@@ -1767,8 +1767,7 @@ contains
       !*Diagonal
       kk = kk + 1
       call VLCPY(val,hecMAT%D(ndof2*(j-1)+1:ndof2*j),ndof)
-      call STAIJ1(0,j,j,val,FCT%NEQns,FCT%NDEg,FCT%LEN_colno,FCT%NSTop,FCT%LEN_dsln,FCT%INVp,FCT%XLNzr,FCT%COLno,&
-           FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%RALoc,FCT%STAge,Ir)
+      call STAIJ1(0,j,j,val,FCT,Ir)
 
       do i = 1, ndof
         if ( val((i-1)*ndof+i)<=0 ) write (idbg,*) 'j,j,val:', j, i, val((i-1)*ndof+i)
@@ -1779,8 +1778,7 @@ contains
         i = hecMAT%ITEML(k)
         kk = kk + 1
         call VLCPY(val,hecMAT%AL(ndof2*(k-1)+1:ndof2*k),ndof)
-        call STAIJ1(0,j,i,val,FCT%NEQns,FCT%NDEg,FCT%LEN_colno,FCT%NSTop,FCT%LEN_dsln,FCT%INVp,FCT%XLNzr,FCT%COLno,&
-             FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%RALoc,FCT%STAge,Ir)
+        call STAIJ1(0,j,i,val,FCT,Ir)
       enddo
     enddo
 
@@ -1815,27 +1813,17 @@ contains
   !          aij      value
   !      (o)
   !          iv       communication array
+  !  sets DIAg, ZLN, DSLn
+  !  updates RALoc, STAge
   !======================================================================!
-  subroutine STAIJ1(Isw,I,J,Aij,NEQns,NDEg,LEN_colno,NSTop,LEN_dsln,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,RALoc,STAge,Ir)
+  subroutine STAIJ1(Isw,I,J,Aij,FCT,Ir)
     implicit none
     !------
     integer(kind=kint), intent(in):: I
     integer(kind=kint), intent(in):: Isw
     integer(kind=kint), intent(in):: J
-    real(kind=kreal), intent(in):: Aij(NDEg*NDEg)
-    integer(kind=kint), intent(in):: NEQns
-    integer(kind=kint), intent(in):: NDEg
-    integer(kind=kint), intent(in):: LEN_colno
-    integer(kind=kint), intent(in):: NSTop
-    integer(kind=kint), intent(in):: LEN_dsln
-    integer(kind=kint), intent(in):: INVp(:)
-    integer(kind=kint), intent(in):: XLNzr(:)
-    integer(kind=kint), intent(in):: COLno(:)
-    real(kind=kreal), pointer :: DIAg(:)
-    real(kind=kreal), pointer :: ZLN(:)
-    real(kind=kreal), pointer :: DSLn(:)
-    integer(kind=kint), intent(inout):: RALoc
-    integer(kind=kint), intent(inout):: STAge
+    real(kind=kreal), intent(in):: Aij(:)
+    type (cholesky_factor), intent(inout):: FCT
     integer(kind=kint), intent(out):: Ir
     !------
     integer(kind=kint):: ndeg2
@@ -1843,46 +1831,46 @@ contains
     integer(kind=kint):: ierror
 
     Ir = 0
-    ndeg2 = NDEg*NDEg
-    ndeg2l = NDEg*(NDEg+1)/2
-    if ( STAge==30 ) write (6,*) 'warning a matrix was build up '//'but never solved.'
-    if ( STAge==10 ) then
-      allocate (DIAg(NEQns*ndeg2l),stat=IERror)
+    ndeg2 = FCT%NDEg*FCT%NDEg
+    ndeg2l = FCT%NDEg*(FCT%NDEg+1)/2
+    if ( FCT%STAge==30 ) write (6,*) 'warning a matrix was build up '//'but never solved.'
+    if ( FCT%STAge==10 ) then
+      allocate (FCT%DIAg(FCT%NEQns*ndeg2l),stat=IERror)
       if ( IERror/=0 ) stop "Allocation error diag"
-      RALoc = RALoc + NEQns*ndeg2l
+      FCT%RALoc = FCT%RALoc + FCT%NEQns*ndeg2l
 
-      allocate (ZLN(LEN_colno*ndeg2),stat=IERror)
+      allocate (FCT%ZLN(FCT%LEN_colno*ndeg2),stat=IERror)
       if ( IERror/=0 ) stop "Allocation error zln"
-      RALoc = RALoc + LEN_colno*ndeg2
+      FCT%RALoc = FCT%RALoc + FCT%LEN_colno*ndeg2
 
-      allocate (DSLn(LEN_dsln*ndeg2),stat=IERror)
+      allocate (FCT%DSLn(FCT%LEN_dsln*ndeg2),stat=IERror)
       if ( IERror/=0 ) stop "Allocation error dsln"
-      RALoc = RALoc + LEN_dsln*ndeg2
+      FCT%RALoc = FCT%RALoc + FCT%LEN_dsln*ndeg2
     endif
-    if ( STAge/=20 ) then
+    if ( FCT%STAge/=20 ) then
       !
       ! for diagonal
       !
-      DIAg = 0.
+      FCT%DIAg = 0.
       !
       ! for lower triangle
       !
-      ZLN = 0.
+      FCT%ZLN = 0.
       !
       ! for dense window
       !
-      DSLn = 0.
+      FCT%DSLn = 0.
 
-      STAge = 20
+      FCT%STAge = 20
     endif
     !         Print *,'********Set Stage 20 *********'
     !
-    if ( NDEg<=2 ) then
-      call ADDR0(Isw,I,J,Aij,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,NSTop,ndeg2,ndeg2l,Ir)
-    elseif ( NDEg==3 ) then
-      call ADDR3(I,J,Aij,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,NSTop,Ir)
+    if ( FCT%NDEg<=2 ) then
+      call ADDR0(Isw,I,J,Aij,FCT%INVp,FCT%XLNzr,FCT%COLno,FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%NSTop,ndeg2,ndeg2l,Ir)
+    elseif ( FCT%NDEg==3 ) then
+      call ADDR3(I,J,Aij,FCT%INVp,FCT%XLNzr,FCT%COLno,FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%NSTop,Ir)
     else
-      call ADDRX(I,J,Aij,INVp,XLNzr,COLno,DIAg,ZLN,DSLn,NSTop,NDEg,ndeg2l,Ir)
+      call ADDRX(I,J,Aij,FCT%INVp,FCT%XLNzr,FCT%COLno,FCT%DIAg,FCT%ZLN,FCT%DSLn,FCT%NSTop,FCT%NDEg,ndeg2l,Ir)
     endif
   end subroutine STAIJ1
 
