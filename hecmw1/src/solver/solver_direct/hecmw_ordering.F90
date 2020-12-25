@@ -18,6 +18,8 @@ module hecmw_ordering
   integer(kind=kint), parameter:: ORDERING_QMD     = 1
   integer(kind=kint), parameter:: ORDERING_METIS   = 2
 
+  integer(kind=kint), parameter:: DEBUG = 0
+
 contains
 
   !======================================================================!
@@ -54,6 +56,52 @@ contains
     case(ORDERING_METIS)
       call hecmw_ordering_METIS_NodeND(Neqns,Xadj,Adj0,Perm,Invp)
     end select
+    if (DEBUG > 0) then
+      call write_nonzero_profile(Neqns, Xadj, Adj0, perm, invp)
+      call write_perm(Neqns, perm, invp)
+    endif
   end subroutine hecmw_ordering_gen
+
+  subroutine write_nonzero_profile(N, index, item, perm, iperm)
+    implicit none
+    integer(kind=kint), intent(in) :: N
+    integer(kind=kint), intent(in) :: index(:)
+    integer(kind=kint), intent(in) :: item(:)
+    integer(kind=kint), intent(in) :: perm(:), iperm(:)
+    integer(kind=kint), parameter :: F_ORG = 901
+    integer(kind=kint), parameter :: F_NEW = 902
+    integer(kind=kint) :: i, j, irow, jcol
+    open(F_ORG, file='nzprof_org.txt', status='replace')
+    do irow = 1, N
+      i = irow
+      do j = index(i), index(i+1)-1
+        jcol = item(j)
+        write(F_ORG,*) irow, jcol
+      end do
+    end do
+    close(F_ORG)
+    open(F_NEW, file='nzprof_new.txt', status='replace')
+    do irow = 1, N
+      i = perm(irow)
+      do j = index(i), index(i+1)-1
+        jcol = item(j)
+        write(F_NEW,*) irow, iperm(jcol)
+      end do
+    end do
+    close(F_NEW)
+  end subroutine write_nonzero_profile
+
+  subroutine write_perm(N, perm, iperm)
+    implicit none
+    integer(kind=kint), intent(in) :: N
+    integer(kind=kint), intent(in) :: perm(:), iperm(:)
+    integer(kind=kint), parameter :: F_PERM = 903
+    integer(kind=kint) :: i
+    open(F_PERM, file='perm_iperm.txt', status='replace')
+    do i = 1, N
+      write(F_PERM,*) perm(i), iperm(i)
+    end do
+    close(F_PERM)
+  end subroutine write_perm
 
 end module hecmw_ordering
