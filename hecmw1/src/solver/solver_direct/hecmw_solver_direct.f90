@@ -371,7 +371,7 @@ contains
         if ( IERror/=0 ) stop "ALLOCATION ERROR, parent: SUB. matini.f"
         allocate (FCT%NCH(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, nch: SUB. matini.f"
-        call POSORD(FCT%PARent,BTRee,FCT%INVp,FCT%IPErm,FCT%NEQns,Quarent)
+        call POSORD(FCT%PARent,BTRee,FCT%INVp,FCT%IPErm,FCT%NCH,FCT%NEQns,Quarent)
         !
         !   generate skelton graph
         !
@@ -1159,7 +1159,7 @@ contains
   !======================================================================!
   !> @brief POSORD
   !======================================================================!
-  subroutine POSORD(Parent,Btree,Invp,Iperm,Neqns,Qarent)
+  subroutine POSORD(Parent,Btree,Invp,Iperm,Nch,Neqns,Qarent)
     implicit none
     !------
     integer(kind=kint), intent(in):: Neqns
@@ -1168,9 +1168,9 @@ contains
     integer(kind=kint), intent(out):: Parent(:)
     integer(kind=kint), intent(inout):: Invp(:)
     integer(kind=kint), intent(out):: Iperm(:)
+    integer(kind=kint), intent(out):: Nch(:)
     !------
     integer(kind=kint), allocatable:: Pordr(:)
-    integer(kind=kint), allocatable:: Nch(:)
     integer(kind=kint), allocatable:: Iw(:)
     integer(kind=kint), allocatable:: Mch(:)
     integer(kind=kint):: i
@@ -1185,8 +1185,6 @@ contains
 
     allocate (Pordr(Neqns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, pordr: SUB. posord"
-    allocate (Nch(Neqns+1),stat=IERror)
-    if ( IERror/=0 ) stop "ALLOCATION ERROR, nch: SUB. posord"
     allocate (Iw(Neqns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, iw: SUB. posord"
     allocate (Mch(0:Neqns+1),stat=IERror)
@@ -1247,7 +1245,6 @@ contains
     enddo
 
     deallocate (Pordr)
-    deallocate (Nch)
     deallocate (Iw)
     deallocate (Mch)
   end subroutine POSORD
