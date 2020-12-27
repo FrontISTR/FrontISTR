@@ -73,6 +73,7 @@ contains
     integer(kind=kint):: timelog
     integer(kind=kint):: iterlog
     integer(kind=kint):: ordering
+    integer(kind=kint):: loglevel
     integer(kind=kint):: ir
     integer(kind=kint):: i
     real(kind=kreal):: t1
@@ -86,6 +87,7 @@ contains
     timelog = hecMAT%IARRAY(22)
     iterlog = hecMAT%IARRAY(21)
     ordering = hecMAT%IARRAY(41)
+    loglevel = max(timelog,iterlog)
 
     call HECMW_MAT_DUMP(hecMAT,hecMESH)
 
@@ -99,10 +101,10 @@ contains
       call SETIJ(hecMESH,hecMAT,FCT)
 
       !* Symbolic factorization
-      call MATINI(FCT,ordering,ir)
+      call MATINI(FCT,ordering,loglevel,ir)
       hecMAT%IARRAY(98) = 0
 
-      if ( timelog > 0 .or. iterlog > 0 ) write (*,*) "[DIRECT]: symbolic fct done"
+      if ( loglevel > 0  ) write (*,*) "[DIRECT]: symbolic fct done"
     endif
     call PTIME(t2)
     t3 = t2
@@ -117,10 +119,10 @@ contains
       call NUFCT0(FCT,ir)
       hecMAT%IARRAY(97) = 0
 
-      if ( timelog > 0 .or. iterlog > 0 ) write (*,*) "[DIRECT]: numeric fct done"
+      if ( loglevel > 0 ) write (*,*) "[DIRECT]: numeric fct done"
 
       !*Memory Details
-      if ( timelog > 1 ) then
+      if ( loglevel > 1 ) then
         write (*,*) '*-----------------------------------*'
         write (*,*) '|   Direct  Solver  Memory  Usage   |'
         write (*,*) '*-----------------------------------*'
@@ -280,12 +282,13 @@ contains
   !  sets LEN_colno, NSTop, LEN_dsln, IPErm, INVp, PARent, NCH, XLNzr, COLno
   !       IALoc, RALoc, STAge
   !======================================================================!
-  subroutine MATINI(FCT,ordering,Ir)
+  subroutine MATINI(FCT,ordering,loglevel,Ir)
     use hecmw_ordering
     implicit none
     !------
     type (cholesky_factor), intent(inout) :: FCT
     integer(kind=kint), intent(in):: ordering
+    integer(kind=kint), intent(in):: loglevel
     integer(kind=kint), intent(out):: Ir
     !------
     !*Work arrays
@@ -353,7 +356,7 @@ contains
     if ( IERror/=0 ) stop "ALLOCATION ERROR, invp: SUB. matini"
     allocate (Quarent(FCT%NEQns+1),stat=IERror)
     if ( IERror/=0 ) stop "ALLOCATION ERROR, quarent: SUB. matini"
-    call hecmw_ordering_GEN(neqnsz,FCT%NTTbr,IA,JA,FCT%IPErm,FCT%INVp,ordering)
+    call hecmw_ordering_GEN(neqnsz,FCT%NTTbr,IA,JA,FCT%IPErm,FCT%INVp,ordering,loglevel)
     do
       !   build up the parent vector
       !   parent vector will be saved in Quarent for a while

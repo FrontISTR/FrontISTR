@@ -17,6 +17,8 @@ module hecmw_ordering
   integer(kind=kint), parameter:: ORDERING_DEFAULT = 0
   integer(kind=kint), parameter:: ORDERING_QMD     = 1
   integer(kind=kint), parameter:: ORDERING_METIS   = 2
+  integer(kind=kint), parameter:: ORDERING_RCM     = 3
+  integer(kind=kint), parameter:: ORDERING_NMAX    = 3
 
   integer(kind=kint), parameter:: DEBUG = 0
 
@@ -25,9 +27,10 @@ contains
   !======================================================================!
   !> @brief hecmw_ordering_gen
   !======================================================================!
-  subroutine hecmw_ordering_gen(Neqns,Nttbr,Xadj,Adj0,Perm,Invp,opt)
+  subroutine hecmw_ordering_gen(Neqns,Nttbr,Xadj,Adj0,Perm,Invp,opt,loglevel)
     use hecmw_ordering_qmd
     use hecmw_ordering_metis
+    use hecmw_ordering_rcm
     implicit none
     !------
     integer(kind=kint), intent(in):: Neqns
@@ -35,12 +38,13 @@ contains
     integer(kind=kint), intent(in):: Adj0(:)
     integer(kind=kint), intent(in):: Xadj(:)
     integer(kind=kint), intent(in):: opt
+    integer(kind=kint), intent(in):: loglevel
     integer(kind=kint), intent(out):: Perm(:)
     integer(kind=kint), intent(out):: Invp(:)
     !------
     integer(kind=kint):: ordering
     ordering = opt
-    if (ordering < 0 .or. ordering > 2) then
+    if (ordering < 0 .or. ordering > ORDERING_NMAX) then
       stop "ERROR ordering option for direct solver out of range"
     endif
     if (ordering == ORDERING_DEFAULT) then
@@ -52,9 +56,14 @@ contains
     endif
     select case (ordering)
     case(ORDERING_QMD)
+      if (loglevel > 0) write(*,*) 'Ordering method: QMD'
       call hecmw_ordering_GENQMD(Neqns,Nttbr,Xadj,Adj0,Perm,Invp)
     case(ORDERING_METIS)
+      if (loglevel > 0) write(*,*) 'Ordering method: METIS_NodeND'
       call hecmw_ordering_METIS_NodeND(Neqns,Xadj,Adj0,Perm,Invp)
+    case(ORDERING_RCM)
+      if (loglevel > 0) write(*,*) 'Ordering method: RCM'
+      call hecmw_ordering_GENRCM(Neqns,Xadj,Adj0,Perm,Invp)
     end select
     if (DEBUG > 0) then
       call write_nonzero_profile(Neqns, Xadj, Adj0, perm, invp)
