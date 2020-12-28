@@ -168,6 +168,8 @@ contains
     else if( precond == 5 ) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiii ', solver_opt1, solver_opt2, solver_opt3, &
         & solver_opt4, solver_opt5, solver_opt6 )/= 0) return
+    else if( method == 101 ) then
+      if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt1 )/= 0) return
     end if
 
     iterlog = iter -1

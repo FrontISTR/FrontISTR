@@ -280,7 +280,9 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	# with METIS / with ParMETIS
 	#
-	if [ ${WITHMETIS} -eq 0 ]; then
+	if [ ${WITHMETIS} -eq 1 ]; then
+		F90FLAGS="${F90FLAGS} -DHECMW_WITH_METIS -DHECMW_METIS_VER=${HECMW_METIS_VER}"
+	else
 		METISDIR=""
 		METISLIBDIR=""
 		METISINCDIR=""
