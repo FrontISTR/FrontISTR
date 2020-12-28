@@ -80,6 +80,7 @@ OBJS =
 OBJSF = \
 	hecmw_ordering_qmd.@f90objfilepostfix@ \
 	hecmw_ordering_metis.@f90objfilepostfix@ \
+	hecmw_ordering_rcm.@f90objfilepostfix@ \
 	hecmw_ordering.@f90objfilepostfix@ \
 	hecmw_solver_direct.@f90objfilepostfix@
 
