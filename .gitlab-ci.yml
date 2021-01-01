@@ -150,13 +150,14 @@ docker:fistr1:
     - docker
 
 binary:x86_64-w64-mingw32:
-    image: ${REGISTRY}/x86_64-w64-mingw32-lib
+    image: ${REGISTRY}/x86_64-w64-mingw32/lib
     stage: build_for_deploy
     needs: []
     script:
+        - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
         - LIB_ROOT=/usr/local/x86_64-w64-mingw32
         - cmake  -Bbuild -H.
-            -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/x86_64-w64-mingw32.cmake
+            -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake
             -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
             -DCMAKE_EXE_LINKER_FLAGS="-static -static-libstdc++ -static-libgcc -lstdc++ -lgcc -lwinpthread"
             -DMUMPS_INCLUDE_PATH=${LIB_ROOT}/include
@@ -186,22 +187,22 @@ binary:x86_64-w64-mingw32:
         expire_in: 100min
 
 binary:x86_64-w64-mingw32-msmpi:
-    image: ${REGISTRY}/x86_64-w64-mingw32-mpilib
+    image: ${REGISTRY}/x86_64-w64-mingw32/mpilib
     stage: build_for_deploy
     needs: []
     script:
+        - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
         - LIB_ROOT=/usr/local/x86_64-w64-mingw32
         - cmake  -Bbuild -H.
-            -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/x86_64-w64-mingw32.cmake
+            -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake
             -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
             -DCMAKE_EXE_LINKER_FLAGS="-static -static-libstdc++ -static-libgcc -lstdc++ -lgcc -lwinpthread"
-            -DCMAKE_CXX_STANDARD_LIBRARIES=${LIB_ROOT}/lib/libmsmpi.a
-            -DMPI_C_INCLUDE_PATH=${LIB_ROOT}/include
-            -DMPI_C_LIBRARIES=${LIB_ROOT}/lib/libmsmpi.a
-            -DMPI_CXX_INCLUDE_PATH=${LIB_ROOT}/include
-            -DMPI_CXX_LIBRARIES=${LIB_ROOT}/lib/libmsmpi.a
-            -DMPI_Fortran_INCLUDE_PATH=${LIB_ROOT}/include
-            -DMPI_Fortran_LIBRARIES=${LIB_ROOT}/lib/libmsmpi.a
+            -DMPI_msmpi_LIBRARY=${LIB_ROOT}/lib/libmsmpi.a
+            -DMPI_msmpifec_LIBRARY=${LIB_ROOT}/lib/libmsmpi.a
+            -DMPI_C_HEADER_DIR=${LIB_ROOT}/include
+            -DMPI_CXX_HEADER_DIR=${LIB_ROOT}/include
+            -DMPI_Fortran_F77_HEADER_DIR=${LIB_ROOT}/include
+            -DMPI_mpifptr_INCLUDE_DIR=${LIB_ROOT}/include
             -DMUMPS_INCLUDE_PATH=${LIB_ROOT}/include
             -DMUMPS_D_LIB=${LIB_ROOT}/lib/libdmumps.a
             -DMUMPS_PORD_LIB=${LIB_ROOT}/lib/libpord.a
