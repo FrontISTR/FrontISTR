@@ -14,9 +14,11 @@ build:
 lib:
 	docker build -t $(CI_REGISTRY_IMAGE)/lib               . --target lib
 	docker build -t $(CI_REGISTRY_IMAGE)/lib:trilinos12    . --target lib-trilinos12
+	docker build -t $(CI_REGISTRY_IMAGE)/lib:metis4        . --target lib-metis4
 mpilib:
 	docker build -t $(CI_REGISTRY_IMAGE)/mpilib            . --target mpilib
 	docker build -t $(CI_REGISTRY_IMAGE)/mpilib:trilinos12 . --target mpilib-trilinos12
+	docker build -t $(CI_REGISTRY_IMAGE)/mpilib:metis4     . --target mpilib-metis4
 
 push: login build lib mpilib
 	docker push $(CI_REGISTRY_IMAGE)/build

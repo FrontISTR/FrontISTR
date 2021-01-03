@@ -109,7 +109,57 @@ FROM lib2 AS lib-trilinos12
 RUN export target=x86_64-w64-mingw32 \
  && export LIB_ROOT=/usr/local/$target \
  && cd /tmp \
- && git clone --depth 1 -b trilinos-release-13-0-1 https://github.com/trilinos/Trilinos.git \
+ && git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git \
+ && cd Trilinos \
+ && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && mkdir build; cd build \
+ && cmake \
+  -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake \
+  -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DCMAKE_CXX_FLAGS_NONE_OVERRIDE=-fopenmp \
+  -DTPL_BLAS_LIBRARIES=$LIB_ROOT/lib/libopenblas.a \
+  -DTPL_LAPACK_LIBRARIES=$LIB_ROOT/lib/libopenblas.a \
+  -DTPL_METIS_LIBRARIES=$LIB_ROOT/lib/libmetis.a \
+  -DTPL_METIS_INCLUDE_DIRS=$LIB_ROOT/include \
+  -DTPL_MUMPS_LIBRARIES=$LIB_ROOT/lib/libdmumps.a \
+  -DTPL_MUMPS_INCLUDE_DIRS=$LIB_ROOT/include \
+  -DTPL_ENABLE_METIS=ON \
+  -DTPL_ENABLE_MUMPS=ON \
+  -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+  -DTrilinos_ENABLE_TriKota=OFF \
+  -DTrilinos_ENABLE_ML=ON \
+  -DTrilinos_ENABLE_Zoltan=ON \
+  -DTrilinos_ENABLE_OpenMP=ON \
+  -DTrilinos_ENABLE_Amesos=OFF \
+  -DTPL_ENABLE_DLlib=OFF \
+  -DMETIS_LIBRARY_DIRS=$LIB_ROOT/lib \
+  -DMUMPS_LIBRARY_DIRS=$LIB_ROOT/lib \
+  -DBLAS_LIBRARY_DIRS=$LIB_ROOT/lib \
+  -DLAPACK_LIBRARY_DIRS=$LIB_ROOT/lib \
+  -DBLAS_LIBRARY_NAMES="openblas" \
+  -DLAPACK_LIBRARY_NAMES="openblas" \
+  -DTrilinos_ENABLE_Fortran=OFF \
+  .. \
+ && make -j \
+ && make install \
+ && cd .. \
+ && rm -fr /tmp/*
+
+FROM lib2 AS lib-metis4
+RUN export target=x86_64-w64-mingw32 \
+ && export LIB_ROOT=/usr/local/$target \
+ && cd /tmp \
+ && curl -O http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.gz \
+ && tar xvf metis-4.0.3.tar.gz \
+ && cd metis-4.0.3 \
+ && sed -e 's/CC = cc/CC = x86_64-w64-mingw32-gcc/' -i Makefile.in \
+ && sed -e 's/COPTIONS = /COPTIONS = -D__VC__/' -i Makefile.in \
+ && make -C Lib -j \
+ && cp libmetis.a $LIB_ROOT/lib/ \
+ && find Lib -name "*.h"|xargs -i cp {} $LIB_ROOT/include/ \
+ && cd .. \
+ && git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git \
  && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
  && mkdir build; cd build \
@@ -227,7 +277,7 @@ FROM mpilib2 AS mpilib-trilinos12
 RUN export target=x86_64-w64-mingw32 \
  && export LIB_ROOT=/usr/local/$target \
  && cd /tmp \
- && git clone --depth 1 -b trilinos-release-13-0-1 https://github.com/trilinos/Trilinos.git \
+ && git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git \
  && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
  && mkdir build; cd build \
@@ -265,5 +315,56 @@ RUN export target=x86_64-w64-mingw32 \
  && cd .. \
  && rm -fr /tmp/*
 
+FROM mpilib2 AS mpilib-metis4
+RUN export target=x86_64-w64-mingw32 \
+ && export LIB_ROOT=/usr/local/$target \
+ && cd /tmp \
+ && cd /tmp \
+ && curl -O http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.gz \
+ && tar xvf metis-4.0.3.tar.gz \
+ && cd metis-4.0.3 \
+ && sed -e 's/CC = cc/CC = x86_64-w64-mingw32-gcc/' -i Makefile.in \
+ && sed -e 's/COPTIONS = /COPTIONS = -D__VC__/' -i Makefile.in \
+ && make -C Lib -j \
+ && cp libmetis.a $LIB_ROOT/lib/ \
+ && find Lib -name "*.h"|xargs -i cp {} $LIB_ROOT/include/ \
+ && cd .. \
+ && git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git \
+ && cd Trilinos \
+ && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && mkdir build; cd build \
+ && cmake \
+  -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake \
+  -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DCMAKE_CXX_FLAGS_NONE_OVERRIDE=-fopenmp \
+  -DTPL_BLAS_LIBRARIES=$LIB_ROOT/lib/libopenblas.a \
+  -DTPL_LAPACK_LIBRARIES=$LIB_ROOT/lib/libopenblas.a \
+  -DTPL_METIS_LIBRARIES=$LIB_ROOT/lib/libmetis.a \
+  -DTPL_METIS_INCLUDE_DIRS=$LIB_ROOT/include \
+  -DTPL_MUMPS_LIBRARIES=$LIB_ROOT/lib/libdmumps.a \
+  -DTPL_MUMPS_INCLUDE_DIRS=$LIB_ROOT/include \
+  -DTPL_ENABLE_METIS=ON \
+  -DTPL_ENABLE_MUMPS=ON \
+  -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
+  -DTrilinos_ENABLE_TriKota=OFF \
+  -DTrilinos_ENABLE_ML=ON \
+  -DTrilinos_ENABLE_Zoltan=ON \
+  -DTrilinos_ENABLE_OpenMP=ON \
+  -DTrilinos_ENABLE_Amesos=OFF \
+  -DTPL_ENABLE_DLlib=OFF \
+  -DMETIS_LIBRARY_DIRS=$LIB_ROOT/lib \
+  -DMUMPS_LIBRARY_DIRS=$LIB_ROOT/lib \
+  -DBLAS_LIBRARY_DIRS=$LIB_ROOT/lib \
+  -DLAPACK_LIBRARY_DIRS=$LIB_ROOT/lib \
+  -DBLAS_LIBRARY_NAMES="openblas" \
+  -DLAPACK_LIBRARY_NAMES="openblas" \
+  -DTrilinos_ENABLE_Fortran=OFF \
+  -DTPL_ENABLE_MPI=ON \
+  .. \
+ && make -j \
+ && make install \
+ && cd .. \
+ && rm -fr /tmp/*
 
 
