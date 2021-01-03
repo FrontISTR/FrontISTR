@@ -18,4 +18,5 @@ document:
 push: login build document
 	docker push $(CI_REGISTRY_IMAGE)/document
 	docker push $(CI_REGISTRY_IMAGE)/build
+	docker push $(CI_REGISTRY_IMAGE)/build:metis4
 	docker push $(CI_REGISTRY_IMAGE)/runtime
