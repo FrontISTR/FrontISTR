@@ -180,7 +180,7 @@ binary:x86_64-w64-mingw32:
             -DWINDOWS=ON
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32/
-        - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
+        - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe README README.ja
     artifacts:
         paths:
             - public
@@ -223,7 +223,7 @@ binary:x86_64-w64-mingw32-msmpi:
             -DWINDOWS=ON
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32-msmpi/
-        - zip -j public/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll
+        - zip -j public/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README README.ja
     artifacts:
         paths:
             - public
