@@ -12,9 +12,11 @@ endif
 build:
 	docker build -t $(CI_REGISTRY_IMAGE)/build  . --target build
 lib:
-	docker build -t $(CI_REGISTRY_IMAGE)/lib    . --target lib
+	docker build -t $(CI_REGISTRY_IMAGE)/lib               . --target lib
+	docker build -t $(CI_REGISTRY_IMAGE)/lib:trilinos12    . --target lib-trilinos12
 mpilib:
-	docker build -t $(CI_REGISTRY_IMAGE)/mpilib . --target mpilib
+	docker build -t $(CI_REGISTRY_IMAGE)/mpilib            . --target mpilib
+	docker build -t $(CI_REGISTRY_IMAGE)/mpilib:trilinos12 . --target mpilib-trilinos12
 
 push: login build lib mpilib
 	docker push $(CI_REGISTRY_IMAGE)/build
