@@ -255,13 +255,14 @@ contains
 
       ! MOONEY-ORTHO
     else if( ipt==5 ) then
-      allocate( fval(5,depends+1) )
+      allocate( fval(10,depends+1) )
       fval =0.0d0
       if( depends==0 ) then
-        data_fmt = "RRRRR "
+        data_fmt = "RRRRRrrrrr "
         fstr_ctrl_get_HYPERELASTIC = &
           fstr_ctrl_get_data_array_ex( ctrl, data_fmt, &
-          fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:) )
+          fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), &
+          fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
         matval(M_PLCONST1) = fval(1,1)
@@ -269,6 +270,11 @@ contains
         matval(M_PLCONST3) = fval(3,1)
         matval(M_PLCONST4) = fval(4,1)
         matval(M_PLCONST5) = fval(5,1)
+        matval(M_PLCONST6) = fval(6,1)
+        matval(M_PLCONST7) = fval(7,1)
+        matval(M_PLCONST8) = fval(8,1)
+        matval(M_PLCONST9) = fval(9,1)
+        matval(M_PLCONST10) = fval(10,1)
       endif
       mattype = MOONEYRIVLIN_ANISO
 

@@ -108,6 +108,13 @@ module mMaterial
 
   integer(kind=kint), parameter :: M_VISCOCITY = 29
 
+  ! additional plastic constitutive parameter
+  integer(kind=kint), parameter :: M_PLCONST6 = 30
+  integer(kind=kint), parameter :: M_PLCONST7 = 31
+  integer(kind=kint), parameter :: M_PLCONST8 = 32
+  integer(kind=kint), parameter :: M_PLCONST9 = 33
+  integer(kind=kint), parameter :: M_PLCONST10 = 34
+
   ! Dictionary constants
   character(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
   character(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
