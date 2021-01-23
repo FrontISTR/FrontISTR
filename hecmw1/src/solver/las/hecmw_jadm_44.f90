@@ -71,7 +71,7 @@ contains
 
     D => hecMAT%D
 
-    !$OMP PARALLEL PRIVATE(I,K,X1,X2,X3,IXX)
+    !$OMP PARALLEL PRIVATE(i)
     !$OMP DO
     do i= 1, hecMAT%N
       X1= X(4*i-3)
@@ -84,6 +84,7 @@ contains
       Y(4*i  )= D(16*i- 3)*X1 + D(16*i- 2)*X2 + D(16*i- 1)*X3 + D(16*i- 0)*X4
     enddo
     !$OMP END DO
+    !$OMP END PARALLEL
     call MATJAD(hecMAT%N, MJAD, IAJAD, JAJAD, AJAD, JADORD, X, Y, WP1, WP2, WP3, WP4)
   end subroutine hecmw_JAD_MATVEC_44
 
@@ -175,7 +176,7 @@ contains
     integer(kind=kint) :: I, K, NZ, IXX
     real(kind=kreal)   :: X1, X2, X3, X4
 
-    !$OMP PARALLEL PRIVATE(I,K,X1,X2,X3,IXX)
+    !$OMP PARALLEL PRIVATE(I,K,X1,X2,X3,X4,IXX)
     !$OMP DO
     do I=1,N
       W1(I)=0.D0
