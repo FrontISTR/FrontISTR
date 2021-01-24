@@ -192,7 +192,7 @@ contains
       !C +-----------------------------+
       !C===
       if ( ITER.eq.1 ) then
-          call hecmw_copy_R(hecMESH, NDOF, WW(:,Z), WW(:,P))
+        call hecmw_copy_R(hecMESH, NDOF, WW(:,Z), WW(:,P))
       else
         BETA = RHO / RHO1
         call hecmw_xpay_R(hecMESH, NDOF, BETA, WW(:,Z), WW(:,P))
