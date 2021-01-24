@@ -72,6 +72,9 @@ contains
     NDOF = hecMAT%NDOF
     NDOF2 = NDOF*NDOF
     Y=0.0d0
+
+    !$OMP PARALLEL PRIVATE(i, idof, jdof)
+    !$OMP DO
     do i= 1, hecMAT%N
       do idof=1,hecMAT%NDOF
         do jdof=1,hecMAT%NDOF
@@ -79,6 +82,8 @@ contains
         end do
       end do
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
     call MATJAD(hecMAT%N,hecMAT%NDOF, MJAD, IAJAD, JAJAD, AJAD, JADORD, X, Y, WP)
   end subroutine hecmw_JAD_MATVEC_nn
 
@@ -170,7 +175,10 @@ contains
     NDOF2=NDOF*NDOF
 
     W=0.0d0
+
     do NZ=1,MJAD
+      !$OMP PARALLEL PRIVATE(K,IXX,idof,jdof)
+      !$OMP DO
       do K=IAJAD(NZ),IAJAD(NZ+1)-1
         IXX = K-IAJAD(NZ)+1
         do idof = 1, NDOF
@@ -179,13 +187,19 @@ contains
           end do
         end do
       enddo
+      !$OMP END DO
+      !$OMP END PARALLEL
     enddo
 
+    !$OMP PARALLEL PRIVATE(I,idof)
+    !$OMP DO
     do I=1,N
       do idof = 1, NDOF
         Y(NDOF*(I-1)+idof)=Y(NDOF*(I-1)+idof)+W(idof,JADORD(I))
       end do
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
   end subroutine MATJAD
 
 end module hecmw_JAD_TYPE_nn
