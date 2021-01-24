@@ -197,7 +197,7 @@ contains
           fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
-        if( fval(2,1)==0.d0 ) stop "We cannot deal with imcompresible material currently"
+        if( fval(2,1)==0.d0 ) stop "We cannot deal with incompressible material currently"
         matval(M_PLCONST1) = fval(1,1)
         matval(M_PLCONST2) = 0.d0
         matval(M_PLCONST3) = fval(2,1)
