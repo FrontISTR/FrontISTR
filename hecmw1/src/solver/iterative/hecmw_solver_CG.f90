@@ -192,14 +192,10 @@ contains
       !C +-----------------------------+
       !C===
       if ( ITER.eq.1 ) then
-        do i = 1, NNDOF
-          WW(i,P) = WW(i,Z)
-        enddo
+          call hecmw_copy_R(hecMESH, NDOF, WW(:,Z), WW(:,P))
       else
         BETA = RHO / RHO1
-        do i = 1, NNDOF
-          WW(i,P) = WW(i,Z) + BETA*WW(i,P)
-        enddo
+        call hecmw_xpay_R(hecMESH, NDOF, BETA, WW(:,Z), WW(:,P))
       endif
 
       !C===
@@ -233,17 +229,12 @@ contains
       !C | {r}= {r} - ALPHA*{q} |
       !C +----------------------+
       !C===
-      do i = 1, NNDOF
-        X(i)  = X(i)    + ALPHA * WW(i,P)
-        ! WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
-      enddo
+      call hecmw_axpy_R(hecMESH, NDOF, ALPHA, WW(:,P), X)
 
       if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
         call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
       else
-        do i = 1, NNDOF
-          WW(i,R)= WW(i,R) - ALPHA * WW(i,Q)
-        enddo
+        call hecmw_axpy_R(hecMESH, NDOF, -ALPHA, WW(:,Q), WW(:,R))
       endif
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
