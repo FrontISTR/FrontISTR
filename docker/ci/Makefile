@@ -12,9 +12,11 @@ runtime:
 	docker build -t $(CI_REGISTRY_IMAGE)/runtime . --target runtime
 build:
 	docker build -t $(CI_REGISTRY_IMAGE)/build . --target build
+	docker build -t $(CI_REGISTRY_IMAGE)/build:metis4 . --target build-metis4
 document:
 	docker build -t $(CI_REGISTRY_IMAGE)/document . --target document
 push: login build document
-	docker push $(CI_REGISTRY_IMAGE)/runtime
-	docker push $(CI_REGISTRY_IMAGE)/build
 	docker push $(CI_REGISTRY_IMAGE)/document
+	docker push $(CI_REGISTRY_IMAGE)/build
+	docker push $(CI_REGISTRY_IMAGE)/build:metis4
+	docker push $(CI_REGISTRY_IMAGE)/runtime
