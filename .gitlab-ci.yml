@@ -96,14 +96,11 @@ document:
     stage: build_for_deploy
     needs: []
     script:
-        - echo '/FrontISTR/manual_ja/ /FrontISTR_manual/ja/ 301' >> public/_redirects
-        - echo '/FrontISTR/manual_en/ /FrontISTR_manual/en/ 301' >> public/_redirects
+        - cp doc/_redirects public/_redirects
     artifacts:
         paths:
             - public
         expire_in: 100min
-    variables:
-        GIT_SUBMODULE_STRATEGY: recursive
 
 doxygen:
     image: ${REGISTRY}/document:latest
