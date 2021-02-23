@@ -497,6 +497,7 @@ contains
         dstrain(:) = dstrain(:)-EPSTH(:)
 
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
+        dstrain(1:6) = dstrain(1:6) - gausses(LX)%strain_bak(1:6)
 
       else if( flag == TOTALLAG ) then
         Fbar(1:ndof, 1:ndof) = Jratio(LX)*(I33(1:ndof,1:ndof) + gdispderiv(1:ndof, 1:ndof))

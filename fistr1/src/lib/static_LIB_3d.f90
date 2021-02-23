@@ -620,8 +620,9 @@ contains
     end if
 
     if( flag == INFINITE ) then
+      dstress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+      gauss%stress(1:6) = gauss%stress_bak(1:6) + dstress(1:6)
 
-      gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         if( present(ttc) .AND. present(ttn) ) then
           call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, ttn )

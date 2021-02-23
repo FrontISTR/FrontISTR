@@ -322,6 +322,7 @@ contains
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
       if( flag == INFINITE ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
+        dstrain(1:6) = dstrain(1:6) - gausses(LX)%strain_bak(1:6)
 
       else if( flag == TOTALLAG ) then
         ! Green-Lagrange strain
