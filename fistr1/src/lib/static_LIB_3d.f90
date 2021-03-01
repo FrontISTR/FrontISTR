@@ -621,7 +621,7 @@ contains
 
     if( flag == INFINITE ) then
       dstress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-      gauss%stress(1:6) = gauss%stress_bak(1:6) + dstress(1:6)
+      gauss%stress(1:6) = matmul(D(1:6, 1:6), gauss%strain(1:6))
 
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         if( present(ttc) .AND. present(ttn) ) then
