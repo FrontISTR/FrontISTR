@@ -620,8 +620,8 @@ contains
     end if
 
     if( flag == INFINITE ) then
-      dstress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
-      gauss%stress(1:6) = matmul(D(1:6, 1:6), gauss%strain(1:6))
+      dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
+      gauss%stress(1:6) = gauss%stress_bak(1:6) + dstress
 
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         if( present(ttc) .AND. present(ttn) ) then
@@ -880,6 +880,7 @@ contains
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
       if( flag == INFINITE ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(1:6)
+        dstrain(1:6) = dstrain(1:6) - gausses(LX)%strain_bak(1:6)
 
       else if( flag == TOTALLAG ) then
         ! Green-Lagrange strain
