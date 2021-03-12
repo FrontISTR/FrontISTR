@@ -323,7 +323,7 @@ contains
     integer(kind=kint)            :: j, k, sect_id, ori_id, elemopt
     integer(kind=kint),save       :: cache = 1
     character(len=HECMW_NAME_LEN) :: sect_orien
-    character(16) :: form361list = 'FI,BBAR,IC,FBAR '
+    character(19) :: form361list = 'FI,BBAR,IC,FBAR,RI '
 
     fstr_ctrl_get_SECTION = -1
 
