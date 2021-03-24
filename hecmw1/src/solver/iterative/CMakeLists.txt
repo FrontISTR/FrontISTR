@@ -10,5 +10,7 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_GMRES.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_GPBiCG.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_Iterative.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_Iterative_SXAT.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_Iterative_SXAT_entry.c
 )
 
