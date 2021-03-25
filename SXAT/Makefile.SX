@@ -1,0 +1,56 @@
+CXXOPT=-O3 -lm -lc -fopenmp -fdiag-vector=0 -fdiag-parallel=0
+FOPT=-O3 -lm -fopenmp -mvector -fdiag-vector=0 -fdiag-parallel=0
+DIR=hecmw_VE
+VEORUN=/opt/nec/ve/bin/mk_veorun_static 
+VEO=hecmw_ve
+
+FRONTISTR_DIR=fistr_VH
+AVEOINC=-I/opt/nec/ve/veos/include 
+AVEOLIB=-L/opt/nec/ve/veos/lib64/ -Wl,-rpath=/opt/nec/ve/veos/lib64/ -lveo
+FLAG=-O3 -lm -fopenmp 
+
+all: fistr
+
+veo:
+	cmake ../hecmw1/ \
+		-DCMAKE_C_COMPILER=ncc \
+		-DCMAKE_CXX_COMPILER=nc++ \
+		-DCMAKE_Fortran_COMPILER=nfort \
+		-DCMAKE_C_FLAGS="$(CXXOPT)" \
+		-DCMAKE_CXX_FLAGS="$(CXXOPT)" \
+		-DCMAKE_Fortran_FLAGS="$(FOPT)" \
+		-DWITH_MPI=OFF \
+		-DWITH_OPENMP=ON \
+		-Dhecmw_DEFINITIONS=HECMW_SERIAL \
+		-DCMAKE_VERBOSE_MAKEFILE=1 \
+		-B$(DIR) 
+	make -j -C $(DIR)
+	$(VEORUN) -fopenmp -o $(DIR)/$(VEO) $(DIR)/libhecmw.a 
+
+fistr: veo
+	cmake ../ \
+		-DCMAKE_C_FLAGS="$(FLAG) $(AVEOINC) -DUSE_SX" \
+		-DCMAKE_CXX_FLAGS="$(FLAG) $(AVEOINC) -DUSE_SX" \
+		-DCMAKE_Fortran_FLAGS="$(FLAG)" \
+		-DCMAKE_EXE_LINKER_FLAGS="$(AVEOINC) $(AVEOLIB)" \
+		-DWITH_MPI=OFF \
+		-DWITH_OPENMP=ON \
+		-DCMAKE_VERBOSE_MAKEFILE=1 \
+		-B$(FRONTISTR_DIR) 
+	make -j -C $(FRONTISTR_DIR)
+
+all_ve:
+	cmake ../\
+		-DCMAKE_C_COMPILER=ncc \
+		-DCMAKE_CXX_COMPILER=nc++ \
+		-DCMAKE_Fortran_COMPILER=nfort \
+		-DCMAKE_CXX_FLAGS="$CXXOPT" \
+		-DCMAKE_Fortran_FLAGS="$FOPT" \
+		-DWITH_OPENMP=ON
+		-B$(FRONTISTR_DIR) 
+	make -j -C $(FrontISTR_DIR)
+	nfort -fopenmp -O3 -o $(FrontISTR_DIR)/CMakeFiles/fistr1.dir/src/main/fistr1 $(FrontISTR_DIR)/CMakeFiles/fistr1.dir/src/main/fistr_main.f90.o $(FrontISTR_DIR)/CMakeFiles/fistr1.dir/src/main/main.c.o $(FrontISTR_DIR)/libfistr.a $(FrontISTR_DIR)/hecmw1/libhecmw.a
+
+clean:
+	rm -rf $(DIR) $(FRONTISTR_DIR)
+
