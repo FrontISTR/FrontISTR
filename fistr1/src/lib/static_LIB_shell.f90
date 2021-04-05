@@ -187,7 +187,7 @@ contains
 
     flag = gausses(1)%pMaterial%nlgeom_flag
 
-    if( .not. present( nddisp ) ) flag = INFINITE
+    if( .not. present( nddisp ) ) flag = INFINITESIMAL
 
     !--------------------------------------------------------------------
 

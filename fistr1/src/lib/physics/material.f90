@@ -10,7 +10,7 @@ module mMaterial
   implicit none
 
   ! Following algorithm type
-  integer(kind=kint), parameter :: INFINITE = 0
+  integer(kind=kint), parameter :: INFINITESIMAL = 0
   integer(kind=kint), parameter :: TOTALLAG  = 1
   integer(kind=kint), parameter :: UPDATELAG = 2
 
@@ -156,7 +156,7 @@ contains
     type( tMaterial ), intent(inout) :: material
     material%mtype = -1                  ! not defined yet
     material%nfstatus = 0                ! Default: no status
-    material%nlgeom_flag = INFINITE      ! Default: INFINITE ANALYSIS
+    material%nlgeom_flag = INFINITESIMAL ! Default: INFINITESIMAL ANALYSIS
     material%variables =  0.d0           ! not defined yet
     material%totallyr =  0               ! not defined yet
 

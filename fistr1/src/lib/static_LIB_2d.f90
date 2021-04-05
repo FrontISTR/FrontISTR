@@ -58,7 +58,7 @@ contains
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1,NumOfQuadPoints( ETYPE )
       call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0,cdsys )
-      if( .not. present(u) ) flag=INFINITE    ! enforce to infinite deformation analysis
+      if( .not. present(u) ) flag=INFINITESIMAL    ! enforce to infinitesimal deformation analysis
 
       if( flag==1 .and. ISET == 2 ) then
         write(*,'(a)') '    PROGRAM STOP : non-TL element for axixsymmetric element'

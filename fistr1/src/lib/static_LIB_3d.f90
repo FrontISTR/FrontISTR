@@ -89,7 +89,7 @@ contains
     stiff(:, :) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
-    if( .not. present(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
+    if( .not. present(u) ) flag = INFINITESIMAL    ! enforce to infinitesimal deformation analysis
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
 
@@ -619,7 +619,7 @@ contains
       call MatlMatrix( gauss, D3, D, time, tincr, coordsys, isEp=isEp)
     end if
 
-    if( flag == INFINITE ) then
+    if( flag == INFINITESIMAL ) then
 
       gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
@@ -708,7 +708,7 @@ contains
     !convert stress/strain measure for output
     if( OPSSTYPE == kOPSS_SOLUTION ) then
 
-      if( flag == INFINITE ) then !linear
+      if( flag == INFINITESIMAL ) then !linear
         gauss%stress_out(1:6) = gauss%stress(1:6)
         gauss%strain_out(1:6) = gauss%strain(1:6)
       else !nonlinear
@@ -877,7 +877,7 @@ contains
       dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
 
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(1:6)
 
       else if( flag == TOTALLAG ) then
@@ -933,7 +933,7 @@ contains
       end do
 
       ! calculate the BL1 matrix ( TOTAL LAGRANGE METHOD )
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
 
       else if( flag == TOTALLAG ) then
 
