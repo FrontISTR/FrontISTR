@@ -20,7 +20,7 @@ module hecmw_ordering
   integer(kind=kint), parameter:: ORDERING_RCM     = 3
   integer(kind=kint), parameter:: ORDERING_NMAX    = 3
 
-  integer(kind=kint), parameter:: DEBUG = 0
+  integer(kind=kint), parameter:: ORDERING_DEBUG = 0
 
 contains
 
@@ -65,7 +65,7 @@ contains
       if (loglevel > 0) write(*,*) 'Ordering method: RCM'
       call hecmw_ordering_GENRCM(Neqns,Xadj,Adj0,Perm,Invp)
     end select
-    if (DEBUG > 0) then
+    if (ORDERING_DEBUG > 0) then
       call write_nonzero_profile(Neqns, Xadj, Adj0, perm, invp)
       call write_perm(Neqns, perm, invp)
     endif
