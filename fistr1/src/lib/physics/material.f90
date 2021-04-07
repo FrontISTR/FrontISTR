@@ -65,6 +65,7 @@ module mMaterial
   integer(kind=kint), parameter :: MOONEYRIVLIN          = 131000
   integer(kind=kint), parameter :: ARRUDABOYCE           = 132000
   integer(kind=kint), parameter :: USERHYPERELASTIC      = 133000
+  integer(kind=kint), parameter :: MOONEYRIVLIN_ANISO    = 134000
 
   integer(kind=kint), parameter :: VISCOELASTIC          = 140000
   integer(kind=kint), parameter :: NORTON                = 150000
@@ -106,6 +107,13 @@ module mMaterial
   integer(kind=kint), parameter :: M_BEAM_ANGLE6 = 28
 
   integer(kind=kint), parameter :: M_VISCOCITY = 29
+
+  ! additional plastic constitutive parameter
+  integer(kind=kint), parameter :: M_PLCONST6 = 30
+  integer(kind=kint), parameter :: M_PLCONST7 = 31
+  integer(kind=kint), parameter :: M_PLCONST8 = 32
+  integer(kind=kint), parameter :: M_PLCONST9 = 33
+  integer(kind=kint), parameter :: M_PLCONST10 = 34
 
   ! Dictionary constants
   character(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
@@ -330,6 +338,15 @@ contains
     isElastoplastic = .false.
     itype = fetchDigit( 2, mtype )
     if( itype==2 ) isElastoplastic = .true.
+  end function
+
+  !> If it is a hyperelastic material?
+  logical function isHyperelastic( mtype )
+    integer, intent(in) :: mtype
+    integer :: itype
+    isHyperelastic = .false.
+    itype = fetchDigit( 2, mtype )
+    if( itype==3 ) isHyperelastic = .true.
   end function
 
   !> If it is an viscoelastic material?

@@ -624,24 +624,23 @@ contains
       gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, ttn )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn )
         else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
         end if
         gauss%stress = real(gauss%stress)
       end if
 
     else if( flag == TOTALLAG ) then
 
-      if( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.   &
-          mtype==USERELASTIC .OR. mtype==USERHYPERELASTIC .OR. mtype==USERMATERIAL ) then
-        call StressUpdate( gauss, D3, dstrain, gauss%stress )
+      if( isHyperelastic(mtype) .OR. mtype == USERELASTIC .OR. mtype == USERMATERIAL ) then
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys )
       else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
         gauss%pMaterial%mtype=mtype
         if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, ttn )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn )
         else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
         end if
       else
         gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
@@ -653,9 +652,9 @@ contains
 
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, tt0 )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, tt0 )
         else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
         end if
       else
         dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
@@ -679,15 +678,15 @@ contains
         gauss%stress(6) = dum(3,1) + dstress(6)
 
         if( mtype == USERMATERIAL ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys )
         else if( mtype == NORTON ) then
           !gauss%pMaterial%mtype = mtype
           if( tincr /= 0.0D0 .AND. any( gauss%stress /= 0.0D0 ) ) then
             !gauss%pMaterial%mtype = mtype
             if( present(ttc) .AND. present(ttn) ) then
-              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, time, tincr, ttc, ttn )
+              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr, ttc, ttn )
             else
-              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, time, tincr )
+              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr )
             end if
           end if
         end if

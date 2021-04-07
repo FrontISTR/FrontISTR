@@ -192,7 +192,7 @@ contains
     if( ipt/=0 ) nlgeom = UPDATELAG
 
     ipt=1
-    s = 'NEOHOOKE,MOONEY-RIVLIN,ARRUDA-BOYCE,USER '
+    s = 'NEOHOOKE,MOONEY-RIVLIN,ARRUDA-BOYCE,USER,MOONEY-RIVLIN-ANISO '
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  s, 0, 'P',   ipt    ) /= 0 ) return
 
     ! NEOHOOKE
@@ -260,6 +260,31 @@ contains
         enddo
       endif
       mattype = USERHYPERELASTIC
+
+      ! MOONEY-ORTHO
+    else if( ipt==5 ) then
+      allocate( fval(10,depends+1) )
+      fval =0.0d0
+      if( depends==0 ) then
+        data_fmt = "RRRRRrrrrr "
+        fstr_ctrl_get_HYPERELASTIC = &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, &
+          fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), &
+          fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
+      endif
+      if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
+        matval(M_PLCONST1) = fval(1,1)
+        matval(M_PLCONST2) = fval(2,1)
+        matval(M_PLCONST3) = fval(3,1)
+        matval(M_PLCONST4) = fval(4,1)
+        matval(M_PLCONST5) = fval(5,1)
+        matval(M_PLCONST6) = fval(6,1)
+        matval(M_PLCONST7) = fval(7,1)
+        matval(M_PLCONST8) = fval(8,1)
+        matval(M_PLCONST9) = fval(9,1)
+        matval(M_PLCONST10) = fval(10,1)
+      endif
+      mattype = MOONEYRIVLIN_ANISO
 
     endif
 
