@@ -568,6 +568,16 @@ static int param_value_convert(int type, char *token, void *val) {
   return FSTR_CTRL_RCODE_PARAM_SUCCESS;
 }
 
+static int param_length_count(const char *param) {
+  const char *p = param;
+  int len = 0;
+  while (*p != '\0' && *p != '=' && *p != ' ') {
+    p++;
+    len++;
+  }
+  return len;
+}
+
 int c_fstr_ctrl_get_param(fstr_ctrl_data *ctrl, const char *param_name,
                           const char *value_list, char type, void *val) {
   int h_index;
@@ -594,6 +604,7 @@ int c_fstr_ctrl_get_param(fstr_ctrl_data *ctrl, const char *param_name,
     char *val_pos;
     char *p;
     int param_name_len;
+    int param_len;
     int r;
     int index;
     param_name_len = strlen(param_name);
@@ -602,8 +613,9 @@ int c_fstr_ctrl_get_param(fstr_ctrl_data *ctrl, const char *param_name,
 
     while (token) {
       param_pos = remove_header_space(token);
+      param_len = param_length_count(param_pos);
 
-      if (Strncmpi(param_pos, param_name, param_name_len) == 0) {
+      if (param_len == param_name_len && Strncmpi(param_pos, param_name, param_name_len) == 0) {
         if (type == 'E' || type == 'e') {
           *((int *)val) = 1;
           return FSTR_CTRL_RCODE_PARAM_VALUE_NOTHING;
