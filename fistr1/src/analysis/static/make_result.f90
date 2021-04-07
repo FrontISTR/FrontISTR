@@ -200,20 +200,19 @@ contains
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(9), ndof )
       ngauss = fstrSOLID%maxn_gauss
+      work(:) = 0.d0
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
-          if( k > size(fstrSOLID%elements(i)%gausses) ) then
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = 0.0D0
-            enddo
-          else
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
-            enddo
-          endif
+          if( associated(fstrSOLID%elements(i)%gausses) ) then
+            if( k <= size(fstrSOLID%elements(i)%gausses) ) then
+              do j = 1, nitem
+                work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%strain_out(j)
+              enddo
+            endif
+          end if
         enddo
         call hecmw_result_add( id, nitem, label, work )
       enddo
@@ -224,20 +223,19 @@ contains
       id = 2
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(10), ndof )
       ngauss = fstrSOLID%maxn_gauss
+      work(:) = 0.d0
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'GaussSTRESS',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
-          if( k > size(fstrSOLID%elements(i)%gausses) ) then
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = 0.0D0
-            enddo
-          else
-            do j = 1, nitem
-              work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
-            enddo
-          endif
+          if( associated(fstrSOLID%elements(i)%gausses) ) then
+            if( k <= size(fstrSOLID%elements(i)%gausses) ) then
+              do j = 1, nitem
+                work(nitem*(i-1)+j) = fstrSOLID%elements(i)%gausses(k)%stress_out(j)
+              enddo
+            endif
+          end if
         enddo
         call hecmw_result_add( id, nitem, label, work )
       enddo
