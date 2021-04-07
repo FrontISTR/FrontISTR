@@ -64,7 +64,7 @@ contains
     stiff(:, :) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
-    if( .not. present(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
+    if( .not. present(u) ) flag = INFINITESIMAL    ! enforce to infinitesimal deformation analysis
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
 
@@ -320,7 +320,7 @@ contains
       dstrain(:) = dstrain(:)-EPSTH(:)
 
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
 
       else if( flag == TOTALLAG ) then
@@ -386,7 +386,7 @@ contains
         B(6, 3*j  ) = gderiv(j, 1)
       end do
 
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
 
       else if( flag == TOTALLAG ) then
 

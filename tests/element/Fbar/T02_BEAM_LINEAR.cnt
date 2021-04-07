@@ -33,7 +33,7 @@ SET-2,2,-0.1
 #####         MATERIAL        #####
 ###################################
 !MATERIAL, NAME=MATERIAL-1
-!ELASTIC, INFINITE
+!ELASTIC, INFINITESIMAL
  1.00000000E+02, 3.00000000E-01
 !SECTION, SECNUM=1, FORM361=FBAR
 ###################################

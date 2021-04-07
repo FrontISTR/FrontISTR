@@ -218,7 +218,7 @@ module m_fstr
 
   type fstr_solid
     integer(kind=kint) :: file_type  ! kbcfFSTR or kbcfNASTRAN
-    integer(kind=kint) :: StaticType ! 1:Total, 2:Updated, 3:Infinite
+    integer(kind=kint) :: StaticType ! 1:Total, 2:Updated, 3:Infinitesimal
     integer(kind=kint) :: nstep_tot
 
     type(step_info), pointer       :: step_ctrl(:)  =>null()   !< step information

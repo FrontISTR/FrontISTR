@@ -69,7 +69,7 @@ contains
     stiff(:, :) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
-    if( .not. present(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
+    if( .not. present(u) ) flag = INFINITESIMAL    ! enforce to infinitesimal deformation analysis
     elem(:, :) = ecoord(:, :)
     elem0(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
@@ -84,7 +84,7 @@ contains
       call getQuadPoint( etype, LX, naturalCoord(:) )
       call getGlobalDeriv( etype, nn, naturalcoord, elem0, det, gderiv)
       wg = getWeight(etype, LX)*det
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         jacob = 1.d0
         gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof) + jacob*wg*gderiv(1:nn, 1:ndof)
       else
@@ -158,7 +158,7 @@ contains
       end do
 
       ! calculate the BL1 matrix ( TOTAL LAGRANGE METHOD )
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         B2(1:6, 1:nn*ndof) = 0.0D0
         do j = 1, nn
           Z1(1:3,1) = (gderiv1_ave(j,1:3)-gderiv(j,1:3))/3.d0
@@ -392,7 +392,7 @@ contains
     flag = gausses(1)%pMaterial%nlgeom_flag
     elem0(1:ndof,1:nn) = ecoord(1:ndof,1:nn)
     totaldisp(:, :) = u(:, :)+du(:, :)
-    if( flag == INFINITE ) then
+    if( flag == INFINITESIMAL ) then
       elem(:, :) = ecoord(:, :)
       elem1(:, :) = ecoord(:, :)
     else if( flag == TOTALLAG ) then
@@ -423,7 +423,7 @@ contains
       call getQuadPoint( etype, LX, naturalCoord(:) )
       call getGlobalDeriv( etype, nn, naturalcoord, elem0, det, gderiv)
       wg = getWeight(etype, LX)*det
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         jacob = 1.d0
         gderiv1(1:nn, 1:ndof) = gderiv(1:nn, 1:ndof)
       else
@@ -483,7 +483,7 @@ contains
       end if
 
       ! Update strain
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         dvol = dot_product( totaldisp(1,1:nn), gderiv1_ave(1:nn,1) ) !du1/dx1
         dvol = dvol + dot_product( totaldisp(2,1:nn), gderiv1_ave(1:nn,2) ) !du2/dx2
         dvol = dvol + dot_product( totaldisp(3,1:nn), gderiv1_ave(1:nn,3) ) !du3/dx3
@@ -563,7 +563,7 @@ contains
       end do
 
       WG=getWeight( etype, LX )*DET
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         gderiv1(1:nn, 1:ndof) = gderiv(1:nn, 1:ndof)
 
         B2(1:6, 1:nn*ndof) = 0.0D0

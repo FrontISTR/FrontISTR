@@ -82,7 +82,7 @@ contains
         thick = material%variables(M_THICK)
         if( getSpaceDimension( ic_type )==2 ) thick =1.d0
         if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
-          if( material%nlgeom_flag /= INFINITE ) call StiffMat_abort( ic_type, 2 )
+          if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick,  &
             stiffness(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset,          &
             u(1:2,1:nn) )
@@ -153,21 +153,21 @@ contains
           endif
 
         else if( ic_type == 611) then
-          if( material%nlgeom_flag /= INFINITE ) call StiffMat_abort( ic_type, 2 )
+          if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
           call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
             &   material%variables(M_YOUNGS), material%variables(M_POISSON), stiffness(1:nn*ndof,1:nn*ndof))
 
         else if( ic_type == 641 ) then
-          if( material%nlgeom_flag /= INFINITE ) call StiffMat_abort( ic_type, 2 )
+          if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
           call STF_Beam_641(ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
             &            hecMESH%section%sect_R_item(ihead+1:), stiffness(1:nn*ndof,1:nn*ndof))
 
         else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-          if( material%nlgeom_flag /= INFINITE ) call StiffMat_abort( ic_type, 2 )
+          if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
           thick = hecMESH%section%sect_R_item(ihead+1)
@@ -175,7 +175,7 @@ contains
             &              stiffness(1:nn*ndof, 1:nn*ndof), thick, 0)
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
-          if( material%nlgeom_flag /= INFINITE ) call StiffMat_abort( ic_type, 2 )
+          if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
           thick = hecMESH%section%sect_R_item(ihead+1)
@@ -183,7 +183,7 @@ contains
             &              stiffness(1:nn*ndof, 1:nn*ndof), thick, 2)
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
-          if( material%nlgeom_flag /= INFINITE ) call StiffMat_abort( ic_type, 2 )
+          if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           isect = hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
           thick = hecMESH%section%sect_R_item(ihead+1)
