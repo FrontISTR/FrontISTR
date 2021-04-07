@@ -955,7 +955,7 @@ contains
           if(fstr_streqr(hecMESH%surf_group%grp_name(casha), grp_id_name(i))) then
             grp_ID(i) = casha
             casha = casha + 1
-            exit
+            cycle
           end if
         endif
         do id = 1, hecMESH%surf_group%n_grp
@@ -981,7 +981,7 @@ contains
             if(fstr_streqr(hecMESH%surf_group%grp_name(cashb), grp_id_name(i))) then
               grp_ID(i) = cashb
               cashb = cashb + 1
-              exit
+              cycle
             end if
           endif
           do id = 1, hecMESH%elem_group%n_grp
