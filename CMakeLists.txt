@@ -95,9 +95,26 @@ endif()
 ###############################################################
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
-set(VERSION_MINOR 1 CACHE STRING "Minor version number of FrontISTR")
-set(VERSION_PATCH 1 CACHE STRING "Patch version number of FrontISTR")
+
+# cat VERSION | sed -r "s/^[^0-9]*(([0-9]+)\\.?([0-9]+)?\\.?([0-9]+)?).*$/\\1/"|cut -d. -f1|sed "s/^$/0/"
+execute_process(
+  COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/VERSION COMMAND sed -r "s/^[^0-9]*(([0-9]+)\\.?([0-9]+)?\\.?([0-9]+)?).*$/\\1/"
+  COMMAND cut -d. -f1
+  COMMAND sed "s/^$/0/"
+  OUTPUT_VARIABLE VERSION_MAJOR 
+)
+execute_process(
+  COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/VERSION COMMAND sed -r "s/^[^0-9]*(([0-9]+)\\.?([0-9]+)?\\.?([0-9]+)?).*$/\\1/"
+  COMMAND cut -d. -f2
+  COMMAND sed "s/^$/0/"
+  OUTPUT_VARIABLE VERSION_MINOR
+)
+execute_process(
+  COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/VERSION COMMAND sed -r "s/^[^0-9]*(([0-9]+)\\.?([0-9]+)?\\.?([0-9]+)?).*$/\\1/"
+  COMMAND cut -d. -f3
+  COMMAND sed "s/^$/0/"
+  OUTPUT_VARIABLE VERSION_PATCH
+)
 execute_process(COMMAND date "+%Y-%m-%dT%H:%M:%S%z" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH BUILD_DATE GIT_HASH)
