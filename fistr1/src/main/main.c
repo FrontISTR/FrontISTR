@@ -219,7 +219,11 @@ int main(int argc, char *argv[])
     printf("#                         FrontISTR                              #\n");
     printf("##################################################################\n");
     printf("---\n");
-    printf("version:    %d.%d.%d\n", VERSION_MAJOR,VERSION_MINOR, VERSION_PATCH);
+    if (VERSION_PATCH == 0){
+      printf("version:    %d.%d\n", VERSION_MAJOR,VERSION_MINOR);
+    }else{
+      printf("version:    %d.%d.%d\n", VERSION_MAJOR,VERSION_MINOR, VERSION_PATCH);
+    }
     printf("git_hash:   %s\n", GIT_HASH );
     printf("build:\n");
     printf("  date:     %s\n", BUILD_DATE );
