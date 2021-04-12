@@ -1,24 +1,24 @@
 ###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
+# Copyright (c) 2021 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
 
-include(${CMAKE_CURRENT_LIST_DIR}/communication/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/las/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/matrix/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/init/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/sparse_matrix/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/mumps/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/mkl/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/clustermkl/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/precond/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/iterative/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_direct/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_direct_parallel/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/solver_direct_lag/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/mpc/CMakeLists.txt)
+add_subdirectory(communication)
+add_subdirectory(las)
+add_subdirectory(matrix)
+add_subdirectory(init)
+add_subdirectory(sparse_matrix)
+add_subdirectory(mumps)
+add_subdirectory(mkl)
+add_subdirectory(clustermkl)
+add_subdirectory(precond)
+add_subdirectory(iterative)
+add_subdirectory(solver_direct)
+add_subdirectory(solver_direct_parallel)
+add_subdirectory(solver_direct_lag)
+add_subdirectory(mpc)
 
-list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver.f90
+target_sources(hecmw
+	PRIVATE
+  	hecmw_solver.f90
 )

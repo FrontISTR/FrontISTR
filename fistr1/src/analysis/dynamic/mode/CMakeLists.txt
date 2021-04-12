@@ -1,15 +1,14 @@
 ###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
+# Copyright (c) 2021 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-cmake_minimum_required(VERSION 2.8.11)
-
-list(APPEND fistr_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_lanczos_util.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_setMASS.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_tridiag.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_output.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_lanczos.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_eigen.f90
+target_sources(fistr
+	PRIVATE
+  fstr_EIG_lanczos_util.f90
+  fstr_EIG_setMASS.f90
+  fstr_EIG_tridiag.f90
+  fstr_EIG_output.f90
+  fstr_EIG_lanczos.f90
+  fstr_solve_eigen.f90
 )

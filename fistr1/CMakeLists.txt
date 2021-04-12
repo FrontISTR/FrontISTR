@@ -1,70 +1,37 @@
 ###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
+# Copyright (c) 2021 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
-
-project(fistr CXX Fortran C)
-
-set(fistr_SOURCES)
-set(fistr_INCLUDE_DIRS)
-set(fistr_DEFINITIONS)
-set(fistr_LIBRARIES)
-set(fistr1_SOURCES)
-
-#
-# Inherit definitions from fistr options
-#
-set(fistr_INCLUDE_DIRS ${FrontISTR_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/hecmw1)
-set(fistr_DEFINITIONS ${FrontISTR_DEFINITIONS})
-set(fistr_LIBRARIES ${FrontISTR_LIBRARIES})
-
-#
-# Build for libfistr.a
-#
-include(src/CMakeLists.txt)
-add_library(fistr STATIC ${fistr_SOURCES})
-target_link_libraries(fistr hecmw)
-target_include_directories(fistr PUBLIC
-  ${fistr_INCLUDE_DIRS} ${hecmw_INCLUDE_DIRS}
-)
-target_compile_definitions(fistr PUBLIC
-  ${fistr_DEFINITIONS} ${hecmw_DEFINITIONS}
-)
-
-#
-# Build for fistr1 (executable)
-#
-include(src/main/CMakeLists.txt)
-add_executable(fistr1 ${fistr1_SOURCES})
+add_executable(fistr1
+  src/main/main.c
+  src/main/fistr_main.f90
+  )
 target_link_libraries(fistr1
-  fistr hecmw ${hecmw_LIBRARIES} ${fistr_LIBRARIES}
-  ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}
-)
+  PRIVATE
+  hecmw
+  fistr
+  )
+target_include_directories(fistr1
+  PRIVATE
+  ${CMAKE_BINARY_DIR}
+  ${CMAKE_BINARY_DIR}/fistr1
+  ${CMAKE_BINARY_DIR}/hecmw1
+  )
+set_target_properties(fistr1
+  PROPERTIES
+  LINKER_LANGUAGE C
+  )
 
-set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "CXX")
+add_library(fistr)
 
-target_include_directories(fistr1 PUBLIC
-  ${fistr_INCLUDE_DIRS}
-  ${hecmw_INCLUDE_DIRS}
-  ${CMAKE_Fortran_MODULE_DIRECTORY}
-)
-target_compile_definitions(fistr1 PUBLIC
-  ${fistr_DEFINITIONS}
-  ${hecmw_DEFINITIONS}
-)
+add_subdirectory(src)
 
-#
-# Set installing files
-#
-install(TARGETS fistr1
-  DESTINATION bin
-  CONFIGURATIONS ${CMAKE_BUILD_TYPE}
-)
+target_include_directories(fistr
+  PRIVATE
+    src/common
+    ../hecmw1/src/common
+    ${CMAKE_BINARY_DIR}/hecmw1
+  )
 
-#
-# Bulid tools
-#
-if(WITH_TOOLS)
-  add_subdirectory(tools)
-endif()
+
+#add_subdirectory(tools)

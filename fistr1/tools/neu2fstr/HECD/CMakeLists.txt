@@ -1,50 +1,54 @@
 ###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
+# Copyright (c) 2021 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
 
-list(APPEND neu2fstr_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecd_util.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECData.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/HECDB_util.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_Amplitude.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_EGroup.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_Element.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_Header.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_Material.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_NGroup.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_Node.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_Section.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_SGroup.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_Visual.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CHECDB_Zero.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRData.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/FSTRDB_util.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Boundary.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_CFlux.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_CLoad.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_DFlux.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_DLoad.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Echo.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Eigen.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Film.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Fixtemp.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Heat.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Radiate.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Reftemp.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_SFilm.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_SFlux.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Solution.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Solver.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_SRadiate.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Static.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Step.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Temperature.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Write.cpp
-)
-
-list(APPEND neu2fstr_INCLUDE_DIRS
-  ${CMAKE_CURRENT_LIST_DIR}
+target_sources(neu2fstr
+  PRIVATE
+    hecd_util.cpp
+    CHECData.cpp
+    HECDB_util.cpp
+    CHECDB_Amplitude.cpp
+    CHECDB_EGroup.cpp
+    CHECDB_Element.cpp
+    CHECDB_Header.cpp
+    CHECDB_Material.cpp
+    CHECDB_NGroup.cpp
+    CHECDB_Node.cpp
+    CHECDB_Section.cpp
+    CHECDB_SGroup.cpp
+    CHECDB_Visual.cpp
+    CHECDB_Zero.cpp
+    CFSTRData.cpp
+    FSTRDB_util.cpp
+    CFSTRDB_Boundary.cpp
+    CFSTRDB_CFlux.cpp
+    CFSTRDB_CLoad.cpp
+    CFSTRDB_DFlux.cpp
+    CFSTRDB_DLoad.cpp
+    CFSTRDB_Echo.cpp
+    CFSTRDB_Eigen.cpp
+    CFSTRDB_Film.cpp
+    CFSTRDB_Fixtemp.cpp
+    CFSTRDB_Heat.cpp
+    CFSTRDB_Radiate.cpp
+    CFSTRDB_Reftemp.cpp
+    CFSTRDB_SFilm.cpp
+    CFSTRDB_SFlux.cpp
+    CFSTRDB_Solution.cpp
+    CFSTRDB_Solver.cpp
+    CFSTRDB_SRadiate.cpp
+    CFSTRDB_Static.cpp
+    CFSTRDB_Step.cpp
+    CFSTRDB_Temperature.cpp
+    CFSTRDB_Write.cpp
+  PUBLIC
+    CFSTRDB.h
+    CFSTRData.h
+    CHECDB.h
+    CHECDB_Visual.h
+    CHECData.h
+    CHECDataBlock.h
+    hecd_util.h
 )
 

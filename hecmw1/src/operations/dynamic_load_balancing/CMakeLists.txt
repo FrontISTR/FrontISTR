@@ -1,22 +1,25 @@
 ###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
+# Copyright (c) 2021 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
 
-list(APPAND hecmw_SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_transfer_result_c.f90
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_transfer_data_c.f90
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_transfer_data_c2f.f90
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dist_result_copy_c2f.f90
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dlb_data_transfer.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dynamic_load_balancing.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dlb_mesh2graph.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dlb_read_control.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dlb_migrate.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dlb_elem_sr_adapt.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dlb_comm_util.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/output_ucd_c.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dlb_mem_util.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_dlb_output_result.c
+target_sources(hecmw
+	PRIVATE
+    hecmw_transfer_result_c.f90
+    hecmw_transfer_data_c.f90
+    hecmw_transfer_data_c2f.f90
+    hecmw_dist_result_copy_c2f.f90
+    hecmw_dlb_data_transfer.c
+    hecmw_dynamic_load_balancing.c
+    hecmw_dlb_mesh2graph.c
+    hecmw_dlb_read_control.c
+    hecmw_dlb_migrate.c
+    hecmw_dlb_elem_sr_adapt.c
+    hecmw_dlb_comm_util.c
+    output_ucd_c.c
+    hecmw_dlb_mem_util.c
+    hecmw_dlb_output_result.c
+  PUBLIC
+    hecmw_dlb_comm_util.h
+    hecmw_repart.h
 )
