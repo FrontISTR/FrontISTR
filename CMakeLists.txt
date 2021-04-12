@@ -9,7 +9,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 file(READ "VERSION" fistr_ver)
 string(REGEX MATCH "[0-9](.[0-9](.[0-9])?)?" fistr_ver ${fistr_ver})
-message(${fistr_ver})
+message("===== FrontISTR v" ${fistr_ver} " =====")
 project(FrontISTR
 	VERSION ${fistr_ver}
 	DESCRIPTION "Open-Source Large-Scale Parallel FEM Program for Nonlinear Structural Analysis:FrontISTR"
