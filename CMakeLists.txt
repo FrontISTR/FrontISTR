@@ -8,7 +8,7 @@
 ###############################################################
 cmake_minimum_required(VERSION 3.20.0)
 file(READ "VERSION" fistr_ver)
-string(SUBSTRING ${fistr_ver} 8 3 fistr_ver)
+string(REGEX MATCH "[0-9](.[0-9](.[0-9])?)?" fistr_ver ${fistr_ver})
 message(${fistr_ver})
 project(FrontISTR
 	VERSION ${fistr_ver}
