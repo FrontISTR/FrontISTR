@@ -13,12 +13,12 @@ target_sources(rmerge
   )
 
 target_include_directories(rmerge
-  PUBLIC
+  PRIVATE
   ../../src/common
   )
 
 target_link_libraries(rmerge
-  PUBLIC
+  PRIVATE
   hecmw
   )
 

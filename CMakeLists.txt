@@ -6,8 +6,9 @@
 ###############################################################
 # CMakeLists.txt for FrontISTR
 ###############################################################
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.20)
 
+find_package(Git QUIET)
 execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse HEAD^1
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
   OUTPUT_VARIABLE GIT_HASH
@@ -33,14 +34,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 ###############################################################
 # options
 ###############################################################
-find_package(Git QUIET)
 find_package(MPI COMPONENTS C CXX Fortran)
 find_package(OpenMP COMPONENTS C CXX Fortran)
 find_package(LAPACK)
-#find_package(METIS)
+find_package(METIS)
 option(with_tools "compile tools" ON)
 option(with_mpi "for parallel environment with MPI" ${MPI_FOUND})
-option(with_openmp "for multi-(core|processor) environment" ${OPENMP_FOUND})
+option(with_openmp "for multi-(core|processor) environment with OpenMP" ${OPENMP_FOUND})
+option(with_metis "use METIS" ${METIS_FOUND})
 feature_summary(WHAT ALL)
 
 configure_file(

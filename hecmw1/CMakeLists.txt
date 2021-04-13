@@ -10,7 +10,7 @@ add_subdirectory(src)
 add_subdirectory(tools)
 
 target_link_libraries(hecmw
-  PUBLIC
+  PRIVATE
   MPI::MPI_C
   MPI::MPI_CXX
   MPI::MPI_Fortran
@@ -20,7 +20,7 @@ target_link_libraries(hecmw
   #  METIS::METIS
   )
 target_include_directories(hecmw
-  PUBLIC
+  PRIVATE
   src/visualizer
   src/common
   )

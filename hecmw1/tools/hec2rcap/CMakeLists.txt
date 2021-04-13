@@ -12,8 +12,10 @@ target_link_libraries(hec2rcap
   hecmw
   )
 target_include_directories(hec2rcap
-  PUBLIC
+  PRIVATE
   ../../src/hecmw
+  ../../src/common
+  ../../src/visualizer
   )
 install(TARGETS hec2rcap
   DESTINATION bin

@@ -28,12 +28,12 @@ target_sources(hecmw_part1
   )
 
 target_link_libraries(hecmw_part1
-  PUBLIC
+  PRIVATE
   hecmw
   )
 
 target_include_directories(hecmw_part1
-  PUBLIC
+  PRIVATE
     ../../src/common
   )
 
