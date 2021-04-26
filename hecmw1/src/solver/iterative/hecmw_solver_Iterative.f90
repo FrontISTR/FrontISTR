@@ -29,27 +29,37 @@ contains
 
     interface
         subroutine hecmw_solve_cg_entry( &
-              &N,& !1
-              &NP,& !2
-              &NDOF,& !3
-              &my_rank,& !4
-              &X,& !5
-              &B,& !6
-              &iterlog,& !7
-              &timelog,& !8
-              &estcond,& !9
-              &ITER,& !10
-              &error,& !11
-              &resid,& !12
-              &Tset,& !13
-              &Tsol,& !14
-              &Tcomm ) bind(c) !15
+              &N,& !0
+              &NP,& !1
+              &NDOF,& !2
+              &D,& !3
+              &AL,& !4
+              &AU,& !5
+              &indexL,& !6
+              &indexU,& !7
+              &itemL,& !8
+              &itemU,& !9
+              &my_rank,& !10
+              &X,& !11
+              &B,& !12
+              &iterlog,& !13
+              &timelog,& !14
+              &estcond,& !15
+              &ITER,& !16
+              &error,& !17
+              &Tset,& !18
+              &Tsol,& !19
+              &Tcomm,& !20
+              &resid ) bind(c) !21
             Import
             integer(kind=kint), Value :: N, NP, NDOF, my_rank
+            real(kind=kreal) :: D(:), AL(:), AU(:)
+            integer(kind=kint) :: indexL(:), indexU(:)
+            integer(kind=kint) :: itemL(:), itemU(:)
             real(kind=kreal) :: B(:), X(:)
             integer(kind=kint), Value :: iterlog, timelog
             integer(kind=kint), Value :: iter, error, estcond
-            real(kind=kreal), Value :: resid, Tset, Tsol, Tcomm
+            real(kind=kreal), Value :: Tset, Tsol, Tcomm, resid
         end subroutine
     end interface
 
@@ -148,10 +158,10 @@ contains
               &hecmw_mat_get_estcond( hecMAT ),&
               &ITER,&
               &error,&
-              &RESID,&
               &TIME_setup,&
               &TIME_sol,&
-              &TIME_comm )
+              &TIME_comm,&
+              &RESID )
         case (2)  !--BiCGSTAB
           hecMAT%symmetric = .false.
           call hecmw_solve_BiCGSTAB( hecMESH,hecMAT, ITER, RESID, error,TIME_setup, TIME_sol, TIME_comm )
