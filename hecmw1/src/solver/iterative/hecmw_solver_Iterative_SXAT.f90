@@ -10,32 +10,33 @@
 !C
 module hecmw_solver_iterative_SXAT
 
-    public :: hecmw_solve_sxat_test_fortran
-    public :: hecmw_solve_sxat_entry
+!     public :: hecmw_solve_sxat_test_fortran
+!     public :: hecmw_solve_sxat_entry
     public :: hecmw_solve_sxat_CG_entry
 
 contains
     subroutine hecmw_solve_sxat_CG_interface(N, & !0
-            &                               NP, &  !1
-            &                               NDOF, & !2
-            &                               D, & !3
-            &                               AL, & !4
-            &                               AU, & !5
-            &                               indexL, & !6
-            &                               indexU, & !7
-            &                               itemL, & !8
-            &                               itemU, & !9
-            &                               my_rank, & !10
-            &                               X, & !11
-            &                               B, & !12
-            &                               iterlog, & !13
-            &                               timelog, & !14
-            &                               estcond, & !15
-            &                               iter, & !16
-            &                               err, & !17
-            &                               time_setup, & !18
-            &                               time_sol, & !19
-            &                               time_comm) bind(c) !20
+            &                                NP, &  !1
+            &                                NDOF, & !2
+            &                                D, & !3
+            &                                AL, & !4
+            &                                AU, & !5
+            &                                indexL, & !6
+            &                                indexU, & !7
+            &                                itemL, & !8
+            &                                itemU, & !9
+            &                                my_rank, & !10
+            &                                X, & !11
+            &                                B, & !12
+            &                                iterlog, & !13
+            &                                timelog, & !14
+            &                                estcond, & !15
+            &                                iter, & !16
+            &                                error, & !17
+            &                                time_setup, & !18
+            &                                time_sol, & !19
+            &                                time_comm, & !20
+            &                                resid) bind(c) !21
 
         use hecmw_util
         use m_hecmw_solve_error
@@ -57,34 +58,43 @@ contains
         implicit none
 
         integer(kind=kint), value :: N,NP,NDOF
-        real(kind=kreal), allocatable :: D(:), AL(:), AU(:)
-        real(kind=kreal), allocatable :: B(:), X(:)
-        real(kind=kint), allocatable :: itemL(:), itemU(:), indexL(:), indexU(:)
         integer(kind=kint), value :: iter, error
-        integer(kind=kint), value :: iterlog, timelog, 
+        integer(kind=kint), value :: iterlog, timelog
+
+        real(kind=kreal), target :: B(:), X(:)
+
+        real(kind=kreal), target :: D(:), AL(:), AU(:)
+        integer(kind=kint), target :: indexL(:), indexU(:)
+        integer(kind=kint), target :: itemL(:), itemU(:)
+
         integer(kind=kint) ::ESTCOND
         integer(kind=kint ) :: my_rank
-        integer(kind=kint), value :: iter, error
         real(kind=kreal), value :: resid, time_setup, time_sol, time_comm
 
         type(hecmwST_matrix) :: hecMAT
         type (hecmwST_local_mesh) :: hecMESH
+
         hecMAT%N = N
         hecMAT%NP = NP
         hecMAT%NDOF = NDOF
+
         hecMAT%D => D
-        hecMAT%AL => D
-        hecMAT%AU => D
+        hecMAT%AL => AL
+        hecMAT%AU => AU
+
         hecMAT%indexL => indexL
         hecMAT%indexU => indexU
+
         hecMAT%itemL => itemL
         hecMAT%itemU => itemU
+
         hecMAT%X => X
         hecMAT%B => B
+
         hecMESH%my_rank = my_rank
 
 !       print *, 'VE fortran CG now'
-        call hecmw_solve_CG(hecMESH, hecMAT, iter, resid, error, Tset, Tsol, Tcomm)
+        call hecmw_solve_CG(hecMESH, hecMAT, iter, resid, error, time_setup, time_sol, time_comm)
 
     end subroutine hecmw_solve_sxat_CG_interface
 
