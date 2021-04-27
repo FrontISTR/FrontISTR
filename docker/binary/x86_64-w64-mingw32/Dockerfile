@@ -42,20 +42,20 @@ FROM lib1 AS lib2
 RUN export target=x86_64-w64-mingw32 \
  && export LIB_ROOT=/usr/local/$target \
  && cd /tmp \
- && curl -L -O http://mumps.enseeiht.fr/MUMPS_5.3.5.tar.gz \
- && tar xvf MUMPS_5.3.5.tar.gz \
- && cd MUMPS_5.3.5 \
+ && curl -L -O http://mumps.enseeiht.fr/MUMPS_5.4.0.tar.gz \
+ && tar xvf MUMPS_5.4.0.tar.gz \
+ && cd MUMPS_5.4.0 \
  && cp Make.inc/Makefile.inc.generic.SEQ Makefile.inc \
  && make -C src build_mumps_int_def.o build_mumps_int_def \
  && sed -i \
- -e "s|^LAPACK = -llapack|LAPACK = -L${LIB_ROOT}/lib -lopenblas|" \
- -e "s|^LIBBLAS = -lblas|LIBBLAS = -L${LIB_ROOT}/lib -lopenblas|" \
- -e "s|^CC      = cc|CC      = ${target}-gcc|"  \
- -e "s|^FC      = f90|FC      = ${target}-gfortran|"  \
- -e "s|^FL      = f90|FL      = ${target}-gfortran|" \
- -e "s|^OPTF    = -O|OPTF    = -O -fopenmp -DBLR_MT|" \
- -e "s|^OPTC    = -O -I\.|OPTC    = -O -I. -fopenmp|" \
- -e "s|^OPTL    = -O|OPTL    = -O -fopenmp|" Makefile.inc \
+ -e "s|^LAPACK.*$|LAPACK = -L${LIB_ROOT}/lib -lopenblas|" \
+ -e "s|^LIBBLAS.*$|LIBBLAS = -L${LIB_ROOT}/lib -lopenblas|" \
+ -e "s|^CC.*$|CC = ${target}-gcc|"  \
+ -e "s|^FC.*$|FC = ${target}-gfortran|"  \
+ -e "s|^FL.*$|FL = ${target}-gfortran|" \
+ -e "s|^OPTF.*$|OPTF = -O -fopenmp -DBLR_MT|" \
+ -e "s|^OPTC.*$|OPTC = -O -I. -fopenmp|" \
+ -e "s|^OPTL.*$|OPTL = -O -fopenmp|" Makefile.inc \
  && make RANLIB=${target}-ranlib d -j \
  && cp include/d*.h ${LIB_ROOT}/include \
  && cp lib/*.a ${LIB_ROOT}/lib \
@@ -209,21 +209,23 @@ RUN export target=x86_64-w64-mingw32 \
  && sed -e "s/mpif90/x86_64-w64-mingw32-gfortran/g" -e "s/mpicc/x86_64-w64-mingw32-gcc/"  -e "s/ranlib/x86_64-w64-mingw32-ranlib/" -e "s/ar/x86_64-w64-mingw32-ar/" -e "s|-O3|-O3 -I${LIB_ROOT}/include|g" SLmake.inc.example > SLmake.inc \
  && make lib && cp libscalapack.a ${LIB_ROOT}/lib \
  && cd .. \
- && curl -L -O http://mumps.enseeiht.fr/MUMPS_5.3.5.tar.gz \
- && tar xvf MUMPS_5.3.5.tar.gz \
- && cd MUMPS_5.3.5 \
- && cp Make.inc/Makefile.inc.generic.SEQ Makefile.inc \
+ && curl -L -O http://mumps.enseeiht.fr/MUMPS_5.4.0.tar.gz \
+ && tar xvf MUMPS_5.4.0.tar.gz \
+ && cd MUMPS_5.4.0 \
+ && cp Make.inc/Makefile.inc.generic Makefile.inc \
  && make -C src build_mumps_int_def.o build_mumps_int_def \
  && sed \
  -e "s|^LAPACK = -llapack|LAPACK = -L${LIB_ROOT}/lib -lopenblas|" \
  -e "s|^LIBBLAS = -lblas|LIBBLAS = -L${LIB_ROOT}/lib -lopenblas|" \
- -e "s|^CC      = cc|CC      = ${target}-gcc|"  \
- -e "s|^FC      = f90|FC      = ${target}-gfortran|"  \
- -e "s|^FL      = f90|FL      = ${target}-gfortran|" \
- -e "s|^INCPAR  = -I/usr/include|INCPAR  = -I${LIB_ROOT}/include|" \
- -e "s|^OPTF    = -O|OPTF    = -O -fopenmp -DBLR_MT|" \
- -e "s|^OPTC    = -O -I\.|OPTC    = -O -I. -fopenmp|" \
- -e "s|^OPTL    = -O|OPTL    = -O -fopenmp|" -i Makefile.inc \
+ -e "s|^CC.*$|CC = ${target}-gcc|"  \
+ -e "s|^FC.*$|FC = ${target}-gfortran|"  \
+ -e "s|^FL.*$|FL = ${target}-gfortran|" \
+ -e "s|^INCPAR.*$|INCPAR = -I${LIB_ROOT}/include|" \
+ -e "s|^SCALAP.*$|SCALAP = -lscalapack|" \
+ -e "s|^LIBPAR.*$|LIBPAR = \$(SCALAP) \$(LAPACK) ${LIB_ROOT}/lib/libmsmpi.a|" \
+ -e "s|^OPTF.*$|OPTF = -O -fopenmp -DBLR_MT|" \
+ -e "s|^OPTC.*$|OPTC = -O -I. -fopenmp|" \
+ -e "s|^OPTL.*$|OPTL = -O -fopenmp|" -i Makefile.inc \
  && make RANLIB=${target}-ranlib d -j \
  && cp include/d*.h ${LIB_ROOT}/include \
  && cp lib/*.a ${LIB_ROOT}/lib \
