@@ -51,6 +51,7 @@ contains
     call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
 
     call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+
     call hecmw_mpc_tback_eigvec(hecMESH, hecMAT, fstrEIG%iter, fstrEIG%eigvec)
 
     call fstr_eigen_output(hecMESH, hecMAT, fstrEIG)

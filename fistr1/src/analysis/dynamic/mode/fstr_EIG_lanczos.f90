@@ -39,6 +39,7 @@ contains
 
     allocate(fstrEIG%filter(NPNDOF))
     fstrEIG%filter = 1.0d0
+    fstrEIG%sigma = 0.02d0
 
     jn = 0
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
@@ -72,7 +73,7 @@ contains
     if(jn == 0)then
       fstrEIG%is_free = .true.
       if(myrank == 0)then
-        write(*,*) '** free modal analysis: shift factor = 0.1'
+        write(*,*) '** free modal analysis: shift factor = 0.02'
       endif
     endif
 
