@@ -24,4 +24,8 @@ push: login build lib mpilib
 	docker push $(CI_REGISTRY_IMAGE)/build
 	docker push $(CI_REGISTRY_IMAGE)/lib
 	docker push $(CI_REGISTRY_IMAGE)/mpilib
+	docker push $(CI_REGISTRY_IMAGE)/lib:trilinos12
+	docker push $(CI_REGISTRY_IMAGE)/mpilib:trilinos12
+	docker push $(CI_REGISTRY_IMAGE)/lib:metis4
+	docker push $(CI_REGISTRY_IMAGE)/mpilib:metis4
 

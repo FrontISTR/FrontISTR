@@ -207,7 +207,7 @@ RUN export target=x86_64-w64-mingw32 \
  && tar xvf scalapack-2.1.0.tgz \
  && cd scalapack-2.1.0 \
  && sed -e "s/mpif90/x86_64-w64-mingw32-gfortran/g" -e "s/mpicc/x86_64-w64-mingw32-gcc/"  -e "s/ranlib/x86_64-w64-mingw32-ranlib/" -e "s/ar/x86_64-w64-mingw32-ar/" -e "s|-O3|-O3 -I${LIB_ROOT}/include|g" SLmake.inc.example > SLmake.inc \
- && make lib -j && cp libscalapack.a ${LIB_ROOT}/lib \
+ && make lib && cp libscalapack.a ${LIB_ROOT}/lib \
  && cd .. \
  && curl -L -O http://mumps.enseeiht.fr/MUMPS_5.4.0.tar.gz \
  && tar xvf MUMPS_5.4.0.tar.gz \
@@ -227,7 +227,7 @@ RUN export target=x86_64-w64-mingw32 \
  -e "s|^OPTC.*$|OPTC = -O -I. -fopenmp|" \
  -e "s|^OPTL.*$|OPTL = -O -fopenmp|" -i Makefile.inc \
  && make RANLIB=${target}-ranlib d -j \
- && cp include/d*.h ${LIB_ROOT}/include \
+ && cp include/*.h ${LIB_ROOT}/include \
  && cp lib/*.a ${LIB_ROOT}/lib \
  && cd .. \
  && rm -fr /tmp/*
@@ -240,6 +240,7 @@ RUN export target=x86_64-w64-mingw32 \
  && git clone --depth 1 -b trilinos-release-13-0-1 https://github.com/trilinos/Trilinos.git \
  && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake \
@@ -259,7 +260,7 @@ RUN export target=x86_64-w64-mingw32 \
   -DTrilinos_ENABLE_ML=ON \
   -DTrilinos_ENABLE_Zoltan=ON \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \
+  -DTrilinos_ENABLE_Amesos=ON \
   -DTPL_ENABLE_DLlib=OFF \
   -DMETIS_LIBRARY_DIRS=$LIB_ROOT/lib \
   -DMUMPS_LIBRARY_DIRS=$LIB_ROOT/lib \
@@ -268,7 +269,11 @@ RUN export target=x86_64-w64-mingw32 \
   -DBLAS_LIBRARY_NAMES="openblas" \
   -DLAPACK_LIBRARY_NAMES="openblas" \
   -DTrilinos_ENABLE_Fortran=OFF \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
   -DTPL_ENABLE_MPI=ON \
+  -DMPI_C_HEADER_DIR=$LIB_ROOT/include -DMPI_CXX_HEADER_DIR=$LIB_ROOT/include \
+  -DMPI_C_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include  -DMPI_CXX_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include \
+  -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=$LIB_ROOT/lib/libmsmpi.a -DCMAKE_CXX_FLAGS=-fpermissive \
   .. \
  && make -j \
  && make install \
@@ -282,6 +287,7 @@ RUN export target=x86_64-w64-mingw32 \
  && git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git \
  && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake \
@@ -301,7 +307,7 @@ RUN export target=x86_64-w64-mingw32 \
   -DTrilinos_ENABLE_ML=ON \
   -DTrilinos_ENABLE_Zoltan=ON \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \
+  -DTrilinos_ENABLE_Amesos=ON \
   -DTPL_ENABLE_DLlib=OFF \
   -DMETIS_LIBRARY_DIRS=$LIB_ROOT/lib \
   -DMUMPS_LIBRARY_DIRS=$LIB_ROOT/lib \
@@ -310,7 +316,11 @@ RUN export target=x86_64-w64-mingw32 \
   -DBLAS_LIBRARY_NAMES="openblas" \
   -DLAPACK_LIBRARY_NAMES="openblas" \
   -DTrilinos_ENABLE_Fortran=OFF \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
   -DTPL_ENABLE_MPI=ON \
+  -DMPI_C_HEADER_DIR=$LIB_ROOT/include -DMPI_CXX_HEADER_DIR=$LIB_ROOT/include \
+  -DMPI_C_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include  -DMPI_CXX_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include \
+  -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=$LIB_ROOT/lib/libmsmpi.a -DCMAKE_CXX_FLAGS=-fpermissive \
   .. \
  && make -j \
  && make install \
@@ -334,6 +344,7 @@ RUN export target=x86_64-w64-mingw32 \
  && git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git \
  && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake \
@@ -353,7 +364,7 @@ RUN export target=x86_64-w64-mingw32 \
   -DTrilinos_ENABLE_ML=ON \
   -DTrilinos_ENABLE_Zoltan=ON \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \
+  -DTrilinos_ENABLE_Amesos=ON \
   -DTPL_ENABLE_DLlib=OFF \
   -DMETIS_LIBRARY_DIRS=$LIB_ROOT/lib \
   -DMUMPS_LIBRARY_DIRS=$LIB_ROOT/lib \
@@ -362,7 +373,11 @@ RUN export target=x86_64-w64-mingw32 \
   -DBLAS_LIBRARY_NAMES="openblas" \
   -DLAPACK_LIBRARY_NAMES="openblas" \
   -DTrilinos_ENABLE_Fortran=OFF \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
   -DTPL_ENABLE_MPI=ON \
+  -DMPI_C_HEADER_DIR=$LIB_ROOT/include -DMPI_CXX_HEADER_DIR=$LIB_ROOT/include \
+  -DMPI_C_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include  -DMPI_CXX_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include \
+  -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=$LIB_ROOT/lib/libmsmpi.a -DCMAKE_CXX_FLAGS=-fpermissive \
   .. \
  && make -j \
  && make install \
