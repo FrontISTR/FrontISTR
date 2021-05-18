@@ -96,7 +96,7 @@ contains
 
     if(is_converge)then
       sigma = 0.0d0
-      if(fstrEIG%is_free) sigma = 0.1d0
+      if(fstrEIG%is_free) sigma = fstrEIG%sigma
       do i = 1, iter
         if(alpha(i) /= 0.0d0)then
           eigval(i) = 1.0d0/alpha(i) + sigma
