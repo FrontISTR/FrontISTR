@@ -1,6 +1,6 @@
 CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32
 
-all: build lib mpilib
+all: build ser mpi omp hyb
 
 login:
 ifeq ($(CI_BUILD_TOKEN),)
@@ -10,22 +10,40 @@ else
 endif
 
 build:
-	docker build -t $(CI_REGISTRY_IMAGE)/build  . --target build
-lib:
-	docker build -t $(CI_REGISTRY_IMAGE)/lib               . --target lib
-	docker build -t $(CI_REGISTRY_IMAGE)/lib:trilinos12    . --target lib-trilinos12
-	docker build -t $(CI_REGISTRY_IMAGE)/lib:metis4        . --target lib-metis4
-mpilib:
-	docker build -t $(CI_REGISTRY_IMAGE)/mpilib            . --target mpilib
-	docker build -t $(CI_REGISTRY_IMAGE)/mpilib:trilinos12 . --target mpilib-trilinos12
-	docker build -t $(CI_REGISTRY_IMAGE)/mpilib:metis4     . --target mpilib-metis4
+	docker build -t $(CI_REGISTRY_IMAGE)/build          -f Dockerfile.ser . --target build
+	docker build -t $(CI_REGISTRY_IMAGE)/common         -f Dockerfile.ser . --target common
+ser: build
+	docker build -t $(CI_REGISTRY_IMAGE)/ser            -f Dockerfile.ser . --target lib
+	docker build -t $(CI_REGISTRY_IMAGE)/ser:trilinos12 -f Dockerfile.ser . --target lib-trilinos12
+	docker build -t $(CI_REGISTRY_IMAGE)/ser:metis4     -f Dockerfile.ser . --target lib-metis4
+mpi: build
+	docker build -t $(CI_REGISTRY_IMAGE)/mpi            -f Dockerfile.mpi . --target lib
+	docker build -t $(CI_REGISTRY_IMAGE)/mpi:trilinos12 -f Dockerfile.mpi . --target lib-trilinos12
+	docker build -t $(CI_REGISTRY_IMAGE)/mpi:metis4     -f Dockerfile.mpi . --target lib-metis4
+omp: build
+	docker build -t $(CI_REGISTRY_IMAGE)/omp            -f Dockerfile.omp . --target lib
+	docker build -t $(CI_REGISTRY_IMAGE)/omp:trilinos12 -f Dockerfile.omp . --target lib-trilinos12
+	docker build -t $(CI_REGISTRY_IMAGE)/omp:metis4     -f Dockerfile.omp . --target lib-metis4
+hyb: build
+	docker build -t $(CI_REGISTRY_IMAGE)/hyb            -f Dockerfile.hyb . --target lib
+	docker build -t $(CI_REGISTRY_IMAGE)/hyb:trilinos12 -f Dockerfile.hyb . --target lib-trilinos12
+	docker build -t $(CI_REGISTRY_IMAGE)/hyb:metis4     -f Dockerfile.hyb . --target lib-metis4
 
-push: login build lib mpilib
-	docker push $(CI_REGISTRY_IMAGE)/build
-	docker push $(CI_REGISTRY_IMAGE)/lib
-	docker push $(CI_REGISTRY_IMAGE)/mpilib
-	docker push $(CI_REGISTRY_IMAGE)/lib:trilinos12
-	docker push $(CI_REGISTRY_IMAGE)/mpilib:trilinos12
-	docker push $(CI_REGISTRY_IMAGE)/lib:metis4
-	docker push $(CI_REGISTRY_IMAGE)/mpilib:metis4
+push_ser: ser login
+	docker push $(CI_REGISTRY_IMAGE)/ser
+	docker push $(CI_REGISTRY_IMAGE)/ser:trilinos12
+	docker push $(CI_REGISTRY_IMAGE)/ser:metis4
+push_omp: omp login
+	docker push $(CI_REGISTRY_IMAGE)/omp
+	docker push $(CI_REGISTRY_IMAGE)/omp:trilinos12
+	docker push $(CI_REGISTRY_IMAGE)/omp:metis4
+push_mpi: mpi login
+	docker push $(CI_REGISTRY_IMAGE)/mpi
+	docker push $(CI_REGISTRY_IMAGE)/mpi:trilinos12
+	docker push $(CI_REGISTRY_IMAGE)/mpi:metis4
+push_hyb: hyb login
+	docker push $(CI_REGISTRY_IMAGE)/hyb
+	docker push $(CI_REGISTRY_IMAGE)/hyb:trilinos12
+	docker push $(CI_REGISTRY_IMAGE)/hyb:metis4
 
+push: push_ser push_mpi push_omp push_hyb
