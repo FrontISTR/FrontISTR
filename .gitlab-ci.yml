@@ -124,10 +124,10 @@ pages:
     dependencies:
         - document
         - doxygen
-        - x86_64-w64-mingw32_omp
-        - x86_64-w64-mingw32_hyb
-        - x86_64-w64-mingw32_hyb-mklseq
-        - x86_64-w64-mingw32_mpi-mklithr
+        - x86_64-w64-mingw32/omp
+        - x86_64-w64-mingw32/hyb
+        - x86_64-w64-mingw32/hyb-mklseq
+        - x86_64-w64-mingw32/mpi-mklithr
     script:
         - ls public
     artifacts:
@@ -151,7 +151,7 @@ docker:fistr1:
   tags:
     - docker
 
-x86_64-w64-mingw32_omp:
+x86_64-w64-mingw32/omp:
     image: ${REGISTRY}/x86_64-w64-mingw32/omp
     stage: build_for_deploy
     needs: []
@@ -173,7 +173,7 @@ x86_64-w64-mingw32_omp:
             - public
         expire_in: 100min
 
-x86_64-w64-mingw32_hyb:
+x86_64-w64-mingw32/hyb:
     image: ${REGISTRY}/x86_64-w64-mingw32/hyb
     stage: build_for_deploy
     needs: []
@@ -197,7 +197,7 @@ x86_64-w64-mingw32_hyb:
             - public
         expire_in: 100min
 
-x86_64-w64-mingw32_hyb-mklseq:
+x86_64-w64-mingw32/hyb-mklseq:
     image: ${REGISTRY}/x86_64-w64-mingw32/hyb
     stage: build_for_deploy
     needs: []
@@ -225,7 +225,7 @@ x86_64-w64-mingw32_hyb-mklseq:
             - public
         expire_in: 100min
 
-x86_64-w64-mingw32_mpi-mklithr:
+x86_64-w64-mingw32/mpi-mklithr:
     image: ${REGISTRY}/x86_64-w64-mingw32/mpi
     stage: build_for_deploy
     needs: []
