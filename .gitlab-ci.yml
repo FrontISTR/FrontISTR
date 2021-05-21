@@ -124,8 +124,8 @@ pages:
     dependencies:
         - document
         - doxygen
-        - binary:x86_64-w64-mingw32
-        - binary:x86_64-w64-mingw32-msmpi
+        - binary:x86_64-w64-mingw32-omp
+        - binary:x86_64-w64-mingw32-hyb
     script:
         - ls public
     artifacts:
@@ -149,50 +149,35 @@ docker:fistr1:
   tags:
     - docker
 
-binary:x86_64-w64-mingw32:
-    image: ${REGISTRY}/x86_64-w64-mingw32/lib
+binary:x86_64-w64-mingw32-omp:
+    image: ${REGISTRY}/x86_64-w64-mingw32/omp
     stage: build_for_deploy
     needs: []
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
-        - LIB_ROOT=/usr/local/x86_64-w64-mingw32
         - cmake  -Bbuild -H.
-            -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake
-            -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
-            -DCMAKE_EXE_LINKER_FLAGS="-static -static-libstdc++ -static-libgcc -lstdc++ -lgcc -lwinpthread"
-            -DMUMPS_INCLUDE_PATH=${LIB_ROOT}/include
-            -DMUMPS_D_LIB=${LIB_ROOT}/lib/libdmumps.a\;${LIB_ROOT}/lib/libmpiseq.a
-            -DMUMPS_PORD_LIB=${LIB_ROOT}/lib/libpord.a
-            -DMUMPS_COMMON_LIB=${LIB_ROOT}/lib/libmumps_common.a
-            -DMETIS_INCLUDE_PATH=${LIB_ROOT}/include
-            -DMETIS_LIBRARIES=${LIB_ROOT}/lib/libmetis.a
-            -DREFINER_INCLUDE_PATH=${LIB_ROOT}/include
-            -DREFINER_LIBRARIES=${LIB_ROOT}/lib/libRcapRefiner.a
-            -DBLAS_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a
-            -DLAPACK_LIBRARIES=${LIB_ROOT}/lib/libopenblas.a
-            -DSCALAPACK_LIBRARIES=${LIB_ROOT}/lib/libdmumps.a
-            -DWITH_METIS=ON
-            -DWITH_MUMPS=ON
-            -DWITH_LAPACK=ON
-            -DWITH_REFINER=ON
-            -DWITH_ML=ON
-            -DWITH_MPI=OFF
-            -DWINDOWS=ON
+          -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake
+          -DCMAKE_LINK_SEARCH_START_STATIC=1
+          -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
+          -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++"
+          -DREFINER_LIBRARIES=RcapRefiner
+          -DBLAS_LIBRARIES=openblas -DLAPACK_LIBRARIES=openblas -DSCALAPACK_LIBRARIES=mpiseq\;pthread
+          -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWITH_MPI=OFF -DWINDOWS=ON
         - cmake --build build -- -j $(nproc)
-        - mkdir -p public/release/x86_64-w64-mingw32/
-        - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe README README.ja
+        - mkdir -p public/release/x86_64-w64-mingw32/omp/
+        - zip -j public/release/x86_64-w64-mingw32/omp/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe README.md README.ja.md License.txt VERSION
+        - ln -s ./omp/FrontISTR-latest.zip public/release/x86_64-w64-mingw32/FrontISTR-latest.zip
     artifacts:
         paths:
             - public
         expire_in: 100min
 
-binary:x86_64-w64-mingw32-msmpi:
-    image: ${REGISTRY}/x86_64-w64-mingw32/mpilib
+binary:x86_64-w64-mingw32-hyb:
+    image: ${REGISTRY}/x86_64-w64-mingw32/hyb
     stage: build_for_deploy
     needs: []
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
-        - LIB_ROOT=/usr/local/x86_64-w64-mingw32
         - cmake  -Bbuild -H.
           -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake
           -DCMAKE_LINK_SEARCH_START_STATIC=1
@@ -204,8 +189,9 @@ binary:x86_64-w64-mingw32-msmpi:
           -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_Fortran_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=msmpi
           -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWITH_MPI=ON -DWINDOWS=ON
         - cmake --build build -- -j $(nproc)
-        - mkdir -p public/release/x86_64-w64-mingw32-msmpi/
-        - zip -j public/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README README.ja
+        - mkdir -p public/release/x86_64-w64-mingw32/hyb/
+        - zip -j public/release/x86_64-w64-mingw32/hyb/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
+        - ln -s ../x86_64-w64-mingw32/hyb public/release/x86_64-w64-mingw32-msmpi
     artifacts:
         paths:
             - public
