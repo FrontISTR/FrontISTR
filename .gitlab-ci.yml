@@ -126,8 +126,8 @@ pages:
         - doxygen
         - x86_64-w64-mingw32/omp
         - x86_64-w64-mingw32/hyb
-        - x86_64-w64-mingw32/hyb-mklseq
-        - x86_64-w64-mingw32/mpi-mklithr
+        - x86_64-w64-mingw32/hyb/mkl_seq
+        - x86_64-w64-mingw32/mpi/mkl_ithr
     script:
         - ls public
     artifacts:
@@ -138,7 +138,7 @@ pages:
       - master
       - release
 
-docker:fistr1:
+docker/fistr1:
   image: docker:latest
   stage: build_for_deploy
   needs: []
@@ -166,7 +166,8 @@ x86_64-w64-mingw32/omp:
           -DBLAS_LIBRARIES=openblas -DLAPACK_LIBRARIES=openblas -DSCALAPACK_LIBRARIES=mpiseq\;pthread
           -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=OFF -DWITH_MKL=OFF
         - cmake --build build -- -j $(nproc)
-        - mkdir -p public/release/x86_64-w64-mingw32/
+        - mkdir -p public/release/x86_64-w64-mingw32/omp/
+        - zip -j public/release/x86_64-w64-mingw32/omp/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe README.md README.ja.md License.txt VERSION
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe README.md README.ja.md License.txt VERSION
     artifacts:
         paths:
@@ -190,6 +191,8 @@ x86_64-w64-mingw32/hyb:
           -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_Fortran_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=msmpi
           -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=ON -DWITH_MKL=OFF
         - cmake --build build -- -j $(nproc)
+        - mkdir -p public/release/x86_64-w64-mingw32/hyb/
+        - zip -j public/release/x86_64-w64-mingw32/hyb/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
         - mkdir -p public/release/x86_64-w64-mingw32-msmpi/
         - zip -j public/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
     artifacts:
@@ -197,7 +200,7 @@ x86_64-w64-mingw32/hyb:
             - public
         expire_in: 100min
 
-x86_64-w64-mingw32/hyb-mklseq:
+x86_64-w64-mingw32/hyb/mkl_seq:
     image: ${REGISTRY}/x86_64-w64-mingw32/hyb
     stage: build_for_deploy
     needs: []
@@ -218,14 +221,14 @@ x86_64-w64-mingw32/hyb-mklseq:
           -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_Fortran_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=msmpi
           -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=ON -DWITH_MKL=ON
         - cmake --build build -- -j $(nproc)
-        - mkdir -p public/release/x86_64-w64-mingw32/hyb-mklseq/
-        - zip -j public/release/x86_64-w64-mingw32/hyb-mklseq/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
+        - mkdir -p public/release/x86_64-w64-mingw32/hyb/
+        - zip -j public/release/x86_64-w64-mingw32/hyb/FrontISTR-latest.mkl_seq.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
     artifacts:
         paths:
             - public
         expire_in: 100min
 
-x86_64-w64-mingw32/mpi-mklithr:
+x86_64-w64-mingw32/mpi/mkl_ithr:
     image: ${REGISTRY}/x86_64-w64-mingw32/mpi
     stage: build_for_deploy
     needs: []
@@ -247,8 +250,8 @@ x86_64-w64-mingw32/mpi-mklithr:
           -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_Fortran_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=msmpi
           -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=OFF -DWITH_MKL=ON
         - cmake --build build -- -j $(nproc)
-        - mkdir -p public/release/x86_64-w64-mingw32/mpi-mklithr/
-        - zip -j public/release/x86_64-w64-mingw32/mpi-mklithr/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION ${LIB_ROOT}/lib/libiomp5md.dll
+        - mkdir -p public/release/x86_64-w64-mingw32/mpi/
+        - zip -j public/release/x86_64-w64-mingw32/mpi/FrontISTR-latest.mkl_ithr.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION ${LIB_ROOT}/lib/libiomp5md.dll
     artifacts:
         paths:
             - public
