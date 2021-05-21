@@ -127,6 +127,7 @@ pages:
         - x86_64-w64-mingw32_omp
         - x86_64-w64-mingw32_hyb
         - x86_64-w64-mingw32_hyb-mklseq
+        - x86_64-w64-mingw32_mpi-mklithr
     script:
         - ls public
     artifacts:
@@ -219,6 +220,35 @@ x86_64-w64-mingw32_hyb-mklseq:
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32/hyb-mklseq/
         - zip -j public/release/x86_64-w64-mingw32/hyb-mklseq/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
+    artifacts:
+        paths:
+            - public
+        expire_in: 100min
+
+x86_64-w64-mingw32_mpi-mklithr:
+    image: ${REGISTRY}/x86_64-w64-mingw32/mpi
+    stage: build_for_deploy
+    needs: []
+    script:
+        - echo -e "#include <stdint.h>\nvoid __GSHandlerCheck() {}\nvoid __security_check_cookie(uintptr_t i) {}\nvoid __chkstk() {}" > stub.c
+        - x86_64-w64-mingw32-gcc -c stub.c && ar rcs $LIB_ROOT/lib/libstub.a stub.o && rm -f stub.*
+        - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
+        - cmake  -Bbuild -H.
+          -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake
+          -DCMAKE_LINK_SEARCH_START_STATIC=1
+          -DCMAKE_INSTALL_PREFIX=${LIB_ROOT}
+          -DCMAKE_EXE_LINKER_FLAGS="-Xlinker --allow-multiple-definition -static -static-libgcc -static-libstdc++"
+          -DREFINER_LIBRARIES=RcapRefiner
+          -DMUMPS_LIBRARIES="pthread"
+          -DBLAS_LIBRARIES=openblas -DLAPACK_LIBRARIES=openblas
+          -DSCALAPACK_LIBRARIES="mkl_scalapack_lp64;mkl_blacs_msmpi_lp64;mkl_intel_lp64;mkl_intel_thread;mkl_core;mkl_intel_thread;mkl_core;libiomp5md;mkl_blacs_msmpi_lp64;msmpi;ucrtbase;stub"
+          -DMKL_LIBRARIES="mkl_blacs_msmpi_lp64;mkl_intel_lp64;mkl_intel_thread;mkl_core;libiomp5md;mkl_blacs_msmpi_lp64;mkl_intel_lp64;mkl_intel_thread;mkl_core;libiomp5md;mkl_blacs_msmpi_lp64;msmpi;ucrtbase;stub"
+          -DMPI_C_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include -DMPI_CXX_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include -DMPI_Fortran_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include
+          -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_Fortran_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=msmpi
+          -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=OFF -DWITH_MKL=ON
+        - cmake --build build -- -j $(nproc)
+        - mkdir -p public/release/x86_64-w64-mingw32/mpi-mklithr/
+        - zip -j public/release/x86_64-w64-mingw32/mpi-mklithr/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION ${LIB_ROOT}/lib/libiomp5md.dll
     artifacts:
         paths:
             - public
