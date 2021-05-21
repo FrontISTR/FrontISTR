@@ -124,9 +124,9 @@ pages:
     dependencies:
         - document
         - doxygen
-        - binary:x86_64-w64-mingw32
-        - binary:x86_64-w64-mingw32-msmpi
-        - binary:x86_64-w64-mingw32-hyb-mklseq
+        - x86_64-w64-mingw32_omp
+        - x86_64-w64-mingw32_hyb
+        - x86_64-w64-mingw32_hyb-mklseq
     script:
         - ls public
     artifacts:
@@ -150,7 +150,7 @@ docker:fistr1:
   tags:
     - docker
 
-binary:x86_64-w64-mingw32:
+x86_64-w64-mingw32_omp:
     image: ${REGISTRY}/x86_64-w64-mingw32/omp
     stage: build_for_deploy
     needs: []
@@ -172,7 +172,7 @@ binary:x86_64-w64-mingw32:
             - public
         expire_in: 100min
 
-binary:x86_64-w64-mingw32-msmpi:
+x86_64-w64-mingw32_hyb:
     image: ${REGISTRY}/x86_64-w64-mingw32/hyb
     stage: build_for_deploy
     needs: []
@@ -196,7 +196,7 @@ binary:x86_64-w64-mingw32-msmpi:
             - public
         expire_in: 100min
 
-binary:x86_64-w64-mingw32-hyb-mklseq:
+x86_64-w64-mingw32_hyb-mklseq:
     image: ${REGISTRY}/x86_64-w64-mingw32/hyb
     stage: build_for_deploy
     needs: []
