@@ -124,8 +124,8 @@ pages:
     dependencies:
         - document
         - doxygen
-        - binary:x86_64-w64-mingw32-omp
-        - binary:x86_64-w64-mingw32-hyb
+        - binary:x86_64-w64-mingw32
+        - binary:x86_64-w64-mingw32-msmpi
     script:
         - ls public
     artifacts:
@@ -149,7 +149,7 @@ docker:fistr1:
   tags:
     - docker
 
-binary:x86_64-w64-mingw32-omp:
+binary:x86_64-w64-mingw32:
     image: ${REGISTRY}/x86_64-w64-mingw32/omp
     stage: build_for_deploy
     needs: []
@@ -162,17 +162,16 @@ binary:x86_64-w64-mingw32-omp:
           -DCMAKE_EXE_LINKER_FLAGS="-static -static-libgcc -static-libstdc++"
           -DREFINER_LIBRARIES=RcapRefiner
           -DBLAS_LIBRARIES=openblas -DLAPACK_LIBRARIES=openblas -DSCALAPACK_LIBRARIES=mpiseq\;pthread
-          -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWITH_MPI=OFF -DWINDOWS=ON
+          -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=OFF -DWITH_MKL=OFF
         - cmake --build build -- -j $(nproc)
-        - mkdir -p public/release/x86_64-w64-mingw32/omp/
-        - zip -j public/release/x86_64-w64-mingw32/omp/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe README.md README.ja.md License.txt VERSION
-        - ln -s ./omp/FrontISTR-latest.zip public/release/x86_64-w64-mingw32/FrontISTR-latest.zip
+        - mkdir -p public/release/x86_64-w64-mingw32/
+        - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe README.md README.ja.md License.txt VERSION
     artifacts:
         paths:
             - public
         expire_in: 100min
 
-binary:x86_64-w64-mingw32-hyb:
+binary:x86_64-w64-mingw32-msmpi:
     image: ${REGISTRY}/x86_64-w64-mingw32/hyb
     stage: build_for_deploy
     needs: []
@@ -187,11 +186,10 @@ binary:x86_64-w64-mingw32-hyb:
           -DBLAS_LIBRARIES=openblas -DLAPACK_LIBRARIES=openblas -DSCALAPACK_LIBRARIES=scalapack
           -DMPI_C_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include -DMPI_CXX_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include -DMPI_Fortran_ADDITIONAL_INCLUDE_DIRS=$LIB_ROOT/include
           -DMPI_C_LIB_NAMES=msmpi -DMPI_CXX_LIB_NAMES=msmpi -DMPI_Fortran_LIB_NAMES=msmpi -DMPI_msmpi_LIBRARY=msmpi
-          -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWITH_MPI=ON -DWINDOWS=ON
+          -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=ON -DWITH_MKL=OFF
         - cmake --build build -- -j $(nproc)
-        - mkdir -p public/release/x86_64-w64-mingw32/hyb/
-        - zip -j public/release/x86_64-w64-mingw32/hyb/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
-        - ln -s ../x86_64-w64-mingw32/hyb public/release/x86_64-w64-mingw32-msmpi
+        - mkdir -p public/release/x86_64-w64-mingw32-msmpi/
+        - zip -j public/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
     artifacts:
         paths:
             - public
