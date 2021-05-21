@@ -1,10 +1,10 @@
-FROM debian:buster AS build
+FROM debian:buster AS base
 RUN apt-get update \
  && apt-get -y install cmake git gfortran make zip unzip curl gcc g++ gfortran mingw-w64-tools gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 gfortran-mingw-w64-x86-64 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
-FROM build AS common
+FROM base AS common
 COPY toolchain.cmake /usr/x86_64-w64-mingw32/
 ENV target=x86_64-w64-mingw32
 ENV LIB_ROOT=/usr/x86_64-w64-mingw32
