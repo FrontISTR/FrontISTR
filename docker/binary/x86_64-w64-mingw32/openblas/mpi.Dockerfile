@@ -1,24 +1,4 @@
-FROM debian:buster AS base
-RUN apt-get update \
- && apt-get -y install cmake git gfortran make zip unzip curl gcc g++ gfortran mingw-w64-tools gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 gfortran-mingw-w64-x86-64 \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
-
-FROM base AS common
-COPY toolchain.cmake /usr/x86_64-w64-mingw32/
-ENV target=x86_64-w64-mingw32
-ENV LIB_ROOT=/usr/x86_64-w64-mingw32
-RUN ln -s /usr/x86_64-w64-mingw32 /usr/local/x86_64-w64-mingw32 \
- && git clone --depth 1 https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git && cd REVOCAP_Mesh \
- && cat ./config/MakefileConfig.LinuxCluster|sed  -e "s/ g++/ ${target}-g++/" -e "s/AR = ar/AR = ${target}-ar/" > MakefileConfig.in  \
- && make Refiner -j \
- && find lib -type f -name "libRcapRefiner*" -exec cp {} ${LIB_ROOT}/lib/ \; \
- && find . -type f -name "rcapRefiner.h" -exec cp {} ${LIB_ROOT}/include/ \; \
- && cd .. && rm -fr REVOCAP_Mesh \
- && curl -L https://www.frontistr.com/files/oneapi_2021.2.0.tar.xz | tar Jxv \
- && cp -r ./oneapi/include ./oneapi/lib ${LIB_ROOT} && rm -fr oneapi
-
-FROM common AS lib1
+FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/base:normal AS lib1
 RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd OpenBLAS \
  && CC=${target}-gcc FC=${target}-gfortran RANLIB=${target}-ranlib HOSTCC=gcc make USE_OPENMP=0 BINARY=64 DYNAMIC_ARCH=1 NO_SHARED=1 -j \
  && make PREFIX=${LIB_ROOT} install \
@@ -31,7 +11,7 @@ RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd 
  && cd ../.. && rm -fr metis-5.1.0
 
 FROM lib1 AS lib2
-RUN curl -L https://www.frontistr.com/files/msmpi_10.1.2.tar.xz | tar Jxv \
+RUN curl -L https://www.frontistr.com/files/gitlab-ci/msmpi_10.1.2.tar.xz | tar Jxv \
  && cp -r ./msmpi/bin ./msmpi/include ./msmpi/lib ${LIB_ROOT} && rm -fr msmpi \
  && cd ${LIB_ROOT}/lib/ && gendef msmpi.dll && x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll && rm msmpi.def && cd - \
  && curl -L http://www.netlib.org/scalapack/scalapack-2.1.0.tgz | tar zxv && cd scalapack-2.1.0 \
@@ -42,17 +22,15 @@ RUN curl -L https://www.frontistr.com/files/msmpi_10.1.2.tar.xz | tar Jxv \
  && cp Make.inc/Makefile.inc.generic Makefile.inc \
  && make -C src build_mumps_int_def.o build_mumps_int_def \
  && sed \
- -e "s|^LAPACK = -llapack|LAPACK = -lopenblas|" -e "s|^LIBBLAS = -lblas|LIBBLAS = -lopenblas|" \
  -e "s|^CC.*$|CC = ${target}-gcc|"  \
  -e "s|^FC.*$|FC = ${target}-gfortran|"  \
  -e "s|^FL.*$|FL = ${target}-gfortran|" \
  -e "s|^INCPAR.*$|INCPAR = -I${LIB_ROOT}/include|" \
- -e "s|^SCALAP.*$|SCALAP = -lscalapack|" \
- -e "s|^LIBPAR.*$|LIBPAR = \$(SCALAP) \$(LAPACK) -lmsmpi |" \
  -e "s|^OPTF.*$|OPTF = -O|" \
  -e "s|^OPTC.*$|OPTC = -O -I.|" \
  -e "s|^OPTL.*$|OPTL = -O|" -i Makefile.inc \
- && make RANLIB=${target}-ranlib all -j \
+ && make RANLIB=${target}-ranlib prerequisites libseqneeded -j \
+ && make -C src RANLIB=${target}-ranlib all -j \
  && cp include/*.h ${LIB_ROOT}/include && cp lib/*.a ${LIB_ROOT}/lib \
  && cd .. && rm -fr MUMPS_5.4.0
 

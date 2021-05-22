@@ -1,32 +1,12 @@
-FROM debian:buster AS base
-RUN apt-get update \
- && apt-get -y install cmake git gfortran make zip unzip curl gcc g++ gfortran mingw-w64-tools gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 gfortran-mingw-w64-x86-64 \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
-
-FROM base AS common
-COPY toolchain.cmake /usr/x86_64-w64-mingw32/
-ENV target=x86_64-w64-mingw32
-ENV LIB_ROOT=/usr/x86_64-w64-mingw32
-RUN ln -s /usr/x86_64-w64-mingw32 /usr/local/x86_64-w64-mingw32 \
- && git clone --depth 1 https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git && cd REVOCAP_Mesh \
- && cat ./config/MakefileConfig.LinuxCluster|sed  -e "s/ g++/ ${target}-g++/" -e "s/AR = ar/AR = ${target}-ar/" > MakefileConfig.in  \
- && make Refiner -j \
- && find lib -type f -name "libRcapRefiner*" -exec cp {} ${LIB_ROOT}/lib/ \; \
- && find . -type f -name "rcapRefiner.h" -exec cp {} ${LIB_ROOT}/include/ \; \
- && cd .. && rm -fr REVOCAP_Mesh \
- && curl -L https://www.frontistr.com/files/oneapi_2021.2.0.tar.xz | tar Jxv \
- && cp -r ./oneapi/include ./oneapi/lib ${LIB_ROOT} && rm -fr oneapi
-
-FROM common AS lib1
+FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/base:normal AS lib1
 RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd OpenBLAS \
- && CC=${target}-gcc FC=${target}-gfortran RANLIB=${target}-ranlib HOSTCC=gcc make USE_OPENMP=0 BINARY=64 DYNAMIC_ARCH=1 NO_SHARED=1 -j \
+ && CC=${target}-gcc FC=${target}-gfortran RANLIB=${target}-ranlib HOSTCC=gcc LDFLAGS=-fopenmp make USE_OPENMP=0 BINARY=64 DYNAMIC_ARCH=1 NO_SHARED=1 -j \
  && make PREFIX=${LIB_ROOT} install \
  && cd .. && rm -fr OpenBLAS \
  && curl -L http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz | tar zxv && cd metis-5.1.0 \
  && sed -i -e "/#include <sys\/resource.h>/d" ./GKlib/gk_arch.h && sed -i -e "/extern int gk_getopt/d" -e "/longopts/d" ./GKlib/gk_getopt.h \
  && mkdir buildserial && cd buildserial \
- && cmake  -DCMAKE_TOOLCHAIN_FILE=$LIB_ROOT/toolchain.cmake -DOPENMP=OFF -DGKRAND=ON -DCMAKE_BUILD_TYPE="Release" -DCMAKE_VERBOSE_MAKEFILE=1  -DGKLIB_PATH=../GKlib -DCMAKE_INSTALL_PREFIX="${LIB_ROOT} " .. \
+ && cmake  -DCMAKE_TOOLCHAIN_FILE=$LIB_ROOT/toolchain.cmake -DOPENMP=ON -DGKRAND=ON -DCMAKE_BUILD_TYPE="Release" -DCMAKE_VERBOSE_MAKEFILE=1  -DGKLIB_PATH=../GKlib -DCMAKE_INSTALL_PREFIX="${LIB_ROOT} " .. \
  && make -j && make install \
  && cd ../.. && rm -fr metis-5.1.0
 
@@ -34,15 +14,16 @@ FROM lib1 AS lib2
 RUN curl -L http://mumps.enseeiht.fr/MUMPS_5.4.0.tar.gz | tar zxv && cd MUMPS_5.4.0 \
  && cp Make.inc/Makefile.inc.generic.SEQ Makefile.inc \
  && make -C src build_mumps_int_def.o build_mumps_int_def \
- && sed -i \
- -e "s|^LAPACK.*$|LAPACK = -lopenblas|" -e "s|^LIBBLAS.*$|LIBBLAS = -lopenblas|" \
+ && sed \
  -e "s|^CC.*$|CC = ${target}-gcc|"  \
  -e "s|^FC.*$|FC = ${target}-gfortran|"  \
  -e "s|^FL.*$|FL = ${target}-gfortran|" \
- -e "s|^OPTF.*$|OPTF = -O |" \
- -e "s|^OPTC.*$|OPTC = -O -I.|" \
- -e "s|^OPTL.*$|OPTL = -O |" -i Makefile.inc \
- && make RANLIB=${target}-ranlib all -j \
+ -e "s|^INCPAR.*$|INCPAR = -I${LIB_ROOT}/include|" \
+ -e "s|^OPTF.*$|OPTF = -O -fopenmp -DBLR_MT|" \
+ -e "s|^OPTC.*$|OPTC = -O -I. -fopenmp|" \
+ -e "s|^OPTL.*$|OPTL = -O -fopenmp|" -i Makefile.inc \
+ && make RANLIB=${target}-ranlib prerequisites libseqneeded -j \
+ && make -C src RANLIB=${target}-ranlib all -j \
  && cp include/*.h ${LIB_ROOT}/include && cp lib/*.a ${LIB_ROOT}/lib && cp libseq/*.h ${LIB_ROOT}/include && cp libseq/*.a ${LIB_ROOT}/lib \
  && cd .. && rm -fr MUMPS_5.4.0
 
@@ -52,7 +33,8 @@ RUN git clone --depth 1 -b trilinos-release-13-0-1 https://github.com/trilinos/T
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
-  -DTrilinos_ENABLE_OpenMP=OFF \
+  -DTrilinos_ENABLE_OpenMP=ON \
+  -DCMAKE_CXX_FLAGS_NONE_OVERRIDE=-fopenmp \
   -DBUILD_SHARED_LIBS=OFF -DTPL_ENABLE_DLlib=OFF \
   -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=ON \
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
@@ -60,7 +42,7 @@ RUN git clone --depth 1 -b trilinos-release-13-0-1 https://github.com/trilinos/T
   -DTrilinos_ENABLE_ML=ON \
   -DTrilinos_ENABLE_Zoltan=ON \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \  
+  -DTrilinos_ENABLE_Amesos=OFF \
   -DBLAS_LIBRARY_NAMES="openblas" -DLAPACK_LIBRARY_NAMES="openblas" \
   -DTrilinos_ENABLE_Fortran=OFF .. \
  && make -j && make install \
@@ -72,7 +54,8 @@ RUN git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
-  -DTrilinos_ENABLE_OpenMP=OFF \
+  -DTrilinos_ENABLE_OpenMP=ON \
+  -DCMAKE_CXX_FLAGS_NONE_OVERRIDE=-fopenmp \
   -DBUILD_SHARED_LIBS=OFF -DTPL_ENABLE_DLlib=OFF \
   -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=ON \
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
@@ -80,7 +63,7 @@ RUN git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/
   -DTrilinos_ENABLE_ML=ON \
   -DTrilinos_ENABLE_Zoltan=ON \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \  
+  -DTrilinos_ENABLE_Amesos=OFF \
   -DBLAS_LIBRARY_NAMES="openblas" -DLAPACK_LIBRARY_NAMES="openblas" \
   -DTrilinos_ENABLE_Fortran=OFF .. \
  && make -j && make install \
@@ -97,7 +80,8 @@ RUN curl -L http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
-  -DTrilinos_ENABLE_OpenMP=OFF \
+  -DTrilinos_ENABLE_OpenMP=ON \
+  -DCMAKE_CXX_FLAGS_NONE_OVERRIDE=-fopenmp \
   -DBUILD_SHARED_LIBS=OFF -DTPL_ENABLE_DLlib=OFF \
   -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=ON \
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
@@ -105,9 +89,8 @@ RUN curl -L http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.
   -DTrilinos_ENABLE_ML=ON \
   -DTrilinos_ENABLE_Zoltan=ON \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \  
+  -DTrilinos_ENABLE_Amesos=OFF \
   -DBLAS_LIBRARY_NAMES="openblas" -DLAPACK_LIBRARY_NAMES="openblas" \
   -DTrilinos_ENABLE_Fortran=OFF .. \
  && make -j && make install \
  && cd ../.. && rm -fr Trilinos
-
