@@ -129,6 +129,8 @@ pages:
         - x86_64-w64-mingw32/hybrid-impi-mkl_intelthread
     script:
         - ls public
+        - echo /release/x86_64-w64-mingw32/FrontISTR-latest.zip       /release/x86_64-w64-mingw32/FrontISTR-latest.omo.zip 301 >> public/_redirects
+        - echo /release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /release/x86_64-w64-mingw32/FrontISTR-latest.hmo.zip 301 >> public/_redirects
     artifacts:
         paths:
             - public
