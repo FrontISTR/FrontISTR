@@ -300,6 +300,12 @@ int main(int argc, char *argv[])
     printf("---\n");
     printf("...\n");
   }
+#ifdef WITH_MKL
+  if ((getenv("MKL_NUM_THREADS")) == NULL) {
+    sprintf(date, "MKL_NUM_THREADS=%d",get_threads_num());
+    putenv(date);
+  }
+#endif  
 #ifndef HECMW_SERIAL
   MPI_Barrier( MPI_COMM_WORLD );
 #endif
