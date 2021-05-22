@@ -1,12 +1,19 @@
 CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32
-
 SUBDIRS := openblas mkl
+
+.PHONY: clean all build push $(SUBDIRS)
 
 all: build
 
-build: $(SUBDIRS)
+build: build_base
+	$(MAKE) subdir MAKECMDGOALS=$@
+push: push_base
+	$(MAKE) subdir MAKECMDGOALS=$@
 
-push: $(SUBDIRS)
+subdir: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
 
 
 login:
@@ -16,16 +23,10 @@ else
 	docker login -u gitlab-ci-token -p $(CI_BUILD_TOKEN) $(CI_REGISTRY_IMAGE)
 endif
 
-$(SUBDIRS): base
-	make -C $@ $(MAKECMDGOALS)
 
-base:
+build_base:
 	docker build -t $(CI_REGISTRY_IMAGE)/core  -f Dockerfile . --target core
 	docker build -t $(CI_REGISTRY_IMAGE)/base  -f Dockerfile . --target base
 
-push_base: base login
+push_base: build_base login
 	docker push $(CI_REGISTRY_IMAGE)/base
-
-
-
-
