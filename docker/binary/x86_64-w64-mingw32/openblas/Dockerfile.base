@@ -1,5 +1,5 @@
 
-FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/base AS ser
+FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/base AS serial
 RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd OpenBLAS \
  && CC=${target}-gcc FC=${target}-gfortran RANLIB=${target}-ranlib HOSTCC=gcc make USE_OPENMP=0 BINARY=64 DYNAMIC_ARCH=1 NO_SHARED=1 -j \
  && make PREFIX=${LIB_ROOT} install \
@@ -11,7 +11,7 @@ RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd 
  && make -j && make install \
  && cd ../.. && rm -fr metis-5.1.0
 
-FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/base AS omp
+FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/base AS openmp
 RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd OpenBLAS \
  && CC=${target}-gcc FC=${target}-gfortran RANLIB=${target}-ranlib HOSTCC=gcc LDFLAGS=-fopenmp make USE_OPENMP=1 BINARY=64 DYNAMIC_ARCH=1 NO_SHARED=1 -j \
  && make PREFIX=${LIB_ROOT} install \
@@ -23,11 +23,11 @@ RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd 
  && make -j && make install \
  && cd ../.. && rm -fr metis-5.1.0
 
-FROM ser AS mpi
+FROM serial AS mpi
 RUN curl -L https://www.frontistr.com/files/ci/msmpi_10.1.2.tar.xz | tar Jxv -C ${LIB_ROOT} \
  && cd ${LIB_ROOT}/lib/ && gendef msmpi.dll && x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll && rm msmpi.def && cd -
 
-FROM omp AS hyb
+FROM openmp AS hybrid
 RUN curl -L https://www.frontistr.com/files/ci/msmpi_10.1.2.tar.xz | tar Jxv -C ${LIB_ROOT} \
  && cd ${LIB_ROOT}/lib/ && gendef msmpi.dll && x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll && rm msmpi.def && cd -
 
