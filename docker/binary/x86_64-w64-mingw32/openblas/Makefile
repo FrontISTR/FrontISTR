@@ -12,9 +12,11 @@ endif
 
 base: base_serial base_openmp base_mpi base_hybrid
 
-base_serial:
+base_common:
+	docker build -t $(CI_REGISTRY_IMAGE):base_common       -f Dockerfile.base . --target common
+base_serial: base_common
 	docker build -t $(CI_REGISTRY_IMAGE):base_serial       -f Dockerfile.base . --target serial
-base_openmp:
+base_openmp: base_common
 	docker build -t $(CI_REGISTRY_IMAGE):base_openmp       -f Dockerfile.base . --target openmp
 base_mpi:    base_serial
 	docker build -t $(CI_REGISTRY_IMAGE):base_mpi          -f Dockerfile.base . --target mpi
@@ -39,9 +41,11 @@ hybrid: base_hybrid
 	docker build -t $(CI_REGISTRY_IMAGE):hybrid_metis4     -f Dockerfile.hybrid . --target lib-metis4
 
 push_base: push_base_serial push_base_openmp push_base_mpi push_base_hybrid
-push_base_serial: base_serial
+push_base_common: base_common
+	docker push $(CI_REGISTRY_IMAGE):base_common
+push_base_serial: base_serial push_base_common
 	docker push $(CI_REGISTRY_IMAGE):base_serial
-push_base_openmp: base_openmp
+push_base_openmp: base_openmp push_base_common
 	docker push $(CI_REGISTRY_IMAGE):base_openmp
 push_base_mpi:    base_mpi    push_base_serial
 	docker push $(CI_REGISTRY_IMAGE):base_mpi
