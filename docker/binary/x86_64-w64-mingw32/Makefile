@@ -20,13 +20,11 @@ $(SUBDIRS): base
 	make -C $@ $(MAKECMDGOALS)
 
 base:
-	docker build -t $(CI_REGISTRY_IMAGE)/core         -f Dockerfile . --target core
-	docker build -t $(CI_REGISTRY_IMAGE)/base:normal  -f Dockerfile . --target base
-	docker build -t $(CI_REGISTRY_IMAGE)/base:mkl     -f Dockerfile . --target base-mkl
+	docker build -t $(CI_REGISTRY_IMAGE)/core  -f Dockerfile . --target core
+	docker build -t $(CI_REGISTRY_IMAGE)/base  -f Dockerfile . --target base
 
 push_base: base login
-	docker push $(CI_REGISTRY_IMAGE)/base:mkl
-	docker push $(CI_REGISTRY_IMAGE)/base:normal
+	docker push $(CI_REGISTRY_IMAGE)/base
 
 
 

@@ -11,19 +11,25 @@ else
 	docker login -u gitlab-ci-token -p $(CI_BUILD_TOKEN) $(CI_REGISTRY_IMAGE)
 endif
 
-ser:
+base:
+	docker build -t $(CI_REGISTRY_IMAGE):base_ser       -f base.Dockerfile . --target ser
+	docker build -t $(CI_REGISTRY_IMAGE):base_omp       -f base.Dockerfile . --target omp
+	docker build -t $(CI_REGISTRY_IMAGE):base_mpi       -f base.Dockerfile . --target mpi
+	docker build -t $(CI_REGISTRY_IMAGE):base_hyb       -f base.Dockerfile . --target hyb
+
+ser: base
 	docker build -t $(CI_REGISTRY_IMAGE):ser            -f ser.Dockerfile . --target lib
 	docker build -t $(CI_REGISTRY_IMAGE):ser_trilinos12 -f ser.Dockerfile . --target lib-trilinos12
 	docker build -t $(CI_REGISTRY_IMAGE):ser_metis4     -f ser.Dockerfile . --target lib-metis4
-mpi:
+mpi: base
 	docker build -t $(CI_REGISTRY_IMAGE):mpi            -f mpi.Dockerfile . --target lib
 	docker build -t $(CI_REGISTRY_IMAGE):mpi_trilinos12 -f mpi.Dockerfile . --target lib-trilinos12
 	docker build -t $(CI_REGISTRY_IMAGE):mpi_metis4     -f mpi.Dockerfile . --target lib-metis4
-omp:
+omp: base
 	docker build -t $(CI_REGISTRY_IMAGE):omp            -f omp.Dockerfile . --target lib
 	docker build -t $(CI_REGISTRY_IMAGE):omp_trilinos12 -f omp.Dockerfile . --target lib-trilinos12
 	docker build -t $(CI_REGISTRY_IMAGE):omp_metis4     -f omp.Dockerfile . --target lib-metis4
-hyb:
+hyb: base
 	docker build -t $(CI_REGISTRY_IMAGE):hyb            -f hyb.Dockerfile . --target lib
 	docker build -t $(CI_REGISTRY_IMAGE):hyb_trilinos12 -f hyb.Dockerfile . --target lib-trilinos12
 	docker build -t $(CI_REGISTRY_IMAGE):hyb_metis4     -f hyb.Dockerfile . --target lib-metis4

@@ -1,20 +1,5 @@
-FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/base:normal AS lib1
-RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd OpenBLAS \
- && CC=${target}-gcc FC=${target}-gfortran RANLIB=${target}-ranlib HOSTCC=gcc LDFLAGS=-fopenmp make USE_OPENMP=1 BINARY=64 DYNAMIC_ARCH=1 NO_SHARED=1 -j \
- && make PREFIX=${LIB_ROOT} install \
- && cd .. && rm -fr OpenBLAS \
- && curl -L http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz | tar zxv && cd metis-5.1.0 \
- && sed -i -e "/#include <sys\/resource.h>/d" ./GKlib/gk_arch.h && sed -i -e "/extern int gk_getopt/d" -e "/longopts/d" ./GKlib/gk_getopt.h \
- && mkdir buildserial && cd buildserial \
- && cmake  -DCMAKE_TOOLCHAIN_FILE=$LIB_ROOT/toolchain.cmake -DOPENMP=ON -DGKRAND=ON -DCMAKE_BUILD_TYPE="Release" -DCMAKE_VERBOSE_MAKEFILE=1  -DGKLIB_PATH=../GKlib -DCMAKE_INSTALL_PREFIX="${LIB_ROOT} " .. \
- && make -j && make install \
- && cd ../.. && rm -fr metis-5.1.0
-
-FROM lib1 AS lib2
-RUN curl -L https://www.frontistr.com/files/gitlab-ci/msmpi_10.1.2.tar.xz | tar Jxv \
- && cp -r ./msmpi/bin ./msmpi/include ./msmpi/lib ${LIB_ROOT} && rm -fr msmpi \
- && cd ${LIB_ROOT}/lib/ && gendef msmpi.dll && x86_64-w64-mingw32-dlltool -d msmpi.def -l libmsmpi.a -D msmpi.dll && rm msmpi.def && cd - \
- && curl -L http://www.netlib.org/scalapack/scalapack-2.1.0.tgz | tar zxv && cd scalapack-2.1.0 \
+FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/openblas:base_hyb AS lib2
+RUN curl -L http://www.netlib.org/scalapack/scalapack-2.1.0.tgz | tar zxv && cd scalapack-2.1.0 \
  && sed -e "s/mpif90/x86_64-w64-mingw32-gfortran/g" -e "s/mpicc/x86_64-w64-mingw32-gcc/"  -e "s/ranlib/x86_64-w64-mingw32-ranlib/" -e "s/ar/x86_64-w64-mingw32-ar/" -e "s|-O3|-O3 -I${LIB_ROOT}/include|g" SLmake.inc.example > SLmake.inc \
  && make lib && cp libscalapack.a ${LIB_ROOT}/lib \
  && cd .. && rm -fr scalapack-2.1.0 \
