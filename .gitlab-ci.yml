@@ -169,7 +169,7 @@ x86_64-w64-mingw32/openmp-msmpi-openblas:
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32/
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.omo.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
-          README.md README.ja.md License.txt VERSION
+          README* License* VERSION
     artifacts:
         paths:
             - public
@@ -194,7 +194,7 @@ x86_64-w64-mingw32/hybrid-msmpi-openblas:
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32/
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.hmo.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
-          README.md README.ja.md License.txt VERSION
+          README* License* VERSION
           ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll 
     artifacts:
         paths:
@@ -222,7 +222,7 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32/
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.himi.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
-          README.md README.ja.md License.txt VERSION
+          README* License* VERSION
           ${LIB_ROOT}/bin/mpiexec.exe  ${LIB_ROOT}/lib/impi.dll ${LIB_ROOT}/lib/impi.dll ${LIB_ROOT}/lib/libfabric.dll ${LIB_ROOT}/bin/hydra_bstrap_proxy.exe ${LIB_ROOT}/bin/hydra_pmi_proxy.exe
           ${LIB_ROOT}/lib/mkl_def.1.dll ${LIB_ROOT}/lib/mkl_mc.1.dll ${LIB_ROOT}/lib/mkl_mc3.1.dll ${LIB_ROOT}/lib/mkl_avx.1.dll ${LIB_ROOT}/lib/mkl_avx2.1.dll ${LIB_ROOT}/lib/mkl_avx512.1.dll ${LIB_ROOT}/lib/mkl_blacs_lp64.1.dll ${LIB_ROOT}/lib/mkl_blacs_intelmpi_lp64.1.dll ${LIB_ROOT}/lib/mkl_core.1.dll ${LIB_ROOT}/lib/mkl_intel_thread.1.dll ${LIB_ROOT}/lib/mkl_rt.1.dll ${LIB_ROOT}/lib/libiomp5md.dll ${LIB_ROOT}/lib/mkl_scalapack_lp64.1.dll 
     artifacts:
