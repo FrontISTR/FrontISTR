@@ -241,7 +241,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	if (myrank == 0) {
 		/* outpu pvtu file */
 		sprintf(file_pvtu, "%s.pvtu", outfile1);
-		outfp = fopen (file_pvtu, "w");
+		outfp = fopen (file_pvtu, "wb");
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\" header_type=\"UInt32\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
@@ -304,7 +304,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		offset[5+data->nn_component+i] = offset[4+data->nn_component+i] + sizeof(int) + data->ne_dof[i]*n_elem*sizeof(int);
 	}
 
-	outfp = fopen (file_vtu, "w");
+	outfp = fopen (file_vtu, "wb");
 	fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 	fprintf (outfp, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"%s\" header_type=\"UInt32\">\n", HECMW_endian_str());
 	fprintf (outfp, "<UnstructuredGrid>\n");
