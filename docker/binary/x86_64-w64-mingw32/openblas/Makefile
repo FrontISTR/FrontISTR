@@ -59,7 +59,7 @@ push_mpi:    mpi push_base_mpi
 	docker push $(CI_REGISTRY_IMAGE):mpi
 	docker push $(CI_REGISTRY_IMAGE):mpi_trilinos12
 	docker push $(CI_REGISTRY_IMAGE):mpi_metis4
-push_hybrid: hyb push_base_hybrid
+push_hybrid: hybrid push_base_hybrid
 	docker push $(CI_REGISTRY_IMAGE):hybrid
 	docker push $(CI_REGISTRY_IMAGE):hybrid_trilinos12
 	docker push $(CI_REGISTRY_IMAGE):hybrid_metis4
