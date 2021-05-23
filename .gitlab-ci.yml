@@ -129,8 +129,8 @@ pages:
         - x86_64-w64-mingw32/hybrid-impi-mkl_intelthread
     script:
         - ls public
-        - echo /release/x86_64-w64-mingw32/FrontISTR-latest.zip       /release/x86_64-w64-mingw32/FrontISTR-latest.omo.zip 301 >> public/_redirects
-        - echo /release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /release/x86_64-w64-mingw32/FrontISTR-latest.hmo.zip 301 >> public/_redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.omo.zip 301 >> public/_redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hmo.zip 301 >> public/_redirects
     artifacts:
         paths:
             - public
@@ -170,7 +170,6 @@ x86_64-w64-mingw32/openmp-msmpi-openblas:
         - mkdir -p public/release/x86_64-w64-mingw32/
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.omo.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README.md README.ja.md License.txt VERSION
-        - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe README.md README.ja.md License.txt VERSION
     artifacts:
         paths:
             - public
@@ -197,10 +196,6 @@ x86_64-w64-mingw32/hybrid-msmpi-openblas:
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.hmo.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README.md README.ja.md License.txt VERSION
           ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll 
-        - mkdir -p public/release/x86_64-w64-mingw32-msmpi/
-        - zip -j public/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
-          README.md README.ja.md License.txt VERSION
-          ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll README.md README.ja.md License.txt VERSION
     artifacts:
         paths:
             - public
