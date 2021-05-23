@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/openblas:base_hyb AS lib2
+FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/openblas:base_hybrid AS lib2
 RUN curl -L http://www.netlib.org/scalapack/scalapack-2.1.0.tgz | tar zxv && cd scalapack-2.1.0 \
  && sed -e "s/mpif90/x86_64-w64-mingw32-gfortran/g" -e "s/mpicc/x86_64-w64-mingw32-gcc/"  -e "s/ranlib/x86_64-w64-mingw32-ranlib/" -e "s/ar/x86_64-w64-mingw32-ar/" -e "s|-O3|-O3 -I${LIB_ROOT}/include|g" SLmake.inc.example > SLmake.inc \
  && make lib && cp libscalapack.a ${LIB_ROOT}/lib \

@@ -1,4 +1,4 @@
-FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/openblas:base_ser AS lib2
+FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/openblas:base_serial AS lib2
 RUN curl -L http://mumps.enseeiht.fr/MUMPS_5.4.0.tar.gz | tar zxv && cd MUMPS_5.4.0 \
  && cp Make.inc/Makefile.inc.generic.SEQ Makefile.inc \
  && make -C src build_mumps_int_def.o build_mumps_int_def \
