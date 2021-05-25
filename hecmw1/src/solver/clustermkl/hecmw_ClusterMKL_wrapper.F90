@@ -4,7 +4,7 @@
 !-------------------------------------------------------------------------------
 !> This module provides linear equation solver interface for Cluster Pardiso
 #ifndef HECMW_SERIAL
-#  ifdef WITH_MKL
+#  ifdef HECMW_WITH_MKL
 #    define WITH_CLUSTERMKL
 #  endif
 #endif
