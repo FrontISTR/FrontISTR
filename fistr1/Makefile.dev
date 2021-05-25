@@ -64,6 +64,12 @@ MLLIBS                   = -lml -lzoltan
 ML_LDFLAGS               = -L$(MLLIBDIR) $(MLLIBS)
 ML_F90LDFLAGS            = -L$(MLLIBDIR) $(MLLIBS)
 
+MKLLIBS                  =
+MKL_CFLAGS               = -I$(MKLINCDIR)
+MKL_LDFLAGS              = -L$(MKLLIBDIR) $(MKLLIBS)
+MKL_F90FLAGS             = -I$(MKLINCDIR)
+MKL_F90LDFLAGS           = -L$(MKLLIBDIR) $(MKLLIBS)
+
 REVOCAPLIBS              = -lrcapf
 REVOCAP_F90FLAGS         = -I$(REVOCAPINCDIR)
 REVOCAP_F90LDFLAGS       = -L$(REVOCAPLIBDIR) $(REVOCAPLIBS)
