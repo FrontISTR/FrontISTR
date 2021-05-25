@@ -1,14 +1,21 @@
 FROM debian:buster AS env1
 RUN apt-get update \
- && apt-get -y install cmake git gfortran make zip unzip curl gcc g++ gfortran \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+ && apt-get -y install gcc g++ gfortran \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && apt-get -y install make cmake git zip unzip curl \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 FROM env1 AS env
 RUN apt-get update \
- && apt-get -y install mingw-w64-tools gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 gfortran-mingw-w64-x86-64 \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+ && apt-get -y install binutils-mingw-w64-x86-64 mingw-w64-common mingw-w64-tools gcc-mingw-w64-base mingw-w64-x86-64-dev \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && apt-get -y install gcc-mingw-w64-x86-64 \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && apt-get -y install g++-mingw-w64-x86-64 gfortran-mingw-w64-x86-64 \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 FROM env AS core1
 COPY toolchain.cmake /usr/x86_64-w64-mingw32/
@@ -23,7 +30,8 @@ RUN ln -s /usr/x86_64-w64-mingw32 /usr/local/x86_64-w64-mingw32 \
  && cd .. && rm -fr REVOCAP_Mesh
 
 FROM core1 AS core
-RUN curl -L https://www.frontistr.com/files/ci/mkl_2021.2.0.tar.xz | tar Jxv -C ${LIB_ROOT}
+RUN curl -L https://www.frontistr.com/files/ci/mkl_2021.2.0.tar.xz | tar Jxv -C ${LIB_ROOT} --wildcards './lib/mkl_avx*' './lib/mkl_core*'
+RUN curl -L https://www.frontistr.com/files/ci/mkl_2021.2.0.tar.xz | tar Jkxv -C ${LIB_ROOT} 2>/dev/null || true
 
 FROM core AS serial
 RUN git clone --depth 1 -b v0.3.15 https://github.com/xianyi/OpenBLAS.git && cd OpenBLAS \
