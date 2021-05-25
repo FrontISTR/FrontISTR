@@ -1,4 +1,4 @@
-CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32
+CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr
 SUBDIRS := serial thread process hybrid
 
 .PHONY: clean all build push $(SUBDIRS)
@@ -23,18 +23,18 @@ else
 endif
 
 build_core:
-	docker build -t $(CI_REGISTRY_IMAGE)/env   -f Dockerfile . --target env
-	docker build -t $(CI_REGISTRY_IMAGE)/core  -f Dockerfile . --target core
+	docker build -t $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/env   -f Dockerfile . --target env
+	docker build -t $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/core  -f Dockerfile . --target core
 build_serial: build_core
-	docker build -t $(CI_REGISTRY_IMAGE)/base:serial -f Dockerfile . --target serial
+	docker build -t $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/base:serial -f Dockerfile . --target serial
 build_thread: build_core
-	docker build -t $(CI_REGISTRY_IMAGE)/base:thread -f Dockerfile . --target thread
+	docker build -t $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/base:thread -f Dockerfile . --target thread
 
 push_core: build_core login
-	docker push $(CI_REGISTRY_IMAGE)/env
-	docker push $(CI_REGISTRY_IMAGE)/core
+	docker push $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/env
+	docker push $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/core
 
 push_serial: build_serial
-	docker push $(CI_REGISTRY_IMAGE)/base:serial
+	docker push $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/base:serial
 push_thread: build_thread
-	docker push $(CI_REGISTRY_IMAGE)/base:thread
+	docker push $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/base:thread
