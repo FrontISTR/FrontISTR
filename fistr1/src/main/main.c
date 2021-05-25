@@ -20,6 +20,9 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
+#ifdef WITH_MKL
+#include <mkl.h>
+#endif
 
 extern void fstr_main();
 
@@ -92,6 +95,10 @@ void set_num_threads(char *arg) {
     exit(1);
   }
   omp_set_num_threads(exec_threads);
+#ifdef WITH_MKL
+  mkl_set_num_threads(exec_threads);
+#endif
+
 }
 #endif /* _OPENMP */
 
