@@ -3,8 +3,6 @@ SUBDIRS := serial thread process hybrid
 
 .PHONY: clean all build push $(SUBDIRS)
 
-all: build
-
 build: build_serial build_thread
 	$(MAKE) subdir MAKECMDGOALS=$@
 push: login push_serial push_thread
@@ -33,7 +31,6 @@ build_thread: build_core
 push_core: build_core login
 	docker push $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/env
 	docker push $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/core
-
 push_serial: build_serial
 	docker push $(CI_REGISTRY_IMAGE)/x86_64-w64-mingw32/base:serial
 push_thread: build_thread
