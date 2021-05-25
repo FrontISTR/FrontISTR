@@ -392,7 +392,7 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	# with MKL PARDISO
 	#
-	if [ ${WITHMKL} -eq 1 ] && [ ${SERIAL} -eq 0 ]; then
+	if [ ${WITHMKL} -eq 1 ]; then
 		F90FLAGS="${F90FLAGS} -DHECMW_WITH_MKL"
 	else
 		MKL_CFLAGS=""
