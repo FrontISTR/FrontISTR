@@ -18,6 +18,7 @@ RUN curl -L http://mumps.enseeiht.fr/MUMPS_5.4.0.tar.gz | tar zxv && cd MUMPS_5.
 FROM lib2 AS openblas
 RUN git clone --depth 1 -b trilinos-release-13-0-1 https://github.com/trilinos/Trilinos.git && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
@@ -27,31 +28,34 @@ RUN git clone --depth 1 -b trilinos-release-13-0-1 https://github.com/trilinos/T
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
   -DTrilinos_ENABLE_TriKota=OFF \
   -DTrilinos_ENABLE_ML=ON \
-  -DTrilinos_ENABLE_Zoltan=ON \
+  -DTrilinos_ENABLE_Zoltan=OFF \
   -DTrilinos_ENABLE_OpenMP=ON \
   -DTrilinos_ENABLE_Amesos=OFF \  
   -DBLAS_LIBRARY_NAMES="openblas" -DLAPACK_LIBRARY_NAMES="openblas" \
-  -DTrilinos_ENABLE_Fortran=OFF .. \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
+  -DTrilinos_ENABLE_Fortran=OFF -DCMAKE_CXX_FLAGS=-fpermissive .. \
  && make -j && make install \
  && cd ../.. && rm -fr Trilinos
 
 FROM lib2 AS openblas-trilinos12
 RUN git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
   -DTrilinos_ENABLE_OpenMP=OFF \
   -DBUILD_SHARED_LIBS=OFF -DTPL_ENABLE_DLlib=OFF \
-  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=ON \
+  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=OFF \
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
   -DTrilinos_ENABLE_TriKota=OFF \
   -DTrilinos_ENABLE_ML=ON \
-  -DTrilinos_ENABLE_Zoltan=ON \
+  -DTrilinos_ENABLE_Zoltan=OFF \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \  
+  -DTrilinos_ENABLE_Amesos=ON \  
   -DBLAS_LIBRARY_NAMES="openblas" -DLAPACK_LIBRARY_NAMES="openblas" \
-  -DTrilinos_ENABLE_Fortran=OFF .. \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
+  -DTrilinos_ENABLE_Fortran=OFF -DCMAKE_CXX_FLAGS=-fpermissive .. \
  && make -j && make install \
  && cd ../.. && rm -fr Trilinos
 
@@ -63,60 +67,66 @@ RUN curl -L http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.
  && cd .. && rm -fr metis-4.0.3 \
  && git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
   -DTrilinos_ENABLE_OpenMP=OFF \
   -DBUILD_SHARED_LIBS=OFF -DTPL_ENABLE_DLlib=OFF \
-  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=ON \
+  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=OFF \
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
   -DTrilinos_ENABLE_TriKota=OFF \
   -DTrilinos_ENABLE_ML=ON \
-  -DTrilinos_ENABLE_Zoltan=ON \
+  -DTrilinos_ENABLE_Zoltan=OFF \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \  
+  -DTrilinos_ENABLE_Amesos=ON \  
   -DBLAS_LIBRARY_NAMES="openblas" -DLAPACK_LIBRARY_NAMES="openblas" \
-  -DTrilinos_ENABLE_Fortran=OFF .. \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
+  -DTrilinos_ENABLE_Fortran=OFF -DCMAKE_CXX_FLAGS=-fpermissive .. \
  && make -j && make install \
  && cd ../.. && rm -fr Trilinos
 
 FROM lib2 AS mkl
 RUN git clone --depth 1 -b trilinos-release-13-0-1 https://github.com/trilinos/Trilinos.git && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
   -DTrilinos_ENABLE_OpenMP=OFF \
   -DBUILD_SHARED_LIBS=OFF -DTPL_ENABLE_DLlib=OFF \
-  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=ON \
+  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=OFF \
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
   -DTrilinos_ENABLE_TriKota=OFF \
   -DTrilinos_ENABLE_ML=ON \
-  -DTrilinos_ENABLE_Zoltan=ON \
+  -DTrilinos_ENABLE_Zoltan=OFF \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \  
+  -DTrilinos_ENABLE_Amesos=ON \  
   -DBLAS_LIBRARY_NAMES="mkl_rt;mkl_intel_lp64_dll;mkl_intel_thread_dll;mkl_core_dll" -DLAPACK_LIBRARY_NAMES="mkl_rt;mkl_intel_lp64_dll;mkl_intel_thread_dll;mkl_core_dll" \
-  -DTrilinos_ENABLE_Fortran=OFF .. \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
+  -DTrilinos_ENABLE_Fortran=OFF -DCMAKE_CXX_FLAGS=-fpermissive .. \
  && make -j && make install \
  && cd ../.. && rm -fr Trilinos
 
 FROM lib2 AS mkl-trilinos12
 RUN git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
   -DTrilinos_ENABLE_OpenMP=OFF \
   -DBUILD_SHARED_LIBS=OFF -DTPL_ENABLE_DLlib=OFF \
-  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=ON \
+  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=OFF \
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
   -DTrilinos_ENABLE_TriKota=OFF \
   -DTrilinos_ENABLE_ML=ON \
-  -DTrilinos_ENABLE_Zoltan=ON \
+  -DTrilinos_ENABLE_Zoltan=OFF \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \  
+  -DTrilinos_ENABLE_Amesos=ON \  
   -DBLAS_LIBRARY_NAMES="mkl_rt;mkl_intel_lp64_dll;mkl_intel_thread_dll;mkl_core_dll" -DLAPACK_LIBRARY_NAMES="mkl_rt;mkl_intel_lp64_dll;mkl_intel_thread_dll;mkl_core_dll" \
-  -DTrilinos_ENABLE_Fortran=OFF .. \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
+  -DTrilinos_ENABLE_Fortran=OFF -DCMAKE_CXX_FLAGS=-fpermissive .. \
  && make -j && make install \
  && cd ../.. && rm -fr Trilinos
 
@@ -128,20 +138,22 @@ RUN curl -L http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.
  && cd .. && rm -fr metis-4.0.3 \
  && git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/Trilinos.git && cd Trilinos \
  && sed -i -e "s/git.cmd/git/" ./cmake/tribits/core/package_arch/TribitsConstants.cmake \
+ && sed -e '1s/^/#include <windows.h>\n/' -e '1s/^/#include <unistd.h>\n/' -i packages/ml/src/Utils/ml_epetra_utils.cpp \
  && mkdir build; cd build \
  && cmake \
   -DCMAKE_TOOLCHAIN_FILE=${LIB_ROOT}/toolchain.cmake -DCMAKE_INSTALL_PREFIX=${LIB_ROOT} \
   -DTrilinos_ENABLE_OpenMP=OFF \
   -DBUILD_SHARED_LIBS=OFF -DTPL_ENABLE_DLlib=OFF \
-  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=ON \
+  -DTPL_ENABLE_METIS=ON -DTPL_ENABLE_MUMPS=OFF \
   -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF \
   -DTrilinos_ENABLE_TriKota=OFF \
   -DTrilinos_ENABLE_ML=ON \
-  -DTrilinos_ENABLE_Zoltan=ON \
+  -DTrilinos_ENABLE_Zoltan=OFF \
   -DTrilinos_ENABLE_OpenMP=ON \
-  -DTrilinos_ENABLE_Amesos=OFF \  
+  -DTrilinos_ENABLE_Amesos=ON \  
   -DBLAS_LIBRARY_NAMES="mkl_rt;mkl_intel_lp64_dll;mkl_intel_thread_dll;mkl_core_dll" -DLAPACK_LIBRARY_NAMES="mkl_rt;mkl_intel_lp64_dll;mkl_intel_thread_dll;mkl_core_dll" \
-  -DTrilinos_ENABLE_Fortran=OFF .. \
+  -DHAVE_GCC_ABI_DEMANGLE=1 -DHAVE_TEUCHOS_BLASFLOAT=1 -DHAVE_TEUCHOS_LAPACKLARND=1 \
+  -DTrilinos_ENABLE_Fortran=OFF -DCMAKE_CXX_FLAGS=-fpermissive .. \
  && make -j && make install \
  && cd ../.. && rm -fr Trilinos
 
