@@ -9,7 +9,7 @@ stages:
     - build_for_deploy
     - deploy
 
-make_serial:
+build/serial:
     stage: build
     script:
         - cmake -Bbuild_serial -DWITH_MPI=OFF -DWITH_OPENMP=OFF -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
@@ -19,7 +19,7 @@ make_serial:
             - build_serial/
         expire_in: 100min
 
-make_openmp:
+build/openmp:
     stage: build
     script:
         - cmake -Bbuild_openmp -DWITH_MPI=OFF -DWITH_OPENMP=ON -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
@@ -28,7 +28,7 @@ make_openmp:
         paths:
             - build_openmp/
         expire_in: 100min
-make_mpi:
+build/mpi:
     stage: build
     script:
         - cmake -Bbuild_mpi -DWITH_MPI=ON -DWITH_OPENMP=OFF -H.
@@ -37,7 +37,7 @@ make_mpi:
         paths:
             - build_mpi/
         expire_in: 100min
-make_hybrid:
+build/hybrid:
     stage: build
     script:
         - cmake -Bbuild_hybrid -DWITH_MPI=ON -DWITH_OPENMP=ON -H.
@@ -54,42 +54,78 @@ make_hybrid:
             - run_test
         expire_in: 1week
         when: on_failure
-test_serial:
+
+test/serial/serial:
     extends: .test
-    needs: ["make_serial"]
+    needs: ["build/serial"]
     dependencies:
-        - make_serial
+        - build/serial
     script:
         - cd build_serial
         - ctest -L serial --output-on-failure
-test_openmp:
+test/openmp/serial:
     extends: .test
-    needs: ["make_openmp"]
+    needs: ["build/openmp"]
     dependencies:
-        - make_openmp
+        - build/openmp
     script:
         - cd build_openmp
         - ctest -L serial --output-on-failure
-        - ctest -L openmp --output-on-failure
-test_mpi:
+test/openmp/openmp:
     extends: .test
-    needs: ["make_mpi"]
+    needs: ["build/openmp"]
     dependencies:
-        - make_mpi
+        - build/openmp
+    script:
+        - cd build_openmp
+        - ctest -L openmp --output-on-failure
+test/mpi/serial:
+    extends: .test
+    needs: ["build/mpi"]
+    dependencies:
+        - build/mpi
     script:
         - cd build_mpi
         - ctest -L serial --output-on-failure
-        - ctest -L mpi    --output-on-failure
-test_hybrid:
+test/mpi/mpi:
     extends: .test
-    needs: ["make_hybrid"]
+    needs: ["build/mpi"]
     dependencies:
-        - make_hybrid
+        - build/mpi
+    script:
+        - cd build_mpi
+        - ctest -L mpi    --output-on-failure
+test/hybrid/serial:
+    extends: .test
+    needs: ["build/hybrid"]
+    dependencies:
+        - build/hybrid
     script:
         - cd build_hybrid
         - ctest -L serial --output-on-failure
+test/hybrid/openmp:
+    extends: .test
+    needs: ["build/hybrid"]
+    dependencies:
+        - build/hybrid
+    script:
+        - cd build_hybrid
         - ctest -L openmp --output-on-failure
+test/hybrid/mpi:
+    extends: .test
+    needs: ["build/hybrid"]
+    dependencies:
+        - build/hybrid
+    script:
+        - cd build_hybrid
         - ctest -L mpi    --output-on-failure
+test/hybrid/hybrid:
+    extends: .test
+    needs: ["build/hybrid"]
+    dependencies:
+        - build/hybrid
+    script:
+        - cd build_hybrid
         - ctest -L hybrid --output-on-failure
 document:
     image: ${REGISTRY}/document:latest
