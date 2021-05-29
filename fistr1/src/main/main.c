@@ -236,19 +236,15 @@ int main(int argc, char *argv[])
     printf("  date:     %s\n", BUILD_DATE );
     printf("  MPI:      ");
 #ifdef WITH_MPI
-    printf("enabled\n");
+    printf("enabled, %s\n",_OPENMP);
 #else
     printf("disabled\n");
 #endif
     printf("  OpenMP:   ");
-#ifndef OPENMP_UNKNOWN
-#ifdef WITH_OPENMP
+#ifdef _OPENMP
     printf("enabled\n");
 #else
     printf("disabled\n");
-#endif
-#else
-    printf("unknown\n");
 #endif
     printf("  option:   ");
     printf("\"");
