@@ -186,6 +186,7 @@ void print_executeinfo(int log_level) {
   char *p; 
   char date[32];
   time_t t;
+  int d;
 #ifndef HECMW_SERIAL
   char hostname[MPI_MAX_PROCESSOR_NAME];
   char mpilibver[MPI_MAX_LIBRARY_VERSION_STRING];
@@ -204,8 +205,12 @@ void print_executeinfo(int log_level) {
   if (rank==0){
     printf("execute:  \n");
     t=time(NULL);
-    strftime(date, sizeof(date), "%Y-%m-%dT%H:%M:%S%z", localtime(&t));
-    printf("  date:       %s\n", date);
+    /* for windows compatibility */
+    d=(int)difftime(t,mktime(gmtime(&t)));
+    strftime(date, sizeof(date), "%Y-%m-%dT%H:%M:%S", localtime(&t));
+    printf("  date:       %s", date);
+    if (abs(d)<86400) printf("%+05d", (int)(d/3600)*100+(int)(d/60)%60);
+    printf("\n");
     printf("  processes:  %d\n", get_procs_num());
     printf("  threads:    %d\n", get_threads_num());
     printf("  cores:      %d\n", get_threads_num()*get_procs_num());
