@@ -1,4 +1,5 @@
 CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr
+ARCH  ?= x86_64
 
 ifdef CI_COMMIT_TAG
   TAG ?= $(CI_COMMIT_TAG)
@@ -11,7 +12,7 @@ else
   endif
 endif
 
-all: build
+all: push
 
 login:
 ifeq ($(CI_BUILD_TOKEN),)
@@ -20,15 +21,7 @@ else
 	docker login -u gitlab-ci-token -p $(CI_BUILD_TOKEN) $(CI_REGISTRY_IMAGE)
 endif
 
-build:
-	docker pull registry.gitlab.com/frontistr-commons/frontistr/build:latest
-	docker pull registry.gitlab.com/frontistr-commons/frontistr/runtime:latest
-	docker build \
-		-t $(CI_REGISTRY_IMAGE)/fistr1:$(TAG) \
-		-f Dockerfile \
-		--target fistr1 \
-		../..
-
-push: login build
-	docker push $(CI_REGISTRY_IMAGE)/fistr1:$(TAG)
+push: login
+	-docker buildx create --name multiarch --driver docker-container
+	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/fistr1:$(TAG) -f Dockerfile     --target fistr1 ../..
 
