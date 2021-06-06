@@ -21,13 +21,12 @@ RUN apt-get update \
       && apt-get -y install libmkl-dev \
       || apt-get -y install libopenblas64-openmp-dev libscalapack-openmpi-dev \
  && apt-get clean \
- && git clone --depth=1  https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git \
- && cd REVOCAP_Mesh \
- && cp config/MakefileConfig.LinuxCluster MakefileConfig.in \
- && make -j4 Refiner \
+ && git clone --depth=1  https://github.com/FrontISTR/REVOCAP_Refiner.git \
+ && cd REVOCAP_Refiner \
+ && make Refiner -j4 \
  && find lib -type f -name "libRcapRefiner*" -exec cp {} /usr/lib/ \; \
  && find . -type f -name "rcapRefiner.h" -exec cp {} /usr/include/ \; \
- && cd ../ && rm -fr ./REVOCAP_Mesh \
+ && cd ../ && rm -fr ./REVOCAP_Refiner \
  && rm -rf /var/lib/apt/lists/*
 
 FROM build AS build-metis4

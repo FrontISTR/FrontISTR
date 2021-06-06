@@ -22,12 +22,12 @@ COPY toolchain.cmake /usr/x86_64-w64-mingw32/
 ENV target=x86_64-w64-mingw32
 ENV LIB_ROOT=/usr/x86_64-w64-mingw32
 RUN ln -s /usr/x86_64-w64-mingw32 /usr/local/x86_64-w64-mingw32 \
- && git clone --depth 1 https://gitlab.com/FrontISTR-Commons/REVOCAP_Mesh.git && cd REVOCAP_Mesh \
- && cat ./config/MakefileConfig.LinuxCluster|sed  -e "s/ g++/ ${target}-g++/" -e "s/AR = ar/AR = ${target}-ar/" > MakefileConfig.in  \
- && make Refiner -j \
+ && git clone --depth 1 https://github.com/FrontISTR/REVOCAP_Refiner.git && cd REVOCAP_Refiner \
+ && sed  -e "s/ g++/ ${target}-g++/" -e "s/AR = ar/AR = ${target}-ar/" -i MakefileConfig.in  \
+ && make Refiner -j4 \
  && find lib -type f -name "libRcapRefiner*" -exec cp {} ${LIB_ROOT}/lib/ \; \
  && find . -type f -name "rcapRefiner.h" -exec cp {} ${LIB_ROOT}/include/ \; \
- && cd .. && rm -fr REVOCAP_Mesh
+ && cd .. && rm -fr REVOCAP_Refiner
 
 FROM core1 AS core
 RUN curl -L https://www.frontistr.com/files/ci/mkl_2021.2.0.tar.xz | tar Jxv -C ${LIB_ROOT} --wildcards './lib/mkl_avx*' './lib/mkl_core*'
