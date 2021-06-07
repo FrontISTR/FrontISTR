@@ -1,5 +1,5 @@
 CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr
-ARCH  ?= x86_64,aarch64,ppc64le
+ARCH  ?= x86_64,aarch64,ppc64le,s390x
 all: runtime build document
 
 login:
