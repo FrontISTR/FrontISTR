@@ -13,7 +13,7 @@ runtime: builder
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime -f Dockerfile . --target runtime
 build: builder
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build -f Dockerfile . --target build
-#	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:metis4 -f Dockerfile . --target build-metis4
+	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:metis4 -f Dockerfile . --target build-metis4
 document: builder
 	docker buildx build --push --builder multiarch --platform x86_64 -t $(CI_REGISTRY_IMAGE)/document      -f Dockerfile      . --target document
 builder:
