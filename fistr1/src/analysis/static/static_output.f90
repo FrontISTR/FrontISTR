@@ -69,7 +69,8 @@ contains
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. outflag) ) then
 
-      call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
+      if( associated( fstrSOLID%contacts ) ) &
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
       call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
