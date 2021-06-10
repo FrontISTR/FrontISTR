@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2019 FrontISTR Commons
+ * Copyright (c) 2021 FrontISTR Commons
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
@@ -12,15 +12,271 @@
 
 #include "Trilinos_version.h"
 #include "ml_include.h"
+#include "ml_config.h"
+#ifdef HAVE_ML_AMESOS
+# include "Amesos_config.h"
+#endif
 #include "hecmw_ML_helper.h"
 #include "hecmw_ML_helper_33.h"
 #include "hecmw_ML_helper_nn.h"
+
+/*
+ * Options
+ */
+
+enum coarse_solver {Smoother, KLU, MUMPS};
+enum smoother_type {Cheby, SymBlockGaussSeidel, Jacobi};
+enum coarsen_scheme {UncoupledMIS, METIS, ParMETIS, Zoltan, DD};
+
+struct ml_options {
+  /* Coarse solver
+   *  available solvers: Smoother, KLU, MUMPS
+   * Note:
+   *  - Trilinos must be built with Amesos enabled to use KLU
+   *  - Trilinos must be built with Amesos and MPI enabled to use MUMPS
+   */
+  enum coarse_solver CoarseSolver;
+
+  /* Smoother type
+   *  available types: Cheby, SymBlockGaussSeidel, Jacobi
+   */
+  enum smoother_type SmootherType;
+
+  /* Whether HEC-MW smoother is used at finest level when SmootherType is SymBlockGaussSeidel
+   */
+  int FlgUseHECMWSmoother;
+
+  /* Solver cycle
+   *  available types: ML_MGV (V-cycle), ML_MGW (W-cycle), ML_MGFULLV (Full V-Cycle)
+   */
+  int MGType;
+
+  /* Max num of levels
+   */
+  int MaxLevels;
+
+  /* Coarsening scheme
+   *  available types: UncoupledMIS, METIS, ParMETIS, Zoltan, DD
+   */
+  enum coarsen_scheme CoarsenScheme;
+
+  /* Num of smoother sweeps (order of polynomial for Cheby)
+   */
+  int NumSweeps;
+
+  /* Max coarse size
+   */
+  int MaxCoarseSize;
+};
+
+
+/* default values */
+#define DEFAULT_COARSE_SOLVER   Smoother
+#define DEFAULT_SMOOTHER_TYPE   Cheby
+#define DEFAULT_MG_TYPE         ML_MGV
+#define DEFAULT_MAX_LEVELS      10
+#define DEFAULT_COARSEN_SCHEME  UncoupledMIS
+#define DEFAULT_NUM_SWEEPS      2
+
+#define MAX_COARSE_SIZE_MUMPS   -1
+#define MAX_COARSE_SIZE_KLU     -1
+
+
+static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *ierr) {
+  int opt1, opt2, opt3, opt4, opt5, opt6;
+
+  hecmw_ml_get_opt1_(id, &opt1, ierr);
+  if (*ierr != HECMW_SUCCESS) return;
+  switch (opt1) {
+  case 0: /* default */
+    mlopt->CoarseSolver = DEFAULT_COARSE_SOLVER;
+    break;
+  case 1:
+    mlopt->CoarseSolver = Smoother;
+    break;
+#ifdef HAVE_ML_AMESOS
+  case 2:
+    mlopt->CoarseSolver = KLU;
+    break;
+  case 3:
+# ifdef HAVE_AMESOS_MUMPS
+    mlopt->CoarseSolver = MUMPS;
+    break;
+# else
+    if (myrank == 0) fprintf(stderr, "WARNING: MUMPS not available as coarse solver (rebuild Trilinos with MUMPS and MPI enabled)\n");
+    break;
+# endif
+#else
+  case 2:
+    if (myrank == 0) fprintf(stderr, "WARNING: KLU not available as coarse solver (rebuild Trilinos with Amesos enabled)\n");
+    break;
+  case 3:
+    if (myrank == 0) fprintf(stderr, "WARNING: MUMPS not available as coarse solver (rebuild Trilinos with Amesos, MUMPS and MPI enabled)\n");
+    break;
+#endif
+  default:
+    if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt1=%d (ignored)\n", opt1);
+  }
+
+  hecmw_ml_get_opt2_(id, &opt2, ierr);
+  if (*ierr != HECMW_SUCCESS) return;
+  switch (opt2) {
+  case 0: /* default */
+    mlopt->SmootherType = DEFAULT_SMOOTHER_TYPE;
+    break;
+  case 1:
+    mlopt->SmootherType = Cheby;
+    break;
+  case 2:
+    mlopt->SmootherType = SymBlockGaussSeidel;
+    mlopt->FlgUseHECMWSmoother = 1;
+    break;
+  case 3:
+    mlopt->SmootherType = Jacobi;
+    mlopt->FlgUseHECMWSmoother = 1;
+    break;
+  default:
+    if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt2=%d (ignored)\n", opt2);
+  }
+
+  hecmw_ml_get_opt3_(id, &opt3, ierr);
+  if (*ierr != HECMW_SUCCESS) return;
+  switch (opt3) {
+  case 0: /* default */
+    mlopt->MGType = DEFAULT_MG_TYPE;
+    break;
+  case 1:
+    mlopt->MGType = ML_MGV;
+    break;
+  case 2:
+    mlopt->MGType = ML_MGW;
+    break;
+  case 3:
+    mlopt->MGType = ML_MGFULLV;
+    break;
+  default:
+    if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt3=%d (ignored)\n", opt3);
+  }
+
+  hecmw_ml_get_opt4_(id, &opt4, ierr);
+  if (*ierr != HECMW_SUCCESS) return;
+  if (opt4 > 0) {
+    mlopt->MaxLevels = opt4;
+  } else {
+    if (opt4 < 0) {
+      if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt4=%d (ignored)\n", opt4);
+    }
+    mlopt->MaxLevels = DEFAULT_MAX_LEVELS;
+  }
+
+  hecmw_ml_get_opt5_(id, &opt5, ierr);
+  if (*ierr != HECMW_SUCCESS) return;
+  switch (opt5) {
+  case 0: /* default */
+    mlopt->CoarsenScheme = DEFAULT_COARSEN_SCHEME;
+    break;
+  case 1:
+    mlopt->CoarsenScheme = UncoupledMIS;
+    break;
+  case 2:
+    mlopt->CoarsenScheme = METIS;
+    break;
+  case 3:
+    mlopt->CoarsenScheme = ParMETIS;
+    break;
+  case 4:
+    mlopt->CoarsenScheme = Zoltan;
+    break;
+  case 5:
+    mlopt->CoarsenScheme = DD;
+    break;
+  default:
+    if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt5=%d (ignored)\n", opt5);
+  }
+
+  hecmw_ml_get_opt6_(id, &opt6, ierr);
+  if (*ierr != HECMW_SUCCESS) return;
+  if (opt6 > 0) {
+    mlopt->NumSweeps = opt6;
+  } else {
+    if (opt6 < 0) {
+      if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt6=%d (ignored)\n", opt6);
+    }
+    mlopt->NumSweeps = DEFAULT_NUM_SWEEPS;
+    hecmw_ml_set_opt6_(id, &(mlopt->NumSweeps), ierr);
+    if (*ierr != HECMW_SUCCESS) return;
+  }
+
+  if (mlopt->CoarseSolver == MUMPS) {
+    mlopt->MaxCoarseSize = MAX_COARSE_SIZE_MUMPS;
+  } else if (mlopt->CoarseSolver == KLU) {
+    mlopt->MaxCoarseSize = MAX_COARSE_SIZE_KLU;
+  } else {
+    mlopt->MaxCoarseSize = -1; /* use default (128? 32?) */
+  }
+}
+
+void ml_options_print(struct ml_options *mlopt, FILE *fp, int myrank, int loglevel) {
+  switch (mlopt->CoarseSolver) {
+  case Smoother:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is smoother\n");
+    break;
+  case KLU:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is KLU\n");
+    break;
+  case MUMPS:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is MUMPS\n");
+    break;
+  }
+  switch (mlopt->SmootherType) {
+  case Cheby:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML smoother is Cheby\n");
+    break;
+  case SymBlockGaussSeidel:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML smoother is SymBlockGaussSeidel\n");
+    break;
+  case Jacobi:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML smoother is Jacobi\n");
+    break;
+  }
+  switch (mlopt->MGType) {
+  case ML_MGV:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is V-cycle\n");
+    break;
+  case ML_MGW:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is W-cycle\n");
+    break;
+  case ML_MGFULLV:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is Full-V-cycle\n");
+    break;
+  }
+  if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML num of max levels is %d\n", mlopt->MaxLevels);
+  switch (mlopt->CoarsenScheme) {
+  case UncoupledMIS:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is UncoupledMIS\n");
+    break;
+  case METIS:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is METIS\n");
+    break;
+  case ParMETIS:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is ParMETIS\n");
+    break;
+  case Zoltan:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is Zoltan\n");
+    break;
+  case DD:
+    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is DD\n");
+    break;
+  }
+  if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML num of smoother sweeps is %d\n", mlopt->NumSweeps);
+}
 
 /*
  * static variable
  */
 
 struct ml_info {
+  struct ml_options opt;
   ML *ml_object;
   ML_Aggregate *agg_object;
   int ndof;
@@ -30,58 +286,6 @@ struct ml_info {
 
 static struct ml_info MLInfo[MAX_MI];
 
-
-/*
- * Settings
- */
-
-/* Whether coasest level is solved with direct solver
- * If not, a few sweeps of smoother is applied.
- * (Note: Trilinos must be built with Amesos package enabled)
- */
-static int FlgDirectSolveCoarsest = 1;
-
-/* Direct solver for the coarsest level
- *  available types: KLU, MUMPS
- * (KLU is a serial direct solver that comes with Trilinos/Amesos)
- */
-enum direct_solver {KLU, MUMPS};
-static enum direct_solver DirectSolver = KLU;
-
-/* Smoother type
- *  available types: Jacobi, GaussSeidel, BlockGaussSeidel, SymGaussSeidel,
- *                   SymBlockGaussSeidel, Cheby, Amesos, etc.
- * However, the following three types are currently available from this interface
- */
-enum smoother_type {Jacobi, SymBlockGaussSeidel, Cheby};
-static enum smoother_type SmootherType = Cheby;
-
-/* Whether HEC-MW smoother is used at finest level when SmootherType is SymBlockGaussSeidel
- */
-static int FlgUseHECMWSmoother = 1;
-
-/* Solver cycle
- *  available types: ML_MGV (V-cycle), ML_MGW (W-cycle), ML_MGFULLV (Full V-Cycle), etc.
- */
-static int MGType = ML_MGW;
-
-/* Max num of levels
- */
-static int MaxLevels = 10;
-
-/* Coarsening scheme
- *  available types: Coupled, Uncoupled, MIS, UncoupledCoupled, UncoupledMIS,
- *                   DD, METIS, ParMETIS, Zoltan, User
- * However, the following three types are currently available from this interface
- */
-enum coarsen_scheme {UncoupledMIS, METIS, ParMETIS, Zoltan, DD};
-static enum coarsen_scheme CoarsenScheme = UncoupledMIS;
-
-/* Num of smoother sweeps
- */
-static int NumSweeps = 2;
-
-
 /*
  * public functions
  */
@@ -90,6 +294,7 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
   int loglevel, myrank;
   int N_grids, N_levels;
   int nlocal, nlocal_allcolumns;
+  struct ml_options *mlopt;
   ML *ml_object;
   ML_Aggregate *agg_object;
 
@@ -104,148 +309,21 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
   HECMW_Comm_rank(HECMW_comm_get_comm(), &myrank);
 
   /* Get options */
-  {
-    int opt1, opt2, opt3, opt4, opt5, opt6;
-
-    hecmw_ml_get_opt1_(id, &opt1, ierr);
-    if (*ierr != HECMW_SUCCESS) return;
-    switch (opt1) {
-    case 0: /* default */
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML using default coarse solver\n");
-    case 1:
-      FlgDirectSolveCoarsest = 0;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarse solver is smoother\n");
-      break;
-    case 2:
-      FlgDirectSolveCoarsest = 1;
-      DirectSolver = KLU;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarse solver is KLU\n");
-      break;
-    case 3:
-      FlgDirectSolveCoarsest = 1;
-      DirectSolver = MUMPS;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarse solver is MUMPS\n");
-      break;
-    default:
-      if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt1=%d (ignored)\n", opt1);
-    }
-
-    hecmw_ml_get_opt2_(id, &opt2, ierr);
-    if (*ierr != HECMW_SUCCESS) return;
-    switch (opt2) {
-    case 0: /* default */
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML using default smoother\n");
-    case 1:
-      SmootherType = Cheby;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML smoother is Cheby\n");
-      break;
-    case 2:
-      SmootherType = SymBlockGaussSeidel;
-      FlgUseHECMWSmoother = 1;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML smoother is SymBlockGaussSeidel\n");
-      break;
-    case 3:
-      SmootherType = Jacobi;
-      FlgUseHECMWSmoother = 1;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML smoother is Jacobi\n");
-      break;
-    default:
-      if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt2=%d (ignored)\n", opt2);
-    }
-
-    hecmw_ml_get_opt3_(id, &opt3, ierr);
-    if (*ierr != HECMW_SUCCESS) return;
-    switch (opt3) {
-    case 0: /* default */
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML using default multigrid type\n");
-    case 1:
-      MGType = ML_MGV;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML multigrid type is V-cycle\n");
-      break;
-    case 2:
-      MGType = ML_MGW;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML multigrid type is W-cycle\n");
-      break;
-    case 3:
-      MGType = ML_MGFULLV;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML multigrid type is Full-V-cycle\n");
-      break;
-    default:
-      if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt3=%d (ignored)\n", opt3);
-    }
-
-    hecmw_ml_get_opt4_(id, &opt4, ierr);
-    if (*ierr != HECMW_SUCCESS) return;
-    if (opt4 > 0) {
-      MaxLevels = opt4;
-    } else {
-      if (opt4 < 0) {
-        if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt4=%d (ignored)\n", opt4);
-      }
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML using default MaxLevels\n");
-      MaxLevels = 10; /* default */
-    }
-    if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML num of max levels is %d\n", MaxLevels);
-
-    hecmw_ml_get_opt5_(id, &opt5, ierr);
-    if (*ierr != HECMW_SUCCESS) return;
-    switch (opt5) {
-    case 0: /* default */
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML using default coarsening scheme\n");
-    case 1:
-      CoarsenScheme = UncoupledMIS;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarsening scheme is UncoupledMIS\n");
-      break;
-    case 2:
-      CoarsenScheme = METIS;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarsening scheme is METIS\n");
-      break;
-    case 3:
-      CoarsenScheme = ParMETIS;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarsening scheme is ParMETIS\n");
-      break;
-    case 4:
-      CoarsenScheme = Zoltan;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarsening scheme is Zoltan\n");
-      break;
-    case 5:
-      CoarsenScheme = DD;
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML coarsening scheme is DD\n");
-      break;
-    default:
-      if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt5=%d (ignored)\n", opt5);
-    }
-
-    hecmw_ml_get_opt6_(id, &opt6, ierr);
-    if (*ierr != HECMW_SUCCESS) return;
-    if (opt6 > 0) {
-      NumSweeps = opt6;
-    } else {
-      if (opt6 < 0) {
-        if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt6=%d (ignored)\n", opt6);
-      }
-      if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML using default num of sweeps\n");
-      NumSweeps = 2; /* default */
-      hecmw_ml_set_opt6_(id, &NumSweeps, ierr);
-      if (*ierr != HECMW_SUCCESS) return;
-    }
-    if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML num of smoother sweeps is %d\n", NumSweeps);
-
-  }
+  mlopt = &(MLInfo[*id - 1].opt);
+  ml_options_set(mlopt, id, myrank, ierr);
+  ml_options_print(mlopt, stderr, myrank, loglevel);
 
   /* ML object */
-  N_grids = MaxLevels;
+  N_grids = mlopt->MaxLevels;
   ML_Create(&ml_object, N_grids);
   hecmw_ml_get_nlocal_(id, &nlocal, &nlocal_allcolumns, ierr);
   if (*ierr != HECMW_SUCCESS) return;
   ML_Init_Amatrix(ml_object, 0, nlocal, nlocal, id);
   if (*Ndof == 3) {
-    ML_Set_Amatrix_Getrow(ml_object, 0, hecmw_ML_getrow_33, hecmw_ML_comm_33,
-                          nlocal_allcolumns);
+    ML_Set_Amatrix_Getrow(ml_object, 0, hecmw_ML_getrow_33, hecmw_ML_comm_33, nlocal_allcolumns);
     ML_Set_Amatrix_Matvec(ml_object, 0, hecmw_ML_matvec_33);
   } else {
-    ML_Set_Amatrix_Getrow(ml_object, 0, hecmw_ML_getrow_nn, hecmw_ML_comm_nn,
-                          nlocal_allcolumns);
+    ML_Set_Amatrix_Getrow(ml_object, 0, hecmw_ML_getrow_nn, hecmw_ML_comm_nn, nlocal_allcolumns);
     ML_Set_Amatrix_Matvec(ml_object, 0, hecmw_ML_matvec_nn);
   }
 
@@ -274,30 +352,36 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
     }
     hecmw_ml_get_rbm_(id, null_vect, ierr);
     if (*ierr != HECMW_SUCCESS) return;
-    ML_Aggregate_Set_NullSpace(agg_object, num_PDE_eqns, null_dim, null_vect,
-                               leng);
+    ML_Aggregate_Set_NullSpace(agg_object, num_PDE_eqns, null_dim, null_vect, leng);
     HECMW_free(null_vect);
   }
-  /* ML_Aggregate_Set_MaxCoarseSize(agg_object, 128); */ /* default: 128 */
+
+  /* Max coarse size */
+  {
+    int nglobal;
+    HECMW_Allreduce(&nlocal, &nglobal, 1, HECMW_INT, HECMW_SUM, HECMW_comm_get_comm());
+    if (nglobal <= mlopt->MaxCoarseSize) mlopt->MaxCoarseSize = nglobal - 1; /* coarsen at least once */
+    if (mlopt->MaxCoarseSize > 0) ML_Aggregate_Set_MaxCoarseSize(agg_object, mlopt->MaxCoarseSize);
+  }
 
   /* options */
   /* CoarsenScheme */
   {
-    if (CoarsenScheme == UncoupledMIS) {
+    if (mlopt->CoarsenScheme == UncoupledMIS) {
       ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(agg_object);
-    } else if (CoarsenScheme == METIS) {
+    } else if (mlopt->CoarsenScheme == METIS) {
       ML_Aggregate_Set_CoarsenScheme_METIS(agg_object);
-    } else if (CoarsenScheme == ParMETIS) {
+    } else if (mlopt->CoarsenScheme == ParMETIS) {
       ML_Aggregate_Set_CoarsenScheme_ParMETIS(agg_object);
-    } else if (CoarsenScheme == Zoltan) {
+    } else if (mlopt->CoarsenScheme == Zoltan) {
       ML_Aggregate_Set_CoarsenScheme_Zoltan(agg_object);
-    } else if (CoarsenScheme == DD) {
+    } else if (mlopt->CoarsenScheme == DD) {
       ML_Aggregate_Set_CoarsenScheme_DD(agg_object);
     }
     /*
-    if (MaxLevels == 2) {
+    if (mlopt->MaxLevels == 2) {
       ML_Aggregate_Set_LocalNumber(ml_object, agg_object, ML_ALL_LEVELS, 1);
-    } else if (MaxLevels == 3) {
+    } else if (mlopt->MaxLevels == 3) {
       ML_Aggregate_Set_NodesPerAggr(ml_object, agg_object, ML_ALL_LEVELS, 512);
       ML_Aggregate_Set_ReqLocalCoarseSize(ml_object->ML_num_levels, agg_object, ML_ALL_LEVELS, 128);
     }
@@ -324,11 +408,9 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
   ML_Aggregate_Set_Dimensions(agg_object, *Ndof);
 
   /* Generate MultiGrid */
-  /* N_levels = ML_Gen_MGHierarchy_UsingAggregation( */
-  /*     ml_object, 0, ML_INCREASING, agg_object); */
-  N_levels = ML_Gen_MultiLevelHierarchy_UsingAggregation(
-      ml_object, 0, ML_INCREASING, agg_object);
-  if (loglevel > 0 && myrank == 0) fprintf(stderr, "INFO: ML generated num of levels is %d\n", N_levels);
+  /* N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_object, 0, ML_INCREASING, agg_object); */
+  N_levels = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_object, 0, ML_INCREASING, agg_object);
+  if (loglevel >= 1 && myrank == 0) fprintf(stderr, "INFO: ML generated num of levels is %d\n", N_levels);
 
   /* Smoother */
   /*
@@ -343,9 +425,9 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
     /*
      * levels other than the coarsest level
      */
-    if (SmootherType == Jacobi) {
+    if (mlopt->SmootherType == Jacobi) {
       level = 0;
-      if (FlgUseHECMWSmoother) {
+      if (mlopt->FlgUseHECMWSmoother) {
         /* use HEC-MW's Block-Diag preconditioner at the finest level */
         if (*Ndof == 3) {
           hecmw_ml_smoother_diag_setup_33_(id, ierr);
@@ -360,12 +442,11 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
       }
       /* use ML's smoother at other levels */
       for (; level < coarsest_level; level++) {
-        ML_Gen_Smoother_Jacobi(ml_object, level,
-                               ML_BOTH, NumSweeps, ML_DEFAULT);
+        ML_Gen_Smoother_Jacobi(ml_object, level, ML_BOTH, mlopt->NumSweeps, ML_DEFAULT);
       }
-    } else if (SmootherType == SymBlockGaussSeidel) {
+    } else if (mlopt->SmootherType == SymBlockGaussSeidel) {
       level = 0;
-      if (FlgUseHECMWSmoother) {
+      if (mlopt->FlgUseHECMWSmoother) {
         /* use HEC-MW's Block-SSOR preconditioner at the finest level */
         if (*Ndof == 3) {
           hecmw_ml_smoother_ssor_setup_33_(id, ierr);
@@ -380,46 +461,41 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
       }
       /* use ML's smoother at other levels */
       for (; level < coarsest_level; level++) {
-        ML_Gen_Smoother_SymBlockGaussSeidel(ml_object, level,
-                                            ML_BOTH, NumSweeps, ML_DEFAULT, *Ndof);
+        ML_Gen_Smoother_SymBlockGaussSeidel(ml_object, level, ML_BOTH, mlopt->NumSweeps, ML_DEFAULT, *Ndof);
       }
-    } else /* if (SmootherType == Cheby) */ {
+    } else /* if (mlopt->SmootherType == Cheby) */ {
       for (level = 0; level < coarsest_level; level++) {
-        ML_Gen_Smoother_Cheby(ml_object, level, ML_BOTH, 20.0, NumSweeps);
+        ML_Gen_Smoother_Cheby(ml_object, level, ML_BOTH, 20.0, mlopt->NumSweeps);
       }
     }
     /*
      * coarsest level
      */
-    if (FlgDirectSolveCoarsest) {
-      if (DirectSolver == MUMPS) {
+    if (mlopt->CoarseSolver == MUMPS) {
 #if TRILINOS_MAJOR_VERSION < 13
-        ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_MUMPS, 1, 0.0);
+      ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_MUMPS, 1, 0.0);
 #else
-        ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_MUMPS, 1, 0.0, 1);
+      ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_MUMPS, 1, 0.0, 1);
 #endif
-      } else /* if (DirectSolver == KLU) */ {
+    } else if (mlopt->CoarseSolver == KLU) {
 #if TRILINOS_MAJOR_VERSION < 13
-        ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_KLU, 1, 0.0);
+      ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_KLU, 1, 0.0);
 #else
-        ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_KLU, 1, 0.0, 1);
+      ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_KLU, 1, 0.0, 1);
 #endif
-      }
-    } else {
-      if (SmootherType == Jacobi) {
-        ML_Gen_Smoother_Jacobi(ml_object, coarsest_level,
-                               ML_BOTH, 3, ML_DEFAULT);
-      } else if (SmootherType == SymBlockGaussSeidel) {
-        ML_Gen_Smoother_SymBlockGaussSeidel(ml_object, coarsest_level,
-                                            ML_BOTH, 3, ML_DEFAULT, *Ndof);
-      } else /* if (SmootherType == Cheby) */ {
+    } else /* if (mlopt->CoarseSolver == Smoother) */ {
+      if (mlopt->SmootherType == Jacobi) {
+        ML_Gen_Smoother_Jacobi(ml_object, coarsest_level, ML_BOTH, 3, ML_DEFAULT);
+      } else if (mlopt->SmootherType == SymBlockGaussSeidel) {
+        ML_Gen_Smoother_SymBlockGaussSeidel(ml_object, coarsest_level, ML_BOTH, 3, ML_DEFAULT, *Ndof);
+      } else /* if (mlopt->SmootherType == Cheby) */ {
         ML_Gen_Smoother_Cheby(ml_object, coarsest_level, ML_BOTH, 20.0, 2);
       }
     }
   }
 
   /* Solver */
-  ML_Gen_Solver(ml_object, MGType, 0, N_levels - 1);
+  ML_Gen_Solver(ml_object, mlopt->MGType, 0, N_levels - 1);
 
   /* Save objects */
   MLInfo[*id - 1].ml_object  = ml_object;
@@ -453,6 +529,7 @@ void hecmw_ML_wrapper_apply(int *id, double rhs[], int *ierr) {
 }
 
 void hecmw_ML_wrapper_clear(int *id, int *ierr) {
+  struct ml_options *mlopt = &(MLInfo[*id - 1].opt);
   if (*id <= 0 && MAX_MI < *id) {
     *ierr = HECMW_ERROR;
     return;
@@ -460,14 +537,14 @@ void hecmw_ML_wrapper_clear(int *id, int *ierr) {
   ML_Aggregate_Destroy(&(MLInfo[*id - 1].agg_object));
   ML_Destroy(&(MLInfo[*id - 1].ml_object));
 
-  if (FlgUseHECMWSmoother) {
-    if (SmootherType == Jacobi) {
+  if (mlopt->FlgUseHECMWSmoother) {
+    if (mlopt->SmootherType == Jacobi) {
       if (MLInfo[*id - 1].ndof == 3) {
         hecmw_ml_smoother_diag_clear_33_(id, ierr);
       } else {
         hecmw_ml_smoother_diag_clear_nn_(id, ierr);
       }
-    } else if (SmootherType == SymBlockGaussSeidel) {
+    } else if (mlopt->SmootherType == SymBlockGaussSeidel) {
       if (MLInfo[*id - 1].ndof == 3) {
         hecmw_ml_smoother_ssor_clear_33_(id, ierr);
       } else {
@@ -493,6 +570,7 @@ void hecmw_ML_wrapper_clear(int *id, int *ierr) {
 }
 
 #endif /* WITH_ML */
+
 /* Fortran interface */
 
 void hecmw_ml_wrapper_setup_(int *id, int *sym, int *ndof, int *ierr) {
