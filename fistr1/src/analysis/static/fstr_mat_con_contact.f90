@@ -439,7 +439,7 @@ contains
     integer(kind=kint) :: countNon0_lagrange !< counter of node-based number of non-zero items
     !< in Lagrange multiplier-related matrix
     integer(kind=kint) :: ierr, num_lagrange, location
-    integer(kind=kint) :: id_lagrange_save(1000)
+    integer(kind=kint), allocatable :: id_lagrange_save(:)
 
     character(len=1)   :: answer
 
@@ -465,6 +465,7 @@ contains
       list_node%id_lagrange(1) = id_lagrange
       countNon0_lagrange = countNon0_lagrange + 1
     else
+      allocate(id_lagrange_save(num_lagrange))
       id_lagrange_save(1:num_lagrange) = list_node%id_lagrange(1:num_lagrange)
       location = find_locationINarray(id_lagrange,num_lagrange,list_node%id_lagrange)
       if(location /= 0)then
@@ -480,6 +481,7 @@ contains
         if(location /= num_lagrange) list_node%id_lagrange(location+1:num_lagrange) = id_lagrange_save(location:num_lagrange-1)
         countNon0_lagrange = countNon0_lagrange + 1
       endif
+      deallocate(id_lagrange_save)
     endif
 
   end subroutine insert_lagrange
@@ -492,12 +494,12 @@ contains
     !< global number of node
     integer(kind=kint) :: countNon0_node !< counter of node-based number of non-zero items in displacement-related matrix
     integer(kind=kint) :: ierr, num_node, location
-    integer(kind=kint) :: id_node_save(1000)
+    integer(kind=kint),allocatable :: id_node_save(:)
 
     ierr = 0
 
     num_node = list_node%num_node
-
+    allocate(id_node_save(num_node))
     id_node_save(1:num_node) = list_node%id_node(1:num_node)
     location = find_locationINarray(id_node,num_node,list_node%id_node)
     if(location /= 0)then
@@ -513,6 +515,7 @@ contains
       if(location /= num_node) list_node%id_node(location+1:num_node) = id_node_save(location:num_node-1)
       countNon0_node = countNon0_node + 1
     endif
+    deallocate(id_node_save)
 
   end subroutine insert_node
 
