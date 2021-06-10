@@ -217,58 +217,79 @@ static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *i
 }
 
 void ml_options_print(struct ml_options *mlopt, FILE *fp, int myrank, int loglevel) {
+  char optstr[6][32];
   switch (mlopt->CoarseSolver) {
   case Smoother:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is smoother\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is smoother\n");
+    strcpy(optstr[0], "Smoother");
     break;
   case KLU:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is KLU\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is KLU\n");
+    strcpy(optstr[0], "KLU");
     break;
   case MUMPS:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is MUMPS\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is MUMPS\n");
+    strcpy(optstr[0], "MUMPS");
     break;
   }
   switch (mlopt->SmootherType) {
   case Cheby:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML smoother is Cheby\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML smoother is Cheby\n");
+    strcpy(optstr[1], "Cheby");
     break;
   case SymBlockGaussSeidel:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML smoother is SymBlockGaussSeidel\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML smoother is SymBlockGaussSeidel\n");
+    strcpy(optstr[1], "SymBlockGaussSeidel");
     break;
   case Jacobi:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML smoother is Jacobi\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML smoother is Jacobi\n");
+    strcpy(optstr[1], "Jacobi");
     break;
   }
   switch (mlopt->MGType) {
   case ML_MGV:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is V-cycle\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is V-cycle\n");
+    strcpy(optstr[2], "V-cycle");
     break;
   case ML_MGW:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is W-cycle\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is W-cycle\n");
+    strcpy(optstr[2], "W-cycle");
     break;
   case ML_MGFULLV:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is Full-V-cycle\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is Full-V-cycle\n");
+    strcpy(optstr[2], "Full-V-cycle");
     break;
   }
-  if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML num of max levels is %d\n", mlopt->MaxLevels);
+  if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML num of max levels is %d\n", mlopt->MaxLevels);
+  sprintf(optstr[3], "MaxLevels=%d", mlopt->MaxLevels);
   switch (mlopt->CoarsenScheme) {
   case UncoupledMIS:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is UncoupledMIS\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is UncoupledMIS\n");
+    strcpy(optstr[4], "UncoupledMIS");
     break;
   case METIS:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is METIS\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is METIS\n");
+    strcpy(optstr[4], "METIS");
     break;
   case ParMETIS:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is ParMETIS\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is ParMETIS\n");
+    strcpy(optstr[4], "ParMETIS");
     break;
   case Zoltan:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is Zoltan\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is Zoltan\n");
+    strcpy(optstr[4], "Zoltan");
     break;
   case DD:
-    if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is DD\n");
+    if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is DD\n");
+    strcpy(optstr[4], "DD");
     break;
   }
-  if (loglevel > 0 && myrank == 0) fprintf(fp, "INFO: ML num of smoother sweeps is %d\n", mlopt->NumSweeps);
+  if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML num of smoother sweeps is %d\n", mlopt->NumSweeps);
+  sprintf(optstr[5], "NumSweeps=%d", mlopt->NumSweeps);
+  if (loglevel >= 1 && myrank == 0) {
+    fprintf(fp, "INFO: ML options: %s %s %s %s %s %s\n",
+            optstr[0], optstr[1], optstr[2], optstr[3], optstr[4], optstr[5]);
+  }
 }
 
 /*
