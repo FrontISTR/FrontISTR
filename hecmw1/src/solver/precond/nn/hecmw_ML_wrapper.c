@@ -71,15 +71,23 @@ struct ml_options {
 
 
 /* default values */
-#define DEFAULT_COARSE_SOLVER   Smoother
+#ifdef HAVE_ML_AMESOS
+# ifdef HAVE_AMESOS_MUMPS
+#  define DEFAULT_COARSE_SOLVER MUMPS
+# else
+#  define DEFAULT_COARSE_SOLVER KLU
+# endif
+#else
+# define DEFAULT_COARSE_SOLVER  Smoother
+#endif
 #define DEFAULT_SMOOTHER_TYPE   Cheby
-#define DEFAULT_MG_TYPE         ML_MGV
-#define DEFAULT_MAX_LEVELS      10
+#define DEFAULT_MG_TYPE         ML_MGW
+#define DEFAULT_MAX_LEVELS      4
 #define DEFAULT_COARSEN_SCHEME  UncoupledMIS
 #define DEFAULT_NUM_SWEEPS      2
 
-#define MAX_COARSE_SIZE_MUMPS   -1
-#define MAX_COARSE_SIZE_KLU     -1
+#define MAX_COARSE_SIZE_MUMPS   50000
+#define MAX_COARSE_SIZE_KLU     10000
 
 
 static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *ierr) {
@@ -286,6 +294,8 @@ void ml_options_print(struct ml_options *mlopt, FILE *fp, int myrank, int loglev
   }
   if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML num of smoother sweeps is %d\n", mlopt->NumSweeps);
   sprintf(optstr[5], "NumSweeps=%d", mlopt->NumSweeps);
+  /* if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML max coarse size is %d\n", mlopt->MaxCoarseSize); */
+  /* sprintf(optstr[6], "MaxCoarseSize=%d", mlopt->MaxCoarseSize); */
   if (loglevel >= 1 && myrank == 0) {
     fprintf(fp, "INFO: ML options: %s %s %s %s %s %s\n",
             optstr[0], optstr[1], optstr[2], optstr[3], optstr[4], optstr[5]);
