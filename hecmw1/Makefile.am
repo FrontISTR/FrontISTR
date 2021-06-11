@@ -33,7 +33,7 @@ create-bin-dir:
 build-libs: clean-includes clean-libs
 	@cd src && $(MAKE) @build_target@
 
-build-tools:
+build-tools: build-libs
 	@cd tools && $(MAKE) @build_target@
 
 setup-msg:

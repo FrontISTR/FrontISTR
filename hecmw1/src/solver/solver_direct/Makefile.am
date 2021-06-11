@@ -108,7 +108,7 @@ $(OBJSF):
 install-header: $(HEADERS)
 	$(CP) $(HEADERS) $(HECMWINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
@@ -117,3 +117,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

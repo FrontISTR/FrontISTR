@@ -1,0 +1,2 @@
+sparse_matrix.o : sparse_matrix.f90 
+sparse_matrix_hec.o : sparse_matrix_hec.f90 sparse_matrix.o 

@@ -140,17 +140,9 @@ HEADERS =
 #------------------------------------------------------------------------------#
 all: @build_target@
 
-@build_target@:
-	@cd utilities && $(MAKE) @build_target@
-	@cd user      && $(MAKE) @build_target@
-	@cd element   && $(MAKE) @build_target@
-	@cd physics   && $(MAKE) @build_target@
-	@cd contact   && $(MAKE) @build_target@
-	$(MAKE) BUILD_CURR
+build-default: @build_target@_subdir $(TARGET) $(F90TARGET) install-module
 
 build-with-rcap: @build_target@
-
-BUILD_CURR: $(TARGET) $(F90TARGET) install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(FSTRLIBDIR)/$@ $(OBJS)
@@ -162,12 +154,19 @@ $(F90TARGET): $(OBJSF)
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(FSTRINCDIR)/.
+
+@build_target@_subdir:
+	@cd utilities && $(MAKE) @build_target@
+	@cd user      && $(MAKE) @build_target@
+	@cd element   && $(MAKE) @build_target@
+	@cd physics   && $(MAKE) @build_target@
+	@cd contact   && $(MAKE) @build_target@
 
 $(OBJS): $(HEADERS)
 
-$(OBJSF):
+$(OBJSF): @build_target@_subdir
 
 install:
 
@@ -181,3 +180,8 @@ clean:
 	${RM} test_flush.log
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

@@ -1,0 +1,2 @@
+hecmw_MUMPS_wrapper.o : hecmw_MUMPS_wrapper.F90 
+hecmw_solver_direct_MUMPS.o : hecmw_solver_direct_MUMPS.f90 hecmw_MUMPS_wrapper.o 

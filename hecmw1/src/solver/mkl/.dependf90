@@ -1,0 +1,2 @@
+hecmw_MKL_wrapper.o : hecmw_MKL_wrapper.F90 
+hecmw_solver_direct_MKL.o : hecmw_solver_direct_MKL.f90 hecmw_MKL_wrapper.o 

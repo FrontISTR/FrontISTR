@@ -96,13 +96,13 @@ $(F90TARGET): $(OBJSF)
 
 $(OBJS): $(HEADERS)
 
-$(OBJSF):
+$(OBJSF): @build_target@_subdir
 
 install-header:
 	@cd nn     && $(MAKE) install-header
 	@cd 33     && $(MAKE) install-header
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 @build_target@_subdir:
@@ -145,3 +145,8 @@ maintainer-clean:
 	@cd 33     && $(MAKE) maintainer-clean
 	@cd 44     && $(MAKE) maintainer-clean
 	@cd 66     && $(MAKE) maintainer-clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90
