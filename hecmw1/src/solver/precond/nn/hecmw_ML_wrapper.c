@@ -91,12 +91,13 @@ struct ml_options {
 
 
 static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *ierr) {
-  int opt1, opt2, opt3, opt4, opt5, opt6;
+  int opt[10];
 
-  hecmw_ml_get_opt1_(id, &opt1, ierr);
+  hecmw_ml_get_opt_(id, opt, ierr);
   if (*ierr != HECMW_SUCCESS) return;
-  switch (opt1) {
-  case 0: /* default */
+
+  switch (opt[0]) {
+  case 0:
     mlopt->CoarseSolver = DEFAULT_COARSE_SOLVER;
     break;
   case 1:
@@ -123,13 +124,11 @@ static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *i
     break;
 #endif
   default:
-    if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt1=%d (ignored)\n", opt1);
+    if (myrank == 0) fprintf(stderr, "WARNING: invalid ML_CoarseSolver=%d (ignored)\n", opt[0]);
   }
 
-  hecmw_ml_get_opt2_(id, &opt2, ierr);
-  if (*ierr != HECMW_SUCCESS) return;
-  switch (opt2) {
-  case 0: /* default */
+  switch (opt[1]) {
+  case 0:
     mlopt->SmootherType = DEFAULT_SMOOTHER_TYPE;
     break;
   case 1:
@@ -144,13 +143,11 @@ static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *i
     mlopt->FlgUseHECMWSmoother = 1;
     break;
   default:
-    if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt2=%d (ignored)\n", opt2);
+    if (myrank == 0) fprintf(stderr, "WARNING: invalid ML_Smoother=%d (ignored)\n", opt[1]);
   }
 
-  hecmw_ml_get_opt3_(id, &opt3, ierr);
-  if (*ierr != HECMW_SUCCESS) return;
-  switch (opt3) {
-  case 0: /* default */
+  switch (opt[2]) {
+  case 0:
     mlopt->MGType = DEFAULT_MG_TYPE;
     break;
   case 1:
@@ -163,24 +160,20 @@ static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *i
     mlopt->MGType = ML_MGFULLV;
     break;
   default:
-    if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt3=%d (ignored)\n", opt3);
+    if (myrank == 0) fprintf(stderr, "WARNING: invalid ML_MGCycle=%d (ignored)\n", opt[2]);
   }
 
-  hecmw_ml_get_opt4_(id, &opt4, ierr);
-  if (*ierr != HECMW_SUCCESS) return;
-  if (opt4 > 0) {
-    mlopt->MaxLevels = opt4;
+  if (opt[3] > 0) {
+    mlopt->MaxLevels = opt[3];
   } else {
-    if (opt4 < 0) {
-      if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt4=%d (ignored)\n", opt4);
+    if (opt[3] < 0) {
+      if (myrank == 0) fprintf(stderr, "WARNING: invalid ML_MaxLevels=%d (ignored)\n", opt[3]);
     }
     mlopt->MaxLevels = DEFAULT_MAX_LEVELS;
   }
 
-  hecmw_ml_get_opt5_(id, &opt5, ierr);
-  if (*ierr != HECMW_SUCCESS) return;
-  switch (opt5) {
-  case 0: /* default */
+  switch (opt[4]) {
+  case 0:
     mlopt->CoarsenScheme = DEFAULT_COARSEN_SCHEME;
     break;
   case 1:
@@ -199,28 +192,31 @@ static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *i
     mlopt->CoarsenScheme = DD;
     break;
   default:
-    if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt5=%d (ignored)\n", opt5);
+    if (myrank == 0) fprintf(stderr, "WARNING: invalid ML_CoarseningScheme=%d (ignored)\n", opt[4]);
   }
 
-  hecmw_ml_get_opt6_(id, &opt6, ierr);
-  if (*ierr != HECMW_SUCCESS) return;
-  if (opt6 > 0) {
-    mlopt->NumSweeps = opt6;
+  if (opt[5] > 0) {
+    mlopt->NumSweeps = opt[5];
   } else {
-    if (opt6 < 0) {
-      if (myrank == 0) fprintf(stderr, "WARNING: invalid solver_opt6=%d (ignored)\n", opt6);
+    if (opt[5] < 0) {
+      if (myrank == 0) fprintf(stderr, "WARNING: invalid ML_NumSweep=%d (ignored)\n", opt[5]);
     }
     mlopt->NumSweeps = DEFAULT_NUM_SWEEPS;
-    hecmw_ml_set_opt6_(id, &(mlopt->NumSweeps), ierr);
+    opt[5] = mlopt->NumSweeps;
+    hecmw_ml_set_opt_(id, opt, ierr);
     if (*ierr != HECMW_SUCCESS) return;
   }
 
-  if (mlopt->CoarseSolver == MUMPS) {
-    mlopt->MaxCoarseSize = MAX_COARSE_SIZE_MUMPS;
-  } else if (mlopt->CoarseSolver == KLU) {
-    mlopt->MaxCoarseSize = MAX_COARSE_SIZE_KLU;
+  if (opt[6] > 0) {
+    mlopt->MaxCoarseSize = opt[6];
   } else {
-    mlopt->MaxCoarseSize = -1; /* use default (128? 32?) */
+    if (mlopt->CoarseSolver == MUMPS) {
+      mlopt->MaxCoarseSize = MAX_COARSE_SIZE_MUMPS;
+    } else if (mlopt->CoarseSolver == KLU) {
+      mlopt->MaxCoarseSize = MAX_COARSE_SIZE_KLU;
+    } else {
+      mlopt->MaxCoarseSize = -1; /* use default (128? 32?) */
+    }
   }
 }
 
