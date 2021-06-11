@@ -150,3 +150,9 @@ include .dependf90
 
 depend .dependf90:
 	makedepf90 *.[fF]90 > .dependf90
+	@cd nn     && $(MAKE) depend
+	@cd 11     && $(MAKE) depend
+	@cd 22     && $(MAKE) depend
+	@cd 33     && $(MAKE) depend
+	@cd 44     && $(MAKE) depend
+	@cd 66     && $(MAKE) depend

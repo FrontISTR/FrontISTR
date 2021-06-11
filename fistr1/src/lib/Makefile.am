@@ -185,3 +185,8 @@ include .dependf90
 
 depend .dependf90:
 	makedepf90 *.[fF]90 > .dependf90
+	@cd utilities  && $(MAKE) depend
+	@cd user       && $(MAKE) depend
+	@cd element    && $(MAKE) depend
+	@cd physics    && $(MAKE) depend
+	@cd contact    && $(MAKE) depend

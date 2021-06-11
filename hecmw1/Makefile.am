@@ -69,3 +69,8 @@ install:
 		$(MKDIR) $(BINDIR); \
 	fi
 	$(CP) ./bin/* $(BINDIR)
+
+depend:
+	@cd util && $(MAKE) depend
+	@cd src && $(MAKE) depend
+	@cd tools && $(MAKE) depend

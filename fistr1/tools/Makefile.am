@@ -13,3 +13,6 @@ distclean:
 
 install:
 	@cd neu2fstr   && $(MAKE) install
+
+depend:
+	@cd neu2fstr   && $(MAKE) depend

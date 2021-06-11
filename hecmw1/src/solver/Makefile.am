@@ -189,3 +189,17 @@ include .dependf90
 
 depend .dependf90:
 	makedepf90 *.[fF]90 > .dependf90
+	@cd communication && $(MAKE) depend
+	@cd matrix        && $(MAKE) depend
+	@cd init          && $(MAKE) depend
+	@cd sparse_matrix && $(MAKE) depend
+	@cd las           && $(MAKE) depend
+	@cd mumps         && $(MAKE) depend
+	@cd mkl           && $(MAKE) depend
+	@cd clustermkl    && $(MAKE) depend
+	@cd precond       && $(MAKE) depend
+	@cd iterative     && $(MAKE) depend
+	@cd solver_direct && $(MAKE) depend
+	@cd solver_direct_parallel && $(MAKE) depend
+	@cd solver_direct_lag && $(MAKE) depend
+	@cd mpc           && $(MAKE) depend

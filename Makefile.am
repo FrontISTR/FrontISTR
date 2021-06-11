@@ -33,3 +33,7 @@ install:
 	fi
 	@cd hecmw1 && $(MAKE) install
 	@cd fistr1 && $(MAKE) install
+
+depend:
+	@cd hecmw1 && $(MAKE) depend
+	@cd fistr1 && $(MAKE) depend
