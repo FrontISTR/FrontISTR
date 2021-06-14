@@ -221,7 +221,7 @@ static void ml_options_set(struct ml_options *mlopt, int *id, int myrank, int *i
 }
 
 void ml_options_print(struct ml_options *mlopt, FILE *fp, int myrank, int loglevel) {
-  char optstr[6][32];
+  char optstr[7][32];
   switch (mlopt->CoarseSolver) {
   case Smoother:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is smoother\n");
@@ -290,11 +290,11 @@ void ml_options_print(struct ml_options *mlopt, FILE *fp, int myrank, int loglev
   }
   if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML num of smoother sweeps is %d\n", mlopt->NumSweeps);
   sprintf(optstr[5], "NumSweeps=%d", mlopt->NumSweeps);
-  /* if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML max coarse size is %d\n", mlopt->MaxCoarseSize); */
-  /* sprintf(optstr[6], "MaxCoarseSize=%d", mlopt->MaxCoarseSize); */
+  if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML max coarse size is %d\n", mlopt->MaxCoarseSize);
+  sprintf(optstr[6], "MaxCoarseSize=%d", mlopt->MaxCoarseSize);
   if (loglevel >= 1 && myrank == 0) {
-    fprintf(fp, "INFO: ML options: %s %s %s %s %s %s\n",
-            optstr[0], optstr[1], optstr[2], optstr[3], optstr[4], optstr[5]);
+    fprintf(fp, "INFO: ML options: %s %s %s %s %s %s %s\n",
+            optstr[0], optstr[1], optstr[2], optstr[3], optstr[4], optstr[5], optstr[6]);
   }
 }
 
