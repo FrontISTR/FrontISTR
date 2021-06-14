@@ -82,11 +82,18 @@ HEADERS =
 #-----------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: @build_target@_subdir $(TARGET) $(F90TARGET) install-module
-
-build-serial: $(TARGET) $(F90TARGET) install-module
+@build_target@:
+	@cd nn     && $(MAKE) @build_target@
+	@cd 11     && $(MAKE) @build_target@
+	@cd 22     && $(MAKE) @build_target@
+	@cd 33     && $(MAKE) @build_target@
+	@cd 44     && $(MAKE) @build_target@
+	@cd 66     && $(MAKE) @build_target@
+	$(MAKE) BUILD_CURR
 
 build-without-f: $(TARGET)
+
+BUILD_CURR: $(TARGET) $(F90TARGET) install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
@@ -96,7 +103,7 @@ $(F90TARGET): $(OBJSF)
 
 $(OBJS): $(HEADERS)
 
-$(OBJSF): @build_target@_subdir
+$(OBJSF):
 
 install-header:
 	@cd nn     && $(MAKE) install-header
@@ -105,14 +112,6 @@ install-header:
 install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
-@build_target@_subdir:
-	@cd nn     && $(MAKE) @build_target@
-	@cd 11     && $(MAKE) @build_target@
-	@cd 22     && $(MAKE) @build_target@
-	@cd 33     && $(MAKE) @build_target@
-	@cd 44     && $(MAKE) @build_target@
-	@cd 66     && $(MAKE) @build_target@
-  
 install:
 	@cd nn     && $(MAKE) install
 	@cd 11     && $(MAKE) install

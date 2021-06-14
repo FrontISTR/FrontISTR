@@ -140,9 +140,17 @@ HEADERS =
 #------------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: @build_target@_subdir $(TARGET) $(F90TARGET) install-module
+@build_target@:
+	@cd utilities && $(MAKE) @build_target@
+	@cd user      && $(MAKE) @build_target@
+	@cd element   && $(MAKE) @build_target@
+	@cd physics   && $(MAKE) @build_target@
+	@cd contact   && $(MAKE) @build_target@
+	$(MAKE) BUILD_CURR
 
 build-with-rcap: @build_target@
+
+BUILD_CURR: $(TARGET) $(F90TARGET) install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(FSTRLIBDIR)/$@ $(OBJS)
@@ -157,16 +165,9 @@ install-header:
 install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(FSTRINCDIR)/.
 
-@build_target@_subdir:
-	@cd utilities && $(MAKE) @build_target@
-	@cd user      && $(MAKE) @build_target@
-	@cd element   && $(MAKE) @build_target@
-	@cd physics   && $(MAKE) @build_target@
-	@cd contact   && $(MAKE) @build_target@
-
 $(OBJS): $(HEADERS)
 
-$(OBJSF): @build_target@_subdir
+$(OBJSF):
 
 install:
 
