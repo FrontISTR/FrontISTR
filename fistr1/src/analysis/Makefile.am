@@ -18,3 +18,8 @@ distclean:
 	@cd heat    && $(MAKE) distclean
 
 install:
+
+depend:
+	@cd static  && $(MAKE) depend
+	@cd dynamic && $(MAKE) depend
+	@cd heat    && $(MAKE) depend

@@ -18,3 +18,8 @@ distclean:
 	@cd freq    && $(MAKE) distclean
 
 install:
+
+depend:
+	@cd mode    && $(MAKE) depend
+	@cd transit && $(MAKE) depend
+	@cd freq    && $(MAKE) depend

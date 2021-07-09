@@ -1,0 +1,1 @@
+fstr_frequency_analysis.o : fstr_frequency_analysis.f90 

@@ -29,3 +29,10 @@ install:
 	@cd hec2rcap              && $(MAKE) install
 	@cd result_type_converter && $(MAKE) install
 	@cd result_file_merger    && $(MAKE) install
+
+depend:
+	@cd partitioner           && $(MAKE) depend
+	@cd visualizer            && $(MAKE) depend
+	@cd hec2rcap              && $(MAKE) depend
+	@cd result_type_converter && $(MAKE) depend
+	@cd result_file_merger    && $(MAKE) depend

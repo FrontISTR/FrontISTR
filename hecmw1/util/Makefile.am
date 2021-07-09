@@ -54,3 +54,5 @@ clean:
 	$(RM) $(MSGSRC) $(LEXSRC)
 
 distclean: clean
+
+depend:

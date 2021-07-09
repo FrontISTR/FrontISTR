@@ -162,7 +162,7 @@ $(F90TARGET): $(OBJSF)
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(FSTRINCDIR)/.
 
 $(OBJS): $(HEADERS)
@@ -181,3 +181,13 @@ clean:
 	${RM} test_flush.log
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90
+	@cd utilities  && $(MAKE) depend
+	@cd user       && $(MAKE) depend
+	@cd element    && $(MAKE) depend
+	@cd physics    && $(MAKE) depend
+	@cd contact    && $(MAKE) depend

@@ -85,11 +85,11 @@ HEADERS = \
 #-----------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: clean $(TARGET) $(F90TARGET) install-header install-module
+build-default: $(TARGET) $(F90TARGET) install-header install-module
 
-build-serial: clean $(TARGET) $(F90TARGET) install-header install-module
+build-serial: $(TARGET) $(F90TARGET) install-header install-module
 
-build-without-f: clean install-header
+build-without-f: install-header
 
 $(TARGET): $(OBJS)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
@@ -123,7 +123,7 @@ $(HEADERS):
 install-header: $(HEADERS)
 	$(CP) $(HEADERS) $(HECMWINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
@@ -132,3 +132,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

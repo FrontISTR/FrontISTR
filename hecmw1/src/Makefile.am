@@ -48,3 +48,12 @@ install:
 	@cd hecmw      && $(MAKE) install
 	@cd visualizer && $(MAKE) install
 	@cd etc        && $(MAKE) install
+
+depend:
+	@cd common     && $(MAKE) depend
+	@cd operations && $(MAKE) depend
+	@cd solver     && $(MAKE) depend
+	@cd couple     && $(MAKE) depend
+	@cd hecmw      && $(MAKE) depend
+	@cd visualizer && $(MAKE) depend
+	@cd etc        && $(MAKE) depend

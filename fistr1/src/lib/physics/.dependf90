@@ -1,0 +1,8 @@
+ElasticLinear.o : ElasticLinear.f90 material.o 
+Elastoplastic.o : Elastoplastic.f90 mechgauss.o ElasticLinear.o material.o 
+Hyperelastic.o : Hyperelastic.f90 material.o 
+Viscoelastic.o : Viscoelastic.f90 mechgauss.o ElasticLinear.o material.o 
+calMatMatrix.o : calMatMatrix.f90 creep.o Viscoelastic.o Elastoplastic.o Hyperelastic.o ElasticLinear.o mechgauss.o material.o 
+creep.o : creep.f90 mechgauss.o ElasticLinear.o material.o 
+material.o : material.f90 
+mechgauss.o : mechgauss.f90 material.o 

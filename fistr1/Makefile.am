@@ -49,3 +49,7 @@ install:
 	fi
 	$(CP) ./bin/* $(BINDIR)
 	@cd tools && $(MAKE) install
+
+depend:
+	@cd src && $(MAKE) depend
+	@cd tools && $(MAKE) depend

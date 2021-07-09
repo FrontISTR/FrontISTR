@@ -1,0 +1,5 @@
+uelastic.o : uelastic.f90 
+uhardening.o : uhardening.f90 
+uload.o : uload.f90 
+umat.o : umat.f90 
+uyield.o : uyield.f90 

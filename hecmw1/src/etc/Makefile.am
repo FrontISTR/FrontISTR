@@ -105,3 +105,5 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+depend:

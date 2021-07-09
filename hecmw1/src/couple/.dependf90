@@ -1,0 +1,11 @@
+hecmw_couple_cleanup_f.o : hecmw_couple_cleanup_f.f90 hecmw_couple_struct_f.o hecmw_couple_define_f.o 
+hecmw_couple_copy_c2f_f.o : hecmw_couple_copy_c2f_f.f90 hecmw_couple_struct_f.o hecmw_couple_define_f.o 
+hecmw_couple_copy_f2c_f.o : hecmw_couple_copy_f2c_f.f90 hecmw_couple_struct_f.o 
+hecmw_couple_define_f.o : hecmw_couple_define_f.f90 
+hecmw_couple_f.o : hecmw_couple_f.f90 hecmw_couple_copy_f2c_f.o hecmw_couple_copy_c2f_f.o hecmw_couple_struct_f.o 
+hecmw_couple_finalize_f.o : hecmw_couple_finalize_f.f90 
+hecmw_couple_get_mesh_f.o : hecmw_couple_get_mesh_f.f90 hecmw_couple_info_f.o hecmw_couple_struct_f.o 
+hecmw_couple_info_f.o : hecmw_couple_info_f.f90 
+hecmw_couple_init_f.o : hecmw_couple_init_f.f90 hecmw_couple_info_f.o hecmw_couple_define_f.o 
+hecmw_couple_startup_f.o : hecmw_couple_startup_f.f90 hecmw_couple_struct_f.o hecmw_couple_define_f.o hecmw_couple_copy_c2f_f.o 
+hecmw_couple_struct_f.o : hecmw_couple_struct_f.f90 
