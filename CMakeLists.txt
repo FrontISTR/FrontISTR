@@ -144,8 +144,10 @@ endif()
 ###################
 # Find external packages
 ###################
+option(WITH_MPI "for parallel environment with MPI" ON)
 if(WITH_MPI)
   find_package(MPI)
+  set(WITH_MPI "${MPI_FOUND}")
   find_package(Parmetis)
   find_package(Scalapack)
 endif()
@@ -161,7 +163,6 @@ find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_DOC "Generate API documents." ${WITH_DOC})
 option(WINDOWS "build on windows" ${WINDOWS})
-option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
 option(WITH_MKL "compile with MKL PARDISO" ${MKL_FOUND})
 option(WITH_LAPACK "for estimating number of condition" ${LAPACK_FOUND})
