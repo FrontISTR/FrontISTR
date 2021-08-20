@@ -22,6 +22,9 @@ set(hecmw_LIBRARIES ${FrontISTR_LIBRARIES})
 # Build for libhecmw.a
 #
 include(src/CMakeLists.txt)
+if(USE_NLC_SBLAS)
+  add_definitions(-DUSE_NLC_SBLAS)
+endif()
 
 add_library(hecmw STATIC ${hecmw_SOURCES})
 target_link_libraries(hecmw ${hecmw_LIBRARIES})

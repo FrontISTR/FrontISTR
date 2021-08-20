@@ -125,6 +125,9 @@ contains
     use hecmw_jad_type
     use hecmw_tuning_fx
     !$ use omp_lib
+#ifdef USE_NLC_SBLAS
+    use sblas
+#endif
 
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -152,6 +155,17 @@ contains
     integer(kind=kint) :: numOfElement, elementCount, blockIndex
     real(kind=kreal) :: numOfElementPerBlock
     ! <<< added for turning
+    ! add for NLC SBLAS >>>
+#ifdef USE_NLC_SBLAS
+    integer :: ierr
+    integer(kind=8) :: hnd
+    integer,save :: mrow, ncol, nnz, idx, ii, jj
+    integer, allocatable, save :: iacol(:), iarow(:)
+    real(kind=kreal), allocatable, save:: aval(:)
+    real(kind=kreal):: alpha = 1.0d0
+    real(kind=kreal):: beta = 1.0d0
+#endif
+    ! <<< add for NLC SBLAS
 
     if (hecmw_JAD_IS_INITIALIZED().ne.0) then
       Tcomm = 0.d0
@@ -215,6 +229,56 @@ contains
 
         call hecmw_tuning_fx_calc_sector_cache(NP, 3, &
           sectorCacheSize0, sectorCacheSize1)
+#ifdef USE_NLC_SBLAS
+          START_TIME = hecmw_Wtime()
+          write(0,*) 'NLC SBLASS version'
+          if(kreal .eq. 8) then
+            mrow=hecMAT%NP*hecMAT%NDOF
+            ncol=mrow
+            nnz=mrow+hecMAT%NPU*hecMAT%NDOF*hecMAT%NDOF
+            allocate(iacol(nnz))
+            allocate(iarow(nnz))
+            allocate(aval(nnz))
+            idx=1
+            !store upper triangular
+            do i=1, hecMAT%NP
+              do j=hecMAT%indexU(i-1)+1, hecMAT%indexU(i)
+                do ii=0, hecMAT%NDOF-1
+                  do jj=0, hecMAT%NDOF-1
+                    aval(idx)=hecMAT%AU(idx)
+                    iacol(idx)=(hecMAT%itemU(i) -1 )*hecMAT%NDOF+1+jj
+                    iarow(idx)=(i-1)*hecMAT%NDOF+1+ii
+                    idx=idx+1
+                  enddo
+                enddo
+              enddo
+            enddo
+            !store Diagonal
+            do i=1, hecMAT%NP
+              do ii=0,hecMAT%NDOF-1
+                aval(idx)=hecMAT%D((i-1)*hecMAT%NDOF+1+ii*(hecMAT%NDOF+1))
+                iacol(idx)=(i-1)*hecMAT%NDOF+ii+1
+                iarow(idx)=(i-1)*hecMAT%NDOF+ii+1
+                idx=idx+1
+              enddo
+            enddo
+            call sblas_create_matrix_handle_from_coo_rd (mrow, ncol, nnz, iarow, iacol,&
+                                                         aval, SBLAS_INDEXING_1, SBLAS_SYMMETRIC, hnd, ierr)
+            if(ierr .ne. SBLAS_OK)then
+              write(0,*) 'sblas_create_matrix_handle_from_coo_rd failed', ierr
+              call hecmw_abort(hecmw_comm_get_comm())
+            endif
+            call sblas_analyze_mv_rd(SBLAS_NON_TRANSPOSE, hnd, ierr)
+            if(ierr .ne. SBLAS_OK)then
+              write(0,*) 'sblas_analyze_mv_rd failed', ierr
+              call hecmw_abort(hecmw_comm_get_comm())
+            endif
+          else
+            write(0,*) 'NLC-SBLAS single presicion version is not implemented'
+          endif
+          END_TIME = hecmw_Wtime()
+          write(0,*) 'sblas mv setup time=', END_TIME-START_TIME
+#endif
 
         isFirst = .false.
       endif
@@ -230,6 +294,9 @@ contains
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
       START_TIME = hecmw_Wtime()
+#ifdef USE_NLC_SBLAS
+          call sblas_execute_mv_rd(SBLAS_NON_TRANSPOSE, hnd, alpha, x, beta, y, ierr)
+#else
 
       !call fapp_start("loopInMatvec33", 1, 0)
       !call start_collection("loopInMatvec33")
@@ -288,6 +355,7 @@ contains
       !call stop_collection("loopInMatvec33")
       !call fapp_stop("loopInMatvec33", 1, 0)
 
+#endif
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME
 
