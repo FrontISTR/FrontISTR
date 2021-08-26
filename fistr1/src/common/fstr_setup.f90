@@ -84,6 +84,7 @@ contains
     integer(kind=kint) :: c_mpc, c_weldline, c_initial
     integer(kind=kint) :: c_istep, c_localcoord, c_section
     integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints
+    integer(kind=kint) :: c_newheader
     integer(kind=kint) :: c_output, islog
     integer(kind=kint) :: k
     integer(kind=kint) :: cache = 1
@@ -113,7 +114,9 @@ contains
     c_istep    = 0; c_localcoord = 0
     c_fload    = 0; c_eigenread = 0
     c_elemopt  = 0;
-    c_aincparam= 0; c_timepoints = 0
+    c_aincparam= 0; c_timepoints = 0; c_newheader=0
+
+    fstrPARAM%new_variable = 0.d0
 
     ctrl_list = 0
     ictrl = 1
@@ -281,6 +284,12 @@ contains
         end if
         ictrl = ictrl + 1
         cycle
+
+        !--------------- for new_header -------------------------
+
+      else if( header_name == '!NEW_HEADER' ) then
+        c_newheader = c_newheader + 1
+        call fstr_setup_NEW_HEADER( ctrl, c_newheader, P )
 
         !--------------------- END -------------------------
 
@@ -3504,5 +3513,25 @@ end function fstr_setup_INITIAL
       ! call append_intersection_node_grp( hecMESH, ngrp_id, ngrp_id2 )
     enddo
   end subroutine fstr_convert_contact_type
+
+  !*****************************************************************************!
+  !* NEW_HEADER ****************************************************************!
+  !*****************************************************************************!
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !NEW_HEADER                                                              !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_NEW_HEADER( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack), target :: P
+
+    integer(kind=kint) :: rcode
+    rcode = fstr_ctrl_get_NEW_HEADER( ctrl, P%PARAM%new_variable)
+    if( rcode /= 0) call fstr_ctrl_err_stop
+  end subroutine fstr_setup_NEW_HEADER
+
 
 end module m_fstr_setup

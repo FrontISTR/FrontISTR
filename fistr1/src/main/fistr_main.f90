@@ -71,6 +71,7 @@ contains
     T2 = hecmw_Wtime()
 
     ! =============== ANALYSIS =====================
+    if( myrank == 0 ) write(*,*) '## new_variable: ',fstrPR%new_variable
 
     select case( fstrPR%solution_type )
       case( kstSTATIC )

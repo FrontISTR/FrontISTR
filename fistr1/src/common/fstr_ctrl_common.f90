@@ -704,5 +704,14 @@ contains
     fstr_ctrl_get_TIMEPOINTS = 0
   end function fstr_ctrl_get_TIMEPOINTS
 
+  !> Read in !NEW_HEADER
+  function fstr_ctrl_get_NEW_HEADER( ctrl, new_value )
+    integer(kind=kint), intent(in) :: ctrl      !< readed data
+    real(kind=kreal), intent(out)  :: new_value   !< new_value
+    integer(kind=kint) :: fstr_ctrl_get_NEW_HEADER
+
+    fstr_ctrl_get_NEW_HEADER = fstr_ctrl_get_data_ex( ctrl, 1, 'R' , new_value )
+
+  end function fstr_ctrl_get_NEW_HEADER
 
 end module fstr_ctrl_common

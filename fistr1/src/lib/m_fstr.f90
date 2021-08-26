@@ -184,6 +184,9 @@ module m_fstr
     !> for auto increment and cutback
     type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control
     type(time_points), pointer :: timepoints(:)  !< time points data
+
+    !> sample
+    real( kind=kreal ) :: new_variable
   end type fstr_param
 
   !> GLOBAL VARIABLE INITIALIZED IN FSTR_SETUP
