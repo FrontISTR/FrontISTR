@@ -357,6 +357,22 @@ contains
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_FTRAC )
     endif
 
+    ! --- COORDINATE
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(38) ) then
+      mdof = min(ndof,3)
+      work(:) = 0.d0
+      do i=1,hecMESH%n_node
+        do j=1,mdof
+          work(mdof*(i-1)+j) = hecMESH%node(mdof*(i-1)+j)+fstrSOLID%unode(ndof*(i-1)+j)
+        end do
+      end do
+
+      id = 1
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(38), mdof )
+      label = 'COORDINATE'
+      call hecmw_result_add( id, nitem, label, work )
+    endif
+
     ! --- WRITE
     nameID = 'fstrRES'
     if( flag==0 ) then
@@ -696,6 +712,11 @@ contains
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(37), ndof )
     endif
+    ! --- COORDINATE
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) ) then
+      ncomp = ncomp + 1
+      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
+    endif
 
     ! --- STRAIN @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(6) ) then
@@ -990,6 +1011,22 @@ contains
       do i = 1, hecMESH%n_node
         do j = 1, nn
           fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%CONT_FTRAC(nn*(i-1)+j)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- COORDINATE
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) ) then
+      mdof = min(ndof,3)
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), mdof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'COORDINATE'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = &
+            &  hecMESH%node(mdof*(i-1)+j)+fstrSOLID%unode(ndof*(i-1)+j)
         enddo
       enddo
       iitem = iitem + nn

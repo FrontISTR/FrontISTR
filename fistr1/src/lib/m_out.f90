@@ -42,7 +42,7 @@ contains
     outinfo%grp_id_name = "ALL"
     outinfo%grp_id      = -1
     outinfo%on(:)       = .false.
-    outinfo%num_items   = 37
+    outinfo%num_items   = 38
 
     outinfo%keyWord(1)  = "DISP"
     outinfo%vtype(1)    = -2
@@ -157,6 +157,10 @@ contains
 
     outinfo%keyWord(37) = "CONTACT_FTRACTION"
     outinfo%vtype(37)   = -2
+
+    outinfo%keyWord(38) = "COORDINATE"
+    outinfo%vtype(38)   = -2
+
   end subroutine initOutInfo
 
 

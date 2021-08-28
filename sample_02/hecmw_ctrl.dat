@@ -1,0 +1,18 @@
+!MESH, NAME=part_in,TYPE=HECMW-ENTIRE
+sample.msh
+!MESH, NAME=part_out,TYPE=HECMW-DIST
+sample_p
+!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+sample.msh
+!MESH, NAME=mesh,TYPE=HECMW-ENTIRE
+sample.msh
+!CONTROL,NAME=fstrCNT
+sample.cnt
+!RESTART,NAME=restart_out,IO=OUT
+sample.restart
+!RESULT,NAME=fstrRES,IO=OUT
+sample.res
+!RESULT,NAME=result,IO=IN
+sample.res
+!RESULT,NAME=vis_out,IO=OUT
+sample.vis
