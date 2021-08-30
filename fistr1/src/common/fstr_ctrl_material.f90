@@ -192,7 +192,7 @@ contains
     if( ipt/=0 ) nlgeom = UPDATELAG
 
     ipt=1
-    s = 'NEOHOOKE,MOONEY-RIVLIN,ARRUDA-BOYCE,USER,MOONEY-RIVLIN-ANISO '
+    s = 'NEOHOOKE,MOONEY-RIVLIN,ARRUDA-BOYCE,USER,MOONEY-RIVLIN-ANISO,YEOH2 '
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  s, 0, 'P',   ipt    ) /= 0 ) return
 
     ! NEOHOOKE
@@ -285,6 +285,22 @@ contains
         matval(M_PLCONST10) = fval(10,1)
       endif
       mattype = MOONEYRIVLIN_ANISO
+
+      ! 2ND-ORDER YEOH
+    else if( ipt==6 ) then
+      allocate( fval(3,depends+1) )
+      fval =0.0d0
+      if( depends==0 ) then
+        data_fmt = "RRR "
+        fstr_ctrl_get_HYPERELASTIC =                       &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+      endif
+      if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
+        matval(M_PLCONST1) = fval(1,1)
+        matval(M_PLCONST2) = fval(2,1)
+        matval(M_PLCONST3) = fval(3,1)
+      endif
+      mattype = YEOH2
 
     endif
 

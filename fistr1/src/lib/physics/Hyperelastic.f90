@@ -422,4 +422,74 @@ contains
 
   end subroutine calUpdateElasticMooneyRivlinAniso
 
+  !-------------------------------------------------------------------------------
+  !> This subroutine provides elastic tangent coefficient for 2nd-order Yeoh hyperelastic material
+  !-------------------------------------------------------------------------------
+  subroutine calElasticYeoh2( matl, sectType, cijkl, strain )
+    type( tMaterial ), intent(in) :: matl             !< material rpoperties
+    integer, intent(in)           :: sectType         !< not used curr
+    real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
+    real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
+
+    integer :: k, l, m, n
+    real(kind=kreal) :: ctn(3,3), itn(3,3)
+    real(kind=kreal) :: inv1b, inv2b, inv3b
+    real(kind=kreal) :: dibdc(3,3,3)
+    real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
+    real(kind=kreal) :: constant(3)
+
+
+    constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
+    call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,            &
+      dibdc, d2ibdc2, strain    )
+
+    forall( k=1:3, l=1:3, m=1:3, n=1:3 )
+      cijkl(k,l,m,n) = d2ibdc2(k,l,m,n,1)*constant(1) +  &
+      2.d0*(dibdc(k,l,1)*dibdc(m,n,1)+(inv1b-3.d0)*d2ibdc2(k,l,m,n,1))*constant(2) +  &
+        2.d0*(dibdc(k,l,3)*dibdc(m,n,3)+  &
+        (inv3b-1.d0)*d2ibdc2(k,l,m,n,3))/constant(3)
+    end forall
+    cijkl(:,:,:,:)=4.d0*cijkl(:,:,:,:)
+
+  end subroutine calElasticYeoh2
+
+  !-------------------------------------------------------------------------------
+  !> This subroutine provides to update stress and strain for 2nd-order Yeoh material
+  !-------------------------------------------------------------------------------
+  subroutine calUpdateElasticYeoh2( matl, sectType, strain, stress )
+    type( tMaterial ), intent(in) :: matl        !< material properties
+    integer, intent(in)           :: sectType    !< not used currently
+    real(kind=kreal), intent(out) :: stress(6)   !< 2nd Piola-Kirchhoff stress
+    real(kind=kreal), intent(in)  :: strain(6)   !< Green-Lagrangen strain
+
+    integer :: k, l
+    real(kind=kreal) :: ctn(3,3), itn(3,3)
+    real(kind=kreal) :: inv1b, inv2b, inv3b
+    real(kind=kreal) :: dibdc(3,3,3)
+    real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
+    real(kind=kreal) :: constant(3)
+    real(kind=kreal) :: dudc(3,3)
+
+    constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
+    call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
+      dibdc, d2ibdc2, strain    )
+
+
+    ! ----- stress
+    do l=1,3
+      do k=1,3
+        dudc(k,l) = dibdc(k,l,1)*constant(1)+2.d0*(inv1b-3.d0)*dibdc(k,l,1)*constant(2)  &
+          +2.d0*(inv3b-1.d0)*dibdc(k,l,3)/constant(3)
+      enddo
+    enddo
+
+    stress(1)=2.d0*dudc(1,1)
+    stress(2)=2.d0*dudc(2,2)
+    stress(3)=2.d0*dudc(3,3)
+    stress(4)=2.d0*dudc(1,2)
+    stress(5)=2.d0*dudc(2,3)
+    stress(6)=2.d0*dudc(1,3)
+
+  end subroutine calUpdateElasticYeoh2
+
 end module

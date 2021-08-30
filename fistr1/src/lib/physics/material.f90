@@ -66,6 +66,7 @@ module mMaterial
   integer(kind=kint), parameter :: ARRUDABOYCE           = 132000
   integer(kind=kint), parameter :: USERHYPERELASTIC      = 133000
   integer(kind=kint), parameter :: MOONEYRIVLIN_ANISO    = 134000
+  integer(kind=kint), parameter :: YEOH2                 = 135000
 
   integer(kind=kint), parameter :: VISCOELASTIC          = 140000
   integer(kind=kint), parameter :: NORTON                = 150000

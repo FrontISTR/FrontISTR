@@ -88,6 +88,9 @@ contains
     elseif( matl%mtype==MOONEYRIVLIN_ANISO ) then
       call calElasticMooneyRivlinAniso( matl, sectType, cijkl, gauss%strain, cdsys )
       call mat_c2d( cijkl, matrix, sectType )
+    elseif( matl%mtype==YEOH2 )  then
+      call calElasticYeoh2( matl, sectType, cijkl, gauss%strain )
+      call mat_c2d( cijkl, matrix, sectType )
     elseif( matl%mtype==USERHYPERELASTIC )  then
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
     elseif( isElastoplastic(matl%mtype) )  then
@@ -134,6 +137,8 @@ contains
       call calUpdateElasticArrudaBoyce( gauss%pMaterial, sectType, strain, stress )
     elseif( gauss%pMaterial%mtype==MOONEYRIVLIN_ANISO ) then
       call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, sectType, strain, stress, cdsys )
+    elseif( gauss%pMaterial%mtype==YEOH2 ) then
+      call calUpdateElasticYeoh2( gauss%pMaterial, sectType, strain, stress )
     elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
       call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
     elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
