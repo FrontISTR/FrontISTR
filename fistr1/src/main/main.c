@@ -132,11 +132,11 @@ void print_buildinfo(int log_level) {
 #elif defined(OMPI_MAJOR_VERSION)
   printf(", Open MPI %d.%d.%d", OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
 #endif
-  printf("\"\n");  
+  printf("\"\n");
 #else
   printf("  MPI:        disabled\n");
 #endif
-#ifdef _OPENMP  
+#ifdef _OPENMP
   printf("  OpenMP:     %d\n", _OPENMP);
 #else
   printf("  OpenMP:     disabled\n");
@@ -170,6 +170,12 @@ void print_buildinfo(int log_level) {
 #ifdef WITH_MKL
   printf("--with-mkl ");
 #endif
+#ifdef USE_VHCALL
+    printf("--with-vhcall");
+#endif
+#ifdef USE_HETERO_SOLVER
+    printf("--with-heterosolver");
+#endif
   printf("\"");
   printf("\n");
 #ifdef HECMW_METIS_VER
@@ -183,7 +189,7 @@ void print_buildinfo(int log_level) {
 void print_executeinfo(int log_level) {
   int rank=0;
   int proc, i, len, mpi_ver, mpi_subver;
-  char *p; 
+  char *p;
   char date[32];
   time_t t;
   int d;
@@ -220,7 +226,7 @@ void print_executeinfo(int log_level) {
     printf("  host:\n");
   }
 #ifndef HECMW_SERIAL
-  
+
     if (rank == 0){
       printf("    %d: %s\n",0,hostname);
       for (i=1;i<proc;i++){
@@ -247,7 +253,7 @@ void version(char *arg) {
 #endif
   print_buildinfo(9);
   if (rank==0) printf("---\n");
-  exit(0);    
+  exit(0);
 }
 
 /**

@@ -40,6 +40,10 @@ contains
     real(kind=kreal) :: T1, T2, T3
 
     T1=0.0d0; T2=0.0d0; T3=0.0d0
+#ifdef VHCALL_LIB
+    write(0,*) 'ERROR fstr_main never called from lib version'
+    stop
+#endif
 
     ! =============== INITIALIZE ===================
 

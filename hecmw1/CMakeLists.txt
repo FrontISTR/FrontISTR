@@ -22,6 +22,12 @@ set(hecmw_LIBRARIES ${FrontISTR_LIBRARIES})
 # Build for libhecmw.a
 #
 include(src/CMakeLists.txt)
+if(USE_VHCALL)
+  add_definitions(-DUSE_VHCALL)
+endif()
+if(USE_HETERO_SOLVER)
+  add_definitions(-DHECMW_WITH_HETEROSOLVER)
+endif()
 if(USE_NLC_SBLAS)
   add_definitions(-DUSE_NLC_SBLAS)
 endif()
@@ -30,6 +36,10 @@ add_library(hecmw STATIC ${hecmw_SOURCES})
 target_link_libraries(hecmw ${hecmw_LIBRARIES})
 target_include_directories(hecmw PUBLIC ${hecmw_INCLUDE_DIRS})
 target_compile_definitions(hecmw PUBLIC ${hecmw_DEFINITIONS})
+if(BUILD_SHARED)
+  target_compile_options(hecmw PUBLIC -fPIC)
+endif()
+
 
 #
 # Build tools

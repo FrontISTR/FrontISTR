@@ -75,8 +75,12 @@ contains
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt = stepcnt+1
 
+#ifdef USE_VHCALL
+    call stiffMatrixCallerWrapper(hecMAT, ctime, tincr, cstep, fstrSOLID%maxn_gauss, hecMAT%D,hecMAT%AL, hecMAT%AU )
+#else
       call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+#endif
 
       ! ----- Set Boundary condition
       call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)

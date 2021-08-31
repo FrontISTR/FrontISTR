@@ -1400,8 +1400,9 @@ contains
     if(hecMESH%my_rank == 0)then
       call fstr_setup_visualize_main( ctrl, vis_filename )
     endif
-
+#ifndef VHCALL_LIB
     call hecmw_barrier( hecMESH )
+#endif
 
     inquire(file = vis_filename, EXIST = is_exit)
 

@@ -1033,6 +1033,7 @@ contains
 
     integer :: i, j, ng, isect, ndof, id, nn
 
+
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
     endif
@@ -1083,7 +1084,9 @@ contains
       endif
     enddo
 
+#ifndef VHCALL_LIB
     call hecmw_allreduce_I1(hecMESH,fstrSOLID%maxn_gauss,HECMW_MAX)
+#endif
   end subroutine
 
   !> Finalizer of fstr_solid
@@ -1577,7 +1580,9 @@ contains
       call fstr_setup_visualize( ctrl, P%MESH )
     end if
 
+#ifndef VHCALL_LIB
     call hecmw_barrier( P%MESH ) ! JP-7
+#endif
 
     if( P%HEAT%STEPtot == 0 ) then ! No !HEAT Input
       if( P%PARAM%analysis_n == 0 ) then  ! No !STATIC Input
