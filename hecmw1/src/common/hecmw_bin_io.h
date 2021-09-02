@@ -9,6 +9,10 @@
 #include <stdio.h>
 
 /*---------------------------------------------------------------------------*/
+void bfwrite(const void *data, size_t size, size_t nitems, FILE* stream);
+void bfwrite_flush(FILE* stream);
+
+/*---------------------------------------------------------------------------*/
 /* CAUTION) hecmw_set_endian_info must be executed before calling following
  * functions. */
 
