@@ -1,0 +1,11 @@
+dynamic_mat_ass_bc.o : dynamic_mat_ass_bc.f90 table_dyn.o 
+dynamic_mat_ass_bc_ac.o : dynamic_mat_ass_bc_ac.f90 table_dyn.o 
+dynamic_mat_ass_bc_vl.o : dynamic_mat_ass_bc_vl.f90 table_dyn.o 
+dynamic_mat_ass_couple.o : dynamic_mat_ass_couple.f90 
+dynamic_mat_ass_load.o : dynamic_mat_ass_load.f90 table_dyn.o 
+dynamic_output.o : dynamic_output.f90 
+dynamic_var_init.o : dynamic_var_init.f90 dynamic_mat_ass_load.o 
+fstr_dynamic_nlexplicit.o : fstr_dynamic_nlexplicit.f90 dynamic_mat_ass_couple.o dynamic_mat_ass_load.o dynamic_mat_ass_bc_vl.o dynamic_mat_ass_bc.o dynamic_mat_ass_bc_ac.o dynamic_output.o 
+fstr_dynamic_nlimplicit.o : fstr_dynamic_nlimplicit.f90 dynamic_var_init.o dynamic_mat_ass_couple.o dynamic_mat_ass_load.o dynamic_mat_ass_bc_vl.o dynamic_mat_ass_bc.o dynamic_mat_ass_bc_ac.o dynamic_output.o 
+fstr_solve_dynamic.o : fstr_solve_dynamic.f90 fstr_dynamic_nlimplicit.o fstr_dynamic_nlexplicit.o 
+table_dyn.o : table_dyn.f90 

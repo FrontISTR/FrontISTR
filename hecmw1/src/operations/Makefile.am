@@ -24,3 +24,8 @@ install:
 	@cd adaptaion              && $(MAKE) install
 	@cd dynamic_load_balancing && $(MAKE) install
 	@cd jacobian               && $(MAKE) install
+
+depend:
+	@cd adaptation             && $(MAKE) depend
+	@cd dynamic_load_balancing && $(MAKE) depend
+	@cd jacobian               && $(MAKE) depend

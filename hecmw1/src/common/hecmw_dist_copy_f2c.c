@@ -1784,6 +1784,21 @@ static int set_contact_pair_slave_grp_id(void *src) {
   return 0;
 }
 
+static int set_contact_pair_slave_orisgrp_id(void *src) {
+  int size;
+
+  if (mesh->contact_pair->n_pair <= 0) return 0;
+  size =
+      sizeof(*mesh->contact_pair->slave_orisgrp_id) * (mesh->contact_pair->n_pair);
+  mesh->contact_pair->slave_orisgrp_id = HECMW_malloc(size);
+  if (mesh->contact_pair->slave_orisgrp_id == NULL) {
+    HECMW_set_error(errno, "");
+    return -1;
+  }
+  memcpy(mesh->contact_pair->slave_orisgrp_id, src, size);
+  return 0;
+}
+
 static int set_contact_pair_master_grp_id(void *src) {
   int size;
 
@@ -1971,6 +1986,7 @@ static struct func_table {
     {"hecmwST_contact_pair", "name", set_contact_pair_name},
     {"hecmwST_contact_pair", "type", set_contact_pair_type},
     {"hecmwST_contact_pair", "slave_grp_id", set_contact_pair_slave_grp_id},
+    {"hecmwST_contact_pair", "slave_orisgrp_id", set_contact_pair_slave_orisgrp_id},
     {"hecmwST_contact_pair", "master_grp_id", set_contact_pair_master_grp_id},
 };
 

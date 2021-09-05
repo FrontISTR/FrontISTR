@@ -29,12 +29,12 @@ contains
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
     real(kind=kreal)   :: RHS, factor
-    integer(kind=kint) :: idof1, idof2, ndof, i, grpid
+    integer(kind=kint) :: ndof, grpid
 
     !for rotation
-    integer(kind=kint) :: n_rot, rid, n_nodes
+    integer(kind=kint) :: n_rot, rid
     type(tRotInfo)     :: rinfo
-    real(kind=kreal)   :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
+    real(kind=kreal)   :: ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3), cddisp(3)
 
     !

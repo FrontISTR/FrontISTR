@@ -1,0 +1,6 @@
+_unused_code.o : _unused_code.f90 
+hecmw_ordering.o : hecmw_ordering.F90 hecmw_ordering_rcm.o hecmw_ordering_metis.o hecmw_ordering_qmd.o 
+hecmw_ordering_metis.o : hecmw_ordering_metis.F90 
+hecmw_ordering_qmd.o : hecmw_ordering_qmd.f90 
+hecmw_ordering_rcm.o : hecmw_ordering_rcm.f90 
+hecmw_solver_direct.o : hecmw_solver_direct.f90 hecmw_ordering.o 

@@ -205,6 +205,7 @@ module hecmw_util
     integer(kind=kint),pointer :: type(:)
     integer(kind=kint),pointer :: slave_grp_id(:)
     integer(kind=kint),pointer :: master_grp_id(:)
+    integer(kind=kint),pointer :: slave_orisgrp_id(:)
   end type hecmwST_contact_pair
 
   !C      for hecmwST_contact_pair%type
@@ -714,6 +715,7 @@ contains
     nullify( P%name )
     nullify( P%type )
     nullify( P%slave_grp_id )
+    nullify( P%slave_orisgrp_id )
     nullify( P%master_grp_id )
   end subroutine hecmw_nullify_contact_pair
 
@@ -1127,7 +1129,7 @@ contains
   subroutine hecmw_vector_contract(hecMATorig,hecMAT,NDOF)
     type (hecmwST_matrix    ) :: hecMATorig
     type (hecmwST_matrix    ),pointer :: hecMAT
-    integer(kind=kint) NDOF,NDOF2,oNDOF,oNDOF2,i,j,k
+    integer(kind=kint) NDOF,NDOF2,oNDOF,i,j
     NDOF2 = NDOF*NDOF
     oNDOF = hecMATorig%NDOF
     do i = 1, hecMATorig%NP

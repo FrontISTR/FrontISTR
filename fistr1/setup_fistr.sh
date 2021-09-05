@@ -234,7 +234,7 @@ fi
 #
 # with mkl
 #
-if [ ${WITHMKL} -eq 1 -a ${SERIAL} -eq 1 ]; then
+if [ ${WITHMKL} -eq 1 ]; then
 	F90FLAGS="${F90FLAGS} -DWITH_MKL"
 fi
 
@@ -366,6 +366,14 @@ do
 		-e "s!@mllibs@!${MLLIBS}!" \
 		-e "s!@ml_ldflags@!${ML_LDFLAGS}!" \
 		-e "s!@ml_f90ldflags@!${ML_F90LDFLAGS}!" \
+		-e "s!@mkldir@!${MKLDIR}!" \
+		-e "s!@mkllibdir@!${MKLLIBDIR}!" \
+		-e "s!@mklincdir@!${MKLINCDIR}!" \
+		-e "s!@mkllibs@!${MKLLIBS}!" \
+		-e "s!@mkl_cflags@!${MKL_CFLAGS}!" \
+		-e "s!@mkl_ldflags@!${MKL_LDFLAGS}!" \
+		-e "s!@mkl_f90flags@!${MKL_F90FLAGS}!" \
+		-e "s!@mkl_f90ldflags@!${MKL_F90LDFLAGS}!" \
 		-e "s!@build_target@!${BUILDTARGET}!" \
 		-e "s!@all_build_target@!${ALLBUILDTARGET}!" \
 		-e "s!@revocap_f90flags@!${REVOCAP_F90FLAGS}!" \

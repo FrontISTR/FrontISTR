@@ -28,7 +28,8 @@ module mContactDef
     integer                       :: ctype                   !< 1:node-surface 2: surface-surface
     integer                       :: group                   !< group number
     character(len=HECMW_NAME_LEN) :: pair_name               !< name of contact pair
-    integer                       :: surf_id1, surf_id2      !< slave surafce, master surface
+    integer                       :: surf_id1, surf_id2      !< slave surface, master surface
+    integer                       :: surf_id1_sgrp           !< surface group id of slave surface
     type(tSurfElement), pointer   :: master(:)=>null()       !< master surface (element )
     integer, pointer              :: slave(:)=>null()        !< slave surface (node)
     real(kind=kreal)              :: fcoeff                  !< coeeficient of friction
@@ -152,6 +153,7 @@ contains
         contact%ctype = hecMESH%contact_pair%type(i)
         contact%surf_id1 = hecMESH%contact_pair%slave_grp_id(i)
         contact%surf_id2 = hecMESH%contact_pair%master_grp_id(i)
+        contact%surf_id1_sgrp = hecMESH%contact_pair%slave_orisgrp_id(i)
         isfind = .true.
       endif
     enddo
@@ -317,7 +319,7 @@ contains
     logical, intent(in)                              :: is_init       !< wheather initial scan or not
     logical, intent(out)                            :: active        !< if any in contact
     real(kind=kreal), intent(in)                     :: mu            !< penalty
-    real(kind=kreal), optional                       :: B(:)          !< nodal force residual
+    real(kind=kreal), optional, target               :: B(:)          !< nodal force residual
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
@@ -329,7 +331,8 @@ contains
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-    logical :: is_cand
+    logical :: is_cand, is_present_B
+    real(kind=kreal), pointer :: Bp(:)
 
     if( contact%algtype<=2 ) return
 
@@ -349,12 +352,16 @@ contains
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
 
+    ! for gfortran-10: optional parameter seems not allowed within omp parallel
+    is_present_B = present(B)
+    if( is_present_B ) Bp => B
+
     !$omp parallel do &
       !$omp& default(none) &
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
       !$omp&         bktID,nCand,indexCand) &
-      !$omp& firstprivate(nMasterMax) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,B,distclr,contact_surf) &
+      !$omp& firstprivate(nMasterMax,is_present_B) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -371,10 +378,10 @@ contains
             elemID(contact%master(id)%eid), " with tensile force ", nlforce
           cycle
         endif
-        if( contact%algtype /= CONTACTFSLID .or. (.not. present(B)) ) then   ! small slide problem
+        if( contact%algtype /= CONTACTFSLID .or. (.not. is_present_B) ) then   ! small slide problem
           contact_surf(contact%slave(i)) = -id
         else
-          call track_contact_position( flag_ctAlgo, i, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, B )
+          call track_contact_position( flag_ctAlgo, i, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, Bp )
           if( contact%states(i)%state /= CONTACTFREE ) then
             contact_surf(contact%slave(i)) = -contact%states(i)%surface
           endif
@@ -472,7 +479,7 @@ contains
     integer(kind=kint) :: cnode, i, j, cnt, nd1, gn, etype, iSS, nn,cgn
     real(kind=kreal) :: cnpos(2), elem(3, l_max_elem_node )
     integer(kind=kint) :: cnode1, cnode2, gn1, gn2, nsurf, cgn1, cgn2, isin_n
-    real(kind=kreal) :: x, normal_n(3), lpos_n(2)
+    real(kind=kreal) :: x=0, normal_n(3), lpos_n(2)
 
     if( 1 <= isin .and. isin <= 4 ) then  ! corner
       cnode = isin
@@ -593,7 +600,7 @@ contains
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
-    logical            :: isin, is_cand
+    logical            :: isin
     real(kind=kreal)    :: opos(2), odirec(3)
     integer(kind=kint) :: bktID, nCand, idm
     integer(kind=kint), allocatable :: indexCand(:)
@@ -706,7 +713,7 @@ contains
     integer(kind=kint)  :: nn, j, iSS
     real(kind=kreal)    :: nrlforce, fcoeff, tangent(3,2)
     real(kind=kreal)    :: elemcrd(3, l_max_elem_node )
-    real(kind=kreal)    :: dum, dxi(2), shapefunc(l_max_surface_node)
+    real(kind=kreal)    :: shapefunc(l_max_surface_node)
     real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
     real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
     integer(kind=kint)  :: i, idx0
@@ -806,7 +813,7 @@ contains
     integer(kind=kint)  :: nn, i, j, iSS
     real(kind=kreal)    :: nrlforce, elemdisp(3,l_max_elem_node), tangent(3,2)
     real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
-    real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
+    real(kind=kreal)    :: dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
     real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
     real(kind=kreal)    :: fric(2), f3(3*l_max_elem_node+3), edisp(3*l_max_elem_node+3)
 
@@ -958,10 +965,10 @@ contains
     real(kind=kreal), intent(inout)   :: B(:)           !< nodal force residual
 
     integer(kind=kint)  :: slave,  etype, master
-    integer(kind=kint)  :: nn, i, j, k, iSS
+    integer(kind=kint)  :: nn, i, j, iSS
     real(kind=kreal)    :: fcoeff, nrlforce, tangent(3,2)
-    real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
-    real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
+    real(kind=kreal)    :: elemcrd(3, l_max_elem_node )
+    real(kind=kreal)    :: shapefunc(l_max_surface_node)
     real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
     real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
     fcoeff = contact%fcoeff
@@ -1011,13 +1018,7 @@ contains
       real(kind=kreal), intent(inout)   :: relvel_vec(:)       !< mesh coordinate
       real(kind=kreal), intent(inout)   :: state_vec(:)        !< disp till current now
 
-      integer(kind=kint)  :: slave,  etype, master
-      integer(kind=kint)  :: nn, i, j, k, iSS
-      real(kind=kreal)    :: fcoeff, nrlforce, tangent(3,2)
-      real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
-      real(kind=kreal)    :: dum, dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
-      real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-      real(kind=kreal)    :: fric(2), f3(l_max_elem_node*3+3)
+      integer(kind=kint)  :: i, slave
 
       do i= 1, size(contact%slave)
         slave = contact%slave(i)
@@ -1061,7 +1062,7 @@ contains
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
-    logical            :: isin, is_cand
+    logical            :: isin
     real(kind=kreal)    :: opos(2), odirec(3)
     integer(kind=kint) :: bktID, nCand, idm
     integer(kind=kint), allocatable :: indexCand(:)

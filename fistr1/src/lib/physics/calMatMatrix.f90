@@ -85,6 +85,9 @@ contains
     elseif( matl%mtype==ARRUDABOYCE )  then
       call calElasticArrudaBoyce( matl, sectType, cijkl, gauss%strain )
       call mat_c2d( cijkl, matrix, sectType )
+    elseif( matl%mtype==MOONEYRIVLIN_ANISO ) then
+      call calElasticMooneyRivlinAniso( matl, sectType, cijkl, gauss%strain, cdsys )
+      call mat_c2d( cijkl, matrix, sectType )
     elseif( matl%mtype==USERHYPERELASTIC )  then
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
     elseif( isElastoplastic(matl%mtype) )  then
@@ -114,11 +117,12 @@ contains
 
   !
   !> Update strain and stress for elastic and hyperelastic materials
-  subroutine StressUpdate( gauss, sectType, strain, stress, time, dtime, temp, tempn )
+  subroutine StressUpdate( gauss, sectType, strain, stress, cdsys, time, dtime, temp, tempn )
     type( tGaussStatus ), intent(inout) :: gauss      !> status of qudrature point
     integer, intent(in)                 :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(in)        :: strain(6)  !> strain
     real(kind=kreal), intent(out)       :: stress(6)  !> stress
+    real(kind=kreal), intent(in)        :: cdsys(3,3) !> material coordinate system
     real(kind=kreal), intent(in), optional  :: time   !> current time
     real(kind=kreal), intent(in), optional  :: dtime  !> time increment
     real(kind=kreal), optional          :: temp       !> current temprature
@@ -128,6 +132,8 @@ contains
       call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress )
     elseif( gauss%pMaterial%mtype==ARRUDABOYCE ) then ! Arruda-Boyce Hyperelastic material
       call calUpdateElasticArrudaBoyce( gauss%pMaterial, sectType, strain, stress )
+    elseif( gauss%pMaterial%mtype==MOONEYRIVLIN_ANISO ) then
+      call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, sectType, strain, stress, cdsys )
     elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
       call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
     elseif( isViscoelastic( gauss%pMaterial%mtype) ) then

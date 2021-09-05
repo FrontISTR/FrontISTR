@@ -75,8 +75,16 @@ contains
 
     if( fstr_ctrl_get_param_ex( ctrl, 'CAUCHY ',  '# ',    0,   'E',   ipt )/= 0) return
     if( ipt/=0 ) nlgeom = UPDATELAG
+    if( fstr_ctrl_get_param_ex( ctrl, 'INFINITESIMAL ',  '# ',    0,   'E',   ipt )/= 0) return
+    if( ipt/=0 ) nlgeom = INFINITESIMAL
+
+    ! for backward compatibility
     if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
-    if( ipt/=0 ) nlgeom = INFINITE
+    if( ipt/=0 ) then
+      write(*,*) "Warning : !ELASTIC : parameter 'INFINITE' is deprecated." &
+           & //  " Pleaase use the replacement parameter 'INFINITESIMAL'"
+      nlgeom = INFINITESIMAL
+    endif
 
     ipt=1
     s = 'ISOTROPIC,ORTHOTROPIC,USER '
@@ -150,7 +158,7 @@ contains
         enddo
       endif
       mattype = USERELASTIC
-      nlgeom = INFINITE
+      nlgeom = INFINITESIMAL
 
     else
       stop "ERROR: Material type not supported"
@@ -184,7 +192,7 @@ contains
     if( ipt/=0 ) nlgeom = UPDATELAG
 
     ipt=1
-    s = 'NEOHOOKE,MOONEY-RIVLIN,ARRUDA-BOYCE,USER '
+    s = 'NEOHOOKE,MOONEY-RIVLIN,ARRUDA-BOYCE,USER,MOONEY-RIVLIN-ANISO '
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  s, 0, 'P',   ipt    ) /= 0 ) return
 
     ! NEOHOOKE
@@ -197,7 +205,7 @@ contains
           fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
-        if( fval(2,1)==0.d0 ) stop "We cannot deal with imcompresible material currently"
+        if( fval(2,1)==0.d0 ) stop "We cannot deal with incompressible material currently"
         matval(M_PLCONST1) = fval(1,1)
         matval(M_PLCONST2) = 0.d0
         matval(M_PLCONST3) = fval(2,1)
@@ -253,6 +261,31 @@ contains
       endif
       mattype = USERHYPERELASTIC
 
+      ! MOONEY-ORTHO
+    else if( ipt==5 ) then
+      allocate( fval(10,depends+1) )
+      fval =0.0d0
+      if( depends==0 ) then
+        data_fmt = "RRRRRrrrrr "
+        fstr_ctrl_get_HYPERELASTIC = &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, &
+          fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), &
+          fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
+      endif
+      if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
+        matval(M_PLCONST1) = fval(1,1)
+        matval(M_PLCONST2) = fval(2,1)
+        matval(M_PLCONST3) = fval(3,1)
+        matval(M_PLCONST4) = fval(4,1)
+        matval(M_PLCONST5) = fval(5,1)
+        matval(M_PLCONST6) = fval(6,1)
+        matval(M_PLCONST7) = fval(7,1)
+        matval(M_PLCONST8) = fval(8,1)
+        matval(M_PLCONST9) = fval(9,1)
+        matval(M_PLCONST10) = fval(10,1)
+      endif
+      mattype = MOONEYRIVLIN_ANISO
+
     endif
 
     if( associated(fval) ) deallocate(fval)
@@ -279,8 +312,16 @@ contains
     if( depends>1 ) depends=1   ! temperature depends only currently
     !depends = 0
     nlgeom = TOTALLAG   !default value
+    if( fstr_ctrl_get_param_ex( ctrl, 'INFINITESIMAL ',  '# ',    0,   'E',   ipt )/= 0) return
+    if( ipt/=0 ) nlgeom = INFINITESIMAL
+
+    ! for backward compatibility
     if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
-    if( ipt/=0 ) nlgeom = INFINITE
+    if( ipt/=0 ) then
+      write(*,*) "Warning : !VISCOELASTIC : parameter 'INFINITE' is deprecated." &
+           & //  " Pleaase use the replacement parameter 'INFINITESIMAL'"
+      nlgeom = INFINITESIMAL
+    endif
 
     ipt=1
     s = 'ISOTROPIC,USER '
@@ -369,8 +410,16 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'KIRCHHOFF ',  '# ',    0,   'E',   ipt )/= 0) return
     ! rcode = fstr_ctrl_get_param_ex( ctrl, 'FILE  ', '# ',           0,   'S',   fname )
     if( ipt/=0 ) nlgeom = TOTALLAG
+    if( fstr_ctrl_get_param_ex( ctrl, 'INFINITESIMAL ',  '# ',    0,   'E',   ipt )/= 0) return
+    if( ipt/=0 ) nlgeom = INFINITESIMAL
+
+    ! for backward compatibility
     if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
-    if( ipt/=0 ) nlgeom = INFINITE
+    if( ipt/=0 ) then
+      write(*,*) "Warning : !PLASTIC : parameter 'INFINITE' is deprecated." &
+           & //  " Pleaase use the replacement parameter 'INFINITESIMAL'"
+      nlgeom = INFINITESIMAL
+    endif
 
     call setDigit( 1, 1, mattype )
     call setDigit( 2, 2, mattype )

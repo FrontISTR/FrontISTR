@@ -1974,9 +1974,15 @@ end function fstr_setup_INITIAL
     endif
 
     ipt = 0
-    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'INFINITE,NLGEOM ', 0, 'P', ipt  )/=0 )  &
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'INFINITESIMAL,NLGEOM,INFINITE ', 0, 'P', ipt  )/=0 )  &
       return
     if( ipt == 2 ) P%PARAM%nlgeom = .true.
+
+    ! for backward compatibility
+    if( ipt == 3 ) then
+      write(*,*) "Warning : !STATIC : parameter 'TYPE=INFINITE' is deprecated." &
+           & //  " Please use the replacement parameter 'TYPE=INFINITESIMAL'"
+    endif
 
     rcode = fstr_ctrl_get_STATIC( ctrl, &
       DT, ETIME, ITMAX, EPS, P%SOLID%restart_nout, &

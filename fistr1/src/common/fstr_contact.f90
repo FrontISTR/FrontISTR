@@ -37,7 +37,7 @@ contains
     write(file,*) "Number of contact pair", pair%n_pair
     do i=1,pair%n_pair
       write(file,*) trim(pair%name(i)), pair%type(i), pair%slave_grp_id(i)  &
-        ,pair%master_grp_id(i)
+        ,pair%master_grp_id(i), pair%slave_orisgrp_id(i)
     enddo
   end subroutine
 
@@ -274,6 +274,11 @@ contains
     infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
 
+    if( .not. active ) then
+      fstrSOLID%CONT_NFORCE(:) = 0.d0
+      fstrSOLID%CONT_FRIC(:) = 0.d0
+    end if
+
   end subroutine
 
   !> Scanning contact state
@@ -283,7 +288,7 @@ contains
     type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
     type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
-    integer(kind=kint) :: i, grpid
+    integer(kind=kint) :: i
     logical :: iactive, is_init
 
 
@@ -446,7 +451,170 @@ contains
       allocate( fstrSOLID%CONT_STATE(hecMAT%NP*1) )
       fstrSOLID%CONT_STATE(:) = 0.d0
     end if
+
+    if( .not. associated(fstrSOLID%CONT_AREA) ) then
+      allocate( fstrSOLID%CONT_AREA(hecMAT%NP) )
+      fstrSOLID%CONT_AREA(:) = 0.d0
+    end if
+
+    if( .not. associated(fstrSOLID%CONT_NTRAC) ) then
+      allocate( fstrSOLID%CONT_NTRAC(hecMAT%NP*3) )
+      fstrSOLID%CONT_NTRAC(:) = 0.d0
+    end if
+
+    if( .not. associated(fstrSOLID%CONT_FTRAC) ) then
+      allocate( fstrSOLID%CONT_FTRAC(hecMAT%NP*3) )
+      fstrSOLID%CONT_FTRAC(:) = 0.d0
+    end if
+
   end subroutine
 
+  subroutine setup_contact_elesurf_for_area( cstep, hecMESH, fstrSOLID )
+    integer(kind=kint), intent(in)               :: cstep         !< current step number
+    type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
+    type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
+
+    integer(kind=kint) :: i, j, k, sgrp_id, iS, iE, eid, sid, n_cdsurfs
+    logical, pointer :: cdef_surf(:,:)
+    real(kind=kreal), pointer   :: coord(:)
+
+    if( associated(fstrSOLID%CONT_SGRP_ID) ) deallocate(fstrSOLID%CONT_SGRP_ID)
+
+    allocate(cdef_surf(l_max_elem_surf,hecMESH%n_elem))
+    cdef_surf(:,:) = .false.
+
+    ! label contact defined surfaces
+    n_cdsurfs = 0
+    do i=1, size(fstrSOLID%contacts)
+      !grpid = fstrSOLID%contacts(i)%group
+      !if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
+      !  call clear_contact_state(fstrSOLID%contacts(i));  cycle
+      !endif
+
+      do k=1,2 !slave,master
+        if( k==1 ) then !slave
+          sgrp_id = fstrSOLID%contacts(i)%surf_id1_sgrp
+        else if( k==2 ) then !master
+          sgrp_id = fstrSOLID%contacts(i)%surf_id2
+        end if
+
+        if( sgrp_id <= 0 ) cycle
+
+        iS = hecMESH%surf_group%grp_index(sgrp_id-1) + 1
+        iE = hecMESH%surf_group%grp_index(sgrp_id  )
+        do j=iS,iE
+          eid = hecMESH%surf_group%grp_item(2*j-1)
+          sid = hecMESH%surf_group%grp_item(2*j)
+          ! only internal and boundary element should be added
+          if( .not. cdef_surf(sid,eid) ) n_cdsurfs = n_cdsurfs + 1
+          cdef_surf(sid,eid) = .true.
+        enddo
+      end do
+    enddo
+
+    !gather info of contact defined surfaces
+    allocate(fstrSOLID%CONT_SGRP_ID(2*n_cdsurfs))
+    n_cdsurfs = 0
+    do i=1,hecMESH%n_elem
+      do j=1,l_max_elem_surf
+        if( cdef_surf(j,i) ) then
+          n_cdsurfs = n_cdsurfs + 1
+          fstrSOLID%CONT_SGRP_ID(2*n_cdsurfs-1) = i
+          fstrSOLID%CONT_SGRP_ID(2*n_cdsurfs  ) = j
+        endif
+      end do
+    end do
+    deallocate(cdef_surf)
+
+  end subroutine
+
+  subroutine calc_contact_area( hecMESH, fstrSOLID, flag )
+    type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
+    type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
+    integer(kind=kint), intent(in)               :: flag          !< set 1 if called in NR iteration
+
+    integer(kind=kint), parameter :: NDOF=3
+    integer(kind=kint) :: i, isuf, icel, sid, etype, nn, iS, stype, idx
+    integer(kind=kint) :: ndlocal(l_max_elem_node)
+    real(kind=kreal), pointer   :: coord(:)
+    real(kind=kreal)   :: ecoord(NDOF,l_max_elem_node), vect(l_max_elem_node)
+
+    fstrSOLID%CONT_AREA(:) = 0.d0
+
+    if( .not. associated(fstrSOLID%CONT_SGRP_ID) ) return
+
+    allocate(coord(NDOF*hecMESH%n_node))
+    do i=1,NDOF*hecMESH%n_node
+      coord(i) = hecMESH%node(i)+fstrSOLID%unode(i)
+    end do
+    if( flag == 1 ) then
+      do i=1,NDOF*hecMESH%n_node
+        coord(i) = coord(i)+fstrSOLID%dunode(i)
+      end do
+    end if
+
+    do isuf=1,size(fstrSOLID%CONT_SGRP_ID)/2
+      icel = fstrSOLID%CONT_SGRP_ID(2*isuf-1)
+      sid  = fstrSOLID%CONT_SGRP_ID(2*isuf  )
+
+      etype = hecMESH%elem_type(icel)
+      nn = hecmw_get_max_node(etype)
+      iS = hecMESH%elem_node_index(icel-1)
+      ndlocal(1:nn) = hecMESH%elem_node_item (iS+1:iS+nn)
+
+      do i=1,nn
+        idx = NDOF*(ndlocal(i)-1)
+        ecoord(1:NDOF,i) = coord(idx+1:idx+NDOF)
+      end do
+
+      call calc_nodalarea_surfelement( etype, nn, ecoord, sid, vect )
+
+      do i=1,nn
+        idx = ndlocal(i)
+        fstrSOLID%CONT_AREA(idx) = fstrSOLID%CONT_AREA(idx) + vect(i)
+      end do
+
+    end do
+
+    deallocate(coord)
+  end subroutine
+
+  subroutine calc_nodalarea_surfelement( etype, nn, ecoord, sid, vect )
+    integer(kind=kint), intent(in)   :: etype
+    integer(kind=kint), intent(in)   :: nn
+    real(kind=kreal), intent(in)     :: ecoord(:,:)
+    integer(kind=kint), intent(in)   :: sid
+    real(kind=kreal), intent(out)    :: vect(:)
+
+    integer(kind=kint), parameter :: NDOF=3
+    integer(kind=kint) :: nod(l_max_surface_node)
+    integer(kind=kint) :: nsur, stype, ig0, i
+    real(kind=kreal)   :: localcoord(2), normal(3), area, wg
+    real(kind=kreal)   :: scoord(NDOF,l_max_surface_node), H(l_max_surface_node)
+
+    vect(:) = 0.d0
+
+    call getSubFace( etype, sid, stype, nod )
+    nsur = getNumberOfNodes( stype )
+    do i=1,nsur
+      scoord(1:NDOF,i) = ecoord(1:NDOF,nod(i))
+    end do
+
+    area = 0.d0
+    do ig0=1,NumOfQuadPoints( stype )
+      call getQuadPoint( stype, ig0, localcoord(1:2) )
+      call getShapeFunc( stype, localcoord(1:2), H(1:nsur) )
+
+      wg=getWeight( stype, ig0 )
+      ! normal = dx/dr_1 \times dx/dr_2
+      normal(1:3) = SurfaceNormal( stype, nsur, localcoord(1:2), scoord(1:NDOF,1:nsur) )
+      area = area + dsqrt(dot_product(normal,normal))*wg
+    enddo
+    area = area/dble(nsur)
+    do i=1,nsur
+      vect(nod(i)) = area
+    end do
+
+  end subroutine
 
 end module mContact

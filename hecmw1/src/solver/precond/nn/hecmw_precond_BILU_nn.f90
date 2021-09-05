@@ -210,7 +210,7 @@ contains
 
     integer(kind=kint), dimension(:), allocatable :: IW1, IW2
     real (kind=kreal),  dimension(NDOF,NDOF) :: RHS_Aij, DkINV, Aik, Akj
-    integer(kind=kint) :: i,jj,jj1,ij0,kk,kk1,NDOF2
+    integer(kind=kint) :: i,jj,ij0,kk,NDOF2
     integer(kind=kint) :: j,k,ii,ij
     NDOF2=NDOF*NDOF
     allocate (IW1(NP) , IW2(NP))
@@ -360,7 +360,7 @@ contains
     integer(kind=kint) :: NPLf1,NPUf1,NDOF2
     integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
-    integer(kind=kint) :: j,k,iSL,iSU,ii,ij
+    integer(kind=kint) :: j,k,iSL,iSU
     !C
     !C +--------------+
     !C | find fill-in |
@@ -740,7 +740,7 @@ contains
     integer(kind=kint) :: NPLf1,NPLf2,NPUf1,NPUf2,iAS,iconIK,iconKJ,NDOF2
     integer(kind=kint) :: i,jj,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
-    integer(kind=kint) :: j,k,iSL,iSU,ii,ij
+    integer(kind=kint) :: j,k,iSL,iSU
 
     !C
     !C +------------------+
@@ -1501,7 +1501,6 @@ contains
     use hecmw_util
     implicit none
     real(kind=kreal) :: ALU(NDOF,NDOF), D(NDOF*NDOF), PW(NDOF)
-    real(kind=kreal) :: D11,D12,D13,D21,D22,D23,D31,D32,D33
     integer(kind=kint) :: NDOF, i,j,k
 
     do i = 1, NDOF

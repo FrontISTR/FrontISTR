@@ -12,7 +12,7 @@ contains
 
   !> This subroutine calculates derivative of the invariant with respect to Cauchy-Green tensor
   subroutine cderiv( matl, sectType, ctn, itn,               &
-      inv1b, inv2b, inv3b, dibdc, d2ibdc2, strain    )
+      inv1b, inv2b, inv3b, dibdc, d2ibdc2, strain, direction, inv4b, dibdc_ani, d2ibdc2_ani )
     type( tMaterial ), intent(in) :: matl                  !< material rpoperties
     integer, intent(in)           :: sectType              !< not used currently
     real(kind=kreal), intent(out) :: inv1b                 !< invariants
@@ -23,7 +23,10 @@ contains
     real(kind=kreal), intent(in)  :: strain(6)             !< Cauchy-Lagrange strain tensor
     real(kind=kreal), intent(out) :: ctn(3,3)              !< right Cauchy-Green deformation tensor
     real(kind=kreal), intent(out) :: itn(3,3)              !< identity tensor
-
+    real(kind=kreal), intent(in), optional :: direction(3)       !< direction vector of anisotropic materials
+    real(kind=kreal), intent(out), optional :: inv4b                 !< invariants
+    real(kind=kreal), intent(out), optional :: dibdc_ani(3,3)        !< derivative of the 4th anisotropic invariant
+    real(kind=kreal), intent(out), optional :: d2ibdc2_ani(3,3,3,3)  !< 2nd derivative of the 4th anisotropic invariant
 
     integer :: i, j, k, l, m, n
 
@@ -129,7 +132,63 @@ contains
       enddo
     enddo
 
+    if( present(direction) ) call cderiv_aniso( ctn, inv3, didc(:,:,3), d2idc2(:,:,:,:,3), &
+      direction, inv4b, dibdc_ani, d2ibdc2_ani )
+
   end subroutine cderiv
+
+  !> This subroutine calculates derivative of the 4th reduced invariant I4 with respect to Cauchy-Green tensor
+  !> where I4 = I_3^{-1/3}*a_i*C_{ij}*a_j and a_i = direc(i).
+  subroutine cderiv_aniso( ctn, inv3, didc_3, d2idc2_3, direction, inv4b, dibdc_ani, d2ibdc2_ani )
+    real(kind=kreal), intent(in)  :: ctn(3,3)              !< right Cauchy-Green deformation tensor
+    real(kind=kreal), intent(in)  :: inv3                  !< 3rd invariants
+    real(kind=kreal), intent(in)  :: didc_3(3,3)           !< derivative of the 3rd invariant with respect to c(i,j)
+    real(kind=kreal), intent(in)  :: d2idc2_3(3,3,3,3)     !< derivative of the 3rd invariant with respect to c(i,j)
+    real(kind=kreal), intent(in)  :: direction(3)          !< direction vector of anisotropic materials
+    real(kind=kreal), intent(out) :: inv4b                 !< 4th reduced invariant I4
+    real(kind=kreal), intent(out) :: dibdc_ani(3,3)        !< derivative of the 4th anisotropic invariant
+    real(kind=kreal), intent(out) :: d2ibdc2_ani(3,3,3,3)  !< 2nd derivative of the 4th anisotropic invariant
+
+    integer :: i, j, k, l, m, n
+    real(kind=kreal) :: inv4, inv33, inv3m43, inv4d3
+    real(kind=kreal) :: d2ibdc24
+
+    inv33 = inv3**(-1.d0/3.d0) ! = I_3^{-1/3}
+    inv3m43 = inv33/inv3       ! = I_3^{-4/3}
+
+    inv4 = 0.d0
+    do i=1,3
+      do j=1,3
+        inv4 = inv4 + direction(j)*ctn(j,i)*direction(i)
+      enddo
+    enddo
+    inv4b = inv33*inv4 ! I4
+    inv4d3 = inv4/inv3   ! I4*I_3^{-1}
+
+    !   --- first derivative the reduced 4th c-invarians w.r.t. c(i,j)
+    do i=1,3
+      do j=1,3
+        dibdc_ani(i,j) = inv33*( (-1.d0/3.d0)*didc_3(i,j)*inv4d3+direction(i)*direction(j) )
+      enddo
+    enddo
+
+    !   --- second derivative of the reduced c-invariants w.r.t. c(i,j)
+    do k=1,3
+      do l=1,3
+        do m=1,3
+          do n=1,3
+            d2ibdc24 = (2.d0/3.d0)*didc_3(k,l)*didc_3(m,n)*inv4d3
+            d2ibdc24 = d2ibdc24 - d2idc2_3(k,l,m,n)*inv4
+            d2ibdc24 = d2ibdc24 - direction(k)*direction(l)*didc_3(m,n)
+            d2ibdc24 = d2ibdc24 - didc_3(k,l)*direction(m)*direction(n)
+            d2ibdc2_ani(k,l,m,n) = (1.d0/3.d0)*inv3m43*d2ibdc24
+          enddo
+        enddo
+      enddo
+    enddo
+
+  end subroutine
+
 
   !-------------------------------------------------------------------------------
   !> This subroutine provides elastic tangent coefficient for Arruda-Boyce hyperelastic material
@@ -179,7 +238,7 @@ contains
     real(kind=kreal), intent(out) :: dstress(6)   !> Cauchy-Green strain
     real(kind=kreal), intent(in)  :: dstrain(6)   !> 2nd Piola-Kirchhoff stress
 
-    integer :: i, j, k
+    integer :: i, j
     real(kind=kreal) :: ctn(3,3), itn(3,3)
     real(kind=kreal) :: inv1b, inv2b, inv3b
     real(kind=kreal) :: dibdc(3,3,3)
@@ -224,12 +283,12 @@ contains
     real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
     real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
 
-    integer :: i, j, k, l, m, n, jj
+    integer :: k, l, m, n
     real(kind=kreal) :: ctn(3,3), itn(3,3)
     real(kind=kreal) :: inv1b, inv2b, inv3b
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
-    real(kind=kreal) :: constant(3), coef
+    real(kind=kreal) :: constant(3)
 
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
@@ -261,7 +320,7 @@ contains
     real(kind=kreal) :: dibdc(3,3,3)
     real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
     real(kind=kreal) :: constant(3)
-    real(kind=kreal) :: CGstrain(3,3), dudc(3,3)
+    real(kind=kreal) :: dudc(3,3)
 
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
@@ -284,5 +343,83 @@ contains
     stress(6)=2.d0*dudc(1,3)
 
   end subroutine calUpdateElasticMooneyRivlin
+
+  !-------------------------------------------------------------------------------
+  !> This subroutine provides elastic tangent coefficient for anisotropic Mooney-Rivlin hyperelastic material
+  !-------------------------------------------------------------------------------
+  subroutine calElasticMooneyRivlinAniso( matl, sectType, cijkl, strain, cdsys )
+    type( tMaterial ), intent(in) :: matl             !< material rpoperties
+    integer, intent(in)           :: sectType         !< not used curr
+    real(kind=kreal), intent(out) :: cijkl(3,3,3,3)   !< constitutive relation
+    real(kind=kreal), intent(in)  :: strain(6)        !< Cauchy-Lagrange strain tensor
+    real(kind=kreal), intent(in)  :: cdsys(3,3) !> material coordinate system
+
+    integer :: i, j, k, l, m, n, jj
+    real(kind=kreal) :: ctn(3,3), itn(3,3)
+    real(kind=kreal) :: inv1b, inv2b, inv3b, inv4b
+    real(kind=kreal) :: dibdc(3,3,3)
+    real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
+    real(kind=kreal) :: constant(5)
+    real(kind=kreal) :: dibdc_ani(3,3)
+    real(kind=kreal) :: d2ibdc2_ani(3,3,3,3)
+
+
+    constant(1:5)=matl%variables(M_PLCONST1:M_PLCONST5)
+    call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
+      dibdc, d2ibdc2, strain, cdsys(1,1:3), inv4b, dibdc_ani, d2ibdc2_ani )
+
+    forall( k=1:3, l=1:3, m=1:3, n=1:3 )
+      cijkl(k,l,m,n) = d2ibdc2(k,l,m,n,1)*constant(1) +  &
+        d2ibdc2(k,l,m,n,2)*constant(2) +  &
+        2.d0*(dibdc(k,l,3)*dibdc(m,n,3)+  &
+        (inv3b-1.d0)*d2ibdc2(k,l,m,n,3))/constant(3)+ &
+        (2.d0*constant(4)+6.d0*(inv4b-1.d0)*constant(5))*dibdc_ani(k,l)*dibdc_ani(m,n)+ &
+        (inv4b-1.d0)*(2.d0*constant(4)+3.d0*(inv4b-1.d0)*constant(5))*d2ibdc2_ani(k,l,m,n)
+    end forall
+    cijkl(:,:,:,:)=4.d0*cijkl(:,:,:,:)
+
+  end subroutine calElasticMooneyRivlinAniso
+
+  !-------------------------------------------------------------------------------
+  !> This subroutine provides to update stress and strain for anisotropic Mooney-Rivlin material
+  !-------------------------------------------------------------------------------
+  subroutine calUpdateElasticMooneyRivlinAniso( matl, sectType, strain, stress, cdsys )
+    type( tMaterial ), intent(in) :: matl        !< material properties
+    integer, intent(in)           :: sectType    !< not used currently
+    real(kind=kreal), intent(out) :: stress(6)   !< 2nd Piola-Kirchhoff stress
+    real(kind=kreal), intent(in)  :: strain(6)   !< Green-Lagrangen strain
+    real(kind=kreal), intent(in)  :: cdsys(3,3) !> material coordinate system
+
+    integer :: k, l
+    real(kind=kreal) :: ctn(3,3), itn(3,3)
+    real(kind=kreal) :: inv1b, inv2b, inv3b, inv4b
+    real(kind=kreal) :: dibdc(3,3,3)
+    real(kind=kreal) :: d2ibdc2(3,3,3,3,3)
+    real(kind=kreal) :: constant(5)
+    real(kind=kreal) :: dudc(3,3)
+    real(kind=kreal) :: dibdc_ani(3,3)
+    real(kind=kreal) :: d2ibdc2_ani(3,3,3,3)
+
+    constant(1:5)=matl%variables(M_PLCONST1:M_PLCONST5)
+    call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
+      dibdc, d2ibdc2, strain, cdsys(1,1:3), inv4b, dibdc_ani, d2ibdc2_ani )
+
+    ! ----- stress
+    do l=1,3
+      do k=1,3
+        dudc(k,l) = dibdc(k,l,1)*constant(1)+dibdc(k,l,2)*constant(2)  &
+          +2.d0*(inv3b-1.d0)*dibdc(k,l,3)/constant(3) &
+          +(inv4b-1.d0)*(2.d0*constant(4)+3.d0*(inv4b-1.d0)*constant(5))*dibdc_ani(k,l)
+      enddo
+    enddo
+
+    stress(1)=2.d0*dudc(1,1)
+    stress(2)=2.d0*dudc(2,2)
+    stress(3)=2.d0*dudc(3,3)
+    stress(4)=2.d0*dudc(1,2)
+    stress(5)=2.d0*dudc(2,3)
+    stress(6)=2.d0*dudc(1,3)
+
+  end subroutine calUpdateElasticMooneyRivlinAniso
 
 end module

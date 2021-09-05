@@ -89,7 +89,7 @@ contains
     stiff(:, :) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
-    if( .not. present(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
+    if( .not. present(u) ) flag = INFINITESIMAL    ! enforce to infinitesimal deformation analysis
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
 
@@ -619,29 +619,28 @@ contains
       call MatlMatrix( gauss, D3, D, time, tincr, coordsys, isEp=isEp)
     end if
 
-    if( flag == INFINITE ) then
+    if( flag == INFINITESIMAL ) then
 
       gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, ttn )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn )
         else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
         end if
         gauss%stress = real(gauss%stress)
       end if
 
     else if( flag == TOTALLAG ) then
 
-      if( mtype == NEOHOOKE .OR. mtype == MOONEYRIVLIN .OR.  mtype == ARRUDABOYCE  .OR.   &
-          mtype==USERELASTIC .OR. mtype==USERHYPERELASTIC .OR. mtype==USERMATERIAL ) then
-        call StressUpdate( gauss, D3, dstrain, gauss%stress )
+      if( isHyperelastic(mtype) .OR. mtype == USERELASTIC .OR. mtype == USERMATERIAL ) then
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys )
       else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
         gauss%pMaterial%mtype=mtype
         if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, ttn )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn )
         else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
         end if
       else
         gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
@@ -653,9 +652,9 @@ contains
 
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr, ttc, tt0 )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, tt0 )
         else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, time, tincr )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
         end if
       else
         dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
@@ -679,15 +678,15 @@ contains
         gauss%stress(6) = dum(3,1) + dstress(6)
 
         if( mtype == USERMATERIAL ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys )
         else if( mtype == NORTON ) then
           !gauss%pMaterial%mtype = mtype
           if( tincr /= 0.0D0 .AND. any( gauss%stress /= 0.0D0 ) ) then
             !gauss%pMaterial%mtype = mtype
             if( present(ttc) .AND. present(ttn) ) then
-              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, time, tincr, ttc, ttn )
+              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr, ttc, ttn )
             else
-              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, time, tincr )
+              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr )
             end if
           end if
         end if
@@ -708,7 +707,7 @@ contains
     !convert stress/strain measure for output
     if( OPSSTYPE == kOPSS_SOLUTION ) then
 
-      if( flag == INFINITE ) then !linear
+      if( flag == INFINITESIMAL ) then !linear
         gauss%stress_out(1:6) = gauss%stress(1:6)
         gauss%strain_out(1:6) = gauss%strain(1:6)
       else !nonlinear
@@ -810,10 +809,10 @@ contains
     ! LCOAL VARIAVLES
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
-    real(kind=kreal)   :: D(6,6), B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
-    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gdispderiv(3,3), F(3,3), det, det1, WG, ttc,tt0, ttn,outa(1)
-    integer(kind=kint) :: i, j, k, LX, serr
-    real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
+    real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
+    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gdispderiv(3,3), F(3,3), det, det1, WG, ttc,tt0, ttn
+    integer(kind=kint) :: j, LX, serr
+    real(kind=kreal)   :: naturalCoord(3), rot(3,3), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3)
     real(kind=kreal)   :: dstrain(6)
     real(kind=kreal)   :: alpo(3)
@@ -877,7 +876,7 @@ contains
       dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
 
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(1:6)
 
       else if( flag == TOTALLAG ) then
@@ -933,7 +932,7 @@ contains
       end do
 
       ! calculate the BL1 matrix ( TOTAL LAGRANGE METHOD )
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
 
       else if( flag == TOTALLAG ) then
 
@@ -1078,8 +1077,8 @@ contains
 
     !---------------------------------------------------------------------
 
-    real(kind=kreal) :: XJ(3, 3), det, wg
-    integer(kind=kint) :: LX, i
+    real(kind=kreal) :: XJ(3, 3), det
+    integer(kind=kint) :: LX
     real(kind=kreal) :: localcoord(3), deriv(nn, 3)
 
     !---------------------------------------------------------------------

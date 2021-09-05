@@ -10,6 +10,7 @@
 
 #ifdef HECMW_WITH_ML
 
+#include "Trilinos_version.h"
 #include "ml_include.h"
 #include "hecmw_ML_helper.h"
 #include "hecmw_ML_helper_33.h"
@@ -392,11 +393,17 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
      */
     if (FlgDirectSolveCoarsest) {
       if (DirectSolver == MUMPS) {
-        ML_Gen_Smoother_Amesos(ml_object, coarsest_level,
-                               ML_AMESOS_MUMPS, 1, 0.0);
+#if TRILINOS_MAJOR_VERSION < 13
+        ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_MUMPS, 1, 0.0);
+#else
+        ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_MUMPS, 1, 0.0, 1);
+#endif
       } else /* if (DirectSolver == KLU) */ {
-        ML_Gen_Smoother_Amesos(ml_object, coarsest_level,
-                               ML_AMESOS_KLU, 1, 0.0);
+#if TRILINOS_MAJOR_VERSION < 13
+        ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_KLU, 1, 0.0);
+#else
+        ML_Gen_Smoother_Amesos(ml_object, coarsest_level, ML_AMESOS_KLU, 1, 0.0, 1);
+#endif
       }
     } else {
       if (SmootherType == Jacobi) {

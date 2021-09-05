@@ -70,7 +70,7 @@ contains
 
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
-    if( .not. present(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
+    if( .not. present(u) ) flag = INFINITESIMAL    ! enforce to infinitesimal deformation analysis
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+unode(:, 1:nn)
 
@@ -257,7 +257,7 @@ contains
     real(kind=kreal)   :: gderiv(nn+3,3), gderiv0(nn+3,3), gdispderiv(3,3), F(3,3), det, det0, WG, ttc, tt0, ttn
     integer(kind=kint) :: i, j, LX, mtype, serr
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), mat(6,6), EPSTH(6)
-    real(kind=kreal)   :: totaldisp(3,nn+3), elem(3,nn), elem1(3,nn), coordsys(3,3), tm(6,6)
+    real(kind=kreal)   :: totaldisp(3,nn+3), elem(3,nn), elem1(3,nn), coordsys(3,3)
     real(kind=kreal)   :: dstrain(6)
     real(kind=kreal)   :: alpo(3)
     logical            :: ierr, matlaniso
@@ -521,7 +521,7 @@ contains
       dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
 
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
         F(1:3,1:3) = F(1:3,1:3) + gdispderiv(1:3,1:3)
 
@@ -581,7 +581,7 @@ contains
       end do
 
       ! calculate the BL1 matrix ( TOTAL LAGRANGE METHOD )
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
 
       else if( flag == TOTALLAG ) then
 

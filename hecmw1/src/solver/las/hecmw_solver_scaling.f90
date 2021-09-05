@@ -13,9 +13,6 @@ module hecmw_solver_scaling
   use hecmw_solver_scaling_nn
   implicit none
 
-  private
-  real(kind=kreal), private, allocatable :: scale(:)
-
   public :: hecmw_solver_scaling_fw
   public :: hecmw_solver_scaling_bk
 

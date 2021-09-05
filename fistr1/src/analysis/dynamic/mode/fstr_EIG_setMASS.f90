@@ -16,13 +16,13 @@ contains
     use hecmw_util
     use m_fstr
     use mMaterial
-	use m_static_LIB_shell
+    use m_static_LIB_shell
     implicit none
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
     type(fstr_eigen)         :: fstrEIG
-    integer(kind=kint) :: i, iS, iE, ii, nn, j, jn, jS, jE, k
+    integer(kind=kint) :: i, iS, iE, ii, nn, j, jn, jS, k
     integer(kind=kint) :: N, NP, NDOF
     integer(kind=kint) :: icel, ic_type, itype, isect, ihead, sec_opt, cid
     integer(kind=kint) :: nodLOCAL(20)

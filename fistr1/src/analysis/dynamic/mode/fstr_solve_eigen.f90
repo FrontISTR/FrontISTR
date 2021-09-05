@@ -19,6 +19,7 @@ contains
     use m_static_lib
     use m_hecmw2fstr_mesh_conv
     use fstr_matrix_con_contact
+    use m_fstr_spring
 
     implicit none
 
@@ -40,6 +41,7 @@ contains
 
     fstrSOLID%dunode = 0.0d0
     call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
+    call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
@@ -49,6 +51,7 @@ contains
     call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
 
     call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+
     call hecmw_mpc_tback_eigvec(hecMESH, hecMAT, fstrEIG%iter, fstrEIG%eigvec)
 
     call fstr_eigen_output(hecMESH, hecMAT, fstrEIG)

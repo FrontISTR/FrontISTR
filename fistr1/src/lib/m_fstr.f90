@@ -218,7 +218,7 @@ module m_fstr
 
   type fstr_solid
     integer(kind=kint) :: file_type  ! kbcfFSTR or kbcfNASTRAN
-    integer(kind=kint) :: StaticType ! 1:Total, 2:Updated, 3:Infinite
+    integer(kind=kint) :: StaticType ! 1:Total, 2:Updated, 3:Infinitesimal
     integer(kind=kint) :: nstep_tot
 
     type(step_info), pointer       :: step_ctrl(:)  =>null()   !< step information
@@ -329,6 +329,10 @@ module m_fstr
     real(kind=kreal), pointer :: CONT_FRIC(:)    !< contact friction force for output
     real(kind=kreal), pointer :: CONT_RELVEL(:)  !< contact ralative velocity for output
     real(kind=kreal), pointer :: CONT_STATE(:)   !< contact state for output
+    integer(kind=kint), pointer :: CONT_SGRP_ID(:) !< contact element surf ids for output
+    real(kind=kreal), pointer :: CONT_AREA(:)    !< contact area
+    real(kind=kreal), pointer :: CONT_NTRAC(:)   !< contact normal traction force for output
+    real(kind=kreal), pointer :: CONT_FTRAC(:)   !< contact friction traction force for output
 
     type(fstr_solid_physic_val), pointer :: SOLID=>null()     !< for solid physical value stracture
     type(fstr_solid_physic_val), pointer :: SHELL=>null()     !< for shell physical value stracture
@@ -1089,7 +1093,6 @@ contains
   subroutine fstr_solid_phys_clear(fstrSOLID)
     implicit none
     type (fstr_solid)         :: fstrSOLID
-    type(fstr_solid_physic_val), pointer :: phys
     integer(kind=kint) :: i
 
     if (associated(fstrSOLID%SOLID)) then

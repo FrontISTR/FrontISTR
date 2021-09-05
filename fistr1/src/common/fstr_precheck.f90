@@ -68,7 +68,8 @@ contains
     integer(kind=kint) :: ndof2, nelem_wo_mpc
     integer(kind=kint) :: ie, ia, jelem, ic_type, nn, jS, jE, itype
     integer(kind=kint) :: nodLOCAL(20),NTOTsum(1)
-    integer(kind=8)    :: ntdof2, nonzero
+    integer(kind=kint) :: nonzero
+    real(kind=kreal)   :: ntdof2
     real(kind=kreal)   :: al, almin, almax, AA, thick, vol, avvol
     real(kind=kreal)   :: tvol, tvmax, tvmin, tlmax, tlmin, asp, aspmax
     real(kind=kreal)   :: xx(20),yy(20),zz(20)
@@ -93,7 +94,7 @@ contains
     write(ILOG,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
     write(*   ,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
     ndof2  = hecMESH%n_dof**2
-    ntdof2 = (hecMESH%n_node*hecMESH%n_dof)**2
+    ntdof2 = dble(hecMESH%n_node*hecMESH%n_dof)**2
     write(ILOG,"(a,i12)") '  Num of elem:',hecMESH%n_elem
     write(*   ,"(a,i12)") '  Num of elem:',hecMESH%n_elem
     nelem_wo_mpc = 0

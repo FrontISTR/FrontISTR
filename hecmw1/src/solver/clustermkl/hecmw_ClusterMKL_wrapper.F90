@@ -3,7 +3,13 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides linear equation solver interface for Cluster Pardiso
-#ifdef WITH_MKL
+#ifndef HECMW_SERIAL
+#  ifdef HECMW_WITH_MKL
+#    define WITH_CLUSTERMKL
+#  endif
+#endif
+
+#ifdef WITH_CLUSTERMKL
 include 'mkl_cluster_sparse_solver.f90'
 #endif
 
@@ -12,7 +18,7 @@ module m_hecmw_ClusterMKL_wrapper
   use m_hecmw_comm_f
   use m_sparse_matrix
 
-#ifdef WITH_MKL
+#ifdef WITH_CLUSTERMKL
   use mkl_cluster_sparse_solver
 #endif
 
@@ -22,7 +28,7 @@ module m_hecmw_ClusterMKL_wrapper
   public hecmw_clustermkl_wrapper ! only entry point of Parallel Direct Solver is public
 
   logical, save :: INITIALIZED = .false.
-#ifdef WITH_MKL
+#ifdef WITH_CLUSTERMKL
   type(MKL_CLUSTER_SPARSE_SOLVER_HANDLE) :: pt(64)
 #endif
   integer maxfct, mnum, mtype, nrhs, msglvl
@@ -48,7 +54,7 @@ contains
     integer(kind=kint) :: myrank, phase
     real(kind=kreal)   :: t1,t2,t3,t4,t5
 
-#ifdef WITH_MKL
+#ifdef WITH_CLUSTERMKL
 
     myrank=hecmw_comm_get_rank()
 
@@ -190,7 +196,7 @@ contains
 #endif
   end subroutine hecmw_clustermkl_wrapper
 
-#ifdef WITH_MKL
+#ifdef WITH_CLUSTERMKL
   subroutine print_iparm_paramters()
     write(*,'(A60,I8)') 'Number of iterative refinement steps performed: ',iparm(7)
     write(*,'(A60,I8)') 'Number of perturbed pivots: ',iparm(14)
@@ -211,10 +217,9 @@ contains
     integer(kind=kint), pointer, intent(inout) :: ia(:), ja(:)
     real(kind=kreal), pointer, intent(inout)   :: a(:), b(:), x(:)
 
-    integer(kind=kint) :: i,k
-    integer(kind=kint) :: nprocs, ierr, nnz, info
+    integer(kind=kint) :: i, nprocs, ierr, nnz
     integer(kind=kint), allocatable :: DISPMAT(:), NCOUNTS(:)
-    real(kind=kreal)   :: t1,t2,t3,t4,t5
+    real(kind=kreal)   :: t1,t2,t3,t4
 
     t1=hecmw_wtime()
 
@@ -409,7 +414,7 @@ contains
     type (sparse_matrix), intent(inout) :: spMAT
     integer(kind=kint), intent(in)   :: myrank
 
-    integer(kind=kint) :: i, j, is, iE
+    integer(kind=kint) :: i, is, iE
 
     do i=2,spMAT%N_loc+1
       if(spMAT%IRN(i)-spMAT%IRN(i-1)>10000) &
@@ -432,7 +437,7 @@ contains
     integer(kind=kint), intent(inout) :: ja(:)
     real(kind=kreal), intent(inout) :: a(:)
 
-    integer(kind=kint) :: i, j, work(2,n)
+    integer(kind=kint) :: i, work(2,n)
     real(kind=kreal)   :: oa(n)
 
     do i=1,n

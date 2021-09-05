@@ -28,7 +28,7 @@ contains
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
 
-    sigma  = 0.1d0
+    sigma  = fstrEIG%sigma
     mass   => fstrEIG%mass
     filter => fstrEIG%filter
 

@@ -33,7 +33,7 @@ create-bin-dir:
 build-libs: clean-includes clean-libs
 	@cd src && $(MAKE) @build_target@
 
-build-tools:
+build-tools: build-libs
 	@cd tools && $(MAKE) @build_target@
 
 setup-msg:
@@ -69,3 +69,8 @@ install:
 		$(MKDIR) $(BINDIR); \
 	fi
 	$(CP) ./bin/* $(BINDIR)
+
+depend:
+	@cd util && $(MAKE) depend
+	@cd src && $(MAKE) depend
+	@cd tools && $(MAKE) depend

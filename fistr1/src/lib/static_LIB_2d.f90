@@ -58,7 +58,7 @@ contains
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1,NumOfQuadPoints( ETYPE )
       call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0,cdsys )
-      if( .not. present(u) ) flag=INFINITE    ! enforce to infinite deformation analysis
+      if( .not. present(u) ) flag=INFINITESIMAL    ! enforce to infinitesimal deformation analysis
 
       if( flag==1 .and. ISET == 2 ) then
         write(*,'(a)') '    PROGRAM STOP : non-TL element for axixsymmetric element'
@@ -433,13 +433,13 @@ contains
 
 
     integer(kind=kint), parameter :: ndof=2
-    real(kind=kreal)   :: D(4,4), B(4,ndof*nn), B1(4,ndof*nn)
+    real(kind=kreal)   :: D(4,4), B(4,ndof*nn)
     real(kind=kreal)   :: H(nn)
     real(kind=kreal)   :: thick,pai,rr
     real(kind=kreal)   :: det, WG
     real(kind=kreal)   :: localCoord(2)
-    real(kind=kreal)   :: gderiv(nn,2), dstrain(4), ttc, tt0, ttn
-    real(kind=kreal)   :: gdispderiv(2,2), cdsys(3,3)
+    real(kind=kreal)   :: gderiv(nn,2), ttc, tt0, ttn
+    real(kind=kreal)   :: cdsys(3,3)
     integer(kind=kint) :: j, LX
     real(kind=kreal)   :: totaldisp(2*nn)
     real(kind=kreal)   :: EPSTH(4), alp, alp0, ina(1), outa(1)

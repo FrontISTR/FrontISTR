@@ -104,13 +104,13 @@ contains
     real(kind=kreal), intent(out)   :: force(:)        !< contact force
 
     integer          :: i,j
-    real(kind=kreal) :: shapefunc(nnode), shapederiv(nnode,2)
-    real(kind=kreal) :: N(nnode*3+3), NN(nnode*3+3,2), dispmat(2,nnode*3+3)
-    real(kind=kreal) :: curv(2,2), metric(2,2), l2ndderiv(3,2,2)
+    real(kind=kreal) :: shapefunc(nnode)
+    real(kind=kreal) :: N(nnode*3+3), dispmat(2,nnode*3+3)
+    real(kind=kreal) :: metric(2,2)
     real(kind=kreal) :: det, inverse(2,2), ff(2), cff(2)
     real(kind=kreal) :: dum11(nnode*3+3,nnode*3+3), dum12(nnode*3+3,nnode*3+3)
     real(kind=kreal) :: dum21(nnode*3+3,nnode*3+3), dum22(nnode*3+3,nnode*3+3)
-    real(kind=kreal) :: fstiff(nnode*3+3,nnode*3+3), tangent(3,2)
+    real(kind=kreal) :: tangent(3,2)
 
     call getShapeFunc( etype, cstate%lpos(:), shapefunc )
     N(1:3) = cstate%direction(1:3)
@@ -188,7 +188,7 @@ contains
     real(kind=kreal), intent(out) :: matrix(2,nnode*3+3) !< relation between local and global disp increment
 
     integer          :: i,j
-    real(kind=kreal) :: det, inverse(2,2)
+    real(kind=kreal) :: det
     real(kind=kreal) :: shapefunc(nnode), t1(nnode*3+3), t2(nnode*3+3)
     call TangentBase( etype, nnode, pos, ele, tangent )
     tensor(1,1)= dot_product( tangent(:,1), tangent(:,1) )

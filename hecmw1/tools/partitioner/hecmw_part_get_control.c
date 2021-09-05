@@ -17,8 +17,14 @@
 #include "hecmw_part_get_control.h"
 
 static char ctrl_file_name[HECMW_FILENAME_LEN] = "\0";
+static int  args_subdomain = 0;
 
 /*================================================================================================*/
+
+extern int HECMW_part_set_subdomains(int n_domain) {
+  args_subdomain = n_domain;
+  return 0;
+}
 
 extern int HECMW_part_set_ctrl_file_name(char *fname) {
   if (fname == NULL) {
@@ -517,6 +523,16 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
 static int part_get_control(struct hecmw_part_cont_data *cont_data) {
   int token, stat;
   FILE *fp;
+
+  if (args_subdomain){
+    cont_data->type         = HECMW_PART_TYPE_NODE_BASED;
+    cont_data->method       = HECMW_PART_METHOD_KMETIS; /*HECMW_PART_METHOD_RCB; HECMW_PART_METHOD_PMETIS;*/
+    cont_data->n_domain     = args_subdomain;
+    cont_data->depth        = 1;
+    cont_data->is_print_ucd = 0;
+    cont_data->contact      = HECMW_PART_CONTACT_DEFAULT;
+    return 0;
+  }
 
   /* open file */
   if (strlen(ctrl_file_name) == 0) {

@@ -1,0 +1,4 @@
+hecmw_Jacob_231.o : hecmw_Jacob_231.f90 
+hecmw_Jacob_241.o : hecmw_Jacob_241.f90 
+hecmw_Jacob_341.o : hecmw_Jacob_341.f90 
+hecmw_Jacob_361.o : hecmw_Jacob_361.f90 

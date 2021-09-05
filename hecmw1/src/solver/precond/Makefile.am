@@ -82,11 +82,18 @@ HEADERS =
 #-----------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: @build_target@_subdir $(TARGET) $(F90TARGET) install-module
-
-build-serial: $(TARGET) $(F90TARGET) install-module
+@build_target@:
+	@cd nn     && $(MAKE) @build_target@
+	@cd 11     && $(MAKE) @build_target@
+	@cd 22     && $(MAKE) @build_target@
+	@cd 33     && $(MAKE) @build_target@
+	@cd 44     && $(MAKE) @build_target@
+	@cd 66     && $(MAKE) @build_target@
+	$(MAKE) BUILD_CURR
 
 build-without-f: $(TARGET)
+
+BUILD_CURR: $(TARGET) $(F90TARGET) install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
@@ -102,17 +109,9 @@ install-header:
 	@cd nn     && $(MAKE) install-header
 	@cd 33     && $(MAKE) install-header
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
-@build_target@_subdir:
-	@cd nn     && $(MAKE) @build_target@
-	@cd 11     && $(MAKE) @build_target@
-	@cd 22     && $(MAKE) @build_target@
-	@cd 33     && $(MAKE) @build_target@
-	@cd 44     && $(MAKE) @build_target@
-	@cd 66     && $(MAKE) @build_target@
-  
 install:
 	@cd nn     && $(MAKE) install
 	@cd 11     && $(MAKE) install
@@ -145,3 +144,14 @@ maintainer-clean:
 	@cd 33     && $(MAKE) maintainer-clean
 	@cd 44     && $(MAKE) maintainer-clean
 	@cd 66     && $(MAKE) maintainer-clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90
+	@cd nn     && $(MAKE) depend
+	@cd 11     && $(MAKE) depend
+	@cd 22     && $(MAKE) depend
+	@cd 33     && $(MAKE) depend
+	@cd 44     && $(MAKE) depend
+	@cd 66     && $(MAKE) depend

@@ -20,11 +20,20 @@
 #define DEFAULT_CONTROL_FILE_NAME "hecmw_part_ctrl.dat"
 
 static void print_usage(void) {
-  fprintf(stderr, "Usage: hecmw_part [-f file]\n");
+  fprintf(stderr, "Usage: hecmw_part1 [-f filename] [-v] [-d number] [-m KMETIS|PMETIS|RCB ] [-e number] \n");
+  fprintf(stderr, "         [ -t NODE-BASED|ELEMENT-BASED ] [ -u filename ] [ -c DEFAULT|AGGREGATE|DISTRIBUTE|SIMPLE]\n");
   fprintf(stderr, "\n");
   fprintf(stderr, "  -f  specify control file name\n");
   fprintf(stderr, "  -v  print verbose messages\n");
   fprintf(stderr, "  -h  print usage\n");
+  fprintf(stderr, "*** If the following options are set, hecmw_part_ctrl.dat will be ignored. ***\n");
+  fprintf(stderr, "  -d  number of sub-domains \n");
+  fprintf(stderr, "  -t  partitioning type            (unimplemented, default: NODE-BASED) \n");
+  fprintf(stderr, "  -m  partitioning method          (unimplemented, default: KMETIS) \n");
+  fprintf(stderr, "  -e  depth of overlapping zone    (unimplemented, default: 1) \n");
+  fprintf(stderr, "  -u  UCD file.                    (unimplemented, default: #no output#)  \n");
+  fprintf(stderr, "  -c  partitioning contact         (unimplemented, default: DEFAULT)  \n");
+
 }
 
 extern int HECMW_init_for_partition(int argc, char **argv) {
@@ -50,6 +59,14 @@ extern int HECMW_init_for_partition(int argc, char **argv) {
         strcpy(control_file_name, argv[counter]);
         counter++;
 
+      }else if (!strcmp(argv[counter], "-d")) {
+        counter++;
+        if (counter >= argc) {
+          print_usage();
+          goto error;
+        }
+        if (HECMW_part_set_subdomains(atoi(argv[counter]))) goto error;
+        counter++;
       } else if (!strcmp(argv[counter], "-v")) {
         counter++;
         HECMW_setloglv(HECMW_LOG_DEBUG);

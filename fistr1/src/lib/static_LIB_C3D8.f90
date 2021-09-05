@@ -57,14 +57,14 @@ contains
     real(kind=kreal) :: B1(6, ndof*nn), Bbar(nn, 3)
     real(kind=kreal) :: Smat(9, 9), elem(3, nn)
     real(kind=kreal) :: BN(9, ndof*nn), SBN(9, ndof*nn)
-    real(kind=kreal) :: B4, B6, B8, Vol, coordsys(3, 3)
+    real(kind=kreal) :: B4, B6, B8, coordsys(3, 3)
 
     !---------------------------------------------------------------------
 
     stiff(:, :) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
-    if( .not. present(u) ) flag = INFINITE    ! enforce to infinite deformation analysis
+    if( .not. present(u) ) flag = INFINITESIMAL    ! enforce to infinitesimal deformation analysis
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = ecoord(:, :)+u(:, :)
 
@@ -236,15 +236,14 @@ contains
 
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
-    real(kind=kreal) :: D(6, 6), B(6, ndof*nn), B1(6, ndof*nn)
+    real(kind=kreal) :: B(6, ndof*nn), B1(6, ndof*nn)
     real(kind=kreal) :: gderiv(nn, 3), gderiv1(nn,3), gdispderiv(3, 3), F(3,3), det, det1, wg
-    integer(kind=kint) :: i, j, k, LX, mtype, serr
-    integer(kind=kint) :: isEp
-    real(kind=kreal) :: naturalCoord(3), rot(3, 3), R(3, 3), spfunc(nn)
+    integer(kind=kint) :: j, LX, mtype, serr
+    real(kind=kreal) :: naturalCoord(3), rot(3, 3), spfunc(nn)
     real(kind=kreal) :: totaldisp(3, nn), elem(3, nn), elem1(3, nn), coordsys(3, 3)
     real(kind=kreal) :: dstrain(6)
     real(kind=kreal) :: dvol, vol0, Bbar(nn, 3), derivdum(1:ndof, 1:ndof), BBar2(nn, 3)
-    real(kind=kreal) :: B4, B6, B8, ttc, tt0, ttn, alpo(3), outa(1), ina(1), EPSTH(6)
+    real(kind=kreal) :: B4, B6, B8, ttc, tt0, ttn, alpo(3), ina(1), EPSTH(6)
     logical :: ierr, matlaniso
 
     !---------------------------------------------------------------------
@@ -321,7 +320,7 @@ contains
       dstrain(:) = dstrain(:)-EPSTH(:)
 
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
         gausses(LX)%strain(1:6) = dstrain(1:6)+EPSTH(:)
 
       else if( flag == TOTALLAG ) then
@@ -387,7 +386,7 @@ contains
         B(6, 3*j  ) = gderiv(j, 1)
       end do
 
-      if( flag == INFINITE ) then
+      if( flag == INFINITESIMAL ) then
 
       else if( flag == TOTALLAG ) then
 

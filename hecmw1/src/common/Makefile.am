@@ -147,6 +147,7 @@ OBJS = \
 
 OBJSF = \
 	hecmw_util_f.@f90objfilepostfix@ \
+	hecmw_etype_f.@f90objfilepostfix@ \
 	hecmw_logging.@f90objfilepostfix@ \
 	hecmw_msgno_f.@f90objfilepostfix@ \
 	hecmw_msg_f.@f90objfilepostfix@ \
@@ -158,7 +159,6 @@ OBJSF = \
 	hecmw_dist_free_f.@f90objfilepostfix@ \
 	hecmw_dist_print_f.@f90objfilepostfix@ \
 	hecmw_visualizer_f.@f90objfilepostfix@ \
-	hecmw_etype_f.@f90objfilepostfix@ \
 	hecmw_io.@f90objfilepostfix@
 
 HEADERS = \
@@ -238,7 +238,7 @@ $(OBJSF):
 install-header: $(HEADERS)
 	$(CP) $(HEADERS) $(HECMWINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
@@ -247,3 +247,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90
