@@ -357,6 +357,22 @@ contains
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_FTRAC )
     endif
 
+    ! --- TEMPERATURE @node
+    !if(present(fstrPARAM))then
+    !  if( fstrSOLID%output_ctrl(4)%outinfo%on(38) .and. fstrPARAM%solution_type == kstHEATSTATIC)then
+    !    ncomp = ncomp + 1
+    !    nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
+    !    fstrRESULT%nn_dof(ncomp) = nn
+    !    fstrRESULT%node_label(ncomp) = 'TEMPERATURE'
+    !    do i = 1, hecMESH%n_node
+    !      do j = 1, nn
+    !        fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%temperature(nn*(i-1)+j)
+    !      enddo
+    !    enddo
+    !    iitem = iitem + nn
+    !  endif
+    !endif
+
     ! --- WRITE
     nameID = 'fstrRES'
     if( flag==0 ) then
@@ -696,6 +712,16 @@ contains
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(37), ndof )
     endif
+    ! --- NODE ID @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+      ncomp = ncomp + 1
+      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
+    endif
+    ! --- TEMPERATURE @node
+    !if( fstrSOLID%output_ctrl(4)%outinfo%on(41) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+    !  ncomp = ncomp + 1
+    !  nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(41), ndof )
+    !endif
 
     ! --- STRAIN @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(6) ) then
@@ -736,6 +762,16 @@ contains
     if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(34), ndof )
+    endif
+    ! --- ELEM ID @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(39) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(39), ndof )
+    endif
+    ! --- SECTION ID @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(40) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(40), ndof )
     endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -995,18 +1031,67 @@ contains
       iitem = iitem + nn
     endif
 
+    ! --- NODE ID @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(37) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(37), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'NODE_ID'
+      do i = 1, hecMESH%n_node
+        fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = hecMESH%global_node_ID(i)
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- TEMPERATURE @node
+    !if( fstrSOLID%output_ctrl(4)%outinfo%on(41) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+    !  ncomp = ncomp + 1
+    !  nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(41), ndof )
+    !  fstrRESULT%nn_dof(ncomp) = nn
+    !  fstrRESULT%node_label(ncomp) = 'TEMPERATURE'
+    !  do i = 1, hecMESH%n_node
+    !    fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrSOLID%global_node_ID(i)
+    !  enddo
+    !  iitem = iitem + nn
+    !endif
+
+
     ! --- MATERIAL @elem
     if(fstrSOLID%output_ctrl(4)%outinfo%on(34)) then
       ecomp = ecomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(34), ndof )
       fstrRESULT%ne_dof(ecomp) = nn
-      fstrRESULT%elem_label(ecomp) = 'Material_ID'
+      fstrRESULT%elem_label(ecomp) = 'MATERIAL_ID'
+      do i = 1, hecMESH%n_elem
+        j = hecMESH%section_ID(i)
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = hecMESH%section%sect_mat_ID_item(j)
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- ELEM ID @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(39)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(39), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ELEM_ID'
+      do i = 1, hecMESH%n_elem
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = hecMESH%global_elem_ID(i)
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- SECTION ID @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(40)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(40), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'SECTION_ID'
       do i = 1, hecMESH%n_elem
         fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = hecMESH%section_ID(i)
       enddo
       jitem = jitem + nn
     endif
-
   end subroutine fstr_make_result
 
   subroutine fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, &
