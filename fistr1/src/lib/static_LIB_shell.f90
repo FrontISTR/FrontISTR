@@ -3192,7 +3192,7 @@ contains
     qf = matmul(stiff,totaldisp)
 
   end subroutine UpdateST_Shell_MITC33
-
+  
   !####################################################################
   subroutine mass_Shell(etype, nn, elem, rho, thick, gausses, mass, lumped)
   !####################################################################
