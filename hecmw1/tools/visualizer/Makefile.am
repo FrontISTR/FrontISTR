@@ -89,3 +89,5 @@ clean:
 
 distclean: clean
 	$(RM) $(TARGET)
+
+depend:

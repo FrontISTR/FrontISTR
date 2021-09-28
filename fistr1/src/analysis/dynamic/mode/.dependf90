@@ -1,0 +1,6 @@
+fstr_EIG_lanczos.o : fstr_EIG_lanczos.f90 fstr_EIG_tridiag.o fstr_EIG_lanczos_util.o 
+fstr_EIG_lanczos_util.o : fstr_EIG_lanczos_util.f90 
+fstr_EIG_output.o : fstr_EIG_output.f90 fstr_EIG_lanczos_util.o 
+fstr_EIG_setMASS.o : fstr_EIG_setMASS.f90 
+fstr_EIG_tridiag.o : fstr_EIG_tridiag.f90 fstr_EIG_lanczos_util.o 
+fstr_solve_eigen.o : fstr_solve_eigen.f90 fstr_EIG_output.o fstr_EIG_lanczos.o fstr_EIG_setMASS.o 

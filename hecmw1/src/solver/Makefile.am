@@ -82,29 +82,7 @@ HEADERS = .
 #-----------------------------------------------------------------------------#
 all: @build_target@
 
-build-default: @build_target@_subdir $(TARGET) $(F90TARGET) install-module
-
-build-serial: $(TARGET) $(F90TARGET) install-module
-
-build-without-f: $(TARGET)
-
-$(TARGET): $(OBJS)
-	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
-
-$(F90TARGET): $(OBJSF)
-	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF)
-
-$(OBJS): $(HEADERS)
-
-$(OBJSF):
-
-install-header:
-	@cd precond       && $(MAKE) install-header
-
-install-module:
-	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
-
-@build_target@_subdir:
+@build_target@:
 	@cd communication && $(MAKE) @build_target@
 	@cd matrix        && $(MAKE) @build_target@
 	@cd init          && $(MAKE) @build_target@
@@ -119,6 +97,27 @@ install-module:
 	@cd solver_direct_parallel && $(MAKE) @build_target@
 	@cd solver_direct_lag && $(MAKE) @build_target@
 	@cd mpc           && $(MAKE) @build_target@
+	$(MAKE) BUILD_CURR
+
+build-without-f: $(TARGET)
+
+BUILD_CURR: $(TARGET) $(F90TARGET) install-module
+
+$(TARGET): $(OBJS)
+	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
+
+$(F90TARGET): $(OBJSF)
+	$(AR) $(HECMWLIBDIR)/$@ $(OBJSF)
+
+$(OBJS): $(HEADERS)
+
+$(OBJSF):
+
+install-header:
+	@cd precond       && $(MAKE) install-header
+
+install-module: $(OBJSF)
+	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
 	@cd communication && $(MAKE) install
@@ -184,3 +183,22 @@ maintainer-clean:
 	@cd solver_direct_parallel && $(MAKE) maintainer-clean
 	@cd solver_direct_lag && $(MAKE) maintainer-clean
 	@cd mpc           && $(MAKE) maintainer-clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90
+	@cd communication && $(MAKE) depend
+	@cd matrix        && $(MAKE) depend
+	@cd init          && $(MAKE) depend
+	@cd sparse_matrix && $(MAKE) depend
+	@cd las           && $(MAKE) depend
+	@cd mumps         && $(MAKE) depend
+	@cd mkl           && $(MAKE) depend
+	@cd clustermkl    && $(MAKE) depend
+	@cd precond       && $(MAKE) depend
+	@cd iterative     && $(MAKE) depend
+	@cd solver_direct && $(MAKE) depend
+	@cd solver_direct_parallel && $(MAKE) depend
+	@cd solver_direct_lag && $(MAKE) depend
+	@cd mpc           && $(MAKE) depend

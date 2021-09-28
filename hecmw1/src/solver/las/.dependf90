@@ -1,0 +1,17 @@
+hecmw_jadm.o : hecmw_jadm.f90 hecmw_jadm_nn.o hecmw_jadm_44.o hecmw_jadm_33.o 
+hecmw_jadm_33.o : hecmw_jadm_33.f90 
+hecmw_jadm_44.o : hecmw_jadm_44.f90 
+hecmw_jadm_nn.o : hecmw_jadm_nn.f90 
+hecmw_solver_las.o : hecmw_solver_las.f90 hecmw_solver_las_nn.o hecmw_solver_las_66.o hecmw_solver_las_44.o hecmw_solver_las_33.o hecmw_solver_las_22.o hecmw_solver_las_11.o 
+hecmw_solver_las_11.o : hecmw_solver_las_11.f90 
+hecmw_solver_las_22.o : hecmw_solver_las_22.f90 hecmw_tuning_fx.o hecmw_jadm.o 
+hecmw_solver_las_33.o : hecmw_solver_las_33.f90 hecmw_tuning_fx.o hecmw_jadm.o 
+hecmw_solver_las_44.o : hecmw_solver_las_44.f90 hecmw_tuning_fx.o hecmw_jadm.o 
+hecmw_solver_las_66.o : hecmw_solver_las_66.f90 hecmw_tuning_fx.o hecmw_jadm.o 
+hecmw_solver_las_nn.o : hecmw_solver_las_nn.f90 hecmw_tuning_fx.o hecmw_jadm.o 
+hecmw_solver_scaling.o : hecmw_solver_scaling.f90 hecmw_solver_scaling_nn.o hecmw_solver_scaling_66.o hecmw_solver_scaling_44.o hecmw_solver_scaling_33.o 
+hecmw_solver_scaling_33.o : hecmw_solver_scaling_33.f90 
+hecmw_solver_scaling_44.o : hecmw_solver_scaling_44.f90 
+hecmw_solver_scaling_66.o : hecmw_solver_scaling_66.f90 
+hecmw_solver_scaling_nn.o : hecmw_solver_scaling_nn.f90 
+hecmw_tuning_fx.o : hecmw_tuning_fx.f90 

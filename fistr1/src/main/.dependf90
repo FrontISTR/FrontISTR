@@ -1,0 +1,1 @@
+fistr_main.o : fistr_main.f90 

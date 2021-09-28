@@ -1,0 +1,2 @@
+hecmw_solve_error.o : hecmw_solve_error.f90 
+hecmw_solve_init.o : hecmw_solve_init.f90 

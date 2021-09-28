@@ -221,9 +221,11 @@ contains
         step_count = step_count + 1
 
         ! ----- Restart
-        if( fstrSOLID%restart_nout > 0 .and. mod(step_count,fstrSOLID%restart_nout) == 0 ) then
-          call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),  &
-            & fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
+        if( fstrSOLID%restart_nout > 0) then
+          if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
+            call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),  &
+              & fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
+          endif
         endif
 
         ! ----- Result output (include visualize output)

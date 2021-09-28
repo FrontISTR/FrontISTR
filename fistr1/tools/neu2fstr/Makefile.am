@@ -129,3 +129,8 @@ distclean:
 	$(RM) ./include/*
 	$(RM) ./bin/*
 	$(RM) ./lib/*
+
+depend:
+	@cd NFD       && $(MAKE) depend
+	@cd HECD      && $(MAKE) depend
+	@cd converter && $(MAKE) depend

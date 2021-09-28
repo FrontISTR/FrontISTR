@@ -1,0 +1,14 @@
+hecmw_control_f.o : hecmw_control_f.f90 hecmw_util_f.o 
+hecmw_dist_copy_c2f_f.o : hecmw_dist_copy_c2f_f.f90 hecmw_util_f.o 
+hecmw_dist_copy_f2c_f.o : hecmw_dist_copy_f2c_f.f90 hecmw_util_f.o 
+hecmw_dist_free_f.o : hecmw_dist_free_f.f90 hecmw_util_f.o 
+hecmw_dist_print_f.o : hecmw_dist_print_f.f90 hecmw_util_f.o 
+hecmw_etype_f.o : hecmw_etype_f.f90 hecmw_util_f.o 
+hecmw_io.o : hecmw_io.f90 hecmw_restart_f.o hecmw_result_f.o hecmw_dist_print_f.o hecmw_dist_free_f.o hecmw_dist_copy_c2f_f.o hecmw_dist_copy_f2c_f.o hecmw_util_f.o 
+hecmw_logging.o : hecmw_logging.f90 hecmw_util_f.o 
+hecmw_msg_f.o : hecmw_msg_f.f90 hecmw_msgno_f.o 
+hecmw_msgno_f.o : hecmw_msgno_f.f90 hecmw_util_f.o 
+hecmw_restart_f.o : hecmw_restart_f.f90 hecmw_util_f.o 
+hecmw_result_f.o : hecmw_result_f.f90 hecmw_etype_f.o hecmw_util_f.o 
+hecmw_util_f.o : hecmw_util_f.F90 
+hecmw_visualizer_f.o : hecmw_visualizer_f.f90 hecmw_dist_copy_f2c_f.o hecmw_result_f.o hecmw_util_f.o 

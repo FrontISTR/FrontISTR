@@ -1,0 +1,4 @@
+hecmw_dist_result_copy_c2f.o : hecmw_dist_result_copy_c2f.f90 
+hecmw_transfer_data_c.o : hecmw_transfer_data_c.f90 
+hecmw_transfer_data_c2f.o : hecmw_transfer_data_c2f.f90 
+hecmw_transfer_result_c.o : hecmw_transfer_result_c.f90 

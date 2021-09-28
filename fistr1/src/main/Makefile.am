@@ -156,3 +156,8 @@ clean:
 
 distclean: clean
 	$(RM) $(TARGET)
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

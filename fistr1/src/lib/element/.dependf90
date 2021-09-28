@@ -1,0 +1,15 @@
+element.o : element.f90 quadrature.o prism15n.o prism6n.o tet10n.o tet4n.o hex20n.o hex8n.o quad9n.o quad8n.o quad4n.o tri6n.o tri3n.o line3n.o line2n.o 
+hex20n.o : hex20n.f90 
+hex8n.o : hex8n.f90 
+line2n.o : line2n.f90 
+line3n.o : line3n.f90 
+prism15n.o : prism15n.f90 
+prism6n.o : prism6n.f90 tri3n.o 
+quad4n.o : quad4n.f90 
+quad8n.o : quad8n.f90 
+quad9n.o : quad9n.f90 
+quadrature.o : quadrature.f90 
+tet10n.o : tet10n.f90 
+tet4n.o : tet4n.f90 
+tri3n.o : tri3n.f90 
+tri6n.o : tri6n.f90 
