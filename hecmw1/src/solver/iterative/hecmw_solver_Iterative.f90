@@ -170,7 +170,83 @@ contains
       write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
     endif
 
+    call hecmw_output_flops(hecMESH, hecMAT, ITER, time_Ax)
+    !call hecmw_output_flops(hecMESH, hecMAT, count_Ax, time_Ax)
+
   end subroutine hecmw_solve_iterative
+
+  !> @brief
+  !> output FLOPs
+  !> @param[in] hecMESH
+  !> @param[in] hecMAT
+  !> @param[in] count_Ax
+  !> @param[in] time_Ax
+  subroutine hecmw_output_flops(hecMESH, hecMAT, count_Ax, time_Ax)
+    use hecmw_util
+    use m_hecmw_comm_f
+    use hecmw_matrix_misc
+    use hecmw_solver_misc
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix) :: hecMAT
+    integer(kint) :: N, NP, NDOF, NPU, NPL, NZ
+    integer(kint) :: base, i, count_Ax
+    real(kreal) :: time_Ax, size_matrix, flop_matrix, size_vector, memory_size, tmp, num
+    real(kreal) :: t_max, t_min, t_avg, t_sd
+    character(2) :: SI(0:6) = ['  ',' K',' M',' G',' T',' P',' E']
+
+    if(hecmw_mat_get_timelog(hecMAT) /= 2) return !> VERBOSE
+
+    N = hecMAT%N
+    NP = hecMAT%NP
+    NDOF = hecMAT%NDOF
+    NPU = hecMAT%indexU(N)
+    NPL = hecMAT%indexL(N)
+    NZ = N + NPU + NPL
+
+    size_matrix = kreal*NZ*NDOF**2 & !> hecMAT%A
+                + kint*(NPU+NPL) & !> hecMAT%item
+                + kint*2*(N+1) !> hecMAT%index
+    size_vector = kreal*N*NDOF & !> y
+                + kreal*NP*NDOF !> x
+    memory_size = size_matrix + size_vector
+    flop_matrix = 2.0d0*NZ*NDOF**2 !> count opetations of add and multiply
+
+    call hecmw_allreduce_R1(hecMESH, memory_size, hecmw_sum)
+    call hecmw_allreduce_R1(hecMESH, flop_matrix, hecmw_sum)
+
+    base = 1000 ! or 1024
+    num = memory_size
+    i = int(log(num) / log(dble(base)))
+    tmp = 1.0d0/base**i * num
+    if(hecMESH%my_rank == 0)then
+      write (*,"(a,f11.3,a,a)") "memory amount of coef. matrix: ", tmp, SI(i),"B"
+    endif
+
+    num = count_Ax*memory_size/time_Ax
+    i = int(log(num) / log(dble(base)))
+    tmp = 1.0d0/base**i * num
+    call hecmw_time_statistics(hecMESH, tmp, t_max, t_min, t_avg, t_sd)
+    if(hecMESH%my_rank == 0)then
+      write(*,"(a,f11.3,a,a)") "matvec memory band width     : ", tmp, SI(i),"B/s"
+      write(*,"(a,f11.3)") '  Max     :',t_max
+      write(*,"(a,f11.3)") '  Min     :',t_min
+      write(*,"(a,f11.3)") '  Avg     :',t_avg
+      write(*,"(a,f11.3)") '  Std Dev :',t_sd
+    endif
+
+    num = count_Ax*flop_matrix/time_Ax
+    i = int(log(num) / log(dble(base)))
+    tmp = 1.0d0/base**i * num
+    call hecmw_time_statistics(hecMESH, tmp, t_max, t_min, t_avg, t_sd)
+    if(hecMESH%my_rank == 0)then
+      write(*,"(a,f11.3,a,a)") "matvec FLOPs                 : ", tmp, SI(i),"FLOPs"
+      write(*,"(a,f11.3)") '  Max     :',t_max
+      write(*,"(a,f11.3)") '  Min     :',t_min
+      write(*,"(a,f11.3)") '  Avg     :',t_avg
+      write(*,"(a,f11.3)") '  Std Dev :',t_sd
+    endif
+  end subroutine hecmw_output_flops
 
   subroutine hecmw_solve_check_zerodiag (hecMESH, hecMAT)
     use hecmw_util
