@@ -7,7 +7,7 @@ See the [Official home page](https://www.frontistr.com/) for more information ab
 # Prerequisites
 
 - FUJITSU Software Compiler Package or Fujitsu Development Studio
-- cmake 2.8.0 or later
+- cmake 3.11.4 or later
   - https://cmake.org/download/
 - metis 5.1.0
   - http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.1.0.tar.gz
@@ -70,6 +70,7 @@ TAR = tar
 Make Refiner.
 ```
 make -j 12 Refiner
+cd ..
 ```
 
 ## Building FrontISTR
@@ -80,7 +81,7 @@ $ git clone https://github.com/fujitsu/FrontISTR.git
 
 Set path to dependencies and target directory.
 ```
-export METISDIR="Path to metis directory"
+export METISDIR="Path to metis install directory"
 export REFINERDIR="Path to REVOCAP_Refiner directory"
 export FISTRDIR="Path to FrontISTR install directory"
 ```
@@ -124,7 +125,7 @@ make -j12 install
 Following are the instructions on how to run the tutorial 02.
 ```
 cd FrontISTR/tutorial/02_elastic_hinge_parallel
-${FISTRDIR}/bin/hecmw_part1
+mpiexec -n 1 ${FISTRDIR}/bin/hecmw_part1
 mpiexec -n 4 ${FISTRDIR}/bin/fistr1 -t 1
 ```
 
