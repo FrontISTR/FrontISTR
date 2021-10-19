@@ -52,10 +52,12 @@ contains
     hecMAT%Iarray(98) = 1 !Assmebly complete
     hecMAT%X = 0.0d0
 
-    if(fstrHEAT%is_steady == 1)then
-      fstrHEAT%beta = 1.0d0
-    else
-      fstrHEAT%beta = 0.5d0
+    if(fstrHEAT%beta == -1.0d0)then
+      if(fstrHEAT%is_steady == 1)then
+        fstrHEAT%beta = 1.0d0
+      else
+        fstrHEAT%beta = 0.5d0
+      endif
     endif
 
     if(fstrHEAT%is_steady /= 1 .and. total_step == 1) then
