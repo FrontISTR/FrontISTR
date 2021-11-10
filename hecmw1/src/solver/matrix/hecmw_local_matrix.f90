@@ -14,6 +14,7 @@ module hecmw_local_matrix
   public :: hecmw_localmat_free
   public :: hecmw_localmat_mulvec
   public :: hecmw_trimatmul_TtKT
+  public :: hecmw_trimatmul_TtKT_serial
   public :: hecmw_trimatmul_TtKT_mpc
   public :: hecmw_localmat_transpose
   public :: hecmw_localmat_assemble
