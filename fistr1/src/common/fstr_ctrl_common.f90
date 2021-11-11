@@ -511,7 +511,7 @@ contains
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo )
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname )
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
     integer(kind=kint), intent(in)    :: ctAlgo        !< contact algorithm
@@ -520,6 +520,7 @@ contains
     real(kind=kreal), intent(out)      :: tp             !< penalty along contact tangent
     real(kind=kreal), intent(out)      :: ntol           !< tolrence along contact nomral
     real(kind=kreal), intent(out)      :: ttol           !< tolrence along contact tangent
+    character(len=*), intent(out)      :: cpname         !< name of contact parameter
 
     integer           :: rcode, ipt
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
@@ -556,8 +557,83 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'TPENALTY ', '# ', 0, 'R', tp ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'NTOL ',  '# ',  0, 'R', ntol ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '# ', 0, 'R', ttol ) /= 0 ) return
+    cpname=""
+    if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
     fstr_ctrl_get_CONTACT = .true.
   end function fstr_ctrl_get_CONTACT
+
+  !> Read in !CONTACT_PARAM                                                             !
+  function fstr_ctrl_get_CONTACTPARAM( ctrl, contactparam )
+    implicit none
+    integer(kind=kint)    :: ctrl
+    type( tContactParam ) :: contactparam !< contact paramter
+    integer(kind=kint) :: fstr_ctrl_get_CONTACTPARAM
+
+    integer(kind=kint) :: rcode
+    character(len=HECMW_NAME_LEN) :: data_fmt
+    character(len=128) :: msg
+    real(kind=kreal) :: CLEARANCE, CLR_SAME_ELEM, CLR_DIFFLPOS, CLR_CAL_NORM
+    real(kind=kreal) :: DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE
+    real(kind=kreal) :: BOX_EXP_RATE
+
+    fstr_ctrl_get_CONTACTPARAM = -1
+
+    !parameters
+    contactparam%name = ''
+    if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', contactparam%name ) /=0 ) return
+
+    !read first line
+    data_fmt = 'rrrr '
+    rcode = fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, &
+      &  CLEARANCE, CLR_SAME_ELEM, CLR_DIFFLPOS, CLR_CAL_NORM )
+    if( rcode /= 0 ) return
+    contactparam%CLEARANCE = CLEARANCE
+    contactparam%CLR_SAME_ELEM = CLR_SAME_ELEM
+    contactparam%CLR_DIFFLPOS  = CLR_DIFFLPOS
+    contactparam%CLR_CAL_NORM  = CLR_CAL_NORM
+
+    !read second line
+    data_fmt = 'rrrrr '
+    rcode = fstr_ctrl_get_data_ex( ctrl, 2, data_fmt, &
+      &  DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE, BOX_EXP_RATE )
+    if( rcode /= 0 ) return
+    contactparam%DISTCLR_INIT = DISTCLR_INIT
+    contactparam%DISTCLR_FREE = DISTCLR_FREE
+    contactparam%DISTCLR_NOCHECK = DISTCLR_NOCHECK
+    contactparam%TENSILE_FORCE = TENSILE_FORCE
+    contactparam%BOX_EXP_RATE = BOX_EXP_RATE
+
+    !input check
+    rcode = 1
+    if( CLEARANCE<0.d0 .OR. 1.d0<CLEARANCE ) THEN
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : CLEARANCE must be 0 < CLEARANCE < 1.'
+    else if( CLR_SAME_ELEM<0.d0 .or. 1.d0<CLR_SAME_ELEM ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : CLR_SAME_ELEM must be 0 < CLR_SAME_ELEM < 1.'
+    else if( CLR_DIFFLPOS<0.d0 .or. 1.d0<CLR_DIFFLPOS ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : CLR_DIFFLPOS must be 0 < CLR_DIFFLPOS < 1.'
+    else if( CLR_CAL_NORM<0.d0 .or. 1.d0<CLR_CAL_NORM ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : CLR_CAL_NORM must be 0 < CLR_CAL_NORM < 1.'
+    else if( DISTCLR_INIT<0.d0 .or. 1.d0<DISTCLR_INIT ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_INIT must be 0 < DISTCLR_INIT < 1.'
+    else if( DISTCLR_FREE<-1.d0 .or. 1.d0<DISTCLR_FREE ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_FREE must be -1 < DISTCLR_FREE < 1.'
+    else if( DISTCLR_NOCHECK<0.5d0 ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_NOCHECK must be >= 0.5.'
+    else if( TENSILE_FORCE>=0.d0 ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : TENSILE_FORCE must be < 0.'
+    else if( BOX_EXP_RATE<=1.d0 .or. 2.0<BOX_EXP_RATE ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : BOX_EXP_RATE must be 1 < BOX_EXP_RATE <= 2.'
+    else
+      rcode =0
+    end if
+    if( rcode /= 0 ) then
+      write(*,*) trim(msg)
+      write(ILOG,*) trim(msg)
+      return
+    endif
+
+    fstr_ctrl_get_CONTACTPARAM = 0
+  end function fstr_ctrl_get_CONTACTPARAM
 
   !> Read in !ELEMOPT
   function fstr_ctrl_get_ELEMOPT( ctrl, elemopt361 )
