@@ -1,5 +1,6 @@
 variables:
   REGISTRY: registry.gitlab.com/frontistr-commons/frontistr
+  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/FrontISTR/${CI_COMMIT_TAG}"
 
 image: ${REGISTRY}/build:latest
 
@@ -8,6 +9,8 @@ stages:
     - test
     - build_for_deploy
     - deploy
+    - registry
+    - release
 
 build/serial:
     stage: build
@@ -162,8 +165,11 @@ pages:
         - x86_64-w64-mingw32/hybrid-impi-mkl_intelthread
     script:
         - ls public
-        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> public/_redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> public/_redirects
         - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip 301 >> public/_redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-master.thread_openblas.zip 301 >> public/_redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-master.hybrid_msmpi_openblas.zip 301 >> public/_redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_impi_mkl_intelthread.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-master.hybrid_impi_mkl_intelthread.zip 301 >> public/_redirects
     artifacts:
         paths:
             - public
@@ -206,7 +212,7 @@ x86_64-w64-mingw32/thread-openblas:
           -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=OFF -DWITH_OPENMP=ON -DWITH_MKL=OFF
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32/
-        - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
+        - zip -j public/release/x86_64-w64-mingw32/FrontISTR.thread_openblas.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README* License* VERSION
     artifacts:
         paths:
@@ -231,7 +237,7 @@ x86_64-w64-mingw32/hybrid-msmpi-openblas:
           -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=ON -DWITH_OPENMP=ON -DWITH_MKL=OFF
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32/
-        - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
+        - zip -j public/release/x86_64-w64-mingw32/FrontISTR.hybrid_msmpi_openblas.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README* License* VERSION
           ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll 
     artifacts:
@@ -259,7 +265,7 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
           -DWITH_METIS=ON -DWITH_MUMPS=ON -DWITH_LAPACK=ON -DWITH_REFINER=ON -DWITH_ML=ON -DWINDOWS=ON -DWITH_MPI=ON -DWITH_OPENMP=ON -DWITH_MKL=ON
         - cmake --build build -- -j $(nproc)
         - mkdir -p public/release/x86_64-w64-mingw32/
-        - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_impi_mkl_intelthread.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
+        - zip -j public/release/x86_64-w64-mingw32/FrontISTR.hybrid_impi_mkl_intelthread.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README* License* VERSION
           ${LIB_ROOT}/bin/mpiexec.exe  ${LIB_ROOT}/lib/impi.dll ${LIB_ROOT}/lib/impi.dll ${LIB_ROOT}/lib/libfabric.dll ${LIB_ROOT}/bin/hydra_bstrap_proxy.exe ${LIB_ROOT}/bin/hydra_pmi_proxy.exe
           ${LIB_ROOT}/lib/mkl_blacs_lp64.1.dll ${LIB_ROOT}/lib/mkl_blacs_intelmpi_lp64.1.dll ${LIB_ROOT}/lib/mkl_core.1.dll ${LIB_ROOT}/lib/mkl_intel_thread.1.dll ${LIB_ROOT}/lib/mkl_rt.1.dll ${LIB_ROOT}/lib/libiomp5md.dll ${LIB_ROOT}/lib/mkl_scalapack_lp64.1.dll
@@ -269,3 +275,24 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
             - public
         expire_in: 100min
 
+upload:
+  stage: registry
+  image: curlimages/curl:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file public/release/x86_64-w64-mingw32/FrontISTR.hybrid_impi_mkl_intelthread.zip "${PACKAGE_REGISTRY_URL}/FrontISTR.${CI_COMMIT_TAG}.hybrid_impi_mkl_intelthread.zip"'
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file public/release/x86_64-w64-mingw32/FrontISTR.hybrid_msmpi_openblas.zip "${PACKAGE_REGISTRY_URL}/FrontISTR.${CI_COMMIT_TAG}.hybrid_msmpi_openblas.zip"'
+    - 'curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file public/release/x86_64-w64-mingw32/FrontISTR.thread_openblas.zip "${PACKAGE_REGISTRY_URL}/FrontISTR.${CI_COMMIT_TAG}.thread_openblas.zip"'
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - |
+      release-cli create --name "Release $CI_COMMIT_TAG" --tag-name $CI_COMMIT_TAG \
+        --assets-link "{\"name\":\"FrontISTR.${CI_COMMIT_TAG}.hybrid_impi_mkl_intelthread.zip\",\"url\":\"${PACKAGE_REGISTRY_URL}/FrontISTR.${CI_COMMIT_TAG}.hybrid_impi_mkl_intelthread.zip\"}" \
+        --assets-link "{\"name\":\"FrontISTR.${CI_COMMIT_TAG}.hybrid_msmpi_openblas.zip\",\"url\":\"${PACKAGE_REGISTRY_URL}/FrontISTR.${CI_COMMIT_TAG}.hybrid_msmpi_openblas.zip\"}" \
+        --assets-link "{\"name\":\"FrontISTR.${CI_COMMIT_TAG}.thread_openblas.zip\",\"url\":\"${PACKAGE_REGISTRY_URL}/FrontISTR.${CI_COMMIT_TAG}.thread_openblas.zip\"}" \
