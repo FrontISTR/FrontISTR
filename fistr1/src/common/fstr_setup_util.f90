@@ -190,7 +190,7 @@ contains
         endif
       enddo
 
-      do i=1, cache
+      do i=1, cache-1
         if( hecMESH%global_node_ID(i) == list(j)) then
           list(j) = i
           cache = i+1
@@ -201,7 +201,7 @@ contains
       enddo
 
       if( .not. fg ) then
-        list(j) = -list(j) ! not exist node
+        list(j) = -1 ! not exist node
       endif
     enddo aa
   end function node_global_to_local
@@ -226,7 +226,7 @@ contains
         endif
       end do
       if( .not. fg ) then
-        list(j) = -list(j)
+        list(j) = -1
       endif
     end do
   end function elem_global_to_local
