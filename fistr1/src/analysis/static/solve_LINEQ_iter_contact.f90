@@ -301,7 +301,7 @@ contains
 
       ! calc trimatmul in hecmwST_matrix data structure
       call hecmw_mat_init(hecTKT)
-      call hecmw_trimatmul_TtKT(hecMESHtmp, BTtmat, hecMAT, BT_all, iwS, fstrMAT%num_lagrange, hecTKT)
+      call hecmw_trimatmul_TtKT_serial(hecMESHtmp, BTtmat, hecMAT, BT_all, iwS, fstrMAT%num_lagrange, hecTKT)
     endif
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: calculated TtKT', hecmw_wtime()-t1
 
@@ -927,7 +927,8 @@ contains
     do i=1,npndof+num_lagrange
       Btot(i) = conMAT%B(i)
     enddo
-    call fstr_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
+    !call fstr_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
+    call hecmw_assemble_3_R(hecMESH, Btot, hecMAT%NP)
   end subroutine assemble_b_paracon
 
   subroutine make_new_b_paracon(hecMESH, hecMAT, conMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &

@@ -761,6 +761,40 @@ contains
 
   !C
   !C***
+  !C*** hecmw_assemble_3_R
+  !C***
+  !C
+  !C    3-DOF, REAL
+  !C
+  subroutine hecmw_assemble_3_R (hecMESH, val, n)
+    use hecmw_util
+    use  hecmw_solver_SR_33
+
+    implicit none
+    integer(kind=kint):: n
+    real(kind=kreal), dimension(3*n) :: val
+    type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+    integer(kind=kint):: ns, nr
+    real(kind=kreal), dimension(:), allocatable :: WS, WR
+
+    if( hecMESH%n_neighbor_pe == 0 ) return
+
+    ns = hecMESH%import_index(hecMESH%n_neighbor_pe)
+    nr = hecMESH%export_index(hecMESH%n_neighbor_pe)
+
+    allocate (WS(3*ns), WR(3*nr))
+    call hecmw_solve_REV_SEND_RECV_33                                    &
+      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
+      &     hecMESH%import_index, hecMESH%import_item,                   &
+      &     hecMESH%export_index, hecMESH%export_item,                   &
+      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
+    deallocate (WS, WR)
+#endif
+  end subroutine hecmw_assemble_3_R
+
+  !C
+  !C***
   !C*** hecmw_update_4_R
   !C***
   !C
