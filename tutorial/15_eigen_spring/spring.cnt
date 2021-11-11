@@ -16,7 +16,7 @@
 ### Material
 # define in mesh file
 ### Solver Setting
-!SOLVER,METHOD=DIRECT
+!SOLVER,METHOD=MUMPS
 ## Post Control
 !VISUAL,metod=PSR
 !surface_num=1
