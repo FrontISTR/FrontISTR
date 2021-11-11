@@ -46,7 +46,7 @@ contains
 
       call heat_check_convergence(hecMESH, fstrHEAT, fstrPARAM, ISTEP, iterALL, is_congerged)
 
-      if(is_congerged .or. fstrHEAT%is_iter_max_limit) exit
+      if(is_congerged .or. fstrHEAT%is_iter_max_limit .or. fstrHEAT%beta == 0.0d0) exit
     enddo
   end subroutine heat_solve_main
 

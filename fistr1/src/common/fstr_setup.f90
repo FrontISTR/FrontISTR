@@ -1340,6 +1340,7 @@ contains
     fstrHEAT%R_SUF_tot   = 0
     fstrHEAT%H_SUF_tot   = 0
     fstrHEAT%WL_tot      = 0
+    fstrHEAT%beta        = -1.0d0
   end subroutine fstr_heat_init
 
   !> Initial setting of eigen ca;culation
@@ -2461,7 +2462,8 @@ end function fstr_setup_INITIAL
       P%PARAM%delmax,    &
       P%PARAM%itmax,     &
       P%PARAM%eps,       &
-      mName )
+      mName,             &
+      P%HEAT%beta)
     if( rcode /= 0 ) then
       call fstr_ctrl_err_stop
     end if
