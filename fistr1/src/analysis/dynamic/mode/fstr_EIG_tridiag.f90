@@ -99,7 +99,7 @@ contains
       if(fstrEIG%is_free) sigma = fstrEIG%sigma
       do i = 1, iter
         if(alpha(i) /= 0.0d0)then
-          eigval(i) = 1.0d0/alpha(i) + sigma
+          eigval(i) = 1.0d0/alpha(i) - sigma
         endif
       enddo
 
