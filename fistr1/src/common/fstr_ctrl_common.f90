@@ -312,6 +312,7 @@ contains
 
   !> Read in !SECTION
   integer function fstr_ctrl_get_SECTION( ctrl, hecMESH, sections )
+    use fstr_setup_util
     integer(kind=kint), intent(in)           :: ctrl
     type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< mesh information
     type (tSection), pointer, intent(inout)  :: sections(:)
@@ -335,6 +336,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  0, 'S', sect_orien )/= 0) return
 
     if( associated(g_LocalCoordSys) ) then
+      call fstr_strupr(sect_orien)
       k = size(g_LocalCoordSys)
 
       if(cache < k)then
