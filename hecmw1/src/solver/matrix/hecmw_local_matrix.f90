@@ -47,23 +47,25 @@ contains
     type (hecmwST_local_matrix), intent(in) :: Tmat
     integer(kind=kint), intent(in) :: iunit
     integer(kind=kint) :: nr, nc, nnz, ndof, ndof2, i, js, je, j, jj
+    character(len=64) :: fmt
     nr=Tmat%nr
     nc=Tmat%nc
     nnz=Tmat%nnz
     ndof=Tmat%ndof
     ndof2=ndof*ndof
-    write(iunit,*) 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
-    write(iunit,*) 'i, j, A'
+    write(iunit,'(a,4i10)') 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
+    write(iunit,'(a)') 'i, j, A'
+    write(fmt,'(a,i0,a)') '(',ndof,'f12.3)'
     do i=1,nr
       js=Tmat%index(i-1)+1
       je=Tmat%index(i)
       do j=js,je
         jj=Tmat%item(j)
         if (ndof==1) then
-          write(iunit,*) i, jj, Tmat%A(j)
+          write(iunit,'(2i10,f12.3)') i, jj, Tmat%A(j)
         else
-          write(iunit,*) i, jj
-          write(iunit,*) Tmat%A((j-1)*ndof2+1:j*ndof2)
+          write(iunit,'(2i10)') i, jj
+          write(iunit,fmt) Tmat%A((j-1)*ndof2+1:j*ndof2)
         endif
       enddo
     enddo
@@ -78,14 +80,14 @@ contains
     nc=Tmat%nc
     nnz=Tmat%nnz
     ndof=Tmat%ndof
-    write(iunit,*) 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
-    write(iunit,*) 'i, j'
+    write(iunit,'(a,4i10)') 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
+    write(iunit,'(a)') 'i, j'
     do i=1,nr
       js=Tmat%index(i-1)+1
       je=Tmat%index(i)
       do j=js,je
         jj=Tmat%item(j)
-        write(iunit,*) i, jj
+        write(iunit,'(2i10)') i, jj
       enddo
     enddo
   end subroutine hecmw_localmat_write_ij
