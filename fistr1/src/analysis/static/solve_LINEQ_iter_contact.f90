@@ -927,7 +927,8 @@ contains
     do i=1,npndof+num_lagrange
       Btot(i) = conMAT%B(i)
     enddo
-    call fstr_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
+    !call fstr_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
+    call hecmw_assemble_3_R(hecMESH, Btot, hecMAT%NP)
   end subroutine assemble_b_paracon
 
   subroutine make_new_b_paracon(hecMESH, hecMAT, conMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
