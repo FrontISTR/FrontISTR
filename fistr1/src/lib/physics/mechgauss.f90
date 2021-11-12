@@ -32,6 +32,8 @@ module mMechGauss
     real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces
     type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
     real(kind=kreal), pointer   :: aux(:,:) => null()    !< nodeless dof for incompatible element
+    real(kind=kreal)            :: spring (3,3)
+    real(kind=kreal)            :: dashpot(3,3)
   end type
 
 contains

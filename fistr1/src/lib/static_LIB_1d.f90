@@ -67,6 +67,42 @@ contains
 
   end subroutine STF_C1
 
+  subroutine STF_C1_SPRING(etype, nn, ecoord, k, stiff)
+    use mMechGauss
+    integer(kind=kint), intent(in)  :: etype               !< element type
+    integer(kind=kint), intent(in)  :: nn                  !< number of elemental nodes
+    real(kind=kreal),   intent(in)  :: ecoord(3,nn)        !< coordinates of elemental nodes
+    real(kind=kreal),   intent(in)  :: k                   !< spring coeff
+    real(kind=kreal),   intent(out) :: stiff(:,:)          !< stiff matrix
+    integer(kind=kint) :: i
+
+    stiff(:,:) = 0.0d0
+    do i = 1, 3
+      stiff(i  , i  ) =  k
+      stiff(i  , i+3) = -k
+      stiff(i+3, i  ) = -k
+      stiff(i+3, i+3) =  k
+    enddo
+  end subroutine STF_C1_SPRING
+
+  SUBROUTINE STF_C1_DAMPER(etype, nn, ecoord, c, damp)
+    USE mMechGauss
+    INTEGER(kind=kint), INTENT(IN)  :: etype               !< element type
+    INTEGER(kind=kint), INTENT(IN)  :: nn                  !< number of elemental nodes
+    REAL(kind=kreal),   INTENT(IN)  :: ecoord(3,nn)        !< coordinates of elemental nodes
+    REAL(kind=kreal),   INTENT(IN)  :: c                   !< dashpod properties
+    REAL(kind=kreal),   INTENT(OUT) :: damp(:,:)           !< damping matrix
+    integer(kint) :: i
+
+    damp(:,:)  = 0.0d0
+    do i = 1, 3
+      damp (i  , i  ) =  c
+      damp (i  , i+3) = -c
+      damp (i+3, i  ) = -c
+      damp (i+3, i+3) =  c
+    enddo
+  end subroutine STF_C1_DAMPER
+
   !
   !> Update strain and stress inside element
   !---------------------------------------------------------------------*
@@ -142,6 +178,58 @@ contains
     qf(4:6) = -qf(1:3)
 
   end subroutine UPDATE_C1
+
+  !> Update strain and stress inside element
+  !---------------------------------------------------------------------*
+  subroutine UPDATE_C1_SPRING(etype, nn, ecoord, k, u, du, qf)
+    !---------------------------------------------------------------------*
+    use m_fstr
+    use mMechGauss
+    ! I/F VARIAVLES
+    integer(kind=kint), intent(in)     :: etype           !< \param [in] element type
+    integer(kind=kint), intent(in)     :: nn              !< \param [in] number of elemental nodes
+    real(kind=kreal),   intent(in)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
+    real(kind=kreal),   intent(in)     :: k               !< spring coeff
+    real(kind=kreal),   intent(in)     :: u(3,nn)         !< \param [in] nodal dislplacements
+    real(kind=kreal),   intent(in)     :: du(3,nn)        !< \param [in] nodal displacement ( solutions of solver )
+    real(kind=kreal),   intent(out)    :: qf(nn*3)        !< \param [out] Internal Force
+
+    ! LCOAL VARIAVLES
+    real(kind=kreal)   :: direc(3)
+    real(kind=kreal)   :: llen, llen0, ina(1)
+    real(kind=kreal)   :: coord(3,nn)
+    real(kind=kreal)   :: young
+    real(kind=kreal)   :: ttc, tt0, alp, alp0, epsth
+    logical            :: ierr
+
+    qf(:) = 0.d0
+
+    ! we suppose the same material type in the element
+    coord(:,:) = ecoord(:,:) + u(:,:) + du(:,:)
+    direc = coord(:,2) - coord(:,1)
+
+    !gausses(1)%strain(1) = direc(1)
+    !gausses(1)%strain(2) = direc(2)
+    !gausses(1)%strain(3) = direc(3)
+    !gausses(1)%stress(1) = k*direc(1)
+    !gausses(1)%stress(2) = k*direc(2)
+    !gausses(1)%stress(3) = k*direc(3)
+
+    !set stress and strain for output
+    !gausses(1)%strain_out(1) = gausses(1)%strain(1)
+    !gausses(1)%strain_out(2) = gausses(1)%strain(2)
+    !gausses(1)%strain_out(3) = gausses(1)%strain(3)
+    !gausses(1)%stress_out(1) = gausses(1)%stress(1)
+    !gausses(1)%stress_out(2) = gausses(1)%stress(2)
+    !gausses(1)%stress_out(3) = gausses(1)%stress(3)
+
+    qf(1) = -k*direc(1)!gausses(1)%stress(1)
+    qf(2) = -k*direc(2)!gausses(1)%stress(2)
+    qf(3) = -k*direc(3)!gausses(1)%stress(3)
+    qf(4) =  qf(1)
+    qf(5) =  qf(2)
+    qf(6) =  qf(3)
+  end subroutine UPDATE_C1_SPRING
 
   !----------------------------------------------------------------------*
   subroutine NodalStress_C1(ETYPE,NN,gausses,ndstrain,ndstress)

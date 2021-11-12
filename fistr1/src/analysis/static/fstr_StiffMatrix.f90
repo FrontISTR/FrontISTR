@@ -33,7 +33,7 @@ contains
     real(kind=kreal)   :: tt(20), ecoord(3,20)
     real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
-    real(kind=kreal)   :: u(6,20), du(6,20), coords(3,3), u_prev(6,20)
+    real(kind=kreal)   :: u(6,20), du(6,20), coords(3,3), u_prev(6,20), spring
     integer            :: isect, ihead, cdsys_ID
 
     ! ----- initialize
@@ -90,9 +90,11 @@ contains
         elseif ( ic_type==301 ) then
           isect= hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
-          call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:),   &
-            stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
+          spring = hecMESH%section%sect_R_item(ihead+1)
+          !thick = hecMESH%section%sect_R_item(ihead+1)
+          !call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:),   &
+          !  stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
+          call STF_C1_SPRING(ic_type, nn, ecoord(:,1:nn), spring, stiffness(1:nn*ndof,1:nn*ndof))
 
         elseif ( ic_type==361 ) then
 
@@ -199,7 +201,7 @@ contains
           call STF_C3_vp                                                           &
             ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:), &
             stiffness(1:nn*ndof, 1:nn*ndof), tincr, u_prev(1:4, 1:nn) )
-          !
+
           !      elseif ( ic_type==731) then
           !        call STF_S3(xx,yy,zz,ee,pp,thick,local_stf)
           !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)

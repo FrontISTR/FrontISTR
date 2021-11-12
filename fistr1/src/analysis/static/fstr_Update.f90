@@ -39,7 +39,7 @@ contains
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
 
     real(kind=kreal)   :: total_disp(6, 20), du(6, 20), ddu(6, 20)
-    real(kind=kreal)   :: tt(20), tt0(20), ttn(20), qf(20*6), coords(3, 3)
+    real(kind=kreal)   :: tt(20), tt0(20), ttn(20), qf(20*6), coords(3, 3), spring
     integer            :: ig0, ig, ik, in, ierror, isect, ihead, cdsys_ID
     integer            :: ndim, initt
 
@@ -149,9 +149,11 @@ contains
         else if( ic_type == 301 ) then
           isect= hecMESH%section_ID(icel)
           ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
-          call UPDATE_C1( ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), du(1:3,1:nn), &
-            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
+          spring = hecMESH%section%sect_R_item(ihead+1)
+          !thick = hecMESH%section%sect_R_item(ihead+1)
+          !call UPDATE_C1( ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), du(1:3,1:nn), &
+          !  qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
+          call UPDATE_C1_SPRING(ic_type, nn, ecoord(:,1:nn), spring, total_disp(1:3,1:nn), du(1:3,1:nn), qf(1:nn*ndof))
 
         else if( ic_type == 361 ) then
 
