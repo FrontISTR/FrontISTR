@@ -1574,7 +1574,7 @@ contains
     end if
 
     if( P%PARAM%fg_visual == kON )then
-      call fstr_setup_visualize( ctrl, P%MESH%my_rank )
+      call fstr_setup_visualize( ctrl, P%MESH )
     end if
 
     call hecmw_barrier( P%MESH ) ! JP-7

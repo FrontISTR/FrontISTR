@@ -1386,18 +1386,22 @@ contains
   ! 3) All following lines under the header are writen to the opend file        !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_visualize( ctrl, my_rank )
+  subroutine fstr_setup_visualize( ctrl, hecMESH )
     implicit none
-    integer(kind=kint) :: ctrl, my_rank, rcode
+    integer(kind=kint) :: ctrl
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: rcode
     character(HECMW_FILENAME_LEN) :: vis_filename = 'hecmw_vis.ini'
     logical :: is_exit
 
     rcode = fstr_ctrl_seek_header( ctrl, '!VISUAL ' )
     if(rcode == 0) return
 
-    if(my_rank == 0)then
+    if(hecMESH%my_rank == 0)then
       call fstr_setup_visualize_main( ctrl, vis_filename )
     endif
+
+    call hecmw_barrier( hecMESH )
 
     inquire(file = vis_filename, EXIST = is_exit)
 
