@@ -1,12 +1,12 @@
 ###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
+# Copyright (c) 2021 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
 ###############################################################
 # CMakeLists.txt for FrontISTR
 ###############################################################
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.20)
 
 ###############################################################
 # Check building mode whether out-of-source builds
@@ -427,30 +427,30 @@ add_subdirectory(fistr1)
 enable_testing()
 add_subdirectory(tests)
 
-###############################################################################
-# Package generator (deb, rpm, exe etc.)
-###############################################################################
-include(InstallRequiredSystemLibraries)
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Large-scale structural analysis program with FEM ")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
-set(CPACK_PACKAGE_VENDOR "FrontISTR Forum, The University of Tokyo")
-set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
-set(CPACK_PACKAGE_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-set(CPACK_PACKAGE_CONTACT "${CPACK_PACKAGE_VENDOR}")
-if(WIN32 AND NOT UNIX)
-  # Windows
-else()
-  # Unix
-  set(CPACK_BINARY_DEB ON)
-  set(CPACK_BINARY_RPM ON)
-  set(CPACK_GENERATOR "TBZ2;DEB;RPM")
-  set(CPACK_STRIP_FILES ON)
-endif()
-include(CPack)
+################################################################################
+## Package generator (deb, rpm, exe etc.)
+################################################################################
+#include(InstallRequiredSystemLibraries)
+#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Large-scale structural analysis program with FEM ")
+#set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+#set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
+#set(CPACK_PACKAGE_VENDOR "FrontISTR Forum, The University of Tokyo")
+#set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+#set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
+#set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
+#set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
+#set(CPACK_PACKAGE_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+#set(CPACK_PACKAGE_CONTACT "${CPACK_PACKAGE_VENDOR}")
+#if(WIN32 AND NOT UNIX)
+#  # Windows
+#else()
+#  # Unix
+#  set(CPACK_BINARY_DEB ON)
+#  set(CPACK_BINARY_RPM ON)
+#  set(CPACK_GENERATOR "TBZ2;DEB;RPM")
+#  set(CPACK_STRIP_FILES ON)
+#endif()
+#include(CPack)
 
 
 
