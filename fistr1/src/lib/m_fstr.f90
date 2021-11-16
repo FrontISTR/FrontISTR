@@ -65,6 +65,9 @@ module m_fstr
   integer(kind=kint), parameter :: restart_outAll  = 2
 
   !> section control
+  integer(kind=kint), parameter :: kel341FI     =  1
+  integer(kind=kint), parameter :: kel341SESNS  =  2
+
   integer(kind=kint), parameter :: kel361FI     =  1
   integer(kind=kint), parameter :: kel361BBAR   =  2
   integer(kind=kint), parameter :: kel361IC     =  3
@@ -613,7 +616,7 @@ module m_fstr
     !integer              :: iset
     !integer              :: orien_ID
     !real(kind=kreal)     :: thickness
-    !integer              :: elemopt341
+    integer              :: elemopt341
     !integer              :: elemopt342
     !integer              :: elemopt351
     !integer              :: elemopt352
