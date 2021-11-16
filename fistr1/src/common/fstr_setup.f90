@@ -392,6 +392,7 @@ contains
       else
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
+      fstrSOLID%sections(i)%elemopt341 = kel341FI
     enddo
 
     allocate( fstrSOLID%output_ctrl( 4 ) )

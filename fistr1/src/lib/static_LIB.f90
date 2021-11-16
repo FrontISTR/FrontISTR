@@ -12,6 +12,7 @@ module m_static_LIB
   use m_static_LIB_2d
   use m_static_LIB_3d
   use m_static_LIB_3d_vp
+  use m_static_LIB_C3D4SESNS
   use m_static_LIB_C3D8
   use m_static_LIB_Fbar
   use m_static_LIB_3dIC
