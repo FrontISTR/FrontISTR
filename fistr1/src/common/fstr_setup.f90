@@ -940,6 +940,7 @@ contains
     fstrSOLID%COUPLE_ngrp_tot   = 0
 
     fstrSOLID%restart_nout= 0
+    fstrSOLID%is_smoothing_active = .false.
 
   end subroutine fstr_solid_init
 
@@ -1024,6 +1025,33 @@ contains
     fstrSOLID%FACTOR(1)=0.d0
   end subroutine fstr_solid_alloc
 
+  subroutine fstr_smoothed_element_init( hecMESH, fstrSOLID )
+    type(hecmwST_local_mesh),target :: hecMESH
+    type(fstr_solid)                :: fstrSOLID
+
+    logical, allocatable :: is_selem_list(:)
+    integer :: i, isect
+
+    do isect=1,hecMESH%section%n_sect
+      if( fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) fstrSOLID%is_smoothing_active = .true.
+    end do
+    if( .not. fstrSOLID%is_smoothing_active ) return
+
+    allocate(is_selem_list(hecMESH%n_elem))
+    is_selem_list(:) = .false.
+
+    do i=1,hecMESH%n_elem
+      isect= hecMESH%section_ID(i)
+      if( hecMESH%elem_type(i) /= fe_tet4n ) cycle
+      if( fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) is_selem_list(i) = .true.
+    enddo
+
+    call hecmw_create_smoothing_element_connectivity(hecMESH,is_selem_list)
+
+    deallocate(is_selem_list)
+
+  end subroutine
+
   !> Initialize elements info in static calculation
   subroutine fstr_element_init( hecMESH, fstrSOLID )
     use elementInfo
@@ -1032,7 +1060,7 @@ contains
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
-    integer :: i, j, ng, isect, ndof, id, nn
+    integer :: i, j, ng, isect, ndof, id, nn, n_elem
 
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
@@ -1040,15 +1068,21 @@ contains
 
     fstrSOLID%maxn_gauss = 0
 
-    allocate( fstrSOLID%elements(hecMESH%n_elem) )
-    do i=1,hecMESH%n_elem
+    ! elemopt341 = kel341ES
+    call fstr_smoothed_element_init( hecMESH, fstrSOLID )
+
+    ! number of elements
+    n_elem = hecMESH%elem_type_index(hecMESH%n_elem_type)
+    allocate( fstrSOLID%elements(n_elem) )
+
+    do i= 1, n_elem
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
       if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
-      if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
+      if( ng > 0 ) allocate( fstrSOLID%elements(i)%gausses( ng ) )
 
       isect= hecMESH%section_ID(i)
       ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
@@ -1082,6 +1116,7 @@ contains
           fstrSOLID%elements(i)%aux = 0.0d0
         endif
       endif
+
     enddo
 
     call hecmw_allreduce_I1(hecMESH,fstrSOLID%maxn_gauss,HECMW_MAX)
