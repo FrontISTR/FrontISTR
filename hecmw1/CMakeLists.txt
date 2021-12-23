@@ -16,17 +16,5 @@ target_link_libraries(hecmw
   )
 add_subdirectory(src)
 
-#install(TARGETS hecmw
-#  EXPORT hecmw-export
-#  LIBRARY       DESTINATION lib
-#  INCLUDES      DESTINATION include
-#  )
-#install(EXPORT hecmw-export
-#  FILE hecmw-config.cmake
-#  DESTINATION share/cmake/hecmw/
-#  EXPORT_LINK_INTERFACE_LIBRARIES
-#  )
-#export(TARGETS hecmw-export
-#  FILE hecmw-config.cmake
-#  EXPORT_LINK_INTERFACE_LIBRARIES
-#  )
+# tools
+add_subdirectory(tools)

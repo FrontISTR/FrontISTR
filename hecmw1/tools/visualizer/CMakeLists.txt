@@ -1,9 +1,21 @@
-###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
-# This software is released under the MIT License, see License.txt
-###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
+add_executable(hecmw_vis1)
 
-list(APPEND hecmw_vis1_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/visualizer.c
+target_sources(hecmw_vis1
+  PRIVATE
+  visualizer.c
 )
+target_link_libraries(hecmw_vis1
+  PRIVATE
+  hecmw
+  OpenMP::OpenMP_C
+  OpenMP::OpenMP_CXX
+  OpenMP::OpenMP_Fortran
+  MPI::MPI_C
+  MPI::MPI_CXX
+  MPI::MPI_Fortran
+  )
+target_include_directories(hecmw_vis1
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/hecmw1/src/common
+  ${CMAKE_SOURCE_DIR}/hecmw1/src/visualizer
+  )

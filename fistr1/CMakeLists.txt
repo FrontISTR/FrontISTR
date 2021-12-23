@@ -39,3 +39,6 @@ target_link_libraries(fistr1
   MPI::MPI_CXX
   MPI::MPI_Fortran
   )
+
+add_subdirectory(tools)
+

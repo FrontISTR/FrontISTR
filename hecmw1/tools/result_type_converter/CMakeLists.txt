@@ -1,9 +1,20 @@
-###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
-# This software is released under the MIT License, see License.txt
-###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
+add_executable(rconv)
 
-list(APPEND rconv_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_res_type_conv.c
+target_sources(rconv
+  PRIVATE
+  hecmw_res_type_conv.c
 )
+target_link_libraries(rconv
+  PRIVATE
+  hecmw
+  OpenMP::OpenMP_C
+  OpenMP::OpenMP_CXX
+  OpenMP::OpenMP_Fortran
+  MPI::MPI_C
+  MPI::MPI_CXX
+  MPI::MPI_Fortran
+  )
+target_include_directories(rconv
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/hecmw1/src/common
+  )

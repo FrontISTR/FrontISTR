@@ -1,17 +1,28 @@
-###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
-# This software is released under the MIT License, see License.txt
-###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
-
-list(APPEND hecmw_part1_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_partlex.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_part_log.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_mesh_hash_sort.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_mesh_edge_info.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_part_get_control.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_init_for_partition.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_graph.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_partition.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_partitioner.c
+add_executable(hecmw_part1)
+target_sources(hecmw_part1
+  PRIVATE
+  hecmw_partlex.c
+  hecmw_part_log.c
+  hecmw_mesh_hash_sort.c
+  hecmw_mesh_edge_info.c
+  hecmw_part_get_control.c
+  hecmw_init_for_partition.c
+  hecmw_graph.c
+  hecmw_partition.c
+  hecmw_partitioner.c
 )
+target_link_libraries(hecmw_part1
+  PRIVATE
+  hecmw
+  OpenMP::OpenMP_C
+  OpenMP::OpenMP_CXX
+  OpenMP::OpenMP_Fortran
+  MPI::MPI_C
+  MPI::MPI_CXX
+  MPI::MPI_Fortran
+  )
+target_include_directories(hecmw_part1
+  PRIVATE
+  .
+  ${CMAKE_SOURCE_DIR}/hecmw1/src/common
+  )

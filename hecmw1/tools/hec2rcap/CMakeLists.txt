@@ -1,9 +1,22 @@
-###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
-# This software is released under the MIT License, see License.txt
-###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
+add_executable(hec2rcap)
 
-list(APPEND hec2rcap_SORUCES
-  ${CMAKE_CURRENT_LIST_DIR}/hec2rcap.c
+target_sources(hec2rcap
+  PRIVATE
+  hec2rcap.c
 )
+target_link_libraries(hec2rcap
+  PRIVATE
+  hecmw
+  OpenMP::OpenMP_C
+  OpenMP::OpenMP_CXX
+  OpenMP::OpenMP_Fortran
+  MPI::MPI_C
+  MPI::MPI_CXX
+  MPI::MPI_Fortran
+  )
+target_include_directories(hec2rcap
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/hecmw1/src/hecmw
+  ${CMAKE_SOURCE_DIR}/hecmw1/src/common
+  ${CMAKE_SOURCE_DIR}/hecmw1/src/visualizer
+  )

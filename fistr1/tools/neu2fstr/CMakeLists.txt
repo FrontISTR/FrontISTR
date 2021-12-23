@@ -1,14 +1,15 @@
-###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
-# This software is released under the MIT License, see License.txt
-###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
+add_executable(neu2fstr)
 
-include(${CMAKE_CURRENT_LIST_DIR}/HECD/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/NFD/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/converter/CMakeLists.txt)
-
-list(APPEND neu2fstr_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/neu2fstr.cpp
+target_sources(neu2fstr
+  PRIVATE
+  neu2fstr.cpp
 )
-
+target_include_directories(neu2fstr
+  PRIVATE
+  converter
+  NFD
+  HECD
+  )
+add_subdirectory(HECD)
+add_subdirectory(NFD)
+add_subdirectory(converter)
