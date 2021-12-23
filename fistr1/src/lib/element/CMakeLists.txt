@@ -1,23 +1,19 @@
-###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
-# This software is released under the MIT License, see License.txt
-###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
 
-list(APPEND fistr_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/element.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hex20n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hex8n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/line2n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/line3n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/prism15n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/prism6n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/quad4n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/quad8n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/quad9n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/quadrature.f90
-  ${CMAKE_CURRENT_LIST_DIR}/tet10n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/tet4n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/tri3n.f90
-  ${CMAKE_CURRENT_LIST_DIR}/tri6n.f90
+target_sources(fistr
+  PRIVATE
+  element.f90
+  hex20n.f90
+  hex8n.f90
+  line2n.f90
+  line3n.f90
+  prism15n.f90
+  prism6n.f90
+  quad4n.f90
+  quad8n.f90
+  quad9n.f90
+  quadrature.f90
+  tet10n.f90
+  tet4n.f90
+  tri3n.f90
+  tri6n.f90
 )

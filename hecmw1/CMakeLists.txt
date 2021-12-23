@@ -1,36 +1,32 @@
-###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
-# This software is released under the MIT License, see License.txt
-###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
+add_library(hecmw)
+target_include_directories(hecmw
+  PRIVATE
+  src/common
+  src/hecmw
+  src/visualizer
+  )
+target_link_libraries(hecmw
+  PRIVATE
+  OpenMP::OpenMP_C
+  OpenMP::OpenMP_CXX
+  OpenMP::OpenMP_Fortran
+  MPI::MPI_C
+  MPI::MPI_CXX
+  MPI::MPI_Fortran
+  )
+add_subdirectory(src)
 
-project(hecmw C CXX Fortran)
-
-set(hecmw_SOURCES)
-set(hecmw_INCLUDE_DIRS)
-set(hecmw_DEFINITIONS)
-set(hecmw_LIBRARIES)
-
-#
-# Inherit definitions from fistr options
-#
-set(hecmw_INCLUDE_DIRS ${FrontISTR_INCLUDE_DIRS})
-set(hecmw_DEFINITIONS ${FrontISTR_DEFINITIONS})
-set(hecmw_LIBRARIES ${FrontISTR_LIBRARIES})
-
-#
-# Build for libhecmw.a
-#
-include(src/CMakeLists.txt)
-
-add_library(hecmw STATIC ${hecmw_SOURCES})
-target_link_libraries(hecmw ${hecmw_LIBRARIES})
-target_include_directories(hecmw PUBLIC ${hecmw_INCLUDE_DIRS})
-target_compile_definitions(hecmw PUBLIC ${hecmw_DEFINITIONS})
-
-#
-# Build tools
-#
-if(WITH_TOOLS)
-  add_subdirectory(tools)
-endif()
+#install(TARGETS hecmw
+#  EXPORT hecmw-export
+#  LIBRARY       DESTINATION lib
+#  INCLUDES      DESTINATION include
+#  )
+#install(EXPORT hecmw-export
+#  FILE hecmw-config.cmake
+#  DESTINATION share/cmake/hecmw/
+#  EXPORT_LINK_INTERFACE_LIBRARIES
+#  )
+#export(TARGETS hecmw-export
+#  FILE hecmw-config.cmake
+#  EXPORT_LINK_INTERFACE_LIBRARIES
+#  )
