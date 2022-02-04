@@ -175,7 +175,7 @@ contains
               call hecmw_InnerProduct_R(hecMESH, NDOF, yBFGS(:,idx), uin(:,1), coef, Tcomm)
               coef2 = rho(k) * coef
               do kk= 1, NNDOF
-                uin(kk,1)= u(kk,1) + (alpha(k)-coef2)*sBFGS(kk,idx)
+                uin(kk,1)= uin(kk,1) + (alpha(k)-coef2)*sBFGS(kk,idx)
               enddo
            enddo
         endif
@@ -215,8 +215,8 @@ contains
              iBFGS = iBFGS - 1
            endif
            do kk= 1, NNDOF
-             yBFGS(kk,idxBFGS(iBFGS))= coef*u(kk,I)
-             sBFGS(kk,idxBFGS(iBFGS))= coef*c(kk,I)
+             yBFGS(kk,idxBFGS(iBFGS))= coef*c(kk,I)
+             sBFGS(kk,idxBFGS(iBFGS))= coef*u(kk,I)
            enddo
         endif
 
