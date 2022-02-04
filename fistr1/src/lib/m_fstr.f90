@@ -47,6 +47,8 @@ module m_fstr
   integer(kind=kint), parameter :: ksmBiCGSTAB = 2
   integer(kind=kint), parameter :: ksmGMRES    = 3
   integer(kind=kint), parameter :: ksmGPBiCG   = 4
+  integer(kind=kint), parameter :: ksmGMRESR   = 5
+  integer(kind=kint), parameter :: ksmGMRESREN = 6
   integer(kind=kint), parameter :: ksmDIRECT   = 101
 
   !> contact analysis algorithm

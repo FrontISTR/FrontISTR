@@ -16,6 +16,7 @@ contains
     use hecmw_solver_CG
     use hecmw_solver_BiCGSTAB
     use hecmw_solver_GMRES
+    use hecmw_solver_GMRESR
     use hecmw_solver_GPBiCG
     use m_hecmw_solve_error
     use m_hecmw_comm_f
@@ -112,6 +113,15 @@ contains
         case (4)  !--GPBiCG
           hecMAT%symmetric = .false.
           call hecmw_solve_GPBiCG( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (5)  !--GMRESR
+          write(0,*)"coming GMRESR"
+          hecMAT%symmetric = .false.
+          call hecmw_solve_GMRESR( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (6)  !--GMRESREN
+          write(0,*)"coming GMRESREN"
+          hecMAT%symmetric = .false.
+          write(0,*)"This is just reserved for GMRESR with EN matrix update"
+          !call hecmw_solve_GMRESR( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
           error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
           call hecmw_solve_error (hecMESH, error)
