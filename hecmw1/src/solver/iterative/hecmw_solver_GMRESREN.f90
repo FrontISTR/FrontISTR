@@ -4,18 +4,18 @@
 !-------------------------------------------------------------------------------
 
 !C***
-!C*** module hecmw_solver_GMRESR
+!C*** module hecmw_solver_GMRESREN
 !C***
 !
-module hecmw_solver_GMRESR
+module hecmw_solver_GMRESREN
 
-  public :: hecmw_solve_GMRESR
+  public :: hecmw_solve_GMRESREN
 
 contains
   !C
-  !C*** hecmw_solve_GMRESR
+  !C*** hecmw_solve_GMRESREN
   !C
-  subroutine hecmw_solve_GMRESR( hecMESH,  hecMAT, ITER, RESID, error, &
+  subroutine hecmw_solve_GMRESREN( hecMESH,  hecMAT, ITER, RESID, error, &
       &                                    Tset, Tsol, Tcomm )
     use hecmw_util
     use m_hecmw_solve_error
@@ -42,7 +42,7 @@ contains
     real(kind=kreal), dimension(:)  ,  allocatable :: vecR,workPC
     real(kind=kreal), dimension(:,:),  allocatable :: u,c,uin,cin,sBFGS,yBFGS
 
-    integer(kind=kint ) :: MAXIT, NREST,NBFGS
+    integer(kind=kint ) :: MAXIT, NREST
 
     real   (kind=kreal) :: TOL
 
@@ -75,7 +75,6 @@ contains
     MAXIT  = hecmw_mat_get_iter( hecMAT )
     TOL   = hecmw_mat_get_resid( hecMAT )
     NREST  = hecmw_mat_get_nrest( hecMAT )
-    NBFGS  = hecmw_mat_get_nbfgs( hecMAT )
     ESTCOND = hecmw_mat_get_estcond( hecMAT )
 
     error= 0
@@ -216,6 +215,6 @@ contains
       Tsol = E1_TIME - S1_TIME
     endif
 
-  end subroutine  hecmw_solve_GMRESR
+  end subroutine  hecmw_solve_GMRESREN
 
-end module     hecmw_solver_GMRESR
+end module     hecmw_solver_GMRESREN

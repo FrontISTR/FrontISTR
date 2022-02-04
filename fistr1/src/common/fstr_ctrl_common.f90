@@ -67,7 +67,7 @@ contains
 
   !> Read in !SOLVER
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
-      iterpremax, nrest, scaling, &
+      iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, &
       resid, singma_diag, sigma, thresh, filter )
@@ -81,6 +81,7 @@ contains
     integer(kind=kint) :: nier
     integer(kind=kint) :: iterpremax
     integer(kind=kint) :: nrest
+    integer(kind=kint) :: nBFGS
     integer(kind=kint) :: scaling
     integer(kind=kint) :: dumptype
     integer(kind=kint) :: dumpexit
@@ -157,7 +158,7 @@ contains
 
     !* data --------------------------------------------------------------------------------------- *!
     ! JP-4
-    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre )/= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiiii ', nier, iterpremax, nrest, nBFGS, ncolor_in, recyclepre )/= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
 
     if( precond == 20 .or. precond == 21) then
