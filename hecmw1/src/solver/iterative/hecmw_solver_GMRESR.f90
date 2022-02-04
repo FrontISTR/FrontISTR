@@ -39,7 +39,8 @@ contains
     integer(kind=kint ) :: ITERlog, TIMElog
     real(kind=kreal), pointer :: B(:), X(:)
 
-    real(kind=kreal), dimension(:)  ,  allocatable :: vecR,workPC
+    integer(kind=kint),dimension(:), allocatable :: idxBFGS
+    real(kind=kreal), dimension(:)  ,  allocatable :: vecR,workPC,tmpVecBFGS,rho,alpha
     real(kind=kreal), dimension(:,:),  allocatable :: u,c,uin,cin,sBFGS,yBFGS
 
     integer(kind=kint ) :: MAXIT, NREST,NBFGS
@@ -49,11 +50,11 @@ contains
     real   (kind=kreal)   ZERO, ONE
     parameter ( ZERO = 0.0D+0, ONE = 1.0D+0 )
 
-    integer(kind=kint ) :: NRK,i,k,kk,jj,INFO,ik,iOrth
+    integer(kind=kint ) :: NRK,i,k,kk,jj,INFO,ik,iOrth,idx,tmpIdx,iBFGS
     integer(kind=kint ) :: IROW
     real   (kind=kreal) :: S_TIME,E_TIME,S1_TIME,E1_TIME
     real   (kind=kreal) :: LDH,LDW,BNRM2,DNRM2,RNORM
-    real   (kind=kreal) :: COMMtime,COMPtime, coef,val,VCS,VSN,DTEMP,AA,BB,R0,scale,RR
+    real   (kind=kreal) :: COMMtime,COMPtime, coef,coef2,val,VCS,VSN,DTEMP,AA,BB,R0,scale,RR
     integer(kind=kint ) :: ESTCOND
     real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
 
@@ -86,6 +87,19 @@ contains
     allocate (c  (NDOF*NP,NREST))
     allocate (uin(NDOF*NP,NREST))
     allocate (cin(NDOF*NP,NREST))
+
+    if(NBFGS>0)then
+       allocate (tmpVecBFGS(NDOF*NP))
+       allocate (sBFGS(NDOF*NP,NBFGS))
+       allocate (yBFGS(NDOF*NP,NBFGS))
+       allocate (idxBFGS(NBFGS))
+       allocate (rho(NBFGS))
+       allocate (alpha(NBFGS))
+    endif
+
+    do idx = 1, NBFGS
+       idxBFGS(idx) = idx
+    enddo
 
     COMMtime= 0.d0
     COMPtime= 0.d0
@@ -131,7 +145,7 @@ contains
     call hecmw_barrier(hecMESH)
     S1_TIME= HECMW_WTIME()
     ITER= 0
-
+    iBFGS=0
     OUTER: do
 
       call hecmw_matresid(hecMESH, hecMAT, X, B, vecR, Tcomm)
@@ -139,7 +153,32 @@ contains
         ITER= ITER + 1
 
         !C Solve M*r = uin(:,1)
-        call hecmw_precond_apply(hecMESH, hecMAT, vecR, uin(:,1), workPC, Tcomm)
+        if (iBFGS == 0)then
+           call hecmw_precond_apply(hecMESH, hecMAT, vecR, uin(:,1), workPC, Tcomm)
+        else
+           do kk= 1, NNDOF
+             tmpVecBFGS(kk)= vecR(kk)
+           enddo
+           do k = 1,iBFGS
+              idx = idxBFGS(k)
+              call hecmw_InnerProduct_R(hecMESH, NDOF, sBFGS(:,idx), yBFGS(:,idx), coef, Tcomm)
+              rho(k) = 1.0d0 / coef
+              call hecmw_InnerProduct_R(hecMESH, NDOF, sBFGS(:,idx), tmpVecBFGS, coef2, Tcomm)
+              alpha(k) = rho(k)*coef2
+              do kk= 1, NNDOF
+                tmpVecBFGS(kk)= tmpVecBFGS(kk) - alpha(k)*yBFGS(kk,idx)
+              enddo
+           enddo
+           call hecmw_precond_apply(hecMESH, hecMAT, tmpVecBFGS, uin(:,1), workPC, Tcomm)
+           do k = iBFGS,1,-1
+              idx = idxBFGS(k)
+              call hecmw_InnerProduct_R(hecMESH, NDOF, yBFGS(:,idx), uin(:,1), coef, Tcomm)
+              coef2 = rho(k) * coef
+              do kk= 1, NNDOF
+                uin(kk,1)= u(kk,1) + (alpha(k)-coef2)*sBFGS(kk,idx)
+              enddo
+           enddo
+        endif
         !C cin(:,1) = A*uin(:,1)
         call hecmw_matvec(hecMESH, hecMAT, uin(:,1), cin(:,1), Tcomm)
 
@@ -165,8 +204,24 @@ contains
           vecR(kk)= vecR(kk) - coef*c(kk,I)
         enddo
 
-        call hecmw_InnerProduct_R(hecMESH, NDOF, vecR, vecR, DNRM2, Tcomm)
+        if (NBFGS > 0)then
+           iBFGS = iBFGS + 1
+           if (iBFGS == NBFGS+1)then
+             tmpIdx = idxBFGS(1)
+             do kk = 1, NBFGS-1
+                idxBFGS(kk) = idxBFGS(kk+1)
+             enddo
+             idxBFGS(NBFGS) = tmpIdx
+             iBFGS = iBFGS - 1
+           endif
+           do kk= 1, NNDOF
+             yBFGS(kk,idxBFGS(iBFGS))= coef*u(kk,I)
+             sBFGS(kk,idxBFGS(iBFGS))= coef*c(kk,I)
+           enddo
+        endif
 
+
+        call hecmw_InnerProduct_R(hecMESH, NDOF, vecR, vecR, DNRM2, Tcomm)
         RESID= dsqrt(DNRM2/BNRM2)
 
         !C##### ITERATION HISTORY
