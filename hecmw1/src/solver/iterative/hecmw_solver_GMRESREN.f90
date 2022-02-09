@@ -40,7 +40,7 @@ contains
     real(kind=kreal), pointer :: B(:), X(:)
 
     real(kind=kreal), dimension(:)  ,  allocatable :: vecR,workPC
-    real(kind=kreal), dimension(:,:),  allocatable :: u,c,uin,cin,sBFGS,yBFGS
+    real(kind=kreal), dimension(:,:),  allocatable :: u,c,uin,cin,sBFGS,yBFGS,xi,eta
 
     integer(kind=kint ) :: MAXIT, NREST
 
@@ -56,7 +56,8 @@ contains
     real   (kind=kreal) :: COMMtime,COMPtime, coef,val,VCS,VSN,DTEMP,AA,BB,R0,scale,RR
     integer(kind=kint ) :: ESTCOND
     real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
-
+    real   (kind=kreal) :: alpha,beta
+   
 
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
@@ -85,6 +86,8 @@ contains
     allocate (c  (NDOF*NP,NREST))
     allocate (uin(NDOF*NP,NREST))
     allocate (cin(NDOF*NP,NREST))
+    allocate (xi (NDOF*NP,NREST))
+    allocate (eta(NDOF*NP,NREST))
 
     COMMtime= 0.d0
     COMPtime= 0.d0
@@ -137,14 +140,34 @@ contains
       do I = 1, NREST
         ITER= ITER + 1
 
+        !C Compute  xi(1) = (I-AM^-1)r
+        !C Compute eta(1) = M^-1r
+        call hecmw_precond_apply(hecMESH, hecMAT, vecR, eta(:,1), workPC, Tcomm)
+        call hecmw_matvec(hecMESH, hecMAT, eta(:,1), xi(:,1), Tcomm)
+        do kk= 1, NNDOF
+          xi(kk,1)= vecR(kk) - xi(kk,1)
+        enddo
+
+        do iOrth = 1, I-1
+           !C alpha = c_{i}^T xi_{i}
+           call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,iOrth), xi(:,iOrth), alpha, Tcomm)
+
+           !C  xi(i+1) =  xi(i) - alpha * c(i)
+           !C eta(i+1) = eta(i) + alpha * u(i)
+           do kk= 1, NNDOF
+              xi(kk,iOrth+1)=  xi(kk,iOrth) - alpha * c(kk,iOrth)
+             eta(kk,iOrth+1)= eta(kk,iOrth) + alpha * u(kk,iOrth)
+           enddo
+        enddo
+
         !C Solve M*r = uin(:,1)
-        call hecmw_precond_apply(hecMESH, hecMAT, vecR, uin(:,1), workPC, Tcomm)
+        call hecmw_precond_apply(hecMESH, hecMAT, xi(:,I), uin(:,1), workPC, Tcomm)
         !C cin(:,1) = A*uin(:,1)
         call hecmw_matvec(hecMESH, hecMAT, uin(:,1), cin(:,1), Tcomm)
 
         do iOrth = 1, I-1
            !C c_{i}^T cin_{i}
-           call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,iOrth), cin(:,iOrth), coef, Tcomm)
+           call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,iOrth), cin(:,iOrth), beta, Tcomm)
 
            do kk= 1, NNDOF
              cin(kk,iOrth+1)= cin(kk,iOrth) - coef * c(kk,iOrth)
@@ -158,10 +181,10 @@ contains
           u(kk,I)= coef * uin(kk,I)
         enddo
 
-        call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,I), vecR, coef, Tcomm)
+        call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,I), xi(:,I), coef, Tcomm)
         do kk= 1, NNDOF
-             x(kk)=    x(kk) + coef*u(kk,I)
-          vecR(kk)= vecR(kk) - coef*c(kk,I)
+             x(kk)=  x(kk)   + coef*u(kk,I) + eta(kk,I)
+          vecR(kk)= xi(kk,I) - coef*c(kk,I)
         enddo
 
         call hecmw_InnerProduct_R(hecMESH, NDOF, vecR, vecR, DNRM2, Tcomm)
