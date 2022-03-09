@@ -312,12 +312,16 @@ static int get_boundary_nodelist(const struct hecmwST_local_mesh *global_mesh,
 
   qsort(bnd_nlist[domain], counter, sizeof(int), int_cmp);
 
-  i = 1;
-  for (j = 1; j < counter; j++) {
-    if (bnd_nlist[domain][j - 1] != bnd_nlist[domain][j]) {
-      bnd_nlist[domain][i] = bnd_nlist[domain][j];
-      i++;
+  if (counter > 1) {
+    i = 1;
+    for (j = 1; j < counter; j++) {
+      if (bnd_nlist[domain][j - 1] != bnd_nlist[domain][j]) {
+        bnd_nlist[domain][i] = bnd_nlist[domain][j];
+        i++;
+      }
     }
+  } else {
+    i = 0;
   }
 
   n_bnd_nlist[2 * domain + 1] = i;
