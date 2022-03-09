@@ -321,7 +321,7 @@ static int get_boundary_nodelist(const struct hecmwST_local_mesh *global_mesh,
       }
     }
   } else {
-    i = 0;
+    i = counter;
   }
 
   n_bnd_nlist[2 * domain + 1] = i;
