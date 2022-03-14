@@ -90,6 +90,18 @@ elseif (CMAKE_BUILD_TYPE MATCHES "RELEASE")
   list(APPEND FrontISTR_DEFINITIONS "NDEBUG")
 endif()
 
+# force preprocess to .f90 files
+if(CMAKE_SYSTEM_NAME MATCHES "Aurora-VE")
+  set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp")
+  set (CMAKE_EXE_LINKER_FLAGS "-lrt -lvhcall_fortran -lheterosolver_mpi_openmp -lsblas_sequential")
+elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
+  set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp")
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lrt")
+elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
+  set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp")
+endif()
+
+
 ###############################################################
 # Version number
 ###############################################################
@@ -451,6 +463,3 @@ else()
   set(CPACK_STRIP_FILES ON)
 endif()
 include(CPack)
-
-
-

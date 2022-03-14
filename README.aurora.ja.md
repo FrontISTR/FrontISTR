@@ -19,11 +19,9 @@ vhcallではベクトルエンジンでの実行を担当する通常のプロ�
 ```
 CC=icc CXX=icpc FC=ifort cmake \
   -DTOOLS_ONLY=YES\
-  -DCMAKE_Fortran_FLAGS="-fpp"\
   -DWITH_METIS=YES\
   -DWITH_MKL=OFF\
   -DWITH_LAPACK=OFF\
-  -DCMAKE_EXE_LINKER_FLAGS=-lrt\
   ..
 make
 make install
@@ -33,15 +31,12 @@ make install
 
 ```
 CC=icc CXX=icpc FC=ifort cmake \
-  -DCMAKE_Fortran_FLAGS="-fpp"\
   -DBUILD_SHARED=YES\
   -DWITH_DOC=OFF\
   -DWITH_METIS=OFF\
   -DWITH_MKL=OFF\
   -DWITH_LAPACK=OFF\
   -DWITH_TOOLS=OFF\
-  -DCMAKE_INSTALL_PREFIX=${REMOTE_INSTALLDIR}\
-  -DCMAKE_EXE_LINKER_FLAGS=-lrt\
   ..
 make
 make install
@@ -52,16 +47,13 @@ make install
 ```
 cmake \
   -DUSE_VHCALL=YES\
-  -DCMAKE_Fortran_FLAGS="-fpp"\
   -DUSE_HETERO_SOLVER=ON\
   -DWITH_DOC=OFF\
   -DWITH_MKL=OFF\
   -DWITH_METIS=OFF\
   -DWITH_LAPACK=OFF\
   -DWITH_TOOLS=OFF\
-  -DCMAKE_INSTALL_PREFIX=${REMOTE_INSTALLDIR}\
   -DCMAKE_TOOLCHAIN_FILE=../../cmake/AuroraToolchain.cmake\
-  -DCMAKE_EXE_LINKER_FLAGS="-lrt -lvhcall_fortran -lheterosolver_mpi_openmp -lsblas_sequential"\
   ..
 make
 make install
@@ -89,4 +81,3 @@ SX-Aurora TSUBASA版 FrontISTRでは線形ソルバとして、NEC製直接法�
 本ソルバを使用する時は、解析制御データの `METHOD`  行に `HeteroSolver` を指定してください。
 
 その他のプログラムの実行方法は通常のFrontISTRに準じます。
-
