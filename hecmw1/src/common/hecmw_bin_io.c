@@ -35,6 +35,51 @@ static int fg_little_endian = TRUE;
 
 #define RES_BIN_HEADER "HECMW_BINARY_RESULT"
 
+
+#ifndef BUFFER_SIZE_IN_BYTE
+#define BUFFER_SIZE_IN_BYTE 1024
+#endif
+
+void bfwrite_impl(const void *data, size_t size, size_t nitems, FILE* stream, int flush_only){
+  static char buffer[BUFFER_SIZE_IN_BYTE];
+  static size_t current_size=0;
+  static FILE* last_fp = NULL;
+
+  if(last_fp != stream){
+    if(current_size > 0){
+     fprintf(stderr, "write remaining data %d\n",current_size);
+      fwrite(buffer, sizeof(char), current_size, last_fp);
+    }
+    last_fp = stream;
+    current_size=0;
+  }
+  if(flush_only != 0 || current_size + size*nitems > BUFFER_SIZE_IN_BYTE){
+    fwrite(buffer, sizeof(char), current_size, stream);
+    current_size=0;
+    if(flush_only != 0){
+      return;
+    }
+  }
+  if(size*nitems >BUFFER_SIZE_IN_BYTE){
+    fwrite(data, sizeof(char), size*nitems, stream);
+    current_size=0;
+    return;
+  }
+  memcpy(buffer+current_size, data, size*nitems);
+  current_size+=size*nitems;
+}
+
+void bfwrite(const void *data, size_t size, size_t nitems, FILE* stream){
+  bfwrite_impl(data, size, nitems, stream, 0);
+}
+
+void bfwrite_flush(FILE* stream){
+  const void *data=NULL;
+  size_t size=NULL;
+  size_t nitems=NULL;
+  bfwrite_impl(data, size, nitems, stream, 1);
+}
+
 /*---------------------------------------------------------------------------*/
 
 union endian_check_u {
@@ -59,6 +104,7 @@ int hecmw_write_bin_value(unsigned char *x, int size, FILE *fp) {
   int i;
 
   if (fg_little_endian) {
+    /*
     c = x;
 
     for (i = 0; i < size; i++) {
@@ -66,6 +112,8 @@ int hecmw_write_bin_value(unsigned char *x, int size, FILE *fp) {
 
       c++;
     }
+    */
+     bfwrite(x, sizeof(unsigned char), size, fp);
 
   } else {
     c = x;

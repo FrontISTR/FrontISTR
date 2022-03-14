@@ -357,6 +357,7 @@ int HECMW_result_write_bin_by_fname(char *filename) {
   if (write_bin_header(fp)) goto error;
   if (bin_output_result_data(fp)) goto error;
 
+  bfwrite_flush(fp);
   if (fclose(fp)) {
     HECMW_set_error(HECMW_UTIL_E0202, HECMW_strmsg(errno));
     goto error;

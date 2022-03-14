@@ -24,6 +24,7 @@ contains
     use hecmw_solver_las
     use hecmw_solver_scaling
     use hecmw_precond
+    use hecmw_jad_type
 
     implicit none
 
@@ -96,6 +97,9 @@ contains
     !C
     !C-- SCALING
     call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
+    if (hecmw_mat_get_usejad(hecMAT).ne.0) then
+      call hecmw_JAD_INIT(hecMAT)
+    endif
 
     !C===
     !C +----------------------+
@@ -281,6 +285,9 @@ contains
 
     deallocate (WW)
     !call hecmw_precond_clear(hecMAT)
+    if (hecmw_mat_get_usejad(hecMAT).ne.0) then
+      call hecmw_JAD_FINALIZE(hecMAT)
+    endif
 
     E1_time = HECMW_WTIME()
     if (TIMElog.eq.2) then

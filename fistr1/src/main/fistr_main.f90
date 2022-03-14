@@ -19,6 +19,7 @@ module m_fstr_main
   use fstr_solver_dynamic
   use fstr_debug_dump
   use fstr_matrix_con_contact
+  use m_hecmw_HeteroSolver_wrapper
 
   type(hecmwST_local_mesh), save             :: hecMESH
   type(hecmwST_matrix), save                 :: hecMAT
@@ -40,6 +41,10 @@ contains
     real(kind=kreal) :: T1, T2, T3
 
     T1=0.0d0; T2=0.0d0; T3=0.0d0
+#ifdef VHCALL_LIB
+    write(0,*) 'ERROR fstr_main never called from lib version'
+    stop
+#endif
 
     ! =============== INITIALIZE ===================
 
@@ -108,6 +113,9 @@ contains
 
     call fstr_rcap_finalize( fstrPR, fstrCPL )
     call fstr_finalize()
+#ifdef HECMW_WITH_HETEROSOLVER
+   call hecmw_HeteroSolver_wrapper_finalize()
+#endif
     call hecmw_dist_free(hecMESH)
     call hecmw_finalize
     if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'

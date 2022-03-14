@@ -15,6 +15,8 @@
 #include "hecmw_vis_comm_util.h"
 #include "hecmw_vis_combine.h"
 #include "hecmw_fstr_endian.h"
+#include "hecmw_bin_io.h"
+
 
 void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
@@ -358,18 +360,18 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 
 	fprintf (outfp, " _");
 	uint32 = (uint32_t)(3*n_node*sizeof(float));
-	fwrite (&uint32, sizeof(uint32), 1, outfp);
+	bfwrite (&uint32, sizeof(uint32), 1, outfp);
 	for(i=0; i<n_node; i++){
 		val = (float)mesh->node[3*i];
-		fwrite (&val, sizeof(float), 1, outfp);
+		bfwrite (&val, sizeof(float), 1, outfp);
 		val = (float)mesh->node[3*i+1];
-		fwrite (&val, sizeof(float), 1, outfp);
+		bfwrite (&val, sizeof(float), 1, outfp);
 		val = (float)mesh->node[3*i+2];
-		fwrite (&val, sizeof(float), 1, outfp);
+		bfwrite (&val, sizeof(float), 1, outfp);
 	}
 
 	uint32 = (uint32_t)(uint64*sizeof(int));
-	fwrite (&uint32, sizeof(uint32), 1, outfp);
+	bfwrite (&uint32, sizeof(uint32), 1, outfp);
 	for(i=0; i<n_elem; i++){
 		jS=mesh->elem_node_index[i];
 		jE=mesh->elem_node_index[i+1];
@@ -380,39 +382,39 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		if(mesh->elem_type[i]==342){
 			for(j=jS; j<jE-shift; j++){
 				in = (int)mesh->elem_node_item[jS+table342[j-jS]]-1;
-				fwrite (&in, sizeof(int), 1, outfp);
+				bfwrite (&in, sizeof(int), 1, outfp);
 			}
 		}else{
 			for(j=jS; j<jE-shift; j++){
 				in = (int)mesh->elem_node_item[j]-1;
-				fwrite (&in, sizeof(int), 1, outfp);
+				bfwrite (&in, sizeof(int), 1, outfp);
 			}
 		}
 	}
 
 	uint32 = (uint32_t)(n_elem*sizeof(int));
-	fwrite (&uint32, sizeof(uint32), 1, outfp);
+	bfwrite (&uint32, sizeof(uint32), 1, outfp);
 	shift=0;
 	for(i=0; i<n_elem; i++){
 		if(mesh->elem_type[i]==641) shift+=2;
 		if(mesh->elem_type[i]==761) shift+=3;
 		if(mesh->elem_type[i]==781) shift+=4;
 		in = (int)mesh->elem_node_index[i+1]-shift;
-		fwrite (&in, sizeof(int), 1, outfp);
+		bfwrite (&in, sizeof(int), 1, outfp);
 	}
 
 	uint32 = (uint32_t)(n_elem*sizeof(int));
-	fwrite (&uint32, sizeof(uint32), 1, outfp);
+	bfwrite (&uint32, sizeof(uint32), 1, outfp);
 	for(i=0; i<n_elem; i++){
 		//uint8 = (uint8_t)HECMW_get_etype_vtk_shape(mesh->elem_type[i]);
 	  //fwrite (&uint8, sizeof(u_int8_t), 1, outfp);
 		in = (int)HECMW_get_etype_vtk_shape(mesh->elem_type[i]);
-	  fwrite (&in, sizeof(int), 1, outfp);
+	  bfwrite (&in, sizeof(int), 1, outfp);
 	}
 
 	for(i=0; i<data->nn_component; i++){
 		uint32 = (uint32_t)(data->nn_dof[i]*n_node*sizeof(int));
-		fwrite (&uint32, sizeof(uint32), 1, outfp);
+		bfwrite (&uint32, sizeof(uint32), 1, outfp);
 
 		shift=0;
 		for(j=0; j<i; j++){
@@ -421,14 +423,14 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		for(j=0; j<n_node; j++){
 			for(k=0; k<data->nn_dof[i]; k++){
 				val = (float)data->node_val_item[j*data_tot_n+k+shift];
-				fwrite (&val, sizeof(float), 1, outfp);
+				bfwrite (&val, sizeof(float), 1, outfp);
 			}
 		}
 	}
 
 	for(i=0; i<data->ne_component; i++){
 		uint32 = (uint32_t)(data->ne_dof[i]*n_elem*sizeof(int));
-		fwrite (&uint32, sizeof(uint32), 1, outfp);
+		bfwrite (&uint32, sizeof(uint32), 1, outfp);
 
 		shift=0;
 		for(j=0; j<i; j++){
@@ -437,24 +439,26 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		for(j=0; j<n_elem; j++){
 			for(k=0; k<data->ne_dof[i]; k++){
 				val = (float)data->elem_val_item[j*data_tot_e+k+shift];
-				fwrite (&val, sizeof(float), 1, outfp);
+				bfwrite (&val, sizeof(float), 1, outfp);
 			}
 		}
 	}
 
 	uint32 = (uint32_t)(n_elem*sizeof(int));
-	fwrite (&uint32, sizeof(uint32), 1, outfp);
+	bfwrite (&uint32, sizeof(uint32), 1, outfp);
 	for(i=0; i<n_elem; i++){
 		//uint16 = (uint16_t)mesh->elem_type[i];
 	  //fwrite (&uint16, sizeof(u_int16_t), 1, outfp);
 		in = (int)mesh->elem_type[i];
-	  fwrite (&in, sizeof(int), 1, outfp);
+	  bfwrite (&in, sizeof(int), 1, outfp);
 	}
+	bfwrite_flush (outfp);
 
 	fprintf (outfp, "</AppendedData>\n");
 	fprintf (outfp, "</VTKFile>\n");
 	fclose (outfp);
 }
+
 
 void HECMW_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
