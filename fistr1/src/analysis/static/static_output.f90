@@ -62,7 +62,8 @@ contains
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
-      call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
+      if( associated( fstrSOLID%contacts ) ) &
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
     endif
 
