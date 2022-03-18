@@ -49,6 +49,9 @@ contains
       call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
 
+    if( associated( fstrSOLID%contacts ) ) &
+      &  call setup_contact_output_variables( hecMESH, fstrSOLID, -1 )
+
     maxstep = fstrDYNAMIC%n_step
 
     if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep) ) then
@@ -69,11 +72,16 @@ contains
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
+      if( associated( fstrSOLID%contacts ) ) &
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, fstrDYNAMIC%t_curr, 0, fstrDYNAMIC )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
+
+      if( associated( fstrSOLID%contacts ) ) &
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
       call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, fstrDYNAMIC%t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
