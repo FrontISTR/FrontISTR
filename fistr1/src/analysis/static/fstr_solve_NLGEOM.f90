@@ -32,7 +32,7 @@ contains
     type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
     type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
     type (fstr_info_contactChange)         :: infoCTChange, infoCTChange_bak !< type fstr_info_contactChange
-    type (hecmwST_matrix    ),optional     :: conMAT
+    type (hecmwST_matrix    )              :: conMAT
 
     integer(kind=kint) :: ndof, nn
     integer(kind=kint) :: j, i, tot_step, step_count, tot_step_print, CBbound
@@ -150,14 +150,8 @@ contains
             restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
         else
           if( fstrPARAM%contact_algo == kcaSLagrange ) then
-            ! For Parallel Contact with Multi-Partition Domains
-            if(paraContactFlag.and.present(conMAT)) then
-              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
-                restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
-            else
-              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
-                restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
-            endif
+            call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
+              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
           else if( fstrPARAM%contact_algo == kcaALagrange ) then
             call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
               restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
@@ -188,12 +182,8 @@ contains
 
             ! restore matrix structure for slagrange contact analysis
             if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaSLagrange ) then
-              if(paraContactFlag.and.present(conMAT)) then
-                call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
-                conMAT%B(:) = 0.0d0
-              else
-                call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
-              endif
+              call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
+              conMAT%B(:) = 0.0d0
               call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif
             if( hecMESH%my_rank == 0 ) write(*,*) '### State has been restored at time =',fstr_get_time()

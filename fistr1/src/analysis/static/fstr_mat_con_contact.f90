@@ -101,7 +101,7 @@ contains
     integer(kind=kint)                   :: countNon0LU_node, countNon0LU_lagrange !< counter of node-based number of non-zero items
     integer(kind=kint)                   :: numNon0_node, numNon0_lagrange !< node-based number of displacement-related non-zero items in half of the matrix
     !< node-based number of Lagrange multiplier-related non-zero items in half of the matrix
-    type (hecmwST_matrix),optional          :: conMAT
+    type (hecmwST_matrix)                :: conMAT
 
     num_lagrange = infoCTChange%contactNode_current
     fstrMAT%num_lagrange = num_lagrange
@@ -118,12 +118,7 @@ contains
     ! Construct new matrix structure(hecMAT&fstrMAT)
     numNon0_node = countNon0LU_node/2
     numNon0_lagrange = countNon0LU_lagrange/2
-    !     ----  For Parallel Contact with Multi-Partition Domains
-    if(paraContactFlag.and.present(conMAT)) then
-      call constructNewMatrixStructure(hecMAT,fstrMAT,numNon0_node,numNon0_lagrange,conMAT)
-    else
-      call constructNewMatrixStructure(hecMAT,fstrMAT,numNon0_node,numNon0_lagrange)
-    endif
+    call constructNewMatrixStructure(hecMAT,fstrMAT,numNon0_node,numNon0_lagrange,conMAT)
 
     ! Copy Lagrange multipliers
     if( fstr_is_contact_active() ) &
@@ -257,25 +252,22 @@ contains
     integer(kind=kint)                   :: i, j, ierr
     integer(kind=kint)                   :: numI_node, numI_lagrange
     integer(kind=kint)                   :: ndof, nn
-    type(hecmwST_matrix), optional       :: conMAT
+    type(hecmwST_matrix)                 :: conMAT
 
-    !     ----  For Parallel Contact with Multi-Partition Domains
-    if(paraContactFlag.and.present(conMAT)) then
-      conMAT%N  = hecMAT%N
-      conMAT%NP = hecMAT%NP
-      conMAT%ndof = hecMAT%ndof
-      if(associated(conMAT%indexL).and.associated(conMAT%indexU))deallocate(conMAT%indexL,conMAT%indexU)
-      allocate(conMAT%indexL(0:conMAT%NP), conMAT%indexU(0:conMAT%NP), stat=ierr)
-      if ( ierr /= 0) stop " Allocation error, conMAT%indexL-conMAT%indexU "
-      conMAT%indexL = 0 ; conMAT%indexU = 0
-      if(associated(conMAT%itemL).and.associated(conMAT%itemU))deallocate(conMAT%itemL,conMAT%itemU)
-      allocate(conMAT%itemL(numNon0_node), conMAT%itemU(numNon0_node), stat=ierr)
-      if ( ierr /= 0) stop " Allocation error, conMAT%itemL-conMAT%itemU "
-      conMAT%itemL = 0 ; conMAT%itemU = 0
-      !
-      conMAT%NPL = numNon0_node
-      conMAT%NPU = numNon0_node
-    endif
+    conMAT%N  = hecMAT%N
+    conMAT%NP = hecMAT%NP
+    conMAT%ndof = hecMAT%ndof
+    if(associated(conMAT%indexL).and.associated(conMAT%indexU))deallocate(conMAT%indexL,conMAT%indexU)
+    allocate(conMAT%indexL(0:conMAT%NP), conMAT%indexU(0:conMAT%NP), stat=ierr)
+    if ( ierr /= 0) stop " Allocation error, conMAT%indexL-conMAT%indexU "
+    conMAT%indexL = 0 ; conMAT%indexU = 0
+    if(associated(conMAT%itemL).and.associated(conMAT%itemU))deallocate(conMAT%itemL,conMAT%itemU)
+    allocate(conMAT%itemL(numNon0_node), conMAT%itemU(numNon0_node), stat=ierr)
+    if ( ierr /= 0) stop " Allocation error, conMAT%itemL-conMAT%itemU "
+    conMAT%itemL = 0 ; conMAT%itemU = 0
+    !
+    conMAT%NPL = numNon0_node
+    conMAT%NPU = numNon0_node
 
     if(associated(hecMAT%indexL).and.associated(hecMAT%indexU))deallocate(hecMAT%indexL,hecMAT%indexU)
     allocate(hecMAT%indexL(0:hecMAT%NP), hecMAT%indexU(0:hecMAT%NP), stat=ierr)
@@ -340,13 +332,10 @@ contains
 
     end do
 
-    !     ----  For Parallel Contact with Multi-Partition Domains
-    if(paraContactFlag.and.present(conMAT)) then
-      conMAT%itemL(:)   = hecMAT%itemL(:)
-      conMAT%indexL(:)  = hecMAT%indexL(:)
-      conMAT%itemU(:)   = hecMAT%itemU(:)
-      conMAT%indexU(:)  = hecMAT%indexU(:)
-    endif
+    conMAT%itemL(:)   = hecMAT%itemL(:)
+    conMAT%indexL(:)  = hecMAT%indexL(:)
+    conMAT%itemU(:)   = hecMAT%itemU(:)
+    conMAT%indexU(:)  = hecMAT%indexU(:)
 
     if( fstr_is_contact_active() ) then
       countNon0L_lagrange = 0
@@ -401,31 +390,29 @@ contains
     if(associated(hecMAT%D)) deallocate(hecMAT%D)
     allocate(hecMAT%D(hecMAT%NP*ndof**2+fstrMAT%num_lagrange))
     hecMAT%D = 0.0D0
-    !
-    !     ----  For Parallel Contact with Multi-Partition Domains
-    if(paraContactFlag.and.present(conMAT)) then
-      if(associated(conMAT%AL)) deallocate(conMAT%AL)
-      allocate(conMAT%AL(nn*conMAT%NPL), stat=ierr)
-      if ( ierr /= 0 ) stop " Allocation error, conMAT%AL "
-      conMAT%AL = 0.0D0
 
-      if(associated(conMAT%AU)) deallocate(conMAT%AU)
-      allocate(conMAT%AU(nn*conMAT%NPU), stat=ierr)
-      if ( ierr /= 0 ) stop " Allocation error, conMAT%AU "
-      conMAT%AU = 0.0D0
 
-      if(associated(conMAT%B)) deallocate(conMAT%B)
-      allocate(conMAT%B(conMAT%NP*ndof+fstrMAT%num_lagrange))
-      conMAT%B = 0.0D0
+    if(associated(conMAT%AL)) deallocate(conMAT%AL)
+    allocate(conMAT%AL(nn*conMAT%NPL), stat=ierr)
+    if ( ierr /= 0 ) stop " Allocation error, conMAT%AL "
+    conMAT%AL = 0.0D0
 
-      if(associated(conMAT%X)) deallocate(conMAT%X)
-      allocate(conMAT%X(conMAT%NP*ndof+fstrMAT%num_lagrange))
-      conMAT%X = 0.0D0
+    if(associated(conMAT%AU)) deallocate(conMAT%AU)
+    allocate(conMAT%AU(nn*conMAT%NPU), stat=ierr)
+    if ( ierr /= 0 ) stop " Allocation error, conMAT%AU "
+    conMAT%AU = 0.0D0
 
-      if(associated(conMAT%D)) deallocate(conMAT%D)
-      allocate(conMAT%D(conMAT%NP*ndof**2+fstrMAT%num_lagrange))
-      conMAT%D = 0.0D0
-    endif
+    if(associated(conMAT%B)) deallocate(conMAT%B)
+    allocate(conMAT%B(conMAT%NP*ndof+fstrMAT%num_lagrange))
+    conMAT%B = 0.0D0
+
+    if(associated(conMAT%X)) deallocate(conMAT%X)
+    allocate(conMAT%X(conMAT%NP*ndof+fstrMAT%num_lagrange))
+    conMAT%X = 0.0D0
+
+    if(associated(conMAT%D)) deallocate(conMAT%D)
+    allocate(conMAT%D(conMAT%NP*ndof**2+fstrMAT%num_lagrange))
+    conMAT%D = 0.0D0
 
   end subroutine ConstructNewMatrixStructure
 

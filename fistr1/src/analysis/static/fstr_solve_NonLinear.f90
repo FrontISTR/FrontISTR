@@ -426,7 +426,7 @@ contains
     type (fstr_param)                      :: fstrPARAM    !< type fstr_param
     type (fstr_info_contactChange)         :: infoCTChange !< fstr_info_contactChange
     type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
-    type (hecmwST_matrix), optional        :: conMAT
+    type (hecmwST_matrix)                  :: conMAT
 
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
@@ -473,16 +473,9 @@ contains
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
       call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
-      if(paraContactFlag.and.present(conMAT)) then
-        call hecmw_mat_copy_profile( hecMAT, conMAT )
-      endif
+      call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
-        ! ----  For Parallel Contact with Multi-Partition Domains
-        if(paraContactFlag.and.present(conMAT)) then
-          call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
-        else
-          call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
-        endif
+        call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
       elseif( hecMAT%Iarray(99)==4 ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
@@ -496,17 +489,10 @@ contains
 
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-    if( paraContactFlag.and.present(conMAT) ) then
-      call hecmw_mat_clear_b(conMAT)
-    endif
+    call hecmw_mat_clear_b(conMAT)
 
     if( fstr_is_contact_active() )  then
-      ! ----  For Parallel Contact with Multi-Partition Domains
-      if(paraContactFlag.and.present(conMAT)) then
-        call fstr_ass_load_contact(cstep, hecMESH, conMAT, fstrSOLID, fstrMAT)
-      else
-        call fstr_ass_load_contact(cstep, hecMESH, hecMAT, fstrSOLID, fstrMAT)
-      endif
+      call fstr_ass_load_contact(cstep, hecMESH, conMAT, fstrSOLID, fstrMAT)
     endif
 
     fstrSOLID%dunode(:) = 0.0d0
@@ -530,28 +516,17 @@ contains
         call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, ctime, tincr)
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-        if( paraContactFlag .and. present(conMAT) ) then
-          call hecmw_mat_clear( conMAT )
-          conMAT%X = 0.0d0
-        endif
+        call hecmw_mat_clear( conMAT )
+        conMAT%X = 0.0d0
 
         if( fstr_is_contact_active() ) then
-          ! ---- For Parallel Contact with Multi-Partition Domains
-          if( paraContactFlag .and. present(conMAT) ) then
-            call fstr_AddContactStiffness(cstep,iter,conMAT,fstrMAT,fstrSOLID)
-          else
-            call fstr_AddContactStiffness(cstep,iter,hecMAT,fstrMAT,fstrSOLID)
-          endif
+          call fstr_AddContactStiffness(cstep,iter,conMAT,fstrMAT,fstrSOLID)
         endif
 
         ! ----- Set Boundary condition
         call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
         call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-        if(paraContactFlag.and.present(conMAT)) then
-          call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, fstrMAT, stepcnt, conMAT)
-        else
-          call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, fstrMAT, stepcnt)
-        endif
+        call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, fstrMAT, stepcnt, conMAT)
 
         nndof = hecMAT%N*hecMAT%ndof
 
@@ -559,13 +534,8 @@ contains
         ! ----  For Parallel Contact with Multi-Partition Domains
         hecMATmpc%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-        if(paraContactFlag.and.present(conMAT)) then
-          q_residual = fstr_get_norm_para_contact(hecMATmpc,fstrMAT,conMAT,hecMESH)
-          call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, fstrMAT, istat, 1.0D0, conMAT)
-        else
-          q_residual = fstr_get_norm_contact('residualForce',hecMESH,hecMATmpc,fstrSOLID,fstrMAT)
-          call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, fstrMAT, istat)
-        endif
+        q_residual = fstr_get_norm_para_contact(hecMATmpc,fstrMAT,conMAT,hecMESH)
+        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, fstrMAT, istat, 1.0D0, conMAT)
         call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         ! ----- check matrix solver error
@@ -608,26 +578,14 @@ contains
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
           call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-        if(paraContactFlag.and.present(conMAT)) then
-          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
-        else
-          call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID)
-        endif
+        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
 
         if( fstr_is_contact_active() )  then
-          if(paraContactFlag.and.present(conMAT)) then
-            call hecmw_mat_clear_b( conMAT )
-            call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)
-          else
-            call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID)
-          endif
+          call hecmw_mat_clear_b( conMAT )
+          call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)
         endif
 
-        if( paraContactFlag .and. present(conMAT) ) then
-          res = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)
-        else
-          res = fstr_get_norm_contact('residualForce',hecMESH,hecMAT,fstrSOLID,fstrMAT)
-        endif
+        res = fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH)
 
         res = sqrt(res)/n_node_global
         if( iter == 1 ) res0 = res
@@ -676,12 +634,7 @@ contains
       is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH)
       contact_changed_global = 0
       if( fstr_is_matrixStructure_changed(infoCTChange) ) then
-        ! ----  For Parallel Contact with Multi-Partition Domains
-        if(paraContactFlag.and.present(conMAT)) then
-          call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
-        else
-          call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
-        endif
+        call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
         contact_changed_global = 1
       endif
 
@@ -691,9 +644,7 @@ contains
 
       if (contact_changed_global > 0) then
         call hecmw_mat_clear_b( hecMAT )
-        if( paraContactFlag .and. present(conMAT) ) then
-          call hecmw_mat_clear_b( conMAT )
-        endif
+        call hecmw_mat_clear_b( conMAT )
         call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, is_mat_symmetric)
       endif
 
@@ -709,19 +660,11 @@ contains
       end if
 
       ! ----- Set residual for next newton iteration
-      if(paraContactFlag.and.present(conMAT)) then
-        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
-      else
-        call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID)
-      endif
+      call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
 
       if( fstr_is_contact_active() )  then
-        if(paraContactFlag.and.present(conMAT)) then
-          call hecmw_mat_clear_b( conMAT )
-          call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)
-        else
-          call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID)
-        endif
+        call hecmw_mat_clear_b( conMAT )
+        call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)
       endif
 
     enddo loopFORcontactAnalysis

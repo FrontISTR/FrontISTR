@@ -263,7 +263,7 @@ contains
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
-    type(hecmwST_matrix), optional       :: conMAT !< type hecmwST_matrix for contact part only
+    type(hecmwST_matrix)                 :: conMAT !< type hecmwST_matrix for contact part only
     integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contants of type tContact
     integer(kind=kint) :: i, j, k, id_lagrange
     real(kind=kreal)   :: ndCoord(9*3), ndDu(9*3) !< nodal coordinates ; nodal displacement increment
@@ -307,11 +307,7 @@ contains
         call getContactNodalForce(etype,nnode,ndCoord,ndDu,fstrSOLID%contacts(i)%states(j),    &
           fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce)
         ! Update non-eqilibrited force vector
-        if(present(conMAT)) then
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,fstrSOLID,conMAT)
-        else
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,fstrSOLID,hecMAT)
-        endif
+        call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,fstrSOLID,conMAT)
 
       enddo
 
@@ -319,7 +315,7 @@ contains
 
     !    Consider SPC condition
     call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
-    if(present(conMAT)) call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+    call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
 
   end subroutine fstr_Update_NDForce_contact
 
