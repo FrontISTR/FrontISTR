@@ -18,6 +18,7 @@ module fstr_dynamic_nlexplicit
   use fstr_matrix_con_contact
   use m_dynamic_mat_ass_couple
   use m_fstr_rcap_io
+  use mContact
 
 contains
 

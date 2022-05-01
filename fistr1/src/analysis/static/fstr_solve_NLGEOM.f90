@@ -13,6 +13,7 @@ module m_fstr_solve_NLGEOM
   use fstr_matrix_con_contact
   use m_fstr_TimeInc
   use m_fstr_Cutback
+  use mContact
   use m_solve_LINEQ_contact
 
   implicit none
@@ -182,7 +183,7 @@ contains
 
             ! restore matrix structure for slagrange contact analysis
             if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaSLagrange ) then
-              call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
+              call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT, fstr_is_contact_active())
               conMAT%B(:) = 0.0d0
               call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif

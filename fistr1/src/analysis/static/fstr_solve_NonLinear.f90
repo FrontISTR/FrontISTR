@@ -475,7 +475,7 @@ contains
       call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
       call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
-        call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
+        call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT, fstr_is_contact_active())
       elseif( hecMAT%Iarray(99)==4 ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
@@ -634,7 +634,7 @@ contains
       is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH)
       contact_changed_global = 0
       if( fstr_is_matrixStructure_changed(infoCTChange) ) then
-        call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
+        call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT, fstr_is_contact_active())
         contact_changed_global = 1
       endif
 
