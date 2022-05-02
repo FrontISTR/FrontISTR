@@ -71,7 +71,6 @@ contains
     logical, intent(in)                  :: is_contact_active
 
     num_lagrange = infoCTChange%contactNode_current
-    fstrMAT%num_lagrange = num_lagrange
 
     ! Get original list of related nodes
     call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active,list_nodeRelated_org,list_nodeRelated)
@@ -85,7 +84,7 @@ contains
     ! Construct new matrix structure(hecMAT&fstrMAT)
     numNon0_node = countNon0LU_node/2
     numNon0_lagrange = countNon0LU_lagrange/2
-    call constructNewMatrixStructure(hecMAT,fstrMAT,numNon0_node,numNon0_lagrange,conMAT,is_contact_active)
+    call constructNewMatrixStructure(hecMAT,fstrMAT,num_lagrange,numNon0_node,numNon0_lagrange,conMAT,is_contact_active)
 
     ! Copy Lagrange multipliers
     if( is_contact_active ) &
@@ -137,19 +136,95 @@ contains
 
   end subroutine getNewListOFrelatednodesANDLagrangeMultipliers
 
+  !> Construct fstrMAT structure
+  subroutine construct_fstrMAT(np,ndof,num_lagrange,numNon0_lagrange,is_contact_active,list_nodeRelated,fstrMAT)
+    integer(kind=kint), intent(in)                      :: np
+    integer(kind=kint), intent(in)                      :: ndof
+    integer(kind=kint), intent(in)                      :: num_lagrange
+    integer(kind=kint), intent(in)                      :: numNon0_lagrange
+    logical, intent(in)                                 :: is_contact_active
+    type(nodeRelated), pointer, intent(in)              :: list_nodeRelated(:) !< nodeRelated structure of matrix
+    type(fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT             !< type fstrST_matrix_contact_lagrange
+
+    integer(kind=kint)  :: countNon0U_lagrange, countNon0L_lagrange !< counters of node-based number of non-zero items
+    integer(kind=kint)  :: numI_lagrange
+    integer(kind=kint)  :: i, j, ierr
+
+    fstrMAT%num_lagrange = num_lagrange
+    fstrMAT%numL_lagrange = numNon0_lagrange
+    fstrMAT%numU_lagrange = numNon0_lagrange
+
+    if(associated(fstrMAT%indexL_lagrange).and.associated(fstrMAT%indexU_lagrange)) &
+      deallocate(fstrMAT%indexL_lagrange,fstrMAT%indexU_lagrange)
+    if(associated(fstrMAT%itemL_lagrange).and.associated(fstrMAT%itemU_lagrange)) &
+      deallocate(fstrMAT%itemL_lagrange,fstrMAT%itemU_lagrange)
+    if( is_contact_active ) then
+      allocate(fstrMAT%indexL_lagrange(0:num_lagrange), fstrMAT%indexU_lagrange(0:np), stat=ierr)
+      if ( ierr /= 0) stop " Allocation error, fstrMAT%indexL_lagrange-fstrMAT%indexU_lagrange "
+      fstrMAT%indexL_lagrange = 0 ; fstrMAT%indexU_lagrange = 0
+      allocate(fstrMAT%itemL_lagrange(numNon0_lagrange), fstrMAT%itemU_lagrange(numNon0_lagrange), stat=ierr)
+      if ( ierr /= 0) stop " Allocation error, fstrMAT%itemL_lagrange-fstrMAT%itemU_lagrange "
+      fstrMAT%itemL_lagrange = 0 ; fstrMAT%itemU_lagrange = 0
+    endif
+
+    if( is_contact_active ) then
+      ! upper
+      countNon0U_lagrange = 0
+      do i = 1, np
+        numI_lagrange = list_nodeRelated(i)%num_lagrange
+        do j = 1, numI_lagrange
+          countNon0U_lagrange = countNon0U_lagrange + 1
+          fstrMAT%itemU_lagrange(countNon0U_lagrange) = list_nodeRelated(i)%id_lagrange(j)
+        enddo
+        fstrMAT%indexU_lagrange(i) = countNon0U_lagrange
+      end do
+
+      ! lower
+      countNon0L_lagrange = 0
+      do i = 1, num_lagrange
+        numI_lagrange = list_nodeRelated(np+i)%num_lagrange
+        do j = 1, numI_lagrange
+          countNon0L_lagrange = countNon0L_lagrange + 1
+          fstrMAT%itemL_lagrange(countNon0L_lagrange) = list_nodeRelated(np+i)%id_lagrange(j)
+        enddo
+        fstrMAT%indexL_lagrange(i) = countNon0L_lagrange
+      enddo
+    endif
+
+    if(associated(fstrMAT%AL_lagrange)) deallocate(fstrMAT%AL_lagrange)
+    if(associated(fstrMAT%AU_lagrange)) deallocate(fstrMAT%AU_lagrange)
+    if(associated(fstrMAT%Lagrange)) deallocate(fstrMAT%Lagrange)
+
+    if( is_contact_active ) then
+      allocate(fstrMAT%AL_lagrange(ndof*numNon0_lagrange), stat=ierr)
+      if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AL_lagrange "
+      fstrMAT%AL_lagrange = 0.0D0
+      allocate(fstrMAT%AU_lagrange(ndof*numNon0_lagrange), stat=ierr)
+      if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AU_lagrange "
+      fstrMAT%AU_lagrange = 0.0D0
+      allocate(fstrMAT%Lagrange(num_lagrange))
+      fstrMAT%Lagrange = 0.0D0
+    endif
+
+  end subroutine
+
   !> Construct new stiffness matrix structure
-  subroutine constructNewMatrixStructure(hecMAT,fstrMAT,numNon0_node,numNon0_lagrange,conMAT,is_contact_active)
+  subroutine constructNewMatrixStructure(hecMAT,fstrMAT,num_lagrange,numNon0_node,numNon0_lagrange,conMAT,is_contact_active)
 
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
 
+    integer(kind=kint), intent(in)       :: num_lagrange
     integer(kind=kint)                   :: numNon0_node, numNon0_lagrange !< node-based number of non-zero items in half of the matrix
-    integer(kind=kint)                   :: countNon0L_node, countNon0U_node, countNon0U_lagrange, countNon0L_lagrange !< counters of node-based number ofnon-zero items
+    integer(kind=kint)                   :: countNon0L_node, countNon0U_node !< counters of node-based number ofnon-zero items
     integer(kind=kint)                   :: i, j, ierr
-    integer(kind=kint)                   :: numI_node, numI_lagrange
+    integer(kind=kint)                   :: numI_node
     integer(kind=kint)                   :: ndof, nn
     type(hecmwST_matrix)                 :: conMAT
     logical, intent(in)                  :: is_contact_active
+
+    ndof = hecMAT%NDOF
+    nn = ndof*ndof
 
     conMAT%N  = hecMAT%N
     conMAT%NP = hecMAT%NP
@@ -175,34 +250,17 @@ contains
     if ( ierr /= 0) stop " Allocation error, hecMAT%itemL-hecMAT%itemU "
     hecMAT%itemL = 0 ; hecMAT%itemU = 0
 
-    if(associated(fstrMAT%indexL_lagrange).and.associated(fstrMAT%indexU_lagrange)) &
-      deallocate(fstrMAT%indexL_lagrange,fstrMAT%indexU_lagrange)
-    if(associated(fstrMAT%itemL_lagrange).and.associated(fstrMAT%itemU_lagrange)) &
-      deallocate(fstrMAT%itemL_lagrange,fstrMAT%itemU_lagrange)
-    if( is_contact_active ) then
-      allocate(fstrMAT%indexL_lagrange(0:fstrMAT%num_lagrange), fstrMAT%indexU_lagrange(0:hecMAT%NP), stat=ierr)
-      if ( ierr /= 0) stop " Allocation error, fstrMAT%indexL_lagrange-fstrMAT%indexU_lagrange "
-      fstrMAT%indexL_lagrange = 0 ; fstrMAT%indexU_lagrange = 0
-      allocate(fstrMAT%itemL_lagrange(numNon0_lagrange), fstrMAT%itemU_lagrange(numNon0_lagrange), stat=ierr)
-      if ( ierr /= 0) stop " Allocation error, fstrMAT%itemL_lagrange-fstrMAT%itemU_lagrange "
-      fstrMAT%itemL_lagrange = 0 ; fstrMAT%itemU_lagrange = 0
-    endif
+    call construct_fstrMAT(hecMAT%NP,ndof,num_lagrange,numNon0_lagrange,is_contact_active,list_nodeRelated,fstrMAT)
 
     hecMAT%NPL = numNon0_node
     hecMAT%NPU = numNon0_node
 
-    fstrMAT%numL_lagrange = numNon0_lagrange
-    fstrMAT%numU_lagrange = numNon0_lagrange
 
     countNon0L_node = 0
     countNon0U_node = 0
-    countNon0U_lagrange = 0
     do i = 1, hecMAT%NP
-
       list_nodeRelated(i)%num_node = count(list_nodeRelated(i)%id_node /= 0)
       numI_node = list_nodeRelated(i)%num_node
-      if( is_contact_active ) &
-        numI_lagrange = list_nodeRelated(i)%num_lagrange
 
       do j = 1, numI_node
         if( list_nodeRelated(i)%id_node(j) < i ) then
@@ -215,20 +273,8 @@ contains
       enddo
       hecMAT%indexL(i) = countNon0L_node
       hecMAT%indexU(i) = countNon0U_node
-
     end do
 
-    if( is_contact_active ) then
-      do i = 1, hecMAT%NP
-        do j = 1, numI_lagrange
-          countNon0U_lagrange = countNon0U_lagrange + 1
-          fstrMAT%itemU_lagrange(countNon0U_lagrange) = list_nodeRelated(i)%id_lagrange(j)
-        enddo
-        fstrMAT%indexU_lagrange(i) = countNon0U_lagrange
-      end do
-    endif
-
-    !< finalize list_nodeRelated
     do i = 1, hecMAT%NP
       deallocate(list_nodeRelated(i)%id_node)
       if(associated(list_nodeRelated(i)%id_lagrange)) deallocate(list_nodeRelated(i)%id_lagrange)
@@ -240,18 +286,6 @@ contains
     conMAT%indexU(:)  = hecMAT%indexU(:)
 
     if( is_contact_active ) then
-      countNon0L_lagrange = 0
-      do i = 1, fstrMAT%num_lagrange
-        numI_lagrange = list_nodeRelated(hecMAT%NP+i)%num_lagrange
-        do j = 1, numI_lagrange
-          countNon0L_lagrange = countNon0L_lagrange + 1
-          fstrMAT%itemL_lagrange(countNon0L_lagrange) = list_nodeRelated(hecMAT%NP+i)%id_lagrange(j)
-        enddo
-        fstrMAT%indexL_lagrange(i) = countNon0L_lagrange
-      enddo
-    endif
-
-    if( is_contact_active ) then
       do i = 1, fstrMAT%num_lagrange
         deallocate(list_nodeRelated(hecMAT%NP+i)%id_lagrange)
       enddo
@@ -259,8 +293,6 @@ contains
 
     deallocate(list_nodeRelated)
 
-    ndof = hecMAT%NDOF
-    nn = ndof*ndof
     if(associated(hecMAT%AL)) deallocate(hecMAT%AL)
     allocate(hecMAT%AL(nn*hecMAT%NPL), stat=ierr)
     if ( ierr /= 0 ) stop " Allocation error, hecMAT%AL "
@@ -270,21 +302,6 @@ contains
     allocate(hecMAT%AU(nn*hecMAT%NPU), stat=ierr)
     if ( ierr /= 0 ) stop " Allocation error, hecMAT%AU "
     hecMAT%AU = 0.0D0
-
-    if(associated(fstrMAT%AL_lagrange)) deallocate(fstrMAT%AL_lagrange)
-    if(associated(fstrMAT%AU_lagrange)) deallocate(fstrMAT%AU_lagrange)
-    if(associated(fstrMAT%Lagrange)) deallocate(fstrMAT%Lagrange)
-
-    if( is_contact_active ) then
-      allocate(fstrMAT%AL_lagrange(ndof*fstrMAT%numL_lagrange), stat=ierr)
-      if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AL_lagrange "
-      fstrMAT%AL_lagrange = 0.0D0
-      allocate(fstrMAT%AU_lagrange(ndof*fstrMAT%numU_lagrange), stat=ierr)
-      if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AU_lagrange "
-      fstrMAT%AU_lagrange = 0.0D0
-      allocate(fstrMAT%Lagrange(fstrMAT%num_lagrange))
-      fstrMAT%Lagrange = 0.0D0
-    endif
 
     if(associated(hecMAT%B)) deallocate(hecMAT%B)
     allocate(hecMAT%B(hecMAT%NP*ndof+fstrMAT%num_lagrange))
