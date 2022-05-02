@@ -154,21 +154,26 @@ contains
     fstrMAT%numL_lagrange = numNon0_lagrange
     fstrMAT%numU_lagrange = numNon0_lagrange
 
-    if(associated(fstrMAT%indexL_lagrange).and.associated(fstrMAT%indexU_lagrange)) &
-      deallocate(fstrMAT%indexL_lagrange,fstrMAT%indexU_lagrange)
-    if(associated(fstrMAT%itemL_lagrange).and.associated(fstrMAT%itemU_lagrange)) &
-      deallocate(fstrMAT%itemL_lagrange,fstrMAT%itemU_lagrange)
-    if( is_contact_active ) then
-      allocate(fstrMAT%indexL_lagrange(0:num_lagrange), fstrMAT%indexU_lagrange(0:np), stat=ierr)
-      if ( ierr /= 0) stop " Allocation error, fstrMAT%indexL_lagrange-fstrMAT%indexU_lagrange "
-      fstrMAT%indexL_lagrange = 0 ; fstrMAT%indexU_lagrange = 0
-      allocate(fstrMAT%itemL_lagrange(numNon0_lagrange), fstrMAT%itemU_lagrange(numNon0_lagrange), stat=ierr)
-      if ( ierr /= 0) stop " Allocation error, fstrMAT%itemL_lagrange-fstrMAT%itemU_lagrange "
-      fstrMAT%itemL_lagrange = 0 ; fstrMAT%itemU_lagrange = 0
-    endif
+    if(associated(fstrMAT%indexL_lagrange)) deallocate(fstrMAT%indexL_lagrange)
+    if(associated(fstrMAT%indexU_lagrange)) deallocate(fstrMAT%indexU_lagrange)
+    if(associated(fstrMAT%itemL_lagrange)) deallocate(fstrMAT%itemL_lagrange)
+    if(associated(fstrMAT%itemU_lagrange)) deallocate(fstrMAT%itemU_lagrange)
+    if(associated(fstrMAT%AL_lagrange)) deallocate(fstrMAT%AL_lagrange)
+    if(associated(fstrMAT%AU_lagrange)) deallocate(fstrMAT%AU_lagrange)
+    if(associated(fstrMAT%Lagrange)) deallocate(fstrMAT%Lagrange)
 
     if( is_contact_active ) then
-      ! upper
+      ! init indexU_lagrange
+      allocate(fstrMAT%indexU_lagrange(0:np), stat=ierr)
+      if ( ierr /= 0) stop " Allocation error, fstrMAT%indexU_lagrange "
+      fstrMAT%indexU_lagrange = 0
+
+      ! init itemU_lagrange
+      allocate(fstrMAT%itemU_lagrange(numNon0_lagrange), stat=ierr)
+      if ( ierr /= 0) stop " Allocation error, fstrMAT%itemU_lagrange "
+      fstrMAT%itemU_lagrange = 0
+
+      ! setup upper lagrange CRS matrix
       countNon0U_lagrange = 0
       do i = 1, np
         numI_lagrange = list_nodeRelated(i)%num_lagrange
@@ -179,7 +184,17 @@ contains
         fstrMAT%indexU_lagrange(i) = countNon0U_lagrange
       end do
 
-      ! lower
+      ! init indexL_lagrange
+      allocate(fstrMAT%indexL_lagrange(0:num_lagrange), stat=ierr)
+      if ( ierr /= 0) stop " Allocation error, fstrMAT%indexL_lagrange "
+      fstrMAT%indexL_lagrange = 0
+
+      ! init itemL_lagrange
+      allocate(fstrMAT%itemL_lagrange(numNon0_lagrange), stat=ierr)
+      if ( ierr /= 0) stop " Allocation error, fstrMAT%itemL_lagrange "
+      fstrMAT%itemL_lagrange = 0
+
+      ! setup lower lagrange CRS matrix
       countNon0L_lagrange = 0
       do i = 1, num_lagrange
         numI_lagrange = list_nodeRelated(np+i)%num_lagrange
@@ -189,19 +204,18 @@ contains
         enddo
         fstrMAT%indexL_lagrange(i) = countNon0L_lagrange
       enddo
-    endif
 
-    if(associated(fstrMAT%AL_lagrange)) deallocate(fstrMAT%AL_lagrange)
-    if(associated(fstrMAT%AU_lagrange)) deallocate(fstrMAT%AU_lagrange)
-    if(associated(fstrMAT%Lagrange)) deallocate(fstrMAT%Lagrange)
-
-    if( is_contact_active ) then
-      allocate(fstrMAT%AL_lagrange(ndof*numNon0_lagrange), stat=ierr)
-      if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AL_lagrange "
-      fstrMAT%AL_lagrange = 0.0D0
+      ! init AU_lagrange
       allocate(fstrMAT%AU_lagrange(ndof*numNon0_lagrange), stat=ierr)
       if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AU_lagrange "
       fstrMAT%AU_lagrange = 0.0D0
+
+      ! init AL_lagrange
+      allocate(fstrMAT%AL_lagrange(ndof*numNon0_lagrange), stat=ierr)
+      if ( ierr /= 0 ) stop " Allocation error, fstrMAT%AL_lagrange "
+      fstrMAT%AL_lagrange = 0.0D0
+
+      ! init Lagrange
       allocate(fstrMAT%Lagrange(num_lagrange))
       fstrMAT%Lagrange = 0.0D0
     endif
