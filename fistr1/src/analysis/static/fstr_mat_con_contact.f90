@@ -13,17 +13,10 @@ module fstr_matrix_con_contact
 
   implicit none
   private
+  public :: fstrST_matrix_contact_lagrange
   public :: fstr_save_originalMatrixStructure
   public :: fstr_mat_con_contact
   public :: fstr_is_matrixStruct_symmetric
-  public :: fstrST_matrix_contact_lagrange
-
-  !> Structure for defining stiffness matrix structure
-  type nodeRelated
-    integer(kind=kint)          :: num_node = 0, num_lagrange = 0 !< total number of related nodes and Lagrange multipliers
-    integer(kind=kint), pointer :: id_node(:) => null() !< list of related nodes
-    integer(kind=kint), pointer :: id_lagrange(:) => null() !< list of related Lagrange multipliers
-  end type
 
   !> Structure for Lagrange multiplier-related part of stiffness matrix
   !> (Lagrange multiplier-related matrix)
@@ -55,37 +48,8 @@ contains
 
     type(hecmwST_matrix) :: hecMAT !< type hecmwST_matrix
 
-    integer(kind=kint)   :: numL, numU, num_nodeRelated !< original number of nodes related to each node
-    integer(kind=kint)   :: i, j
-    integer(kind=kint)   :: ierr
-
-    NPL_org = hecMAT%NPL; NPU_org = hecMAT%NPU
-
     if( associated(list_nodeRelated_org) ) return
-    allocate(list_nodeRelated_org(hecMAT%NP), stat=ierr)
-    if( ierr /= 0) stop " Allocation error, list_nodeRelated_org "
-
-    do i = 1, hecMAT%NP
-
-      numL = hecMAT%indexL(i) - hecMAT%indexL(i-1)
-      numU = hecMAT%indexU(i) - hecMAT%indexU(i-1)
-
-      num_nodeRelated = numL + numU + 1
-
-      allocate(list_nodeRelated_org(i)%id_node(num_nodeRelated), stat=ierr)
-      if( ierr /= 0) stop " Allocation error, list_nodeRelated_org%id_node "
-
-      list_nodeRelated_org(i)%num_node = num_nodeRelated
-
-      do j = 1, numL
-        list_nodeRelated_org(i)%id_node(j) = hecMAT%itemL(hecMAT%indexL(i-1)+j)
-      enddo
-      list_nodeRelated_org(i)%id_node(numL+1) = i
-      do j = 1, numU
-        list_nodeRelated_org(i)%id_node(numL+1+j) = hecMAT%itemU(hecMAT%indexU(i-1)+j)
-      enddo
-
-    enddo
+    call hecmw_construct_nodeRelated_from_hecMAT(hecMAT, NPL_org, NPU_org, list_nodeRelated_org)
 
   end subroutine fstr_save_originalMatrixStructure
 
@@ -110,7 +74,7 @@ contains
     fstrMAT%num_lagrange = num_lagrange
 
     ! Get original list of related nodes
-    call getOriginalListOFrelatedNodes(hecMAT%NP,num_lagrange,is_contact_active)
+    call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active,list_nodeRelated_org,list_nodeRelated)
 
     ! Construct new list of related nodes and Lagrange multipliers
     countNon0LU_node = NPL_org + NPU_org
@@ -129,50 +93,19 @@ contains
 
   end subroutine fstr_mat_con_contact
 
-  !> Get original list of related nodes
-  subroutine getOriginalListOFrelatedNodes(np,num_lagrange,is_contact_active)
-
-    integer(kind=kint)            :: np, num_lagrange !< total number of nodes
-    integer(kind=kint)            :: num_nodeRelated_org !< original number of nodes related to each node
-    integer(kind=kint)            :: i, ierr
-    logical, intent(in)           :: is_contact_active
-
-    allocate(list_nodeRelated(np+num_lagrange), stat=ierr)
-    if( ierr /= 0) stop " Allocation error, list_nodeRelated "
-
-    do i = 1, np  !hecMAT%NP
-      num_nodeRelated_org = list_nodeRelated_org(i)%num_node
-      allocate(list_nodeRelated(i)%id_node(num_nodeRelated_org), stat=ierr)
-      if( ierr /= 0) stop " Allocation error, list_nodeRelated%id_node "
-      list_nodeRelated(i)%num_node = num_nodeRelated_org
-      list_nodeRelated(i)%id_node(1:num_nodeRelated_org) = list_nodeRelated_org(i)%id_node(1:num_nodeRelated_org)
-    enddo
-
-    if( is_contact_active ) then
-      do i = np+1, np+num_lagrange  !hecMAT%NP+1, hecMAT%NP+num_lagrange
-        allocate(list_nodeRelated(i)%id_lagrange(5), stat=ierr)
-        if( ierr /= 0) stop " Allocation error, list_nodeRelated%id_lagrange "
-        list_nodeRelated(i)%num_lagrange = 0
-        list_nodeRelated(i)%id_lagrange = 0
-      enddo
-    endif
-
-  end subroutine getOriginalListOFrelatedNodes
-
-
   !> Construct new list of related nodes and Lagrange multipliers. Here, a procedure similar to HEC_MW is used.
   subroutine getNewListOFrelatednodesANDLagrangeMultipliers(cstep,np,fstrSOLID,countNon0LU_node,countNon0LU_lagrange)
+    integer(kind=kint),intent(in)     :: cstep !< current loading step
+    integer(kind=kint),intent(in)     :: np !< total number of nodes
+    type(fstr_solid),intent(in)       :: fstrSOLID !< type fstr_solid
+    integer(kind=kint), intent(inout) :: countNon0LU_node, countNon0LU_lagrange !< counters of node-based number of non-zero items
 
-    type(fstr_solid)              :: fstrSOLID !< type fstr_solid
-
-    integer(kind=kint)            :: cstep !< current loading step
-    integer(kind=kint)            :: np !< total number of nodes
-    integer(kind=kint)            :: countNon0LU_node, countNon0LU_lagrange !< counters of node-based number of non-zero items
     integer(kind=kint)            :: grpid !< contact pairs group ID
     integer(kind=kint)            :: count_lagrange !< counter of Lagrange multiplier
     integer(kind=kint)            :: ctsurf, etype, nnode, ndLocal(l_max_surface_node + 1) !< contants of type tContact
-    integer(kind=kint)            :: i, j, k, l, num, num_nodeRelated_org, ierr
+    integer(kind=kint)            :: i, j
     real(kind=kreal)              :: fcoeff !< friction coefficient
+    logical                       :: necessary_to_insert_node
 
     count_lagrange = 0
     do i = 1, size(fstrSOLID%contacts)
@@ -181,6 +114,7 @@ contains
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
       fcoeff = fstrSOLID%contacts(i)%fcoeff
+      necessary_to_insert_node = ( fcoeff /= 0.0d0 )
 
       do j = 1, size(fstrSOLID%contacts(i)%slave)
 
@@ -195,55 +129,13 @@ contains
 
         count_lagrange = count_lagrange + 1
 
-        do k = 1, nnode+1
-
-          if( .not. associated(list_nodeRelated(ndLocal(k))%id_lagrange) )then
-            num = 10
-            !             if( k == 1 ) num = 1
-            allocate(list_nodeRelated(ndLocal(k))%id_lagrange(num),stat=ierr)
-            if( ierr /= 0) stop " Allocation error, list_nodeRelated%id_lagrange "
-            list_nodeRelated(ndLocal(k))%num_lagrange = 0
-            list_nodeRelated(ndLocal(k))%id_lagrange = 0
-          endif
-
-          if( fcoeff /= 0.0d0 ) then
-            num_nodeRelated_org = list_nodeRelated_org(ndLocal(k))%num_node
-            if( list_nodeRelated(ndLocal(k))%num_node == num_nodeRelated_org )then
-              num = 10
-              if(k==1) num = 4
-              call reallocate_memory(num,list_nodeRelated(ndLocal(k)))
-            endif
-          endif
-
-          call insert_lagrange(k,count_lagrange,list_nodeRelated(ndLocal(k)),countNon0LU_lagrange)
-
-          do l = k, nnode+1
-            if( fcoeff /= 0.0d0 ) then
-              if( k /= l) then
-                num_nodeRelated_org = list_nodeRelated_org(ndLocal(k))%num_node
-                call insert_node(ndLocal(l),list_nodeRelated(ndLocal(k)),countNon0LU_node)
-                num_nodeRelated_org = list_nodeRelated_org(ndLocal(l))%num_node
-                if( list_nodeRelated(ndLocal(l))%num_node == num_nodeRelated_org )then
-                  num = 10
-                  call reallocate_memory(num,list_nodeRelated(ndLocal(l)))
-                endif
-                call insert_node(ndLocal(k),list_nodeRelated(ndLocal(l)),countNon0LU_node)
-              endif
-            endif
-
-            if(k == 1) &
-              call insert_lagrange(0,ndLocal(l),list_nodeRelated(np+count_lagrange),countNon0LU_lagrange)
-
-          enddo
-
-        enddo
-
+        call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
+          & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
       enddo
 
     enddo
 
   end subroutine getNewListOFrelatednodesANDLagrangeMultipliers
-
 
   !> Construct new stiffness matrix structure
   subroutine constructNewMatrixStructure(hecMAT,fstrMAT,numNon0_node,numNon0_lagrange,conMAT,is_contact_active)
@@ -324,17 +216,22 @@ contains
       hecMAT%indexL(i) = countNon0L_node
       hecMAT%indexU(i) = countNon0U_node
 
-      if( is_contact_active ) then
+    end do
+
+    if( is_contact_active ) then
+      do i = 1, hecMAT%NP
         do j = 1, numI_lagrange
           countNon0U_lagrange = countNon0U_lagrange + 1
           fstrMAT%itemU_lagrange(countNon0U_lagrange) = list_nodeRelated(i)%id_lagrange(j)
         enddo
         fstrMAT%indexU_lagrange(i) = countNon0U_lagrange
-      endif
+      end do
+    endif
 
+    !< finalize list_nodeRelated
+    do i = 1, hecMAT%NP
       deallocate(list_nodeRelated(i)%id_node)
       if(associated(list_nodeRelated(i)%id_lagrange)) deallocate(list_nodeRelated(i)%id_lagrange)
-
     end do
 
     conMAT%itemL(:)   = hecMAT%itemL(:)
@@ -351,6 +248,11 @@ contains
           fstrMAT%itemL_lagrange(countNon0L_lagrange) = list_nodeRelated(hecMAT%NP+i)%id_lagrange(j)
         enddo
         fstrMAT%indexL_lagrange(i) = countNon0L_lagrange
+      enddo
+    endif
+
+    if( is_contact_active ) then
+      do i = 1, fstrMAT%num_lagrange
         deallocate(list_nodeRelated(hecMAT%NP+i)%id_lagrange)
       enddo
     endif
@@ -421,155 +323,6 @@ contains
 
   end subroutine ConstructNewMatrixStructure
 
-
-  !> Insert a Lagrange multiplier in list of related Lagrange multipliers
-  subroutine insert_lagrange(i,id_lagrange,list_node,countNon0_lagrange)
-
-    type(nodeRelated)  :: list_node !< type nodeRelated
-    integer(kind=kint) :: i, id_lagrange !< local number of node in current contact pair
-    !< Lagrange multiplier ID
-    integer(kind=kint) :: countNon0_lagrange !< counter of node-based number of non-zero items
-    !< in Lagrange multiplier-related matrix
-    integer(kind=kint) :: ierr, num_lagrange, location
-    integer(kind=kint), allocatable :: id_lagrange_save(:)
-
-    character(len=1)   :: answer
-
-    ierr = 0
-
-    num_lagrange = count(list_node%id_lagrange /= 0 )
-
-    !      if( i == 1 .and. num_lagrange /= 0) return
-    if( i == 1 .and. num_lagrange /= 0 .and. .not. permission) then
-      1  write(*,*) '##Error: node is both slave and master node simultaneously !'
-      write(*,*) '         Please check contact surface definition !'
-      write(*,'(''          Do you want to continue(y/n)):'',$)')
-      read(*,'(A1)',err=1) answer
-      if(answer == 'Y' .OR. answer == 'y')then
-        permission = .true.
-      else
-        stop
-      endif
-    endif
-
-    if (num_lagrange == 0)then
-      list_node%num_lagrange = 1
-      list_node%id_lagrange(1) = id_lagrange
-      countNon0_lagrange = countNon0_lagrange + 1
-    else
-      allocate(id_lagrange_save(num_lagrange))
-      id_lagrange_save(1:num_lagrange) = list_node%id_lagrange(1:num_lagrange)
-      location = find_locationINarray(id_lagrange,num_lagrange,list_node%id_lagrange)
-      if(location /= 0)then
-        num_lagrange = num_lagrange + 1
-        if( num_lagrange > size(list_node%id_lagrange)) then
-          deallocate(list_node%id_lagrange)
-          allocate(list_node%id_lagrange(num_lagrange),stat=ierr)
-          if( ierr /= 0 ) stop " Allocation error, list_nodeRelated%id_lagrange "
-        endif
-        list_node%num_lagrange = num_lagrange
-        list_node%id_lagrange(location) = id_lagrange
-        if(location /= 1) list_node%id_lagrange(1:location-1) = id_lagrange_save(1:location-1)
-        if(location /= num_lagrange) list_node%id_lagrange(location+1:num_lagrange) = id_lagrange_save(location:num_lagrange-1)
-        countNon0_lagrange = countNon0_lagrange + 1
-      endif
-      deallocate(id_lagrange_save)
-    endif
-
-  end subroutine insert_lagrange
-
-  !> Insert a node in list of related nodes
-  subroutine insert_node(id_node,list_node,countNon0_node)
-
-    type(nodeRelated)  :: list_node !< type nodeRelated
-    integer(kind=kint) :: id_node !< local number of node in current contact pair
-    !< global number of node
-    integer(kind=kint) :: countNon0_node !< counter of node-based number of non-zero items in displacement-related matrix
-    integer(kind=kint) :: ierr, num_node, location
-    integer(kind=kint),allocatable :: id_node_save(:)
-
-    ierr = 0
-
-    num_node = list_node%num_node
-    allocate(id_node_save(num_node))
-    id_node_save(1:num_node) = list_node%id_node(1:num_node)
-    location = find_locationINarray(id_node,num_node,list_node%id_node)
-    if(location /= 0)then
-      num_node = num_node + 1
-      if( num_node > size(list_node%id_node)) then
-        deallocate(list_node%id_node)
-        allocate(list_node%id_node(num_node),stat=ierr)
-        if( ierr /= 0) stop " Allocation error, list_nodeRelated%id_node "
-      endif
-      list_node%num_node = num_node
-      list_node%id_node(location) = id_node
-      if(location /= 1) list_node%id_node(1:location-1) = id_node_save(1:location-1)
-      if(location /= num_node) list_node%id_node(location+1:num_node) = id_node_save(location:num_node-1)
-      countNon0_node = countNon0_node + 1
-    endif
-    deallocate(id_node_save)
-
-  end subroutine insert_node
-
-
-  !> Find location of an item in an array by bisection method
-  integer function find_locationINarray(item,n,a)
-
-    integer(kind=kint)           :: item, n !< item to be found; length of array
-    integer(kind=kint), pointer  :: a(:) !< array
-    integer(kind=kint)           :: l, r, m
-
-    find_locationINarray = 0
-
-    l = 1 ; r = n ; m = (l+r)/2
-    if( item == a(l) .or. item == a(r) )then
-      return
-    elseif( item < a(l) )then
-      find_locationINarray = 1
-      return
-    elseif( item > a(r) )then
-      find_locationINarray = n + 1
-      return
-    endif
-
-    do while ( l <= r)
-      if( item > a(m) ) then
-        l = m + 1
-        m = (l + r)/2
-      elseif( item < a(m) ) then
-        r = m - 1
-        m = (l + r)/2
-      elseif( item == a(m) )then
-        return
-      endif
-    enddo
-
-    find_locationINarray = m + 1
-
-  end function find_locationINarray
-
-
-  !> Reallocate memory for list_relatedNodes
-  subroutine reallocate_memory(num,list_node)
-
-    type(nodeRelated)  :: list_node !< type nodeRelated
-    integer(kind=kint) :: num !< length to be added
-    integer(kind=kint) :: num_node_org !< original number of related nodes
-    !< before reallocation
-    integer(kind=kint) :: id_save(1000)
-    integer(kind=kint) :: ierr
-
-    num_node_org = size(list_node%id_node)
-    id_save(1:num_node_org) = list_node%id_node(1:num_node_org)
-    deallocate(list_node%id_node)
-    allocate(list_node%id_node(num_node_org+num),stat=ierr)
-    if( ierr /= 0) stop " reAllocation error, list_nodeRelated%id_node "
-    list_node%id_node = 0
-    list_node%id_node(1:num_node_org) = id_save(1:num_node_org)
-
-  end subroutine reallocate_memory
-
-
   !> Copy Lagrange multipliers
   subroutine fstr_copy_lagrange_contact(fstrSOLID,fstrMAT)
 
@@ -588,7 +341,6 @@ contains
     enddo
 
   end subroutine fstr_copy_lagrange_contact
-
 
   !> \brief this function judges whether sitiffness matrix is symmetric or not
   logical function fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)

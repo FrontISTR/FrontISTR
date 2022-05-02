@@ -13,6 +13,7 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mat_con.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mat_id.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_contact.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_contact_lagrange.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_dump.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_misc.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_matrix_ordering_CM.f90
