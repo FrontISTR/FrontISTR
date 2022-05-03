@@ -12,6 +12,8 @@ module hecmw_matrix_contact_lagrange
   public :: hecmw_construct_nodeRelated_from_hecMAT
   public :: hecmw_init_nodeRelated_from_org
   public :: hecmw_ass_nodeRelated_from_contact_pair
+  public :: hecmw_construct_hecMAT_from_nodeRelated
+  public :: hecmw_finalize_nodeRelated
 
   !> Structure for defining stiffness matrix structure
   type nodeRelated
@@ -300,5 +302,107 @@ contains
     list_node%id_node(1:num_node_org) = id_save(1:num_node_org)
 
   end subroutine reallocate_memory
+
+  !> \brief This subroutine constructs hecMAT structure from list_nodeRelated
+  subroutine hecmw_construct_hecMAT_from_nodeRelated(n, np, ndof, nnz, num_lagrange, list_nodeRelated, hecMAT)
+    integer(kind=kint), intent(in)                      :: n
+    integer(kind=kint), intent(in)                      :: np
+    integer(kind=kint), intent(in)                      :: ndof
+    integer(kind=kint), intent(in)                      :: nnz
+    integer(kind=kint), intent(in)                      :: num_lagrange
+    type(nodeRelated), pointer, intent(in)              :: list_nodeRelated(:) !< nodeRelated structure of matrix
+    type(hecmwST_matrix), intent(inout)                 :: hecMAT !< type hecmwST_matrix
+
+    integer(kind=kint)  :: countNon0L_node, countNon0U_node !< counters of node-based number ofnon-zero items
+    integer(kind=kint)  :: numI_node
+    integer(kind=kint)  :: i, j, ierr
+    integer(kind=kint)  :: ndof2
+
+    ndof2 = ndof*ndof
+
+    hecMAT%N  = n
+    hecMAT%NP = np
+    hecMAT%NDOF = ndof
+    hecMAT%NPL = nnz
+    hecMAT%NPU = nnz
+
+    if(associated(hecMAT%indexL)) deallocate(hecMAT%indexL)
+    if(associated(hecMAT%indexU)) deallocate(hecMAT%indexU)
+    if(associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
+    if(associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
+    if(associated(hecMAT%AL)) deallocate(hecMAT%AL)
+    if(associated(hecMAT%AU)) deallocate(hecMAT%AU)
+    if(associated(hecMAT%B)) deallocate(hecMAT%B)
+    if(associated(hecMAT%X)) deallocate(hecMAT%X)
+    if(associated(hecMAT%D)) deallocate(hecMAT%D)
+
+    allocate(hecMAT%indexL(0:np), stat=ierr)
+    if ( ierr /= 0) stop " Allocation error, hecMAT%indexL "
+    hecMAT%indexL = 0
+
+    allocate(hecMAT%indexU(0:np), stat=ierr)
+    if ( ierr /= 0) stop " Allocation error, hecMAT%indexU "
+    hecMAT%indexU = 0
+
+    allocate(hecMAT%itemL(nnz), stat=ierr)
+    if ( ierr /= 0) stop " Allocation error, hecMAT%itemL "
+    hecMAT%itemL = 0
+
+    allocate(hecMAT%itemU(nnz), stat=ierr)
+    if ( ierr /= 0) stop " Allocation error, hecMAT%itemU "
+    hecMAT%itemU = 0
+
+    countNon0L_node = 0
+    countNon0U_node = 0
+    do i = 1, np
+      numI_node = count(list_nodeRelated(i)%id_node /= 0)
+
+      do j = 1, numI_node
+        if( list_nodeRelated(i)%id_node(j) < i ) then
+          countNon0L_node = countNon0L_node + 1
+          hecMAT%itemL(countNon0L_node) = list_nodeRelated(i)%id_node(j)
+        elseif( list_nodeRelated(i)%id_node(j) > i ) then
+          countNon0U_node = countNon0U_node + 1
+          hecMAT%itemU(countNon0U_node) = list_nodeRelated(i)%id_node(j)
+        endif
+      enddo
+      hecMAT%indexL(i) = countNon0L_node
+      hecMAT%indexU(i) = countNon0U_node
+    end do
+
+    allocate(hecMAT%AL(nnz*ndof2), stat=ierr)
+    if ( ierr /= 0 ) stop " Allocation error, hecMAT%AL "
+    hecMAT%AL = 0.0D0
+
+    allocate(hecMAT%AU(nnz*ndof2), stat=ierr)
+    if ( ierr /= 0 ) stop " Allocation error, hecMAT%AU "
+    hecMAT%AU = 0.0D0
+
+    allocate(hecMAT%D(np*ndof2+num_lagrange))
+    hecMAT%D = 0.0D0
+
+    allocate(hecMAT%B(np*ndof+num_lagrange))
+    hecMAT%B = 0.0D0
+
+    allocate(hecMAT%X(np*ndof+num_lagrange))
+    hecMAT%X = 0.0D0
+
+  end subroutine
+
+  !> \brief This subroutine finalize list_nodeRelated
+  subroutine hecmw_finalize_nodeRelated(list_nodeRelated)
+    type(nodeRelated), pointer, intent(inout) :: list_nodeRelated(:) !< nodeRelated structure of matrix
+
+    integer(kind=kint)   :: i
+
+    do i = 1, size(list_nodeRelated)
+      list_nodeRelated(i)%num_node = 0
+      list_nodeRelated(i)%num_lagrange = 0
+      if(associated(list_nodeRelated(i)%id_node)) deallocate(list_nodeRelated(i)%id_node)
+      if(associated(list_nodeRelated(i)%id_lagrange)) deallocate(list_nodeRelated(i)%id_lagrange)
+    end do
+
+    deallocate(list_nodeRelated)
+  end subroutine
 
 end module hecmw_matrix_contact_lagrange
