@@ -146,7 +146,6 @@ contains
     NRRES    => fstrPR%nrres
     NPRINT   => fstrPR%nprint
 
-    call hecmw_mat_con(hecMESH, hecMAT)
 
     ! ------- initial value setting -------------
     call fstr_mat_init  ( hecMAT   )
@@ -157,7 +156,11 @@ contains
     call fstr_heat_init ( fstrHEAT  )
     call fstr_dynamic_init( fstrDYNAMIC  )
 
+    ! ------- scan cnt file -------------
     call fstr_init_condition
+
+    ! ------- hecMAT setting -------------
+    call hecmw_mat_con(hecMESH, hecMAT)
     hecMAT%NDOF = hecMESH%n_dof
     if( kstHEAT == fstrPR%solution_type ) then
       call heat_init_material (hecMESH,fstrHEAT)
