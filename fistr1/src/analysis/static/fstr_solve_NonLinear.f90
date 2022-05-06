@@ -289,17 +289,7 @@ contains
         call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
-        if( hecMESH%n_dof == 3 ) then
-          call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
-          if( hecMESH%my_rank == 0 ) then
-            write(IMSG, *) 'hecmw_update_3_R: OK'
-          endif
-        else if( hecMESH%n_dof == 2 ) then
-          call hecmw_update_2_R (hecMESH, hecMAT%X, hecMAT%NP)
-          if( hecMESH%my_rank == 0 ) then
-            write(IMSG, *) 'hecmw_update_2_R: OK'
-          endif
-        endif
+        call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMESH%n_dof)
 
         ! ----- update the small displacement and the displacement for 1step
         !       \delta u^k => solver's solution

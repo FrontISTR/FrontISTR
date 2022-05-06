@@ -266,11 +266,7 @@ contains
     !C
     !C Update for fstrSOLID%GL
     !C
-    if( hecMESH%n_dof == 3 ) then
-      call hecmw_update_3_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
-    else if( hecMESH%n_dof == 2 ) then
-      call hecmw_update_2_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
-    endif
+    call hecmw_update_R (hecMESH,fstrSOLID%GL,hecMESH%n_node, hecMESH%n_dof)
 
     call hecmw_mat_clear_b( hecMAT )
     do i=1, hecMESH%n_node*  hecMESH%n_dof

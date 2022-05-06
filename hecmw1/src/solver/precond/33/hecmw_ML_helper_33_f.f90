@@ -97,7 +97,7 @@ subroutine hecmw_ML_comm_33(id, x, ierr)
   type(hecmwST_matrix), pointer :: hecMAT
   type(hecmwST_local_mesh), pointer :: hecMESH
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  call hecmw_update_3_R (hecMESH, x, hecMESH%n_node)
+  call hecmw_update_R (hecMESH, x, hecMESH%n_node, 3)
   ierr = 0
 end subroutine hecmw_ML_comm_33
 

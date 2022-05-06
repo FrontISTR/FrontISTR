@@ -77,7 +77,7 @@ contains
       endif
     endif
 
-    call hecmw_update_m_R(hecMESH, fstrEIG%filter, NP, NDOF)
+    call hecmw_update_R(hecMESH, fstrEIG%filter, NP, NDOF)
 
     in = 0
     do i = 1, NNDOF

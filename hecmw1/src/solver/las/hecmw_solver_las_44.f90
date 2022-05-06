@@ -190,7 +190,7 @@ contains
 
       START_TIME= HECMW_WTIME()
 
-      call hecmw_update_4_R (hecMESH, X, NP)
+      call hecmw_update_R (hecMESH, X, NP, 4)
 
       ! endif
       END_TIME= HECMW_WTIME()
@@ -355,7 +355,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_4_R (hecMESH, X, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 4)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -402,7 +402,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_4_R (hecMESH, X, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 4)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -477,10 +477,10 @@ contains
       W(4*ip  ,1)= D(16*ip- 3); W(4*ip  ,2)= D(16*ip- 2); W(4*ip  ,3)= D(16*ip- 1); W(4*ip  ,4)= D(16*ip   )
     enddo
     START_TIME= HECMW_WTIME()
-    call hecmw_update_4_R (hecMESH, W(:,1), hecMAT%NP)
-    call hecmw_update_4_R (hecMESH, W(:,2), hecMAT%NP)
-    call hecmw_update_4_R (hecMESH, W(:,3), hecMAT%NP)
-    call hecmw_update_4_R (hecMESH, W(:,4), hecMAT%NP)
+    call hecmw_update_R (hecMESH, W(:,1), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,2), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,3), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,4), hecMAT%NP, 4)
     END_TIME= HECMW_WTIME()
     if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
     do ip= hecMAT%N+1, hecMAT%NP

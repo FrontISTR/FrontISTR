@@ -60,14 +60,7 @@ contains
     if(present(conMAT)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, conMAT%B )
 
     !
-    if( ndof==3 ) then
-      call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
-    else if( ndof==2 ) then
-      call hecmw_update_2_R(hecMESH,hecMAT%B,hecMESH%n_node)
-    else if( ndof==6 ) then
-      call hecmw_update_m_R(hecMESH,hecMAT%B,hecMESH%n_node,6)
-    endif
-
+    call hecmw_update_R(hecMESH,hecMAT%B,hecMESH%n_node, ndof)
   end subroutine fstr_Update_NDForce
 
   subroutine fstr_Update_NDForce_MPC( hecMESH, B )

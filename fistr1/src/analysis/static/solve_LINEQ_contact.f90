@@ -87,15 +87,7 @@ contains
     endif
 
     ndof = hecMAT%NDOF
-    if( ndof==3 ) then
-      call hecmw_update_3_R(hecMESH,hecMAT%X,hecMESH%n_node)
-    else if( ndof==2 ) then
-      call hecmw_update_2_R(hecMESH,hecMAT%X,hecMESH%n_node)
-    else if( ndof==4 ) then
-      call hecmw_update_4_R(hecMESH,hecMAT%X,hecMESH%n_node)
-    else if( ndof==6 ) then
-      call hecmw_update_m_R(hecMESH,hecMAT%X,hecMESH%n_node,6)
-    endif
+    call hecmw_update_R(hecMESH,hecMAT%X,hecMESH%n_node, ndof)
 
     t2 = hecmw_wtime()
     if (hecmw_mat_get_timelog(hecMAT) .ge. 1) then

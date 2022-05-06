@@ -65,7 +65,7 @@ contains
     real(kind=kreal) :: X1, X2, X3
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
+    call hecmw_update_R (hecMESH, X, hecMAT%NP, 3)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 

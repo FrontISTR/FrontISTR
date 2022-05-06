@@ -228,7 +228,7 @@ contains
       ! if (async_matvec_flg) then
       !   call hecmw_update_3_R_async (hecMESH, X, NP, ireq)
       ! else
-      call hecmw_update_m_R (hecMESH, X, NP, NDOF)
+      call hecmw_update_R (hecMESH, X, NP, NDOF)
       ! endif
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
@@ -395,7 +395,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_m_R (hecMESH, X, hecMESH%n_node, ndof)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, ndof)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -443,7 +443,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_m_R (hecMESH, X, hecMESH%n_node,ndof)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node,ndof)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -521,7 +521,7 @@ contains
     enddo
     START_TIME= HECMW_WTIME()
     do i=1,NDOF
-      call hecmw_update_m_R (hecMESH, W(:,i), hecMAT%NP, NDOF)
+      call hecmw_update_R (hecMESH, W(:,i), hecMAT%NP, NDOF)
     end do
     END_TIME= HECMW_WTIME()
     if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
