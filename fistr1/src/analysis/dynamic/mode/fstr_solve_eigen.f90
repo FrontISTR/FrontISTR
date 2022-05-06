@@ -15,6 +15,7 @@ contains
     use m_fstr_AddBC
     use m_fstr_EIG_setMASS
     use m_fstr_EIG_lanczos
+    use m_fstr_EIG_lobpcg
     use m_fstr_EIG_output
     use m_static_lib
     use m_hecmw2fstr_mesh_conv
@@ -50,7 +51,8 @@ contains
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
     call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
 
-    call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+    !call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+    call fstr_solve_lobpcg (hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
 
     call hecmw_mpc_tback_eigvec(hecMESH, hecMAT, fstrEIG%iter, fstrEIG%eigvec)
 

@@ -84,6 +84,7 @@ OBJSF = \
 	fstr_EIG_tridiag.@f90objfilepostfix@ \
 	fstr_EIG_output.@f90objfilepostfix@ \
 	fstr_EIG_lanczos.@f90objfilepostfix@ \
+	fstr_EIG_lobpcg.@f90objfilepostfix@ \
 	fstr_solve_eigen.@f90objfilepostfix@
 
 HEADERS =

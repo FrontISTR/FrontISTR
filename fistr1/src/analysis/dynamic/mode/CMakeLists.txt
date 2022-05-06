@@ -11,5 +11,6 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_tridiag.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_output.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_lanczos.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_lobpcg.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_eigen.f90
 )
