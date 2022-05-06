@@ -2764,72 +2764,79 @@ contains
     real(kind=kreal) :: t0, t1
     t0 = hecmw_wtime()
     !
-    call make_comm_table(BKmat, hecMESH, hecCOMM)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: make_comm_table done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (1) : ',t1-t0
-    t0 = hecmw_wtime()
-    !
-    if (BTmat%nr > hecMESH%nn_internal) then
-      ! consider only internal part of BTmat
-      if (DEBUG >= 1) write(0,'(A)') 'DEBUG: hecmw_localmat_multmat: ignore external part of BTmat'
-      BTmat%nr = hecMESH%nn_internal
-      BTmat%nnz = BTmat%index(BTmat%nr)
-    endif
-    !
-    call extract_BT_exp(BTmat, hecCOMM, BT_exp)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: extract_BT_exp done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (2) : ',t1-t0
-    t0 = hecmw_wtime()
-    !
-    call prepare_column_info(hecMESH, BT_exp, exp_cols_index, exp_cols_item)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: prepare column info done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (3) : ',t1-t0
-    t0 = hecmw_wtime()
-    !
-    call send_BT_exp_and_recv_BT_imp(hecMESH, hecCOMM, BT_exp, exp_cols_index, exp_cols_item, BT_imp, hecMESHnew)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: send BT_exp and recv BT_imp done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (4) : ',t1-t0
-    t0 = hecmw_wtime()
-    call free_comm_table(hecCOMM)
-    !
-    call concat_BTmat_and_BT_imp(BTmat, BT_imp, BT_all)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: concat BTmat and BT_imp into BT_all done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (5) : ',t1-t0
-    t0 = hecmw_wtime()
-    call hecmw_localmat_free(BT_imp)
-    !
-    call multiply_mat_mat(BKmat, BT_all, BKTmat)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: multiply BKmat and BT_all into BKTmat done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (6) : ',t1-t0
-    t0 = hecmw_wtime()
-    call hecmw_localmat_free(BT_all)
-    !
-    if (hecMESH%n_neighbor_pe > 0) then
-      hecMESH%n_node = hecMESHnew%n_node
-      hecMESH%n_neighbor_pe = hecMESHnew%n_neighbor_pe
-      deallocate(hecMESH%neighbor_pe)
-      deallocate(hecMESH%import_index)
-      deallocate(hecMESH%export_index)
-      deallocate(hecMESH%import_item)
-      deallocate(hecMESH%export_item)
-      deallocate(hecMESH%node_ID)
-      deallocate(hecMESH%global_node_ID)
-      hecMESH%neighbor_pe => hecMESHnew%neighbor_pe
-      hecMESH%import_index => hecMESHnew%import_index
-      hecMESH%export_index => hecMESHnew%export_index
-      hecMESH%import_item => hecMESHnew%import_item
-      hecMESH%export_item => hecMESHnew%export_item
-      hecMESH%node_ID => hecMESHnew%node_ID
-      hecMESH%global_node_ID => hecMESHnew%global_node_ID
-      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: update hecMESH done'
+    if (hecMESH%PETOT > 1) then
+      call make_comm_table(BKmat, hecMESH, hecCOMM)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: make_comm_table done'
       t1 = hecmw_wtime()
-      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (7) : ',t1-t0
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (1) : ',t1-t0
+      t0 = hecmw_wtime()
+      !
+      if (BTmat%nr > hecMESH%nn_internal) then
+        ! consider only internal part of BTmat
+        if (DEBUG >= 1) write(0,'(A)') 'DEBUG: hecmw_localmat_multmat: ignore external part of BTmat'
+        BTmat%nr = hecMESH%nn_internal
+        BTmat%nnz = BTmat%index(BTmat%nr)
+      endif
+      !
+      call extract_BT_exp(BTmat, hecCOMM, BT_exp)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: extract_BT_exp done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (2) : ',t1-t0
+      t0 = hecmw_wtime()
+      !
+      call prepare_column_info(hecMESH, BT_exp, exp_cols_index, exp_cols_item)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: prepare column info done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (3) : ',t1-t0
+      t0 = hecmw_wtime()
+      !
+      call send_BT_exp_and_recv_BT_imp(hecMESH, hecCOMM, BT_exp, exp_cols_index, exp_cols_item, BT_imp, hecMESHnew)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: send BT_exp and recv BT_imp done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (4) : ',t1-t0
+      t0 = hecmw_wtime()
+      call free_comm_table(hecCOMM)
+      !
+      call concat_BTmat_and_BT_imp(BTmat, BT_imp, BT_all)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: concat BTmat and BT_imp into BT_all done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (5) : ',t1-t0
+      t0 = hecmw_wtime()
+      call hecmw_localmat_free(BT_imp)
+      !
+      call multiply_mat_mat(BKmat, BT_all, BKTmat)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: multiply BKmat and BT_all into BKTmat done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (6) : ',t1-t0
+      t0 = hecmw_wtime()
+      call hecmw_localmat_free(BT_all)
+      !
+      if (hecMESH%n_neighbor_pe > 0) then
+        hecMESH%n_node = hecMESHnew%n_node
+        hecMESH%n_neighbor_pe = hecMESHnew%n_neighbor_pe
+        deallocate(hecMESH%neighbor_pe)
+        deallocate(hecMESH%import_index)
+        deallocate(hecMESH%export_index)
+        deallocate(hecMESH%import_item)
+        deallocate(hecMESH%export_item)
+        deallocate(hecMESH%node_ID)
+        deallocate(hecMESH%global_node_ID)
+        hecMESH%neighbor_pe => hecMESHnew%neighbor_pe
+        hecMESH%import_index => hecMESHnew%import_index
+        hecMESH%export_index => hecMESHnew%export_index
+        hecMESH%import_item => hecMESHnew%import_item
+        hecMESH%export_item => hecMESHnew%export_item
+        hecMESH%node_ID => hecMESHnew%node_ID
+        hecMESH%global_node_ID => hecMESHnew%global_node_ID
+        if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: update hecMESH done'
+        t1 = hecmw_wtime()
+        if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (7) : ',t1-t0
+      endif
+    else
+      call multiply_mat_mat(BKmat, BTmat, BKTmat)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: multiply BKmat and BTmat into BKTmat done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat : ',t1-t0
     endif
   end subroutine hecmw_localmat_multmat
 

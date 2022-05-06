@@ -34,7 +34,7 @@ contains
     type(fstr_freqanalysis)              :: fstrFREQ
     type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
     type(fstr_info_contactChange)        :: infoCTChange !< type fstr_info_contactChange
-    type(hecmwST_matrix), optional       :: conMAT
+    type(hecmwST_matrix)                 :: conMAT
     integer(kind=kint) :: i, j, num_monit, ig, is, iE, ik, in, ing, iunitS, iunit, ierror, flag, limit
     character(len=HECMW_FILENAME_LEN) :: fname, header
     integer(kind=kint) :: restrt_step_num, ndof
@@ -208,17 +208,10 @@ contains
             ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
             ,fstrCPL, restrt_step_num )
         elseif( fstrPARAM%contact_algo == kcaSLagrange ) then
-          !                ----  For Parallel Contact with Multi-Partition Domains
-          if(paraContactFlag.and.present(conMAT)) then
-            call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-              ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-              ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange   &
-              ,conMAT )
-          else
-            call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-              ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-              ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange )
-          endif
+          call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
+            ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+            ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange   &
+            ,conMAT )
         endif
 
       else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis

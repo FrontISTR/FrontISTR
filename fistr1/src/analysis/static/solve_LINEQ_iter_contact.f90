@@ -186,27 +186,29 @@ contains
       allocate(hecMESHtmp)
       call copy_mesh(hecMESH, hecMESHtmp, fg_paracon)
 
-      ! communicate and complete BTmat (update hecMESHtmp)
-      call hecmw_localmat_assemble(BTmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble T done', hecmw_wtime()-t1
-      if (BTmat%nc /= hecMESH%n_node) then
-        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with T',BTmat%nc-hecMESH%n_node
-      endif
-      if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BTmat (assembled)'
-        call hecmw_localmat_write(BTmat, 1000+myrank)
-      endif
+      if (nprocs > 1) then
+        ! communicate and complete BTmat (update hecMESHtmp)
+        call hecmw_localmat_assemble(BTmat, hecMESH, hecMESHtmp)
+        if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble T done', hecmw_wtime()-t1
+        if (BTmat%nc /= hecMESH%n_node) then
+          if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with T',BTmat%nc-hecMESH%n_node
+        endif
+        if (DEBUG >= 4) then
+          write(1000+myrank,*) 'BTmat (assembled)'
+          call hecmw_localmat_write(BTmat, 1000+myrank)
+        endif
 
-      ! communicate and complete BTtmat (update hecMESHtmp)
-      call hecmw_localmat_assemble(BTtmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble Tt done', hecmw_wtime()-t1
-      if (BTtmat%nc /= BTmat%nc) then
-        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BTtmat',BTtmat%nc-BTmat%nc
-        BTmat%nc = BTtmat%nc
-      endif
-      if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BTtmat (assembled)'
-        call hecmw_localmat_write(BTtmat, 1000+myrank)
+        ! communicate and complete BTtmat (update hecMESHtmp)
+        call hecmw_localmat_assemble(BTtmat, hecMESH, hecMESHtmp)
+        if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble Tt done', hecmw_wtime()-t1
+        if (BTtmat%nc /= BTmat%nc) then
+          if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BTtmat',BTtmat%nc-BTmat%nc
+          BTmat%nc = BTtmat%nc
+        endif
+        if (DEBUG >= 4) then
+          write(1000+myrank,*) 'BTtmat (assembled)'
+          call hecmw_localmat_write(BTtmat, 1000+myrank)
+        endif
       endif
 
       ! place 1 on diag of non-slave dofs of BTmat and BTtmat
@@ -230,17 +232,19 @@ contains
         call hecmw_localmat_write(BKmat, 1000+myrank)
       endif
 
-      ! communicate and complete BKmat (update hecMESHtmp)
-      call hecmw_localmat_assemble(BKmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble K (conMAT) done', hecmw_wtime()-t1
-      if (BKmat%nc /= BTtmat%nc) then
-        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BKmat',BKmat%nc-BTtmat%nc
-        BTmat%nc = BKmat%nc
-        BTtmat%nc = BKmat%nc
-      endif
-      if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BKmat (conMAT assembled)'
-        call hecmw_localmat_write(BKmat, 1000+myrank)
+      if (nprocs > 1) then
+        ! communicate and complete BKmat (update hecMESHtmp)
+        call hecmw_localmat_assemble(BKmat, hecMESH, hecMESHtmp)
+        if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble K (conMAT) done', hecmw_wtime()-t1
+        if (BKmat%nc /= BTtmat%nc) then
+          if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BKmat',BKmat%nc-BTtmat%nc
+          BTmat%nc = BKmat%nc
+          BTtmat%nc = BKmat%nc
+        endif
+        if (DEBUG >= 4) then
+          write(1000+myrank,*) 'BKmat (conMAT assembled)'
+          call hecmw_localmat_write(BKmat, 1000+myrank)
+        endif
       endif
 
       ! add hecMAT to BKmat
@@ -1907,24 +1911,33 @@ contains
     dst%n_elem_type   = src%n_elem_type
     dst%n_dof         = src%n_dof
     dst%n_neighbor_pe = src%n_neighbor_pe
-    allocate(dst%neighbor_pe(dst%n_neighbor_pe))
-    dst%neighbor_pe(:) = src%neighbor_pe(:)
-    allocate(dst%import_index(0:dst%n_neighbor_pe))
-    allocate(dst%export_index(0:dst%n_neighbor_pe))
-    if (present(fg_paracon) .and. fg_paracon) then
-      dst%import_index(:)= src%import_index(:)
-      dst%export_index(:)= src%export_index(:)
-      allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
-      dst%import_item(:) = src%import_item(:)
-      allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
-      dst%export_item(:) = src%export_item(:)
-      allocate(dst%global_node_ID(dst%n_node))
-      dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
+    if (src%n_neighbor_pe > 0) then
+      allocate(dst%neighbor_pe(dst%n_neighbor_pe))
+      dst%neighbor_pe(:) = src%neighbor_pe(:)
+      allocate(dst%import_index(0:dst%n_neighbor_pe))
+      allocate(dst%export_index(0:dst%n_neighbor_pe))
+      if (present(fg_paracon) .and. fg_paracon) then
+        dst%import_index(:)= src%import_index(:)
+        dst%export_index(:)= src%export_index(:)
+        allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
+        dst%import_item(:) = src%import_item(:)
+        allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
+        dst%export_item(:) = src%export_item(:)
+        allocate(dst%global_node_ID(dst%n_node))
+        dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
+      else
+        dst%import_index(:)= 0
+        dst%export_index(:)= 0
+        dst%import_item => null()
+        dst%export_item => null()
+      endif
     else
-      dst%import_index(:)= 0
-      dst%export_index(:)= 0
+      dst%neighbor_pe => null()
+      dst%import_index => null()
+      dst%export_index => null()
       dst%import_item => null()
       dst%export_item => null()
+      dst%global_node_ID => src%global_node_ID
     endif
     allocate(dst%node_ID(2*dst%n_node))
     dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*dst%n_node)
@@ -1940,16 +1953,18 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     logical, intent(in), optional :: fg_paracon
-    deallocate(hecMESH%neighbor_pe)
-    deallocate(hecMESH%import_index)
-    deallocate(hecMESH%export_index)
-    if (present(fg_paracon) .and. fg_paracon) then
-      deallocate(hecMESH%import_item)
-      deallocate(hecMESH%export_item)
-      deallocate(hecMESH%global_node_ID)
-    else
-      if (associated(hecMESH%import_item)) deallocate(hecMESH%import_item)
-      if (associated(hecMESH%export_item)) deallocate(hecMESH%export_item)
+    if (hecMESH%n_neighbor_pe > 0) then
+      deallocate(hecMESH%neighbor_pe)
+      deallocate(hecMESH%import_index)
+      deallocate(hecMESH%export_index)
+      if (present(fg_paracon) .and. fg_paracon) then
+        deallocate(hecMESH%import_item)
+        deallocate(hecMESH%export_item)
+        deallocate(hecMESH%global_node_ID)
+      else
+        if (associated(hecMESH%import_item)) deallocate(hecMESH%import_item)
+        if (associated(hecMESH%export_item)) deallocate(hecMESH%export_item)
+      endif
     endif
     deallocate(hecMESH%node_ID)
     deallocate(hecMESH%elem_type_item)
