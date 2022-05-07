@@ -160,13 +160,13 @@ contains
   end function
 
   !> Calculate square norm
-  real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,fstrMAT)
+  real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,hecLagMAT)
     use m_fstr
     use fstr_matrix_con_contact
     type(hecmwST_local_mesh), intent(in)             :: hecMESH !< mesh information
     type(hecmwST_matrix), intent(in)                 :: hecMAT
     type(fstr_solid), intent(in)                     :: fstrSOLID
-    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
+    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
     character(len=13)                                :: flag
     real(kind=kreal) :: tmp1, tmp2, bi
     integer :: i, i0, ndof
@@ -175,7 +175,7 @@ contains
       call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,tmp1)
       tmp2 = 0.0d0
       i0 = hecMESH%n_node*ndof
-      do i=1,fstrMAT%num_lagrange
+      do i=1,hecLagMAT%num_lagrange
         bi = hecMAT%B(i0+i)
         tmp2 = tmp2 + bi*bi
       enddo
@@ -187,12 +187,12 @@ contains
   end function
 
   !
-  function fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH) result(rhsB)
+  function fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH) result(rhsB)
     use m_fstr
     use fstr_matrix_con_contact
     implicit none
     type(hecmwST_matrix), intent(in)                 :: hecMAT
-    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
+    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
     type(hecmwST_matrix), intent(in)                 :: conMAT
     type(hecmwST_local_mesh), intent(in)             :: hecMESH
     !
@@ -204,7 +204,7 @@ contains
     !
     ndof = hecMAT%ndof
     nndof = hecMAT%N*ndof
-    N_loc = nndof + fstrMAT%num_lagrange
+    N_loc = nndof + hecLagMAT%num_lagrange
     allocate(displs(0:nprocs))
     displs(:) = 0
     displs(myrank+1) = N_loc
@@ -243,7 +243,7 @@ contains
     end do
     deallocate(rhs_con_all)
     i0 = hecMAT%NP*ndof
-    do i=1,fstrMAT%num_lagrange
+    do i=1,hecLagMAT%num_lagrange
       rhs_con(nndof+i) = conMAT%B(i0+i)
     enddo
     rhsB = 0.d0
@@ -253,12 +253,12 @@ contains
 
   end function fstr_get_norm_para_contact
 
-  function fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH) result(rhsX)
+  function fstr_get_x_norm_contact(hecMAT,hecLagMAT,hecMESH) result(rhsX)
     use m_fstr
     use fstr_matrix_con_contact
     implicit none
     type(hecmwST_matrix), intent(in)                 :: hecMAT
-    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
+    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
     type(hecmwST_local_mesh), intent(in)             :: hecMESH
     real(kind=kreal)   ::  rhsX
     integer(kind=kint) :: nndof, npndof, i
@@ -269,7 +269,7 @@ contains
     do i=1,nndof
       rhsX = rhsX + hecMAT%X(i) ** 2
     end do
-    do i=1,fstrMAT%num_lagrange
+    do i=1,hecLagMAT%num_lagrange
       rhsX = rhsX + hecMAT%X(npndof+i) ** 2
     end do
     call hecmw_allreduce_R1(hecMESH, rhsX, hecmw_sum)

@@ -36,20 +36,20 @@ contains
 
   !> \brief This subroutine obtains contact stiffness matrix of each contact pair
   !!  and assembles it into global stiffness matrix.
-  subroutine fstr_AddContactStiffness(cstep,iter,hecMAT,fstrMAT,fstrSOLID)
+  subroutine fstr_AddContactStiffness(cstep,iter,hecMAT,hecLagMAT,fstrSOLID)
 
     integer(kind=kint)                   :: cstep !< current loding step
     integer(kind=kint)                   :: iter
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint)                   :: ctsurf, etype, nnode, ndLocal(9) !< contants of type tContact
     integer(kind=kint)                   :: i, j, id_lagrange, grpid
     real(kind=kreal)                     :: lagrange
     real(kind=kreal)                     :: stiffness(9*3 + 1, 9*3 + 1)
 
-    fstrMAT%AL_lagrange = 0.0d0
-    fstrMAT%AU_lagrange = 0.0d0
+    hecLagMAT%AL_lagrange = 0.0d0
+    hecLagMAT%AU_lagrange = 0.0d0
 
     id_lagrange = 0
 
@@ -63,7 +63,7 @@ contains
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
 
         id_lagrange = id_lagrange + 1
-        lagrange = fstrMAT%Lagrange(id_lagrange)
+        lagrange = hecLagMAT%Lagrange(id_lagrange)
 
         ctsurf = fstrSOLID%contacts(i)%states(j)%surface
         etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
@@ -76,7 +76,7 @@ contains
           fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,stiffness)
 
         ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
-        call fstr_mat_ass_contact(nnode,ndLocal,id_lagrange,fstrSOLID%contacts(i)%fcoeff,stiffness,hecMAT,fstrMAT)
+        call fstr_mat_ass_contact(nnode,ndLocal,id_lagrange,fstrSOLID%contacts(i)%fcoeff,stiffness,hecMAT,hecLagMAT)
 
       enddo
 
@@ -193,10 +193,10 @@ contains
 
 
   !> \brief This subroutine assembles contact stiffness matrix of a contact pair into global stiffness matrix
-  subroutine fstr_mat_ass_contact(nnode,ndLocal,id_lagrange,fcoeff,stiffness,hecMAT,fstrMAT)
+  subroutine fstr_mat_ass_contact(nnode,ndLocal,id_lagrange,fcoeff,stiffness,hecMAT,hecLagMAT)
 
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint) :: nnode, ndLocal(nnode + 1), id_lagrange !< total number of nodes of master segment
 !< global number of nodes of contact pair
 !< number of Lagrange multiplier
@@ -208,20 +208,20 @@ contains
 
     i = nnode + 1 + 1
     inod = id_lagrange
-    isL = fstrMAT%indexL_lagrange(inod-1)+1
-    ieL = fstrMAT%indexL_lagrange(inod)
+    isL = hecLagMAT%indexL_lagrange(inod-1)+1
+    ieL = hecLagMAT%indexL_lagrange(inod)
 
     do j = 1, nnode + 1
       jnod = ndLocal(j)
-      isU = fstrMAT%indexU_lagrange(jnod-1)+1
-      ieU = fstrMAT%indexU_lagrange(jnod)
+      isU = hecLagMAT%indexU_lagrange(jnod-1)+1
+      ieU = hecLagMAT%indexU_lagrange(jnod)
 
-      kL = hecmw_array_search_i(fstrMAT%itemL_lagrange,isL,ieL,jnod)
+      kL = hecmw_array_search_i(hecLagMAT%itemL_lagrange,isL,ieL,jnod)
       if( kL<isL .or. kL>ieL ) then
         write(*,*) '###ERROR### : cannot find connectivity (Lagrange1)'
         stop
       endif
-      kU = hecmw_array_search_i(fstrMAT%itemU_lagrange,isU,ieU,inod)
+      kU = hecmw_array_search_i(hecLagMAT%itemU_lagrange,isU,ieU,inod)
       if( kU<isU .or. kU>ieU ) then
         write(*,*) '###ERROR### : cannot find connectivity (Lagrange2)'
         stop
@@ -232,9 +232,9 @@ contains
 
       do l = 1, 3
         idxL = idxL_base + l
-        fstrMAT%AL_lagrange(idxL) = fstrMAT%AL_lagrange(idxL) + stiffness((i-1)*3+1,(j-1)*3+l)
+        hecLagMAT%AL_lagrange(idxL) = hecLagMAT%AL_lagrange(idxL) + stiffness((i-1)*3+1,(j-1)*3+l)
         idxU = idxU_base + l
-        fstrMAT%AU_lagrange(idxU) = fstrMAT%AU_lagrange(idxU) + stiffness((j-1)*3+l,(i-1)*3+1)
+        hecLagMAT%AU_lagrange(idxU) = hecLagMAT%AU_lagrange(idxU) + stiffness((j-1)*3+l,(i-1)*3+1)
       enddo
     enddo
 
@@ -257,12 +257,12 @@ contains
 
   !> \brief This subroutine obtains contact nodal force vector of each contact pair
   !! and assembles it into right-hand side vector to update non-equilibrated nodal force vector.
-  subroutine fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)
+  subroutine fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
 
     type(hecmwST_local_mesh)             :: hecMESH !< type hecmwST_local_mesh
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(hecmwST_matrix)                 :: conMAT !< type hecmwST_matrix for contact part only
     integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contants of type tContact
     integer(kind=kint) :: i, j, k, id_lagrange
@@ -288,9 +288,9 @@ contains
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
 
         id_lagrange = id_lagrange + 1
-        lagrange = fstrMAT%Lagrange(id_lagrange)
+        lagrange = hecLagMAT%Lagrange(id_lagrange)
 
-        fstrSOLID%contacts(i)%states(j)%multiplier(1) = fstrMAT%Lagrange(id_lagrange)
+        fstrSOLID%contacts(i)%states(j)%multiplier(1) = hecLagMAT%Lagrange(id_lagrange)
 
         ctsurf = fstrSOLID%contacts(i)%states(j)%surface
         etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
@@ -449,12 +449,12 @@ contains
 
   !> \brief This subroutine adds initial contact force vector to the right-hand side vector
   !> \at the beginning of each substep calculation
-  subroutine fstr_ass_load_contact(cstep, hecMESH, hecMAT, fstrSOLID, fstrMAT)
+  subroutine fstr_ass_load_contact(cstep, hecMESH, hecMAT, fstrSOLID, hecLagMAT)
 
     type(hecmwST_local_mesh)             :: hecMESH !< type hecmwST_local_mesh
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint) :: cstep !< current step
     integer(kind=kint) :: np, ndof !< total number of nodes; degree of freedom
     integer(kind=kint) :: i, j, k, l, id_lagrange, lnod, grpid
@@ -528,25 +528,25 @@ contains
 
   !> Modify Lagrange multiplier-related part of stiffness matrix and right-hand side vector
   !> for dealing with prescribed displacement boundary condition
-  subroutine fstr_mat_ass_bc_contact(hecMAT,fstrMAT,inode,idof,RHS)
+  subroutine fstr_mat_ass_bc_contact(hecMAT,hecLagMAT,inode,idof,RHS)
 
     type(hecmwST_matrix)                 :: hecMAT !< hecmwST_matrix
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< hecmwST_matrix_lagrange
     integer(kind=kint) :: inode, idof !< number of node; degree of freedom
     integer(kind=kint) :: isU, ieU, isL, ieL, i, l, k
     real(kind=kreal)   :: RHS !< value of prescribed displacement
 
-    isU = fstrMAT%indexU_lagrange(inode-1)+1
-    ieU = fstrMAT%indexU_lagrange(inode)
+    isU = hecLagMAT%indexU_lagrange(inode-1)+1
+    ieU = hecLagMAT%indexU_lagrange(inode)
     do i = isU, ieU
-      fstrMAT%AU_lagrange((i-1)*3+idof) = 0.0d0
-      l = fstrMAT%itemU_lagrange(i)
-      isL = fstrMAT%indexL_lagrange(l-1)+1
-      ieL = fstrMAT%indexL_lagrange(l)
-      k = hecmw_array_search_i(fstrMAT%itemL_lagrange,isL,ieL,inode)
+      hecLagMAT%AU_lagrange((i-1)*3+idof) = 0.0d0
+      l = hecLagMAT%itemU_lagrange(i)
+      isL = hecLagMAT%indexL_lagrange(l-1)+1
+      ieL = hecLagMAT%indexL_lagrange(l)
+      k = hecmw_array_search_i(hecLagMAT%itemL_lagrange,isL,ieL,inode)
       if(k < isL .or. k > ieL) cycle
-      hecMAT%B(hecMAT%NP*hecMAT%NDOF+l) = hecMAT%B(hecMAT%NP*hecMAT%NDOF+l) - fstrMAT%AL_lagrange((k-1)*3+idof)*RHS
-      fstrMAT%AL_lagrange((k-1)*3+idof) = 0.0d0
+      hecMAT%B(hecMAT%NP*hecMAT%NDOF+l) = hecMAT%B(hecMAT%NP*hecMAT%NDOF+l) - hecLagMAT%AL_lagrange((k-1)*3+idof)*RHS
+      hecLagMAT%AL_lagrange((k-1)*3+idof) = 0.0d0
     enddo
 
   end subroutine fstr_mat_ass_bc_contact

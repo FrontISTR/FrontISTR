@@ -24,30 +24,30 @@ module m_solve_LINEQ_contact
 contains
 
   !> \brief This subroutine
-  subroutine solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
+  subroutine solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
+    type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange)
     logical :: is_sym
 
     if( hecMAT%Iarray(99)==1 )then
-      call solve_LINEQ_iter_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
+      call solve_LINEQ_iter_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
     elseif( hecMAT%Iarray(99)==2 )then
-      call solve_LINEQ_serial_lag_hecmw_init(hecMAT,fstrMAT,is_sym)
+      call solve_LINEQ_serial_lag_hecmw_init(hecMAT,hecLagMAT,is_sym)
     else if( hecMAT%Iarray(99)==3 )then
       call solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
     elseif( hecMAT%Iarray(99)==5 ) then
-      call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
+      call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
     endif
   end subroutine solve_LINEQ_contact_init
 
 
   !> \brief This subroutine
-  subroutine solve_LINEQ_contact(hecMESH,hecMAT,fstrMAT,istat,rf,conMAT)
+  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,istat,rf,conMAT)
 
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange)
+    type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange)
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), optional               :: rf
     type (hecmwST_matrix),optional           :: conMAT
@@ -65,24 +65,24 @@ contains
     istat = 0
     if( hecMAT%Iarray(99)==1 )then
       if(paraContactFlag.and.present(conMAT)) then
-        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
       else
-        call solve_LINEQ_iter_contact(hecMESH,hecMAT,fstrMAT,istat)
+        call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat)
       endif
     elseif( hecMAT%Iarray(99)==2 )then
-      call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
+      call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
     elseif( hecMAT%Iarray(99)==3 )then
       if(paraContactFlag.and.present(conMAT)) then
-        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
+        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
       else
-        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat)
+        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat)
       endif
     elseif( hecMAT%Iarray(99)==5 ) then
       ! ----  For Parallel Contact with Multi-Partition Domains
       if(paraContactFlag.and.present(conMAT)) then
-        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
+        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
       else
-        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,fstrMAT,istat)
+        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,istat)
       endif
     endif
 
@@ -104,7 +104,7 @@ contains
 
     if(paraContactFlag.and.present(conMAT)) then
     else
-      resid=fstr_get_resid_max_contact(hecMESH,hecMAT,fstrMAT)
+      resid=fstr_get_resid_max_contact(hecMESH,hecMAT,hecLagMAT)
       if (myrank==0) then
         write(*,*) ' maximum residual = ', resid
         if( hecmw_mat_get_solver_type(hecMAT) /= 1 .and. resid >= 1.0d-8) then

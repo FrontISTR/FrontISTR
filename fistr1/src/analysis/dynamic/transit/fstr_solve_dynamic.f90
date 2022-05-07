@@ -19,7 +19,7 @@ contains
   !C================================================================C
   subroutine fstr_solve_DYNAMIC(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-      ,fstrCPL,fstrFREQ, fstrMAT  &
+      ,fstrCPL,fstrFREQ, hecLagMAT  &
       ,conMAT )
     use m_fstr_setup
     implicit none
@@ -32,7 +32,7 @@ contains
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_couple)                    :: fstrCPL !for COUPLE
     type(fstr_freqanalysis)              :: fstrFREQ
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(fstr_info_contactChange)        :: infoCTChange !< type fstr_info_contactChange
     type(hecmwST_matrix)                 :: conMAT
     integer(kind=kint) :: i, j, num_monit, ig, is, iE, ik, in, ing, iunitS, iunit, ierror, flag, limit
@@ -210,7 +210,7 @@ contains
         elseif( fstrPARAM%contact_algo == kcaSLagrange ) then
           call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
             ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-            ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange   &
+            ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange   &
             ,conMAT )
         endif
 
@@ -231,7 +231,7 @@ contains
 
       if( hecMESH%my_rank .eq. 0 ) then
         call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, &
-          fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, fstrMAT, &
+          fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, hecLagMAT, &
           restrt_step_num)
       end if
     end if

@@ -68,7 +68,7 @@ contains
 
   subroutine fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG,  &
       fstrDYNAMIC, fstrRESULT, fstrPARAM, &
-      fstrCPL, fstrFREQ, fstrMAT, restart_step_num)
+      fstrCPL, fstrFREQ, hecLagMAT, restart_step_num)
     !C
     !C-- global variable
     !C
@@ -81,7 +81,7 @@ contains
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_couple)                    :: fstrCPL
     type(fstr_freqanalysis)              :: fstrFREQ
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT
     integer(kind=kint)                   :: restart_step_num
 
     !C
@@ -155,7 +155,7 @@ contains
     call assemble_nodeload(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
 
     write(*,*) "calc mass matrix"
-    call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrMAT)
+    call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
     write(*,*) "scale eigenvector"
     call scaleEigenVector(fstrEIG, ndof*numnode, nummode, freqData%eigVector)
 
@@ -658,14 +658,14 @@ contains
     return
   end subroutine
 
-  subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrMAT)
+  subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
     !---- args
     type(fstr_param), intent(in)         :: fstrPARAM
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(hecmwST_matrix), intent(inout)  :: hecMAT
     type(fstr_solid), intent(inout)      :: fstrSOLID
     type(fstr_eigen), intent(inout)      :: fstrEIG
-    type(fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT
+    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
     !---- vals
     integer(kind=kint) :: ntotal
     !---- body
@@ -673,7 +673,7 @@ contains
 
     fstrSOLID%dunode = 0.d0
     call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
-    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
+    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
 

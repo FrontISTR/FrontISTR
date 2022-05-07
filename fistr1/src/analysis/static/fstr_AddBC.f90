@@ -10,7 +10,7 @@ contains
 
   !>  Add Essential Boundary Conditions
   !------------------------------------------------------------------------------------------*
-  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,fstrMAT,iter,conMAT)
+  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,conMAT)
     !------------------------------------------------------------------------------------------*
     use m_fstr
     use fstr_matrix_con_contact
@@ -23,7 +23,7 @@ contains
     type(hecmwST_matrix)                 :: hecMAT !< hecmw matrix
     type(fstr_solid)                     :: fstrSOLID !< fstr_solid
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint)                   :: iter !< NR iterations
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
 
@@ -96,9 +96,9 @@ contains
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
             if(present(conMAT)) then
-              call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)
+              call fstr_mat_ass_bc_contact(conMAT,hecLagMAT,in,idof,RHS)
             else
-              call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
+              call fstr_mat_ass_bc_contact(hecMAT,hecLagMAT,in,idof,RHS)
             endif
           endif
 
@@ -143,9 +143,9 @@ contains
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
             if(present(conMAT)) then
-              call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)
+              call fstr_mat_ass_bc_contact(conMAT,hecLagMAT,in,idof,RHS)
             else
-              call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
+              call fstr_mat_ass_bc_contact(hecMAT,hecLagMAT,in,idof,RHS)
             endif
           endif
         enddo

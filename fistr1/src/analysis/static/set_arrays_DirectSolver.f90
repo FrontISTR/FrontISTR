@@ -24,10 +24,10 @@ contains
 
   !> \brief This subroutine sets index arrays for direct sparse solver from those stored
   !> \in the matrix structures defined in MODULE fstr_matrix_con_contact
-  subroutine set_pointersANDindices_directsolver(hecMAT,fstrMAT,is_sym)
+  subroutine set_pointersANDindices_directsolver(hecMAT,hecLagMAT,is_sym)
 
     type(hecmwST_matrix)                     :: hecMAT    !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange)           :: hecLagMAT   !< type hecmwST_matrix_lagrange
     logical :: is_sym
 
     integer (kind=kint)     :: np                         !< total number of nodes
@@ -39,15 +39,15 @@ contains
 
     symmetricMatrixStruc = is_sym
 
-    np = hecMAT%NP ; ndof = hecMAT%NDOF ; num_lagrange = fstrMAT%num_lagrange
+    np = hecMAT%NP ; ndof = hecMAT%NDOF ; num_lagrange = hecLagMAT%num_lagrange
     nn = np*ndof + num_lagrange + 1
 
     if( symmetricMatrixStruc )then
       numNon0 = hecMAT%NPU*ndof**2+hecMAT%NP*ndof*(ndof+1)/2 &
-        + (fstrMAT%numU_lagrange)*ndof+fstrMAT%num_lagrange
+        + (hecLagMAT%numU_lagrange)*ndof+hecLagMAT%num_lagrange
     else
       numNon0 = (hecMAT%NPL+hecMAT%NPU+hecMAT%NP)*ndof**2 &
-        + (fstrMAT%numL_lagrange+fstrMAT%numU_lagrange)*ndof
+        + (hecLagMAT%numL_lagrange+hecLagMAT%numU_lagrange)*ndof
     endif
 
     if(allocated(pointers))deallocate(pointers)
@@ -88,8 +88,8 @@ contains
           enddo
         enddo
         if( num_lagrange > 0 )then
-          do l = fstrMAT%indexU_lagrange(i-1)+1, fstrMAT%indexU_lagrange(i)
-            indices(countNon0) = np*ndof + fstrMAT%itemU_lagrange(l)
+          do l = hecLagMAT%indexU_lagrange(i-1)+1, hecLagMAT%indexU_lagrange(i)
+            indices(countNon0) = np*ndof + hecLagMAT%itemU_lagrange(l)
             countNon0 = countNon0 + 1
           enddo
         endif
@@ -103,9 +103,9 @@ contains
           indices(countNon0) = np*ndof + i
           countNon0 = countNon0 + 1
         else
-          do l = fstrMAT%indexL_lagrange(i-1)+1, fstrMAT%indexL_lagrange(i)
+          do l = hecLagMAT%indexL_lagrange(i-1)+1, hecLagMAT%indexL_lagrange(i)
             do k = 1, ndof
-              indices(countNon0) = (fstrMAT%itemL_lagrange(l)-1)*ndof + k
+              indices(countNon0) = (hecLagMAT%itemL_lagrange(l)-1)*ndof + k
               countNon0 = countNon0 + 1
             enddo
           enddo
@@ -120,10 +120,10 @@ contains
   !> \brief This subroutine sets the array for direct sparse solver that contains
   !> \the non-zero items(elements)of stiffness matrix from those stored
   !> \in the matrix structures defined in MODULE fstr_matrix_con_contact
-  subroutine set_values_directsolver(hecMAT,fstrMAT)
+  subroutine set_values_directsolver(hecMAT,hecLagMAT)
 
     type(hecmwST_matrix)                    :: hecMAT    !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)   :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange)          :: hecLagMAT   !< type hecmwST_matrix_lagrange
 
     integer (kind=kint)     :: np                        !< total number of nodes
     integer (kind=kint)     :: ndof                      !< degree of freedom
@@ -132,7 +132,7 @@ contains
     integer (kind=kint)     :: i, j, k, l
     integer (kind=kint)     :: countNon0, locINal, locINd, locINau, locINal_lag, locINau_lag
 
-    np = hecMAT%NP ; ndof = hecMAT%NDOF ; num_lagrange = fstrMAT%num_lagrange
+    np = hecMAT%NP ; ndof = hecMAT%NDOF ; num_lagrange = hecLagMAT%num_lagrange
 
     if(allocated(values))deallocate(values)
     allocate(values(numNon0), stat=ierr)
@@ -169,9 +169,9 @@ contains
           enddo
         enddo
         if( num_lagrange > 0 )then
-          do l = fstrMAT%indexU_lagrange(i-1)+1, fstrMAT%indexU_lagrange(i)
+          do l = hecLagMAT%indexU_lagrange(i-1)+1, hecLagMAT%indexU_lagrange(i)
             locINau_lag = (l-1)*ndof + j
-            values(countNon0) = fstrMAT%AU_lagrange(locINau_lag)
+            values(countNon0) = hecLagMAT%AU_lagrange(locINau_lag)
             countNon0 = countNon0 + 1
           enddo
         endif
@@ -180,10 +180,10 @@ contains
 
     if( .not.symmetricMatrixStruc .and. num_lagrange > 0 )then
       do i = 1, num_lagrange
-        do l = fstrMAT%indexL_lagrange(i-1)+1, fstrMAT%indexL_lagrange(i)
+        do l = hecLagMAT%indexL_lagrange(i-1)+1, hecLagMAT%indexL_lagrange(i)
           do k = 1, ndof
             locINal_lag = (l-1)*ndof + k
-            values(countNon0) = fstrMAT%AL_lagrange(locINal_lag)
+            values(countNon0) = hecLagMAT%AL_lagrange(locINal_lag)
             countNon0 = countNon0 + 1
           enddo
         enddo
@@ -213,14 +213,14 @@ contains
   end subroutine getApproximateB
 
 
-  subroutine checkResidual(hecMAT,fstrMAT)
+  subroutine checkResidual(hecMAT,hecLagMAT)
     type(hecmwST_matrix)                    :: hecMAT    !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)   :: fstrMAT   !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange)          :: hecLagMAT   !< type hecmwST_matrix_lagrange
     integer(kind=kint)                       :: ntdf
     real(kind=kreal), allocatable            :: y(:)           !< right-hand side vector
     real(kind=kreal)                          :: residual_Max   !< maximum residual
 
-    ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
+    ntdf = hecMAT%NP*hecMAT%NDOF + hecLagMAT%num_lagrange
 
     allocate(y(size(hecMAT%B)))
     y = 0.0d0
