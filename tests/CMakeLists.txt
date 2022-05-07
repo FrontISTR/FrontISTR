@@ -46,6 +46,7 @@ foreach(parallel IN LISTS parallels)
   list(REMOVE_DUPLICATES TEST_TARGETS)
 
   list(APPEND solver/CG element nonlinear)
+  list(APPEND TEST_TARGETS nonlinear/contact_iter)
   if(WITH_MUMPS)
     list(APPEND TEST_TARGETS solver/mumps)
     list(APPEND TEST_TARGETS nonlinear/contact)
