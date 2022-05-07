@@ -57,7 +57,6 @@ module fstr_frequency_analysis
   use m_fstr
   use m_fstr_StiffMatrix
   use m_fstr_AddBC
-  use fstr_matrix_con_contact
   use m_fstr_EIG_setMASS
   use fstr_frequency_visout
   use m_hecmw2fstr_mesh_conv

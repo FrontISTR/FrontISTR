@@ -8,7 +8,6 @@
 module m_set_arrays_directsolver_contact
 
   use m_fstr
-  use fstr_matrix_con_contact
 
   implicit none
 

@@ -6,7 +6,6 @@
 !! structures and DOF based sparse matrix data structures (CSR/COO).
 module m_sparse_matrix_contact
   use m_fstr
-  use fstr_matrix_con_contact
   use m_sparse_matrix
   use m_sparse_matrix_hec
   implicit none

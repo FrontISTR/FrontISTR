@@ -15,7 +15,6 @@ module fstr_dynamic_nlexplicit
   use m_dynamic_mat_ass_load
   use m_fstr_Update
   use m_fstr_Restart
-  use fstr_matrix_con_contact
   use m_dynamic_mat_ass_couple
   use m_fstr_rcap_io
   use mContact

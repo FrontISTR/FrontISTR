@@ -162,7 +162,6 @@ contains
   !> Calculate square norm
   real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,hecLagMAT)
     use m_fstr
-    use fstr_matrix_con_contact
     type(hecmwST_local_mesh), intent(in)             :: hecMESH !< mesh information
     type(hecmwST_matrix), intent(in)                 :: hecMAT
     type(fstr_solid), intent(in)                     :: fstrSOLID
@@ -189,7 +188,6 @@ contains
   !
   function fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH) result(rhsB)
     use m_fstr
-    use fstr_matrix_con_contact
     implicit none
     type(hecmwST_matrix), intent(in)                 :: hecMAT
     type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
@@ -255,7 +253,6 @@ contains
 
   function fstr_get_x_norm_contact(hecMAT,hecLagMAT,hecMESH) result(rhsX)
     use m_fstr
-    use fstr_matrix_con_contact
     implicit none
     type(hecmwST_matrix), intent(in)                 :: hecMAT
     type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT

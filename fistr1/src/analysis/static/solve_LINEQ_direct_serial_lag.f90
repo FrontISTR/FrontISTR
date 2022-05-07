@@ -5,7 +5,6 @@
 module m_solve_LINEQ_direct_serial_lag
 
   use hecmw_util
-  use fstr_matrix_con_contact
   use m_set_arrays_directsolver_contact
   use hecmw_solver_direct_serial_lag
   ! use hecmw_solver_

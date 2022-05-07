@@ -18,7 +18,6 @@ module m_fstr_main
   use m_fstr_rcap_io
   use fstr_solver_dynamic
   use fstr_debug_dump
-  use fstr_matrix_con_contact
 
   type(hecmwST_local_mesh), save             :: hecMESH
   type(hecmwST_matrix), save                 :: hecMAT

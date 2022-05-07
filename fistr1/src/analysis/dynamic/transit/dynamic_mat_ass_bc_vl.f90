@@ -13,7 +13,6 @@ contains
   subroutine DYNAMIC_MAT_ASS_BC_VL(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter, conMAT)
     use m_fstr
     use m_table_dyn
-    use fstr_matrix_con_contact
     use m_addContactStiffness
     use mContact
 
@@ -213,7 +212,6 @@ contains
   subroutine DYNAMIC_EXPLICIT_ASS_VL(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, iter)
     use m_fstr
     use m_table_dyn
-    use fstr_matrix_con_contact
     use m_addContactStiffness
     use mContact
 

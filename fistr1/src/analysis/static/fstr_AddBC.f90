@@ -13,7 +13,6 @@ contains
   subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,conMAT)
     !------------------------------------------------------------------------------------------*
     use m_fstr
-    use fstr_matrix_con_contact
     use m_addContactStiffness
     use mContact
     use m_static_LIB_1d

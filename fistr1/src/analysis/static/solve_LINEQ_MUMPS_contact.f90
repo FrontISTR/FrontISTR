@@ -8,7 +8,6 @@ module m_solve_LINEQ_MUMPS_contact
   use m_fstr
   use m_sparse_matrix
   use m_sparse_matrix_contact
-  use fstr_matrix_con_contact
   use m_hecmw_MUMPS_wrapper
 
   private

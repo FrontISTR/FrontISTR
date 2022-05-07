@@ -6,7 +6,6 @@
 !! contact problems using Lagrange multiplier.
 module m_solve_LINEQ_iter_contact
   use m_fstr
-  use fstr_matrix_con_contact
   use hecmw_solver
 
   private

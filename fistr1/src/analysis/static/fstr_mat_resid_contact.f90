@@ -4,7 +4,6 @@
 !-------------------------------------------------------------------------------
 module m_fstr_mat_resid_contact
   use m_fstr
-  use fstr_matrix_con_contact
   implicit none
 
   private

@@ -18,7 +18,6 @@ contains
     use m_fstr_EIG_output
     use m_static_lib
     use m_hecmw2fstr_mesh_conv
-    use fstr_matrix_con_contact
     use m_fstr_spring
 
     implicit none

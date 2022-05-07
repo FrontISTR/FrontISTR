@@ -9,7 +9,6 @@ module fstr_solver_dynamic
   use m_fstr
   use fstr_dynamic_nlexplicit
   use fstr_dynamic_nlimplicit
-  use fstr_matrix_con_contact
   use fstr_frequency_analysis  !Frequency analysis module
 
 contains

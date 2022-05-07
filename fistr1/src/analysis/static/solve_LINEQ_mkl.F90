@@ -10,7 +10,6 @@ module m_solve_LINEQ_MKL_contact
   use m_fstr
   use m_sparse_matrix
   use m_sparse_matrix_contact
-  use fstr_matrix_con_contact
   use m_hecmw_MKL_wrapper
   use m_hecmw_ClusterMKL_wrapper
 
