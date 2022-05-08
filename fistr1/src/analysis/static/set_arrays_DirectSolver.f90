@@ -22,7 +22,7 @@ contains
 
 
   !> \brief This subroutine sets index arrays for direct sparse solver from those stored
-  !> \in the matrix structures defined in MODULE fstr_matrix_con_contact
+  !> \in the matrix structures hecmwST_matrix_lagrange
   subroutine set_pointersANDindices_directsolver(hecMAT,hecLagMAT,is_sym)
 
     type(hecmwST_matrix)                     :: hecMAT    !< type hecmwST_matrix
@@ -118,7 +118,7 @@ contains
 
   !> \brief This subroutine sets the array for direct sparse solver that contains
   !> \the non-zero items(elements)of stiffness matrix from those stored
-  !> \in the matrix structures defined in MODULE fstr_matrix_con_contact
+  !> \in the matrix structures hecmwST_matrix_lagrange
   subroutine set_values_directsolver(hecMAT,hecLagMAT)
 
     type(hecmwST_matrix)                    :: hecMAT    !< type hecmwST_matrix

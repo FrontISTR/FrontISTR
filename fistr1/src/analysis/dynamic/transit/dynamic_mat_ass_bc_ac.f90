@@ -14,7 +14,6 @@ contains
   subroutine DYNAMIC_MAT_ASS_BC_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, iter, conMAT)
     use m_fstr
     use m_table_dyn
-    use m_addContactStiffness
     use mContact
 
     implicit none
@@ -92,9 +91,9 @@ contains
             if( fstr_is_contact_active() .and. fstrPARAM%contact_algo == kcaSLagrange  &
                 .and. fstrPARAM%nlgeom .and. fstrDYNAMIC%idx_resp == 1 ) then
               if(present(conMAT)) then
-                call fstr_mat_ass_bc_contact(conMAT,hecLagMAT,in,idof,RHS)
+                call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
               else
-                call fstr_mat_ass_bc_contact(hecMAT,hecLagMAT,in,idof,RHS)
+                call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
 
@@ -208,7 +207,6 @@ contains
   subroutine DYNAMIC_EXPLICIT_ASS_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, iter)
     use m_fstr
     use m_table_dyn
-    use m_addContactStiffness
     use mContact
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_local_mesh)             :: hecMESH

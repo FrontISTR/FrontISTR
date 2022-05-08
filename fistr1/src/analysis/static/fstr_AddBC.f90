@@ -13,7 +13,6 @@ contains
   subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,conMAT)
     !------------------------------------------------------------------------------------------*
     use m_fstr
-    use m_addContactStiffness
     use mContact
     use m_static_LIB_1d
     use m_utilities
@@ -95,9 +94,9 @@ contains
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
             if(present(conMAT)) then
-              call fstr_mat_ass_bc_contact(conMAT,hecLagMAT,in,idof,RHS)
+              call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
             else
-              call fstr_mat_ass_bc_contact(hecMAT,hecLagMAT,in,idof,RHS)
+              call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
             endif
           endif
 
@@ -142,9 +141,9 @@ contains
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
             if(present(conMAT)) then
-              call fstr_mat_ass_bc_contact(conMAT,hecLagMAT,in,idof,RHS)
+              call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
             else
-              call fstr_mat_ass_bc_contact(hecMAT,hecLagMAT,in,idof,RHS)
+              call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
             endif
           endif
         enddo
