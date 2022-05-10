@@ -1920,9 +1920,9 @@ contains
         dst%import_index(:)= src%import_index(:)
         dst%export_index(:)= src%export_index(:)
         allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
-        dst%import_item(:) = src%import_item(:)
+        dst%import_item(1:dst%import_index(dst%n_neighbor_pe)) = src%import_item(1:dst%import_index(dst%n_neighbor_pe))
         allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
-        dst%export_item(:) = src%export_item(:)
+        dst%export_item(1:dst%export_index(dst%n_neighbor_pe)) = src%export_item(1:dst%export_index(dst%n_neighbor_pe))
         allocate(dst%global_node_ID(dst%n_node))
         dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
       else
