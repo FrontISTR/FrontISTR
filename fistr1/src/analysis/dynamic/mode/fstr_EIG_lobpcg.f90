@@ -28,8 +28,6 @@ contains
     integer(kint) :: N, n_eigs, loglevel, maxit
     real(kreal) :: tol
 
-write(*,*)"fstr_solve_lobpcg"
-
     N = hecMAT%NP*hecMAT%NDOF
     n_eigs = fstrEIG%nget
     maxit = fstrEIG%maxiter
@@ -42,7 +40,7 @@ write(*,*)"fstr_solve_lobpcg"
     allocate(fstrEIG%eigval(n_eigs), source = 0.0d0)
     allocate(fstrEIG%eigvec(N, n_eigs), source = 0.0d0)
 
-    loglevel = 1
+    loglevel = 0
 
     call blopex_lobpcg_solve(N, n_eigs, maxit, tol, loglevel, &
       & fstrEIG%eigval, fstrEIG%eigvec)
@@ -67,10 +65,10 @@ write(*,*)"fstr_solve_lobpcg"
     is_B = 0
     is_T = 0
 
-    !call blopex_lobpcg_solve_c(n_eigs, maxit, tol, N, &
-    !  & blopex_fortran_opA, blopex_fortran_opB, blopex_fortran_opT, &
-    !  & is_B, is_T, &
-    !  & loglevel, eigen_val, eigen_vec_temp)
+    call blopex_lobpcg_solve_c(n_eigs, maxit, tol, N, &
+      & blopex_fortran_opA, blopex_fortran_opB, blopex_fortran_opT, &
+      & is_B, is_T, &
+      & loglevel, eigen_val, eigen_vec_temp)
 
     do i = 1, n_eigs
       do j = 1, N

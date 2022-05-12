@@ -3514,7 +3514,8 @@ contains
           totdiag = totdiag + mass(lx,lx)
         END DO
     ENDDO
-  lumped(:)=0.d0
+
+    lumped(:)=0.d0
     do nb = 1, nn
         DO i = 1, 6
           lx = (nb-1)*ndof+i
