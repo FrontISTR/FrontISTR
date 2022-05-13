@@ -2,7 +2,6 @@
 # Copyright (c) 2019 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
 
 list(APPAND hecmw_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_transfer_result_c.f90
