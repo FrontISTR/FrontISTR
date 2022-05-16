@@ -3,11 +3,13 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 module blopex_fortran_hold_vars
+  use m_fstr
   use hecmw_util
   use iso_c_binding
   integer(c_int) :: N_hold, M_hold
   type(hecmwST_local_mesh), pointer :: hecMESH_hold
-  type(hecmwST_matrix), pointer :: hecMAT_hold
+  type(hecmwST_matrix), pointer     :: hecMAT_hold
+  type(fstr_eigen), pointer         :: fstrEIG_hold
 end module blopex_fortran_hold_vars
 
 module m_fstr_EIG_lobpcg
@@ -20,13 +22,19 @@ contains
   subroutine fstr_solve_lobpcg(hecMESH, hecMAT, fstrSOLID, fstrEIG)
     use m_fstr
     use hecmw_util
+    use hecmw_precond
     implicit none
     type(hecmwST_local_mesh), target :: hecMESH
-    type(hecmwST_matrix), target :: hecMAT
-    type(fstr_solid)         :: fstrSOLID
-    type(fstr_eigen)         :: fstrEIG
+    type(hecmwST_matrix), target     :: hecMAT
+    type(fstr_solid)                 :: fstrSOLID
+    type(fstr_eigen), target         :: fstrEIG
     integer(kint) :: N, n_eigs, loglevel, maxit
     real(kreal) :: tol
+
+    if(myrank == 0)then
+      write(IMSG,'(" fstr_solve_lobpcg")')
+      write(*,'(" fstr_solve_lobpcg")')
+    endif
 
     N = hecMAT%NP*hecMAT%NDOF
     n_eigs = fstrEIG%nget
@@ -36,11 +44,14 @@ contains
     M_hold = n_eigs
     hecMESH_hold => hecMESH
     hecMAT_hold => hecMAT
+    fstrEIG_hold => fstrEIG
+
+    call hecmw_precond_setup(hecMAT, hecMESH, 1)
 
     allocate(fstrEIG%eigval(n_eigs), source = 0.0d0)
     allocate(fstrEIG%eigvec(N, n_eigs), source = 0.0d0)
 
-    loglevel = 0
+    loglevel = 1
 
     call blopex_lobpcg_solve(N, n_eigs, maxit, tol, loglevel, &
       & fstrEIG%eigval, fstrEIG%eigvec)
@@ -62,7 +73,7 @@ contains
 
     if(N < n_eigs) n_eigs = N
 
-    is_B = 0
+    is_B = 1
     is_T = 0
 
     call blopex_lobpcg_solve_c(n_eigs, maxit, tol, N, &
@@ -104,6 +115,9 @@ subroutine blopex_fortran_opB(dum, a, b)
   do j = 1, M_hold
     jS = N_hold*(j-1) + 1
     jE = N_hold*(j)
+    do i = jS, jE
+      b(i) = fstrEIG_hold%mass(i-jS+1)*a(i)
+    enddo
   enddo
 end subroutine blopex_fortran_opB
 
@@ -117,5 +131,6 @@ subroutine blopex_fortran_opT(dum, a, b)
   do j = 1, M_hold
     jS = N_hold*(j-1) + 1
     jE = N_hold*(j)
+    !call hecmw_precond_apply(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
   enddo
 end subroutine blopex_fortran_opT
