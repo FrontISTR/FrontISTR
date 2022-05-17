@@ -565,6 +565,7 @@ module m_fstr
     integer(kind=kint)  :: nget      ! Solved eigen value number (default:5)
     integer(kind=kint)  :: maxiter   ! Max. Lcz iterations (default:60)
     integer(kind=kint)  :: iter      ! Max. Lcz iterations (default:60)
+    integer(kind=kint)  :: method    ! method 1: Lanczos, 2: LOBPCG
     real   (kind=kreal) :: sigma     ! 0.0
     real   (kind=kreal) :: tolerance ! Lcz tolerance (default:1.0e-8)
     real   (kind=kreal) :: totalmass

@@ -28,7 +28,6 @@ contains
     end do
   end subroutine pc_strupr
 
-
   !> Read in !EIGEN (struct)
   function fstr_ctrl_get_EIGEN( ctrl, nget, tolerance, maxiter)
     implicit none
@@ -39,11 +38,8 @@ contains
     integer(kind=kint) :: fstr_ctrl_get_EIGEN
 
     ! JP-16
-    fstr_ctrl_get_EIGEN = fstr_ctrl_get_data_ex( ctrl, 1,  'Iri ',  nget, tolerance, maxiter )
-
+    fstr_ctrl_get_EIGEN = fstr_ctrl_get_data_ex( ctrl, 1,  'IRI ',  nget, tolerance, maxiter )
   end function fstr_ctrl_get_EIGEN
 
-
-  !* ----------------------------------------------------------------------------------------------- *!
 end module fstr_ctrl_eigen
 

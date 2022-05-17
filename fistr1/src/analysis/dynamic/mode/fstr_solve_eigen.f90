@@ -51,8 +51,11 @@ contains
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
     call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
 
-    !call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
-    call fstr_solve_lobpcg (hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+    if(fstrEIG%method == 1)then
+      call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+    elseif(fstrEIG%method == 2)then
+      call fstr_solve_lobpcg (hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+    endif
 
     call hecmw_mpc_tback_eigvec(hecMESH, hecMAT, fstrEIG%iter, fstrEIG%eigvec)
 

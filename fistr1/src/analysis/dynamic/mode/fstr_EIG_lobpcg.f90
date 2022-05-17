@@ -32,8 +32,8 @@ contains
     real(kreal) :: tol
 
     if(myrank == 0)then
-      write(IMSG,'(" fstr_solve_lobpcg")')
-      write(*,'(" fstr_solve_lobpcg")')
+      write(IMSG,*)"fstr_solve_lobpcg, precond: ", hecmw_mat_get_precond(hecMAT)
+      write(*,*)"fstr_solve_lobpcg, precond: ", hecmw_mat_get_precond(hecMAT)
     endif
 
     N = hecMAT%NP*hecMAT%NDOF
@@ -74,7 +74,7 @@ contains
     if(N < n_eigs) n_eigs = N
 
     is_B = 1
-    is_T = 0
+    is_T = 1
 
     call blopex_lobpcg_solve_c(n_eigs, maxit, tol, N, &
       & blopex_fortran_opA, blopex_fortran_opB, blopex_fortran_opT, &
@@ -124,13 +124,14 @@ end subroutine blopex_fortran_opB
 subroutine blopex_fortran_opT(dum, a, b)
   use blopex_fortran_hold_vars
   use iso_c_binding
+  use hecmw_precond
   implicit none
   integer(c_int) :: dum, i, j, jS, jE
-  real(c_double) :: a(N_hold*M_hold), b(N_hold*M_hold)
+  real(c_double) :: a(N_hold*M_hold), b(N_hold*M_hold), w(N_hold), tcomm
 
   do j = 1, M_hold
     jS = N_hold*(j-1) + 1
     jE = N_hold*(j)
-    !call hecmw_precond_apply(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
+    call hecmw_precond_apply(hecMESH_hold, hecMAT_hold, a(jS:jE), b(jS:jE), w, tcomm)
   enddo
 end subroutine blopex_fortran_opT

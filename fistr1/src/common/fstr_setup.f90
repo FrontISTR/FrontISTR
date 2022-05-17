@@ -3201,12 +3201,17 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
+    integer(kind=kint) :: rcode, method
 
-    integer(kind=kint) :: rcode
+    method = 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'METHOD ', 'LANCZOS,LOBPCG ', 0, 'P', method ) /= 0 ) return
+
+write(*,*)"method", method
+
+    P%EIGEN%method = method
 
     rcode = fstr_ctrl_get_EIGEN( ctrl, P%EIGEN%nget, P%EIGEN%tolerance, P%EIGEN%maxiter)
     if( rcode /= 0) call fstr_ctrl_err_stop
-
   end subroutine fstr_setup_EIGEN
 
 
