@@ -5,29 +5,28 @@
 module m_solve_LINEQ_direct_serial_lag
 
   use hecmw_util
-  use fstr_matrix_con_contact
   use m_set_arrays_directsolver_contact
   use hecmw_solver_direct_serial_lag
   ! use hecmw_solver_
 
 contains
 
-  subroutine solve_LINEQ_serial_lag_hecmw_init(hecMAT,fstrMAT,is_sym)
+  subroutine solve_LINEQ_serial_lag_hecmw_init(hecMAT,hecLagMAT,is_sym)
     implicit none
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange
     logical                                  :: is_sym         !< symmetry of matrix
 
-    call set_pointersANDindices_directsolver(hecMAT,fstrMAT,is_sym)
+    call set_pointersANDindices_directsolver(hecMAT,hecLagMAT,is_sym)
 
   end subroutine solve_LINEQ_serial_lag_hecmw_init
 
 
-  subroutine solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,fstrMAT)
+  subroutine solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
     implicit none
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
-    type (fstrST_matrix_contact_lagrange)    :: fstrMAT        !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange
     integer (kind=4)                         :: ntdf, ilag_sta
     integer (kind=4)                         :: numNon0
     integer (kind=4)                         :: ierr, nprocs, myrank
@@ -36,12 +35,12 @@ contains
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 
-    call set_values_directsolver(hecMAT,fstrMAT)
+    call set_values_directsolver(hecMAT,hecLagMAT)
 
-    ntdf = hecMAT%NP*hecMAT%NDOF + fstrMAT%num_lagrange
+    ntdf = hecMAT%NP*hecMAT%NDOF + hecLagMAT%num_lagrange
     ilag_sta = hecMAT%NP*hecMAT%NDOF + 1
     numNon0 = hecMAT%NPU*hecMAT%NDOF**2+hecMAT%NP*hecMAT%NDOF*(ntdf+1)/2 &
-      + (fstrMAT%numU_lagrange)*hecMAT%NDOF+fstrMAT%num_lagrange
+      + (hecLagMAT%numU_lagrange)*hecMAT%NDOF+hecLagMAT%num_lagrange
 
     allocate(b(size(hecMAT%B)))
     b = hecMAT%B

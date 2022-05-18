@@ -431,6 +431,25 @@ module hecmw_util
     integer(kind=kint) :: max_col
   end type hecmwST_matrix_contact
 
+  !> Structure for Lagrange multiplier-related part of stiffness matrix
+  !> (Lagrange multiplier-related matrix)
+  type hecmwST_matrix_lagrange
+    integer(kind=kint) :: num_lagrange = 0 !< total number of Lagrange multipliers
+    integer(kind=kint) :: numL_lagrange = 0 !< node-based number of non-zero items in lower triangular half of matrix
+    integer(kind=kint) :: numU_lagrange = 0 !< node-based number of non-zero items in upper triangular half of matrix
+
+    integer(kind=kint), pointer  :: indexL_lagrange(:) => null() !< node-based index of first non-zero item of each row in lower part
+    integer(kind=kint), pointer  :: indexU_lagrange(:) => null() !< node-based index of first non-zero item of each row in upper part
+
+    integer(kind=kint), pointer  :: itemL_lagrange(:) => null() !< node-based column number of non-zero items in lower part
+    integer(kind=kint), pointer  :: itemU_lagrange(:) => null() !< node-based column number of non-zero items in upper part
+
+    real(kind=kreal),    pointer  :: AL_lagrange(:) => null() !< values of non-zero items in lower part
+    real(kind=kreal),    pointer  :: AU_lagrange(:) => null() !< values of non-zero items in upper part
+
+    real(kind=kreal),    pointer  :: Lagrange(:) => null() !< values of Lagrange multipliers
+  end type hecmwST_matrix_lagrange
+
   type hecmwST_matrix
     integer(kind=kint) ::  N, NP, NPL, NPU, NDOF, NPCL, NPCU
     !integer(kind=kint) ::  NU, NL  ! used only in mat_con
