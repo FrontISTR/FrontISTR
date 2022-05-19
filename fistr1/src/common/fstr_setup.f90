@@ -3206,8 +3206,6 @@ end function fstr_setup_INITIAL
     method = 1
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD ', 'LANCZOS,LOBPCG ', 0, 'P', method ) /= 0 ) return
 
-write(*,*)"method", method
-
     P%EIGEN%method = method
 
     rcode = fstr_ctrl_get_EIGEN( ctrl, P%EIGEN%nget, P%EIGEN%tolerance, P%EIGEN%maxiter)
