@@ -29,6 +29,7 @@ contains
     type(fstr_solid)                 :: fstrSOLID
     type(fstr_eigen), target         :: fstrEIG
     integer(kint) :: N, n_eigs, loglevel, maxit
+    integer(kint) :: i, j, NDOF2, ik, in, it, jn, ig, ig0, is0, ie0, its0, ite0, NDOF
     real(kreal) :: tol
 
     if(myrank == 0)then
@@ -37,6 +38,7 @@ contains
     endif
 
     N = hecMAT%NP*hecMAT%NDOF
+    NDOF = hecMAT%NDOF
     n_eigs = fstrEIG%nget
     maxit = fstrEIG%maxiter
     tol = fstrEIG%tolerance
@@ -48,6 +50,56 @@ contains
 
     call hecmw_precond_setup(hecMAT, hecMESH, 1)
 
+    !> shifting
+    fstrEIG%sigma = 0.01d0
+
+    jn = 0
+    do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
+      ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+      iS0  = hecMESH%node_group%grp_index(ig-1) + 1
+      iE0  = hecMESH%node_group%grp_index(ig  )
+      it   = fstrSOLID%BOUNDARY_ngrp_type(ig0)
+      itS0 = (it - mod(it,10))/10
+      itE0 = mod(it,10)
+
+      do ik = iS0, iE0
+        in = hecMESH%node_group%grp_item(ik)
+        if(NDOF < itE0) itE0 = NDOF
+        do i = itS0, itE0
+          jn = jn + 1
+          fstrEIG%filter((in-1)*NDOF+i) = 0.0d0
+        enddo
+      enddo
+    enddo
+
+    do ig0 = 1, fstrSOLID%SPRING_ngrp_tot
+      ig = fstrSOLID%SPRING_ngrp_ID(ig0)
+      iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+      iE0 = hecMESH%node_group%grp_index(ig  )
+      do ik = iS0, iE0
+        jn = jn + 1
+      enddo
+    enddo
+
+    call hecmw_allreduce_I1(hecMESH, jn, hecmw_sum)
+    if(jn == 0)then
+      fstrEIG%is_free = .true.
+      if(myrank == 0)then
+        write(*,"(a,1pe12.4)") '** free modal analysis: shift factor =', fstrEIG%sigma
+      endif
+    endif
+
+    if(fstrEIG%is_free)then
+      NDOF2 = NDOF*NDOF
+      do i = 1, hecMAT%NP
+        do j = 1, NDOF
+          hecMAT%D(NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) = &
+          & hecMAT%D(NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) + fstrEIG%sigma * fstrEIG%mass(NDOF*(i-1) + j)
+        enddo
+      enddo
+    endif
+
+    !> solver
     allocate(fstrEIG%eigval(n_eigs), source = 0.0d0)
     allocate(fstrEIG%eigvec(N, n_eigs), source = 0.0d0)
 
