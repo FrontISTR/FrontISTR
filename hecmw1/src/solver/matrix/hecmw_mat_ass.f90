@@ -19,7 +19,9 @@ module hecmw_matrix_ass
   public :: hecmw_mat_ass_equation_rhs
   public :: hecmw_mat_add_dof
   public :: hecmw_mat_ass_bc
+  public :: hecmw_mat_ass_bc_contactlag
   public :: hecmw_mat_ass_contact
+  public :: hecmw_mat_ass_contactlag
   public :: stf_get_block
 
 contains
@@ -467,6 +469,32 @@ contains
 
   end subroutine hecmw_mat_ass_bc
 
+
+  !> Modify Lagrange multiplier-related part of stiffness matrix and right-hand side vector
+  !> for dealing with prescribed displacement boundary condition
+  subroutine hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,inode,idof,RHS)
+
+    type(hecmwST_matrix)                 :: hecMAT !< hecmwST_matrix
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< hecmwST_matrix_lagrange
+    integer(kind=kint) :: inode, idof !< number of node; degree of freedom
+    integer(kind=kint) :: isU, ieU, isL, ieL, i, l, k
+    real(kind=kreal)   :: RHS !< value of prescribed displacement
+
+    isU = hecLagMAT%indexU_lagrange(inode-1)+1
+    ieU = hecLagMAT%indexU_lagrange(inode)
+    do i = isU, ieU
+      hecLagMAT%AU_lagrange((i-1)*3+idof) = 0.0d0
+      l = hecLagMAT%itemU_lagrange(i)
+      isL = hecLagMAT%indexL_lagrange(l-1)+1
+      ieL = hecLagMAT%indexL_lagrange(l)
+      k = hecmw_array_search_i(hecLagMAT%itemL_lagrange,isL,ieL,inode)
+      if(k < isL .or. k > ieL) cycle
+      hecMAT%B(hecMAT%NP*hecMAT%NDOF+l) = hecMAT%B(hecMAT%NP*hecMAT%NDOF+l) - hecLagMAT%AL_lagrange((k-1)*3+idof)*RHS
+      hecLagMAT%AL_lagrange((k-1)*3+idof) = 0.0d0
+    enddo
+
+  end subroutine hecmw_mat_ass_bc_contactlag
+
   !C
   !C***
   !C*** MAT_ASS_CONTACT
@@ -500,5 +528,68 @@ contains
     call hecmw_cmat_pack(hecMAT%cmat)
 
   end subroutine hecmw_mat_ass_contact
+
+  !> \brief This subroutine assembles contact stiffness matrix of a contact pair into global stiffness matrix
+  subroutine hecmw_mat_ass_contactlag(nnode,ndLocal,id_lagrange,fcoeff,stiffness,hecMAT,hecLagMAT)
+
+    type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    integer(kind=kint) :: nnode, ndLocal(nnode + 1), id_lagrange !< total number of nodes of master segment
+!< global number of nodes of contact pair
+!< number of Lagrange multiplier
+    integer(kind=kint) :: i, j, inod, jnod, l
+    integer(kind=kint) :: isL, ieL, idxL_base, kL, idxL, isU, ieU, idxU_base, kU, idxU
+    real(kind=kreal)   :: fcoeff !< friction coefficient
+    real(kind=kreal)   :: stiffness(9*3 + 1, 9*3 + 1) !< contact stiffness matrix
+    real(kind=kreal)   :: a(3, 3)
+
+    i = nnode + 1 + 1
+    inod = id_lagrange
+    isL = hecLagMAT%indexL_lagrange(inod-1)+1
+    ieL = hecLagMAT%indexL_lagrange(inod)
+
+    do j = 1, nnode + 1
+      jnod = ndLocal(j)
+      isU = hecLagMAT%indexU_lagrange(jnod-1)+1
+      ieU = hecLagMAT%indexU_lagrange(jnod)
+
+      kL = hecmw_array_search_i(hecLagMAT%itemL_lagrange,isL,ieL,jnod)
+      if( kL<isL .or. kL>ieL ) then
+        write(*,*) '###ERROR### : cannot find connectivity (Lagrange1)'
+        stop
+      endif
+      kU = hecmw_array_search_i(hecLagMAT%itemU_lagrange,isU,ieU,inod)
+      if( kU<isU .or. kU>ieU ) then
+        write(*,*) '###ERROR### : cannot find connectivity (Lagrange2)'
+        stop
+      endif
+
+      idxL_base = (kL-1)*3
+      idxU_base = (kU-1)*3
+
+      do l = 1, 3
+        idxL = idxL_base + l
+        hecLagMAT%AL_lagrange(idxL) = hecLagMAT%AL_lagrange(idxL) + stiffness((i-1)*3+1,(j-1)*3+l)
+        idxU = idxU_base + l
+        hecLagMAT%AU_lagrange(idxU) = hecLagMAT%AU_lagrange(idxU) + stiffness((j-1)*3+l,(i-1)*3+1)
+      enddo
+    enddo
+
+
+    if(fcoeff /= 0.0d0)then
+
+      do i = 1, nnode + 1
+        inod = ndLocal(i)
+        do j = 1, nnode + 1
+          jnod = ndLocal(j)
+          call stf_get_block(stiffness(1:(nnode+1)*3,1:(nnode+1)*3), 3, i, j, a)
+          call hecmw_mat_add_node(hecMAT, inod, jnod, a)
+        enddo
+      enddo
+
+    endif
+
+  end subroutine hecmw_mat_ass_contactlag
+
 
 end module hecmw_matrix_ass

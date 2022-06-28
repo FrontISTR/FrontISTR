@@ -73,7 +73,7 @@ contains
     do i=1,ndp
       j=j*table%tbindex(i)
     enddo
-    if( j/= row) stop "Error in table defnition!"
+    if( j/= row) stop "Error in table definition!"
     !  print *, j,row, table%tbindex(1:ndp); pause
   end subroutine
 

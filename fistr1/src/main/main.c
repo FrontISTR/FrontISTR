@@ -224,7 +224,7 @@ void print_executeinfo(int log_level) {
     if (rank == 0){
       printf("    %d: %s\n",0,hostname);
       for (i=1;i<proc;i++){
-        MPI_Recv(&hostname, len, MPI_CHAR, i, 0, MPI_COMM_WORLD, &status);
+        MPI_Recv(&hostname, sizeof(hostname), MPI_CHAR, i, 0, MPI_COMM_WORLD, &status);
         printf("    %d: %s\n",i,hostname);
       }
     }else{
