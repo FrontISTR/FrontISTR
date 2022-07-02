@@ -709,7 +709,7 @@ contains
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMATmpc%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-          call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,hecLagMAT,istat,1.0D0,conMAT)
+          call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,hecLagMAT,conMAT,istat,1.0D0)
           call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
           call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 

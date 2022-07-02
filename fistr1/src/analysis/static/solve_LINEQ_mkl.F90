@@ -69,7 +69,7 @@ contains
     endif
 
     !  ----  For Parallel Contact with Multi-Partition Domains
-    if(paraContactFlag.and.present(conMAT)) then
+    if(present(conMAT)) then
       call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, hecLagMAT, conMAT)
       call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, hecLagMAT, conMAT)
     else

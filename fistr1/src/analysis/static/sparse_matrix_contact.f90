@@ -30,12 +30,7 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint) :: ndof, ndof2, N_loc, NL, NU, NZ, NN,nLag
     ndof=hecMAT%NDOF; ndof2=ndof*ndof
-    !   ----  For Parallel Contact with Multi-Partition Domains
-    if(paraContactFlag) then
-      NN = hecMAT%NP
-    else
-      NN = hecMAT%N
-    endif
+    NN = hecMAT%NP
     N_loc=hecMAT%N*ndof+hecLagMAT%num_lagrange
     if (sparse_matrix_is_sym(spMAT)) then
       NU=hecMAT%indexU(NN)
@@ -57,7 +52,7 @@ contains
     call hecmw_allreduce_I1(hecMESH, nLag, HECMW_SUM)
     if(myrank == 0) print *,'total number of contact nodes:',nLag
     spMAT%timelog = hecMAT%Iarray(22)
-    if(paraContactFlag) then
+    if(nprocs > 1) then
       call sparse_matrix_para_contact_set_prof(spMAT, hecMAT, hecLagMAT)
     else
       call sparse_matrix_contact_set_prof(spMAT, hecMAT, hecLagMAT)
