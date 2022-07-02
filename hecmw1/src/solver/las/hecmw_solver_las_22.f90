@@ -316,7 +316,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 3)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 2)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
