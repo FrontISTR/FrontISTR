@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-module m_fstr_mat_resid_contact
+module m_hecmw_mat_resid_contact
   use hecmw_util
   use hecmw_solver_las
   use hecmw_matrix_misc
@@ -11,17 +11,17 @@ module m_fstr_mat_resid_contact
   implicit none
 
   private
-  public :: fstr_get_residual_contact
-  public :: fstr_get_rel_resid_L2_contact
-  public :: fstr_get_resid_max_contact
+  public :: hecmw_get_residual_contact
+  public :: hecmw_get_rel_resid_L2_contact
+  public :: hecmw_get_resid_max_contact
 
 contains
 
-  subroutine fstr_get_residual_contact(hecMESH, hecMAT, hecLagMAT, r, rlag)
+  subroutine hecmw_get_residual_contact(hecMESH, hecMAT, hecLagMAT, r, rlag)
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix)     :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type fstrS  end subroutine fstr_get_residual_contact
+    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type fstrS  end subroutine hecmw_get_residual_contact
     real(kind=kreal), intent(out) :: r(:)
     real(kind=kreal), intent(out) :: rlag(:)
     real(kind=kreal)   :: Tcomm, sum
@@ -73,12 +73,12 @@ contains
         rlag(i)=hecMAT%B(npndof+i)-sum
       enddo
     end if
-  end subroutine fstr_get_residual_contact
+  end subroutine hecmw_get_residual_contact
 
   !> \brief This function calculates relative L2 residual
-  function fstr_get_rel_resid_L2_contact(hecMESH, hecMAT, hecLagMAT)
+  function hecmw_get_rel_resid_L2_contact(hecMESH, hecMAT, hecLagMAT)
     implicit none
-    real(kind=kreal)         :: fstr_get_rel_resid_L2_contact
+    real(kind=kreal)         :: hecmw_get_rel_resid_L2_contact
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type hecmwST_matrix_lagrange
@@ -91,7 +91,7 @@ contains
     allocate(r(hecMAT%NDOF*hecMAT%NP),rlag(hecLagMAT%num_lagrange))
     ! |b|^2
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, Tcomm)
-    call fstr_get_residual_contact(hecMESH, hecMAT, hecLagMAT, r, rlag)
+    call hecmw_get_residual_contact(hecMESH, hecMAT, hecLagMAT, r, rlag)
     ! |r|^2
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
     ! |rlag|^2
@@ -104,13 +104,13 @@ contains
     ! |r_total|^2 = |r|^2 + |rlag|^2
     if (hecLagMAT%num_lagrange > 0) rnorm2=rnorm2+rlagnorm2
     ! |r_total| / |b|
-    fstr_get_rel_resid_L2_contact = sqrt(rnorm2 / bnorm2)
-  end function fstr_get_rel_resid_L2_contact
+    hecmw_get_rel_resid_L2_contact = sqrt(rnorm2 / bnorm2)
+  end function hecmw_get_rel_resid_L2_contact
 
   !> \brief This function calculates maximum residual
-  function fstr_get_resid_max_contact(hecMESH, hecMAT, hecLagMAT)
+  function hecmw_get_resid_max_contact(hecMESH, hecMAT, hecLagMAT)
     implicit none
-    real(kind=kreal)         :: fstr_get_resid_max_contact
+    real(kind=kreal)         :: hecmw_get_resid_max_contact
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type hecmwST_matrix_lagrange
@@ -119,7 +119,7 @@ contains
     real(kind=kreal) :: rmax, rlagmax
     real(kind=kreal) :: Tcomm
     allocate(r(hecMAT%NDOF*hecMAT%NP),rlag(hecLagMAT%num_lagrange))
-    call fstr_get_residual_contact(hecMESH, hecMAT, hecLagMAT, r, rlag)
+    call hecmw_get_residual_contact(hecMESH, hecMAT, hecLagMAT, r, rlag)
     rmax = maxval(dabs(r))
     if (hecLagMAT%num_lagrange > 0) then
       rlagmax = maxval(dabs(rlag))
@@ -127,7 +127,7 @@ contains
     endif
     deallocate(r,rlag)
     call hecmw_allreduce_R1(hecMESH, rmax, HECMW_MAX)
-    fstr_get_resid_max_contact = rmax
-  end function fstr_get_resid_max_contact
+    hecmw_get_resid_max_contact = rmax
+  end function hecmw_get_resid_max_contact
 
-end module m_fstr_mat_resid_contact
+end module m_hecmw_mat_resid_contact

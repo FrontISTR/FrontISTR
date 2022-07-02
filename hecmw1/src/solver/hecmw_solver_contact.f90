@@ -13,7 +13,7 @@ module m_solve_LINEQ_contact
   use m_solve_LINEQ_direct_serial_lag
   use m_solve_LINEQ_MUMPS_contact
   use m_solve_LINEQ_iter_contact
-  use m_fstr_mat_resid_contact
+  use m_hecmw_mat_resid_contact
   use hecmw_matrix_misc
   use m_hecmw_comm_f
 
