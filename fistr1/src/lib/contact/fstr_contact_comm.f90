@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
-module m_fstr_contact_comm
+module m_hecmw_contact_comm
 
   use hecmw
 
@@ -11,14 +11,14 @@ module m_fstr_contact_comm
 
   private
   public :: fstrST_contact_comm
-  public :: fstr_contact_comm_init
-  public :: fstr_contact_comm_finalize
-  public :: fstr_contact_comm_reduce_r
-  public :: fstr_contact_comm_bcast_r
-  public :: fstr_contact_comm_reduce_i
-  public :: fstr_contact_comm_bcast_i
-  public :: fstr_contact_comm_allreduce_r
-  public :: fstr_contact_comm_allreduce_i
+  public :: hecmw_contact_comm_init
+  public :: hecmw_contact_comm_finalize
+  public :: hecmw_contact_comm_reduce_r
+  public :: hecmw_contact_comm_bcast_r
+  public :: hecmw_contact_comm_reduce_i
+  public :: hecmw_contact_comm_bcast_i
+  public :: hecmw_contact_comm_allreduce_r
+  public :: hecmw_contact_comm_allreduce_i
 
   type fstrST_contact_comm
     private
@@ -37,7 +37,7 @@ module m_fstr_contact_comm
 
 contains
 
-  subroutine fstr_contact_comm_init(conComm, hecMESH, ndof, n_contact_dof, contact_dofs)
+  subroutine hecmw_contact_comm_init(conComm, hecMESH, ndof, n_contact_dof, contact_dofs)
     implicit none
     type (fstrST_contact_comm), intent(inout) :: conComm
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -153,9 +153,9 @@ contains
     conComm%ext_item => ext_item
     conComm%int_index => int_index
     conComm%int_item => int_item
-  end subroutine fstr_contact_comm_init
+  end subroutine hecmw_contact_comm_init
 
-  subroutine fstr_contact_comm_finalize(conComm)
+  subroutine hecmw_contact_comm_finalize(conComm)
     implicit none
     type (fstrST_contact_comm), intent(inout) :: conComm
     if (conComm%n_neighbor_pe == 0) return
@@ -166,9 +166,9 @@ contains
     if (associated(conComm%int_item)) deallocate(conComm%int_item)
     conComm%n_neighbor_pe = 0
     conComm%MPI_COMM = 0
-  end subroutine fstr_contact_comm_finalize
+  end subroutine hecmw_contact_comm_finalize
 
-  subroutine fstr_contact_comm_reduce_r(conComm, vec, op)
+  subroutine hecmw_contact_comm_reduce_r(conComm, vec, op)
     implicit none
     type (fstrST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
@@ -176,9 +176,9 @@ contains
     if (conComm%n_neighbor_pe == 0) return
     call send_recv_contact_info_r(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%ext_index, conComm%ext_item, conComm%int_index, conComm%int_item, vec, op)
-  end subroutine fstr_contact_comm_reduce_r
+  end subroutine hecmw_contact_comm_reduce_r
 
-  subroutine fstr_contact_comm_bcast_r(conComm, vec)
+  subroutine hecmw_contact_comm_bcast_r(conComm, vec)
     implicit none
     type (fstrST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
@@ -187,9 +187,9 @@ contains
     op = op_overwrite
     call send_recv_contact_info_r(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%int_index, conComm%int_item, conComm%ext_index, conComm%ext_item, vec, op)
-  end subroutine fstr_contact_comm_bcast_r
+  end subroutine hecmw_contact_comm_bcast_r
 
-  subroutine fstr_contact_comm_reduce_i(conComm, vec, op)
+  subroutine hecmw_contact_comm_reduce_i(conComm, vec, op)
     implicit none
     type (fstrST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
@@ -197,9 +197,9 @@ contains
     if (conComm%n_neighbor_pe == 0) return
     call send_recv_contact_info_i(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%ext_index, conComm%ext_item, conComm%int_index, conComm%int_item, vec, op)
-  end subroutine fstr_contact_comm_reduce_i
+  end subroutine hecmw_contact_comm_reduce_i
 
-  subroutine fstr_contact_comm_bcast_i(conComm, vec)
+  subroutine hecmw_contact_comm_bcast_i(conComm, vec)
     implicit none
     type (fstrST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
@@ -208,25 +208,25 @@ contains
     op = op_overwrite
     call send_recv_contact_info_i(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%int_index, conComm%int_item, conComm%ext_index, conComm%ext_item, vec, op)
-  end subroutine fstr_contact_comm_bcast_i
+  end subroutine hecmw_contact_comm_bcast_i
 
-  subroutine fstr_contact_comm_allreduce_r(conComm, vec, op)
+  subroutine hecmw_contact_comm_allreduce_r(conComm, vec, op)
     implicit none
     type (fstrST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
-    call fstr_contact_comm_reduce_r(conComm, vec, op)
-    call fstr_contact_comm_bcast_r(conComm, vec)
-  end subroutine fstr_contact_comm_allreduce_r
+    call hecmw_contact_comm_reduce_r(conComm, vec, op)
+    call hecmw_contact_comm_bcast_r(conComm, vec)
+  end subroutine hecmw_contact_comm_allreduce_r
 
-  subroutine fstr_contact_comm_allreduce_i(conComm, vec, op)
+  subroutine hecmw_contact_comm_allreduce_i(conComm, vec, op)
     implicit none
     type (fstrST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
-    call fstr_contact_comm_reduce_i(conComm, vec, op)
-    call fstr_contact_comm_bcast_i(conComm, vec)
-  end subroutine fstr_contact_comm_allreduce_i
+    call hecmw_contact_comm_reduce_i(conComm, vec, op)
+    call hecmw_contact_comm_bcast_i(conComm, vec)
+  end subroutine hecmw_contact_comm_allreduce_i
 
   !
   ! private subroutines
@@ -395,4 +395,4 @@ contains
     deallocate(recv_buf)
   end subroutine send_recv_contact_info_i
 
-end module m_fstr_contact_comm
+end module m_hecmw_contact_comm

@@ -5,8 +5,12 @@
 !> This module provides interface of iteratie linear equation solver for
 !! contact problems using Lagrange multiplier.
 module m_solve_LINEQ_iter_contact
-  use m_fstr
+  use hecmw_util
+  use hecmw_local_matrix
+  use m_hecmw_contact_comm
   use hecmw_solver
+  use hecmw_matrix_misc
+  use m_hecmw_comm_f
 
   private
   public :: solve_LINEQ_iter_contact_init
@@ -53,6 +57,9 @@ contains
     logical :: fg_eliminate
     logical :: fg_amg
     integer(kind=kint) :: num_lagrange_global
+    integer(kind=kint) :: myrank
+
+    myrank = hecmw_comm_get_rank()
 
     hecMAT%Iarray(97) = 1
 
@@ -131,6 +138,9 @@ contains
     integer(kind=kint) :: n_contact_dof, n_slave
     integer(kind=kint), allocatable :: contact_dofs(:), slaves(:)
     real(kind=kreal), allocatable :: Btot(:)
+    integer(kind=kint) :: myrank
+
+    myrank = hecmw_comm_get_rank()
 
     t1 = hecmw_wtime()
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate start', hecmw_wtime()-t1
@@ -172,15 +182,15 @@ contains
       call make_contact_dof_list(hecMAT, hecLagMAT, n_contact_dof, contact_dofs)
 
       ! make comm_table for contact dof
-      ! call fstr_contact_comm_init(conCOMM, hecMESH, ndof, hecLagMAT%num_lagrange, iwS)
-      call fstr_contact_comm_init(conCOMM, hecMESH, ndof, n_contact_dof, contact_dofs)
+      ! call hecmw_contact_comm_init(conCOMM, hecMESH, ndof, hecLagMAT%num_lagrange, iwS)
+      call hecmw_contact_comm_init(conCOMM, hecMESH, ndof, n_contact_dof, contact_dofs)
       if (DEBUG >= 2) write(0,*) '  DEBUG2: make contact comm_table done', hecmw_wtime()-t1
 
       ! copy hecMESH to hecMESHtmp
       allocate(hecMESHtmp)
       call copy_mesh(hecMESH, hecMESHtmp, fg_paracon)
 
-      if (nprocs > 1) then
+      if ( hecmw_comm_get_size() > 1 ) then
         ! communicate and complete BTmat (update hecMESHtmp)
         call hecmw_localmat_assemble(BTmat, hecMESH, hecMESHtmp)
         if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble T done', hecmw_wtime()-t1
@@ -226,7 +236,7 @@ contains
         call hecmw_localmat_write(BKmat, 1000+myrank)
       endif
 
-      if (nprocs > 1) then
+      if ( hecmw_comm_get_size() > 1) then
         ! communicate and complete BKmat (update hecMESHtmp)
         call hecmw_localmat_assemble(BKmat, hecMESH, hecMESHtmp)
         if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble K (conMAT) done', hecmw_wtime()-t1
@@ -486,7 +496,7 @@ contains
     if (fg_paracon) then
       call hecmw_localmat_free(BKmat)
       deallocate(BKmat)
-      call fstr_contact_comm_finalize(conCOMM)
+      call hecmw_contact_comm_finalize(conCOMM)
       call free_mesh(hecMESHtmp, fg_paracon)
       deallocate(hecMESHtmp)
     else
@@ -512,6 +522,9 @@ contains
     real(kind=kreal) :: val, vmax
     integer, allocatable :: iw1L(:), iw1U(:)
     integer(kind=kint) :: n_slave_in,n_slave_out
+    integer(kind=kint) :: myrank
+
+    myrank = hecmw_comm_get_rank()
 
     iw2=-1
 
@@ -877,6 +890,8 @@ contains
   end subroutine make_contact_dof_list
 
   subroutine make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, num_lagrange, Bnew)
+    use hecmw_solver_las
+
     implicit none
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -925,7 +940,7 @@ contains
     do i=1,npndof+num_lagrange
       Btot(i) = conMAT%B(i)
     enddo
-    !call fstr_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
+    !call hecmw_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
     call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, hecMAT%NDOF)
   end subroutine assemble_b_paracon
 
@@ -961,7 +976,7 @@ contains
       Bnew(iwS(i))=wSL(i)*Btot(npndof+i)
     enddo
     ! send external contact dof => recv internal contact dof
-    call fstr_contact_comm_reduce_r(conCOMM, Bnew, HECMW_SUM)
+    call hecmw_contact_comm_reduce_r(conCOMM, Bnew, HECMW_SUM)
     ! Btmp=B+K*B2 (including update of Bnew)
     call hecmw_update_R(hecMESHtmp, Bnew, hecTKT%NP, hecMAT%NDOF)
     call hecmw_localmat_mulvec(BKmat, Bnew, Btmp)
@@ -1026,7 +1041,7 @@ contains
     enddo
     !
     ! send external contact dof => recv internal contact dof
-    call fstr_contact_comm_reduce_r(conCOMM, Xtmp, HECMW_SUM)
+    call hecmw_contact_comm_reduce_r(conCOMM, Xtmp, HECMW_SUM)
     !
     ! {X} = {X} - {Xtmp}
     do i = 1, n_slave
@@ -1128,7 +1143,7 @@ contains
     ! 3. send internal contact dof => recv external contact dof
     !call hecmw_update_3_R(hecMESH, Btmp, hecMAT%NP)
     ! Btmp(nndof+1:npndof) = 0.0d0
-    call fstr_contact_comm_bcast_r(conCOMM, Btmp)
+    call hecmw_contact_comm_bcast_r(conCOMM, Btmp)
     !
     ! 4. {lag} = - [-Bs^-T] {Btmp_s}
     xlag => hecMAT%X(npndof+1:npndof+num_lagrange)
@@ -1166,7 +1181,7 @@ contains
     ! {Btmp} = {hecMAT%B} - [hecMAT] {u}
     allocate(Btmp(npndof))
     call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, Btmp)
-    call fstr_contact_comm_bcast_r(conCOMM, Btmp)
+    call hecmw_contact_comm_bcast_r(conCOMM, Btmp)
     !
     ! {Btmp} = {Btmp} + {conMAT%B} - [conMAT] {u}
     do ilag = 1, num_lagrange
@@ -1225,6 +1240,9 @@ contains
     real(kind=kreal), pointer :: rlag(:), blag(:), xlag(:)
     real(kind=kreal) :: rnrm2, rlagnrm2
     real(kind=kreal) :: bnrm2, blagnrm2
+    integer(kind=kint) :: myrank
+
+    myrank = hecmw_comm_get_rank()
     ndof = hecMAT%NDOF
     nndof = hecMAT%N * ndof
     npndof = hecMAT%NP * ndof
@@ -1261,7 +1279,7 @@ contains
         enddo
       enddo
     endif
-    call fstr_contact_comm_reduce_r(conCOMM, Btmp, HECMW_SUM)
+    call hecmw_contact_comm_reduce_r(conCOMM, Btmp, HECMW_SUM)
     r(1:nndof) = r(1:nndof) - Btmp(1:nndof)
     !
     ! {rlag} = {c} - [B] {x}
@@ -1331,6 +1349,9 @@ contains
     real(kind=kreal), allocatable :: r_con(:)
     real(kind=kreal), pointer :: rlag(:), blag(:), xlag(:)
     real(kind=kreal) :: rnrm2, rlagnrm2
+    integer(kind=kint) :: myrank
+
+    myrank = hecmw_comm_get_rank()
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof
     nndof = hecMAT%N * ndof
@@ -1431,7 +1452,7 @@ contains
     endif
     !
     ! 1.2.3 send external part of {r_con}
-    call fstr_contact_comm_reduce_r(conCOMM, r_con, HECMW_SUM)
+    call hecmw_contact_comm_reduce_r(conCOMM, r_con, HECMW_SUM)
     !
     if (DEBUG >= 3) then
       write(1000+myrank,*) 'Residual(contact,assembled)--------------------------------------------'

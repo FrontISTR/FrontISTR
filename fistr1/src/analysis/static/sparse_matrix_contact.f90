@@ -5,7 +5,8 @@
 !> This module provides conversion routines between HEC and FISTR data
 !! structures and DOF based sparse matrix data structures (CSR/COO).
 module m_sparse_matrix_contact
-  use m_fstr
+  use hecmw_util
+  use m_hecmw_comm_f
   use m_sparse_matrix
   use m_sparse_matrix_hec
   implicit none
@@ -47,12 +48,12 @@ contains
     call sparse_matrix_init(spMAT, N_loc, NZ)
     call sparse_matrix_hec_set_conv_ext(spMAT, hecMESH, ndof)
     if(hecLagMAT%num_lagrange > 0) print '(I3,A,4I10,A,2I10)', &
-      myrank,' sparse_matrix_init ',hecMAT%N,hecMAT%NP,N_loc,NZ,' LAG',hecLagMAT%num_lagrange,spMAT%offset
+      hecmw_comm_get_rank(),' sparse_matrix_init ',hecMAT%N,hecMAT%NP,N_loc,NZ,' LAG',hecLagMAT%num_lagrange,spMAT%offset
     nLag = hecLagMAT%num_lagrange
     call hecmw_allreduce_I1(hecMESH, nLag, HECMW_SUM)
-    if(myrank == 0) print *,'total number of contact nodes:',nLag
+    if(hecmw_comm_get_rank() == 0) print *,'total number of contact nodes:',nLag
     spMAT%timelog = hecMAT%Iarray(22)
-    if(nprocs > 1) then
+    if( hecmw_comm_get_size() > 1) then
       call sparse_matrix_para_contact_set_prof(spMAT, hecMAT, hecLagMAT)
     else
       call sparse_matrix_contact_set_prof(spMAT, hecMAT, hecLagMAT)
@@ -166,7 +167,7 @@ contains
     if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) spMAT%IRN(ii+1-spMAT%offset)=m
     if (m-1 < spMAT%NZ) spMAT%NZ=m-1
     if (m-1 /= spMAT%NZ) then
-      write(*,*) 'ERROR: sparse_matrix_contact_set_prof on rank ',myrank
+      write(*,*) 'ERROR: sparse_matrix_contact_set_prof on rank ',hecmw_comm_get_rank()
       write(*,*) 'm-1 = ',m-1,', NZ=',spMAT%NZ,',num_lagrange=',hecLagMAT%num_lagrange
       call hecmw_abort(hecmw_comm_get_comm())
     endif
@@ -181,7 +182,7 @@ contains
     !integer(kind=kint) :: offset_l, offset_d, offset_u
     ! CONVERT TO CSR or COO STYLE
     if(spMAT%type /= SPARSE_MATRIX_TYPE_COO) then
-      write(*,*) 'ERROR: sparse_matrix_para_contact_set_prof on rank ',myrank
+      write(*,*) 'ERROR: sparse_matrix_para_contact_set_prof on rank ',hecmw_comm_get_rank()
       write(*,*) 'spMAT%type must be SPARSE_MATRIX_TYPE_COO, only for mumps'
       call hecmw_abort(hecmw_comm_get_comm())
     endif
@@ -361,7 +362,7 @@ contains
 
     !    if (sparse_matrix_is_sym(spMAT) .and. m-1 < spMAT%NZ) spMAT%NZ=m-1
     if (m-1 /= spMAT%NZ) then
-      write(*,*) 'ERROR: sparse_matrix_para_contact_set_prof on rank ',myrank
+      write(*,*) 'ERROR: sparse_matrix_para_contact_set_prof on rank ',hecmw_comm_get_rank()
       write(*,*) 'm-1 = ',m-1,', NZ=',spMAT%NZ,',num_lagrange=',hecLagMAT%num_lagrange
       call hecmw_abort(hecmw_comm_get_comm())
     endif
@@ -500,7 +501,7 @@ contains
     integer(kind=kint) :: offset_l, offset_d, offset_u
 
     if(spMAT%type /= SPARSE_MATRIX_TYPE_COO) then
-      write(*,*) 'ERROR: sparse_matrix_para_contact_set_vals on rank ',myrank
+      write(*,*) 'ERROR: sparse_matrix_para_contact_set_vals on rank ',hecmw_comm_get_rank()
       write(*,*) 'spMAT%type must be SPARSE_MATRIX_TYPE_COO, only for mumps'
       call hecmw_abort(hecmw_comm_get_comm())
     endif
@@ -707,7 +708,7 @@ contains
         stop "ERROR: sparse_matrix_contact_set_a"
     endif
     if (m-1 /= spMAT%NZ) then
-      write(*,*) 'ERROR: sparse_matrix_para_contact_set_vals on rank ',myrank
+      write(*,*) 'ERROR: sparse_matrix_para_contact_set_vals on rank ',hecmw_comm_get_rank()
       write(*,*) 'm-1 = ',m-1,', NZ=',spMAT%NZ,',num_lagrange=',hecLagMAT%num_lagrange
       call hecmw_abort(hecmw_comm_get_comm())
     endif
@@ -755,13 +756,13 @@ contains
       if((i0 < 0.or.i0 > spMAT%N)) then
         do j=1,ndof
           if(conMAT%b((i-1)*ndof+j) /= 0.0D0) then
-            print *,myrank,'i0',i,spMAT%N,'conMAT%b',conMAT%b((i-1)*ndof+j)
+            print *,hecmw_comm_get_rank(),'i0',i,spMAT%N,'conMAT%b',conMAT%b((i-1)*ndof+j)
             stop
           endif
         enddo
       else
         if(i0 > spMAT%N - ndof) then
-          print *,myrank,'ext out',hecMAT%N,hecMAT%NP,i,i0
+          print *,hecmw_comm_get_rank(),'ext out',hecMAT%N,hecMAT%NP,i,i0
         endif
         do j=1,ndof
           if(conMAT%b((i-1)*ndof+j) /= 0.0D0) then
