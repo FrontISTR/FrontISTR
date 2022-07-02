@@ -75,7 +75,8 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_solver.@f90objfilepostfix@
+	hecmw_solver.@f90objfilepostfix@ \
+	hecmw_solver_contact.@f90objfilepostfix@
   
 HEADERS = .
 
@@ -96,6 +97,7 @@ all: @build_target@
 	@cd solver_direct && $(MAKE) @build_target@
 	@cd solver_direct_parallel && $(MAKE) @build_target@
 	@cd solver_direct_lag && $(MAKE) @build_target@
+	@cd contact       && $(MAKE) @build_target@
 	@cd mpc           && $(MAKE) @build_target@
 	$(MAKE) BUILD_CURR
 
@@ -133,6 +135,7 @@ install:
 	@cd solver_direct && $(MAKE) install
 	@cd solver_direct_parallel && $(MAKE) install
 	@cd solver_direct_lag && $(MAKE) install
+	@cd contact       && $(MAKE) install
 	@cd mpc           && $(MAKE) install
 
 clean:
@@ -150,6 +153,7 @@ clean:
 	@cd solver_direct && $(MAKE) clean
 	@cd solver_direct_parallel && $(MAKE) clean
 	@cd solver_direct_lag && $(MAKE) clean
+	@cd contact       && $(MAKE) clean
 	@cd mpc           && $(MAKE) clean
 
 distclean: clean
@@ -166,6 +170,7 @@ distclean: clean
 	@cd solver_direct && $(MAKE) distclean
 	@cd solver_direct_parallel && $(MAKE) distclean
 	@cd solver_direct_lag && $(MAKE) distclean
+	@cd contact       && $(MAKE) distclean
 	@cd mpc           && $(MAKE) distclean
 
 maintainer-clean:
@@ -182,6 +187,7 @@ maintainer-clean:
 	@cd solver_direct && $(MAKE) maintainer-clean
 	@cd solver_direct_parallel && $(MAKE) maintainer-clean
 	@cd solver_direct_lag && $(MAKE) maintainer-clean
+	@cd contact       && $(MAKE) maintainer-clean
 	@cd mpc           && $(MAKE) maintainer-clean
 
 include .dependf90
@@ -201,4 +207,5 @@ depend .dependf90:
 	@cd solver_direct && $(MAKE) depend
 	@cd solver_direct_parallel && $(MAKE) depend
 	@cd solver_direct_lag && $(MAKE) depend
+	@cd contact       && $(MAKE) depend
 	@cd mpc           && $(MAKE) depend

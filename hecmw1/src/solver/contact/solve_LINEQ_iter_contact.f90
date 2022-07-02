@@ -8,7 +8,7 @@ module m_solve_LINEQ_iter_contact
   use hecmw_util
   use hecmw_local_matrix
   use m_hecmw_contact_comm
-  use hecmw_solver
+  use hecmw_solver_iterative
   use hecmw_matrix_misc
   use m_hecmw_comm_f
 
@@ -85,7 +85,7 @@ contains
       ! avoid ML when no contact
       !if (fg_amg) call hecmw_mat_set_precond(hecMAT, 3) ! set diag-scaling
       ! solve
-      call hecmw_solve(hecMESH, hecMAT)
+      call hecmw_solve_iterative(hecMESH,hecMAT)
       ! restore solver setting
       call hecmw_mat_set_method(hecMAT, method_org)
       !if (fg_amg) call hecmw_mat_set_precond(hecMAT, 5)
@@ -428,7 +428,7 @@ contains
     ! if (SymType == 1) call hecmw_mat_set_method(hecTKT, 1)
 
     ! solve
-    call hecmw_solve(hecMESHtmp, hecTKT)
+    call hecmw_solve_iterative(hecMESHtmp,hecTKT)
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: linear solver finished', hecmw_wtime()-t1
 
     ! solution in converged system
@@ -2523,7 +2523,7 @@ contains
       enddo
     endif
 
-    call hecmw_solve(hecMESH, hecMATLag)
+    call hecmw_solve_iterative(hecMESH, hecMATLag)
 
     hecMAT%Iarray=hecMATLag%Iarray
     hecMAT%Rarray=hecMATLag%Rarray

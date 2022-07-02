@@ -1,15 +1,6 @@
-hecmw_comm_f.o : hecmw_comm_f.F90 hecmw_solver_SR_mmi.o hecmw_solver_SR_66i.o hecmw_solver_SR_44i.o hecmw_solver_SR_33i.o hecmw_solver_SR_22i.o hecmw_solver_SR_11i.o hecmw_solver_SR_mm.o hecmw_solver_SR_66.o hecmw_solver_SR_44.o hecmw_solver_SR_33.o hecmw_solver_SR_22.o hecmw_solver_SR_11.o 
+hecmw_comm_f.o : hecmw_comm_f.F90 hecmw_solver_SR_i.o hecmw_solver_SR.o
 hecmw_comm_group.o : hecmw_comm_group.f90 hecmw_comm_f.o 
-hecmw_solver_SR_11.o : hecmw_solver_SR_11.F90 
-hecmw_solver_SR_11i.o : hecmw_solver_SR_11i.F90 
-hecmw_solver_SR_22.o : hecmw_solver_SR_22.F90 
-hecmw_solver_SR_22i.o : hecmw_solver_SR_22i.F90 
-hecmw_solver_SR_33.o : hecmw_solver_SR_33.F90 
-hecmw_solver_SR_33i.o : hecmw_solver_SR_33i.F90 
-hecmw_solver_SR_44.o : hecmw_solver_SR_44.F90 
-hecmw_solver_SR_44i.o : hecmw_solver_SR_44i.F90 
-hecmw_solver_SR_66.o : hecmw_solver_SR_66.F90 
-hecmw_solver_SR_66i.o : hecmw_solver_SR_66i.F90 
-hecmw_solver_SR_mm.o : hecmw_solver_SR_mm.F90 
-hecmw_solver_SR_mmi.o : hecmw_solver_SR_mmi.F90 
+hecmw_comm_contact_f.o : hecmw_comm_contact_f.f90 hecmw_comm_f.o 
+hecmw_solver_SR.o : hecmw_solver_SR.F90 
+hecmw_solver_SR_i.o : hecmw_solver_SR_i.F90 
 hecmw_solver_misc.o : hecmw_solver_misc.f90 hecmw_comm_f.o 

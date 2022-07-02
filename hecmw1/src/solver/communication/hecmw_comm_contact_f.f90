@@ -5,7 +5,8 @@
 
 module m_hecmw_contact_comm
 
-  use hecmw
+  use hecmw_util
+  use m_hecmw_comm_f
 
   implicit none
 
@@ -33,7 +34,7 @@ module m_hecmw_contact_comm
 
   integer(kind=kint), parameter :: op_overwrite = 46810
 
-  integer(kind=kint), parameter :: DEBUG = 0
+  integer(kind=kint), parameter :: DBG = 0
 
 contains
 
@@ -136,7 +137,7 @@ contains
     enddo
     call HECMW_Waitall(n_send, requests, statuses)
     deallocate(statuses, requests)
-    if (DEBUG >= 2) then
+    if (DBG >= 2) then
       write(0,*) '  DEBUG2: ext_index',ext_index(:)
       write(0,*) '  DEBUG2: ext_item',ext_item(:)
       write(0,*) '  DEBUG2: ext_item_remote',ext_item_remote(:)
@@ -313,7 +314,7 @@ contains
     endif
     deallocate(requests)
     deallocate(statuses)
-    if (DEBUG >= 2) then
+    if (DBG >= 2) then
       write(0,*) '  DEBUG2: send_buf',send_buf(:)
       write(0,*) '  DEBUG2: recv_buf',recv_buf(:)
     endif
@@ -387,7 +388,7 @@ contains
     endif
     deallocate(requests)
     deallocate(statuses)
-    if (DEBUG >= 2) then
+    if (DBG >= 2) then
       write(0,*) '  DEBUG2: send_buf',send_buf(:)
       write(0,*) '  DEBUG2: recv_buf',recv_buf(:)
     endif

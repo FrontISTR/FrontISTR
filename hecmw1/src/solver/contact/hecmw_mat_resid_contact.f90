@@ -3,7 +3,11 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 module m_fstr_mat_resid_contact
-  use m_fstr
+  use hecmw_util
+  use hecmw_solver_las
+  use hecmw_matrix_misc
+  use hecmw_solver_misc
+  use m_hecmw_comm_f
   implicit none
 
   private

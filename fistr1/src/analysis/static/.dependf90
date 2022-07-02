@@ -10,17 +10,9 @@ fstr_StiffMatrix.o : fstr_StiffMatrix.f90
 fstr_Update.o : fstr_Update.f90 
 fstr_ass_load.o : fstr_ass_load.f90 fstr_Spring.o readtemp.o 
 fstr_mat_con_contact.o : fstr_mat_con_contact.f90 
-fstr_mat_resid_contact.o : fstr_mat_resid_contact.f90 fstr_mat_con_contact.o 
-fstr_solve_NLGEOM.o : fstr_solve_NLGEOM.f90 solve_LINEQ_contact.o fstr_Cutback.o fstr_Ctrl_TimeInc.o fstr_mat_con_contact.o fstr_Restart.o fstr_solve_NonLinear.o static_output.o 
-fstr_solve_NonLinear.o : fstr_solve_NonLinear.f90 solve_LINEQ_contact.o fstr_AddContactStiff.o fstr_mat_con_contact.o fstr_Restart.o fstr_Residual.o fstr_AddBC.o fstr_ass_load.o fstr_Update.o fstr_StiffMatrix.o fstr_Spring.o static_output.o 
+fstr_solve_NLGEOM.o : fstr_solve_NLGEOM.f90 fstr_Cutback.o fstr_Ctrl_TimeInc.o fstr_mat_con_contact.o fstr_Restart.o fstr_solve_NonLinear.o static_output.o 
+fstr_solve_NonLinear.o : fstr_solve_NonLinear.f90 fstr_AddContactStiff.o fstr_mat_con_contact.o fstr_Restart.o fstr_Residual.o fstr_AddBC.o fstr_ass_load.o fstr_Update.o fstr_StiffMatrix.o fstr_Spring.o static_output.o 
 make_result.o : make_result.f90 
 readtemp.o : readtemp.f90 
-set_arrays_DirectSolver.o : set_arrays_DirectSolver.f90 fstr_mat_con_contact.o 
-solve_LINEQ_MUMPS_contact.o : solve_LINEQ_MUMPS_contact.f90 fstr_mat_con_contact.o sparse_matrix_contact.o 
-solve_LINEQ_contact.o : solve_LINEQ_contact.f90 fstr_mat_resid_contact.o solve_LINEQ_iter_contact.o solve_LINEQ_MUMPS_contact.o solve_LINEQ_direct_serial_lag.o solve_LINEQ_mkl.o 
-solve_LINEQ_direct_serial_lag.o : solve_LINEQ_direct_serial_lag.f90 set_arrays_DirectSolver.o fstr_mat_con_contact.o 
-solve_LINEQ_iter_contact.o : solve_LINEQ_iter_contact.f90 fstr_mat_con_contact.o 
-solve_LINEQ_mkl.o : solve_LINEQ_mkl.F90 fstr_mat_con_contact.o sparse_matrix_contact.o 
-sparse_matrix_contact.o : sparse_matrix_contact.f90 fstr_mat_con_contact.o 
 static_echo.o : static_echo.f90 
 static_output.o : static_output.f90 make_result.o fstr_NodalStress.o 
