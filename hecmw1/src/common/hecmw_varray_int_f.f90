@@ -5,6 +5,7 @@
 !> \brief varray int
 
 module hecmw_varray_int
+  use hecmw_util, only: kint
   implicit none
 
   private
@@ -26,17 +27,17 @@ module hecmw_varray_int
 
   type hecmwST_varray_int
     private
-    integer :: nitem
-    integer, allocatable :: items(:)
+    integer(kind=kint) :: nitem
+    integer(kind=kint), allocatable :: items(:)
   end type hecmwST_varray_int
 
 contains
 
   subroutine HECMW_varray_int_initialize( ilist, n_init_in )
     type( hecmwST_varray_int ), intent(inout) :: ilist
-    integer, intent(in) :: n_init_in
+    integer(kind=kint), intent(in) :: n_init_in
 
-    integer :: n_init
+    integer(kind=kint) :: n_init
 
     n_init = max(n_init_in,1)
 
@@ -47,10 +48,10 @@ contains
 
   subroutine HECMW_varray_int_initialize_all( ilists, nlists, n_init_in )
     type( hecmwST_varray_int ), allocatable, intent(inout) :: ilists(:)
-    integer, intent(in) :: nlists
-    integer, intent(in) :: n_init_in
+    integer(kind=kint), intent(in) :: nlists
+    integer(kind=kint), intent(in) :: n_init_in
 
-    integer :: i
+    integer(kind=kint) :: i
 
     allocate(ilists(nlists))
     do i=1,size(ilists)
@@ -68,7 +69,7 @@ contains
   subroutine HECMW_varray_int_finalize_all( ilists )
     type( hecmwST_varray_int ), allocatable, intent(inout) :: ilists(:)
 
-    integer :: i
+    integer(kind=kint) :: i
 
     do i=1,size(ilists)
       ilists(i)%nitem = 0
@@ -87,8 +88,8 @@ contains
   subroutine HECMW_varray_int_enlarge( ilist )
     type( hecmwST_varray_int ), intent(inout) :: ilist
 
-    integer :: i, size_ilist
-    integer, allocatable :: tmp(:)
+    integer(kind=kint) :: i, size_ilist
+    integer(kind=kint), allocatable :: tmp(:)
 
     size_ilist = size(ilist%items)
     allocate(tmp(size_ilist))
@@ -107,7 +108,7 @@ contains
 
   subroutine HECMW_varray_int_add( ilist, ival )
     type( hecmwST_varray_int ), intent(inout) :: ilist
-    integer, intent(in) :: ival
+    integer(kind=kint), intent(in) :: ival
 
     if( ilist%nitem == size(ilist%items) ) &
       &  call HECMW_varray_int_enlarge( ilist )
@@ -118,9 +119,9 @@ contains
 
   subroutine HECMW_varray_int_add_if_not_exits( ilist, ival )
     type( hecmwST_varray_int ), intent(inout) :: ilist
-    integer, intent(in) :: ival
+    integer(kind=kint), intent(in) :: ival
 
-    integer :: i
+    integer(kind=kint) :: i
 
     do i=1,ilist%nitem
       if( ilist%items(i) == ival ) return
@@ -131,9 +132,9 @@ contains
 
   subroutine HECMW_varray_int_insert( ilist, ival )
     type( hecmwST_varray_int ), intent(inout) :: ilist
-    integer, intent(in) :: ival
+    integer(kind=kint), intent(in) :: ival
 
-    integer :: i, cval, tmpval
+    integer(kind=kint) :: i, cval, tmpval
 
     cval = ival
     do i=1,ilist%nitem
@@ -148,9 +149,9 @@ contains
 
   subroutine HECMW_varray_int_insert_if_not_exists( ilist, ival )
     type( hecmwST_varray_int ), intent(inout) :: ilist
-    integer, intent(in) :: ival
+    integer(kind=kint), intent(in) :: ival
 
-    integer :: i
+    integer(kind=kint) :: i
 
     do i=1,ilist%nitem
       if( ilist%items(i) == ival ) return
@@ -161,8 +162,8 @@ contains
 
   subroutine HECMW_varray_int_expand( ilist, n, vals )
     type( hecmwST_varray_int ), intent(inout) :: ilist
-    integer, intent(in) :: n
-    integer, intent(in) :: vals(:)
+    integer(kind=kint), intent(in) :: n
+    integer(kind=kint), intent(in) :: vals(:)
 
     do while( ilist%nitem + n > size(ilist%items) )
       call HECMW_varray_int_enlarge( ilist )
@@ -182,7 +183,7 @@ contains
   subroutine HECMW_varray_int_print_all( ilists )
     type( hecmwST_varray_int ), allocatable, intent(inout) :: ilists(:)
 
-    integer :: i
+    integer(kind=kint) :: i
 
     do i=1,size(ilists)
       write(*,*) "i, n, maxn: ", i, ilists(i)%nitem, size(ilists(i)%items)
@@ -190,11 +191,11 @@ contains
     end do
   end subroutine HECMW_varray_int_print_all
 
-  integer function HECMW_varray_int_find( ilist, ival )
+  integer(kind=kint) function HECMW_varray_int_find( ilist, ival )
     type( hecmwST_varray_int ), intent(in) :: ilist
-    integer, intent(in)          :: ival
+    integer(kind=kint), intent(in)          :: ival
 
-    integer :: i
+    integer(kind=kint) :: i
 
     HECMW_varray_int_find = -1
     do i=1,ilist%nitem
@@ -202,15 +203,15 @@ contains
     end do
   end function HECMW_varray_int_find
 
-  integer function HECMW_varray_int_get_nitem( ilist )
+  integer(kind=kint) function HECMW_varray_int_get_nitem( ilist )
     type( hecmwST_varray_int), intent(in) :: ilist
 
     HECMW_varray_int_get_nitem = ilist%nitem
   end function HECMW_varray_int_get_nitem
 
-  integer function HECMW_varray_int_get_item( ilist, n )
+  integer(kind=kint) function HECMW_varray_int_get_item( ilist, n )
     type( hecmwST_varray_int), intent(in) :: ilist
-    integer, intent(in) :: n
+    integer(kind=kint), intent(in) :: n
 
     HECMW_varray_int_get_item = ilist%items(n)
   end function HECMW_varray_int_get_item
