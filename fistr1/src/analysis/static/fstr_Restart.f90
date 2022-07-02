@@ -271,6 +271,8 @@ contains
       call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,3))
     endif
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       call hecmw_restart_read_real(fstrSOLID%elements(i)%equiForces)
     enddo
 
@@ -349,6 +351,8 @@ contains
       call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,3),size(fstrDYNAMIC%DISP(:,3)))
     endif
     do i= 1, hecMESH%n_elem
+      if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
+      if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       call hecmw_restart_add_real(fstrSOLID%elements(i)%equiForces,size(fstrSOLID%elements(i)%equiForces))
     enddo
 

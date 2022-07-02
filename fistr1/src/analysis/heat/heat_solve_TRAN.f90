@@ -32,14 +32,13 @@ contains
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
-    if(ISTEP == 1)then
-      start_time = 0.0d0
-    else
-      start_time = 0.0d0
-      do i = 1, ISTEP - 1
-        start_time = start_time + fstrHEAT%STEP_EETIME(i)
-      enddo
-    endif
+    start_time = 0.0d0
+    do i = 1, ISTEP - 1
+      start_time = start_time + fstrHEAT%STEP_EETIME(i)
+    enddo
+
+    current_time = 0.d0
+    next_time = 0.d0
     total_time = start_time + current_time
 
     delta_time_base = fstrHEAT%STEP_DLTIME(ISTEP)
