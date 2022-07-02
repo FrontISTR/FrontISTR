@@ -10,7 +10,7 @@ module m_hecmw_contact_comm
   implicit none
 
   private
-  public :: fstrST_contact_comm
+  public :: hecmwST_contact_comm
   public :: hecmw_contact_comm_init
   public :: hecmw_contact_comm_finalize
   public :: hecmw_contact_comm_reduce_r
@@ -20,7 +20,7 @@ module m_hecmw_contact_comm
   public :: hecmw_contact_comm_allreduce_r
   public :: hecmw_contact_comm_allreduce_i
 
-  type fstrST_contact_comm
+  type hecmwST_contact_comm
     private
     integer(kind=kint) :: n_neighbor_pe
     integer(kind=kint), pointer :: neighbor_pe(:)
@@ -29,7 +29,7 @@ module m_hecmw_contact_comm
     integer(kind=kint), pointer :: ext_item(:)
     integer(kind=kint), pointer :: int_index(:)
     integer(kind=kint), pointer :: int_item(:)
-  end type fstrST_contact_comm
+  end type hecmwST_contact_comm
 
   integer(kind=kint), parameter :: op_overwrite = 46810
 
@@ -39,7 +39,7 @@ contains
 
   subroutine hecmw_contact_comm_init(conComm, hecMESH, ndof, n_contact_dof, contact_dofs)
     implicit none
-    type (fstrST_contact_comm), intent(inout) :: conComm
+    type (hecmwST_contact_comm), intent(inout) :: conComm
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: ndof, n_contact_dof
     integer(kind=kint), intent(in) :: contact_dofs(:)
@@ -157,7 +157,7 @@ contains
 
   subroutine hecmw_contact_comm_finalize(conComm)
     implicit none
-    type (fstrST_contact_comm), intent(inout) :: conComm
+    type (hecmwST_contact_comm), intent(inout) :: conComm
     if (conComm%n_neighbor_pe == 0) return
     if (associated(conComm%neighbor_pe)) deallocate(conComm%neighbor_pe)
     if (associated(conComm%ext_index)) deallocate(conComm%ext_index)
@@ -170,7 +170,7 @@ contains
 
   subroutine hecmw_contact_comm_reduce_r(conComm, vec, op)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
     if (conComm%n_neighbor_pe == 0) return
@@ -180,7 +180,7 @@ contains
 
   subroutine hecmw_contact_comm_bcast_r(conComm, vec)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
     integer(kind=kint) :: op
     if (conComm%n_neighbor_pe == 0) return
@@ -191,7 +191,7 @@ contains
 
   subroutine hecmw_contact_comm_reduce_i(conComm, vec, op)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
     if (conComm%n_neighbor_pe == 0) return
@@ -201,7 +201,7 @@ contains
 
   subroutine hecmw_contact_comm_bcast_i(conComm, vec)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
     integer(kind=kint) :: op
     if (conComm%n_neighbor_pe == 0) return
@@ -212,7 +212,7 @@ contains
 
   subroutine hecmw_contact_comm_allreduce_r(conComm, vec, op)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
     call hecmw_contact_comm_reduce_r(conComm, vec, op)
@@ -221,7 +221,7 @@ contains
 
   subroutine hecmw_contact_comm_allreduce_i(conComm, vec, op)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
     call hecmw_contact_comm_reduce_i(conComm, vec, op)

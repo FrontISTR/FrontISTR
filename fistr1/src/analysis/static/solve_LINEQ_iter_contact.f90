@@ -134,7 +134,7 @@ contains
     logical :: fg_paracon
     type (hecmwST_local_matrix), pointer :: BKmat, BTtKmat, BTtKTmat, BKtmp
     integer(kind=kint), allocatable :: mark(:)
-    type(fstrST_contact_comm) :: conCOMM
+    type(hecmwST_contact_comm) :: conCOMM
     integer(kind=kint) :: n_contact_dof, n_slave
     integer(kind=kint), allocatable :: contact_dofs(:), slaves(:)
     real(kind=kreal), allocatable :: Btot(:)
@@ -931,7 +931,7 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in) :: hecMAT, conMAT
     integer(kind=kint), intent(in) :: num_lagrange
-    type (fstrST_contact_comm), intent(in) :: conCOMM
+    type (hecmwST_contact_comm), intent(in) :: conCOMM
     real(kind=kreal), intent(out) :: Btot(:)
     integer(kind=kint) :: ndof, nndof, npndof, i
     ndof = hecMAT%NDOF
@@ -954,7 +954,7 @@ contains
     integer(kind=kint), intent(in) :: iwS(:)
     real(kind=kreal), intent(in) :: wSL(:)
     integer(kind=kint), intent(in) :: num_lagrange
-    type (fstrST_contact_comm), intent(in) :: conCOMM
+    type (hecmwST_contact_comm), intent(in) :: conCOMM
     real(kind=kreal), intent(out) :: Bnew(:)
     real(kind=kreal), allocatable :: Btmp(:)
     integer(kind=kint) :: npndof, nndof, npndof_new, i
@@ -1015,7 +1015,7 @@ contains
     integer(kind=kint), intent(in) :: num_lagrange
     integer(kind=kint), intent(in) :: iwS(:)
     real(kind=kreal), intent(in) :: wSL(:)
-    type (fstrST_contact_comm), intent(in) :: conCOMM
+    type (hecmwST_contact_comm), intent(in) :: conCOMM
     integer(kind=kint), intent(in) :: n_slave
     integer(kind=kint), intent(in) :: slaves(:)
     integer(kind=kint) :: ndof, ndof2, npndof, nndof, ilag, islave, i
@@ -1113,7 +1113,7 @@ contains
     integer(kind=kint), intent(in) :: n_slave, num_lagrange
     integer(kind=kint), intent(in) :: slaves(:), iwS(:)
     real(kind=kreal), intent(in) :: wSU(:)
-    type (fstrST_contact_comm), intent(in) :: conCOMM
+    type (hecmwST_contact_comm), intent(in) :: conCOMM
     integer(kind=kint) :: ndof, npndof, nndof, npndof_new, i, ilag, islave
     real(kind=kreal), allocatable :: Btmp(:)
     real(kind=kreal), pointer :: xlag(:)
@@ -1163,7 +1163,7 @@ contains
     integer(kind=kint), intent(in) :: num_lagrange
     integer(kind=kint), intent(in) :: iwS(:)
     real(kind=kreal), intent(in) :: wSU(:)
-    type (fstrST_contact_comm), intent(in) :: conCOMM
+    type (hecmwST_contact_comm), intent(in) :: conCOMM
     integer(kind=kint) :: ndof, ndof2, npndof, nndof, i, ilag, irow, idof, js, je, j, jcol, jdof, islave
     real(kind=kreal), allocatable :: Btmp(:)
     real(kind=kreal), pointer :: xlag(:)
@@ -1231,7 +1231,7 @@ contains
     type (hecmwST_matrix_lagrange) , intent(in) :: hecLagMAT
     real(kind=kreal), target, intent(in) :: Btot(:)
     type (hecmwST_local_matrix), intent(in) :: BKmat
-    type (fstrST_contact_comm), intent(in) :: conCOMM
+    type (hecmwST_contact_comm), intent(in) :: conCOMM
     integer(kind=kint), intent(in) :: n_slave
     integer(kind=kint), intent(in) :: slaves(:)
     integer(kind=kint) :: ndof, nndof, npndof, num_lagrange, i, ls, le, l, j, idof, jdof
@@ -1340,7 +1340,7 @@ contains
     type (hecmwST_matrix_lagrange) , intent(in) :: hecLagMAT
     integer(kind=kint), intent(in) :: n_contact_dof
     integer(kind=kint), intent(in) :: contact_dofs(:)
-    type (fstrST_contact_comm), intent(in) :: conCOMM
+    type (hecmwST_contact_comm), intent(in) :: conCOMM
     integer(kind=kint), intent(in) :: n_slave
     integer(kind=kint), intent(in) :: slaves(:)
     integer(kind=kint) :: ndof, ndof2, nndof, npndof, num_lagrange

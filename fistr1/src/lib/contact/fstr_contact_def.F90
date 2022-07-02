@@ -50,7 +50,7 @@ module mContactDef
     ! following contact state
     type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes
 
-    type(fstrST_contact_comm)     :: comm                    !< contact communication table
+    type(hecmwST_contact_comm)     :: comm                    !< contact communication table
     type(bucketDB)                :: master_bktDB            !< bucket DB for master surface
 
     type(tContactParam), pointer  :: cparam=>null()          !< contact parameter
