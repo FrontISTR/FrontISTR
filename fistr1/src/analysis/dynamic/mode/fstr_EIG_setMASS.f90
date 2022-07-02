@@ -168,7 +168,7 @@ contains
       enddo
     enddo
 
-    call hecmw_update_m_R(hecMESH, fstrEIG%mass, NP, NDOF)
+    call hecmw_update_R(hecMESH, fstrEIG%mass, NP, NDOF)
 
     chkmass = 0.0d0
     do i = 1, N

@@ -714,7 +714,7 @@ contains
           call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
           ! ----- update external nodal displacement increments
-          call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
+          call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
 
           ! ----- update the strain, stress, and internal force
           do j=1,hecMESH%n_node*ndof

@@ -931,7 +931,7 @@ contains
       Btot(i) = conMAT%B(i)
     enddo
     !call fstr_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
-    call hecmw_assemble_3_R(hecMESH, Btot, hecMAT%NP)
+    call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, hecMAT%NDOF)
   end subroutine assemble_b_paracon
 
   subroutine make_new_b_paracon(hecMESH, hecMAT, conMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
@@ -968,13 +968,13 @@ contains
     ! send external contact dof => recv internal contact dof
     call fstr_contact_comm_reduce_r(conCOMM, Bnew, HECMW_SUM)
     ! Btmp=B+K*B2 (including update of Bnew)
-    call hecmw_update_3_R(hecMESHtmp, Bnew, hecTKT%NP)
+    call hecmw_update_R(hecMESHtmp, Bnew, hecTKT%NP, hecMAT%NDOF)
     call hecmw_localmat_mulvec(BKmat, Bnew, Btmp)
     do i=1,nndof
       Btmp(i)=Btot(i)+Btmp(i)
     enddo
     ! B2=BTtmat*Btmp
-    call hecmw_update_3_R(hecMESHtmp, Btmp, hecTKT%NP)
+    call hecmw_update_R(hecMESHtmp, Btmp, hecTKT%NP, hecMAT%NDOF)
     call hecmw_localmat_mulvec(BTtmat, Btmp, Bnew)
     deallocate(Btmp)
   end subroutine make_new_b_paracon
@@ -1018,7 +1018,7 @@ contains
     !! {X} = [BT] {Xp} - [-Bs^-1] {c}
     !!
     ! compute {X} = [BT] {Xp}
-    call hecmw_update_3_R(hecMESHtmp, hecTKT%X, hecTKT%NP)
+    call hecmw_update_R(hecMESHtmp, hecTKT%X, hecTKT%NP, 3)
     call hecmw_localmat_mulvec(BTmat, hecTKT%X, hecMAT%X)
     !
     ! compute {Xtmp} = [-Bs^-1] {c}
@@ -1117,7 +1117,7 @@ contains
     !!
     ! 1. {Btmp} = [BKmat] {X}
     hecTKT%X(1:nndof) = hecMAT%X(1:nndof)
-    call hecmw_update_3_R(hecMESHtmp, hecTKT%X, hecTKT%NP)
+    call hecmw_update_R(hecMESHtmp, hecTKT%X, hecTKT%NP, 3)
     allocate(Btmp(npndof))
     call hecmw_localmat_mulvec(BKmat, hecTKT%X, Btmp)
     !
@@ -1248,7 +1248,7 @@ contains
     !
     ! {r} = {b} - [K] {x}
     hecTKT%X(1:nndof) = hecMAT%X(1:nndof)
-    call hecmw_update_3_R(hecMESHtmp, hecTKT%X, hecTKT%NP)
+    call hecmw_update_R(hecMESHtmp, hecTKT%X, hecTKT%NP, ndof)
     call hecmw_localmat_mulvec(BKmat, hecTKT%X, Btmp)
     r(1:nndof) = Btot(1:nndof) - Btmp(1:nndof)
     !
@@ -1270,7 +1270,7 @@ contains
     r(1:nndof) = r(1:nndof) - Btmp(1:nndof)
     !
     ! {rlag} = {c} - [B] {x}
-    call hecmw_update_3_R(hecMESH, hecMAT%X, hecMAT%NP)
+    call hecmw_update_R(hecMESH, hecMAT%X, hecMAT%NP, ndof)
     do i = 1, num_lagrange
       rlag(i) = blag(i)
       ls = hecLagMAT%indexL_lagrange(i-1)+1
