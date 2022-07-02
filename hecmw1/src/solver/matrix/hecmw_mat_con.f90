@@ -42,8 +42,8 @@ contains
     !C | CONNECTIVITY according to ELEMENT TYPE |
     !C +----------------------------------------+
     !C===
-    call HECMW_varray_int_initialize_all( hecMAT%NP, 27, CLU )
-    call HECMW_varray_int_initialize_all( hecMAT%NP, 27, CLL )
+    call HECMW_varray_int_initialize_all( CLU, hecMAT%NP, 27 )
+    call HECMW_varray_int_initialize_all( CLL, hecMAT%NP, 27 )
     do itype= 1, hecMESH%n_elem_type
       is= hecMESH%elem_type_index(itype-1) + 1
       iE= hecMESH%elem_type_index(itype  )
@@ -62,9 +62,9 @@ contains
           do k=1,nn
             nid2 = nid(k)
             if( nid1 < nid2 ) then
-              call HECMW_varray_int_insert_if_not_exists( nid2, CLU(nid1) )
+              call HECMW_varray_int_insert_if_not_exists( CLU(nid1), nid2 )
             else if( nid1 > nid2 ) then
-              call HECMW_varray_int_insert_if_not_exists( nid2, CLL(nid1) )
+              call HECMW_varray_int_insert_if_not_exists( CLL(nid1), nid2 )
             end if
           enddo
         enddo
@@ -82,8 +82,8 @@ contains
     hecMAT%indexL = 0
     hecMAT%indexU = 0
     do i = 1, hecMAT%NP
-      hecMAT%indexL(i) = hecMAT%indexL(i-1) + CLL(i)%nitem
-      hecMAT%indexU(i) = hecMAT%indexU(i-1) + CLU(i)%nitem
+      hecMAT%indexL(i) = hecMAT%indexL(i-1) + HECMW_varray_int_get_nitem(CLL(i))
+      hecMAT%indexU(i) = hecMAT%indexU(i-1) + HECMW_varray_int_get_nitem(CLU(i))
     enddo
 
     hecMAT%NPL = hecMAT%indexL(hecMAT%NP)
@@ -92,13 +92,13 @@ contains
     allocate (hecMAT%itemL(hecMAT%NPL), hecMAT%itemU(hecMAT%NPU))
 
     do i=1,hecMAT%NP
-      do k=1,CLL(i)%nitem
+      do k=1,HECMW_varray_int_get_nitem(CLL(i))
         kk = k + hecMAT%indexL(i-1)
-        hecMAT%itemL(kk) = CLL(i)%items(k)
+        hecMAT%itemL(kk) = HECMW_varray_int_get_item(CLL(i), k)
       enddo
-      do k=1,CLU(i)%nitem
+      do k=1,HECMW_varray_int_get_nitem(CLU(i))
         kk = k + hecMAT%indexU(i-1)
-        hecMAT%itemU(kk) = CLU(i)%items(k)
+        hecMAT%itemU(kk) = HECMW_varray_int_get_item(CLU(i), k)
       enddo
     enddo
 
