@@ -620,11 +620,11 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static const flex_int16_t yy_accept[28] =
+static const flex_int16_t yy_accept[31] =
     {   0,
-        0,    0,   10,    8,    3,    4,    8,    2,    8,    6,
-        5,    7,    2,    3,    4,    2,    6,    5,    6,    0,
-        7,    2,    1,    2,    0,    6,    0
+        6,    6,   10,    8,    3,    4,    8,    2,    6,    6,
+        5,    7,    7,    2,    3,    4,    2,    6,    5,    0,
+        6,    7,    0,    7,    6,    2,    1,    2,    6,    0
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -665,40 +665,42 @@ static const YY_CHAR yy_meta[13] =
         5,    5
     } ;
 
-static const flex_int16_t yy_base[32] =
+static const flex_int16_t yy_base[35] =
     {   0,
-        0,    8,   44,   45,   41,   45,   39,    0,    6,    7,
-        0,    0,   17,   39,   45,    0,    0,    0,    0,   30,
-        0,   19,   45,   21,   17,    8,   45,   25,   27,   32,
-       35
+        0,    8,   51,   52,   48,   52,   46,    0,    6,    9,
+        0,    0,   15,   25,   46,   52,    0,    0,    0,   25,
+        0,    0,   14,   10,    0,   27,   52,   29,    7,   52,
+       33,   35,   40,   43
     } ;
 
-static const flex_int16_t yy_def[32] =
+static const flex_int16_t yy_def[35] =
     {   0,
-       27,    1,   27,   27,   27,   27,   27,   28,   27,   27,
-        9,   29,   30,   27,   27,   28,   10,    9,   10,   31,
-       29,   30,   27,   30,   27,   27,    0,   27,   27,   27,
-       27
+       30,    1,   30,   30,   30,   30,   30,   31,   30,   30,
+        9,   32,   30,   33,   30,   30,   31,   10,    9,   34,
+       10,   32,   30,   32,   24,   33,   30,   33,   30,    0,
+       30,   30,   30,   30
     } ;
 
-static const flex_int16_t yy_nxt[58] =
+static const flex_int16_t yy_nxt[65] =
     {   0,
         4,    5,    6,    7,    8,    8,    9,    9,   10,   11,
-       12,   12,   13,   13,   17,   18,   19,   26,   20,   23,
-       24,   23,   24,   23,   24,   16,   26,   16,   16,   16,
-       21,   21,   22,   22,   22,   22,   22,   25,   25,   26,
-       14,   15,   14,   27,    3,   27,   27,   27,   27,   27,
-       27,   27,   27,   27,   27,   27,   27
+       12,   13,   14,   14,   18,   19,   29,   20,   21,   25,
+       20,   23,   24,   29,   25,   22,   22,   27,   28,   27,
+       28,   27,   28,   17,   29,   17,   17,   17,   22,   22,
+       26,   26,   26,   26,   26,   23,   23,   15,   16,   15,
+       30,    3,   30,   30,   30,   30,   30,   30,   30,   30,
+       30,   30,   30,   30
     } ;
 
-static const flex_int16_t yy_chk[58] =
+static const flex_int16_t yy_chk[65] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    2,    2,    9,    9,   10,   26,   10,   13,
-       13,   22,   22,   24,   24,   28,   25,   28,   28,   28,
-       29,   29,   30,   30,   30,   30,   30,   31,   31,   20,
-       14,    7,    5,    3,   27,   27,   27,   27,   27,   27,
-       27,   27,   27,   27,   27,   27,   27
+        1,    1,    2,    2,    9,    9,   29,    9,   10,   24,
+       10,   13,   13,   23,   13,   13,   13,   14,   14,   26,
+       26,   28,   28,   31,   20,   31,   31,   31,   32,   32,
+       33,   33,   33,   33,   33,   34,   34,   15,    7,    5,
+        3,   30,   30,   30,   30,   30,   30,   30,   30,   30,
+       30,   30,   30,   30
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -730,8 +732,8 @@ static YYSTYPE yylval;
 static int lineno;
 static long len = 0;
 
-#line 733 "<stdout>"
-#line 734 "<stdout>"
+#line 735 "<stdout>"
+#line 736 "<stdout>"
 
 #define INITIAL 0
 
@@ -952,7 +954,7 @@ YY_DECL
 #line 28 "../src/common/hecmw_gflex.l"
 
 
-#line 955 "<stdout>"
+#line 957 "<stdout>"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -980,13 +982,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 28 )
+				if ( yy_current_state >= 31 )
 					yy_c = yy_meta[yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 45 );
+		while ( yy_base[yy_current_state] != 52 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -1073,7 +1075,7 @@ YY_RULE_SETUP
 #line 53 "../src/common/hecmw_gflex.l"
 ECHO;
 	YY_BREAK
-#line 1076 "<stdout>"
+#line 1078 "<stdout>"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -1369,7 +1371,7 @@ static int yy_get_next_buffer (void)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 28 )
+			if ( yy_current_state >= 31 )
 				yy_c = yy_meta[yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
@@ -1397,11 +1399,11 @@ static int yy_get_next_buffer (void)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 28 )
+		if ( yy_current_state >= 31 )
 			yy_c = yy_meta[yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
-	yy_is_jam = (yy_current_state == 27);
+	yy_is_jam = (yy_current_state == 30);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
