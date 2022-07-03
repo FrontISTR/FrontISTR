@@ -48,7 +48,7 @@ contains
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint), intent(out) :: istat
-    type (hecmwST_matrix), intent(in),optional :: conMAT
+    type (hecmwST_matrix), intent(in) :: conMAT
     integer :: method_org, precond_org
     logical :: fg_eliminate
     logical :: fg_amg
@@ -85,21 +85,15 @@ contains
     else
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: with contact'
       if (fg_eliminate) then
-        if(paraContactFlag.and.present(conMAT)) then
-          call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
-        else
-          call solve_eliminate(hecMESH, hecMAT, hecLagMAT)
-        endif
+        call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
       else
-        if(paraContactFlag.and.present(conMAT)) then
-          write(0,*) 'ERROR: solve_no_eliminate not implemented for ParaCon'
-          call hecmw_abort( hecmw_comm_get_comm())
-        endif
-        if (hecLagMAT%num_lagrange > 0) then
-          call solve_no_eliminate(hecMESH, hecMAT, hecLagMAT)
-        else
-          call hecmw_solve(hecMESH, hecMAT)
-        endif
+        write(0,*) 'ERROR: solve_no_eliminate not implemented for ParaCon'
+        call hecmw_abort( hecmw_comm_get_comm())
+        ! if (hecLagMAT%num_lagrange > 0) then
+        !   call solve_no_eliminate(hecMESH, hecMAT, hecLagMAT)
+        ! else
+        !   call hecmw_solve(hecMESH, hecMAT)
+        ! endif
       endif
     endif
 
@@ -119,7 +113,7 @@ contains
     type (hecmwST_local_mesh), intent(in), target :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    type (hecmwST_matrix), intent(in),optional :: conMAT
+    type (hecmwST_matrix), intent(in) :: conMAT
     integer(kind=kint) :: ndof
     integer(kind=kint), allocatable :: iw2(:), iwS(:)
     real(kind=kreal), allocatable :: wSL(:), wSU(:)
@@ -141,7 +135,8 @@ contains
     t1 = hecmw_wtime()
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate start', hecmw_wtime()-t1
 
-    fg_paracon = (paraContactFlag.and.present(conMAT))
+    ! fg_paracon = (paraContactFlag.and.present(conMAT))
+    fg_paracon = .true.
 
     ndof=hecMAT%NDOF
     if(fg_paracon) then
