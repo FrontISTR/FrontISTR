@@ -7,7 +7,7 @@ module m_solve_LINEQ_direct_serial_lag
   use hecmw_util
   use m_set_arrays_directsolver_contact
   use hecmw_solver_direct_serial_lag
-  ! use hecmw_solver_
+  use hecmw_matrix_dump
 
 contains
 

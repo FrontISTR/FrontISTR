@@ -5,10 +5,11 @@
 !> This module provides linear equation solver interface of MUMPS for
 !! contact problems using Lagrange multiplier.
 module m_solve_LINEQ_MUMPS_contact
-  use m_fstr
+  use hecmw_util
   use m_sparse_matrix
   use m_sparse_matrix_contact
   use m_hecmw_MUMPS_wrapper
+  use hecmw_matrix_dump
 
   private
   public :: solve_LINEQ_MUMPS_contact_init
@@ -75,14 +76,14 @@ contains
 
     ! ANALYSIS
     if (NEED_ANALYSIS) then
-      call sparse_matrix_contact_init_prof(spMAT, hecMAT, hecLagMAT, hecMESH)
+      call sparse_matrix_contact_init_prof(spMAT, hecMAT, hecLagMAT, hecMESH )
       mumps_job=1
       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
       if (istat < 0) then
         write(*,*) 'ERROR: MUMPS returned with error', istat
         stop
       endif
-      if (myrank==0) write(*,*) ' [MUMPS]: Analysis completed.'
+      if ( hecmw_comm_get_rank()==0 ) write(*,*) ' [MUMPS]: Analysis completed.'
       NEED_ANALYSIS = .false.
     endif
 
@@ -96,7 +97,7 @@ contains
       return
     endif
     call sparse_matrix_contact_get_rhs(spMAT, hecMAT, hecLagMAT)
-    if (myrank==0) write(*,*) ' [MUMPS]: Factorization and Solution completed.'
+    if (hecmw_comm_get_rank()==0) write(*,*) ' [MUMPS]: Factorization and Solution completed.'
 
     call hecmw_mat_dump_solution(hecMAT)
 

@@ -3,24 +3,25 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
-module m_fstr_contact_comm
+module m_hecmw_contact_comm
 
-  use hecmw
+  use hecmw_util
+  use m_hecmw_comm_f
 
   implicit none
 
   private
-  public :: fstrST_contact_comm
-  public :: fstr_contact_comm_init
-  public :: fstr_contact_comm_finalize
-  public :: fstr_contact_comm_reduce_r
-  public :: fstr_contact_comm_bcast_r
-  public :: fstr_contact_comm_reduce_i
-  public :: fstr_contact_comm_bcast_i
-  public :: fstr_contact_comm_allreduce_r
-  public :: fstr_contact_comm_allreduce_i
+  public :: hecmwST_contact_comm
+  public :: hecmw_contact_comm_init
+  public :: hecmw_contact_comm_finalize
+  public :: hecmw_contact_comm_reduce_r
+  public :: hecmw_contact_comm_bcast_r
+  public :: hecmw_contact_comm_reduce_i
+  public :: hecmw_contact_comm_bcast_i
+  public :: hecmw_contact_comm_allreduce_r
+  public :: hecmw_contact_comm_allreduce_i
 
-  type fstrST_contact_comm
+  type hecmwST_contact_comm
     private
     integer(kind=kint) :: n_neighbor_pe
     integer(kind=kint), pointer :: neighbor_pe(:)
@@ -29,17 +30,17 @@ module m_fstr_contact_comm
     integer(kind=kint), pointer :: ext_item(:)
     integer(kind=kint), pointer :: int_index(:)
     integer(kind=kint), pointer :: int_item(:)
-  end type fstrST_contact_comm
+  end type hecmwST_contact_comm
 
   integer(kind=kint), parameter :: op_overwrite = 46810
 
-  integer(kind=kint), parameter :: DEBUG = 0
+  integer(kind=kint), parameter :: DBG = 0
 
 contains
 
-  subroutine fstr_contact_comm_init(conComm, hecMESH, ndof, n_contact_dof, contact_dofs)
+  subroutine hecmw_contact_comm_init(conComm, hecMESH, ndof, n_contact_dof, contact_dofs)
     implicit none
-    type (fstrST_contact_comm), intent(inout) :: conComm
+    type (hecmwST_contact_comm), intent(inout) :: conComm
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: ndof, n_contact_dof
     integer(kind=kint), intent(in) :: contact_dofs(:)
@@ -136,7 +137,7 @@ contains
     enddo
     call HECMW_Waitall(n_send, requests, statuses)
     deallocate(statuses, requests)
-    if (DEBUG >= 2) then
+    if (DBG >= 2) then
       write(0,*) '  DEBUG2: ext_index',ext_index(:)
       write(0,*) '  DEBUG2: ext_item',ext_item(:)
       write(0,*) '  DEBUG2: ext_item_remote',ext_item_remote(:)
@@ -153,11 +154,11 @@ contains
     conComm%ext_item => ext_item
     conComm%int_index => int_index
     conComm%int_item => int_item
-  end subroutine fstr_contact_comm_init
+  end subroutine hecmw_contact_comm_init
 
-  subroutine fstr_contact_comm_finalize(conComm)
+  subroutine hecmw_contact_comm_finalize(conComm)
     implicit none
-    type (fstrST_contact_comm), intent(inout) :: conComm
+    type (hecmwST_contact_comm), intent(inout) :: conComm
     if (conComm%n_neighbor_pe == 0) return
     if (associated(conComm%neighbor_pe)) deallocate(conComm%neighbor_pe)
     if (associated(conComm%ext_index)) deallocate(conComm%ext_index)
@@ -166,67 +167,67 @@ contains
     if (associated(conComm%int_item)) deallocate(conComm%int_item)
     conComm%n_neighbor_pe = 0
     conComm%MPI_COMM = 0
-  end subroutine fstr_contact_comm_finalize
+  end subroutine hecmw_contact_comm_finalize
 
-  subroutine fstr_contact_comm_reduce_r(conComm, vec, op)
+  subroutine hecmw_contact_comm_reduce_r(conComm, vec, op)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
     if (conComm%n_neighbor_pe == 0) return
     call send_recv_contact_info_r(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%ext_index, conComm%ext_item, conComm%int_index, conComm%int_item, vec, op)
-  end subroutine fstr_contact_comm_reduce_r
+  end subroutine hecmw_contact_comm_reduce_r
 
-  subroutine fstr_contact_comm_bcast_r(conComm, vec)
+  subroutine hecmw_contact_comm_bcast_r(conComm, vec)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
     integer(kind=kint) :: op
     if (conComm%n_neighbor_pe == 0) return
     op = op_overwrite
     call send_recv_contact_info_r(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%int_index, conComm%int_item, conComm%ext_index, conComm%ext_item, vec, op)
-  end subroutine fstr_contact_comm_bcast_r
+  end subroutine hecmw_contact_comm_bcast_r
 
-  subroutine fstr_contact_comm_reduce_i(conComm, vec, op)
+  subroutine hecmw_contact_comm_reduce_i(conComm, vec, op)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
     if (conComm%n_neighbor_pe == 0) return
     call send_recv_contact_info_i(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%ext_index, conComm%ext_item, conComm%int_index, conComm%int_item, vec, op)
-  end subroutine fstr_contact_comm_reduce_i
+  end subroutine hecmw_contact_comm_reduce_i
 
-  subroutine fstr_contact_comm_bcast_i(conComm, vec)
+  subroutine hecmw_contact_comm_bcast_i(conComm, vec)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
     integer(kind=kint) :: op
     if (conComm%n_neighbor_pe == 0) return
     op = op_overwrite
     call send_recv_contact_info_i(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%int_index, conComm%int_item, conComm%ext_index, conComm%ext_item, vec, op)
-  end subroutine fstr_contact_comm_bcast_i
+  end subroutine hecmw_contact_comm_bcast_i
 
-  subroutine fstr_contact_comm_allreduce_r(conComm, vec, op)
+  subroutine hecmw_contact_comm_allreduce_r(conComm, vec, op)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     real(kind=kreal), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
-    call fstr_contact_comm_reduce_r(conComm, vec, op)
-    call fstr_contact_comm_bcast_r(conComm, vec)
-  end subroutine fstr_contact_comm_allreduce_r
+    call hecmw_contact_comm_reduce_r(conComm, vec, op)
+    call hecmw_contact_comm_bcast_r(conComm, vec)
+  end subroutine hecmw_contact_comm_allreduce_r
 
-  subroutine fstr_contact_comm_allreduce_i(conComm, vec, op)
+  subroutine hecmw_contact_comm_allreduce_i(conComm, vec, op)
     implicit none
-    type (fstrST_contact_comm), intent(in) :: conComm
+    type (hecmwST_contact_comm), intent(in) :: conComm
     integer(kind=kint), intent(inout) :: vec(:)
     integer(kind=kint), intent(in) :: op
-    call fstr_contact_comm_reduce_i(conComm, vec, op)
-    call fstr_contact_comm_bcast_i(conComm, vec)
-  end subroutine fstr_contact_comm_allreduce_i
+    call hecmw_contact_comm_reduce_i(conComm, vec, op)
+    call hecmw_contact_comm_bcast_i(conComm, vec)
+  end subroutine hecmw_contact_comm_allreduce_i
 
   !
   ! private subroutines
@@ -313,7 +314,7 @@ contains
     endif
     deallocate(requests)
     deallocate(statuses)
-    if (DEBUG >= 2) then
+    if (DBG >= 2) then
       write(0,*) '  DEBUG2: send_buf',send_buf(:)
       write(0,*) '  DEBUG2: recv_buf',recv_buf(:)
     endif
@@ -387,7 +388,7 @@ contains
     endif
     deallocate(requests)
     deallocate(statuses)
-    if (DEBUG >= 2) then
+    if (DBG >= 2) then
       write(0,*) '  DEBUG2: send_buf',send_buf(:)
       write(0,*) '  DEBUG2: recv_buf',recv_buf(:)
     endif
@@ -395,4 +396,4 @@ contains
     deallocate(recv_buf)
   end subroutine send_recv_contact_info_i
 
-end module m_fstr_contact_comm
+end module m_hecmw_contact_comm

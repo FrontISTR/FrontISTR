@@ -8,12 +8,14 @@
 
 module m_solve_LINEQ_contact
 
-  use m_fstr
+  use hecmw_util
   use m_solve_LINEQ_MKL_contact
   use m_solve_LINEQ_direct_serial_lag
   use m_solve_LINEQ_MUMPS_contact
   use m_solve_LINEQ_iter_contact
-  use m_fstr_mat_resid_contact
+  use m_hecmw_mat_resid_contact
+  use hecmw_matrix_misc
+  use m_hecmw_comm_f
 
   implicit none
 
@@ -65,7 +67,7 @@ contains
     if( hecMAT%Iarray(99)==1 )then
       call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
     elseif( hecMAT%Iarray(99)==2 )then
-      if(nprocs > 1) then
+      if( hecmw_comm_get_size() > 1) then
         write(*,*) 'ERROR: !SOLVER,METHOD=DIRECT not available in parallel contact analysis; please use MUMPS or DIRECTmkl instead'
         call hecmw_abort(hecmw_comm_get_comm())
       else
@@ -73,7 +75,7 @@ contains
         call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
       endif
     elseif( hecMAT%Iarray(99)==3 )then
-      if(nprocs > 1) then
+      if( hecmw_comm_get_size() > 1) then
         call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
       else
         call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
@@ -88,7 +90,7 @@ contains
 
     t2 = hecmw_wtime()
     if (hecmw_mat_get_timelog(hecMAT) .ge. 1) then
-      if (myrank==0) write(*,*) ' solve time :', t2 - t1
+      if ( hecmw_comm_get_rank() ==0) write(*,*) ' solve time :', t2 - t1
     endif
 
     hecMAT%X=factor*hecMAT%X

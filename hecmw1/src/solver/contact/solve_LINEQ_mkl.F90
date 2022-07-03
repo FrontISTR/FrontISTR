@@ -7,9 +7,9 @@
 
 module m_solve_LINEQ_MKL_contact
   use hecmw_util
-  use m_fstr
   use m_sparse_matrix
   use m_sparse_matrix_contact
+  use hecmw_matrix_dump
   use m_hecmw_MKL_wrapper
   use m_hecmw_ClusterMKL_wrapper
 
@@ -79,7 +79,7 @@ contains
     endif
 
     t2=hecmw_wtime()
-    if (myrank==0 .and. spMAT%timelog > 0) then
+    if ( hecmw_comm_get_rank() == 0 .and. spMAT%timelog > 0) then
       if( hecMESH%PETOT .GT. 1 ) then
          write(*,'(A,f10.3)') ' [Cluster Pardiso]: Setup completed.            time(sec)=',t2-t1
       else

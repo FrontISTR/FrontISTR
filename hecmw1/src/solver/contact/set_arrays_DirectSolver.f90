@@ -6,8 +6,7 @@
 !> \in the case of using standard Lagrange multiplier algorithm for contact analysis.
 
 module m_set_arrays_directsolver_contact
-
-  use m_fstr
+  use hecmw_util
 
   implicit none
 

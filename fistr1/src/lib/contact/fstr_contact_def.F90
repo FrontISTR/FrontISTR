@@ -14,7 +14,7 @@ module mContactDef
   use hecmw
   use mSurfElement
   use m_contact_lib
-  use m_fstr_contact_comm
+  use m_hecmw_contact_comm
   use bucket_search
   use mContactParam
 
@@ -50,7 +50,7 @@ module mContactDef
     ! following contact state
     type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes
 
-    type(fstrST_contact_comm)     :: comm                    !< contact communication table
+    type(hecmwST_contact_comm)     :: comm                    !< contact communication table
     type(bucketDB)                :: master_bktDB            !< bucket DB for master surface
 
     type(tContactParam), pointer  :: cparam=>null()          !< contact parameter
@@ -115,7 +115,7 @@ contains
       deallocate(contact%master)
     endif
     if( associated(contact%states) ) deallocate(contact%states)
-    call fstr_contact_comm_finalize(contact%comm)
+    call hecmw_contact_comm_finalize(contact%comm)
     call bucketDB_finalize( contact%master_bktDB )
   end subroutine
 
@@ -263,7 +263,7 @@ contains
     call find_surface_neighbor( contact%master, contact%master_bktDB )
 
     ! initialize contact communication table
-    call fstr_contact_comm_init( contact%comm, hecMESH, 1, nslave, contact%slave )
+    call hecmw_contact_comm_init( contact%comm, hecMESH, 1, nslave, contact%slave )
 
     contact%symmetric = .true.
     fstr_contact_init = .true.
@@ -431,7 +431,7 @@ contains
     enddo
     !$omp end parallel do
 
-    call fstr_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
+    call hecmw_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
     nactive = 0
     do i = 1, size(contact%slave)
       if (contact%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
@@ -1259,7 +1259,7 @@ contains
     enddo
     !$omp end parallel do
 
-    call fstr_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
+    call hecmw_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
     nactive = 0
     do i = 1, size(contact%slave)
       if (contact%states(i)%state /= CONTACTFREE) then                    ! any slave in contact

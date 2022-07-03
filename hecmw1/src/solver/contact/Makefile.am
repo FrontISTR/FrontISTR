@@ -41,7 +41,6 @@ F90LDFLAGS        = @f90ldflags@
 MPI_F90LDFLAGS    = @mpi_f90ldflags@
 HECMW_F90LDFLAGS  = @hecmw_f90ldflags@
 ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
-F90FPP            = @f90fpp@
 F90OPTFLAGS       = @f90optflags@
 
 AR                = @ar@
@@ -71,6 +70,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 .F90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
 
+
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
 
@@ -78,12 +78,13 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_solver_SR.@f90objfilepostfix@ \
-	hecmw_solver_SR_i.@f90objfilepostfix@ \
-	hecmw_comm_f.@f90objfilepostfix@ \
-	hecmw_comm_contact_f.@f90objfilepostfix@ \
-	hecmw_solver_misc.@f90objfilepostfix@ \
-	hecmw_comm_group.@f90objfilepostfix@
+	hecmw_mat_resid_contact.@f90objfilepostfix@ \
+	sparse_matrix_contact.@f90objfilepostfix@ \
+	solve_LINEQ_MUMPS_contact.@f90objfilepostfix@ \
+	set_arrays_DirectSolver.@f90objfilepostfix@ \
+	solve_LINEQ_mkl.@f90objfilepostfix@ \
+	solve_LINEQ_direct_serial_lag.@f90objfilepostfix@ \
+	solve_LINEQ_iter_contact.@f90objfilepostfix@
 
 HEADERS =
 
@@ -91,6 +92,8 @@ HEADERS =
 all: @build_target@
 
 build-default: $(TARGET) $(F90TARGET) install-module
+
+build-serial: $(TARGET) $(F90TARGET) install-module
 
 build-without-f: $(TARGET)
 

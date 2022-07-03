@@ -90,6 +90,7 @@ LIBSRCDIRS="\
 	src/solver/clustermkl \
 	src/solver/communication \
 	src/solver/init \
+	src/solver/contact \
 	src/solver/mpc \
 	src/visualizer \
 	src/hecmw \
