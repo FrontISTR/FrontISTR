@@ -12,6 +12,7 @@ module hecmw
   use hecmw_dist_print_f
   use hecmw_etype
   use hecmw_comm_group
+  use hecmw_varray_int
   use hecmw_io
   use hecmw_local_matrix
   use hecmw_logging
