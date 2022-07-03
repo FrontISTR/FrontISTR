@@ -171,16 +171,9 @@ contains
     endif
 
     call hecmw_output_flops(hecMESH, hecMAT, ITER, time_Ax)
-    !call hecmw_output_flops(hecMESH, hecMAT, count_Ax, time_Ax)
 
   end subroutine hecmw_solve_iterative
 
-  !> @brief
-  !> output FLOPs
-  !> @param[in] hecMESH
-  !> @param[in] hecMAT
-  !> @param[in] count_Ax
-  !> @param[in] time_Ax
   subroutine hecmw_output_flops(hecMESH, hecMAT, count_Ax, time_Ax)
     use hecmw_util
     use m_hecmw_comm_f
