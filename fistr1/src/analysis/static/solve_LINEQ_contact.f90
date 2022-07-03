@@ -43,17 +43,16 @@ contains
 
 
   !> \brief This subroutine
-  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,istat,rf,conMAT)
+  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,rf)
 
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange)
+    type (hecmwST_matrix)                    :: conMAT
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), optional               :: rf
-    type (hecmwST_matrix),optional           :: conMAT
 
     real(kind=kreal)                         :: factor
-    real(kind=kreal) :: resid
     real(kind=kreal) :: t1, t2
     integer(kind=kint) :: ndof
 
@@ -64,26 +63,24 @@ contains
 
     istat = 0
     if( hecMAT%Iarray(99)==1 )then
-      if(paraContactFlag.and.present(conMAT)) then
-        call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
-      else
-        call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat)
-      endif
+      call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
     elseif( hecMAT%Iarray(99)==2 )then
-      call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
+      if(nprocs > 1) then
+        write(*,*) 'ERROR: !SOLVER,METHOD=DIRECT not available in parallel contact analysis; please use MUMPS or DIRECTmkl instead'
+        call hecmw_abort(hecmw_comm_get_comm())
+      else
+        call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
+        call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
+      endif
     elseif( hecMAT%Iarray(99)==3 )then
-      if(paraContactFlag.and.present(conMAT)) then
+      if(nprocs > 1) then
         call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
       else
+        call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
         call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat)
       endif
     elseif( hecMAT%Iarray(99)==5 ) then
-      ! ----  For Parallel Contact with Multi-Partition Domains
-      if(paraContactFlag.and.present(conMAT)) then
-        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
-      else
-        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,istat)
-      endif
+      call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
     endif
 
     ndof = hecMAT%NDOF
@@ -94,20 +91,38 @@ contains
       if (myrank==0) write(*,*) ' solve time :', t2 - t1
     endif
 
-    if(paraContactFlag.and.present(conMAT)) then
-    else
-      resid=fstr_get_resid_max_contact(hecMESH,hecMAT,hecLagMAT)
-      if (myrank==0) then
-        write(*,*) ' maximum residual = ', resid
-        if( hecmw_mat_get_solver_type(hecMAT) /= 1 .and. resid >= 1.0d-8) then
-          write(*,*) ' ###Maximum residual exceeded 1.0d-8---Direct Solver### '
-          !          stop
-        endif
-      endif
-    endif
-
     hecMAT%X=factor*hecMAT%X
 
   end subroutine solve_LINEQ_contact
+
+
+  subroutine add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
+    type (hecmwST_matrix),          intent(inout) :: hecMAT
+    type (hecmwST_matrix),          intent(in)    :: conMAT
+    type (hecmwST_matrix_lagrange), intent(in)    :: hecLagMAT
+
+
+    integer(kind=kint) :: ndof,ndof2,i
+
+    ndof = hecMAT%NDOF
+    ndof2 = ndof*ndof
+
+    do i=1,hecMAT%NP*ndof + hecLagMat%num_lagrange
+      hecMAT%B(i) = hecMAT%B(i) + conMAT%B(i)
+    enddo
+
+    do i=1,hecMAT%NP*ndof2
+      hecMAT%D(i) = hecMAT%D(i) + conMAT%D(i)
+    enddo
+
+    do i=1,hecMAT%NPL*ndof2
+      hecMAT%AL(i) = hecMAT%AL(i) + conMAT%AL(i)
+    enddo
+
+    do i=1,hecMAT%NPU*ndof2
+      hecMAT%AU(i) = hecMAT%AU(i) + conMAT%AU(i)
+    enddo
+  end subroutine add_conMAT_to_hecMAT
+
 
 end module m_solve_LINEQ_contact

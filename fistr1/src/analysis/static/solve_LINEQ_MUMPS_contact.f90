@@ -67,7 +67,7 @@ contains
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint), intent(out) :: istat
-    type (hecmwST_matrix), intent(in),optional :: conMAT
+    type (hecmwST_matrix), intent(in) :: conMAT
 
     integer(kind=kint) :: mumps_job
 
@@ -87,15 +87,8 @@ contains
     endif
 
     ! FACTORIZATION and SOLUTION
-    !  ----  For Parallel Contact with Multi-Partition Domains
-    if(paraContactFlag.and.present(conMAT)) then
-      call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, hecLagMAT, conMAT)
-      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, hecLagMAT, conMAT)
-    else
-      call sparse_matrix_contact_set_vals(spMAT, hecMAT, hecLagMAT)
-      !call sparse_matrix_dump(spMAT)
-      call sparse_matrix_contact_set_rhs(spMAT, hecMAT, hecLagMAT)
-    endif
+    call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, hecLagMAT, conMAT)
+    call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, hecLagMAT, conMAT)
     mumps_job=5
     call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
     if (istat < 0) then

@@ -524,7 +524,7 @@ contains
         hecMATmpc%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         q_residual = fstr_get_norm_para_contact(hecMATmpc,hecLagMAT,conMAT,hecMESH)
-        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, istat, 1.0D0, conMAT)
+        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMAT, istat, 1.0D0)
         call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         ! ----- check matrix solver error
