@@ -875,10 +875,15 @@ contains
           & fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  / nnumber(i)
         fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRESS(6*(i-1)+1:6*(i-1)+6)  = &
           & fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRESS(6*(i-1)+1:6*(i-1)+6)  / nnumber(i)
+        fstrSOLID%SHELL%LAYER(nlyr)%PLUS%MISES(i) = &
+          & get_mises(fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRESS(6*(i-1)+1:6*(i-1)+6))
+
         fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRAIN(6*(i-1)+1:6*(i-1)+6) = &
           & fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRAIN(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
         fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRESS(6*(i-1)+1:6*(i-1)+6) = &
           & fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRESS(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
+        fstrSOLID%SHELL%LAYER(nlyr)%MINUS%MISES(i) = &
+          & get_mises(fstrSOLID%SHELL%LAYER(nlyr)%MINUS%STRESS(6*(i-1)+1:6*(i-1)+6))
       enddo
     enddo
 
