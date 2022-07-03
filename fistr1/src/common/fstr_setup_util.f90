@@ -190,7 +190,7 @@ contains
         endif
       enddo
 
-      do i=1, cache
+      do i=1, cache-1
         if( hecMESH%global_node_ID(i) == list(j)) then
           list(j) = i
           cache = i+1
@@ -201,7 +201,7 @@ contains
       enddo
 
       if( .not. fg ) then
-        list(j) = -list(j) ! not exist node
+        list(j) = -1 ! not exist node
       endif
     enddo aa
   end function node_global_to_local
@@ -226,7 +226,7 @@ contains
         endif
       end do
       if( .not. fg ) then
-        list(j) = -list(j)
+        list(j) = -1
       endif
     end do
   end function elem_global_to_local
@@ -1386,18 +1386,22 @@ contains
   ! 3) All following lines under the header are writen to the opend file        !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_visualize( ctrl, my_rank )
+  subroutine fstr_setup_visualize( ctrl, hecMESH )
     implicit none
-    integer(kind=kint) :: ctrl, my_rank, rcode
+    integer(kind=kint) :: ctrl
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: rcode
     character(HECMW_FILENAME_LEN) :: vis_filename = 'hecmw_vis.ini'
     logical :: is_exit
 
     rcode = fstr_ctrl_seek_header( ctrl, '!VISUAL ' )
     if(rcode == 0) return
 
-    if(my_rank == 0)then
+    if(hecMESH%my_rank == 0)then
       call fstr_setup_visualize_main( ctrl, vis_filename )
     endif
+
+    call hecmw_barrier( hecMESH )
 
     inquire(file = vis_filename, EXIST = is_exit)
 

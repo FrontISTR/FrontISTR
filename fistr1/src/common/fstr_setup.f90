@@ -14,6 +14,7 @@ module m_fstr_setup
   use fstr_ctrl_dynamic
   use fstr_ctrl_material
   use mContact
+  use mContactParam
   use m_static_get_prop
   use m_out
   use m_step
@@ -62,7 +63,7 @@ contains
     integer(kind=kint) :: fstr_ctrl_get_c_h_name
 
     integer(kind=kint) :: version, resul, visual, femap, n_totlyr
-    integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror
+    integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror, cparam_id
     character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
     real(kind=kreal) :: beam_radius,                          &
@@ -77,7 +78,7 @@ contains
     integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
-    integer(kind=kint) :: c_eigen, c_contact
+    integer(kind=kint) :: c_eigen, c_contact, c_contactparam
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
     integer(kind=kint) :: c_fload, c_eigenread
     integer(kind=kint) :: c_couple, c_material
@@ -106,7 +107,7 @@ contains
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-    c_eigen    = 0; c_contact  = 0
+    c_eigen    = 0; c_contact  = 0; c_contactparam = 0
     c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
     c_couple   = 0; c_material = 0; c_section =0
     c_mpc      = 0; c_weldline = 0; c_initial = 0
@@ -188,6 +189,8 @@ contains
       else if( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         c_contact = c_contact + n
+      else if( header_name == '!CONTACT_PARAM' ) then
+        c_contactparam = c_contactparam + 1
       else if( header_name == '!MATERIAL' ) then
         c_material = c_material + 1
       else if( header_name == '!TEMPERATURE' ) then
@@ -316,6 +319,10 @@ contains
       call init_AincParam( fstrPARAM%ainc(i) )
     end do
     if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
+    allocate( fstrPARAM%contactparam(0:c_contactparam) )
+    do i=0,c_contactparam
+      call init_ContactParam( fstrPARAM%contactparam(i) )
+    end do
 
     P%SOLID%is_33shell = 0
     P%SOLID%is_33beam  = 0
@@ -403,6 +410,7 @@ contains
     c_material = 0
     c_output = 0
     c_contact  = 0
+    c_contactparam  = 0
     c_initial = 0
     c_localcoord = 0
     c_section = 0
@@ -431,11 +439,17 @@ contains
       elseif( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
-            ,ee, pp, rho, alpha, P%PARAM%contact_algo ) ) then
+            ,ee, pp, rho, alpha, P%PARAM%contact_algo, mName ) ) then
           write(*,*) '### Error: Fail in read in contact condition : ', c_contact
           write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
           stop
         endif
+        cparam_id = 0
+        do i=1,size(fstrPARAM%contactparam)-1
+          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+            cparam_id = i; exit
+          endif
+        enddo
         ! initialize contact condition
         if( ee>0.d0 ) cdotp = ee
         if( pp>0.d0 ) mut = pp
@@ -448,9 +462,9 @@ contains
             stop
           else
             if(paraContactFlag) then
-              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, myrank)
+              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id), myrank)
             else
-              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH)
+              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id))
             endif
             !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
           endif
@@ -748,6 +762,13 @@ contains
         if( fstr_ctrl_get_TIMEPOINTS( ctrl, fstrPARAM%timepoints(c_timepoints) )/=0 ) then
           write(*,*) '### Error: Fail in read in TIME_POINTS definition : ' , c_timepoints
           write(ILOG,*) '### Error: Fail in read in TIME_POINTS definition : ', c_timepoints
+          stop
+        endif
+      else if( header_name == '!CONTACT_PARAM' ) then
+        c_contactparam = c_contactparam + 1
+        if( fstr_ctrl_get_CONTACTPARAM( ctrl, fstrPARAM%contactparam(c_contactparam) ) /=0 ) then
+          write(*,*) '### Error: Fail in read in CONTACT_PARAM definition : ' , c_contactparam
+          write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', c_contactparam
           stop
         endif
       else if( header_name == '!ULOAD' ) then
@@ -1319,6 +1340,7 @@ contains
     fstrHEAT%R_SUF_tot   = 0
     fstrHEAT%H_SUF_tot   = 0
     fstrHEAT%WL_tot      = 0
+    fstrHEAT%beta        = -1.0d0
   end subroutine fstr_heat_init
 
   !> Initial setting of eigen ca;culation
@@ -1552,7 +1574,7 @@ contains
     end if
 
     if( P%PARAM%fg_visual == kON )then
-      call fstr_setup_visualize( ctrl, P%MESH%my_rank )
+      call fstr_setup_visualize( ctrl, P%MESH )
     end if
 
     call hecmw_barrier( P%MESH ) ! JP-7
@@ -1641,12 +1663,7 @@ contains
     !   estcond    => svIarray(14)
     !   method2    => svIarray(8)
     !   recyclepre => svIarray(35)
-    !   solver_opt1=> svIarray(41)
-    !   solver_opt2=> svIarray(42)
-    !   solver_opt3=> svIarray(43)
-    !   solver_opt4=> svIarray(44)
-    !   solver_opt5=> svIarray(45)
-    !   solver_opt6=> svIarray(46)
+    !   solver_opt => svIarray(41:50)
 
     !   resid      => svRarray(1)
     !   sigma_diag => svRarray(2)
@@ -1658,7 +1675,7 @@ contains
       svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
       svIarray(1), svIarray(5), svIarray(6), svIarray(7), &
       svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
-      svIarray(35), svIarray(41), svIarray(42), svIarray(43), svIarray(44), svIarray(45), svIarray(46), &
+      svIarray(35), svIarray(41:50), &
       svRarray(1), svRarray(2), svRarray(3),                &
       svRarray(4), svRarray(5) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
@@ -2445,7 +2462,8 @@ end function fstr_setup_INITIAL
       P%PARAM%delmax,    &
       P%PARAM%itmax,     &
       P%PARAM%eps,       &
-      mName )
+      mName,             &
+      P%HEAT%beta)
     if( rcode /= 0 ) then
       call fstr_ctrl_err_stop
     end if

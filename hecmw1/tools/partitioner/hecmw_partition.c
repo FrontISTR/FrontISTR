@@ -312,12 +312,16 @@ static int get_boundary_nodelist(const struct hecmwST_local_mesh *global_mesh,
 
   qsort(bnd_nlist[domain], counter, sizeof(int), int_cmp);
 
-  i = 1;
-  for (j = 1; j < counter; j++) {
-    if (bnd_nlist[domain][j - 1] != bnd_nlist[domain][j]) {
-      bnd_nlist[domain][i] = bnd_nlist[domain][j];
-      i++;
+  if (counter > 1) {
+    i = 1;
+    for (j = 1; j < counter; j++) {
+      if (bnd_nlist[domain][j - 1] != bnd_nlist[domain][j]) {
+        bnd_nlist[domain][i] = bnd_nlist[domain][j];
+        i++;
+      }
     }
+  } else {
+    i = counter;
   }
 
   n_bnd_nlist[2 * domain + 1] = i;
@@ -6759,7 +6763,7 @@ static int const_import_item(struct hecmwST_local_mesh *local_mesh,
 
   HECMW_assert(local_mesh->n_neighbor_pe > 0);
   HECMW_assert(local_mesh->import_index);
-  HECMW_assert(local_mesh->import_index[local_mesh->n_neighbor_pe] > 0);
+  HECMW_assert(local_mesh->import_index[local_mesh->n_neighbor_pe] >= 0);
   HECMW_assert(local_mesh->import_item);
 
   for (i = 0; i < local_mesh->import_index[local_mesh->n_neighbor_pe]; i++) {
@@ -6782,7 +6786,7 @@ static int const_export_item(struct hecmwST_local_mesh *local_mesh,
 
   HECMW_assert(local_mesh->n_neighbor_pe > 0);
   HECMW_assert(local_mesh->export_index);
-  HECMW_assert(local_mesh->export_index[local_mesh->n_neighbor_pe] > 0);
+  HECMW_assert(local_mesh->export_index[local_mesh->n_neighbor_pe] >= 0);
   HECMW_assert(local_mesh->export_item);
 
   for (i = 0; i < local_mesh->export_index[local_mesh->n_neighbor_pe]; i++) {
@@ -6805,7 +6809,7 @@ static int const_shared_item(struct hecmwST_local_mesh *local_mesh,
 
   HECMW_assert(local_mesh->n_neighbor_pe > 0);
   HECMW_assert(local_mesh->shared_index);
-  HECMW_assert(local_mesh->shared_index[local_mesh->n_neighbor_pe] > 0);
+  HECMW_assert(local_mesh->shared_index[local_mesh->n_neighbor_pe] >= 0);
   HECMW_assert(local_mesh->shared_item);
 
   for (i = 0; i < local_mesh->shared_index[local_mesh->n_neighbor_pe]; i++) {

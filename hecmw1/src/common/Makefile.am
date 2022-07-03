@@ -159,6 +159,7 @@ OBJSF = \
 	hecmw_dist_free_f.@f90objfilepostfix@ \
 	hecmw_dist_print_f.@f90objfilepostfix@ \
 	hecmw_visualizer_f.@f90objfilepostfix@ \
+	hecmw_varray_int_f.@f90objfilepostfix@ \
 	hecmw_io.@f90objfilepostfix@
 
 HEADERS = \

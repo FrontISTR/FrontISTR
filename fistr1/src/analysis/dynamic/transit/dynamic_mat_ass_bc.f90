@@ -10,11 +10,9 @@ contains
 
 
   !>  This subroutine setup disp bundary condition
-  subroutine DYNAMIC_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, fstrMAT, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, iter, conMAT)
     use m_fstr
     use m_table_dyn
-    use fstr_matrix_con_contact
-    use m_addContactStiffness
     use mContact
     use m_utilities
 
@@ -24,7 +22,7 @@ contains
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer, optional                    :: iter
     type(hecmwST_matrix), optional       :: conMAT
 
@@ -107,9 +105,9 @@ contains
             if( fstr_is_contact_active() .and. fstrPARAM%contact_algo == kcaSLagrange  &
                 .and. fstrPARAM%nlgeom .and. fstrDYNAMIC%idx_resp == 1 )  then
               if(present(conMAT)) then
-                call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)
+                call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
               else
-                call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
+                call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
 
@@ -157,9 +155,9 @@ contains
             if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
                 .and. fstrPARAM%contact_algo == kcaSLagrange ) then
               if(present(conMAT)) then
-                call fstr_mat_ass_bc_contact(conMAT,fstrMAT,in,idof,RHS)
+                call hecmw_mat_ass_bc_contactlag(conMAT,hecLagMAT,in,idof,RHS)
               else
-                call fstr_mat_ass_bc_contact(hecMAT,fstrMAT,in,idof,RHS)
+                call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
 
@@ -265,8 +263,6 @@ contains
   subroutine DYNAMIC_EXPLICIT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, iter)
     use m_fstr
     use m_table_dyn
-    use fstr_matrix_con_contact
-    use m_addContactStiffness
     use mContact
     use m_utilities
 

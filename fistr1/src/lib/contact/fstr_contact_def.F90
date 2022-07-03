@@ -16,6 +16,7 @@ module mContactDef
   use m_contact_lib
   use m_fstr_contact_comm
   use bucket_search
+  use mContactParam
 
   implicit none
 
@@ -51,6 +52,8 @@ module mContactDef
 
     type(fstrST_contact_comm)     :: comm                    !< contact communication table
     type(bucketDB)                :: master_bktDB            !< bucket DB for master surface
+
+    type(tContactParam), pointer  :: cparam=>null()          !< contact parameter
   end type tContact
 
   type fstr_info_contactChange
@@ -63,31 +66,11 @@ module mContactDef
     integer(kind=kint) :: contactNode_current    !< current number of nodes in contact
   end type fstr_info_contactChange
 
-  real(kind=kreal), parameter :: CLEARANCE       = 1.d-4  !< ordinary clearance
-  real(kind=kreal), parameter :: CLR_SAME_ELEM   = 5.d-3  !< clearance for already-in-contct elems (loosen to avoid moving too easily)
-  real(kind=kreal), parameter :: CLR_DIFFLPOS    = 1.d-2  !< clearance to be recognized as different position (loosen to avoid oscillation)
-  real(kind=kreal), parameter :: CLR_CAL_NORM    = 1.d-4  !< clearance used when calculating surface normal
-  real(kind=kreal), parameter :: DISTCLR_INIT    = 1.d-6  !< dist clearance for initial scan
-  real(kind=kreal), parameter :: DISTCLR_FREE    =-1.d-6  !< dist clearance for free nodes (wait until little penetration to be judged as contact)
-  real(kind=kreal), parameter :: DISTCLR_NOCHECK = 1.d0   !< dist clearance for skipping distance check for nodes already in contact
-                                                          !< (big value to keep contact because contact-to-free is judged by tensile force)
-  real(kind=kreal), parameter :: BOX_EXP_RATE    = 1.05d0 !< recommended: (1.0..2.0] (the smaller the faster, the bigger the safer)
-  real(kind=kreal), parameter :: TENSILE_FORCE   =-1.d-8  !< tensile force to be judged as free node
-
   private :: is_MPC_available
   private :: is_active_contact
   private :: cal_node_normal
   private :: track_contact_position
   private :: reset_contact_force
-
-  private :: CLEARANCE
-  private :: CLR_SAME_ELEM
-  private :: CLR_DIFFLPOS
-  private :: CLR_CAL_NORM
-  private :: DISTCLR_FREE
-  private :: DISTCLR_NOCHECK
-  private :: BOX_EXP_RATE
-  private :: TENSILE_FORCE
 
 contains
 
@@ -166,15 +149,19 @@ contains
   end function
 
   !>  Initializer of tContactState
-  logical function fstr_contact_init( contact, hecMESH,myrank )
+  logical function fstr_contact_init( contact, hecMESH, cparam, myrank )
     type(tContact), intent(inout)     :: contact  !< contact definition
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    type(tContactParam), target       :: cparam   !< contact parameter
     integer(kint),intent(in),optional :: myrank
 
     integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
     integer  :: count,nodeID
 
     fstr_contact_init = .false.
+
+    contact%cparam => cparam
+
     !  master surface
     cgrp = contact%surf_id2
     if( cgrp<=0 ) return
@@ -337,9 +324,9 @@ contains
     if( contact%algtype<=2 ) return
 
     if( is_init ) then
-      distclr = DISTCLR_INIT
+      distclr = contact%cparam%DISTCLR_INIT
     else
-      distclr = DISTCLR_FREE
+      distclr = contact%cparam%DISTCLR_FREE
     endif
 
     allocate(contact_surf(size(nodeID)))
@@ -371,7 +358,7 @@ contains
         id = contact%states(i)%surface
         nlforce = contact%states(i)%multiplier(1)
 
-        if( nlforce < TENSILE_FORCE ) then
+        if( nlforce < contact%cparam%TENSILE_FORCE ) then
           contact%states(i)%state = CONTACTFREE
           contact%states(i)%multiplier(:) = 0.d0
           write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
@@ -404,7 +391,7 @@ contains
         ! narrow down candidates
         do idm= 1, nCand
           id = indexCand(idm)
-          if (.not. is_in_surface_box( contact%master(id), coord(1:3), BOX_EXP_RATE )) cycle
+          if (.not. is_in_surface_box( contact%master(id), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           nMaster = nMaster + 1
           indexMaster(nMaster) = id
         enddo
@@ -424,11 +411,11 @@ contains
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
           call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,contact%states(i), &
-            isin,distclr,localclr=CLEARANCE )
+            isin,distclr,localclr=contact%cparam%CLEARANCE )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
-          iSS = isInsideElement( etype, contact%states(i)%lpos, CLR_CAL_NORM )
+          iSS = isInsideElement( etype, contact%states(i)%lpos, contact%cparam%CLR_CAL_NORM )
           if( iSS>0 ) &
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos, &
               contact%states(i)%direction(:) )
@@ -621,7 +608,7 @@ contains
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
-      isin,DISTCLR_NOCHECK,contact%states(nslave)%lpos,CLR_SAME_ELEM )
+      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos,contact%cparam%CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -632,7 +619,7 @@ contains
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
         call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-          isin,DISTCLR_NOCHECK,localclr=CLEARANCE )
+          isin,contact%cparam%DISTCLR_NOCHECK,localclr=contact%cparam%CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -652,7 +639,7 @@ contains
           sid = indexCand(idm)
           if( sid==sid0 ) cycle
           if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
-          if (.not. is_in_surface_box( contact%master(sid), coord(1:3), BOX_EXP_RATE )) cycle
+          if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           etype = contact%master(sid)%etype
           nn = size( contact%master(sid)%nodes )
           do j=1,nn
@@ -660,7 +647,7 @@ contains
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
           call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-               isin,DISTCLR_NOCHECK,localclr=CLEARANCE )
+               isin,contact%cparam%DISTCLR_NOCHECK,localclr=contact%cparam%CLEARANCE )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -672,7 +659,7 @@ contains
 
     if( isin ) then
       if( contact%states(nslave)%surface==sid0 ) then
-        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= CLR_DIFFLPOS))  then
+        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= contact%cparam%CLR_DIFFLPOS))  then
           !$omp atomic
           infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         endif
@@ -686,7 +673,7 @@ contains
           call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
       endif
       if( flag_ctAlgo=='SLagrange' ) call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
-      iSS = isInsideElement( etype, contact%states(nslave)%lpos, CLR_CAL_NORM )
+      iSS = isInsideElement( etype, contact%states(nslave)%lpos, contact%cparam%CLR_CAL_NORM )
       if( iSS>0 ) &
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
           contact%states(nslave)%lpos, contact%states(nslave)%direction(:) )
@@ -1083,7 +1070,7 @@ contains
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
-      isin,DISTCLR_NOCHECK,contact%states(nslave)%lpos,CLR_SAME_ELEM )
+      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos,contact%cparam%CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -1094,7 +1081,7 @@ contains
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
         call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-          isin,DISTCLR_NOCHECK,localclr=CLEARANCE )
+          isin,contact%cparam%DISTCLR_NOCHECK,localclr=contact%cparam%CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -1114,7 +1101,7 @@ contains
           sid = indexCand(idm)
           if( sid==sid0 ) cycle
           if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
-          if (.not. is_in_surface_box( contact%master(sid), coord(1:3), BOX_EXP_RATE )) cycle
+          if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           etype = contact%master(sid)%etype
           nn = size( contact%master(sid)%nodes )
           do j=1,nn
@@ -1122,7 +1109,7 @@ contains
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
           call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-               isin,DISTCLR_NOCHECK,localclr=CLEARANCE )
+               isin,contact%cparam%DISTCLR_NOCHECK,localclr=contact%cparam%CLEARANCE )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -1134,7 +1121,7 @@ contains
 
     if( isin ) then
       if( contact%states(nslave)%surface==sid0 ) then
-        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= CLR_DIFFLPOS))  then
+        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= contact%cparam%CLR_DIFFLPOS))  then
           !$omp atomic
           infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         endif
@@ -1145,7 +1132,7 @@ contains
         !$omp atomic
         infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
       endif
-      iSS = isInsideElement( etype, contact%states(nslave)%lpos, CLR_CAL_NORM )
+      iSS = isInsideElement( etype, contact%states(nslave)%lpos, contact%cparam%CLR_CAL_NORM )
       if( iSS>0 ) then
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
           contact%states(nslave)%lpos, contact%states(nslave)%direction(:) )
@@ -1185,9 +1172,9 @@ contains
     logical :: is_cand
 
     if( is_init ) then
-      distclr = DISTCLR_INIT
+      distclr = contact%cparam%DISTCLR_INIT
     else
-      distclr = DISTCLR_FREE
+      distclr = contact%cparam%DISTCLR_FREE
     endif
 
     allocate(contact_surf(size(nodeID)))
@@ -1232,7 +1219,7 @@ contains
         ! narrow down candidates
         do idm= 1, nCand
           id = indexCand(idm)
-          if (.not. is_in_surface_box( contact%master(id), coord(1:3), BOX_EXP_RATE )) cycle
+          if (.not. is_in_surface_box( contact%master(id), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           nMaster = nMaster + 1
           indexMaster(nMaster) = id
         enddo
@@ -1252,11 +1239,11 @@ contains
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
           call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,contact%states(i), &
-            isin,distclr,localclr=CLEARANCE )
+            isin,distclr,localclr=contact%cparam%CLEARANCE )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
-          iSS = isInsideElement( etype, contact%states(i)%lpos, CLR_CAL_NORM )
+          iSS = isInsideElement( etype, contact%states(i)%lpos, contact%cparam%CLR_CAL_NORM )
           if( iSS>0 ) &
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos, &
               contact%states(i)%direction(:) )

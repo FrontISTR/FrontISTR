@@ -42,7 +42,7 @@ contains
     outinfo%grp_id_name = "ALL"
     outinfo%grp_id      = -1
     outinfo%on(:)       = .false.
-    outinfo%num_items   = 37
+    outinfo%num_items   = 42
 
     outinfo%keyWord(1)  = "DISP"
     outinfo%vtype(1)    = -2
@@ -157,8 +157,22 @@ contains
 
     outinfo%keyWord(37) = "CONTACT_FTRACTION"
     outinfo%vtype(37)   = -2
-  end subroutine initOutInfo
 
+    outinfo%keyWord(38) = "NODE_ID"
+    outinfo%vtype(38)   = -1
+
+    outinfo%keyWord(39) = "ELEM_ID"
+    outinfo%vtype(39)   = -1
+
+    outinfo%keyWord(40) = "SECTION_ID"
+    outinfo%vtype(40)   = -1
+
+    outinfo%keyWord(41) = "TEMPERATURE"
+    outinfo%vtype(41)   = -1
+
+    outinfo%keyWord(42) = "ITEMP"
+    outinfo%vtype(42)   = -1
+  end subroutine initOutInfo
 
   subroutine write_outinfo( fnum, nitem, outinfo, outdata )
     integer, intent(in)             :: fnum

@@ -215,107 +215,36 @@ subroutine hecmw_ML_get_loglevel(id, level)
   level = hecmw_mat_get_timelog(hecMAT)
 end subroutine hecmw_ML_get_loglevel
 
-subroutine hecmw_ml_get_opt1(id, opt1, ierr)
+subroutine hecmw_ml_get_opt(id, opt, ierr)
   use hecmw_util
   use hecmw_mat_id
   use hecmw_matrix_misc
   implicit none
   integer(kind=kint), intent(in) :: id
-  integer(kind=kint), intent(out) :: opt1
+  integer(kind=kint), intent(out) :: opt(*)
   integer(kind=kint), intent(out) :: ierr
   type(hecmwST_matrix), pointer :: hecMAT
   type(hecmwST_local_mesh), pointer :: hecMESH
+  integer(kind=kint) :: iopt(10)
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  opt1 = hecmw_mat_get_solver_opt1(hecMAT)
+  call hecmw_mat_get_solver_opt(hecMAT, iopt)
+  opt(1:10) = iopt(1:10)
   ierr = 0
-end subroutine hecmw_ml_get_opt1
+end subroutine hecmw_ml_get_opt
 
-subroutine hecmw_ml_get_opt2(id, opt2, ierr)
+subroutine hecmw_ml_set_opt(id, opt, ierr)
   use hecmw_util
   use hecmw_mat_id
   use hecmw_matrix_misc
   implicit none
   integer(kind=kint), intent(in) :: id
-  integer(kind=kint), intent(out) :: opt2
+  integer(kind=kint), intent(in) :: opt(*)
   integer(kind=kint), intent(out) :: ierr
   type(hecmwST_matrix), pointer :: hecMAT
   type(hecmwST_local_mesh), pointer :: hecMESH
+  integer(kind=kint) :: iopt(10)
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  opt2 = hecmw_mat_get_solver_opt2(hecMAT)
+  iopt(1:10) = opt(1:10)
+  call hecmw_mat_set_solver_opt(hecMAT, iopt)
   ierr = 0
-end subroutine hecmw_ml_get_opt2
-
-subroutine hecmw_ml_get_opt3(id, opt3, ierr)
-  use hecmw_util
-  use hecmw_mat_id
-  use hecmw_matrix_misc
-  implicit none
-  integer(kind=kint), intent(in) :: id
-  integer(kind=kint), intent(out) :: opt3
-  integer(kind=kint), intent(out) :: ierr
-  type(hecmwST_matrix), pointer :: hecMAT
-  type(hecmwST_local_mesh), pointer :: hecMESH
-  call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  opt3 = hecmw_mat_get_solver_opt3(hecMAT)
-  ierr = 0
-end subroutine hecmw_ml_get_opt3
-
-subroutine hecmw_ml_get_opt4(id, opt4, ierr)
-  use hecmw_util
-  use hecmw_mat_id
-  use hecmw_matrix_misc
-  implicit none
-  integer(kind=kint), intent(in) :: id
-  integer(kind=kint), intent(out) :: opt4
-  integer(kind=kint), intent(out) :: ierr
-  type(hecmwST_matrix), pointer :: hecMAT
-  type(hecmwST_local_mesh), pointer :: hecMESH
-  call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  opt4 = hecmw_mat_get_solver_opt4(hecMAT)
-  ierr = 0
-end subroutine hecmw_ml_get_opt4
-
-subroutine hecmw_ml_get_opt5(id, opt5, ierr)
-  use hecmw_util
-  use hecmw_mat_id
-  use hecmw_matrix_misc
-  implicit none
-  integer(kind=kint), intent(in) :: id
-  integer(kind=kint), intent(out) :: opt5
-  integer(kind=kint), intent(out) :: ierr
-  type(hecmwST_matrix), pointer :: hecMAT
-  type(hecmwST_local_mesh), pointer :: hecMESH
-  call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  opt5 = hecmw_mat_get_solver_opt5(hecMAT)
-  ierr = 0
-end subroutine hecmw_ml_get_opt5
-
-subroutine hecmw_ml_get_opt6(id, opt6, ierr)
-  use hecmw_util
-  use hecmw_mat_id
-  use hecmw_matrix_misc
-  implicit none
-  integer(kind=kint), intent(in) :: id
-  integer(kind=kint), intent(out) :: opt6
-  integer(kind=kint), intent(out) :: ierr
-  type(hecmwST_matrix), pointer :: hecMAT
-  type(hecmwST_local_mesh), pointer :: hecMESH
-  call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  opt6 = hecmw_mat_get_solver_opt6(hecMAT)
-  ierr = 0
-end subroutine hecmw_ml_get_opt6
-
-subroutine hecmw_ml_set_opt6(id, opt6, ierr)
-  use hecmw_util
-  use hecmw_mat_id
-  use hecmw_matrix_misc
-  implicit none
-  integer(kind=kint), intent(in) :: id
-  integer(kind=kint), intent(in) :: opt6
-  integer(kind=kint), intent(out) :: ierr
-  type(hecmwST_matrix), pointer :: hecMAT
-  type(hecmwST_local_mesh), pointer :: hecMESH
-  call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  call hecmw_mat_set_solver_opt6(hecMAT, opt6)
-  ierr = 0
-end subroutine hecmw_ml_set_opt6
+end subroutine hecmw_ml_set_opt

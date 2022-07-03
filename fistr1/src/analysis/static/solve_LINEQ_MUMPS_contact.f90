@@ -8,7 +8,6 @@ module m_solve_LINEQ_MUMPS_contact
   use m_fstr
   use m_sparse_matrix
   use m_sparse_matrix_contact
-  use fstr_matrix_con_contact
   use m_hecmw_MUMPS_wrapper
 
   private
@@ -21,11 +20,11 @@ module m_solve_LINEQ_MUMPS_contact
 
 contains
 
-  subroutine solve_LINEQ_MUMPS_contact_init(hecMESH,hecMAT,fstrMAT,is_sym)
+  subroutine solve_LINEQ_MUMPS_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    type (fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type hecmwST_matrix_lagrange
     logical, intent(in) :: is_sym
     integer(kind=kint) :: spmat_type
     integer(kind=kint) :: spmat_symtype
@@ -62,11 +61,11 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_MUMPS_contact_init
 
-  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
+  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(in),optional :: conMAT
 
@@ -76,7 +75,7 @@ contains
 
     ! ANALYSIS
     if (NEED_ANALYSIS) then
-      call sparse_matrix_contact_init_prof(spMAT, hecMAT, fstrMAT, hecMESH)
+      call sparse_matrix_contact_init_prof(spMAT, hecMAT, hecLagMAT, hecMESH)
       mumps_job=1
       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
       if (istat < 0) then
@@ -90,12 +89,12 @@ contains
     ! FACTORIZATION and SOLUTION
     !  ----  For Parallel Contact with Multi-Partition Domains
     if(paraContactFlag.and.present(conMAT)) then
-      call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, fstrMAT, conMAT)
-      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, fstrMAT, conMAT)
+      call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, hecLagMAT, conMAT)
+      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, hecLagMAT, conMAT)
     else
-      call sparse_matrix_contact_set_vals(spMAT, hecMAT, fstrMAT)
+      call sparse_matrix_contact_set_vals(spMAT, hecMAT, hecLagMAT)
       !call sparse_matrix_dump(spMAT)
-      call sparse_matrix_contact_set_rhs(spMAT, hecMAT, fstrMAT)
+      call sparse_matrix_contact_set_rhs(spMAT, hecMAT, hecLagMAT)
     endif
     mumps_job=5
     call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
@@ -103,7 +102,7 @@ contains
       write(*,*) 'ERROR: MUMPS returned with error', istat
       return
     endif
-    call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
+    call sparse_matrix_contact_get_rhs(spMAT, hecMAT, hecLagMAT)
     if (myrank==0) write(*,*) ' [MUMPS]: Factorization and Solution completed.'
 
     call hecmw_mat_dump_solution(hecMAT)

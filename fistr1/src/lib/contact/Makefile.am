@@ -86,6 +86,7 @@ OBJSF = \
         surf_ele.@f90objfilepostfix@ \
         contact_lib.@f90objfilepostfix@ \
         fstr_contact_comm.@f90objfilepostfix@ \
+        fstr_contact_param.@f90objfilepostfix@ \
         fstr_contact_def.@f90objfilepostfix@
 
 HEADERS =

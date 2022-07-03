@@ -10,7 +10,6 @@ module m_solve_LINEQ_MKL_contact
   use m_fstr
   use m_sparse_matrix
   use m_sparse_matrix_contact
-  use fstr_matrix_con_contact
   use m_hecmw_MKL_wrapper
   use m_hecmw_ClusterMKL_wrapper
 
@@ -51,10 +50,10 @@ contains
   end subroutine solve_LINEQ_MKL_contact_init
 
   !> \brief This subroutine executes the MKL solver
-  subroutine solve_LINEQ_MKL_contact(hecMESH,hecMAT,fstrMAT,istat,conMAT)
+  subroutine solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    type (fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(in),optional :: conMAT
 
@@ -66,17 +65,17 @@ contains
 
     if (NEED_ANALYSIS) then
       !constrtuct new structure
-      call sparse_matrix_contact_init_prof(spMAT, hecMAT, fstrMAT, hecMESH)
+      call sparse_matrix_contact_init_prof(spMAT, hecMAT, hecLagMAT, hecMESH)
     endif
 
     !  ----  For Parallel Contact with Multi-Partition Domains
     if(paraContactFlag.and.present(conMAT)) then
-      call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, fstrMAT, conMAT)
-      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, fstrMAT, conMAT)
+      call sparse_matrix_para_contact_set_vals(spMAT, hecMAT, hecLagMAT, conMAT)
+      call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, hecLagMAT, conMAT)
     else
-      call sparse_matrix_contact_set_vals(spMAT, hecMAT, fstrMAT)
+      call sparse_matrix_contact_set_vals(spMAT, hecMAT, hecLagMAT)
       !call sparse_matrix_dump(spMAT)
-      call sparse_matrix_contact_set_rhs(spMAT, hecMAT, fstrMAT)
+      call sparse_matrix_contact_set_rhs(spMAT, hecMAT, hecLagMAT)
     endif
 
     t2=hecmw_wtime()
@@ -97,7 +96,7 @@ contains
     ! SOLVE
     if( hecMESH%PETOT.GT.1 ) then
       call hecmw_clustermkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
-      call sparse_matrix_contact_get_rhs(spMAT, hecMAT, fstrMAT)
+      call sparse_matrix_contact_get_rhs(spMAT, hecMAT, hecLagMAT)
     else
       call hecmw_mkl_wrapper(spMAT, phase_start, hecMAT%X, istat)
       deallocate(spMAT%rhs)
