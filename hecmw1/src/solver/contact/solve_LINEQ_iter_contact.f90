@@ -11,6 +11,8 @@ module m_solve_LINEQ_iter_contact
   use hecmw_solver_iterative
   use hecmw_matrix_misc
   use m_hecmw_comm_f
+  use hecmw_solver_misc
+  use hecmw_solver_las
 
   private
   public :: solve_LINEQ_iter_contact_init
