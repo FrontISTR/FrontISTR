@@ -32,7 +32,7 @@ module hecmw_local_matrix
     real(kind=kreal), pointer :: A(:)
   end type hecmwST_local_matrix
 
-  integer(kind=kint), parameter :: cNCOL_ITEM = 2 !< num of column items to be migrated (2 or 3)
+  integer(kind=kint), parameter :: cNCOL_ITEM = 3 !< num of column items to be migrated (2 or 3)
   integer(kind=kint), parameter :: cLID = 1       !< index for local ID in belonging rank (node_ID(2*i-1))
   integer(kind=kint), parameter :: cRANK = 2      !< index for belonging rank (node_ID(2*i))
   integer(kind=kint), parameter :: cGID = 3       !< index for global ID (used only when cNCOL_ITEM==3)
@@ -937,6 +937,13 @@ contains
         call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
       endif
     endif
+
+    if (DEBUG >= 3) then
+      write(700+hecmw_comm_get_rank(),*) 'hecMESH%node_ID before trimatmul_TtKT'
+      do i=hecMESH%nn_internal+1, hecMESH%n_node
+        write(700+hecmw_comm_get_rank(),*) i,hecMESH%node_ID(2*i-1),hecMESH%node_ID(2*i),hecMESH%global_node_ID(i)
+      enddo
+    endif
     t1 = hecmw_wtime()
     if (TIMER >= 1) write(0, '(A,f10.4)') "### hecmw_trimatmul_TtKT_mpc (3) : ",t1-t0
     t0 = hecmw_wtime()
@@ -944,6 +951,12 @@ contains
     t1 = hecmw_wtime()
     if (TIMER >= 1) write(0, '(A,f10.4)') "### hecmw_trimatmul_TtKT_mpc (4) : ",t1-t0
     t0 = hecmw_wtime()
+    if (DEBUG >= 3) then
+      write(700+hecmw_comm_get_rank(),*) 'hecMESH%node_ID after trimatmul_TtKT'
+      do i=hecMESH%nn_internal+1, hecMESH%n_node
+        write(700+hecmw_comm_get_rank(),*) i,hecMESH%node_ID(2*i-1),hecMESH%node_ID(2*i),hecMESH%global_node_ID(i)
+      enddo
+    endif
 
     if (associated(hecTKT%B)) deallocate(hecTKT%B)
     if (associated(hecTKT%X)) deallocate(hecTKT%X)
@@ -1984,9 +1997,9 @@ contains
       node_ID(2*ii-1) = add_nodes(cLID,i)
       node_ID(2*ii  ) = add_nodes(cRANK,i)
       if (cNCOL_ITEM >= 3) then
-        global_node_ID(i) = add_nodes(cGID,i)
+        global_node_ID(ii) = add_nodes(cGID,i)
       else
-        global_node_ID(i) = -1
+        global_node_ID(ii) = -1
       endif
     enddo
     deallocate(hecMESHnew%node_ID)
