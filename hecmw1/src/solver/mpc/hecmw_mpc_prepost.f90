@@ -219,7 +219,7 @@ contains
   !C*** hecmw_mpc_mat_ass
   !C***
   !C
-  subroutine hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
+  subroutine hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc, hecLagMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
@@ -227,6 +227,7 @@ contains
     type (hecmwST_matrix), pointer :: hecMATmpc
     type (hecmwST_matrix), intent(inout), optional :: conMAT
     type (hecmwST_matrix), pointer, optional :: conMATmpc
+    type (hecmwST_matrix_lagrange), intent(inout), optional :: hecLagMAT
     integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
@@ -245,13 +246,30 @@ contains
     case (3)  ! elimination
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
       call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, hecMAT, hecMATmpc)
-      if (present(conMAT).and.present(conMATmpc)) then
+      if (present(conMAT).and.present(conMATmpc).and.present(hecLagMAT)) then
         call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, conMAT, conMATmpc)
+        call resize_hecLagMAT(conMAT%NP, conMATmpc%NP, conMAT%NDOF, hecLagMAT)
       endif
     end select
 
   end subroutine hecmw_mpc_mat_ass
 
+
+  subroutine resize_hecLagMAT(NP_orig, NP_new, ndof, hecLagMAT)
+    integer(kind=kint), intent(in) :: NP_orig, NP_new, ndof
+    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
+    integer(kind=kint), pointer :: itemp(:)
+
+    if (hecLagMAT%num_lagrange == 0) return
+
+    allocate(itemp(0:NP_new))
+    itemp(0:NP_orig) = hecLagMAT%indexU_lagrange(0:NP_orig)
+    itemp(NP_orig+1:NP_new) = hecLagMAT%indexU_lagrange(NP_orig)
+
+    deallocate(hecLagMAT%indexU_lagrange)
+    hecLagMAT%indexU_lagrange => itemp
+
+  end subroutine resize_hecLagMAT
 
   !C
   !C***
@@ -304,6 +322,7 @@ contains
     type (hecmwST_matrix), pointer :: hecMATmpc
     real(kind=kreal) :: time_dumm
     integer(kind=kint) :: totalmpc, MPC_METHOD, i
+    integer(kind=kint) :: npndof, npndof_mpc, num_lagrange
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
@@ -318,10 +337,16 @@ contains
     case (2)  ! MPCCG
       call hecmw_tback_x(hecMESH, hecMAT%NDOF, hecMAT%X, time_dumm)
     case (3)  ! elimination
-      do i = 1, size(hecMAT%X)
+      npndof = hecMAT%NP * hecMAT%NDOF
+      do i = 1, npndof
         hecMAT%X(i) = hecMATmpc%X(i)
       enddo
       call hecmw_tback_x(hecMESH, hecMAT%NDOF, hecMAT%X, time_dumm)
+      num_lagrange = size(hecMAT%X) - npndof
+      npndof_mpc = hecMATmpc%NP * hecMATmpc%NDOF
+      do i = 1, num_lagrange
+        hecMAT%X(npndof+i) = hecMATmpc%X(npndof_mpc+i)
+      enddo
       hecMAT%Iarray=hecMATmpc%Iarray
       hecMAT%Rarray=hecMATmpc%Rarray
     end select

@@ -513,7 +513,7 @@ contains
         endif
 
         ! ----- Set Boundary condition
-        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc, hecLagMAT)
         call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
         call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, conMATmpc)
 
