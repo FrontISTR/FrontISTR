@@ -31,12 +31,14 @@ contains
   !C*** hecmw_mpc_mat_init
   !C***
   !C
-  subroutine hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  subroutine hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(inout), target :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_matrix), intent(in), target, optional :: conMAT
+    type (hecmwST_matrix), pointer, optional :: conMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
 
     totalmpc = hecMESH%mpc%n_mpc
@@ -45,6 +47,7 @@ contains
     if (totalmpc == 0) then
       hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
+      if (present(conMAT).and.present(conMATmpc)) conMATmpc => conMAT
       return
     endif
 
@@ -71,14 +74,20 @@ contains
     case (1)  ! penalty
       hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
+      if (present(conMAT).and.present(conMATmpc)) conMATmpc => conMAT
     case (2)  ! MPCCG
       hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
+      if (present(conMAT).and.present(conMATmpc)) conMATmpc => conMAT
     case (3)  ! elimination
       allocate(hecMESHmpc)
       call hecmw_mpc_mesh_copy(hecMESH, hecMESHmpc)
       allocate(hecMATmpc)
       call hecmw_mat_init(hecMATmpc)
+      if (present(conMAT).and.present(conMATmpc)) then
+        allocate(conMATmpc)
+        call hecMW_mat_init(conMATmpc)
+      endif
     end select
 
   end subroutine hecmw_mpc_mat_init
@@ -124,12 +133,13 @@ contains
   !C*** hecmw_mpc_mat_finalize
   !C***
   !C
-  subroutine hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  subroutine hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in) :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_matrix), pointer, optional :: conMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
@@ -138,6 +148,7 @@ contains
     if (totalmpc == 0) then
       nullify(hecMESHmpc)
       nullify(hecMATmpc)
+      if (present(conMATmpc)) nullify(conMATmpc)
       return
     endif
 
@@ -147,9 +158,11 @@ contains
     case (1)  ! penalty
       nullify(hecMESHmpc)
       nullify(hecMATmpc)
+      if (present(conMATmpc)) nullify(conMATmpc)
     case (2) ! MPCCG
       nullify(hecMESHmpc)
       nullify(hecMATmpc)
+      if (present(conMATmpc)) nullify(conMATmpc)
     case (3) ! elimination
       call hecmw_mpc_mesh_free(hecMESHmpc)
       deallocate(hecMESHmpc)
@@ -157,6 +170,11 @@ contains
       call hecmw_mat_finalize(hecMATmpc)
       deallocate(hecMATmpc)
       nullify(hecMATmpc)
+      if (present(conMATmpc)) then
+        call hecmw_mat_finalize(conMATmpc)
+        deallocate(conMATmpc)
+        nullify(conMATmpc)
+      endif
     end select
 
   end subroutine hecmw_mpc_mat_finalize
@@ -201,12 +219,14 @@ contains
   !C*** hecmw_mpc_mat_ass
   !C***
   !C
-  subroutine hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  subroutine hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_matrix), intent(inout), optional :: conMAT
+    type (hecmwST_matrix), pointer, optional :: conMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
@@ -225,6 +245,9 @@ contains
     case (3)  ! elimination
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
       call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, hecMAT, hecMATmpc)
+      if (present(conMAT).and.present(conMATmpc)) then
+        call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, conMAT, conMATmpc)
+      endif
     end select
 
   end subroutine hecmw_mpc_mat_ass

@@ -2590,8 +2590,8 @@ contains
     integer(kind=kint) :: ndof, ndof2, i, idx, idx2, js, je, j, k
     integer(kind=kint), allocatable :: incl_nz(:), cnt(:)
     logical :: check_nonzero
-    !check_nonzero = .false.
-    check_nonzero = .true.  !!! always checking nonzero seems to be faster
+    check_nonzero = .false.
+    !check_nonzero = .true.  !!! always checking nonzero seems to be faster
     !
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof

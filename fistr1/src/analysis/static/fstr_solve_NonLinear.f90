@@ -418,7 +418,7 @@ contains
     type (hecmwST_matrix)                  :: conMAT
 
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
-    type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_matrix), pointer :: hecMATmpc, conMATmpc
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter, max_iter_contact
@@ -433,7 +433,7 @@ contains
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
 
-    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -513,9 +513,9 @@ contains
         endif
 
         ! ----- Set Boundary condition
-        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
         call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-        call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, conMAT)
+        call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, conMATmpc)
 
         nndof = hecMAT%N*hecMAT%ndof
 
@@ -523,8 +523,8 @@ contains
         ! ----  For Parallel Contact with Multi-Partition Domains
         hecMATmpc%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-        q_residual = fstr_get_norm_para_contact(hecMATmpc,hecLagMAT,conMAT,hecMESH)
-        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMAT, istat, 1.0D0)
+        q_residual = fstr_get_norm_para_contact(hecMATmpc,hecLagMAT,conMATmpc,hecMESHmpc)
+        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMATmpc, istat, 1.0D0)
         call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         ! ----- check matrix solver error
