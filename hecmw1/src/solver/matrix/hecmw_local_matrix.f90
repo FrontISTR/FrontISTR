@@ -882,6 +882,7 @@ contains
     integer(kind=kint), allocatable :: iwS(:)
     integer(kind=kint) :: ndof, n_mpc, i_mpc
     integer(kind=kint) :: i, j, k, kk, ilag
+    integer(kind=kint) :: num_lagrange
     real(kind=kreal) :: t0, t1
     t0 = hecmw_wtime()
     ndof=hecMAT%NDOF
@@ -946,13 +947,18 @@ contains
 
     if (associated(hecTKT%B)) deallocate(hecTKT%B)
     if (associated(hecTKT%X)) deallocate(hecTKT%X)
-    allocate(hecTKT%B(ndof*hecTKT%NP))
-    allocate(hecTKT%X(ndof*hecTKT%NP))
-    do i=1, size(hecMAT%B)
+    num_lagrange = size(hecMAT%B) - hecMAT%NP*ndof
+    allocate(hecTKT%B(ndof*hecTKT%NP + num_lagrange))
+    allocate(hecTKT%X(ndof*hecTKT%NP + num_lagrange))
+    hecTKT%B(:) = 0.d0
+    hecTKT%X(:) = 0.d0
+    do i=1, ndof*hecMAT%NP
       hecTKT%B(i) = hecMAT%B(i)
-    enddo
-    do i=1, size(hecMAT%X)
       hecTKT%X(i) = hecMAT%X(i)
+    enddo
+    do i=1, num_lagrange
+      hecTKT%B(ndof*hecTKT%NP+i) = hecMAT%B(ndof*hecMAT%NP+i)
+      hecTKT%X(ndof*hecTKT%NP+i) = hecMAT%X(ndof*hecMAT%NP+i)
     enddo
     do ilag=1,n_mpc
       hecTKT%X(iwS(ilag)) = 0.d0
