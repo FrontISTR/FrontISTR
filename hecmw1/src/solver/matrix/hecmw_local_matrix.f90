@@ -71,6 +71,18 @@ contains
     enddo
   end subroutine hecmw_localmat_write
 
+  subroutine hecmw_localmat_write_size(Tmat,iunit)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: Tmat
+    integer(kind=kint), intent(in) :: iunit
+    integer(kind=kint) :: nr, nc, nnz, ndof
+    nr=Tmat%nr
+    nc=Tmat%nc
+    nnz=Tmat%nnz
+    ndof=Tmat%ndof
+    write(iunit,'(a,4i10)') 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
+  end subroutine hecmw_localmat_write_size
+
   subroutine hecmw_localmat_write_ij(Tmat,iunit)
     implicit none
     type (hecmwST_local_matrix), intent(in) :: Tmat
@@ -259,9 +271,11 @@ contains
     ! perform three matrices multiplication for elimination
     t0 = hecmw_wtime()
     call hecmw_localmat_init_with_hecmat(BKmat, hecMAT)
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BKmat (hecMAT)'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BKmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BKmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BKmat, 700+hecmw_comm_get_rank())
@@ -273,9 +287,11 @@ contains
     t0 = hecmw_wtime()
     call hecmw_localmat_multmat(BTtmat, BKmat, hecMESH, BTtKmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply Tt and K done'
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BTtKmat'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKmat, 700+hecmw_comm_get_rank())
@@ -288,9 +304,11 @@ contains
     t0 = hecmw_wtime()
     call hecmw_localmat_multmat(BTtKmat, BTmat, hecMESH, BTtKTmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply TtK and T done'
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BTtKTmat'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKTmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKTmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
@@ -305,12 +323,16 @@ contains
     !num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-10
     num = 1.d0
     call place_num_on_diag(BTtKTmat, iwS, num_lagrange, num)
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'num_lagrange =', num_lagrange
-      write(700+hecmw_comm_get_rank(),*) 'iwS(1:num_lagrange)'
-      write(700+hecmw_comm_get_rank(),*) iwS(1:num_lagrange)
+      if (DEBUG >= 3) then
+        write(700+hecmw_comm_get_rank(),*) 'iwS(1:num_lagrange)'
+        write(700+hecmw_comm_get_rank(),*) iwS(1:num_lagrange)
+      endif
       write(700+hecmw_comm_get_rank(),*) 'BTtKTmat (place 1.0 on slave diag)'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKTmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKTmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
