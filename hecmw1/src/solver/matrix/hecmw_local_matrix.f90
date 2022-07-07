@@ -32,7 +32,7 @@ module hecmw_local_matrix
     real(kind=kreal), pointer :: A(:)
   end type hecmwST_local_matrix
 
-  integer(kind=kint), parameter :: cNCOL_ITEM = 2 !< num of column items to be migrated (2 or 3)
+  integer(kind=kint), parameter :: cNCOL_ITEM = 3 !< num of column items to be migrated (2 or 3)
   integer(kind=kint), parameter :: cLID = 1       !< index for local ID in belonging rank (node_ID(2*i-1))
   integer(kind=kint), parameter :: cRANK = 2      !< index for belonging rank (node_ID(2*i))
   integer(kind=kint), parameter :: cGID = 3       !< index for global ID (used only when cNCOL_ITEM==3)
@@ -70,6 +70,18 @@ contains
       enddo
     enddo
   end subroutine hecmw_localmat_write
+
+  subroutine hecmw_localmat_write_size(Tmat,iunit)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: Tmat
+    integer(kind=kint), intent(in) :: iunit
+    integer(kind=kint) :: nr, nc, nnz, ndof
+    nr=Tmat%nr
+    nc=Tmat%nc
+    nnz=Tmat%nnz
+    ndof=Tmat%ndof
+    write(iunit,'(a,4i10)') 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
+  end subroutine hecmw_localmat_write_size
 
   subroutine hecmw_localmat_write_ij(Tmat,iunit)
     implicit none
@@ -259,9 +271,11 @@ contains
     ! perform three matrices multiplication for elimination
     t0 = hecmw_wtime()
     call hecmw_localmat_init_with_hecmat(BKmat, hecMAT)
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BKmat (hecMAT)'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BKmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BKmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BKmat, 700+hecmw_comm_get_rank())
@@ -273,9 +287,11 @@ contains
     t0 = hecmw_wtime()
     call hecmw_localmat_multmat(BTtmat, BKmat, hecMESH, BTtKmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply Tt and K done'
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BTtKmat'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKmat, 700+hecmw_comm_get_rank())
@@ -288,9 +304,11 @@ contains
     t0 = hecmw_wtime()
     call hecmw_localmat_multmat(BTtKmat, BTmat, hecMESH, BTtKTmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply TtK and T done'
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BTtKTmat'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKTmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKTmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
@@ -305,12 +323,16 @@ contains
     !num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-10
     num = 1.d0
     call place_num_on_diag(BTtKTmat, iwS, num_lagrange, num)
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'num_lagrange =', num_lagrange
-      write(700+hecmw_comm_get_rank(),*) 'iwS(1:num_lagrange)'
-      write(700+hecmw_comm_get_rank(),*) iwS(1:num_lagrange)
+      if (DEBUG >= 3) then
+        write(700+hecmw_comm_get_rank(),*) 'iwS(1:num_lagrange)'
+        write(700+hecmw_comm_get_rank(),*) iwS(1:num_lagrange)
+      endif
       write(700+hecmw_comm_get_rank(),*) 'BTtKTmat (place 1.0 on slave diag)'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKTmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKTmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
@@ -860,6 +882,7 @@ contains
     integer(kind=kint), allocatable :: iwS(:)
     integer(kind=kint) :: ndof, n_mpc, i_mpc
     integer(kind=kint) :: i, j, k, kk, ilag
+    integer(kind=kint) :: num_lagrange
     real(kind=kreal) :: t0, t1
     t0 = hecmw_wtime()
     ndof=hecMAT%NDOF
@@ -914,6 +937,13 @@ contains
         call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
       endif
     endif
+
+    if (DEBUG >= 3) then
+      write(700+hecmw_comm_get_rank(),*) 'hecMESH%node_ID before trimatmul_TtKT'
+      do i=hecMESH%nn_internal+1, hecMESH%n_node
+        write(700+hecmw_comm_get_rank(),*) i,hecMESH%node_ID(2*i-1),hecMESH%node_ID(2*i),hecMESH%global_node_ID(i)
+      enddo
+    endif
     t1 = hecmw_wtime()
     if (TIMER >= 1) write(0, '(A,f10.4)') "### hecmw_trimatmul_TtKT_mpc (3) : ",t1-t0
     t0 = hecmw_wtime()
@@ -921,16 +951,27 @@ contains
     t1 = hecmw_wtime()
     if (TIMER >= 1) write(0, '(A,f10.4)') "### hecmw_trimatmul_TtKT_mpc (4) : ",t1-t0
     t0 = hecmw_wtime()
+    if (DEBUG >= 3) then
+      write(700+hecmw_comm_get_rank(),*) 'hecMESH%node_ID after trimatmul_TtKT'
+      do i=hecMESH%nn_internal+1, hecMESH%n_node
+        write(700+hecmw_comm_get_rank(),*) i,hecMESH%node_ID(2*i-1),hecMESH%node_ID(2*i),hecMESH%global_node_ID(i)
+      enddo
+    endif
 
     if (associated(hecTKT%B)) deallocate(hecTKT%B)
     if (associated(hecTKT%X)) deallocate(hecTKT%X)
-    allocate(hecTKT%B(ndof*hecTKT%NP))
-    allocate(hecTKT%X(ndof*hecTKT%NP))
-    do i=1, size(hecMAT%B)
+    num_lagrange = size(hecMAT%B) - hecMAT%NP*ndof
+    allocate(hecTKT%B(ndof*hecTKT%NP + num_lagrange))
+    allocate(hecTKT%X(ndof*hecTKT%NP + num_lagrange))
+    hecTKT%B(:) = 0.d0
+    hecTKT%X(:) = 0.d0
+    do i=1, ndof*hecMAT%NP
       hecTKT%B(i) = hecMAT%B(i)
-    enddo
-    do i=1, size(hecMAT%X)
       hecTKT%X(i) = hecMAT%X(i)
+    enddo
+    do i=1, num_lagrange
+      hecTKT%B(ndof*hecTKT%NP+i) = hecMAT%B(ndof*hecMAT%NP+i)
+      hecTKT%X(ndof*hecTKT%NP+i) = hecMAT%X(ndof*hecMAT%NP+i)
     enddo
     do ilag=1,n_mpc
       hecTKT%X(iwS(ilag)) = 0.d0
@@ -1956,9 +1997,9 @@ contains
       node_ID(2*ii-1) = add_nodes(cLID,i)
       node_ID(2*ii  ) = add_nodes(cRANK,i)
       if (cNCOL_ITEM >= 3) then
-        global_node_ID(i) = add_nodes(cGID,i)
+        global_node_ID(ii) = add_nodes(cGID,i)
       else
-        global_node_ID(i) = -1
+        global_node_ID(ii) = -1
       endif
     enddo
     deallocate(hecMESHnew%node_ID)
@@ -2562,8 +2603,8 @@ contains
     integer(kind=kint) :: ndof, ndof2, i, idx, idx2, js, je, j, k
     integer(kind=kint), allocatable :: incl_nz(:), cnt(:)
     logical :: check_nonzero
-    !check_nonzero = .false.
-    check_nonzero = .true.  !!! always checking nonzero seems to be faster
+    check_nonzero = .false.
+    !check_nonzero = .true.  !!! always checking nonzero seems to be faster
     !
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof
