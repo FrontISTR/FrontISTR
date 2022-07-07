@@ -45,8 +45,8 @@ contains
     endif
 
     !(2)elemental values
-    allocate(fstrSOLID%elements_bkup(hecMESH%n_elem))
-    do i=1,hecMESH%n_elem
+    allocate(fstrSOLID%elements_bkup(size(fstrSOLID%elements)))
+    do i=1,size(fstrSOLID%elements)
       if (hecmw_is_etype_link( fstrSOLID%elements(i)%etype )) cycle
       if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
