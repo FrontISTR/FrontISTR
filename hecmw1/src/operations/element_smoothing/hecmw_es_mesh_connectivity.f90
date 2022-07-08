@@ -56,13 +56,13 @@ contains
     type(hecmwST_local_mesh), intent(inout)   :: hecMESH
 
     integer(kind=kint) :: i
-    integer(kind=kint) :: n_newelem, n_newelemnodes
+    integer(kind=kint) :: n_newelem, n_newelemnodes, nitem
     integer(kind=kint), allocatable :: iwork(:)
 
     n_newelem = size(elems)
     n_newelemnodes = 0
     do i=1,n_newelem
-      n_newelemnodes = n_newelemnodes + elems(i)%nitem
+      n_newelemnodes = n_newelemnodes + HECMW_varray_int_get_nitem(elems(i))
     end do
     allocate(iwork(0:n_newelemnodes))
 
@@ -93,15 +93,16 @@ contains
     ! elem_node_index(:)
     iwork(0) = hecMESH%elem_node_index(ubound(hecMESH%elem_node_index,1))
     do i=1,n_newelem
-      iwork(i) = iwork(i-1) + elems(i)%nitem
+      iwork(i) = iwork(i-1) + HECMW_varray_int_get_nitem(elems(i))
     end do
     call concat_int_list(iwork, n_newelem, hecMESH%elem_node_index)
 
     ! elem_node_item(:)
     n_newelemnodes = 0
     do i=1,n_newelem
-      iwork(n_newelemnodes+1:n_newelemnodes+elems(i)%nitem) = elems(i)%items(1:elems(i)%nitem)
-      n_newelemnodes = n_newelemnodes + elems(i)%nitem
+      nitem = HECMW_varray_int_get_nitem(elems(i))
+      call HECMW_varray_int_get_item_all( elems(i), iwork(n_newelemnodes+1:n_newelemnodes+nitem) )
+      n_newelemnodes = n_newelemnodes + nitem
     end do
     call concat_int_list(iwork, n_newelemnodes, hecMESH%elem_node_item)
 
@@ -221,7 +222,7 @@ contains
 
     integer(kind=kint) :: i, icel, iS, iE, nid
 
-    call HECMW_varray_int_initialize_all( hecMESH%n_node, 8, node_elem_list )
+    call HECMW_varray_int_initialize_all( node_elem_list, hecMESH%n_node, 8 )
 
     do icel=1,n_elem_ori
       if( .not. is_selem_list(icel) ) cycle
@@ -231,7 +232,7 @@ contains
 
       do i=iS,iE
         nid = hecMESH%elem_node_item(i)
-        call HECMW_varray_int_add( icel, node_elem_list(nid) )
+        call HECMW_varray_int_add( node_elem_list(nid), icel )
       end do
     end do
 
@@ -249,40 +250,40 @@ contains
     integer(kind=kint) :: nodlocal(4)
 
     !get num of node-smoothed elements
-    call HECMW_varray_int_initialize_all( hecMESH%n_node, 2, n_sections )
+    call HECMW_varray_int_initialize_all( n_sections, hecMESH%n_node, 2 )
 
     n_nselems = 0
     do i=1,hecMESH%n_node
-      do j=1,node_elem_list(i)%nitem
-        icel = node_elem_list(i)%items(j)
+      do j=1,HECMW_varray_int_get_nitem(node_elem_list(i))
+        icel = HECMW_varray_int_get_item( node_elem_list(i), j )
         isect = hecMESH%section_ID(icel)
-        call HECMW_varray_int_add_if_not_exits( isect, n_sections(i) )
+        call HECMW_varray_int_add_if_not_exits( n_sections(i), isect )
       enddo
-      n_nselems = n_nselems + n_sections(i)%nitem
+      n_nselems = n_nselems + HECMW_varray_int_get_nitem(n_sections(i))
     end do
 
     allocate(sectionID(n_nselems))
 
     !create node-smoothed elements
     !elements which belongs to different sections must not be connected
-    call HECMW_varray_int_initialize_all( n_nselems, 16, nselems )
+    call HECMW_varray_int_initialize_all( nselems, n_nselems, 16 )
 
     n_nselems = 0
     do i=1,hecMESH%n_node
-      do j=1,n_sections(i)%nitem
-        isect = n_sections(i)%items(j)
+      do j=1,HECMW_varray_int_get_nitem( n_sections(i) )
+        isect = HECMW_varray_int_get_item( n_sections(i), j )
         n_nselems = n_nselems + 1
         sectionID(n_nselems) = isect
-        do k=1,node_elem_list(i)%nitem
-          icel = node_elem_list(i)%items(k)
+        do k=1,HECMW_varray_int_get_nitem(node_elem_list(i))
+          icel = HECMW_varray_int_get_item( node_elem_list(i), k )
           if ( hecMESH%section_ID(icel) == isect ) then
             iS = hecMESH%elem_node_index(icel-1)+1
             iE = hecMESH%elem_node_index(icel)
             if( iE-iS+1 /= 4 ) stop "error in add_elemments_smoothed_by_node(1)"
             nodlocal(1:4) = hecMESH%elem_node_item(is:iE)
             call reorder_tet1( i, nodlocal )
-            if( nselems(n_nselems)%nitem == 0 ) call HECMW_varray_int_add( nodlocal(1), nselems(n_nselems) )
-            call HECMW_varray_int_expand( 3, nodlocal(2:4), nselems(n_nselems) )
+            if( HECMW_varray_int_get_nitem(nselems(n_nselems)) == 0 ) call HECMW_varray_int_add( nselems(n_nselems), nodlocal(1) )
+            call HECMW_varray_int_expand( nselems(n_nselems), 3, nodlocal(2:4) )
           end if
         end do
       enddo
@@ -341,7 +342,7 @@ contains
 
     !create edge connectivity list in node num order
     !edge_con(i)%items : list of nodes connecting to i by edge
-    call HECMW_varray_int_initialize_all( hecMESH%n_node, 8, edge_con )
+    call HECMW_varray_int_initialize_all( edge_con, hecMESH%n_node, 8 )
 
     do icel=1,n_elem_ori
       if( .not. is_selem_list(icel) ) cycle
@@ -354,9 +355,9 @@ contains
         nid1 = ndlocal(leid(1,i))
         nid2 = ndlocal(leid(2,i))
         if( nid1 < nid2 ) then
-          call HECMW_varray_int_add_if_not_exits( nid2, edge_con(nid1) )
+          call HECMW_varray_int_add_if_not_exits( edge_con(nid1), nid2 )
         else
-          call HECMW_varray_int_add_if_not_exits( nid1, edge_con(nid2) )
+          call HECMW_varray_int_add_if_not_exits( edge_con(nid2), nid1 )
         end if
       end do
     end do
@@ -364,23 +365,23 @@ contains
     !create edges and edge_id
     n_edges = 0
     do i=1,hecMESH%n_node
-      n_edges = n_edges + edge_con(i)%nitem
+      n_edges = n_edges + HECMW_varray_int_get_nitem(edge_con(i))
     end do
 
     allocate(edges(2*n_edges))
-    call HECMW_varray_int_initialize_all( hecMESH%n_node, 8, edge_id )
+    call HECMW_varray_int_initialize_all( edge_id, hecMESH%n_node, 8 )
     n_edges = 0
     do i=1,hecMESH%n_node
-      do j=1,edge_con(i)%nitem
+      do j=1,HECMW_varray_int_get_nitem(edge_con(i))
         n_edges = n_edges + 1
         edges(2*n_edges-1) = i
-        edges(2*n_edges  ) = edge_con(i)%items(j)
-        call HECMW_varray_int_add( n_edges, edge_id(i) )
+        edges(2*n_edges  ) = HECMW_varray_int_get_item( edge_con(i), j )
+        call HECMW_varray_int_add( edge_id(i), n_edges )
       end do
     end do
 
     !create edge-elem list
-    call HECMW_varray_int_initialize_all( n_edges, 8, edge_elem_list )
+    call HECMW_varray_int_initialize_all( edge_elem_list, n_edges, 8 )
 
     do icel=1,n_elem_ori
       if( .not. is_selem_list(icel) ) cycle
@@ -393,11 +394,11 @@ contains
         nid1 = ndlocal(leid(1,i))
         nid2 = ndlocal(leid(2,i))
         if( nid1 < nid2 ) then
-          edid = edge_id(nid1)%items( HECMW_varray_int_find( nid2, edge_con(nid1) ) )
+          edid = HECMW_varray_int_get_item( edge_id(nid1), HECMW_varray_int_find( edge_con(nid1), nid2 ) )
         else
-          edid = edge_id(nid2)%items( HECMW_varray_int_find( nid1, edge_con(nid2) ) )
+          edid = HECMW_varray_int_get_item( edge_id(nid2), HECMW_varray_int_find( edge_con(nid2), nid1 ) )
         end if
-        call HECMW_varray_int_add( icel, edge_elem_list(edid) )
+        call HECMW_varray_int_add( edge_elem_list(edid), icel )
       end do
     end do
 
@@ -421,40 +422,41 @@ contains
     n_edges = size(edge_elem_list)
 
     !get num of edge-smoothed elements
-    call HECMW_varray_int_initialize_all( n_edges, 2, n_sections )
+    call HECMW_varray_int_initialize_all( n_sections, n_edges, 2 )
 
     n_eselems = 0
     do i=1,n_edges
-      do j=1,edge_elem_list(i)%nitem
-        icel = edge_elem_list(i)%items(j)
+      do j=1,HECMW_varray_int_get_nitem(edge_elem_list(i))
+        icel = HECMW_varray_int_get_item( edge_elem_list(i), j )
         isect = hecMESH%section_ID(icel)
-        call HECMW_varray_int_add_if_not_exits( isect, n_sections(i) )
+        call HECMW_varray_int_add_if_not_exits( n_sections(i), isect )
       enddo
-      n_eselems = n_eselems + n_sections(i)%nitem
+      n_eselems = n_eselems + HECMW_varray_int_get_nitem(n_sections(i))
     end do
 
     allocate(sectionID(n_eselems))
 
     !create edge-smoothed elements
     !elements which belongs to different sections must not be connected
-    call HECMW_varray_int_initialize_all( n_eselems, 16, eselems )
+    call HECMW_varray_int_initialize_all( eselems, n_eselems, 16 )
 
     n_eselems = 0
     do i=1,n_edges
-      do j=1,n_sections(i)%nitem
-        isect = n_sections(i)%items(j)
+      do j=1,HECMW_varray_int_get_nitem(n_sections(i))
+        isect = HECMW_varray_int_get_item( n_sections(i), j )
         n_eselems = n_eselems + 1
         sectionID(n_eselems) = isect
-        do k=1,edge_elem_list(i)%nitem
-          icel = edge_elem_list(i)%items(k)
+        do k=1,HECMW_varray_int_get_nitem(edge_elem_list(i))
+          icel = HECMW_varray_int_get_item( edge_elem_list(i), k )
           if ( hecMESH%section_ID(icel) == isect ) then
             iS = hecMESH%elem_node_index(icel-1)+1
             iE = hecMESH%elem_node_index(icel)
             if( iE-iS+1 /= 4 ) stop "error in add_elemments_smoothed_by_node(1)"
             nodlocal(1:4) = hecMESH%elem_node_item(is:iE)
             call reorder_tet1_edge( edges(2*i-1), edges(2*i), nodlocal )
-            if( eselems(n_eselems)%nitem == 0 ) call HECMW_varray_int_expand( 2, nodlocal(1:2), eselems(n_eselems) )
-            call HECMW_varray_int_expand( 2, nodlocal(3:4), eselems(n_eselems) )
+            if( HECMW_varray_int_get_nitem(eselems(n_eselems)) == 0 ) &
+              &  call HECMW_varray_int_expand( eselems(n_eselems), 2, nodlocal(1:2) )
+            call HECMW_varray_int_expand( eselems(n_eselems), 2, nodlocal(3:4) )
           end if
         end do
       enddo
