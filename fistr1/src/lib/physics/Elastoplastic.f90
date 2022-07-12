@@ -215,7 +215,7 @@ contains
         if( present(temp) ) then
           ina(1) = temp;  ina(2)=pstrain
           call fetch_TableGrad( MC_YIELD, ina, matl%dict, calHardenCoeff, ierr )
-          !	  print *, ina, calHardenCoeff; pause
+          !   print *, ina, calHardenCoeff; pause
         else
           ina(1)=pstrain
           call fetch_TableGrad( MC_YIELD, ina(1:1), matl%dict, calHardenCoeff, ierr )
@@ -597,5 +597,31 @@ contains
       gauss%fstatus(8:13) =gauss%fstatus(2:7)
     endif
   end subroutine
+
+  subroutine get_average_equivalent_strain(hecMESH, tmp)
+    use hecmw_etype
+    use elementInfo
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kint) :: i, j, itype, iS, iE, ic_type, icel, np
+    real(kreal) :: tmp(:), avg
+
+    do itype = 1, hecMESH%n_elem_type
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+      ic_type = hecMESH%elem_type_item(itype)
+      if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_patch(ic_type)) cycle
+
+      np = NumOfQuadPoints(ic_type)
+      do icel = iS, iE
+        avg = 0.0d0
+        do j = 1, np
+          avg = avg + fstrSOLID%elements(icel)%gausses(j)%plstrain
+        enddo
+        tmp(icel) = avg/dble(np)
+      enddo
+    enddo
+  end subroutine get_average_equivalent_strain
 
 end module m_ElastoPlastic

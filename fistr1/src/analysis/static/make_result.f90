@@ -24,6 +24,7 @@ contains
     use m_out
     use m_static_lib
     use mMaterial
+    use m_ElastoPlastic
     use hecmw_util
 
     implicit none
@@ -552,6 +553,7 @@ contains
   subroutine fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time, fstrDYNAMIC )
     use m_fstr
     use hecmw_util
+    use m_ElastoPlastic
 
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
@@ -564,7 +566,7 @@ contains
     integer(kind=kint) :: i, j, k, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
     integer(kind=kint) :: idx
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
-    real(kind=kreal), allocatable   ::unode(:)
+    real(kind=kreal), allocatable   :: unode(:), tmp(:)
     character(len=4) :: cnum
     character(len=6), allocatable   :: clyr(:)
     logical :: is_dynamic
@@ -772,6 +774,16 @@ contains
     if( fstrSOLID%output_ctrl(4)%outinfo%on(40) ) then
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(40), ndof )
+    endif
+    ! --- PL_ESTRAIN @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(43) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
+    endif
+    ! --- EQPL_ESTRAIN @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(44) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(44), ndof )
     endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1091,6 +1103,35 @@ contains
         fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = hecMESH%section_ID(i)
       enddo
       jitem = jitem + nn
+    endif
+
+    ! --- PL_ESTRAIN @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(43)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'PL_ESTRAIN'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          !fstrRESULT%node_val_item(nitem*(i-1)+j+jitem) = fstrSOLID%CONT_FTRAC(nn*(i-1)+j)
+        enddo
+      enddo
+      jitem = jitem + nn
+    endif
+
+    ! --- EQPL_ESTRAIN @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(44)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(44), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'EQPL_ESTRAIN'
+      allocate(tmp(hecMESH%n_elem), source = 0.0d0)
+      call get_average_equivalent_strain(hecMESH, tmp)
+      do i = 1, hecMESH%n_elem
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = tmp(i)
+      enddo
+      jitem = jitem + nn
+      deallocate(tmp)
     endif
   end subroutine fstr_make_result
 
@@ -1605,6 +1646,4 @@ contains
 
   deallocate(displs,vec_all)
   end subroutine
-
-
 end module m_make_result
