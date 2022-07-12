@@ -157,7 +157,7 @@ contains
       !  endif
       !endif
 
-      call hecmw_update_m_R(hecMESH, X, hecMAT%NP, NDOF)
+      call hecmw_update_R(hecMESH, X, hecMAT%NP, NDOF)
 
       if( IRESULT.eq.1 ) then
         header = "*fstrresult"

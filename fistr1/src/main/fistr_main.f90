@@ -18,13 +18,12 @@ module m_fstr_main
   use m_fstr_rcap_io
   use fstr_solver_dynamic
   use fstr_debug_dump
-  use fstr_matrix_con_contact
 
   type(hecmwST_local_mesh), save             :: hecMESH
   type(hecmwST_matrix), save                 :: hecMAT
   type(hecmwST_matrix), save                 :: conMAT
   type(fstr_solid), save                     :: fstrSOLID
-  type(fstrST_matrix_contact_lagrange), save :: fstrMAT
+  type(hecmwST_matrix_lagrange), save        :: hecLagMAT
   type(fstr_heat), save                      :: fstrHEAT
   type(fstr_eigen), save                     :: fstrEIG
   type(fstr_dynamic), save                   :: fstrDYNAMIC
@@ -53,10 +52,7 @@ contains
     call hecmw_get_mesh( name_ID , hecMESH )
 
     if( hecMESH%contact_pair%n_pair > 0 ) then
-      if( nprocs > 1 .and. &
-          hecMESH%hecmw_flag_partcontact /= HECMW_FLAG_PARTCONTACT_AGGREGATE ) then
-        paraContactFlag = .true.
-      endif
+      paraContactFlag = .true.
       if( myrank == 0 ) then
         print *,'paraContactFlag',paraContactFlag
       endif
@@ -303,11 +299,7 @@ contains
       if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
     endif
 
-    if( paraContactFlag ) then
-      call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR, conMAT )
-    else
-      call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
-    endif
+    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, hecLagMAT, fstrPR, conMAT )
 
     call fstr_solid_finalize( fstrSOLID )
 
@@ -330,7 +322,7 @@ contains
       write(IMSG,*) ' ***   STAGE Eigenvalue analysis     **'
     endif
 
-    call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, fstrMAT )
+    call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, hecLagMAT )
 
   end subroutine fstr_eigen_analysis
 
@@ -373,14 +365,9 @@ contains
       endif
     endif
 
-    if( paraContactFlag ) then
-      call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
-        fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT, &
-        conMAT )
-    else
-      call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
-        fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, fstrMAT)
-    endif
+    call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+      fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, hecLagMAT, &
+      conMAT )
 
   end subroutine fstr_dynamic_analysis
 
@@ -404,7 +391,7 @@ contains
       write(*,*) ' ***   Stage 1: Nonlinear dynamic analysis   **'
     endif
 
-    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, fstrMAT, fstrPR )
+    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, hecLagMAT, fstrPR, conMAT )
 
     if(myrank == 0) then
       write(IMSG,*)
@@ -413,7 +400,7 @@ contains
       write(*,*) ' ***   Stage 2: Eigenvalue analysis   **'
     endif
 
-    call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, fstrMAT )
+    call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, hecLagMAT )
 
     call fstr_solid_finalize( fstrSOLID )
 

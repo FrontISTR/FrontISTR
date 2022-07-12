@@ -293,16 +293,7 @@ contains
     !C
     !C Update for fstrSOLID%QFORCE
     !C
-    if( ndof==3 ) then
-      call hecmw_update_3_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
-    else if( ndof==2 ) then
-      call hecmw_update_2_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
-    else if( ndof==4 ) then
-      call hecmw_update_4_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node)
-    else if( ndof==6 ) then
-      call hecmw_update_m_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node,6)
-    endif
-
+    call hecmw_update_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node, ndof)
   end subroutine fstr_UpdateNewton
 
 

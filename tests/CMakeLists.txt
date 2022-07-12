@@ -2,7 +2,6 @@
 # Copyright (c) 2019 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
 
 project(Fistr_Test)
 
@@ -46,12 +45,14 @@ foreach(parallel IN LISTS parallels)
   list(REMOVE_DUPLICATES TEST_TARGETS)
 
   list(APPEND solver/CG element nonlinear)
+  list(APPEND TEST_TARGETS nonlinear/contact_iter)
   if(WITH_MUMPS)
     list(APPEND TEST_TARGETS solver/mumps)
     list(APPEND TEST_TARGETS nonlinear/contact)
   endif()
   if(WITH_MKL AND ( (parallel STREQUAL "serial") OR (parallel STREQUAL "openmp") ) )
     list(APPEND TEST_TARGETS solver/mkl)
+    list(APPEND TEST_TARGETS nonlinear/contact_mkl)
   endif()
   if(WITH_ML)
     list(APPEND TEST_TARGETS solver/ml)

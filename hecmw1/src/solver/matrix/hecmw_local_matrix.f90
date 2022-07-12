@@ -32,7 +32,7 @@ module hecmw_local_matrix
     real(kind=kreal), pointer :: A(:)
   end type hecmwST_local_matrix
 
-  integer(kind=kint), parameter :: cNCOL_ITEM = 2 !< num of column items to be migrated (2 or 3)
+  integer(kind=kint), parameter :: cNCOL_ITEM = 3 !< num of column items to be migrated (2 or 3)
   integer(kind=kint), parameter :: cLID = 1       !< index for local ID in belonging rank (node_ID(2*i-1))
   integer(kind=kint), parameter :: cRANK = 2      !< index for belonging rank (node_ID(2*i))
   integer(kind=kint), parameter :: cGID = 3       !< index for global ID (used only when cNCOL_ITEM==3)
@@ -70,6 +70,18 @@ contains
       enddo
     enddo
   end subroutine hecmw_localmat_write
+
+  subroutine hecmw_localmat_write_size(Tmat,iunit)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: Tmat
+    integer(kind=kint), intent(in) :: iunit
+    integer(kind=kint) :: nr, nc, nnz, ndof
+    nr=Tmat%nr
+    nc=Tmat%nc
+    nnz=Tmat%nnz
+    ndof=Tmat%ndof
+    write(iunit,'(a,4i10)') 'nr, nc, nnz, ndof', nr, nc, nnz, ndof
+  end subroutine hecmw_localmat_write_size
 
   subroutine hecmw_localmat_write_ij(Tmat,iunit)
     implicit none
@@ -259,9 +271,11 @@ contains
     ! perform three matrices multiplication for elimination
     t0 = hecmw_wtime()
     call hecmw_localmat_init_with_hecmat(BKmat, hecMAT)
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BKmat (hecMAT)'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BKmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BKmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BKmat, 700+hecmw_comm_get_rank())
@@ -273,9 +287,11 @@ contains
     t0 = hecmw_wtime()
     call hecmw_localmat_multmat(BTtmat, BKmat, hecMESH, BTtKmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply Tt and K done'
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BTtKmat'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKmat, 700+hecmw_comm_get_rank())
@@ -288,9 +304,11 @@ contains
     t0 = hecmw_wtime()
     call hecmw_localmat_multmat(BTtKmat, BTmat, hecMESH, BTtKTmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply TtK and T done'
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'BTtKTmat'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKTmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKTmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
@@ -305,12 +323,16 @@ contains
     !num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-10
     num = 1.d0
     call place_num_on_diag(BTtKTmat, iwS, num_lagrange, num)
-    if (DEBUG >= 3) then
+    if (DEBUG >= 2) then
       write(700+hecmw_comm_get_rank(),*) 'num_lagrange =', num_lagrange
-      write(700+hecmw_comm_get_rank(),*) 'iwS(1:num_lagrange)'
-      write(700+hecmw_comm_get_rank(),*) iwS(1:num_lagrange)
+      if (DEBUG >= 3) then
+        write(700+hecmw_comm_get_rank(),*) 'iwS(1:num_lagrange)'
+        write(700+hecmw_comm_get_rank(),*) iwS(1:num_lagrange)
+      endif
       write(700+hecmw_comm_get_rank(),*) 'BTtKTmat (place 1.0 on slave diag)'
-      if (DEBUG == 3) then
+      if (DEBUG == 2) then
+        call hecmw_localmat_write_size(BTtKTmat, 700+hecmw_comm_get_rank())
+      else if (DEBUG == 3) then
         call hecmw_localmat_write_ij(BTtKTmat, 700+hecmw_comm_get_rank())
       else
         call hecmw_localmat_write(BTtKTmat, 700+hecmw_comm_get_rank())
@@ -860,6 +882,7 @@ contains
     integer(kind=kint), allocatable :: iwS(:)
     integer(kind=kint) :: ndof, n_mpc, i_mpc
     integer(kind=kint) :: i, j, k, kk, ilag
+    integer(kind=kint) :: num_lagrange
     real(kind=kreal) :: t0, t1
     t0 = hecmw_wtime()
     ndof=hecMAT%NDOF
@@ -914,6 +937,13 @@ contains
         call hecmw_localmat_write(BTtmat,700+hecmw_comm_get_rank())
       endif
     endif
+
+    if (DEBUG >= 3) then
+      write(700+hecmw_comm_get_rank(),*) 'hecMESH%node_ID before trimatmul_TtKT'
+      do i=hecMESH%nn_internal+1, hecMESH%n_node
+        write(700+hecmw_comm_get_rank(),*) i,hecMESH%node_ID(2*i-1),hecMESH%node_ID(2*i),hecMESH%global_node_ID(i)
+      enddo
+    endif
     t1 = hecmw_wtime()
     if (TIMER >= 1) write(0, '(A,f10.4)') "### hecmw_trimatmul_TtKT_mpc (3) : ",t1-t0
     t0 = hecmw_wtime()
@@ -921,16 +951,27 @@ contains
     t1 = hecmw_wtime()
     if (TIMER >= 1) write(0, '(A,f10.4)') "### hecmw_trimatmul_TtKT_mpc (4) : ",t1-t0
     t0 = hecmw_wtime()
+    if (DEBUG >= 3) then
+      write(700+hecmw_comm_get_rank(),*) 'hecMESH%node_ID after trimatmul_TtKT'
+      do i=hecMESH%nn_internal+1, hecMESH%n_node
+        write(700+hecmw_comm_get_rank(),*) i,hecMESH%node_ID(2*i-1),hecMESH%node_ID(2*i),hecMESH%global_node_ID(i)
+      enddo
+    endif
 
     if (associated(hecTKT%B)) deallocate(hecTKT%B)
     if (associated(hecTKT%X)) deallocate(hecTKT%X)
-    allocate(hecTKT%B(ndof*hecTKT%NP))
-    allocate(hecTKT%X(ndof*hecTKT%NP))
-    do i=1, size(hecMAT%B)
+    num_lagrange = size(hecMAT%B) - hecMAT%NP*ndof
+    allocate(hecTKT%B(ndof*hecTKT%NP + num_lagrange))
+    allocate(hecTKT%X(ndof*hecTKT%NP + num_lagrange))
+    hecTKT%B(:) = 0.d0
+    hecTKT%X(:) = 0.d0
+    do i=1, ndof*hecMAT%NP
       hecTKT%B(i) = hecMAT%B(i)
-    enddo
-    do i=1, size(hecMAT%X)
       hecTKT%X(i) = hecMAT%X(i)
+    enddo
+    do i=1, num_lagrange
+      hecTKT%B(ndof*hecTKT%NP+i) = hecMAT%B(ndof*hecMAT%NP+i)
+      hecTKT%X(ndof*hecTKT%NP+i) = hecMAT%X(ndof*hecMAT%NP+i)
     enddo
     do ilag=1,n_mpc
       hecTKT%X(iwS(ilag)) = 0.d0
@@ -1956,9 +1997,9 @@ contains
       node_ID(2*ii-1) = add_nodes(cLID,i)
       node_ID(2*ii  ) = add_nodes(cRANK,i)
       if (cNCOL_ITEM >= 3) then
-        global_node_ID(i) = add_nodes(cGID,i)
+        global_node_ID(ii) = add_nodes(cGID,i)
       else
-        global_node_ID(i) = -1
+        global_node_ID(ii) = -1
       endif
     enddo
     deallocate(hecMESHnew%node_ID)
@@ -2562,8 +2603,8 @@ contains
     integer(kind=kint) :: ndof, ndof2, i, idx, idx2, js, je, j, k
     integer(kind=kint), allocatable :: incl_nz(:), cnt(:)
     logical :: check_nonzero
-    !check_nonzero = .false.
-    check_nonzero = .true.  !!! always checking nonzero seems to be faster
+    check_nonzero = .false.
+    !check_nonzero = .true.  !!! always checking nonzero seems to be faster
     !
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof
@@ -2764,72 +2805,79 @@ contains
     real(kind=kreal) :: t0, t1
     t0 = hecmw_wtime()
     !
-    call make_comm_table(BKmat, hecMESH, hecCOMM)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: make_comm_table done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (1) : ',t1-t0
-    t0 = hecmw_wtime()
-    !
-    if (BTmat%nr > hecMESH%nn_internal) then
-      ! consider only internal part of BTmat
-      if (DEBUG >= 1) write(0,'(A)') 'DEBUG: hecmw_localmat_multmat: ignore external part of BTmat'
-      BTmat%nr = hecMESH%nn_internal
-      BTmat%nnz = BTmat%index(BTmat%nr)
-    endif
-    !
-    call extract_BT_exp(BTmat, hecCOMM, BT_exp)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: extract_BT_exp done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (2) : ',t1-t0
-    t0 = hecmw_wtime()
-    !
-    call prepare_column_info(hecMESH, BT_exp, exp_cols_index, exp_cols_item)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: prepare column info done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (3) : ',t1-t0
-    t0 = hecmw_wtime()
-    !
-    call send_BT_exp_and_recv_BT_imp(hecMESH, hecCOMM, BT_exp, exp_cols_index, exp_cols_item, BT_imp, hecMESHnew)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: send BT_exp and recv BT_imp done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (4) : ',t1-t0
-    t0 = hecmw_wtime()
-    call free_comm_table(hecCOMM)
-    !
-    call concat_BTmat_and_BT_imp(BTmat, BT_imp, BT_all)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: concat BTmat and BT_imp into BT_all done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (5) : ',t1-t0
-    t0 = hecmw_wtime()
-    call hecmw_localmat_free(BT_imp)
-    !
-    call multiply_mat_mat(BKmat, BT_all, BKTmat)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: multiply BKmat and BT_all into BKTmat done'
-    t1 = hecmw_wtime()
-    if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (6) : ',t1-t0
-    t0 = hecmw_wtime()
-    call hecmw_localmat_free(BT_all)
-    !
-    if (hecMESH%n_neighbor_pe > 0) then
-      hecMESH%n_node = hecMESHnew%n_node
-      hecMESH%n_neighbor_pe = hecMESHnew%n_neighbor_pe
-      deallocate(hecMESH%neighbor_pe)
-      deallocate(hecMESH%import_index)
-      deallocate(hecMESH%export_index)
-      deallocate(hecMESH%import_item)
-      deallocate(hecMESH%export_item)
-      deallocate(hecMESH%node_ID)
-      deallocate(hecMESH%global_node_ID)
-      hecMESH%neighbor_pe => hecMESHnew%neighbor_pe
-      hecMESH%import_index => hecMESHnew%import_index
-      hecMESH%export_index => hecMESHnew%export_index
-      hecMESH%import_item => hecMESHnew%import_item
-      hecMESH%export_item => hecMESHnew%export_item
-      hecMESH%node_ID => hecMESHnew%node_ID
-      hecMESH%global_node_ID => hecMESHnew%global_node_ID
-      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: update hecMESH done'
+    if (hecMESH%PETOT > 1) then
+      call make_comm_table(BKmat, hecMESH, hecCOMM)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: make_comm_table done'
       t1 = hecmw_wtime()
-      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (7) : ',t1-t0
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (1) : ',t1-t0
+      t0 = hecmw_wtime()
+      !
+      if (BTmat%nr > hecMESH%nn_internal) then
+        ! consider only internal part of BTmat
+        if (DEBUG >= 1) write(0,'(A)') 'DEBUG: hecmw_localmat_multmat: ignore external part of BTmat'
+        BTmat%nr = hecMESH%nn_internal
+        BTmat%nnz = BTmat%index(BTmat%nr)
+      endif
+      !
+      call extract_BT_exp(BTmat, hecCOMM, BT_exp)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: extract_BT_exp done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (2) : ',t1-t0
+      t0 = hecmw_wtime()
+      !
+      call prepare_column_info(hecMESH, BT_exp, exp_cols_index, exp_cols_item)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: prepare column info done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (3) : ',t1-t0
+      t0 = hecmw_wtime()
+      !
+      call send_BT_exp_and_recv_BT_imp(hecMESH, hecCOMM, BT_exp, exp_cols_index, exp_cols_item, BT_imp, hecMESHnew)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: send BT_exp and recv BT_imp done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (4) : ',t1-t0
+      t0 = hecmw_wtime()
+      call free_comm_table(hecCOMM)
+      !
+      call concat_BTmat_and_BT_imp(BTmat, BT_imp, BT_all)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: concat BTmat and BT_imp into BT_all done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (5) : ',t1-t0
+      t0 = hecmw_wtime()
+      call hecmw_localmat_free(BT_imp)
+      !
+      call multiply_mat_mat(BKmat, BT_all, BKTmat)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: multiply BKmat and BT_all into BKTmat done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (6) : ',t1-t0
+      t0 = hecmw_wtime()
+      call hecmw_localmat_free(BT_all)
+      !
+      if (hecMESH%n_neighbor_pe > 0) then
+        hecMESH%n_node = hecMESHnew%n_node
+        hecMESH%n_neighbor_pe = hecMESHnew%n_neighbor_pe
+        deallocate(hecMESH%neighbor_pe)
+        deallocate(hecMESH%import_index)
+        deallocate(hecMESH%export_index)
+        deallocate(hecMESH%import_item)
+        deallocate(hecMESH%export_item)
+        deallocate(hecMESH%node_ID)
+        deallocate(hecMESH%global_node_ID)
+        hecMESH%neighbor_pe => hecMESHnew%neighbor_pe
+        hecMESH%import_index => hecMESHnew%import_index
+        hecMESH%export_index => hecMESHnew%export_index
+        hecMESH%import_item => hecMESHnew%import_item
+        hecMESH%export_item => hecMESHnew%export_item
+        hecMESH%node_ID => hecMESHnew%node_ID
+        hecMESH%global_node_ID => hecMESHnew%global_node_ID
+        if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: update hecMESH done'
+        t1 = hecmw_wtime()
+        if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat (7) : ',t1-t0
+      endif
+    else
+      call multiply_mat_mat(BKmat, BTmat, BKTmat)
+      if (DEBUG >= 1) write(0,*) 'DEBUG: hecmw_localmat_multmat: multiply BKmat and BTmat into BKTmat done'
+      t1 = hecmw_wtime()
+      if (TIMER >= 2) write(0,'(A,f10.4)') '##### hecmw_localmat_multmat : ',t1-t0
     endif
   end subroutine hecmw_localmat_multmat
 

@@ -38,7 +38,7 @@ contains
     type(hecmwST_result_data)            :: fstrRESULT
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYNAMIC
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(fstr_couple)                    :: fstrCPL !for COUPLE
 
     !C-- local variable
@@ -236,9 +236,9 @@ contains
           !C-- geometrical boundary condition
           call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
           call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-          call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
-          call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
-          call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, iter)
+          call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
+          call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
+          call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
 
           !C-- RHS LOAD VECTOR CHECK
           numnp=hecMATmpc%NP
@@ -411,7 +411,7 @@ contains
   !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.
   subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-      ,fstrCPL,fstrMAT,restrt_step_num,infoCTChange  &
+      ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange  &
       ,conMAT )
 
     use mContact
@@ -432,9 +432,9 @@ contains
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_couple)                    :: fstrCPL !for COUPLE
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(fstr_info_contactChange)        :: infoCTChange !< fstr_info_contactChange
-    type(hecmwST_matrix), optional       :: conMAT
+    type(hecmwST_matrix)                 :: conMAT
 
     !C
     !C-- local variable
@@ -555,24 +555,17 @@ contains
     call fstr_save_originalMatrixStructure(hecMAT)
     call fstr_scan_contact_state(cstep, restrt_step_num, 0, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
 
-    if(paraContactFlag.and.present(conMAT)) then
-      call hecmw_mat_copy_profile( hecMAT, conMAT )
-    endif
+    call hecmw_mat_copy_profile( hecMAT, conMAT )
 
     if ( fstr_is_contact_active() ) then
-      !     ----  For Parallel Contact with Multi-Partition Domains
-      if(paraContactFlag.and.present(conMAT)) then
-        call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
-      else
-        call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
-      endif
+      call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
     elseif( hecMAT%Iarray(99)==4 ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change solver type to intel MKL direct solver !'
       call  hecmw_abort(hecmw_comm_get_comm())
     endif
     is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
-    call solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_mat_symmetric)
+    call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
 
     !!
     !!    step = 1,2,....,fstrDYNAMIC%n_step
@@ -648,21 +641,13 @@ contains
             enddo
           enddo
 
+          call hecmw_mat_clear( conMAT )
+          call hecmw_mat_clear_b( conMAT )
+          conMAT%X = 0.0d0
 
-          if(paraContactFlag.and.present(conMAT)) then
-            call hecmw_mat_clear( conMAT )
-            call hecmw_mat_clear_b( conMAT )
-            conMAT%X = 0.0d0
-          endif
           if( fstr_is_contact_active() ) then
-            !    ----  For Parallel Contact with Multi-Partition Domains
-            if(paraContactFlag.and.present(conMAT)) then
-              call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID,conMAT)
-              call fstr_AddContactStiffness(cstep,iter,conMAT,fstrMAT,fstrSOLID)
-            else
-              call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,fstrMAT,fstrSOLID)
-              call fstr_AddContactStiffness(cstep,iter,hecMAT,fstrMAT,fstrSOLID)
-            endif
+            call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+            call fstr_AddContactStiffness(cstep,iter,conMAT,hecLagMAT,fstrSOLID)
           endif
           !
           !C ********************************************************************************
@@ -679,23 +664,12 @@ contains
           !C-- geometrical boundary condition
           call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
           call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-          if(paraContactFlag.and.present(conMAT)) then
-            call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
-            call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
-            call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt, conMAT=conMAT)
-          else
-            call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
-            call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
-            call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, fstrMAT, stepcnt)
-          endif
+          call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
+          call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
+          call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
 
           ! ----- check convergence
-          !   ----  For Parallel Contact with Multi-Partition Domains
-          if(paraContactFlag.and.present(conMAT)) then
-            res = fstr_get_norm_para_contact(hecMATmpc,fstrMAT,conMAT,hecMESH)
-          else
-            call hecmw_innerProduct_R(hecMESH,ndof,hecMATmpc%B,hecMATmpc%B,res)
-          endif
+          res = fstr_get_norm_para_contact(hecMATmpc,hecLagMAT,conMAT,hecMESH)
           res = sqrt(res)/n_node_global
 
           if( iter==1 ) res0=res
@@ -735,16 +709,12 @@ contains
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMATmpc%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-          if(paraContactFlag.and.present(conMAT)) then
-            call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,fstrMAT,istat,1.0D0,conMAT)
-          else
-            call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,fstrMAT,istat,rf)
-          endif
+          call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,hecLagMAT,conMAT,istat,1.0D0)
           call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
           call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
           ! ----- update external nodal displacement increments
-          call hecmw_update_3_R (hecMESH, hecMAT%X, hecMAT%NP)
+          call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
 
           ! ----- update the strain, stress, and internal force
           do j=1,hecMESH%n_node*ndof
@@ -757,10 +727,10 @@ contains
           ! ----- update the Lagrange multipliers
           if( fstr_is_contact_active() ) then
             maxDLag = 0.0d0
-            do j=1,fstrMAT%num_lagrange
-              fstrMAT%lagrange(j) = fstrMAT%lagrange(j) + hecMAT%X(hecMESH%n_node*ndof+j)
+            do j=1,hecLagMAT%num_lagrange
+              hecLagMAT%lagrange(j) = hecLagMAT%lagrange(j) + hecMAT%X(hecMESH%n_node*ndof+j)
               if(dabs(hecMAT%X(hecMESH%n_node*ndof+j))>maxDLag) maxDLag=dabs(hecMAT%X(hecMESH%n_node*ndof+j))
-              !              write(*,*)'Lagrange:', j,fstrMAT%lagrange(j),hecMAT%X(hecMESH%n_node*ndof+j)
+              !              write(*,*)'Lagrange:', j,hecLagMAT%lagrange(j),hecMAT%X(hecMESH%n_node*ndof+j)
             enddo
           endif
         enddo
@@ -788,19 +758,14 @@ contains
         if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
           exit loopFORcontactAnalysis
         elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then
-          !     ----  For Parallel Contact with Multi-Partition Domains
-          if(paraContactFlag.and.present(conMAT)) then
-            call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
-          else
-            call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
-          endif
+          call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
           contact_changed_global=1
         endif
         call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
         if (contact_changed_global > 0) then
           call hecmw_mat_clear_b( hecMAT )
-          if(paraContactFlag.and.present(conMAT)) call hecmw_mat_clear_b( conMAT )
-          call solve_LINEQ_contact_init(hecMESH,hecMAT,fstrMAT,is_mat_symmetric)
+          call hecmw_mat_clear_b( conMAT )
+          call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
         endif
 
         if( count_step > max_iter_contact ) exit loopFORcontactAnalysis

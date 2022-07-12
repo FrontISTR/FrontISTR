@@ -220,8 +220,8 @@ contains
     hecMAT%NDOF = hecMATorg%NDOF
     hecMAT%NPL  = hecMATorg%NPL
     hecMAT%NPU  = hecMATorg%NPU
-    allocate(hecMAT%indexL(size(hecMATorg%indexL)))
-    allocate(hecMAT%indexU(size(hecMATorg%indexU)))
+    allocate(hecMAT%indexL(0:size(hecMATorg%indexL)-1))
+    allocate(hecMAT%indexU(0:size(hecMATorg%indexU)-1))
     allocate(hecMAT%itemL (size(hecMATorg%itemL )))
     allocate(hecMAT%itemU (size(hecMATorg%itemU )))
     allocate(hecMAT%D (size(hecMATorg%D )))

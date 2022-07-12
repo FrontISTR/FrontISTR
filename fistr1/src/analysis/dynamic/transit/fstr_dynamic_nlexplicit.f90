@@ -15,9 +15,9 @@ module fstr_dynamic_nlexplicit
   use m_dynamic_mat_ass_load
   use m_fstr_Update
   use m_fstr_Restart
-  use fstr_matrix_con_contact
   use m_dynamic_mat_ass_couple
   use m_fstr_rcap_io
+  use mContact
 
 contains
 
@@ -35,7 +35,7 @@ contains
     type(hecmwST_result_data)            :: fstrRESULT
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYN
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(fstr_info_contactChange)        :: infoCTChange !< fstr_info_contactChange
     type(fstr_couple)                    :: fstrCPL !for COUPLE
     type(hecmwST_matrix), pointer :: hecMATmpc
@@ -183,9 +183,9 @@ contains
         call dynamic_explicit_ass_bc(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
         call dynamic_explicit_ass_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
         call dynamic_explicit_ass_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
-        !call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, fstrMAT)
-        !call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, fstrMAT)
-        !call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, fstrMAT)
+        !call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
+        !call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
+        !call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
 
         ! Finish the calculation
         do j = 1 ,ndof*nnod

@@ -534,7 +534,7 @@ contains
 
 
   !----------------------------------------------------------------------
-  !> Read in !VISCOELASTIC
+  !> Read in !CREEP
   integer function fstr_ctrl_get_VISCOPLASTICITY( ctrl, mattype, nlgeom, dict )
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
@@ -551,7 +551,6 @@ contains
     depends = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
-    depends = 0
     nlgeom = UPDATELAG   !default value
     if( fstr_ctrl_get_param_ex( ctrl, 'KIRCHHOFF ',  '# ',    0,   'E',   ipt )/= 0) return
     if( ipt/=0 ) nlgeom = TOTALLAG

@@ -510,6 +510,7 @@ contains
 
   !>  Read in contact definition
   logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname )
+    use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
     integer(kind=kint), intent(in)    :: ctAlgo        !< contact algorithm
@@ -544,6 +545,7 @@ contains
     end do
     if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
     do rcode=1,n
+      call fstr_strupr(cp_name(rcode))
       contact(rcode)%pair_name = cp_name(rcode)
       contact(rcode)%fcoeff = fcoeff(rcode)
       contact(rcode)%tPenalty = tPenalty(rcode)

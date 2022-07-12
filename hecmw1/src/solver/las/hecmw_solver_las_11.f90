@@ -34,7 +34,7 @@ contains
     real(kind=kreal) :: YV
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_1_R (hecMESH, X, hecMAT%NP)
+    call hecmw_update_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
     END_TIME= HECMW_WTIME()
     if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 

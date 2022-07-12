@@ -64,7 +64,7 @@ contains
     integer(kind=kint) :: i,idof,jdof,NDOF,NDOF2
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_m_R (hecMESH, X, hecMAT%NP,hecMAT%NDOF)
+    call hecmw_update_R (hecMESH, X, hecMAT%NP,hecMAT%NDOF)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
