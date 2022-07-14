@@ -3,13 +3,16 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
+# env BLOPEX_ROOT    Set BLOPEX_ROOT environment variable, where metis are.
+# ex. export BLOPEX_ROOT=/home/someone/somewhere/BLOPEX
+
 if(BLOPEX_LIBRARIES)
   set(BLOPEX_FOUND TRUE)
   RETURN()
 endif()
 
-set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} /Users/morita/git/blopex/blopex_abstract/lib)
-set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} /Users/morita/git/blopex/blopex_fortran)
+set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} $ENV{BLOPEX_ROOT}/blopex_abstract/lib)
+set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} $ENV{BLOPEX_ROOT}/blopex_fortran)
 
 find_library(BLOPEX_LIB
   NAMES BLOPEX
@@ -23,7 +26,7 @@ find_library(BLOPEX_DRIVER_LIB
 
 find_path(BLOPEX_INCLUDE_PATH
   NAMES lobpcg.h
-  HINTS /Users/morita/git/blopex/blopex_abstract/include
+  HINTS $ENV{BLOPEX_ROOT}/blopex_abstract/include
 )
 
 if(BLOPEX_DRIVER_LIB AND BLOPEX_LIB AND BLOPEX_INCLUDE_PATH)
