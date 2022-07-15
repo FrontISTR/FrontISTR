@@ -76,7 +76,8 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
 
 #------------------------------------------------------------------------------#
-OBJS =
+OBJS = \
+	blopex_fortran_wrapper.@cobjfilepostfix@
 
 OBJSF = \
 	fstr_EIG_lanczos_util.@f90objfilepostfix@ \

@@ -4,6 +4,7 @@
 ###############################################################################
 
 list(APPEND fistr_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/blopex_fortran_wrapper.c
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_lanczos_util.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_setMASS.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_tridiag.f90
