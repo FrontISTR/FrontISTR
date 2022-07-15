@@ -10,6 +10,7 @@ module blopex_fortran_hold_vars
   type(hecmwST_local_mesh), pointer :: hecMESH_hold
   type(hecmwST_matrix), pointer     :: hecMAT_hold
   type(fstr_eigen), pointer         :: fstrEIG_hold
+  real(kreal), pointer :: filter(:)
 end module blopex_fortran_hold_vars
 
 module m_fstr_EIG_lobpcg
@@ -52,7 +53,7 @@ contains
 
     !> shifting
     fstrEIG%sigma = 0.01d0
-    allocate(fstrEIG%filter(hecMAT%NP*hecMAT%NDOF), source = 1.0d0)
+    allocate(filter(hecMAT%NP*hecMAT%NDOF), source = 1.0d0)
 
     jn = 0
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
@@ -68,7 +69,7 @@ contains
         if(NDOF < itE0) itE0 = NDOF
         do i = itS0, itE0
           jn = jn + 1
-          fstrEIG%filter((in-1)*NDOF+i) = 0.0d0
+          filter((in-1)*NDOF+i) = 0.0d0
         enddo
       enddo
     enddo
@@ -149,12 +150,15 @@ subroutine blopex_fortran_opA(dum, a, b)
   use iso_c_binding
   implicit none
   integer(c_int) :: dum, i, j, jS, jE
-  real(c_double) :: a(N_hold*M_hold), b(N_hold*M_hold)
+  real(c_double) :: a(N_hold*M_hold), b(N_hold*M_hold), t(N_hold*M_hold)
 
   do j = 1, M_hold
     jS = N_hold*(j-1) + 1
     jE = N_hold*(j)
-    call hecmw_matvec(hecMESH_hold, hecMAT_hold, a(jS:jE), b(jS:jE))
+    do i = 1, N_hold
+      t(i) = a(jS-1+i)*filter(i)
+    enddo
+    call hecmw_matvec(hecMESH_hold, hecMAT_hold, t, b(jS:jE))
   enddo
 end subroutine blopex_fortran_opA
 
@@ -169,7 +173,7 @@ subroutine blopex_fortran_opB(dum, a, b)
     jS = N_hold*(j-1) + 1
     jE = N_hold*(j)
     do i = jS, jE
-      b(i) = fstrEIG_hold%mass(i-jS+1)*a(i)
+      b(i) = fstrEIG_hold%mass(i-jS+1)*a(i)*filter(i-jS+1)
     enddo
   enddo
 end subroutine blopex_fortran_opB
@@ -180,11 +184,14 @@ subroutine blopex_fortran_opT(dum, a, b)
   use hecmw_precond
   implicit none
   integer(c_int) :: dum, i, j, jS, jE
-  real(c_double) :: a(N_hold*M_hold), b(N_hold*M_hold), w(N_hold), tcomm
+  real(c_double) :: a(N_hold*M_hold), b(N_hold*M_hold), w(N_hold), t(N_hold*M_hold), tcomm
 
   do j = 1, M_hold
     jS = N_hold*(j-1) + 1
     jE = N_hold*(j)
-    call hecmw_precond_apply(hecMESH_hold, hecMAT_hold, a(jS:jE), b(jS:jE), w, tcomm)
+    do i = 1, N_hold
+      t(i) = a(jS-1+i)*filter(i)
+    enddo
+    call hecmw_precond_apply(hecMESH_hold, hecMAT_hold, t, b(jS:jE), w, tcomm)
   enddo
 end subroutine blopex_fortran_opT
