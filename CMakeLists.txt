@@ -177,6 +177,7 @@ option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
 option(OLD_RES_FORMAT "use old style result file" ${OLD_RES_FORMAT})
 option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
+option(WITH_LOBPCG "compile with BLOPEX" ${BLOPEX_FOUND})
 feature_summary(WHAT ALL)
 
 # Provisional solution FOR GCC Fortran 10 compiling error
@@ -307,6 +308,8 @@ endif()
 if(BLOPEX_FOUND)
   list(APPEND FrontISTR_INCLUDE_DIRS ${BLOPEX_INCLUDE_PATH})
   list(APPEND FrontISTR_LIBRARIES ${BLOPEX_LIBRARIES})
+else()
+    set(WITH_LOBPCG OFF)
 endif()
 
 ###################

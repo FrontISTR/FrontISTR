@@ -34,7 +34,7 @@ contains
 
     if(myrank == 0)then
       write(IMSG,*)"fstr_solve_lobpcg, precond: ", hecmw_mat_get_precond(hecMAT)
-      write(*,"(a,a)")" fstr_eigen: LOBPCG method, precond: ", hecmw_mat_get_precond(hecMAT)
+      write(*,"(a,i0)")" fstr_eigen: LOBPCG method, precond: ", hecmw_mat_get_precond(hecMAT)
     endif
 
     N = hecMAT%NP*hecMAT%NDOF
