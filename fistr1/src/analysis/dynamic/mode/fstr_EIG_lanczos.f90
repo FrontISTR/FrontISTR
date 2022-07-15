@@ -31,6 +31,10 @@ contains
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
     logical :: is_converge
 
+    if(myrank == 0)then
+      write(*,"(a)")" fstr_eigen: Lanczos method"
+    endif
+
     N      = hecMAT%N
     NP     = hecMAT%NP
     NDOF   = hecMESH%n_dof
