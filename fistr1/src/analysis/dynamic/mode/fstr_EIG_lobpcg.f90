@@ -52,6 +52,7 @@ contains
 
     !> shifting
     fstrEIG%sigma = 0.01d0
+    allocate(fstrEIG%filter(hecMAT%NP*hecMAT%NDOF), source = 1.0d0)
 
     jn = 0
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
