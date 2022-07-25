@@ -26,7 +26,7 @@ contains
   end function
 
   !> Calculate constituive matrix
-  subroutine MatlMatrix( gauss, sectType, matrix, time, dtime, cdsys, temperature, isEp )
+  subroutine MatlMatrix( gauss, sectType, matrix, time, dtime, cdsys, temperature, isEp, hdflag )
     type( tGaussStatus ), intent(in) :: gauss          !> status of qudrature point
     integer, intent(in)              :: sectType       !> plane strain/stress or 3D
     real(kind=kreal), intent(out)    :: matrix(:,:)    !> constitutive matrix
@@ -35,9 +35,10 @@ contains
     real(kind=kreal), intent(in)     :: cdsys(3,3)     !> material coordinate system
     real(kind=kreal), intent(in)     :: temperature   !> temperature
     integer(kind=kint), intent(in), optional :: isEp
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
     integer :: i
-    integer :: flag
+    integer :: flag, hdflag_in
     real(kind=kreal)            :: cijkl(3,3,3,3)
     type( tMaterial ), pointer  :: matl
     matl=>gauss%pMaterial
@@ -46,6 +47,9 @@ contains
     if( present(isEp) )then
       if( isEp == 1 )flag = 1
     endif
+
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
 
     if( matl%mtype==USERELASTIC ) then
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
@@ -59,7 +63,7 @@ contains
       endif
 
       if( i==0 ) then
-        call calElasticMatrix( matl, sectTYPE, matrix, temperature  )
+        call calElasticMatrix( matl, sectTYPE, matrix, temperature, hdflag=hdflag_in )
       elseif(  i==1 ) then
         call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature )
       else
@@ -68,13 +72,13 @@ contains
       endif
 
     elseif( matl%mtype==NEOHOOKE .or. matl%mtype==MOONEYRIVLIN ) then
-      call calElasticMooneyRivlin( matl, sectType, cijkl, gauss%strain  )
+      call calElasticMooneyRivlin( matl, sectType, cijkl, gauss%strain, hdflag=hdflag_in )
       call mat_c2d( cijkl, matrix, sectType )
     elseif( matl%mtype==ARRUDABOYCE )  then
       call calElasticArrudaBoyce( matl, sectType, cijkl, gauss%strain )
       call mat_c2d( cijkl, matrix, sectType )
     elseif( matl%mtype==MOONEYRIVLIN_ANISO ) then
-      call calElasticMooneyRivlinAniso( matl, sectType, cijkl, gauss%strain, cdsys )
+      call calElasticMooneyRivlinAniso( matl, sectType, cijkl, gauss%strain, cdsys, hdflag=hdflag_in )
       call mat_c2d( cijkl, matrix, sectType )
     elseif( matl%mtype==USERHYPERELASTIC )  then
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
@@ -95,7 +99,7 @@ contains
 
   !
   !> Update strain and stress for elastic and hyperelastic materials
-  subroutine StressUpdate( gauss, sectType, strain, stress, cdsys, time, dtime, temp, tempn )
+  subroutine StressUpdate( gauss, sectType, strain, stress, cdsys, time, dtime, temp, tempn, hdflag  )
     type( tGaussStatus ), intent(inout) :: gauss      !> status of qudrature point
     integer, intent(in)                 :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(in)        :: strain(6)  !> strain
@@ -105,13 +109,14 @@ contains
     real(kind=kreal), intent(in), optional  :: dtime  !> time increment
     real(kind=kreal), intent(in)        :: temp       !> current temperature
     real(kind=kreal), intent(in)        :: tempn      !> temperature at last step
+    integer(kind=kint), intent(in)      :: hdflag  !> return only hyd and dev term if specified
 
     if( gauss%pMaterial%mtype==NEOHOOKE .or. gauss%pMaterial%mtype==MOONEYRIVLIN ) then
-      call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress )
+      call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress, hdflag=hdflag )
     elseif( gauss%pMaterial%mtype==ARRUDABOYCE ) then ! Arruda-Boyce Hyperelastic material
       call calUpdateElasticArrudaBoyce( gauss%pMaterial, sectType, strain, stress )
     elseif( gauss%pMaterial%mtype==MOONEYRIVLIN_ANISO ) then
-      call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, sectType, strain, stress, cdsys )
+      call calUpdateElasticMooneyRivlinAniso( gauss%pMaterial, sectType, strain, stress, cdsys, hdflag=hdflag )
     elseif( gauss%pMaterial%mtype==USERHYPERELASTIC .or. gauss%pMaterial%mtype==USERELASTIC ) then ! user-defined
       call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
     elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
