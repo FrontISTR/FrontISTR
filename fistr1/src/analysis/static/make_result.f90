@@ -1126,7 +1126,7 @@ contains
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'EQPL_ESTRAIN'
       allocate(tmp(hecMESH%n_elem), source = 0.0d0)
-      call get_average_equivalent_strain(hecMESH, tmp)
+      call get_average_equivalent_strain(hecMESH, fstrSOLID, tmp)
       do i = 1, hecMESH%n_elem
         fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = tmp(i)
       enddo
@@ -1134,6 +1134,34 @@ contains
       deallocate(tmp)
     endif
   end subroutine fstr_make_result
+
+  subroutine get_average_equivalent_strain(hecMESH, fstrSOLID, tmp)
+    use m_fstr
+    use hecmw_etype
+    use elementInfo
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type (fstr_solid)         :: fstrSOLID
+    integer(kint) :: i, j, itype, iS, iE, ic_type, icel, np
+    real(kreal) :: tmp(:), avg
+
+    do itype = 1, hecMESH%n_elem_type
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+      ic_type = hecMESH%elem_type_item(itype)
+      if (hecmw_is_etype_link(ic_type)) cycle
+      if (hecmw_is_etype_patch(ic_type)) cycle
+
+      np = NumOfQuadPoints(ic_type)
+      do icel = iS, iE
+        avg = 0.0d0
+        do j = 1, np
+          avg = avg + fstrSOLID%elements(icel)%gausses(j)%plstrain
+        enddo
+        tmp(icel) = avg/dble(np)
+      enddo
+    enddo
+  end subroutine get_average_equivalent_strain
 
   subroutine fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, &
      &                              iitem, ncomp, eitem, jitem, ecomp, nlyr, clyr )

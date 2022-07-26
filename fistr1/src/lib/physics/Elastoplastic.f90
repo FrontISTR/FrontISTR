@@ -598,30 +598,4 @@ contains
     endif
   end subroutine
 
-  subroutine get_average_equivalent_strain(hecMESH, tmp)
-    use hecmw_etype
-    use elementInfo
-    implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    integer(kint) :: i, j, itype, iS, iE, ic_type, icel, np
-    real(kreal) :: tmp(:), avg
-
-    do itype = 1, hecMESH%n_elem_type
-      iS = hecMESH%elem_type_index(itype-1) + 1
-      iE = hecMESH%elem_type_index(itype  )
-      ic_type = hecMESH%elem_type_item(itype)
-      if (hecmw_is_etype_link(ic_type)) cycle
-      if (hecmw_is_etype_patch(ic_type)) cycle
-
-      np = NumOfQuadPoints(ic_type)
-      do icel = iS, iE
-        avg = 0.0d0
-        do j = 1, np
-          avg = avg + fstrSOLID%elements(icel)%gausses(j)%plstrain
-        enddo
-        tmp(icel) = avg/dble(np)
-      enddo
-    enddo
-  end subroutine get_average_equivalent_strain
-
 end module m_ElastoPlastic
