@@ -1,0 +1,51 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC, NONLINEAR
+!WRITE,LOG
+!WRITE,RESULT,FREQUENCY=1000000
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRAIN,OFF
+NSTRESS,OFF
+NMISES,ON
+ESTRAIN,OFF
+ESTRESS,OFF
+EMISES,ON
+ISTRESS,ON
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_3,1,1
+ SET_3,2,2
+ SET_3,3,3
+!CLOAD, GRPID=1
+PUSH1,2,-0.05
+!CLOAD, GRPID=2
+PUSH2,2,-0.1
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!HYPERELASTIC, TYPE=MOONEY-RIVLIN
+ 1.342, 0.336, 0.0012
+!SECTION,SECNUM=1,FORM341=SELECTIVE_ESNS
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=100, MAXITER=10, INC_TYPE=AUTO, CONVERG=1.0E-6
+0.2, 1.0, 0.001, 0.1
+BOUNDARY,1
+LOAD,1
+LOAD,2
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+!END
