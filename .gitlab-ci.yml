@@ -200,7 +200,6 @@ pages:
     only:
       - master
       - release
-      - deb
 
 docker/fistr1:
   image: docker:latest
