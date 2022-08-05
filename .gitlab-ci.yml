@@ -16,6 +16,7 @@ build/serial:
         - cmake --build build_serial -- -j $(nproc)
         - mkdir -p public/release/ubuntu/serial
         - cd build_serial
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
         - cpack -G DEB
         - mv *.deb ../public/release/ubuntu/serial
     artifacts:
@@ -31,6 +32,7 @@ build/openmp:
         - cmake --build build_openmp -- -j $(nproc)
         - mkdir -p public/release/ubuntu/openmp
         - cd build_openmp
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
         - cpack -G DEB
         - mv *.deb ../public/release/ubuntu/openmp
     artifacts:
@@ -45,6 +47,7 @@ build/mpi:
         - cmake --build build_mpi -- -j $(nproc)
         - mkdir -p public/release/ubuntu/mpi
         - cd build_mpi
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
         - cpack -G DEB
         - mv *.deb ../public/release/ubuntu/mpi
     artifacts:
@@ -59,6 +62,7 @@ build/hybrid:
         - cmake --build build_hybrid -- -j $(nproc)
         - mkdir -p public/release/ubuntu/hybrid
         - cd build_hybrid
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
         - cpack -G DEB
         - mv *.deb ../public/release/ubuntu/hybrid
     artifacts:
