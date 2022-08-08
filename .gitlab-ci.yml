@@ -14,9 +14,15 @@ build/serial:
     script:
         - cmake -Bbuild_serial -DWITH_MPI=OFF -DWITH_OPENMP=OFF -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
         - cmake --build build_serial -- -j $(nproc)
+        - mkdir -p public/release/ubuntu/serial
+        - cd build_serial
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
+        - cpack -G DEB
+        - mv *.deb ../public/release/ubuntu/serial
     artifacts:
         paths:
             - build_serial/
+            - public/
         expire_in: 100min
 
 build/openmp:
@@ -24,27 +30,45 @@ build/openmp:
     script:
         - cmake -Bbuild_openmp -DWITH_MPI=OFF -DWITH_OPENMP=ON -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
         - cmake --build build_openmp -- -j $(nproc)
+        - mkdir -p public/release/ubuntu/openmp
+        - cd build_openmp
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
+        - cpack -G DEB
+        - mv *.deb ../public/release/ubuntu/openmp
     artifacts:
         paths:
             - build_openmp/
+            - public/
         expire_in: 100min
 build/mpi:
     stage: build
     script:
         - cmake -Bbuild_mpi -DWITH_MPI=ON -DWITH_OPENMP=OFF -H.
         - cmake --build build_mpi -- -j $(nproc)
+        - mkdir -p public/release/ubuntu/mpi
+        - cd build_mpi
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
+        - cpack -G DEB
+        - mv *.deb ../public/release/ubuntu/mpi
     artifacts:
         paths:
             - build_mpi/
+            - public/
         expire_in: 100min
 build/hybrid:
     stage: build
     script:
         - cmake -Bbuild_hybrid -DWITH_MPI=ON -DWITH_OPENMP=ON -H.
         - cmake --build build_hybrid -- -j $(nproc)
+        - mkdir -p public/release/ubuntu/hybrid
+        - cd build_hybrid
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
+        - cpack -G DEB
+        - mv *.deb ../public/release/ubuntu/hybrid
     artifacts:
         paths:
             - build_hybrid/
+            - public/
         expire_in: 100min
 
 .test:
@@ -127,6 +151,7 @@ test/hybrid/hybrid:
     script:
         - cd build_hybrid
         - ctest -L hybrid --output-on-failure
+
 document:
     image: ${REGISTRY}/document:latest
     stage: build_for_deploy
@@ -160,6 +185,10 @@ pages:
         - x86_64-w64-mingw32/thread-openblas
         - x86_64-w64-mingw32/hybrid-msmpi-openblas
         - x86_64-w64-mingw32/hybrid-impi-mkl_intelthread
+        - build/serial
+        - build/openmp
+        - build/mpi
+        - build/hybrid
     script:
         - ls public
         - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> public/_redirects
