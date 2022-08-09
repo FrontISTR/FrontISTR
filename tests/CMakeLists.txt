@@ -50,22 +50,21 @@ endif()
 foreach(parallel IN LISTS parallels)
   GetProcThreads(${parallel} np nt)
 
-  # Get the list of tests in analysis/
+  # Get the default list of tests
   set(TEST_TARGETS "")
   AppendListTests("analysis/*" "${TEST_TARGETS}" TEST_TARGETS)
+  AppendListTests("lib/*" "${TEST_TARGETS}" TEST_TARGETS)
+  AppendListTests("solver/*" "${TEST_TARGETS}" TEST_TARGETS)
 
-  #list(APPEND TEST_TARGETS solver/CG element nonlinear)
-  list(APPEND TEST_TARGETS nonlinear/contact_iter)
+  # Get the optional list of tests
   if(WITH_MUMPS)
-    list(APPEND TEST_TARGETS solver/mumps)
-    list(APPEND TEST_TARGETS nonlinear/contact)
+    AppendListTests("with_mumps/*" "${TEST_TARGETS}" TEST_TARGETS)
   endif()
   if(WITH_MKL AND ( (parallel STREQUAL "serial") OR (parallel STREQUAL "openmp") ) )
-    list(APPEND TEST_TARGETS solver/mkl)
-    list(APPEND TEST_TARGETS nonlinear/contact_mkl)
+    AppendListTests("with_mkl/*" "${TEST_TARGETS}" TEST_TARGETS)
   endif()
   if(WITH_ML)
-    list(APPEND TEST_TARGETS solver/ml)
+    AppendListTests("with_ml/*" "${TEST_TARGETS}" TEST_TARGETS)
   endif()
 
   foreach(target ${TEST_TARGETS})
