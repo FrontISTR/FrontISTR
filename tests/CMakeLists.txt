@@ -22,6 +22,21 @@ function(GetProcThreads type np nt)
     set(nt 2 PARENT_SCOPE)
   endif()
 endfunction(GetProcThreads)
+
+# Get the list of tests in specifed directory
+function(AppendListTests rootdir list_in TEST_TARGETS)
+
+  set(TMPLIST "${list_in}")
+  file(GLOB_RECURSE TEST_ANALYSIS_MESH_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${rootdir}/*.msh")
+  foreach(MESH_FILE ${TEST_ANALYSIS_MESH_FILES})
+    get_filename_component(DIR_NAME ${MESH_FILE} DIRECTORY)
+    list(APPEND TMPLIST ${DIR_NAME})
+  endforeach()
+  list(REMOVE_DUPLICATES TMPLIST)
+
+  set(TEST_TARGETS "${TMPLIST}" PARENT_SCOPE)
+endfunction(AppendListTests)
+
 set(parallels serial)
 IF(WITH_MPI)
   list(APPEND parallels mpi)
@@ -36,15 +51,10 @@ foreach(parallel IN LISTS parallels)
   GetProcThreads(${parallel} np nt)
 
   # Get the list of tests in analysis/
-  file(GLOB_RECURSE TEST_ANALYSIS_MESH_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} analysis/**/*.msh)
   set(TEST_TARGETS "")
-  foreach(MESH_FILE ${TEST_ANALYSIS_MESH_FILES})
-    get_filename_component(DIR_NAME ${MESH_FILE} DIRECTORY)
-    list(APPEND TEST_TARGETS ${DIR_NAME})
-  endforeach()
-  list(REMOVE_DUPLICATES TEST_TARGETS)
+  AppendListTests("analysis/*" "${TEST_TARGETS}" TEST_TARGETS)
 
-  list(APPEND solver/CG element nonlinear)
+  #list(APPEND TEST_TARGETS solver/CG element nonlinear)
   list(APPEND TEST_TARGETS nonlinear/contact_iter)
   if(WITH_MUMPS)
     list(APPEND TEST_TARGETS solver/mumps)
