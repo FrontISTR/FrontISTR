@@ -1067,6 +1067,19 @@ contains
     !  iitem = iitem + nn
     !endif
 
+    ! --- NODE ID @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(43) ) then
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'EQPL_NSTRAIN'
+      do i = 1, hecMESH%n_node
+        !fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = hecMESH%global_node_ID(i)
+      enddo
+      iitem = iitem + nn
+    endif
+
+
 
     ! --- MATERIAL @elem
     if(fstrSOLID%output_ctrl(4)%outinfo%on(34)) then
@@ -1105,33 +1118,19 @@ contains
       jitem = jitem + nn
     endif
 
-    ! --- PL_ESTRAIN @elem
-    if(fstrSOLID%output_ctrl(4)%outinfo%on(43)) then
-      ecomp = ecomp + 1
-      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
-      fstrRESULT%ne_dof(ecomp) = nn
-      fstrRESULT%elem_label(ecomp) = 'PL_ESTRAIN'
-      do i = 1, hecMESH%n_node
-        do j = 1, nn
-          !fstrRESULT%node_val_item(nitem*(i-1)+j+jitem) = fstrSOLID%CONT_FTRAC(nn*(i-1)+j)
-        enddo
-      enddo
-      jitem = jitem + nn
-    endif
-
     ! --- EQPL_ESTRAIN @elem
     if(fstrSOLID%output_ctrl(4)%outinfo%on(44)) then
       ecomp = ecomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(44), ndof )
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'EQPL_ESTRAIN'
-      allocate(tmp(hecMESH%n_elem), source = 0.0d0)
-      call get_average_equivalent_strain(hecMESH, fstrSOLID, tmp)
+      !allocate(tmp(hecMESH%n_elem), source = 0.0d0)
+      !call get_average_equivalent_strain(hecMESH, fstrSOLID, tmp)
       do i = 1, hecMESH%n_elem
-        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = tmp(i)
+        !fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = tmp(i)
       enddo
       jitem = jitem + nn
-      deallocate(tmp)
+      !deallocate(tmp)
     endif
   end subroutine fstr_make_result
 
