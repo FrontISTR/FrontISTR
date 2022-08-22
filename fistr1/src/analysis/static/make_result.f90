@@ -243,13 +243,14 @@ contains
     endif
 
     ! --- PLASTIC STRAIN @gauss
-    if( fstrSOLID%output_ctrl(3)%outinfo%on(11) .and. fstrSOLID%StaticType/=3 ) then
+    if( (fstrSOLID%output_ctrl(3)%outinfo%on(11) .or. fstrSOLID%output_ctrl(3)%outinfo%on(45)) &
+      .and. fstrSOLID%StaticType/=3 ) then
       id = 2
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(45), ndof )
       ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
         write(s,*) k
-        write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
+        write(label,'(a,a)') 'EQPL_ISTRAIN',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
           if( k > size(fstrSOLID%elements(i)%gausses) ) then
@@ -566,7 +567,7 @@ contains
     integer(kind=kint) :: i, j, k, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
     integer(kind=kint) :: idx
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
-    real(kind=kreal), allocatable   :: unode(:), tmp(:)
+    real(kind=kreal), allocatable   :: unode(:), work(:)
     character(len=4) :: cnum
     character(len=6), allocatable   :: clyr(:)
     logical :: is_dynamic
@@ -719,11 +720,11 @@ contains
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
     endif
-    ! --- TEMPERATURE @node
-    !if( fstrSOLID%output_ctrl(4)%outinfo%on(41) .and. associated(fstrSOLID%CONT_FTRAC) ) then
-    !  ncomp = ncomp + 1
-    !  nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(41), ndof )
-    !endif
+    ! --- EQPL_NSTRAIN @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(43) ) then
+      ncomp = ncomp + 1
+      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
+    endif
 
     ! --- STRAIN @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(6) ) then
@@ -774,11 +775,6 @@ contains
     if( fstrSOLID%output_ctrl(4)%outinfo%on(40) ) then
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(40), ndof )
-    endif
-    ! --- PL_ESTRAIN @element
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(43) ) then
-      ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
     endif
     ! --- EQPL_ESTRAIN @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(44) ) then
@@ -1067,15 +1063,18 @@ contains
     !  iitem = iitem + nn
     !endif
 
-    ! --- NODE ID @node
+    ! --- EQPL_NSTRAIN @node
     if( fstrSOLID%output_ctrl(4)%outinfo%on(43) ) then
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
       fstrRESULT%nn_dof(ncomp) = nn
       fstrRESULT%node_label(ncomp) = 'EQPL_NSTRAIN'
+      allocate(work(hecMESH%n_node), source = 0.0d0)
+      call get_average_equivalent_nstrain(hecMESH, fstrSOLID, work)
       do i = 1, hecMESH%n_node
-        !fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = hecMESH%global_node_ID(i)
+        fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = work(i)
       enddo
+      deallocate(work)
       iitem = iitem + nn
     endif
 
@@ -1124,17 +1123,59 @@ contains
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(44), ndof )
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'EQPL_ESTRAIN'
-      !allocate(tmp(hecMESH%n_elem), source = 0.0d0)
-      !call get_average_equivalent_strain(hecMESH, fstrSOLID, tmp)
+      allocate(work(hecMESH%n_elem), source = 0.0d0)
+      call get_average_equivalent_estrain(hecMESH, fstrSOLID, work)
       do i = 1, hecMESH%n_elem
-        !fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = tmp(i)
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = work(i)
       enddo
       jitem = jitem + nn
-      !deallocate(tmp)
+      deallocate(work)
     endif
   end subroutine fstr_make_result
 
-  subroutine get_average_equivalent_strain(hecMESH, fstrSOLID, tmp)
+  subroutine get_average_equivalent_nstrain(hecMESH, fstrSOLID, tmp)
+    use m_fstr
+    use hecmw_etype
+    use elementInfo
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type (fstr_solid)         :: fstrSOLID
+    integer(kint) :: i, j, itype, iS, iE, ic_type, icel, np, ic, jS, jE, nn
+    integer(kint), allocatable :: nnumber(:)
+    real(kreal) :: tmp(:), avg
+    real(kreal), allocatable :: work(:)
+
+    allocate(work(hecMESH%n_elem), source = 0.0d0)
+    call get_average_equivalent_estrain(hecMESH, fstrSOLID, work)
+
+    allocate(nnumber(hecMESH%n_node), source = 0)
+    tmp = 0.0d0
+
+    do itype = 1, hecMESH%n_elem_type
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+      ic_type = hecMESH%elem_type_item(itype)
+      if(.not. (hecmw_is_etype_solid(ic_type) .or. ic_type == 781 &
+        & .or. ic_type == 761 .or. ic_type == fe_beam341)) cycle
+      nn = hecmw_get_max_node( ic_type )
+      do icel = iS, iE
+        jS = hecMESH%elem_node_index(icel-1)
+        do j = 1, nn
+          ic = hecMESH%elem_node_item(jS+j)
+          tmp(ic) = tmp(ic) + work(icel)
+          nnumber(ic) = nnumber(ic) + 1
+        enddo
+      enddo
+    enddo
+
+    do i = 1, hecMESH%n_node
+      if(nnumber(i) == 0) cycle
+      tmp(i) = tmp(i) / dble(nnumber(i))
+    enddo
+    deallocate(work)
+  end subroutine get_average_equivalent_nstrain
+
+  subroutine get_average_equivalent_estrain(hecMESH, fstrSOLID, tmp)
     use m_fstr
     use hecmw_etype
     use elementInfo
@@ -1160,7 +1201,7 @@ contains
         tmp(icel) = avg/dble(np)
       enddo
     enddo
-  end subroutine get_average_equivalent_strain
+  end subroutine get_average_equivalent_estrain
 
   subroutine fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, &
      &                              iitem, ncomp, eitem, jitem, ecomp, nlyr, clyr )
