@@ -4,171 +4,171 @@
 	<table prefix="HECMW-IO">
 		<define type="error" name="E0001">
 			<message>Too long name</message>
-			<description>Ì¾ï¿½ï¿½ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+			<description>Ì¾Á°¤¬Ä¹¤¹¤®¤ë</description>
 		</define>
 		<define type="error" name="E0002">
 			<message>Too long file name</message>
-			<description>ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Ì¾ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+			<description>¥Õ¥¡¥¤¥ëÌ¾¤¬Ä¹¤¹¤®¤ë</description>
 		</define>
 		<define type="error" name="E0003">
 			<message>Cannot use reserved name</message>
-			<description>Í½ï¿½ï¿½Ñ¤ß¤ï¿½Ì¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¤ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<description>Í½ÌóºÑ¤ß¤ÎÌ¾Á°¤ò»ÈÍÑ¤·¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E0004">
 			<message>Nested include not allowed</message>
-			<description>ï¿½ï¿½ï¿½ó¥¯¥ë¡¼ï¿½É¥Õ¥ï¿½ï¿½ï¿½ï¿½ë¤¬ï¿½Í¥ï¿½ï¿½È¤ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<description>¥¤¥ó¥¯¥ë¡¼¥É¥Õ¥¡¥¤¥ë¤¬¥Í¥¹¥È¤·¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E0005">
 			<message>Failed to open include file</message>
-			<description>ï¿½ï¿½ï¿½ó¥¯¥ë¡¼ï¿½É¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½×¥ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>¥¤¥ó¥¯¥ë¡¼¥É¥Õ¥¡¥¤¥ë¤Î¥ª¡¼¥×¥ó¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E0006">
 			<message>Failed to close include file</message>
-			<description>ï¿½ï¿½ï¿½ó¥¯¥ë¡¼ï¿½É¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>¥¤¥ó¥¯¥ë¡¼¥É¥Õ¥¡¥¤¥ë¤Î¥¯¥í¡¼¥º¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E0007">
 			<message>TYPE mismatch for name_ID</message>
-			<description>name_IDï¿½ï¿½TYPEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½</description>
+			<description>name_ID¤ÎTYPE¤¬ÉÔÀµ¤Ç¤¢¤ë</description>
 		</define>
 		<define type="warning" name="W1001">
 			<message>Checking element: Element has already defined, updated</message>
-			<description>ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ñ¤­¤ï¿½ï¿½ì¤¿</description>
+			<description>Í×ÁÇ¤¬´û¤ËÄêµÁ¤µ¤ì¤Æ¤¤¤¿¤¿¤á¾å½ñ¤­¤µ¤ì¤¿</description>
 		</define>
 		<define type="warning" name="W1002">
 			<message>Checking element group: Element not found, ignored</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½É²Ã¤ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤Í×ÁÇ¤òÍ×ÁÇ¥°¥ë¡¼¥×¤ËÄÉ²Ã¤·¤è¤¦¤È¤·¤¿</description>
 		</define>
 		<define type="warning" name="W1003">
 			<message>Checking element group: Duplicate element found, ignored</message>
-			<description>ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ë¡¼ï¿½×¤Ë´ï¿½ï¿½Ë´Þ¤Þ¤ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½É²Ã¤ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
+			<description>Í×ÁÇ¥°¥ë¡¼¥×¤Ë´û¤Ë´Þ¤Þ¤ì¤ëÍ×ÁÇ¤òºÆÅÙÆ±¤¸Í×ÁÇ¥°¥ë¡¼¥×¤ËÄÉ²Ã¤·¤è¤¦¤È¤·¤¿</description>
 		</define>
 		<define type="warning" name="W1004">
 			<message>Checking node: Node has already defined, updated</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ñ¤­¤ï¿½ï¿½ì¤¿</description>
+			<description>ÀáÅÀ¤¬´û¤ËÄêµÁ¤µ¤ì¤Æ¤¤¤¿¤¿¤á¾å½ñ¤­¤µ¤ì¤¿</description>
 		</define>
 		<define type="warning" name="W1005">
 			<message>Checking node group: Node not found, ignored</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½É²Ã¤ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤ÀáÅÀ¤òÀáÅÀ¥°¥ë¡¼¥×¤ËÄÉ²Ã¤·¤è¤¦¤È¤·¤¿</description>
 		</define>
 		<define type="warning" name="W1006">
 			<message>Checking node group: Duplicate node found, ignored</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½×¤Ë´ï¿½ï¿½Ë´Þ¤Þ¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½É²Ã¤ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
+			<description>ÀáÅÀ¥°¥ë¡¼¥×¤Ë´û¤Ë´Þ¤Þ¤ì¤ëÀáÅÀ¤òºÆÅÙÆ±¤¸ÀáÅÀ¥°¥ë¡¼¥×¤ËÄÉ²Ã¤·¤è¤¦¤È¤·¤¿</description>
 		</define>
 		<define type="warning" name="W1007">
 			<message>Checking surface group: Element not found, ignored</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½Ì¥ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½É²Ã¤ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤Í×ÁÇ¤òÌÌ¥°¥ë¡¼¥×¤ËÄÉ²Ã¤·¤è¤¦¤È¤·¤¿</description>
 		</define>
 		<define type="warning" name="W1008">
 			<message>Checking surface group: Invalid combination of element and surface, ignored</message>
-			<description>ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¤ï¿½Ê¤ï¿½</description>
+			<description>Í×ÁÇ¤ÈÌÌÈÖ¹æ¤ÎÀ°¹çÀ­¤¬¤È¤ì¤Ê¤¤</description>
 		</define>
 		<define type="warning" name="W1009">
-			<message>Checking surface group: Duplicate pair of element and surface found, ignored</message>
-			<description>Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½È¤ï¿½ï¿½É²Ã¤ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
+			<message>Checking surface gorup: Duplicate pair of element and surface found, ignored</message>
+			<description>Æ±¤¸Í×ÁÇ¤ÈÌÌÈÖ¹æ¤ÎÁÈ¤òÄÉ²Ã¤·¤è¤¦¤È¤·¤¿</description>
 		</define>
 		<define type="warning" name="W1010">
 			<message>Header updated</message>
-			<description>ï¿½Ø¥Ã¥ï¿½ï¿½ï¿½ï¿½ï¿½ñ¤­¤ï¿½ï¿½ì¤¿</description>
+			<description>¥Ø¥Ã¥À¤¬¾å½ñ¤­¤µ¤ì¤¿</description>
 		</define>
 		<define type="warning" name="W1011">
 			<message>Zero temperature updated</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¤ï¿½ï¿½ï¿½ñ¤­¤ï¿½ï¿½ì¤¿</description>
+			<description>ÀäÂÐÎíÅÙ¤¬¾å½ñ¤­¤µ¤ì¤¿</description>
 		</define>
 		<define type="error" name="E1012">
 			<message>Element doesn't have section</message>
-			<description>ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¤Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Í×ÁÇ¤¬¥»¥¯¥·¥ç¥ó¾ðÊó¤ò»ý¤Ã¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1013">
 			<message>Cannot set section</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>¥»¥¯¥·¥ç¥ó¾ðÊó¤òÀßÄê¤Ç¤­¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1014">
 			<message>No nodes defined</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>ÀáÅÀ¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1015">
 			<message>No elements defined</message>
-			<description>ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Í×ÁÇ¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="warning" name="W1016">
 			<message>INITIAL CONDITION: Node not found, ignored</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤·ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤ÀáÅÀ¤ò»ØÄê¤·¤¿</description>
 		</define>
 		<define type="warning" name="W1017">
 			<message>INITIAL CONDITION: Node group not found, ignored</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½×»ï¿½ï¿½ê¤·ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤ÀáÅÀ¥°¥ë¡¼¥×»ØÄê¤·¤¿</description>
 		</define>
 		<define type="error" name="E1018">
-			<message>INITIAL CONDITION: Cannot initialize node twice</message>
-			<description>ï¿½ï¿½ï¿½Ë½ï¿½ï¿½ï¿½ï¿½ï¤¬Í¿ï¿½ï¿½ï¿½ï¿½ï¿½ë¤¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¿ï¿½ï¿½ï¿½ï¿½</description>
+			<message>INITIAL CONDITON: Cannot initialize node twice</message>
+			<description>´û¤Ë½é´ü¾ò·ï¤¬Í¿¤¨¤é¤ì¤ë¤¤¤ëÀáÅÀ¤ËÂÐ¤·¡¢ºÆÅÙ½é´ü¾ò·ï¤òÍ¿¤¨¤¿</description>
 		</define>
 		<define type="warning" name="W1019">
 			<message>EQUATION: Node not found, ignored</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤·ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤ÀáÅÀ¤ò»ØÄê¤·¤¿</description>
 		</define>
 		<define type="warning" name="W1020">
 			<message>EQUATION: Node grourp not found, ignored</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½ï¿½ê¤·ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤ÀáÅÀ¥°¥ë¡¼¥×¤ò»ØÄê¤·¤¿</description>
 		</define>
 		<define type="error" name="E1021">
 			<message>EQUATION: # of node in node groups must be same, ignored</message>
-			<description>2ï¿½Ä¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½×¤Ë´Þ¤Þ¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ±ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½ï¿½Ð¤Ê¤ï¿½Ê¤ï¿½</description>
+			<description>2¤Ä¤ÎÀáÅÀ¥°¥ë¡¼¥×¤Ë´Þ¤Þ¤ì¤ëÀáÅÀ¿ô¤ÏÆ±¤¸¤Ç¤Ê¤±¤ì¤Ð¤Ê¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1022">
 			<message>EQUATION: Same pair of Node and DOF not allowed</message>
-			<description>Æ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½Í³ï¿½Ù¿ï¿½ï¿½ï¿½ï¿½È¤ß¹ï¿½ï¤»ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Æ±¤¸ÀáÅÀ¤È¼«Í³ÅÙ¿ô¤ÎÁÈ¤ß¹ç¤ï¤»¤Ïµö¤µ¤ì¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1023">
 			<message>No sections defined</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>¥»¥¯¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1024">
 			<message>SECTION: Element group not found</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½Ç¤ò¥»¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç»ï¿½ï¿½ê¤·ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤Í×ÁÇ¤ò¥»¥¯¥·¥ç¥ó¤Ç»ØÄê¤·¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E1025">
 			<message>SECTION: MATERIAL not found</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½Êªï¿½ï¿½ï¿½ò¥»¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç»ï¿½ï¿½ê¤·ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<description>ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤ÊªÀ­¤ò¥»¥¯¥·¥ç¥ó¤Ç»ØÄê¤·¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E1026">
 			<message>SECTION: Invalid element type found in element group</message>
-			<description>ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ë¡¼ï¿½×¤Ë¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ó¥¿¥ï¿½ï¿½×¤Ë¹ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½Þ¤Þ¤ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<description>Í×ÁÇ¥°¥ë¡¼¥×¤Ë¥»¥¯¥·¥ç¥ó¥¿¥¤¥×¤Ë¹ç¤ï¤Ê¤¤Í×ÁÇ¤¬´Þ¤Þ¤ì¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E1027">
-			<message>ELEMENT: Existent node required for connectivity</message>
-			<description>ï¿½ï¿½ï¿½Ç¤Î¥ï¿½ï¿½Í¥ï¿½ï¿½Æ¥ï¿½ï¿½Ó¥Æ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¤Þ¤ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<message>ELEMENT: Existent node requied for connectiviy</message>
+			<description>Í×ÁÇ¤Î¥³¥Í¥¯¥Æ¥£¥Ó¥Æ¥£¤ËÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤ÀáÅÀ¤¬´Þ¤Þ¤ì¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E1028">
 			<message>CONTACT: Surface group not found</message>
-			<description>ï¿½Ü¿ï¿½ï¿½Ú¥ï¿½ï¿½Î¥Þ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¥ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>ÀÜ¿¨¥Ú¥¢¤Î¥Þ¥¹¥¿¡¼ÌÌ¥°¥ë¡¼¥×¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1029">
 			<message>CONTACT: Node group not found</message>
-			<description>ï¿½Ü¿ï¿½ï¿½Ú¥ï¿½ï¿½Î¥ï¿½ï¿½ì¡¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>ÀÜ¿¨¥Ú¥¢¤Î¥¹¥ì¡¼¥ÖÀáÅÀ¥°¥ë¡¼¥×¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E5001">
 			<message>Failed to open distributed mesh file</message>
-			<description>Ê¬ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½×¥ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>Ê¬»¶¥á¥Ã¥·¥å¥Õ¥¡¥¤¥ë¤Î¥ª¡¼¥×¥ó¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E5002">
 			<message>Failed to close distributed mesh file</message>
-			<description>Ê¬ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>Ê¬»¶¥á¥Ã¥·¥å¥Õ¥¡¥¤¥ë¤Î¥¯¥í¡¼¥º¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E5003">
 			<message>Unexpected EOF found in distributed mesh file</message>
-			<description>Ê¬ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½EOFï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>Ê¬»¶¥á¥Ã¥·¥å¥Õ¥¡¥¤¥ëÆâ¤ËÍ½´ü¤·¤Ê¤¤EOF¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E5004">
-			<message>IO error occurred while reading distributed mesh file</message>
-			<description>Ê¬ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IOï¿½ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+			<message>IO error occured while readig distributed mesh file</message>
+			<description>Ê¬»¶¥á¥Ã¥·¥å¥Õ¥¡¥¤¥ë¤ÎÆþ½ÐÎÏÃæ¤ËIO¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
 		</define>
 		<define type="error" name="E5005">
 			<message>Not a distributed mesh file</message>
-			<description>Ê¬ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤Ï¤Ê¤ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¤ß¹ï¿½ï¿½â¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
+			<description>Ê¬»¶¥á¥Ã¥·¥å¥Õ¥¡¥¤¥ë¤Ç¤Ï¤Ê¤¤¥Õ¥¡¥¤¥ë¤òÆÉ¤ß¹þ¤â¤¦¤È¤·¤¿</description>
 		</define>
 		<define type="error" name="E5006">
 			<message>Invalid header in distributed mesh file</message>
-			<description>Ê¬ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥Ø¥Ã¥ï¿½ï¿½ï¿½ï¿½Û¾ï¿½Ç¤ï¿½ï¿½ï¿½</description>
+			<description>Ê¬»¶¥á¥Ã¥·¥å¥Õ¥¡¥¤¥ë¤Î¥Ø¥Ã¥À¤¬°Û¾ï¤Ç¤¢¤ë</description>
 		</define>
 	</table>
 </msg-table>
