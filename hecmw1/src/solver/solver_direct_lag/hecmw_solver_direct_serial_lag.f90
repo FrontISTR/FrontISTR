@@ -21,7 +21,7 @@ module hecmw_solver_direct_serial_lag
   type dsinfo ! direct solver information
     integer(kind=kint) :: ndeg   ! dimension of small matrix
     integer(kind=kint) :: neqns  ! number of equations
-    integer(kind=kint) :: nstop  ! begining point of C
+    integer(kind=kint) :: nstop  ! beginning point of C
     integer(kind=kint) :: stage  ! calculation stage
     integer(kind=kint) :: lncol  ! length of col
     integer(kind=kint) :: lndsln ! length of dsln
@@ -264,7 +264,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: nspdsln
 
 
-    !! temporaly
+    !! temporary
     integer(kind=kint), pointer :: iperm_all_inc_lag(:), part_all_inc_lag(:), iperm_rev_inc_lag(:)
     integer(kind=kint) :: child_lag_nrows, child_lag_ncols, child_lag_nttbr, offset_irow
     integer(kind=kint) :: ii, jj
@@ -289,7 +289,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! STEP1X: LDU decompose of givem A0
+    ! STEP1X: LDU decompose of given A0
     !
     ! STEP11: build up matrix.
     ! A is given a0
@@ -300,9 +300,9 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     neqns_a   = a0%neqns
     neqns_lag = lag%nrows
     allocate(dsln_lag(1,neqns_lag*(neqns_lag - 1)/2)) ! size of lagrange
-    allocate(diag_lag(1,neqns_lag))                 ! size of lagrange
-    dsln_lag=0.0d0 ! bcause of lagrange
-    diag_lag=0.0d0 ! bcause of lagrange
+    allocate(diag_lag(1,neqns_lag))                   ! size of lagrange
+    dsln_lag=0.0d0 ! because of lagrange
+    diag_lag=0.0d0 ! because of lagrange
 
     ! set matrix for LDU decomposition
 
@@ -579,7 +579,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !        lenv      length of the array v (iv)
     !
     !    (o)
-    !        dsi       matrix informations
+    !        dsi       matrix information
     !        ir        return code
     !                              =0    normal
     !                              =-1   non positive index
@@ -756,7 +756,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end if
     call posord(dsi%parent,lbtreearr,invp_a,iperm_a,lpordrarr,dsi%nch,neqns_a,lwk1arr,lwk2arr,lwk3arr)
 
-    !   generate skelton graph
+    !   generate skeleton graph
     allocate(lleafarr(nttbr_a),lxleafarr(neqns_a1),ladparr(neqns_a1), stat=ierr)
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
@@ -780,7 +780,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     call lduDecomposeC(xlnzr_a,colno_a,invp_a,iperm_a, ndeg, nttbr_c, irow_c, &
       jcol_c, cm%c%ncols, cm%c%nrows, xlnzr_c, colno_c, lncol_c)
 
-    ! set calculated informations to dsi.
+    ! set calculated information to dsi.
     allocate(dsi%xlnzr(neqns_t + 1), stat=ierr)
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
@@ -1022,7 +1022,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! divide by D (because of diag is already inverted (1/Dii))
     b(:)=b(:)*diag(:)
 
-    ! Backword substitution.
+    ! Backward substitution.
     ! Substitute Zi into D and get Xd results.
     loc=(neqns-1)*neqns/2
     do i=neqns,1,-1
@@ -2294,7 +2294,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !
-  ! After here, routines specilized for ndeg = 1
+  ! After here, routines specialized for ndeg = 1
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

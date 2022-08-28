@@ -63,7 +63,7 @@ sub start_element {
 		$msg_table = 1;
 		if(!$including) {
 			$msgno_base = $attr{"msgno_base"};
-			die "Validation Error: atribute 'msgno_base' required in msg-table\n" if(!$msgno_base);
+			die "Validation Error: attribute 'msgno_base' required in msg-table\n" if(!$msgno_base);
 		}
 	} elsif($element eq 'include') {
 		die "Validation Error\n" if(!$msg_table);

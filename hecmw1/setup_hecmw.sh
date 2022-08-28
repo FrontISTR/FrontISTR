@@ -201,7 +201,7 @@ do
 		EOF
 		exit 1
 	#else
-	#	echo "Unknown paramer: " $i " (ignored, -h:help)"
+	#	echo "Unknown parameter: " $i " (ignored, -h:help)"
 	fi
 done
 

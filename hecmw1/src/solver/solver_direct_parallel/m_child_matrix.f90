@@ -11,7 +11,7 @@ module m_child_matrix
   type child_matrix
 
     integer(kind=kint) :: ndeg    ! same for A and C
-    integer(kind=kint) :: ista_c  ! begining index of row of C
+    integer(kind=kint) :: ista_c  ! beginning index of row of C
     integer(kind=kint) :: neqns_t ! total number of equations.
 
     ! A region

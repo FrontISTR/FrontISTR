@@ -4,199 +4,199 @@
 	<table prefix="HECMW-PART">
 		<define type="error" name="E0001">
 			<message>No such file or directory</message>
-			<description>»ØÄê¤·¤¿¥Õ¥¡¥¤¥ë¤¬Â¸ºß¤·¤Ê¤¤</description>
+			<description>ï¿½ï¿½ï¿½ê¤·ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ë¤¬Â¸ï¿½ß¤ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0002">
 			<message>File close error</message>
-			<description>¥Õ¥¡¥¤¥ë¤òÊÄ¤¸¤ëºÝ¤ËÍ½´ü¤»¤Ì¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
+			<description>ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ý¤ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¥ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0003">
 			<message>Too long file name</message>
-			<description>¥Õ¥¡¥¤¥ëÌ¾¤¬Ä¹¤¹¤®¤ë</description>
+			<description>ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Ì¾ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0004">
 			<message>NULL pointer found</message>
-			<description>ÉÔÀµ¤Ê¥Ì¥ë¥Ý¥¤¥ó¥¿¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥Ì¥ï¿½Ý¥ï¿½ï¿½ó¥¿¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0005">
 			<message>Invalid EOF found</message>
-			<description>Í½´ü¤»¤ÌEOF¤ò¸¡½Ð¤·¤¿</description>
+			<description>Í½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½EOFï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
         <define type="error" name="E0006">
             <message>Invalid argument found</message>
-            <description>ÉÔÀµ¤Ê°ú¿ô¤ò¸¡½Ð¤·¤¿</description>
+            <description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê°ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
         </define>
 		<define type="error" name="E0101">
 			<message>Invalid token found</message>
-			<description>Ìµ¸ú¤Ê¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
+			<description>Ìµï¿½ï¿½ï¿½Ê¥È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0111">
-			<message>'TYPE' must not be ommited</message>
-			<description>!PARTITION¤ÎÉ¬¿Ü¤Î¥ª¥×¥·¥ç¥ó¤Ç¤¢¤ë'TYPE'¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<message>'TYPE' must not be omitted</message>
+			<description>!PARTITIONï¿½ï¿½É¬ï¿½Ü¤Î¥ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½'TYPE'ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0112">
 			<message>'TYPE' must be 'NODE-BASED' or 'ELEMENT-BASED'</message>
-			<description>'TYPE'¤Ë»ØÄê¤¹¤ëÃÍ¤Ï'NODE-BASED'¤«'ELEMENT-BASED'¤Ç¤Ê¤±¤ì¤Ð¤Ê¤é¤Ê¤¤</description>
+			<description>'TYPE'ï¿½Ë»ï¿½ï¿½ê¤¹ï¿½ï¿½ï¿½Í¤ï¿½'NODE-BASED'ï¿½ï¿½'ELEMENT-BASED'ï¿½Ç¤Ê¤ï¿½ï¿½ï¿½Ð¤Ê¤ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0113">
 			<message>'=' required after 'TYPE'</message>
-			<description>'TYPE'¤Î¸å¤Ë'='¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>'TYPE'ï¿½Î¸ï¿½ï¿½'='ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0121">
-			<message>'METHOD' must not be ommited</message>
-			<description>!PARTITION¤ÎÉ¬¿Ü¤Î¥ª¥×¥·¥ç¥ó¤Ç¤¢¤ë'METHOD'¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<message>'METHOD' must not be omitted</message>
+			<description>!PARTITIONï¿½ï¿½É¬ï¿½Ü¤Î¥ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½'METHOD'ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0122">
 			<message>'METHOD' must be 'RCB', 'KMETIS' or 'PMETIS'</message>
-			<description>METHOD¤Ë»ØÄê¤¹¤ëÃÍ¤Ï'RCB'¤«'KMETIS'¤«'PMETIS'¤Ç¤Ê¤±¤ì¤Ð¤Ê¤é¤Ê¤¤</description>
+			<description>METHODï¿½Ë»ï¿½ï¿½ê¤¹ï¿½ï¿½ï¿½Í¤ï¿½'RCB'ï¿½ï¿½'KMETIS'ï¿½ï¿½'PMETIS'ï¿½Ç¤Ê¤ï¿½ï¿½ï¿½Ð¤Ê¤ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0123">
 			<message>'=' required after 'METHOD'</message>
-			<description>'METHOD'¤Î¸å¤Ë'='¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>'METHOD'ï¿½Î¸ï¿½ï¿½'='ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0124">
-			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'PMETIS' is specfied in 'METHOD'.</message>
-			<description>-DHECMW_PART_WITH_METIS¥ª¥×¥·¥ç¥óÌµ¤·¤Ë¥Ó¥ë¥É¤µ¤ì¤Æ¤¤¤ë¤Ë¤â¤«¤«¤ï¤é¤º¡¤'METHOD'¤Ë'PMETIS'¤¬»ØÄê¤µ¤ì¤¿¡¥</description>
+			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'PMETIS' is specified in 'METHOD'.</message>
+			<description>-DHECMW_PART_WITH_METISï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½Ìµï¿½ï¿½ï¿½Ë¥Ó¥ï¿½É¤ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½Ë¤â¤«ï¿½ï¿½ï¿½ï¿½é¤ºï¿½ï¿½'METHOD'ï¿½ï¿½'PMETIS'ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0125">
-			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'KMETIS' is specfied in 'METHOD'.</message>
-			<description>-DHECMW_PART_WITH_METIS¥ª¥×¥·¥ç¥óÌµ¤·¤Ë¥Ó¥ë¥É¤µ¤ì¤Æ¤¤¤ë¤Ë¤â¤«¤«¤ï¤é¤º¡¤'METHOD'¤Ë'KMETIS'¤¬»ØÄê¤µ¤ì¤¿¡¥</description>
+			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'KMETIS' is specified in 'METHOD'.</message>
+			<description>-DHECMW_PART_WITH_METISï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½Ìµï¿½ï¿½ï¿½Ë¥Ó¥ï¿½É¤ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½Ë¤â¤«ï¿½ï¿½ï¿½ï¿½é¤ºï¿½ï¿½'METHOD'ï¿½ï¿½'KMETIS'ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0131">
-			<message>'DOMAIN' must not be ommited</message>
-			<description>!PARTITION¤ÎÉ¬¿Ü¤Î¥ª¥×¥·¥ç¥ó¤Ç¤¢¤ë'DOMAIN'¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<message>'DOMAIN' must not be omitted</message>
+			<description>!PARTITIONï¿½ï¿½É¬ï¿½Ü¤Î¥ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½'DOMAIN'ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0132">
 			<message>'DOMAIN' must be natural number</message>
-			<description>'DOMAIN'¤Ë»ØÄê¤¹¤ëÃÍ¤Ï¼«Á³¿ô¤Ç¤Ê¤±¤ì¤Ð¤Ê¤é¤Ê¤¤</description>
+			<description>'DOMAIN'ï¿½Ë»ï¿½ï¿½ê¤¹ï¿½ï¿½ï¿½Í¤Ï¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½ï¿½Ð¤Ê¤ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0133">
 			<message>'=' required after 'DOMAIN'</message>
-			<description>'DOMAIN'¤Î¸å¤Ë'='¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>'DOMAIN'ï¿½Î¸ï¿½ï¿½'='ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0134">
 			<message>'METHOD' is 'RCB', but 'DOMAIN' is not n-th power of 2</message>
-			<description>'METHOD'¤Ë'RCB'¤¬»ØÄê¤µ¤ì¤Æ¤¤¤ë¤¬'DOMAIN'¤ÎÃÍ¤¬2¤Î¤Ù¤­¾è¤Ç¤Ê¤¤</description>
+			<description>'METHOD'ï¿½ï¿½'RCB'ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ï¿½Æ¤ï¿½ï¿½ë¤¬'DOMAIN'ï¿½ï¿½ï¿½Í¤ï¿½2ï¿½Î¤Ù¤ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0141">
 			<message>'DEPTH' must be natural number</message>
-			<description>'DEPTH'¤Ë»ØÄê¤¹¤ëÃÍ¤Ï¼«Á³¿ô¤Ç¤Ê¤±¤ì¤Ð¤Ê¤é¤Ê¤¤</description>
+			<description>'DEPTH'ï¿½Ë»ï¿½ï¿½ê¤¹ï¿½ï¿½ï¿½Í¤Ï¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½ï¿½ï¿½Ð¤Ê¤ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0142">
 			<message>'=' required after 'DEPTH'</message>
-			<description>'DEPTH'¤Î¸å¤Ë'='¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>'DEPTH'ï¿½Î¸ï¿½ï¿½'='ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0151">
 			<message>UCD file name is too long</message>
-			<description>UCD¥Õ¥¡¥¤¥ëÌ¾¤¬Ä¹¤¹¤®¤ë</description>
+			<description>UCDï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Ì¾ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0152">
 			<message>'=' required after 'UCD'</message>
-			<description>'UCD'¤Î¸å¤Ë'='¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>'UCD'ï¿½Î¸ï¿½ï¿½'='ï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0153">
 			<message>UCD file name must start with number, alphabet, '.', '-', '_' or '/'</message>
-			<description>UCD¥Õ¥¡¥¤¥ëÌ¾¤Ï¿ô»ú¡¤¥¢¥ë¥Õ¥¡¥Ù¥Ã¥È¡¤'.'¡¤'-'¡¤'_'¡¤'/'¤Ç»Ï¤Þ¤é¤Ê¤±¤ì¤Ð¤Ê¤é¤Ê¤¤</description>
+			<description>UCDï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Ì¾ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½Ù¥Ã¥È¡ï¿½'.'ï¿½ï¿½'-'ï¿½ï¿½'_'ï¿½ï¿½'/'ï¿½Ç»Ï¤Þ¤ï¿½Ê¤ï¿½ï¿½ï¿½Ð¤Ê¤ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0154">
 			<message>'CONTACT' must be 'AGGREGATE' or 'DEFAULT'</message>
-			<description>ÉÔÀµ¤Ê¥Ñ¥é¥á¡¼¥¿¤¬ÀßÄê¤µ¤ì¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥Ñ¥ï¿½á¡¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
 		</define>
 		<define type="error" name="E0161">
 			<message>Partitioning directions must be 'x', 'y' or 'z'</message>
-			<description>RCBÊ¬³ä¤ÎÊ¬³ä¼´Êý¸þ¤Î»ØÄê¤Ï'x'¡¤'y'¡¤'z'¤Ç¤Ê¤±¤ì¤Ð¤Ê¤é¤Ê¤¤</description>
+			<description>RCBÊ¬ï¿½ï¿½ï¿½Ê¬ï¿½ä¼´ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½'x'ï¿½ï¿½'y'ï¿½ï¿½'z'ï¿½Ç¤Ê¤ï¿½ï¿½ï¿½Ð¤Ê¤ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0162">
 			<message>Partitioning directions are not enough</message>
-			<description>Ê¬³ä¼´Êý¸þ¤Î»ØÄê¤¬Â­¤ê¤Ê¤¤</description>
+			<description>Ê¬ï¿½ä¼´ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ê¤¬Â­ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="warn" name="W0163">
 			<message>Too many partitioning directions are specified</message>
-			<description>É¬Í×¿ô°Ê¾å¤ÎÊ¬³ä¼´Êý¸þ¤¬»ØÄê¤µ¤ì¤¿</description>
+			<description>É¬ï¿½×¿ï¿½ï¿½Ê¾ï¿½ï¿½Ê¬ï¿½ä¼´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
 		</define>
 		<define type="error" name="E0164">
-			<message>Partitioning directions must not be ommited, if 'METHOD' is 'RCB'</message>
-			<description>'METHOD'¤¬'RCB'¤Ë¤â¤«¤«¤ï¤é¤ºÊ¬³ä¼´Êý¸þ¤Î»ØÄê¤¬¾ÊÎ¬¤µ¤ì¤¿</description>
+			<message>Partitioning directions must not be omitted, if 'METHOD' is 'RCB'</message>
+			<description>'METHOD'ï¿½ï¿½'RCB'ï¿½Ë¤â¤«ï¿½ï¿½ï¿½ï¿½é¤ºÊ¬ï¿½ä¼´ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ê¤¬ï¿½ï¿½Î¬ï¿½ï¿½ï¿½ì¤¿</description>
 		</define>
 		<define type="error" name="W0165">
 			<message>Partitioning directions are specified, although 'METHOD' is not 'RCB'</message>
-			<description>'METHOD'¤¬'RCB'¤Ç¤Ê¤¤¤Ë¤â¤«¤«¤ï¤é¤ºÊ¬³ä¼´Êý¸þ¤Î»ØÄê¤¬¤Ê¤µ¤ì¤Æ¤¤¤ë</description>
+			<description>'METHOD'ï¿½ï¿½'RCB'ï¿½Ç¤Ê¤ï¿½ï¿½Ë¤â¤«ï¿½ï¿½ï¿½ï¿½é¤ºÊ¬ï¿½ä¼´ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ê¤¬ï¿½Ê¤ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0201">
 			<message>Invalid partitioning type found</message>
-			<description>ÉÔÀµ¤ÊÎÎ°èÊ¬³ä¥¿¥¤¥×¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î°ï¿½Ê¬ï¿½ä¥¿ï¿½ï¿½ï¿½×¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0202">
 			<message>Invalid partitioning method found</message>
-			<description>ÉÔÀµ¤ÊÎÎ°èÊ¬³äË¡¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î°ï¿½Ê¬ï¿½ï¿½Ë¡ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0203">
 			<message>Invalid element type found</message>
-			<description>ÉÔÀµ¤ÊÍ×ÁÇ¥¿¥¤¥×¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½×¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0204">
 			<message>Invalid partitioning direction found</message>
-			<description>ÉÔÀµ¤ÊÊ¬³ä¼´Êý¸þ¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¬ï¿½ä¼´ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0205">
 			<message>Invalid number of sub-domains found</message>
-			<description>ÉÔÀµ¤ÊÉôÊ¬ÎÎ°è¿ô¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¬ï¿½Î°ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0206">
 			<message>Invalid overlapping depth found</message>
-			<description>ÉÔÀµ¤ÊÉôÊ¬ÎÎ°è´Ö¥ª¡¼¥Ð¡¼¥é¥Ã¥×¿¼¤µ¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¬ï¿½Î°ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½Ã¥×¿ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0211">
 			<message>Stack overflow</message>
-			<description>¥¹¥¿¥Ã¥¯ÇÛÎó¤¬¥ª¡¼¥Ð¡¼¥Õ¥í¡¼¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½ï¿½ó¤¬¥ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0301">
 			<message>Sub-domain number must be grater than or equal to 0</message>
-			<description>ÉôÊ¬ÎÎ°èÈÖ¹æ¤¬0¤è¤ê¾®¤µ¤¤</description>
+			<description>ï¿½ï¿½Ê¬ï¿½Î°ï¿½ï¿½Ö¹æ¤¬0ï¿½ï¿½ê¾®ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0302">
 			<message>Sub-domain number must be less than number of sub-domains</message>
-			<description>ÉôÊ¬ÎÎ°èÈÖ¹æ¤¬ÉôÊ¬ÎÎ°è¿ô¤òÄ¶¤¨¤Æ¤¤¤ë</description>
+			<description>ï¿½ï¿½Ê¬ï¿½Î°ï¿½ï¿½Ö¹æ¤¬ï¿½ï¿½Ê¬ï¿½Î°ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0311">
 			<message>Number of nodes must be natural number</message>
-			<description>ÀáÅÀ¿ô¤¬¼«Á³¿ô¤Ç¤Ê¤¤</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0312">
 			<message>Number of internal nodes must be grater than or equal to 0</message>
-			<description>ÆâÉôÀáÅÀ¿ô¤¬0¤è¤ê¾®¤µ¤¤</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ê¾®ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0313">
 			<message>Number of internal nodes must be less than or equal to number of nodes</message>
-			<description>ÆâÉôÀáÅÀ¿ô¤¬ÀáÅÀ¿ô¤è¤êÂç¤­¤¤</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ç¤­ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0321">
 			<message>Number of elements must be natural number</message>
-			<description>Í×ÁÇ¿ô¤¬0¤è¤ê¾®¤µ¤¤</description>
+			<description>ï¿½ï¿½ï¿½Ç¿ï¿½ï¿½ï¿½0ï¿½ï¿½ê¾®ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0322">
 			<message>Number of internal elements must be grater than or equal to 0</message>
-			<description>ÆâÉôÍ×ÁÇ¿ô¤¬0¤è¤ê¾®¤µ¤¤</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¿ï¿½ï¿½ï¿½0ï¿½ï¿½ê¾®ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0323">
 			<message>Number of internal elements must be less than or equal to number of elements</message>
-			<description>ÆâÉôÍ×ÁÇ¿ô¤¬Í×ÁÇ¿ô¤è¤êÂç¤­¤¤</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¿ï¿½ï¿½ï¿½ï¿½ï¿½ç¤­ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0331">
 			<message>Number of neighboring sub-domains must be grater than or equal to 0</message>
-			<description>ÎÙÀÜÉôÊ¬ÎÎ°è¿ô¤¬0¤è¤ê¾®¤µ¤¤</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¬ï¿½Î°ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ê¾®ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="warn" name="W0401">
 			<message>EQUATION_BLOCK not found</message>
-			<description>EQUATION_BLOCK¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>EQUATION_BLOCKï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0501">
 			<message>Log file has not initialized yet</message>
-			<description>¥í¥°¥Õ¥¡¥¤¥ë¤Î½é´ü²½½èÍý¤¬¹Ô¤ï¤ì¤Æ¤¤¤Ê¤¤</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¤ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="warn" name="W0502">
 			<message>Log file for partitioner has already initialized</message>
-			<description>¥í¥°¥Õ¥¡¥¤¥ë¤Î½é´ü²½½èÍý¤¬Ê£¿ô²ó¸Æ¤Ó½Ð¤µ¤ì¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½ï¿½Æ¤Ó½Ð¤ï¿½ï¿½ì¤¿</description>
 		</define>
 	</table>
 </msg-table>

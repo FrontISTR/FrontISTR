@@ -558,7 +558,7 @@ exit(0);
         start_y = 10;
         if (vr->xr < start_x + 10) {
           fprintf(stderr,
-                  "The image x_resolution cannot write such size charaters\n");
+                  "The image x_resolution cannot write such size characters\n");
           fprintf(stderr,
                   "Please reduce the font size or enlarge x_resolution and run "
                   "again\n");
@@ -702,7 +702,7 @@ if(endj>vr->yr) endj=vr->yr;
                         else
                           tav_length = av_length;
 
-                        /* Build hierachical tree*/
+                        /* Build hierarchical tree*/
                         image = (double *)HECMW_calloc(vr->xr * vr->yr * 3,
                                                        sizeof(double));
                         if (image == NULL) HECMW_vis_memory_exit("image");

@@ -11,7 +11,7 @@ CAUTION)
 	An example of the above case is
 
 	MPI      : MPICH2 for Microsoft Windows
-	complier : gFortran (gcc) version 4.1.0
+	compiler : gFortran (gcc) version 4.1.0
 
 NOTE)
 	If you compile hecmw library with above environment,

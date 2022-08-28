@@ -4,7 +4,7 @@
 ###############################################################################
 
 #
-# Build excutable hec2rcap
+# Build executable hec2rcap
 #
 set(hec2rcap_SOURCES)
 include(hec2rcap/CMakeLists.txt)
@@ -59,7 +59,7 @@ target_include_directories(hecmw_vis1 PUBLIC ${hecmw_INCLUDE_DIRS})
 target_compile_definitions(hecmw_vis1 PUBLIC ${hecmw_DEFINITIONS})
 
 #
-# Set intalling files
+# Set installing files
 #
 install(TARGETS hec2rcap hecmw_part1 rmerge rconv hecmw_vis1
   DESTINATION bin

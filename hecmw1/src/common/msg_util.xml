@@ -4,212 +4,212 @@
 	<table prefix="HECMW-UTIL">
 		<define type="error" name="E0001">
 			<message>Failed to open control file</message>
-			<description>Á´ÂÎÀ©¸æ¥Õ¥¡¥¤¥ë¤Î¥ª¡¼¥×¥ó¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½×¥ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0002">
 			<message>Failed to close control file</message>
-			<description>Á´ÂÎÀ©¸æ¥Õ¥¡¥¤¥ë¤Î¥¯¥í¡¼¥º¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0003">
 			<message>Unexpected EOF found in control file</message>
-			<description>Á´ÂÎÀ©¸æ¥Õ¥¡¥¤¥ëÆâ¤ËÍ½´ü¤·¤Ê¤¤EOF¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½EOFï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0004">
 			<message>Unsupported header in control file</message>
-			<description>Á´ÂÎÀ©¸æ¥Õ¥¡¥¤¥ëÆÉ¤ß¹þ¤ßÃæ¤ËÇ§¼±ÉÔÇ½¤Ê¥Ø¥Ã¥À¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç§ï¿½ï¿½ï¿½ï¿½Ç½ï¿½Ê¥Ø¥Ã¥ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0005">
 			<message>Invalid token while reading header in control file</message>
-			<description>Á´ÂÎÀ©¸æ¥Õ¥¡¥¤¥ë¤Î¥Ø¥Ã¥ÀÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥Ø¥Ã¥ï¿½ï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 
 		<define type="error" name="E0010">
 			<message>!MESH: Invalid token in control file</message>
-			<description>!MESHÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
+			<description>!MESHï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0011">
 			<message>!MESH: Missing NAME</message>
-			<description>!MESH¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿NAME¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!MESHï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½NAMEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0012">
 			<message>!MESH: Missing TYPE</message>
-			<description>!MESH¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿TYPE¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!MESHï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½TYPEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0013">
 			<message>!MESH: This NAME has already defined</message>
-			<description>!MESH¤ÇÆ±¤¸¼±ÊÌ»Ò¤ò»ý¤Ä¥Õ¥¡¥¤¥ë¤òÄêµÁ¤·¤è¤¦¤È¤·¤¿</description>
+			<description>!MESHï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Ì»Ò¤ï¿½ï¿½ï¿½Ä¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0014">
 			<message>No !MESH or no such NAME in !MESH</message>
-			<description>!MESH¤Þ¤¿¤Ï!MESH GROUP¤¬¤Ê¤¤¤«¡¢»ØÄê¤µ¤ì¤¿NAME¤ò»ý¤Ä!MESH¤Þ¤¿¤Ï!MESH GROUP¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!MESHï¿½Þ¤ï¿½ï¿½ï¿½!MESH GROUPï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿NAMEï¿½ï¿½ï¿½ï¿½ï¿½!MESHï¿½Þ¤ï¿½ï¿½ï¿½!MESH GROUPï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 
 		<define type="error" name="E0020">
 			<message>!RESULT: Invalid token in control file</message>
-			<description>!RESULTÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
+			<description>!RESULTï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0021">
 			<message>!RESULT: Missing NAME</message>
-			<description>!RESULT¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿NAME¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!RESULTï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½NAMEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0022">
 			<message>!RESULT: Missing IO</message>
-			<description>!RESULT¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿IO¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!RESULTï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½IOï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0023">
 			<message>!RESULT: This NAME has already defined</message>
-			<description>!RESULT¤ÇÆ±¤¸¼±ÊÌ»Ò¤ò»ý¤Ä¥Õ¥¡¥¤¥ë¤òÄêµÁ¤·¤è¤¦¤È¤·¤¿</description>
+			<description>!RESULTï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Ì»Ò¤ï¿½ï¿½ï¿½Ä¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0024">
 			<message>No !RESULT or no such NAME in !RESULT</message>
-			<description>!RESULT¤¬¤Ê¤¤¤«¡¢»ØÄê¤µ¤ì¤¿NAME¤ò»ý¤Ä!RESULT¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!RESULTï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿NAMEï¿½ï¿½ï¿½ï¿½ï¿½!RESULTï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0025">
 			<message>No !RESULT or no such IO in !RESULT</message>
-			<description>!RESULT¤¬¤Ê¤¤¤«¡¢»ØÄê¤µ¤ì¤¿IO¤ò»ý¤Ä!RESULT¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!RESULTï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿IOï¿½ï¿½ï¿½ï¿½ï¿½!RESULTï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 
 		<define type="error" name="E0030">
 			<message>!CONTROL: Invalid token in control file</message>
-			<description>!CONTROLÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
+			<description>!CONTROLï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0031">
 			<message>!CONTROL: Missing NAME</message>
-			<description>!CONTROL¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿NAME¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!CONTROLï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½NAMEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0032">
 			<message>!CONTROL: This NAME has already defined</message>
-			<description>!CONTROL¤ÇÆ±¤¸¼±ÊÌ»Ò¤ò»ý¤Ä¥Õ¥¡¥¤¥ë¤òÄêµÁ¤·¤è¤¦¤È¤·¤¿</description>
+			<description>!CONTROLï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Ì»Ò¤ï¿½ï¿½ï¿½Ä¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0033">
 			<message>No !CONTROL or no such NAME in !CONTROL</message>
-			<description>!CONTROL¤¬¤Ê¤¤¤«¡¢»ØÄê¤µ¤ì¤¿NAME¤ò»ý¤Ä!CONTROL¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!CONTROLï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿NAMEï¿½ï¿½ï¿½ï¿½ï¿½!CONTROLï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 
 		<define type="error" name="E0040">
 			<message>!RESTART: Invalid token in control file</message>
-			<description>!RESTARTÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
+			<description>!RESTARTï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0041">
 			<message>!RESTART: Missing NAME</message>
-			<description>!RESTART¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿NAME¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!RESTARTï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½NAMEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0042">
 			<message>!RESTART: Missing IO</message>
-			<description>!RESTART¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿IO¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!RESTARTï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½IOï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0043">
 			<message>!RESTART: This NAME has already defined</message>
-			<description>!RESTART¤ÇÆ±¤¸¼±ÊÌ»Ò¤ò»ý¤Ä¥Õ¥¡¥¤¥ë¤òÄêµÁ¤·¤è¤¦¤È¤·¤¿</description>
+			<description>!RESTARTï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Ì»Ò¤ï¿½ï¿½ï¿½Ä¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0044">
 			<message>!RESTART: No !RESTART or no such NAME in !RESTART</message>
-			<description>!RESTART¤¬¤Ê¤¤¤«¡¢»ØÄê¤µ¤ì¤¿NAME¤ò»ý¤Ä!RESTART¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!RESTARTï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿NAMEï¿½ï¿½ï¿½ï¿½ï¿½!RESTARTï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0045">
 			<message>!RESTART: No !RESTART or no such IO in !RESTART</message>
-			<description>!RESTART¤¬¤Ê¤¤¤«¡¢»ØÄê¤µ¤ì¤¿IO¤ò»ý¤Ä!RESTART¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!RESTARTï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿IOï¿½ï¿½ï¿½ï¿½ï¿½!RESTARTï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 
 		<define type="error" name="E0050">
 			<message>!MESH GROUP: Invalid token in control file</message>
-			<description>!MESH GROUPÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
+			<description>!MESH GROUPï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0051">
 			<message>!MESH GROUP: Missing NAME</message>
-			<description>!MESH GROUP¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿NAME¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!MESH GROUPï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½NAMEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0052">
 			<message>!MESH GROUP: This NAME has not defined in !MESH</message>
-			<description>!MESH¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤name_ID¤ò»È¤Ã¤Æ¥á¥Ã¥·¥å¥°¥ë¡¼¥×¤òÄêµÁ¤·¤è¤¦¤È¤·¤¿</description>
+			<description>!MESHï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½name_IDï¿½ï¿½È¤Ã¤Æ¥ï¿½Ã¥ï¿½ï¿½å¥°ï¿½ë¡¼ï¿½×¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0053">
 			<message>!MESH GROUP: This NAME has already defined</message>
-			<description>!MESH GROUP¤ÇÆ±¤¸¼±ÊÌ»Ò¤ò»ý¤Ä¥°¥ë¡¼¥×¤òÄêµÁ¤·¤è¤¦¤È¤·¤¿</description>
+			<description>!MESH GROUPï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½ï¿½Ì»Ò¤ï¿½ï¿½ï¿½Ä¥ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è¤¦ï¿½È¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0054">
 			<message>!MESH GROUP: No !MESH GROUP or no such NAME in !MESH GROUP</message>
-			<description>!MESH GROUP¤¬¤Ê¤¤¤«¡¢»ØÄê¤µ¤ì¤¿NAME¤ò»ý¤Ä!MESH GROUP¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!MESH GROUPï¿½ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿NAMEï¿½ï¿½ï¿½ï¿½ï¿½!MESH GROUPï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0055">
 			<message>!MESH GROUP: TYPE mismatch</message>
-			<description>¥°¥ë¡¼¥×²½ÉÔ²ÄÇ½¤Ê¥á¥Ã¥·¥å¥¿¥¤¥×¤Î¥á¥Ã¥·¥å¤ò»ØÄê¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ë¡¼ï¿½×²ï¿½ï¿½Ô²ï¿½Ç½ï¿½Ê¥ï¿½Ã¥ï¿½ï¿½å¥¿ï¿½ï¿½ï¿½×¤Î¥ï¿½Ã¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤·ï¿½ï¿½</description>
 		</define>
 
 		<define type="error" name="E0060">
 			<message>!SUBDIR: Invalid token in control file</message>
-			<description>!SUBDIRÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
+			<description>!SUBDIRï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0061">
 			<message>!SUBDIR: Missing ON/OFF</message>
-			<description>!SUBDIR¤ËÉ¬¿Ü¤Î¥Ñ¥é¥á¡¼¥¿ON/OFF¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
+			<description>!SUBDIRï¿½ï¿½É¬ï¿½Ü¤Î¥Ñ¥ï¿½á¡¼ï¿½ï¿½ON/OFFï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 
 		<define type="error" name="E0101">
 			<message>Failed to open restart file</message>
-			<description>¥ê¥¹¥¿¡¼¥È¥Õ¥¡¥¤¥ë¤Î¥ª¡¼¥×¥ó¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ê¥¹ï¿½ï¿½ï¿½ï¿½ï¿½È¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½×¥ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0102">
 			<message>Failed to close restart file</message>
-			<description>¥ê¥¹¥¿¡¼¥È¥Õ¥¡¥¤¥ë¤Î¥¯¥í¡¼¥º¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ê¥¹ï¿½ï¿½ï¿½ï¿½ï¿½È¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0103">
 			<message>Restart file has not opened yet</message>
-			<description>¥ê¥¹¥¿¡¼¥È¥Õ¥¡¥¤¥ë¤¬¥ª¡¼¥×¥ó¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
+			<description>ï¿½ê¥¹ï¿½ï¿½ï¿½ï¿½ï¿½È¥Õ¥ï¿½ï¿½ï¿½ï¿½ë¤¬ï¿½ï¿½ï¿½ï¿½ï¿½×¥ó¤µ¤ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0104">
 			<message>Unexpected EOF found in restart file</message>
-			<description>¥ê¥¹¥¿¡¼¥È¥Õ¥¡¥¤¥ëÆâ¤ËÍ½´ü¤·¤Ê¤¤EOF¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ê¥¹ï¿½ï¿½ï¿½ï¿½ï¿½È¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½EOFï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0105">
-			<message>IO error occured while readig restart file</message>
-			<description>¥ê¥¹¥¿¡¼¥È¥Õ¥¡¥¤¥ë¤ÎÆþ½ÐÎÏÃæ¤ËIO¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
+			<message>IO error occurred while reading restart file</message>
+			<description>ï¿½ê¥¹ï¿½ï¿½ï¿½ï¿½ï¿½È¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IOï¿½ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 
 		<define type="error" name="E0201">
 			<message>Failed to open result file</message>
-			<description>·ë²Ì¥Õ¥¡¥¤¥ë¤Î¥ª¡¼¥×¥ó¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ï¿½Ì¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½×¥ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0202">
 			<message>Failed to close result file</message>
-			<description>·ë²Ì¥Õ¥¡¥¤¥ë¤Î¥¯¥í¡¼¥º¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ï¿½Ì¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0203">
 			<message>Result file has not opened yet</message>
-			<description>·ë²Ì¥Õ¥¡¥¤¥ë¤¬¥ª¡¼¥×¥ó¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
+			<description>ï¿½ï¿½Ì¥Õ¥ï¿½ï¿½ï¿½ï¿½ë¤¬ï¿½ï¿½ï¿½ï¿½ï¿½×¥ó¤µ¤ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0204">
 			<message>Unexpected EOF found in result file</message>
-			<description>·ë²Ì¥Õ¥¡¥¤¥ëÆâ¤ËÍ½´ü¤·¤Ê¤¤EOF¤ò¸¡½Ð¤·¤¿</description>
+			<description>ï¿½ï¿½Ì¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½EOFï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0205">
-			<message>IO error occured while reading result file</message>
-			<description>·ë²Ì¥Õ¥¡¥¤¥ë¤ÎÆþ½ÐÎÏÃæ¤ËIO¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
+			<message>IO error occurred while reading result file</message>
+			<description>ï¿½ï¿½Ì¥Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IOï¿½ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E0206">
 			<message>Invalid flag for result data(must be 1:node or 2:elem)</message>
-			<description>·ë²Ì¥Ç¡¼¥¿»ØÄê¤Î¥Õ¥é¥°¤¬µ¬ÄêÃÍ¤Ç¤Ê¤¤</description>
+			<description>ï¿½ï¿½Ì¥Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¥Õ¥é¥°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¤Ç¤Ê¤ï¿½</description>
 		</define>
 		<define type="error" name="E0207">
 			<message>Invalid label for result data</message>
-			<description>·ë²Ì¥Ç¡¼¥¿¤Î¥é¥Ù¥ë»ØÄê¤¬Ìµ¸ú¤Ç¤¢¤ë</description>
+			<description>ï¿½ï¿½Ì¥Ç¡ï¿½ï¿½ï¿½ï¿½Î¥ï¿½Ù¥ï¿½ï¿½ï¿½ê¤¬Ìµï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½</description>
 		</define>
 
 		<define type="error" name="E9001">
 			<message>HEC-MW memory check: No such allocated memory</message>
-			<description>HEC-MW¤Î¥á¥â¥ê³ÎÊÝ´Ø¿ô³ÎÊÝ¤µ¤ì¤Æ¤¤¤Ê¤¤¥á¥â¥êÎÎ°è¤ò»ØÄê¤·¤Æ¤¤¤ë</description>
+			<description>HEC-MWï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½Ý´Ø¿ï¿½ï¿½ï¿½ï¿½Ý¤ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î°ï¿½ï¿½ï¿½ï¿½ê¤·ï¿½Æ¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E9011">
 			<message>HEC-MW log: Failed to open log file</message>
-			<description>¥í¥°¥Õ¥¡¥¤¥ë¤Î¥ª¡¼¥×¥ó¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½×¥ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E9012">
 			<message>HEC-MW log: Failed to output log file</message>
-			<description>¥í¥°¥Õ¥¡¥¤¥ë¤Î½ÐÎÏ¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î½ï¿½ï¿½Ï¤Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 		<define type="error" name="E9013">
 			<message>HEC-MW log: Failed to close log file</message>
-			<description>¥í¥°¥Õ¥¡¥¤¥ë¤Î¥¯¥í¡¼¥º¤Ë¼ºÇÔ¤·¤¿</description>
+			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
 		</define>
 	</table>
 </msg-table>

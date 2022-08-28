@@ -36,14 +36,14 @@ int set_params(int argc, char **argv) {
       return -1;
     } else if (strcmp(argv[i], "-o") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         return -1;
       }
       i++;
       strcpy(out_file, argv[i]);
     } else if (strcmp(argv[i], "-s") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         return -1;
       }
       i++;
@@ -56,7 +56,7 @@ int set_params(int argc, char **argv) {
       }
     } else if (strcmp(argv[i], "-e") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         return -1;
       }
       i++;
@@ -68,7 +68,7 @@ int set_params(int argc, char **argv) {
       }
     } else if (strcmp(argv[i], "-i") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         return -1;
       }
       i++;

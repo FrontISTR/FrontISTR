@@ -46,7 +46,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
       exit(-1);
     } else if (!strcmp(argv[i], "-o")) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         exit(-1);
       }
       i++;
@@ -60,7 +60,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
       }
     } else if (strcmp(argv[i], "-n") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         exit(-1);
       }
       i++;
@@ -72,7 +72,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
       }
     } else if (strcmp(argv[i], "-s") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         exit(-1);
       }
       i++;
@@ -85,7 +85,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
       }
     } else if (strcmp(argv[i], "-e") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         exit(-1);
       }
       i++;
@@ -97,7 +97,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
       }
     } else if (strcmp(argv[i], "-i") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         exit(-1);
       }
       i++;

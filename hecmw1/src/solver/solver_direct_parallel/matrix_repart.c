@@ -54,7 +54,7 @@ void bi_part_directive(int *neqns, int *nttbr, int *irow, int *jcol,
   {
     int options[8];
     int num_flag;
-    /* followings are options. see METIS manual for METIS_NODEND() */
+    /* the following are options. see METIS manual for METIS_NODEND() */
     options[0] = 1; /* specify parameters */
     options[1] = 3; /* default */
     options[2] = 1; /* default */

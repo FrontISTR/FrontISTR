@@ -577,7 +577,7 @@ contains
     !!$    enddo
 
     ! Choose dofs that
-    ! - appear only onece in both lower and upper Lag. and
+    ! - appear only once in both lower and upper Lag. and
     ! - has greatest coefficient among them (in lower Lag.)
     do i=1,hecLagMAT%num_lagrange
       ls=hecLagMAT%indexL_lagrange(i-1)+1
@@ -1847,7 +1847,7 @@ contains
       call HECMW_Recv_R(val_imp, nnz_imp(idom) * ndof2, &
         irank, tag, hecMESH%MPI_COMM, statuses(:,1))
 
-      ! convert column id of item_imp() to local id refering cur_import(:)
+      ! convert column id of item_imp() to local id referring cur_import(:)
       idx_0_tmp = hecMESHtmp%import_index(idom-1)
       idx_n_tmp = hecMESHtmp%import_index(idom)
       cur_import => hecMESHtmp%import_item(idx_0_tmp+1:idx_n_tmp)
