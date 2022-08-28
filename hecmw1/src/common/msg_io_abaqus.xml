@@ -4,303 +4,303 @@
 	<table prefix="HECMW-IO-ABAQUS">
 		<define type="error" name="E0001">
 			<message>Failed to open ABAQUS mesh file</message>
-			<description>ABAQSUï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½×¥ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>ABAQSU¥á¥Ã¥·¥å¥Õ¥¡¥¤¥ë¤Î¥ª¡¼¥×¥ó¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E0002">
 			<message>Failed to close ABAQUS mesh file</message>
-			<description>ABAQUSï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Õ¥ï¿½ï¿½ï¿½ï¿½ï¿½Î¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>ABAQUS¥á¥Ã¥·¥å¥Õ¥¡¥¤¥ë¤Î¥¯¥í¡¼¥º¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E0003">
 			<message>Unexpected EOF found</message>
-			<description>Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½EOFï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>Í½´ü¤·¤Ê¤¤EOF¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="W0095">
 			<message>Redefined material information, updated</message>
-			<description>Æ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ó¤¬ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½</description>
+			<description>Æ±¤¸ºàÎÁ¾ðÊó¤¬ºÆÄêµÁ¤µ¤ì¤Æ¤¿</description>
 		</define>
 		<define type="error" name="E0096">
 			<message>This keyword must be appeared after *MATERIAL</message>
-			<description>*MATERIALï¿½ï¿½ï¿½Ð¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<description>*MATERIAL¤¬½Ð¸½¤¹¤ë°ÊÁ°¤ËºàÎÁ¾ðÊó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="W0097">
 			<message>Unsupported keyword found</message>
-			<description>Ì¤ï¿½Ð±ï¿½ï¿½Ê¥ï¿½ï¿½ï¿½ï¿½ï¡¼ï¿½É¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>Ì¤ÂÐ±þ¤Ê¥­¡¼¥ï¡¼¥É¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0098">
 			<message>Invalid token found while reading keyword</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¡¼ï¿½ï¿½ï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>¥­¡¼¥ï¡¼¥ÉÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="warning" name="W0099">
 			<message>Skipped unsupported keyword</message>
-			<description>Ç§ï¿½ï¿½ï¿½ï¿½Ç½ï¿½Ê¥ï¿½ï¿½ï¿½ï¿½ï¡¼ï¿½É¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>Ç§¼±ÉÔÇ½¤Ê¥­¡¼¥ï¡¼¥É¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0100">
 			<message>*AMPLITUDE: Invalid token</message>
-			<description>*AMPLITUDEï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*AMPLITUDEÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0101">
 			<message>*AMPLITUDE: Missing NAME</message>
-			<description>*AMPLITUDEï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½NAMEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*AMPLITUDE¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿NAME¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E0200">
 			<message>*CONNECTIVITY: Invalid token</message>
-			<description>*CONNECTIVITYï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*CONNECTIVITYÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0300">
 			<message>*ECOPY: Invalid token</message>
-			<description>*ECOPYï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*ECOPYÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0400">
 			<message>*EGEN: Invalid token</message>
-			<description>*EGENï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*EGENÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0500">
 			<message>*ELSET: Invalid token</message>
-			<description>*ELSETï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*ELSETÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0501">
 			<message>*ELSET: Missing EGRP</message>
-			<description>*ELSETï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½EGRPï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*ELSET¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿EGRP¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E0502">
 			<message>*ELSET: elem1,elem2 and increment must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç³ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½Ç½ï¿½Î»IDï¿½ï¿½ï¿½ï¿½Ê¬ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊÍ×ÁÇ³«»ÏID¡¢Í×ÁÇ½ªÎ»ID¡¢ÁýÊ¬¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0503">
 			<message>*ELSET: Cannot generate element ID</message>
-			<description>ï¿½ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>Í×ÁÇID¤ÎÀ¸À®¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E0600">
 			<message>*ELEMENT: Invalid token</message>
-			<description>*ELEMENTï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*ELEMENTÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0601">
 			<message>*ELEMENT: Unsuppotred element type</message>
-			<description>Ì¤ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½×¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>Ì¤ÂÐ±þ¤ÊÍ×ÁÇ¥¿¥¤¥×¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0603">
 			<message>*ELEMENT: Element ID must be posivive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IDï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊÍ×ÁÇID¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0604">
 			<message>*ELEMENT: Connectivity must be posivive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥ï¿½ï¿½Í¥ï¿½ï¿½Æ¥ï¿½ï¿½Ó¥Æ¥ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤Ê¥³¥Í¥¯¥Æ¥£¥Ó¥Æ¥£¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0605">
-			<message>*ELEMENT: Existent node required for connectivity</message>
-			<description>Â¸ï¿½ß¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ï¿½IDï¿½ò¥³¥Í¥ï¿½ï¿½Æ¥ï¿½ï¿½Ó¥Æ¥ï¿½ï¿½Ë»ï¿½ï¿½Ñ¤ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<message>*ELEMENT: Existent node required for connectiviy</message>
+			<description>Â¸ºß¤·¤Ê¤¤ÀáÅÀID¤ò¥³¥Í¥¯¥Æ¥£¥Ó¥Æ¥£¤Ë»ÈÍÑ¤·¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E0606">
 			<message>*ELEMENT: Missing TYPE</message>
-			<description>*ELEMENTï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½TYPEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*ELEMENT¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿TYPE¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E0700">
 			<message>*EQUATION: Invalid token</message>
-			<description>*EQUATIONï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*EQUATIONÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0701">
 			<message>*EQUATION: NEQ must be greater than 1</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NEQï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊNEQ¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0702">
 			<message>*EQUATION: Node must be defined by same type(Node ID or NGRP)</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½×¤ï¿½Î¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¤ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<description>ÀáÅÀ¤Î»ØÄê¤ËÀáÅÀÈÖ¹æ¤ÈÀáÅÀ¥°¥ë¡¼¥×¤ÎÎ¾Êý¤¬»ÈÍÑ¤µ¤ì¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E0703">
 			<message>*EQUATION: DOF must be between 1 and 6</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½Í³ï¿½Ù¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤Ê¼«Í³ÅÙ¤¬»ØÄê¤µ¤ì¤Æ¤¤¤ë</description>
 		</define>
 		<define type="error" name="E0800">
 			<message>*HEADING: Invalid token</message>
-			<description>*HEADINGï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*HEADINGÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0900">
 			<message>*INCLUDE: Invalid token</message>
-			<description>*INCLUDEï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*INCLUDEÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E0901">
 			<message>*INCLUDE: Missing INPUT</message>
-			<description>*INCLUDEï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½INPUTï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*INCLUDE¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿INPUT¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1000">
 			<message>*INITIAL CONDITION: Invalid token</message>
-			<description>*INITIAL CONDITIONï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*INITIAL CONDITIONÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1001">
 			<message>*INITIAL CONDITION: Missing TYPE</message>
-			<description>*INITIAL CONDITIONï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½TYPEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*INITIAL CONDITION¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿TYPE¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1002">
 			<message>*INITIAL CONDITION: Node ID must be posivive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IDï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊÀáÅÀID¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1100">
 			<message>*MATERIAL: Invalid token</message>
-			<description>*MATERIALï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*MATERIALÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1101">
 			<message>*MATERIAL: Missing NAME</message>
-			<description>*MATERIALï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½NAMEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*MATERIAL¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿NAME¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1102">
 			<message>*MATERIAL: Duplicated material name</message>
-			<description>Æ±ï¿½ï¿½Ì¾ï¿½ï¿½ï¿½ï¿½MATERIALï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ì¤¿</description>
+			<description>Æ±¤¸Ì¾Á°¤ÇMATERIAL¤¬ºÆÄêµÁ¤µ¤ì¤¿</description>
 		</define>
 		<define type="error" name="E1103">
 			<message>*MATERIAL: ITEM must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ITEMï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊITEM¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1104">
 			<message>*MATERIAL: *ITEM value must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*ITEMï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤Ê*ITEM¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1105">
 			<message>*MATERIAL: *ITEM value must be 1 to SUBITEM</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½*ITEMï¿½ï¿½ï¿½Í¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤Ê*ITEM¤ÎÃÍ¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1106">
 			<message>*MATERIAL: SUBITEM value must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½SUBITEMï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊSUBITEM¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1107">
 			<message>*MATERIAL: Temperature must be greater than previous one</message>
-			<description>ï¿½ï¿½ï¿½Ù¤ï¿½ï¿½ã¤¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>²¹ÅÙ¤ÎÄã¤¤½ç¤ËÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1200">
 			<message>*NCOPY: Invalid token</message>
-			<description>*NCOPYï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*NCOPYÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1300">
 			<message>*NFILL: Invalid token</message>
-			<description>*NFILLï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*NFILLÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1400">
 			<message>*NGEN: Invalid token</message>
-			<description>*NGENï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*NGENÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1500">
 			<message>*NSET: Invalid token</message>
-			<description>*NSETï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*NSETÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1501">
 			<message>*NSET: Missing NGRP</message>
-			<description>*NSETï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½NGRPï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*NSET¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿NGRP¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1502">
 			<message>*NSET: nod1,nod2 and increment must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»IDï¿½ï¿½ï¿½ï¿½Ê¬ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊÀáÅÀ³«»ÏID¡¢ÀáÅÀ½ªÎ»ID¡¢ÁýÊ¬¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1503">
 			<message>*NSET: Cannot generate node ID</message>
-			<description>ï¿½ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>ÀáÅÀID¤ÎÀ¸À®¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E1600">
 			<message>*NODE: Invalid token</message>
-			<description>*NODEï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*NODEÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1601">
 			<message>*NODE: Node ID must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IDï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊÀáÅÀID¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1700">
 			<message>*SHELL SECTION: Invalid token</message>
-			<description>*SHELL SECTIONï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*SHELL SECTIONÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1701">
 			<message>*SHELL SECTION: Missing TYPE</message>
-			<description>*SHELL SECTIONï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½TYPEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*SHELL SECTION¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿TYPE¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1702">
 			<message>*SHELL SECTION: Missing ELSET</message>
-			<description>*SHELL SECTIONï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½ELSETï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*SHELL SECTION¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿ELSET¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1703">
 			<message>*SHELL SECTION: MATERIAL and COMPOSITE are mutually exclusive</message>
-			<description>ï¿½ß¤ï¿½ï¿½ï¿½ï¿½ï¿½Â¾Åªï¿½Ê¥Ñ¥ï¿½á¡¼ï¿½ï¿½ï¿½ï¿½Æ±ï¿½ï¿½ï¿½Ë»ï¿½ï¿½Ñ¤ï¿½ï¿½ì¤¿</description>
+			<description>¸ß¤¤¤ËÇÓÂ¾Åª¤Ê¥Ñ¥é¥á¡¼¥¿¤¬Æ±»þ¤Ë»ÈÍÑ¤µ¤ì¤¿</description>
 		</define>
 		<define type="error" name="E1704">
 			<message>*SHELL SECTION: COMPOSITE value must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½COMPOSITEï¿½ï¿½ï¿½Í¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊCOMPOSITE¤ÎÃÍ¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1705">
 			<message>*SHELL SECTION: THICKNESS must be greater than 0.0</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½THICKNESSï¿½ï¿½ï¿½Í¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊTHICKNESS¤ÎÃÍ¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1706">
 			<message>*SHELL SECTION: INTEGPOINTS must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½INTEGPOINTSï¿½ï¿½ï¿½Í¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊINTEGPOINTS¤ÎÃÍ¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1707">
 			<message>*SHELL SECTION: Missing MATERIAL or COMPOSITE</message>
-			<description>*SHELL SECTIONï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½MATERIALï¿½Þ¤ï¿½ï¿½ï¿½COMPOSITEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*SHELL SECTION¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿MATERIAL¤Þ¤¿¤ÏCOMPOSITE¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1800">
 			<message>*SGROUP: Invalid token</message>
-			<description>*SGROUPï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*SGROUPÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E1801">
 			<message>*SGROUP: Missing SGRP</message>
-			<description>*SGROUPï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½SGRPï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*SGROUP¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿SGRP¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1900">
 			<message>*SYSTEM: Invalid token</message>
-			<description>*SYSTEMï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*SYSTEMÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2000">
 			<message>*ZERO: Invalid token</message>
-			<description>*ZEROï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*ZEROÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2100">
 			<message>*SOLID SECTION: Invalid token</message>
-			<description>*SOLID SECTIONï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*SOLID SECTIONÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2101">
 			<message>*SOLID SECTION: Missing TYPE</message>
-			<description>*SOLID SECTIONï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½TYPEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*SOLID SECTION¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿TYPE¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2102">
 			<message>*SOLID SECTION: Missing ELSET</message>
-			<description>*SOLID SECTIONï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½ELSETï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*SOLID SECTION¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿ELSET¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2103">
 			<message>*SOLID SECTION: MATERIAL and COMPOSITE are mutually exclusive</message>
-			<description>ï¿½ß¤ï¿½ï¿½ï¿½ï¿½ï¿½Â¾Åªï¿½Ê¥Ñ¥ï¿½á¡¼ï¿½ï¿½ï¿½ï¿½Æ±ï¿½ï¿½ï¿½Ë»ï¿½ï¿½Ñ¤ï¿½ï¿½ì¤¿</description>
+			<description>¸ß¤¤¤ËÇÓÂ¾Åª¤Ê¥Ñ¥é¥á¡¼¥¿¤¬Æ±»þ¤Ë»ÈÍÑ¤µ¤ì¤¿</description>
 		</define>
 		<define type="error" name="E2104">
 			<message>*SOLID SECTION: COMPOSITE value must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½COMPOSITEï¿½ï¿½ï¿½Í¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊCOMPOSITE¤ÎÃÍ¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2105">
 			<message>*SOLID SECTION: THICKNESS must be greater than 0.0</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½THICKNESSï¿½ï¿½ï¿½Í¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊTHICKNESS¤ÎÃÍ¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2106">
 			<message>*SOLID SECTION: INTEGPOINTS must be positive integer</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½INTEGPOINTSï¿½ï¿½ï¿½Í¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>ÉÔÀµ¤ÊINTEGPOINTS¤ÎÃÍ¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2107">
 			<message>*SOLID SECTION: Only one secopt can be allowed in element group</message>
-			<description>ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ë¡¼ï¿½×¤ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½ï¿½ï¿½Æ±ï¿½ï¿½secoptï¿½Ç¤Ê¤ï¿½ï¿½ï¿½Ð¤Ê¤ï¿½Ê¤ï¿½</description>
+			<description>Í×ÁÇ¥°¥ë¡¼¥×¤ÎÍ×ÁÇ¤ÏÁ´¤ÆÆ±¤¸secopt¤Ç¤Ê¤±¤ì¤Ð¤Ê¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2108">
 			<message>*SOLID SECTION: Missing MATERIAL or COMPOSITE</message>
-			<description>*SOLID SECIOTNï¿½ï¿½É¬ï¿½Ü¥Ñ¥ï¿½á¡¼ï¿½ï¿½MATERIALï¿½Þ¤ï¿½ï¿½ï¿½COMPOSITEï¿½ï¿½ï¿½ï¿½ï¿½Ä¤ï¿½ï¿½ï¿½Ê¤ï¿½</description>
+			<description>*SOLID SECIOTN¤ÎÉ¬¿Ü¥Ñ¥é¥á¡¼¥¿MATERIAL¤Þ¤¿¤ÏCOMPOSITE¤¬¸«¤Ä¤«¤é¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2200">
 			<message>*DENSITY: Invalid token</message>
-			<description>*DENSITYï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*DENSITYÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2300">
 			<message>*ELASTIC: Invalid token</message>
-			<description>*ELASTICï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*ELASTICÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2400">
 			<message>*SPECIFIC HEAT: Invalid token</message>
-			<description>*SPECIFIC HEATï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*SPECIFIC HEATÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 		<define type="error" name="E2500">
 			<message>*CONDUCTIVITY: Invalid token</message>
-			<description>*CONDUCTIVITYï¿½É¤ß¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¤ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<description>*CONDUCTIVITYÆÉ¤ß¹þ¤ßÃæ¤ËÍ½´ü¤·¤Ê¤¤¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 	</table>
 </msg-table>

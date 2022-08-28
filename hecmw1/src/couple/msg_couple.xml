@@ -4,199 +4,199 @@
     <table prefix="HECMW-COUPLE">
         <define type="error" name="E1001">
             <message>Invalid argument is found</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¤ï¿½ï¿½ì¤¿ï¿½Í¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½</description>
+            <description>²¾°ú¿ô¤ÇÅÏ¤µ¤ì¤¿ÃÍ¤¬ÉÔÀµ¤Ç¤¢¤ë</description>
         </define>
         <define type="warn" name="W1001">
             <message>Invalid argument is found</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¤ï¿½ï¿½ì¤¿ï¿½Í¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½</description>
+            <description>²¾°ú¿ô¤ÇÅÏ¤µ¤ì¤¿ÃÍ¤¬ÉÔÀµ¤Ç¤¢¤ë</description>
         </define>
         <define type="error" name="E1002">
             <message>Invalid NULL pointer is found</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥Ì¥ï¿½Ý¥ï¿½ï¿½ó¥¿¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+            <description>ÉÔÀµ¤Ê¥Ì¥ë¥Ý¥¤¥ó¥¿¤ò¸¡½Ð¤·¤¿</description>
         </define>
         <define type="error" name="E1101">
             <message>Invalid element type is found</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½×¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+            <description>ÉÔÀµ¤ÊÍ×ÁÇ¥¿¥¤¥×¤ò¸¡½Ð¤·¤¿</description>
         </define>
         <define type="error" name="E1102">
             <message>Unsupported element type is found</message>
-            <description>ï¿½ï¿½ï¿½Ý¡ï¿½ï¿½È³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½×¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+            <description>¥µ¥Ý¡¼¥È³°¤ÎÍ×ÁÇ¥¿¥¤¥×¤ò¸¡½Ð¤·¤¿</description>
         </define>
 		<define type="error" name="E9999">
-			<message>Error occurs in coupling interface module</message>
-			<description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥ï¿½ó¥°¥â¥¸ï¿½å¡¼ï¿½ï¿½Ç¥ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+			<message>Error occures in coupling interface module</message>
+			<description>Ï¢À®¥«¥Ã¥×¥ê¥ó¥°¥â¥¸¥å¡¼¥ë¤Ç¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
 		</define>
         <define type="error" name="E2001">
             <message>Invalid token is found</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥È¡ï¿½ï¿½ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+            <description>ÉÔÀµ¤Ê¥È¡¼¥¯¥ó¤ò¸¡½Ð¤·¤¿</description>
         </define>
         <define type="error" name="E2002">
             <message>Too long name</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½Ä¹ï¿½ï¿½ï¿½ï¿½Û¤ï¿½ï¿½ï¿½Ì¾ï¿½ï¿½ï¿½ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+            <description>µ¬Äê¤ÎÄ¹¤µ¤ò±Û¤¨¤¿Ì¾Á°¤ò¸¡½Ð¤·¤¿</description>
         </define>
-        <define type="error" name="E2101">
-            <message>Error occurred in !COUPLE UNIT section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE UNITï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+        <define tyhe="error" name="E2101">
+            <message>Error occured in !COUPLE UNIT section</message>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE UNIT¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
         </define>
         <define type="error" name="E2111">
             <message>NAME option is not specified in !COUPLE UNIT section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE UNITï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½NAMEï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE UNIT¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤NAME¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
         <define type="error" name="E2112">
             <message>NPROC option is not specified in !COUPLE UNIT section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE UNITï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½NPROCï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE UNIT¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤NPROC¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
         <define type="error" name="E2113">
             <message>Number of ranks specified in !COUPLE UNIT section is unmatched</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE UNITï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ»ï¿½ï¿½ê¤µï¿½ì¤¿ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½Î¿ï¿½ï¿½ï¿½ï¿½ï¿½NPROCï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½Ç»ï¿½ï¿½ê¤µï¿½ì¤¿ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È°ï¿½ï¿½×¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE UNIT¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ»ØÄê¤µ¤ì¤¿¥×¥í¥»¥¹¥é¥ó¥¯ÈÖ¹æ¤Î¿ô¤¬¡¤NPROC¥ª¥×¥·¥ç¥ó¤Ç»ØÄê¤µ¤ì¤¿¥×¥í¥»¥¹¿ô¤È°ìÃ×¤·¤Ê¤¤</description>
         </define>
         <define type="error" name="E2201">
-            <message>Error occurred in !COUPLE section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+            <message>Error occured in !COUPLE section</message>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
         </define>
         <define type="error" name="E2211">
             <message>NAME option is not specified in !COUPLE section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½NAMEï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤NAME¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
         <define type="error" name="E2212">
             <message>TYPE option is not specified in !COUPLE section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½TYPEï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤TYPE¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
         <define type="error" name="E2213">
             <message>UNIT1 option is not specified in !COUPLE section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½UNIT1ï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤UNIT1¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
         <define type="error" name="E2214">
             <message>UNIT2 option is not specified in !COUPLE section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLEï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½UNIT2ï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤UNIT2¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
         <define type="error" name="E2301">
-            <message>Error occurred in !COUPLE BOUNDARY section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE BOUNDARYï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¥ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+            <message>Error occured in !COUPLE BOUNDARY section</message>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE BOUNDARY¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
         </define>
         <define type="error" name="E2311">
             <message>NAME option is not specified in !COUPLE BOUNDARY section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE BOUNDARYï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½NAMEï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE BOUNDARY¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤NAME¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
         <define type="error" name="E2312">
             <message>COUPLE option is not specified in !COUPLE BOUNDARY section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE BOUNDARYï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½COUPLEï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE BOUNDARY¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤COUPLE¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
         <define type="error" name="E2313">
             <message>DIRECTION option is not specified in !COUPLE BOUNDARY section</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE BOUNDARYï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½DIRECTIONï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE BOUNDARY¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤DIRECTION¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
         </define>
 		<define type="error" name="E2321">
 			<message>!UNIT1 sub-section is not specified in !COUPLE BOUNDARY section</message>
-			<description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE BOUNDARYï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½!UNIT1ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE BOUNDARY¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤!UNIT1¥µ¥Ö¥»¥¯¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2322">
 			<message>!UNIT2 sub-section is not specified in !COUPLE BOUNDARY section</message>
-			<description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!COUPLE BOUNDARYï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½!UNIT2ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!COUPLE BOUNDARY¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤!UNIT2¥µ¥Ö¥»¥¯¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2323">
 			<message>GEOM option is not specified in !UNIT1 or !UNIT2 sub-section</message>
-			<description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!UNIT1ï¿½â¤·ï¿½ï¿½ï¿½ï¿½!UNIT2ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½GEOMï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!UNIT1¤â¤·¤¯¤Ï!UNIT2¥µ¥Ö¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤GEOM¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2324">
 			<message>DATA option is not specified in !UNIT1 or !UNIT2 sub-section</message>
-			<description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!UNIT1ï¿½â¤·ï¿½ï¿½ï¿½ï¿½!UNIT2ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½DATAï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!UNIT1¤â¤·¤¯¤Ï!UNIT2¥µ¥Ö¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤DATA¥ª¥×¥·¥ç¥ó¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2325">
 			<message>Group name is not specified in !UNIT1 or !UNIT2 sub-section</message>
-			<description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!UNIT1ï¿½â¤·ï¿½ï¿½ï¿½ï¿½!UNIT2ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½ï¿½Ì¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!UNIT1¤â¤·¤¯¤Ï!UNIT2¥µ¥Ö¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤Ï¢À®¶­³¦¥°¥ë¡¼¥×Ì¾¤¬ÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E2326">
 			<message>GEOM and DATA options in !UNIT1 or !UNIT2 sub-section are inconsistent</message>
-			<description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½!UNIT1ï¿½â¤·ï¿½ï¿½ï¿½ï¿½!UNIT2ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¤ï¿½ï¿½ï¿½ï¿½Æ¡ï¿½GEOMï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¤ï¿½DATAï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¤ï¿½ï¿½ï¿½ï¿½ç¤¬ï¿½È¤ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Î!UNIT1¤â¤·¤¯¤Ï!UNIT2¥µ¥Ö¥»¥¯¥·¥ç¥ó¤Ë¤ª¤¤¤Æ¡¤GEOM¥ª¥×¥·¥ç¥ó¤ÎÃÍ¤ÈDATA¥ª¥×¥·¥ç¥ó¤ÎÃÍ¤ÎÀ°¹ç¤¬¤È¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
         <define type="error" name="E3001">
             <message>Undefined couple id is specified</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤Ï¢À®¾ðÊó¼±ÊÌID¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3002">
             <message>Undefined coupling unit id is specified</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½Ë¥Ã¥È¼ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤Ï¢À®¥æ¥Ë¥Ã¥È¼±ÊÌID¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3003">
             <message>Undefined coupling boundary id is specified</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½IDï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤Ï¢À®¶­³¦¾ðÊó¼±ÊÌID¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
 		<define type="error" name="E3011">
 			<message>Undefined group name is specified</message>
-			<description>ï¿½ï¿½Ã¥ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½ï¿½ï¿½ï¿½ë¡¼ï¿½ï¿½Ì¾ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+			<description>¥á¥Ã¥·¥å¥Ç¡¼¥¿¤ÇÄêµÁ¤µ¤ì¤Æ¤¤¤Ê¤¤¥°¥ë¡¼¥×Ì¾¤¬»ØÄê¤µ¤ì¤¿</description>
 		</define>
         <define type="error" name="E3101">
             <message>Invalid number of processes is specified</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê³ï¿½ï¿½ï¿½ï¿½ï¿½Æ¥×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>ÉÔÀµ¤Ê³ä¤êÅö¤Æ¥×¥í¥»¥¹¿ô¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3102">
             <message>Number of processes is not matched</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½Ã¥×¥é¡¼ï¿½ï¿½ï¿½ï¿½Ç¡ï¿½ï¿½ï¿½ï¿½Ç»ï¿½ï¿½ê¤µï¿½ì¤¿ï¿½ï¿½ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Èµï¿½Æ°ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¤ï¿½ï¿½Ê¤ï¿½</description>
+            <description>Ï¢À®¥«¥Ã¥×¥é¡¼À©¸æ¥Ç¡¼¥¿¤Ç»ØÄê¤µ¤ì¤¿Áí¥×¥í¥»¥¹¿ô¤Èµ¯Æ°¥×¥í¥»¥¹¿ô¤¬°ìÃ×¤·¤Ê¤¤</description>
         </define>
         <define type="error" name="E3103">
             <message>Invalid process number is specified</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹æ¤¬ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>ÉÔÀµ¤Ê¥×¥í¥»¥¹ÈÖ¹æ¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3104">
             <message>process numbers are discontinuous</message>
-            <description>ï¿½×¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½Ð¤ï¿½ï¿½ì¤¿</description>
+            <description>¥×¥í¥»¥¹ÈÖ¹æ¤ËÈô¤ÓÈÖ¤¬¸¡½Ð¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3111">
             <message>Invalid couple type specifier is found</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ò¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>ÉÔÀµ¤ÊÏ¢À®¥¿¥¤¥×»ØÄê»Ò¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3112">
             <message>Several coupling type are specified</message>
-            <description>Ê£ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ï¿½Æ¤ï¿½ï¿½ï¿½</description>
+            <description>Ê£¿ô¤ÎÏ¢À®¥¿¥¤¥×¤¬»ØÄê¤µ¤ì¤Æ¤¤¤ë</description>
         </define>
         <define type="error" name="E3121">
             <message>Invalid coupling direction specifier is found</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>ÉÔÀµ¤ÊÏ¢À®Êý¸þ»ØÄê»Ò¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3122">
             <message>Invalid group type specifier is found</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥ï¿½ï¿½ë¡¼ï¿½×¥ï¿½ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ò¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>ÉÔÀµ¤Ê¥°¥ë¡¼¥×¥¿¥¤¥×»ØÄê»Ò¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3123">
             <message>Invalid group type specifier for geometry data is found</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥ï¿½ï¿½ë¡¼ï¿½×¥ï¿½ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ò¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>Ï¢À®¶­³¦·Á¾õ¤Î»ØÄê¤ËÉÔÀµ¤Ê¥°¥ë¡¼¥×¥¿¥¤¥×»ØÄê»Ò¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E3124">
             <message>Invalid group type specifier for data is found</message>
-            <description>Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥ï¿½ï¿½ë¡¼ï¿½×¥ï¿½ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ò¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>Ï¢À®¶­³¦¤Î»ØÄê¤ËÉÔÀµ¤Ê¥°¥ë¡¼¥×¥¿¥¤¥×»ØÄê»Ò¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
 		<define type="error" name="E3125">
 			<message>Invalid coupling unit specifier is found</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½Ë¥Ã¥È»ï¿½ï¿½ï¿½Ò¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+			<description>ÉÔÀµ¤ÊÏ¢À®¥æ¥Ë¥Ã¥È»ØÄê»Ò¤¬»ØÄê¤µ¤ì¤¿</description>
 		</define>
 		<define type="error" name="E3126">
 			<message>Invalid mapping type specifier is found</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½Ê¥Þ¥Ã¥Ô¥ó¥°¥ï¿½ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ò¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+			<description>ÉÔÀµ¤Ê¥Þ¥Ã¥Ô¥ó¥°¥¿¥¤¥×»ØÄê»Ò¤¬»ØÄê¤µ¤ì¤¿</description>
 		</define>
 		<define type="error" name="E3127">
 			<message>Invalid interpolation type specifier is found</message>
-			<description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¥ï¿½ï¿½ï¿½ï¿½×»ï¿½ï¿½ï¿½Ò¤ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+			<description>ÉÔÀµ¤ÊÊä´Ö¥¿¥¤¥×»ØÄê»Ò¤¬»ØÄê¤µ¤ì¤¿</description>
 		</define>
 		<define type="error" name="E3201">
 			<message>Nonsupport element type is found</message>
-			<description>ï¿½ï¿½ï¿½Ý¡ï¿½ï¿½È³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½×¤ï¿½ï¿½ï¿½ï¿½Ð¤ï¿½ï¿½ì¤¿</description>
+			<description>¥µ¥Ý¡¼¥È³°¤ÎÍ×ÁÇ¥¿¥¤¥×¤¬¸¡½Ð¤µ¤ì¤¿</description>
 		</define>
 		<define type="error" name="E3202">
 			<message>Nonsupport geometry type on couple boundary is found</message>
-			<description>ï¿½ï¿½ï¿½Ý¡ï¿½ï¿½È³ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¤ï¿½ï¿½ì¤¿</description>
+			<description>¥µ¥Ý¡¼¥È³°¤ÎÏ¢À®¶­³¦·Á¾õ¤¬¸¡½Ð¤µ¤ì¤¿</description>
 		</define>
         <define type="error" name="E8001">
             <message>Error in MPI function</message>
-            <description>MPIï¿½Ø¿ï¿½ï¿½ï¿½Ç¥ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+            <description>MPI´Ø¿ôÆâ¤Ç¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
         </define>
         <define type="error" name="E8011">
             <message>Invalid HECMW_Datatype is specified</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ HECMW_Datatype ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>ÉÔÀµ¤Ê HECMW_Datatype ¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
         <define type="error" name="E8012">
             <message>Invalid HECMW_Op is specified</message>
-            <description>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ HECMW_Op ï¿½ï¿½ï¿½ï¿½ï¿½ê¤µï¿½ì¤¿</description>
+            <description>ÉÔÀµ¤Ê HECMW_Op ¤¬»ØÄê¤µ¤ì¤¿</description>
         </define>
     </table>
 </msg-table>

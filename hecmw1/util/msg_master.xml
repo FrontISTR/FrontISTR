@@ -12,28 +12,28 @@
 	<table prefix="HECMW-ALL">
 		<define type="error" name="E0001">
 			<message>Fatal error</message>
-			<description>ï¿½ï¿½ï¿½ï¿½Ê¥ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+			<description>¿¼¹ï¤Ê¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
 		</define>
 		<define type="error" name="E0101">
 			<message>Illegal argument error</message>
-			<description>Ìµï¿½ï¿½ï¿½Ê°ï¿½ï¿½ï¿½ï¿½Ç¤ï¿½ï¿½ï¿½</description>
+			<description>Ìµ¸ú¤Ê°ú¿ô¤Ç¤¢¤ë</description>
 		</define>
 		<define type="error" name="E0102">
-			<message>NULL pointer error</message>
-			<description>NULLï¿½Ý¥ï¿½ï¿½ó¥¿¤ò¸¡½Ð¤ï¿½ï¿½ï¿½</description>
+			<message>NULL poiner error</message>
+			<description>NULL¥Ý¥¤¥ó¥¿¤ò¸¡½Ð¤·¤¿</description>
 		</define>
 
 		<define type="error" name="E1001">
 			<message>MPI initialization failed</message>
-			<description>MPIï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¼ï¿½ï¿½Ô¤ï¿½ï¿½ï¿½</description>
+			<description>MPI¤Î½é´ü²½¤Ë¼ºÇÔ¤·¤¿</description>
 		</define>
 		<define type="error" name="E1002">
 			<message>MPI has not initialized yet</message>
-			<description>MPIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½Ê¤ï¿½</description>
+			<description>MPI¤¬½é´ü²½¤µ¤ì¤Æ¤¤¤Ê¤¤</description>
 		</define>
 		<define type="error" name="E1003">
 			<message>MPI operation failed</message>
-			<description>MPIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¥ï¿½ï¿½é¡¼ï¿½ï¿½È¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</description>
+			<description>MPIÍøÍÑÃæ¤Ë¥¨¥é¡¼¤¬È¯À¸¤·¤¿</description>
 		</define>
 	</table>
 </msg-table>
