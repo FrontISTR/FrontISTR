@@ -507,7 +507,7 @@ for(j=0;j<3;j++)
         start_y = 10;
         if (sr->xr < start_x + 10) {
           fprintf(stderr,
-                  "The image x_resolution cannot write such size charaters\n");
+              "The image x_resolution cannot write such size characters\n");
           HECMW_vis_print_exit(
               "Please reduce the font size or enlarge x_resolution and run "
               "again");
@@ -614,7 +614,7 @@ feai_minmax[0]=tfeai_minmax[0];  feai_minmax[1]=tfeai_minmax[1];
     if ((transfer_function_style == 5) || (transfer_function_style == 6))
       find_dis_minmax(view_point_d, vertex, dis_minmax);
 #endif
-    /* Build hierachical tree*/
+    /* Build hierarchical tree*/
     for (jjj = 0; jjj < sr->deform_num_of_frames; jjj++) {
       if (sr->deform_num_of_frames > 1)
         fprintf(stderr, "Start rendering deformation frame %d\n", jjj);

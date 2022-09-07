@@ -21,7 +21,7 @@ distclean:
 	@cd jacobian               && $(MAKE) distclean
 
 install:
-	@cd adaptaion              && $(MAKE) install
+	@cd adaptation             && $(MAKE) install
 	@cd dynamic_load_balancing && $(MAKE) install
 	@cd jacobian               && $(MAKE) install
 

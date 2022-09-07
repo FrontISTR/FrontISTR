@@ -15,11 +15,11 @@ private
 public sp_LINEQ ! entry point of Parallel Direct Solver
 
 
-! required global informations for solver !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! required global information for solver !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! for trunk and leaf solve
 integer :: m_pds_neqns   ! size of given left side sparse matrix.
-integer :: m_pds_ndeg    ! degree of freedum of each element in sparse matrix.
+integer :: m_pds_ndeg    ! degree of freedom of each element in sparse matrix.
 
 ! for trunksolve
 integer :: m_pds_neqns1  ! size of divided sparse matrix a1.
@@ -34,9 +34,9 @@ logical :: m_pds_isready_dc = .false.            ! set true after d is updated c
 ! for leafsolve
 integer, parameter :: m_pds_lenv=80000000     ! allocate v as size of lenv in leaf process.
 real(8), pointer   :: m_pds_v(:) ! Communication vector for serial direct solver.
-logical :: m_pds_isready_v = .false.          ! set true after v is setted correctly via nufct0().
+logical :: m_pds_isready_v = .false.          ! set true after v is set correctly via nufct0().
 
-! process position informations on MPI processes binary tree. !!!!!!!!!!!!!!!!!!!!!!!!!!
+! process position information on MPI processes binary tree. !!!!!!!!!!!!!!!!!!!!!!!!!!
 
 integer :: npe     ! total number of process
 integer :: myid    ! my process id
@@ -680,7 +680,7 @@ call elapout('sp_direct_leaf: exit recsolve')
 
 !  write(20,'(a)')          '# profile sp_direct_leaf ########################################'
 !  write(20,*) 'Elaptime (sec)'
-!    write(20,'(a,1f15.5)') 'STEP01: Recive a from parent:              ', t10e  - t10s
+!    write(20,'(a,1f15.5)') 'STEP01: Receive a from parent:             ', t10e  - t10s
 !    write(20,'(a,1f15.5)') 'STEP02: Prepare serial solver:             ', t20e  - t20s
 !    write(20,'(a,1f15.5)') 'STEP03: calcCtAC:                          ', t30e  - t30s
 !    write(20,'(a,1f15.5)') 'STEP04: recsolve:                          ', t40e  - t40s
@@ -746,7 +746,7 @@ end subroutine recsolve
 
 subroutine trunksolve(b)
 ! Do recursive calculation to solve A x =b0
-! Before start this routine, m_pds_d, c1 and c2 must be setted on module m_pds correctly.
+! Before start this routine, m_pds_d, c1 and c2 must be set on module m_pds correctly.
 !
 ! Get right hand side vector b0 and divide it to b1, b2, bd.
 ! Send b1, b2 to child process and receive result of A1 xab1 = b1.
@@ -1018,7 +1018,7 @@ call elapout('calcCtAC: end send CtAC')
 
 !  write(20,'(a)')          '# profile calcCtAC ########################################'
 !  write(20,*) 'Elaptime (sec)'
-!  write(20,'(a,1f15.5)') 'STEP01: Recive C from parent:              ', t10e  - t10s
+!  write(20,'(a,1f15.5)') 'STEP01: Receive C from parent:             ', t10e  - t10s
 !  write(20,'(a,1f15.5)') 'STEP02: calc CtAC:                         ', t20e  - t20s
 !  write(20,'(a,1f15.5)') 'STEP03: send CtAC to parent:               ', t30e  - t30s
 !  write(20,'(a)')          '# End profile data######################################'
@@ -1096,7 +1096,7 @@ use m_cclsmatrix
 implicit none
 
 ! Divide given matrix a0 to a1 and a2
-! accortind to partitioning informatin array "part" and "iperm" which set by mkpart()
+! according to partitioning information array "part" and "iperm" which set by mkpart()
 ! this subroutine set following valuables.
 !
 ! a1, a2 : divided small matrix
@@ -1110,7 +1110,7 @@ integer, dimension(:), intent(in) :: iperm ! relation of index of large matrix a
 integer, intent(in) :: neqns1 ! size of a1
 integer, intent(in) :: neqns2 ! size of a2
 integer, intent(in) :: neqnsd ! size of D (ndeg is not multiplied. so actual size of d is neqnsd*ndeg)
-integer, intent(in) :: ndeg   ! degree of freedum of each element in sparse matrix
+integer, intent(in) :: ndeg   ! degree of freedom of each element in sparse matrix
 
 type (irjc_matrix), intent(out) :: a1, a2
 type (ccls_matrix), intent(out) :: c1, c2

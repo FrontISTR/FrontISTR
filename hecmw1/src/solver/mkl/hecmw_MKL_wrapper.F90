@@ -54,7 +54,7 @@ contains
       iparm(1) = 1 ! no solver default
       iparm(2) = 3 ! fill-in reordering from METIS
       iparm(3) = 1
-      iparm(10) = 13 ! perturbe the pivot elements with 1E-13
+      iparm(10) = 13 ! perturb the pivot elements with 1E-13
       iparm(11) = 1 ! use nonsymmetric permutation and scaling MPS
       iparm(13) = 1 ! maximum weighted matching algorithm is switched-off
       iparm(18) = -1

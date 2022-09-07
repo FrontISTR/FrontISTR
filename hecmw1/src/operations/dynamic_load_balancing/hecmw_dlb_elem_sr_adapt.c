@@ -1717,7 +1717,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
   for (i = 0; i < recv_ptr_num[pesize]; i++) {
     tmp_int = tmp_int_nodeid[i];
     if (tmp_int >= result->t_node) {
-      fprintf(stderr, "There is somethign wrong with data: i=%d tmp_int=%d\n",
+      fprintf(stderr, "There is something wrong with data: i=%d tmp_int=%d\n",
               i, tmp_int);
       HECMW_dlb_print_exit("Please check again");
     }
@@ -1730,7 +1730,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
   for (i = 0; i < recv_ptr_parent_num[pesize]; i++) {
     tmp_int = tmp2_int_nodeid[i];
     if (tmp_int >= result->t_node) {
-      fprintf(stderr, "There is somethign wrong with data: i=%d tmp_int=%d\n",
+      fprintf(stderr, "There is something wrong with data: i=%d tmp_int=%d\n",
               i, tmp_int);
       HECMW_dlb_print_exit("Please check again");
     }
@@ -1751,7 +1751,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
     global_index_hit[recv_node[i]] = i;
   }
   free(recv_node);
-  /*  ********origianl mesh free
+  /*  ********original mesh free
           free(mesh->node_id);
 
 

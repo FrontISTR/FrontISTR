@@ -91,7 +91,7 @@ static double intersect_line(int v0, int v1, double isovalue, Tetra *tetra,
   double rate, color;
 
   if (fabs(tetra->s_data[v1] - tetra->s_data[v0]) < EPSILON)
-    HECMW_vis_print_exit("There is something wrong in data precison");
+    HECMW_vis_print_exit("There is something wrong in data precision");
   else {
     rate = (isovalue - tetra->s_data[v0]) /
            (tetra->s_data[v1] - tetra->s_data[v0]);

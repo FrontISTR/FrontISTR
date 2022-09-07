@@ -259,7 +259,7 @@ contains
   !        jcol      to define non-zero pattern
   !        lenv      length of the array v (iv)
   !    (o)
-  !        iv        comunication array. v is the original name
+  !        iv        communication array. v is the original name
   !        ir        return code
   !                              =0    normal
   !                              =-1   non positive index
@@ -380,7 +380,7 @@ contains
         if ( IERror/=0 ) stop "ALLOCATION ERROR, nch: SUB. matini.f"
         call POSORD(FCT%PARent,BTRee,FCT%INVp,FCT%IPErm,FCT%NCH,FCT%NEQns,Quarent)
         !
-        !   generate skelton graph
+        !   generate skeleton graph
         !
         allocate (XLEaf(FCT%NEQns+1),stat=IERror)
         if ( IERror/=0 ) stop "ALLOCATION ERROR, xleaf: SUB. matini.f"
@@ -4125,7 +4125,7 @@ contains
         enddo
       endif
     enddo
-    ! permutaion
+    ! permutation
     do i = 1, Neqns
       B(Iperm(i)) = Wk(i)
     enddo
@@ -4195,7 +4195,7 @@ contains
         enddo
       endif
     enddo
-    ! permutaion
+    ! permutation
     do i = 1, Neqns
       B(1,Iperm(i)) = Wk(1,i)
       B(2,Iperm(i)) = Wk(2,i)
@@ -4272,7 +4272,7 @@ contains
         enddo
       endif
     enddo
-    ! permutaion
+    ! permutation
     do i = 1, Neqns
       B(1,Iperm(i)) = Wk(1,i)
       B(2,Iperm(i)) = Wk(2,i)
@@ -4375,7 +4375,7 @@ contains
         enddo
       endif
     enddo
-    ! permutaion
+    ! permutation
     do l = 1, Ndeg
       B(l,Iperm(1:Neqns)) = Wk(l,1:Neqns)
     enddo

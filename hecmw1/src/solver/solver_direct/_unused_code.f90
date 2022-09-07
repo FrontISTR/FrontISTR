@@ -259,7 +259,7 @@ SUBROUTINE NUSOL6(Xlnzr,Colno,Dsln,Zln,Diag,Iperm,B,Wk,Neqns,Nstop)
         ENDDO
      ENDIF
   ENDDO
-  ! permutaion
+  ! permutation
   DO i = 1, Neqns
      B(1,Iperm(i)) = Wk(1,i)
      B(2,Iperm(i)) = Wk(2,i)

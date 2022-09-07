@@ -61,7 +61,7 @@ char *HECMW_get_date_r(char *buf, int len) {
 
 void HECMW_assert_(int cond, char *cond_str, char *file, int line) {
   if (!cond) {
-    fprintf(stderr, "%s:%d: Assersion `%s' failed.\n", file, line, cond_str);
+    fprintf(stderr, "%s:%d: Assertion `%s' failed.\n", file, line, cond_str);
 #ifdef HECMW_SERIAL
     abort();
 #else
@@ -75,7 +75,7 @@ int HECMW_check_condition_(int cond, char *cond_str, int isabort, char *file,
   if (cond) return 0;
 
   if (isabort) {
-    fprintf(stderr, "%s:%d: Assertion `%s' falied.\n", file, line, cond_str);
+    fprintf(stderr, "%s:%d: Assertion `%s' failed.\n", file, line, cond_str);
 #ifdef HECMW_SERIAL
     abort();
 #else

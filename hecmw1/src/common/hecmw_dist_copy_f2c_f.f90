@@ -4,7 +4,7 @@
 !-------------------------------------------------------------------------------
 !> \brief I/O and Utility
 !> memo)
-!>   Intel 9 compiler generates codes to wast stack memory
+!>   Intel 9 compiler generates codes to waste stack memory
 !>   when an array of string is passed to external subroutines defined with C.
 !>   Then the pointer of the head of the array is passed
 !>   to avoid consumptions of stack memory.

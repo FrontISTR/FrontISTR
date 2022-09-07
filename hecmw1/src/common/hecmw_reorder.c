@@ -743,7 +743,7 @@ static int set_elem_type_index(struct hecmwST_local_mesh *local_mesh,
 }
 
 /*============================================================================*/
-/*  reoreder element accordint to finite element type                         */
+/*  reoreder element according to finite element type                         */
 /*============================================================================*/
 extern int HECMW_reorder_elem_type(struct hecmwST_local_mesh *local_mesh) {
   int *counter; /* counter of elements */
@@ -799,7 +799,7 @@ extern int HECMW_reorder_elem_type(struct hecmwST_local_mesh *local_mesh) {
 }
 
 /*                                                                            */
-/*  reorder node accordint to DOF                                             */
+/*  reorder node according to DOF                                             */
 /*                                                                            */
 
 /*----------------------------------------------------------------------------*/
@@ -1186,7 +1186,7 @@ reorder_node_dof_4mpc( struct hecmwST_local_mesh *local_mesh,
   /* mask EQUATION_BLOCK according to DOF */
   if(mask_eqn_block( local_mesh, node_flag, block_flag, eqn_block_idx )) return -1;
 
-  /* reorder nodes accordint to DOF with EQUATION_BLOCK */
+  /* reorder nodes according to DOF with EQUATION_BLOCK */
   if(reorder_node_dof_4mpc_inner( local_mesh, node_flag, block_flag, node_new2old, node_old2new, block_old2new, n_eqn_block, eqn_block_idx, dof_flag, n_dof_tot )) return -1;
 
   /* reorder relevant arrays */
@@ -1599,7 +1599,7 @@ static int create_old2new_node(struct hecmwST_local_mesh *local_mesh,
 }
 
 /*----------------------------------------------------------------------------*/
-/*  reconstruct node group informaion                                         */
+/*  reconstruct node group information                                        */
 /*----------------------------------------------------------------------------*/
 static int reconstruct_node_grp(struct hecmwST_local_mesh *local_mesh,
                                 struct equation_block *eqn_block) {
@@ -1770,7 +1770,7 @@ extern int HECMW_reorder_node_mpc(struct hecmwST_local_mesh *local_mesh) {
 extern int HECMW_reorder(struct hecmwST_local_mesh *local_mesh) {
   HECMW_assert(local_mesh);
 
-  /* reorder element accordint to finite element type */
+  /* reorder element according to finite element type */
   if (HECMW_reorder_elem_type(local_mesh)) return -1;
 
   /* reorder node according to MPC group */
@@ -1778,7 +1778,7 @@ extern int HECMW_reorder(struct hecmwST_local_mesh *local_mesh) {
   /* if(HECMW_reorder_node_mpc( local_mesh )) return -1; */
   /* commented out by K.Goto; end */
 
-  /* reorder node accordint to node dof */
+  /* reorder node according to node dof */
   if (HECMW_reorder_node_dof(local_mesh)) return -1;
 
   return 0;

@@ -745,7 +745,7 @@ static int read_amplitude(void) {
         if (read_input(HECMW_IO_ABAQUS_E0100)) return -1;
         flag_input = 1;
       } else {
-        set_err_token(token, HECMW_IO_ABAQUS_E0100, "Unknown paramter");
+        set_err_token(token, HECMW_IO_ABAQUS_E0100, "Unknown parameter");
         return -1;
       }
 
@@ -761,7 +761,7 @@ static int read_amplitude(void) {
       } else if (token == ',') {
         ; /* continue this state */
       } else {
-        set_err_token(token, HECMW_IO_ABAQUS_E0100, "Unknown paramter");
+        set_err_token(token, HECMW_IO_ABAQUS_E0100, "Unknown parameter");
         return -1;
       }
     } else if (state == ST_DATA_INCLUDE) {
@@ -1223,7 +1223,7 @@ static int read_element_data(int *id, int nnode, int *node) {
   /* ',' */
   token = HECMW_ablex_next_token();
   if (token != ',') {
-    set_err_token(token, HECMW_IO_ABAQUS_E0600, "',' required after elment ID");
+    set_err_token(token, HECMW_IO_ABAQUS_E0600, "',' required after element ID");
     return -1;
   }
 
@@ -1738,7 +1738,7 @@ static int read_initial_param_type(int *type) {
 
   token = HECMW_ablex_next_token();
   if (token != '=') {
-    set_err_token(token, HECMW_IO_ABAQUS_E1000, "'=' reqired after TYPE");
+    set_err_token(token, HECMW_IO_ABAQUS_E1000, "'=' required after TYPE");
     return -1;
   }
   token = HECMW_ablex_next_token();
@@ -2359,7 +2359,7 @@ static int read_material_param_name(char *name) {
     return -1;
   }
   if (HECMW_io_get_mat(name)) {
-    set_err(HECMW_IO_ABAQUS_E1102, "%s alredy exists", name);
+    set_err(HECMW_IO_ABAQUS_E1102, "%s already exists", name);
     return -1;
   }
   return 0;
@@ -2613,7 +2613,7 @@ static int read_nset_data_generate(int *nnode, int **node_array) {
   /* nod2 */
   token = HECMW_ablex_next_token();
   if (token != HECMW_ABLEX_INT) {
-    set_err_token(token, HECMW_IO_ABAQUS_E1500, "nod2 requird");
+    set_err_token(token, HECMW_IO_ABAQUS_E1500, "nod2 required");
     return -1;
   }
   nod2 = HECMW_ablex_get_number();
@@ -3058,7 +3058,7 @@ static int read_node(void) {
       }
       HECMW_ablex_unput_token();
 
-      /* reflect SYSYEM, *SYSTEM */
+      /* reflect SYSTEM, *SYSTEM */
       if (read_node_data_system(system, &x, &y, &z)) return -1;
 
       /* add node */
@@ -3838,13 +3838,13 @@ static int read_boundary_keyword(void) {
   /* *BOUNDARY */
   token = HECMW_ablex_next_token();
   if (token != HECMW_ABLEX_H_BOUNDARY) {
-    set_err_token(token, HECMW_IO_ABAQUS_E1500, "*BOUDARY required");
+    set_err_token(token, HECMW_IO_ABAQUS_E1500, "*BOUNDARY required");
     return -1;
   }
   token = HECMW_ablex_next_token();
   if (token != HECMW_ABLEX_NL) {
     set_err_token(token, HECMW_IO_ABAQUS_E1700,
-                  "',' is not required after *BOUDARY SECTION");
+                  "',' is not required after *BOUNDARY SECTION");
     return -1;
   }
   /* if(isFirst == 0) { */

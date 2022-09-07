@@ -2046,7 +2046,7 @@ static void write_elem_with_mismatching_refinement(const struct hecmwST_local_me
       tag = 9803;
       HECMW_Isend(shared_elem_node_item_l, n_shared_elem_node, HECMW_INT, irank, tag, comm, &requests[2]);
     }
-    { /* receiv elem_node_index, elem_node_item */
+    { /* receive elem_node_index, elem_node_item */
       int recv_buf[2];
       /* receive n_shared_elem/n_shared_elem_node */
       tag = 9801;
@@ -2260,7 +2260,7 @@ static int check_node_rank(const struct hecmwST_local_mesh *mesh,
     HECMW_Isend(send_buf + 4*i, 4, HECMW_INT, irank, tag, comm, requests + i);
   }
 
-  /* recieve size and check */
+  /* receive size and check */
   for (i = 0; i < mesh->n_neighbor_pe; i++) {
     irank = mesh->neighbor_pe[i];
     tag = 9901;
@@ -2320,7 +2320,7 @@ static int check_node_rank(const struct hecmwST_local_mesh *mesh,
     HECMW_Isend(send_ranks, n_shared_nodes[i], HECMW_INT, irank, tag, comm, requests + i);
   }
 
-  /* recieve rank of new shared nodes */
+  /* receive rank of new shared nodes */
   for (i = 0; i < mesh->n_neighbor_pe; i++) {
     int *recv_ranks = (int *)HECMW_malloc(sizeof(int) * n_shared_nodes[i]);
     if (recv_ranks == NULL) {
@@ -3044,7 +3044,7 @@ static int rebuild_refine_origin(const struct hecmwST_local_mesh *mesh,
     return HECMW_ERROR;
   }
 
-  /* copy original-node infomation up to previous refinement */
+  /* copy original-node information up to previous refinement */
   ref_reforg->item_index[0] = 0;
   for (i = 1; i <= ref_reforg->index[n_refine - 1]; i++) {
     ref_reforg->item_index[i] = reforg->item_index[i];
@@ -3186,7 +3186,7 @@ static int rebuild_info(const struct hecmwST_local_mesh *mesh,
 
 /*============================================================================*/
 /*                                                                            */
-/*  copy unchanging infomation                                                */
+/*  copy unchanging information                                               */
 /*                                                                            */
 /*============================================================================*/
 static int copy_global_info(const struct hecmwST_local_mesh *mesh,

@@ -351,7 +351,7 @@ static int read_amplitude(void) {
         if (read_input(HECMW_IO_HEC_E0100)) return -1;
         flag_input = 1;
       } else {
-        set_err_token(token, HECMW_IO_HEC_E0100, "Unknown paramter");
+        set_err_token(token, HECMW_IO_HEC_E0100, "Unknown parameter");
         return -1;
       }
 
@@ -367,7 +367,7 @@ static int read_amplitude(void) {
       } else if (token == ',') {
         ; /* continue this state */
       } else {
-        set_err_token(token, HECMW_IO_HEC_E0100, "Unknown paramter");
+        set_err_token(token, HECMW_IO_HEC_E0100, "Unknown parameter");
         return -1;
       }
     } else if (state == ST_DATA_INCLUDE) {
@@ -972,7 +972,7 @@ static int read_elem_head(void) {
   /* !ELEMENT */
   token = HECMW_heclex_next_token();
   if (token != HECMW_HECLEX_H_ELEMENT) {
-    set_err_token(token, HECMW_IO_HEC_E0600, "!ELLEMENT required");
+    set_err_token(token, HECMW_IO_HEC_E0600, "!ELEMENT required");
     return -1;
   }
 
@@ -1078,7 +1078,7 @@ static int read_elem_data_conn(int *id, int nnode, int *node) {
   /* ',' */
   token = HECMW_heclex_next_token();
   if (token != ',') {
-    set_err_token(token, HECMW_IO_HEC_E0600, "',' required after elment ID");
+    set_err_token(token, HECMW_IO_HEC_E0600, "',' required after element ID");
     return -1;
   }
 
@@ -1697,7 +1697,7 @@ static int read_header(void) {
     return -1;
   }
 
-  /* !HEAER */
+  /* !HEADER */
   token = HECMW_heclex_next_token();
   if (token != HECMW_HECLEX_H_HEADER) {
     set_err_token(token, HECMW_IO_HEC_E0800, "!HEADER required");
@@ -1805,7 +1805,7 @@ static int read_initial_param_type(int *type) {
 
   token = HECMW_heclex_next_token();
   if (token != '=') {
-    set_err_token(token, HECMW_IO_HEC_E1000, "'=' reqired after TYPE");
+    set_err_token(token, HECMW_IO_HEC_E1000, "'=' required after TYPE");
     return -1;
   }
   token = HECMW_heclex_next_token();
@@ -1978,7 +1978,7 @@ static int read_matitem_head(int *item, int *last_token) {
   /* ITEM */
   token = HECMW_heclex_next_token();
   if (token != HECMW_HECLEX_INT) {
-    set_err_token(token, HECMW_IO_HEC_E1100, "requied !ITEM value");
+    set_err_token(token, HECMW_IO_HEC_E1100, "required !ITEM value");
     return -1;
   }
   *item = HECMW_heclex_get_number();
@@ -2242,7 +2242,7 @@ static int read_material_param_name(char *name) {
     return -1;
   }
   if (HECMW_io_get_mat(name)) {
-    set_err(HECMW_IO_HEC_E1102, "%s alredy exists", name);
+    set_err(HECMW_IO_HEC_E1102, "%s already exists", name);
     return -1;
   }
   return 0;
@@ -2578,7 +2578,7 @@ static int read_ngrp_generate(char *ngrp) {
     /* nod2 */
     token = HECMW_heclex_next_token();
     if (token != HECMW_HECLEX_INT) {
-      set_err_token(token, HECMW_IO_HEC_E1500, "nod2 requird");
+      set_err_token(token, HECMW_IO_HEC_E1500, "nod2 required");
       return -1;
     }
     nod2 = HECMW_heclex_get_number();

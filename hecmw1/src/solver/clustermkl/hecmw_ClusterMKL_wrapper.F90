@@ -68,9 +68,9 @@ contains
       iparm(3) = 1
       iparm(8) = 2
       if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_ASYM) then
-        iparm(10) = 13 ! perturbe the pivot elements with 1E-13
+        iparm(10) = 13 ! perturb the pivot elements with 1E-13
       else
-        iparm(10) = 8 ! perturbe the pivot elements with 1E-8
+        iparm(10) = 8 ! perturb the pivot elements with 1E-8
       endif
       iparm(11) = 1 ! Enable scaling
       iparm(13) = 1 ! Enable matching
