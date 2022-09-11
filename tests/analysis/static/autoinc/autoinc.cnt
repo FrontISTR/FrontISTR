@@ -19,7 +19,7 @@ PLSTRAIN,OFF
  20000, 1
  1.00e-06, 1.00, 0.0
 !AUTOINC_PARAM, NAME=AP1
-0.25, 2, 50, 5, 1
+0.5, 2, 50, 5, 1
 2.0, 2, 5, 2, 2
 0.5, 6
 ###################################
@@ -40,7 +40,7 @@ _PickedSet5, 2, -0.01
 ###################################
 #####       STEP CONTROL      #####
 ###################################
-!STEP, SUBSTEPS=10, MAXITER=3, CONVERG=1.000E-08, INC_TYPE=AUTO, AUTOINCPARAM=AP1
+!STEP, SUBSTEPS=1000, MAXITER=3, CONVERG=1.000E-06, INC_TYPE=AUTO, AUTOINCPARAM=AP1
 1.0,1.0
 BOUNDARY,1
 LOAD,1
