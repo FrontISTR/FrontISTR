@@ -336,7 +336,7 @@ contains
     !  FOR AX-SYM. ANALYSIS
     if(ISET==2) THICK=1.d0
     ! We suppose material properties doesn't varies inside element
-    call calElasticMatrix( gausses(1)%pMaterial, ISET, D  )
+    call calElasticMatrix( gausses(1)%pMaterial, ISET, D, 0.d0  )
     ALP = gausses(1)%pMaterial%variables(M_EXAPNSION)
     pp = gausses(1)%pMaterial%variables(M_POISSON)
     !* LOOP OVER ALL INTEGRATION POINTS

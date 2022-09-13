@@ -66,13 +66,13 @@ contains
         if( present(temperature) ) then
           call calElasticMatrix( matl, sectTYPE, matrix, temperature  )
         else
-          call calElasticMatrix( matl, sectTYPE, matrix )
+          call calElasticMatrix( matl, sectTYPE, matrix, 0.d0 )
         endif
       elseif(  i==1 ) then
         if( present(temperature) ) then
           call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature )
         else
-          call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix )
+          call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, 0.d0 )
         endif
       else
         print *, "Elasticity type", matl%mtype, "not supported"

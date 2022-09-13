@@ -53,7 +53,7 @@ contains
     if( present( temperature ) ) then
       call calElasticMatrix( matl, sectTYPE, De, temperature  )
     else
-      call calElasticMatrix( matl, sectTYPE, De )
+      call calElasticMatrix( matl, sectTYPE, De, 0.d0 )
     endif
 
     J1 = (stress(1)+stress(2)+stress(3))

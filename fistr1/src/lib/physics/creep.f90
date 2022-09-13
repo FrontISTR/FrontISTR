@@ -39,7 +39,13 @@ contains
     !
     !     elastic
     !
-    call calElasticMatrix( matl, sectTYPE, stiffness )
+    if( present(temp) ) then
+      ina(1) = temp
+      call calElasticMatrix( matl, sectTYPE, stiffness, 0.d0 )
+    else
+      call calElasticMatrix( matl, sectTYPE, stiffness, 0.d0 )
+    endif
+
     if( dtime==0.d0 .or. all(stress==0.d0) ) return
     !
     !     elastic constants

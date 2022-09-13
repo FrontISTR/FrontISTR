@@ -109,7 +109,7 @@ contains
       if( present( temp ) ) then
         call calElasticMatrix( matl, D3, D, temp  )
       else
-        call calElasticMatrix( matl, D3, D )
+        call calElasticMatrix( matl, D3, D, 0.d0 )
       endif
       return
     endif
