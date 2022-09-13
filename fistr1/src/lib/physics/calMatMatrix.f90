@@ -107,7 +107,7 @@ contains
           gauss%plstrain, dtime, time, matrix, temperature  )
       else
         call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
-          gauss%plstrain, dtime, time, matrix  )
+          gauss%plstrain, dtime, time, matrix, 0.d0  )
       endif
     else
       stop "Material type not supported!"
@@ -148,7 +148,7 @@ contains
       if( present(temp) ) then
         call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time, temp )
       else
-        call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time )
+        call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time, 0.d0 )
       endif
     elseif ( gauss%pMaterial%mtype==USERMATERIAL)  then ! user-defined
       call uUpdate(  gauss%pMaterial%name, gauss%pMaterial%variables(101:),   &

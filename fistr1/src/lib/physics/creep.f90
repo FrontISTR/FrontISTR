@@ -25,7 +25,7 @@ contains
     real(kind=kreal), intent(in)     :: ttime     !< total time at the start of the current increment
     real(kind=kreal), intent(in)     :: dtime     !< time length of the increment
     real(kind=kreal), intent(out)    :: stiffness(6,6) !< stiffness
-    real(kind=kreal), optional       :: temp      !> temperature
+    real(kind=kreal), intent(in)     :: temp      !> temperature
 
     integer :: i, j
     logical :: ierr
@@ -39,23 +39,16 @@ contains
     !
     !     elastic
     !
-    if( present(temp) ) then
-      ina(1) = temp
-      call calElasticMatrix( matl, sectTYPE, stiffness, 0.d0 )
-    else
-      call calElasticMatrix( matl, sectTYPE, stiffness, 0.d0 )
-    endif
+    ina(1) = temp
+    call calElasticMatrix( matl, sectTYPE, stiffness, 0.d0 )
 
     if( dtime==0.d0 .or. all(stress==0.d0) ) return
     !
     !     elastic constants
     !
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa(1:2), ierr, ina )
-    else
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa(1:2), ierr )
-    endif
+    ina(1) = temp
+    call fetch_TableData( MC_ISOELASTIC, matl%dict, outa(1:2), ierr, ina )
+
     if( ierr ) then
       stop "error in isotropic elasticity definition"
     else
@@ -65,12 +58,8 @@ contains
 
     !      Norton
     if( matl%mtype==NORTON ) then         ! those with no yield surface
-      if( present( temp ) ) then
-        ina(1) = temp
-        call fetch_TableData( MC_NORTON, matl%dict, outa, ierr, ina )
-      else
-        call fetch_TableData( MC_NORTON, matl%dict, outa, ierr )
-      endif
+      ina(1) = temp
+      call fetch_TableData( MC_NORTON, matl%dict, outa, ierr, ina )
       xxn=outa(2)
       aa=outa(1)*((ttime+dtime)**(outa(3)+1.d0)-ttime**(outa(3)+1.d0))/(outa(3)+1.d0)
     endif
@@ -133,7 +122,7 @@ contains
     real(kind=kreal), intent(out)    :: plstrain  !< plastic strain increment
     real(kind=kreal), intent(in)     :: ttime     !< total time at the start of the current increment
     real(kind=kreal), intent(in)     :: dtime     !< time length of the increment
-    real(kind=kreal), optional       :: temp      !> temperature
+    real(kind=kreal), intent(in)     :: temp      !> temperature
 
     integer :: i
     logical :: ierr
@@ -149,12 +138,8 @@ contains
     !
     !     elastic constants
     !
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa(1:2), ierr, ina )
-    else
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa(1:2), ierr )
-    endif
+    ina(1) = temp
+    call fetch_TableData( MC_ISOELASTIC, matl%dict, outa(1:2), ierr, ina )
     if( ierr ) then
       stop "error in isotropic elasticity definition"
     else
@@ -164,12 +149,8 @@ contains
 
     !      Norton
     if( matl%mtype==NORTON ) then         ! those with no yield surface
-      if( present( temp ) ) then
-        ina(1) = temp
-        call fetch_TableData( MC_NORTON, matl%dict, outa, ierr, ina )
-      else
-        call fetch_TableData( MC_NORTON, matl%dict, outa, ierr )
-      endif
+      ina(1) = temp
+      call fetch_TableData( MC_NORTON, matl%dict, outa, ierr, ina )
       if( ierr ) then
         stop "error in isotropic elasticity definition"
       else
