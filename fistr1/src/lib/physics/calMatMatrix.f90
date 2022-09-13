@@ -53,7 +53,7 @@ contains
       if( present(temperature) ) then
         call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix, temperature )
       else
-        call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix )
+        call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix, 0.d0 )
       endif
     elseif( isElastic(matl%mtype) .or. flag==1 ) then
       if(flag==1)then
@@ -141,7 +141,7 @@ contains
       if( present(temp) .and. present(tempn) ) then
         call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
       else
-        call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime )
+        call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, 0.d0, 0.d0 )
       endif
     elseif ( gauss%pMaterial%mtype==NORTON ) then
       if( .not. present(dtime)  ) stop "error in viscoelastic update!"
