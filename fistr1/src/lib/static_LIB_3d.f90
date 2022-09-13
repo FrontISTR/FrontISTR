@@ -700,7 +700,7 @@ contains
           gauss%istatus(1), gauss%fstatus, ttc )
       else
         call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
-          gauss%istatus(1), gauss%fstatus )
+          gauss%istatus(1), gauss%fstatus, 0.d0 )
       end if
     end if
 
