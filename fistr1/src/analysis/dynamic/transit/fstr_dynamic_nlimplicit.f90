@@ -118,6 +118,8 @@ contains
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+    else( restrt_step_num < 0 ) then
+      call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
     endif
 
     fstrDYNAMIC%VEC3(:) =0.0d0
@@ -527,8 +529,9 @@ contains
     !C
     !C-- initialize variables
     !C
-    if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 ) &
+    if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 )then
       call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
+    endif
     !C
     !C
     !C-- time step loop
@@ -547,6 +550,10 @@ contains
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+    else( restrt_step_num < 0 ) then
+      call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
+      call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
+         & fstrDYNAMIC%t_delta,iter, fstrDYNAMIC%strainEnergy )
     endif
 
     fstrDYNAMIC%VEC3(:) =0.d0
