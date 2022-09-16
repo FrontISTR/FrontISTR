@@ -118,7 +118,7 @@ contains
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
-    else( restrt_step_num < 0 ) then
+    elseif ( restrt_step_num < 0 ) then
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
     endif
 
@@ -550,7 +550,7 @@ contains
     if( restrt_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
-    else( restrt_step_num < 0 ) then
+    elseif ( restrt_step_num < 0 ) then
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
       call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
          & fstrDYNAMIC%t_delta,iter, fstrDYNAMIC%strainEnergy )
