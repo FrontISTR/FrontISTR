@@ -18,7 +18,7 @@ echo_err () {
   echo "${ESC}[31m$1${ESC}[m" >&2
 }
 
-for path in $(find . -type f -name "*.msh"); do
+for path in $(find . -not -path "./_archive/*" -type f -name "*.msh" ); do
   dir=$(dirname $path)
   mesh=$(basename $path)
   cnt=${mesh%.msh}.cnt

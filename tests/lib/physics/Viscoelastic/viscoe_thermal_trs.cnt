@@ -1,0 +1,51 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,LOG
+!WRITE,RESULT,FREQUENCY=5
+!OUTPUT_RES
+EMISES,ON
+PL_ISTRAIN,ON
+!SOLVER,METHOD=BiCGSTAB,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-08, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+ SET_1,2,2
+ SET_1,3,3
+!BOUNDARY, GRPID=2
+ SET_2,1,1
+!BOUNDARY, GRPID=3
+ SET_3,2,2
+!TEMPERATURE, GRPID=1
+BEAM_1_SET_1,125.
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+!EXPANSION_COEFF
+ 1.00000000E-03
+!VISCOELASTIC
+ 0.25, 0.1
+ 0.5,  0.3
+!TRS
+ 50.0, 1.0, 10.0
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, TYPE=VISCO, CONVERG=1.0E-6
+ 0.2, 1.0
+BOUNDARY,1
+BOUNDARY,2
+BOUNDARY,3
+LOAD,1
+!END
