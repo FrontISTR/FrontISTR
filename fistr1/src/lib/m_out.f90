@@ -100,6 +100,7 @@ contains
 
     outinfo%keyWord(18) = "ROT"
     outinfo%vtype(18)   = -2
+    outinfo%on(18)      = .true.
 
     outinfo%keyWord(19) = "PRINC_NSTRESS"
     outinfo%vtype(19)   = -2
