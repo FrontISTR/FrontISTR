@@ -166,7 +166,9 @@ contains
     logical, intent(in)       :: outflag     !< if true, result will be output regardless of istep
     real(kind=kreal)   :: current_time
 
-    if(0 < fstrHEAT%restart_nout .and. (mod(tstep, fstrHEAT%restart_nout) == 0 .or. outflag))then
+    if( fstrHEAT%restart_nout <= 0 ) return
+
+    if( mod(tstep, fstrHEAT%restart_nout) == 0 .or. outflag )then
       restart_istep(1) = istep
       restart_step(1) = tstep
       restart_time(1) = current_time
