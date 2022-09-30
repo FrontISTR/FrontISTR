@@ -71,6 +71,12 @@ while getopts ":d:p:t:f:e:r:h" optKey; do
   esac
 done
 
+if [ "$(shell mpicc --showme:version 2> /dev/null | grep 'Open MPI')" != "" ]; then
+  mpi_options="--oversubscribe --allow-run-as-root"
+else
+  mpi_options=""
+fi
+
 compare_res=$FRONTISTR_HOME/tests/compare_res.pl
 
 check_executable $fistr1
@@ -133,7 +139,7 @@ EOL
     $hecmw_part1 2>&1 \
       | tee hecmw_part1.log \
       | sed -e "s/^/    hecmw_part1 > /"
-    mpirun --oversubscribe --allow-run-as-root -n $mpi_num_process \
+    mpirun $mpi_options -n $mpi_num_process \
       $fistr1 -t $omp_num_threads 2>&1 \
       | tee fistr1.log \
       | sed -e "s/^/    fistr1 > /"
