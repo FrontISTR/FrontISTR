@@ -71,7 +71,7 @@ while getopts ":d:p:t:f:e:r:h" optKey; do
   esac
 done
 
-if [ "$(shell mpicc --showme:version 2> /dev/null | grep 'open-mpi')" != "" ]; then
+if [ "$(shell mpirun --version 2> /dev/null | grep 'open-mpi')" != "" ]; then
   mpi_options="--oversubscribe --allow-run-as-root"
 else
   mpi_options=""
