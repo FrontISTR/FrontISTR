@@ -106,19 +106,8 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
 
-    !> matrix [M] lumped mass matrix
-    !> lumped mass matrix
-    if(fstrDYNAMIC%idx_mas == 1) then
-      call fstr_MassMatrix(hecMESH, fstrSOLID, matM)
-
-    !> consistent mass matrix
-    else if(fstrDYNAMIC%idx_mas == 2) then
-      if( hecMESH%my_rank .eq. 0 ) write(imsg,*) 'stop: consistent mass matrix is not yet available !'
-      call hecmw_abort( hecmw_comm_get_comm())
-    endif
-
-    !> damping matrix
-    call fstr_DampingMatrix(hecMESH, fstrSOLID, matC)
+    !> mass matrix
+    call fstr_MassMatrix(hecMESH, fstrSOLID, matM)
 
     hecMAT%Iarray(98) = 1   !Assmebly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
@@ -160,12 +149,12 @@ contains
       !> ********************************************************************************
       !> for couple analysis
       do
-        fstrSOLID%dunode(:) =0.d0
+        fstrSOLID%dunode(:) = 0.d0
         call fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM)
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           !if (fstrPARAM%nlgeom) then
-            call fstr_StiffMatrix( hecMESH, matK, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+            call fstr_StiffMatrix( hecMESH, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, matK )
           !else
           !  if (.not. associated(hecMAT0)) then
           !    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
@@ -178,12 +167,11 @@ contains
           !  endif
           !endif
 
+          !> damping matrix
+          call fstr_DampingMatrix(hecMESH, fstrSOLID, matC)
+
           !> mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
-
-          call hecmw_mat_clear_val(matC)
-          call hecmw_mat_add_AX(matC, b1, matM)
-          call hecmw_mat_add_AX(matC, b2, matK)
 
           call hecmw_mat_clear_val(hecMAT)
           call hecmw_mat_add_AX(hecMAT, 1.0d0, matK)

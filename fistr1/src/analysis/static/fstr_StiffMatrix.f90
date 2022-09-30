@@ -56,7 +56,7 @@ contains
         !$omp&          material,thick,stiffness,isect,ihead), &
         !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,time,tincr)
       !$omp do
-      do icel= is, iE
+      do icel= iS, iE
 
         ! ----- nodal coordinate & displacement
         iiS= hecMESH%elem_node_index(icel-1)
