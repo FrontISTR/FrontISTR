@@ -80,6 +80,9 @@ and tests the difference is enough small.
 In order to append a new test, you should
 
 1. Create a directory under `${FRONTISTR_HOME}/tests`
+    - Directories created in analysis, lib and solver are always included in the test run.
+    - Directories created in with_[mkl|mumps|ml] are included in the test run when the cmake option -DWITH_[MKL|MUMPS|ML] is ON.
+    - Directories created in _archive are not included in the test run.
 2. Put `*.msh` and `*.cnt` files
 3. Generate reference result by `${FRONTISTR_HOME}/tests/create_reference.sh`
 4. and Confirm this result is correct by your eye

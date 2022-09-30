@@ -86,9 +86,12 @@ ctest --output-on-failure
 
 したがって、テストを新たに追加するには
 
-1. `${FRONTISTR_HOME}/tests` 以下に新たにディレクトリを追加し
-2. `*.msh` ファイル、`*.cnt` ファイルを追加し
-3. `${FRONTISTR_HOME}/tests/create_reference.sh` でリファレンスデータを生成し
+1. `${FRONTISTR_HOME}/tests` 以下に新たにディレクトリを作成する
+    - analysis, lib, solver配下に作成されたディレクトリは常にテスト実行対象となります
+    - with_[mkl|mumps|ml]配下に作成されたディレクトリはcmakeオプション-DWITH_[MKL|MUMPS|ML]がONのときにテスト実行対象となります
+    - _archive配下に作成されたディレクトリはテスト対象に含まれません
+2. `*.msh` ファイル、`*.cnt` ファイルを追加する
+3. `${FRONTISTR_HOME}/tests/create_reference.sh` でリファレンスデータを生成する
 4. 計算結果が妥当かどうかを手動で確認する
 
 というプロセスを経ます。

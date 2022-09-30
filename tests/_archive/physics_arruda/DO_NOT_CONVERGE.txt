@@ -1,0 +1,36 @@
+failed to converge with BiCGSTAB solver
+
+lib/physics/Hyperelastic/arruda.msh:
+  workdir: /mnt/c/work/FrontISTR/run_test/test_openmp_lib/physics/Hyperelastic/202208101040
+    fistr1 > ##################################################################
+    fistr1 > #                         FrontISTR                              #
+    fistr1 > ##################################################################
+    fistr1 > ---
+    fistr1 > version:      5.4
+    fistr1 > git_hash:     618d39750de61967fb8ee85e10aa951fe61b3fd4
+    fistr1 > build:
+    fistr1 >   date:       2022-08-10T10:07:00+0900
+    fistr1 >   MPI:       "3.1, Open MPI 4.0.3"
+    fistr1 >   OpenMP:     201511
+    fistr1 >   option:    "-p --with-tools --with-metis --with-lapack --with-mkl "
+    fistr1 >   HECMW_METIS_VER: 5
+    fistr1 > execute:  
+    fistr1 >   date:       2022-08-10T10:41:00+0900
+    fistr1 >   processes:  1
+    fistr1 >   threads:    2
+    fistr1 >   cores:      2
+    fistr1 >   MPI:       "3.1, Open MPI v4.0.3, package: Debian OpenMPI, ident: 4.0.3, repo rev: v4.0.3, Mar 03, 2020"
+    fistr1 >   host:
+    fistr1 >     0: DESKTOP-NDB9SBH
+    fistr1 > ---
+    fistr1 >  fstr_setup: OK
+    fistr1 >  
+    fistr1 >  loading step=    1
+    fistr1 >  sub_step= 1,   current_time=  0.0000E+00, time_inc=  0.1000E+00
+    fistr1 >  loading_factor=    0.0000000   0.1000000
+    fistr1 > 
+    fistr1 >   #### HEC-MW-SOLVER-W-3001: 
+    fistr1 >     not converged within certain iterations
+    fistr1 > 
+    fistr1 >  iter:       1, residual:        NaN, disp.corr.:        NaN
+    fistr1 >      ### Fail to Converge  : at total_step=    1  sub_step=    1
