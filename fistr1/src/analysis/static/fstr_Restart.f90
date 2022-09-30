@@ -56,6 +56,7 @@ contains
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         call hecmw_restart_read_int(nif)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain)
+        call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain_bak)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%stress)
         if( nif(1)>0 ) call hecmw_restart_read_int(fstrSOLID%elements(i)%gausses(j)%istatus)
         if( nif(2)>0 ) call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%fstatus)
@@ -174,6 +175,7 @@ contains
         if( associated(fstrSOLID%elements(i)%gausses(j)%fstatus) ) nif(2)=size(fstrSOLID%elements(i)%gausses(j)%fstatus)
         call hecmw_restart_add_int(nif,size(nif))
         call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%strain,size(fstrSOLID%elements(i)%gausses(j)%strain))
+        call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%strain_bak,size(fstrSOLID%elements(i)%gausses(j)%strain_bak))
         call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%stress,size(fstrSOLID%elements(i)%gausses(j)%stress))
         if( nif(1)>0 ) then
           call hecmw_restart_add_int(fstrSOLID%elements(i)%gausses(j)%istatus,size(fstrSOLID%elements(i)%gausses(j)%istatus))
@@ -234,6 +236,7 @@ contains
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         call hecmw_restart_read_int(nif)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain)
+        call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain_bak)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%stress)
         if( nif(1)>0 ) call hecmw_restart_read_int(fstrSOLID%elements(i)%gausses(j)%istatus)
         if( nif(2)>0 ) call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%fstatus)
@@ -308,6 +311,7 @@ contains
         if( associated(fstrSOLID%elements(i)%gausses(j)%fstatus) ) nif(2)=size(fstrSOLID%elements(i)%gausses(j)%fstatus)
         call hecmw_restart_add_int(nif,size(nif))
         call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%strain,size(fstrSOLID%elements(i)%gausses(j)%strain))
+        call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%strain_bak,size(fstrSOLID%elements(i)%gausses(j)%strain_bak))
         call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%stress,size(fstrSOLID%elements(i)%gausses(j)%stress))
         if( nif(1)>0 ) then
           call hecmw_restart_add_int(fstrSOLID%elements(i)%gausses(j)%istatus,size(fstrSOLID%elements(i)%gausses(j)%istatus))
