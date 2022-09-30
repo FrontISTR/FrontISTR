@@ -13,6 +13,7 @@ module fstr_dynamic_nlimplicit
   use m_dynamic_mat_ass_bc_vl
   use m_dynamic_mat_ass_load
   use m_fstr_StiffMatrix
+  use m_fstr_CreateMatrix
   use m_fstr_Update
   use m_fstr_Restart
   use fstr_matrix_con_contact
@@ -107,7 +108,7 @@ contains
     endif
 
     !> mass matrix
-    call fstr_MassMatrix(hecMESH, fstrSOLID, matM)
+    !call fstr_MassMatrix(hecMESH, fstrSOLID, matM)
 
     hecMAT%Iarray(98) = 1   !Assmebly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
@@ -150,11 +151,11 @@ contains
       !> for couple analysis
       do
         fstrSOLID%dunode(:) = 0.d0
-        call fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM)
+        call fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM, fstrCPL)
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           !if (fstrPARAM%nlgeom) then
-            call fstr_StiffMatrix( hecMESH, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, matK )
+          call fstr_CreateMatrix( hecMESH, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, matK, matM, matC)
           !else
           !  if (.not. associated(hecMAT0)) then
           !    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
@@ -168,15 +169,15 @@ contains
           !endif
 
           !> damping matrix
-          call fstr_DampingMatrix(hecMESH, fstrSOLID, matC)
+          !call fstr_DampingMatrix(hecMESH, fstrSOLID, matC)
 
           !> mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
 
-          call hecmw_mat_clear_val(hecMAT)
-          call hecmw_mat_add_AX(hecMAT, 1.0d0, matK)
-          call hecmw_mat_add_AX(hecMAT, c1, matC)
-          call hecmw_mat_add_AX(hecMAT, c2, matM)
+          !call hecmw_mat_clear_val(hecMAT)
+          !call hecmw_mat_add_AX(hecMAT, 1.0d0, matK)
+          !call hecmw_mat_add_AX(hecMAT, c1, matC)
+          !call hecmw_mat_add_AX(hecMAT, c2, matM)
 
           do j = 1, hecMESH%n_node*hecMESH%n_dof
             hecMAT%B(j) = hecMAT%B(j) - fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j) &
@@ -301,9 +302,10 @@ contains
     endif
   end subroutine fstr_solve_dynamic_nlimplicit
 
-  subroutine fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM)
+  subroutine fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM, fstrCPL)
     implicit none
     type(fstr_param)         :: fstrPARAM
+    type(fstr_couple)        :: fstrCPL
     if( fstrPARAM%fg_couple == 1) then
       if( fstrPARAM%fg_couple_type==1 .or. &
           fstrPARAM%fg_couple_type==3 .or. &
@@ -461,7 +463,7 @@ contains
     type(hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
-    integer(kind=kint) :: iter
+    integer(kind=kint) :: iter, n_node_global
 
 
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
