@@ -517,7 +517,7 @@ contains
       call getShapeFunc( etype, naturalcoord, H(1:nn) )
       call getGlobalDeriv(etype, nn, naturalcoord, ecoord, det, gderiv)
 
-      if( matlaniso ) then
+      if( cdsys_ID > 0 ) then
         call set_localcoordsys(coords, g_LocalCoordSys(cdsys_ID), coordsys, serr)
         if( serr == -1 ) stop "Fail to setup local coordinate"
         if( serr == -2 ) then
