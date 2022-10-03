@@ -62,8 +62,6 @@ contains
 
     call fstr_init
 
-    call fstr_input_precheck( hecMESH, hecMAT )
-
     call fstr_rcap_initialize( hecMESH, fstrPR, fstrCPL )
 
     T2 = hecmw_Wtime()
@@ -167,67 +165,7 @@ contains
       hecMAT%NDOF = 1
     endif
     call hecMAT_init( hecMAT )
-
   end subroutine fstr_init
-
-  !=============================================================================!
-  !> fstr_input_precheck                                                        !
-  !=============================================================================!
-
-  subroutine fstr_input_precheck( hecMESH, hecMAT )
-    use m_fstr
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    integer(kint) :: i, cid
-
-    if(fstrPR%solution_type == kstSTATIC  .or. &
-       fstrPR%solution_type == kstDYNAMIC .or. &
-       fstrPR%solution_type == kstEIGEN   .or. &
-       fstrPR%solution_type == kstSTATICEIGEN)then
-      do i = 1, hecMESH%section%n_sect
-        if(hecMESH%section%sect_type(i) == 4) cycle
-        cid = hecMESH%section%sect_mat_ID_item(i)
-
-        if(fstrSOLID%materials(cid)%variables(M_YOUNGS) == 0.0d0)then
-          write(*,*) "*** error: Young's modulus is not assigned or set to zero"
-          call hecmw_abort(hecmw_comm_get_comm())
-        endif
-
-        if(fstrSOLID%materials(cid)%variables(M_POISSON) < -1.0d0 .or. &
-           0.5d0 < fstrSOLID%materials(cid)%variables(M_POISSON)  )then
-          write(*,*) "*** error: Poisson's ratio is smaller than -1.0 or larger than 0.5"
-          call hecmw_abort(hecmw_comm_get_comm())
-        endif
-      enddo
-    endif
-
-    if(fstrPR%solution_type == kstEIGEN .or. &
-       fstrPR%solution_type == kstSTATICEIGEN)then
-      do i = 1, hecMESH%section%n_sect
-        if(hecMESH%section%sect_type(i) == 4) cycle
-        cid = hecMESH%section%sect_mat_ID_item(i)
-
-        if(fstrSOLID%materials(cid)%variables(M_DENSITY) == 0.0d0)then
-          write(*,*) "*** error: density is not assigned or set to zero"
-          call hecmw_abort(hecmw_comm_get_comm())
-        endif
-      enddo
-    endif
-
-    if(fstrPR%solution_type == kstPRECHECK)then
-      if(myrank == 0)then
-        write(IMSG,*)
-        write(IMSG,*) " ****   STAGE Precheck  **"
-      endif
-      call fstr_precheck_elem(hecMESH, hecMAT)
-      write(IDBG,*) "fstr_precheck_elem: OK"
-    endif
-
-    if(fstrPR%solution_type == kstNZPROF)then
-      call hecmw_nonzero_profile(hecMESH, hecMAT)
-    endif
-  end subroutine fstr_input_precheck
 
   !------------------------------------------------------------------------------
   !> Open all files preparing calculation
@@ -330,6 +268,8 @@ contains
 
     hecMAT%Rarray(:) = svRarray(:)
     hecMAT%Iarray(:) = svIarray(:)
+
+    call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID )
 
     if( myrank == 0) write(*,*) 'fstr_setup: OK'
     write(ILOG,*) 'fstr_setup: OK'
