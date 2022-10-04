@@ -33,7 +33,7 @@ contains
     real(kind=kreal), intent(in)     :: time           !> current time
     real(kind=kreal), intent(in)     :: dtime          !> time increment
     real(kind=kreal), intent(in)     :: cdsys(3,3)     !> material coordinate system
-    real(kind=kreal), intent(in), optional  :: temperature   !> temperature
+    real(kind=kreal), intent(in)     :: temperature   !> temperature
     integer(kind=kint), intent(in), optional :: isEp
 
     integer :: i
@@ -50,11 +50,7 @@ contains
     if( matl%mtype==USERELASTIC ) then
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
     elseif( isViscoelastic(matl%mtype) ) then
-      if( present(temperature) ) then
-        call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix, temperature )
-      else
-        call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix, 0.d0 )
-      endif
+      call calViscoelasticMatrix( matl, sectTYPE, dtime, matrix, temperature )
     elseif( isElastic(matl%mtype) .or. flag==1 ) then
       if(flag==1)then
         i = getElasticType(ELASTIC)
@@ -63,17 +59,9 @@ contains
       endif
 
       if( i==0 ) then
-        if( present(temperature) ) then
-          call calElasticMatrix( matl, sectTYPE, matrix, temperature  )
-        else
-          call calElasticMatrix( matl, sectTYPE, matrix, 0.d0 )
-        endif
+        call calElasticMatrix( matl, sectTYPE, matrix, temperature  )
       elseif(  i==1 ) then
-        if( present(temperature) ) then
-          call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature )
-        else
-          call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, 0.d0 )
-        endif
+        call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature )
       else
         print *, "Elasticity type", matl%mtype, "not supported"
         stop
@@ -91,24 +79,14 @@ contains
     elseif( matl%mtype==USERHYPERELASTIC )  then
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
     elseif( isElastoplastic(matl%mtype) )  then
-      if( present( temperature ) ) then
-        call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
-          gauss%istatus(1), gauss%fstatus, gauss%plstrain, matrix, temperature  )
-      else
-        call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
-          gauss%istatus(1), gauss%fstatus, gauss%plstrain, matrix, 0.d0  )
-      endif
+      call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
+        gauss%istatus(1), gauss%fstatus, gauss%plstrain, matrix, temperature  )
     elseif( matl%mtype==USERMATERIAL ) then
       call uMatlMatrix( matl%name, matl%variables(101:), gauss%strain,  &
         gauss%stress, gauss%fstatus, matrix, dtime, time )
     elseif( matl%mtype==NORTON ) then
-      if( present( temperature ) ) then
-        call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
-          gauss%plstrain, dtime, time, matrix, temperature  )
-      else
-        call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
-          gauss%plstrain, dtime, time, matrix, 0.d0  )
-      endif
+      call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
+        gauss%plstrain, dtime, time, matrix, temperature  )
     else
       stop "Material type not supported!"
     endif
@@ -125,8 +103,8 @@ contains
     real(kind=kreal), intent(in)        :: cdsys(3,3) !> material coordinate system
     real(kind=kreal), intent(in), optional  :: time   !> current time
     real(kind=kreal), intent(in), optional  :: dtime  !> time increment
-    real(kind=kreal), optional          :: temp       !> current temperature
-    real(kind=kreal), optional          :: tempn      !> temperature at last step
+    real(kind=kreal), intent(in)        :: temp       !> current temperature
+    real(kind=kreal), intent(in)        :: tempn      !> temperature at last step
 
     if( gauss%pMaterial%mtype==NEOHOOKE .or. gauss%pMaterial%mtype==MOONEYRIVLIN ) then
       call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress )
@@ -138,18 +116,10 @@ contains
       call uElasticUpdate( gauss%pMaterial%variables(101:), strain, stress )
     elseif( isViscoelastic( gauss%pMaterial%mtype) ) then
       if( .not. present(dtime) ) stop "error in viscoelastic update!"
-      if( present(temp) .and. present(tempn) ) then
-        call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
-      else
-        call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, 0.d0, 0.d0 )
-      endif
+      call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
     elseif ( gauss%pMaterial%mtype==NORTON ) then
       if( .not. present(dtime)  ) stop "error in viscoelastic update!"
-      if( present(temp) ) then
-        call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time, temp )
-      else
-        call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time, 0.d0 )
-      endif
+      call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time, temp )
     elseif ( gauss%pMaterial%mtype==USERMATERIAL)  then ! user-defined
       call uUpdate(  gauss%pMaterial%name, gauss%pMaterial%variables(101:),   &
         strain, stress, gauss%fstatus, dtime, time )

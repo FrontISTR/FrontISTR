@@ -57,7 +57,7 @@ contains
     endif
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1,NumOfQuadPoints( ETYPE )
-      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0,cdsys )
+      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys, 0.d0 )
       if( .not. present(u) ) flag=INFINITESIMAL    ! enforce to infinitesimal deformation analysis
 
       if( flag==1 .and. ISET == 2 ) then
@@ -460,7 +460,7 @@ contains
     endif
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1, NumOfQuadPoints(etype)
-      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys  )
+      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys, 0.d0 )
 
       call getQuadPoint( etype, LX, localCoord(:) )
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )

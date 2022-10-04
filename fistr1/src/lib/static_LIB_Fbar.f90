@@ -135,7 +135,7 @@ contains
         temp = dot_product( temperature, spfunc )
         call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
       else
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
+        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, 0.d0 )
       end if
 
       if( flag == UPDATELAG ) then
