@@ -23,9 +23,6 @@
 #ifdef WITH_MKL
 #include <mkl.h>
 #endif
-#ifdef _WINDOWS
-#include <winsock.h>
-#endif
 
 extern void fstr_main();
 
