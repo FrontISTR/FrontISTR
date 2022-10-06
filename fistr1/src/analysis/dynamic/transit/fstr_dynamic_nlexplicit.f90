@@ -307,9 +307,10 @@ contains
       end do
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYN%t_delta )
 
-      if( fstrDYN%restart_nout > 0 .and. &
-          (mod(i,fstrDYN%restart_nout).eq.0 .or. i.eq.fstrDYN%n_step) ) then
-        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM)
+      if( fstrDYN%restart_nout > 0 ) then
+        if ( mod(i,fstrDYN%restart_nout).eq.0 .or. i.eq.fstrDYN%n_step ) then
+          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM)
+        end if
       end if
       !
       !C-- output new displacement, velocity and accelaration

@@ -9,7 +9,7 @@
 # REVOCAP_INCLUDE_PATH  Include path of REVOCAP_Coupler
 # REVOCAP_LIBRARIES     REVOCAP_Coupler libraries
 #
-# env REVOCAP_ROOT      Set REVOCAP_ROOT envionment variable,
+# env REVOCAP_ROOT      Set REVOCAP_ROOT environment variable,
 #                       where REVOCAP_Coupler are.
 #    ex. REVOCAP_ROOT=/home/someone/somewhere/REVOCAP_Coupler-2.1
 #

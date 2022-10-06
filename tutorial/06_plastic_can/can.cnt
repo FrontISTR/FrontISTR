@@ -6,7 +6,7 @@
 !WRITE,RESULT
 !WRITE,VISUAL
 ## Solver Control
-### Boundary Conditon
+### Boundary Condition
 !BOUNDARY, GRPID=1
  BND0, 3, 3, 0.000000
 !BOUNDARY, GRPID=1
@@ -34,7 +34,7 @@
  20000, 1
  1.0e-8, 1.0, 0.0
 ## Post Control
-!VISUAL,metod=PSR
+!VISUAL,method=PSR
 !surface_num=1
 !surface 1
 !output_type=VTK
