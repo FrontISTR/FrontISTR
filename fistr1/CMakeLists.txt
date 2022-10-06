@@ -55,8 +55,6 @@ install(TARGETS fistr
   DESTINATION bin
   CONFIGURATIONS ${CMAKE_BUILD_TYPE}
 )
-elseif(TOOLS_ONLY)
-  #do nothing here
 else()
 
 add_executable(fistr1 ${fistr1_SOURCES})

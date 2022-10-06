@@ -21,7 +21,7 @@ subroutine stiffMatrixCallerWrapper(hecMAT, ctime, tincr, cstep, maxn_gauss)
   hecmw_rank=hecmw_comm_get_rank()
   hecmw_comm=hecmw_comm_get_comm()
 
-  handle = fvhcall_install('./libfistr.so')
+  handle = fvhcall_install('libfistr.so')
   func = fvhcall_find(handle, 'stiffMatrixCalleeWrapper')
   args = fvhcall_args_alloc()
 
