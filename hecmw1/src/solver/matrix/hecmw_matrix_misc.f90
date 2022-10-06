@@ -95,6 +95,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_recycle_precond_setting
   public :: hecmw_mat_substitute
 
+  public :: hecmw_mat_block_transpose_33
+
   integer, parameter :: IDX_I_ITER               = 1
   integer, parameter :: IDX_I_METHOD             = 2
   integer, parameter :: IDX_I_PRECOND            = 3
@@ -808,5 +810,23 @@ contains
     dest%Rarray(:) = src%Rarray(:)
     call hecmw_cmat_substitute( dest%cmat, src%cmat )
   end subroutine hecmw_mat_substitute
+
+  subroutine hecmw_mat_block_transpose_33(mat)
+    real(kind=kreal), intent(inout) :: mat(9)
+
+    real(kind=kreal) :: tmp
+
+    tmp = mat(2)
+    mat(2) = mat(4)
+    mat(4) = tmp
+
+    tmp = mat(3)
+    mat(3) = mat(7)
+    mat(7) = tmp
+
+    tmp = mat(6)
+    mat(6) = mat(8)
+    mat(8) = tmp
+  end subroutine
 
 end module hecmw_matrix_misc

@@ -87,6 +87,9 @@ contains
     call hecmw_mat_dump(hecMAT, hecMESH)
     call hecmw_matvec_set_async(hecMAT)
 
+    !C-- setup matrix-vector product
+    call hecmw_matvec_setup (hecMESH, hecMAT)
+
     !C ITERATIVE solver
     error=0
     !! Auto Sigma_diag loop

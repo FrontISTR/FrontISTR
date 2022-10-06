@@ -23,7 +23,7 @@ module hecmw_precond_SSOR_33
   public:: hecmw_precond_SSOR_33_apply
   public:: hecmw_precond_SSOR_33_clear
 
-  integer(kind=kint) :: N
+  integer(kind=kint) :: N,NP
   real(kind=kreal), pointer :: D(:) => null()
   real(kind=kreal), pointer :: AL(:) => null()
   real(kind=kreal), pointer :: AU(:) => null()
@@ -68,7 +68,7 @@ contains
     real   (kind=kreal), allocatable :: CD(:)
     integer(kind=kint ) :: NCOLOR_IN
     real   (kind=kreal) :: SIGMA_DIAG
-    real   (kind=kreal) :: ALUtmp(3,3), PW(3)
+    real   (kind=kreal) :: ALUtmp(3,3), PW(3), Atmp(9)
     integer(kind=kint ) :: ii, i, j, k
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
@@ -92,7 +92,7 @@ contains
     !$ nthreads = omp_get_max_threads()
 
     N = hecMAT%N
-    ! N = hecMAT%NP
+    NP = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
     NContact = hecMAT%cmat%n_val
@@ -126,7 +126,7 @@ contains
 
     NPL = hecMAT%indexL(N)
     NPU = hecMAT%indexU(N)
-    allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
+    allocate(indexL(0:N), indexU(0:N), itemL(3*NPL), itemU(3*NPU))
     call hecmw_matrix_reorder_profile(N, perm, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       indexL, indexU, itemL, itemU)
@@ -161,6 +161,13 @@ contains
 
       call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
       call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
+    else
+      NPCL = 1
+      NPCU = 1
+      allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
+      indexCL(0:N) = 1
+      indexCU(0:N) = 1
+      allocate(CAL(9*NPCL), CAU(9*NPCU))
     end if
 
     allocate(ALU(9*N))
@@ -186,7 +193,7 @@ contains
       enddo
     endif
 
-    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW,Atmp),shared(N,ALU,SIGMA_DIAG)
     !$omp do
     do ii= 1, N
       ALUtmp(1,1)= ALU(9*ii-8) * SIGMA_DIAG
@@ -210,15 +217,35 @@ contains
           enddo
         enddo
       enddo
-      ALU(9*ii-8)= ALUtmp(1,1)
-      ALU(9*ii-7)= ALUtmp(1,2)
-      ALU(9*ii-6)= ALUtmp(1,3)
-      ALU(9*ii-5)= ALUtmp(2,1)
-      ALU(9*ii-4)= ALUtmp(2,2)
-      ALU(9*ii-3)= ALUtmp(2,3)
-      ALU(9*ii-2)= ALUtmp(3,1)
-      ALU(9*ii-1)= ALUtmp(3,2)
-      ALU(9*ii  )= ALUtmp(3,3)
+      Atmp(1)= ALUtmp(1,1)
+      Atmp(2)= ALUtmp(1,2)
+      Atmp(3)= ALUtmp(1,3)
+      Atmp(4)= ALUtmp(2,1)
+      Atmp(5)= ALUtmp(2,2)
+      Atmp(6)= ALUtmp(2,3)
+      Atmp(7)= ALUtmp(3,1)
+      Atmp(8)= ALUtmp(3,2)
+      Atmp(9)= ALUtmp(3,3)
+
+      ALU(9*ii  )= Atmp(9)
+      ALU(9*ii-1)= -Atmp(8)*Atmp(9)
+      ALU(9*ii-2)= (Atmp(4)*Atmp(8)-Atmp(7))*Atmp(9)
+      ALU(9*ii-3)= -Atmp(5)*Atmp(6)*ALU(9*ii)
+      ALU(9*ii-4)= Atmp(5)*(1.d0-Atmp(6)*ALU(9*ii-1))
+      ALU(9*ii-5)= -Atmp(5)*(Atmp(4)+Atmp(6)*ALU(9*ii-2))
+      ALU(9*ii-6)= -Atmp(1)*(Atmp(3)*ALU(9*ii)+Atmp(2)*ALU(9*ii-3))
+      ALU(9*ii-7)= -Atmp(1)*(Atmp(3)*ALU(9*ii-1)+Atmp(2)*ALU(9*ii-4))
+      ALU(9*ii-8)= Atmp(1)*(1.d0-Atmp(3)*ALU(9*ii-2)-Atmp(2)*ALU(9*ii-5))
+
+      !ALU(9*ii-8)= ALUtmp(1,1)
+      !ALU(9*ii-7)= ALUtmp(1,2)
+      !ALU(9*ii-6)= ALUtmp(1,3)
+      !ALU(9*ii-5)= ALUtmp(2,1)
+      !ALU(9*ii-4)= ALUtmp(2,2)
+      !ALU(9*ii-3)= ALUtmp(2,3)
+      !ALU(9*ii-2)= ALUtmp(3,1)
+      !ALU(9*ii-1)= ALUtmp(3,2)
+      !ALU(9*ii  )= ALUtmp(3,3)
     enddo
     !$omp end do
     !$omp end parallel
@@ -230,6 +257,36 @@ contains
     hecMAT%Iarray(97) = 0 ! numerical setup done
 
     if (DEBUG >= 1) write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
+
+    do ii=1,N
+      indexL(ii) = 3*indexL(ii)
+      indexU(ii) = 3*indexU(ii)
+    end do
+    do ii=NPL,1,-1
+      itemL(3*ii  ) = 3*itemL(ii)
+      itemL(3*ii-1) = 3*itemL(ii)-1
+      itemL(3*ii-2) = 3*itemL(ii)-2
+    end do
+    do ii=NPU,1,-1
+      itemU(3*ii  ) = 3*itemU(ii)
+      itemU(3*ii-1) = 3*itemU(ii)-1
+      itemU(3*ii-2) = 3*itemU(ii)-2
+    end do
+
+    !$omp parallel default(none),private(ii),shared(NPL,AL)
+    !$omp do
+    do ii=1,NPL
+      call hecmw_mat_block_transpose_33(AL(9*ii-8:9*ii))
+    end do
+    !$omp end do
+    !$omp end parallel
+    !$omp parallel default(none),private(ii),shared(NPU,AU)
+    !$omp do
+    do ii=1,NPU
+      call hecmw_mat_block_transpose_33(AU(9*ii-8:9*ii))
+    end do
+    !$omp end do
+    !$omp end parallel
 
   end subroutine hecmw_precond_SSOR_33_setup
 
@@ -283,11 +340,13 @@ contains
          sectorCacheSize0, sectorCacheSize1 )
   end subroutine setup_tuning_parameters
 
+
+
   subroutine hecmw_precond_SSOR_33_apply(ZP)
+    use hecmw_tuning_fx
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
-    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
-    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
+    integer(kind=kint) :: ic, i
 
     ! added for turning >>>
     integer(kind=kint) :: blockIndex
@@ -298,10 +357,54 @@ contains
     endif
     ! <<< added for turning
 
+    call hecmw_precond_SSOR_33_apply_inner( &
+    N,NP,ZP,AL,AU,D,ALU,itemL,itemU,indexL,indexU,perm,icToBlockIndex,blockIndexToColorIndex, &
+    indexL(N),indexU(N),NColor,numOfBlock, &
+    NContact,indexCL(N),indexCU(N),indexCL,itemCL,indexCU,itemCU,CAL,CAU)
+
+  end subroutine hecmw_precond_SSOR_33_apply
+
+  subroutine hecmw_precond_SSOR_33_apply_inner( &
+    N,NP,ZP,AL,AU,D,ALU,itemL,itemU,indexL,indexU,perm,icToBlockIndex,blockIndexToColorIndex, &
+    NPL,NPU,NColor,numOfBlock,NContact,NPCL,NPCU,indexCL,itemCL,indexCU,itemCU,CAL,CAU)
+    integer(kind=kint), intent(in)  :: N
+    integer(kind=kint), intent(in)  :: NP
+    real(kind=kreal), intent(inout) :: ZP(3*NP)
+    real(kind=kreal), intent(in)    :: AL(9*NPL)
+    real(kind=kreal), intent(in)    :: AU(9*NPU)
+    real(kind=kreal), intent(in)    :: D(9*N)
+    real(kind=kreal), intent(in)    :: ALU(9*N)
+    integer(kind=kint), intent(in)  :: itemL(NPL)
+    integer(kind=kint), intent(in)  :: itemU(NPU)
+    integer(kind=kint), intent(in)  :: indexL(0:N)
+    integer(kind=kint), intent(in)  :: indexU(0:N)
+    integer(kind=kint), intent(in)  :: perm(N)
+    integer(kind=kint), intent(in)  :: icToBlockIndex(0:NColor)
+    integer(kind=kint), intent(in)  :: blockIndexToColorIndex(0:numOfBlock+NColor)
+    integer(kind=kint), intent(in)  :: NPL
+    integer(kind=kint), intent(in)  :: NPU
+    integer(kind=kint), intent(in)  :: NColor
+    integer(kind=kint), intent(in)  :: numOfBlock
+    integer(kind=kint), intent(in)  :: NContact
+    integer(kind=kint), intent(in)  :: NPCL
+    integer(kind=kint), intent(in)  :: NPCU
+    integer(kind=kint), intent(in)  :: indexCL(0:NPCL)
+    integer(kind=kint), intent(in)  :: itemCL(N)
+    integer(kind=kint), intent(in)  :: indexCU(0:NPCU)
+    integer(kind=kint), intent(in)  :: itemCU(N)
+    real(kind=kreal), intent(in)    :: CAL(9*NPL)
+    real(kind=kreal), intent(in)    :: CAU(9*NPU)
+
+    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
+    integer(kind=kint) :: blockIndex
+    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
+
     !call start_collection("loopInPrecond33")
 
     !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
     !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
+
+    if( NColor > 1 .or. NContact > 0 ) then
 
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
@@ -324,13 +427,10 @@ contains
           ieL= indexL(i)
           do j= isL, ieL
             !k= perm(itemL(j))
-            k= itemL(j)
-            X1= ZP(3*k-2)
-            X2= ZP(3*k-1)
-            X3= ZP(3*k  )
-            SW1= SW1 - AL(9*j-8)*X1 - AL(9*j-7)*X2 - AL(9*j-6)*X3
-            SW2= SW2 - AL(9*j-5)*X1 - AL(9*j-4)*X2 - AL(9*j-3)*X3
-            SW3= SW3 - AL(9*j-2)*X1 - AL(9*j-1)*X2 - AL(9*j  )*X3
+            X1= ZP(itemL(j))
+            SW1= SW1 - AL(3*j-2)*X1
+            SW2= SW2 - AL(3*j-1)*X1
+            SW3= SW3 - AL(3*j  )*X1
           enddo ! j
 
           if (NContact.ne.0) then
@@ -348,17 +448,9 @@ contains
             enddo ! j
           endif
 
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - ALU(9*i-5)*X1
-          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
-          X3= ALU(9*i  )*  X3
-          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
-          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
-          ZP(3*iold-2)= X1
-          ZP(3*iold-1)= X2
-          ZP(3*iold  )= X3
+          ZP(3*iold-2)= ALU(9*i-8)*SW1+ALU(9*i-7)*SW2+ALU(9*i-6)*SW3
+          ZP(3*iold-1)= ALU(9*i-5)*SW1+ALU(9*i-4)*SW2+ALU(9*i-3)*SW3
+          ZP(3*iold  )= ALU(9*i-2)*SW1+ALU(9*i-1)*SW2+ALU(9*i  )*SW3
         enddo ! i
       enddo ! blockIndex
       !$omp end do
@@ -381,13 +473,10 @@ contains
           ieU= indexU(i)
           do j= ieU, isU, -1
             !k= perm(itemU(j))
-            k= itemU(j)
-            X1= ZP(3*k-2)
-            X2= ZP(3*k-1)
-            X3= ZP(3*k  )
-            SW1= SW1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
-            SW2= SW2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
-            SW3= SW3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+            X1= ZP(itemU(j))
+            SW1= SW1 + AU(3*j-2)*X1
+            SW2= SW2 + AU(3*j-1)*X1
+            SW3= SW3 + AU(3*j  )*X1
           enddo ! j
 
           if (NContact.gt.0) then
@@ -405,30 +494,63 @@ contains
             enddo ! j
           endif
 
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - ALU(9*i-5)*X1
-          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
-          X3= ALU(9*i  )*  X3
-          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
-          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
           iold = perm(i)
-          ZP(3*iold-2)=  ZP(3*iold-2) - X1
-          ZP(3*iold-1)=  ZP(3*iold-1) - X2
-          ZP(3*iold  )=  ZP(3*iold  ) - X3
+          ZP(3*iold-2)= ZP(3*iold-2) - ALU(9*i-8)*SW1 - ALU(9*i-7)*SW2 - ALU(9*i-6)*SW3
+          ZP(3*iold-1)= ZP(3*iold-1) - ALU(9*i-5)*SW1 - ALU(9*i-4)*SW2 - ALU(9*i-3)*SW3
+          ZP(3*iold  )= ZP(3*iold  ) - ALU(9*i-2)*SW1 - ALU(9*i-1)*SW2 - ALU(9*i  )*SW3
         enddo ! i
       enddo ! blockIndex
       !$omp end do
     enddo ! ic
     !$omp end parallel
 
-    !OCL END_CACHE_SUBSECTOR
-    !OCL END_CACHE_SECTOR_SIZE
+    else
 
-    !call stop_collection("loopInPrecond33")
+      !C-- FORWARD
+      do i = 1, N
+        iold = perm(i)
+        SW1= ZP(3*iold-2)
+        SW2= ZP(3*iold-1)
+        SW3= ZP(3*iold  )
+        isL= indexL(i-1)+1
+        ieL= indexL(i)
+        do j= isL, ieL
+          !k= perm(itemL(j))
+          X1= ZP(itemL(j))
+          SW1= SW1 - AL(3*j-2)*X1
+          SW2= SW2 - AL(3*j-1)*X1
+          SW3= SW3 - AL(3*j  )*X1
+        enddo ! j
 
-  end subroutine hecmw_precond_SSOR_33_apply
+        ZP(3*iold-2)= ALU(9*i-8)*SW1+ALU(9*i-7)*SW2+ALU(9*i-6)*SW3
+        ZP(3*iold-1)= ALU(9*i-5)*SW1+ALU(9*i-4)*SW2+ALU(9*i-3)*SW3
+        ZP(3*iold  )= ALU(9*i-2)*SW1+ALU(9*i-1)*SW2+ALU(9*i  )*SW3
+      enddo ! i
+
+      !C-- BACKWARD
+      do i = N, 1, -1
+        SW1= 0.d0
+        SW2= 0.d0
+        SW3= 0.d0
+        isU= indexU(i-1) + 1
+        ieU= indexU(i)
+        do j= ieU, isU, -1
+          X1= ZP(itemU(j))
+          SW1= SW1 + AU(3*j-2)*X1
+          SW2= SW2 + AU(3*j-1)*X1
+          SW3= SW3 + AU(3*j  )*X1
+        enddo ! j
+
+        iold = perm(i)
+        ZP(3*iold-2)= ZP(3*iold-2) - ALU(9*i-8)*SW1 - ALU(9*i-7)*SW2 - ALU(9*i-6)*SW3
+        ZP(3*iold-1)= ZP(3*iold-1) - ALU(9*i-5)*SW1 - ALU(9*i-4)*SW2 - ALU(9*i-3)*SW3
+        ZP(3*iold  )= ZP(3*iold  ) - ALU(9*i-2)*SW1 - ALU(9*i-1)*SW2 - ALU(9*i  )*SW3
+      enddo ! i
+
+    end if
+
+
+  end subroutine
 
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)
     implicit none

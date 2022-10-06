@@ -51,6 +51,8 @@ contains
     name_ID = 'fstrMSH'
     call hecmw_get_mesh( name_ID , hecMESH )
 
+    call hecmw_tuning_reorder_do(hecMESH, 20, 20, 20, 0.1d0)
+
     if( hecMESH%contact_pair%n_pair > 0 ) then
       paraContactFlag = .true.
       if( myrank == 0 ) then

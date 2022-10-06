@@ -17,6 +17,7 @@ module hecmw_solver_las
   private
 
   public :: hecmw_matvec
+  public :: hecmw_matvec_setup
   public :: hecmw_matvec_set_async
   public :: hecmw_matvec_unset_async
   public :: hecmw_matresid
@@ -33,6 +34,25 @@ module hecmw_solver_las
   real(kind=kreal), save :: time_Ax = 0.d0
 
 contains
+
+  !C
+  !C***
+  !C*** hecmw_matvec_setup
+  !C***
+  !C
+  subroutine hecmw_matvec_setup (hecMESH, hecMAT)
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    select case(hecMAT%NDOF)
+      case (3)
+        call hecmw_matvec_setup_33(hecMESH, hecMAT)
+      case default
+    end select
+
+  end subroutine hecmw_matvec_setup
 
   !C
   !C***
