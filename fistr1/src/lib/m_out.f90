@@ -209,7 +209,7 @@ contains
     else if( vtype==-4 ) then
       n_comp_valtype = ndim*ndim
     else if( vtype==-5 ) then
-      n_comp_valtype = ndim*4
+      n_comp_valtype = 12
     else
       n_comp_valtype = 0
     endif
