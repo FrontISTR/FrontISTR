@@ -26,7 +26,7 @@
 !SOLVER, METHOD=BICGSTAB, PRECOND=1, ITERLOG=NO, TIMELOG=YES, SCALING=NO
  100000, 1
  1.0e-8, 1.0, 0.0
-!VISUAL,metod=PSR
+!VISUAL,method=PSR
 !surface_num=1
 !surface 1
 !output_type=VTK

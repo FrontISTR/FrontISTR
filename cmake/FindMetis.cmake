@@ -6,7 +6,7 @@
 # Variables:
 #
 # METIS_FOUND         TRUE if FindMetis found metis
-# METIS_INCLUDE_PATH  Inclue path of metis
+# METIS_INCLUDE_PATH  Include path of metis
 # METIS_LIBRARIES     metis libraries
 #
 # METIS_VER_4         Set TRUE, if use metis-4

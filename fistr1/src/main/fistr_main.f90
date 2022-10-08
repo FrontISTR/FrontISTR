@@ -79,8 +79,6 @@ contains
         call fstr_heat_analysis
       case( kstSTATICEIGEN )
         call fstr_static_eigen_analysis
-      case( kstPRECHECK, kstNZPROF )
-        call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
     end select
 
     T3 = hecmw_Wtime()
@@ -167,7 +165,6 @@ contains
       hecMAT%NDOF = 1
     endif
     call hecMAT_init( hecMAT )
-
   end subroutine fstr_init
 
   !------------------------------------------------------------------------------
@@ -271,6 +268,8 @@ contains
 
     hecMAT%Rarray(:) = svRarray(:)
     hecMAT%Iarray(:) = svIarray(:)
+
+    call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID )
 
     if( myrank == 0) write(*,*) 'fstr_setup: OK'
     write(ILOG,*) 'fstr_setup: OK'
