@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This module provide a function to control nonsteady heat analysis
+!> \brief This module provide a function to control nonsteady heat analysis
 module m_heat_solve_TRAN
 contains
 
@@ -48,7 +48,7 @@ contains
 
     is_end = .false.
     hecMAT%NDOF = 1
-    hecMAT%Iarray(98) = 1 !Assmebly complete
+    hecMAT%Iarray(98) = 1 !Assembly complete
     hecMAT%X = 0.0d0
 
     if(fstrHEAT%beta == -1.0d0)then
@@ -64,7 +64,7 @@ contains
       call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, 0, total_time, .true.)
     endif
 
-    !C--------------------   START TRANSIET LOOP   ------------------------
+    !C--------------------   START TRANSIENT LOOP   ------------------------
     tr_loop: do
 
       if(end_time <= current_time + delta_time_base + delta_time_base*1.0d-6) then
@@ -148,7 +148,7 @@ contains
       current_time = next_time
       if( is_end ) exit
     enddo tr_loop
-    !C--------------------   END TRANSIET LOOP   ------------------------
+    !C--------------------   END TRANSIENT LOOP   ------------------------
 
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 

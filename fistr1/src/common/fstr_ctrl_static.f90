@@ -156,7 +156,7 @@ contains
     n = fstr_ctrl_get_data_line_n(ctrl)
     allocate( type_name_list(n) )
     !!
-    !! for avoiding stack overflow with intel 9 complier
+    !! for avoiding stack overflow with intel 9 compiler
     !!
     element_id_p => element_id(1)
     type_name_list_p => type_name_list(1)

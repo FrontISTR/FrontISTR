@@ -13,14 +13,14 @@ module mULoad
   type tULoad
     integer, pointer :: nodeID(:)=>null()    !< nodes' ID
     integer, pointer :: dof(:)=>null()       !< dof to be loaded
-    ! == add futher defintiions here ==
+    ! == add further definitions here ==
   end type
 
   type(tULoad), pointer, save :: uloads(:)=>null()
 
 contains
 
-  !> This suborutine read in variables needs to define user-defined external loads
+  !> This subroutine read in variables needs to define user-defined external loads
   integer function ureadload( fname )
     character(len=*), intent(in)    :: fname   !< input file name
     ureadload = 0

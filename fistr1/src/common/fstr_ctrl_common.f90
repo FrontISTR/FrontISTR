@@ -566,7 +566,7 @@ contains
   function fstr_ctrl_get_CONTACTPARAM( ctrl, contactparam )
     implicit none
     integer(kind=kint)    :: ctrl
-    type( tContactParam ) :: contactparam !< contact paramter
+    type( tContactParam ) :: contactparam !< contact parameter
     integer(kind=kint) :: fstr_ctrl_get_CONTACTPARAM
 
     integer(kind=kint) :: rcode
@@ -663,7 +663,7 @@ contains
   function fstr_get_AUTOINC( ctrl, aincparam )
     implicit none
     integer(kind=kint)    :: ctrl
-    type( tParamAutoInc ) :: aincparam !< auto increment paramter
+    type( tParamAutoInc ) :: aincparam !< auto increment parameter
     integer(kind=kint) :: fstr_get_AUTOINC
 
     integer(kind=kint) :: rcode
@@ -710,21 +710,21 @@ contains
     !input check
     rcode = 1
     if( Rs<0.d0 .or. Rs>1.d0 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease ratio Rs must 0 < Rs < 1.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : decrease ratio Rs must 0 < Rs < 1.'
     else if( any(bound_s<0) ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease NR bound must >= 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : decrease NR bound must >= 0.'
     else if( aincparam%NRtimes_s < 1 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to decrease must > 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : # of times to decrease must > 0.'
     else if( Rl<1.d0 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase ratio Rl must > 1.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : increase ratio Rl must > 1.'
     else if( any(bound_l<0) ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
     else if( aincparam%NRtimes_l < 1 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to increase must > 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : # of times to increase must > 0.'
     elseif( aincparam%ainc_Rc<0.d0 .or. aincparam%ainc_Rc>1.d0 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : cutback decrease ratio Rc must 0 < Rc < 1.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : cutback decrease ratio Rc must 0 < Rc < 1.'
     else if( aincparam%CBbound < 1 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : maximum # of cutback times must > 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : maximum # of cutback times must > 0.'
     else
       rcode =0
     end if

@@ -833,7 +833,7 @@ contains
           end do
         end if
 
-        !not fouund => exit
+        !not found => exit
         if( grp_ID(i) == -1 ) then
           write(msg,*) '### Error: ', header_name,' : Node group "',grp_id_name(i),'" does not exist.'
           call fstr_setup_util_err_stop(msg)
@@ -1382,8 +1382,8 @@ contains
   !-----------------------------------------------------------------------------!
   ! FSTR_SETUP_VISUALIZE                                                        !
   ! 1) Seeking header to 'WRITE'                                                !
-  ! 2) If parameter 'VISUAL' exists, then 'hecmw_vis.ini' is opend.             !
-  ! 3) All following lines under the header are writen to the opend file        !
+  ! 2) If parameter 'VISUAL' exists, then 'hecmw_vis.ini' is opened.            !
+  ! 3) All following lines under the header are written to the opened file      !
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_visualize( ctrl, hecMESH )

@@ -255,7 +255,7 @@ fstr_ctrl_data *c_fstr_ctrl_open(const char *filename) {
     return NULL;
   }
 
-#if 0 /* all PE reading fstr contorl */
+#if 0 /* all PE reading fstr control */
   /* #ifndef HECMW_SERIAL */
   {
     int i;

@@ -22,7 +22,7 @@ contains
     real(kind=kreal), intent(out) :: D(:,:)    !< strain-stress relation
     real(kind=kreal), intent(in)  :: dtime     !< time increment
     real(kind=kreal), intent(in)  :: ttime     !< total time at the start of the current increment
-    real(kind=kreal), optional    :: temperature !< temprature
+    real(kind=kreal), optional    :: temperature !< temperature
 
   end subroutine
 

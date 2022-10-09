@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides a subroutine for all boundary conditions
-!! needed in heat anaylsis
+!! needed in heat analysis
 module m_heat_mat_ass_boundary
 contains
 

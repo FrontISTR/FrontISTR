@@ -62,7 +62,7 @@ install(TARGETS fistr1
 )
 
 #
-# Bulid tools
+# Build tools
 #
 if(WITH_TOOLS)
   add_subdirectory(tools)

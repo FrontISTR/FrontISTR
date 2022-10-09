@@ -63,7 +63,7 @@ void CHECData::WriteLine(const char *s) { fprintf(fp, "%s\n", s); }
 // fmt : format of parameters.
 //       Each character specify the parameter's type
 //         'I': integer, 'F':float, 'S':string
-// ... : piars of parameter name and value
+// ... : pairs of parameter name and value
 
 void CHECData::WriteHeader(const char *name, const char *fmt, ...) {
   va_list va;
@@ -156,7 +156,7 @@ void CHECData::WriteParameter(const char *fmt, ...) {
 // ----------------------------------------------------------------------------
 // Data Line
 // ----------------------------------------------------------------------------
-// fmt : formt of data like one of WriteHeader
+// fmt : format of data like one of WriteHeader
 // ... : values to write the file.
 
 void CHECData::WriteData(const char *fmt, ...) {

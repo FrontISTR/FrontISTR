@@ -2,13 +2,13 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>  \brief   This module manage the data structure for contact calculation
+!>  \brief  This module manages the data structure for contact calculation
 !!
 !!  Contact calculation takes into act after calling the following three
 !!  subrotuines provided in this module
 !!-#      Reading contact definition with subroutine: fstr_ctrl_get_CONTACT
 !!-#      Check its consistency with mesh definition: fstr_contact_check
-!!-#      Initilizing the contact calculation       : fstr_contact_init
+!!-#      Initializing the contact calculation      : fstr_contact_init
 module mContactDef
 
   use hecmw
@@ -41,7 +41,7 @@ module mContactDef
     ! 1: TIED-Just rigidly fixed the two surfaces
     ! 2: GLUED-Distance between the two surfaces to zero and glue them
     ! 3: SSLID-Small sliding contact( no position but with contact state change)
-    ! 4: FSLID-Finite sliding contact (both changes in contact state and poisition possible)
+    ! 4: FSLID-Finite sliding contact (both changes in contact state and position possible)
     integer                       :: algtype                 !< algorithm flag
 
     logical                       :: mpced                   !< if turns into mpc condition
@@ -50,7 +50,7 @@ module mContactDef
     ! following contact state
     type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes
 
-    type(hecmwST_contact_comm)     :: comm                    !< contact communication table
+    type(hecmwST_contact_comm)    :: comm                    !< contact communication table
     type(bucketDB)                :: master_bktDB            !< bucket DB for master surface
 
     type(tContactParam), pointer  :: cparam=>null()          !< contact parameter
@@ -119,7 +119,7 @@ contains
     call bucketDB_finalize( contact%master_bktDB )
   end subroutine
 
-  !>  Check the consistency with given mesh of contact defintiion
+  !>  Check the consistency with given mesh of contact definition
   logical function fstr_contact_check( contact, hecMESH )
     type(tContact), intent(inout)     :: contact  !< contact definition
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
@@ -295,18 +295,18 @@ contains
   !!-# Clear lagrangian multipliers when free to contact
   subroutine scan_contact_state( flag_ctAlgo, contact, currpos, currdisp, ndforce, infoCTChange, &
       nodeID, elemID, is_init, active, mu, B )
-    character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
+    character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
-    real(kind=kreal), intent(in)                     :: currpos(:)    !< current coordinate of each nodes
-    real(kind=kreal), intent(in)                     :: currdisp(:)    !< current displacement of each nodes
-    real(kind=kreal), intent(in)                     :: ndforce(:)    !< nodal force
-    integer(kind=kint), intent(in)                  :: nodeID(:)     !< global nodal ID, just for print out
-    integer(kind=kint), intent(in)                  :: elemID(:)     !< global elemental ID, just for print out
-    logical, intent(in)                              :: is_init       !< wheather initial scan or not
-    logical, intent(out)                            :: active        !< if any in contact
-    real(kind=kreal), intent(in)                     :: mu            !< penalty
-    real(kind=kreal), optional, target               :: B(:)          !< nodal force residual
+    real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
+    real(kind=kreal), intent(in)                     :: currdisp(:)  !< current displacement of each nodes
+    real(kind=kreal), intent(in)                     :: ndforce(:)   !< nodal force
+    integer(kind=kint), intent(in)                   :: nodeID(:)    !< global nodal ID, just for print out
+    integer(kind=kint), intent(in)                   :: elemID(:)    !< global elemental ID, just for print out
+    logical, intent(in)                              :: is_init      !< whether initial scan or not
+    logical, intent(out)                             :: active       !< if any in contact
+    real(kind=kreal), intent(in)                     :: mu           !< penalty
+    real(kind=kreal), optional, target               :: B(:)         !< nodal force residual
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
@@ -783,8 +783,8 @@ contains
 
   end subroutine reset_contact_force
 
-  !>\brief This subroutine update contact condition as follows:
-  !!-# Contact force from multipler and disp increment
+  !>\brief This subroutine updates contact condition as follows:
+  !!-# Contact force from multiplier and disp increment
   !!-# Update nodal force residual
   subroutine calcu_contact_force0( contact, coord, disp, ddisp, fcoeff, mu,     &
       mut, B )
@@ -870,7 +870,7 @@ contains
     real(kind=kreal), intent(in)      :: fcoeff         !< frictional coeff
     real(kind=kreal), intent(in)      :: mu, mut        !< penalty
     real(kind=kreal), intent(out)     :: gnt(2)         !< convergency information
-    logical, intent(inout)            :: ctchanged       !< if contact state changes
+    logical, intent(inout)            :: ctchanged      !< if contact state changes
 
     integer(kind=kint)  :: slave,  etype, master
     integer(kind=kint)  :: nn, i, j, iSS, cnt
@@ -1156,7 +1156,7 @@ contains
     real(kind=kreal), intent(in)                    :: currdisp(:)  !< current displacement of each nodes
     integer(kind=kint), intent(in)                  :: nodeID(:)    !< global nodal ID, just for print out
     integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
-    logical, intent(in)                             :: is_init      !< wheather initial scan or not
+    logical, intent(in)                             :: is_init      !< whether initial scan or not
     logical, intent(out)                            :: active       !< if any in contact
 
     real(kind=kreal)    :: distclr

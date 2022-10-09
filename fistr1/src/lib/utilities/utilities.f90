@@ -11,7 +11,7 @@ module m_utilities
 
 contains
 
-  !> Record used memeory
+  !> Record used memory
   subroutine memget(var,dimn,syze)
     integer :: var,dimn,syze,bite
     parameter(bite=1)
@@ -101,7 +101,7 @@ contains
   end subroutine
 
   !> Compute eigenvalue and eigenvetor for symmetric 3*3 tensor using
-  !> Jacobi iteration adapted from numerical recpies
+  !> Jacobi iteration adapted from numerical recipes
   subroutine eigen3 (tensor, eigval, princ)
     real(kind=kreal), intent(in)  :: tensor(6)     !< tensor
     real(kind=kreal), intent(out) :: eigval(3)     !< vector containing the eigvalches

@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>  \brief   This module provides functions to calcualte contact stiff matrix
+!>  \brief   This module provides functions to calculate contact stiff matrix
 module mContact
 
   use mContactDef
@@ -21,9 +21,9 @@ module mContact
   real(kind=kreal), save :: cgn=1.d-5 !< convergent condition of penetration
   real(kind=kreal), save :: cgt=1.d-3 !< convergent condition of relative tangent disp
 
-  real(kind=kreal), save :: gnt(2)    !< 1:current avarage penetration;
+  real(kind=kreal), save :: gnt(2)    !< 1:current average penetration;
   !< 2:current relative tangent displacement
-  real(kind=kreal), save :: bakgnt(2) !< 1:current avarage penetration;
+  real(kind=kreal), save :: bakgnt(2) !< 1:current average penetration;
   !< 2:current relative tangent displacement!
 
 contains

@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions to read in and write out
-!>         restart fiels
+!>         restart files
 
 module m_fstr_Restart
   use m_utilities

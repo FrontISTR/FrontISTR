@@ -133,7 +133,7 @@ contains
     ITMAX = 20
     EPS   = 1.0d-6
 
-    ! -------  grobal pointer setting ----------
+    ! -------  global pointer setting ----------
     REF_TEMP => fstrPR%ref_temp
     IECHO    => fstrPR%fg_echo
     IRESULT  => fstrPR%fg_result
@@ -371,7 +371,7 @@ contains
   end subroutine fstr_dynamic_analysis
 
   !=============================================================================!
-  !> Master subroutine of static -> eigen anaylsis                              !
+  !> Master subroutine of static -> eigen analysis                              !
   !=============================================================================!
 
   subroutine fstr_static_eigen_analysis

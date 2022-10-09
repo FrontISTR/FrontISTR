@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module provides functions to take into acount external load
+!> \brief  This module provides functions to take into account external load
 
 module m_fstr_ass_load
   implicit none

@@ -25,7 +25,7 @@ contains
     real(kind=kreal), intent(in)     :: ttime     !< total time at the start of the current increment
     real(kind=kreal), intent(in)     :: dtime     !< time length of the increment
     real(kind=kreal), intent(out)    :: stiffness(6,6) !< stiffness
-    real(kind=kreal), optional       :: temp      !> temprature
+    real(kind=kreal), optional       :: temp      !> temperature
 
     integer :: i, j
     logical :: ierr
@@ -127,7 +127,7 @@ contains
     real(kind=kreal), intent(out)    :: plstrain  !< plastic strain increment
     real(kind=kreal), intent(in)     :: ttime     !< total time at the start of the current increment
     real(kind=kreal), intent(in)     :: dtime     !< time length of the increment
-    real(kind=kreal), optional       :: temp      !> temprature
+    real(kind=kreal), optional       :: temp      !> temperature
 
     integer :: i
     logical :: ierr
