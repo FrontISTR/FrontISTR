@@ -552,7 +552,7 @@ contains
         gderiv0(nn+1, :) = -2.0D0*naturalcoord(1)*inverse0(1, :)/det0
         gderiv0(nn+2, :) = -2.0D0*naturalcoord(2)*inverse0(2, :)/det0
         gderiv0(nn+3, :) = -2.0D0*naturalcoord(3)*inverse0(3, :)/det0
-        F(1:3,1:3) = F(1:3,1:3) + matmul( u(1:ndof, 1:nn+3)+du(1:ndof, 1:nn+3), gderiv0(1:nn+3, 1:ndof) )
+        F(1:3,1:3) = F(1:3,1:3) + matmul( totaldisp(1:ndof, 1:nn+3), gderiv0(1:nn+3, 1:ndof) )
 
       end if
 
