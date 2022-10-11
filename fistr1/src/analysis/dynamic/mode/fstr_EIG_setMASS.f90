@@ -75,7 +75,7 @@ contains
         elseif(ic_type == 341 .or. ic_type == 342 .or. ic_type == 351 .or. ic_type == 352 .or. &
              & ic_type == 361 .or. ic_type == 362 )then
           call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass, lumped)
-		  
+
         elseif(ic_type==731 .or. ic_type==741 .or. ic_type==743) then
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           thick = fstrSOLID%materials(cid)%variables(M_THICK)
@@ -160,7 +160,7 @@ contains
             fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val
 
           else
-            do k = 1, 3
+            do k = 1, NDOF
               fstrEIG%mass(js+k) = fstrEIG%mass(js+k) + lumped(NDOF*(j-1)+k)
             enddo
           endif
