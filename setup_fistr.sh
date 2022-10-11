@@ -21,13 +21,13 @@ do
 	if [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 	#else
-	#	echo "Unknown paramer: " $i " (ignored, -h:help)"
+	#	echo "Unknown parameter: " $i " (ignored, -h:help)"
 	fi
 done
 
 #------------------------------------------------------------------------------#
 #
-# create intermidiate config file
+# create intermediate config file
 #
 sed -e "s!\([[:alnum:]_]\)[[:blank:]]*=[[:blank:]]*\(.*\)!\1='\2'!g" \
 	${HECMW_CONFIGFILE} > ${INTERMED_CONFIGFILE}

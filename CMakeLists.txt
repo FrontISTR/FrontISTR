@@ -115,7 +115,7 @@ set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH BUILD_DATE GIT_HASH)
 
 #############################################
-# Archtecture and compiler dependent options
+# Architecture and compiler dependent options
 #############################################
 if(WIN32)
   set(WINDOWS TRUE)
@@ -345,7 +345,7 @@ endif()
 mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
 
 #############################################
-# Archtecture and compiler dependent options
+# Architecture and compiler dependent options
 #############################################
 ###################
 # -DWINDOWS

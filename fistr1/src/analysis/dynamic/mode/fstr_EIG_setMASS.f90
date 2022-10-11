@@ -160,7 +160,7 @@ contains
             fstrEIG%mass(js+3) = fstrEIG%mass(js+3) + val
 
           else
-            do k = 1, NDOF
+            do k = 1, 3
               fstrEIG%mass(js+k) = fstrEIG%mass(js+k) + lumped(NDOF*(j-1)+k)
             enddo
           endif
