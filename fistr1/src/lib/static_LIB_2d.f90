@@ -427,9 +427,9 @@ contains
     real(kind=kreal),   intent(in)     :: u(2,nn)
     real(kind=kreal),   intent(in)     :: ddu(2,nn)
     real(kind=kreal),   intent(out)    :: qf(:)
-    real(kind=kreal), intent(in), optional :: TT(nn)   !< current temperature
-    real(kind=kreal), intent(in), optional :: T0(nn)   !< reference temperature
-    real(kind=kreal), intent(in), optional :: TN(nn)   !< reference temperature
+    real(kind=kreal),   intent(in)     :: TT(nn)   !< current temperature
+    real(kind=kreal),   intent(in)     :: T0(nn)   !< reference temperature
+    real(kind=kreal),   intent(in)     :: TN(nn)   !< reference temperature
 
 
     integer(kind=kint), parameter :: ndof=2
@@ -466,11 +466,11 @@ contains
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )
       !
       EPSTH = 0.d0
-      if( present(TT) .AND. present(T0) ) then
-        call getShapeFunc( ETYPE, localcoord, H(:) )
-        ttc = dot_product(TT(:), H(:))
-        tt0 = dot_product(T0(:), H(:))
-        ttn = dot_product(TN(:), H(:))
+      call getShapeFunc( ETYPE, localcoord, H(:) )
+      ttc = dot_product(TT(:), H(:))
+      tt0 = dot_product(T0(:), H(:))
+      ttn = dot_product(TN(:), H(:))
+      if( dabs(ttc-tt0) > 1.d-14 ) then
         ina(1) = ttc
         call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
         if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)

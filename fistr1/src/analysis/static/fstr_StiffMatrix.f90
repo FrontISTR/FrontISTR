@@ -40,6 +40,8 @@ contains
     call hecmw_mat_clear( hecMAT )
 
     ndof = hecMAT%NDOF
+    tt(:) = 0.d0
+
     do itype= 1, hecMESH%n_elem_type
       is= hecMESH%elem_type_index(itype-1) + 1
       iE= hecMESH%elem_type_index(itype  )
@@ -97,60 +99,29 @@ contains
         elseif ( ic_type==361 ) then
 
           if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-              call STF_C3                                                                              &
-                ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
-            else
-              call STF_C3                                                                     &
-                ( ic_type,nn,ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),          &
-                stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
-            endif
-          else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-              call STF_C3D8Bbar                                                                        &
-                ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
-            else
-              call STF_C3D8Bbar                                                               &
-                ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),        &
-                stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
-            endif
-          else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-              CALL STF_C3D8IC                                                              &
-                ( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-                stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
-                fstrSOLID%elements(icel)%aux, tt(1:nn) )
-            else
-              CALL STF_C3D8IC                                                              &
-                ( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-                stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
-                fstrSOLID%elements(icel)%aux )
-            endif
-          else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-              call STF_C3D8Fbar                                                                        &
-                ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
-            else
-              call STF_C3D8Fbar                                                               &
-                ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),        &
-                stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
-            endif
-          endif
-
-        elseif (ic_type==341 .or. ic_type==351 .or.                     &
-            ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
-          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
             call STF_C3                                                                              &
               ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
               stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
-          else
-            call STF_C3                                                                     &
-              ( ic_type,nn,ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),          &
-              stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
+          else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
+            call STF_C3D8Bbar                                                                        &
+              ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
+              stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
+          else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
+            call STF_C3D8IC                                                              &
+              ( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+              stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
+              fstrSOLID%elements(icel)%aux, tt(1:nn) )
+          else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
+            call STF_C3D8Fbar                                                                        &
+              ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
+              stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
           endif
+
+        elseif (ic_type==341 .or. ic_type==351 .or.                     &
+          ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
+          call STF_C3                                                                              &
+            ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
+            stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
 
         else if( ic_type == 611) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )

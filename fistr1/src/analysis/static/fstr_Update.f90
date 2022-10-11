@@ -134,17 +134,10 @@ contains
         if( getSpaceDimension( ic_type ) == 2 ) thick = 1.0d0
 
         if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
-
-          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-            call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
-              thick,fstrSOLID%elements(icel)%iset,                             &
-              total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
-              tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-          else
-            call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
-              thick,fstrSOLID%elements(icel)%iset,           &
-              total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof) )
-          endif
+          call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
+            thick,fstrSOLID%elements(icel)%iset,                             &
+            total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
+            tt(1:nn), tt0(1:nn), ttn(1:nn)  )
 
         else if( ic_type == 301 ) then
           isect= hecMESH%section_ID(icel)
@@ -156,50 +149,24 @@ contains
         else if( ic_type == 361 ) then
 
           if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-              call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-                qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-            else
-              call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-                qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
-            endif
+            call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-              call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
-                qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-            else
-              call Update_C3D8Bbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-                qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
-            endif
+            call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
+              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-              call UPDATE_C3D8IC( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), cdsys_ID, coords,&
-                qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, &
-                fstrSOLID%elements(icel)%aux, ddaux(1:3,1:3), tt(1:nn), tt0(1:nn), ttn(1:nn) )
-            else
-              call UPDATE_C3D8IC( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), cdsys_ID, coords,&
-                qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, &
-                fstrSOLID%elements(icel)%aux, ddaux(1:3,1:3) )
-            endif
+            call UPDATE_C3D8IC( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), cdsys_ID, coords,&
+              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, &
+              fstrSOLID%elements(icel)%aux, ddaux(1:3,1:3), tt(1:nn), tt0(1:nn), ttn(1:nn) )
             fstrSOLID%elements(icel)%aux(1:3,1:3) = fstrSOLID%elements(icel)%aux(1:3,1:3) + ddaux(1:3,1:3)
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-              call UPDATE_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
-                qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-            else
-              call Update_C3D8Fbar( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-                qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
-            endif
+            call UPDATE_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
+              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
           endif
 
         else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
-          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
-            call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-          else
-            call UPDATE_C3( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr )
-          endif
+          call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
 
         else if( ic_type == 611) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
