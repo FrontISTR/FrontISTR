@@ -16,32 +16,21 @@ contains
     type( tMaterial ), intent(in) :: matl       !> material properties
     integer, intent(in)           :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(out) :: D(:,:)     !> elastic matrix
-    real(kind=kreal), optional    :: temp       !> temperature
+    real(kind=kreal), intent(in)  :: temp       !> temperature
     real(kind=kreal) :: EE, PP, COEF1, COEF2, ina(1), outa(2)
     logical :: ierr
 
     D(:,:)=0.d0
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
-      if( ierr ) then
-        ee = matl%variables(M_YOUNGS)
-        pp = matl%variables(M_POISSON)
-      else
-        EE = outa(1)
-        PP = outa(2)
-      endif
-    else
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr )
-      if( ierr ) then
-        ee = matl%variables(M_YOUNGS)
-        pp = matl%variables(M_POISSON)
-      else
-        EE = outa(1)
-        PP = outa(2)
-      endif
-    endif
 
+    ina(1) = temp
+    call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
+    if( ierr ) then
+      ee = matl%variables(M_YOUNGS)
+      pp = matl%variables(M_POISSON)
+    else
+      EE = outa(1)
+      PP = outa(2)
+    endif
 
     select case (sectType)
       case (D3)
@@ -114,23 +103,16 @@ contains
     integer, intent(in)           :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(in)  :: bij(3,3)   !> director
     real(kind=kreal), intent(out) :: DMAT(:,:)  !> elastic matrix
-    real(kind=kreal), optional    :: temp       !> temperature
+    real(kind=kreal), intent(in)  :: temp       !> temperature
     real(kind=kreal) :: E1, E2, E3, G12, G23, G13, nyu12, nyu23,nyu13
     real(kind=kreal) :: nyu21,nyu32,nyu31, delta1, ina(1), outa(9)
     real(kind=kreal) :: tm(6,6)
     logical :: ierr
 
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData( MC_ORTHOELASTIC, matl%dict, outa, ierr, ina )
-      if( ierr ) then
-        stop "Fails in fetching orthotropic elastic constants!"
-      endif
-    else
-      call fetch_TableData( MC_ORTHOELASTIC, matl%dict, outa, ierr )
-      if( ierr ) then
-        stop "Fails in fetching orthotropic elastic constants!"
-      endif
+    ina(1) = temp
+    call fetch_TableData( MC_ORTHOELASTIC, matl%dict, outa, ierr, ina )
+    if( ierr ) then
+      stop "Fails in fetching orthotropic elastic constants!"
     endif
 
     E1    = outa(1)

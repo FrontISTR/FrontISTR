@@ -42,7 +42,7 @@ contains
     real(kind=kreal), intent(in)    :: time                   !< current time
     real(kind=kreal), intent(in)    :: tincr                  !< time increment
     real(kind=kreal), intent(in), optional :: u(:, :)         !< nodal displacemwent
-    real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
+    real(kind=kreal), intent(in)    :: temperature(nn)        !< temperature
 
     !---------------------------------------------------------------------
 
@@ -85,13 +85,9 @@ contains
         end if
       end if
 
-      if( present(temperature) ) then
-        call getShapeFunc( etype, naturalcoord, spfunc )
-        temp = dot_product( temperature, spfunc )
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
-      else
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
-      end if
+      call getShapeFunc( etype, naturalcoord, spfunc )
+      temp = dot_product( temperature, spfunc )
+      call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
 
       if( flag == UPDATELAG ) then
         call GEOMAT_C3( gausses(LX)%stress, mat )
@@ -228,9 +224,9 @@ contains
     integer, intent(in) :: iter
     real(kind=kreal), intent(in)      :: time          !< current time
     real(kind=kreal), intent(in)      :: tincr         !< time increment
-    real(kind=kreal), intent(in), optional :: TT(nn)   !< current temperature
-    real(kind=kreal), intent(in), optional :: T0(nn)   !< reference temperature
-    real(kind=kreal), intent(in), optional :: TN(nn)   !< reference temperature
+    real(kind=kreal), intent(in)      :: TT(nn)        !< current temperature
+    real(kind=kreal), intent(in)      :: T0(nn)        !< reference temperature
+    real(kind=kreal), intent(in)      :: TN(nn)        !< reference temperature
 
     !---------------------------------------------------------------------
 
@@ -261,11 +257,9 @@ contains
     end if
 
     matlaniso = .FALSE.
-    if( cdsys_ID > 0 .AND. present(TT) ) then
-      ina = TT(1)
-      call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
-      if( .not. ierr ) matlaniso = .TRUE.
-    end if
+    ina = TT(1)
+    call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
+    if( .not. ierr ) matlaniso = .TRUE.
 
     ! dilatation at centroid
     naturalCoord = 0.0D0
@@ -300,14 +294,11 @@ contains
       ! ========================================================
 
       ! Thermal Strain
-      EPSTH = 0.0D0
-      if( present(tt) .AND. present(t0) ) then
-        call getShapeFunc(etype, naturalcoord, spfunc)
-        ttc = dot_product(TT, spfunc)
-        tt0 = dot_product(T0, spfunc)
-        ttn = dot_product(TN, spfunc)
-        call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
-      end if
+      call getShapeFunc(etype, naturalcoord, spfunc)
+      ttc = dot_product(TT, spfunc)
+      tt0 = dot_product(T0, spfunc)
+      ttn = dot_product(TN, spfunc)
+      call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
 
       ! Update strain
       ! Small strain
@@ -351,11 +342,7 @@ contains
       end if
 
       ! Update stress
-      if( present(tt) .AND. present(t0) ) then
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
-      else
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr )
-      end if
+      call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
 
       ! ========================================================
       ! calculate the internal force ( equivalent nodal force )
