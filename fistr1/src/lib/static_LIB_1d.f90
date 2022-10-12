@@ -74,7 +74,7 @@ contains
     !---------------------------------------------------------------------*
     use m_fstr
     use mMechGauss
-    ! I/F VARIAVLES
+    ! I/F VARIABLES
     integer(kind=kint), intent(in)     :: etype           !< \param [in] element type
     integer(kind=kint), intent(in)     :: nn              !< \param [in] number of elemental nodes
     real(kind=kreal),   intent(in)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
@@ -86,7 +86,7 @@ contains
     real(kind=kreal),   intent(in), optional :: TT(nn)    !< current temperature
     real(kind=kreal),   intent(in), optional :: T0(nn)    !< reference temperature
 
-    ! LCOAL VARIAVLES
+    ! LOCAL VARIABLES
     real(kind=kreal)   :: direc(3), direc0(3)
     real(kind=kreal)   :: llen, llen0, ina(1), outa(1)
     real(kind=kreal)   :: elem(3,nn)

@@ -2,9 +2,9 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module manage surface elements in 3D
+!> \brief  This module manages surface elements in 3D
 !>  It provides basic definition of surface elements (trianglar and quadrilateral)
-!!  and functions for fetch its neighborhood information
+!!  and functions for fetching its neighborhood information
 module mSurfElement
   use hecmw, only: kint, kreal
   implicit none
@@ -21,7 +21,7 @@ module mSurfElement
     integer(kind=kint)              :: etype                !< type of surface element
     integer(kind=kint), pointer     :: nodes(:)=>null()     !< nodes index(global)
     integer(kind=kint)              :: n_neighbor           !< number of neighborhood tSurfElement
-    integer(kind=kint)              :: n_neighbor_max       !< maximum size of neighber(:)
+    integer(kind=kint)              :: n_neighbor_max       !< maximum size of neighbor(:)
     integer(kind=kint), pointer     :: neighbor(:)=>null()  !< index(global) of neighborhood tSurfElement
     real(kind=kreal)                :: reflen               !< reference length
     real(kind=kreal)                :: xavg(3)              !< current coordinate of element center
@@ -56,7 +56,7 @@ contains
     surf%bktID   = -1
   end subroutine
 
-  !> Memeory management subroutine
+  !> Memory management subroutine
   subroutine finalize_surf( surf )
     type(tSurfElement), intent(inout) :: surf   !< surface element
     if( associated(surf%nodes) ) deallocate( surf%nodes )

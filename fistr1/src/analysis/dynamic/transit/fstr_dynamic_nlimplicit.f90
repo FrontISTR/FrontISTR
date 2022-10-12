@@ -110,7 +110,7 @@ contains
     !> mass matrix
     !call fstr_MassMatrix(hecMESH, fstrSOLID, matM)
 
-    hecMAT%Iarray(98) = 1   !Assmebly complete
+    hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
 
     !> time step loop
@@ -255,7 +255,7 @@ contains
       enddo
       !C *****************************************************
 
-      !C-- new displacement, velocity and accelaration
+      !C-- new displacement, velocity and acceleration
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
         fstrDYNAMIC%ACC (j,2) = -a1*fstrDYNAMIC%ACC(j,1) - a2*fstrDYNAMIC%VEL(j,1) + &
@@ -279,7 +279,7 @@ contains
         endif
       endif
 
-      !C-- output new displacement, velocity and accelaration
+      !C-- output new displacement, velocity and acceleration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
       !C-- output result of monitoring node
@@ -527,7 +527,7 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
 
-    hecMAT%Iarray(98) = 1   !Assmebly complete
+    hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
 
     !> initialize variables
@@ -771,7 +771,7 @@ contains
 
       enddo loopFORcontactAnalysis
       !
-      !C-- new displacement, velocity and accelaration
+      !C-- new displacement, velocity and acceleration
       !C
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
@@ -796,7 +796,7 @@ contains
           infoCTChange%contactNode_current)
       endif
 
-      !C-- output new displacement, velocity and accelaration
+      !C-- output new displacement, velocity and acceleration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
       !C-- output result of monitoring node

@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module provides functions to caluclation nodal stress
+!> \brief  This module provides functions to calculation nodal stress
 module m_fstr_NodalStress
   implicit none
   private :: NodalStress_INV3, NodalStress_INV2, inverse_func

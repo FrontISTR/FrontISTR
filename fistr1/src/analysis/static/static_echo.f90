@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This module provide a function to ECHO for IFSTR solver
+!> \brief This module provide a function to ECHO for IFSTR solver
 module m_static_echo
 contains
   !C
@@ -83,7 +83,7 @@ contains
       enddo
     enddo
     !C +-------------------------------+
-    !C | ELEMEN GROUP                  |
+    !C | ELEMENT GROUP                 |
     !C +-------------------------------+
     write(ILOG,*) '### Egroup'
     do ig1= 1, hecMESH%elem_group%n_grp

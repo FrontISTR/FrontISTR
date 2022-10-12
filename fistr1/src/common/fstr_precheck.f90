@@ -231,7 +231,7 @@ contains
         asp = almax/almin
         if( asp.gt.aspmax ) aspmax = asp
         if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif
@@ -295,7 +295,7 @@ contains
         asp = almax/almin
         if( asp.gt.aspmax ) aspmax = asp
         if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif
@@ -356,7 +356,7 @@ contains
         asp = almax/almin
         if( asp.gt.aspmax ) aspmax = asp
         if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif

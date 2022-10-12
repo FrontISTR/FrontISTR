@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module provides function to calcualte tangent stiffness matrix.
+!> \brief  This module provides function to calculate tangent stiffness matrix.
 
 module m_fstr_StiffMatrix
   use m_fstr

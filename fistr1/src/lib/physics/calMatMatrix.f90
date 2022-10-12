@@ -125,7 +125,7 @@ contains
     real(kind=kreal), intent(in)        :: cdsys(3,3) !> material coordinate system
     real(kind=kreal), intent(in), optional  :: time   !> current time
     real(kind=kreal), intent(in), optional  :: dtime  !> time increment
-    real(kind=kreal), optional          :: temp       !> current temprature
+    real(kind=kreal), optional          :: temp       !> current temperature
     real(kind=kreal), optional          :: tempn      !> temperature at last step
 
     if( gauss%pMaterial%mtype==NEOHOOKE .or. gauss%pMaterial%mtype==MOONEYRIVLIN ) then

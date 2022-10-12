@@ -94,7 +94,7 @@ contains
     integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: dt        !< time increment
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
-    real(kind=kreal), optional    :: temp      !> temprature
+    real(kind=kreal), optional    :: temp      !> temperature
 
     integer   i,j, n
     real(kind=kreal) :: G,Gg,K,Kg, gfac,exp_n,mu_0,mu_n,dq_n,dtau
@@ -187,7 +187,7 @@ contains
     real(kind=kreal), intent(out)   :: sig(6)    !< stress
     real(kind=kreal), intent(inout) :: vsig(:)   !< Visco stress components
     real(kind=kreal), intent(in)    :: dt        !< time increment
-    real(kind=kreal), optional      :: temp      !> current temprature
+    real(kind=kreal), optional      :: temp      !> current temperature
     real(kind=kreal), optional      :: tempn     !> temperature at last step
 
     integer   i,n

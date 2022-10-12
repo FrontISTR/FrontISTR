@@ -83,7 +83,7 @@ contains
       enddo
     enddo
 
-    ! ----- calculate the secont derivative of the C-invariant
+    ! ----- calculate the second derivative of the C-invariant
     do k=1,3
       do l=1,3
         do m=1,3

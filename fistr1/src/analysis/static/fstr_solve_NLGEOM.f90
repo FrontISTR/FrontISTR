@@ -21,7 +21,7 @@ module m_fstr_solve_NLGEOM
 contains
 
   !======================================================================!
-  !> \brief This module provides main suborutine for nonlinear calculation.
+  !> \brief This module provides main subroutine for nonlinear calculation.
   !>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
   !>              Z. Sun(ASTOM)/2010/11
   !>  \date       2009/08/31

@@ -16,7 +16,7 @@ contains
     type( tMaterial ), intent(in) :: matl       !> material properties
     integer, intent(in)           :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(out) :: D(:,:)     !> elastic matrix
-    real(kind=kreal), optional    :: temp       !> temprature
+    real(kind=kreal), optional    :: temp       !> temperature
     real(kind=kreal) :: EE, PP, COEF1, COEF2, ina(1), outa(2)
     logical :: ierr
 
@@ -114,7 +114,7 @@ contains
     integer, intent(in)           :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(in)  :: bij(3,3)   !> director
     real(kind=kreal), intent(out) :: DMAT(:,:)  !> elastic matrix
-    real(kind=kreal), optional    :: temp       !> temprature
+    real(kind=kreal), optional    :: temp       !> temperature
     real(kind=kreal) :: E1, E2, E3, G12, G23, G13, nyu12, nyu23,nyu13
     real(kind=kreal) :: nyu21,nyu32,nyu31, delta1, ina(1), outa(9)
     real(kind=kreal) :: tm(6,6)

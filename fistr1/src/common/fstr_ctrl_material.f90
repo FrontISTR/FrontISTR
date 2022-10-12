@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>   This module manages read in of various material properties
+!> \brief  This module manages read in of various material properties
 module fstr_ctrl_material
   use hecmw
   use mMaterial
@@ -82,7 +82,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
     if( ipt/=0 ) then
       write(*,*) "Warning : !ELASTIC : parameter 'INFINITE' is deprecated." &
-           & //  " Pleaase use the replacement parameter 'INFINITESIMAL'"
+           & //  " Please use the replacement parameter 'INFINITESIMAL'"
       nlgeom = INFINITESIMAL
     endif
 
@@ -319,7 +319,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
     if( ipt/=0 ) then
       write(*,*) "Warning : !VISCOELASTIC : parameter 'INFINITE' is deprecated." &
-           & //  " Pleaase use the replacement parameter 'INFINITESIMAL'"
+           & //  " Please use the replacement parameter 'INFINITESIMAL'"
       nlgeom = INFINITESIMAL
     endif
 
@@ -404,7 +404,7 @@ contains
 
     depends = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
-    if( depends>1 ) depends = 1 ! we consider temprature dependence only currently
+    if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = UPDATELAG   !default value
     if( fstr_ctrl_get_param_ex( ctrl, 'KIRCHHOFF ',  '# ',    0,   'E',   ipt )/= 0) return
@@ -417,7 +417,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'INFINITE ',  '# ',    0,   'E',   ipt )/= 0) return
     if( ipt/=0 ) then
       write(*,*) "Warning : !PLASTIC : parameter 'INFINITE' is deprecated." &
-           & //  " Pleaase use the replacement parameter 'INFINITESIMAL'"
+           & //  " Please use the replacement parameter 'INFINITESIMAL'"
       nlgeom = INFINITESIMAL
     endif
 
@@ -439,7 +439,7 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return               ! fail in reading plastic
-    if( hipt==2 .and. n<2 ) return    ! not enought data
+    if( hipt==2 .and. n<2 ) return    ! not enough data
     if( ( ipt==3 .or. ipt==4 ) .and. hipt>2 ) hipt = 1
 
     select case (ipt)
@@ -606,7 +606,7 @@ contains
 
     depends = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
-    if( depends>1 ) depends = 1 ! we consider temprature dependence only currently
+    if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
 
     allocate( fval(1,depends+1) )
     do i=2,1+depends
@@ -645,7 +645,7 @@ contains
 
     depends = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
-    if( depends>1 ) depends = 1 ! we consider temprature dependence only currently
+    if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
 
     if( ipt==1 ) then
       allocate( fval(depends+1, n) )

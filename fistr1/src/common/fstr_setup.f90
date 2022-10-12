@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides functions to read in data from control file
-!! and do neccessary preparation for following calculation
+!! and do necessary preparation for following calculation
 module m_fstr_setup
   use m_fstr
   use fstr_setup_util
@@ -23,7 +23,7 @@ module m_fstr_setup
 
   include 'fstr_ctrl_util_f.inc'
 
-  !> Package of all data needs to initilize
+  !> Package of all data needs to initialize
   type fstr_param_pack
     type(hecmwST_local_mesh), pointer :: MESH
     type(fstr_param), pointer         :: PARAM
@@ -435,7 +435,7 @@ contains
           stop
         endif
 
-        ! ----- CONTACT condtion setting
+        ! ----- CONTACT condition setting
       elseif( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
@@ -550,7 +550,7 @@ contains
           stop
         endif
 
-        !== following material proerties ==
+        !== following material properties ==
       else if( header_name == '!MATERIAL' ) then
         c_material = c_material+1
         if( fstr_ctrl_get_MATERIAL( ctrl, mName )/=0 ) then
@@ -2086,14 +2086,14 @@ end function fstr_setup_INITIAL
     P%SOLID%BOUNDARY_ngrp_GRPID(old_size+1:new_size) = gid
     call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY', n, grp_id_name, P%SOLID%BOUNDARY_ngrp_ID(old_size+1:))
 
-    ! set up infomation abount rotation ( default value is set if ROT_CENTER is not given.)
+    ! set up information about rotation ( default value is set if ROT_CENTER is not given.)
     P%SOLID%BOUNDARY_ngrp_rotID(old_size+1:) = n_rotc
     P%SOLID%BOUNDARY_ngrp_centerID(old_size+1:) = rotc_id(1)
 
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(*,*) 'fstr contol file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
-        write(ILOG,*) 'fstr contol file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
+        write(*,*) 'fstr control file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
+        write(ILOG,*) 'fstr control file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
         call fstr_ctrl_err_stop
       end if
       P%SOLID%BOUNDARY_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
@@ -2172,7 +2172,7 @@ end function fstr_setup_INITIAL
     rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    ! set up infomation abount torque load ( default value is set if ROT_CENTER is not given.)
+    ! set up information about torque load ( default value is set if ROT_CENTER is not given.)
     P%SOLID%CLOAD_ngrp_rotID(old_size+1:) = n_rotc
     P%SOLID%CLOAD_ngrp_centerID(old_size+1:) = rotc_id(1)
 
@@ -3309,7 +3309,7 @@ end function fstr_setup_INITIAL
     j = old_size+1
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(ILOG,*) 'fstr contol file error : !VELOCITY : range of dof_ids and dof_ide is from 1 to 6'
+        write(ILOG,*) 'fstr control file error : !VELOCITY : range of dof_ids and dof_ide is from 1 to 6'
         stop
       end if
       P%SOLID%VELOCITY_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
@@ -3376,7 +3376,7 @@ end function fstr_setup_INITIAL
     j = old_size+1
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(ILOG,*) 'fstr contol file error : !ACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
+        write(ILOG,*) 'fstr control file error : !ACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
         stop
       end if
       P%SOLID%ACCELERATION_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
@@ -3453,7 +3453,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: ctrl
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid        ) :: fstrSOLID
-    write(ILOG,*) '### Error : In !BOUNNDARY, TYPE=NASTRAN is not supported.'
+    write(ILOG,*) '### Error : In !BOUNDARY, TYPE=NASTRAN is not supported.'
     call hecmw_abort( hecmw_comm_get_comm())
   end subroutine fstr_setup_solid_nastran
 

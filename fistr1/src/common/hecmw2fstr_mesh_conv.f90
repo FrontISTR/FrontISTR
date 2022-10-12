@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief HECMW to FSTR Mesh Data Converter.
-!! Convering Conectivity of Element Type 232, 342 and 352
+!! Converting Connectivity of Element Type 232, 342 and 352
 
 module m_hecmw2fstr_mesh_conv
   use hecmw

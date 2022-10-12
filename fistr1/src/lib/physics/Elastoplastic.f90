@@ -30,7 +30,7 @@ contains
     real(kind=kreal), INTENT(IN)  :: plstrain  !< plastic strain
     integer, intent(in)           :: istat     !< plastic state
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
-    real(kind=kreal), optional    :: temperature   !> temprature
+    real(kind=kreal), optional    :: temperature   !> temperature
 
     integer :: i,j,ytype
     logical :: kinematic
@@ -196,11 +196,11 @@ contains
     cal_mises_strain = dsqrt( cal_mises_strain/3.d0 )
   end function
 
-  !> This function calcualtes hardening coefficient
+  !> This function calculates hardening coefficient
   real(kind=kreal) function calHardenCoeff( matl, pstrain, temp )
     type( tMaterial ), intent(in)          :: matl    !< material property
     real(kind=kreal), intent(in)           :: pstrain !< plastic strain
-    real(kind=kreal), intent(in), optional :: temp !< temprature
+    real(kind=kreal), intent(in), optional :: temp !< temperature
 
     integer :: htype
     logical :: ierr
@@ -243,7 +243,7 @@ contains
     end select
   end function
 
-  !> This function calcualtes kinematic hardening coefficient
+  !> This function calculates kinematic hardening coefficient
   real(kind=kreal) function calKinematicHarden( matl, pstrain )
     type( tMaterial ), intent(in) :: matl    !< material property
     real(kind=kreal), intent(in)  :: pstrain !< plastic strain
@@ -258,7 +258,7 @@ contains
     end select
   end function
 
-  !> This function calcualtes state of kinematic hardening
+  !> This function calculates state of kinematic hardening
   real(kind=kreal) function calCurrKinematic( matl, pstrain )
     type( tMaterial ), intent(in) :: matl    !< material property
     real(kind=kreal), intent(in)  :: pstrain !< plastic strain
@@ -273,7 +273,7 @@ contains
     end select
   end function
 
-  !> This function calcualtes current yield stress
+  !> This function calculates current yield stress
   real(kind=kreal) function calCurrYield( matl, pstrain, temp )
     type( tMaterial ), intent(in) :: matl    !< material property
     real(kind=kreal), intent(in)  :: pstrain !< plastic strain
@@ -317,7 +317,7 @@ contains
     end select
   end function
 
-  !> This function calcualtes yield state
+  !> This function calculates yield state
   real(kind=kreal) function calYieldFunc( matl, stress, extval, temp )
     type( tMaterial ), intent(in) :: matl        !< material property
     real(kind=kreal), intent(in)  :: stress(6)   !< stress

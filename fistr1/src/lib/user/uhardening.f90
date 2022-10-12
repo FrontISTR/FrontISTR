@@ -8,7 +8,7 @@
 function uhardening( matl, pstrain )
   use hecmw
   implicit none
-  real( kind=kreal ), intent(in) :: matl(:) !< material proerties
+  real( kind=kreal ), intent(in) :: matl(:) !< material properties
   real( kind=kreal ), intent(in) :: pstrain !< plastic strain
   real(kind=kreal) :: uhardening
 
@@ -19,7 +19,7 @@ end function
 function ukhardening( matl, pstrain )
   use hecmw
   implicit none
-  real( kind=kreal ), intent(in) :: matl(:) !< material proerties
+  real( kind=kreal ), intent(in) :: matl(:) !< material properties
   real( kind=kreal ), intent(in) :: pstrain !< plastic strain
   real(kind=kreal) :: ukhardening
 
@@ -30,7 +30,7 @@ end function
 function uCurrYield( matl, pstrain )
   use hecmw
   implicit none
-  real( kind=kreal ), intent(in) :: matl(:) !< material proerties
+  real( kind=kreal ), intent(in) :: matl(:) !< material properties
   real( kind=kreal ), intent(in) :: pstrain !< plastic strain
   real(kind=kreal) :: uCurrYield
 

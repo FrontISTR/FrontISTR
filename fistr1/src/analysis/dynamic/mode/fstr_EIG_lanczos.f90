@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> Lanczos iteration calculation
+!> \brief  Lanczos iteration calculation
 module m_fstr_EIG_lanczos
 contains
 
@@ -123,7 +123,7 @@ contains
 
     call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, fstrEIG%eigvec, p, Q(1)%q, Tri%beta(1))
 
-    hecMAT%Iarray(98) = 1 !Assmebly complete
+    hecMAT%Iarray(98) = 1 !Assembly complete
     hecMAT%Iarray(97) = 1 !Need numerical factorization
 
     if(myrank == 0)then
