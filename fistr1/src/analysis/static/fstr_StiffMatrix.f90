@@ -14,7 +14,7 @@ module m_fstr_StiffMatrix
 contains
 
   !---------------------------------------------------------------------*
-  !> \brief 接線剛性マトリックスを作成するサブルーチン
+  !> \brief This subroutine creates tangential stiffness matrix
   subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, time, tincr)
     !---------------------------------------------------------------------*
     use m_static_LIB
@@ -77,12 +77,13 @@ contains
         enddo
 
         isect = hecMESH%section_ID(icel)
+        ihead = hecMESH%section%sect_R_index(isect-1)
         cdsys_ID = hecMESH%section%sect_orien_ID(isect)
         if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
-
-        material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
-        thick = material%variables(M_THICK)
+        thick = hecMESH%section%sect_R_item(ihead+1)
         if( getSpaceDimension( ic_type )==2 ) thick =1.d0
+        material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
+
         if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick,  &
@@ -90,14 +91,10 @@ contains
             u(1:2,1:nn) )
 
         elseif ( ic_type==301 ) then
-          isect= hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
           call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:),   &
             stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
 
         elseif ( ic_type==361 ) then
-
           if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
             call STF_C3                                                                              &
               ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
@@ -117,66 +114,41 @@ contains
               stiffness(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
           endif
 
-        elseif (ic_type==341 .or. ic_type==351 .or.                     &
-          ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
+        elseif (ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
           call STF_C3                                                                              &
             ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
             stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
 
         else if( ic_type == 611) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
           call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
             &   material%variables(M_YOUNGS), material%variables(M_POISSON), stiffness(1:nn*ndof,1:nn*ndof))
 
         else if( ic_type == 641 ) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
           call STF_Beam_641(ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
             &            hecMESH%section%sect_R_item(ihead+1:), stiffness(1:nn*ndof,1:nn*ndof))
 
         else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
           call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
             &              stiffness(1:nn*ndof, 1:nn*ndof), thick, 0)
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
           call STF_Shell_MITC(731, 3, 6, ecoord(1:3, 1:3), fstrSOLID%elements(icel)%gausses(:), &
             &              stiffness(1:nn*ndof, 1:nn*ndof), thick, 2)
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
           call STF_Shell_MITC(741, 4, 6, ecoord(1:3, 1:4), fstrSOLID%elements(icel)%gausses(:), &
             &              stiffness(1:nn*ndof, 1:nn*ndof), thick, 1)
 
         elseif ( ic_type==3414 ) then
-          if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
-            write(*, *) '###ERROR### : This element is not supported for this material'
-            write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
-            call hecmw_abort(hecmw_comm_get_comm())
-          endif
+          if( material%mtype /= INCOMP_NEWTONIAN) call StiffMat_abort( ic_type, 3, material%mtype )
           call STF_C3_vp                                                           &
             ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:), &
             stiffness(1:nn*ndof, 1:nn*ndof), tincr, u_prev(1:4, 1:nn) )
-          !
-          !      elseif ( ic_type==731) then
-          !        call STF_S3(xx,yy,zz,ee,pp,thick,local_stf)
-          !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
-          !      elseif ( ic_type==741) then
-          !        call STF_S4(xx,yy,zz,ee,pp,thick,local_stf)
-          !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, stiffness)
         else
           call StiffMat_abort( ic_type, 1 )
         endif
@@ -191,16 +163,20 @@ contains
 
   end subroutine fstr_StiffMatrix
 
-  subroutine StiffMat_abort( ic_type, flag )
-    integer(kind=kint), intent(in) :: ic_type
-    integer(kind=kint), intent(in) :: flag
+  subroutine StiffMat_abort( ic_type, flag, mtype )
+    integer(kind=kint), intent(in)           :: ic_type
+    integer(kind=kint), intent(in)           :: flag
+    integer(kind=kint), intent(in), optional :: mtype
 
     if( flag == 1 ) then
       write(*,*) '###ERROR### : Element type not supported for static analysis'
     else if( flag == 2 ) then
       write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
+    else if( flag == 3 ) then
+      write(*,*) '###ERROR### : This element is not supported for this material'
     endif
     write(*,*) ' ic_type = ', ic_type
+    if( present(mtype) ) write(*,*) ' mtype = ', mtype
     call hecmw_abort(hecmw_comm_get_comm())
   end subroutine
 
