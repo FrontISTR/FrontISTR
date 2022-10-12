@@ -1,0 +1,49 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!WRITE,LOG
+!NODE_OUTPUT
+DISP,OFF
+REAC,OFF
+STRAIN,OFF
+STRESS,OFF
+!ELEMENT_OUTPUT, POSITION=INTEG
+STRAIN,OFF
+STRESS,OFF
+PLSTRAIN,OFF
+!SOLVER,METHOD=CG,PRECOND=3,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.00e-10, 1.00, 0.0
+ 0.100, 0.100
+!OUTPUT_RES
+REACTION,ON
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET-1,1,1
+ SET-1,2,2
+ SET-1,3,3
+!CLOAD, GRPID=1
+SET-2,2,-0.1
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL-1
+!ELASTIC, INFINITESIMAL
+ 1.00000000E+02, 3.00000000E-01
+!SECTION, SECNUM=1, FORM361=BBAR
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1
+BOUNDARY,1
+LOAD,1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+!WRITE,RESULT
+!END
