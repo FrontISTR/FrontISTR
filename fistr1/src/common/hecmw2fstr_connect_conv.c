@@ -27,7 +27,7 @@ int Table352[] = { 1,2,3,4,5,6,  7,8,9,  10,11,12,  13,14,15 };*/
 /*======================================================================*/
 /*                                                                      */
 /* HECMW to FSTR Mesh Data Converter                                    */
-/* Convering Conectivity of Element Type 232, 342 and 352               */
+/* Converting Connectivity of Element Type 232, 342 and 352             */
 /*                                                                      */
 /*======================================================================*/
 
@@ -80,7 +80,7 @@ void c_hecmw2fstr_connect_conv(int n_elem, int elem_type[],
 /*======================================================================*/
 /*                                                                      */
 /* FSTR to HECMW Mesh Data Converter                                    */
-/* Convering Conectivity of Element Type 232, 342 and 352               */
+/* Converting Connectivity of Element Type 232, 342 and 352             */
 /*                                                                      */
 /*======================================================================*/
 

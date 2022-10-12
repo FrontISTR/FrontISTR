@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>   This module provide common functions of Plane deformation elements
+!> \brief  This module provides common functions of Plane deformation elements
 module m_static_LIB_2d
   use hecmw, only : kint, kreal
   use elementInfo
@@ -61,7 +61,7 @@ contains
       if( .not. present(u) ) flag=INFINITESIMAL    ! enforce to infinitesimal deformation analysis
 
       if( flag==1 .and. ISET == 2 ) then
-        write(*,'(a)') '    PROGRAM STOP : non-TL element for axixsymmetric element'
+        write(*,'(a)') '    PROGRAM STOP : non-TL element for axisymmetric element'
         stop
       endif
 
@@ -187,7 +187,7 @@ contains
     NSIZE=NN*NDOF
     VECT(1:NSIZE)=0.d0
     !
-    ! SELCTION OF LOAD TYPE
+    ! SELECTION OF LOAD TYPE
     !
     IVOL=0
     ISUF=0
@@ -419,7 +419,7 @@ contains
     use m_fstr
     use mMechGauss
     use m_MatMatrix
-    ! I/F VARIAVLES
+    ! I/F VARIABLES
     integer(kind=kint), intent(in)     :: etype, nn
     real(kind=kreal),   intent(in)     :: ecoord(3,nn),PARAM1
     integer(kind=kint), intent(in)     :: ISET

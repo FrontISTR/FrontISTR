@@ -421,7 +421,7 @@ static void SetElement(CNFData &neu, CHECData &hec) {
 
         default:
           // throw CConvMessage( CONV_NO_SUPPORTED_ELEMENT, "ELEMENT" );
-          fprintf(stderr, "##Warning: Non suported element type is found.\n");
+          fprintf(stderr, "##Warning: Non-supported element type is found.\n");
           continue;
       }
 

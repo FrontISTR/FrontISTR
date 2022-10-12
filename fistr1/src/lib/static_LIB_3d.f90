@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>   This module provide common functions of Solid elements
+!> \brief  This module provides common functions of Solid elements
 module m_static_LIB_3d
 
   use hecmw, only : kint, kreal
@@ -64,7 +64,7 @@ contains
     type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
     real(kind=kreal),   intent(out) :: stiff(:,:)             !< stiff matrix
     integer(kind=kint), intent(in)  :: cdsys_ID
-    real(kind=kreal), intent(inout) :: coords(3,3)            !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout) :: coords(3,3)            !< variables to define material coordinate system
     real(kind=kreal), intent(in)    :: time                   !< current time
     real(kind=kreal), intent(in)    :: tincr                  !< time increment
     real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
@@ -208,10 +208,10 @@ contains
   end subroutine STF_C3
 
 
-  !> Distrubuted external load
+  !> Distributed external load
   !----------------------------------------------------------------------*
   subroutine DL_C3(etype, nn, XX, YY, ZZ, RHO, LTYPE, PARAMS, VECT, NSIZE)
-    !----------------------------------------------------------------------*
+    !--------------------------------------------------------------------*
     !**
     !**  SET DLOAD
     !**
@@ -255,7 +255,7 @@ contains
     !
     val = PARAMS(0)
     !
-    ! SELCTION OF LOAD TYPE
+    ! SELECTION OF LOAD TYPE
     !
     IVOL=0
     ISUF=0
@@ -402,7 +402,7 @@ contains
     real(kind=kreal), intent(in)    :: TT(nn),T0(nn)
     real(kind=kreal), intent(out)   :: VECT(nn*NDOF)
     integer(kind=kint), intent(in)  :: cdsys_ID
-    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define material coordinate system
 
     !---------------------------------------------------------------------
 
@@ -419,7 +419,7 @@ contains
 
     matlaniso = .FALSE.
 
-    if( cdsys_ID > 0 ) then   ! cannot define aniso exapansion when no local coord defined
+    if( cdsys_ID > 0 ) then   ! cannot define aniso expansion when no local coord defined
       ina = TT(1)
       call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
       if( .not. ierr ) matlaniso = .TRUE.
@@ -796,7 +796,7 @@ contains
     real(kind=kreal), intent(in)      :: u(3, nn)      !< \param [in] nodal dislplacements
     real(kind=kreal), intent(in)      :: ddu(3, nn)    !< \param [in] nodal displacement
     integer(kind=kint), intent(in)    :: cdsys_ID
-    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define material coordinate system
     real(kind=kreal), intent(out)     :: qf(nn*3)      !< \param [out] Internal Force
     type(tGaussStatus), intent(inout) :: gausses(:)    !< \param [out] status of qudrature points
     integer, intent(in)               :: iter
@@ -806,7 +806,7 @@ contains
     real(kind=kreal), intent(in), optional :: T0(nn)   !< reference temperature
     real(kind=kreal), intent(in), optional :: TN(nn)   !< reference temperature
 
-    ! LCOAL VARIAVLES
+    ! LOCAL VARIABLES
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
@@ -873,7 +873,7 @@ contains
       dstrain(4) = ( gdispderiv(1, 2)+gdispderiv(2, 1) )
       dstrain(5) = ( gdispderiv(2, 3)+gdispderiv(3, 2) )
       dstrain(6) = ( gdispderiv(3, 1)+gdispderiv(1, 3) )
-      dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
+      dstrain(:) = dstrain(:)-EPSTH(:)   ! alright?
 
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
       if( flag == INFINITESIMAL ) then

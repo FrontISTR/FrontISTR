@@ -29,7 +29,7 @@
 !!
 !!
 !       If you wish introduce new elements with new geometry or/and
-!    new shape functions, you need do the followings
+!    new shape functions, you need do the following
 !!
 !!
 !!-    Introduce new element ID corresponding to your element in this module.
@@ -566,7 +566,7 @@ contains
   !************************************
   !    Following shape function information
   !************************************
-  !> Calculate deivatives of shape fucntion in natural coordiante system
+  !> Calculate derivatives of shape function in natural coordinate system
   subroutine getShapeDeriv( fetype, localcoord, shapederiv )
     integer, intent(in)           :: fetype             !< input element type
     real(kind=kreal), intent(in)  :: localcoord(:)      !< natural points
@@ -610,7 +610,7 @@ contains
     end select
   end subroutine
 
-  !> Calculate the 2nd derivative of shape function in natural coodinate system
+  !> Calculate the 2nd derivative of shape function in natural coordinate system
   subroutine getShape2ndDeriv( fetype, localcoord, shapederiv )
     integer, intent(in)           :: fetype             !< elemental type
     real(kind=kreal), intent(in)  :: localcoord(:)      !< natural points
@@ -635,7 +635,7 @@ contains
     end select
   end subroutine
 
-  !> Calculate the shape function in natural coodinate system
+  !> Calculate the shape function in natural coordinate system
   subroutine getShapeFunc( fetype, localcoord, func )
     integer, intent(in)           :: fetype            !< input element type
     real(kind=kreal), intent(in)  :: localcoord(:)     !< natural points
@@ -962,7 +962,7 @@ contains
     real(kind=kreal), intent(in)  :: localcoord(2)     !< position
     real(kind=kreal), intent(in)  :: elecoord(3,nn)    !< nodes coordinates of element
     real(kind=kreal), intent(out) :: l2ndderiv(3,2,2)  !< 2nd derivative of shape function
-    real(kind=kreal), intent(in), optional  :: normal(3)     !< noraml direction of surface
+    real(kind=kreal), intent(in), optional  :: normal(3)     !< normal direction of surface
     real(kind=kreal), intent(out), optional :: curv(2,2)     !< curvature tensor
     real(kind=kreal) :: deriv2(nn,2,2)
 
@@ -1118,7 +1118,7 @@ contains
 
   !> This subroutine extrapolate a point value into elemental nodes
   subroutine extrapolateValue( lpos, fetype, nnode, pvalue, ndvalue )
-    real(kind=kreal), intent(in)  :: lpos(:)        !< poisition of value given
+    real(kind=kreal), intent(in)  :: lpos(:)        !< position of value given
     integer, intent(in)           :: fetype         !< element type
     integer, intent(in)           :: nnode          !< number of element node
     real(kind=kreal), intent(in)  :: pvalue(:)      !< value to be extropolated
@@ -1134,7 +1134,7 @@ contains
 
   !> This subroutine interapolate element nodes value into a point value
   subroutine interapolateValue( lpos, fetype, nnode, pvalue, ndvalue )
-    real(kind=kreal), intent(in)  :: lpos(:)        !< poisition of value given
+    real(kind=kreal), intent(in)  :: lpos(:)        !< position of value given
     integer, intent(in)           :: fetype         !< element type
     integer, intent(in)           :: nnode          !< number of element node
     real(kind=kreal), intent(out) :: pvalue(:)      !< value to be extropolated

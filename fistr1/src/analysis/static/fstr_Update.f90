@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module provides function to calcualte to do updates
+!> \brief  This module provides function to calculate to do updates
 module m_fstr_Update
   use m_fstr
   implicit none

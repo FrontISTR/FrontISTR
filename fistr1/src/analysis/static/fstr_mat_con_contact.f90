@@ -94,7 +94,7 @@ contains
 
     integer(kind=kint)            :: grpid !< contact pairs group ID
     integer(kind=kint)            :: count_lagrange !< counter of Lagrange multiplier
-    integer(kind=kint)            :: ctsurf, etype, nnode, ndLocal(l_max_surface_node + 1) !< contants of type tContact
+    integer(kind=kint)            :: ctsurf, etype, nnode, ndLocal(l_max_surface_node + 1) !< contents of type tContact
     integer(kind=kint)            :: i, j
     real(kind=kreal)              :: fcoeff !< friction coefficient
     logical                       :: necessary_to_insert_node

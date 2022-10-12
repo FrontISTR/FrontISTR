@@ -268,7 +268,7 @@ void set_loglevel_debug(char *arg) {
 
 /**
  * \brief specify command line option name and executing function name.
- * \attension list must be terminated with NULL value.
+ * \attention list must be terminated with NULL value.
  */
 struct option_rec options[] = {
   {"-h", help},

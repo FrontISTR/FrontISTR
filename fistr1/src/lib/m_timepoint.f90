@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>   This module manages timepoint infomation
+!> \brief This module manages timepoint information
 module m_timepoint
   use hecmw
   implicit none

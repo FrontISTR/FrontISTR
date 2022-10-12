@@ -36,12 +36,12 @@ contains
   !!  and assembles it into global stiffness matrix.
   subroutine fstr_AddContactStiffness(cstep,iter,hecMAT,hecLagMAT,fstrSOLID)
 
-    integer(kind=kint)                   :: cstep !< current loding step
+    integer(kind=kint)                   :: cstep !< current loading step
     integer(kind=kint)                   :: iter
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint)                   :: ctsurf, etype, nnode, ndLocal(9) !< contants of type tContact
+    integer(kind=kint)                   :: ctsurf, etype, nnode, ndLocal(9) !< contents of type tContact
     integer(kind=kint)                   :: i, j, id_lagrange, grpid
     real(kind=kreal)                     :: lagrange
     real(kind=kreal)                     :: stiffness(9*3 + 1, 9*3 + 1)
@@ -197,7 +197,7 @@ contains
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(hecmwST_matrix)                 :: conMAT !< type hecmwST_matrix for contact part only
-    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contants of type tContact
+    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contents of type tContact
     integer(kind=kint) :: i, j, k, id_lagrange
     real(kind=kreal)   :: ndCoord(9*3), ndDu(9*3) !< nodal coordinates ; nodal displacement increment
     real(kind=kreal)   :: lagrange !< value of Lagrange multiplier
@@ -391,7 +391,7 @@ contains
     integer(kind=kint) :: cstep !< current step
     integer(kind=kint) :: np, ndof !< total number of nodes; degree of freedom
     integer(kind=kint) :: i, j, k, l, id_lagrange, lnod, grpid
-    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contants of type tContact
+    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contents of type tContact
     real(kind=kreal)   :: ndCoord(9*3), lagrange !< nodal coordinates; value of Lagrange mutiplier
     real(kind=kreal)   :: normal(3), shapefunc(9) !< normal vector; shape functions
     real(kind=kreal)   :: nTm(10*3) !< vector

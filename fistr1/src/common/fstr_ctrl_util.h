@@ -162,7 +162,7 @@ int c_fstr_ctrl_get_current_header_pos(fstr_ctrl_data* ctrl);
  * @param ctrl Specify fstr_ctrl_data* pointer obtained from fstr_ctrl_open
  * @param paran_name Specify parameter name
  * @param value_list Specify value list by csv string
- * @param type Specify type of parameter's value as charactor
+ * @param type Specify type of parameter's value as character
  *        'I':integer(int), 'C' or 'S':string(char*), 'R':real(double),
  *        'P':Pattern Input(first string in value_list is 0) (int)
  *        'E':exist or not(int, 1 or 0)
@@ -180,11 +180,11 @@ int c_fstr_ctrl_get_param(fstr_ctrl_data* ctrl, const char* param_name,
 /**
  * Obtaining value of parameter in current header line
  * This function uses "fstr_ctrl_get_param" and prints message in error
- * occurance.
+ * occurrence.
  * @param ctrl Specify fstr_ctrl_data* pointer obtained from fstr_ctrl_open
  * @param paran_name Specify parameter name
  * @param necessity Necessity of parameter (1 or 0)
- * @param type Specify type of parameter's value as charactor
+ * @param type Specify type of parameter's value as character
  *        'I':integer(int), 'C' or 'S':string(char*), 'R':real(double),
  *        'P':Pattern Input(first string in value_list is 1) (int)
  *        'E':exist or not(int, 1 or 0)
@@ -225,7 +225,7 @@ int c_fstr_ctrl_get_data_n_in_line(fstr_ctrl_data* ctrl, int line_no,
 /* =================================================================================
  */
 /**
- * Obtainig converting error position in previous fstr_ctrl_get_data executation
+ * Obtaining converting error position in previous fstr_ctrl_get_data execution
  * @return Position of error, 0: no error, or, -1 : non converting error
  */
 

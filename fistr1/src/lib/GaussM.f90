@@ -7,7 +7,7 @@ module gauss_integration
   use hecmw
   implicit none
   real(kind=kreal) :: XG(3, 3) !< abscissa of gauss points
-  real(kind=kreal) :: WGT(3, 3) !< wieght of gauss points
+  real(kind=kreal) :: WGT(3, 3) !< weight of gauss points
   !****************************
   !* Gauss Integration Table **
   !****************************

@@ -38,7 +38,7 @@ contains
     type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
     real(kind=kreal), intent(out)   :: stiff(:,:)             !< stiff matrix
     integer(kind=kint), intent(in)  :: cdsys_ID
-    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define material coordinate system
     real(kind=kreal), intent(in)    :: time                   !< current time
     real(kind=kreal), intent(in)    :: tincr                  !< time increment
     real(kind=kreal), intent(in), optional :: u(:, :)         !< nodal displacemwent
@@ -356,7 +356,7 @@ contains
     real(kind=kreal), intent(in)      :: u(3, nn)      !< \param [in] nodal dislplacements
     real(kind=kreal), intent(in)      :: du(3, nn)     !< \param [in] nodal displacement increment
     integer(kind=kint), intent(in)    :: cdsys_ID
-    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define material coordinate system
     real(kind=kreal), intent(out)     :: qf(nn*3)      !< \param [out] Internal Force
     type(tGaussStatus), intent(inout) :: gausses(:)    !< \param [out] status of qudrature points
     integer, intent(in) :: iter
@@ -680,7 +680,7 @@ contains
     real(kind=kreal), intent(in)    :: TT(nn), T0(nn)
     real(kind=kreal), intent(out)   :: VECT(nn*ndof)
     integer(kind=kint), intent(in)  :: cdsys_ID
-    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define material coordinate system
 
     !---------------------------------------------------------------------
 
@@ -697,7 +697,7 @@ contains
 
     matlaniso = .FALSE.
 
-    if( cdsys_ID > 0 ) then   ! cannot define aniso exapansion when no local coord defined
+    if( cdsys_ID > 0 ) then   ! cannot define aniso expansion when no local coord defined
       ina = TT(1)
       call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
       if( .not. ierr ) matlaniso = .TRUE.

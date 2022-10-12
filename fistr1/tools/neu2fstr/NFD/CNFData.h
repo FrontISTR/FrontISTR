@@ -58,8 +58,8 @@ class CNFData {
 
  public:
 //-----------------------------------------------------
-// Indivisual DataBlock Strage and Utilities
-// CAUTION) No strage for CNFDB_100
+// Individual DataBlock Storage and Utilities
+// CAUTION) No storage for CNFDB_100
 //-----------------------------------------------------
 
 #define GENRATE_CODE(x)           \

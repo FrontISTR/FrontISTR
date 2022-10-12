@@ -966,7 +966,7 @@ contains
     data XG2 /  0.1666666667,   0.66666666667, 0.16666666667 /
     data WGT1/  0.1666666667,   0.16666666667, 0.16666666667 /
     !
-    ! SELCTION OF LOAD TYPE
+    ! SELECTION OF LOAD TYPE
     IVOL=0
     ISUF=0
     if( LTYPE.EQ.0 ) then
@@ -1173,7 +1173,7 @@ contains
     WGT(2) = 0.8888888888
     WGT(3) = 0.5555555555
     !
-    ! SELCTION OF LOAD TYPE
+    ! SELECTION OF LOAD TYPE
     !
     IVOL=0
     ISUF=0
@@ -1508,7 +1508,7 @@ contains
     data XG/-0.5773502691896,0.5773502691896/
     data WGT/1.0,1.0/
     !
-    ! SELCTION OF LOAD TYPE
+    ! SELECTION OF LOAD TYPE
     !
     IVOL=0
     ISUF=0
@@ -1736,7 +1736,7 @@ contains
     WGT(2) = 0.8888888888
     WGT(3) = 0.5555555555
     !
-    ! SELCTION OF LOAD TYPE
+    ! SELECTION OF LOAD TYPE
     !
     IVOL=0
     ISUF=0
@@ -2072,7 +2072,7 @@ contains
     data XG  / -0.5773502691896,0.5773502691896 /
     data WGT /  1.0, 1.0 /
     !
-    ! SELCTION OF LOAD TYPE
+    ! SELECTION OF LOAD TYPE
     !
     if    ( LTYPE.EQ.0 ) then
       THICK = 1.0d0 * THICK

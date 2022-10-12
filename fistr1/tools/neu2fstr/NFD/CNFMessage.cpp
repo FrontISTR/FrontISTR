@@ -12,7 +12,7 @@
 static char ERROR_MSG[][80] = {
     "No error",        "Unknown error",      "Cannot open NEU file",
     "Read data error", "Data line required", "Data block required",
-    "Invalid token",   "Item requred",       "A record is required"};
+    "Invalid token",   "Item required",      "A record is required"};
 
 static char WARNING_MSG[][80] = {"Non supported data block"};
 
