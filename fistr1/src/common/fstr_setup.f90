@@ -891,8 +891,8 @@ contains
       call fstr_solid_alloc( hecMESH, fstrSOLID )
 
     if( p%PARAM%solution_type == kstHEAT) then
-      p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%freqency
-      p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
+      p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%frequency
+      p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%frequency
     endif
 
     n_totlyr = 1
