@@ -33,14 +33,14 @@ contains
     real(kind=kreal),intent(in) :: tincr     !< time increment
     integer, intent(in)         :: iter      !< NR iterations
 
-    integer(kind=kint) :: nodLOCAL(20)
-    real(kind=kreal)   :: ecoord(3, 20), stiff(60, 60)
+    integer(kind=kint) :: nodLOCAL(150)
+    real(kind=kreal)   :: ecoord(3, 150)
     real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
 
-    real(kind=kreal)   :: total_disp(6, 20), du(6, 20), ddu(6, 20)
-    real(kind=kreal)   :: tt(20), tt0(20), ttn(20), qf(20*6), coords(3, 3)
-    integer            :: ig0, ig, ik, in, ierror, isect, ihead, cdsys_ID
+    real(kind=kreal)   :: total_disp(6, 150), du(6, 150), ddu(6, 150)
+    real(kind=kreal)   :: tt(150), tt0(150), ttn(150), qf(150*6), coords(3, 3)
+    integer            :: isect, ihead, cdsys_ID
     integer            :: ndim, initt
 
     real(kind=kreal), optional :: strainEnergy
@@ -81,14 +81,12 @@ contains
       ic_type= hecMESH%elem_type_item(itype)
       if (hecmw_is_etype_link(ic_type)) cycle
       if (hecmw_is_etype_patch(ic_type)) cycle
-      nn = hecmw_get_max_node(ic_type)
-      if( nn>20 ) stop "Elemental nodes>20!"
 
       !element loop
       !$omp parallel default(none), &
-        !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,ddu,du,total_disp, &
+        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp, &
         !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux), &
-        !$omp&  shared(iS,iE,hecMESH,nn,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
+        !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
       !$omp do
@@ -96,6 +94,8 @@ contains
 
         ! ----- nodal coordinate, displacement and temperature
         iiS = hecMESH%elem_node_index(icel-1)
+        nn = hecMESH%elem_node_index(icel)-iiS
+        if( nn>150 ) stop "elemental nodes > 150!"
 
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item (iiS+j)
@@ -159,6 +159,7 @@ contains
           endif
 
         else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
+          if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
           call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
 
@@ -194,6 +195,10 @@ contains
             ( ic_type, nn, ecoord(:,1:nn), total_disp(1:4,1:nn), du(1:4,1:nn), &
             fstrSOLID%elements(icel)%gausses(:) )
           qf = 0.0d0
+
+        else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
+          call UPDATE_C3_SESNS( ic_type, nn, nodLOCAL, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
 
         else
           write(*, *) '###ERROR### : Element type not supported for nonlinear static analysis'
