@@ -198,7 +198,7 @@ contains
 
         else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
           call UPDATE_C3_SESNS( ic_type, nn, nodLOCAL, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
 
         else
           write(*, *) '###ERROR### : Element type not supported for nonlinear static analysis'

@@ -20,24 +20,6 @@ module m_static_LIB_C3D4SESNS
 
   logical, parameter :: DEBUG=.false.
 
-  real(kind=kreal), private, parameter :: Ihyd(6,6) = reshape( &
-    & (/  1.d0/3.d0,  1.d0/3.d0,  1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
-    &     1.d0/3.d0,  1.d0/3.d0,  1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
-    &     1.d0/3.d0,  1.d0/3.d0,  1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
-    &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0,  0.d0,   &
-    &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0,  0.d0,   &
-    &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0,  0.d0/), &
-    & (/6, 6/))
-
-  real(kind=kreal), private, parameter :: Idev(6,6) = reshape( &
-    & (/  2.d0/3.d0, -1.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
-    &    -1.d0/3.d0,  2.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
-    &    -1.d0/3.d0, -1.d0/3.d0,  2.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
-    &          0.d0,       0.d0,       0.d0,  1.d0,  0.d0,  0.d0,   &
-    &          0.d0,       0.d0,       0.d0,  0.d0,  1.d0,  0.d0,   &
-    &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0,  1.d0/), &
-    & (/6, 6/))
-
 contains
 
   subroutine create_compressed_vector_by_node_id(nn,nodlocal,nn_comp,local_nid)
@@ -113,7 +95,6 @@ contains
     integer(kind=kint) :: n_subelem, nn_comp, local_nid(nn)
     real(kind=kreal) :: elem(3, 4)
     real(kind=kreal) :: tmpgderiv(2*nn,3), ratio(nn)
-    real(kind=kreal) :: tmpgderiv0(2*nn,3)
     real(kind=kreal) :: tmpgderiv1(2*nn,3)
     real(kind=kreal) :: naturalCoord(3)
 
@@ -396,7 +377,7 @@ contains
   !---------------------------------------------------------------------*
   subroutine UPDATE_C3_SESNS                     &
       (etype, nn, nodlocal, ecoord, u, ddu, cdsys_ID, coords, qf, &
-      gausses, iter, time, tincr, TT, T0, TN)
+      gausses, time, tincr, TT, T0, TN)
     !---------------------------------------------------------------------*
 
     use m_fstr
@@ -416,7 +397,6 @@ contains
     real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define matreial coordinate system
     real(kind=kreal), intent(out)     :: qf(nn*3)      !< \param [out] Internal Force
     type(tGaussStatus), intent(inout) :: gausses(:)    !< \param [out] status of qudrature points
-    integer, intent(in)               :: iter
     real(kind=kreal), intent(in)      :: time          !< current time
     real(kind=kreal), intent(in)      :: tincr         !< time increment
     real(kind=kreal), intent(in)      :: TT(nn)   !< current temperature
@@ -426,10 +406,10 @@ contains
     ! LCOAL VARIAVLES
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
-    real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
-    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gderiv0(nn,3), gdispderiv(3,3), F(3,3), det, det1, WG, ttc,tt0, ttn
+    real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), ina(1)
+    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gderiv0(nn,3), gdispderiv(3,3), F(3,3), det, WG, ttc,tt0, ttn
     integer(kind=kint) :: j, serr
-    real(kind=kreal)   :: naturalCoord(3), rot(3,3), EPSTH(6)
+    real(kind=kreal)   :: rot(3,3), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3)
     real(kind=kreal)   :: dstrain(6)
     real(kind=kreal)   :: alpo(3)
