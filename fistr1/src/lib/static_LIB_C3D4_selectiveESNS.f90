@@ -76,7 +76,7 @@ contains
   end function
 
   subroutine Get_Compressed_gderiv_and_disp_C3D4_SESNS  &
-      &  (flag, etype, nn, nodlocal, ecoord, gderiv, det, u, tmpu, ecoord0, gderiv0, ecoord1, gderiv1)
+      &  (flag, etype, nn, nodlocal, ecoord, gderiv, det, u, du, tmpu, tmpdu, gderiv1)
     integer(kind=kint), intent(in)    :: flag
     integer(kind=kint), intent(in)    :: etype             !< element type
     integer(kind=kint), intent(inout) :: nn                !< number of elemental nodes
@@ -85,18 +85,17 @@ contains
     real(kind=kreal), intent(out)     :: gderiv(nn, 3)
     real(kind=kreal), intent(out)     :: det
     real(kind=kreal), intent(out)     :: u(:,:)
-    real(kind=kreal), intent(in), optional      :: tmpu(:,:)       !< nodal displacemwent
-    real(kind=kreal),   intent(in), optional    :: ecoord0(3,nn)      !< coordinates of elemental nodes
-    real(kind=kreal), intent(out), optional     :: gderiv0(nn, 3)
-    real(kind=kreal),   intent(in), optional    :: ecoord1(3,nn)      !< coordinates of elemental nodes
-    real(kind=kreal), intent(out), optional     :: gderiv1(nn, 3)
+    real(kind=kreal), intent(out)     :: du(:,:)
+    real(kind=kreal), intent(in)      :: tmpu(:,:)          !< nodal displacemwent
+    real(kind=kreal), intent(in), optional   :: tmpdu(:,:)         !< nodal displacemwent
+    real(kind=kreal), intent(out), optional  :: gderiv1(nn, 3)
 
     integer(kind=kint) :: i, j, LX
     integer(kind=kint) :: n_subelem, nn_comp, local_nid(nn)
     real(kind=kreal) :: elem(3, 4)
     real(kind=kreal) :: tmpgderiv(2*nn,3), ratio(nn)
-    real(kind=kreal) :: tmpgderiv1(2*nn,3)
     real(kind=kreal) :: naturalCoord(3)
+    real(kind=kreal) :: coord_comp(3,nn), F(3,3)
 
     !compress node id
     if( etype == 881 ) then !node-smoothed element
@@ -113,20 +112,16 @@ contains
 
     if( etype == 881 ) then !node-smoothed element
       elem(1:3,1) = ecoord(1:3,1)
-      if( flag == UPDATELAG ) elem(1:3,1) = elem(1:3,1) + tmpu(1:3,1)
       do i=1,n_subelem
         elem(1:3,2:4) = ecoord(1:3,3*i-1:3*i+1)
-        if( flag == UPDATELAG ) elem(1:3,2:4) = elem(1:3,2:4) + tmpu(1:3,3*i-1:3*i+1)
         call getGlobalDeriv(fe_tet4n, 4, naturalcoord, elem, ratio(i), tmpgderiv(4*i-3:4*i,1:3))
         ratio(i) = ratio(i)/24.d0
         det = det + ratio(i)
       end do
     else if( etype == 891 ) then !edge-smoothed element
       elem(1:3,1:2) = ecoord(1:3,1:2)
-      if( flag == UPDATELAG ) elem(1:3,1:2) = elem(1:3,1:2) + tmpu(1:3,1:2)
       do i=1,n_subelem
         elem(1:3,3:4) = ecoord(1:3,2*i+1:2*i+2)
-        if( flag == UPDATELAG ) elem(1:3,3:4) = elem(1:3,3:4) + tmpu(1:3,2*i+1:2*i+2)
         call getGlobalDeriv(fe_tet4n, 4, naturalcoord, elem, ratio(i), tmpgderiv(4*i-3:4*i,1:3))
         ratio(i) = ratio(i)/36.d0
         det = det + ratio(i)
@@ -159,40 +154,32 @@ contains
       end do
     end if
 
-    if( present(ecoord0) .and. present(gderiv0) .and.  present(ecoord1) .and. present(gderiv1) ) then
-      gderiv0(:,:) = 0.d0
-      if( etype == 881 ) then !node-smoothed element
-        elem(1:3,1) = ecoord0(1:3,1)
-        do i=1,n_subelem
-          elem(1:3,2:4) = ecoord0(1:3,3*i-1:3*i+1)
-          call getGlobalDeriv(fe_tet4n, 4, naturalcoord, elem, ratio(i), tmpgderiv(4*i-3:4*i,1:3))
+    if( flag == UPDATELAG ) then
+      do i=1,nn
+        LX = local_nid(i)
+        u(1:3,LX) = tmpu(1:3,i)
+        coord_comp(1:3,LX) = ecoord(1:3,i)
+      end do
+      if( present(tmpdu) ) then
+        do i=1,nn
+          LX = local_nid(i)
+          du(1:3,LX) = tmpdu(1:3,i)
         end do
-
-        ratio(1:n_subelem) = ratio(1:n_subelem)/det
-        do i=1,n_subelem
-          tmpgderiv1(4*i-3:4*i,1:3) = ratio(i)*tmpgderiv(4*i-3:4*i,1:3)
-        end do
-
-        do i=1,n_subelem
-          gderiv0(1,1:3) = gderiv0(1,1:3) + tmpgderiv(4*i-3,1:3)
-          do j=2,4
-            LX = local_nid(3*i-3+j)
-            gderiv0(LX,1:3) = gderiv0(LX,1:3) + tmpgderiv(4*i+j-4,1:3)
-          end do
-        end do
-      else if( etype == 891 ) then !edge-smoothed element
-        do i=1,n_subelem
-          gderiv0(1:2,1:3) = gderiv0(1:2,1:3) + tmpgderiv(4*i-3:4*i-2,1:3)
-          do j=3,4
-            LX = local_nid(2*i-2+j)
-            gderiv0(LX,1:3) = gderiv0(LX,1:3) + tmpgderiv(4*i+j-4,1:3)
-          end do
-        end do
+      else
+        du(1:3,1:nn_comp) = 0.d0
       end if
-    end if
 
-    !! compress displacement
-    if( present(tmpu) ) then
+      F(1:3,1:3) = matmul(coord_comp(1:3,1:nn_comp)+u(1:3,1:nn_comp)+du(1:3,1:nn_comp),gderiv(1:nn_comp,1:3))
+      det = det * Determinant33( F )
+      call calInverse(3,F)
+      ! dN/dx_{n+1}
+      gderiv1(1:nn_comp,1:3) = matmul(gderiv(1:nn_comp,1:3),F(1:3,1:3))
+
+      F(1:3,1:3) = matmul(coord_comp(1:3,1:nn_comp)+u(1:3,1:nn_comp)+0.5d0*du(1:3,1:nn_comp),gderiv(1:nn_comp,1:3))
+      call calInverse(3,F)
+      ! dN/dx_{n+1/2}
+      gderiv(1:nn_comp,1:3) = matmul(gderiv(1:nn_comp,1:3),F(1:3,1:3))
+    else
       do i=1,nn
         LX = local_nid(i)
         u(1:3,LX) = tmpu(1:3,i)
@@ -240,10 +227,11 @@ contains
     real(kind=kreal) :: B1(6, NDOF*nn), coordsys(3, 3)
     real(kind=kreal) :: Smat(9, 9)
     real(kind=kreal) :: BN(9, NDOF*nn), SBN(9, NDOF*nn)
+    real(kind=kreal) :: gderiv1(nn,3)
 
     !---------------------------------------------------------------------
 
-    real(kind=kreal) :: u(3,nn)
+    real(kind=kreal) :: u(3,nn), du(3,nn)
 
     !---------------------------------------------------------------------
 
@@ -254,11 +242,13 @@ contains
 
     ! compress id and calc gderiv
     if( present(tmpu) ) then
-      call Get_Compressed_gderiv_and_disp_C3D4_SESNS &
-        &  (flag, etype, nn, nodlocal, ecoord, gderiv, det, u, tmpu)
-    else
-      call Get_Compressed_gderiv_and_disp_C3D4_SESNS &
-        &  (flag, etype, nn, nodlocal, ecoord, gderiv, det, u)
+      if( flag == UPDATELAG ) then
+        call Get_Compressed_gderiv_and_disp_C3D4_SESNS &
+          &  (flag, etype, nn, nodlocal, ecoord, gderiv, det, u, du, tmpu, gderiv1=gderiv1)
+      else
+        call Get_Compressed_gderiv_and_disp_C3D4_SESNS &
+          &  (flag, etype, nn, nodlocal, ecoord, gderiv, det, u, du, tmpu)
+      end if
     end if
 
     ! calc stiffness matrix
@@ -407,37 +397,27 @@ contains
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), ina(1)
-    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gderiv0(nn,3), gdispderiv(3,3), F(3,3), det, WG, ttc,tt0, ttn
+    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gdispderiv(3,3), F(3,3), det, WG, ttc,tt0, ttn
     integer(kind=kint) :: j, serr
     real(kind=kreal)   :: rot(3,3), EPSTH(6)
-    real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3)
+    real(kind=kreal)   :: totaldisp(3,nn), totalddisp(3,nn), coordsys(3,3)
     real(kind=kreal)   :: dstrain(6)
     real(kind=kreal)   :: alpo(3)
     logical            :: ierr, matlaniso
 
-    real(kind=kreal)   :: tmptotaldisp(3,nn)
     real(kind=kreal)   :: stress(6)
 
     qf(:) = 0.0D0
     ! we suppose the same material type in the element
     flag = gausses(1)%pMaterial%nlgeom_flag
-    elem(:,:) = ecoord(:,:)
-    tmptotaldisp(:,:) = u(:,:)+ ddu(:,:)
-    if( flag == UPDATELAG ) then
-      elem(:,:) = (0.5D0*ddu(:,:)+u(:,:) ) +ecoord(:,:)
-      elem1(:,:) = (ddu(:,:)+u(:,:) ) +ecoord(:,:)
-      ! elem = elem1
-      tmptotaldisp(:,:) = ddu(:,:)
-    end if
 
     ! compress id and calc gderiv
     if( flag == UPDATELAG ) then
       call Get_Compressed_gderiv_and_disp_C3D4_SESNS &
-        &  (flag, etype, nn, nodlocal, elem, gderiv, det, totaldisp, tmptotaldisp, &
-        &   ecoord, gderiv0, elem1, gderiv1)
+        &  (flag, etype, nn, nodlocal, ecoord, gderiv, det, totaldisp, totalddisp, u, ddu, gderiv1)
     else
       call Get_Compressed_gderiv_and_disp_C3D4_SESNS &
-        &  (flag, etype, nn, nodlocal, elem, gderiv, det, totaldisp, tmptotaldisp)
+        &  (flag, etype, nn, nodlocal, ecoord, gderiv, det, totaldisp, totalddisp, u+ddu )
     end if
 
     matlaniso = .FALSE.
@@ -472,7 +452,12 @@ contains
 
     ! Update strain
     ! Small strain
-    gdispderiv(1:ndof, 1:ndof) = matmul( totaldisp(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
+    if( flag == UPDATELAG ) then
+      gdispderiv(1:ndof, 1:ndof) = matmul( totalddisp(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
+    else
+      gdispderiv(1:ndof, 1:ndof) = matmul( totaldisp(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
+    end if
+
     dstrain(1) = gdispderiv(1, 1)
     dstrain(2) = gdispderiv(2, 2)
     dstrain(3) = gdispderiv(3, 3)
@@ -508,7 +493,8 @@ contains
 
       gausses(1)%strain(1:6) = gausses(1)%strain_bak(1:6)+dstrain(1:6)+EPSTH(:)
 
-      F(1:3,1:3) = F(1:3,1:3) + matmul( u(1:ndof, 1:nn)+ddu(1:ndof, 1:nn), gderiv1(1:nn, 1:ndof) )
+      F(1:3,1:3) = F(1:3,1:3) + matmul( totaldisp(1:ndof, 1:nn)+totalddisp(1:ndof, 1:nn), gderiv1(1:nn, 1:ndof) )
+      gderiv(1:nn, 1:ndof) = gderiv1(1:nn, 1:ndof)
     end if
 
     ! Update stress
@@ -569,7 +555,7 @@ contains
     ! calculate the Internal Force
     stress(1:6) = gausses(1)%stress(1:6)
 
-    WG=DET
+    WG=det
     qf(1:nn*ndof) = qf(1:nn*ndof)+matmul( stress(1:6), B(1:6,1:nn*ndof) )*WG
 
   end subroutine
