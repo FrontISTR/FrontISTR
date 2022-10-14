@@ -22,7 +22,7 @@ module m_ElastoPlastic
 contains
 
   !> This subroutine calculates elastoplastic constitutive relation
-  subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, plstrain, D, temperature )
+  subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
     type( tMaterial ), intent(in) :: matl      !< material properties
     integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: stress(6) !< stress
@@ -31,12 +31,16 @@ contains
     integer, intent(in)           :: istat     !< plastic state
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
     real(kind=kreal), intent(in)  :: temperature   !> temperature
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i,j,ytype
+    integer :: i,j,ytype,hdflag_in
     logical :: kinematic
     real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6), De(6,6), G, dlambda
     real(kind=kreal) :: C1,C2,C3, back(6)
     real(kind=kreal) :: J1,J2,J3, fai, sita, harden, khard, da(6), devia(6)
+
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
 
     ytype = getYieldFunction( matl%mtype )
     if( ytype==3 ) then
@@ -51,7 +55,7 @@ contains
       khard = calKinematicHarden( matl, extval(1) )
     endif
 
-    call calElasticMatrix( matl, sectTYPE, De, temperature  )
+    call calElasticMatrix( matl, sectTYPE, De, temperature, hdflag=hdflag_in )
 
     J1 = (stress(1)+stress(2)+stress(3))
     devia(1:3) = stress(1:3)-J1/3.d0
@@ -62,6 +66,9 @@ contains
 
     D(:,:) = De(:,:)
     if( istat == 0 ) return   ! elastic state
+    if( present(hdflag) ) then
+      if( hdflag == 2 ) return
+    end if
 
     !derivative of J2
     dj2(1:3) = devia(1:3)
@@ -348,7 +355,7 @@ contains
   end function
 
   !> This subroutine does backward-Euler return calculation
-  subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, temp )
+  subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, temp, hdflag )
     use m_utilities, only : eigen3
     type( tMaterial ), intent(in)    :: matl        !< material properties
     real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
@@ -356,11 +363,12 @@ contains
     integer, intent(inout)           :: istat       !< plastic state
     real(kind=kreal), intent(inout)  :: fstat(:)    !< plastic strain, back stress
     real(kind=kreal), intent(in)     :: temp  !< temperature
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
     real(kind=kreal), parameter :: tol =1.d-3
     integer, parameter          :: MAXITER = 5
     real(kind=kreal) :: dlambda, f, mat(3,3)
-    integer :: i,ytype, maxp(1), minp(1), mm
+    integer :: i,ytype, maxp(1), minp(1), mm, hdflag_in
     real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
     real(kind=kreal) :: J1,J2,J3, H, KH, KK, dd, yd, G, K, devia(6)
     real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
@@ -368,6 +376,9 @@ contains
     real(kind=kreal) :: fstat_bak(7)
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
+
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
 
     f = 0.0d0
 
@@ -388,6 +399,8 @@ contains
       istat =0
       return
     endif
+    if( hdflag_in == 2 ) return
+
     istat = 1           ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
 

@@ -84,7 +84,7 @@ contains
       call uElasticMatrix( matl%variables(101:), gauss%strain, matrix )
     elseif( isElastoplastic(matl%mtype) )  then
       call calElastoPlasticMatrix( matl, sectType, gauss%stress,  &
-        gauss%istatus(1), gauss%fstatus, gauss%plstrain, matrix, temperature  )
+        gauss%istatus(1), gauss%fstatus, gauss%plstrain, matrix, temperature, hdflag=hdflag_in  )
     elseif( matl%mtype==USERMATERIAL ) then
       call uMatlMatrix( matl%name, matl%variables(101:), gauss%strain,  &
         gauss%stress, gauss%fstatus, matrix, dtime, time )
