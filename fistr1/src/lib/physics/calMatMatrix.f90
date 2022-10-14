@@ -90,7 +90,7 @@ contains
         gauss%stress, gauss%fstatus, matrix, dtime, time )
     elseif( matl%mtype==NORTON ) then
       call iso_creep( matl, sectTYPE, gauss%stress, gauss%strain, gauss%fstatus,  &
-        gauss%plstrain, dtime, time, matrix, temperature  )
+        gauss%plstrain, dtime, time, matrix, temperature, hdflag=hdflag_in )
     else
       stop "Material type not supported!"
     endif
@@ -124,7 +124,8 @@ contains
       call UpdateViscoelastic( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, dtime, temp, tempn )
     elseif ( gauss%pMaterial%mtype==NORTON ) then
       if( .not. present(dtime)  ) stop "error in viscoelastic update!"
-      call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, gauss%plstrain, dtime, time, temp )
+      call update_iso_creep( gauss%pMaterial, sectType, strain, stress, gauss%fstatus, &
+        &  gauss%plstrain, dtime, time, temp, hdflag=hdflag )
     elseif ( gauss%pMaterial%mtype==USERMATERIAL)  then ! user-defined
       call uUpdate(  gauss%pMaterial%name, gauss%pMaterial%variables(101:),   &
         strain, stress, gauss%fstatus, dtime, time )
