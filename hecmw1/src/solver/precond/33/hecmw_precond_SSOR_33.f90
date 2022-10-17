@@ -21,6 +21,8 @@ module hecmw_precond_SSOR_33
 
   public:: hecmw_precond_SSOR_33_setup
   public:: hecmw_precond_SSOR_33_apply
+  public:: hecmw_precond_SSOR_33_apply_opt1
+  public:: hecmw_precond_SSOR_33_apply_opt2
   public:: hecmw_precond_SSOR_33_clear
 
   integer(kind=kint) :: N
@@ -368,6 +370,7 @@ contains
     do ic=NColor, 1, -1
       !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
+!NEC$ ivdep
         do i = blockIndexToColorIndex(blockIndex), &
             blockIndexToColorIndex(blockIndex-1)+1, -1
           ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
@@ -379,6 +382,7 @@ contains
           SW3= 0.d0
           isU= indexU(i-1) + 1
           ieU= indexU(i)
+!NEC$ NOVECTOR
           do j= ieU, isU, -1
             !k= perm(itemU(j))
             k= itemU(j)
@@ -429,6 +433,363 @@ contains
     !call stop_collection("loopInPrecond33")
 
   end subroutine hecmw_precond_SSOR_33_apply
+
+  subroutine hecmw_precond_SSOR_33_apply_opt1(ZP)
+    implicit none
+    real(kind=kreal), intent(inout) :: ZP(:)
+    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k, jmax,jmax2
+    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
+
+    ! added for turning >>>
+    integer(kind=kint) :: blockIndex
+
+    if (isFirst) then
+      call setup_tuning_parameters
+      isFirst = .false.
+    endif
+    ! <<< added for turning
+
+    !call start_collection("loopInPrecond33")
+
+    !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+    !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
+
+    jmax=0
+    jmax2=0
+    do i=1, N
+      isL= indexL(i-1)+1
+      ieL= indexL(i)
+      if(jmax .lt. ieL - isL) then
+        jmax=ieL-isL
+      endif
+      isU= indexU(i-1) + 1
+      ieU= indexU(i)
+      if(jmax2 .lt. ieU - isU) then
+        jmax2=ieU-isU
+      endif
+    enddo
+
+
+    !$omp parallel default(none) &
+      !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
+      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,jmax,jmax2) &
+      !$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+
+    !C-- FORWARD
+    do ic=1,NColor
+      !$omp do schedule (static, 1)
+      do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
+!NEC$ ivdep
+        do i = blockIndexToColorIndex(blockIndex-1)+1, &
+            blockIndexToColorIndex(blockIndex)
+          ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
+          iold = perm(i)
+          SW1= ZP(3*iold-2)
+          SW2= ZP(3*iold-1)
+          SW3= ZP(3*iold  )
+          isL= indexL(i-1)+1
+          ieL= indexL(i)
+          do j= isL, ieL
+            !k= perm(itemL(j))
+            k= itemL(j)
+            X1= ZP(3*k-2)
+            X2= ZP(3*k-1)
+            X3= ZP(3*k  )
+            SW1= SW1 - AL(9*j-8)*X1 - AL(9*j-7)*X2 - AL(9*j-6)*X3
+            SW2= SW2 - AL(9*j-5)*X1 - AL(9*j-4)*X2 - AL(9*j-3)*X3
+            SW3= SW3 - AL(9*j-2)*X1 - AL(9*j-1)*X2 - AL(9*j  )*X3
+          enddo ! j
+
+          if (NContact.ne.0) then
+            isL= indexCL(i-1)+1
+            ieL= indexCL(i)
+            do j= isL, ieL
+              !k= perm(itemCL(j))
+              k= itemCL(j)
+              X1= ZP(3*k-2)
+              X2= ZP(3*k-1)
+              X3= ZP(3*k  )
+              SW1= SW1 - CAL(9*j-8)*X1 - CAL(9*j-7)*X2 - CAL(9*j-6)*X3
+              SW2= SW2 - CAL(9*j-5)*X1 - CAL(9*j-4)*X2 - CAL(9*j-3)*X3
+              SW3= SW3 - CAL(9*j-2)*X1 - CAL(9*j-1)*X2 - CAL(9*j  )*X3
+            enddo ! j
+          endif
+
+          X1= SW1
+          X2= SW2
+          X3= SW3
+          X2= X2 - ALU(9*i-5)*X1
+          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
+          X3= ALU(9*i  )*  X3
+          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
+          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
+          ZP(3*iold-2)= X1
+          ZP(3*iold-1)= X2
+          ZP(3*iold  )= X3
+        enddo ! i
+        if (NContact.ne.0) then
+!NEC$ ivdep
+          do i = blockIndexToColorIndex(blockIndex-1)+1, &
+            blockIndexToColorIndex(blockIndex)
+            iold = perm(i)
+            SW1= ZP(3*iold-2)
+            SW2= ZP(3*iold-1)
+            SW3= ZP(3*iold  )
+            isL= indexCL(i-1)+1
+            ieL= indexCL(i)
+            do j= isL, ieL
+              !k= perm(itemCL(j))
+              k= itemCL(j)
+              X1= ZP(3*k-2)
+              X2= ZP(3*k-1)
+              X3= ZP(3*k  )
+              SW1= SW1 - CAL(9*j-8)*X1 - CAL(9*j-7)*X2 - CAL(9*j-6)*X3
+              SW2= SW2 - CAL(9*j-5)*X1 - CAL(9*j-4)*X2 - CAL(9*j-3)*X3
+              SW3= SW3 - CAL(9*j-2)*X1 - CAL(9*j-1)*X2 - CAL(9*j  )*X3
+            enddo ! j
+            X1= SW1
+            X2= SW2
+            X3= SW3
+            X2= X2 - ALU(9*i-5)*X1
+            X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
+            X3= ALU(9*i  )*  X3
+            X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
+            X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
+            ZP(3*iold-2)= X1
+            ZP(3*iold-1)= X2
+            ZP(3*iold  )= X3
+          enddo ! i
+        endif
+
+
+
+
+
+
+      enddo ! blockIndex
+      !$omp end do
+    enddo ! ic
+
+    !C
+    !C-- BACKWARD
+    do ic=NColor, 1, -1
+      !$omp do schedule (static, 1)
+      do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
+!NEC$ ivdep
+        do i = blockIndexToColorIndex(blockIndex), &
+            blockIndexToColorIndex(blockIndex-1)+1, -1
+          ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
+          !   do i = blockIndexToColorIndex(blockIndex-1)+1, &
+            !        blockIndexToColorIndex(blockIndex)
+          !   do i = endPos(threadNum, ic), startPos(threadNum, ic), -1
+          SW1= 0.d0
+          SW2= 0.d0
+          SW3= 0.d0
+          isU= indexU(i-1) + 1
+          ieU= indexU(i)
+!NEC$ NOVECTOR
+          do j= ieU, isU, -1
+            !k= perm(itemU(j))
+            k= itemU(j)
+            X1= ZP(3*k-2)
+            X2= ZP(3*k-1)
+            X3= ZP(3*k  )
+            SW1= SW1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
+            SW2= SW2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
+            SW3= SW3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+          enddo ! j
+
+          if (NContact.gt.0) then
+            isU= indexCU(i-1) + 1
+            ieU= indexCU(i)
+            do j= ieU, isU, -1
+              !k= perm(itemCU(j))
+              k= itemCU(j)
+              X1= ZP(3*k-2)
+              X2= ZP(3*k-1)
+              X3= ZP(3*k  )
+              SW1= SW1 + CAU(9*j-8)*X1 + CAU(9*j-7)*X2 + CAU(9*j-6)*X3
+              SW2= SW2 + CAU(9*j-5)*X1 + CAU(9*j-4)*X2 + CAU(9*j-3)*X3
+              SW3= SW3 + CAU(9*j-2)*X1 + CAU(9*j-1)*X2 + CAU(9*j  )*X3
+            enddo ! j
+          endif
+
+          X1= SW1
+          X2= SW2
+          X3= SW3
+          X2= X2 - ALU(9*i-5)*X1
+          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
+          X3= ALU(9*i  )*  X3
+          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
+          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
+          iold = perm(i)
+          ZP(3*iold-2)=  ZP(3*iold-2) - X1
+          ZP(3*iold-1)=  ZP(3*iold-1) - X2
+          ZP(3*iold  )=  ZP(3*iold  ) - X3
+        enddo ! i
+      enddo ! blockIndex
+      !$omp end do
+    enddo ! ic
+    !$omp end parallel
+
+    !OCL END_CACHE_SUBSECTOR
+    !OCL END_CACHE_SECTOR_SIZE
+
+    !call stop_collection("loopInPrecond33")
+
+  end subroutine hecmw_precond_SSOR_33_apply_opt1
+
+  subroutine hecmw_precond_SSOR_33_apply_opt2(ZP)
+    implicit none
+    real(kind=kreal), intent(inout) :: ZP(:)
+    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
+    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
+
+    ! added for turning >>>
+    integer(kind=kint) :: blockIndex
+
+    if (isFirst) then
+      call setup_tuning_parameters
+      isFirst = .false.
+    endif
+    ! <<< added for turning
+
+    !call start_collection("loopInPrecond33")
+
+    !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+    !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
+
+    !$omp parallel default(none) &
+      !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
+      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
+      !$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+
+    !C-- FORWARD
+    do ic=1,NColor
+      !$omp do schedule (static, 1)
+      do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
+!NEC$ ivdep
+        do i = blockIndexToColorIndex(blockIndex-1)+1, &
+            blockIndexToColorIndex(blockIndex)
+          ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
+          iold = perm(i)
+          SW1= ZP(3*iold-2)
+          SW2= ZP(3*iold-1)
+          SW3= ZP(3*iold  )
+          isL= indexL(i-1)+1
+          ieL= indexL(i)
+!NEC$ NOVECTOR
+          do j= isL, ieL
+            !k= perm(itemL(j))
+            k= itemL(j)
+            X1= ZP(3*k-2)
+            X2= ZP(3*k-1)
+            X3= ZP(3*k  )
+            SW1= SW1 - AL(9*j-8)*X1 - AL(9*j-7)*X2 - AL(9*j-6)*X3
+            SW2= SW2 - AL(9*j-5)*X1 - AL(9*j-4)*X2 - AL(9*j-3)*X3
+            SW3= SW3 - AL(9*j-2)*X1 - AL(9*j-1)*X2 - AL(9*j  )*X3
+          enddo ! j
+
+          if (NContact.ne.0) then
+            isL= indexCL(i-1)+1
+            ieL= indexCL(i)
+            do j= isL, ieL
+              !k= perm(itemCL(j))
+              k= itemCL(j)
+              X1= ZP(3*k-2)
+              X2= ZP(3*k-1)
+              X3= ZP(3*k  )
+              SW1= SW1 - CAL(9*j-8)*X1 - CAL(9*j-7)*X2 - CAL(9*j-6)*X3
+              SW2= SW2 - CAL(9*j-5)*X1 - CAL(9*j-4)*X2 - CAL(9*j-3)*X3
+              SW3= SW3 - CAL(9*j-2)*X1 - CAL(9*j-1)*X2 - CAL(9*j  )*X3
+            enddo ! j
+          endif
+
+          X1= SW1
+          X2= SW2
+          X3= SW3
+          X2= X2 - ALU(9*i-5)*X1
+          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
+          X3= ALU(9*i  )*  X3
+          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
+          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
+          ZP(3*iold-2)= X1
+          ZP(3*iold-1)= X2
+          ZP(3*iold  )= X3
+        enddo ! i
+      enddo ! blockIndex
+      !$omp end do
+    enddo ! ic
+
+    !C-- BACKWARD
+    do ic=NColor, 1, -1
+      !$omp do schedule (static, 1)
+      do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
+!NEC$ ivdep
+        do i = blockIndexToColorIndex(blockIndex), &
+            blockIndexToColorIndex(blockIndex-1)+1, -1
+          ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
+          !   do i = blockIndexToColorIndex(blockIndex-1)+1, &
+            !        blockIndexToColorIndex(blockIndex)
+          !   do i = endPos(threadNum, ic), startPos(threadNum, ic), -1
+          SW1= 0.d0
+          SW2= 0.d0
+          SW3= 0.d0
+          isU= indexU(i-1) + 1
+          ieU= indexU(i)
+!NEC$ NOVECTOR
+          do j= ieU, isU, -1
+            !k= perm(itemU(j))
+            k= itemU(j)
+            X1= ZP(3*k-2)
+            X2= ZP(3*k-1)
+            X3= ZP(3*k  )
+            SW1= SW1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
+            SW2= SW2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
+            SW3= SW3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+          enddo ! j
+
+          if (NContact.gt.0) then
+            isU= indexCU(i-1) + 1
+            ieU= indexCU(i)
+            do j= ieU, isU, -1
+              !k= perm(itemCU(j))
+              k= itemCU(j)
+              X1= ZP(3*k-2)
+              X2= ZP(3*k-1)
+              X3= ZP(3*k  )
+              SW1= SW1 + CAU(9*j-8)*X1 + CAU(9*j-7)*X2 + CAU(9*j-6)*X3
+              SW2= SW2 + CAU(9*j-5)*X1 + CAU(9*j-4)*X2 + CAU(9*j-3)*X3
+              SW3= SW3 + CAU(9*j-2)*X1 + CAU(9*j-1)*X2 + CAU(9*j  )*X3
+            enddo ! j
+          endif
+
+          X1= SW1
+          X2= SW2
+          X3= SW3
+          X2= X2 - ALU(9*i-5)*X1
+          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
+          X3= ALU(9*i  )*  X3
+          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
+          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
+          iold = perm(i)
+          ZP(3*iold-2)=  ZP(3*iold-2) - X1
+          ZP(3*iold-1)=  ZP(3*iold-1) - X2
+          ZP(3*iold  )=  ZP(3*iold  ) - X3
+        enddo ! i
+      enddo ! blockIndex
+      !$omp end do
+    enddo ! ic
+    !$omp end parallel
+
+    !OCL END_CACHE_SUBSECTOR
+    !OCL END_CACHE_SECTOR_SIZE
+
+    !call stop_collection("loopInPrecond33")
+
+  end subroutine hecmw_precond_SSOR_33_apply_opt2
 
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)
     implicit none
