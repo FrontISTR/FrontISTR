@@ -318,7 +318,7 @@ contains
     real(kind=kreal)   :: tmpval(6), hydval, nsecdup
     integer(kind=kint), allocatable :: irow(:), jcol(:), asect(:)
     real(kind=kreal), allocatable :: stress_hyd(:), strain_hyd(:)
-    real(kind=kreal), allocatable :: stress_dev(:), strain_dev(:)
+    real(kind=kreal), allocatable :: stress_dev(:)
     real(kind=kreal) :: stress_hyd_ndave(6), strain_hyd_ndave(6)
     real(kind=kreal) :: stress_dev_ndave(6), strain_dev_ndave(6)
     real(kind=kreal), allocatable :: n_dup_dev(:), n_dup_hyd(:)
@@ -363,13 +363,12 @@ contains
 
     ! add stress/strain from smoothed elements
     allocate(stress_hyd(6*nlen), strain_hyd(6*nlen))
-    allocate(stress_dev(6*nlen), strain_dev(6*nlen))
+    allocate(stress_dev(6*nlen))
     allocate(n_dup_dev(nlen),n_dup_hyd(nlen))
 
     stress_hyd(:) = 0.d0
     strain_hyd(:) = 0.d0
     stress_dev(:) = 0.d0
-    strain_dev(:) = 0.d0
     n_dup_hyd(:) = 0.d0
     n_dup_dev(:) = 0.d0
     do itype = 1, hecMESH%n_elem_type
@@ -387,13 +386,9 @@ contains
           idx(1) = search_idx_SENES( irow, asect, nid(1), isect )
 
           !strain
-          tmpval(1:6) = fstrSOLID%elements(icel)%gausses(1)%strain_out(1:6)
-          hydval = (tmpval(1)+tmpval(2)+tmpval(3))/3.d0
-          strain_hyd(6*idx(1)-5:6*idx(1)-3) = hydval
+          strain_hyd(6*idx(1)-5:6*idx(1)) = fstrSOLID%elements(icel)%gausses(1)%strain_out(1:6)
           !stress
-          tmpval(1:6) = fstrSOLID%elements(icel)%gausses(1)%stress_out(1:6)
-          hydval = (tmpval(1)+tmpval(2)+tmpval(3))/3.d0
-          stress_hyd(6*idx(1)-5:6*idx(1)-3) = hydval
+          stress_hyd(6*idx(1)-5:6*idx(1)) =  fstrSOLID%elements(icel)%gausses(1)%stress_out(1:6)
           !number of duplication
           n_dup_hyd(idx(1)) = n_dup_hyd(idx(1)) + 1.d0
         else if( ic_type == 891 ) then
@@ -401,16 +396,8 @@ contains
           idx(1) = search_idx_SENES( irow, asect, nid(1), isect )
           idx(2) = search_idx_SENES( irow, asect, nid(2), isect )
 
-          !strain
-          tmpval(1:6) = fstrSOLID%elements(icel)%gausses(1)%strain_out(1:6)
-          hydval = (tmpval(1)+tmpval(2)+tmpval(3))/3.d0
-          tmpval(1:3) = tmpval(1:3)-hydval
-          strain_dev(6*idx(1)-5:6*idx(1)) = strain_dev(6*idx(1)-5:6*idx(1)) + tmpval(1:6)
-          strain_dev(6*idx(2)-5:6*idx(2)) = strain_dev(6*idx(2)-5:6*idx(2)) + tmpval(1:6)
           !stress
           tmpval(1:6) = fstrSOLID%elements(icel)%gausses(1)%stress_out(1:6)
-          hydval = (tmpval(1)+tmpval(2)+tmpval(3))/3.d0
-          tmpval(1:3) = tmpval(1:3)-hydval
           stress_dev(6*idx(1)-5:6*idx(1)) = stress_dev(6*idx(1)-5:6*idx(1)) + tmpval(1:6)
           stress_dev(6*idx(2)-5:6*idx(2)) = stress_dev(6*idx(2)-5:6*idx(2)) + tmpval(1:6)
           !number of duplication
@@ -425,7 +412,6 @@ contains
       do j=irow(i-1)+1,irow(i)
         if( n_dup_dev(j) < 1.0d-8 ) cycle
         stress_dev(6*j-5:6*j) = stress_dev(6*j-5:6*j)/n_dup_dev(j)
-        strain_dev(6*j-5:6*j) = strain_dev(6*j-5:6*j)/n_dup_dev(j)
       end do
     end do
 
@@ -433,22 +419,19 @@ contains
     do i=1,nnode
       if( irow(i-1) == irow(i) ) cycle
       strain_hyd_ndave(:) = 0.d0
-      strain_dev_ndave(:) = 0.d0
       stress_hyd_ndave(:) = 0.d0
       stress_dev_ndave(:) = 0.d0
       do j=irow(i-1)+1,irow(i)
         strain_hyd_ndave(1:6) = strain_hyd_ndave(1:6) + strain_hyd(6*j-5:6*j)
-        strain_dev_ndave(1:6) = strain_dev_ndave(1:6) + strain_dev(6*j-5:6*j)
         stress_hyd_ndave(1:6) = stress_hyd_ndave(1:6) + stress_hyd(6*j-5:6*j)
         stress_dev_ndave(1:6) = stress_dev_ndave(1:6) + stress_dev(6*j-5:6*j)
       end do
       nsecdup = dble(irow(i)-irow(i-1))
       strain_hyd_ndave(1:6) = strain_hyd_ndave(1:6)/nsecdup
-      strain_dev_ndave(1:6) = strain_dev_ndave(1:6)/nsecdup
       stress_hyd_ndave(1:6) = stress_hyd_ndave(1:6)/nsecdup
       stress_dev_ndave(1:6) = stress_dev_ndave(1:6)/nsecdup
 
-      Nodal_STRAIN(6*i-5:6*i) = Nodal_STRAIN(6*i-5:6*i)+strain_hyd_ndave(1:6)+strain_dev_ndave(1:6)
+      Nodal_STRAIN(6*i-5:6*i) = Nodal_STRAIN(6*i-5:6*i)+strain_hyd_ndave(1:6)
       Nodal_STRESS(6*i-5:6*i) = Nodal_STRESS(6*i-5:6*i)+stress_hyd_ndave(1:6)+stress_dev_ndave(1:6)
     end do
 
@@ -469,7 +452,7 @@ contains
         do i=1,4
           nd = hecMESH%elem_node_item(jS+i)
           idx(1) = search_idx_SENES( irow, asect, hecMESH%elem_node_item(jS+i), isect )
-          edstrain(1:6) = edstrain(1:6) + strain_hyd(6*idx(1)-5:6*idx(1)) + strain_dev(6*idx(1)-5:6*idx(1))
+          edstrain(1:6) = edstrain(1:6) + strain_hyd(6*idx(1)-5:6*idx(1))
           edstress(1:6) = edstress(1:6) + stress_hyd(6*idx(1)-5:6*idx(1)) + stress_dev(6*idx(1)-5:6*idx(1))
         end do
         edstrain(1:6) = 0.25d0*edstrain(1:6)
@@ -484,7 +467,7 @@ contains
     enddo
 
     deallocate(stress_hyd, strain_hyd)
-    deallocate(stress_dev, strain_dev)
+    deallocate(stress_dev)
     deallocate(n_dup_dev, n_dup_hyd)
 
   end subroutine
