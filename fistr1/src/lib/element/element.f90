@@ -570,7 +570,7 @@ contains
   subroutine getShapeDeriv( fetype, localcoord, shapederiv )
     integer, intent(in)           :: fetype             !< input element type
     real(kind=kreal), intent(in)  :: localcoord(:)      !< natural points
-    real(kind=kreal), intent(out) :: shapederiv(:,:)    !< deivative of shape function
+    real(kind=kreal), intent(out) :: shapederiv(:,:)    !< derivative of shape function
 
     select case (fetype)
       case ( fe_tri3n, fe_mitc3_shell )
@@ -736,7 +736,7 @@ contains
     real(kind=kreal), intent(in)  :: localcoord(:)   !< curr position with natural coord
     real(kind=kreal), intent(in)  :: elecoord(:,:)   !< nodal coord of curr element
     real(kind=kreal), intent(out) :: det             !< nodal coord of curr element
-    real(kind=kreal), intent(out) :: gderiv(:,:)     !< shape deivative in global coordinate system
+    real(kind=kreal), intent(out) :: gderiv(:,:)     !< shape derivative in global coordinate system
 
     real(kind=kreal) :: DUM, XJ(3,3), XJI(3,3), deriv(nn,3)
     integer          :: nspace

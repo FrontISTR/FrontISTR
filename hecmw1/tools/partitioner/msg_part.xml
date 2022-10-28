@@ -31,7 +31,7 @@
 			<description>無効なトークンを検出した</description>
 		</define>
 		<define type="error" name="E0111">
-			<message>'TYPE' must not be ommited</message>
+			<message>'TYPE' must not be omitted</message>
 			<description>!PARTITIONの必須のオプションである'TYPE'が見つからない</description>
 		</define>
 		<define type="error" name="E0112">
@@ -43,7 +43,7 @@
 			<description>'TYPE'の後に'='が見つからない</description>
 		</define>
 		<define type="error" name="E0121">
-			<message>'METHOD' must not be ommited</message>
+			<message>'METHOD' must not be omitted</message>
 			<description>!PARTITIONの必須のオプションである'METHOD'が見つからない</description>
 		</define>
 		<define type="error" name="E0122">
@@ -55,15 +55,15 @@
 			<description>'METHOD'の後に'='が見つからない</description>
 		</define>
 		<define type="error" name="E0124">
-			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'PMETIS' is specfied in 'METHOD'.</message>
+			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'PMETIS' is specified in 'METHOD'.</message>
 			<description>-DHECMW_PART_WITH_METISオプション無しにビルドされているにもかかわらず，'METHOD'に'PMETIS'が指定された．</description>
 		</define>
 		<define type="error" name="E0125">
-			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'KMETIS' is specfied in 'METHOD'.</message>
+			<message>Partitioner was compiled without -DHECMW_PART_WITH_METIS, but 'KMETIS' is specified in 'METHOD'.</message>
 			<description>-DHECMW_PART_WITH_METISオプション無しにビルドされているにもかかわらず，'METHOD'に'KMETIS'が指定された．</description>
 		</define>
 		<define type="error" name="E0131">
-			<message>'DOMAIN' must not be ommited</message>
+			<message>'DOMAIN' must not be omitted</message>
 			<description>!PARTITIONの必須のオプションである'DOMAIN'が見つからない</description>
 		</define>
 		<define type="error" name="E0132">
@@ -115,7 +115,7 @@
 			<description>必要数以上の分割軸方向が指定された</description>
 		</define>
 		<define type="error" name="E0164">
-			<message>Partitioning directions must not be ommited, if 'METHOD' is 'RCB'</message>
+			<message>Partitioning directions must not be omitted, if 'METHOD' is 'RCB'</message>
 			<description>'METHOD'が'RCB'にもかかわらず分割軸方向の指定が省略された</description>
 		</define>
 		<define type="error" name="W0165">

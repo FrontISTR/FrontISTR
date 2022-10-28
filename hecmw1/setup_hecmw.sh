@@ -152,7 +152,7 @@ do
 		LEXONLY=0
 	elif [ "\"$i\"" = "\"-only-message\"" -o "\"$i\"" = "\"--only-message\"" ]; then
 		REMOVEMAKEFILES=0
-		GATHERMAKEFIELS=0
+		GATHERMAKEFILES=0
 		MESSAGEONLY=1
 		LEXONLY=0
 	elif [ "\"$i\"" = "\"-only-lex\"" -o "\"$i\"" = "\"--only-lex\"" ]; then
