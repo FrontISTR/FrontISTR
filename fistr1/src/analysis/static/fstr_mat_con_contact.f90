@@ -27,6 +27,14 @@ module fstr_matrix_con_contact
 
 contains
 
+  integer(kind=kint) function fstr_get_num_lagrange_pernode(algtype)
+    integer(kind=kint) :: algtype !< current loading step
+    if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+      fstr_get_num_lagrange_pernode = 1
+    else if( algtype == CONTACTTIED ) then
+      fstr_get_num_lagrange_pernode = 3
+    endif
+  end function
 
   !> \brief This subroutine saves original matrix structure constructed originally by hecMW_matrix
   subroutine fstr_save_originalMatrixStructure(hecMAT)
@@ -55,7 +63,19 @@ contains
     type (hecmwST_matrix)                :: conMAT
     logical, intent(in)                  :: is_contact_active
 
-    num_lagrange = infoCTChange%contactNode_current
+    integer(kind=kint)                   :: i, j, grpid
+    integer(kind=kint)                   :: nlag !< number of Lagrange multipliers per node
+
+    num_lagrange = 0
+    do i = 1, size(fstrSOLID%contacts)
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+      nlag = fstr_get_num_lagrange_pernode(fstrSOLID%contacts(i)%algtype)
+      do j = 1, size(fstrSOLID%contacts(i)%slave)
+        if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+        num_lagrange = num_lagrange + nlag
+      enddo
+    enddo
 
     ! Get original list of related nodes
     call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active,list_nodeRelated_org,list_nodeRelated)
@@ -95,7 +115,7 @@ contains
     integer(kind=kint)            :: grpid !< contact pairs group ID
     integer(kind=kint)            :: count_lagrange !< counter of Lagrange multiplier
     integer(kind=kint)            :: ctsurf, etype, nnode, ndLocal(l_max_surface_node + 1) !< contents of type tContact
-    integer(kind=kint)            :: i, j
+    integer(kind=kint)            :: i, j, k, nlag, algtype
     real(kind=kreal)              :: fcoeff !< friction coefficient
     logical                       :: necessary_to_insert_node
 
@@ -108,6 +128,10 @@ contains
       fcoeff = fstrSOLID%contacts(i)%fcoeff
       necessary_to_insert_node = ( fcoeff /= 0.0d0 )
 
+      algtype = fstrSOLID%contacts(i)%algtype
+      nlag = fstr_get_num_lagrange_pernode(algtype)
+      if( algtype == CONTACTTIED ) permission = .true.
+
       do j = 1, size(fstrSOLID%contacts(i)%slave)
 
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
@@ -119,10 +143,11 @@ contains
         ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
         ndLocal(2:nnode+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(1:nnode)
 
-        count_lagrange = count_lagrange + 1
-
-        call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
-          & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+        do k=1,nlag
+          count_lagrange = count_lagrange + 1
+          call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
+            & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+        enddo
       enddo
 
     enddo
@@ -134,15 +159,21 @@ contains
 
     type(fstr_solid)                        :: fstrSOLID                !< type fstr_solid
     type(hecmwST_matrix_lagrange)          :: hecLagMAT            !< hecmwST_matrix_lagrange
-    integer (kind=kint)                    :: id_lagrange, i, j
+    integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag
 
     id_lagrange = 0
 
     do i = 1, size(fstrSOLID%contacts)
+
+      algtype = fstrSOLID%contacts(i)%algtype
+      nlag = fstr_get_num_lagrange_pernode(algtype)
+
       do j = 1, size(fstrSOLID%contacts(i)%slave)
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
-        id_lagrange = id_lagrange + 1
-        hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%contacts(i)%states(j)%multiplier(1)
+        do k=1,nlag
+          id_lagrange = id_lagrange + 1
+          hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
+        enddo
       enddo
     enddo
 

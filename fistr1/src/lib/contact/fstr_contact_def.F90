@@ -321,12 +321,11 @@ contains
     logical :: is_cand, is_present_B
     real(kind=kreal), pointer :: Bp(:)
 
-    if( contact%algtype<=2 ) return
-
     if( is_init ) then
       distclr = contact%cparam%DISTCLR_INIT
     else
       distclr = contact%cparam%DISTCLR_FREE
+      if( contact%algtype == CONTACTTIED ) return
     endif
 
     allocate(contact_surf(size(nodeID)))
