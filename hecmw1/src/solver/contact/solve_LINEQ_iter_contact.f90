@@ -520,7 +520,7 @@ contains
     real(kind=kreal), intent(out) :: wSL(:)
     real(kind=kreal), intent(out) :: wSU(:)
     logical, intent(in) :: fg_paracon
-    integer :: ndof, n, i, j, idof, jdof, l, ls, le, idx, imax
+    integer :: ndof, n, i, j, idof, jdof, l, ls, le, idx, imax, iwmin
     real(kind=kreal) :: val, vmax
     integer, allocatable :: iw1L(:), iw1U(:)
     integer(kind=kint) :: n_slave_in,n_slave_out
@@ -584,14 +584,21 @@ contains
       le=hecLagMAT%indexL_lagrange(i)
       vmax = 0.d0
       imax = -1
+      iwmin = n
       do l=ls,le
         j=hecLagMAT%itemL_lagrange(l)
         do jdof=1,ndof
           idx=(j-1)*ndof+jdof
           val=hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
-          if (iw1L(idx) == 1 .and. iw1U(idx) == 1 .and. abs(val) > abs(vmax)) then
-            imax=idx
-            vmax=val
+          if ( iw1L(idx) < iwmin .and. iw1U(idx) < iwmin ) then
+            iwmin = min(iw1L(idx),iw1U(idx))
+            vmax = 0.d0
+          endif
+          if ( iw1L(idx) == iwmin .and. iw1U(idx) == iwmin ) then
+            if ( abs(val) > abs(vmax) ) then
+              imax=idx
+              vmax=val
+            endif
           endif
         enddo
       enddo
@@ -694,7 +701,8 @@ contains
     enddo
     if (Tmat%nnz /= Tmat%index(Tmat%nr)) then
       write(0,*) Tmat%nnz, Tmat%index(Tmat%nr)
-      stop 'ERROR: Tmat%nnz wrong'
+      Tmat%nnz = Tmat%index(Tmat%nr)
+      !stop 'ERROR: Tmat%nnz wrong'
     endif
     ! item and A
     do i=1,Tmat%nr
@@ -787,7 +795,8 @@ contains
     enddo
     if (Ttmat%nnz /= Ttmat%index(Ttmat%nr)) then
       write(0,*) Ttmat%nnz, Ttmat%index(Ttmat%nr)
-      stop 'ERROR: Ttmat%nnz wrong'
+      !stop 'ERROR: Ttmat%nnz wrong'
+      Ttmat%nnz = Ttmat%index(Ttmat%nr)
     endif
     ! item and A
     do i=1,n
