@@ -357,7 +357,7 @@ contains
         if (NBFGS==0) then
            msg_method="GMRESR"
         else
-           msg_method="GMRESR-BFGS"
+           msg_method="SUP-GMRESR"
         endif
       case (6)  
         msg_method="GMRESR-EN"
