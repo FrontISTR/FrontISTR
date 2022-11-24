@@ -325,7 +325,16 @@ contains
       distclr = contact%cparam%DISTCLR_INIT
     else
       distclr = contact%cparam%DISTCLR_FREE
-      if( contact%algtype == CONTACTTIED ) return
+      if( contact%algtype == CONTACTTIED ) then
+        active = .false.
+        do i= 1, size(contact%slave)
+          if( contact%states(i)%state==CONTACTSTICK ) then
+            active = .true.
+            exit
+          endif
+        enddo
+        return
+      endif
     endif
 
     allocate(contact_surf(size(nodeID)))
@@ -1174,6 +1183,16 @@ contains
       distclr = contact%cparam%DISTCLR_INIT
     else
       distclr = contact%cparam%DISTCLR_FREE
+      if( contact%algtype == CONTACTTIED ) then
+        active = .false.
+        do i= 1, size(contact%slave)
+          if( contact%states(i)%state==CONTACTSTICK ) then
+            active = .true.
+            exit
+          endif
+        enddo
+        return
+      endif
     endif
 
     allocate(contact_surf(size(nodeID)))
