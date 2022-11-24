@@ -280,7 +280,7 @@ contains
           if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
             ! Obtain contact nodal force vector of contact pair
             call getContactNodalForce(etype,nnode,ndCoord,ndDu,fstrSOLID%contacts(i)%states(j),    &
-            fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce)
+            fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.true.)
             ! Update non-eqilibrited force vector
             call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,fstrSOLID,conMAT)
           else if( algtype == CONTACTTIED ) then
@@ -334,7 +334,7 @@ contains
   end subroutine 
 
   !> \brief This subroutine obtains contact nodal force vector of contact pair
-  subroutine getContactNodalForce(etype,nnode,ndCoord,ndDu,ctState,tPenalty,fcoeff,lagrange,ctNForce,ctTForce)
+  subroutine getContactNodalForce(etype,nnode,ndCoord,ndDu,ctState,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag)
 
     type(tContactState) :: ctState !< type tContactState
     integer(kind=kint) :: etype, nnode !< type of master segment; number of nodes of master segment
@@ -347,6 +347,7 @@ contains
     real(kind=kreal)   :: tf_trial(3), length_tft, tangent(3), tf_final(3)
     real(kind=kreal)       :: ctNForce((nnode+1)*3+1)                     !< contact force vector
     real(kind=kreal)       :: ctTForce((nnode+1)*3+1)                     !< contact force vector
+    logical            :: cflag  !< is necessary to update tangentForce_final
 
     ctNForce = 0.0d0
     ctTForce = 0.0d0
@@ -368,23 +369,26 @@ contains
 
     if(fcoeff /= 0.0d0 .and. lagrange > 0.0d0)then
 
-      call getTrialFricForceANDcheckFricState(nnode,tPenalty,fcoeff,lagrange,normal,shapefunc,nTm,ndDu,ctstate)
+      if( cflag ) then !calc tf_final and set it to tangentForce_final
+        call getTrialFricForceANDcheckFricState(nnode,tPenalty,fcoeff,lagrange,normal,shapefunc,nTm,ndDu,ctstate)
 
-      if( ctstate%state == contactStick ) then
-        tf_final(1:3) = ctstate%tangentForce_trial(1:3)
-      elseif( ctstate%state == contactSlip ) then
-        tf_trial(1:3) = ctstate%tangentForce_trial(1:3)
-        length_tft = dsqrt(dot_product(tf_trial,tf_trial))
-        tangent(1:3) = tf_trial(1:3)/length_tft
-        tf_final(1:3) = fcoeff*dabs(lagrange)*tangent(1:3)
+        if( ctstate%state == contactStick ) then
+          tf_final(1:3) = ctstate%tangentForce_trial(1:3)
+        elseif( ctstate%state == contactSlip ) then
+          tf_trial(1:3) = ctstate%tangentForce_trial(1:3)
+          length_tft = dsqrt(dot_product(tf_trial,tf_trial))
+          tangent(1:3) = tf_trial(1:3)/length_tft
+          tf_final(1:3) = fcoeff*dabs(lagrange)*tangent(1:3)
+        endif
+        ctstate%tangentForce_final(1:3) = tf_final(1:3)
+      else ! just set tangentForce_final to tf_final (used for fstr_ass_load_contact)
+        tf_final(1:3) = ctstate%tangentForce_final(1:3)
       endif
 
       ctTForce(1:3) = -tf_final(1:3)
       do j = 1, nnode
         ctTForce(j*3+1:j*3+3) = shapefunc(j)*tf_final(1:3)
       enddo
-
-      ctstate%tangentForce_final(1:3) = tf_final(1:3)
 
     endif
 
@@ -473,11 +477,15 @@ contains
     integer(kind=kint) :: np, ndof !< total number of nodes; degree of freedom
     integer(kind=kint) :: i, j, k, l, id_lagrange, lnod, grpid
     integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contents of type tContact
-    real(kind=kreal)   :: ndCoord(9*3), lagrange !< nodal coordinates; value of Lagrange mutiplier
+    real(kind=kreal)   :: ndu(9*3), ndCoord(9*3), lagrange !< nodal coordinates; value of Lagrange mutiplier
     real(kind=kreal)   :: normal(3), shapefunc(9) !< normal vector; shape functions
     real(kind=kreal)   :: nTm(10*3) !< vector
     real(kind=kreal)   :: tf_final(3) !< final friciton force vector
     real(kind=kreal)   :: ctForce(9*3 + 1) !< initial nodal contact force vector
+
+    integer(kind=kint) :: algtype, nlag    
+    real(kind=kreal)   :: ctNForce(9*3+1)     !< nodal normal contact force vector
+    real(kind=kreal)   :: ctTForce(9*3+1)     !< nodal tangential contact force vector
 
     np = hecMAT%NP ; ndof = hecMAT%NDOF
 
@@ -488,12 +496,12 @@ contains
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
+      algtype = fstrSOLID%contacts(i)%algtype
+      nlag = fstr_get_num_lagrange_pernode(algtype)
+
       do j = 1, size(fstrSOLID%contacts(i)%slave)
 
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
-
-        id_lagrange = id_lagrange + 1
-        lagrange = fstrSOLID%contacts(i)%states(j)%multiplier(1)
 
         ctsurf = fstrSOLID%contacts(i)%states(j)%surface
         etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
@@ -501,40 +509,28 @@ contains
         ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
         ndLocal(2:nnode+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(1:nnode)
         do k = 1, nnode+1
-          ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)          &
-            + fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
+          ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
+          ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
         enddo
 
-        ctForce = 0.0d0
+        do k=1,nlag
+          id_lagrange = id_lagrange + 1
+          lagrange = fstrSOLID%contacts(i)%states(j)%multiplier(k)
+    
+          if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+            ! Obtain contact nodal force vector of contact pair
+            call getContactNodalForce(etype,nnode,ndCoord,ndu,fstrSOLID%contacts(i)%states(j),    &
+            fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.false.)
+            ! Update non-eqilibrited force vector
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,fstrSOLID,hecMAT)
+          else if( algtype == CONTACTTIED ) then
+            call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%contacts(i)%states(j),lagrange,ctNForce,ctTForce)
+            ! Update non-eqilibrited force vector
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,fstrSOLID,hecMAT)
+          endif 
 
-        call getShapeFunc( etype, fstrSOLID%contacts(i)%states(j)%lpos(:), shapefunc )
-        normal(1:3) = fstrSOLID%contacts(i)%states(j)%direction(1:3)
-        nTm(1:3) = -normal(1:3)
-        do k = 1, nnode
-          nTm(k*3+1:k*3+3) = shapefunc(k)*normal(1:3)
         enddo
-        do l = 1, (nnode+1)*3
-          ctForce(l) = lagrange*nTm(l)
-        enddo
-        l = (nnode+1)*3 + 1
-        ctForce(l) = dot_product(nTm(1:(nnode+1)*3),ndCoord(1:(nnode+1)*3))
-
-        if( fstrSOLID%contacts(i)%fcoeff/=0.0d0 .and. lagrange>0.0d0 )then
-          tf_final(1:3) = fstrSOLID%contacts(i)%states(j)%tangentForce_final(1:3)
-          ctForce(1:3) = ctForce(1:3) - tf_final(1:3)
-          do l = 1, nnode
-            ctForce(l*3+1:l*3+3) = ctForce(l*3+1:l*3+3) + shapefunc(l)*tf_final(1:3)
-          enddo
-        endif
-
-        do l = 1, nnode + 1
-          lnod = ndLocal(l)
-          hecMAT%B((lnod-1)*3+1:(lnod-1)*3+3) = hecMAT%B((lnod-1)*3+1:(lnod-1)*3+3) + ctForce((l-1)*3+1:(l-1)*3+3)
-        enddo
-        hecMAT%B(np*ndof+id_lagrange) = ctForce((nnode+1)*3+1)
-
       enddo
-
     enddo
 
   end subroutine fstr_ass_load_contact

@@ -13,6 +13,7 @@ module fstr_matrix_con_contact
 
   implicit none
   private
+  public :: fstr_get_num_lagrange_pernode
   public :: hecmwST_matrix_lagrange
   public :: fstr_save_originalMatrixStructure
   public :: fstr_mat_con_contact
