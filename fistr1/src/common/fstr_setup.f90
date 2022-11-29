@@ -1052,6 +1052,27 @@ contains
 
   end subroutine
 
+  subroutine fstr_smoothed_element_calcmaxcon( hecMESH, fstrSOLID )
+    use m_static_LIB_C3D4SESNS
+    type(hecmwST_local_mesh),target :: hecMESH
+    type(fstr_solid)                :: fstrSOLID
+
+    integer :: i, isect, nodlocal(fstrSOLID%max_ncon), iiS, nn, con_stf
+
+    if( fstrSOLID%max_ncon_stf > 20 ) fstrSOLID%max_ncon_stf = 20   
+
+    do i=1,hecMESH%n_elem
+      isect= hecMESH%section_ID(i)
+      if( hecMESH%elem_type(i) /= fe_tet4n ) cycle
+      if( fstrSOLID%sections(isect)%elemopt341 /= kel341SESNS ) cycle
+      iiS = hecMESH%elem_node_index(i-1)
+      nn = hecMESH%elem_node_index(i-1) - iiS
+      nodlocal(1:nn) = hecMESH%elem_node_item(iiS+1:iiS+nn)
+      con_stf = Return_nn_comp_C3D4_SESNS(nn, nodlocal)
+      if( con_stf > fstrSOLID%max_ncon_stf ) fstrSOLID%max_ncon_stf = con_stf
+    enddo
+  end subroutine
+
   !> Initialize elements info in static calculation
   subroutine fstr_element_init( hecMESH, fstrSOLID )
     use elementInfo
@@ -1061,12 +1082,14 @@ contains
     type(fstr_solid)                :: fstrSOLID
 
     integer :: i, j, ng, isect, ndof, id, nn, n_elem
+    integer :: ncon_stf
 
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
     endif
 
     fstrSOLID%maxn_gauss = 0
+    fstrSOLID%max_ncon   = 0
 
     ! elemopt341 = kel341ES
     call fstr_smoothed_element_init( hecMESH, fstrSOLID )
@@ -1106,9 +1129,10 @@ contains
         call fstr_init_gauss( fstrSOLID%elements(i)%gausses( j )  )
       enddo
 
-      nn = hecmw_get_max_node(hecMESH%elem_type(i))
+      nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
       allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
       fstrSOLID%elements(i)%equiForces = 0.0d0
+      if( nn > fstrSOLID%max_ncon ) fstrSOLID%max_ncon = nn
 
       if( hecMESH%elem_type(i)==361 ) then
         if( fstrSOLID%sections(isect)%elemopt361==kel361IC ) then
@@ -1118,6 +1142,9 @@ contains
       endif
 
     enddo
+
+    fstrSOLID%max_ncon_stf = fstrSOLID%max_ncon
+    if( fstrSOLID%is_smoothing_active ) call fstr_smoothed_element_calcmaxcon( hecMESH, fstrSOLID )
 
     call hecmw_allreduce_I1(hecMESH,fstrSOLID%maxn_gauss,HECMW_MAX)
   end subroutine

@@ -28,12 +28,12 @@ contains
 
     type( tMaterial ), pointer :: material     !< material information
 
-    real(kind=kreal)   :: stiffness(60*6, 60*6)
-    integer(kind=kint) :: nodLOCAL(150)
-    real(kind=kreal)   :: tt(150), ecoord(3,150)
+    real(kind=kreal)   :: stiffness(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
+    integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
+    real(kind=kreal)   :: tt(fstrSOLID%max_ncon), ecoord(3,fstrSOLID%max_ncon)
     real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
-    real(kind=kreal)   :: u(6,150), du(6,150), coords(3,3), u_prev(6,150)
+    real(kind=kreal)   :: u(6,fstrSOLID%max_ncon), du(6,fstrSOLID%max_ncon), coords(3,3), u_prev(6,fstrSOLID%max_ncon)
     integer            :: isect, ihead, cdsys_ID
 
     ! ----- initialize

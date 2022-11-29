@@ -16,7 +16,7 @@ module m_static_LIB_C3D4SESNS
 
   implicit none
   private
-  public :: STF_C3D4_SESNS, UPDATE_C3_SESNS
+  public :: STF_C3D4_SESNS, UPDATE_C3_SESNS, Return_nn_comp_C3D4_SESNS
 
   logical, parameter :: DEBUG=.false.
 

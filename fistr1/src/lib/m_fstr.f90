@@ -353,6 +353,8 @@ module m_fstr
     integer(kind=kint) :: is_33shell
     integer(kind=kint) :: is_33beam
     integer(kind=kint) :: is_heat
+    integer(kind=kint) :: max_ncon_stf     !< maximum num of stiffness matrix size
+    integer(kind=kint) :: max_ncon         !< maximum num of element connectivity
     integer(kind=kint), pointer :: is_rot(:) => null()
     integer(kind=kint) :: elemopt361
     logical            :: is_smoothing_active

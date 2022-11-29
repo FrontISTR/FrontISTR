@@ -33,13 +33,14 @@ contains
     real(kind=kreal),intent(in) :: tincr     !< time increment
     integer, intent(in)         :: iter      !< NR iterations
 
-    integer(kind=kint) :: nodLOCAL(150)
-    real(kind=kreal)   :: ecoord(3, 150)
+    integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
+    real(kind=kreal)   :: ecoord(3, fstrSOLID%max_ncon)
     real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
 
-    real(kind=kreal)   :: total_disp(6, 150), du(6, 150), ddu(6, 150)
-    real(kind=kreal)   :: tt(150), tt0(150), ttn(150), qf(150*6), coords(3, 3)
+    real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: tt(fstrSOLID%max_ncon), tt0(fstrSOLID%max_ncon), ttn(fstrSOLID%max_ncon)
+    real(kind=kreal)   :: qf(fstrSOLID%max_ncon*6), coords(3, 3)
     integer            :: isect, ihead, cdsys_ID
     integer            :: ndim, initt
 
