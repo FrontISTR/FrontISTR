@@ -266,9 +266,13 @@ contains
            & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu )
       endif
       if( .not. active ) active = iactive
+    enddo
 
-        !for output contact state
-        call set_contact_state_vector( fstrSOLID%contacts(i), dt, fstrSOLID%CONT_RELVEL, fstrSOLID%CONT_STATE )
+    if( is_init ) call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
+
+    !for output contact state
+    do i=1,size(fstrSOLID%contacts)
+      call set_contact_state_vector( fstrSOLID%contacts(i), dt, fstrSOLID%CONT_RELVEL, fstrSOLID%CONT_STATE )
     enddo
 
     infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
@@ -280,6 +284,47 @@ contains
     end if
 
   end subroutine
+
+  !> Scanning contact state
+  subroutine remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
+    integer(kind=kint), intent(in)         :: cstep      !< current step number
+    type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
+    type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
+    type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
+
+    integer(kind=kint) :: i, j, grpid, slave
+    integer(kind=kint) :: k, id, iSS
+    integer(kind=kint), allocatable :: states(:)
+
+    allocate(states(hecMESH%n_node))
+    states(:) = CONTACTFREE
+
+    do i=1,size(fstrSOLID%contacts)
+      if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      do j=1, size(fstrSOLID%contacts(i)%slave)
+        if( fstrSOLID%contacts(i)%states(j)%state==CONTACTFREE ) cycle   ! free
+        slave = fstrSOLID%contacts(i)%slave(j)
+        if( states(slave) == CONTACTFREE ) then
+          states(slave) = fstrSOLID%contacts(i)%states(j)%state
+          id = fstrSOLID%contacts(i)%states(i)%surface
+          do k=1,size( fstrSOLID%contacts(i)%master(id)%nodes )
+            iSS = fstrSOLID%contacts(i)%master(id)%nodes(k)
+            states(iSS) = fstrSOLID%contacts(i)%states(j)%state
+          enddo
+        else !found duplicate tied contact slave node
+          fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
+          infoCTChange%free2contact = infoCTChange%free2contact - 1
+          write(*,'(A,i10,A,i6,A,i6,A)') "Node",hecMESH%global_node_ID(slave), &
+            " in rank",hecmw_comm_get_rank()," freed due to duplication"
+        endif
+      enddo
+    enddo
+
+  end subroutine
+
 
   !> Scanning contact state
   subroutine fstr_scan_contact_state_exp( cstep, hecMESH, fstrSOLID, infoCTChange )
