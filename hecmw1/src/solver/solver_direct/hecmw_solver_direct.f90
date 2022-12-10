@@ -51,8 +51,8 @@ contains
   !     and is also available for performance tests
   !     to solve Ax=b for x, nozero pattern and values must be give.
   !   arrays
-  !     jcol     column entrys
-  !     irow     row entrys
+  !     jcol     column entries
+  !     irow     row entries
   !     val      its value
   !     v        interface array used through matini, staijx, nufctx,
   !              nusolx

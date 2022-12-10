@@ -62,7 +62,7 @@ contains
     external fstr_ctrl_get_c_h_name
     integer(kind=kint) :: fstr_ctrl_get_c_h_name
 
-    integer(kind=kint) :: version, resul, visual, femap, n_totlyr
+    integer(kind=kint) :: version, result, visual, femap, n_totlyr
     integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror, cparam_id
     character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
@@ -146,9 +146,9 @@ contains
           c_istep = c_istep + 1
         endif
       else if( header_name == '!WRITE' ) then
-        call fstr_ctrl_get_output( ctrl, outctrl, islog, resul, visual, femap )
+        call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
         if( visual==1 ) P%PARAM%fg_visual= 1
-        if( resul==1 ) P%PARAM%fg_result = 1
+        if( result==1 ) P%PARAM%fg_result = 1
         c_output = c_output+1
       else if( header_name == '!ECHO' ) then
         c_echo = c_echo + 1
@@ -697,7 +697,7 @@ contains
 
         ! == Following output control ==
       else if( header_name == '!WRITE' ) then
-        call fstr_ctrl_get_output( ctrl, outctrl, islog, resul, visual, femap )
+        call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
         if( islog == 1 ) then
           c_output=1
           outctrl%filename = trim(logfileNAME)
@@ -711,7 +711,7 @@ contains
           call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
           open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE' )
         endif
-        if( resul == 1 ) then
+        if( result == 1 ) then
           c_output=3
           call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
         endif
