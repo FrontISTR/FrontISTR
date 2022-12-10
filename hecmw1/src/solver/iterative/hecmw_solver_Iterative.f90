@@ -16,6 +16,8 @@ contains
     use hecmw_solver_CG
     use hecmw_solver_BiCGSTAB
     use hecmw_solver_GMRES
+    use hecmw_solver_GMRESR
+    use hecmw_solver_GMRESREN
     use hecmw_solver_GPBiCG
     use m_hecmw_solve_error
     use m_hecmw_comm_f
@@ -112,6 +114,12 @@ contains
         case (4)  !--GPBiCG
           hecMAT%symmetric = .false.
           call hecmw_solve_GPBiCG( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (5)  !--GMRESR
+          hecMAT%symmetric = .false.
+          call hecmw_solve_GMRESR( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (6)  !--GMRESREN
+          hecMAT%symmetric = .false.
+          call hecmw_solve_GMRESREN( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
           error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
           call hecmw_solve_error (hecMESH, error)
@@ -320,7 +328,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
     integer(kind=kint) :: METHOD
-    integer(kind=kint) :: ITER, PRECOND, NSET, iterPREmax, NREST
+    integer(kind=kint) :: ITER, PRECOND, NSET, iterPREmax, NREST,NBFGS
     integer(kind=kint) :: ITERlog, TIMElog
 
     character(len=30) :: msg_precond
@@ -332,6 +340,7 @@ contains
     NSET      = hecmw_mat_get_nset(hecMAT)
     iterPREmax= hecmw_mat_get_iterpremax(hecMAT)
     NREST     = hecmw_mat_get_nrest(hecMAT)
+    NBFGS     = hecmw_mat_get_nbfgs(hecMAT)
     ITERlog= hecmw_mat_get_iterlog(hecMAT)
     TIMElog= hecmw_mat_get_timelog(hecMAT)
 
@@ -344,6 +353,14 @@ contains
         msg_method="GMRES"
       case (4)  !--GPBiCG
         msg_method="GPBiCG"
+      case (5)  
+        if (NBFGS==0) then
+           msg_method="GMRESR"
+        else
+           msg_method="SUP-GMRESR"
+        endif
+      case (6)  
+        msg_method="GMRESR-EN"
       case default
         msg_method="Unlabeled"
     end select
