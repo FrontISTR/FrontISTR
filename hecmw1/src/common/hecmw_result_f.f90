@@ -107,6 +107,7 @@ contains
 
           if (hecmw_is_etype_patch(ic_type)) cycle
           if (hecmw_is_etype_link(ic_type)) cycle
+          if (hecmw_is_etype_smoothing(ic_type)) cycle
 
           do icel= iS, iE
             nelem_wo_MPC = nelem_wo_MPC + 1

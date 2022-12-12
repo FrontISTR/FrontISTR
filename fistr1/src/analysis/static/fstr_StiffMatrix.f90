@@ -28,12 +28,12 @@ contains
 
     type( tMaterial ), pointer :: material     !< material information
 
-    real(kind=kreal)   :: stiffness(20*6, 20*6)
-    integer(kind=kint) :: nodLOCAL(20)
-    real(kind=kreal)   :: tt(20), ecoord(3,20)
+    real(kind=kreal)   :: stiffness(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
+    integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
+    real(kind=kreal)   :: tt(fstrSOLID%max_ncon), ecoord(3,fstrSOLID%max_ncon)
     real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
-    real(kind=kreal)   :: u(6,20), du(6,20), coords(3,3), u_prev(6,20)
+    real(kind=kreal)   :: u(6,fstrSOLID%max_ncon), du(6,fstrSOLID%max_ncon), coords(3,3), u_prev(6,fstrSOLID%max_ncon)
     integer            :: isect, ihead, cdsys_ID
 
     ! ----- initialize
@@ -50,18 +50,20 @@ contains
       if (hecmw_is_etype_link(ic_type)) cycle
       if (hecmw_is_etype_patch(ic_type)) cycle
       ! ----- Set number of nodes
-      nn = hecmw_get_max_node(ic_type)
 
       ! ----- element loop
       !$omp parallel default(none), &
-        !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,cdsys_ID,coords, &
+        !$omp&  private(icel,iiS,nn,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,cdsys_ID,coords, &
         !$omp&          material,thick,stiffness,isect,ihead), &
-        !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,time,tincr)
+        !$omp&  shared(iS,iE,hecMESH,ndof,fstrSOLID,ic_type,hecMAT,time,tincr)
       !$omp do
       do icel= is, iE
 
         ! ----- nodal coordinate & displacement
         iiS= hecMESH%elem_node_index(icel-1)
+        nn = hecMESH%elem_node_index(icel)-iiS
+        if( nn>150 ) stop "elemental nodes > 150!"
+
         do j=1,nn
           nodLOCAL(j)= hecMESH%elem_node_item (iiS+j)
           do i=1, 3
@@ -115,6 +117,7 @@ contains
           endif
 
         elseif (ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
+          if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
           call STF_C3                                                                              &
             ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
             stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
@@ -149,6 +152,10 @@ contains
           call STF_C3_vp                                                           &
             ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:), &
             stiffness(1:nn*ndof, 1:nn*ndof), tincr, u_prev(1:4, 1:nn) )
+        else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
+          call STF_C3D4_SESNS                                                                   &
+            ( ic_type,nn,nodLOCAL,ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),         &
+            stiffness, cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
         else
           call StiffMat_abort( ic_type, 1 )
         endif

@@ -1,0 +1,49 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!WRITE,LOG
+!WRITE,RESULT,FREQUENCY=5
+!OUTPUT_RES
+DISP,ON
+NSTRESS,ON
+NMISES,ON
+ESTRESS,ON
+EMISES,ON
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,3,3
+!BOUNDARY, GRPID=2
+ SET_2,1,1
+!BOUNDARY, GRPID=3
+ SET_3,2,2
+!BOUNDARY, GRPID=4
+ SET_4,1,1,1.
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_2
+!ELASTIC
+ 1.00000000E+02, 3.00000000E-01
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+!SECTION, SECNUM=1, FORM341=SELECTIVE_ESNS
+!SECTION, SECNUM=2, FORM341=SELECTIVE_ESNS
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1
+BOUNDARY,1
+BOUNDARY,2
+BOUNDARY,3
+BOUNDARY,4
+!END

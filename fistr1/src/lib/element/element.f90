@@ -96,6 +96,9 @@ module elementInfo
   integer, parameter :: fe_mitc3_shell361  = 761
   integer, parameter :: fe_mitc4_shell361  = 781
 
+  integer, parameter :: fe_nodesmooth_tet4n = 881
+  integer, parameter :: fe_edgesmooth_tet4n = 891
+
   integer, parameter :: fe_tri3n_patch    = 1031
   integer, parameter :: fe_tri6n_patch    = 1032
   integer, parameter :: fe_quad4n_patch   = 1041
@@ -470,6 +473,8 @@ contains
         NumOfQuadPoints = 4
       case ( fe_tet10nc )
         NumOfQuadPoints = 12
+      case ( fe_nodesmooth_tet4n, fe_edgesmooth_tet4n )
+        NumOfQuadPoints = 1
       case default
         NumOfQuadPoints = -1
         ! error message

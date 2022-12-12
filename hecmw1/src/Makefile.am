@@ -9,6 +9,7 @@ all: @build_target@
 #	@cd couple     && $(MAKE) install-header
 	@cd visualizer && $(MAKE) install-header
 	@cd common     && $(MAKE) @build_target@
+	@cd operations/element_smoothing && $(MAKE) @build_target@
 #	@cd operations && $(MAKE) @build_target@
 	@cd solver     && $(MAKE) @build_target@
 #	@cd couple     && $(MAKE) @build_target@

@@ -15,7 +15,7 @@ contains
   !> This subroutine calculates stiffness for elastically isotropic
   !>     materials with isotropic creep
   subroutine iso_creep(matl, sectType, stress, strain, extval,plstrain,            &
-      dtime,ttime,stiffness, temp)
+      dtime,ttime,stiffness, temp, hdflag)
     type( tMaterial ), intent(in)    :: matl      !< material properties
     integer, intent(in)              :: sectType  !< not used currently
     real(kind=kreal), intent(in)     :: stress(6) !< Piola-Kirchhoff stress
@@ -26,13 +26,17 @@ contains
     real(kind=kreal), intent(in)     :: dtime     !< time length of the increment
     real(kind=kreal), intent(out)    :: stiffness(6,6) !< stiffness
     real(kind=kreal), intent(in)     :: temp      !> temperature
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i, j
+    integer :: i, j, hdflag_in
     logical :: ierr
     real(kind=kreal) :: ina(1), outa(3)
     real(kind=kreal) :: xxn, aa
 
     real(kind=kreal) :: c3,e,un,G,stri(6),p,dstri,c4,c5,f,df, eqvs
+
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
 
     aa = 0.0d0
     xxn = 0.0d0
@@ -40,9 +44,10 @@ contains
     !     elastic
     !
     ina(1) = temp
-    call calElasticMatrix( matl, sectTYPE, stiffness, 0.d0 )
+    call calElasticMatrix( matl, sectTYPE, stiffness, temp, hdflag=hdflag_in )
 
     if( dtime==0.d0 .or. all(stress==0.d0) ) return
+    if( hdflag_in == 2 ) return
     !
     !     elastic constants
     !
@@ -112,8 +117,8 @@ contains
 
   !> This subroutine calculates stresses and creep status for an elastically isotropic
   !>     material with isotropic creep
-  subroutine update_iso_creep(matl, sectType, strain, stress, extval,plstrain,                &
-      dtime,ttime,temp)
+  subroutine update_iso_creep(matl, sectType, strain, stress, extval, plstrain,         &
+      dtime, ttime, temp, hdflag)
     type( tMaterial ), intent(in)    :: matl      !< material properties
     integer, intent(in)              :: sectType  !< not used currently
     real(kind=kreal), intent(in)     :: strain(6) !< strain
@@ -123,18 +128,23 @@ contains
     real(kind=kreal), intent(in)     :: ttime     !< total time at the start of the current increment
     real(kind=kreal), intent(in)     :: dtime     !< time length of the increment
     real(kind=kreal), intent(in)     :: temp      !> temperature
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i
+    integer :: i, hdflag_in
     logical :: ierr
     real(kind=kreal) :: ina(1), outa(3)
     real(kind=kreal) :: xxn, aa
 
     real(kind=kreal) :: e,un,G,dg,ddg,stri(6),p,dstri,f,df, eqvs
 
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
+
     aa = 0.0d0
     xxn = 0.0d0
 
     if( dtime==0.d0 ) return
+    if( hdflag_in == 2 ) return
     !
     !     elastic constants
     !

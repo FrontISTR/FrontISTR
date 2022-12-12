@@ -19,11 +19,13 @@ module hecmw_varray_int
   public :: HECMW_varray_int_add_if_not_exits
   public :: HECMW_varray_int_insert
   public :: HECMW_varray_int_insert_if_not_exists
+  public :: HECMW_varray_int_expand
   public :: HECMW_varray_int_print
   public :: HECMW_varray_int_print_all
   public :: HECMW_varray_int_find
   public :: HECMW_varray_int_get_nitem
   public :: HECMW_varray_int_get_item
+  public :: HECMW_varray_int_get_item_all
 
   type hecmwST_varray_int
     private
@@ -215,5 +217,12 @@ contains
 
     HECMW_varray_int_get_item = ilist%items(n)
   end function HECMW_varray_int_get_item
+
+  subroutine HECMW_varray_int_get_item_all( ilist, array )
+    type( hecmwST_varray_int), intent(in) :: ilist
+    integer(kind=kint), intent(inout) :: array(:)
+
+    array(1:ilist%nitem) = ilist%items(1:ilist%nitem)
+  end subroutine HECMW_varray_int_get_item_all
 
 end module hecmw_varray_int

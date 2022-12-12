@@ -579,7 +579,7 @@ contains
     stress_out = matmul(stress_out,transpose(dr))
   end subroutine
 
-  subroutine Update_Stress3D( flag, gauss, rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
+  subroutine Update_Stress3D( flag, gauss, rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn, hdflag )
     use m_fstr
     use m_MatMatrix
     use mMechGauss
@@ -596,9 +596,10 @@ contains
     real(kind=kreal), intent(in)            :: ttc
     real(kind=kreal), intent(in)            :: tt0
     real(kind=kreal), intent(in)            :: ttn
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
     integer(kind=kint) :: mtype, i, j, k
-    integer(kind=kint) :: isEp
+    integer(kind=kint) :: isEp, hdflag_in
     real(kind=kreal)   :: D(6,6), dstress(6), dumstress(3,3), dum(3,3), trD, det
     real(kind=kreal)   :: tensor(6)     !< tensor
     real(kind=kreal)   :: eigval(3)     !< vector containing the eigvalches
@@ -612,23 +613,26 @@ contains
       isEp = 0
     endif
 
-    call MatlMatrix( gauss, D3, D, time, tincr, coordsys, ttc, isEp )
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
+
+    call MatlMatrix( gauss, D3, D, time, tincr, coordsys, ttc, isEp, hdflag=hdflag_in )
 
     if( flag == INFINITESIMAL ) then
 
       gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
-        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn )
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
         gauss%stress = real(gauss%stress)
       end if
 
     else if( flag == TOTALLAG ) then
 
       if( isHyperelastic(mtype) .OR. mtype == USERELASTIC .OR. mtype == USERMATERIAL ) then
-        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, temp=0.d0, tempn=0.d0 )
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, temp=0.d0, tempn=0.d0, hdflag=hdflag_in )
       else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
         gauss%pMaterial%mtype=mtype
-        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn )
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
       else
         gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       end if
@@ -638,7 +642,7 @@ contains
       !  D(:, :) = D(:, :)+mat(:, :)
 
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
-        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, tt0 )
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, tt0, hdflag=hdflag_in )
       else
         dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
         dumstress(1,1) = gauss%stress_bak(1)
@@ -661,12 +665,12 @@ contains
         gauss%stress(6) = dum(3,1) + dstress(6)
 
         if( mtype == USERMATERIAL ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, temp=0.d0, tempn=0.d0 )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, temp=0.d0, tempn=0.d0, hdflag=hdflag_in )
         else if( mtype == NORTON ) then
           !gauss%pMaterial%mtype = mtype
           if( tincr /= 0.0D0 .AND. any( gauss%stress /= 0.0D0 ) ) then
             !gauss%pMaterial%mtype = mtype
-            call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr, ttc, ttn )
+            call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
           end if
         end if
       end if
