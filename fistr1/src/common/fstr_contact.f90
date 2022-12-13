@@ -294,10 +294,24 @@ contains
 
     integer(kind=kint) :: i, j, grpid, slave
     integer(kind=kint) :: k, id, iSS
+    integer(kind=kint) :: ig0, ig, iS0, iE0
     integer(kind=kint), allocatable :: states(:)
 
     allocate(states(hecMESH%n_node))
     states(:) = CONTACTFREE
+
+    ! if a boundary condition is given, the slave
+    do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
+      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
+      ig= fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+      iS0= hecMESH%node_group%grp_index(ig-1) + 1
+      iE0= hecMESH%node_group%grp_index(ig  )
+      do k= iS0, iE0
+        iSS = hecMESH%node_group%grp_item(k)
+        !states(iSS) = CONTACTSTICK
+      enddo
+    enddo
 
     do i=1,size(fstrSOLID%contacts)
       if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
@@ -309,7 +323,7 @@ contains
         slave = fstrSOLID%contacts(i)%slave(j)
         if( states(slave) == CONTACTFREE ) then
           states(slave) = fstrSOLID%contacts(i)%states(j)%state
-          id = fstrSOLID%contacts(i)%states(i)%surface
+          id = fstrSOLID%contacts(i)%states(j)%surface
           do k=1,size( fstrSOLID%contacts(i)%master(id)%nodes )
             iSS = fstrSOLID%contacts(i)%master(id)%nodes(k)
             states(iSS) = fstrSOLID%contacts(i)%states(j)%state
