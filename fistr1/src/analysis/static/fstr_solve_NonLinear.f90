@@ -228,6 +228,8 @@ contains
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
 
+    fstrSOLID%dunode(:) = 0.0d0
+
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)
       if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
@@ -251,6 +253,8 @@ contains
 
     call hecmw_mat_clear_b(conMAT)
 
+    if( fstr_is_contact_active() ) call fstr_ass_load_contactAlag( hecMESH, fstrSOLID, hecMAT%B )
+
     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
     if( .not. fstr_is_contact_active() ) n_al_step = 1
@@ -263,8 +267,6 @@ contains
           write(IMSG, *) "Augmentation step:", al_step
         endif
       end if
-
-      fstrSOLID%dunode(:) = 0.0d0
 
       ! ----- Inner Iteration, lagrange multiplier constant
       res0   = 0.0d0
@@ -326,7 +328,10 @@ contains
         if( fstr_is_contact_active() ) then
           call fstr_update_contact0(hecMESH, fstrSOLID, hecMAT%B)
         endif
-
+        !    Consider SPC condition
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+    
         res = fstr_get_residual(hecMAT%B, hecMESH)
 
         ! ----- Gather global residual
@@ -383,7 +388,7 @@ contains
         call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, .true.)
       endif
 
-      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) exit
+      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) .and. .not. ctchange ) exit
 
       ! ----- check divergence
       if( al_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
@@ -395,6 +400,14 @@ contains
         fstrSOLID%NRstat_i(knstDRESN) = 3
         return
       end if
+
+      ! ----- Set residual for next newton iteration
+      call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
+
+      if( fstr_is_contact_active() )  then
+        call hecmw_mat_clear_b( conMAT )
+        call fstr_update_contact0(hecMESH, fstrSOLID, hecMAT%B)
+      endif
 
     enddo
     ! ----- end of augmentation loop

@@ -866,6 +866,53 @@ contains
     enddo
   end subroutine calcu_contact_force0
 
+  !>\brief This subroutine updates contact condition as follows:
+  !!-# Contact force from multiplier and disp increment
+  !!-# Update nodal force residual
+  subroutine calcu_tied_force0( contact, disp, ddisp, mu, B )
+    type( tContact ), intent(inout)   :: contact        !< contact info
+    real(kind=kreal), intent(in)      :: disp(:)        !< disp till current step
+    real(kind=kreal), intent(in)      :: ddisp(:)       !< disp till current substep
+    real(kind=kreal), intent(in)      :: mu             !< penalty
+    real(kind=kreal), intent(inout)   :: B(:)           !< nodal force residual
+
+    integer(kind=kint)  :: slave,  etype, master
+    integer(kind=kint)  :: nn, i, j, iSS
+    real(kind=kreal)    :: nrlforce(3)
+    real(kind=kreal)    :: dg(3)
+    real(kind=kreal)    :: shapefunc(l_max_surface_node)
+    real(kind=kreal)    :: edisp(3*l_max_elem_node+3)
+
+    do i= 1, size(contact%slave)
+      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
+      slave = contact%slave(i)
+      edisp(1:3) = disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave)
+      master = contact%states(i)%surface
+
+      nn = size( contact%master(master)%nodes )
+      etype = contact%master(master)%etype
+      do j=1,nn
+        iSS = contact%master(master)%nodes(j)
+        edisp(3*j+1:3*j+3) = disp(3*iSS-2:3*iSS)+ddisp(3*iSS-2:3*iSS)
+      enddo
+      call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
+
+      ! normal component
+      dg(1:3) = edisp(1:3)
+      do j=1,nn
+        dg(1:3) = dg(1:3)-shapefunc(j)*edisp(3*j+1:3*j+3)
+      enddo
+
+      nrlforce(1:3) = contact%states(i)%multiplier(1:3)+mu*dg(1:3)
+
+      B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-nrlforce(1:3)
+      do j=1,nn
+        iSS = contact%master(master)%nodes(j)
+        B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS) + shapefunc(j)*nrlforce(1:3)
+      enddo
+    enddo
+
+  end subroutine 
 
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
@@ -951,6 +998,56 @@ contains
     if(cnt>0) lgnt(:) = lgnt(:)/cnt
     gnt = gnt + lgnt
   end subroutine update_contact_multiplier
+
+  !> This subroutine update lagrangian multiplier and the
+  !> distance between contacting nodes
+  subroutine update_tied_multiplier( contact, disp, ddisp, mu, ctchanged )
+    type( tContact ), intent(inout)   :: contact        !< contact info
+    real(kind=kreal), intent(in)      :: disp(:)        !< disp till current step
+    real(kind=kreal), intent(in)      :: ddisp(:)       !< disp till current substep
+    real(kind=kreal), intent(in)      :: mu             !< penalty
+    logical, intent(inout)            :: ctchanged      !< if contact state changes
+
+    integer(kind=kint)  :: slave, etype, master
+    integer(kind=kint)  :: nn, i, j, iSS, cnt
+    real(kind=kreal)    :: dg(3), dgmax
+    real(kind=kreal)    :: shapefunc(l_max_surface_node)
+    real(kind=kreal)    :: edisp(3*l_max_elem_node+3)
+
+    do i= 1, size(contact%slave)
+      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
+      slave = contact%slave(i)
+      edisp(1:3) = disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave)
+      master = contact%states(i)%surface
+
+      nn = size( contact%master(master)%nodes )
+      etype = contact%master(master)%etype
+      do j=1,nn
+        iSS = contact%master(master)%nodes(j)
+        edisp(3*j+1:3*j+3) = disp(3*iSS-2:3*iSS)+ddisp(3*iSS-2:3*iSS)
+      enddo
+      call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
+
+      ! normal component
+      dg(1:3) = edisp(1:3)
+      do j=1,nn
+        dg(1:3) = dg(1:3)-shapefunc(j)*edisp(3*j+1:3*j+3)
+      enddo
+
+      contact%states(i)%multiplier(1:3) = contact%states(i)%multiplier(1:3) + mu*dg(1:3)
+
+      ! check if tied constraint converged
+      dgmax = 0.d0
+      do j=1,(nn+1)*3
+        dgmax = dgmax + dabs(edisp(j))
+      enddo
+      dgmax = dgmax/dble((nn+1)*3)
+      do j=1,3
+        if( dabs(dg(j))/dmax1(1.d0,dgmax) > 1.d-3 ) ctchanged = .true.
+      enddo
+
+    enddo
+  end subroutine 
 
   !>\brief This subroutine assemble contact force into contacing nodes
   subroutine ass_contact_force( contact, coord, disp, B )

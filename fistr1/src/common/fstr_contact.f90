@@ -262,7 +262,8 @@ contains
       if( .not. active ) active = iactive
     enddo
 
-    if( is_init ) call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
+    if( is_init .and. ctAlgo == kcaSLAGRANGE ) &
+      &  call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
 
     !for output contact state
     do i=1,size(fstrSOLID%contacts)
@@ -383,12 +384,19 @@ contains
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     real(kind=kreal), intent(inout)        :: B(:)        !< nodal force residual
 
-    integer(kind=kint) :: i
+    integer(kind=kint) :: i, algtype
+
     do i=1, size(fstrSOLID%contacts)
       !   if( contacts(i)%mpced ) cycle
-      call calcu_contact_force0( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
+      algtype = fstrSOLID%contacts(i)%algtype
+      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+        call calcu_contact_force0( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
         , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, B )
+      else if( algtype == CONTACTTIED ) then
+        call calcu_tied_force0( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
+      endif
     enddo
+
   end subroutine
 
   !> Update lagrangian multiplier
@@ -397,15 +405,39 @@ contains
     type(fstr_solid), intent(inout)        :: fstrSOLID
     logical, intent(out)                   :: ctchanged
 
-    integer(kind=kint) :: i, nc
+    integer(kind=kint) :: i, nc, algtype
+
     gnt = 0.d0;  ctchanged = .false.
     nc = size(fstrSOLID%contacts)
     do i=1, nc
-      !   if( contacts(i)%mpced ) cycle
-      call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
+      algtype = fstrSOLID%contacts(i)%algtype
+      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+        call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
         , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged )
+      else if( algtype == CONTACTTIED ) then
+        call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
+                                     &  mu, ctchanged )
+      endif
     enddo
     if( nc>0 ) gnt = gnt/nc
+  end subroutine
+
+  !> Update lagrangian multiplier
+  subroutine fstr_ass_load_contactAlag( hecMESH, fstrSOLID, B )
+    type( hecmwST_local_mesh ), intent(in) :: hecMESH
+    type(fstr_solid), intent(inout)        :: fstrSOLID
+    real(kind=kreal), intent(inout)        :: B(:)        !< nodal force residual
+
+    integer(kind=kint) :: i, algtype
+
+    do i = 1, size(fstrSOLID%contacts)
+      algtype = fstrSOLID%contacts(i)%algtype
+      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+        call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, B )
+      else if( algtype == CONTACTTIED ) then
+        call calcu_tied_force0( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
+      endif
+    enddo
   end subroutine
 
   !> Update tangent force
@@ -433,6 +465,7 @@ contains
 
     integer(kind=kint) :: i, j, k, m, nnode, nd, etype, grpid
     integer(kind=kint) :: ctsurf, ndLocal(l_max_surface_node+1)
+    integer(kind=kint) :: algtype    
     real(kind=kreal) :: factor, elecoord( 3, l_max_surface_node)
     real(kind=kreal) :: stiff(l_max_surface_node*3+3, l_max_surface_node*3+3)
     real(kind=kreal) :: nrlforce, force(l_max_surface_node*3+3)
@@ -444,6 +477,8 @@ contains
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
+      algtype = fstrSOLID%contacts(i)%algtype
+
       do j=1, size(fstrSOLID%contacts(i)%slave)
         if( fstrSOLID%contacts(i)%states(j)%state==CONTACTFREE ) cycle   ! free
         ctsurf = fstrSOLID%contacts(i)%states(j)%surface          ! contacting surface
@@ -452,13 +487,16 @@ contains
         ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
         do k=1,nnode
           ndLocal(k+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(k)
-          elecoord(1,k)=hecMESH%node(3*ndLocal(k+1)-2)
-          elecoord(2,k)=hecMESH%node(3*ndLocal(k+1)-1)
-          elecoord(3,k)=hecMESH%node(3*ndLocal(k+1))
+          elecoord(1:3,k)=hecMESH%node(3*ndLocal(k+1)-2:3*ndLocal(k+1))
         enddo
-        call contact2stiff( fstrSOLID%contacts(i)%algtype, fstrSOLID%contacts(i)%states(j),    &
+        if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+          call contact2stiff( algtype, fstrSOLID%contacts(i)%states(j),    &
           etype, nnode, elecoord(:,:), mu, mut, fstrSOLID%contacts(i)%fcoeff,    &
           fstrSOLID%contacts(i)%symmetric, stiff(:,:), force(:) )
+        else if( algtype == CONTACTTIED ) then
+          call tied2stiff( algtype, fstrSOLID%contacts(i)%states(j),    &
+          etype, nnode, mu, mut, stiff(:,:), force(:) )
+        endif
         ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
         call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiff)
 
