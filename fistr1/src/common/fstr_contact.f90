@@ -62,18 +62,12 @@ contains
     type (fstr_info_contactChange), intent(in) :: infoCTChange   !< fstr_contactChange
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint) :: is_conv
+
     fstr_is_contact_conv = .false.
-    if( ctAlgo== kcaSLagrange ) then
-      if( infoCTChange%contact2free+infoCTChange%contact2neighbor+      &
-        infoCTChange%contact2difflpos+infoCTChange%free2contact == 0 ) &
-        fstr_is_contact_conv = .true.
-    elseif( ctAlgo==kcaALagrange ) then
-      if( gnt(1)<cgn .and. gnt(2)<cgt ) fstr_is_contact_conv = .true.
-      write(*,'(a,2e15.7)') "--Relative displacement in contact surface",gnt
-      !  if( dabs( bakgnt(1)-gnt(1) )<cgn*1.d-2 .and.    &
-        !      dabs( bakgnt(2)-gnt(2) )<cgn ) fstr_is_contact_conv = .true.
-      bakgnt = gnt
-    endif
+    if( infoCTChange%contact2free+infoCTChange%contact2neighbor+      &
+    infoCTChange%contact2difflpos+infoCTChange%free2contact == 0 ) &
+    fstr_is_contact_conv = .true.
+
     is_conv = 0
     if (fstr_is_contact_conv) is_conv = 1
     call hecmw_allreduce_I1(hecMESH, is_conv, HECMW_MIN)
@@ -427,8 +421,9 @@ contains
   end subroutine
 
   !> Introduce contact stiff into global stiff matrix or mpc conditions into hecMESH
-  subroutine fstr_contactBC( iter, hecMESH, hecMAT, fstrSOLID )
+  subroutine fstr_contactBC( cstep, iter, hecMESH, hecMAT, fstrSOLID )
     use fstr_ctrl_modifier
+    integer(kind=kint)                       :: cstep     !< current loading step
     integer(kind=kint), intent(in)           :: iter      !< NR iterations
     type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< type mesh
     type (hecmwST_matrix), intent(inout)     :: hecMAT    !< type matrix
@@ -436,22 +431,19 @@ contains
 
     integer(kind=kint), parameter :: NDOF=3
 
-    integer(kind=kint) :: i, j, k, m, nnode, nd, etype
+    integer(kind=kint) :: i, j, k, m, nnode, nd, etype, grpid
     integer(kind=kint) :: ctsurf, ndLocal(l_max_surface_node+1)
     real(kind=kreal) :: factor, elecoord( 3, l_max_surface_node)
     real(kind=kreal) :: stiff(l_max_surface_node*3+3, l_max_surface_node*3+3)
     real(kind=kreal) :: nrlforce, force(l_max_surface_node*3+3)
-    !   if( n_contact_mpc>0 ) call fstr_delete_mpc( n_contact_mpc, hecMESH%mpc )
-    !   call fstr_contact2mpc( fstrSOLID%contacts, hecMESH%mpc )
-    ! temp. need modification
-    !   do i=1,size(fstrSOLID%contacts)
-    !     fstrSOLID%contacts(i)%mpced = .true.
-    !     enddo
-    !    call fstr_write_mpc( 6, hecMESH%mpc )
-    !print *,"Contact to mpc ok!",n_contact_mpc,"equations generated"
+
     factor = fstrSOLID%FACTOR(2)
-    call hecmw_cmat_clear( hecMAT%cmat )
+
     do i=1,size(fstrSOLID%contacts)
+
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
       do j=1, size(fstrSOLID%contacts(i)%slave)
         if( fstrSOLID%contacts(i)%states(j)%state==CONTACTFREE ) cycle   ! free
         ctsurf = fstrSOLID%contacts(i)%states(j)%surface          ! contacting surface
@@ -467,7 +459,8 @@ contains
         call contact2stiff( fstrSOLID%contacts(i)%algtype, fstrSOLID%contacts(i)%states(j),    &
           etype, nnode, elecoord(:,:), mu, mut, fstrSOLID%contacts(i)%fcoeff,    &
           fstrSOLID%contacts(i)%symmetric, stiff(:,:), force(:) )
-        call hecmw_mat_ass_contact( hecMAT,nnode+1,ndLocal,stiff )
+        ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
+        call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiff)
 
         if( iter>1 ) cycle
         !  if( fstrSOLID%contacts(i)%states(j)%multiplier(1)/=0.d0 ) cycle
