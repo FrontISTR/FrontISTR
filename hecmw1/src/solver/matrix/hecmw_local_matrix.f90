@@ -2614,14 +2614,6 @@ contains
     BKmat%ndof = ndof
     !
     if (present(num_lagrange)) then       !!! TEMPORARY (DUE TO WRONG conMAT WHEN num_lagrange==0) !!!
-      if (num_lagrange == 0) then
-        BKmat%nnz = 0
-        allocate(BKmat%index(0:BKmat%nr))
-        BKmat%index(:) = 0
-        BKmat%item => null()
-        BKmat%A => null()
-        return
-      endif
       check_nonzero = .true.
     endif
     !

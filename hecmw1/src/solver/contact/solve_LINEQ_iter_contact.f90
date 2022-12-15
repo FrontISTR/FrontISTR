@@ -48,17 +48,18 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_iter_contact_init
 
-  subroutine solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
+  subroutine solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(in) :: conMAT
+    logical,intent(in)                :: is_contact_active
     integer :: method_org, precond_org
     logical :: fg_eliminate
     logical :: fg_amg
-    integer(kind=kint) :: num_lagrange_global
+    integer(kind=kint) :: is_contact
     integer(kind=kint) :: myrank
 
     myrank = hecmw_comm_get_rank()
@@ -76,10 +77,12 @@ contains
       if (precond_org == 5) fg_amg = .true.
     endif
 
-    num_lagrange_global = hecLagMAT%num_lagrange
-    call hecmw_allreduce_I1(hecMESH, num_lagrange_global, hecmw_sum)
 
-    if (num_lagrange_global == 0) then
+    is_contact = 0
+    if( is_contact_active ) is_contact = 1
+    call hecmw_allreduce_I1(hecMESH, is_contact, hecmw_max)
+
+    if ( is_contact == 0 ) then
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: no contact'
       ! use CG because the matrix is symmetric
       method_org = hecmw_mat_get_method(hecMAT)

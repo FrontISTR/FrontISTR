@@ -253,7 +253,7 @@ contains
 
     call hecmw_mat_clear_b(conMAT)
 
-    if( fstr_is_contact_active() ) call fstr_ass_load_contactAlag( hecMESH, fstrSOLID, hecMAT%B )
+    if( fstr_is_contact_active() ) call fstr_ass_load_contactAlag( hecMESH, fstrSOLID, conMAT%B )
 
     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
@@ -279,13 +279,16 @@ contains
         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
+        call hecmw_mat_clear( conMAT )
+        conMAT%X = 0.0d0
+
         ! ----- Contact
-        if( fstr_is_contact_active() .and. stepcnt==1 )  then
+        if( al_step == 1 .and. stepcnt == 1 ) then
           maxv = hecmw_mat_diag_max( hecMAT, hecMESH )
           call fstr_set_contact_penalty( maxv )
         endif
-        if( fstr_is_contact_active() ) then
-          call fstr_contactBC( cstep, iter, hecMESH, hecMAT, fstrSOLID )
+        if( fstr_is_contact_active() )  then
+          call fstr_contactBC( cstep, iter, hecMESH, conMAT, fstrSOLID )
         endif
 
         ! ----- Set Boundary condition
@@ -294,16 +297,10 @@ contains
         call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, conMATmpc)
 
         !----- SOLVE [Kt]{du}={R}
-        if( sub_step == restart_step_num .and. iter == 1 ) hecMATmpc%Iarray(98) = 1
-        if( iter == 1 ) then
-          hecMATmpc%Iarray(97) = 2   !Force numerical factorization
-        else
-          hecMATmpc%Iarray(97) = 1   !Need numerical factorization
-        endif
+        ! ----  For Parallel Contact with Multi-Partition Domains
         hecMATmpc%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-        call solve_LINEQ(hecMESHmpc,hecMATmpc)
-        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMATmpc, istat, 1.0D0)
+        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMATmpc, istat, 1.0D0, fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
@@ -323,17 +320,18 @@ contains
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
           call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-        call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+        call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, conMAT)
 
         if( fstr_is_contact_active() ) then
-          call fstr_update_contact0(hecMESH, fstrSOLID, hecMAT%B)
+          call hecmw_mat_clear_b( conMAT )
+          call fstr_update_contact0(hecMESH, fstrSOLID, conMAT%B)
         endif
         !    Consider SPC condition
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
     
-        res = fstr_get_residual(hecMAT%B, hecMESH)
-
+        !res = fstr_get_residual(hecMAT%B, hecMESH)
+        res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
         ! ----- Gather global residual
         res = sqrt(res)/n_node_global
         if( iter == 1 ) res0 = res
@@ -406,7 +404,7 @@ contains
 
       if( fstr_is_contact_active() )  then
         call hecmw_mat_clear_b( conMAT )
-        call fstr_update_contact0(hecMESH, fstrSOLID, hecMAT%B)
+        call fstr_update_contact0(hecMESH, fstrSOLID, conMAT%B)
       endif
 
     enddo
@@ -556,7 +554,7 @@ contains
         hecMATmpc%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         q_residual = fstr_get_norm_para_contact(hecMATmpc,hecLagMAT,conMATmpc,hecMESHmpc)
-        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMATmpc, istat, 1.0D0)
+        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMATmpc, istat, 1.0D0, fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         ! ----- check matrix solver error
