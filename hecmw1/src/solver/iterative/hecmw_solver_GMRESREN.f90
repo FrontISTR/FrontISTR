@@ -209,7 +209,9 @@ contains
     !C
     !C-- INTERFACE data EXCHANGE
     S_TIME = HECMW_WTIME()
-    call hecmw_update_m_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
+    !call hecmw_update_m_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
+    call hecmw_update_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
+
     E_TIME = HECMW_WTIME()
     Tcomm = Tcomm + E_TIME - S_TIME
 
