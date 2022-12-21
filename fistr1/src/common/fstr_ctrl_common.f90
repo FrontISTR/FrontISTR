@@ -67,7 +67,7 @@ contains
 
   !> Read in !SOLVER
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
-      iterpremax, nrest, scaling, &
+      iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, &
       resid, singma_diag, sigma, thresh, filter )
@@ -81,6 +81,7 @@ contains
     integer(kind=kint) :: nier
     integer(kind=kint) :: iterpremax
     integer(kind=kint) :: nrest
+    integer(kind=kint) :: nBFGS
     integer(kind=kint) :: scaling
     integer(kind=kint) :: dumptype
     integer(kind=kint) :: dumpexit
@@ -98,11 +99,12 @@ contains
     real(kind=kreal) :: filter
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-    character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
+    character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' 
+    !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
     integer(kind=kint) :: number_number = 5
-    integer(kind=kint) :: indirect_number = 4
+    integer(kind=kint) :: indirect_number = 6 ! GMRESR and GMRESREN need to be added
     integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step
 
     fstr_ctrl_get_SOLVER = -1
@@ -155,7 +157,7 @@ contains
 
     !* data --------------------------------------------------------------------------------------- *!
     ! JP-4
-    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre )/= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiiii ', nier, iterpremax, nrest, nBFGS, ncolor_in, recyclepre )/= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
 
     if( precond == 20 .or. precond == 21) then
