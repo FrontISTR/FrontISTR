@@ -99,13 +99,12 @@ contains
     real(kind=kreal) :: filter
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-    character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' ! by Kushida
+    character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' 
     !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
     integer(kind=kint) :: number_number = 5
-    !integer(kind=kint) :: indirect_number = 4
-    integer(kind=kint) :: indirect_number = 6 ! changed by Kushida, GMRESR and GMRESREN need to be added
+    integer(kind=kint) :: indirect_number = 6 ! GMRESR and GMRESREN need to be added
     integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step
 
     fstr_ctrl_get_SOLVER = -1

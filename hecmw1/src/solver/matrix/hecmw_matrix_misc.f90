@@ -103,7 +103,7 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_NSET               = 4
   integer, parameter :: IDX_I_ITERPREMAX         = 5
   integer, parameter :: IDX_I_NREST              = 6
-  integer, parameter :: IDX_I_NBFGS              = 60 ! by Kushida
+  integer, parameter :: IDX_I_NBFGS              = 60
   integer, parameter :: IDX_I_SCALING            = 7
   integer, parameter :: IDX_I_PENALIZED          = 11
   integer, parameter :: IDX_I_PENALIZED_B        = 12
