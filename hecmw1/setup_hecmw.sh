@@ -68,6 +68,7 @@ LIBSRCDIRS="\
 	src/operations \
 	src/operations/adaptation \
 	src/operations/dynamic_load_balancing \
+	src/operations/element_smoothing \
 	src/operations/jacobian \
 	src/couple \
 	src/solver \

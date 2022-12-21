@@ -4,6 +4,8 @@
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions to calculation nodal stress
 module m_fstr_NodalStress
+  use m_fstr
+
   implicit none
   private :: NodalStress_INV3, NodalStress_INV2, inverse_func
 contains
@@ -12,7 +14,6 @@ contains
   !----------------------------------------------------------------------*
   subroutine fstr_NodalStress3D( hecMESH, fstrSOLID )
     !----------------------------------------------------------------------*
-    use m_fstr
     use m_static_lib
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
@@ -197,7 +198,11 @@ contains
             tdstrain(1:nn,1:6) )
           call ElementStress_C3( ic_type, fstrSOLID%elements(icel)%gausses, estrain, estress )
 
+        else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
+          cycle
         else
+          if( ic_type == 341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle
+
           call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
             ndstrain(1:nn,1:6), ndstress(1:nn,1:6) )
           !call NodalStress_C3( ic_type, nn, fstrSOLID%elements(icel)%gausses, &
@@ -224,6 +229,9 @@ contains
       enddo !<element loop
       deallocate( func, inv_func )
     enddo !<element type loop
+
+    if( fstrSOLID%is_smoothing_active ) call fstr_NodalStress3D_C3D4_SESNS( &
+      &  hecMESH, fstrSOLID, nnumber, fstrSOLID%STRAIN, fstrSOLID%STRESS, fstrSOLID%ESTRAIN, fstrSOLID%ESTRESS )
 
     !C** calculate nodal stress and strain
     do i = 1, hecMESH%n_node
@@ -275,8 +283,196 @@ contains
 
   end subroutine fstr_NodalStress3D
 
+  integer(kind=kint) function search_idx_SENES( irow, asect, nid, sid )
+    integer(kind=kint), allocatable, intent(in) :: irow(:)
+    integer(kind=kint), allocatable, intent(in) :: asect(:)
+    integer(kind=kint), intent(in) :: nid
+    integer(kind=kint), intent(in) :: sid
+
+    integer(kind=kint) :: i
+
+    search_idx_SENES = -1
+    do i=irow(nid-1)+1,irow(nid)
+      if( asect(i) == sid ) then
+        search_idx_SENES = i
+        return
+      end if
+    end do
+
+  end function
+
+  subroutine fstr_NodalStress3D_C3D4_SESNS( hecMESH, fstrSOLID, nnumber, &
+      Nodal_STRAIN, Nodal_STRESS, Elemental_STRAIN, Elemental_STRESS )
+    type(hecmwST_local_mesh),intent(in) :: hecMESH
+    type(fstr_solid),intent(in)         :: fstrSOLID
+    integer(kind=kint), allocatable, intent(inout) :: nnumber(:)
+    real(kind=kreal), pointer, intent(inout)   :: Nodal_STRAIN(:)
+    real(kind=kreal), pointer, intent(inout)   :: Nodal_STRESS(:)
+    real(kind=kreal), pointer, intent(inout)   :: Elemental_STRAIN(:)
+    real(kind=kreal), pointer, intent(inout)   :: Elemental_STRESS(:)
+
+    integer(kind=kint) :: itype, iS, iE, jS, ic_type, icel, i, j, isect
+    integer(kind=kint) :: nsize, nid(2), idx(2), nd
+    integer(kind=kint) :: nnode, nlen
+    type(hecmwST_varray_int), allocatable :: nodal_sections(:)
+    real(kind=kreal)   :: tmpval(6), hydval, nsecdup
+    integer(kind=kint), allocatable :: irow(:), jcol(:), asect(:)
+    real(kind=kreal), allocatable :: stress_hyd(:), strain_hyd(:)
+    real(kind=kreal), allocatable :: stress_dev(:)
+    real(kind=kreal) :: stress_hyd_ndave(6), strain_hyd_ndave(6)
+    real(kind=kreal) :: stress_dev_ndave(6), strain_dev_ndave(6)
+    real(kind=kreal), allocatable :: n_dup_dev(:), n_dup_hyd(:)
+    real(kind=kreal)   :: edstrain(6), edstress(6)
+
+    nnode = hecMESH%n_node
+    nsize = size(Nodal_STRAIN)
+
+    ! create section info at node
+    call HECMW_varray_int_initialize_all( nodal_sections, nnode, 2 )
+    do itype = 1, hecMESH%n_elem_type
+      ic_type = hecMESH%elem_type_item(itype)
+      if( ic_type /= 341 ) cycle
+
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+
+      do icel=iS,iE
+        isect= hecMESH%section_ID(icel)
+        if( fstrSOLID%sections(isect)%elemopt341 /= kel341SESNS ) cycle
+        jS = hecMESH%elem_node_index(icel-1)
+        do i=1,4
+          nd = hecMESH%elem_node_item(jS+i)
+          call HECMW_varray_int_add_if_not_exits( nodal_sections(nd), isect )
+        end do
+      end do
+    enddo
+
+    ! create CRS arrays of nodal stress/strain with different sections
+    allocate(irow(0:nnode))
+    irow(0) = 0
+    do i=1,nnode
+      irow(i) = irow(i-1)+HECMW_varray_int_get_nitem(nodal_sections(i))
+    end do
+    nlen = irow(nnode)
+
+    allocate(asect(nlen))
+    do i=1,nnode
+      if( irow(i-1) == irow(i) ) cycle
+      call HECMW_varray_int_get_item_all( nodal_sections(i), asect(irow(i-1)+1:irow(i)) )
+    end do
+
+    ! add stress/strain from smoothed elements
+    allocate(stress_hyd(6*nlen), strain_hyd(6*nlen))
+    allocate(stress_dev(6*nlen))
+    allocate(n_dup_dev(nlen),n_dup_hyd(nlen))
+
+    stress_hyd(:) = 0.d0
+    strain_hyd(:) = 0.d0
+    stress_dev(:) = 0.d0
+    n_dup_hyd(:) = 0.d0
+    n_dup_dev(:) = 0.d0
+    do itype = 1, hecMESH%n_elem_type
+      ic_type = hecMESH%elem_type_item(itype)
+      if( ic_type /= 881 .and. ic_type /= 891 ) cycle
+
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+
+      do icel=iS,iE
+        jS = hecMESH%elem_node_index(icel-1)
+        isect= hecMESH%section_ID(icel)
+        if( ic_type == 881 ) then
+          nid(1) = hecMESH%elem_node_item(jS+1)
+          idx(1) = search_idx_SENES( irow, asect, nid(1), isect )
+
+          !strain
+          strain_hyd(6*idx(1)-5:6*idx(1)) = fstrSOLID%elements(icel)%gausses(1)%strain_out(1:6)
+          !stress
+          stress_hyd(6*idx(1)-5:6*idx(1)) =  fstrSOLID%elements(icel)%gausses(1)%stress_out(1:6)
+          !number of duplication
+          n_dup_hyd(idx(1)) = n_dup_hyd(idx(1)) + 1.d0
+        else if( ic_type == 891 ) then
+          nid(1:2) = hecMESH%elem_node_item(jS+1:jS+2)
+          idx(1) = search_idx_SENES( irow, asect, nid(1), isect )
+          idx(2) = search_idx_SENES( irow, asect, nid(2), isect )
+
+          !stress
+          tmpval(1:6) = fstrSOLID%elements(icel)%gausses(1)%stress_out(1:6)
+          stress_dev(6*idx(1)-5:6*idx(1)) = stress_dev(6*idx(1)-5:6*idx(1)) + tmpval(1:6)
+          stress_dev(6*idx(2)-5:6*idx(2)) = stress_dev(6*idx(2)-5:6*idx(2)) + tmpval(1:6)
+          !number of duplication
+          n_dup_dev(idx(1)) = n_dup_dev(idx(1)) + 1.d0
+          n_dup_dev(idx(2)) = n_dup_dev(idx(2)) + 1.d0
+        end if
+      end do
+    enddo
+
+    do i=1,nnode
+      if( irow(i-1) == irow(i) ) cycle
+      do j=irow(i-1)+1,irow(i)
+        if( n_dup_dev(j) < 1.0d-8 ) cycle
+        stress_dev(6*j-5:6*j) = stress_dev(6*j-5:6*j)/n_dup_dev(j)
+      end do
+    end do
+
+    ! average at node for nodal output
+    do i=1,nnode
+      if( irow(i-1) == irow(i) ) cycle
+      strain_hyd_ndave(:) = 0.d0
+      stress_hyd_ndave(:) = 0.d0
+      stress_dev_ndave(:) = 0.d0
+      do j=irow(i-1)+1,irow(i)
+        strain_hyd_ndave(1:6) = strain_hyd_ndave(1:6) + strain_hyd(6*j-5:6*j)
+        stress_hyd_ndave(1:6) = stress_hyd_ndave(1:6) + stress_hyd(6*j-5:6*j)
+        stress_dev_ndave(1:6) = stress_dev_ndave(1:6) + stress_dev(6*j-5:6*j)
+      end do
+      nsecdup = dble(irow(i)-irow(i-1))
+      strain_hyd_ndave(1:6) = strain_hyd_ndave(1:6)/nsecdup
+      stress_hyd_ndave(1:6) = stress_hyd_ndave(1:6)/nsecdup
+      stress_dev_ndave(1:6) = stress_dev_ndave(1:6)/nsecdup
+
+      Nodal_STRAIN(6*i-5:6*i) = Nodal_STRAIN(6*i-5:6*i)+strain_hyd_ndave(1:6)
+      Nodal_STRESS(6*i-5:6*i) = Nodal_STRESS(6*i-5:6*i)+stress_hyd_ndave(1:6)+stress_dev_ndave(1:6)
+    end do
+
+    ! ELEMENTAL STRAIN and STRESS
+    do itype = 1, hecMESH%n_elem_type
+      ic_type = hecMESH%elem_type_item(itype)
+      if( ic_type /= 341 ) cycle
+
+      iS = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype  )
+
+      do icel=iS,iE
+        isect= hecMESH%section_ID(icel)
+        if( fstrSOLID%sections(isect)%elemopt341 /= kel341SESNS ) cycle
+        jS = hecMESH%elem_node_index(icel-1)
+        edstrain(1:6) = 0.d0
+        edstress(1:6) = 0.d0
+        do i=1,4
+          nd = hecMESH%elem_node_item(jS+i)
+          idx(1) = search_idx_SENES( irow, asect, hecMESH%elem_node_item(jS+i), isect )
+          edstrain(1:6) = edstrain(1:6) + strain_hyd(6*idx(1)-5:6*idx(1))
+          edstress(1:6) = edstress(1:6) + stress_hyd(6*idx(1)-5:6*idx(1)) + stress_dev(6*idx(1)-5:6*idx(1))
+        end do
+        edstrain(1:6) = 0.25d0*edstrain(1:6)
+        edstress(1:6) = 0.25d0*edstress(1:6)
+
+        Elemental_STRAIN(6*(icel-1)+1:6*(icel-1)+6) = Elemental_STRAIN(6*(icel-1)+1:6*(icel-1)+6) + edstrain(1:6)
+        Elemental_STRESS(6*(icel-1)+1:6*(icel-1)+6) = Elemental_STRESS(6*(icel-1)+1:6*(icel-1)+6) + edstress(1:6)
+
+        fstrSOLID%elements(icel)%gausses(1)%strain_out(1:6) = Elemental_STRAIN(6*(icel-1)+1:6*(icel-1)+6)
+        fstrSOLID%elements(icel)%gausses(1)%stress_out(1:6) = Elemental_STRESS(6*(icel-1)+1:6*(icel-1)+6)
+      end do
+    enddo
+
+    deallocate(stress_hyd, strain_hyd)
+    deallocate(stress_dev)
+    deallocate(n_dup_dev, n_dup_hyd)
+
+  end subroutine
+
   subroutine fstr_Stress_add_shelllyr(nn,fstrSOLID,icel,nodLOCAL,nlyr,strain,stress,flag)
-    use m_fstr
     implicit none
     type(fstr_solid)   :: fstrSOLID
     integer(kind=kint) :: nodLOCAL(20)
@@ -304,7 +500,6 @@ contains
   end subroutine fstr_Stress_add_shelllyr
 
   subroutine fstr_getavg_shell(nn,fstrSOLID,icel,nodLOCAL,strain,stress,estrain,estress)
-    use m_fstr
     implicit none
     type (fstr_solid)  :: fstrSOLID
     integer(kind=kint) :: nodLOCAL(20)
@@ -340,7 +535,6 @@ contains
   !----------------------------------------------------------------------*
   subroutine NodalStress_INV3( etype, ni, gausses, func, edstrain, edstress, tdstrain )
     !----------------------------------------------------------------------*
-    use m_fstr
     use mMechGauss
     integer(kind=kint) :: etype, ni
     type(tGaussStatus) :: gausses(:)
@@ -485,7 +679,6 @@ contains
   end subroutine NodalStress_INV3
 
   function get_mises(s)
-    use m_fstr
     implicit none
     real(kind=kreal) :: get_mises, s(1:6)
     real(kind=kreal) :: s11, s22, s33, s12, s23, s13, ps, smises
@@ -506,7 +699,6 @@ contains
   !----------------------------------------------------------------------*
   subroutine fstr_NodalStress2D( hecMESH, fstrSOLID )
     !----------------------------------------------------------------------*
-    use m_fstr
     use m_static_lib
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
@@ -645,7 +837,6 @@ contains
   !----------------------------------------------------------------------*
   subroutine NodalStress_INV2( etype, ni, gausses, func, edstrain, edstress, tdstrain )
     !----------------------------------------------------------------------*
-    use m_fstr
     use mMechGauss
     integer(kind=kint) :: etype, ni
     type(tGaussStatus) :: gausses(:)
@@ -717,7 +908,6 @@ contains
   !----------------------------------------------------------------------*
   subroutine inverse_func( n, a, inv_a )
     !----------------------------------------------------------------------*
-    use m_fstr
     integer(kind=kint) :: n
     real(kind=kreal)   :: a(:,:), inv_a(:,:)
     integer(kind=kint) :: i, j, k
@@ -755,7 +945,6 @@ contains
   !----------------------------------------------------------------------*
   subroutine fstr_NodalStress6D( hecMESH, fstrSOLID )
     !----------------------------------------------------------------------*
-    use m_fstr
     use m_static_lib
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
@@ -900,7 +1089,6 @@ contains
 
   subroutine make_principal(fstrSOLID, hecMESH, RES)
     use hecmw_util
-    use m_fstr
     use m_out
     use m_static_lib
 

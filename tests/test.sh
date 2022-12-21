@@ -130,7 +130,12 @@ EOL
   if [ -e $ref_dir/is_tet_tet2.txt ]; then
     echo "!TET_TET2, ON" >> hecmw_ctrl.dat
   fi
-  echo "!PARTITION,TYPE=NODE-BASED,METHOD=KMETIS,DOMAIN=$mpi_num_process" > hecmw_part_ctrl.dat
+  depth=1
+  if [ -e $ref_dir/depth.txt ]; then
+    depth=`cat $ref_dir/depth.txt`
+    echo $depth
+  fi
+  echo "!PARTITION,TYPE=NODE-BASED,METHOD=KMETIS,DOMAIN=$mpi_num_process,DEPTH=$depth" > hecmw_part_ctrl.dat
 
   #
   # Execute Tests

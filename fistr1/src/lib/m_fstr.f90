@@ -67,6 +67,9 @@ module m_fstr
   integer(kind=kint), parameter :: restart_outAll  = 2
 
   !> section control
+  integer(kind=kint), parameter :: kel341FI     =  1
+  integer(kind=kint), parameter :: kel341SESNS  =  2
+
   integer(kind=kint), parameter :: kel361FI     =  1
   integer(kind=kint), parameter :: kel361BBAR   =  2
   integer(kind=kint), parameter :: kel361IC     =  3
@@ -352,8 +355,11 @@ module m_fstr
     integer(kind=kint) :: is_33shell
     integer(kind=kint) :: is_33beam
     integer(kind=kint) :: is_heat
+    integer(kind=kint) :: max_ncon_stf     !< maximum num of stiffness matrix size
+    integer(kind=kint) :: max_ncon         !< maximum num of element connectivity
     integer(kind=kint), pointer :: is_rot(:) => null()
     integer(kind=kint) :: elemopt361
+    logical            :: is_smoothing_active
     real(kind=kreal)   :: FACTOR     (2)   !< factor of incrementation
     !< 1:time t  2: time t+dt
     !> for increment control
@@ -615,7 +621,7 @@ module m_fstr
     !integer              :: iset
     !integer              :: orien_ID
     !real(kind=kreal)     :: thickness
-    !integer              :: elemopt341
+    integer              :: elemopt341
     !integer              :: elemopt342
     !integer              :: elemopt351
     !integer              :: elemopt352

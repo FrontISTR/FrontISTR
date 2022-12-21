@@ -322,12 +322,17 @@ contains
     integer(kind=kint)            :: j, k, sect_id, ori_id, elemopt
     integer(kind=kint),save       :: cache = 1
     character(len=HECMW_NAME_LEN) :: sect_orien
+    character(19) :: form341list = 'FI,SELECTIVE_ESNS '
     character(16) :: form361list = 'FI,BBAR,IC,FBAR '
 
     fstr_ctrl_get_SECTION = -1
 
     if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return
     if( sect_id > hecMESH%section%n_sect ) return
+
+    elemopt = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'FORM341 ',   form341list, 0, 'P', elemopt )/= 0) return
+    if( elemopt > 0 ) sections(sect_id)%elemopt341 = elemopt
 
     elemopt = 0
     if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt )/= 0) return
