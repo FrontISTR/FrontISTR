@@ -339,7 +339,7 @@ contains
 
     allocate(contact_surf(size(nodeID)))
     allocate(states_prev(size(contact%slave)))
-    contact_surf(:) = size(elemID)+1
+    contact_surf(:) = 99999999
     do i = 1, size(contact%slave)
       states_prev(i) = contact%states(i)%state
     enddo
@@ -374,11 +374,12 @@ contains
           cycle
         endif
         if( contact%algtype /= CONTACTFSLID .or. (.not. is_present_B) ) then   ! small slide problem
-          contact_surf(contact%slave(i)) = -id
+          contact_surf(contact%slave(i)) = -elemID(contact%master(id)%eid)
         else
           call track_contact_position( flag_ctAlgo, i, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, Bp )
           if( contact%states(i)%state /= CONTACTFREE ) then
-            contact_surf(contact%slave(i)) = -contact%states(i)%surface
+            id = contact%states(i)%surface
+            contact_surf(contact%slave(i)) = -elemID(contact%master(id)%eid)
           endif
         endif
 
@@ -427,11 +428,11 @@ contains
           if( iSS>0 ) &
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos, &
               contact%states(i)%direction(:) )
-          contact_surf(contact%slave(i)) = id
-          write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
+          contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+          write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
             elemID(contact%master(id)%eid),       &
             " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(:), &
-            " along direction ", contact%states(i)%direction
+            " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
           exit
         enddo
         deallocate(indexMaster)
@@ -443,10 +444,11 @@ contains
     nactive = 0
     do i = 1, size(contact%slave)
       if (contact%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
-        if (abs(contact_surf(contact%slave(i))) /= contact%states(i)%surface) then ! that is in contact with other surface
+        id = contact%states(i)%surface
+        if (abs(contact_surf(contact%slave(i))) /= elemID(contact%master(id)%eid)) then ! that is in contact with other surface
           contact%states(i)%state = CONTACTFREE                           ! should be freed
-          write(*,'(A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i)), &
-            " in rank",hecmw_comm_get_rank()," freed due to duplication"
+          write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i))," contact with element", &
+            &  elemID(contact%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
         else
           nactive = nactive + 1
         endif
