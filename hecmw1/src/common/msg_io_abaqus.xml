@@ -87,7 +87,7 @@
 			<description>不正なコネクティビティを検出した</description>
 		</define>
 		<define type="error" name="E0605">
-			<message>*ELEMENT: Existent node required for connectiviy</message>
+			<message>*ELEMENT: Existent node required for connectivity</message>
 			<description>存在しない節点IDをコネクティビティに使用している</description>
 		</define>
 		<define type="error" name="E0606">

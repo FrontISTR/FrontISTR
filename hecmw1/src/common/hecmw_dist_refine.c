@@ -2223,7 +2223,7 @@ static int check_node_rank(const struct hecmwST_local_mesh *mesh,
 
   /* Collect nodes of the shared elements, and send size */
   for (i = 0; i < mesh->n_neighbor_pe; i++) {
-    /* numver of shared elements in original mesh */
+    /* number of shared elements in original mesh */
     send_buf[4*i] = mesh->shared_index[i+1] - mesh->shared_index[i];
 
     /* number of refined shared elements */
