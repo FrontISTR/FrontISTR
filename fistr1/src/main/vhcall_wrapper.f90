@@ -4,6 +4,7 @@ subroutine stiffMatrixCallerWrapper(hecMAT, ctime, tincr, cstep, maxn_gauss)
   use hecmw_util, only: kint, kreal, hecmwST_local_mesh, hecmwST_matrix, &
     hecmw_comm_get_comm, hecmw_comm_get_rank, hecmw_comm_get_size
   use m_fstr, only: fstr_solid, fstr_param
+  use m_fstr_main, only: hecMESH, fstrSOLID
   implicit none
   integer(8) :: handle
   integer(8) :: func
@@ -77,6 +78,38 @@ subroutine stiffMatrixCallerWrapper(hecMAT, ctime, tincr, cstep, maxn_gauss)
   if(ret /= 0)then
     write(0,*) 'fvhcall_args_set for failed size(hecMAT%AL)', ret
   endif
+  ret = fvhcall_args_set(args, fvhcall_intent_in, 14, hecMESH%node)
+  if(ret /= 0)then
+    write(0,*) 'fvhcall_args_set for failed hecMESH%node', ret
+  endif
+  ret = fvhcall_args_set(args, fvhcall_intent_in, 15, size(hecMESH%node))
+  if(ret /= 0)then
+    write(0,*) 'fvhcall_args_set for failed size(hecMESH%node)', ret
+  endif
+  ret = fvhcall_args_set(args, fvhcall_intent_in, 16, fstrSOLID%dunode)
+  if(ret /= 0)then
+    write(0,*) 'fvhcall_args_set for failed fstrSOLID%dunode', ret
+  endif
+  ret = fvhcall_args_set(args, fvhcall_intent_in, 17, size(fstrSOLID%dunode))
+  if(ret /= 0)then
+    write(0,*) 'fvhcall_args_set for failed size(fstrSOLID%dunode)', ret
+  endif
+  ret = fvhcall_args_set(args, fvhcall_intent_in, 18, fstrSOLID%unode)
+  if(ret /= 0)then
+    write(0,*) 'fvhcall_args_set for failed fstrSOLID%unode', ret
+  endif
+  ret = fvhcall_args_set(args, fvhcall_intent_in, 19, size(fstrSOLID%unode))
+  if(ret /= 0)then
+    write(0,*) 'fvhcall_args_set for failed size(fstrSOLID%unode)', ret
+  endif
+  ret = fvhcall_args_set(args, fvhcall_intent_in, 20, fstrSOLID%factor)
+  if(ret /= 0)then
+    write(0,*) 'fvhcall_args_set for failed fstrSOLID%factor', ret
+  endif
+  ret = fvhcall_args_set(args, fvhcall_intent_in, 21, size(fstrSOLID%factor))
+  if(ret /= 0)then
+    write(0,*) 'fvhcall_args_set for failed size(fstrSOLID%factor)', ret
+  endif
 
   ret = fvhcall_invoke_with_args(func, args)
   if(ret /= 0)then
@@ -87,7 +120,8 @@ end subroutine
 #endif
 
 #ifdef VHCALL_LIB
-subroutine stiffMatrixCalleeWrapper(ctime, tincr, cstep, hecmw_comm, hecmw_PETOT, hecmw_rank, hecmw_group, maxn_gauss, D, AL, AU, sizeD, sizeALAU )
+subroutine stiffMatrixCalleeWrapper(ctime, tincr, cstep, hecmw_comm, hecmw_PETOT, hecmw_rank, hecmw_group, maxn_gauss, &
+    D, AL, AU, sizeD, sizeALAU, node, sizeNode, dunode, sizeDunode, unode, sizeUnode, factor, sizeFactor )
   use hecmw_util, only: kint, kreal, HECMW_FILENAME_LEN
   use m_fstr, only: fstr_param
   use m_fstr_main, only: hecMESH, hecMAT, fstrSOLID, fstrPR, fstrCPL, &
@@ -103,22 +137,32 @@ subroutine stiffMatrixCalleeWrapper(ctime, tincr, cstep, hecmw_comm, hecmw_PETOT
   character(len=HECMW_FILENAME_LEN):: ctrlfile = "hecmw_ctrl.dat"
   integer(kind=kint) :: ierr
   integer(kind=kint) :: maxn_gauss
-  integer(kind=kint) :: sizeD, sizeALAU
+  integer(kind=kint) :: sizeD, sizeALAU, sizeNode, sizeDunode, sizeUnode, sizeFactor
   real(kind=kreal),intent(out) :: D(sizeD), AL(sizeALAU), AU(sizeALAU)
+  real(kind=kreal),intent(in) :: node(sizeNode), dunode(sizeDunode), unode(sizeUnode), factor(sizeFactor)
   integer(kind=kint) :: i
   type(fstr_param)   :: fstrPARAM
+  logical,save       :: is_first=.true.
 
 
-  call hecmw_comm_init_if(hecmw_comm, hecmw_PETOT, hecmw_rank, hecmw_group)
-  call hecmw_ctrl_init_ex_if(ctrlfile, ierr)
+  if( is_first) then
+    call hecmw_comm_init_if(hecmw_comm, hecmw_PETOT, hecmw_rank, hecmw_group)
+    call hecmw_ctrl_init_ex_if(ctrlfile, ierr)
 
-  name_ID = 'fstrMSH'
-  call hecmw_get_mesh( name_ID , hecMESH )
-  call hecmw2fstr_mesh_conv( hecMESH )
-  call fstr_init
+    name_ID = 'fstrMSH'
+    call hecmw_get_mesh( name_ID , hecMESH )
+    call hecmw2fstr_mesh_conv( hecMESH )
+    call fstr_init
 
-  fstrSOLID%maxn_gauss=maxn_gauss
-  call fstr_rcap_initialize( hecMESH, fstrPR, fstrCPL )
+    fstrSOLID%maxn_gauss=maxn_gauss
+    call fstr_rcap_initialize( hecMESH, fstrPR, fstrCPL )
+    is_first=.false.
+  else
+    hecMESH%node=node
+    fstrSOLID%dunode=dunode
+    fstrSOLID%unode=unode
+    fstrSOLID%factor=factor
+  endif
 
   call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
   call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
