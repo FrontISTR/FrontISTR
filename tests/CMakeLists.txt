@@ -23,7 +23,7 @@ function(GetProcThreads type np nt)
   endif()
 endfunction(GetProcThreads)
 
-# Get the list of tests in specifed directory
+# Get the list of tests in specified directory
 function(AppendListTests rootdir list_in TEST_TARGETS)
 
   set(TMPLIST "${list_in}")

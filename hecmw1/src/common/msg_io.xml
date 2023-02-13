@@ -63,7 +63,7 @@
 			<description>要素と面番号の整合性がとれない</description>
 		</define>
 		<define type="warning" name="W1009">
-			<message>Checking surface gorup: Duplicate pair of element and surface found, ignored</message>
+			<message>Checking surface group: Duplicate pair of element and surface found, ignored</message>
 			<description>同じ要素と面番号の組を追加しようとした</description>
 		</define>
 		<define type="warning" name="W1010">
@@ -99,7 +99,7 @@
 			<description>定義されていない節点グループ指定した</description>
 		</define>
 		<define type="error" name="E1018">
-			<message>INITIAL CONDITON: Cannot initialize node twice</message>
+			<message>INITIAL CONDITION: Cannot initialize node twice</message>
 			<description>既に初期条件が与えられるいる節点に対し、再度初期条件を与えた</description>
 		</define>
 		<define type="warning" name="W1019">
@@ -135,7 +135,7 @@
 			<description>要素グループにセクションタイプに合わない要素が含まれている</description>
 		</define>
 		<define type="error" name="E1027">
-			<message>ELEMENT: Existent node requied for connectiviy</message>
+			<message>ELEMENT: Existent node required for connectivity</message>
 			<description>要素のコネクティビティに定義されていない節点が含まれている</description>
 		</define>
 		<define type="error" name="E1028">
@@ -159,7 +159,7 @@
 			<description>分散メッシュファイル内に予期しないEOFを検出した</description>
 		</define>
 		<define type="error" name="E5004">
-			<message>IO error occured while readig distributed mesh file</message>
+			<message>IO error occurred while reading distributed mesh file</message>
 			<description>分散メッシュファイルの入出力中にIOエラーが発生した</description>
 		</define>
 		<define type="error" name="E5005">

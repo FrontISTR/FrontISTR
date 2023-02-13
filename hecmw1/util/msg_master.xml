@@ -19,7 +19,7 @@
 			<description>無効な引数である</description>
 		</define>
 		<define type="error" name="E0102">
-			<message>NULL poiner error</message>
+			<message>NULL pointer error</message>
 			<description>NULLポインタを検出した</description>
 		</define>
 
