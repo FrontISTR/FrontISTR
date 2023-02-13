@@ -37,8 +37,6 @@ contains
       start_time = start_time + fstrHEAT%STEP_EETIME(i)
     enddo
 
-    current_time = 0.d0
-    next_time = 0.d0
     total_time = start_time + current_time
 
     delta_time_base = fstrHEAT%STEP_DLTIME(ISTEP)
