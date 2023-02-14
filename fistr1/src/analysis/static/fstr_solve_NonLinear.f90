@@ -179,8 +179,10 @@ contains
   !> method combined with Nested iteration of augmentation calculation as suggested
   !> by Simo & Laursen (Compu & Struct, Vol42, pp97-116, 1992 )
   subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,                   &
-      restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange )
+      restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange, conMAT )
     use mContact
+    use m_addContactStiffness
+    use m_solve_LINEQ_contact
 
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -191,10 +193,11 @@ contains
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     type (fstr_info_contactChange)        :: infoCTChange  !< fstr_info_contactChange
-    type (hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
+    type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    type (hecmwST_matrix)                 :: conMAT
 
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
-    type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_matrix), pointer :: hecMATmpc, conMATmpc
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter
@@ -203,9 +206,11 @@ contains
     integer(kind=kint) :: restart_step_num, restart_substep_num
     logical            :: convg, ctchange
     integer(kind=kint) :: n_node_global
+    integer(kind=kint) :: contact_changed_global
     real(kind=kreal), allocatable :: coord(:)
+    integer(kind=kint)  :: istat
 
-    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -223,10 +228,21 @@ contains
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
 
+    fstrSOLID%dunode(:) = 0.0d0
+
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
+      call fstr_save_originalMatrixStructure(hecMAT)
       if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
-      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
-      if(hecMESH%my_rank==0) write(*,*)
+      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+      call hecmw_mat_copy_profile( hecMAT, conMAT )
+      if ( fstr_is_contact_active() ) then
+        call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+      elseif( hecMAT%Iarray(99)==4 ) then
+        write(*, *) ' This type of direct solver is not yet available in such case ! '
+        write(*, *) ' Please change the solver type to intel MKL direct solver !'
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, .true.)
     endif
 
     hecMAT%X = 0.0d0
@@ -234,6 +250,10 @@ contains
     stepcnt = 0
 
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+
+    call hecmw_mat_clear_b(conMAT)
+
+    if( fstr_is_contact_active() ) call fstr_ass_load_contactAlag( hecMESH, fstrSOLID, conMAT%B )
 
     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
@@ -248,8 +268,6 @@ contains
         endif
       end if
 
-      fstrSOLID%dunode(:) = 0.0d0
-
       ! ----- Inner Iteration, lagrange multiplier constant
       res0   = 0.0d0
       res1   = 0.0d0
@@ -261,30 +279,28 @@ contains
         call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
+        call hecmw_mat_clear( conMAT )
+        conMAT%X = 0.0d0
+
         ! ----- Contact
-        if( fstr_is_contact_active() .and. stepcnt==1 )  then
+        if( al_step == 1 .and. stepcnt == 1 ) then
           maxv = hecmw_mat_diag_max( hecMAT, hecMESH )
           call fstr_set_contact_penalty( maxv )
         endif
-        if( fstr_is_contact_active() ) then
-          call fstr_contactBC( iter, hecMESH, hecMAT, fstrSOLID )
+        if( fstr_is_contact_active() )  then
+          call fstr_contactBC( cstep, iter, hecMESH, conMAT, fstrSOLID )
         endif
 
         ! ----- Set Boundary condition
-        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+        call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc, hecLagMAT)
         call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-        call fstr_AddBC(cstep, hecMESH,hecMATmpc,fstrSOLID,fstrPARAM,hecLagMAT,stepcnt)
+        call fstr_AddBC(cstep, hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, conMATmpc)
 
         !----- SOLVE [Kt]{du}={R}
-        if( sub_step == restart_step_num .and. iter == 1 ) hecMATmpc%Iarray(98) = 1
-        if( iter == 1 ) then
-          hecMATmpc%Iarray(97) = 2   !Force numerical factorization
-        else
-          hecMATmpc%Iarray(97) = 1   !Need numerical factorization
-        endif
+        ! ----  For Parallel Contact with Multi-Partition Domains
         hecMATmpc%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-        call solve_LINEQ(hecMESHmpc,hecMATmpc)
+        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMATmpc, istat, 1.0D0, fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
@@ -304,14 +320,18 @@ contains
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
           call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-        call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+        call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, conMAT)
 
         if( fstr_is_contact_active() ) then
-          call fstr_update_contact0(hecMESH, fstrSOLID, hecMAT%B)
+          call hecmw_mat_clear_b( conMAT )
+          call fstr_update_contact0(hecMESH, fstrSOLID, conMAT%B)
         endif
-
-        res = fstr_get_residual(hecMAT%B, hecMESH)
-
+        !    Consider SPC condition
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+    
+        !res = fstr_get_residual(hecMAT%B, hecMESH)
+        res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
         ! ----- Gather global residual
         res = sqrt(res)/n_node_global
         if( iter == 1 ) res0 = res
@@ -351,26 +371,22 @@ contains
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
       ! ----- deal with contact boundary
-      convg = .true.
-      ctchange = .false.
-      if( associated(fstrSOLID%contacts) ) then
-        call fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchange )
-        call fstr_scan_contact_state( cstep, sub_step, al_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
-        if( infoCTChange%contact2free+infoCTChange%contact2neighbor+infoCTChange%free2contact > 0 ) &
-          ctchange = .true.
+      call fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchange )
+      call fstr_scan_contact_state( cstep, sub_step, al_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
+
+      contact_changed_global = 0
+      if( fstr_is_matrixStructure_changed(infoCTChange) ) then
+        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        contact_changed_global = 1
       endif
-      if( fstr_is_contact_active() ) then
-        gnt(2)=gnt(2)/iter
-        convg = fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH)
+      call hecmw_allreduce_I1(hecMESH, contact_changed_global, HECMW_MAX)
+      if (contact_changed_global > 0) then
+        call hecmw_mat_clear_b( hecMAT )
+        call hecmw_mat_clear_b( conMAT )
+        call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, .true.)
       endif
 
-      ! ----- update the total displacement
-      ! u_{n+1} = u_{n} + \Delta u_{n+1}
-      do i=1,hecMESH%n_node*ndof
-        fstrSOLID%unode(i) = fstrSOLID%unode(i)+fstrSOLID%dunode(i)
-      enddo
-
-      if( convg .and. (.not.ctchange) ) exit
+      if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) .and. .not. ctchange ) exit
 
       ! ----- check divergence
       if( al_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
@@ -383,8 +399,22 @@ contains
         return
       end if
 
+      ! ----- Set residual for next newton iteration
+      call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
+
+      if( fstr_is_contact_active() )  then
+        call hecmw_mat_clear_b( conMAT )
+        call fstr_update_contact0(hecMESH, fstrSOLID, conMAT%B)
+      endif
+
     enddo
     ! ----- end of augmentation loop
+
+    ! ----- update the total displacement
+    ! u_{n+1} = u_{n} + \Delta u_{n+1}
+    do i=1,hecMESH%n_node*ndof
+      fstrSOLID%unode(i) = fstrSOLID%unode(i)+fstrSOLID%dunode(i)
+    enddo
 
     fstrSOLID%NRstat_i(knstCITER) = al_step-1 ! logging contact iteration
 
@@ -414,7 +444,7 @@ contains
     real(kind=kreal), intent(in)           :: dtime     !< time increment
     type (fstr_param)                      :: fstrPARAM    !< type fstr_param
     type (fstr_info_contactChange)         :: infoCTChange !< fstr_info_contactChange
-    type (hecmwST_matrix_lagrange)  :: hecLagMAT      !< type hecmwST_matrix_lagrange
+    type (hecmwST_matrix_lagrange)         :: hecLagMAT      !< type hecmwST_matrix_lagrange
     type (hecmwST_matrix)                  :: conMAT
 
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
@@ -464,7 +494,7 @@ contains
       call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
       call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
-        call fstr_mat_con_contact(cstep, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
       elseif( hecMAT%Iarray(99)==4 ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
@@ -524,7 +554,7 @@ contains
         hecMATmpc%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         q_residual = fstr_get_norm_para_contact(hecMATmpc,hecLagMAT,conMATmpc,hecMESHmpc)
-        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMATmpc, istat, 1.0D0)
+        call solve_LINEQ_contact(hecMESHmpc, hecMATmpc, hecLagMAT, conMATmpc, istat, 1.0D0, fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
         call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
         ! ----- check matrix solver error
@@ -623,14 +653,13 @@ contains
       is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH)
       contact_changed_global = 0
       if( fstr_is_matrixStructure_changed(infoCTChange) ) then
-        call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+        call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
         contact_changed_global = 1
       endif
 
       if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) exit loopFORcontactAnalysis
 
       call hecmw_allreduce_I1(hecMESH, contact_changed_global, HECMW_MAX)
-
       if (contact_changed_global > 0) then
         call hecmw_mat_clear_b( hecMAT )
         call hecmw_mat_clear_b( conMAT )
