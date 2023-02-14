@@ -430,12 +430,6 @@ contains
     ! ----- Spring force
     call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
 
-    if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaALagrange ) then
-      do i = 1, size(fstrSOLID%contacts)
-        call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, hecMAT%B )
-      enddo
-    endif
-
   end subroutine fstr_ass_load
 
 end module m_fstr_ass_load

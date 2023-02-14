@@ -159,6 +159,38 @@ contains
 
   end subroutine
 
+    !> This subroutine calculate contact stiff matrix and contact force
+  subroutine tied2stiff( flag, cstate, etype, nnode, mu, mut, stiff, force )
+  integer, intent(in)             :: flag            !< small slid or finite slide
+  type(tContactState), intent(in) :: cstate          !< contact state
+  integer, intent(in)             :: etype           !< type of contacting surface
+  integer, intent(in)             :: nnode           !< number of elemental nodes
+  real(kind=kreal), intent(in)    :: mu              !< penalty
+  real(kind=kreal), intent(in)    :: mut             !< penalty along tangent
+  real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
+  real(kind=kreal), intent(out)   :: force(:)        !< contact force
+
+  integer          :: i,j,k
+  real(kind=kreal) :: shapefunc(nnode)
+  real(kind=kreal) :: N(nnode*3+3)
+
+  stiff = 0.d0
+
+  call getShapeFunc( etype, cstate%lpos(:), shapefunc )
+  N(1) = 1.d0
+  N(2:nnode+1) = -shapefunc(1:nnode)
+
+  do j=1,nnode+1
+    do k=1,nnode+1
+      do i=1,3
+        stiff(3*k-3+i,3*j-3+i) = mu*N(k)*N(j)
+      enddo
+    enddo
+  enddo
+  force(1:nnode*3+3) = N(:)
+
+end subroutine
+
   !> This subroutine calculate the metric tensor of a elemental surface
   subroutine getMetricTensor( pos, etype, ele, tensor )
     real(kind=kreal), intent(in)  :: pos(2)        !< current position(local coordinate)

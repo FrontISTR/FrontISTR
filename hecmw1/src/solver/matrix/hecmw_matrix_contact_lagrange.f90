@@ -133,7 +133,7 @@ contains
         endif
       endif
 
-      call insert_lagrange(k,count_lagrange,list_nodeRelated(ndLocal(k)),countNon0LU_lagrange,permission)
+      if( count_lagrange > 0 ) call insert_lagrange(k,count_lagrange,list_nodeRelated(ndLocal(k)),countNon0LU_lagrange,permission)
 
       do l = k, nnode+1
         if( necessary_to_insert_node ) then
@@ -149,7 +149,7 @@ contains
           endif
         endif
 
-        if(k == 1) &
+        if(k == 1 .and. count_lagrange > 0) &
           call insert_lagrange(0,ndLocal(l),list_nodeRelated(np+count_lagrange),countNon0LU_lagrange,permission)
 
       enddo

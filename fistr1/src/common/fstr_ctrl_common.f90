@@ -537,7 +537,6 @@ contains
     tPenalty = 1.0d6
 
     write(ss,*)  HECMW_NAME_LEN
-    write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
 
     fstr_ctrl_get_CONTACT = .false.
     contact(1)%ctype = 1   ! pure slave-master contact; default value
@@ -550,13 +549,26 @@ contains
       contact(rcode)%group = contact(1)%group
       contact(rcode)%algtype = contact(1)%algtype
     end do
-    if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
-    do rcode=1,n
-      call fstr_strupr(cp_name(rcode))
-      contact(rcode)%pair_name = cp_name(rcode)
-      contact(rcode)%fcoeff = fcoeff(rcode)
-      contact(rcode)%tPenalty = tPenalty(rcode)
-    enddo
+
+    if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
+      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
+      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      do rcode=1,n
+        call fstr_strupr(cp_name(rcode))
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = fcoeff(rcode)
+        contact(rcode)%tPenalty = tPenalty(rcode)
+      enddo
+    else if( contact(1)%algtype==CONTACTTIED ) then
+      write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
+      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
+      do rcode=1,n
+        call fstr_strupr(cp_name(rcode))
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = 0.d0
+        contact(rcode)%tPenalty = 1.d+4
+      enddo
+    endif
 
     np = 0.d0;  tp=0.d0
     ntol = 0.d0;  ttol=0.d0

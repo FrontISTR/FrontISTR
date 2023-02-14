@@ -558,7 +558,7 @@ contains
     call hecmw_mat_copy_profile( hecMAT, conMAT )
 
     if ( fstr_is_contact_active() ) then
-      call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+      call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
     elseif( hecMAT%Iarray(99)==4 ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change solver type to intel MKL direct solver !'
@@ -709,7 +709,7 @@ contains
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMATmpc%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-          call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,hecLagMAT,conMAT,istat,1.0D0)
+          call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,hecLagMAT,conMAT,istat,1.0D0,fstr_is_contact_active())
           call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
           call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
@@ -758,7 +758,7 @@ contains
         if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
           exit loopFORcontactAnalysis
         elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then
-          call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+          call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
           contact_changed_global=1
         endif
         call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
