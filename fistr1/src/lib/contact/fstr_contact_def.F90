@@ -339,7 +339,7 @@ contains
 
     allocate(contact_surf(size(nodeID)))
     allocate(states_prev(size(contact%slave)))
-    contact_surf(:) = 99999999
+    contact_surf(:) = huge(0)
     do i = 1, size(contact%slave)
       states_prev(i) = contact%states(i)%state
     enddo
