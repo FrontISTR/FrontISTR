@@ -34,11 +34,12 @@ run_hecmw_part1 () {
   rm -f hecmw_part1.log
   if [ $mpi_num_process -gt 1 ]; then
     $mpirun $mpirun_options -n 1 \
-    $hecmw_part1 2>&1 \
+      $hecmw_part1 2>&1 \
       | tee hecmw_part1.log \
       | sed -e "s/^/    hecmw_part1 > /"
     if ! ( [ -e hecmw_part1.log ] && grep 'Domain decomposition done' hecmw_part1.log ); then
       echo "    $(dirname $mesh_path): partitioning failure" >&2
+      : $((errors++))
       return 1
     fi
   fi
@@ -49,7 +50,7 @@ run_fistr1 () {
   str_restart=$1
   rm -f fistr1.log
   if [ $mpi_num_process -gt 1 ] || [ "$always_mpirun" = "true" ]; then
-    mpirun $mpi_options -n $mpi_num_process \
+    mpirun $mpirun_options -n $mpi_num_process \
       $fistr1 -t $omp_num_threads 2>&1 \
       | tee fistr1.log \
       | sed -e "s/^/    fistr1 > /"
@@ -66,6 +67,7 @@ run_fistr1 () {
       echo "    $(dirname $mesh_path)$str_restart: execution failure" >&2
     fi
     rm -f *.res.*
+    : $((errors++))
     return 1
   fi
   return 0
@@ -160,9 +162,9 @@ check_executable $compare_res
 
 if [ "$mpirun_options" = "not_set" ]; then
   if [ "$($mpirun --version 2> /dev/null | grep 'open-mpi')" != "" ]; then
-    mpi_options="--oversubscribe --allow-run-as-root"
+    mpirun_options="--oversubscribe --allow-run-as-root"
   else
-    mpi_options=""
+    mpirun_options=""
   fi
 fi
 
