@@ -18,6 +18,8 @@ module fstr_dynamic_nlimplicit
   use fstr_matrix_con_contact
   use m_fstr_Residual
 
+  use m_fstr_spring
+
   !-------- for couple -------
   use m_dynamic_mat_ass_couple
   use m_fstr_rcap_io
@@ -166,6 +168,7 @@ contains
               call hecmw_mat_copy_val(hecMAT0, hecMAT)
             endif
           endif
+          call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYNAMIC)
 
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
@@ -603,6 +606,7 @@ contains
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
           call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+          call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYNAMIC)
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
               hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
