@@ -930,6 +930,7 @@ contains
     fstrSOLID%DLOAD_follow      = 1
     fstrSOLID%TEMP_ngrp_tot     = 0
     fstrSOLID%SPRING_ngrp_tot   = 0
+    fstrSOLID%SPRING_damper     = 0
     fstrSOLID%TEMP_irres        = 0
     fstrSOLID%TEMP_tstep        = 1
     fstrSOLID%TEMP_interval     = 1
@@ -2419,7 +2420,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: counter
     type(fstr_param_pack) :: P
 
-    integer(kind=kint) :: rcode
+    integer(kind=kint) :: rcode, damp
     character(HECMW_NAME_LEN) :: amp
     integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
@@ -2441,13 +2442,15 @@ end function fstr_setup_INITIAL
     call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_DOF, old_size, new_size )
     call fstr_expand_real_array    ( P%SOLID%SPRING_ngrp_val, old_size, new_size )
     call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_amp, old_size, new_size )
+    call fstr_expand_integer_array ( P%SOLID%SPRING_damper, old_size, new_size )
 
     allocate( grp_id_name(n))
     amp = ' '
+    damp = 0
     val_ptr => P%SOLID%SPRING_ngrp_val(old_size+1:)
     id_ptr =>P%SOLID%SPRING_ngrp_DOF(old_size+1:)
     val_ptr = 0
-    rcode = fstr_ctrl_get_SPRING( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
+    rcode = fstr_ctrl_get_SPRING( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr, damp )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     call amp_name_to_id( P%MESH, '!SPRING', amp, amp_id )
@@ -2456,6 +2459,7 @@ end function fstr_setup_INITIAL
     end do
     P%SOLID%SPRING_ngrp_GRPID(old_size+1:new_size) = gid
     call node_grp_name_to_id_ex( P%MESH, '!SPRING', n, grp_id_name, P%SOLID%SPRING_ngrp_ID(old_size+1:))
+    P%SOLID%SPRING_damper(old_size+1:new_size) = damp
 
     deallocate( grp_id_name )
 

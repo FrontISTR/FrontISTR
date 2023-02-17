@@ -21,6 +21,8 @@ contains
     use m_common_struct
     use m_utilities
 
+  use m_fstr_spring
+
     implicit none
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
@@ -449,6 +451,10 @@ contains
       enddo
       deallocate ( temp )
     endif
+
+    ! ----- Spring force
+    call fstr_Update_NDForce_spring( 1, hecMESH, fstrSOLID, hecMAT%B, fstrDYNAMIC )
+
   end subroutine DYNAMIC_MAT_ASS_LOAD
 
 

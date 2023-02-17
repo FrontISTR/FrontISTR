@@ -296,6 +296,7 @@ module m_fstr
     integer(kind=kint), pointer :: SPRING_ngrp_ID       (:)
     integer(kind=kint), pointer :: SPRING_ngrp_DOF      (:)
     integer(kind=kint), pointer :: SPRING_ngrp_amp      (:)
+    integer(kind=kint), pointer :: SPRING_damper        (:)    !< use damper or not
     real(kind=kreal), pointer   :: SPRING_ngrp_val      (:)
 
     !> for couple analysis

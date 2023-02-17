@@ -39,6 +39,8 @@ contains
       jj_n_amp = fstrSOLID%CLOAD_ngrp_amp(ig0)
     else if( flag_u .eq. 10 ) then
       jj_n_amp = fstrSOLID%DLOAD_ngrp_amp(ig0)
+    else if( flag_u .eq. 11 ) then
+      jj_n_amp = fstrSOLID%SPRING_ngrp_amp(ig0)
     end if
 
     if( jj_n_amp == 0 ) then
