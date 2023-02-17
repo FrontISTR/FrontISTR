@@ -573,7 +573,7 @@ contains
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
       fstrDYNAMIC%i_step = i
-      fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
+      fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * (i - restrt_step_num + 1)
 
       if(hecMESH%my_rank==0) then
         write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
@@ -700,7 +700,7 @@ contains
           !          call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
           !          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag<1.0d-5 .and. iter>1 ) exit
           if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &
-            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-4 ) exit
+            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-1 ) exit
           res1 = res
           rf=1.0d0
           if( iter>1 .and. res>res1 )rf=0.5d0*rf
