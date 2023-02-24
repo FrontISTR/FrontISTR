@@ -157,7 +157,7 @@ contains
 
     !* data --------------------------------------------------------------------------------------- *!
     ! JP-4
-    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiiii ', nier, iterpremax, nrest, nBFGS, ncolor_in, recyclepre )/= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre, nBFGS )/= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
 
     if( precond == 20 .or. precond == 21) then
