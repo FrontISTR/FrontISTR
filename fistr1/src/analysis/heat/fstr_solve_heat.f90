@@ -53,6 +53,8 @@ contains
       endif
 
       call heat_solve_TRAN(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT, ISTEP, total_step, start_time)
+
+      start_time = 0.0d0
     enddo
 
     call heat_finalize(fstrHEAT)
