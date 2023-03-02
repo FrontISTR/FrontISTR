@@ -443,8 +443,10 @@ contains
     character(len=6)                :: clyr
     character(len=4)                :: cnum
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+    real(kind=kreal), allocatable   :: work(:)
 
     ndof = hecMESH%n_dof
+    allocate( work(hecMESH%n_elem) )
 
     ! --- STRAIN @node
     if (fstrSOLID%output_ctrl(3)%outinfo%on(3)) then
@@ -579,6 +581,24 @@ contains
       end do
     endif
 
+    ! --- PLASTIC STRAIN @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(43) ) then
+      id = 2
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(43), ndof )
+      ngauss = fstrSOLID%maxn_gauss
+      label = 'ElementalPLSTRAIN'//trim(clyr)
+      do i = 1, hecMESH%n_elem
+        work(i) = 0.d0
+        do j = 1, size(fstrSOLID%elements(i)%gausses) 
+          work(i) = work(i) + fstrSOLID%elements(i)%gausses(j)%plstrain
+        enddo
+        work(i) = work(i) / size(fstrSOLID%elements(i)%gausses) 
+        RES%EPLSTRAIN(i) = work(i)
+      enddo
+      call hecmw_result_add( id, nitem, label, work )
+    endif
+    deallocate( work )
+  
   end subroutine fstr_write_result_main
 
   !C***
@@ -802,6 +822,11 @@ contains
     if( fstrSOLID%output_ctrl(4)%outinfo%on(26) ) then
       ecomp = ecomp + 3
       eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
+    endif
+    ! --- PLASTIC STRAIN @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(43) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
     endif
     ! --- MATERIAL @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
@@ -1418,6 +1443,18 @@ contains
         enddo
         jitem = jitem + nn
       enddo
+    endif
+
+    ! --- PLSTRAIN @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(43)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalPLSTRAIN'
+      do i = 1, hecMESH%n_elem
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = RES%EPLSTRAIN(i)
+      enddo
+      jitem = jitem + nn
     endif
 
   end subroutine fstr_make_result_main

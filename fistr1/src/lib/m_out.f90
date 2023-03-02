@@ -42,7 +42,7 @@ contains
     outinfo%grp_id_name = "ALL"
     outinfo%grp_id      = -1
     outinfo%on(:)       = .false.
-    outinfo%num_items   = 42
+    outinfo%num_items   = 43
 
     outinfo%keyWord(1)  = "DISP"
     outinfo%vtype(1)    = -2
@@ -173,6 +173,10 @@ contains
 
     outinfo%keyWord(42) = "ITEMP"
     outinfo%vtype(42)   = -1
+
+    outinfo%keyWord(43)  = "PL_ESTRAIN"
+    outinfo%vtype(43)    = -1
+
   end subroutine initOutInfo
 
   subroutine write_outinfo( fnum, nitem, outinfo, outdata )
