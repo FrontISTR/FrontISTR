@@ -799,5 +799,52 @@ contains
     fstr_ctrl_get_TIMEPOINTS = 0
   end function fstr_ctrl_get_TIMEPOINTS
 
+  !> Read in !AMPLITUDE
+  function fstr_ctrl_get_AMPLITUDE( ctrl, name, type_def, type_time, type_val, val, table )
+    implicit none
+    integer(kind=kint),            intent(in)  :: ctrl
+    character(len=HECMW_NAME_LEN), intent(out) :: name
+    integer(kind=kint),            intent(out) :: type_def
+    integer(kind=kint),            intent(out) :: type_time
+    integer(kind=kint),            intent(out) :: type_val
+    real(kind=kreal),              pointer     :: val(:)
+    real(kind=kreal),              pointer     :: table(:)
+    integer(kind=kint) :: fstr_ctrl_get_AMPLITUDE
+
+    integer(kind=kint) :: t_def, t_time, t_val
+
+    fstr_ctrl_get_AMPLITUDE = -1
+
+    name = ''
+    t_def = 1
+    t_time = 1
+    t_val = 1
+
+    if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', name )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ', 'TABULAR ', 0, 'P', t_def )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'TIME ', 'STEP ', 0, 'P', t_time )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'VALUE ', 'RELATIVE,ABSOLUTE ', 0, 'P', t_val )/=0 ) return
+
+    if( t_def==1 ) then
+      type_def = HECMW_AMP_TYPEDEF_TABULAR
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter DEFINITION.'
+    endif
+    if( t_time==1 ) then
+      type_time = HECMW_AMP_TYPETIME_STEP
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter TIME.'
+    endif
+    if( t_val==1 ) then
+      type_val = HECMW_AMP_TYPEVAL_RELATIVE
+    elseif( t_val==2 ) then
+      type_val = HECMW_AMP_TYPEVAL_ABSOLUTE
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter VALUE.'
+    endif
+
+    fstr_ctrl_get_AMPLITUDE = fstr_ctrl_get_data_array_ex( ctrl, 'RR ', val, table )
+
+  end function fstr_ctrl_get_AMPLITUDE
 
 end module fstr_ctrl_common

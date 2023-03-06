@@ -1025,6 +1025,55 @@ contains
   !------------------------------------------------------------------------------
   ! JP-7
 
+  !> Append new amplitude table at the end of existing amplitude tables
+  subroutine append_new_amplitude( amp, name, type_def, type_time, type_val, np, val, table )
+    type( hecmwST_amplitude ),     intent(inout) :: amp       !< amplitude table structure
+    character(len=HECMW_NAME_LEN), intent(in)    :: name      !< name of amplitude table
+    integer(kind=kint),            intent(in)    :: type_def  !< HECMW_AMP_TYPEDEF_TABULAR
+    integer(kind=kint),            intent(in)    :: type_time !< HECMW_AMP_TYPETIME_STEP
+    integer(kind=kint),            intent(in)    :: type_val  !< HECMW_AMP_TYPEVAL_{RELATIVE|ABSOLUTE}
+    integer(kind=kint),            intent(in)    :: np        !< number of table items
+    real(kind=kreal),              intent(in)    :: val(:)    !< values of the table
+    real(kind=kreal),              intent(in)    :: table(:)  !< time points of the table
+
+    ! type(fstr_str_arr) :: amp_name
+    integer(kind=kint) :: n_amp, new_size, old_size, i
+
+    do i=1,amp%n_amp
+      if( fstr_streqr(amp%amp_name(i), name) ) then
+        write(*,*) 'Error: AMPLITUDE with NAME=',trim(name),' already exists'
+        call fstr_ctrl_err_stop
+      endif
+    enddo
+
+    n_amp = amp%n_amp
+    new_size = n_amp+1
+    amp%n_amp = new_size
+    call fstr_expand_index_array( amp%amp_index, n_amp+1, new_size+1 )
+    ! amp_name%s => amp%amp_name
+    ! call fstr_expand_name_array( amp_name, n_amp, new_size )
+    ! amp%amp_name => amp_name%s
+    call fstr_expand_char_array( amp%amp_name, n_amp, new_size )
+    call fstr_expand_integer_array( amp%amp_type_definition, n_amp, new_size )
+    call fstr_expand_integer_array( amp%amp_type_time, n_amp, new_size )
+    call fstr_expand_integer_array( amp%amp_type_value, n_amp, new_size )
+    old_size = amp%amp_index( amp%n_amp )
+    new_size = old_size+np
+    call fstr_expand_real_array( amp%amp_val, old_size, new_size )
+    call fstr_expand_real_array( amp%amp_table, old_size, new_size )
+
+    amp%amp_index(amp%n_amp) = amp%amp_index(amp%n_amp-1)+np
+    amp%amp_name(amp%n_amp) = name
+    amp%amp_type_definition(amp%n_amp) = type_def
+    amp%amp_type_time(amp%n_amp) = type_time
+    amp%amp_type_value(amp%n_amp) = type_val
+    do i=1,np
+      amp%amp_val(old_size+i) = val(i)
+      amp%amp_table(old_size+i) = table(i)
+    enddo
+  end subroutine append_new_amplitude
+
+
   subroutine amp_name_to_id( hecMESH, header_name, aname, id )
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
