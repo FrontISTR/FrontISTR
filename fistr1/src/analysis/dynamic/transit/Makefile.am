@@ -82,7 +82,6 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	table_dyn.@f90objfilepostfix@ \
 	dynamic_mat_ass_load.@f90objfilepostfix@ \
 	dynamic_mat_ass_bc.@f90objfilepostfix@ \
 	dynamic_mat_ass_bc_vl.@f90objfilepostfix@ \

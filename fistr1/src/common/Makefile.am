@@ -103,7 +103,8 @@ OBJSF = \
 	fstr_setup.@f90objfilepostfix@ \
 	fstr_debug_dump.@f90objfilepostfix@ \
 	fstr_precheck.@f90objfilepostfix@ \
-	fstr_rcap_io.@f90objfilepostfix@
+	fstr_rcap_io.@f90objfilepostfix@ \
+	table_dyn.@f90objfilepostfix@
 
 INCLUDESF = \
 	fstr_ctrl_util_f.inc
