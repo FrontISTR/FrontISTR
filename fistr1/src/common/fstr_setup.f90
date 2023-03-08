@@ -930,7 +930,7 @@ contains
     fstrSOLID%DLOAD_follow      = 1
     fstrSOLID%TEMP_ngrp_tot     = 0
     fstrSOLID%SPRING_ngrp_tot   = 0
-    fstrSOLID%SPRING_damper     = 0
+    ! fstrSOLID%SPRING_damper     = 0
     fstrSOLID%TEMP_irres        = 0
     fstrSOLID%TEMP_tstep        = 1
     fstrSOLID%TEMP_interval     = 1

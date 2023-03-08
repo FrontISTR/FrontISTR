@@ -4,7 +4,6 @@
 ###############################################################################
 
 list(APPEND fistr_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/table_dyn.f90
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_mat_ass_load.f90
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_mat_ass_bc.f90
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_mat_ass_bc_vl.f90
