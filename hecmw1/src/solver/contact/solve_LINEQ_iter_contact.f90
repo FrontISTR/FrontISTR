@@ -78,13 +78,18 @@ contains
       ! use CG because the matrix is symmetric
       method_org = hecmw_mat_get_method(hecMAT)
       call hecmw_mat_set_method(hecMAT, 1)
-      ! avoid ML when no contact
-      !if (fg_amg) call hecmw_mat_set_precond(hecMAT, 3) ! set diag-scaling
       ! solve
       call hecmw_solve_iterative(hecMESH,hecMAT)
+      if (fg_amg .and. hecmw_mat_get_flag_diverged(hecMAT) /= 0) then
+        ! avoid ML and retry when diverged
+        call hecmw_mat_set_precond(hecMAT, 3) ! set diag-scaling
+        hecMAT%Iarray(97:98) = 1
+        hecMAT%X(:) = 0.d0
+        call hecmw_solve_iterative(hecMESH,hecMAT)
+        call hecmw_mat_set_precond(hecMAT, 5) ! restore amg
+      endif
       ! restore solver setting
       call hecmw_mat_set_method(hecMAT, method_org)
-      !if (fg_amg) call hecmw_mat_set_precond(hecMAT, 5)
     else
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: with contact'
       call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
