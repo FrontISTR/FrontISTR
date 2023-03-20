@@ -2220,4 +2220,4 @@ int HECMW_IS_ETYPE_PATCH_IF(int *etype) { return HECMW_is_etype_patch(*etype); }
 int hecmw_is_etype_smoothing_if(int *etype) { return HECMW_is_etype_smoothing(*etype); }
 int hecmw_is_etype_smoothing_if_(int *etype) { return HECMW_is_etype_smoothing(*etype); }
 int hecmw_is_etype_smoothing_if__(int *etype) { return HECMW_is_etype_smoothing(*etype); }
-int HECMW_IS_ETYPE_SMOOTING_IF(int *etype) { return HECMW_is_etype_smoothing(*etype); }
+int HECMW_IS_ETYPE_SMOOTHING_IF(int *etype) { return HECMW_is_etype_smoothing(*etype); }
