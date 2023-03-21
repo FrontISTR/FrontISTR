@@ -277,9 +277,9 @@ contains
     if( ISUF==1 ) then
       ! INTEGRATION OVER SURFACE
       do I=1,NSUR
-        elecoord(1,i)=XX(NOD(I))
-        elecoord(2,i)=YY(NOD(i))
-        elecoord(3,i)=ZZ(NOD(i))
+        elecoord(1,I)=XX(NOD(I))
+        elecoord(2,I)=YY(NOD(I))
+        elecoord(3,I)=ZZ(NOD(I))
       enddo
       do IG2=1,NumOfQuadPoints( SURTYPE )
         call getQuadPoint( SURTYPE, IG2, localcoord(1:2) )
