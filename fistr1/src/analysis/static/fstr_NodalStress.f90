@@ -230,9 +230,6 @@ contains
       deallocate( func, inv_func )
     enddo !<element type loop
 
-    if( fstrSOLID%is_smoothing_active ) call fstr_NodalStress3D_C3D4_SESNS( &
-      &  hecMESH, fstrSOLID, nnumber, fstrSOLID%STRAIN, fstrSOLID%STRESS, fstrSOLID%ESTRAIN, fstrSOLID%ESTRESS )
-
     !C** calculate nodal stress and strain
     do i = 1, hecMESH%n_node
       if( nnumber(i) == 0 ) cycle
@@ -242,6 +239,9 @@ contains
         tnstrain(6*(i-1)+1:6*(i-1)+6) = tnstrain(6*(i-1)+1:6*(i-1)+6) / nnumber(i)
       endif
     enddo
+
+    if( fstrSOLID%is_smoothing_active ) call fstr_NodalStress3D_C3D4_SESNS( &
+      &  hecMESH, fstrSOLID, nnumber, fstrSOLID%STRAIN, fstrSOLID%STRESS, fstrSOLID%ESTRAIN, fstrSOLID%ESTRESS )
 
     if( flag33 == 1 )then
       do nlyr = 1, ntot_lyr
@@ -431,8 +431,13 @@ contains
       stress_hyd_ndave(1:6) = stress_hyd_ndave(1:6)/nsecdup
       stress_dev_ndave(1:6) = stress_dev_ndave(1:6)/nsecdup
 
-      Nodal_STRAIN(6*i-5:6*i) = Nodal_STRAIN(6*i-5:6*i)+strain_hyd_ndave(1:6)
-      Nodal_STRESS(6*i-5:6*i) = Nodal_STRESS(6*i-5:6*i)+stress_hyd_ndave(1:6)+stress_dev_ndave(1:6)
+      if( nnumber(i) == 0 ) then
+        Nodal_STRAIN(6*i-5:6*i) = strain_hyd_ndave(1:6)
+        Nodal_STRESS(6*i-5:6*i) = stress_hyd_ndave(1:6)+stress_dev_ndave(1:6)
+      else
+        Nodal_STRAIN(6*i-5:6*i) = 0.5d0*(Nodal_STRAIN(6*i-5:6*i)+strain_hyd_ndave(1:6))
+        Nodal_STRESS(6*i-5:6*i) = 0.5d0*(Nodal_STRESS(6*i-5:6*i)+stress_hyd_ndave(1:6)+stress_dev_ndave(1:6))
+      endif
     end do
 
     ! ELEMENTAL STRAIN and STRESS

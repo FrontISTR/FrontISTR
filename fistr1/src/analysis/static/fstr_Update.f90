@@ -96,7 +96,7 @@ contains
         ! ----- nodal coordinate, displacement and temperature
         iiS = hecMESH%elem_node_index(icel-1)
         nn = hecMESH%elem_node_index(icel)-iiS
-        if( nn>150 ) stop "elemental nodes > 150!"
+        !if( nn>150 ) stop "elemental nodes > 150!"
 
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item (iiS+j)
