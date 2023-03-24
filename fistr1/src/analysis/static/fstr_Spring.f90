@@ -35,7 +35,6 @@ contains
         flag_u = 11
         call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, factor, flag_u)
         fval = fval*factor
-        ! write(*,*)'(@v@)', factor
       else
         if( fval < 0.d0 ) fval = -fval*(1.d0-factor)
       end if
@@ -78,7 +77,6 @@ contains
         flag_u = 11
         call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, factor, flag_u)
         fval = fval*factor
-        ! write(*,*)'(@_@)', factor
       else
         if( fval < 0.d0 ) fval = -fval*(1.d0-factor)
       end if

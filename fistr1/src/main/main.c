@@ -105,7 +105,7 @@ void print_buildinfo(int log_level) {
   if (rank!=0) return;
 #endif
   printf("##################################################################\n");
-  printf("#                         FrontISTR   DEVELOP-SPRING             #\n");
+  printf("#                         FrontISTR   DEVELOP-SPRING-DYNCB       #\n");
   printf("##################################################################\n");
   printf("---\n");
   if (VERSION_PATCH == 0){

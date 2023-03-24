@@ -207,10 +207,17 @@ contains
             ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
             ,fstrCPL, restrt_step_num )
         elseif( fstrPARAM%contact_algo == kcaSLagrange ) then
-          call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
+          if( fstrSOLID%step_ctrl(1)%inc_type == stepAutoInc ) then
+            call fstr_solve_dynamic_nlimplicit_contactSLag_CB(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
             ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
             ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange   &
             ,conMAT )
+          else
+            call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
+              ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+              ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange   &
+              ,conMAT )
+          endif
         endif
 
       else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis

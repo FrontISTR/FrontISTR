@@ -156,7 +156,7 @@ contains
     type(tParamAutoInc) :: pAinc
 
     pAinc = fstrPARAM%ainc(stepinfo%AincParam_id)
-
+    timeinc0 = time_inc_base
     if( stepinfo%inc_type == stepFixedInc ) then
       timeinc0 = stepinfo%initdt
     else ! INCTYPE==AUTO
