@@ -377,19 +377,19 @@ contains
           0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
-     !---  Restart info
-      if( fstrDYNAMIC%restart_nout > 0 ) then
-        if( mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) then
-          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
-        endif
-      endif
-
       !C-- output new displacement, velocity and acceleration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
       !C-- output result of monitoring node
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
+
+     !---  Restart info
+      if( fstrDYNAMIC%restart_nout > 0 ) then
+        if( mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) then
+          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
+        endif
+      endif
 
     enddo
     !C-- end of time step loop
@@ -791,13 +791,6 @@ contains
           0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
-      !---  Restart info
-      if( fstrDYNAMIC%restart_nout > 0 .and. &
-          (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
-        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-          infoCTChange%contactNode_current)
-      endif
-
       !C-- output new displacement, velocity and acceleration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
@@ -805,6 +798,13 @@ contains
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
+
+      !---  Restart info
+      if( fstrDYNAMIC%restart_nout > 0 .and. &
+          (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
+        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+          infoCTChange%contactNode_current)
+      endif
 
     enddo
     !C
