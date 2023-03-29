@@ -15,6 +15,7 @@ contains
     use m_fstr_NodalStress
     use m_make_result
     use m_hecmw2fstr_mesh_conv
+    use m_fstr_TimeInc
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
     type(fstr_dynamic), intent(in)       :: fstrDYNAMIC
@@ -22,11 +23,14 @@ contains
 
     type(hecmwST_result_data) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid, istep
+    logical            :: is_OutPoint
 
     ndof = hecMESH%n_dof
 
     !C-- SET DISPLACEMENT etc.
     istep = fstrDYNAMIC%i_step
+
+    is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(1), fstrPARAM )
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
       if( ndof==3 ) then
@@ -78,7 +82,7 @@ contains
     endif
 
     if( IVISUAL==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. istep==maxstep .or. is_OutPoint ) ) then
 
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )

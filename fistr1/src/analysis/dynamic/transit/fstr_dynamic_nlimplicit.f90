@@ -1319,7 +1319,7 @@ contains
           infoCTChange%contactNode_current)
       endif
 
-      if(fstr_get_time() >= fstrDYNAMIC%t_end) exit
+      if(fstr_get_time() > fstrSOLID%step_ctrl(cstep)%elapsetime - fstrSOLID%step_ctrl(cstep)%mindt ) exit
       substep = substep + 1
 
     enddo
