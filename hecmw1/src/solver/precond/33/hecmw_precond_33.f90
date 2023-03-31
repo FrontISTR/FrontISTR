@@ -88,13 +88,21 @@ contains
       START_TIME = hecmw_Wtime()
       select case(hecmw_mat_get_precond( hecMAT ))
         case(1,2)
-          call hecmw_precond_SSOR_33_apply_opt1(ZP)
+#ifndef __NEC__
+          call hecmw_precond_SSOR_33_apply(ZP)
+#elif
+          call hecmw_precond_SSOR_33_apply_aurora(ZP)
+#endif
         case(3)
           call hecmw_precond_DIAG_33_apply(ZP)
         case(5)
           call hecmw_precond_ML_33_apply(ZP)
         case(10:12)
-          call hecmw_precond_BILU_33_apply_opt1(ZP)
+#ifndef __NEC__
+          call hecmw_precond_BILU_33_apply(ZP)
+#elif
+          call hecmw_precond_BILU_33_apply_aurora(ZP)
+#endif
         case(20)
           call hecmw_precond_33_SAINV_apply(R,ZP)
         case(21)

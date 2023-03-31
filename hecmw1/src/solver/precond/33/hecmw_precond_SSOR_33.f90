@@ -21,7 +21,7 @@ module hecmw_precond_SSOR_33
 
   public:: hecmw_precond_SSOR_33_setup
   public:: hecmw_precond_SSOR_33_apply
-  public:: hecmw_precond_SSOR_33_apply_opt3
+  public:: hecmw_precond_SSOR_33_apply_aurora
   public:: hecmw_precond_SSOR_33_clear
 
   integer(kind=kint) :: N
@@ -319,7 +319,6 @@ contains
 
     ! added for turning >>>
     integer(kind=kint) :: blockIndex
-    write(0,*) 'org version'
 
     if (isFirst) then
       call setup_tuning_parameters
@@ -462,7 +461,7 @@ contains
   end subroutine hecmw_precond_SSOR_33_apply
 
   !multicolor + loop exchange
-  subroutine hecmw_precond_SSOR_33_apply_opt3(ZP)
+  subroutine hecmw_precond_SSOR_33_apply_aurora(ZP)
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
@@ -472,17 +471,10 @@ contains
     ! added for turning >>>
     integer(kind=kint) :: blockIndex
 
-    write(0,*) 'opt3 version'
     if (isFirst) then
       call setup_tuning_parameters
       isFirst = .false.
     endif
-    ! <<< added for turning
-
-    !call start_collection("loopInPrecond33")
-
-    !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-    !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
     !$omp parallel default(none) &
       !$omp& shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
@@ -536,7 +528,6 @@ contains
               endif
             endif
             if((ieL .lt. isL .and. j_offset .eq.0) .or. j .eq. ieL) then
-
               X1= SW1(i)
               X2= SW2(i)
               X3= SW3(i)
@@ -585,7 +576,6 @@ contains
               SW2(i)= SW2(i) + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
               SW3(i)= SW3(i) + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
             endif
-
             if (NContact.gt.0) then
               isU= indexCU(i-1) + 1
               ieU= indexCU(i)
@@ -622,12 +612,7 @@ contains
     enddo ! ic
     !$omp end parallel
 
-    !OCL END_CACHE_SUBSECTOR
-    !OCL END_CACHE_SECTOR_SIZE
-
-    !call stop_collection("loopInPrecond33")
-
-  end subroutine hecmw_precond_SSOR_33_apply_opt3
+  end subroutine hecmw_precond_SSOR_33_apply_aurora
 
 
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)
