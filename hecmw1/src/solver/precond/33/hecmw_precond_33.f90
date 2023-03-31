@@ -82,6 +82,7 @@ contains
     real(kind=kreal), intent(inout) :: COMMtime
     integer(kind=kint ) :: i, iterPRE, iterPREmax
     real(kind=kreal) :: START_TIME, END_TIME
+    integer(kind=kint ) :: PRECOND
 
     iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
     do iterPRE= 1, iterPREmax
@@ -90,7 +91,7 @@ contains
         case(1,2)
 #ifndef __NEC__
           call hecmw_precond_SSOR_33_apply(ZP)
-#elif
+#else
           call hecmw_precond_SSOR_33_apply_aurora(ZP)
 #endif
         case(3)
@@ -100,8 +101,13 @@ contains
         case(10:12)
 #ifndef __NEC__
           call hecmw_precond_BILU_33_apply(ZP)
-#elif
-          call hecmw_precond_BILU_33_apply_aurora(ZP)
+#else
+          PRECOND = hecmw_mat_get_precond(hecMAT)
+          if (PRECOND.eq.10) then
+            call hecmw_precond_BILU_33_apply_aurora(ZP)
+          else
+            call hecmw_precond_BILU_33_apply(ZP)
+          endif
 #endif
         case(20)
           call hecmw_precond_33_SAINV_apply(R,ZP)
