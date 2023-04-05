@@ -424,8 +424,10 @@ contains
     endif
     !
     IC = 0
+!NEC$ nomove
     do IP = 1, 6
       TERM2(IP) = 0.0
+!NEC$ nomove
       do JP = 1, 6
         IC = IC + 1
         TERM1(IC) = 0.0
@@ -739,8 +741,10 @@ contains
     !
     if( ISUF.EQ.1 ) then
       IC = 0
+!NEC$ nomove
       do IP = 1, 6
         TERM2(IP) = 0.0
+!NEC$ nomove
         do JP = 1, 6
           IC = IC + 1
           TERM1(IC) = 0.0
@@ -836,8 +840,10 @@ contains
       enddo
     elseif( ISUF.EQ.2 ) then
       IC = 0
+!NEC$ nomove
       do IP = 1, 8
         TERM2(IP) = 0.0
+!NEC$ nomove
         do JP = 1, 8
           IC = IC + 1
           TERM1(IC) = 0.0
@@ -1111,8 +1117,10 @@ contains
     endif
     !
     IC = 0
+!NEC$ nomove
     do IP = 1, 8
       TERM2(IP) = 0.0
+!NEC$ nomove
       do JP = 1, 8
         IC = IC + 1
         TERM1(IC) = 0.0

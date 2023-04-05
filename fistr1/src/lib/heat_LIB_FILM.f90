@@ -454,6 +454,7 @@ contains
             G2X=0.0
             G2Y=0.0
             G2Z=0.0
+!NEC$ novector
             do I=1,6
               G1X=G1X+(HL1(I)-HL3(I))*XX(NOD(I))
               G1Y=G1Y+(HL1(I)-HL3(I))*YY(NOD(I))
@@ -757,6 +758,7 @@ contains
               G2X=0.0
               G2Y=0.0
               G2Z=0.0
+!NEC$ novector
               do I = 1,8
                 G1X=G1X+HR(I)*XX(NOD(I))
                 G1Y=G1Y+HR(I)*YY(NOD(I))
@@ -828,6 +830,7 @@ contains
               G2X=0.0
               G2Y=0.0
               G2Z=0.0
+!NEC$ novector
               do I=1,6
                 G1X=G1X+(HL1(I)-HL3(I))*XX(NOD(I))
                 G1Y=G1Y+(HL1(I)-HL3(I))*YY(NOD(I))
@@ -1119,6 +1122,7 @@ contains
             G2Y=0.0
             G2Z=0.0
 
+!NEC$ novector
             do I = 1,8
               G1X=G1X+HR(I)*XX(NOD(I))
               G1Y=G1Y+HR(I)*YY(NOD(I))
