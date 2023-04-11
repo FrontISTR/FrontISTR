@@ -209,6 +209,7 @@ module m_fstr
     real(kind=kreal), pointer :: ESTRESS(:) => null()  !< elemental stress
     real(kind=kreal), pointer :: ESTRAIN(:) => null()  !< elemental strain
     real(kind=kreal), pointer :: EMISES(:) => null()   !< elemental MISES
+    real(kind=kreal), pointer :: EPLSTRAIN(:) => null()   !< elemental plastic strain
 
     real(kind=kreal), pointer :: EPSTRESS(:) => null()  !< elemental principal stress
     real(kind=kreal), pointer :: EPSTRAIN(:) => null()  !< elemental principal strain

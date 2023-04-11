@@ -1591,13 +1591,14 @@ contains
     type(fstr_solid_physic_val), pointer :: phys
     integer(kind=kint) :: NDOF, n_node, n_elem, mdof
     mdof = (NDOF*NDOF+NDOF)/2;
-    allocate ( phys%STRAIN  (mdof*n_node))
-    allocate ( phys%STRESS  (mdof*n_node))
-    allocate ( phys%MISES   (     n_node))
-    allocate ( phys%ESTRAIN (mdof*n_elem))
-    allocate ( phys%ESTRESS (mdof*n_elem))
-    allocate ( phys%EMISES  (     n_elem))
-    allocate ( phys%ENQM    (12*n_elem))
+    allocate ( phys%STRAIN    (mdof*n_node))
+    allocate ( phys%STRESS    (mdof*n_node))
+    allocate ( phys%MISES     (     n_node))
+    allocate ( phys%ESTRAIN   (mdof*n_elem))
+    allocate ( phys%ESTRESS   (mdof*n_elem))
+    allocate ( phys%EMISES    (     n_elem))
+    allocate ( phys%EPLSTRAIN (     n_elem))
+    allocate ( phys%ENQM      (  12*n_elem))
   end subroutine fstr_setup_post_phys_alloc
 
   subroutine fstr_setup_post( ctrl, P )
