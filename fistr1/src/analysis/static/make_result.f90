@@ -1452,6 +1452,11 @@ contains
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'ElementalPLSTRAIN'
       do i = 1, hecMESH%n_elem
+        RES%EPLSTRAIN(i) = 0.d0
+        do j = 1, size(fstrSOLID%elements(i)%gausses) 
+          RES%EPLSTRAIN(i) = RES%EPLSTRAIN(i) + fstrSOLID%elements(i)%gausses(j)%plstrain
+        enddo
+        RES%EPLSTRAIN(i) = RES%EPLSTRAIN(i) / size(fstrSOLID%elements(i)%gausses)
         fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = RES%EPLSTRAIN(i)
       enddo
       jitem = jitem + nn
