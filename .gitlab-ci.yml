@@ -6,7 +6,8 @@ image: ${REGISTRY}/build:latest
 stages:
     - build
     - test
-    - build_for_deploy
+    - document
+    - package
     - deploy
 
 build/serial:
@@ -154,7 +155,7 @@ test/hybrid/hybrid:
 
 document:
     image: ${REGISTRY}/document:latest
-    stage: build_for_deploy
+    stage: document
     needs: []
     script:
         - cp doc/_redirects public/_redirects
@@ -165,7 +166,7 @@ document:
 
 doxygen:
     image: ${REGISTRY}/document:latest
-    stage: build_for_deploy
+    stage: document
     needs: []
     script:
         - cmake -Bbuild_doc -H. -DWITH_DOC=ON
@@ -179,16 +180,6 @@ doxygen:
 
 pages:
     stage: deploy
-    dependencies:
-        - document
-        - doxygen
-        - x86_64-w64-mingw32/thread-openblas
-        - x86_64-w64-mingw32/hybrid-msmpi-openblas
-        - x86_64-w64-mingw32/hybrid-impi-mkl_intelthread
-        - build/serial
-        - build/openmp
-        - build/mpi
-        - build/hybrid
     script:
         - ls public
         - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> public/_redirects
@@ -197,13 +188,10 @@ pages:
         paths:
             - public
         expire_in: 20min
-    only:
-      - master
-      - release
 
 docker/fistr1:
   image: docker:latest
-  stage: build_for_deploy
+  stage: package
   needs: []
   services:
     - docker:dind
@@ -221,7 +209,7 @@ docker/fistr1:
 
 x86_64-w64-mingw32/thread-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/thread:openblas
-    stage: build_for_deploy
+    stage: package
     needs: []
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
@@ -244,7 +232,7 @@ x86_64-w64-mingw32/thread-openblas:
 
 x86_64-w64-mingw32/hybrid-msmpi-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/hybrid:msmpi_openblas
-    stage: build_for_deploy
+    stage: package
     needs: []
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
@@ -270,7 +258,7 @@ x86_64-w64-mingw32/hybrid-msmpi-openblas:
 
 x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
     image: ${REGISTRY}/x86_64-w64-mingw32/hybrid:impi_mkl
-    stage: build_for_deploy
+    stage: package
     needs: []
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
@@ -298,3 +286,66 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
             - public
         expire_in: 100min
 
+.deb:
+    stage: package
+    needs: []
+    script:
+        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f2)
+        - OS=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
+        - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
+        - cmake -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI -H.
+        - cmake --build build -- -j $(nproc)
+        - set -x
+        - DEPENDS=()
+        - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libtrilinos*|grep ml|grep -v dev|grep ^ii|awk '{print $2}'||true))
+        - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libopenmpi*|grep -v dev|grep ^ii|awk '{print $2}'||true))
+        - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libmumps*|grep -v dev|grep ^ii|awk '{print $2}'||true))
+        - DEPENDS+=("libmetis5")
+        - DEPENDS+=("libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")
+        - cd build
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "'$(echo ${DEPENDS[@]}|sed -e "s/ /,/g")'")' >> CPackConfig.cmake
+        - cpack -G DEB
+        - mkdir -p ../public/release/$OS/$TYPE
+        - mv *.deb ../public/release/$OS/$TYPE
+    artifacts:
+        paths:
+            - public/
+        expire_in: 100min
+.focal:
+    image: ${REGISTRY}/focal/build:latest
+.jammy:
+    image: ${REGISTRY}/jammy/build:latest
+
+deb/hybrid/focal:
+    extends:
+        - .deb
+        - .focal
+deb/hybrid/jammy:
+    extends:
+        - .deb
+        - .jammy
+deb/mpi/focal:
+    extends:
+        - .deb
+        - .focal
+deb/mpi/jammy:
+    extends:
+        - .deb
+        - .jammy
+deb/openmp/focal:
+    extends:
+        - .deb
+        - .focal
+deb/openmp/jammy:
+    extends:
+        - .deb
+        - .jammy
+deb/serial/focal:
+    extends:
+        - .deb
+        - .focal
+deb/serial/jammy:
+    extends:
+        - .deb
+        - .jammy
