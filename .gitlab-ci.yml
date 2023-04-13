@@ -1,7 +1,7 @@
 variables:
   REGISTRY: registry.gitlab.com/frontistr-commons/frontistr
 
-image: ${REGISTRY}/build:latest
+image: ${REGISTRY}/build:focal
 
 stages:
     - build
@@ -10,6 +10,14 @@ stages:
     - package
     - deploy
 
+.focal:
+    image: ${REGISTRY}/build:focal
+.jammy:
+    image: ${REGISTRY}/build:jammy
+.artifact_public:
+    artifacts:
+        paths: ["public"]
+        expire_in: 100min
 
 .build:
     stage: build
@@ -21,100 +29,90 @@ stages:
         - cmake -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI -H.
         - cmake --build build -- -j $(nproc)
     artifacts:
-        paths:
-            - build/
+        paths: ["build/"]
         expire_in: 100min
-build/serial:
-    extends:
-        - .build
-build/openmp:
-    extends:
-        - .build
-build/mpi:
-    extends:
-        - .build
-build/hybrid:
-    extends:
-        - .build
+build/serial/jammy:
+    extends: [".build",".jammy"]
+build/openmp/jammy:
+    extends: [".build",".jammy"]
+build/mpi/jammy:
+    extends: [".build",".jammy"]
+build/hybrid/jammy:
+    extends: [".build",".jammy"]
+build/serial/focal:
+    extends: [".build",".focal"]
+build/openmp/focal:
+    extends: [".build",".focal"]
+build/mpi/focal:
+    extends: [".build",".focal"]
+build/hybrid/focal:
+    extends: [".build",".focal"]
 
 .test:
     stage: test
-    before_script:
-        - cd build
+    script:
+        - cd build && ctest -L $(echo $CI_JOB_NAME|cut -d/ -f3) --output-on-failure
     artifacts:
         paths:
             - run_test
         expire_in: 1week
         when: on_failure
-.bin_serial:
-    needs: ["build/serial"]
-    dependencies:
-        - build/serial
-.bin_openmp:
-    needs: ["build/openmp"]
-    dependencies:
-        - build/openmp
-.bin_mpi:
-    needs: ["build/mpi"]
-    dependencies:
-        - build/mpi
-.bin_hybrid:
-    needs: ["build/hybrid"]
-    dependencies:
-        - build/hybrid
-.test_serial:
-    extends: .test
-    script:
-        - ctest -L serial --output-on-failure
-.test_openmp:
-    extends: .test
-    script:
-        - ctest -L openmp --output-on-failure
-.test_mpi:
-    extends: .test
-    script:
-        - ctest -L mpi --output-on-failure
-.test_hybrid:
-    extends: .test
-    script:
-        - ctest -L hybrid --output-on-failure
 
-test/serial/serial:
-    extends:
-        - .bin_serial
-        - .test_serial
-test/openmp/serial:
-    extends:
-        - .bin_openmp
-        - .test_serial
-test/openmp/openmp:
-    extends:
-        - .bin_openmp
-        - .test_openmp
-test/mpi/serial:
-    extends:
-        - .bin_mpi
-        - .test_serial
-test/mpi/mpi:
-    extends:
-        - .bin_mpi
-        - .test_mpi
-test/hybrid/serial:
-    extends:
-        - .bin_hybrid
-        - .test_serial
-test/hybrid/openmp:
-    extends:
-        - .bin_hybrid
-        - .test_openmp
-test/hybrid/mpi:
-    extends:
-        - .bin_hybrid
-        - .test_mpi
-test/hybrid/hybrid:
-    extends:
-        - .bin_hybrid
-        - .test_hybrid
+test/serial/serial/focal:
+    extends: [".test",".focal"]
+    needs: ["build/serial/focal"]
+test/openmp/serial/focal:
+    extends: [".test",".focal"]
+    needs: ["build/openmp/focal"]
+test/openmp/openmp/focal:
+    extends: [".test",".focal"]
+    needs: ["build/openmp/focal"]
+test/mpi/serial/focal:
+    extends: [".test",".focal"]
+    needs: ["build/mpi/focal"]
+test/mpi/mpi/focal:
+    extends: [".test",".focal"]
+    needs: ["build/mpi/focal"]
+test/hybrid/serial/focal:
+    extends: [".test",".focal"]
+    needs: ["build/hybrid/focal"]
+test/hybrid/openmp/focal:
+    extends: [".test",".focal"]
+    needs: ["build/hybrid/focal"]
+test/hybrid/mpi/focal:
+    extends: [".test",".focal"]
+    needs: ["build/hybrid/focal"]
+test/hybrid/hybrid/focal:
+    extends: [".test",".focal"]
+    needs: ["build/hybrid/focal"]
+
+test/serial/serial/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/serial/jammy"]
+test/openmp/serial/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/openmp/jammy"]
+test/openmp/openmp/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/openmp/jammy"]
+test/mpi/serial/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/mpi/jammy"]
+test/mpi/mpi/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/mpi/jammy"]
+test/hybrid/serial/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/hybrid/jammy"]
+test/hybrid/openmp/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/hybrid/jammy"]
+test/hybrid/mpi/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/hybrid/jammy"]
+test/hybrid/hybrid/jammy:
+    extends: [".test",".jammy"]
+    needs: ["build/hybrid/jammy"]
 
 document:
     image: ${REGISTRY}/document:latest
@@ -122,10 +120,8 @@ document:
     needs: []
     script:
         - cp doc/_redirects public/_redirects
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
+    extends: [".artifact_public"]
+
 
 doxygen:
     image: ${REGISTRY}/document:latest
@@ -136,10 +132,8 @@ doxygen:
         - make -C build_doc doc
         - rm -rf public/doxygen
         - mv build_doc/doc/html public/doxygen
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
+    extends: [".artifact_public"]
+
 
 pages:
     stage: deploy
@@ -148,10 +142,7 @@ pages:
         - ln -s ../focal/ public/release/ubuntu
         - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> public/_redirects
         - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip 301 >> public/_redirects
-    artifacts:
-        paths:
-            - public
-        expire_in: 20min
+    extends: [".artifact_public"]
 #    only:
 #      - master
 #      - release
@@ -174,10 +165,13 @@ docker/fistr1:
   tags:
     - docker
 
+.nodeppackage:
+    stage: package
+    needs: []    
+
 x86_64-w64-mingw32/thread-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/thread:openblas
-    stage: package
-    needs: []
+    extends: [".nodeppackage",".artifact_public"]
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
         - cmake  -Bbuild -H.
@@ -192,15 +186,10 @@ x86_64-w64-mingw32/thread-openblas:
         - mkdir -p public/release/x86_64-w64-mingw32/
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README* License* VERSION
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
 
 x86_64-w64-mingw32/hybrid-msmpi-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/hybrid:msmpi_openblas
-    stage: package
-    needs: []
+    extends: [".nodeppackage",".artifact_public"]
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
         - cmake  -Bbuild -H.
@@ -218,15 +207,10 @@ x86_64-w64-mingw32/hybrid-msmpi-openblas:
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README* License* VERSION
           ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll 
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
 
 x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
     image: ${REGISTRY}/x86_64-w64-mingw32/hybrid:impi_mkl
-    stage: package
-    needs: []
+    extends: [".nodeppackage",".artifact_public"]
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
         - cmake  -Bbuild -H.
@@ -248,22 +232,12 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
           ${LIB_ROOT}/bin/mpiexec.exe  ${LIB_ROOT}/lib/impi.dll ${LIB_ROOT}/lib/impi.dll ${LIB_ROOT}/lib/libfabric.dll ${LIB_ROOT}/bin/hydra_bstrap_proxy.exe ${LIB_ROOT}/bin/hydra_pmi_proxy.exe
           ${LIB_ROOT}/lib/mkl_blacs_lp64.1.dll ${LIB_ROOT}/lib/mkl_blacs_intelmpi_lp64.1.dll ${LIB_ROOT}/lib/mkl_core.1.dll ${LIB_ROOT}/lib/mkl_intel_thread.1.dll ${LIB_ROOT}/lib/mkl_rt.1.dll ${LIB_ROOT}/lib/libiomp5md.dll ${LIB_ROOT}/lib/mkl_scalapack_lp64.1.dll
           ${LIB_ROOT}/lib/mkl_def.1.dll
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
 
 .deb:
     stage: package
-    needs: []
     script:
         - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f2)
         - OS=$(echo $CI_JOB_NAME|cut -d/ -f3)
-        - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
-        - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
-        - cmake -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI -H.
-        - cmake --build build -- -j $(nproc)
-        - set -x
         - DEPENDS=()
         - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libtrilinos*|grep ml|grep -v dev|grep ^ii|awk '{print $2}'||true))
         - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libopenmpi*|grep -v dev|grep ^ii|awk '{print $2}'||true))
@@ -275,44 +249,29 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
         - cpack -G DEB
         - mkdir -p ../public/release/$OS/$TYPE
         - mv *.deb ../public/release/$OS/$TYPE
-    artifacts:
-        paths:
-            - public/
-        expire_in: 100min
-.focal:
-    image: ${REGISTRY}/focal/build:latest
-.jammy:
-    image: ${REGISTRY}/jammy/build:latest
+    extends: [".artifact_public"]
 
 deb/hybrid/focal:
-    extends:
-        - .deb
-        - .focal
+    needs: ["build/hybrid/focal"]
+    extends: [".deb",".focal"]
 deb/hybrid/jammy:
-    extends:
-        - .deb
-        - .jammy
+    needs: ["build/hybrid/jammy"]
+    extends: [".deb",".jammy"]
 deb/mpi/focal:
-    extends:
-        - .deb
-        - .focal
+    needs: ["build/mpi/focal"]
+    extends: [".deb",".focal"]
 deb/mpi/jammy:
-    extends:
-        - .deb
-        - .jammy
+    needs: ["build/hybrid/jammy"]
+    extends: [".deb",".jammy"]
 deb/openmp/focal:
-    extends:
-        - .deb
-        - .focal
+    needs: ["build/openmp/focal"]
+    extends: [".deb",".focal"]
 deb/openmp/jammy:
-    extends:
-        - .deb
-        - .jammy
+    needs: ["build/openmp/jammy"]
+    extends: [".deb",".jammy"]
 deb/serial/focal:
-    extends:
-        - .deb
-        - .focal
+    needs: ["build/serial/focal"]
+    extends: [".deb",".focal"]
 deb/serial/jammy:
-    extends:
-        - .deb
-        - .jammy
+    needs: ["build/serial/jammy"]
+    extends: [".deb",".jammy"]
