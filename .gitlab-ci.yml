@@ -139,13 +139,14 @@ pages:
     stage: deploy
     script:
         - ls public
-        - ln -s ../focal/ public/release/ubuntu
-        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> public/_redirects
-        - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip 301 >> public/_redirects
+        - cd public
+        - echo /FrontISTR/release/ubuntu/hybrid/FrontISTR-5.4.0-Linux.deb       /FrontISTR/$(find . -name "FrontISTR_*.deb") 301 >> _redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> _redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip 301 >> _redirects
     extends: [".artifact_public"]
-#    only:
-#      - master
-#      - release
+    only:
+      - master
+      - release
 
 .nodeppackage:
     stage: package
@@ -232,6 +233,7 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
           ${LIB_ROOT}/lib/mkl_blacs_lp64.1.dll ${LIB_ROOT}/lib/mkl_blacs_intelmpi_lp64.1.dll ${LIB_ROOT}/lib/mkl_core.1.dll ${LIB_ROOT}/lib/mkl_intel_thread.1.dll ${LIB_ROOT}/lib/mkl_rt.1.dll ${LIB_ROOT}/lib/libiomp5md.dll ${LIB_ROOT}/lib/mkl_scalapack_lp64.1.dll
           ${LIB_ROOT}/lib/mkl_def.1.dll
 
+
 .deb:
     stage: package
     script:
@@ -241,13 +243,21 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
         - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libtrilinos*|grep ml|grep -v dev|grep ^ii|awk '{print $2}'||true))
         - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libopenmpi*|grep -v dev|grep ^ii|awk '{print $2}'||true))
         - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libmumps*|grep -v dev|grep ^ii|awk '{print $2}'||true))
+        - DEPENDS+=($([[ $OMP = ON ]] && dpkg -l libgomp*|grep -v dev|grep ^ii|awk '{print $2}'||true))
         - DEPENDS+=("libmetis5")
         - DEPENDS+=("libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")
         - cd build
+        - PACKAGE_NAME=FrontISTR$([ $TYPE != "hybrid" ] && echo "-$TYPE" || true)
+        - VERSION=$(echo $CI_COMMIT_REF_SLUG|sed -e 's/^v\([0-9]\+[\.][0-9]\+[\.]\?[0-9]*.*$\)/\1/g')
+        - DEBIAN_VERSION=0+$OS
+        - echo 'set(CPACK_PACKAGE_NAME "'$PACKAGE_NAME'")' >> CPackConfig.cmake
+        - echo 'set(CPACK_PACKAGE_FILE_NAME "'$PACKAGE_NAME'_'$VERSION'-'$DEBIAN_VERSION'_'$(dpkg --print-architecture)'")' >> CPackConfig.cmake
         - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "'$(echo ${DEPENDS[@]}|sed -e "s/ /,/g")'")' >> CPackConfig.cmake
+        - echo 'set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://www.frontistr.com/")' >> CPackConfig.cmake
+        - echo 'set(CPACK_DEBIAN_PACKAGE_REPLACES "frontistr,frontistr-serial,frontistr-openmp,frontistr-mpi")' >> CPackConfig.cmake
         - cpack -G DEB
-        - mkdir -p ../public/release/$OS/$TYPE
-        - mv *.deb ../public/release/$OS/$TYPE
+        - mkdir -p ../public/release/deb
+        - mv *.deb ../public/release/deb
     extends: [".artifact_public"]
 
 deb/hybrid/focal:

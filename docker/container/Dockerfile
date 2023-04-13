@@ -1,5 +1,5 @@
 # docker build *MUST* run on the top of this project. see Makefile
-FROM registry.gitlab.com/frontistr-commons/frontistr/build:focal AS fistr1-build
+FROM registry.gitlab.com/frontistr-commons/frontistr/build:jammy AS fistr1-build
 COPY . /src
 WORKDIR /src
 RUN [ $(uname -m) = x86_64 ] \
@@ -8,6 +8,6 @@ RUN [ $(uname -m) = x86_64 ] \
  && cmake --build /build --target install -- -j $(nproc) \
  && rm -fr /src
 
-FROM registry.gitlab.com/frontistr-commons/frontistr/runtime AS fistr1
+FROM registry.gitlab.com/frontistr-commons/frontistr/runtime:jammy AS fistr1
 COPY --from=fistr1-build /usr/local/bin/ /usr/bin/
 CMD ["fistr1"]
