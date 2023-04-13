@@ -147,16 +147,19 @@ pages:
 #      - master
 #      - release
 
+.nodeppackage:
+    stage: package
+    needs: []
+
 docker/fistr1:
   image: docker:latest
-  stage: package
-  needs: []
+  extends: [".nodeppackage",".artifact_public"]
   services:
     - docker:dind
   script:
     - apk add curl make
     - mkdir -p /root/.docker/cli-plugins
-    - curl -sSLo /root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.5.1/buildx-v0.5.1.linux-amd64
+    - curl -sSLo /root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.10.4/buildx-v0.10.4.linux-amd64
     - chmod +x /root/.docker/cli-plugins/docker-buildx
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     - apk add make
@@ -164,10 +167,6 @@ docker/fistr1:
     - make push
   tags:
     - docker
-
-.nodeppackage:
-    stage: package
-    needs: []    
 
 x86_64-w64-mingw32/thread-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/thread:openblas
