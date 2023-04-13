@@ -10,148 +10,111 @@ stages:
     - package
     - deploy
 
-build/serial:
-    stage: build
-    script:
-        - cmake -Bbuild_serial -DWITH_MPI=OFF -DWITH_OPENMP=OFF -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
-        - cmake --build build_serial -- -j $(nproc)
-        - mkdir -p public/release/ubuntu/serial
-        - cd build_serial
-        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
-        - cpack -G DEB
-        - mv *.deb ../public/release/ubuntu/serial
-    artifacts:
-        paths:
-            - build_serial/
-            - public/
-        expire_in: 100min
 
+.build:
+    stage: build
+    needs: []
+    script:
+        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f2)
+        - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
+        - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
+        - cmake -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI -H.
+        - cmake --build build -- -j $(nproc)
+    artifacts:
+        paths:
+            - build/
+        expire_in: 100min
+build/serial:
+    extends:
+        - .build
 build/openmp:
-    stage: build
-    script:
-        - cmake -Bbuild_openmp -DWITH_MPI=OFF -DWITH_OPENMP=ON -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
-        - cmake --build build_openmp -- -j $(nproc)
-        - mkdir -p public/release/ubuntu/openmp
-        - cd build_openmp
-        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
-        - cpack -G DEB
-        - mv *.deb ../public/release/ubuntu/openmp
-    artifacts:
-        paths:
-            - build_openmp/
-            - public/
-        expire_in: 100min
+    extends:
+        - .build
 build/mpi:
-    stage: build
-    script:
-        - cmake -Bbuild_mpi -DWITH_MPI=ON -DWITH_OPENMP=OFF -H.
-        - cmake --build build_mpi -- -j $(nproc)
-        - mkdir -p public/release/ubuntu/mpi
-        - cd build_mpi
-        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
-        - cpack -G DEB
-        - mv *.deb ../public/release/ubuntu/mpi
-    artifacts:
-        paths:
-            - build_mpi/
-            - public/
-        expire_in: 100min
+    extends:
+        - .build
 build/hybrid:
-    stage: build
-    script:
-        - cmake -Bbuild_hybrid -DWITH_MPI=ON -DWITH_OPENMP=ON -H.
-        - cmake --build build_hybrid -- -j $(nproc)
-        - mkdir -p public/release/ubuntu/hybrid
-        - cd build_hybrid
-        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
-        - cpack -G DEB
-        - mv *.deb ../public/release/ubuntu/hybrid
-    artifacts:
-        paths:
-            - build_hybrid/
-            - public/
-        expire_in: 100min
+    extends:
+        - .build
 
 .test:
     stage: test
+    before_script:
+        - cd build
     artifacts:
         paths:
             - run_test
         expire_in: 1week
         when: on_failure
-
-test/serial/serial:
-    extends: .test
+.bin_serial:
     needs: ["build/serial"]
     dependencies:
         - build/serial
-    script:
-        - cd build_serial
-        - ctest -L serial --output-on-failure
-test/openmp/serial:
-    extends: .test
+.bin_openmp:
     needs: ["build/openmp"]
     dependencies:
         - build/openmp
-    script:
-        - cd build_openmp
-        - ctest -L serial --output-on-failure
-test/openmp/openmp:
-    extends: .test
-    needs: ["build/openmp"]
-    dependencies:
-        - build/openmp
-    script:
-        - cd build_openmp
-        - ctest -L openmp --output-on-failure
-test/mpi/serial:
-    extends: .test
+.bin_mpi:
     needs: ["build/mpi"]
     dependencies:
         - build/mpi
-    script:
-        - cd build_mpi
-        - ctest -L serial --output-on-failure
-test/mpi/mpi:
-    extends: .test
-    needs: ["build/mpi"]
-    dependencies:
-        - build/mpi
-    script:
-        - cd build_mpi
-        - ctest -L mpi    --output-on-failure
-test/hybrid/serial:
-    extends: .test
+.bin_hybrid:
     needs: ["build/hybrid"]
     dependencies:
         - build/hybrid
-    script:
-        - cd build_hybrid
-        - ctest -L serial --output-on-failure
-test/hybrid/openmp:
+.test_serial:
     extends: .test
-    needs: ["build/hybrid"]
-    dependencies:
-        - build/hybrid
     script:
-        - cd build_hybrid
+        - ctest -L serial --output-on-failure
+.test_openmp:
+    extends: .test
+    script:
         - ctest -L openmp --output-on-failure
-test/hybrid/mpi:
+.test_mpi:
     extends: .test
-    needs: ["build/hybrid"]
-    dependencies:
-        - build/hybrid
     script:
-        - cd build_hybrid
-        - ctest -L mpi    --output-on-failure
-test/hybrid/hybrid:
+        - ctest -L mpi --output-on-failure
+.test_hybrid:
     extends: .test
-    needs: ["build/hybrid"]
-    dependencies:
-        - build/hybrid
     script:
-        - cd build_hybrid
         - ctest -L hybrid --output-on-failure
+
+test/serial/serial:
+    extends:
+        - .bin_serial
+        - .test_serial
+test/openmp/serial:
+    extends:
+        - .bin_openmp
+        - .test_serial
+test/openmp/openmp:
+    extends:
+        - .bin_openmp
+        - .test_openmp
+test/mpi/serial:
+    extends:
+        - .bin_mpi
+        - .test_serial
+test/mpi/mpi:
+    extends:
+        - .bin_mpi
+        - .test_mpi
+test/hybrid/serial:
+    extends:
+        - .bin_hybrid
+        - .test_serial
+test/hybrid/openmp:
+    extends:
+        - .bin_hybrid
+        - .test_openmp
+test/hybrid/mpi:
+    extends:
+        - .bin_hybrid
+        - .test_mpi
+test/hybrid/hybrid:
+    extends:
+        - .bin_hybrid
+        - .test_hybrid
 
 document:
     image: ${REGISTRY}/document:latest
@@ -182,12 +145,16 @@ pages:
     stage: deploy
     script:
         - ls public
+        - ln -s ../focal/ public/release/ubuntu
         - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> public/_redirects
         - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip 301 >> public/_redirects
     artifacts:
         paths:
             - public
         expire_in: 20min
+#    only:
+#      - master
+#      - release
 
 docker/fistr1:
   image: docker:latest
