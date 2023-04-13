@@ -31,12 +31,12 @@ RUN apt-get update \
 
 FROM build AS build-metis4
 RUN apt-get -y remove libmetis-dev libmetis5 \
- && curl -O http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.gz \
- && tar xvf metis-4.0.3.tar.gz \
+ && git clone https://github.com/CIBC-Internal/metis-4.0.3.git \
  && cd metis-4.0.3 \
- && make -C Lib -j \
+ && cmake . && make -j \
  && cp libmetis.a /usr/lib/ \
- && find Lib -name "*.h"|xargs -i cp {} /usr/include/
+ && find Lib -name "*.h"|xargs -i cp {} /usr/include/ \
+ && cd ../ && rm -fr metis-4.0.3
 
 FROM build AS document
 RUN apt-get update \
