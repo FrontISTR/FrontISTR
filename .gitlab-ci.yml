@@ -239,6 +239,8 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
     script:
         - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f2)
         - OS=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
+        - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
         - DEPENDS=()
         - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libtrilinos*|grep ml|grep -v dev|grep ^ii|awk '{print $2}'||true))
         - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libopenmpi*|grep -v dev|grep ^ii|awk '{print $2}'||true))
