@@ -1,7 +1,7 @@
 variables:
   REGISTRY: registry.gitlab.com/frontistr-commons/frontistr
 
-image: ${REGISTRY}/build:focal
+image: ${REGISTRY}/build:ubuntu2004
 
 stages:
     - build
@@ -10,10 +10,10 @@ stages:
     - package
     - deploy
 
-.focal:
-    image: ${REGISTRY}/build:focal
-.jammy:
-    image: ${REGISTRY}/build:jammy
+.ubuntu2004:
+    image: ${REGISTRY}/build:ubuntu2004
+.ubuntu2204:
+    image: ${REGISTRY}/build:ubuntu2204
 .artifact_public:
     artifacts:
         paths: ["public"]
@@ -31,22 +31,22 @@ stages:
     artifacts:
         paths: ["build/"]
         expire_in: 100min
-build/serial/jammy:
-    extends: [".build",".jammy"]
-build/openmp/jammy:
-    extends: [".build",".jammy"]
-build/mpi/jammy:
-    extends: [".build",".jammy"]
-build/hybrid/jammy:
-    extends: [".build",".jammy"]
-build/serial/focal:
-    extends: [".build",".focal"]
-build/openmp/focal:
-    extends: [".build",".focal"]
-build/mpi/focal:
-    extends: [".build",".focal"]
-build/hybrid/focal:
-    extends: [".build",".focal"]
+build/serial/ubuntu2204:
+    extends: [".build",".ubuntu2204"]
+build/openmp/ubuntu2204:
+    extends: [".build",".ubuntu2204"]
+build/mpi/ubuntu2204:
+    extends: [".build",".ubuntu2204"]
+build/hybrid/ubuntu2204:
+    extends: [".build",".ubuntu2204"]
+build/serial/ubuntu2004:
+    extends: [".build",".ubuntu2004"]
+build/openmp/ubuntu2004:
+    extends: [".build",".ubuntu2004"]
+build/mpi/ubuntu2004:
+    extends: [".build",".ubuntu2004"]
+build/hybrid/ubuntu2004:
+    extends: [".build",".ubuntu2004"]
 
 .test:
     stage: test
@@ -58,61 +58,61 @@ build/hybrid/focal:
         expire_in: 1week
         when: on_failure
 
-test/serial/serial/focal:
-    extends: [".test",".focal"]
-    needs: ["build/serial/focal"]
-test/openmp/serial/focal:
-    extends: [".test",".focal"]
-    needs: ["build/openmp/focal"]
-test/openmp/openmp/focal:
-    extends: [".test",".focal"]
-    needs: ["build/openmp/focal"]
-test/mpi/serial/focal:
-    extends: [".test",".focal"]
-    needs: ["build/mpi/focal"]
-test/mpi/mpi/focal:
-    extends: [".test",".focal"]
-    needs: ["build/mpi/focal"]
-test/hybrid/serial/focal:
-    extends: [".test",".focal"]
-    needs: ["build/hybrid/focal"]
-test/hybrid/openmp/focal:
-    extends: [".test",".focal"]
-    needs: ["build/hybrid/focal"]
-test/hybrid/mpi/focal:
-    extends: [".test",".focal"]
-    needs: ["build/hybrid/focal"]
-test/hybrid/hybrid/focal:
-    extends: [".test",".focal"]
-    needs: ["build/hybrid/focal"]
+test/serial/serial/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/serial/ubuntu2004"]
+test/openmp/serial/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/openmp/ubuntu2004"]
+test/openmp/openmp/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/openmp/ubuntu2004"]
+test/mpi/serial/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/mpi/ubuntu2004"]
+test/mpi/mpi/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/mpi/ubuntu2004"]
+test/hybrid/serial/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/hybrid/ubuntu2004"]
+test/hybrid/openmp/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/hybrid/ubuntu2004"]
+test/hybrid/mpi/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/hybrid/ubuntu2004"]
+test/hybrid/hybrid/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/hybrid/ubuntu2004"]
 
-test/serial/serial/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/serial/jammy"]
-test/openmp/serial/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/openmp/jammy"]
-test/openmp/openmp/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/openmp/jammy"]
-test/mpi/serial/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/mpi/jammy"]
-test/mpi/mpi/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/mpi/jammy"]
-test/hybrid/serial/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/hybrid/jammy"]
-test/hybrid/openmp/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/hybrid/jammy"]
-test/hybrid/mpi/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/hybrid/jammy"]
-test/hybrid/hybrid/jammy:
-    extends: [".test",".jammy"]
-    needs: ["build/hybrid/jammy"]
+test/serial/serial/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/serial/ubuntu2204"]
+test/openmp/serial/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/openmp/ubuntu2204"]
+test/openmp/openmp/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/openmp/ubuntu2204"]
+test/mpi/serial/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/mpi/ubuntu2204"]
+test/mpi/mpi/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/mpi/ubuntu2204"]
+test/hybrid/serial/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/hybrid/ubuntu2204"]
+test/hybrid/openmp/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/hybrid/ubuntu2204"]
+test/hybrid/mpi/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/hybrid/ubuntu2204"]
+test/hybrid/hybrid/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/hybrid/ubuntu2204"]
 
 document:
     image: ${REGISTRY}/document:latest
@@ -262,27 +262,27 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
         - mv *.deb ../public/release/deb
     extends: [".artifact_public"]
 
-deb/hybrid/focal:
-    needs: ["build/hybrid/focal"]
-    extends: [".deb",".focal"]
-deb/hybrid/jammy:
-    needs: ["build/hybrid/jammy"]
-    extends: [".deb",".jammy"]
-deb/mpi/focal:
-    needs: ["build/mpi/focal"]
-    extends: [".deb",".focal"]
-deb/mpi/jammy:
-    needs: ["build/hybrid/jammy"]
-    extends: [".deb",".jammy"]
-deb/openmp/focal:
-    needs: ["build/openmp/focal"]
-    extends: [".deb",".focal"]
-deb/openmp/jammy:
-    needs: ["build/openmp/jammy"]
-    extends: [".deb",".jammy"]
-deb/serial/focal:
-    needs: ["build/serial/focal"]
-    extends: [".deb",".focal"]
-deb/serial/jammy:
-    needs: ["build/serial/jammy"]
-    extends: [".deb",".jammy"]
+deb/hybrid/ubuntu2004:
+    needs: ["build/hybrid/ubuntu2004"]
+    extends: [".deb",".ubuntu2004"]
+deb/hybrid/ubuntu2204:
+    needs: ["build/hybrid/ubuntu2204"]
+    extends: [".deb",".ubuntu2204"]
+deb/mpi/ubuntu2004:
+    needs: ["build/mpi/ubuntu2004"]
+    extends: [".deb",".ubuntu2004"]
+deb/mpi/ubuntu2204:
+    needs: ["build/hybrid/ubuntu2204"]
+    extends: [".deb",".ubuntu2204"]
+deb/openmp/ubuntu2004:
+    needs: ["build/openmp/ubuntu2004"]
+    extends: [".deb",".ubuntu2004"]
+deb/openmp/ubuntu2204:
+    needs: ["build/openmp/ubuntu2204"]
+    extends: [".deb",".ubuntu2204"]
+deb/serial/ubuntu2004:
+    needs: ["build/serial/ubuntu2004"]
+    extends: [".deb",".ubuntu2004"]
+deb/serial/ubuntu2204:
+    needs: ["build/serial/ubuntu2204"]
+    extends: [".deb",".ubuntu2204"]
