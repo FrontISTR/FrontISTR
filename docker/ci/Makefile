@@ -12,6 +12,8 @@ endif
 runtime: builder
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2004 -f Dockerfile.ubuntu2004 . --target runtime
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2204 -f Dockerfile.ubuntu2204 . --target runtime
+	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2004-metis4 -f Dockerfile.ubuntu2004 . --target runtime
+	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2204-metis4 -f Dockerfile.ubuntu2204 . --target runtime
 build: builder
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:ubuntu2004 -f Dockerfile.ubuntu2004 . --target build
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:ubuntu2004-metis4 -f Dockerfile.ubuntu2004 . --target build-metis4
