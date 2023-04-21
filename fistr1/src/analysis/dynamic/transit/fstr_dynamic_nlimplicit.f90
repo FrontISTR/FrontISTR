@@ -468,6 +468,7 @@ contains
     real(kind=kreal),allocatable :: tmp_conB(:)
     integer :: istat
     real(kind=kreal), allocatable :: coord(:)
+    logical :: flag
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
@@ -592,13 +593,14 @@ contains
       max_iter_contact = 6 !1
       count_step = 0
       stepcnt = 0
-      loopFORcontactAnalysis: do while( .TRUE. )
-        count_step = count_step + 1
+!      loopFORcontactAnalysis: do while( .TRUE. )
+!        count_step = count_step + 1
 
         ! ----- Inner Iteration
         res0   = 0.d0
         res1   = 0.d0
         relres = 1.d0
+        flag = .false. !sapo
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
@@ -700,12 +702,17 @@ contains
           !          call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
           !          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag<1.0d-5 .and. iter>1 ) exit
           if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &
-            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-4 ) exit
+            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-4 ) then
+                if(iter>1) then       
+                        flag = .true. 
+                endif                 
+          endif                       
           res1 = res
           rf=1.0d0
           if( iter>1 .and. res>res1 )rf=0.5d0*rf
           res1=res
 
+          if (.not.flag) then  
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMATmpc%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
@@ -733,7 +740,8 @@ contains
               !              write(*,*)'Lagrange:', j,hecLagMAT%lagrange(j),hecMAT%X(hecMESH%n_node*ndof+j)
             enddo
           endif
-        enddo
+          endif
+!        enddo
 
         ! -----  not convergence
         if( iter>fstrSOLID%step_ctrl(cstep)%max_iter ) then
@@ -756,7 +764,7 @@ contains
         is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
         contact_changed_global=0
         if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
-          exit loopFORcontactAnalysis
+!          exit loopFORcontactAnalysis
         elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then
           call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
           contact_changed_global=1
@@ -768,10 +776,12 @@ contains
           call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
         endif
 
-        if( count_step > max_iter_contact ) exit loopFORcontactAnalysis
+        if(flag) exit
+        enddo
+!        if( count_step > max_iter_contact ) exit loopFORcontactAnalysis
 
 
-      enddo loopFORcontactAnalysis
+!      enddo loopFORcontactAnalysis
       !
       !C-- new displacement, velocity and acceleration
       !C
