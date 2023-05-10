@@ -57,7 +57,6 @@ contains
     type (hecmwST_matrix), intent(in) :: conMAT
     logical,intent(in)                :: is_contact_active
     integer :: method_org, precond_org
-    logical :: fg_eliminate
     logical :: fg_amg
     integer(kind=kint) :: is_contact
     integer(kind=kint) :: myrank
@@ -66,17 +65,9 @@ contains
 
     hecMAT%Iarray(97) = 1
 
-    ! set if use eliminate version or not
     fg_amg = .false.
     precond_org = hecmw_mat_get_precond(hecMAT)
-    if (precond_org >= 30 .and. precond_org <= 32) then
-      fg_eliminate = .false.
-      call hecmw_mat_set_precond(hecMAT, precond_org - 20)
-    else
-      fg_eliminate = .true.
-      if (precond_org == 5) fg_amg = .true.
-    endif
-
+    if (precond_org == 5) fg_amg = .true.
 
     is_contact = 0
     if( is_contact_active ) is_contact = 1
@@ -96,21 +87,7 @@ contains
       !if (fg_amg) call hecmw_mat_set_precond(hecMAT, 5)
     else
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: with contact'
-      if (fg_eliminate) then
-        call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
-      else
-        write(0,*) 'ERROR: solve_no_eliminate not implemented for ParaCon'
-        call hecmw_abort( hecmw_comm_get_comm())
-        ! if (hecLagMAT%num_lagrange > 0) then
-        !   call solve_no_eliminate(hecMESH, hecMAT, hecLagMAT)
-        ! else
-        !   call hecmw_solve(hecMESH, hecMAT)
-        ! endif
-      endif
-    endif
-
-    if (precond_org >= 30) then
-      call hecmw_mat_set_precond(hecMAT, precond_org)
+      call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
     endif
 
     istat = hecmw_mat_get_flag_diverged(hecMAT)
@@ -135,9 +112,9 @@ contains
     type(hecmwST_local_mesh), pointer :: hecMESHtmp
     type (hecmwST_local_matrix), pointer :: BT_all
     real(kind=kreal) :: t1
-    integer(kind=kint) :: method_org, i, ilag
+    integer(kind=kint) :: i, ilag
     logical :: fg_paracon
-    type (hecmwST_local_matrix), pointer :: BKmat, BTtKmat, BTtKTmat, BKtmp
+    type (hecmwST_local_matrix), pointer :: BKmat, BTtKmat, BTtKTmat
     integer(kind=kint), allocatable :: mark(:)
     type(hecmwST_contact_comm) :: conCOMM
     integer(kind=kint) :: n_contact_dof, n_slave
@@ -459,9 +436,12 @@ contains
 
     ! calc lambda
     if (fg_paracon) then
-      call comp_lag_paracon(hecMESH, hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
-           n_slave, slaves, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
-      ! call comp_lag_paracon2(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
+      if (.true.) then
+        call comp_lag_paracon(hecMESH, hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
+            n_slave, slaves, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
+      else
+        call comp_lag_paracon2(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
+      endif
     else
       call comp_lag(hecMAT, iwS, wSU, hecLagMAT%num_lagrange)
     endif
@@ -488,10 +468,13 @@ contains
 
     ! check solution in the original system
     if (fg_paracon .and. DEBUG >= 2)  then
-      ! call check_solution2(hecMESH, hecMAT, conMAT, hecLagMAT, n_contact_dof, contact_dofs, &
-      !      conCOMM, n_slave, slaves)
-      call check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
-           conCOMM, n_slave, slaves)
+      if (.true.) then
+        call check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
+            conCOMM, n_slave, slaves)
+      else
+        call check_solution2(hecMESH, hecMAT, conMAT, hecLagMAT, n_contact_dof, contact_dofs, &
+            conCOMM, n_slave, slaves)
+      endif
     endif
 
     ! free matrices
@@ -752,7 +735,7 @@ contains
     type (hecmwST_local_matrix), intent(out) :: BTtmat
     logical, intent(in) :: fg_paracon
     type (hecmwST_local_matrix) :: Ttmat
-    integer :: ndof, n, i, nnz, l, js, je, j, k, idof, jdof, idx
+    integer :: ndof, n, i, nnz, l, js, je, j, k, idof, idx
 
     ndof=hecMAT%NDOF
     if (fg_paracon) then
@@ -864,7 +847,7 @@ contains
         ljdof1: do jdof = 1, ndof
           val = hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
           !write(0,*) 'j,jdof,val',j,jdof,val
-          if (val == 0.0d0) cycle
+          if (abs(val) < tiny(0.0d0)) cycle
           idx = (j-1)*ndof+jdof
           do k = 1, icnt
             if (iw(k) == idx) cycle ljdof1
@@ -884,7 +867,7 @@ contains
         lidof1: do idof = 1, ndof
           val = hecLagMAT%AU_lagrange((l-1)*ndof+idof)
           !write(0,*) 'i,idof,val',i,idof,val
-          if (val == 0.0d0) cycle
+          if (abs(val) < tiny(0.0d0)) cycle
           idx = (i-1)*ndof+idof
           do k = 1, icnt
             if (iw(k) == idx) cycle lidof1
@@ -1131,7 +1114,6 @@ contains
     integer(kind=kint) :: ndof, npndof, nndof, npndof_new, i, ilag, islave
     real(kind=kreal), allocatable :: Btmp(:)
     real(kind=kreal), pointer :: xlag(:)
-    integer(kind=kint), allocatable :: slaves_ndup(:)
     ndof=hecMAT%ndof
     npndof = hecMAT%NP * ndof
     nndof  = hecMAT%N * ndof
@@ -1546,7 +1528,7 @@ contains
           if (mark(ndof*(irow-1)+idof) == 1) cycle
           do jdof = 1, ndof
             if (irow == jcol .and. idof == jdof) cycle
-            if (BTmat%A(ndof2*(j-1)+ndof*(idof-1)+jdof) /= 0.0d0) then
+            if (abs(BTmat%A(ndof2*(j-1)+ndof*(idof-1)+jdof)) > tiny(0.0d0)) then
               mark(ndof*(irow-1)+idof) = 1
               exit
             endif
@@ -1575,7 +1557,7 @@ contains
     type (hecmwST_local_matrix), intent(inout) :: BTmat
     integer(kind=kint), intent(in) :: mark(:)
     type (hecmwST_local_matrix) :: Imat, Wmat
-    integer(kind=kint) :: ndof, ndof2, i, irow, js, je, j, jcol, idof, jdof, n_slave, n_other
+    integer(kind=kint) :: ndof, ndof2, i, irow, idof, n_slave, n_other
     ndof = BTmat%ndof
     ndof2 = ndof*ndof
     ! Imat: unit matrix except for slave dofs
@@ -1622,7 +1604,7 @@ contains
     type (hecmwST_local_matrix), intent(inout) :: BTtKTmat
     real(kind=kreal), intent(in) :: num
     integer(kind=kint), intent(in) :: mark(:)
-    integer(kind=kint) :: ndof, ndof2, irow, js, je, j, jcol, idof, jdof
+    integer(kind=kint) :: ndof, ndof2, irow, js, je, j, jcol, idof
     integer(kind=kint) :: n_error = 0
     ndof = BTtKTmat%ndof
     ndof2 = ndof*ndof
@@ -1634,11 +1616,11 @@ contains
         if (irow /= jcol) cycle
         do idof = 1, ndof
           if (mark(ndof*(irow-1)+idof) == 1) then
-            if (BTtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof) /= 0.0d0) &
+            if (abs(BTtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof)) > tiny(0.0d0)) &
                  stop 'ERROR: nonzero diag on slave dof of BTtKTmat'
             BTtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof) = num
           else
-            if (BTtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof) == 0.0d0) then
+            if (abs(BTtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof)) < tiny(0.0d0)) then
               !write(0,*) 'irow,idof',irow,idof
               n_error = n_error+1
             endif
@@ -1660,25 +1642,23 @@ contains
     type (hecmwST_local_matrix), intent(out) :: BT_all
     type(hecmwST_local_matrix), allocatable :: BT_exp(:)
     integer(kind=kint) :: n_send, idom, irank, n_curexp, n_oldexp, n_orgexp
-    integer(kind=kint) :: idx_0, idx_n, k, knod, n_newexp, j, jnod
+    integer(kind=kint) :: idx_0, idx_n, k, knod, n_newexp, j
     integer(kind=kint), pointer :: cur_export(:), org_export(:)
     integer(kind=kint), pointer :: old_export(:)
     integer(kind=kint), allocatable, target :: old_export_item(:)
-    integer(kind=kint), allocatable :: new_export(:)
     integer(kind=kint) :: sendbuf(2), recvbuf(2)
     integer(kind=kint) :: n_oldimp, n_newimp, n_orgimp, i0, n_curimp
     integer(kind=kint), allocatable :: old_import(:)
     integer(kind=kint), pointer :: org_import(:), cur_import(:)
     integer(kind=kint) :: tag
     type (hecmwST_local_matrix) :: BT_imp
-    integer(kind=kint) :: nnz
     integer(kind=kint),allocatable :: nnz_imp(:)
     integer(kind=kint), allocatable :: index_imp(:), item_imp(:)
     real(kind=kreal), allocatable :: val_imp(:)
     integer(kind=kint), allocatable :: requests(:)
     integer(kind=kint), allocatable :: statuses(:,:)
     integer(kind=kint) :: nr_imp, jj, ndof2, idx_0_tmp, idx_n_tmp
-    integer(kind=kint) :: cnt, ks, ke, iimp, i, ii, ierror
+    integer(kind=kint) :: cnt, ks, ke, iimp, i, ii
     !!! PREPARATION FOR COMM_TABLE UPDATE
     call copy_mesh(hecMESH, hecMESHtmp)
     allocate(BT_exp(hecMESH%n_neighbor_pe))
@@ -2237,334 +2217,5 @@ contains
       end if
     end do
   end function is_included
-
-  !!
-  !! Solve without elimination of Lagrange-multipliers
-  !!
-
-  subroutine solve_no_eliminate(hecMESH,hecMAT,hecLagMAT)
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer :: ndof, ndof2, nb_lag, ndofextra
-    integer :: i, ls, le, l, j, jb_lag, ib_lag, idof, jdof, ilag, k
-    integer :: idx, idx_lag_s, idx_lag_e, ll
-    integer, allocatable :: iwUr(:), iwUc(:), iwLr(:), iwLc(:)
-    type(hecmwST_matrix) :: hecMATLag
-    real(kind=kreal) :: t1
-
-    t1 = hecmw_wtime()
-    if (DEBUG >= 1) write(0,*) 'DEBUG: solve_no_eliminate, start', hecmw_wtime()-t1
-
-    call hecmw_mat_init(hecMATLag)
-
-    ndof = hecMAT%NDOF
-    ndof2 = ndof*ndof
-    nb_lag = (hecLagMAT%num_lagrange + 2)/3
-    hecMATLag%NDOF = ndof
-    hecMATLag%N = hecMAT%N + nb_lag
-    hecMATLag%NP = hecMAT%NP + nb_lag
-    !write(0,*) 'DEBUG: hecMAT: NDOF,N,NP=',hecMAT%NDOF,hecMAT%N,hecMAT%NP
-    !write(0,*) 'DEBUG: hecMATLag: NDOF,N,NP=',hecMATLag%NDOF,hecMATLag%N,hecMATLag%NP
-
-    ndofextra = hecMATLag%N*ndof - hecMAT%N*ndof - hecLagMAT%num_lagrange
-    if (DEBUG >= 1) write(0,*) 'DEBUG: num_lagrange,nb_lag,ndofextra=',hecLagMAT%num_lagrange,nb_lag,ndofextra
-
-    ! Upper: count num of blocks
-    allocate(iwUr(hecMAT%N))
-    allocate(iwUc(nb_lag))
-    iwUr = 0
-    do i = 1, hecMAT%N
-      iwUc = 0
-      ls=hecLagMAT%indexU_lagrange(i-1)+1
-      le=hecLagMAT%indexU_lagrange(i)
-      do l=ls,le
-        j=hecLagMAT%itemU_lagrange(l)
-        jb_lag = (j+2)/3
-        iwUc(jb_lag) = 1
-      enddo
-      do j=1,nb_lag
-        if (iwUc(j) > 0) iwUr(i) = iwUr(i) + 1
-      enddo
-      !if (iwUr(i) > 0) write(0,*) 'DEBUG: iwUr(',i,')=',iwUr(i)
-    enddo
-
-    ! Lower: count num of blocks
-    allocate(iwLr(nb_lag))
-    allocate(iwLc(hecMAT%N))
-    iwLr = 0
-    do ib_lag = 1, nb_lag
-      iwLc = 0
-      i = hecMAT%N + ib_lag
-      do idof = 1, ndof
-        ilag = (ib_lag-1)*ndof + idof
-        if (ilag  > hecLagMAT%num_lagrange) exit
-        ls=hecLagMAT%indexL_lagrange(ilag-1)+1
-        le=hecLagMAT%indexL_lagrange(ilag)
-        do l=ls,le
-          j=hecLagMAT%itemL_lagrange(l)
-          iwLc(j) = 1
-        enddo
-      enddo
-      do j=1,hecMAT%N
-        if (iwLc(j) > 0) iwLr(ib_lag) = iwLr(ib_lag) + 1
-      enddo
-      !if (iwLr(ib_lag) > 0) write(0,*) 'DEBUG: iwLr(',ib_lag,')=',iwLr(ib_lag)
-    enddo
-
-    ! Upper: indexU
-    allocate(hecMATLag%indexU(0:hecMATLag%NP))
-    hecMATLag%indexU(0) = 0
-    do i = 1, hecMAT%N
-      hecMATLag%indexU(i) = hecMATLag%indexU(i-1) + &
-        (hecMAT%indexU(i) - hecMAT%indexU(i-1)) + iwUr(i)
-    enddo
-    do i = hecMAT%N+1, hecMATLag%N
-      hecMATLag%indexU(i) = hecMATLag%indexU(i-1)
-    enddo
-    do i = hecMATLag%N+1, hecMATLag%NP
-      hecMATLag%indexU(i) = hecMATLag%indexU(i-1) + &
-        (hecMAT%indexU(i-nb_lag) - hecMAT%indexU(i-1-nb_lag))
-    enddo
-    hecMATLag%NPU = hecMATLag%indexU(hecMATLag%NP)
-    !write(0,*) 'DEBUG: hecMATLag%NPU=',hecMATLag%NPU
-
-    ! Lower: indexL
-    allocate(hecMATLag%indexL(0:hecMATLag%NP))
-    do i = 0, hecMAT%N
-      hecMATLag%indexL(i) = hecMAT%indexL(i)
-    enddo
-    do i = hecMAT%N+1, hecMATLag%N
-      hecMATLag%indexL(i) = hecMATLag%indexL(i-1) + iwLr(i-hecMAT%N)
-    enddo
-    do i = hecMATLag%N+1, hecMATLag%NP
-      hecMATLag%indexL(i) = hecMATLag%indexL(i-1) + &
-        (hecMAT%indexL(i-nb_lag) - hecMAT%indexL(i-1-nb_lag))
-    enddo
-    hecMATLag%NPL = hecMATLag%indexL(hecMATLag%NP)
-    !write(0,*) 'DEBUG: hecMATLag%NPL=',hecMATLag%NPL
-
-    ! Upper: itemU and AU
-    allocate(hecMATLag%itemU(hecMATLag%NPU))
-    allocate(hecMATLag%AU(hecMATLag%NPU*ndof2))
-    hecMATLag%AU = 0.d0
-    do i = 1, hecMAT%N
-      idx = hecMATLag%indexU(i-1)+1
-      ! copy from hecMAT; internal
-      ls = hecMAT%indexU(i-1)+1
-      le = hecMAT%indexU(i)
-      do l=ls,le
-        ll = hecMAT%itemU(l)
-        if (ll > hecMAT%N) cycle  ! skip external
-        hecMATLag%itemU(idx) = ll
-        hecMATLag%AU((idx-1)*ndof2+1:idx*ndof2)=hecMAT%AU((l-1)*ndof2+1:l*ndof2)
-        idx = idx + 1
-      enddo
-      ! Lag. itemU
-      iwUc = 0
-      ls=hecLagMAT%indexU_lagrange(i-1)+1
-      le=hecLagMAT%indexU_lagrange(i)
-      do l=ls,le
-        j=hecLagMAT%itemU_lagrange(l)
-        jb_lag = (j+2)/3
-        iwUc(jb_lag) = 1
-      enddo
-      idx_lag_s = idx
-      do j=1,nb_lag
-        if (iwUc(j) > 0) then
-          hecMATLag%itemU(idx) = hecMAT%N + j
-          idx = idx + 1
-        endif
-      enddo
-      idx_lag_e = idx - 1
-      ! Lag. AU
-      ls=hecLagMAT%indexU_lagrange(i-1)+1
-      le=hecLagMAT%indexU_lagrange(i)
-      do l=ls,le
-        j=hecLagMAT%itemU_lagrange(l)
-        jb_lag = (j+2)/3
-        jdof = j - (jb_lag - 1)*ndof
-        do k = idx_lag_s, idx_lag_e
-          if (hecMATLag%itemU(k) < hecMAT%N + jb_lag) cycle
-          if (hecMATLag%itemU(k) > hecMAT%N + jb_lag) cycle
-          !if (hecMATLag%itemU(k) /= hecMAT%N + jb_lag) stop 'ERROR itemU jb_lag'
-          do idof = 1, ndof
-            hecMATLag%AU((k-1)*ndof2+(idof-1)*ndof+jdof) = &
-              hecLagMAT%AU_lagrange((l-1)*ndof+idof)
-          enddo
-        enddo
-      enddo
-      ! copy from hecMAT; externl
-      ls = hecMAT%indexU(i-1)+1
-      le = hecMAT%indexU(i)
-      do l=ls,le
-        ll = hecMAT%itemU(l)
-        if (ll <= hecMAT%N) cycle  ! skip internal
-        hecMATLag%itemU(idx) = ll + nb_lag
-        hecMATLag%AU((idx-1)*ndof2+1:idx*ndof2)=hecMAT%AU((l-1)*ndof2+1:l*ndof2)
-        idx = idx + 1
-      enddo
-      if (idx /= hecMATLag%indexU(i)+1) stop 'ERROR idx indexU'
-    enddo
-    do i = hecMAT%N, hecMAT%NP
-      idx = hecMATLag%indexU(i+nb_lag-1)+1
-      ls=hecMAT%indexU(i-1)+1
-      le=hecMAT%indexU(i)
-      do l=ls,le
-        ll = hecMAT%itemU(l)
-        hecMATLag%itemU(idx) = ll + nb_lag
-        hecMATLag%AU((idx-1)*ndof2+1:idx*ndof2)=hecMAT%AU((l-1)*ndof2+1:l*ndof2)
-        idx = idx + 1
-      enddo
-    enddo
-
-    ! Lower: itemL and AL
-    allocate(hecMATLag%itemL(hecMATLag%NPL))
-    allocate(hecMATLag%AL(hecMATLag%NPL*ndof2))
-    hecMATLag%AL = 0.d0
-    do i = 1, hecMAT%indexL(hecMAT%N)
-      hecMATLag%itemL(i) = hecMAT%itemL(i)
-    enddo
-    do i = 1, hecMAT%indexL(hecMAT%N)*ndof2
-      hecMATLag%AL(i) = hecMAT%AL(i)
-    enddo
-    ! Lag. itemL
-    idx = hecMAT%indexL(hecMAT%N) + 1
-    do ib_lag = 1, nb_lag
-      iwLc = 0
-      i = hecMAT%N + ib_lag
-      do idof = 1, ndof
-        ilag = (ib_lag-1)*ndof + idof
-        if (ilag  > hecLagMAT%num_lagrange) exit
-        ls=hecLagMAT%indexL_lagrange(ilag-1)+1
-        le=hecLagMAT%indexL_lagrange(ilag)
-        do l=ls,le
-          j=hecLagMAT%itemL_lagrange(l)
-          iwLc(j) = 1
-        enddo
-      enddo
-      idx_lag_s = idx
-      do j=1,hecMAT%N
-        if (iwLc(j) > 0) then
-          hecMATLag%itemL(idx) = j
-          idx = idx + 1
-        endif
-      enddo
-      idx_lag_e = idx - 1
-      if (idx /= hecMATLag%indexL(hecMAT%N + ib_lag)+1) then
-        stop 'ERROR idx indexL'
-      endif
-      ! Lag. AL
-      do idof = 1, ndof
-        ilag = (ib_lag-1)*ndof + idof
-        if (ilag  > hecLagMAT%num_lagrange) exit
-        ls=hecLagMAT%indexL_lagrange(ilag-1)+1
-        le=hecLagMAT%indexL_lagrange(ilag)
-        do l=ls,le
-          j=hecLagMAT%itemL_lagrange(l)
-          do k = idx_lag_s, idx_lag_e
-            if (hecMATLag%itemL(k) < j) cycle
-            if (hecMATLag%itemL(k) > j) cycle
-            !if (hecMATLag%itemL(k) /= j) stop 'ERROR itemL j'
-            do jdof = 1, ndof
-              hecMATLag%AL((k-1)*ndof2+(idof-1)*ndof+jdof) = &
-                hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
-            enddo
-          enddo
-        enddo
-      enddo
-    enddo
-    do i = hecMAT%N+1, hecMAT%NP
-      idx = hecMATLag%indexL(i+nb_lag-1)+1
-      ls=hecMAT%indexL(i-1)+1
-      le=hecMAT%indexL(i)
-      do l=ls,le
-        ll = hecMAT%itemL(l)
-        if (ll <= hecMAT%N) then
-          hecMATLag%itemL(idx) = ll
-        else
-          hecMATLag%itemL(idx) = ll + nb_lag
-        endif
-        hecMATLag%AL((idx-1)*ndof2+1:idx*ndof2)=hecMAT%AL((l-1)*ndof2+1:l*ndof2)
-        idx = idx + 1
-      enddo
-    enddo
-
-    deallocate(iwUr, iwUc, iwLr, iwLc)
-
-    allocate(hecMATLag%D(hecMATLag%NP*ndof2))
-    hecMATLag%D = 0.d0
-    ! internal
-    do i = 1, hecMAT%N*ndof2
-      hecMATLag%D(i) = hecMAT%D(i)
-    enddo
-    ! Lag.
-    do idof = ndof - ndofextra + 1, ndof
-      hecMATLag%D((hecMATLag%N-1)*ndof2 + (idof-1)*ndof + idof) = 1.d0
-    enddo
-    ! external
-    do i = hecMAT%N*ndof2+1, hecMAT%NP*ndof2
-      hecMATLag%D(i + nb_lag*ndof2) = hecMAT%D(i)
-    enddo
-
-    allocate(hecMATLag%B(hecMATLag%NP*ndof))
-    allocate(hecMATLag%X(hecMATLag%NP*ndof))
-    hecMATLag%B = 0.d0
-    hecMATLag%X = 0.d0
-
-    ! internal
-    do i = 1, hecMAT%N*ndof
-      hecMATLag%B(i) = hecMAT%B(i)
-    enddo
-    ! Lag.
-    do i = 1, hecLagMAT%num_lagrange
-      hecMATLag%B(hecMAT%N*ndof + i) = hecMAT%B(hecMAT%NP*ndof + i)
-    enddo
-    ! external
-    do i = hecMAT%N*ndof+1, hecMAT%NP*ndof
-      hecMATlag%B(i + nb_lag*ndof) = hecMAT%B(i)
-    enddo
-
-    hecMATLag%Iarray=hecMAT%Iarray
-    hecMATLag%Rarray=hecMAT%Rarray
-
-    if (DEBUG >= 1) write(0,*) 'DEBUG: made hecMATLag', hecmw_wtime()-t1
-
-    if (hecMESH%n_neighbor_pe > 0) then
-      do i = 1, hecMESH%import_index(hecMESH%n_neighbor_pe)
-        hecMESH%import_item(i) = hecMESH%import_item(i) + nb_lag
-      enddo
-    endif
-
-    call hecmw_solve_iterative(hecMESH, hecMATLag)
-
-    hecMAT%Iarray=hecMATLag%Iarray
-    hecMAT%Rarray=hecMATLag%Rarray
-
-    if (hecMESH%n_neighbor_pe > 0) then
-      do i = 1, hecMESH%import_index(hecMESH%n_neighbor_pe)
-        hecMESH%import_item(i) = hecMESH%import_item(i) - nb_lag
-      enddo
-    endif
-
-    hecMAT%X = 0.d0
-    ! internal
-    do i = 1, hecMAT%N*ndof
-      hecMAT%X(i) = hecMATLag%X(i)
-    enddo
-    ! external
-    do i = hecMAT%N*ndof+1, hecMAT%NP*ndof
-      hecMAT%X(i) = hecMATLag%X(i + nb_lag*ndof)
-    enddo
-    ! Lag.
-    do i = 1, hecLagMAT%num_lagrange
-      hecMAT%X(hecMAT%NP*ndof + i) = hecMATLag%X(hecMAT%N*ndof + i)
-    enddo
-
-    call hecmw_mat_finalize(hecMATLag)
-
-    if (DEBUG >= 1) write(0,*) 'DEBUG: solve_no_eliminate end', hecmw_wtime()-t1
-  end subroutine solve_no_eliminate
 
 end module m_solve_LINEQ_iter_contact
