@@ -45,7 +45,7 @@ contains
 
 
   !> \brief This subroutine
-  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,rf)
+  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,rf,is_contact_active)
 
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
@@ -53,6 +53,7 @@ contains
     type (hecmwST_matrix)                    :: conMAT
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), optional               :: rf
+    logical                                  :: is_contact_active
 
     real(kind=kreal)                         :: factor
     real(kind=kreal) :: t1, t2
@@ -65,7 +66,7 @@ contains
 
     istat = 0
     if( hecMAT%Iarray(99)==1 )then
-      call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
+      call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
     elseif( hecMAT%Iarray(99)==2 )then
       if( hecmw_comm_get_size() > 1) then
         write(*,*) 'ERROR: !SOLVER,METHOD=DIRECT not available in parallel contact analysis; please use MUMPS or DIRECTmkl instead'

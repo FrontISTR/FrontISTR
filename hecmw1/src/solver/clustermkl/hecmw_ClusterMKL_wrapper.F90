@@ -134,7 +134,7 @@ contains
         pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
         idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
-        if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_paramters()
+        if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_parameters()
         write(*,*) 'ERROR: MKL returned with error in phase 1', istat
         return
       endif
@@ -153,7 +153,7 @@ contains
         pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
         idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
       if (istat < 0) then
-        if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_paramters()
+        if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_parameters()
         write(*,*) 'ERROR: MKL returned with error in phase 2', istat
         return
       endif
@@ -170,7 +170,7 @@ contains
       pt, maxfct, mnum, mtype, phase, nn, aval, irow, jcol, &
       idum, nrhs, iparm, msglvl, rhs, solx, hecmw_comm_get_comm(), istat )
     if (istat < 0) then
-      if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_paramters()
+      if (myrank==0 .and. spMAT%timelog > 0) call print_iparm_parameters()
       write(*,*) 'ERROR: MKL returned with error in phase 3', istat
       return
     endif
@@ -189,7 +189,7 @@ contains
     if (myrank==0 .and. spMAT%timelog > 0) then
       write(*,'(A,f10.3)') ' [Cluster Pardiso]: Solution completed.         time(sec)=',t5-t4
     end if
-    if( debug>0 .and. myrank==0 ) call print_iparm_paramters()
+    if( debug>0 .and. myrank==0 ) call print_iparm_parameters()
 
 #else
     stop "MKL Pardiso not available"
@@ -197,7 +197,7 @@ contains
   end subroutine hecmw_clustermkl_wrapper
 
 #ifdef WITH_CLUSTERMKL
-  subroutine print_iparm_paramters()
+  subroutine print_iparm_parameters()
     write(*,'(A60,I8)') 'Number of iterative refinement steps performed: ',iparm(7)
     write(*,'(A60,I8)') 'Number of perturbed pivots: ',iparm(14)
     write(*,'(A60,I8)') 'Peak memory on symbolic factorization: ',iparm(15)

@@ -22,21 +22,25 @@ module m_ElastoPlastic
 contains
 
   !> This subroutine calculates elastoplastic constitutive relation
-  subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, plstrain, D, temperature )
+  subroutine calElastoPlasticMatrix( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
     type( tMaterial ), intent(in) :: matl      !< material properties
     integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: stress(6) !< stress
     real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
-    real(kind=kreal), INTENT(IN)  :: plstrain  !< plastic strain
+    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
     integer, intent(in)           :: istat     !< plastic state
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
-    real(kind=kreal), optional    :: temperature   !> temperature
+    real(kind=kreal), intent(in)  :: temperature   !> temperature
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i,j,ytype
+    integer :: i,j,ytype,hdflag_in
     logical :: kinematic
     real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6), De(6,6), G, dlambda
     real(kind=kreal) :: C1,C2,C3, back(6)
     real(kind=kreal) :: J1,J2,J3, fai, sita, harden, khard, da(6), devia(6)
+
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
 
     ytype = getYieldFunction( matl%mtype )
     if( ytype==3 ) then
@@ -50,11 +54,8 @@ contains
       back(1:6) = extval(2:7)
       khard = calKinematicHarden( matl, extval(1) )
     endif
-    if( present( temperature ) ) then
-      call calElasticMatrix( matl, sectTYPE, De, temperature  )
-    else
-      call calElasticMatrix( matl, sectTYPE, De )
-    endif
+
+    call calElasticMatrix( matl, sectTYPE, De, temperature, hdflag=hdflag_in )
 
     J1 = (stress(1)+stress(2)+stress(3))
     devia(1:3) = stress(1:3)-J1/3.d0
@@ -65,16 +66,16 @@ contains
 
     D(:,:) = De(:,:)
     if( istat == 0 ) return   ! elastic state
+    if( present(hdflag) ) then
+      if( hdflag == 2 ) return
+    end if
 
     !derivative of J2
     dj2(1:3) = devia(1:3)
     dj2(4:6) = 2.d0*devia(4:6)
     dj2 = dj2/( 2.d0*dsqrt(j2) )
-    if( present(temperature) ) then
-      harden = calHardenCoeff( matl, extval(1), temperature )
-    else
-      harden = calHardenCoeff( matl, extval(1) )
-    endif
+
+    harden = calHardenCoeff( matl, extval(1), temperature )
 
     select case (yType)
       case (0)       ! Mises or. Isotropic
@@ -200,7 +201,7 @@ contains
   real(kind=kreal) function calHardenCoeff( matl, pstrain, temp )
     type( tMaterial ), intent(in)          :: matl    !< material property
     real(kind=kreal), intent(in)           :: pstrain !< plastic strain
-    real(kind=kreal), intent(in), optional :: temp !< temperature
+    real(kind=kreal), intent(in)           :: temp !< temperature
 
     integer :: htype
     logical :: ierr
@@ -212,15 +213,8 @@ contains
       case (0)  ! Linear hardening
         calHardenCoeff = matl%variables(M_PLCONST2)
       case (1)  ! Multilinear approximation
-        if( present(temp) ) then
-          ina(1) = temp;  ina(2)=pstrain
-          call fetch_TableGrad( MC_YIELD, ina, matl%dict, calHardenCoeff, ierr )
-          !	  print *, ina, calHardenCoeff; pause
-        else
-          ina(1)=pstrain
-          call fetch_TableGrad( MC_YIELD, ina(1:1), matl%dict, calHardenCoeff, ierr )
-        endif
-        !  print *,1, calHardenCoeff; pause
+        ina(1) = temp;  ina(2)=pstrain
+        call fetch_TableGrad( MC_YIELD, ina, matl%dict, calHardenCoeff, ierr )
       case (2)  ! Swift
         s0= matl%variables(M_PLCONST1)
         s1= matl%variables(M_PLCONST2)
@@ -230,11 +224,7 @@ contains
         s0= matl%variables(M_PLCONST1)
         s1= matl%variables(M_PLCONST2)
         s2= matl%variables(M_PLCONST3)
-        if( present(temp) ) then
-          ef = calCurrYield( matl, pstrain, temp )
-        else
-          ef = calCurrYield( matl, pstrain )
-        endif
+        ef = calCurrYield( matl, pstrain, temp )
         calHardenCoeff = s1*(ef/s1)**(1.d0-s2) /(s0*s2)
       case(4)   ! Prager
         calHardenCoeff = 0.d0
@@ -277,7 +267,7 @@ contains
   real(kind=kreal) function calCurrYield( matl, pstrain, temp )
     type( tMaterial ), intent(in) :: matl    !< material property
     real(kind=kreal), intent(in)  :: pstrain !< plastic strain
-    real(kind=kreal), intent(in), optional :: temp  !< temperature
+    real(kind=kreal), intent(in)  :: temp  !< temperature
 
     integer :: htype
     real(kind=kreal) :: s0, s1,s2, ina(2), outa(1)
@@ -289,13 +279,8 @@ contains
       case (0, 5)  ! Linear hardening, Linear+Parger hardening
         calCurrYield = matl%variables(M_PLCONST1)+matl%variables(M_PLCONST2)*pstrain
       case (1)  ! Multilinear approximation
-        if( present(temp) ) then
-          ina(1) = temp;  ina(2)=pstrain
-          call fetch_TableData(MC_YIELD, matl%dict, outa, ierr, ina)
-        else
-          ina(1) = pstrain
-          call fetch_TableData(MC_YIELD, matl%dict, outa, ierr, ina(1:1))
-        endif
+        ina(1) = temp;  ina(2)=pstrain
+        call fetch_TableData(MC_YIELD, matl%dict, outa, ierr, ina)
         if( ierr ) stop "Fail to get yield stress!"
         calCurrYield = outa(1)
       case (2)  ! Swift
@@ -322,7 +307,7 @@ contains
     type( tMaterial ), intent(in) :: matl        !< material property
     real(kind=kreal), intent(in)  :: stress(6)   !< stress
     real(kind=kreal), intent(in)  :: extval(:)   !< plastic strain, back stress
-    real(kind=kreal), intent(in), optional :: temp  !< temperature
+    real(kind=kreal), intent(in)  :: temp  !< temperature
 
     integer :: ytype
     logical :: kinematic
@@ -343,11 +328,7 @@ contains
 
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
-    if( present(temp) ) then
-      eqvs = calCurrYield( matl, pstrain, temp )
-    else
-      eqvs = calCurrYield( matl, pstrain )
-    endif
+    eqvs = calCurrYield( matl, pstrain, temp )
 
     select case (yType)
       case (0)       ! Mises or. Isotropic
@@ -374,19 +355,20 @@ contains
   end function
 
   !> This subroutine does backward-Euler return calculation
-  subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, temp )
+  subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, temp, hdflag )
     use m_utilities, only : eigen3
     type( tMaterial ), intent(in)    :: matl        !< material properties
     real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
     real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
     integer, intent(inout)           :: istat       !< plastic state
     real(kind=kreal), intent(inout)  :: fstat(:)    !< plastic strain, back stress
-    real(kind=kreal), intent(in), optional :: temp  !< temperature
+    real(kind=kreal), intent(in)     :: temp  !< temperature
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
     real(kind=kreal), parameter :: tol =1.d-3
     integer, parameter          :: MAXITER = 5
     real(kind=kreal) :: dlambda, f, mat(3,3)
-    integer :: i,ytype, maxp(1), minp(1), mm
+    integer :: i,ytype, maxp(1), minp(1), mm, hdflag_in
     real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
     real(kind=kreal) :: J1,J2,J3, H, KH, KK, dd, yd, G, K, devia(6)
     real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
@@ -394,6 +376,9 @@ contains
     real(kind=kreal) :: fstat_bak(7)
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
+
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
 
     f = 0.0d0
 
@@ -406,11 +391,7 @@ contains
     pstrain = plstrain
     if(isKinematicHarden( matl%mtype ))fstat_bak(2:7)= fstat(8:13)
     fstat_bak(1) = plstrain
-    if( present(temp) ) then
-      f = calYieldFunc( matl, stress, fstat_bak, temp )
-    else
-      f = calYieldFunc( matl, stress, fstat_bak )
-    endif
+    f = calYieldFunc( matl, stress, fstat_bak, temp )
     if( dabs(f)<tol ) then  ! yielded
       istat = 1
       return
@@ -418,6 +399,8 @@ contains
       istat =0
       return
     endif
+    if( hdflag_in == 2 ) return
+
     istat = 1           ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
 
@@ -433,12 +416,8 @@ contains
     if( kinematic ) devia = devia-back
     yd = cal_equivalent_stress(matl, stress, fstat)
 
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
-    else
-      call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr )
-    endif
+    ina(1) = temp
+    call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
     if( ierr ) then
       stop " fail to fetch young's modulus in elastoplastic calculation"
     else
@@ -452,11 +431,7 @@ contains
 
     if( yType==0 ) then    ! Mises or. Isotropic
       do i=1,MAXITER
-        if( present(temp) ) then
-          H= calHardenCoeff( matl, pstrain+dlambda, temp )
-        else
-          H= calHardenCoeff( matl, pstrain+dlambda )
-        endif
+        H= calHardenCoeff( matl, pstrain+dlambda, temp )
         if( kinematic ) then
           KH = calKinematicHarden( matl, pstrain+dlambda )
         endif
@@ -466,11 +441,7 @@ contains
           dlambda = 0.d0
           istat=0; exit
         endif
-        if( present(temp) ) then
-          dum = calCurrYield( matl, pstrain+dlambda, temp )
-        else
-          dum = calCurrYield( matl, pstrain+dlambda )
-        endif
+        dum = calCurrYield( matl, pstrain+dlambda, temp )
         if( kinematic ) then
           KK = calCurrKinematic( matl, pstrain+dlambda )
         endif
@@ -512,11 +483,7 @@ contains
       if( maxp(1)==1 .or. minp(1)==1 ) mm =2
       if( maxp(1)==2 .or. minp(1)==2 ) mm =3
       do i=1,MAXITER
-        if( present(temp) ) then
-          H= calHardenCoeff( matl, pstrain, temp )
-        else
-          H= calHardenCoeff( matl, pstrain )
-        endif
+        H= calHardenCoeff( matl, pstrain, temp )
         dd= 4.d0*G*( 1.d0+sin(fai)*sin(sita)/3.d0 )+4.d0*K         &
           *sin(fai)*sin(sita)+4.d0*H*cos(fai)*cos(fai)
         dlambda = dlambda+f/dd
@@ -526,11 +493,7 @@ contains
           istat=0; exit
         endif
         dum = pstrain + 2.d0*dlambda*cos(fai)
-        if( present(temp) ) then
-          yd = calCurrYield( matl, dum, temp )
-        else
-          yd = calCurrYield( matl, dum )
-        endif
+        yd = calCurrYield( matl, dum, temp )
         f = prnstre(maxp(1))-prnstre(minp(1))+                     &
           (prnstre(maxp(1))+prnstre(minp(1)))*sin(fai)-            &
           (4.d0*G*(1.d0+sin(fai)*sin(sita)/3.d0)+4.d0*K*sin(fai)   &
@@ -558,11 +521,7 @@ contains
       fai = matl%variables(M_PLCONST3)
       dum = matl%variables(M_PLCONST4)
       do i=1,MAXITER
-        if( present(temp) ) then
-          H= calHardenCoeff( matl, pstrain, temp )
-        else
-          H= calHardenCoeff( matl, pstrain )
-        endif
+        H= calHardenCoeff( matl, pstrain, temp )
         dd= G+K*fai*fai+H*dum*dum
         dlambda = dlambda+f/dd
         if( dum*dlambda<0.d0 ) then
@@ -570,11 +529,7 @@ contains
           dlambda = 0.d0
           istat=0; exit
         endif
-        if( present(temp) ) then
-          f = calCurrYield( matl, pstrain+dum*dlambda, temp  )
-        else
-          f = calCurrYield( matl, pstrain+dum*dlambda  )
-        endif
+        f = calCurrYield( matl, pstrain+dum*dlambda, temp  )
         f = yd-G*dlambda+fai*(J1-K*fai*dlambda)- dum*f
         if( dabs(f)<tol*tol ) exit
       enddo

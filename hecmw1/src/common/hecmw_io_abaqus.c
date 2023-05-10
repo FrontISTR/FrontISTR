@@ -3962,7 +3962,7 @@ error:
   return -1;
 }
 
-static int read_boudary(void) {
+static int read_boundary(void) {
   int token, state;
   int flag_boundary             = 0; /* flag for BOUNDARY */
   int isNodeInput               = 0;
@@ -4181,7 +4181,7 @@ static struct read_func_table {
   ReadFunc func;
 } read_func_table[] = {
     {HECMW_ABLEX_H_AMPLITUDE, read_amplitude},
-    {HECMW_ABLEX_H_BOUNDARY, read_boudary},
+    {HECMW_ABLEX_H_BOUNDARY, read_boundary},
     {HECMW_ABLEX_H_CONDUCTIVITY, read_conductivity},
     {HECMW_ABLEX_H_CLOAD, read_cload},
     {HECMW_ABLEX_H_DLOAD, read_dload},

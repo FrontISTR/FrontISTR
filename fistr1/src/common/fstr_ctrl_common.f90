@@ -67,7 +67,7 @@ contains
 
   !> Read in !SOLVER
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
-      iterpremax, nrest, scaling, &
+      iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, &
       resid, singma_diag, sigma, thresh, filter )
@@ -81,6 +81,7 @@ contains
     integer(kind=kint) :: nier
     integer(kind=kint) :: iterpremax
     integer(kind=kint) :: nrest
+    integer(kind=kint) :: nBFGS
     integer(kind=kint) :: scaling
     integer(kind=kint) :: dumptype
     integer(kind=kint) :: dumpexit
@@ -98,11 +99,12 @@ contains
     real(kind=kreal) :: filter
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-    character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
+    character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' 
+    !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
     integer(kind=kint) :: number_number = 5
-    integer(kind=kint) :: indirect_number = 4
+    integer(kind=kint) :: indirect_number = 6 ! GMRESR and GMRESREN need to be added
     integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step
 
     fstr_ctrl_get_SOLVER = -1
@@ -155,7 +157,7 @@ contains
 
     !* data --------------------------------------------------------------------------------------- *!
     ! JP-4
-    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre )/= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre, nBFGS )/= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
 
     if( precond == 20 .or. precond == 21) then
@@ -320,12 +322,17 @@ contains
     integer(kind=kint)            :: j, k, sect_id, ori_id, elemopt
     integer(kind=kint),save       :: cache = 1
     character(len=HECMW_NAME_LEN) :: sect_orien
+    character(19) :: form341list = 'FI,SELECTIVE_ESNS '
     character(16) :: form361list = 'FI,BBAR,IC,FBAR '
 
     fstr_ctrl_get_SECTION = -1
 
     if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return
     if( sect_id > hecMESH%section%n_sect ) return
+
+    elemopt = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'FORM341 ',   form341list, 0, 'P', elemopt )/= 0) return
+    if( elemopt > 0 ) sections(sect_id)%elemopt341 = elemopt
 
     elemopt = 0
     if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt )/= 0) return
@@ -530,7 +537,6 @@ contains
     tPenalty = 1.0d6
 
     write(ss,*)  HECMW_NAME_LEN
-    write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
 
     fstr_ctrl_get_CONTACT = .false.
     contact(1)%ctype = 1   ! pure slave-master contact; default value
@@ -543,13 +549,26 @@ contains
       contact(rcode)%group = contact(1)%group
       contact(rcode)%algtype = contact(1)%algtype
     end do
-    if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
-    do rcode=1,n
-      call fstr_strupr(cp_name(rcode))
-      contact(rcode)%pair_name = cp_name(rcode)
-      contact(rcode)%fcoeff = fcoeff(rcode)
-      contact(rcode)%tPenalty = tPenalty(rcode)
-    enddo
+
+    if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
+      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
+      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      do rcode=1,n
+        call fstr_strupr(cp_name(rcode))
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = fcoeff(rcode)
+        contact(rcode)%tPenalty = tPenalty(rcode)
+      enddo
+    else if( contact(1)%algtype==CONTACTTIED ) then
+      write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
+      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
+      do rcode=1,n
+        call fstr_strupr(cp_name(rcode))
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = 0.d0
+        contact(rcode)%tPenalty = 1.d+4
+      enddo
+    endif
 
     np = 0.d0;  tp=0.d0
     ntol = 0.d0;  ttol=0.d0

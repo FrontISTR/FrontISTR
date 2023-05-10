@@ -3,8 +3,8 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
-#ifndef HECMW_CONFIG_INCLUED
-#define HECMW_CONFIG_INCLUED
+#ifndef HECMW_CONFIG_INCLUDED
+#define HECMW_CONFIG_INCLUDED
 
 #ifdef HECMW_SERIAL
 

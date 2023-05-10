@@ -57,7 +57,7 @@ contains
     endif
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1,NumOfQuadPoints( ETYPE )
-      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0,cdsys )
+      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys, 0.d0 )
       if( .not. present(u) ) flag=INFINITESIMAL    ! enforce to infinitesimal deformation analysis
 
       if( flag==1 .and. ISET == 2 ) then
@@ -336,7 +336,7 @@ contains
     !  FOR AX-SYM. ANALYSIS
     if(ISET==2) THICK=1.d0
     ! We suppose material properties doesn't varies inside element
-    call calElasticMatrix( gausses(1)%pMaterial, ISET, D  )
+    call calElasticMatrix( gausses(1)%pMaterial, ISET, D, 0.d0  )
     ALP = gausses(1)%pMaterial%variables(M_EXAPNSION)
     pp = gausses(1)%pMaterial%variables(M_POISSON)
     !* LOOP OVER ALL INTEGRATION POINTS
@@ -427,9 +427,9 @@ contains
     real(kind=kreal),   intent(in)     :: u(2,nn)
     real(kind=kreal),   intent(in)     :: ddu(2,nn)
     real(kind=kreal),   intent(out)    :: qf(:)
-    real(kind=kreal), intent(in), optional :: TT(nn)   !< current temperature
-    real(kind=kreal), intent(in), optional :: T0(nn)   !< reference temperature
-    real(kind=kreal), intent(in), optional :: TN(nn)   !< reference temperature
+    real(kind=kreal),   intent(in)     :: TT(nn)   !< current temperature
+    real(kind=kreal),   intent(in)     :: T0(nn)   !< reference temperature
+    real(kind=kreal),   intent(in)     :: TN(nn)   !< reference temperature
 
 
     integer(kind=kint), parameter :: ndof=2
@@ -460,17 +460,17 @@ contains
     endif
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1, NumOfQuadPoints(etype)
-      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys  )
+      call MatlMatrix( gausses(LX), ISET, D, 1.d0, 1.d0, cdsys, 0.d0 )
 
       call getQuadPoint( etype, LX, localCoord(:) )
       call getGlobalDeriv( etype, nn, localcoord, ecoord, det, gderiv )
       !
       EPSTH = 0.d0
-      if( present(TT) .AND. present(T0) ) then
-        call getShapeFunc( ETYPE, localcoord, H(:) )
-        ttc = dot_product(TT(:), H(:))
-        tt0 = dot_product(T0(:), H(:))
-        ttn = dot_product(TN(:), H(:))
+      call getShapeFunc( ETYPE, localcoord, H(:) )
+      ttc = dot_product(TT(:), H(:))
+      tt0 = dot_product(T0(:), H(:))
+      ttn = dot_product(TN(:), H(:))
+      if( dabs(ttc-tt0) > 1.d-14 ) then
         ina(1) = ttc
         call fetch_TableData( MC_THEMOEXP, gausses(LX)%pMaterial%dict, outa(:), ierr, ina )
         if( ierr ) outa(1) = gausses(LX)%pMaterial%variables(M_EXAPNSION)

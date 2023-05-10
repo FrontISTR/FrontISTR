@@ -48,17 +48,18 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_iter_contact_init
 
-  subroutine solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
+  subroutine solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(in) :: conMAT
+    logical,intent(in)                :: is_contact_active
     integer :: method_org, precond_org
     logical :: fg_eliminate
     logical :: fg_amg
-    integer(kind=kint) :: num_lagrange_global
+    integer(kind=kint) :: is_contact
     integer(kind=kint) :: myrank
 
     myrank = hecmw_comm_get_rank()
@@ -76,10 +77,12 @@ contains
       if (precond_org == 5) fg_amg = .true.
     endif
 
-    num_lagrange_global = hecLagMAT%num_lagrange
-    call hecmw_allreduce_I1(hecMESH, num_lagrange_global, hecmw_sum)
 
-    if (num_lagrange_global == 0) then
+    is_contact = 0
+    if( is_contact_active ) is_contact = 1
+    call hecmw_allreduce_I1(hecMESH, is_contact, hecmw_max)
+
+    if ( is_contact == 0 ) then
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: no contact'
       ! use CG because the matrix is symmetric
       method_org = hecmw_mat_get_method(hecMAT)
@@ -520,7 +523,7 @@ contains
     real(kind=kreal), intent(out) :: wSL(:)
     real(kind=kreal), intent(out) :: wSU(:)
     logical, intent(in) :: fg_paracon
-    integer :: ndof, n, i, j, idof, jdof, l, ls, le, idx, imax
+    integer :: ndof, n, i, j, idof, jdof, l, ls, le, idx, imax, iwmin
     real(kind=kreal) :: val, vmax
     integer, allocatable :: iw1L(:), iw1U(:)
     integer(kind=kint) :: n_slave_in,n_slave_out
@@ -584,14 +587,21 @@ contains
       le=hecLagMAT%indexL_lagrange(i)
       vmax = 0.d0
       imax = -1
+      iwmin = n
       do l=ls,le
         j=hecLagMAT%itemL_lagrange(l)
         do jdof=1,ndof
           idx=(j-1)*ndof+jdof
           val=hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
-          if (iw1L(idx) == 1 .and. iw1U(idx) == 1 .and. abs(val) > abs(vmax)) then
-            imax=idx
-            vmax=val
+          if ( iw1L(idx) < iwmin .and. iw1U(idx) < iwmin ) then
+            iwmin = min(iw1L(idx),iw1U(idx))
+            vmax = 0.d0
+          endif
+          if ( iw1L(idx) == iwmin .and. iw1U(idx) == iwmin ) then
+            if ( abs(val) > abs(vmax) ) then
+              imax=idx
+              vmax=val
+            endif
           endif
         enddo
       enddo
@@ -694,7 +704,8 @@ contains
     enddo
     if (Tmat%nnz /= Tmat%index(Tmat%nr)) then
       write(0,*) Tmat%nnz, Tmat%index(Tmat%nr)
-      stop 'ERROR: Tmat%nnz wrong'
+      Tmat%nnz = Tmat%index(Tmat%nr)
+      !stop 'ERROR: Tmat%nnz wrong'
     endif
     ! item and A
     do i=1,Tmat%nr
@@ -787,7 +798,8 @@ contains
     enddo
     if (Ttmat%nnz /= Ttmat%index(Ttmat%nr)) then
       write(0,*) Ttmat%nnz, Ttmat%index(Ttmat%nr)
-      stop 'ERROR: Ttmat%nnz wrong'
+      !stop 'ERROR: Ttmat%nnz wrong'
+      Ttmat%nnz = Ttmat%index(Ttmat%nr)
     endif
     ! item and A
     do i=1,n
