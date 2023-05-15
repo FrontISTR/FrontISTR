@@ -21,7 +21,7 @@ contains
     use mMechGauss
 
     type (hecmwST_local_mesh)  :: hecMESH      !< mesh information
-    type (hecmwST_matrix)      :: matK         !< stiffness matrix
+    type (hecmwST_matrix)      :: matK         !< elem_mat matrix
     type (hecmwST_matrix), optional :: matM    !< Mass matrix
     type (hecmwST_matrix), optional :: matC    !< Damping matrix
     type (fstr_solid)          :: fstrSOLID    !< we need boundary conditions of curr step
@@ -85,136 +85,82 @@ contains
         material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
         thick = material%variables(M_THICK)
         if( getSpaceDimension( ic_type )==2 ) thick =1.d0
+
         if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-          call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick,  &
-            elem_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset,          &
-            u(1:2,1:nn) )
+          call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick, &
+            elem_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn) )
 
         elseif ( ic_type==301 ) then
-          isect= hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
-          call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:),   &
+          call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:), &
             elem_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
 
         elseif ( ic_type==361 ) then
-
           if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-              call STF_C3                                                                              &
-                ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
-            else
-              call STF_C3                                                                     &
-                ( ic_type,nn,ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),          &
-                elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
-            endif
+            call STF_C3 &
+              ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
+              elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-              call STF_C3D8Bbar                                                                        &
-                ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                elem_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
-            else
-              call STF_C3D8Bbar                                                               &
-                ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),        &
-                elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
-            endif
+            call STF_C3D8Bbar &
+              ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
+              elem_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-              CALL STF_C3D8IC                                                              &
-                ( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-                elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
-                fstrSOLID%elements(icel)%aux, tt(1:nn) )
-            else
-              CALL STF_C3D8IC                                                              &
-                ( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-                elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
-                fstrSOLID%elements(icel)%aux )
-            endif
+            call STF_C3D8IC &
+              ( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+              elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
+              fstrSOLID%elements(icel)%aux, tt(1:nn) )
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
-            if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-              call STF_C3D8Fbar                                                                        &
-                ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-                elem_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
-            else
-              call STF_C3D8Fbar                                                               &
-                ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),        &
-                elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
-            endif
+            call STF_C3D8Fbar &
+              ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
+              elem_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
           endif
 
-        elseif (ic_type==341 .or. ic_type==351 .or.                     &
-            ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
-          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 ) then
-            call STF_C3                                                                              &
-              ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
-              elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
-          else
-            call STF_C3                                                                     &
-              ( ic_type,nn,ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:),          &
-              elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn) )
-          endif
+        elseif (ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
+          if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
+          call STF_C3 &
+            ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
+            elem_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
 
         else if( ic_type == 611) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
           call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
             &   material%variables(M_YOUNGS), material%variables(M_POISSON), elem_mat(1:nn*ndof,1:nn*ndof))
 
         else if( ic_type == 641 ) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
           call STF_Beam_641(ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
             &            hecMESH%section%sect_R_item(ihead+1:), elem_mat(1:nn*ndof,1:nn*ndof))
 
         else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
           call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
             &              elem_mat(1:nn*ndof, 1:nn*ndof), thick, 0)
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
           call STF_Shell_MITC(731, 3, 6, ecoord(1:3, 1:3), fstrSOLID%elements(icel)%gausses(:), &
             &              elem_mat(1:nn*ndof, 1:nn*ndof), thick, 2)
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-          isect = hecMESH%section_ID(icel)
-          ihead = hecMESH%section%sect_R_index(isect-1)
-          thick = hecMESH%section%sect_R_item(ihead+1)
           call STF_Shell_MITC(741, 4, 6, ecoord(1:3, 1:4), fstrSOLID%elements(icel)%gausses(:), &
             &              elem_mat(1:nn*ndof, 1:nn*ndof), thick, 1)
 
-        elseif ( ic_type==3414 ) then
-          if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) then
-            write(*, *) '###ERROR### : This element is not supported for this material'
-            write(*, *) 'ic_type = ', ic_type, ', mtype = ', fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype
-            call hecmw_abort(hecmw_comm_get_comm())
-          endif
-          call STF_C3_vp                                                           &
-            ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:), &
-            elem_mat(1:nn*ndof, 1:nn*ndof), tincr, u_prev(1:4, 1:nn) )
-          !
-          !      elseif ( ic_type==731) then
-          !        call STF_S3(xx,yy,zz,ee,pp,thick,local_stf)
-          !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, elem_mat)
-          !      elseif ( ic_type==741) then
-          !        call STF_S4(xx,yy,zz,ee,pp,thick,local_stf)
-          !        call fstr_local_stf_restore_temp(local_stf, nn*ndof, elem_mat)
+        !elseif ( ic_type==3414 ) then
+          !if( material%mtype /= INCOMP_NEWTONIAN) call CreateMat_abort( ic_type, 3, material%mtype )
+          !call STF_C3_vp &
+          !  ( ic_type, nn, ecoord(:, 1:nn),fstrSOLID%elements(icel)%gausses(:), &
+          !  elem_mat(1:nn*ndof, 1:nn*ndof), tincr, u_prev(1:4, 1:nn) )
+
+        else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
+          call STF_C3D4_SESNS &
+            ( ic_type,nn,nodLOCAL,ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
+            elem_mat, cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
+
         else
           call CreateMat_abort( ic_type, 1 )
         endif
-        !
-        ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
+
         call hecmw_mat_ass_elem(matK, nn, nodLOCAL, elem_mat)
 
       enddo      ! icel
