@@ -113,7 +113,6 @@ contains
     type (hecmwST_local_matrix), pointer :: BT_all
     real(kind=kreal) :: t1
     integer(kind=kint) :: i, ilag
-    logical :: fg_paracon
     type (hecmwST_local_matrix), pointer :: BKmat, BTtKmat, BTtKTmat
     integer(kind=kint), allocatable :: mark(:)
     type(hecmwST_contact_comm) :: conCOMM
@@ -127,172 +126,147 @@ contains
     t1 = hecmw_wtime()
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate start', hecmw_wtime()-t1
 
-    ! fg_paracon = (paraContactFlag.and.present(conMAT))
-    fg_paracon = .true.
-
     ndof=hecMAT%NDOF
-    if(fg_paracon) then
-      allocate(iw2(hecMAT%NP*ndof))
-    else
-      allocate(iw2(hecMAT%N*ndof))
-    endif
+    allocate(iw2(hecMAT%NP*ndof))
     if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: num_lagrange',hecLagMAT%num_lagrange
     allocate(iwS(hecLagMAT%num_lagrange), wSL(hecLagMAT%num_lagrange), &
       wSU(hecLagMAT%num_lagrange))
 
     ! choose slave DOFs to be eliminated with Lag. DOFs
-    call choose_slaves(hecMAT, hecLagMAT, iw2, iwS, wSL, wSU, fg_paracon)
+    call choose_slaves(hecMAT, hecLagMAT, iw2, iwS, wSL, wSU)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: slave DOFs chosen', hecmw_wtime()-t1
 
     ! make transformation matrix and its transpose
-    call make_BTmat(hecMAT, hecLagMAT, iw2, wSL, BTmat, fg_paracon)
+    call make_BTmat(hecMAT, hecLagMAT, iw2, wSL, BTmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: make T done', hecmw_wtime()-t1
     if (DEBUG >= 4) then
       write(1000+myrank,*) 'BTmat (local)'
       call hecmw_localmat_write(BTmat, 1000+myrank)
     endif
 
-    call make_BTtmat(hecMAT, hecLagMAT, iw2, iwS, wSU, BTtmat, fg_paracon)
+    call make_BTtmat(hecMAT, hecLagMAT, iw2, iwS, wSU, BTtmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: make Tt done', hecmw_wtime()-t1
     if (DEBUG >= 4) then
       write(1000+myrank,*) 'BTtmat (local)'
       call hecmw_localmat_write(BTtmat, 1000+myrank)
     endif
 
-    if(fg_paracon) then
-      ! make contact dof list
-      call make_contact_dof_list(hecMAT, hecLagMAT, n_contact_dof, contact_dofs)
+    ! make contact dof list
+    call make_contact_dof_list(hecMAT, hecLagMAT, n_contact_dof, contact_dofs)
 
-      ! make comm_table for contact dof
-      ! call hecmw_contact_comm_init(conCOMM, hecMESH, ndof, hecLagMAT%num_lagrange, iwS)
-      call hecmw_contact_comm_init(conCOMM, hecMESH, ndof, n_contact_dof, contact_dofs)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: make contact comm_table done', hecmw_wtime()-t1
+    ! make comm_table for contact dof
+    ! call hecmw_contact_comm_init(conCOMM, hecMESH, ndof, hecLagMAT%num_lagrange, iwS)
+    call hecmw_contact_comm_init(conCOMM, hecMESH, ndof, n_contact_dof, contact_dofs)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: make contact comm_table done', hecmw_wtime()-t1
 
-      ! copy hecMESH to hecMESHtmp
-      allocate(hecMESHtmp)
-      call copy_mesh(hecMESH, hecMESHtmp, fg_paracon)
+    ! copy hecMESH to hecMESHtmp
+    allocate(hecMESHtmp)
+    call copy_mesh(hecMESH, hecMESHtmp)
 
-      if ( hecmw_comm_get_size() > 1 ) then
-        ! communicate and complete BTmat (update hecMESHtmp)
-        call hecmw_localmat_assemble(BTmat, hecMESH, hecMESHtmp)
-        if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble T done', hecmw_wtime()-t1
-        if (BTmat%nc /= hecMESH%n_node) then
-          if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with T',BTmat%nc-hecMESH%n_node
-        endif
-        if (DEBUG >= 4) then
-          write(1000+myrank,*) 'BTmat (assembled)'
-          call hecmw_localmat_write(BTmat, 1000+myrank)
-        endif
-
-        ! communicate and complete BTtmat (update hecMESHtmp)
-        call hecmw_localmat_assemble(BTtmat, hecMESH, hecMESHtmp)
-        if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble Tt done', hecmw_wtime()-t1
-        if (BTtmat%nc /= BTmat%nc) then
-          if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BTtmat',BTtmat%nc-BTmat%nc
-          BTmat%nc = BTtmat%nc
-        endif
-        if (DEBUG >= 4) then
-          write(1000+myrank,*) 'BTtmat (assembled)'
-          call hecmw_localmat_write(BTtmat, 1000+myrank)
-        endif
+    if ( hecmw_comm_get_size() > 1 ) then
+      ! communicate and complete BTmat (update hecMESHtmp)
+      call hecmw_localmat_assemble(BTmat, hecMESH, hecMESHtmp)
+      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble T done', hecmw_wtime()-t1
+      if (BTmat%nc /= hecMESH%n_node) then
+        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with T',BTmat%nc-hecMESH%n_node
+      endif
+      if (DEBUG >= 4) then
+        write(1000+myrank,*) 'BTmat (assembled)'
+        call hecmw_localmat_write(BTmat, 1000+myrank)
       endif
 
-      ! place 1 on diag of non-slave dofs of BTmat and BTtmat
-      allocate(mark(BTmat%nr * BTmat%ndof))
-      call mark_slave_dof(BTmat, mark, n_slave, slaves)
-      call place_one_on_diag_of_unmarked_dof(BTmat, mark)
-      call place_one_on_diag_of_unmarked_dof(BTtmat, mark)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: place 1 on diag of T and Tt done', hecmw_wtime()-t1
+      ! communicate and complete BTtmat (update hecMESHtmp)
+      call hecmw_localmat_assemble(BTtmat, hecMESH, hecMESHtmp)
+      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble Tt done', hecmw_wtime()-t1
+      if (BTtmat%nc /= BTmat%nc) then
+        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BTtmat',BTtmat%nc-BTmat%nc
+        BTmat%nc = BTtmat%nc
+      endif
       if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BTmat (1s on non-slave diag)'
-        call hecmw_localmat_write(BTmat, 1000+myrank)
-        write(1000+myrank,*) 'BTtmat (1s on non-slave diag)'
+        write(1000+myrank,*) 'BTtmat (assembled)'
         call hecmw_localmat_write(BTtmat, 1000+myrank)
       endif
-
-      ! init BKmat and substitute conMAT
-      allocate(BKmat)
-      call hecmw_localmat_init_with_hecmat(BKmat, conMAT, hecLagMAT%num_lagrange)
-      if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BKmat (conMAT local)'
-        call hecmw_localmat_write(BKmat, 1000+myrank)
-      endif
-
-      if ( hecmw_comm_get_size() > 1) then
-        ! communicate and complete BKmat (update hecMESHtmp)
-        call hecmw_localmat_assemble(BKmat, hecMESH, hecMESHtmp)
-        if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble K (conMAT) done', hecmw_wtime()-t1
-        if (BKmat%nc /= BTtmat%nc) then
-          if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BKmat',BKmat%nc-BTtmat%nc
-          BTmat%nc = BKmat%nc
-          BTtmat%nc = BKmat%nc
-        endif
-        if (DEBUG >= 4) then
-          write(1000+myrank,*) 'BKmat (conMAT assembled)'
-          call hecmw_localmat_write(BKmat, 1000+myrank)
-        endif
-      endif
-
-      ! add hecMAT to BKmat
-      call hecmw_localmat_add_hecmat(BKmat, hecMAT)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: add hecMAT to K done', hecmw_wtime()-t1
-      if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BKmat (hecMAT added)'
-        call hecmw_localmat_write(BKmat, 1000+myrank)
-      endif
-
-      ! compute BTtKmat = BTtmat * BKmat (update hecMESHtmp)
-      allocate(BTtKmat)
-      call hecmw_localmat_multmat(BTtmat, BKmat, hecMESHtmp, BTtKmat)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply Tt and K done', hecmw_wtime()-t1
-      if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BTtKmat'
-        call hecmw_localmat_write(BTtKmat, 1000+myrank)
-      endif
-
-      ! compute BTtKTmat = BTtKmat * BTmat (update hecMESHtmp)
-      allocate(BTtKTmat)
-      call hecmw_localmat_multmat(BTtKmat, BTmat, hecMESHtmp, BTtKTmat)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply TtK and T done', hecmw_wtime()-t1
-      if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BTtKTmat'
-        call hecmw_localmat_write(BTtKTmat, 1000+myrank)
-      endif
-      call hecmw_localmat_free(BTtKmat)
-      deallocate(BTtKmat)
-
-      ! shrink comm_table
-      ! call hecmw_localmat_shrink_comm_table(BTtKTmat, hecMESHtmp)
-
-      call place_num_on_diag_of_marked_dof(BTtKTmat, 1.0d0, mark)
-      if (DEBUG >= 4) then
-        write(1000+myrank,*) 'BTtKTmat (place 1.0 on slave diag)'
-        call hecmw_localmat_write(BTtKTmat, 1000+myrank)
-      endif
-      call hecmw_mat_init(hecTKT)
-      call hecmw_localmat_make_hecmat(hecMAT, BTtKTmat, hecTKT)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: convert TtKT to hecTKT done', hecmw_wtime()-t1
-      call hecmw_localmat_free(BTtKTmat)
-      deallocate(BTtKTmat)
-      !
-      BT_all => BTmat
-    else
-      if (hecMESH%n_neighbor_pe > 0) then
-        ! update communication table
-        allocate(hecMESHtmp, BT_all)
-        call update_comm_table(hecMESH, BTmat, hecMESHtmp, BT_all)
-        if (DEBUG >= 2) write(0,*) '  DEBUG2: Updating communication table done', hecmw_wtime()-t1
-        call hecmw_localmat_free(BTmat)
-      else
-        ! in serial computation
-        hecMESHtmp => hecMESH
-        BT_all => BTmat
-      end if
-
-      ! calc trimatmul in hecmwST_matrix data structure
-      call hecmw_mat_init(hecTKT)
-      call hecmw_trimatmul_TtKT_serial(hecMESHtmp, BTtmat, hecMAT, BT_all, iwS, hecLagMAT%num_lagrange, hecTKT)
     endif
+
+    ! place 1 on diag of non-slave dofs of BTmat and BTtmat
+    allocate(mark(BTmat%nr * BTmat%ndof))
+    call mark_slave_dof(BTmat, mark, n_slave, slaves)
+    call place_one_on_diag_of_unmarked_dof(BTmat, mark)
+    call place_one_on_diag_of_unmarked_dof(BTtmat, mark)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: place 1 on diag of T and Tt done', hecmw_wtime()-t1
+    if (DEBUG >= 4) then
+      write(1000+myrank,*) 'BTmat (1s on non-slave diag)'
+      call hecmw_localmat_write(BTmat, 1000+myrank)
+      write(1000+myrank,*) 'BTtmat (1s on non-slave diag)'
+      call hecmw_localmat_write(BTtmat, 1000+myrank)
+    endif
+
+    ! init BKmat and substitute conMAT
+    allocate(BKmat)
+    call hecmw_localmat_init_with_hecmat(BKmat, conMAT, hecLagMAT%num_lagrange)
+    if (DEBUG >= 4) then
+      write(1000+myrank,*) 'BKmat (conMAT local)'
+      call hecmw_localmat_write(BKmat, 1000+myrank)
+    endif
+
+    if ( hecmw_comm_get_size() > 1) then
+      ! communicate and complete BKmat (update hecMESHtmp)
+      call hecmw_localmat_assemble(BKmat, hecMESH, hecMESHtmp)
+      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble K (conMAT) done', hecmw_wtime()-t1
+      if (BKmat%nc /= BTtmat%nc) then
+        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BKmat',BKmat%nc-BTtmat%nc
+        BTmat%nc = BKmat%nc
+        BTtmat%nc = BKmat%nc
+      endif
+      if (DEBUG >= 4) then
+        write(1000+myrank,*) 'BKmat (conMAT assembled)'
+        call hecmw_localmat_write(BKmat, 1000+myrank)
+      endif
+    endif
+
+    ! add hecMAT to BKmat
+    call hecmw_localmat_add_hecmat(BKmat, hecMAT)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: add hecMAT to K done', hecmw_wtime()-t1
+    if (DEBUG >= 4) then
+      write(1000+myrank,*) 'BKmat (hecMAT added)'
+      call hecmw_localmat_write(BKmat, 1000+myrank)
+    endif
+
+    ! compute BTtKmat = BTtmat * BKmat (update hecMESHtmp)
+    allocate(BTtKmat)
+    call hecmw_localmat_multmat(BTtmat, BKmat, hecMESHtmp, BTtKmat)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply Tt and K done', hecmw_wtime()-t1
+    if (DEBUG >= 4) then
+      write(1000+myrank,*) 'BTtKmat'
+      call hecmw_localmat_write(BTtKmat, 1000+myrank)
+    endif
+
+    ! compute BTtKTmat = BTtKmat * BTmat (update hecMESHtmp)
+    allocate(BTtKTmat)
+    call hecmw_localmat_multmat(BTtKmat, BTmat, hecMESHtmp, BTtKTmat)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply TtK and T done', hecmw_wtime()-t1
+    if (DEBUG >= 4) then
+      write(1000+myrank,*) 'BTtKTmat'
+      call hecmw_localmat_write(BTtKTmat, 1000+myrank)
+    endif
+    call hecmw_localmat_free(BTtKmat)
+    deallocate(BTtKmat)
+
+    ! shrink comm_table
+    ! call hecmw_localmat_shrink_comm_table(BTtKTmat, hecMESHtmp)
+
+    call place_num_on_diag_of_marked_dof(BTtKTmat, 1.0d0, mark)
+    if (DEBUG >= 4) then
+      write(1000+myrank,*) 'BTtKTmat (place 1.0 on slave diag)'
+      call hecmw_localmat_write(BTtKTmat, 1000+myrank)
+    endif
+    call hecmw_mat_init(hecTKT)
+    call hecmw_localmat_make_hecmat(hecMAT, BTtKTmat, hecTKT)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: convert TtKT to hecTKT done', hecmw_wtime()-t1
+    call hecmw_localmat_free(BTtKTmat)
+    deallocate(BTtKTmat)
+    !
+    BT_all => BTmat
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: calculated TtKT', hecmw_wtime()-t1
 
     ! original RHS
@@ -312,74 +286,66 @@ contains
       endif
     endif
 
-    if (fg_paracon) then
-      ! contact RHS
-      if (DEBUG >= 3) then
-        write(1000+myrank,*) 'RHS(conMAT)------------------------------------------------------------'
-        write(1000+myrank,*) 'size of conMAT%B',size(conMAT%B)
-        write(1000+myrank,*) 'conMAT%B: 1-',conMAT%N*ndof
-        write(1000+myrank,*) conMAT%B(1:conMAT%N*ndof)
-        write(1000+myrank,*) 'conMAT%B(external): ',conMAT%N*ndof+1,'-',conMAT%NP*ndof
-        write(1000+myrank,*) conMAT%B(conMAT%N*ndof+1:conMAT%NP*ndof)
-        if (hecLagMAT%num_lagrange > 0) then
-          write(1000+myrank,*) 'conMAT%B(lag):',conMAT%NP*ndof+1,'-',conMAT%NP*ndof+hecLagMAT%num_lagrange
-          write(1000+myrank,*) conMAT%B(conMAT%NP*ndof+1:conMAT%NP*ndof+hecLagMAT%num_lagrange)
-        endif
-        if (n_slave > 0) then
-          write(1000+myrank,*) 'conMAT%B(slave):',slaves(:)
-          write(1000+myrank,*) conMAT%B(slaves(:))
-        endif
+    ! contact RHS
+    if (DEBUG >= 3) then
+      write(1000+myrank,*) 'RHS(conMAT)------------------------------------------------------------'
+      write(1000+myrank,*) 'size of conMAT%B',size(conMAT%B)
+      write(1000+myrank,*) 'conMAT%B: 1-',conMAT%N*ndof
+      write(1000+myrank,*) conMAT%B(1:conMAT%N*ndof)
+      write(1000+myrank,*) 'conMAT%B(external): ',conMAT%N*ndof+1,'-',conMAT%NP*ndof
+      write(1000+myrank,*) conMAT%B(conMAT%N*ndof+1:conMAT%NP*ndof)
+      if (hecLagMAT%num_lagrange > 0) then
+        write(1000+myrank,*) 'conMAT%B(lag):',conMAT%NP*ndof+1,'-',conMAT%NP*ndof+hecLagMAT%num_lagrange
+        write(1000+myrank,*) conMAT%B(conMAT%NP*ndof+1:conMAT%NP*ndof+hecLagMAT%num_lagrange)
       endif
-
-      allocate(Btot(hecMAT%NP*ndof+hecLagMAT%num_lagrange))
-      call assemble_b_paracon(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, conCOMM, Btot)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble conMAT%B done', hecmw_wtime()-t1
-      if (DEBUG >= 3) then
-        write(1000+myrank,*) 'RHS(conMAT assembled)--------------------------------------------------'
-        write(1000+myrank,*) 'size of Btot',size(Btot)
-        write(1000+myrank,*) 'Btot: 1-',conMAT%N*ndof
-        write(1000+myrank,*) Btot(1:conMAT%N*ndof)
-        if (hecLagMAT%num_lagrange > 0) then
-          write(1000+myrank,*) 'Btot(lag):',conMAT%NP*ndof+1,'-',conMAT%NP*ndof+hecLagMAT%num_lagrange
-          write(1000+myrank,*) Btot(conMAT%NP*ndof+1:conMAT%NP*ndof+hecLagMAT%num_lagrange)
-        endif
-        if (n_slave > 0) then
-          write(1000+myrank,*) 'Btot(slave):',slaves(:)
-          write(1000+myrank,*) Btot(slaves(:))
-        endif
+      if (n_slave > 0) then
+        write(1000+myrank,*) 'conMAT%B(slave):',slaves(:)
+        write(1000+myrank,*) conMAT%B(slaves(:))
       endif
+    endif
 
-      do i=1,hecMAT%N*ndof
-        Btot(i)=Btot(i)+hecMAT%B(i)
-      enddo
-      ! assembled RHS
-      if (DEBUG >= 3) then
-        write(1000+myrank,*) 'RHS(total)-------------------------------------------------------------'
-        write(1000+myrank,*) 'size of Btot',size(Btot)
-        write(1000+myrank,*) 'Btot: 1-',conMAT%N*ndof
-        write(1000+myrank,*) Btot(1:conMAT%N*ndof)
-        if (hecLagMAT%num_lagrange > 0) then
-          write(1000+myrank,*) 'Btot(lag):',conMAT%NP*ndof+1,'-',conMAT%NP*ndof+hecLagMAT%num_lagrange
-          write(1000+myrank,*) Btot(conMAT%NP*ndof+1:conMAT%NP*ndof+hecLagMAT%num_lagrange)
-        endif
-        if (n_slave > 0) then
-          write(1000+myrank,*) 'Btot(slave):',slaves(:)
-          write(1000+myrank,*) Btot(slaves(:))
-        endif
+    allocate(Btot(hecMAT%NP*ndof+hecLagMAT%num_lagrange))
+    call assemble_b_paracon(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, Btot)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble conMAT%B done', hecmw_wtime()-t1
+    if (DEBUG >= 3) then
+      write(1000+myrank,*) 'RHS(conMAT assembled)--------------------------------------------------'
+      write(1000+myrank,*) 'size of Btot',size(Btot)
+      write(1000+myrank,*) 'Btot: 1-',conMAT%N*ndof
+      write(1000+myrank,*) Btot(1:conMAT%N*ndof)
+      if (hecLagMAT%num_lagrange > 0) then
+        write(1000+myrank,*) 'Btot(lag):',conMAT%NP*ndof+1,'-',conMAT%NP*ndof+hecLagMAT%num_lagrange
+        write(1000+myrank,*) Btot(conMAT%NP*ndof+1:conMAT%NP*ndof+hecLagMAT%num_lagrange)
+      endif
+      if (n_slave > 0) then
+        write(1000+myrank,*) 'Btot(slave):',slaves(:)
+        write(1000+myrank,*) Btot(slaves(:))
+      endif
+    endif
+
+    do i=1,hecMAT%N*ndof
+      Btot(i)=Btot(i)+hecMAT%B(i)
+    enddo
+    ! assembled RHS
+    if (DEBUG >= 3) then
+      write(1000+myrank,*) 'RHS(total)-------------------------------------------------------------'
+      write(1000+myrank,*) 'size of Btot',size(Btot)
+      write(1000+myrank,*) 'Btot: 1-',conMAT%N*ndof
+      write(1000+myrank,*) Btot(1:conMAT%N*ndof)
+      if (hecLagMAT%num_lagrange > 0) then
+        write(1000+myrank,*) 'Btot(lag):',conMAT%NP*ndof+1,'-',conMAT%NP*ndof+hecLagMAT%num_lagrange
+        write(1000+myrank,*) Btot(conMAT%NP*ndof+1:conMAT%NP*ndof+hecLagMAT%num_lagrange)
+      endif
+      if (n_slave > 0) then
+        write(1000+myrank,*) 'Btot(slave):',slaves(:)
+        write(1000+myrank,*) Btot(slaves(:))
       endif
     endif
 
     allocate(hecTKT%B(hecTKT%NP*ndof + hecLagMAT%num_lagrange))
     allocate(hecTKT%X(hecTKT%NP*ndof + hecLagMAT%num_lagrange))
-    if (fg_paracon) then
-      do i=1, hecTKT%N*ndof
-        hecTKT%B(i) = Btot(i)
-      enddo
-    else
-      do i=1, hecTKT%N*ndof
-        hecTKT%B(i) = hecMAT%B(i)
-      enddo
-    endif
+    do i=1, hecTKT%N*ndof
+      hecTKT%B(i) = Btot(i)
+    enddo
     do ilag=1, hecLagMAT%num_lagrange
       hecTKT%B(hecTKT%NP*ndof + ilag) = hecMAT%B(hecMAT%NP*ndof + ilag)
     enddo
@@ -391,13 +357,8 @@ contains
     enddo
 
     ! make new RHS
-    if (fg_paracon) then
-      call make_new_b_paracon(hecMESH, hecMAT, conMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
-           iwS, wSL, hecLagMAT%num_lagrange, conCOMM, hecTKT%B)
-    else
-      call make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, &
-           hecLagMAT%num_lagrange, hecTKT%B)
-    endif
+    call make_new_b_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
+        iwS, wSL, hecLagMAT%num_lagrange, conCOMM, hecTKT%B)
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: converted RHS', hecmw_wtime()-t1
     if (DEBUG >= 3) then
       write(1000+myrank,*) 'RHS(converted)---------------------------------------------------------'
@@ -425,25 +386,16 @@ contains
     hecMAT%Rarray=hecTKT%Rarray
 
     ! calc u_s
-    if (fg_paracon) then
-      call comp_x_slave_paracon(hecMESH, hecMAT, Btot, hecMESHtmp, hecTKT, BTmat, &
-           hecLagMAT%num_lagrange, iwS, wSL, conCOMM, n_slave, slaves)
-    else
-      call hecmw_localmat_mulvec(BT_all, hecTKT%X, hecMAT%X) !!!<== maybe, BT_all should be BTmat ???
-      call subst_Blag(hecMAT, iwS, wSL, hecLagMAT%num_lagrange)
-    endif
+    call comp_x_slave_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BTmat, &
+        hecLagMAT%num_lagrange, iwS, wSL, conCOMM, n_slave, slaves)
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: recovered slave disp', hecmw_wtime()-t1
 
     ! calc lambda
-    if (fg_paracon) then
-      if (.true.) then
-        call comp_lag_paracon(hecMESH, hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
-            n_slave, slaves, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
-      else
-        call comp_lag_paracon2(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
-      endif
+    if (.true.) then
+      call comp_lag_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
+          n_slave, slaves, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
     else
-      call comp_lag(hecMAT, iwS, wSU, hecLagMAT%num_lagrange)
+      call comp_lag_paracon2(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
     endif
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: calculated lag', hecmw_wtime()-t1
 
@@ -467,7 +419,7 @@ contains
     endif
 
     ! check solution in the original system
-    if (fg_paracon .and. DEBUG >= 2)  then
+    if (DEBUG >= 2)  then
       if (.true.) then
         call check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
             conCOMM, n_slave, slaves)
@@ -481,31 +433,22 @@ contains
     call hecmw_localmat_free(BT_all)
     call hecmw_localmat_free(BTtmat)
     call hecmw_mat_finalize(hecTKT)
-    if (fg_paracon) then
-      call hecmw_localmat_free(BKmat)
-      deallocate(BKmat)
-      call hecmw_contact_comm_finalize(conCOMM)
-      call free_mesh(hecMESHtmp, fg_paracon)
-      deallocate(hecMESHtmp)
-    else
-      if (hecMESH%n_neighbor_pe > 0) then
-        call free_mesh(hecMESHtmp)
-        deallocate(hecMESHtmp)
-        deallocate(BT_all)
-      endif
-    endif
+    call hecmw_localmat_free(BKmat)
+    deallocate(BKmat)
+    call hecmw_contact_comm_finalize(conCOMM)
+    call free_mesh(hecMESHtmp)
+    deallocate(hecMESHtmp)
     deallocate(iw2, iwS)
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate end', hecmw_wtime()-t1
   end subroutine solve_eliminate
 
-  subroutine choose_slaves(hecMAT, hecLagMAT, iw2, iwS, wSL, wSU, fg_paracon)
+  subroutine choose_slaves(hecMAT, hecLagMAT, iw2, iwS, wSL, wSU)
     implicit none
     type (hecmwST_matrix    ), intent(in) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer, intent(out) :: iw2(:), iwS(:)
     real(kind=kreal), intent(out) :: wSL(:)
     real(kind=kreal), intent(out) :: wSU(:)
-    logical, intent(in) :: fg_paracon
     integer :: ndof, n, i, j, idof, jdof, l, ls, le, idx, imax, iwmin
     real(kind=kreal) :: val, vmax
     integer, allocatable :: iw1L(:), iw1U(:)
@@ -521,11 +464,7 @@ contains
     ndof=hecMAT%NDOF
     iwS=0
 
-    if (fg_paracon) then
-      n = hecMAT%NP
-    else
-      n = hecMAT%N
-    endif
+    n = hecMAT%NP
 
     allocate(iw1L(n*ndof))
     allocate(iw1U(n*ndof))
@@ -642,31 +581,22 @@ contains
     !write(0,*) wSU
   end subroutine make_wSU
 
-  subroutine make_BTmat(hecMAT, hecLagMAT, iw2, wSL, BTmat, fg_paracon)
+  subroutine make_BTmat(hecMAT, hecLagMAT, iw2, wSL, BTmat)
     implicit none
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer, intent(in) :: iw2(:)
     real(kind=kreal), intent(in) :: wSL(:)
     type (hecmwST_local_matrix), intent(out) :: BTmat
-    logical, intent(in) :: fg_paracon
     type (hecmwST_local_matrix) :: Tmat
     integer :: ndof, n, i, nnz, l, js, je, j, k, jdof, kk, jj
     real(kind=kreal) :: factor
 
     ndof=hecMAT%NDOF
-    if (fg_paracon) then
-      n=hecMAT%NP
-    else
-      n=hecMAT%N
-    endif
+    n=hecMAT%NP
     Tmat%nr=n*ndof
     Tmat%nc=Tmat%nr
-    if (fg_paracon) then
-      Tmat%nnz=hecLagMAT%numL_lagrange*ndof-hecLagMAT%num_lagrange
-    else
-      Tmat%nnz=Tmat%nr+hecLagMAT%numL_lagrange*ndof-2*hecLagMAT%num_lagrange
-    endif
+    Tmat%nnz=hecLagMAT%numL_lagrange*ndof-hecLagMAT%num_lagrange
     Tmat%ndof=1
 
     allocate(Tmat%index(0:Tmat%nr))
@@ -677,11 +607,7 @@ contains
       if (iw2(i) > 0) then
         nnz=ndof*(hecLagMAT%indexL_lagrange(iw2(i))-hecLagMAT%indexL_lagrange(iw2(i)-1))-1
       else
-        if (fg_paracon) then
-          nnz = 0
-        else
-          nnz=1
-        endif
+        nnz = 0
       endif
       Tmat%index(i)=Tmat%index(i-1)+nnz
     enddo
@@ -708,12 +634,6 @@ contains
             l=l+1
           enddo
         enddo
-      else
-        if (.not. fg_paracon) then
-          Tmat%item(l)=i
-          Tmat%A(l)=1.0d0
-          l=l+1
-        endif
       endif
       if (l /= Tmat%index(i)+1) then
         write(0,*) l, Tmat%index(i)+1
@@ -726,30 +646,21 @@ contains
     call hecmw_localmat_free(Tmat)
   end subroutine make_BTmat
 
-  subroutine make_BTtmat(hecMAT, hecLagMAT, iw2, iwS, wSU, BTtmat, fg_paracon)
+  subroutine make_BTtmat(hecMAT, hecLagMAT, iw2, iwS, wSU, BTtmat)
     implicit none
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer, intent(in) :: iw2(:), iwS(:)
     real(kind=kreal), intent(in) :: wSU(:)
     type (hecmwST_local_matrix), intent(out) :: BTtmat
-    logical, intent(in) :: fg_paracon
     type (hecmwST_local_matrix) :: Ttmat
     integer :: ndof, n, i, nnz, l, js, je, j, k, idof, idx
 
     ndof=hecMAT%NDOF
-    if (fg_paracon) then
-      n=hecMAT%NP
-    else
-      n=hecMAT%N
-    endif
+    n=hecMAT%NP
     Ttmat%nr=n*ndof
     Ttmat%nc=Ttmat%nr
-    if (fg_paracon) then
-      Ttmat%nnz=hecLagMAT%numU_lagrange*ndof-hecLagMAT%num_lagrange
-    else
-      Ttmat%nnz=Ttmat%nr+hecLagMAT%numU_lagrange*ndof-2*hecLagMAT%num_lagrange
-    endif
+    Ttmat%nnz=hecLagMAT%numU_lagrange*ndof-hecLagMAT%num_lagrange
     Ttmat%ndof=1
 
     allocate(Ttmat%index(0:Ttmat%nr))
@@ -761,17 +672,9 @@ contains
         idx=(i-1)*ndof+idof
         if (iw2(idx) <= 0) then
           if (hecLagMAT%num_lagrange == 0) then
-            if (fg_paracon) then
-              nnz=0
-            else
-              nnz=1
-            endif
+            nnz=0
           else
-            if (fg_paracon) then
-              nnz=hecLagMAT%indexU_lagrange(i)-hecLagMAT%indexU_lagrange(i-1)
-            else
-              nnz=hecLagMAT%indexU_lagrange(i)-hecLagMAT%indexU_lagrange(i-1)+1
-            endif
+            nnz=hecLagMAT%indexU_lagrange(i)-hecLagMAT%indexU_lagrange(i-1)
           endif
         else
           nnz=0
@@ -790,12 +693,6 @@ contains
         idx=(i-1)*ndof+idof
         l=Ttmat%index(idx-1)+1
         if (iw2(idx) <= 0) then
-          if (.not. fg_paracon) then
-            ! one on diagonal
-            Ttmat%item(l)=idx
-            Ttmat%A(l)=1.0d0
-            l=l+1
-          endif
           if (hecLagMAT%num_lagrange > 0) then
             ! offdiagonal
             js=hecLagMAT%indexU_lagrange(i-1)+1
@@ -886,49 +783,11 @@ contains
     if (DEBUG >= 2) write(0,*) '  DEBUG2: contact_dofs',contact_dofs(:)
   end subroutine make_contact_dof_list
 
-  subroutine make_new_b(hecMESH, hecMAT, BTtmat, iwS, wSL, num_lagrange, Bnew)
-    use hecmw_solver_las
-
-    implicit none
-    type(hecmwST_local_mesh), intent(in) :: hecMESH
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    type(hecmwST_local_matrix), intent(in) :: BTtmat
-    integer(kind=kint), intent(in) :: iwS(:)
-    real(kind=kreal), intent(in) :: wSL(:)
-    integer(kind=kint), intent(in) :: num_lagrange
-    real(kind=kreal), intent(out) :: Bnew(:)
-    real(kind=kreal), allocatable :: Btmp(:)
-    integer(kind=kint) :: npndof, nndof, i
-
-    npndof=hecMAT%NP*hecMAT%NDOF
-    nndof=hecMAT%N*hecMAT%NDOF
-
-    allocate(Btmp(npndof))
-
-    !!! BTtmat*(B+K*(-Bs^-1)*Blag)
-
-    !B2=-Bs^-1*Blag
-    Bnew=0.d0
-    do i=1,num_lagrange
-      Bnew(iwS(i))=wSL(i)*hecMAT%B(npndof+i)
-    enddo
-    !Btmp=B+K*B2
-    call hecmw_matvec(hecMESH, hecMAT, Bnew, Btmp)
-    do i=1,nndof
-      Btmp(i)=hecMAT%B(i)+Btmp(i)
-    enddo
-    !B2=BTtmat*Btmp
-    call hecmw_localmat_mulvec(BTtmat, Btmp, Bnew)
-
-    deallocate(Btmp)
-  end subroutine make_new_b
-
-  subroutine assemble_b_paracon(hecMESH, hecMAT, conMAT, num_lagrange, conCOMM, Btot)
+  subroutine assemble_b_paracon(hecMESH, hecMAT, conMAT, num_lagrange, Btot)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in) :: hecMAT, conMAT
     integer(kind=kint), intent(in) :: num_lagrange
-    type (hecmwST_contact_comm), intent(in) :: conCOMM
     real(kind=kreal), intent(out) :: Btot(:)
     integer(kind=kint) :: ndof, nndof, npndof, i
     ndof = hecMAT%NDOF
@@ -937,15 +796,14 @@ contains
     do i=1,npndof+num_lagrange
       Btot(i) = conMAT%B(i)
     enddo
-    !call hecmw_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
     call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, hecMAT%NDOF)
   end subroutine assemble_b_paracon
 
-  subroutine make_new_b_paracon(hecMESH, hecMAT, conMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
+  subroutine make_new_b_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
        iwS, wSL, num_lagrange, conCOMM, Bnew)
     implicit none
-    type(hecmwST_local_mesh), intent(in) :: hecMESH, hecMESHtmp
-    type(hecmwST_matrix), intent(in) :: hecMAT, conMAT, hecTKT
+    type(hecmwST_local_mesh), intent(in) :: hecMESHtmp
+    type(hecmwST_matrix), intent(in) :: hecMAT, hecTKT
     real(kind=kreal), intent(in) :: Btot(:)
     type(hecmwST_local_matrix), intent(in) :: BTtmat, BKmat
     integer(kind=kint), intent(in) :: iwS(:)
@@ -969,7 +827,6 @@ contains
     ! B2=-Bs^-1*Blag
     Bnew=0.d0
     do i=1,num_lagrange
-      !Bnew(iwS(i))=wSL(i)*conMAT%B(npndof+i)
       Bnew(iwS(i))=wSL(i)*Btot(npndof+i)
     enddo
     ! send external contact dof => recv internal contact dof
@@ -986,25 +843,10 @@ contains
     deallocate(Btmp)
   end subroutine make_new_b_paracon
 
-  subroutine subst_Blag(hecMAT, iwS, wSL, num_lagrange)
-    implicit none
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: iwS(:)
-    real(kind=kreal), intent(in) :: wSL(:)
-    integer(kind=kint), intent(in) :: num_lagrange
-    integer(kind=kint) :: npndof, i, ilag
-
-    npndof=hecMAT%NP*hecMAT%NDOF
-    do i=1,num_lagrange
-      ilag=iwS(i)
-      hecMAT%X(ilag)=hecMAT%X(ilag)-wSL(i)*hecMAT%B(npndof+i)
-    enddo
-  end subroutine subst_Blag
-
-  subroutine comp_x_slave_paracon(hecMESH, hecMAT, Btot, hecMESHtmp, hecTKT, BTmat, &
+  subroutine comp_x_slave_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BTmat, &
        num_lagrange, iwS, wSL, conCOMM, n_slave, slaves)
     implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH, hecMESHtmp
+    type (hecmwST_local_mesh), intent(in) :: hecMESHtmp
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_matrix), intent(in) :: hecTKT
     real(kind=kreal), intent(in) :: Btot(:)
@@ -1048,62 +890,10 @@ contains
     deallocate(Xtmp)
   end subroutine comp_x_slave_paracon
 
-  subroutine comp_lag(hecMAT, iwS, wSU, num_lagrange)
-    implicit none
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: iwS(:)
-    real(kind=kreal), intent(in) :: wSU(:)
-    integer(kind=kint), intent(in) :: num_lagrange
-    integer(kind=kint) :: ndof, ndof2, ilag, is, i, idof
-    integer(kind=kint) :: js, je, j, jj, ij0, j0, jdof
-    real(kind=kreal), pointer :: xlag(:)
-
-    ndof=hecMAT%ndof
-    ndof2=ndof*ndof
-
-    xlag=>hecMAT%X(hecMAT%NP*ndof+1:hecMAT%NP*ndof+num_lagrange)
-
-    do ilag=1,num_lagrange
-      is=iwS(ilag)
-      i=(is-1)/ndof+1
-      idof=mod(is-1, ndof)+1
-      xlag(ilag)=hecMAT%B(is)
-      !lower
-      js=hecMAT%indexL(i-1)+1
-      je=hecMAT%indexL(i)
-      do j=js,je
-        jj=hecMAT%itemL(j)
-        ij0=(j-1)*ndof2+(idof-1)*ndof
-        j0=(jj-1)*ndof
-        do jdof=1,ndof
-          xlag(ilag)=xlag(ilag)-hecMAT%AL(ij0+jdof)*hecMAT%X(j0+jdof)
-        enddo
-      enddo
-      !diag
-      ij0=(i-1)*ndof2+(idof-1)*ndof
-      j0=(i-1)*ndof
-      do jdof=1,ndof
-        xlag(ilag)=xlag(ilag)-hecMAT%D(ij0+jdof)*hecMAT%X(j0+jdof)
-      enddo
-      !upper
-      js=hecMAT%indexU(i-1)+1
-      je=hecMAT%indexU(i)
-      do j=js,je
-        jj=hecMAT%itemU(j)
-        ij0=(j-1)*ndof2+(idof-1)*ndof
-        j0=(jj-1)*ndof
-        do jdof=1,ndof
-          xlag(ilag)=xlag(ilag)-hecMAT%AU(ij0+jdof)*hecMAT%X(j0+jdof)
-        enddo
-      enddo
-      xlag(ilag)=-wSU(ilag)*xlag(ilag)
-    enddo
-  end subroutine comp_lag
-
-  subroutine comp_lag_paracon(hecMESH, hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
+  subroutine comp_lag_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
        n_slave, slaves, num_lagrange, iwS, wSU, conCOMM)
     implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH, hecMESHtmp
+    type (hecmwST_local_mesh), intent(in) :: hecMESHtmp
     type (hecmwST_matrix), intent(inout) :: hecMAT, hecTKT
     real(kind=kreal), intent(in) :: Btot(:)
     type (hecmwST_local_matrix), intent(in) :: BKmat
@@ -1137,8 +927,6 @@ contains
     enddo
     !
     ! 3. send internal contact dof => recv external contact dof
-    !call hecmw_update_3_R(hecMESH, Btmp, hecMAT%NP)
-    ! Btmp(nndof+1:npndof) = 0.0d0
     call hecmw_contact_comm_bcast_r(conCOMM, Btmp)
     !
     ! 4. {lag} = - [-Bs^-T] {Btmp_s}
@@ -1634,279 +1422,10 @@ contains
     endif
   end subroutine place_num_on_diag_of_marked_dof
 
-  subroutine update_comm_table(hecMESH, BTmat, hecMESHtmp, BT_all)
-    implicit none
-    type (hecmwST_local_mesh), intent(in), target :: hecMESH
-    type(hecmwST_local_matrix), intent(in) :: BTmat
-    type(hecmwST_local_mesh), intent(inout), target :: hecMESHtmp
-    type (hecmwST_local_matrix), intent(out) :: BT_all
-    type(hecmwST_local_matrix), allocatable :: BT_exp(:)
-    integer(kind=kint) :: n_send, idom, irank, n_curexp, n_oldexp, n_orgexp
-    integer(kind=kint) :: idx_0, idx_n, k, knod, n_newexp, j
-    integer(kind=kint), pointer :: cur_export(:), org_export(:)
-    integer(kind=kint), pointer :: old_export(:)
-    integer(kind=kint), allocatable, target :: old_export_item(:)
-    integer(kind=kint) :: sendbuf(2), recvbuf(2)
-    integer(kind=kint) :: n_oldimp, n_newimp, n_orgimp, i0, n_curimp
-    integer(kind=kint), allocatable :: old_import(:)
-    integer(kind=kint), pointer :: org_import(:), cur_import(:)
-    integer(kind=kint) :: tag
-    type (hecmwST_local_matrix) :: BT_imp
-    integer(kind=kint),allocatable :: nnz_imp(:)
-    integer(kind=kint), allocatable :: index_imp(:), item_imp(:)
-    real(kind=kreal), allocatable :: val_imp(:)
-    integer(kind=kint), allocatable :: requests(:)
-    integer(kind=kint), allocatable :: statuses(:,:)
-    integer(kind=kint) :: nr_imp, jj, ndof2, idx_0_tmp, idx_n_tmp
-    integer(kind=kint) :: cnt, ks, ke, iimp, i, ii
-    !!! PREPARATION FOR COMM_TABLE UPDATE
-    call copy_mesh(hecMESH, hecMESHtmp)
-    allocate(BT_exp(hecMESH%n_neighbor_pe))
-    call extract_BT_exp(BTmat, hecMESH, BT_exp)
-
-    !!! UPDATE COMMUNICATION TABLE for Parallel Computation
-    allocate(statuses(HECMW_STATUS_SIZE,2*hecMESH%n_neighbor_pe))
-    allocate(requests(2*hecMESH%n_neighbor_pe))
-
-    allocate(old_export_item(hecMESH%export_index(hecMESH%n_neighbor_pe)))
-
-    n_send = 0
-    do idom = 1,hecMESH%n_neighbor_pe
-      irank = hecMESH%neighbor_pe(idom)
-      allocate(cur_export(BT_exp(idom)%nnz))
-      call extract_cols(BT_exp(idom), cur_export, n_curexp)
-      if (DEBUG >= 1) write(0,*) 'DEBUG: extract_cols done'
-      n_oldexp = 0
-      idx_0 = hecMESH%export_index(idom-1)
-      idx_n = hecMESH%export_index(idom)
-      n_orgexp = idx_n - idx_0
-      org_export => hecMESH%export_item(idx_0+1:idx_n)
-      ! check location of old export nodes in original export list
-      old_export => old_export_item(idx_0+1:idx_n)
-      do k = 1,n_orgexp
-        knod = org_export(k)
-        if (.not. is_included(cur_export, n_curexp, knod)) then
-          n_oldexp = n_oldexp + 1
-          old_export(n_oldexp) = k
-        end if
-      end do
-      if (DEBUG >= 1) write(0,*) 'DEBUG: making old_export done'
-      ! gather new export nodes at the end of current export list
-      call reorder_current_export(cur_export, n_curexp, org_export, n_orgexp, n_newexp, hecMESH%nn_internal)
-      if (DEBUG >= 1) write(0,*) 'DEBUG: reorder_current_export done'
-      ! check consistency
-      if (n_curexp /= n_orgexp - n_oldexp + n_newexp) &
-        stop 'ERROR: unknown error(num of export nodes)' !!! ASSERTION
-      ! make item_exp from item of BT_exp by converting column id to place in cur_export
-      call convert_BT_exp_col_id(BT_exp(idom), cur_export, n_curexp)
-      if (DEBUG >= 1) write(0,*) 'DEBUG: convert_BT_expx_col_id done'
-      ! add current export list to commtable
-      call append_commtable(hecMESHtmp%n_neighbor_pe, hecMESHtmp%export_index, &
-        hecMESHtmp%export_item, idom, cur_export, n_curexp)
-      if (DEBUG >= 1) write(0,*) 'DEBUG: append_commtable (export) done'
-      deallocate(cur_export)
-      cur_export => hecMESHtmp%export_item(hecMESHtmp%export_index(idom-1)+1:hecMESHtmp%export_index(idom))
-      ! send current export info to neighbor pe
-      sendbuf(1) = n_oldexp
-      sendbuf(2) = n_newexp
-      tag = 1001
-      call HECMW_ISEND_INT(sendbuf, 2, irank, tag, &
-        hecMESH%MPI_COMM, requests(idom))
-      if (n_oldexp > 0) then
-        n_send = n_send + 1
-        tag = 1002
-        call HECMW_ISEND_INT(old_export, n_oldexp, irank, tag, &
-          hecMESH%MPI_COMM, requests(hecMESH%n_neighbor_pe+n_send))
-      end if
-    end do
-    if (DEBUG >= 1) write(0,*) 'DEBUG: isend n_oldexp, n_newexp, old_export done'
-    do idom = 1,hecMESH%n_neighbor_pe
-      irank = hecMESH%neighbor_pe(idom)
-      ! receive current import info from neighbor pe
-      tag = 1001
-      call HECMW_RECV_INT(recvbuf, 2, irank, tag, &
-        hecMESH%MPI_COMM, statuses(:,1))
-      n_oldimp = recvbuf(1)
-      n_newimp = recvbuf(2)
-      if (n_oldimp > 0) then
-        allocate(old_import(n_oldimp))
-        tag = 1002
-        call HECMW_RECV_INT(old_import, n_oldimp, irank, tag, &
-          hecMESH%MPI_COMM, statuses(:,1))
-      end if
-      !
-      idx_0 = hecMESH%import_index(idom-1)
-      idx_n = hecMESH%import_index(idom)
-      n_orgimp = idx_n - idx_0
-      org_import => hecMESH%import_item(idx_0+1:idx_n)
-      call append_nodes(hecMESHtmp, n_newimp, i0)
-      if (DEBUG >= 1) write(0,*) 'DEBUG: append_nodes done'
-      n_curimp = n_orgimp - n_oldimp + n_newimp
-      allocate(cur_import(n_curimp))
-      call make_cur_import(org_import, n_orgimp, old_import, n_oldimp, &
-        n_newimp, i0, cur_import)
-      if (n_oldimp > 0) deallocate(old_import)
-      if (DEBUG >= 1) write(0,*) 'DEBUG: make_cur_import done'
-      call append_commtable(hecMESHtmp%n_neighbor_pe, hecMESHtmp%import_index, &
-        hecMESHtmp%import_item, idom, cur_import, n_curimp)
-      if (DEBUG >= 1) write(0,*) 'DEBUG: append_commtable (import) done'
-      deallocate(cur_import)
-      !cur_import => hecMESHtmp%import_item(hecMESHtmp%import_index(idom-1)+1:hecMESHtmp%import_index(idom))
-    end do
-    if (DEBUG >= 1) write(0,*) 'DEBUG: recv n_oldimp, n_newimp, old_import done'
-    call HECMW_Waitall(hecMESH%n_neighbor_pe + n_send, requests, statuses)
-    deallocate(old_export_item)
-
-    !!! Send BT_exp & Recv BT_imp; nnz and index
-    do idom = 1,hecMESH%n_neighbor_pe
-      irank = hecMESH%neighbor_pe(idom)
-      sendbuf(1) = BT_exp(idom)%nr
-      sendbuf(2) = BT_exp(idom)%nnz
-      tag = 1003
-      call HECMW_ISEND_INT(sendbuf, 2, irank, tag, &
-        hecMESH%MPI_COMM, requests(2*idom-1))
-      tag = 1004
-      call HECMW_ISEND_INT(BT_exp(idom)%index(0:BT_exp(idom)%nr), BT_exp(idom)%nr+1, &
-        irank, tag, hecMESH%MPI_COMM, requests(2*idom))
-    end do
-    if (DEBUG >= 1) write(0,*) 'DEBUG: isend BT_exp (nnz and index) done'
-    BT_imp%nr = 0
-    BT_imp%nc = hecMESHtmp%n_node - hecMESHtmp%nn_internal
-    BT_imp%nnz = 0
-    allocate(BT_imp%index(0:hecMESH%import_index(hecMESH%n_neighbor_pe)))
-    BT_imp%index(0) = 0
-    allocate(nnz_imp(hecMESH%n_neighbor_pe))
-    do idom = 1,hecMESH%n_neighbor_pe
-      irank = hecMESH%neighbor_pe(idom)
-      tag = 1003
-      call HECMW_RECV_INT(recvbuf, 2, irank, tag, &
-        hecMESH%MPI_COMM, statuses(:,1))
-      nr_imp = recvbuf(1)
-      nnz_imp(idom) = recvbuf(2)
-      idx_0 = hecMESH%import_index(idom-1)
-      idx_n = hecMESH%import_index(idom)
-      if (nr_imp /= idx_n - idx_0) &
-        stop 'ERROR: num of rows of BT_imp incorrect' !!! ASSERTION
-      BT_imp%nr = BT_imp%nr + nr_imp
-      BT_imp%nnz = BT_imp%nnz + nnz_imp(idom)
-      allocate(index_imp(0:nr_imp))
-      tag = 1004
-      call HECMW_RECV_INT(index_imp(0), nr_imp+1, irank, tag, &
-        hecMESH%MPI_COMM, statuses(:,1))
-      if (index_imp(nr_imp) /= nnz_imp(idom)) then !!! ASSERTION
-        if (DEBUG >= 1) write(0,*) 'ERROR: num of nonzero of BT_imp incorrect'
-        if (DEBUG >= 1) write(0,*) 'nr_imp, index_imp(nr_imp), nnz_imp', &
-          nr_imp, index_imp(nr_imp), nnz_imp(idom)
-        stop
-      endif
-      do j = 1, nr_imp
-        jj = hecMESH%import_item(idx_0+j) - hecMESH%nn_internal
-        BT_imp%index(jj) = index_imp(j) - index_imp(j-1)
-      end do
-      deallocate(index_imp)
-    end do
-    if (DEBUG >= 1) write(0,*) 'DEBUG: recv BT_imp (nnz and index) done'
-    do j = 1, hecMESH%import_index(hecMESH%n_neighbor_pe)
-      BT_imp%index(j) = BT_imp%index(j-1) + BT_imp%index(j)
-    end do
-    if (BT_imp%index(hecMESH%import_index(hecMESH%n_neighbor_pe)) /= BT_imp%nnz) &
-      stop 'ERROR: total num of nonzero of BT_imp incorrect' !!! ASSERTION
-    ndof2 = BTmat%ndof ** 2
-    allocate(BT_imp%item(BT_imp%nnz),BT_imp%A(BT_imp%nnz * ndof2))
-    call HECMW_Waitall(hecMESH%n_neighbor_pe * 2, requests, statuses)
-
-    !!! Send BT_exp & Recv BT_imp; item and val
-    do idom = 1,hecMESH%n_neighbor_pe
-      irank = hecMESH%neighbor_pe(idom)
-      tag = 1005
-      call HECMW_Isend_INT(BT_exp(idom)%item, BT_exp(idom)%nnz, &
-        irank, tag, hecMESH%MPI_COMM, requests(2*idom-1))
-      tag = 1006
-      call HECMW_Isend_R(BT_exp(idom)%A, BT_exp(idom)%nnz * ndof2, &
-        irank, tag, hecMESH%MPI_COMM, requests(2*idom))
-    end do
-    if (DEBUG >= 1) write(0,*) 'DEBUG: isend BT_exp (item and val) done'
-    do idom = 1,hecMESH%n_neighbor_pe
-      irank = hecMESH%neighbor_pe(idom)
-      idx_0 = hecMESH%import_index(idom-1)
-      idx_n = hecMESH%import_index(idom)
-      allocate(item_imp(nnz_imp(idom)))
-      tag = 1005
-      call HECMW_Recv_INT(item_imp, nnz_imp(idom), &
-        irank, tag, hecMESH%MPI_COMM, statuses(:,1))
-      allocate(val_imp(nnz_imp(idom) * ndof2))
-      tag = 1006
-      call HECMW_Recv_R(val_imp, nnz_imp(idom) * ndof2, &
-        irank, tag, hecMESH%MPI_COMM, statuses(:,1))
-
-      ! convert column id of item_imp() to local id referring cur_import(:)
-      idx_0_tmp = hecMESHtmp%import_index(idom-1)
-      idx_n_tmp = hecMESHtmp%import_index(idom)
-      cur_import => hecMESHtmp%import_item(idx_0_tmp+1:idx_n_tmp)
-      n_curimp = idx_n_tmp - idx_0_tmp
-      n_orgimp = idx_n - idx_0
-      cnt = 0
-      do j = 1, n_orgimp
-        jj = hecMESH%import_item(idx_0+j) - hecMESH%nn_internal
-        ks = BT_imp%index(jj-1)
-        ke = BT_imp%index(jj)
-        do k = ks+1, ke
-          cnt = cnt + 1
-          iimp = item_imp(cnt)
-          if (iimp <= 0 .or. n_curimp < iimp) &
-            stop 'ERROR: received column id out of range' !!! ASSERTION
-          BT_imp%item(k) = cur_import(iimp)
-          BT_imp%A((k-1)*ndof2+1:k*ndof2) = val_imp((cnt-1)*ndof2+1:cnt*ndof2)
-        end do
-      end do
-      deallocate(item_imp, val_imp)
-    end do
-    deallocate(nnz_imp)
-    if (DEBUG >= 1) write(0,*) 'DEBUG: recv BT_imp (item and val) done'
-    call HECMW_Waitall(hecMESH%n_neighbor_pe * 2, requests, statuses)
-
-    deallocate(statuses)
-    deallocate(requests)
-
-    ! make BT_all by combining BTmat and BT_exp
-    BT_all%nr = BTmat%nr + BT_imp%nr
-    BT_all%nc = BTmat%nc + BT_imp%nc
-    BT_all%nnz = BTmat%nnz + BT_imp%nnz
-    BT_all%ndof = BTmat%ndof
-    allocate(BT_all%index(0:BT_all%nr))
-    allocate(BT_all%item(BT_all%nnz))
-    allocate(BT_all%A(BT_all%nnz * ndof2))
-    BT_all%index(0) = 0
-    do i = 1, BTmat%nr
-      BT_all%index(i) = BTmat%index(i)
-    end do
-    do i = 1, BT_imp%nr
-      BT_all%index(BTmat%nr+i) = BT_all%index(BTmat%nr+i-1) + &
-        BT_imp%index(i) - BT_imp%index(i-1)
-    end do
-    do i = 1, BTmat%nnz
-      BT_all%item(i) = BTmat%item(i)
-      BT_all%A((i-1)*ndof2+1:i*ndof2) = BTmat%A((i-1)*ndof2+1:i*ndof2)
-    end do
-    do i = 1, BT_imp%nnz
-      ii = BTmat%nnz + i
-      BT_all%item(ii) = BT_imp%item(i)
-      BT_all%A((ii-1)*ndof2+1:ii*ndof2) = BT_imp%A((i-1)*ndof2+1:i*ndof2)
-    end do
-    if (DEBUG >= 1) write(0,*) 'DEBUG: making BT_all done'
-
-    ! free BT_exp(:)
-    do idom=1,hecMESH%n_neighbor_pe
-      call hecmw_localmat_free(BT_exp(idom))
-    end do
-    deallocate(BT_exp)
-  end subroutine update_comm_table
-
-  subroutine copy_mesh(src, dst, fg_paracon)
+  subroutine copy_mesh(src, dst)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: src
     type (hecmwST_local_mesh), intent(out) :: dst
-    logical, intent(in), optional :: fg_paracon
     dst%zero          = src%zero
     dst%MPI_COMM      = src%MPI_COMM
     dst%PETOT         = src%PETOT
@@ -1925,21 +1444,14 @@ contains
       dst%neighbor_pe(:) = src%neighbor_pe(:)
       allocate(dst%import_index(0:dst%n_neighbor_pe))
       allocate(dst%export_index(0:dst%n_neighbor_pe))
-      if (present(fg_paracon) .and. fg_paracon) then
-        dst%import_index(:)= src%import_index(:)
-        dst%export_index(:)= src%export_index(:)
-        allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
-        dst%import_item(1:dst%import_index(dst%n_neighbor_pe)) = src%import_item(1:dst%import_index(dst%n_neighbor_pe))
-        allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
-        dst%export_item(1:dst%export_index(dst%n_neighbor_pe)) = src%export_item(1:dst%export_index(dst%n_neighbor_pe))
-        allocate(dst%global_node_ID(dst%n_node))
-        dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
-      else
-        dst%import_index(:)= 0
-        dst%export_index(:)= 0
-        dst%import_item => null()
-        dst%export_item => null()
-      endif
+      dst%import_index(:)= src%import_index(:)
+      dst%export_index(:)= src%export_index(:)
+      allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
+      dst%import_item(1:dst%import_index(dst%n_neighbor_pe)) = src%import_item(1:dst%import_index(dst%n_neighbor_pe))
+      allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
+      dst%export_item(1:dst%export_index(dst%n_neighbor_pe)) = src%export_item(1:dst%export_index(dst%n_neighbor_pe))
+      allocate(dst%global_node_ID(dst%n_node))
+      dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
     else
       dst%neighbor_pe => null()
       dst%import_index => null()
@@ -1958,203 +1470,21 @@ contains
     dst%node => src%node
   end subroutine copy_mesh
 
-  subroutine free_mesh(hecMESH, fg_paracon)
+  subroutine free_mesh(hecMESH)
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
-    logical, intent(in), optional :: fg_paracon
     if (hecMESH%n_neighbor_pe > 0) then
       deallocate(hecMESH%neighbor_pe)
       deallocate(hecMESH%import_index)
       deallocate(hecMESH%export_index)
-      if (present(fg_paracon) .and. fg_paracon) then
-        deallocate(hecMESH%import_item)
-        deallocate(hecMESH%export_item)
-        deallocate(hecMESH%global_node_ID)
-      else
-        if (associated(hecMESH%import_item)) deallocate(hecMESH%import_item)
-        if (associated(hecMESH%export_item)) deallocate(hecMESH%export_item)
-      endif
+      deallocate(hecMESH%import_item)
+      deallocate(hecMESH%export_item)
+      deallocate(hecMESH%global_node_ID)
     endif
     deallocate(hecMESH%node_ID)
     deallocate(hecMESH%elem_type_item)
     !hecMESH%node => null()
   end subroutine free_mesh
-
-  subroutine extract_BT_exp(BTmat, hecMESH, BT_exp)
-    implicit none
-    type(hecmwST_local_matrix), intent(in) :: BTmat
-    type(hecmwST_local_mesh), intent(in) :: hecMESH
-    type(hecmwST_local_matrix), intent(out) :: BT_exp(:)
-    integer(kind=kint) :: i, j, k, n, idx_0, idx_n, jrow, ndof2
-    ndof2 = BTmat%ndof ** 2
-    do i = 1,hecMESH%n_neighbor_pe
-      idx_0 = hecMESH%export_index(i-1)
-      idx_n = hecMESH%export_index(i)
-      BT_exp(i)%nr = idx_n - idx_0
-      BT_exp(i)%nc = BTmat%nc
-      BT_exp(i)%nnz = 0
-      BT_exp(i)%ndof = BTmat%ndof
-      allocate(BT_exp(i)%index(0:BT_exp(i)%nr))
-      BT_exp(i)%index(0) = 0
-      do j = 1,BT_exp(i)%nr
-        jrow = hecMESH%export_item(j + idx_0)
-        n = BTmat%index(jrow) - BTmat%index(jrow-1)
-        BT_exp(i)%nnz = BT_exp(i)%nnz + n
-        BT_exp(i)%index(j) = BT_exp(i)%index(j-1) + n
-      end do
-      allocate(BT_exp(i)%item(BT_exp(i)%nnz))
-      allocate(BT_exp(i)%A(BT_exp(i)%nnz * ndof2))
-      n = 0
-      do j = 1,BT_exp(i)%nr
-        jrow = hecMESH%export_item(j + idx_0)
-        do k = BTmat%index(jrow-1)+1,BTmat%index(jrow)
-          n = n + 1
-          !write(0,*) j, jrow, k, n
-          BT_exp(i)%item(n) = BTmat%item(k)
-          BT_exp(i)%A(ndof2*(n-1)+1:ndof2*n) = BTmat%A(ndof2*(k-1)+1:ndof2*k)
-        end do
-      end do
-    end do
-  end subroutine extract_BT_exp
-
-  subroutine extract_cols(BT_exp, cur_export, n_curexp)
-    implicit none
-    type(hecmwST_local_matrix), intent(in) :: BT_exp
-    integer(kind=kint), intent(out) :: cur_export(:)
-    integer(kind=kint), intent(out) :: n_curexp
-    ! write(0,*) 'BT_exp%item(1:',BT_exp%nnz,')'
-    ! write(0,*) BT_exp%item(1:BT_exp%nnz)
-    cur_export(1:BT_exp%nnz) = BT_exp%item(1:BT_exp%nnz)
-    call quick_sort(cur_export, 1, BT_exp%nnz)
-    call unique(cur_export, BT_exp%nnz, n_curexp)
-    ! write(0,*) 'cur_export(1:',n_curexp,')'
-    ! write(0,*) cur_export(1:n_curexp)
-  end subroutine extract_cols
-
-  subroutine reorder_current_export(cur_export, n_curexp, org_export, n_orgexp, n_newexp, nn_internal)
-    implicit none
-    integer(kind=kint), intent(inout) :: cur_export(:)
-    integer(kind=kint), intent(in) :: n_curexp
-    integer(kind=kint), intent(in) :: org_export(:)
-    integer(kind=kint), intent(in) :: n_orgexp
-    integer(kind=kint), intent(out) :: n_newexp
-    integer(kind=kint), intent(in) :: nn_internal
-    integer(kind=kint), allocatable :: new_export(:)
-    integer(kind=kint) :: j, jnod
-    n_newexp = 0
-    allocate(new_export(n_curexp))
-    do j = 1,n_curexp
-      jnod = cur_export(j)
-      if (jnod > nn_internal) &
-        stop 'ERROR: unknown error (jnod)'  !!! ASSERTION
-      if (.not. is_included(org_export, n_orgexp, jnod)) then
-        n_newexp = n_newexp + 1
-        new_export(n_newexp) = jnod
-        !write(0,*) 'found new export', jnod
-      else if (n_newexp > 0) then
-        cur_export(j - n_newexp) = jnod
-      end if
-    end do
-    do j = 1,n_newexp
-      cur_export(n_curexp - n_newexp + j) = new_export(j)
-    end do
-    deallocate(new_export)
-    ! write(0,*) 'reordered cur_export(1:',n_curexp,')'
-    ! write(0,*) cur_export(1:n_curexp)
-  end subroutine reorder_current_export
-
-  subroutine convert_BT_exp_col_id(BT_exp, cur_export, n_curexp)
-    implicit none
-    type(hecmwST_local_matrix), intent(inout) :: BT_exp
-    integer(kind=kint), intent(in) :: cur_export(:)
-    integer(kind=kint), intent(in) :: n_curexp
-    integer(kind=kint) :: i, icol, j
-    logical :: found
-    ! make item_exp from item of BT_exp by converting column id to place in cur_export
-    do i = 1, BT_exp%nnz
-      icol = BT_exp%item(i)
-      found = .false.
-      do j = 1, n_curexp
-        if (icol == cur_export(j)) then
-          BT_exp%item(i) = j
-          found = .true.
-          exit
-        end if
-      end do
-      if (.not. found) then
-        write(0,*) icol
-        stop 'ERROR: unknown error (item not found in cur_export)' !!! ASSERTION
-      end if
-    end do
-  end subroutine convert_BT_exp_col_id
-
-  subroutine append_commtable(n, index, item, idom, cur, ncur)
-    implicit none
-    integer(kind=kint), intent(in) :: n, idom, ncur
-    integer(kind=kint), pointer :: index(:), item(:)
-    integer(kind=kint), pointer :: cur(:)
-    integer(kind=kint), allocatable :: tmp_index(:), tmp_item(:)
-    integer(kind=kint) :: norg, j
-    allocate(tmp_index(0:n))
-    tmp_index(:) = index(:)
-    norg = index(n)
-    allocate(tmp_item(norg))
-    if (norg > 0) then
-      tmp_item(:) = item(:)
-      if (associated(item)) deallocate(item)
-    end if
-    allocate(item(norg + ncur))
-    do j = idom,n
-      index(j) = index(j) + ncur
-    end do
-    do j = 1,tmp_index(idom)
-      item(j) = tmp_item(j)
-    end do
-    do j = 1,ncur
-      item(tmp_index(idom)+j) = cur(j)
-    end do
-    do j = tmp_index(idom)+1,tmp_index(n)
-      item(j+ncur) = tmp_item(j)
-    end do
-    deallocate(tmp_index, tmp_item)
-  end subroutine append_commtable
-
-  subroutine append_nodes(hecMESHtmp, n_newimp, i0)
-    implicit none
-    type(hecmwST_local_mesh), intent(inout) :: hecMESHtmp
-    integer(kind=kint), intent(in) :: n_newimp
-    integer(kind=kint), intent(out) :: i0
-    i0 = hecMESHtmp%n_node
-    hecMESHtmp%n_node = hecMESHtmp%n_node + n_newimp
-  end subroutine append_nodes
-
-  subroutine make_cur_import(org_import, n_orgimp, old_import, n_oldimp, &
-      n_newimp, i0, cur_import)
-    implicit none
-    integer(kind=kint), intent(in) :: org_import(:), old_import(:)
-    integer(kind=kint), intent(in) :: n_orgimp, n_oldimp, n_newimp, i0
-    integer(kind=kint), intent(out) :: cur_import(:)
-    ! integer(kind=kint), intent(out) :: n_curimp
-    integer(kind=kint) :: ndel, i, j
-    ndel = 0
-    i = 1
-    do while (i <= n_orgimp .and. ndel < n_oldimp)
-      if (org_import(i) == old_import(ndel+1)) then
-        ndel = ndel + 1
-      else
-        cur_import(i-ndel) = org_import(i)
-      endif
-      i = i + 1
-    enddo
-    if (ndel /= n_oldimp) stop 'ERROR: unknown error (ndel)' !!! ASSERTION
-    do j = i, n_orgimp
-      cur_import(j-ndel) = org_import(j)
-    enddo
-    i = n_orgimp - ndel
-    do j = 1, n_newimp
-      cur_import(i + j) = i0+j
-    end do
-  end subroutine make_cur_import
 
   recursive subroutine quick_sort(array, id1, id2)
     implicit none
@@ -2184,38 +1514,5 @@ contains
     if (right+1 < id2) call quick_sort(array, right+1, id2)
     return
   end subroutine quick_sort
-
-  subroutine unique(array, len, newlen)
-    implicit none
-    integer(kind=kint), intent(inout) :: array(:)
-    integer(kind=kint), intent(in) :: len
-    integer(kind=kint), intent(out) :: newlen
-    integer(kind=kint) :: i, ndup
-    ndup = 0
-    do i=2,len
-      if (array(i) == array(i - 1 - ndup)) then
-        ndup = ndup + 1
-      else if (ndup > 0) then
-        array(i - ndup) = array(i)
-      endif
-    end do
-    newlen = len - ndup
-  end subroutine unique
-
-  function is_included(array, len, ival)
-    implicit none
-    logical :: is_included
-    integer(kind=kint), intent(in) :: array(:)
-    integer(kind=kint), intent(in) :: len
-    integer(kind=kint), intent(in) :: ival
-    integer(kind=kint) :: i
-    is_included = .false.
-    do i=1,len
-      if (array(i) == ival) then
-        is_included = .true.
-        exit
-      end if
-    end do
-  end function is_included
 
 end module m_solve_LINEQ_iter_contact
