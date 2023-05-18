@@ -396,12 +396,8 @@ contains
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: recovered slave disp', hecmw_wtime()-t1
 
     ! calc lambda
-    if (.true.) then
-      call comp_lag_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
-          n_slave, slaves, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
-    else
-      call comp_lag_paracon2(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
-    endif
+    call comp_lag_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
+        n_slave, slaves, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: calculated lag', hecmw_wtime()-t1
 
     ! write(0,*) 'size of conMAT%X',size(conMAT%X)
@@ -425,13 +421,8 @@ contains
 
     ! check solution in the original system
     if (DEBUG >= 2)  then
-      if (.true.) then
-        call check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
-            conCOMM, n_slave, slaves)
-      else
-        call check_solution2(hecMESH, hecMAT, conMAT, hecLagMAT, n_contact_dof, contact_dofs, &
-            conCOMM, n_slave, slaves)
-      endif
+      call check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
+          conCOMM, n_slave, slaves)
     endif
 
     ! free matrices
@@ -944,74 +935,6 @@ contains
     deallocate(Btmp)
   end subroutine comp_lag_paracon
 
-  subroutine comp_lag_paracon2(hecMESH, hecMAT, conMAT, num_lagrange, iwS, wSU, conCOMM)
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(inout) :: hecMAT
-    type (hecmwST_matrix), intent(in) :: conMAT
-    integer(kind=kint), intent(in) :: num_lagrange
-    integer(kind=kint), intent(in) :: iwS(:)
-    real(kind=kreal), intent(in) :: wSU(:)
-    type (hecmwST_contact_comm), intent(in) :: conCOMM
-    integer(kind=kint) :: ndof, ndof2, npndof, nndof, i, ilag, irow, idof, js, je, j, jcol, jdof, islave
-    real(kind=kreal), allocatable :: Btmp(:)
-    real(kind=kreal), pointer :: xlag(:)
-    ndof=hecMAT%ndof
-    ndof2=ndof*ndof
-    npndof = hecMAT%NP * ndof
-    nndof  = hecMAT%N * ndof
-    !! <SUMMARY>
-    !! {lag} = [Bs^-T] ( {fs} - [Ksp Kss] {u} )
-    !!
-    !
-    ! {fs} = {hecMAT%B} + {conMAT%B}
-    ! [K] {u} = [hecMAT] {u} + [conMAT] {u}
-    !
-    ! {Btmp} = {hecMAT%B} - [hecMAT] {u}
-    allocate(Btmp(npndof))
-    call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, Btmp)
-    call hecmw_contact_comm_bcast_r(conCOMM, Btmp)
-    !
-    ! {Btmp} = {Btmp} + {conMAT%B} - [conMAT] {u}
-    do ilag = 1, num_lagrange
-      i = iwS(ilag)
-      Btmp(i) = Btmp(i) + conMAT%B(i)
-      irow = (i + ndof - 1) / ndof
-      idof = i - ndof*(irow-1)
-      ! lower
-      js = conMAT%indexL(irow-1)+1
-      je = conMAT%indexL(irow)
-      do j = js, je
-        jcol = conMAT%itemL(j)
-        do jdof = 1, ndof
-          Btmp(i) = Btmp(i) - conMAT%AL(ndof2*(j-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(jcol-1)+jdof)
-        enddo
-      enddo
-      ! diag
-      do jdof = 1, ndof
-        Btmp(i) = Btmp(i) - conMAT%D(ndof2*(irow-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(irow-1)+jdof)
-      enddo
-      ! upper
-      js = conMAT%indexU(irow-1)+1
-      je = conMAT%indexU(irow)
-      do j = js, je
-        jcol = conMAT%itemU(j)
-        do jdof = 1, ndof
-          Btmp(i) = Btmp(i) - conMAT%AU(ndof2*(j-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(jcol-1)+jdof)
-        enddo
-      enddo
-    enddo
-    !
-    ! {lag} = - [-Bs^-T] {Btmp_s}
-    xlag => hecMAT%X(npndof+1:npndof+num_lagrange)
-    do ilag = 1, num_lagrange
-      islave = iwS(ilag)
-      !xlag(ilag)=-wSU(ilag)*(conMAT%B(islave) - Btmp(islave))
-      xlag(ilag)=-wSU(ilag)*Btmp(islave)
-    enddo
-    deallocate(Btmp)
-  end subroutine comp_lag_paracon2
-
   subroutine check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
        conCOMM, n_slave, slaves)
     implicit none
@@ -1119,188 +1042,6 @@ contains
       write(0,*) 'INFO: rhs  (x,lag,tot)',sqrt(bnrm2),sqrt(blagnrm2),sqrt(bnrm2+blagnrm2)
     endif
   end subroutine check_solution
-
-  subroutine check_solution2(hecMESH, hecMAT, conMAT, hecLagMAT, n_contact_dof, contact_dofs, &
-       conCOMM, n_slave, slaves)
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(inout) :: hecMAT
-    type (hecmwST_matrix), intent(in) :: conMAT
-    type (hecmwST_matrix_lagrange) , intent(in) :: hecLagMAT
-    integer(kind=kint), intent(in) :: n_contact_dof
-    integer(kind=kint), intent(in) :: contact_dofs(:)
-    type (hecmwST_contact_comm), intent(in) :: conCOMM
-    integer(kind=kint), intent(in) :: n_slave
-    integer(kind=kint), intent(in) :: slaves(:)
-    integer(kind=kint) :: ndof, ndof2, nndof, npndof, num_lagrange
-    integer(kind=kint) :: icon, i, irow, idof, js, je, j, jcol, jdof, ls, le, l
-    real(kind=kreal), allocatable, target :: r(:)
-    real(kind=kreal), allocatable :: r_con(:)
-    real(kind=kreal), pointer :: rlag(:), blag(:), xlag(:)
-    real(kind=kreal) :: rnrm2, rlagnrm2
-    integer(kind=kint) :: myrank
-
-    myrank = hecmw_comm_get_rank()
-    ndof = hecMAT%NDOF
-    ndof2 = ndof*ndof
-    nndof = hecMAT%N * ndof
-    npndof = hecMAT%NP * ndof
-    num_lagrange = hecLagMAT%num_lagrange
-    !
-    allocate(r(npndof + num_lagrange))
-    r(:) = 0.0d0
-    allocate(r_con(npndof))
-    r_con(:) = 0.0d0
-    !
-    rlag => r(npndof+1:npndof+num_lagrange)
-    blag => conMAT%B(npndof+1:npndof+num_lagrange)
-    xlag => hecMAT%X(npndof+1:npndof+num_lagrange)
-    !
-    !! <SUMMARY>
-    !! {r}    = {b} - [K] {x} - [Bt] {lag}
-    !! {rlag} = {c} - [B] {x}
-    !
-    ! 1. {r} = {r_org} + {r_con}
-    ! {r_org} = {b_org} - [hecMAT] {x}
-    ! {r_con} = {b_con} - [conMAT] {x} - [Bt] {lag}
-    !
-    ! 1.1 {r_org}
-    ! {r} = {b} - [K] {x}
-    call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r)
-    !
-    if (DEBUG >= 3) then
-      write(1000+myrank,*) 'Residual(original)-----------------------------------------------------'
-      write(1000+myrank,*) 'size of R',size(R)
-      write(1000+myrank,*) 'R: 1-',hecMAT%N*ndof
-      write(1000+myrank,*) r(1:hecMAT%N*ndof)
-      if (n_slave > 0) then
-        write(1000+myrank,*) 'R(slave):',slaves(:)
-        write(1000+myrank,*) r(slaves(:))
-      endif
-    endif
-    !
-    ! 1.2 {r_con}
-    ! 1.2.1 {r_con} = {b_con} - [conMAT]{x}
-    !call hecmw_update_3_R(hecMESH, hecMAT%X, hecMAT%NP)  ! X is already updated
-    do i = 1, npndof
-      r_con(i) = conMAT%B(i)
-    enddo
-    do icon = 1, n_contact_dof
-      i = contact_dofs(icon)
-      irow = (i + ndof - 1) / ndof
-      idof = i - ndof*(irow-1)
-      ! lower
-      js = conMAT%indexL(irow-1)+1
-      je = conMAT%indexL(irow)
-      do j = js, je
-        jcol = conMAT%itemL(j)
-        do jdof = 1, ndof
-          r_con(i) = r_con(i) - conMAT%AL(ndof2*(j-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(jcol-1)+jdof)
-        enddo
-      enddo
-      ! diag
-      do jdof = 1, ndof
-        r_con(i) = r_con(i) - conMAT%D(ndof2*(irow-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(irow-1)+jdof)
-      enddo
-      ! upper
-      js = conMAT%indexU(irow-1)+1
-      je = conMAT%indexU(irow)
-      do j = js, je
-        jcol = conMAT%itemU(j)
-        do jdof = 1, ndof
-          r_con(i) = r_con(i) - conMAT%AU(ndof2*(j-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(jcol-1)+jdof)
-        enddo
-      enddo
-    enddo
-    !
-    ! 1.2.2 {r_con} = {r_con} - [Bt] {lag}
-    if (hecLagMAT%num_lagrange > 0) then
-      do i = 1, hecMAT%NP
-        ls = hecLagMAT%indexU_lagrange(i-1)+1
-        le = hecLagMAT%indexU_lagrange(i)
-        do l = ls, le
-          j = hecLagMAT%itemU_lagrange(l)
-          do idof = 1, ndof
-            r_con(ndof*(i-1)+idof) = r_con(ndof*(i-1)+idof) - hecLagMAT%AU_lagrange(ndof*(l-1)+idof) * xlag(j)
-          enddo
-        enddo
-      enddo
-    endif
-    !
-    if (DEBUG >= 3) then
-      write(1000+myrank,*) 'Residual(contact,local)------------------------------------------------'
-      write(1000+myrank,*) 'size of R_con',size(r_con)
-      write(1000+myrank,*) 'R_con: 1-',hecMAT%N*ndof
-      write(1000+myrank,*) r_con(1:hecMAT%N*ndof)
-      write(1000+myrank,*) 'R_con(external): ',hecMAT%N*ndof+1,'-',hecMAT%NP*ndof
-      write(1000+myrank,*) r_con(hecMAT%N*ndof+1:hecMAT%NP*ndof)
-      if (n_slave > 0) then
-        write(1000+myrank,*) 'R_con(slave):',slaves(:)
-        write(1000+myrank,*) r_con(slaves(:))
-      endif
-    endif
-    !
-    ! 1.2.3 send external part of {r_con}
-    call hecmw_contact_comm_reduce_r(conCOMM, r_con, HECMW_SUM)
-    !
-    if (DEBUG >= 3) then
-      write(1000+myrank,*) 'Residual(contact,assembled)--------------------------------------------'
-      write(1000+myrank,*) 'size of R_con',size(r_con)
-      write(1000+myrank,*) 'R_con: 1-',hecMAT%N*ndof
-      write(1000+myrank,*) r_con(1:hecMAT%N*ndof)
-      if (n_slave > 0) then
-        write(1000+myrank,*) 'R_con(slave):',slaves(:)
-        write(1000+myrank,*) r_con(slaves(:))
-      endif
-    endif
-    !
-    ! 1.3 {r} = {r_org} + {r_con}
-    do i = 1,nndof
-      r(i) = r(i) + r_con(i)
-    enddo
-    !
-    if (DEBUG >= 3) then
-      write(1000+myrank,*) 'Residual(total)--------------------------------------------------------'
-      write(1000+myrank,*) 'size of R',size(r)
-      write(1000+myrank,*) 'R: 1-',hecMAT%N*ndof
-      write(1000+myrank,*) r(1:hecMAT%N*ndof)
-      if (n_slave > 0) then
-        write(1000+myrank,*) 'R(slave):',slaves(:)
-        write(1000+myrank,*) r(slaves(:))
-      endif
-    endif
-    !
-    ! 2.  {rlag} = {c} - [B] {x}
-    !call hecmw_update_3_R(hecMESH, hecMAT%X, hecMAT%NP)  ! X is already updated
-    do i = 1, num_lagrange
-      rlag(i) = blag(i)
-      ls = hecLagMAT%indexL_lagrange(i-1)+1
-      le = hecLagMAT%indexL_lagrange(i)
-      do l = ls, le
-        j = hecLagMAT%itemL_lagrange(l)
-        do jdof = 1, ndof
-          rlag(i) = rlag(i) - hecLagMAT%AL_lagrange(ndof*(l-1)+jdof) * hecMAT%X(ndof*(j-1)+jdof)
-        enddo
-      enddo
-    enddo
-    !
-    if (DEBUG >= 3) then
-      write(1000+myrank,*) 'Residual(lagrange)-----------------------------------------------------'
-      if (hecLagMAT%num_lagrange > 0) then
-        write(1000+myrank,*) 'R(lag):',hecMAT%NP*ndof+1,'-',hecMAT%NP*ndof+hecLagMAT%num_lagrange
-        write(1000+myrank,*) r(hecMAT%NP*ndof+1:hecMAT%NP*ndof+hecLagMAT%num_lagrange)
-      endif
-    endif
-    !
-    call hecmw_InnerProduct_R(hecMESH, NDOF, r, r, rnrm2)
-    rlagnrm2 = 0.0d0
-    do i = 1, num_lagrange
-      rlagnrm2 = rlagnrm2 + rlag(i)*rlag(i)
-    enddo
-    call hecmw_allreduce_R1(hecMESH, rlagnrm2, HECMW_SUM)
-    !
-    if (myrank == 0) write(0,*) 'INFO: resid(x,lag,tot)',sqrt(rnrm2),sqrt(rlagnrm2),sqrt(rnrm2+rlagnrm2)
-  end subroutine check_solution2
 
   subroutine mark_slave_dof(BTmat, mark, n_slave, slaves)
     implicit none
