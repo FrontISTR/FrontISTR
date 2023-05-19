@@ -310,7 +310,7 @@ contains
     endif
 
     allocate(Btot(hecMAT%NP*ndof+hecLagMAT%num_lagrange))
-    call assemble_b_paracon(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, Btot)
+    call assemble_b(hecMESH, hecMAT, conMAT, hecLagMAT%num_lagrange, Btot)
     if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble conMAT%B done', hecmw_wtime()-t1
     if (DEBUG >= 3) then
       write(1000+myrank,*) 'RHS(conMAT assembled)--------------------------------------------------'
@@ -362,7 +362,7 @@ contains
     enddo
 
     ! make new RHS
-    call make_new_b_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
+    call make_new_b(hecMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
         iwS, wSL, hecLagMAT%num_lagrange, conCOMM, hecTKT%B)
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: converted RHS', hecmw_wtime()-t1
     if (DEBUG >= 3) then
@@ -391,12 +391,12 @@ contains
     hecMAT%Rarray=hecTKT%Rarray
 
     ! calc u_s
-    call comp_x_slave_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BTmat, &
+    call comp_x_slave(hecMAT, Btot, hecMESHtmp, hecTKT, BTmat, &
         hecLagMAT%num_lagrange, iwS, wSL, conCOMM, n_slave, slaves)
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: recovered slave disp', hecmw_wtime()-t1
 
     ! calc lambda
-    call comp_lag_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
+    call comp_lag(hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
         n_slave, slaves, hecLagMAT%num_lagrange, iwS, wSU, conCOMM)
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: calculated lag', hecmw_wtime()-t1
 
@@ -779,7 +779,7 @@ contains
     if (DEBUG >= 2) write(0,*) '  DEBUG2: contact_dofs',contact_dofs(:)
   end subroutine make_contact_dof_list
 
-  subroutine assemble_b_paracon(hecMESH, hecMAT, conMAT, num_lagrange, Btot)
+  subroutine assemble_b(hecMESH, hecMAT, conMAT, num_lagrange, Btot)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in) :: hecMAT, conMAT
@@ -793,9 +793,9 @@ contains
       Btot(i) = conMAT%B(i)
     enddo
     call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, hecMAT%NDOF)
-  end subroutine assemble_b_paracon
+  end subroutine assemble_b
 
-  subroutine make_new_b_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
+  subroutine make_new_b(hecMAT, Btot, hecMESHtmp, hecTKT, BTtmat, BKmat, &
        iwS, wSL, num_lagrange, conCOMM, Bnew)
     implicit none
     type(hecmwST_local_mesh), intent(in) :: hecMESHtmp
@@ -837,9 +837,9 @@ contains
     call hecmw_update_R(hecMESHtmp, Btmp, hecTKT%NP, hecMAT%NDOF)
     call hecmw_localmat_mulvec(BTtmat, Btmp, Bnew)
     deallocate(Btmp)
-  end subroutine make_new_b_paracon
+  end subroutine make_new_b
 
-  subroutine comp_x_slave_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BTmat, &
+  subroutine comp_x_slave(hecMAT, Btot, hecMESHtmp, hecTKT, BTmat, &
        num_lagrange, iwS, wSL, conCOMM, n_slave, slaves)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESHtmp
@@ -884,9 +884,9 @@ contains
       hecMAT%X(islave) = hecMAT%X(islave) - Xtmp(islave)
     enddo
     deallocate(Xtmp)
-  end subroutine comp_x_slave_paracon
+  end subroutine comp_x_slave
 
-  subroutine comp_lag_paracon(hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
+  subroutine comp_lag(hecMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
        n_slave, slaves, num_lagrange, iwS, wSU, conCOMM)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESHtmp
@@ -933,7 +933,7 @@ contains
       xlag(ilag)=-wSU(ilag)*Btmp(islave)
     enddo
     deallocate(Btmp)
-  end subroutine comp_lag_paracon
+  end subroutine comp_lag
 
   subroutine check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, BKmat, &
        conCOMM, n_slave, slaves)
