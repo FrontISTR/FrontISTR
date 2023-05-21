@@ -106,7 +106,6 @@ contains
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
     type (hecmwST_matrix), intent(in) :: conMAT
     integer(kind=kint) :: ndof
-    integer(kind=kint), allocatable :: dof_type(:)         !< type of dof; >0: slave (number is slave ID), <=0: other
     integer(kind=kint), allocatable :: slaves_detected(:)  !< list of slave dofs detected in this subdomain
     real(kind=kreal), allocatable   :: BLs_inv(:)   !< inverse of diagonal BLs matrix
     real(kind=kreal), allocatable   :: BUs_inv(:)   !< inverse of diagonal BUs matrix
@@ -135,17 +134,13 @@ contains
     call copy_mesh(hecMESH, hecMESHtmp)
 
     ! choose slave DOFs to be eliminated with Lag. DOFs
-    allocate(dof_type(hecMAT%NP*ndof))
     allocate(slaves_detected(hecLagMAT%num_lagrange), BLs_inv(hecLagMAT%num_lagrange), &
       BUs_inv(hecLagMAT%num_lagrange))
-    call choose_slaves(hecMAT, hecLagMAT, dof_type, slaves_detected, BLs_inv, BUs_inv)
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: slave DOFs chosen', hecmw_wtime()-t1
+    allocate(mark(hecMAT%NP*ndof))
 
     ! make transformation matrices
-    allocate(mark(hecMAT%NP*ndof))
     call make_transformation_matrices(hecMAT, hecLagMAT, hecMESH, hecMESHtmp, &
-        dof_type, slaves_detected, BLs_inv, BUs_inv, mark, n_slave, slaves, BTmat, BTtmat)
-    deallocate(dof_type)
+        slaves_detected, BLs_inv, BUs_inv, mark, n_slave, slaves, BTmat, BTtmat)
 
     ! assemble Kmat and RHS vector from conMAT and hecMAT
     allocate(Btot(hecMAT%NP*ndof+hecLagMAT%num_lagrange))
@@ -192,17 +187,82 @@ contains
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate end', hecmw_wtime()-t1
   end subroutine solve_eliminate
 
-  !> \brief Choose slave dofs and compute BL_s^(-1) and BU_s^(-1)
+  !> \brief Make transformation matrices
   !>
-  subroutine choose_slaves(hecMAT, hecLagMAT, dof_type, slaves_detected, BLs_inv, BUs_inv)
-    type (hecmwST_matrix    ), intent(in) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer, intent(out) :: dof_type(:), slaves_detected(:)
+  subroutine make_transformation_matrices(hecMAT, hecLagMAT, hecMESH, hecMESHtmp, &
+      slaves_detected, BLs_inv, BUs_inv, mark, n_slave, slaves, BTmat, BTtmat)
+    type (hecmwST_matrix    ), intent(inout) :: hecMAT
+    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_local_mesh), intent(inout) :: hecMESHtmp
+    integer(kind=kint), intent(out) :: slaves_detected(:)
     real(kind=kreal), intent(out) :: BLs_inv(:)
     real(kind=kreal), intent(out) :: BUs_inv(:)
-    integer :: ndof, n, i, j, idof, jdof, l, ls, le, idx, imax, iwmin
+    integer(kind=kint), intent(out) :: mark(:)
+    integer(kind=kint), intent(out) :: n_slave
+    integer(kind=kint), allocatable, intent(out) :: slaves(:)
+    type (hecmwST_local_matrix), intent(out) :: BTmat
+    type (hecmwST_local_matrix), intent(out) :: BTtmat
+    integer(kind=kint) :: myrank, n
+    integer(kind=kint), allocatable :: dof_type(:)  !< type of dof; >0: slave (number is slave ID), <=0: other
+
+    myrank = hecmw_comm_get_rank()
+    n = hecMAT%NP
+
+    allocate(dof_type(hecMAT%NP*hecMAT%NDOF))
+    call choose_slaves(hecMAT, hecLagMAT, n, dof_type, slaves_detected)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: slave DOFs chosen'
+
+    call make_BLs_inv(hecLagMAT, hecMAT%NDOF, dof_type, BLs_inv)
+    call make_BUs_inv(hecLagMAT, n, hecMAT%NDOF, dof_type, BUs_inv)
+
+    call make_BTmat(hecMAT, hecLagMAT, n, dof_type, BLs_inv, BTmat)
+    if (DEBUG >= 4) call debug_write_matrix(BTmat, 'BTmat (local)')
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: make T done'
+
+    call make_BTtmat(hecMAT, hecLagMAT, n, dof_type, slaves_detected, BUs_inv, BTtmat)
+    if (DEBUG >= 4) call debug_write_matrix(BTtmat, 'BTtmat (local)')
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: make Tt done'
+    deallocate(dof_type)
+
+    if ( hecmw_comm_get_size() > 1 ) then
+      ! communicate and complete BTmat (update hecMESHtmp)
+      call hecmw_localmat_assemble(BTmat, hecMESH, hecMESHtmp)
+      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble T done'
+      if (BTmat%nc /= hecMESH%n_node) then
+        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with T',BTmat%nc-hecMESH%n_node
+      endif
+      if (DEBUG >= 4) call debug_write_matrix(BTmat, 'BTmat (assembled)')
+
+      ! communicate and complete BTtmat (update hecMESHtmp)
+      call hecmw_localmat_assemble(BTtmat, hecMESH, hecMESHtmp)
+      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble Tt done'
+      if (BTtmat%nc /= BTmat%nc) then
+        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BTtmat',BTtmat%nc-BTmat%nc
+        BTmat%nc = BTtmat%nc
+      endif
+      if (DEBUG >= 4) call debug_write_matrix(BTtmat, 'BTtmat (assembled)')
+    endif
+
+    ! place 1 on diag of non-slave dofs of BTmat and BTtmat
+    call mark_slave_dof(BTmat, mark, n_slave, slaves)
+    call place_one_on_diag_of_unmarked_dof(BTmat, mark)
+    if (DEBUG >= 4) call debug_write_matrix(BTmat, 'BTmat (1s on non-slave diag)')
+    call place_one_on_diag_of_unmarked_dof(BTtmat, mark)
+    if (DEBUG >= 4) call debug_write_matrix(BTtmat, 'BTtmat (1s on non-slave diag)')
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: place 1 on diag of T and Tt done'
+  end subroutine make_transformation_matrices
+
+  !> \brief Choose slave dofs and compute BL_s^(-1) and BU_s^(-1)
+  !>
+  subroutine choose_slaves(hecMAT, hecLagMAT, n, dof_type, slaves_detected)
+    type (hecmwST_matrix    ), intent(in) :: hecMAT
+    type (hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< type hecmwST_matrix_lagrange
+    integer(kind=kint), intent(in) :: n
+    integer(kind=kint), intent(out) :: dof_type(:), slaves_detected(:)
+    integer(kind=kint) :: ndof, i, j, idof, jdof, l, ls, le, idx, imax, iwmin
     real(kind=kreal) :: val, vmax
-    integer, allocatable :: iw1L(:), iw1U(:)
+    integer(kind=kint), allocatable :: iw1L(:), iw1U(:)
     integer(kind=kint) :: n_slave_in,n_slave_out
     integer(kind=kint) :: myrank
 
@@ -214,8 +274,6 @@ contains
 
     ndof=hecMAT%NDOF
     slaves_detected=0
-
-    n = hecMAT%NP
 
     allocate(iw1L(n*ndof))
     allocate(iw1U(n*ndof))
@@ -280,7 +338,7 @@ contains
       enddo
       if (imax == -1) stop "ERROR: iterative solver for contact failed"
       dof_type(imax)=i
-      slaves_detected(i)=imax; BLs_inv(i)=1.d0/vmax
+      slaves_detected(i)=imax
     enddo
     !!$    write(0,*) 'dof_type:'
     !!$    do i=1,n*ndof
@@ -288,20 +346,48 @@ contains
     !!$    enddo
     !!$    write(0,*) 'slaves_detected:'
     !!$    write(0,*) slaves_detected(:)
-    n_slave_in = 0
-    do i=1,hecMAT%N*ndof
-      if (dof_type(i) > 0) n_slave_in = n_slave_in + 1
-    enddo
-    n_slave_out = 0
-    do i=hecMAT%N*ndof,n*ndof
-      if (dof_type(i) > 0) n_slave_out = n_slave_out + 1
-    enddo
-    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: n_slave(in,out,tot)',n_slave_in,n_slave_out,n_slave_in+n_slave_out
+    if (DEBUG >= 2) then
+      n_slave_in = 0
+      do i=1,hecMAT%N*ndof
+        if (dof_type(i) > 0) n_slave_in = n_slave_in + 1
+      enddo
+      n_slave_out = 0
+      do i=hecMAT%N*ndof,n*ndof
+        if (dof_type(i) > 0) n_slave_out = n_slave_out + 1
+      enddo
+      write(0,*) '  DEBUG2[',myrank,']: n_slave(in,out,tot)',n_slave_in,n_slave_out,n_slave_in+n_slave_out
+    endif
 
     deallocate(iw1L, iw1U)
-
-    call make_BUs_inv(hecLagMAT, n, ndof, dof_type, BUs_inv)
   end subroutine choose_slaves
+
+  !> \brief Compute BL_s^(-1)
+  !>
+  subroutine make_BLs_inv(hecLagMAT, ndof, dof_type, BLs_inv)
+    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
+    integer(kind=kint), intent(in) :: ndof
+    integer(kind=kint), intent(in) :: dof_type(:)
+    real(kind=kreal), intent(out) :: BLs_inv(:)
+    integer(kind=kint) :: i, ls, le, l, j, jdof, idx
+
+    if (hecLagMAT%num_lagrange == 0) return
+
+    BLs_inv=0.d0
+    do i=1,hecLagMAT%num_lagrange
+      ls=hecLagMAT%indexL_lagrange(i-1)+1
+      le=hecLagMAT%indexL_lagrange(i)
+      do l=ls,le
+        j=hecLagMAT%itemL_lagrange(l)
+        do jdof=1,ndof
+          idx=(j-1)*ndof+jdof
+          if (dof_type(idx)==i) then
+            BLs_inv(i) = 1.0d0/hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
+          endif
+        enddo
+      enddo
+    enddo
+    !write(0,*) BLs_inv
+  end subroutine make_BLs_inv
 
   !> \brief Compute BU_s^(-1)
   !>
@@ -324,7 +410,7 @@ contains
           do j=js,je
             k=hecLagMAT%itemU_lagrange(j)
             if (k==dof_type(idx)) then
-              BUs_inv(dof_type(idx)) = 1.0d0/hecLagMAT%AU_lagrange((j-1)*ndof+idof)
+              BUs_inv(k) = 1.0d0/hecLagMAT%AU_lagrange((j-1)*ndof+idof)
             endif
           enddo
         endif
@@ -333,77 +419,20 @@ contains
     !write(0,*) BUs_inv
   end subroutine make_BUs_inv
 
-  !> \brief Make transformation matrices
-  !>
-  subroutine make_transformation_matrices(hecMAT, hecLagMAT, hecMESH, hecMESHtmp, &
-      dof_type, slaves_detected, BLs_inv, BUs_inv, mark, n_slave, slaves, BTmat, BTtmat)
-    type (hecmwST_matrix    ), intent(inout) :: hecMAT
-    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_local_mesh), intent(inout) :: hecMESHtmp
-    integer(kind=kint), intent(in) :: dof_type(:)
-    integer(kind=kint), intent(in) :: slaves_detected(:)
-    real(kind=kreal), intent(out) :: BLs_inv(:)
-    real(kind=kreal), intent(out) :: BUs_inv(:)
-    integer(kind=kint), intent(out) :: mark(:)
-    integer(kind=kint), intent(out) :: n_slave
-    integer(kind=kint), allocatable, intent(out) :: slaves(:)
-    type (hecmwST_local_matrix), intent(out) :: BTmat
-    type (hecmwST_local_matrix), intent(out) :: BTtmat
-    integer(kind=kint) :: myrank
-
-    myrank = hecmw_comm_get_rank()
-
-    call make_BTmat(hecMAT, hecLagMAT, dof_type, BLs_inv, BTmat)
-    if (DEBUG >= 4) call debug_write_matrix(BTmat, 'BTmat (local)')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: make T done'
-
-    call make_BTtmat(hecMAT, hecLagMAT, dof_type, slaves_detected, BUs_inv, BTtmat)
-    if (DEBUG >= 4) call debug_write_matrix(BTtmat, 'BTtmat (local)')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: make Tt done'
-
-    if ( hecmw_comm_get_size() > 1 ) then
-      ! communicate and complete BTmat (update hecMESHtmp)
-      call hecmw_localmat_assemble(BTmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble T done'
-      if (BTmat%nc /= hecMESH%n_node) then
-        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with T',BTmat%nc-hecMESH%n_node
-      endif
-      if (DEBUG >= 4) call debug_write_matrix(BTmat, 'BTmat (assembled)')
-
-      ! communicate and complete BTtmat (update hecMESHtmp)
-      call hecmw_localmat_assemble(BTtmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble Tt done'
-      if (BTtmat%nc /= BTmat%nc) then
-        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with BTtmat',BTtmat%nc-BTmat%nc
-        BTmat%nc = BTtmat%nc
-      endif
-      if (DEBUG >= 4) call debug_write_matrix(BTtmat, 'BTtmat (assembled)')
-    endif
-
-    ! place 1 on diag of non-slave dofs of BTmat and BTtmat
-    call mark_slave_dof(BTmat, mark, n_slave, slaves)
-    call place_one_on_diag_of_unmarked_dof(BTmat, mark)
-    if (DEBUG >= 4) call debug_write_matrix(BTmat, 'BTmat (1s on non-slave diag)')
-    call place_one_on_diag_of_unmarked_dof(BTtmat, mark)
-    if (DEBUG >= 4) call debug_write_matrix(BTtmat, 'BTtmat (1s on non-slave diag)')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: place 1 on diag of T and Tt done'
-  end subroutine make_transformation_matrices
-
   !> \brief Make 3x3-blocked T matrix
   !>
-  subroutine make_BTmat(hecMAT, hecLagMAT, dof_type, BLs_inv, BTmat)
+  subroutine make_BTmat(hecMAT, hecLagMAT, n, dof_type, BLs_inv, BTmat)
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
+    integer(kind=kint), intent(in) :: n
     integer, intent(in) :: dof_type(:)
     real(kind=kreal), intent(in) :: BLs_inv(:)
     type (hecmwST_local_matrix), intent(out) :: BTmat
     type (hecmwST_local_matrix) :: Tmat
-    integer :: ndof, n, i, nnz, l, js, je, j, k, jdof, kk, jj
+    integer :: ndof, i, nnz, l, js, je, j, k, jdof, kk, jj
     real(kind=kreal) :: factor
 
     ndof=hecMAT%NDOF
-    n=hecMAT%NP
     Tmat%nr=n*ndof
     Tmat%nc=Tmat%nr
     Tmat%nnz=hecLagMAT%numL_lagrange*ndof-hecLagMAT%num_lagrange
@@ -458,17 +487,17 @@ contains
 
   !> \brief Make 3x3-blocked T^t matrix
   !>
-  subroutine make_BTtmat(hecMAT, hecLagMAT, dof_type, slaves_detected, BUs_inv, BTtmat)
+  subroutine make_BTtmat(hecMAT, hecLagMAT, n, dof_type, slaves_detected, BUs_inv, BTtmat)
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
+    integer(kind=kint), intent(in) :: n
     integer, intent(in) :: dof_type(:), slaves_detected(:)
     real(kind=kreal), intent(in) :: BUs_inv(:)
     type (hecmwST_local_matrix), intent(out) :: BTtmat
     type (hecmwST_local_matrix) :: Ttmat
-    integer :: ndof, n, i, nnz, l, js, je, j, k, idof, idx
+    integer :: ndof, i, nnz, l, js, je, j, k, idof, idx
 
     ndof=hecMAT%NDOF
-    n=hecMAT%NP
     Ttmat%nr=n*ndof
     Ttmat%nc=Ttmat%nr
     Ttmat%nnz=hecLagMAT%numU_lagrange*ndof-hecLagMAT%num_lagrange
