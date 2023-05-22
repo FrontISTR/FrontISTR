@@ -573,6 +573,50 @@ contains
     integer(kind=kint), intent(in) :: slaves(:)
     type (hecmwST_local_matrix), intent(out) :: Kmat
     real(kind=kreal), intent(out) :: Btot(:)
+
+    call assemble_matrix(hecMAT, conMAT, num_lagrange, hecMESH, hecMESHtmp, Kmat)
+
+    call assemble_rhs(hecMAT, conMAT, num_lagrange, hecMESH, n_slave, slaves, Btot)
+
+  end subroutine assemble_equation
+
+  !> \brief Assemble hecMAT and conMAT into Kmat
+  !>
+  subroutine assemble_matrix(hecMAT, conMAT, num_lagrange, hecMESH, hecMESHtmp, Kmat)
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_matrix), intent(in) :: conMAT
+    integer(kind=kint), intent(in) :: num_lagrange
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_local_mesh), intent(inout) :: hecMESHtmp
+    type (hecmwST_local_matrix), intent(out) :: Kmat
+
+    ! init Kmat and substitute conMAT
+    call hecmw_localmat_init_with_hecmat(Kmat, conMAT, num_lagrange)
+    if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (conMAT local)')
+
+    if ( hecmw_comm_get_size() > 1) then
+      ! communicate and complete Kmat (update hecMESHtmp)
+      call hecmw_localmat_assemble(Kmat, hecMESH, hecMESHtmp)
+      if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (conMAT assembled)')
+      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble K (conMAT) done'
+    endif
+
+    ! add hecMAT to Kmat
+    call hecmw_localmat_add_hecmat(Kmat, hecMAT)
+    if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (hecMAT added)')
+    if (DEBUG >= 2) write(0,*) '  DEBUG2: add hecMAT to K done'
+  end subroutine assemble_matrix
+
+  !> \brief Assemble hecMAT%B and conMAT%B into Btot
+  !>
+  subroutine assemble_rhs(hecMAT, conMAT, num_lagrange, hecMESH, n_slave, slaves, Btot)
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_matrix), intent(in) :: conMAT
+    integer(kind=kint), intent(in) :: num_lagrange
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: n_slave
+    integer(kind=kint), intent(in) :: slaves(:)
+    real(kind=kreal), intent(out) :: Btot(:)
     integer(kind=kint) :: ndof, i
 
     ndof = hecMAT%NDOF
@@ -582,30 +626,16 @@ contains
     if (DEBUG >= 3) call debug_write_vector(conMAT%B, 'RHS(conMAT)', 'conMAT%B', ndof, conMAT%N, &
         conMAT%NP, .true., num_lagrange, n_slave, slaves)
 
-    ! init Kmat and substitute conMAT
-    call hecmw_localmat_init_with_hecmat(Kmat, conMAT, num_lagrange)
-    if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (conMAT local)')
-
     do i=1,hecMAT%NP*ndof+num_lagrange
       Btot(i) = conMAT%B(i)
     enddo
 
     if ( hecmw_comm_get_size() > 1) then
-      ! communicate and complete Kmat (update hecMESHtmp)
-      call hecmw_localmat_assemble(Kmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (conMAT assembled)')
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble K (conMAT) done'
-
-      call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, hecMAT%NDOF)
+      call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, ndof)
       if (DEBUG >= 3) call debug_write_vector(Btot, 'RHS(conMAT assembled)', 'Btot', ndof, conMAT%N, &
           conMAT%NP, .false., num_lagrange, n_slave, slaves)
       if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble conMAT%B done'
     endif
-
-    ! add hecMAT to Kmat
-    call hecmw_localmat_add_hecmat(Kmat, hecMAT)
-    if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (hecMAT added)')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: add hecMAT to K done'
 
     ! add hecMAT%B to Btot
     do i=1,hecMAT%N*ndof
@@ -613,7 +643,7 @@ contains
     enddo
     if (DEBUG >= 3) call debug_write_vector(Btot, 'RHS(total)', 'Btot', ndof, conMAT%N, &
         conMAT%NP, .false., num_lagrange, n_slave, slaves)
-  end subroutine assemble_equation
+  end subroutine assemble_rhs
 
   !> \brief Make communication table for contact dofs
   !>
