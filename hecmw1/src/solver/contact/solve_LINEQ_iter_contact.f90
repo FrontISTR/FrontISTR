@@ -373,7 +373,7 @@ contains
     if (hecLagMAT%num_lagrange == 0) return
 
     BLs_inv=0.d0
-    do i=1,hecLagMAT%num_lagrange
+    iloop: do i=1,hecLagMAT%num_lagrange
       ls=hecLagMAT%indexL_lagrange(i-1)+1
       le=hecLagMAT%indexL_lagrange(i)
       do l=ls,le
@@ -382,10 +382,11 @@ contains
           idx=(j-1)*ndof+jdof
           if (dof_type(idx)==i) then
             BLs_inv(i) = 1.0d0/hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
+            cycle iloop
           endif
         enddo
       enddo
-    enddo
+    enddo iloop
     !write(0,*) BLs_inv
   end subroutine make_BLs_inv
 
@@ -402,7 +403,7 @@ contains
 
     BUs_inv=0.d0
     do i=1,n
-      do idof=1,ndof
+      idofloop: do idof=1,ndof
         idx=(i-1)*ndof+idof
         if (dof_type(idx) > 0) then
           js=hecLagMAT%indexU_lagrange(i-1)+1
@@ -411,10 +412,11 @@ contains
             k=hecLagMAT%itemU_lagrange(j)
             if (k==dof_type(idx)) then
               BUs_inv(k) = 1.0d0/hecLagMAT%AU_lagrange((j-1)*ndof+idof)
+              cycle idofloop
             endif
           enddo
         endif
-      enddo
+      enddo idofloop
     enddo
     !write(0,*) BUs_inv
   end subroutine make_BUs_inv
@@ -554,7 +556,7 @@ contains
       enddo
     enddo
     !call hecmw_localmat_write(Ttmat11, 0)
-    ! make 3x3-block version of Tmat
+    ! make 3x3-block version of Ttmat
     call hecmw_localmat_blocking(Ttmat11, ndof, Ttmat)
     call hecmw_localmat_free(Ttmat11)
   end subroutine make_Ttmat
