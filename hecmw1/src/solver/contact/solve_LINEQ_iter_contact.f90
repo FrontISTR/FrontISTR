@@ -23,7 +23,9 @@ module m_solve_LINEQ_iter_contact
   logical, save :: INITIALIZED = .false.
   integer, save :: SymType = 0
 
-  integer, parameter :: DEBUG = 0  ! 0: no message, 1: some messages, 2: more messages, 3: vector output, 4: matrix output
+  integer, parameter :: DEBUG = 0  ! 0: no message, 1: some messages, 2: more messages, 3: even more messages
+  logical, parameter :: DEBUG_VECTOR = .false.
+  logical, parameter :: DEBUG_MATRIX = .false.
 
 contains
 
@@ -113,7 +115,7 @@ contains
     type(hecmwST_local_matrix) :: Ttmat       !< blocked T^t matrix
     type(hecmwST_matrix)       :: hecTKT
     type(hecmwST_local_mesh)   :: hecMESHtmp
-    real(kind=kreal) :: t1
+    real(kind=kreal) :: t0, t1, t2
     type(hecmwST_local_matrix) :: Kmat
     integer(kind=kint), allocatable :: mark(:)
     type(hecmwST_contact_comm) :: conCOMM
@@ -124,8 +126,8 @@ contains
 
     myrank = hecmw_comm_get_rank()
 
-    t1 = hecmw_wtime()
-    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate start', hecmw_wtime()-t1
+    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate start'
+    t0 = hecmw_wtime()
 
     ndof=hecMAT%NDOF
     if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: num_lagrange',hecLagMAT%num_lagrange
@@ -138,17 +140,25 @@ contains
     allocate(mark(hecMAT%NP*ndof))
 
     ! make transformation matrices
+    t1 = hecmw_wtime()
     call make_transformation_matrices(hecMAT, hecLagMAT, hecMESH, hecMESHtmp, &
         slaves_detected, BLs_inv, BUs_inv, mark, n_slave, slaves, Tmat, Ttmat)
+    t2 = hecmw_wtime()
+    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: made trans matrices', t2-t1
 
     ! make contact dof list
+    t1 = t2
     call make_contact_comm_table(hecMAT, hecLagMAT, hecMESH, conCOMM)
+    t2 = hecmw_wtime()
     if (DEBUG >= 2) write(0,*) '  DEBUG2: make contact comm_table done', hecmw_wtime()-t1
 
     ! assemble Kmat and RHS vector from conMAT and hecMAT
+    t1 = t2
     allocate(Btot(hecMAT%NP*ndof+hecLagMAT%num_lagrange))
     call assemble_equation(hecMAT, conMAT, hecLagMAT%num_lagrange, hecMESH, hecMESHtmp, &
         n_slave, slaves, conCOMM, Kmat, Btot)
+    t2 = hecmw_wtime()
+    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: assembled equation ', t2-t1
 
     if ( hecmw_comm_get_size() > 1) then
       if (Kmat%nc /= Ttmat%nc) then
@@ -159,21 +169,30 @@ contains
     endif
 
     ! make converted equation
+    t1 = t2
     call convert_equation(hecMAT, hecMESHtmp, Kmat, Tmat, Ttmat, Btot, mark, &
         hecLagMAT%num_lagrange, slaves_detected, BLs_inv, conCOMM, hecTKT)
+    t2 = hecmw_wtime()
+    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: converted equation ', t2-t1
 
     ! solve converted system
+    t1 = t2
     call hecmw_solve_iterative(hecMESHtmp,hecTKT)
-    if (DEBUG >= 3) call debug_write_vector(hecTKT%X, 'Solution(converted)', 'hecTKT%X', ndof, hecTKT%N)
-    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: linear solver finished', hecmw_wtime()-t1
+    if (DEBUG_VECTOR) call debug_write_vector(hecTKT%X, 'Solution(converted)', 'hecTKT%X', ndof, hecTKT%N)
+    t2 = hecmw_wtime()
+    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: linear solver done ', t2-t1
 
     ! recover solution in original system
+    t1 = t2
     call recover_solution(hecMAT, hecTKT, hecMESHtmp, Tmat, Kmat, Btot, &
         hecLagMAT%num_lagrange, slaves_detected, BLs_inv, BUs_inv, conCOMM, n_slave, slaves)
+    t2 = hecmw_wtime()
+    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: recovered solution ', t2-t1
 
     ! check solution in the original system
-    if (DEBUG >= 2) call check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, Kmat, &
+    if (DEBUG >= 1) call check_solution(hecMESH, hecMAT, hecLagMAT, Btot, hecMESHtmp, hecTKT, Kmat, &
           conCOMM, n_slave, slaves)
+    if (DEBUG >= 2) call check_solution2(hecMESH, hecMAT, conMAT, hecLagMAT, conCOMM, n_slave, slaves)
 
     ! free matrices
     call hecmw_localmat_free(Tmat)
@@ -183,7 +202,8 @@ contains
     call hecmw_contact_comm_finalize(conCOMM)
     call free_mesh(hecMESHtmp)
     deallocate(slaves_detected)
-    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate end', hecmw_wtime()-t1
+    t2 = hecmw_wtime()
+    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate end', t2-t0
   end subroutine solve_eliminate
 
   !> \brief Make transformation matrices
@@ -212,47 +232,47 @@ contains
 
     ! choose slave DOFs to be eliminated with Lag. DOFs
     call choose_slaves(hecMAT, hecLagMAT, n, dof_type, slaves_detected)
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: slave DOFs chosen'
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: slave DOFs chosen'
 
     call make_BLs_inv(hecLagMAT, hecMAT%NDOF, dof_type, BLs_inv)
     call make_BUs_inv(hecLagMAT, n, hecMAT%NDOF, dof_type, BUs_inv)
 
     call make_Tmat(hecMAT, hecLagMAT, n, dof_type, BLs_inv, Tmat)
-    if (DEBUG >= 4) call debug_write_matrix(Tmat, 'Tmat (local)')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: make T done'
+    if (DEBUG_MATRIX) call debug_write_matrix(Tmat, 'Tmat (local)')
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: make T done'
 
     call make_Ttmat(hecMAT, hecLagMAT, n, dof_type, slaves_detected, BUs_inv, Ttmat)
-    if (DEBUG >= 4) call debug_write_matrix(Ttmat, 'Ttmat (local)')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: make Tt done'
+    if (DEBUG_MATRIX) call debug_write_matrix(Ttmat, 'Ttmat (local)')
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: make Tt done'
 
     deallocate(dof_type)
 
     if ( hecmw_comm_get_size() > 1 ) then
       ! communicate and complete Tmat (update hecMESHtmp)
       call hecmw_localmat_assemble(Tmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble T done'
-      if (Tmat%nc /= hecMESH%n_node) then
-        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with T',Tmat%nc-hecMESH%n_node
+      if (DEBUG >= 2) then
+        write(0,*) '  DEBUG2[',myrank,']: assemble T done'
+        if (Tmat%nc /= hecMESH%n_node) write(0,*) '  DEBUG2[',myrank,']: node migrated with T',Tmat%nc-hecMESH%n_node
       endif
-      if (DEBUG >= 4) call debug_write_matrix(Tmat, 'Tmat (assembled)')
+      if (DEBUG_MATRIX) call debug_write_matrix(Tmat, 'Tmat (assembled)')
 
       ! communicate and complete Ttmat (update hecMESHtmp)
       call hecmw_localmat_assemble(Ttmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble Tt done'
-      if (Ttmat%nc /= Tmat%nc) then
-        if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: node migrated with Ttmat',Ttmat%nc-Tmat%nc
+      if (DEBUG >= 2) then
+        write(0,*) '  DEBUG2[',myrank,']: assemble Tt done'
+        if (Ttmat%nc /= Tmat%nc) write(0,*) '  DEBUG2[',myrank,']: node migrated with Ttmat',Ttmat%nc-Tmat%nc
         Tmat%nc = Ttmat%nc
       endif
-      if (DEBUG >= 4) call debug_write_matrix(Ttmat, 'Ttmat (assembled)')
+      if (DEBUG_MATRIX) call debug_write_matrix(Ttmat, 'Ttmat (assembled)')
     endif
 
     ! place 1 on diag of non-slave dofs of Tmat and Ttmat
     call mark_slave_dof(Tmat, mark, n_slave, slaves)
     call place_one_on_diag_of_unmarked_dof(Tmat, mark)
-    if (DEBUG >= 4) call debug_write_matrix(Tmat, 'Tmat (1s on non-slave diag)')
+    if (DEBUG_MATRIX) call debug_write_matrix(Tmat, 'Tmat (1s on non-slave diag)')
     call place_one_on_diag_of_unmarked_dof(Ttmat, mark)
-    if (DEBUG >= 4) call debug_write_matrix(Ttmat, 'Ttmat (1s on non-slave diag)')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: place 1 on diag of T and Tt done'
+    if (DEBUG_MATRIX) call debug_write_matrix(Ttmat, 'Ttmat (1s on non-slave diag)')
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: place 1 on diag of T and Tt done'
   end subroutine make_transformation_matrices
 
   !> \brief Choose slave dofs and compute BL_s^(-1) and BU_s^(-1)
@@ -354,10 +374,10 @@ contains
         if (dof_type(i) > 0) n_slave_in = n_slave_in + 1
       enddo
       n_slave_out = 0
-      do i=hecMAT%N*ndof,n*ndof
+      do i=hecMAT%N*ndof+1,n*ndof
         if (dof_type(i) > 0) n_slave_out = n_slave_out + 1
       enddo
-      write(0,*) '  DEBUG2[',myrank,']: n_slave(in,out,tot)',n_slave_in,n_slave_out,n_slave_in+n_slave_out
+      write(0,*) '  DEBUG2[',myrank,']: n_slave(in,out,tot)',n_slave_in,n_slave_out,hecLagMAT%num_lagrange
     endif
 
     deallocate(iw1L, iw1U)
@@ -591,6 +611,7 @@ contains
     integer(kind=kint), allocatable :: iw(:)
     real(kind=kreal) :: val
     logical :: found
+    integer(kind=kint) :: myrank
     if (hecLagMAT%num_lagrange == 0) then
       n_contact_dof = 0
       return
@@ -618,7 +639,6 @@ contains
           if (iw(k) == jnode) cycle lloop1
         enddo
         icnt = icnt + 1
-        write(0,*) 'icnt,jnode',icnt,jnode
         iw(icnt) = jnode
       enddo lloop1
     enddo
@@ -654,7 +674,9 @@ contains
     enddo
     n_contact_dof = icnt*ndof
     deallocate(iw)
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: contact_dofs',contact_dofs(:)
+    myrank = hecmw_comm_get_rank()
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: n_contact_dof',n_contact_dof
+    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: contact_dofs',contact_dofs(:)
   end subroutine make_contact_dof_list
 
   !> \brief Assemble hecMAT and conMAT into Kmat and Btot
@@ -671,10 +693,14 @@ contains
     type(hecmwST_contact_comm), intent(in) :: conCOMM
     type (hecmwST_local_matrix), intent(out) :: Kmat
     real(kind=kreal), intent(out) :: Btot(:)
+    integer(kind=kint) :: myrank
+    myrank = hecmw_comm_get_rank()
 
     call assemble_matrix(hecMAT, conMAT, num_lagrange, hecMESH, hecMESHtmp, Kmat)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: assemble matrix done'
 
     call assemble_rhs(hecMAT, conMAT, num_lagrange, n_slave, slaves, conCOMM, Btot)
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: assemble rhs done'
 
   end subroutine assemble_equation
 
@@ -687,22 +713,24 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_local_mesh), intent(inout) :: hecMESHtmp
     type (hecmwST_local_matrix), intent(out) :: Kmat
+    integer(kind=kint) :: myrank
+    myrank = hecmw_comm_get_rank()
 
     ! init Kmat and substitute conMAT
     call hecmw_localmat_init_with_hecmat(Kmat, conMAT, num_lagrange)
-    if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (conMAT local)')
+    if (DEBUG_MATRIX) call debug_write_matrix(Kmat, 'Kmat (conMAT local)')
 
     if ( hecmw_comm_get_size() > 1) then
       ! communicate and complete Kmat (update hecMESHtmp)
       call hecmw_localmat_assemble(Kmat, hecMESH, hecMESHtmp)
-      if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (conMAT assembled)')
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble K (conMAT) done'
+      if (DEBUG_MATRIX) call debug_write_matrix(Kmat, 'Kmat (conMAT assembled)')
+      if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: assemble K (conMAT) done'
     endif
 
     ! add hecMAT to Kmat
     call hecmw_localmat_add_hecmat(Kmat, hecMAT)
-    if (DEBUG >= 4) call debug_write_matrix(Kmat, 'Kmat (hecMAT added)')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: add hecMAT to K done'
+    if (DEBUG_MATRIX) call debug_write_matrix(Kmat, 'Kmat (hecMAT added)')
+    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: add hecMAT to K done'
   end subroutine assemble_matrix
 
   !> \brief Assemble hecMAT%B and conMAT%B into Btot
@@ -716,13 +744,14 @@ contains
     integer(kind=kint), intent(in) :: slaves(:)
     type(hecmwST_contact_comm), intent(in) :: conCOMM
     real(kind=kreal), intent(out) :: Btot(:)
-    integer(kind=kint) :: ndof, i
+    integer(kind=kint) :: ndof, i, myrank
+    myrank = hecmw_comm_get_rank()
 
     ndof = hecMAT%NDOF
 
-    if (DEBUG >= 3) call debug_write_vector(hecMAT%B, 'RHS(hecMAT)', 'hecMAT%B', ndof, hecMAT%N, &
+    if (DEBUG_VECTOR) call debug_write_vector(hecMAT%B, 'RHS(hecMAT)', 'hecMAT%B', ndof, hecMAT%N, &
         hecMAT%NP, .false., num_lagrange, n_slave, slaves)
-    if (DEBUG >= 3) call debug_write_vector(conMAT%B, 'RHS(conMAT)', 'conMAT%B', ndof, conMAT%N, &
+    if (DEBUG_VECTOR) call debug_write_vector(conMAT%B, 'RHS(conMAT)', 'conMAT%B', ndof, conMAT%N, &
         conMAT%NP, .true., num_lagrange, n_slave, slaves)
 
     do i=1,hecMAT%NP*ndof+num_lagrange
@@ -732,17 +761,18 @@ contains
     if ( hecmw_comm_get_size() > 1) then
       ! next line can be replaced by: call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, ndof)
       call hecmw_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
-      if (DEBUG >= 3) call debug_write_vector(Btot, 'RHS(conMAT assembled)', 'Btot', ndof, conMAT%N, &
+      if (DEBUG_VECTOR) call debug_write_vector(Btot, 'RHS(conMAT assembled)', 'Btot', ndof, conMAT%N, &
           conMAT%NP, .false., num_lagrange, n_slave, slaves)
-      if (DEBUG >= 2) write(0,*) '  DEBUG2: assemble conMAT%B done'
+      if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: assemble RHS (conMAT%B) done'
     endif
 
     ! add hecMAT%B to Btot
     do i=1,hecMAT%N*ndof
       Btot(i)=Btot(i)+hecMAT%B(i)
     enddo
-    if (DEBUG >= 3) call debug_write_vector(Btot, 'RHS(total)', 'Btot', ndof, conMAT%N, &
+    if (DEBUG_VECTOR) call debug_write_vector(Btot, 'RHS(total)', 'Btot', ndof, conMAT%N, &
         conMAT%NP, .false., num_lagrange, n_slave, slaves)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: add hecMAT%B to RHS done'
   end subroutine assemble_rhs
 
   !> \brief Make converted equation
@@ -766,11 +796,11 @@ contains
     myrank = hecmw_comm_get_rank()
 
     call convert_matrix(hecMAT, hecMESHtmp, Kmat, Tmat, Ttmat, mark, hecTKT)
-    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: calculated TtKT'
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: converted matrix'
 
     call convert_rhs(hecMAT, Btot, hecMESHtmp, hecTKT, Ttmat, Kmat, &
         slaves_detected, BLs_inv, num_lagrange, conCOMM)
-    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: converted RHS'
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: converted RHS'
   end subroutine convert_equation
 
   !> \brief Make converted matrix
@@ -784,26 +814,28 @@ contains
     integer(kind=kint), intent(in) :: mark(:)
     type(hecmwST_matrix), intent(out) :: hecTKT
     type(hecmwST_local_matrix) :: TtKmat, TtKTmat
+    integer(kind=kint) :: myrank
+    myrank = hecmw_comm_get_rank()
 
     ! compute TtKmat = Ttmat * Kmat (update hecMESHtmp)
     call hecmw_localmat_multmat(Ttmat, Kmat, hecMESHtmp, TtKmat)
-    if (DEBUG >= 4) call debug_write_matrix(TtKmat, 'TtKmat')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply Tt and K done'
+    if (DEBUG_MATRIX) call debug_write_matrix(TtKmat, 'TtKmat')
+    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: multiply Tt and K done'
 
     ! compute TtKTmat = TtKmat * Tmat (update hecMESHtmp)
     call hecmw_localmat_multmat(TtKmat, Tmat, hecMESHtmp, TtKTmat)
-    if (DEBUG >= 4) call debug_write_matrix(TtKTmat, 'TtKTmat')
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: multiply TtK and T done'
+    if (DEBUG_MATRIX) call debug_write_matrix(TtKTmat, 'TtKTmat')
+    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: multiply TtK and T done'
     call hecmw_localmat_free(TtKmat)
 
     ! shrink comm_table
     ! call hecmw_localmat_shrink_comm_table(TtKTmat, hecMESHtmp)
 
     call place_num_on_diag_of_marked_dof(TtKTmat, 1.0d0, mark)
-    if (DEBUG >= 4) call debug_write_matrix(TtKTmat, 'TtKTmat (place 1.0 on slave diag)')
+    if (DEBUG_MATRIX) call debug_write_matrix(TtKTmat, 'TtKTmat (place 1.0 on slave diag)')
     call hecmw_mat_init(hecTKT)
     call hecmw_localmat_make_hecmat(hecMAT, TtKTmat, hecTKT)
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: convert TtKT to hecTKT done'
+    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: convert TtKT to hecTKT done'
     call hecmw_localmat_free(TtKTmat)
   end subroutine convert_matrix
 
@@ -854,7 +886,7 @@ contains
     call hecmw_localmat_mulvec(Ttmat, Btmp, hecTKT%B)
     deallocate(Btmp)
 
-    if (DEBUG >= 3) call debug_write_vector(hecTKT%B, 'RHS(converted)', 'hecTKT%B', hecMAT%NDOF, hecTKT%N)
+    if (DEBUG_VECTOR) call debug_write_vector(hecTKT%B, 'RHS(converted)', 'hecTKT%B', hecMAT%NDOF, hecTKT%N)
   end subroutine convert_rhs
 
   !> \brief Recover solution in original system
@@ -884,13 +916,13 @@ contains
 
     call comp_x_slave(hecMAT, Btot, hecMESHtmp, hecTKT, Tmat, &
         num_lagrange, slaves_detected, BLs_inv, conCOMM, n_slave, slaves)
-    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: recovered slave disp'
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: recovered slave disp'
 
     call comp_lag(hecMAT, Btot, hecMESHtmp, hecTKT, Kmat, &
         n_slave, slaves, num_lagrange, slaves_detected, BUs_inv, conCOMM)
-    if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: calculated lag'
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: recovered lag'
 
-    if (DEBUG >= 3) call debug_write_vector(hecMAT%X, 'Solution(original)', 'hecMAT%X', hecMAT%NDOF, hecMAT%N, &
+    if (DEBUG_VECTOR) call debug_write_vector(hecMAT%X, 'Solution(original)', 'hecMAT%X', hecMAT%NDOF, hecMAT%N, &
         hecMAT%NP, .false., num_lagrange, n_slave, slaves)
   end subroutine recover_solution
 
@@ -1067,7 +1099,7 @@ contains
     enddo
     !
     ! residual in original system
-    if (DEBUG >= 3) call debug_write_vector(r, 'Residual', 'R', ndof, hecMAT%N, &
+    if (DEBUG_VECTOR) call debug_write_vector(r, 'Residual', 'R', ndof, hecMAT%N, &
         hecMAT%NP, .false., hecLagMAT%num_lagrange, n_slave, slaves)
     !
     call hecmw_InnerProduct_R(hecMESH, NDOF, r, r, rnrm2)
@@ -1089,6 +1121,162 @@ contains
     endif
   end subroutine check_solution
 
+
+  subroutine check_solution2(hecMESH, hecMAT, conMAT, hecLagMAT, &
+       conCOMM, n_slave, slaves)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(inout) :: hecMAT
+    type (hecmwST_matrix), intent(in) :: conMAT
+    type (hecmwST_matrix_lagrange) , intent(in) :: hecLagMAT
+    type (hecmwST_contact_comm), intent(in) :: conCOMM
+    integer(kind=kint), intent(in) :: n_slave
+    integer(kind=kint), intent(in) :: slaves(:)
+    integer(kind=kint) :: ndof, ndof2, nndof, npndof, num_lagrange
+    integer(kind=kint) :: i, idof, j, jdof, ls, le, l
+    integer(kind=kint) :: irow, js, je, jcol
+    real(kind=kreal), allocatable, target :: r(:)
+    real(kind=kreal), allocatable :: r_con(:)
+    real(kind=kreal), pointer :: rlag(:), blag(:), xlag(:)
+    real(kind=kreal) :: rnrm2, rlagnrm2
+    integer(kind=kint) :: myrank
+
+    myrank = hecmw_comm_get_rank()
+    ndof = hecMAT%NDOF
+    ndof2 = ndof*ndof
+    nndof = hecMAT%N * ndof
+    npndof = hecMAT%NP * ndof
+    num_lagrange = hecLagMAT%num_lagrange
+    !
+    allocate(r(npndof + num_lagrange))
+    r(:) = 0.0d0
+    allocate(r_con(npndof))
+    r_con(:) = 0.0d0
+    !
+    rlag => r(npndof+1:npndof+num_lagrange)
+    blag => conMAT%B(npndof+1:npndof+num_lagrange)
+    xlag => hecMAT%X(npndof+1:npndof+num_lagrange)
+    !
+    !! <SUMMARY>
+    !! {r}    = {b} - [K] {x} - [Bt] {lag}
+    !! {rlag} = {c} - [B] {x}
+    !
+    ! 1. {r} = {r_org} + {r_con}
+    ! {r_org} = {b_org} - [hecMAT] {x}
+    ! {r_con} = {b_con} - [conMAT] {x} - [Bt] {lag}
+    !
+    ! 1.1 {r_org}
+    ! {r} = {b} - [K] {x}
+    call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r)
+    !
+    if (DEBUG_VECTOR) call debug_write_vector(r, 'Residual(original)', 'R', ndof, hecMAT%N, &
+        hecMAT%NP, .false., hecLagMAT%num_lagrange, n_slave, slaves)
+    !
+    ! 1.2 {r_con}
+    ! 1.2.1 {r_con} = {b_con} - [conMAT]{x}
+    ! Note: compute not only internal DOFs but also external DOFs, locally
+    ! !call hecmw_update_3_R(hecMESH, hecMAT%X, hecMAT%NP)  ! X is already updated
+    do i = 1, npndof
+      r_con(i) = conMAT%B(i)
+    enddo
+    do irow = 1,hecMAT%NP
+      ! lower
+      js = conMAT%indexL(irow-1)+1
+      je = conMAT%indexL(irow)
+      do j = js, je
+        jcol = conMAT%itemL(j)
+        do idof = 1, ndof
+          i = ndof*(irow-1)+idof
+          do jdof = 1, ndof
+            r_con(i) = r_con(i) - conMAT%AL(ndof2*(j-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(jcol-1)+jdof)
+          enddo
+        enddo
+      enddo
+      ! diag
+      do idof = 1, ndof
+        i = ndof*(irow-1)+idof
+        do jdof = 1, ndof
+          r_con(i) = r_con(i) - conMAT%D(ndof2*(irow-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(irow-1)+jdof)
+        enddo
+      enddo
+      ! upper
+      js = conMAT%indexU(irow-1)+1
+      je = conMAT%indexU(irow)
+      do j = js, je
+        jcol = conMAT%itemU(j)
+        do idof = 1, ndof
+          i = ndof*(irow-1)+idof
+          do jdof = 1, ndof
+            r_con(i) = r_con(i) - conMAT%AU(ndof2*(j-1)+ndof*(idof-1)+jdof) * hecMAT%X(ndof*(jcol-1)+jdof)
+          enddo
+        enddo
+      enddo
+    end do
+    !
+    ! 1.2.2 {r_con} = {r_con} - [Bt] {lag}
+    if (hecLagMAT%num_lagrange > 0) then
+      do i = 1, hecMAT%NP
+        ls = hecLagMAT%indexU_lagrange(i-1)+1
+        le = hecLagMAT%indexU_lagrange(i)
+        do l = ls, le
+          j = hecLagMAT%itemU_lagrange(l)
+          do idof = 1, ndof
+            r_con(ndof*(i-1)+idof) = r_con(ndof*(i-1)+idof) - hecLagMAT%AU_lagrange(ndof*(l-1)+idof) * xlag(j)
+          enddo
+        enddo
+      enddo
+    endif
+    !
+    if (DEBUG_VECTOR) call debug_write_vector(r, 'Residual(contact,local)', 'R_con', ndof, hecMAT%N, &
+        hecMAT%NP, .true., hecLagMAT%num_lagrange, n_slave, slaves)
+    !
+    ! 1.2.3 send external part of {r_con}
+    call hecmw_contact_comm_reduce_r(conCOMM, r_con, HECMW_SUM)
+    !
+    if (DEBUG_VECTOR) call debug_write_vector(r, 'Residual(contact,assembled)', 'R_con', ndof, hecMAT%N, &
+        hecMAT%NP, .false., hecLagMAT%num_lagrange, n_slave, slaves)
+    !
+    ! 1.3 {r} = {r_org} + {r_con}
+    do i = 1,nndof
+      r(i) = r(i) + r_con(i)
+    enddo
+    !
+    if (DEBUG_VECTOR) call debug_write_vector(r, 'Residual(total)', 'R', ndof, hecMAT%N, &
+        hecMAT%NP, .false., hecLagMAT%num_lagrange, n_slave, slaves)
+    !
+    ! 2.  {rlag} = {c} - [B] {x}
+    !call hecmw_update_3_R(hecMESH, hecMAT%X, hecMAT%NP)  ! X is already updated
+    do i = 1, num_lagrange
+      rlag(i) = blag(i)
+      ls = hecLagMAT%indexL_lagrange(i-1)+1
+      le = hecLagMAT%indexL_lagrange(i)
+      do l = ls, le
+        j = hecLagMAT%itemL_lagrange(l)
+        do jdof = 1, ndof
+          rlag(i) = rlag(i) - hecLagMAT%AL_lagrange(ndof*(l-1)+jdof) * hecMAT%X(ndof*(j-1)+jdof)
+        enddo
+      enddo
+    enddo
+    !
+    if (DEBUG_VECTOR) then
+      write(1000+myrank,*) 'Residual(lagrange)-----------------------------------------------------'
+      if (hecLagMAT%num_lagrange > 0) then
+        write(1000+myrank,*) 'R(lag):',hecMAT%NP*ndof+1,'-',hecMAT%NP*ndof+hecLagMAT%num_lagrange
+        write(1000+myrank,*) r(hecMAT%NP*ndof+1:hecMAT%NP*ndof+hecLagMAT%num_lagrange)
+      endif
+    endif
+    !
+    call hecmw_InnerProduct_R(hecMESH, NDOF, r, r, rnrm2)
+    rlagnrm2 = 0.0d0
+    do i = 1, num_lagrange
+      rlagnrm2 = rlagnrm2 + rlag(i)*rlag(i)
+    enddo
+    call hecmw_allreduce_R1(hecMESH, rlagnrm2, HECMW_SUM)
+    !
+    if (myrank == 0) write(0,*) 'INFO: resid(x,lag,tot)',sqrt(rnrm2),sqrt(rlagnrm2),sqrt(rnrm2+rlagnrm2)
+  end subroutine check_solution2
+
+
   !> \brief Find internal dofs that are in contact in some subdomain
   !>
   subroutine mark_slave_dof(Tmat, mark, n_slave, slaves)
@@ -1097,6 +1285,8 @@ contains
     integer(kind=kint), intent(out) :: n_slave
     integer(kind=kint), allocatable, intent(out) :: slaves(:)
     integer(kind=kint) :: ndof, ndof2, irow, js, je, j, jcol, idof, jdof, i
+    integer(kind=kint) :: myrank
+    myrank = hecmw_comm_get_rank()
     ndof = Tmat%ndof
     ndof2 = ndof*ndof
     mark(:) = 0
@@ -1121,7 +1311,7 @@ contains
     do i = 1, Tmat%nr * ndof
       if (mark(i) /= 0) n_slave = n_slave + 1
     enddo
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: n_slave',n_slave
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: n_slave',n_slave
     allocate(slaves(n_slave))
     n_slave = 0
     do i = 1, Tmat%nr * ndof
@@ -1130,7 +1320,7 @@ contains
         slaves(n_slave) = i
       endif
     enddo
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: slaves',slaves(:)
+    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: slaves',slaves(:)
   end subroutine mark_slave_dof
 
   !> \brief Place one on diagonal of unmarked dof of T or T^t matrix
@@ -1139,7 +1329,7 @@ contains
     type (hecmwST_local_matrix), intent(inout) :: Tmat
     integer(kind=kint), intent(in) :: mark(:)
     type (hecmwST_local_matrix) :: Imat, Wmat
-    integer(kind=kint) :: ndof, ndof2, i, irow, idof, n_slave, n_other
+    integer(kind=kint) :: ndof, ndof2, i, irow, idof
     ndof = Tmat%ndof
     ndof2 = ndof*ndof
     ! Imat: unit matrix except for slave dofs
@@ -1156,19 +1346,13 @@ contains
     enddo
     allocate(Imat%A(ndof2 * Imat%nnz))
     Imat%A(:) = 0.0d0
-    n_slave = 0
-    n_other = 0
     do irow = 1, Imat%nr
       do idof = 1, ndof
         if (mark(ndof*(irow-1)+idof) == 0) then
           Imat%A(ndof2*(irow-1)+ndof*(idof-1)+idof) = 1.0d0
-          n_other = n_other + 1
-        else
-          n_slave = n_slave + 1
         endif
       enddo
     enddo
-    if (DEBUG >= 2) write(0,*) '  DEBUG2: n_slave,n_other',n_slave,n_other
     call hecmw_localmat_add(Tmat, Imat, Wmat)
     call hecmw_localmat_free(Tmat)
     call hecmw_localmat_free(Imat)
@@ -1320,7 +1504,7 @@ contains
     character(len=*), intent(in) :: label
     integer(kind=kint) :: myrank
     myrank = hecmw_comm_get_rank()
-    write(1000+myrank,*) trim(label)
+    write(1000+myrank,*) trim(label),'============================================================'
     call hecmw_localmat_write(Mat, 1000+myrank)
   end subroutine debug_write_matrix
 
@@ -1338,7 +1522,7 @@ contains
     integer(kind=kint), intent(in), optional :: slaves(:)
     integer(kind=kint) :: myrank
     myrank = hecmw_comm_get_rank()
-    write(1000+myrank,*) label,'------------------------------------------------------------'
+    write(1000+myrank,*) trim(label),'------------------------------------------------------------'
     write(1000+myrank,*) 'size of ',trim(name),size(Vec)
     write(1000+myrank,*) trim(name),': 1-',N*ndof
     write(1000+myrank,*) Vec(1:N*ndof)
