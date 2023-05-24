@@ -196,6 +196,74 @@ contains
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: solve_eliminate end', t2-t0
   end subroutine solve_eliminate
 
+  !> \brief Copy mesh
+  !>
+  subroutine copy_mesh(src, dst)
+    type(hecmwST_local_mesh), intent(in)  :: src !< original mesh
+    type(hecmwST_local_mesh), intent(out) :: dst !< copy of the mesh
+
+    dst%zero          = src%zero
+    dst%MPI_COMM      = src%MPI_COMM
+    dst%PETOT         = src%PETOT
+    dst%PEsmpTOT      = src%PEsmpTOT
+    dst%my_rank       = src%my_rank
+    dst%n_subdomain   = src%n_subdomain
+    dst%n_node        = src%n_node
+    dst%nn_internal   = src%nn_internal
+    dst%n_elem        = src%n_elem
+    dst%ne_internal   = src%ne_internal
+    dst%n_elem_type   = src%n_elem_type
+    dst%n_dof         = src%n_dof
+    dst%n_neighbor_pe = src%n_neighbor_pe
+    if (src%n_neighbor_pe > 0) then
+      allocate(dst%neighbor_pe(dst%n_neighbor_pe))
+      dst%neighbor_pe(:) = src%neighbor_pe(:)
+      allocate(dst%import_index(0:dst%n_neighbor_pe))
+      allocate(dst%export_index(0:dst%n_neighbor_pe))
+      dst%import_index(:)= src%import_index(:)
+      dst%export_index(:)= src%export_index(:)
+      allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
+      dst%import_item(1:dst%import_index(dst%n_neighbor_pe)) = src%import_item(1:dst%import_index(dst%n_neighbor_pe))
+      allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
+      dst%export_item(1:dst%export_index(dst%n_neighbor_pe)) = src%export_item(1:dst%export_index(dst%n_neighbor_pe))
+      allocate(dst%global_node_ID(dst%n_node))
+      dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
+    else
+      dst%neighbor_pe => null()
+      dst%import_index => null()
+      dst%export_index => null()
+      dst%import_item => null()
+      dst%export_item => null()
+      dst%global_node_ID => src%global_node_ID
+    endif
+    allocate(dst%node_ID(2*dst%n_node))
+    dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*dst%n_node)
+    allocate(dst%elem_type_item(dst%n_elem_type))
+    dst%elem_type_item(:) = src%elem_type_item(:)
+    !dst%mpc            = src%mpc
+    ! MPC is already set outside of here
+    dst%mpc%n_mpc = 0
+    dst%node => src%node
+  end subroutine copy_mesh
+
+  !> \brief Free mesh
+  !>
+  subroutine free_mesh(hecMESH)
+    type(hecmwST_local_mesh), intent(inout) :: hecMESH  !< mesh
+
+    if (hecMESH%n_neighbor_pe > 0) then
+      deallocate(hecMESH%neighbor_pe)
+      deallocate(hecMESH%import_index)
+      deallocate(hecMESH%export_index)
+      deallocate(hecMESH%import_item)
+      deallocate(hecMESH%export_item)
+      deallocate(hecMESH%global_node_ID)
+    endif
+    deallocate(hecMESH%node_ID)
+    deallocate(hecMESH%elem_type_item)
+    !hecMESH%node => null()
+  end subroutine free_mesh
+
   !> \brief Make transformation matrices
   !>
   subroutine make_transformation_matrices(hecMESH, hecMESHtmp, hecMAT, hecLagMAT, &
@@ -570,6 +638,102 @@ contains
     call hecmw_localmat_free(Ttmat11)
   end subroutine add_Ct_to_Ttmat
 
+  !> \brief Make list of INTERNAL dofs that are in contact in WHOLE MODEL
+  !>
+  subroutine make_slave_list(Tmat, slaves)
+    type(hecmwST_local_matrix),      intent(in)  :: Tmat      !< blocked T matrix
+    integer(kind=kint), allocatable, intent(out) :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    !
+    integer(kind=kint), allocatable :: mark_slave(:)
+    integer(kind=kint) :: n_slave
+    integer(kind=kint) :: ndof, ndof2, irow, js, je, j, jcol, idof, jdof, i
+    integer(kind=kint) :: myrank
+
+    myrank = hecmw_comm_get_rank()
+    ndof = Tmat%ndof
+    ndof2 = ndof*ndof
+    allocate(mark_slave(Tmat%nr*ndof), source=0)
+    do irow = 1, Tmat%nr
+      js = Tmat%index(irow-1)+1
+      je = Tmat%index(irow)
+      do j = js, je
+        jcol = Tmat%item(j)
+        do idof = 1, ndof
+          if (mark_slave(ndof*(irow-1)+idof) == 1) cycle
+          do jdof = 1, ndof
+            if (irow == jcol .and. idof == jdof) cycle
+            if (abs(Tmat%A(ndof2*(j-1)+ndof*(idof-1)+jdof)) > tiny(0.0d0)) then
+              mark_slave(ndof*(irow-1)+idof) = 1
+              exit
+            endif
+          enddo
+        enddo
+      enddo
+    enddo
+    n_slave = 0
+    do i = 1, Tmat%nr * ndof
+      if (mark_slave(i) /= 0) n_slave = n_slave + 1
+    enddo
+    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: n_slave',n_slave
+    allocate(slaves(n_slave))
+    n_slave = 0
+    do i = 1, Tmat%nr * ndof
+      if (mark_slave(i) /= 0) then
+        n_slave = n_slave + 1
+        slaves(n_slave) = i
+      endif
+    enddo
+    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: slaves',slaves(:)
+    deallocate(mark_slave)
+  end subroutine make_slave_list
+
+  !> \brief Place one on diagonal of nonslave dof of T or T^t matrix
+  !>
+  subroutine add_Ip_to_Tmat(Tmat, slaves)
+    type(hecmwST_local_matrix), intent(inout) :: Tmat      !< blocked T matrix
+    integer(kind=kint),         intent(in)    :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    !
+    type(hecmwST_local_matrix) :: Imat, Wmat
+    integer(kind=kint) :: ndof, ndof2, i, irow, idof
+
+    ndof = Tmat%ndof
+    ndof2 = ndof*ndof
+    ! Imat: unit matrix except for slave dofs
+    Imat%nr = Tmat%nr
+    Imat%nc = Tmat%nc
+    Imat%nnz = Imat%nr
+    Imat%ndof = ndof
+    allocate(Imat%index(0:Imat%nr))
+    allocate(Imat%item(Imat%nnz))
+    Imat%index(0) = 0
+    do i = 1, Imat%nr
+      Imat%index(i) = i
+      Imat%item(i) = i
+    enddo
+    allocate(Imat%A(ndof2 * Imat%nnz))
+    Imat%A(:) = 0.0d0
+    do irow = 1, Imat%nr
+      do idof = 1, ndof
+        Imat%A(ndof2*(irow-1)+ndof*(idof-1)+idof) = 1.0d0
+      enddo
+    enddo
+    do i = 1, size(slaves)
+      irow = (slaves(i)+ndof-1)/ndof
+      idof = slaves(i)-ndof*(irow-1)
+      Imat%A(ndof2*(irow-1)+ndof*(idof-1)+idof) = 0.0d0
+    enddo
+    call hecmw_localmat_add(Tmat, Imat, Wmat)
+    call hecmw_localmat_free(Tmat)
+    call hecmw_localmat_free(Imat)
+    Tmat%nr = Wmat%nr
+    Tmat%nc = Wmat%nc
+    Tmat%nnz = Wmat%nnz
+    Tmat%ndof = Wmat%ndof
+    Tmat%index => Wmat%index
+    Tmat%item => Wmat%item
+    Tmat%A => Wmat%A
+  end subroutine add_Ip_to_Tmat
+
   !> \brief Make comm table for contact dofs for optimized communication
   !>
   subroutine make_contact_comm_table(hecMESH, hecMAT, hecLagMAT, conCOMM)
@@ -668,6 +832,38 @@ contains
     if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: n_contact_dof',n_contact_dof
     if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: contact_dofs',contact_dofs(:)
   end subroutine make_contact_dof_list
+
+  !> \brief Quick sort for integer array
+  !>
+  recursive subroutine quick_sort(array, id1, id2)
+    integer(kind=kint), intent(inout) :: array(:)  !< integer array
+    integer(kind=kint), intent(in)    :: id1, id2  !< index from id1 to id2 are sorted
+    !
+    integer(kind=kint) :: pivot, center, left, right, tmp
+
+    if (id1 >= id2) return
+    center = (id1 + id2) / 2
+    pivot = array(center)
+    left = id1
+    right = id2
+    do
+      do while (array(left) < pivot)
+        left = left + 1
+      end do
+      do while (pivot < array(right))
+        right = right - 1
+      end do
+      if (left >= right) exit
+      tmp = array(left)
+      array(left) = array(right)
+      array(right) = tmp
+      left = left + 1
+      right = right - 1
+    end do
+    if (id1 < left-1) call quick_sort(array, id1, left-1)
+    if (right+1 < id2) call quick_sort(array, right+1, id2)
+    return
+  end subroutine quick_sort
 
   !> \brief Assemble hecMAT and conMAT into Kmat and Btot
   !>
@@ -829,11 +1025,37 @@ contains
 
     call place_one_on_diag_of_slave_dof(TtKTmat, slaves)
     if (DEBUG_MATRIX) call debug_write_matrix(TtKTmat, 'TtKTmat (place 1.0 on slave diag)')
+
     call hecmw_mat_init(hecTKT)
     call hecmw_localmat_make_hecmat(hecMAT, TtKTmat, hecTKT)
     if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: convert TtKT to hecTKT done'
     call hecmw_localmat_free(TtKTmat)
   end subroutine convert_matrix
+
+  !> \brief Place 1.0 on diagonal of slave dof of T^tKT matrix
+  !>
+  subroutine place_one_on_diag_of_slave_dof(TtKTmat, slaves)
+    type(hecmwST_local_matrix), intent(inout) :: TtKTmat   !< converted matrix
+    integer(kind=kint),         intent(in)    :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    !
+    integer(kind=kint) :: ndof, ndof2, i, irow, idof, js, je, j, jcol
+
+    ndof = TtKTmat%ndof
+    ndof2 = ndof*ndof
+    do i = 1, size(slaves)
+      irow = (slaves(i)+ndof-1)/ndof
+      idof = slaves(i)-ndof*(irow-1)
+      js = TtKTmat%index(irow-1)+1
+      je = TtKTmat%index(irow)
+      do j = js, je
+        jcol = TtKTmat%item(j)
+        if (irow /= jcol) cycle
+        if (abs(TtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof)) > tiny(0.0d0)) &
+            stop 'ERROR: nonzero diag on slave dof of TtKTmat'
+        TtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof) = 1.0d0
+      enddo
+    enddo
+  end subroutine place_one_on_diag_of_slave_dof
 
   !> \brief Make converted RHS vector
   !>
@@ -1279,227 +1501,6 @@ contains
     !
     if (myrank == 0) write(0,*) 'INFO: resid(x,lag,tot)',sqrt(rnrm2),sqrt(rlagnrm2),sqrt(rnrm2+rlagnrm2)
   end subroutine check_solution2
-
-  !> \brief Make list of INTERNAL dofs that are in contact in WHOLE MODEL
-  !>
-  subroutine make_slave_list(Tmat, slaves)
-    type(hecmwST_local_matrix),      intent(in)  :: Tmat      !< blocked T matrix
-    integer(kind=kint), allocatable, intent(out) :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
-    !
-    integer(kind=kint), allocatable :: mark_slave(:)
-    integer(kind=kint) :: n_slave
-    integer(kind=kint) :: ndof, ndof2, irow, js, je, j, jcol, idof, jdof, i
-    integer(kind=kint) :: myrank
-
-    myrank = hecmw_comm_get_rank()
-    ndof = Tmat%ndof
-    ndof2 = ndof*ndof
-    allocate(mark_slave(Tmat%nr*ndof), source=0)
-    do irow = 1, Tmat%nr
-      js = Tmat%index(irow-1)+1
-      je = Tmat%index(irow)
-      do j = js, je
-        jcol = Tmat%item(j)
-        do idof = 1, ndof
-          if (mark_slave(ndof*(irow-1)+idof) == 1) cycle
-          do jdof = 1, ndof
-            if (irow == jcol .and. idof == jdof) cycle
-            if (abs(Tmat%A(ndof2*(j-1)+ndof*(idof-1)+jdof)) > tiny(0.0d0)) then
-              mark_slave(ndof*(irow-1)+idof) = 1
-              exit
-            endif
-          enddo
-        enddo
-      enddo
-    enddo
-    n_slave = 0
-    do i = 1, Tmat%nr * ndof
-      if (mark_slave(i) /= 0) n_slave = n_slave + 1
-    enddo
-    if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: n_slave',n_slave
-    allocate(slaves(n_slave))
-    n_slave = 0
-    do i = 1, Tmat%nr * ndof
-      if (mark_slave(i) /= 0) then
-        n_slave = n_slave + 1
-        slaves(n_slave) = i
-      endif
-    enddo
-    if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: slaves',slaves(:)
-    deallocate(mark_slave)
-  end subroutine make_slave_list
-
-  !> \brief Place one on diagonal of nonslave dof of T or T^t matrix
-  !>
-  subroutine add_Ip_to_Tmat(Tmat, slaves)
-    type(hecmwST_local_matrix), intent(inout) :: Tmat      !< blocked T matrix
-    integer(kind=kint),         intent(in)    :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
-    !
-    type(hecmwST_local_matrix) :: Imat, Wmat
-    integer(kind=kint) :: ndof, ndof2, i, irow, idof
-
-    ndof = Tmat%ndof
-    ndof2 = ndof*ndof
-    ! Imat: unit matrix except for slave dofs
-    Imat%nr = Tmat%nr
-    Imat%nc = Tmat%nc
-    Imat%nnz = Imat%nr
-    Imat%ndof = ndof
-    allocate(Imat%index(0:Imat%nr))
-    allocate(Imat%item(Imat%nnz))
-    Imat%index(0) = 0
-    do i = 1, Imat%nr
-      Imat%index(i) = i
-      Imat%item(i) = i
-    enddo
-    allocate(Imat%A(ndof2 * Imat%nnz))
-    Imat%A(:) = 0.0d0
-    do irow = 1, Imat%nr
-      do idof = 1, ndof
-        Imat%A(ndof2*(irow-1)+ndof*(idof-1)+idof) = 1.0d0
-      enddo
-    enddo
-    do i = 1, size(slaves)
-      irow = (slaves(i)+ndof-1)/ndof
-      idof = slaves(i)-ndof*(irow-1)
-      Imat%A(ndof2*(irow-1)+ndof*(idof-1)+idof) = 0.0d0
-    enddo
-    call hecmw_localmat_add(Tmat, Imat, Wmat)
-    call hecmw_localmat_free(Tmat)
-    call hecmw_localmat_free(Imat)
-    Tmat%nr = Wmat%nr
-    Tmat%nc = Wmat%nc
-    Tmat%nnz = Wmat%nnz
-    Tmat%ndof = Wmat%ndof
-    Tmat%index => Wmat%index
-    Tmat%item => Wmat%item
-    Tmat%A => Wmat%A
-  end subroutine add_Ip_to_Tmat
-
-  !> \brief Place 1.0 on diagonal of slave dof of T^tKT matrix
-  !>
-  subroutine place_one_on_diag_of_slave_dof(TtKTmat, slaves)
-    type(hecmwST_local_matrix), intent(inout) :: TtKTmat   !< converted matrix
-    integer(kind=kint),         intent(in)    :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
-    !
-    integer(kind=kint) :: ndof, ndof2, i, irow, idof, js, je, j, jcol
-
-    ndof = TtKTmat%ndof
-    ndof2 = ndof*ndof
-    do i = 1, size(slaves)
-      irow = (slaves(i)+ndof-1)/ndof
-      idof = slaves(i)-ndof*(irow-1)
-      js = TtKTmat%index(irow-1)+1
-      je = TtKTmat%index(irow)
-      do j = js, je
-        jcol = TtKTmat%item(j)
-        if (irow /= jcol) cycle
-        if (abs(TtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof)) > tiny(0.0d0)) &
-            stop 'ERROR: nonzero diag on slave dof of TtKTmat'
-        TtKTmat%A(ndof2*(j-1)+ndof*(idof-1)+idof) = 1.0d0
-      enddo
-    enddo
-  end subroutine place_one_on_diag_of_slave_dof
-
-  !> \brief Copy mesh
-  !>
-  subroutine copy_mesh(src, dst)
-    type(hecmwST_local_mesh), intent(in)  :: src !< original mesh
-    type(hecmwST_local_mesh), intent(out) :: dst !< copy of the mesh
-
-    dst%zero          = src%zero
-    dst%MPI_COMM      = src%MPI_COMM
-    dst%PETOT         = src%PETOT
-    dst%PEsmpTOT      = src%PEsmpTOT
-    dst%my_rank       = src%my_rank
-    dst%n_subdomain   = src%n_subdomain
-    dst%n_node        = src%n_node
-    dst%nn_internal   = src%nn_internal
-    dst%n_elem        = src%n_elem
-    dst%ne_internal   = src%ne_internal
-    dst%n_elem_type   = src%n_elem_type
-    dst%n_dof         = src%n_dof
-    dst%n_neighbor_pe = src%n_neighbor_pe
-    if (src%n_neighbor_pe > 0) then
-      allocate(dst%neighbor_pe(dst%n_neighbor_pe))
-      dst%neighbor_pe(:) = src%neighbor_pe(:)
-      allocate(dst%import_index(0:dst%n_neighbor_pe))
-      allocate(dst%export_index(0:dst%n_neighbor_pe))
-      dst%import_index(:)= src%import_index(:)
-      dst%export_index(:)= src%export_index(:)
-      allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
-      dst%import_item(1:dst%import_index(dst%n_neighbor_pe)) = src%import_item(1:dst%import_index(dst%n_neighbor_pe))
-      allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
-      dst%export_item(1:dst%export_index(dst%n_neighbor_pe)) = src%export_item(1:dst%export_index(dst%n_neighbor_pe))
-      allocate(dst%global_node_ID(dst%n_node))
-      dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
-    else
-      dst%neighbor_pe => null()
-      dst%import_index => null()
-      dst%export_index => null()
-      dst%import_item => null()
-      dst%export_item => null()
-      dst%global_node_ID => src%global_node_ID
-    endif
-    allocate(dst%node_ID(2*dst%n_node))
-    dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*dst%n_node)
-    allocate(dst%elem_type_item(dst%n_elem_type))
-    dst%elem_type_item(:) = src%elem_type_item(:)
-    !dst%mpc            = src%mpc
-    ! MPC is already set outside of here
-    dst%mpc%n_mpc = 0
-    dst%node => src%node
-  end subroutine copy_mesh
-
-  !> \brief Free mesh
-  !>
-  subroutine free_mesh(hecMESH)
-    type(hecmwST_local_mesh), intent(inout) :: hecMESH  !< mesh
-
-    if (hecMESH%n_neighbor_pe > 0) then
-      deallocate(hecMESH%neighbor_pe)
-      deallocate(hecMESH%import_index)
-      deallocate(hecMESH%export_index)
-      deallocate(hecMESH%import_item)
-      deallocate(hecMESH%export_item)
-      deallocate(hecMESH%global_node_ID)
-    endif
-    deallocate(hecMESH%node_ID)
-    deallocate(hecMESH%elem_type_item)
-    !hecMESH%node => null()
-  end subroutine free_mesh
-
-  !> \brief Quick sort for integer array
-  !>
-  recursive subroutine quick_sort(array, id1, id2)
-    integer(kind=kint), intent(inout) :: array(:)  !< integer array
-    integer(kind=kint), intent(in)    :: id1, id2  !< index from id1 to id2 are sorted
-    !
-    integer(kind=kint) :: pivot, center, left, right, tmp
-
-    if (id1 >= id2) return
-    center = (id1 + id2) / 2
-    pivot = array(center)
-    left = id1
-    right = id2
-    do
-      do while (array(left) < pivot)
-        left = left + 1
-      end do
-      do while (pivot < array(right))
-        right = right - 1
-      end do
-      if (left >= right) exit
-      tmp = array(left)
-      array(left) = array(right)
-      array(right) = tmp
-      left = left + 1
-      right = right - 1
-    end do
-    if (id1 < left-1) call quick_sort(array, id1, left-1)
-    if (right+1 < id2) call quick_sort(array, right+1, id2)
-    return
-  end subroutine quick_sort
 
   !> \brief Debug write matrix
   !>
