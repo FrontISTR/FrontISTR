@@ -30,10 +30,10 @@ module m_solve_LINEQ_iter_contact
 contains
 
   subroutine solve_LINEQ_iter_contact_init(hecMESH, hecMAT, hecLagMAT, is_sym)
-    type(hecmwST_local_mesh),      intent(in)    :: hecMESH
-    type(hecmwST_matrix),          intent(inout) :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(in)    :: hecLagMAT !< type hecmwST_matrix_lagrange
-    logical,                       intent(in)    :: is_sym
+    type(hecmwST_local_mesh),      intent(in)    :: hecMESH   !< mesh
+    type(hecmwST_matrix),          intent(inout) :: hecMAT    !< matrix excl. contact
+    type(hecmwST_matrix_lagrange), intent(in)    :: hecLagMAT !< matrix for lagrange multipliers
+    logical,                       intent(in)    :: is_sym    !< if matrix is symmetric or not
 
     if (INITIALIZED) then
       INITIALIZED = .false.
@@ -52,12 +52,12 @@ contains
   end subroutine solve_LINEQ_iter_contact_init
 
   subroutine solve_LINEQ_iter_contact(hecMESH, hecMAT, hecLagMAT, istat, conMAT, is_contact_active)
-    type(hecmwST_local_mesh),      intent(in)    :: hecMESH
-    type(hecmwST_matrix),          intent(inout) :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint),            intent(out)   :: istat
-    type(hecmwST_matrix),          intent(in)    :: conMAT
-    logical,                       intent(in)    :: is_contact_active
+    type(hecmwST_local_mesh),      intent(in)    :: hecMESH           !< mesh
+    type(hecmwST_matrix),          intent(inout) :: hecMAT            !< matrix excl. contact
+    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT         !< matrix for lagrange multipliers
+    integer(kind=kint),            intent(out)   :: istat             !< status
+    type(hecmwST_matrix),          intent(in)    :: conMAT            !< matrix for contact
+    logical,                       intent(in)    :: is_contact_active !< if contact is active or not
     !
     integer(kind=kint) :: method_org, precond_org
     logical            :: fg_amg
@@ -104,22 +104,22 @@ contains
   !> \brief Solve with elimination of Lagrange-multipliers
   !>
   subroutine solve_eliminate(hecMESH,hecMAT,hecLagMAT,conMAT)
-    type(hecmwST_local_mesh),      intent(in)    :: hecMESH
-    type(hecmwST_matrix),          intent(inout) :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    type(hecmwST_matrix),          intent(in) :: conMAT
+    type(hecmwST_local_mesh),      intent(in)    :: hecMESH   !< original mesh
+    type(hecmwST_matrix),          intent(inout) :: hecMAT    !< original matrix excl. contact
+    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< original matrix for lagrange multipliers
+    type(hecmwST_matrix),          intent(in)    :: conMAT    !< original matrix for contact
     !
-    type(hecmwST_local_mesh)        :: hecMESHtmp
-    integer(kind=kint), allocatable :: slaves4lag(:)  !< list of slave dofs detected in this subdomain
-    real(kind=kreal),   allocatable :: BLs_inv(:)   !< inverse of diagonal BLs matrix
-    real(kind=kreal),   allocatable :: BUs_inv(:)   !< inverse of diagonal BUs matrix
-    type(hecmwST_local_matrix)      :: Tmat        !< blocked T matrix
-    type(hecmwST_local_matrix)      :: Ttmat       !< blocked T^t matrix
-    integer(kind=kint), allocatable :: slaves(:)  !< list of internal dofs that are in contact in some subdomain
-    type(hecmwST_contact_comm)      :: conCOMM
-    type(hecmwST_local_matrix)      :: Kmat
-    real(kind=kreal),   allocatable :: Btot(:)
-    type(hecmwST_matrix)            :: hecTKT
+    type(hecmwST_local_mesh)        :: hecMESHtmp     !< temoprary copy of mesh for migrating nodes
+    integer(kind=kint), allocatable :: slaves4lag(:)  !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),   allocatable :: BLs_inv(:)     !< inverse of diagonal BLs matrix
+    real(kind=kreal),   allocatable :: BUs_inv(:)     !< inverse of diagonal BUs matrix
+    type(hecmwST_local_matrix)      :: Tmat           !< blocked T matrix
+    type(hecmwST_local_matrix)      :: Ttmat          !< blocked T^t matrix
+    integer(kind=kint), allocatable :: slaves(:)      !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    type(hecmwST_contact_comm)      :: conCOMM        !< contact comm table for optimized communication
+    type(hecmwST_local_matrix)      :: Kmat           !< total K matrix assembled from hecMAT and conMAT
+    real(kind=kreal),   allocatable :: Btot(:)        !< total RHS vector assembled from hecMAT%B and conMAT%B
+    type(hecmwST_matrix)            :: hecTKT         !< converted system's matrix and RHS
     integer(kind=kint)              :: ndof
     integer(kind=kint)              :: myrank
     real(kind=kreal)                :: t0, t1, t2
@@ -200,16 +200,16 @@ contains
   !>
   subroutine make_transformation_matrices(hecMESH, hecMESHtmp, hecMAT, hecLagMAT, &
       slaves4lag, BLs_inv, BUs_inv, slaves, Tmat, Ttmat)
-    type(hecmwST_local_mesh),        intent(in)    :: hecMESH
-    type(hecmwST_local_mesh),        intent(inout) :: hecMESHtmp
-    type(hecmwST_matrix),            intent(inout) :: hecMAT
-    type(hecmwST_matrix_lagrange),   intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint),              intent(out)   :: slaves4lag(:)
-    real(kind=kreal),                intent(out)   :: BLs_inv(:)
-    real(kind=kreal),                intent(out)   :: BUs_inv(:)
-    integer(kind=kint), allocatable, intent(out)   :: slaves(:)
-    type(hecmwST_local_matrix),      intent(out)   :: Tmat
-    type(hecmwST_local_matrix),      intent(out)   :: Ttmat
+    type(hecmwST_local_mesh),        intent(in)    :: hecMESH       !< original mesh
+    type(hecmwST_local_mesh),        intent(inout) :: hecMESHtmp    !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),            intent(inout) :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_matrix_lagrange),   intent(inout) :: hecLagMAT     !< original matrix for lagrange multipliers
+    integer(kind=kint),              intent(out)   :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),                intent(out)   :: BLs_inv(:)    !< inverse of diagonal BLs matrix
+    real(kind=kreal),                intent(out)   :: BUs_inv(:)    !< inverse of diagonal BUs matrix
+    integer(kind=kint), allocatable, intent(out)   :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    type(hecmwST_local_matrix),      intent(out)   :: Tmat          !< blocked T matrix
+    type(hecmwST_local_matrix),      intent(out)   :: Ttmat         !< blocked T^t matrix
     !
     integer(kind=kint) :: myrank, n
 
@@ -250,22 +250,22 @@ contains
       if (DEBUG_MATRIX) call debug_write_matrix(Ttmat, 'Ttmat (assembled, Ct only)')
     endif
 
-    ! place 1 on diag of non-slave dofs of Tmat and Ttmat
+    ! add Ip to Tmat and Ttmat
     call make_slave_list(Tmat, slaves)
     call add_Ip_to_Tmat(Tmat, slaves)
-    if (DEBUG_MATRIX) call debug_write_matrix(Tmat, 'Tmat (1s on non-slave diag)')
+    if (DEBUG_MATRIX) call debug_write_matrix(Tmat, 'Tmat (final)')
     call add_Ip_to_Tmat(Ttmat, slaves)
-    if (DEBUG_MATRIX) call debug_write_matrix(Ttmat, 'Ttmat (1s on non-slave diag)')
+    if (DEBUG_MATRIX) call debug_write_matrix(Ttmat, 'Ttmat (final)')
     if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: place 1 on diag of T and Tt done'
   end subroutine make_transformation_matrices
 
   !> \brief Choose slave dofs and compute BL_s^(-1) and BU_s^(-1)
   !>
   subroutine choose_slaves(hecMAT, hecLagMAT, n, slaves4lag)
-    type(hecmwST_matrix),          intent(in)  :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(in)  :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint),            intent(in)  :: n
-    integer(kind=kint),            intent(out) :: slaves4lag(:)
+    type(hecmwST_matrix),          intent(in)  :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_matrix_lagrange), intent(in)  :: hecLagMAT     !< original matrix for lagrange multipliers
+    integer(kind=kint),            intent(in)  :: n             !< num of nodes in this subdomain
+    integer(kind=kint),            intent(out) :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
     !
     integer(kind=kint) :: ndof, i, j, idof, jdof, l, ls, le, idx, imax, iwmin
     real(kind=kreal)   :: val, vmax
@@ -374,10 +374,10 @@ contains
   !> \brief Compute BL_s^(-1)
   !>
   subroutine make_BLs_inv(hecLagMAT, ndof, slaves4lag, BLs_inv)
-    type(hecmwST_matrix_lagrange), intent(in)  :: hecLagMAT
-    integer(kind=kint),            intent(in)  :: ndof
-    integer(kind=kint),            intent(in)  :: slaves4lag(:)
-    real(kind=kreal),              intent(out) :: BLs_inv(:)
+    type(hecmwST_matrix_lagrange), intent(in)  :: hecLagMAT     !< original matrix for lagrange multipliers
+    integer(kind=kint),            intent(in)  :: ndof          !< num of DOF per node
+    integer(kind=kint),            intent(in)  :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),              intent(out) :: BLs_inv(:)    !< inverse of diagonal BLs matrix
     !
     integer(kind=kint) :: ilag, ls, le, l, j, jdof, idx
 
@@ -404,10 +404,10 @@ contains
   !> \brief Compute BU_s^(-1)
   !>
   subroutine make_BUs_inv(hecLagMAT, ndof, slaves4lag, BUs_inv)
-    type(hecmwST_matrix_lagrange), intent(in)  :: hecLagMAT
-    integer(kind=kint),            intent(in)  :: ndof
-    integer(kind=kint),            intent(in)  :: slaves4lag(:)
-    real(kind=kreal),              intent(out) :: BUs_inv(:)
+    type(hecmwST_matrix_lagrange), intent(in)  :: hecLagMAT     !< original matrix for lagrange multipliers
+    integer(kind=kint),            intent(in)  :: ndof          !< num of DOF per node
+    integer(kind=kint),            intent(in)  :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),              intent(out) :: BUs_inv(:)    !< inverse of diagonal BUs matrix
     !
     integer(kind=kint) :: ilag, i, idof, js, je, j, k
 
@@ -433,12 +433,12 @@ contains
   !> \brief Make 3x3-blocked T matrix
   !>
   subroutine add_C_to_Tmat(hecMAT, hecLagMAT, n, slaves4lag, BLs_inv, Tmat)
-    type(hecmwST_matrix),          intent(inout) :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint),            intent(in)    :: n
-    integer(kind=kint),            intent(in)    :: slaves4lag(:)
-    real(kind=kreal),              intent(in)    :: BLs_inv(:)
-    type(hecmwST_local_matrix),    intent(out)   :: Tmat
+    type(hecmwST_matrix),          intent(inout) :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT     !< original matrix for lagrange multipliers
+    integer(kind=kint),            intent(in)    :: n             !< num of nodes in this subdomain
+    integer(kind=kint),            intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),              intent(in)    :: BLs_inv(:)    !< inverse of diagonal BLs matrix
+    type(hecmwST_local_matrix),    intent(out)   :: Tmat          !< blocked T matrix
     !
     type(hecmwST_local_matrix) :: Tmat11
     integer(kind=kint), allocatable :: nz_cnt(:)
@@ -500,12 +500,12 @@ contains
   !> \brief Make 3x3-blocked T^t matrix
   !>
   subroutine add_Ct_to_Ttmat(hecMAT, hecLagMAT, n, slaves4lag, BUs_inv, Ttmat)
-    type(hecmwST_matrix),          intent(inout) :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint),            intent(in)    :: n
-    integer(kind=kint),            intent(in)    :: slaves4lag(:)
-    real(kind=kreal),              intent(in)    :: BUs_inv(:)
-    type(hecmwST_local_matrix),    intent(out)   :: Ttmat
+    type(hecmwST_matrix),          intent(inout) :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT     !< original matrix for lagrange multipliers
+    integer(kind=kint),            intent(in)    :: n             !< num of nodes in this subdomain
+    integer(kind=kint),            intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),              intent(in)    :: BUs_inv(:)    !< inverse of diagonal BUs matrix
+    type(hecmwST_local_matrix),    intent(out)   :: Ttmat         !< blocked T^t matrix
     !
     type(hecmwST_local_matrix) :: Ttmat11
     integer(kind=kint), allocatable :: nz_cnt(:)
@@ -573,10 +573,10 @@ contains
   !> \brief Make comm table for contact dofs for optimized communication
   !>
   subroutine make_contact_comm_table(hecMESH, hecMAT, hecLagMAT, conCOMM)
-    type(hecmwST_local_mesh),      intent(in)  :: hecMESH
-    type(hecmwST_matrix),          intent(in)  :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(in)  :: hecLagMAT
-    type(hecmwST_contact_comm),    intent(out) :: conCOMM
+    type(hecmwST_local_mesh),      intent(in)  :: hecMESH   !< original mesh
+    type(hecmwST_matrix),          intent(in)  :: hecMAT    !< original matrix excl. contact
+    type(hecmwST_matrix_lagrange), intent(in)  :: hecLagMAT !< original matrix for lagrange multipliers
+    type(hecmwST_contact_comm),    intent(out) :: conCOMM   !< contact comm table for optimized communication
     !
     integer(kind=kint)              :: n_contact_dof
     integer(kind=kint), allocatable :: contact_dofs(:)
@@ -591,10 +591,10 @@ contains
   !> \brief Make list of contact dofs including all dofs of master and slave nodes
   !>
   subroutine make_contact_dof_list(hecMAT, hecLagMAT, n_contact_dof, contact_dofs)
-    type(hecmwST_matrix),            intent(in)  :: hecMAT
-    type(hecmwST_matrix_lagrange),   intent(in)  :: hecLagMAT
-    integer(kind=kint),              intent(out) :: n_contact_dof
-    integer(kind=kint), allocatable, intent(out) :: contact_dofs(:)
+    type(hecmwST_matrix),            intent(in)  :: hecMAT          !< original matrix excl. contact
+    type(hecmwST_matrix_lagrange),   intent(in)  :: hecLagMAT       !< original matrix for lagrange multipliers
+    integer(kind=kint),              intent(out) :: n_contact_dof   !< num of contact DOFs
+    integer(kind=kint), allocatable, intent(out) :: contact_dofs(:) !< list of contact DOFs
     !
     integer(kind=kint) :: ndof, icnt, ilag, ls, le, l, jnode, jdof, k, inode, jlag, idof, i
     integer(kind=kint), allocatable :: iw(:)
@@ -673,15 +673,15 @@ contains
   !>
   subroutine assemble_equation(hecMESH, hecMESHtmp, hecMAT, conMAT, num_lagrange, &
       slaves, conCOMM, Kmat, Btot)
-    type(hecmwST_local_mesh),   intent(in)    :: hecMESH
-    type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp
-    type(hecmwST_matrix),       intent(in)    :: hecMAT
-    type(hecmwST_matrix),       intent(in)    :: conMAT
-    integer(kind=kint),         intent(in)    :: num_lagrange
-    integer(kind=kint),         intent(in)    :: slaves(:)
-    type(hecmwST_contact_comm), intent(in)    :: conCOMM
-    type(hecmwST_local_matrix), intent(out)   :: Kmat
-    real(kind=kreal),           intent(out)   :: Btot(:)
+    type(hecmwST_local_mesh),   intent(in)    :: hecMESH      !< original mesh
+    type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp   !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),       intent(in)    :: hecMAT       !< original matrix excl. contact
+    type(hecmwST_matrix),       intent(in)    :: conMAT       !< original matrix for contact
+    integer(kind=kint),         intent(in)    :: num_lagrange !< num of lagrange multipliers in this subdomain
+    integer(kind=kint),         intent(in)    :: slaves(:)    !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    type(hecmwST_contact_comm), intent(in)    :: conCOMM      !< contact comm table for optimized communication
+    type(hecmwST_local_matrix), intent(out)   :: Kmat         !< total K matrix assembled from hecMAT and conMAT
+    real(kind=kreal),           intent(out)   :: Btot(:)      !< total RHS vector assembled from hecMAT%B and conMAT%B
     !
     integer(kind=kint) :: myrank
 
@@ -698,12 +698,12 @@ contains
   !> \brief Assemble hecMAT and conMAT into Kmat
   !>
   subroutine assemble_matrix(hecMESH, hecMESHtmp, hecMAT, conMAT, num_lagrange, Kmat)
-    type(hecmwST_local_mesh),   intent(in)    :: hecMESH
-    type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp
-    type(hecmwST_matrix),       intent(in)    :: hecMAT
-    type(hecmwST_matrix),       intent(in)    :: conMAT
-    integer(kind=kint),         intent(in)    :: num_lagrange
-    type(hecmwST_local_matrix), intent(out)   :: Kmat
+    type(hecmwST_local_mesh),   intent(in)    :: hecMESH      !< original mesh
+    type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp   !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),       intent(in)    :: hecMAT       !< original matrix excl. contact
+    type(hecmwST_matrix),       intent(in)    :: conMAT       !< original matrix for contact
+    integer(kind=kint),         intent(in)    :: num_lagrange !< num of lagrange multipliers in this subdomain
+    type(hecmwST_local_matrix), intent(out)   :: Kmat         !< total K matrix assembled from hecMAT and conMAT
     !
     integer(kind=kint) :: myrank
 
@@ -729,13 +729,13 @@ contains
   !> \brief Assemble hecMAT%B and conMAT%B into Btot
   !>
   subroutine assemble_rhs(hecMAT, conMAT, num_lagrange, slaves, conCOMM, Btot)
-    ! type(hecmwST_local_mesh),   intent(in) :: hecMESH
-    type(hecmwST_matrix),       intent(in) :: hecMAT
-    type(hecmwST_matrix),       intent(in) :: conMAT
-    integer(kind=kint),         intent(in) :: num_lagrange
-    integer(kind=kint),         intent(in) :: slaves(:)
-    type(hecmwST_contact_comm), intent(in) :: conCOMM
-    real(kind=kreal),           intent(out) :: Btot(:)
+    ! type(hecmwST_local_mesh),   intent(in) :: hecMESH    !< original mesh
+    type(hecmwST_matrix),       intent(in) :: hecMAT       !< original matrix excl. contact
+    type(hecmwST_matrix),       intent(in) :: conMAT       !< original matrix for contact
+    integer(kind=kint),         intent(in) :: num_lagrange !< num of lagrange multipliers in this subdomain
+    integer(kind=kint),         intent(in) :: slaves(:)    !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    type(hecmwST_contact_comm), intent(in) :: conCOMM      !< contact comm table for optimized communication
+    real(kind=kreal),           intent(out) :: Btot(:)     !< total RHS vector assembled from hecMAT%B and conMAT%B
     !
     integer(kind=kint) :: ndof, i, myrank
 
@@ -753,7 +753,7 @@ contains
     enddo
 
     if (hecmw_comm_get_size() > 1) then
-      ! next line can be replaced by: call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, ndof)
+      ! next line can be: call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, ndof)
       call hecmw_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
       if (DEBUG_VECTOR) call debug_write_vector(Btot, 'RHS(conMAT assembled)', 'Btot', ndof, conMAT%N, &
           conMAT%NP, .false., num_lagrange, slaves)
@@ -773,17 +773,17 @@ contains
   !>
   subroutine convert_equation(hecMESHtmp, hecMAT, Kmat, Tmat, Ttmat, Btot, slaves, &
       slaves4lag, BLs_inv, conCOMM, hecTKT)
-    type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp
-    type(hecmwST_matrix),       intent(in)    :: hecMAT
-    type(hecmwST_local_matrix), intent(inout) :: Kmat
-    type(hecmwST_local_matrix), intent(inout) :: Tmat
-    type(hecmwST_local_matrix), intent(in)    :: Ttmat
-    real(kind=kreal),           intent(in)    :: Btot(:)
-    integer(kind=kint),         intent(in)    :: slaves(:)
-    integer(kind=kint),         intent(in)    :: slaves4lag(:)
-    real(kind=kreal),           intent(in)    :: BLs_inv(:)
-    type(hecmwST_contact_comm), intent(in)    :: conCOMM
-    type(hecmwST_matrix),       intent(out)   :: hecTKT
+    type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp    !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),       intent(in)    :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_local_matrix), intent(inout) :: Kmat          !< total K matrix assembled from hecMAT and conMAT
+    type(hecmwST_local_matrix), intent(inout) :: Tmat          !< blocked T matrix
+    type(hecmwST_local_matrix), intent(in)    :: Ttmat         !< blocked T^t matrix
+    real(kind=kreal),           intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
+    integer(kind=kint),         intent(in)    :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    integer(kind=kint),         intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),           intent(in)    :: BLs_inv(:)    !< inverse of diagonal BLs matrix
+    type(hecmwST_contact_comm), intent(in)    :: conCOMM       !< contact comm table for optimized communication
+    type(hecmwST_matrix),       intent(out)   :: hecTKT        !< converted system's matrix and RHS
     !
     integer(kind=kint) :: myrank
 
@@ -800,13 +800,13 @@ contains
   !> \brief Make converted matrix
   !>
   subroutine convert_matrix(hecMESHtmp, hecMAT, Ttmat, Kmat, Tmat, slaves, hecTKT)
-    type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp
-    type(hecmwST_matrix),       intent(in)    :: hecMAT
-    type(hecmwST_local_matrix), intent(in)    :: Ttmat
-    type(hecmwST_local_matrix), intent(inout) :: Kmat
-    type(hecmwST_local_matrix), intent(inout) :: Tmat
-    integer(kind=kint),         intent(in)    :: slaves(:)
-    type(hecmwST_matrix),       intent(out)   :: hecTKT
+    type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),       intent(in)    :: hecMAT     !< original matrix excl. contact
+    type(hecmwST_local_matrix), intent(in)    :: Ttmat      !< blocked T^t matrix
+    type(hecmwST_local_matrix), intent(inout) :: Kmat       !< total K matrix assembled from hecMAT and conMAT
+    type(hecmwST_local_matrix), intent(inout) :: Tmat       !< blocked T matrix
+    integer(kind=kint),         intent(in)    :: slaves(:)  !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    type(hecmwST_matrix),       intent(out)   :: hecTKT     !< converted system's matrix and RHS
     !
     type(hecmwST_local_matrix) :: TtKmat, TtKTmat
     integer(kind=kint) :: myrank
@@ -839,15 +839,15 @@ contains
   !>
   subroutine convert_rhs(hecMESHtmp, hecMAT, hecTKT, Ttmat, Kmat, &
        slaves4lag, BLs_inv, Btot, conCOMM)
-    type(hecmwST_local_mesh),   intent(in)    :: hecMESHtmp
-    type(hecmwST_matrix),       intent(in)    :: hecMAT
-    type(hecmwST_matrix),       intent(inout) :: hecTKT
-    type(hecmwST_local_matrix), intent(in)    :: Ttmat
-    type(hecmwST_local_matrix), intent(in)    :: Kmat
-    integer(kind=kint),         intent(in)    :: slaves4lag(:)
-    real(kind=kreal),           intent(in)    :: BLs_inv(:)
-    real(kind=kreal),           intent(in)    :: Btot(:)
-    type(hecmwST_contact_comm), intent(in)    :: conCOMM
+    type(hecmwST_local_mesh),   intent(in)    :: hecMESHtmp    !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),       intent(in)    :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_matrix),       intent(inout) :: hecTKT        !< converted system's matrix and RHS
+    type(hecmwST_local_matrix), intent(in)    :: Ttmat         !< blocked T^t matrix
+    type(hecmwST_local_matrix), intent(in)    :: Kmat          !< total K matrix assembled from hecMAT and conMAT
+    integer(kind=kint),         intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),           intent(in)    :: BLs_inv(:)    !< inverse of diagonal BLs matrix
+    real(kind=kreal),           intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
+    type(hecmwST_contact_comm), intent(in)    :: conCOMM       !< contact comm table for optimized communication
     !
     real(kind=kreal), allocatable :: Btmp(:)
     integer(kind=kint) :: npndof, nndof, npndof_new, ilag, i
@@ -871,7 +871,7 @@ contains
       hecTKT%B(slaves4lag(ilag))=-BLs_inv(ilag)*Btot(npndof+ilag)
     enddo
     ! send external contact dof => recv internal contact dof
-    ! next line can be replace by: call hecmw_assemble_R(hecMESHtmp, hecTKT%B, hecTKT%NP, hecMAT%NDOF)
+    ! next line can be: call hecmw_assemble_R(hecMESHtmp, hecTKT%B, hecTKT%NP, hecMAT%NDOF)
     call hecmw_contact_comm_reduce_r(conCOMM, hecTKT%B, HECMW_SUM)
     ! Btmp=B+K*B2 (including update of hecTKT%B)
     call hecmw_update_R(hecMESHtmp, hecTKT%B, hecTKT%NP, hecMAT%NDOF)
@@ -891,18 +891,18 @@ contains
   !>
   subroutine recover_solution(hecMESHtmp, hecMAT, hecTKT, Tmat, Kmat, Btot, &
       slaves4lag, BLs_inv, BUs_inv, conCOMM, slaves)
-    ! type(hecmwST_local_mesh),   intent(in)    :: hecMESH
-    type(hecmwST_local_mesh),   intent(in)    :: hecMESHtmp
-    type(hecmwST_matrix),       intent(inout) :: hecMAT
-    type(hecmwST_matrix),       intent(inout) :: hecTKT
-    type(hecmwST_local_matrix), intent(in)    :: Tmat
-    type(hecmwST_local_matrix), intent(in)    :: Kmat
-    real(kind=kreal),           intent(in)    :: Btot(:)
-    integer(kind=kint),         intent(in)    :: slaves4lag(:)
-    real(kind=kreal),           intent(in)    :: BLs_inv(:)
-    real(kind=kreal),           intent(in)    :: BUs_inv(:)
-    type(hecmwST_contact_comm), intent(in)    :: conCOMM
-    integer(kind=kint),         intent(in)    :: slaves(:)
+    ! type(hecmwST_local_mesh),   intent(in)    :: hecMESH  !< original mesh
+    type(hecmwST_local_mesh),   intent(in)    :: hecMESHtmp    !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),       intent(inout) :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_matrix),       intent(inout) :: hecTKT        !< converted system's matrix and RHS
+    type(hecmwST_local_matrix), intent(in)    :: Tmat          !< blocked T matrix
+    type(hecmwST_local_matrix), intent(in)    :: Kmat          !< total K matrix assembled from hecMAT and conMAT
+    real(kind=kreal),           intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
+    integer(kind=kint),         intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),           intent(in)    :: BLs_inv(:)    !< inverse of diagonal BLs matrix
+    real(kind=kreal),           intent(in)    :: BUs_inv(:)    !< inverse of diagonal BUs matrix
+    type(hecmwST_contact_comm), intent(in)    :: conCOMM       !< contact comm table for optimized communication
+    integer(kind=kint),         intent(in)    :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint) :: myrank
 
@@ -927,16 +927,16 @@ contains
   !>
   subroutine comp_x_slave(hecMESHtmp, hecMAT, hecTKT, Tmat, Btot, &
        slaves4lag, BLs_inv, conCOMM, slaves)
-    ! type(hecmwST_local_mesh),   intent(in)    :: hecMESH
-    type(hecmwST_local_mesh),   intent(in)    :: hecMESHtmp
-    type(hecmwST_matrix),       intent(inout) :: hecMAT
-    type(hecmwST_matrix),       intent(in)    :: hecTKT
-    type(hecmwST_local_matrix), intent(in)    :: Tmat
-    real(kind=kreal),           intent(in)    :: Btot(:)
-    integer(kind=kint),         intent(in)    :: slaves4lag(:)
-    real(kind=kreal),           intent(in)    :: BLs_inv(:)
-    type(hecmwST_contact_comm), intent(in)    :: conCOMM
-    integer(kind=kint),         intent(in)    :: slaves(:)
+    ! type(hecmwST_local_mesh),   intent(in)    :: hecMESH  !< original mesh
+    type(hecmwST_local_mesh),   intent(in)    :: hecMESHtmp    !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),       intent(inout) :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_matrix),       intent(in)    :: hecTKT        !< converted system's matrix and RHS
+    type(hecmwST_local_matrix), intent(in)    :: Tmat          !< blocked T matrix
+    real(kind=kreal),           intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
+    integer(kind=kint),         intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),           intent(in)    :: BLs_inv(:)    !< inverse of diagonal BLs matrix
+    type(hecmwST_contact_comm), intent(in)    :: conCOMM       !< contact comm table for optimized communication
+    integer(kind=kint),         intent(in)    :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint) :: ndof, ndof2, npndof, nndof, ilag, islave, i
     real(kind=kreal), allocatable :: Xtmp(:)
@@ -961,7 +961,7 @@ contains
     enddo
     !
     ! send external contact dof => recv internal contact dof
-    ! next line can be replace by: call hecmw_assemble_R(hecMESH, Xtmp, hecMAT%NP, ndof)
+    ! next line can be: call hecmw_assemble_R(hecMESH, Xtmp, hecMAT%NP, ndof)
     call hecmw_contact_comm_reduce_r(conCOMM, Xtmp, HECMW_SUM)
     !
     ! {X} = {X} - {Xtmp}
@@ -976,16 +976,16 @@ contains
   !>
   subroutine comp_lag(hecMESHtmp, hecMAT, hecTKT, Kmat, Btot, &
        slaves4lag, BUs_inv, conCOMM, slaves)
-    ! type(hecmwST_local_mesh),   intent(in)    :: hecMESH
-    type(hecmwST_local_mesh),   intent(in)    :: hecMESHtmp
-    type(hecmwST_matrix),       intent(inout) :: hecMAT
-    type(hecmwST_matrix),       intent(inout) :: hecTKT
-    type(hecmwST_local_matrix), intent(in)    :: Kmat
-    real(kind=kreal),           intent(in)    :: Btot(:)
-    integer(kind=kint),         intent(in)    :: slaves4lag(:)
-    real(kind=kreal),           intent(in)    :: BUs_inv(:)
-    type(hecmwST_contact_comm), intent(in)    :: conCOMM
-    integer(kind=kint),         intent(in)    :: slaves(:)
+    ! type(hecmwST_local_mesh),   intent(in)    :: hecMESH  !< original mesh
+    type(hecmwST_local_mesh),   intent(in)    :: hecMESHtmp    !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),       intent(inout) :: hecMAT        !< original matrix excl. contact
+    type(hecmwST_matrix),       intent(inout) :: hecTKT        !< converted system's matrix and RHS
+    type(hecmwST_local_matrix), intent(in)    :: Kmat          !< total K matrix assembled from hecMAT and conMAT
+    real(kind=kreal),           intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
+    integer(kind=kint),         intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
+    real(kind=kreal),           intent(in)    :: BUs_inv(:)    !< inverse of diagonal BUs matrix
+    type(hecmwST_contact_comm), intent(in)    :: conCOMM       !< contact comm table for optimized communication
+    integer(kind=kint),         intent(in)    :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint) :: ndof, npndof, nndof, npndof_new, num_lagrange, i, ilag, islave
     real(kind=kreal), allocatable :: Btmp(:)
@@ -1013,7 +1013,7 @@ contains
     enddo
     !
     ! 3. send internal contact dof => recv external contact dof
-    ! next line can be replaced by: call hecmw_update_R(hecMESH, Btmp, hecMAT%NP, ndof)
+    ! next line can be: call hecmw_update_R(hecMESH, Btmp, hecMAT%NP, ndof)
     call hecmw_contact_comm_bcast_r(conCOMM, Btmp)
     !
     ! 4. {lag} = [Bs^-T] {Btmp_s}
@@ -1029,15 +1029,15 @@ contains
   !>
   subroutine check_solution(hecMESH, hecMESHtmp, hecMAT, hecTKT, hecLagMAT, Kmat, Btot, &
        conCOMM, slaves)
-    type(hecmwST_local_mesh),       intent(in)    :: hecMESH
-    type(hecmwST_local_mesh),       intent(in)    :: hecMESHtmp
-    type(hecmwST_matrix),           intent(inout) :: hecMAT
-    type(hecmwST_matrix),           intent(inout) :: hecTKT
-    type(hecmwST_matrix_lagrange) , intent(in)    :: hecLagMAT
-    type(hecmwST_local_matrix),     intent(in)    :: Kmat
-    real(kind=kreal), target,       intent(in)    :: Btot(:)
-    type(hecmwST_contact_comm),     intent(in)    :: conCOMM
-    integer(kind=kint),             intent(in)    :: slaves(:)
+    type(hecmwST_local_mesh),       intent(in)    :: hecMESH    !< original mesh
+    type(hecmwST_local_mesh),       intent(in)    :: hecMESHtmp !< temoprary copy of mesh for migrating nodes
+    type(hecmwST_matrix),           intent(inout) :: hecMAT     !< original matrix excl. contact
+    type(hecmwST_matrix),           intent(inout) :: hecTKT     !< converted system's matrix and RHS
+    type(hecmwST_matrix_lagrange) , intent(in)    :: hecLagMAT  !< original matrix for lagrange multipliers
+    type(hecmwST_local_matrix),     intent(in)    :: Kmat       !< total K matrix assembled from hecMAT and conMAT
+    real(kind=kreal), target,       intent(in)    :: Btot(:)    !< total RHS vector assembled from hecMAT%B and conMAT%B
+    type(hecmwST_contact_comm),     intent(in)    :: conCOMM    !< contact comm table for optimized communication
+    integer(kind=kint),             intent(in)    :: slaves(:)  !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint) :: ndof, nndof, npndof, num_lagrange, i, ls, le, l, j, idof, jdof
     real(kind=kreal), allocatable, target :: r(:)
@@ -1084,7 +1084,7 @@ contains
         enddo
       enddo
     endif
-    ! next line can be replaced by: call hecmw_assemble_R(hecMESH, Btmp, hecMAT%NP, ndof)
+    ! next line can be: call hecmw_assemble_R(hecMESH, Btmp, hecMAT%NP, ndof)
     call hecmw_contact_comm_reduce_r(conCOMM, Btmp, HECMW_SUM)
     r(1:nndof) = r(1:nndof) - Btmp(1:nndof)
     !
@@ -1129,12 +1129,12 @@ contains
   !>
   subroutine check_solution2(hecMESH, hecMAT, conMAT, hecLagMAT, conCOMM, slaves)
     implicit none
-    type(hecmwST_local_mesh),       intent(in)    :: hecMESH
-    type(hecmwST_matrix),           intent(inout) :: hecMAT
-    type(hecmwST_matrix),           intent(in)    :: conMAT
-    type(hecmwST_matrix_lagrange) , intent(in)    :: hecLagMAT
-    type(hecmwST_contact_comm),     intent(in)    :: conCOMM
-    integer(kind=kint),             intent(in)    :: slaves(:)
+    type(hecmwST_local_mesh),       intent(in)    :: hecMESH   !< original mesh
+    type(hecmwST_matrix),           intent(inout) :: hecMAT    !< original matrix excl. contact
+    type(hecmwST_matrix),           intent(in)    :: conMAT    !< original matrix for contact
+    type(hecmwST_matrix_lagrange) , intent(in)    :: hecLagMAT !< original matrix for lagrange multipliers
+    type(hecmwST_contact_comm),     intent(in)    :: conCOMM   !< contact comm table for optimized communication
+    integer(kind=kint),             intent(in)    :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint) :: ndof, ndof2, nndof, npndof, num_lagrange
     integer(kind=kint) :: i, idof, j, jdof, ls, le, l
@@ -1280,11 +1280,11 @@ contains
     if (myrank == 0) write(0,*) 'INFO: resid(x,lag,tot)',sqrt(rnrm2),sqrt(rlagnrm2),sqrt(rnrm2+rlagnrm2)
   end subroutine check_solution2
 
-  !> \brief Find internal dofs that are in contact in some subdomain
+  !> \brief Make list of INTERNAL dofs that are in contact in WHOLE MODEL
   !>
   subroutine make_slave_list(Tmat, slaves)
-    type(hecmwST_local_matrix),      intent(in)  :: Tmat
-    integer(kind=kint), allocatable, intent(out) :: slaves(:)
+    type(hecmwST_local_matrix),      intent(in)  :: Tmat      !< blocked T matrix
+    integer(kind=kint), allocatable, intent(out) :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint), allocatable :: mark_slave(:)
     integer(kind=kint) :: n_slave
@@ -1332,8 +1332,8 @@ contains
   !> \brief Place one on diagonal of nonslave dof of T or T^t matrix
   !>
   subroutine add_Ip_to_Tmat(Tmat, slaves)
-    type(hecmwST_local_matrix), intent(inout) :: Tmat
-    integer(kind=kint),         intent(in)    :: slaves(:)
+    type(hecmwST_local_matrix), intent(inout) :: Tmat      !< blocked T matrix
+    integer(kind=kint),         intent(in)    :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     type(hecmwST_local_matrix) :: Imat, Wmat
     integer(kind=kint) :: ndof, ndof2, i, irow, idof
@@ -1379,8 +1379,8 @@ contains
   !> \brief Place 1.0 on diagonal of slave dof of T^tKT matrix
   !>
   subroutine place_one_on_diag_of_slave_dof(TtKTmat, slaves)
-    type(hecmwST_local_matrix), intent(inout) :: TtKTmat
-    integer(kind=kint),         intent(in)    :: slaves(:)
+    type(hecmwST_local_matrix), intent(inout) :: TtKTmat   !< converted matrix
+    integer(kind=kint),         intent(in)    :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint) :: ndof, ndof2, i, irow, idof, js, je, j, jcol
 
@@ -1404,8 +1404,8 @@ contains
   !> \brief Copy mesh
   !>
   subroutine copy_mesh(src, dst)
-    type(hecmwST_local_mesh), intent(in)  :: src
-    type(hecmwST_local_mesh), intent(out) :: dst
+    type(hecmwST_local_mesh), intent(in)  :: src !< original mesh
+    type(hecmwST_local_mesh), intent(out) :: dst !< copy of the mesh
 
     dst%zero          = src%zero
     dst%MPI_COMM      = src%MPI_COMM
@@ -1454,7 +1454,7 @@ contains
   !> \brief Free mesh
   !>
   subroutine free_mesh(hecMESH)
-    type(hecmwST_local_mesh), intent(inout) :: hecMESH
+    type(hecmwST_local_mesh), intent(inout) :: hecMESH  !< mesh
 
     if (hecMESH%n_neighbor_pe > 0) then
       deallocate(hecMESH%neighbor_pe)
@@ -1472,8 +1472,8 @@ contains
   !> \brief Quick sort for integer array
   !>
   recursive subroutine quick_sort(array, id1, id2)
-    integer(kind=kint), intent(inout) :: array(:)
-    integer(kind=kint), intent(in)    :: id1, id2
+    integer(kind=kint), intent(inout) :: array(:)  !< integer array
+    integer(kind=kint), intent(in)    :: id1, id2  !< index from id1 to id2 are sorted
     !
     integer(kind=kint) :: pivot, center, left, right, tmp
 
@@ -1504,8 +1504,8 @@ contains
   !> \brief Debug write matrix
   !>
   subroutine debug_write_matrix(Mat, label)
-    type(hecmwST_local_matrix), intent(in) :: Mat
-    character(len=*),           intent(in) :: label
+    type(hecmwST_local_matrix), intent(in) :: Mat   !< matrix
+    character(len=*),           intent(in) :: label !< label for matrix
     !
     integer(kind=kint) :: myrank
 
@@ -1518,13 +1518,15 @@ contains
   !>
   subroutine debug_write_vector(Vec, label, name, ndof, N, &
       NP, write_ext, num_lagrange, slaves)
-    real(kind=kreal),   intent(in) :: Vec(:)
-    character(len=*),   intent(in) :: label, name
-    integer(kind=kint), intent(in) :: ndof, N
-    integer(kind=kint), intent(in), optional :: NP
-    logical,            intent(in), optional :: write_ext
-    integer(kind=kint), intent(in), optional :: num_lagrange
-    integer(kind=kint), intent(in), optional :: slaves(:)
+    real(kind=kreal),   intent(in) :: Vec(:) !< vector
+    character(len=*),   intent(in) :: label  !< label for vector
+    character(len=*),   intent(in) :: name   !< name of vector
+    integer(kind=kint), intent(in) :: ndof   !< num of DOF per node
+    integer(kind=kint), intent(in) :: N      !< num of nodes excl. external nodes
+    integer(kind=kint), intent(in), optional :: NP           !< num of nodes incl. external nodes
+    logical,            intent(in), optional :: write_ext    !< whether to write external dofs or not
+    integer(kind=kint), intent(in), optional :: num_lagrange !< num of lagrange multipliers in this subdomain
+    integer(kind=kint), intent(in), optional :: slaves(:)    !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint) :: myrank
 
