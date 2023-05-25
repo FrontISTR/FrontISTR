@@ -264,7 +264,7 @@ contains
     !hecMESH%node => null()
   end subroutine free_mesh
 
-  !> \brief Make transformation matrices
+  !> \brief Make transformation matrices T and T^t
   !>
   subroutine make_transformation_matrices(hecMESH, hecMESHtmp, hecMAT, hecLagMAT, &
       slaves4lag, BLs_inv, BUs_inv, slaves, Tmat, Ttmat)
@@ -910,7 +910,7 @@ contains
     if (DEBUG_MATRIX) call debug_write_matrix(Kmat, 'Kmat (conMAT local)')
 
     if (hecmw_comm_get_size() > 1) then
-      ! communicate and complete Kmat (update hecMESHtmp)
+      ! communicate and assemble Kmat (updating hecMESHtmp)
       call hecmw_localmat_assemble(Kmat, hecMESH, hecMESHtmp)
       if (DEBUG_MATRIX) call debug_write_matrix(Kmat, 'Kmat (conMAT assembled)')
       if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: assemble K (conMAT) done'
@@ -933,18 +933,20 @@ contains
     type(hecmwST_contact_comm), intent(in) :: conCOMM      !< contact comm table for optimized communication
     real(kind=kreal),           intent(out) :: Btot(:)     !< total RHS vector assembled from hecMAT%B and conMAT%B
     !
-    integer(kind=kint) :: ndof, i, myrank
+    integer(kind=kint) :: ndof, nndof, npndof, i, myrank
 
     myrank = hecmw_comm_get_rank()
 
     ndof = hecMAT%NDOF
+    npndof = hecMAT%NP*ndof
+    nndof  = hecMAT%N *ndof
 
     if (DEBUG_VECTOR) call debug_write_vector(hecMAT%B, 'RHS(hecMAT)', 'hecMAT%B', ndof, hecMAT%N, &
         hecMAT%NP, .false., num_lagrange, slaves)
     if (DEBUG_VECTOR) call debug_write_vector(conMAT%B, 'RHS(conMAT)', 'conMAT%B', ndof, conMAT%N, &
         conMAT%NP, .true., num_lagrange, slaves)
 
-    do i=1,hecMAT%NP*ndof+num_lagrange
+    do i=1,npndof+num_lagrange
       Btot(i) = conMAT%B(i)
     enddo
 
@@ -957,7 +959,7 @@ contains
     endif
 
     ! add hecMAT%B to Btot
-    do i=1,hecMAT%N*ndof
+    do i=1,nndof
       Btot(i)=Btot(i)+hecMAT%B(i)
     enddo
     if (DEBUG_VECTOR) call debug_write_vector(Btot, 'RHS(total)', 'Btot', ndof, conMAT%N, &
@@ -1009,12 +1011,12 @@ contains
 
     myrank = hecmw_comm_get_rank()
 
-    ! compute TtKmat = Ttmat * Kmat (update hecMESHtmp)
+    ! compute TtKmat = Ttmat * Kmat (updating hecMESHtmp)
     call hecmw_localmat_multmat(Ttmat, Kmat, hecMESHtmp, TtKmat)
     if (DEBUG_MATRIX) call debug_write_matrix(TtKmat, 'TtKmat')
     if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: multiply Tt and K done'
 
-    ! compute TtKTmat = TtKmat * Tmat (update hecMESHtmp)
+    ! compute TtKTmat = TtKmat * Tmat (updating hecMESHtmp)
     call hecmw_localmat_multmat(TtKmat, Tmat, hecMESHtmp, TtKTmat)
     if (DEBUG_MATRIX) call debug_write_matrix(TtKTmat, 'TtKTmat')
     if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: multiply TtK and T done'
@@ -1068,19 +1070,22 @@ contains
     type(hecmwST_local_matrix), intent(in)    :: Kmat          !< total K matrix assembled from hecMAT and conMAT
     integer(kind=kint),         intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
     real(kind=kreal),           intent(in)    :: BLs_inv(:)    !< inverse of diagonal BLs matrix
-    real(kind=kreal),           intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
+    real(kind=kreal), target,   intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
     type(hecmwST_contact_comm), intent(in)    :: conCOMM       !< contact comm table for optimized communication
     !
     real(kind=kreal), allocatable :: Btmp(:)
-    integer(kind=kint) :: npndof, nndof, npndof_new, ilag, i
+    real(kind=kreal), pointer :: Blag(:)
+    integer(kind=kint) :: ndof, npndof, nndof, npndof_new, num_lagrange, i
 
     ! SIZE:
     ! Btot     <=> hecMAT, hecMESH
     ! Btmp     <=> Kmat, hecMESHtmp
     ! hecTKT%B <=> hecTKT, hecMESHtmp
-    npndof     = hecMAT%NP*hecMAT%NDOF
-    nndof      = hecMAT%N *hecMAT%NDOF
-    npndof_new = hecTKT%NP*hecTKT%NDOF
+    ndof = hecMAT%NDOF
+    npndof     = hecMAT%NP*ndof
+    nndof      = hecMAT%N *ndof
+    npndof_new = hecTKT%NP*ndof
+    num_lagrange = size(slaves4lag)
 
     allocate(hecTKT%B(npndof_new), source=0.d0)
     allocate(hecTKT%X(npndof_new), source=0.d0)
@@ -1089,24 +1094,23 @@ contains
     !! Ttmat*(B+K*(-Bs^-1)*Blag)
     !
     ! B2=-Bs^-1*Blag
-    do ilag=1,size(slaves4lag)
-      hecTKT%B(slaves4lag(ilag))=-BLs_inv(ilag)*Btot(npndof+ilag)
-    enddo
+    Blag => Btot(npndof+1:npndof+num_lagrange)
+    hecTKT%B(slaves4lag(:))=-BLs_inv(:)*Blag(:)
     ! send external contact dof => recv internal contact dof
-    ! next line can be: call hecmw_assemble_R(hecMESHtmp, hecTKT%B, hecTKT%NP, hecMAT%NDOF)
+    ! next line can be: call hecmw_assemble_R(hecMESHtmp, hecTKT%B, hecTKT%NP, ndof)
     call hecmw_contact_comm_reduce_r(conCOMM, hecTKT%B, HECMW_SUM)
     ! Btmp=B+K*B2 (including update of hecTKT%B)
-    call hecmw_update_R(hecMESHtmp, hecTKT%B, hecTKT%NP, hecMAT%NDOF)
+    call hecmw_update_R(hecMESHtmp, hecTKT%B, hecTKT%NP, ndof)
     call hecmw_localmat_mulvec(Kmat, hecTKT%B, Btmp)
     do i=1,nndof
       Btmp(i)=Btot(i)+Btmp(i)
     enddo
     ! B2=Ttmat*Btmp
-    call hecmw_update_R(hecMESHtmp, Btmp, hecTKT%NP, hecMAT%NDOF)
+    call hecmw_update_R(hecMESHtmp, Btmp, hecTKT%NP, ndof)
     call hecmw_localmat_mulvec(Ttmat, Btmp, hecTKT%B)
     deallocate(Btmp)
 
-    if (DEBUG_VECTOR) call debug_write_vector(hecTKT%B, 'RHS(converted)', 'hecTKT%B', hecMAT%NDOF, hecTKT%N)
+    if (DEBUG_VECTOR) call debug_write_vector(hecTKT%B, 'RHS(converted)', 'hecTKT%B', ndof, hecTKT%N)
   end subroutine convert_rhs
 
   !> \brief Recover solution in original system
@@ -1154,19 +1158,21 @@ contains
     type(hecmwST_matrix),       intent(inout) :: hecMAT        !< original matrix excl. contact
     type(hecmwST_matrix),       intent(in)    :: hecTKT        !< converted system's matrix and RHS
     type(hecmwST_local_matrix), intent(in)    :: Tmat          !< blocked T matrix
-    real(kind=kreal),           intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
+    real(kind=kreal), target,   intent(in)    :: Btot(:)       !< total RHS vector assembled from hecMAT%B and conMAT%B
     integer(kind=kint),         intent(in)    :: slaves4lag(:) !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
     real(kind=kreal),           intent(in)    :: BLs_inv(:)    !< inverse of diagonal BLs matrix
     type(hecmwST_contact_comm), intent(in)    :: conCOMM       !< contact comm table for optimized communication
     integer(kind=kint),         intent(in)    :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
-    integer(kind=kint) :: ndof, ndof2, npndof, nndof, ilag, islave, i
+    integer(kind=kint) :: ndof, ndof2, npndof, nndof, num_lagrange
     real(kind=kreal), allocatable :: Xtmp(:)
+    real(kind=kreal), pointer :: Blag(:)
 
     ndof = hecMAT%NDOF
     ndof2 = ndof*ndof
     npndof = hecMAT%NP * ndof
     nndof  = hecMAT%N  * ndof
+    num_lagrange = size(slaves4lag)
     !!
     !! {X} = [T] {Xp} - [-Bs^-1] {c}
     !!
@@ -1175,22 +1181,16 @@ contains
     call hecmw_localmat_mulvec(Tmat, hecTKT%X, hecMAT%X)
     !
     ! compute {Xtmp} = [-Bs^-1] {c}
-    allocate(Xtmp(npndof))
-    Xtmp(:) = 0.0d0
-    do ilag = 1, size(slaves4lag)
-      islave = slaves4lag(ilag)
-      Xtmp(islave) = -BLs_inv(ilag) * Btot(npndof + ilag)
-    enddo
+    allocate(Xtmp(npndof), source=0.0d0)
+    Blag => Btot(npndof+1:npndof+num_lagrange)
+    Xtmp(slaves4lag(:)) = -BLs_inv(:) * Blag(:)
     !
     ! send external contact dof => recv internal contact dof
     ! next line can be: call hecmw_assemble_R(hecMESH, Xtmp, hecMAT%NP, ndof)
     call hecmw_contact_comm_reduce_r(conCOMM, Xtmp, HECMW_SUM)
     !
     ! {X} = {X} - {Xtmp}
-    do i = 1, size(slaves)
-      islave = slaves(i)
-      hecMAT%X(islave) = hecMAT%X(islave) - Xtmp(islave)
-    enddo
+    hecMAT%X(slaves(:)) = hecMAT%X(slaves(:)) - Xtmp(slaves(:))
     deallocate(Xtmp)
   end subroutine comp_x_slave
 
@@ -1209,7 +1209,7 @@ contains
     type(hecmwST_contact_comm), intent(in)    :: conCOMM       !< contact comm table for optimized communication
     integer(kind=kint),         intent(in)    :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
-    integer(kind=kint) :: ndof, npndof, nndof, npndof_new, num_lagrange, i, ilag, islave
+    integer(kind=kint) :: ndof, npndof, nndof, npndof_new, num_lagrange
     real(kind=kreal), allocatable :: Btmp(:)
     real(kind=kreal), pointer :: xlag(:)
 
@@ -1229,10 +1229,7 @@ contains
     call hecmw_localmat_mulvec(Kmat, hecTKT%X, Btmp)
     !
     ! 2. {Btmp_s} = {fs} - {Btmp_s}
-    do i = 1, size(slaves)
-      islave = slaves(i)
-      Btmp(islave) = Btot(islave) - Btmp(islave)
-    enddo
+    Btmp(slaves(:)) = Btot(slaves(:)) - Btmp(slaves(:))
     !
     ! 3. send internal contact dof => recv external contact dof
     ! next line can be: call hecmw_update_R(hecMESH, Btmp, hecMAT%NP, ndof)
@@ -1240,10 +1237,7 @@ contains
     !
     ! 4. {lag} = [Bs^-T] {Btmp_s}
     xlag => hecMAT%X(npndof+1:npndof+num_lagrange)
-    do ilag = 1, num_lagrange
-      islave = slaves4lag(ilag)
-      xlag(ilag)=BUs_inv(ilag)*Btmp(islave)
-    enddo
+    xlag(:)=BUs_inv(:)*Btmp(slaves4lag(:))
     deallocate(Btmp)
   end subroutine comp_lag
 
@@ -1275,8 +1269,7 @@ contains
     npndof = hecMAT%NP * ndof
     num_lagrange = hecLagMAT%num_lagrange
     !
-    allocate(r(npndof + num_lagrange))
-    r(:) = 0.0d0
+    allocate(r(npndof + num_lagrange), source=0.0d0)
     allocate(Btmp(npndof))
     !
     rlag => r(npndof+1:npndof+num_lagrange)
@@ -1287,10 +1280,14 @@ contains
     !! {rlag} = {c} - [B] {x}
     !
     ! {r} = {b} - [K] {x}
-    hecTKT%X(1:nndof) = hecMAT%X(1:nndof)
+    do i = 1, nndof
+      hecTKT%X(i) = hecMAT%X(i)
+    enddo
     call hecmw_update_R(hecMESHtmp, hecTKT%X, hecTKT%NP, ndof)
     call hecmw_localmat_mulvec(Kmat, hecTKT%X, Btmp)
-    r(1:nndof) = Btot(1:nndof) - Btmp(1:nndof)
+    do i = 1, nndof
+      r(i) = Btot(i) - Btmp(i)
+    enddo
     !
     ! {r} = {r} - [Bt] {lag}
     Btmp(:) = 0.0d0
@@ -1308,7 +1305,9 @@ contains
     endif
     ! next line can be: call hecmw_assemble_R(hecMESH, Btmp, hecMAT%NP, ndof)
     call hecmw_contact_comm_reduce_r(conCOMM, Btmp, HECMW_SUM)
-    r(1:nndof) = r(1:nndof) - Btmp(1:nndof)
+    do i = 1, nndof
+      r(i) = r(i) - Btmp(i)
+    enddo
     !
     ! {rlag} = {c} - [B] {x}
     call hecmw_update_R(hecMESH, hecMAT%X, hecMAT%NP, ndof)
@@ -1330,15 +1329,9 @@ contains
     !
     call hecmw_InnerProduct_R(hecMESH, NDOF, r, r, rnrm2)
     call hecmw_InnerProduct_R(hecMESH, NDOF, Btot, Btot, bnrm2)
-    rlagnrm2 = 0.0d0
-    do i = 1, num_lagrange
-      rlagnrm2 = rlagnrm2 + rlag(i)*rlag(i)
-    enddo
+    rlagnrm2 = dot_product(rlag, rlag)
     call hecmw_allreduce_R1(hecMESH, rlagnrm2, HECMW_SUM)
-    blagnrm2 = 0.0d0
-    do i = 1, num_lagrange
-      blagnrm2 = blagnrm2 + blag(i)*blag(i)
-    enddo
+    blagnrm2 = dot_product(blag, blag)
     call hecmw_allreduce_R1(hecMESH, blagnrm2, HECMW_SUM)
     !
     if (myrank == 0) then
@@ -1493,10 +1486,7 @@ contains
     endif
     !
     call hecmw_InnerProduct_R(hecMESH, NDOF, r, r, rnrm2)
-    rlagnrm2 = 0.0d0
-    do i = 1, num_lagrange
-      rlagnrm2 = rlagnrm2 + rlag(i)*rlag(i)
-    enddo
+    rlagnrm2 = dot_product(rlag, rlag)
     call hecmw_allreduce_R1(hecMESH, rlagnrm2, HECMW_SUM)
     !
     if (myrank == 0) write(0,*) 'INFO: resid(x,lag,tot)',sqrt(rnrm2),sqrt(rlagnrm2),sqrt(rnrm2+rlagnrm2)
