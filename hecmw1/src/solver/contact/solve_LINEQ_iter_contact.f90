@@ -151,7 +151,7 @@ contains
     t1 = t2
     allocate(Btot(hecMAT%NP*ndof+hecLagMAT%num_lagrange))
     call assemble_equation(hecMESH, hecMESHtmp, hecMAT, conMAT, hecLagMAT%num_lagrange, &
-        slaves, conCOMM, Kmat, Btot)
+        slaves, Kmat, Btot)
     t2 = hecmw_wtime()
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: assembled equation ', t2-t1
 
@@ -868,14 +868,14 @@ contains
   !> \brief Assemble hecMAT and conMAT into Kmat and Btot
   !>
   subroutine assemble_equation(hecMESH, hecMESHtmp, hecMAT, conMAT, num_lagrange, &
-      slaves, conCOMM, Kmat, Btot)
+      slaves, Kmat, Btot)
     type(hecmwST_local_mesh),   intent(in)    :: hecMESH      !< original mesh
     type(hecmwST_local_mesh),   intent(inout) :: hecMESHtmp   !< temoprary copy of mesh for migrating nodes
     type(hecmwST_matrix),       intent(in)    :: hecMAT       !< original matrix excl. contact
     type(hecmwST_matrix),       intent(in)    :: conMAT       !< original matrix for contact
     integer(kind=kint),         intent(in)    :: num_lagrange !< num of lagrange multipliers in this subdomain
     integer(kind=kint),         intent(in)    :: slaves(:)    !< list of INTERNAL dofs that are in contact in WHOLE MODEL
-    type(hecmwST_contact_comm), intent(in)    :: conCOMM      !< contact comm table for optimized communication
+    ! type(hecmwST_contact_comm), intent(in)    :: conCOMM      !< contact comm table for optimized communication
     type(hecmwST_local_matrix), intent(out)   :: Kmat         !< total K matrix assembled from hecMAT and conMAT
     real(kind=kreal),           intent(out)   :: Btot(:)      !< total RHS vector assembled from hecMAT%B and conMAT%B
     !
@@ -886,7 +886,7 @@ contains
     call assemble_matrix(hecMESH, hecMESHtmp, hecMAT, conMAT, num_lagrange, Kmat)
     if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: assemble matrix done'
 
-    call assemble_rhs(hecMAT, conMAT, num_lagrange, slaves, conCOMM, Btot)
+    call assemble_rhs(hecMESH, hecMAT, conMAT, num_lagrange, slaves, Btot)
     if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: assemble rhs done'
 
   end subroutine assemble_equation
@@ -924,13 +924,13 @@ contains
 
   !> \brief Assemble hecMAT%B and conMAT%B into Btot
   !>
-  subroutine assemble_rhs(hecMAT, conMAT, num_lagrange, slaves, conCOMM, Btot)
-    ! type(hecmwST_local_mesh),   intent(in) :: hecMESH    !< original mesh
+  subroutine assemble_rhs(hecMESH, hecMAT, conMAT, num_lagrange, slaves, Btot)
+    type(hecmwST_local_mesh),   intent(in) :: hecMESH      !< original mesh
     type(hecmwST_matrix),       intent(in) :: hecMAT       !< original matrix excl. contact
     type(hecmwST_matrix),       intent(in) :: conMAT       !< original matrix for contact
     integer(kind=kint),         intent(in) :: num_lagrange !< num of lagrange multipliers in this subdomain
     integer(kind=kint),         intent(in) :: slaves(:)    !< list of INTERNAL dofs that are in contact in WHOLE MODEL
-    type(hecmwST_contact_comm), intent(in) :: conCOMM      !< contact comm table for optimized communication
+    ! type(hecmwST_contact_comm), intent(in) :: conCOMM      !< contact comm table for optimized communication
     real(kind=kreal),           intent(out) :: Btot(:)     !< total RHS vector assembled from hecMAT%B and conMAT%B
     !
     integer(kind=kint) :: ndof, nndof, npndof, i, myrank
@@ -951,8 +951,8 @@ contains
     enddo
 
     if (hecmw_comm_get_size() > 1) then
-      ! next line can be: call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, ndof)
-      call hecmw_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM)
+      ! next line cannot be: call hecmw_contact_comm_reduce_r(conCOMM, Btot, HECMW_SUM) !!! alag_tied fails
+      call hecmw_assemble_R(hecMESH, Btot, hecMAT%NP, ndof)
       if (DEBUG_VECTOR) call debug_write_vector(Btot, 'RHS(conMAT assembled)', 'Btot', ndof, conMAT%N, &
           conMAT%NP, .false., num_lagrange, slaves)
       if (DEBUG >= 3) write(0,*) '    DEBUG3[',myrank,']: assemble RHS (conMAT%B) done'
