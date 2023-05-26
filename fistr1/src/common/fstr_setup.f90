@@ -2043,13 +2043,14 @@ end function fstr_setup_INITIAL
     type(fstr_param_pack) :: P
     real(kind=kreal), pointer :: val(:), table(:)
     character(len=HECMW_NAME_LEN) :: name
-    integer :: n, type_def, type_time, type_val, rcode
+    integer :: nline, n, type_def, type_time, type_val, rcode
 
-    n = fstr_ctrl_get_data_line_n( ctrl )
-    if( n<=0 ) return
-    allocate( val(n) )
-    allocate( table(n) )
-    rcode = fstr_ctrl_get_AMPLITUDE( ctrl, name, type_def, type_time, type_val, val, table )
+    nline = fstr_ctrl_get_data_line_n( ctrl )
+    if( nline<=0 ) return
+    allocate( val(nline*4) )
+    allocate( table(nline*4) )
+    rcode = fstr_ctrl_get_AMPLITUDE( ctrl, nline, name, type_def, type_time, type_val, &
+        n, val, table )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     call append_new_amplitude( P%MESH%amp, name, type_def, type_time, type_val, n, val, table )

@@ -1057,7 +1057,7 @@ contains
     call fstr_expand_integer_array( amp%amp_type_definition, n_amp, new_size )
     call fstr_expand_integer_array( amp%amp_type_time, n_amp, new_size )
     call fstr_expand_integer_array( amp%amp_type_value, n_amp, new_size )
-    old_size = amp%amp_index( amp%n_amp )
+    old_size = amp%amp_index( n_amp )
     new_size = old_size+np
     call fstr_expand_real_array( amp%amp_val, old_size, new_size )
     call fstr_expand_real_array( amp%amp_table, old_size, new_size )
@@ -1167,6 +1167,34 @@ contains
       array = 0
     end if
   end subroutine fstr_expand_index_array
+
+  subroutine fstr_expand_char_array( array, old_size, new_size )
+    implicit none
+    character(len=HECMW_NAME_LEN), pointer :: array(:)
+    integer(kind=kint) :: old_size, new_size,i
+    character(len=HECMW_NAME_LEN), pointer :: temp(:)
+
+    if( old_size >= new_size ) then
+      return
+    end if
+
+    if( associated( array ) ) then
+      allocate(temp(old_size))
+      do i=1, old_size
+        temp(i) = array(i)
+      end do
+      deallocate(array)
+      allocate(array(new_size))
+      array = ''
+      do i=1, old_size
+        array(i) = temp(i)
+      end do
+      deallocate(temp)
+    else
+      allocate(array(new_size))
+      array = ''
+    end if
+  end subroutine fstr_expand_char_array
 
   subroutine fstr_expand_integer_array( array, old_size, new_size )
     implicit none

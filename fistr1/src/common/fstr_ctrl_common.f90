@@ -800,18 +800,22 @@ contains
   end function fstr_ctrl_get_TIMEPOINTS
 
   !> Read in !AMPLITUDE
-  function fstr_ctrl_get_AMPLITUDE( ctrl, name, type_def, type_time, type_val, val, table )
+  function fstr_ctrl_get_AMPLITUDE( ctrl, nline, name, type_def, type_time, type_val, n, val, table )
     implicit none
     integer(kind=kint),            intent(in)  :: ctrl
+    integer(kind=kint),            intent(in)  :: nline
     character(len=HECMW_NAME_LEN), intent(out) :: name
     integer(kind=kint),            intent(out) :: type_def
     integer(kind=kint),            intent(out) :: type_time
     integer(kind=kint),            intent(out) :: type_val
+    integer(kind=kint),            intent(out) :: n
     real(kind=kreal),              pointer     :: val(:)
     real(kind=kreal),              pointer     :: table(:)
     integer(kind=kint) :: fstr_ctrl_get_AMPLITUDE
 
     integer(kind=kint) :: t_def, t_time, t_val
+    integer(kind=kint) :: i, j
+    real(kind=kreal) :: r(4), t(4)
 
     fstr_ctrl_get_AMPLITUDE = -1
 
@@ -843,7 +847,24 @@ contains
       write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter VALUE.'
     endif
 
-    fstr_ctrl_get_AMPLITUDE = fstr_ctrl_get_data_array_ex( ctrl, 'RR ', val, table )
+    n = 0
+    do i = 1, nline
+      r(:)=huge(0.0d0); t(:)=huge(0.0d0)
+      if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
+      n = n+1
+      val(n) = r(1)
+      table(n) = t(1)
+      do j = 2, 4
+        if (r(j) < huge(0.0d0) .and. t(j) < huge(0.0d0)) then
+          n = n+1
+          val(n) = r(j)
+          table(n) = t(j)
+        else
+          exit
+        endif
+      enddo
+    enddo
+    fstr_ctrl_get_AMPLITUDE = 0
 
   end function fstr_ctrl_get_AMPLITUDE
 
