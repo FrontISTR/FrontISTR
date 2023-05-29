@@ -2784,7 +2784,7 @@ contains
 
   subroutine hecmw_localmat_multmat(BKmat, BTmat, hecMESH, BKTmat)
     implicit none
-    type (hecmwST_local_matrix), intent(inout) :: BKmat
+    type (hecmwST_local_matrix), intent(in) :: BKmat
     type (hecmwST_local_matrix), intent(inout) :: BTmat
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_local_matrix), intent(out) :: BKTmat
