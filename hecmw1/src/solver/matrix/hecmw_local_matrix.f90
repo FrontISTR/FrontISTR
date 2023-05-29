@@ -14,6 +14,7 @@ module hecmw_local_matrix
   public :: hecmw_localmat_free
   public :: hecmw_localmat_mulvec
   public :: hecmw_trimatmul_TtKT
+  public :: hecmw_trimatmul_TtKT_serial
   public :: hecmw_trimatmul_TtKT_mpc
   public :: hecmw_localmat_transpose
   public :: hecmw_localmat_assemble
@@ -215,7 +216,7 @@ contains
     integer(kind=kint), intent(in) :: num_lagrange
     type (hecmwST_matrix), intent(inout) :: hecTKT
     if (hecMESH%n_neighbor_pe == 0) then
-      call hecmw_trimatmul_TtKT_serial(BTtmat, hecMAT, BTmat, &
+      call hecmw_trimatmul_TtKT_serial(hecMESH, BTtmat, hecMAT, BTmat, &
            iwS, num_lagrange, hecTKT)
     else
       call hecmw_trimatmul_TtKT_parallel(hecMESH, BTtmat, hecMAT, BTmat, &
@@ -223,10 +224,11 @@ contains
     endif
   end subroutine hecmw_trimatmul_TtKT
 
-  subroutine hecmw_trimatmul_TtKT_serial(BTtmat, hecMAT, BTmat, &
+  subroutine hecmw_trimatmul_TtKT_serial(hecMESH, BTtmat, hecMAT, BTmat, &
       iwS, num_lagrange, hecTKT)
     use hecmw_matrix_misc
     implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_local_matrix), intent(in) :: BTtmat, BTmat
     type (hecmwST_matrix), intent(in) :: hecMAT
     integer(kind=kint), intent(in) :: iwS(:)
@@ -240,7 +242,8 @@ contains
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
     !call hecmw_localmat_write(BTtKT, 700+hecmw_comm_get_rank())
 
-    ! place 1.0 where the DOF is eliminated
+    ! place small numbers where the DOF is eliminated
+    !num = hecmw_mat_diag_max(hecMAT, hecMESH) * 1.0d-10
     num = 1.d0
     call place_num_on_diag(BTtKT, iwS, num_lagrange, num)
     !write(700+hecmw_comm_get_rank(),*) 'DEBUG: BTtKT(MPC)'
@@ -1045,6 +1048,80 @@ contains
     call hecmw_localmat_free(Tmat)
   end subroutine make_BTmat_mpc
 
+  subroutine make_BTtmat_mpc(hecMESH, ndof, BTtmat)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: ndof
+    type (hecmwST_local_matrix), intent(out) :: BTtmat
+    type (hecmwST_local_matrix) :: Ttmat
+    integer(kind=kint) :: n_mpc
+    integer(kind=kint) :: i,j,k,js,je,jj,kk
+    integer(kind=kint), allocatable :: iw(:)
+    n_mpc=0
+    OUTER: do i=1,hecMESH%mpc%n_mpc
+      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+      enddo
+      n_mpc=n_mpc+1
+    enddo OUTER
+    Ttmat%nr=hecMESH%n_node*ndof
+    Ttmat%nc=Ttmat%nr
+    Ttmat%ndof=1
+    allocate(Ttmat%index(0:Ttmat%nr))
+    ! count nonzero in each row
+    Ttmat%index(1:Ttmat%nr)=1
+    OUTER2: do i=1,hecMESH%mpc%n_mpc
+      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER2
+      enddo
+      k=hecMESH%mpc%mpc_index(i-1)+1
+      kk=ndof*(hecMESH%mpc%mpc_item(k)-1)+hecMESH%mpc%mpc_dof(k)
+      Ttmat%index(kk)=0
+      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
+        jj = ndof * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+        Ttmat%index(jj)=Ttmat%index(jj)+1
+      enddo
+    enddo OUTER2
+    ! index
+    Ttmat%index(0)=0
+    do i=1,Ttmat%nr
+      Ttmat%index(i)=Ttmat%index(i-1)+Ttmat%index(i)
+    enddo
+    Ttmat%nnz=Ttmat%index(Ttmat%nr)
+    allocate(Ttmat%item(Ttmat%nnz), Ttmat%A(Ttmat%nnz))
+    ! diag
+    do i=1,Ttmat%nr
+      js=Ttmat%index(i-1)+1
+      je=Ttmat%index(i)
+      if (js <= je) then
+        Ttmat%item(js)=i
+        Ttmat%A(js)=1.d0
+      endif
+    enddo
+    ! others
+    allocate(iw(Ttmat%nr))
+    iw(:)=1
+    OUTER3: do i=1,hecMESH%mpc%n_mpc
+      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER3
+      enddo
+      k=hecMESH%mpc%mpc_index(i-1)+1
+      kk=ndof*(hecMESH%mpc%mpc_item(k)-1)+hecMESH%mpc%mpc_dof(k)
+      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
+        jj = ndof * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+        js=Ttmat%index(jj-1)+1+iw(jj)
+        Ttmat%item(js)=kk
+        Ttmat%A(js)=-hecMESH%mpc%mpc_val(j)
+        iw(jj)=iw(jj)+1
+      enddo
+    enddo OUTER3
+    deallocate(iw)
+    !write(700+hecmw_comm_get_rank(),*) 'DEBUG: Ttmat(MPC)'
+    !call hecmw_localmat_write(Ttmat,700+hecmw_comm_get_rank())
+    call hecmw_localmat_blocking(Ttmat, ndof, BTtmat)
+    call hecmw_localmat_free(Ttmat)
+  end subroutine make_BTtmat_mpc
+
   subroutine hecmw_localmat_transpose(Tmat, Ttmat)
     implicit none
     type (hecmwST_local_matrix), intent(in) :: Tmat
@@ -1107,7 +1184,7 @@ contains
         if (Tmat1%item(j) /= Tmat2%item(j)) return
         k0 = (j-1)*ndof2
         do k = 1, ndof2
-          if (abs(Tmat1%A(k0+k) - Tmat2%A(k0+k)) > tiny(0.0d0)) return
+          if (Tmat1%A(k0+k) /= Tmat2%A(k0+k)) return
         enddo
       enddo
     enddo
@@ -1234,7 +1311,7 @@ contains
     do i = 1, nnz_ext
       incl_nz(i) = 0
       do k = 1, ndof2
-        if (abs(BTmat%A(ndof2*(i0+i-1)+k)) > tiny(0.0d0)) then
+        if (BTmat%A(ndof2*(i0+i-1)+k) /= 0.0d0) then
           incl_nz(i) = 1
           nnz_blk = nnz_blk + 1
           exit
@@ -2557,7 +2634,7 @@ contains
         do j = js, je
           idx = idx + 1
           do k = 1, ndof2
-            if (abs(hecMAT%AL(ndof2*(j-1)+k)) > tiny(0.0d0)) then
+            if (hecMAT%AL(ndof2*(j-1)+k) /= 0.0d0) then
               incl_nz(idx) = 1
               cnt(i) = cnt(i) + 1
               exit
@@ -2567,7 +2644,7 @@ contains
         ! diag
         idx = idx + 1
         do k = 1, ndof2
-          if (abs(hecMAT%D(ndof2*(i-1)+k)) > tiny(0.0d0)) then
+          if (hecMAT%D(ndof2*(i-1)+k) /= 0.0d0) then
             incl_nz(idx) = 1
             cnt(i) = cnt(i) + 1
             exit
@@ -2579,7 +2656,7 @@ contains
         do j = js, je
           idx = idx + 1
           do k = 1, ndof2
-            if (abs(hecMAT%AU(ndof2*(j-1)+k)) > tiny(0.0d0)) then
+            if (hecMAT%AU(ndof2*(j-1)+k) /= 0.0d0) then
               incl_nz(idx) = 1
               cnt(i) = cnt(i) + 1
               exit
@@ -2707,7 +2784,7 @@ contains
 
   subroutine hecmw_localmat_multmat(BKmat, BTmat, hecMESH, BKTmat)
     implicit none
-    type (hecmwST_local_matrix), intent(in) :: BKmat
+    type (hecmwST_local_matrix), intent(inout) :: BKmat
     type (hecmwST_local_matrix), intent(inout) :: BTmat
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_local_matrix), intent(out) :: BKTmat
