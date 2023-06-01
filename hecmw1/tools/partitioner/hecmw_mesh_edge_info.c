@@ -1224,6 +1224,7 @@ extern int HECMW_mesh_edge_info(struct hecmwST_local_mesh *local_mesh,
     switch (local_mesh->elem_type_item[i]) {
       case HECMW_ETYPE_ROD1: /* line ( 1st order ) */
       case HECMW_ETYPE_ROD31:
+      case HECMW_ETYPE_SPGDPT1:
         if (edge_info_rod1(local_mesh, is, ie)) goto error;
         break;
       case HECMW_ETYPE_ROD2: /* line ( 2nd order ) */

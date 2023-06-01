@@ -57,6 +57,8 @@ extern int HECMW_get_etype_UTIL2HECMW(int etype) {
       return HECMW_ETYPE_MSQ2;
     case HECMW_MESH_ETYPE_JTB1:
       return HECMW_ETYPE_JTB1;
+    case HECMW_MESH_ETYPE_SPGDPT1:
+        return HECMW_ETYPE_SPGDPT1;
     case HECMW_MESH_ETYPE_JTT1:
       return HECMW_ETYPE_JTT1;
     case HECMW_MESH_ETYPE_JTT2:
@@ -222,6 +224,8 @@ extern int HECMW_get_etype_HECMW2UTIL(int etype) {
       return HECMW_MESH_ETYPE_MSQ2;
     case HECMW_ETYPE_JTB1:
       return HECMW_MESH_ETYPE_JTB1;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_MESH_ETYPE_SPGDPT1;
     case HECMW_ETYPE_JTT1:
       return HECMW_MESH_ETYPE_JTT1;
     case HECMW_ETYPE_JTT2:
@@ -456,6 +460,8 @@ extern int HECMW_get_max_node(int etype) {
       return HECMW_MAX_NODE_MSQ2;
     case HECMW_ETYPE_JTB1:
       return HECMW_MAX_NODE_JTB1;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_MAX_NODE_SPGDPT1;
     case HECMW_ETYPE_JTT1:
       return HECMW_MAX_NODE_JTT1;
     case HECMW_ETYPE_JTT2:
@@ -619,6 +625,8 @@ extern int HECMW_get_max_edge(int etype) {
       return HECMW_MAX_EDGE_MSQ2;
     case HECMW_ETYPE_JTB1:
       return HECMW_MAX_EDGE_JTB1;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_MAX_EDGE_SPGDPT1;
     case HECMW_ETYPE_JTT1:
       return HECMW_MAX_EDGE_JTT1;
     case HECMW_ETYPE_JTT2:
@@ -780,6 +788,8 @@ extern int HECMW_get_max_surf(int etype) {
       return HECMW_MAX_SURF_MSQ2;
     case HECMW_ETYPE_JTB1:
       return HECMW_MAX_SURF_JTB1;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_MAX_SURF_SPGDPT1;
     case HECMW_ETYPE_JTT1:
       return HECMW_MAX_SURF_JTT1;
     case HECMW_ETYPE_JTT2:
@@ -939,6 +949,8 @@ extern int HECMW_get_max_tsuf(int etype) {
       return HECMW_MAX_TSUF_MSQ2;
     case HECMW_ETYPE_JTB1:
       return HECMW_MAX_TSUF_JTB1;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_MAX_TSUF_SPGDPT1;
     case HECMW_ETYPE_JTT1:
       return HECMW_MAX_TSUF_JTT1;
     case HECMW_ETYPE_JTT2:
@@ -1100,6 +1112,8 @@ extern int HECMW_get_max_qsuf(int etype) {
       return HECMW_MAX_QSUF_MSQ2;
     case HECMW_ETYPE_JTB1:
       return HECMW_MAX_QSUF_JTB1;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_MAX_QSUF_SPGDPT1;
     case HECMW_ETYPE_JTT1:
       return HECMW_MAX_QSUF_JTT1;
     case HECMW_ETYPE_JTT2:
@@ -1263,6 +1277,8 @@ extern char *HECMW_get_ucd_label(int etype) {
       return HECMW_UCD_LABEL_MSQ2;
     case HECMW_ETYPE_JTB1:
       return HECMW_UCD_LABEL_JTB1;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_UCD_LABEL_SPGDPT1;
     case HECMW_ETYPE_JTT1:
       return HECMW_UCD_LABEL_JTT1;
     case HECMW_ETYPE_JTT2:
@@ -1428,6 +1444,8 @@ extern int HECMW_get_etype_class(int etype) {
       return HECMW_CLASS_SOLID;
     case HECMW_ETYPE_JTB1:
       return HECMW_CLASS_JOINT;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_CLASS_LINE;
     case HECMW_ETYPE_JTT1:
       return HECMW_CLASS_JOINT;
     case HECMW_ETYPE_JTT2:
@@ -1593,6 +1611,8 @@ extern int HECMW_get_etype_shape(int etype) {
       return HECMW_SHAPE_QUAD;
     case HECMW_ETYPE_JTB1:
       return HECMW_SHAPE_LINE;
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_SHAPE_LINE;
     case HECMW_ETYPE_JTT1:
       return HECMW_SHAPE_TRI;
     case HECMW_ETYPE_JTT2:
@@ -1759,7 +1779,9 @@ extern int HECMW_get_etype_vtk_shape(int etype) {
       return HECMW_VTK_SHAPE_QUAD;
     case HECMW_ETYPE_JTB1:
       return HECMW_VTK_SHAPE_LINE;
-    /* case HECMW_ETYPE_JTR1:
+    case HECMW_ETYPE_SPGDPT1:
+        return HECMW_VTK_SHAPE_LINE;
+        /* case HECMW_ETYPE_JTR1:
       return HECMW_VTK_SHAPE_LINE; */
     case HECMW_ETYPE_JTT1:
       return HECMW_VTK_SHAPE_TRI;
@@ -1928,6 +1950,7 @@ extern int HECMW_is_etype_interface(int etype) {
     case 441: /* fall through */
     case 442: /* fall through */
     case 501: /* fall through */
+    case 511: /* fall through */
     case 531: /* fall through */
     case 532: /* fall through */
     case 541: /* fall through */

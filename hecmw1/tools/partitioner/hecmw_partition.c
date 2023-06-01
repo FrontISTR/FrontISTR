@@ -8779,6 +8779,7 @@ static int print_ucd_entire_set_elem_data(
         break;
 
       case HECMW_ETYPE_ROD31:
+      case HECMW_ETYPE_SPGDPT1:
         global_mesh->elem_type[i] = HECMW_ETYPE_ROD1;
         break;
     }
