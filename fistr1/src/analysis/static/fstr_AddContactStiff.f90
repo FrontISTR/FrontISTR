@@ -315,7 +315,7 @@ contains
           else if( algtype == CONTACTTIED ) then
             call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%contacts(i)%states(j),lagrange,ctNForce,ctTForce)
             ! Update non-eqilibrited force vector
-            call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,conMAT,fstrSOLID%CONT_NFORCE)
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,1.d0,ctNForce,ctTForce,conMAT,fstrSOLID%CONT_NFORCE)
           endif 
 
         enddo
@@ -376,25 +376,35 @@ contains
     real(kind=kreal)       :: ctTForce((nnode+1)*3+1)  !< tied contact force vector
 
     integer(kind=kint) :: i, j
-    real(kind=kreal)   :: shapefunc(nnode) !< normal vector at target point; shape functions
-    real(kind=kreal)   :: nTm((nnode + 1)*3) !< vector
+    real(kind=kreal)   :: normal(3), shapefunc(nnode) !< normal vector at target point; shape functions
+    real(kind=kreal)   :: nTm((nnode + 1)*3) !< normal vector
+    real(kind=kreal)   :: tTm((nnode + 1)*3) !< tangential vector
 
     ctNForce = 0.0d0
     ctTForce = 0.0d0
 
     call getShapeFunc( etype, ctState%lpos, shapefunc )
 
-    nTm = 0.d0
-    nTm(idof) = -1.d0
+    normal(1:3) = ctState%direction(1:3)
+
+    nTm(1:3) = -normal(idof)*normal(1:3)
     do i = 1, nnode
-      nTm(i*3+idof) = shapefunc(i)
+      nTm(i*3+1:i*3+3) = -shapefunc(i)*nTm(1:3)
+    enddo
+    tTm = 0.d0
+    tTm(idof) = -1.0
+    tTm(1:3) = tTm(1:3)-nTm(1:3)
+    do i = 1, nnode
+      tTm(i*3+1:i*3+3) = -shapefunc(i)*tTm(1:3)
     enddo
 
     do j = 1, (nnode+1)*3
       ctNForce(j) = lagrange*nTm(j)
+      ctTForce(j) = lagrange*tTm(j)
     enddo
     j = (nnode+1)*3 + 1
     ctNForce(j) = dot_product(nTm,ndu)
+    ctTForce(j) = dot_product(tTm,ndu)
   end subroutine 
 
   !> \brief This subroutine obtains contact nodal force vector of contact pair
