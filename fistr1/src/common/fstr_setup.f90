@@ -75,7 +75,7 @@ contains
     character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2
 
     ! counters
-    integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo
+    integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
     integer(kind=kint) :: c_eigen, c_contact, c_contactparam
@@ -103,7 +103,7 @@ contains
 
     fstrPARAM%contact_algo = kcaALagrange
 
-    c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0;
+    c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
@@ -168,6 +168,9 @@ contains
         call fstr_setup_OUTPUT_SSTYPE( ctrl, P )
       else if( header_name == '!INITIAL_CONDITION' ) then
         c_initial = c_initial + 1
+      else if( header_name == '!AMPLITUDE' ) then
+        c_amplitude = c_amplitude + 1
+        call fstr_setup_AMPLITUDE( ctrl, P )
 
         !--------------- for static -------------------------
 
@@ -2029,6 +2032,32 @@ end function fstr_setup_INITIAL
     P%PARAM%fg_couple = 1
 
   end subroutine fstr_setup_COUPLE
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !AMPLITUDE                                                          !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_AMPLITUDE( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+    real(kind=kreal), pointer :: val(:), table(:)
+    character(len=HECMW_NAME_LEN) :: name
+    integer :: nline, n, type_def, type_time, type_val, rcode
+
+    nline = fstr_ctrl_get_data_line_n( ctrl )
+    if( nline<=0 ) return
+    allocate( val(nline*4) )
+    allocate( table(nline*4) )
+    rcode = fstr_ctrl_get_AMPLITUDE( ctrl, nline, name, type_def, type_time, type_val, &
+        n, val, table )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call append_new_amplitude( P%MESH%amp, name, type_def, type_time, type_val, n, val, table )
+
+    if( associated(val) ) deallocate( val )
+    if( associated(table) ) deallocate( table )
+  end subroutine fstr_setup_AMPLITUDE
 
 
   !*****************************************************************************!

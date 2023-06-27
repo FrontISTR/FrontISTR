@@ -799,5 +799,73 @@ contains
     fstr_ctrl_get_TIMEPOINTS = 0
   end function fstr_ctrl_get_TIMEPOINTS
 
+  !> Read in !AMPLITUDE
+  function fstr_ctrl_get_AMPLITUDE( ctrl, nline, name, type_def, type_time, type_val, n, val, table )
+    implicit none
+    integer(kind=kint),            intent(in)  :: ctrl
+    integer(kind=kint),            intent(in)  :: nline
+    character(len=HECMW_NAME_LEN), intent(out) :: name
+    integer(kind=kint),            intent(out) :: type_def
+    integer(kind=kint),            intent(out) :: type_time
+    integer(kind=kint),            intent(out) :: type_val
+    integer(kind=kint),            intent(out) :: n
+    real(kind=kreal),              pointer     :: val(:)
+    real(kind=kreal),              pointer     :: table(:)
+    integer(kind=kint) :: fstr_ctrl_get_AMPLITUDE
+
+    integer(kind=kint) :: t_def, t_time, t_val
+    integer(kind=kint) :: i, j
+    real(kind=kreal) :: r(4), t(4)
+
+    fstr_ctrl_get_AMPLITUDE = -1
+
+    name = ''
+    t_def = 1
+    t_time = 1
+    t_val = 1
+
+    if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', name )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ', 'TABULAR ', 0, 'P', t_def )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'TIME ', 'STEP ', 0, 'P', t_time )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'VALUE ', 'RELATIVE,ABSOLUTE ', 0, 'P', t_val )/=0 ) return
+
+    if( t_def==1 ) then
+      type_def = HECMW_AMP_TYPEDEF_TABULAR
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter DEFINITION.'
+    endif
+    if( t_time==1 ) then
+      type_time = HECMW_AMP_TYPETIME_STEP
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter TIME.'
+    endif
+    if( t_val==1 ) then
+      type_val = HECMW_AMP_TYPEVAL_RELATIVE
+    elseif( t_val==2 ) then
+      type_val = HECMW_AMP_TYPEVAL_ABSOLUTE
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter VALUE.'
+    endif
+
+    n = 0
+    do i = 1, nline
+      r(:)=huge(0.0d0); t(:)=huge(0.0d0)
+      if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
+      n = n+1
+      val(n) = r(1)
+      table(n) = t(1)
+      do j = 2, 4
+        if (r(j) < huge(0.0d0) .and. t(j) < huge(0.0d0)) then
+          n = n+1
+          val(n) = r(j)
+          table(n) = t(j)
+        else
+          exit
+        endif
+      enddo
+    enddo
+    fstr_ctrl_get_AMPLITUDE = 0
+
+  end function fstr_ctrl_get_AMPLITUDE
 
 end module fstr_ctrl_common
