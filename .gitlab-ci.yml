@@ -83,6 +83,7 @@ test/hybrid/mpi/ubuntu2004:
     extends: [".test",".ubuntu2004"]
     needs: ["build/hybrid/ubuntu2004"]
 test/hybrid/hybrid/ubuntu2004:
+    tags: ["saas-linux-medium-amd64"]
     extends: [".test",".ubuntu2004"]
     needs: ["build/hybrid/ubuntu2004"]
 
@@ -111,6 +112,7 @@ test/hybrid/mpi/ubuntu2204:
     extends: [".test",".ubuntu2204"]
     needs: ["build/hybrid/ubuntu2204"]
 test/hybrid/hybrid/ubuntu2204:
+    tags: ["saas-linux-medium-amd64"]
     extends: [".test",".ubuntu2204"]
     needs: ["build/hybrid/ubuntu2204"]
 
