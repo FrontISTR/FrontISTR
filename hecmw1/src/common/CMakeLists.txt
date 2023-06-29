@@ -54,8 +54,8 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_result_copy_c2f.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_result_copy_f2c.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_result_io.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_result_bin_io.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_result_txt_io.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_result_io_bin.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_result_io_txt.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_visual_if.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_system.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_time.c
