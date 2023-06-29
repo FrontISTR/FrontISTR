@@ -49,23 +49,4 @@ extern int *HECMW_result_get_elemID(int *buff);
 extern void HECMW_result_free_nodeID(void);
 extern void HECMW_result_free_elemID(void);
 
-/*
-  functions defined in hecmw_result_bin_io.c
- */
-extern int HECMW_judge_result_bin_file(char *filename);
-extern int HECMW_result_write_bin_by_fname(char *filename);
-extern int HECMW_result_write_bin_ST_by_fname(
-    char *filename, struct hecmwST_result_data *result, int n_node, int n_elem,
-    char *header, char *comment);
-extern struct hecmwST_result_data *HECMW_result_read_bin_by_fname(char *filename);
-
-/*
-  functions defined in hecmw_result_txt_io.c
- */
-extern int HECMW_result_write_txt_by_fname(char *filename);
-extern int HECMW_result_write_txt_ST_by_fname(
-    char *filename, struct hecmwST_result_data *result, int n_node, int n_elem,
-    char *header, char *comment);
-extern struct hecmwST_result_data *HECMW_result_read_txt_by_fname(char *filename);
-
 #endif

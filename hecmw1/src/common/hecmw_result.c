@@ -14,6 +14,8 @@
 #include "hecmw_bin_io.h"
 #include "hecmw_result.h"
 #include "hecmw_result_io.h"
+#include "hecmw_result_io_bin.h"
+#include "hecmw_result_io_txt.h"
 
 struct fortran_remainder {
   double *ptr;
