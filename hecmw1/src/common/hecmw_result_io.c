@@ -13,8 +13,6 @@
 #include "hecmw_config.h"
 #include "hecmw_result_io.h"
 
-char Line_Buf[LINEBUF_SIZE + 1];
-
 struct hecmwST_result_io_data ResIO;
 
 static int is_valid_label(char *label) {

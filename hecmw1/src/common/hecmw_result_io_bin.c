@@ -14,6 +14,9 @@
 
 #define RES_BIN_HEADER "HECMW_BINARY_RESULT"
 
+#define LINEBUF_SIZE 1023
+static char Line_Buf[LINEBUF_SIZE + 1];
+
 
 /*---------------------------------------------------------------------------*/
 /* BINARY MODE I/O --- bin_header                                            */
