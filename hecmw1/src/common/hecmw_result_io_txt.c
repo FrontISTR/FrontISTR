@@ -11,6 +11,9 @@
 #include "hecmw_result.h"
 #include "hecmw_result_io.h"
 
+#define COL_INT 10
+#define COL_DOUBLE 5
+
 #define LINEBUF_SIZE 1023
 static char Line_Buf[LINEBUF_SIZE + 1];
 

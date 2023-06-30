@@ -8,9 +8,6 @@
 
 #include "hecmw_config.h"
 
-#define COL_INT 10
-#define COL_DOUBLE 5
-
 enum HECMW_RESULT_DTYPE {
   HECMW_RESULT_DTYPE_MIN    = 1,
   HECMW_RESULT_DTYPE_NODE   = 1,
