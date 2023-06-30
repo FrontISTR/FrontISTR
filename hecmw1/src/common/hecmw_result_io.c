@@ -13,14 +13,6 @@
 #include "hecmw_config.h"
 #include "hecmw_result_io.h"
 
-#ifdef OLD_RES_FORMAT
-int filever_major=1;
-int filever_minor=0;
-#else
-int FileVer_Major=2;
-int FileVer_Minor=0;
-#endif // OLD_RES_FORMAT
-
 char Line_Buf[LINEBUF_SIZE + 1];
 
 struct hecmwST_result_io_data ResIO;

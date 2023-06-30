@@ -73,8 +73,8 @@ static int bin_output_result_header(FILE *fp) {
   int rc;
 
   /* header */
-  if( FileVer_Major > 1 ){
-    sprintf(ResIO.head,"%s %d.%d",ResIO.head,FileVer_Major,FileVer_Minor);
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
+    sprintf(ResIO.head,"%s %d.%d",ResIO.head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
   }
   rc = hecmw_write_bin(fp,"S", ResIO.head);
   if(rc < 0) {
@@ -310,7 +310,7 @@ static int bin_output_result_data(FILE *fp) {
   if(bin_output_result_header(fp)) {
     return -1;
   }
-  if( FileVer_Major > 1 ){
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     if(bin_output_result_global(fp)) {
       return -1;
     }
@@ -395,8 +395,8 @@ static int bin_output_result_header_ST(struct hecmwST_result_data *result,
   }
 
   /* header */
-  if( FileVer_Major > 1 ){
-    sprintf(head,"%s %d.%d",head,FileVer_Major,FileVer_Minor);
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
+    sprintf(head,"%s %d.%d",head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
   }
   rc = hecmw_write_bin(fp, "S", header);
   if(rc < 0) {
@@ -626,7 +626,7 @@ static int bin_output_result_data_ST(struct hecmwST_result_data *result,
   if(bin_output_result_header_ST(result, header, fp)) {
     return -1;
   }
-  if( FileVer_Major > 1 ){
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     if(bin_output_result_global_ST(result, comment, fp)) {
       return -1;
     }
@@ -695,7 +695,7 @@ static int bin_input_result_header(struct hecmwST_result_data *result, FILE *fp)
     HECMW_set_error(HECMW_UTIL_E0205, "header");
     return -1;
   }
-  if( FileVer_Major > 1 ){
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     ptr = strtok(Line_Buf, " ");
     sprintf(Line_Buf, "%s", ptr);
   }
@@ -990,7 +990,7 @@ static struct hecmwST_result_data *bin_input_result_data(FILE *fp) {
     return NULL;
   }
 
-  if( FileVer_Major > 1 ){
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     if(bin_input_result_global(result, fp)) {
       return NULL;
     }

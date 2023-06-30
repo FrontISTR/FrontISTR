@@ -20,15 +20,20 @@ enum HECMW_RESULT_DTYPE {
   HECMW_RESULT_DTYPE_MAX    = 3
 };
 
+#ifdef OLD_RES_FORMAT
+# define HECMW_RESULT_FILEVER_MAJOR 1
+# define HECMW_RESULT_FILEVER_MINOR 0
+#else
+# define HECMW_RESULT_FILEVER_MAJOR 2
+# define HECMW_RESULT_FILEVER_MINOR 0
+#endif // OLD_RES_FORMAT
+
 struct result_list {
   char *label;
   double *ptr;
   int n_dof;
   struct result_list *next;
 };
-
-extern int FileVer_Major;
-extern int FileVer_Minor;
 
 extern char Line_Buf[LINEBUF_SIZE + 1];
 

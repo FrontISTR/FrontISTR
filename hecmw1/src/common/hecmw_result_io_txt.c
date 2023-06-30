@@ -20,8 +20,8 @@ static int output_result_header(FILE *fp) {
   int rc;
 
   /* header */
-  if( FileVer_Major > 1 ){
-    sprintf(ResIO.head,"%s %d.%d",ResIO.head,FileVer_Major,FileVer_Minor);
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
+    sprintf(ResIO.head,"%s %d.%d",ResIO.head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
   }
   rc = fprintf(fp, "%s\n", ResIO.head);
   if(rc < 0) {
@@ -305,7 +305,7 @@ static int output_result_data(FILE *fp) {
   if(output_result_header(fp)) {
     return -1;
   }
-  if( FileVer_Major > 1 ){
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     if(output_result_global(fp)) {
       return -1;
     }
@@ -389,8 +389,8 @@ static int output_result_header_ST(struct hecmwST_result_data *result, char *hea
   }
 
   /* header */
-  if( FileVer_Major > 1 ){
-    sprintf(head,"%s %d.%d",head,FileVer_Major,FileVer_Minor);
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
+    sprintf(head,"%s %d.%d",head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
   }
   rc = fprintf(fp, "%s\n", head);
   if(rc < 0) {
@@ -663,7 +663,7 @@ static int output_result_data_ST(struct hecmwST_result_data *result, int n_node,
   if(output_result_header_ST(result, header, fp)) {
     return -1;
   }
-  if( FileVer_Major > 1 ){
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     if(output_result_global_ST(result, comment, fp)) {
       return -1;
     }
@@ -741,7 +741,7 @@ static int input_result_header(struct hecmwST_result_data *result, FILE *fp) {
     return -1;
   }
   Line_Buf[ strlen(Line_Buf)-1 ] = 0;/* remove CR/LF*/
-  if( FileVer_Major > 1 ){
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     ptr = strtok(Line_Buf, " ");
     sprintf(Line_Buf, "%s", ptr);
   }
@@ -1175,7 +1175,7 @@ static struct hecmwST_result_data *input_result_data(FILE *fp) {
   if(input_result_header(result, fp)) {
     return NULL;
   }
-  if( FileVer_Major > 1 ){
+  if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     if(input_result_global(result, fp)) {
       return NULL;
     }
