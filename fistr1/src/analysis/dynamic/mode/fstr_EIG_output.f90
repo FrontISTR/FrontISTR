@@ -164,9 +164,9 @@ contains
         comment = "eigen_result"
         call hecmw_result_init(hecMESH,istep,header,comment)
         label = "EIGENVALUE"
-        call hecmw_result_add(3,1,label,egval)
+        call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL,1,label,egval)
         label = "DISPLACEMENT"
-        call hecmw_result_add(1,NDOF,label,X)
+        call hecmw_result_add(HECMW_RESULT_DTYPE_NODE,NDOF,label,X)
         nameID = "fstrRES"
         call hecmw_result_write_by_name(nameID)
         call hecmw_result_finalize

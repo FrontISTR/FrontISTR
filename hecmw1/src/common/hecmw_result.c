@@ -314,11 +314,11 @@ void hecmw_result_add_if(int *dtype, int *n_dof, char *label,
   if (HECMW_strcpy_f2c_r(label, len, label_str, sizeof(label_str)) == NULL)
     return;
 
-  if (*dtype == 1) { //node
+  if (*dtype == HECMW_RESULT_DTYPE_NODE) {
     n = nnode;
-  } else if (*dtype == 2) { //element
+  } else if (*dtype == HECMW_RESULT_DTYPE_ELEM) {
     n = nelem;
-  } else { // global
+  } else { // *dtype == HECMW_RESULT_DTYPE_GLOBAL
     n = 1;
   }
   size = sizeof(double) * n * (*n_dof);

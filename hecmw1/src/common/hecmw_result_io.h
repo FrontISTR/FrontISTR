@@ -12,6 +12,14 @@
 #define COL_DOUBLE 5
 #define LINEBUF_SIZE 1023
 
+enum HECMW_RESULT_DTYPE {
+  HECMW_RESULT_DTYPE_MIN    = 1,
+  HECMW_RESULT_DTYPE_NODE   = 1,
+  HECMW_RESULT_DTYPE_ELEM   = 2,
+  HECMW_RESULT_DTYPE_GLOBAL = 3,
+  HECMW_RESULT_DTYPE_MAX    = 3
+};
+
 struct result_list {
   char *label;
   double *ptr;

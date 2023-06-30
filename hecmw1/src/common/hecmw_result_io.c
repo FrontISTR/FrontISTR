@@ -221,7 +221,7 @@ error:
 int HECMW_result_io_add(int dtype, int n_dof, char *label, double *ptr) {
   struct result_list *result;
 
-  if (dtype < 1 && dtype > 3) {
+  if (dtype < HECMW_RESULT_DTYPE_MIN && dtype > HECMW_RESULT_DTYPE_MAX) {
     HECMW_set_error(HECMW_UTIL_E0206, "");
     goto error;
   }
@@ -236,14 +236,11 @@ int HECMW_result_io_add(int dtype, int n_dof, char *label, double *ptr) {
     goto error;
   }
 
-  if (dtype == 1) {
-    /* node */
+  if (dtype == HECMW_RESULT_DTYPE_NODE) {
     if (add_to_node_list(result)) goto error;
-  } else if (dtype == 2)  {
-    /* elem */
+  } else if (dtype == HECMW_RESULT_DTYPE_ELEM)  {
     if (add_to_elem_list(result)) goto error;
-  } else {
-    /* global */
+  } else { /* dtype == HECMW_RESULT_DTYPE_GLOBAL */
     if (add_to_global_list(result)) goto error;
   }
 

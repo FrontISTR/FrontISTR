@@ -9,7 +9,11 @@ module hecmw_result
   use hecmw_etype
   implicit none
 
+  private
   public :: hecmwST_result_data
+  public :: HECMW_RESULT_DTYPE_NODE
+  public :: HECMW_RESULT_DTYPE_ELEM
+  public :: HECMW_RESULT_DTYPE_GLOBAL
   public :: hecmw_nullify_result_data
   public :: hecmw_result_copy_c2f
   public :: hecmw_result_copy_f2c
@@ -43,7 +47,11 @@ module hecmw_result
     real(kind=kreal),pointer :: elem_val_item(:)
   end type hecmwST_result_data
 
-  private
+  ! constants defined in hecmw_result_io.h
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_NODE   = 1
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_ELEM   = 2
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_GLOBAL = 3
+
   character(len=HECMW_NAME_LEN) :: sname,vname
   logical :: MPC_exist
   integer(kind=kint) :: nelem_wo_MPC = 0
@@ -133,7 +141,7 @@ contains
     integer(kind=kint) :: i, icel
     real(kind=kreal), pointer :: data_wo_MPC(:)
 
-    if( dtype == 2 .and. MPC_exist ) then !element output without patch element
+    if( dtype == HECMW_RESULT_DTYPE_ELEM .and. MPC_exist ) then !element output without patch element
 
       allocate(data_wo_MPC(n_dof*nelem_wo_MPC))
       data_wo_MPC(:) = 0.d0

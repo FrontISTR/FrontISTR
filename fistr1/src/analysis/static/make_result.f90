@@ -80,7 +80,7 @@ contains
     call hecmw_result_init( hecMESH, istep, header, comment )
 
     ! --- TIME
-    id = 3 !global data
+    id = HECMW_RESULT_DTYPE_GLOBAL
     label = 'TOTALTIME'
     work(1) = time
     call hecmw_result_add( id, 1, label, work )
@@ -88,7 +88,7 @@ contains
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
       if(ndof /= 4) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
       allocate( unode(hecMESH%n_node*ndof) )
       unode = 0.0d0
@@ -107,7 +107,7 @@ contains
       call hecmw_result_add( id, nitem, label, unode )
       deallocate( unode )
       else
-        id = 1
+        id = HECMW_RESULT_DTYPE_NODE
         ! for VELOCITY
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 3 )
         allocate( unode(3*hecMESH%n_node) )
@@ -136,7 +136,7 @@ contains
     ! --- ROTATION
     if (fstrSOLID%output_ctrl(3)%outinfo%on(18)) then
       if ( is_33shell == 1) then
-        id = 1
+        id = HECMW_RESULT_DTYPE_NODE
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
         label = 'ROTATION'
         allocate( rnode(hecMESH%n_node*ndof) )
@@ -149,7 +149,7 @@ contains
 
     ! --- VELOCITY
     if( is_dynamic .and. fstrSOLID%output_ctrl(3)%outinfo%on(15) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(15), ndof )
       label = 'VELOCITY'
       call hecmw_result_add( id, nitem, label, fstrDYNAMIC%VEL(:,idx) )
@@ -157,7 +157,7 @@ contains
 
     ! --- ACCELERATION
     if( is_dynamic .and. fstrSOLID%output_ctrl(3)%outinfo%on(16) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(16), ndof )
       label = 'ACCELERATION'
       call hecmw_result_add( id, nitem, label, fstrDYNAMIC%ACC(:,idx) )
@@ -165,7 +165,7 @@ contains
 
     ! --- REACTION FORCE
     if( fstrSOLID%output_ctrl(3)%outinfo%on(2) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(2), ndof )
       label = 'REACTION_FORCE'
       call hecmw_result_add( id, nitem, label, fstrSOLID%REACTION )
@@ -197,7 +197,7 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! --- STRAIN @gauss
     if( fstrSOLID%output_ctrl(3)%outinfo%on(9) .and. ndof/=6 ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(9), ndof )
       ngauss = fstrSOLID%maxn_gauss
       work(:) = 0.d0
@@ -220,7 +220,7 @@ contains
 
     ! --- STRESS @gauss
     if( fstrSOLID%output_ctrl(3)%outinfo%on(10) .and. ndof/=6 ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(10), ndof )
       ngauss = fstrSOLID%maxn_gauss
       work(:) = 0.d0
@@ -243,7 +243,7 @@ contains
 
     ! --- PLASTIC STRAIN @gauss
     if( fstrSOLID%output_ctrl(3)%outinfo%on(11) .and. fstrSOLID%StaticType/=3 ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
       ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
@@ -263,7 +263,7 @@ contains
 
     ! --- THERMAL STRAIN @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(12) .and. associated(tnstrain) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(12), ndof )
       label = 'THERMAL_NodalSTRAIN'
       call hecmw_result_add( id, nitem, label, tnstrain )
@@ -271,7 +271,7 @@ contains
 
     ! --- THERMAL STRAIN @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(13) .and. associated(testrain) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(13), ndof )
       label = 'THERMAL_ElementalSTRAIN'
       call hecmw_result_add( id, nitem, label, testrain )
@@ -279,7 +279,7 @@ contains
 
     ! --- THERMAL STRAIN @gauss
     if( fstrSOLID%output_ctrl(3)%outinfo%on(14) .and. associated(testrain) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(14), ndof )
       ngauss = fstrSOLID%maxn_gauss
       do k = 1, ngauss
@@ -303,7 +303,7 @@ contains
 
     ! --- YIELD RATIO
     if( fstrSOLID%output_ctrl(3)%outinfo%on(29) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(29), ndof )
       label = "YIELD_RATIO"
       call hecmw_result_add( id, nitem, label, yield_ratio )
@@ -311,7 +311,7 @@ contains
 
     ! --- CONTACT NORMAL FORCE @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(30), ndof )
       label = 'CONTACT_NFORCE'
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_NFORCE )
@@ -319,7 +319,7 @@ contains
 
     ! --- CONTACT FRICTION FORCE @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(31) .and. associated(fstrSOLID%CONT_FRIC) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(31), ndof )
       label = 'CONTACT_FRICTION'
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_FRIC )
@@ -327,7 +327,7 @@ contains
 
     ! --- CONTACT RELATIVE VELOCITY @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(32) .and. associated(fstrSOLID%CONT_RELVEL) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(32), ndof )
       label = 'CONTACT_RELVEL'
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_RELVEL )
@@ -335,7 +335,7 @@ contains
 
     ! --- CONTACT STATE @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(33) .and. associated(fstrSOLID%CONT_STATE) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(33), ndof )
       label = 'CONTACT_STATE'
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_STATE )
@@ -343,7 +343,7 @@ contains
 
     ! --- CONTACT NORMAL TRACTION @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(36) .and. associated(fstrSOLID%CONT_NTRAC) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(36), ndof )
       label = 'CONTACT_NTRACTION'
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_NTRAC )
@@ -351,7 +351,7 @@ contains
 
     ! --- CONTACT FRICTION TRACTION @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(37) .and. associated(fstrSOLID%CONT_FTRAC) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(37), ndof )
       label = 'CONTACT_FTRACTION'
       call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_FTRAC )
@@ -412,7 +412,7 @@ contains
 
     ! --- STRAIN @node
     if (fstrSOLID%output_ctrl(3)%outinfo%on(3)) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(3), ndof )
       label = 'NodalSTRAIN'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%STRAIN )
@@ -420,7 +420,7 @@ contains
 
     ! --- STRESS @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(4) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(4), ndof )
       label = 'NodalSTRESS'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%STRESS )
@@ -428,7 +428,7 @@ contains
 
     ! --- MISES @node
     if( fstrSOLID%output_ctrl(3)%outinfo%on(5) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(5), ndof )
       label = 'NodalMISES'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%MISES )
@@ -436,7 +436,7 @@ contains
 
     ! --- NODAL PRINC STRESS
     if( fstrSOLID%output_ctrl(3)%outinfo%on(19) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(19), ndof )
       label = 'NodalPrincipalSTRESS'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%PSTRESS )
@@ -444,7 +444,7 @@ contains
 
     ! --- NODAL PRINC STRAIN
     if( fstrSOLID%output_ctrl(3)%outinfo%on(21) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(21), ndof )
       label = 'NodalPrincipalSTRAIN'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%PSTRAIN )
@@ -452,7 +452,7 @@ contains
 
     ! --- NODAL PRINC STRESS VECTOR
     if( fstrSOLID%output_ctrl(3)%outinfo%on(23) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       do k=1,3
         write(cnum,'(i0)')k
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(23), ndof )
@@ -463,7 +463,7 @@ contains
 
     ! --- NODAL PRINC STRAIN VECTOR
     if( fstrSOLID%output_ctrl(3)%outinfo%on(25) ) then
-      id = 1
+      id = HECMW_RESULT_DTYPE_NODE
       do k=1,3
         write(cnum,'(i0)')k
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(25), ndof )
@@ -475,7 +475,7 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! --- STRAIN @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(6) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(6), ndof )
       label = 'ElementalSTRAIN'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%ESTRAIN )
@@ -483,7 +483,7 @@ contains
 
     ! --- STRESS @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(7) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(7), ndof )
       label = 'ElementalSTRESS'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%ESTRESS )
@@ -491,7 +491,7 @@ contains
 
     ! --- NQM @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(35) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(35), ndof )
       label = 'ElementalNQM'//trim(clyr)
 !      write (6,*) 'RES%ENQM',RES%ENQM(1)
@@ -500,7 +500,7 @@ contains
 
     ! --- MISES @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(8)) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(8), ndof )
       label = 'ElementalMISES'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%EMISES )
@@ -508,7 +508,7 @@ contains
 
     ! --- Principal_STRESS @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(20) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(20), ndof )
       label = 'ElementalPrincipalSTRESS'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%EPSTRESS )
@@ -516,7 +516,7 @@ contains
 
     ! --- Principal_STRAIN @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(22) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(22), ndof )
       label = 'ElementalPrincipalSTRAIN'//trim(clyr)
       call hecmw_result_add( id, nitem, label, RES%EPSTRAIN )
@@ -524,7 +524,7 @@ contains
 
     ! --- ELEM PRINC STRESS VECTOR
     if( fstrSOLID%output_ctrl(3)%outinfo%on(24) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       do k=1,3
         write(cnum,'(i0)')k
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(24), ndof )
@@ -535,7 +535,7 @@ contains
 
     !ELEM PRINC STRAIN VECTOR
     if( fstrSOLID%output_ctrl(3)%outinfo%on(26) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       do k=1,3
         write(cnum,'(i0)')k
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(26), ndof )

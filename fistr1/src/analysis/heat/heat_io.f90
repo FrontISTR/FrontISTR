@@ -107,9 +107,9 @@ contains
       call hecmw_result_init(hecMESH, tstep, header, comment)
       work(1) = ctime
       label = 'TOTALTIME'
-      call hecmw_result_add(3, 1, label, work)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, work)
       label = 'TEMPERATURE'
-      call hecmw_result_add(1, 1, label, fstrHEAT%TEMP)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 1, label, fstrHEAT%TEMP)
       nameID = 'fstrRES'
       call hecmw_result_write_by_name(nameID)
       call hecmw_result_finalize
