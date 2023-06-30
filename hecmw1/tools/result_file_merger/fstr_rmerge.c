@@ -9,6 +9,8 @@
  */
 
 #include "fstr_rmerge_util.h"
+#include "hecmw_result_io_bin.h"
+#include "hecmw_result_io_txt.h"
 
 FILE* log_fp;
 int nrank = 0;
@@ -215,10 +217,10 @@ int main(int argc, char** argv) {
     HECMW_result_get_comment(comment);
     HECMW_result_init(glmesh, step, header, comment);
     if (binary) {
-      rcode = HECMW_result_write_bin_ST_by_fname(out_fname, data, glt->node_n,
+      rcode = HECMW_result_io_bin_write_ST_by_fname(out_fname, data, glt->node_n,
                                                  glt->elem_n, header, comment);
     } else {
-      rcode = HECMW_result_write_txt_ST_by_fname(out_fname, data, glt->node_n,
+      rcode = HECMW_result_io_txt_write_ST_by_fname(out_fname, data, glt->node_n,
                                                  glt->elem_n, header, comment);
     }
     if (rcode) {

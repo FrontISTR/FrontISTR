@@ -8,11 +8,11 @@
 
 #include "hecmw_result.h"
 
-extern int HECMW_judge_result_bin_file(char *filename);
-extern int HECMW_result_write_bin_by_fname(char *filename);
-extern int HECMW_result_write_bin_ST_by_fname(
+extern int HECMW_result_io_bin_judge_file(char *filename);
+extern int HECMW_result_io_bin_write_by_fname(char *filename);
+extern int HECMW_result_io_bin_write_ST_by_fname(
     char *filename, struct hecmwST_result_data *result, int n_node, int n_elem,
     char *header, char *comment);
-extern struct hecmwST_result_data *HECMW_result_read_bin_by_fname(char *filename);
+extern struct hecmwST_result_data *HECMW_result_io_bin_read_by_fname(char *filename);
 
 #endif

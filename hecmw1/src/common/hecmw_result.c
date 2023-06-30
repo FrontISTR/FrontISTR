@@ -89,9 +89,9 @@ int HECMW_result_write_by_name(char *name_ID) {
   if (ret > HECMW_FILENAME_LEN) return -1;
 
   if (fg_text) {
-    if (HECMW_result_write_txt_by_fname(filename)) return -1;
+    if (HECMW_result_io_txt_write_by_fname(filename)) return -1;
   } else {
-    if (HECMW_result_write_bin_by_fname(filename)) return -1;
+    if (HECMW_result_io_bin_write_by_fname(filename)) return -1;
   }
 
   return 0;
@@ -112,11 +112,11 @@ int HECMW_result_write_ST_by_name(char *name_ID,
   if (ret > HECMW_FILENAME_LEN) return -1;
 
   if (fg_text) {
-    if (HECMW_result_write_txt_ST_by_fname(filename, result, n_node, n_elem,
+    if (HECMW_result_io_txt_write_ST_by_fname(filename, result, n_node, n_elem,
                                            header, comment))
       return -1;
   } else {
-    if (HECMW_result_write_bin_ST_by_fname(filename, result, n_node, n_elem,
+    if (HECMW_result_io_bin_write_ST_by_fname(filename, result, n_node, n_elem,
                                            header, comment))
       return -1;
   }
@@ -139,9 +139,9 @@ int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
   if (ret > HECMW_FILENAME_LEN) return -1;
 
   if (fg_text) {
-    if (HECMW_result_write_txt_by_fname(filename)) return -1;
+    if (HECMW_result_io_txt_write_by_fname(filename)) return -1;
   } else {
-    if (HECMW_result_write_bin_by_fname(filename)) return -1;
+    if (HECMW_result_io_bin_write_by_fname(filename)) return -1;
   }
 
   return 0;
@@ -170,10 +170,10 @@ int HECMW_result_checkfile_by_name(char *name_ID, int i_step) {
 struct hecmwST_result_data *HECMW_result_read_by_fname(char *filename) {
   struct hecmwST_result_data *result;
 
-  if (HECMW_judge_result_bin_file(filename)) {
-    result = HECMW_result_read_bin_by_fname(filename);
+  if (HECMW_result_io_bin_judge_file(filename)) {
+    result = HECMW_result_io_bin_read_by_fname(filename);
   } else {
-    result = HECMW_result_read_txt_by_fname(filename);
+    result = HECMW_result_io_txt_read_by_fname(filename);
   }
 
   return result;

@@ -47,7 +47,7 @@ static int check_bin_header(FILE* fp) {
 }
 
 
-int HECMW_judge_result_bin_file(char *filename) {
+int HECMW_result_io_bin_judge_file(char *filename) {
   int rcode;
   FILE* fp;
 
@@ -336,7 +336,7 @@ static int bin_output_result_data(FILE *fp) {
 
 /*---------------------------------------------------------------------------*/
 
-int HECMW_result_write_bin_by_fname(char *filename) {
+int HECMW_result_io_bin_write_by_fname(char *filename) {
   FILE *fp = NULL;
 
   if (HECMW_ctrl_is_subdir()) {
@@ -646,7 +646,7 @@ static int bin_output_result_data_ST(struct hecmwST_result_data *result,
 
 /*---------------------------------------------------------------------------*/
 
-int HECMW_result_write_bin_ST_by_fname(char *filename,
+int HECMW_result_io_bin_write_ST_by_fname(char *filename,
                                        struct hecmwST_result_data *result,
                                        int n_node, int n_elem, char *header, char *comment) {
   FILE *fp = NULL;
@@ -1016,7 +1016,7 @@ static struct hecmwST_result_data *bin_input_result_data(FILE *fp) {
 /*---------------------------------------------------------------------------*/
 
 
-struct hecmwST_result_data *HECMW_result_read_bin_by_fname(char *filename) {
+struct hecmwST_result_data *HECMW_result_io_bin_read_by_fname(char *filename) {
   FILE *fp;
   struct hecmwST_result_data *result;
 

@@ -331,7 +331,7 @@ static int output_result_data(FILE *fp) {
 
 /*---------------------------------------------------------------------------*/
 
-int HECMW_result_write_txt_by_fname(char *filename) {
+int HECMW_result_io_txt_write_by_fname(char *filename) {
   FILE *fp = NULL;
 
   if (HECMW_ctrl_is_subdir()) {
@@ -683,7 +683,7 @@ static int output_result_data_ST(struct hecmwST_result_data *result, int n_node,
 
 /*---------------------------------------------------------------------------*/
 
-int HECMW_result_write_txt_ST_by_fname(char *filename,
+int HECMW_result_io_txt_write_ST_by_fname(char *filename,
                                        struct hecmwST_result_data *result,
                                        int n_node, int n_elem, char *header, char *comment) {
   FILE *fp = NULL;
@@ -1197,7 +1197,7 @@ static struct hecmwST_result_data *input_result_data(FILE *fp) {
 
 /*---------------------------------------------------------------------------*/
 
-struct hecmwST_result_data *HECMW_result_read_txt_by_fname(char *filename) {
+struct hecmwST_result_data *HECMW_result_io_txt_read_by_fname(char *filename) {
   FILE *fp;
   struct hecmwST_result_data *result;
 
