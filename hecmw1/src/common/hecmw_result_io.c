@@ -70,7 +70,7 @@ static int is_valid_label(char *label) {
   return 1;
 }
 
-void HECMW_result_clear() {
+void HECMW_result_io_finalize() {
   struct result_list *p, *q;
 
   for (p = global_list; p; p = q) {
@@ -101,7 +101,7 @@ void HECMW_result_clear() {
   elem_global_ID = NULL;
 }
 
-int HECMW_result_init_body(int n_node, int n_elem, int *nodeID, int *elemID,
+int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
                            int i_step, char *header, char *comment) {
   int len;
   char *p, *q;
@@ -218,7 +218,7 @@ error:
   return NULL;
 }
 
-int HECMW_result_add(int dtype, int n_dof, char *label, double *ptr) {
+int HECMW_result_io_add(int dtype, int n_dof, char *label, double *ptr) {
   struct result_list *result;
 
   if (dtype < 1 && dtype > 3) {
@@ -253,7 +253,7 @@ error:
   return -1;
 }
 
-int HECMW_result_count_ng_comp(void) {
+int HECMW_result_io_count_ng_comp(void) {
   int ng_comp;
   struct result_list *p;
 
@@ -264,7 +264,7 @@ int HECMW_result_count_ng_comp(void) {
   return ng_comp;
 }
 
-int HECMW_result_count_nn_comp(void) {
+int HECMW_result_io_count_nn_comp(void) {
   int nn_comp;
   struct result_list *p;
 
@@ -275,7 +275,7 @@ int HECMW_result_count_nn_comp(void) {
   return nn_comp;
 }
 
-int HECMW_result_count_ne_comp(void) {
+int HECMW_result_io_count_ne_comp(void) {
   int ne_comp;
   struct result_list *p;
 

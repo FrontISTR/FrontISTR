@@ -36,15 +36,15 @@ extern int *node_global_ID;
 extern int *elem_global_ID;
 
 
-extern void HECMW_result_clear();
-extern int HECMW_result_init_body(int n_node, int n_elem, int *nodeID,
+extern void HECMW_result_io_finalize();
+extern int HECMW_result_io_init(int n_node, int n_elem, int *nodeID,
                                   int *elemID, int i_step,
                                   char *header, char *comment);
-extern int HECMW_result_add(int dtype, int n_dof, char *label,
+extern int HECMW_result_io_add(int dtype, int n_dof, char *label,
                             double *ptr);
 
-extern int HECMW_result_count_ng_comp(void);
-extern int HECMW_result_count_nn_comp(void);
-extern int HECMW_result_count_ne_comp(void);
+extern int HECMW_result_io_count_ng_comp(void);
+extern int HECMW_result_io_count_nn_comp(void);
+extern int HECMW_result_io_count_ne_comp(void);
 
 #endif

@@ -110,7 +110,7 @@ static int bin_output_result_global(FILE *fp) {
   }
 
   /* ng_component */
-  rc = hecmw_write_bin(fp, "II", HECMW_result_count_ng_comp());
+  rc = hecmw_write_bin(fp, "II", HECMW_result_io_count_ng_comp());
   if(rc < 0) {
     HECMW_set_error(HECMW_UTIL_E0205, "ng_comp");
     return -1;
@@ -137,7 +137,7 @@ static int bin_output_result_global(FILE *fp) {
   }
 
   /* global_val_item */
-  ng_comp = HECMW_result_count_ng_comp();
+  ng_comp = HECMW_result_io_count_ng_comp();
   if(ng_comp == 0) return 0;
   data = HECMW_malloc(sizeof(*data) * ng_comp);
   if(data == NULL) {
@@ -175,7 +175,7 @@ static int bin_output_result_dataheader(FILE *fp) {
   }
 
   /* nn_component, ne_component */
-  rc = hecmw_write_bin(fp, "II", HECMW_result_count_nn_comp(), HECMW_result_count_ne_comp());
+  rc = hecmw_write_bin(fp, "II", HECMW_result_io_count_nn_comp(), HECMW_result_io_count_ne_comp());
   if(rc < 0) {
     HECMW_set_error(HECMW_UTIL_E0205, "nn_comp,ne_comp");
     return -1;
@@ -210,7 +210,7 @@ static int bin_output_result_node(FILE *fp) {
   }
 
   /* node_val_item */
-  nn_comp = HECMW_result_count_nn_comp();
+  nn_comp = HECMW_result_io_count_nn_comp();
   if(nn_comp == 0) return 0;
   data = HECMW_malloc(sizeof(*data) * nn_comp);
   if(data == NULL) {
@@ -269,7 +269,7 @@ static int bin_output_result_elem(FILE *fp) {
   }
 
   /* elem_val_item */
-  ne_comp = HECMW_result_count_ne_comp();
+  ne_comp = HECMW_result_io_count_ne_comp();
   if(ne_comp == 0) return 0;
   data = HECMW_malloc(sizeof(*data) * ne_comp);
   if(data == NULL) {
