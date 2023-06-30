@@ -13,26 +13,26 @@
 #include "hecmw_config.h"
 #include "hecmw_result_io.h"
 
-int istep;
-int nnode;
-int nelem;
+int IStep;
+int NNode;
+int NElem;
 #ifdef OLD_RES_FORMAT
 int filever_major=1;
 int filever_minor=0;
 #else
-int filever_major=2;
-int filever_minor=0;
+int FileVer_Major=2;
+int FileVer_Minor=0;
 #endif // OLD_RES_FORMAT
-char head[HECMW_HEADER_LEN + 1];
-char comment_line[HECMW_MSG_LEN + 1];
-char line_buf[LINEBUF_SIZE + 1];
+char Head[HECMW_HEADER_LEN + 1];
+char Comment_Line[HECMW_MSG_LEN + 1];
+char Line_Buf[LINEBUF_SIZE + 1];
 
-struct result_list *global_list;
-struct result_list *node_list;
-struct result_list *elem_list;
+struct result_list *Global_List;
+struct result_list *Node_List;
+struct result_list *Elem_List;
 
-int *node_global_ID = NULL;
-int *elem_global_ID = NULL;
+int *Node_Global_ID = NULL;
+int *Elem_Global_ID = NULL;
 
 static int is_valid_label(char *label) {
 #define ALLOW_CHAR_FIRST "_" /* and alphabet */
@@ -73,32 +73,32 @@ static int is_valid_label(char *label) {
 void HECMW_result_io_finalize() {
   struct result_list *p, *q;
 
-  for (p = global_list; p; p = q) {
+  for (p = Global_List; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
     HECMW_free(p);
   }
-  global_list = NULL;
+  Global_List = NULL;
 
-  for (p = node_list; p; p = q) {
+  for (p = Node_List; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
     HECMW_free(p);
   }
-  node_list = NULL;
+  Node_List = NULL;
 
-  for (p = elem_list; p; p = q) {
+  for (p = Elem_List; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
     HECMW_free(p);
   }
-  elem_list = NULL;
+  Elem_List = NULL;
 
-  nnode = nelem = 0;
-  strcpy(head, "");
+  NNode = NElem = 0;
+  strcpy(Head, "");
 
-  node_global_ID = NULL;
-  elem_global_ID = NULL;
+  Node_Global_ID = NULL;
+  Elem_Global_ID = NULL;
 }
 
 int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
@@ -106,36 +106,36 @@ int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
   int len;
   char *p, *q;
 
-  nnode = n_node;
-  nelem = n_elem;
-  istep = i_step;
+  NNode = n_node;
+  NElem = n_elem;
+  IStep = i_step;
 
-  node_global_ID = nodeID;
-  elem_global_ID = elemID;
+  Node_Global_ID = nodeID;
+  Elem_Global_ID = elemID;
 
   if (header == NULL) {
-    head[0] = '\0';
+    Head[0] = '\0';
     return 0;
   }
 
   len = 0;
   p   = header;
-  q   = head;
-  while (len < sizeof(head) - 1 && *p && *p != '\n') {
+  q   = Head;
+  while (len < sizeof(Head) - 1 && *p && *p != '\n') {
     *q++ = *p++;
     len++;
   }
   *q++ = '\0';
 
   if (comment == NULL) {
-    comment_line[0] = '\0';
+    Comment_Line[0] = '\0';
     return 0;
   }
 
   len = 0;
   p   = comment;
-  q   = comment_line;
-  while (len < sizeof(comment_line) - 1 && *p && *p != '\n') {
+  q   = Comment_Line;
+  while (len < sizeof(Comment_Line) - 1 && *p && *p != '\n') {
     *q++ = *p++;
     len++;
   }
@@ -148,11 +148,11 @@ static int add_to_global_list(struct result_list *result) {
   struct result_list *p, *q;
 
   q = NULL;
-  for (p = global_list; p; p = (q = p)->next)
+  for (p = Global_List; p; p = (q = p)->next)
     ;
 
   if (q == NULL) {
-    global_list = result;
+    Global_List = result;
   } else {
     q->next = result;
   }
@@ -163,11 +163,11 @@ static int add_to_node_list(struct result_list *result) {
   struct result_list *p, *q;
 
   q = NULL;
-  for (p = node_list; p; p = (q = p)->next)
+  for (p = Node_List; p; p = (q = p)->next)
     ;
 
   if (q == NULL) {
-    node_list = result;
+    Node_List = result;
   } else {
     q->next = result;
   }
@@ -178,11 +178,11 @@ static int add_to_elem_list(struct result_list *result) {
   struct result_list *p, *q;
 
   q = NULL;
-  for (p = elem_list; p; p = (q = p)->next)
+  for (p = Elem_List; p; p = (q = p)->next)
     ;
 
   if (q == NULL) {
-    elem_list = result;
+    Elem_List = result;
   } else {
     q->next = result;
   }
@@ -255,7 +255,7 @@ int HECMW_result_io_count_ng_comp(void) {
   struct result_list *p;
 
   ng_comp = 0;
-  for (p = global_list; p; p = p->next) {
+  for (p = Global_List; p; p = p->next) {
     ng_comp++;
   }
   return ng_comp;
@@ -266,7 +266,7 @@ int HECMW_result_io_count_nn_comp(void) {
   struct result_list *p;
 
   nn_comp = 0;
-  for (p = node_list; p; p = p->next) {
+  for (p = Node_List; p; p = p->next) {
     nn_comp++;
   }
   return nn_comp;
@@ -277,7 +277,7 @@ int HECMW_result_io_count_ne_comp(void) {
   struct result_list *p;
 
   ne_comp = 0;
-  for (p = elem_list; p; p = p->next) {
+  for (p = Elem_List; p; p = p->next) {
     ne_comp++;
   }
   return ne_comp;

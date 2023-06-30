@@ -27,21 +27,21 @@ struct result_list {
   struct result_list *next;
 };
 
-extern int istep;
-extern int nnode;
-extern int nelem;
-extern int filever_major;
-extern int filever_minor;
-extern char head[HECMW_HEADER_LEN + 1];
-extern char comment_line[HECMW_MSG_LEN + 1];
-extern char line_buf[LINEBUF_SIZE + 1];
+extern int IStep;
+extern int NNode;
+extern int NElem;
+extern int FileVer_Major;
+extern int FileVer_Minor;
+extern char Head[HECMW_HEADER_LEN + 1];
+extern char Comment_Line[HECMW_MSG_LEN + 1];
+extern char Line_Buf[LINEBUF_SIZE + 1];
 
-extern struct result_list *global_list;
-extern struct result_list *node_list;
-extern struct result_list *elem_list;
+extern struct result_list *Global_List;
+extern struct result_list *Node_List;
+extern struct result_list *Elem_List;
 
-extern int *node_global_ID;
-extern int *elem_global_ID;
+extern int *Node_Global_ID;
+extern int *Elem_Global_ID;
 
 
 extern void HECMW_result_io_finalize();

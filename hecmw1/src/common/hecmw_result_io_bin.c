@@ -73,10 +73,10 @@ static int bin_output_result_header(FILE *fp) {
   int rc;
 
   /* header */
-  if( filever_major > 1 ){
-    sprintf(head,"%s %d.%d",head,filever_major,filever_minor);
+  if( FileVer_Major > 1 ){
+    sprintf(Head,"%s %d.%d",Head,FileVer_Major,FileVer_Minor);
   }
-  rc = hecmw_write_bin(fp,"S", head);
+  rc = hecmw_write_bin(fp,"S", Head);
   if(rc < 0) {
     HECMW_set_error(HECMW_UTIL_E0205, "head");
     return -1;
@@ -96,7 +96,7 @@ static int bin_output_result_global(FILE *fp) {
     HECMW_set_error(HECMW_UTIL_E0205, "*comment");
     return -1;
   }
-  rc = hecmw_write_bin(fp,"S", comment_line);
+  rc = hecmw_write_bin(fp,"S", Comment_Line);
   if(rc < 0) {
     HECMW_set_error(HECMW_UTIL_E0205, "head");
     return -1;
@@ -118,7 +118,7 @@ static int bin_output_result_global(FILE *fp) {
 
   /* ng_dof */
   n = 0;
-  for(p=global_list; p; p=p->next) {
+  for(p=Global_List; p; p=p->next) {
     rc = hecmw_write_bin(fp, "I", p->n_dof );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "ng_dof");
@@ -128,7 +128,7 @@ static int bin_output_result_global(FILE *fp) {
   }
 
   /* global_label */
-  for(p=global_list; p; p=p->next) {
+  for(p=Global_List; p; p=p->next) {
     rc = hecmw_write_bin(fp, "S", p->label);
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "global_label");
@@ -145,7 +145,7 @@ static int bin_output_result_global(FILE *fp) {
     return -1;
   }
   i = 0;
-  for(p=global_list; p; p=p->next) {
+  for(p=Global_List; p; p=p->next) {
     data[i++] = p;
   }
   for(j=0; j < ng_comp; j++) {
@@ -168,7 +168,7 @@ static int bin_output_result_dataheader(FILE *fp) {
   int rc;
 
   /* n_node, n_elem */
-  rc = hecmw_write_bin(fp, "II", nnode, nelem);
+  rc = hecmw_write_bin(fp, "II", NNode, NElem);
   if(rc < 0) {
     HECMW_set_error(HECMW_UTIL_E0205, "nnode,nelem");
     return -1;
@@ -191,7 +191,7 @@ static int bin_output_result_node(FILE *fp) {
 
   /* nn_dof */
   n = 0;
-  for(p=node_list; p; p=p->next) {
+  for(p=Node_List; p; p=p->next) {
     rc = hecmw_write_bin(fp, "I", p->n_dof );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "nn_dof");
@@ -201,7 +201,7 @@ static int bin_output_result_node(FILE *fp) {
   }
 
   /* node_label */
-  for(p=node_list; p; p=p->next) {
+  for(p=Node_List; p; p=p->next) {
     rc = hecmw_write_bin(fp, "S", p->label);
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "node_label");
@@ -218,11 +218,11 @@ static int bin_output_result_node(FILE *fp) {
     return -1;
   }
   i = 0;
-  for(p=node_list; p; p=p->next) {
+  for(p=Node_List; p; p=p->next) {
     data[i++] = p;
   }
-  for(i=0; i < nnode; i++) {
-    rc = hecmw_write_bin(fp, "I", node_global_ID[i] );
+  for(i=0; i < NNode; i++) {
+    rc = hecmw_write_bin(fp, "I", Node_Global_ID[i] );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "node_global_ID");
       return -1;
@@ -250,7 +250,7 @@ static int bin_output_result_elem(FILE *fp) {
 
   /* ne_dof */
   n = 0;
-  for(p=elem_list; p; p=p->next) {
+  for(p=Elem_List; p; p=p->next) {
     rc = hecmw_write_bin(fp, "I", p->n_dof );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "ne_dof");
@@ -260,7 +260,7 @@ static int bin_output_result_elem(FILE *fp) {
   }
 
   /* elem_label */
-  for(p=elem_list; p; p=p->next) {
+  for(p=Elem_List; p; p=p->next) {
     rc = hecmw_write_bin(fp, "S", p->label);
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "elem_label");
@@ -277,11 +277,11 @@ static int bin_output_result_elem(FILE *fp) {
     return -1;
   }
   i = 0;
-  for(p=elem_list; p; p=p->next) {
+  for(p=Elem_List; p; p=p->next) {
     data[i++] = p;
   }
-  for(i=0; i < nelem; i++) {
-    rc = hecmw_write_bin(fp, "I", elem_global_ID[i] );
+  for(i=0; i < NElem; i++) {
+    rc = hecmw_write_bin(fp, "I", Elem_Global_ID[i] );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "elem_global_ID");
       return -1;
@@ -310,7 +310,7 @@ static int bin_output_result_data(FILE *fp) {
   if(bin_output_result_header(fp)) {
     return -1;
   }
-  if( filever_major > 1 ){
+  if( FileVer_Major > 1 ){
     if(bin_output_result_global(fp)) {
       return -1;
     }
@@ -395,8 +395,8 @@ static int bin_output_result_header_ST(struct hecmwST_result_data *result,
   }
 
   /* header */
-  if( filever_major > 1 ){
-    sprintf(head,"%s %d.%d",head,filever_major,filever_minor);
+  if( FileVer_Major > 1 ){
+    sprintf(head,"%s %d.%d",head,FileVer_Major,FileVer_Minor);
   }
   rc = hecmw_write_bin(fp, "S", header);
   if(rc < 0) {
@@ -548,7 +548,7 @@ static int bin_output_result_node_ST(struct hecmwST_result_data *result,
   if(result->nn_component == 0) return 0;
   m = 0;
   for(i=0; i < n_node; i++) {
-    rc = hecmw_write_bin(fp, "I", node_global_ID[i] );
+    rc = hecmw_write_bin(fp, "I", Node_Global_ID[i] );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "node_global_ID");
       return -1;
@@ -597,7 +597,7 @@ static int bin_output_result_elem_ST(struct hecmwST_result_data *result,
   if(result->ne_component == 0) return 0;
   m = 0;
   for(i=0; i < n_elem; i++) {
-    rc = hecmw_write_bin(fp, "I", elem_global_ID[i] );
+    rc = hecmw_write_bin(fp, "I", Elem_Global_ID[i] );
     if(rc < 0) {
       HECMW_set_error(HECMW_UTIL_E0205, "elem_global_ID");
       return -1;
@@ -626,7 +626,7 @@ static int bin_output_result_data_ST(struct hecmwST_result_data *result,
   if(bin_output_result_header_ST(result, header, fp)) {
     return -1;
   }
-  if( filever_major > 1 ){
+  if( FileVer_Major > 1 ){
     if(bin_output_result_global_ST(result, comment, fp)) {
       return -1;
     }
@@ -691,15 +691,15 @@ static int bin_input_result_header(struct hecmwST_result_data *result, FILE *fp)
   char *ptr;
 
   /* header */
-  if(hecmw_read_bin(fp, "S", line_buf)) {
+  if(hecmw_read_bin(fp, "S", Line_Buf)) {
     HECMW_set_error(HECMW_UTIL_E0205, "header");
     return -1;
   }
-  if( filever_major > 1 ){
-    ptr = strtok(line_buf, " ");
-    sprintf(line_buf, "%s", ptr);
+  if( FileVer_Major > 1 ){
+    ptr = strtok(Line_Buf, " ");
+    sprintf(Line_Buf, "%s", ptr);
   }
-  strcpy( head, line_buf );
+  strcpy( Head, Line_Buf );
 
   return 0;
 }
@@ -708,18 +708,18 @@ static int bin_input_result_header(struct hecmwST_result_data *result, FILE *fp)
 static int bin_input_result_global(struct hecmwST_result_data *result, FILE *fp) {
   int i,j,k,n,m;
   /* comment */
-  if(hecmw_read_bin(fp, "S", line_buf)) { //skip comment header
+  if(hecmw_read_bin(fp, "S", Line_Buf)) { //skip comment header
     HECMW_set_error(HECMW_UTIL_E0205, "comment");
     return -1;
   }
-  if(hecmw_read_bin(fp, "S", line_buf)) {
+  if(hecmw_read_bin(fp, "S", Line_Buf)) {
     HECMW_set_error(HECMW_UTIL_E0205, "comment");
     return -1;
   }
-  strcpy( comment_line, line_buf );
+  strcpy( Comment_Line, Line_Buf );
 
   /* skip global header */
-  if(hecmw_read_bin(fp, "S", line_buf)) {
+  if(hecmw_read_bin(fp, "S", Line_Buf)) {
     HECMW_set_error(HECMW_UTIL_E0205, "*global");
     return -1;
   }
@@ -789,7 +789,7 @@ static int bin_input_result_global(struct hecmwST_result_data *result, FILE *fp)
   }
 
   /* skip data header */
-  if(hecmw_read_bin(fp, "S", line_buf)) {
+  if(hecmw_read_bin(fp, "S", Line_Buf)) {
     HECMW_set_error(HECMW_UTIL_E0205, "*data");
     return -1;
   }
@@ -864,8 +864,8 @@ static int bin_input_result_node(struct hecmwST_result_data *result, int n_node,
   }
 
   /* node_val_item */
-  node_global_ID = HECMW_malloc(sizeof(*node_global_ID)*n_node);
-  if(node_global_ID == NULL) {
+  Node_Global_ID = HECMW_malloc(sizeof(*Node_Global_ID)*n_node);
+  if(Node_Global_ID == NULL) {
     HECMW_set_error(errno, "(node_global_ID)");
     return -1;
   }
@@ -877,7 +877,7 @@ static int bin_input_result_node(struct hecmwST_result_data *result, int n_node,
 
   m = 0;
   for(i=0; i < n_node; i++) {
-    if(hecmw_read_bin( fp, "I", &node_global_ID[i] )) {
+    if(hecmw_read_bin( fp, "I", &Node_Global_ID[i] )) {
       HECMW_set_error(HECMW_UTIL_E0205, "node_global_ID");
       return -1;
     }
@@ -941,8 +941,8 @@ static int bin_input_result_elem(struct hecmwST_result_data *result, int n_elem,
   }
 
   /* elem_val_item */
-  elem_global_ID = HECMW_malloc(sizeof(*elem_global_ID)*n_elem);
-  if(elem_global_ID == NULL) {
+  Elem_Global_ID = HECMW_malloc(sizeof(*Elem_Global_ID)*n_elem);
+  if(Elem_Global_ID == NULL) {
     HECMW_set_error(errno, "(elem_global_ID)");
     return -1;
   }
@@ -954,7 +954,7 @@ static int bin_input_result_elem(struct hecmwST_result_data *result, int n_elem,
 
   m = 0;
   for(i=0; i < n_elem; i++) {
-    if(hecmw_read_bin( fp, "I", &elem_global_ID[i] )) {
+    if(hecmw_read_bin( fp, "I", &Elem_Global_ID[i] )) {
       HECMW_set_error(HECMW_UTIL_E0205, "elem_global_ID");
       return -1;
     }
@@ -990,7 +990,7 @@ static struct hecmwST_result_data *bin_input_result_data(FILE *fp) {
     return NULL;
   }
 
-  if( filever_major > 1 ){
+  if( FileVer_Major > 1 ){
     if(bin_input_result_global(result, fp)) {
       return NULL;
     }
@@ -998,8 +998,8 @@ static struct hecmwST_result_data *bin_input_result_data(FILE *fp) {
   if(bin_input_result_dataheader(result, &n_node, &n_elem, fp)) {
     return NULL;
   }
-  nnode = n_node;
-  nelem = n_elem;
+  NNode = n_node;
+  NElem = n_elem;
 
   if(bin_input_result_node(result, n_node, fp)) {
     return NULL;
