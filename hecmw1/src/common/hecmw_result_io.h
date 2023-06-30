@@ -27,29 +27,34 @@ struct result_list {
   struct result_list *next;
 };
 
-extern int IStep;
-extern int NNode;
-extern int NElem;
 extern int FileVer_Major;
 extern int FileVer_Minor;
-extern char Head[HECMW_HEADER_LEN + 1];
-extern char Comment_Line[HECMW_MSG_LEN + 1];
+
 extern char Line_Buf[LINEBUF_SIZE + 1];
 
-extern struct result_list *Global_List;
-extern struct result_list *Node_List;
-extern struct result_list *Elem_List;
+struct hecmwST_result_io_data {
+  int istep;
+  int nnode;
+  int nelem;
+  char head[HECMW_HEADER_LEN + 1];
+  char comment_line[HECMW_MSG_LEN + 1];
 
-extern int *Node_Global_ID;
-extern int *Elem_Global_ID;
+  struct result_list *global_list;
+  struct result_list *node_list;
+  struct result_list *elem_list;
 
+  int *node_global_ID;
+  int *elem_global_ID;
+};
+
+extern struct hecmwST_result_io_data ResIO;
 
 extern void HECMW_result_io_finalize();
 extern int HECMW_result_io_init(int n_node, int n_elem, int *nodeID,
-                                  int *elemID, int i_step,
-                                  char *header, char *comment);
+                                int *elemID, int i_step, char *header,
+                                char *comment);
 extern int HECMW_result_io_add(int dtype, int n_dof, char *label,
-                            double *ptr);
+                               double *ptr);
 
 extern int HECMW_result_io_count_ng_comp(void);
 extern int HECMW_result_io_count_nn_comp(void);

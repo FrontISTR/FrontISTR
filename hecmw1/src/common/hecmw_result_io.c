@@ -13,9 +13,6 @@
 #include "hecmw_config.h"
 #include "hecmw_result_io.h"
 
-int IStep;
-int NNode;
-int NElem;
 #ifdef OLD_RES_FORMAT
 int filever_major=1;
 int filever_minor=0;
@@ -23,16 +20,10 @@ int filever_minor=0;
 int FileVer_Major=2;
 int FileVer_Minor=0;
 #endif // OLD_RES_FORMAT
-char Head[HECMW_HEADER_LEN + 1];
-char Comment_Line[HECMW_MSG_LEN + 1];
+
 char Line_Buf[LINEBUF_SIZE + 1];
 
-struct result_list *Global_List;
-struct result_list *Node_List;
-struct result_list *Elem_List;
-
-int *Node_Global_ID = NULL;
-int *Elem_Global_ID = NULL;
+struct hecmwST_result_io_data ResIO;
 
 static int is_valid_label(char *label) {
 #define ALLOW_CHAR_FIRST "_" /* and alphabet */
@@ -73,32 +64,32 @@ static int is_valid_label(char *label) {
 void HECMW_result_io_finalize() {
   struct result_list *p, *q;
 
-  for (p = Global_List; p; p = q) {
+  for (p = ResIO.global_list; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
     HECMW_free(p);
   }
-  Global_List = NULL;
+  ResIO.global_list = NULL;
 
-  for (p = Node_List; p; p = q) {
+  for (p = ResIO.node_list; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
     HECMW_free(p);
   }
-  Node_List = NULL;
+  ResIO.node_list = NULL;
 
-  for (p = Elem_List; p; p = q) {
+  for (p = ResIO.elem_list; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
     HECMW_free(p);
   }
-  Elem_List = NULL;
+  ResIO.elem_list = NULL;
 
-  NNode = NElem = 0;
-  strcpy(Head, "");
+  ResIO.nnode = ResIO.nelem = 0;
+  strcpy(ResIO.head, "");
 
-  Node_Global_ID = NULL;
-  Elem_Global_ID = NULL;
+  ResIO.node_global_ID = NULL;
+  ResIO.elem_global_ID = NULL;
 }
 
 int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
@@ -106,36 +97,36 @@ int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
   int len;
   char *p, *q;
 
-  NNode = n_node;
-  NElem = n_elem;
-  IStep = i_step;
+  ResIO.nnode = n_node;
+  ResIO.nelem = n_elem;
+  ResIO.istep = i_step;
 
-  Node_Global_ID = nodeID;
-  Elem_Global_ID = elemID;
+  ResIO.node_global_ID = nodeID;
+  ResIO.elem_global_ID = elemID;
 
   if (header == NULL) {
-    Head[0] = '\0';
+    ResIO.head[0] = '\0';
     return 0;
   }
 
   len = 0;
   p   = header;
-  q   = Head;
-  while (len < sizeof(Head) - 1 && *p && *p != '\n') {
+  q   = ResIO.head;
+  while (len < sizeof(ResIO.head) - 1 && *p && *p != '\n') {
     *q++ = *p++;
     len++;
   }
   *q++ = '\0';
 
   if (comment == NULL) {
-    Comment_Line[0] = '\0';
+    ResIO.comment_line[0] = '\0';
     return 0;
   }
 
   len = 0;
   p   = comment;
-  q   = Comment_Line;
-  while (len < sizeof(Comment_Line) - 1 && *p && *p != '\n') {
+  q   = ResIO.comment_line;
+  while (len < sizeof(ResIO.comment_line) - 1 && *p && *p != '\n') {
     *q++ = *p++;
     len++;
   }
@@ -148,11 +139,11 @@ static int add_to_global_list(struct result_list *result) {
   struct result_list *p, *q;
 
   q = NULL;
-  for (p = Global_List; p; p = (q = p)->next)
+  for (p = ResIO.global_list; p; p = (q = p)->next)
     ;
 
   if (q == NULL) {
-    Global_List = result;
+    ResIO.global_list = result;
   } else {
     q->next = result;
   }
@@ -163,11 +154,11 @@ static int add_to_node_list(struct result_list *result) {
   struct result_list *p, *q;
 
   q = NULL;
-  for (p = Node_List; p; p = (q = p)->next)
+  for (p = ResIO.node_list; p; p = (q = p)->next)
     ;
 
   if (q == NULL) {
-    Node_List = result;
+    ResIO.node_list = result;
   } else {
     q->next = result;
   }
@@ -178,11 +169,11 @@ static int add_to_elem_list(struct result_list *result) {
   struct result_list *p, *q;
 
   q = NULL;
-  for (p = Elem_List; p; p = (q = p)->next)
+  for (p = ResIO.elem_list; p; p = (q = p)->next)
     ;
 
   if (q == NULL) {
-    Elem_List = result;
+    ResIO.elem_list = result;
   } else {
     q->next = result;
   }
@@ -255,7 +246,7 @@ int HECMW_result_io_count_ng_comp(void) {
   struct result_list *p;
 
   ng_comp = 0;
-  for (p = Global_List; p; p = p->next) {
+  for (p = ResIO.global_list; p; p = p->next) {
     ng_comp++;
   }
   return ng_comp;
@@ -266,7 +257,7 @@ int HECMW_result_io_count_nn_comp(void) {
   struct result_list *p;
 
   nn_comp = 0;
-  for (p = Node_List; p; p = p->next) {
+  for (p = ResIO.node_list; p; p = p->next) {
     nn_comp++;
   }
   return nn_comp;
@@ -277,7 +268,7 @@ int HECMW_result_io_count_ne_comp(void) {
   struct result_list *p;
 
   ne_comp = 0;
-  for (p = Elem_List; p; p = p->next) {
+  for (p = ResIO.elem_list; p; p = p->next) {
     ne_comp++;
   }
   return ne_comp;
