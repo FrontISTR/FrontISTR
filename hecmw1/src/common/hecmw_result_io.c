@@ -9,8 +9,10 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include "hecmw_malloc.h"
 #include "hecmw_util.h"
 #include "hecmw_config.h"
+#include "hecmw_etype.h"
 #include "hecmw_result_io.h"
 
 struct hecmwST_result_io_data ResIO;
@@ -80,11 +82,70 @@ void HECMW_result_io_finalize() {
 
   ResIO.node_global_ID = NULL;
   ResIO.elem_global_ID = NULL;
+
+  if (ResIO.MPC_exist) {
+    ResIO.MPC_exist = 0;
+    HECMW_free(ResIO.eid_wo_MPC);
+    HECMW_free(ResIO.elem_global_ID);
+  }
+}
+
+static int setup_MPC(int n_elem_type, int *elem_type_index, int *elem_type_item,
+                     int *elemID) {
+  int itype, ic_type, is, ie, icel;
+  int nelem_wo_MPC;
+  int *elemID_wo_MPC;
+
+  ResIO.MPC_exist = 0;
+  ResIO.eid_wo_MPC = NULL;
+
+  for (itype = 0; itype < n_elem_type; itype++) {
+    ic_type = elem_type_item[itype];
+    if (HECMW_is_etype_link(ic_type) || HECMW_is_etype_patch(ic_type)) {
+      ResIO.MPC_exist = 1;
+      break;
+    }
+  }
+
+  if (ResIO.MPC_exist) {
+    ResIO.eid_wo_MPC = (int *) HECMW_calloc(ResIO.nelem, sizeof(int));
+    if (ResIO.eid_wo_MPC == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+    elemID_wo_MPC = (int *) HECMW_calloc(ResIO.nelem, sizeof(int));
+    if (elemID_wo_MPC == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+
+    nelem_wo_MPC = 0;
+    for (itype = 0; itype < n_elem_type; itype++) {
+      ic_type = elem_type_item[itype];
+      if (HECMW_is_etype_link(ic_type) || HECMW_is_etype_patch(ic_type)) {
+        continue;
+      }
+      is = elem_type_index[itype];
+      ie = elem_type_index[itype + 1];
+      for (icel = is; icel < ie; icel++) {
+        ResIO.eid_wo_MPC[nelem_wo_MPC] = icel;
+        elemID_wo_MPC[nelem_wo_MPC] = elemID[icel];
+        nelem_wo_MPC++;
+      }
+    }
+    ResIO.nelem = nelem_wo_MPC;
+    ResIO.elem_global_ID = elemID_wo_MPC;
+  }
+
+  return 0;
+error:
+  return -1;
 }
 
 int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
-                           int i_step, char *header, char *comment) {
-  int len;
+                         int n_elem_type, int *elem_type_index, int *elem_type_item,
+                         int i_step, char *header, char *comment) {
+  int len, rtc;
   char *p, *q;
 
   ResIO.nnode = n_node;
@@ -122,7 +183,14 @@ int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
   }
   *q++ = '\0';
 
+  rtc = setup_MPC(n_elem_type, elem_type_index, elem_type_item, elemID);
+  if (rtc != 0) {
+    goto error;
+  }
+
   return 0;
+error:
+  return -1;
 }
 
 static int add_to_global_list(struct result_list *result) {
@@ -201,6 +269,8 @@ error:
 
 int HECMW_result_io_add(int dtype, int n_dof, char *label, double *ptr) {
   struct result_list *result;
+  double *ptr_wo_MPC;
+  int i, icel, idof;
 
   if (dtype < HECMW_RESULT_DTYPE_MIN && dtype > HECMW_RESULT_DTYPE_MAX) {
     HECMW_set_error(HECMW_UTIL_E0206, "");
@@ -212,7 +282,25 @@ int HECMW_result_io_add(int dtype, int n_dof, char *label, double *ptr) {
     goto error;
   }
 
-  result = make_result_list(n_dof, label, ptr);
+  if (dtype == HECMW_RESULT_DTYPE_ELEM && ResIO.MPC_exist) {
+    ptr_wo_MPC = (double *) HECMW_calloc(n_dof * ResIO.nelem, sizeof(double));
+    if (ptr_wo_MPC == NULL) {
+      HECMW_set_error(errno, "");
+      goto error;
+    }
+
+    for (i = 0; i < ResIO.nelem; i++) {
+      icel = ResIO.eid_wo_MPC[i];
+      for (idof = 0; idof < n_dof; idof++) {
+        ptr_wo_MPC[n_dof * i + idof] = ptr[n_dof * icel + idof];
+      }
+    }
+
+    result = make_result_list(n_dof, label, ptr_wo_MPC);
+
+  } else {
+    result = make_result_list(n_dof, label, ptr);
+  }
   if (result == NULL) {
     goto error;
   }

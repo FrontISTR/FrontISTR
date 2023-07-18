@@ -44,14 +44,17 @@ struct hecmwST_result_io_data {
 
   int *node_global_ID;
   int *elem_global_ID;
+
+  int MPC_exist;
+  int *eid_wo_MPC;
 };
 
 extern struct hecmwST_result_io_data ResIO;
 
 extern void HECMW_result_io_finalize();
-extern int HECMW_result_io_init(int n_node, int n_elem, int *nodeID,
-                                int *elemID, int i_step, char *header,
-                                char *comment);
+extern int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
+                                int n_elem_type, int *elem_type_index, int *elem_type_item,
+                                int i_step, char *header, char *comment);
 extern int HECMW_result_io_add(int dtype, int n_dof, char *label,
                                double *ptr);
 

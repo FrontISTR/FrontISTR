@@ -53,10 +53,6 @@ module hecmw_result
   integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_GLOBAL = 3
 
   character(len=HECMW_NAME_LEN) :: sname,vname
-  logical :: MPC_exist
-  integer(kind=kint) :: nelem_wo_MPC = 0
-  integer(kind=kint), allocatable :: eid_wo_MPC(:)
-  integer(kind=kint), allocatable :: elemID_wo_MPC(:)
 
 contains
 
@@ -89,45 +85,12 @@ contains
 
     integer(kind=kint) :: itype, iS, iE, ic_type, icel
 
-    MPC_exist = .false.
-    do itype= 1, hecMESH%n_elem_type
-      ic_type = hecMESH%elem_type_item(itype)
-      if (hecmw_is_etype_patch(ic_type)) MPC_exist = .true.
-      if (hecmw_is_etype_link(ic_type)) MPC_exist = .true.
-    end do
-
     nnode = hecMESH%n_node
     nelem = hecMESH%n_elem
 
-    if( MPC_exist ) then
-
-      if( nelem_wo_MPC == 0 ) then
-        allocate(eid_wo_MPC(nelem))
-        allocate(elemID_wo_MPC(nelem))
-        eid_wo_MPC(:) = 0
-        elemID_wo_MPC(:) = 0
-
-        nelem_wo_MPC = 0
-        do itype= 1, hecMESH%n_elem_type
-          iS= hecMESH%elem_type_index(itype-1) + 1
-          iE= hecMESH%elem_type_index(itype  )
-          ic_type= hecMESH%elem_type_item(itype)
-
-          if (hecmw_is_etype_patch(ic_type)) cycle
-          if (hecmw_is_etype_link(ic_type)) cycle
-
-          do icel= iS, iE
-            nelem_wo_MPC = nelem_wo_MPC + 1
-            elemID_wo_MPC(nelem_wo_MPC) = hecMESH%global_elem_ID(icel)
-            eid_wo_MPC(nelem_wo_MPC) = icel
-          end do
-        end do
-      end if
-
-      call hecmw_result_init_if(nnode, nelem_wo_MPC, hecMESH%global_node_ID, elemID_wo_MPC, i_step, header, comment, ierr)
-    else
-      call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, i_step, header, comment, ierr)
-    end if
+    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, &
+        hecMESH%n_elem_type, hecMESH%elem_type_index, hecMESH%elem_type_item, &
+        i_step, header, comment, ierr)
 
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_init
@@ -139,25 +102,8 @@ contains
     real(kind=kreal) :: data(:)
 
     integer(kind=kint) :: i, icel
-    real(kind=kreal), pointer :: data_wo_MPC(:)
 
-    if( dtype == HECMW_RESULT_DTYPE_ELEM .and. MPC_exist ) then !element output without patch element
-
-      allocate(data_wo_MPC(n_dof*nelem_wo_MPC))
-      data_wo_MPC(:) = 0.d0
-
-      do i= 1, nelem_wo_MPC
-        icel = eid_wo_MPC(i)
-        data_wo_MPC(n_dof*(i-1)+1:n_dof*i) = data(n_dof*(icel-1)+1:n_dof*icel)
-      end do
-
-      call hecmw_result_add_if(dtype, n_dof, label, data_wo_MPC, ierr)
-
-      deallocate(data_wo_MPC)
-
-    else
-      call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
-    end if
+    call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
 
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_add
