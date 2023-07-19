@@ -59,6 +59,7 @@ void HECMW_result_io_finalize() {
   for (p = ResIO.global_list; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
+    HECMW_free(p->ptr);
     HECMW_free(p);
   }
   ResIO.global_list = NULL;
@@ -66,6 +67,7 @@ void HECMW_result_io_finalize() {
   for (p = ResIO.node_list; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
+    HECMW_free(p->ptr);
     HECMW_free(p);
   }
   ResIO.node_list = NULL;
@@ -73,6 +75,7 @@ void HECMW_result_io_finalize() {
   for (p = ResIO.elem_list; p; p = q) {
     q = p->next;
     HECMW_free(p->label);
+    HECMW_free(p->ptr);
     HECMW_free(p);
   }
   ResIO.elem_list = NULL;
@@ -269,7 +272,8 @@ error:
 
 int HECMW_result_io_add(int dtype, int n_dof, char *label, double *ptr) {
   struct result_list *result;
-  double *ptr_wo_MPC;
+  size_t n, size;
+  double *data;
   int i, icel, idof;
 
   if (dtype < HECMW_RESULT_DTYPE_MIN && dtype > HECMW_RESULT_DTYPE_MAX) {
@@ -282,25 +286,32 @@ int HECMW_result_io_add(int dtype, int n_dof, char *label, double *ptr) {
     goto error;
   }
 
-  if (dtype == HECMW_RESULT_DTYPE_ELEM && ResIO.MPC_exist) {
-    ptr_wo_MPC = (double *) HECMW_calloc(n_dof * ResIO.nelem, sizeof(double));
-    if (ptr_wo_MPC == NULL) {
-      HECMW_set_error(errno, "");
-      goto error;
-    }
+  if (dtype == HECMW_RESULT_DTYPE_NODE) {
+    n = ResIO.nnode;
+  } else if (dtype == HECMW_RESULT_DTYPE_ELEM) {
+    n = ResIO.nelem;
+  } else { // dtype == HECMW_RESULT_DTYPE_GLOBAL
+    n = 1;
+  }
+  size = sizeof(double) * n * n_dof;
+  data = (double *) HECMW_calloc(n * n_dof, sizeof(double));
+  if (data == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
 
+  if (dtype == HECMW_RESULT_DTYPE_ELEM && ResIO.MPC_exist) {
     for (i = 0; i < ResIO.nelem; i++) {
       icel = ResIO.eid_wo_MPC[i];
       for (idof = 0; idof < n_dof; idof++) {
-        ptr_wo_MPC[n_dof * i + idof] = ptr[n_dof * icel + idof];
+        data[n_dof * i + idof] = ptr[n_dof * icel + idof];
       }
     }
-
-    result = make_result_list(n_dof, label, ptr_wo_MPC);
-
   } else {
-    result = make_result_list(n_dof, label, ptr);
+    memcpy(data, ptr, size);
   }
+
+  result = make_result_list(n_dof, label, data);
   if (result == NULL) {
     goto error;
   }
@@ -315,7 +326,6 @@ int HECMW_result_io_add(int dtype, int n_dof, char *label, double *ptr) {
 
   return 0;
 error:
-  HECMW_free(result);
   return -1;
 }
 

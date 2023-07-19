@@ -17,12 +17,6 @@
 #include "hecmw_result_io_bin.h"
 #include "hecmw_result_io_txt.h"
 
-struct fortran_remainder {
-  double *ptr;
-  struct fortran_remainder *next;
-};
-
-static struct fortran_remainder *remainder; /* for Fortran */
 
 void HECMW_result_free(struct hecmwST_result_data *result) {
   int i;
@@ -314,40 +308,13 @@ void HECMW_RESULT_FINALIZE_IF(int *err) { hecmw_result_finalize_if(err); }
 void hecmw_result_add_if(int *dtype, int *n_dof, char *label,
                          double *ptr, int *err, int len) {
   char label_str[HECMW_NAME_LEN + 1];
-  int n, size;
-  double *data;
-  struct fortran_remainder *remain;
 
   *err = 1;
 
   if (HECMW_strcpy_f2c_r(label, len, label_str, sizeof(label_str)) == NULL)
     return;
 
-  if (*dtype == HECMW_RESULT_DTYPE_NODE) {
-    n = ResIO.nnode;
-  } else if (*dtype == HECMW_RESULT_DTYPE_ELEM) {
-    n = ResIO.nelem;
-  } else { // *dtype == HECMW_RESULT_DTYPE_GLOBAL
-    n = 1;
-  }
-  size = sizeof(double) * n * (*n_dof);
-  data = HECMW_malloc(size);
-  if (data == NULL) {
-    HECMW_set_error(errno, "");
-    return;
-  }
-  memcpy(data, ptr, size);
-
-  remain = HECMW_malloc(sizeof(*remain));
-  if (remain == NULL) {
-    HECMW_set_error(errno, "");
-    return;
-  }
-  remain->ptr  = data;
-  remain->next = remainder;
-  remainder    = remain;
-
-  if (HECMW_result_io_add(*dtype, *n_dof, label_str, data)) return;
+  if (HECMW_result_io_add(*dtype, *n_dof, label_str, ptr)) return;
 
   *err = 0;
 }
@@ -371,7 +338,6 @@ void HECMW_RESULT_ADD_IF(int *dtype, int *n_dof, char *label,
 
 void hecmw_result_write_by_name_if(char *name_ID, int *err, int len) {
   char name_ID_str[HECMW_NAME_LEN + 1];
-  struct fortran_remainder *p, *q;
 
   *err = 1;
 
@@ -380,13 +346,6 @@ void hecmw_result_write_by_name_if(char *name_ID, int *err, int len) {
     return;
 
   if (HECMW_result_write_by_name(name_ID_str)) return;
-
-  for (p = remainder; p; p = q) {
-    q = p->next;
-    HECMW_free(p->ptr);
-    HECMW_free(p);
-  }
-  remainder = NULL;
 
   *err = 0;
 }
@@ -409,7 +368,6 @@ void hecmw_result_write_by_addfname_if(char *name_ID, char *addfname, int *err,
                                        int len1, int len2) {
   char name_ID_str[HECMW_NAME_LEN + 1];
   char addfname_str[HECMW_NAME_LEN + 1];
-  struct fortran_remainder *p, *q;
 
   *err = 1;
 
@@ -421,13 +379,6 @@ void hecmw_result_write_by_addfname_if(char *name_ID, char *addfname, int *err,
     return;
 
   if (HECMW_result_write_by_addfname(name_ID_str, addfname_str)) return;
-
-  for (p = remainder; p; p = q) {
-    q = p->next;
-    HECMW_free(p->ptr);
-    HECMW_free(p);
-  }
-  remainder = NULL;
 
   *err = 0;
 }
