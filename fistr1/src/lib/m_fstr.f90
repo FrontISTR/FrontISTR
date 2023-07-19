@@ -381,7 +381,10 @@ module m_fstr
 
     type( tElement ), pointer :: elements(:)   =>null()  !< elements information
     type( tMaterial ),pointer :: materials(:)  =>null()  !< material properties
+    integer                   :: n_contacts              !< number of contact conditions
     type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
+    integer                   :: n_inserts               !< number of insert conditions
+    type( tContact ), pointer :: inserts(:)   =>null()  !< contact information
     integer                   :: n_fix_mpc               !< number mpc conditions user defined
     real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
     type(tSection), pointer   :: sections(:)   =>null()  !< definition of section referred by elements(i)%sectionID
@@ -1035,6 +1038,16 @@ contains
     if( .not. associated(fstrSOLID%step_ctrl) ) return
     if( cstep>fstrSOLID%nstep_tot ) return
     fstr_isContactActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
+  end function
+
+  logical function fstr_isInsertActive( fstrSOLID, nbc, cstep )
+    type(fstr_solid)     :: fstrSOLID !< type fstr_solid
+    integer, intent(in) :: nbc       !< group id of boundary condition
+    integer, intent(in) :: cstep     !< current step number
+    fstr_isInsertActive = .true.
+    if( .not. associated(fstrSOLID%step_ctrl) ) return
+    if( cstep>fstrSOLID%nstep_tot ) return
+    fstr_isInsertActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
   end function
 
   !> This subroutine fetch coords defined by local coordinate system

@@ -223,8 +223,8 @@ contains
     integer(kind=kint) :: i, grpid
     logical :: iactive, is_init
 
-    fstrSOLID%CONT_RELVEL(:) = 0.d0
-    fstrSOLID%CONT_STATE(:) = 0.d0
+    if( associated( fstrSOLID%CONT_RELVEL ) ) fstrSOLID%CONT_RELVEL(:) = 0.d0
+    if( associated( fstrSOLID%CONT_STATE ) ) fstrSOLID%CONT_STATE(:) = 0.d0
 
     if( ctAlgo == kcaSLAGRANGE ) then
       flag_ctAlgo = 'SLagrange'
@@ -247,7 +247,7 @@ contains
 
     is_init = ( cstep == 1 .and. sub_step == 1 .and. cont_step == 0 )
 
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
         call clear_contact_state(fstrSOLID%contacts(i));  cycle
@@ -262,11 +262,21 @@ contains
       if( .not. active ) active = iactive
     enddo
 
-    if( is_init .and. ctAlgo == kcaSLAGRANGE ) &
+    do i=1,fstrSOLID%n_inserts
+      grpid = fstrSOLID%inserts(i)%group
+      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) then
+        call clear_contact_state(fstrSOLID%inserts(i));  cycle
+      endif
+      call scan_insert_state( flag_ctAlgo, fstrSOLID%inserts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+          & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu )
+      if( .not. active ) active = iactive
+    enddo
+
+    if( is_init .and. ctAlgo == kcaSLAGRANGE .and. fstrSOLID%n_contacts > 0 ) &
       &  call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
 
     !for output contact state
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
       call set_contact_state_vector( fstrSOLID%contacts(i), dt, fstrSOLID%CONT_RELVEL, fstrSOLID%CONT_STATE )
     enddo
 
@@ -274,8 +284,8 @@ contains
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
 
     if( .not. active ) then
-      fstrSOLID%CONT_NFORCE(:) = 0.d0
-      fstrSOLID%CONT_FRIC(:) = 0.d0
+      if( associated( fstrSOLID%CONT_NFORCE ) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
+      if( associated( fstrSOLID%CONT_FRIC ) ) fstrSOLID%CONT_FRIC(:) = 0.d0
     end if
 
   end subroutine
@@ -308,7 +318,7 @@ contains
       enddo
     enddo
 
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
       if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -361,7 +371,7 @@ contains
 
     is_init = ( cstep == 1 )
 
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
    !   grpid = fstrSOLID%contacts(i)%group
    !   if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
    !     call clear_contact_state(fstrSOLID%contacts(i));  cycle
@@ -386,7 +396,7 @@ contains
 
     integer(kind=kint) :: i, algtype
 
-    do i=1, size(fstrSOLID%contacts)
+    do i=1, fstrSOLID%n_contacts
       !   if( contacts(i)%mpced ) cycle
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
@@ -408,7 +418,7 @@ contains
     integer(kind=kint) :: i, nc, algtype
 
     gnt = 0.d0;  ctchanged = .false.
-    nc = size(fstrSOLID%contacts)
+    nc = fstrSOLID%n_contacts
     do i=1, nc
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
@@ -416,7 +426,7 @@ contains
         , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged )
       else if( algtype == CONTACTTIED ) then
         call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
-                                     &  mu, ctchanged )
+                                      &  mu, ctchanged )
       endif
     enddo
     if( nc>0 ) gnt = gnt/nc
@@ -430,7 +440,7 @@ contains
 
     integer(kind=kint) :: i, algtype
 
-    do i = 1, size(fstrSOLID%contacts)
+    do i = 1, fstrSOLID%n_contacts
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
         call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, B )
@@ -444,10 +454,9 @@ contains
   subroutine fstr_update_contact_TangentForce( fstrSOLID )
     type(fstr_solid), intent(inout)        :: fstrSOLID
 
-    integer(kind=kint) :: i, nc
+    integer(kind=kint) :: i
 
-    nc = size(fstrSOLID%contacts)
-    do i=1, nc
+    do i=1, fstrSOLID%n_contacts
       call update_contact_TangentForce( fstrSOLID%contacts(i) )
     enddo
   end subroutine
@@ -472,7 +481,7 @@ contains
 
     factor = fstrSOLID%FACTOR(2)
 
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -575,7 +584,7 @@ contains
 
     ! label contact defined surfaces
     n_cdsurfs = 0
-    do i=1, size(fstrSOLID%contacts)
+    do i=1, fstrSOLID%n_contacts
       !grpid = fstrSOLID%contacts(i)%group
       !if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
       !  call clear_contact_state(fstrSOLID%contacts(i));  cycle

@@ -51,7 +51,7 @@ contains
 
     id_lagrange = 0
 
-    do i = 1, size(fstrSOLID%contacts)
+    do i = 1, fstrSOLID%n_contacts
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -83,6 +83,33 @@ contains
     
           ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
           call hecmw_mat_ass_contactlag(nnode,ndLocal,id_lagrange,fstrSOLID%contacts(i)%fcoeff,stiffness,hecMAT,hecLagMAT)
+        enddo
+      enddo
+    enddo
+
+    do i = 1, fstrSOLID%n_inserts
+
+      grpid = fstrSOLID%inserts(i)%group
+      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      do j = 1, size(fstrSOLID%inserts(i)%slave)
+
+        if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
+
+        ctsurf = fstrSOLID%inserts(i)%states(j)%surface
+        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
+        ndLocal(2:nnode+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(1:nnode)
+
+        do k=1,3
+          id_lagrange = id_lagrange + 1
+          lagrange = hecLagMAT%Lagrange(id_lagrange)
+  
+          call getTiedStiffness(etype,nnode,k,fstrSOLID%inserts(i)%states(j),lagrange,stiffness)
+    
+          ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
+          call hecmw_mat_ass_contactlag(nnode,ndLocal,id_lagrange,0.d0,stiffness,hecMAT,hecLagMAT)
         enddo
       enddo
     enddo
@@ -248,7 +275,7 @@ contains
     if( associated(fstrSOLID%CONT_NFORCE) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
     if( associated(fstrSOLID%CONT_FRIC) ) fstrSOLID%CONT_FRIC(:) = 0.d0
 
-    do i = 1, size(fstrSOLID%contacts)
+    do i = 1, fstrSOLID%n_contacts
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -294,6 +321,41 @@ contains
 
     enddo
 
+    do i = 1, fstrSOLID%n_inserts
+
+      grpid = fstrSOLID%inserts(i)%group
+      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      do j = 1, size(fstrSOLID%inserts(i)%slave)
+
+        if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
+
+        ctsurf = fstrSOLID%inserts(i)%states(j)%surface
+        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
+        ndLocal(2:nnode+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(1:nnode)
+        do k = 1, nnode+1
+          ndDu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%dunode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
+          ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndDu((k-1)*3+1:(k-1)*3+3)
+          ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
+        enddo
+
+        do k=1,3
+          id_lagrange = id_lagrange + 1
+          lagrange = hecLagMAT%Lagrange(id_lagrange)
+  
+          fstrSOLID%inserts(i)%states(j)%multiplier(k) = hecLagMAT%Lagrange(id_lagrange)
+    
+          call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%inserts(i)%states(j),lagrange,ctNForce,ctTForce)
+          ! Update non-eqilibrited force vector
+          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,fstrSOLID,conMAT)
+
+        enddo
+      enddo
+
+    enddo
+
     !    Consider SPC condition
     call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
     call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
@@ -318,7 +380,7 @@ contains
     ctNForce = 0.0d0
     ctTForce = 0.0d0
 
-    call getShapeFunc( etype, ctState%lpos(:), shapefunc )
+    call getShapeFunc( etype, ctState%lpos, shapefunc )
 
     nTm = 0.d0
     nTm(idof) = -1.d0
@@ -352,7 +414,7 @@ contains
     ctNForce = 0.0d0
     ctTForce = 0.0d0
 
-    call getShapeFunc( etype, ctState%lpos(:), shapefunc )
+    call getShapeFunc( etype, ctState%lpos, shapefunc )
 
     normal(1:3) = ctState%direction(1:3)
 
@@ -491,7 +553,7 @@ contains
 
     id_lagrange = 0
 
-    do i = 1, size(fstrSOLID%contacts)
+    do i = 1, fstrSOLID%n_contacts
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -528,6 +590,38 @@ contains
             ! Update non-eqilibrited force vector
             call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,fstrSOLID,hecMAT)
           endif 
+
+        enddo
+      enddo
+    enddo
+
+    do i = 1, fstrSOLID%n_inserts
+
+      grpid = fstrSOLID%inserts(i)%group
+      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) cycle
+
+
+      do j = 1, size(fstrSOLID%inserts(i)%slave)
+
+        if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
+
+        ctsurf = fstrSOLID%inserts(i)%states(j)%surface
+        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
+        ndLocal(2:nnode+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(1:nnode)
+        do k = 1, nnode+1
+          ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
+          ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
+        enddo
+
+        do k=1,3
+          id_lagrange = id_lagrange + 1
+          lagrange = fstrSOLID%inserts(i)%states(j)%multiplier(k)
+    
+          call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%inserts(i)%states(j),lagrange,ctNForce,ctTForce)
+          ! Update non-eqilibrited force vector
+          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,fstrSOLID,hecMAT)
 
         enddo
       enddo

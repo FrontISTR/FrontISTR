@@ -61,7 +61,7 @@ contains
     end do
 
     !(3)contact values
-    ncont = size(fstrSOLID%contacts)
+    ncont = fstrSOLID%n_contacts
     if( associated(fstrSOLID%contacts) ) then
       allocate(fstrSOLID%contacts_bkup(ncont))
       do i=1,ncont
@@ -106,7 +106,7 @@ contains
     deallocate(fstrSOLID%elements_bkup)
 
     !(3)contact values
-    ncont = size(fstrSOLID%contacts)
+    ncont = fstrSOLID%n_contacts
     if( associated(fstrSOLID%contacts) ) then
       do i=1,ncont
         deallocate(fstrSOLID%contacts_bkup(i)%states)
@@ -154,7 +154,7 @@ contains
     end do
 
     !(3)contact values
-    ncont = size(fstrSOLID%contacts)
+    ncont = fstrSOLID%n_contacts
     if( associated(fstrSOLID%contacts) ) then
       do i=1,ncont
         nstate = size(fstrSOLID%contacts(i)%states)
@@ -205,7 +205,7 @@ contains
     end do
 
     !(3)contact values
-    ncont = size(fstrSOLID%contacts)
+    ncont = fstrSOLID%n_contacts
     if( associated(fstrSOLID%contacts) ) then
       do i=1,ncont
         nstate = size(fstrSOLID%contacts(i)%states)
