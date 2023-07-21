@@ -377,7 +377,8 @@ error:
 
 
 static int output_result_header_ST(struct hecmwST_result_data *result, char *header, FILE *fp) {
-  int rc,len;
+  size_t len;
+  int rc;
   char *p,*q;
   char head[HECMW_HEADER_LEN+1];
 
@@ -409,7 +410,8 @@ static int output_result_header_ST(struct hecmwST_result_data *result, char *hea
 
 
 static int output_result_global_ST(struct hecmwST_result_data *result, char *comment, FILE *fp) {
-  int i,j,k,n,rc,len;
+  size_t len;
+  int i,j,k,n,rc;
   char *p,*q;
   char comment_line[HECMW_MSG_LEN+1];
 

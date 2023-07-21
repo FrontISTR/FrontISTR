@@ -83,14 +83,14 @@ void HECMW_result_io_finalize() {
   ResIO.nnode = ResIO.nelem = 0;
   strcpy(ResIO.head, "");
 
-  ResIO.node_global_ID = NULL;
-  ResIO.elem_global_ID = NULL;
-
   if (ResIO.MPC_exist) {
     ResIO.MPC_exist = 0;
     HECMW_free(ResIO.eid_wo_MPC);
     HECMW_free(ResIO.elem_global_ID);
   }
+
+  ResIO.node_global_ID = NULL;
+  ResIO.elem_global_ID = NULL;
 }
 
 static int setup_MPC(int n_elem_type, int *elem_type_index, int *elem_type_item,
@@ -148,7 +148,8 @@ error:
 int HECMW_result_io_init(int n_node, int n_elem, int *nodeID, int *elemID,
                          int n_elem_type, int *elem_type_index, int *elem_type_item,
                          int i_step, char *header, char *comment) {
-  int len, rtc;
+  size_t len;
+  int rtc;
   char *p, *q;
 
   ResIO.nnode = n_node;

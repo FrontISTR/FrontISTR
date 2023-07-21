@@ -292,9 +292,7 @@ void HECMW_RESULT_INIT_IF(int *n_node, int *n_elem, int *nodeID, int *elemID,
 void hecmw_result_finalize_if(int *err) {
   *err = 1;
   if (HECMW_result_finalize()) return;
-  ResIO.node_global_ID = NULL;
-  ResIO.elem_global_ID = NULL;
-  *err           = 0;
+  *err = 0;
 }
 
 void hecmw_result_finalize_if_(int *err) { hecmw_result_finalize_if(err); }

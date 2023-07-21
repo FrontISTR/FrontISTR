@@ -25,13 +25,13 @@ static char Line_Buf[LINEBUF_SIZE + 1];
 
 static int write_bin_header(FILE* fp) {
   char* s = (char*)RES_BIN_HEADER;
-  int n;
+  size_t n;
   char nbyte[3];
 
   n = strlen(s);
   if( fwrite( s, sizeof(char), n, fp) != n ) return -1;
   n = sizeof(long);
-  sprintf( nbyte, "%2d", n );
+  sprintf( nbyte, "%2zd", n );
   if( fwrite( nbyte, sizeof(char), 2, fp) != 2 ) return -1;
   return 0;
 }
@@ -39,7 +39,7 @@ static int write_bin_header(FILE* fp) {
 
 static int check_bin_header(FILE* fp) {
   char* s = (char*)RES_BIN_HEADER;
-  int n = strlen(s);
+  size_t n = strlen(s);
   char buff[256], nbyte[3];
 
   if( fread( buff, sizeof(char), n, fp) != n ) return 0;
@@ -380,7 +380,8 @@ error:
 
 static int bin_output_result_header_ST(struct hecmwST_result_data *result,
                                        char *header, FILE *fp) {
-  int rc,len;
+  size_t len;
+  int rc;
   char *p,*q;
   char head[HECMW_HEADER_LEN+1];
 
@@ -413,7 +414,8 @@ static int bin_output_result_header_ST(struct hecmwST_result_data *result,
 
 static int bin_output_result_global_ST(struct hecmwST_result_data *result,
                                        char *comment, FILE *fp) {
-  int i,j,k,n,m,rc,len;
+  size_t len;
+  int i,j,k,n,m,rc;
   char *p,*q;
   char comment_line[HECMW_MSG_LEN+1];
 

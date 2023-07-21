@@ -83,8 +83,6 @@ contains
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN) :: comment
 
-    integer(kind=kint) :: itype, iS, iE, ic_type, icel
-
     nnode = hecMESH%n_node
     nelem = hecMESH%n_elem
 
@@ -100,8 +98,6 @@ contains
     integer(kind=kint) :: dtype, n_dof, ierr
     character(len=HECMW_NAME_LEN) :: label
     real(kind=kreal) :: data(:)
-
-    integer(kind=kint) :: i, icel
 
     call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
 
