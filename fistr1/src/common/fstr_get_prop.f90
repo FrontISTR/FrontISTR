@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This module provide a function to fetch material properties from hecmw
+!> \brief This module provides a function to fetch material properties from hecmw
 module m_static_get_prop
 contains
   !C
@@ -46,9 +46,9 @@ contains
     !C** Number of Item
     n_item=hecMESH%material%mat_ITEM_index(mid)-hecMESH%material%mat_ITEM_index(mid-1)
 
-    !C** Head possition
+    !C** Head position
     ihead=hecMESH%material%mat_ITEM_index(mid-1)
-    !C Get ITEM of Meterial (Young's Modulus & Possion's Ratio
+    !C Get ITEM of Material (Young's Modulus & Possion's Ratio
     pp=0.0
     alpha_over_mu = 0.0
     beam_radius = 0.0
@@ -69,9 +69,9 @@ contains
       !C** Number of Sub Item
       n_subitem = hecMESH%material%mat_subITEM_index(ihead+1)                          &
         - hecMESH%material%mat_subITEM_index(ihead)
-      !C** Head possition
+      !C** Head position
       mpos=hecMESH%material%mat_subITEM_index(ihead)
-      !C Get SUBITEM of Meterial
+      !C Get SUBITEM of Material
       alpha_over_mu=1.0D-3
       !<<********************   shell analysis   ********************
       if (section_type == 2)then
@@ -99,15 +99,15 @@ contains
         endif
       endif
     endif
-    !C Get ITEM of Meterial (Density)
+    !C Get ITEM of Material (Density)
     rho=0.0
     if ( n_item.ge.2 ) then
       !C** Number of Sub Item
       n_subitem=hecMESH%material%mat_subITEM_index(ihead+2)                            &
         -hecMESH%material%mat_subITEM_index(ihead+1)
-      !C** Head possition
+      !C** Head position
       mpos=hecMESH%material%mat_subITEM_index(ihead+1)
-      !C Get SUBITEM of Meterial
+      !C Get SUBITEM of Material
       if( n_subitem .lt. 1 ) then
         write(IMSG,*) '###Error 3'
         stop
@@ -119,15 +119,15 @@ contains
         alpha_over_mu=hecMESH%material%mat_val(mpos+2)
       endif
     endif
-    !C Get ITEM of Meterial (Thermal Expansion)
+    !C Get ITEM of Material (Thermal Expansion)
     alpha=0.0
     if ( n_item.ge.3 ) then
       !C** Number of Sub Item
       n_subitem=hecMESH%material%mat_subITEM_index(ihead+3)                            &
         -hecMESH%material%mat_subITEM_index(ihead+2)
-      !C** Head possition
+      !C** Head position
       mpos=hecMESH%material%mat_subITEM_index(ihead+2)
-      !C Get SUBITEM of Meterial
+      !C Get SUBITEM of Material
       if( n_subitem .lt. 1 ) then
         write(IMSG,*) '###Error 4'
         stop

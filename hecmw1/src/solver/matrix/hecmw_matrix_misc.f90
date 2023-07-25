@@ -29,6 +29,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_iterpremax
   public :: hecmw_mat_set_nrest
   public :: hecmw_mat_get_nrest
+  public :: hecmw_mat_set_nbfgs
+  public :: hecmw_mat_get_nbfgs
   public :: hecmw_mat_set_scaling
   public :: hecmw_mat_get_scaling
   public :: hecmw_mat_set_penalized
@@ -101,6 +103,7 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_NSET               = 4
   integer, parameter :: IDX_I_ITERPREMAX         = 5
   integer, parameter :: IDX_I_NREST              = 6
+  integer, parameter :: IDX_I_NBFGS              = 60
   integer, parameter :: IDX_I_SCALING            = 7
   integer, parameter :: IDX_I_PENALIZED          = 11
   integer, parameter :: IDX_I_PENALIZED_B        = 12
@@ -168,6 +171,7 @@ contains
     call hecmw_mat_set_nset( hecMAT, 0 )
     call hecmw_mat_set_iterpremax( hecMAT, 1 )
     call hecmw_mat_set_nrest( hecMAT, 10 )
+    call hecmw_mat_set_nbfgs( hecMAT, 0 )
     call hecmw_mat_set_scaling( hecMAT, 0 )
     call hecmw_mat_set_iterlog( hecMAT, 0 )
     call hecmw_mat_set_timelog( hecMAT, 0 )
@@ -366,6 +370,20 @@ contains
 
     hecmw_mat_get_nrest = hecMAT%Iarray(IDX_I_NREST)
   end function hecmw_mat_get_nrest
+
+  subroutine hecmw_mat_set_nbfgs( hecMAT, nbfgs )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: nbfgs
+
+    hecMAT%Iarray(IDX_I_NBFGS) = nbfgs
+  end subroutine hecmw_mat_set_nbfgs
+
+  function hecmw_mat_get_nbfgs( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_nbfgs
+    type(hecmwST_matrix) :: hecMAT
+
+    hecmw_mat_get_nbfgs = hecMAT%Iarray(IDX_I_NBFGS)
+  end function hecmw_mat_get_nbfgs
 
   subroutine hecmw_mat_set_scaling( hecMAT, scaling )
     type(hecmwST_matrix) :: hecMAT

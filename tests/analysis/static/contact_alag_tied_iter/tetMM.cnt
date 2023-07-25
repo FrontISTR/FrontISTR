@@ -1,0 +1,56 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO,TYPE=ALAGRANGE
+!WRITE,LOG
+!WRITE,RESULT,FREQUENCY=5
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+ SET_1,2,2
+ SET_1,3,3
+!DLOAD, GRPID=1
+SURF_3,S,1.
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT_PARAM, NAME=CPARAM1
+1.0e-2,  5.0e-3,  1.0e-2,  1.0e-4
+1.0e-2,  1.0e-2,  1.0,    -1.0e-8,  2.0
+!CONTACT, INTERACTION=TIED, CONTACTPARAM=CPARAM1, GRPID=1
+CP1
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC, INFINITESIMAL
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=2, CONVERG=1.000E-07
+BOUNDARY,1
+LOAD,1
+CONTACT,1
+!STEP, SUBSTEPS=2, CONVERG=1.000E-07
+BOUNDARY,1
+LOAD,1
+CONTACT,1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+#!WRITE,VISUAL
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = BIN_VTK
+!END

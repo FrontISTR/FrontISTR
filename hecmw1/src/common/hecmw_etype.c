@@ -2033,6 +2033,14 @@ extern int HECMW_is_etype_patch(int etype) {
   return 0;
 }
 
+extern int HECMW_is_etype_smoothing(int etype) {
+  switch (etype) {
+    case 881:
+    case 891:
+      return 1;
+  }
+  return 0;
+}
 
 extern const int *HECMW_get_surf_nodes(int etype, int sid, int *surf_etype)
 {
@@ -2208,3 +2216,8 @@ int hecmw_is_etype_patch_if(int *etype) { return HECMW_is_etype_patch(*etype); }
 int hecmw_is_etype_patch_if_(int *etype) { return HECMW_is_etype_patch(*etype); }
 int hecmw_is_etype_patch_if__(int *etype) { return HECMW_is_etype_patch(*etype); }
 int HECMW_IS_ETYPE_PATCH_IF(int *etype) { return HECMW_is_etype_patch(*etype); }
+
+int hecmw_is_etype_smoothing_if(int *etype) { return HECMW_is_etype_smoothing(*etype); }
+int hecmw_is_etype_smoothing_if_(int *etype) { return HECMW_is_etype_smoothing(*etype); }
+int hecmw_is_etype_smoothing_if__(int *etype) { return HECMW_is_etype_smoothing(*etype); }
+int HECMW_IS_ETYPE_SMOOTHING_IF(int *etype) { return HECMW_is_etype_smoothing(*etype); }

@@ -11,7 +11,7 @@
 !     in fstr_setup.f90                                                !
 !  5) If initial values are necessary, set the value                   !
 !     in subroutine fstr_setup_init in fstr_setup.f90                  !
-!> This module defined coomon data and basic structures for analysis
+!> \brief  This module defines common data and basic structures for analysis
 module m_fstr
   use hecmw
   use m_common_struct
@@ -47,6 +47,8 @@ module m_fstr
   integer(kind=kint), parameter :: ksmBiCGSTAB = 2
   integer(kind=kint), parameter :: ksmGMRES    = 3
   integer(kind=kint), parameter :: ksmGPBiCG   = 4
+  integer(kind=kint), parameter :: ksmGMRESR   = 5
+  integer(kind=kint), parameter :: ksmGMRESREN = 6
   integer(kind=kint), parameter :: ksmDIRECT   = 101
 
   !> contact analysis algorithm
@@ -65,6 +67,9 @@ module m_fstr
   integer(kind=kint), parameter :: restart_outAll  = 2
 
   !> section control
+  integer(kind=kint), parameter :: kel341FI     =  1
+  integer(kind=kint), parameter :: kel341SESNS  =  2
+
   integer(kind=kint), parameter :: kel361FI     =  1
   integer(kind=kint), parameter :: kel361BBAR   =  2
   integer(kind=kint), parameter :: kel361IC     =  3
@@ -266,7 +271,7 @@ module m_fstr
     integer(kind=kint), pointer :: CLOAD_ngrp_centerID  (:) =>null()
 
     !> DLOAD
-    integer(kind=kint) :: DLOAD_ngrp_tot                       !< Following distrubuted external load
+    integer(kind=kint) :: DLOAD_ngrp_tot                       !< Following distributed external load
     integer(kind=kint) :: DLOAD_follow
     integer(kind=kint), pointer :: DLOAD_ngrp_GRPID     (:) =>null()
     integer(kind=kint), pointer :: DLOAD_ngrp_ID        (:)
@@ -275,7 +280,7 @@ module m_fstr
     real(kind=kreal), pointer   :: DLOAD_ngrp_params    (:,:)
 
     !> TEMPERATURE
-    integer(kind=kint) :: TEMP_ngrp_tot                        !< Following tempearture conditions
+    integer(kind=kint) :: TEMP_ngrp_tot                        !< Following temperature conditions
     integer(kind=kint) :: TEMP_irres
     integer(kind=kint) :: TEMP_tstep
     integer(kind=kint) :: TEMP_interval
@@ -346,13 +351,16 @@ module m_fstr
     integer(kind=kint) :: restart_nin    !< input number of restart
     type(step_info)    :: step_ctrl_restart  !< step information for restart
 
-    integer(kind=kint) :: max_lyr        !< maximun num of layer
+    integer(kind=kint) :: max_lyr          !< maximum num of layer
     integer(kind=kint) :: is_33shell
     integer(kind=kint) :: is_33beam
     integer(kind=kint) :: is_heat
+    integer(kind=kint) :: max_ncon_stf     !< maximum num of stiffness matrix size
+    integer(kind=kint) :: max_ncon         !< maximum num of element connectivity
     integer(kind=kint), pointer :: is_rot(:) => null()
     integer(kind=kint) :: elemopt361
-    real(kind=kreal)   :: FACTOR     (2)      !< factor of incrementation
+    logical            :: is_smoothing_active
+    real(kind=kreal)   :: FACTOR     (2)   !< factor of incrementation
     !< 1:time t  2: time t+dt
     !> for increment control
     integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
@@ -360,12 +368,12 @@ module m_fstr
     integer(kind=kint) :: AutoINC_stat     !< status of auto-increment control
     integer(kind=kint) :: CutBack_stat     !< status of cutback control
 
-    real(kind=kreal), pointer :: GL          (:)           !< exnternal force
-    real(kind=kreal), pointer :: EFORCE      (:)           !< exnternal force
+    real(kind=kreal), pointer :: GL          (:)           !< external force
+    real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
-    real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp icrement
+    real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp increment
     real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
     real(kind=kreal), pointer :: temp_bak(:)   => null()
     real(kind=kreal), pointer :: last_temp(:)  => null()
@@ -375,7 +383,7 @@ module m_fstr
     type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
     integer                   :: n_fix_mpc               !< number mpc conditions user defined
     real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
-    type(tSection), pointer   :: sections(:)   =>null()  !< definition of setion referred by elements(i)%sectionID
+    type(tSection), pointer   :: sections(:)   =>null()  !< definition of section referred by elements(i)%sectionID
 
     ! for cutback
     ! ####################### Notice #######################
@@ -613,7 +621,7 @@ module m_fstr
     !integer              :: iset
     !integer              :: orien_ID
     !real(kind=kreal)     :: thickness
-    !integer              :: elemopt341
+    integer              :: elemopt341
     !integer              :: elemopt342
     !integer              :: elemopt351
     !integer              :: elemopt352

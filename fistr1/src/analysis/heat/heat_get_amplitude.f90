@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This moudle provide a function to get amplitude definition
+!> \brief This module provide a function to get amplitude definition
 module m_heat_get_amplitude
 contains
   !C***

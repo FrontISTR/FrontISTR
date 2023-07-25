@@ -115,7 +115,7 @@ set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH BUILD_DATE GIT_HASH)
 
 #############################################
-# Archtecture and compiler dependent options
+# Architecture and compiler dependent options
 #############################################
 if(WIN32)
   set(WINDOWS TRUE)
@@ -345,7 +345,7 @@ endif()
 mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
 
 #############################################
-# Archtecture and compiler dependent options
+# Architecture and compiler dependent options
 #############################################
 ###################
 # -DWINDOWS
@@ -434,7 +434,7 @@ include(InstallRequiredSystemLibraries)
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Large-scale structural analysis program with FEM ")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
-set(CPACK_PACKAGE_VENDOR "FrontISTR Forum, The University of Tokyo")
+set(CPACK_PACKAGE_VENDOR "FrontISTR Commons")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")

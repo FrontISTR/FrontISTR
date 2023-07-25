@@ -21,7 +21,7 @@ module m_fstr_solve_NLGEOM
 contains
 
   !======================================================================!
-  !> \brief This module provides main suborutine for nonlinear calculation.
+  !> \brief This module provides main subroutine for nonlinear calculation.
   !>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
   !>              Z. Sun(ASTOM)/2010/11
   !>  \date       2009/08/31
@@ -155,7 +155,7 @@ contains
               restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
           else if( fstrPARAM%contact_algo == kcaALagrange ) then
             call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
-              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
+              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
           endif
         endif
 
@@ -183,7 +183,8 @@ contains
 
             ! restore matrix structure for slagrange contact analysis
             if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaSLagrange ) then
-              call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+              call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
+                &  infoCTChange, conMAT, fstr_is_contact_active())
               conMAT%B(:) = 0.0d0
               call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif

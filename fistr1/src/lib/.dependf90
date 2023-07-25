@@ -21,6 +21,7 @@ static_LIB.o : static_LIB.f90 static_LIB_shell.o static_LIB_beam.o static_LIB_3d
 static_LIB_1d.o : static_LIB_1d.f90 m_fstr.o 
 static_LIB_2d.o : static_LIB_2d.f90 m_fstr.o 
 static_LIB_3d.o : static_LIB_3d.f90 m_fstr.o m_common_struct.o 
+static_LIB_C3D4_selectiveESNS.o : static_LIB_C3D4_selectiveESNS.f90 static_LIB_3d.o
 static_LIB_3dIC.o : static_LIB_3dIC.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 
 static_LIB_3d_vp.o : static_LIB_3d_vp.f90 
 static_LIB_C3D8.o : static_LIB_C3D8.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 

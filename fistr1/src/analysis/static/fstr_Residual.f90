@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module provides function to calcualte residual of nodal force.
+!> \brief  This module provides function to calculate residual of nodal force.
 
 module m_fstr_Residual
   use hecmw
@@ -22,7 +22,7 @@ contains
   !C---------------------------------------------------------------------*
   subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT)
     !C---------------------------------------------------------------------*
-    !> In this subroutine, nodal force arose from prescribed displacement constarints
+    !> In this subroutine, nodal force arising from prescribed displacement constraints
     !> are cleared and nodal force residual is calculated.
     !> Those constraints considered here includes:
     !!-#  nodal displacement

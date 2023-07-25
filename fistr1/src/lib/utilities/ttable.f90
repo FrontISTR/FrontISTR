@@ -148,7 +148,7 @@ module Table_DICTS
 
 
   !> fetch a data table itself.
-  !! P.A. it sould be deleted by users of this subroutine
+  !! P.A. it should be deleted by users of this subroutine
   subroutine fetch_Table( key, dict, dicval, ierr )
     character(len=*), intent(in)   :: key     !< parameter key
     type(DICT_STRUCT), pointer     :: dict    !< data table
@@ -280,7 +280,7 @@ module Table_DICTS
     character(len=*), intent(in)   :: key     !< parameter key
     type(DICT_STRUCT), pointer     :: dict    !< data table
     real(kind=kreal), intent(out)  :: outa(:) !< output data
-    logical, intent(out)           :: ierr    !< erro message
+    logical, intent(out)           :: ierr    !< error message
     real(kind=kreal), intent(in), optional   :: a(:)    !< automatic variables
 
     type(DICT_DATA), pointer       :: dicval

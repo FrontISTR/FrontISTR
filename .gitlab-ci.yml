@@ -1,216 +1,168 @@
 variables:
   REGISTRY: registry.gitlab.com/frontistr-commons/frontistr
 
-image: ${REGISTRY}/build:latest
+image: ${REGISTRY}/build:ubuntu2004
 
 stages:
     - build
     - test
-    - build_for_deploy
+    - document
+    - package
     - deploy
 
-build/serial:
-    stage: build
-    script:
-        - cmake -Bbuild_serial -DWITH_MPI=OFF -DWITH_OPENMP=OFF -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
-        - cmake --build build_serial -- -j $(nproc)
-        - mkdir -p public/release/ubuntu/serial
-        - cd build_serial
-        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
-        - cpack -G DEB
-        - mv *.deb ../public/release/ubuntu/serial
+.ubuntu2004:
+    image: ${REGISTRY}/build:ubuntu2004
+.ubuntu2204:
+    image: ${REGISTRY}/build:ubuntu2204
+.artifact_public:
     artifacts:
-        paths:
-            - build_serial/
-            - public/
+        paths: ["public"]
         expire_in: 100min
 
-build/openmp:
+.build:
     stage: build
+    needs: []
     script:
-        - cmake -Bbuild_openmp -DWITH_MPI=OFF -DWITH_OPENMP=ON -DWITH_ML=OFF -DWITH_MUMPS=OFF -H.
-        - cmake --build build_openmp -- -j $(nproc)
-        - mkdir -p public/release/ubuntu/openmp
-        - cd build_openmp
-        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
-        - cpack -G DEB
-        - mv *.deb ../public/release/ubuntu/openmp
+        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f2)
+        - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
+        - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
+        - cmake -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI -H.
+        - cmake --build build -- -j $(nproc)
     artifacts:
-        paths:
-            - build_openmp/
-            - public/
+        paths: ["build/"]
         expire_in: 100min
-build/mpi:
-    stage: build
-    script:
-        - cmake -Bbuild_mpi -DWITH_MPI=ON -DWITH_OPENMP=OFF -H.
-        - cmake --build build_mpi -- -j $(nproc)
-        - mkdir -p public/release/ubuntu/mpi
-        - cd build_mpi
-        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
-        - cpack -G DEB
-        - mv *.deb ../public/release/ubuntu/mpi
-    artifacts:
-        paths:
-            - build_mpi/
-            - public/
-        expire_in: 100min
-build/hybrid:
-    stage: build
-    script:
-        - cmake -Bbuild_hybrid -DWITH_MPI=ON -DWITH_OPENMP=ON -H.
-        - cmake --build build_hybrid -- -j $(nproc)
-        - mkdir -p public/release/ubuntu/hybrid
-        - cd build_hybrid
-        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "libmumps-5.2.1,libgomp1,libtrilinos-ml12,libopenmpi3,libmetis5,libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")' >> CPackConfig.cmake
-        - cpack -G DEB
-        - mv *.deb ../public/release/ubuntu/hybrid
-    artifacts:
-        paths:
-            - build_hybrid/
-            - public/
-        expire_in: 100min
+build/serial/ubuntu2204:
+    extends: [".build",".ubuntu2204"]
+build/openmp/ubuntu2204:
+    extends: [".build",".ubuntu2204"]
+build/mpi/ubuntu2204:
+    extends: [".build",".ubuntu2204"]
+build/hybrid/ubuntu2204:
+    extends: [".build",".ubuntu2204"]
+build/serial/ubuntu2004:
+    extends: [".build",".ubuntu2004"]
+build/openmp/ubuntu2004:
+    extends: [".build",".ubuntu2004"]
+build/mpi/ubuntu2004:
+    extends: [".build",".ubuntu2004"]
+build/hybrid/ubuntu2004:
+    extends: [".build",".ubuntu2004"]
 
 .test:
     stage: test
+    script:
+        - cd build && ctest -L $(echo $CI_JOB_NAME|cut -d/ -f3) --output-on-failure
     artifacts:
         paths:
             - run_test
         expire_in: 1week
         when: on_failure
 
-test/serial/serial:
-    extends: .test
-    needs: ["build/serial"]
-    dependencies:
-        - build/serial
-    script:
-        - cd build_serial
-        - ctest -L serial --output-on-failure
-test/openmp/serial:
-    extends: .test
-    needs: ["build/openmp"]
-    dependencies:
-        - build/openmp
-    script:
-        - cd build_openmp
-        - ctest -L serial --output-on-failure
-test/openmp/openmp:
-    extends: .test
-    needs: ["build/openmp"]
-    dependencies:
-        - build/openmp
-    script:
-        - cd build_openmp
-        - ctest -L openmp --output-on-failure
-test/mpi/serial:
-    extends: .test
-    needs: ["build/mpi"]
-    dependencies:
-        - build/mpi
-    script:
-        - cd build_mpi
-        - ctest -L serial --output-on-failure
-test/mpi/mpi:
-    extends: .test
-    needs: ["build/mpi"]
-    dependencies:
-        - build/mpi
-    script:
-        - cd build_mpi
-        - ctest -L mpi    --output-on-failure
-test/hybrid/serial:
-    extends: .test
-    needs: ["build/hybrid"]
-    dependencies:
-        - build/hybrid
-    script:
-        - cd build_hybrid
-        - ctest -L serial --output-on-failure
-test/hybrid/openmp:
-    extends: .test
-    needs: ["build/hybrid"]
-    dependencies:
-        - build/hybrid
-    script:
-        - cd build_hybrid
-        - ctest -L openmp --output-on-failure
-test/hybrid/mpi:
-    extends: .test
-    needs: ["build/hybrid"]
-    dependencies:
-        - build/hybrid
-    script:
-        - cd build_hybrid
-        - ctest -L mpi    --output-on-failure
-test/hybrid/hybrid:
-    extends: .test
-    needs: ["build/hybrid"]
-    dependencies:
-        - build/hybrid
-    script:
-        - cd build_hybrid
-        - ctest -L hybrid --output-on-failure
+test/serial/serial/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/serial/ubuntu2004"]
+test/openmp/serial/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/openmp/ubuntu2004"]
+test/openmp/openmp/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/openmp/ubuntu2004"]
+test/mpi/serial/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/mpi/ubuntu2004"]
+test/mpi/mpi/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/mpi/ubuntu2004"]
+test/hybrid/serial/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/hybrid/ubuntu2004"]
+test/hybrid/openmp/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/hybrid/ubuntu2004"]
+test/hybrid/mpi/ubuntu2004:
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/hybrid/ubuntu2004"]
+test/hybrid/hybrid/ubuntu2004:
+    tags: ["saas-linux-medium-amd64"]
+    extends: [".test",".ubuntu2004"]
+    needs: ["build/hybrid/ubuntu2004"]
+
+test/serial/serial/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/serial/ubuntu2204"]
+test/openmp/serial/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/openmp/ubuntu2204"]
+test/openmp/openmp/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/openmp/ubuntu2204"]
+test/mpi/serial/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/mpi/ubuntu2204"]
+test/mpi/mpi/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/mpi/ubuntu2204"]
+test/hybrid/serial/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/hybrid/ubuntu2204"]
+test/hybrid/openmp/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/hybrid/ubuntu2204"]
+test/hybrid/mpi/ubuntu2204:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/hybrid/ubuntu2204"]
+test/hybrid/hybrid/ubuntu2204:
+    tags: ["saas-linux-medium-amd64"]
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/hybrid/ubuntu2204"]
 
 document:
     image: ${REGISTRY}/document:latest
-    stage: build_for_deploy
+    stage: document
     needs: []
     script:
         - cp doc/_redirects public/_redirects
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
+    extends: [".artifact_public"]
+
 
 doxygen:
     image: ${REGISTRY}/document:latest
-    stage: build_for_deploy
+    stage: document
     needs: []
     script:
         - cmake -Bbuild_doc -H. -DWITH_DOC=ON
         - make -C build_doc doc
         - rm -rf public/doxygen
         - mv build_doc/doc/html public/doxygen
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
+    extends: [".artifact_public"]
+
 
 pages:
     stage: deploy
-    dependencies:
-        - document
-        - doxygen
-        - x86_64-w64-mingw32/thread-openblas
-        - x86_64-w64-mingw32/hybrid-msmpi-openblas
-        - x86_64-w64-mingw32/hybrid-impi-mkl_intelthread
-        - build/serial
-        - build/openmp
-        - build/mpi
-        - build/hybrid
     script:
         - ls public
-        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> public/_redirects
-        - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip 301 >> public/_redirects
-    artifacts:
-        paths:
-            - public
-        expire_in: 20min
+        - cd public
+        - echo /FrontISTR/release/ubuntu/hybrid/FrontISTR-5.4.0-Linux.deb       /FrontISTR/$(find . -name "FrontISTR_*.deb") 301 >> _redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> _redirects
+        - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip 301 >> _redirects
+    extends: [".artifact_public"]
     only:
       - master
       - release
 
+.nodeppackage:
+    stage: package
+    needs: []
+
 docker/fistr1:
   image: docker:latest
-  stage: build_for_deploy
-  needs: []
+  extends: [".nodeppackage",".artifact_public"]
   services:
     - docker:dind
   script:
     - apk add curl make
     - mkdir -p /root/.docker/cli-plugins
-    - curl -sSLo /root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.5.1/buildx-v0.5.1.linux-amd64
+    - curl -sSLo /root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.10.4/buildx-v0.10.4.linux-amd64
     - chmod +x /root/.docker/cli-plugins/docker-buildx
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     - apk add make
@@ -221,8 +173,7 @@ docker/fistr1:
 
 x86_64-w64-mingw32/thread-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/thread:openblas
-    stage: build_for_deploy
-    needs: []
+    extends: [".nodeppackage",".artifact_public"]
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
         - cmake  -Bbuild -H.
@@ -237,15 +188,10 @@ x86_64-w64-mingw32/thread-openblas:
         - mkdir -p public/release/x86_64-w64-mingw32/
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README* License* VERSION
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
 
 x86_64-w64-mingw32/hybrid-msmpi-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/hybrid:msmpi_openblas
-    stage: build_for_deploy
-    needs: []
+    extends: [".nodeppackage",".artifact_public"]
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
         - cmake  -Bbuild -H.
@@ -263,15 +209,10 @@ x86_64-w64-mingw32/hybrid-msmpi-openblas:
         - zip -j public/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip build/fistr1/fistr1.exe build/fistr1/tools/neu2fstr.exe build/hecmw1/tools/hecmw_part1.exe build/hecmw1/tools/hecmw_vis1.exe build/hecmw1/tools/rmerge.exe build/hecmw1/tools/hec2rcap.exe build/hecmw1/tools/rconv.exe
           README* License* VERSION
           ${LIB_ROOT}/bin/mpiexec.exe ${LIB_ROOT}/bin/smpd.exe ${LIB_ROOT}/lib/msmpi.dll 
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
 
 x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
     image: ${REGISTRY}/x86_64-w64-mingw32/hybrid:impi_mkl
-    stage: build_for_deploy
-    needs: []
+    extends: [".nodeppackage",".artifact_public"]
     script:
         - sed -i -e 's/${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}//' ./fistr1/CMakeLists.txt
         - cmake  -Bbuild -H.
@@ -293,8 +234,57 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
           ${LIB_ROOT}/bin/mpiexec.exe  ${LIB_ROOT}/lib/impi.dll ${LIB_ROOT}/lib/impi.dll ${LIB_ROOT}/lib/libfabric.dll ${LIB_ROOT}/bin/hydra_bstrap_proxy.exe ${LIB_ROOT}/bin/hydra_pmi_proxy.exe
           ${LIB_ROOT}/lib/mkl_blacs_lp64.1.dll ${LIB_ROOT}/lib/mkl_blacs_intelmpi_lp64.1.dll ${LIB_ROOT}/lib/mkl_core.1.dll ${LIB_ROOT}/lib/mkl_intel_thread.1.dll ${LIB_ROOT}/lib/mkl_rt.1.dll ${LIB_ROOT}/lib/libiomp5md.dll ${LIB_ROOT}/lib/mkl_scalapack_lp64.1.dll
           ${LIB_ROOT}/lib/mkl_def.1.dll
-    artifacts:
-        paths:
-            - public
-        expire_in: 100min
 
+
+.deb:
+    stage: package
+    script:
+        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f2)
+        - OS=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
+        - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
+        - DEPENDS=()
+        - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libtrilinos*|grep ml|grep -v dev|grep ^ii|awk '{print $2}'||true))
+        - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libopenmpi*|grep -v dev|grep ^ii|awk '{print $2}'||true))
+        - DEPENDS+=($([[ $MPI = ON ]] && dpkg -l libmumps*|grep -v dev|grep ^ii|awk '{print $2}'||true))
+        - DEPENDS+=($([[ $OMP = ON ]] && dpkg -l libgomp*|grep -v dev|grep ^ii|awk '{print $2}'||true))
+        - DEPENDS+=("libmetis5")
+        - DEPENDS+=("libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")
+        - cd build
+        - PACKAGE_NAME=FrontISTR$([ $TYPE != "hybrid" ] && echo "-$TYPE" || true)
+        - VERSION=$(echo $CI_COMMIT_REF_SLUG|sed -e 's/^v\([0-9]\+[\.][0-9]\+[\.]\?[0-9]*.*$\)/\1/g')
+        - DEBIAN_VERSION=0+$OS
+        - echo 'set(CPACK_PACKAGE_NAME "'$PACKAGE_NAME'")' >> CPackConfig.cmake
+        - echo 'set(CPACK_PACKAGE_FILE_NAME "'$PACKAGE_NAME'_'$VERSION'-'$DEBIAN_VERSION'_'$(dpkg --print-architecture)'")' >> CPackConfig.cmake
+        - echo 'set(CPACK_DEBIAN_PACKAGE_DEPENDS "'$(echo ${DEPENDS[@]}|sed -e "s/ /,/g")'")' >> CPackConfig.cmake
+        - echo 'set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://www.frontistr.com/")' >> CPackConfig.cmake
+        - echo 'set(CPACK_DEBIAN_PACKAGE_REPLACES "frontistr,frontistr-serial,frontistr-openmp,frontistr-mpi")' >> CPackConfig.cmake
+        - cpack -G DEB
+        - mkdir -p ../public/release/deb
+        - mv *.deb ../public/release/deb
+    extends: [".artifact_public"]
+
+deb/hybrid/ubuntu2004:
+    needs: ["build/hybrid/ubuntu2004"]
+    extends: [".deb",".ubuntu2004"]
+deb/hybrid/ubuntu2204:
+    needs: ["build/hybrid/ubuntu2204"]
+    extends: [".deb",".ubuntu2204"]
+deb/mpi/ubuntu2004:
+    needs: ["build/mpi/ubuntu2004"]
+    extends: [".deb",".ubuntu2004"]
+deb/mpi/ubuntu2204:
+    needs: ["build/hybrid/ubuntu2204"]
+    extends: [".deb",".ubuntu2204"]
+deb/openmp/ubuntu2004:
+    needs: ["build/openmp/ubuntu2004"]
+    extends: [".deb",".ubuntu2004"]
+deb/openmp/ubuntu2204:
+    needs: ["build/openmp/ubuntu2204"]
+    extends: [".deb",".ubuntu2204"]
+deb/serial/ubuntu2004:
+    needs: ["build/serial/ubuntu2004"]
+    extends: [".deb",".ubuntu2004"]
+deb/serial/ubuntu2204:
+    needs: ["build/serial/ubuntu2204"]
+    extends: [".deb",".ubuntu2204"]

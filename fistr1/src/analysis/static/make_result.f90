@@ -87,26 +87,7 @@ contains
 
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
-      if(ndof /= 4) then
-      id = HECMW_RESULT_DTYPE_NODE
-      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
-      allocate( unode(hecMESH%n_node*ndof) )
-      unode = 0.0d0
-        if( is_dynamic ) then
-          unode(:) = fstrDYNAMIC%DISP(:,idx)
-        else
-          unode(:) = fstrSOLID%unode
-        endif
-      label = 'DISPLACEMENT'
-      if(is_33beam == 1)then
-        call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
-      endif
-      if(is_33shell == 1)then
-        call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
-      endif
-      call hecmw_result_add( id, nitem, label, unode )
-      deallocate( unode )
-      else
+      if(ndof == 4) then
         id = HECMW_RESULT_DTYPE_NODE
         ! for VELOCITY
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 3 )
@@ -130,20 +111,75 @@ contains
         label = 'PRESSURE'
         call hecmw_result_add( id, nitem, label, unode )
         deallocate( unode )
+      else if(ndof == 6) then
+        id = HECMW_RESULT_DTYPE_NODE
+        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 3 )
+        allocate( unode(hecMESH%n_node*3) )
+        unode = 0.0d0
+        if( is_dynamic ) then
+          do i=1, hecMESH%n_node
+            unode((i-1)*3+1:(i-1)*3+3) = fstrDYNAMIC%DISP((i-1)*ndof+1:(i-1)*ndof+3, idx)
+          enddo
+        else
+          do i=1, hecMESH%n_node
+            unode((i-1)*3+1:(i-1)*3+3) = fstrSOLID%unode((i-1)*ndof+1:(i-1)*ndof+3)
+          enddo
+        endif
+        label = 'DISPLACEMENT'
+        call hecmw_result_add( id, nitem, label, unode )
+        deallocate( unode )
+      else
+        id = HECMW_RESULT_DTYPE_NODE
+        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
+        allocate( unode(hecMESH%n_node*ndof) )
+        unode = 0.0d0
+        if( is_dynamic ) then
+          unode(:) = fstrDYNAMIC%DISP(:,idx)
+        else
+          unode(:) = fstrSOLID%unode
+        endif
+        label = 'DISPLACEMENT'
+        if(is_33beam == 1)then
+          call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+        endif
+        if(is_33shell == 1)then
+          call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
+        endif
+        call hecmw_result_add( id, nitem, label, unode )
+        deallocate( unode )
       endif
     endif
 
     ! --- ROTATION
     if (fstrSOLID%output_ctrl(3)%outinfo%on(18)) then
-      if ( is_33shell == 1) then
+      if(ndof == 6) then
         id = HECMW_RESULT_DTYPE_NODE
-        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
+        nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 3 )
         label = 'ROTATION'
-        allocate( rnode(hecMESH%n_node*ndof) )
+        allocate( rnode(hecMESH%n_node*3) )
         rnode = 0.0d0
-        call fstr_reorder_rot_shell(fstrSOLID, hecMESH, rnode)
+        if( is_dynamic ) then
+          do i=1, hecMESH%n_node
+            rnode((i-1)*3+1:(i-1)*3+3) = fstrDYNAMIC%DISP((i-1)*ndof+4:(i-1)*ndof+6, idx)
+          enddo
+        else
+          do i=1, hecMESH%n_node
+            rnode((i-1)*3+1:(i-1)*3+3) = fstrSOLID%unode((i-1)*ndof+4:(i-1)*ndof+6)
+          enddo
+        endif
         call hecmw_result_add( id, nitem, label, rnode )
         deallocate( rnode )
+      else
+        if ( is_33shell == 1) then
+          id = HECMW_RESULT_DTYPE_NODE
+          nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), ndof )
+          label = 'ROTATION'
+          allocate( rnode(hecMESH%n_node*ndof) )
+          rnode = 0.0d0
+          call fstr_reorder_rot_shell(fstrSOLID, hecMESH, rnode)
+          call hecmw_result_add( id, nitem, label, rnode )
+          deallocate( rnode )
+        end if
       end if
     endif
 
@@ -494,7 +530,6 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(35), ndof )
       label = 'ElementalNQM'//trim(clyr)
-!      write (6,*) 'RES%ENQM',RES%ENQM(1)
       call hecmw_result_add( id, nitem, label, RES%ENQM )
     endif
 
@@ -612,14 +647,17 @@ contains
     gitem = gitem + 1
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
-      if(ndof /= 4) then
-      ncomp = ncomp + 1
-      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
-      else
+      if(ndof == 4) then
         ncomp = ncomp + 1
         nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 3 )
         ncomp = ncomp + 1
         nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 1 )
+      else if(ndof == 6) then
+        ncomp = ncomp + 1
+        nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 3 )
+      else
+        ncomp = ncomp + 1
+        nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
       endif
     endif
     ! --- VELOCITY
@@ -633,9 +671,16 @@ contains
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(16), ndof )
     endif
     ! --- ROTATION (Only for 781 shell)
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(18) .and. is_33shell == 1 ) then
-      ncomp = ncomp + 1
-      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(18), ndof )
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(18) ) then
+      if(ndof == 6) then
+        ncomp = ncomp + 1
+        nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(18), 3 )
+      else
+        if( is_33shell == 1 ) then
+          ncomp = ncomp + 1
+          nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(18), ndof )
+        endif
+      endif
     endif
     ! --- REACTION FORCE
     if( fstrSOLID%output_ctrl(4)%outinfo%on(2) ) then
@@ -799,32 +844,7 @@ contains
 
     ! --- DISPLACEMENT
     if (fstrSOLID%output_ctrl(4)%outinfo%on(1) ) then
-      if(ndof /= 4) then
-      ncomp = ncomp + 1
-      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
-      fstrRESULT%nn_dof(ncomp) = nn
-      fstrRESULT%node_label(ncomp) = 'DISPLACEMENT'
-      allocate( unode(ndof*hecMESH%n_node) )
-      unode = 0.0d0
-        if( is_dynamic ) then
-          unode(:) = fstrDYNAMIC%DISP(:,idx)
-        else
-      unode(:) = fstrSOLID%unode(:)
-        endif
-      if(is_33beam == 1)then
-        call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
-      endif
-      if(is_33shell == 1)then
-        call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
-      endif
-      do i = 1, hecMESH%n_node
-        do j = 1, nn
-          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
-        enddo
-      enddo
-      deallocate( unode )
-      iitem = iitem + nn
-      else
+      if(ndof == 4) then
         ! DIPLACEMENT
         ncomp = ncomp + 1
         nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 3 )
@@ -844,6 +864,55 @@ contains
         do i = 1, hecMESH%n_node
           fstrRESULT%node_val_item(nitem*(i-1)+1+iitem) = fstrDYNAMIC%DISP(4*i,idx)
         enddo
+        iitem = iitem + nn
+      else if(ndof == 6) then
+        ncomp = ncomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 3 )
+        fstrRESULT%nn_dof(ncomp) = nn
+        fstrRESULT%node_label(ncomp) = 'DISPLACEMENT'
+        allocate( unode(3*hecMESH%n_node) )
+        unode = 0.0d0
+        if( is_dynamic ) then
+          do i=1, hecMESH%n_node
+            unode((i-1)*3+1:(i-1)*3+3) = fstrDYNAMIC%DISP((i-1)*ndof+1:(i-1)*ndof+3, idx)
+          enddo
+        else
+          do i=1, hecMESH%n_node
+            unode((i-1)*3+1:(i-1)*3+3) = fstrSOLID%unode((i-1)*ndof+1:(i-1)*ndof+3)
+          enddo
+        endif
+        do i = 1, hecMESH%n_node
+          do j = 1, nn
+            fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
+          enddo
+        enddo
+        deallocate( unode )
+        iitem = iitem + nn
+
+      else
+        ncomp = ncomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
+        fstrRESULT%nn_dof(ncomp) = nn
+        fstrRESULT%node_label(ncomp) = 'DISPLACEMENT'
+        allocate( unode(ndof*hecMESH%n_node) )
+        unode = 0.0d0
+        if( is_dynamic ) then
+          unode(:) = fstrDYNAMIC%DISP(:,idx)
+        else
+          unode(:) = fstrSOLID%unode(:)
+        endif
+        if(is_33beam == 1)then
+          call fstr_reorder_node_beam(fstrSOLID, hecMESH, unode)
+        endif
+        if(is_33shell == 1)then
+          call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
+        endif
+        do i = 1, hecMESH%n_node
+          do j = 1, nn
+            fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
+          enddo
+        enddo
+        deallocate( unode )
         iitem = iitem + nn
       endif
     endif
@@ -877,21 +946,49 @@ contains
     endif
 
     ! --- ROTATION
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(18) .and. is_33shell == 1 ) then
-      ncomp = ncomp + 1
-      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
-      fstrRESULT%nn_dof(ncomp) = nn
-      fstrRESULT%node_label(ncomp) = 'ROTATION'
-      allocate( unode(ndof*hecMESH%n_node) )
-      unode = 0.0d0
-      call fstr_reorder_rot_shell(fstrSOLID, hecMESH, unode)
-      do i = 1, hecMESH%n_node
-        do j = 1, nn
-          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(18) ) then
+
+      if(ndof == 6) then
+        ncomp = ncomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), 3 )
+        fstrRESULT%nn_dof(ncomp) = nn
+        fstrRESULT%node_label(ncomp) = 'ROTATION'
+        allocate( unode(3*hecMESH%n_node) )
+        unode = 0.0d0
+        if( is_dynamic ) then
+          do i=1, hecMESH%n_node
+            unode((i-1)*3+1:(i-1)*3+3) = fstrDYNAMIC%DISP((i-1)*ndof+4:(i-1)*ndof+6, idx)
+          enddo
+        else
+          do i=1, hecMESH%n_node
+            unode((i-1)*3+1:(i-1)*3+3) = fstrSOLID%unode((i-1)*ndof+4:(i-1)*ndof+6)
+          enddo
+        endif
+        do i = 1, hecMESH%n_node
+          do j = 1, nn
+            fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
+          enddo
         enddo
-      enddo
-      deallocate( unode )
-      iitem = iitem + nn
+        deallocate( unode )
+        iitem = iitem + nn
+      else
+        if ( is_33shell == 1) then
+          ncomp = ncomp + 1
+          nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(1), ndof )
+          fstrRESULT%nn_dof(ncomp) = nn
+          fstrRESULT%node_label(ncomp) = 'ROTATION'
+          allocate( unode(ndof*hecMESH%n_node) )
+          unode = 0.0d0
+          call fstr_reorder_rot_shell(fstrSOLID, hecMESH, unode)
+          do i = 1, hecMESH%n_node
+            do j = 1, nn
+              fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = unode(nn*(i-1)+j)
+            enddo
+          enddo
+          deallocate( unode )
+          iitem = iitem + nn
+        end if
+      end if
     endif
 
     ! --- REACTION FORCE

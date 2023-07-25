@@ -38,4 +38,5 @@ module hecmw
   use m_hecmw_comm_f
   use m_hecmw_solve_error
   use m_hecmw_solve_init
+  use hecmw_es_mesh_connectivity
 end module hecmw

@@ -67,7 +67,7 @@ contains
 
   !> Read in !SOLVER
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
-      iterpremax, nrest, scaling, &
+      iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, &
       resid, singma_diag, sigma, thresh, filter )
@@ -81,6 +81,7 @@ contains
     integer(kind=kint) :: nier
     integer(kind=kint) :: iterpremax
     integer(kind=kint) :: nrest
+    integer(kind=kint) :: nBFGS
     integer(kind=kint) :: scaling
     integer(kind=kint) :: dumptype
     integer(kind=kint) :: dumpexit
@@ -98,11 +99,12 @@ contains
     real(kind=kreal) :: filter
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-    character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
+    character(92) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' 
+    !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
     integer(kind=kint) :: number_number = 5
-    integer(kind=kint) :: indirect_number = 4
+    integer(kind=kint) :: indirect_number = 6 ! GMRESR and GMRESREN need to be added
     integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step
 
     fstr_ctrl_get_SOLVER = -1
@@ -155,7 +157,7 @@ contains
 
     !* data --------------------------------------------------------------------------------------- *!
     ! JP-4
-    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre )/= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre, nBFGS )/= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
 
     if( precond == 20 .or. precond == 21) then
@@ -320,12 +322,17 @@ contains
     integer(kind=kint)            :: j, k, sect_id, ori_id, elemopt
     integer(kind=kint),save       :: cache = 1
     character(len=HECMW_NAME_LEN) :: sect_orien
+    character(19) :: form341list = 'FI,SELECTIVE_ESNS '
     character(16) :: form361list = 'FI,BBAR,IC,FBAR '
 
     fstr_ctrl_get_SECTION = -1
 
     if( fstr_ctrl_get_param_ex( ctrl, 'SECNUM ',  '# ',  1, 'I', sect_id )/= 0) return
     if( sect_id > hecMESH%section%n_sect ) return
+
+    elemopt = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'FORM341 ',   form341list, 0, 'P', elemopt )/= 0) return
+    if( elemopt > 0 ) sections(sect_id)%elemopt341 = elemopt
 
     elemopt = 0
     if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt )/= 0) return
@@ -530,7 +537,6 @@ contains
     tPenalty = 1.0d6
 
     write(ss,*)  HECMW_NAME_LEN
-    write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
 
     fstr_ctrl_get_CONTACT = .false.
     contact(1)%ctype = 1   ! pure slave-master contact; default value
@@ -543,13 +549,26 @@ contains
       contact(rcode)%group = contact(1)%group
       contact(rcode)%algtype = contact(1)%algtype
     end do
-    if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
-    do rcode=1,n
-      call fstr_strupr(cp_name(rcode))
-      contact(rcode)%pair_name = cp_name(rcode)
-      contact(rcode)%fcoeff = fcoeff(rcode)
-      contact(rcode)%tPenalty = tPenalty(rcode)
-    enddo
+
+    if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
+      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
+      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      do rcode=1,n
+        call fstr_strupr(cp_name(rcode))
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = fcoeff(rcode)
+        contact(rcode)%tPenalty = tPenalty(rcode)
+      enddo
+    else if( contact(1)%algtype==CONTACTTIED ) then
+      write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
+      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
+      do rcode=1,n
+        call fstr_strupr(cp_name(rcode))
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = 0.d0
+        contact(rcode)%tPenalty = 1.d+4
+      enddo
+    endif
 
     np = 0.d0;  tp=0.d0
     ntol = 0.d0;  ttol=0.d0
@@ -566,7 +585,7 @@ contains
   function fstr_ctrl_get_CONTACTPARAM( ctrl, contactparam )
     implicit none
     integer(kind=kint)    :: ctrl
-    type( tContactParam ) :: contactparam !< contact paramter
+    type( tContactParam ) :: contactparam !< contact parameter
     integer(kind=kint) :: fstr_ctrl_get_CONTACTPARAM
 
     integer(kind=kint) :: rcode
@@ -663,7 +682,7 @@ contains
   function fstr_get_AUTOINC( ctrl, aincparam )
     implicit none
     integer(kind=kint)    :: ctrl
-    type( tParamAutoInc ) :: aincparam !< auto increment paramter
+    type( tParamAutoInc ) :: aincparam !< auto increment parameter
     integer(kind=kint) :: fstr_get_AUTOINC
 
     integer(kind=kint) :: rcode
@@ -710,21 +729,21 @@ contains
     !input check
     rcode = 1
     if( Rs<0.d0 .or. Rs>1.d0 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease ratio Rs must 0 < Rs < 1.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : decrease ratio Rs must 0 < Rs < 1.'
     else if( any(bound_s<0) ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : decrease NR bound must >= 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : decrease NR bound must >= 0.'
     else if( aincparam%NRtimes_s < 1 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to decrease must > 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : # of times to decrease must > 0.'
     else if( Rl<1.d0 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase ratio Rl must > 1.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : increase ratio Rl must > 1.'
     else if( any(bound_l<0) ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : increase NR bound must >= 0.'
     else if( aincparam%NRtimes_l < 1 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : # of times to increase must > 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : # of times to increase must > 0.'
     elseif( aincparam%ainc_Rc<0.d0 .or. aincparam%ainc_Rc>1.d0 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : cutback decrease ratio Rc must 0 < Rc < 1.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : cutback decrease ratio Rc must 0 < Rc < 1.'
     else if( aincparam%CBbound < 1 ) then
-      write(msg,*) 'fstr contol file error : !AUTOINC_PARAM : maximum # of cutback times must > 0.'
+      write(msg,*) 'fstr control file error : !AUTOINC_PARAM : maximum # of cutback times must > 0.'
     else
       rcode =0
     end if
@@ -780,5 +799,73 @@ contains
     fstr_ctrl_get_TIMEPOINTS = 0
   end function fstr_ctrl_get_TIMEPOINTS
 
+  !> Read in !AMPLITUDE
+  function fstr_ctrl_get_AMPLITUDE( ctrl, nline, name, type_def, type_time, type_val, n, val, table )
+    implicit none
+    integer(kind=kint),            intent(in)  :: ctrl
+    integer(kind=kint),            intent(in)  :: nline
+    character(len=HECMW_NAME_LEN), intent(out) :: name
+    integer(kind=kint),            intent(out) :: type_def
+    integer(kind=kint),            intent(out) :: type_time
+    integer(kind=kint),            intent(out) :: type_val
+    integer(kind=kint),            intent(out) :: n
+    real(kind=kreal),              pointer     :: val(:)
+    real(kind=kreal),              pointer     :: table(:)
+    integer(kind=kint) :: fstr_ctrl_get_AMPLITUDE
+
+    integer(kind=kint) :: t_def, t_time, t_val
+    integer(kind=kint) :: i, j
+    real(kind=kreal) :: r(4), t(4)
+
+    fstr_ctrl_get_AMPLITUDE = -1
+
+    name = ''
+    t_def = 1
+    t_time = 1
+    t_val = 1
+
+    if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', name )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ', 'TABULAR ', 0, 'P', t_def )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'TIME ', 'STEP ', 0, 'P', t_time )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'VALUE ', 'RELATIVE,ABSOLUTE ', 0, 'P', t_val )/=0 ) return
+
+    if( t_def==1 ) then
+      type_def = HECMW_AMP_TYPEDEF_TABULAR
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter DEFINITION.'
+    endif
+    if( t_time==1 ) then
+      type_time = HECMW_AMP_TYPETIME_STEP
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter TIME.'
+    endif
+    if( t_val==1 ) then
+      type_val = HECMW_AMP_TYPEVAL_RELATIVE
+    elseif( t_val==2 ) then
+      type_val = HECMW_AMP_TYPEVAL_ABSOLUTE
+    else
+      write(*,*) 'Error in reading !AMPLITUDE: invalid value for parameter VALUE.'
+    endif
+
+    n = 0
+    do i = 1, nline
+      r(:)=huge(0.0d0); t(:)=huge(0.0d0)
+      if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
+      n = n+1
+      val(n) = r(1)
+      table(n) = t(1)
+      do j = 2, 4
+        if (r(j) < huge(0.0d0) .and. t(j) < huge(0.0d0)) then
+          n = n+1
+          val(n) = r(j)
+          table(n) = t(j)
+        else
+          exit
+        endif
+      enddo
+    enddo
+    fstr_ctrl_get_AMPLITUDE = 0
+
+  end function fstr_ctrl_get_AMPLITUDE
 
 end module fstr_ctrl_common

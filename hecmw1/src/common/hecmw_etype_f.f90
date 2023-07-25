@@ -137,4 +137,17 @@ contains
     endif
   end function hecmw_is_etype_patch
 
+  function hecmw_is_etype_smoothing(etype)
+    logical :: hecmw_is_etype_smoothing
+    integer(kind=kint) :: etype
+    external hecmw_is_etype_smoothing_if
+    integer(kind=kint) :: hecmw_is_etype_smoothing_if
+
+    if (hecmw_is_etype_smoothing_if(etype) /= 0) then
+      hecmw_is_etype_smoothing = .true.
+    else
+      hecmw_is_etype_smoothing = .false.
+    endif
+  end function hecmw_is_etype_smoothing
+
 end module hecmw_etype

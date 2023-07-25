@@ -15,10 +15,10 @@ endif
 all: push
 
 login:
-ifeq ($(CI_BUILD_TOKEN),)
+ifeq ($(CI_JOB_TOKEN),)
 	docker login $(CI_REGISTRY_IMAGE)
 else
-	docker login -u gitlab-ci-token -p $(CI_BUILD_TOKEN) $(CI_REGISTRY_IMAGE)
+	docker login -u gitlab-ci-token -p $(CI_JOB_TOKEN) $(CI_REGISTRY_IMAGE)
 endif
 
 push: login

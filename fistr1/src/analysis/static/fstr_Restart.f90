@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief  This module provides functions to read in and write out
-!>         restart fiels
+!>         restart files
 
 module m_fstr_Restart
   use m_utilities
@@ -26,7 +26,7 @@ contains
     type (fstr_solid),intent(inout)       :: fstrSOLID   !< fstr_solid
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1)
+    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1),naux(2)
     real(kind=kreal) :: times(3)
 
     call hecmw_restart_open()
@@ -56,9 +56,15 @@ contains
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         call hecmw_restart_read_int(nif)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain)
+        call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain_bak)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%stress)
+        call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%stress_bak)
         if( nif(1)>0 ) call hecmw_restart_read_int(fstrSOLID%elements(i)%gausses(j)%istatus)
         if( nif(2)>0 ) call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%fstatus)
+      enddo
+      call hecmw_restart_read_int(naux)
+      do j= 1, naux(2)
+        call hecmw_restart_read_real(fstrSOLID%elements(i)%aux(:,j))
       enddo
     enddo
 
@@ -124,7 +130,7 @@ contains
     type (fstr_solid), intent(in)         :: fstrSOLID  !< fstr_solid
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1)
+    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1),naux(2)
     real(kind=kreal) :: times(3)
 
     restrt_step(1) = cstep_ext
@@ -174,13 +180,21 @@ contains
         if( associated(fstrSOLID%elements(i)%gausses(j)%fstatus) ) nif(2)=size(fstrSOLID%elements(i)%gausses(j)%fstatus)
         call hecmw_restart_add_int(nif,size(nif))
         call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%strain,size(fstrSOLID%elements(i)%gausses(j)%strain))
+        call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%strain_bak,size(fstrSOLID%elements(i)%gausses(j)%strain_bak))
         call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%stress,size(fstrSOLID%elements(i)%gausses(j)%stress))
+        call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%stress_bak,size(fstrSOLID%elements(i)%gausses(j)%stress_bak))
         if( nif(1)>0 ) then
           call hecmw_restart_add_int(fstrSOLID%elements(i)%gausses(j)%istatus,size(fstrSOLID%elements(i)%gausses(j)%istatus))
         endif
         if( nif(2)>0 ) then
           call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%fstatus,size(fstrSOLID%elements(i)%gausses(j)%fstatus))
         endif
+      enddo
+      naux = 0
+      if( associated(fstrSOLID%elements(i)%aux) ) naux=shape(fstrSOLID%elements(i)%aux)
+      call hecmw_restart_add_int(naux,size(naux))
+      do j= 1, naux(2)
+        call hecmw_restart_add_real(fstrSOLID%elements(i)%aux(:,j),naux(1))
       enddo
     enddo
 
@@ -218,7 +232,7 @@ contains
     type ( fstr_dynamic), intent(inout)   :: fstrDYNAMIC
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(1),nif(2)
+    integer :: i,j,restrt_step(1),nif(2),naux(2)
     real(kind=kreal) :: data(2)
 
     call hecmw_restart_open()
@@ -234,9 +248,15 @@ contains
       do j= 1, size(fstrSOLID%elements(i)%gausses)
         call hecmw_restart_read_int(nif)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain)
+        call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%strain_bak)
         call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%stress)
+        call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%stress_bak)
         if( nif(1)>0 ) call hecmw_restart_read_int(fstrSOLID%elements(i)%gausses(j)%istatus)
         if( nif(2)>0 ) call hecmw_restart_read_real(fstrSOLID%elements(i)%gausses(j)%fstatus)
+      enddo
+      call hecmw_restart_read_int(naux)
+      do j= 1, naux(2)
+        call hecmw_restart_read_real(fstrSOLID%elements(i)%aux(:,j))
       enddo
     enddo
 
@@ -291,7 +311,7 @@ contains
     type ( fstr_dynamic), intent(in)      :: fstrDYNAMIC
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(1),nif(2)
+    integer :: i,j,restrt_step(1),nif(2),naux(2)
     real(kind=kreal) :: data(2)
 
     restrt_step(1) = cstep
@@ -308,13 +328,21 @@ contains
         if( associated(fstrSOLID%elements(i)%gausses(j)%fstatus) ) nif(2)=size(fstrSOLID%elements(i)%gausses(j)%fstatus)
         call hecmw_restart_add_int(nif,size(nif))
         call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%strain,size(fstrSOLID%elements(i)%gausses(j)%strain))
+        call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%strain_bak,size(fstrSOLID%elements(i)%gausses(j)%strain_bak))
         call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%stress,size(fstrSOLID%elements(i)%gausses(j)%stress))
+        call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%stress_bak,size(fstrSOLID%elements(i)%gausses(j)%stress_bak))
         if( nif(1)>0 ) then
           call hecmw_restart_add_int(fstrSOLID%elements(i)%gausses(j)%istatus,size(fstrSOLID%elements(i)%gausses(j)%istatus))
         endif
         if( nif(2)>0 ) then
           call hecmw_restart_add_real(fstrSOLID%elements(i)%gausses(j)%fstatus,size(fstrSOLID%elements(i)%gausses(j)%fstatus))
         endif
+      enddo
+      naux = 0
+      if( associated(fstrSOLID%elements(i)%aux) ) naux=shape(fstrSOLID%elements(i)%aux)
+      call hecmw_restart_add_int(naux,size(naux))
+      do j= 1, naux(2)
+        call hecmw_restart_add_real(fstrSOLID%elements(i)%aux(:,j),naux(1))
       enddo
     enddo
 

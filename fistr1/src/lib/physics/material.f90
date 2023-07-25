@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This module summarizes all infomation of material properties
+!> \brief This module summarizes all information of material properties
 module mMaterial
   use hecmw_util
   use m_table
@@ -80,7 +80,7 @@ module mMaterial
   integer(kind=kint), parameter :: Shell         = 3
 
   ! Material constants are saved in an array of size 100 and their physical meaning
-  ! are conrresponds to their position in the array
+  ! correspond to their position in the array
   integer(kind=kint), parameter :: M_YOUNGS  = 1
   integer(kind=kint), parameter :: M_POISSON = 2
   integer(kind=kint), parameter :: M_DENSITY = 3
@@ -135,12 +135,12 @@ module mMaterial
     real(kind=kreal)           :: g31
     real(kind=kreal)           :: angle
     real(kind=kreal)           :: rho
-    real(kind=kreal)           :: aplha
+    real(kind=kreal)           :: alpha
     real(kind=kreal)           :: alpha_over_mu
     real(kind=kreal)           :: weight
   end type tshellmat
 
-  !> Stucture to management all material relates data
+  !> Structure to manage all material related data
   type tMaterial
     integer(kind=kint)         :: nlgeom_flag       !< type of constitutive relation
     integer(kind=kint)         :: mtype             !< material type

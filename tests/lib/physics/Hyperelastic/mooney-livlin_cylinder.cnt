@@ -5,7 +5,7 @@
 !SOLUTION, TYPE=NLSTATIC
 !WRITE, RESULT, FREQUENCY=5
 ## Solver Control
-### Boundary Conditon
+### Boundary Condition
 !BOUNDARY, GRPID=1
  LOADS, 3, 3, -7.0
  FIX,   3, 3, 0.0
@@ -22,4 +22,9 @@
 !SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
  10000, 1
  1.0e-8, 1.0, 0.0
+## Post Control
+!VISUAL,method=PSR
+!surface_num=1
+!surface 1
+!output_type=VTK
 !END

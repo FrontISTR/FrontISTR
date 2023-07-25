@@ -101,7 +101,7 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
 
-    hecMAT%Iarray(98) = 1   !Assmebly complete
+    hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
 
     !C-- time step loop
@@ -360,7 +360,7 @@ contains
       enddo
       !C *****************************************************
 
-      !C-- new displacement, velocity and accelaration
+      !C-- new displacement, velocity and acceleration
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
         fstrDYNAMIC%ACC (j,2) = -a1*fstrDYNAMIC%ACC(j,1) - a2*fstrDYNAMIC%VEL(j,1) + &
@@ -377,19 +377,19 @@ contains
           0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
+      !C-- output new displacement, velocity and acceleration
+      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+
+      !C-- output result of monitoring node
+      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+      call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
+
      !---  Restart info
       if( fstrDYNAMIC%restart_nout > 0 ) then
         if( mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) then
           call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
         endif
       endif
-
-      !C-- output new displacement, velocity and accelaration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-
-      !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
-      call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
     enddo
     !C-- end of time step loop
@@ -522,7 +522,7 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
     !C--
-    hecMAT%Iarray(98) = 1   !Assmebly complete
+    hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
     !C
     !C-- initialize variables
@@ -558,7 +558,7 @@ contains
     call hecmw_mat_copy_profile( hecMAT, conMAT )
 
     if ( fstr_is_contact_active() ) then
-      call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+      call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
     elseif( hecMAT%Iarray(99)==4 ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change solver type to intel MKL direct solver !'
@@ -709,7 +709,7 @@ contains
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMATmpc%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-          call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,hecLagMAT,conMAT,istat,1.0D0)
+          call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,hecLagMAT,conMAT,istat,1.0D0,fstr_is_contact_active())
           call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
           call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
@@ -758,7 +758,7 @@ contains
         if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) ) then
           exit loopFORcontactAnalysis
         elseif( fstr_is_matrixStructure_changed(infoCTChange) ) then
-          call fstr_mat_con_contact( cstep, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+          call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
           contact_changed_global=1
         endif
         call hecmw_allreduce_I1(hecMESH,contact_changed_global,HECMW_MAX)
@@ -773,7 +773,7 @@ contains
 
       enddo loopFORcontactAnalysis
       !
-      !C-- new displacement, velocity and accelaration
+      !C-- new displacement, velocity and acceleration
       !C
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
@@ -791,20 +791,20 @@ contains
           0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
-      !---  Restart info
-      if( fstrDYNAMIC%restart_nout > 0 .and. &
-          (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
-        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-          infoCTChange%contactNode_current)
-      endif
-
-      !C-- output new displacement, velocity and accelaration
+      !C-- output new displacement, velocity and acceleration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
       !C-- output result of monitoring node
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
 
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
+
+      !---  Restart info
+      if( fstrDYNAMIC%restart_nout > 0 .and. &
+          (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
+        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+          infoCTChange%contactNode_current)
+      endif
 
     enddo
     !C

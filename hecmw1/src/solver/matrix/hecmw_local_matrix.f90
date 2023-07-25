@@ -2614,14 +2614,6 @@ contains
     BKmat%ndof = ndof
     !
     if (present(num_lagrange)) then       !!! TEMPORARY (DUE TO WRONG conMAT WHEN num_lagrange==0) !!!
-      if (num_lagrange == 0) then
-        BKmat%nnz = 0
-        allocate(BKmat%index(0:BKmat%nr))
-        BKmat%index(:) = 0
-        BKmat%item => null()
-        BKmat%A => null()
-        return
-      endif
       check_nonzero = .true.
     endif
     !
@@ -2792,7 +2784,7 @@ contains
 
   subroutine hecmw_localmat_multmat(BKmat, BTmat, hecMESH, BKTmat)
     implicit none
-    type (hecmwST_local_matrix), intent(inout) :: BKmat
+    type (hecmwST_local_matrix), intent(in) :: BKmat
     type (hecmwST_local_matrix), intent(inout) :: BTmat
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_local_matrix), intent(out) :: BKTmat

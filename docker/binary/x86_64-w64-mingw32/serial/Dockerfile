@@ -1,5 +1,5 @@
 FROM registry.gitlab.com/frontistr-commons/frontistr/x86_64-w64-mingw32/base:serial AS lib2
-RUN curl -L http://mumps.enseeiht.fr/MUMPS_5.4.0.tar.gz | tar zxv && cd MUMPS_5.4.0 \
+RUN curl -L https://ftp.mcs.anl.gov/pub/petsc/externalpackages/MUMPS_5.4.0.tar.gz | tar zxv && cd MUMPS_5.4.0 \
  && cp Make.inc/Makefile.inc.generic.SEQ Makefile.inc \
  && make -C src build_mumps_int_def.o build_mumps_int_def \
  && sed \
@@ -60,7 +60,7 @@ RUN git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/
  && cd ../.. && rm -fr Trilinos
 
 FROM lib2 AS openblas-metis4
-RUN curl -L http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.gz | tar zxv && cd metis-4.0.3 \
+RUN curl -L https://github.com/mfem/tpls/raw/gh-pages/metis-4.0.3.tar.gz | tar zxv && cd metis-4.0.3 \
  && sed -e 's/CC = cc/CC = x86_64-w64-mingw32-gcc/' -i Makefile.in && sed -e 's/COPTIONS = /COPTIONS = -D__VC__/' -i Makefile.in \
  && make -C Lib -j && cp libmetis.a $LIB_ROOT/lib/ \
  && find Lib -name "*.h"|xargs -i cp {} $LIB_ROOT/include/ \
@@ -111,7 +111,7 @@ RUN git clone --depth 1 -b trilinos-release-12-18-1 https://github.com/trilinos/
  && cd ../.. && rm -fr Trilinos
 
 FROM lib2 AS mkl-metis4
-RUN curl -L http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.gz | tar zxv && cd metis-4.0.3 \
+RUN curl -L https://github.com/mfem/tpls/raw/gh-pages/metis-4.0.3.tar.gz | tar zxv && cd metis-4.0.3 \
  && sed -e 's/CC = cc/CC = x86_64-w64-mingw32-gcc/' -i Makefile.in && sed -e 's/COPTIONS = /COPTIONS = -D__VC__/' -i Makefile.in \
  && make -C Lib -j && cp libmetis.a $LIB_ROOT/lib/ \
  && find Lib -name "*.h"|xargs -i cp {} $LIB_ROOT/include/ \

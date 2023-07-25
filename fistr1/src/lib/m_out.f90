@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>   This module manages step infomation
+!> \brief  This module manages step information
 module m_out
   use hecmw
   implicit none
@@ -16,7 +16,7 @@ module m_out
   !> output information
   type output_info
     integer                   :: num_items          !< number of output items
-    character(len=MAXNAMELEN) :: keyWord(MAXOUT)    !< name of output varibales
+    character(len=MAXNAMELEN) :: keyWord(MAXOUT)    !< name of output variables
     integer                   :: vtype(MAXOUT)      !< 0:not defined; -1:scaler; -2:vector; -3:symmetric tensor; -4:tensor
     !< >0: user given number of viariable components
     logical                   :: on(MAXOUT)         !< if output needed
@@ -25,11 +25,11 @@ module m_out
     integer                   :: actn               !< 0: do nothing; 1: sum
   end type output_info
 
-  !> output control such as output filename, output freqency etc.
+  !> output control such as output filename, output frequency etc.
   type t_output_ctrl
     character(len=HECMW_NAME_LEN) :: filename       !< output file name
     integer                       :: filenum        !< file number
-    integer                       :: freqency       !< output frenqency
+    integer                       :: frequency       !< output frenqency
     type( output_info )           :: outinfo        !< info of output
   end type t_output_ctrl
 
@@ -100,6 +100,7 @@ contains
 
     outinfo%keyWord(18) = "ROT"
     outinfo%vtype(18)   = -2
+    outinfo%on(18)      = .true.
 
     outinfo%keyWord(19) = "PRINC_NSTRESS"
     outinfo%vtype(19)   = -2
@@ -208,7 +209,7 @@ contains
     else if( vtype==-4 ) then
       n_comp_valtype = ndim*ndim
     else if( vtype==-5 ) then
-      n_comp_valtype = ndim*4
+      n_comp_valtype = 12
     else
       n_comp_valtype = 0
     endif
@@ -220,7 +221,7 @@ contains
     type(t_output_ctrl), intent(out) :: outctrl
     outctrl%filename= trim(OUTFILENAME)
     outctrl%filenum = -1
-    outctrl%freqency= 1
+    outctrl%frequency= 1
     call initOutInfo( outctrl%outinfo )
   end subroutine
 
@@ -229,14 +230,14 @@ contains
     type(t_output_ctrl), intent(in)  :: outctrl2
     outctrl1%filename = outctrl2%filename
     outctrl1%filenum  = outctrl2%filenum
-    outctrl1%freqency = outctrl2%freqency
+    outctrl1%frequency = outctrl2%frequency
   end subroutine
 
   logical function fstr_output_active( cstep, outctrl )
     integer, intent(in)             :: cstep  !< current step number
     type(t_output_ctrl), intent(in) :: outctrl
     fstr_output_active = .false.
-    if( mod( cstep, outctrl%freqency )==0 ) fstr_output_active=.true.
+    if( mod( cstep, outctrl%frequency )==0 ) fstr_output_active=.true.
   end function
 
   subroutine fstr_ctrl_get_filename( ctrl, ss )
@@ -265,17 +266,17 @@ contains
     if( len(trim(ss))>0 ) then
       outctrl%filename = trim(ss)
     endif
-    outctrl%freqency = 1
+    outctrl%frequency = 1
     n = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'FREQUENCY ', '# ', 0, 'I', n )
-    if( n>0 ) outctrl%freqency = n
+    if( n>0 ) outctrl%frequency = n
   end subroutine
 
   subroutine print_output_ctrl( nfile, outctrl )
     integer, intent(in)                :: nfile
     type(t_output_ctrl), intent(inout) :: outctrl
     integer :: i
-    write( nfile, *) trim(outctrl%filename),outctrl%filenum,outctrl%freqency,outctrl%outinfo%num_items
+    write( nfile, *) trim(outctrl%filename),outctrl%filenum,outctrl%frequency,outctrl%outinfo%num_items
     do i=1,outctrl%outinfo%num_items
       write( nfile, *) trim(outctrl%outinfo%keyWord(i)),outctrl%outinfo%on(i),outctrl%outinfo%vtype(i)
     enddo

@@ -288,7 +288,7 @@ contains
         enddo
       endif
 
-      !C-- new displacement, velocity and accelaration
+      !C-- new displacement, velocity and acceleration
       do j = 1 ,ndof*nnod
         fstrDYN%ACC (j,1) = a1*(hecMAT%X(j) - 2.d0*fstrDYN%DISP(j,1) + fstrDYN%DISP(j,3))
         fstrDYN%VEL (j,1) = a2*(hecMAT%X(j) - fstrDYN%DISP(j,3))
@@ -313,7 +313,7 @@ contains
         end if
       end if
       !
-      !C-- output new displacement, velocity and accelaration
+      !C-- output new displacement, velocity and acceleration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
 

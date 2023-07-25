@@ -2,6 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
+!> \brief This module ...
 module m_static_LIB_shell
   use hecmw, only : kint, kreal
   use elementInfo
@@ -210,7 +211,7 @@ contains
 
       !--------------------------------------------------------
 
-      ! xi-coordinate at a tying pont in a local element
+      ! xi-coordinate at a tying point in a local element
       tpcoord(1, 1, 1) =  0.0D0
       tpcoord(2, 1, 1) =  1.0D0
       tpcoord(3, 1, 1) =  0.0D0
@@ -1451,7 +1452,7 @@ contains
 
       !--------------------------------------------------------
 
-      ! xi-coordinate at a tying pont in a local element
+      ! xi-coordinate at a tying point in a local element
       tpcoord(1, 1, 1) =  0.0D0
       tpcoord(2, 1, 1) =  1.0D0
       tpcoord(3, 1, 1) =  0.0D0
@@ -2624,7 +2625,7 @@ contains
 
     !--------------------------------------------------------------------
 
-    ! Selction of load type
+    ! Selection of load type
 
     ivol = 0
     isurf = 0
@@ -3509,12 +3510,11 @@ contains
 
     totdiag=0.d0
     do nb = 1, nn
-        DO i = 1, 6
+        DO i = 1, 3
           lx = (nb-1)*ndof+i
           totdiag = totdiag + mass(lx,lx)
         END DO
     ENDDO
-  lumped(:)=0.d0
     do nb = 1, nn
         DO i = 1, 6
           lx = (nb-1)*ndof+i

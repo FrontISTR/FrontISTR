@@ -79,8 +79,6 @@ contains
         call fstr_heat_analysis
       case( kstSTATICEIGEN )
         call fstr_static_eigen_analysis
-      case( kstPRECHECK, kstNZPROF )
-        call fstr_precheck( hecMESH, hecMAT, fstrPR%solution_type )
     end select
 
     T3 = hecmw_Wtime()
@@ -135,7 +133,7 @@ contains
     ITMAX = 20
     EPS   = 1.0d-6
 
-    ! -------  grobal pointer setting ----------
+    ! -------  global pointer setting ----------
     REF_TEMP => fstrPR%ref_temp
     IECHO    => fstrPR%fg_echo
     IRESULT  => fstrPR%fg_result
@@ -148,7 +146,6 @@ contains
     NRRES    => fstrPR%nrres
     NPRINT   => fstrPR%nprint
 
-    call hecmw_mat_con(hecMESH, hecMAT)
 
     ! ------- initial value setting -------------
     call fstr_mat_init  ( hecMAT   )
@@ -159,7 +156,11 @@ contains
     call fstr_heat_init ( fstrHEAT  )
     call fstr_dynamic_init( fstrDYNAMIC  )
 
+    ! ------- scan cnt file -------------
     call fstr_init_condition
+
+    ! ------- hecMAT setting -------------
+    call hecmw_mat_con(hecMESH, hecMAT)
     hecMAT%NDOF = hecMESH%n_dof
     if( kstHEAT == fstrPR%solution_type ) then
       call heat_init_material (hecMESH,fstrHEAT)
@@ -167,7 +168,6 @@ contains
       hecMAT%NDOF = 1
     endif
     call hecMAT_init( hecMAT )
-
   end subroutine fstr_init
 
   !------------------------------------------------------------------------------
@@ -272,6 +272,8 @@ contains
     hecMAT%Rarray(:) = svRarray(:)
     hecMAT%Iarray(:) = svIarray(:)
 
+    call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID )
+
     if( myrank == 0) write(*,*) 'fstr_setup: OK'
     write(ILOG,*) 'fstr_setup: OK'
     call flush(6)
@@ -372,7 +374,7 @@ contains
   end subroutine fstr_dynamic_analysis
 
   !=============================================================================!
-  !> Master subroutine of static -> eigen anaylsis                              !
+  !> Master subroutine of static -> eigen analysis                              !
   !=============================================================================!
 
   subroutine fstr_static_eigen_analysis

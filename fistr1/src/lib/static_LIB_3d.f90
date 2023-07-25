@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>   This module provide common functions of Solid elements
+!> \brief  This module provides common functions of Solid elements
 module m_static_LIB_3d
 
   use hecmw, only : kint, kreal
@@ -64,10 +64,10 @@ contains
     type(tGaussStatus), intent(in)  :: gausses(:)             !< status of qudrature points
     real(kind=kreal),   intent(out) :: stiff(:,:)             !< stiff matrix
     integer(kind=kint), intent(in)  :: cdsys_ID
-    real(kind=kreal), intent(inout) :: coords(3,3)            !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout) :: coords(3,3)            !< variables to define material coordinate system
     real(kind=kreal), intent(in)    :: time                   !< current time
     real(kind=kreal), intent(in)    :: tincr                  !< time increment
-    real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
+    real(kind=kreal), intent(in)    :: temperature(nn) !< temperature
     real(kind=kreal), intent(in), optional :: u(:,:)          !< nodal displacemwent
 
     !---------------------------------------------------------------------
@@ -106,13 +106,9 @@ contains
         end if
       end if
 
-      if( present(temperature) ) then
-        call getShapeFunc(etype, naturalcoord, spfunc)
-        temp = dot_product(temperature, spfunc)
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
-      else
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
-      end if
+      call getShapeFunc(etype, naturalcoord, spfunc)
+      temp = dot_product(temperature, spfunc)
+      call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
 
       if( flag == UPDATELAG ) then
         call GEOMAT_C3( gausses(LX)%stress, mat )
@@ -208,10 +204,10 @@ contains
   end subroutine STF_C3
 
 
-  !> Distrubuted external load
+  !> Distributed external load
   !----------------------------------------------------------------------*
   subroutine DL_C3(etype, nn, XX, YY, ZZ, RHO, LTYPE, PARAMS, VECT, NSIZE)
-    !----------------------------------------------------------------------*
+    !--------------------------------------------------------------------*
     !**
     !**  SET DLOAD
     !**
@@ -255,7 +251,7 @@ contains
     !
     val = PARAMS(0)
     !
-    ! SELCTION OF LOAD TYPE
+    ! SELECTION OF LOAD TYPE
     !
     IVOL=0
     ISUF=0
@@ -281,9 +277,9 @@ contains
     if( ISUF==1 ) then
       ! INTEGRATION OVER SURFACE
       do I=1,NSUR
-        elecoord(1,i)=XX(NOD(I))
-        elecoord(2,i)=YY(NOD(i))
-        elecoord(3,i)=ZZ(NOD(i))
+        elecoord(1,I)=XX(NOD(I))
+        elecoord(2,I)=YY(NOD(I))
+        elecoord(3,I)=ZZ(NOD(I))
       enddo
       do IG2=1,NumOfQuadPoints( SURTYPE )
         call getQuadPoint( SURTYPE, IG2, localcoord(1:2) )
@@ -402,7 +398,7 @@ contains
     real(kind=kreal), intent(in)    :: TT(nn),T0(nn)
     real(kind=kreal), intent(out)   :: VECT(nn*NDOF)
     integer(kind=kint), intent(in)  :: cdsys_ID
-    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout) :: coords(3, 3)           !< variables to define material coordinate system
 
     !---------------------------------------------------------------------
 
@@ -419,7 +415,7 @@ contains
 
     matlaniso = .FALSE.
 
-    if( cdsys_ID > 0 ) then   ! cannot define aniso exapansion when no local coord defined
+    if( cdsys_ID > 0 ) then   ! cannot define aniso expansion when no local coord defined
       ina = TT(1)
       call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
       if( .not. ierr ) matlaniso = .TRUE.
@@ -530,6 +526,9 @@ contains
     logical            :: ierr
     real(kind=kreal)   :: alp, alp0, alpo(3), alpo0(3), tm(6,6)
 
+    EPSTH = 0.d0
+    if( dabs(ttc-tt0) < 1.d-14 ) return
+
     ina(1) = ttc
     if( matlaniso ) then
       call fetch_TableData( MC_ORTHOEXP, material%dict, alpo(:), ierr, ina )
@@ -580,7 +579,7 @@ contains
     stress_out = matmul(stress_out,transpose(dr))
   end subroutine
 
-  subroutine Update_Stress3D( flag, gauss, rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
+  subroutine Update_Stress3D( flag, gauss, rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn, hdflag )
     use m_fstr
     use m_MatMatrix
     use mMechGauss
@@ -594,12 +593,13 @@ contains
     real(kind=kreal), intent(in)            :: coordsys(3,3)
     real(kind=kreal), intent(in)            :: time
     real(kind=kreal), intent(in)            :: tincr
-    real(kind=kreal), intent(in), optional  :: ttc
-    real(kind=kreal), intent(in), optional  :: tt0
-    real(kind=kreal), intent(in), optional  :: ttn
+    real(kind=kreal), intent(in)            :: ttc
+    real(kind=kreal), intent(in)            :: tt0
+    real(kind=kreal), intent(in)            :: ttn
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
     integer(kind=kint) :: mtype, i, j, k
-    integer(kind=kint) :: isEp
+    integer(kind=kint) :: isEp, hdflag_in
     real(kind=kreal)   :: D(6,6), dstress(6), dumstress(3,3), dum(3,3), trD, det
     real(kind=kreal)   :: tensor(6)     !< tensor
     real(kind=kreal)   :: eigval(3)     !< vector containing the eigvalches
@@ -613,35 +613,26 @@ contains
       isEp = 0
     endif
 
-    if( present(ttc) .AND. present(ttn) ) then
-      call MatlMatrix( gauss, D3, D, time, tincr, coordsys, ttc, isEp )
-    else
-      call MatlMatrix( gauss, D3, D, time, tincr, coordsys, isEp=isEp)
-    end if
+    hdflag_in = 0
+    if( present(hdflag) ) hdflag_in = hdflag
+
+    call MatlMatrix( gauss, D3, D, time, tincr, coordsys, ttc, isEp, hdflag=hdflag_in )
 
     if( flag == INFINITESIMAL ) then
 
       gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
-        if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn )
-        else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
-        end if
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
         gauss%stress = real(gauss%stress)
       end if
 
     else if( flag == TOTALLAG ) then
 
       if( isHyperelastic(mtype) .OR. mtype == USERELASTIC .OR. mtype == USERMATERIAL ) then
-        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys )
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, temp=0.d0, tempn=0.d0, hdflag=hdflag_in )
       else if( ( isViscoelastic(mtype) .OR. mtype == NORTON ) .AND. tincr /= 0.0D0 ) then
         gauss%pMaterial%mtype=mtype
-        if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn )
-        else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
-        end if
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
       else
         gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       end if
@@ -651,11 +642,7 @@ contains
       !  D(:, :) = D(:, :)+mat(:, :)
 
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
-        if( present(ttc) .AND. present(ttn) ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, tt0 )
-        else
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr )
-        end if
+        call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, tt0, hdflag=hdflag_in )
       else
         dstress = real( matmul( D(1:6,1:6), dstrain(1:6) ) )
         dumstress(1,1) = gauss%stress_bak(1)
@@ -678,16 +665,12 @@ contains
         gauss%stress(6) = dum(3,1) + dstress(6)
 
         if( mtype == USERMATERIAL ) then
-          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys )
+          call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, temp=0.d0, tempn=0.d0, hdflag=hdflag_in )
         else if( mtype == NORTON ) then
           !gauss%pMaterial%mtype = mtype
           if( tincr /= 0.0D0 .AND. any( gauss%stress /= 0.0D0 ) ) then
             !gauss%pMaterial%mtype = mtype
-            if( present(ttc) .AND. present(ttn) ) then
-              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr, ttc, ttn )
-            else
-              call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr )
-            end if
+            call StressUpdate( gauss, D3, gauss%strain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
           end if
         end if
       end if
@@ -695,13 +678,8 @@ contains
     end if
 
     if( isElastoplastic(mtype) ) then
-      if( present(ttc) ) then
-        call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
-          gauss%istatus(1), gauss%fstatus, ttc )
-      else
-        call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
-          gauss%istatus(1), gauss%fstatus )
-      end if
+      call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
+        gauss%istatus(1), gauss%fstatus, ttc )
     end if
 
     !convert stress/strain measure for output
@@ -796,21 +774,21 @@ contains
     real(kind=kreal), intent(in)      :: u(3, nn)      !< \param [in] nodal dislplacements
     real(kind=kreal), intent(in)      :: ddu(3, nn)    !< \param [in] nodal displacement
     integer(kind=kint), intent(in)    :: cdsys_ID
-    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define material coordinate system
     real(kind=kreal), intent(out)     :: qf(nn*3)      !< \param [out] Internal Force
     type(tGaussStatus), intent(inout) :: gausses(:)    !< \param [out] status of qudrature points
     integer, intent(in)               :: iter
     real(kind=kreal), intent(in)      :: time          !< current time
     real(kind=kreal), intent(in)      :: tincr         !< time increment
-    real(kind=kreal), intent(in), optional :: TT(nn)   !< current temperature
-    real(kind=kreal), intent(in), optional :: T0(nn)   !< reference temperature
-    real(kind=kreal), intent(in), optional :: TN(nn)   !< reference temperature
+    real(kind=kreal), intent(in)      :: TT(nn)   !< current temperature
+    real(kind=kreal), intent(in)      :: T0(nn)   !< reference temperature
+    real(kind=kreal), intent(in)      :: TN(nn)   !< reference temperature
 
-    ! LCOAL VARIAVLES
+    ! LOCAL VARIABLES
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: B(6,ndof*nn), B1(6,ndof*nn), spfunc(nn), ina(1)
-    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gdispderiv(3,3), F(3,3), det, det1, WG, ttc,tt0, ttn
+    real(kind=kreal)   :: gderiv(nn,3), gderiv1(nn,3), gdispderiv(3,3), F(3,3), det, det1, WG, ttc, tt0, ttn
     integer(kind=kint) :: j, LX, serr
     real(kind=kreal)   :: naturalCoord(3), rot(3,3), EPSTH(6)
     real(kind=kreal)   :: totaldisp(3,nn), elem(3,nn), elem1(3,nn), coordsys(3,3)
@@ -831,11 +809,9 @@ contains
     end if
 
     matlaniso = .FALSE.
-    if( present(TT) .and. cdsys_ID > 0 ) then
-      ina = TT(1)
-      call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
-      if( .not. ierr ) matlaniso = .true.
-    end if
+    ina = TT(1)
+    call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
+    if( .not. ierr ) matlaniso = .true.
 
     do LX = 1, NumOfQuadPoints(etype)
 
@@ -856,13 +832,11 @@ contains
 
       ! Thermal Strain
       EPSTH = 0.0D0
-      if( present(tt) .AND. present(t0) ) then
-        call getShapeFunc(etype, naturalcoord, spfunc)
-        ttc = dot_product(TT, spfunc)
-        tt0 = dot_product(T0, spfunc)
-        ttn = dot_product(TN, spfunc)
-        call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
-      end if
+      call getShapeFunc(etype, naturalcoord, spfunc)
+      ttc = dot_product(TT, spfunc)
+      tt0 = dot_product(T0, spfunc)
+      ttn = dot_product(TN, spfunc)
+      call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
 
       ! Update strain
       ! Small strain
@@ -873,7 +847,7 @@ contains
       dstrain(4) = ( gdispderiv(1, 2)+gdispderiv(2, 1) )
       dstrain(5) = ( gdispderiv(2, 3)+gdispderiv(3, 2) )
       dstrain(6) = ( gdispderiv(3, 1)+gdispderiv(1, 3) )
-      dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
+      dstrain(:) = dstrain(:)-EPSTH(:)   ! alright?
 
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
       if( flag == INFINITESIMAL ) then
@@ -908,11 +882,7 @@ contains
       end if
 
       ! Update stress
-      if( present(tt) .AND. present(t0) ) then
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
-      else
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr )
-      end if
+      call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
 
       ! ========================================================
       ! calculate the internal force ( equivalent nodal force )

@@ -12,41 +12,39 @@ module m_ElasticLinear
 contains
 
   !> Calculate isotropic elastic matrix
-  subroutine calElasticMatrix( matl, sectType, D, temp  )
+  subroutine calElasticMatrix( matl, sectType, D, temp, hdflag  )
     type( tMaterial ), intent(in) :: matl       !> material properties
     integer, intent(in)           :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(out) :: D(:,:)     !> elastic matrix
-    real(kind=kreal), optional    :: temp       !> temprature
+    real(kind=kreal), intent(in)  :: temp       !> temperature
     real(kind=kreal) :: EE, PP, COEF1, COEF2, ina(1), outa(2)
+    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
     logical :: ierr
+    real(kind=kreal) :: K, G
 
     D(:,:)=0.d0
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
-      if( ierr ) then
-        ee = matl%variables(M_YOUNGS)
-        pp = matl%variables(M_POISSON)
-      else
-        EE = outa(1)
-        PP = outa(2)
-      endif
-    else
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr )
-      if( ierr ) then
-        ee = matl%variables(M_YOUNGS)
-        pp = matl%variables(M_POISSON)
-      else
-        EE = outa(1)
-        PP = outa(2)
-      endif
-    endif
 
+    ina(1) = temp
+    call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
+    if( ierr ) then
+      ee = matl%variables(M_YOUNGS)
+      pp = matl%variables(M_POISSON)
+    else
+      EE = outa(1)
+      PP = outa(2)
+    endif
 
     select case (sectType)
       case (D3)
-        D(1,1)=EE*(1.d0-PP)/(1.d0-2.d0*PP)/(1.d0+PP)
-        D(1,2)=EE*PP/(1.d0-2.d0*PP)/(1.d0+PP)
+        K = EE/(1.d0-2.d0*PP)/3.d0
+        G = EE/(1.d0+PP)*0.5d0
+        if( present(hdflag) ) then
+          if( hdflag == 1 ) K = 0.d0
+          if( hdflag == 2 ) G = 0.d0
+        end if
+        D(1,1)=K+(4.d0/3.d0)*G
+        D(1,2)=K-(2.d0/3.d0)*G
+        D(4,4)=G
         D(1,3)=D(1,2)
         D(2,1)=D(1,2)
         D(2,2)=D(1,1)
@@ -54,9 +52,8 @@ contains
         D(3,1)=D(1,3)
         D(3,2)=D(2,3)
         D(3,3)=D(1,1)
-        D(4,4)=EE/(1.d0+PP)*0.5d0
-        D(5,5)=EE/(1.d0+PP)*0.5d0
-        D(6,6)=EE/(1.d0+PP)*0.5d0
+        D(5,5)=D(4,4)
+        D(6,6)=D(4,4)
       case (PlaneStress)
         COEF1=EE/(1.d0-PP*PP)
         COEF2=0.5d0*(1.d0-PP)
@@ -114,23 +111,16 @@ contains
     integer, intent(in)           :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(in)  :: bij(3,3)   !> director
     real(kind=kreal), intent(out) :: DMAT(:,:)  !> elastic matrix
-    real(kind=kreal), optional    :: temp       !> temprature
+    real(kind=kreal), intent(in)  :: temp       !> temperature
     real(kind=kreal) :: E1, E2, E3, G12, G23, G13, nyu12, nyu23,nyu13
     real(kind=kreal) :: nyu21,nyu32,nyu31, delta1, ina(1), outa(9)
     real(kind=kreal) :: tm(6,6)
     logical :: ierr
 
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData( MC_ORTHOELASTIC, matl%dict, outa, ierr, ina )
-      if( ierr ) then
-        stop "Fails in fetching orthotropic elastic constants!"
-      endif
-    else
-      call fetch_TableData( MC_ORTHOELASTIC, matl%dict, outa, ierr )
-      if( ierr ) then
-        stop "Fails in fetching orthotropic elastic constants!"
-      endif
+    ina(1) = temp
+    call fetch_TableData( MC_ORTHOELASTIC, matl%dict, outa, ierr, ina )
+    if( ierr ) then
+      stop "Fails in fetching orthotropic elastic constants!"
     endif
 
     E1    = outa(1)

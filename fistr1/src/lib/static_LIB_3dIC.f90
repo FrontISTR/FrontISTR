@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  Eight-node hexagonal element with imcompatible mode
+!> \brief  Eight-node hexagonal element with incompatible mode
 !> \see R.L.Taylor,P.J.Bereford, and E.L.Wilson, "A Nonconforming element
 !>  for Stress Analysis", Intl. J. Numer. Methods Engng, 10(6), pp1211-1219
 !>  ,1976
@@ -36,12 +36,12 @@ contains
     type(tGaussStatus), intent(in)  :: gausses(:)           !< Info of qudrature points
     real(kind=kreal), intent(out)   :: stiff(:, :)          !< stiffness matrix
     integer(kind=kint), intent(in)  :: cdsys_ID
-    real(kind=kreal), intent(inout) :: coords(3, 3)         !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout) :: coords(3, 3)         !< variables to define material coordinate system
     real(kind=kreal), intent(in)    :: time                 !< current time
     real(kind=kreal), intent(in)    :: tincr                !< time increment
     real(kind=kreal), intent(in), optional :: u(3, nn)      !< nodal displacemwent
     real(kind=kreal), intent(in), optional :: aux(3, 3)     !< enhanced disp of bending mode
-    real(kind=kreal), intent(in), optional :: temperature(nn) !< temperature
+    real(kind=kreal), intent(in)    :: temperature(nn)      !< temperature
 
     !---------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ contains
     naturalcoord(:) = 0.0D0
     call getJacobian(etype, nn, naturalcoord, elem, det, jacobian, inverse)
     inverse(:, :)= inverse(:, :)*det
-    ! ---- We now calculate stiff matrix include imcompatible mode
+    ! ---- We now calculate stiff matrix include incompatible mode
     !    [   Kdd   Kda ]
     !    [   Kad   Kaa ]
     tmpstiff(:, :) = 0.0D0
@@ -98,20 +98,16 @@ contains
         end if
       end if
 
-      if( present(temperature) ) then
-        call getShapeFunc( etype, naturalcoord, spfunc )
-        temp = dot_product( temperature, spfunc )
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
-      else
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
-      end if
+      call getShapeFunc( etype, naturalcoord, spfunc )
+      temp = dot_product( temperature, spfunc )
+      call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, temp )
 
       if( flag == UPDATELAG ) then
         call GEOMAT_C3( gausses(LX)%stress, mat )
         D(:, :) = D(:, :)-mat
       endif
 
-      ! -- Derivative of shape function of imcompatible mode --
+      ! -- Derivative of shape function of incompatible mode --
       !     [ -2*a   0,   0   ]
       !     [   0,  -2*b, 0   ]
       !     [   0,   0,  -2*c ]
@@ -237,7 +233,7 @@ contains
     real(kind=kreal), intent(in)      :: du(3, nn)     !< \param [in] increment of nodal displacements
     real(kind=kreal), intent(in)      :: ddu(3, nn)    !< \param [in] correction of nodal displacements
     integer(kind=kint), intent(in)    :: cdsys_ID
-    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout)   :: coords(3, 3)  !< variables to define material coordinate system
     real(kind=kreal), intent(out)     :: qf(nn*3)      !< \param [out] Internal Force
     type(tGaussStatus), intent(inout) :: gausses(:)    !< \param [out] status of qudrature points
     integer, intent(in)               :: iter
@@ -245,11 +241,11 @@ contains
     real(kind=kreal), intent(in)      :: tincr         !< time increment
     real(kind=kreal), intent(inout)   :: aux(3, 3)     !< \param [in] incompatible dof
     real(kind=kreal), intent(out)     :: ddaux(3, 3)   !< \param [in] increment of incompatible dof
-    real(kind=kreal), intent(in), optional :: TT(nn)   !< current temperature
-    real(kind=kreal), intent(in), optional :: T0(nn)   !< reference temperature
-    real(kind=kreal), intent(in), optional :: TN(nn)   !< reference temperature
+    real(kind=kreal), intent(in)      :: TT(nn)        !< current temperature
+    real(kind=kreal), intent(in)      :: T0(nn)        !< reference temperature
+    real(kind=kreal), intent(in)      :: TN(nn)        !< reference temperature
 
-    ! LCOAL VARIAVLES
+    ! LOCAL VARIABLES
     integer(kind=kint) :: flag
     integer(kind=kint), parameter :: ndof = 3
     real(kind=kreal)   :: D(6,6), B(6,ndof*(nn+3)), B1(6,ndof*(nn+3)), spfunc(nn), ina(1)
@@ -280,7 +276,7 @@ contains
     naturalcoord(:) = 0.0D0
     call getJacobian(etype, nn, naturalcoord, elem, det, jacobian, inverse)
     inverse(:, :)= inverse(:, :)*det
-    ! ---- We now calculate stiff matrix include imcompatible mode
+    ! ---- We now calculate stiff matrix include incompatible mode
     !    [   Kdd   Kda ]
     !    [   Kad   Kaa ]
     stiff_ad(:, :) = 0.0D0
@@ -301,20 +297,16 @@ contains
         end if
       end if
 
-      if( present(tt) ) then
-        call getShapeFunc( etype, naturalcoord, spfunc )
-        ttc = dot_product( tt, spfunc )
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc )
-      else
-        call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys )
-      end if
+      call getShapeFunc( etype, naturalcoord, spfunc )
+      ttc = dot_product( tt, spfunc )
+      call MatlMatrix( gausses(LX), D3, D, time, tincr, coordsys, ttc )
 
       if( flag == UPDATELAG ) then
         call GEOMAT_C3( gausses(LX)%stress, mat )
         D(:, :) = D(:, :)-mat
       endif
 
-      ! -- Derivative of shape function of imcompatible mode --
+      ! -- Derivative of shape function of incompatible mode --
       !     [ -2*a   0,   0   ]
       !     [   0,  -2*b, 0   ]
       !     [   0,   0,  -2*c ]
@@ -455,11 +447,9 @@ contains
     end if
 
     matlaniso = .FALSE.
-    if( present(TT) .and. cdsys_ID > 0 ) then
-      ina = TT(1)
-      call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
-      if( .not. ierr ) matlaniso = .true.
-    end if
+    ina = TT(1)
+    call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
+    if( .not. ierr ) matlaniso = .true.
 
     ! --- Inverse of Jacobian at elemental center
     naturalcoord(:) = 0.0D0
@@ -493,15 +483,13 @@ contains
 
       ! Thermal Strain
       EPSTH = 0.0D0
-      if( present(tt) .AND. present(t0) ) then
-        call getShapeFunc(etype, naturalcoord, spfunc)
-        ttc = dot_product(TT, spfunc)
-        tt0 = dot_product(T0, spfunc)
-        ttn = dot_product(TN, spfunc)
-        call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
-      end if
+      call getShapeFunc(etype, naturalcoord, spfunc)
+      ttc = dot_product(TT, spfunc)
+      tt0 = dot_product(T0, spfunc)
+      ttn = dot_product(TN, spfunc)
+      call Cal_Thermal_expansion_C3( tt0, ttc, gausses(LX)%pMaterial, coordsys, matlaniso, EPSTH )
 
-      ! -- Derivative of shape function of imcompatible mode --
+      ! -- Derivative of shape function of incompatible mode --
       !     [ -2*a   0,   0   ]
       !     [   0,  -2*b, 0   ]
       !     [   0,   0,  -2*c ]
@@ -518,7 +506,7 @@ contains
       dstrain(4) = ( gdispderiv(1, 2)+gdispderiv(2, 1) )
       dstrain(5) = ( gdispderiv(2, 3)+gdispderiv(3, 2) )
       dstrain(6) = ( gdispderiv(3, 1)+gdispderiv(1, 3) )
-      dstrain(:) = dstrain(:)-EPSTH(:)   ! allright?
+      dstrain(:) = dstrain(:)-EPSTH(:)   ! alright?
 
       F(1:3,1:3) = 0.d0; F(1,1)=1.d0; F(2,2)=1.d0; F(3,3)=1.d0; !deformation gradient
       if( flag == INFINITESIMAL ) then
@@ -552,16 +540,12 @@ contains
         gderiv0(nn+1, :) = -2.0D0*naturalcoord(1)*inverse0(1, :)/det0
         gderiv0(nn+2, :) = -2.0D0*naturalcoord(2)*inverse0(2, :)/det0
         gderiv0(nn+3, :) = -2.0D0*naturalcoord(3)*inverse0(3, :)/det0
-        F(1:3,1:3) = F(1:3,1:3) + matmul( u(1:ndof, 1:nn+3)+du(1:ndof, 1:nn+3), gderiv0(1:nn+3, 1:ndof) )
+        F(1:3,1:3) = F(1:3,1:3) + matmul( totaldisp(1:ndof, 1:nn+3), gderiv0(1:nn+3, 1:ndof) )
 
       end if
 
       ! Update stress
-      if( present(tt) .AND. present(t0) ) then
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
-      else
-        call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr )
-      end if
+      call Update_Stress3D( flag, gausses(LX), rot, dstrain, F, coordsys, time, tincr, ttc, tt0, ttn )
 
       ! ========================================================
       ! calculate the internal force ( equivalent nodal force )
@@ -616,7 +600,7 @@ contains
 
         call getGlobalDeriv(etype, nn, naturalcoord, elem1, det, gderiv(1:nn,1:3))
 
-        ! -- Derivative of shape function of imcompatible mode --
+        ! -- Derivative of shape function of incompatible mode --
         !     [ -2*a   0,   0   ]
         !     [   0,  -2*b, 0   ]
         !     [   0,   0,  -2*c ]
@@ -667,7 +651,7 @@ contains
   end subroutine UPDATE_C3D8IC
 
 
-  !>  This subroutine calculatess thermal loading
+  !>  This subroutine calculates thermal loading
   !----------------------------------------------------------------------*
   subroutine TLOAD_C3D8IC &
       (etype, nn, xx, yy, zz, tt, t0, &
@@ -685,11 +669,11 @@ contains
     integer(kind=kint), intent(in)    :: etype                   !< element type, not used here
     integer(kind=kint), intent(in)    :: nn                      !< number of element nodes
     real(kind=kreal), intent(in)      :: xx(nn), yy(nn), zz(nn)  !< nodes coordinate of element
-    real(kind=kreal), intent(in)      :: tt(nn), t0(nn)          !< current and ref temprature
+    real(kind=kreal), intent(in)      :: tt(nn), t0(nn)          !< current and ref temperature
     type(tGaussStatus), intent(inout) :: gausses(:)              !< info about qudrature points
     real(kind=kreal), intent(out)     :: VECT(nn*ndof)           !< load vector
     integer(kind=kint), intent(in)    :: cdsys_ID
-    real(kind=kreal), intent(inout)   :: coords(3, 3)            !< variables to define matreial coordinate system
+    real(kind=kreal), intent(inout)   :: coords(3, 3)            !< variables to define material coordinate system
 
     !---------------------------------------------------------------------
 
@@ -709,7 +693,7 @@ contains
     !---------------------------------------------------------------------
 
     matlaniso = .FALSE.
-    if( cdsys_ID > 0 ) then   ! cannot define aniso exapansion when no local coord defined
+    if( cdsys_ID > 0 ) then   ! cannot define aniso expansion when no local coord defined
       ina = TT(1)
       call fetch_TableData( MC_ORTHOEXP, gausses(1)%pMaterial%dict, alpo(:), ierr, ina )
       if( .not. ierr ) matlaniso = .true.
@@ -723,7 +707,7 @@ contains
     naturalcoord(:) = 0.0D0
     call getJacobian(etype, nn, naturalcoord, ecoord, det, jacobian, inverse)
     inverse(:, :) = inverse(:, :)*det
-    ! ---- We now calculate stiff matrix include imcompatible mode
+    ! ---- We now calculate stiff matrix include incompatible mode
     !    [   Kdd   Kda ]
     !    [   Kad   Kaa ]
     stiff_da(:, :) = 0.0D0
@@ -750,7 +734,7 @@ contains
       TEMP0 = dot_product( H(1:nn), T0(1:nn) )
       call MatlMatrix( gausses(IC), D3, D, 1.d0, 1.0D0, coordsys, TEMPC )
 
-      ! -- Derivative of shape function of imcompatible mode --
+      ! -- Derivative of shape function of incompatible mode --
       !     [ -2*a   0,   0   ]
       !     [   0,  -2*b, 0   ]
       !     [   0,   0,  -2*c ]

@@ -54,21 +54,21 @@ contains
 
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
-          (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
+          (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
         call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 1 )
       endif
       return
     endif
 
     if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
+        (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
     endif
 
     if( IVISUAL==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. outflag) ) then
+        (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. outflag) ) then
 
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
@@ -81,13 +81,13 @@ contains
       call hecmw_result_free( fstrRESULT )
     endif
 
-    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. outflag) ) then
+    if( (mod(istep,fstrSOLID%output_ctrl(1)%frequency)==0 .or. outflag) ) then
       fnum = fstrSOLID%output_ctrl(1)%filenum
       call fstr_static_post( fnum, hecMESH, fstrSOLID, istep )
     endif
 
     if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. outflag) ) then
+        (mod(istep,fstrSOLID%output_ctrl(2)%frequency)==0 .or. outflag) ) then
       is = fstrSOLID%output_ctrl(2)%outinfo%grp_id
       fnum = fstrSOLID%output_ctrl(2)%filenum
       do i = hecMESH%node_group%grp_index(is-1)+1, hecMESH%node_group%grp_index(is)

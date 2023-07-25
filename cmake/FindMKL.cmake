@@ -6,7 +6,7 @@
 # Variables:
 #
 # MKL_FOUND         TRUE if FindMKL found MKL
-# MKL_INCLUDE_PATH  Inclue path of MKL
+# MKL_INCLUDE_PATH  Include path of MKL
 # MKL_LIBRARIES     MKL libraries
 #
 # env MKL_ROOT      Set MKL_ROOT environment variable,

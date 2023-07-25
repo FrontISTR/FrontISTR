@@ -205,8 +205,8 @@ contains
     write(ilog,*) "start time:", t_start
     write(*,   *) "end time:", t_end
     write(ilog,*) "end time:", t_end
-    write(*,   *) "freqency:", freq
-    write(ilog,*) "freqency:", freq
+    write(*,   *) "frequency:", freq
+    write(ilog,*) "frequency:", freq
     write(*,   *) "node id:", idnode
     write(ilog,*) "node id:", idnode
     write(*,   *) "num disp:", numdisp

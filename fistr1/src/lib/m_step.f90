@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>   This module manages step infomation
+!> \brief  This module manages step information
 module m_step
   use hecmw
   implicit none
@@ -43,7 +43,7 @@ module m_step
     integer, pointer :: Load(:)=>null()       !< active group of external load conditions of current step
     integer, pointer :: Contact(:)=>null()    !< active group of contact conditions of current step
     integer :: timepoint_id                   !< id of timepoint
-    integer :: AincParam_id                   !< id of auto increment paramter
+    integer :: AincParam_id                   !< id of auto increment parameter
   end type
 
   type tParamAutoInc
@@ -159,7 +159,7 @@ contains
 
   !> Initializer
   subroutine init_AincParam( aincparam )
-    type( tParamAutoInc ), intent(out) :: aincparam !< auto increment paramter
+    type( tParamAutoInc ), intent(out) :: aincparam !< auto increment parameter
 
     aincparam%name      = ''
     aincparam%ainc_Rs   = 0.25d0

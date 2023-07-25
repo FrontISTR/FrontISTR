@@ -49,7 +49,7 @@ class CHECData {
   // fmt : format of parameters.
   //       Each character specify the parameter's type
   //         'I': integer, 'F':float, 'S':string
-  // ... : piars of parameter name and value
+  // ... : pairs of parameter name and value
   virtual void WriteHeader(const char* name, const char* fmt = "", ...);
 
   // Parameter Line -----------------------------------------------
@@ -57,7 +57,7 @@ class CHECData {
 
   // Data Line ---------------------------------------------------
 
-  // fmt : formt of data like one of WriteHeader
+  // fmt : format of data like one of WriteHeader
   // ... : values to write the file.
   virtual void WriteData(const char* fmt, ...);
 
