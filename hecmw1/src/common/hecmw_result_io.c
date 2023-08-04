@@ -131,6 +131,14 @@ static int setup_MPC(int n_elem_type, int *elem_type_index, int *elem_type_item,
       is = elem_type_index[itype];
       ie = elem_type_index[itype + 1];
       for (icel = is; icel < ie; icel++) {
+        if (icel >= ResIO.nelem) {
+          /*
+           * Temporary fix for inconsistent n_elem and elem_type_index in selectiveESNS
+           */
+          /* fprintf(stderr, "Warning: result output: ignoring elements type=%d, %d..%d (n_elem=%d)\n", */
+          /*         ic_type, icel+1, ie, ResIO.nelem); */
+          break;
+        }
         ResIO.eid_wo_MPC[nelem_wo_MPC] = icel;
         elemID_wo_MPC[nelem_wo_MPC] = elemID[icel];
         nelem_wo_MPC++;
