@@ -9,6 +9,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include "hecmw_log.h"
 #include "hecmw_malloc.h"
 #include "hecmw_util.h"
 #include "hecmw_config.h"
@@ -137,10 +138,10 @@ static int setup_MPC(int n_elem_type, int *elem_type_index, int *elem_type_item,
       for (icel = is; icel < ie; icel++) {
         if (icel >= ResIO.nelem) {
           /*
-           * Temporary fix for inconsistent n_elem and elem_type_index in selectiveESNS
+           * Safeguard for inconsistent n_elem and elem_type_index
            */
-          /* fprintf(stderr, "Warning: result output: ignoring elements type=%d, %d..%d (n_elem=%d)\n", */
-          /*         ic_type, icel+1, ie, ResIO.nelem); */
+          HECMW_log(HECMW_LOG_WARN, "result output: ignoring elements type=%d, %d..%d (n_elem=%d)\n",
+                  ic_type, icel+1, ie, ResIO.nelem);
           break;
         }
         ResIO.eid_wo_MPC[nelem_wo_MPC] = icel;
