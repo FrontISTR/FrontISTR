@@ -104,7 +104,9 @@ static int setup_MPC(int n_elem_type, int *elem_type_index, int *elem_type_item,
 
   for (itype = 0; itype < n_elem_type; itype++) {
     ic_type = elem_type_item[itype];
-    if (HECMW_is_etype_link(ic_type) || HECMW_is_etype_patch(ic_type)) {
+    if (HECMW_is_etype_link(ic_type) ||
+        HECMW_is_etype_patch(ic_type) ||
+        HECMW_is_etype_smoothing(ic_type)) {
       ResIO.MPC_exist = 1;
       break;
     }
@@ -125,7 +127,9 @@ static int setup_MPC(int n_elem_type, int *elem_type_index, int *elem_type_item,
     nelem_wo_MPC = 0;
     for (itype = 0; itype < n_elem_type; itype++) {
       ic_type = elem_type_item[itype];
-      if (HECMW_is_etype_link(ic_type) || HECMW_is_etype_patch(ic_type)) {
+      if (HECMW_is_etype_link(ic_type) ||
+          HECMW_is_etype_patch(ic_type) ||
+          HECMW_is_etype_smoothing(ic_type)) {
         continue;
       }
       is = elem_type_index[itype];
