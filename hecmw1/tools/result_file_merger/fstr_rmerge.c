@@ -4,8 +4,8 @@
  *****************************************************************************/
 
 /*
- * FSTR result 出力ファイルを1つのファイルに統合する。
- * 計算に用いたコントロールファイル、メッシュデータが必要
+ * Merge FSTR result output files into a single file.
+ * Control file and mesh file used in calculations are required.
  */
 
 #include "fstr_rmerge_util.h"

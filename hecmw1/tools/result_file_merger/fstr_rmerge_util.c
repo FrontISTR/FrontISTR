@@ -4,7 +4,7 @@
  *****************************************************************************/
 
 /**
- * @brief 並列計算された結果を読込み処理するためのユーティリティ
+ * @brief Utility for reading and processing results computed in parallel
  */
 
 #include "fstr_rmerge_util.h"
@@ -23,7 +23,7 @@ static void out_log(const char* fmt, ...) {
 }
 
 /**
- * @brief 全分散メッシュの読込み
+ * @brief Read all distributed meshes
  */
 
 static int get_dist_fname(char* name_ID, char* fheader, int* fg_single,
@@ -73,7 +73,7 @@ static int get_area_n(char* fheader) {
 }
 
 /**
- * @brief 全分散メッシュの読込み
+ * @brief Read all distributed meshes
  */
 
 struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
@@ -122,7 +122,7 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
 }
 
 /**
- * @brief メッシュの削除
+ * @brief Delete mesh
  */
 
 void fstr_free_mesh(struct hecmwST_local_mesh** mesh, int area_n) {
@@ -138,7 +138,7 @@ void fstr_free_mesh(struct hecmwST_local_mesh** mesh, int area_n) {
 }
 
 /**
- * @brief ステップ数を調べる(ファイルの存在を調べる)
+ * @brief Check the number of steps (check for the existence of files)
  */
 
 int fstr_get_step_n(char* name_ID) {
@@ -177,7 +177,7 @@ int fstr_get_step_n(char* name_ID) {
 }
 
 /**
- * @brief ステップの全領域データの読み込み
+ * @brief Read all area data of step
  */
 
 fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
@@ -342,7 +342,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
 }
 
 /**
- * @brief ステップの全領域データの結合
+ * @brief Combine data in all areas of the step
  */
 
 struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
@@ -423,7 +423,7 @@ struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
 }
 
 /**
- * @brief fstr_res_info の削除
+ * @biref Delete fstr_res_info
  */
 
 void fstr_free_result(fstr_res_info** res, int area_n) {
@@ -442,7 +442,7 @@ void fstr_free_result(fstr_res_info** res, int area_n) {
 }
 
 /**
- * @brief グローバルとローカル、所属領域のテーブル fstr_glt の作成
+ * @brief Create table for global ID, local ID and belonging area records fstr_glt
  */
 
 static int cmp_global_glt(const fstr_gl_rec* g1, const fstr_gl_rec* g2) {
@@ -545,7 +545,7 @@ fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n) {
 }
 
 /**
- * @brief fstr_glt の削除
+ * @brief Delete fstr_glt
  */
 
 void fstr_free_glt(fstr_glt* glt) {
@@ -558,7 +558,7 @@ void fstr_free_glt(fstr_glt* glt) {
 }
 
 /**
- * @brief 単一領域メッシュの作成
+ * @brief Create a single region mesh
  */
 
 struct hecmwST_local_mesh* fstr_create_glmesh(fstr_glt* glt) {
@@ -583,7 +583,7 @@ struct hecmwST_local_mesh* fstr_create_glmesh(fstr_glt* glt) {
 }
 
 /**
- * @brief 単一領域メッシュの削除
+ * @brief Delete a single region mesh
  */
 
 void fstr_free_glmesh(struct hecmwST_local_mesh* mesh) {
