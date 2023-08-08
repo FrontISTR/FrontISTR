@@ -19,16 +19,26 @@
 #include "hecmw_io_get_mesh.h"
 #include "hecmw_etype.h"
 
-extern FILE* log_fp;
+static FILE* Log_FP;
 extern int nrank;
 extern int strid;
 extern int endid;
 extern int intid;
 
-static void out_log(const char* fmt, ...) {
+/**
+ * @brief Set file pointer for log output
+ */
+void fstr_set_log_fp(FILE *log_fp) {
+  Log_FP = log_fp;
+}
+
+/**
+ * @brief Log output
+ */
+void fstr_out_log(const char* fmt, ...) {
   va_list arg;
   va_start(arg, fmt);
-  vfprintf(log_fp, fmt, arg);
+  vfprintf(Log_FP, fmt, arg);
   va_end(arg);
 }
 
@@ -51,7 +61,7 @@ static int get_dist_fname(char* name_ID, char* fheader, int* fg_single,
       *fg_single = 1;
     }
     *refine = files->meshfiles[0].refine;
-    out_log("refine number is %d\n", *refine);
+    fstr_out_log("refine number is %d\n", *refine);
   } else {
     HECMW_ctrl_free_meshfiles(files);
     return -1;
@@ -68,14 +78,14 @@ static int get_area_n(char* fheader) {
 
   while (1) {
     sprintf(buff, "%s.%d", fheader, area);
-    out_log("try open : %s  ... ", buff);
+    fstr_out_log("try open : %s  ... ", buff);
     fp = fopen(buff, "r");
     if (!fp) {
-      out_log("fail\n");
-      out_log("area number is %d\n", area);
+      fstr_out_log("fail\n");
+      fstr_out_log("area number is %d\n", area);
       return area;
     } else {
-      out_log("success\n");
+      fstr_out_log("success\n");
       fclose(fp);
     }
     area++;
@@ -99,14 +109,14 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
   if (get_dist_fname(name_ID, fheader, &fg_single, refine, 0)) return NULL;
 
   if (fg_single) {
-    out_log("mesh file type is NOT HECMW_DIST.\n");
+    fstr_out_log("mesh file type is NOT HECMW_DIST.\n");
     area_n = 1;
-    out_log("area number is %d\n", area_n);
+    fstr_out_log("area number is %d\n", area_n);
     mesh    = HECMW_malloc(area_n * sizeof(struct hecmwST_local_mesh*));
     mesh[0] = HECMW_get_mesh(name_ID);
     if (!mesh[0]) return NULL;
   } else {
-    out_log("mesh file type is HECMW_DIST.\n");
+    fstr_out_log("mesh file type is HECMW_DIST.\n");
     if (nrank == 0) {
       area_n = get_area_n(fheader);
     } else {
@@ -121,7 +131,7 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
         get_dist_fname(name_ID, fheader, &fg_single, refine, i);
         sprintf(fname, "%s.%d", fheader, i);
       }
-      out_log("loading dist mesh from %s\n", fname);
+      fstr_out_log("loading dist mesh from %s\n", fname);
       mesh[i] = HECMW_get_dist_mesh(fname);
       if (!mesh[i]) return NULL;
     }
@@ -172,14 +182,14 @@ int fstr_get_step_n(char* name_ID) {
   step = 1;
   while (1) {
     sprintf(fname, "%s.0.%d", fheader, step);
-    out_log("try open : %s  ... ", fname);
+    fstr_out_log("try open : %s  ... ", fname);
     fp = fopen(fname, "r");
     if (!fp) {
-      out_log("fail\n");
-      out_log("step number is %d\n", step - 1);
+      fstr_out_log("fail\n");
+      fstr_out_log("step number is %d\n", step - 1);
       return step - 1;
     } else {
-      out_log("success\n");
+      fstr_out_log("success\n");
       fclose(fp);
     }
     step++;
@@ -267,7 +277,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
         if (node_gid[j] < 0 && node_gid[j] > node_gid[j - 1]) flag++;
       }
       count--;
-      out_log("\narea:%d -- refined_nn_internal:%d", i, count);
+      fstr_out_log("\narea:%d -- refined_nn_internal:%d", i, count);
       refine_nnode += count;
 
       count = 0;
@@ -303,7 +313,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
       count = 0;
       for (j = 0; j < nelem; j++)
         if (elem_gid[j] > 0) count++;
-      out_log("\narea:%d -- ne_original from result:%d", i, count);
+      fstr_out_log("\narea:%d -- ne_original from result:%d", i, count);
       res[i]->nelem_gid = count;
       res[i]->result->elem_val_item =
           HECMW_malloc(num * count * sizeof(double));
@@ -346,7 +356,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
     }
   }
 
-  if (refine) out_log("\ntotal refined_nn_internal:%d\n", refine_nnode);
+  if (refine) fstr_out_log("\ntotal refined_nn_internal:%d\n", refine_nnode);
 
   return res;
 }
@@ -472,10 +482,10 @@ fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n) {
 
   all_n = 0;
   for (i = 0; i < area_n; i++) {
-    out_log("area:%d -- nn_internal:%d\n", i, mesh[i]->nn_internal);
+    fstr_out_log("area:%d -- nn_internal:%d\n", i, mesh[i]->nn_internal);
     all_n += mesh[i]->nn_internal;
   }
-  out_log("total nn_internal:%d\n", all_n);
+  fstr_out_log("total nn_internal:%d\n", all_n);
 
   nrec = HECMW_malloc(sizeof(fstr_gl_rec) * all_n);
   if (!nrec) return NULL;
@@ -511,9 +521,9 @@ fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n) {
 
     HECMW_free(area_etype_list);
     all_e += area_e;
-    out_log("area:%d -- ne_internal:%d\n", i, area_e);
+    fstr_out_log("area:%d -- ne_internal:%d\n", i, area_e);
   }
-  out_log("total ne_internal:%d\n", all_e);
+  fstr_out_log("total ne_internal:%d\n", all_e);
 
   erec = HECMW_malloc(sizeof(fstr_gl_rec) * all_e);
   if (!erec) return NULL;

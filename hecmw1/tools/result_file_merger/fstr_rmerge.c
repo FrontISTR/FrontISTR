@@ -18,7 +18,6 @@
 
 #include "fstr_rmerge_util.h"
 
-FILE* log_fp;
 int nrank = 0;
 int strid = 0;
 int endid = -1;
@@ -146,17 +145,17 @@ int main(int argc, char** argv) {
   char buff[HECMW_HEADER_LEN + 1];
   char *ptoken, *ntoken;
 
-  log_fp = stderr;
+  fstr_set_log_fp(stderr);
 
   if (HECMW_init(&argc, &argv)) error_stop();
 
   set_fname(argc, argv, out_fheader, &binary);
-  fprintf(log_fp, "out file name header is %s\n", out_fheader);
+  fstr_out_log("out file name header is %s\n", out_fheader);
 
   mesh = fstr_get_all_local_mesh("fstrMSH", &area_n, &refine);
   if (!mesh) error_stop();
 
-  fprintf(log_fp, "table creating .. \n");
+  fstr_out_log("table creating .. \n");
   glt = fstr_create_glt(mesh, area_n);
   if (!glt) {
     fprintf(stderr, "ERROR : Cannot create global_local table.\n");
@@ -179,15 +178,15 @@ int main(int argc, char** argv) {
   for (step = strid; step <= step_n; step++) {
     if ((step % intid) != 0 && step != step_n) continue;
 
-    fprintf(log_fp, "step:%d .. reading .. ", step);
+    fstr_out_log("step:%d .. reading .. ", step);
     res = fstr_get_all_result("fstrRES", step, area_n, refine);
     if (!res) {
       fstr_free_result(res, area_n);
       continue;
     }
-    fprintf(log_fp, "end\n");
+    fstr_out_log("end\n");
 
-    fprintf(log_fp, "step:%d .. combining .. ", step);
+    fstr_out_log("step:%d .. combining .. ", step);
     data = fstr_all_result(glt, res, refine);
     if (!data) {
       fprintf(stderr, "ERROR : Cannot combine result structure.\n");
@@ -196,7 +195,7 @@ int main(int argc, char** argv) {
       fstr_free_result(res, area_n);
       exit(-1);
     }
-    fprintf(log_fp, "end\n");
+    fstr_out_log("end\n");
 
     if (nrank == 0) {
       if ((fileheader = HECMW_ctrl_get_result_fileheader("fstrRES", step,
@@ -218,7 +217,7 @@ int main(int argc, char** argv) {
       ntoken = strtok(NULL, "/");
     }
     sprintf(out_fname, "%s%s.%d", dirname, out_fheader, step);
-    fprintf(log_fp, "output to %s .. ", out_fname);
+    fstr_out_log("output to %s .. ", out_fname);
     HECMW_result_get_header(header);
     HECMW_result_get_comment(comment);
     HECMW_result_init(glmesh, step, header, comment);
@@ -237,7 +236,7 @@ int main(int argc, char** argv) {
       HECMW_result_free(data);
       exit(-1);
     }
-    fprintf(log_fp, "end\n");
+    fstr_out_log("end\n");
 
     fstr_free_result(res, area_n);
     HECMW_result_free(data);

@@ -7,6 +7,7 @@
  * @brief Utility for reading and processing results computed in parallel
  */
 
+#include <stdio.h>
 #include "hecmw_struct.h"
 #include "hecmw_result.h"
 
@@ -42,6 +43,16 @@ typedef struct {
   int node_n;
   int elem_n;
 } fstr_glt;
+
+/**
+ * @brief Set file pointer for log output
+ */
+void fstr_set_log_fp(FILE *log_fp);
+
+/**
+ * @brief Log output
+ */
+void fstr_out_log(const char* fmt, ...);
 
 /**
  * @brief Read all distributed meshes
