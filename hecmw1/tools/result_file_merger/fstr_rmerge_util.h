@@ -57,8 +57,8 @@ void fstr_out_log(const char* fmt, ...);
 /**
  * @brief Read all distributed meshes
  */
-struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID, int* area_n,
-                                                    int* refine);
+struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID, int nrank,
+                                                    int* area_n, int* refine);
 
 /**
  * @brief Delete mesh
@@ -68,13 +68,13 @@ void fstr_free_mesh(struct hecmwST_local_mesh** mesh, int area_n);
 /**
  * @brief Check the number of steps (check for the existence of files)
  */
-int fstr_get_step_n(char* name_ID);
+int fstr_get_step_n(char* name_ID, int nrank);
 
 /**
  * @brief Read all area data of step
  */
 fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
-                                    int refine);
+                                    int refine, int nrank);
 
 /**
  * @brief Combine data in all areas of the step

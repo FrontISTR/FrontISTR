@@ -20,10 +20,6 @@
 #include "hecmw_etype.h"
 
 static FILE* Log_FP;
-extern int nrank;
-extern int strid;
-extern int endid;
-extern int intid;
 
 /**
  * @brief Set file pointer for log output
@@ -47,7 +43,7 @@ void fstr_out_log(const char* fmt, ...) {
  */
 
 static int get_dist_fname(char* name_ID, char* fheader, int* fg_single,
-                          int* refine, int irank) {
+                          int* refine, int nrank, int irank) {
   struct hecmw_ctrl_meshfiles* files;
 
   files = HECMW_ctrl_get_meshfiles_header_sub(name_ID, nrank, irank);
@@ -97,6 +93,7 @@ static int get_area_n(char* fheader) {
  */
 
 struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
+                                                    int nrank,
                                                     int* area_number,
                                                     int* refine) {
   int i;
@@ -106,7 +103,7 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
   char fname[HECMW_FILENAME_LEN + 1];
   struct hecmwST_local_mesh** mesh;
 
-  if (get_dist_fname(name_ID, fheader, &fg_single, refine, 0)) return NULL;
+  if (get_dist_fname(name_ID, fheader, &fg_single, refine, nrank, 0)) return NULL;
 
   if (fg_single) {
     fstr_out_log("mesh file type is NOT HECMW_DIST.\n");
@@ -128,7 +125,7 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
       if (nrank == 0) {
         sprintf(fname, "%s.%d", fheader, i);
       } else {
-        get_dist_fname(name_ID, fheader, &fg_single, refine, i);
+        get_dist_fname(name_ID, fheader, &fg_single, refine, nrank, i);
         sprintf(fname, "%s.%d", fheader, i);
       }
       fstr_out_log("loading dist mesh from %s\n", fname);
@@ -161,13 +158,11 @@ void fstr_free_mesh(struct hecmwST_local_mesh** mesh, int area_n) {
  * @brief Check the number of steps (check for the existence of files)
  */
 
-int fstr_get_step_n(char* name_ID) {
+int fstr_get_step_n(char* name_ID, int nrank) {
   FILE* fp;
   int step, fg_text;
   char* fheader;
   char fname[HECMW_FILENAME_LEN + 1];
-
-  if (endid > -1) return endid;
 
   if (nrank == 0) {
     if ((fheader = HECMW_ctrl_get_result_fileheader(name_ID, 1, &fg_text)) ==
@@ -201,7 +196,7 @@ int fstr_get_step_n(char* name_ID) {
  */
 
 fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
-                                    int refine) {
+                                    int refine, int nrank) {
   char* fheader;
   char fname[HECMW_FILENAME_LEN + 1];
   fstr_res_info** res;

@@ -18,10 +18,11 @@
 
 #include "fstr_rmerge_util.h"
 
-int nrank = 0;
-int strid = 0;
-int endid = -1;
-int intid = 1;
+#define BINARY_DEFAULT 0
+#define NRANK_DEFAULT 0
+#define STRID_DEFAULT 0
+#define ENDID_DEFAULT -1
+#define INTID_DEFAULT 1
 
 void error_stop(void) {
   char* msg;
@@ -35,18 +36,19 @@ void help(void) {
   printf("usage)  rmerge [options] out_fileheader\n");
   printf("[option]\n");
   printf(" -h             : help\n");
-  printf(" -o [type]      : output file type (binary/text)\n");
-  printf(" -n [rank]      : number of ranks (default:%d)\n", nrank);
-  printf(" -s [step]      : start step number (default:%d)\n", strid);
-  printf(" -e [step]      : end step number (default:%d)\n", endid);
-  printf(" -i [step]      : interval step number (default:%d)\n", intid);
+  printf(" -o [type]      : output file type (binary/text, default:%s)\n",
+         (BINARY_DEFAULT == 1) ? "binary" : "text");
+  printf(" -n [rank]      : number of ranks (default:%d)\n", NRANK_DEFAULT);
+  printf(" -s [step]      : start step number (default:%d)\n", STRID_DEFAULT);
+  printf(" -e [step]      : end step number (default:%d)\n", ENDID_DEFAULT);
+  printf(" -i [step]      : interval step number (default:%d)\n", INTID_DEFAULT);
 }
 
-void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
+void set_fname(int argc, char** argv, char* out_fheader, int* binary,
+               int *nrank, int *strid, int *endid, int *intid) {
   int i;
   char* fheader = NULL;
 
-  *binary = 0;
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "-h")) {
       help();
@@ -71,7 +73,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
         exit(-1);
       }
       i++;
-      if (sscanf(argv[i], "%d", &nrank) != 1) {
+      if (sscanf(argv[i], "%d", nrank) != 1) {
         fprintf(stderr,
                 "Error : parameter %s cannot be converted to number of ranks\n",
                 argv[i]);
@@ -83,7 +85,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
         exit(-1);
       }
       i++;
-      if (sscanf(argv[i], "%d", &strid) != 1) {
+      if (sscanf(argv[i], "%d", strid) != 1) {
         fprintf(
             stderr,
             "Error : parameter %s cannot be converted to start step number\n",
@@ -96,7 +98,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
         exit(-1);
       }
       i++;
-      if (sscanf(argv[i], "%d", &endid) != 1) {
+      if (sscanf(argv[i], "%d", endid) != 1) {
         fprintf(stderr,
                 "Error : parameter %s cannot be converted to end step number\n",
                 argv[i]);
@@ -108,7 +110,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
         exit(-1);
       }
       i++;
-      if (sscanf(argv[i], "%d", &intid) != 1) {
+      if (sscanf(argv[i], "%d", intid) != 1) {
         fprintf(stderr,
                 "Error : parameter %s cannot be converted to interval step "
                 "number\n",
@@ -129,7 +131,12 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary) {
 }
 
 int main(int argc, char** argv) {
-  int area_n, step_n, binary, refine, fg_text;
+  int binary = BINARY_DEFAULT;
+  int nrank = NRANK_DEFAULT;
+  int strid = STRID_DEFAULT;
+  int endid = ENDID_DEFAULT;
+  int intid = INTID_DEFAULT;
+  int area_n, step_n, refine, fg_text;
   int step, rcode;
   char out_fheader[HECMW_HEADER_LEN + 1];
   char out_fname[HECMW_FILENAME_LEN + 1];
@@ -149,10 +156,10 @@ int main(int argc, char** argv) {
 
   if (HECMW_init(&argc, &argv)) error_stop();
 
-  set_fname(argc, argv, out_fheader, &binary);
+  set_fname(argc, argv, out_fheader, &binary, &nrank, &strid, &endid, &intid);
   fstr_out_log("out file name header is %s\n", out_fheader);
 
-  mesh = fstr_get_all_local_mesh("fstrMSH", &area_n, &refine);
+  mesh = fstr_get_all_local_mesh("fstrMSH", nrank, &area_n, &refine);
   if (!mesh) error_stop();
 
   fstr_out_log("table creating .. \n");
@@ -173,13 +180,13 @@ int main(int argc, char** argv) {
 
   fstr_free_mesh(mesh, area_n);
 
-  step_n = fstr_get_step_n("fstrRES");
+  step_n = (endid > -1) ? endid : fstr_get_step_n("fstrRES", nrank);
 
   for (step = strid; step <= step_n; step++) {
     if ((step % intid) != 0 && step != step_n) continue;
 
     fstr_out_log("step:%d .. reading .. ", step);
-    res = fstr_get_all_result("fstrRES", step, area_n, refine);
+    res = fstr_get_all_result("fstrRES", step, area_n, refine, nrank);
     if (!res) {
       fstr_free_result(res, area_n);
       continue;
