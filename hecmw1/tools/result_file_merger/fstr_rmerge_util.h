@@ -7,23 +7,8 @@
  * @brief Utility for reading and processing results computed in parallel
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include "hecmw_util.h"
-#include "hecmw_io_mesh.h"
-#include "hecmw_io_struct.h"
 #include "hecmw_struct.h"
-#include "hecmw_config.h"
-#include "hecmw_dist.h"
-#include "hecmw_dist_free.h"
-#include "hecmw_common.h"
-
-#include "hecmw_control.h"
 #include "hecmw_result.h"
-#include "hecmw_io_dist.h"
-#include "hecmw_io_get_mesh.h"
 
 /**
  * @struct fstr_res_info

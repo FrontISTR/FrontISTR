@@ -8,9 +8,15 @@
  * Control file and mesh file used in calculations are required.
  */
 
-#include "fstr_rmerge_util.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "hecmw_util.h"
 #include "hecmw_result_io_bin.h"
 #include "hecmw_result_io_txt.h"
+
+#include "fstr_rmerge_util.h"
 
 FILE* log_fp;
 int nrank = 0;

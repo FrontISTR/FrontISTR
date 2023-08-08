@@ -9,6 +9,16 @@
 
 #include "fstr_rmerge_util.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "hecmw_util.h"
+#include "hecmw_dist_free.h"
+#include "hecmw_io_dist.h"
+#include "hecmw_io_get_mesh.h"
+#include "hecmw_etype.h"
+
 extern FILE* log_fp;
 extern int nrank;
 extern int strid;
