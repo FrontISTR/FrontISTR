@@ -3031,6 +3031,202 @@ error:
 
 /*------------------------------------------------------------------------------------------------*/
 
+#define LINEBUF_SIZE 1023
+
+static int read_part_file(
+    const char *part_file_name,
+    int n,
+    int n_domain,
+    int *wnum) {
+  FILE *fpart;
+  char linebuf[LINEBUF_SIZE + 1];
+  int rtc, n_in, n_domain_in;
+  int i, part;
+  int *count_dom;
+
+  fpart = fopen(part_file_name, "r");
+  if (fpart == NULL) {
+    HECMW_set_error(HECMW_PART_E_NO_SUCH_FILE, "%s", part_file_name);
+    goto error;
+  }
+
+  /* read n and n_domain */
+  if (fgets(linebuf, LINEBUF_SIZE, fpart) == NULL) {
+    HECMW_set_error(HECMW_PART_E_PART_EOF, "read_part_file");
+    goto error;
+  }
+  rtc = sscanf(linebuf, "%d %d", &n_in, &n_domain_in);
+  if (rtc != 2) {
+    HECMW_set_error(HECMW_PART_E_PART_INVALID_FORMAT, "");
+    goto error;
+  }
+
+  if (n_in != n) {
+    HECMW_set_error(HECMW_PART_E_PART_N, "");
+    goto error;
+  }
+  if (n_domain_in != n_domain) {
+    HECMW_set_error(HECMW_PART_E_PART_NDOMAIN, "");
+    goto error;
+  }
+
+  count_dom = (int *) HECMW_calloc(n_domain, sizeof(int));
+  if (count_dom == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
+
+  /* read part array and count members in each domain */
+  for (i = 0; i < n; i++) {
+    if (fgets(linebuf, LINEBUF_SIZE, fpart) == NULL) {
+      HECMW_set_error(HECMW_PART_E_PART_EOF, "");
+      goto error;
+    }
+    rtc = sscanf(linebuf, "%d", &part);
+    if (rtc != 1) {
+      HECMW_set_error(HECMW_PART_E_PART_INVALID_FORMAT, "");
+      goto error;
+    }
+
+    if (part < 0 || n_domain <= part) {
+      HECMW_set_error(HECMW_PART_E_PART_INVALID_PART, "%d", part);
+      goto error;
+    }
+
+    count_dom[part]++;
+
+    wnum[2*i+1] = part;
+  }
+
+  /* check for empty domain */
+  for (i = 0; i < n_domain; i++) {
+    if (count_dom[i] == 0) {
+      HECMW_set_error(HECMW_PART_E_PART_EMPTY_DOMAIN, "%d", i);
+      goto error;
+    }
+  }
+
+  fclose(fpart);
+
+  return RTC_NORMAL;
+
+error:
+  return RTC_ERROR;
+}
+
+static int write_part_file(
+    const char *part_file_name,
+    int n,
+    int n_domain,
+    const int *wnum) {
+  FILE *fpart;
+  int i;
+
+  fpart = fopen(part_file_name, "w");
+  if (fpart == NULL) {
+    HECMW_set_error(HECMW_PART_E_NO_SUCH_FILE, "%s", part_file_name);
+    goto error;
+  }
+
+  fprintf(fpart, "%d %d\n", n, n_domain);
+
+  for (i = 0; i < n; i++) {
+    fprintf(fpart, "%d\n", wnum[2*i+1]);
+  }
+
+  fclose(fpart);
+
+  return RTC_NORMAL;
+
+error:
+  return RTC_ERROR;
+}
+
+/*------------------------------------------------------------------------------------------------*/
+
+static int user_partition(
+    int n,
+    int n_domain,
+    int *wnum,
+    const char *part_file_name) {
+  int rtc;
+
+  rtc = read_part_file(part_file_name, n, n_domain, wnum);
+  if (rtc != RTC_NORMAL) goto error;
+
+  return RTC_NORMAL;
+
+error:
+  return RTC_ERROR;
+}
+
+static int user_partition_nb(
+    struct hecmwST_local_mesh *global_mesh,
+    const struct hecmw_part_cont_data *cont_data) {
+  return user_partition(global_mesh->n_node, global_mesh->n_subdomain,
+                        global_mesh->node_ID, cont_data->part_file_name);
+}
+
+static int user_partition_eb(
+    struct hecmwST_local_mesh *global_mesh,
+    const struct hecmw_part_cont_data *cont_data) {
+  return user_partition(global_mesh->n_elem, global_mesh->n_subdomain,
+                        global_mesh->elem_ID, cont_data->part_file_name);
+}
+
+/*------------------------------------------------------------------------------------------------*/
+
+static int print_part(
+    struct hecmwST_local_mesh *global_mesh,
+    const char *part_file_name) {
+  int rtc;
+
+  switch (global_mesh->hecmw_flag_parttype) {
+  case HECMW_FLAG_PARTTYPE_NODEBASED:
+    rtc = write_part_file(part_file_name, global_mesh->n_node,
+			  global_mesh->n_subdomain, global_mesh->node_ID);
+    if (rtc != RTC_NORMAL) goto error;
+
+    break;
+
+  case HECMW_FLAG_PARTTYPE_ELEMBASED:
+    rtc = write_part_file(part_file_name, global_mesh->n_elem,
+			  global_mesh->n_subdomain, global_mesh->elem_ID);
+    if (rtc != RTC_NORMAL) goto error;
+
+    break;
+
+  default:
+    HECMW_set_error(HECMW_PART_E_INVALID_PTYPE, "");
+    goto error;
+  }
+
+  return RTC_NORMAL;
+
+error:
+  return RTC_ERROR;
+}
+
+/*------------------------------------------------------------------------------------------------*/
+
+static int count_edgecut(
+    const struct hecmw_part_edge_data *edge_data,
+    const int *wnum) {
+  int i;
+  int n_edgecut = 0;
+
+  for (i = 0; i < edge_data->n_edge; i++) {
+    if (wnum[2 * (edge_data->edge_node_item[2 * i] - 1) + 1] !=
+        wnum[2 * (edge_data->edge_node_item[2 * i + 1] - 1) + 1]) {
+      n_edgecut++;
+    }
+  }
+
+  return n_edgecut;
+}
+
+/*------------------------------------------------------------------------------------------------*/
+
 static int set_node_belong_domain_nb(
     struct hecmwST_local_mesh *global_mesh,
     const struct hecmw_part_cont_data *cont_data) {
@@ -3062,14 +3258,7 @@ static int set_node_belong_domain_nb(
                           global_mesh->node_ID, cont_data);
       if (rtc != RTC_NORMAL) goto error;
 
-      for (n_edgecut = 0, i = 0; i < edge_data->n_edge; i++) {
-        if (global_mesh
-                ->node_ID[2 * (edge_data->edge_node_item[2 * i] - 1) + 1] !=
-            global_mesh
-                ->node_ID[2 * (edge_data->edge_node_item[2 * i + 1] - 1) + 1]) {
-          n_edgecut++;
-        }
-      }
+      n_edgecut = count_edgecut(edge_data, global_mesh->node_ID);
 
       break;
 
@@ -3077,6 +3266,14 @@ static int set_node_belong_domain_nb(
     case HECMW_PART_METHOD_PMETIS: /* pMETIS */
       n_edgecut = metis_partition_nb(global_mesh, cont_data, edge_data);
       if (n_edgecut < 0) goto error;
+
+      break;
+
+    case HECMW_PART_METHOD_USER: /* USER */
+      rtc = user_partition_nb(global_mesh, cont_data);
+      if (rtc != RTC_NORMAL) goto error;
+
+      n_edgecut = count_edgecut(edge_data, global_mesh->node_ID);
 
       break;
 
@@ -3294,14 +3491,7 @@ static int set_elem_belong_domain_eb(
       rtc = rcb_partition_eb(global_mesh, cont_data);
       if (rtc != RTC_NORMAL) goto error;
 
-      for (n_edgecut = 0, i = 0; i < elem_data->n_edge; i++) {
-        if (global_mesh
-                ->elem_ID[2 * (elem_data->edge_node_item[2 * i] - 1) + 1] !=
-            global_mesh
-                ->elem_ID[2 * (elem_data->edge_node_item[2 * i + 1] - 1) + 1]) {
-          n_edgecut++;
-        }
-      }
+      n_edgecut = count_edgecut(elem_data, global_mesh->elem_ID);
 
       break;
 
@@ -3310,6 +3500,14 @@ static int set_elem_belong_domain_eb(
       n_edgecut = metis_partition_eb(global_mesh, cont_data, elem_graph_index,
                                      elem_graph_item);
       if (n_edgecut < 0) goto error;
+
+      break;
+
+    case HECMW_PART_METHOD_USER: /* USER */
+      rtc = user_partition_eb(global_mesh, cont_data);
+      if (rtc != RTC_NORMAL) goto error;
+
+      n_edgecut = count_edgecut(elem_data, global_mesh->elem_ID);
 
       break;
 
@@ -9003,6 +9201,12 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
 
   rtc = wnumbering(global_mesh, cont_data);
   if (rtc != RTC_NORMAL) goto error;
+
+  if (cont_data->is_print_part == 1) {
+    if (global_mesh->my_rank == 0) {
+      print_part(global_mesh, cont_data->part_file_name);
+    }
+  }
 
   /*K. Inagaki */
   rtc = spdup_makelist_main(global_mesh);
