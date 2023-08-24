@@ -146,6 +146,10 @@
 			<message>CONTACT: Node group not found</message>
 			<description>接触ペアのスレーブ節点グループが定義されていない</description>
 		</define>
+		<define type="warning" name="W1030">
+			<message>GROUP: ALL is reserved word, ignored</message>
+			<description>ALLは予約済みのグループ名であるため、無視された</description>
+		</define>
 		<define type="error" name="E5001">
 			<message>Failed to open distributed mesh file</message>
 			<description>分散メッシュファイルのオープンに失敗した</description>
