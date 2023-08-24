@@ -31,7 +31,7 @@
 			<description>name_IDのTYPEが不正である</description>
 		</define>
 		<define type="warning" name="W1001">
-			<message>Checking element: Element has already defined, updated</message>
+			<message>Checking element: Element already defined, updated</message>
 			<description>要素が既に定義されていたため上書きされた</description>
 		</define>
 		<define type="warning" name="W1002">
@@ -43,7 +43,7 @@
 			<description>要素グループに既に含まれる要素を再度同じ要素グループに追加しようとした</description>
 		</define>
 		<define type="warning" name="W1004">
-			<message>Checking node: Node has already defined, updated</message>
+			<message>Checking node: Node already defined, updated</message>
 			<description>節点が既に定義されていたため上書きされた</description>
 		</define>
 		<define type="warning" name="W1005">

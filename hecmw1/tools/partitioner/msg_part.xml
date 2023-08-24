@@ -99,8 +99,8 @@
 			<description>UCDファイル名は数字，アルファベット，'.'，'-'，'_'，'/'で始まらなければならない</description>
 		</define>
 		<define type="error" name="E0154">
-			<message>'CONTACT' must be 'AGGREGATE' or 'DEFAULT'</message>
-			<description>不正なパラメータが設定された</description>
+			<message>'CONTACT' must be 'AGGREGATE', 'DISTRIBUTE', 'SIMPLE' or 'DEFAULT'</message>
+			<description>CONTACTに指定する値は'AGGREGATE'か'DISTRIBUTE'か'SIMPLE'か'DEFAULT'でなければならない</description>
 		</define>
 		<define type="error" name="E0161">
 			<message>Partitioning directions must be 'x', 'y' or 'z'</message>
@@ -111,7 +111,7 @@
 			<description>分割軸方向の指定が足りない</description>
 		</define>
 		<define type="warn" name="W0163">
-			<message>Too many partitioning directions are specified</message>
+			<message>Too many partitioning directions specified</message>
 			<description>必要数以上の分割軸方向が指定された</description>
 		</define>
 		<define type="error" name="E0164">
@@ -155,7 +155,7 @@
 			<description>部分領域番号が0より小さい</description>
 		</define>
 		<define type="error" name="E0302">
-			<message>Sub-domain number must be less than number of sub-domains</message>
+			<message>Sub-domain number must be less than the number of sub-domains</message>
 			<description>部分領域番号が部分領域数を超えている</description>
 		</define>
 		<define type="error" name="E0311">
@@ -167,7 +167,7 @@
 			<description>内部節点数が0より小さい</description>
 		</define>
 		<define type="error" name="E0313">
-			<message>Number of internal nodes must be less than or equal to number of nodes</message>
+			<message>Number of internal nodes must be less than or equal to the number of nodes</message>
 			<description>内部節点数が節点数より大きい</description>
 		</define>
 		<define type="error" name="E0321">
@@ -179,7 +179,7 @@
 			<description>内部要素数が0より小さい</description>
 		</define>
 		<define type="error" name="E0323">
-			<message>Number of internal elements must be less than or equal to number of elements</message>
+			<message>Number of internal elements must be less than or equal to the number of elements</message>
 			<description>内部要素数が要素数より大きい</description>
 		</define>
 		<define type="error" name="E0331">
@@ -191,11 +191,11 @@
 			<description>EQUATION_BLOCKが見つからない</description>
 		</define>
 		<define type="error" name="E0501">
-			<message>Log file has not initialized yet</message>
+			<message>Log file not initialized yet</message>
 			<description>ログファイルの初期化処理が行われていない</description>
 		</define>
 		<define type="warn" name="W0502">
-			<message>Log file for partitioner has already initialized</message>
+			<message>Log file for partitioner already initialized</message>
 			<description>ログファイルの初期化処理が複数回呼び出された</description>
 		</define>
 	</table>

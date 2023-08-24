@@ -28,7 +28,7 @@
 			<description>MPIの初期化に失敗した</description>
 		</define>
 		<define type="error" name="E1002">
-			<message>MPI has not initialized yet</message>
+			<message>MPI not initialized yet</message>
 			<description>MPIが初期化されていない</description>
 		</define>
 		<define type="error" name="E1003">
