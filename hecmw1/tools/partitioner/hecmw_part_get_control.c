@@ -475,7 +475,7 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
 
       case HECMW_PARTLEX_K_PART: /* PART */
         cont_data->is_print_part = part_cont_part(cont_data->part_file_name);
-        if (cont_data->is_print_ucd < 0) return -1;
+        if (cont_data->is_print_part < 0) return -1;
         break;
 
       default:
