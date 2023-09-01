@@ -139,8 +139,8 @@ OBJS = \
 	hecmw_result_copy_c2f.@cobjfilepostfix@ \
 	hecmw_result_copy_f2c.@cobjfilepostfix@ \
 	hecmw_result_io.@cobjfilepostfix@ \
-	hecmw_result_bin_io.@cobjfilepostfix@ \
-	hecmw_result_txt_io.@cobjfilepostfix@ \
+	hecmw_result_io_bin.@cobjfilepostfix@ \
+	hecmw_result_io_txt.@cobjfilepostfix@ \
 	hecmw_visual_if.@cobjfilepostfix@ \
 	hecmw_system.@cobjfilepostfix@ \
 	hecmw_time.@cobjfilepostfix@

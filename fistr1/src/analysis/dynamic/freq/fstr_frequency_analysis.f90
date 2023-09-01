@@ -462,19 +462,19 @@ contains
 
     label = "frequency"
     freqval(1) = freq
-    call hecmw_result_add(3, 1, label, freqval)
+    call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, freqval)
 
     if(iout(1) == 1) then
       label='displacement'
-      call hecmw_result_add(1, 3, label, disp) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, disp) !mode=node, ndof=3
     end if
     if(iout(2) == 1) then
       label='velocity'
-      call hecmw_result_add(1, 3, label, vel) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, vel) !mode=node, ndof=3
     end if
     if(iout(3) == 1) then
       label='acceleration'
-      call hecmw_result_add(1, 3, label, acc) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, acc) !mode=node, ndof=3
     end if
     call hecmw_result_write_by_name(nameid)
     call hecmw_result_finalize()
@@ -1009,36 +1009,36 @@ contains
 
     label = "time"
     absval(1) = time
-    call hecmw_result_add(3, 1, label, absval)
+    call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, absval)
 
     if(iout(1) == 1) then
       label='displacement_real'
-      call hecmw_result_add(1, 3, label, dispre) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, dispre) !mode=node, ndof=3
       label='displacement_imag'
-      call hecmw_result_add(1, 3, label, dispim)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, dispim)
       label='displacement_abs'
       absval(:) = abs(cmplx(dispre(:), dispim(:)))
-      call hecmw_result_add(1, 3, label, absval)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
     if(iout(2) == 1) then
       label='velocity_real'
-      call hecmw_result_add(1, 3, label, velre) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, velre) !mode=node, ndof=3
       label='velocity_imag'
-      call hecmw_result_add(1, 3, label, velim)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, velim)
       label='velocity_abs'
       absval(:) = abs(cmplx(velre(:), velim(:)))
-      call hecmw_result_add(1, 3, label, absval)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
     if(iout(3) == 1) then
       label='acceleration_real'
-      call hecmw_result_add(1, 3, label, accre) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, accre) !mode=node, ndof=3
       label='acceleration_imag'
-      call hecmw_result_add(1, 3, label, accim)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, accim)
       label='acceleration_abs'
       absval(:) = abs(cmplx(velre(:), velim(:)))
-      call hecmw_result_add(1, 3, label, absval)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
     call hecmw_result_write_by_name(nameid)

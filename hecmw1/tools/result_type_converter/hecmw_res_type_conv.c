@@ -8,6 +8,7 @@
 #include <errno.h>
 #include "hecmw_struct.h"
 #include "hecmw_result.h"
+#include "hecmw_result_io_txt.h"
 #include "hecmw_util.h"
 #include "hecmw_io.h"
 
@@ -141,7 +142,7 @@ int main(int argc, char **argv) {
     n_elem = HECMW_result_get_nelem();
     HECMW_result_get_header(header);
     HECMW_result_get_comment(comment);
-    rcode = HECMW_result_write_txt_ST_by_fname(resultfile, data, n_node, n_elem,
+    rcode = HECMW_result_io_txt_write_ST_by_fname(resultfile, data, n_node, n_elem,
                                                header, comment);
     if (rcode) {
       HECMW_abort(HECMW_comm_get_comm());

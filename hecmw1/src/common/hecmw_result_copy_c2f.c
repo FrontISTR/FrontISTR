@@ -9,15 +9,15 @@
 #include "hecmw_util.h"
 #include "hecmw_result.h"
 
-static struct hecmwST_result_data *result;
-static int nnode, nelem;
+static struct hecmwST_result_data *Result;
+static int NNode, NElem;
 
 /*-----------------------------------------------------------------------------
  * SetFunc
  */
 
 static int set_ng_component(void *dst) {
-  *((int *)dst) = result->ng_component;
+  *((int *)dst) = Result->ng_component;
   return 0;
 }
 
@@ -25,10 +25,10 @@ static int set_ng_dof(void *dst) {
   void *src;
   int size;
 
-  if (result->ng_component <= 0) return 0;
+  if (Result->ng_component <= 0) return 0;
 
-  src  = result->ng_dof;
-  size = sizeof(*result->ng_dof) * result->ng_component;
+  src  = Result->ng_dof;
+  size = sizeof(*Result->ng_dof) * Result->ng_component;
   memcpy(dst, src, size);
 
   return 0;
@@ -37,11 +37,11 @@ static int set_ng_dof(void *dst) {
 static int set_global_label(void *dst) {
   int i;
 
-  if (result->ng_component <= 0) return 0;
+  if (Result->ng_component <= 0) return 0;
 
-  for (i = 0; i < result->ng_component; i++) {
+  for (i = 0; i < Result->ng_component; i++) {
     char *dst_point = (char *)dst + HECMW_NAME_LEN * i;
-    char *src       = result->global_label[i];
+    char *src       = Result->global_label[i];
     HECMW_strcpy_c2f(src, dst_point, HECMW_NAME_LEN);
   }
 
@@ -52,21 +52,21 @@ static int set_global_val_item(void *dst) {
   void *src;
   int i, n, size;
 
-  if (result->ng_component <= 0) return 0;
+  if (Result->ng_component <= 0) return 0;
 
   n = 0;
-  for (i = 0; i < result->ng_component; i++) {
-    n += result->ng_dof[i];
+  for (i = 0; i < Result->ng_component; i++) {
+    n += Result->ng_dof[i];
   }
-  src  = result->global_val_item;
-  size = sizeof(*result->global_val_item) * n;
+  src  = Result->global_val_item;
+  size = sizeof(*Result->global_val_item) * n;
   memcpy(dst, src, size);
 
   return 0;
 }
 
 static int set_nn_component(void *dst) {
-  *((int *)dst) = result->nn_component;
+  *((int *)dst) = Result->nn_component;
   return 0;
 }
 
@@ -74,10 +74,10 @@ static int set_nn_dof(void *dst) {
   void *src;
   int size;
 
-  if (result->nn_component <= 0) return 0;
+  if (Result->nn_component <= 0) return 0;
 
-  src  = result->nn_dof;
-  size = sizeof(*result->nn_dof) * result->nn_component;
+  src  = Result->nn_dof;
+  size = sizeof(*Result->nn_dof) * Result->nn_component;
   memcpy(dst, src, size);
 
   return 0;
@@ -86,11 +86,11 @@ static int set_nn_dof(void *dst) {
 static int set_node_label(void *dst) {
   int i;
 
-  if (result->nn_component <= 0) return 0;
+  if (Result->nn_component <= 0) return 0;
 
-  for (i = 0; i < result->nn_component; i++) {
+  for (i = 0; i < Result->nn_component; i++) {
     char *dst_point = (char *)dst + HECMW_NAME_LEN * i;
-    char *src       = result->node_label[i];
+    char *src       = Result->node_label[i];
     HECMW_strcpy_c2f(src, dst_point, HECMW_NAME_LEN);
   }
 
@@ -101,21 +101,21 @@ static int set_node_val_item(void *dst) {
   void *src;
   int i, n, size;
 
-  if (result->nn_component <= 0) return 0;
+  if (Result->nn_component <= 0) return 0;
 
   n = 0;
-  for (i = 0; i < result->nn_component; i++) {
-    n += result->nn_dof[i];
+  for (i = 0; i < Result->nn_component; i++) {
+    n += Result->nn_dof[i];
   }
-  src  = result->node_val_item;
-  size = sizeof(*result->node_val_item) * n * nnode;
+  src  = Result->node_val_item;
+  size = sizeof(*Result->node_val_item) * n * NNode;
   memcpy(dst, src, size);
 
   return 0;
 }
 
 static int set_ne_component(void *dst) {
-  *((int *)dst) = result->ne_component;
+  *((int *)dst) = Result->ne_component;
   return 0;
 }
 
@@ -123,10 +123,10 @@ static int set_ne_dof(void *dst) {
   void *src;
   int size;
 
-  if (result->ne_component <= 0) return 0;
+  if (Result->ne_component <= 0) return 0;
 
-  src  = result->ne_dof;
-  size = sizeof(*result->ne_dof) * result->ne_component;
+  src  = Result->ne_dof;
+  size = sizeof(*Result->ne_dof) * Result->ne_component;
   memcpy(dst, src, size);
 
   return 0;
@@ -135,11 +135,11 @@ static int set_ne_dof(void *dst) {
 static int set_elem_label(void *dst) {
   int i;
 
-  if (result->ne_component <= 0) return 0;
+  if (Result->ne_component <= 0) return 0;
 
-  for (i = 0; i < result->ne_component; i++) {
+  for (i = 0; i < Result->ne_component; i++) {
     char *dst_point = (char *)dst + HECMW_NAME_LEN * i;
-    char *src       = result->elem_label[i];
+    char *src       = Result->elem_label[i];
     HECMW_strcpy_c2f(src, dst_point, HECMW_NAME_LEN);
   }
 
@@ -150,14 +150,14 @@ static int set_elem_val_item(void *dst) {
   void *src;
   int i, n, size;
 
-  if (result->ne_component <= 0) return 0;
+  if (Result->ne_component <= 0) return 0;
 
   n = 0;
-  for (i = 0; i < result->ne_component; i++) {
-    n += result->ne_dof[i];
+  for (i = 0; i < Result->ne_component; i++) {
+    n += Result->ne_dof[i];
   }
-  src  = result->elem_val_item;
-  size = sizeof(*result->elem_val_item) * n * nelem;
+  src  = Result->elem_val_item;
+  size = sizeof(*Result->elem_val_item) * n * NElem;
   memcpy(dst, src, size);
 
   return 0;
@@ -211,14 +211,14 @@ static SetFunc get_set_func(char *struct_name, char *var_name) {
 
 int HECMW_result_copy_c2f_init(struct hecmwST_result_data *result_data,
                                int n_node, int n_elem) {
-  result = result_data;
-  nnode  = n_node;
-  nelem  = n_elem;
+  Result = result_data;
+  NNode  = n_node;
+  NElem  = n_elem;
   return 0;
 }
 
 int HECMW_result_copy_c2f_finalize(void) {
-  result = NULL;
+  Result = NULL;
   return 0;
 }
 
@@ -232,7 +232,7 @@ void hecmw_result_copy_c2f_set_if(char *struct_name, char *var_name, void *dst,
 
   *err = 1;
 
-  if (result == NULL) {
+  if (Result == NULL) {
     HECMW_set_error(
         HECMW_ALL_E0102,
         "hecmw_result_copy_c2f_set_if(): 'result' has not initialized yet");
@@ -307,13 +307,13 @@ void hecmw_result_read_by_name_if(char *name_ID, int *i_step,
       NULL)
     return;
 
-  result = HECMW_result_read_by_name(name_ID_str, *i_step);
-  if (result == NULL) return;
+  Result = HECMW_result_read_by_name(name_ID_str, *i_step);
+  if (Result == NULL) return;
 
-  nnode   = HECMW_result_get_nnode();
-  nelem   = HECMW_result_get_nelem();
-  *n_node = nnode;
-  *n_elem = nelem;
+  NNode   = HECMW_result_get_nnode();
+  NElem   = HECMW_result_get_nelem();
+  *n_node = NNode;
+  *n_elem = NElem;
 
   *err = 0;
 }
@@ -342,7 +342,7 @@ void HECMW_RESULT_READ_BY_NAME_IF(char *name_ID, int *i_step,
 
 void hecmw_result_read_finalize_if(int *err) {
   *err = 1;
-  HECMW_result_free(result);
+  HECMW_result_free(Result);
   HECMW_result_free_nodeID();
   HECMW_result_free_elemID();
   *err = 0;

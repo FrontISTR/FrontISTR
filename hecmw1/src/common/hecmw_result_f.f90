@@ -9,7 +9,11 @@ module hecmw_result
   use hecmw_etype
   implicit none
 
+  private
   public :: hecmwST_result_data
+  public :: HECMW_RESULT_DTYPE_NODE
+  public :: HECMW_RESULT_DTYPE_ELEM
+  public :: HECMW_RESULT_DTYPE_GLOBAL
   public :: hecmw_nullify_result_data
   public :: hecmw_result_copy_c2f
   public :: hecmw_result_copy_f2c
@@ -43,12 +47,12 @@ module hecmw_result
     real(kind=kreal),pointer :: elem_val_item(:)
   end type hecmwST_result_data
 
-  private
+  ! constants defined in hecmw_result_io.h
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_NODE   = 1
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_ELEM   = 2
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_GLOBAL = 3
+
   character(len=HECMW_NAME_LEN) :: sname,vname
-  logical :: MPC_exist
-  integer(kind=kint) :: nelem_wo_MPC = 0
-  integer(kind=kint), allocatable :: eid_wo_MPC(:)
-  integer(kind=kint), allocatable :: elemID_wo_MPC(:)
 
 contains
 
@@ -79,48 +83,12 @@ contains
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN) :: comment
 
-    integer(kind=kint) :: itype, iS, iE, ic_type, icel
-
-    MPC_exist = .false.
-    do itype= 1, hecMESH%n_elem_type
-      ic_type = hecMESH%elem_type_item(itype)
-      if (hecmw_is_etype_patch(ic_type)) MPC_exist = .true.
-      if (hecmw_is_etype_link(ic_type)) MPC_exist = .true.
-    end do
-
     nnode = hecMESH%n_node
     nelem = hecMESH%n_elem
 
-    if( MPC_exist ) then
-
-      if( nelem_wo_MPC == 0 ) then
-        allocate(eid_wo_MPC(nelem))
-        allocate(elemID_wo_MPC(nelem))
-        eid_wo_MPC(:) = 0
-        elemID_wo_MPC(:) = 0
-
-        nelem_wo_MPC = 0
-        do itype= 1, hecMESH%n_elem_type
-          iS= hecMESH%elem_type_index(itype-1) + 1
-          iE= hecMESH%elem_type_index(itype  )
-          ic_type= hecMESH%elem_type_item(itype)
-
-          if (hecmw_is_etype_patch(ic_type)) cycle
-          if (hecmw_is_etype_link(ic_type)) cycle
-          if (hecmw_is_etype_smoothing(ic_type)) cycle
-
-          do icel= iS, iE
-            nelem_wo_MPC = nelem_wo_MPC + 1
-            elemID_wo_MPC(nelem_wo_MPC) = hecMESH%global_elem_ID(icel)
-            eid_wo_MPC(nelem_wo_MPC) = icel
-          end do
-        end do
-      end if
-
-      call hecmw_result_init_if(nnode, nelem_wo_MPC, hecMESH%global_node_ID, elemID_wo_MPC, i_step, header, comment, ierr)
-    else
-      call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, i_step, header, comment, ierr)
-    end if
+    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, &
+        hecMESH%n_elem_type, hecMESH%elem_type_index, hecMESH%elem_type_item, &
+        i_step, header, comment, ierr)
 
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_init
@@ -131,26 +99,7 @@ contains
     character(len=HECMW_NAME_LEN) :: label
     real(kind=kreal) :: data(:)
 
-    integer(kind=kint) :: i, icel
-    real(kind=kreal), pointer :: data_wo_MPC(:)
-
-    if( dtype == 2 .and. MPC_exist ) then !element output without patch element
-
-      allocate(data_wo_MPC(n_dof*nelem_wo_MPC))
-      data_wo_MPC(:) = 0.d0
-
-      do i= 1, nelem_wo_MPC
-        icel = eid_wo_MPC(i)
-        data_wo_MPC(n_dof*(i-1)+1:n_dof*i) = data(n_dof*(icel-1)+1:n_dof*icel)
-      end do
-
-      call hecmw_result_add_if(dtype, n_dof, label, data_wo_MPC, ierr)
-
-      deallocate(data_wo_MPC)
-
-    else
-      call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
-    end if
+    call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
 
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_add
