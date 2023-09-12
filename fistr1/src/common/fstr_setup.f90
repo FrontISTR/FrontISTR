@@ -485,8 +485,7 @@ contains
         ! ----- INSERT condition setting
       elseif( header_name == '!INSERT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
-        if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%inserts(c_insert+1:c_insert+n)   &
-            ,ee, pp, rho, alpha, P%PARAM%contact_algo, mName ) ) then
+        if( .not. fstr_ctrl_get_INSERT( ctrl, n, fstrSOLID%inserts(c_insert+1:c_insert+n), mName ) ) then
           write(*,*) '### Error: Fail in read in insert condition : ', c_insert
           write(ILOG,*) '### Error: Fail in read in insert condition : ', c_insert
           stop
@@ -497,11 +496,6 @@ contains
             cparam_id = i; exit
           endif
         enddo
-        ! initialize contact condition
-        if( ee>0.d0 ) cdotp = ee
-        if( pp>0.d0 ) mut = pp
-        if( rho>0.d0 ) cgn = rho
-        if( alpha>0.d0 ) cgt = alpha
         do i=1,n
           if( .not. fstr_contact_check( fstrSOLID%inserts(c_insert+i), P%MESH ) ) then
             write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_insert

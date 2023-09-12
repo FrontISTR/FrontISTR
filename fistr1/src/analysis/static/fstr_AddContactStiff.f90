@@ -41,10 +41,10 @@ contains
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint)                   :: ctsurf, etype, nnode, ndLocal(9) !< contents of type tContact
+    integer(kind=kint)                   :: ctsurf, etype, nnode, ndLocal(21) !< contents of type tContact
     integer(kind=kint)                   :: i, j, k, nlag, id_lagrange, grpid, algtype
     real(kind=kreal)                     :: lagrange
-    real(kind=kreal)                     :: stiffness(9*3 + 1, 9*3 + 1)
+    real(kind=kreal)                     :: stiffness(21*3 + 1, 21*3 + 1)
 
     hecLagMAT%AL_lagrange = 0.0d0
     hecLagMAT%AU_lagrange = 0.0d0
@@ -123,7 +123,7 @@ contains
     integer(kind=kint)  :: idof
     type(tContactState) :: ctState !< type tContactState
     real(kind=kreal)    :: lagrange !< value of Lagrange multiplier
-    real(kind=kreal)    :: stiffness(9*3 + 1, 9*3 + 1) !< contact stiffness matrix
+    real(kind=kreal)    :: stiffness((nnode+1)*3 + 1, (nnode+1)*3 + 1) !< contact stiffness matrix
 
     integer(kind=kint)  :: i, j, k, l
     real(kind=kreal)    :: shapefunc(nnode) !< normal vector at target point; shape functions
@@ -260,13 +260,13 @@ contains
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(hecmwST_matrix)                 :: conMAT !< type hecmwST_matrix for contact part only
-    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contents of type tContact
+    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(21) !< contents of type tContact
     integer(kind=kint) :: i, j, k, nlag, id_lagrange, algtype
-    real(kind=kreal)   :: ndCoord(9*3) !< nodal coordinates
-    real(kind=kreal)   :: ndu(9*3), ndDu(9*3) !< nodal displacement and its increment
+    real(kind=kreal)   :: ndCoord(21*3) !< nodal coordinates
+    real(kind=kreal)   :: ndu(21*3), ndDu(21*3) !< nodal displacement and its increment
     real(kind=kreal)   :: lagrange !< value of Lagrange multiplier
-    real(kind=kreal)   :: ctNForce(9*3+1)     !< nodal normal contact force vector
-    real(kind=kreal)   :: ctTForce(9*3+1)     !< nodal tangential contact force vector
+    real(kind=kreal)   :: ctNForce(21*3+1)     !< nodal normal contact force vector
+    real(kind=kreal)   :: ctTForce(21*3+1)     !< nodal tangential contact force vector
 
     integer(kind=kint) :: cstep !< current calculation step
     integer(kind=kint) :: grpid
@@ -538,16 +538,16 @@ contains
     integer(kind=kint) :: cstep !< current step
     integer(kind=kint) :: np, ndof !< total number of nodes; degree of freedom
     integer(kind=kint) :: i, j, k, l, id_lagrange, lnod, grpid
-    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(9) !< contents of type tContact
-    real(kind=kreal)   :: ndu(9*3), ndCoord(9*3), lagrange !< nodal coordinates; value of Lagrange mutiplier
-    real(kind=kreal)   :: normal(3), shapefunc(9) !< normal vector; shape functions
+    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(21) !< contents of type tContact
+    real(kind=kreal)   :: ndu(21*3), ndCoord(21*3), lagrange !< nodal coordinates; value of Lagrange mutiplier
+    real(kind=kreal)   :: normal(3), shapefunc(21) !< normal vector; shape functions
     real(kind=kreal)   :: nTm(10*3) !< vector
     real(kind=kreal)   :: tf_final(3) !< final friciton force vector
-    real(kind=kreal)   :: ctForce(9*3 + 1) !< initial nodal contact force vector
+    real(kind=kreal)   :: ctForce(21*3 + 1) !< initial nodal contact force vector
 
     integer(kind=kint) :: algtype, nlag    
-    real(kind=kreal)   :: ctNForce(9*3+1)     !< nodal normal contact force vector
-    real(kind=kreal)   :: ctTForce(9*3+1)     !< nodal tangential contact force vector
+    real(kind=kreal)   :: ctNForce(21*3+1)     !< nodal normal contact force vector
+    real(kind=kreal)   :: ctTForce(21*3+1)     !< nodal tangential contact force vector
 
     np = hecMAT%NP ; ndof = hecMAT%NDOF
 
