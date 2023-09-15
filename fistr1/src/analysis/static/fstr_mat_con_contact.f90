@@ -173,7 +173,7 @@ contains
       grpid = fstrSOLID%inserts(i)%group
       if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      necessary_to_insert_node = .false.
+      necessary_to_insert_node = ( contact_algo == kcaALagrange )
 
       nlag = 3
       if( contact_algo == kcaALagrange ) nlag = 1

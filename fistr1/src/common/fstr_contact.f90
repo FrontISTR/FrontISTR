@@ -407,6 +407,10 @@ contains
       endif
     enddo
 
+    do i=1, fstrSOLID%n_inserts
+      call calcu_tied_force0( fstrSOLID%inserts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
+    enddo
+
   end subroutine
 
   !> Update lagrangian multiplier
@@ -418,8 +422,8 @@ contains
     integer(kind=kint) :: i, nc, algtype
 
     gnt = 0.d0;  ctchanged = .false.
-    nc = fstrSOLID%n_contacts
-    do i=1, nc
+    nc = fstrSOLID%n_contacts+fstrSOLID%n_inserts
+    do i=1, fstrSOLID%n_contacts
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
         call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
@@ -429,6 +433,12 @@ contains
                                       &  mu, ctchanged )
       endif
     enddo
+
+    do i=1, fstrSOLID%n_inserts
+      call update_tied_multiplier( fstrSOLID%inserts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
+      &  mu, ctchanged )
+    enddo
+
     if( nc>0 ) gnt = gnt/nc
   end subroutine
 
@@ -447,6 +457,10 @@ contains
       else if( algtype == CONTACTTIED ) then
         call calcu_tied_force0( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
       endif
+    enddo
+
+    do i = 1, fstrSOLID%n_inserts
+      call calcu_tied_force0( fstrSOLID%inserts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
     enddo
   end subroutine
 
@@ -522,6 +536,26 @@ contains
           enddo
         enddo
 
+      enddo
+    enddo
+
+    do i=1,fstrSOLID%n_inserts
+      grpid = fstrSOLID%inserts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+      do j=1, size(fstrSOLID%inserts(i)%slave)
+        if( fstrSOLID%inserts(i)%states(j)%state==CONTACTFREE ) cycle   ! free
+        ctsurf = fstrSOLID%inserts(i)%states(j)%surface          ! contacting surface
+        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
+        do k=1,nnode
+          ndLocal(k+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(k)
+          elecoord(1:3,k)=hecMESH%node(3*ndLocal(k+1)-2:3*ndLocal(k+1))
+        enddo
+        call tied2stiff( algtype, fstrSOLID%inserts(i)%states(j),    &
+        etype, nnode, mu, mut, stiff(:,:), force(:) )
+        ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
+        call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiff)
       enddo
     enddo
 
