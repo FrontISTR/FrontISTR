@@ -216,6 +216,8 @@ HEADERS = \
 	hecmw_result_copy_c2f.h \
 	hecmw_result_copy_f2c.h \
 	hecmw_result_io.h \
+	hecmw_result_io_bin.h \
+	hecmw_result_io_txt.h \
 	hecmw_system.h \
 	hecmw_time.h
 
