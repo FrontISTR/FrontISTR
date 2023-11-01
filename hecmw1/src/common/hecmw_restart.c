@@ -184,7 +184,7 @@ int HECMW_restart_write_by_name(char *name_ID) {
     }
   }
 
-  if ((fp = fopen(filename, "w")) == NULL) {
+  if ((fp = fopen(filename, "wb")) == NULL) {
     HECMW_set_error(HECMW_UTIL_E0101, "File: %s, %s", filename,
                     HECMW_strmsg(errno));
     HECMW_free(filename);
