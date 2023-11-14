@@ -41,7 +41,7 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
 
 ## gitlabでやっていることの詳細
 
-### ビルド環境となるDockerイメージの作成と保管
+### ビルド環境となるDockerイメージの保管
 * イメージの作成、gitlabのコンテナレジストリへのpushは各Makefileでローカルから行える(pushにはDeveloper以上の権限が必要)。パッケージの更新があったときなどに限りたまにmakeすればよい。
   * docker/ci/Makefile
   * docker/binary/x86_64-w64-mingw32/Makefile
@@ -66,12 +66,12 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
     * CIのbuildやdocker/fistr1のビルド環境として利用される
   * build-metis4イメージ
     * buildでmetisをv4にしたもの
-    * metis4のダウンロードURL[https://github.com/CIBC-Internal/metis-4.0.3.git](https://github.com/CIBC-Internal/metis-4.0.3.git)は非公式のものなので、リンク切れに注意
+    * metis4のダウンロードURL([https://github.com/CIBC-Internal/metis-4.0.3.git](https://github.com/CIBC-Internal/metis-4.0.3.git))は非公式のものなので、リンク切れに注意
     * CIの中では使われていない
   * documentイメージ
     * doxygen実行用に必要なツールをインストールしたubuntu環境
 * docker/binary/x86_64-w64-mingw32
-  * Ubuntu上でWindowsバイナリをビルドするための、クロスコンパイル環境のDockerイメージを作成するためにディレクトリ
+  * Ubuntu上でWindowsバイナリをビルドするための、クロスコンパイル環境のDockerイメージを作成するためのディレクトリ
   * Makefile
     * serial と thread の共通イメージ (base:serial, base:thread) の作成
     * serial, thread, process, hybrid の各サブディレクトリでのmake
@@ -87,7 +87,7 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
     * thread:openblas
     * hybrid:msmpi_openblas
     * hybrid:impi_mkl
-  * metis4のダウンロードURL[https://github.com/mfem/tpls/raw/gh-pages/metis-4.0.3.tar.gz](https://github.com/mfem/tpls/raw/gh-pages/metis-4.0.3.tar.gz)は非公式のものなので、リンク切れに注意
+  * metis4のダウンロードURL([https://github.com/mfem/tpls/raw/gh-pages/metis-4.0.3.tar.gz](https://github.com/mfem/tpls/raw/gh-pages/metis-4.0.3.tar.gz))は非公式のものなので、リンク切れに注意
 
 
 ### コミットごとに実行されること
@@ -95,17 +95,22 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
 
 * 補足情報
   * artifacts で指定したパスは、そのジョブの成果物として保存される。
-    * [Jobs downloads all artifacts from the completed jobs in previous stages by default.](https://docs.gitlab.com/ee/ci/jobs/job_artifacts.html)
+    * 参考: GitLab Docsの[Job artifactsに関する記述](https://docs.gitlab.com/ee/ci/jobs/job_artifacts.html)
+      > Jobs downloads all artifacts from the completed jobs in previous stages by default.
   * needsで指定したジョブの artifacts は複製されて受け継がれる。
-    * [When a job uses needs, it no longer downloads all artifacts from previous stages by default, because jobs with needs can start before earlier stages complete. With needs you can only download artifacts from the jobs listed in the needs configuration.](https://docs.gitlab.com/ee/ci/yaml/?query=needs)
+    * 参考：GitLab Docsの[needsに関する記述](https://docs.gitlab.com/ee/ci/yaml/?query=needs)
+      > When a job uses needs, it no longer downloads all artifacts from previous stages by default,
+      > because jobs with needs can start before earlier stages complete.
+      > With needs you can only download artifacts from the jobs listed in the needs configuration.
 * build
   * Dockerイメージ(build:ubuntu2004 or build:ubuntu2204) の中でmakeする。
-    * build フォルダをアーティファクトとして残す。
+    * build ディレクトリをアーティファクトとして残す。
   * build/{serial,openmp,mpi,hybrid}/{ubuntu2004,ubuntu2204} (4x2=8種類)
     * 以上8個のジョブを動かす。
     * それぞれ対応するdockerイメージを利用する。
 * test
-  * Dockerイメージ(build:ubuntu2004 or build:ubuntu2204) の中でテストを実施する。test/serial/serial/{ubuntu2004,ubuntu2204} (2通り)
+  * Dockerイメージ(build:ubuntu2004 or build:ubuntu2204) の中でテストを実施する。
+  * test/serial/serial/{ubuntu2004,ubuntu2204} (2通り)
   * test/openmp/{serial,openmp}/{ubuntu2004,ubuntu2204} (4通り)
   * test/mpi/{serial,mpi}/{ubuntu2004,ubuntu2204} (4通り)
   * test/hybrid/{serial,openmp,mpi,hybrid}/{ubuntu2004,ubuntu2204} (8通り)
@@ -114,7 +119,7 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
     * needs で対応する build ジョブを指定している。
       * 対応する build ジョブのあとに実行される。
       * アーティファクトに build ステージの成果物があるのでそれを利用しテストを行う。
-  * [テストの詳細](https://gitlab.com/FrontISTR-Commons/FrontISTR/-/blob/master/tests/README.ja.md?ref_type=heads)
+  * テストの詳細は[tests/README.ja.md](https://gitlab.com/FrontISTR-Commons/FrontISTR/-/blob/master/tests/README.ja.md?ref_type=heads)
 * document
   * document
     * FrontISTR_manual のgitlab-ciで作られるものへのリダイレクトをアーティファクトの public/_redirects に書き出す。
@@ -125,7 +130,7 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
       * _redirects のコピーを行うだけなので、document:latest イメージを使う必要もない。
   * doxygen
     * APIドキュメントの生成
-    * アーティファクトの public/doxygen フォルダーに書き出す。
+    * アーティファクトの public/doxygen ディレクトリに書き出す。
     * document:latest イメージを実行環境として使う。
     * [FrontISTR Documents](https://frontistr-commons.gitlab.io/FrontISTR/)
 * package
@@ -141,22 +146,22 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
     * x86_64-w64-mingw32/hybrid-impi-mkl_intelthread
       * 以上3つのジョブを動かす。
       * それぞれ対応するdockerイメージを利用する
-      * 計3種類のzipファイルがアーティファクトの public/release/x86_64-w64xy-mingw32/ フォルダに保存される。
+      * 計3種類のzipファイルがアーティファクトの public/release/x86_64-w64xy-mingw32/ ディレクトリに保存される。
   * deb/{serial,openmp,mpi,hybrid}/{ubuntu2004,ubuntu2204}
     * 以上8個のジョブを動かす。
     * needs で対応する build ジョブを指定している。
       * ビルド結果を適宜利用している。
-    * cpack により Debian package を作成する。計8種類のdebファイルがアーティファクトの public/release/deb フォルダに保存される。
+    * cpack により Debian package を作成する。計8種類のdebファイルがアーティファクトの public/release/deb ディレクトリに保存される。
   * 依存ライブラリ
     * docker/fistr1とx86_64-w64-mingw32の各3種については、次表のとおり。
       ![library dependency](library_dependency.png)
 * deploy
   * pages(masterブランチにおいてのみ実行)
-    * document, packageにおける成果物(publicフォルダ)をそのまま保持
+    * document, packageにおける成果物(publicディレクトリ)をそのまま保持
       * document ステージで生成したリダイレクトや doxygen
       * package ステージで生成した Debian package や Windows binary
     * 古いリンクからのリダイレクトを public/_redirects に追記
-    * gitlab-pagesの機能でpublicフォルダが永続化され、中身がwebに公開される
+    * gitlab-pagesの機能でpublicディレクトリが永続化され、中身がwebに公開される
 
 全ブランチの全コミットについて build, test, document, package ステージが実行される。
 計算資源の節約のために build, test ステージまでとすることも可能である。
@@ -171,15 +176,15 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
   ![download list](download_list.png)
 
 
-## 聞きたいこと
+## 確認したいこと
 * webサーバの[Downloadページ](https://www.frontistr.com/download/)の修正について
   * [Ubuntu debのダウンロードリンクが誤っている](https://gitlab.com/FrontISTR-Commons/FrontISTR/-/issues/560)
 * Githubへのミラーのタイミング
   * [参考](https://docs.gitlab.com/ee/user/project/repository/mirror/)
-* Windows版でMKLをリンクする際に難しかったこと。
+* Windows版でMKLをリンクする際に難しかったことは？
 * Windows用ビルド環境イメージは、全てを使っているわけではない？
-* Webサーバー上にあるCDのスクリプトはバージョン管理している?
-* GitLab CIでの成果物をWebサーバーで流用できない?
+* Webサーバー上にあるCDのスクリプトはバージョン管理している？
+* GitLab CIでの成果物をWebサーバーで流用できない？
   * パラメータを変えたいと思ったときにGitLab CIとWebサーバーの両方で作業をする必要があり、大変
 * Webサーバでやっていることに「Push built container to Gitlab Registry」とあるが、本当？ なぜ？
 * 変更した場合のテスト方法は？
