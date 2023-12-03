@@ -602,6 +602,16 @@ contains
 
   end subroutine
 
+  subroutine initialize_insert_vectors(fstrSOLID,hecMAT)
+    type(fstr_solid)       :: fstrSOLID      !< type fstr_solid
+    type(hecmwST_matrix)   :: hecMAT         !< type hecmwST_matrix
+
+    if( .not. associated(fstrSOLID%INSERT_NFORCE) ) then
+      allocate( fstrSOLID%INSERT_NFORCE(hecMAT%NP*3) )
+      fstrSOLID%INSERT_NFORCE(:) = 0.d0
+    end if
+  end subroutine
+
   subroutine setup_contact_elesurf_for_area( cstep, hecMESH, fstrSOLID )
     integer(kind=kint), intent(in)               :: cstep         !< current step number
     type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh

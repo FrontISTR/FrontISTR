@@ -12,7 +12,7 @@ module m_make_result
   public:: fstr_reorder_rot_shell
   public:: fstr_reorder_node_beam
   public:: setup_contact_output_variables
-
+  public:: setup_insert_output
 
 contains
 
@@ -1677,6 +1677,38 @@ contains
         fstrSOLID%CONT_FTRAC(3*i-2:3*i) = fstrSOLID%CONT_FRIC(3*i-2:3*i)/area
       end do
       updated(7) = .true.
+    endif
+
+  end subroutine
+
+  subroutine setup_insert_output( hecMESH, fstrSOLID, phase )
+    use m_fstr
+    use hecmw_util
+    use mContact
+    implicit none
+    type(hecmwST_local_mesh), intent(in)  :: hecMESH
+    type (fstr_solid), intent(inout)      :: fstrSOLID
+    integer(kind=kint), intent(in)        :: phase !< -1:clear,3:result,4:vis
+
+    logical, save :: updated = .false.
+    integer(kind=kint) :: ndof, i
+    real(kind=kreal) :: area
+
+    ndof = hecMESH%n_dof
+
+    if( phase == -1 ) then
+      updated = .false.
+      return
+    else
+      if( phase /= 3 .and. phase /= 4 ) return !irregular case
+    end if
+
+    ! --- REACTION FORCE @node
+    if( fstrSOLID%output_ctrl(phase)%outinfo%on(2) .and. associated(fstrSOLID%INSERT_NFORCE) ) then
+      if( paraContactFlag .and. .not. updated) then
+        call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%INSERT_NFORCE,1)
+      end if
+      updated = .true.
     endif
 
   end subroutine

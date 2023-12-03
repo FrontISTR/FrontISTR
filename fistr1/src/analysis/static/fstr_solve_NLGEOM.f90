@@ -83,6 +83,7 @@ contains
       call initialize_contact_output_vectors(fstrSOLID,hecMAT)
       call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
     endif
+    if( fstrSOLID%n_inserts > 0 ) call initialize_insert_vectors(fstrSOLID,hecMAT)
 
     restart_step_num    = 1
     restart_substep_num = 1

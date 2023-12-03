@@ -274,6 +274,7 @@ contains
     id_lagrange = 0
     if( associated(fstrSOLID%CONT_NFORCE) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
     if( associated(fstrSOLID%CONT_FRIC) ) fstrSOLID%CONT_FRIC(:) = 0.d0
+    if( associated(fstrSOLID%INSERT_NFORCE) ) fstrSOLID%INSERT_NFORCE(:) = 0.d0
 
     do i = 1, fstrSOLID%n_contacts
 
@@ -309,11 +310,12 @@ contains
             call getContactNodalForce(etype,nnode,ndCoord,ndDu,fstrSOLID%contacts(i)%states(j),    &
             fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.true.)
             ! Update non-eqilibrited force vector
-            call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,fstrSOLID,conMAT)
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,  &
+              &  conMAT,fstrSOLID%CONT_NFORCE,fstrSOLID%CONT_FRIC)
           else if( algtype == CONTACTTIED ) then
             call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%contacts(i)%states(j),lagrange,ctNForce,ctTForce)
             ! Update non-eqilibrited force vector
-            call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,fstrSOLID,conMAT)
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,conMAT,fstrSOLID%CONT_NFORCE)
           endif 
 
         enddo
@@ -349,11 +351,10 @@ contains
     
           call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%inserts(i)%states(j),lagrange,ctNForce,ctTForce)
           ! Update non-eqilibrited force vector
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,fstrSOLID,conMAT)
+          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,conMAT,fstrSOLID%INSERT_NFORCE)
 
         enddo
       enddo
-
     enddo
 
     !    Consider SPC condition
@@ -498,9 +499,8 @@ contains
 
   !> \brief This subroutine assembles contact nodal force vector into right-hand side vector
   !! to update non-equilibrated nodal force vector.
-  subroutine update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,fstrSOLID,hecMAT)
+  subroutine update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,hecMAT,cont_nforce,cont_fric)
 
-    type(fstr_solid)                        :: fstrSOLID                       !< type fstr_solid
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     integer(kind=kint) :: nnode, ndLocal(nnode + 1) !< number of nodes of master segment
     !< global number of nodes of contact pair
@@ -510,6 +510,8 @@ contains
     integer (kind=kint)                     :: i, inod, idx
     real(kind=kreal)                        :: ctNForce((nnode+1)*3+1)         !< contact force vector
     real(kind=kreal)                        :: ctTForce((nnode+1)*3+1)         !< contact force vector
+    real(kind=kreal), pointer               :: cont_nforce(:)         !< contact force vector
+    real(kind=kreal), pointer, optional     :: cont_fric(:)         !< contact force vector
 
     np = hecMAT%NP; ndof = hecMAT%NDOF
 
@@ -517,9 +519,8 @@ contains
       inod = ndLocal(i)
       idx = (inod-1)*3+1
       hecMAT%B(idx:idx+2) = hecMAT%B(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3) + ctTForce((i-1)*3+1:(i-1)*3+3)
-      if( lagrange < 0.d0 ) cycle
-      fstrSOLID%CONT_NFORCE(idx:idx+2) = fstrSOLID%CONT_NFORCE(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3)
-      fstrSOLID%CONT_FRIC(idx:idx+2) = fstrSOLID%CONT_FRIC(idx:idx+2) + ctTForce((i-1)*3+1:(i-1)*3+3)
+      cont_nforce(idx:idx+2) = cont_nforce(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3)
+      if( present(cont_fric) ) cont_fric(idx:idx+2) = cont_fric(idx:idx+2) + ctTForce((i-1)*3+1:(i-1)*3+3)
     enddo
 
     hecMAT%B(np*ndof+id_lagrange) = ctNForce((nnode+1)*3+1)+ctTForce((nnode+1)*3+1)
@@ -584,11 +585,12 @@ contains
             call getContactNodalForce(etype,nnode,ndCoord,ndu,fstrSOLID%contacts(i)%states(j),    &
             fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.false.)
             ! Update non-eqilibrited force vector
-            call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,fstrSOLID,hecMAT)
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce, & 
+               &  hecMAT,fstrSOLID%CONT_NFORCE,fstrSOLID%CONT_FRIC)
           else if( algtype == CONTACTTIED ) then
             call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%contacts(i)%states(j),lagrange,ctNForce,ctTForce)
             ! Update non-eqilibrited force vector
-            call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,fstrSOLID,hecMAT)
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,hecMAT,fstrSOLID%CONT_NFORCE)
           endif 
 
         enddo
@@ -621,7 +623,7 @@ contains
     
           call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%inserts(i)%states(j),lagrange,ctNForce,ctTForce)
           ! Update non-eqilibrited force vector
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,fstrSOLID,hecMAT)
+          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,hecMAT,fstrSOLID%INSERT_NFORCE)
 
         enddo
       enddo

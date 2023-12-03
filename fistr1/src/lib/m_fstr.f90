@@ -340,6 +340,7 @@ module m_fstr
     real(kind=kreal), pointer :: CONT_AREA(:)    !< contact area
     real(kind=kreal), pointer :: CONT_NTRAC(:)   !< contact normal traction force for output
     real(kind=kreal), pointer :: CONT_FTRAC(:)   !< contact friction traction force for output
+    real(kind=kreal), pointer :: INSERT_NFORCE(:)  !< insert force for output
 
     type(fstr_solid_physic_val), pointer :: SOLID=>null()     !< for solid physical value stracture
     type(fstr_solid_physic_val), pointer :: SHELL=>null()     !< for shell physical value stracture
