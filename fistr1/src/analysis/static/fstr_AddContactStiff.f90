@@ -123,7 +123,7 @@ contains
     integer(kind=kint)  :: idof
     type(tContactState) :: ctState !< type tContactState
     real(kind=kreal)    :: lagrange !< value of Lagrange multiplier
-    real(kind=kreal)    :: stiffness((nnode+1)*3 + 1, (nnode+1)*3 + 1) !< contact stiffness matrix
+    real(kind=kreal)    :: stiffness(:,:) !< contact stiffness matrix
 
     integer(kind=kint)  :: i, j, k, l
     real(kind=kreal)    :: shapefunc(nnode) !< normal vector at target point; shape functions
@@ -159,7 +159,7 @@ contains
     real(kind=kreal)    :: lagrange !< value of Lagrange multiplier
     real(kind=kreal)    :: tf_trial(3), length_tft
     real(kind=kreal)    :: tangent(3), tTm((nnode + 1)*3)
-    real(kind=kreal)    :: stiffness(9*3 + 1, 9*3 + 1) !< contact stiffness matrix
+    real(kind=kreal)    :: stiffness(:,:) !< contact stiffness matrix
 
     stiffness = 0.0d0
 
