@@ -1060,7 +1060,7 @@ contains
     allocate(hecMAT%D(NDOF2*NP))
     allocate(hecMAT%AU(NDOF2*NPU))
     allocate(hecMAT%AL(NDOF2*NPL))
-    allocate(hecMAT%indexL(0:N), hecMAT%indexU(0:N), hecMAT%itemL(NPL), hecMAT%itemU(NPU))
+    allocate(hecMAT%indexL(0:NP), hecMAT%indexU(0:NP), hecMAT%itemL(NPL), hecMAT%itemU(NPU))
     hecMAT%B       = hecMATorig%B
     hecMAT%X       = hecMATorig%X
     hecMAT%D       = hecMATorig%D
