@@ -178,7 +178,7 @@ contains
         exit
       elseif (iter > 1 .and. RHO*RHO1 <= 0) then
         n_indef_precond = n_indef_precond + 1
-        if (n_indef_precond >= 3) then
+        if (n_indef_precond >= 10) then
           ! diverged due to indefinite preconditioner
           error = HECMW_SOLVER_ERROR_DIVERGE_PC
           exit
@@ -186,6 +186,8 @@ contains
       elseif (RHO /= RHO) then  ! RHO is NaN
         error = HECMW_SOLVER_ERROR_DIVERGE_NAN
         exit
+      else
+        n_indef_precond = 0
       endif
 
       !C===

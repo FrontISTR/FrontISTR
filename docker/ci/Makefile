@@ -15,7 +15,7 @@ build: builder
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build -f Dockerfile . --target build
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:metis4 -f Dockerfile . --target build-metis4
 document: builder
-	docker buildx build --push --builder multiarch --platform x86_64 -t $(CI_REGISTRY_IMAGE)/document      -f Dockerfile      . --target document
+	docker buildx build --push --builder multiarch --platform x86_64 -t $(CI_REGISTRY_IMAGE)/document      -f Dockerfile.ubuntu2004      . --target document
 builder:
 	-docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 	-docker buildx create --name multiarch --driver docker-container

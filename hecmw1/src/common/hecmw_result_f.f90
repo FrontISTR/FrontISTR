@@ -81,7 +81,7 @@ contains
 
   subroutine hecmw_result_init(hecMESH, i_step, header, comment)
     type(hecmwST_local_mesh):: hecMESH
-    integer(kind=kint) :: nnode, nelem, i_step, ierr
+    integer(kind=kint) :: i_step, ierr
     integer :: i, org_id
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN) :: comment
@@ -188,7 +188,7 @@ contains
       deallocate(data_wo_MPC)
       if (ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
     else
-      return ! NEVER COME HERE (not node, not elem)
+      call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
     end if
 
   end subroutine hecmw_result_add
