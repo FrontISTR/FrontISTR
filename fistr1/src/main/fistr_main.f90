@@ -51,8 +51,6 @@ contains
     name_ID = 'fstrMSH'
     call hecmw_get_mesh( name_ID , hecMESH )
 
-    call hecmw_tuning_reorder_do(hecMESH, 20, 20, 20, 0.1d0)
-
     if( hecMESH%contact_pair%n_pair > 0 ) then
       paraContactFlag = .true.
       if( myrank == 0 ) then
@@ -148,18 +146,23 @@ contains
     NRRES    => fstrPR%nrres
     NPRINT   => fstrPR%nprint
 
-    call hecmw_mat_con(hecMESH, hecMAT)
-
     ! ------- initial value setting -------------
-    call fstr_mat_init  ( hecMAT   )
     call fstr_param_init( fstrPR, hecMESH )
-
     call fstr_solid_init( hecMESH, fstrSOLID )
     call fstr_eigen_init( fstrEIG )
     call fstr_heat_init ( fstrHEAT  )
     call fstr_dynamic_init( fstrDYNAMIC  )
+    call fstr_mat_init  ( hecMAT   )
 
     call fstr_init_condition
+
+    if( hecMAT%Iarray(99) == 1 .and. hecMESH%n_dof == 3 .and. & !reorder only when 3x3 iterative solver
+        ( fstrPR%solution_type == kstSTATIC .or. fstrPR%solution_type == kstDYNAMIC ) &
+        .and. .not. associated( fstrSOLID%contacts ) ) & 
+      &  call hecmw_tuning_reorder_do(hecMESH, 20, 20, 20, 0.1d0)
+
+    call hecmw_mat_con(hecMESH, hecMAT)
+
     hecMAT%NDOF = hecMESH%n_dof
     if( kstHEAT == fstrPR%solution_type ) then
       call heat_init_material (hecMESH,fstrHEAT)
