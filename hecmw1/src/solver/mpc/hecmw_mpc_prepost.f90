@@ -24,6 +24,8 @@ module hecmw_mpc_prepost
   public :: hecmw_mpc_tback_eigvec
   public :: hecmw_mpc_mark_slave
 
+  logical, parameter :: DEBUG_VECTOR = .true.
+
 contains
 
   !C
@@ -494,6 +496,8 @@ contains
 
     ndof = hecMAT%NDOF
 
+    call debug_write_vector(B, 'original RHS', 'B', ndof, hecMAT%N, hecMAT%NP, .true.)
+
     allocate(W(hecMESH%n_node * ndof))
 
     !C===
@@ -530,6 +534,8 @@ contains
     call hecmw_Ttvec(hecMESH, ndof, W, BT, COMMtime)
 
     deallocate(W)
+
+    call debug_write_vector(BT, 'transformed RHS', 'BT', ndof, hecMAT%N, hecMAT%NP, .true.)
   end subroutine hecmw_trans_b
 
 
@@ -547,6 +553,9 @@ contains
 
     real(kind=kreal), allocatable :: W(:)
     integer(kind=kint) :: i, j, k, kk
+
+    call debug_write_vector(X, 'solution for transformed eqn', 'X', ndof, hecMESH%nn_internal, &
+        hecMESH%n_node, .true.)
 
     allocate(W(hecMESH%n_node * ndof))
 
@@ -576,6 +585,8 @@ contains
     deallocate(W)
 
     call hecmw_update_R(hecMESH, X, hecMESH%n_node, ndof)
+    call debug_write_vector(X, 'recovered solution', 'X', ndof, hecMESH%nn_internal, &
+        hecMESH%n_node, .true.)
   end subroutine hecmw_tback_x
 
   subroutine hecmw_mpc_mesh_copy(src, dst)
@@ -649,4 +660,43 @@ contains
     deallocate(hecMESH%node_ID)
     deallocate(hecMESH%elem_type_item)
   end subroutine hecmw_mpc_mesh_free
+
+  !> \brief Debug write vector
+  !>
+  subroutine debug_write_vector(Vec, label, name, ndof, N, &
+      NP, write_ext, slaves)
+    real(kind=kreal),   intent(in) :: Vec(:) !< vector
+    character(len=*),   intent(in) :: label  !< label for vector
+    character(len=*),   intent(in) :: name   !< name of vector
+    integer(kind=kint), intent(in) :: ndof   !< num of DOF per node
+    integer(kind=kint), intent(in) :: N      !< num of nodes excl. external nodes
+    integer(kind=kint), intent(in), optional :: NP           !< num of nodes incl. external nodes
+    logical,            intent(in), optional :: write_ext    !< whether to write external dofs or not
+    integer(kind=kint), intent(in), optional :: slaves(:)    !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    !
+    integer(kind=kint) :: iunit
+    character(len=128) :: fmt
+
+    if (.not. DEBUG_VECTOR) return
+
+    write(fmt,'(a,i0,a)') '(',ndof,'f12.3)'
+
+    iunit = 1000 + hecmw_comm_get_rank()
+    write(iunit,*) trim(label),'------------------------------------------------------------'
+    write(iunit,*) 'size of ',trim(name),size(Vec)
+    write(iunit,*) trim(name),': 1-',N*ndof
+    write(iunit,fmt) Vec(1:N*ndof)
+    if (present(write_ext) .and. present(NP)) then
+      if (write_ext) then
+        write(iunit,*) trim(name),'(external): ',N*ndof+1,'-',NP*ndof
+        write(iunit,fmt) Vec(N*ndof+1:NP*ndof)
+      endif
+    endif
+    if (present(slaves)) then
+      if (size(slaves) > 0) then
+        write(iunit,*) trim(name),'(slave):',slaves(:)
+        write(iunit,fmt) Vec(slaves(:))
+      endif
+    endif
+  end subroutine debug_write_vector
 end module hecmw_mpc_prepost
