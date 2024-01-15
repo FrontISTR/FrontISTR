@@ -36,12 +36,12 @@ contains
     !> !RADIATE
     call heat_mat_ass_bc_RADIATE(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
 
+    !> !BOUNDARY
+    call heat_mat_ass_bc_FIXT(hecMAT, fstrHEAT, next_time, delta_time, beta)
+
     !> MPC
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-
-    !> !BOUNDARY
-    call heat_mat_ass_bc_FIXT(hecMATmpc, fstrHEAT, next_time, delta_time, beta)
 
   end subroutine heat_mat_ass_boundary
 end module m_heat_mat_ass_boundary
