@@ -321,6 +321,7 @@ endif()
 ###################
 if(WITH_MONOLIS)
   list(APPEND FrontISTR_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/include)
+  list(APPEND FrontISTR_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/submodule/ggtools)
 
   find_library(MONOLIS_SOLVER_LIB
     NAMES monolis_solver
@@ -332,7 +333,7 @@ if(WITH_MONOLIS)
   )
   find_library(MONOLIS_GGTOOLS_LIB
     NAMES ggtools
-    HINTS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/lib
+    HINTS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/submodule/ggtools/lib
   )
   find_library(MONOLIS_UTILS_LIB
     NAMES monolis_utils
