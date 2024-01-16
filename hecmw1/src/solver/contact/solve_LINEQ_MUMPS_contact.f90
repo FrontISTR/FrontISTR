@@ -10,6 +10,7 @@ module m_solve_LINEQ_MUMPS_contact
   use m_sparse_matrix_contact
   use m_hecmw_MUMPS_wrapper
   use hecmw_matrix_dump
+  use hecmw_matrix_ass
 
   private
   public :: solve_LINEQ_MUMPS_contact_init
@@ -72,6 +73,8 @@ contains
 
     integer(kind=kint) :: mumps_job
 
+    call hecmw_mat_ass_equation(hecMESH, hecMAT)
+    call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     ! ANALYSIS
