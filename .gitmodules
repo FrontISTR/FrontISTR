@@ -1,3 +1,6 @@
 [submodule "doc/FrontISTR_manual"]
 	path = doc/FrontISTR_manual
 	url = ../FrontISTR_manual
+[submodule "hecmw1/monolis"]
+	path = hecmw1/monolis
+	url = https://github.com/nqomorita/monolis.git
