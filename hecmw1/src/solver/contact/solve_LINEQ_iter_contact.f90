@@ -8,7 +8,7 @@ module m_solve_LINEQ_iter_contact
   use hecmw_util
   use hecmw_local_matrix
   use m_hecmw_contact_comm
-  use hecmw_solver_iterative
+  use hecmw_solver
   use hecmw_matrix_misc
   use m_hecmw_comm_f
   use hecmw_solver_misc
@@ -60,7 +60,7 @@ contains
     type(hecmwST_matrix),          intent(in)    :: conMAT            !< matrix for contact
     logical,                       intent(in)    :: is_contact_active !< if contact is active or not
     !
-    integer(kind=kint) :: method_org
+    integer(kind=kint) :: solver_type, method_org
     integer(kind=kint) :: is_contact
     integer(kind=kint) :: myrank
 
@@ -74,13 +74,18 @@ contains
 
     if (is_contact == 0) then
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: no contact'
-      ! use CG because the matrix is symmetric
-      method_org = hecmw_mat_get_method(hecMAT)
-      call hecmw_mat_set_method(hecMAT, 1)
+      solver_type = hecmw_mat_get_solver_type(hecMAT)
+      if (solver_type == 1) then
+        ! use CG because the matrix is symmetric
+        method_org = hecmw_mat_get_method(hecMAT)
+        call hecmw_mat_set_method(hecMAT, 1)
+      endif
       ! solve
       call solve_with_MPC(hecMESH, hecMAT)
-      ! restore solver setting
-      call hecmw_mat_set_method(hecMAT, method_org)
+      if (solver_type == 1) then
+        ! restore solver setting
+        call hecmw_mat_set_method(hecMAT, method_org)
+      endif
     else
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: with contact'
       call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
@@ -104,13 +109,13 @@ contains
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-    call hecmw_solve_iterative(hecMESHmpc,hecMATmpc)
+    call hecmw_solve(hecMESHmpc,hecMATmpc)
     if (fg_cg .and. fg_amg .and. hecmw_mat_get_flag_diverged(hecMATmpc) /= 0) then
       ! avoid ML and retry when diverged
       call hecmw_mat_set_precond(hecMATmpc, 3) ! set diag-scaling
       hecMATmpc%Iarray(97:98) = 1
       hecMATmpc%X(:) = 0.d0
-      call hecmw_solve_iterative(hecMESHmpc,hecMATmpc)
+      call hecmw_solve(hecMESHmpc,hecMATmpc)
       call hecmw_mat_set_precond(hecMATmpc, 5) ! restore amg
     endif
     call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
