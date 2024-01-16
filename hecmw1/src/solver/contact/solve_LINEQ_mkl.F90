@@ -12,6 +12,7 @@ module m_solve_LINEQ_MKL_contact
   use hecmw_matrix_dump
   use m_hecmw_MKL_wrapper
   use m_hecmw_ClusterMKL_wrapper
+  use hecmw_matrix_ass
 
   implicit none
 
@@ -61,6 +62,8 @@ contains
     real(kind=kreal)    :: t1,t2
 
     t1=hecmw_wtime()
+    call hecmw_mat_ass_equation(hecMESH, hecMAT)
+    call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     if (NEED_ANALYSIS) then

@@ -8,6 +8,7 @@ module m_solve_LINEQ_direct_serial_lag
   use m_set_arrays_directsolver_contact
   use hecmw_solver_direct_serial_lag
   use hecmw_matrix_dump
+  use hecmw_matrix_ass
 
 contains
 
@@ -33,6 +34,8 @@ contains
 
     real(kind=8), allocatable               :: b(:)           !< right-hand side vector
 
+    call hecmw_mat_ass_equation(hecMESH, hecMAT)
+    call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     call set_values_directsolver(hecMAT,hecLagMAT)
