@@ -4,6 +4,9 @@
 !-------------------------------------------------------------------------------
 
 module hecmw
+#ifdef HECMW_WITH_MONOLIS
+  use mod_monollis
+#endif
   use hecmw_allocate
   use hecmw_control
   use hecmw_dist_copy_c2f_f

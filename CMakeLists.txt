@@ -174,6 +174,7 @@ option(PARMETIS_VER_3 "uses METIS-3" OFF)
 option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
+option(WITH_MONOLIS "monolis library" OFF)
 option(OLD_RES_FORMAT "use old style result file" ${OLD_RES_FORMAT})
 option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
@@ -315,6 +316,14 @@ if(WITH_LAPACK)
   endif()
 endif()
 
+###################
+# -DWITH_MONOLIS
+###################
+if(WITH_MONOLIS)
+  list(APPEND FrontISTR_INCLUDE_DIRS "")
+  list(APPEND FrontISTR_LIBRARIES "monolis_solver gedatsu monolis_utils")
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MONOLIS")
+endif()
 
 ###################
 # -DOLD_RES_FORMAT

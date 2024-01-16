@@ -4,7 +4,7 @@
 ###############################################################################
 
 list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw.F90
 )
 
 list(APPEND hecmw_INCLUDE_DIRS

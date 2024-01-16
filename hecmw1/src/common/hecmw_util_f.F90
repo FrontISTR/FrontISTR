@@ -12,7 +12,9 @@ module hecmw_util
   private :: hecmw_PETOT,hecmw_rank,hecmw_comm,hecmw_group
   public
 
+#ifndef HECMW_WITH_MONOLIS
   integer(kind=4),parameter:: kint  = 4
+#endif
   integer(kind=4),parameter:: kreal = 8
 
   integer(kind=kint),parameter :: HECMW_NAME_LEN     =   63
