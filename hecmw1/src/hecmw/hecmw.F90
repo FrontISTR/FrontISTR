@@ -5,7 +5,7 @@
 
 module hecmw
 #ifdef HECMW_WITH_MONOLIS
-  use mod_monollis
+  use mod_monolis, monolis_int => kint
 #endif
   use hecmw_allocate
   use hecmw_control

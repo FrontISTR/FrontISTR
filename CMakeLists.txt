@@ -320,8 +320,29 @@ endif()
 # -DWITH_MONOLIS
 ###################
 if(WITH_MONOLIS)
-  list(APPEND FrontISTR_INCLUDE_DIRS "")
-  list(APPEND FrontISTR_LIBRARIES "monolis_solver gedatsu monolis_utils")
+  list(APPEND FrontISTR_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/include)
+
+  find_library(MONOLIS_SOLVER_LIB
+    NAMES monolis_solver
+    HINTS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/lib
+  )
+  find_library(MONOLIS_GEDATSU_LIB
+    NAMES gedatsu
+    HINTS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/lib
+  )
+  find_library(MONOLIS_GGTOOLS_LIB
+    NAMES ggtools
+    HINTS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/lib
+  )
+  find_library(MONOLIS_UTILS_LIB
+    NAMES monolis_utils
+    HINTS ${CMAKE_SOURCE_DIR}/hecmw1/monolis/lib
+  )
+
+  list(APPEND FrontISTR_LIBRARIES ${MONOLIS_SOLVER_LIB})
+  list(APPEND FrontISTR_LIBRARIES ${MONOLIS_GEDATSU_LIB})
+  #list(APPEND FrontISTR_LIBRARIES ${MONOLIS_GGTOOLS_LIB})
+  list(APPEND FrontISTR_LIBRARIES ${MONOLIS_UTILS_LIB})
   list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MONOLIS")
 endif()
 
