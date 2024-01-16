@@ -31,15 +31,40 @@ contains
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange)
     logical :: is_sym
+    integer(kind=kint) :: contact_elim, solver_type, iterlog, timelog, myrank
+    logical :: writelog
 
-    if( hecMAT%Iarray(99)==1 )then
+    contact_elim = hecmw_mat_get_contact_elim(hecMAT)
+    solver_type = hecmw_mat_get_solver_type(hecMAT)
+    iterlog = hecmw_mat_get_iterlog(hecMAT)
+    timelog = hecmw_mat_get_timelog(hecMAT)
+    myrank = hecmw_comm_get_rank()
+    writelog = (myrank==0 .and. (iterlog>0 .or. timelog>0))
+
+    if( contact_elim==0 )then ! auto
+      if( solver_type==1 )then ! iterative
+        contact_elim=1
+      else ! direct
+        contact_elim=-1
+      endif
+      call hecmw_mat_set_contact_elim(hecMAT,contact_elim)
+    endif
+
+    if( contact_elim==1 )then
+      if( writelog ) write(*,*) 'solve contact with elimination'
       call solve_LINEQ_iter_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
-    elseif( hecMAT%Iarray(99)==2 )then
-      call solve_LINEQ_serial_lag_hecmw_init(hecMAT,hecLagMAT,is_sym)
-    else if( hecMAT%Iarray(99)==3 )then
-      call solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
-    elseif( hecMAT%Iarray(99)==5 ) then
-      call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+    else
+      if( writelog ) write(*,*) 'solve contact without elimination'
+      if( solver_type==1 )then
+        write(*,*) 'ERROR: iterative solver without elimination not available in contact analysis'
+        call hecmw_abort(hecmw_comm_get_comm())
+      elseif( solver_type==2 )then
+        call solve_LINEQ_serial_lag_hecmw_init(hecMAT,hecLagMAT,is_sym)
+      else if( solver_type==3 )then
+        call solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
+      elseif( solver_type==5 ) then
+        call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+      endif
     endif
   end subroutine solve_LINEQ_contact_init
 
@@ -58,6 +83,10 @@ contains
     real(kind=kreal)                         :: factor
     real(kind=kreal) :: t1, t2
     integer(kind=kint) :: ndof
+    integer(kind=kint) :: contact_elim, solver_type
+
+    contact_elim = hecmw_mat_get_contact_elim(hecMAT)
+    solver_type = hecmw_mat_get_solver_type(hecMAT)
 
     factor = 1.0d0
     if( present(rf) )factor = rf
@@ -65,25 +94,31 @@ contains
     t1 = hecmw_wtime()
 
     istat = 0
-    if( hecMAT%Iarray(99)==1 )then
+    if( contact_elim==1 )then
       call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
-    elseif( hecMAT%Iarray(99)==2 )then
-      if( hecmw_comm_get_size() > 1) then
-        write(*,*) 'ERROR: !SOLVER,METHOD=DIRECT not available in parallel contact analysis; please use MUMPS or DIRECTmkl instead'
+    else
+      if( solver_type==1 )then
+        write(*,*) 'ERROR: iterative solver without elimination not available in contact analysis'
         call hecmw_abort(hecmw_comm_get_comm())
-      else
-        call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
-        call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
+      elseif( solver_type==2 )then
+        if( hecmw_comm_get_size() > 1) then
+          write(*,*) 'ERROR: !SOLVER,METHOD=DIRECT not available in parallel contact analysis;',&
+              ' please use MUMPS or DIRECTmkl instead'
+          call hecmw_abort(hecmw_comm_get_comm())
+        else
+          call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
+          call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
+        endif
+      elseif( solver_type==3 )then
+        if( hecmw_comm_get_size() > 1) then
+          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
+        else
+          call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
+          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat)
+        endif
+      elseif( solver_type==5 ) then
+        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
       endif
-    elseif( hecMAT%Iarray(99)==3 )then
-      if( hecmw_comm_get_size() > 1) then
-        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
-      else
-        call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
-        call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat)
-      endif
-    elseif( hecMAT%Iarray(99)==5 ) then
-      call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
     endif
 
     ndof = hecMAT%NDOF
