@@ -23,8 +23,11 @@ module hecmw_mpc_prepost
   public :: hecmw_mpc_trans_mass
   public :: hecmw_mpc_tback_eigvec
   public :: hecmw_mpc_mark_slave
+  public :: hecmw_mpc_check_solution
+  public :: hecmw_mpc_check_equation
 
-  logical, parameter :: DEBUG_VECTOR = .true.
+  integer, parameter :: DEBUG = 0
+  logical, parameter :: DEBUG_VECTOR = .false.
 
 contains
 
@@ -227,7 +230,7 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
-    type (hecmwST_matrix), intent(inout), optional :: conMAT
+    type (hecmwST_matrix), intent(in), optional :: conMAT
     type (hecmwST_matrix), pointer, optional :: conMATmpc
     type (hecmwST_matrix_lagrange), intent(inout), optional :: hecLagMAT
     integer(kind=kint) :: totalmpc, MPC_METHOD
@@ -588,6 +591,66 @@ contains
     call debug_write_vector(X, 'recovered solution', 'X', ndof, hecMESH%nn_internal, &
         hecMESH%n_node, .true.)
   end subroutine hecmw_tback_x
+
+  subroutine hecmw_mpc_check_solution(hecMESH, hecMAT)
+    use hecmw_solver_misc
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in) :: hecMAT
+
+    real(kind=kreal), allocatable :: kx(:), ttkx(:), ttb(:), resid(:)
+    integer(kind=kint) :: ndof, nndof, npndof, i
+    real(kind=kreal) :: bnrm, rnrm, commtime
+
+    ndof = hecMAT%NDOF
+    nndof = hecMAT%N * ndof
+    npndof = hecMAT%NP * ndof
+    allocate(kx(npndof), ttkx(npndof), ttb(npndof), resid(npndof))
+    call hecmw_matvec(hecMESH, hecMAT, hecMAT%X, kx)
+    call hecmw_Ttvec(hecMESH, ndof, kx, ttkx, commtime)
+    call hecmw_Ttvec(hecMESH, ndof, hecMAT%B, ttb, commtime)
+    do i = 1, nndof
+      resid(i) = ttb(i) - ttkx(i)
+    enddo
+    call hecmw_innerProduct_R(hecMESH, ndof, ttb, ttb, bnrm)
+    call hecmw_innerProduct_R(hecMESH, ndof, resid, resid, rnrm)
+    bnrm = sqrt(bnrm)
+    rnrm = sqrt(rnrm)
+    write(0,*) 'DEBUG: hecmw_mpc_check_solution: resid(abs), resid(rel):',rnrm, rnrm/bnrm
+  end subroutine hecmw_mpc_check_solution
+
+  subroutine hecmw_mpc_check_equation(hecMESH, hecMAT)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in) :: hecMAT
+
+    integer(kind=kint) :: ndof
+    integer(kind=kint) :: i, j, kk
+    real(kind=kreal) :: xmax, sum, resid, resid_max
+
+    ndof = hecMAT%NDOF
+    xmax = 0.d0
+    do i = 1, hecMESH%nn_internal * ndof
+      if (xmax < abs(hecMAT%X(i))) xmax = abs(hecMAT%X(i))
+    enddo
+    call hecmw_allreduce_R1 (hecMESH, xmax, hecmw_max)
+
+    resid_max = 0.d0
+    OUTER: do i = 1, hecMESH%mpc%n_mpc
+      do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+      enddo
+      sum = 0.d0
+      do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)
+        kk = ndof * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+        sum = sum + hecMAT%X(kk) * hecMESH%mpc%mpc_val(j)
+      enddo
+      resid = abs(hecMESH%mpc%mpc_const(i) - sum)
+      if (resid_max < resid) resid_max = resid
+    enddo OUTER
+    call hecmw_allreduce_R1 (hecMESH, resid_max, hecmw_max)
+    write(0,*) 'DEBUG: hecmw_mpc_check_equation: resid(abs), resid(rel):', resid_max, resid_max/xmax
+  end subroutine hecmw_mpc_check_equation
 
   subroutine hecmw_mpc_mesh_copy(src, dst)
     implicit none
