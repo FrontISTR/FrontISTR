@@ -12,7 +12,7 @@ module m_solve_LINEQ_contact
   use m_solve_LINEQ_MKL_contact
   use m_solve_LINEQ_direct_serial_lag
   use m_solve_LINEQ_MUMPS_contact
-  use m_solve_LINEQ_iter_contact
+  use m_solve_LINEQ_contact_elim
   use m_hecmw_mat_resid_contact
   use hecmw_matrix_misc
   use m_hecmw_comm_f
@@ -52,7 +52,7 @@ contains
 
     if( contact_elim==1 )then
       if( writelog ) write(*,*) 'solve contact with elimination'
-      call solve_LINEQ_iter_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+      call solve_LINEQ_contact_elim_init(hecMESH,hecMAT,hecLagMAT,is_sym)
     else
       if( writelog ) write(*,*) 'solve contact without elimination'
       if( solver_type==1 )then
@@ -95,7 +95,7 @@ contains
 
     istat = 0
     if( contact_elim==1 )then
-      call solve_LINEQ_iter_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
+      call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
     else
       if( solver_type==1 )then
         write(*,*) 'ERROR: iterative solver without elimination not available in contact analysis'

@@ -4,7 +4,7 @@
 !-------------------------------------------------------------------------------
 !> This module provides interface of iteratie linear equation solver for
 !! contact problems using Lagrange multiplier.
-module m_solve_LINEQ_iter_contact
+module m_solve_LINEQ_contact_elim
   use hecmw_util
   use hecmw_local_matrix
   use m_hecmw_contact_comm
@@ -18,8 +18,8 @@ module m_solve_LINEQ_iter_contact
   implicit none
 
   private
-  public :: solve_LINEQ_iter_contact_init
-  public :: solve_LINEQ_iter_contact
+  public :: solve_LINEQ_contact_elim_init
+  public :: solve_LINEQ_contact_elim
 
   logical, save :: INITIALIZED = .false.
   integer, save :: SymType = 0
@@ -30,7 +30,7 @@ module m_solve_LINEQ_iter_contact
 
 contains
 
-  subroutine solve_LINEQ_iter_contact_init(hecMESH, hecMAT, hecLagMAT, is_sym)
+  subroutine solve_LINEQ_contact_elim_init(hecMESH, hecMAT, hecLagMAT, is_sym)
     type(hecmwST_local_mesh),      intent(in)    :: hecMESH   !< mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT    !< matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(in)    :: hecLagMAT !< matrix for lagrange multipliers
@@ -50,9 +50,9 @@ contains
     endif
 
     INITIALIZED = .true.
-  end subroutine solve_LINEQ_iter_contact_init
+  end subroutine solve_LINEQ_contact_elim_init
 
-  subroutine solve_LINEQ_iter_contact(hecMESH, hecMAT, hecLagMAT, istat, conMAT, is_contact_active)
+  subroutine solve_LINEQ_contact_elim(hecMESH, hecMAT, hecLagMAT, istat, conMAT, is_contact_active)
     type(hecmwST_local_mesh),      intent(inout) :: hecMESH           !< mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT            !< matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT         !< matrix for lagrange multipliers
@@ -92,7 +92,7 @@ contains
     endif
 
     istat = hecmw_mat_get_flag_diverged(hecMAT)
-  end subroutine solve_LINEQ_iter_contact
+  end subroutine solve_LINEQ_contact_elim
 
   subroutine solve_with_MPC(hecMESH, hecMAT)
     type(hecmwST_local_mesh),      intent(inout) :: hecMESH           !< mesh
@@ -1584,4 +1584,4 @@ contains
     endif
   end subroutine debug_write_vector
 
-end module m_solve_LINEQ_iter_contact
+end module m_solve_LINEQ_contact_elim
