@@ -51,7 +51,6 @@ contains
     if( associated( fstrSOLID%contacts ) ) then
       call setup_contact_output_variables( hecMESH, fstrSOLID, -1 )
     endif
-    if( fstrSOLID%n_inserts > 0 ) call setup_insert_output( hecMESH, fstrSOLID, -1 )
 
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
@@ -65,7 +64,6 @@ contains
         (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
-      if( fstrSOLID%n_inserts > 0 ) call setup_insert_output( hecMESH, fstrSOLID, 3 )
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
     endif
 
@@ -74,7 +72,6 @@ contains
 
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
-      if( fstrSOLID%n_inserts > 0 ) call setup_insert_output( hecMESH, fstrSOLID, 4 )
       call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
