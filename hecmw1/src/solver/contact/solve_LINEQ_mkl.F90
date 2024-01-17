@@ -13,6 +13,7 @@ module m_solve_LINEQ_MKL_contact
   use m_hecmw_MKL_wrapper
   use m_hecmw_ClusterMKL_wrapper
   use hecmw_matrix_ass
+  use hecmw_matrix_misc
 
   implicit none
 
@@ -60,10 +61,23 @@ contains
 
     integer(kind=kint)  :: phase_start
     real(kind=kreal)    :: t1,t2
+    integer(kind=kint)  :: mpc_method
 
     t1=hecmw_wtime()
+
+    mpc_method = hecmw_mat_get_mpc_method(hecMAT)
+    if (mpc_method < 1 .or. 3 < mpc_method) then
+      mpc_method = 1
+      call hecmw_mat_set_mpc_method(hecMAT,mpc_method)
+    endif
+    if (mpc_method /= 1) then
+      write(*,*) 'ERROR: MPCMETHOD other than penalty is not available for DIRECTmkl solver', &
+          ' in contact analysis without elimination'
+      stop
+    endif
     call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
+
     call hecmw_mat_dump(hecMAT, hecMESH)
 
     if (NEED_ANALYSIS) then
