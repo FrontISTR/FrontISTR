@@ -1599,6 +1599,7 @@ contains
     allocate ( phys%ESTRAIN (mdof*n_elem))
     allocate ( phys%ESTRESS (mdof*n_elem))
     allocate ( phys%EMISES  (     n_elem))
+    allocate ( phys%EPLSTRAIN (   n_elem))
     allocate ( phys%ENQM    (12*n_elem))
   end subroutine fstr_setup_post_phys_alloc
 
