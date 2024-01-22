@@ -330,9 +330,9 @@ contains
           PHX=XCOD-HX
           PHY=YCOD-HY
           PHZ=ZCOD-HZ
-          COEFX=RHO*val*val*PHX
-          COEFY=RHO*val*val*PHY
-          COEFZ=RHO*val*val*PHZ
+          COEFX=RHO*val*dabs(val)*PHX
+          COEFY=RHO*val*dabs(val)*PHY
+          COEFZ=RHO*val*dabs(val)*PHZ
         end if
 
         WG=getWeight( etype, LX )*DET
