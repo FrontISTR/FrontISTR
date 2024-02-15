@@ -4,6 +4,8 @@ my $path_ref  = shift;
 my $path_test = shift;
 use Data::Dumper;
 
+my $eps = 1e-8;
+
 my %r=func($path_ref);
 #print Dumper {%r};
 my %t=func($path_test);
@@ -12,8 +14,8 @@ my $return=0;
 
 foreach my $key(sort keys(%r)){
   my $res;
-  if ($r{$key} == 0){
-    $res=0
+  if ($r{$key} < $eps){
+    $res = $r{$key} - $t{$key};
   }else{
     $res = ($r{$key} - $t{$key})/$r{$key};
   }
