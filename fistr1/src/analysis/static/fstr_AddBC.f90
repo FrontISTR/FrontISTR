@@ -26,7 +26,7 @@ contains
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
-    real(kind=kreal)   :: RHS, factor
+    real(kind=kreal)   :: RHS0, RHS, factor
     integer(kind=kint) :: ndof, grpid
 
     !for rotation
@@ -53,9 +53,9 @@ contains
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-      RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
+      RHS0 = fstrSOLID%BOUNDARY_ngrp_val(ig0)
       !
-      RHS= RHS*factor
+      RHS= RHS0*factor
       !
       ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
       idofS = ityp/10
@@ -86,6 +86,7 @@ contains
         in = hecMESH%node_group%grp_item(ik)
         !
         do idof = idofS, idofE
+          RHS = (RHS0 - fstrSOLID%unode_bak(ndof*(in-1)+idof))*factor
           if(present(conMAT)) then
             call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
           else

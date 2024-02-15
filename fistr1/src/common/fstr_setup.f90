@@ -1022,6 +1022,13 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%unode_bak( ntotal )  ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, unode>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
     allocate ( fstrSOLID%dunode( ntotal )  ,stat=ierror )
     if( ierror /= 0 ) then
       write(idbg,*) 'stop due to allocation error <FSTR_SOLID, dunode>'
@@ -1047,6 +1054,7 @@ contains
     fstrSOLID%GL(:)=0.d0
     !        fstrSOLID%TOTAL_DISP(:)=0.d0
     fstrSOLID%unode(:)      = 0.d0
+    fstrSOLID%unode_bak(:)  = 0.d0
     fstrSOLID%dunode(:)     = 0.d0
     fstrSOLID%ddunode(:)    = 0.d0
     fstrSOLID%QFORCE(:)     = 0.d0
@@ -1256,6 +1264,14 @@ contains
       deallocate(fstrSOLID%unode       ,stat=ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, unode>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%unode_bak) ) then
+      deallocate(fstrSOLID%unode_bak   ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, unode_bak>'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
