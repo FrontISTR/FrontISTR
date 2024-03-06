@@ -23,7 +23,7 @@ set(fistr_LIBRARIES ${FrontISTR_LIBRARIES})
 #
 include(src/CMakeLists.txt)
 add_library(fistr STATIC ${fistr_SOURCES})
-target_link_libraries(fistr hecmw)
+target_link_libraries(fistr contact element util hecmw)
 target_include_directories(fistr PUBLIC
   ${fistr_INCLUDE_DIRS} ${hecmw_INCLUDE_DIRS}
 )
@@ -37,7 +37,7 @@ target_compile_definitions(fistr PUBLIC
 include(src/main/CMakeLists.txt)
 add_executable(fistr1 ${fistr1_SOURCES})
 target_link_libraries(fistr1
-  fistr hecmw ${hecmw_LIBRARIES} ${fistr_LIBRARIES}
+  fistr contact element util hecmw ${hecmw_LIBRARIES} ${fistr_LIBRARIES}
   ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}
 )
 

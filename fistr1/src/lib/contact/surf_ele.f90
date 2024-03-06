@@ -6,13 +6,13 @@
 !>  It provides basic definition of surface elements (trianglar and quadrilateral)
 !!  and functions for fetching its neighborhood information
 module mSurfElement
-  use hecmw, only: kint, kreal
   implicit none
 
+  integer, parameter, private :: kreal = 8
+  integer, parameter, private :: kint = 4
   integer(kind=kint), parameter       :: l_max_surface_node =20
   integer(kind=kint), parameter       :: l_max_elem_node = 100
   integer(kind=kint), parameter       :: l_max_elem_surf = 6
-
   integer(kind=kint), parameter       :: N_NEIGHBOR_MAX_INIT = 8
 
   !> Structure to define surface group
@@ -85,8 +85,6 @@ contains
 
   !> Find neighboring surface elements
   subroutine find_surface_neighbor( surf, bktDB )
-    use m_utilities
-    use hecmw_util
     use bucket_search
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
     type(bucketDB), intent(in) :: bktDB            !< bucket info
