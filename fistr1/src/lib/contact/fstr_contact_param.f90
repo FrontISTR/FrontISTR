@@ -6,16 +6,16 @@
 !!
 module mContactParam
 
-  use hecmw
-
   implicit none
 
   private
+  integer, parameter, private :: kreal = kind(0.0d0)
+
   public :: tContactParam
   public :: init_ContactParam
 
   type tContactParam
-    character(HECMW_NAME_LEN) :: name    !< name of contact parameter set
+    character(63) :: name    !< name of contact parameter set
     real(kind=kreal) :: CLEARANCE        !< ordinary clearance
     real(kind=kreal) :: CLR_SAME_ELEM    !< clearance for already-in-contct elems (loosen to avoid moving too easily)
     real(kind=kreal) :: CLR_DIFFLPOS     !< clearance to be recognized as different position (loosen to avoid oscillation)

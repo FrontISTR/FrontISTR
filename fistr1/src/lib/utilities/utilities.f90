@@ -4,9 +4,10 @@
 !-------------------------------------------------------------------------------
 !> \brief  This module provides aux functions
 module m_utilities
-  use hecmw
   implicit none
 
+  integer, parameter, private :: kreal = 8
+  integer, parameter, private :: kint = 4
   real(kind=kreal), parameter, private :: PI=3.14159265358979d0
 
 contains
@@ -241,7 +242,6 @@ contains
   end function Determinant33
 
   subroutine fstr_chk_alloc( imsg, sub_name, ierr )
-    use hecmw
     character(*) :: sub_name
     integer(kind=kint) :: imsg
     integer(kind=kint) :: ierr
@@ -249,7 +249,7 @@ contains
     if( ierr /= 0 ) then
       write(imsg,*) 'Memory overflow at ', sub_name
       write(*,*) 'Memory overflow at ', sub_name
-      call hecmw_abort( hecmw_comm_get_comm( ) )
+      stop
     endif
   end subroutine fstr_chk_alloc
 

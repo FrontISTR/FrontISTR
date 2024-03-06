@@ -5,10 +5,13 @@
 !> \brief  This module provides bucket-search functionality
 !>  It provides definition of bucket info and its access routines
 module bucket_search
-  use hecmw
   implicit none
 
   private
+
+  integer(kind=4),parameter:: kint  = 4
+  integer(kind=4),parameter:: kreal = 8
+    
   public :: bucketDB
   public :: bucketDB_init
   public :: bucketDB_finalize
@@ -51,7 +54,7 @@ contains
     if (DEBUG > 0) then
       if (.not. cond) then
         write(0,*) 'ASSERTION FAILED: ',mesg
-        call hecmw_abort( hecmw_comm_get_comm() )
+        stop
       endif
     endif
   end subroutine assert
