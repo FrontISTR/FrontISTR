@@ -3,6 +3,13 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
+cmake_minimum_required(VERSION 2.8.11)
+
+project(femlib Fortran)
+set(contact_SOURCES)
+set(element_SOURCES)
+set(util_SOURCES)
+
 include(${CMAKE_CURRENT_LIST_DIR}/contact/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/element/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/physics/CMakeLists.txt)
@@ -41,3 +48,13 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_beam.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_shell.f90
 )
+
+add_library(util STATIC ${util_SOURCES})
+add_library(element STATIC ${element_SOURCES})
+add_library(contact STATIC ${contact_SOURCES})
+target_link_libraries(contact element util)
+install(TARGETS contact element util
+  DESTINATION lib
+  CONFIGURATIONS ${CMAKE_BUILD_TYPE}
+)
+
