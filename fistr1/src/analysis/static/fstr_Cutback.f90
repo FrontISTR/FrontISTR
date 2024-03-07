@@ -70,6 +70,16 @@ contains
       end do
     end if
 
+    !(4)insert values
+    ncont = fstrSOLID%n_inserts
+    if( associated(fstrSOLID%inserts) ) then
+      allocate(fstrSOLID%inserts_bkup(ncont))
+      do i=1,ncont
+        nstate = size(fstrSOLID%inserts(i)%states)
+        allocate(fstrSOLID%inserts_bkup(i)%states(nstate))
+      end do
+    end if
+    
   end subroutine
 
   !> Finalizer of cutback variables
@@ -113,6 +123,17 @@ contains
       end do
       deallocate(fstrSOLID%contacts_bkup)
     end if
+
+    !(4)insert values
+    ncont = fstrSOLID%n_inserts
+    if( associated(fstrSOLID%inserts) ) then
+      do i=1,ncont
+        deallocate(fstrSOLID%inserts_bkup(i)%states)
+      end do
+      deallocate(fstrSOLID%inserts_bkup)
+    end if
+
+        
   end subroutine
 
   !> Save analysis status
@@ -164,6 +185,18 @@ contains
       end do
       infoCTChange_bak = infoCTChange
     end if
+
+    !(4)insert values
+    ncont = fstrSOLID%n_inserts
+    if( associated(fstrSOLID%inserts) ) then
+      do i=1,ncont
+        nstate = size(fstrSOLID%inserts(i)%states)
+        do j=1,nstate
+          call contact_state_copy(fstrSOLID%inserts(i)%states(j), fstrSOLID%inserts_bkup(i)%states(j))
+        enddo
+      end do
+      infoCTChange_bak = infoCTChange
+    end if
   end subroutine
 
   !> Load analysis status
@@ -211,6 +244,18 @@ contains
         nstate = size(fstrSOLID%contacts(i)%states)
         do j=1,nstate
           call contact_state_copy(fstrSOLID%contacts_bkup(i)%states(j), fstrSOLID%contacts(i)%states(j))
+        enddo
+      end do
+      infoCTChange = infoCTChange_bak
+    end if
+
+    !(4)insert values
+    ncont = fstrSOLID%n_inserts
+    if( associated(fstrSOLID%inserts) ) then
+      do i=1,ncont
+        nstate = size(fstrSOLID%inserts(i)%states)
+        do j=1,nstate
+          call contact_state_copy(fstrSOLID%inserts_bkup(i)%states(j), fstrSOLID%inserts(i)%states(j))
         enddo
       end do
       infoCTChange = infoCTChange_bak

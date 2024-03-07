@@ -402,6 +402,7 @@ module m_fstr
     real(kind=kreal), pointer :: last_temp_bkup(:) => null()
     type( tElement ), pointer :: elements_bkup(:)  =>null()  !< elements information (backup)
     type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
+    type( tContact ), pointer :: inserts_bkup(:)  =>null()  !< contact information (backup)
   end type fstr_solid
 
   !> Data for HEAT ANSLYSIS  (fstrHEAT)
