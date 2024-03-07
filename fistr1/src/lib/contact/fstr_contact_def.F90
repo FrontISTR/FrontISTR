@@ -436,6 +436,10 @@ contains
     logical :: is_cand, is_present_B
     real(kind=kreal), pointer :: Bp(:)
 
+    integer(kind=kint)  :: n_slaves_tobe_searched, idx
+    integer(kind=kint), allocatable :: slaves_tobe_searched(:), slaveids_tobe_searched(:)
+    type(tContactState), allocatable :: states(:)
+
     if( is_init ) then
       distclr = contact%cparam%DISTCLR_INIT
     else
@@ -458,21 +462,35 @@ contains
       states_prev(i) = contact%states(i)%state
     enddo
 
-    call update_surface_box_info( contact%master, currpos )
-    call update_surface_bucket_info( contact%master, contact%master_bktDB )
+    ! prepare for free slaves
+    !! count number of free slave nodes
+    n_slaves_tobe_searched = 0
+    do i= 1, size(contact%slave)
+      slave = contact%slave(i)
+      if( contact%states(i)%state==CONTACTFREE ) then
+        n_slaves_tobe_searched = n_slaves_tobe_searched + 1
+      endif
+    enddo
 
-    ! for gfortran-10: optional parameter seems not allowed within omp parallel
+    !! make the list of free slave nodes
+    allocate(slaves_tobe_searched(n_slaves_tobe_searched))
+    allocate(slaveids_tobe_searched(n_slaves_tobe_searched))
+    allocate(states(n_slaves_tobe_searched))
+    n_slaves_tobe_searched = 0
+    do i= 1, size(contact%slave)
+      slave = contact%slave(i)
+      if( contact%states(i)%state==CONTACTFREE ) then
+        n_slaves_tobe_searched = n_slaves_tobe_searched + 1
+        slaves_tobe_searched(n_slaves_tobe_searched) = slave
+        slaveids_tobe_searched(n_slaves_tobe_searched) = i
+      endif
+    enddo
+
+    ! scan in-contact slaves
+    !! for gfortran-10: optional parameter seems not allowed within omp parallel
     is_present_B = present(B)
     if( is_present_B ) Bp => B
 
-    !$omp parallel do &
-      !$omp& default(none) &
-      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
-      !$omp&         bktID,nCand,indexCand) &
-      !$omp& firstprivate(nMasterMax,is_present_B) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf,is_init) &
-      !$omp& reduction(.or.:active) &
-      !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
       slave = contact%slave(i)
       if( contact%states(i)%state==CONTACTSTICK .or. contact%states(i)%state==CONTACTSLIP ) then
@@ -502,71 +520,93 @@ contains
             contact_surf(contact%slave(i)) = -elemID(contact%master(id)%eid)
           endif
         endif
-
-      else if( contact%states(i)%state==CONTACTFREE ) then
-        if( contact%algtype == CONTACTTIED .and. .not. is_init ) cycle 
-        coord(:) = currpos(3*slave-2:3*slave)
-
-        ! get master candidates from bucketDB
-        bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
-        nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
-        if (nCand == 0) cycle
-        allocate(indexCand(nCand))
-        call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
-
-        nMasterMax = nCand
-        allocate(indexMaster(nMasterMax))
-        nMaster = 0
-
-        ! narrow down candidates
-        do idm= 1, nCand
-          id = indexCand(idm)
-          if (.not. is_in_surface_box( contact%master(id), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
-          nMaster = nMaster + 1
-          indexMaster(nMaster) = id
-        enddo
-        deallocate(indexCand)
-
-        if(nMaster == 0) then
-          deallocate(indexMaster)
-          cycle
-        endif
-
-        do idm = 1,nMaster
-          id = indexMaster(idm)
-          etype = contact%master(id)%etype
-          nn = size( contact%master(id)%nodes )
-          do j=1,nn
-            iSS = contact%master(id)%nodes(j)
-            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-          enddo
-          call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,contact%states(i), &
-            isin,distclr,localclr=contact%cparam%CLEARANCE )
-          if( .not. isin ) cycle
-          contact%states(i)%surface = id
-          contact%states(i)%multiplier(:) = 0.d0
-          iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
-          if( iSS>0 ) &
-            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
-              contact%states(i)%direction(:) )
-          contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
-          write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
-            elemID(contact%master(id)%eid),       &
-            " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
-            " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
-          exit
-        enddo
-        deallocate(indexMaster)
       endif
+    enddo
+
+    if( contact%algtype == CONTACTTIED .and. .not. is_init ) return
+
+    ! scan free nodes
+    call update_surface_box_info( contact%master, currpos )
+    call update_surface_bucket_info( contact%master, contact%master_bktDB )
+
+    !$omp parallel do &
+      !$omp& default(none) &
+      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+      !$omp&         bktID,nCand,indexCand) &
+      !$omp& firstprivate(nMasterMax,is_present_B) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,  &
+      !$omp&        contact_surf,n_slaves_tobe_searched,slaves_tobe_searched,states) &
+      !$omp& reduction(.or.:active) &
+      !$omp& schedule(dynamic,1)
+    do i = 1, n_slaves_tobe_searched
+      slave = slaves_tobe_searched(i)
+      call contact_state_init(states(i))
+
+      coord(:) = currpos(3*slave-2:3*slave)
+
+      ! get master candidates from bucketDB
+      bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
+      nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
+      if (nCand == 0) cycle
+      allocate(indexCand(nCand))
+      call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+
+      nMasterMax = nCand
+      allocate(indexMaster(nMasterMax))
+      nMaster = 0
+
+      ! narrow down candidates
+      do idm= 1, nCand
+        id = indexCand(idm)
+        if (.not. is_in_surface_box( contact%master(id), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
+        nMaster = nMaster + 1
+        indexMaster(nMaster) = id
+      enddo
+      deallocate(indexCand)
+
+      if(nMaster == 0) then
+        deallocate(indexMaster)
+        cycle
+      endif
+
+      do idm = 1,nMaster
+        id = indexMaster(idm)
+        etype = contact%master(id)%etype
+        nn = size( contact%master(id)%nodes )
+        do j=1,nn
+          iSS = contact%master(id)%nodes(j)
+          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+        enddo
+        call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,states(i), &
+          isin,distclr,localclr=contact%cparam%CLEARANCE )
+        if( .not. isin ) cycle
+        states(i)%surface = id
+        states(i)%multiplier(:) = 0.d0
+        exit
+      enddo
+      deallocate(indexMaster)
     enddo
     !$omp end parallel do
 
-    if( contact%algtype == CONTACTTIED .and. .not. is_init ) then
-      deallocate(contact_surf)
-      deallocate(states_prev)
-      return
-    endif
+    ! revert original contact state and modify edge contact and print free to contact node information
+    do idx= 1, n_slaves_tobe_searched
+      slave = slaves_tobe_searched(idx)
+      i = slaveids_tobe_searched(idx)
+      contact%states(i) = states(idx)
+      if( contact%states(i)%state==CONTACTFREE ) cycle
+      id = contact%states(i)%surface
+      iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
+      if( iSS>0 ) &
+        call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
+          contact%states(i)%direction(:) )
+      contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+      write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
+        elemID(contact%master(id)%eid),       &
+        " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
+        " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
+    enddo
 
+    ! communiacte duplicate contact information
     call hecmw_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
     nactive = 0
     do i = 1, size(contact%slave)

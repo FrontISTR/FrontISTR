@@ -50,6 +50,17 @@ contains
     type(tContactState), intent(inout) :: cstate !< contact state
     cstate%state = -1
     cstate%surface = -1
+    cstate%distance = 0.d0
+    cstate%wkdist = 0.d0
+    cstate%lpos = 0.d0
+    cstate%gpos = 0.d0
+    cstate%direction = 0.d0
+    cstate%multiplier = 0.d0
+    cstate%tangentForce = 0.d0
+    cstate%tangentForce1 = 0.d0
+    cstate%tangentForce_trial = 0.d0
+    cstate%tangentForce_final = 0.d0
+    cstate%reldisp = 0.d0
   end subroutine
 
   !> Copy
