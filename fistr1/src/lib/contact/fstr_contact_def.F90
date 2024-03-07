@@ -12,11 +12,8 @@
 module mContactDef
 
   use hecmw
-  use mSurfElement
-  use m_contact_lib
   use m_hecmw_contact_comm
-  use bucket_search
-  use mContactParam
+  use m_contact_lib
 
   implicit none
 

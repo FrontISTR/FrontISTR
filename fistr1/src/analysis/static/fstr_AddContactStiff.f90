@@ -14,7 +14,6 @@ module m_addContactStiffness
 
   use m_fstr
   use elementInfo
-  use m_contact_lib
   use fstr_matrix_con_contact
   use hecmw_matrix_ass
   use m_fstr_Residual
