@@ -8,10 +8,12 @@ module m_contact_lib
   use mSurfElement
   use bucket_search
   use mContactParam
+  use m_mpc
 
   implicit none
 
-  integer, parameter, private :: kreal = kind(0.0d0)
+  integer, parameter, private :: kint = 4
+  integer, parameter, private :: kreal = 8
 
   integer, parameter :: CONTACTUNKNOWN = -1
   !> contact state definition
@@ -373,6 +375,105 @@ end subroutine
     endif
   end subroutine project_Point2Element
 
+  subroutine find_contactpoint_node_surf(nodes,slaves,masters,states,params)
+    real(kind=kreal), intent(in)        :: nodes(:)
+    integer(kind=kint), intent(in)      :: slaves(:)
+    type(tSurfElement), intent(inout)   :: masters(:)
+    type(tContactState), intent(inout)    :: states(:)
+    real(kind=kreal), intent(in), optional :: params(:)
+
+    integer(kind=kint) :: n_slaves
+    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
+    real(kind=kreal)    :: box_exp_rate
+    integer(kind=kint)  :: slave, id, etype
+    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    real(kind=kreal)    :: nlforce
+    logical             :: isin
+    real(kind=kreal)    :: distclr, localclr
+
+    !original bucket search
+    type(bucketDB) :: bktDB
+    integer   ::  nMaster,idm,nMasterMax,bktID,nCand
+    integer, pointer :: indexMaster(:),indexCand(:)
+
+    !original bucket search
+    call update_surface_box_info( masters, nodes )
+    call bucketDB_init( bktDB )
+    call update_surface_bucket_info( masters, bktDB )
+
+    if( present(params) ) then
+      distclr = params(1)
+      localclr = params(2)
+      box_exp_rate = params(3)
+    else
+      distclr = 1.d-4
+      localclr = 1.d-4
+      box_exp_rate = 2.d0
+    endif
+
+    n_slaves = size(slaves)
+
+    !$omp parallel do &
+      !$omp& default(none) &
+      !$omp& private(i,slave,id,coord,indexMaster,nMaster,nn,j,iSS,elem,idm,etype,isin, &
+      !$omp&         bktID,nCand,indexCand) &
+      !$omp& firstprivate(nMasterMax) &
+      !$omp& shared(nodes,distclr,localclr,box_exp_rate,n_slaves,slaves,states,bktDB,masters) &
+      !$omp& schedule(dynamic,1)
+    do i = 1, n_slaves
+      slave = slaves(i)
+      call contact_state_init(states(i))
+
+      coord(:) = nodes(3*slave-2:3*slave)
+
+      ! get master candidates from bucketDB
+      bktID = bucketDB_getBucketID(bktDB, coord)
+      nCand = bucketDB_getNumCand(bktDB, bktID)
+      if (nCand == 0) cycle
+      allocate(indexCand(nCand))
+      call bucketDB_getCand(bktDB, bktID, nCand, indexCand)
+
+      nMasterMax = nCand
+      allocate(indexMaster(nMasterMax))
+      nMaster = 0
+
+      ! narrow down candidates
+      do idm= 1, nCand
+        id = indexCand(idm)
+        if (.not. is_in_surface_box( masters(id), coord(1:3), box_exp_rate )) cycle
+        nMaster = nMaster + 1
+        indexMaster(nMaster) = id
+      enddo
+      deallocate(indexCand)
+
+      if(nMaster == 0) then
+        deallocate(indexMaster)
+        cycle
+      endif
+
+      do idm = 1,nMaster
+        id = indexMaster(idm)
+        etype = masters(id)%etype
+        nn = size( masters(id)%nodes )
+        do j=1,nn
+          iSS = masters(id)%nodes(j)
+          elem(1:3,j)=nodes(3*iSS-2:3*iSS)
+        enddo
+        call project_Point2Element( coord,etype,nn,elem,masters(id)%reflen,states(i), &
+          isin,distclr,localclr=localclr )
+        if( .not. isin ) cycle
+        states(i)%surface = id
+        states(i)%multiplier(:) = 0.d0
+        exit
+      enddo
+      deallocate(indexMaster)
+    enddo
+    !$omp end parallel do
+
+    !original bucket search
+    call bucketDB_finalize( bktDB )
+  end subroutine
+
   !> This subroutine find the projection of a slave point onto master surface
   subroutine project_Point2SolidElement(xyz,etype,nn,elemt,reflen,cstate,isin,distclr,ctpos,localclr)
     use m_utilities
@@ -458,6 +559,49 @@ end subroutine
         cstate%lpos(1:3)=r(:)
       endif
     endif
+  end subroutine
+
+  subroutine create_mpc_coeff(slaves,masters,states,ndof,mpcs)
+    integer(kind=kint), intent(in)      :: slaves(:)
+    type(tSurfElement), intent(in)      :: masters(:)
+    type(tContactState), intent(in)     :: states(:)
+    integer(kind=kint), intent(in)      :: ndof
+    type(tMPCCond), allocatable, intent(out)    :: mpcs(:)
+
+    integer :: i, j, idx
+    integer :: n_slaves, slave, id, nn, etype
+    real(kind=kreal) :: r(3), sfunc(l_max_elem_node)
+
+    n_slaves = 0
+    do i = 1, size(slaves)
+      if( states(i)%state == CONTACTFREE ) cycle
+      n_slaves = n_slaves + 1
+    enddo
+
+    allocate(mpcs(n_slaves*ndof))
+    n_slaves = 0
+    do i = 1, size(slaves)
+      if( states(i)%state == CONTACTFREE ) cycle
+      n_slaves = n_slaves + 1
+      slave = slaves(i)
+
+      id = states(i)%surface
+      nn = size( masters(id)%nodes )
+      etype = masters(id)%etype
+      r(1:3) = states(i)%lpos(1:3)
+      call getShapeFunc( etype, r, sfunc )
+
+      do j=1,ndof
+        idx = ndof*(n_slaves-1)+j
+        call mpc_cond_init(mpcs(idx),nn+1)
+        mpcs(idx)%pid(1) = slave
+        mpcs(idx)%pid(2:nn+1) = masters(id)%nodes(1:nn)
+        mpcs(idx)%dof(1:nn+1) = j
+        mpcs(idx)%coeff(1) = 1.d0
+        mpcs(idx)%coeff(2:nn+1) = -sfunc(1:nn)
+      enddo
+    enddo
+
   end subroutine
 
   !> This subroutine find the projection of a slave point onto master surface
