@@ -7,6 +7,7 @@ module m_ElastoPlastic
   use hecmw_util
   use mMaterial
   use m_ElasticLinear
+  use mUYield
 
   implicit none
 
@@ -44,7 +45,7 @@ contains
 
     ytype = getYieldFunction( matl%mtype )
     if( ytype==3 ) then
-      call uElastoPlasticMatrix( matl, stress, istat, extval, D  )
+      call uElastoPlasticMatrix( matl%variables, stress, istat, extval, plstrain, D  )
       return
     endif
     if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
@@ -384,7 +385,7 @@ contains
 
     ytype = getYieldFunction( matl%mtype )
     if( ytype==3 ) then
-      call uBackwardEuler( matl, stress, istat, fstat )
+      call uBackwardEuler( matl%variables, stress, plstrain, istat, fstat )
       return
     endif
 
