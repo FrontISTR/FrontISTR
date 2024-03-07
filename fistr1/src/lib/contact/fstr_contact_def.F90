@@ -427,7 +427,7 @@ contains
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
-    real(kind=kreal)    :: nlforce, slforce(3)
+    real(kind=kreal)    :: nlforce, slforce(3), params(10)
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
@@ -475,7 +475,6 @@ contains
     !! make the list of free slave nodes
     allocate(slaves_tobe_searched(n_slaves_tobe_searched))
     allocate(slaveids_tobe_searched(n_slaves_tobe_searched))
-    allocate(states(n_slaves_tobe_searched))
     n_slaves_tobe_searched = 0
     do i= 1, size(contact%slave)
       slave = contact%slave(i)
@@ -526,69 +525,13 @@ contains
     if( contact%algtype == CONTACTTIED .and. .not. is_init ) return
 
     ! scan free nodes
-    call update_surface_box_info( contact%master, currpos )
-    call update_surface_bucket_info( contact%master, contact%master_bktDB )
+    params(1) = distclr
+    params(2) = contact%cparam%CLEARANCE
+    params(3) = contact%cparam%BOX_EXP_RATE
+    allocate(states(size(slaves_tobe_searched)))
+    call find_contactpoint_node_surf(currpos,slaves_tobe_searched,contact%master,states,params)
 
-    !$omp parallel do &
-      !$omp& default(none) &
-      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
-      !$omp&         bktID,nCand,indexCand) &
-      !$omp& firstprivate(nMasterMax,is_present_B) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,  &
-      !$omp&        contact_surf,n_slaves_tobe_searched,slaves_tobe_searched,states) &
-      !$omp& reduction(.or.:active) &
-      !$omp& schedule(dynamic,1)
-    do i = 1, n_slaves_tobe_searched
-      slave = slaves_tobe_searched(i)
-      call contact_state_init(states(i))
-
-      coord(:) = currpos(3*slave-2:3*slave)
-
-      ! get master candidates from bucketDB
-      bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
-      nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
-      if (nCand == 0) cycle
-      allocate(indexCand(nCand))
-      call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
-
-      nMasterMax = nCand
-      allocate(indexMaster(nMasterMax))
-      nMaster = 0
-
-      ! narrow down candidates
-      do idm= 1, nCand
-        id = indexCand(idm)
-        if (.not. is_in_surface_box( contact%master(id), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
-        nMaster = nMaster + 1
-        indexMaster(nMaster) = id
-      enddo
-      deallocate(indexCand)
-
-      if(nMaster == 0) then
-        deallocate(indexMaster)
-        cycle
-      endif
-
-      do idm = 1,nMaster
-        id = indexMaster(idm)
-        etype = contact%master(id)%etype
-        nn = size( contact%master(id)%nodes )
-        do j=1,nn
-          iSS = contact%master(id)%nodes(j)
-          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-        enddo
-        call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,states(i), &
-          isin,distclr,localclr=contact%cparam%CLEARANCE )
-        if( .not. isin ) cycle
-        states(i)%surface = id
-        states(i)%multiplier(:) = 0.d0
-        exit
-      enddo
-      deallocate(indexMaster)
-    enddo
-    !$omp end parallel do
-
-    ! revert original contact state and modify edge contact and print free to contact node information
+    ! revert original contact state, modify edge contact and print free to contact node information
     do idx= 1, n_slaves_tobe_searched
       slave = slaves_tobe_searched(idx)
       i = slaveids_tobe_searched(idx)
@@ -605,6 +548,7 @@ contains
         " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
         " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
     enddo
+    deallocate(states)
 
     ! communiacte duplicate contact information
     call hecmw_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)

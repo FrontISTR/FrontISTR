@@ -5,7 +5,6 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-project(femlib Fortran)
 set(contact_SOURCES)
 set(element_SOURCES)
 set(util_SOURCES)
@@ -49,11 +48,11 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_shell.f90
 )
 
-add_library(util STATIC ${util_SOURCES})
-add_library(element STATIC ${element_SOURCES})
-add_library(contact STATIC ${contact_SOURCES})
-target_link_libraries(contact element util)
-install(TARGETS contact element util
+list(APPEND contact_SOURCES ${element_SOURCES})
+list(APPEND contact_SOURCES ${util_SOURCES})
+
+add_library(femmpc STATIC ${contact_SOURCES})
+install(TARGETS femmpc
   DESTINATION lib
   CONFIGURATIONS ${CMAKE_BUILD_TYPE}
 )
