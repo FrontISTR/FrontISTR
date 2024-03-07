@@ -5,11 +5,13 @@
 !>  \brief   This module provide functions of contact stiffness calculation
 module m_contact_lib
   use elementInfo
+  use mSurfElement
+  use bucket_search
+  use mContactParam
+
   implicit none
 
   integer, parameter, private :: kreal = kind(0.0d0)
-  integer, parameter, private :: l_max_surface_node = 20
-  integer, parameter, private :: l_max_elem_node = 100
 
   integer, parameter :: CONTACTUNKNOWN = -1
   !> contact state definition
