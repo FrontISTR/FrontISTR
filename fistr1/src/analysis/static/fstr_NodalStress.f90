@@ -304,7 +304,7 @@ contains
   subroutine fstr_NodalStress3D_C3D4_SESNS( hecMESH, fstrSOLID, nnumber, &
       Nodal_STRAIN, Nodal_STRESS, Elemental_STRAIN, Elemental_STRESS )
     type(hecmwST_local_mesh),intent(in) :: hecMESH
-    type(fstr_solid),intent(in)         :: fstrSOLID
+    type(fstr_solid),intent(inout)         :: fstrSOLID
     integer(kind=kint), allocatable, intent(inout) :: nnumber(:)
     real(kind=kreal), pointer, intent(inout)   :: Nodal_STRAIN(:)
     real(kind=kreal), pointer, intent(inout)   :: Nodal_STRESS(:)

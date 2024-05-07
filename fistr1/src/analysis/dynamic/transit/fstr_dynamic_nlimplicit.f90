@@ -455,7 +455,7 @@ contains
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: max_iter_contact, count_step
     integer(kind=kint) :: stepcnt
-    real(kind=kreal)   :: maxDLag
+    real(kind=kreal)   :: maxDLag, converg_dlag
 
     logical :: is_mat_symmetric
     integer(kind=kint) :: n_node_global
@@ -567,6 +567,9 @@ contains
     !!
     !!    step = 1,2,....,fstrDYNAMIC%n_step
     !!
+    max_iter_contact = fstrSOLID%step_ctrl(cstep)%max_contiter
+    converg_dlag = fstrSOLID%step_ctrl(cstep)%converg_lag
+    
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
       fstrDYNAMIC%i_step = i
@@ -586,7 +589,6 @@ contains
         fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
       enddo
 
-      max_iter_contact = 6 !1
       count_step = 0
       stepcnt = 0
       loopFORcontactAnalysis: do while( .TRUE. )
@@ -695,7 +697,7 @@ contains
           !          call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
           !          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag<1.0d-5 .and. iter>1 ) exit
           if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &
-            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-4 ) exit
+            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag < converg_dlag ) exit
           res1 = res
           rf=1.0d0
           if( iter>1 .and. res>res1 )rf=0.5d0*rf
