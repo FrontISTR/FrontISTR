@@ -177,7 +177,7 @@ contains
       case ( fe_prism6n, fe_prism15n )
         getNumberOfSubface = 5
       case ( fe_hex8n, fe_hex20n)
-        getNumberOfSubface = 8
+        getNumberOfSubface = 6
       case ( fe_tri3n_patch, fe_tri6n_patch, fe_quad4n_patch, fe_quad8n_patch )
         getNumberOfSubface = 1
       case default
