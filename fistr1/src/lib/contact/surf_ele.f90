@@ -40,14 +40,22 @@ contains
     integer(kind=kint), intent(in)    :: etype  !< element type
     integer(kind=kint), intent(in)    :: nsurf  !< surface ID
     type(tSurfElement), intent(inout) :: surf   !< surface element
-    integer(kind=kint) :: n, outtype, nodes(100)
+    integer(kind=kint) :: i, n, outtype, nodes(100)
     surf%eid = eid
-    call getSubFace( etype, nsurf, outtype, nodes )
-    surf%etype = outtype
-    n=getNumberOfNodes( outtype )
+
+    if( nsurf > 0 ) then
+      call getSubFace( etype, nsurf, outtype, nodes )
+      surf%etype = outtype
+      n=getNumberOfNodes( outtype )
+    else !treat 3d master element as it is
+      surf%etype = etype
+      n=getNumberOfNodes( etype )
+      do i=1,n
+        nodes(i) = i
+      enddo
+    endif
     allocate( surf%nodes(n) )
     surf%nodes(1:n)=nodes(1:n)
-    n=getNumberOfSubface( outtype )
     surf%n_neighbor = 0
     surf%n_neighbor_max = 0
     surf%reflen  = -1.d0

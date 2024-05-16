@@ -407,6 +407,8 @@ static void print_contact(FILE *fp) {
       fprintf(fp, "TYPE=NODE-SURF, ");
     } else if (p->type == HECMW_CONTACT_TYPE_SURF_SURF) {
       fprintf(fp, "TYPE=SURF-SURF, ");
+    } else if (p->type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      fprintf(fp, "TYPE=NODE-ELEM, ");
     }
     fprintf(fp, "SLAVE_GRP=%s, MASTER_GRP=%s\n", p->slave_grp, p->master_grp);
   }
@@ -3029,6 +3031,9 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
     } else if (p->type == HECMW_CONTACT_TYPE_SURF_SURF) {
       slave_gid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->slave_grp);
       orislave_sgid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->slave_orisgrp);
+    } else if (p->type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      slave_gid = HECMW_dist_get_ngrp_id(mesh->node_group, p->slave_grp);
+      orislave_sgid = -1;
     } else {
       HECMW_assert(0);
     }
@@ -3037,7 +3042,12 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
     cpair->slave_grp_id[i] = slave_gid;
     cpair->slave_orisgrp_id[i] = orislave_sgid;
 
-    master_gid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->master_grp);
+    if (p->type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      master_gid = HECMW_dist_get_egrp_id(mesh->elem_group, p->master_grp);
+    } else {
+      master_gid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->master_grp);
+    }
+
     HECMW_assert(master_gid > 0);
 
     cpair->master_grp_id[i] = master_gid;
@@ -3803,11 +3813,17 @@ static int post_contact_check_grp(void) {
   for (p = _contact; p; p = p->next) {
     struct hecmw_io_ngrp *ngrp;
     struct hecmw_io_sgrp *sgrp;
+    struct hecmw_io_egrp *egrp;
 
     if (p->type == HECMW_CONTACT_TYPE_NODE_SURF) {
       ngrp = HECMW_io_get_ngrp(p->slave_grp);
       if (ngrp == NULL) {
         set_err(HECMW_IO_E1029, "Node group %s not found", p->slave_grp);
+        goto error;
+      }
+      sgrp = HECMW_io_get_sgrp(p->master_grp);
+      if (sgrp == NULL) {
+        set_err(HECMW_IO_E1028, "Surface group %s not found", p->master_grp);
         goto error;
       }
     } else if (p->type == HECMW_CONTACT_TYPE_SURF_SURF) {
@@ -3816,16 +3832,27 @@ static int post_contact_check_grp(void) {
         set_err(HECMW_IO_E1028, "Surface group %s not found", p->slave_grp);
         goto error;
       }
+      sgrp = HECMW_io_get_sgrp(p->master_grp);
+      if (sgrp == NULL) {
+        set_err(HECMW_IO_E1028, "Surface group %s not found", p->master_grp);
+        goto error;
+      }
+    } else if (p->type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      ngrp = HECMW_io_get_ngrp(p->slave_grp);
+      if (ngrp == NULL) {
+        set_err(HECMW_IO_E1029, "Node group %s not found", p->slave_grp);
+        goto error;
+      }
+      egrp = HECMW_io_get_egrp(p->master_grp);
+      if (egrp == NULL) {
+        set_err(HECMW_IO_E1028, "Element group %s not found", p->master_grp);
+        goto error;
+      }
     } else {
       fprintf(stderr, "ERROR: CONTACT_PAIR: TYPE=%d\n", p->type);
       HECMW_assert(0);
     }
 
-    sgrp = HECMW_io_get_sgrp(p->master_grp);
-    if (sgrp == NULL) {
-      set_err(HECMW_IO_E1028, "Surface group %s not found", p->master_grp);
-      goto error;
-    }
   }
   return 0;
 error:

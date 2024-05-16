@@ -13,7 +13,6 @@ module m_make_result
   public:: fstr_reorder_node_beam
   public:: setup_contact_output_variables
 
-
 contains
 
   !C***
@@ -1680,70 +1679,5 @@ contains
     endif
 
   end subroutine
-
-  subroutine fstr_setup_parancon_contactvalue(hecMESH,ndof,vec,vtype)
-  use m_fstr
-  implicit none
-  type(hecmwST_local_mesh), intent(in)      :: hecMESH
-  integer(kind=kint), intent(in)            :: ndof
-  real(kind=kreal), pointer, intent(inout)  :: vec(:)
-  integer(kind=kint), intent(in)            :: vtype !1:value, 2:state
-  !
-  real(kind=kreal) ::  rhsB
-  integer(kind=kint) ::  i,j,N,i0,N_loc,nndof
-  integer(kind=kint) :: offset, pid, lid
-  integer(kind=kint), allocatable :: displs(:)
-  real(kind=kreal), allocatable   :: vec_all(:)
-
-  !
-  N_loc = hecMESH%nn_internal
-  allocate(displs(0:nprocs))
-  displs(:) = 0
-  displs(myrank+1) = N_loc
-  call hecmw_allreduce_I(hecMESH, displs, nprocs+1, hecmw_sum)
-  do i=1,nprocs
-    displs(i) = displs(i-1) + displs(i)
-  end do
-  offset = displs(myrank)
-  N = displs(nprocs)
-
-  allocate(vec_all(ndof*N))
-
-  if( vtype == 1 ) then
-    vec_all(:) = 0.d0
-    do i= hecMESH%nn_internal+1,hecMESH%n_node
-      pid = hecMESH%node_ID(i*2)
-      lid = hecMESH%node_ID(i*2-1)
-      i0 = (displs(pid) + (lid-1))*ndof
-      vec_all(i0+1:i0+ndof) = vec((i-1)*ndof+1:i*ndof)
-      vec((i-1)*ndof+1:i*ndof) = 0.d0
-    enddo
-
-    call hecmw_allreduce_R(hecMESH, vec_all, N*ndof, hecmw_sum)
-
-    do i=1,ndof*N_loc
-      vec(i) = vec(i) + vec_all(offset*ndof+i)
-    end do
-  else if( vtype == 2 ) then
-    vec_all(:) = -1000.d0
-    do i= hecMESH%nn_internal+1,hecMESH%n_node
-      if( vec(i) == 0.d0 ) cycle
-      pid = hecMESH%node_ID(i*2)
-      lid = hecMESH%node_ID(i*2-1)
-      i0 = displs(pid) + lid
-      vec_all(i0) = vec(i)
-    enddo
-
-    call hecmw_allreduce_R(hecMESH, vec_all, N, hecmw_max)
-
-    do i=1,N_loc
-      if( vec_all(offset+i) == -1000.d0 ) cycle
-      if( vec(i) < vec_all(offset+i) ) vec(i) = vec_all(offset+i)
-    end do
-  end if
-
-  deallocate(displs,vec_all)
-  end subroutine
-
 
 end module m_make_result

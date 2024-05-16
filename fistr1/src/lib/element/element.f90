@@ -1086,6 +1086,49 @@ contains
     end select
   end function isInsideElement
 
+  !> if a point is inside a surface element
+  !> -1: No; 0: Yes; >0: Node's (vertex) number
+  integer function isInside3DElement( fetype, localcoord, clearance )
+    integer, intent(in)              :: fetype          !< type of surface element
+    real(kind=kreal), intent(inout)  :: localcoord(3)   !< natural coord
+    real(kind=kreal), optional       :: clearance       !< clearance used for judgement
+    real(kind=kreal) :: clr, coord4
+
+    integer :: idof
+
+    clr = 1.d-6
+    if( present(clearance) ) clr = clearance
+    do idof=1,3
+      if( dabs(localcoord(idof))<clr ) localcoord(idof)=0.d0
+      if( dabs(dabs(localcoord(idof))-1.d0)<clr )    &
+        &  localcoord(idof)=sign(1.d0,localcoord(idof))
+    enddo
+
+    isInside3DElement = -1
+    select case (fetype)
+      case (fe_tet4n, fe_tet4n_pipi, fe_tet10n, fe_tet10nc)
+        !error check
+        coord4 = 1.d0-(localcoord(1)+localcoord(2)+localcoord(3))
+        if( dabs(coord4)<clr ) coord4=0.d0
+        isInside3DElement = 0
+        do idof=1,3
+          if( localcoord(idof) < 0.d0 .or. localcoord(idof) > 1.d0 ) isInside3DElement = -1
+        enddo
+        if( coord4 < 0.d0 .or. coord4 > 1.d0 ) isInside3DElement = -1
+      case (fe_prism6n, fe_prism15n)
+        !error check
+        coord4 = 1.d0-(localcoord(1)+localcoord(2))
+        isInside3DElement = 0
+        do idof=1,2
+          if( localcoord(idof) < 0.d0 .or. localcoord(idof) > 1.d0 ) isInside3DElement = -1
+        enddo
+        if( localcoord(3) < -1.d0 .or. localcoord(3) > 1.d0 ) isInside3DElement = -1
+        if( coord4 < 0.d0 .or. coord4 > 1.d0 ) isInside3DElement = -1
+      case (fe_hex8n, fe_hex20n, fe_hex27n)
+        if( all(dabs(localcoord)<=1.d0) ) isInside3DElement = 0
+      end select
+  end function
+
   !> Get the natural coord of a vertex node
   subroutine getVertexCoord( fetype, cnode, localcoord )
     integer, intent(in)            :: fetype          !< type of surface element

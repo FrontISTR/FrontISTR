@@ -211,6 +211,7 @@ module hecmw_util
   !C      for hecmwST_contact_pair%type
   integer(kind=kint),parameter :: HECMW_CONTACT_TYPE_NODE_SURF = 1
   integer(kind=kint),parameter :: HECMW_CONTACT_TYPE_SURF_SURF = 2
+  integer(kind=kint),parameter :: HECMW_CONTACT_TYPE_NODE_ELEM = 3
   !C===
 
   !C
