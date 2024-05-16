@@ -142,7 +142,7 @@ contains
     enddo
     if( .not. isfind ) return;
     if( contact%fcoeff<=0.d0 ) contact%fcoeff=0.d0
-    if( contact%ctype/=1 .and. contact%ctype/=2 ) return
+    if( contact%ctype < 1 .and. contact%ctype > 3 ) return
     if( contact%group<=0 ) return
 
     fstr_contact_check = .true.
@@ -211,8 +211,6 @@ contains
 
     call update_surface_reflen( contact%master, hecMESH%node )
 
-    ! slave surface
-    !    if( contact%ctype==1 ) then
     cgrp = contact%surf_id1
     if( cgrp<=0 ) return
     is= hecMESH%node_group%grp_index(cgrp-1) + 1
@@ -268,6 +266,126 @@ contains
     contact%symmetric = .true.
     fstr_contact_init = .true.
   end function
+
+  !>  Initializer of tContactState for insert case
+  logical function fstr_insert_init( insert, hecMESH, cparam, myrank )
+    type(tContact), intent(inout)     :: insert  !< contact definition
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    type(tContactParam), target       :: cparam   !< contact parameter
+    integer(kint),intent(in),optional :: myrank
+
+    integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
+    integer  :: count,nodeID
+
+    fstr_insert_init = .false.
+
+    insert%cparam => cparam
+
+    !  master surface
+    cgrp = insert%surf_id2
+    if( cgrp<=0 ) return
+    is= hecMESH%elem_group%grp_index(cgrp-1) + 1
+    ie= hecMESH%elem_group%grp_index(cgrp  )
+
+    if(present(myrank)) then
+      ! PARA_CONTACT
+      count = 0
+      do i=is,ie
+        ic   = hecMESH%elem_group%grp_item(i)
+        if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+        count = count + 1
+      enddo
+      allocate( insert%master(count) )
+      count = 0
+      do i=is,ie
+        ic   = hecMESH%elem_group%grp_item(i)
+        if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+        count = count + 1
+        ic_type = hecMESH%elem_type(ic)
+        call initialize_surf( ic, ic_type, 0, insert%master(count) )
+        iss = hecMESH%elem_node_index(ic-1)
+        do j=1, size( insert%master(count)%nodes )
+          nn = insert%master(count)%nodes(j)
+          insert%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+        enddo
+      enddo
+
+    else
+      ! not PARA_CONTACT
+      allocate( insert%master(ie-is+1) )
+      do i=is,ie
+        ic   = hecMESH%elem_group%grp_item(i)
+        ic_type = hecMESH%elem_type(ic)
+        call initialize_surf( ic, ic_type, 0, insert%master(i-is+1) )
+        iss = hecMESH%elem_node_index(ic-1)
+        do j=1, size( insert%master(i-is+1)%nodes )
+          nn = insert%master(i-is+1)%nodes(j)
+          insert%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+        enddo
+      enddo
+
+    endif
+
+    !call update_surface_reflen( insert%master, hecMESH%node )
+
+    ! slave surface
+    !    if( contact%ctype==1 ) then
+    cgrp = insert%surf_id1
+    if( cgrp<=0 ) return
+    is= hecMESH%node_group%grp_index(cgrp-1) + 1
+    ie= hecMESH%node_group%grp_index(cgrp  )
+    nslave = 0
+    do i=is,ie
+      nodeID = hecMESH%global_node_ID(hecMESH%node_group%grp_item(i))
+      if(present(myrank)) then
+        ! PARA_CONTACT
+        nslave = nslave + 1
+      else
+        ! not PARA_CONTACT
+        if( hecMESH%node_group%grp_item(i) <= hecMESH%nn_internal) then
+          nslave = nslave + 1
+        endif
+      endif
+    enddo
+    allocate( insert%slave(nslave) )
+    allocate( insert%states(nslave) )
+    ii = 0
+    do i=is,ie
+      if(.not.present(myrank)) then
+        ! not PARA_CONTACT
+        if( hecMESH%node_group%grp_item(i) > hecMESH%nn_internal) cycle
+      endif
+      ii = ii + 1
+      insert%slave(ii) = hecMESH%node_group%grp_item(i)
+      insert%states(ii)%state = -1
+      insert%states(ii)%multiplier(:) = 0.d0
+      insert%states(ii)%tangentForce(:) = 0.d0
+      insert%states(ii)%tangentForce1(:) = 0.d0
+      insert%states(ii)%tangentForce_trial(:) = 0.d0
+      insert%states(ii)%tangentForce_final(:) = 0.d0
+      insert%states(ii)%reldisp(:) = 0.d0
+    enddo
+    !    endif
+
+    ! contact state
+    !      allocate( contact%states(nslave) )
+    do i=1,nslave
+      call contact_state_init( insert%states(i) )
+    enddo
+
+    ! neighborhood of surface group
+    call update_surface_box_info( insert%master, hecMESH%node )
+    call bucketDB_init( insert%master_bktDB )
+    call update_surface_bucket_info( insert%master, insert%master_bktDB )
+    call find_surface_neighbor( insert%master, insert%master_bktDB )
+
+    ! initialize contact communication table
+    call hecmw_contact_comm_init( insert%comm, hecMESH, 1, nslave, insert%slave )
+
+    insert%symmetric = .true.
+    fstr_insert_init = .true.
+  end function
+
 
   !> Reset contact state all to free
   subroutine clear_contact_state( contact )
@@ -424,14 +542,14 @@ contains
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
-          iSS = isInsideElement( etype, contact%states(i)%lpos, contact%cparam%CLR_CAL_NORM )
+          iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
           if( iSS>0 ) &
-            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos, &
+            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
               contact%states(i)%direction(:) )
           contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
           write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
             elemID(contact%master(id)%eid),       &
-            " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(:), &
+            " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
             " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
           exit
         enddo
@@ -463,6 +581,151 @@ contains
     deallocate(contact_surf)
     deallocate(states_prev)
   end subroutine scan_contact_state
+
+  !> This subroutine update contact states, which include
+  !!-# Free to contact or contact to free state changes
+  !!-# Clear lagrangian multipliers when free to contact
+  subroutine scan_insert_state( flag_ctAlgo, insert, currpos, currdisp, ndforce, infoCTChange, &
+    nodeID, elemID, is_init, active, mu, B )
+  character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
+  type( tContact ), intent(inout)                  :: insert      !< contact info
+  type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
+  real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
+  real(kind=kreal), intent(in)                     :: currdisp(:)  !< current displacement of each nodes
+  real(kind=kreal), intent(in)                     :: ndforce(:)   !< nodal force
+  integer(kind=kint), intent(in)                   :: nodeID(:)    !< global nodal ID, just for print out
+  integer(kind=kint), intent(in)                   :: elemID(:)    !< global elemental ID, just for print out
+  logical, intent(in)                              :: is_init      !< whether initial scan or not
+  logical, intent(out)                             :: active       !< if any in contact
+  real(kind=kreal), intent(in)                     :: mu           !< penalty
+  real(kind=kreal), optional, target               :: B(:)         !< nodal force residual
+
+  real(kind=kreal)    :: distclr
+  integer(kind=kint)  :: slave, id, etype
+  integer(kind=kint)  :: nn, i, j, iSS, nactive
+  real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
+  real(kind=kreal)    :: nlforce, slforce(3)
+  logical             :: isin
+  integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
+  !
+  integer, pointer :: indexMaster(:),indexCand(:)
+  integer   ::  nMaster,idm,nMasterMax,bktID,nCand
+  logical :: is_cand, is_present_B
+  real(kind=kreal), pointer :: Bp(:)
+
+  if( is_init ) then
+    distclr = insert%cparam%DISTCLR_INIT
+  else
+    distclr = insert%cparam%DISTCLR_FREE
+    active = .false.
+    do i= 1, size(insert%slave)
+      if( insert%states(i)%state==CONTACTSTICK ) then
+        active = .true.
+        exit
+      endif
+    enddo
+    return
+  endif
+
+  allocate(contact_surf(size(nodeID)))
+  allocate(states_prev(size(insert%slave)))
+  contact_surf(:) = huge(0)
+  do i = 1, size(insert%slave)
+    states_prev(i) = insert%states(i)%state
+  enddo
+
+  call update_surface_box_info( insert%master, currpos )
+  call update_surface_bucket_info( insert%master, insert%master_bktDB )
+
+  ! for gfortran-10: optional parameter seems not allowed within omp parallel
+  is_present_B = present(B)
+  if( is_present_B ) Bp => B
+
+  !$omp parallel do &
+    !$omp& default(none) &
+    !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+    !$omp&         bktID,nCand,indexCand) &
+    !$omp& firstprivate(nMasterMax,is_present_B) &
+    !$omp& shared(insert,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
+    !$omp& reduction(.or.:active) &
+    !$omp& schedule(dynamic,1)
+  do i= 1, size(insert%slave)
+    slave = insert%slave(i)
+    if( insert%states(i)%state==CONTACTFREE ) then
+      coord(:) = currpos(3*slave-2:3*slave)
+
+      ! get master candidates from bucketDB
+      bktID = bucketDB_getBucketID(insert%master_bktDB, coord)
+      nCand = bucketDB_getNumCand(insert%master_bktDB, bktID)
+      if (nCand == 0) cycle
+      allocate(indexCand(nCand))
+      call bucketDB_getCand(insert%master_bktDB, bktID, nCand, indexCand)
+
+      nMasterMax = nCand
+      allocate(indexMaster(nMasterMax))
+      nMaster = 0
+
+      ! narrow down candidates
+      do idm= 1, nCand
+        id = indexCand(idm)
+        if (.not. is_in_surface_box( insert%master(id), coord(1:3), insert%cparam%BOX_EXP_RATE )) cycle
+        nMaster = nMaster + 1
+        indexMaster(nMaster) = id
+      enddo
+      deallocate(indexCand)
+
+      if(nMaster == 0) then
+        deallocate(indexMaster)
+        cycle
+      endif
+
+      do idm = 1,nMaster
+        id = indexMaster(idm)
+        etype = insert%master(id)%etype
+        nn = size( insert%master(id)%nodes )
+        do j=1,nn
+          iSS = insert%master(id)%nodes(j)
+          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+        enddo
+        call project_Point2SolidElement( coord,etype,nn,elem,insert%master(id)%reflen,insert%states(i), &
+          isin,distclr,localclr=insert%cparam%CLEARANCE )
+        if( .not. isin ) cycle
+        insert%states(i)%surface = id
+        insert%states(i)%multiplier(:) = 0.d0
+        contact_surf(insert%slave(i)) = elemID(insert%master(id)%eid)
+        write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," inserted to element", &
+          elemID(insert%master(id)%eid), " at ",insert%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
+        exit
+      enddo
+      deallocate(indexMaster)
+    endif
+  enddo
+  !$omp end parallel do
+
+  call hecmw_contact_comm_allreduce_i(insert%comm, contact_surf, HECMW_MIN)
+  nactive = 0
+  do i = 1, size(insert%slave)
+    if (insert%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
+      id = insert%states(i)%surface
+      if (abs(contact_surf(insert%slave(i))) /= elemID(insert%master(id)%eid)) then ! that is in contact with other surface
+        insert%states(i)%state = CONTACTFREE                           ! should be freed
+        write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(insert%slave(i))," contact with element", &
+          &  elemID(insert%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
+      else
+        nactive = nactive + 1
+      endif
+    endif
+    if (states_prev(i) == CONTACTFREE .and. insert%states(i)%state /= CONTACTFREE) then
+      infoCTChange%free2contact = infoCTChange%free2contact + 1
+    elseif (states_prev(i) /= CONTACTFREE .and. insert%states(i)%state == CONTACTFREE) then
+      infoCTChange%contact2free = infoCTChange%contact2free + 1
+    endif
+  enddo
+  active = (nactive > 0)
+  deallocate(contact_surf)
+  deallocate(states_prev)
+end subroutine scan_insert_state
+
 
   !> Calculate averaged nodal normal
   subroutine cal_node_normal( csurf, isin, surf, currpos, lpos, normal )
@@ -608,7 +871,7 @@ contains
     coord(:) = currpos(3*slave-2:3*slave)
     !> checking the contact element of last step
     sid0 = contact%states(nslave)%surface
-    opos = contact%states(nslave)%lpos
+    opos = contact%states(nslave)%lpos(1:2)
     odirec = contact%states(nslave)%direction
     etype = contact%master(sid0)%etype
     nn = getNumberOfNodes( etype )
@@ -618,7 +881,7 @@ contains
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
-      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos,contact%cparam%CLR_SAME_ELEM )
+      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos(1:2),contact%cparam%CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -648,7 +911,9 @@ contains
         do idm= 1, nCand
           sid = indexCand(idm)
           if( sid==sid0 ) cycle
-          if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+          if( associated(contact%master(sid0)%neighbor) ) then
+            if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+          endif
           if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           etype = contact%master(sid)%etype
           nn = size( contact%master(sid)%nodes )
@@ -669,24 +934,24 @@ contains
 
     if( isin ) then
       if( contact%states(nslave)%surface==sid0 ) then
-        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= contact%cparam%CLR_DIFFLPOS))  then
+        if(any(dabs(contact%states(nslave)%lpos(1:2)-opos(:)) >= contact%cparam%CLR_DIFFLPOS))  then
           !$omp atomic
           infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         endif
       else
         write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
           elemID(contact%master(sid)%eid), " with distance ",      &
-          contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(:)
+          contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(1:2)
         !$omp atomic
         infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
         if( flag_ctAlgo=='ALagrange' )  &
           call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
       endif
       if( flag_ctAlgo=='SLagrange' ) call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
-      iSS = isInsideElement( etype, contact%states(nslave)%lpos, contact%cparam%CLR_CAL_NORM )
+      iSS = isInsideElement( etype, contact%states(nslave)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
       if( iSS>0 ) &
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
-          contact%states(nslave)%lpos, contact%states(nslave)%direction(:) )
+          contact%states(nslave)%lpos(1:2), contact%states(nslave)%direction(:) )
     else if( .not. isin ) then
       write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
       contact%states(nslave)%state = CONTACTFREE
@@ -757,7 +1022,7 @@ contains
     master = contact%states(lslave)%surface
     nn = size( contact%master(master)%nodes )
     etype = contact%master(master)%etype
-    call getShapeFunc( etype, contact%states(lslave)%lpos(:), shapefunc )
+    call getShapeFunc( etype, contact%states(lslave)%lpos(1:2), shapefunc )
     B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-nrlforce*contact%states(lslave)%direction
     do j=1,nn
       iSS = contact%master(master)%nodes(j)
@@ -775,7 +1040,7 @@ contains
         iSS = contact%master(master)%nodes(j)
         elemcrd(:,j) = currpos(3*iSS-2:3*iSS)
       enddo
-      call DispIncreMatrix( contact%states(lslave)%lpos, etype, nn, elemcrd, tangent,   &
+      call DispIncreMatrix( contact%states(lslave)%lpos(1:2), etype, nn, elemcrd, tangent,   &
         metric, dispmat )
       fric(1:2) = contact%states(lslave)%multiplier(2:3)
       f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
@@ -828,7 +1093,7 @@ contains
         edisp(3*j+1:3*j+3) = ddisp(3*iSS-2:3*iSS)
         elemcrd(:,j) = coord(3*iSS-2:3*iSS)+disp(3*iSS-2:3*iSS)
       enddo
-      call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
+      call getShapeFunc( etype, contact%states(i)%lpos(1:2), shapefunc )
 
       ! normal component
       elemg = 0.d0
@@ -848,7 +1113,7 @@ contains
 
       if( fcoeff==0.d0 ) cycle
       ! tangent component
-      call DispIncreMatrix( contact%states(i)%lpos, etype, nn, elemcrd, tangent,   &
+      call DispIncreMatrix( contact%states(i)%lpos(1:2), etype, nn, elemcrd, tangent,   &
         metric, dispmat )
       dxi(1) = dot_product( dispmat(1,1:nn*3+3), edisp(1:nn*3+3) )
       dxi(2) = dot_product( dispmat(2,1:nn*3+3), edisp(1:nn*3+3) )
@@ -897,7 +1162,7 @@ contains
         iSS = contact%master(master)%nodes(j)
         edisp(3*j+1:3*j+3) = disp(3*iSS-2:3*iSS)+ddisp(3*iSS-2:3*iSS)
       enddo
-      call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
+      call getShapeFunc( etype, contact%states(i)%lpos(1:2), shapefunc )
 
       ! normal component
       dg(1:3) = edisp(1:3)
@@ -952,7 +1217,7 @@ contains
         edisp(3*j+1:3*j+3) = ddisp(3*iSS-2:3*iSS)
         elemcrd(:,j) = coord(3*iSS-2:3*iSS)+disp(3*iSS-2:3*iSS)
       enddo
-      call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
+      call getShapeFunc( etype, contact%states(i)%lpos(1:2), shapefunc )
 
       ! normal component
       elemg = 0.d0
@@ -969,7 +1234,7 @@ contains
 
       if( fcoeff==0.d0 ) cycle
       ! tangent component
-      call DispIncreMatrix( contact%states(i)%lpos, etype, nn, elemcrd, tangent,   &
+      call DispIncreMatrix( contact%states(i)%lpos(1:2), etype, nn, elemcrd, tangent,   &
         metric, dispmat )
       dxi(1) = dot_product( dispmat(1,1:nn*3+3), edisp(1:nn*3+3) )
       dxi(2) = dot_product( dispmat(2,1:nn*3+3), edisp(1:nn*3+3) )
@@ -1028,7 +1293,7 @@ contains
         iSS = contact%master(master)%nodes(j)
         edisp(3*j+1:3*j+3) = disp(3*iSS-2:3*iSS)+ddisp(3*iSS-2:3*iSS)
       enddo
-      call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
+      call getShapeFunc( etype, contact%states(i)%lpos(1:2), shapefunc )
 
       ! normal component
       dg(1:3) = edisp(1:3)
@@ -1073,7 +1338,7 @@ contains
 
       nn = size( contact%master(master)%nodes )
       etype = contact%master(master)%etype
-      call getShapeFunc( etype, contact%states(i)%lpos(:), shapefunc )
+      call getShapeFunc( etype, contact%states(i)%lpos(1:2), shapefunc )
 
       ! normal component
       nrlforce = contact%states(i)%multiplier(1)
@@ -1091,7 +1356,7 @@ contains
         iSS = contact%master(master)%nodes(j)
         elemcrd(:,j) = coord(3*iSS-2:3*iSS)+disp(3*iSS-2:3*iSS)
       enddo
-      call DispIncreMatrix( contact%states(i)%lpos, etype, nn, elemcrd, tangent,   &
+      call DispIncreMatrix( contact%states(i)%lpos(1:2), etype, nn, elemcrd, tangent,   &
         metric, dispmat )
 
       fric(1:2) = contact%states(i)%multiplier(2:3)
@@ -1167,7 +1432,7 @@ contains
     coord(:) = currpos(3*slave-2:3*slave)
     !> checking the contact element of last step
     sid0 = contact%states(nslave)%surface
-    opos = contact%states(nslave)%lpos
+    opos = contact%states(nslave)%lpos(1:2)
     odirec = contact%states(nslave)%direction
     etype = contact%master(sid0)%etype
     nn = getNumberOfNodes( etype )
@@ -1177,7 +1442,7 @@ contains
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
-      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos,contact%cparam%CLR_SAME_ELEM )
+      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos(1:2),contact%cparam%CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
@@ -1228,21 +1493,21 @@ contains
 
     if( isin ) then
       if( contact%states(nslave)%surface==sid0 ) then
-        if(any(dabs(contact%states(nslave)%lpos(:)-opos(:)) >= contact%cparam%CLR_DIFFLPOS))  then
+        if(any(dabs(contact%states(nslave)%lpos(1:2)-opos(:)) >= contact%cparam%CLR_DIFFLPOS))  then
           !$omp atomic
           infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         endif
       else
         write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
           elemID(contact%master(sid)%eid), " with distance ",      &
-          contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(:)
+          contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(1:2)
         !$omp atomic
         infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
       endif
-      iSS = isInsideElement( etype, contact%states(nslave)%lpos, contact%cparam%CLR_CAL_NORM )
+      iSS = isInsideElement( etype, contact%states(nslave)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
       if( iSS>0 ) then
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
-          contact%states(nslave)%lpos, contact%states(nslave)%direction(:) )
+          contact%states(nslave)%lpos(1:2), contact%states(nslave)%direction(:) )
       endif
     else if( .not. isin ) then
       write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
@@ -1360,14 +1625,14 @@ contains
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
-          iSS = isInsideElement( etype, contact%states(i)%lpos, contact%cparam%CLR_CAL_NORM )
+          iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
           if( iSS>0 ) &
-            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos, &
+            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
               contact%states(i)%direction(:) )
           contact_surf(contact%slave(i)) = id
           write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3)') "Node",nodeID(slave)," contact with element", &
             elemID(contact%master(id)%eid),       &
-            " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(:), &
+            " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
             " along direction ", contact%states(i)%direction
           exit
         enddo
