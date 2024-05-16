@@ -59,17 +59,13 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .F90 .f
+.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $< $(ALL_CFLAGS) $(OPTFLAGS)
 
 .f90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
-
-.F90.@f90objfilepostfix@:
-	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
-
 
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
@@ -78,14 +74,7 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_mat_resid_contact.@f90objfilepostfix@ \
-	sparse_matrix_contact.@f90objfilepostfix@ \
-	solve_LINEQ_MUMPS_contact.@f90objfilepostfix@ \
-	set_arrays_DirectSolver.@f90objfilepostfix@ \
-	solve_LINEQ_mkl.@f90objfilepostfix@ \
-	solve_LINEQ_direct_serial_lag.@f90objfilepostfix@ \
-	solve_LINEQ_contact_elim.@f90objfilepostfix@ \
-	hecmw_solver_contact.@f90objfilepostfix@
+	hecmw_solver.@f90objfilepostfix@
 
 HEADERS =
 

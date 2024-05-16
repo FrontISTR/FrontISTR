@@ -69,7 +69,7 @@ contains
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
-      solver_opt, &
+      solver_opt, contact_elim, &
       resid, singma_diag, sigma, thresh, filter )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
@@ -92,6 +92,7 @@ contains
     integer(kind=kint) :: method2
     integer(kind=kint) :: recyclepre
     integer(kind=kint) :: solver_opt(10)
+    integer(kind=kint) :: contact_elim
     real(kind=kreal) :: resid
     real(kind=kreal) :: singma_diag
     real(kind=kreal) :: sigma
@@ -132,6 +133,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'CONTACT_ELIM ','# ',            0,   'I',contact_elim ) /= 0) return
     ! JP-1
     if( method > number_number ) then  ! JP-2
       method = method - number_number
@@ -239,6 +241,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'MAXITER ',  '# ',  0, 'I', steps%max_iter )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MAXCONTITER ',  '# ',  0, 'I', steps%max_contiter )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG ',  '# ',  0, 'R', steps%converg )/= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG_LAG ',  '# ',  0, 'R', steps%converg_lag )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MAXRES ',  '# ',  0, 'R', steps%maxres )/= 0) return
     amp = ""
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return

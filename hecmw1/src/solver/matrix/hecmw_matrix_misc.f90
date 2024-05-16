@@ -41,6 +41,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_mpc_method
   public :: hecmw_mat_set_estcond
   public :: hecmw_mat_get_estcond
+  public :: hecmw_mat_set_contact_elim
+  public :: hecmw_mat_get_contact_elim
   public :: hecmw_mat_set_iterlog
   public :: hecmw_mat_get_iterlog
   public :: hecmw_mat_set_timelog
@@ -109,6 +111,7 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_PENALIZED_B        = 12
   integer, parameter :: IDX_I_MPC_METHOD         = 13
   integer, parameter :: IDX_I_ESTCOND            = 14
+  integer, parameter :: IDX_I_CONTACT_ELIM       = 15
   integer, parameter :: IDX_I_ITERLOG            = 21
   integer, parameter :: IDX_I_TIMELOG            = 22
   integer, parameter :: IDX_I_DUMP               = 31
@@ -452,6 +455,18 @@ contains
     integer(kind=kint) :: estcond
     hecMAT%Iarray(IDX_I_ESTCOND) = estcond
   end subroutine hecmw_mat_set_estcond
+
+  function hecmw_mat_get_contact_elim( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_contact_elim
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_contact_elim = hecMAT%Iarray(IDX_I_CONTACT_ELIM)
+  end function hecmw_mat_get_contact_elim
+
+  subroutine hecmw_mat_set_contact_elim( hecMAT, contact_elim )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: contact_elim
+    hecMAT%Iarray(IDX_I_CONTACT_ELIM) = contact_elim
+  end subroutine hecmw_mat_set_contact_elim
 
   subroutine hecmw_mat_set_iterlog( hecMAT, iterlog )
     type(hecmwST_matrix) :: hecMAT

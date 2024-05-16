@@ -4,11 +4,11 @@
 !-------------------------------------------------------------------------------
 !> This module provides interface of iteratie linear equation solver for
 !! contact problems using Lagrange multiplier.
-module m_solve_LINEQ_iter_contact
+module m_solve_LINEQ_contact_elim
   use hecmw_util
   use hecmw_local_matrix
   use m_hecmw_contact_comm
-  use hecmw_solver_iterative
+  use hecmw_solver
   use hecmw_matrix_misc
   use m_hecmw_comm_f
   use hecmw_solver_misc
@@ -18,8 +18,8 @@ module m_solve_LINEQ_iter_contact
   implicit none
 
   private
-  public :: solve_LINEQ_iter_contact_init
-  public :: solve_LINEQ_iter_contact
+  public :: solve_LINEQ_contact_elim_init
+  public :: solve_LINEQ_contact_elim
 
   logical, save :: INITIALIZED = .false.
   integer, save :: SymType = 0
@@ -30,7 +30,7 @@ module m_solve_LINEQ_iter_contact
 
 contains
 
-  subroutine solve_LINEQ_iter_contact_init(hecMESH, hecMAT, hecLagMAT, is_sym)
+  subroutine solve_LINEQ_contact_elim_init(hecMESH, hecMAT, hecLagMAT, is_sym)
     type(hecmwST_local_mesh),      intent(in)    :: hecMESH   !< mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT    !< matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(in)    :: hecLagMAT !< matrix for lagrange multipliers
@@ -50,9 +50,9 @@ contains
     endif
 
     INITIALIZED = .true.
-  end subroutine solve_LINEQ_iter_contact_init
+  end subroutine solve_LINEQ_contact_elim_init
 
-  subroutine solve_LINEQ_iter_contact(hecMESH, hecMAT, hecLagMAT, istat, conMAT, is_contact_active)
+  subroutine solve_LINEQ_contact_elim(hecMESH, hecMAT, hecLagMAT, istat, conMAT, is_contact_active)
     type(hecmwST_local_mesh),      intent(inout) :: hecMESH           !< mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT            !< matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT         !< matrix for lagrange multipliers
@@ -60,7 +60,7 @@ contains
     type(hecmwST_matrix),          intent(in)    :: conMAT            !< matrix for contact
     logical,                       intent(in)    :: is_contact_active !< if contact is active or not
     !
-    integer(kind=kint) :: method_org
+    integer(kind=kint) :: solver_type, method_org
     integer(kind=kint) :: is_contact
     integer(kind=kint) :: myrank
 
@@ -74,20 +74,25 @@ contains
 
     if (is_contact == 0) then
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: no contact'
-      ! use CG because the matrix is symmetric
-      method_org = hecmw_mat_get_method(hecMAT)
-      call hecmw_mat_set_method(hecMAT, 1)
+      solver_type = hecmw_mat_get_solver_type(hecMAT)
+      if (solver_type == 1) then
+        ! use CG because the matrix is symmetric
+        method_org = hecmw_mat_get_method(hecMAT)
+        call hecmw_mat_set_method(hecMAT, 1)
+      endif
       ! solve
       call solve_with_MPC(hecMESH, hecMAT)
-      ! restore solver setting
-      call hecmw_mat_set_method(hecMAT, method_org)
+      if (solver_type == 1) then
+        ! restore solver setting
+        call hecmw_mat_set_method(hecMAT, method_org)
+      endif
     else
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: with contact'
       call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
     endif
 
     istat = hecmw_mat_get_flag_diverged(hecMAT)
-  end subroutine solve_LINEQ_iter_contact
+  end subroutine solve_LINEQ_contact_elim
 
   subroutine solve_with_MPC(hecMESH, hecMAT)
     type(hecmwST_local_mesh),      intent(inout) :: hecMESH           !< mesh
@@ -104,13 +109,13 @@ contains
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-    call hecmw_solve_iterative(hecMESHmpc,hecMATmpc)
+    call hecmw_solve(hecMESHmpc,hecMATmpc)
     if (fg_cg .and. fg_amg .and. hecmw_mat_get_flag_diverged(hecMATmpc) /= 0) then
       ! avoid ML and retry when diverged
       call hecmw_mat_set_precond(hecMATmpc, 3) ! set diag-scaling
       hecMATmpc%Iarray(97:98) = 1
       hecMATmpc%X(:) = 0.d0
-      call hecmw_solve_iterative(hecMESHmpc,hecMATmpc)
+      call hecmw_solve(hecMESHmpc,hecMATmpc)
       call hecmw_mat_set_precond(hecMATmpc, 5) ! restore amg
     endif
     call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
@@ -1579,4 +1584,4 @@ contains
     endif
   end subroutine debug_write_vector
 
-end module m_solve_LINEQ_iter_contact
+end module m_solve_LINEQ_contact_elim

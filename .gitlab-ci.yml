@@ -169,7 +169,7 @@ docker/fistr1:
     - cd docker/container
     - make push
   tags:
-    - docker
+    - gitlab-org-docker
 
 x86_64-w64-mingw32/thread-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/thread:openblas
