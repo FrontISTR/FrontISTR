@@ -78,7 +78,7 @@ contains
     integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
-    integer(kind=kint) :: c_eigen, c_contact, c_contactparam
+    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_insert
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
     integer(kind=kint) :: c_fload, c_eigenread
     integer(kind=kint) :: c_couple, c_material
@@ -107,7 +107,7 @@ contains
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-    c_eigen    = 0; c_contact  = 0; c_contactparam = 0
+    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_insert  = 0
     c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
     c_couple   = 0; c_material = 0; c_section =0
     c_mpc      = 0; c_weldline = 0; c_initial = 0
@@ -192,6 +192,9 @@ contains
       else if( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         c_contact = c_contact + n
+      else if( header_name == '!INSERT' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        c_insert = c_insert + n
       else if( header_name == '!CONTACT_PARAM' ) then
         c_contactparam = c_contactparam + 1
       else if( header_name == '!MATERIAL' ) then
@@ -308,11 +311,14 @@ contains
     end do
 
     ! -----
+    fstrSOLID%n_contacts = c_contact
     if( c_contact>0 ) then
       allocate( fstrSOLID%contacts( c_contact ) )
       ! convert SURF_SURF contact to NODE_SURF contact
       call fstr_convert_contact_type( P%MESH )
     endif
+    fstrSOLID%n_inserts = c_insert
+    if( c_insert>0 )  allocate( fstrSOLID%inserts( c_insert ) )
     if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
     if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
     if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
@@ -415,6 +421,7 @@ contains
     c_output = 0
     c_contact  = 0
     c_contactparam  = 0
+    c_insert = 0
     c_initial = 0
     c_localcoord = 0
     c_section = 0
@@ -474,6 +481,35 @@ contains
           endif
         enddo
         c_contact = c_contact+n
+
+        ! ----- INSERT condition setting
+      elseif( header_name == '!INSERT' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        if( .not. fstr_ctrl_get_INSERT( ctrl, n, fstrSOLID%inserts(c_insert+1:c_insert+n), mName ) ) then
+          write(*,*) '### Error: Fail in read in insert condition : ', c_insert
+          write(ILOG,*) '### Error: Fail in read in insert condition : ', c_insert
+          stop
+        endif
+        cparam_id = 0
+        do i=1,size(fstrPARAM%contactparam)-1
+          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+            cparam_id = i; exit
+          endif
+        enddo
+        do i=1,n
+          if( .not. fstr_contact_check( fstrSOLID%inserts(c_insert+i), P%MESH ) ) then
+            write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_insert
+            write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_insert
+            stop
+          else
+            if(paraContactFlag) then
+              isOK = fstr_insert_init( fstrSOLID%inserts(c_insert+i), P%MESH, fstrPARAM%contactparam(cparam_id), myrank)
+            else
+              isOK = fstr_insert_init( fstrSOLID%inserts(c_insert+i), P%MESH, fstrPARAM%contactparam(cparam_id))
+            endif
+          endif
+        enddo
+        c_insert = c_insert+n
 
       else if( header_name == '!ISTEP'  ) then
         c_istep = c_istep+1

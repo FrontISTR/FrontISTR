@@ -357,7 +357,7 @@ contains
     iter = 0
     do
       wkarray = 0.0d0
-      do i=1,size(fstrSOLID%contacts)
+      do i=1,fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
           if( fstrSOLID%contacts(i)%states(j)%distance>epsilon(1.d0) ) then
@@ -384,7 +384,7 @@ contains
       enddo
 
       if(iter > 0)then
-        do i=1,size(fstrSOLID%contacts)
+        do i=1,fstrSOLID%n_contacts
           do j= 1, size(fstrSOLID%contacts(i)%slave)
             if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
             slave = fstrSOLID%contacts(i)%slave(j)
@@ -404,7 +404,7 @@ contains
 
       conv = 0.d0
       wkarray = 0.d0
-      do i=1,size(fstrSOLID%contacts)
+      do i=1,fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
           slave = fstrSOLID%contacts(i)%slave(j)

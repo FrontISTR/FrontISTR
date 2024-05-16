@@ -537,7 +537,7 @@ contains
     integer(kind=kint) :: i, j, inod, jnod, l
     integer(kind=kint) :: isL, ieL, idxL_base, kL, idxL, isU, ieU, idxU_base, kU, idxU
     real(kind=kreal)   :: fcoeff !< friction coefficient
-    real(kind=kreal)   :: stiffness(9*3 + 1, 9*3 + 1) !< contact stiffness matrix
+    real(kind=kreal)   :: stiffness(:,:) !< contact stiffness matrix
     real(kind=kreal)   :: a(3, 3)
 
     i = nnode + 1 + 1
@@ -587,6 +587,5 @@ contains
     endif
 
   end subroutine hecmw_mat_ass_contactlag
-
 
 end module hecmw_matrix_ass

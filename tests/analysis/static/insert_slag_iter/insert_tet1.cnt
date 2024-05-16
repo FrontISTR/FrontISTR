@@ -1,0 +1,48 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC, NONLINEAR
+!CONTACT_ALGO, TYPE=SLAGRANGE
+!WRITE,LOG
+!WRITE,RESULT,FREQUENCY=5
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+ SET_1,2,2
+ SET_1,3,3
+!DLOAD, GRPID=1
+SURF_1,S,0.1
+!INSERT, GRPID=1
+IP1
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_2
+!ELASTIC
+ 1000, 0.3
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 100, 0.3
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1, CONVERG=1.000E-07
+BOUNDARY,1
+LOAD,1
+CONTACT,1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = BIN_VTK
+!END
