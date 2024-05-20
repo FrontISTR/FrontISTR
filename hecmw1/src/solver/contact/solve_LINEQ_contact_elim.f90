@@ -4,21 +4,22 @@
 !-------------------------------------------------------------------------------
 !> This module provides interface of iteratie linear equation solver for
 !! contact problems using Lagrange multiplier.
-module m_solve_LINEQ_iter_contact
+module m_solve_LINEQ_contact_elim
   use hecmw_util
   use hecmw_local_matrix
   use m_hecmw_contact_comm
-  use hecmw_solver_iterative
+  use hecmw_solver
   use hecmw_matrix_misc
   use m_hecmw_comm_f
   use hecmw_solver_misc
   use hecmw_solver_las
+  use hecmw_mpc_prepost
 
   implicit none
 
   private
-  public :: solve_LINEQ_iter_contact_init
-  public :: solve_LINEQ_iter_contact
+  public :: solve_LINEQ_contact_elim_init
+  public :: solve_LINEQ_contact_elim
 
   logical, save :: INITIALIZED = .false.
   integer, save :: SymType = 0
@@ -29,7 +30,7 @@ module m_solve_LINEQ_iter_contact
 
 contains
 
-  subroutine solve_LINEQ_iter_contact_init(hecMESH, hecMAT, hecLagMAT, is_sym)
+  subroutine solve_LINEQ_contact_elim_init(hecMESH, hecMAT, hecLagMAT, is_sym)
     type(hecmwST_local_mesh),      intent(in)    :: hecMESH   !< mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT    !< matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(in)    :: hecLagMAT !< matrix for lagrange multipliers
@@ -49,18 +50,17 @@ contains
     endif
 
     INITIALIZED = .true.
-  end subroutine solve_LINEQ_iter_contact_init
+  end subroutine solve_LINEQ_contact_elim_init
 
-  subroutine solve_LINEQ_iter_contact(hecMESH, hecMAT, hecLagMAT, istat, conMAT, is_contact_active)
-    type(hecmwST_local_mesh),      intent(in)    :: hecMESH           !< mesh
+  subroutine solve_LINEQ_contact_elim(hecMESH, hecMAT, hecLagMAT, istat, conMAT, is_contact_active)
+    type(hecmwST_local_mesh),      intent(inout) :: hecMESH           !< mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT            !< matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT         !< matrix for lagrange multipliers
     integer(kind=kint),            intent(out)   :: istat             !< status
     type(hecmwST_matrix),          intent(in)    :: conMAT            !< matrix for contact
     logical,                       intent(in)    :: is_contact_active !< if contact is active or not
     !
-    integer(kind=kint) :: method_org, precond_org
-    logical            :: fg_amg
+    integer(kind=kint) :: solver_type, method_org
     integer(kind=kint) :: is_contact
     integer(kind=kint) :: myrank
 
@@ -68,48 +68,71 @@ contains
 
     hecMAT%Iarray(97) = 1
 
-    fg_amg = .false.
-    precond_org = hecmw_mat_get_precond(hecMAT)
-    if (precond_org == 5) fg_amg = .true.
-
     is_contact = 0
     if (is_contact_active) is_contact = 1
     call hecmw_allreduce_I1(hecMESH, is_contact, hecmw_max)
 
     if (is_contact == 0) then
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: no contact'
-      ! use CG because the matrix is symmetric
-      method_org = hecmw_mat_get_method(hecMAT)
-      call hecmw_mat_set_method(hecMAT, 1)
-      ! solve
-      call hecmw_solve_iterative(hecMESH,hecMAT)
-      if (fg_amg .and. hecmw_mat_get_flag_diverged(hecMAT) /= 0) then
-        ! avoid ML and retry when diverged
-        call hecmw_mat_set_precond(hecMAT, 3) ! set diag-scaling
-        hecMAT%Iarray(97:98) = 1
-        hecMAT%X(:) = 0.d0
-        call hecmw_solve_iterative(hecMESH,hecMAT)
-        call hecmw_mat_set_precond(hecMAT, 5) ! restore amg
+      solver_type = hecmw_mat_get_solver_type(hecMAT)
+      if (solver_type == 1) then
+        ! use CG because the matrix is symmetric
+        method_org = hecmw_mat_get_method(hecMAT)
+        call hecmw_mat_set_method(hecMAT, 1)
       endif
-      ! restore solver setting
-      call hecmw_mat_set_method(hecMAT, method_org)
+      ! solve
+      call solve_with_MPC(hecMESH, hecMAT)
+      if (solver_type == 1) then
+        ! restore solver setting
+        call hecmw_mat_set_method(hecMAT, method_org)
+      endif
     else
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: with contact'
       call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
     endif
 
     istat = hecmw_mat_get_flag_diverged(hecMAT)
-  end subroutine solve_LINEQ_iter_contact
+  end subroutine solve_LINEQ_contact_elim
+
+  subroutine solve_with_MPC(hecMESH, hecMAT)
+    type(hecmwST_local_mesh),      intent(inout) :: hecMESH           !< mesh
+    type(hecmwST_matrix),          intent(inout) :: hecMAT            !< matrix excl. contact
+    !
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
+    type (hecmwST_matrix), pointer :: hecMATmpc
+    integer(kind=kint) :: method
+    logical            :: fg_cg, fg_amg
+
+    fg_cg = (hecmw_mat_get_method(hecMAT) == 1)
+    fg_amg = (hecmw_mat_get_precond(hecMAT) == 5)
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+    call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+    call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_solve(hecMESHmpc,hecMATmpc)
+    if (fg_cg .and. fg_amg .and. hecmw_mat_get_flag_diverged(hecMATmpc) /= 0) then
+      ! avoid ML and retry when diverged
+      call hecmw_mat_set_precond(hecMATmpc, 3) ! set diag-scaling
+      hecMATmpc%Iarray(97:98) = 1
+      hecMATmpc%X(:) = 0.d0
+      call hecmw_solve(hecMESHmpc,hecMATmpc)
+      call hecmw_mat_set_precond(hecMATmpc, 5) ! restore amg
+    endif
+    call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  end subroutine solve_with_MPC
 
   !> \brief Solve with elimination of Lagrange-multipliers
   !>
   subroutine solve_eliminate(hecMESH,hecMAT,hecLagMAT,conMAT)
-    type(hecmwST_local_mesh),      intent(in)    :: hecMESH   !< original mesh
+    type(hecmwST_local_mesh),      intent(inout) :: hecMESH   !< original mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT    !< original matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< original matrix for lagrange multipliers
     type(hecmwST_matrix),          intent(in)    :: conMAT    !< original matrix for contact
     !
     type(hecmwST_local_mesh)        :: hecMESHtmp     !< temoprary copy of mesh for migrating nodes
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
+    type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint), allocatable :: slaves4lag(:)  !< list of slave dofs chosed for EACH Lag. in THIS SUBDOMAIN
     real(kind=kreal),   allocatable :: BLs_inv(:)     !< inverse of diagonal BLs matrix
     real(kind=kreal),   allocatable :: BUs_inv(:)     !< inverse of diagonal BUs matrix
@@ -170,7 +193,7 @@ contains
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: converted equation ', t2-t1
 
     t1 = t2
-    call hecmw_solve_iterative(hecMESHtmp,hecTKT)
+    call solve_with_MPC(hecMESHtmp, hecTKT)
     if (DEBUG_VECTOR) call debug_write_vector(hecTKT%X, 'Solution(converted)', 'hecTKT%X', ndof, hecTKT%N)
     t2 = hecmw_wtime()
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: linear solver done ', t2-t1
@@ -219,30 +242,45 @@ contains
       allocate(dst%neighbor_pe(dst%n_neighbor_pe))
       dst%neighbor_pe(:) = src%neighbor_pe(:)
       allocate(dst%import_index(0:dst%n_neighbor_pe))
-      allocate(dst%export_index(0:dst%n_neighbor_pe))
       dst%import_index(:)= src%import_index(:)
+      allocate(dst%export_index(0:dst%n_neighbor_pe))
       dst%export_index(:)= src%export_index(:)
       allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
       dst%import_item(1:dst%import_index(dst%n_neighbor_pe)) = src%import_item(1:dst%import_index(dst%n_neighbor_pe))
       allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
       dst%export_item(1:dst%export_index(dst%n_neighbor_pe)) = src%export_item(1:dst%export_index(dst%n_neighbor_pe))
-      allocate(dst%global_node_ID(dst%n_node))
-      dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
     else
       dst%neighbor_pe => null()
       dst%import_index => null()
       dst%export_index => null()
       dst%import_item => null()
       dst%export_item => null()
-      dst%global_node_ID => src%global_node_ID
     endif
+    allocate(dst%global_node_ID(dst%n_node))
+    dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
     allocate(dst%node_ID(2*dst%n_node))
     dst%node_ID(1:2*dst%n_node) = src%node_ID(1:2*dst%n_node)
     allocate(dst%elem_type_item(dst%n_elem_type))
     dst%elem_type_item(:) = src%elem_type_item(:)
-    !dst%mpc            = src%mpc
-    ! MPC is already set outside of here
-    dst%mpc%n_mpc = 0
+    !
+    dst%mpc%n_mpc =  src%mpc%n_mpc
+    dst%mpc%mpc_index => src%mpc%mpc_index
+    dst%mpc%mpc_item => src%mpc%mpc_item
+    dst%mpc%mpc_dof => src%mpc%mpc_dof
+    dst%mpc%mpc_val => src%mpc%mpc_val
+    dst%mpc%mpc_const => src%mpc%mpc_const
+    !
+    dst%node_group%n_grp = src%node_group%n_grp
+    dst%node_group%n_bc = src%node_group%n_bc
+    dst%node_group%grp_name => src%node_group%grp_name
+    dst%node_group%grp_index => src%node_group%grp_index
+    dst%node_group%grp_item => src%node_group%grp_item
+    dst%node_group%bc_grp_ID => src%node_group%bc_grp_ID
+    dst%node_group%bc_grp_type => src%node_group%bc_grp_type
+    dst%node_group%bc_grp_index => src%node_group%bc_grp_index
+    dst%node_group%bc_grp_dof => src%node_group%bc_grp_dof
+    dst%node_group%bc_grp_val => src%node_group%bc_grp_val
+    !
     dst%node => src%node
   end subroutine copy_mesh
 
@@ -1546,4 +1584,4 @@ contains
     endif
   end subroutine debug_write_vector
 
-end module m_solve_LINEQ_iter_contact
+end module m_solve_LINEQ_contact_elim

@@ -10,6 +10,8 @@ module m_solve_LINEQ_MUMPS_contact
   use m_sparse_matrix_contact
   use m_hecmw_MUMPS_wrapper
   use hecmw_matrix_dump
+  use hecmw_matrix_ass
+  use hecmw_matrix_misc
 
   private
   public :: solve_LINEQ_MUMPS_contact_init
@@ -70,7 +72,20 @@ contains
     integer(kind=kint), intent(out) :: istat
     type (hecmwST_matrix), intent(in) :: conMAT
 
-    integer(kind=kint) :: mumps_job
+    integer(kind=kint) :: mumps_job, mpc_method
+
+    mpc_method = hecmw_mat_get_mpc_method(hecMAT)
+    if (mpc_method < 1 .or. 3 < mpc_method) then
+      mpc_method = 1
+      call hecmw_mat_set_mpc_method(hecMAT,mpc_method)
+    endif
+    if (mpc_method /= 1) then
+      write(*,*) 'ERROR: MPCMETHOD other than penalty is not available for MUMPS solver', &
+          ' in contact analysis without elimination'
+      stop
+    endif
+    call hecmw_mat_ass_equation(hecMESH, hecMAT)
+    call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 
