@@ -20,7 +20,7 @@
  SET_1,3,3
 !DLOAD, GRPID=1
 SURF_1,S,0.1
-!INSERT, GRPID=1
+!EMBED, GRPID=1
 IP1
 ###################################
 #####         MATERIAL        #####

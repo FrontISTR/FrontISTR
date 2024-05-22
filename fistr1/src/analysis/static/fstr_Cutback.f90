@@ -70,13 +70,13 @@ contains
       end do
     end if
 
-    !(4)insert values
-    ncont = fstrSOLID%n_inserts
-    if( associated(fstrSOLID%inserts) ) then
-      allocate(fstrSOLID%inserts_bkup(ncont))
+    !(4)embed values
+    ncont = fstrSOLID%n_embeds
+    if( associated(fstrSOLID%embeds) ) then
+      allocate(fstrSOLID%embeds_bkup(ncont))
       do i=1,ncont
-        nstate = size(fstrSOLID%inserts(i)%states)
-        allocate(fstrSOLID%inserts_bkup(i)%states(nstate))
+        nstate = size(fstrSOLID%embeds(i)%states)
+        allocate(fstrSOLID%embeds_bkup(i)%states(nstate))
       end do
     end if
     
@@ -124,13 +124,13 @@ contains
       deallocate(fstrSOLID%contacts_bkup)
     end if
 
-    !(4)insert values
-    ncont = fstrSOLID%n_inserts
-    if( associated(fstrSOLID%inserts) ) then
+    !(4)embed values
+    ncont = fstrSOLID%n_embeds
+    if( associated(fstrSOLID%embeds) ) then
       do i=1,ncont
-        deallocate(fstrSOLID%inserts_bkup(i)%states)
+        deallocate(fstrSOLID%embeds_bkup(i)%states)
       end do
-      deallocate(fstrSOLID%inserts_bkup)
+      deallocate(fstrSOLID%embeds_bkup)
     end if
 
         
@@ -186,13 +186,13 @@ contains
       infoCTChange_bak = infoCTChange
     end if
 
-    !(4)insert values
-    ncont = fstrSOLID%n_inserts
-    if( associated(fstrSOLID%inserts) ) then
+    !(4)embed values
+    ncont = fstrSOLID%n_embeds
+    if( associated(fstrSOLID%embeds) ) then
       do i=1,ncont
-        nstate = size(fstrSOLID%inserts(i)%states)
+        nstate = size(fstrSOLID%embeds(i)%states)
         do j=1,nstate
-          call contact_state_copy(fstrSOLID%inserts(i)%states(j), fstrSOLID%inserts_bkup(i)%states(j))
+          call contact_state_copy(fstrSOLID%embeds(i)%states(j), fstrSOLID%embeds_bkup(i)%states(j))
         enddo
       end do
       infoCTChange_bak = infoCTChange
@@ -249,13 +249,13 @@ contains
       infoCTChange = infoCTChange_bak
     end if
 
-    !(4)insert values
-    ncont = fstrSOLID%n_inserts
-    if( associated(fstrSOLID%inserts) ) then
+    !(4)embed values
+    ncont = fstrSOLID%n_embeds
+    if( associated(fstrSOLID%embeds) ) then
       do i=1,ncont
-        nstate = size(fstrSOLID%inserts(i)%states)
+        nstate = size(fstrSOLID%embeds(i)%states)
         do j=1,nstate
-          call contact_state_copy(fstrSOLID%inserts_bkup(i)%states(j), fstrSOLID%inserts(i)%states(j))
+          call contact_state_copy(fstrSOLID%embeds_bkup(i)%states(j), fstrSOLID%embeds(i)%states(j))
         enddo
       end do
       infoCTChange = infoCTChange_bak

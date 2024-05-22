@@ -585,11 +585,11 @@ contains
   end function fstr_ctrl_get_CONTACT
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_INSERT( ctrl, n, insert, cpname )
+  logical function fstr_ctrl_get_EMBED( ctrl, n, embed, cpname )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
-    type(tContact), intent(out)       :: insert(n)      !< insert definition
+    type(tContact), intent(out)       :: embed(n)      !< embed definition
     character(len=*), intent(out)     :: cpname         !< name of contact parameter
 
     integer           :: rcode, ipt
@@ -602,26 +602,26 @@ contains
 
     write(ss,*)  HECMW_NAME_LEN
 
-    fstr_ctrl_get_INSERT = .false.
-    insert(1)%ctype = 1   ! pure slave-master contact; default value
-    insert(1)%algtype = CONTACTTIED ! small sliding contact; default value
-    if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', insert(1)%group )/=0) return
+    fstr_ctrl_get_EMBED = .false.
+    embed(1)%ctype = 1   ! pure slave-master contact; default value
+    embed(1)%algtype = CONTACTTIED ! small sliding contact; default value
+    if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', embed(1)%group )/=0) return
     do rcode=2,n
-      insert(rcode)%ctype = insert(1)%ctype
-      insert(rcode)%group = insert(1)%group
-      insert(rcode)%algtype = insert(1)%algtype
+      embed(rcode)%ctype = embed(1)%ctype
+      embed(rcode)%group = embed(1)%group
+      embed(rcode)%algtype = embed(1)%algtype
     end do
 
     write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
     if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
     do rcode=1,n
       call fstr_strupr(cp_name(rcode))
-      insert(rcode)%pair_name = cp_name(rcode)
+      embed(rcode)%pair_name = cp_name(rcode)
     enddo
 
     cpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
-    fstr_ctrl_get_INSERT = .true.
+    fstr_ctrl_get_EMBED = .true.
   end function 
 
   !> Read in !CONTACT_PARAM                                                             !
