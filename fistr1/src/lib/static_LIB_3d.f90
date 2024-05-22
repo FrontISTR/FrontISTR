@@ -654,7 +654,7 @@ contains
 
         !stress integration
         trD = dstrain(1)+dstrain(2)+dstrain(3)
-        dum(:,:) = dumstress + matmul( rot,dumstress ) - matmul( dumstress, rot ) + dumstress*trD
+        dum(:,:) = dumstress + matmul( rot,dumstress ) - matmul( dumstress, rot ) - dumstress*trD
         !call Hughes_Winget_rotation_3D( rot, dumstress, dum )
 
         gauss%stress(1) = dum(1,1) + dstress(1)
