@@ -620,7 +620,7 @@ contains
 
     if( flag == INFINITESIMAL ) then
 
-      gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+      gauss%stress(1:6) = gauss%stress_bak(1:6) + matmul( D(1:6, 1:6), dstrain(1:6)-gauss%strain_bak(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
         gauss%stress = real(gauss%stress)
@@ -654,7 +654,7 @@ contains
 
         !stress integration
         trD = dstrain(1)+dstrain(2)+dstrain(3)
-        dum(:,:) = dumstress + matmul( rot,dumstress ) - matmul( dumstress, rot ) + dumstress*trD
+        dum(:,:) = dumstress + matmul( rot,dumstress ) - matmul( dumstress, rot ) - dumstress*trD
         !call Hughes_Winget_rotation_3D( rot, dumstress, dum )
 
         gauss%stress(1) = dum(1,1) + dstress(1)
