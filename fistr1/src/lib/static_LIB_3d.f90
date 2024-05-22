@@ -620,7 +620,7 @@ contains
 
     if( flag == INFINITESIMAL ) then
 
-      gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+      gauss%stress(1:6) = gauss%stress_bak(1:6) + matmul( D(1:6, 1:6), dstrain(1:6)-gauss%strain_bak(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
         gauss%stress = real(gauss%stress)
