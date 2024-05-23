@@ -87,26 +87,26 @@ contains
       enddo
     enddo
 
-    do i = 1, fstrSOLID%n_inserts
+    do i = 1, fstrSOLID%n_embeds
 
-      grpid = fstrSOLID%inserts(i)%group
-      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) cycle
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      do j = 1, size(fstrSOLID%inserts(i)%slave)
+      do j = 1, size(fstrSOLID%embeds(i)%slave)
 
-        if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
+        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
 
-        ctsurf = fstrSOLID%inserts(i)%states(j)%surface
-        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
-        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
-        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
-        ndLocal(2:nnode+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(1:nnode)
+        ctsurf = fstrSOLID%embeds(i)%states(j)%surface
+        etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
+        ndLocal(2:nnode+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(1:nnode)
 
         do k=1,3
           id_lagrange = id_lagrange + 1
           lagrange = hecLagMAT%Lagrange(id_lagrange)
   
-          call getTiedStiffness(etype,nnode,k,fstrSOLID%inserts(i)%states(j),lagrange,stiffness)
+          call getTiedStiffness(etype,nnode,k,fstrSOLID%embeds(i)%states(j),lagrange,stiffness)
     
           ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
           call hecmw_mat_ass_contactlag(nnode,ndLocal,id_lagrange,0.d0,stiffness,hecMAT,hecLagMAT)
@@ -274,7 +274,7 @@ contains
     id_lagrange = 0
     if( associated(fstrSOLID%CONT_NFORCE) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
     if( associated(fstrSOLID%CONT_FRIC) ) fstrSOLID%CONT_FRIC(:) = 0.d0
-    if( associated(fstrSOLID%INSERT_NFORCE) ) fstrSOLID%INSERT_NFORCE(:) = 0.d0
+    if( associated(fstrSOLID%EMBED_NFORCE) ) fstrSOLID%EMBED_NFORCE(:) = 0.d0
 
     do i = 1, fstrSOLID%n_contacts
 
@@ -323,20 +323,20 @@ contains
 
     enddo
 
-    do i = 1, fstrSOLID%n_inserts
+    do i = 1, fstrSOLID%n_embeds
 
-      grpid = fstrSOLID%inserts(i)%group
-      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) cycle
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      do j = 1, size(fstrSOLID%inserts(i)%slave)
+      do j = 1, size(fstrSOLID%embeds(i)%slave)
 
-        if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
+        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
 
-        ctsurf = fstrSOLID%inserts(i)%states(j)%surface
-        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
-        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
-        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
-        ndLocal(2:nnode+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(1:nnode)
+        ctsurf = fstrSOLID%embeds(i)%states(j)%surface
+        etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
+        ndLocal(2:nnode+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(1:nnode)
         do k = 1, nnode+1
           ndDu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%dunode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
           ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndDu((k-1)*3+1:(k-1)*3+3)
@@ -347,11 +347,11 @@ contains
           id_lagrange = id_lagrange + 1
           lagrange = hecLagMAT%Lagrange(id_lagrange)
   
-          fstrSOLID%inserts(i)%states(j)%multiplier(k) = hecLagMAT%Lagrange(id_lagrange)
+          fstrSOLID%embeds(i)%states(j)%multiplier(k) = hecLagMAT%Lagrange(id_lagrange)
     
-          call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%inserts(i)%states(j),lagrange,ctNForce,ctTForce)
+          call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%embeds(i)%states(j),lagrange,ctNForce,ctTForce)
           ! Update non-eqilibrited force vector
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,conMAT,fstrSOLID%INSERT_NFORCE)
+          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,conMAT,fstrSOLID%EMBED_NFORCE)
 
         enddo
       enddo
@@ -597,21 +597,21 @@ contains
       enddo
     enddo
 
-    do i = 1, fstrSOLID%n_inserts
+    do i = 1, fstrSOLID%n_embeds
 
-      grpid = fstrSOLID%inserts(i)%group
-      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) cycle
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
 
-      do j = 1, size(fstrSOLID%inserts(i)%slave)
+      do j = 1, size(fstrSOLID%embeds(i)%slave)
 
-        if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
+        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
 
-        ctsurf = fstrSOLID%inserts(i)%states(j)%surface
-        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
-        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
-        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
-        ndLocal(2:nnode+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(1:nnode)
+        ctsurf = fstrSOLID%embeds(i)%states(j)%surface
+        etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
+        ndLocal(2:nnode+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(1:nnode)
         do k = 1, nnode+1
           ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
           ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
@@ -619,11 +619,11 @@ contains
 
         do k=1,3
           id_lagrange = id_lagrange + 1
-          lagrange = fstrSOLID%inserts(i)%states(j)%multiplier(k)
+          lagrange = fstrSOLID%embeds(i)%states(j)%multiplier(k)
     
-          call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%inserts(i)%states(j),lagrange,ctNForce,ctTForce)
+          call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%embeds(i)%states(j),lagrange,ctNForce,ctTForce)
           ! Update non-eqilibrited force vector
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,hecMAT,fstrSOLID%INSERT_NFORCE)
+          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,hecMAT,fstrSOLID%EMBED_NFORCE)
 
         enddo
       enddo

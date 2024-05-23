@@ -262,12 +262,12 @@ contains
       if( .not. active ) active = iactive
     enddo
 
-    do i=1,fstrSOLID%n_inserts
-      grpid = fstrSOLID%inserts(i)%group
-      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) then
-        call clear_contact_state(fstrSOLID%inserts(i));  cycle
+    do i=1,fstrSOLID%n_embeds
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) then
+        call clear_contact_state(fstrSOLID%embeds(i));  cycle
       endif
-      call scan_insert_state( flag_ctAlgo, fstrSOLID%inserts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+      call scan_embed_state( flag_ctAlgo, fstrSOLID%embeds(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
           & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu )
       if( .not. active ) active = iactive
     enddo
@@ -407,8 +407,8 @@ contains
       endif
     enddo
 
-    do i=1, fstrSOLID%n_inserts
-      call calcu_tied_force0( fstrSOLID%inserts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
+    do i=1, fstrSOLID%n_embeds
+      call calcu_tied_force0( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
     enddo
 
   end subroutine
@@ -422,7 +422,7 @@ contains
     integer(kind=kint) :: i, nc, algtype
 
     gnt = 0.d0;  ctchanged = .false.
-    nc = fstrSOLID%n_contacts+fstrSOLID%n_inserts
+    nc = fstrSOLID%n_contacts+fstrSOLID%n_embeds
     do i=1, fstrSOLID%n_contacts
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
@@ -434,8 +434,8 @@ contains
       endif
     enddo
 
-    do i=1, fstrSOLID%n_inserts
-      call update_tied_multiplier( fstrSOLID%inserts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
+    do i=1, fstrSOLID%n_embeds
+      call update_tied_multiplier( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
       &  mu, ctchanged )
     enddo
 
@@ -459,8 +459,8 @@ contains
       endif
     enddo
 
-    do i = 1, fstrSOLID%n_inserts
-      call calcu_tied_force0( fstrSOLID%inserts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
+    do i = 1, fstrSOLID%n_embeds
+      call calcu_tied_force0( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
     enddo
   end subroutine
 
@@ -539,20 +539,20 @@ contains
       enddo
     enddo
 
-    do i=1,fstrSOLID%n_inserts
-      grpid = fstrSOLID%inserts(i)%group
+    do i=1,fstrSOLID%n_embeds
+      grpid = fstrSOLID%embeds(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
-      do j=1, size(fstrSOLID%inserts(i)%slave)
-        if( fstrSOLID%inserts(i)%states(j)%state==CONTACTFREE ) cycle   ! free
-        ctsurf = fstrSOLID%inserts(i)%states(j)%surface          ! contacting surface
-        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
-        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
-        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
+      do j=1, size(fstrSOLID%embeds(i)%slave)
+        if( fstrSOLID%embeds(i)%states(j)%state==CONTACTFREE ) cycle   ! free
+        ctsurf = fstrSOLID%embeds(i)%states(j)%surface          ! contacting surface
+        etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
         do k=1,nnode
-          ndLocal(k+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(k)
+          ndLocal(k+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(k)
           elecoord(1:3,k)=hecMESH%node(3*ndLocal(k+1)-2:3*ndLocal(k+1))
         enddo
-        call tied2stiff( algtype, fstrSOLID%inserts(i)%states(j),    &
+        call tied2stiff( algtype, fstrSOLID%embeds(i)%states(j),    &
         etype, nnode, mu, mut, stiff(:,:), force(:) )
         ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
         call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiff)
@@ -602,13 +602,13 @@ contains
 
   end subroutine
 
-  subroutine initialize_insert_vectors(fstrSOLID,hecMAT)
+  subroutine initialize_embed_vectors(fstrSOLID,hecMAT)
     type(fstr_solid)       :: fstrSOLID      !< type fstr_solid
     type(hecmwST_matrix)   :: hecMAT         !< type hecmwST_matrix
 
-    if( .not. associated(fstrSOLID%INSERT_NFORCE) ) then
-      allocate( fstrSOLID%INSERT_NFORCE(hecMAT%NP*3) )
-      fstrSOLID%INSERT_NFORCE(:) = 0.d0
+    if( .not. associated(fstrSOLID%EMBED_NFORCE) ) then
+      allocate( fstrSOLID%EMBED_NFORCE(hecMAT%NP*3) )
+      fstrSOLID%EMBED_NFORCE(:) = 0.d0
     end if
   end subroutine
 

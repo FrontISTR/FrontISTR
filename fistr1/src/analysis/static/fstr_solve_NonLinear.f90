@@ -684,9 +684,9 @@ contains
 
     call fstr_UpdateState(hecMESH, fstrSOLID, tincr)
     call fstr_update_contact_TangentForce( fstrSOLID )
-    if( fstrSOLID%n_inserts > 0 .and. paraContactFlag ) then
-      call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%INSERT_NFORCE,1)
-      fstrSOLID%REACTION(:) = fstrSOLID%QFORCE(:) - fstrSOLID%INSERT_NFORCE(:)
+    if( fstrSOLID%n_embeds > 0 .and. paraContactFlag ) then
+      call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%EMBED_NFORCE,1)
+      fstrSOLID%REACTION(:) = fstrSOLID%QFORCE(:) - fstrSOLID%EMBED_NFORCE(:)
     endif
 
     deallocate(coord)

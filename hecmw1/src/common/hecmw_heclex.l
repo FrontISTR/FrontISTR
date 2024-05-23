@@ -69,8 +69,8 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 !CONNECTIVITY	{ return flag_header ? HECMW_HECLEX_H_CONNECTIVITY : ' '; }
 ^!CONTACT" "?PAIR	{ set_flag_header(1); return HECMW_HECLEX_H_CONTACT_PAIR; }
 !CONTACT" "?PAIR	{ return flag_header ? HECMW_HECLEX_H_CONTACT_PAIR : ' '; }
-^!INSERT" "?PAIR	{ set_flag_header(1); return HECMW_HECLEX_H_INSERT_PAIR; }
-!INSERT" "?PAIR	{ return flag_header ? HECMW_HECLEX_H_INSERT_PAIR : ' '; }
+^!EMBED" "?PAIR	{ set_flag_header(1); return HECMW_HECLEX_H_EMBED_PAIR; }
+!EMBED" "?PAIR	{ return flag_header ? HECMW_HECLEX_H_EMBED_PAIR : ' '; }
 ^!ECOPY		{ set_flag_header(1); return HECMW_HECLEX_H_ECOPY; }
 !ECOPY		{ return flag_header ? HECMW_HECLEX_H_ECOPY : ' '; }
 ^!EGEN		{ set_flag_header(1); return HECMW_HECLEX_H_EGEN; }

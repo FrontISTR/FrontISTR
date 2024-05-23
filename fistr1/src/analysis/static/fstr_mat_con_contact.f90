@@ -80,12 +80,12 @@ contains
         enddo
       enddo
 
-      do i = 1, fstrSOLID%n_inserts
-        grpid = fstrSOLID%inserts(i)%group
+      do i = 1, fstrSOLID%n_embeds
+        grpid = fstrSOLID%embeds(i)%group
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
         nlag = 3
-        do j = 1, size(fstrSOLID%inserts(i)%slave)
-          if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
+        do j = 1, size(fstrSOLID%embeds(i)%slave)
+          if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
           num_lagrange = num_lagrange + nlag
         enddo
       enddo
@@ -168,10 +168,10 @@ contains
 
     enddo
 
-    do i = 1, fstrSOLID%n_inserts
+    do i = 1, fstrSOLID%n_embeds
 
-      grpid = fstrSOLID%inserts(i)%group
-      if( .not. fstr_isInsertActive( fstrSOLID, grpid, cstep ) ) cycle
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
       necessary_to_insert_node = ( contact_algo == kcaALagrange )
 
@@ -179,14 +179,14 @@ contains
       if( contact_algo == kcaALagrange ) nlag = 1
       permission = .true.
 
-      do j = 1, size(fstrSOLID%inserts(i)%slave)
+      do j = 1, size(fstrSOLID%embeds(i)%slave)
 
-        if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
-        ctsurf = fstrSOLID%inserts(i)%states(j)%surface
-        etype = fstrSOLID%inserts(i)%master(ctsurf)%etype
-        nnode = size(fstrSOLID%inserts(i)%master(ctsurf)%nodes)
-        ndLocal(1) = fstrSOLID%inserts(i)%slave(j)
-        ndLocal(2:nnode+1) = fstrSOLID%inserts(i)%master(ctsurf)%nodes(1:nnode)
+        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+        ctsurf = fstrSOLID%embeds(i)%states(j)%surface
+        etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
+        ndLocal(2:nnode+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(1:nnode)
 
         do k=1,nlag
           if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
@@ -222,13 +222,13 @@ contains
       enddo
     enddo
 
-    do i = 1, fstrSOLID%n_inserts
+    do i = 1, fstrSOLID%n_embeds
       nlag = 3
-      do j = 1, size(fstrSOLID%inserts(i)%slave)
-        if( fstrSOLID%inserts(i)%states(j)%state == CONTACTFREE ) cycle
+      do j = 1, size(fstrSOLID%embeds(i)%slave)
+        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
         do k=1,nlag
           id_lagrange = id_lagrange + 1
-          hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%inserts(i)%states(j)%multiplier(k)
+          hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
         enddo
       enddo
     enddo

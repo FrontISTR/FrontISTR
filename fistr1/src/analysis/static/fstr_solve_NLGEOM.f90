@@ -50,7 +50,7 @@ contains
     ndof = hecMAT%NDOF
     nn = ndof*ndof
 
-    is_interaction_active = ( associated( fstrSOLID%contacts ) .or. associated( fstrSOLID%inserts ) )
+    is_interaction_active = ( associated( fstrSOLID%contacts ) .or. associated( fstrSOLID%embeds ) )
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
       fstrSOLID%last_temp = 0.0d0
@@ -83,7 +83,7 @@ contains
       call initialize_contact_output_vectors(fstrSOLID,hecMAT)
       call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
     endif
-    if( fstrSOLID%n_inserts > 0 ) call initialize_insert_vectors(fstrSOLID,hecMAT)
+    if( fstrSOLID%n_embeds > 0 ) call initialize_embed_vectors(fstrSOLID,hecMAT)
 
     restart_step_num    = 1
     restart_substep_num = 1

@@ -403,10 +403,10 @@ static int read_contact_or_insert_pair_head(int *last_token, int *type) {
   token = HECMW_heclex_next_token();
   if ( token == HECMW_HECLEX_H_CONTACT_PAIR ){
     *type = HECMW_CONTACT_TYPE_NODE_SURF;
-  } else if ( token == HECMW_HECLEX_H_INSERT_PAIR ){
+  } else if ( token == HECMW_HECLEX_H_EMBED_PAIR ){
     *type = HECMW_CONTACT_TYPE_NODE_ELEM;
   } else {
-    set_err_token(token, HECMW_IO_HEC_E2100, "!CONTACT or !INSERT required");
+    set_err_token(token, HECMW_IO_HEC_E2100, "!CONTACT or !EMBED required");
     return -1;
   }
 
@@ -4371,7 +4371,7 @@ static struct read_func_table {
     {HECMW_HECLEX_H_AMPLITUDE, read_amplitude},
     {HECMW_HECLEX_H_CONNECTIVITY, read_connectivity},
     {HECMW_HECLEX_H_CONTACT_PAIR, read_contact_pair},
-    {HECMW_HECLEX_H_INSERT_PAIR, read_contact_pair},
+    {HECMW_HECLEX_H_EMBED_PAIR, read_contact_pair},
     /*	{ HECMW_HECLEX_H_ECOPY,     read_ecopy     }, */
     /*	{ HECMW_HECLEX_H_EGEN,      read_egen      }, */
     {HECMW_HECLEX_H_EGROUP, read_egroup},

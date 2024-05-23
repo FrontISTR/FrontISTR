@@ -267,9 +267,9 @@ contains
     fstr_contact_init = .true.
   end function
 
-  !>  Initializer of tContactState for insert case
-  logical function fstr_insert_init( insert, hecMESH, cparam, myrank )
-    type(tContact), intent(inout)     :: insert  !< contact definition
+  !>  Initializer of tContactState for embed case
+  logical function fstr_embed_init( embed, hecMESH, cparam, myrank )
+    type(tContact), intent(inout)     :: embed  !< contact definition
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
     type(tContactParam), target       :: cparam   !< contact parameter
     integer(kint),intent(in),optional :: myrank
@@ -277,12 +277,12 @@ contains
     integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
     integer  :: count,nodeID
 
-    fstr_insert_init = .false.
+    fstr_embed_init = .false.
 
-    insert%cparam => cparam
+    embed%cparam => cparam
 
     !  master surface
-    cgrp = insert%surf_id2
+    cgrp = embed%surf_id2
     if( cgrp<=0 ) return
     is= hecMESH%elem_group%grp_index(cgrp-1) + 1
     ie= hecMESH%elem_group%grp_index(cgrp  )
@@ -295,42 +295,42 @@ contains
         if(hecMESH%elem_ID(ic*2) /= myrank) cycle
         count = count + 1
       enddo
-      allocate( insert%master(count) )
+      allocate( embed%master(count) )
       count = 0
       do i=is,ie
         ic   = hecMESH%elem_group%grp_item(i)
         if(hecMESH%elem_ID(ic*2) /= myrank) cycle
         count = count + 1
         ic_type = hecMESH%elem_type(ic)
-        call initialize_surf( ic, ic_type, 0, insert%master(count) )
+        call initialize_surf( ic, ic_type, 0, embed%master(count) )
         iss = hecMESH%elem_node_index(ic-1)
-        do j=1, size( insert%master(count)%nodes )
-          nn = insert%master(count)%nodes(j)
-          insert%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+        do j=1, size( embed%master(count)%nodes )
+          nn = embed%master(count)%nodes(j)
+          embed%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
       enddo
 
     else
       ! not PARA_CONTACT
-      allocate( insert%master(ie-is+1) )
+      allocate( embed%master(ie-is+1) )
       do i=is,ie
         ic   = hecMESH%elem_group%grp_item(i)
         ic_type = hecMESH%elem_type(ic)
-        call initialize_surf( ic, ic_type, 0, insert%master(i-is+1) )
+        call initialize_surf( ic, ic_type, 0, embed%master(i-is+1) )
         iss = hecMESH%elem_node_index(ic-1)
-        do j=1, size( insert%master(i-is+1)%nodes )
-          nn = insert%master(i-is+1)%nodes(j)
-          insert%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+        do j=1, size( embed%master(i-is+1)%nodes )
+          nn = embed%master(i-is+1)%nodes(j)
+          embed%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
       enddo
 
     endif
 
-    !call update_surface_reflen( insert%master, hecMESH%node )
+    !call update_surface_reflen( embed%master, hecMESH%node )
 
     ! slave surface
     !    if( contact%ctype==1 ) then
-    cgrp = insert%surf_id1
+    cgrp = embed%surf_id1
     if( cgrp<=0 ) return
     is= hecMESH%node_group%grp_index(cgrp-1) + 1
     ie= hecMESH%node_group%grp_index(cgrp  )
@@ -347,8 +347,8 @@ contains
         endif
       endif
     enddo
-    allocate( insert%slave(nslave) )
-    allocate( insert%states(nslave) )
+    allocate( embed%slave(nslave) )
+    allocate( embed%states(nslave) )
     ii = 0
     do i=is,ie
       if(.not.present(myrank)) then
@@ -356,34 +356,34 @@ contains
         if( hecMESH%node_group%grp_item(i) > hecMESH%nn_internal) cycle
       endif
       ii = ii + 1
-      insert%slave(ii) = hecMESH%node_group%grp_item(i)
-      insert%states(ii)%state = -1
-      insert%states(ii)%multiplier(:) = 0.d0
-      insert%states(ii)%tangentForce(:) = 0.d0
-      insert%states(ii)%tangentForce1(:) = 0.d0
-      insert%states(ii)%tangentForce_trial(:) = 0.d0
-      insert%states(ii)%tangentForce_final(:) = 0.d0
-      insert%states(ii)%reldisp(:) = 0.d0
+      embed%slave(ii) = hecMESH%node_group%grp_item(i)
+      embed%states(ii)%state = -1
+      embed%states(ii)%multiplier(:) = 0.d0
+      embed%states(ii)%tangentForce(:) = 0.d0
+      embed%states(ii)%tangentForce1(:) = 0.d0
+      embed%states(ii)%tangentForce_trial(:) = 0.d0
+      embed%states(ii)%tangentForce_final(:) = 0.d0
+      embed%states(ii)%reldisp(:) = 0.d0
     enddo
     !    endif
 
     ! contact state
     !      allocate( contact%states(nslave) )
     do i=1,nslave
-      call contact_state_init( insert%states(i) )
+      call contact_state_init( embed%states(i) )
     enddo
 
     ! neighborhood of surface group
-    call update_surface_box_info( insert%master, hecMESH%node )
-    call bucketDB_init( insert%master_bktDB )
-    call update_surface_bucket_info( insert%master, insert%master_bktDB )
-    call find_surface_neighbor( insert%master, insert%master_bktDB )
+    call update_surface_box_info( embed%master, hecMESH%node )
+    call bucketDB_init( embed%master_bktDB )
+    call update_surface_bucket_info( embed%master, embed%master_bktDB )
+    call find_surface_neighbor( embed%master, embed%master_bktDB )
 
     ! initialize contact communication table
-    call hecmw_contact_comm_init( insert%comm, hecMESH, 1, nslave, insert%slave )
+    call hecmw_contact_comm_init( embed%comm, hecMESH, 1, nslave, embed%slave )
 
-    insert%symmetric = .true.
-    fstr_insert_init = .true.
+    embed%symmetric = .true.
+    fstr_embed_init = .true.
   end function
 
 
@@ -585,10 +585,10 @@ contains
   !> This subroutine update contact states, which include
   !!-# Free to contact or contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
-  subroutine scan_insert_state( flag_ctAlgo, insert, currpos, currdisp, ndforce, infoCTChange, &
+  subroutine scan_embed_state( flag_ctAlgo, embed, currpos, currdisp, ndforce, infoCTChange, &
     nodeID, elemID, is_init, active, mu, B )
   character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
-  type( tContact ), intent(inout)                  :: insert      !< contact info
+  type( tContact ), intent(inout)                  :: embed      !< contact info
   type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
   real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
   real(kind=kreal), intent(in)                     :: currdisp(:)  !< current displacement of each nodes
@@ -614,12 +614,12 @@ contains
   real(kind=kreal), pointer :: Bp(:)
 
   if( is_init ) then
-    distclr = insert%cparam%DISTCLR_INIT
+    distclr = embed%cparam%DISTCLR_INIT
   else
-    distclr = insert%cparam%DISTCLR_FREE
+    distclr = embed%cparam%DISTCLR_FREE
     active = .false.
-    do i= 1, size(insert%slave)
-      if( insert%states(i)%state==CONTACTSTICK ) then
+    do i= 1, size(embed%slave)
+      if( embed%states(i)%state==CONTACTSTICK ) then
         active = .true.
         exit
       endif
@@ -628,14 +628,14 @@ contains
   endif
 
   allocate(contact_surf(size(nodeID)))
-  allocate(states_prev(size(insert%slave)))
+  allocate(states_prev(size(embed%slave)))
   contact_surf(:) = huge(0)
-  do i = 1, size(insert%slave)
-    states_prev(i) = insert%states(i)%state
+  do i = 1, size(embed%slave)
+    states_prev(i) = embed%states(i)%state
   enddo
 
-  call update_surface_box_info( insert%master, currpos )
-  call update_surface_bucket_info( insert%master, insert%master_bktDB )
+  call update_surface_box_info( embed%master, currpos )
+  call update_surface_bucket_info( embed%master, embed%master_bktDB )
 
   ! for gfortran-10: optional parameter seems not allowed within omp parallel
   is_present_B = present(B)
@@ -646,20 +646,20 @@ contains
     !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand) &
     !$omp& firstprivate(nMasterMax,is_present_B) &
-    !$omp& shared(insert,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
+    !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
-  do i= 1, size(insert%slave)
-    slave = insert%slave(i)
-    if( insert%states(i)%state==CONTACTFREE ) then
+  do i= 1, size(embed%slave)
+    slave = embed%slave(i)
+    if( embed%states(i)%state==CONTACTFREE ) then
       coord(:) = currpos(3*slave-2:3*slave)
 
       ! get master candidates from bucketDB
-      bktID = bucketDB_getBucketID(insert%master_bktDB, coord)
-      nCand = bucketDB_getNumCand(insert%master_bktDB, bktID)
+      bktID = bucketDB_getBucketID(embed%master_bktDB, coord)
+      nCand = bucketDB_getNumCand(embed%master_bktDB, bktID)
       if (nCand == 0) cycle
       allocate(indexCand(nCand))
-      call bucketDB_getCand(insert%master_bktDB, bktID, nCand, indexCand)
+      call bucketDB_getCand(embed%master_bktDB, bktID, nCand, indexCand)
 
       nMasterMax = nCand
       allocate(indexMaster(nMasterMax))
@@ -668,7 +668,7 @@ contains
       ! narrow down candidates
       do idm= 1, nCand
         id = indexCand(idm)
-        if (.not. is_in_surface_box( insert%master(id), coord(1:3), insert%cparam%BOX_EXP_RATE )) cycle
+        if (.not. is_in_surface_box( embed%master(id), coord(1:3), embed%cparam%BOX_EXP_RATE )) cycle
         nMaster = nMaster + 1
         indexMaster(nMaster) = id
       enddo
@@ -681,20 +681,21 @@ contains
 
       do idm = 1,nMaster
         id = indexMaster(idm)
-        etype = insert%master(id)%etype
-        nn = size( insert%master(id)%nodes )
+        etype = embed%master(id)%etype
+        if( mod(etype,10) == 2 ) etype = etype - 1 !search by 1st-order shape function
+        nn = getNumberOfNodes(etype)
         do j=1,nn
-          iSS = insert%master(id)%nodes(j)
+          iSS = embed%master(id)%nodes(j)
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
         enddo
-        call project_Point2SolidElement( coord,etype,nn,elem,insert%master(id)%reflen,insert%states(i), &
-          isin,distclr,localclr=insert%cparam%CLEARANCE )
+        call project_Point2SolidElement( coord,etype,nn,elem,embed%master(id)%reflen,embed%states(i), &
+          isin,distclr,localclr=embed%cparam%CLEARANCE )
         if( .not. isin ) cycle
-        insert%states(i)%surface = id
-        insert%states(i)%multiplier(:) = 0.d0
-        contact_surf(insert%slave(i)) = elemID(insert%master(id)%eid)
-        write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," inserted to element", &
-          elemID(insert%master(id)%eid), " at ",insert%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
+        embed%states(i)%surface = id
+        embed%states(i)%multiplier(:) = 0.d0
+        contact_surf(embed%slave(i)) = elemID(embed%master(id)%eid)
+        write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
+          elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
         exit
       enddo
       deallocate(indexMaster)
@@ -702,29 +703,29 @@ contains
   enddo
   !$omp end parallel do
 
-  call hecmw_contact_comm_allreduce_i(insert%comm, contact_surf, HECMW_MIN)
+  call hecmw_contact_comm_allreduce_i(embed%comm, contact_surf, HECMW_MIN)
   nactive = 0
-  do i = 1, size(insert%slave)
-    if (insert%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
-      id = insert%states(i)%surface
-      if (abs(contact_surf(insert%slave(i))) /= elemID(insert%master(id)%eid)) then ! that is in contact with other surface
-        insert%states(i)%state = CONTACTFREE                           ! should be freed
-        write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(insert%slave(i))," contact with element", &
-          &  elemID(insert%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
+  do i = 1, size(embed%slave)
+    if (embed%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
+      id = embed%states(i)%surface
+      if (abs(contact_surf(embed%slave(i))) /= elemID(embed%master(id)%eid)) then ! that is in contact with other surface
+        embed%states(i)%state = CONTACTFREE                           ! should be freed
+        write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(embed%slave(i))," contact with element", &
+          &  elemID(embed%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
       else
         nactive = nactive + 1
       endif
     endif
-    if (states_prev(i) == CONTACTFREE .and. insert%states(i)%state /= CONTACTFREE) then
+    if (states_prev(i) == CONTACTFREE .and. embed%states(i)%state /= CONTACTFREE) then
       infoCTChange%free2contact = infoCTChange%free2contact + 1
-    elseif (states_prev(i) /= CONTACTFREE .and. insert%states(i)%state == CONTACTFREE) then
+    elseif (states_prev(i) /= CONTACTFREE .and. embed%states(i)%state == CONTACTFREE) then
       infoCTChange%contact2free = infoCTChange%contact2free + 1
     endif
   enddo
   active = (nactive > 0)
   deallocate(contact_surf)
   deallocate(states_prev)
-end subroutine scan_insert_state
+end subroutine scan_embed_state
 
 
   !> Calculate averaged nodal normal
