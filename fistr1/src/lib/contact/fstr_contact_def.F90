@@ -682,7 +682,8 @@ contains
       do idm = 1,nMaster
         id = indexMaster(idm)
         etype = embed%master(id)%etype
-        nn = size( embed%master(id)%nodes )
+        if( mod(etype,10) == 2 ) etype = etype - 1 !search by 1st-order shape function
+        nn = getNumberOfNodes(etype)
         do j=1,nn
           iSS = embed%master(id)%nodes(j)
           elem(1:3,j)=currpos(3*iSS-2:3*iSS)
