@@ -439,6 +439,7 @@ end subroutine
           cstate%state = initstate
         endif
         cstate%gpos(:)=xyz_out(:)
+        cstate%direction(:) = (/1.d0,0.d0,0.d0/)
         cstate%lpos(1:3)=r(:)
       endif
     endif

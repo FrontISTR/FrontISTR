@@ -351,7 +351,8 @@ contains
     
           call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%embeds(i)%states(j),lagrange,ctNForce,ctTForce)
           ! Update non-eqilibrited force vector
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,conMAT,fstrSOLID%EMBED_NFORCE)
+          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,  &
+          &  conMAT,fstrSOLID%EMBED_NFORCE,fstrSOLID%EMBED_NFORCE)
 
         enddo
       enddo
