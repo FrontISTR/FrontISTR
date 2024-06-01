@@ -315,7 +315,8 @@ contains
           else if( algtype == CONTACTTIED ) then
             call getTiedNodalForce(etype,nnode,k,ndu,fstrSOLID%contacts(i)%states(j),lagrange,ctNForce,ctTForce)
             ! Update non-eqilibrited force vector
-            call update_NDForce_contact(nnode,ndLocal,id_lagrange,1.d0,ctNForce,ctTForce,conMAT,fstrSOLID%CONT_NFORCE)
+            call update_NDForce_contact(nnode,ndLocal,id_lagrange,1.d0,ctNForce,ctTForce,  &
+              &  conMAT,fstrSOLID%CONT_NFORCE,fstrSOLID%CONT_FRIC)
           endif 
 
         enddo
