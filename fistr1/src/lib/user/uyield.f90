@@ -20,23 +20,27 @@ module mUYield
 
 contains
   !> This subroutine calculates elastoplastic constitutive relation
-  subroutine uElastoPlasticMatrix( matl, stress, istat, fstat, plstrain, D  )
-    real(kind=kreal), intent(in)  :: matl(:)   !< material properties
-    real(kind=kreal), intent(in)  :: stress(6) !< stress
-    integer, intent(in)           :: istat     !< plastic state
-    real(kind=kreal), intent(in)  :: fstat(:)  !< plastic strain, back stress
-    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
-    real(kind=kreal), intent(out) :: D(:,:)    !< strain-stress relation
+  subroutine uElastoPlasticMatrix( matl, stress, istat, fstat, plstrain, D, temp, hdflag )
+    real(kind=kreal),   intent(in)  :: matl(:)   !< material properties
+    real(kind=kreal),   intent(in)  :: stress(6) !< stress
+    integer(kind=kint), intent(in)  :: istat     !< plastic state
+    real(kind=kreal),   intent(in)  :: fstat(:)  !< plastic strain, back stress
+    real(kind=kreal),   intent(in)  :: plstrain  !< plastic strain
+    real(kind=kreal),   intent(out) :: D(:,:)    !< strain-stress relation
+    real(kind=kreal),   intent(in)  :: temp      !> temperature
+    integer(kind=kint), intent(in)  :: hdflag    !> return total(0), dev term only(1) or hyd term only(2)
 
   end subroutine uElastoPlasticMatrix
 
   !> This subroutine does backward-Euler return calculation
-  subroutine uBackwardEuler( matl, stress, plstrain, istat, fstat )
-    real(kind=kreal), intent(in)    :: matl(:)    !< material properties
-    real(kind=kreal), intent(inout) :: stress(6)  !< trial->real stress
-    real(kind=kreal), intent(in)    :: plstrain   !< plastic strain till current substep
-    integer, intent(inout)          :: istat      !< plastic state
-    real(kind=kreal), intent(inout) :: fstat(:)   !< plastic strain, back stress
+  subroutine uBackwardEuler( matl, stress, plstrain, istat, fstat, temp, hdflag )
+    real(kind=kreal),   intent(in)    :: matl(:)   !< material properties
+    real(kind=kreal),   intent(inout) :: stress(6) !< trial->real stress
+    real(kind=kreal),   intent(in)    :: plstrain  !< plastic strain till current substep
+    integer(kind=kint), intent(inout) :: istat     !< plastic state
+    real(kind=kreal),   intent(inout) :: fstat(:)  !< plastic strain, back stress
+    real(kind=kreal),   intent(in)    :: temp      !< temperature
+    integer(kind=kint), intent(in)    :: hdflag    !> return total(0), dev term only(1) or hyd term only(2)
 
   end subroutine uBackwardEuler
 
