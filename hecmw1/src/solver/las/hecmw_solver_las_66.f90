@@ -220,20 +220,21 @@ contains
   !C*** hecmw_matresid_66
   !C***
   !C
-  subroutine hecmw_matresid_66 (hecMESH, hecMAT, X, B, R, COMMtime)
+  subroutine hecmw_matresid_66 (hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
     real(kind=kreal), intent(in) :: X(:), B(:)
     real(kind=kreal), intent(out) :: R(:)
+    real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout), optional :: COMMtime
 
     integer(kind=kint) :: i
     real(kind=kreal) :: Tcomm
 
     Tcomm = 0.d0
-    call hecmw_matvec_66 (hecMESH, hecMAT, X, R, Tcomm)
+    call hecmw_matvec_66 (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
     do i = 1, hecMAT%N * 6
       R(i) = B(i) - R(i)
@@ -246,13 +247,14 @@ contains
   !C*** hecmw_rel_resid_L2_66
   !C***
   !C
-  function hecmw_rel_resid_L2_66 (hecMESH, hecMAT, COMMtime)
+  function hecmw_rel_resid_L2_66 (hecMESH, hecMAT, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_solver_misc
     implicit none
     real(kind=kreal) :: hecmw_rel_resid_L2_66
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH
     type ( hecmwST_matrix     ), intent(in) :: hecMAT
+    real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout), optional :: COMMtime
 
     real(kind=kreal), allocatable :: r(:)
@@ -267,7 +269,7 @@ contains
     if (bnorm2 == 0.d0) then
       bnorm2 = 1.d0
     endif
-    call hecmw_matresid_66(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
+    call hecmw_matresid_66(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, time_Ax, Tcomm)
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
     hecmw_rel_resid_L2_66 = sqrt(rnorm2 / bnorm2)
 
@@ -357,17 +359,18 @@ contains
   !C*** hecmw_TtmatTvec_66
   !C***
   !C
-  subroutine hecmw_TtmatTvec_66 (hecMESH, hecMAT, X, Y, W, COMMtime)
+  subroutine hecmw_TtmatTvec_66 (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Y(:), W(:)
+    real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout) :: COMMtime
 
     call hecmw_Tvec_66(hecMESH, X, Y, COMMtime)
-    call hecmw_matvec_66(hecMESH, hecMAT, Y, W, COMMtime)
+    call hecmw_matvec_66(hecMESH, hecMAT, Y, W, time_Ax, COMMtime)
     call hecmw_Ttvec_66(hecMESH, W, Y, COMMtime)
 
   end subroutine hecmw_TtmatTvec_66

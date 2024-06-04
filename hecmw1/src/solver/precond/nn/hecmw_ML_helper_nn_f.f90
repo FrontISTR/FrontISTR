@@ -120,7 +120,7 @@ subroutine hecmw_ML_smoother_diag_apply_nn(id, x_length, x, rhs_length, rhs, ier
   use hecmw_util
   use hecmw_mat_id
   use hecmw_matrix_misc
-  use hecmw_solver_las_nn
+  use hecmw_solver_las
   use hecmw_precond_DIAG_nn
   implicit none
   integer(kind=kint), intent(in) :: id
@@ -144,7 +144,7 @@ subroutine hecmw_ML_smoother_diag_apply_nn(id, x_length, x, rhs_length, rhs, ier
   allocate(resid(hecMAT%NP * hecMAT%NDOF))
   do i_sweep = 1, num_sweeps
     ! {resid} = {rhs} - [A] {x}
-    call hecmw_matresid_nn(hecMESH, hecMAT, x, rhs, resid, COMMtime)
+    call hecmw_matresid(hecMESH, hecMAT, x, rhs, resid, COMMtime)
     ! {delta_x} = [M]^-1 {resid}
     call hecmw_precond_DIAG_nn_apply(resid, hecMAT%NDOF)
     ! {x} = {x} + {delta_x}
@@ -188,7 +188,7 @@ subroutine hecmw_ML_smoother_ssor_apply_nn(id, x_length, x, rhs_length, rhs, ier
   use hecmw_util
   use hecmw_mat_id
   use hecmw_matrix_misc
-  use hecmw_solver_las_nn
+  use hecmw_solver_las
   use hecmw_precond_SSOR_nn
   implicit none
   integer(kind=kint), intent(in) :: id
@@ -212,7 +212,7 @@ subroutine hecmw_ML_smoother_ssor_apply_nn(id, x_length, x, rhs_length, rhs, ier
   allocate(resid(hecMAT%NP * hecMAT%NDOF))
   do i_sweep = 1, num_sweeps
     ! {resid} = {rhs} - [A] {x}
-    call hecmw_matresid_nn(hecMESH, hecMAT, x, rhs, resid, COMMtime)
+    call hecmw_matresid(hecMESH, hecMAT, x, rhs, resid, COMMtime)
     ! {delta_x} = [M]^-1 {resid}
     call hecmw_precond_SSOR_nn_apply(resid, hecMAT%NDOF)
     ! {x} = {x} + {delta_x}

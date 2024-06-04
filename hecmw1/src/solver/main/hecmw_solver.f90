@@ -9,7 +9,7 @@ contains
   subroutine hecmw_solve (hecMESH, hecMAT)
 
     use hecmw_util
-    use hecmw_solver_las_nn
+    use hecmw_solver_las
     use hecmw_solver_iterative
     use hecmw_solver_direct
     use hecmw_solver_direct_parallel
@@ -66,7 +66,7 @@ contains
           endif
         endif
 
-        resid=hecmw_rel_resid_L2_nn(hecMESH,hecMAT)
+        resid=hecmw_rel_resid_L2(hecMESH,hecMAT)
         myrank=hecmw_comm_get_rank()
         if (myrank==0) then
           if (hecMAT%Iarray(21) > 0 .or. hecMAT%Iarray(22) > 0) then

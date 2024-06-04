@@ -10,7 +10,7 @@ module hecmw_precond_66
   use hecmw_precond_DIAG_66
   use hecmw_precond_SSOR_66
   use hecmw_precond_nn
-  use hecmw_solver_las_66
+  use hecmw_solver_las
 
   implicit none
 
@@ -94,7 +94,7 @@ contains
       if (iterPRE.eq.iterPREmax) exit
 
       !C--    {ZP} = {R} - [A] {Z}
-      call hecmw_matresid_66 (hecMESH, hecMAT, Z, R, ZP, COMMtime)
+      call hecmw_matresid (hecMESH, hecMAT, Z, R, ZP, COMMtime)
     enddo
   end subroutine hecmw_precond_66_apply
 end module hecmw_precond_66
