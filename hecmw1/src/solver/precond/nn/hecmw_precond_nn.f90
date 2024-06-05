@@ -13,7 +13,7 @@ module hecmw_precond_nn
   use hecmw_precond_SAINV_nn
   use hecmw_precond_RIF_nn
   use hecmw_solver_direct_MUMPS
-  use hecmw_solver_las_nn
+  use hecmw_solver_las
   implicit none
 
   private
@@ -121,7 +121,7 @@ contains
       if (iterPRE.eq.iterPREmax) exit
 
       !C--    {ZP} = {R} - [A] {Z}
-      call hecmw_matresid_nn (hecMESH, hecMAT, Z, R, ZP, COMMtime)
+      call hecmw_matresid (hecMESH, hecMAT, Z, R, ZP, COMMtime)
     enddo
   end subroutine hecmw_precond_nn_apply
 end module hecmw_precond_nn

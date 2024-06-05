@@ -686,7 +686,7 @@ contains
     call fstr_update_contact_TangentForce( fstrSOLID )
     if( fstrSOLID%n_embeds > 0 .and. paraContactFlag ) then
       call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%EMBED_NFORCE,1)
-      fstrSOLID%REACTION(:) = fstrSOLID%QFORCE(:) - fstrSOLID%EMBED_NFORCE(:)
+      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
     endif
 
     deallocate(coord)

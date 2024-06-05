@@ -405,7 +405,7 @@ end subroutine
       dr(1:3) = -matmul(inverse(1:3,1:3),dxyz(1:3))
 
       tol=dot_product(dr,dr)
-      if( dsqrt(tol)> 3.d0 ) then   ! too far away
+      if( count > 1 .and. dsqrt(tol)> 3.d0 ) then   ! too far away
         r= -100.d0; exit
       endif
 
@@ -439,6 +439,7 @@ end subroutine
           cstate%state = initstate
         endif
         cstate%gpos(:)=xyz_out(:)
+        cstate%direction(:) = (/1.d0,0.d0,0.d0/)
         cstate%lpos(1:3)=r(:)
       endif
     endif
