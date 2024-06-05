@@ -1366,6 +1366,14 @@ contains
           call hecmw_abort( hecmw_comm_get_comm())
        end if
     endif
+    if( associated(fstrSOLID%BOUNDARY_ngrp_istot) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_istot, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_istot>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
     if( associated(fstrSOLID%BOUNDARY_ngrp_rotID) ) then
        deallocate(fstrSOLID%BOUNDARY_ngrp_rotID, stat=ierror)
        if( ierror /= 0 ) then
@@ -2181,7 +2189,7 @@ end function fstr_setup_INITIAL
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint) :: i, n, old_size, new_size
 
-    integer(kind=kint) :: gid
+    integer(kind=kint) :: gid, istot
 
     gid = 1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
@@ -2191,6 +2199,10 @@ end function fstr_setup_INITIAL
 
     !  if( type == 0 ) then
 
+    istot = 0
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'TOTAL ', '# ', 0, 'E', istot )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
     ! get center of torque load
     rotc_name = ' '
     rotc_id = -1
@@ -2198,6 +2210,11 @@ end function fstr_setup_INITIAL
     rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
     if(  rotc_name(1) /= ' ' ) then
+      if( istot /= 0 ) then
+        write(*,*) 'fstr control file error : !BOUNDARY : rotational boundary cannot be specified with total value'
+        write(ILOG,*) 'fstr control file error : !BOUNDARY : rotational boundary cannot be specified with total value'
+        call fstr_ctrl_err_stop
+      endif
       P%SOLID%BOUNDARY_ngrp_rot = P%SOLID%BOUNDARY_ngrp_rot + 1
       n_rotc = P%SOLID%BOUNDARY_ngrp_rot
       call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY,ROT_CENTER=', 1, rotc_name, rotc_id)
@@ -2217,6 +2234,7 @@ end function fstr_setup_INITIAL
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_type,  old_size, new_size )
     call fstr_expand_real_array    (P%SOLID%BOUNDARY_ngrp_val,   old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_amp,   old_size, new_size )
+    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_istot, old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_rotID, old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_centerID, old_size, new_size )
 
@@ -2232,6 +2250,7 @@ end function fstr_setup_INITIAL
     call amp_name_to_id( P%MESH, '!BOUNDARY', amp, amp_id )
     P%SOLID%BOUNDARY_ngrp_GRPID(old_size+1:new_size) = gid
     call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY', n, grp_id_name, P%SOLID%BOUNDARY_ngrp_ID(old_size+1:))
+    P%SOLID%BOUNDARY_ngrp_istot(old_size+1:new_size) = istot
 
     ! set up information about rotation ( default value is set if ROT_CENTER is not given.)
     P%SOLID%BOUNDARY_ngrp_rotID(old_size+1:) = n_rotc

@@ -238,6 +238,7 @@ module m_fstr
     integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()
     real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)  =>null()
+    integer(kind=kint), pointer :: BOUNDARY_ngrp_istot  (:)  =>null()
     integer(kind=kint) :: BOUNDARY_ngrp_rot                   !< number of rotational boundary conditions
     integer(kind=kint), pointer :: BOUNDARY_ngrp_rotID     (:) =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_centerID  (:) =>null()
