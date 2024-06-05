@@ -451,7 +451,6 @@ contains
             exit
           endif
         enddo
-        return
       endif
     endif
 
@@ -474,7 +473,7 @@ contains
       !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
       !$omp&         bktID,nCand,indexCand) &
       !$omp& firstprivate(nMasterMax,is_present_B) &
-      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
+      !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf,is_init) &
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -483,6 +482,12 @@ contains
         slforce(1:3)=ndforce(3*slave-2:3*slave)
         id = contact%states(i)%surface
         nlforce = contact%states(i)%multiplier(1)
+
+        ! update direction of TIED contact
+        if( contact%algtype == CONTACTTIED ) then
+          call update_direction( i, contact, currpos )
+          if (.not.is_init) cycle
+        endif
 
         if( nlforce < contact%cparam%TENSILE_FORCE ) then
           contact%states(i)%state = CONTACTFREE
@@ -502,6 +507,7 @@ contains
         endif
 
       else if( contact%states(i)%state==CONTACTFREE ) then
+        if( contact%algtype == CONTACTTIED .and. .not. is_init ) cycle 
         coord(:) = currpos(3*slave-2:3*slave)
 
         ! get master candidates from bucketDB
@@ -557,6 +563,12 @@ contains
       endif
     enddo
     !$omp end parallel do
+
+    if( contact%algtype == CONTACTTIED .and. .not. is_init ) then
+      deallocate(contact_surf)
+      deallocate(states_prev)
+      return
+    endif
 
     call hecmw_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
     nactive = 0
@@ -960,6 +972,53 @@ end subroutine scan_embed_state
     endif
 
   end subroutine track_contact_position
+
+  !> This subroutine tracks down next contact position after a finite slide
+  subroutine update_direction( nslave, contact, currpos )
+    integer, intent(in)                             :: nslave       !< slave node
+    type( tContact ), intent(inout)                  :: contact      !< contact info
+    real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
+
+    integer(kind=kint) :: slave, sid0, sid, etype
+    integer(kind=kint) :: nn, i, j, iSS
+    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
+    logical            :: isin
+    real(kind=kreal)    :: opos(2), odirec(3)
+    integer(kind=kint) :: bktID, nCand, idm
+    integer(kind=kint), allocatable :: indexCand(:)
+    type(tContactState) :: cstate_tmp  !< Recorde of contact information
+
+    sid = 0
+
+    slave = contact%slave(nslave)
+    coord(:) = currpos(3*slave-2:3*slave)
+    !> checking the contact element of last step
+    sid0 = contact%states(nslave)%surface
+    opos = contact%states(nslave)%lpos(1:2)
+    odirec = contact%states(nslave)%direction
+    etype = contact%master(sid0)%etype
+    nn = getNumberOfNodes( etype )
+    do j=1,nn
+      iSS = contact%master(sid0)%nodes(j)
+      elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+    enddo
+
+    cstate_tmp%state = contact%states(nslave)%state
+	cstate_tmp%surface = sid0
+    call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,cstate_tmp, &
+      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos,contact%cparam%CLR_SAME_ELEM )
+
+    if( isin ) then
+      iSS = isInsideElement( etype, cstate_tmp%lpos, contact%cparam%CLR_CAL_NORM )
+      if( iSS>0 ) &
+        call cal_node_normal( cstate_tmp%surface, iSS, contact%master, currpos, &
+        cstate_tmp%lpos, cstate_tmp%direction(:) )
+    endif
+
+    contact%states(nslave)%direction = cstate_tmp%direction
+
+  end subroutine 
+
 
   !>\brief This subroutine update contact force in case that contacting element
   !> is changed

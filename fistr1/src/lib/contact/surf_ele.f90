@@ -287,7 +287,7 @@ contains
     if (nsurf == 0) return
     x_min(:) = surf(1)%xavg(:)
     x_max(:) = surf(1)%xavg(:)
-    d_max = surf(1)%dmax
+    d_max = surf(1)%dmax*2.d0
     do i = 2, nsurf
       do j = 1, 3
         if (surf(i)%xavg(j) < x_min(j)) x_min(j) = surf(i)%xavg(j)
@@ -299,7 +299,7 @@ contains
       x_min(j) = x_min(j) - d_max
       x_max(j) = x_max(j) + d_max
     enddo
-    call bucketDB_setup(bktDB, x_min, x_max, d_max*2.d0, nsurf)
+    call bucketDB_setup(bktDB, x_min, x_max, d_max, nsurf)
     !$omp parallel do default(none) private(i) shared(nsurf,surf,bktDB)
     do i = 1, nsurf
       surf(i)%bktID = bucketDB_getBucketID(bktDB, surf(i)%xavg)
