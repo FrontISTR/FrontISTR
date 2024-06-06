@@ -238,6 +238,7 @@ module m_fstr
     integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()
     real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)  =>null()
+    integer(kind=kint), pointer :: BOUNDARY_ngrp_istot  (:)  =>null()
     integer(kind=kint) :: BOUNDARY_ngrp_rot                   !< number of rotational boundary conditions
     integer(kind=kint), pointer :: BOUNDARY_ngrp_rotID     (:) =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_centerID  (:) =>null()
@@ -374,6 +375,7 @@ module m_fstr
     real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
+    real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
     real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp increment
     real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature

@@ -118,6 +118,8 @@ contains
       endif
       call fstr_UpdateState( hecMESH, fstrSOLID, 0.0d0 )
 
+      fstrSOLID%unode_bak(:) = fstrSOLID%unode(:)
+
       ! -------------------------------------------------------------------------
       !      STEP LOOP
       ! -------------------------------------------------------------------------
