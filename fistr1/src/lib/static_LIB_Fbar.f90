@@ -237,9 +237,11 @@ contains
       end if
 
       DB(1:6, 1:nn*ndof) = matmul( D, B(1:6, 1:nn*ndof) )
-      forall( i=1:nn*ndof, j=1:nn*ndof )
-        stiff(i, j) = stiff(i, j)+dot_product( B(:, i), DB(:, j) )*wg
-      end forall
+      do j=1,nn*ndof 
+        do i=1,nn*ndof
+          stiff(i, j) = stiff(i, j)+dot_product( B(:, i), DB(:, j) )*wg
+        end do
+      end do
 
       ! calculate the initial stress matrix(1): dFbar*dFbar*Stress
       if( flag == TOTALLAG .or. flag == UPDATELAG ) then
@@ -289,9 +291,11 @@ contains
           Smat(j+6, j+6) = stress(3)
         end do
         SBN(1:9, 1:nn*ndof) = matmul( Smat(1:9, 1:9), BN(1:9, 1:nn*ndof) )
-        forall( i=1:nn*ndof, j=1:nn*ndof )
-          stiff(i, j) = stiff(i, j)+dot_product( BN(:, i), SBN(:, j) )*wg
-        end forall
+        do j=1,nn*ndof 
+          do i=1,nn*ndof
+            stiff(i, j) = stiff(i, j)+dot_product( BN(:, i), SBN(:, j) )*wg
+          end do
+        end do
 
         ! calculate the initial stress matrix(2): d(dFbar)*Stress
         FS(1,1) = Fbar(1,1)*stress(1)+Fbar(1,2)*stress(4)+Fbar(1,3)*stress(6)

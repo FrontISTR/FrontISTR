@@ -1211,9 +1211,9 @@ contains
     select case (fetype)
       case (fe_tri3n)
         !error check
-        forall(i=1:nnode)
+        do i=1,nnode
           nodev(i,:) = gaussv(1,:)
-        end forall
+        enddo
       case (fe_tri6n)
         !error check
         !   func(1:6) = ShapeFunc_tri6n(localcoord)
@@ -1230,19 +1230,19 @@ contains
         ! error check
         call ShapeFunc_hex20n(localcoord,func(1:20))
       case (fe_prism6n, fe_mitc3_shell361)
-        forall(i=1:3)
+        do i=1,3
           nodev(i,:) = gaussv(1,:)
-        end forall
-        forall(i=1:3)
+        enddo
+        do i=1,3
           nodev(i+3,:) = gaussv(2,:)
-        end forall
+        enddo
       case (fe_prism15n)
         call ShapeFunc_prism15n(localcoord,func(1:15))
       case (fe_tet4n, fe_tet4n_pipi, fe_beam341)
         ! error check
-        forall(i=1:nnode)
+        do i=1,nnode
           nodev(i,:) = gaussv(1,:)
-        end forall
+        enddo
       case (fe_tet10n)
         ! error check
         call ShapeFunc_tet10n(localcoord,func(1:10))

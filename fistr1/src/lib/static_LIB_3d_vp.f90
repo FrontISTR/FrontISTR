@@ -246,57 +246,57 @@ contains
 
       !----------------------------------------------------------
 
-      forall(na = 1:nn, nb = 1:nn)
+      do nb = 1,nn
+        do na = 1,nn
+          MM(na, nb) = spfunc(na)*spfunc(nb)
+          AA(na, nb) = vx*( spfunc(na)*gderiv(nb, 1) ) &
+            +vy*( spfunc(na)*gderiv(nb, 2) ) &
+            +vz*( spfunc(na)*gderiv(nb, 3) )
+          DD(na, nb, 1, 1) = gderiv(na, 1)*gderiv(nb, 1)
+          DD(na, nb, 1, 2) = gderiv(na, 1)*gderiv(nb, 2)
+          DD(na, nb, 1, 3) = gderiv(na, 1)*gderiv(nb, 3)
+          DD(na, nb, 2, 1) = gderiv(na, 2)*gderiv(nb, 1)
+          DD(na, nb, 2, 2) = gderiv(na, 2)*gderiv(nb, 2)
+          DD(na, nb, 2, 3) = gderiv(na, 2)*gderiv(nb, 3)
+          DD(na, nb, 3, 1) = gderiv(na, 3)*gderiv(nb, 1)
+          DD(na, nb, 3, 2) = gderiv(na, 3)*gderiv(nb, 2)
+          DD(na, nb, 3, 3) = gderiv(na, 3)*gderiv(nb, 3)
+          trD(na, nb) = DD(na, nb, 1, 1) &
+            +DD(na, nb, 2, 2) &
+            +DD(na, nb, 3, 3)
+          BB(na, nb) = ( vx*vx )*DD(na, nb, 1, 1) &
+            +( vx*vy )*DD(na, nb, 1, 2) &
+            +( vx*vz )*DD(na, nb, 1, 3) &
+            +( vy*vx )*DD(na, nb, 2, 1) &
+            +( vy*vy )*DD(na, nb, 2, 2) &
+            +( vy*vz )*DD(na, nb, 2, 3) &
+            +( vz*vx )*DD(na, nb, 3, 1) &
+            +( vz*vy )*DD(na, nb, 3, 2) &
+            +( vz*vz )*DD(na, nb, 3, 3)
+          CC(na, nb, 1) = gderiv(na, 1)*spfunc(nb)
+          CC(na, nb, 2) = gderiv(na, 2)*spfunc(nb)
+          CC(na, nb, 3) = gderiv(na, 3)*spfunc(nb)
 
-        MM(na, nb) = spfunc(na)*spfunc(nb)
-        AA(na, nb) = vx*( spfunc(na)*gderiv(nb, 1) ) &
-          +vy*( spfunc(na)*gderiv(nb, 2) ) &
-          +vz*( spfunc(na)*gderiv(nb, 3) )
-        DD(na, nb, 1, 1) = gderiv(na, 1)*gderiv(nb, 1)
-        DD(na, nb, 1, 2) = gderiv(na, 1)*gderiv(nb, 2)
-        DD(na, nb, 1, 3) = gderiv(na, 1)*gderiv(nb, 3)
-        DD(na, nb, 2, 1) = gderiv(na, 2)*gderiv(nb, 1)
-        DD(na, nb, 2, 2) = gderiv(na, 2)*gderiv(nb, 2)
-        DD(na, nb, 2, 3) = gderiv(na, 2)*gderiv(nb, 3)
-        DD(na, nb, 3, 1) = gderiv(na, 3)*gderiv(nb, 1)
-        DD(na, nb, 3, 2) = gderiv(na, 3)*gderiv(nb, 2)
-        DD(na, nb, 3, 3) = gderiv(na, 3)*gderiv(nb, 3)
-        trD(na, nb) = DD(na, nb, 1, 1) &
-          +DD(na, nb, 2, 2) &
-          +DD(na, nb, 3, 3)
-        BB(na, nb) = ( vx*vx )*DD(na, nb, 1, 1) &
-          +( vx*vy )*DD(na, nb, 1, 2) &
-          +( vx*vz )*DD(na, nb, 1, 3) &
-          +( vy*vx )*DD(na, nb, 2, 1) &
-          +( vy*vy )*DD(na, nb, 2, 2) &
-          +( vy*vz )*DD(na, nb, 2, 3) &
-          +( vz*vx )*DD(na, nb, 3, 1) &
-          +( vz*vy )*DD(na, nb, 3, 2) &
-          +( vz*vz )*DD(na, nb, 3, 3)
-        CC(na, nb, 1) = gderiv(na, 1)*spfunc(nb)
-        CC(na, nb, 2) = gderiv(na, 2)*spfunc(nb)
-        CC(na, nb, 3) = gderiv(na, 3)*spfunc(nb)
-
-        MS(nb, na) = AA(na, nb)
-        AS(na, nb) = BB(na, nb)
-        CS(na, nb, 1) = vx*DD(na, nb, 1, 1) &
-          +vy*DD(na, nb, 2, 1) &
-          +vz*DD(na, nb, 3, 1)
-        CS(na, nb, 2) = vx*DD(na, nb, 1, 2) &
-          +vy*DD(na, nb, 2, 2) &
-          +vz*DD(na, nb, 3, 2)
-        CS(na, nb, 3) = vx*DD(na, nb, 1, 3) &
-          +vy*DD(na, nb, 2, 3) &
-          +vz*DD(na, nb, 3, 3)
-        MP(na, nb, 1) = spfunc(nb)*gderiv(na, 1)
-        MP(na, nb, 2) = spfunc(nb)*gderiv(na, 2)
-        MP(na, nb, 3) = spfunc(nb)*gderiv(na, 3)
-        AP(nb, na, 1) = CS(na, nb, 1)
-        AP(nb, na, 2) = CS(na, nb, 2)
-        AP(nb, na, 3) = CS(na, nb, 3)
-        CP(na, nb) = trD(na, nb)
-
-      end forall
+          MS(nb, na) = AA(na, nb)
+          AS(na, nb) = BB(na, nb)
+          CS(na, nb, 1) = vx*DD(na, nb, 1, 1) &
+            +vy*DD(na, nb, 2, 1) &
+            +vz*DD(na, nb, 3, 1)
+          CS(na, nb, 2) = vx*DD(na, nb, 1, 2) &
+            +vy*DD(na, nb, 2, 2) &
+            +vz*DD(na, nb, 3, 2)
+          CS(na, nb, 3) = vx*DD(na, nb, 1, 3) &
+            +vy*DD(na, nb, 2, 3) &
+            +vz*DD(na, nb, 3, 3)
+          MP(na, nb, 1) = spfunc(nb)*gderiv(na, 1)
+          MP(na, nb, 2) = spfunc(nb)*gderiv(na, 2)
+          MP(na, nb, 3) = spfunc(nb)*gderiv(na, 3)
+          AP(nb, na, 1) = CS(na, nb, 1)
+          AP(nb, na, 2) = CS(na, nb, 2)
+          AP(nb, na, 3) = CS(na, nb, 3)
+          CP(na, nb) = trD(na, nb)
+        enddo
+      enddo
 
       !----------------------------------------------------------
 
@@ -636,11 +636,11 @@ contains
 
     elem(:, :) = ecoord(:, :)
 
-    forall(na = 1:nn, i = 1:4)
-
-      velo_new( 4*(na-1)+i ) = v(i, na)+dv(i, na)
-
-    end forall
+    do i = 1,4
+      do na = 1,nn
+        velo_new( 4*(na-1)+i ) = v(i, na)+dv(i, na)
+      enddo
+    enddo
 
     !--------------------------------------------------------------------
 
@@ -821,57 +821,58 @@ contains
 
       !----------------------------------------------------------
 
-      forall(na = 1:nn, nb = 1:nn)
+      do nb = 1,nn
+        do na = 1,nn
 
-        MM(na, nb) = spfunc(na)*spfunc(nb)
-        AA(na, nb) = vx*( spfunc(na)*gderiv(nb, 1) ) &
-          +vy*( spfunc(na)*gderiv(nb, 2) ) &
-          +vz*( spfunc(na)*gderiv(nb, 3) )
-        DD(na, nb, 1, 1) = gderiv(na, 1)*gderiv(nb, 1)
-        DD(na, nb, 1, 2) = gderiv(na, 1)*gderiv(nb, 2)
-        DD(na, nb, 1, 3) = gderiv(na, 1)*gderiv(nb, 3)
-        DD(na, nb, 2, 1) = gderiv(na, 2)*gderiv(nb, 1)
-        DD(na, nb, 2, 2) = gderiv(na, 2)*gderiv(nb, 2)
-        DD(na, nb, 2, 3) = gderiv(na, 2)*gderiv(nb, 3)
-        DD(na, nb, 3, 1) = gderiv(na, 3)*gderiv(nb, 1)
-        DD(na, nb, 3, 2) = gderiv(na, 3)*gderiv(nb, 2)
-        DD(na, nb, 3, 3) = gderiv(na, 3)*gderiv(nb, 3)
-        trD(na, nb) = DD(na, nb, 1, 1) &
-          +DD(na, nb, 2, 2) &
-          +DD(na, nb, 3, 3)
-        BB(na, nb) = ( vx*vx )*DD(na, nb, 1, 1) &
-          +( vx*vy )*DD(na, nb, 1, 2) &
-          +( vx*vz )*DD(na, nb, 1, 3) &
-          +( vy*vx )*DD(na, nb, 2, 1) &
-          +( vy*vy )*DD(na, nb, 2, 2) &
-          +( vy*vz )*DD(na, nb, 2, 3) &
-          +( vz*vx )*DD(na, nb, 3, 1) &
-          +( vz*vy )*DD(na, nb, 3, 2) &
-          +( vz*vz )*DD(na, nb, 3, 3)
-        CC(na, nb, 1) = gderiv(na, 1)*spfunc(nb)
-        CC(na, nb, 2) = gderiv(na, 2)*spfunc(nb)
-        CC(na, nb, 3) = gderiv(na, 3)*spfunc(nb)
+          MM(na, nb) = spfunc(na)*spfunc(nb)
+          AA(na, nb) = vx*( spfunc(na)*gderiv(nb, 1) ) &
+            +vy*( spfunc(na)*gderiv(nb, 2) ) &
+            +vz*( spfunc(na)*gderiv(nb, 3) )
+          DD(na, nb, 1, 1) = gderiv(na, 1)*gderiv(nb, 1)
+          DD(na, nb, 1, 2) = gderiv(na, 1)*gderiv(nb, 2)
+          DD(na, nb, 1, 3) = gderiv(na, 1)*gderiv(nb, 3)
+          DD(na, nb, 2, 1) = gderiv(na, 2)*gderiv(nb, 1)
+          DD(na, nb, 2, 2) = gderiv(na, 2)*gderiv(nb, 2)
+          DD(na, nb, 2, 3) = gderiv(na, 2)*gderiv(nb, 3)
+          DD(na, nb, 3, 1) = gderiv(na, 3)*gderiv(nb, 1)
+          DD(na, nb, 3, 2) = gderiv(na, 3)*gderiv(nb, 2)
+          DD(na, nb, 3, 3) = gderiv(na, 3)*gderiv(nb, 3)
+          trD(na, nb) = DD(na, nb, 1, 1) &
+            +DD(na, nb, 2, 2) &
+            +DD(na, nb, 3, 3)
+          BB(na, nb) = ( vx*vx )*DD(na, nb, 1, 1) &
+            +( vx*vy )*DD(na, nb, 1, 2) &
+            +( vx*vz )*DD(na, nb, 1, 3) &
+            +( vy*vx )*DD(na, nb, 2, 1) &
+            +( vy*vy )*DD(na, nb, 2, 2) &
+            +( vy*vz )*DD(na, nb, 2, 3) &
+            +( vz*vx )*DD(na, nb, 3, 1) &
+            +( vz*vy )*DD(na, nb, 3, 2) &
+            +( vz*vz )*DD(na, nb, 3, 3)
+          CC(na, nb, 1) = gderiv(na, 1)*spfunc(nb)
+          CC(na, nb, 2) = gderiv(na, 2)*spfunc(nb)
+          CC(na, nb, 3) = gderiv(na, 3)*spfunc(nb)
 
-        MS(nb, na) = AA(na, nb)
-        AS(na, nb) = BB(na, nb)
-        CS(na, nb, 1) = vx*DD(na, nb, 1, 1) &
-          +vy*DD(na, nb, 2, 1) &
-          +vz*DD(na, nb, 3, 1)
-        CS(na, nb, 2) = vx*DD(na, nb, 1, 2) &
-          +vy*DD(na, nb, 2, 2) &
-          +vz*DD(na, nb, 3, 2)
-        CS(na, nb, 3) = vx*DD(na, nb, 1, 3) &
-          +vy*DD(na, nb, 2, 3) &
-          +vz*DD(na, nb, 3, 3)
-        MP(na, nb, 1) = spfunc(nb)*gderiv(na, 1)
-        MP(na, nb, 2) = spfunc(nb)*gderiv(na, 2)
-        MP(na, nb, 3) = spfunc(nb)*gderiv(na, 3)
-        AP(nb, na, 1) = CS(na, nb, 1)
-        AP(nb, na, 2) = CS(na, nb, 2)
-        AP(nb, na, 3) = CS(na, nb, 3)
-        CP(na, nb) = trD(na, nb)
-
-      end forall
+          MS(nb, na) = AA(na, nb)
+          AS(na, nb) = BB(na, nb)
+          CS(na, nb, 1) = vx*DD(na, nb, 1, 1) &
+            +vy*DD(na, nb, 2, 1) &
+            +vz*DD(na, nb, 3, 1)
+          CS(na, nb, 2) = vx*DD(na, nb, 1, 2) &
+            +vy*DD(na, nb, 2, 2) &
+            +vz*DD(na, nb, 3, 2)
+          CS(na, nb, 3) = vx*DD(na, nb, 1, 3) &
+            +vy*DD(na, nb, 2, 3) &
+            +vz*DD(na, nb, 3, 3)
+          MP(na, nb, 1) = spfunc(nb)*gderiv(na, 1)
+          MP(na, nb, 2) = spfunc(nb)*gderiv(na, 2)
+          MP(na, nb, 3) = spfunc(nb)*gderiv(na, 3)
+          AP(nb, na, 1) = CS(na, nb, 1)
+          AP(nb, na, 2) = CS(na, nb, 2)
+          AP(nb, na, 3) = CS(na, nb, 3)
+          CP(na, nb) = trD(na, nb)
+        enddo
+      enddo
 
       !----------------------------------------------------------
 
@@ -1098,50 +1099,50 @@ contains
 
       !----------------------------------------------------------
 
-      forall(na = 1:nn, nb = 1:nn)
+      do nb = 1,nn
+        do na = 1,nn
+          MM(na, nb) = spfunc(na)*spfunc(nb)
+          AA(na, nb) = vx*( spfunc(na)*gderiv(nb, 1) ) &
+            +vy*( spfunc(na)*gderiv(nb, 2) ) &
+            +vz*( spfunc(na)*gderiv(nb, 3) )
+          DD(na, nb, 1, 1) = gderiv(na, 1)*gderiv(nb, 1)
+          DD(na, nb, 1, 2) = gderiv(na, 1)*gderiv(nb, 2)
+          DD(na, nb, 1, 3) = gderiv(na, 1)*gderiv(nb, 3)
+          DD(na, nb, 2, 1) = gderiv(na, 2)*gderiv(nb, 1)
+          DD(na, nb, 2, 2) = gderiv(na, 2)*gderiv(nb, 2)
+          DD(na, nb, 2, 3) = gderiv(na, 2)*gderiv(nb, 3)
+          DD(na, nb, 3, 1) = gderiv(na, 3)*gderiv(nb, 1)
+          DD(na, nb, 3, 2) = gderiv(na, 3)*gderiv(nb, 2)
+          DD(na, nb, 3, 3) = gderiv(na, 3)*gderiv(nb, 3)
+          BB(na, nb) = ( vx*vx )*DD(na, nb, 1, 1) &
+            +( vx*vy )*DD(na, nb, 1, 2) &
+            +( vx*vz )*DD(na, nb, 1, 3) &
+            +( vy*vx )*DD(na, nb, 2, 1) &
+            +( vy*vy )*DD(na, nb, 2, 2) &
+            +( vy*vz )*DD(na, nb, 2, 3) &
+            +( vz*vx )*DD(na, nb, 3, 1) &
+            +( vz*vy )*DD(na, nb, 3, 2) &
+            +( vz*vz )*DD(na, nb, 3, 3)
 
-        MM(na, nb) = spfunc(na)*spfunc(nb)
-        AA(na, nb) = vx*( spfunc(na)*gderiv(nb, 1) ) &
-          +vy*( spfunc(na)*gderiv(nb, 2) ) &
-          +vz*( spfunc(na)*gderiv(nb, 3) )
-        DD(na, nb, 1, 1) = gderiv(na, 1)*gderiv(nb, 1)
-        DD(na, nb, 1, 2) = gderiv(na, 1)*gderiv(nb, 2)
-        DD(na, nb, 1, 3) = gderiv(na, 1)*gderiv(nb, 3)
-        DD(na, nb, 2, 1) = gderiv(na, 2)*gderiv(nb, 1)
-        DD(na, nb, 2, 2) = gderiv(na, 2)*gderiv(nb, 2)
-        DD(na, nb, 2, 3) = gderiv(na, 2)*gderiv(nb, 3)
-        DD(na, nb, 3, 1) = gderiv(na, 3)*gderiv(nb, 1)
-        DD(na, nb, 3, 2) = gderiv(na, 3)*gderiv(nb, 2)
-        DD(na, nb, 3, 3) = gderiv(na, 3)*gderiv(nb, 3)
-        BB(na, nb) = ( vx*vx )*DD(na, nb, 1, 1) &
-          +( vx*vy )*DD(na, nb, 1, 2) &
-          +( vx*vz )*DD(na, nb, 1, 3) &
-          +( vy*vx )*DD(na, nb, 2, 1) &
-          +( vy*vy )*DD(na, nb, 2, 2) &
-          +( vy*vz )*DD(na, nb, 2, 3) &
-          +( vz*vx )*DD(na, nb, 3, 1) &
-          +( vz*vy )*DD(na, nb, 3, 2) &
-          +( vz*vz )*DD(na, nb, 3, 3)
-
-        MS(nb, na) = AA(na, nb)
-        AS(na, nb) = BB(na, nb)
-        CS(na, nb, 1) = vx*DD(na, nb, 1, 1) &
-          +vy*DD(na, nb, 2, 1) &
-          +vz*DD(na, nb, 3, 1)
-        CS(na, nb, 2) = vx*DD(na, nb, 1, 2) &
-          +vy*DD(na, nb, 2, 2) &
-          +vz*DD(na, nb, 3, 2)
-        CS(na, nb, 3) = vx*DD(na, nb, 1, 3) &
-          +vy*DD(na, nb, 2, 3) &
-          +vz*DD(na, nb, 3, 3)
-        MP(na, nb, 1) = spfunc(nb)*gderiv(na, 1)
-        MP(na, nb, 2) = spfunc(nb)*gderiv(na, 2)
-        MP(na, nb, 3) = spfunc(nb)*gderiv(na, 3)
-        AP(nb, na, 1) = CS(na, nb, 1)
-        AP(nb, na, 2) = CS(na, nb, 2)
-        AP(nb, na, 3) = CS(na, nb, 3)
-
-      end forall
+          MS(nb, na) = AA(na, nb)
+          AS(na, nb) = BB(na, nb)
+          CS(na, nb, 1) = vx*DD(na, nb, 1, 1) &
+            +vy*DD(na, nb, 2, 1) &
+            +vz*DD(na, nb, 3, 1)
+          CS(na, nb, 2) = vx*DD(na, nb, 1, 2) &
+            +vy*DD(na, nb, 2, 2) &
+            +vz*DD(na, nb, 3, 2)
+          CS(na, nb, 3) = vx*DD(na, nb, 1, 3) &
+            +vy*DD(na, nb, 2, 3) &
+            +vz*DD(na, nb, 3, 3)
+          MP(na, nb, 1) = spfunc(nb)*gderiv(na, 1)
+          MP(na, nb, 2) = spfunc(nb)*gderiv(na, 2)
+          MP(na, nb, 3) = spfunc(nb)*gderiv(na, 3)
+          AP(nb, na, 1) = CS(na, nb, 1)
+          AP(nb, na, 2) = CS(na, nb, 2)
+          AP(nb, na, 3) = CS(na, nb, 3)
+        enddo
+      enddo
 
       !----------------------------------------------------------
 

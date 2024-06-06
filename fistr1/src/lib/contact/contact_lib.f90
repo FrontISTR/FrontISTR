@@ -117,9 +117,11 @@ contains
     do i=1,nnode
       N( i*3+1:i*3+3 ) = -shapefunc(i)*cstate%direction(1:3)
     enddo
-    forall( i=1:nnode*3+3, j=1:nnode*3+3 )
-      stiff(i,j) = mu* N(i)*N(j)
-    end forall
+    do j=1,nnode*3+3 
+      do i=1,nnode*3+3
+        stiff(i,j) = mu* N(i)*N(j)
+      enddo
+    enddo
     force(1:nnode*3+3) = N(:)
 
     if( fcoeff/=0.d0 .or. flag==CONTACTFSLID ) &
