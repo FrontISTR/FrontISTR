@@ -322,9 +322,11 @@ contains
     end if
 
     DB(1:6, 1:nn*ndof) = matmul( D, B(1:6, 1:nn*ndof) )
-    forall( i=1:nn*ndof,  j=1:nn*ndof )
-      stiff(i, j) = stiff(i, j)+dot_product( B(:, i),  DB(:, j) )*WG
-    end forall
+    do j=1,nn*ndof 
+      do i=1,nn*ndof
+        stiff(i, j) = stiff(i, j)+dot_product( B(:, i),  DB(:, j) )*WG
+      enddo
+    enddo
 
     ! calculate the stress matrix ( TOTAL LAGRANGE METHOD )
     if( flag == TOTALLAG .OR. flag==UPDATELAG ) then
@@ -355,9 +357,11 @@ contains
         Smat(j+6, j+6) = stress(3)
       end do
       SBN(1:9, 1:nn*ndof) = matmul( Smat(1:9, 1:9),  BN(1:9, 1:nn*ndof) )
-      forall( i=1:nn*ndof,  j=1:nn*ndof )
-        stiff(i, j) = stiff(i, j)+dot_product( BN(:, i),  SBN(:, j) )*WG
-      end forall
+      do j=1,nn*ndof 
+        do i=1,nn*ndof
+          stiff(i, j) = stiff(i, j)+dot_product( BN(:, i),  SBN(:, j) )*WG
+        end do
+      end do
 
     end if
 

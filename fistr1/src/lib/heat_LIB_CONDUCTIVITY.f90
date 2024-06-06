@@ -105,9 +105,11 @@ contains
       wg = getWeight(etype, LX)*det
 
       DN = matmul(D, transpose(gderiv))
-      forall(i = 1:nn,  j = 1:nn)
-        stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
-      end forall
+      do j = 1,nn
+        do i = 1,nn
+          stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
+        enddo
+      enddo
     enddo
   end subroutine heat_conductivity_C2
 
@@ -151,9 +153,12 @@ contains
       wg = getWeight(etype, LX)*det
 
       DN = matmul(D, transpose(gderiv))
-      forall(i = 1:nn,  j = 1:nn)
-        stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
-      end forall
+
+      do j = 1,nn
+        do i = 1,nn
+          stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
+        enddo
+      enddo
     enddo
   end subroutine heat_conductivity_C3
 
