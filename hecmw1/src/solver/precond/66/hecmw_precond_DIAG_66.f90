@@ -99,6 +99,8 @@ contains
     !
     !    endif
 
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+    !$omp do
     do ii= 1, N
       ALUtmp(1,1)= ALU(36*ii-35) * SIGMA_DIAG
       ALUtmp(1,2)= ALU(36*ii-34)
@@ -192,6 +194,9 @@ contains
       ALU(36*ii-1 )= ALUtmp(6,5)
       ALU(36*ii   )= ALUtmp(6,6)
     enddo
+    !$omp end do
+    !$omp end parallel
+
   end subroutine hecmw_precond_DIAG_66_setup
 
   subroutine hecmw_precond_DIAG_66_apply(WW)
@@ -202,6 +207,8 @@ contains
 
     !C
     !C== Block SCALING
+    !$omp parallel default(none),private(i,X1,X2,X3,X4,X5,X6),shared(N,WW,ALU)
+    !$omp do
     do i= 1, N
       X1= WW(6*i-5)
       X2= WW(6*i-4)
@@ -227,6 +234,9 @@ contains
       WW(6*i-1)= X5
       WW(6*i  )= X6
     enddo
+    !$omp end do
+    !$omp end parallel
+
   end subroutine hecmw_precond_DIAG_66_apply
 
   subroutine hecmw_precond_DIAG_66_clear()

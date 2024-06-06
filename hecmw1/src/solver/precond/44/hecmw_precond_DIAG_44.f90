@@ -67,6 +67,8 @@ contains
       ALU(16*ii   ) = D(16*ii   )
     enddo
 
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+    !$omp do
     do ii= 1, N
       ALUtmp(1,1)= ALU(16*ii-15) * SIGMA_DIAG
       ALUtmp(1,2)= ALU(16*ii-14)
@@ -118,6 +120,8 @@ contains
       ALU(16*ii- 1)= ALUtmp(4,3)
       ALU(16*ii   )= ALUtmp(4,4)
     enddo
+    !$omp end do
+    !$omp end parallel
 
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0 ! symbolic setup done
@@ -132,6 +136,8 @@ contains
 
     !C
     !C== Block SCALING
+    !$omp parallel default(none),private(i,X1,X2,X3,X4),shared(N,WW,ALU)
+    !$omp do
     do i= 1, N
       X1= WW(4*i-3)
       X2= WW(4*i-2)
@@ -149,6 +155,9 @@ contains
       WW(4*i-1)= X3
       WW(4*i  )= X4
     enddo
+    !$omp end do
+    !$omp end parallel
+
   end subroutine hecmw_precond_DIAG_44_apply
 
   subroutine hecmw_precond_DIAG_44_clear()
