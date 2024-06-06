@@ -48,6 +48,7 @@ contains
     endif
 
     call hecmw_restart_read_real(fstrSOLID%unode)
+    call hecmw_restart_read_real(fstrSOLID%unode_bak)
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
     do i= 1, hecMESH%n_elem
@@ -169,6 +170,7 @@ contains
     end if
 
     call hecmw_restart_add_real(fstrSOLID%unode,size(fstrSOLID%unode))
+    call hecmw_restart_add_real(fstrSOLID%unode_bak,size(fstrSOLID%unode_bak))
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
     do i= 1, hecMESH%n_elem
