@@ -56,7 +56,7 @@ contains
       case (6)
         call hecmw_matvec_66(hecMESH, hecMAT, X, Y, time_Ax,COMMtime)
       case (1)
-        call hecmw_matvec_11(hecMESH, hecMAT, X, Y, hecMAT%NP, time_Ax, COMMtime)
+        call hecmw_matvec_11(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
       case (2)
         call hecmw_matvec_22(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
       case default
