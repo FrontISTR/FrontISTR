@@ -540,10 +540,10 @@ contains
       TEMP(5:8) = TEMP(5:8) + gausses(i)%stress_out(1:4)
     enddo
     TEMP(1:8) = TEMP(1:8)/IC
-    forall( i=1:NN )
+    do i=1,NN 
       ndstrain(i,1:4) = TEMP(1:4)
       ndstress(i,1:4) = TEMP(5:8)
-    end forall
+    enddo
 
   end subroutine
 

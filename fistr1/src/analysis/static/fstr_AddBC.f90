@@ -26,8 +26,8 @@ contains
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
-    real(kind=kreal)   :: RHS, factor
-    integer(kind=kint) :: ndof, grpid
+    real(kind=kreal)   :: RHS0, RHS, factor
+    integer(kind=kint) :: ndof, grpid, istot
 
     !for rotation
     integer(kind=kint) :: n_rot, rid
@@ -53,13 +53,13 @@ contains
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-      RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
-      !
-      RHS= RHS*factor
+      RHS0 = fstrSOLID%BOUNDARY_ngrp_val(ig0)
       !
       ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
       idofS = ityp/10
       idofE = ityp - idofS*10
+      !
+      istot = fstrSOLID%BOUNDARY_ngrp_istot(ig0)
       !
       iS0 = hecMESH%node_group%grp_index(ig-1) + 1
       iE0 = hecMESH%node_group%grp_index(ig  )
@@ -70,6 +70,13 @@ contains
           rinfo%conds(rid)%active = .true.
           rinfo%conds(rid)%center_ngrp_id = fstrSOLID%BOUNDARY_ngrp_centerID(ig0)
           rinfo%conds(rid)%torque_ngrp_id = ig
+        endif
+        if( istot == 0 ) then
+          RHS= RHS0*factor
+        else
+          ! not implemented yet
+          write(*,*) 'Error: rotational boundary cannot be specified with total value'
+          call hecmw_abort( hecmw_comm_get_comm() )
         endif
         do idof=idofS,idofE
           if( idof>ndof ) then
@@ -86,6 +93,11 @@ contains
         in = hecMESH%node_group%grp_item(ik)
         !
         do idof = idofS, idofE
+          if( istot == 0 ) then
+            RHS = RHS0*factor
+          else
+            RHS = (RHS0 - fstrSOLID%unode_bak(ndof*(in-1)+idof))*factor
+          endif
           if(present(conMAT)) then
             call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
           else

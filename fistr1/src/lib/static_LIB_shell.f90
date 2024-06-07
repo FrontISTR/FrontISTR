@@ -1040,11 +1040,13 @@ contains
 
           !--------------------------------------------------
 
-          forall( isize=1:ndof*nn, jsize=1:ndof*nn )
-            tmpstiff(isize, jsize)                               &
-              = tmpstiff(isize, jsize)                             &
-              +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight*dot_product( B(:, isize), DB(:, jsize) )
-          end forall
+          do jsize=1,ndof*nn 
+            do isize=1,ndof*nn
+              tmpstiff(isize, jsize)                               &
+                = tmpstiff(isize, jsize)                             &
+                +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight*dot_product( B(:, isize), DB(:, jsize) )
+            end do
+          end do
 
           !--------------------------------------------------
 

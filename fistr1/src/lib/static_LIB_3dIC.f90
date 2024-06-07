@@ -164,9 +164,11 @@ contains
       end if
 
       DB(1:6, 1:(nn+3)*ndof) = matmul( D, B(1:6, 1:(nn+3)*ndof) )
-      forall( i=1:(nn+3)*ndof, j=1:(nn+3)*ndof )
-        tmpstiff(i, j) = tmpstiff(i, j)+dot_product( B(:, i), DB(:, j) )*wg
-      end forall
+      do  j=1,(nn+3)*ndof
+        do i=1,(nn+3)*ndof
+          tmpstiff(i, j) = tmpstiff(i, j)+dot_product( B(:, i), DB(:, j) )*wg
+        enddo
+      enddo
 
       ! calculate the stress matrix ( TOTAL LAGRANGE METHOD )
       if( flag == TOTALLAG .OR. flag == UPDATELAG ) then
@@ -195,9 +197,11 @@ contains
           Smat(j+6, j+6) = stress(3)
         end do
         SBN(1:9, 1:(nn+3)*ndof) = matmul( Smat(1:9, 1:9), BN(1:9, 1:(nn+3)*ndof) )
-        forall( i=1:(nn+3)*ndof, j=1:(nn+3)*ndof )
-          tmpstiff(i, j) = tmpstiff(i, j)+dot_product( BN(:, i), SBN(:, j) )*wg
-        end forall
+        do j=1,(nn+3)*ndof 
+          do i=1,(nn+3)*ndof
+            tmpstiff(i, j) = tmpstiff(i, j)+dot_product( BN(:, i), SBN(:, j) )*wg
+          enddo
+        enddo
       end if
 
     end do
@@ -363,12 +367,17 @@ contains
       end if
 
       DB(1:6, 1:(nn+3)*ndof) = matmul( D, B(1:6, 1:(nn+3)*ndof) )
-      forall( i=1:3*ndof, j=1:nn*ndof )
-        stiff_ad(i, j) = stiff_ad(i, j)+dot_product( B(:, nn*ndof+i), DB(:, j) )*wg
-      end forall
-      forall( i=1:3*ndof, j=1:3*ndof )
-        stiff_aa(i, j) = stiff_aa(i, j)+dot_product( B(:, nn*ndof+i), DB(:, nn*ndof+j) )*wg
-      end forall
+      do j=1,nn*ndof 
+        do i=1,3*ndof
+          stiff_ad(i, j) = stiff_ad(i, j)+dot_product( B(:, nn*ndof+i), DB(:, j) )*wg
+        enddo
+      enddo
+
+      do j=1,3*ndof 
+        do i=1,3*ndof
+          stiff_aa(i, j) = stiff_aa(i, j)+dot_product( B(:, nn*ndof+i), DB(:, nn*ndof+j) )*wg
+        enddo
+      enddo
 
       ! calculate the stress matrix ( TOTAL LAGRANGE METHOD )
       if( flag == TOTALLAG .OR. flag == UPDATELAG ) then
@@ -397,12 +406,17 @@ contains
           Smat(j+6, j+6) = stress(3)
         end do
         SBN(1:9, 1:(nn+3)*ndof) = matmul( Smat(1:9, 1:9), BN(1:9, 1:(nn+3)*ndof) )
-        forall( i=1:3*ndof, j=1:nn*ndof )
-          stiff_ad(i, j) = stiff_ad(i, j)+dot_product( BN(:, nn*ndof+i), SBN(:, j) )*wg
-        end forall
-        forall( i=1:3*ndof, j=1:3*ndof )
-          stiff_aa(i, j) = stiff_aa(i, j)+dot_product( BN(:, nn*ndof+i), SBN(:, nn*ndof+j) )*wg
-        end forall
+
+        do j=1,nn*ndof 
+          do i=1,3*ndof
+            stiff_ad(i, j) = stiff_ad(i, j)+dot_product( BN(:, nn*ndof+i), SBN(:, j) )*wg
+          enddo
+        enddo
+        do j=1,3*ndof 
+          do i=1,3*ndof
+            stiff_aa(i, j) = stiff_aa(i, j)+dot_product( BN(:, nn*ndof+i), SBN(:, nn*ndof+j) )*wg
+          enddo
+        enddo
       end if
 
     end do
@@ -627,12 +641,17 @@ contains
       WG=getWeight( etype, LX )*DET
 
       DB(1:6, 1:(nn+3)*ndof) = matmul( D, B(1:6, 1:(nn+3)*ndof) )
-      forall( i=1:3*ndof, j=1:nn*ndof )
-        stiff_ad(i, j) = stiff_ad(i, j)+dot_product( B(:, nn*ndof+i), DB(:, j) )*wg
-      end forall
-      forall( i=1:3*ndof, j=1:3*ndof )
-        stiff_aa(i, j) = stiff_aa(i, j)+dot_product( B(:, nn*ndof+i), DB(:, nn*ndof+j) )*wg
-      end forall
+      
+      do j=1,nn*ndof 
+        do i=1,3*ndof
+          stiff_ad(i, j) = stiff_ad(i, j)+dot_product( B(:, nn*ndof+i), DB(:, j) )*wg
+        enddo
+      enddo
+      do j=1,3*ndof 
+        do i=1,3*ndof
+          stiff_aa(i, j) = stiff_aa(i, j)+dot_product( B(:, nn*ndof+i), DB(:, nn*ndof+j) )*wg
+        enddo
+      enddo
 
       ! calculate the Internal Force
       qf(1:nn*ndof)                                                          &
@@ -757,12 +776,16 @@ contains
       end do
 
       DB_a(1:6, 1:3*ndof) = matmul( D, B(1:6, nn*ndof+1:(nn+3)*ndof) )
-      forall( i=1:nn*ndof, j=1:3*ndof )
-        stiff_da(i, j) = stiff_da(i, j) + dot_product( B(1:6, i), DB_a(1:6, j) ) * wg
-      end forall
-      forall( i=1:3*ndof, j=1:3*ndof )
-        stiff_aa(i, j) = stiff_aa(i, j) + dot_product( B(1:6, nn*ndof+i), DB_a(1:6, j) ) * wg
-      end forall
+      do j=1,3*ndof 
+        do i=1,nn*ndof
+          stiff_da(i, j) = stiff_da(i, j) + dot_product( B(1:6, i), DB_a(1:6, j) ) * wg
+        enddo
+      enddo
+      do j=1,3*ndof 
+        do i=1,3*ndof
+          stiff_aa(i, j) = stiff_aa(i, j) + dot_product( B(1:6, nn*ndof+i), DB_a(1:6, j) ) * wg
+        enddo
+      enddo
 
       ina(1) = TEMPC
       if( matlaniso ) then

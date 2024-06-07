@@ -92,6 +92,10 @@ contains
     integer(kind=kint) :: in, i, j, isL, ieL, isU, ieU,idof,jdof
     real(kind=kreal) :: SW(NDOF),X(NDOF)
 
+    !$OMP PARALLEL DEFAULT(NONE) &
+      !$OMP&PRIVATE(i,X,SW,j,in,isL,ieL,isU,ieU,idof,jdof) &
+      !$OMP&SHARED(N,SAINVD,SAINVL,SAINVU,inumFI1U,FI1U,inumFI1L,FI1L,R,T,ZP,NDOF,NDOF2)
+    !$OMP DO
     !C-- FORWARD
     do i= 1, N
       do idof = 1, NDOF
@@ -121,7 +125,8 @@ contains
         T(NDOF*(i-1)+idof)=T(NDOF*(i-1)+idof)*SAINVD(NDOF2*(i-1)+NDOF*(idof-1)+idof)
       end do
     enddo
-
+    !$OMP END DO
+    !$OMP DO
     !C-- BACKWARD
     do i= 1, N
       do idof = 1, NDOF
@@ -152,6 +157,8 @@ contains
         end do
       end do
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
 
   end subroutine hecmw_precond_nn_SAINV_apply
 

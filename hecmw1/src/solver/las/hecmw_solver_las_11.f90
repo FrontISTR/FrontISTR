@@ -18,17 +18,17 @@ contains
   !C*** hecmw_matvec_11
   !C***
   !C
-  subroutine hecmw_matvec_11 (hecMESH, hecMAT, X, Y, n, time_Ax, COMMtime)
+  subroutine hecmw_matvec_11 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
 
     implicit none
-    integer(kind=kint):: n
-    real(kind=kreal), dimension(n) :: X, Y
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    real(kind=kreal) :: time_Ax
-    real(kind=kreal), optional :: COMMtime
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME
     integer(kind=kint) :: i, j, jS, jE, in
@@ -80,7 +80,7 @@ contains
     real(kind=kreal) :: Tcomm
 
     Tcomm = 0.d0
-    call hecmw_matvec_11 (hecMESH, hecMAT, X, R, hecMAT%NP, time_Ax, Tcomm)
+    call hecmw_matvec_11 (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
 
     do i = 1, hecMAT%N
