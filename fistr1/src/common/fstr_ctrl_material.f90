@@ -145,18 +145,7 @@ contains
       endif
 
     else if( ipt==3 ) then
-      allocate( fval(10,10) )
-      fval =0.d0
-      fstr_ctrl_get_ELASTICITY = fstr_ctrl_get_data_ex( ctrl, 1, 'rrrrrrrrrr ',    &
-        fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
-        fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
-      if( fstr_ctrl_get_ELASTICITY ==0 ) then
-        do i=1,10
-          do j=1,10
-            matval(100+(i-1)*10+j)=fval(i,j)
-          enddo
-        enddo
-      endif
+      fstr_ctrl_get_ELASTICITY = read_user_matl( ctrl, matval(101:200))
       mattype = USERELASTIC
       nlgeom = INFINITESIMAL
 
@@ -247,18 +236,7 @@ contains
       mattype = ARRUDABOYCE
 
     else if( ipt==4 ) then    !User
-      allocate( fval(10,10) )
-      fval =0.0d0
-      fstr_ctrl_get_HYPERELASTIC = fstr_ctrl_get_data_ex( ctrl, 1, 'rrrrrrrrrr ',    &
-        fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
-        fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
-      if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
-        do i=1,10
-          do j=1,10
-            matval(100+(i-1)*10+j)=fval(i,j)
-          enddo
-        enddo
-      endif
+      fstr_ctrl_get_HYPERELASTIC = read_user_matl( ctrl, matval(101:200))
       mattype = USERHYPERELASTIC
 
       ! MOONEY-ORTHO
@@ -392,7 +370,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt, hipt
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     real(kind=kreal) :: dum, fdum
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256)    :: s
@@ -522,7 +500,7 @@ contains
         endif
 
       case(4)
-        fstr_ctrl_get_PLASTICITY = read_user_matl( ctrl, matval )
+        fstr_ctrl_get_PLASTICITY = read_user_matl( ctrl, matval(101:200) )
 
       case default
         stop "Yield function not supported"
@@ -691,17 +669,19 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     real(kind=kreal),intent(out)      :: matval(:)
 
-    integer(kind=kint) :: i, j
+    integer(kind=kint) :: n, i, j
     real(kind=kreal)   :: fval(10,10)
 
     read_user_matl = -1
 
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n > 10 ) stop "Num of data lines for user-defined material exceeds 10"
     fval =0.d0
     if( fstr_ctrl_get_data_array_ex( ctrl, 'rrrrrrrrrr ', fval(1,:), fval(2,:), fval(3,:),  &
       fval(4,:), fval(5,:), fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) ) /= 0 ) return
     do i=1,10
       do j=1,10
-        matval((i-1)*10+j)=fval(i,j)
+        matval((i-1)*10+j)=fval(j,i)
       enddo
     enddo
 
