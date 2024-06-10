@@ -260,7 +260,6 @@ contains
 
     integer          :: I, J,K,IW,LR,IP(NN)
     real(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
-    data EPS/1.0E-35/
     DET=1.d0
     LR = 0.0d0
     do I=1,NN
@@ -277,7 +276,7 @@ contains
       enddo
       PIVOT=A(LR,K)
       API=abs(PIVOT)
-      if(API.LE.EPS) then
+      if(API.LE.TINY(0.d0)) then
         write(*,'(''PIVOT ERROR AT'',I5)') K
         stop
       end if
