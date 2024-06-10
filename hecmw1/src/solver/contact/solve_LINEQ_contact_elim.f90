@@ -785,9 +785,8 @@ contains
     integer(kind=kint),              intent(out) :: n_contact_dof   !< num of contact DOFs
     integer(kind=kint), allocatable, intent(out) :: contact_dofs(:) !< list of contact DOFs
     !
-    integer(kind=kint) :: ndof, icnt, ilag, ls, le, l, jnode, jdof, k, inode, jlag, idof, i
+    integer(kind=kint) :: ndof, icnt, ilag, ls, le, l, jnode, k, inode, idof, i
     integer(kind=kint), allocatable :: iw(:)
-    real(kind=kreal) :: val
     logical :: found
     integer(kind=kint) :: myrank
 
@@ -804,16 +803,6 @@ contains
       le = hecLagMAT%indexL_lagrange(ilag)
       lloop1: do l = ls, le
         jnode = hecLagMAT%itemL_lagrange(l)
-        found = .false.
-        do jdof = 1, ndof
-          val = hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
-          !write(0,*) 'jnode,jdof,val',jnode,jdof,val
-          if (abs(val) > tiny(0.0d0)) then
-            found = .true.
-            exit
-          endif
-        enddo
-        if (.not. found) cycle
         do k = 1, icnt
           if (iw(k) == jnode) cycle lloop1
         enddo
@@ -825,24 +814,16 @@ contains
     do inode = 1, hecMAT%NP
       ls = hecLagMAT%indexU_lagrange(inode-1)+1
       le = hecLagMAT%indexU_lagrange(inode)
-      lloop2: do l = ls, le
-        jlag = hecLagMAT%itemU_lagrange(l)
+      if (ls <= le) then
         found = .false.
-        do idof = 1, ndof
-          val = hecLagMAT%AU_lagrange((l-1)*ndof+idof)
-          !write(0,*) 'inode,idof,val',inode,idof,val
-          if (abs(val) > tiny(0.0d0)) then
-            found = .true.
-            exit
-          endif
-        enddo
-        if (.not. found) cycle
         do k = 1, icnt
-          if (iw(k) == inode) cycle lloop2
+          if (iw(k) == inode) found = .true.
         enddo
-        icnt = icnt + 1
-        iw(icnt) = inode
-      enddo lloop2
+        if (.not. found) then
+          icnt = icnt + 1
+          iw(icnt) = inode
+        endif
+      endif
     enddo
     call quick_sort(iw, 1, icnt)
     allocate(contact_dofs(icnt*ndof))

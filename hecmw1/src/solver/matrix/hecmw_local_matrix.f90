@@ -1221,9 +1221,17 @@ contains
     type (hecmwST_local_matrix), allocatable, intent(out) :: BT_ext(:)
     integer(kind=kint), allocatable :: incl_nz(:), exp_cols_per_row(:), exp_rows_per_rank(:)
     integer(kind=kint) :: nn_int
+    logical, parameter :: FLG_CHECK_NONZERO_NUMERICALLY = .true.
     nn_int = hecMESH%nn_internal
     !
-    call check_external_nz_blocks(BTmat, nn_int, incl_nz)
+    if (FLG_CHECK_NONZERO_NUMERICALLY) then
+      ! efficient for assembling conMAT which has same non-zero profile as hecMAT
+      ! but only dofs related to cntact are actually non-zero
+      call check_external_nz_blocks(BTmat, nn_int, incl_nz)
+    else
+      ! probably good enough to assemble T or T^t
+      call incl_all_external_nz_blocks(BTmat, nn_int, incl_nz)
+    endif
     !
     call count_ext_rows_with_nz(BTmat, nn_int, incl_nz, exp_cols_per_row)
     !
@@ -1269,6 +1277,19 @@ contains
     enddo
     if (DEBUG >= 1) write(0,*) 'DEBUG: nnz_blk',nnz_blk
   end subroutine check_external_nz_blocks
+
+  subroutine incl_all_external_nz_blocks(BTmat, nn_internal, incl_nz)
+    implicit none
+    type (hecmwST_local_matrix), intent(in) :: BTmat
+    integer(kind=kint), intent(in) :: nn_internal
+    integer(kind=kint), allocatable, intent(out) :: incl_nz(:)
+    integer(kind=kint) :: i0, nnz_ext
+    if (nn_internal > BTmat%nr) stop 'ERROR: invalid nn_internal'
+    i0 = BTmat%index(nn_internal)
+    nnz_ext = BTmat%index(BTmat%nr) - i0
+    allocate(incl_nz(nnz_ext))
+    incl_nz(1:nnz_ext) = 1
+  end subroutine incl_all_external_nz_blocks
 
   subroutine count_ext_rows_with_nz(BTmat, nn_internal, incl_nz, exp_cols_per_row)
     implicit none
