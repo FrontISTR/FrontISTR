@@ -614,11 +614,8 @@ contains
 
   !C
   !C***
-  !C*** hecmw_assemble_3_R
+  !C*** hecmw_assemble_R
   !C***
-  !C
-  !C    3-DOF, REAL
-  !C
   subroutine hecmw_assemble_R (hecMESH, val, n, m)
     use hecmw_util
     use  hecmw_solver_SR
@@ -645,6 +642,37 @@ contains
     deallocate (WS, WR)
 #endif
   end subroutine hecmw_assemble_R
+
+  !C
+  !C***
+  !C*** hecmw_assemble_I
+  !C***
+  subroutine hecmw_assemble_I (hecMESH, val, n, m)
+    use hecmw_util
+    use  hecmw_solver_SR_i
+
+    implicit none
+    integer(kind=kint):: n, m
+    integer(kind=kint), dimension(m*n) :: val
+    type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+    integer(kind=kint):: ns, nr
+    integer(kind=kint), dimension(:), allocatable :: WS, WR
+
+    if( hecMESH%n_neighbor_pe == 0 ) return
+
+    ns = hecMESH%import_index(hecMESH%n_neighbor_pe)
+    nr = hecMESH%export_index(hecMESH%n_neighbor_pe)
+
+    allocate (WS(m*ns), WR(m*nr))
+    call hecmw_solve_REV_SEND_RECV_i                                    &
+      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
+      &     hecMESH%import_index, hecMESH%import_item,                   &
+      &     hecMESH%export_index, hecMESH%export_item,                   &
+      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
+    deallocate (WS, WR)
+#endif
+  end subroutine hecmw_assemble_I
 
   !C
   !C***

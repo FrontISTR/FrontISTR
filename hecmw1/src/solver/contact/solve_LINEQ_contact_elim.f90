@@ -357,7 +357,7 @@ contains
     endif
 
     ! add Ip to Tmat and Ttmat
-    call make_slave_list(Tmat, slaves)
+    call make_slave_list(hecMESHtmp, Tmat%ndof, slaves4lag, slaves)
     call add_Ip_to_Tmat(Tmat, slaves)
     if (DEBUG_MATRIX) call debug_write_matrix(Tmat, 'Tmat (final)')
     call add_Ip_to_Tmat(Ttmat, slaves)
@@ -678,44 +678,31 @@ contains
 
   !> \brief Make list of INTERNAL dofs that are in contact in WHOLE MODEL
   !>
-  subroutine make_slave_list(Tmat, slaves)
-    type(hecmwST_local_matrix),      intent(in)  :: Tmat      !< blocked T matrix
-    integer(kind=kint), allocatable, intent(out) :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+  subroutine make_slave_list(hecMESHtmp, ndof, slaves4lag, slaves)
+    type(hecmwST_local_mesh),        intent(in)  :: hecMESHtmp    !< mesh updated for the current contact state
+    integer(kind=kint),              intent(in)  :: ndof          !< num of dof per node
+    integer(kind=kint),              intent(in)  :: slaves4lag(:) !< LOCALLY detected slave dofs (incl. EXTERNAL)
+    integer(kind=kint), allocatable, intent(out) :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint), allocatable :: mark_slave(:)
     integer(kind=kint) :: n_slave
-    integer(kind=kint) :: ndof, ndof2, irow, js, je, j, jcol, idof, jdof, i
+    integer(kind=kint) :: ilag, i
     integer(kind=kint) :: myrank
 
     myrank = hecmw_comm_get_rank()
-    ndof = Tmat%ndof
-    ndof2 = ndof*ndof
-    allocate(mark_slave(Tmat%nr*ndof), source=0)
-    do irow = 1, Tmat%nr
-      js = Tmat%index(irow-1)+1
-      je = Tmat%index(irow)
-      do j = js, je
-        jcol = Tmat%item(j)
-        do idof = 1, ndof
-          if (mark_slave(ndof*(irow-1)+idof) == 1) cycle
-          do jdof = 1, ndof
-            if (irow == jcol .and. idof == jdof) cycle
-            if (abs(Tmat%A(ndof2*(j-1)+ndof*(idof-1)+jdof)) > tiny(0.0d0)) then
-              mark_slave(ndof*(irow-1)+idof) = 1
-              exit
-            endif
-          enddo
-        enddo
-      enddo
+    allocate(mark_slave(hecMESHtmp%n_node*ndof), source=0)
+    do ilag=1,size(slaves4lag)
+      mark_slave(slaves4lag(ilag))=1
     enddo
+    call hecmw_assemble_I(hecMESHtmp, mark_slave, hecMESHtmp%n_node, ndof)
     n_slave = 0
-    do i = 1, Tmat%nr * ndof
+    do i = 1, hecMESHtmp%nn_internal * ndof
       if (mark_slave(i) /= 0) n_slave = n_slave + 1
     enddo
     if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: n_slave',n_slave
     allocate(slaves(n_slave))
     n_slave = 0
-    do i = 1, Tmat%nr * ndof
+    do i = 1, hecMESHtmp%nn_internal * ndof
       if (mark_slave(i) /= 0) then
         n_slave = n_slave + 1
         slaves(n_slave) = i
