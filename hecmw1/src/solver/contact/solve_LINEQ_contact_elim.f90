@@ -562,7 +562,7 @@ contains
     allocate(nz_cnt(Tmat11%nr), source=0)
     ! index
     do ilag=1,size(slaves4lag)
-      nz_cnt(slaves4lag)=ndof*(hecLagMAT%indexL_lagrange(ilag)-hecLagMAT%indexL_lagrange(ilag-1))-1
+      nz_cnt(slaves4lag(ilag))=ndof*(hecLagMAT%indexL_lagrange(ilag)-hecLagMAT%indexL_lagrange(ilag-1))-1
     enddo
     Tmat11%index(0)=0
     do i=1,Tmat11%nr
