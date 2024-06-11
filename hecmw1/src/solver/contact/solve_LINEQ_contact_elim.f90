@@ -357,7 +357,7 @@ contains
     endif
 
     ! add Ip to Tmat and Ttmat
-    call make_slave_list(Tmat, slaves)
+    call make_slave_list(hecMESHtmp, Tmat%ndof, slaves4lag, slaves)
     call add_Ip_to_Tmat(Tmat, slaves)
     if (DEBUG_MATRIX) call debug_write_matrix(Tmat, 'Tmat (final)')
     call add_Ip_to_Tmat(Ttmat, slaves)
@@ -562,7 +562,7 @@ contains
     allocate(nz_cnt(Tmat11%nr), source=0)
     ! index
     do ilag=1,size(slaves4lag)
-      nz_cnt(slaves4lag)=ndof*(hecLagMAT%indexL_lagrange(ilag)-hecLagMAT%indexL_lagrange(ilag-1))-1
+      nz_cnt(slaves4lag(ilag))=ndof*(hecLagMAT%indexL_lagrange(ilag)-hecLagMAT%indexL_lagrange(ilag-1))-1
     enddo
     Tmat11%index(0)=0
     do i=1,Tmat11%nr
@@ -678,44 +678,31 @@ contains
 
   !> \brief Make list of INTERNAL dofs that are in contact in WHOLE MODEL
   !>
-  subroutine make_slave_list(Tmat, slaves)
-    type(hecmwST_local_matrix),      intent(in)  :: Tmat      !< blocked T matrix
-    integer(kind=kint), allocatable, intent(out) :: slaves(:) !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+  subroutine make_slave_list(hecMESHtmp, ndof, slaves4lag, slaves)
+    type(hecmwST_local_mesh),        intent(in)  :: hecMESHtmp    !< mesh updated for the current contact state
+    integer(kind=kint),              intent(in)  :: ndof          !< num of dof per node
+    integer(kind=kint),              intent(in)  :: slaves4lag(:) !< LOCALLY detected slave dofs (incl. EXTERNAL)
+    integer(kind=kint), allocatable, intent(out) :: slaves(:)     !< list of INTERNAL dofs that are in contact in WHOLE MODEL
     !
     integer(kind=kint), allocatable :: mark_slave(:)
     integer(kind=kint) :: n_slave
-    integer(kind=kint) :: ndof, ndof2, irow, js, je, j, jcol, idof, jdof, i
+    integer(kind=kint) :: ilag, i
     integer(kind=kint) :: myrank
 
     myrank = hecmw_comm_get_rank()
-    ndof = Tmat%ndof
-    ndof2 = ndof*ndof
-    allocate(mark_slave(Tmat%nr*ndof), source=0)
-    do irow = 1, Tmat%nr
-      js = Tmat%index(irow-1)+1
-      je = Tmat%index(irow)
-      do j = js, je
-        jcol = Tmat%item(j)
-        do idof = 1, ndof
-          if (mark_slave(ndof*(irow-1)+idof) == 1) cycle
-          do jdof = 1, ndof
-            if (irow == jcol .and. idof == jdof) cycle
-            if (abs(Tmat%A(ndof2*(j-1)+ndof*(idof-1)+jdof)) > tiny(0.0d0)) then
-              mark_slave(ndof*(irow-1)+idof) = 1
-              exit
-            endif
-          enddo
-        enddo
-      enddo
+    allocate(mark_slave(hecMESHtmp%n_node*ndof), source=0)
+    do ilag=1,size(slaves4lag)
+      mark_slave(slaves4lag(ilag))=1
     enddo
+    call hecmw_assemble_I(hecMESHtmp, mark_slave, hecMESHtmp%n_node, ndof)
     n_slave = 0
-    do i = 1, Tmat%nr * ndof
+    do i = 1, hecMESHtmp%nn_internal * ndof
       if (mark_slave(i) /= 0) n_slave = n_slave + 1
     enddo
     if (DEBUG >= 2) write(0,*) '  DEBUG2[',myrank,']: n_slave',n_slave
     allocate(slaves(n_slave))
     n_slave = 0
-    do i = 1, Tmat%nr * ndof
+    do i = 1, hecMESHtmp%nn_internal * ndof
       if (mark_slave(i) /= 0) then
         n_slave = n_slave + 1
         slaves(n_slave) = i
@@ -798,9 +785,8 @@ contains
     integer(kind=kint),              intent(out) :: n_contact_dof   !< num of contact DOFs
     integer(kind=kint), allocatable, intent(out) :: contact_dofs(:) !< list of contact DOFs
     !
-    integer(kind=kint) :: ndof, icnt, ilag, ls, le, l, jnode, jdof, k, inode, jlag, idof, i
+    integer(kind=kint) :: ndof, icnt, ilag, ls, le, l, jnode, k, inode, idof, i
     integer(kind=kint), allocatable :: iw(:)
-    real(kind=kreal) :: val
     logical :: found
     integer(kind=kint) :: myrank
 
@@ -817,16 +803,6 @@ contains
       le = hecLagMAT%indexL_lagrange(ilag)
       lloop1: do l = ls, le
         jnode = hecLagMAT%itemL_lagrange(l)
-        found = .false.
-        do jdof = 1, ndof
-          val = hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
-          !write(0,*) 'jnode,jdof,val',jnode,jdof,val
-          if (abs(val) > tiny(0.0d0)) then
-            found = .true.
-            exit
-          endif
-        enddo
-        if (.not. found) cycle
         do k = 1, icnt
           if (iw(k) == jnode) cycle lloop1
         enddo
@@ -838,24 +814,16 @@ contains
     do inode = 1, hecMAT%NP
       ls = hecLagMAT%indexU_lagrange(inode-1)+1
       le = hecLagMAT%indexU_lagrange(inode)
-      lloop2: do l = ls, le
-        jlag = hecLagMAT%itemU_lagrange(l)
+      if (ls <= le) then
         found = .false.
-        do idof = 1, ndof
-          val = hecLagMAT%AU_lagrange((l-1)*ndof+idof)
-          !write(0,*) 'inode,idof,val',inode,idof,val
-          if (abs(val) > tiny(0.0d0)) then
-            found = .true.
-            exit
-          endif
-        enddo
-        if (.not. found) cycle
         do k = 1, icnt
-          if (iw(k) == inode) cycle lloop2
+          if (iw(k) == inode) found = .true.
         enddo
-        icnt = icnt + 1
-        iw(icnt) = inode
-      enddo lloop2
+        if (.not. found) then
+          icnt = icnt + 1
+          iw(icnt) = inode
+        endif
+      endif
     enddo
     call quick_sort(iw, 1, icnt)
     allocate(contact_dofs(icnt*ndof))
