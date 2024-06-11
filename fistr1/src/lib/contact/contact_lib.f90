@@ -257,7 +257,7 @@ end subroutine
     real(kind=kreal),intent(in)       :: xyz(3)        !< Coordinates of a spacial point, whose projecting point is to be computed
     integer, intent(in)               :: etype         !< surface element type
     integer, intent(in)               :: nn            !< number of elemental nodes
-    real(kind=kreal),intent(in)       :: elemt(3,nn)   !< nodes coordinates of surface element
+    real(kind=kreal),intent(in)       :: elemt(:,:)   !< nodes coordinates of surface element
     real(kind=kreal),intent(in)       :: reflen        !< reference length of surface element
     type(tContactState),intent(inout) :: cstate        !< Recorde of contact information
     logical, intent(out)              :: isin          !< in contact or not
@@ -288,12 +288,12 @@ end subroutine
     tol = 1.0D0
     do count=1,100
       call getShapeFunc( etype, r, sfunc )
-      xyz_out = matmul( elemt(:,:), sfunc )
+      xyz_out = matmul( elemt(1:3,1:nn), sfunc )
       dxyz(1:3) = xyz_out(1:3) - xyz(1:3)
       dist_last = dot_product( dxyz, dxyz(:) )
 
-      call TangentBase( etype, nn, r, elemt, tangent )
-      call Curvature( etype, nn, r, elemt, curv )
+      call TangentBase( etype, nn, r, elemt(1:3,1:nn), tangent )
+      call Curvature( etype, nn, r, elemt(1:3,1:nn), curv )
 
       !     dF(1:2)
       dF(1:2) = -matmul( dxyz(:), tangent(:,:) )
@@ -321,7 +321,7 @@ end subroutine
       do order=1,10
         r_tmp(1:2) = r(1:2) + factor*dr(1:2)
         call getShapeFunc( etype, r_tmp, sfunc )
-        xyz_out(1:3) = matmul( elemt(:,:), sfunc(:) )
+        xyz_out(1:3) = matmul( elemt(1:3,1:nn), sfunc(:) )
         dxyz(1:3) = xyz(1:3)-xyz_out(:)
         dist_now = dot_product( dxyz, dxyz )
         if(dist_now <= dist_last) exit
@@ -336,7 +336,7 @@ end subroutine
     cstate%state = CONTACTFREE
     if( isInsideElement( etype, r, clr )>=0 ) then
       dxyz(:)=xyz_out(:)-xyz(:)
-      normal(:) = SurfaceNormal( etype, nn, r, elemt )
+      normal(:) = SurfaceNormal( etype, nn, r, elemt(1:3,1:nn) )
       normal(:) = normal(:)/dsqrt( dot_product(normal, normal) )
       do count = 1,3
         if( dabs(normal(count))<1.D-10 ) normal(count) =0.d0
@@ -366,7 +366,7 @@ end subroutine
     real(kind=kreal),intent(in)       :: xyz(3)        !< Coordinates of a spacial point, whose projecting point is to be computed
     integer, intent(in)               :: etype         !< surface element type
     integer, intent(in)               :: nn            !< number of elemental nodes
-    real(kind=kreal),intent(in)       :: elemt(3,nn)   !< nodes coordinates of surface element
+    real(kind=kreal),intent(in)       :: elemt(:,:)   !< nodes coordinates of surface element
     real(kind=kreal),intent(in)       :: reflen        !< reference length of surface element
     type(tContactState),intent(inout) :: cstate        !< Recorde of contact information
     logical, intent(out)              :: isin          !< in contact or not
