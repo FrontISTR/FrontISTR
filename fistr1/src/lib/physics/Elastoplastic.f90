@@ -11,6 +11,11 @@ module m_ElastoPlastic
 
   implicit none
 
+  private
+  public :: calElastoPlasticMatrix
+  public :: BackwardEuler
+  public :: updateEPState
+
   real(kind=kreal), private, parameter :: Id(6,6) = reshape( &
     & (/  2.d0/3.d0, -1.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
     &    -1.d0/3.d0,  2.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
@@ -34,29 +39,56 @@ contains
     real(kind=kreal), intent(in)  :: temperature   !> temperature
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i,j,ytype,hdflag_in
-    logical :: kinematic
-    real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6), De(6,6), G, dlambda
-    real(kind=kreal) :: C1,C2,C3, back(6)
-    real(kind=kreal) :: J1,J2,J3, fai, sita, harden, khard, da(6), devia(6)
+    integer :: ytype,hdflag_in
 
     hdflag_in = 0
     if( present(hdflag) ) hdflag_in = hdflag
 
     ytype = getYieldFunction( matl%mtype )
-    if( ytype==3 ) then
+    select case (ytype)
+    case (0)
+      call calElastoPlasticMatrix_VM( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
+    case (1)
+      call calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
+    case (2)
+      call calElastoPlasticMatrix_DP( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
+    case (3)
       call uElastoPlasticMatrix( matl%variables, stress, istat, extval, plstrain, D, temperature, hdflag_in )
-      return
-    endif
+    end select
+  end subroutine calElastoPlasticMatrix
+
+  !> This subroutine calculates elastoplastic constitutive relation
+  subroutine calElastoPlasticMatrix_VM( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
+    type( tMaterial ), intent(in) :: matl      !< material properties
+    integer, intent(in)           :: sectType  !< not used currently
+    real(kind=kreal), intent(in)  :: stress(6) !< stress
+    real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
+    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
+    integer, intent(in)           :: istat     !< plastic state
+    real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
+    real(kind=kreal), intent(in)  :: temperature   !> temperature
+    integer(kind=kint), intent(in) :: hdflag  !> return only hyd and dev term if specified
+
+    integer :: i,j
+    logical :: kinematic
+    real(kind=kreal) :: dum, a(6), G, dlambda
+    real(kind=kreal) :: C1,C2,C3, back(6)
+    real(kind=kreal) :: J1,J2, harden, khard, devia(6)
+
     if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
+
+    call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
+    if( istat == 0 ) return   ! elastic state
+    if( hdflag == 2 ) return
+
+    harden = calHardenCoeff( matl, extval(1), temperature )
+
     kinematic = isKinematicHarden( matl%mtype )
     khard = 0.d0
     if( kinematic ) then
       back(1:6) = extval(2:7)
       khard = calKinematicHarden( matl, extval(1) )
     endif
-
-    call calElasticMatrix( matl, sectTYPE, De, temperature, hdflag=hdflag_in )
 
     J1 = (stress(1)+stress(2)+stress(3))
     devia(1:3) = stress(1:3)-J1/3.d0
@@ -65,84 +97,165 @@ contains
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
 
-    D(:,:) = De(:,:)
+    a(1:6) = devia(1:6)/dsqrt(2.d0*J2)
+    G = D(4,4)
+    dlambda = extval(1)-plstrain
+    C3 = dsqrt(3.d0*J2)+3.d0*G*dlambda !trial mises stress
+    C1 = 6.d0*dlambda*G*G/C3
+    dum = 3.d0*G+khard+harden
+    C2 = 6.d0*G*G*(dlambda/C3-1.d0/dum)
+
+    do i=1,6
+      do j=1,6
+        D(i,j) = D(i,j) - C1*Id(i,j) + C2*a(i)*a(j)
+      enddo
+    enddo
+  end subroutine calElastoPlasticMatrix_VM
+
+  !> This subroutine calculates elastoplastic constitutive relation
+  subroutine calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
+    type( tMaterial ), intent(in) :: matl      !< material properties
+    integer, intent(in)           :: sectType  !< not used currently
+    real(kind=kreal), intent(in)  :: stress(6) !< stress
+    real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
+    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
+    integer, intent(in)           :: istat     !< plastic state
+    real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
+    real(kind=kreal), intent(in)  :: temperature   !> temperature
+    integer(kind=kint), intent(in) :: hdflag  !> return only hyd and dev term if specified
+
+    integer :: i,j
+    logical :: kinematic
+    real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6)
+    real(kind=kreal) :: C1,C2,C3, back(6)
+    real(kind=kreal) :: J1,J2,J3, fai, sita, harden, khard, da(6), devia(6)
+
+    if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
+
+    call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
     if( istat == 0 ) return   ! elastic state
-    if( present(hdflag) ) then
-      if( hdflag == 2 ) return
-    end if
+    if( hdflag == 2 ) return
+
+    harden = calHardenCoeff( matl, extval(1), temperature )
+
+    kinematic = isKinematicHarden( matl%mtype )
+    khard = 0.d0
+    if( kinematic ) then
+      back(1:6) = extval(2:7)
+      khard = calKinematicHarden( matl, extval(1) )
+    endif
+
+    J1 = (stress(1)+stress(2)+stress(3))
+    devia(1:3) = stress(1:3)-J1/3.d0
+    devia(4:6) = stress(4:6)
+    if( kinematic ) devia = devia-back
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
 
     !derivative of J2
     dj2(1:3) = devia(1:3)
     dj2(4:6) = 2.d0*devia(4:6)
     dj2 = dj2/( 2.d0*dsqrt(j2) )
 
-    harden = calHardenCoeff( matl, extval(1), temperature )
+    fai = matl%variables(M_PLCONST3)
+    J3 = devia(1)*devia(2)*devia(3)                    &
+        +2.d0* devia(4)*devia(5)*devia(6)                     &
+        -devia(6)*devia(2)*devia(6)                           &
+        -devia(4)*devia(4)*devia(3)                           &
+        -devia(1)*devia(5)*devia(5)
+    sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
+    if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) then
+      C1 = 0.d0
+      C2 = dsqrt(3.d0)
+      C3 = 0.d0
+    else
+      if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
+      sita = asin( sita )/3.d0
+      C2 = cos(sita)*( 1.d0*tan(sita)*tan(3.d0*sita) + sin(fai)* &
+          ( tan(3.d0*sita)-tan(sita )/dsqrt(3.d0) ) )
+      C1 = sin(fai)/3.d0
+      C3 = dsqrt(3.d0)*sin(sita)+cos(sita)*sin(fai)/(2.d0*J2*cos(3.d0*sita))
+    endif
+    ! deirivative of j1
+    dj1(1:3) = 1.d0
+    dj1(4:6) = 0.d0
+    ! deirivative of j3
+    dj3(1) = devia(2)*devia(3)-devia(5)*devia(5)+J2/3.d0
+    dj3(2) = devia(1)*devia(3)-devia(6)*devia(6)+J2/3.d0
+    dj3(3) = devia(1)*devia(2)-devia(4)*devia(4)+J2/3.d0
+    dj3(4) = 2.d0*(devia(5)*devia(6)-devia(3)*devia(4))
+    dj3(5) = 2.d0*(devia(4)*devia(6)-devia(1)*devia(5))
+    dj3(6) = 2.d0*(devia(4)*devia(5)-devia(2)*devia(6))
+    a(:) = C1*dj1 + C2*dj2 + C3*dj3
 
-    select case (yType)
-      case (0)       ! Mises or. Isotropic
-        a(1:6) = devia(1:6)/dsqrt(2.d0*J2)
-        G = De(4,4)
-        dlambda = extval(1)-plstrain
-        C3 = dsqrt(3.d0*J2)+3.d0*G*dlambda !trial mises stress
-        C1 = 6.d0*dlambda*G*G/C3
-        dum = 3.d0*G+khard+harden
-        C2 = 6.d0*G*G*(dlambda/C3-1.d0/dum)
-
-        do i=1,6
-          do j=1,6
-            D(i,j) = De(i,j) - C1*Id(i,j) + C2*a(i)*a(j)
-          enddo
-        enddo
-
-        return
-      case (1)      ! Mohr-Coulomb
-        fai = matl%variables(M_PLCONST3)
-        J3 = devia(1)*devia(2)*devia(3)                    &
-          +2.d0* devia(4)*devia(5)*devia(6)                     &
-          -devia(6)*devia(2)*devia(6)                           &
-          -devia(4)*devia(4)*devia(3)                           &
-          -devia(1)*devia(5)*devia(5)
-        sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-        if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) then
-          C1 = 0.d0
-          C2 = dsqrt(3.d0)
-          C3 = 0.d0
-        else
-          if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-          sita = asin( sita )/3.d0
-          C2 = cos(sita)*( 1.d0*tan(sita)*tan(3.d0*sita) + sin(fai)* &
-            ( tan(3.d0*sita)-tan(sita )/dsqrt(3.d0) ) )
-          C1 = sin(fai)/3.d0
-          C3 = dsqrt(3.d0)*sin(sita)+cos(sita)*sin(fai)/(2.d0*J2*cos(3.d0*sita))
-        endif
-        ! deirivative of j1
-        dj1(1:3) = 1.d0
-        dj1(4:6) = 0.d0
-        ! deirivative of j3
-        dj3(1) = devia(2)*devia(3)-devia(5)*devia(5)+J2/3.d0
-        dj3(2) = devia(1)*devia(3)-devia(6)*devia(6)+J2/3.d0
-        dj3(3) = devia(1)*devia(2)-devia(4)*devia(4)+J2/3.d0
-        dj3(4) = 2.d0*(devia(5)*devia(6)-devia(3)*devia(4))
-        dj3(5) = 2.d0*(devia(4)*devia(6)-devia(1)*devia(5))
-        dj3(6) = 2.d0*(devia(4)*devia(5)-devia(2)*devia(6))
-        a(:) = C1*dj1 + C2*dj2 + C3*dj3
-      case (2)      ! Drucker-Prager
-        fai = matl%variables(M_PLCONST3)
-        ! deirivative of j1
-        dj1(1:3) = 1.d0
-        dj1(4:6) = 0.d0
-        a(:) = fai*dj1(:) + dj2(:)
-    end select
-
-    da = matmul( de, a )
+    da = matmul( D, a )
     dum = harden + khard+ dot_product( da, a )
     do i=1,6
       do j=1,6
-        D(i,j) = De(i,j) - da(i)*da(j)/dum
+        D(i,j) = D(i,j) - da(i)*da(j)/dum
       enddo
     enddo
+  end subroutine calElastoPlasticMatrix_MC
 
-  end subroutine
+  !> This subroutine calculates elastoplastic constitutive relation
+  subroutine calElastoPlasticMatrix_DP( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
+    type( tMaterial ), intent(in) :: matl      !< material properties
+    integer, intent(in)           :: sectType  !< not used currently
+    real(kind=kreal), intent(in)  :: stress(6) !< stress
+    real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
+    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
+    integer, intent(in)           :: istat     !< plastic state
+    real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
+    real(kind=kreal), intent(in)  :: temperature   !> temperature
+    integer(kind=kint), intent(in) :: hdflag  !> return only hyd and dev term if specified
+
+    integer :: i,j
+    logical :: kinematic
+    real(kind=kreal) :: dum, dj1(6), dj2(6), a(6)
+    real(kind=kreal) :: back(6)
+    real(kind=kreal) :: J1,J2, fai, harden, khard, da(6), devia(6)
+
+    if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
+
+    call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
+    if( istat == 0 ) return   ! elastic state
+    if( hdflag == 2 ) return
+
+    harden = calHardenCoeff( matl, extval(1), temperature )
+
+    kinematic = isKinematicHarden( matl%mtype )
+    khard = 0.d0
+    if( kinematic ) then
+      back(1:6) = extval(2:7)
+      khard = calKinematicHarden( matl, extval(1) )
+    endif
+
+    J1 = (stress(1)+stress(2)+stress(3))
+    devia(1:3) = stress(1:3)-J1/3.d0
+    devia(4:6) = stress(4:6)
+    if( kinematic ) devia = devia-back
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+
+    !derivative of J2
+    dj2(1:3) = devia(1:3)
+    dj2(4:6) = 2.d0*devia(4:6)
+    dj2 = dj2/( 2.d0*dsqrt(j2) )
+
+    fai = matl%variables(M_PLCONST3)
+    ! deirivative of j1
+    dj1(1:3) = 1.d0
+    dj1(4:6) = 0.d0
+    a(:) = fai*dj1(:) + dj2(:)
+
+    da = matmul( D, a )
+    dum = harden + khard+ dot_product( da, a )
+    do i=1,6
+      do j=1,6
+        D(i,j) = D(i,j) - da(i)*da(j)/dum
+      enddo
+    enddo
+  end subroutine calElastoPlasticMatrix_DP
 
   !> This subrouitne calculate equivalent stress
   real(kind=kreal) function cal_equivalent_stress(matl, stress, extval)
