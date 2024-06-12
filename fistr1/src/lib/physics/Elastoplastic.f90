@@ -257,60 +257,6 @@ contains
     enddo
   end subroutine calElastoPlasticMatrix_DP
 
-  !> This subrouitne calculate equivalent stress
-  real(kind=kreal) function cal_equivalent_stress(matl, stress, extval)
-    type( tMaterial ), intent(in) :: matl        !< material property
-    real(kind=kreal), intent(in)  :: stress(6)   !< stress
-    real(kind=kreal), intent(in)  :: extval(:)   !< plastic strain, back stress
-
-    integer :: ytype
-    logical :: kinematic
-    real(kind=kreal) :: eqvs, sita, fai, J1,J2,J3, devia(6)
-    real(kind=kreal) :: back(6)
-    kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) back(1:6) = extval(2:7)
-
-    ytype = getYieldFunction( matl%mtype )
-    J1 = (stress(1)+stress(2)+stress(3))
-    devia(1:3) = stress(1:3)-J1/3.d0
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-
-    select case (yType)
-      case (0)       ! Mises or. Isotropic
-        eqvs = dsqrt( 3.d0*J2 )
-      case (1)      ! Mohr-Coulomb
-        fai = matl%variables(M_PLCONST1)
-        J3 = devia(1)*devia(2)*devia(3)                    &
-          +2.d0* devia(4)*devia(5)*devia(6)                     &
-          -devia(6)*devia(2)*devia(6)                           &
-          -devia(4)*devia(4)*devia(3)                           &
-          -devia(1)*devia(5)*devia(5)
-        sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-        if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
-        if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-        sita = asin( sita )/3.d0
-        eqvs = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
-          +J1*sin(fai)/3.d0
-      case (2)      ! Drucker-Prager
-        eqvs = dsqrt(J2)
-      case default
-        eqvs = -1.d0
-    end select
-
-    cal_equivalent_stress = eqvs
-  end function
-
-  !> This subrouitne calculate equivalent stress
-  real(kind=kreal) function cal_mises_strain( strain )
-    real(kind=kreal), intent(in)  :: strain(6)        !< strain
-    cal_mises_strain = 2.d0*dot_product( strain(1:3), strain(1:3) )
-    cal_mises_strain = cal_mises_strain+ dot_product( strain(4:6), strain(4:6) )
-    cal_mises_strain = dsqrt( cal_mises_strain/3.d0 )
-  end function
-
   !> This function calculates hardening coefficient
   real(kind=kreal) function calHardenCoeff( matl, pstrain, temp )
     type( tMaterial ), intent(in)          :: matl    !< material property
@@ -511,7 +457,7 @@ contains
     real(kind=kreal) :: dlambda, f
     integer :: i
     real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
-    real(kind=kreal) :: J1, H, KH, KK, dd, yd, G, K, devia(6)
+    real(kind=kreal) :: J1, J2, H, KH, KK, dd, yd, G, K, devia(6)
     real(kind=kreal) :: fstat_bak(7)
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
@@ -544,7 +490,10 @@ contains
     devia(1:3) = stress(1:3)-J1
     devia(4:6) = stress(4:6)
     if( kinematic ) devia = devia-back
-    yd = cal_equivalent_stress(matl, stress, fstat)
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+
+    yd = dsqrt( 3.d0*J2 )
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -641,7 +590,21 @@ contains
     devia(1:3) = stress(1:3)-J1
     devia(4:6) = stress(4:6)
     if( kinematic ) devia = devia-back
-    yd = cal_equivalent_stress(matl, stress, fstat)
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+
+    fai = matl%variables(M_PLCONST3)
+    J3 = devia(1)*devia(2)*devia(3)                    &
+        +2.d0* devia(4)*devia(5)*devia(6)                     &
+        -devia(6)*devia(2)*devia(6)                           &
+        -devia(4)*devia(4)*devia(3)                           &
+        -devia(1)*devia(5)*devia(5)
+    sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
+    if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
+    if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
+    sita = asin( sita )/3.d0
+    yd = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
+        +J1*sin(fai)/3.d0
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -656,20 +619,6 @@ contains
     K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
     dlambda = 0.d0
 
-    fai = matl%variables(M_PLCONST3)
-
-    !   do j=1,MAXITER
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-        dot_product( devia(4:6), devia(4:6) )
-    J3 = devia(1)*devia(2)*devia(3)                    &
-        +2.d0* devia(4)*devia(5)*devia(6)                     &
-        -devia(6)*devia(2)*devia(6)                           &
-        -devia(4)*devia(4)*devia(3)                           &
-        -devia(1)*devia(5)*devia(5)
-    sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-    if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
-    if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-    sita = asin( sita )/3.d0
     do mm=1,6
       if( dabs(stress(mm))<1.d-10 ) stress(mm)=0.d0
     enddo
@@ -735,7 +684,7 @@ contains
     real(kind=kreal) :: dlambda, f
     integer :: i
     real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
-    real(kind=kreal) :: J1,H, KH, KK, dd, yd, G, K, devia(6)
+    real(kind=kreal) :: J1,J2,H, KH, KK, dd, yd, G, K, devia(6)
     real(kind=kreal) :: fai
     real(kind=kreal) :: fstat_bak(7)
     logical          :: kinematic, ierr
@@ -769,7 +718,10 @@ contains
     devia(1:3) = stress(1:3)-J1
     devia(4:6) = stress(4:6)
     if( kinematic ) devia = devia-back
-    yd = cal_equivalent_stress(matl, stress, fstat)
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+
+    yd = dsqrt(J2)
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
