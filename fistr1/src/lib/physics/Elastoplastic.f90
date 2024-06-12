@@ -362,58 +362,6 @@ contains
     end select
   end function
 
-  !> This function calculates yield state
-  real(kind=kreal) function calYieldFunc( matl, stress, extval, temp )
-    type( tMaterial ), intent(in) :: matl        !< material property
-    real(kind=kreal), intent(in)  :: stress(6)   !< stress
-    real(kind=kreal), intent(in)  :: extval(:)   !< plastic strain, back stress
-    real(kind=kreal), intent(in)  :: temp  !< temperature
-
-    integer :: ytype
-    logical :: kinematic
-    real(kind=kreal) :: eqvs, sita, eta, fai, J1,J2,J3, f, devia(6)
-    real(kind=kreal) :: pstrain, back(6)
-
-    f = 0.0d0
-
-    kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) back(1:6) = extval(2:7)
-
-    pstrain = extval(1)
-    ytype = getYieldFunction( matl%mtype )
-    J1 = (stress(1)+stress(2)+stress(3))
-    devia(1:3) = stress(1:3)-J1/3.d0
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-    eqvs = calCurrYield( matl, pstrain, temp )
-
-    select case (yType)
-      case (0)       ! Mises or. Isotropic
-        f = dsqrt( 3.d0*J2 ) - eqvs
-      case (1)      ! Mohr-Coulomb
-        fai = matl%variables(M_PLCONST3)
-        J3 = devia(1)*devia(2)*devia(3)                    &
-          +2.d0* devia(4)*devia(5)*devia(6)                     &
-          -devia(2)*devia(6)*devia(6)                           &
-          -devia(3)*devia(4)*devia(4)                           &
-          -devia(1)*devia(5)*devia(5)
-        sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-        if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
-        if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-        sita = asin( sita )/3.d0
-        f = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
-          +J1*sin(fai)/3.d0 - eqvs*cos(fai)
-      case (2)      ! Drucker-Prager
-        eta = matl%variables(M_PLCONST3)
-        f = dsqrt(J2) + eta*J1 - eqvs*matl%variables(M_PLCONST4)
-    end select
-
-    calYieldFunc = f
-  end function
-
   !> This subroutine does backward-Euler return calculation
   subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, temp, hdflag )
     type( tMaterial ), intent(in)    :: matl        !< material properties
@@ -462,12 +410,21 @@ contains
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
 
-    f = 0.0d0
-
     pstrain = plstrain
-    if(isKinematicHarden( matl%mtype ))fstat_bak(2:7)= fstat(8:13)
-    fstat_bak(1) = plstrain
-    f = calYieldFunc( matl, stress, fstat_bak, temp )
+
+    kinematic = isKinematicHarden( matl%mtype )
+    if( kinematic ) back(1:6) = fstat(8:13)
+
+    J1 = (stress(1)+stress(2)+stress(3))
+    devia(1:3) = stress(1:3)-J1/3.d0
+    devia(4:6) = stress(4:6)
+    if( kinematic ) devia = devia-back
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+    yd = dsqrt( 3.d0*J2 )
+
+    f = yd - calCurrYield( matl, pstrain, temp )
+
     if( dabs(f)<tol ) then  ! yielded
       istat = 1
       return
@@ -480,20 +437,9 @@ contains
     istat = 1           ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
 
-    kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) then
-      back(1:6) = fstat(8:13)
       betan = calCurrKinematic( matl, pstrain )
     endif
-
-    J1 = (stress(1)+stress(2)+stress(3))/3.d0
-    devia(1:3) = stress(1:3)-J1
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-
-    yd = dsqrt( 3.d0*J2 )
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -532,7 +478,7 @@ contains
       fstat(2:7) = back(:)+(KK-betan)*devia(:)/yd
     endif
     devia(:) = (1.d0-3.d0*dlambda*G/yd)*devia(:)
-    stress(1:3) = devia(1:3)+J1
+    stress(1:3) = devia(1:3)+J1/3.d0
     stress(4:6) = devia(4:6)
     stress(:)= stress(:)+back(:)
 
@@ -562,12 +508,32 @@ contains
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
 
-    f = 0.0d0
-
     pstrain = plstrain
-    if(isKinematicHarden( matl%mtype ))fstat_bak(2:7)= fstat(8:13)
-    fstat_bak(1) = plstrain
-    f = calYieldFunc( matl, stress, fstat_bak, temp )
+
+    kinematic = isKinematicHarden( matl%mtype )
+    if( kinematic ) back(1:6) = fstat(8:13)
+
+    J1 = (stress(1)+stress(2)+stress(3))
+    devia(1:3) = stress(1:3)-J1/3.d0
+    devia(4:6) = stress(4:6)
+    if( kinematic ) devia = devia-back
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+
+    fai = matl%variables(M_PLCONST3)
+    J3 = devia(1)*devia(2)*devia(3)                    &
+        +2.d0* devia(4)*devia(5)*devia(6)                     &
+        -devia(2)*devia(6)*devia(6)                           &
+        -devia(3)*devia(4)*devia(4)                           &
+        -devia(1)*devia(5)*devia(5)
+    sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
+    if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
+    if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
+    sita = asin( sita )/3.d0
+    yd = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
+        +J1*sin(fai)/3.d0
+    f = yd - calCurrYield( matl, pstrain, temp )*cos(fai)
+
     if( dabs(f)<tol ) then  ! yielded
       istat = 1
       return
@@ -580,31 +546,9 @@ contains
     istat = 1           ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
 
-    kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) then
-      back(1:6) = fstat(8:13)
       betan = calCurrKinematic( matl, pstrain )
     endif
-
-    J1 = (stress(1)+stress(2)+stress(3))/3.d0
-    devia(1:3) = stress(1:3)-J1
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-
-    fai = matl%variables(M_PLCONST3)
-    J3 = devia(1)*devia(2)*devia(3)                    &
-        +2.d0* devia(4)*devia(5)*devia(6)                     &
-        -devia(6)*devia(2)*devia(6)                           &
-        -devia(4)*devia(4)*devia(3)                           &
-        -devia(1)*devia(5)*devia(5)
-    sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-    if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
-    if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-    sita = asin( sita )/3.d0
-    yd = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
-        +J1*sin(fai)/3.d0
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -684,18 +628,29 @@ contains
     real(kind=kreal) :: dlambda, f
     integer :: i
     real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
-    real(kind=kreal) :: J1,J2,H, KH, KK, dd, yd, G, K, devia(6)
+    real(kind=kreal) :: J1,J2,H, KH, KK, dd, yd, G, K, devia(6), eta, p
     real(kind=kreal) :: fai
     real(kind=kreal) :: fstat_bak(7)
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
 
-    f = 0.0d0
-
     pstrain = plstrain
-    if(isKinematicHarden( matl%mtype ))fstat_bak(2:7)= fstat(8:13)
-    fstat_bak(1) = plstrain
-    f = calYieldFunc( matl, stress, fstat_bak, temp )
+
+    kinematic = isKinematicHarden( matl%mtype )
+    if( kinematic ) back(1:6) = fstat(8:13)
+
+    J1 = (stress(1)+stress(2)+stress(3))
+    p = J1/3.d0
+    devia(1:3) = stress(1:3)-p
+    devia(4:6) = stress(4:6)
+    if( kinematic ) devia = devia-back
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+
+    yd = dsqrt(J2)
+    eta = matl%variables(M_PLCONST3)
+    f = yd + eta*J1 - calCurrYield( matl, pstrain, temp )*matl%variables(M_PLCONST4)
+
     if( dabs(f)<tol ) then  ! yielded
       istat = 1
       return
@@ -708,20 +663,9 @@ contains
     istat = 1           ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
 
-    kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) then
-      back(1:6) = fstat(8:13)
       betan = calCurrKinematic( matl, pstrain )
     endif
-
-    J1 = (stress(1)+stress(2)+stress(3))/3.d0
-    devia(1:3) = stress(1:3)-J1
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-
-    yd = dsqrt(J2)
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -748,13 +692,13 @@ contains
         istat=0; exit
       endif
       f = calCurrYield( matl, pstrain+dum*dlambda, temp  )
-      f = yd-G*dlambda+fai*(J1-K*fai*dlambda)- dum*f
+      f = yd-G*dlambda+fai*(p-K*fai*dlambda)- dum*f
       if( dabs(f)<tol*tol ) exit
     enddo
     pstrain = pstrain+dum*dlambda
     devia(:) = (1.d0-G*dlambda/yd)*devia(:)
-    J1 = J1-K*fai*dlambda
-    stress(1:3) = devia(1:3)+J1
+    p = p-K*fai*dlambda
+    stress(1:3) = devia(1:3)+p
     stress(4:6) = devia(4:6)
 
     fstat(1) = pstrain
