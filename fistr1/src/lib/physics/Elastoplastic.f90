@@ -400,8 +400,8 @@ contains
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
 
-    real(kind=kreal), parameter :: tol =1.d-3
-    integer, parameter          :: MAXITER = 5
+    real(kind=kreal), parameter :: tol =1.d-6
+    integer, parameter          :: MAXITER = 10
     real(kind=kreal) :: dlambda, f
     integer :: i
     real(kind=kreal) :: youngs, poisson, pstrain, ina(1), ee(2)
@@ -422,7 +422,7 @@ contains
     yd = calCurrYield( matl, plstrain, temp )
     f = eqvs - yd
 
-    if( abs(f)<tol ) then  ! yielded
+    if( abs(f/yd)<tol ) then  ! yielded
       istat = 1
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
@@ -467,7 +467,10 @@ contains
         KK = calCurrKinematic( matl, pstrain )
       endif
       f = eqvs-3.d0*G*dlambda-yd -(KK-betan)
-      if( abs(f)<tol*tol ) exit
+      if( abs(f/yd)<tol ) exit
+      if( i==MAXITER ) then
+        stop 'ERROR: BackwardEuler_VM: convergence failure'
+      endif
     enddo
     if( kinematic ) then
       KK = calCurrKinematic( matl, pstrain )
@@ -492,8 +495,8 @@ contains
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
 
-    real(kind=kreal), parameter :: tol =1.d-3
-    integer, parameter          :: MAXITER = 5
+    real(kind=kreal), parameter :: tol =1.d-6
+    integer, parameter          :: MAXITER = 10
     real(kind=kreal) :: dlambda, f, mat(3,3)
     integer :: i, maxp(1), minp(1), mm
     real(kind=kreal) :: youngs, poisson, pstrain, ina(1), ee(2)
@@ -529,7 +532,7 @@ contains
     cohe = calCurrYield( matl, plstrain, temp )
     f = eqvs - cohe*cos(phi)
 
-    if( abs(f)<tol ) then  ! yielded
+    if( abs(f/cohe)<tol ) then  ! yielded
       istat = 1
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
@@ -584,7 +587,10 @@ contains
           (prnstre(maxp(1))+prnstre(minp(1)))*sin(phi)-            &
           (4.d0*G*(1.d0+sin(phi)*sin(theta)/3.d0)+4.d0*K*sin(phi)   &
           *sin(theta))*dlambda-2.d0*cohe*cos(phi)
-      if( abs(f)<tol ) exit
+      if( abs(f/cohe)<tol ) exit
+      if( i==MAXITER ) then
+        stop 'ERROR: BackwardEuler_MC: convergence failure'
+      endif
     enddo
     prnstre(maxp(1)) = prnstre(maxp(1))-(2.d0*G*(1.d0+sin(phi)/3.d0)  &
         + 2.d0*K*sin(phi) )*dlambda
@@ -617,8 +623,8 @@ contains
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
 
-    real(kind=kreal), parameter :: tol =1.d-3
-    integer, parameter          :: MAXITER = 5
+    real(kind=kreal), parameter :: tol =1.d-6
+    integer, parameter          :: MAXITER = 10
     real(kind=kreal) :: dlambda, f
     integer :: i
     real(kind=kreal) :: youngs, poisson, pstrain, xi, ina(1), ee(2)
@@ -644,7 +650,7 @@ contains
     cohe = calCurrYield( matl, plstrain, temp )
     f = eqvs + eta*J1 - cohe*xi
 
-    if( abs(f)<tol ) then  ! yielded
+    if( abs(f/cohe)<tol ) then  ! yielded
       istat = 1
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
@@ -685,7 +691,10 @@ contains
       pstrain = plstrain+xi*dlambda
       cohe = calCurrYield( matl, pstrain, temp  )
       f = eqvs-G*dlambda+eta*(p-K*eta*dlambda)- xi*cohe
-      if( abs(f)<tol*tol ) exit
+      if( abs(f/cohe)<tol ) exit
+      if( i==MAXITER ) then
+        stop 'ERROR: BackwardEuler_DP: convergence failure'
+      endif
     enddo
     devia(:) = (1.d0-G*dlambda/eqvs)*devia(:)
     p = p-K*eta*dlambda
