@@ -97,10 +97,10 @@ contains
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
 
-    a(1:6) = devia(1:6)/dsqrt(2.d0*J2)
+    a(1:6) = devia(1:6)/sqrt(2.d0*J2)
     G = D(4,4)
     dlambda = extval(1)-plstrain
-    C3 = dsqrt(3.d0*J2)+3.d0*G*dlambda !trial mises stress
+    C3 = sqrt(3.d0*J2)+3.d0*G*dlambda !trial mises stress
     C1 = 6.d0*dlambda*G*G/C3
     dum = 3.d0*G+khard+harden
     C2 = 6.d0*G*G*(dlambda/C3-1.d0/dum)
@@ -128,7 +128,7 @@ contains
     logical :: kinematic
     real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6)
     real(kind=kreal) :: C1,C2,C3, back(6)
-    real(kind=kreal) :: J1,J2,J3, fai, sita, harden, khard, da(6), devia(6)
+    real(kind=kreal) :: J1,J2,J3, phi, sin3theta, theta, harden, khard, da(6), devia(6)
 
     if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
 
@@ -155,26 +155,26 @@ contains
     !derivative of J2
     dj2(1:3) = devia(1:3)
     dj2(4:6) = 2.d0*devia(4:6)
-    dj2 = dj2/( 2.d0*dsqrt(j2) )
+    dj2 = dj2/( 2.d0*sqrt(j2) )
 
-    fai = matl%variables(M_PLCONST3)
+    phi = matl%variables(M_PLCONST3)
     J3 = devia(1)*devia(2)*devia(3)                    &
         +2.d0* devia(4)*devia(5)*devia(6)                     &
         -devia(6)*devia(2)*devia(6)                           &
         -devia(4)*devia(4)*devia(3)                           &
         -devia(1)*devia(5)*devia(5)
-    sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-    if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) then
+    sin3theta = -3.d0*sqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
+    if( abs( abs(sin3theta)-1.d0 ) <1.d-8 ) then
       C1 = 0.d0
-      C2 = dsqrt(3.d0)
+      C2 = sqrt(3.d0)
       C3 = 0.d0
     else
-      if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-      sita = asin( sita )/3.d0
-      C2 = cos(sita)*( 1.d0*tan(sita)*tan(3.d0*sita) + sin(fai)* &
-          ( tan(3.d0*sita)-tan(sita )/dsqrt(3.d0) ) )
-      C1 = sin(fai)/3.d0
-      C3 = dsqrt(3.d0)*sin(sita)+cos(sita)*sin(fai)/(2.d0*J2*cos(3.d0*sita))
+      if( abs(sin3theta) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
+      theta = asin( sin3theta )/3.d0
+      C2 = cos(theta)*( 1.d0*tan(theta)*tan(3.d0*theta) + sin(phi)* &
+          ( tan(3.d0*theta)-tan(theta )/sqrt(3.d0) ) )
+      C1 = sin(phi)/3.d0
+      C3 = sqrt(3.d0)*sin(theta)+cos(theta)*sin(phi)/(2.d0*J2*cos(3.d0*theta))
     endif
     ! deirivative of j1
     dj1(1:3) = 1.d0
@@ -213,7 +213,7 @@ contains
     logical :: kinematic
     real(kind=kreal) :: dum, dj1(6), dj2(6), a(6)
     real(kind=kreal) :: back(6)
-    real(kind=kreal) :: J1,J2, fai, harden, khard, da(6), devia(6)
+    real(kind=kreal) :: J1,J2, eta, harden, khard, da(6), devia(6)
 
     if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
 
@@ -240,13 +240,13 @@ contains
     !derivative of J2
     dj2(1:3) = devia(1:3)
     dj2(4:6) = 2.d0*devia(4:6)
-    dj2 = dj2/( 2.d0*dsqrt(j2) )
+    dj2 = dj2/( 2.d0*sqrt(j2) )
 
-    fai = matl%variables(M_PLCONST3)
+    eta = matl%variables(M_PLCONST3)
     ! deirivative of j1
     dj1(1:3) = 1.d0
     dj1(4:6) = 0.d0
-    a(:) = fai*dj1(:) + dj2(:)
+    a(:) = eta*dj1(:) + dj2(:)
 
     da = matmul( D, a )
     dum = harden + khard+ dot_product( da, a )
@@ -404,13 +404,10 @@ contains
     integer, parameter          :: MAXITER = 5
     real(kind=kreal) :: dlambda, f
     integer :: i
-    real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
-    real(kind=kreal) :: J1, J2, H, KH, KK, dd, yd, G, K, devia(6)
-    real(kind=kreal) :: fstat_bak(7)
+    real(kind=kreal) :: youngs, poisson, pstrain, ina(1), ee(2)
+    real(kind=kreal) :: J1, J2, H, KH, KK, dd, eqvs, yd, G, K, devia(6)
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
-
-    pstrain = plstrain
 
     kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) back(1:6) = fstat(8:13)
@@ -421,11 +418,11 @@ contains
     if( kinematic ) devia = devia-back
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
-    yd = dsqrt( 3.d0*J2 )
+    eqvs = sqrt( 3.d0*J2 )
+    yd = calCurrYield( matl, plstrain, temp )
+    f = eqvs - yd
 
-    f = yd - calCurrYield( matl, pstrain, temp )
-
-    if( dabs(f)<tol ) then  ! yielded
+    if( abs(f)<tol ) then  ! yielded
       istat = 1
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
@@ -436,10 +433,7 @@ contains
 
     istat = 1           ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
-
-    if( kinematic ) then
-      betan = calCurrKinematic( matl, pstrain )
-    endif
+    if( kinematic ) betan = calCurrKinematic( matl, plstrain )
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -453,31 +447,33 @@ contains
     G = youngs/ ( 2.d0*(1.d0+poisson) )
     K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
     dlambda = 0.d0
+    pstrain = plstrain
 
     do i=1,MAXITER
-      H= calHardenCoeff( matl, pstrain+dlambda, temp )
+      H= calHardenCoeff( matl, pstrain, temp )
       if( kinematic ) then
-        KH = calKinematicHarden( matl, pstrain+dlambda )
+        KH = calKinematicHarden( matl, pstrain )
       endif
       dd= 3.d0*G+H+KH
       dlambda = dlambda+f/dd
       if( dlambda<0.d0 ) then
         dlambda = 0.d0
+        pstrain = plstrain
         istat=0; exit
       endif
-      dum = calCurrYield( matl, pstrain+dlambda, temp )
+      pstrain = plstrain+dlambda
+      yd = calCurrYield( matl, pstrain, temp )
       if( kinematic ) then
-        KK = calCurrKinematic( matl, pstrain+dlambda )
+        KK = calCurrKinematic( matl, pstrain )
       endif
-      f = yd-3.d0*G*dlambda-dum -(KK-betan)
-      if( dabs(f)<tol*tol ) exit
+      f = eqvs-3.d0*G*dlambda-yd -(KK-betan)
+      if( abs(f)<tol*tol ) exit
     enddo
-    pstrain = pstrain+dlambda
     if( kinematic ) then
       KK = calCurrKinematic( matl, pstrain )
-      fstat(2:7) = back(:)+(KK-betan)*devia(:)/yd
+      fstat(2:7) = back(:)+(KK-betan)*devia(:)/eqvs
     endif
-    devia(:) = (1.d0-3.d0*dlambda*G/yd)*devia(:)
+    devia(:) = (1.d0-3.d0*dlambda*G/eqvs)*devia(:)
     stress(1:3) = devia(1:3)+J1/3.d0
     stress(4:6) = devia(4:6)
     stress(:)= stress(:)+back(:)
@@ -500,15 +496,14 @@ contains
     integer, parameter          :: MAXITER = 5
     real(kind=kreal) :: dlambda, f, mat(3,3)
     integer :: i, maxp(1), minp(1), mm
-    real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
-    real(kind=kreal) :: J1,J2,J3, H, KH, KK, dd, yd, G, K, devia(6)
+    real(kind=kreal) :: youngs, poisson, pstrain, ina(1), ee(2)
+    real(kind=kreal) :: J1,J2,J3, H, KH, KK, dd, eqvs, cohe, G, K, devia(6)
     real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
-    real(kind=kreal) :: sita, fai, trialprn(3)
-    real(kind=kreal) :: fstat_bak(7)
+    real(kind=kreal) :: sin3theta, theta, phi, trialprn(3)
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
 
-    pstrain = plstrain
+    phi = matl%variables(M_PLCONST3)
 
     kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) back(1:6) = fstat(8:13)
@@ -520,21 +515,21 @@ contains
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
 
-    fai = matl%variables(M_PLCONST3)
     J3 = devia(1)*devia(2)*devia(3)                    &
         +2.d0* devia(4)*devia(5)*devia(6)                     &
         -devia(2)*devia(6)*devia(6)                           &
         -devia(3)*devia(4)*devia(4)                           &
         -devia(1)*devia(5)*devia(5)
-    sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-    if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
-    if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-    sita = asin( sita )/3.d0
-    yd = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
-        +J1*sin(fai)/3.d0
-    f = yd - calCurrYield( matl, pstrain, temp )*cos(fai)
+    sin3theta = -3.d0*sqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
+    if( abs( abs(sin3theta)-1.d0 ) <1.d-8 ) sin3theta=sign(1.d0, sin3theta)
+    if( abs(sin3theta) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
+    theta = asin( sin3theta )/3.d0
+    eqvs = (cos(theta)-sin(theta)*sin(phi)/sqrt(3.d0))*sqrt(J2)  &
+        +J1*sin(phi)/3.d0
+    cohe = calCurrYield( matl, plstrain, temp )
+    f = eqvs - cohe*cos(phi)
 
-    if( dabs(f)<tol ) then  ! yielded
+    if( abs(f)<tol ) then  ! yielded
       istat = 1
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
@@ -546,9 +541,7 @@ contains
     istat = 1           ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
 
-    if( kinematic ) then
-      betan = calCurrKinematic( matl, pstrain )
-    endif
+    if( kinematic ) betan = calCurrKinematic( matl, plstrain )
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -562,9 +555,10 @@ contains
     G = youngs/ ( 2.d0*(1.d0+poisson) )
     K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
     dlambda = 0.d0
+    pstrain = plstrain
 
     do mm=1,6
-      if( dabs(stress(mm))<1.d-10 ) stress(mm)=0.d0
+      if( abs(stress(mm))<1.d-10 ) stress(mm)=0.d0
     enddo
     call eigen3( stress, prnstre, prnprj )
     trialprn = prnstre
@@ -575,28 +569,28 @@ contains
     if( maxp(1)==2 .or. minp(1)==2 ) mm =3
     do i=1,MAXITER
       H= calHardenCoeff( matl, pstrain, temp )
-      dd= 4.d0*G*( 1.d0+sin(fai)*sin(sita)/3.d0 )+4.d0*K         &
-          *sin(fai)*sin(sita)+4.d0*H*cos(fai)*cos(fai)
+      dd= 4.d0*G*( 1.d0+sin(phi)*sin(theta)/3.d0 )+4.d0*K         &
+          *sin(phi)*sin(theta)+4.d0*H*cos(phi)*cos(phi)
       dlambda = dlambda+f/dd
-      if( 2.d0*dlambda*cos(fai)<0.d0 ) then
-        if( cos(fai)==0.d0 ) stop "Math error in return mapping"
+      if( 2.d0*dlambda*cos(phi)<0.d0 ) then
+        if( cos(phi)==0.d0 ) stop "Math error in return mapping"
         dlambda = 0.d0
+        pstrain = plstrain
         istat=0; exit
       endif
-      dum = pstrain + 2.d0*dlambda*cos(fai)
-      yd = calCurrYield( matl, dum, temp )
+      pstrain = plstrain + 2.d0*dlambda*cos(phi)
+      cohe = calCurrYield( matl, pstrain, temp )
       f = prnstre(maxp(1))-prnstre(minp(1))+                     &
-          (prnstre(maxp(1))+prnstre(minp(1)))*sin(fai)-            &
-          (4.d0*G*(1.d0+sin(fai)*sin(sita)/3.d0)+4.d0*K*sin(fai)   &
-          *sin(sita))*dlambda-2.d0*yd*cos(fai)
-      if( dabs(f)<tol ) exit
+          (prnstre(maxp(1))+prnstre(minp(1)))*sin(phi)-            &
+          (4.d0*G*(1.d0+sin(phi)*sin(theta)/3.d0)+4.d0*K*sin(phi)   &
+          *sin(theta))*dlambda-2.d0*cohe*cos(phi)
+      if( abs(f)<tol ) exit
     enddo
-    pstrain = pstrain + 2.d0*dlambda*cos(fai)
-    prnstre(maxp(1)) = prnstre(maxp(1))-(2.d0*G*(1.d0+sin(fai)/3.d0)  &
-        + 2.d0*K*sin(fai) )*dlambda
-    prnstre(minp(1)) = prnstre(minp(1))+(2.d0*G*(1.d0-sin(fai)/3.d0)  &
-        - 2.d0*K*sin(fai) )*dlambda
-    prnstre(mm) = prnstre(mm)+(4.d0*G/3.d0-2.d0*K)*sin(fai)*dlambda
+    prnstre(maxp(1)) = prnstre(maxp(1))-(2.d0*G*(1.d0+sin(phi)/3.d0)  &
+        + 2.d0*K*sin(phi) )*dlambda
+    prnstre(minp(1)) = prnstre(minp(1))+(2.d0*G*(1.d0-sin(phi)/3.d0)  &
+        - 2.d0*K*sin(phi) )*dlambda
+    prnstre(mm) = prnstre(mm)+(4.d0*G/3.d0-2.d0*K)*sin(phi)*dlambda
 
     tstre(:,:) = 0.d0
     tstre(1,1)= prnstre(1); tstre(2,2)=prnstre(2); tstre(3,3)=prnstre(3)
@@ -627,14 +621,13 @@ contains
     integer, parameter          :: MAXITER = 5
     real(kind=kreal) :: dlambda, f
     integer :: i
-    real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
-    real(kind=kreal) :: J1,J2,H, KH, KK, dd, yd, G, K, devia(6), eta, p
-    real(kind=kreal) :: fai
-    real(kind=kreal) :: fstat_bak(7)
+    real(kind=kreal) :: youngs, poisson, pstrain, xi, ina(1), ee(2)
+    real(kind=kreal) :: J1,J2,H, KH, KK, dd, eqvs, cohe, G, K, devia(6), eta, p
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
 
-    pstrain = plstrain
+    eta = matl%variables(M_PLCONST3)
+    xi = matl%variables(M_PLCONST4)
 
     kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) back(1:6) = fstat(8:13)
@@ -647,11 +640,11 @@ contains
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
 
-    yd = dsqrt(J2)
-    eta = matl%variables(M_PLCONST3)
-    f = yd + eta*J1 - calCurrYield( matl, pstrain, temp )*matl%variables(M_PLCONST4)
+    eqvs = sqrt(J2)
+    cohe = calCurrYield( matl, plstrain, temp )
+    f = eqvs + eta*J1 - cohe*xi
 
-    if( dabs(f)<tol ) then  ! yielded
+    if( abs(f)<tol ) then  ! yielded
       istat = 1
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
@@ -663,9 +656,7 @@ contains
     istat = 1           ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
 
-    if( kinematic ) then
-      betan = calCurrKinematic( matl, pstrain )
-    endif
+    if( kinematic ) betan = calCurrKinematic( matl, plstrain )
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -679,25 +670,25 @@ contains
     G = youngs/ ( 2.d0*(1.d0+poisson) )
     K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
     dlambda = 0.d0
+    pstrain = plstrain
 
-    fai = matl%variables(M_PLCONST3)
-    dum = matl%variables(M_PLCONST4)
     do i=1,MAXITER
       H= calHardenCoeff( matl, pstrain, temp )
-      dd= G+K*fai*fai+H*dum*dum
+      dd= G+K*eta*eta+H*xi*xi
       dlambda = dlambda+f/dd
-      if( dum*dlambda<0.d0 ) then
-        if( dum==0.d0 ) stop "Math error in return mapping"
+      if( xi*dlambda<0.d0 ) then
+        if( xi==0.d0 ) stop "Math error in return mapping"
         dlambda = 0.d0
+        pstrain = plstrain
         istat=0; exit
       endif
-      f = calCurrYield( matl, pstrain+dum*dlambda, temp  )
-      f = yd-G*dlambda+fai*(p-K*fai*dlambda)- dum*f
-      if( dabs(f)<tol*tol ) exit
+      pstrain = plstrain+xi*dlambda
+      cohe = calCurrYield( matl, pstrain, temp  )
+      f = eqvs-G*dlambda+eta*(p-K*eta*dlambda)- xi*cohe
+      if( abs(f)<tol*tol ) exit
     enddo
-    pstrain = pstrain+dum*dlambda
-    devia(:) = (1.d0-G*dlambda/yd)*devia(:)
-    p = p-K*fai*dlambda
+    devia(:) = (1.d0-G*dlambda/eqvs)*devia(:)
+    p = p-K*eta*dlambda
     stress(1:3) = devia(1:3)+p
     stress(4:6) = devia(4:6)
 
