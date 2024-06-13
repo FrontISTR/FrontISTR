@@ -28,6 +28,13 @@ module m_ElastoPlastic
 
   integer, parameter :: VM_ELASTIC = 0
   integer, parameter :: VM_PLASTIC = 1
+
+  integer, parameter :: MC_ELASTIC       = 0
+  integer, parameter :: MC_PLASTIC_SURF  = 1
+  integer, parameter :: MC_PLASTIC_RIGHT = 2
+  integer, parameter :: MC_PLASTIC_LEFT  = 3
+  integer, parameter :: MC_PLASTIC_APEX  = 4
+
   integer, parameter :: DP_ELASTIC      = 0
   integer, parameter :: DP_PLASTIC_SURF = 1
   integer, parameter :: DP_PLASTIC_APEX = 2
@@ -514,53 +521,47 @@ contains
     real(kind=kreal), parameter :: tol =1.d-6
     integer, parameter          :: MAXITER = 10
     real(kind=kreal) :: dlambda, f, mat(3,3)
-    integer :: i, maxp(1), minp(1), mm
+    integer :: i, m1, m2, m3
     real(kind=kreal) :: youngs, poisson, pstrain, ina(1), ee(2)
-    real(kind=kreal) :: J1,J2,J3, H, KH, KK, dd, eqvs, cohe, G, K, devia(6)
+    real(kind=kreal) :: H, dd, eqvs, cohe, G, K
     real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
-    real(kind=kreal) :: sin3theta, theta, phi, trialprn(3)
-    logical          :: kinematic, ierr
-    real(kind=kreal) :: betan, back(6)
+    real(kind=kreal) :: phi, psi, trialprn(3)
+    logical          :: ierr
+    real(kind=kreal) :: C1, C2, CS1, CS2, CS3
+    real(kind=kreal) :: sinphi, cosphi, sinpsi, sphsps, r2cosphi, r4cos2phi, cotphi
+    real(kind=kreal) :: da, db, dc, depv, detinv, dlambdb, dum, eps, eqvsb, fb
+    real(kind=kreal) :: pt, p, resid
 
     phi = matl%variables(M_PLCONST3)
+    psi = phi
+    sinphi = sin(phi)
+    cosphi = cos(phi)
+    r2cosphi = 2.d0*cosphi
 
-    kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) back(1:6) = fstat(8:13)
+    call eigen3( stress, prnstre, prnprj )
+    trialprn = prnstre
+    m1 = maxloc( prnstre, 1 )
+    m3 = minloc( prnstre, 1 )
+    if( m1 == m3 ) then
+      m1 = 1; m2 = 2; m3 = 3
+    else
+      m2 = 6 - (m1 + m3)
+    endif
 
-    J1 = (stress(1)+stress(2)+stress(3))
-    devia(1:3) = stress(1:3)-J1/3.d0
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-
-    J3 = devia(1)*devia(2)*devia(3)                    &
-        +2.d0* devia(4)*devia(5)*devia(6)                     &
-        -devia(2)*devia(6)*devia(6)                           &
-        -devia(3)*devia(4)*devia(4)                           &
-        -devia(1)*devia(5)*devia(5)
-    sin3theta = -3.d0*sqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-    if( abs( abs(sin3theta)-1.d0 ) <1.d-8 ) sin3theta=sign(1.d0, sin3theta)
-    if( abs(sin3theta) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-    theta = asin( sin3theta )/3.d0
-    eqvs = (cos(theta)-sin(theta)*sin(phi)/sqrt(3.d0))*sqrt(J2)  &
-        +J1*sin(phi)/3.d0
+    eqvs = prnstre(m1)-prnstre(m3) + (prnstre(m1)+prnstre(m3))*sinphi
     cohe = calCurrYield( matl, plstrain, temp )
-    f = eqvs - cohe*cos(phi)
+    f = eqvs - r2cosphi*cohe
 
     if( abs(f/cohe)<tol ) then  ! yielded
-      istat = 1
+      istat = MC_PLASTIC_SURF
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
-      istat =0
+      istat = MC_ELASTIC
       return
     endif
     if( hdflag == 2 ) return
 
-    istat = 1           ! yielded
-    KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
-
-    if( kinematic ) betan = calCurrKinematic( matl, plstrain )
+    istat = MC_PLASTIC_SURF   ! yielded
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -573,47 +574,116 @@ contains
     if( youngs==0.d0 ) stop "YOUNG's ratio==0"
     G = youngs/ ( 2.d0*(1.d0+poisson) )
     K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
+
     dlambda = 0.d0
     pstrain = plstrain
 
-    do mm=1,6
-      if( abs(stress(mm))<1.d-10 ) stress(mm)=0.d0
-    enddo
-    call eigen3( stress, prnstre, prnprj )
-    trialprn = prnstre
-    maxp = maxloc( prnstre )
-    minp = minloc( prnstre )
-    mm = 1
-    if( maxp(1)==1 .or. minp(1)==1 ) mm =2
-    if( maxp(1)==2 .or. minp(1)==2 ) mm =3
+    sinpsi = sin(psi)
+    sphsps = sinphi*sinpsi
+    r4cos2phi = r2cosphi*r2cosphi
+    C1 = 4.d0*(G*(1.d0+sphsps/3.d0)+K*sphsps)
     do i=1,MAXITER
       H= calHardenCoeff( matl, pstrain, temp )
-      dd= 4.d0*G*( 1.d0+sin(phi)*sin(theta)/3.d0 )+4.d0*K         &
-          *sin(phi)*sin(theta)+4.d0*H*cos(phi)*cos(phi)
+      dd= C1 + r4cos2phi*H
       dlambda = dlambda+f/dd
-      if( 2.d0*dlambda*cos(phi)<0.d0 ) then
-        if( cos(phi)==0.d0 ) stop "Math error in return mapping"
+      if( r2cosphi*dlambda<0.d0 ) then
+        if( cosphi==0.d0 ) stop "Math error in return mapping"
         dlambda = 0.d0
         pstrain = plstrain
-        istat=0; exit
+        istat = MC_ELASTIC; exit
       endif
-      pstrain = plstrain + 2.d0*dlambda*cos(phi)
+      pstrain = plstrain + r2cosphi*dlambda
       cohe = calCurrYield( matl, pstrain, temp )
-      f = prnstre(maxp(1))-prnstre(minp(1))+                     &
-          (prnstre(maxp(1))+prnstre(minp(1)))*sin(phi)-            &
-          (4.d0*G*(1.d0+sin(phi)*sin(theta)/3.d0)+4.d0*K*sin(phi)   &
-          *sin(theta))*dlambda-2.d0*cohe*cos(phi)
+      f = eqvs - C1*dlambda - r2cosphi*cohe
       if( abs(f/cohe)<tol ) exit
       if( i==MAXITER ) then
         stop 'ERROR: BackwardEuler_MC: convergence failure'
       endif
     enddo
-    prnstre(maxp(1)) = prnstre(maxp(1))-(2.d0*G*(1.d0+sin(phi)/3.d0)  &
-        + 2.d0*K*sin(phi) )*dlambda
-    prnstre(minp(1)) = prnstre(minp(1))+(2.d0*G*(1.d0-sin(phi)/3.d0)  &
-        - 2.d0*K*sin(phi) )*dlambda
-    prnstre(mm) = prnstre(mm)+(4.d0*G/3.d0-2.d0*K)*sin(phi)*dlambda
-
+    CS1 =2.d0*G*(1.d0+sinpsi/3.d0) + 2.d0*K*sinpsi
+    CS2 =(4.d0*G/3.d0-2.d0*K)*sinpsi
+    CS3 =2.d0*G*(1.d0-sinpsi/3.d0) - 2.d0*K*sinpsi
+    prnstre(m1) = prnstre(m1)-CS1*dlambda
+    prnstre(m2) = prnstre(m2)+CS2*dlambda
+    prnstre(m3) = prnstre(m3)+CS3*dlambda
+    eps = (abs(prnstre(m1))+abs(prnstre(m2))+abs(prnstre(m3)))*tol
+    if( prnstre(m1) < prnstre(m2)-eps .or. prnstre(m2) < prnstre(m3)-eps ) then
+      ! return mapping to EDGE
+      prnstre = trialprn
+      dlambda = 0.d0
+      dlambdb = 0.d0
+      if( (1.d0-sinpsi)*prnstre(m1) - 2*prnstre(m2) + (1.d0+sinpsi)*prnstre(m3) > 0) then
+        istat = MC_PLASTIC_RIGHT
+        eqvsb = prnstre(m1)-prnstre(m2) + (prnstre(m1)+prnstre(m2))*sinphi
+        C2 = 2.d0*G*(1.d0+sinphi+sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
+      else
+        istat = MC_PLASTIC_LEFT
+        eqvsb = prnstre(m2)-prnstre(m3) + (prnstre(m2)+prnstre(m3))*sinphi
+        C2 = 2.d0*G*(1.d0-sinphi-sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
+      endif
+      cohe = calCurrYield( matl, plstrain, temp )
+      f = eqvs - r2cosphi*cohe
+      fb = eqvsb - r2cosphi*cohe
+      pstrain = plstrain
+      do i=1,MAXITER
+        H= calHardenCoeff( matl, pstrain, temp )
+        dum = r4cos2phi*H
+        da = C1 + dum
+        db = C2 + dum
+        dc = db
+        dd = da
+        detinv = 1.d0/(da*dd-db*dc)
+        dlambda = dlambda + detinv*( dd*f - db*fb)
+        dlambdb = dlambdb + detinv*(-dc*f + da*fb)
+        pstrain = plstrain + r2cosphi*(dlambda+dlambdb)
+        cohe = calCurrYield( matl, pstrain, temp )
+        f = eqvs - C1*dlambda - C2*dlambdb - r2cosphi*cohe
+        fb = eqvsb - C2*dlambda - C1*dlambdb - r2cosphi*cohe
+        if( (abs(f)+abs(fb))/(abs(eqvs)+abs(eqvsb)) < tol ) exit
+        if( i==MAXITER ) then
+          write(0,*) 'ERROR: BackwardEuler_MC: convergence failure(2)'
+        endif
+      enddo
+      if( istat==MC_PLASTIC_RIGHT ) then
+        prnstre(m1) = prnstre(m1)-CS1*(dlambda+dlambdb)
+        prnstre(m2) = prnstre(m2)+CS2*dlambda+CS3*dlambdb
+        prnstre(m3) = prnstre(m3)+CS3*dlambda+CS2*dlambdb
+      else
+        prnstre(m1) = prnstre(m1)-CS1*dlambda+CS2*dlambdb
+        prnstre(m2) = prnstre(m2)+CS2*dlambda-CS1*dlambdb
+        prnstre(m3) = prnstre(m3)+CS3*(dlambda+dlambdb)
+      endif
+      eps = (abs(prnstre(m1))+abs(prnstre(m2))+abs(prnstre(m3)))*tol
+      if( prnstre(m1) < prnstre(m2)-eps .or. prnstre(m2) < prnstre(m3)-eps ) then
+        ! return mapping to APEX
+        prnstre = trialprn
+        istat = MC_PLASTIC_APEX
+        if( sinphi==0.d0 ) stop 'ERROR: BackwardEuler_MC: phi==0.0'
+        if( sinpsi==0.d0 ) stop 'ERROR: BackwardEuler_MC: psi==0.0'
+        depv = 0.d0
+        cohe = calCurrYield( matl, plstrain, temp )
+        cotphi = cosphi/sinphi
+        pt = (stress(1)+stress(2)+stress(3))/3.d0
+        resid = cotphi*cohe - pt
+        pstrain = plstrain
+        do i=1,MAXITER
+          H= calHardenCoeff( matl, pstrain, temp )
+          dd= cosphi*cotphi*H/sinpsi + K
+          depv = depv - resid/dd
+          pstrain = plstrain + cosphi*depv/sinpsi
+          cohe = calCurrYield( matl, pstrain,temp )
+          p = pt-K*depv
+          resid = cotphi*cohe-p
+          if( abs(resid/cohe)<tol ) exit
+          if( i==MAXITER ) then
+            write(0,*) 'ERROR: BackwardEuler_MC: convergence failure(3)'
+          endif
+        enddo
+        prnstre(m1) = p
+        prnstre(m2) = p
+        prnstre(m3) = p
+      endif
+    endif
     tstre(:,:) = 0.d0
     tstre(1,1)= prnstre(1); tstre(2,2)=prnstre(2); tstre(3,3)=prnstre(3)
     mat= matmul( prnprj, tstre )
