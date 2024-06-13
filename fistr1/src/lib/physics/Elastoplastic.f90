@@ -25,6 +25,10 @@ module m_ElastoPlastic
     &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0, 0.5d0/), &
     & (/6, 6/))
 
+  integer, parameter :: DP_ELASTIC      = 0
+  integer, parameter :: DP_PLASTIC_SURF = 1
+  integer, parameter :: DP_PLASTIC_APEX = 2
+
 contains
 
   !> This subroutine calculates elastoplastic constitutive relation
@@ -614,7 +618,6 @@ contains
 
   !> This subroutine does backward-Euler return calculation for Drucker-Prager
   subroutine BackwardEuler_DP( matl, stress, plstrain, istat, fstat, temp, hdflag )
-    use m_utilities, only : eigen3
     type( tMaterial ), intent(in)    :: matl        !< material properties
     real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
     real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
@@ -628,41 +631,35 @@ contains
     real(kind=kreal) :: dlambda, f
     integer :: i
     real(kind=kreal) :: youngs, poisson, pstrain, xi, ina(1), ee(2)
-    real(kind=kreal) :: J1,J2,H, KH, KK, dd, eqvs, cohe, G, K, devia(6), eta, p
-    logical          :: kinematic, ierr
-    real(kind=kreal) :: betan, back(6)
+    real(kind=kreal) :: J1,J2,H, dd, eqvst, eqvs, cohe, G, K, devia(6), eta, etabar, pt, p
+    logical          :: ierr
+    real(kind=kreal) :: alpha, beta, depv, factor, resid
 
     eta = matl%variables(M_PLCONST3)
     xi = matl%variables(M_PLCONST4)
-
-    kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) back(1:6) = fstat(8:13)
+    etabar = eta
 
     J1 = (stress(1)+stress(2)+stress(3))
-    p = J1/3.d0
-    devia(1:3) = stress(1:3)-p
+    pt = J1/3.d0
+    devia(1:3) = stress(1:3)-pt
     devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
 
-    eqvs = sqrt(J2)
+    eqvst = sqrt(J2)
     cohe = calCurrYield( matl, plstrain, temp )
-    f = eqvs + eta*J1 - cohe*xi
+    f = eqvst + eta*pt - xi*cohe
 
     if( abs(f/cohe)<tol ) then  ! yielded
-      istat = 1
+      istat = DP_PLASTIC_SURF
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
-      istat =0
+      istat = DP_ELASTIC
       return
     endif
     if( hdflag == 2 ) return
 
-    istat = 1           ! yielded
-    KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
-
-    if( kinematic ) betan = calCurrKinematic( matl, plstrain )
+    istat = DP_PLASTIC_SURF
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -675,12 +672,13 @@ contains
     if( youngs==0.d0 ) stop "YOUNG's ratio==0"
     G = youngs/ ( 2.d0*(1.d0+poisson) )
     K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
+
     dlambda = 0.d0
     pstrain = plstrain
 
     do i=1,MAXITER
       H= calHardenCoeff( matl, pstrain, temp )
-      dd= G+K*eta*eta+H*xi*xi
+      dd= G+K*etabar*eta+H*xi*xi
       dlambda = dlambda+f/dd
       if( xi*dlambda<0.d0 ) then
         if( xi==0.d0 ) stop "Math error in return mapping"
@@ -690,14 +688,45 @@ contains
       endif
       pstrain = plstrain+xi*dlambda
       cohe = calCurrYield( matl, pstrain, temp  )
-      f = eqvs-G*dlambda+eta*(p-K*eta*dlambda)- xi*cohe
+      eqvs = eqvst-G*dlambda
+      p = pt-K*etabar*dlambda
+      f = eqvs + eta*p- xi*cohe
       if( abs(f/cohe)<tol ) exit
       if( i==MAXITER ) then
         stop 'ERROR: BackwardEuler_DP: convergence failure'
       endif
     enddo
-    devia(:) = (1.d0-G*dlambda/eqvs)*devia(:)
-    p = p-K*eta*dlambda
+    if( eqvs>=0.d0 ) then ! converged
+      factor = 1.d0-G*dlambda/eqvst
+    else                  ! return mapping to APEX
+      istat = DP_PLASTIC_APEX
+      if( eta==0.d0 ) stop 'ERROR: BackwardEuler_DP: eta==0.0'
+      if( etabar==0.d0 ) stop 'ERROR: BackwardEuler_DP: etabar==0.0'
+      alpha = xi/etabar
+      beta = xi/eta
+      depv=0.d0
+      pstrain = plstrain
+      cohe = calCurrYield( matl, pstrain, temp )
+      resid = beta*cohe - pt
+      do i=1,MAXITER
+        H= calHardenCoeff( matl, pstrain, temp )
+        dd= alpha*beta*H + K
+        depv = depv - resid/dd
+        pstrain = plstrain+alpha*depv
+        cohe = calCurrYield( matl, pstrain, temp )
+        p = pt-K*depv
+        resid = beta*cohe - p
+        if( abs(resid/cohe)<tol ) then
+          dlambda=depv/etabar
+          factor=0.d0
+          exit
+        endif
+        if( i==MAXITER ) then
+          stop 'ERROR: BackwardEuler_DP: convergence failure(2)'
+        endif
+      enddo
+    endif
+    devia(:) = factor*devia(:)
     stress(1:3) = devia(1:3)+p
     stress(4:6) = devia(4:6)
 
