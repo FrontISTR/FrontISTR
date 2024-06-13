@@ -26,6 +26,8 @@ module m_ElastoPlastic
     & (/6, 6/))
   real(kind=kreal), parameter :: I2(6) = (/ 1.d0, 1.d0, 1.d0, 0.d0, 0.d0, 0.d0 /)
 
+  integer, parameter :: VM_ELASTIC = 0
+  integer, parameter :: VM_PLASTIC = 1
   integer, parameter :: DP_ELASTIC      = 0
   integer, parameter :: DP_PLASTIC_SURF = 1
   integer, parameter :: DP_PLASTIC_APEX = 2
@@ -83,7 +85,7 @@ contains
     if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
 
     call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
-    if( istat == 0 ) return   ! elastic state
+    if( istat == VM_ELASTIC ) return
     if( hdflag == 2 ) return
 
     harden = calHardenCoeff( matl, extval(1), temperature )
@@ -430,20 +432,21 @@ contains
     if( kinematic ) devia = devia-back
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
+
     eqvs = sqrt( 3.d0*J2 )
     yd = calCurrYield( matl, plstrain, temp )
     f = eqvs - yd
 
     if( abs(f/yd)<tol ) then  ! yielded
-      istat = 1
+      istat = VM_PLASTIC
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
-      istat =0
+      istat = VM_ELASTIC
       return
     endif
     if( hdflag == 2 ) return
 
-    istat = 1           ! yielded
+    istat = VM_PLASTIC      ! yielded
     KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
     if( kinematic ) betan = calCurrKinematic( matl, plstrain )
 
@@ -458,6 +461,7 @@ contains
     if( youngs==0.d0 ) stop "YOUNG's ratio==0"
     G = youngs/ ( 2.d0*(1.d0+poisson) )
     K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
+
     dlambda = 0.d0
     pstrain = plstrain
 
@@ -471,7 +475,7 @@ contains
       if( dlambda<0.d0 ) then
         dlambda = 0.d0
         pstrain = plstrain
-        istat=0; exit
+        istat=VM_ELASTIC; exit
       endif
       pstrain = plstrain+dlambda
       yd = calCurrYield( matl, pstrain, temp )
