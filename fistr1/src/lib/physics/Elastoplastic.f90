@@ -128,6 +128,7 @@ contains
 
   !> This subroutine calculates elastoplastic constitutive relation
   subroutine calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
+    use m_utilities, only : eigen3,deriv_general_iso_tensor_func_3d
     type( tMaterial ), intent(in) :: matl      !< material properties
     integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: stress(6) !< stress
@@ -138,77 +139,124 @@ contains
     real(kind=kreal), intent(in)  :: temperature   !> temperature
     integer(kind=kint), intent(in) :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i,j
-    logical :: kinematic
-    real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6)
-    real(kind=kreal) :: C1,C2,C3, back(6)
-    real(kind=kreal) :: J1,J2,J3, phi, sin3theta, theta, harden, khard, da(6), devia(6)
+    real(kind=kreal) :: G, K, harden, r2G, r2Gd3, r4Gd3, r2K, youngs, poisson
+    real(kind=kreal) :: phi, psi, cosphi, sinphi, cotphi, sinpsi, sphsps, r2cosphi, r4cos2phi
+    real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3), prnstra(3)
+    integer(kind=kint) :: m1, m2, m3
+    real(kind=kreal) :: C1,C2,C3, CA1, CA2, CA3, CAm, CAp, CD1, CD2, CD3, Cdiag, Coffd
+    real(kind=kreal) :: CK1, CK2, CK3
+    real(kind=kreal) :: dum, da, db, dc, dd, detinv
+    real(kind=kreal) :: dpsdpe(3,3)
 
     if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
 
     call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
-    if( istat == 0 ) return   ! elastic state
+    if( istat == MC_ELASTIC ) return
     if( hdflag == 2 ) return
 
     harden = calHardenCoeff( matl, extval(1), temperature )
-
-    kinematic = isKinematicHarden( matl%mtype )
-    khard = 0.d0
-    if( kinematic ) then
-      back(1:6) = extval(2:7)
-      khard = calKinematicHarden( matl, extval(1) )
-    endif
-
-    J1 = (stress(1)+stress(2)+stress(3))
-    devia(1:3) = stress(1:3)-J1/3.d0
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-
-    !derivative of J2
-    dj2(1:3) = devia(1:3)
-    dj2(4:6) = 2.d0*devia(4:6)
-    dj2 = dj2/( 2.d0*sqrt(j2) )
+    G = D(4,4)
+    K = D(1,1)-(4.d0/3.d0)*G
+    r2G = 2.d0*G
+    r2K = 2.d0*K
+    r2Gd3 = r2G/3.d0
+    r4Gd3 = 2.d0*r2Gd3
+    youngs = 9.d0*K*G/(3.d0*K+G)
+    poisson = (3.d0*K-r2G)/(6.d0*K+r2G)
 
     phi = matl%variables(M_PLCONST3)
-    J3 = devia(1)*devia(2)*devia(3)                    &
-        +2.d0* devia(4)*devia(5)*devia(6)                     &
-        -devia(6)*devia(2)*devia(6)                           &
-        -devia(4)*devia(4)*devia(3)                           &
-        -devia(1)*devia(5)*devia(5)
-    sin3theta = -3.d0*sqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-    if( abs( abs(sin3theta)-1.d0 ) <1.d-8 ) then
-      C1 = 0.d0
-      C2 = sqrt(3.d0)
-      C3 = 0.d0
-    else
-      if( abs(sin3theta) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-      theta = asin( sin3theta )/3.d0
-      C2 = cos(theta)*( 1.d0*tan(theta)*tan(3.d0*theta) + sin(phi)* &
-          ( tan(3.d0*theta)-tan(theta )/sqrt(3.d0) ) )
-      C1 = sin(phi)/3.d0
-      C3 = sqrt(3.d0)*sin(theta)+cos(theta)*sin(phi)/(2.d0*J2*cos(3.d0*theta))
-    endif
-    ! deirivative of j1
-    dj1(1:3) = 1.d0
-    dj1(4:6) = 0.d0
-    ! deirivative of j3
-    dj3(1) = devia(2)*devia(3)-devia(5)*devia(5)+J2/3.d0
-    dj3(2) = devia(1)*devia(3)-devia(6)*devia(6)+J2/3.d0
-    dj3(3) = devia(1)*devia(2)-devia(4)*devia(4)+J2/3.d0
-    dj3(4) = 2.d0*(devia(5)*devia(6)-devia(3)*devia(4))
-    dj3(5) = 2.d0*(devia(4)*devia(6)-devia(1)*devia(5))
-    dj3(6) = 2.d0*(devia(4)*devia(5)-devia(2)*devia(6))
-    a(:) = C1*dj1 + C2*dj2 + C3*dj3
+    psi = phi
+    sinphi = sin(phi)
+    cosphi = cos(phi)
+    sinpsi = sin(psi)
+    sphsps = sinphi*sinpsi
+    r2cosphi = 2.d0*cosphi
+    r4cos2phi = r2cosphi*r2cosphi
 
-    da = matmul( D, a )
-    dum = harden + khard+ dot_product( da, a )
-    do i=1,6
-      do j=1,6
-        D(i,j) = D(i,j) - da(i)*da(j)/dum
-      enddo
-    enddo
+    call eigen3( stress, prnstre, prnprj )
+    m1 = maxloc( prnstre, 1 )
+    m3 = minloc( prnstre, 1 )
+    if( m1 == m3 ) then
+      m1 = 1; m2 = 2; m3 = 3
+    else
+      m2 = 6 - (m1 + m3)
+    endif
+
+    C1 = 4.d0*(G*(1.d0+sphsps/3.d0)+K*sphsps)
+    if( istat==MC_PLASTIC_SURF ) then
+      dd= C1 + r4cos2phi*harden
+      CD1 = (r2G*(1.d0+sinpsi/3.d0) + r2K*sinpsi)/dd
+      CD2 = (r4Gd3-r2K)*sinpsi/dd
+      CD3 = (r2G*(1.d0-sinpsi/3.d0) - r2K*sinpsi)/dd
+      CAp = 1.d0+sinphi/3.d0
+      CAm = 1.d0-sinphi/3.d0
+      CK1 = 1.d0-2.d0*CD1*sinphi
+      CK2 = 1.d0+2.d0*CD2*sinphi
+      CK3 = 1.d0+2.d0*CD3*sinphi
+      dpsdpe(m1,m1) = r2G*( 2.d0/3.d0-CD1*CAp)+K*CK1
+      dpsdpe(m1,m2) = (K-r2Gd3)*CK1
+      dpsdpe(m1,m3) = r2G*(-1.d0/3.d0+CD1*CAm)+K*CK1
+      dpsdpe(m2,m1) = r2G*(-1.d0/3.d0+CD2*CAp)+K*CK2
+      dpsdpe(m2,m2) = r4Gd3*( 1.d0-CD2*sinphi)+K*CK2
+      dpsdpe(m2,m3) = r2G*(-1.d0/3.d0-CD2*CAm)+K*CK2
+      dpsdpe(m3,m1) = r2G*(-1.d0/3.d0+CD3*CAp)+K*CK3
+      dpsdpe(m3,m2) = (K-r2Gd3)*CK3
+      dpsdpe(m3,m3) = r2G*( 2.d0/3.d0-CD3*CAm)+K*CK3
+    else if( istat==MC_PLASTIC_APEX ) then
+      cotphi = cosphi/sinphi
+      dpsdpe(:,:) = K*(1.d0-(K/(K+harden*cotphi*cosphi/sinpsi)))
+    else ! EDGE
+      if( istat==MC_PLASTIC_RIGHT ) then
+        C2 = r2G*(1.d0+sinphi+sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
+      else if( istat==MC_PLASTIC_LEFT ) then
+        C2 = r2G*(1.d0-sinphi-sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
+      endif
+      dum = r4cos2phi*harden
+      da = C1 + dum
+      db = C2 + dum
+      dc = db
+      dd = da
+      detinv = 1.d0/(da*dd-db*dc)
+      CA1 = r2G*(1.d0+sinphi/3.d0)+r2K*sinpsi
+      CA2 = (r4Gd3-r2K)*sinpsi
+      CA3 = r2G*(1.d0-sinpsi/3.d0)-r2K*sinpsi
+      Cdiag = K+r4Gd3
+      Coffd = K-r2Gd3
+      if( istat==MC_PLASTIC_RIGHT ) then
+        dpsdpe(m1,m1) = Cdiag+CA1*(db-dd-da+dc)*(r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m1,m2) = Coffd+CA1*(r2G*(da-db)+((db-dd-da+dc)*(r2K+r2Gd3)+(dd-dc)*r2G)*sinphi)*detinv
+        dpsdpe(m1,m3) = Coffd+CA1*(r2G*(dd-dc)+((db-dd-da+dc)*(r2K+r2Gd3)+(da-db)*r2G)*sinphi)*detinv
+        dpsdpe(m2,m1) = Coffd+(CA2*(dd-db)+CA3*(da-dc))*(r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m2,m2) = Cdiag+(CA2*((r2K*(dd-db)-(db*r2Gd3+dd*r4Gd3))*sinphi+db*r2G) &
+            &                 +CA3*((r2K*(da-dc)+(da*r2Gd3+dc*r4Gd3))*sinphi-da*r2G))*detinv
+        dpsdpe(m2,m3) = Coffd+(CA2*((r2K*(dd-db)+(db*r4Gd3+dd*r2Gd3))*sinphi-dd*r2G) &
+            &                 +CA3*((r2K*(da-dc)-(da*r4Gd3+dc*r2Gd3))*sinphi+dc*r2G))*detinv
+        dpsdpe(m3,m1) = Coffd+(CA2*(da-dc)+CA3*(dd-db))*(r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m3,m2) = Coffd+(CA2*((r2K*(da-dc)+(da*r2Gd3+dc*r4Gd3))*sinphi-da*r2G) &
+            &                 +CA3*((r2K*(dd-db)-(db*r2Gd3+dd*r4Gd3))*sinphi+db*r2G))*detinv
+        dpsdpe(m3,m3) = Cdiag+(CA2*((r2K*(da-dc)-(da*r4Gd3+dc*r2Gd3))*sinphi+dc*r2G) &
+            &                 +CA3*((r2K*(dd-db)+(db*r4Gd3+dd*r2Gd3))*sinphi-dd*r2G))*detinv
+      else if( istat==MC_PLASTIC_LEFT ) then
+        dpsdpe(m1,m1) = Cdiag+(CA1*((r2K*(db-dd)-(db*r4Gd3+dd*r2Gd3))*sinphi-dd*r2G) &
+            &                 +CA2*((r2K*(da-dc)-(da*r4Gd3+dc*r2Gd3))*sinphi-dc*r2G))*detinv
+        dpsdpe(m1,m2) = Coffd+(CA1*((r2K*(db-dd)+(db*r2Gd3+dd*r4Gd3))*sinphi+db*r2G) &
+            &                 +CA2*((r2K*(da-dc)+(da*r2Gd3+dc*r4Gd3))*sinphi+da*r2G))*detinv
+        dpsdpe(m1,m3) = Coffd+(CA1*(db-dd)+CA2*(da-dc))*(-r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m2,m1) = Coffd+(CA1*((r2K*(dc-da)+(da*r4Gd3+dc*r2Gd3))*sinphi+dc*r2G) &
+            &                 +CA2*((r2K*(dd-db)+(db*r4Gd3+dd*r2Gd3))*sinphi+dd*r2G))*detinv
+        dpsdpe(m2,m2) = Cdiag+(CA1*((r2K*(dc-da)-(da*r2Gd3+dc*r4Gd3))*sinphi-da*r2G) &
+            &                 +CA2*((r2K*(dd-db)-(db*r2Gd3+dd*r4Gd3))*sinphi-db*r2G))*detinv
+        dpsdpe(m2,m3) = Coffd+(CA1*(dc-da)+CA2*(dd-db))*(-r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m3,m1) = Coffd+CA3*((r2K*(-db+dd+da-dc)+(db-da)*r4Gd3+(dd-dc)*r2Gd3)*sinphi+(dd-dc)*r2G)*detinv
+        dpsdpe(m3,m2) = Coffd+CA3*((r2K*(-db+dd+da-dc)+(da-db)*r2Gd3+(dd-dc)*r4Gd3)*sinphi+(da-db)*r2G)*detinv
+        dpsdpe(m3,m3) = Cdiag+CA3*(-db+dd+da-dc)*(-r2G+(r2K+r2Gd3)*sinphi)*detinv
+      endif
+    endif
+    ! compute principal elastic strain from principal stress
+    prnstra(1) = (prnstre(1)-poisson*(prnstre(2)+prnstre(3)))/youngs
+    prnstra(2) = (prnstre(2)-poisson*(prnstre(1)+prnstre(3)))/youngs
+    prnstra(3) = (prnstre(3)-poisson*(prnstre(1)+prnstre(2)))/youngs
+    call deriv_general_iso_tensor_func_3d(dpsdpe, D, prnprj, prnstra, prnstre)
   end subroutine calElastoPlasticMatrix_MC
 
   !> This subroutine calculates elastoplastic constitutive relation
