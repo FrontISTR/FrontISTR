@@ -371,7 +371,7 @@ contains
 
     integer(kind=kint) :: i, n, rcode, depends, ipt, hipt
     real(kind=kreal),pointer :: fval(:,:) => null()
-    real(kind=kreal) :: dum, fdum
+    real(kind=kreal) :: phi, psi, eta, xi, etabar
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256)    :: s
     type( tTable )        :: mttable
@@ -481,21 +481,36 @@ contains
         end select
       case (2, 3)  ! Mohr-Coulomb, Drucker-Prager
         call setDigit( 5, 0, mattype )
-        allocate( fval(3,depends+1) )
-        data_fmt = "RRr "
+        allocate( fval(4,depends+1) )
+        data_fmt = "RRrr "
+        fval(4,:) = -1.d0
         fstr_ctrl_get_PLASTICITY                                                         &
-          = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+          = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:) )
         if( fstr_ctrl_get_PLASTICITY ==0 ) then
           matval(M_PLCONST1) = fval(1,1)    ! c
           matval(M_PLCONST2) = fval(3,1)    ! H
           if( ipt==3 ) then     ! Drucker-Prager
-            dum = fval(2,1)*PI/180.d0
-            fdum = 2.d0*sin(dum)/ ( sqrt(3.d0)*(3.d0+sin(dum)) )
-            matval(M_PLCONST3) = fdum
-            fdum = 6.d0* cos(dum)/ ( sqrt(3.d0)*(3.d0+sin(dum)) )
-            matval(M_PLCONST4) = fdum
+            phi = fval(2,1)*PI/180.d0
+            eta = 2.d0*sin(phi)/ ( sqrt(3.d0)*(3.d0+sin(phi)) )
+            xi  = 6.d0*cos(phi)/ ( sqrt(3.d0)*(3.d0+sin(phi)) )
+            if( fval(4,1) >= 0.d0 ) then
+              psi = fval(4,1)*PI/180.d0
+              etabar = 2.d0*sin(psi)/ ( sqrt(3.d0)*(3.d0+sin(psi)) )
+            else
+              etabar = eta
+            endif
+            matval(M_PLCONST3) = eta
+            matval(M_PLCONST4) = xi
+            matval(M_PLCONST5) = etabar
           else                  ! Mohr-Coulomb
-            matval(M_PLCONST3) = fval(2,1)*PI/180.d0
+            phi =fval(2,1)*PI/180.d0
+            if( fval(4,1) >= 0.d0 ) then
+              psi = fval(4,1)*PI/180.d0
+            else
+              psi = phi
+            endif
+            matval(M_PLCONST3) = phi
+            matval(M_PLCONST4) = psi
           endif
         endif
 

@@ -165,7 +165,7 @@ contains
     poisson = (3.d0*K-r2G)/(6.d0*K+r2G)
 
     phi = matl%variables(M_PLCONST3)
-    psi = phi
+    psi = matl%variables(M_PLCONST4)
     sinphi = sin(phi)
     cosphi = cos(phi)
     sinpsi = sin(psi)
@@ -289,7 +289,7 @@ contains
 
     eta = matl%variables(M_PLCONST3)
     xi = matl%variables(M_PLCONST4)
-    etabar = eta
+    etabar = matl%variables(M_PLCONST5)
 
     if( istat==DP_PLASTIC_SURF ) then
       J1 = (stress(1)+stress(2)+stress(3))
@@ -581,7 +581,7 @@ contains
     real(kind=kreal) :: pt, p, resid
 
     phi = matl%variables(M_PLCONST3)
-    psi = phi
+    psi = matl%variables(M_PLCONST4)
     sinphi = sin(phi)
     cosphi = cos(phi)
     r2cosphi = 2.d0*cosphi
@@ -767,7 +767,7 @@ contains
 
     eta = matl%variables(M_PLCONST3)
     xi = matl%variables(M_PLCONST4)
-    etabar = eta
+    etabar = matl%variables(M_PLCONST5)
 
     J1 = (stress(1)+stress(2)+stress(3))
     pt = J1/3.d0
