@@ -16,7 +16,7 @@ module m_ElastoPlastic
   public :: BackwardEuler
   public :: updateEPState
 
-  real(kind=kreal), private, parameter :: Id(6,6) = reshape( &
+  real(kind=kreal), parameter :: Id(6,6) = reshape( &
     & (/  2.d0/3.d0, -1.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
     &    -1.d0/3.d0,  2.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
     &    -1.d0/3.d0, -1.d0/3.d0,  2.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
@@ -24,6 +24,7 @@ module m_ElastoPlastic
     &          0.d0,       0.d0,       0.d0,  0.d0, 0.5d0,  0.d0,   &
     &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0, 0.5d0/), &
     & (/6, 6/))
+  real(kind=kreal), parameter :: I2(6) = (/ 1.d0, 1.d0, 1.d0, 0.d0, 0.d0, 0.d0 /)
 
   integer, parameter :: DP_ELASTIC      = 0
   integer, parameter :: DP_PLASTIC_SURF = 1
@@ -214,51 +215,58 @@ contains
     integer(kind=kint), intent(in) :: hdflag  !> return only hyd and dev term if specified
 
     integer :: i,j
-    logical :: kinematic
-    real(kind=kreal) :: dum, dj1(6), dj2(6), a(6)
-    real(kind=kreal) :: back(6)
-    real(kind=kreal) :: J1,J2, eta, harden, khard, da(6), devia(6)
+    real(kind=kreal) :: dum, a(6), dlambda, G, K
+    real(kind=kreal) :: J1,J2, eta, xi, etabar, harden, devia(6)
+    real(kind=kreal) :: alpha, beta, C1, C2, C3, C4, CA, devia_norm
 
     if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
 
     call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
-    if( istat == 0 ) return   ! elastic state
+    if( istat == DP_ELASTIC ) return   ! elastic state
     if( hdflag == 2 ) return
 
     harden = calHardenCoeff( matl, extval(1), temperature )
 
-    kinematic = isKinematicHarden( matl%mtype )
-    khard = 0.d0
-    if( kinematic ) then
-      back(1:6) = extval(2:7)
-      khard = calKinematicHarden( matl, extval(1) )
-    endif
-
-    J1 = (stress(1)+stress(2)+stress(3))
-    devia(1:3) = stress(1:3)-J1/3.d0
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-
-    !derivative of J2
-    dj2(1:3) = devia(1:3)
-    dj2(4:6) = 2.d0*devia(4:6)
-    dj2 = dj2/( 2.d0*sqrt(j2) )
+    G = D(4,4)
+    K = D(1,1)-(4.d0/3.d0)*G
 
     eta = matl%variables(M_PLCONST3)
-    ! deirivative of j1
-    dj1(1:3) = 1.d0
-    dj1(4:6) = 0.d0
-    a(:) = eta*dj1(:) + dj2(:)
+    xi = matl%variables(M_PLCONST4)
+    etabar = eta
 
-    da = matmul( D, a )
-    dum = harden + khard+ dot_product( da, a )
-    do i=1,6
+    if( istat==DP_PLASTIC_SURF ) then
+      J1 = (stress(1)+stress(2)+stress(3))
+      devia(1:3) = stress(1:3)-J1/3.d0
+      devia(4:6) = stress(4:6)
+      J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+          dot_product( devia(4:6), devia(4:6) )
+
+      devia_norm = sqrt(2.d0*J2)
+      a(1:6) = devia(1:6)/devia_norm
+      dlambda = extval(1)-plstrain
+      CA = 1.d0 / (G + K*eta*etabar + xi*xi*harden)
+      dum = sqrt(2.d0)*devia_norm
+      C1 = 4.d0*G*G*dlambda/dum
+      C2 = 2.d0*G*(2.d0*G*dlambda/dum - G*CA)
+      C3 = sqrt(2.d0)*G*CA*K
+      C4 = K*K*eta*etabar*CA
       do j=1,6
-        D(i,j) = D(i,j) - da(i)*da(j)/dum
+        do i=1,6
+          D(i,j) = D(i,j) - C1*Id(i,j) + C2*a(i)*a(j) &
+              - C3*(eta*a(i)*I2(j) + etabar*I2(i)*a(j)) &
+              - C4*I2(i)*I2(j)
+        enddo
       enddo
-    enddo
+    else ! istat==DP_PLASTIC_APEX
+      alpha = xi/etabar
+      beta = xi/eta
+      C1 = K*(1.d0 - K/(K + alpha*beta*harden))
+      do j=1,6
+        do i=1,6
+          D(i,j) = C1*I2(i)*I2(j)
+        enddo
+      enddo
+    endif
   end subroutine calElastoPlasticMatrix_DP
 
   !> This function calculates hardening coefficient
