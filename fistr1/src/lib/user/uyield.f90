@@ -9,6 +9,7 @@ module mUYield
   implicit none
 
   private
+  public :: uElastoPlasticNumStatus
   public :: uElastoPlasticMatrix
   public :: uBackwardEuler
 
@@ -19,13 +20,20 @@ module mUYield
   ! user-defined material properties are saved in matl(101:200)
 
 contains
+  !> This function returns the number of real state variables
+  integer(kind=kint) function uElastoPlasticNumStatus( matl )
+    real(kind=kreal),   intent(in)    :: matl(:)   !< material properties
+
+    uElastoPlasticNumStatus = 0
+  end function uElastoPlasticNumStatus
+
   !> This subroutine calculates elastoplastic constitutive relation
   subroutine uElastoPlasticMatrix( matl, stress, istat, fstat, plstrain, D, temp, hdflag )
     real(kind=kreal),   intent(in)  :: matl(:)   !< material properties
     real(kind=kreal),   intent(in)  :: stress(6) !< stress
-    integer(kind=kint), intent(in)  :: istat     !< plastic state
-    real(kind=kreal),   intent(in)  :: fstat(:)  !< plastic strain, back stress
-    real(kind=kreal),   intent(in)  :: plstrain  !< plastic strain
+    integer(kind=kint), intent(in)  :: istat     !< integer state variable
+    real(kind=kreal),   intent(in)  :: fstat(:)  !< real state variables
+    real(kind=kreal),   intent(in)  :: plstrain  !< plastic strain at the beginning of current substep
     real(kind=kreal),   intent(out) :: D(:,:)    !< strain-stress relation
     real(kind=kreal),   intent(in)  :: temp      !> temperature
     integer(kind=kint), intent(in)  :: hdflag    !> return total(0), dev term only(1) or hyd term only(2)
@@ -36,9 +44,9 @@ contains
   subroutine uBackwardEuler( matl, stress, plstrain, istat, fstat, temp, hdflag )
     real(kind=kreal),   intent(in)    :: matl(:)   !< material properties
     real(kind=kreal),   intent(inout) :: stress(6) !< trial->real stress
-    real(kind=kreal),   intent(in)    :: plstrain  !< plastic strain till current substep
-    integer(kind=kint), intent(inout) :: istat     !< plastic state
-    real(kind=kreal),   intent(inout) :: fstat(:)  !< plastic strain, back stress
+    real(kind=kreal),   intent(in)    :: plstrain  !< plastic strain at the beginning of current substep
+    integer(kind=kint), intent(inout) :: istat     !< integer state variable
+    real(kind=kreal),   intent(inout) :: fstat(:)  !< real state variables
     real(kind=kreal),   intent(in)    :: temp      !< temperature
     integer(kind=kint), intent(in)    :: hdflag    !> return total(0), dev term only(1) or hyd term only(2)
 

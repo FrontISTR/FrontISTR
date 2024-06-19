@@ -38,6 +38,7 @@ contains
 
   !> Initializer
   subroutine fstr_init_gauss( gauss )
+    use mUYield, only: uElastoPlasticNumStatus
     type( tGaussStatus ), intent(inout) :: gauss
     integer :: n
     gauss%strain=0.d0; gauss%stress=0.d0
@@ -52,7 +53,10 @@ contains
       endif
     else if( isElastoplastic(gauss%pMaterial%mtype) ) then
       allocate( gauss%istatus(1) )    ! 0:elastic 1:plastic
-      if( isKinematicHarden( gauss%pMaterial%mtype ) ) then
+      if( getYieldFunction( gauss%pMaterial%mtype )==3 ) then  ! user defined
+        n = uElastoPlasticNumStatus( gauss%pMaterial%variables )
+        if( n>0 ) allocate( gauss%fstatus(n) )
+      elseif( isKinematicHarden( gauss%pMaterial%mtype ) ) then
         allocate( gauss%fstatus(7+6) )  ! plastic strain, back stress
       else
         allocate( gauss%fstatus(2) )    ! plastic strain
