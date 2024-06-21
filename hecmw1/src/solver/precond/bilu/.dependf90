@@ -1,0 +1,5 @@
+hecmw_precond_BILU.o : hecmw_precond_BILU.f90 hecmw_precond_BILU_nn.o hecmw_precond_BILU_66.o hecmw_precond_BILU_44.o hecmw_precond_BILU_33.o 
+hecmw_precond_BILU_33.o : hecmw_precond_BILU_33.f90 
+hecmw_precond_BILU_44.o : hecmw_precond_BILU_44.f90 
+hecmw_precond_BILU_66.o : hecmw_precond_BILU_66.f90 
+hecmw_precond_BILU_nn.o : hecmw_precond_BILU_nn.f90 

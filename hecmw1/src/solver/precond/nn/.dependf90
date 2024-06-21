@@ -1,9 +1,0 @@
-hecmw_ML_helper.o : hecmw_ML_helper.f90 
-hecmw_ML_helper_nn_f.o : hecmw_ML_helper_nn_f.f90 hecmw_precond_SSOR_nn.o hecmw_precond_DIAG_nn.o 
-hecmw_precond_BILU_nn.o : hecmw_precond_BILU_nn.f90 
-hecmw_precond_DIAG_nn.o : hecmw_precond_DIAG_nn.f90 
-hecmw_precond_ML_nn.o : hecmw_precond_ML_nn.f90 
-hecmw_precond_RIF_nn.o : hecmw_precond_RIF_nn.f90 
-hecmw_precond_SAINV_nn.o : hecmw_precond_SAINV_nn.f90 
-hecmw_precond_SSOR_nn.o : hecmw_precond_SSOR_nn.f90 
-hecmw_precond_nn.o : hecmw_precond_nn.f90 hecmw_precond_RIF_nn.o hecmw_precond_SAINV_nn.o hecmw_precond_ML_nn.o hecmw_precond_SSOR_nn.o hecmw_precond_DIAG_nn.o hecmw_precond_BILU_nn.o 
