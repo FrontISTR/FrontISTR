@@ -4,4 +4,4 @@ hecmw_solver_GMRES.o : hecmw_solver_GMRES.f90
 hecmw_solver_GMRESR.o : hecmw_solver_GMRESR.f90 
 hecmw_solver_GMRESREN.o : hecmw_solver_GMRESREN.f90 
 hecmw_solver_GPBiCG.o : hecmw_solver_GPBiCG.f90 
-hecmw_solver_Iterative.o : hecmw_solver_Iterative.f90 hecmw_solver_GPBiCG.o hecmw_solver_GMRES.o hecmw_solver_BiCGSTAB.o hecmw_solver_CG.o 
+hecmw_solver_Iterative.o : hecmw_solver_Iterative.f90 hecmw_solver_GPBiCG.o hecmw_solver_GMRESREN.o hecmw_solver_GMRESR.o hecmw_solver_GMRES.o hecmw_solver_BiCGSTAB.o hecmw_solver_CG.o 
