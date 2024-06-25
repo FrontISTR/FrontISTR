@@ -10,6 +10,6 @@ hecmw_msg_f.o : hecmw_msg_f.f90 hecmw_msgno_f.o
 hecmw_msgno_f.o : hecmw_msgno_f.f90 hecmw_util_f.o 
 hecmw_restart_f.o : hecmw_restart_f.f90 hecmw_util_f.o 
 hecmw_result_f.o : hecmw_result_f.f90 hecmw_etype_f.o hecmw_util_f.o 
-hecmw_varray_int_f.o : hecmw_varray_int_f.f90 hecmw_util_f.o
 hecmw_util_f.o : hecmw_util_f.F90 
+hecmw_varray_int_f.o : hecmw_varray_int_f.f90 hecmw_util_f.o 
 hecmw_visualizer_f.o : hecmw_visualizer_f.f90 hecmw_dist_copy_f2c_f.o hecmw_result_f.o hecmw_util_f.o 

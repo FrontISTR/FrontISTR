@@ -17,13 +17,13 @@ precheck_LIB_2d.o : precheck_LIB_2d.f90 GaussM.o
 precheck_LIB_3d.o : precheck_LIB_3d.f90 GaussM.o 
 precheck_LIB_shell.o : precheck_LIB_shell.f90 GaussM.o 
 solve_LINEQ.o : solve_LINEQ.f90 
-static_LIB.o : static_LIB.f90 static_LIB_shell.o static_LIB_beam.o static_LIB_3dIC.o static_LIB_Fbar.o static_LIB_C3D8.o static_LIB_3d_vp.o static_LIB_3d.o static_LIB_2d.o static_LIB_1d.o solve_LINEQ.o 
+static_LIB.o : static_LIB.f90 static_LIB_shell.o static_LIB_beam.o static_LIB_3dIC.o static_LIB_Fbar.o static_LIB_C3D8.o static_LIB_C3D4_selectiveESNS.o static_LIB_3d_vp.o static_LIB_3d.o static_LIB_2d.o static_LIB_1d.o solve_LINEQ.o 
 static_LIB_1d.o : static_LIB_1d.f90 m_fstr.o 
 static_LIB_2d.o : static_LIB_2d.f90 m_fstr.o 
 static_LIB_3d.o : static_LIB_3d.f90 m_fstr.o m_common_struct.o 
-static_LIB_C3D4_selectiveESNS.o : static_LIB_C3D4_selectiveESNS.f90 static_LIB_3d.o
 static_LIB_3dIC.o : static_LIB_3dIC.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 
 static_LIB_3d_vp.o : static_LIB_3d_vp.f90 
+static_LIB_C3D4_selectiveESNS.o : static_LIB_C3D4_selectiveESNS.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 
 static_LIB_C3D8.o : static_LIB_C3D8.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 
 static_LIB_Fbar.o : static_LIB_Fbar.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 
 static_LIB_beam.o : static_LIB_beam.f90 GaussM.o m_fstr.o 

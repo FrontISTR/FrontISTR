@@ -1,6 +1,6 @@
-hecmw_comm_f.o : hecmw_comm_f.F90 hecmw_solver_SR_i.o hecmw_solver_SR.o
-hecmw_comm_group.o : hecmw_comm_group.f90 hecmw_comm_f.o 
 hecmw_comm_contact_f.o : hecmw_comm_contact_f.f90 hecmw_comm_f.o 
+hecmw_comm_f.o : hecmw_comm_f.F90 hecmw_solver_SR_i.o hecmw_solver_SR.o 
+hecmw_comm_group.o : hecmw_comm_group.f90 hecmw_comm_f.o 
 hecmw_solver_SR.o : hecmw_solver_SR.F90 
 hecmw_solver_SR_i.o : hecmw_solver_SR_i.F90 
 hecmw_solver_misc.o : hecmw_solver_misc.f90 hecmw_comm_f.o 

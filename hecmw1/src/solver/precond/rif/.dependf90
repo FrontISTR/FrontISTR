@@ -1,0 +1,3 @@
+hecmw_precond_RIF.o : hecmw_precond_RIF.f90 hecmw_precond_RIF_nn.o hecmw_precond_RIF_33.o 
+hecmw_precond_RIF_33.o : hecmw_precond_RIF_33.f90 
+hecmw_precond_RIF_nn.o : hecmw_precond_RIF_nn.f90 

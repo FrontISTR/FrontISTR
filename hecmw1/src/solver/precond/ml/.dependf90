@@ -1,0 +1,6 @@
+hecmw_ML_helper.o : hecmw_ML_helper.f90 
+hecmw_ML_helper_33_f.o : hecmw_ML_helper_33_f.f90 
+hecmw_ML_helper_nn_f.o : hecmw_ML_helper_nn_f.f90 
+hecmw_precond_ML.o : hecmw_precond_ML.f90 hecmw_precond_ML_nn.o hecmw_precond_ML_33.o 
+hecmw_precond_ML_33.o : hecmw_precond_ML_33.f90 
+hecmw_precond_ML_nn.o : hecmw_precond_ML_nn.f90 
