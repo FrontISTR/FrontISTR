@@ -59,6 +59,10 @@ contains
         call table_amp(hecMESH,fstrSOLID,cstep,ig0,fstr_get_time(),factor0,flag_u)
         call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
         factor = factor - factor0
+        if(fstrSOLID%step_ctrl(cstep)%solution==stepVisco)then
+          factor = 0.d0
+          if(factor0 < 1.d-10) factor = 1.d0
+        endif
       endif
 
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
