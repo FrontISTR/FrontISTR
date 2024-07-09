@@ -689,6 +689,11 @@ contains
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(16), ndof )
     endif
+    ! --- TEMPERATURE @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) ) then
+     ncomp = ncomp + 1
+     nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
+    endif
     ! --- ROTATION (Only for 781 shell)
     if( fstrSOLID%output_ctrl(4)%outinfo%on(18) ) then
       if(ndof == 6) then
@@ -964,6 +969,20 @@ contains
       do i = 1, hecMESH%n_node
         do j = 1, nn
           fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrDYNAMIC%ACC(nn*(i-1)+j,idx)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- TEMPERATURE
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) )then
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'TEMPERATURE'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%temperature(nn*(i-1)+j)
         enddo
       enddo
       iitem = iitem + nn

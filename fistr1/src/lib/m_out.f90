@@ -168,8 +168,8 @@ contains
     outinfo%keyWord(40) = "SECTION_ID"
     outinfo%vtype(40)   = -1
 
-    outinfo%keyWord(41) = "TEMPERATURE"
-    outinfo%vtype(41)   = -1
+    ! outinfo%keyWord(41) = "TEMPERATURE"
+    ! outinfo%vtype(41)   = -1
 
     outinfo%keyWord(42) = "ITEMP"
     outinfo%vtype(42)   = -1
