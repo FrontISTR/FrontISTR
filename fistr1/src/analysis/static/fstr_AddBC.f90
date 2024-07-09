@@ -27,7 +27,7 @@ contains
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
-    real(kind=kreal)   :: RHS0, RHS, factor, ctime
+    real(kind=kreal)   :: RHS0, RHS, factor, factor0, ctime
     integer(kind=kint) :: ndof, grpid, istot
 
     !for rotation
@@ -53,8 +53,13 @@ contains
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
       flag_u = 1
-      call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
-      if( iter>1 ) factor=0.d0
+      if( iter>1 ) then
+        factor=0.d0
+      else
+        call table_amp(hecMESH,fstrSOLID,cstep,ig0,fstr_get_time(),factor0,flag_u)
+        call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
+        factor = factor - factor0
+      endif
 
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
