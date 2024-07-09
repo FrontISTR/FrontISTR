@@ -68,7 +68,6 @@ contains
     do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
       grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
       if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-      ! factor = fstrSOLID%factor(2)
       flag_u = 0
       call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
 
@@ -145,7 +144,6 @@ contains
     do ig0 = 1, fstrSOLID%DLOAD_ngrp_tot
       grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
       if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-      ! factor = fstrSOLID%factor(2)
       flag_u = 10
       call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
 

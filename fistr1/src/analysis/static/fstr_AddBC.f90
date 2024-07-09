@@ -38,13 +38,7 @@ contains
   
     !
     ndof = hecMAT%NDOF
-    factor = fstrSOLID%FACTOR(2)-fstrSOLID%FACTOR(1)
     ctime = fstr_get_time()+fstr_get_timeinc()
-    if( cstep<=fstrSOLID%nstep_tot .and. fstrSOLID%step_ctrl(cstep)%solution==stepVisco ) then
-      factor = 0.d0
-      if( fstrSOLID%FACTOR(1) < 1.d-10 ) factor = 1.d0
-    endif
-    if( iter>1 ) factor=0.d0
 
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
