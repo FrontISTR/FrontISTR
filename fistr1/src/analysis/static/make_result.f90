@@ -690,7 +690,7 @@ contains
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(16), ndof )
     endif
     ! --- TEMPERATURE @node
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) .and. associated(fstrSOLID%temperature) ) then
      ncomp = ncomp + 1
      nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
     endif
@@ -782,7 +782,7 @@ contains
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(37), ndof )
     endif
     ! --- NODE ID @node
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) ) then
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
     endif
@@ -975,7 +975,7 @@ contains
     endif
 
     ! --- TEMPERATURE
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) )then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) .and. associated(fstrSOLID%temperature))then
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
       fstrRESULT%nn_dof(ncomp) = nn
@@ -1172,7 +1172,7 @@ contains
     endif
 
     ! --- NODE ID @node
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) ) then
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
       fstrRESULT%nn_dof(ncomp) = nn
