@@ -1,0 +1,50 @@
+.ubuntu2404:
+    image: ${REGISTRY}/build:ubuntu2404
+build/ubuntu2404/serial:
+    extends: [".build",".ubuntu2404"]
+build/ubuntu2404/openmp:
+    extends: [".build",".ubuntu2404"]
+build/ubuntu2404/mpi:
+    extends: [".build",".ubuntu2404"]
+build/ubuntu2404/hybrid:
+    extends: [".build",".ubuntu2404"]
+test/ubuntu2404/serial/serial:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/serial"]
+test/ubuntu2404/openmp/serial:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/openmp"]
+test/ubuntu2404/openmp/openmp:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/openmp"]
+test/ubuntu2404/mpi/serial:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/mpi"]
+test/ubuntu2404/mpi/mpi:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/mpi"]
+test/ubuntu2404/hybrid/serial:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/hybrid"]
+test/ubuntu2404/hybrid/openmp:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/hybrid"]
+test/ubuntu2404/hybrid/mpi:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/hybrid"]
+test/ubuntu2404/hybrid/hybrid:
+    extends: [".test",".ubuntu2404"]
+    needs: ["build/ubuntu2404/hybrid"]
+    tags: ["saas-linux-medium-amd64"]
+deb/ubuntu2404/hybrid:
+    needs: ["build/ubuntu2404/hybrid"]
+    extends: [".deb",".ubuntu2404"]
+deb/ubuntu2404/mpi:
+    needs: ["build/ubuntu2404/mpi"]
+    extends: [".deb",".ubuntu2404"]
+deb/ubuntu2404/openmp:
+    needs: ["build/ubuntu2404/openmp"]
+    extends: [".deb",".ubuntu2404"]
+deb/ubuntu2404/serial:
+    needs: ["build/ubuntu2404/serial"]
+    extends: [".deb",".ubuntu2404"]

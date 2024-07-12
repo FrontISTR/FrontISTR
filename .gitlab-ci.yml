@@ -10,16 +10,15 @@ stages:
     - package
     - deploy
 
-.ubuntu2004:
-    image: ${REGISTRY}/build:ubuntu2004
-.ubuntu2204:
-    image: ${REGISTRY}/build:ubuntu2204
-.ubuntu2404:
-    image: ${REGISTRY}/build:ubuntu2404
 .artifact_public:
     artifacts:
         paths: ["public"]
         expire_in: 100min
+
+include: 
+    - '.ubuntu2004.yml'
+    - '.ubuntu2204.yml'
+    - '.ubuntu2404.yml'
 
 .build:
     stage: build
@@ -33,30 +32,6 @@ stages:
     artifacts:
         paths: ["build/"]
         expire_in: 100min
-build/ubuntu2004/serial:
-    extends: [".build",".ubuntu2004"]
-build/ubuntu2004/openmp:
-    extends: [".build",".ubuntu2004"]
-build/ubuntu2004/mpi:
-    extends: [".build",".ubuntu2004"]
-build/ubuntu2004/hybrid:
-    extends: [".build",".ubuntu2004"]
-build/ubuntu2204/serial:
-    extends: [".build",".ubuntu2204"]
-build/ubuntu2204/openmp:
-    extends: [".build",".ubuntu2204"]
-build/ubuntu2204/mpi:
-    extends: [".build",".ubuntu2204"]
-build/ubuntu2204/hybrid:
-    extends: [".build",".ubuntu2204"]
-build/ubuntu2404/serial:
-    extends: [".build",".ubuntu2404"]
-build/ubuntu2404/openmp:
-    extends: [".build",".ubuntu2404"]
-build/ubuntu2404/mpi:
-    extends: [".build",".ubuntu2404"]
-build/ubuntu2404/hybrid:
-    extends: [".build",".ubuntu2404"]
 
 .test:
     stage: test
@@ -68,92 +43,6 @@ build/ubuntu2404/hybrid:
         expire_in: 1week
         when: on_failure
 
-test/ubuntu2004/serial/serial:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/serial"]
-test/ubuntu2004/openmp/serial:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/openmp"]
-test/ubuntu2004/openmp/openmp:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/openmp"]
-test/ubuntu2004/mpi/serial:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/mpi"]
-test/ubuntu2004/mpi/mpi:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/mpi"]
-test/ubuntu2004/hybrid/serial:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/hybrid"]
-test/ubuntu2004/hybrid/openmp:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/hybrid"]
-test/ubuntu2004/hybrid/mpi:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/hybrid"]
-test/ubuntu2004/hybrid/hybrid:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/ubuntu2004/hybrid"]
-
-test/ubuntu2204/serial/serial:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/serial"]
-test/ubuntu2204/openmp/serial:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/openmp"]
-test/ubuntu2204/openmp/openmp:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/openmp"]
-test/ubuntu2204/mpi/serial:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/mpi"]
-test/ubuntu2204/mpi/mpi:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/mpi"]
-test/ubuntu2204/hybrid/serial:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/hybrid"]
-test/ubuntu2204/hybrid/openmp:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/hybrid"]
-test/ubuntu2204/hybrid/mpi:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/hybrid"]
-test/ubuntu2204/hybrid/hybrid:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/ubuntu2204/hybrid"]
-
-
-test/ubuntu2404/serial/serial:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/serial"]
-test/ubuntu2404/openmp/serial:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/openmp"]
-test/ubuntu2404/openmp/openmp:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/openmp"]
-test/ubuntu2404/mpi/serial:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/mpi"]
-test/ubuntu2404/mpi/mpi:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/mpi"]
-test/ubuntu2404/hybrid/serial:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/hybrid"]
-test/ubuntu2404/hybrid/openmp:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/hybrid"]
-test/ubuntu2404/hybrid/mpi:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/hybrid"]
-test/ubuntu2404/hybrid/hybrid:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/hybrid"]
-
-
 document:
     image: ${REGISTRY}/document:latest
     stage: document
@@ -161,7 +50,6 @@ document:
     script:
         - cp doc/_redirects public/_redirects
     extends: [".artifact_public"]
-
 
 doxygen:
     image: ${REGISTRY}/document:latest
@@ -173,7 +61,6 @@ doxygen:
         - rm -rf public/doxygen
         - mv build_doc/doc/html public/doxygen
     extends: [".artifact_public"]
-
 
 pages:
     stage: deploy
@@ -273,7 +160,6 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
           ${LIB_ROOT}/lib/mkl_blacs_lp64.1.dll ${LIB_ROOT}/lib/mkl_blacs_intelmpi_lp64.1.dll ${LIB_ROOT}/lib/mkl_core.1.dll ${LIB_ROOT}/lib/mkl_intel_thread.1.dll ${LIB_ROOT}/lib/mkl_rt.1.dll ${LIB_ROOT}/lib/libiomp5md.dll ${LIB_ROOT}/lib/mkl_scalapack_lp64.1.dll
           ${LIB_ROOT}/lib/mkl_def.1.dll
 
-
 .deb:
     stage: package
     script:
@@ -301,40 +187,3 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
         - mkdir -p ../public/release/deb
         - mv *.deb ../public/release/deb
     extends: [".artifact_public"]
-
-deb/ubuntu2004/hybrid:
-    needs: ["build/ubuntu2004/hybrid"]
-    extends: [".deb",".ubuntu2004"]
-deb/ubuntu2004/mpi:
-    needs: ["build/ubuntu2004/mpi"]
-    extends: [".deb",".ubuntu2004"]
-deb/ubuntu2004/openmp:
-    needs: ["build/ubuntu2004/openmp"]
-    extends: [".deb",".ubuntu2004"]
-deb/ubuntu2004/serial:
-    needs: ["build/ubuntu2004/serial"]
-    extends: [".deb",".ubuntu2004"]
-deb/ubuntu2204/hybrid:
-    needs: ["build/ubuntu2204/hybrid"]
-    extends: [".deb",".ubuntu2204"]
-deb/ubuntu2204/mpi:
-    needs: ["build/ubuntu2204/mpi"]
-    extends: [".deb",".ubuntu2204"]
-deb/ubuntu2204/openmp:
-    needs: ["build/ubuntu2204/openmp"]
-    extends: [".deb",".ubuntu2204"]
-deb/ubuntu2204/serial:
-    needs: ["build/ubuntu2204/serial"]
-    extends: [".deb",".ubuntu2204"]
-deb/ubuntu2404/hybrid:
-    needs: ["build/ubuntu2404/hybrid"]
-    extends: [".deb",".ubuntu2404"]
-deb/ubuntu2404/mpi:
-    needs: ["build/ubuntu2404/mpi"]
-    extends: [".deb",".ubuntu2404"]
-deb/ubuntu2404/openmp:
-    needs: ["build/ubuntu2404/openmp"]
-    extends: [".deb",".ubuntu2404"]
-deb/ubuntu2404/serial:
-    needs: ["build/ubuntu2404/serial"]
-    extends: [".deb",".ubuntu2404"]
