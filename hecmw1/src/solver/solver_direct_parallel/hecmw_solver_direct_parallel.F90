@@ -272,7 +272,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         call MPI_SEND(dm(i)%a%irow, dm(i)%a%nttbr, MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
         call MPI_SEND(dm(i)%a%jcol, dm(i)%a%nttbr, MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(dm(i)%a%val,  dm(i)%a%nttbr*dm(i)%a%ndeg*dm(i)%a%ndeg, MPI_REAL8,ICP,1,MPI_COMM_WORLD,istatus,ierr)
+        call MPI_SEND(dm(i)%a%val,  dm(i)%a%nttbr*dm(i)%a%ndeg*dm(i)%a%ndeg, MPI_REAL8,ICP,1,MPI_COMM_WORLD,ierr)
 
         call MPI_SEND(dm(i)%c%ndeg,   1,MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
         call MPI_SEND(dm(i)%c%nttbr,  1,MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
@@ -281,7 +281,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         call MPI_SEND(dm(i)%c%irow, dm(i)%c%nttbr, MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
         call MPI_SEND(dm(i)%c%jcol, dm(i)%c%nttbr, MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(dm(i)%c%val,  dm(i)%c%nttbr*dm(i)%c%ndeg*dm(i)%c%ndeg, MPI_REAL8,ICP,1,MPI_COMM_WORLD,istatus,ierr)
+        call MPI_SEND(dm(i)%c%val,  dm(i)%c%nttbr*dm(i)%c%ndeg*dm(i)%c%ndeg, MPI_REAL8,ICP,1,MPI_COMM_WORLD,ierr)
       end do
 
       !call MPI_BARRIER(MPI_COMM_WORLD, ierr)

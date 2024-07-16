@@ -5,10 +5,10 @@
 !> \brief I/O and Utility
 
 module hecmw_util
-  implicit none
 #ifndef HECMW_SERIAL
-  include 'mpif.h'
+  use mpi
 #endif
+  implicit none
   private :: hecmw_PETOT,hecmw_rank,hecmw_comm,hecmw_group
   public
 
