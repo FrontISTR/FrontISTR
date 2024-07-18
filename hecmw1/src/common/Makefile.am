@@ -147,6 +147,7 @@ OBJS = \
 
 OBJSF = \
 	hecmw_util_f.@f90objfilepostfix@ \
+	hecmw_array_util.@f90objfilepostfix@ \
 	hecmw_etype_f.@f90objfilepostfix@ \
 	hecmw_logging.@f90objfilepostfix@ \
 	hecmw_msgno_f.@f90objfilepostfix@ \

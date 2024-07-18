@@ -1,4 +1,5 @@
-fstr_contact.o : fstr_contact.f90 fstr_ctrl_modifier.o 
+fstr_mpc_preprocess.o : fstr_mpc_preprocess.f90 
+fstr_contact.o : fstr_contact.f90 fstr_ctrl_modifier.o fstr_mpc_preprocess.o
 fstr_ctrl_common.o : fstr_ctrl_common.f90 fstr_ctrl_util_f.inc fstr_setup_util.o fstr_contact.o 
 fstr_ctrl_dynamic.o : fstr_ctrl_dynamic.f90 fstr_ctrl_util_f.inc 
 fstr_ctrl_eigen.o : fstr_ctrl_eigen.f90 fstr_ctrl_util_f.inc 

@@ -3695,7 +3695,7 @@ static int post_equation_add_elem(void) {
 static int post_equation(void) {
   if (_mpc == NULL) return 0;
 
-  if (post_equation_check_node_exists()) return -1;
+  //if (post_equation_check_node_exists()) return -1;
   if (post_equation_ngrp_to_node()) return -1;
   /* Delete because performance grow worse at large number of equations
           if(post_equation_check_dup()) return -1;

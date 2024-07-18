@@ -681,4 +681,141 @@ contains
     endif
   end subroutine deriv_general_iso_tensor_func_3d
 
+  subroutine bsearch_int_array(array, istart, iend, val, idx)
+    implicit none
+    integer(kind=kint), intent(in) :: array(:)
+    integer(kind=kint), intent(in) :: istart, iend
+    integer(kind=kint), intent(in) :: val
+    integer(kind=kint), intent(out) :: idx
+    integer(kind=kint) :: center, left, right, pivot
+    left = istart
+    right = iend
+    do
+      if (left > right) then
+        idx = -1
+        exit
+      end if
+      center = (left + right) / 2
+      pivot = array(center)
+      if (val < pivot) then
+        right = center - 1
+        cycle
+      else if (pivot < val) then
+        left = center + 1
+        cycle
+      else ! if (pivot == val) then
+        idx = center
+        exit
+      end if
+    end do
+  end subroutine bsearch_int_array
+
+  recursive subroutine qsort_int_array(array, istart, iend)
+    implicit none
+    integer(kind=kint), intent(inout) :: array(:)
+    integer(kind=kint), intent(in) :: istart, iend
+    integer(kind=kint) :: pivot, center, left, right, tmp
+    if (istart >= iend) return
+    center = (istart + iend) / 2
+    pivot = array(center)
+    left = istart
+    right = iend
+    do
+      do while (array(left) < pivot)
+        left = left + 1
+      end do
+      do while (pivot < array(right))
+        right = right - 1
+      end do
+      if (left >= right) exit
+      tmp = array(left)
+      array(left) = array(right)
+      array(right) = tmp
+      left = left + 1
+      right = right - 1
+    end do
+    if (istart < left-1) call qsort_int_array(array, istart, left-1)
+    if (right+1 < iend) call qsort_int_array(array, right+1, iend)
+    return
+  end subroutine qsort_int_array
+
+  subroutine uniq_int_array(array, len, newlen)
+    implicit none
+    integer(kind=kint), intent(inout) :: array(:)
+    integer(kind=kint), intent(in) :: len
+    integer(kind=kint), intent(out) :: newlen
+    integer(kind=kint) :: i, ndup
+    ndup = 0
+    do i=2,len
+      if (array(i) == array(i - 1 - ndup)) then
+        ndup = ndup + 1
+      else if (ndup > 0) then
+        array(i - ndup) = array(i)
+      endif
+    end do
+    newlen = len - ndup
+  end subroutine uniq_int_array
+
+  subroutine resize_real_array( n, array )
+    integer(kind=kint), intent(in) :: n
+    real(kind=kreal), pointer, intent(inout) :: array(:)
+
+    integer(kind=kint) :: orisize
+    real(kind=kreal), allocatable :: work(:)
+
+    if( associated(array) ) then
+      orisize = size(array)
+      if( n <= orisize ) return
+      allocate(work(orisize))
+      work(1:orisize) = array(1:orisize)
+      deallocate(array)
+      allocate(array(n))
+      array(1:orisize) = work(1:orisize)
+      array(orisize+1:) = 0.d0
+    else
+      allocate(array(n))
+      array(:) = 0.d0
+    endif
+  end subroutine
+
+  subroutine resize_real_array2( n, m, array )
+    integer(kind=kint), intent(in) :: n, m
+    real(kind=kreal), pointer, intent(inout) :: array(:,:)
+
+    integer(kind=kint) :: orin, orim
+    real(kind=kreal), allocatable :: work(:,:)
+
+    orin = size(array(:,1))
+    orim = size(array(1,:))
+    if( n < orin ) return
+    if( m < orim ) return
+    if( associated(array) ) then
+      allocate(work(orin,orim))
+      work(1:orin,1:orim) = array(1:orin,1:orim)
+      deallocate(array)
+    endif
+    allocate(array(n,m))
+    array(:,:) = 0.d0
+    array(1:orin,1:orim) = work(1:orin,1:orim)
+  end subroutine
+
+  subroutine resize_int_array( n, array )
+    integer(kind=kint), intent(in) :: n
+    integer(kind=kint), pointer, intent(inout) :: array(:)
+
+    integer(kind=kint) :: orisize
+    integer(kind=kint), allocatable :: work(:)
+
+    orisize = size(array)
+    if( n <= orisize ) return
+    if( associated(array) ) then
+      allocate(work(orisize))
+      work(1:orisize) = array(1:orisize)
+      deallocate(array)
+    endif
+    allocate(array(n))
+    array(1:orisize) = work(1:orisize)
+    array(orisize+1:) = 0
+  end subroutine
+
 end module

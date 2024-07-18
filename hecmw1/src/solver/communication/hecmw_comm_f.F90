@@ -147,6 +147,26 @@ contains
 #endif
   end subroutine hecmw_gatherv_real
 
+  subroutine hecmw_scatterv_int(sbuf, scs, disp, &
+      &     rbuf, rc, root, comm)
+    use hecmw_util
+    implicit none
+    integer(kind=kint) :: sbuf(*) !send buffer
+    integer(kind=kint) :: scs(*) !send counts
+    integer(kind=kint) :: disp(*) !displacement
+    integer(kind=kint) :: rbuf(*) !receive buffer
+    integer(kind=kint) :: rc  !receive counts
+    integer(kind=kint) :: root
+    integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    call MPI_scatterv( sbuf, scs, disp, MPI_INTEGER, &
+      &     rbuf, rc, MPI_INTEGER, root, comm, ierr )
+#else
+    rbuf(1:rc)=sbuf(1:rc)
+#endif
+  end subroutine hecmw_scatterv_int
+
   subroutine hecmw_gatherv_int(sbuf, sc, &
       &     rbuf, rcs, disp, root, comm)
     use hecmw_util

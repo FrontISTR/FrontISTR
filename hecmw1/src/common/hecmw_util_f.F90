@@ -909,7 +909,7 @@ contains
     character(len=*), intent(in)       :: fname
     type( hecmwST_matrix ), intent(in) :: P
 
-    integer :: i, nf, nBlock
+    integer :: i, j, nf, nBlock
     nf = 777
     nBlock = P%NDOF * P%NDOF
     open( unit=nf, file=fname)
@@ -919,26 +919,36 @@ contains
       write( nf,* )  P%indexL(i), P%indexU(i)
     enddo
     !---- itemL, AL
-    do i=1, P%NPL
-      write( nf,* ) P%itemL(i)
+    do i=1, P%NP
+      write( nf,* ) i,":",P%itemL(P%indexL(i-1)+1:P%indexL(i))
     enddo
+    !do i=1, P%NPL
+    !  write( nf,* ) P%itemL(i)
+    !enddo
+    write(nf,*) "AL"
     do i=1,nBlock * P%NPL
-      write( nf,* ) P%AL(i)
+      write( nf,'(f12.6)' ) P%AL(i)
     enddo
     !---- itemU, AU
-    do i=1,P%NPU
-      write( nf,* ) P%itemU(i)
+    do i=1, P%NP
+      write( nf,* ) i,":",P%itemU(P%indexL(i-1)+1:P%indexU(i))
     enddo
+    !do i=1,P%NPU
+    !  write( nf,* ) P%itemU(i)
+    !enddo
+    write(nf,*) "AU"
     do i=1,nBlock * P%NPU
-      write( nf,* ) P%AU(i)
+      write( nf,'(f12.6)' ) P%AU(i)
     enddo
     !---- D
+    write(nf,*) "D"
     do i=1,nBlock * P%NP
-      write( nf, * ) P%D(i)
+      write( nf, '(f12.6)' ) P%D(i)
     enddo
     !---- B
+    write(nf,*) "B"
     do i=1,P%NDOF * P%NP
-      write( nf, * ) P%B(i)
+      write( nf, '(f12.6)' ) P%B(i)
     enddo
 
     !--- cmat

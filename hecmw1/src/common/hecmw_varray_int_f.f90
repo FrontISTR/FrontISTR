@@ -6,6 +6,7 @@
 
 module hecmw_varray_int
   use hecmw_util, only: kint
+  use hecmw_array_util
   implicit none
 
   private
@@ -26,6 +27,7 @@ module hecmw_varray_int
   public :: HECMW_varray_int_get_nitem
   public :: HECMW_varray_int_get_item
   public :: HECMW_varray_int_get_item_all
+  public :: HECMW_varray_int_unique_items
 
   type hecmwST_varray_int
     private
@@ -224,5 +226,14 @@ contains
 
     array(1:ilist%nitem) = ilist%items(1:ilist%nitem)
   end subroutine HECMW_varray_int_get_item_all
+
+  subroutine HECMW_varray_int_unique_items( ilist )
+    type( hecmwST_varray_int ), intent(inout) :: ilist
+    integer(kind=kint) :: ndup
+
+    call hecmw_qsort_int_array(ilist%items, 1, ilist%nitem)
+    call hecmw_uniq_int_array(ilist%items, 1, ilist%nitem, ndup)
+    ilist%nitem = ilist%nitem - ndup
+  end subroutine HECMW_varray_int_unique_items
 
 end module hecmw_varray_int

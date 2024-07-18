@@ -1,5 +1,4 @@
 hecmw_allocate.o : hecmw_allocate.f90 
-hecmw_array_util.o : hecmw_array_util.f90 
 hecmw_estimate_condition.o : hecmw_estimate_condition.F90 
 hecmw_local_matrix.o : hecmw_local_matrix.f90 hecmw_array_util.o hecmw_matrix_misc.o hecmw_pair_array.o 
 hecmw_mat_ass.o : hecmw_mat_ass.f90 hecmw_matrix_contact.o hecmw_matrix_misc.o 

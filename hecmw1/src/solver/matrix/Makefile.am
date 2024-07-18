@@ -79,7 +79,6 @@ OBJS =
 
 OBJSF = \
 	hecmw_allocate.@f90objfilepostfix@ \
-	hecmw_array_util.@f90objfilepostfix@ \
 	hecmw_matrix_contact.@f90objfilepostfix@ \
 	hecmw_matrix_contact_lagrange.@f90objfilepostfix@ \
 	hecmw_matrix_misc.@f90objfilepostfix@ \

@@ -20,6 +20,7 @@ module m_fstr
   use m_timepoint
   use mMechGauss
   use mContactDef
+  use m_utilities
 
   implicit none
 

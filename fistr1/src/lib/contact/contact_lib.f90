@@ -43,6 +43,7 @@ module m_contact_lib
     real(kind=kreal) :: tangentForce_trial(3) !< trial friction force
     real(kind=kreal) :: tangentForce_final(3) !< final friction force
     real(kind=kreal)    :: reldisp(3)
+    type(tMPCCond)   :: mpc_cond(3) !< mpc coeff for tied contact
   end type
 
 contains
@@ -593,7 +594,7 @@ end subroutine
 
       do j=1,ndof
         idx = ndof*(n_slaves-1)+j
-        call mpc_cond_init(mpcs(idx),nn+1)
+        call init_mpc_cond(mpcs(idx),nn+1)
         mpcs(idx)%pid(1) = slave
         mpcs(idx)%pid(2:nn+1) = masters(id)%nodes(1:nn)
         mpcs(idx)%dof(1:nn+1) = j

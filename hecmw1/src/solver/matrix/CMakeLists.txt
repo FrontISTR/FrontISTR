@@ -5,7 +5,6 @@
 
 list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_allocate.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_array_util.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_estimate_condition.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_local_matrix.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mat_ass.f90

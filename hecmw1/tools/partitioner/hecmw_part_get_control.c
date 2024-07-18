@@ -533,7 +533,8 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
   }
   HECMW_assert(cont_data->method == HECMW_PART_METHOD_RCB ||
                cont_data->method == HECMW_PART_METHOD_KMETIS ||
-               cont_data->method == HECMW_PART_METHOD_PMETIS);
+               cont_data->method == HECMW_PART_METHOD_PMETIS ||
+               cont_data->method == HECMW_PART_METHOD_USER);
 
   if (cont_data->n_domain <= 0) {
     HECMW_log(HECMW_LOG_ERROR, HECMW_strmsg(HECMW_PART_E_CTRL_NO_DOMAIN));

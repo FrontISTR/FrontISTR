@@ -99,7 +99,7 @@ contains
     if(fstrDYNAMIC%idx_mas == 1) then
       call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
-    !C-- consistent mass matrix
+      !C-- consistent mass matrix
     else if(fstrDYNAMIC%idx_mas == 2) then
       if( hecMESH%my_rank .eq. 0 ) then
         write(imsg,*) 'stop: consistent mass matrix is not yet available !'
@@ -130,7 +130,7 @@ contains
     hecMAT%X(:) =0.0d0
 
     !! step = 1,2,....,fstrDYNAMIC%n_step
-    do i = restrt_step_num, fstrDYNAMIC%n_step
+    do i= restrt_step_num, fstrDYNAMIC%n_step
       if(ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",i
 
       fstrDYNAMIC%i_step = i
@@ -216,8 +216,6 @@ contains
           call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
           call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
           call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
-          call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
-          call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
 
           !C-- RHS LOAD VECTOR CHECK
           numnp=hecMATmpc%NP
@@ -353,6 +351,8 @@ contains
     type(hecmwST_matrix)                 :: conMAT
 
     !C-- local variable
+    type(hecmwST_local_mesh), pointer :: hecMESHmpc
+    type(hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
@@ -415,7 +415,7 @@ contains
     if(fstrDYNAMIC%idx_mas == 1) then
       call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
-    !C-- consistent mass matrix
+      !C-- consistent mass matrix
     else if(fstrDYNAMIC%idx_mas == 2) then
       if( hecMESH%my_rank .eq. 0 ) then
         write(imsg,*) 'stop: consistent mass matrix is not yet available !'
@@ -449,8 +449,19 @@ contains
     fstrDYNAMIC%VEC3(:) =0.d0
     hecMAT%X(:) =0.d0
 
-    call fstr_save_originalMatrixStructure(hecMAT)
-    call fstr_scan_contact_state(cstep, restrt_step_num, 0, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
+    if( associated(fstrSOLID%contacts) ) then
+      call fstr_scan_contact_state(cstep, restrt_step_num, 0, fstrDYNAMIC%t_delta, ctAlgo, &
+      &  hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B)
+      ! restructure Matrix for mpc
+      call resize_structures( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrEIG )
+      call hecmw_mat_recon_withmpc ( hecMESH, hecMAT )
+      !call hecmw_mat_con ( hecMESH, hecMAT )
+      call hecMAT_finalize( hecMAT )
+      call hecMAT_init( hecMAT )
+      call fstr_save_originalMatrixStructure(hecMAT)
+      ! end restructure Matrix for mpc
+    endif
+
 
     call hecmw_mat_copy_profile( hecMAT, conMAT )
 
@@ -468,7 +479,7 @@ contains
     converg_dlag = fstrSOLID%step_ctrl(cstep)%converg_lag
     
     !! step = 1,2,....,fstrDYNAMIC%n_step
-    do i = restrt_step_num, fstrDYNAMIC%n_step
+    do i= restrt_step_num, fstrDYNAMIC%n_step
 
       fstrDYNAMIC%i_step = i
       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
@@ -494,7 +505,7 @@ contains
         call fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM, fstrCPL)
 
       loopFORcontactAnalysis: do while( .TRUE. )
-      count_step = count_step + 1
+        count_step = count_step + 1
 
         ! ----- Inner Iteration
         res0   = 0.d0
@@ -573,6 +584,7 @@ contains
           call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
           call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
           call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
+          call fstr_Update_NDForce_MPC( hecMESH, hecMAT%B )
 
           ! ----- check convergence
           res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
@@ -596,7 +608,14 @@ contains
             write(*,'(a,1e15.7)') ' - MaxDLag =',maxDLag
             write(ISTA,'(a,1e15.7)') ' - MaxDLag =',maxDLag
           endif
-          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag < converg_dlag ) exit
+
+          ! ----- check convergence
+          if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &
+            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag < converg_dlag ) exit
+          res1 = res
+          rf=1.0d0
+          if( iter>1 .and. res>res1 )rf=0.5d0*rf
+          res1=res
 
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMAT%X = 0.0d0
@@ -637,7 +656,8 @@ contains
           stop
         endif
 
-        call fstr_scan_contact_state(cstep, i, count_step, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
+        call fstr_scan_contact_state(cstep, i, count_step, fstrDYNAMIC%t_delta, &
+        &  ctAlgo, hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B)
 
         if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then
           write(*,*) ' This type of direct solver is not yet available in such case ! '
@@ -699,9 +719,9 @@ contains
       !---  Restart info
       if( fstrDYNAMIC%restart_nout > 0 ) then
         if( mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step ) then
-          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-            infoCTChange%contactNode_current)
-        endif
+        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+          infoCTChange%contactNode_current)
+      endif
       endif
 
     enddo

@@ -6,6 +6,7 @@
 module mContact
 
   use mContactDef
+  use mMPCPreprocess
   use hecmw
   use m_fstr
   implicit none
@@ -208,13 +209,14 @@ contains
   end subroutine
 
   !> Scanning contact state
-  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )
+  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, hecMESH, hecMAT, fstrSOLID, infoCTChange, B )
     integer(kind=kint), intent(in)         :: cstep      !< current step number
     integer(kind=kint), intent(in)         :: sub_step   !< current sub-step number
     integer(kind=kint), intent(in)         :: cont_step  !< current contact step number
     real(kind=kreal), intent(in)           :: dt
     integer(kind=kint), intent(in)         :: ctAlgo     !< contact analysis algorithm
-    type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
+    type( hecmwST_local_mesh ), intent(inout) :: hecMESH     !< type mesh
+    type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
     !      logical, intent(inout)                 :: changed     !< if contact state changed
@@ -272,8 +274,10 @@ contains
       if( .not. active ) active = iactive
     enddo
 
-    if( is_init .and. ctAlgo == kcaSLAGRANGE .and. fstrSOLID%n_contacts > 0 ) &
-      &  call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
+    if( is_init .and. ctAlgo == kcaSLAGRANGE ) then
+      call fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, infoCTChange )
+      active = .false.
+    endif
 
     !for output contact state
     do i=1,fstrSOLID%n_contacts
@@ -289,61 +293,6 @@ contains
     end if
 
   end subroutine
-
-  !> Scanning contact state
-  subroutine remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
-    integer(kind=kint), intent(in)         :: cstep      !< current step number
-    type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
-    type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
-    type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
-
-    integer(kind=kint) :: i, j, grpid, slave
-    integer(kind=kint) :: k, id, iSS
-    integer(kind=kint) :: ig0, ig, iS0, iE0
-    integer(kind=kint), allocatable :: states(:)
-
-    allocate(states(hecMESH%n_node))
-    states(:) = CONTACTFREE
-
-    ! if a boundary condition is given, the slave
-    do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
-      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
-      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
-      ig= fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-      iS0= hecMESH%node_group%grp_index(ig-1) + 1
-      iE0= hecMESH%node_group%grp_index(ig  )
-      do k= iS0, iE0
-        iSS = hecMESH%node_group%grp_item(k)
-        !states(iSS) = CONTACTSTICK
-      enddo
-    enddo
-
-    do i=1,fstrSOLID%n_contacts
-      if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
-      grpid = fstrSOLID%contacts(i)%group
-      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
-
-      do j=1, size(fstrSOLID%contacts(i)%slave)
-        if( fstrSOLID%contacts(i)%states(j)%state==CONTACTFREE ) cycle   ! free
-        slave = fstrSOLID%contacts(i)%slave(j)
-        if( states(slave) == CONTACTFREE ) then
-          states(slave) = fstrSOLID%contacts(i)%states(j)%state
-          id = fstrSOLID%contacts(i)%states(j)%surface
-          do k=1,size( fstrSOLID%contacts(i)%master(id)%nodes )
-            iSS = fstrSOLID%contacts(i)%master(id)%nodes(k)
-            states(iSS) = fstrSOLID%contacts(i)%states(j)%state
-          enddo
-        else !found duplicate tied contact slave node
-          fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
-          infoCTChange%free2contact = infoCTChange%free2contact - 1
-          write(*,'(A,i10,A,i6,A,i6,A)') "Node",hecMESH%global_node_ID(slave), &
-            " in rank",hecmw_comm_get_rank()," freed due to duplication"
-        endif
-      enddo
-    enddo
-
-  end subroutine
-
 
   !> Scanning contact state
   subroutine fstr_scan_contact_state_exp( cstep, hecMESH, fstrSOLID, infoCTChange )

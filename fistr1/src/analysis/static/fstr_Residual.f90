@@ -9,13 +9,12 @@ module m_fstr_Residual
   implicit none
 
   public :: fstr_Update_NDForce
+  public :: fstr_Update_NDForce_MPC
   public :: fstr_Update_NDForce_SPC
   public :: fstr_get_residual
   public :: fstr_get_norm_contact
   public :: fstr_get_norm_para_contact
   public :: fstr_get_x_norm_contact
-
-  private :: fstr_Update_NDForce_MPC
 
 contains
 

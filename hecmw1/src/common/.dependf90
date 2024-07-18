@@ -1,3 +1,4 @@
+hecmw_array_util.o : hecmw_array_util.f90 
 hecmw_control_f.o : hecmw_control_f.f90 hecmw_util_f.o 
 hecmw_dist_copy_c2f_f.o : hecmw_dist_copy_c2f_f.f90 hecmw_util_f.o 
 hecmw_dist_copy_f2c_f.o : hecmw_dist_copy_f2c_f.f90 hecmw_util_f.o 

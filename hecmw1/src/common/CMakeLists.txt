@@ -60,6 +60,7 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_system.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_time.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_util_f.F90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_array_util.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_logging.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_msgno_f.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_msg_f.f90

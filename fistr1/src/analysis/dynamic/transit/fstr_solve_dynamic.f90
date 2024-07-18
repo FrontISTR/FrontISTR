@@ -36,7 +36,7 @@ contains
     type(hecmwST_matrix)                 :: conMAT
     integer(kind=kint) :: i, j, num_monit, ig, is, iE, ik, in, ing, iunitS, iunit, ierror, flag, limit
     character(len=HECMW_FILENAME_LEN) :: fname, header
-    integer(kind=kint) :: restrt_step_num, ndof
+    integer(kind=kint) :: restrt_step_num, ndof, istat
     integer(kind=kint) :: restrt_step(1)
 
     num_monit = 0
