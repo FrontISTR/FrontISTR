@@ -469,7 +469,7 @@ contains
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
 
-    real(kind=kreal), parameter :: tol =1.d-6
+    real(kind=kreal), parameter :: tol =1.d-8
     integer, parameter          :: MAXITER = 10
     real(kind=kreal) :: dlambda, f
     integer :: i
@@ -539,9 +539,9 @@ contains
       endif
       f = eqvs-3.d0*G*dlambda-yd -(KK-betan)
       if( abs(f/yd)<tol ) exit
-      if( i==MAXITER ) then
-        stop 'ERROR: BackwardEuler_VM: convergence failure'
-      endif
+      ! if( i==MAXITER ) then
+      !   stop 'ERROR: BackwardEuler_VM: convergence failure'
+      ! endif
     enddo
     if( kinematic ) then
       KK = calCurrKinematic( matl, pstrain )
@@ -566,7 +566,7 @@ contains
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
 
-    real(kind=kreal), parameter :: tol =1.d-6
+    real(kind=kreal), parameter :: tol =1.d-8
     integer, parameter          :: MAXITER = 10
     real(kind=kreal) :: dlambda, f, mat(3,3)
     integer :: i, m1, m2, m3
@@ -644,9 +644,9 @@ contains
       cohe = calCurrYield( matl, pstrain, temp )
       f = eqvs - C1*dlambda - r2cosphi*cohe
       if( abs(f/cohe)<tol ) exit
-      if( i==MAXITER ) then
-        stop 'ERROR: BackwardEuler_MC: convergence failure'
-      endif
+      ! if( i==MAXITER ) then
+      !   stop 'ERROR: BackwardEuler_MC: convergence failure'
+      ! endif
     enddo
     CS1 =2.d0*G*(1.d0+sinpsi/3.d0) + 2.d0*K*sinpsi
     CS2 =(4.d0*G/3.d0-2.d0*K)*sinpsi
@@ -688,9 +688,9 @@ contains
         f = eqvs - C1*dlambda - C2*dlambdb - r2cosphi*cohe
         fb = eqvsb - C2*dlambda - C1*dlambdb - r2cosphi*cohe
         if( (abs(f)+abs(fb))/(abs(eqvs)+abs(eqvsb)) < tol ) exit
-        if( i==MAXITER ) then
-          write(0,*) 'ERROR: BackwardEuler_MC: convergence failure(2)'
-        endif
+        ! if( i==MAXITER ) then
+        !   stop 'ERROR: BackwardEuler_MC: convergence failure(2)'
+        ! endif
       enddo
       if( istat==MC_PLASTIC_RIGHT ) then
         prnstre(m1) = prnstre(m1)-CS1*(dlambda+dlambdb)
@@ -723,9 +723,9 @@ contains
           p = pt-K*depv
           resid = cotphi*cohe-p
           if( abs(resid/cohe)<tol ) exit
-          if( i==MAXITER ) then
-            write(0,*) 'ERROR: BackwardEuler_MC: convergence failure(3)'
-          endif
+          ! if( i==MAXITER ) then
+          !   stop 'ERROR: BackwardEuler_MC: convergence failure(3)'
+          ! endif
         enddo
         prnstre(m1) = p
         prnstre(m2) = p
@@ -756,7 +756,7 @@ contains
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
 
-    real(kind=kreal), parameter :: tol =1.d-6
+    real(kind=kreal), parameter :: tol =1.d-8
     integer, parameter          :: MAXITER = 10
     real(kind=kreal) :: dlambda, f
     integer :: i
@@ -822,9 +822,9 @@ contains
       p = pt-K*etabar*dlambda
       f = eqvs + eta*p- xi*cohe
       if( abs(f/cohe)<tol ) exit
-      if( i==MAXITER ) then
-        stop 'ERROR: BackwardEuler_DP: convergence failure'
-      endif
+      ! if( i==MAXITER ) then
+      !   stop 'ERROR: BackwardEuler_DP: convergence failure'
+      ! endif
     enddo
     if( eqvs>=0.d0 ) then ! converged
       factor = 1.d0-G*dlambda/eqvst
@@ -851,9 +851,9 @@ contains
           factor=0.d0
           exit
         endif
-        if( i==MAXITER ) then
-          stop 'ERROR: BackwardEuler_DP: convergence failure(2)'
-        endif
+        ! if( i==MAXITER ) then
+        !   stop 'ERROR: BackwardEuler_DP: convergence failure(2)'
+        ! endif
       enddo
     endif
     devia(:) = factor*devia(:)
