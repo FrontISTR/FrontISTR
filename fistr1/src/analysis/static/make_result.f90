@@ -281,15 +281,16 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
       ngauss = fstrSOLID%maxn_gauss
+      work(:) = 0.d0
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
-          if( k > size(fstrSOLID%elements(i)%gausses) ) then
-            work(i) = 0.d0
-          else
-            work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+          if( associated(fstrSOLID%elements(i)%gausses) ) then
+            if( k <= size(fstrSOLID%elements(i)%gausses) ) then
+              work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+            endif
           endif
         enddo
         call hecmw_result_add( id, nitem, label, work )

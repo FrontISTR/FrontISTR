@@ -547,4 +547,138 @@ contains
 
   end subroutine
 
+  !> Compute derivative of a general isotropic tensor function of one tensor
+  subroutine deriv_general_iso_tensor_func_3d(dpydpx, dydx, eigv, px, py)
+    real(kind=kreal), intent(in) :: dpydpx(3,3)
+    real(kind=kreal), intent(out) :: dydx(6,6)
+    real(kind=kreal), intent(in) :: eigv(3,3)
+    real(kind=kreal), intent(in) :: px(3), py(3)
+
+    real(kind=kreal) :: x(6)
+    real(kind=kreal) :: Ep(6,3), dx2dx(6,6)
+    integer(kind=kint) :: i, j, m1, m2, m3, ia, ib, ic, ip, jp, k
+    real(kind=kreal) :: xmax, dif12, dif23, C1, C2, C3, C4, D1, D2, D3
+    real(kind=kreal) :: xa, xc, ya, yc, daa, dac, dca, dcb, dcc
+    real(kind=kreal) :: xa_xc, xa_xc2, xa_xc3, ya_yc, xc2
+    real(kind=kreal) :: s1, s2, s3, s4, s5, s6
+    real(kind=kreal), parameter :: I2(6) = [1.d0, 1.d0, 1.d0, 0.d0, 0.d0, 0.d0]
+    real(kind=kreal), parameter :: Is(6,6) = reshape([&
+        1.d0, 0.d0, 0.d0,  0.d0,   0.d0,   0.d0,&
+        0.d0, 1.d0, 0.d0,  0.d0,   0.d0,   0.d0,&
+        0.d0, 0.d0, 1.d0,  0.d0,   0.d0,   0.d0,&
+        0.d0, 0.d0, 0.d0, 0.5d0,   0.d0,   0.d0,&
+        0.d0, 0.d0, 0.d0,  0.d0,  0.5d0,   0.d0,&
+        0.d0, 0.d0, 0.d0,  0.d0,   0.d0,  0.5d0],&
+        [6, 6])
+    real(kind=kreal), parameter :: EPS=1.d-6
+
+    do i=1,3
+      Ep(1,i) = eigv(1,i)*eigv(1,i)
+      Ep(2,i) = eigv(2,i)*eigv(2,i)
+      Ep(3,i) = eigv(3,i)*eigv(3,i)
+      Ep(4,i) = eigv(1,i)*eigv(2,i)
+      Ep(5,i) = eigv(2,i)*eigv(3,i)
+      Ep(6,i) = eigv(3,i)*eigv(1,i)
+    enddo
+    x(:) = 0.d0
+    do i=1,3
+      do j=1,6
+        x(j) = x(j)+px(i)*Ep(j,i)
+      enddo
+    enddo
+    dx2dx = reshape([2.d0*x(1),      0.d0,      0.d0,             x(4),             0.d0,             x(6),&
+        &                 0.d0, 2.d0*x(2),      0.d0,             x(4),             x(5),             0.d0,&
+        &                 0.d0,      0.d0, 2.d0*x(3),             0.d0,             x(5),             x(6),&
+        &                 x(4),      x(4),      0.d0, (x(1)+x(2))/2.d0,        x(6)/2.d0,        x(5)/2.d0,&
+        &                 0.d0,      x(5),      x(6),        x(6)/2.d0, (x(2)+x(3))/2.d0,        x(4)/2.d0,&
+        &                 x(6),      0.d0,      x(6),        x(5)/2.d0,        x(4)/2.d0, (x(1)+x(3))/2.d0],&
+        [6, 6])
+    m1 = maxloc(px, 1)
+    m3 = minloc(px, 1)
+    if( m1 == m3 ) then
+      m1 = 1; m2 = 2; m3 = 3
+    else
+      m2 = 6 - (m1 + m3)
+    endif
+    xmax = maxval(abs(px), 1)
+    if( xmax < EPS ) xmax = 1.d0
+    dif12 = abs(px(m1) - px(m2)) / xmax
+    dif23 = abs(px(m2) - px(m3)) / xmax
+    if( dif12 < EPS .and. dif23 < EPS ) then
+      C1 = dpydpx(1,1)-dpydpx(1,2)
+      C2 = dpydpx(1,2)
+      do j=1,6
+        do i=1,6
+          dydx(i,j) = C1*Is(i,j)+C2*I2(i)*I2(j)
+        enddo
+      enddo
+    else if( dif12 < EPS .or. dif23 < EPS ) then
+      if( dif12 < EPS ) then
+        ia = m3; ib = m1; ic = m2
+      else
+        ia = m1; ib = m2; ic = m3
+      endif
+      ya = py(ia); yc = py(ic)
+      xa = px(ia); xc = px(ic)
+      daa = dpydpx(ia,ia)
+      dac = dpydpx(ia,ic)
+      dca = dpydpx(ic,ia)
+      dcb = dpydpx(ic,ib)
+      dcc = dpydpx(ic,ic)
+      xa_xc = xa-xc
+      xa_xc2 = xa_xc*xa_xc
+      xa_xc3 = xa_xc2*xa_xc
+      ya_yc = ya-yc
+      xc2 = xc*xc
+      C1 = ya_yc/xa_xc2
+      C2 = ya_yc/xa_xc3
+      C3 = xc/xa_xc2
+      C4 = (xa+xc)/xa_xc
+      D1 = dac+dca
+      D2 = daa+dcc
+      D3 = D1-D2
+      s1 = C1+(dcb-dcc)/xa_xc
+      s2 = 2.d0*xc*C1+(dcb-dcc)*C4
+      s3 = 2.d0*C2+D3/xa_xc2
+      s4 = 2.d0*xc*C2+(dac-dcb)/xa_xc+D3*C3
+      s5 = 2.d0*xc*C2+(dca-dcb)/xa_xc+D3*C3
+      s6 = 2.d0*xc2*C2+(D1*xa-D2*xc)*C3-dcb*C4
+      do j=1,6
+        do i=1,6
+          dydx(i,j) = s1*dx2dx(i,j)-s2*Is(i,j)-s3*x(i)*x(j)+s4*x(i)*I2(j)+s5*I2(i)*x(j)-s6*I2(i)*I2(j)
+        enddo
+      enddo
+    else
+      do k=1,3
+        select case(k)
+        case(1)
+          ia = 1; ib = 2; ic = 3
+        case(2)
+          ia = 2; ib = 3; ic = 1
+        case(3)
+          ia = 3; ib = 1; ic = 2
+        end select
+        C1 = py(ia)/((px(ia)-px(ib))*(px(ia)-px(ic)))
+        C2 = px(ib)+px(ic)
+        C3 = (px(ia)-px(ib))+(px(ia)-px(ic))
+        C4 = px(ib)-px(ic)
+        do j=1,6
+          do i=1,6
+            dydx(i,j) = dydx(i,j)+C1*(dx2dx(i,j)-C2*Is(i,j)-C3*Ep(i,ia)*Ep(j,ia)-C4*(Ep(i,ib)*Ep(j,ib)-Ep(i,ic)*Ep(j,ic)))
+          enddo
+        enddo
+      enddo
+      do jp=1,3
+        do ip=1,3
+          C1 = dpydpx(ip,jp)
+          do j=1,6
+            do i=1,6
+              dydx(i,j) = dydx(i,j)+C1*Ep(i,ip)*Ep(j,jp)
+            enddo
+          enddo
+        enddo
+      enddo
+    endif
+  end subroutine deriv_general_iso_tensor_func_3d
+
 end module
