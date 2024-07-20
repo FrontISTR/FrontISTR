@@ -14,6 +14,7 @@ module m_fstr_Residual
   public :: fstr_get_norm_contact
   public :: fstr_get_norm_para_contact
   public :: fstr_get_x_norm_contact
+  public :: fstr_get_potential
 
   private :: fstr_Update_NDForce_MPC
 
@@ -239,5 +240,69 @@ contains
     call hecmw_allreduce_R1(hecMESH, rhsX, hecmw_sum)
 
   end function fstr_get_x_norm_contact
+
+  !C---------------------------------------------------------------------*
+  function fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype) result(potential)
+    use m_fstr
+    use mULoad
+    use m_fstr_spring
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    type(hecmwST_matrix), intent(inout)  :: hecMAT !< linear equation, its right side modified here
+    type(fstr_solid), intent(inout)      :: fstrSOLID !< we need boundary conditions of curr step
+    integer(kind=kint), intent(in)       :: ptype
+    real(kind=kreal)   ::  potential
+    !    Local variables
+    integer(kind=kint) :: ndof, i, icel, ig
+    real(kind=kreal), allocatable :: totdisp(:), totload(:)
+    real(kind=kreal) :: factor
+    real(kind=kreal) :: extenal_work, internal_work
+
+    ndof = hecMAT%NDOF
+    factor = fstrSOLID%factor(2)
+    potential = 0.d0
+
+    allocate(totload(ndof*hecMESH%n_node))
+
+    ! Set external load
+    do i=1,ndof*hecMESH%n_node
+      totload(i) = fstrSOLID%GL(i)
+    end do
+    !    Consiter Spring
+    call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, totload )
+    !    Consider Uload
+    call uResidual( cstep, factor, totload )
+    !    Consider EQUATION condition
+    call fstr_Update_NDForce_MPC( hecMESH, totload )
+
+    if( ptype == 1 ) then !< asseble strain potential
+      ! calc internal work
+      internal_work = 0.d0
+      do icel=1,hecMESH%ne_internal
+        do ig=1,size(fstrSOLID%elements(icel)%gausses)
+          internal_work = internal_work + fstrSOLID%elements(icel)%gausses(ig)%strain_energy
+        enddo
+      enddo
+      ! calc external work
+      call hecmw_innerProduct_R(hecMESH,ndof,totload,fstrSOLID%dunode,extenal_work)      
+      potential = internal_work - extenal_work
+    else if( ptype == 2 ) then ! multiply internal force with displacement
+      ! calc internal work
+      call hecmw_innerProduct_R(hecMESH,ndof,0.5d0*(fstrSOLID%QFORCE+fstrSOLID%QFORCE_bak),fstrSOLID%dunode,internal_work)
+      ! calc external work
+      call hecmw_innerProduct_R(hecMESH,ndof,totload,fstrSOLID%dunode,extenal_work)
+      potential = internal_work - extenal_work
+    else if( ptype == 3 ) then ! norm of residual
+      ! Consider internal force
+      totload(:) = fstrSOLID%QFORCE(:) - totload(:)
+      !    Consider SPC condition
+      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, totload )
+      ! calc norm of residual
+      call hecmw_innerProduct_R(hecMESH,ndof,totload,totload,potential)
+      potential = dsqrt(potential)
+    else
+      stop "ptype error in fstr_get_potential"
+    endif
+  end function fstr_get_potential
 
 end module m_fstr_Residual

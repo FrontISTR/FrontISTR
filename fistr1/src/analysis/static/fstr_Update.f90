@@ -297,6 +297,11 @@ contains
         enddo
       enddo
     enddo
+
+    do i = 1, hecMESH%n_node
+      fstrSOLID%QFORCE_bak(i) = fstrSOLID%QFORCE(i)
+    end do
+
   end subroutine fstr_UpdateState
 
   subroutine Update_abort( ic_type, flag, mtype )
