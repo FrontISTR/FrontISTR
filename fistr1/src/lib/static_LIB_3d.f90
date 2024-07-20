@@ -960,6 +960,10 @@ contains
       qf(1:nn*ndof)                                                          &
         = qf(1:nn*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
 
+      ! calculate strain energy
+      gausses(LX)%strain_energy = 0.5d0*dot_product(gausses(LX)%stress(1:6)+gausses(LX)%stress_bak(1:6), & 
+        &  gausses(LX)%strain(1:6)-gausses(LX)%strain_bak(1:6))*WG
+
     end do
 
   end subroutine UPDATE_C3

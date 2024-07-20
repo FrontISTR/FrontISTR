@@ -374,6 +374,7 @@ module m_fstr
     real(kind=kreal), pointer :: GL          (:)           !< external force
     real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
+    real(kind=kreal), pointer :: QFORCE_bak  (:)           !< equivalent nodal force at the beginning of curr step
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
