@@ -47,6 +47,7 @@ contains
     real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm, pot(3), pot0(3)
     real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
+    integer(kind=kint) :: iterStatus
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
@@ -65,35 +66,7 @@ contains
 
     P = 0.0d0
     stepcnt = 0
-    fstrSOLID%dunode(:) = 0.0d0
-    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
-
-    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
-
-    !calc initial potential
-    !! initialize du for non-zero Dirichlet condition
-    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
-    !! update stress and strain
-    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, 1)
-    !! update residual vector
-    call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
-
-    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
-    res = sqrt(res)
-    pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
-    pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
-    pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
-    pot0(1:3) = pot(1:3)
-    if( hecMESH%my_rank == 0 ) then
-      write(IMSG,'(A4,7(",",A14))') "iter","residual","p1","p2","p3","diffp1","diffp2","diffp3"
-      write(IMSG,'(I4,7(",",1pE14.7))') 0,res,pot(1:3),pot(1:3)-pot0(1:3)
-    endif
-
-    !! reset du and stress and strain
-    fstrSOLID%dunode(:) = 0.0d0
-    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
-    call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
-    !end calc initial potential
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, pot, pot0, ndof)
 
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
@@ -127,63 +100,14 @@ contains
         fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
       enddo
 
-      ! ----- update the strain, stress, and internal force
-      call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
-
-      ! ----- Set residual
-      if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-        & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
-
-      call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
-
+      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+      
       if( isLinear ) exit
 
       ! ----- check convergence
-      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
-      res = sqrt(res)
-      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%X, hecMAT%X, xnrm)
-      xnrm = sqrt(xnrm)
-      call hecmw_innerProduct_R(hecMESH, ndof, fstrSOLID%QFORCE, fstrSOLID%QFORCE, qnrm)
-      qnrm = sqrt(qnrm)
-      if (qnrm < 1.0d-8) qnrm = 1.0d0
-      if( iter == 1 ) then
-        dunrm = xnrm
-      else
-        call hecmw_InnerProduct_R(hecMESH, ndof, fstrSOLID%dunode, fstrSOLID%dunode, dunrm)
-        dunrm = sqrt(dunrm)
-      endif
-      rres = res/qnrm
-      rxnrm = xnrm/dunrm
-      pot0(1:3) = pot(1:3)
-      pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
-      pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
-      pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
-      if( hecMESH%my_rank == 0 ) then
-        if (qnrm == 1.0d0) then
-          write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
-        else
-          write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
-        endif
-        write(IMSG,'(I4,7(",",1pE14.7))') iter,res,pot(1:3),pot(1:3)-pot0(1:3)
-      endif
-      if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
-        if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
-        if( rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) exit
-      endif
-
-      ! ----- check divergence and NaN
-      if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres .or. rres /= rres ) then
-        if( hecMESH%my_rank == 0) then
-          write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-        end if
-        fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
-        fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
-        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
-        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
-        if( rres > fstrSOLID%step_ctrl(cstep)%maxres .or. rres /= rres ) fstrSOLID%NRstat_i(knstDRESN) = 2
-        return
-      end if
+      iterStatus = fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep, pot)
+      if (iterStatus == kitrConverged) exit
+      if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
     enddo
     ! ----- end of inner loop
 
@@ -723,5 +647,146 @@ contains
     fstrSOLID%CutBack_stat = 0
   end subroutine fstr_Newton_contactSLag
 
+  subroutine fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, pot, pot0, ndof)
+    use m_fstr_Update
+    implicit none
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    real(kind=kreal), intent(inout) :: pot(3), pot0(3)
+    integer(kind=kint), intent(in) :: ndof
 
+    real(kind=kreal)   :: res
+
+    fstrSOLID%dunode(:) = 0.0d0
+    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
+
+    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+
+    !calc initial potential
+    !! initialize du for non-zero Dirichlet condition
+    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
+    !! update residual vector
+    call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+
+    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+    res = sqrt(res)
+    pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+    pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
+    pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
+    pot0(1:3) = pot(1:3)
+    if( hecMESH%my_rank == 0 ) then
+      write(IMSG,'(A4,7(",",A14))') "iter","residual","p1","p2","p3","diffp1","diffp2","diffp3"
+      write(IMSG,'(I4,7(",",1pE14.7))') 0,res,pot(1:3),pot(1:3)-pot0(1:3)
+    endif
+
+    !! reset du and stress and strain 
+    fstrSOLID%dunode(:) = 0.0d0
+    call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+    !end calc initial potential
+  end subroutine fstr_init_Newton
+
+
+  !> \breaf This subroutine calculate residual vector
+  subroutine fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+    use m_fstr_Update
+    implicit none
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+
+    ! ----- update the strain, stress, and internal force
+    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+
+    ! ----- Set residual
+    if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
+      & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
+
+    call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+  end subroutine fstr_calc_residual_vector
+
+  !> \breaf This function check iteration status
+  function fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep, pot) result(iterStatus)
+    implicit none
+    integer(kind=kint) :: iterStatus
+
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    integer(kind=kint), intent(in) :: ndof
+    integer(kind=kint), intent(in) :: iter
+    integer(kind=kint), intent(in) :: sub_step, cstep
+    real(kind=kreal), intent(inout) :: pot(3)
+
+    real(kind=kreal)   :: res, qnrm, rres, xnrm, dunrm, rxnrm, pot0(3)
+
+    iterStatus = kitrContinue
+
+    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+    res = sqrt(res)
+    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%X, hecMAT%X, xnrm)
+    xnrm = sqrt(xnrm)
+    call hecmw_innerProduct_R(hecMESH, ndof, fstrSOLID%QFORCE, fstrSOLID%QFORCE, qnrm)
+    qnrm = sqrt(qnrm)
+    if (qnrm < 1.0d-8) qnrm = 1.0d0
+    if( iter == 1 ) then
+      dunrm = xnrm
+    else
+      call hecmw_InnerProduct_R(hecMESH, ndof, fstrSOLID%dunode, fstrSOLID%dunode, dunrm)
+      dunrm = sqrt(dunrm)
+    endif
+    rres = res/qnrm
+    rxnrm = xnrm/dunrm
+
+    pot0(1:3) = pot(1:3)
+    pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+    pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
+    pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
+
+    if( hecMESH%my_rank == 0 ) then
+      if (qnrm == 1.0d0) then
+        write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
+      else
+        write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
+      endif
+      write(IMSG,'(I4,7(",",1pE14.7))') iter,res,pot(1:3),pot(1:3)-pot0(1:3)
+    endif
+    if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
+      if( rres < fstrSOLID%step_ctrl(cstep)%converg .or. &
+          rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) then
+          iterStatus=kitrConverged
+          return
+      endif
+    endif
+
+    ! ----- check divergence and NaN
+    if ( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres) &
+      iterStatus = kitrDiverged
+    if (rres /= rres ) iterStatus = kitrFloatingError
+    if (iterStatus /= kitrContinue) then
+      if( hecMESH%my_rank == 0) then
+        write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+      end if
+      fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
+      fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+      if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
+      if( rres > fstrSOLID%step_ctrl(cstep)%maxres .or. rres /= rres ) fstrSOLID%NRstat_i(knstDRESN) = 2
+      return
+    end if
+  end function fstr_check_iteration_converged
 end module m_fstr_NonLinearMethod
