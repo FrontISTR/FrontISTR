@@ -85,6 +85,13 @@ module m_fstr
   integer(kind=kint), parameter :: kFLOADCASE_RE = 1
   integer(kind=kint), parameter :: kFLOADCASE_IM = 2
 
+  !> iteration control
+  integer(kind=kint), parameter :: kitrContinue = 0
+  integer(kind=kint), parameter :: kitrConverged = 1
+  integer(kind=kint), parameter :: kitrDiverged = 2
+  integer(kind=kint), parameter :: kitrFloatingError = 3
+
+
   !> PARALLEL EXECUTION
   integer(kind = kint) :: myrank
   integer(kind = kint) :: nprocs
