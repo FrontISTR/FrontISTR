@@ -64,6 +64,21 @@ contains
     fstr_ctrl_get_SOLUTION = 0
   end function fstr_ctrl_get_SOLUTION
 
+  !> Read in !NONLINEAR_SOLVER
+  function fstr_ctrl_get_NONLINEAR_SOLVER( ctrl, method )
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: method
+    integer(kind=kint) :: fstr_ctrl_get_NONLINEAR_SOLVER
+
+    integer(kind=kint) :: ipt
+    character(len=80) :: s
+
+    fstr_ctrl_get_NONLINEAR_SOLVER = -1
+
+    s = 'NEWTON,QUASINEWTON '
+    if( fstr_ctrl_get_param_ex( ctrl,      'METHOD ',     s,    1,   'P',  method )/= 0) return
+    fstr_ctrl_get_NONLINEAR_SOLVER = 0
+  end function fstr_ctrl_get_NONLINEAR_SOLVER
 
   !> Read in !SOLVER
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
