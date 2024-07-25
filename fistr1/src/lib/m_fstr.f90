@@ -51,6 +51,10 @@ module m_fstr
   integer(kind=kint), parameter :: ksmGMRESREN = 6
   integer(kind=kint), parameter :: ksmDIRECT   = 101
 
+  !> nonlinear solver method (nsm)
+  integer(kind=kint), parameter :: knsmNEWTON      = 1
+  integer(kind=kint), parameter :: knsmQUASINEWTON = 2
+
   !> contact analysis algorithm
   integer(kind=kint), parameter :: kcaSLagrange = 1
   integer(kind=kint), parameter :: kcaALagrange = 2
@@ -143,6 +147,7 @@ module m_fstr
   type fstr_param
     integer(kind=kint) :: solution_type !< solution type number
     integer(kind=kint) :: solver_method !< solver method number
+    integer(kind=kint) :: nlsolver_method !< solver method number for nonlinear equation
     logical            :: nlgeom        !< is geometrical nonlinearity considered
 
     !> STATIC !HEAT
@@ -971,6 +976,7 @@ contains
     fstrPARAM%solution_type = kstSTATIC
     fstrPARAM%nlgeom        = .false.
     fstrPARAM%solver_method = ksmCG
+    fstrPARAM%nlsolver_method = knsmNEWTON
 
     !!STATIC !HEAT
     fstrPARAM%analysis_n = 0

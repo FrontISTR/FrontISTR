@@ -151,6 +151,7 @@ contains
         time_1 = hecmw_Wtime()
 
         ! analysis algorithm ( Newton-Rapshon Method )
+        write(*,*) "nonliner solver method(1:newton,2:quasi-newton)",fstrPARAM%nlsolver_method
         if( .not. is_interaction_active ) then
           call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
             restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
