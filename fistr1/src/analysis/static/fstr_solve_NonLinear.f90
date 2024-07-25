@@ -44,7 +44,7 @@ contains
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
-    real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm
+    real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm, pot(3), pot0(3)
     real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
 
@@ -69,6 +69,31 @@ contains
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+
+    !calc initial potential
+    !! initialize du for non-zero Dirichlet condition
+    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
+    !! update stress and strain
+    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, 1)
+    !! update residual vector
+    call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+
+    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+    res = sqrt(res)
+    pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+    pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
+    pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
+    pot0(1:3) = pot(1:3)
+    if( hecMESH%my_rank == 0 ) then
+      write(IMSG,'(A4,7(",",A14))') "iter","residual","p1","p2","p3","diffp1","diffp2","diffp3"
+      write(IMSG,'(I4,7(",",1pE14.7))') 0,res,pot(1:3),pot(1:3)-pot0(1:3)
+    endif
+
+    !! reset du and stress and strain
+    fstrSOLID%dunode(:) = 0.0d0
+    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+    call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+    !end calc initial potential
 
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
@@ -129,12 +154,17 @@ contains
       endif
       rres = res/qnrm
       rxnrm = xnrm/dunrm
+      pot0(1:3) = pot(1:3)
+      pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+      pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
+      pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
       if( hecMESH%my_rank == 0 ) then
         if (qnrm == 1.0d0) then
           write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
         else
           write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
         endif
+        write(IMSG,'(I4,7(",",1pE14.7))') iter,res,pot(1:3),pot(1:3)-pot0(1:3)
       endif
       if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
         if( rres < fstrSOLID%step_ctrl(cstep)%converg ) exit
