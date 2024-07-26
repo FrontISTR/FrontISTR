@@ -19,6 +19,8 @@ module m_fstr_NonLinearMethod
   use m_fstr_Restart
 
   implicit none
+  ! parameters for line search
+  real(kind=kreal), parameter :: C_line_search=2.0, delta=0.2, sigma=0.9, eps_wolfe=1.0d-6
 
 contains
 
@@ -789,4 +791,280 @@ contains
       return
     end if
   end function fstr_check_iteration_converged
+
+  !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
+  !> method
+  subroutine fstr_Quasi_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
+    restrt_step_num, sub_step, ctime, dtime )
+    implicit none
+
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    integer, intent(in)                   :: sub_step  !< substep number of current loading step
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+
+    type (hecmwST_local_mesh), pointer :: hecMESHmpc
+    type (hecmwST_matrix), pointer :: hecMATmpc
+    integer(kind=kint) :: ndof
+    integer(kind=kint) :: i, iter
+    integer(kind=kint) :: stepcnt
+    integer(kind=kint) :: restrt_step_num
+    real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm, pot(3), pot0(3)
+    real(kind=kreal), allocatable :: coord(:), P(:)
+    logical :: isLinear = .false.
+    integer(kind=kint) :: iterStatus
+
+    real(kind=kreal), allocatable :: z_k(:), s_k(:,:), y_k(:,:), g_prev(:), rho_k(:)
+    integer, parameter :: n_mem=10
+    integer :: len_vector
+    integer(kind=kint) :: k
+
+    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+
+    if(.not. fstrPR%nlgeom)then
+      isLinear = .true.
+    endif
+
+    hecMAT%NDOF = hecMESH%n_dof
+    NDOF = hecMAT%NDOF
+
+    allocate(P(hecMESH%n_node*NDOF))
+    allocate(coord(hecMESH%n_node*ndof))
+    len_vector = hecMESH%n_node*ndof
+    allocate(z_k(len_vector))
+    allocate(s_k(len_vector, n_mem))
+    allocate(y_k(len_vector, n_mem))
+    allocate(g_prev(len_vector))
+    allocate(rho_k(n_mem))
+
+    tincr = dtime
+    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
+
+    P = 0.0d0
+    stepcnt = 0
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, pot, pot0, ndof)
+
+    ! ----- Inner Iteration, lagrange multiplier constant
+    do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
+      stepcnt = stepcnt+1
+
+      ! ----- calculate search direction by limited BFGS method
+      g_prev(:) = hecMAT%B(:)
+      call fstr_calc_direction_LBFGS(hecMesh, g_prev, s_k, y_k, rho_k, z_k, n_mem)
+      ! ----- Set Boundary condition
+      call fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
+      
+      !----- line search of step length
+      call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
+
+      ! ----- update the small displacement and the displacement for 1step
+      !       \delta u^k => solver's solution
+      !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
+      do i = 1, hecMESH%n_node*ndof
+        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+      enddo
+
+      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+      
+      if( isLinear ) exit
+
+      ! ----- check convergence
+      iterStatus = fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep, pot)
+      if (iterStatus == kitrConverged) exit
+      if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
+
+      do k=n_mem, 2, -1
+        s_k(:,k) = s_k(:,k-1)
+        y_k(:,k) = y_k(:,k-1)
+        rho_k(k) = rho_k(k-1)
+      enddo
+      s_k(:,1) = hecMAT%X(:)
+      y_k(:,1) = hecMAT%B(:) - g_prev(:)
+      call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,1), y_k(:,1), rho_k(1))
+    enddo
+    ! ----- end of inner loop
+
+    fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+    fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
+
+    ! ----- update the total displacement
+    ! u_{n+1} = u_{n} + \Delta u_{n+1}
+    do i=1,hecMESH%n_node*ndof
+      fstrSOLID%unode(i) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
+    enddo
+
+    call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
+
+    fstrSOLID%CutBack_stat = 0
+    deallocate(coord)
+    deallocate(P)
+    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  end subroutine fstr_Quasi_Newton
+
+  subroutine fstr_calc_direction_LBFGS(hecMESH, g_prev, s_k, y_k, rho_k, z_k, n_mem)
+    implicit none
+
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    real(kind=kreal) :: z_k(:), s_k(:,:), y_k(:,:), g_prev(:), rho_k(:)
+    integer :: n_mem
+
+    real(Kind=kreal), allocatable :: q(:)
+    real(Kind=kreal) :: alpha(n_mem), beta
+    real(kind=kreal) :: sdotq, ysq, gamma, ydotz
+    
+    integer :: len_vector, ndof
+    integer(kind=kint) :: k,i
+
+    ndof = hecMesh%n_dof
+    len_vector = hecMESH%n_node*hecMesh%n_dof
+    allocate(q(len_vector))
+
+    q(1:len_vector) = g_prev(1:len_vector)
+
+    do k=1, n_mem
+      call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,k), q, sdotq)
+      alpha(k) = rho_k(k) * sdotq
+      do i=1, len_vector
+        q(i) = q(i) - alpha(k)*y_k(i,k)
+      enddo
+    enddo
+    call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,1), y_k(:,1), ysq)
+    gamma = rho_k(1)/ysq
+
+    do i=1, len_vector
+      z_k(i) = gamma*q(i)
+    enddo
+
+    do k=n_mem, 1, -1
+      call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,k), z_k, ydotz)
+      beta = rho_k(k)*ydotz
+      do i=1, len_vector
+        z_k(i)=z_k(i) + s_k(i,k)*(alpha(k)-beta)
+      enddo
+    enddo
+
+    z_k(:) = -z_k(:)
+    
+    deallocate(q)
+  end subroutine fstr_calc_direction_LBFGS
+
+  subroutine fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
+    implicit none
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    integer(kind=kint) :: cstep
+    real(kind=kreal) :: z_k(:)
+
+    integer(kind=kint) :: ig0, grpid, ig, ityp, idofS, idofE, iS0, iE0, ik, in, idof, ndof
+
+    ndof = hecMesh%n_dof
+    !   ----- Prescibed displacement Boundary Conditions
+    do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
+      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
+      ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+      ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
+      idofS = ityp/10
+      idofE = ityp - idofS*10
+      !
+      iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+      iE0 = hecMESH%node_group%grp_index(ig  )
+      !
+      do ik = iS0, iE0
+        in = hecMESH%node_group%grp_item(ik)
+        !
+        do idof = idofS, idofE
+            z_k(ndof*(in-1)+idof) = 0.0d0
+        enddo
+      enddo
+    enddo
+  end subroutine fstr_AddBC_to_direction_vector
+
+  subroutine fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
+    implicit none
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+    integer, intent(in)                   :: cstep     !< current loading step
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal) :: z_k(:)
+
+
+    real(kind=kreal) :: alpha_S, alpha_E
+    real(kind=kreal) :: h_prime_0, h_prime_a, h_prime_c
+    real(kind=kreal) :: pot_0, pot_a, pot_c
+    real(kind=kreal) :: c_secant
+    logical :: flag_converged
+    integer :: ndof
+
+    ndof = hecMAT%NDOF
+
+    alpha_S = 0.0d0
+    hecMat%X(:) = 0.0d0
+    call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_0)
+    pot_0 = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+    if (h_prime_0 > 0.0d0) then
+      write(6,*) 'residual vector is not directed to potential decretion.', h_prime_0
+      stop
+    endif
+
+    h_prime_a = h_prime_0
+    alpha_E = 1.0d0 / C_line_search
+
+    do while (h_prime_a < 0.0d0)
+      alpha_E = alpha_E * C_line_search
+      hecMat%X(:) = alpha_E*z_k(:)
+      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+      call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_a)
+      pot_a = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+    enddo
+
+    flag_converged = .false.
+    do while (.not. flag_converged)
+      call fstr_set_secant(alpha_S, h_prime_0, alpha_E, h_prime_a, c_secant)
+      hecMat%X(:) = c_secant*z_k(:)
+      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+      call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_c)
+      pot_c = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+
+      flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, c_secant, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+    enddo
+  end subroutine fstr_line_search_along_direction
+
+  subroutine fstr_set_secant(a, b, Fa, Fb, c)
+    implicit none
+    real(kind=kreal), intent(in) :: a,b, Fa,Fb
+    real(kind=kreal), intent(out) :: c
+    if(Fb /= Fa) then
+      c = (a*Fb  - b*Fa) / ( Fb - Fa )
+    else
+      c = 0.5*a + 0.5*b
+    endif
+  end subroutine fstr_set_secant
+
+  function fstr_wolfe_condition(alpha_0, alpha_a, alpha_c, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c) result(flag_converged)
+    implicit none
+    logical :: flag_converged
+
+    real(kind=kreal), intent(in) :: alpha_0, alpha_a, alpha_c, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c
+
+    real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
+
+    wolfe1_left = pot_a - pot_c
+    wolfe1_right = delta*h_prime_c*alpha_c
+
+    wolfe2_left = h_prime_c
+    wolfe2_right = sigma*h_prime_0
+
+    flag_converged = (wolfe1_left<wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
+  end function
 end module m_fstr_NonLinearMethod
