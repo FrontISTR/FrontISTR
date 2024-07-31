@@ -107,7 +107,11 @@ contains
       enddo
 
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-      
+
+      ! do i = 1, hecMESH%n_node*ndof
+      !   write(6,*) fstrSOLID%dunode(i), fstrSOLID%QFORCE(i), fstrSOLID%GL(i)
+      ! enddo
+
       if( isLinear ) exit
 
       ! ----- check convergence
@@ -852,11 +856,16 @@ contains
     integer(kind=kint) :: iterStatus
 
     real(kind=kreal), allocatable :: z_k(:), s_k(:,:), y_k(:,:), g_prev(:), rho_k(:)
+    real(kind=kreal) :: sdoty
     integer, parameter :: n_mem=10
     integer :: len_vector
     integer(kind=kint) :: k
 
-    write(6,*) 'fstr_Quasi_Newton'
+    integer :: u_debug
+    integer :: max_iter_bak
+
+    max_iter_bak = fstrSOLID%step_ctrl(cstep)%max_iter
+    fstrSOLID%step_ctrl(cstep)%max_iter = 100*fstrSOLID%step_ctrl(cstep)%max_iter
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
@@ -869,6 +878,19 @@ contains
 
     allocate(P(hecMESH%n_node*NDOF))
     allocate(coord(hecMESH%n_node*ndof))
+    P = 0.0d0
+    stepcnt = 0
+
+    tincr = dtime
+    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, pot, pot0, ndof)
+
+    !calc initial potential
+    !! initialize du for non-zero Dirichlet condition
+    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
+    !! update residual vector
+    call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+
     len_vector = hecMESH%n_node*ndof
     allocate(z_k(len_vector))
     allocate(s_k(len_vector, n_mem))
@@ -880,34 +902,23 @@ contains
     y_k(:,:) = 0.0d0
     g_prev(:) = 0.0d0
     rho_k(:) = 0.0d0
-
-    tincr = dtime
-    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
-
-    P = 0.0d0
-    stepcnt = 0
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, pot, pot0, ndof)
+    ! write(6,*) hecMESH%n_node, ndof
     do i=1,hecMESH%n_node*ndof
-      y_k(i,1) = hecMAT%B(i) - g_prev(i)
-      s_k(i,1) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
+      y_k(i,1) = -hecMAT%B(i)
+      ! if (y_k(i,1) .ne. 0.0d0) write(6,*) i, y_k(i,1)
     enddo
-    call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,1), y_k(:,1), rho_k(1))
 
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt = stepcnt+1
 
       ! ----- calculate search direction by limited BFGS method
-      g_prev(:) = hecMAT%B(:)
-      ! do i = 1, hecMESH%n_node*ndof
-      !   write(6,*) g_prev(i), s_k(i,1)
-      ! enddo
+      do i=1,hecMESH%n_node*ndof
+          g_prev(i) = -hecMAT%B(i)
+      enddo
       call fstr_calc_direction_LBFGS(hecMesh, g_prev, s_k, y_k, rho_k, z_k, n_mem)
-      ! do i = 1, hecMESH%n_node*ndof
-      !   write(6,*) z_k(i)
-      ! enddo
 
-      ! ----- Set Boundary condition
+      ! ! ----- Set Boundary condition
       call fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
       
       !----- line search of step length
@@ -920,8 +931,10 @@ contains
         fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
       enddo
 
+      !! set du for non-zero Dirichlet condition
+      ! call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-      
+ 
       if( isLinear ) exit
 
       ! ----- check convergence
@@ -934,9 +947,17 @@ contains
         y_k(:,k) = y_k(:,k-1)
         rho_k(k) = rho_k(k-1)
       enddo
-      s_k(:,1) = hecMAT%X(:)
-      y_k(:,1) = hecMAT%B(:) - g_prev(:)
-      call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,1), y_k(:,1), rho_k(1))
+
+      do i = 1, hecMESH%n_node*ndof
+        s_k(i,1) = hecMAT%X(i)
+        y_k(i,1) = -hecMAT%B(i) - g_prev(i)
+      enddo
+      call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,1), y_k(:,1), sdoty)
+      if (abs(sdoty) < 1.0d-10) then
+        rho_k(1) = 0.0d0
+      else
+        rho_k(1) = 1.0d0/sdoty
+      endif
     enddo
     ! ----- end of inner loop
 
@@ -955,6 +976,8 @@ contains
     deallocate(coord)
     deallocate(P)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+
+    fstrSOLID%step_ctrl(cstep)%max_iter = max_iter_bak
   end subroutine fstr_Quasi_Newton
 
   subroutine fstr_calc_direction_LBFGS(hecMESH, g_prev, s_k, y_k, rho_k, z_k, n_mem)
@@ -976,19 +999,28 @@ contains
     allocate(q(len_vector))
 
     q(1:len_vector) = g_prev(1:len_vector)
+    ! do i=1, len_vector
+    !   write(6,*) 'q ', q(i)
+    ! enddo
 
     do k=1, n_mem
       call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,k), q, sdotq)
-      ! write(6,*) k, 'sdotq', sdotq
       alpha(k) = rho_k(k) * sdotq
       do i=1, len_vector
         q(i) = q(i) - alpha(k)*y_k(i,k)
       enddo
     enddo
     call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,1), y_k(:,1), ysq)
-    gamma = rho_k(1)/ysq
-    ! write(6,*) 'gamma', gamma
-    if (gamma < 1.0d-10) gamma = 1.0d0
+    if (abs(rho_k(1)) < 1.0d-10) then
+      ! if (ysq < 1.0d-10) then
+        gamma = 1.0d0
+      ! else
+      !   gamma = 1.0d0/ysq
+      ! endif
+    else
+      gamma = 1.0d0/(rho_k(1)*ysq)
+    endif
+    write(6,*) 'gamma ', gamma
 
     do i=1, len_vector
       z_k(i) = gamma*q(i)
@@ -996,17 +1028,18 @@ contains
 
     do k=n_mem, 1, -1
       call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,k), z_k, ydotz)
-      ! write(6,*) k, 'ydotz', ydotz
       beta = rho_k(k)*ydotz
       do i=1, len_vector
         z_k(i)=z_k(i) + s_k(i,k)*(alpha(k)-beta)
       enddo
     enddo
+    ! do i=1, len_vector
+    !   write(6,*) 'z ', z_k(i)
+    ! enddo
 
-    do i=1, len_vector
-      z_k(i) = -z_k(i)
-    enddo
-    
+    ! do i=1, len_vector
+    !   z_k(i) = -z_k(i)
+    ! enddo
     deallocate(q)
   end subroutine fstr_calc_direction_LBFGS
 
@@ -1068,13 +1101,13 @@ contains
 
     alpha_S = 0.0d0
     hecMat%X(:) = 0.0d0
-    call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_0)
+    call hecmw_innerProduct_R(hecMESH,ndof, hecMat%B, z_k, h_prime_0)
     pot_0 = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
     if (h_prime_0 > 0.0d0) then
       write(6,*) 'residual vector is not directed to potential decretion.', h_prime_0
       stop
     endif
-    write(6,*) ' h_prime_0, pot_0', h_prime_0, pot_0
+    ! write(6,*) ' h_prime_0, pot_0', h_prime_0, pot_0
 
     h_prime_a = h_prime_0
     alpha_E = 1.0d0 / C_line_search
@@ -1083,24 +1116,24 @@ contains
       alpha_E = alpha_E * C_line_search
       hecMat%X(:) = -alpha_E*z_k(:)
       call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-      call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_a)
+      call hecmw_innerProduct_R(hecMESH,ndof, hecMat%B, z_k, h_prime_a)
       pot_a = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
+      write(6,*) ' h_prime_a, pot_a', h_prime_a, pot_a
     enddo
-    write(6,*) ' h_prime_a, pot_a', h_prime_a, pot_a
 
     flag_converged = .false.
     do while (.true.)
       call fstr_set_secant(alpha_S, h_prime_0, alpha_E, h_prime_a, c_secant)
-      ! write(6,*) 'alpha_S, alpha_E, c_secant', alpha_S, alpha_E, c_secant
+      write(6,*) 'alpha_S, alpha_E, c_secant', alpha_S, alpha_E, c_secant
       hecMat%X(:) = -c_secant*z_k(:)
       call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_c)
       pot_c = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
 
       write(6,*) 'alpha_c, h_prime_c, pot_c',c_secant, h_prime_c, pot_c
-      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
-      res = sqrt(res)
-      write(6,*) 'res: ', res
+      ! call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+      ! res = sqrt(res)
+      ! write(6,*) 'res: ', res
 
       flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, c_secant, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
       if (flag_converged) exit
@@ -1141,6 +1174,7 @@ contains
     wolfe2_left = h_prime_c
     wolfe2_right = sigma*h_prime_0
 
-    flag_converged = (wolfe1_left<wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
+    ! flag_converged = (wolfe1_left<wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
+    flag_converged = (wolfe2_left >= wolfe2_right)
   end function
 end module m_fstr_NonLinearMethod
