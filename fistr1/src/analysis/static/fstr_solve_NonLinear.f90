@@ -51,6 +51,10 @@ contains
     logical :: isLinear = .false.
     integer(kind=kint) :: iterStatus
 
+    call fstr_Quasi_Newton( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, restrt_step_num, sub_step, ctime, dtime)
+    return
+
+
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     if(.not. fstrPR%nlgeom)then
@@ -720,6 +724,34 @@ contains
     call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
   end subroutine fstr_calc_residual_vector
 
+  !> \breaf This subroutine calculate residual vector
+  subroutine fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+    use m_fstr_Update
+    implicit none
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+
+    integer :: i
+    real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
+
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      dunode_bak(i) = fstrSOLID%dunode(i)
+      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+    enddo
+    call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      fstrSOLID%dunode(i) = dunode_bak(i)
+    enddo
+  end subroutine fstr_calc_residual_vector_with_X
+
+
   !> \breaf This function check iteration status
   function fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep, pot) result(iterStatus)
     implicit none
@@ -824,6 +856,8 @@ contains
     integer :: len_vector
     integer(kind=kint) :: k
 
+    write(6,*) 'fstr_Quasi_Newton'
+
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     if(.not. fstrPR%nlgeom)then
@@ -841,6 +875,11 @@ contains
     allocate(y_k(len_vector, n_mem))
     allocate(g_prev(len_vector))
     allocate(rho_k(n_mem))
+    z_k(:) = 0.0d0
+    s_k(:,:) = 0.0d0
+    y_k(:,:) = 0.0d0
+    g_prev(:) = 0.0d0
+    rho_k(:) = 0.0d0
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
@@ -848,6 +887,11 @@ contains
     P = 0.0d0
     stepcnt = 0
     call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, pot, pot0, ndof)
+    do i=1,hecMESH%n_node*ndof
+      y_k(i,1) = hecMAT%B(i) - g_prev(i)
+      s_k(i,1) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
+    enddo
+    call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,1), y_k(:,1), rho_k(1))
 
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
@@ -855,7 +899,14 @@ contains
 
       ! ----- calculate search direction by limited BFGS method
       g_prev(:) = hecMAT%B(:)
+      ! do i = 1, hecMESH%n_node*ndof
+      !   write(6,*) g_prev(i), s_k(i,1)
+      ! enddo
       call fstr_calc_direction_LBFGS(hecMesh, g_prev, s_k, y_k, rho_k, z_k, n_mem)
+      ! do i = 1, hecMESH%n_node*ndof
+      !   write(6,*) z_k(i)
+      ! enddo
+
       ! ----- Set Boundary condition
       call fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
       
@@ -928,6 +979,7 @@ contains
 
     do k=1, n_mem
       call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,k), q, sdotq)
+      ! write(6,*) k, 'sdotq', sdotq
       alpha(k) = rho_k(k) * sdotq
       do i=1, len_vector
         q(i) = q(i) - alpha(k)*y_k(i,k)
@@ -935,6 +987,8 @@ contains
     enddo
     call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,1), y_k(:,1), ysq)
     gamma = rho_k(1)/ysq
+    ! write(6,*) 'gamma', gamma
+    if (gamma < 1.0d-10) gamma = 1.0d0
 
     do i=1, len_vector
       z_k(i) = gamma*q(i)
@@ -942,13 +996,16 @@ contains
 
     do k=n_mem, 1, -1
       call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,k), z_k, ydotz)
+      ! write(6,*) k, 'ydotz', ydotz
       beta = rho_k(k)*ydotz
       do i=1, len_vector
         z_k(i)=z_k(i) + s_k(i,k)*(alpha(k)-beta)
       enddo
     enddo
 
-    z_k(:) = -z_k(:)
+    do i=1, len_vector
+      z_k(i) = -z_k(i)
+    enddo
     
     deallocate(q)
   end subroutine fstr_calc_direction_LBFGS
@@ -1005,6 +1062,7 @@ contains
     real(kind=kreal) :: c_secant
     logical :: flag_converged
     integer :: ndof
+    real(kind=kreal) :: res
 
     ndof = hecMAT%NDOF
 
@@ -1016,31 +1074,49 @@ contains
       write(6,*) 'residual vector is not directed to potential decretion.', h_prime_0
       stop
     endif
+    write(6,*) ' h_prime_0, pot_0', h_prime_0, pot_0
 
     h_prime_a = h_prime_0
     alpha_E = 1.0d0 / C_line_search
 
     do while (h_prime_a < 0.0d0)
       alpha_E = alpha_E * C_line_search
-      hecMat%X(:) = alpha_E*z_k(:)
-      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+      hecMat%X(:) = -alpha_E*z_k(:)
+      call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_a)
-      pot_a = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+      pot_a = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
     enddo
+    write(6,*) ' h_prime_a, pot_a', h_prime_a, pot_a
 
     flag_converged = .false.
-    do while (.not. flag_converged)
+    do while (.true.)
       call fstr_set_secant(alpha_S, h_prime_0, alpha_E, h_prime_a, c_secant)
-      hecMat%X(:) = c_secant*z_k(:)
-      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+      ! write(6,*) 'alpha_S, alpha_E, c_secant', alpha_S, alpha_E, c_secant
+      hecMat%X(:) = -c_secant*z_k(:)
+      call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_c)
-      pot_c = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+      pot_c = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
+
+      write(6,*) 'alpha_c, h_prime_c, pot_c',c_secant, h_prime_c, pot_c
+      call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+      res = sqrt(res)
+      write(6,*) 'res: ', res
 
       flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, c_secant, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+      if (flag_converged) exit
+      if (h_prime_c < 0.0d0) then
+        alpha_S = c_secant
+        h_prime_0 = h_prime_c
+        pot_0 = pot_c
+      else
+        alpha_E = c_secant
+        h_prime_a = h_prime_c
+        pot_a = pot_c
+      endif
     enddo
   end subroutine fstr_line_search_along_direction
 
-  subroutine fstr_set_secant(a, b, Fa, Fb, c)
+  subroutine fstr_set_secant(a, Fa, b, Fb, c)
     implicit none
     real(kind=kreal), intent(in) :: a,b, Fa,Fb
     real(kind=kreal), intent(out) :: c

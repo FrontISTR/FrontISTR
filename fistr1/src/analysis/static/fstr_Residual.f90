@@ -305,4 +305,29 @@ contains
     endif
   end function fstr_get_potential
 
+  function fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,ptype) result(potential)
+    use m_fstr
+    use mULoad
+    use m_fstr_spring
+    implicit none
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    type(hecmwST_matrix), intent(inout)  :: hecMAT !< linear equation, its right side modified here
+    type(fstr_solid), intent(inout)      :: fstrSOLID !< we need boundary conditions of curr step
+    integer(kind=kint), intent(in)       :: ptype
+    real(kind=kreal)   ::  potential
+
+    integer :: i
+    real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
+
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      dunode_bak(i) = fstrSOLID%dunode(i)
+      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+    enddo
+    potential = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype)
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      fstrSOLID%dunode(i) = dunode_bak(i)
+    enddo
+  end function fstr_get_potential_with_X
+
 end module m_fstr_Residual
