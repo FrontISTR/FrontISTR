@@ -9,10 +9,9 @@ module fstr_ctrl_common
   use hecmw
   use mContact
   use m_timepoint
+  use fstr_ctrl_util_f
 
   implicit none
-
-  include 'fstr_ctrl_util_f.inc'
 
   private :: pc_strupr
 

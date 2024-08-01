@@ -17,10 +17,9 @@ module mContactDef
   use m_hecmw_contact_comm
   use bucket_search
   use mContactParam
+  use fstr_ctrl_util_f
 
   implicit none
-
-  include 'fstr_ctrl_util_f.inc'
 
   !> Structure to includes all info needed by contact calculation
   type tContact

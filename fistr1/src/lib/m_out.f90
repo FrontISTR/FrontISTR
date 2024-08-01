@@ -5,13 +5,13 @@
 !> \brief  This module manages step information
 module m_out
   use hecmw
+  use fstr_ctrl_util_f
+
   implicit none
 
   integer, parameter, private :: MAXOUT = 256
   integer, parameter, private :: MAXNAMELEN = 24
   character(len=20), parameter, private :: OUTFILENAME = "ifstr.out"
-
-  include 'fstr_ctrl_util_f.inc'
 
   !> output information
   type output_info

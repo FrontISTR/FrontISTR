@@ -6,7 +6,7 @@
 module fstr_ctrl_static
   use m_fstr
   use hecmw
-  include 'fstr_ctrl_util_f.inc'
+  use fstr_ctrl_util_f
 
   private :: pc_strupr
 contains

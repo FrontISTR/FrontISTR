@@ -7,7 +7,7 @@
 module fstr_ctrl_dynamic
   use m_fstr
   use hecmw
-  include 'fstr_ctrl_util_f.inc'
+  use fstr_ctrl_util_f
   private :: fstr_ctrl_get_nval
 contains
 

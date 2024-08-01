@@ -7,11 +7,10 @@ module fstr_ctrl_material
   use hecmw
   use mMaterial
   use m_table
+  use fstr_ctrl_util_f
   implicit none
 
   private :: read_user_matl
-
-  include 'fstr_ctrl_util_f.inc'
 
 contains
 
