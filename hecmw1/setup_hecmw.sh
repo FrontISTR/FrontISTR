@@ -75,12 +75,12 @@ LIBSRCDIRS="\
 	src/solver/matrix \
 	src/solver/las \
 	src/solver/iterative \
-	src/solver/precond/11 \
-	src/solver/precond/22 \
-	src/solver/precond/33 \
-	src/solver/precond/44 \
-	src/solver/precond/66 \
-	src/solver/precond/nn \
+	src/solver/precond/bilu \
+	src/solver/precond/diag \
+	src/solver/precond/ml \
+	src/solver/precond/rif \
+	src/solver/precond/sainv \
+	src/solver/precond/ssor \
 	src/solver/precond \
 	src/solver/solver_direct \
 	src/solver/solver_direct_parallel \

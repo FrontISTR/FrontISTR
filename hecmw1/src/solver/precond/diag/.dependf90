@@ -1,0 +1,7 @@
+hecmw_precond_DIAG.o : hecmw_precond_DIAG.f90 hecmw_precond_DIAG_nn.o hecmw_precond_DIAG_66.o hecmw_precond_DIAG_44.o hecmw_precond_DIAG_33.o hecmw_precond_DIAG_22.o hecmw_precond_DIAG_11.o 
+hecmw_precond_DIAG_11.o : hecmw_precond_DIAG_11.f90 
+hecmw_precond_DIAG_22.o : hecmw_precond_DIAG_22.f90 
+hecmw_precond_DIAG_33.o : hecmw_precond_DIAG_33.f90 
+hecmw_precond_DIAG_44.o : hecmw_precond_DIAG_44.f90 
+hecmw_precond_DIAG_66.o : hecmw_precond_DIAG_66.f90 
+hecmw_precond_DIAG_nn.o : hecmw_precond_DIAG_nn.f90 

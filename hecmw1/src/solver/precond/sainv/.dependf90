@@ -1,0 +1,3 @@
+hecmw_precond_SAINV.o : hecmw_precond_SAINV.f90 hecmw_precond_SAINV_nn.o hecmw_precond_SAINV_33.o 
+hecmw_precond_SAINV_33.o : hecmw_precond_SAINV_33.f90 
+hecmw_precond_SAINV_nn.o : hecmw_precond_SAINV_nn.f90 

@@ -1,4 +1,5 @@
 bucket_search.o : bucket_search.f90 
 contact_lib.o : contact_lib.f90 
-fstr_contact_def.o : fstr_contact_def.F90 bucket_search.o contact_lib.o surf_ele.o 
+fstr_contact_def.o : fstr_contact_def.F90 fstr_contact_param.o bucket_search.o contact_lib.o surf_ele.o 
+fstr_contact_param.o : fstr_contact_param.f90 
 surf_ele.o : surf_ele.f90 bucket_search.o 

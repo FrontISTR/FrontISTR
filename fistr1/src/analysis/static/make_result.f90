@@ -281,15 +281,16 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
       ngauss = fstrSOLID%maxn_gauss
+      work(:) = 0.d0
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
-          if( k > size(fstrSOLID%elements(i)%gausses) ) then
-            work(i) = 0.d0
-          else
-            work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+          if( associated(fstrSOLID%elements(i)%gausses) ) then
+            if( k <= size(fstrSOLID%elements(i)%gausses) ) then
+              work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+            endif
           endif
         enddo
         call hecmw_result_add( id, nitem, label, work )
@@ -689,6 +690,11 @@ contains
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(16), ndof )
     endif
+    ! --- TEMPERATURE @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) .and. associated(fstrSOLID%temperature) ) then
+     ncomp = ncomp + 1
+     nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
+    endif
     ! --- ROTATION (Only for 781 shell)
     if( fstrSOLID%output_ctrl(4)%outinfo%on(18) ) then
       if(ndof == 6) then
@@ -777,7 +783,7 @@ contains
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(37), ndof )
     endif
     ! --- NODE ID @node
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) ) then
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
     endif
@@ -969,6 +975,20 @@ contains
       iitem = iitem + nn
     endif
 
+    ! --- TEMPERATURE
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) .and. associated(fstrSOLID%temperature))then
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'TEMPERATURE'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%temperature(nn*(i-1)+j)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
     ! --- ROTATION
     if( fstrSOLID%output_ctrl(4)%outinfo%on(18) ) then
 
@@ -1153,7 +1173,7 @@ contains
     endif
 
     ! --- NODE ID @node
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) ) then
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
       fstrRESULT%nn_dof(ncomp) = nn
