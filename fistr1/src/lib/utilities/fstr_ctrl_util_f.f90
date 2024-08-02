@@ -241,7 +241,7 @@ contains
     integer(c_int) :: necessity
     character(c_char),target :: type
     type(*),dimension(..),target :: val
-    fstr_ctrl_get_param_ex = fstr_ctrl_get_param_ex_c( ctrl, c_loc(param_name), c_loc(value_list), necessity, c_loc(type), c_loc(val) )
+    fstr_ctrl_get_param_ex = fstr_ctrl_get_param_ex_c( ctrl,c_loc(param_name),c_loc(value_list),necessity,c_loc(type),c_loc(val) )
   end function fstr_ctrl_get_param_ex
 
   function fstr_ctrl_get_data_n_in_line( ctrl, line_no, delim )
