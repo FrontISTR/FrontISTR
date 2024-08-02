@@ -9360,7 +9360,7 @@ extern struct hecmwST_local_mesh *HECMW_partition(
     goto error;
   }
 
-  cont_data = HECMW_part_get_control(global_mesh);
+  cont_data = HECMW_part_get_control();
   if (cont_data == NULL) goto error;
 
   local_mesh = HECMW_partition_inner(global_mesh, cont_data);
