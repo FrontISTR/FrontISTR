@@ -101,6 +101,7 @@ contains
           endif
           if(present(RHSvector)) then
             RHSvector(ndof*(in-1)+idof) = RHS
+            ! write(6,*) 'BC: ', ndof*(in-1)+idof, RHS
             cycle
           endif
           if(present(conMAT)) then
@@ -152,6 +153,7 @@ contains
           RHS = cdiff(idof)-cdiff0(idof)+cddisp(idof)
           if(present(RHSvector)) then
             RHSvector(ndof*(in-1)+idof) = RHS
+            ! write(6,*) 'BC(rot): ', ndof*(in-1)+idof, RHS
             cycle
           endif
           if(present(conMAT)) then
