@@ -218,7 +218,7 @@ contains
     real(kind=kreal)   :: value
     integer(kind=kint) :: fstr_ctrl_get_REFTEMP,rcode
 
-    rcode = fstr_ctrl_get_data_array_ex( ctrl, 'r ', value )
+    rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'r ', value )
     fstr_ctrl_get_REFTEMP = rcode
 
   end function fstr_ctrl_get_REFTEMP

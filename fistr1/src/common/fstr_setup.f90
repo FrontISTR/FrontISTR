@@ -125,7 +125,7 @@ contains
     do
       rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
       if(     header_name == '!VERSION' ) then
-        rcode = fstr_ctrl_get_data_array_ex( ctrl, 'i ', version )
+        rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'i ', version )
       else if(     header_name == '!SOLUTION' ) then
         c_solution = c_solution + 1
         call fstr_setup_SOLUTION( ctrl, c_solution, P )

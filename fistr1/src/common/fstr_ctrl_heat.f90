@@ -436,7 +436,7 @@ contains
     if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRRR ',   weldline%I, weldline%U, weldline%coe, weldline%v )/=0 ) return
     write(s1,*) grp_name_len
     write(data_fmt,'(a,a,a)') 'S', trim(adjustl(s1)), 'IRRRR  '
-    if( fstr_ctrl_get_data_ex( ctrl, 2, data_fmt,  grp_id_name, weldline%xyz, weldline%n1, &
+    if( fstr_ctrl_get_data_ex( ctrl, 2, data_fmt,  grp_id_name(1), weldline%xyz, weldline%n1, &
       weldline%n2, weldline%distol, weldline%tstart )/=0 ) return
     call elem_grp_name_to_id( hecMESH, 'WELD_LINE ', 1, grp_id_name, grp_id )
     weldline%egrpid = grp_id(1)
