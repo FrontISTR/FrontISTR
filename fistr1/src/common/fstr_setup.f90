@@ -1849,7 +1849,7 @@ contains
     if( dtype==0 ) then
       data_fmt = "RRRRRRrrr "
       xyzc(:) = 0.d0
-      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, xyza(1), xyza(2),  &
+      if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, xyza(1), xyza(2),  &
         xyza(3), xyzb(1), xyzb(2), xyzb(3), xyzc(1), xyzc(2), xyzc(3) )/=0 ) return
       if( coordsys%sys_type==10 ) then
         ff1 = xyza-xyzc
@@ -1873,7 +1873,7 @@ contains
     else
       coordsys%node_ID(3) = 0   ! global origin
       data_fmt = "IIi "
-      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, coordsys%node_ID(1),  &
+      if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, coordsys%node_ID(1),  &
         coordsys%node_ID(2), coordsys%node_ID(3) )/=0 ) return
       if( coordsys%node_ID(3) == 0 ) then
         nid = node_global_to_local( hecMESH, coordsys%node_ID(1:2), 2 )
