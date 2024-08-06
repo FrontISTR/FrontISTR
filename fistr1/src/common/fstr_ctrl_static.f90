@@ -284,7 +284,7 @@ contains
     character(len=256) :: fname
 
     fstr_ctrl_get_USERLOAD = -1
-    if( fstr_ctrl_get_param_ex( ctrl, 'FILE  ', '# ',           0,   'S',   fname )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'FILE ', '# ',           0,   'S',   fname )/=0 ) return
     if( fname=="" ) stop "You must define a file name before read in user-defined material"
     if( ureadload(fname)/=0 ) return
 
