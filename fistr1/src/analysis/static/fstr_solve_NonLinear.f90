@@ -21,6 +21,8 @@ module m_fstr_NonLinearMethod
   implicit none
   ! parameters for line search
   real(kind=kreal), parameter :: C_line_search=2.0, delta=0.2, sigma=0.9, eps_wolfe=1.0d-6
+  real(kind=kreal), parameter :: omega_wolfe=0.001, Delta_approx_wolfe=0.7
+  real(kind=kreal) :: C_wolfe, Q_Wolfe
 
 contains
 
@@ -863,6 +865,7 @@ contains
 
     integer :: u_debug
     integer :: max_iter_bak
+    logical :: flag_approx_Wolfe
 
     max_iter_bak = fstrSOLID%step_ctrl(cstep)%max_iter
     fstrSOLID%step_ctrl(cstep)%max_iter = 100*fstrSOLID%step_ctrl(cstep)%max_iter
@@ -901,19 +904,14 @@ contains
     y_k(:,:) = 0.0d0
     g_prev(:) = 0.0d0
     rho_k(:) = 0.0d0
-    ! write(6,*) hecMESH%n_node, ndof
     do i=1,hecMESH%n_node*ndof
       y_k(i,1) = -hecMAT%B(i)
-      ! if (y_k(i,1) .ne. 0.0d0) write(6,*) i, y_k(i,1)
     enddo
 
-    ! do i=1,hecMESH%n_node*ndof
-    !   if (fstrSOLID%dunode(i) /= 0.0d0) write(6,*) 'du: ', i, fstrSOLID%dunode(i)
-    ! enddo
-    ! do i=1,hecMESH%n_node*ndof
-    !   if (fstrSOLID%GL(i) /= 0.0d0) write(6,*) 'GL: ', i, fstrSOLID%GL(i)
-    ! enddo
-
+    ! parameter to judge Wolfe/approx Wolfe selection
+    C_wolfe = 0.0d0
+    Q_wolfe = 0.0d0
+    flag_approx_Wolfe = .false.
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt = stepcnt+1
@@ -927,6 +925,7 @@ contains
       ! ! ----- Set Boundary condition
       call fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
       
+
       !----- line search of step length
       call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
 
@@ -1028,7 +1027,6 @@ contains
     else
       gamma = 1.0d0/(rho_k(1)*ysq)
     endif
-    ! write(6,*) 'gamma ', gamma
 
     do i=1, len_vector
       z_k(i) = gamma*q(i)
@@ -1041,9 +1039,6 @@ contains
         z_k(i)=z_k(i) + s_k(i,k)*(alpha(k)-beta)
       enddo
     enddo
-    ! do i=1, len_vector
-    !   write(6,*) 'z ', z_k(i)
-    ! enddo
 
     ! do i=1, len_vector
     !   z_k(i) = -z_k(i)
@@ -1110,18 +1105,6 @@ contains
     integer :: dummy
 
     ndof = hecMAT%NDOF
-    len_vector = hecMESH%n_node*hecMesh%n_dof
-    z_max = 0.0d0
-    do i=1, len_vector
-      z_max = max(z_max, abs(z_k(i)))
-    end do
-    call MPI_Allreduce                                              &
-    &       (MPI_IN_PLACE, z_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX,              &
-    &        hecMESH%MPI_COMM, ierr)
-    if (z_max==0.0d0) then
-      write(6,*) 'direction for line search is zero-vector'
-      stop
-    endif
 
     alpha_S = 0.0d0
     hecMat%X(:) = 0.0d0
@@ -1134,7 +1117,20 @@ contains
     write(6,'(a, 2es27.16e3)') ' h_prime_0, pot_0', h_prime_0, pot_0
 
     h_prime_a = h_prime_0
-    z_max = 1.0d0
+
+    len_vector = hecMESH%n_node*hecMesh%n_dof
+    z_max = 0.0d0
+    do i=1, len_vector
+      z_max = max(z_max, abs(z_k(i)))
+    end do
+    call MPI_Allreduce                                              &
+    &       (MPI_IN_PLACE, z_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX,              &
+    &        hecMESH%MPI_COMM, ierr)
+    if (z_max==0.0d0) then
+      write(6,*) 'direction for line search is zero-vector'
+      stop
+    endif
+    ! z_max = 1.0d0
     alpha_E = 1.0d0 / z_max /C_line_search
 
     do while (h_prime_a < 0.0d0)
@@ -1146,7 +1142,8 @@ contains
       write(6,'(a, 3es27.16e3)') 'alpha_E, h_prime_a, pot_a', alpha_E, h_prime_a, pot_a
     enddo
 
-    ! read(5,*) dummy
+		Q_Wolfe = 1 + Delta_approx_wolfe * Q_Wolfe
+		C_Wolfe = C_Wolfe + (abs(pot_0)-C_Wolfe) / Q_Wolfe
 
     flag_converged = .false.
     iter_ls=1
@@ -1157,12 +1154,17 @@ contains
       call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_c)
       pot_c = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
 
-      write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, c_secant, h_prime_c, pot_c', alpha_S, alpha_E, c_secant, h_prime_c, pot_c
+      ! write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, c_secant, h_prime_c, pot_c', alpha_S, alpha_E, c_secant, h_prime_c, pot_c
       ! call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
       ! res = sqrt(res)
       ! write(6,*) 'res: ', res
 
-      flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, c_secant, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+      ! if (abs( pot_c - pot_0) <= (omega_Wolfe * C_Wolfe) ) then
+      !   flag_converged = fstr_approx_wolfe_condition(alpha_S, alpha_E, c_secant, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+      ! else
+        flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, c_secant, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+      ! endif
+
       if (flag_converged) exit
       if (h_prime_c < 0.0d0) then
         alpha_S = c_secant
@@ -1173,7 +1175,6 @@ contains
         h_prime_a = h_prime_c
         pot_a = pot_c
       endif
-      ! if (iter_ls > 10) stop
       iter_ls = iter_ls +1
     enddo
   end subroutine fstr_line_search_along_direction
@@ -1197,13 +1198,34 @@ contains
 
     real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
 
-    wolfe1_left = pot_a - pot_c
+    wolfe1_left = pot_c - pot_0
     wolfe1_right = delta*h_prime_c*alpha_c
 
     wolfe2_left = h_prime_c
     wolfe2_right = sigma*h_prime_0
 
-    ! flag_converged = (wolfe1_left<wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
+    ! flag_converged = (wolfe1_left<=wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
     flag_converged = (abs(h_prime_c) < abs(sigma*h_prime_0))
-  end function
+    ! flag_converged = h_prime_c>=(sigma*h_prime_0)
+  end function fstr_wolfe_condition
+  function fstr_approx_wolfe_condition(alpha_0, alpha_a, alpha_c, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c) result(flag_converged)
+    implicit none
+    logical :: flag_converged
+
+    real(kind=kreal), intent(in) :: alpha_0, alpha_a, alpha_c, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c
+
+    real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
+    real(kind=kreal) :: pot_Eps
+
+    wolfe1_left =  ( 2.0 * delta - 1.0d0 ) * h_prime_0
+    wolfe1_right = h_prime_c
+
+    wolfe2_left = h_prime_c
+    wolfe2_right = sigma*h_prime_0
+
+    flag_converged = &
+      (wolfe1_left>=wolfe1_right) &
+      .and. (wolfe2_left >= wolfe2_right) &
+      .and. (pot_c < pot_0 + (eps_wolfe*C_Wolfe))
+  end function fstr_approx_wolfe_condition
 end module m_fstr_NonLinearMethod
