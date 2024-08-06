@@ -66,8 +66,7 @@ contains
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target :: node_grp_name(:)
-    character(len=HECMW_NAME_LEN),pointer:: node_grp_name_p
+    character(len=HECMW_NAME_LEN) :: node_grp_name(:)
     integer(kind=kint) :: node_grp_name_len
     real(kind=kreal), pointer :: value(:)
     integer(kind=kint) :: fstr_ctrl_get_FIXTEMP
@@ -82,8 +81,7 @@ contains
     write(ss,*)  node_grp_name_len
     write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'r '
 
-    node_grp_name_p => node_grp_name(1)
-    fstr_ctrl_get_FIXTEMP = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_grp_name_p, value )
+    fstr_ctrl_get_FIXTEMP = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_grp_name, value )
 
   end function fstr_ctrl_get_FIXTEMP
 
@@ -93,8 +91,7 @@ contains
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target :: node_grp_name(:)
-    character(len=HECMW_NAME_LEN),pointer:: node_grp_name_p
+    character(len=HECMW_NAME_LEN) :: node_grp_name(:)
     integer(kind=kint) :: node_grp_name_len
     real(kind=kreal),pointer :: value(:)
     integer(kind=kint) :: fstr_ctrl_get_CFLUX
@@ -109,8 +106,7 @@ contains
     write(ss,*)  node_grp_name_len
     write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'r '
 
-    node_grp_name_p => node_grp_name(1)
-    fstr_ctrl_get_CFLUX = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_grp_name_p, value )
+    fstr_ctrl_get_CFLUX = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_grp_name, value )
 
   end function fstr_ctrl_get_CFLUX
 
@@ -119,8 +115,7 @@ contains
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target :: elem_grp_name(:)
-    character(len=HECMW_NAME_LEN),pointer:: elem_grp_name_p
+    character(len=HECMW_NAME_LEN) :: elem_grp_name(:)
     integer(kind=kint) :: elem_grp_name_len
     integer(kind=kint),pointer :: load_type(:)
     real(kind=kreal),pointer :: value(:)
@@ -130,7 +125,6 @@ contains
     integer(kind=kint) :: i, n
     character(len=HECMW_NAME_LEN) :: data_fmt,s1,s2
     character(len=type_name_size),pointer :: type_name_list(:)
-    character(len=type_name_size),pointer :: type_name_list_p
     integer(kind=kint) :: rcode
     integer(kind=kint) :: lid = -1
 
@@ -146,9 +140,7 @@ contains
     n = fstr_ctrl_get_data_line_n(ctrl)
     allocate( type_name_list(n) )
 
-    elem_grp_name_p => elem_grp_name(1)
-    type_name_list_p => type_name_list(1)
-      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, elem_grp_name_p, type_name_list_p, value)
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, elem_grp_name, type_name_list, value)
 
       if( rcode /= 0 ) then
         deallocate( type_name_list )
@@ -187,8 +179,7 @@ contains
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target :: surface_grp_name(:)
-    character(len=HECMW_NAME_LEN),pointer:: surface_grp_name_p
+    character(len=HECMW_NAME_LEN) :: surface_grp_name(:)
     integer(kind=kint) :: surface_grp_name_len
     real(kind=kreal),pointer :: value(:)
     integer(kind=kint) :: fstr_ctrl_get_SFLUX
@@ -203,8 +194,7 @@ contains
     write(ss,*)  surface_grp_name_len
     write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'r '
 
-    surface_grp_name_p => surface_grp_name(1)
-    fstr_ctrl_get_SFLUX = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surface_grp_name_p, value )
+    fstr_ctrl_get_SFLUX = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surface_grp_name, value )
   end function fstr_ctrl_get_SFLUX
 
 
@@ -217,8 +207,7 @@ contains
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp1
     character(len=HECMW_NAME_LEN) :: amp2
-    character(len=HECMW_NAME_LEN),target :: elem_grp_name(:)
-    character(len=HECMW_NAME_LEN),pointer:: elem_grp_name_p
+    character(len=HECMW_NAME_LEN) :: elem_grp_name(:)
     integer(kind=kint) :: elem_grp_name_len
     integer(kind=kint),pointer :: load_type(:)
     real(kind=kreal),pointer :: value(:)
@@ -229,7 +218,6 @@ contains
     integer(kind=kint) :: i, n
     character(len=HECMW_NAME_LEN) :: data_fmt,s1,s2
     character(len=type_name_size),pointer :: type_name_list(:)
-    character(len=type_name_size),pointer :: type_name_list_p
     integer(kind=kint) :: lid
     integer(kind=kint) :: rcode
 
@@ -246,9 +234,7 @@ contains
     n = fstr_ctrl_get_data_line_n(ctrl)
     allocate( type_name_list(n) )
 
-    elem_grp_name_p => elem_grp_name(1)
-    type_name_list_p => type_name_list(1)
-      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, elem_grp_name_p, type_name_list_p, value, sink)
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, elem_grp_name, type_name_list, value, sink)
 
       if( rcode /= 0 ) then
         deallocate( type_name_list )
@@ -288,8 +274,7 @@ contains
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp1
     character(len=HECMW_NAME_LEN) :: amp2
-    character(len=HECMW_NAME_LEN),target :: surface_grp_name(:)
-    character(len=HECMW_NAME_LEN),pointer:: surface_grp_name_p
+    character(len=HECMW_NAME_LEN) :: surface_grp_name(:)
     integer(kind=kint) :: surface_grp_name_len
     real(kind=kreal),pointer :: value(:)
     real(kind=kreal),pointer :: sink(:)
@@ -306,8 +291,7 @@ contains
     write(ss,*)  surface_grp_name_len
     write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'Rr '
 
-    surface_grp_name_p => surface_grp_name(1)
-    fstr_ctrl_get_SFILM = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surface_grp_name_p, value, sink )
+    fstr_ctrl_get_SFILM = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surface_grp_name, value, sink )
   end function fstr_ctrl_get_SFILM
 
 
@@ -320,8 +304,7 @@ contains
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp1
     character(len=HECMW_NAME_LEN) :: amp2
-    character(len=HECMW_NAME_LEN),target :: elem_grp_name(:)
-    character(len=HECMW_NAME_LEN),pointer:: elem_grp_name_p
+    character(len=HECMW_NAME_LEN) :: elem_grp_name(:)
     integer(kind=kint) :: elem_grp_name_len
     integer(kind=kint),pointer :: load_type(:)
     real(kind=kreal),pointer :: value(:)
@@ -332,7 +315,6 @@ contains
     integer(kind=kint) :: i, n
     character(len=HECMW_NAME_LEN) :: data_fmt,s1,s2
     character(len=type_name_size),pointer :: type_name_list(:)
-    character(len=type_name_size),pointer :: type_name_list_p
     integer(kind=kint) :: lid
     integer(kind=kint) :: rcode
 
@@ -349,9 +331,7 @@ contains
     n = fstr_ctrl_get_data_line_n(ctrl)
     allocate( type_name_list(n) )
 
-    elem_grp_name_p => elem_grp_name(1)
-    type_name_list_p => type_name_list(1)
-      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, elem_grp_name_p ,type_name_list_p, value, sink)
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, elem_grp_name ,type_name_list, value, sink)
 
       if( rcode /= 0 ) then
         deallocate( type_name_list )
@@ -391,8 +371,7 @@ contains
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp1
     character(len=HECMW_NAME_LEN) :: amp2
-    character(len=HECMW_NAME_LEN),target :: surface_grp_name(:)
-    character(len=HECMW_NAME_LEN),pointer:: surface_grp_name_p
+    character(len=HECMW_NAME_LEN) :: surface_grp_name(:)
     integer(kind=kint) :: surface_grp_name_len
     real(kind=kreal),pointer :: value(:)
     real(kind=kreal),pointer :: sink(:)
@@ -410,8 +389,7 @@ contains
     write(s1,*) surface_grp_name_len;
     write(data_fmt,'(a,a,a)') 'S', trim(adjustl(s1)), 'Rr  '
 
-    surface_grp_name_p => surface_grp_name(1)
-    fstr_ctrl_get_SRADIATE = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surface_grp_name_p, value, sink )
+    fstr_ctrl_get_SRADIATE = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surface_grp_name, value, sink )
 
   end function fstr_ctrl_get_SRADIATE
 

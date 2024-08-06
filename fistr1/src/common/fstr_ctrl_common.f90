@@ -408,8 +408,7 @@ contains
     integer(kind=kint) :: fg_type                        !< if type
     integer(kind=kint) :: fg_first                       !< if first
     integer(kind=kint) :: fg_window                      !< if window
-    character(len=HECMW_NAME_LEN),target  :: surf_id(:)  !< surface id
-    character(len=HECMW_NAME_LEN),pointer :: surf_id_p   !< surface id
+    character(len=HECMW_NAME_LEN) :: surf_id(:)          !< surface id
     integer(kind=kint) :: surf_id_len
     integer(kind=kint) :: fstr_ctrl_get_COUPLE
 
@@ -422,9 +421,8 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'ISTEP ', '# ', 0, 'I', fg_first )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'WINDOW ', '# ', 0, 'I', fg_window )/= 0) return
 
-    surf_id_p => surf_id(1)
     fstr_ctrl_get_COUPLE = &
-      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surf_id_p )
+      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surf_id )
 
   end function fstr_ctrl_get_COUPLE
 

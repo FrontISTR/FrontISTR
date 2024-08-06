@@ -2422,19 +2422,17 @@ end function fstr_setup_INITIAL
 
     function fstr_ctrl_get_FLOAD(ctrl, node_id, node_id_len, dof_id, value)
       integer(kind=kint)                    :: ctrl
-      character(len=HECMW_NAME_LEN),target :: node_id(:)  !Node group name
+      character(len=HECMW_NAME_LEN)        :: node_id(:)  !Node group name
       integer(kind=kint), pointer          :: dof_id(:)
       integer(kind=kint)                    :: node_id_len
       real(kind=kreal), pointer             :: value(:)
       integer(kind=kint)                    :: fstr_ctrl_get_FLOAD !return value
       character(len=HECMW_NAME_LEN)        :: data_fmt, ss
-      character(len=HECMW_NAME_LEN),pointer :: node_id_p
 
       write(ss,*) node_id_len
       write(data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'IR '
 
-      node_id_p => node_id(1)
-      fstr_ctrl_get_FLOAD = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, node_id_p, dof_id, value)
+      fstr_ctrl_get_FLOAD = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, node_id, dof_id, value)
     end function
 
   end subroutine
