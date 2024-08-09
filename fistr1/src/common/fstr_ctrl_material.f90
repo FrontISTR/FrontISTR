@@ -781,4 +781,59 @@ contains
     if( associated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_FLUID
 
+  !----------------------------------------------------------------------
+  !> Read in !CONNECTOR
+  integer function fstr_ctrl_get_CONNECTOR( ctrl, mattype, nlgeom, matval, dict )
+    integer(kind=kint), intent(in)    :: ctrl
+    integer(kind=kint), intent(inout) :: mattype
+    integer(kind=kint), intent(out)   :: nlgeom
+    real(kind=kreal),intent(out)      :: matval(:)
+    type(DICT_STRUCT), pointer        :: dict
+
+    integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof
+    real(kind=kreal),pointer :: fval(:,:)
+    character(len=HECMW_NAME_LEN) :: data_fmt
+    type( tTable )        :: mattable
+    logical            :: isok
+    character(len=256) :: s
+
+    fstr_ctrl_get_CONNECTOR = -1
+    depends = 0
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    if( depends>1 ) depends=1   ! temperature depends only currently
+    depends = 0
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DOF  ', '# ',           0,   'I',   dof )
+    nlgeom = INFINITESIMAL   !default value
+
+    ipt=1
+    s = 'SPRING,SPRINGA '
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  s, 0, 'P',   ipt    ) /= 0 ) return
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    ! SPRING or SPRINGA
+    if( ipt==1 .or. ipt==2 ) then
+      allocate( fval(1+depends,n) )
+      if( depends==0 ) then
+        data_fmt = "R "
+        fstr_ctrl_get_CONNECTOR = &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
+      else if( depends==1 ) then
+        data_fmt = "RR "
+        fstr_ctrl_get_CONNECTOR = &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+      endif
+      if( fstr_ctrl_get_CONNECTOR ==0 ) then
+        call init_table( mattable, depends, 1+depends,n, fval )
+        call dict_add_key( dict, MC_CONNECTOR, mattable )
+      endif
+    else
+      stop "ERROR: Material type not supported"
+    endif
+
+    mattype = CONNECTOR + ipt*1000 + dof*100
+    call finalize_table( mattable )
+    if( associated(fval) ) deallocate(fval)
+  end function fstr_ctrl_get_CONNECTOR
+
+
 end module fstr_ctrl_material

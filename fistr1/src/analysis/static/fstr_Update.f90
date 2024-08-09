@@ -132,7 +132,11 @@ contains
         ! ===== calculate the Internal Force
         if( getSpaceDimension( ic_type ) == 2 ) thick = 1.0d0
 
-        if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
+        if( ic_type == 111 ) then
+          call UPDATE_CONNECTOR( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
+            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
+
+        else if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
           call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
             thick,fstrSOLID%elements(icel)%iset,                             &
             total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &

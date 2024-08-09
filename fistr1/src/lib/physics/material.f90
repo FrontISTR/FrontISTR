@@ -71,6 +71,7 @@ module mMaterial
   integer(kind=kint), parameter :: NORTON                = 150000
 
   integer(kind=kint), parameter :: INCOMP_NEWTONIAN      = 160000
+  integer(kind=kint), parameter :: CONNECTOR             = 170000
 
   ! Following section type
   integer(kind=kint), parameter :: D3            = -1
@@ -124,6 +125,7 @@ module mMaterial
   character(len=DICT_KEY_LENGTH) :: MC_VISCOELASTIC = 'VISCOELASTIC' ! Prony coeff only curr.
   character(len=DICT_KEY_LENGTH) :: MC_NORTON = 'NORTON'             ! NOrton's creep law
   character(len=DICT_KEY_LENGTH) :: MC_INCOMP_NEWTONIAN = 'INCOMP_FLUID' ! viscocity
+  character(len=DICT_KEY_LENGTH) :: MC_CONNECTOR= 'CONNECTOR'        ! conector property
 
   type tshellmat
     integer(kind=kint)         :: ortho
@@ -364,6 +366,30 @@ contains
     if( .not. isElastoplastic( mtype ) ) return
     call setDigit( 2, 1, mtype )
   end subroutine
+
+  !> Get type of connector
+  integer function getConnectorType( mtype )
+    integer, intent(in) :: mtype
+    integer :: itype
+    getConnectorType = -1
+    itype = fetchDigit( 1, mtype )
+    if( itype/=1 ) return  ! not defomration problem
+    itype = fetchDigit( 2, mtype )
+    if( itype/=7 ) return  ! not connector
+    getConnectorType = fetchDigit( 3, mtype )
+  end function
+
+  !> Get dof of connector
+  integer function getConnectorDOF( mtype )
+    integer, intent(in) :: mtype
+    integer :: itype
+    getConnectorDOF = -1
+    itype = fetchDigit( 1, mtype )
+    if( itype/=1 ) return  ! not defomration problem
+    itype = fetchDigit( 2, mtype )
+    if( itype/=7 ) return  ! not connector
+    getConnectorDOF = fetchDigit( 4, mtype )
+  end function
 
 end module
 

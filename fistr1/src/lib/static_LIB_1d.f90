@@ -6,6 +6,8 @@
 module m_static_LIB_1d
   use hecmw, only : kint, kreal
   use elementInfo
+  use mMechGauss
+  use m_MatMatrix
   implicit none
 
 contains
@@ -15,7 +17,6 @@ contains
   !=====================================================================*
   !>  This subroutine calculate stiff matrix of 2-nodes truss element
   subroutine STF_C1( etype,nn,ecoord,area,gausses,stiff, u ,temperature )
-    use mMechGauss
     integer(kind=kint), intent(in)  :: etype               !< element type
     integer(kind=kint), intent(in)  :: nn                  !< number of elemental nodes
     real(kind=kreal),   intent(in)  :: ecoord(3,nn)        !< coordinates of elemental nodes
@@ -73,7 +74,6 @@ contains
   subroutine UPDATE_C1( etype, nn, ecoord, area, u, du, qf ,gausses, TT, T0 )
     !---------------------------------------------------------------------*
     use m_fstr
-    use mMechGauss
     ! I/F VARIABLES
     integer(kind=kint), intent(in)     :: etype           !< \param [in] element type
     integer(kind=kint), intent(in)     :: nn              !< \param [in] number of elemental nodes
@@ -149,7 +149,6 @@ contains
     !
     ! Calculate Strain and Stress increment of solid elements
     !
-    use mMechGauss
     integer(kind=kint), intent(in) :: ETYPE,NN
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: ndstrain(NN,6)
@@ -170,7 +169,6 @@ contains
     !
     ! Calculate Strain and Stress increment of solid elements
     !
-    use mMechGauss
     integer(kind=kint), intent(in) :: ETYPE
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out)  :: strain(6)
@@ -364,6 +362,122 @@ contains
         !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:3"
       endif
     endif
+
+  end subroutine
+
+  !>  This subroutine calculate stiff matrix of 2-nodes spring element
+  subroutine STF_CONNECTOR( etype, nn, ecoord, gausses, stiff, u, temperature )
+    integer(kind=kint), intent(in)  :: etype               !< element type
+    integer(kind=kint), intent(in)  :: nn                  !< number of elemental nodes
+    real(kind=kreal),   intent(in)  :: ecoord(3,nn)        !< coordinates of elemental nodes
+    type(tGaussStatus), intent(in)  :: gausses(:)          !< status of qudrature points
+    real(kind=kreal),   intent(out) :: stiff(:,:)          !< stiff matrix
+    real(kind=kreal),   intent(in)  :: u(:,:)     !< nodal displacemwent
+    real(kind=kreal),   intent(in)  :: temperature(nn)     !< temperature
+
+    real(kind=kreal) :: params(4)
+    integer(kind=kint) :: ctype
+    real(kind=kreal) llen, llen0, elem(3,nn)
+    real(kind=kreal) direc(3), direc0(3), ratio
+    integer(kind=kint) :: i,j
+
+    ! get connector property
+    call GetConnectorProperty( gausses(1), ctype, params, direc, temperature )
+
+    stiff(:,:) = 0.d0
+    if( ctype == 1 .or. ctype == 2 ) then
+      if( ctype == 1 ) then
+        ratio = 0.d0
+      else ! ctype == 2
+        elem(:,:) = ecoord(:,:) + u(:,:)
+        direc = elem(:,1)-elem(:,2)
+        llen = dsqrt( dot_product(direc, direc) )
+        direc0 = ecoord(:,1)-ecoord(:,2)
+        llen0 = dsqrt( dot_product(direc0, direc0) )
+        if( llen < 1.d-10 ) then
+          direc(1:3) = 1.d0
+          ratio = 0.d0
+        else
+          direc(1:3) = direc(1:3)/llen
+          ratio = (llen-llen0)/llen
+        endif
+      endif
+      
+      do i=1,3
+        stiff(i,i) = params(1)*ratio
+        do j=1,3
+          stiff(i,j) = stiff(i,j) + params(1)*(1.d0-ratio)*direc(i)*direc(j)
+        enddo
+      enddo
+        
+    else if( ctype == 3 ) then
+      stop "CONNECTOR ctype == 3 is not defined"
+    endif
+
+    stiff(4:6,1:3) = -stiff(1:3,1:3)
+    stiff(1:3,4:6) = transpose(stiff(4:6,1:3))
+    stiff(4:6,4:6) = stiff(1:3,1:3)
+
+  end subroutine
+  !
+  !> Update strain and stress inside spring element
+  !---------------------------------------------------------------------*
+  subroutine UPDATE_CONNECTOR( etype, nn, ecoord, u, du, qf ,gausses, TT )
+    !---------------------------------------------------------------------*
+    use m_fstr
+    ! I/F VARIABLES
+    integer(kind=kint), intent(in)     :: etype           !< \param [in] element type
+    integer(kind=kint), intent(in)     :: nn              !< \param [in] number of elemental nodes
+    real(kind=kreal),   intent(in)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
+    real(kind=kreal),   intent(in)     :: u(3,nn)         !< \param [in] nodal dislplacements
+    real(kind=kreal),   intent(in)     :: du(3,nn)        !< \param [in] nodal displacement ( solutions of solver )
+    real(kind=kreal),   intent(out)    :: qf(nn*3)        !< \param [out] Internal Force
+    type(tGaussStatus), intent(inout)  :: gausses(:)      !< \param [out] status of qudrature points
+    real(kind=kreal),   intent(in), optional :: TT(nn)    !< current temperature
+
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: mtype, ctype
+    real(kind=kreal) llen, llen0, elem(3,nn)
+    real(kind=kreal) direc(3), direc0(3), ratio
+    real(kind=kreal) :: params(4)
+    integer(kind=kint) :: i,j
+
+    ! get connector property
+    call GetConnectorProperty( gausses(1), ctype, params, direc, TT )
+
+    qf(:) = 0.d0
+    if( ctype == 1 .or. ctype == 2 ) then
+      elem(:,:) = ecoord(:,:) + u(:,:) + du(:,:)
+      if( ctype == 1 ) then
+        llen = dot_product(elem(:,1)-elem(:,2), direc)
+        llen0 = dot_product(ecoord(:,1)-ecoord(:,2), direc)
+      else ! ctype == 2
+        direc = elem(:,1)-elem(:,2)
+        llen = dsqrt( dot_product(direc, direc) )
+        direc0 = ecoord(:,1)-ecoord(:,2)
+        llen0 = dsqrt( dot_product(direc0, direc0) )
+        if( llen < 1.d-10 ) then
+          direc(1:3) = 1.d0
+          ratio = 0.d0
+        else
+          direc(1:3) = direc(1:3)/llen
+          ratio = (llen-llen0)/llen
+        endif
+      endif
+      
+      gausses(1)%strain(1) = llen-llen0
+      gausses(1)%stress(1) = params(1)*gausses(1)%strain(1)
+  
+      qf(1:3) = gausses(1)%stress(1)*direc
+      qf(4:6) = -qf(1:3)
+        
+    else if( ctype == 3 ) then
+      stop "CONNECTOR ctype == 3 is not defined"
+    endif
+
+    !set stress and strain for output
+    gausses(1)%strain_out(1) = gausses(1)%strain(1)
+    gausses(1)%stress_out(1) = gausses(1)%stress(1)
 
   end subroutine
 

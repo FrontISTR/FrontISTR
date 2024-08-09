@@ -86,7 +86,11 @@ contains
         if( getSpaceDimension( ic_type )==2 ) thick =1.d0
         material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
 
-        if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
+        if( ic_type==111 ) then
+          call STF_CONNECTOR( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
+            stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn) )
+
+        elseif( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick,  &
             stiffness(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset,          &

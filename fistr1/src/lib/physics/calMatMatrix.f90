@@ -335,4 +335,39 @@ contains
   !####################################################################
   ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
 
+  subroutine GetConnectorProperty( gauss, ctype, params, direction, temperature )
+    type( tGaussStatus ), intent(in)         :: gauss          !> status of qudrature point
+    integer(kind=kint), intent(out)          :: ctype          !> connector type
+    real(kind=kreal), intent(out)            :: params(:)      !> paramters
+    real(kind=kreal), intent(inout)          :: direction(:)   !> return direction of connector if specified
+    real(kind=kreal), intent(in), optional   :: temperature(:) !> current temperature
+
+    real(kind=kreal) ina(1), outa(4)
+    logical :: ierr
+    integer(kind=kint) :: mtype, dof
+
+    mtype = gauss%pMaterial%mtype
+    ctype = getConnectorType( mtype )
+    params(:) = 0.d0
+
+    if( ctype == 1 .or. ctype == 2 ) then
+      if( present(temperature) ) then
+        ina(1) = 0.5d0*(temperature(1)+temperature(2))
+        call fetch_TableData( MC_CONNECTOR, gauss%pMaterial%dict, outa(1:1), ierr, ina )
+      else
+        call fetch_TableData( MC_CONNECTOR, gauss%pMaterial%dict, outa(1:1), ierr )
+      endif
+      params(1) = outa(1)
+
+      dof = getConnectorDOF( mtype )
+      if( dof > 0 ) then
+        direction(:) = 0.d0
+        direction(dof) = 1.d0
+      endif
+    else if( ctype == 3 ) then
+      stop "CONNECTOR ctype == 3 is not defined"
+    endif
+
+  end subroutine
+
 end module m_MatMatrix
