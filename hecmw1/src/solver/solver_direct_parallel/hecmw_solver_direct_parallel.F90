@@ -82,10 +82,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-#ifndef HECMW_SERIAL
-    include 'mpif.h'
-#endif
-
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     integer(kind=kint), intent(in) :: ii ! output file handler
@@ -151,8 +147,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine sp_direct_parent(hecMESH, hecMAT)
 
     implicit none
-
-    include 'mpif.h'
 
     !I/O !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
@@ -547,8 +541,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-    include 'mpif.h'
-
     type (child_matrix)  :: cm
 
     real(kind=kreal), allocatable :: b(:,:) ! (ndeg, neqns)
@@ -701,8 +693,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initproc()
     implicit none
-
-    include 'mpif.h'
 
     integer(kind=kint) :: npe, myid
     integer(kind=kint) :: ndiv
@@ -1067,7 +1057,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
-    include 'mpif.h'
 
     !----------------------------------------------------------------------
     !
@@ -1137,7 +1126,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
-    include 'mpif.h'
 
     !----------------------------------------------------------------------
     !
@@ -1223,7 +1211,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal), pointer :: spdslnval(:,:)
-    include 'mpif.h'
     !
     !----------------------------------------------------------------------
     !
@@ -1373,7 +1360,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
-    include 'mpif.h'
     !----------------------------------------------------------------------
     !
     !     nufctx performs cholesky factorization in row order for every ndeg
@@ -1494,8 +1480,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: k, ks, ke, i, j, imp, ierr
     real(kind=kreal), allocatable :: wk(:), wk_d(:)
 
-    include 'mpif.h'
-
     ! forward
 
     !     now nstop is beginning point of C
@@ -1585,8 +1569,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal), allocatable :: wk(:,:), wk_d(:,:)
     integer(kind=kint) :: neqns_c, neqns_a, nstop, neqns, ks, ke
     integer(kind=kint) :: i, j, k, l, imp, ierr
-
-    include 'mpif.h'
 
     !now nstop is beginning point of C
     neqns_a = nstop - 1
@@ -1690,8 +1672,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal), allocatable :: wk(:,:), wk_d(:,:)
     integer(kind=kint) :: neqns_c, neqns_a, nstop, neqns, ks, ke
     integer(kind=kint) :: i, j, k, l, imp, ierr
-
-    include 'mpif.h'
 
     !     now nstop is beginning point of C
 
@@ -1804,8 +1784,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal), allocatable :: wk(:,:), wk_d(:,:)
     integer(kind=kint) :: neqns_c, neqns_a, ks, ke, locd, loc1
     integer(kind=kint) :: i, j, k, l, m, n, imp, ierr
-
-    include 'mpif.h'
 
     !now nstop is beginning point of C
     neqns_a = nstop - 1
