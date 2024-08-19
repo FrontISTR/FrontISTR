@@ -6,7 +6,7 @@
 
 module hecmw_util
 #ifndef HECMW_SERIAL
-  use mpi
+  use mpi_f08
 #endif
   implicit none
   private :: hecmw_PETOT,hecmw_rank,hecmw_comm,hecmw_group
@@ -514,11 +514,15 @@ contains
     integer(kind=kint) :: ierr
 
 #ifndef HECMW_SERIAL
+    type(MPI_COMM) :: mpicomm
+    type(MPI_GROUP) :: mpigroup
     !call MPI_INIT (ierr)
     call MPI_COMM_SIZE (MPI_COMM_WORLD, hecmw_PETOT, ierr)
     call MPI_COMM_RANK (MPI_COMM_WORLD, hecmw_rank,  ierr)
-    call MPI_COMM_DUP  (MPI_COMM_WORLD, hecmw_comm,  ierr)
-    call MPI_COMM_GROUP(MPI_COMM_WORLD, hecmw_group, ierr)
+    call MPI_COMM_DUP  (MPI_COMM_WORLD, mpicomm,  ierr)
+    call MPI_COMM_GROUP(MPI_COMM_WORLD, mpigroup, ierr)
+    hecmw_comm = mpicomm%mpi_val
+    hecmw_group = mpigroup%mpi_val
 #else
     hecmw_PETOT=1
     hecmw_rank=0
@@ -570,7 +574,9 @@ contains
     integer(kind=kint) :: comm, errorcode, ierror
 
 #ifndef HECMW_SERIAL
-    call MPI_ABORT(comm, errorcode, ierror)
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
+    call MPI_ABORT(mpicomm, errorcode, ierror)
 #else
     stop
 #endif

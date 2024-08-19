@@ -17,7 +17,9 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    call MPI_BARRIER (hecMESH%MPI_COMM, ierr)
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = hecMESH%MPI_COMM
+    call MPI_BARRIER (mpicomm, ierr)
 #endif
   end subroutine hecmw_barrier
 
@@ -33,9 +35,11 @@ contains
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_scatterv( sbuf, sc, disp, MPI_DOUBLE_PRECISION, &
       rbuf, rc, MPI_DOUBLE_PRECISION, &
-      root, comm, ierr )
+      root, mpicomm, ierr )
 #else
     rbuf(1) = sbuf(1)
 #endif
@@ -45,9 +49,9 @@ contains
   function hecmw_operation_hec2mpi(operation)
     use hecmw_util
     implicit none
-    integer(kind=kint) :: hecmw_operation_hec2mpi
+    type(MPI_OP) :: hecmw_operation_hec2mpi
     integer(kind=kint) :: operation
-    hecmw_operation_hec2mpi = -1
+    hecmw_operation_hec2mpi%mpi_val = -1
     if (operation == HECMW_SUM) then
       hecmw_operation_hec2mpi = MPI_SUM
     elseif (operation == HECMW_PROD) then
@@ -69,8 +73,10 @@ contains
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_scatter( sbuf, 1, MPI_INTEGER, &
-      &     rval, 1, MPI_INTEGER, root, comm, ierr )
+      &     rval, 1, MPI_INTEGER, root, mpicomm, ierr )
 #else
     rval=sbuf(1)
 #endif
@@ -85,8 +91,10 @@ contains
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_gather( sval, 1, MPI_INTEGER, &
-      &     rbuf, 1, MPI_INTEGER, root, comm, ierr )
+      &     rbuf, 1, MPI_INTEGER, root, mpicomm, ierr )
 #else
     rbuf(1)=sval
 #endif
@@ -100,8 +108,10 @@ contains
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_allgather( sval, 1, MPI_INTEGER, &
-      &     rbuf, 1, MPI_INTEGER, comm, ierr )
+      &     rbuf, 1, MPI_INTEGER, mpicomm, ierr )
 #else
     rbuf(1)=sval
 #endif
@@ -120,8 +130,10 @@ contains
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_scatterv( sbuf, scs, disp, MPI_REAL8, &
-      &     rbuf, rc, MPI_REAL8, root, comm, ierr )
+      &     rbuf, rc, MPI_REAL8, root, mpicomm, ierr )
 #else
     rbuf(1:rc)=sbuf(1:rc)
 #endif
@@ -140,8 +152,10 @@ contains
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_gatherv( sbuf, sc, MPI_REAL8, &
-      &     rbuf, rcs, disp, MPI_REAL8, root, comm, ierr )
+      &     rbuf, rcs, disp, MPI_REAL8, root, mpicomm, ierr )
 #else
     rbuf(1:sc)=sbuf(1:sc)
 #endif
@@ -160,8 +174,10 @@ contains
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_gatherv( sbuf, sc, MPI_INTEGER, &
-      &     rbuf, rcs, disp, MPI_INTEGER, root, comm, ierr )
+      &     rbuf, rcs, disp, MPI_INTEGER, root, mpicomm, ierr )
 #else
     rbuf(1:sc)=sbuf(1:sc)
 #endif
@@ -174,8 +190,10 @@ contains
     integer(kind=kint)   :: rval !receive val
     integer(kind=kint):: op, comm, ierr
 #ifndef HECMW_SERIAL
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_ALLREDUCE(sval, rval, 1, MPI_INTEGER, &
-      &     hecmw_operation_hec2mpi(op), comm, ierr)
+      &     hecmw_operation_hec2mpi(op), mpicomm, ierr)
 #else
     rval=sval
 #endif
@@ -191,8 +209,10 @@ contains
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     call MPI_alltoall( sbuf, sc, MPI_INTEGER, &
-      &     rbuf, rc, MPI_INTEGER, comm, ierr )
+      &     rbuf, rc, MPI_INTEGER, mpicomm, ierr )
 #else
     rbuf(1:sc)=sbuf(1:sc)
 #endif
@@ -210,8 +230,12 @@ contains
     integer(kind=kint) :: req
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    type(MPI_REQUEST) :: mpireq
+    mpicomm%mpi_val = comm
     call MPI_ISEND(sbuf, sc, MPI_INTEGER, &
-      &     dest, tag, comm, req, ierr)
+      &     dest, tag, mpicomm, mpireq, ierr)
+    req = mpireq%mpi_val
 #endif
   end subroutine hecmw_isend_int
 
@@ -227,8 +251,12 @@ contains
     integer(kind=kint) :: req
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    type(MPI_REQUEST) :: mpireq
+    mpicomm%mpi_val = comm
     call MPI_ISEND(sbuf, sc, MPI_DOUBLE_PRECISION, &
-      &     dest, tag, comm, req, ierr)
+      &     dest, tag, mpicomm, mpireq, ierr)
+    req = mpireq%mpi_val
 #endif
   end subroutine hecmw_isend_r
 
@@ -244,8 +272,12 @@ contains
     integer(kind=kint) :: req
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    type(MPI_REQUEST) :: mpireq
+    mpicomm%mpi_val = comm
     call MPI_IRECV(rbuf, rc, MPI_INTEGER, &
-      &     source, tag, comm, req, ierr)
+      &     source, tag, mpicomm, mpireq, ierr)
+    req = mpireq%mpi_val
 #endif
   end subroutine hecmw_irecv_int
 
@@ -261,8 +293,12 @@ contains
     integer(kind=kint) :: req
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    type(MPI_REQUEST) :: mpireq
+    mpicomm%mpi_val = comm
     call MPI_IRECV(rbuf, rc, MPI_DOUBLE_PRECISION, &
-      &     source, tag, comm, req, ierr)
+      &     source, tag, mpicomm, mpireq, ierr)
+    req = mpireq%mpi_val
 #endif
   end subroutine hecmw_irecv_r
 
@@ -273,8 +309,16 @@ contains
     integer(kind=kint) :: reqs(*)
     integer(kind=kint) :: stats(HECMW_STATUS_SIZE,*)
 #ifndef HECMW_SERIAL
-    integer(kind=kint) :: ierr
-    call MPI_WAITALL(cnt, reqs, stats, ierr)
+    integer(kind=kint) :: ierr, i
+    type(MPI_REQUEST) :: mpireqs(cnt)
+    type(MPI_STATUS) :: mpistats(cnt)
+    do i=1,cnt
+      mpireqs(i)%mpi_val = reqs(i)
+    enddo
+    call MPI_WAITALL(cnt, mpireqs, mpistats, ierr)
+    do i=1,cnt
+      call MPI_STATUS_F082F(mpistats(i), stats(:,i), ierr)
+    enddo
 #endif
   end subroutine hecmw_waitall
 
@@ -290,8 +334,12 @@ contains
     integer(kind=kint) :: stat(HECMW_STATUS_SIZE)
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    type(MPI_STATUS) :: mpistat
+    mpicomm%mpi_val = comm
     call MPI_RECV(rbuf, rc, MPI_INTEGER, &
-      &     source, tag, comm, stat, ierr)
+      &     source, tag, mpicomm, mpistat, ierr)
+    call MPI_STATUS_F082F(mpistat, stat, ierr)
 #endif
   end subroutine hecmw_recv_int
 
@@ -307,8 +355,12 @@ contains
     integer(kind=kint) :: stat(HECMW_STATUS_SIZE)
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
+    type(MPI_COMM) :: mpicomm
+    type(MPI_STATUS) :: mpistat
+    mpicomm%mpi_val = comm
     call MPI_RECV(rbuf, rc, MPI_DOUBLE_PRECISION, &
-      &     source, tag, comm, stat, ierr)
+      &     source, tag, mpicomm, mpistat, ierr)
+    call MPI_STATUS_F082F(mpistat, stat, ierr)
 #endif
   end subroutine hecmw_recv_r
   !C
@@ -319,10 +371,13 @@ contains
   subroutine hecmw_allreduce_DP(val,VALM,n,hec_op,comm )
     use hecmw_util
     implicit none
-    integer(kind=kint) :: n, hec_op,op, comm, ierr
+    integer(kind=kint) :: n, hec_op, comm, ierr
     double precision, dimension(n) :: val
     double precision, dimension(n) :: VALM
 #ifndef HECMW_SERIAL
+    type(MPI_OP) :: op
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     select case( hec_op )
       case ( hecmw_sum )
         op = MPI_SUM
@@ -333,7 +388,7 @@ contains
       case ( hecmw_min )
         op = MPI_MIN
     end select
-    call MPI_allREDUCE(val,VALM,n,MPI_DOUBLE_PRECISION,op,comm,ierr)
+    call MPI_allREDUCE(val,VALM,n,MPI_DOUBLE_PRECISION,op,mpicomm,ierr)
 #else
     integer(kind=kint) :: i
     do i=1,n
@@ -373,25 +428,27 @@ contains
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
     real(kind=kreal), dimension(:), allocatable :: VALM
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = hecMESH%MPI_COMM
 
     allocate (VALM(n))
     VALM= 0.d0
     if (ntag .eq. hecmw_sum) then
       call MPI_allREDUCE                                              &
         &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM,              &
-        &        hecMESH%MPI_COMM, ierr)
+        &        mpicomm, ierr)
     endif
 
     if (ntag .eq. hecmw_max) then
       call MPI_allREDUCE                                              &
         &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MAX,              &
-        &        hecMESH%MPI_COMM, ierr)
+        &        mpicomm, ierr)
     endif
 
     if (ntag .eq. hecmw_min) then
       call MPI_allREDUCE                                              &
         &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MIN,              &
-        &        hecMESH%MPI_COMM, ierr)
+        &        mpicomm, ierr)
     endif
 
     val= VALM
@@ -427,25 +484,27 @@ contains
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
     integer(kind=kint), dimension(:), allocatable :: VALM
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = hecMESH%MPI_COMM
 
     allocate (VALM(n))
     VALM= 0
     if (ntag .eq. hecmw_sum) then
       call MPI_allREDUCE                                              &
         &       (val, VALM, n, MPI_INTEGER, MPI_SUM,                       &
-        &        hecMESH%MPI_COMM, ierr)
+        &        mpicomm, ierr)
     endif
 
     if (ntag .eq. hecmw_max) then
       call MPI_allREDUCE                                              &
         &       (val, VALM, n, MPI_INTEGER, MPI_MAX,                       &
-        &        hecMESH%MPI_COMM, ierr)
+        &        mpicomm, ierr)
     endif
 
     if (ntag .eq. hecmw_min) then
       call MPI_allREDUCE                                              &
         &       (val, VALM, n, MPI_INTEGER, MPI_MIN,                       &
-        &        hecMESH%MPI_COMM, ierr)
+        &        mpicomm, ierr)
     endif
 
 
@@ -481,7 +540,9 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    call MPI_BCAST (val, n, MPI_DOUBLE_PRECISION, nbase, hecMESH%MPI_COMM, ierr)
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = hecMESH%MPI_COMM
+    call MPI_BCAST (val, n, MPI_DOUBLE_PRECISION, nbase, mpicomm, ierr)
 #endif
   end subroutine hecmw_bcast_R
 
@@ -493,7 +554,9 @@ contains
     integer(kind=kint):: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    call MPI_BCAST (val, n, MPI_DOUBLE_PRECISION, nbase, comm, ierr)
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
+    call MPI_BCAST (val, n, MPI_DOUBLE_PRECISION, nbase, mpicomm, ierr)
 #endif
   end subroutine hecmw_bcast_R_comm
 
@@ -505,8 +568,10 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     real(kind=kreal), dimension(1) :: val
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = hecMESH%MPI_COMM
     val(1)=s
-    call MPI_BCAST (val, 1, MPI_DOUBLE_PRECISION, nbase, hecMESH%MPI_COMM, ierr)
+    call MPI_BCAST (val, 1, MPI_DOUBLE_PRECISION, nbase, mpicomm, ierr)
     s = val(1)
 #endif
   end subroutine hecmw_bcast_R1
@@ -520,8 +585,10 @@ contains
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
     real(kind=kreal), dimension(1) :: val
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     val(1)=s
-    call MPI_BCAST (val, 1, MPI_DOUBLE_PRECISION, nbase, comm, ierr)
+    call MPI_BCAST (val, 1, MPI_DOUBLE_PRECISION, nbase, mpicomm, ierr)
     s = val(1)
 #endif
   end subroutine hecmw_bcast_R1_comm
@@ -538,7 +605,9 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    call MPI_BCAST (val, n, MPI_INTEGER, nbase, hecMESH%MPI_COMM, ierr)
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = hecMESH%MPI_COMM
+    call MPI_BCAST (val, n, MPI_INTEGER, nbase, mpicomm, ierr)
 #endif
   end subroutine hecmw_bcast_I
 
@@ -550,7 +619,9 @@ contains
     integer(kind=kint):: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    call MPI_BCAST (val, n, MPI_INTEGER, nbase, comm, ierr)
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
+    call MPI_BCAST (val, n, MPI_INTEGER, nbase, mpicomm, ierr)
 #endif
   end subroutine hecmw_bcast_I_comm
 
@@ -562,8 +633,10 @@ contains
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
     integer(kind=kint), dimension(1) :: val
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = hecMESH%MPI_COMM
     val(1) = s
-    call MPI_BCAST (val, 1, MPI_INTEGER, nbase, hecMESH%MPI_COMM, ierr)
+    call MPI_BCAST (val, 1, MPI_INTEGER, nbase, mpicomm, ierr)
     s = val(1)
 #endif
   end subroutine hecmw_bcast_I1
@@ -576,8 +649,10 @@ contains
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
     integer(kind=kint), dimension(1) :: val
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
     val(1) = s
-    call MPI_BCAST (val, 1, MPI_INTEGER, nbase, comm, ierr)
+    call MPI_BCAST (val, 1, MPI_INTEGER, nbase, mpicomm, ierr)
     s = val(1)
 #endif
   end subroutine hecmw_bcast_I1_comm
@@ -594,7 +669,9 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    call MPI_BCAST (val, n*nn, MPI_CHARACTER, nbase, hecMESH%MPI_COMM,&
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = hecMESH%MPI_COMM
+    call MPI_BCAST (val, n*nn, MPI_CHARACTER, nbase, mpicomm,&
       &                                                 ierr)
 #endif
   end subroutine hecmw_bcast_C
@@ -607,7 +684,9 @@ contains
     integer(kind=kint):: comm
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    call MPI_BCAST (val, n*nn, MPI_CHARACTER, nbase, comm,&
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = comm
+    call MPI_BCAST (val, n*nn, MPI_CHARACTER, nbase, mpicomm,&
       &                                                 ierr)
 #endif
   end subroutine hecmw_bcast_C_comm

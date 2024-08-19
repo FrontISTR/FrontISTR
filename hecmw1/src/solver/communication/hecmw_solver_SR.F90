@@ -19,8 +19,8 @@ module hecmw_solver_SR
     real   (kind=kreal), pointer :: WS(:)
     real   (kind=kreal), pointer :: WR(:)
     real   (kind=kreal), pointer :: X(:)
-    integer(kind=kint ), pointer :: req1(:)
-    integer(kind=kint ), pointer :: req2(:)
+    type(MPI_REQUEST), pointer :: req1(:)
+    type(MPI_REQUEST), pointer :: req2(:)
     integer(kind=kint )   ::  nreq1
     integer(kind=kint )   ::  nreq2
   end type async_buf
@@ -58,19 +58,21 @@ contains
     integer(kind=kint )                , intent(in)   :: my_rank
 
 #ifndef HECMW_SERIAL
-    integer(kind=kint ), dimension(:,:), allocatable :: sta1
-    integer(kind=kint ), dimension(:,:), allocatable :: sta2
-    integer(kind=kint ), dimension(:  ), allocatable :: req1
-    integer(kind=kint ), dimension(:  ), allocatable :: req2
+    type(MPI_STATUS), dimension(:), allocatable :: sta1
+    type(MPI_STATUS), dimension(:), allocatable :: sta2
+    type(MPI_REQUEST), dimension(:), allocatable :: req1
+    type(MPI_REQUEST), dimension(:), allocatable :: req2
 
     integer(kind=kint ), save :: NFLAG
     data NFLAG/0/
     ! local valiables
     integer(kind=kint ) :: neib,istart,inum,k,kk,ii,ierr,nreq1,nreq2
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = SOLVER_COMM
     !C
     !C-- INIT.
-    allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
-    allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
+    allocate (sta1(NEIBPETOT))
+    allocate (sta2(NEIBPETOT))
     allocate (req1(NEIBPETOT))
     allocate (req2(NEIBPETOT))
 
@@ -90,7 +92,7 @@ contains
       enddo
 
       call MPI_ISEND (WS(m*istart+1), m*inum,MPI_DOUBLE_PRECISION,    &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req1(nreq1), ierr)
     enddo
 
     !C
@@ -102,7 +104,7 @@ contains
       if (inum==0) cycle
       nreq2=nreq2+1
       call MPI_IRECV (WR(m*istart+1), m*inum, MPI_DOUBLE_PRECISION,   &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req2(nreq2), ierr)
     enddo
 
     call MPI_WAITALL (nreq2, req2, sta2, ierr)
@@ -148,9 +150,11 @@ contains
     ! local valiables
     real   (kind=kreal), pointer :: WS(:)
     real   (kind=kreal), pointer :: WR(:)
-    integer(kind=kint ), pointer :: req1(:)
-    integer(kind=kint ), pointer :: req2(:)
+    type(MPI_REQUEST), pointer :: req1(:)
+    type(MPI_REQUEST), pointer :: req2(:)
     integer(kind=kint ) :: neib,istart,inum,k,kk,ii,ierr,i,nreq1,nreq2
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = SOLVER_COMM
     !C
     !C-- INIT.
     allocate (WS(M*STACK_EXPORT(NEIBPETOT)))
@@ -172,7 +176,7 @@ contains
         enddo
       enddo
       call MPI_ISEND (WS(m*istart+1), m*inum,MPI_DOUBLE_PRECISION,    &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req1(nreq1), ierr)
     enddo
     !C
     !C-- RECEIVE
@@ -183,7 +187,7 @@ contains
       if (inum==0) cycle
       nreq2=nreq2+1
       call MPI_IRECV (WR(m*istart+1), m*inum, MPI_DOUBLE_PRECISION,   &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req2(nreq2), ierr)
     enddo
     !C
     !C-- Find empty abuf
@@ -228,10 +232,10 @@ contains
     real   (kind=kreal), pointer :: WS(:)
     real   (kind=kreal), pointer :: WR(:)
     real   (kind=kreal), pointer :: X (:)
-    integer(kind=kint ), pointer :: req1(:)
-    integer(kind=kint ), pointer :: req2(:)
-    integer(kind=kint ), dimension(:,:), allocatable :: sta1
-    integer(kind=kint ), dimension(:,:), allocatable :: sta2
+    type(MPI_REQUEST), pointer :: req1(:)
+    type(MPI_REQUEST), pointer :: req2(:)
+    type(MPI_STATUS), dimension(:), allocatable :: sta1
+    type(MPI_STATUS), dimension(:), allocatable :: sta2
     integer(kind=kint ) :: neib,istart,inum,k,j,ii,ierr,nreq1,nreq2
     !C-- Check ireq
     if (ireq < 0 .or. ireq > MAX_NREQ) then
@@ -251,8 +255,8 @@ contains
     !C-- Free abuf
     abuf(ireq)%NEIBPETOT = 0
     !C-- Allocate
-    allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
-    allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
+    allocate (sta1(NEIBPETOT))
+    allocate (sta2(NEIBPETOT))
     !C-- Wait irecv
     call MPI_WAITALL (nreq2, req2, sta2, ierr)
     do neib= 1, NEIBPETOT
@@ -298,17 +302,19 @@ contains
     integer(kind=kint )                , intent(in)   :: my_rank
 
 #ifndef HECMW_SERIAL
-    integer(kind=kint ), dimension(:,:), allocatable :: sta1
-    integer(kind=kint ), dimension(:,:), allocatable :: sta2
-    integer(kind=kint ), dimension(:  ), allocatable :: req1
-    integer(kind=kint ), dimension(:  ), allocatable :: req2
+    type(MPI_STATUS), dimension(:), allocatable :: sta1
+    type(MPI_STATUS), dimension(:), allocatable :: sta2
+    type(MPI_REQUEST), dimension(:), allocatable :: req1
+    type(MPI_REQUEST), dimension(:), allocatable :: req2
 
     ! local valiables
     integer(kind=kint ) :: neib,istart,inum,k,kk,ii,ierr,nreq1,nreq2
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = SOLVER_COMM
     !C
     !C-- INIT.
-    allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
-    allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
+    allocate (sta1(NEIBPETOT))
+    allocate (sta2(NEIBPETOT))
     allocate (req1(NEIBPETOT))
     allocate (req2(NEIBPETOT))
 
@@ -328,7 +334,7 @@ contains
       enddo
 
       call MPI_ISEND (WS(M*istart+1), M*inum,MPI_DOUBLE_PRECISION,    &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req1(nreq1), ierr)
     enddo
 
     !C
@@ -340,7 +346,7 @@ contains
       if (inum==0) cycle
       nreq2=nreq2+1
       call MPI_IRECV (WR(M*istart+1), M*inum, MPI_DOUBLE_PRECISION,   &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req2(nreq2), ierr)
     enddo
 
     call MPI_WAITALL (nreq2, req2, sta2, ierr)

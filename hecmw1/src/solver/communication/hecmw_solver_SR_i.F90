@@ -38,19 +38,21 @@ contains
     integer(kind=kint )                , intent(in)   :: my_rank
 
 #ifndef HECMW_SERIAL
-    integer(kind=kint ), dimension(:,:), allocatable :: sta1
-    integer(kind=kint ), dimension(:,:), allocatable :: sta2
-    integer(kind=kint ), dimension(:  ), allocatable :: req1
-    integer(kind=kint ), dimension(:  ), allocatable :: req2
+    type(MPI_STATUS), dimension(:), allocatable :: sta1
+    type(MPI_STATUS), dimension(:), allocatable :: sta2
+    type(MPI_REQUEST), dimension(:), allocatable :: req1
+    type(MPI_REQUEST), dimension(:), allocatable :: req2
 
     integer(kind=kint ), save :: NFLAG
     data NFLAG/0/
     ! local valiables
     integer(kind=kint ) :: neib,istart,inum,k,ii,ierr,nreq1,nreq2
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = SOLVER_COMM
     !C
     !C-- INIT.
-    allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
-    allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
+    allocate (sta1(NEIBPETOT))
+    allocate (sta2(NEIBPETOT))
     allocate (req1(NEIBPETOT))
     allocate (req2(NEIBPETOT))
 
@@ -70,7 +72,7 @@ contains
       enddo
 
       call MPI_ISEND (WS(m*istart+1), m*inum, MPI_INTEGER,            &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req1(nreq1), ierr)
     enddo
 
     !C
@@ -82,7 +84,7 @@ contains
       if (inum==0) cycle
       nreq2=nreq2+1
       call MPI_IRECV (WR(m*istart+1), m*inum, MPI_INTEGER,            &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req2(nreq2), ierr)
     enddo
 
     call MPI_WAITALL (nreq2, req2, sta2, ierr)
@@ -129,17 +131,19 @@ contains
     integer(kind=kint )                , intent(in)   :: my_rank
 
 #ifndef HECMW_SERIAL
-    integer(kind=kint ), dimension(:,:), allocatable :: sta1
-    integer(kind=kint ), dimension(:,:), allocatable :: sta2
-    integer(kind=kint ), dimension(:  ), allocatable :: req1
-    integer(kind=kint ), dimension(:  ), allocatable :: req2
+    type(MPI_STATUS), dimension(:), allocatable :: sta1
+    type(MPI_STATUS), dimension(:), allocatable :: sta2
+    type(MPI_REQUEST), dimension(:), allocatable :: req1
+    type(MPI_REQUEST), dimension(:), allocatable :: req2
 
     ! local valiables
     integer(kind=kint ) :: neib,istart,inum,k,kk,ii,ierr,nreq1,nreq2
+    type(MPI_COMM) :: mpicomm
+    mpicomm%mpi_val = SOLVER_COMM
     !C
     !C-- INIT.
-    allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
-    allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
+    allocate (sta1(NEIBPETOT))
+    allocate (sta2(NEIBPETOT))
     allocate (req1(NEIBPETOT))
     allocate (req2(NEIBPETOT))
 
@@ -159,7 +163,7 @@ contains
       enddo
 
       call MPI_ISEND (WS(M*istart+1), M*inum,MPI_INTEGER,    &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req1(nreq1), ierr)
     enddo
 
     !C
@@ -171,7 +175,7 @@ contains
       if (inum==0) cycle
       nreq2=nreq2+1
       call MPI_IRECV (WR(M*istart+1), M*inum, MPI_INTEGER,   &
-        &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
+        &                  NEIBPE(neib), 0, mpicomm, req2(nreq2), ierr)
     enddo
 
     call MPI_WAITALL (nreq2, req2, sta2, ierr)

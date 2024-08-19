@@ -184,7 +184,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: i,j,k,l,m,n
 
     ! for MPI
-    integer(kind=kint) :: istatus(MPI_STATUS_SIZE)
+    ! integer(kind=kint) :: istatus(MPI_STATUS_SIZE)
+    type(MPI_STATUS) :: istatus
     integer(kind=kint) :: ICP
     real(kind=kreal), allocatable :: spdslnval(:,:), diagbuf(:,:), bdbuf(:,:)
     integer(kind=kint), allocatable :: spdslnidx(:)
@@ -548,7 +549,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     logical, save :: nusol_ready = .false.
 
     ! for MPI
-    integer(kind=kint) :: istatus(MPI_STATUS_SIZE)
+    ! integer(kind=kint) :: istatus(MPI_STATUS_SIZE)
+    type(MPI_STATUS) :: istatus
     integer(kind=kint) :: imp, ierr
     integer(kind=kint) :: i,j,k,l,m,n
 
