@@ -19,9 +19,10 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     integer(kind=kint) :: icou, i, im1, im2, is
-    dimension rdum(0:9)
+    real(kind=kreal) :: CD, CP, RHO, val
+    real(kind=kreal) :: rdum(0:9)
     character(len=80) :: line
 
     type(hecmwST_local_mesh) :: hecMESH
@@ -122,7 +123,7 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     integer(kind=kint) :: i, im
     integer(kind=kint) :: idum(0:9)
 
@@ -221,8 +222,9 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     integer(kind=kint) :: i, inod
+    real(kind=kreal)   :: xx, yy, zz 
 
     type(hecmwST_local_mesh) :: hecMESH
 
@@ -254,7 +256,7 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     integer(kind=kint) :: i, j, k, ij, jj, is, ie, ielm, icol, isid, isop, ietyp, istyp, itopo
     integer(kind=kint) :: nn(20), nna(10), nnb(10)
 
@@ -642,8 +644,9 @@ contains
 
     use m_fstr
 
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     integer(kind=kint) :: i, inod
+    real(kind=kreal)   :: tmin, tmax, tt, absmin, absmax
 
     type(fstr_heat)          :: hecHEAT
     type(hecmwST_local_mesh) :: hecMESH

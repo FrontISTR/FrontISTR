@@ -29,13 +29,15 @@ contains
     !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
     !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) NN, LTYPE, MM
     integer(kind=kint) NOD(MM)
+    real(kind=kreal)   THICK, HH, SINK
     real(kind=kreal)   XX(NN),YY(NN),ZZ(NN),TERM1(MM*MM),TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) I, IC, IP, JP, LX
+    real(kind=kreal)   RI, GX, GY, XSUM
     real(kind=kreal)   XG(2),WGT(2),H(2),HR(2)
     data WGT/1.0,1.0/
     data XG/-0.5773502691896, 0.5773502691896/
@@ -92,13 +94,15 @@ contains
     !   F2   LTYPE=2  : FILM IN NORMAL-DIRECTION FOR FACE-2
     !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: THICK, HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM
     real(kind=kreal)   :: XG(3), WGT(3), H(3), HR(3)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -168,13 +172,15 @@ contains
     !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
     !   F4   LTYPE=4  : FILM IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: THICK, HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM
     real(kind=kreal)   :: XG(2), WGT(2), H(2), HR(2)
     data WGT/1.0, 1.0/
     data XG/-0.5773502691896, 0.5773502691896/
@@ -235,13 +241,15 @@ contains
     !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
     !   F4   LTYPE=4  : FILM IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: THICK, HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM
     real(kind=kreal)   :: XG(3), WGT(3), H(3), HR(3)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -315,13 +323,15 @@ contains
     !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
     !   F4   LTYPE=4  : FILM IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: IC, IP, JP
+    real(kind=kreal)   :: AX, AY, AZ, BX, BY, BZ, AA
 
     !
     if     ( LTYPE.EQ.1 ) then
@@ -374,13 +384,18 @@ contains
     !   F3   LTYPE=3  : FILM IN NORMAL-DIRECTION FOR FACE-3
     !   F4   LTYPE=4  : FILM IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, L1, L2
+    real(kind=kreal)   :: X1, X2, X3, XL1, XL2
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
+    real(kind=kreal)   :: XSUM, DET, WG
     real(kind=kreal)   :: XG(3), WGT(3), H(6), HL1(6), HL2(6), HL3(6)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -529,13 +544,17 @@ contains
     !   F4   LTYPE=4  : FILM IN NORMAL-DIRECTION FOR FACE-4
     !   F5   LTYPE=5  : FILM IN NORMAL-DIRECTION FOR FACE-5
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: ISUF, I, IC, IP, JP, IG1, IG2
+    real(kind=kreal)   :: RI, SI, XSUM
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
+    real(kind=kreal)   :: AX, AY, AZ, BX, BY, BZ, AA
     real(kind=kreal)   :: H(6), HR(6), HS(6), HT(6)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
@@ -666,13 +685,19 @@ contains
     !   F5   LTYPE=5  : FILM IN NORMAL-DIRECTION FOR FACE-5
     !   F6   LTYPE=6  : FILM IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: ISUF, I, IC, IP, JP, IG1, IG2, L1, L2
+    real(kind=kreal)   :: RI, SI, RP, SP, RM, SM
+    real(kind=kreal)   :: XSUM, DET, WG
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
+    real(kind=kreal)   :: X1, X2, X3, XL1, XL2
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
     real(kind=kreal)   :: H(8), HR(8), HS(8), HT(8), HL1(6), HL2(6), HL3(6)
     real(kind=kreal)   :: XG(3), WGT(3)
     !*************************
@@ -908,13 +933,16 @@ contains
     !   F5   LTYPE=5  : FILM IN NORMAL-DIRECTION FOR FACE-5
     !   F6   LTYPE=6  : FILM IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
+    real(kind=kreal)   :: RI, SI, XSUM
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
@@ -1022,13 +1050,17 @@ contains
     !   F5   LTYPE=5  : FILM IN NORMAL-DIRECTION FOR FACE-5
     !   F6   LTYPE=6  : FILM IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: HH, SINK
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
+    real(kind=kreal)   :: RI, SI, RP, SP, RM, SM
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
+    real(kind=kreal)   :: XSUM
     real(kind=kreal)   :: H(8), HR(8), HS(8), HT(8)
     real(kind=kreal)   :: XG(3), WGT(3)
     !*************************
@@ -1180,11 +1212,12 @@ contains
     !**
     !   F1   LTYPE=1  : SURFACE FILM
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN
     real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), HH, SINK, TERM1(NN*NN), TERM2(NN)
     ! LOCAL VARIABLES
+    real(kind=kreal) :: AX, AY, AZ, BX, BY, BZ, AA
     integer(kind=kint) :: IC, IP, JP
     !
     AX = XX(2) - XX(1)
@@ -1215,12 +1248,14 @@ contains
     !**
     !   F1   LTYPE=1  : FILM IN NORMAL-DIRECTION FOR FACE-1
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN
-    real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), TERM1(NN*NN), TERM2(NN)
+    real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), HH, SINK, TERM1(NN*NN), TERM2(NN)
     ! LOCAL VARIABLES
     integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
+    real(kind=kreal) :: RI, SI, XSUM
+    real(kind=kreal) :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
     real(kind=kreal) :: XG(2), WGT(2)
     !*************************
