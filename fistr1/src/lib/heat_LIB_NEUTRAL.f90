@@ -20,6 +20,7 @@ contains
     use m_fstr
 
     implicit real(kind=kreal) (A - H, O - Z)
+    integer(kind=kint) :: icou, i, im1, im2, is
     dimension rdum(0:9)
     character(len=80) :: line
 
@@ -122,7 +123,8 @@ contains
     use m_fstr
 
     implicit real(kind=kreal) (A - H, O - Z)
-    dimension idum(0:9)
+    integer(kind=kint) :: i, im
+    integer(kind=kint) :: idum(0:9)
 
     type(hecmwST_local_mesh) :: hecMESH
 
@@ -220,6 +222,7 @@ contains
     use m_fstr
 
     implicit real(kind=kreal) (A - H, O - Z)
+    integer(kind=kint) :: i, inod
 
     type(hecmwST_local_mesh) :: hecMESH
 
@@ -252,7 +255,8 @@ contains
     use m_fstr
 
     implicit real(kind=kreal) (A - H, O - Z)
-    dimension nn(20), nna(10), nnb(10)
+    integer(kind=kint) :: i, j, k, ij, jj, is, ie, ielm, icol, isid, isop, ietyp, istyp, itopo
+    integer(kind=kint) :: nn(20), nna(10), nnb(10)
 
     type(hecmwST_local_mesh) :: hecMESH
 
@@ -435,8 +439,9 @@ contains
 
   !----------------------------------------------------------------------
   !C
-  subroutine heat_put_neutral_409( INEU )
+  subroutine heat_put_neutral_409
 
+    use m_fstr
     !C
     !C==put View : BLOCK NO. = 409 )
     !C
@@ -612,8 +617,9 @@ contains
 
   !----------------------------------------------------------------------
   !C
-  subroutine heat_put_neutral_450( INEU )
+  subroutine heat_put_neutral_450
 
+    use m_fstr
     !C
     !C==put RESULT : BLOCK NO. = 450 )
     !C
@@ -637,6 +643,7 @@ contains
     use m_fstr
 
     implicit real(kind=kreal) (A - H, O - Z)
+    integer(kind=kint) :: i, inod
 
     type(fstr_heat)          :: hecHEAT
     type(hecmwST_local_mesh) :: hecMESH

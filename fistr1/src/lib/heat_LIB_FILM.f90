@@ -31,8 +31,11 @@ contains
     use hecmw
     implicit real(kind=kreal)(A-H,O-Z)
     ! I/F VARIABLES
+    integer(kind=kint) NN, LTYPE, MM
     integer(kind=kint) NOD(MM)
     real(kind=kreal)   XX(NN),YY(NN),ZZ(NN),TERM1(MM*MM),TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) I, IC, IP, JP, LX
     real(kind=kreal)   XG(2),WGT(2),H(2),HR(2)
     data WGT/1.0,1.0/
     data XG/-0.5773502691896, 0.5773502691896/
@@ -91,8 +94,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: XG(3), WGT(3), H(3), HR(3)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -164,8 +170,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: XG(2), WGT(2), H(2), HR(2)
     data WGT/1.0, 1.0/
     data XG/-0.5773502691896, 0.5773502691896/
@@ -228,8 +237,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, LX
     real(kind=kreal)   :: XG(3), WGT(3), H(3), HR(3)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -305,8 +317,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: IC, IP, JP
 
     !
     if     ( LTYPE.EQ.1 ) then
@@ -361,8 +376,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, L1, L2
     real(kind=kreal)   :: XG(3), WGT(3), H(6), HL1(6), HL2(6), HL3(6)
     !*************************
     !  GAUSS INTEGRATION POINT
@@ -513,9 +531,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: ISUF, I, IC, IP, JP, IG1, IG2
     real(kind=kreal)   :: H(6), HR(6), HS(6), HT(6)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
@@ -648,9 +668,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: ISUF, I, IC, IP, JP, IG1, IG2, L1, L2
     real(kind=kreal)   :: H(8), HR(8), HS(8), HT(8), HL1(6), HL2(6), HL3(6)
     real(kind=kreal)   :: XG(3), WGT(3)
     !*************************
@@ -888,9 +910,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
     real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
@@ -1000,9 +1024,11 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
     real(kind=kreal)   :: H(8), HR(8), HS(8), HT(8)
     real(kind=kreal)   :: XG(3), WGT(3)
     !*************************
@@ -1156,7 +1182,10 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN
     real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), HH, SINK, TERM1(NN*NN), TERM2(NN)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: IC, IP, JP
     !
     AX = XX(2) - XX(1)
     AY = YY(2) - YY(1)
@@ -1188,8 +1217,10 @@ contains
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
     ! I/F VARIABLES
+    integer(kind=kint) :: NN
     real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), TERM1(NN*NN), TERM2(NN)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
     real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
     real(kind=kreal) :: XG(2), WGT(2)
     !*************************

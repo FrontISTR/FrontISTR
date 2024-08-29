@@ -699,6 +699,7 @@ contains
   subroutine heat_conductivity_541(NN,ecoord,TEMP,TZERO,THICK,HH,RR1,RR2,SS,stiff )
     use hecmw
     implicit real(kind=kreal) (A - H, O - Z)
+    integer(kind=kint), intent(in) :: NN
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
     real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
     dimension XXX(NN), YYY(NN), ZZZ(NN), TEMP(NN), SS(NN*NN)
@@ -803,6 +804,7 @@ contains
   subroutine heat_get_area ( XX,YY,ZZ,AA )
     use hecmw
     implicit real(kind=kreal)(A-H,O-Z)
+    integer(kind=kint) :: LX, LY
     dimension XX(4),YY(4),ZZ(4)
     dimension XG(2),H(4),HR(4),HS(4)
 

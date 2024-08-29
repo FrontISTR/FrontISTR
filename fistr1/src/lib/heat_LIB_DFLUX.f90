@@ -32,6 +32,8 @@ contains
     !C* I/F VARIABLES
     integer(kind=kint) NN, LTYPE
     real(kind=kreal) XX(NN),YY(NN),ZZ(NN),val,VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) I
     !C*
     !C*
     if( LTYPE.EQ.0 ) then
@@ -68,6 +70,8 @@ contains
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, LX
     real(kind=kreal)   :: XG(2), WGT(2), H(4), HR(4), HS(4)
     integer(kind=kint) :: NOD(2)
     !*************************
@@ -155,6 +159,8 @@ contains
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, L1, L2, LX
     real(kind=kreal)   :: XG(3), WGT(3), H(6), HR(3)
     real(kind=kreal)   :: HL1(6), HL2(6), HL3(6)
     integer(kind=kint) :: NOD(3)
@@ -289,6 +295,8 @@ contains
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, LX, LY
     real(kind=kreal)   :: XG(2), WGT(2), H(4), HR(4), HS(4)
     integer(kind=kint) :: NOD(2)
     !*************************
@@ -396,6 +404,8 @@ contains
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, LX, LY
     real(kind=kreal)   :: XG(3), WGT(3), H(8), HR(8), HS(8)
     integer(kind=kint) :: NOD(3)
     !*************************
@@ -954,6 +964,7 @@ contains
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, IG1, IG2, L12, LZ
     real(kind=kreal)   :: H(6), HR(6), HS(6), HT(6), PL(6)
     real(kind=kreal)   :: XG(2), WGT(2), XG1(3), XG2(3), WGT1(3)
     integer(kind=kint) :: NOD(4)
@@ -1160,6 +1171,7 @@ contains
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, IG1, IG2, LX, LY, LZ
     real(kind=kreal)   :: H(15), HR(15), HS(15), HT(15), PL(15)
     real(kind=kreal)   :: XG(3), WGT(3)
     integer(kind=kint) :: NOD(8)
@@ -2020,6 +2032,8 @@ contains
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I
     !
     if( LTYPE.EQ.0 ) then
       THICK = THICK
@@ -2064,6 +2078,7 @@ contains
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IG1, IG2
     real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4), PL(4)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************
