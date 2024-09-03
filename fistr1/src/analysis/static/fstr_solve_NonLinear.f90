@@ -1190,7 +1190,8 @@ contains
     endif
   end subroutine fstr_set_secant
 
-  function fstr_wolfe_condition(alpha_0, alpha_a, alpha_c, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c) result(flag_converged)
+  function fstr_wolfe_condition(alpha_0, alpha_a, alpha_c, h_prime_0, &
+    &  h_prime_a, h_prime_c, pot_0, pot_a, pot_c) result(flag_converged)
     implicit none
     logical :: flag_converged
 
@@ -1208,11 +1209,14 @@ contains
     flag_converged = (abs(h_prime_c) < abs(sigma*h_prime_0))
     ! flag_converged = h_prime_c>=(sigma*h_prime_0)
   end function fstr_wolfe_condition
-  function fstr_approx_wolfe_condition(alpha_0, alpha_a, alpha_c, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c) result(flag_converged)
+
+  function fstr_approx_wolfe_condition(alpha_0, alpha_a, alpha_c, h_prime_0, h_prime_a, &
+    &  h_prime_c, pot_0, pot_a, pot_c) result(flag_converged)
     implicit none
     logical :: flag_converged
 
-    real(kind=kreal), intent(in) :: alpha_0, alpha_a, alpha_c, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c
+    real(kind=kreal), intent(in) :: alpha_0, alpha_a, alpha_c
+    real(kind=kreal), intent(in) :: h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c
 
     real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
     real(kind=kreal) :: pot_Eps
