@@ -28,10 +28,13 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit none
     !C* I/F VARIABLES
     integer(kind=kint) NN, LTYPE
-    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),val,VECT(NN)
+    real(kind=kreal) XX(NN),YY(NN),ZZ(NN),ASECT,val,VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) I
+    real(kind=kreal) DX, DY, DZ, AL, VV
     !C*
     !C*
     if( LTYPE.EQ.0 ) then
@@ -64,10 +67,14 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM
+    real(kind=kreal)   :: V1X, V1Y, V1Z, V2X, V2Y, V2Z, V3X, V3Y, V3Z, AA, VV
     real(kind=kreal)   :: XG(2), WGT(2), H(4), HR(4), HS(4)
     integer(kind=kint) :: NOD(2)
     !*************************
@@ -151,10 +158,14 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, L1, L2, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM, X1, X2, X3, XL1, XL2
+    real(kind=kreal)   :: XJ11, XJ12, XJ21, XJ22, DET, WG
     real(kind=kreal)   :: XG(3), WGT(3), H(6), HR(3)
     real(kind=kreal)   :: HL1(6), HL2(6), HL3(6)
     integer(kind=kint) :: NOD(3)
@@ -285,10 +296,15 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, LX, LY
+    real(kind=kreal)   :: GX, GY, XSUM
+    real(kind=kreal)   :: RI, SI, RP, SP, RM, SM
+    real(kind=kreal)   :: XJ11, XJ12, XJ21, XJ22, DET, WG
     real(kind=kreal)   :: XG(2), WGT(2), H(4), HR(4), HS(4)
     integer(kind=kint) :: NOD(2)
     !*************************
@@ -392,10 +408,15 @@ contains
     !C***
     !C*   LTYPE=0  : BODY FLUX
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     !C* I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    !C* LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, LX, LY
+    real(kind=kreal)   :: GX, GY, XSUM
+    real(kind=kreal)   :: RI, SI, RP, SP, RM, SM
+    real(kind=kreal)   :: XJ11, XJ12, XJ21, XJ22, DET, WG
     real(kind=kreal)   :: XG(3), WGT(3), H(8), HR(8), HS(8)
     integer(kind=kint) :: NOD(3)
     !*************************
@@ -949,11 +970,18 @@ contains
     !   S4   LTYPE=4  :FLUX IN NORMAL-DIRECTION FOR FACE-4
     !   S5   LTYPE=5  :FLUX IN NORMAL-DIRECTION FOR FACE-5
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, IG1, IG2, L12, LZ
+    real(kind=kreal)   :: RI, SI, XSUM
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
+    real(kind=kreal)   :: V1X, V1Y, V1Z, V2X, V2Y, V2Z, V3X, V3Y, V3Z, AA
+    real(kind=kreal)   :: ZI, X1, X2
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
+    real(kind=kreal)   :: DET, WG
     real(kind=kreal)   :: H(6), HR(6), HS(6), HT(6), PL(6)
     real(kind=kreal)   :: XG(2), WGT(2), XG1(3), XG2(3), WGT1(3)
     integer(kind=kint) :: NOD(4)
@@ -1155,11 +1183,16 @@ contains
     !   S4   LTYPE=4  :FLUX IN NORMAL-DIRECTION FOR FACE-4
     !   S5   LTYPE=5  :FLUX IN NORMAL-DIRECTION FOR FACE-5
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: IVOL, ISUF, I, IG1, IG2, LX, LY, LZ
+    real(kind=kreal)   :: RI, SI, TI, RP, SP, TP, RM, SM, TM, XSUM
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
+    real(kind=kreal)   :: DET, WG
     real(kind=kreal)   :: H(15), HR(15), HS(15), HT(15), PL(15)
     real(kind=kreal)   :: XG(3), WGT(3)
     integer(kind=kint) :: NOD(8)
@@ -2016,10 +2049,13 @@ contains
     !   BF   LTYPE=0  :BODY FLUX
     !   S1   LTYPE=1  :SURFACE FLUX
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I
+    real(kind=kreal)   :: V1X, V1Y, V1Z, V2X, V2Y, V2Z, V3X, V3Y, V3Z, AA
     !
     if( LTYPE.EQ.0 ) then
       THICK = THICK
@@ -2059,11 +2095,14 @@ contains
     !   BF   LTYPE=0  : BODY FLUX
     !   S1   LTYPE=1  : SURFACE FLUX
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
     integer(kind=kint) :: NN, LTYPE
-    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), val, VECT(NN)
+    real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), THICK, val, VECT(NN)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IG1, IG2
+    real(kind=kreal)   :: RI, SI, XSUM
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal)   :: H(4), HR(4), HS(4), HT(4), PL(4)
     real(kind=kreal)   :: XG(2), WGT(2)
     !*************************

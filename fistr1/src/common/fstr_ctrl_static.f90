@@ -303,7 +303,7 @@ contains
     if( fname=="" ) stop "You must define a file name before read in user-defined material"
     if( ureadload(fname)/=0 ) return
 
-    fstr_ctrl_get_USERMATERIAL = 0
+    fstr_ctrl_get_USERLOAD = 0
   end function fstr_ctrl_get_USERLOAD
 
 end module fstr_ctrl_static
