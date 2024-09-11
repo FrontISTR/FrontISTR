@@ -389,8 +389,8 @@ contains
       write(IMSG,*) ' ***   STAGE Static -> Eigen analysis   **'
       write(*,*) ' ***   STAGE Static -> Eigen analysis   **'
       write(IMSG,*)
-      write(IMSG,*) ' ***   Stage 1: Nonlinear dynamic analysis  **'
-      write(*,*) ' ***   Stage 1: Nonlinear dynamic analysis   **'
+      write(IMSG,*) ' ***   Stage 1: Nonlinear static analysis  **'
+      write(*,*) ' ***   Stage 1: Nonlinear static analysis   **'
     endif
 
     call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, hecLagMAT, fstrPR, conMAT )
