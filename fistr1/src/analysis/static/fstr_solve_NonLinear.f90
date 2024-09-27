@@ -1093,8 +1093,8 @@ contains
 
 
     real(kind=kreal) :: alpha_S, alpha_E
-    real(kind=kreal) :: h_prime_0, h_prime_a, h_prime_c
-    real(kind=kreal) :: pot_0, pot_a, pot_c
+    real(kind=kreal) :: h_prime_0, h_prime_S, h_prime_a, h_prime_c
+    real(kind=kreal) :: pot_0, pot_s, pot_a, pot_c
     real(kind=kreal) :: c_secant
     logical :: flag_converged
     integer :: ndof, len_vector
@@ -1147,8 +1147,9 @@ contains
 
     flag_converged = .false.
     iter_ls=1
+    h_prime_S = h_prime_0
     do while (.true.)
-      call fstr_set_secant(alpha_S, h_prime_0, alpha_E, h_prime_a, c_secant)
+      call fstr_set_secant(alpha_S, h_prime_S, alpha_E, h_prime_a, c_secant)
       hecMat%X(:) = -c_secant*z_k(:)
       call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_c)
@@ -1159,17 +1160,19 @@ contains
       ! res = sqrt(res)
       ! write(6,*) 'res: ', res
 
-      ! if (abs( pot_c - pot_0) <= (omega_Wolfe * C_Wolfe) ) then
-      !   flag_converged = fstr_approx_wolfe_condition(alpha_S, alpha_E, c_secant, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
-      ! else
-        flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, c_secant, h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
-      ! endif
+      if (abs( pot_c - pot_0) <= (omega_Wolfe * C_Wolfe) ) then
+        flag_converged = fstr_approx_wolfe_condition(alpha_S, alpha_E, c_secant, &
+          &  h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+      else
+        flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, c_secant, &
+          &  h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+      endif
 
       if (flag_converged) exit
       if (h_prime_c < 0.0d0) then
         alpha_S = c_secant
-        h_prime_0 = h_prime_c
-        pot_0 = pot_c
+        h_prime_S = h_prime_c
+        pot_s = pot_c
       else
         alpha_E = c_secant
         h_prime_a = h_prime_c
@@ -1205,8 +1208,8 @@ contains
     wolfe2_left = h_prime_c
     wolfe2_right = sigma*h_prime_0
 
-    ! flag_converged = (wolfe1_left<=wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
-    flag_converged = (abs(h_prime_c) < abs(sigma*h_prime_0))
+    flag_converged = (wolfe1_left<=wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
+    ! flag_converged = (abs(h_prime_c) < abs(sigma*h_prime_0))
     ! flag_converged = h_prime_c>=(sigma*h_prime_0)
   end function fstr_wolfe_condition
 
@@ -1230,6 +1233,6 @@ contains
     flag_converged = &
       (wolfe1_left>=wolfe1_right) &
       .and. (wolfe2_left >= wolfe2_right) &
-      .and. (pot_c < pot_0 + (eps_wolfe*C_Wolfe))
+      .and. (pot_c <= pot_0 + (eps_wolfe*C_Wolfe))
   end function fstr_approx_wolfe_condition
 end module m_fstr_NonLinearMethod
