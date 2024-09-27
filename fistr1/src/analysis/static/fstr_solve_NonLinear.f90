@@ -23,6 +23,7 @@ module m_fstr_NonLinearMethod
   real(kind=kreal), parameter :: C_line_search=2.0, delta=0.2, sigma=0.9, eps_wolfe=1.0d-6
   real(kind=kreal), parameter :: omega_wolfe=0.001, Delta_approx_wolfe=0.7
   real(kind=kreal) :: C_wolfe, Q_Wolfe
+  integer(kind=kint), parameter :: maxiter_ls = 10
 
 contains
 
@@ -1130,7 +1131,7 @@ contains
       write(6,*) 'direction for line search is zero-vector'
       stop
     endif
-    ! z_max = 1.0d0
+    z_max = 1.0d0
     alpha_E = 1.0d0 / z_max /C_line_search
 
     do while (h_prime_a < 0.0d0)
@@ -1148,7 +1149,7 @@ contains
     flag_converged = .false.
     iter_ls=1
     h_prime_S = h_prime_0
-    do while (.true.)
+    do while (iter_ls<maxiter_ls)
       call fstr_set_secant(alpha_S, h_prime_S, alpha_E, h_prime_a, c_secant)
       hecMat%X(:) = -c_secant*z_k(:)
       call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
@@ -1180,6 +1181,7 @@ contains
       endif
       iter_ls = iter_ls +1
     enddo
+    write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, c_secant, h_prime_c, pot_c', alpha_S, alpha_E, c_secant, h_prime_c, pot_c
   end subroutine fstr_line_search_along_direction
 
   subroutine fstr_set_secant(a, Fa, b, Fb, c)
