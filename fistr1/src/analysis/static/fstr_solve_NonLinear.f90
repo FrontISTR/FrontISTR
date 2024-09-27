@@ -307,7 +307,7 @@ contains
 
         ! ----- check convergence
         if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-          relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
+          relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) exit
         res1 = res
 
         ! ----- check divergence and NaN
@@ -572,7 +572,7 @@ contains
 
         ! ----- check convergence
         if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-          relres < fstrSOLID%step_ctrl(cstep)%converg ) exit
+          relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) exit
         res1 = res
 
         ! ----- check divergence and NaN
@@ -806,7 +806,7 @@ contains
     endif
     if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
       if( rres < fstrSOLID%step_ctrl(cstep)%converg .or. &
-          rxnrm < fstrSOLID%step_ctrl(cstep)%converg ) then
+          rxnrm < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
           iterStatus=kitrConverged
           return
       endif
