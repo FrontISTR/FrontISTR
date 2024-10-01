@@ -20,7 +20,7 @@ contains
       &                  SOLVER_COMM,my_rank)
 
     use hecmw_util
-    implicit real*8 (A-H,O-Z)
+    implicit none
     !      include  'mpif.h'
     !      include  'hecmw_config_f.h'
 
@@ -46,7 +46,7 @@ contains
     integer(kind=kint ), save :: NFLAG
     data NFLAG/0/
     ! local valiables
-    integer(kind=kint ) :: neib,istart,inum,k,ii,ierr,nreq1,nreq2
+    integer(kind=kint ) :: neib,istart,inum,k,ii,kk,ierr,nreq1,nreq2
     !C
     !C-- INIT.
     allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
