@@ -848,6 +848,7 @@ contains
     if( fstrSOLID%output_ctrl(4)%outinfo%on(136) ) then
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(36), ndof )
+    endif
     ! --- ELEM ID @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(39) ) then
       ecomp = ecomp + 1
