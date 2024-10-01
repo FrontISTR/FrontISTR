@@ -164,6 +164,10 @@ contains
           call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
 
+        else if( ic_type == 511) then
+          call UPDATE_CONNECTOR( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
+            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), tincr )
+  
         else if( ic_type == 611) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
           CALL UpdateST_Beam(ic_type, nn, ecoord, total_disp(1:6,1:nn), du(1:6,1:nn), &

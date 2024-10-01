@@ -26,6 +26,8 @@ module mMaterial
   !     3: Hyperelastic
   !     4: Viscoelastic
   !     5: Viscoplastic
+  !     6: Incomp newtonian
+  !     7: Connector(Spring, Dashpot, Joint etc.)
   !     Heat conductiovity
   !     ......
   !   Third digit:
@@ -36,11 +38,14 @@ module mMaterial
   !       0: Neo-Hooke                          130000
   !       1: Mooney-Rivlin                      131000
   !       2: Arruda-Boyce                       132000
+  !     For spring or dashpot, joint etc.
+  !       0: spring dof                     ie. 170000
+  !       1: spring axial                       171000
+  !       2: dashpot dof                        172000
+  !       3: dashpot axial                      173000
   !   Fourth digit
-  !     For elastoplastic problem,yield function
-  !       0: isotropic (Mises)
-  !       1: Mohr-Coulomb
-  !       2: Drucker-Prager
+  !     For spring_d or dashpot_d, joint_d etc.
+  !       k: number of dof param (1st digit)
   !   Fifth digit:
   !     For elastoplastic deformation, hardening law
   !       0: Linear hardening           i.e.  120000
@@ -49,6 +54,8 @@ module mMaterial
   !       3: Ramberg-Osgood
   !       4: linear kinematic
   !       5: combined (linear kinematic + linear isotropic)
+  !     For spring_d or dashpot_d, joint_d etc.
+  !       k: number of dof param (2nd digit)
   !   Six digit:
   !     For visco-elastoplastic deformation, visco law
   !       0: Norton                     i.e.  150000
@@ -71,6 +78,7 @@ module mMaterial
   integer(kind=kint), parameter :: NORTON                = 150000
 
   integer(kind=kint), parameter :: INCOMP_NEWTONIAN      = 160000
+  integer(kind=kint), parameter :: CONNECTOR             = 170000
 
   ! Following section type
   integer(kind=kint), parameter :: D3            = -1
@@ -115,6 +123,19 @@ module mMaterial
   integer(kind=kint), parameter :: M_PLCONST9 = 33
   integer(kind=kint), parameter :: M_PLCONST10 = 34
 
+  integer(kind=kint), parameter :: M_DAMPING_RM = 35
+  integer(kind=kint), parameter :: M_DAMPING_RK = 36
+
+  integer(kind=kint), parameter :: M_SPRING_DOF    = 0
+  integer(kind=kint), parameter :: M_SPRING_AXIAL  = 1
+  integer(kind=kint), parameter :: M_DASHPOT_DOF   = 2
+  integer(kind=kint), parameter :: M_DASHPOT_AXIAL = 3
+
+  integer(kind=kint), parameter :: M_SPRING_D_NDOFFSET  = 0
+  integer(kind=kint), parameter :: M_SPRING_A_NDOFFSET  = 72
+  integer(kind=kint), parameter :: M_DASHPOT_D_NDOFFSET = 73
+  integer(kind=kint), parameter :: M_DASHPOT_A_NDOFFSET = 145
+
   ! Dictionary constants
   character(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
   character(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
@@ -124,6 +145,8 @@ module mMaterial
   character(len=DICT_KEY_LENGTH) :: MC_VISCOELASTIC = 'VISCOELASTIC' ! Prony coeff only curr.
   character(len=DICT_KEY_LENGTH) :: MC_NORTON = 'NORTON'             ! NOrton's creep law
   character(len=DICT_KEY_LENGTH) :: MC_INCOMP_NEWTONIAN = 'INCOMP_FLUID' ! viscocity
+  character(len=DICT_KEY_LENGTH) :: MC_SPRING= 'SPRING'              ! spring
+  character(len=DICT_KEY_LENGTH) :: MC_DASHPOT= 'DASHPOT'            ! dashpot
 
   type tshellmat
     integer(kind=kint)         :: ortho
@@ -147,6 +170,7 @@ module mMaterial
     integer(kind=kint)         :: nfstatus          !< number of status variables
     character(len=30)          :: name              !< material name
     real(kind=kreal)           :: variables(200)    !< material properties
+    integer(kind=kint)         :: variables_i(200)  !< material properties(integer)
     type(tshellmat), pointer   :: shell_var(:)      !< material properties for shell
     integer(kind=kint)         :: totallyr          !< total layer of element
     integer(kind=kint)         :: cdsys_ID          !< ID of material coordinate system
@@ -166,6 +190,7 @@ contains
     material%nfstatus = 0                ! Default: no status
     material%nlgeom_flag = INFINITESIMAL ! Default: INFINITESIMAL ANALYSIS
     material%variables =  0.d0           ! not defined yet
+    material%variables_i =  0            ! not defined yet
     material%totallyr =  0               ! not defined yet
 
     call dict_create( material%dict, 'INIT', DICT_NULL )
@@ -364,6 +389,42 @@ contains
     if( .not. isElastoplastic( mtype ) ) return
     call setDigit( 2, 1, mtype )
   end subroutine
+
+  !> Get type of connector
+  integer function getConnectorType( mtype )
+    integer, intent(in) :: mtype
+    integer :: itype
+    getConnectorType = -1
+    itype = fetchDigit( 1, mtype )
+    if( itype/=1 ) return  ! not defomration problem
+    itype = fetchDigit( 2, mtype )
+    if( itype/=7 ) return  ! not connector
+    getConnectorType = fetchDigit( 3, mtype )
+  end function
+
+  !> Get number of spring_d parameters 
+  integer function getNumOfSpring_dParam( material )
+    type( tMaterial ), intent(in) :: material
+    getNumOfSpring_dParam = material%variables_i(M_SPRING_D_NDOFFSET+1)
+  end function
+
+  !> Get number of spring_a parameters 
+  integer function getNumOfSpring_aParam( material )
+    type( tMaterial ), intent(in) :: material
+    getNumOfSpring_aParam = material%variables_i(M_SPRING_A_NDOFFSET+1)
+  end function
+
+  !> Get number of dashpot_d parameters 
+  integer function getNumOfDashpot_dParam( material )
+    type( tMaterial ), intent(in) :: material
+    getNumOfDashpot_dParam = material%variables_i(M_DASHPOT_D_NDOFFSET+1)
+  end function
+
+  !> Get number of dashpot_a parameters 
+  integer function getNumOfDashpot_aParam( material )
+    type( tMaterial ), intent(in) :: material
+    getNumOfDashpot_aParam = material%variables_i(M_DASHPOT_A_NDOFFSET+1)
+  end function
 
 end module
 
