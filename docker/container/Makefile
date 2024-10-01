@@ -1,23 +1,29 @@
 CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr
-CI_COMMIT_REF_NAME ?= _no_branch
-CI_COMMIT_REF_NAME := $(shell echo $(CI_COMMIT_REF_NAME) | sed -e 's/\//__/')
+ARCH  ?= x86_64
 
-all: build
-
-login:
-ifeq ($(CI_BUILD_TOKEN),)
-	docker login $(CI_REGISTRY_IMAGE)
+ifdef CI_COMMIT_TAG
+  TAG ?= $(CI_COMMIT_TAG)
 else
-	docker login -u gitlab-ci-token -p $(CI_BUILD_TOKEN) $(CI_REGISTRY_IMAGE)
+  ifdef CI_COMMIT_REF_SLUG
+    TAG ?= $(CI_COMMIT_REF_SLUG)
+    TAG := $(shell echo $(TAG) | sed -e 's/\//__/')
+  else
+    TAG := _no_branch
+  endif
 endif
 
-build:
-	docker build \
-		-t $(CI_REGISTRY_IMAGE)/fistr1:$(CI_COMMIT_REF_NAME) \
-		-f Dockerfile \
-		--target fistr1 \
-		../..
+all: push
 
-push: login build
-	docker push $(CI_REGISTRY_IMAGE)/fistr1:$(CI_COMMIT_REF_NAME)
+login:
+ifeq ($(CI_JOB_TOKEN),)
+	docker login $(CI_REGISTRY_IMAGE)
+else
+	docker login -u gitlab-ci-token -p $(CI_JOB_TOKEN) $(CI_REGISTRY_IMAGE)
+endif
 
+push: login
+	-docker buildx create --name multiarch --driver docker-container
+	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/fistr1:$(TAG) -f Dockerfile     --target fistr1 ../..
+ifeq ($(TAG),master)
+	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/fistr1:latest -f Dockerfile     --target fistr1 ../..
+endif

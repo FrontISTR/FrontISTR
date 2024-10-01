@@ -162,7 +162,7 @@
 			<description>リスタートファイル内に予期しないEOFを検出した</description>
 		</define>
 		<define type="error" name="E0105">
-			<message>IO error occured while readig restart file</message>
+			<message>IO error occurred while reading restart file</message>
 			<description>リスタートファイルの入出力中にIOエラーが発生した</description>
 		</define>
 
@@ -183,7 +183,7 @@
 			<description>結果ファイル内に予期しないEOFを検出した</description>
 		</define>
 		<define type="error" name="E0205">
-			<message>IO error occured while reading result file</message>
+			<message>IO error occurred while reading result file</message>
 			<description>結果ファイルの入出力中にIOエラーが発生した</description>
 		</define>
 		<define type="error" name="E0206">

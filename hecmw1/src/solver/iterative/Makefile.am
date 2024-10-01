@@ -78,6 +78,8 @@ OBJSF = \
 	hecmw_solver_BiCGSTAB.@f90objfilepostfix@ \
 	hecmw_solver_CG.@f90objfilepostfix@ \
 	hecmw_solver_GMRES.@f90objfilepostfix@ \
+	hecmw_solver_GMRESR.@f90objfilepostfix@ \
+	hecmw_solver_GMRESREN.@f90objfilepostfix@ \
 	hecmw_solver_GPBiCG.@f90objfilepostfix@ \
 	hecmw_solver_Iterative.@f90objfilepostfix@ 
 
@@ -105,7 +107,7 @@ $(OBJSF):
 install-header: $(HEADERS)
 	$(CP) $(HEADERS) $(HECMWINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
@@ -114,3 +116,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

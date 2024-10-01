@@ -13,7 +13,7 @@
  * @param[in] void
  * @return bool if running CPU is big endian, return true,
  * @details if running CPU is big endian, return true.
- *          if it is littel endian, return false.
+ *          if it is little endian, return false.
  */
 bool HECMW_is_big_endian(void) {
   union {
@@ -30,7 +30,7 @@ bool HECMW_is_big_endian(void) {
  * @param[in] void
  * @return const char* if running CPU is big endian, return "BigEndian",
  * @details if running CPU is big endian, return "BigEndian" as const char*.
- *          if it is littel endian, return "LittleEndian" as const char*.
+ *          if it is little endian, return "LittleEndian" as const char*.
  */
 const char* HECMW_endian_str(void) {
   if (HECMW_is_big_endian() == true) {

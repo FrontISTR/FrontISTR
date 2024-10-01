@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module provides functions to take into acount external load
+!> \brief  This module provides functions to take into account external load
 
 module m_fstr_ass_load
   implicit none
@@ -15,7 +15,7 @@ contains
   !>  -#  volume force
   !>  -#  thermal force
 
-  subroutine fstr_ass_load(cstep, ttime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+  subroutine fstr_ass_load(cstep, ctime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
     !======================================================================!
     use m_fstr
     use m_static_lib
@@ -27,8 +27,8 @@ contains
     use m_fstr_spring
     use m_common_struct
     use m_utilities
-    integer, intent(in)                  :: cstep !< current step
-    real(kind=kreal), intent(in)                     :: ttime  !< target time
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    real(kind=kreal), intent(in)         :: ctime !< current time
     type(hecmwST_matrix), intent(inout)  :: hecMAT !< hecmw matrix
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< hecmw mesh
     type(fstr_solid), intent(inout)      :: fstrSOLID !< fstr_solid
@@ -276,11 +276,7 @@ contains
     !C
     !C Update for fstrSOLID%GL
     !C
-    if( hecMESH%n_dof == 3 ) then
-      call hecmw_update_3_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
-    else if( hecMESH%n_dof == 2 ) then
-      call hecmw_update_2_R (hecMESH,fstrSOLID%GL,hecMESH%n_node)
-    endif
+    call hecmw_update_R (hecMESH,fstrSOLID%GL,hecMESH%n_node, hecMESH%n_dof)
 
     call hecmw_mat_clear_b( hecMAT )
     do i=1, hecMESH%n_node*  hecMESH%n_dof
@@ -317,7 +313,8 @@ contains
 
       if( fstrSOLID%TEMP_irres > 0 ) then
         call read_temperature_result(hecMESH, fstrSOLID%TEMP_irres, fstrSOLID%TEMP_tstep, &
-          &  fstrSOLID%TEMP_interval, fstrSOLID%TEMP_factor, fstrSOLID%temperature, fstrSOLID%temp_bak)
+          &  fstrSOLID%TEMP_rtype, fstrSOLID%TEMP_interval, fstrSOLID%TEMP_factor, ctime, &
+          &  fstrSOLID%temperature, fstrSOLID%temp_bak)
       endif
 
       ! ----- element TYPE loop.
@@ -445,12 +442,6 @@ contains
 
     ! ----- Spring force
     call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
-
-    if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaALagrange ) then
-      do i = 1, size(fstrSOLID%contacts)
-        call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, hecMAT%B )
-      enddo
-    endif
 
   end subroutine fstr_ass_load
 

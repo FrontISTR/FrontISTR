@@ -205,11 +205,13 @@ module hecmw_util
     integer(kind=kint),pointer :: type(:)
     integer(kind=kint),pointer :: slave_grp_id(:)
     integer(kind=kint),pointer :: master_grp_id(:)
+    integer(kind=kint),pointer :: slave_orisgrp_id(:)
   end type hecmwST_contact_pair
 
   !C      for hecmwST_contact_pair%type
   integer(kind=kint),parameter :: HECMW_CONTACT_TYPE_NODE_SURF = 1
   integer(kind=kint),parameter :: HECMW_CONTACT_TYPE_SURF_SURF = 2
+  integer(kind=kint),parameter :: HECMW_CONTACT_TYPE_NODE_ELEM = 3
   !C===
 
   !C
@@ -429,6 +431,25 @@ module hecmw_util
     integer(kind=kint) :: max_row
     integer(kind=kint) :: max_col
   end type hecmwST_matrix_contact
+
+  !> Structure for Lagrange multiplier-related part of stiffness matrix
+  !> (Lagrange multiplier-related matrix)
+  type hecmwST_matrix_lagrange
+    integer(kind=kint) :: num_lagrange = 0 !< total number of Lagrange multipliers
+    integer(kind=kint) :: numL_lagrange = 0 !< node-based number of non-zero items in lower triangular half of matrix
+    integer(kind=kint) :: numU_lagrange = 0 !< node-based number of non-zero items in upper triangular half of matrix
+
+    integer(kind=kint), pointer  :: indexL_lagrange(:) => null() !< node-based index of first non-zero item of each row in lower part
+    integer(kind=kint), pointer  :: indexU_lagrange(:) => null() !< node-based index of first non-zero item of each row in upper part
+
+    integer(kind=kint), pointer  :: itemL_lagrange(:) => null() !< node-based column number of non-zero items in lower part
+    integer(kind=kint), pointer  :: itemU_lagrange(:) => null() !< node-based column number of non-zero items in upper part
+
+    real(kind=kreal),    pointer  :: AL_lagrange(:) => null() !< values of non-zero items in lower part
+    real(kind=kreal),    pointer  :: AU_lagrange(:) => null() !< values of non-zero items in upper part
+
+    real(kind=kreal),    pointer  :: Lagrange(:) => null() !< values of Lagrange multipliers
+  end type hecmwST_matrix_lagrange
 
   type hecmwST_matrix
     integer(kind=kint) ::  N, NP, NPL, NPU, NDOF, NPCL, NPCU
@@ -714,6 +735,7 @@ contains
     nullify( P%name )
     nullify( P%type )
     nullify( P%slave_grp_id )
+    nullify( P%slave_orisgrp_id )
     nullify( P%master_grp_id )
   end subroutine hecmw_nullify_contact_pair
 
@@ -1039,7 +1061,7 @@ contains
     allocate(hecMAT%D(NDOF2*NP))
     allocate(hecMAT%AU(NDOF2*NPU))
     allocate(hecMAT%AL(NDOF2*NPL))
-    allocate(hecMAT%indexL(0:N), hecMAT%indexU(0:N), hecMAT%itemL(NPL), hecMAT%itemU(NPU))
+    allocate(hecMAT%indexL(0:NP), hecMAT%indexU(0:NP), hecMAT%itemL(NPL), hecMAT%itemU(NPU))
     hecMAT%B       = hecMATorig%B
     hecMAT%X       = hecMATorig%X
     hecMAT%D       = hecMATorig%D
@@ -1127,7 +1149,7 @@ contains
   subroutine hecmw_vector_contract(hecMATorig,hecMAT,NDOF)
     type (hecmwST_matrix    ) :: hecMATorig
     type (hecmwST_matrix    ),pointer :: hecMAT
-    integer(kind=kint) NDOF,NDOF2,oNDOF,oNDOF2,i,j,k
+    integer(kind=kint) NDOF,NDOF2,oNDOF,i,j
     NDOF2 = NDOF*NDOF
     oNDOF = hecMATorig%NDOF
     do i = 1, hecMATorig%NP

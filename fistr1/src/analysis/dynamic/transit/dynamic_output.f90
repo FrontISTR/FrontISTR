@@ -12,9 +12,8 @@ contains
   subroutine fstr_dynamic_Output( hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM )
     !----------------------------------------------------------------------*
     use m_fstr
-    use m_fstr_Update
     use m_fstr_NodalStress
-    use m_dynamic_make_result
+    use m_make_result
     use m_hecmw2fstr_mesh_conv
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
@@ -22,17 +21,12 @@ contains
     type(fstr_param), intent(in)         :: fstrPARAM
 
     type(hecmwST_result_data) :: fstrRESULT
-    integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid, istep, idx
+    integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid, istep
 
     ndof = hecMESH%n_dof
 
     !C-- SET DISPLACEMENT etc.
     istep = fstrDYNAMIC%i_step
-    if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
-      idx = 2
-    else
-      idx = 1
-    endif
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
       if( ndof==3 ) then
@@ -55,15 +49,18 @@ contains
       call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
 
+    if( associated( fstrSOLID%contacts ) ) &
+      &  call setup_contact_output_variables( hecMESH, fstrSOLID, -1 )
+
     maxstep = fstrDYNAMIC%n_step
 
-    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. istep==maxstep) ) then
+    if( (mod(istep,fstrSOLID%output_ctrl(1)%frequency)==0 .or. istep==maxstep) ) then
       fnum = fstrSOLID%output_ctrl(1)%filenum
       call fstr_dynamic_post( fnum, hecMESH, fstrSOLID, fstrDYNAMIC )
     endif
 
     if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(2)%frequency)==0 .or. istep==maxstep) ) then
       is = fstrSOLID%output_ctrl(2)%outinfo%grp_id
       fnum = fstrSOLID%output_ctrl(2)%filenum
       do i = hecMESH%node_group%grp_index(is-1)+1, hecMESH%node_group%grp_index(is)
@@ -74,13 +71,18 @@ contains
     endif
 
     if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. istep==maxstep) ) then
-      call fstr_write_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, maxstep, istep, fstrDYNAMIC%t_curr )
+        (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. istep==maxstep) ) then
+      if( associated( fstrSOLID%contacts ) ) &
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
+      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, fstrDYNAMIC%t_curr, 0, fstrDYNAMIC )
     endif
 
     if( IVISUAL==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. istep==maxstep) ) then
-      call fstr_make_dynamic_result( hecMESH, fstrSOLID, fstrDYNAMIC, fstrRESULT )
+        (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. istep==maxstep) ) then
+
+      if( associated( fstrSOLID%contacts ) ) &
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
+      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, fstrDYNAMIC%t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, istep )

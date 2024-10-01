@@ -121,7 +121,7 @@ contains
       ! <<< added for turning
 
       START_TIME= HECMW_WTIME()
-      call hecmw_update_6_R (hecMESH, X, NP)
+      call hecmw_update_R (hecMESH, X, NP, 6)
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -291,10 +291,10 @@ contains
     real(kind=kreal), intent(inout) :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME
-    integer(kind=kint) :: i, j, jj, k, kk
+    integer(kind=kint) :: i
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_6_R (hecMESH, X, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 6)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -329,10 +329,10 @@ contains
     real(kind=kreal), intent(inout) :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME
-    integer(kind=kint) :: i, j, jj, k, kk
+    integer(kind=kint) :: i
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_6_R (hecMESH, X, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 6)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 

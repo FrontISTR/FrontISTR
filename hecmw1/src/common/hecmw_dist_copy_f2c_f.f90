@@ -4,7 +4,7 @@
 !-------------------------------------------------------------------------------
 !> \brief I/O and Utility
 !> memo)
-!>   Intel 9 compiler generates codes to wast stack memory
+!>   Intel 9 compiler generates codes to waste stack memory
 !>   when an array of string is passed to external subroutines defined with C.
 !>   Then the pointer of the head of the array is passed
 !>   to avoid consumptions of stack memory.
@@ -932,6 +932,10 @@ contains
 
       vname = 'slave_grp_id'
       call hecmw_dist_copy_f2c_set_if(sname, vname, cpair%slave_grp_id, ierr)
+      if(ierr /= 0) return
+
+      vname = 'slave_orisgrp_id'
+      call hecmw_dist_copy_f2c_set_if(sname, vname, cpair%slave_orisgrp_id, ierr)
       if(ierr /= 0) return
 
       vname = 'master_grp_id'

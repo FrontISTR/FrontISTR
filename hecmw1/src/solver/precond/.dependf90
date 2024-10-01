@@ -1,0 +1,1 @@
+hecmw_precond.o : hecmw_precond.f90 

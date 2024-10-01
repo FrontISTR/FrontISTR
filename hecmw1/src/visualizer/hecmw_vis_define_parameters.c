@@ -50,7 +50,7 @@ void get_frame_transform_matrix(double view_point_d[3], double screen_point[3],
   U[1] = -up[0] * N[2] + N[0] * up[2];
   U[2] = up[0] * N[1] - N[0] * up[1];
   normalize_f(U);
-  /*find the direction of axix V */
+  /*find the direction of axis V */
   V[0] = N[1] * U[2] - U[1] * N[2];
   V[1] = -N[0] * U[2] + U[0] * N[2];
   V[2] = N[0] * U[1] - U[0] * N[1];
@@ -75,7 +75,7 @@ void find_inverse_matrix(double coff_matrix[3][3], double inv_matrix[3][3]) {
   if (fabs(norm_a) < 1.0E-7)
     HECMW_vis_print_exit(
         "ERROR: HEC-MW-VIS-E2001: There is something wrong with transform "
-        "matrix, invers =0");
+        "matrix, inverse = 0");
 
   aa[0][0] = a[1][1] * a[2][2] - a[1][2] * a[2][1];
   aa[0][1] = -(a[0][1] * a[2][2] - a[2][1] * a[0][2]);

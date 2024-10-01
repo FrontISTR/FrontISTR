@@ -275,7 +275,7 @@ contains
     !C-- INTERFACE data EXCHANGE
     !C
     START_TIME = HECMW_WTIME()
-    call hecmw_update_m_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
+    call hecmw_update_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
     END_TIME = HECMW_WTIME()
     Tcomm = Tcomm + END_TIME - START_TIME
 

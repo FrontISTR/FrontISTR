@@ -14,11 +14,10 @@ contains
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: i, in, j, nodLOCAL(20), ip, inod
-    integer(kind=kint) :: itype, iS, iE, ic_type, icel, isect, IMAT, in0, nn, NDOF
+    integer(kind=kint) :: itype, iS, iE, ic_type, icel, isect, IMAT, in0, nn
     real(kind=kreal) :: temp(20), lumped(120), mass(20*6, 20*6), ecoord(3,20)
     real(kind=kreal) :: delta_time, surf, THICK, ALFA, BETA
 
-    NDOF = hecMESH%n_dof
     beta = fstrHEAT%beta
 
     do itype = 1, hecMESH%n_elem_type
@@ -32,7 +31,7 @@ contains
 
       !$omp parallel default(none), &
         !$omp&  private(icel,isect,IMAT,nn,temp,in0,i,j,nodLOCAL,ecoord,in,thick,surf,inod,lumped,mass), &
-        !$omp&  shared(iS,iE,hecMESH,ic_type,hecMAT,fstrHEAT,ndof,delta_time)
+        !$omp&  shared(iS,iE,hecMESH,ic_type,hecMAT,fstrHEAT,delta_time)
       !$omp do
       do icel = iS, iE
         if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
@@ -42,7 +41,7 @@ contains
         nn = hecmw_get_max_node(ic_type)
         do i = 1, nn
           nodLOCAL(i) = hecMESH%elem_node_item(in0+i)
-          do j = 1, NDOF
+          do j = 1, 3
             ecoord(j,i) = hecMESH%node(3*(nodLOCAL(i)-1)+j)
           enddo
           temp(i) = fstrHEAT%TEMP0(nodLOCAL(i))
@@ -61,6 +60,9 @@ contains
           call heat_capacity_C3(ic_type, nn, ecoord(1:3,1:nn), temp, IMAT, lumped, mass, &
             fstrHEAT%CPtab(IMAT), fstrHEAT%CPtemp(IMAT,:), fstrHEAT%CPfuncA(IMAT,:) ,fstrHEAT%CPfuncB(IMAT,:), &
             fstrHEAT%RHOtab(IMAT), fstrHEAT%RHOtemp(IMAT,:), fstrHEAT%RHOfuncA(IMAT,:), fstrHEAT%RHOfuncB(IMAT,:))
+
+        elseif (ic_type == 541) then
+          ! skip warning
 
         elseif(ic_type == 731)then
           in = hecMesh%section%sect_R_index(isect)

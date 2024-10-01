@@ -155,6 +155,7 @@ struct hecmw_io_contact {
   int type;
   char master_grp[HECMW_NAME_LEN + 1];
   char slave_grp[HECMW_NAME_LEN + 1];
+  char slave_orisgrp[HECMW_NAME_LEN + 1];
   struct hecmw_io_contact *next;
 };
 

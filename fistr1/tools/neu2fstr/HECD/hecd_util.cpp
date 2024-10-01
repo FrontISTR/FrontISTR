@@ -84,7 +84,7 @@ void remove_cr(char *s) {
 }
 
 // note)
-//  I/O of HEC-MW does not support '1e+2' formated number.
+//  I/O of HEC-MW does not support '1e+2' formatted number.
 //  Then ftos converts '1e+2' to '1.0e+2'
 
 void ftos(double x, char *s) {

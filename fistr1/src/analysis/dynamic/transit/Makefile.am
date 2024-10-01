@@ -89,7 +89,6 @@ OBJSF = \
 	dynamic_mat_ass_bc_ac.@f90objfilepostfix@ \
 	dynamic_mat_ass_couple.@f90objfilepostfix@ \
 	dynamic_var_init.@f90objfilepostfix@ \
-	dynamic_make_result.@f90objfilepostfix@ \
 	dynamic_output.@f90objfilepostfix@ \
 	fstr_dynamic_nlexplicit.@f90objfilepostfix@ \
 	fstr_dynamic_nlimplicit.@f90objfilepostfix@ \
@@ -111,7 +110,7 @@ $(F90TARGET): $(OBJSF)
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(FSTRINCDIR)/.
 
 $(OBJS): $(HEADERS)
@@ -124,3 +123,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

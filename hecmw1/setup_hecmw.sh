@@ -68,6 +68,7 @@ LIBSRCDIRS="\
 	src/operations \
 	src/operations/adaptation \
 	src/operations/dynamic_load_balancing \
+	src/operations/element_smoothing \
 	src/operations/jacobian \
 	src/couple \
 	src/solver \
@@ -91,6 +92,8 @@ LIBSRCDIRS="\
 	src/solver/communication \
 	src/solver/init \
 	src/solver/mpc \
+	src/solver/main \
+	src/solver/contact \
 	src/visualizer \
 	src/hecmw \
 	src/etc"
@@ -151,7 +154,7 @@ do
 		LEXONLY=0
 	elif [ "\"$i\"" = "\"-only-message\"" -o "\"$i\"" = "\"--only-message\"" ]; then
 		REMOVEMAKEFILES=0
-		GATHERMAKEFIELS=0
+		GATHERMAKEFILES=0
 		MESSAGEONLY=1
 		LEXONLY=0
 	elif [ "\"$i\"" = "\"-only-lex\"" -o "\"$i\"" = "\"--only-lex\"" ]; then
@@ -200,7 +203,7 @@ do
 		EOF
 		exit 1
 	#else
-	#	echo "Unknown paramer: " $i " (ignored, -h:help)"
+	#	echo "Unknown parameter: " $i " (ignored, -h:help)"
 	fi
 done
 
@@ -280,7 +283,9 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	# with METIS / with ParMETIS
 	#
-	if [ ${WITHMETIS} -eq 0 ]; then
+	if [ ${WITHMETIS} -eq 1 ]; then
+		F90FLAGS="${F90FLAGS} -DHECMW_WITH_METIS -DHECMW_METIS_VER=${HECMW_METIS_VER}"
+	else
 		METISDIR=""
 		METISLIBDIR=""
 		METISINCDIR=""
@@ -390,8 +395,8 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	# with MKL PARDISO
 	#
-	if [ ${WITHMKL} -eq 1 ] && [ ${SERIAL} -eq 0 ]; then
-		F90FLAGS="${F90FLAGS} -DWITH_MKL"
+	if [ ${WITHMKL} -eq 1 ]; then
+		F90FLAGS="${F90FLAGS} -DHECMW_WITH_MKL"
 	else
 		MKL_CFLAGS=""
 		MKL_LDFLAGS=""

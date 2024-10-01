@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> Lanczos iteration calculation
+!> \brief  Lanczos iteration calculation
 module m_fstr_EIG_lanczos
 contains
 
@@ -39,6 +39,7 @@ contains
 
     allocate(fstrEIG%filter(NPNDOF))
     fstrEIG%filter = 1.0d0
+    fstrEIG%sigma = 0.01d0
 
     jn = 0
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
@@ -59,15 +60,24 @@ contains
       enddo
     enddo
 
+    do ig0 = 1, fstrSOLID%SPRING_ngrp_tot
+      ig = fstrSOLID%SPRING_ngrp_ID(ig0)
+      iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+      iE0 = hecMESH%node_group%grp_index(ig  )
+      do ik = iS0, iE0
+        jn = jn + 1
+      enddo
+    enddo
+
     call hecmw_allreduce_I1(hecMESH, jn, hecmw_sum)
     if(jn == 0)then
       fstrEIG%is_free = .true.
       if(myrank == 0)then
-        write(*,*) '** free modal analysis: shift factor = 0.1'
+        write(*,"(a,1pe12.4)") '** free modal analysis: shift factor =', fstrEIG%sigma
       endif
     endif
 
-    call hecmw_update_m_R(hecMESH, fstrEIG%filter, NP, NDOF)
+    call hecmw_update_R(hecMESH, fstrEIG%filter, NP, NDOF)
 
     in = 0
     do i = 1, NNDOF
@@ -113,7 +123,7 @@ contains
 
     call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, fstrEIG%eigvec, p, Q(1)%q, Tri%beta(1))
 
-    hecMAT%Iarray(98) = 1 !Assmebly complete
+    hecMAT%Iarray(98) = 1 !Assembly complete
     hecMAT%Iarray(97) = 1 !Need numerical factorization
 
     if(myrank == 0)then

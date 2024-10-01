@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module provides functions to read in data from control file
-!! and do neccessary preparation for following calculation
+!! and do necessary preparation for following calculation
 module m_fstr_setup
   use m_fstr
   use fstr_setup_util
@@ -14,6 +14,7 @@ module m_fstr_setup
   use fstr_ctrl_dynamic
   use fstr_ctrl_material
   use mContact
+  use mContactParam
   use m_static_get_prop
   use m_out
   use m_step
@@ -22,7 +23,7 @@ module m_fstr_setup
 
   include 'fstr_ctrl_util_f.inc'
 
-  !> Package of all data needs to initilize
+  !> Package of all data needs to initialize
   type fstr_param_pack
     type(hecmwST_local_mesh), pointer :: MESH
     type(fstr_param), pointer         :: PARAM
@@ -61,8 +62,8 @@ contains
     external fstr_ctrl_get_c_h_name
     integer(kind=kint) :: fstr_ctrl_get_c_h_name
 
-    integer(kind=kint) :: version, resul, visual, femap, n_totlyr
-    integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror
+    integer(kind=kint) :: version, result, visual, femap, n_totlyr
+    integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror, cparam_id
     character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
     real(kind=kreal) :: ee, pp, rho, alpha, thick, alpha_over_mu
     real(kind=kreal) :: beam_radius,                          &
@@ -74,10 +75,10 @@ contains
     character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2
 
     ! counters
-    integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo
+    integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring, c_dummy
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
-    integer(kind=kint) :: c_eigen, c_contact
+    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
     integer(kind=kint) :: c_fload, c_eigenread
     integer(kind=kint) :: c_couple, c_material
@@ -102,12 +103,12 @@ contains
 
     fstrPARAM%contact_algo = kcaALagrange
 
-    c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0;
+    c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_dummy = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-    c_eigen    = 0; c_contact  = 0
+    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0
     c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
     c_couple   = 0; c_material = 0; c_section =0
     c_mpc      = 0; c_weldline = 0; c_initial = 0
@@ -146,9 +147,9 @@ contains
           c_istep = c_istep + 1
         endif
       else if( header_name == '!WRITE' ) then
-        call fstr_ctrl_get_output( ctrl, outctrl, islog, resul, visual, femap )
+        call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
         if( visual==1 ) P%PARAM%fg_visual= 1
-        if( resul==1 ) P%PARAM%fg_result = 1
+        if( result==1 ) P%PARAM%fg_result = 1
         c_output = c_output+1
       else if( header_name == '!ECHO' ) then
         c_echo = c_echo + 1
@@ -171,6 +172,9 @@ contains
       else if( header_name == '!DUMMY' ) then
         c_dummy = c_dummy + 1
         call fstr_setup_DUMMY( ctrl, c_dummy, P )
+      else if( header_name == '!AMPLITUDE' ) then
+        c_amplitude = c_amplitude + 1
+        call fstr_setup_AMPLITUDE( ctrl, P )
 
         !--------------- for static -------------------------
 
@@ -192,6 +196,11 @@ contains
       else if( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         c_contact = c_contact + n
+      else if( header_name == '!EMBED' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        c_embed = c_embed + n
+      else if( header_name == '!CONTACT_PARAM' ) then
+        c_contactparam = c_contactparam + 1
       else if( header_name == '!MATERIAL' ) then
         c_material = c_material + 1
       else if( header_name == '!TEMPERATURE' ) then
@@ -208,7 +217,6 @@ contains
 
       else if( header_name == '!HEAT' ) then
         c_heat = c_heat + 1
-        call fstr_setup_HEAT( ctrl, c_heat, P )
       else if( header_name == '!FIXTEMP' ) then
         c_fixtemp = c_fixtemp + 1
         call fstr_setup_FIXTEMP( ctrl, c_fixtemp, P )
@@ -307,11 +315,14 @@ contains
     end do
 
     ! -----
+    fstrSOLID%n_contacts = c_contact
     if( c_contact>0 ) then
       allocate( fstrSOLID%contacts( c_contact ) )
       ! convert SURF_SURF contact to NODE_SURF contact
       call fstr_convert_contact_type( P%MESH )
     endif
+    fstrSOLID%n_embeds = c_embed
+    if( c_embed>0 )  allocate( fstrSOLID%embeds( c_embed ) )
     if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
     if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
     if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
@@ -321,6 +332,10 @@ contains
       call init_AincParam( fstrPARAM%ainc(i) )
     end do
     if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
+    allocate( fstrPARAM%contactparam(0:c_contactparam) )
+    do i=0,c_contactparam
+      call init_ContactParam( fstrPARAM%contactparam(i) )
+    end do
 
     P%SOLID%is_33shell = 0
     P%SOLID%is_33beam  = 0
@@ -390,6 +405,7 @@ contains
       else
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
+      fstrSOLID%sections(i)%elemopt341 = kel341FI
     enddo
 
     allocate( fstrSOLID%output_ctrl( 4 ) )
@@ -404,9 +420,12 @@ contains
     rcode = fstr_ctrl_rewind( ctrl )
 
     c_istep    = 0
+    c_heat     = 0
     c_material = 0
     c_output = 0
     c_contact  = 0
+    c_contactparam  = 0
+    c_embed = 0
     c_initial = 0
     c_localcoord = 0
     c_section = 0
@@ -431,15 +450,21 @@ contains
           stop
         endif
 
-        ! ----- CONTACT condtion setting
+        ! ----- CONTACT condition setting
       elseif( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
-            ,ee, pp, rho, alpha, P%PARAM%contact_algo ) ) then
+            ,ee, pp, rho, alpha, P%PARAM%contact_algo, mName ) ) then
           write(*,*) '### Error: Fail in read in contact condition : ', c_contact
           write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
           stop
         endif
+        cparam_id = 0
+        do i=1,size(fstrPARAM%contactparam)-1
+          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+            cparam_id = i; exit
+          endif
+        enddo
         ! initialize contact condition
         if( ee>0.d0 ) cdotp = ee
         if( pp>0.d0 ) mut = pp
@@ -452,14 +477,43 @@ contains
             stop
           else
             if(paraContactFlag) then
-              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, myrank)
+              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id), myrank)
             else
-              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH)
+              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id))
             endif
             !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
           endif
         enddo
         c_contact = c_contact+n
+
+        ! ----- EMBED condition setting
+      elseif( header_name == '!EMBED' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(c_embed+1:c_embed+n), mName ) ) then
+          write(*,*) '### Error: Fail in read in embed condition : ', c_embed
+          write(ILOG,*) '### Error: Fail in read in embed condition : ', c_embed
+          stop
+        endif
+        cparam_id = 0
+        do i=1,size(fstrPARAM%contactparam)-1
+          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+            cparam_id = i; exit
+          endif
+        enddo
+        do i=1,n
+          if( .not. fstr_contact_check( fstrSOLID%embeds(c_embed+i), P%MESH ) ) then
+            write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_embed
+            write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_embed
+            stop
+          else
+            if(paraContactFlag) then
+              isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id), myrank)
+            else
+              isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id))
+            endif
+          endif
+        enddo
+        c_embed = c_embed+n
 
       else if( header_name == '!ISTEP'  ) then
         c_istep = c_istep+1
@@ -504,6 +558,10 @@ contains
           enddo
         endif
 
+      else if( header_name == '!HEAT'  ) then
+        c_heat = c_heat + 1
+        call fstr_setup_HEAT( ctrl, c_heat, P )
+
       else if( header_name == '!WELD_LINE'  ) then
         fstrHEAT%WL_tot = fstrHEAT%WL_tot+1
         if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
@@ -536,7 +594,7 @@ contains
           stop
         endif
 
-        !== following material proerties ==
+        !== following material properties ==
       else if( header_name == '!MATERIAL' ) then
         c_material = c_material+1
         if( fstr_ctrl_get_MATERIAL( ctrl, mName )/=0 ) then
@@ -683,7 +741,7 @@ contains
 
         ! == Following output control ==
       else if( header_name == '!WRITE' ) then
-        call fstr_ctrl_get_output( ctrl, outctrl, islog, resul, visual, femap )
+        call fstr_ctrl_get_output( ctrl, outctrl, islog, result, visual, femap )
         if( islog == 1 ) then
           c_output=1
           outctrl%filename = trim(logfileNAME)
@@ -697,7 +755,7 @@ contains
           call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
           open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE' )
         endif
-        if( resul == 1 ) then
+        if( result == 1 ) then
           c_output=3
           call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
         endif
@@ -748,6 +806,13 @@ contains
         if( fstr_ctrl_get_TIMEPOINTS( ctrl, fstrPARAM%timepoints(c_timepoints) )/=0 ) then
           write(*,*) '### Error: Fail in read in TIME_POINTS definition : ' , c_timepoints
           write(ILOG,*) '### Error: Fail in read in TIME_POINTS definition : ', c_timepoints
+          stop
+        endif
+      else if( header_name == '!CONTACT_PARAM' ) then
+        c_contactparam = c_contactparam + 1
+        if( fstr_ctrl_get_CONTACTPARAM( ctrl, fstrPARAM%contactparam(c_contactparam) ) /=0 ) then
+          write(*,*) '### Error: Fail in read in CONTACT_PARAM definition : ' , c_contactparam
+          write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', c_contactparam
           stop
         endif
       else if( header_name == '!ULOAD' ) then
@@ -875,8 +940,8 @@ contains
       call fstr_solid_alloc( hecMESH, fstrSOLID )
 
     if( p%PARAM%solution_type == kstHEAT) then
-      p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%freqency
-      p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
+      p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%frequency
+      p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%frequency
       p%HEAT%dummy = p%SOLID%dummy
     endif
 
@@ -917,12 +982,14 @@ contains
     fstrSOLID%TEMP_irres        = 0
     fstrSOLID%TEMP_tstep        = 1
     fstrSOLID%TEMP_interval     = 1
+    fstrSOLID%TEMP_rtype        = 1
     fstrSOLID%TEMP_factor       = 1.d0
     fstrSOLID%VELOCITY_ngrp_tot = 0
     fstrSOLID%ACCELERATION_ngrp_tot = 0
     fstrSOLID%COUPLE_ngrp_tot   = 0
 
     fstrSOLID%restart_nout= 0
+    fstrSOLID%is_smoothing_active = .false.
 
   end subroutine fstr_solid_init
 
@@ -1007,6 +1074,54 @@ contains
     fstrSOLID%FACTOR(1)=0.d0
   end subroutine fstr_solid_alloc
 
+  subroutine fstr_smoothed_element_init( hecMESH, fstrSOLID )
+    type(hecmwST_local_mesh),target :: hecMESH
+    type(fstr_solid)                :: fstrSOLID
+
+    logical, allocatable :: is_selem_list(:)
+    integer :: i, isect
+
+    do isect=1,hecMESH%section%n_sect
+      if( fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) fstrSOLID%is_smoothing_active = .true.
+    end do
+    if( .not. fstrSOLID%is_smoothing_active ) return
+
+    allocate(is_selem_list(hecMESH%n_elem))
+    is_selem_list(:) = .false.
+
+    do i=1,hecMESH%n_elem
+      isect= hecMESH%section_ID(i)
+      if( hecMESH%elem_type(i) /= fe_tet4n ) cycle
+      if( fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) is_selem_list(i) = .true.
+    enddo
+
+    call hecmw_create_smoothing_element_connectivity(hecMESH,is_selem_list)
+
+    deallocate(is_selem_list)
+
+  end subroutine
+
+  subroutine fstr_smoothed_element_calcmaxcon( hecMESH, fstrSOLID )
+    use m_static_LIB_C3D4SESNS
+    type(hecmwST_local_mesh),target :: hecMESH
+    type(fstr_solid)                :: fstrSOLID
+
+    integer :: i, isect, nodlocal(fstrSOLID%max_ncon), iiS, nn, con_stf
+
+    if( fstrSOLID%max_ncon_stf > 20 ) fstrSOLID%max_ncon_stf = 20   
+
+    do i=1,hecMESH%n_elem
+      isect= hecMESH%section_ID(i)
+      if( hecMESH%elem_type(i) /= fe_tet4n ) cycle
+      if( fstrSOLID%sections(isect)%elemopt341 /= kel341SESNS ) cycle
+      iiS = hecMESH%elem_node_index(i-1)
+      nn = hecMESH%elem_node_index(i-1) - iiS
+      nodlocal(1:nn) = hecMESH%elem_node_item(iiS+1:iiS+nn)
+      con_stf = Return_nn_comp_C3D4_SESNS(nn, nodlocal)
+      if( con_stf > fstrSOLID%max_ncon_stf ) fstrSOLID%max_ncon_stf = con_stf
+    enddo
+  end subroutine
+
   !> Initialize elements info in static calculation
   subroutine fstr_element_init( hecMESH, fstrSOLID )
     use elementInfo
@@ -1015,16 +1130,24 @@ contains
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
-    integer :: i, j, ng, isect, ndof, id, nn
+    integer :: i, j, ng, isect, ndof, id, nn, n_elem
+    integer :: ncon_stf
 
     if( hecMESH%n_elem <=0 ) then
       stop "no element defined!"
     endif
 
     fstrSOLID%maxn_gauss = 0
+    fstrSOLID%max_ncon   = 0
 
-    allocate( fstrSOLID%elements(hecMESH%n_elem) )
-    do i=1,hecMESH%n_elem
+    ! elemopt341 = kel341ES
+    call fstr_smoothed_element_init( hecMESH, fstrSOLID )
+
+    ! number of elements
+    n_elem = hecMESH%elem_type_index(hecMESH%n_elem_type)
+    allocate( fstrSOLID%elements(n_elem) )
+
+    do i= 1, n_elem
       fstrSOLID%elements(i)%dummy_flag = kDUM_UNDEFINED
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
@@ -1032,7 +1155,7 @@ contains
       if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
-      if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
+      if( ng > 0 ) allocate( fstrSOLID%elements(i)%gausses( ng ) )
 
       isect= hecMESH%section_ID(i)
       ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
@@ -1056,9 +1179,10 @@ contains
         call fstr_init_gauss( fstrSOLID%elements(i)%gausses( j )  )
       enddo
 
-      nn = hecmw_get_max_node(hecMESH%elem_type(i))
+      nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
       allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
       fstrSOLID%elements(i)%equiForces = 0.0d0
+      if( nn > fstrSOLID%max_ncon ) fstrSOLID%max_ncon = nn
 
       if( hecMESH%elem_type(i)==361 ) then
         if( fstrSOLID%sections(isect)%elemopt361==kel361IC ) then
@@ -1066,7 +1190,11 @@ contains
           fstrSOLID%elements(i)%aux = 0.0d0
         endif
       endif
+
     enddo
+
+    fstrSOLID%max_ncon_stf = fstrSOLID%max_ncon
+    if( fstrSOLID%is_smoothing_active ) call fstr_smoothed_element_calcmaxcon( hecMESH, fstrSOLID )
 
     call hecmw_allreduce_I1(hecMESH,fstrSOLID%maxn_gauss,HECMW_MAX)
   end subroutine
@@ -1325,6 +1453,7 @@ contains
     fstrHEAT%R_SUF_tot   = 0
     fstrHEAT%H_SUF_tot   = 0
     fstrHEAT%WL_tot      = 0
+    fstrHEAT%beta        = -1.0d0
   end subroutine fstr_heat_init
 
   !> Initial setting of eigen ca;culation
@@ -1517,6 +1646,7 @@ contains
     allocate ( phys%ESTRAIN (mdof*n_elem))
     allocate ( phys%ESTRESS (mdof*n_elem))
     allocate ( phys%EMISES  (     n_elem))
+    allocate ( phys%EPLSTRAIN (   n_elem))
     allocate ( phys%ENQM    (12*n_elem))
   end subroutine fstr_setup_post_phys_alloc
 
@@ -1558,7 +1688,7 @@ contains
     end if
 
     if( P%PARAM%fg_visual == kON )then
-      call fstr_setup_visualize( ctrl, P%MESH%my_rank )
+      call fstr_setup_visualize( ctrl, P%MESH )
     end if
 
     call hecmw_barrier( P%MESH ) ! JP-7
@@ -1645,14 +1775,11 @@ contains
     !   ncolor_in  => svIarray(34)
     !   mpc_method => svIarray(13)
     !   estcond    => svIarray(14)
+    !   contact_elim=> svIarray(15)
     !   method2    => svIarray(8)
     !   recyclepre => svIarray(35)
-    !   solver_opt1=> svIarray(41)
-    !   solver_opt2=> svIarray(42)
-    !   solver_opt3=> svIarray(43)
-    !   solver_opt4=> svIarray(44)
-    !   solver_opt5=> svIarray(45)
-    !   solver_opt6=> svIarray(46)
+    !   solver_opt => svIarray(41:50)
+    !   nBFGS      => svIarray(60)
 
     !   resid      => svRarray(1)
     !   sigma_diag => svRarray(2)
@@ -1662,9 +1789,9 @@ contains
 
     rcode = fstr_ctrl_get_SOLVER( ctrl,                      &
       svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
-      svIarray(1), svIarray(5), svIarray(6), svIarray(7), &
+      svIarray(1), svIarray(5), svIarray(6), svIarray(60), svIarray(7), &
       svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
-      svIarray(35), svIarray(41), svIarray(42), svIarray(43), svIarray(44), svIarray(45), svIarray(46), &
+      svIarray(35), svIarray(41:50), svIarray(15), &
       svRarray(1), svRarray(2), svRarray(3),                &
       svRarray(4), svRarray(5) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
@@ -2001,6 +2128,31 @@ end function fstr_setup_INITIAL
 
     deallocate( grp_id_name )
   end subroutine fstr_setup_DUMMY
+  !-----------------------------------------------------------------------------!
+  !> Read in !AMPLITUDE                                                          !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_AMPLITUDE( ctrl, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    type(fstr_param_pack) :: P
+    real(kind=kreal), pointer :: val(:), table(:)
+    character(len=HECMW_NAME_LEN) :: name
+    integer :: nline, n, type_def, type_time, type_val, rcode
+
+    nline = fstr_ctrl_get_data_line_n( ctrl )
+    if( nline<=0 ) return
+    allocate( val(nline*4) )
+    allocate( table(nline*4) )
+    rcode = fstr_ctrl_get_AMPLITUDE( ctrl, nline, name, type_def, type_time, type_val, &
+        n, val, table )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call append_new_amplitude( P%MESH%amp, name, type_def, type_time, type_val, n, val, table )
+
+    if( associated(val) ) deallocate( val )
+    if( associated(table) ) deallocate( table )
+  end subroutine fstr_setup_AMPLITUDE
 
 
   !*****************************************************************************!
@@ -2027,9 +2179,15 @@ end function fstr_setup_INITIAL
     endif
 
     ipt = 0
-    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'INFINITE,NLGEOM ', 0, 'P', ipt  )/=0 )  &
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', 'INFINITESIMAL,NLGEOM,INFINITE ', 0, 'P', ipt  )/=0 )  &
       return
     if( ipt == 2 ) P%PARAM%nlgeom = .true.
+
+    ! for backward compatibility
+    if( ipt == 3 ) then
+      write(*,*) "Warning : !STATIC : parameter 'TYPE=INFINITE' is deprecated." &
+           & //  " Please use the replacement parameter 'TYPE=INFINITESIMAL'"
+    endif
 
     rcode = fstr_ctrl_get_STATIC( ctrl, &
       DT, ETIME, ITMAX, EPS, P%SOLID%restart_nout, &
@@ -2116,14 +2274,14 @@ end function fstr_setup_INITIAL
     P%SOLID%BOUNDARY_ngrp_GRPID(old_size+1:new_size) = gid
     call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY', n, grp_id_name, P%SOLID%BOUNDARY_ngrp_ID(old_size+1:))
 
-    ! set up infomation abount rotation ( default value is set if ROT_CENTER is not given.)
+    ! set up information about rotation ( default value is set if ROT_CENTER is not given.)
     P%SOLID%BOUNDARY_ngrp_rotID(old_size+1:) = n_rotc
     P%SOLID%BOUNDARY_ngrp_centerID(old_size+1:) = rotc_id(1)
 
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(*,*) 'fstr contol file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
-        write(ILOG,*) 'fstr contol file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
+        write(*,*) 'fstr control file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
+        write(ILOG,*) 'fstr control file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
         call fstr_ctrl_err_stop
       end if
       P%SOLID%BOUNDARY_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
@@ -2202,7 +2360,7 @@ end function fstr_setup_INITIAL
     rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    ! set up infomation abount torque load ( default value is set if ROT_CENTER is not given.)
+    ! set up information about torque load ( default value is set if ROT_CENTER is not given.)
     P%SOLID%CLOAD_ngrp_rotID(old_size+1:) = n_rotc
     P%SOLID%CLOAD_ngrp_centerID(old_size+1:) = rotc_id(1)
 
@@ -2357,6 +2515,7 @@ end function fstr_setup_INITIAL
       P%SOLID%TEMP_irres,           &
       P%SOLID%TEMP_tstep,           &
       P%SOLID%TEMP_interval,        &
+      P%SOLID%TEMP_rtype,           &
       grp_id_name, HECMW_NAME_LEN,  &
       val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
@@ -2461,6 +2620,8 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     integer(kind=kint) :: n
+    character(len=HECMW_NAME_LEN) :: mName
+    integer(kind=kint) :: i
 
     n = fstr_ctrl_get_data_line_n( ctrl )
 
@@ -2480,6 +2641,7 @@ end function fstr_setup_INITIAL
     P%PARAM%delmax = 0
     P%PARAM%itmax = 20
     P%PARAM%eps = 1.0e-6
+    P%PARAM%timepoint_id = 0
 
     rcode = fstr_ctrl_get_HEAT(   ctrl,        &
       P%PARAM%dtime,     &
@@ -2487,10 +2649,20 @@ end function fstr_setup_INITIAL
       P%PARAM%dtmin,     &
       P%PARAM%delmax,    &
       P%PARAM%itmax,     &
-      P%PARAM%eps )
+      P%PARAM%eps,       &
+      mName,             &
+      P%HEAT%beta)
     if( rcode /= 0 ) then
       call fstr_ctrl_err_stop
     end if
+
+    if( associated(P%PARAM%timepoints) ) then
+      do i=1,size(P%PARAM%timepoints)
+        if( fstr_streqr( P%PARAM%timepoints(i)%name, mName ) ) then
+          P%PARAM%timepoint_id = i; exit
+        endif
+      enddo
+    endif
 
     call reallocate_real( P%HEAT%STEP_DLTIME, n)
     call reallocate_real( P%HEAT%STEP_EETIME, n)
@@ -2502,6 +2674,7 @@ end function fstr_setup_INITIAL
     P%HEAT%STEP_EETIME = P%PARAM%etime
     P%HEAT%STEP_DELMIN = P%PARAM%dtmin
     P%HEAT%STEP_DELMAX = P%PARAM%delmax
+    P%HEAT%timepoint_id = P%PARAM%timepoint_id
 
   end subroutine fstr_setup_HEAT
 
@@ -3324,7 +3497,7 @@ end function fstr_setup_INITIAL
     j = old_size+1
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(ILOG,*) 'fstr contol file error : !VELOCITY : range of dof_ids and dof_ide is from 1 to 6'
+        write(ILOG,*) 'fstr control file error : !VELOCITY : range of dof_ids and dof_ide is from 1 to 6'
         stop
       end if
       P%SOLID%VELOCITY_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
@@ -3391,7 +3564,7 @@ end function fstr_setup_INITIAL
     j = old_size+1
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
-        write(ILOG,*) 'fstr contol file error : !ACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
+        write(ILOG,*) 'fstr control file error : !ACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
         stop
       end if
       P%SOLID%ACCELERATION_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
@@ -3468,7 +3641,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: ctrl
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid        ) :: fstrSOLID
-    write(ILOG,*) '### Error : In !BOUNNDARY, TYPE=NASTRAN is not supported.'
+    write(ILOG,*) '### Error : In !BOUNDARY, TYPE=NASTRAN is not supported.'
     call hecmw_abort( hecmw_comm_get_comm())
   end subroutine fstr_setup_solid_nastran
 

@@ -92,21 +92,13 @@ OBJSF = \
         fstr_Update.@f90objfilepostfix@ \
         readtemp.@f90objfilepostfix@ \
         static_echo.@f90objfilepostfix@ \
-        static_make_result.@f90objfilepostfix@ \
+        make_result.@f90objfilepostfix@ \
         fstr_ass_load.@f90objfilepostfix@ \
         static_output.@f90objfilepostfix@ \
         fstr_mat_con_contact.@f90objfilepostfix@ \
         fstr_Residual.@f90objfilepostfix@ \
         fstr_AddContactStiff.@f90objfilepostfix@ \
         fstr_AddBC.@f90objfilepostfix@ \
-        fstr_mat_resid_contact.@f90objfilepostfix@ \
-        sparse_matrix_contact.@f90objfilepostfix@ \
-        solve_LINEQ_MUMPS_contact.@f90objfilepostfix@ \
-        set_arrays_DirectSolver.@f90objfilepostfix@ \
-        solve_LINEQ_mkl.@f90objfilepostfix@ \
-        solve_LINEQ_direct_serial_lag.@f90objfilepostfix@ \
-        solve_LINEQ_iter_contact.@f90objfilepostfix@ \
-        solve_LINEQ_contact.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \
         fstr_solve_NLGEOM.@f90objfilepostfix@
 
@@ -126,7 +118,7 @@ $(F90TARGET): $(OBJSF)
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(FSTRINCDIR)/.
 
 $(OBJS): $(HEADERS)
@@ -139,3 +131,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

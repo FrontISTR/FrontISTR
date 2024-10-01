@@ -476,7 +476,7 @@ static void find_coordinates_of_cell(int r_level[3], double orig_xyz[3],
 int find_out_point(VR_data *vd, int ijk[3], double in_point[3],
                    double ray_direction[3], int face_sect[3],
                    double out_point[3])
-/*Calculate the coordiates of exit point*/
+/*Calculate the coordinates of exit point*/
 {
   double fp[4][3], t, a[6], b[6], c[6], d[6], abc, st[6], mint, vv[24];
   int i, j, m, lc, spm[6], con1, minsp, node[4], face1_sect[3], lm;

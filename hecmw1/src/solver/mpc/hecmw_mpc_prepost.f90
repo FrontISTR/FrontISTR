@@ -23,6 +23,11 @@ module hecmw_mpc_prepost
   public :: hecmw_mpc_trans_mass
   public :: hecmw_mpc_tback_eigvec
   public :: hecmw_mpc_mark_slave
+  public :: hecmw_mpc_check_solution
+  public :: hecmw_mpc_check_equation
+
+  integer, parameter :: DEBUG = 0
+  logical, parameter :: DEBUG_VECTOR = .false.
 
 contains
 
@@ -31,12 +36,14 @@ contains
   !C*** hecmw_mpc_mat_init
   !C***
   !C
-  subroutine hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  subroutine hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(inout), target :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_matrix), intent(in), target, optional :: conMAT
+    type (hecmwST_matrix), pointer, optional :: conMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
 
     totalmpc = hecMESH%mpc%n_mpc
@@ -45,6 +52,7 @@ contains
     if (totalmpc == 0) then
       hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
+      if (present(conMAT).and.present(conMATmpc)) conMATmpc => conMAT
       return
     endif
 
@@ -71,14 +79,20 @@ contains
     case (1)  ! penalty
       hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
+      if (present(conMAT).and.present(conMATmpc)) conMATmpc => conMAT
     case (2)  ! MPCCG
       hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
+      if (present(conMAT).and.present(conMATmpc)) conMATmpc => conMAT
     case (3)  ! elimination
       allocate(hecMESHmpc)
       call hecmw_mpc_mesh_copy(hecMESH, hecMESHmpc)
       allocate(hecMATmpc)
       call hecmw_mat_init(hecMATmpc)
+      if (present(conMAT).and.present(conMATmpc)) then
+        allocate(conMATmpc)
+        call hecMW_mat_init(conMATmpc)
+      endif
     end select
 
   end subroutine hecmw_mpc_mat_init
@@ -124,12 +138,13 @@ contains
   !C*** hecmw_mpc_mat_finalize
   !C***
   !C
-  subroutine hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  subroutine hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in) :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_matrix), pointer, optional :: conMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
@@ -138,6 +153,7 @@ contains
     if (totalmpc == 0) then
       nullify(hecMESHmpc)
       nullify(hecMATmpc)
+      if (present(conMATmpc)) nullify(conMATmpc)
       return
     endif
 
@@ -147,9 +163,11 @@ contains
     case (1)  ! penalty
       nullify(hecMESHmpc)
       nullify(hecMATmpc)
+      if (present(conMATmpc)) nullify(conMATmpc)
     case (2) ! MPCCG
       nullify(hecMESHmpc)
       nullify(hecMATmpc)
+      if (present(conMATmpc)) nullify(conMATmpc)
     case (3) ! elimination
       call hecmw_mpc_mesh_free(hecMESHmpc)
       deallocate(hecMESHmpc)
@@ -157,6 +175,11 @@ contains
       call hecmw_mat_finalize(hecMATmpc)
       deallocate(hecMATmpc)
       nullify(hecMATmpc)
+      if (present(conMATmpc)) then
+        call hecmw_mat_finalize(conMATmpc)
+        deallocate(conMATmpc)
+        nullify(conMATmpc)
+      endif
     end select
 
   end subroutine hecmw_mpc_mat_finalize
@@ -201,14 +224,16 @@ contains
   !C*** hecmw_mpc_mat_ass
   !C***
   !C
-  subroutine hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+  subroutine hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc, hecLagMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
-    real(kind=kreal) :: time_dumm
-    integer(kind=kint) :: totalmpc, MPC_METHOD, SOLVER_TYPE
+    type (hecmwST_matrix), intent(in), optional :: conMAT
+    type (hecmwST_matrix), pointer, optional :: conMATmpc
+    type (hecmwST_matrix_lagrange), intent(inout), optional :: hecLagMAT
+    integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
@@ -226,10 +251,30 @@ contains
     case (3)  ! elimination
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
       call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, hecMAT, hecMATmpc)
+      if (present(conMAT).and.present(conMATmpc).and.present(hecLagMAT)) then
+        call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, conMAT, conMATmpc)
+        call resize_hecLagMAT(conMAT%NP, conMATmpc%NP, conMAT%NDOF, hecLagMAT)
+      endif
     end select
 
   end subroutine hecmw_mpc_mat_ass
 
+
+  subroutine resize_hecLagMAT(NP_orig, NP_new, ndof, hecLagMAT)
+    integer(kind=kint), intent(in) :: NP_orig, NP_new, ndof
+    type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
+    integer(kind=kint), pointer :: itemp(:)
+
+    if (hecLagMAT%num_lagrange == 0) return
+
+    allocate(itemp(0:NP_new))
+    itemp(0:NP_orig) = hecLagMAT%indexU_lagrange(0:NP_orig)
+    itemp(NP_orig+1:NP_new) = hecLagMAT%indexU_lagrange(NP_orig)
+
+    deallocate(hecLagMAT%indexU_lagrange)
+    hecLagMAT%indexU_lagrange => itemp
+
+  end subroutine resize_hecLagMAT
 
   !C
   !C***
@@ -282,6 +327,7 @@ contains
     type (hecmwST_matrix), pointer :: hecMATmpc
     real(kind=kreal) :: time_dumm
     integer(kind=kint) :: totalmpc, MPC_METHOD, i
+    integer(kind=kint) :: npndof, npndof_mpc, num_lagrange
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
@@ -296,10 +342,16 @@ contains
     case (2)  ! MPCCG
       call hecmw_tback_x(hecMESH, hecMAT%NDOF, hecMAT%X, time_dumm)
     case (3)  ! elimination
-      do i = 1, size(hecMAT%X)
+      npndof = hecMAT%NP * hecMAT%NDOF
+      do i = 1, npndof
         hecMAT%X(i) = hecMATmpc%X(i)
       enddo
       call hecmw_tback_x(hecMESH, hecMAT%NDOF, hecMAT%X, time_dumm)
+      num_lagrange = size(hecMAT%X) - npndof
+      npndof_mpc = hecMATmpc%NP * hecMATmpc%NDOF
+      do i = 1, num_lagrange
+        hecMAT%X(npndof+i) = hecMATmpc%X(npndof_mpc+i)
+      enddo
       hecMAT%Iarray=hecMATmpc%Iarray
       hecMAT%Rarray=hecMATmpc%Rarray
     end select
@@ -447,6 +499,8 @@ contains
 
     ndof = hecMAT%NDOF
 
+    call debug_write_vector(B, 'original RHS', 'B', ndof, hecMAT%N, hecMAT%NP, .true.)
+
     allocate(W(hecMESH%n_node * ndof))
 
     !C===
@@ -483,6 +537,8 @@ contains
     call hecmw_Ttvec(hecMESH, ndof, W, BT, COMMtime)
 
     deallocate(W)
+
+    call debug_write_vector(BT, 'transformed RHS', 'BT', ndof, hecMAT%N, hecMAT%NP, .true.)
   end subroutine hecmw_trans_b
 
 
@@ -500,6 +556,9 @@ contains
 
     real(kind=kreal), allocatable :: W(:)
     integer(kind=kint) :: i, j, k, kk
+
+    call debug_write_vector(X, 'solution for transformed eqn', 'X', ndof, hecMESH%nn_internal, &
+        hecMESH%n_node, .true.)
 
     allocate(W(hecMESH%n_node * ndof))
 
@@ -528,14 +587,70 @@ contains
 
     deallocate(W)
 
-    if (ndof == 3) then
-      call hecmw_update_3_R(hecMESH, X, hecMESH%n_node)
-    else if (ndof == 2) then
-      call hecmw_update_2_R(hecMESH, X, hecMESH%n_node)
-    else
-      call hecmw_update_m_R(hecMESH, X, hecMESH%n_node, ndof)
-    endif
+    call hecmw_update_R(hecMESH, X, hecMESH%n_node, ndof)
+    call debug_write_vector(X, 'recovered solution', 'X', ndof, hecMESH%nn_internal, &
+        hecMESH%n_node, .true.)
   end subroutine hecmw_tback_x
+
+  subroutine hecmw_mpc_check_solution(hecMESH, hecMAT)
+    use hecmw_solver_misc
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in) :: hecMAT
+
+    real(kind=kreal), allocatable :: kx(:), ttkx(:), ttb(:), resid(:)
+    integer(kind=kint) :: ndof, nndof, npndof, i
+    real(kind=kreal) :: bnrm, rnrm, commtime
+
+    ndof = hecMAT%NDOF
+    nndof = hecMAT%N * ndof
+    npndof = hecMAT%NP * ndof
+    allocate(kx(npndof), ttkx(npndof), ttb(npndof), resid(npndof))
+    call hecmw_matvec(hecMESH, hecMAT, hecMAT%X, kx)
+    call hecmw_Ttvec(hecMESH, ndof, kx, ttkx, commtime)
+    call hecmw_Ttvec(hecMESH, ndof, hecMAT%B, ttb, commtime)
+    do i = 1, nndof
+      resid(i) = ttb(i) - ttkx(i)
+    enddo
+    call hecmw_innerProduct_R(hecMESH, ndof, ttb, ttb, bnrm)
+    call hecmw_innerProduct_R(hecMESH, ndof, resid, resid, rnrm)
+    bnrm = sqrt(bnrm)
+    rnrm = sqrt(rnrm)
+    write(0,*) 'DEBUG: hecmw_mpc_check_solution: resid(abs), resid(rel):',rnrm, rnrm/bnrm
+  end subroutine hecmw_mpc_check_solution
+
+  subroutine hecmw_mpc_check_equation(hecMESH, hecMAT)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in) :: hecMAT
+
+    integer(kind=kint) :: ndof
+    integer(kind=kint) :: i, j, kk
+    real(kind=kreal) :: xmax, sum, resid, resid_max
+
+    ndof = hecMAT%NDOF
+    xmax = 0.d0
+    do i = 1, hecMESH%nn_internal * ndof
+      if (xmax < abs(hecMAT%X(i))) xmax = abs(hecMAT%X(i))
+    enddo
+    call hecmw_allreduce_R1 (hecMESH, xmax, hecmw_max)
+
+    resid_max = 0.d0
+    OUTER: do i = 1, hecMESH%mpc%n_mpc
+      do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+      enddo
+      sum = 0.d0
+      do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)
+        kk = ndof * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+        sum = sum + hecMAT%X(kk) * hecMESH%mpc%mpc_val(j)
+      enddo
+      resid = abs(hecMESH%mpc%mpc_const(i) - sum)
+      if (resid_max < resid) resid_max = resid
+    enddo OUTER
+    call hecmw_allreduce_R1 (hecMESH, resid_max, hecmw_max)
+    write(0,*) 'DEBUG: hecmw_mpc_check_equation: resid(abs), resid(rel):', resid_max, resid_max/xmax
+  end subroutine hecmw_mpc_check_equation
 
   subroutine hecmw_mpc_mesh_copy(src, dst)
     implicit none
@@ -554,16 +669,18 @@ contains
     dst%n_elem_type   = src%n_elem_type
     dst%n_dof         = src%n_dof
     dst%n_neighbor_pe = src%n_neighbor_pe
-    allocate(dst%neighbor_pe(dst%n_neighbor_pe))
-    dst%neighbor_pe(:) = src%neighbor_pe(:)
-    allocate(dst%import_index(0:dst%n_neighbor_pe))
-    dst%import_index(:)= src%import_index(:)
-    allocate(dst%export_index(0:dst%n_neighbor_pe))
-    dst%export_index(:)= src%export_index(:)
-    allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
-    dst%import_item(:) = src%import_item(:)
-    allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
-    dst%export_item(:) = src%export_item(:)
+    if (src%n_neighbor_pe > 0) then
+      allocate(dst%neighbor_pe(dst%n_neighbor_pe))
+      dst%neighbor_pe(:) = src%neighbor_pe(:)
+      allocate(dst%import_index(0:dst%n_neighbor_pe))
+      dst%import_index(:)= src%import_index(:)
+      allocate(dst%export_index(0:dst%n_neighbor_pe))
+      dst%export_index(:)= src%export_index(:)
+      allocate(dst%import_item(dst%import_index(dst%n_neighbor_pe)))
+      dst%import_item(:) = src%import_item(:)
+      allocate(dst%export_item(dst%export_index(dst%n_neighbor_pe)))
+      dst%export_item(:) = src%export_item(:)
+    endif
     allocate(dst%global_node_ID(dst%n_node))
     dst%global_node_ID(1:dst%n_node) = src%global_node_ID(1:dst%n_node)
     allocate(dst%node_ID(2*dst%n_node))
@@ -595,13 +712,54 @@ contains
   subroutine hecmw_mpc_mesh_free(hecMESH)
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
-    deallocate(hecMESH%neighbor_pe)
-    deallocate(hecMESH%import_index)
-    deallocate(hecMESH%export_index)
-    deallocate(hecMESH%import_item)
-    deallocate(hecMESH%export_item)
+    if (hecMESH%n_neighbor_pe > 1) then
+      deallocate(hecMESH%neighbor_pe)
+      deallocate(hecMESH%import_index)
+      deallocate(hecMESH%export_index)
+      deallocate(hecMESH%import_item)
+      deallocate(hecMESH%export_item)
+    endif
     deallocate(hecMESH%global_node_ID)
     deallocate(hecMESH%node_ID)
     deallocate(hecMESH%elem_type_item)
   end subroutine hecmw_mpc_mesh_free
+
+  !> \brief Debug write vector
+  !>
+  subroutine debug_write_vector(Vec, label, name, ndof, N, &
+      NP, write_ext, slaves)
+    real(kind=kreal),   intent(in) :: Vec(:) !< vector
+    character(len=*),   intent(in) :: label  !< label for vector
+    character(len=*),   intent(in) :: name   !< name of vector
+    integer(kind=kint), intent(in) :: ndof   !< num of DOF per node
+    integer(kind=kint), intent(in) :: N      !< num of nodes excl. external nodes
+    integer(kind=kint), intent(in), optional :: NP           !< num of nodes incl. external nodes
+    logical,            intent(in), optional :: write_ext    !< whether to write external dofs or not
+    integer(kind=kint), intent(in), optional :: slaves(:)    !< list of INTERNAL dofs that are in contact in WHOLE MODEL
+    !
+    integer(kind=kint) :: iunit
+    character(len=128) :: fmt
+
+    if (.not. DEBUG_VECTOR) return
+
+    write(fmt,'(a,i0,a)') '(',ndof,'f12.3)'
+
+    iunit = 1000 + hecmw_comm_get_rank()
+    write(iunit,*) trim(label),'------------------------------------------------------------'
+    write(iunit,*) 'size of ',trim(name),size(Vec)
+    write(iunit,*) trim(name),': 1-',N*ndof
+    write(iunit,fmt) Vec(1:N*ndof)
+    if (present(write_ext) .and. present(NP)) then
+      if (write_ext) then
+        write(iunit,*) trim(name),'(external): ',N*ndof+1,'-',NP*ndof
+        write(iunit,fmt) Vec(N*ndof+1:NP*ndof)
+      endif
+    endif
+    if (present(slaves)) then
+      if (size(slaves) > 0) then
+        write(iunit,*) trim(name),'(slave):',slaves(:)
+        write(iunit,fmt) Vec(slaves(:))
+      endif
+    endif
+  end subroutine debug_write_vector
 end module hecmw_mpc_prepost

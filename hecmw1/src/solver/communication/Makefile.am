@@ -78,19 +78,10 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_solver_SR_11.@f90objfilepostfix@ \
-	hecmw_solver_SR_11i.@f90objfilepostfix@ \
-	hecmw_solver_SR_22.@f90objfilepostfix@ \
-	hecmw_solver_SR_22i.@f90objfilepostfix@ \
-	hecmw_solver_SR_33.@f90objfilepostfix@ \
-	hecmw_solver_SR_33i.@f90objfilepostfix@ \
-	hecmw_solver_SR_44.@f90objfilepostfix@ \
-	hecmw_solver_SR_44i.@f90objfilepostfix@ \
-	hecmw_solver_SR_66.@f90objfilepostfix@ \
-	hecmw_solver_SR_66i.@f90objfilepostfix@ \
-	hecmw_solver_SR_mm.@f90objfilepostfix@ \
-	hecmw_solver_SR_mmi.@f90objfilepostfix@ \
+	hecmw_solver_SR.@f90objfilepostfix@ \
+	hecmw_solver_SR_i.@f90objfilepostfix@ \
 	hecmw_comm_f.@f90objfilepostfix@ \
+	hecmw_comm_contact_f.@f90objfilepostfix@ \
 	hecmw_solver_misc.@f90objfilepostfix@ \
 	hecmw_comm_group.@f90objfilepostfix@
 
@@ -116,7 +107,7 @@ $(OBJSF):
 install-header: $(HEADERS)
 	$(CP) $(HEADERS) $(HECMWINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
@@ -125,3 +116,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

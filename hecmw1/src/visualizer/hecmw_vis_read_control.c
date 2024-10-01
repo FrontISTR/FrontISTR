@@ -514,7 +514,7 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf,
       for (i = 0; i < NUM_CONTROL_PSF; i++) {
         parameters[i] = (char *)HECMW_calloc(128, sizeof(char));
         if (parameters[i] == NULL)
-          HECMW_vis_memory_exit("tempory parameters: Parameter");
+          HECMW_vis_memory_exit("temporary parameters: Parameter");
       }
       strcpy(parameters[0], "surface_style");
       len_para[0] = 12;
@@ -1520,7 +1520,7 @@ HECMW_vis_print_exit("Please re-input again");
         if (stat_para[43] == 0) sr->font_size = 1.0;
         if (sr->font_size < 1.0 - EPSILON) {
           fprintf(stderr,
-                  "ERROR: HEC-MW-VIS-E1023: font_size paramters cannot be "
+                  "ERROR: HEC-MW-VIS-E1023: font_size parameters cannot be "
                   "between 1.0 and 4.0\n");
           HECMW_vis_print_exit("Please re-input and run again");
         }
@@ -1674,7 +1674,7 @@ fprintf(stderr, "*********current PSF number= %d\n", psf->num_of_psf);
         stat_para     = (int *)HECMW_calloc(NUM_CONTROL_PVR, sizeof(int));
         parameters[i] = (char *)HECMW_calloc(128, sizeof(char));
         if (parameters[i] == NULL)
-          HECMW_vis_memory_exit("tempory variable parameters");
+          HECMW_vis_memory_exit("temporary variable parameters");
       }
       vr->opa_value     = 0.0;
       vr->color_comp    = -1;
@@ -2358,7 +2358,7 @@ on case\n");
       if (stat_para[35] == 0) vr->font_size = 1.0;
       if (vr->font_size < 1.0 - EPSILON) {
         fprintf(stderr,
-                "ERROR: HEC-MW-VIS-E1023: font_size paramters cannot be "
+                "ERROR: HEC-MW-VIS-E1023: font_size parameters cannot be "
                 "between 1.0 and 4.0\n");
         HECMW_vis_print_exit("Please re-input and run again");
       }

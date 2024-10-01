@@ -23,12 +23,12 @@
 #include "hecmw_set_int.h"
 #include "hecmw_hash.h"
 
-#define HECMW_FLAG_VERSION 4
+#define HECMW_FLAG_VERSION 5
 
 static int global_node_ID_max = -1;
 static int global_elem_ID_max = -1;
 
-/* temporaly data structures */
+/* temporary data structures */
 static struct hecmw_io_header *_head;
 static struct hecmw_io_initial *_init;
 static struct hecmw_io_amplitude *_amp;
@@ -118,7 +118,7 @@ static void decode_surf_key(int key, int *elem_id, int *surf_id) {
 static int clear(void) {
   if (HECMW_io_free_all()) return -1;
 
-  strcpy(grid_filename, "Unkown");
+  strcpy(grid_filename, "Unknown");
 
   _head    = NULL;
   _init    = NULL;
@@ -407,6 +407,8 @@ static void print_contact(FILE *fp) {
       fprintf(fp, "TYPE=NODE-SURF, ");
     } else if (p->type == HECMW_CONTACT_TYPE_SURF_SURF) {
       fprintf(fp, "TYPE=SURF-SURF, ");
+    } else if (p->type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      fprintf(fp, "TYPE=NODE-ELEM, ");
     }
     fprintf(fp, "SLAVE_GRP=%s, MASTER_GRP=%s\n", p->slave_grp, p->master_grp);
   }
@@ -956,7 +958,7 @@ int HECMW_io_add_egrp(const char *name, int nelem, int *elem) {
   }
 
   if (hecmw_hash_p_put(hash_eg, name, (void *)p) == 0) {
-    printf("HECMW HASH TABEL PUT ERROR\n");
+    printf("HECMW HASH TABLE PUT ERROR\n");
     return -1;
   }
 
@@ -1172,7 +1174,7 @@ int HECMW_io_add_ngrp(const char *name, int nnode, int *node) {
   }
 
   if (hecmw_hash_p_put(hash_ng, name, (void *)p) == 0) {
-    printf("HECMW HASH TABEL PUT ERROR\n");
+    printf("HECMW HASH TABLE PUT ERROR\n");
     return -1;
   }
 
@@ -1298,7 +1300,7 @@ int HECMW_io_add_sgrp(const char *name, int n_item, int *elem, int *surf) {
   }
 
   if (hecmw_hash_p_put(hash_sg, name, (void *)p) == 0) {
-    printf("HECMW HASH TABEL PUT ERROR\n");
+    printf("HECMW HASH TABLE PUT ERROR\n");
     return -1;
   }
 
@@ -1428,7 +1430,7 @@ struct hecmw_io_material *HECMW_io_add_mat(const char *name,
   p = (struct hecmw_io_material *)hecmw_hash_p_get(hash_mat, name);
   if (p == NULL) {
     if (hecmw_hash_p_put(hash_mat, name, (void *)mat) == 0) {
-      printf("HECMW HASH TABEL PUT ERROR\n");
+      printf("HECMW HASH TABLE PUT ERROR\n");
       return NULL;
     } else {
       if (prev_mat == NULL) {
@@ -1497,6 +1499,7 @@ struct hecmw_io_contact *HECMW_io_add_contact(const char *name, int type,
   strcpy(p->name, name);
   p->type = type;
   strcpy(p->slave_grp, slave_grp);
+  strcpy(p->slave_orisgrp, slave_grp);
   strcpy(p->master_grp, master_grp);
   p->next = NULL;
 
@@ -2934,10 +2937,11 @@ static int setup_elem_mat(struct hecmwST_local_mesh *mesh) {
 }
 
 static int setup_contact(struct hecmwST_local_mesh *mesh) {
-  int i, npair, slave_gid, master_gid;
+  int i, npair, slave_gid, master_gid, orislave_sgid;
   size_t size;
   struct hecmwST_contact_pair *cpair;
   struct hecmw_io_contact *p;
+  orislave_sgid = 0;
   slave_gid = 0;
 
   HECMW_assert(mesh);
@@ -2952,6 +2956,7 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
   cpair->type          = NULL;
   cpair->name          = NULL;
   cpair->slave_grp_id  = NULL;
+  cpair->slave_orisgrp_id  = NULL;
   cpair->master_grp_id = NULL;
 
   if (_contact == NULL) {
@@ -2991,6 +2996,14 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
     goto error;
   }
 
+  /* slave_orisgrp_id */
+  size                = sizeof(*cpair->slave_orisgrp_id) * (cpair->n_pair);
+  cpair->slave_orisgrp_id = HECMW_malloc(size);
+  if (cpair->slave_orisgrp_id == NULL) {
+    set_err(errno, "");
+    goto error;
+  }
+
   /* master_grp_id */
   size                 = sizeof(*cpair->master_grp_id) * (cpair->n_pair);
   cpair->master_grp_id = HECMW_malloc(size);
@@ -3014,16 +3027,27 @@ static int setup_contact(struct hecmwST_local_mesh *mesh) {
 
     if (p->type == HECMW_CONTACT_TYPE_NODE_SURF) {
       slave_gid = HECMW_dist_get_ngrp_id(mesh->node_group, p->slave_grp);
+      orislave_sgid = -1;
     } else if (p->type == HECMW_CONTACT_TYPE_SURF_SURF) {
       slave_gid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->slave_grp);
+      orislave_sgid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->slave_orisgrp);
+    } else if (p->type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      slave_gid = HECMW_dist_get_ngrp_id(mesh->node_group, p->slave_grp);
+      orislave_sgid = -1;
     } else {
       HECMW_assert(0);
     }
     HECMW_assert(slave_gid > 0);
 
     cpair->slave_grp_id[i] = slave_gid;
+    cpair->slave_orisgrp_id[i] = orislave_sgid;
 
-    master_gid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->master_grp);
+    if (p->type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      master_gid = HECMW_dist_get_egrp_id(mesh->elem_group, p->master_grp);
+    } else {
+      master_gid = HECMW_dist_get_sgrp_id(mesh->surf_group, p->master_grp);
+    }
+
     HECMW_assert(master_gid > 0);
 
     cpair->master_grp_id[i] = master_gid;
@@ -3697,7 +3721,7 @@ static int post_section_check_egrp(void) {
     struct hecmw_io_egrp *egrp = HECMW_io_get_egrp(p->egrp);
 
     if (egrp == NULL) {
-      set_err(HECMW_IO_E1024, "Element gorup %s not found", p->egrp);
+      set_err(HECMW_IO_E1024, "Element group %s not found", p->egrp);
       goto error;
     }
 
@@ -3789,17 +3813,39 @@ static int post_contact_check_grp(void) {
   for (p = _contact; p; p = p->next) {
     struct hecmw_io_ngrp *ngrp;
     struct hecmw_io_sgrp *sgrp;
+    struct hecmw_io_egrp *egrp;
 
     if (p->type == HECMW_CONTACT_TYPE_NODE_SURF) {
       ngrp = HECMW_io_get_ngrp(p->slave_grp);
       if (ngrp == NULL) {
-        set_err(HECMW_IO_E1029, "Node gorup %s not found", p->slave_grp);
+        set_err(HECMW_IO_E1029, "Node group %s not found", p->slave_grp);
+        goto error;
+      }
+      sgrp = HECMW_io_get_sgrp(p->master_grp);
+      if (sgrp == NULL) {
+        set_err(HECMW_IO_E1028, "Surface group %s not found", p->master_grp);
         goto error;
       }
     } else if (p->type == HECMW_CONTACT_TYPE_SURF_SURF) {
       sgrp = HECMW_io_get_sgrp(p->slave_grp);
       if (sgrp == NULL) {
-        set_err(HECMW_IO_E1028, "Surface gorup %s not found", p->slave_grp);
+        set_err(HECMW_IO_E1028, "Surface group %s not found", p->slave_grp);
+        goto error;
+      }
+      sgrp = HECMW_io_get_sgrp(p->master_grp);
+      if (sgrp == NULL) {
+        set_err(HECMW_IO_E1028, "Surface group %s not found", p->master_grp);
+        goto error;
+      }
+    } else if (p->type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      ngrp = HECMW_io_get_ngrp(p->slave_grp);
+      if (ngrp == NULL) {
+        set_err(HECMW_IO_E1029, "Node group %s not found", p->slave_grp);
+        goto error;
+      }
+      egrp = HECMW_io_get_egrp(p->master_grp);
+      if (egrp == NULL) {
+        set_err(HECMW_IO_E1028, "Element group %s not found", p->master_grp);
         goto error;
       }
     } else {
@@ -3807,11 +3853,6 @@ static int post_contact_check_grp(void) {
       HECMW_assert(0);
     }
 
-    sgrp = HECMW_io_get_sgrp(p->master_grp);
-    if (sgrp == NULL) {
-      set_err(HECMW_IO_E1028, "Surface gorup %s not found", p->master_grp);
-      goto error;
-    }
   }
   return 0;
 error:

@@ -142,9 +142,6 @@ contains
     integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
     real(kind=kreal), pointer :: AL(:), AU(:), D(:)
 
-    ! for communication hiding
-    integer(kind=kint) :: ireq
-
     ! added for turning >>>
     integer, parameter :: numOfBlockPerThread = 100
     logical, save :: isFirst = .true.
@@ -227,7 +224,7 @@ contains
       ! if (async_matvec_flg) then
       !   call hecmw_update_3_R_async (hecMESH, X, NP, ireq)
       ! else
-      call hecmw_update_3_R (hecMESH, X, NP)
+      call hecmw_update_R (hecMESH, X, NP, 3)
       ! endif
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
@@ -417,7 +414,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_3_R (hecMESH, X, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 3)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -464,7 +461,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_3_R (hecMESH, X, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 3)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -485,6 +482,7 @@ contains
       Y(kk) = 0.d0
       do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
         jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+        !$omp atomic
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
     enddo OUTER
@@ -529,7 +527,7 @@ contains
     real(kind=kreal), allocatable :: W(:,:)
     real(kind=kreal), pointer :: D(:)
     integer(kind=kint) :: ip
-    real(kind=kreal) :: START_TIME, END_TIME, Tcomm
+    real(kind=kreal) :: START_TIME, END_TIME
     allocate(W(3*hecMAT%NP,3))
     D => hecMAT%D
     do ip= 1, hecMAT%N
@@ -538,9 +536,9 @@ contains
       W(3*ip  ,1)= D(9*ip-2); W(3*ip  ,2)= D(9*ip-1); W(3*ip  ,3)= D(9*ip  )
     enddo
     START_TIME= HECMW_WTIME()
-    call hecmw_update_3_R (hecMESH, W(:,1), hecMAT%NP)
-    call hecmw_update_3_R (hecMESH, W(:,2), hecMAT%NP)
-    call hecmw_update_3_R (hecMESH, W(:,3), hecMAT%NP)
+    call hecmw_update_R (hecMESH, W(:,1), hecMAT%NP, 3)
+    call hecmw_update_R (hecMESH, W(:,2), hecMAT%NP, 3)
+    call hecmw_update_R (hecMESH, W(:,3), hecMAT%NP, 3)
     END_TIME= HECMW_WTIME()
     if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
     do ip= hecMAT%N+1, hecMAT%NP

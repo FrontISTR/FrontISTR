@@ -6,6 +6,46 @@
 module m_fstr_precheck
 contains
 
+  !=============================================================================!
+  !> fstr_input_precheck                                                        !
+  !=============================================================================!
+
+  subroutine fstr_input_precheck( hecMESH, hecMAT, fstrSOLID )
+    use m_fstr
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    type(fstr_solid), intent(in)          :: fstrSOLID
+    integer(kint) :: i, cid
+
+    if(fstrPR%solution_type == kstEIGEN .or. &
+       fstrPR%solution_type == kstSTATICEIGEN .or. &
+       fstrPR%solution_type == kstDYNAMIC)then
+      do i = 1, hecMESH%section%n_sect
+        if(hecMESH%section%sect_type(i) == 4) cycle
+        cid = hecMESH%section%sect_mat_ID_item(i)
+
+        if(fstrSOLID%materials(cid)%variables(M_DENSITY) == 0.0d0)then
+          write(*,*) "*** error: density is not assigned or set to zero"
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
+      enddo
+    endif
+
+    if(fstrPR%solution_type == kstPRECHECK)then
+      if(myrank == 0)then
+        write(IMSG,*)
+        write(IMSG,*) " ****   STAGE Precheck  **"
+      endif
+      call fstr_precheck_elem(hecMESH, hecMAT)
+      write(IDBG,*) "fstr_precheck_elem: OK"
+    endif
+
+    if(fstrPR%solution_type == kstNZPROF)then
+      call hecmw_nonzero_profile(hecMESH, hecMAT)
+    endif
+  end subroutine fstr_input_precheck
+
   subroutine fstr_get_thickness(hecMESH,mid,thick)
     use hecmw
     use m_fstr
@@ -68,7 +108,8 @@ contains
     integer(kind=kint) :: ndof2, nelem_wo_mpc
     integer(kind=kint) :: ie, ia, jelem, ic_type, nn, jS, jE, itype
     integer(kind=kint) :: nodLOCAL(20),NTOTsum(1)
-    integer(kind=8)    :: ntdof2, nonzero
+    integer(kind=kint) :: nonzero
+    real(kind=kreal)   :: ntdof2
     real(kind=kreal)   :: al, almin, almax, AA, thick, vol, avvol
     real(kind=kreal)   :: tvol, tvmax, tvmin, tlmax, tlmin, asp, aspmax
     real(kind=kreal)   :: xx(20),yy(20),zz(20)
@@ -93,7 +134,7 @@ contains
     write(ILOG,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
     write(*   ,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
     ndof2  = hecMESH%n_dof**2
-    ntdof2 = (hecMESH%n_node*hecMESH%n_dof)**2
+    ntdof2 = dble(hecMESH%n_node*hecMESH%n_dof)**2
     write(ILOG,"(a,i12)") '  Num of elem:',hecMESH%n_elem
     write(*   ,"(a,i12)") '  Num of elem:',hecMESH%n_elem
     nelem_wo_mpc = 0
@@ -190,7 +231,7 @@ contains
         asp = almax/almin
         if( asp.gt.aspmax ) aspmax = asp
         if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif
@@ -254,7 +295,7 @@ contains
         asp = almax/almin
         if( asp.gt.aspmax ) aspmax = asp
         if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif
@@ -315,7 +356,7 @@ contains
         asp = almax/almin
         if( asp.gt.aspmax ) aspmax = asp
         if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNIG %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif

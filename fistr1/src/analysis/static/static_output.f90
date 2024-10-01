@@ -13,8 +13,9 @@ contains
     !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
-    use m_static_make_result
+    use m_make_result
     use m_hecmw2fstr_mesh_conv
+    use mContact
     integer, intent(in)                   :: cstep       !< current step number
     integer, intent(in)                   :: istep       !< current substep number
     real(kind=kreal), intent(in)          :: time        !< current time
@@ -31,11 +32,11 @@ contains
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
       if( ndof==3 ) then
-        allocate( fstrSOLID%tnstrain(hecMESH%n_node*6) )
-        allocate( fstrSOLID%testrain(hecMESH%n_elem*6) )
+        if( .not. associated(fstrSOLID%tnstrain) ) allocate( fstrSOLID%tnstrain(hecMESH%n_node*6) )
+        if( .not. associated(fstrSOLID%testrain) ) allocate( fstrSOLID%testrain(hecMESH%n_elem*6) )
       else if( ndof==2 ) then
-        allocate( fstrSOLID%tnstrain(hecMESH%n_node*3) )
-        allocate( fstrSOLID%testrain(hecMESH%n_elem*3) )
+        if( .not. associated(fstrSOLID%tnstrain) ) allocate( fstrSOLID%tnstrain(hecMESH%n_node*3) )
+        if( .not. associated(fstrSOLID%testrain) ) allocate( fstrSOLID%testrain(hecMESH%n_elem*3) )
       endif
     endif
 
@@ -47,23 +48,31 @@ contains
       call fstr_NodalStress6D( hecMESH, fstrSOLID )
     endif
 
+    if( associated( fstrSOLID%contacts ) ) then
+      call setup_contact_output_variables( hecMESH, fstrSOLID, -1 )
+    endif
+
     if( flag==kstSTATICEIGEN ) then
       if( IRESULT==1 .and. &
-          (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
-        call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 1 )
+          (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
+        call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 1 )
       endif
       return
     endif
 
     if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%freqency)==0 .or. outflag) ) then
-      call fstr_write_static_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
+        (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
+      if( associated( fstrSOLID%contacts ) ) &
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
+      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
     endif
 
     if( IVISUAL==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(4)%freqency)==0 .or. outflag) ) then
+        (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. outflag) ) then
 
-      call fstr_make_static_result( hecMESH, fstrSOLID, fstrRESULT )
+      if( associated( fstrSOLID%contacts ) ) &
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
+      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, istep )
@@ -72,13 +81,13 @@ contains
       call hecmw_result_free( fstrRESULT )
     endif
 
-    if( (mod(istep,fstrSOLID%output_ctrl(1)%freqency)==0 .or. outflag) ) then
+    if( (mod(istep,fstrSOLID%output_ctrl(1)%frequency)==0 .or. outflag) ) then
       fnum = fstrSOLID%output_ctrl(1)%filenum
       call fstr_static_post( fnum, hecMESH, fstrSOLID, istep )
     endif
 
     if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(2)%freqency)==0 .or. outflag) ) then
+        (mod(istep,fstrSOLID%output_ctrl(2)%frequency)==0 .or. outflag) ) then
       is = fstrSOLID%output_ctrl(2)%outinfo%grp_id
       fnum = fstrSOLID%output_ctrl(2)%filenum
       do i = hecMESH%node_group%grp_index(is-1)+1, hecMESH%node_group%grp_index(is)

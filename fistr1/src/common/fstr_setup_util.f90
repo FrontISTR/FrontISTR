@@ -17,7 +17,6 @@ module fstr_setup_util
   !> private parameter and pointers to group members in hecMESH
   integer(kind=kint),private :: grp_type     ! 1:node_grp, 2:elem_grp, 3:surf_grp
   integer(kind=kint),pointer,private :: n_grp
-  integer(kind=kint),pointer,private :: n_index(:)
   integer(kind=kint),pointer,private :: grp_index(:)
   integer(kind=kint),pointer,private :: grp_item(:)
   type(fstr_str_arr),private :: grp_name
@@ -191,7 +190,7 @@ contains
         endif
       enddo
 
-      do i=1, cache
+      do i=1, cache-1
         if( hecMESH%global_node_ID(i) == list(j)) then
           list(j) = i
           cache = i+1
@@ -202,7 +201,7 @@ contains
       enddo
 
       if( .not. fg ) then
-        list(j) = -list(j) ! not exist node
+        list(j) = -1 ! not exist node
       endif
     enddo aa
   end function node_global_to_local
@@ -227,7 +226,7 @@ contains
         endif
       end do
       if( .not. fg ) then
-        list(j) = -list(j)
+        list(j) = -1
       endif
     end do
   end function elem_global_to_local
@@ -330,7 +329,6 @@ contains
     integer(kind=kint) :: is, ie, nnode, i, ic, isurf, ic_type, stype, nn, j0, j, new_nnode
     integer(kind=kint) :: snode(20)
     integer(kind=kint), allocatable :: node(:)
-    type(tSurfElement) :: surf
     character(len=HECMW_NAME_LEN) :: grp_name
     is= hecMESH%surf_group%grp_index(sgrp_id-1) + 1
     ie= hecMESH%surf_group%grp_index(sgrp_id  )
@@ -521,7 +519,7 @@ contains
     character(len=*) :: type_name
     character(len=*) :: name
     integer(kind=kint) :: local_id
-    integer(kind=kint) :: i, n, stat, no, fg
+    integer(kind=kint) :: i, n, no, fg
     integer(kind=kint),pointer :: global_item(:)
 
     if( .not. fstr_str2index(name, no) ) then
@@ -564,8 +562,7 @@ contains
     character(len=*) :: type_name
     character(len=*) :: name
     integer(kind=kint) :: local_id, idx
-    integer(kind=kint) :: i, n, stat, no, fg
-    integer(kind=kint),pointer :: item(:)
+    integer(kind=kint) :: n, no, fg
 
     if( .not. fstr_str2index(name, no) ) then
       get_sorted_local_member_index = -1
@@ -836,7 +833,7 @@ contains
           end do
         end if
 
-        !not fouund => exit
+        !not found => exit
         if( grp_ID(i) == -1 ) then
           write(msg,*) '### Error: ', header_name,' : Node group "',grp_id_name(i),'" does not exist.'
           call fstr_setup_util_err_stop(msg)
@@ -958,7 +955,7 @@ contains
           if(fstr_streqr(hecMESH%surf_group%grp_name(casha), grp_id_name(i))) then
             grp_ID(i) = casha
             casha = casha + 1
-            exit
+            cycle
           end if
         endif
         do id = 1, hecMESH%surf_group%n_grp
@@ -984,7 +981,7 @@ contains
             if(fstr_streqr(hecMESH%surf_group%grp_name(cashb), grp_id_name(i))) then
               grp_ID(i) = cashb
               cashb = cashb + 1
-              exit
+              cycle
             end if
           endif
           do id = 1, hecMESH%elem_group%n_grp
@@ -1027,6 +1024,55 @@ contains
 
   !------------------------------------------------------------------------------
   ! JP-7
+
+  !> Append new amplitude table at the end of existing amplitude tables
+  subroutine append_new_amplitude( amp, name, type_def, type_time, type_val, np, val, table )
+    type( hecmwST_amplitude ),     intent(inout) :: amp       !< amplitude table structure
+    character(len=HECMW_NAME_LEN), intent(in)    :: name      !< name of amplitude table
+    integer(kind=kint),            intent(in)    :: type_def  !< HECMW_AMP_TYPEDEF_TABULAR
+    integer(kind=kint),            intent(in)    :: type_time !< HECMW_AMP_TYPETIME_STEP
+    integer(kind=kint),            intent(in)    :: type_val  !< HECMW_AMP_TYPEVAL_{RELATIVE|ABSOLUTE}
+    integer(kind=kint),            intent(in)    :: np        !< number of table items
+    real(kind=kreal),              intent(in)    :: val(:)    !< values of the table
+    real(kind=kreal),              intent(in)    :: table(:)  !< time points of the table
+
+    ! type(fstr_str_arr) :: amp_name
+    integer(kind=kint) :: n_amp, new_size, old_size, i
+
+    do i=1,amp%n_amp
+      if( fstr_streqr(amp%amp_name(i), name) ) then
+        write(*,*) 'Error: AMPLITUDE with NAME=',trim(name),' already exists'
+        call fstr_ctrl_err_stop
+      endif
+    enddo
+
+    n_amp = amp%n_amp
+    new_size = n_amp+1
+    amp%n_amp = new_size
+    call fstr_expand_index_array( amp%amp_index, n_amp+1, new_size+1 )
+    ! amp_name%s => amp%amp_name
+    ! call fstr_expand_name_array( amp_name, n_amp, new_size )
+    ! amp%amp_name => amp_name%s
+    call fstr_expand_char_array( amp%amp_name, n_amp, new_size )
+    call fstr_expand_integer_array( amp%amp_type_definition, n_amp, new_size )
+    call fstr_expand_integer_array( amp%amp_type_time, n_amp, new_size )
+    call fstr_expand_integer_array( amp%amp_type_value, n_amp, new_size )
+    old_size = amp%amp_index( n_amp )
+    new_size = old_size+np
+    call fstr_expand_real_array( amp%amp_val, old_size, new_size )
+    call fstr_expand_real_array( amp%amp_table, old_size, new_size )
+
+    amp%amp_index(amp%n_amp) = amp%amp_index(amp%n_amp-1)+np
+    amp%amp_name(amp%n_amp) = name
+    amp%amp_type_definition(amp%n_amp) = type_def
+    amp%amp_type_time(amp%n_amp) = type_time
+    amp%amp_type_value(amp%n_amp) = type_val
+    do i=1,np
+      amp%amp_val(old_size+i) = val(i)
+      amp%amp_table(old_size+i) = table(i)
+    enddo
+  end subroutine append_new_amplitude
+
 
   subroutine amp_name_to_id( hecMESH, header_name, aname, id )
     implicit none
@@ -1121,6 +1167,34 @@ contains
       array = 0
     end if
   end subroutine fstr_expand_index_array
+
+  subroutine fstr_expand_char_array( array, old_size, new_size )
+    implicit none
+    character(len=HECMW_NAME_LEN), pointer :: array(:)
+    integer(kind=kint) :: old_size, new_size,i
+    character(len=HECMW_NAME_LEN), pointer :: temp(:)
+
+    if( old_size >= new_size ) then
+      return
+    end if
+
+    if( associated( array ) ) then
+      allocate(temp(old_size))
+      do i=1, old_size
+        temp(i) = array(i)
+      end do
+      deallocate(array)
+      allocate(array(new_size))
+      array = ''
+      do i=1, old_size
+        array(i) = temp(i)
+      end do
+      deallocate(temp)
+    else
+      allocate(array(new_size))
+      array = ''
+    end if
+  end subroutine fstr_expand_char_array
 
   subroutine fstr_expand_integer_array( array, old_size, new_size )
     implicit none
@@ -1385,22 +1459,26 @@ contains
   !-----------------------------------------------------------------------------!
   ! FSTR_SETUP_VISUALIZE                                                        !
   ! 1) Seeking header to 'WRITE'                                                !
-  ! 2) If parameter 'VISUAL' exists, then 'hecmw_vis.ini' is opend.             !
-  ! 3) All following lines under the header are writen to the opend file        !
+  ! 2) If parameter 'VISUAL' exists, then 'hecmw_vis.ini' is opened.            !
+  ! 3) All following lines under the header are written to the opened file      !
   !-----------------------------------------------------------------------------!
 
-  subroutine fstr_setup_visualize( ctrl, my_rank )
+  subroutine fstr_setup_visualize( ctrl, hecMESH )
     implicit none
-    integer(kind=kint) :: ctrl, my_rank, rcode
+    integer(kind=kint) :: ctrl
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: rcode
     character(HECMW_FILENAME_LEN) :: vis_filename = 'hecmw_vis.ini'
     logical :: is_exit
 
     rcode = fstr_ctrl_seek_header( ctrl, '!VISUAL ' )
     if(rcode == 0) return
 
-    if(my_rank == 0)then
+    if(hecMESH%my_rank == 0)then
       call fstr_setup_visualize_main( ctrl, vis_filename )
     endif
+
+    call hecmw_barrier( hecMESH )
 
     inquire(file = vis_filename, EXIST = is_exit)
 

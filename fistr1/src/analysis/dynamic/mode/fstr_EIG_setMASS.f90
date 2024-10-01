@@ -16,13 +16,13 @@ contains
     use hecmw_util
     use m_fstr
     use mMaterial
-	use m_static_LIB_shell
+    use m_static_LIB_shell
     implicit none
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
     type(fstr_eigen)         :: fstrEIG
-    integer(kind=kint) :: i, iS, iE, ii, nn, j, jn, jS, jE, k
+    integer(kind=kint) :: i, iS, iE, ii, nn, j, jn, jS, k
     integer(kind=kint) :: N, NP, NDOF
     integer(kind=kint) :: icel, ic_type, itype, isect, ihead, sec_opt, cid
     integer(kind=kint) :: nodLOCAL(20)
@@ -75,7 +75,7 @@ contains
         elseif(ic_type == 341 .or. ic_type == 342 .or. ic_type == 351 .or. ic_type == 352 .or. &
              & ic_type == 361 .or. ic_type == 362 )then
           call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass, lumped)
-		  
+
         elseif(ic_type==731 .or. ic_type==741 .or. ic_type==743) then
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           thick = fstrSOLID%materials(cid)%variables(M_THICK)
@@ -168,7 +168,7 @@ contains
       enddo
     enddo
 
-    call hecmw_update_m_R(hecMESH, fstrEIG%mass, NP, NDOF)
+    call hecmw_update_R(hecMESH, fstrEIG%mass, NP, NDOF)
 
     chkmass = 0.0d0
     do i = 1, N

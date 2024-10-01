@@ -10,8 +10,8 @@ module m_common_struct
   type tLocalCoordSys
     character(len=128) :: sys_name
     integer            :: sys_type !< type of material or local coordinate system;
-    !< fisrt digit: 1- Cartensian 2- Cylinder 3- Sphere
-    !< second digit: 0- coodinate; 1-nodes  2-local nodes
+    !< first digit: 1- Cartesian 2- Cylinder 3- Sphere
+    !< second digit: 0- coordinate; 1-nodes  2-local nodes
     integer            :: node_ID(3) !< nodes' ID
     real(kind=kreal)   :: CoordSys(3, 3) !< variables when second digit=0
   end type tLocalCoordSys
@@ -57,7 +57,7 @@ contains
     write(nfile, *) coordsys%CoordSys(3,:)
   end subroutine
 
-  !> if need to fetch global nodes' coodinate
+  !> if need to fetch global nodes' coordinate
   logical function isCoordNeeds( coordsys )
     type(tLocalCoordSys), intent(in) :: coordsys
 
@@ -75,8 +75,8 @@ contains
     real(kind=kreal), intent(out)    :: outsys(3, 3)
     integer, intent(out)             :: ierr
 
-    real(kind=kreal) :: dis,f, ff(3), xyza(3), xyzb(3), xyzc(3)
-    integer :: ftype, stype
+    real(kind=kreal) :: f, xyza(3), xyzb(3), xyzc(3)
+    integer :: stype
 
     ierr = 0
     stype = mod( coordsys%sys_type, 10 )

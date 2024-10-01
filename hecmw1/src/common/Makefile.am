@@ -138,12 +138,16 @@ OBJS = \
 	hecmw_result.@cobjfilepostfix@ \
 	hecmw_result_copy_c2f.@cobjfilepostfix@ \
 	hecmw_result_copy_f2c.@cobjfilepostfix@ \
+	hecmw_result_io.@cobjfilepostfix@ \
+	hecmw_result_io_bin.@cobjfilepostfix@ \
+	hecmw_result_io_txt.@cobjfilepostfix@ \
 	hecmw_visual_if.@cobjfilepostfix@ \
 	hecmw_system.@cobjfilepostfix@ \
 	hecmw_time.@cobjfilepostfix@
 
 OBJSF = \
 	hecmw_util_f.@f90objfilepostfix@ \
+	hecmw_etype_f.@f90objfilepostfix@ \
 	hecmw_logging.@f90objfilepostfix@ \
 	hecmw_msgno_f.@f90objfilepostfix@ \
 	hecmw_msg_f.@f90objfilepostfix@ \
@@ -155,7 +159,7 @@ OBJSF = \
 	hecmw_dist_free_f.@f90objfilepostfix@ \
 	hecmw_dist_print_f.@f90objfilepostfix@ \
 	hecmw_visualizer_f.@f90objfilepostfix@ \
-	hecmw_etype_f.@f90objfilepostfix@ \
+	hecmw_varray_int_f.@f90objfilepostfix@ \
 	hecmw_io.@f90objfilepostfix@
 
 HEADERS = \
@@ -211,6 +215,9 @@ HEADERS = \
 	hecmw_ucd_print.h \
 	hecmw_result_copy_c2f.h \
 	hecmw_result_copy_f2c.h \
+	hecmw_result_io.h \
+	hecmw_result_io_bin.h \
+	hecmw_result_io_txt.h \
 	hecmw_system.h \
 	hecmw_time.h
 
@@ -234,7 +241,7 @@ $(OBJSF):
 install-header: $(HEADERS)
 	$(CP) $(HEADERS) $(HECMWINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
@@ -243,3 +250,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

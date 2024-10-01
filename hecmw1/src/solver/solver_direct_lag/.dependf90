@@ -1,0 +1,5 @@
+hecmw_solver_direct_serial_lag.o : hecmw_solver_direct_serial_lag.f90 m_crs_matrix_lag.o my_hecmw_util_f_lag.o m_irjc_matrix_lag.o m_child_matrix_lag.o 
+m_child_matrix_lag.o : m_child_matrix_lag.f90 m_irjc_matrix_lag.o my_hecmw_util_f_lag.o 
+m_crs_matrix_lag.o : m_crs_matrix_lag.f90 my_hecmw_util_f_lag.o 
+m_irjc_matrix_lag.o : m_irjc_matrix_lag.f90 my_hecmw_util_f_lag.o 
+my_hecmw_util_f_lag.o : my_hecmw_util_f_lag.f90 

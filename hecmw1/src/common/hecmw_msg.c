@@ -10,7 +10,7 @@
 #include "hecmw_util.h"
 
 static struct hecmw_msgent msg_unknown = {-1, "HEC-MW-UNKNOWN",
-                                          "Unkown message No"};
+                                          "Unknown message No"};
 
 static struct hecmw_msgent msg_err = {-1, "HEC-MW-SYSERR", NULL};
 

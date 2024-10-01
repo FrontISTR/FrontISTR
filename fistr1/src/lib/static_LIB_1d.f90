@@ -25,7 +25,7 @@ contains
     real(kind=kreal),   intent(in), optional :: u(:,:)     !< nodal displacemwent
     real(kind=kreal),   intent(in), optional :: temperature(nn)     !< temperature
 
-    real(kind=kreal) DET,WG, llen, llen0, elem(3,nn)
+    real(kind=kreal) llen, llen0, elem(3,nn)
     logical :: ierr
     real(kind=kreal) ina(1), outa(1), direc(3), direc0(3), coeff, strain
     integer(kind=kint) :: i,j
@@ -74,7 +74,7 @@ contains
     !---------------------------------------------------------------------*
     use m_fstr
     use mMechGauss
-    ! I/F VARIAVLES
+    ! I/F VARIABLES
     integer(kind=kint), intent(in)     :: etype           !< \param [in] element type
     integer(kind=kint), intent(in)     :: nn              !< \param [in] number of elemental nodes
     real(kind=kreal),   intent(in)     :: ecoord(3,nn)    !< \param [in] coordinates of elemental nodes
@@ -86,7 +86,7 @@ contains
     real(kind=kreal),   intent(in), optional :: TT(nn)    !< current temperature
     real(kind=kreal),   intent(in), optional :: T0(nn)    !< reference temperature
 
-    ! LCOAL VARIAVLES
+    ! LOCAL VARIABLES
     real(kind=kreal)   :: direc(3), direc0(3)
     real(kind=kreal)   :: llen, llen0, ina(1), outa(1)
     real(kind=kreal)   :: elem(3,nn)
@@ -195,11 +195,10 @@ contains
     real(kind = kreal), intent(in)    :: params(0:6)
     real(kind = kreal), intent(inout) :: vect(:)
     real(kind = kreal) :: rho, thick
-    integer(kind = kint) :: ltype, nsize, surtype
+    integer(kind = kint) :: ltype, nsize
     ! LOCAL VARIABLES
     integer(kind = kint) :: ndof = 3
-    integer(kind = kint) :: ivol, isuf, nsur, i
-    integer(kind = kint) :: nod(nn)
+    integer(kind = kint) :: ivol, isuf, i
     real(kind = kreal) :: vx, vy, vz, val, a, AA
     !--------------------------------------------------------------------
     val = params(0)
@@ -294,8 +293,7 @@ contains
     use hecmw
     type (hecmwST_matrix)     :: hecMAT
     type (hecmwST_local_mesh) :: hecMESH
-    integer :: n, nn, is, iE, i, j, in
-    integer :: flagl, flagu, flagb, a
+    integer :: n, nn, is, iE, i, a
 
     if(nn == 1)then
       a = 0

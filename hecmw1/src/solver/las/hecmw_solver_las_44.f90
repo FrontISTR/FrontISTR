@@ -19,8 +19,6 @@ module hecmw_solver_las_44
   public :: hecmw_TtmatTvec_44
   public :: hecmw_mat_diag_sr_44
 
-  logical, save :: spikematvec_flg = .false.
-
   ! ! for communication hiding in matvec
   ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
   ! real(kind=kreal), save, allocatable :: A_o(:)
@@ -112,9 +110,6 @@ contains
     integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
     real(kind=kreal), pointer :: AL(:), AU(:), D(:)
 
-    ! for communication hiding
-    integer(kind=kint) :: ireq
-
     ! added for turning >>>
     integer, parameter :: numOfBlockPerThread = 100
     logical, save :: isFirst = .true.
@@ -195,7 +190,7 @@ contains
 
       START_TIME= HECMW_WTIME()
 
-      call hecmw_update_4_R (hecMESH, X, NP)
+      call hecmw_update_R (hecMESH, X, NP, 4)
 
       ! endif
       END_TIME= HECMW_WTIME()
@@ -360,7 +355,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_4_R (hecMESH, X, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 4)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -407,7 +402,7 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_4_R (hecMESH, X, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 4)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -428,6 +423,7 @@ contains
       Y(kk) = 0.d0
       do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
         jj = 4 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+        !omp atomic
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
     enddo OUTER
@@ -472,7 +468,7 @@ contains
     real(kind=kreal), allocatable :: W(:,:)
     real(kind=kreal), pointer :: D(:)
     integer(kind=kint) :: ip
-    real(kind=kreal) :: START_TIME, END_TIME, Tcomm
+    real(kind=kreal) :: START_TIME, END_TIME
     allocate(W(4*hecMAT%NP,4))
     D => hecMAT%D
     do ip= 1, hecMAT%N
@@ -482,10 +478,10 @@ contains
       W(4*ip  ,1)= D(16*ip- 3); W(4*ip  ,2)= D(16*ip- 2); W(4*ip  ,3)= D(16*ip- 1); W(4*ip  ,4)= D(16*ip   )
     enddo
     START_TIME= HECMW_WTIME()
-    call hecmw_update_4_R (hecMESH, W(:,1), hecMAT%NP)
-    call hecmw_update_4_R (hecMESH, W(:,2), hecMAT%NP)
-    call hecmw_update_4_R (hecMESH, W(:,3), hecMAT%NP)
-    call hecmw_update_4_R (hecMESH, W(:,4), hecMAT%NP)
+    call hecmw_update_R (hecMESH, W(:,1), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,2), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,3), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,4), hecMAT%NP, 4)
     END_TIME= HECMW_WTIME()
     if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
     do ip= hecMAT%N+1, hecMAT%NP

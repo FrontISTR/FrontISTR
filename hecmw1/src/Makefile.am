@@ -9,6 +9,7 @@ all: @build_target@
 #	@cd couple     && $(MAKE) install-header
 	@cd visualizer && $(MAKE) install-header
 	@cd common     && $(MAKE) @build_target@
+	@cd operations/element_smoothing && $(MAKE) @build_target@
 #	@cd operations && $(MAKE) @build_target@
 	@cd solver     && $(MAKE) @build_target@
 #	@cd couple     && $(MAKE) @build_target@
@@ -48,3 +49,12 @@ install:
 	@cd hecmw      && $(MAKE) install
 	@cd visualizer && $(MAKE) install
 	@cd etc        && $(MAKE) install
+
+depend:
+	@cd common     && $(MAKE) depend
+	@cd operations && $(MAKE) depend
+	@cd solver     && $(MAKE) depend
+	@cd couple     && $(MAKE) depend
+	@cd hecmw      && $(MAKE) depend
+	@cd visualizer && $(MAKE) depend
+	@cd etc        && $(MAKE) depend

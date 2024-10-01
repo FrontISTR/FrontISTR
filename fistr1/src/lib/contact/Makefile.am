@@ -85,7 +85,7 @@ OBJSF = \
         bucket_search.@f90objfilepostfix@ \
         surf_ele.@f90objfilepostfix@ \
         contact_lib.@f90objfilepostfix@ \
-        fstr_contact_comm.@f90objfilepostfix@ \
+        fstr_contact_param.@f90objfilepostfix@ \
         fstr_contact_def.@f90objfilepostfix@
 
 HEADERS =
@@ -104,7 +104,7 @@ $(F90TARGET): $(OBJSF)
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(FSTRINCDIR)/.
 
 $(OBJS): $(HEADERS)
@@ -117,3 +117,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

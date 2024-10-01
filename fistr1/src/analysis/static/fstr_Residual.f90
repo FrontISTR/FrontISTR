@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module provides function to calcualte residual of nodal force.
+!> \brief  This module provides function to calculate residual of nodal force.
 
 module m_fstr_Residual
   use hecmw
@@ -22,7 +22,7 @@ contains
   !C---------------------------------------------------------------------*
   subroutine fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT)
     !C---------------------------------------------------------------------*
-    !> In this subroutine, nodal force arose from prescribed displacement constarints
+    !> In this subroutine, nodal force arising from prescribed displacement constraints
     !> are cleared and nodal force residual is calculated.
     !> Those constraints considered here includes:
     !!-#  nodal displacement
@@ -36,7 +36,7 @@ contains
     type(fstr_solid), intent(inout)      :: fstrSOLID !< we need boundary conditions of curr step
     type(hecmwST_matrix), intent(inout), optional  :: conMAT
     !    Local variables
-    integer(kind=kint) :: ndof, idof, num
+    integer(kind=kint) :: ndof, idof
     real(kind=kreal)   :: factor
 
     factor = fstrSOLID%factor(2)
@@ -60,14 +60,7 @@ contains
     if(present(conMAT)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, conMAT%B )
 
     !
-    if( ndof==3 ) then
-      call hecmw_update_3_R(hecMESH,hecMAT%B,hecMESH%n_node)
-    else if( ndof==2 ) then
-      call hecmw_update_2_R(hecMESH,hecMAT%B,hecMESH%n_node)
-    else if( ndof==6 ) then
-      call hecmw_update_m_R(hecMESH,hecMAT%B,hecMESH%n_node,6)
-    endif
-
+    call hecmw_update_R(hecMESH,hecMAT%B,hecMESH%n_node, ndof)
   end subroutine fstr_Update_NDForce
 
   subroutine fstr_Update_NDForce_MPC( hecMESH, B )
@@ -134,6 +127,9 @@ contains
           B( ndof*(in-1) + idof ) = 0.d0
           !for output reaction force
           fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
+          !count embed force as reaction force
+          if( associated(fstrSOLID%EMBED_NFORCE) ) fstrSOLID%REACTION(ndof*(in-1)+idof) = &
+                &  fstrSOLID%QFORCE(ndof*(in-1)+idof) - fstrSOLID%EMBED_NFORCE(ndof*(in-1)+idof)
         enddo
       enddo
     enddo
@@ -160,13 +156,12 @@ contains
   end function
 
   !> Calculate square norm
-  real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,fstrMAT)
+  real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,hecLagMAT)
     use m_fstr
-    use fstr_matrix_con_contact
     type(hecmwST_local_mesh), intent(in)             :: hecMESH !< mesh information
     type(hecmwST_matrix), intent(in)                 :: hecMAT
     type(fstr_solid), intent(in)                     :: fstrSOLID
-    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
+    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
     character(len=13)                                :: flag
     real(kind=kreal) :: tmp1, tmp2, bi
     integer :: i, i0, ndof
@@ -175,7 +170,7 @@ contains
       call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,tmp1)
       tmp2 = 0.0d0
       i0 = hecMESH%n_node*ndof
-      do i=1,fstrMAT%num_lagrange
+      do i=1,hecLagMAT%num_lagrange
         bi = hecMAT%B(i0+i)
         tmp2 = tmp2 + bi*bi
       enddo
@@ -187,78 +182,47 @@ contains
   end function
 
   !
-  function fstr_get_norm_para_contact(hecMAT,fstrMAT,conMAT,hecMESH) result(rhsB)
+  function fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH) result(rhsB)
     use m_fstr
-    use fstr_matrix_con_contact
     implicit none
     type(hecmwST_matrix), intent(in)                 :: hecMAT
-    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
+    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
     type(hecmwST_matrix), intent(in)                 :: conMAT
     type(hecmwST_local_mesh), intent(in)             :: hecMESH
     !
     real(kind=kreal) ::  rhsB
-    integer(kind=kint) ::  i,j,N,i0,ndof,N_loc,nndof
-    integer(kind=kint) :: offset, pid, lid
-    integer(kind=kint), allocatable :: displs(:)
-    real(kind=kreal), allocatable   :: rhs_con_all(:), rhs_con(:)
-    !
-    ndof = hecMAT%ndof
-    nndof = hecMAT%N*ndof
-    N_loc = nndof + fstrMAT%num_lagrange
-    allocate(displs(0:nprocs))
-    displs(:) = 0
-    displs(myrank+1) = N_loc
-    call hecmw_allreduce_I(hecMESH, displs, nprocs+1, hecmw_sum)
-    do i=1,nprocs
-      displs(i) = displs(i-1) + displs(i)
-    end do
-    offset = displs(myrank)
-    N = displs(nprocs)
-    allocate(rhs_con_all(N))
-    do i=1,N
-      rhs_con_all(i) = 0.0D0
-    end do
-    do i= hecMAT%N+1,hecMAT%NP
-      !        i0 = getExternalGlobalIndex(i,ndof,hecMAT%N)
-      pid = hecMESH%node_ID(i*2)
-      lid = hecMESH%node_ID(i*2-1)
-      i0 = displs(pid) + (lid-1)*ndof
-      if((i0 < 0.or.i0 > N)) then
-        !          print *,myrank,'ext dummy',i,i0/ndof
-        do j=1,ndof
-          if(conMAT%b((i-1)*ndof+j) /= 0.0D0) then
-            print *,myrank,'i0',i,'conMAT%b',conMAT%b((i-1)*ndof+j)
-            stop
-          endif
-        enddo
-      else
-        rhs_con_all(i0+1:i0+ndof) = conMAT%b((i-1)*ndof+1:i*ndof)
-      endif
+    integer(kind=kint) ::  i,ndof,nndof,npndof,num_lagrange
+    real(kind=kreal), allocatable   :: rhs_con(:)
+    real(kind=kreal), pointer :: rhs_lag(:)
+
+    ndof = conMAT%ndof
+    nndof = conMAT%N * ndof
+    npndof = conMAT%NP * ndof
+    num_lagrange = hecLagMAT%num_lagrange
+
+    allocate(rhs_con(npndof))
+    do i=1,npndof
+      rhs_con(i) = conMAT%B(i)
     enddo
-    deallocate(displs)
-    call hecmw_allreduce_R(hecMESH, rhs_con_all, N, hecmw_sum)
-    allocate(rhs_con(N_loc))
+    call hecmw_assemble_R(hecMESH, rhs_con, conMAT%NP, conMAT%NDOF)
+
     do i=1,nndof
-      rhs_con(i) = rhs_con_all(offset+i) + hecMAT%B(i) + conMAT%B(i)
-    end do
-    deallocate(rhs_con_all)
-    i0 = hecMAT%NP*ndof
-    do i=1,fstrMAT%num_lagrange
-      rhs_con(nndof+i) = conMAT%B(i0+i)
+      rhs_con(i) = rhs_con(i) + hecMAT%B(i)
     enddo
-    rhsB = 0.d0
-    rhsB = dot_product(rhs_con, rhs_con)
+
+    rhs_lag => conMAT%B(npndof+1:npndof+num_lagrange)
+
+    rhsB = dot_product(rhs_con(1:nndof), rhs_con(1:nndof)) + dot_product(rhs_lag(:), rhs_lag(:))
     call hecmw_allreduce_R1(hecMESH, rhsB, hecmw_sum)
     deallocate(rhs_con)
 
   end function fstr_get_norm_para_contact
 
-  function fstr_get_x_norm_contact(hecMAT,fstrMAT,hecMESH) result(rhsX)
+  function fstr_get_x_norm_contact(hecMAT,hecLagMAT,hecMESH) result(rhsX)
     use m_fstr
-    use fstr_matrix_con_contact
     implicit none
     type(hecmwST_matrix), intent(in)                 :: hecMAT
-    type(fstrST_matrix_contact_lagrange), intent(in) :: fstrMAT
+    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
     type(hecmwST_local_mesh), intent(in)             :: hecMESH
     real(kind=kreal)   ::  rhsX
     integer(kind=kint) :: nndof, npndof, i
@@ -269,7 +233,7 @@ contains
     do i=1,nndof
       rhsX = rhsX + hecMAT%X(i) ** 2
     end do
-    do i=1,fstrMAT%num_lagrange
+    do i=1,hecLagMAT%num_lagrange
       rhsX = rhsX + hecMAT%X(npndof+i) ** 2
     end do
     call hecmw_allreduce_R1(hecMESH, rhsX, hecmw_sum)

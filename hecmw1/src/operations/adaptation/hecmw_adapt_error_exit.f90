@@ -14,7 +14,7 @@ subroutine hecmw_adapt_ERROR_EXIT (hecMESH, IFLAG)
 
   if (IFLAG.ge. 1001) then
     write (*,'(/,a)')                                               &
-      &        " ### ABORT : unexpected ZERO/minus in the orginal file"
+      &        " ### ABORT : unexpected ZERO/minus in the original file"
     if (IFLAG.eq.1001) write (*,'(  a,/)')                          &
       &        "       TOTAL NODE and/or ELEMENT NUMBER"
     if (IFLAG.eq.1002) write (*,'(  a,/)')                          &
@@ -49,7 +49,7 @@ subroutine hecmw_adapt_ERROR_EXIT (hecMESH, IFLAG)
 
   if (IFLAG.eq.21) then
     write (*,'(/,a,/)')                                             &
-      &        " ### ABORT : ERROR in MeTiS PARTIRION FILE"
+      &        " ### ABORT : ERROR in MeTiS PARTITION FILE"
   endif
 
   if (IFLAG.eq.99) then

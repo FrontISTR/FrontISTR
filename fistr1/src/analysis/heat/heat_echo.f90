@@ -154,7 +154,7 @@ contains
         jE= hecMESH%material%mat_TABLE_index(ic  )
         nn= jE - jS + 1
         if (jm.eq.1) write(ILOG,*) ' Density       Temperature   functionA     functionB'
-        if (jm.eq.2) write(ILOG,*) ' Spcific heat  Temperature   functionA     functionB'
+        if (jm.eq.2) write(ILOG,*) ' Specific heat Temperature   functionA     functionB'
         if (jm.eq.3) write(ILOG,*) ' Conductivity  Temperature   functionA     functionB'
         kc = 0
         do km = jS, jE
@@ -198,7 +198,7 @@ contains
     enddo
 
     !C +-------------------------------+
-    !C | ELEMEN GROUP                  |
+    !C | ELEMENT GROUP                 |
     !C +-------------------------------+
 
     write(ILOG,*)

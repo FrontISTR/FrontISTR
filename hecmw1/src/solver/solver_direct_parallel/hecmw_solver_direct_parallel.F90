@@ -29,7 +29,7 @@ module hecmw_solver_direct_parallel
 
   ! internal type definition !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  type procinfo ! process informations on MPI
+  type procinfo ! process information on MPI
     integer(kind=kint) :: myid
     integer(kind=kint) :: imp      ! mother  process id
     logical :: isparent ! true if this process is parent
@@ -44,7 +44,7 @@ module hecmw_solver_direct_parallel
   type dsinfo ! direct solver information
     integer(kind=kint) :: ndeg   ! dimension of small matrix
     integer(kind=kint) :: neqns  ! number of equations
-    integer(kind=kint) :: nstop  ! begining point of C
+    integer(kind=kint) :: nstop  ! beginning point of C
     integer(kind=kint) :: stage  ! calculation stage
     integer(kind=kint) :: lncol  ! length of col
     integer(kind=kint) :: lndsln ! length of dsln
@@ -134,7 +134,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       call hecmw_abort( hecmw_comm_get_comm())
     end if
 
-    call MPI_BCAST(hecMAT%b, hecMESH%n_dof*hecMAT%NP, MPI_REAL8, m_pds_procinfo%imp, MPI_COMM_WORLD, ierr)
+    call MPI_BCAST(hecMAT%x, hecMESH%n_dof*hecMAT%NP, MPI_REAL8, m_pds_procinfo%imp, MPI_COMM_WORLD, ierr)
 
     call hecmw_mat_dump_solution(hecMAT)
 
@@ -216,7 +216,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !
-      ! STEP1X: Parallel LDU decompose of givem A0
+      ! STEP1X: Parallel LDU decompose of given A0
       !
       ! STEP11: divide given large matrix A into a1 and a2 ... extend to 2^n division.
       ! C is added to bottom of A1, A2.
@@ -259,7 +259,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !
       ! STEP12: Send divided left hand side matrixes to child processes.
       !
-      ! nstop (separater of A and C) is also send
+      ! nstop (separator of A and C) is also send
       ! A and C will be LDU decomposed in child processes.
       ! D region update data will be returned.
 
@@ -461,7 +461,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! set result to FEM data
     do i=1,a0%neqns
       do j=1,ndeg
-        hecMAT%b(ndeg*(i-1)+j)=b(j,i)
+        hecMAT%x(ndeg*(i-1)+j)=b(j,i)
       end do
     end do
 
@@ -660,7 +660,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! STEP2x: solve ax=b by using forward an backword substitution
+    ! STEP2x: solve ax=b by using forward an backward substitution
     !
     ! STEP21: receive b from parent
     !
@@ -679,7 +679,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! STEP22: forward substitution for A
     ! STEP23: forward substitution for C and send it (yi) to parent
     ! STEP24: divide with diagonal matrix
-    ! STEP25: receive xd from parent and do backword substitution
+    ! STEP25: receive xd from parent and do backward substitution
     call elapout('sp_direct_child: enter nusol0_child') !elap
     call nusol0_child(b, dsi, ierr)
     call elapout('sp_direct_child: exit nusol0_child') !elap
@@ -781,7 +781,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !        lenv      length of the array v (iv)
     !
     !    (o)
-    !        dsi       matrix informations
+    !        dsi       matrix information
     !        ir        return code
     !                              =0    normal
     !                              =-1   non positive index
@@ -958,7 +958,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end if
     call posord(dsi%parent,lbtreearr,invp_a,iperm_a,lpordrarr,dsi%nch,neqns_a,lwk1arr,lwk2arr,lwk3arr)
 
-    !   generate skelton graph
+    !   generate skeleton graph
     allocate(lleafarr(nttbr_a),lxleafarr(neqns_a1),ladparr(neqns_a1), stat=ierr)
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
@@ -982,7 +982,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     call lduDecomposeC(xlnzr_a,colno_a,invp_a,iperm_a, ndeg, nttbr_c, irow_c, &
       jcol_c, cm%c%ncols, cm%c%nrows, xlnzr_c, colno_c, lncol_c)
 
-    ! set calculated informations to dsi.
+    ! set calculated information to dsi.
     allocate(dsi%xlnzr(neqns_t + 1), stat=ierr)
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
@@ -1498,7 +1498,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! forward
 
-    !     now nstop is begining point of C
+    !     now nstop is beginning point of C
     neqns_a = nstop - 1
     neqns_c = neqns - nstop + 1
 
@@ -1543,7 +1543,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             wk(i)=wk(i)*diag(1,i)
             120 continue
 
-            ! STEP25: receive xd from parent and do backword substitution
+            ! STEP25: receive xd from parent and do backward substitution
             call MPI_BCAST(wk_d, neqns_c, MPI_REAL8, IMP, MPI_COMM_WORLD, ierr)
 
             wk(nstop:neqns)=wk_d(nstop:neqns)
@@ -1559,7 +1559,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 210    continue
                 200 continue
 
-                ! permutaion
+                ! permutation
                 do 300 i=1,neqns
                   b(1,iperm(i))=wk(i)
                   300 continue
@@ -1572,7 +1572,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine nusol2_child(xlnzr, colno, zln, diag, iperm, b, neqns, nstop)
     ! perform forward substitution for sparse matrix,
     ! send bd to parent and receive xd from parent,
-    ! backword substitution using xd ad send final result x to parent.
+    ! backward substitution using xd ad send final result x to parent.
 
     use m_elap
 
@@ -1588,7 +1588,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     include 'mpif.h'
 
-    !now nstop is begining point of C
+    !now nstop is beginning point of C
     neqns_a = nstop - 1
     neqns_c = neqns - nstop + 1
 
@@ -1640,11 +1640,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       wk(1,i)=wk(1,i)-wk(2,i)*diag(2,i)
     end do
 
-    ! STEP25: receive xd from parent and do backword substitution
+    ! STEP25: receive xd from parent and do backward substitution
     call elapout('nusol2_child: wait until receive wk_d') !elap
     call MPI_BCAST(wk_d, 2*neqns_c, MPI_REAL8, IMP, MPI_COMM_WORLD, ierr)
     call elapout('nusol2_child: end receive wk_d') !elap
-    call elapout('nusol2_child: begin backword substitution') !elap
+    call elapout('nusol2_child: begin backward substitution') !elap
 
     wk(:,nstop:neqns)=wk_d(:,nstop:neqns)
     do i=neqns,1,-1
@@ -1658,9 +1658,9 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         end do
       end if
     end do
-    call elapout('nusol2_child: end backword substitution') !elap
+    call elapout('nusol2_child: end backward substitution') !elap
 
-    ! permutaion
+    ! permutation
     do i=1,neqns_a
       b(1,iperm(i))=wk(1,i)
       b(2,iperm(i))=wk(2,i)
@@ -1677,7 +1677,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! perform forward substitution for sparse matrix,
     ! send bd to parent and receive xd from parent,
-    ! backword substitution using xd ad send final result x to parent.
+    ! backward substitution using xd ad send final result x to parent.
 
     use m_elap
 
@@ -1693,7 +1693,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     include 'mpif.h'
 
-    !     now nstop is begining point of C
+    !     now nstop is beginning point of C
 
     neqns_a = nstop - 1
     neqns_c = neqns - nstop + 1
@@ -1756,11 +1756,11 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             wk(1,i)=wk(1,i)-wk(2,i)*diag(2,i)-wk(3,i)*diag(4,i)
             120 continue
 
-            ! STEP25: receive xd from parent and do backword substitution
+            ! STEP25: receive xd from parent and do backward substitution
             call elapout('nusol3_child: wait until receive wk_d') !elap
             call MPI_BCAST(wk_d, 3*neqns_c, MPI_REAL8, IMP, MPI_COMM_WORLD, ierr)
             call elapout('nusol3_child: end receive wk_d') !elap
-            call elapout('nusol3_child: begin backword substitution') !elap
+            call elapout('nusol3_child: begin backward substitution') !elap
 
             wk(:,nstop:neqns)=wk_d(:,nstop:neqns)
 
@@ -1777,10 +1777,10 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 wk(3,j)=wk(3,j)-wk(1,i)*zln(7,k)-wk(2,i)*zln(8,k)-wk(3,i)*zln(9,k)
                 210    continue
                 200 continue
-                call elapout('nusol3_child: end backword substitution') !elap
+                call elapout('nusol3_child: end backward substitution') !elap
 
 
-                ! permutaion
+                ! permutation
                 do 300 i=1,neqns_a
                   b(1,iperm(i))=wk(1,i)
                   b(2,iperm(i))=wk(2,i)
@@ -1807,7 +1807,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     include 'mpif.h'
 
-    !now nstop is begining point of C
+    !now nstop is beginning point of C
     neqns_a = nstop - 1
     neqns_c = neqns - nstop + 1
 
@@ -1895,7 +1895,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       end if
     end do
 
-    ! permutaion
+    ! permutation
     do l=1,ndeg
       do i=1,neqns_a
         b(l,iperm(i))=wk(l,i)
@@ -1978,7 +1978,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! divide by D (because of diag is already inverted (1/Dii))
     b(:)=b(:)*diag(:)
 
-    ! Backword substitution.
+    ! Backward substitution.
     ! Substitute Zi into D and get Xd results.
     loc=(neqns-1)*neqns/2
     do i=neqns,1,-1
@@ -2017,7 +2017,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! STEP23 divide Yd by diagonal elment of D and get Zi=Yi/Di
+    ! STEP23 divide Yd by diagonal element of D and get Zi=Yi/Di
     !
     do i=1,neqns
       b(2,i)=b(2,i)-b(1,i)*diag(2,i)
@@ -2028,7 +2028,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! STEP24 Backword substitution.
+    ! STEP24 Backward substitution.
     ! Substitute Zi into D and get Xd results.
     !
     loc=(neqns-1)*neqns/2
@@ -2070,7 +2070,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! STEP23 divide Yd by diagonal elment of D and get Zi=Yi/Di
+    ! STEP23 divide Yd by diagonal element of D and get Zi=Yi/Di
     !
     do i=1,neqns
       b(2,i)=b(2,i)-b(1,i)*diag(2,i)
@@ -2084,7 +2084,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! STEP24 Backword substitution.
+    ! STEP24 Backward substitution.
     ! Substitute Zi into D and get Xd results.
     !
     loc=(neqns-1)*neqns/2
@@ -3556,7 +3556,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !
-  ! After here, routines specilized for ndeg = 1
+  ! After here, routines specialized for ndeg = 1
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -3968,7 +3968,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !
-  ! After here, routines specilized for ndeg = 3
+  ! After here, routines specialized for ndeg = 3
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This module summarizes all infomation of material properties
+!> \brief This module summarizes all information of material properties
 module mMaterial
   use hecmw_util
   use m_table
@@ -10,7 +10,7 @@ module mMaterial
   implicit none
 
   ! Following algorithm type
-  integer(kind=kint), parameter :: INFINITE = 0
+  integer(kind=kint), parameter :: INFINITESIMAL = 0
   integer(kind=kint), parameter :: TOTALLAG  = 1
   integer(kind=kint), parameter :: UPDATELAG = 2
 
@@ -65,6 +65,7 @@ module mMaterial
   integer(kind=kint), parameter :: MOONEYRIVLIN          = 131000
   integer(kind=kint), parameter :: ARRUDABOYCE           = 132000
   integer(kind=kint), parameter :: USERHYPERELASTIC      = 133000
+  integer(kind=kint), parameter :: MOONEYRIVLIN_ANISO    = 134000
 
   integer(kind=kint), parameter :: VISCOELASTIC          = 140000
   integer(kind=kint), parameter :: NORTON                = 150000
@@ -79,7 +80,7 @@ module mMaterial
   integer(kind=kint), parameter :: Shell         = 3
 
   ! Material constants are saved in an array of size 100 and their physical meaning
-  ! are conrresponds to their position in the array
+  ! correspond to their position in the array
   integer(kind=kint), parameter :: M_YOUNGS  = 1
   integer(kind=kint), parameter :: M_POISSON = 2
   integer(kind=kint), parameter :: M_DENSITY = 3
@@ -107,6 +108,13 @@ module mMaterial
 
   integer(kind=kint), parameter :: M_VISCOCITY = 29
 
+  ! additional plastic constitutive parameter
+  integer(kind=kint), parameter :: M_PLCONST6 = 30
+  integer(kind=kint), parameter :: M_PLCONST7 = 31
+  integer(kind=kint), parameter :: M_PLCONST8 = 32
+  integer(kind=kint), parameter :: M_PLCONST9 = 33
+  integer(kind=kint), parameter :: M_PLCONST10 = 34
+
   ! Dictionary constants
   character(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
   character(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
@@ -127,12 +135,12 @@ module mMaterial
     real(kind=kreal)           :: g31
     real(kind=kreal)           :: angle
     real(kind=kreal)           :: rho
-    real(kind=kreal)           :: aplha
+    real(kind=kreal)           :: alpha
     real(kind=kreal)           :: alpha_over_mu
     real(kind=kreal)           :: weight
   end type tshellmat
 
-  !> Stucture to management all material relates data
+  !> Structure to manage all material related data
   type tMaterial
     integer(kind=kint)         :: nlgeom_flag       !< type of constitutive relation
     integer(kind=kint)         :: mtype             !< material type
@@ -156,7 +164,7 @@ contains
     type( tMaterial ), intent(inout) :: material
     material%mtype = -1                  ! not defined yet
     material%nfstatus = 0                ! Default: no status
-    material%nlgeom_flag = INFINITE      ! Default: INFINITE ANALYSIS
+    material%nlgeom_flag = INFINITESIMAL ! Default: INFINITESIMAL ANALYSIS
     material%variables =  0.d0           ! not defined yet
     material%totallyr =  0               ! not defined yet
 
@@ -330,6 +338,15 @@ contains
     isElastoplastic = .false.
     itype = fetchDigit( 2, mtype )
     if( itype==2 ) isElastoplastic = .true.
+  end function
+
+  !> If it is a hyperelastic material?
+  logical function isHyperelastic( mtype )
+    integer, intent(in) :: mtype
+    integer :: itype
+    isHyperelastic = .false.
+    itype = fetchDigit( 2, mtype )
+    if( itype==3 ) isHyperelastic = .true.
   end function
 
   !> If it is an viscoelastic material?

@@ -94,7 +94,7 @@ contains
     integer, intent(in)           :: sectType  !< not used currently
     real(kind=kreal), intent(in)  :: dt        !< time increment
     real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
-    real(kind=kreal), optional    :: temp      !> temprature
+    real(kind=kreal), intent(in)  :: temp      !> temperature
 
     integer   i,j, n
     real(kind=kreal) :: G,Gg,K,Kg, gfac,exp_n,mu_0,mu_n,dq_n,dtau
@@ -103,40 +103,30 @@ contains
     type(tTable), pointer  :: dicval
     logical :: ierr
 
-
     D(:,:)=0.d0
-    if( dt==0.d0 ) then
-      if( present( temp ) ) then
-        call calElasticMatrix( matl, D3, D, temp  )
-      else
-        call calElasticMatrix( matl, D3, D )
-      endif
-      return
-    endif
 
     ddt = dt
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
-      if( ierr ) then
-        EE = matl%variables(M_YOUNGS)
-        PP = matl%variables(M_POISSON)
-      else
-        EE = outa(1)
-        PP = outa(2)
-      endif
-      if( matl%mtype>VISCOELASTIC ) ddt=trs(temp,matl%mtype, matl%variables)*dt
-    else
+
+    ina(1) = temp
+    call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
+    if( ierr ) then
       EE = matl%variables(M_YOUNGS)
       PP = matl%variables(M_POISSON)
+    else
+      EE = outa(1)
+      PP = outa(2)
+    endif
+    if( matl%mtype>VISCOELASTIC ) ddt=trs(temp,matl%mtype, matl%variables)*dt
+
+    if( ddt<=0.d0 ) then
+      call calElasticMatrix( matl, D3, D, temp  )
+      return
     endif
 
     !     Set elastic parameters for G (mu) and lambda
 
     G = EE/(2.d0*(1.d0 + PP))
     K = EE/(3.d0*(1.d0 - 2.d0*PP))
-
-
 
     !     Set properties for integrating the q_i terms
 
@@ -187,11 +177,11 @@ contains
     real(kind=kreal), intent(out)   :: sig(6)    !< stress
     real(kind=kreal), intent(inout) :: vsig(:)   !< Visco stress components
     real(kind=kreal), intent(in)    :: dt        !< time increment
-    real(kind=kreal), optional      :: temp      !> current temprature
-    real(kind=kreal), optional      :: tempn     !> temperature at last step
+    real(kind=kreal), intent(in)    :: temp      !> current temperature
+    real(kind=kreal), intent(in)    :: tempn     !> temperature at last step
 
-    integer   i,j, n
-    real(kind=kreal) :: G,Gg,K,Kg,Kth, exp_n,mu_0,mu_n,dq_n,dtau, theta
+    integer   i,n
+    real(kind=kreal) :: G,K,Kth, exp_n,mu_0,mu_n,dq_n,dtau, theta
     real(kind=kreal) :: ina(1), outa(2), EE, PP, ddt
 
     real(kind=kreal) :: devstrain(6), en(6), D(6,6)
@@ -199,26 +189,23 @@ contains
     logical :: ierr
 
     ddt = dt
-    if( present(temp) ) then
-      ina(1) = temp
-      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
-      if( ierr ) then
-        EE = matl%variables(M_YOUNGS)
-        PP = matl%variables(M_POISSON)
-      else
-        EE = outa(1)
-        PP = outa(2)
-      endif
-      if( matl%mtype>VISCOELASTIC ) ddt=trsinc(temp,tempn, matl%mtype, matl%variables)*dt
-      if( ddt<=0.d0 ) then
-        call calElasticMatrix( matl, sectType, D, temp  )
-        sig = matmul( D(:,:), eps(:) )
-        vsig = 0.d0
-        return
-      endif
-    else
+
+    ina(1) = temp
+    call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
+    if( ierr ) then
       EE = matl%variables(M_YOUNGS)
       PP = matl%variables(M_POISSON)
+    else
+      EE = outa(1)
+      PP = outa(2)
+    endif
+    if( matl%mtype>VISCOELASTIC ) ddt=trsinc(temp, tempn, matl%mtype, matl%variables)*dt
+
+    if( ddt<=0.d0 ) then
+      call calElasticMatrix( matl, sectType, D, temp )
+      sig = matmul( D(:,:), eps(:) )
+      vsig = 0.d0
+      return
     endif
 
     !     Set elastic parameters for G (mu) and lambda

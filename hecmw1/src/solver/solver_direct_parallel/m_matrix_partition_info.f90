@@ -15,7 +15,7 @@ module m_matrix_partition_info
   public matrix_partition_recursive_bisection
   public reovec
 
-  ! Handle matrix partitioning informations.
+  ! Handle matrix partitioning information.
   type matrix_partition_info
     integer(kind=kint)          :: ndm          ! number of dm
     type(child_matrix), pointer :: dm(:)        ! partitioned matrix. 2^n number
@@ -237,7 +237,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       end if
     end do
 
-    ! devide a0 to a_left and a_right
+    ! divide a0 to a_left and a_right
     do ipass=1,2
       left%nttbr_a  = 0
       right%nttbr_a = 0

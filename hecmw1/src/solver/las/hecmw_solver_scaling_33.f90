@@ -52,7 +52,7 @@ contains
     enddo
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_3_R (hecMESH, scale, hecMESH%n_node)
+    call hecmw_update_R (hecMESH, scale, hecMESH%n_node, NDOF)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 

@@ -2,7 +2,6 @@
 # Copyright (c) 2019 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
 
 include(${CMAKE_CURRENT_LIST_DIR}/contact/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/element/CMakeLists.txt)
@@ -37,6 +36,7 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3d.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3dIC.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_3d_vp.f90
+  ${CMAKE_CURRENT_LIST_DIR}/static_LIB_C3D4_selectiveESNS.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_C3D8.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_Fbar.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_beam.f90

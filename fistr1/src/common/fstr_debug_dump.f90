@@ -203,7 +203,7 @@ contains
       write(*,*) 'TEMPC ',h%TEMPC
     end if
     write(*,*)
-    write(*,*) 'BOUNDARY CONDTIONS -------'
+    write(*,*) 'BOUNDARY CONDITIONS -------'
     write(*,*)
     write(*,*) '!FIXTEMP '
     write(*,*) 'T_FIX_tot ',h%T_FIX_tot

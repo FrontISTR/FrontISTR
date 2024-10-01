@@ -143,7 +143,7 @@ class CFSTRDB_Step : public CFSTRDataBlock {
 };
 
 //-----------------------------------------------
-// For Elastic Static Structual Analysis
+// For Elastic Static Structural Analysis
 //-----------------------------------------------
 
 class CFSTRDB_Static : public CFSTRDataBlock {

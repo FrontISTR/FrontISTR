@@ -73,7 +73,7 @@ contains
     do i=1,ndp
       j=j*table%tbindex(i)
     enddo
-    if( j/= row) stop "Error in table defnition!"
+    if( j/= row) stop "Error in table definition!"
     !  print *, j,row, table%tbindex(1:ndp); pause
   end subroutine
 
@@ -114,7 +114,6 @@ contains
   subroutine TableCopy( lhs, rhs )
     type(tTable), intent(out) :: lhs
     type(tTable), intent(in)  :: rhs
-    integer :: i,j
 
     lhs%ndepends = rhs%ndepends
     lhs%tbcol = rhs%tbcol
@@ -149,7 +148,7 @@ module Table_DICTS
 
 
   !> fetch a data table itself.
-  !! P.A. it sould be deleted by users of this subroutine
+  !! P.A. it should be deleted by users of this subroutine
   subroutine fetch_Table( key, dict, dicval, ierr )
     character(len=*), intent(in)   :: key     !< parameter key
     type(DICT_STRUCT), pointer     :: dict    !< data table
@@ -188,8 +187,7 @@ module Table_DICTS
     logical, intent(out)           :: ierr
 
     type(DICT_DATA), pointer       :: dicval
-    integer          :: i, j, na, dd, crow, cindex
-    integer          :: cindex1(MAXINDEX), cindex2(MAXINDEX)
+    integer          :: na, dd, crow, cindex
     dicval => dict_get_key( dict, key )
     ierr = .false.
     if( .not. associated(dicval) ) then
@@ -216,9 +214,8 @@ module Table_DICTS
     integer, intent(inout)         :: dd, crow
     real(kind=kreal), intent(out)  :: outa
 
-    integer          :: i, j, na, nn, ccol, ddd
-    real(kind=kreal) :: cval, val1, val2, lambda
-    logical          :: isok
+    integer          :: i, ccol, ddd
+    real(kind=kreal) :: val1, val2, lambda
 
     ddd = dd / table%tbindex(cindex)
     ccol = table%tbcol-cindex+1
@@ -283,7 +280,7 @@ module Table_DICTS
     character(len=*), intent(in)   :: key     !< parameter key
     type(DICT_STRUCT), pointer     :: dict    !< data table
     real(kind=kreal), intent(out)  :: outa(:) !< output data
-    logical, intent(out)           :: ierr    !< erro message
+    logical, intent(out)           :: ierr    !< error message
     real(kind=kreal), intent(in), optional   :: a(:)    !< automatic variables
 
     type(DICT_DATA), pointer       :: dicval
@@ -330,9 +327,8 @@ module Table_DICTS
     integer, intent(inout)         :: dd, crow
     real(kind=kreal), intent(out)  :: outa(:)
 
-    integer          :: i, j, na, nn, ccol, ddd, nval
-    real(kind=kreal) :: cval, lambda, val1(MAXINDEX), val2(MAXINDEX)
-    logical          :: isok
+    integer          :: i, ccol, ddd, nval
+    real(kind=kreal) :: lambda, val1(MAXINDEX), val2(MAXINDEX)
 
     ddd = dd / table%tbindex(cindex)
     ccol = table%tbcol-cindex+1
@@ -399,7 +395,6 @@ module Table_DICTS
     type(DICT_STRUCT), pointer     :: dict
     integer, intent(in)            :: fname
 
-    type(DICT_DATA)             :: dicval
     type(LINKED_LIST), pointer  :: current
     integer :: i
     do i = 1,size(dict%table)

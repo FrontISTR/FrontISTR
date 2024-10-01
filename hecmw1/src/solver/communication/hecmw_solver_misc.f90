@@ -94,6 +94,142 @@ contains
 
   !C
   !C***
+  !C*** hecmw_axpy_R
+  !C***
+  !C
+  subroutine hecmw_axpy_R (hecMESH, ndof, alpha, X, Y)
+
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: ndof
+    real(kind=kreal) :: X(:), Y(:)
+    real(kind=kreal)          :: alpha
+
+    integer(kind=kint) :: i
+
+    
+    !$OMP PARALLEL
+    !$OMP DO
+    do i = 1, hecMESH%nn_internal * ndof
+      Y(i) = alpha * X(i) + Y(i) 
+    end do
+    !$OMP END DO
+    !$OMP END PARALLEL 
+
+  end subroutine hecmw_axpy_R
+
+  !C
+  !C***
+  !C*** hecmw_xpay_R
+  !C***
+  !C
+  subroutine hecmw_xpay_R (hecMESH, ndof, alpha, X, Y)
+
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: ndof
+    real(kind=kreal) :: X(:), Y(:)
+    real(kind=kreal)          :: alpha
+
+    integer(kind=kint) :: i
+    
+    !$OMP PARALLEL
+    !$OMP DO
+    do i = 1, hecMESH%nn_internal * ndof
+      Y(i) = X(i) + alpha *  Y(i) 
+    end do
+    !$OMP END DO
+    !$OMP END PARALLEL 
+
+  end subroutine hecmw_xpay_R
+
+  !C
+  !C***
+  !C*** hecmw_axpyz_R
+  !C***
+  !C
+  subroutine hecmw_axpyz_R (hecMESH, ndof, alpha, X, Y, Z)
+
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: ndof
+    real(kind=kreal) :: X(:), Y(:), Z(:)
+    real(kind=kreal)          :: alpha
+
+    integer(kind=kint) :: i
+
+    
+    !$OMP PARALLEL
+    !$OMP DO
+    do i = 1, hecMESH%nn_internal * ndof
+      Z(i) = alpha * X(i) + Y(i) 
+    end do
+    !$OMP END DO
+    !$OMP END PARALLEL 
+  end subroutine hecmw_axpyz_R
+
+  !C
+  !C***
+  !C*** hecmw_scale_R
+  !C***
+  !C
+  subroutine hecmw_scale_R (hecMESH, ndof, alpha, X)
+
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: ndof
+    real(kind=kreal) :: X(:)
+    real(kind=kreal)          :: alpha
+
+    integer(kind=kint) :: i
+    
+    !$OMP PARALLEL
+    !$OMP DO
+    do i = 1, hecMESH%nn_internal * ndof
+      X(i) = alpha * X(i) 
+    end do
+    !$OMP END DO
+    !$OMP END PARALLEL 
+
+  end subroutine hecmw_scale_R
+
+  !C
+  !C***
+  !C*** hecmw_copy_R
+  !C***
+  !C
+  subroutine hecmw_copy_R (hecMESH, ndof, X, Y)
+
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: ndof
+    real(kind=kreal) :: X(:), Y(:)
+
+    integer(kind=kint) :: i
+
+    
+    !$OMP PARALLEL
+    !$OMP DO
+    do i = 1, hecMESH%nn_internal * ndof
+      Y(i) = X(i) 
+    end do
+    !$OMP END DO
+    !$OMP END PARALLEL 
+
+  end subroutine hecmw_copy_R
+
+  !C
+  !C***
   !C*** hecmw_time_statistics
   !C***
   !C

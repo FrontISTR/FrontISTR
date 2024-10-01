@@ -28,7 +28,7 @@ ws			[ \t]+
 nl			\r?\n
 
 int 		[+-]?[0-9]+
-double		[+-]?[0-9]*\.([0-9]*([eE][+-]?[0-9]+)?)?
+double		[+-]?([0-9]+\.?|\.?[0-9]+)([0-9]*([eE][+-]?[0-9]+)?)?
 name		[_a-zA-Z][_a-zA-Z0-9-]*
 file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 
@@ -69,6 +69,8 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 !CONNECTIVITY	{ return flag_header ? HECMW_HECLEX_H_CONNECTIVITY : ' '; }
 ^!CONTACT" "?PAIR	{ set_flag_header(1); return HECMW_HECLEX_H_CONTACT_PAIR; }
 !CONTACT" "?PAIR	{ return flag_header ? HECMW_HECLEX_H_CONTACT_PAIR : ' '; }
+^!EMBED" "?PAIR	{ set_flag_header(1); return HECMW_HECLEX_H_EMBED_PAIR; }
+!EMBED" "?PAIR	{ return flag_header ? HECMW_HECLEX_H_EMBED_PAIR : ' '; }
 ^!ECOPY		{ set_flag_header(1); return HECMW_HECLEX_H_ECOPY; }
 !ECOPY		{ return flag_header ? HECMW_HECLEX_H_ECOPY : ' '; }
 ^!EGEN		{ set_flag_header(1); return HECMW_HECLEX_H_EGEN; }
@@ -136,6 +138,7 @@ NAME		{ set_flag_header(0); return HECMW_HECLEX_K_NAME; }
 NASTRAN		{ set_flag_header(0); return HECMW_HECLEX_K_NASTRAN; }
 NGRP		{ set_flag_header(0); return HECMW_HECLEX_K_NGRP; }
 NODE"-"SURF	{ set_flag_header(0); return HECMW_HECLEX_K_NODE_SURF; }
+NODE"-"ELEM	{ set_flag_header(0); return HECMW_HECLEX_K_NODE_ELEM; }
 RELATIVE	{ set_flag_header(0); return HECMW_HECLEX_K_RELATIVE; }
 SECOPT		{ set_flag_header(0); return HECMW_HECLEX_K_SECOPT; }
 SECTION		{ set_flag_header(0); return HECMW_HECLEX_K_SECTION; }

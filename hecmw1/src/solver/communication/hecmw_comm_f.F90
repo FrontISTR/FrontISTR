@@ -614,86 +614,18 @@ contains
 
   !C
   !C***
-  !C*** hecmw_update_1_R
-  !C***
-  !C
-  !C    1-DOF, REAL
-  !C
-  subroutine hecmw_update_1_R (hecMESH, val, n)
-    use hecmw_util
-    use  hecmw_solver_SR_11
-
-    implicit none
-    integer(kind=kint):: n
-    real(kind=kreal), dimension(n) :: val
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    real(kind=kreal), dimension(:), allocatable :: WS, WR
-
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(ns), WR(nr))
-    call hecmw_solve_SEND_RECV_11                                     &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
-#endif
-  end subroutine hecmw_update_1_R
-
-  !C
-  !C***
-  !C*** hecmw_update_2_R
-  !C***
-  !C
-  !C    2-DOF, REAL
-  !C
-  subroutine hecmw_update_2_R (hecMESH, val, n)
-    use hecmw_util
-    use  hecmw_solver_SR_22
-
-    implicit none
-    integer(kind=kint):: n
-    real(kind=kreal), dimension(2*n) :: val
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    real(kind=kreal), dimension(:), allocatable :: WS, WR
-
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(2*ns), WR(2*nr))
-    call hecmw_solve_SEND_RECV_22                                     &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
-#endif
-  end subroutine hecmw_update_2_R
-
-  !C
-  !C***
-  !C*** hecmw_update_3_R
+  !C*** hecmw_assemble_3_R
   !C***
   !C
   !C    3-DOF, REAL
   !C
-  subroutine hecmw_update_3_R (hecMESH, val, n)
+  subroutine hecmw_assemble_R (hecMESH, val, n, m)
     use hecmw_util
-    use  hecmw_solver_SR_33
+    use  hecmw_solver_SR
 
     implicit none
-    integer(kind=kint):: n
-    real(kind=kreal), dimension(3*n) :: val
+    integer(kind=kint):: n, m
+    real(kind=kreal), dimension(m*n) :: val
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ns, nr
@@ -701,142 +633,27 @@ contains
 
     if( hecMESH%n_neighbor_pe == 0 ) return
 
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
+    ns = hecMESH%import_index(hecMESH%n_neighbor_pe)
+    nr = hecMESH%export_index(hecMESH%n_neighbor_pe)
 
-    allocate (WS(3*ns), WR(3*nr))
-    call hecmw_solve_SEND_RECV_33                                     &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
+    allocate (WS(m*ns), WR(m*nr))
+    call hecmw_solve_REV_SEND_RECV                                    &
+      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
       &     hecMESH%import_index, hecMESH%import_item,                   &
       &     hecMESH%export_index, hecMESH%export_item,                   &
       &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
     deallocate (WS, WR)
 #endif
-  end subroutine hecmw_update_3_R
+  end subroutine hecmw_assemble_R
 
   !C
   !C***
-  !C*** hecmw_update_3_R_async
+  !C*** hecmw_update_R
   !C***
   !C
-  !C    3-DOF, REAL
-  !C
-  subroutine hecmw_update_3_R_async (hecMESH, val, n, ireq)
+  subroutine hecmw_update_R (hecMESH, val, n, m)
     use hecmw_util
-    use  hecmw_solver_SR_33
-    implicit none
-    integer(kind=kint):: n, ireq
-    real(kind=kreal), dimension(3*n) :: val
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    call hecmw_solve_ISEND_IRECV_33                                   &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     val , hecMESH%MPI_COMM, hecMESH%my_rank, ireq)
-#endif
-  end subroutine hecmw_update_3_R_async
-
-  !C
-  !C***
-  !C*** hecmw_update_3_R_wait
-  !C***
-  !C
-  !C    3-DOF, REAL
-  !C
-  subroutine hecmw_update_3_R_wait (hecMESH, ireq)
-    use hecmw_util
-    use  hecmw_solver_SR_33
-    implicit none
-    integer(kind=kint):: ireq
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    call hecmw_solve_ISEND_IRECV_33_WAIT( ireq )
-#endif
-  end subroutine hecmw_update_3_R_wait
-
-  !C
-  !C***
-  !C*** hecmw_update_4_R
-  !C***
-  !C
-  !C    4-DOF, REAL
-  !C
-  subroutine hecmw_update_4_R (hecMESH, val, n)
-    use hecmw_util
-    use hecmw_solver_SR_44
-
-    implicit none
-    integer(kind=kint):: n
-    real(kind=kreal), dimension(4*n) :: val
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    real(kind=kreal), dimension(:), allocatable :: WS, WR
-
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(4*ns), WR(4*nr))
-    call hecmw_solve_SEND_RECV_44                                     &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
-#endif
-  end subroutine hecmw_update_4_R
-
-  !C
-  !C***
-  !C*** hecmw_update_6_R
-  !C***
-  !C
-  !C    6-DOF, REAL
-  !C
-  subroutine hecmw_update_6_R (hecMESH, val, n)
-    use hecmw_util
-    use hecmw_solver_SR_66
-
-    implicit none
-    integer(kind=kint):: n
-    real(kind=kreal), dimension(6*n) :: val
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    real(kind=kreal), dimension(:), allocatable :: WS, WR
-
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(6*ns), WR(6*nr))
-    call hecmw_solve_SEND_RECV_66                                     &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
-#endif
-  end subroutine hecmw_update_6_R
-
-  !C
-  !C***
-  !C*** hecmw_update_m_R
-  !C***
-  !C
-  !C    m-DOF, REAL
-  !C
-  subroutine hecmw_update_m_R (hecMESH, val, n, m)
-    use hecmw_util
-    use  hecmw_solver_SR_mm
+    use  hecmw_solver_SR
 
     implicit none
     integer(kind=kint):: n, m
@@ -852,195 +669,69 @@ contains
     nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
     allocate (WS(m*ns), WR(m*nr))
-    call hecmw_solve_SEND_RECV_mm                                     &
+    call hecmw_solve_SEND_RECV                                     &
       &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
       &     hecMESH%import_index, hecMESH%import_item,                   &
       &     hecMESH%export_index, hecMESH%export_item,                   &
       &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
     deallocate (WS, WR)
 #endif
-  end subroutine hecmw_update_m_R
+  end subroutine hecmw_update_R
 
   !C
   !C***
-  !C*** hecmw_update_1_I
+  !C*** hecmw_update_R_async
   !C***
   !C
-  !C    1-DOF, INTEGER
+  !C    REAL
   !C
-  subroutine hecmw_update_1_I (hecMESH, val, n)
+  subroutine hecmw_update_R_async (hecMESH, val, n, m, ireq)
     use hecmw_util
-    use  hecmw_solver_SR_11i
-
+    use  hecmw_solver_SR
     implicit none
-    integer(kind=kint):: n
-    integer(kind=kint), dimension(n) :: val
+    integer(kind=kint):: n, m, ireq
+    real(kind=kreal), dimension(m*n) :: val
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    integer(kind=kint), dimension(:), allocatable :: WS, WR
-
     if( hecMESH%n_neighbor_pe == 0 ) return
 
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(ns), WR(nr))
-    call hecmw_solve_SEND_RECV_11i                                    &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
+    call hecmw_solve_ISEND_IRECV                                   &
+      &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
       &     hecMESH%import_index, hecMESH%import_item,                   &
       &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
+      &     val , hecMESH%MPI_COMM, hecMESH%my_rank, ireq)
 #endif
-  end subroutine hecmw_update_1_I
+  end subroutine hecmw_update_R_async
 
   !C
   !C***
-  !C*** hecmw_update_2_I
+  !C*** hecmw_update_R_wait
   !C***
   !C
-  !C    2-DOF, INTEGER
+  !C    REAL
   !C
-  subroutine hecmw_update_2_I (hecMESH, val, n)
+  subroutine hecmw_update_R_wait (hecMESH, ireq)
     use hecmw_util
-    use  hecmw_solver_SR_22i
-
+    use  hecmw_solver_SR
     implicit none
-    integer(kind=kint):: n
-    integer(kind=kint), dimension(2*n) :: val
+    integer(kind=kint):: ireq
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    integer(kind=kint), dimension(:), allocatable :: WS, WR
-
     if( hecMESH%n_neighbor_pe == 0 ) return
 
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(2*ns), WR(2*nr))
-    call hecmw_solve_SEND_RECV_22i                                    &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
+    call hecmw_solve_ISEND_IRECV_WAIT(hecMESH%n_dof, ireq )
 #endif
-  end subroutine hecmw_update_2_I
+  end subroutine hecmw_update_R_wait
+
 
   !C
   !C***
-  !C*** hecmw_update_3_I
+  !C*** hecmw_update_I
   !C***
   !C
-  !C    3-DOF, INTEGER
-  !C
-  subroutine hecmw_update_3_I (hecMESH, val, n)
+  subroutine hecmw_update_I (hecMESH, val, n, m)
     use hecmw_util
-    use  hecmw_solver_SR_33i
-
-    implicit none
-    integer(kind=kint):: n
-    integer(kind=kint), dimension(3*n) :: val
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    integer(kind=kint), dimension(:), allocatable :: WS, WR
-
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(3*ns), WR(3*nr))
-    call hecmw_solve_SEND_RECV_33i                                    &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
-#endif
-  end subroutine hecmw_update_3_I
-
-  !C
-  !C***
-  !C*** hecmw_update_4_I
-  !C***
-  !C
-  !C    4-DOF, INTEGER
-  !C
-  subroutine hecmw_update_4_I (hecMESH, val, n)
-    use hecmw_util
-    use  hecmw_solver_SR_44i
-
-    implicit none
-    integer(kind=kint):: n
-    integer(kind=kint), dimension(4*n) :: val
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    integer(kind=kint), dimension(:), allocatable :: WS, WR
-
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(4*ns), WR(4*nr))
-    call hecmw_solve_SEND_RECV_44i                                    &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
-#endif
-  end subroutine hecmw_update_4_I
-
-  !C
-  !C***
-  !C*** hecmw_update_6_I
-  !C***
-  !C
-  !C    6-DOF, INTEGER
-  !C
-  subroutine hecmw_update_6_I (hecMESH, val, n)
-    use hecmw_util
-    use  hecmw_solver_SR_66i
-
-    implicit none
-    integer(kind=kint):: n
-    integer(kind=kint), dimension(6*n) :: val
-    type (hecmwST_local_mesh) :: hecMESH
-#ifndef HECMW_SERIAL
-    integer(kind=kint):: ns, nr
-    integer(kind=kint), dimension(:), allocatable :: WS, WR
-
-    if( hecMESH%n_neighbor_pe == 0 ) return
-
-    ns = hecMESH%export_index(hecMESH%n_neighbor_pe)
-    nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
-
-    allocate (WS(6*ns), WR(6*nr))
-    call hecmw_solve_SEND_RECV_66i                                    &
-      &   ( n, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,               &
-      &     hecMESH%import_index, hecMESH%import_item,                   &
-      &     hecMESH%export_index, hecMESH%export_item,                   &
-      &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
-    deallocate (WS, WR)
-#endif
-  end subroutine hecmw_update_6_I
-
-  !C
-  !C***
-  !C*** hecmw_update_m_I
-  !C***
-  !C
-  !C    m-DOF, REAL
-  !C
-  subroutine hecmw_update_m_I (hecMESH, val, n, m)
-    use hecmw_util
-    use  hecmw_solver_SR_mmi
+    use  hecmw_solver_SR_i
 
     implicit none
     integer(kind=kint):: n, m
@@ -1056,13 +747,13 @@ contains
     nr = hecMESH%import_index(hecMESH%n_neighbor_pe)
 
     allocate (WS(m*ns), WR(m*nr))
-    call hecmw_solve_SEND_RECV_mmi                                    &
+    call hecmw_solve_SEND_RECV_i                                    &
       &   ( n, m, hecMESH%n_neighbor_pe, hecMESH%neighbor_pe,            &
       &     hecMESH%import_index, hecMESH%import_item,                   &
       &     hecMESH%export_index, hecMESH%export_item,                   &
       &     WS, WR, val , hecMESH%MPI_COMM, hecMESH%my_rank)
     deallocate (WS, WR)
 #endif
-  end subroutine hecmw_update_m_I
+  end subroutine hecmw_update_I
 
 end module m_hecmw_comm_f

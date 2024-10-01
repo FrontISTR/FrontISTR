@@ -4,30 +4,16 @@
  *****************************************************************************/
 
 /**
- * @brief 分散で計算された結果を読込み処理するためのユーティリティ
+ * @brief Utility for reading and processing results computed in parallel
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include "hecmw_util.h"
-#include "hecmw_io_mesh.h"
-#include "hecmw_io_struct.h"
 #include "hecmw_struct.h"
-#include "hecmw_config.h"
-#include "hecmw_dist.h"
-#include "hecmw_dist_free.h"
-#include "hecmw_common.h"
-
-#include "hecmw_control.h"
 #include "hecmw_result.h"
-#include "hecmw_io_dist.h"
-#include "hecmw_io_get_mesh.h"
 
 /**
  * @struct fstr_res_info
- * @brief 解析結果ファイル情報
+ * @brief Analysis result file info
  */
 typedef struct {
   int nnode_gid;
@@ -39,7 +25,7 @@ typedef struct {
 
 /**
  * @struct fstr_gl_rec
- * @brief グローバル・ローカルID対応
+ * @brief Global ID, local ID and belonging area record
  */
 typedef struct {
   int global;
@@ -49,7 +35,7 @@ typedef struct {
 
 /**
  * @struct fstr_glt
- * @brief グローバル・ローカル対応表
+ * @brief Table for global ID, local ID and belonging area records
  */
 typedef struct {
   fstr_gl_rec* nrec;
@@ -59,54 +45,64 @@ typedef struct {
 } fstr_glt;
 
 /**
- * @brief 全分散メッシュの読込み
+ * @brief Set file pointer for log output
  */
-struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID, int* area_n,
-                                                    int* refine);
+void fstr_set_log_fp(FILE *log_fp);
 
 /**
- * @brief メッシュの削除
+ * @brief Log output
+ */
+void fstr_out_log(const char* fmt, ...);
+
+/**
+ * @brief Read all distributed meshes
+ */
+struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID, int nrank,
+                                                    int* area_n, int* refine);
+
+/**
+ * @brief Delete mesh
  */
 void fstr_free_mesh(struct hecmwST_local_mesh** mesh, int area_n);
 
 /**
- * @brief ステップ数を調べる(ファイルの存在を調べる)
+ * @brief Check the number of steps (check for the existence of files)
  */
-int fstr_get_step_n(char* name_ID);
+int fstr_get_step_n(char* name_ID, int nrank);
 
 /**
- * @brief ステップの全領域データの読み込み
+ * @brief Read all area data of step
  */
 fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
-                                    int refine);
+                                    int refine, int nrank);
 
 /**
- * @brief ステップの全領域のデータの結合
+ * @brief Combine data in all areas of the step
  */
 struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
                                             int refine);
 
 /**
- * @biref fstr_res_info の削除
+ * @biref Delete fstr_res_info
  */
 void fstr_free_result(fstr_res_info** res, int area_n);
 
 /**
- * @brief テーブル fstr_glt の作成
+ * @brief Create table for global ID, local ID and belonging area records fstr_glt
  */
 fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n);
 
 /**
- * @brief fstr_glt の削除
+ * @brief Delete fstr_glt
  */
 void fstr_free_glt(fstr_glt* glt);
 
 /**
- * @brief 単一領域メッシュの作成
+ * @brief Create a single region mesh
  */
 struct hecmwST_local_mesh* fstr_create_glmesh(fstr_glt* glt);
 
 /**
- * @brief 単一領域メッシュの削除
+ * @brief Delete a single region mesh
  */
 void fstr_free_glmesh(struct hecmwST_local_mesh* mp);

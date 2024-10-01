@@ -199,7 +199,7 @@ contains
 
     integer(kind=kint), dimension(:), allocatable :: IW1, IW2
     real (kind=kreal),  dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
-    integer(kind=kint) :: i,jj,jj1,ij0,kk,kk1
+    integer(kind=kint) :: i,jj,ij0,kk
     integer(kind=kint) :: j,k
     allocate (IW1(NP) , IW2(NP))
     allocate(Dlu0(9*NP), ALlu0(9*NPL), AUlu0(9*NPU))

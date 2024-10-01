@@ -98,7 +98,7 @@ subroutine hecmw_ML_comm_nn(id, x, ierr)
   type(hecmwST_matrix), pointer :: hecMAT
   type(hecmwST_local_mesh), pointer :: hecMESH
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  call hecmw_update_m_R (hecMESH, x, hecMESH%n_node,hecMESH%n_dof)
+  call hecmw_update_R (hecMESH, x, hecMAT%NP, hecMAT%NDOF)
   ierr = 0
 end subroutine hecmw_ML_comm_nn
 
@@ -136,9 +136,11 @@ subroutine hecmw_ML_smoother_diag_apply_nn(id, x_length, x, rhs_length, rhs, ier
   integer(kind=kint) :: i
   real(kind=kreal) :: COMMtime
   integer(kind=kint) :: num_sweeps, i_sweep
+  integer(kind=kint) :: opt(10)
 
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  num_sweeps = hecmw_mat_get_solver_opt6(hecMAT)
+  call hecmw_mat_get_solver_opt(hecMAT, opt)
+  num_sweeps = opt(6)
   allocate(resid(hecMAT%NP * hecMAT%NDOF))
   do i_sweep = 1, num_sweeps
     ! {resid} = {rhs} - [A] {x}
@@ -202,9 +204,11 @@ subroutine hecmw_ML_smoother_ssor_apply_nn(id, x_length, x, rhs_length, rhs, ier
   integer(kind=kint) :: i
   real(kind=kreal) :: COMMtime
   integer(kind=kint) :: num_sweeps, i_sweep
+  integer(kind=kint) :: opt(10)
 
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  num_sweeps = hecmw_mat_get_solver_opt6(hecMAT)
+  call hecmw_mat_get_solver_opt(hecMAT, opt)
+  num_sweeps = opt(6)
   allocate(resid(hecMAT%NP * hecMAT%NDOF))
   do i_sweep = 1, num_sweeps
     ! {resid} = {rhs} - [A] {x}

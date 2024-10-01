@@ -6,9 +6,14 @@
 
 module hecmw_result
   use hecmw_util
+  use hecmw_etype
   implicit none
 
+  private
   public :: hecmwST_result_data
+  public :: HECMW_RESULT_DTYPE_NODE
+  public :: HECMW_RESULT_DTYPE_ELEM
+  public :: HECMW_RESULT_DTYPE_GLOBAL
   public :: hecmw_nullify_result_data
   public :: hecmw_result_copy_c2f
   public :: hecmw_result_copy_f2c
@@ -20,6 +25,7 @@ module hecmw_result
   public :: hecmw_result_finalize
   public :: hecmw_result_free
   public :: hecmw_result_read_by_name
+  public :: hecmw_result_checkfile_by_name
   private :: put_node_component
   private :: put_elem_component
   private :: refine_result
@@ -41,7 +47,11 @@ module hecmw_result
     real(kind=kreal),pointer :: elem_val_item(:)
   end type hecmwST_result_data
 
-  private
+  ! constants defined in hecmw_result_io.h
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_NODE   = 1
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_ELEM   = 2
+  integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_GLOBAL = 3
+
   character(len=HECMW_NAME_LEN) :: sname,vname
 
 contains
@@ -76,7 +86,10 @@ contains
     nnode = hecMESH%n_node
     nelem = hecMESH%n_elem
 
-    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, i_step, header, comment, ierr)
+    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, &
+        hecMESH%n_elem_type, hecMESH%elem_type_index, hecMESH%elem_type_item, &
+        i_step, header, comment, ierr)
+
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_init
 
@@ -87,6 +100,7 @@ contains
     real(kind=kreal) :: data(:)
 
     call hecmw_result_add_if(dtype, n_dof, label, data, ierr)
+
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
   end subroutine hecmw_result_add
 
@@ -225,12 +239,21 @@ contains
   !C Read result data from file
   !C=============================================================================
 
+  subroutine hecmw_result_checkfile_by_name(name_ID, i_step, ierr)
+    character(len=HECMW_NAME_LEN), intent(in) :: name_ID
+    integer(kind=kint), intent(in) :: i_step
+    integer(kind=kint), intent(out) :: ierr
+
+    call hecmw_result_checkfile_by_name_if(name_ID, i_step, ierr)
+  end subroutine hecmw_result_checkfile_by_name
+
+
   subroutine hecmw_result_read_by_name(hecMESH, name_ID, i_step, result)
-    type(hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: n_node, n_elem, i_step, ierr
-    character(len=HECMW_NAME_LEN) :: name_ID
-    type(hecmwST_result_data) :: result
-    real(kind=kreal), pointer :: tmp_val(:)
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    character(len=HECMW_NAME_LEN), intent(in) :: name_ID
+    integer(kind=kint), intent(in) :: i_step
+    type(hecmwST_result_data), intent(inout) :: result
+    integer(kind=kint) :: n_node, n_elem, ierr
 
     call hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, ierr)
     if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm())

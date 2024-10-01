@@ -1,0 +1,30 @@
+GaussM.o : GaussM.f90 
+dynamic_mass.o : dynamic_mass.f90 
+eigen_LIB.o : eigen_LIB.f90 dynamic_mass.o solve_LINEQ.o 
+heat_LIB.o : heat_LIB.f90 heat_LIB_NEUTRAL.o heat_LIB_RADIATE.o heat_LIB_FILM.o heat_LIB_DFLUX.o heat_LIB_CAPACITY.o heat_LIB_CONDUCTIVITY.o 
+heat_LIB_CAPACITY.o : heat_LIB_CAPACITY.f90 dynamic_mass.o 
+heat_LIB_CONDUCTIVITY.o : heat_LIB_CONDUCTIVITY.f90 dynamic_mass.o 
+heat_LIB_DFLUX.o : heat_LIB_DFLUX.f90 
+heat_LIB_FILM.o : heat_LIB_FILM.f90 
+heat_LIB_NEUTRAL.o : heat_LIB_NEUTRAL.f90 m_fstr.o 
+heat_LIB_RADIATE.o : heat_LIB_RADIATE.f90 
+m_common_struct.o : m_common_struct.f90 
+m_fstr.o : m_fstr.f90 m_timepoint.o m_out.o m_step.o m_common_struct.o 
+m_out.o : m_out.f90 
+m_step.o : m_step.f90 
+m_timepoint.o : m_timepoint.f90 
+precheck_LIB_2d.o : precheck_LIB_2d.f90 GaussM.o 
+precheck_LIB_3d.o : precheck_LIB_3d.f90 GaussM.o 
+precheck_LIB_shell.o : precheck_LIB_shell.f90 GaussM.o 
+solve_LINEQ.o : solve_LINEQ.f90 
+static_LIB.o : static_LIB.f90 static_LIB_shell.o static_LIB_beam.o static_LIB_3dIC.o static_LIB_Fbar.o static_LIB_C3D8.o static_LIB_3d_vp.o static_LIB_3d.o static_LIB_2d.o static_LIB_1d.o solve_LINEQ.o 
+static_LIB_1d.o : static_LIB_1d.f90 m_fstr.o 
+static_LIB_2d.o : static_LIB_2d.f90 m_fstr.o 
+static_LIB_3d.o : static_LIB_3d.f90 m_fstr.o m_common_struct.o 
+static_LIB_C3D4_selectiveESNS.o : static_LIB_C3D4_selectiveESNS.f90 static_LIB_3d.o
+static_LIB_3dIC.o : static_LIB_3dIC.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 
+static_LIB_3d_vp.o : static_LIB_3d_vp.f90 
+static_LIB_C3D8.o : static_LIB_C3D8.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 
+static_LIB_Fbar.o : static_LIB_Fbar.f90 m_fstr.o static_LIB_3d.o m_common_struct.o 
+static_LIB_beam.o : static_LIB_beam.f90 GaussM.o m_fstr.o 
+static_LIB_shell.o : static_LIB_shell.f90 GaussM.o 

@@ -1,0 +1,15 @@
+fstr_solve_heat.o : fstr_solve_heat.f90 heat_io.o heat_solve_TRAN.o heat_init.o 
+heat_echo.o : heat_echo.f90 
+heat_get_amplitude.o : heat_get_amplitude.f90 
+heat_init.o : heat_init.f90 
+heat_io.o : heat_io.f90 
+heat_mat_ass_bc_CFLUX.o : heat_mat_ass_bc_CFLUX.f90 heat_get_amplitude.o 
+heat_mat_ass_bc_DFLUX.o : heat_mat_ass_bc_DFLUX.f90 heat_get_amplitude.o 
+heat_mat_ass_bc_FILM.o : heat_mat_ass_bc_FILM.f90 heat_get_amplitude.o 
+heat_mat_ass_bc_FIXT.o : heat_mat_ass_bc_FIXT.f90 heat_get_amplitude.o 
+heat_mat_ass_bc_RADIATE.o : heat_mat_ass_bc_RADIATE.f90 heat_get_amplitude.o 
+heat_mat_ass_boundary.o : heat_mat_ass_boundary.f90 heat_mat_ass_bc_RADIATE.o heat_mat_ass_bc_FILM.o heat_mat_ass_bc_FIXT.o heat_mat_ass_bc_DFLUX.o heat_mat_ass_bc_CFLUX.o 
+heat_mat_ass_capacity.o : heat_mat_ass_capacity.f90 
+heat_mat_ass_conductivity.o : heat_mat_ass_conductivity.f90 
+heat_solve_TRAN.o : heat_solve_TRAN.f90 heat_io.o heat_solve_main.o heat_init.o heat_mat_ass_boundary.o heat_mat_ass_capacity.o heat_mat_ass_conductivity.o 
+heat_solve_main.o : heat_solve_main.f90 heat_mat_ass_boundary.o heat_mat_ass_capacity.o heat_mat_ass_conductivity.o 

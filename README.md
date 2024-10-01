@@ -1,7 +1,5 @@
 # README of FrontISTR on HEC-MW
 
-2019.10.18  Version 5.0
-
 FrontISTR Commons
 
 Comments, Questions, Problems etc.
@@ -13,8 +11,8 @@ FrontISTR : Open-Source Large-Scale Parallel FEM Program for Nonlinear Structura
 
 ### Detailed manuals
 
-  - [English](https://frontistr-commons.gitlab.io/FrontISTR/manual_en/index.html)
-  - [Japanese](https://frontistr-commons.gitlab.io/FrontISTR/manual_ja/index.html)
+  - [English](https://manual.frontistr.com/en/)
+  - [Japanese](https://manual.frontistr.com/ja/)
 
 ### Files in this directory
 README.md                   : README (in English : this file)  

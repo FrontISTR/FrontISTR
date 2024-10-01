@@ -15,9 +15,9 @@ module fstr_dynamic_nlexplicit
   use m_dynamic_mat_ass_load
   use m_fstr_Update
   use m_fstr_Restart
-  use fstr_matrix_con_contact
   use m_dynamic_mat_ass_couple
   use m_fstr_rcap_io
+  use mContact
 
 contains
 
@@ -35,7 +35,7 @@ contains
     type(hecmwST_result_data)            :: fstrRESULT
     type(fstr_param)                     :: fstrPARAM
     type(fstr_dynamic)                   :: fstrDYN
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT !< type fstrST_matrix_contact_lagrange
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(fstr_info_contactChange)        :: infoCTChange !< fstr_info_contactChange
     type(fstr_couple)                    :: fstrCPL !for COUPLE
     type(hecmwST_matrix), pointer :: hecMATmpc
@@ -183,9 +183,9 @@ contains
         call dynamic_explicit_ass_bc(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
         call dynamic_explicit_ass_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
         call dynamic_explicit_ass_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
-        !call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, fstrMAT)
-        !call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, fstrMAT)
-        !call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, fstrMAT)
+        !call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
+        !call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
+        !call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
 
         ! Finish the calculation
         do j = 1 ,ndof*nnod
@@ -288,7 +288,7 @@ contains
         enddo
       endif
 
-      !C-- new displacement, velocity and accelaration
+      !C-- new displacement, velocity and acceleration
       do j = 1 ,ndof*nnod
         fstrDYN%ACC (j,1) = a1*(hecMAT%X(j) - 2.d0*fstrDYN%DISP(j,1) + fstrDYN%DISP(j,3))
         fstrDYN%VEL (j,1) = a2*(hecMAT%X(j) - fstrDYN%DISP(j,3))
@@ -307,12 +307,13 @@ contains
       end do
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYN%t_delta )
 
-      if( fstrDYN%restart_nout > 0 .and. &
-          (mod(i,fstrDYN%restart_nout).eq.0 .or. i.eq.fstrDYN%n_step) ) then
-        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM)
+      if( fstrDYN%restart_nout > 0 ) then
+        if ( mod(i,fstrDYN%restart_nout).eq.0 .or. i.eq.fstrDYN%n_step ) then
+          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM)
+        end if
       end if
       !
-      !C-- output new displacement, velocity and accelaration
+      !C-- output new displacement, velocity and acceleration
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
 
@@ -356,7 +357,7 @@ contains
     iter = 0
     do
       wkarray = 0.0d0
-      do i=1,size(fstrSOLID%contacts)
+      do i=1,fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
           if( fstrSOLID%contacts(i)%states(j)%distance>epsilon(1.d0) ) then
@@ -383,7 +384,7 @@ contains
       enddo
 
       if(iter > 0)then
-        do i=1,size(fstrSOLID%contacts)
+        do i=1,fstrSOLID%n_contacts
           do j= 1, size(fstrSOLID%contacts(i)%slave)
             if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
             slave = fstrSOLID%contacts(i)%slave(j)
@@ -403,7 +404,7 @@ contains
 
       conv = 0.d0
       wkarray = 0.d0
-      do i=1,size(fstrSOLID%contacts)
+      do i=1,fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
           slave = fstrSOLID%contacts(i)%slave(j)

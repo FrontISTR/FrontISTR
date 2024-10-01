@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides linear equation solver interface for Pardiso
-#ifdef WITH_MKL
+#ifdef HECMW_WITH_MKL
 include 'mkl_pardiso.f90'
 #endif
 
@@ -11,7 +11,7 @@ module m_hecmw_MKL_wrapper
   use hecmw_util
   use m_sparse_matrix
 
-#ifdef WITH_MKL
+#ifdef HECMW_WITH_MKL
   use mkl_pardiso
 #endif
 
@@ -21,7 +21,7 @@ module m_hecmw_MKL_wrapper
   public :: hecmw_mkl_wrapper     ! only entry point of Parallel Direct Solver is public
 
   logical, save :: INITIALIZED = .false.
-#ifdef WITH_MKL
+#ifdef HECMW_WITH_MKL
   type(MKL_PARDISO_HANDLE) :: pt(64)
 #endif
   integer maxfct, mnum, mtype, nrhs, msglvl
@@ -42,7 +42,7 @@ contains
     integer(kind=kint) :: myrank, phase
     real(kind=kreal)   :: t2,t3,t4,t5
 
-#ifdef WITH_MKL
+#ifdef HECMW_WITH_MKL
 
     myrank=hecmw_comm_get_rank()
 
@@ -54,7 +54,7 @@ contains
       iparm(1) = 1 ! no solver default
       iparm(2) = 3 ! fill-in reordering from METIS
       iparm(3) = 1
-      iparm(10) = 13 ! perturbe the pivot elements with 1E-13
+      iparm(10) = 13 ! perturb the pivot elements with 1E-13
       iparm(11) = 1 ! use nonsymmetric permutation and scaling MPS
       iparm(13) = 1 ! maximum weighted matching algorithm is switched-off
       iparm(18) = -1

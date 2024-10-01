@@ -23,7 +23,7 @@
             <description>サポート外の要素タイプを検出した</description>
         </define>
 		<define type="error" name="E9999">
-			<message>Error occures in coupling interface module</message>
+			<message>Error occurs in coupling interface module</message>
 			<description>連成カップリングモジュールでエラーが発生した</description>
 		</define>
         <define type="error" name="E2001">
@@ -34,8 +34,8 @@
             <message>Too long name</message>
             <description>規定の長さを越えた名前を検出した</description>
         </define>
-        <define tyhe="error" name="E2101">
-            <message>Error occured in !COUPLE UNIT section</message>
+        <define type="error" name="E2101">
+            <message>Error occurred in !COUPLE UNIT section</message>
             <description>連成カップラー制御データの!COUPLE UNITセクションにおいてエラーが発生した</description>
         </define>
         <define type="error" name="E2111">
@@ -51,7 +51,7 @@
             <description>連成カップラー制御データの!COUPLE UNITセクションにおいて指定されたプロセスランク番号の数が，NPROCオプションで指定されたプロセス数と一致しない</description>
         </define>
         <define type="error" name="E2201">
-            <message>Error occured in !COUPLE section</message>
+            <message>Error occurred in !COUPLE section</message>
             <description>連成カップラー制御データの!COUPLEセクションにおいてエラーが発生した</description>
         </define>
         <define type="error" name="E2211">
@@ -71,7 +71,7 @@
             <description>連成カップラー制御データの!COUPLEセクションにおいて，UNIT2オプションが定義されていない</description>
         </define>
         <define type="error" name="E2301">
-            <message>Error occured in !COUPLE BOUNDARY section</message>
+            <message>Error occurred in !COUPLE BOUNDARY section</message>
             <description>連成カップラー制御データの!COUPLE BOUNDARYセクションにおいてエラーが発生した</description>
         </define>
         <define type="error" name="E2311">

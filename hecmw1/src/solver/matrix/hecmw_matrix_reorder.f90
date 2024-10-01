@@ -5,6 +5,7 @@
 
 module hecmw_matrix_reorder
   use hecmw_util
+  use hecmw_array_util
   implicit none
 
   private
@@ -59,8 +60,8 @@ contains
       end do
       indexLp(inew) = cntL
       indexUp(inew) = cntU
-      call sort_int_array(itemLp, indexLp(inew-1)+1, indexLp(inew))
-      call sort_int_array(itemUp, indexUp(inew-1)+1, indexUp(inew))
+      call hecmw_qsort_int_array(itemLp, indexLp(inew-1)+1, indexLp(inew))
+      call hecmw_qsort_int_array(itemUp, indexUp(inew-1)+1, indexUp(inew))
     end do
   end subroutine hecmw_matrix_reorder_profile
 
@@ -226,7 +227,7 @@ contains
         knew = itemXp(jnew)
         kold = perm(knew)
         if (kold < iold) then
-          call bsearch_int_array(itemL, jsoldL, jeoldL, kold, jold)
+          call hecmw_bsearch_int_array(itemL, jsoldL, jeoldL, kold, jold)
           if (jold < 0) then
             write(0,*) 'DEBUG:: jold < 0 in reorder_off_diag'
             cycle
@@ -237,7 +238,7 @@ contains
             AXp(l0new + l) = AL(l0old + l)
           end do
         else
-          call bsearch_int_array(itemU, jsoldU, jeoldU, kold, jold)
+          call hecmw_bsearch_int_array(itemU, jsoldU, jeoldU, kold, jold)
           if (jold < 0) then
             write(0,*) 'DEBUG:: jold < 0 in reorder_off_diag'
             cycle
@@ -284,7 +285,7 @@ contains
         if (kold > N) cycle
         knew = iperm(kold)
         if (knew < inew) then
-          call bsearch_int_array(itemLp, jsnewL, jenewL, knew, jnew)
+          call hecmw_bsearch_int_array(itemLp, jsnewL, jenewL, knew, jnew)
           if (jnew < 0) then
             write(0,*) 'ERROR:: jnew < 0 in reorder_off_diag2'
             call hecmw_abort( hecmw_comm_get_comm() )
@@ -295,7 +296,7 @@ contains
             ALp(l0new + l) = AX(l0old + l)
           end do
         else
-          call bsearch_int_array(itemUp, jsnewU, jenewU, knew, jnew)
+          call hecmw_bsearch_int_array(itemUp, jsnewU, jenewU, knew, jnew)
           if (jnew < 0) then
             write(0,*) 'ERROR:: jnew < 0 in reorder_off_diag2'
             call hecmw_abort( hecmw_comm_get_comm() )
@@ -311,63 +312,5 @@ contains
     !$omp end do
     !$omp end parallel
   end subroutine reorder_off_diag2
-
-  recursive subroutine sort_int_array(array, istart, iend)
-    implicit none
-    integer(kind=kint), intent(inout) :: array(:)
-    integer(kind=kint), intent(in) :: istart, iend
-    integer(kind=kint) :: left, right, center
-    integer(kind=kint) :: pivot, tmp
-    if (istart >= iend) return
-    center = (istart + iend) / 2
-    pivot = array(center)
-    left = istart
-    right = iend
-    do
-      do while (array(left) < pivot)
-        left = left + 1
-      end do
-      do while (pivot < array(right))
-        right = right - 1
-      end do
-      if (left >= right) exit
-      tmp = array(left)
-      array(left) = array(right)
-      array(right) = tmp
-      left = left + 1
-      right = right - 1
-    end do
-    if (istart < left-1) call sort_int_array(array, istart, left-1)
-    if (right+1 < iend) call sort_int_array(array, right+1, iend)
-  end subroutine sort_int_array
-
-  subroutine bsearch_int_array(array, istart, iend, val, idx)
-    implicit none
-    integer(kind=kint), intent(in) :: array(:)
-    integer(kind=kint), intent(in) :: istart, iend
-    integer(kind=kint), intent(in) :: val
-    integer(kind=kint), intent(out) :: idx
-    integer(kind=kint) :: center, left, right, pivot
-    left = istart
-    right = iend
-    do
-      if (left > right) then
-        idx = -1
-        exit
-      end if
-      center = (left + right) / 2
-      pivot = array(center)
-      if (val < pivot) then
-        right = center - 1
-        cycle
-      else if (pivot < val) then
-        left = center + 1
-        cycle
-      else ! if (pivot == val) then
-        idx = center
-        exit
-      end if
-    end do
-  end subroutine bsearch_int_array
 
 end module hecmw_matrix_reorder

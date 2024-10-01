@@ -95,14 +95,27 @@ endif()
 ###############################################################
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-set(VERSION_MAJOR 5 CACHE STRING "Major version number of FrontISTR")
-set(VERSION_MINOR 0 CACHE STRING "Minor version number of FrontISTR")
-set(VERSION_PATCH 0 CACHE STRING "Patch version number of FrontISTR")
+
+file(READ "VERSION" ver)
+string(REGEX MATCH "[0-9](.[0-9](.[0-9])?)?" vertxt ${ver})
+string(REGEX MATCHALL "[0-9]" verlist "${vertxt}")
+list(LENGTH verlist verlength)
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 0)
+set(VERSION_PATCH 0)
+list(GET verlist 0 VERSION_MAJOR)
+if(${verlength} GREATER 1)
+  list(GET verlist 1 VERSION_MINOR)
+endif()
+if(${verlength} GREATER 2)
+  list(GET verlist 2 VERSION_PATCH)
+endif()
+execute_process(COMMAND date "+%Y-%m-%dT%H:%M:%S%z" OUTPUT_VARIABLE BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(GIT_HASH \"${GIT_SHA1}\" CACHE STRING "GIT hash number of FrontISTR")
-mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH GIT_HASH)
+mark_as_advanced(VERSION_MAJOR VERSION_MINOR VERSION_PATCH BUILD_DATE GIT_HASH)
 
 #############################################
-# Archtecture and compiler dependent options
+# Architecture and compiler dependent options
 #############################################
 if(WIN32)
   set(WINDOWS TRUE)
@@ -131,23 +144,27 @@ endif()
 ###################
 # Find external packages
 ###################
-find_package(MPI)
+option(WITH_MPI "for parallel environment with MPI" ON)
+if(WITH_MPI)
+  find_package(MPI)
+  set(WITH_MPI "${MPI_FOUND}")
+  find_package(Parmetis)
+  find_package(Scalapack)
+endif()
 find_package(OpenMP)
+find_package(MKL)
 find_package(LAPACK)
 find_package(Metis)
-find_package(Parmetis)
 find_package(Mumps)
 find_package(Refiner)
 find_package(Revocap)
-find_package(Scalapack)
 find_package(Trilinos)
 find_package(Doxygen)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_DOC "Generate API documents." ${WITH_DOC})
 option(WINDOWS "build on windows" ${WINDOWS})
-option(WITH_MPI "for parallel environment with MPI" ${MPI_FOUND})
 option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
-option(WITH_MKL "compile with MKL PARDISO" ${SCALAPACK_MKL})
+option(WITH_MKL "compile with MKL PARDISO" ${MKL_FOUND})
 option(WITH_LAPACK "for estimating number of condition" ${LAPACK_FOUND})
 option(WITH_METIS "compile with METIS" ${METIS_FOUND})
 option(METIS_VER_4 "uses METIS-4" OFF)
@@ -161,26 +178,10 @@ option(OLD_RES_FORMAT "use old style result file" ${OLD_RES_FORMAT})
 option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
 
-###################
-# -DWITH_MPI
-###################
-if(WITH_MPI AND MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS
-    ${MPI_C_INCLUDE_PATH}
-    ${MPI_CXX_INCLUDE_PATH}
-    ${MPI_Fortran_INCLUDE_PATH})
-
-  list(APPEND FrontISTR_LIBRARIES
-    ${MPI_C_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${MPI_Fortran_LIBRARIES})
-
-else()
-  set(WITH_MPI OFF)
-  set(HECMW_SERIAL ON)
-  list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
+# Provisional solution FOR GCC Fortran 10 compiling error
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 10)
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch")
 endif()
-mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
 
 ###################
 # -DWITH_OPENMP
@@ -192,6 +193,19 @@ if(WITH_OPENMP AND OPENMP_FOUND)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_C_FLAGS}")
 else()
   set(WITH_OPENMP OFF)
+endif()
+
+###################
+# -DWITH_MKL
+###################
+if(WITH_MKL)
+  set(BLA_VENDOR "Intel10_64lp")
+  list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
+  list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MKL")
+  set(WITH_LAPACK ON)
+else()
+  set(WITH_MKL OFF)
 endif()
 
 ###################
@@ -220,9 +234,15 @@ endif()
 ###################
 if(WITH_ML)
   if(Trilinos_FOUND)
-    list(APPEND FrontISTR_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_ML")
-    list(APPEND FrontISTR_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
+    list(FIND Trilinos_TPL_LIST MPI trilinos_mpi_index)
+    if((trilinos_mpi_index EQUAL -1 AND WITH_MPI) OR (trilinos_mpi_index GREATER -1 AND NOT WITH_MPI))
+      message(WARNING "Trilinos found but turned off due to incompatible MPI setting")
+      set(WITH_ML OFF)
+    else()
+      list(APPEND FrontISTR_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
+      list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_ML")
+      list(APPEND FrontISTR_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
+    endif()
   else()
     message(WARNING "Trilinos not found")
     set(WITH_ML OFF)
@@ -234,17 +254,26 @@ mark_as_advanced(Trilinos_DIR)
 # -DWITH_MUMPS
 ###################
 if(WITH_MUMPS)
-  if(MUMPS_FOUND AND ( (SCALAPACK_FOUND AND LAPACK_FOUND) OR SCALAPACK_MKL ) )
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MUMPS")
-    list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
-    list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
-    mark_as_advanced(scalapack_DIR)
+  if(MUMPS_FOUND)
+    if(WITH_MPI)
+      if((SCALAPACK_FOUND AND LAPACK_FOUND) OR SCALAPACK_MKL)
+        list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MUMPS")
+        list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
+        list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
+        mark_as_advanced(scalapack_DIR)
+      else()
+        message(WARNING "MUMPS could not be enabled. Please also install scalapack and lapack.")
+        set(WITH_MUMPS OFF)
+      endif()
+    else()
+      list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MUMPS")
+      list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
+      list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES})
+    endif()
   else()
-    message(FATAL_ERROR "MUMPS could not enable. Please also install scalapack and lapack.")
+    message(WARNING "MUMPS not found")
     set(WITH_MUMPS OFF)
   endif()
-else()
-  set(WITH_MUMPS OFF)
 endif()
 
 ###################
@@ -286,19 +315,6 @@ if(WITH_LAPACK)
   endif()
 endif()
 
-###################
-# -DWITH_MKL
-###################
-if(WITH_MKL)
-  message(STATUS "scalapack libraries ${SCALAPACK_LIBRARIES}")
-  set(BLA_VENDOR "Intel10_64lp")
-  list(APPEND FrontISTR_INCLUDE_DIRS $ENV{MKLROOT}/include)
-  list(APPEND FrontISTR_LIBRARIES ${SCALAPACK_LIBRARIES})
-  list(APPEND FrontISTR_DEFINITIONS "WITH_MKL")
-  set(WITH_LAPACK ON)
-else()
-  set(WITH_MKL OFF)
-endif()
 
 ###################
 # -DOLD_RES_FORMAT
@@ -307,8 +323,29 @@ if(OLD_RES_FORMAT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOLD_RES_FORMAT")
 endif()
 
+###################
+# -DWITH_MPI
+###################
+if(WITH_MPI AND MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
+  list(APPEND FrontISTR_INCLUDE_DIRS
+    ${MPI_C_INCLUDE_PATH}
+    ${MPI_CXX_INCLUDE_PATH}
+    ${MPI_Fortran_INCLUDE_PATH})
+
+  list(APPEND FrontISTR_LIBRARIES
+    ${MPI_C_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
+    ${MPI_Fortran_LIBRARIES})
+
+else()
+  set(WITH_MPI OFF)
+  set(HECMW_SERIAL ON)
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_SERIAL")
+endif()
+mark_as_advanced(MPI_EXTRA_LIBRARY MPI_LIBRARY)
+
 #############################################
-# Archtecture and compiler dependent options
+# Architecture and compiler dependent options
 #############################################
 ###################
 # -DWINDOWS
@@ -387,13 +424,8 @@ add_subdirectory(fistr1)
 ###############################################################################
 # Tests
 ###############################################################################
-find_package(Ruby)
-if (NOT ${RUBY_EXECUTABLE})
-  message(STATUS "Found ${RUBY_EXECUTABLE}. Enable tests.")
-  message("If you would like to test, please type 'make test' after build binaries.")
-  enable_testing()
-  add_subdirectory(examples)
-endif()
+enable_testing()
+add_subdirectory(tests)
 
 ###############################################################################
 # Package generator (deb, rpm, exe etc.)
@@ -402,7 +434,7 @@ include(InstallRequiredSystemLibraries)
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Large-scale structural analysis program with FEM ")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
-set(CPACK_PACKAGE_VENDOR "FrontISTR Forum, The University of Tokyo")
+set(CPACK_PACKAGE_VENDOR "FrontISTR Commons")
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
@@ -419,3 +451,6 @@ else()
   set(CPACK_STRIP_FILES ON)
 endif()
 include(CPack)
+
+
+

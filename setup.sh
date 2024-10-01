@@ -17,9 +17,13 @@ echo "Executing /setup_fistr.sh"
 ./setup_fistr.sh $@
 
 echo "" > ./fistr1/src/main/FrontISTRConfig.h
-echo "#define VERSION_MAJOR 5" >> ./fistr1/src/main/FrontISTRConfig.h
-echo "#define VERSION_MINOR 0" >> ./fistr1/src/main/FrontISTRConfig.h
-echo "#define VERSION_PATCH 0" >> ./fistr1/src/main/FrontISTRConfig.h
+VERSION_MAJOR=$(cat VERSION | sed -r "s/^[^0-9]*(([0-9]+)\\.?([0-9]+)?\\.?([0-9]+)?).*$/\\1/"|cut -d. -f1|sed "s/^$/0/")
+VERSION_MINOR=$(cat VERSION | sed -r "s/^[^0-9]*(([0-9]+)\\.?([0-9]+)?\\.?([0-9]+)?).*$/\\1/"|cut -d. -f2|sed "s/^$/0/")
+VERSION_PATCH=$(cat VERSION | sed -r "s/^[^0-9]*(([0-9]+)\\.?([0-9]+)?\\.?([0-9]+)?).*$/\\1/"|cut -d. -f3|sed "s/^$/0/")
+echo "#define VERSION_MAJOR $VERSION_MAJOR" >> ./fistr1/src/main/FrontISTRConfig.h
+echo "#define VERSION_MINOR $VERSION_MINOR" >> ./fistr1/src/main/FrontISTRConfig.h
+echo "#define VERSION_PATCH $VERSION_PATCH" >> ./fistr1/src/main/FrontISTRConfig.h
+echo '#define BUILD_DATE "'`date '+%Y-%m-%dT%H:%M:%S%z'`'"' >> ./fistr1/src/main/FrontISTRConfig.h
 
 if type "git" > /dev/null 2>&1
 then

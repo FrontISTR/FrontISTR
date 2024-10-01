@@ -26,13 +26,13 @@ contains
     type(hecmwST_local_mesh) :: hecMESH
 
     real(kind=kreal)   :: xx(20), yy(20), zz(20)
-    real(kind=kreal)   :: term1(64), term2(20)
-    integer(kind=kint) :: nodLocal(20), nsuf(8)
+    real(kind=kreal)   :: term1(64), term2(20), stiff(8,8)
+    integer(kind=kint) :: nodLocal(20), nsuf(8), nodSurf(8)
 
 !C
     !$omp parallel default(none), &
-      !$omp&  private(k,icel,isuf,iam1,iam2,QQ,HH,SINK,ic_type,isect,nn, &
-      !$omp&  is,j,nodLOCAL,xx,yy,zz,thick,mm,term1,term2,nsuf,ip,inod,jnod,ic,isU,ieU,ik,jp,isL,ieL), &
+      !$omp&  private(k,icel,isuf,iam1,iam2,QQ,HH,SINK,ic_type,isect,nn,is,j,nodLocal, &
+      !$omp&  xx,yy,zz,thick,mm,term1,term2,stiff,nsuf,nodSurf,ip,inod,jnod,ic,isU,ieU,ik,jp,isL,ieL), &
       !$omp&  shared(fstrHEAT,CTIME,hecMAT,hecMESH)
     !$omp do
     do k = 1, fstrHEAT%H_SUF_tot
@@ -116,41 +116,27 @@ contains
 
       endif
       !C
-      ic = 0
+
       do ip = 1, mm
-        inod = nodLOCAL(nsuf(ip))
+        nodSurf(ip) = nodLOCAL(nsuf(ip))
+      end do
 
+      ic = 0
+      stiff = 0.d0
+      do ip = 1, mm
         do jp = 1, mm
-          jnod = nodLOCAL(nsuf(jp))
           ic = ic + 1
-
-          if( jnod.gt.inod ) then
-            isU = hecMAT%indexU(inod-1) + 1
-            ieU = hecMAT%indexU(inod)
-            do ik = isU, ieU
-              if( hecMAT%itemU(ik).ne.jnod ) cycle
-              !$omp atomic
-              hecMAT%AU(ik) = hecMAT%AU(ik) - term1(ic)
-            enddo
-
-          elseif( jnod.lt.inod ) then
-            isL = hecMAT%indexL(inod-1) + 1
-            ieL = hecMAT%indexL(inod)
-            do ik = isL, ieL
-              if( hecMAT%itemL(ik).ne.jnod ) cycle
-              !$omp atomic
-              hecMAT%AL(ik) = hecMAT%AL(ik) - term1(ic)
-            enddo
-
-          else
-            !$omp atomic
-            hecMAT%D(inod) = hecMAT%D(inod) - term1(ic)
-            !$omp atomic
-            hecMAT%B(jnod) = hecMAT%B(jnod) - term2(jp)
-          endif
-
+          stiff(ip,jp) = -term1(ic)
         enddo
       enddo
+
+      call hecmw_mat_ass_elem(hecMAT, mm, nodSurf, stiff)
+
+      do ip = 1, mm
+        !$omp atomic
+        hecMAT%B(nodSurf(ip)) = hecMAT%B(nodSurf(ip)) - term2(ip)
+      end do
+
       !C
       !C
     enddo

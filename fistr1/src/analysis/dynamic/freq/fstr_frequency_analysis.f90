@@ -57,7 +57,6 @@ module fstr_frequency_analysis
   use m_fstr
   use m_fstr_StiffMatrix
   use m_fstr_AddBC
-  use fstr_matrix_con_contact
   use m_fstr_EIG_setMASS
   use fstr_frequency_visout
   use m_hecmw2fstr_mesh_conv
@@ -68,7 +67,7 @@ contains
 
   subroutine fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG,  &
       fstrDYNAMIC, fstrRESULT, fstrPARAM, &
-      fstrCPL, fstrFREQ, fstrMAT, restart_step_num)
+      fstrCPL, fstrFREQ, hecLagMAT, restart_step_num)
     !C
     !C-- global variable
     !C
@@ -81,7 +80,7 @@ contains
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_couple)                    :: fstrCPL
     type(fstr_freqanalysis)              :: fstrFREQ
-    type(fstrST_matrix_contact_lagrange) :: fstrMAT
+    type(hecmwST_matrix_lagrange)        :: hecLagMAT
     integer(kind=kint)                   :: restart_step_num
 
     !C
@@ -155,7 +154,7 @@ contains
     call assemble_nodeload(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
 
     write(*,*) "calc mass matrix"
-    call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrMAT)
+    call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
     write(*,*) "scale eigenvector"
     call scaleEigenVector(fstrEIG, ndof*numnode, nummode, freqData%eigVector)
 
@@ -192,7 +191,7 @@ contains
       if(IRESULT==1) then
         write(*,   *) freq, "[Hz] : ", im, ".res"
         write(ilog,*) freq, "[Hz] : ", im, ".res"
-        call output_resfile(hecMESH, im, disp, vel, acc, freqiout)
+        call output_resfile(hecMESH, freq, im, disp, vel, acc, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==1) then
         write(*,   *) freq, "[Hz] : ", im, ".vis"
@@ -206,8 +205,8 @@ contains
     write(ilog,*) "start time:", t_start
     write(*,   *) "end time:", t_end
     write(ilog,*) "end time:", t_end
-    write(*,   *) "freqency:", freq
-    write(ilog,*) "freqency:", freq
+    write(*,   *) "frequency:", freq
+    write(ilog,*) "frequency:", freq
     write(*,   *) "node id:", idnode
     write(ilog,*) "node id:", idnode
     write(*,   *) "num disp:", numdisp
@@ -232,7 +231,7 @@ contains
       if(IRESULT==1) then
         write(*,   *) "time=", time, " : ", im, ".res"
         write(ilog,*) "time=", time, " : ", im, ".res"
-        call outputdyna_resfile(hecMESH, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
+        call outputdyna_resfile(hecMESH, time, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==2) then
         write(*,   *) "time=", time, " : ", im, ".vis"
@@ -439,9 +438,10 @@ contains
 
   end subroutine
 
-  subroutine output_resfile(hecMESH, ifreq, disp, vel, acc, iout)
+  subroutine output_resfile(hecMESH, freq, ifreq, disp, vel, acc, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
+    real(kind=kreal), intent(in)         :: freq
     integer(kind=kint), intent(in)       :: ifreq
     real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
@@ -452,23 +452,29 @@ contains
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label, nameid
+    real(kind=kreal)                :: freqval(1)
     !---- body
 
     nameid='fstrRES'
     header='*fstrresult'
     comment='frequency_result'
     call hecmw_result_init(hecMESH, ifreq, header, comment)
+
+    label = "frequency"
+    freqval(1) = freq
+    call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, freqval)
+
     if(iout(1) == 1) then
       label='displacement'
-      call hecmw_result_add(1, 3, label, disp) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, disp) !mode=node, ndof=3
     end if
     if(iout(2) == 1) then
       label='velocity'
-      call hecmw_result_add(1, 3, label, vel) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, vel) !mode=node, ndof=3
     end if
     if(iout(3) == 1) then
       label='acceleration'
-      call hecmw_result_add(1, 3, label, acc) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, acc) !mode=node, ndof=3
     end if
     call hecmw_result_write_by_name(nameid)
     call hecmw_result_finalize()
@@ -651,14 +657,14 @@ contains
     return
   end subroutine
 
-  subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrMAT)
+  subroutine calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
     !---- args
     type(fstr_param), intent(in)         :: fstrPARAM
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(hecmwST_matrix), intent(inout)  :: hecMAT
     type(fstr_solid), intent(inout)      :: fstrSOLID
     type(fstr_eigen), intent(inout)      :: fstrEIG
-    type(fstrST_matrix_contact_lagrange), intent(inout) :: fstrMAT
+    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
     !---- vals
     integer(kind=kint) :: ntotal
     !---- body
@@ -666,7 +672,7 @@ contains
 
     fstrSOLID%dunode = 0.d0
     call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
-    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT, 2)
+    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
 
@@ -972,9 +978,10 @@ contains
     return
   end subroutine
 
-  subroutine outputdyna_resfile(hecMESH, istp, dispre, dispim, velre, velim, accre, accim, iout)
+  subroutine outputdyna_resfile(hecMESH, time, istp, dispre, dispim, velre, velim, accre, accim, iout)
     !---- args
     type(hecmwST_local_mesh), intent(in) :: hecMESH
+    real(kind=kreal), intent(in)   :: time
     integer(kind=kint), intent(in) :: istp
     real(kind=kreal), intent(in)   :: dispre(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)   :: dispim(:) !intend (numnodeDOF)
@@ -1000,34 +1007,38 @@ contains
 
     call hecmw_result_init(hecMESH, istp, header, comment)
 
+    label = "time"
+    absval(1) = time
+    call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, absval)
+
     if(iout(1) == 1) then
       label='displacement_real'
-      call hecmw_result_add(1, 3, label, dispre) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, dispre) !mode=node, ndof=3
       label='displacement_imag'
-      call hecmw_result_add(1, 3, label, dispim)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, dispim)
       label='displacement_abs'
       absval(:) = abs(cmplx(dispre(:), dispim(:)))
-      call hecmw_result_add(1, 3, label, absval)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
     if(iout(2) == 1) then
       label='velocity_real'
-      call hecmw_result_add(1, 3, label, velre) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, velre) !mode=node, ndof=3
       label='velocity_imag'
-      call hecmw_result_add(1, 3, label, velim)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, velim)
       label='velocity_abs'
       absval(:) = abs(cmplx(velre(:), velim(:)))
-      call hecmw_result_add(1, 3, label, absval)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
     if(iout(3) == 1) then
       label='acceleration_real'
-      call hecmw_result_add(1, 3, label, accre) !mode=node, ndof=3
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, accre) !mode=node, ndof=3
       label='acceleration_imag'
-      call hecmw_result_add(1, 3, label, accim)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, accim)
       label='acceleration_abs'
       absval(:) = abs(cmplx(velre(:), velim(:)))
-      call hecmw_result_add(1, 3, label, absval)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
     call hecmw_result_write_by_name(nameid)

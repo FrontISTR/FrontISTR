@@ -2,7 +2,6 @@
 # Copyright (c) 2019 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
-cmake_minimum_required(VERSION 2.8.11)
 
 project(fistr CXX Fortran C)
 
@@ -63,7 +62,7 @@ install(TARGETS fistr1
 )
 
 #
-# Bulid tools
+# Build tools
 #
 if(WITH_TOOLS)
   add_subdirectory(tools)

@@ -55,7 +55,7 @@ contains
     else if( isElastoplastic(gauss%pMaterial%mtype) ) then
       allocate( gauss%istatus(1) )    ! 0:elastic 1:plastic
       if( isKinematicHarden( gauss%pMaterial%mtype ) ) then
-        allocate( gauss%fstatus(7) )  ! plastic strain, back stress
+        allocate( gauss%fstatus(7+6) )  ! plastic strain, back stress
       else
         allocate( gauss%fstatus(2) )    ! plastic strain
       endif
@@ -88,7 +88,6 @@ contains
     type( tGaussStatus ), intent(in)    :: gauss1
     type( tGaussStatus ), intent(inout) :: gauss2
 
-    integer :: n
     gauss2%strain     = gauss1%strain
     gauss2%stress     = gauss1%stress
     gauss2%strain_bak = gauss1%strain_bak

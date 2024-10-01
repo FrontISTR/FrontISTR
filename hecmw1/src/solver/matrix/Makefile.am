@@ -79,7 +79,9 @@ OBJS =
 
 OBJSF = \
 	hecmw_allocate.@f90objfilepostfix@ \
+	hecmw_array_util.@f90objfilepostfix@ \
 	hecmw_matrix_contact.@f90objfilepostfix@ \
+	hecmw_matrix_contact_lagrange.@f90objfilepostfix@ \
 	hecmw_matrix_misc.@f90objfilepostfix@ \
 	hecmw_matrix_ordering_CM.@f90objfilepostfix@ \
 	hecmw_matrix_ordering_MC.@f90objfilepostfix@ \
@@ -87,6 +89,7 @@ OBJSF = \
 	hecmw_mat_con.@f90objfilepostfix@ \
 	hecmw_mat_ass.@f90objfilepostfix@ \
 	hecmw_matrix_dump.@f90objfilepostfix@ \
+	hecmw_pair_array.@f90objfilepostfix@ \
 	hecmw_local_matrix.@f90objfilepostfix@ \
 	hecmw_mat_id.@f90objfilepostfix@ \
 	hecmw_estimate_condition.@f90objfilepostfix@
@@ -115,7 +118,7 @@ $(OBJSF):
 install-header: $(HEADERS)
 	$(CP) $(HEADERS) $(HECMWINCDIR)/.
 
-install-module:
+install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
@@ -124,3 +127,8 @@ clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
 
 distclean: clean
+
+include .dependf90
+
+depend .dependf90:
+	makedepf90 *.[fF]90 > .dependf90

@@ -13,6 +13,7 @@ module m_fstr_solve_NLGEOM
   use fstr_matrix_con_contact
   use m_fstr_TimeInc
   use m_fstr_Cutback
+  use mContact
   use m_solve_LINEQ_contact
 
   implicit none
@@ -20,19 +21,19 @@ module m_fstr_solve_NLGEOM
 contains
 
   !======================================================================!
-  !> \brief This module provides main suborutine for nonlinear calculation.
+  !> \brief This module provides main subroutine for nonlinear calculation.
   !>  \author     K. Sato(Advancesoft), X. YUAN(AdavanceSoft)
   !>              Z. Sun(ASTOM)/2010/11
   !>  \date       2009/08/31
   !>  \version    0.00
-  subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,fstrMAT,fstrPARAM,conMAT)
+  subroutine FSTR_SOLVE_NLGEOM(hecMESH,hecMAT,fstrSOLID,hecLagMAT,fstrPARAM,conMAT)
     type (hecmwST_local_mesh)              :: hecMESH      !< mesh information
     type (hecmwST_matrix    )              :: hecMAT       !< linear equation, its right side modified here
     type (fstr_param       )               :: fstrPARAM    !< analysis control parameters
     type (fstr_solid       )               :: fstrSOLID    !< we need boundary conditions of curr step
-    type (fstrST_matrix_contact_lagrange)  :: fstrMAT      !< type fstrST_matrix_contact_lagrange
+    type (hecmwST_matrix_lagrange)         :: hecLagMAT    !< type hecmwST_matrix_lagrange
     type (fstr_info_contactChange)         :: infoCTChange, infoCTChange_bak !< type fstr_info_contactChange
-    type (hecmwST_matrix    ),optional     :: conMAT
+    type (hecmwST_matrix    )              :: conMAT
 
     integer(kind=kint) :: ndof, nn
     integer(kind=kint) :: j, i, tot_step, step_count, tot_step_print, CBbound
@@ -40,7 +41,7 @@ contains
     integer(kind=kint) :: restart_step_num, restart_substep_num
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
-    logical            :: ctchanged, is_OutPoint
+    logical            :: ctchanged, is_OutPoint, is_interaction_active
 
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 
@@ -48,6 +49,8 @@ contains
 
     ndof = hecMAT%NDOF
     nn = ndof*ndof
+
+    is_interaction_active = ( associated( fstrSOLID%contacts ) .or. associated( fstrSOLID%embeds ) )
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
       fstrSOLID%last_temp = 0.0d0
@@ -67,7 +70,7 @@ contains
                 allocate( fstrSOLID%temperature( hecMESH%n_node ) )
                 allocate( fstrSOLID%temp_bak( hecMESH%n_node ) )
                 allocate( fstrSOLID%last_temp( hecMESH%n_node ) )
-            endif 
+            endif
             do i= 1, hecMESH%n_node
               fstrSOLID%last_temp(i) = g_InitialCnd(j)%realval(i)
               fstrSOLID%temperature(i) = fstrSOLID%last_temp(i)
@@ -76,7 +79,11 @@ contains
       end do
     endif
 
-    if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+    if( associated( fstrSOLID%contacts ) ) then
+      call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
+    endif
+    if( fstrSOLID%n_embeds > 0 ) call initialize_embed_vectors(fstrSOLID,hecMAT)
 
     restart_step_num    = 1
     restart_substep_num = 1
@@ -142,22 +149,16 @@ contains
         time_1 = hecmw_Wtime()
 
         ! analysis algorithm ( Newton-Rapshon Method )
-        if( .not. associated( fstrSOLID%contacts ) ) then
+        if( .not. is_interaction_active ) then
           call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
             restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
         else
           if( fstrPARAM%contact_algo == kcaSLagrange ) then
-            ! For Parallel Contact with Multi-Partition Domains
-            if(paraContactFlag.and.present(conMAT)) then
-              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
-                restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
-            else
-              call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrMAT,  &
-                restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
-            endif
+            call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT,  &
+              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
           else if( fstrPARAM%contact_algo == kcaALagrange ) then
             call fstr_Newton_contactALag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,            &
-              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange )
+              restart_step_num, restart_substep_num, sub_step, fstr_get_time(), fstr_get_timeinc(), infoCTChange, conMAT )
           endif
         endif
 
@@ -184,14 +185,11 @@ contains
             call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
 
             ! restore matrix structure for slagrange contact analysis
-            if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaSLagrange ) then
-              if(paraContactFlag.and.present(conMAT)) then
-                call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange, conMAT)
-                conMAT%B(:) = 0.0d0
-              else
-                call fstr_mat_con_contact( tot_step, hecMAT, fstrSOLID, fstrMAT, infoCTChange)
-              endif
-              call solve_LINEQ_contact_init(hecMESH, hecMAT, fstrMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
+            if( is_interaction_active .and. fstrPARAM%contact_algo == kcaSLagrange ) then
+              call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
+                &  infoCTChange, conMAT, fstr_is_contact_active())
+              conMAT%B(:) = 0.0d0
+              call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif
             if( hecMESH%my_rank == 0 ) write(*,*) '### State has been restored at time =',fstr_get_time()
 
@@ -218,9 +216,11 @@ contains
         step_count = step_count + 1
 
         ! ----- Restart
-        if( fstrSOLID%restart_nout > 0 .and. mod(step_count,fstrSOLID%restart_nout) == 0 ) then
-          call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),  &
-            & fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
+        if( fstrSOLID%restart_nout > 0) then
+          if( mod(step_count,fstrSOLID%restart_nout) == 0 ) then
+            call fstr_write_restart(tot_step,tot_step_print,sub_step,step_count,fstr_get_time(),  &
+              & fstr_get_timeinc_base(), hecMESH,fstrSOLID,fstrPARAM,.false.,infoCTChange%contactNode_current)
+          endif
         endif
 
         ! ----- Result output (include visualize output)

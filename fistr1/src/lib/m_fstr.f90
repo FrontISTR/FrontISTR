@@ -11,7 +11,7 @@
 !     in fstr_setup.f90                                                !
 !  5) If initial values are necessary, set the value                   !
 !     in subroutine fstr_setup_init in fstr_setup.f90                  !
-!> This module defined coomon data and basic structures for analysis
+!> \brief  This module defines common data and basic structures for analysis
 module m_fstr
   use hecmw
   use m_common_struct
@@ -48,6 +48,8 @@ module m_fstr
   integer(kind=kint), parameter :: ksmBiCGSTAB = 2
   integer(kind=kint), parameter :: ksmGMRES    = 3
   integer(kind=kint), parameter :: ksmGPBiCG   = 4
+  integer(kind=kint), parameter :: ksmGMRESR   = 5
+  integer(kind=kint), parameter :: ksmGMRESREN = 6
   integer(kind=kint), parameter :: ksmDIRECT   = 101
 
   !> contact analysis algorithm
@@ -66,6 +68,9 @@ module m_fstr
   integer(kind=kint), parameter :: restart_outAll  = 2
 
   !> section control
+  integer(kind=kint), parameter :: kel341FI     =  1
+  integer(kind=kint), parameter :: kel341SESNS  =  2
+
   integer(kind=kint), parameter :: kel361FI     =  1
   integer(kind=kint), parameter :: kel361BBAR   =  2
   integer(kind=kint), parameter :: kel361IC     =  3
@@ -150,6 +155,7 @@ module m_fstr
     integer(kind=kint), pointer:: itmax(:) !< (/=ITMAX)
     real(kind=kreal), pointer  :: eps(:)   !< (/=ESP)
     real(kind=kreal)           :: ref_temp !< (=REF_TEMP)
+    integer(kind=kint)         :: timepoint_id !< time point ID for heat analysis
 
     !> output control
     integer(kind=kint) :: fg_echo       !< output echo   (kYES/kNO) (=IECHO)
@@ -180,6 +186,7 @@ module m_fstr
 
     !> for contact analysis
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
+    type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
 
     !> for auto increment and cutback
     type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control
@@ -203,6 +210,7 @@ module m_fstr
     real(kind=kreal), pointer :: ESTRESS(:) => null()  !< elemental stress
     real(kind=kreal), pointer :: ESTRAIN(:) => null()  !< elemental strain
     real(kind=kreal), pointer :: EMISES(:) => null()   !< elemental MISES
+    real(kind=kreal), pointer :: EPLSTRAIN(:) => null()   !< elemental plastic strain
 
     real(kind=kreal), pointer :: EPSTRESS(:) => null()  !< elemental principal stress
     real(kind=kreal), pointer :: EPSTRAIN(:) => null()  !< elemental principal strain
@@ -218,7 +226,7 @@ module m_fstr
 
   type fstr_solid
     integer(kind=kint) :: file_type  ! kbcfFSTR or kbcfNASTRAN
-    integer(kind=kint) :: StaticType ! 1:Total, 2:Updated, 3:Infinite
+    integer(kind=kint) :: StaticType ! 1:Total, 2:Updated, 3:Infinitesimal
     integer(kind=kint) :: nstep_tot
 
     type(step_info), pointer       :: step_ctrl(:)  =>null()   !< step information
@@ -265,7 +273,7 @@ module m_fstr
     integer(kind=kint), pointer :: CLOAD_ngrp_centerID  (:) =>null()
 
     !> DLOAD
-    integer(kind=kint) :: DLOAD_ngrp_tot                       !< Following distrubuted external load
+    integer(kind=kint) :: DLOAD_ngrp_tot                       !< Following distributed external load
     integer(kind=kint) :: DLOAD_follow
     integer(kind=kint), pointer :: DLOAD_ngrp_GRPID     (:) =>null()
     integer(kind=kint), pointer :: DLOAD_ngrp_ID        (:)
@@ -274,10 +282,11 @@ module m_fstr
     real(kind=kreal), pointer   :: DLOAD_ngrp_params    (:,:)
 
     !> TEMPERATURE
-    integer(kind=kint) :: TEMP_ngrp_tot                        !< Following tempearture conditions
+    integer(kind=kint) :: TEMP_ngrp_tot                        !< Following temperature conditions
     integer(kind=kint) :: TEMP_irres
     integer(kind=kint) :: TEMP_tstep
     integer(kind=kint) :: TEMP_interval
+    integer(kind=kint) :: TEMP_rtype      ! type of reading result; 1: step-based; 2: time-based
     real(kind=kreal)   :: TEMP_FACTOR
     integer(kind=kint), pointer :: TEMP_ngrp_GRPID     (:) =>null()
     integer(kind=kint), pointer :: TEMP_ngrp_ID        (:)
@@ -331,6 +340,11 @@ module m_fstr
     real(kind=kreal), pointer :: CONT_FRIC(:)    !< contact friction force for output
     real(kind=kreal), pointer :: CONT_RELVEL(:)  !< contact ralative velocity for output
     real(kind=kreal), pointer :: CONT_STATE(:)   !< contact state for output
+    integer(kind=kint), pointer :: CONT_SGRP_ID(:) !< contact element surf ids for output
+    real(kind=kreal), pointer :: CONT_AREA(:)    !< contact area
+    real(kind=kreal), pointer :: CONT_NTRAC(:)   !< contact normal traction force for output
+    real(kind=kreal), pointer :: CONT_FTRAC(:)   !< contact friction traction force for output
+    real(kind=kreal), pointer :: EMBED_NFORCE(:)  !< embed force for output
 
     type(fstr_solid_physic_val), pointer :: SOLID=>null()     !< for solid physical value stracture
     type(fstr_solid_physic_val), pointer :: SHELL=>null()     !< for shell physical value stracture
@@ -343,13 +357,16 @@ module m_fstr
     integer(kind=kint) :: restart_nin    !< input number of restart
     type(step_info)    :: step_ctrl_restart  !< step information for restart
 
-    integer(kind=kint) :: max_lyr        !< maximun num of layer
+    integer(kind=kint) :: max_lyr          !< maximum num of layer
     integer(kind=kint) :: is_33shell
     integer(kind=kint) :: is_33beam
     integer(kind=kint) :: is_heat
+    integer(kind=kint) :: max_ncon_stf     !< maximum num of stiffness matrix size
+    integer(kind=kint) :: max_ncon         !< maximum num of element connectivity
     integer(kind=kint), pointer :: is_rot(:) => null()
     integer(kind=kint) :: elemopt361
-    real(kind=kreal)   :: FACTOR     (2)      !< factor of incrementation
+    logical            :: is_smoothing_active
+    real(kind=kreal)   :: FACTOR     (2)   !< factor of incrementation
     !< 1:time t  2: time t+dt
     !> for increment control
     integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
@@ -357,22 +374,25 @@ module m_fstr
     integer(kind=kint) :: AutoINC_stat     !< status of auto-increment control
     integer(kind=kint) :: CutBack_stat     !< status of cutback control
 
-    real(kind=kreal), pointer :: GL          (:)           !< exnternal force
-    real(kind=kreal), pointer :: EFORCE      (:)           !< exnternal force
+    real(kind=kreal), pointer :: GL          (:)           !< external force
+    real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
-    real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp icrement
+    real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp increment
     real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
     real(kind=kreal), pointer :: temp_bak(:)   => null()
     real(kind=kreal), pointer :: last_temp(:)  => null()
 
     type( tElement ), pointer :: elements(:)   =>null()  !< elements information
     type( tMaterial ),pointer :: materials(:)  =>null()  !< material properties
+    integer                   :: n_contacts              !< number of contact conditions
     type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
+    integer                   :: n_embeds               !< number of embed conditions
+    type( tContact ), pointer :: embeds(:)   =>null()  !< contact information
     integer                   :: n_fix_mpc               !< number mpc conditions user defined
     real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
-    type(tSection), pointer   :: sections(:)   =>null()  !< definition of setion referred by elements(i)%sectionID
+    type(tSection), pointer   :: sections(:)   =>null()  !< definition of section referred by elements(i)%sectionID
 
     ! for cutback
     ! ####################### Notice #######################
@@ -386,6 +406,7 @@ module m_fstr
     real(kind=kreal), pointer :: last_temp_bkup(:) => null()
     type( tElement ), pointer :: elements_bkup(:)  =>null()  !< elements information (backup)
     type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
+    type( tContact ), pointer :: embeds_bkup(:)  =>null()  !< contact information (backup)
   end type fstr_solid
 
   !> Data for HEAT ANSLYSIS  (fstrHEAT)
@@ -400,6 +421,7 @@ module m_fstr
     integer(kind=kint) :: restart_nout
     real(kind=kreal), pointer :: STEP_DLTIME(:), STEP_EETIME(:)
     real(kind=kreal), pointer :: STEP_DELMIN(:), STEP_DELMAX(:)
+    integer(kind=kint) :: timepoint_id
 
     !> MATERIAL
     integer(kind=kint) :: MATERIALtot
@@ -612,7 +634,7 @@ module m_fstr
     !integer              :: iset
     !integer              :: orien_ID
     !real(kind=kreal)     :: thickness
-    !integer              :: elemopt341
+    integer              :: elemopt341
     !integer              :: elemopt342
     !integer              :: elemopt351
     !integer              :: elemopt352
@@ -1037,6 +1059,16 @@ contains
     fstr_isDummyActive = isDummyActive( nbc, fstrSOLID%step_ctrl(cstep) )
   end function
 
+  logical function fstr_isEmbedActive( fstrSOLID, nbc, cstep )
+    type(fstr_solid)     :: fstrSOLID !< type fstr_solid
+    integer, intent(in) :: nbc       !< group id of boundary condition
+    integer, intent(in) :: cstep     !< current step number
+    fstr_isEmbedActive = .true.
+    if( .not. associated(fstrSOLID%step_ctrl) ) return
+    if( cstep>fstrSOLID%nstep_tot ) return
+    fstr_isEmbedActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
+  end function
+
   !> This subroutine fetch coords defined by local coordinate system
   subroutine get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
     integer, intent(in)             :: cdsys_ID      !< id of local coordinate
@@ -1103,7 +1135,6 @@ contains
   subroutine fstr_solid_phys_clear(fstrSOLID)
     implicit none
     type (fstr_solid)         :: fstrSOLID
-    type(fstr_solid_physic_val), pointer :: phys
     integer(kind=kint) :: i
 
     if (associated(fstrSOLID%SOLID)) then

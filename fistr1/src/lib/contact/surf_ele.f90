@@ -2,15 +2,16 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> \brief  This module manage surface elements in 3D
+!> \brief  This module manages surface elements in 3D
 !>  It provides basic definition of surface elements (trianglar and quadrilateral)
-!!  and functions for fetch its neighborhood information
+!!  and functions for fetching its neighborhood information
 module mSurfElement
   use hecmw, only: kint, kreal
   implicit none
 
   integer(kind=kint), parameter       :: l_max_surface_node =20
   integer(kind=kint), parameter       :: l_max_elem_node = 100
+  integer(kind=kint), parameter       :: l_max_elem_surf = 6
 
   integer(kind=kint), parameter       :: N_NEIGHBOR_MAX_INIT = 8
 
@@ -20,7 +21,7 @@ module mSurfElement
     integer(kind=kint)              :: etype                !< type of surface element
     integer(kind=kint), pointer     :: nodes(:)=>null()     !< nodes index(global)
     integer(kind=kint)              :: n_neighbor           !< number of neighborhood tSurfElement
-    integer(kind=kint)              :: n_neighbor_max       !< maximum size of neighber(:)
+    integer(kind=kint)              :: n_neighbor_max       !< maximum size of neighbor(:)
     integer(kind=kint), pointer     :: neighbor(:)=>null()  !< index(global) of neighborhood tSurfElement
     real(kind=kreal)                :: reflen               !< reference length
     real(kind=kreal)                :: xavg(3)              !< current coordinate of element center
@@ -39,14 +40,22 @@ contains
     integer(kind=kint), intent(in)    :: etype  !< element type
     integer(kind=kint), intent(in)    :: nsurf  !< surface ID
     type(tSurfElement), intent(inout) :: surf   !< surface element
-    integer(kind=kint) :: n, outtype, nodes(100)
+    integer(kind=kint) :: i, n, outtype, nodes(100)
     surf%eid = eid
-    call getSubFace( etype, nsurf, outtype, nodes )
-    surf%etype = outtype
-    n=getNumberOfNodes( outtype )
+
+    if( nsurf > 0 ) then
+      call getSubFace( etype, nsurf, outtype, nodes )
+      surf%etype = outtype
+      n=getNumberOfNodes( outtype )
+    else !treat 3d master element as it is
+      surf%etype = etype
+      n=getNumberOfNodes( etype )
+      do i=1,n
+        nodes(i) = i
+      enddo
+    endif
     allocate( surf%nodes(n) )
     surf%nodes(1:n)=nodes(1:n)
-    n=getNumberOfSubface( outtype )
     surf%n_neighbor = 0
     surf%n_neighbor_max = 0
     surf%reflen  = -1.d0
@@ -55,7 +64,7 @@ contains
     surf%bktID   = -1
   end subroutine
 
-  !> Memeory management subroutine
+  !> Memory management subroutine
   subroutine finalize_surf( surf )
     type(tSurfElement), intent(inout) :: surf   !< surface element
     if( associated(surf%nodes) ) deallocate( surf%nodes )
@@ -257,7 +266,6 @@ contains
     real(kind=kreal), intent(in) :: x0(3)      !< coordinate of slave node
     real(kind=kreal), intent(in) :: exp_rate   !< expansion rate (>1.0)
     real(kind=kreal) :: dist(3), er
-    integer(kind=kint) :: i
     er = max(exp_rate, 1.d0)
     dist(:) = abs(x0(:) - surf%xavg(:))
     if ( maxval(dist(:)) < surf%dmax * er ) then

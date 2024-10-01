@@ -65,12 +65,14 @@ contains
     real(kind=kreal) :: X1, X2, X3
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_3_R (hecMESH, X, hecMAT%NP)
+    call hecmw_update_R (hecMESH, X, hecMAT%NP, 3)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
     D => hecMAT%D
 
+    !$OMP PARALLEL PRIVATE(i)
+    !$OMP DO
     do i= 1, hecMAT%N
       X1= X(3*i-2)
       X2= X(3*i-1)
@@ -79,6 +81,9 @@ contains
       Y(3*i -1)= D(9*i-5)*X1 + D(9*i-4)*X2 + D(9*i-3)*X3
       Y(3*i   )= D(9*i-2)*X1 + D(9*i-1)*X2 + D(9*i  )*X3
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
+
     call MATJAD(hecMAT%N, MJAD, IAJAD, JAJAD, AJAD, JADORD, X, Y, WP1, WP2, WP3)
   end subroutine hecmw_JAD_MATVEC_33
 
@@ -170,13 +175,17 @@ contains
     integer(kind=kint) :: I, K, NZ, IXX
     real(kind=kreal)   :: X1, X2, X3
 
+    !$OMP PARALLEL PRIVATE(I,K,X1,X2,X3,IXX)
+    !$OMP DO
     do I=1,N
       W1(I)=0.D0
       W2(I)=0.D0
       W3(I)=0.D0
     enddo
+    !$OMP END DO
 
     do NZ=1,MJAD
+      !$OMP DO
       do K=IAJAD(NZ),IAJAD(NZ+1)-1
         X1=X(JAJAD(K)*3-2)
         X2=X(JAJAD(K)*3-1)
@@ -186,13 +195,17 @@ contains
         W2(IXX)=W2(IXX) + AJAD(K*9-5)*X1 + AJAD(K*9-4)*X2 + AJAD(K*9-3)*X3
         W3(IXX)=W3(IXX) + AJAD(K*9-2)*X1 + AJAD(K*9-1)*X2 + AJAD(K*9-0)*X3
       enddo
+      !$OMP END DO
     enddo
 
+    !$OMP DO
     do I=1,N
       Y(3*I-2)=Y(3*I-2)+W1(JADORD(I))
       Y(3*I-1)=Y(3*I-1)+W2(JADORD(I))
       Y(3*I  )=Y(3*I  )+W3(JADORD(I))
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
   end subroutine MATJAD
 
 end module hecmw_JAD_TYPE_33

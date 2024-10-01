@@ -1,0 +1,70 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO,TYPE=SLAGRANGE
+!WRITE,LOG
+!WRITE,RESULT,FREQUENCY=9999
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRAIN,OFF
+NSTRESS,ON
+NMISES,ON
+ESTRAIN,OFF
+ESTRESS,ON
+EMISES,ON
+ISTRAIN,ON
+ISTRESS,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_RELVEL,ON
+CONTACT_STATE,ON
+CONTACT_FTRACTION,ON
+CONTACT_NTRACTION,ON
+!SOLVER,METHOD=GMRES,PRECOND=5,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_3,1,1
+ SET_3,2,2
+ SET_3,3,3
+!DLOAD, GRPID=1
+SURF_5,S,3.0
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1
+CP1,0.2,50.0
+!CONTACT, INTERACTION=FSLID, GRPID=2
+CP2,0.0,50.0
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, INC_TYPE=AUTO, SUBSTEPS=200
+0.1, 1.0, 1E-5, 1.0
+BOUNDARY,1
+LOAD,1
+CONTACT,1
+CONTACT,2
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+#!WRITE,VISUAL
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = BIN_VTK
+!END

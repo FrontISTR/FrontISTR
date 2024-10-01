@@ -312,12 +312,16 @@ static int get_boundary_nodelist(const struct hecmwST_local_mesh *global_mesh,
 
   qsort(bnd_nlist[domain], counter, sizeof(int), int_cmp);
 
-  i = 1;
-  for (j = 1; j < counter; j++) {
-    if (bnd_nlist[domain][j - 1] != bnd_nlist[domain][j]) {
-      bnd_nlist[domain][i] = bnd_nlist[domain][j];
-      i++;
+  if (counter > 1) {
+    i = 1;
+    for (j = 1; j < counter; j++) {
+      if (bnd_nlist[domain][j - 1] != bnd_nlist[domain][j]) {
+        bnd_nlist[domain][i] = bnd_nlist[domain][j];
+        i++;
+      }
     }
+  } else {
+    i = counter;
   }
 
   n_bnd_nlist[2 * domain + 1] = i;
@@ -1176,6 +1180,7 @@ static int init_struct_contact_pair(struct hecmwST_local_mesh *local_mesh) {
   local_mesh->contact_pair->name          = NULL;
   local_mesh->contact_pair->type          = NULL;
   local_mesh->contact_pair->slave_grp_id  = NULL;
+  local_mesh->contact_pair->slave_orisgrp_id  = NULL;
   local_mesh->contact_pair->master_grp_id = NULL;
 
   return RTC_NORMAL;
@@ -1376,6 +1381,9 @@ static void clean_struct_contact_pair(struct hecmwST_local_mesh *local_mesh) {
   }
   if (local_mesh->contact_pair->slave_grp_id) {
     HECMW_free(local_mesh->contact_pair->slave_grp_id);
+  }
+  if (local_mesh->contact_pair->slave_orisgrp_id) {
+    HECMW_free(local_mesh->contact_pair->slave_orisgrp_id);
   }
   if (local_mesh->contact_pair->master_grp_id) {
     HECMW_free(local_mesh->contact_pair->master_grp_id);
@@ -2655,7 +2663,12 @@ static int metis_partition_nb_contact_agg(
       rtc =
           contact_agg_mark_node_group(mark, global_mesh, gid, agg_id, &agg_dup);
       if (rtc != RTC_NORMAL) goto error;
-    } else { /* HECMW_CONTACT_TYPE_SURF_SURF */
+    } else if(cp->type[i] == HECMW_CONTACT_TYPE_SURF_SURF) {
+      gid = cp->slave_grp_id[i];
+      rtc =
+          contact_agg_mark_surf_group(mark, global_mesh, gid, agg_id, &agg_dup);
+      if (rtc != RTC_NORMAL) goto error;
+    } else if(cp->type[i] == HECMW_CONTACT_TYPE_NODE_ELEM) {
       gid = cp->slave_grp_id[i];
       rtc =
           contact_agg_mark_surf_group(mark, global_mesh, gid, agg_id, &agg_dup);
@@ -3490,7 +3503,7 @@ static int mask_elem_by_domain_mod(char *elem_flag, int current_domain) {
 }
 
 #if 0
-/* For Additional overlap for explicite DOF elimination for MPC */
+/* For Additional overlap for explicit DOF elimination for MPC */
 /* NO LONGER NEEDED because node-migration implemented */
 static int mask_slave_node(const struct hecmwST_local_mesh *global_mesh,
                            char *node_flag, int current_domain) {
@@ -3573,7 +3586,7 @@ static int mask_boundary_node_mod(const struct hecmwST_local_mesh *global_mesh,
 }
 
 #if 0
-/* For Additional overlap for explicite DOF elimination for MPC */
+/* For Additional overlap for explicit DOF elimination for MPC */
 /* NO LONGER NEEDED because node-migration implemented */
 static int mask_boundary_elem_with_slave(
     const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
@@ -3679,10 +3692,12 @@ static int mask_contact_slave_surf(const struct hecmwST_local_mesh *global_mesh,
   struct hecmwST_contact_pair *cp;
   struct hecmwST_surf_grp *sgrp;
   struct hecmwST_node_grp *ngrp;
+  struct hecmwST_elem_grp *egrp;
 
   cp   = global_mesh->contact_pair;
   sgrp = global_mesh->surf_group;
   ngrp = global_mesh->node_group;
+  egrp = global_mesh->elem_group;
 
   for (i = 0; i < cp->n_pair; i++) {
     switch (cp->type[i]) {
@@ -3808,6 +3823,58 @@ static int mask_contact_slave_surf(const struct hecmwST_local_mesh *global_mesh,
         }
       }
       break;
+
+    case HECMW_CONTACT_TYPE_NODE_ELEM:
+      /* if any elem of master surf is internal */
+      evalsum    = 0;
+      master_gid = cp->master_grp_id[i];
+      jstart     = egrp->grp_index[master_gid - 1];
+      jend       = egrp->grp_index[master_gid];
+      for (j = jstart; j < jend; j++) {
+        elem = egrp->grp_item[j];
+        if (EVAL_BIT(elem_flag[elem - 1], INTERNAL)) {
+          evalsum++;
+          break;
+        }
+      }
+      if (evalsum) {
+        /* mask all external slave nodes as BOUNDARY (but not OVERLAP) */
+        slave_gid = cp->slave_grp_id[i];
+        jstart    = ngrp->grp_index[slave_gid - 1];
+        jend      = ngrp->grp_index[slave_gid];
+        for (j = jstart; j < jend; j++) {
+          node = ngrp->grp_item[j];
+          if (!EVAL_BIT(node_flag[node - 1], INTERNAL)) {
+            MASK_BIT(node_flag[node - 1], BOUNDARY);
+          }
+        }
+      }
+      /* if any elem of master surf is external */
+      evalsum    = 0;
+      master_gid = cp->master_grp_id[i];
+      jstart     = egrp->grp_index[master_gid - 1];
+      jend       = egrp->grp_index[master_gid];
+      for (j = jstart; j < jend; j++) {
+        elem = egrp->grp_item[j];
+        if (!EVAL_BIT(elem_flag[elem - 1], INTERNAL)) {
+          evalsum++;
+          break;
+        }
+      }
+      if (evalsum) {
+        /* mask all internal slave nodes as BOUNDARY (but not OVERLAP) */
+        slave_gid = cp->slave_grp_id[i];
+        jstart    = ngrp->grp_index[slave_gid - 1];
+        jend      = ngrp->grp_index[slave_gid];
+        for (j = jstart; j < jend; j++) {
+          node = ngrp->grp_item[j];
+          if (EVAL_BIT(node_flag[node - 1], INTERNAL)) {
+            MASK_BIT(node_flag[node - 1], BOUNDARY);
+          }
+        }
+      }
+      break;
+
     default:
       return RTC_ERROR;
     }
@@ -3836,7 +3903,7 @@ static int mask_mesh_status_nb(const struct hecmwST_local_mesh *global_mesh,
   if (rtc != RTC_NORMAL) goto error;
 
 #if 0
-  /* Additional overlap for explicite DOF elimination for MPC */
+  /* Additional overlap for explicit DOF elimination for MPC */
   /* NO LONGER NEEDED because node-migration implemented */
   if (global_mesh->mpc->n_mpc > 0) {
     int added = 0;
@@ -4050,10 +4117,12 @@ static int mask_neighbor_domain_nb_contact(
   struct hecmwST_contact_pair *cp;
   struct hecmwST_surf_grp *sgrp;
   struct hecmwST_node_grp *ngrp;
+  struct hecmwST_elem_grp *egrp;
 
   cp   = global_mesh->contact_pair;
   sgrp = global_mesh->surf_group;
   ngrp = global_mesh->node_group;
+  egrp = global_mesh->elem_group;
 
   for (i = 0; i < cp->n_pair; i++) {
     /* if any slave node is internal */
@@ -4088,18 +4157,41 @@ static int mask_neighbor_domain_nb_contact(
         if (evalsum) break;
       }
       break;
+    case HECMW_CONTACT_TYPE_NODE_ELEM:
+      slave_gid = cp->slave_grp_id[i];
+      jstart    = ngrp->grp_index[slave_gid - 1];
+      jend      = ngrp->grp_index[slave_gid];
+      for (j = jstart; j < jend; j++) {
+        node = ngrp->grp_item[j];
+        if (EVAL_BIT(node_flag[node - 1], INTERNAL)) {
+          evalsum++;
+          break;
+        }
+      }
+      break;
     default:
       return RTC_ERROR;
     }
     /* the domain to which elems of the master surf belong is neighbor */
     if (evalsum) {
       master_gid = cp->master_grp_id[i];
-      jstart     = sgrp->grp_index[master_gid - 1];
-      jend       = sgrp->grp_index[master_gid];
-      for (j = jstart; j < jend; j++) {
-        elem = sgrp->grp_item[j * 2];
-        if (!EVAL_BIT(elem_flag[elem - 1], INTERNAL)) {
-          MASK_BIT(domain_flag[global_mesh->elem_ID[2 * (elem - 1) + 1]], MASK);
+      if( cp->type[i] == HECMW_CONTACT_TYPE_NODE_ELEM ) {
+        jstart     = egrp->grp_index[master_gid - 1];
+        jend       = egrp->grp_index[master_gid];
+        for (j = jstart; j < jend; j++) {
+          elem = egrp->grp_item[j];
+          if (!EVAL_BIT(elem_flag[elem - 1], INTERNAL)) {
+            MASK_BIT(domain_flag[global_mesh->elem_ID[2 * (elem - 1) + 1]], MASK);
+          }
+        }
+      } else {
+        jstart     = sgrp->grp_index[master_gid - 1];
+        jend       = sgrp->grp_index[master_gid];
+        for (j = jstart; j < jend; j++) {
+          elem = sgrp->grp_item[j * 2];
+          if (!EVAL_BIT(elem_flag[elem - 1], INTERNAL)) {
+            MASK_BIT(domain_flag[global_mesh->elem_ID[2 * (elem - 1) + 1]], MASK);
+          }
         }
       }
     }
@@ -6755,7 +6847,7 @@ static int const_import_item(struct hecmwST_local_mesh *local_mesh,
 
   HECMW_assert(local_mesh->n_neighbor_pe > 0);
   HECMW_assert(local_mesh->import_index);
-  HECMW_assert(local_mesh->import_index[local_mesh->n_neighbor_pe] > 0);
+  HECMW_assert(local_mesh->import_index[local_mesh->n_neighbor_pe] >= 0);
   HECMW_assert(local_mesh->import_item);
 
   for (i = 0; i < local_mesh->import_index[local_mesh->n_neighbor_pe]; i++) {
@@ -6778,7 +6870,7 @@ static int const_export_item(struct hecmwST_local_mesh *local_mesh,
 
   HECMW_assert(local_mesh->n_neighbor_pe > 0);
   HECMW_assert(local_mesh->export_index);
-  HECMW_assert(local_mesh->export_index[local_mesh->n_neighbor_pe] > 0);
+  HECMW_assert(local_mesh->export_index[local_mesh->n_neighbor_pe] >= 0);
   HECMW_assert(local_mesh->export_item);
 
   for (i = 0; i < local_mesh->export_index[local_mesh->n_neighbor_pe]; i++) {
@@ -6801,7 +6893,7 @@ static int const_shared_item(struct hecmwST_local_mesh *local_mesh,
 
   HECMW_assert(local_mesh->n_neighbor_pe > 0);
   HECMW_assert(local_mesh->shared_index);
-  HECMW_assert(local_mesh->shared_index[local_mesh->n_neighbor_pe] > 0);
+  HECMW_assert(local_mesh->shared_index[local_mesh->n_neighbor_pe] >= 0);
   HECMW_assert(local_mesh->shared_item);
 
   for (i = 0; i < local_mesh->shared_index[local_mesh->n_neighbor_pe]; i++) {
@@ -8338,6 +8430,30 @@ error:
   return RTC_ERROR;
 }
 
+static int const_contact_pair_slave_orisgrp_id(
+    const struct hecmwST_local_mesh *global_mesh,
+    struct hecmwST_local_mesh *local_mesh) {
+  struct hecmwST_contact_pair *cpair_global = global_mesh->contact_pair;
+  struct hecmwST_contact_pair *cpair_local  = local_mesh->contact_pair;
+  int i;
+
+  cpair_local->slave_orisgrp_id =
+      (int *)HECMW_calloc(cpair_local->n_pair, sizeof(int));
+  if (cpair_local->slave_orisgrp_id == NULL) {
+    HECMW_set_error(errno, "");
+    goto error;
+  }
+
+  for (i = 0; i < cpair_global->n_pair; i++) {
+    cpair_local->slave_orisgrp_id[i] = cpair_global->slave_orisgrp_id[i];
+  }
+
+  return RTC_NORMAL;
+
+error:
+  return RTC_ERROR;
+}
+
 static int const_contact_pair_master_grp_id(
     const struct hecmwST_local_mesh *global_mesh,
     struct hecmwST_local_mesh *local_mesh) {
@@ -8386,6 +8502,9 @@ static int const_contact_pair_info(const struct hecmwST_local_mesh *global_mesh,
   if (rtc != RTC_NORMAL) goto error;
 
   rtc = const_contact_pair_slave_grp_id(global_mesh, local_mesh);
+  if (rtc != RTC_NORMAL) goto error;
+
+  rtc = const_contact_pair_slave_orisgrp_id(global_mesh, local_mesh);
   if (rtc != RTC_NORMAL) goto error;
 
   rtc = const_contact_pair_master_grp_id(global_mesh, local_mesh);

@@ -65,12 +65,14 @@ contains
     real(kind=kreal) :: X1, X2, X3, X4
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_4_R (hecMESH, X, hecMAT%NP)
+    call hecmw_update_R (hecMESH, X, hecMAT%NP, 4)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
     D => hecMAT%D
 
+    !$OMP PARALLEL PRIVATE(i)
+    !$OMP DO
     do i= 1, hecMAT%N
       X1= X(4*i-3)
       X2= X(4*i-2)
@@ -81,6 +83,8 @@ contains
       Y(4*i-1)= D(16*i- 7)*X1 + D(16*i- 6)*X2 + D(16*i- 5)*X3 + D(16*i- 4)*X4
       Y(4*i  )= D(16*i- 3)*X1 + D(16*i- 2)*X2 + D(16*i- 1)*X3 + D(16*i- 0)*X4
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
     call MATJAD(hecMAT%N, MJAD, IAJAD, JAJAD, AJAD, JADORD, X, Y, WP1, WP2, WP3, WP4)
   end subroutine hecmw_JAD_MATVEC_44
 
@@ -172,14 +176,18 @@ contains
     integer(kind=kint) :: I, K, NZ, IXX
     real(kind=kreal)   :: X1, X2, X3, X4
 
+    !$OMP PARALLEL PRIVATE(I,K,X1,X2,X3,X4,IXX)
+    !$OMP DO
     do I=1,N
       W1(I)=0.D0
       W2(I)=0.D0
       W3(I)=0.D0
       W4(I)=0.D0
     enddo
+    !$OMP END DO
 
     do NZ=1,MJAD
+      !$OMP DO
       do K=IAJAD(NZ),IAJAD(NZ+1)-1
         X1=X(JAJAD(K)*4-3)
         X2=X(JAJAD(K)*4-2)
@@ -191,14 +199,18 @@ contains
         W3(IXX)=W3(IXX) + AJAD(K*16- 7)*X1 + AJAD(K*16- 6)*X2 + AJAD(K*16- 5)*X3 + AJAD(K*16- 4)*X4
         W4(IXX)=W4(IXX) + AJAD(K*16- 3)*X1 + AJAD(K*16- 2)*X2 + AJAD(K*16- 1)*X3 + AJAD(K*16- 0)*X4
       enddo
+      !$OMP END DO
     enddo
 
+    !$OMP DO
     do I=1,N
       Y(4*I-3)=Y(4*I-3)+W1(JADORD(I))
       Y(4*I-2)=Y(4*I-2)+W2(JADORD(I))
       Y(4*I-1)=Y(4*I-1)+W3(JADORD(I))
       Y(4*I  )=Y(4*I  )+W4(JADORD(I))
     enddo
+    !$OMP END DO
+    !$OMP END PARALLEL
   end subroutine MATJAD
 
 end module hecmw_JAD_TYPE_44

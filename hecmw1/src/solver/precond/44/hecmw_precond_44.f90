@@ -62,7 +62,8 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
     real(kind=kreal), intent(in) :: R(:)
-    real(kind=kreal), intent(out) :: Z(:), ZP(:)
+    real(kind=kreal), intent(inout) :: ZP(:)
+    real(kind=kreal), intent(inout) :: Z(:)
     real(kind=kreal), intent(inout) :: time_precond
     real(kind=kreal), intent(inout) :: COMMtime
     integer(kind=kint ) :: i, iterPRE, iterPREmax

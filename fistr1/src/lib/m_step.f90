@@ -2,7 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!>   This module manages step infomation
+!> \brief  This module manages step information
 module m_step
   use hecmw
   implicit none
@@ -28,6 +28,7 @@ module m_step
     character( len=80 ) :: ConvControl        !< Judgement of convergency, such as nodal force residual
     !< disp increment, energy
     real(kind=kreal)    :: converg            !< value of convergent judgement
+    real(kind=kreal)    :: converg_lag        !< value of convergent judgement (Lagrange)
     real(kind=kreal)    :: maxres             !< upper bound of NR residual
 
     integer :: num_substep                    !< substeps user given
@@ -44,7 +45,7 @@ module m_step
     integer, pointer :: Contact(:)=>null()    !< active group of contact conditions of current step
     integer, pointer :: Dummy(:)=>null()      !< active group of dummy conditions of current step
     integer :: timepoint_id                   !< id of timepoint
-    integer :: AincParam_id                   !< id of auto increment paramter
+    integer :: AincParam_id                   !< id of auto increment parameter
   end type
 
   type tParamAutoInc
@@ -76,6 +77,7 @@ contains
     stepinfo%elapsetime = 1.d0
     stepinfo%starttime = 0.d0
     stepinfo%converg = 1.d-3
+    stepinfo%converg_lag = 1.d-4
     stepinfo%maxres = 1.d+10
     stepinfo%timepoint_id = 0
     stepinfo%AincParam_id = 0
@@ -175,7 +177,7 @@ contains
 
   !> Initializer
   subroutine init_AincParam( aincparam )
-    type( tParamAutoInc ), intent(out) :: aincparam !< auto increment paramter
+    type( tParamAutoInc ), intent(out) :: aincparam !< auto increment parameter
 
     aincparam%name      = ''
     aincparam%ainc_Rs   = 0.25d0

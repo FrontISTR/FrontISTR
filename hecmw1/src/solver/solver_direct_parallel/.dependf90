@@ -1,0 +1,9 @@
+hecmw_solver_direct_parallel.o : hecmw_solver_direct_parallel.F90 m_crs_matrix.o m_elap.o m_matrix_partition_info.o m_irjc_matrix.o m_child_matrix.o 
+m_cclsmatrix.o : m_cclsmatrix.f90 
+m_child_matrix.o : m_child_matrix.f90 m_irjc_matrix.o 
+m_crs_matrix.o : m_crs_matrix.f90 
+m_elap.o : m_elap.F90 
+m_irjc_matrix.o : m_irjc_matrix.f90 
+m_irjcmatrix.o : m_irjcmatrix.f90 
+m_matrix_partition_info.o : m_matrix_partition_info.f90 m_child_matrix.o m_irjc_matrix.o 
+m_pds.o : m_pds.f90 m_irjcmatrix.o m_elap.o m_cclsmatrix.o 

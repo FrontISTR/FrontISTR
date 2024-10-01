@@ -22,3 +22,9 @@ distclean:
 	@cd main     && $(MAKE) distclean
 
 install:
+
+depend:
+	@cd lib      && $(MAKE) depend
+	@cd common   && $(MAKE) depend
+	@cd analysis && $(MAKE) depend
+	@cd main     && $(MAKE) depend

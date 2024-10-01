@@ -8,6 +8,7 @@
 #include <errno.h>
 #include "hecmw_struct.h"
 #include "hecmw_result.h"
+#include "hecmw_result_io_txt.h"
 #include "hecmw_util.h"
 #include "hecmw_io.h"
 
@@ -36,14 +37,14 @@ int set_params(int argc, char **argv) {
       return -1;
     } else if (strcmp(argv[i], "-o") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         return -1;
       }
       i++;
       strcpy(out_file, argv[i]);
     } else if (strcmp(argv[i], "-s") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         return -1;
       }
       i++;
@@ -56,7 +57,7 @@ int set_params(int argc, char **argv) {
       }
     } else if (strcmp(argv[i], "-e") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         return -1;
       }
       i++;
@@ -68,7 +69,7 @@ int set_params(int argc, char **argv) {
       }
     } else if (strcmp(argv[i], "-i") == 0) {
       if (argc == i + 1) {
-        fprintf(stderr, "Error : paramter required after %s\n", argv[i]);
+        fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
         return -1;
       }
       i++;
@@ -141,7 +142,7 @@ int main(int argc, char **argv) {
     n_elem = HECMW_result_get_nelem();
     HECMW_result_get_header(header);
     HECMW_result_get_comment(comment);
-    rcode = HECMW_result_write_txt_ST_by_fname(resultfile, data, n_node, n_elem,
+    rcode = HECMW_result_io_txt_write_ST_by_fname(resultfile, data, n_node, n_elem,
                                                header, comment);
     if (rcode) {
       HECMW_abort(HECMW_comm_get_comm());

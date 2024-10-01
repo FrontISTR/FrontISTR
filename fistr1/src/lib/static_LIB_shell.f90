@@ -2,6 +2,7 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
+!> \brief This module ...
 module m_static_LIB_shell
   use hecmw, only : kint, kreal
   use elementInfo
@@ -75,7 +76,7 @@ contains
 
     !--------------------------------------------------------------------
 
-    integer :: flag, flag_dof, shellmatl
+    integer :: flag, flag_dof
     integer :: i, j, m
     integer :: lx, ly
     integer :: fetype
@@ -118,7 +119,7 @@ contains
     real(kind = kreal) :: dudxi_rot(3, nn), dudeta_rot(3, nn), &
       dudzeta_rot(3, nn)
     real(kind = kreal) :: g1(3), g2(3), g3(3)
-    real(kind = kreal) :: g1_abs, g2_abs, g3_abs
+    real(kind = kreal) :: g3_abs
     real(kind = kreal) :: e_0(3)
     real(kind = kreal) :: cg1(3), cg2(3), cg3(3)
     real(kind = kreal) :: det
@@ -133,7 +134,7 @@ contains
       Cv31(ndof*nn), Cv32(ndof*nn)
     real(kind = kreal) :: Cv_theta(ndof*nn), Cv_w(ndof*nn)
     real(kind = kreal) :: Cv(ndof*nn)
-    real(kind = kreal) :: sumlyr, thick_layer
+    real(kind = kreal) :: sumlyr
 
     sstable = 0
     flag_dof = 0
@@ -187,7 +188,7 @@ contains
 
     flag = gausses(1)%pMaterial%nlgeom_flag
 
-    if( .not. present( nddisp ) ) flag = INFINITE
+    if( .not. present( nddisp ) ) flag = INFINITESIMAL
 
     !--------------------------------------------------------------------
 
@@ -210,7 +211,7 @@ contains
 
       !--------------------------------------------------------
 
-      ! xi-coordinate at a tying pont in a local element
+      ! xi-coordinate at a tying point in a local element
       tpcoord(1, 1, 1) =  0.0D0
       tpcoord(2, 1, 1) =  1.0D0
       tpcoord(3, 1, 1) =  0.0D0
@@ -1341,24 +1342,18 @@ contains
 
     !--------------------------------------------------------------------
 
-    integer :: i, j, m
+    integer :: i, m
     integer :: lx
     integer :: fetype
     integer :: ntying
     integer :: npoints_tying(3)
     integer :: it, ip
     integer :: na, nb
-    integer :: isize, jsize
-    integer :: jsize1, jsize2, jsize3, &
-      jsize4, jsize5, jsize6
-    integer :: n_layer, n_totlyr, shellmatl
+    integer :: n_layer, n_totlyr
 
     real(kind = kreal) :: D(5, 5)
     real(kind = kreal) :: elem(3, nn)
     real(kind = kreal) :: xi_lx, eta_lx, zeta_ly
-    real(kind = kreal) :: B_di(5, ndof*nn, 6, 3)
-    real(kind = kreal) :: B1(3, ndof*nn), B2(3, ndof*nn), &
-      B3(3, ndof*nn)
     real(kind = kreal) :: naturalcoord(2)
     real(kind = kreal) :: tpcoord(6, 2, 3)
     real(kind = kreal) :: nncoord(nn, 2)
@@ -1378,7 +1373,7 @@ contains
     real(kind = kreal) :: dudxi_rot(3, nn), dudeta_rot(3, nn), &
       dudzeta_rot(3, nn)
     real(kind = kreal) :: g1(3), g2(3), g3(3)
-    real(kind = kreal) :: g1_abs, g2_abs, g3_abs
+    real(kind = kreal) :: g3_abs
     real(kind = kreal) :: e_0(3)
     real(kind = kreal) :: cg1(3), cg2(3), cg3(3)
     real(kind = kreal) :: det
@@ -1457,7 +1452,7 @@ contains
 
       !--------------------------------------------------------
 
-      ! xi-coordinate at a tying pont in a local element
+      ! xi-coordinate at a tying point in a local element
       tpcoord(1, 1, 1) =  0.0D0
       tpcoord(2, 1, 1) =  1.0D0
       tpcoord(3, 1, 1) =  0.0D0
@@ -2378,7 +2373,7 @@ contains
     integer :: jsize1, jsize2, jsize3, &
       jsize4, jsize5, jsize6
     integer :: ltype
-    integer :: n_totlyr, n_layer, shellmatl
+    integer :: n_totlyr, n_layer
 
     real(kind = kreal) :: elem(3, nn)
     real(kind = kreal) :: val
@@ -2397,16 +2392,12 @@ contains
     real(kind = kreal) :: dudxi_rot(3, nn), dudeta_rot(3, nn), &
       dudzeta_rot(3, nn)
     real(kind = kreal) :: g1(3), g2(3), g3(3)
-    real(kind = kreal) :: g1_abs, g2_abs, g3_abs
     real(kind = kreal) :: g1_cross_g2(3)
     real(kind = kreal) :: e_0(3)
-    real(kind = kreal) :: cg1(3), cg2(3), cg3(3)
     real(kind = kreal) :: det
     real(kind = kreal) :: det_cg3(3)
-    real(kind = kreal) :: det_inv
     real(kind = kreal) :: det_cg3_abs
     real(kind = kreal) :: w_w_w_det
-    real(kind = kreal) :: e3_hat(3)
     real(kind = kreal) :: N(3, ndof*nn)
     real(kind = kreal) :: hx, hy, hz
     real(kind = kreal) :: phx, phy, phz
@@ -2634,7 +2625,7 @@ contains
 
     !--------------------------------------------------------------------
 
-    ! Selction of load type
+    ! Selection of load type
 
     ivol = 0
     isurf = 0
@@ -3044,7 +3035,7 @@ contains
     real(kind = kreal) :: params(*)
     real(kind = kreal) :: vect(*)
     integer(kind = kint) :: nsize
-    integer :: ltype, i, j
+    integer :: ltype, i
     real(kind = kreal) :: tmp(24)
     !--------------------------------------------------------------------
 
@@ -3226,9 +3217,8 @@ contains
     integer :: ny
     integer :: i, m
     integer :: na, nb
-    integer :: isize
     integer :: jsize1, jsize2, jsize3, jsize4, jsize5, jsize6
-    integer :: n_totlyr, n_layer, shellmatl
+    integer :: n_totlyr, n_layer
 
     real(kind = kreal) :: xi_lx, eta_lx, zeta_ly
     real(kind = kreal) :: w_w_lx, w_ly
@@ -3242,19 +3232,12 @@ contains
     real(kind = kreal) :: u_rot(3, nn)
     real(kind = kreal) :: dudxi_rot(3, nn), dudeta_rot(3, nn), dudzeta_rot(3, nn)
     real(kind = kreal) :: g1(3), g2(3), g3(3)
-    real(kind = kreal) :: g1_abs, g2_abs, g3_abs
-    real(kind = kreal) :: g1_cross_g2(3)
     real(kind = kreal) :: e_0(3)
-    real(kind = kreal) :: cg1(3), cg2(3), cg3(3)
     real(kind = kreal) :: det
     real(kind = kreal) :: det_cg3(3)
-    real(kind = kreal) :: det_inv
     real(kind = kreal) :: det_cg3_abs
     real(kind = kreal) :: w_w_w_det
-    real(kind = kreal) :: e3_hat(3)
     real(kind = kreal) :: N(3, 6*nn)
-    real(kind = kreal) :: hx, hy, hz
-    real(kind = kreal) :: x, y, z
     real(kind = kreal) :: sumlyr, totalmass, totdiag
 
     ny = 0; ndof=6
@@ -3510,7 +3493,7 @@ contains
             !--------------------------------------------
 
             w_w_w_det = w_w_lx*w_ly*det
-            mass = mass+ matmul( transpose(N), N )*w_w_w_det*rho	
+            mass(1:nsize,1:nsize) = mass(1:nsize,1:nsize)+ matmul( transpose(N), N )*w_w_w_det*rho
             totalmass = totalmass + w_w_w_det*rho
             !--------------------------------------------
 
@@ -3527,16 +3510,15 @@ contains
 
     totdiag=0.d0
     do nb = 1, nn
-        DO i = 1, 6
+        DO i = 1, 3
           lx = (nb-1)*ndof+i
-		  totdiag = totdiag + mass(lx,lx)
+          totdiag = totdiag + mass(lx,lx)
         END DO
     ENDDO
-	lumped(:)=0.d0
     do nb = 1, nn
         DO i = 1, 6
           lx = (nb-1)*ndof+i
-		  lumped(lx) = mass(lx,lx)/totdiag* totalmass
+          lumped(lx) = mass(lx,lx)/totdiag* totalmass
         END DO
     ENDDO
 

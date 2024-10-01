@@ -386,7 +386,7 @@ int double_part_send_recv(int n, int neibpetot, int *neibpe, int *stack_import,
   for (neib = 0; neib < neibpetot; neib++) {
     inum = stack_import[neib + 1] - stack_import[neib];
     if (inum > 0) {
-      /*		fprintf(stderr, "PE %d recieve %d node from PE %d\n",
+      /*		fprintf(stderr, "PE %d receive %d node from PE %d\n",
        * my_rank, inum, neibpe[neib]);
       */
       HECMW_Irecv(&wr[stack_import[neib]], inum, HECMW_DOUBLE, neibpe[neib], 0,

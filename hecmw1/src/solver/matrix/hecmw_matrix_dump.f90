@@ -237,7 +237,7 @@ contains
     type(hecmwST_matrix) :: hecMAT
     integer, parameter :: iDump = 201
     character(len=64) :: fname
-    integer :: i, j, jj
+    integer :: i, j
     integer :: idx, idxL0, idxD0, idxU0
     integer :: n, np, ndof, ndof2, nnz, nnz1
     character(len=64), parameter :: lineFormat = "(e20.12e3)"

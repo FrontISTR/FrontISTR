@@ -16,6 +16,8 @@ contains
     use hecmw_solver_CG
     use hecmw_solver_BiCGSTAB
     use hecmw_solver_GMRES
+    use hecmw_solver_GMRESR
+    use hecmw_solver_GMRESREN
     use hecmw_solver_GPBiCG
     use m_hecmw_solve_error
     use m_hecmw_comm_f
@@ -32,7 +34,7 @@ contains
 
     integer(kind=kint) :: error
     integer(kind=kint) :: ITER, METHOD, PRECOND, NSET, METHOD2
-    integer(kind=kint) :: iterPREmax, i, j
+    integer(kind=kint) :: iterPREmax
     integer(kind=kint) :: ITERlog, TIMElog
     real(kind=kreal)   :: RESID, SIGMA_DIAG, THRESH, FILTER, resid2
     real(kind=kreal)   :: TIME_setup, TIME_comm, TIME_sol, TR
@@ -112,6 +114,12 @@ contains
         case (4)  !--GPBiCG
           hecMAT%symmetric = .false.
           call hecmw_solve_GPBiCG( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (5)  !--GMRESR
+          hecMAT%symmetric = .false.
+          call hecmw_solve_GMRESR( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (6)  !--GMRESREN
+          hecMAT%symmetric = .false.
+          call hecmw_solve_GMRESREN( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
           error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
           call hecmw_solve_error (hecMESH, error)
@@ -170,7 +178,76 @@ contains
       write (*,'(a, 1pe16.6/)') '    work ratio (%)   : ', TR
     endif
 
+    call hecmw_output_flops(hecMESH, hecMAT, ITER, time_Ax)
+
   end subroutine hecmw_solve_iterative
+
+  subroutine hecmw_output_flops(hecMESH, hecMAT, count_Ax, time_Ax)
+    use hecmw_util
+    use m_hecmw_comm_f
+    use hecmw_matrix_misc
+    use hecmw_solver_misc
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix) :: hecMAT
+    integer(kint) :: N, NP, NDOF, NPU, NPL, NZ
+    integer(kint) :: base, i, count_Ax
+    real(kreal) :: time_Ax, size_matrix, flop_matrix, size_vector, memory_size, tmp, num
+    real(kreal) :: t_max, t_min, t_avg, t_sd
+    character(2) :: SI(0:6) = ['  ',' K',' M',' G',' T',' P',' E']
+
+    if(hecmw_mat_get_timelog(hecMAT) /= 2) return !> VERBOSE
+
+    N = hecMAT%N
+    NP = hecMAT%NP
+    NDOF = hecMAT%NDOF
+    NPU = hecMAT%indexU(N)
+    NPL = hecMAT%indexL(N)
+    NZ = N + NPU + NPL
+
+    size_matrix = kreal*NZ*NDOF**2 & !> hecMAT%A
+                + kint*(NPU+NPL) & !> hecMAT%item
+                + kint*2*(N+1) !> hecMAT%index
+    size_vector = kreal*N*NDOF & !> y
+                + kreal*NP*NDOF !> x
+    memory_size = size_matrix + size_vector
+    flop_matrix = 2.0d0*NZ*NDOF**2 !> count opetations of add and multiply
+
+    call hecmw_allreduce_R1(hecMESH, memory_size, hecmw_sum)
+    call hecmw_allreduce_R1(hecMESH, flop_matrix, hecmw_sum)
+
+    base = 1000 ! or 1024
+    num = memory_size
+    i = int(log(num) / log(dble(base)))
+    tmp = 1.0d0/base**i * num
+    if(hecMESH%my_rank == 0)then
+      write (*,"(a,f11.3,a,a)") "memory amount of coef. matrix: ", tmp, SI(i),"B"
+    endif
+
+    num = count_Ax*memory_size/time_Ax
+    i = int(log(num) / log(dble(base)))
+    tmp = 1.0d0/base**i * num
+    call hecmw_time_statistics(hecMESH, tmp, t_max, t_min, t_avg, t_sd)
+    if(hecMESH%my_rank == 0)then
+      write(*,"(a,f11.3,a,a)") "matvec memory band width     : ", tmp, SI(i),"B/s"
+      write(*,"(a,f11.3)") '  Max     :',t_max
+      write(*,"(a,f11.3)") '  Min     :',t_min
+      write(*,"(a,f11.3)") '  Avg     :',t_avg
+      write(*,"(a,f11.3)") '  Std Dev :',t_sd
+    endif
+
+    num = count_Ax*flop_matrix/time_Ax
+    i = int(log(num) / log(dble(base)))
+    tmp = 1.0d0/base**i * num
+    call hecmw_time_statistics(hecMESH, tmp, t_max, t_min, t_avg, t_sd)
+    if(hecMESH%my_rank == 0)then
+      write(*,"(a,f11.3,a,a)") "matvec FLOPs                 : ", tmp, SI(i),"FLOPs"
+      write(*,"(a,f11.3)") '  Max     :',t_max
+      write(*,"(a,f11.3)") '  Min     :',t_min
+      write(*,"(a,f11.3)") '  Avg     :',t_avg
+      write(*,"(a,f11.3)") '  Std Dev :',t_sd
+    endif
+  end subroutine hecmw_output_flops
 
   subroutine hecmw_solve_check_zerodiag (hecMESH, hecMAT)
     use hecmw_util
@@ -180,7 +257,6 @@ contains
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
-    integer (kind=kint) :: IFLAG
     integer (kind=kint)::PRECOND,iterPREmax,i,j,error
     PRECOND   = hecmw_mat_get_precond(hecMAT)
     iterPREmax= hecmw_mat_get_iterpremax(hecMAT)
@@ -252,7 +328,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix), target :: hecMAT
     integer(kind=kint) :: METHOD
-    integer(kind=kint) :: ITER, PRECOND, NSET, iterPREmax, NREST
+    integer(kind=kint) :: ITER, PRECOND, NSET, iterPREmax, NREST,NBFGS
     integer(kind=kint) :: ITERlog, TIMElog
 
     character(len=30) :: msg_precond
@@ -264,6 +340,7 @@ contains
     NSET      = hecmw_mat_get_nset(hecMAT)
     iterPREmax= hecmw_mat_get_iterpremax(hecMAT)
     NREST     = hecmw_mat_get_nrest(hecMAT)
+    NBFGS     = hecmw_mat_get_nbfgs(hecMAT)
     ITERlog= hecmw_mat_get_iterlog(hecMAT)
     TIMElog= hecmw_mat_get_timelog(hecMAT)
 
@@ -276,6 +353,14 @@ contains
         msg_method="GMRES"
       case (4)  !--GPBiCG
         msg_method="GPBiCG"
+      case (5)  
+        if (NBFGS==0) then
+           msg_method="GMRESR"
+        else
+           msg_method="SUP-GMRESR"
+        endif
+      case (6)  
+        msg_method="GMRESR-EN"
       case default
         msg_method="Unlabeled"
     end select
