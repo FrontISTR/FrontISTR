@@ -335,4 +335,35 @@ contains
   !####################################################################
   ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
 
+  subroutine GetConnectorProperty( gauss, ctype, dof, params, stretch )
+    type( tGaussStatus ), intent(in)         :: gauss          !> status of qudrature point
+    integer(kind=kint), intent(out)          :: ctype          !> connector type
+    integer(kind=kint), intent(in)           :: dof            !> dof ( used only in ***_D type connector )
+    real(kind=kreal), intent(out)            :: params(:)      !> paramters
+    real(kind=kreal), intent(in), optional   :: stretch        !> current stretch
+
+    real(kind=kreal) ina(1), outa(4)
+    logical :: ierr
+    integer(kind=kint) :: mtype
+    character(len=DICT_KEY_LENGTH) :: cnkey
+
+    mtype = gauss%pMaterial%mtype
+    ctype = getConnectorType( mtype )
+    params(:) = 0.d0
+
+    if( ctype == 0 ) then ! Dof Spring
+      write(cnkey,'(A,I0)') MC_SPRING,dof
+      if( present(stretch) ) then
+        ina(1) = stretch
+        call fetch_TableData( cnkey, gauss%pMaterial%dict, outa(1:1), ierr, ina )
+      else
+        call fetch_TableData( cnkey, gauss%pMaterial%dict, outa(1:1), ierr )
+      endif
+      params(1) = outa(1)
+    else
+      stop "CONNECTOR ctype > 1 is not defined"
+    endif
+
+  end subroutine
+
 end module m_MatMatrix

@@ -26,6 +26,8 @@ module mMaterial
   !     3: Hyperelastic
   !     4: Viscoelastic
   !     5: Viscoplastic
+  !     6: Incomp newtonian
+  !     7: Connector(Spring, Dashpot, Joint etc.)
   !     Heat conductiovity
   !     ......
   !   Third digit:
@@ -36,11 +38,19 @@ module mMaterial
   !       0: Neo-Hooke                          130000
   !       1: Mooney-Rivlin                      131000
   !       2: Arruda-Boyce                       132000
+  !     For spring or dashpot, joint etc.
+  !       0: spring dof                     ie. 170000
+  !       1: spring axial                       171000
+  !       2: dashpot dof                        172000
+  !       3: dashpot axial                      173000
   !   Fourth digit
-  !     For elastoplastic problem,yield function
-  !       0: isotropic (Mises)
-  !       1: Mohr-Coulomb
-  !       2: Drucker-Prager
+  !     For spring or dashpot, joint etc.
+  !       1: x-direction
+  !       2: y-direction
+  !       3: z-direction
+  !       4: Rx-direction
+  !       5: Ry-direction
+  !       6: Rz-direction
   !   Fifth digit:
   !     For elastoplastic deformation, hardening law
   !       0: Linear hardening           i.e.  120000
@@ -71,6 +81,7 @@ module mMaterial
   integer(kind=kint), parameter :: NORTON                = 150000
 
   integer(kind=kint), parameter :: INCOMP_NEWTONIAN      = 160000
+  integer(kind=kint), parameter :: CONNECTOR             = 170000
 
   ! Following section type
   integer(kind=kint), parameter :: D3            = -1
@@ -124,6 +135,7 @@ module mMaterial
   character(len=DICT_KEY_LENGTH) :: MC_VISCOELASTIC = 'VISCOELASTIC' ! Prony coeff only curr.
   character(len=DICT_KEY_LENGTH) :: MC_NORTON = 'NORTON'             ! NOrton's creep law
   character(len=DICT_KEY_LENGTH) :: MC_INCOMP_NEWTONIAN = 'INCOMP_FLUID' ! viscocity
+  character(len=DICT_KEY_LENGTH) :: MC_SPRING= 'SPRING'              ! spring property
 
   type tshellmat
     integer(kind=kint)         :: ortho
@@ -153,6 +165,7 @@ module mMaterial
     integer(kind=kint)         :: n_table           !< size of table
     real(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
     type(DICT_STRUCT), pointer :: dict              !< material properties in dictionaried linked list
+    integer(kind=kint)         :: iparam(:)         !< integer material parameters
   end type tMaterial
 
   type(tMaterial), allocatable :: materials(:)
@@ -364,6 +377,41 @@ contains
     if( .not. isElastoplastic( mtype ) ) return
     call setDigit( 2, 1, mtype )
   end subroutine
+
+  !> Get type of connector
+  integer function getConnectorType( mtype )
+    integer, intent(in) :: mtype
+    integer :: itype
+    getConnectorType = -1
+    itype = fetchDigit( 1, mtype )
+    if( itype/=1 ) return  ! not defomration problem
+    itype = fetchDigit( 2, mtype )
+    if( itype/=7 ) return  ! not connector
+    getConnectorType = fetchDigit( 3, mtype )
+  end function
+
+  !> Get dof of connector
+  logical function isDofEnableConnector( mtype, idof )
+    integer, intent(in) :: mtype
+    integer, intent(in) :: idof
+    integer :: itype
+
+    isDofEnableConnector = .false.
+
+    itype = fetchDigit( 1, mtype )
+    if( itype/=1 ) return  ! not defomration problem
+    itype = fetchDigit( 2, mtype )
+    if( itype/=7 ) return  ! not connector
+    itype = fetchDigit( 4, mtype )
+
+    if( idof == 1 ) then
+      if( mod(itype,2) == 1 ) isDofEnableConnector = .true.
+    else if( idof == 2 ) then
+      if( mod(mod(itype,4),2) == 1 ) isDofEnableConnector = .true.
+    else if( idof == 3 ) then
+      if( mod(mod(mod(itype,8),4),2) == 1 ) isDofEnableConnector = .true.
+    endif
+  end function
 
 end module
 
