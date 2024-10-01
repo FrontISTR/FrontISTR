@@ -78,7 +78,7 @@ contains
     integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
-    integer(kind=kint) :: c_eigen, c_contact, c_contactparam
+    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
     integer(kind=kint) :: c_fload, c_eigenread
     integer(kind=kint) :: c_couple, c_material
@@ -107,7 +107,7 @@ contains
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-    c_eigen    = 0; c_contact  = 0; c_contactparam = 0
+    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0
     c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
     c_couple   = 0; c_material = 0; c_section =0
     c_mpc      = 0; c_weldline = 0; c_initial = 0
@@ -192,6 +192,9 @@ contains
       else if( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         c_contact = c_contact + n
+      else if( header_name == '!EMBED' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        c_embed = c_embed + n
       else if( header_name == '!CONTACT_PARAM' ) then
         c_contactparam = c_contactparam + 1
       else if( header_name == '!MATERIAL' ) then
@@ -308,11 +311,14 @@ contains
     end do
 
     ! -----
+    fstrSOLID%n_contacts = c_contact
     if( c_contact>0 ) then
       allocate( fstrSOLID%contacts( c_contact ) )
       ! convert SURF_SURF contact to NODE_SURF contact
       call fstr_convert_contact_type( P%MESH )
     endif
+    fstrSOLID%n_embeds = c_embed
+    if( c_embed>0 )  allocate( fstrSOLID%embeds( c_embed ) )
     if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
     if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
     if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
@@ -415,6 +421,7 @@ contains
     c_output = 0
     c_contact  = 0
     c_contactparam  = 0
+    c_embed = 0
     c_initial = 0
     c_localcoord = 0
     c_section = 0
@@ -474,6 +481,35 @@ contains
           endif
         enddo
         c_contact = c_contact+n
+
+        ! ----- EMBED condition setting
+      elseif( header_name == '!EMBED' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(c_embed+1:c_embed+n), mName ) ) then
+          write(*,*) '### Error: Fail in read in embed condition : ', c_embed
+          write(ILOG,*) '### Error: Fail in read in embed condition : ', c_embed
+          stop
+        endif
+        cparam_id = 0
+        do i=1,size(fstrPARAM%contactparam)-1
+          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+            cparam_id = i; exit
+          endif
+        enddo
+        do i=1,n
+          if( .not. fstr_contact_check( fstrSOLID%embeds(c_embed+i), P%MESH ) ) then
+            write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_embed
+            write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_embed
+            stop
+          else
+            if(paraContactFlag) then
+              isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id), myrank)
+            else
+              isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id))
+            endif
+          endif
+        enddo
+        c_embed = c_embed+n
 
       else if( header_name == '!ISTEP'  ) then
         c_istep = c_istep+1
@@ -986,6 +1022,13 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%unode_bak( ntotal )  ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, unode>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
     allocate ( fstrSOLID%dunode( ntotal )  ,stat=ierror )
     if( ierror /= 0 ) then
       write(idbg,*) 'stop due to allocation error <FSTR_SOLID, dunode>'
@@ -1011,6 +1054,7 @@ contains
     fstrSOLID%GL(:)=0.d0
     !        fstrSOLID%TOTAL_DISP(:)=0.d0
     fstrSOLID%unode(:)      = 0.d0
+    fstrSOLID%unode_bak(:)  = 0.d0
     fstrSOLID%dunode(:)     = 0.d0
     fstrSOLID%ddunode(:)    = 0.d0
     fstrSOLID%QFORCE(:)     = 0.d0
@@ -1224,6 +1268,14 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
+    if( associated(fstrSOLID%unode_bak) ) then
+      deallocate(fstrSOLID%unode_bak   ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, unode_bak>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
     if( associated(fstrSOLID%dunode) ) then
       deallocate(fstrSOLID%dunode       ,stat=ierror)
       if( ierror /= 0 ) then
@@ -1310,6 +1362,14 @@ contains
        deallocate(fstrSOLID%BOUNDARY_ngrp_amp, stat=ierror)
        if( ierror /= 0 ) then
           write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_amp>'
+          call flush(idbg)
+          call hecmw_abort( hecmw_comm_get_comm())
+       end if
+    endif
+    if( associated(fstrSOLID%BOUNDARY_ngrp_istot) ) then
+       deallocate(fstrSOLID%BOUNDARY_ngrp_istot, stat=ierror)
+       if( ierror /= 0 ) then
+          write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, BOUNDARY_ngrp_istot>'
           call flush(idbg)
           call hecmw_abort( hecmw_comm_get_comm())
        end if
@@ -1599,6 +1659,7 @@ contains
     allocate ( phys%ESTRAIN (mdof*n_elem))
     allocate ( phys%ESTRESS (mdof*n_elem))
     allocate ( phys%EMISES  (     n_elem))
+    allocate ( phys%EPLSTRAIN (   n_elem))
     allocate ( phys%ENQM    (12*n_elem))
   end subroutine fstr_setup_post_phys_alloc
 
@@ -1727,6 +1788,7 @@ contains
     !   ncolor_in  => svIarray(34)
     !   mpc_method => svIarray(13)
     !   estcond    => svIarray(14)
+    !   contact_elim=> svIarray(15)
     !   method2    => svIarray(8)
     !   recyclepre => svIarray(35)
     !   solver_opt => svIarray(41:50)
@@ -1742,7 +1804,7 @@ contains
       svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
       svIarray(1), svIarray(5), svIarray(6), svIarray(60), svIarray(7), &
       svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
-      svIarray(35), svIarray(41:50), &
+      svIarray(35), svIarray(41:50), svIarray(15), &
       svRarray(1), svRarray(2), svRarray(3),                &
       svRarray(4), svRarray(5) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
@@ -2127,7 +2189,7 @@ end function fstr_setup_INITIAL
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint) :: i, n, old_size, new_size
 
-    integer(kind=kint) :: gid
+    integer(kind=kint) :: gid, istot
 
     gid = 1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
@@ -2137,6 +2199,10 @@ end function fstr_setup_INITIAL
 
     !  if( type == 0 ) then
 
+    istot = 0
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'TOTAL ', '# ', 0, 'E', istot )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
     ! get center of torque load
     rotc_name = ' '
     rotc_id = -1
@@ -2144,6 +2210,11 @@ end function fstr_setup_INITIAL
     rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
     if(  rotc_name(1) /= ' ' ) then
+      if( istot /= 0 ) then
+        write(*,*) 'fstr control file error : !BOUNDARY : rotational boundary cannot be specified with total value'
+        write(ILOG,*) 'fstr control file error : !BOUNDARY : rotational boundary cannot be specified with total value'
+        call fstr_ctrl_err_stop
+      endif
       P%SOLID%BOUNDARY_ngrp_rot = P%SOLID%BOUNDARY_ngrp_rot + 1
       n_rotc = P%SOLID%BOUNDARY_ngrp_rot
       call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY,ROT_CENTER=', 1, rotc_name, rotc_id)
@@ -2163,6 +2234,7 @@ end function fstr_setup_INITIAL
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_type,  old_size, new_size )
     call fstr_expand_real_array    (P%SOLID%BOUNDARY_ngrp_val,   old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_amp,   old_size, new_size )
+    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_istot, old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_rotID, old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_centerID, old_size, new_size )
 
@@ -2178,6 +2250,7 @@ end function fstr_setup_INITIAL
     call amp_name_to_id( P%MESH, '!BOUNDARY', amp, amp_id )
     P%SOLID%BOUNDARY_ngrp_GRPID(old_size+1:new_size) = gid
     call node_grp_name_to_id_ex( P%MESH, '!BOUNDARY', n, grp_id_name, P%SOLID%BOUNDARY_ngrp_ID(old_size+1:))
+    P%SOLID%BOUNDARY_ngrp_istot(old_size+1:new_size) = istot
 
     ! set up information about rotation ( default value is set if ROT_CENTER is not given.)
     P%SOLID%BOUNDARY_ngrp_rotID(old_size+1:) = n_rotc

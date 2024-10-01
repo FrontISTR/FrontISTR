@@ -55,6 +55,10 @@ contains
         call hecmw_matvec_44(hecMESH, hecMAT, X, Y, time_Ax,COMMtime)
       case (6)
         call hecmw_matvec_66(hecMESH, hecMAT, X, Y, time_Ax,COMMtime)
+      case (1)
+        call hecmw_matvec_11(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+      case (2)
+        call hecmw_matvec_22(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
       case default
         call hecmw_matvec_nn(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     end select
@@ -89,8 +93,6 @@ contains
   !C
   subroutine hecmw_matresid (hecMESH, hecMAT, X, B, R, COMMtime)
     use hecmw_util
-    use hecmw_solver_las_33
-    use hecmw_solver_las_nn
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
@@ -100,9 +102,17 @@ contains
 
     select case(hecMAT%NDOF)
       case (3)
-        call hecmw_matresid_33(hecMESH, hecMAT, X, B, R, COMMtime)
+        call hecmw_matresid_33(hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
+      case (4)
+        call hecmw_matresid_44(hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
+      case (6)
+        call hecmw_matresid_66(hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
+      case (1)
+        call hecmw_matresid_11(hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
+      case (2)
+        call hecmw_matresid_22(hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
       case default
-        call hecmw_matresid_nn(hecMESH, hecMAT, X, B, R, COMMtime)
+        call hecmw_matresid_nn(hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
     end select
   end subroutine hecmw_matresid
 
@@ -113,33 +123,26 @@ contains
   !C
   function hecmw_rel_resid_L2 (hecMESH, hecMAT, COMMtime)
     use hecmw_util
-    use hecmw_solver_misc
-
     implicit none
     real(kind=kreal) :: hecmw_rel_resid_L2
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH
     type ( hecmwST_matrix     ), intent(in) :: hecMAT
     real(kind=kreal), intent(inout), optional :: COMMtime
 
-    real(kind=kreal), allocatable :: r(:)
-    real(kind=kreal) :: bnorm2, rnorm2
-    real(kind=kreal) :: Tcomm
-
-    allocate(r(hecMAT%NDOF*hecMAT%NP))
-
-    Tcomm = 0.d0
-    call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, &
-      hecMAT%B, hecMAT%B, bnorm2, Tcomm)
-    if (bnorm2 == 0.d0) then
-      bnorm2 = 1.d0
-    endif
-    call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
-    call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
-    hecmw_rel_resid_L2 = sqrt(rnorm2 / bnorm2)
-
-    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
-
-    deallocate(r)
+    select case(hecMAT%NDOF)
+      case (3)
+        hecmw_rel_resid_L2 = hecmw_rel_resid_L2_33(hecMESH, hecMAT, time_Ax, COMMtime)
+      case (4)
+        hecmw_rel_resid_L2 = hecmw_rel_resid_L2_44(hecMESH, hecMAT, time_Ax, COMMtime)
+      case (6)
+        hecmw_rel_resid_L2 = hecmw_rel_resid_L2_66(hecMESH, hecMAT, time_Ax, COMMtime)
+      case (1)
+        hecmw_rel_resid_L2 = hecmw_rel_resid_L2_11(hecMESH, hecMAT, time_Ax, COMMtime)
+      case (2)
+        hecmw_rel_resid_L2 = hecmw_rel_resid_L2_22(hecMESH, hecMAT, time_Ax, COMMtime)
+      case default
+        hecmw_rel_resid_L2 = hecmw_rel_resid_L2_nn(hecMESH, hecMAT, time_Ax, COMMtime)
+    end select
   end function hecmw_rel_resid_L2
 
   !C
@@ -212,9 +215,9 @@ contains
     !    call hecmw_Ttvec(hecMESH, W, Y, COMMtime)
     select case(hecMESH%n_dof)
       case (3)
-        call hecmw_TtmatTvec_33 (hecMESH, hecMAT, X, Y, W, COMMtime)
+        call hecmw_TtmatTvec_33 (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
       case default
-        call hecmw_TtmatTvec_nn (hecMESH, hecMAT, X, Y, W, COMMtime)
+        call hecmw_TtmatTvec_nn (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
     end select
 
   end subroutine hecmw_TtmatTvec

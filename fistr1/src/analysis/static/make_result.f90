@@ -13,7 +13,6 @@ module m_make_result
   public:: fstr_reorder_node_beam
   public:: setup_contact_output_variables
 
-
 contains
 
   !C***
@@ -282,15 +281,16 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(11), ndof )
       ngauss = fstrSOLID%maxn_gauss
+      work(:) = 0.d0
       do k = 1, ngauss
         write(s,*) k
         write(label,'(a,a)') 'PLASTIC_GaussSTRAIN',trim(adjustl(s))
         label = adjustl(label)
         do i = 1, hecMESH%n_elem
-          if( k > size(fstrSOLID%elements(i)%gausses) ) then
-            work(i) = 0.d0
-          else
-            work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+          if( associated(fstrSOLID%elements(i)%gausses) ) then
+            if( k <= size(fstrSOLID%elements(i)%gausses) ) then
+              work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+            endif
           endif
         enddo
         call hecmw_result_add( id, nitem, label, work )
@@ -443,8 +443,10 @@ contains
     character(len=6)                :: clyr
     character(len=4)                :: cnum
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
+    real(kind=kreal), allocatable   :: work(:)
 
     ndof = hecMESH%n_dof
+    allocate( work(hecMESH%n_elem) )
 
     ! --- STRAIN @node
     if (fstrSOLID%output_ctrl(3)%outinfo%on(3)) then
@@ -579,6 +581,24 @@ contains
       end do
     endif
 
+    ! --- PLASTIC STRAIN @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(43) ) then
+      id = 2
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(43), ndof )
+      ngauss = fstrSOLID%maxn_gauss
+      label = 'ElementalPLSTRAIN'//trim(clyr)
+      do i = 1, hecMESH%n_elem
+        work(i) = 0.d0
+        do j = 1, size(fstrSOLID%elements(i)%gausses) 
+          work(i) = work(i) + fstrSOLID%elements(i)%gausses(j)%plstrain
+        enddo
+        work(i) = work(i) / size(fstrSOLID%elements(i)%gausses) 
+        RES%EPLSTRAIN(i) = work(i)
+      enddo
+      call hecmw_result_add( id, nitem, label, work )
+    endif
+    deallocate( work )
+  
   end subroutine fstr_write_result_main
 
   !C***
@@ -670,6 +690,11 @@ contains
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(16), ndof )
     endif
+    ! --- TEMPERATURE @node
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) .and. associated(fstrSOLID%temperature) ) then
+     ncomp = ncomp + 1
+     nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
+    endif
     ! --- ROTATION (Only for 781 shell)
     if( fstrSOLID%output_ctrl(4)%outinfo%on(18) ) then
       if(ndof == 6) then
@@ -758,7 +783,7 @@ contains
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(37), ndof )
     endif
     ! --- NODE ID @node
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) ) then
       ncomp = ncomp + 1
       nitem = nitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
     endif
@@ -802,6 +827,11 @@ contains
     if( fstrSOLID%output_ctrl(4)%outinfo%on(26) ) then
       ecomp = ecomp + 3
       eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(26), ndof )
+    endif
+    ! --- PLASTIC STRAIN @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(43) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
     endif
     ! --- MATERIAL @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
@@ -940,6 +970,20 @@ contains
       do i = 1, hecMESH%n_node
         do j = 1, nn
           fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrDYNAMIC%ACC(nn*(i-1)+j,idx)
+        enddo
+      enddo
+      iitem = iitem + nn
+    endif
+
+    ! --- TEMPERATURE
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(17) .and. associated(fstrSOLID%temperature))then
+      ncomp = ncomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(17), ndof )
+      fstrRESULT%nn_dof(ncomp) = nn
+      fstrRESULT%node_label(ncomp) = 'TEMPERATURE'
+      do i = 1, hecMESH%n_node
+        do j = 1, nn
+          fstrRESULT%node_val_item(nitem*(i-1)+j+iitem) = fstrSOLID%temperature(nn*(i-1)+j)
         enddo
       enddo
       iitem = iitem + nn
@@ -1129,7 +1173,7 @@ contains
     endif
 
     ! --- NODE ID @node
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) .and. associated(fstrSOLID%CONT_FTRAC) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(38) ) then
       ncomp = ncomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(38), ndof )
       fstrRESULT%nn_dof(ncomp) = nn
@@ -1420,6 +1464,23 @@ contains
       enddo
     endif
 
+    ! --- PLSTRAIN @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(43)) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(43), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ElementalPLSTRAIN'
+      do i = 1, hecMESH%n_elem
+        RES%EPLSTRAIN(i) = 0.d0
+        do j = 1, size(fstrSOLID%elements(i)%gausses) 
+          RES%EPLSTRAIN(i) = RES%EPLSTRAIN(i) + fstrSOLID%elements(i)%gausses(j)%plstrain
+        enddo
+        RES%EPLSTRAIN(i) = RES%EPLSTRAIN(i) / size(fstrSOLID%elements(i)%gausses)
+        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = RES%EPLSTRAIN(i)
+      enddo
+      jitem = jitem + nn
+    endif
+
   end subroutine fstr_make_result_main
 
   subroutine fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
@@ -1638,70 +1699,5 @@ contains
     endif
 
   end subroutine
-
-  subroutine fstr_setup_parancon_contactvalue(hecMESH,ndof,vec,vtype)
-  use m_fstr
-  implicit none
-  type(hecmwST_local_mesh), intent(in)      :: hecMESH
-  integer(kind=kint), intent(in)            :: ndof
-  real(kind=kreal), pointer, intent(inout)  :: vec(:)
-  integer(kind=kint), intent(in)            :: vtype !1:value, 2:state
-  !
-  real(kind=kreal) ::  rhsB
-  integer(kind=kint) ::  i,j,N,i0,N_loc,nndof
-  integer(kind=kint) :: offset, pid, lid
-  integer(kind=kint), allocatable :: displs(:)
-  real(kind=kreal), allocatable   :: vec_all(:)
-
-  !
-  N_loc = hecMESH%nn_internal
-  allocate(displs(0:nprocs))
-  displs(:) = 0
-  displs(myrank+1) = N_loc
-  call hecmw_allreduce_I(hecMESH, displs, nprocs+1, hecmw_sum)
-  do i=1,nprocs
-    displs(i) = displs(i-1) + displs(i)
-  end do
-  offset = displs(myrank)
-  N = displs(nprocs)
-
-  allocate(vec_all(ndof*N))
-
-  if( vtype == 1 ) then
-    vec_all(:) = 0.d0
-    do i= hecMESH%nn_internal+1,hecMESH%n_node
-      pid = hecMESH%node_ID(i*2)
-      lid = hecMESH%node_ID(i*2-1)
-      i0 = (displs(pid) + (lid-1))*ndof
-      vec_all(i0+1:i0+ndof) = vec((i-1)*ndof+1:i*ndof)
-      vec((i-1)*ndof+1:i*ndof) = 0.d0
-    enddo
-
-    call hecmw_allreduce_R(hecMESH, vec_all, N*ndof, hecmw_sum)
-
-    do i=1,ndof*N_loc
-      vec(i) = vec(i) + vec_all(offset*ndof+i)
-    end do
-  else if( vtype == 2 ) then
-    vec_all(:) = -1000.d0
-    do i= hecMESH%nn_internal+1,hecMESH%n_node
-      if( vec(i) == 0.d0 ) cycle
-      pid = hecMESH%node_ID(i*2)
-      lid = hecMESH%node_ID(i*2-1)
-      i0 = displs(pid) + lid
-      vec_all(i0) = vec(i)
-    enddo
-
-    call hecmw_allreduce_R(hecMESH, vec_all, N, hecmw_max)
-
-    do i=1,N_loc
-      if( vec_all(offset+i) == -1000.d0 ) cycle
-      if( vec(i) < vec_all(offset+i) ) vec(i) = vec_all(offset+i)
-    end do
-  end if
-
-  deallocate(displs,vec_all)
-  end subroutine
-
 
 end module m_make_result

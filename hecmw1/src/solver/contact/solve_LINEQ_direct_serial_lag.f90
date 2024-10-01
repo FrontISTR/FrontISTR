@@ -8,6 +8,8 @@ module m_solve_LINEQ_direct_serial_lag
   use m_set_arrays_directsolver_contact
   use hecmw_solver_direct_serial_lag
   use hecmw_matrix_dump
+  use hecmw_matrix_ass
+  use hecmw_matrix_misc
 
 contains
 
@@ -32,6 +34,20 @@ contains
     integer (kind=4)                         :: ierr, nprocs, myrank
 
     real(kind=8), allocatable               :: b(:)           !< right-hand side vector
+    integer(kind=kint) :: mpc_method
+
+    mpc_method = hecmw_mat_get_mpc_method(hecMAT)
+    if (mpc_method < 1 .or. 3 < mpc_method) then
+      mpc_method = 1
+      call hecmw_mat_set_mpc_method(hecMAT,mpc_method)
+    endif
+    if (mpc_method /= 1) then
+      write(*,*) 'ERROR: MPCMETHOD other than penalty is not available for DIRECT solver', &
+          ' in contact analysis without elimination'
+      stop
+    endif
+    call hecmw_mat_ass_equation(hecMESH, hecMAT)
+    call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 

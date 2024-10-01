@@ -1,2 +1,0 @@
-hecmw_solver.o : hecmw_solver.f90 
-hecmw_solver_contact.o : hecmw_solver_contact.f90 hecmw_solver.o

@@ -105,9 +105,11 @@ contains
       wg = getWeight(etype, LX)*det
 
       DN = matmul(D, transpose(gderiv))
-      forall(i = 1:nn,  j = 1:nn)
-        stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
-      end forall
+      do j = 1,nn
+        do i = 1,nn
+          stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
+        enddo
+      enddo
     enddo
   end subroutine heat_conductivity_C2
 
@@ -151,9 +153,12 @@ contains
       wg = getWeight(etype, LX)*det
 
       DN = matmul(D, transpose(gderiv))
-      forall(i = 1:nn,  j = 1:nn)
-        stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
-      end forall
+
+      do j = 1,nn
+        do i = 1,nn
+          stiff(i,j) = stiff(i,j) + dot_product(gderiv(i,:), DN(:,j))*wg
+        enddo
+      enddo
     enddo
   end subroutine heat_conductivity_C3
 
@@ -693,11 +698,20 @@ contains
 
   subroutine heat_conductivity_541(NN,ecoord,TEMP,TZERO,THICK,HH,RR1,RR2,SS,stiff )
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
+    integer(kind=kint), intent(in) :: NN
     real(kind=kreal), intent(in)  :: ecoord(3,nn)           !< coordinates of elemental nodes
     real(kind=kreal), intent(out) :: stiff(:,:)              !< stiff matrix
-    dimension XXX(NN), YYY(NN), ZZZ(NN), TEMP(NN), SS(NN*NN)
-    dimension XX(4), YY(4), ZZ(4)
+    real(kind=kreal), intent(in)  :: TEMP(NN), TZERO, THICK, HH, RR1, RR2
+    real(kind=kreal), intent(inout) :: SS(NN*NN)
+    real(kind=kreal) :: SA, SB, SM
+    real(kind=kreal) :: T1Z, T2Z, T3Z, T4Z, T5Z, T6Z, T7Z, T8Z
+    real(kind=kreal) :: RRR1, RRR2, HHH
+    real(kind=kreal) :: HA1, HA2, HA3, HA4
+    real(kind=kreal) :: HB1, HB2, HB3, HB4
+    real(kind=kreal) :: HH1, HH2, HH3, HH4
+    real(kind=kreal) :: XXX(NN), YYY(NN), ZZZ(NN)
+    real(kind=kreal) :: XX(4), YY(4), ZZ(4)
 
     XX(1)=ecoord(1,1)
     XX(2)=ecoord(1,2)
@@ -797,9 +811,12 @@ contains
 
   subroutine heat_get_area ( XX,YY,ZZ,AA )
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
-    dimension XX(4),YY(4),ZZ(4)
-    dimension XG(2),H(4),HR(4),HS(4)
+    implicit none
+    real(kind=kreal), intent(inout) :: AA
+    real(kind=kreal), intent(in) :: XX(4),YY(4),ZZ(4)
+    integer(kind=kint) :: LX, LY
+    real(kind=kreal) :: PI, RI, SI, RP, SP, RM, SM, XR, XS, YR, YS, ZR, ZS, DET
+    real(kind=kreal) :: XG(2),H(4),HR(4),HS(4)
 
     PI=4.0*atan(1.0)
 

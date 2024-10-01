@@ -29,7 +29,7 @@ module m_contact_lib
     integer          :: surface !< contacting surface number
     real(kind=kreal) :: distance !< penetration value
     real(kind=kreal) :: wkdist !< copy of penetration value
-    real(kind=kreal) :: lpos(2) !< contact position(local coordinate)
+    real(kind=kreal) :: lpos(3) !< contact position(local coordinate)
     real(kind=kreal) :: gpos(3) !< contact position(global coordinate)
     real(kind=kreal) :: direction(3) !< contact direction
     real(kind=kreal) :: multiplier(3) !< Lagrangian multiplier or contact force
@@ -78,7 +78,7 @@ contains
     integer          :: i,j
     real(kind=kreal) :: shapefunc(nnode)
 
-    call getShapeFunc( etype, cstate%lpos(:), shapefunc )
+    call getShapeFunc( etype, cstate%lpos(1:2), shapefunc )
     mpcval(1:3) = cstate%direction(1:3)
     do i=1,nnode
       do j=1,3
@@ -112,18 +112,20 @@ contains
     real(kind=kreal) :: dum21(nnode*3+3,nnode*3+3), dum22(nnode*3+3,nnode*3+3)
     real(kind=kreal) :: tangent(3,2)
 
-    call getShapeFunc( etype, cstate%lpos(:), shapefunc )
+    call getShapeFunc( etype, cstate%lpos(1:2), shapefunc )
     N(1:3) = cstate%direction(1:3)
     do i=1,nnode
       N( i*3+1:i*3+3 ) = -shapefunc(i)*cstate%direction(1:3)
     enddo
-    forall( i=1:nnode*3+3, j=1:nnode*3+3 )
-      stiff(i,j) = mu* N(i)*N(j)
-    end forall
+    do j=1,nnode*3+3 
+      do i=1,nnode*3+3
+        stiff(i,j) = mu* N(i)*N(j)
+      enddo
+    enddo
     force(1:nnode*3+3) = N(:)
 
     if( fcoeff/=0.d0 .or. flag==CONTACTFSLID ) &
-      call DispIncreMatrix( cstate%lpos, etype, nnode, ele, tangent, metric, dispmat )
+      call DispIncreMatrix( cstate%lpos(1:2), etype, nnode, ele, tangent, metric, dispmat )
 
     ! frictional component
     if( fcoeff/=0.d0 ) then
@@ -176,7 +178,7 @@ contains
 
   stiff = 0.d0
 
-  call getShapeFunc( etype, cstate%lpos(:), shapefunc )
+  call getShapeFunc( etype, cstate%lpos(1:2), shapefunc )
   N(1) = 1.d0
   N(2:nnode+1) = -shapefunc(1:nnode)
 
@@ -255,7 +257,7 @@ end subroutine
     real(kind=kreal),intent(in)       :: xyz(3)        !< Coordinates of a spacial point, whose projecting point is to be computed
     integer, intent(in)               :: etype         !< surface element type
     integer, intent(in)               :: nn            !< number of elemental nodes
-    real(kind=kreal),intent(in)       :: elemt(3,nn)   !< nodes coordinates of surface element
+    real(kind=kreal),intent(in)       :: elemt(:,:)   !< nodes coordinates of surface element
     real(kind=kreal),intent(in)       :: reflen        !< reference length of surface element
     type(tContactState),intent(inout) :: cstate        !< Recorde of contact information
     logical, intent(out)              :: isin          !< in contact or not
@@ -286,12 +288,12 @@ end subroutine
     tol = 1.0D0
     do count=1,100
       call getShapeFunc( etype, r, sfunc )
-      xyz_out = matmul( elemt(:,:), sfunc )
+      xyz_out = matmul( elemt(1:3,1:nn), sfunc )
       dxyz(1:3) = xyz_out(1:3) - xyz(1:3)
       dist_last = dot_product( dxyz, dxyz(:) )
 
-      call TangentBase( etype, nn, r, elemt, tangent )
-      call Curvature( etype, nn, r, elemt, curv )
+      call TangentBase( etype, nn, r, elemt(1:3,1:nn), tangent )
+      call Curvature( etype, nn, r, elemt(1:3,1:nn), curv )
 
       !     dF(1:2)
       dF(1:2) = -matmul( dxyz(:), tangent(:,:) )
@@ -319,7 +321,7 @@ end subroutine
       do order=1,10
         r_tmp(1:2) = r(1:2) + factor*dr(1:2)
         call getShapeFunc( etype, r_tmp, sfunc )
-        xyz_out(1:3) = matmul( elemt(:,:), sfunc(:) )
+        xyz_out(1:3) = matmul( elemt(1:3,1:nn), sfunc(:) )
         dxyz(1:3) = xyz(1:3)-xyz_out(:)
         dist_now = dot_product( dxyz, dxyz )
         if(dist_now <= dist_last) exit
@@ -334,7 +336,7 @@ end subroutine
     cstate%state = CONTACTFREE
     if( isInsideElement( etype, r, clr )>=0 ) then
       dxyz(:)=xyz_out(:)-xyz(:)
-      normal(:) = SurfaceNormal( etype, nn, r, elemt )
+      normal(:) = SurfaceNormal( etype, nn, r, elemt(1:3,1:nn) )
       normal(:) = normal(:)/dsqrt( dot_product(normal, normal) )
       do count = 1,3
         if( dabs(normal(count))<1.D-10 ) normal(count) =0.d0
@@ -351,12 +353,99 @@ end subroutine
           cstate%state = initstate
         endif
         cstate%gpos(:)=xyz_out(:)
-        cstate%lpos(:)=r(:)
+        cstate%lpos(1:2)=r(:)
         cstate%direction(:) = normal(:)
         cstate%wkdist = cstate%distance
       endif
     endif
   end subroutine project_Point2Element
+
+  !> This subroutine find the projection of a slave point onto master surface
+  subroutine project_Point2SolidElement(xyz,etype,nn,elemt,reflen,cstate,isin,distclr,ctpos,localclr)
+    use m_utilities
+    real(kind=kreal),intent(in)       :: xyz(3)        !< Coordinates of a spacial point, whose projecting point is to be computed
+    integer, intent(in)               :: etype         !< surface element type
+    integer, intent(in)               :: nn            !< number of elemental nodes
+    real(kind=kreal),intent(in)       :: elemt(:,:)   !< nodes coordinates of surface element
+    real(kind=kreal),intent(in)       :: reflen        !< reference length of surface element
+    type(tContactState),intent(inout) :: cstate        !< Recorde of contact information
+    logical, intent(out)              :: isin          !< in contact or not
+    real(kind=kreal), intent(in)      :: distclr       !< clearance of contact distance
+    real(kind=kreal), optional        :: ctpos(3)      !< curr contact position( natural coord )
+    real(kind=kreal), optional        :: localclr      !< clearance of contact local coord
+
+    integer          ::  count,order, initstate
+    real(kind=kreal)  ::  determ, inverse(3,3)
+    real(kind=kreal)  ::  sfunc(nn), deriv(nn,3)
+    real(kind=kreal)  ::  r(3), dr(3), r_tmp(3)        ! natural coordinate
+    real(kind=kreal)  ::  xyz_out(3)                   ! curr. projection position
+    real(kind=kreal)  ::  dist_last,dist_now, dxyz(3)  ! dist between the point and its projection
+    real(kind=kreal)  ::  tangent(3,2)                 ! base vectors in tangent space
+    real(kind=kreal)  ::  dF(2),d2F(2,2),normal(3)
+    real(kind=kreal),parameter :: eps = 1.0D-8
+    real(kind=kreal)  ::  clr, tol, factor
+
+    initstate = cstate%state
+    clr = 1.d-4
+    if( present( localclr ) ) clr=localclr
+    if( present( ctpos ) ) then
+      r(:)= ctpos
+    else
+      call getElementCenter( etype, r(:) )
+    endif
+
+    tol = 1.0D0
+    do count=1,100
+      call getShapeFunc( etype, r, sfunc )
+      xyz_out = matmul( elemt(1:3,1:nn), sfunc(1:nn) )
+      dxyz(1:3) = xyz_out(1:3) - xyz(1:3)
+      dist_last = dot_product( dxyz, dxyz(:) )
+
+      call getShapeDeriv( etype, r, deriv )
+      inverse(1:3,1:3) = matmul(elemt(1:3,1:nn),deriv(1:nn,1:3))
+      call calInverse(3, inverse(1:3,1:3))
+      dr(1:3) = -matmul(inverse(1:3,1:3),dxyz(1:3))
+
+      tol=dot_product(dr,dr)
+      if( count > 1 .and. dsqrt(tol)> 3.d0 ) then   ! too far away
+        r= -100.d0; exit
+      endif
+
+      factor = 1.d0
+      do order=1,10
+        r_tmp(1:3) = r(1:3) + factor*dr(1:3)
+        call getShapeFunc( etype, r_tmp, sfunc )
+        xyz_out(1:3) = matmul( elemt(1:3,1:nn), sfunc(1:nn) )
+        dxyz(1:3) = xyz(1:3)-xyz_out(1:3)
+        dist_now = dot_product( dxyz, dxyz )
+        if(dist_now <= dist_last) exit
+        factor = factor*0.7D0
+      enddo
+      r(1:3) = r_tmp(1:3)
+
+      if( tol<eps ) exit
+    enddo
+
+    isin = .false.
+    cstate%state = CONTACTFREE
+    if( isInside3DElement( etype, r, clr )>=0 ) then
+      dxyz(:)=xyz_out(:)-xyz(:)
+      cstate%distance = dsqrt(dot_product( dxyz, dxyz ))
+
+      if( cstate%distance < distclr ) isin = .true.
+
+      if( isin ) then
+        if( initstate== CONTACTFREE ) then
+          cstate%state = CONTACTSTICK
+        else
+          cstate%state = initstate
+        endif
+        cstate%gpos(:)=xyz_out(:)
+        cstate%direction(:) = (/1.d0,0.d0,0.d0/)
+        cstate%lpos(1:3)=r(:)
+      endif
+    endif
+  end subroutine
 
   !> This subroutine find the projection of a slave point onto master surface
   subroutine update_TangentForce(etype,nn,elemt0,elemt,cstate)
@@ -371,8 +460,8 @@ end subroutine
     real(kind=kreal)  ::  coeff(2), norm, norm_tmp
     real(kind=kreal)  ::  tangentForce_tmp(3)
 
-    call TangentBase( etype, nn, cstate%lpos, elemt0, tangent0 )
-    call TangentBase( etype, nn, cstate%lpos, elemt, tangent )
+    call TangentBase( etype, nn, cstate%lpos(1:2), elemt0, tangent0 )
+    call TangentBase( etype, nn, cstate%lpos(1:2), elemt, tangent )
 
     !project tangentforce to base vector tangent0
     do i=1,2

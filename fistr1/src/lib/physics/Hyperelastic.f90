@@ -212,20 +212,26 @@ contains
     constant(1:3)=matl%variables(M_PLCONST1:M_PLCONST3)
     coef = constant(2)
 
-    forall( i=1:3, j=1:3, k=1:3, l=1:3 )
-      cijkl(i,j,k,l) =  constant(1)*(1.d0/(10.d0*coef**2)                            &
-        +66.d0*inv1b/(1050.d0*coef**4)                 &
-        +228.d0*inv1b**2/(7000.d0*coef**6)             &
-        +10380.d0*inv1b**3/(673750.d0*coef**8))        &
-        *dibdc(i,j,1)*dibdc(k,l,1)                       &
-        +constant(1)*(0.5d0+inv1b/(10.d0*coef**2)                    &
-        +33.d0*inv1b**2/(1050.d0*coef**4)              &
-        +76.d0*inv1b**3/(7000.d0*coef**6)              &
-        +2595.d0*inv1b**4/(673750.d0*coef**8))         &
-        *d2ibdc2(i,j,k,l,1)                              &
-        +(1.d0+1.d0/inv3b**2)*dibdc(i,j,3)*dibdc(k,l,3)/constant(3)  &
-        +(inv3b-1.d0/inv3b)*d2ibdc2(i,j,k,l,3)/constant(3)
-    end forall
+    do l=1,3 
+      do k=1,3
+        do j=1,3
+          do i=1,3
+            cijkl(i,j,k,l) =  constant(1)*(1.d0/(10.d0*coef**2)                            &
+              +66.d0*inv1b/(1050.d0*coef**4)                 &
+              +228.d0*inv1b**2/(7000.d0*coef**6)             &
+              +10380.d0*inv1b**3/(673750.d0*coef**8))        &
+              *dibdc(i,j,1)*dibdc(k,l,1)                       &
+              +constant(1)*(0.5d0+inv1b/(10.d0*coef**2)                    &
+              +33.d0*inv1b**2/(1050.d0*coef**4)              &
+              +76.d0*inv1b**3/(7000.d0*coef**6)              &
+              +2595.d0*inv1b**4/(673750.d0*coef**8))         &
+              *d2ibdc2(i,j,k,l,1)                              &
+              +(1.d0+1.d0/inv3b**2)*dibdc(i,j,3)*dibdc(k,l,3)/constant(3)  &
+              +(inv3b-1.d0/inv3b)*d2ibdc2(i,j,k,l,3)/constant(3)
+          enddo
+        enddo
+      enddo
+    enddo
     cijkl(:,:,:,:) = 4.d0*cijkl(:,:,:,:)
 
   end subroutine calElasticArrudaBoyce
@@ -305,12 +311,18 @@ contains
     call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,            &
       dibdc, d2ibdc2, strain    )
 
-    forall( k=1:3, l=1:3, m=1:3, n=1:3 )
-      cijkl(k,l,m,n) = d2ibdc2(k,l,m,n,1)*constant(1) +  &
-        d2ibdc2(k,l,m,n,2)*constant(2) +  &
-        2.d0*(dibdc(k,l,3)*dibdc(m,n,3)+  &
-        (inv3b-1.d0)*d2ibdc2(k,l,m,n,3))*constant(3)
-    end forall
+    do n=1,3
+      do m=1,3
+        do l=1,3
+          do k=1,3
+            cijkl(k,l,m,n) = d2ibdc2(k,l,m,n,1)*constant(1) +  &
+              d2ibdc2(k,l,m,n,2)*constant(2) +  &
+              2.d0*(dibdc(k,l,3)*dibdc(m,n,3)+  &
+              (inv3b-1.d0)*d2ibdc2(k,l,m,n,3))*constant(3)
+          enddo
+        enddo
+      enddo
+    enddo
     cijkl(:,:,:,:)=4.d0*cijkl(:,:,:,:)
 
   end subroutine calElasticMooneyRivlin
@@ -399,14 +411,20 @@ contains
     call cderiv( matl, sectType, ctn, itn, inv1b, inv2b, inv3b,      &
       dibdc, d2ibdc2, strain, cdsys(1,1:3), inv4b, dibdc_ani, d2ibdc2_ani )
 
-    forall( k=1:3, l=1:3, m=1:3, n=1:3 )
-      cijkl(k,l,m,n) = d2ibdc2(k,l,m,n,1)*constant(1) +  &
-        d2ibdc2(k,l,m,n,2)*constant(2) +  &
-        2.d0*(dibdc(k,l,3)*dibdc(m,n,3)+  &
-        (inv3b-1.d0)*d2ibdc2(k,l,m,n,3))*constant(3)+ &
-        (2.d0*constant(4)+6.d0*(inv4b-1.d0)*constant(5))*dibdc_ani(k,l)*dibdc_ani(m,n)+ &
-        (inv4b-1.d0)*(2.d0*constant(4)+3.d0*(inv4b-1.d0)*constant(5))*d2ibdc2_ani(k,l,m,n)
-    end forall
+    do n=1,3 
+      do m=1,3
+        do l=1,3
+          do k=1,3
+            cijkl(k,l,m,n) = d2ibdc2(k,l,m,n,1)*constant(1) +  &
+              d2ibdc2(k,l,m,n,2)*constant(2) +  &
+              2.d0*(dibdc(k,l,3)*dibdc(m,n,3)+  &
+              (inv3b-1.d0)*d2ibdc2(k,l,m,n,3))*constant(3)+ &
+              (2.d0*constant(4)+6.d0*(inv4b-1.d0)*constant(5))*dibdc_ani(k,l)*dibdc_ani(m,n)+ &
+              (inv4b-1.d0)*(2.d0*constant(4)+3.d0*(inv4b-1.d0)*constant(5))*d2ibdc2_ani(k,l,m,n)
+          enddo
+        enddo
+      enddo
+    enddo
     cijkl(:,:,:,:)=4.d0*cijkl(:,:,:,:)
 
   end subroutine calElasticMooneyRivlinAniso

@@ -80,6 +80,7 @@ test/hybrid/openmp/ubuntu2004:
     extends: [".test",".ubuntu2004"]
     needs: ["build/hybrid/ubuntu2004"]
 test/hybrid/mpi/ubuntu2004:
+    tags: ["saas-linux-medium-amd64"]
     extends: [".test",".ubuntu2004"]
     needs: ["build/hybrid/ubuntu2004"]
 test/hybrid/hybrid/ubuntu2004:
@@ -109,6 +110,7 @@ test/hybrid/openmp/ubuntu2204:
     extends: [".test",".ubuntu2204"]
     needs: ["build/hybrid/ubuntu2204"]
 test/hybrid/mpi/ubuntu2204:
+    tags: ["saas-linux-medium-amd64"]
     extends: [".test",".ubuntu2204"]
     needs: ["build/hybrid/ubuntu2204"]
 test/hybrid/hybrid/ubuntu2204:
@@ -169,7 +171,7 @@ docker/fistr1:
     - cd docker/container
     - make push
   tags:
-    - docker
+    - gitlab-org-docker
 
 x86_64-w64-mingw32/thread-openblas:
     image: ${REGISTRY}/x86_64-w64-mingw32/thread:openblas

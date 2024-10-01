@@ -51,10 +51,10 @@ contains
 
     if (hecmw_mat_get_flag_mpcmatvec(hecMAT) /= 0) then
       allocate(WK(hecMAT%NP * hecMAT%NDOF))
-      call hecmw_TtmatTvec_nn(hecMESH, hecMAT, X, Y, WK, Tcomm)
+      call hecmw_TtmatTvec_nn(hecMESH, hecMAT, X, Y, WK, time_Ax, Tcomm)
       deallocate(WK)
     else
-      call hecmw_matvec_nn_inner(hecMESH, hecMAT, X, Y, Tcomm)
+      call hecmw_matvec_nn_inner(hecMESH, hecMAT, X, Y, time_Ax, Tcomm)
     endif
 
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
@@ -317,20 +317,21 @@ contains
   !C*** hecmw_matresid_nn
   !C***
   !C
-  subroutine hecmw_matresid_nn (hecMESH, hecMAT, X, B, R, COMMtime)
+  subroutine hecmw_matresid_nn (hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
     real(kind=kreal), intent(in) :: X(:), B(:)
     real(kind=kreal), intent(out) :: R(:)
+    real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout), optional :: COMMtime
 
     integer(kind=kint) :: i
     real(kind=kreal) :: Tcomm
 
     Tcomm = 0.d0
-    call hecmw_matvec_nn (hecMESH, hecMAT, X, R, Tcomm)
+    call hecmw_matvec_nn (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
     !$omp parallel default(none),private(i),shared(hecMAT,R,B)
     !$omp do
@@ -346,13 +347,14 @@ contains
   !C*** hecmw_rel_resid_L2_nn
   !C***
   !C
-  function hecmw_rel_resid_L2_nn (hecMESH, hecMAT, COMMtime)
+  function hecmw_rel_resid_L2_nn (hecMESH, hecMAT, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_solver_misc
     implicit none
     real(kind=kreal) :: hecmw_rel_resid_L2_nn
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH
     type ( hecmwST_matrix     ), intent(in) :: hecMAT
+    real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout), optional :: COMMtime
 
     real(kind=kreal), allocatable :: r(:)
@@ -367,7 +369,7 @@ contains
     if (bnorm2 == 0.d0) then
       bnorm2 = 1.d0
     endif
-    call hecmw_matresid_nn(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
+    call hecmw_matresid_nn(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, time_Ax, Tcomm)
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
     hecmw_rel_resid_L2_nn = sqrt(rnorm2 / bnorm2)
 
@@ -464,6 +466,7 @@ contains
       Y(kk) = 0.d0
       do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
         jj = ndof * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+        !$omp atomic
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
     enddo OUTER
@@ -478,17 +481,18 @@ contains
   !C*** hecmw_TtmatTvec_nn
   !C***
   !C
-  subroutine hecmw_TtmatTvec_nn (hecMESH, hecMAT, X, Y, W, COMMtime)
+  subroutine hecmw_TtmatTvec_nn (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Y(:), W(:)
+    real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout) :: COMMtime
 
     call hecmw_Tvec_nn(hecMESH, hecMAT%NDOF, X, Y, COMMtime)
-    call hecmw_matvec_nn_inner(hecMESH, hecMAT, Y, W, COMMtime)
+    call hecmw_matvec_nn_inner(hecMESH, hecMAT, Y, W, time_Ax, COMMtime)
     call hecmw_Ttvec_nn(hecMESH, hecMAT%NDOF, W, Y, COMMtime)
 
   end subroutine hecmw_TtmatTvec_nn

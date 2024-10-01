@@ -396,13 +396,17 @@ static int read_amplitude(void) {
 
 /*----------------------------------------------------------------------------*/
 
-static int read_contact_pair_head(int *last_token) {
+static int read_contact_or_insert_pair_head(int *last_token, int *type) {
   int token;
 
   /* !CONTACT */
   token = HECMW_heclex_next_token();
-  if (token != HECMW_HECLEX_H_CONTACT_PAIR) {
-    set_err_token(token, HECMW_IO_HEC_E2100, "!CONTACT required");
+  if ( token == HECMW_HECLEX_H_CONTACT_PAIR ){
+    *type = HECMW_CONTACT_TYPE_NODE_SURF;
+  } else if ( token == HECMW_HECLEX_H_EMBED_PAIR ){
+    *type = HECMW_CONTACT_TYPE_NODE_ELEM;
+  } else {
+    set_err_token(token, HECMW_IO_HEC_E2100, "!CONTACT or !EMBED required");
     return -1;
   }
 
@@ -459,6 +463,8 @@ static int read_contact_pair_param_type(int *type) {
     *type = HECMW_CONTACT_TYPE_NODE_SURF;
   } else if (token == HECMW_HECLEX_K_SURF_SURF) {
     *type = HECMW_CONTACT_TYPE_SURF_SURF;
+  } else if (token == HECMW_HECLEX_K_NODE_ELEM) {
+    *type = HECMW_CONTACT_TYPE_NODE_ELEM;
   } else {
     set_err_token(token, HECMW_IO_HEC_E2100, "Invalid  TYPE");
     return -1;
@@ -492,6 +498,8 @@ static int read_contact_pair_data(char *name, int type) {
       set_err_token(token, HECMW_IO_HEC_E2100, "NGROUP name required");
     } else if (type == HECMW_CONTACT_TYPE_SURF_SURF) {
       set_err_token(token, HECMW_IO_HEC_E2100, "SGROUP name required");
+    } else if (type == HECMW_CONTACT_TYPE_NODE_ELEM) {
+      set_err_token(token, HECMW_IO_HEC_E2100, "NGROUP name required");
     } else {
       HECMW_assert(0);
     }
@@ -558,7 +566,7 @@ static int read_contact_pair(void) {
   state = ST_HEADER_LINE;
   while (state != ST_FINISHED) {
     if (state == ST_HEADER_LINE) {
-      if (read_contact_pair_head(&token)) return -1;
+      if (read_contact_or_insert_pair_head(&token,&type)) return -1;
       if (token == HECMW_HECLEX_NL) {
         state = ST_DATA_LINE;
       } else if (token == ',') {
@@ -4363,6 +4371,7 @@ static struct read_func_table {
     {HECMW_HECLEX_H_AMPLITUDE, read_amplitude},
     {HECMW_HECLEX_H_CONNECTIVITY, read_connectivity},
     {HECMW_HECLEX_H_CONTACT_PAIR, read_contact_pair},
+    {HECMW_HECLEX_H_EMBED_PAIR, read_contact_pair},
     /*	{ HECMW_HECLEX_H_ECOPY,     read_ecopy     }, */
     /*	{ HECMW_HECLEX_H_EGEN,      read_egen      }, */
     {HECMW_HECLEX_H_EGROUP, read_egroup},

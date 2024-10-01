@@ -5,8 +5,9 @@
 
 module hecmw_estimate_condition
 
-  public :: hecmw_estimate_cond_num_CG
-  public :: hecmw_estimate_cond_num_GMRES
+  private
+  public :: hecmw_estimate_condition_CG
+  public :: hecmw_estimate_condition_GMRES
 
 contains
 

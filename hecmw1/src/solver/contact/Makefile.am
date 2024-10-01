@@ -84,7 +84,8 @@ OBJSF = \
 	set_arrays_DirectSolver.@f90objfilepostfix@ \
 	solve_LINEQ_mkl.@f90objfilepostfix@ \
 	solve_LINEQ_direct_serial_lag.@f90objfilepostfix@ \
-	solve_LINEQ_iter_contact.@f90objfilepostfix@
+	solve_LINEQ_contact_elim.@f90objfilepostfix@ \
+	hecmw_solver_contact.@f90objfilepostfix@
 
 HEADERS =
 

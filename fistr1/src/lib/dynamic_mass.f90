@@ -70,9 +70,11 @@ contains
       enddo
 
       DN(1:2, 1:nn*ndof) = matmul(D, N(1:2, 1:nn*ndof))
-      forall(i = 1:nn*ndof,  j = 1:nn*ndof)
-        mass(i,j) = mass(i,j) + dot_product(N(:,i), DN(:,j))*wg
-      end forall
+      do  j = 1,nn*ndof
+        do i = 1,nn*ndof
+          mass(i,j) = mass(i,j) + dot_product(N(:,i), DN(:,j))*wg
+        enddo
+      enddo
     enddo
 
     is_lumped = .true.
@@ -142,9 +144,11 @@ contains
       enddo
 
       DN(1:3, 1:nn*ndof) = matmul(D, N(1:3, 1:nn*ndof))
-      forall(i = 1:nn*ndof,  j = 1:nn*ndof)
-        mass(i,j) = mass(i,j) + dot_product(N(:,i), DN(:,j))*wg
-      end forall
+      do  j = 1,nn*ndof
+        do i = 1,nn*ndof
+          mass(i,j) = mass(i,j) + dot_product(N(:,i), DN(:,j))*wg
+        enddo
+      enddo
     enddo
 
     is_lumped = .true.

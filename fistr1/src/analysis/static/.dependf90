@@ -1,9 +1,9 @@
-fstr_AddBC.o : fstr_AddBC.f90 fstr_AddContactStiff.o fstr_mat_con_contact.o 
+fstr_AddBC.o : fstr_AddBC.f90 
 fstr_AddContactStiff.o : fstr_AddContactStiff.f90 fstr_Residual.o fstr_mat_con_contact.o 
 fstr_Ctrl_TimeInc.o : fstr_Ctrl_TimeInc.f90 
 fstr_Cutback.o : fstr_Cutback.f90 
 fstr_NodalStress.o : fstr_NodalStress.f90 
-fstr_Residual.o : fstr_Residual.f90 fstr_mat_con_contact.o fstr_Spring.o 
+fstr_Residual.o : fstr_Residual.f90 fstr_Spring.o 
 fstr_Restart.o : fstr_Restart.f90 
 fstr_Spring.o : fstr_Spring.f90 
 fstr_StiffMatrix.o : fstr_StiffMatrix.f90 
@@ -11,7 +11,7 @@ fstr_Update.o : fstr_Update.f90
 fstr_ass_load.o : fstr_ass_load.f90 fstr_Spring.o readtemp.o 
 fstr_mat_con_contact.o : fstr_mat_con_contact.f90 
 fstr_solve_NLGEOM.o : fstr_solve_NLGEOM.f90 fstr_Cutback.o fstr_Ctrl_TimeInc.o fstr_mat_con_contact.o fstr_Restart.o fstr_solve_NonLinear.o static_output.o 
-fstr_solve_NonLinear.o : fstr_solve_NonLinear.f90 fstr_AddContactStiff.o fstr_mat_con_contact.o fstr_Restart.o fstr_Residual.o fstr_AddBC.o fstr_ass_load.o fstr_Update.o fstr_StiffMatrix.o fstr_Spring.o static_output.o 
+fstr_solve_NonLinear.o : fstr_solve_NonLinear.f90 fstr_AddContactStiff.o fstr_Restart.o fstr_Residual.o fstr_AddBC.o fstr_ass_load.o fstr_Update.o fstr_StiffMatrix.o fstr_Spring.o static_output.o 
 make_result.o : make_result.f90 
 readtemp.o : readtemp.f90 
 static_echo.o : static_echo.f90 

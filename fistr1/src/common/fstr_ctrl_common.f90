@@ -69,7 +69,7 @@ contains
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
-      solver_opt, &
+      solver_opt, contact_elim, &
       resid, singma_diag, sigma, thresh, filter )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
@@ -92,6 +92,7 @@ contains
     integer(kind=kint) :: method2
     integer(kind=kint) :: recyclepre
     integer(kind=kint) :: solver_opt(10)
+    integer(kind=kint) :: contact_elim
     real(kind=kreal) :: resid
     real(kind=kreal) :: singma_diag
     real(kind=kreal) :: sigma
@@ -132,6 +133,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'CONTACT_ELIM ','# ',            0,   'I',contact_elim ) /= 0) return
     ! JP-1
     if( method > number_number ) then  ! JP-2
       method = method - number_number
@@ -239,6 +241,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'MAXITER ',  '# ',  0, 'I', steps%max_iter )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MAXCONTITER ',  '# ',  0, 'I', steps%max_contiter )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG ',  '# ',  0, 'R', steps%converg )/= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG_LAG ',  '# ',  0, 'R', steps%converg_lag )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MAXRES ',  '# ',  0, 'R', steps%maxres )/= 0) return
     amp = ""
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
@@ -580,6 +583,46 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
     fstr_ctrl_get_CONTACT = .true.
   end function fstr_ctrl_get_CONTACT
+
+  !>  Read in contact definition
+  logical function fstr_ctrl_get_EMBED( ctrl, n, embed, cpname )
+    use fstr_setup_util
+    integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
+    integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
+    type(tContact), intent(out)       :: embed(n)      !< embed definition
+    character(len=*), intent(out)     :: cpname         !< name of contact parameter
+
+    integer           :: rcode, ipt
+    character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
+    character(len=HECMW_NAME_LEN) :: data_fmt,ss
+    character(len=HECMW_NAME_LEN) :: cp_name(n)
+    real(kind=kreal)  :: fcoeff(n),tPenalty(n)
+
+    tPenalty = 1.0d6
+
+    write(ss,*)  HECMW_NAME_LEN
+
+    fstr_ctrl_get_EMBED = .false.
+    embed(1)%ctype = 1   ! pure slave-master contact; default value
+    embed(1)%algtype = CONTACTTIED ! small sliding contact; default value
+    if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', embed(1)%group )/=0) return
+    do rcode=2,n
+      embed(rcode)%ctype = embed(1)%ctype
+      embed(rcode)%group = embed(1)%group
+      embed(rcode)%algtype = embed(1)%algtype
+    end do
+
+    write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
+    if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
+    do rcode=1,n
+      call fstr_strupr(cp_name(rcode))
+      embed(rcode)%pair_name = cp_name(rcode)
+    enddo
+
+    cpname=""
+    if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
+    fstr_ctrl_get_EMBED = .true.
+  end function 
 
   !> Read in !CONTACT_PARAM                                                             !
   function fstr_ctrl_get_CONTACTPARAM( ctrl, contactparam )

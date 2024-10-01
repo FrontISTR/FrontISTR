@@ -1,0 +1,67 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION,TYPE=NLSTATIC
+!CONTACT_ALGO, TYPE=SLAGRANGE
+!WRITE,LOG
+!WRITE,RESULT,FREQUENCY=10
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRAIN,OFF
+NSTRESS,ON
+NMISES,ON
+ESTRAIN,OFF
+ESTRESS,ON
+EMISES,ON
+ISTRAIN,ON
+ISTRESS,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_RELVEL,ON
+CONTACT_STATE,ON
+CONTACT_FTRACTION,ON
+CONTACT_NTRACTION,ON
+!SOLVER,METHOD=DIRECTmkl,ITERLOG=YES,TIMELOG=NO,MPCMETHOD=1
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ B1_S1, 1, 3, 0.00000
+!BOUNDARY, GRPID=2
+ B3_S4, 1, 3, 0.00000
+ B3_S6, 1, 3, 0.00000
+!DLOAD, GRPID=1
+ B3_S2, S, 20.00000
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1
+CP1, 0.2, 50.0
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=M1
+!ELASTIC, TYPE=ISOTROPIC
+ 4000.00, 0.300000
+###################################
+#####       STEP CONTROL      #####
+###################################
+#!STEP, INC_TYPE=AUTO, SUBSTEPS=200
+#0.2, 1.0, 1E-5, 1.0
+!STEP, SUBSTEPS=1
+BOUNDARY,1
+BOUNDARY,2
+LOAD,1
+CONTACT, 1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+!WRITE,VISUAL
+!VISUAL, method=PSR
+!surface_num=1
+!surface
+!output_type = VTK
+!END

@@ -1,7 +1,8 @@
-hecmw_mat_resid_contact.o : hecmw_mat_resid_contact.f90
+hecmw_mat_resid_contact.o : hecmw_mat_resid_contact.f90 
+hecmw_solver_contact.o : hecmw_solver_contact.f90 hecmw_mat_resid_contact.o solve_LINEQ_contact_elim.o solve_LINEQ_MUMPS_contact.o solve_LINEQ_direct_serial_lag.o solve_LINEQ_mkl.o 
 set_arrays_DirectSolver.o : set_arrays_DirectSolver.f90 
 solve_LINEQ_MUMPS_contact.o : solve_LINEQ_MUMPS_contact.f90 sparse_matrix_contact.o 
+solve_LINEQ_contact_elim.o : solve_LINEQ_contact_elim.f90 
 solve_LINEQ_direct_serial_lag.o : solve_LINEQ_direct_serial_lag.f90 set_arrays_DirectSolver.o 
-solve_LINEQ_iter_contact.o : solve_LINEQ_iter_contact.f90 
 solve_LINEQ_mkl.o : solve_LINEQ_mkl.F90 sparse_matrix_contact.o 
 sparse_matrix_contact.o : sparse_matrix_contact.f90 

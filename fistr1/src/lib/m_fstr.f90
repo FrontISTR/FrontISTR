@@ -209,6 +209,7 @@ module m_fstr
     real(kind=kreal), pointer :: ESTRESS(:) => null()  !< elemental stress
     real(kind=kreal), pointer :: ESTRAIN(:) => null()  !< elemental strain
     real(kind=kreal), pointer :: EMISES(:) => null()   !< elemental MISES
+    real(kind=kreal), pointer :: EPLSTRAIN(:) => null()   !< elemental plastic strain
 
     real(kind=kreal), pointer :: EPSTRESS(:) => null()  !< elemental principal stress
     real(kind=kreal), pointer :: EPSTRAIN(:) => null()  !< elemental principal strain
@@ -237,6 +238,7 @@ module m_fstr
     integer(kind=kint), pointer :: BOUNDARY_ngrp_type   (:)  =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_amp    (:)  =>null()
     real(kind=kreal), pointer   :: BOUNDARY_ngrp_val    (:)  =>null()
+    integer(kind=kint), pointer :: BOUNDARY_ngrp_istot  (:)  =>null()
     integer(kind=kint) :: BOUNDARY_ngrp_rot                   !< number of rotational boundary conditions
     integer(kind=kint), pointer :: BOUNDARY_ngrp_rotID     (:) =>null()
     integer(kind=kint), pointer :: BOUNDARY_ngrp_centerID  (:) =>null()
@@ -339,6 +341,7 @@ module m_fstr
     real(kind=kreal), pointer :: CONT_AREA(:)    !< contact area
     real(kind=kreal), pointer :: CONT_NTRAC(:)   !< contact normal traction force for output
     real(kind=kreal), pointer :: CONT_FTRAC(:)   !< contact friction traction force for output
+    real(kind=kreal), pointer :: EMBED_NFORCE(:)  !< embed force for output
 
     type(fstr_solid_physic_val), pointer :: SOLID=>null()     !< for solid physical value stracture
     type(fstr_solid_physic_val), pointer :: SHELL=>null()     !< for shell physical value stracture
@@ -372,6 +375,7 @@ module m_fstr
     real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
+    real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
     real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp increment
     real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
@@ -380,7 +384,10 @@ module m_fstr
 
     type( tElement ), pointer :: elements(:)   =>null()  !< elements information
     type( tMaterial ),pointer :: materials(:)  =>null()  !< material properties
+    integer                   :: n_contacts              !< number of contact conditions
     type( tContact ), pointer :: contacts(:)   =>null()  !< contact information
+    integer                   :: n_embeds               !< number of embed conditions
+    type( tContact ), pointer :: embeds(:)   =>null()  !< contact information
     integer                   :: n_fix_mpc               !< number mpc conditions user defined
     real(kind=kreal), pointer :: mpc_const(:)  =>null()  !< bakeup of hecmwST_mpc%mpc_const
     type(tSection), pointer   :: sections(:)   =>null()  !< definition of section referred by elements(i)%sectionID
@@ -397,6 +404,7 @@ module m_fstr
     real(kind=kreal), pointer :: last_temp_bkup(:) => null()
     type( tElement ), pointer :: elements_bkup(:)  =>null()  !< elements information (backup)
     type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
+    type( tContact ), pointer :: embeds_bkup(:)  =>null()  !< contact information (backup)
   end type fstr_solid
 
   !> Data for HEAT ANSLYSIS  (fstrHEAT)
@@ -1034,6 +1042,16 @@ contains
     if( .not. associated(fstrSOLID%step_ctrl) ) return
     if( cstep>fstrSOLID%nstep_tot ) return
     fstr_isContactActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
+  end function
+
+  logical function fstr_isEmbedActive( fstrSOLID, nbc, cstep )
+    type(fstr_solid)     :: fstrSOLID !< type fstr_solid
+    integer, intent(in) :: nbc       !< group id of boundary condition
+    integer, intent(in) :: cstep     !< current step number
+    fstr_isEmbedActive = .true.
+    if( .not. associated(fstrSOLID%step_ctrl) ) return
+    if( cstep>fstrSOLID%nstep_tot ) return
+    fstr_isEmbedActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
   end function
 
   !> This subroutine fetch coords defined by local coordinate system

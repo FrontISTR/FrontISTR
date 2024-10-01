@@ -223,8 +223,8 @@ contains
     integer(kind=kint) :: i, grpid
     logical :: iactive, is_init
 
-    fstrSOLID%CONT_RELVEL(:) = 0.d0
-    fstrSOLID%CONT_STATE(:) = 0.d0
+    if( associated( fstrSOLID%CONT_RELVEL ) ) fstrSOLID%CONT_RELVEL(:) = 0.d0
+    if( associated( fstrSOLID%CONT_STATE ) ) fstrSOLID%CONT_STATE(:) = 0.d0
 
     if( ctAlgo == kcaSLAGRANGE ) then
       flag_ctAlgo = 'SLagrange'
@@ -247,7 +247,7 @@ contains
 
     is_init = ( cstep == 1 .and. sub_step == 1 .and. cont_step == 0 )
 
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
         call clear_contact_state(fstrSOLID%contacts(i));  cycle
@@ -262,11 +262,21 @@ contains
       if( .not. active ) active = iactive
     enddo
 
-    if( is_init .and. ctAlgo == kcaSLAGRANGE ) &
+    do i=1,fstrSOLID%n_embeds
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) then
+        call clear_contact_state(fstrSOLID%embeds(i));  cycle
+      endif
+      call scan_embed_state( flag_ctAlgo, fstrSOLID%embeds(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+          & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu )
+      if( .not. active ) active = iactive
+    enddo
+
+    if( is_init .and. ctAlgo == kcaSLAGRANGE .and. fstrSOLID%n_contacts > 0 ) &
       &  call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
 
     !for output contact state
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
       call set_contact_state_vector( fstrSOLID%contacts(i), dt, fstrSOLID%CONT_RELVEL, fstrSOLID%CONT_STATE )
     enddo
 
@@ -274,8 +284,8 @@ contains
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
 
     if( .not. active ) then
-      fstrSOLID%CONT_NFORCE(:) = 0.d0
-      fstrSOLID%CONT_FRIC(:) = 0.d0
+      if( associated( fstrSOLID%CONT_NFORCE ) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
+      if( associated( fstrSOLID%CONT_FRIC ) ) fstrSOLID%CONT_FRIC(:) = 0.d0
     end if
 
   end subroutine
@@ -308,7 +318,7 @@ contains
       enddo
     enddo
 
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
       if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -361,7 +371,7 @@ contains
 
     is_init = ( cstep == 1 )
 
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
    !   grpid = fstrSOLID%contacts(i)%group
    !   if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
    !     call clear_contact_state(fstrSOLID%contacts(i));  cycle
@@ -386,7 +396,7 @@ contains
 
     integer(kind=kint) :: i, algtype
 
-    do i=1, size(fstrSOLID%contacts)
+    do i=1, fstrSOLID%n_contacts
       !   if( contacts(i)%mpced ) cycle
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
@@ -395,6 +405,10 @@ contains
       else if( algtype == CONTACTTIED ) then
         call calcu_tied_force0( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
       endif
+    enddo
+
+    do i=1, fstrSOLID%n_embeds
+      call calcu_tied_force0( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
     enddo
 
   end subroutine
@@ -408,17 +422,23 @@ contains
     integer(kind=kint) :: i, nc, algtype
 
     gnt = 0.d0;  ctchanged = .false.
-    nc = size(fstrSOLID%contacts)
-    do i=1, nc
+    nc = fstrSOLID%n_contacts+fstrSOLID%n_embeds
+    do i=1, fstrSOLID%n_contacts
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
         call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
         , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged )
       else if( algtype == CONTACTTIED ) then
         call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
-                                     &  mu, ctchanged )
+                                      &  mu, ctchanged )
       endif
     enddo
+
+    do i=1, fstrSOLID%n_embeds
+      call update_tied_multiplier( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
+      &  mu, ctchanged )
+    enddo
+
     if( nc>0 ) gnt = gnt/nc
   end subroutine
 
@@ -430,7 +450,7 @@ contains
 
     integer(kind=kint) :: i, algtype
 
-    do i = 1, size(fstrSOLID%contacts)
+    do i = 1, fstrSOLID%n_contacts
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
         call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, B )
@@ -438,16 +458,19 @@ contains
         call calcu_tied_force0( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
       endif
     enddo
+
+    do i = 1, fstrSOLID%n_embeds
+      call calcu_tied_force0( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
+    enddo
   end subroutine
 
   !> Update tangent force
   subroutine fstr_update_contact_TangentForce( fstrSOLID )
     type(fstr_solid), intent(inout)        :: fstrSOLID
 
-    integer(kind=kint) :: i, nc
+    integer(kind=kint) :: i
 
-    nc = size(fstrSOLID%contacts)
-    do i=1, nc
+    do i=1, fstrSOLID%n_contacts
       call update_contact_TangentForce( fstrSOLID%contacts(i) )
     enddo
   end subroutine
@@ -472,7 +495,7 @@ contains
 
     factor = fstrSOLID%FACTOR(2)
 
-    do i=1,size(fstrSOLID%contacts)
+    do i=1,fstrSOLID%n_contacts
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -513,6 +536,26 @@ contains
           enddo
         enddo
 
+      enddo
+    enddo
+
+    do i=1,fstrSOLID%n_embeds
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+      do j=1, size(fstrSOLID%embeds(i)%slave)
+        if( fstrSOLID%embeds(i)%states(j)%state==CONTACTFREE ) cycle   ! free
+        ctsurf = fstrSOLID%embeds(i)%states(j)%surface          ! contacting surface
+        etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
+        do k=1,nnode
+          ndLocal(k+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(k)
+          elecoord(1:3,k)=hecMESH%node(3*ndLocal(k+1)-2:3*ndLocal(k+1))
+        enddo
+        call tied2stiff( algtype, fstrSOLID%embeds(i)%states(j),    &
+        etype, nnode, mu, mut, stiff(:,:), force(:) )
+        ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
+        call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiff)
       enddo
     enddo
 
@@ -559,6 +602,16 @@ contains
 
   end subroutine
 
+  subroutine initialize_embed_vectors(fstrSOLID,hecMAT)
+    type(fstr_solid)       :: fstrSOLID      !< type fstr_solid
+    type(hecmwST_matrix)   :: hecMAT         !< type hecmwST_matrix
+
+    if( .not. associated(fstrSOLID%EMBED_NFORCE) ) then
+      allocate( fstrSOLID%EMBED_NFORCE(hecMAT%NP*3) )
+      fstrSOLID%EMBED_NFORCE(:) = 0.d0
+    end if
+  end subroutine
+
   subroutine setup_contact_elesurf_for_area( cstep, hecMESH, fstrSOLID )
     integer(kind=kint), intent(in)               :: cstep         !< current step number
     type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
@@ -575,7 +628,7 @@ contains
 
     ! label contact defined surfaces
     n_cdsurfs = 0
-    do i=1, size(fstrSOLID%contacts)
+    do i=1, fstrSOLID%n_contacts
       !grpid = fstrSOLID%contacts(i)%group
       !if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
       !  call clear_contact_state(fstrSOLID%contacts(i));  cycle
@@ -706,5 +759,69 @@ contains
     end do
 
   end subroutine
+
+  subroutine fstr_setup_parancon_contactvalue(hecMESH,ndof,vec,vtype)
+    use m_fstr
+    implicit none
+    type(hecmwST_local_mesh), intent(in)      :: hecMESH
+    integer(kind=kint), intent(in)            :: ndof
+    real(kind=kreal), pointer, intent(inout)  :: vec(:)
+    integer(kind=kint), intent(in)            :: vtype !1:value, 2:state
+    !
+    real(kind=kreal) ::  rhsB
+    integer(kind=kint) ::  i,j,N,i0,N_loc,nndof
+    integer(kind=kint) :: offset, pid, lid
+    integer(kind=kint), allocatable :: displs(:)
+    real(kind=kreal), allocatable   :: vec_all(:)
+  
+    !
+    N_loc = hecMESH%nn_internal
+    allocate(displs(0:nprocs))
+    displs(:) = 0
+    displs(myrank+1) = N_loc
+    call hecmw_allreduce_I(hecMESH, displs, nprocs+1, hecmw_sum)
+    do i=1,nprocs
+      displs(i) = displs(i-1) + displs(i)
+    end do
+    offset = displs(myrank)
+    N = displs(nprocs)
+  
+    allocate(vec_all(ndof*N))
+  
+    if( vtype == 1 ) then
+      vec_all(:) = 0.d0
+      do i= hecMESH%nn_internal+1,hecMESH%n_node
+        pid = hecMESH%node_ID(i*2)
+        lid = hecMESH%node_ID(i*2-1)
+        i0 = (displs(pid) + (lid-1))*ndof
+        vec_all(i0+1:i0+ndof) = vec((i-1)*ndof+1:i*ndof)
+        vec((i-1)*ndof+1:i*ndof) = 0.d0
+      enddo
+  
+      call hecmw_allreduce_R(hecMESH, vec_all, N*ndof, hecmw_sum)
+  
+      do i=1,ndof*N_loc
+        vec(i) = vec(i) + vec_all(offset*ndof+i)
+      end do
+    else if( vtype == 2 ) then
+      vec_all(:) = -1000.d0
+      do i= hecMESH%nn_internal+1,hecMESH%n_node
+        if( vec(i) == 0.d0 ) cycle
+        pid = hecMESH%node_ID(i*2)
+        lid = hecMESH%node_ID(i*2-1)
+        i0 = displs(pid) + lid
+        vec_all(i0) = vec(i)
+      enddo
+  
+      call hecmw_allreduce_R(hecMESH, vec_all, N, hecmw_max)
+  
+      do i=1,N_loc
+        if( vec_all(offset+i) == -1000.d0 ) cycle
+        if( vec(i) < vec_all(offset+i) ) vec(i) = vec_all(offset+i)
+      end do
+    end if
+  
+    deallocate(displs,vec_all)
+    end subroutine
 
 end module mContact

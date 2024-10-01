@@ -7,10 +7,16 @@ module m_ElastoPlastic
   use hecmw_util
   use mMaterial
   use m_ElasticLinear
+  use mUYield
 
   implicit none
 
-  real(kind=kreal), private, parameter :: Id(6,6) = reshape( &
+  private
+  public :: calElastoPlasticMatrix
+  public :: BackwardEuler
+  public :: updateEPState
+
+  real(kind=kreal), parameter :: Id(6,6) = reshape( &
     & (/  2.d0/3.d0, -1.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
     &    -1.d0/3.d0,  2.d0/3.d0, -1.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
     &    -1.d0/3.d0, -1.d0/3.d0,  2.d0/3.d0,  0.d0,  0.d0,  0.d0,   &
@@ -18,6 +24,20 @@ module m_ElastoPlastic
     &          0.d0,       0.d0,       0.d0,  0.d0, 0.5d0,  0.d0,   &
     &          0.d0,       0.d0,       0.d0,  0.d0,  0.d0, 0.5d0/), &
     & (/6, 6/))
+  real(kind=kreal), parameter :: I2(6) = (/ 1.d0, 1.d0, 1.d0, 0.d0, 0.d0, 0.d0 /)
+
+  integer, parameter :: VM_ELASTIC = 0
+  integer, parameter :: VM_PLASTIC = 1
+
+  integer, parameter :: MC_ELASTIC       = 0
+  integer, parameter :: MC_PLASTIC_SURF  = 1
+  integer, parameter :: MC_PLASTIC_RIGHT = 2
+  integer, parameter :: MC_PLASTIC_LEFT  = 3
+  integer, parameter :: MC_PLASTIC_APEX  = 4
+
+  integer, parameter :: DP_ELASTIC      = 0
+  integer, parameter :: DP_PLASTIC_SURF = 1
+  integer, parameter :: DP_PLASTIC_APEX = 2
 
 contains
 
@@ -33,21 +53,50 @@ contains
     real(kind=kreal), intent(in)  :: temperature   !> temperature
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    integer :: i,j,ytype,hdflag_in
-    logical :: kinematic
-    real(kind=kreal) :: dum, dj1(6), dj2(6), dj3(6), a(6), De(6,6), G, dlambda
-    real(kind=kreal) :: C1,C2,C3, back(6)
-    real(kind=kreal) :: J1,J2,J3, fai, sita, harden, khard, da(6), devia(6)
+    integer :: ytype,hdflag_in
 
     hdflag_in = 0
     if( present(hdflag) ) hdflag_in = hdflag
 
     ytype = getYieldFunction( matl%mtype )
-    if( ytype==3 ) then
-      call uElastoPlasticMatrix( matl, stress, istat, extval, D  )
-      return
-    endif
+    select case (ytype)
+    case (0)
+      call calElastoPlasticMatrix_VM( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
+    case (1)
+      call calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
+    case (2)
+      call calElastoPlasticMatrix_DP( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag_in )
+    case (3)
+      call uElastoPlasticMatrix( matl%variables, stress, istat, extval, plstrain, D, temperature, hdflag_in )
+    end select
+  end subroutine calElastoPlasticMatrix
+
+  !> This subroutine calculates elastoplastic constitutive relation
+  subroutine calElastoPlasticMatrix_VM( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
+    type( tMaterial ), intent(in) :: matl      !< material properties
+    integer, intent(in)           :: sectType  !< not used currently
+    real(kind=kreal), intent(in)  :: stress(6) !< stress
+    real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
+    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
+    integer, intent(in)           :: istat     !< plastic state
+    real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
+    real(kind=kreal), intent(in)  :: temperature   !> temperature
+    integer(kind=kint), intent(in) :: hdflag  !> return only hyd and dev term if specified
+
+    integer :: i,j
+    logical :: kinematic
+    real(kind=kreal) :: dum, a(6), G, dlambda
+    real(kind=kreal) :: C1,C2,C3, back(6)
+    real(kind=kreal) :: J1,J2, harden, khard, devia(6)
+
     if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
+
+    call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
+    if( istat == VM_ELASTIC ) return
+    if( hdflag == 2 ) return
+
+    harden = calHardenCoeff( matl, extval(1), temperature )
+
     kinematic = isKinematicHarden( matl%mtype )
     khard = 0.d0
     if( kinematic ) then
@@ -55,8 +104,6 @@ contains
       khard = calKinematicHarden( matl, extval(1) )
     endif
 
-    call calElasticMatrix( matl, sectTYPE, De, temperature, hdflag=hdflag_in )
-
     J1 = (stress(1)+stress(2)+stress(3))
     devia(1:3) = stress(1:3)-J1/3.d0
     devia(4:6) = stress(4:6)
@@ -64,138 +111,220 @@ contains
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
 
-    D(:,:) = De(:,:)
-    if( istat == 0 ) return   ! elastic state
-    if( present(hdflag) ) then
-      if( hdflag == 2 ) return
-    end if
+    a(1:6) = devia(1:6)/sqrt(2.d0*J2)
+    G = D(4,4)
+    dlambda = extval(1)-plstrain
+    C3 = sqrt(3.d0*J2)+3.d0*G*dlambda !trial mises stress
+    C1 = 6.d0*dlambda*G*G/C3
+    dum = 3.d0*G+khard+harden
+    C2 = 6.d0*G*G*(dlambda/C3-1.d0/dum)
 
-    !derivative of J2
-    dj2(1:3) = devia(1:3)
-    dj2(4:6) = 2.d0*devia(4:6)
-    dj2 = dj2/( 2.d0*dsqrt(j2) )
+    do i=1,6
+      do j=1,6
+        D(i,j) = D(i,j) - C1*Id(i,j) + C2*a(i)*a(j)
+      enddo
+    enddo
+  end subroutine calElastoPlasticMatrix_VM
+
+  !> This subroutine calculates elastoplastic constitutive relation
+  subroutine calElastoPlasticMatrix_MC( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
+    use m_utilities, only : eigen3,deriv_general_iso_tensor_func_3d
+    type( tMaterial ), intent(in) :: matl      !< material properties
+    integer, intent(in)           :: sectType  !< not used currently
+    real(kind=kreal), intent(in)  :: stress(6) !< stress
+    real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
+    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
+    integer, intent(in)           :: istat     !< plastic state
+    real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
+    real(kind=kreal), intent(in)  :: temperature   !> temperature
+    integer(kind=kint), intent(in) :: hdflag  !> return only hyd and dev term if specified
+
+    real(kind=kreal) :: G, K, harden, r2G, r2Gd3, r4Gd3, r2K, youngs, poisson
+    real(kind=kreal) :: phi, psi, cosphi, sinphi, cotphi, sinpsi, sphsps, r2cosphi, r4cos2phi
+    real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3), prnstra(3)
+    integer(kind=kint) :: m1, m2, m3
+    real(kind=kreal) :: C1,C2,C3, CA1, CA2, CA3, CAm, CAp, CD1, CD2, CD3, Cdiag, Coffd
+    real(kind=kreal) :: CK1, CK2, CK3
+    real(kind=kreal) :: dum, da, db, dc, dd, detinv
+    real(kind=kreal) :: dpsdpe(3,3)
+
+    if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
+
+    call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
+    if( istat == MC_ELASTIC ) return
+    if( hdflag == 2 ) return
+
+    harden = calHardenCoeff( matl, extval(1), temperature )
+    G = D(4,4)
+    K = D(1,1)-(4.d0/3.d0)*G
+    r2G = 2.d0*G
+    r2K = 2.d0*K
+    r2Gd3 = r2G/3.d0
+    r4Gd3 = 2.d0*r2Gd3
+    youngs = 9.d0*K*G/(3.d0*K+G)
+    poisson = (3.d0*K-r2G)/(6.d0*K+r2G)
+
+    phi = matl%variables(M_PLCONST3)
+    psi = matl%variables(M_PLCONST4)
+    sinphi = sin(phi)
+    cosphi = cos(phi)
+    sinpsi = sin(psi)
+    sphsps = sinphi*sinpsi
+    r2cosphi = 2.d0*cosphi
+    r4cos2phi = r2cosphi*r2cosphi
+
+    call eigen3( stress, prnstre, prnprj )
+    m1 = maxloc( prnstre, 1 )
+    m3 = minloc( prnstre, 1 )
+    if( m1 == m3 ) then
+      m1 = 1; m2 = 2; m3 = 3
+    else
+      m2 = 6 - (m1 + m3)
+    endif
+
+    C1 = 4.d0*(G*(1.d0+sphsps/3.d0)+K*sphsps)
+    if( istat==MC_PLASTIC_SURF ) then
+      dd= C1 + r4cos2phi*harden
+      CD1 = (r2G*(1.d0+sinpsi/3.d0) + r2K*sinpsi)/dd
+      CD2 = (r4Gd3-r2K)*sinpsi/dd
+      CD3 = (r2G*(1.d0-sinpsi/3.d0) - r2K*sinpsi)/dd
+      CAp = 1.d0+sinphi/3.d0
+      CAm = 1.d0-sinphi/3.d0
+      CK1 = 1.d0-2.d0*CD1*sinphi
+      CK2 = 1.d0+2.d0*CD2*sinphi
+      CK3 = 1.d0+2.d0*CD3*sinphi
+      dpsdpe(m1,m1) = r2G*( 2.d0/3.d0-CD1*CAp)+K*CK1
+      dpsdpe(m1,m2) = (K-r2Gd3)*CK1
+      dpsdpe(m1,m3) = r2G*(-1.d0/3.d0+CD1*CAm)+K*CK1
+      dpsdpe(m2,m1) = r2G*(-1.d0/3.d0+CD2*CAp)+K*CK2
+      dpsdpe(m2,m2) = r4Gd3*( 1.d0-CD2*sinphi)+K*CK2
+      dpsdpe(m2,m3) = r2G*(-1.d0/3.d0-CD2*CAm)+K*CK2
+      dpsdpe(m3,m1) = r2G*(-1.d0/3.d0+CD3*CAp)+K*CK3
+      dpsdpe(m3,m2) = (K-r2Gd3)*CK3
+      dpsdpe(m3,m3) = r2G*( 2.d0/3.d0-CD3*CAm)+K*CK3
+    else if( istat==MC_PLASTIC_APEX ) then
+      cotphi = cosphi/sinphi
+      dpsdpe(:,:) = K*(1.d0-(K/(K+harden*cotphi*cosphi/sinpsi)))
+    else ! EDGE
+      if( istat==MC_PLASTIC_RIGHT ) then
+        C2 = r2G*(1.d0+sinphi+sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
+      else if( istat==MC_PLASTIC_LEFT ) then
+        C2 = r2G*(1.d0-sinphi-sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
+      endif
+      dum = r4cos2phi*harden
+      da = C1 + dum
+      db = C2 + dum
+      dc = db
+      dd = da
+      detinv = 1.d0/(da*dd-db*dc)
+      CA1 = r2G*(1.d0+sinphi/3.d0)+r2K*sinpsi
+      CA2 = (r4Gd3-r2K)*sinpsi
+      CA3 = r2G*(1.d0-sinpsi/3.d0)-r2K*sinpsi
+      Cdiag = K+r4Gd3
+      Coffd = K-r2Gd3
+      if( istat==MC_PLASTIC_RIGHT ) then
+        dpsdpe(m1,m1) = Cdiag+CA1*(db-dd-da+dc)*(r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m1,m2) = Coffd+CA1*(r2G*(da-db)+((db-dd-da+dc)*(r2K+r2Gd3)+(dd-dc)*r2G)*sinphi)*detinv
+        dpsdpe(m1,m3) = Coffd+CA1*(r2G*(dd-dc)+((db-dd-da+dc)*(r2K+r2Gd3)+(da-db)*r2G)*sinphi)*detinv
+        dpsdpe(m2,m1) = Coffd+(CA2*(dd-db)+CA3*(da-dc))*(r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m2,m2) = Cdiag+(CA2*((r2K*(dd-db)-(db*r2Gd3+dd*r4Gd3))*sinphi+db*r2G) &
+            &                 +CA3*((r2K*(da-dc)+(da*r2Gd3+dc*r4Gd3))*sinphi-da*r2G))*detinv
+        dpsdpe(m2,m3) = Coffd+(CA2*((r2K*(dd-db)+(db*r4Gd3+dd*r2Gd3))*sinphi-dd*r2G) &
+            &                 +CA3*((r2K*(da-dc)-(da*r4Gd3+dc*r2Gd3))*sinphi+dc*r2G))*detinv
+        dpsdpe(m3,m1) = Coffd+(CA2*(da-dc)+CA3*(dd-db))*(r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m3,m2) = Coffd+(CA2*((r2K*(da-dc)+(da*r2Gd3+dc*r4Gd3))*sinphi-da*r2G) &
+            &                 +CA3*((r2K*(dd-db)-(db*r2Gd3+dd*r4Gd3))*sinphi+db*r2G))*detinv
+        dpsdpe(m3,m3) = Cdiag+(CA2*((r2K*(da-dc)-(da*r4Gd3+dc*r2Gd3))*sinphi+dc*r2G) &
+            &                 +CA3*((r2K*(dd-db)+(db*r4Gd3+dd*r2Gd3))*sinphi-dd*r2G))*detinv
+      else if( istat==MC_PLASTIC_LEFT ) then
+        dpsdpe(m1,m1) = Cdiag+(CA1*((r2K*(db-dd)-(db*r4Gd3+dd*r2Gd3))*sinphi-dd*r2G) &
+            &                 +CA2*((r2K*(da-dc)-(da*r4Gd3+dc*r2Gd3))*sinphi-dc*r2G))*detinv
+        dpsdpe(m1,m2) = Coffd+(CA1*((r2K*(db-dd)+(db*r2Gd3+dd*r4Gd3))*sinphi+db*r2G) &
+            &                 +CA2*((r2K*(da-dc)+(da*r2Gd3+dc*r4Gd3))*sinphi+da*r2G))*detinv
+        dpsdpe(m1,m3) = Coffd+(CA1*(db-dd)+CA2*(da-dc))*(-r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m2,m1) = Coffd+(CA1*((r2K*(dc-da)+(da*r4Gd3+dc*r2Gd3))*sinphi+dc*r2G) &
+            &                 +CA2*((r2K*(dd-db)+(db*r4Gd3+dd*r2Gd3))*sinphi+dd*r2G))*detinv
+        dpsdpe(m2,m2) = Cdiag+(CA1*((r2K*(dc-da)-(da*r2Gd3+dc*r4Gd3))*sinphi-da*r2G) &
+            &                 +CA2*((r2K*(dd-db)-(db*r2Gd3+dd*r4Gd3))*sinphi-db*r2G))*detinv
+        dpsdpe(m2,m3) = Coffd+(CA1*(dc-da)+CA2*(dd-db))*(-r2G+(r2K+r2Gd3)*sinphi)*detinv
+        dpsdpe(m3,m1) = Coffd+CA3*((r2K*(-db+dd+da-dc)+(db-da)*r4Gd3+(dd-dc)*r2Gd3)*sinphi+(dd-dc)*r2G)*detinv
+        dpsdpe(m3,m2) = Coffd+CA3*((r2K*(-db+dd+da-dc)+(da-db)*r2Gd3+(dd-dc)*r4Gd3)*sinphi+(da-db)*r2G)*detinv
+        dpsdpe(m3,m3) = Cdiag+CA3*(-db+dd+da-dc)*(-r2G+(r2K+r2Gd3)*sinphi)*detinv
+      endif
+    endif
+    ! compute principal elastic strain from principal stress
+    prnstra(1) = (prnstre(1)-poisson*(prnstre(2)+prnstre(3)))/youngs
+    prnstra(2) = (prnstre(2)-poisson*(prnstre(1)+prnstre(3)))/youngs
+    prnstra(3) = (prnstre(3)-poisson*(prnstre(1)+prnstre(2)))/youngs
+    call deriv_general_iso_tensor_func_3d(dpsdpe, D, prnprj, prnstra, prnstre)
+  end subroutine calElastoPlasticMatrix_MC
+
+  !> This subroutine calculates elastoplastic constitutive relation
+  subroutine calElastoPlasticMatrix_DP( matl, sectType, stress, istat, extval, plstrain, D, temperature, hdflag )
+    type( tMaterial ), intent(in) :: matl      !< material properties
+    integer, intent(in)           :: sectType  !< not used currently
+    real(kind=kreal), intent(in)  :: stress(6) !< stress
+    real(kind=kreal), intent(in)  :: extval(:) !< plastic strain, back stress
+    real(kind=kreal), intent(in)  :: plstrain  !< plastic strain
+    integer, intent(in)           :: istat     !< plastic state
+    real(kind=kreal), intent(out) :: D(:,:)    !< constitutive relation
+    real(kind=kreal), intent(in)  :: temperature   !> temperature
+    integer(kind=kint), intent(in) :: hdflag  !> return only hyd and dev term if specified
+
+    integer :: i,j
+    real(kind=kreal) :: dum, a(6), dlambda, G, K
+    real(kind=kreal) :: J1,J2, eta, xi, etabar, harden, devia(6)
+    real(kind=kreal) :: alpha, beta, C1, C2, C3, C4, CA, devia_norm
+
+    if( sectType /=D3 ) stop "Elastoplastic calculation support only Solid element currently"
+
+    call calElasticMatrix( matl, sectTYPE, D, temperature, hdflag=hdflag )
+    if( istat == DP_ELASTIC ) return   ! elastic state
+    if( hdflag == 2 ) return
 
     harden = calHardenCoeff( matl, extval(1), temperature )
 
-    select case (yType)
-      case (0)       ! Mises or. Isotropic
-        a(1:6) = devia(1:6)/dsqrt(2.d0*J2)
-        G = De(4,4)
-        dlambda = extval(1)-plstrain
-        C3 = dsqrt(3.d0*J2)+3.d0*G*dlambda !trial mises stress
-        C1 = 6.d0*dlambda*G*G/C3
-        dum = 3.d0*G+khard+harden
-        C2 = 6.d0*G*G*(dlambda/C3-1.d0/dum)
+    G = D(4,4)
+    K = D(1,1)-(4.d0/3.d0)*G
 
-        do i=1,6
-          do j=1,6
-            D(i,j) = De(i,j) - C1*Id(i,j) + C2*a(i)*a(j)
-          enddo
-        enddo
+    eta = matl%variables(M_PLCONST3)
+    xi = matl%variables(M_PLCONST4)
+    etabar = matl%variables(M_PLCONST5)
 
-        return
-      case (1)      ! Mohr-Coulomb
-        fai = matl%variables(M_PLCONST3)
-        J3 = devia(1)*devia(2)*devia(3)                    &
-          +2.d0* devia(4)*devia(5)*devia(6)                     &
-          -devia(6)*devia(2)*devia(6)                           &
-          -devia(4)*devia(4)*devia(3)                           &
-          -devia(1)*devia(5)*devia(5)
-        sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-        if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) then
-          C1 = 0.d0
-          C2 = dsqrt(3.d0)
-          C3 = 0.d0
-        else
-          if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-          sita = asin( sita )/3.d0
-          C2 = cos(sita)*( 1.d0*tan(sita)*tan(3.d0*sita) + sin(fai)* &
-            ( tan(3.d0*sita)-tan(sita )/dsqrt(3.d0) ) )
-          C1 = sin(fai)/3.d0
-          C3 = dsqrt(3.d0)*sin(sita)+cos(sita)*sin(fai)/(2.d0*J2*cos(3.d0*sita))
-        endif
-        ! deirivative of j1
-        dj1(1:3) = 1.d0
-        dj1(4:6) = 0.d0
-        ! deirivative of j3
-        dj3(1) = devia(2)*devia(3)-devia(5)*devia(5)+J2/3.d0
-        dj3(2) = devia(1)*devia(3)-devia(6)*devia(6)+J2/3.d0
-        dj3(3) = devia(1)*devia(2)-devia(4)*devia(4)+J2/3.d0
-        dj3(4) = 2.d0*(devia(5)*devia(6)-devia(3)*devia(4))
-        dj3(5) = 2.d0*(devia(4)*devia(6)-devia(1)*devia(5))
-        dj3(6) = 2.d0*(devia(4)*devia(5)-devia(2)*devia(6))
-        a(:) = C1*dj1 + C2*dj2 + C3*dj3
-      case (2)      ! Drucker-Prager
-        fai = matl%variables(M_PLCONST3)
-        ! deirivative of j1
-        dj1(1:3) = 1.d0
-        dj1(4:6) = 0.d0
-        a(:) = fai*dj1(:) + dj2(:)
-    end select
+    if( istat==DP_PLASTIC_SURF ) then
+      J1 = (stress(1)+stress(2)+stress(3))
+      devia(1:3) = stress(1:3)-J1/3.d0
+      devia(4:6) = stress(4:6)
+      J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+          dot_product( devia(4:6), devia(4:6) )
 
-    da = matmul( de, a )
-    dum = harden + khard+ dot_product( da, a )
-    do i=1,6
+      devia_norm = sqrt(2.d0*J2)
+      a(1:6) = devia(1:6)/devia_norm
+      dlambda = extval(1)-plstrain
+      CA = 1.d0 / (G + K*eta*etabar + xi*xi*harden)
+      dum = sqrt(2.d0)*devia_norm
+      C1 = 4.d0*G*G*dlambda/dum
+      C2 = 2.d0*G*(2.d0*G*dlambda/dum - G*CA)
+      C3 = sqrt(2.d0)*G*CA*K
+      C4 = K*K*eta*etabar*CA
       do j=1,6
-        D(i,j) = De(i,j) - da(i)*da(j)/dum
+        do i=1,6
+          D(i,j) = D(i,j) - C1*Id(i,j) + C2*a(i)*a(j) &
+              - C3*(eta*a(i)*I2(j) + etabar*I2(i)*a(j)) &
+              - C4*I2(i)*I2(j)
+        enddo
       enddo
-    enddo
-
-  end subroutine
-
-  !> This subrouitne calculate equivalent stress
-  real(kind=kreal) function cal_equivalent_stress(matl, stress, extval)
-    type( tMaterial ), intent(in) :: matl        !< material property
-    real(kind=kreal), intent(in)  :: stress(6)   !< stress
-    real(kind=kreal), intent(in)  :: extval(:)   !< plastic strain, back stress
-
-    integer :: ytype
-    logical :: kinematic
-    real(kind=kreal) :: eqvs, sita, fai, J1,J2,J3, devia(6)
-    real(kind=kreal) :: back(6)
-    kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) back(1:6) = extval(2:7)
-
-    ytype = getYieldFunction( matl%mtype )
-    J1 = (stress(1)+stress(2)+stress(3))
-    devia(1:3) = stress(1:3)-J1/3.d0
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-
-    select case (yType)
-      case (0)       ! Mises or. Isotropic
-        eqvs = dsqrt( 3.d0*J2 )
-      case (1)      ! Mohr-Coulomb
-        fai = matl%variables(M_PLCONST1)
-        J3 = devia(1)*devia(2)*devia(3)                    &
-          +2.d0* devia(4)*devia(5)*devia(6)                     &
-          -devia(6)*devia(2)*devia(6)                           &
-          -devia(4)*devia(4)*devia(3)                           &
-          -devia(1)*devia(5)*devia(5)
-        sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-        if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
-        if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-        sita = asin( sita )/3.d0
-        eqvs = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
-          +J1*sin(fai)/3.d0
-      case (2)      ! Drucker-Prager
-        eqvs = dsqrt(J2)
-      case default
-        eqvs = -1.d0
-    end select
-
-    cal_equivalent_stress = eqvs
-  end function
-
-  !> This subrouitne calculate equivalent stress
-  real(kind=kreal) function cal_mises_strain( strain )
-    real(kind=kreal), intent(in)  :: strain(6)        !< strain
-    cal_mises_strain = 2.d0*dot_product( strain(1:3), strain(1:3) )
-    cal_mises_strain = cal_mises_strain+ dot_product( strain(4:6), strain(4:6) )
-    cal_mises_strain = dsqrt( cal_mises_strain/3.d0 )
-  end function
+    else ! istat==DP_PLASTIC_APEX
+      alpha = xi/etabar
+      beta = xi/eta
+      C1 = K*(1.d0 - K/(K + alpha*beta*harden))
+      do j=1,6
+        do i=1,6
+          D(i,j) = C1*I2(i)*I2(j)
+        enddo
+      enddo
+    endif
+  end subroutine calElastoPlasticMatrix_DP
 
   !> This function calculates hardening coefficient
   real(kind=kreal) function calHardenCoeff( matl, pstrain, temp )
@@ -302,61 +431,8 @@ contains
     end select
   end function
 
-  !> This function calculates yield state
-  real(kind=kreal) function calYieldFunc( matl, stress, extval, temp )
-    type( tMaterial ), intent(in) :: matl        !< material property
-    real(kind=kreal), intent(in)  :: stress(6)   !< stress
-    real(kind=kreal), intent(in)  :: extval(:)   !< plastic strain, back stress
-    real(kind=kreal), intent(in)  :: temp  !< temperature
-
-    integer :: ytype
-    logical :: kinematic
-    real(kind=kreal) :: eqvs, sita, eta, fai, J1,J2,J3, f, devia(6)
-    real(kind=kreal) :: pstrain, back(6)
-
-    f = 0.0d0
-
-    kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) back(1:6) = extval(2:7)
-
-    pstrain = extval(1)
-    ytype = getYieldFunction( matl%mtype )
-    J1 = (stress(1)+stress(2)+stress(3))
-    devia(1:3) = stress(1:3)-J1/3.d0
-    devia(4:6) = stress(4:6)
-    if( kinematic ) devia = devia-back
-
-    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-      dot_product( devia(4:6), devia(4:6) )
-    eqvs = calCurrYield( matl, pstrain, temp )
-
-    select case (yType)
-      case (0)       ! Mises or. Isotropic
-        f = dsqrt( 3.d0*J2 ) - eqvs
-      case (1)      ! Mohr-Coulomb
-        fai = matl%variables(M_PLCONST3)
-        J3 = devia(1)*devia(2)*devia(3)                    &
-          +2.d0* devia(4)*devia(5)*devia(6)                     &
-          -devia(2)*devia(6)*devia(6)                           &
-          -devia(3)*devia(4)*devia(4)                           &
-          -devia(1)*devia(5)*devia(5)
-        sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-        if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
-        if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-        sita = asin( sita )/3.d0
-        f = (cos(sita)-sin(sita)*sin(fai)/dsqrt(3.d0))*dsqrt(J2)  &
-          +J1*sin(fai)/3.d0 - eqvs*cos(fai)
-      case (2)      ! Drucker-Prager
-        eta = matl%variables(M_PLCONST3)
-        f = dsqrt(J2) + eta*J1 - eqvs*matl%variables(M_PLCONST4)
-    end select
-
-    calYieldFunc = f
-  end function
-
   !> This subroutine does backward-Euler return calculation
   subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, temp, hdflag )
-    use m_utilities, only : eigen3
     type( tMaterial ), intent(in)    :: matl        !< material properties
     real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
     real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
@@ -365,56 +441,69 @@ contains
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
-    real(kind=kreal), parameter :: tol =1.d-3
-    integer, parameter          :: MAXITER = 5
-    real(kind=kreal) :: dlambda, f, mat(3,3)
-    integer :: i,ytype, maxp(1), minp(1), mm, hdflag_in
-    real(kind=kreal) :: youngs, poisson, pstrain, dum, ina(1), ee(2)
-    real(kind=kreal) :: J1,J2,J3, H, KH, KK, dd, yd, G, K, devia(6)
-    real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
-    real(kind=kreal) :: sita, fai, trialprn(3)
-    real(kind=kreal) :: fstat_bak(7)
-    logical          :: kinematic, ierr
-    real(kind=kreal) :: betan, back(6)
+    integer :: ytype, hdflag_in
 
     hdflag_in = 0
     if( present(hdflag) ) hdflag_in = hdflag
 
-    f = 0.0d0
-
     ytype = getYieldFunction( matl%mtype )
-    if( ytype==3 ) then
-      call uBackwardEuler( matl, stress, istat, fstat )
-      return
-    endif
+    select case (ytype)
+    case (0)
+      call BackwardEuler_VM( matl, stress, plstrain, istat, fstat, temp, hdflag_in )
+    case (1)
+      call BackwardEuler_MC( matl, stress, plstrain, istat, fstat, temp, hdflag_in )
+    case (2)
+      call BackwardEuler_DP( matl, stress, plstrain, istat, fstat, temp, hdflag_in )
+    case (3)
+      call uBackwardEuler( matl%variables, stress, plstrain, istat, fstat, temp, hdflag_in )
+    end select
+  end subroutine BackwardEuler
 
-    pstrain = plstrain
-    if(isKinematicHarden( matl%mtype ))fstat_bak(2:7)= fstat(8:13)
-    fstat_bak(1) = plstrain
-    f = calYieldFunc( matl, stress, fstat_bak, temp )
-    if( dabs(f)<tol ) then  ! yielded
-      istat = 1
-      return
-    elseif( f<0.d0 ) then   ! not yielded or unloading
-      istat =0
-      return
-    endif
-    if( hdflag_in == 2 ) return
+  !> This subroutine does backward-Euler return calculation for von Mises
+  subroutine BackwardEuler_VM( matl, stress, plstrain, istat, fstat, temp, hdflag )
+    type( tMaterial ), intent(in)    :: matl        !< material properties
+    real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
+    real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
+    integer, intent(inout)           :: istat       !< plastic state
+    real(kind=kreal), intent(inout)  :: fstat(:)    !< plastic strain, back stress
+    real(kind=kreal), intent(in)     :: temp  !< temperature
+    integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
 
-    istat = 1           ! yielded
-    KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
+    real(kind=kreal), parameter :: tol =1.d-8
+    integer, parameter          :: MAXITER = 10
+    real(kind=kreal) :: dlambda, f
+    integer :: i
+    real(kind=kreal) :: youngs, poisson, pstrain, ina(1), ee(2)
+    real(kind=kreal) :: J1, J2, H, KH, KK, dd, eqvs, yd, G, K, devia(6)
+    logical          :: kinematic, ierr
+    real(kind=kreal) :: betan, back(6)
 
     kinematic = isKinematicHarden( matl%mtype )
-    if( kinematic ) then
-      back(1:6) = fstat(8:13)
-      betan = calCurrKinematic( matl, pstrain )
-    endif
+    if( kinematic ) back(1:6) = fstat(8:13)
 
-    J1 = (stress(1)+stress(2)+stress(3))/3.d0
-    devia(1:3) = stress(1:3)-J1
+    J1 = (stress(1)+stress(2)+stress(3))
+    devia(1:3) = stress(1:3)-J1/3.d0
     devia(4:6) = stress(4:6)
     if( kinematic ) devia = devia-back
-    yd = cal_equivalent_stress(matl, stress, fstat)
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+
+    eqvs = sqrt( 3.d0*J2 )
+    yd = calCurrYield( matl, plstrain, temp )
+    f = eqvs - yd
+
+    if( abs(f/yd)<tol ) then  ! yielded
+      istat = VM_PLASTIC
+      return
+    elseif( f<0.d0 ) then   ! not yielded or unloading
+      istat = VM_ELASTIC
+      return
+    endif
+    if( hdflag == 2 ) return
+
+    istat = VM_PLASTIC      ! yielded
+    KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
+    if( kinematic ) betan = calCurrKinematic( matl, plstrain )
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
@@ -427,121 +516,352 @@ contains
     if( youngs==0.d0 ) stop "YOUNG's ratio==0"
     G = youngs/ ( 2.d0*(1.d0+poisson) )
     K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
-    dlambda = 0.d0
 
-    if( yType==0 ) then    ! Mises or. Isotropic
-      do i=1,MAXITER
-        H= calHardenCoeff( matl, pstrain+dlambda, temp )
-        if( kinematic ) then
-          KH = calKinematicHarden( matl, pstrain+dlambda )
-        endif
-        dd= 3.d0*G+H+KH
-        dlambda = dlambda+f/dd
-        if( dlambda<0.d0 ) then
-          dlambda = 0.d0
-          istat=0; exit
-        endif
-        dum = calCurrYield( matl, pstrain+dlambda, temp )
-        if( kinematic ) then
-          KK = calCurrKinematic( matl, pstrain+dlambda )
-        endif
-        f = yd-3.d0*G*dlambda-dum -(KK-betan)
-        if( dabs(f)<tol*tol ) exit
-      enddo
-      pstrain = pstrain+dlambda
+    dlambda = 0.d0
+    pstrain = plstrain
+
+    do i=1,MAXITER
+      H= calHardenCoeff( matl, pstrain, temp )
+      if( kinematic ) then
+        KH = calKinematicHarden( matl, pstrain )
+      endif
+      dd= 3.d0*G+H+KH
+      dlambda = dlambda+f/dd
+      if( dlambda<0.d0 ) then
+        dlambda = 0.d0
+        pstrain = plstrain
+        istat=VM_ELASTIC; exit
+      endif
+      pstrain = plstrain+dlambda
+      yd = calCurrYield( matl, pstrain, temp )
       if( kinematic ) then
         KK = calCurrKinematic( matl, pstrain )
-        fstat(2:7) = back(:)+(KK-betan)*devia(:)/yd
       endif
-      devia(:) = (1.d0-3.d0*dlambda*G/yd)*devia(:)
-      stress(1:3) = devia(1:3)+J1
-      stress(4:6) = devia(4:6)
-      stress(:)= stress(:)+back(:)
-    elseif(yType==1) then    ! Mohr-Coulomb
-      fai = matl%variables(M_PLCONST3)
-
-      !   do j=1,MAXITER
-      J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
-        dot_product( devia(4:6), devia(4:6) )
-      J3 = devia(1)*devia(2)*devia(3)                    &
-        +2.d0* devia(4)*devia(5)*devia(6)                     &
-        -devia(6)*devia(2)*devia(6)                           &
-        -devia(4)*devia(4)*devia(3)                           &
-        -devia(1)*devia(5)*devia(5)
-      sita = -3.d0*dsqrt(3.d0)*J3/( 2.d0*(J2**1.5d0) )
-      if( dabs( dabs(sita)-1.d0 ) <1.d-8 ) sita=sign(1.d0, sita)
-      if( dabs(sita) >1.d0 ) stop "Math Error in Mohr-Coulomb calculation"
-      sita = asin( sita )/3.d0
-      do mm=1,6
-        if( dabs(stress(mm))<1.d-10 ) stress(mm)=0.d0
-      enddo
-      call eigen3( stress, prnstre, prnprj )
-      trialprn = prnstre
-      maxp = maxloc( prnstre )
-      minp = minloc( prnstre )
-      mm = 1
-      if( maxp(1)==1 .or. minp(1)==1 ) mm =2
-      if( maxp(1)==2 .or. minp(1)==2 ) mm =3
-      do i=1,MAXITER
-        H= calHardenCoeff( matl, pstrain, temp )
-        dd= 4.d0*G*( 1.d0+sin(fai)*sin(sita)/3.d0 )+4.d0*K         &
-          *sin(fai)*sin(sita)+4.d0*H*cos(fai)*cos(fai)
-        dlambda = dlambda+f/dd
-        if( 2.d0*dlambda*cos(fai)<0.d0 ) then
-          if( cos(fai)==0.d0 ) stop "Math error in return mapping"
-          dlambda = 0.d0
-          istat=0; exit
-        endif
-        dum = pstrain + 2.d0*dlambda*cos(fai)
-        yd = calCurrYield( matl, dum, temp )
-        f = prnstre(maxp(1))-prnstre(minp(1))+                     &
-          (prnstre(maxp(1))+prnstre(minp(1)))*sin(fai)-            &
-          (4.d0*G*(1.d0+sin(fai)*sin(sita)/3.d0)+4.d0*K*sin(fai)   &
-          *sin(sita))*dlambda-2.d0*yd*cos(fai)
-        if( dabs(f)<tol ) exit
-      enddo
-      pstrain = pstrain + 2.d0*dlambda*cos(fai)
-      prnstre(maxp(1)) = prnstre(maxp(1))-(2.d0*G*(1.d0+sin(fai)/3.d0)  &
-        + 2.d0*K*sin(fai) )*dlambda
-      prnstre(minp(1)) = prnstre(minp(1))+(2.d0*G*(1.d0-sin(fai)/3.d0)  &
-        - 2.d0*K*sin(fai) )*dlambda
-      prnstre(mm) = prnstre(mm)+(4.d0*G/3.d0-2.d0*K)*sin(fai)*dlambda
-
-      tstre(:,:) = 0.d0
-      tstre(1,1)= prnstre(1); tstre(2,2)=prnstre(2); tstre(3,3)=prnstre(3)
-      mat= matmul( prnprj, tstre )
-      mat= matmul( mat, transpose(prnprj) )
-      stress(1) = mat(1,1)
-      stress(2) = mat(2,2)
-      stress(3) = mat(3,3)
-      stress(4) = mat(1,2)
-      stress(5) = mat(2,3)
-      stress(6) = mat(3,1)
-    elseif(yType==2) then    ! Drucker-Prager
-      fai = matl%variables(M_PLCONST3)
-      dum = matl%variables(M_PLCONST4)
-      do i=1,MAXITER
-        H= calHardenCoeff( matl, pstrain, temp )
-        dd= G+K*fai*fai+H*dum*dum
-        dlambda = dlambda+f/dd
-        if( dum*dlambda<0.d0 ) then
-          if( dum==0.d0 ) stop "Math error in return mapping"
-          dlambda = 0.d0
-          istat=0; exit
-        endif
-        f = calCurrYield( matl, pstrain+dum*dlambda, temp  )
-        f = yd-G*dlambda+fai*(J1-K*fai*dlambda)- dum*f
-        if( dabs(f)<tol*tol ) exit
-      enddo
-      pstrain = pstrain+dum*dlambda
-      devia(:) = (1.d0-G*dlambda/yd)*devia(:)
-      J1 = J1-K*fai*dlambda
-      stress(1:3) = devia(1:3)+J1
-      stress(4:6) = devia(4:6)
-    end if
+      f = eqvs-3.d0*G*dlambda-yd -(KK-betan)
+      if( abs(f/yd)<tol ) exit
+      ! if( i==MAXITER ) then
+      !   stop 'ERROR: BackwardEuler_VM: convergence failure'
+      ! endif
+    enddo
+    if( kinematic ) then
+      KK = calCurrKinematic( matl, pstrain )
+      fstat(2:7) = back(:)+(KK-betan)*devia(:)/eqvs
+    endif
+    devia(:) = (1.d0-3.d0*dlambda*G/eqvs)*devia(:)
+    stress(1:3) = devia(1:3)+J1/3.d0
+    stress(4:6) = devia(4:6)
+    stress(:)= stress(:)+back(:)
 
     fstat(1) = pstrain
-  end subroutine BackwardEuler
+  end subroutine BackwardEuler_VM
+
+  !> This subroutine does backward-Euler return calculation for Mohr-Coulomb
+  subroutine BackwardEuler_MC( matl, stress, plstrain, istat, fstat, temp, hdflag )
+    use m_utilities, only : eigen3
+    type( tMaterial ), intent(in)    :: matl        !< material properties
+    real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
+    real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
+    integer, intent(inout)           :: istat       !< plastic state
+    real(kind=kreal), intent(inout)  :: fstat(:)    !< plastic strain, back stress
+    real(kind=kreal), intent(in)     :: temp  !< temperature
+    integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
+
+    real(kind=kreal), parameter :: tol =1.d-8
+    integer, parameter          :: MAXITER = 10
+    real(kind=kreal) :: dlambda, f, mat(3,3)
+    integer :: i, m1, m2, m3
+    real(kind=kreal) :: youngs, poisson, pstrain, ina(1), ee(2)
+    real(kind=kreal) :: H, dd, eqvs, cohe, G, K
+    real(kind=kreal) :: prnstre(3), prnprj(3,3), tstre(3,3)
+    real(kind=kreal) :: phi, psi, trialprn(3)
+    logical          :: ierr
+    real(kind=kreal) :: C1, C2, CS1, CS2, CS3
+    real(kind=kreal) :: sinphi, cosphi, sinpsi, sphsps, r2cosphi, r4cos2phi, cotphi
+    real(kind=kreal) :: da, db, dc, depv, detinv, dlambdb, dum, eps, eqvsb, fb
+    real(kind=kreal) :: pt, p, resid
+
+    phi = matl%variables(M_PLCONST3)
+    psi = matl%variables(M_PLCONST4)
+    sinphi = sin(phi)
+    cosphi = cos(phi)
+    r2cosphi = 2.d0*cosphi
+
+    call eigen3( stress, prnstre, prnprj )
+    trialprn = prnstre
+    m1 = maxloc( prnstre, 1 )
+    m3 = minloc( prnstre, 1 )
+    if( m1 == m3 ) then
+      m1 = 1; m2 = 2; m3 = 3
+    else
+      m2 = 6 - (m1 + m3)
+    endif
+
+    eqvs = prnstre(m1)-prnstre(m3) + (prnstre(m1)+prnstre(m3))*sinphi
+    cohe = calCurrYield( matl, plstrain, temp )
+    f = eqvs - r2cosphi*cohe
+
+    if( abs(f/cohe)<tol ) then  ! yielded
+      istat = MC_PLASTIC_SURF
+      return
+    elseif( f<0.d0 ) then   ! not yielded or unloading
+      istat = MC_ELASTIC
+      return
+    endif
+    if( hdflag == 2 ) return
+
+    istat = MC_PLASTIC_SURF   ! yielded
+
+    ina(1) = temp
+    call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
+    if( ierr ) then
+      stop " fail to fetch young's modulus in elastoplastic calculation"
+    else
+      youngs = ee(1)
+      poisson = ee(2)
+    endif
+    if( youngs==0.d0 ) stop "YOUNG's ratio==0"
+    G = youngs/ ( 2.d0*(1.d0+poisson) )
+    K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
+
+    dlambda = 0.d0
+    pstrain = plstrain
+
+    sinpsi = sin(psi)
+    sphsps = sinphi*sinpsi
+    r4cos2phi = r2cosphi*r2cosphi
+    C1 = 4.d0*(G*(1.d0+sphsps/3.d0)+K*sphsps)
+    do i=1,MAXITER
+      H= calHardenCoeff( matl, pstrain, temp )
+      dd= C1 + r4cos2phi*H
+      dlambda = dlambda+f/dd
+      if( r2cosphi*dlambda<0.d0 ) then
+        if( cosphi==0.d0 ) stop "Math error in return mapping"
+        dlambda = 0.d0
+        pstrain = plstrain
+        istat = MC_ELASTIC; exit
+      endif
+      pstrain = plstrain + r2cosphi*dlambda
+      cohe = calCurrYield( matl, pstrain, temp )
+      f = eqvs - C1*dlambda - r2cosphi*cohe
+      if( abs(f/cohe)<tol ) exit
+      ! if( i==MAXITER ) then
+      !   stop 'ERROR: BackwardEuler_MC: convergence failure'
+      ! endif
+    enddo
+    CS1 =2.d0*G*(1.d0+sinpsi/3.d0) + 2.d0*K*sinpsi
+    CS2 =(4.d0*G/3.d0-2.d0*K)*sinpsi
+    CS3 =2.d0*G*(1.d0-sinpsi/3.d0) - 2.d0*K*sinpsi
+    prnstre(m1) = prnstre(m1)-CS1*dlambda
+    prnstre(m2) = prnstre(m2)+CS2*dlambda
+    prnstre(m3) = prnstre(m3)+CS3*dlambda
+    eps = (abs(prnstre(m1))+abs(prnstre(m2))+abs(prnstre(m3)))*tol
+    if( prnstre(m1) < prnstre(m2)-eps .or. prnstre(m2) < prnstre(m3)-eps ) then
+      ! return mapping to EDGE
+      prnstre = trialprn
+      dlambda = 0.d0
+      dlambdb = 0.d0
+      if( (1.d0-sinpsi)*prnstre(m1) - 2*prnstre(m2) + (1.d0+sinpsi)*prnstre(m3) > 0) then
+        istat = MC_PLASTIC_RIGHT
+        eqvsb = prnstre(m1)-prnstre(m2) + (prnstre(m1)+prnstre(m2))*sinphi
+        C2 = 2.d0*G*(1.d0+sinphi+sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
+      else
+        istat = MC_PLASTIC_LEFT
+        eqvsb = prnstre(m2)-prnstre(m3) + (prnstre(m2)+prnstre(m3))*sinphi
+        C2 = 2.d0*G*(1.d0-sinphi-sinpsi-sphsps/3.d0) + 4.d0*K*sphsps
+      endif
+      cohe = calCurrYield( matl, plstrain, temp )
+      f = eqvs - r2cosphi*cohe
+      fb = eqvsb - r2cosphi*cohe
+      pstrain = plstrain
+      do i=1,MAXITER
+        H= calHardenCoeff( matl, pstrain, temp )
+        dum = r4cos2phi*H
+        da = C1 + dum
+        db = C2 + dum
+        dc = db
+        dd = da
+        detinv = 1.d0/(da*dd-db*dc)
+        dlambda = dlambda + detinv*( dd*f - db*fb)
+        dlambdb = dlambdb + detinv*(-dc*f + da*fb)
+        pstrain = plstrain + r2cosphi*(dlambda+dlambdb)
+        cohe = calCurrYield( matl, pstrain, temp )
+        f = eqvs - C1*dlambda - C2*dlambdb - r2cosphi*cohe
+        fb = eqvsb - C2*dlambda - C1*dlambdb - r2cosphi*cohe
+        if( (abs(f)+abs(fb))/(abs(eqvs)+abs(eqvsb)) < tol ) exit
+        ! if( i==MAXITER ) then
+        !   stop 'ERROR: BackwardEuler_MC: convergence failure(2)'
+        ! endif
+      enddo
+      if( istat==MC_PLASTIC_RIGHT ) then
+        prnstre(m1) = prnstre(m1)-CS1*(dlambda+dlambdb)
+        prnstre(m2) = prnstre(m2)+CS2*dlambda+CS3*dlambdb
+        prnstre(m3) = prnstre(m3)+CS3*dlambda+CS2*dlambdb
+      else
+        prnstre(m1) = prnstre(m1)-CS1*dlambda+CS2*dlambdb
+        prnstre(m2) = prnstre(m2)+CS2*dlambda-CS1*dlambdb
+        prnstre(m3) = prnstre(m3)+CS3*(dlambda+dlambdb)
+      endif
+      eps = (abs(prnstre(m1))+abs(prnstre(m2))+abs(prnstre(m3)))*tol
+      if( prnstre(m1) < prnstre(m2)-eps .or. prnstre(m2) < prnstre(m3)-eps ) then
+        ! return mapping to APEX
+        prnstre = trialprn
+        istat = MC_PLASTIC_APEX
+        if( sinphi==0.d0 ) stop 'ERROR: BackwardEuler_MC: phi==0.0'
+        if( sinpsi==0.d0 ) stop 'ERROR: BackwardEuler_MC: psi==0.0'
+        depv = 0.d0
+        cohe = calCurrYield( matl, plstrain, temp )
+        cotphi = cosphi/sinphi
+        pt = (stress(1)+stress(2)+stress(3))/3.d0
+        resid = cotphi*cohe - pt
+        pstrain = plstrain
+        do i=1,MAXITER
+          H= calHardenCoeff( matl, pstrain, temp )
+          dd= cosphi*cotphi*H/sinpsi + K
+          depv = depv - resid/dd
+          pstrain = plstrain + cosphi*depv/sinpsi
+          cohe = calCurrYield( matl, pstrain,temp )
+          p = pt-K*depv
+          resid = cotphi*cohe-p
+          if( abs(resid/cohe)<tol ) exit
+          ! if( i==MAXITER ) then
+          !   stop 'ERROR: BackwardEuler_MC: convergence failure(3)'
+          ! endif
+        enddo
+        prnstre(m1) = p
+        prnstre(m2) = p
+        prnstre(m3) = p
+      endif
+    endif
+    tstre(:,:) = 0.d0
+    tstre(1,1)= prnstre(1); tstre(2,2)=prnstre(2); tstre(3,3)=prnstre(3)
+    mat= matmul( prnprj, tstre )
+    mat= matmul( mat, transpose(prnprj) )
+    stress(1) = mat(1,1)
+    stress(2) = mat(2,2)
+    stress(3) = mat(3,3)
+    stress(4) = mat(1,2)
+    stress(5) = mat(2,3)
+    stress(6) = mat(3,1)
+
+    fstat(1) = pstrain
+  end subroutine BackwardEuler_MC
+
+  !> This subroutine does backward-Euler return calculation for Drucker-Prager
+  subroutine BackwardEuler_DP( matl, stress, plstrain, istat, fstat, temp, hdflag )
+    type( tMaterial ), intent(in)    :: matl        !< material properties
+    real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
+    real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
+    integer, intent(inout)           :: istat       !< plastic state
+    real(kind=kreal), intent(inout)  :: fstat(:)    !< plastic strain, back stress
+    real(kind=kreal), intent(in)     :: temp  !< temperature
+    integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
+
+    real(kind=kreal), parameter :: tol =1.d-8
+    integer, parameter          :: MAXITER = 10
+    real(kind=kreal) :: dlambda, f
+    integer :: i
+    real(kind=kreal) :: youngs, poisson, pstrain, xi, ina(1), ee(2)
+    real(kind=kreal) :: J1,J2,H, dd, eqvst, eqvs, cohe, G, K, devia(6), eta, etabar, pt, p
+    logical          :: ierr
+    real(kind=kreal) :: alpha, beta, depv, factor, resid
+
+    eta = matl%variables(M_PLCONST3)
+    xi = matl%variables(M_PLCONST4)
+    etabar = matl%variables(M_PLCONST5)
+
+    J1 = (stress(1)+stress(2)+stress(3))
+    pt = J1/3.d0
+    devia(1:3) = stress(1:3)-pt
+    devia(4:6) = stress(4:6)
+    J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
+      dot_product( devia(4:6), devia(4:6) )
+
+    eqvst = sqrt(J2)
+    cohe = calCurrYield( matl, plstrain, temp )
+    f = eqvst + eta*pt - xi*cohe
+
+    if( abs(f/cohe)<tol ) then  ! yielded
+      istat = DP_PLASTIC_SURF
+      return
+    elseif( f<0.d0 ) then   ! not yielded or unloading
+      istat = DP_ELASTIC
+      return
+    endif
+    if( hdflag == 2 ) return
+
+    istat = DP_PLASTIC_SURF
+
+    ina(1) = temp
+    call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
+    if( ierr ) then
+      stop " fail to fetch young's modulus in elastoplastic calculation"
+    else
+      youngs = ee(1)
+      poisson = ee(2)
+    endif
+    if( youngs==0.d0 ) stop "YOUNG's ratio==0"
+    G = youngs/ ( 2.d0*(1.d0+poisson) )
+    K = youngs/ ( 3.d0*(1.d0-2.d0*poisson) )
+
+    dlambda = 0.d0
+    pstrain = plstrain
+
+    do i=1,MAXITER
+      H= calHardenCoeff( matl, pstrain, temp )
+      dd= G+K*etabar*eta+H*xi*xi
+      dlambda = dlambda+f/dd
+      if( xi*dlambda<0.d0 ) then
+        if( xi==0.d0 ) stop "Math error in return mapping"
+        dlambda = 0.d0
+        pstrain = plstrain
+        istat=0; exit
+      endif
+      pstrain = plstrain+xi*dlambda
+      cohe = calCurrYield( matl, pstrain, temp  )
+      eqvs = eqvst-G*dlambda
+      p = pt-K*etabar*dlambda
+      f = eqvs + eta*p- xi*cohe
+      if( abs(f/cohe)<tol ) exit
+      ! if( i==MAXITER ) then
+      !   stop 'ERROR: BackwardEuler_DP: convergence failure'
+      ! endif
+    enddo
+    if( eqvs>=0.d0 ) then ! converged
+      factor = 1.d0-G*dlambda/eqvst
+    else                  ! return mapping to APEX
+      istat = DP_PLASTIC_APEX
+      if( eta==0.d0 ) stop 'ERROR: BackwardEuler_DP: eta==0.0'
+      if( etabar==0.d0 ) stop 'ERROR: BackwardEuler_DP: etabar==0.0'
+      alpha = xi/etabar
+      beta = xi/eta
+      depv=0.d0
+      pstrain = plstrain
+      cohe = calCurrYield( matl, pstrain, temp )
+      resid = beta*cohe - pt
+      do i=1,MAXITER
+        H= calHardenCoeff( matl, pstrain, temp )
+        dd= alpha*beta*H + K
+        depv = depv - resid/dd
+        pstrain = plstrain+alpha*depv
+        cohe = calCurrYield( matl, pstrain, temp )
+        p = pt-K*depv
+        resid = beta*cohe - p
+        if( abs(resid/cohe)<tol ) then
+          dlambda=depv/etabar
+          factor=0.d0
+          exit
+        endif
+        ! if( i==MAXITER ) then
+        !   stop 'ERROR: BackwardEuler_DP: convergence failure(2)'
+        ! endif
+      enddo
+    endif
+    devia(:) = factor*devia(:)
+    stress(1:3) = devia(1:3)+p
+    stress(4:6) = devia(4:6)
+
+    fstat(1) = pstrain
+  end subroutine BackwardEuler_DP
 
   !> Clear elatoplastic state
   subroutine updateEPState( gauss )

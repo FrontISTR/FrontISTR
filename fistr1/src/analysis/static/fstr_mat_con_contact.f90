@@ -70,7 +70,7 @@ contains
 
     num_lagrange = 0
     if( contact_algo == kcaSLagrange ) then
-      do i = 1, size(fstrSOLID%contacts)
+      do i = 1, fstrSOLID%n_contacts
         grpid = fstrSOLID%contacts(i)%group
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
         nlag = fstr_get_num_lagrange_pernode(fstrSOLID%contacts(i)%algtype)
@@ -79,7 +79,17 @@ contains
           num_lagrange = num_lagrange + nlag
         enddo
       enddo
-    endif
+
+      do i = 1, fstrSOLID%n_embeds
+        grpid = fstrSOLID%embeds(i)%group
+        if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+        nlag = 3
+        do j = 1, size(fstrSOLID%embeds(i)%slave)
+          if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+          num_lagrange = num_lagrange + nlag
+        enddo
+      enddo
+  endif
 
     ! Get original list of related nodes
     call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active,list_nodeRelated_org,list_nodeRelated)
@@ -125,7 +135,7 @@ contains
     logical                       :: necessary_to_insert_node
 
     count_lagrange = 0
-    do i = 1, size(fstrSOLID%contacts)
+    do i = 1, fstrSOLID%n_contacts
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -158,6 +168,35 @@ contains
 
     enddo
 
+    do i = 1, fstrSOLID%n_embeds
+
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      necessary_to_insert_node = ( contact_algo == kcaALagrange )
+
+      nlag = 3
+      if( contact_algo == kcaALagrange ) nlag = 1
+      permission = .true.
+
+      do j = 1, size(fstrSOLID%embeds(i)%slave)
+
+        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+        ctsurf = fstrSOLID%embeds(i)%states(j)%surface
+        etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
+        ndLocal(2:nnode+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(1:nnode)
+
+        do k=1,nlag
+          if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
+          call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
+            & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+        enddo
+      enddo
+
+    enddo
+
   end subroutine getNewListOFrelatednodesANDLagrangeMultipliers
 
   !> Copy Lagrange multipliers
@@ -169,7 +208,7 @@ contains
 
     id_lagrange = 0
 
-    do i = 1, size(fstrSOLID%contacts)
+    do i = 1, fstrSOLID%n_contacts
 
       algtype = fstrSOLID%contacts(i)%algtype
       nlag = fstr_get_num_lagrange_pernode(algtype)
@@ -179,6 +218,17 @@ contains
         do k=1,nlag
           id_lagrange = id_lagrange + 1
           hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
+        enddo
+      enddo
+    enddo
+
+    do i = 1, fstrSOLID%n_embeds
+      nlag = 3
+      do j = 1, size(fstrSOLID%embeds(i)%slave)
+        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+        do k=1,nlag
+          id_lagrange = id_lagrange + 1
+          hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
         enddo
       enddo
     enddo
@@ -193,8 +243,9 @@ contains
     integer (kind=kint)      :: is_in_contact
 
     is_in_contact = 0
-    if( any(fstrSOLID%contacts(:)%fcoeff /= 0.0d0) )  &
-      is_in_contact = 1
+    if( fstrSOLID%n_contacts>0 ) then
+      if( any(fstrSOLID%contacts(:)%fcoeff /= 0.0d0) )  is_in_contact = 1
+    endif
     call hecmw_allreduce_I1(hecMESH, is_in_contact, HECMW_MAX)
     fstr_is_matrixStruct_symmetric = (is_in_contact == 0)
 

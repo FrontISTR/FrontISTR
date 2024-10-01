@@ -181,7 +181,7 @@ contains
     real(kind=kreal), pointer :: penalty
     real(kind=kreal) :: ALPHA, a1_2inv, ai, aj, factor
     integer(kind=kint) :: impc, is, iE, i, j, inod, idof, jnod, jdof
-    logical :: is_internal_i, is_internal_j
+    logical :: is_internal_i
 
     if( hecmw_mat_get_penalized(hecMAT) == 1 ) return
 
@@ -210,6 +210,7 @@ contains
         inod = hecMESH%mpc%mpc_item(i)
 
         is_internal_i = (hecMESH%node_ID(2*inod) == hecmw_comm_get_rank())
+        if (.not. is_internal_i) cycle
 
         idof = hecMESH%mpc%mpc_dof(i)
         ai = hecMESH%mpc%mpc_val(i)
@@ -217,10 +218,6 @@ contains
 
         do j = is, iE
           jnod = hecMESH%mpc%mpc_item(j)
-
-          is_internal_j = (hecMESH%node_ID(2*jnod) == hecmw_comm_get_rank())
-          if (.not. (is_internal_i .or. is_internal_j)) cycle
-
           jdof = hecMESH%mpc%mpc_dof(j)
           aj = hecMESH%mpc%mpc_val(j)
 
@@ -540,7 +537,7 @@ contains
     integer(kind=kint) :: i, j, inod, jnod, l
     integer(kind=kint) :: isL, ieL, idxL_base, kL, idxL, isU, ieU, idxU_base, kU, idxU
     real(kind=kreal)   :: fcoeff !< friction coefficient
-    real(kind=kreal)   :: stiffness(9*3 + 1, 9*3 + 1) !< contact stiffness matrix
+    real(kind=kreal)   :: stiffness(:,:) !< contact stiffness matrix
     real(kind=kreal)   :: a(3, 3)
 
     i = nnode + 1 + 1
@@ -590,6 +587,5 @@ contains
     endif
 
   end subroutine hecmw_mat_ass_contactlag
-
 
 end module hecmw_matrix_ass

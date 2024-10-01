@@ -127,6 +127,9 @@ contains
           B( ndof*(in-1) + idof ) = 0.d0
           !for output reaction force
           fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
+          !count embed force as reaction force
+          if( associated(fstrSOLID%EMBED_NFORCE) ) fstrSOLID%REACTION(ndof*(in-1)+idof) = &
+                &  fstrSOLID%QFORCE(ndof*(in-1)+idof) - fstrSOLID%EMBED_NFORCE(ndof*(in-1)+idof)
         enddo
       enddo
     enddo

@@ -30,10 +30,15 @@ contains
     !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     use hecmw
-    implicit real(kind=kreal)(A-H,O-Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: THICK, RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM, TT, T1, T2, RRR, WG
     real(kind=kreal)   :: XG(2), WGT(2), H(2), HR(2)
     data WGT/1.0,1.0/
     data XG/-0.5773502691896, 0.5773502691896/
@@ -94,10 +99,15 @@ contains
     !   R2   LTYPE=2  : RADIATE IN NORMAL-DIRECTION FOR FACE-2
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: THICK, RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM, TT, T1, T2, RRR, WG
     real(kind=kreal)   :: XG(3), WGT(3), H(3), HR(3)
     !**************************
     !  GAUSS INTEGRATION POINT
@@ -171,10 +181,15 @@ contains
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: THICK, RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM, TT, T1, T2, RRR, WG
     real(kind=kreal)   :: XG(2), WGT(2), H(2), HR(2)
     data WGT/1.0,1.0/
     data XG/-0.5773502691896, 0.5773502691896/
@@ -239,10 +254,15 @@ contains
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: THICK, RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, LX
+    real(kind=kreal)   :: RI, GX, GY, XSUM, TT, T1, T2, RRR, WG
     real(kind=kreal)   :: XG(3), WGT(3), H(3), HR(3)
     !**************************
     !  GAUSS INTEGRATION POINT
@@ -320,10 +340,15 @@ contains
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: IC, IP, JP
+    real(kind=kreal)   :: AX, AY, AZ, BX, BY, BZ, AA, TT, T1, T2, RRR
     !
     if     ( LTYPE.EQ.1 ) then
       NOD(1) = 1
@@ -378,10 +403,18 @@ contains
     !   R3   LTYPE=3  : RADIATE IN NORMAL-DIRECTION FOR FACE-3
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, L1, L2
+    real(kind=kreal)   :: XSUM, TT, T1, T2, RRR, DET, WG
+    real(kind=kreal)   :: X1, X2, X3, XL1, XL2
+    real(kind=kreal)   :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
+    real(kind=kreal)   :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
     real(kind=kreal)   :: XG(3), WGT(3), H(6), HL1(6), HL2(6), HL3(6)
     !**************************
     !  GAUSS INTEGRATION POINT
@@ -536,11 +569,17 @@ contains
     !   R4   LTYPE=4  : RADIATE IN NORMAL-DIRECTION FOR FACE-4
     !   R5   LTYPE=5  : RADIATE IN NORMAL-DIRECTION FOR FACE-5
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: ISUF, I, IC, IP, JP, IG1, IG2
+    real(kind=kreal) :: AX, AY, AZ, BX, BY, BZ, AA
+    real(kind=kreal) :: RI, SI, XSUM, TT, T1, T2, RRR, WG
+    real(kind=kreal) :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
     real(kind=kreal) :: XG(2), WGT(2)
     !*************************
@@ -671,11 +710,19 @@ contains
     !   R5   LTYPE=5  : RADIATE IN NORMAL-DIRECTION FOR FACE-5
     !   R6   LTYPE=6  : RADIATE IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: ISUF, I, IC, IP, JP, IG1, IG2, L1, L2
+    real(kind=kreal) :: RI, SI, RP, SP, RM, SM
+    real(kind=kreal) :: XSUM, TT, T1, T2, RRR, DET, WG
+    real(kind=kreal) :: X1, X2, X3, XL1, XL2
+    real(kind=kreal) :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
+    real(kind=kreal) :: XJ11, XJ21, XJ31, XJ12, XJ22, XJ32, XJ13, XJ23, XJ33
     real(kind=kreal) :: H(8), HR(8), HS(8), HT(8)
     real(kind=kreal) :: XG(3), WGT(3), HL1(6), HL2(6), HL3(6)
     !*************************
@@ -923,11 +970,16 @@ contains
     !   R5   LTYPE=5  : RADIATE IN NORMAL-DIRECTION FOR FACE-5
     !   R6   LTYPE=6  : RADIATE IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)   :: RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
+    real(kind=kreal) :: RI, SI, XSUM, TT, T1, T2, RRR, WG
+    real(kind=kreal) :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
     real(kind=kreal) :: XG(2), WGT(2)
     !*************************
@@ -1037,11 +1089,17 @@ contains
     !   R5   LTYPE=5  : RADIATE IN NORMAL-DIRECTION FOR FACE-5
     !   R6   LTYPE=6  : RADIATE IN NORMAL-DIRECTION FOR FACE-6
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE, MM
     integer(kind=kint) :: NOD(MM)
+    real(kind=kreal)  :: RR, SINK, TZERO
     real(kind=kreal)   :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(MM*MM), TERM2(MM)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
+    real(kind=kreal) :: RI, SI, RP, SP, RM, SM
+    real(kind=kreal) :: XSUM, TT, T1, T2, RRR, WG
+    real(kind=kreal) :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal) :: H(8), HR(8), HS(8), HT(8)
     real(kind=kreal) :: XG(3), WGT(3)
     !*************************
@@ -1192,9 +1250,14 @@ contains
     !**
     !   R1   LTYPE=1  : SURFACE  RADIATE
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal) :: RR, SINK, TZERO
     real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(NN*NN), TERM2(NN)
+    ! LOCAL VARIABLES
+    integer(kind=kint) :: IC, IP, JP
+    real(kind=kreal) :: AX, AY, AZ, BX, BY, BZ, AA, TT, T1, T2, RRR
     !
     AX = XX(2) - XX(1)
     AY = YY(2) - YY(1)
@@ -1230,10 +1293,15 @@ contains
     !**
     !   R1   LTYPE=1  : RADIATE IN NORMAL-DIRECTION FOR FACE-1
     use hecmw
-    implicit real(kind=kreal) (A - H, O - Z)
+    implicit none
     ! I/F VARIABLES
+    integer(kind=kint) :: NN, LTYPE
+    real(kind=kreal) :: RR, SINK, TZERO
     real(kind=kreal) :: XX(NN), YY(NN), ZZ(NN), TEMP(NN), TERM1(NN*NN), TERM2(NN)
     ! LOCAL VARIABLES
+    integer(kind=kint) :: I, IC, IP, JP, IG1, IG2
+    real(kind=kreal) :: RI, SI, XSUM, TT, T1, T2, RRR
+    real(kind=kreal) :: G1X, G1Y, G1Z, G2X, G2Y, G2Z, G3X, G3Y, G3Z
     real(kind=kreal) :: H(4), HR(4), HS(4), HT(4)
     real(kind=kreal) :: XG(2), WGT(2)
     !*************************

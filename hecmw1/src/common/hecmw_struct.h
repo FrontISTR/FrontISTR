@@ -124,6 +124,7 @@ struct hecmwST_contact_pair {
   int *type;
 #define HECMW_CONTACT_TYPE_NODE_SURF 1 /* 1:NODE_SURF */
 #define HECMW_CONTACT_TYPE_SURF_SURF 2 /* 2:SURF_SURF */
+#define HECMW_CONTACT_TYPE_NODE_ELEM 3 /* 3:NODE_ELEM */
   int *slave_grp_id;
   int *slave_orisgrp_id;
   int *master_grp_id;

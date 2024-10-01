@@ -41,7 +41,7 @@ contains
     integer(kind=kint) :: restart_step_num, restart_substep_num
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
-    logical            :: ctchanged, is_OutPoint
+    logical            :: ctchanged, is_OutPoint, is_interaction_active
 
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 
@@ -49,6 +49,8 @@ contains
 
     ndof = hecMAT%NDOF
     nn = ndof*ndof
+
+    is_interaction_active = ( associated( fstrSOLID%contacts ) .or. associated( fstrSOLID%embeds ) )
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .and. hecMESH%hecmw_flag_initcon==1 ) then
       fstrSOLID%last_temp = 0.0d0
@@ -81,6 +83,7 @@ contains
       call initialize_contact_output_vectors(fstrSOLID,hecMAT)
       call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
     endif
+    if( fstrSOLID%n_embeds > 0 ) call initialize_embed_vectors(fstrSOLID,hecMAT)
 
     restart_step_num    = 1
     restart_substep_num = 1
@@ -115,6 +118,8 @@ contains
       endif
       call fstr_UpdateState( hecMESH, fstrSOLID, 0.0d0 )
 
+      fstrSOLID%unode_bak(:) = fstrSOLID%unode(:)
+
       ! -------------------------------------------------------------------------
       !      STEP LOOP
       ! -------------------------------------------------------------------------
@@ -146,7 +151,7 @@ contains
         time_1 = hecmw_Wtime()
 
         ! analysis algorithm ( Newton-Rapshon Method )
-        if( .not. associated( fstrSOLID%contacts ) ) then
+        if( .not. is_interaction_active ) then
           call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
             restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
         else
@@ -182,7 +187,7 @@ contains
             call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
 
             ! restore matrix structure for slagrange contact analysis
-            if( associated( fstrSOLID%contacts ) .and. fstrPARAM%contact_algo == kcaSLagrange ) then
+            if( is_interaction_active .and. fstrPARAM%contact_algo == kcaSLagrange ) then
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
                 &  infoCTChange, conMAT, fstr_is_contact_active())
               conMAT%B(:) = 0.0d0

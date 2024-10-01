@@ -161,9 +161,11 @@ contains
       end if
 
       DB(1:6, 1:nn*ndof) = matmul( D, B(1:6, 1:nn*ndof) )
-      forall( i=1:nn*ndof,  j=1:nn*ndof )
-        stiff(i, j) = stiff(i, j)+dot_product( B(:, i),  DB(:, j) )*WG
-      end forall
+      do j=1,nn*ndof 
+        do i=1,nn*ndof
+          stiff(i, j) = stiff(i, j)+dot_product( B(:, i),  DB(:, j) )*WG
+        enddo
+      enddo
 
       ! calculate the stress matrix ( TOTAL LAGRANGE METHOD )
       if( flag == TOTALLAG .OR. flag==UPDATELAG ) then
@@ -193,9 +195,11 @@ contains
           Smat(j+6, j+6) = stress(3)
         end do
         SBN(1:9, 1:nn*ndof) = matmul( Smat(1:9, 1:9),  BN(1:9, 1:nn*ndof) )
-        forall( i=1:nn*ndof,  j=1:nn*ndof )
-          stiff(i, j) = stiff(i, j)+dot_product( BN(:, i),  SBN(:, j) )*WG
-        end forall
+        do j=1,nn*ndof 
+          do i=1,nn*ndof
+            stiff(i, j) = stiff(i, j)+dot_product( BN(:, i),  SBN(:, j) )*WG
+          enddo
+        enddo
 
       end if
 
@@ -330,9 +334,9 @@ contains
           PHX=XCOD-HX
           PHY=YCOD-HY
           PHZ=ZCOD-HZ
-          COEFX=RHO*val*val*PHX
-          COEFY=RHO*val*val*PHY
-          COEFZ=RHO*val*val*PHZ
+          COEFX=RHO*val*dabs(val)*PHX
+          COEFY=RHO*val*dabs(val)*PHY
+          COEFZ=RHO*val*dabs(val)*PHZ
         end if
 
         WG=getWeight( etype, LX )*DET
@@ -620,7 +624,7 @@ contains
 
     if( flag == INFINITESIMAL ) then
 
-      gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+      gauss%stress(1:6) = gauss%stress_bak(1:6) + matmul( D(1:6, 1:6), dstrain(1:6)-gauss%strain_bak(1:6) )
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
         gauss%stress = real(gauss%stress)
@@ -654,7 +658,7 @@ contains
 
         !stress integration
         trD = dstrain(1)+dstrain(2)+dstrain(3)
-        dum(:,:) = dumstress + matmul( rot,dumstress ) - matmul( dumstress, rot ) + dumstress*trD
+        dum(:,:) = dumstress + matmul( rot,dumstress ) - matmul( dumstress, rot ) - dumstress*trD
         !call Hughes_Winget_rotation_3D( rot, dumstress, dum )
 
         gauss%stress(1) = dum(1,1) + dstress(1)
@@ -993,10 +997,10 @@ contains
 
     TEMP(1:12) = TEMP(1:12)/IC
 
-    forall( i=1:nn )
+    do i=1,nn 
       ndstrain(i, 1:6) = TEMP(1:6)
       ndstress(i, 1:6) = TEMP(7:12)
-    end forall
+    enddo
 
   end subroutine NodalStress_C3
 

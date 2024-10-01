@@ -5,13 +5,14 @@
 
 module hecmw_precond
   use hecmw_util
-  use hecmw_precond_11
-  use hecmw_precond_22
-  use hecmw_precond_33
-  use hecmw_precond_44
-  use hecmw_precond_66
-  use hecmw_precond_nn
+  use hecmw_precond_SSOR
+  use hecmw_precond_DIAG
+  use hecmw_precond_ML
+  use hecmw_precond_BILU
+  use hecmw_precond_SAINV
+  use hecmw_precond_RIF
   use hecmw_matrix_misc
+  use hecmw_solver_las
   implicit none
 
   private
@@ -33,19 +34,23 @@ contains
 
     if (hecmw_mat_get_iterpremax( hecMAT ).le.0) return
 
-    select case(hecMAT%NDOF)
+    select case(hecmw_mat_get_precond( hecMAT ))
+      case(1,2)
+        call hecmw_precond_SSOR_setup(hecMAT)
       case(3)
-        call hecmw_precond_33_setup(hecMAT, hecMESH, sym)
-      case(4)
-        call hecmw_precond_44_setup(hecMAT, hecMESH, sym)
-      case(6)
-        call hecmw_precond_66_setup(hecMAT, hecMESH, sym)
-      case(1)
-        call hecmw_precond_11_setup(hecMAT, hecMESH, sym)
-      case(2)
-        call hecmw_precond_22_setup(hecMAT, hecMESH, sym)
+        call hecmw_precond_DIAG_setup(hecMAT)
+      case(5)
+        call hecmw_precond_ML_setup(hecMAT, hecMESH, sym)
+      case(10,11,12)
+        call hecmw_precond_BILU_setup(hecMAT)
+      case(20)
+        call hecmw_precond_SAINV_setup(hecMAT)
+      case(21)
+        call hecmw_precond_RIF_setup(hecMAT)
       case default
-        call hecmw_precond_nn_setup(hecMAT, hecMESH, sym)
+        write (*,'(/a )')'#### HEC-MW-SOLVER-E-1001'
+        write (*,'( a/)')'    inconsistent solver/preconditioning'
+        call hecmw_abort( hecmw_comm_get_comm())
     end select
   end subroutine hecmw_precond_setup
 
@@ -55,19 +60,20 @@ contains
 
     if (hecmw_mat_get_iterpremax( hecMAT ).le.0) return
 
-    select case(hecMAT%NDOF)
+    select case(hecmw_mat_get_precond( hecMAT ))
+      case(1,2)
+        call hecmw_precond_SSOR_clear(hecMAT)
       case(3)
-        call hecmw_precond_33_clear(hecMAT)
-      case(4)
-        call hecmw_precond_44_clear(hecMAT)
-      case(6)
-        call hecmw_precond_66_clear(hecMAT)
-      case(1)
-        call hecmw_precond_11_clear(hecMAT)
-      case(2)
-        call hecmw_precond_22_clear(hecMAT)
+        call hecmw_precond_DIAG_clear(hecMAT%NDOF)
+      case(5)
+        call hecmw_precond_ML_clear(hecMAT%NDOF)
+      case(10:12)
+        call hecmw_precond_BILU_clear(hecMAT%NDOF)
+      case(20)
+        call hecmw_precond_SAINV_clear(hecMAT%NDOF)
+      case(21)
+        call hecmw_precond_RIF_clear(hecMAT%NDOF)
       case default
-        call hecmw_precond_nn_clear(hecMAT)
     end select
 
   end subroutine hecmw_precond_clear
@@ -80,6 +86,11 @@ contains
     real(kind=kreal), intent(inout) :: Z(:), ZP(:)
     real(kind=kreal), intent(inout) :: COMMtime
     integer(kind=kint ) :: i, N, NP, NNDOF, NPNDOF
+    integer(kind=kint) :: iterPREmax, iterPRE
+    real(kind=kreal) :: START_TIME, END_TIME
+
+    START_TIME = hecmw_Wtime()
+
     N = hecMAT%N
     NP = hecMAT%NP
     NNDOF = N * hecMAT%NDOF
@@ -103,30 +114,48 @@ contains
       Z(i)= 0.d0
     enddo
 
-    select case(hecMAT%NDOF)
-      case(3)
-        call hecmw_precond_33_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      case(4)
-        call hecmw_precond_44_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      case(6)
-        call hecmw_precond_66_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      case(1)
-        call hecmw_precond_11_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      case(2)
-        call hecmw_precond_22_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-      case default
-        call hecmw_precond_nn_apply(hecMESH, hecMAT, R, Z, ZP, time_precond, COMMtime)
-    end select
+    iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
+    do iterPRE= 1, iterPREmax
 
+      select case(hecmw_mat_get_precond( hecMAT ))
+        case(1,2)
+          call hecmw_precond_SSOR_apply(ZP,hecMAT%NDOF)
+        case(3)
+          call hecmw_precond_DIAG_apply(ZP,hecMAT%NDOF)
+        case(5)
+          call hecmw_precond_ML_apply(ZP,hecMAT%NDOF)
+        case(10:12)
+          call hecmw_precond_BILU_apply(ZP,hecMAT%NDOF)
+        case(20)
+          call hecmw_precond_SAINV_apply(R,ZP,hecMAT%NDOF)
+        case(21)
+          call hecmw_precond_RIF_apply(ZP,hecMAT%NDOF)
+        case default
+      end select
+
+      !C-- additive Schwartz
+      do i= 1, hecMAT%N * hecMAT%NDOF
+        Z(i)= Z(i) + ZP(i)
+      enddo
+      if (iterPRE.eq.iterPREmax) exit
+
+      !C--    {ZP} = {R} - [A] {Z}
+      call hecmw_matresid (hecMESH, hecMAT, Z, R, ZP, COMMtime)
+    enddo
+
+    END_TIME = hecmw_Wtime()
+    time_precond = time_precond + END_TIME - START_TIME
   end subroutine hecmw_precond_apply
 
   subroutine hecmw_precond_clear_timer
     implicit none
     time_precond = 0.d0
   end subroutine hecmw_precond_clear_timer
+
   function hecmw_precond_get_timer()
     implicit none
     real(kind=kreal) :: hecmw_precond_get_timer
     hecmw_precond_get_timer = time_precond
   end function hecmw_precond_get_timer
+
 end module hecmw_precond

@@ -42,9 +42,9 @@ contains
     call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
     call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
+    call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-    call fstr_AddBC(1,  hecMESH, hecMATmpc, fstrSOLID, fstrPARAM, hecLagMAT, 2)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
     call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)

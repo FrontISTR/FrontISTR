@@ -234,11 +234,11 @@ contains
           enddo
 
           !C-- geometrical boundary condition
+          call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
+          call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
+          call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
           call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
           call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-          call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
-          call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
-          call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter)
 
           !C-- RHS LOAD VECTOR CHECK
           numnp=hecMATmpc%NP
@@ -440,8 +440,6 @@ contains
     !C-- local variable
     !C
 
-    type(hecmwST_local_mesh), pointer :: hecMESHmpc
-    type(hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
@@ -457,7 +455,7 @@ contains
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: max_iter_contact, count_step
     integer(kind=kint) :: stepcnt
-    real(kind=kreal)   :: maxDLag
+    real(kind=kreal)   :: maxDLag, converg_dlag
 
     logical :: is_mat_symmetric
     integer(kind=kint) :: n_node_global
@@ -469,7 +467,6 @@ contains
     integer :: istat
     real(kind=kreal), allocatable :: coord(:)
 
-    call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -570,6 +567,9 @@ contains
     !!
     !!    step = 1,2,....,fstrDYNAMIC%n_step
     !!
+    max_iter_contact = fstrSOLID%step_ctrl(cstep)%max_contiter
+    converg_dlag = fstrSOLID%step_ctrl(cstep)%converg_lag
+    
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
       fstrDYNAMIC%i_step = i
@@ -589,7 +589,6 @@ contains
         fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
       enddo
 
-      max_iter_contact = 6 !1
       count_step = 0
       stepcnt = 0
       loopFORcontactAnalysis: do while( .TRUE. )
@@ -662,14 +661,12 @@ contains
           !C ********************************************************************************
 
           !C-- geometrical boundary condition
-          call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
-          call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-          call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
-          call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
-          call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
+          call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
+          call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
+          call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
 
           ! ----- check convergence
-          res = fstr_get_norm_para_contact(hecMATmpc,hecLagMAT,conMAT,hecMESH)
+          res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
           res = sqrt(res)/n_node_global
 
           if( iter==1 ) res0=res
@@ -700,18 +697,17 @@ contains
           !          call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
           !          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag<1.0d-5 .and. iter>1 ) exit
           if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &
-            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag<1.0d-4 ) exit
+            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag < converg_dlag ) exit
           res1 = res
           rf=1.0d0
           if( iter>1 .and. res>res1 )rf=0.5d0*rf
           res1=res
 
           !   ----  For Parallel Contact with Multi-Partition Domains
-          hecMATmpc%X = 0.0d0
-          call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-          call solve_LINEQ_contact(hecMESHmpc,hecMATmpc,hecLagMAT,conMAT,istat,1.0D0,fstr_is_contact_active())
-          call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
-          call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
+          hecMAT%X = 0.0d0
+          call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
+          call solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,1.0D0,fstr_is_contact_active())
+          call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
           ! ----- update external nodal displacement increments
           call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
@@ -816,7 +812,6 @@ contains
     endif
 
     deallocate(coord)
-    call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
   end subroutine fstr_solve_dynamic_nlimplicit_contactSLag
 
 end module fstr_dynamic_nlimplicit

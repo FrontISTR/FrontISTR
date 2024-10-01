@@ -61,7 +61,7 @@ contains
     end do
 
     !(3)contact values
-    ncont = size(fstrSOLID%contacts)
+    ncont = fstrSOLID%n_contacts
     if( associated(fstrSOLID%contacts) ) then
       allocate(fstrSOLID%contacts_bkup(ncont))
       do i=1,ncont
@@ -70,6 +70,16 @@ contains
       end do
     end if
 
+    !(4)embed values
+    ncont = fstrSOLID%n_embeds
+    if( associated(fstrSOLID%embeds) ) then
+      allocate(fstrSOLID%embeds_bkup(ncont))
+      do i=1,ncont
+        nstate = size(fstrSOLID%embeds(i)%states)
+        allocate(fstrSOLID%embeds_bkup(i)%states(nstate))
+      end do
+    end if
+    
   end subroutine
 
   !> Finalizer of cutback variables
@@ -106,13 +116,24 @@ contains
     deallocate(fstrSOLID%elements_bkup)
 
     !(3)contact values
-    ncont = size(fstrSOLID%contacts)
+    ncont = fstrSOLID%n_contacts
     if( associated(fstrSOLID%contacts) ) then
       do i=1,ncont
         deallocate(fstrSOLID%contacts_bkup(i)%states)
       end do
       deallocate(fstrSOLID%contacts_bkup)
     end if
+
+    !(4)embed values
+    ncont = fstrSOLID%n_embeds
+    if( associated(fstrSOLID%embeds) ) then
+      do i=1,ncont
+        deallocate(fstrSOLID%embeds_bkup(i)%states)
+      end do
+      deallocate(fstrSOLID%embeds_bkup)
+    end if
+
+        
   end subroutine
 
   !> Save analysis status
@@ -154,12 +175,24 @@ contains
     end do
 
     !(3)contact values
-    ncont = size(fstrSOLID%contacts)
+    ncont = fstrSOLID%n_contacts
     if( associated(fstrSOLID%contacts) ) then
       do i=1,ncont
         nstate = size(fstrSOLID%contacts(i)%states)
         do j=1,nstate
           call contact_state_copy(fstrSOLID%contacts(i)%states(j), fstrSOLID%contacts_bkup(i)%states(j))
+        enddo
+      end do
+      infoCTChange_bak = infoCTChange
+    end if
+
+    !(4)embed values
+    ncont = fstrSOLID%n_embeds
+    if( associated(fstrSOLID%embeds) ) then
+      do i=1,ncont
+        nstate = size(fstrSOLID%embeds(i)%states)
+        do j=1,nstate
+          call contact_state_copy(fstrSOLID%embeds(i)%states(j), fstrSOLID%embeds_bkup(i)%states(j))
         enddo
       end do
       infoCTChange_bak = infoCTChange
@@ -205,12 +238,24 @@ contains
     end do
 
     !(3)contact values
-    ncont = size(fstrSOLID%contacts)
+    ncont = fstrSOLID%n_contacts
     if( associated(fstrSOLID%contacts) ) then
       do i=1,ncont
         nstate = size(fstrSOLID%contacts(i)%states)
         do j=1,nstate
           call contact_state_copy(fstrSOLID%contacts_bkup(i)%states(j), fstrSOLID%contacts(i)%states(j))
+        enddo
+      end do
+      infoCTChange = infoCTChange_bak
+    end if
+
+    !(4)embed values
+    ncont = fstrSOLID%n_embeds
+    if( associated(fstrSOLID%embeds) ) then
+      do i=1,ncont
+        nstate = size(fstrSOLID%embeds(i)%states)
+        do j=1,nstate
+          call contact_state_copy(fstrSOLID%embeds_bkup(i)%states(j), fstrSOLID%embeds(i)%states(j))
         enddo
       end do
       infoCTChange = infoCTChange_bak

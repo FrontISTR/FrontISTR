@@ -83,12 +83,12 @@ HEADERS =
 all: @build_target@
 
 @build_target@:
-	@cd nn     && $(MAKE) @build_target@
-	@cd 11     && $(MAKE) @build_target@
-	@cd 22     && $(MAKE) @build_target@
-	@cd 33     && $(MAKE) @build_target@
-	@cd 44     && $(MAKE) @build_target@
-	@cd 66     && $(MAKE) @build_target@
+	@cd ssor   && $(MAKE) @build_target@
+	@cd diag   && $(MAKE) @build_target@
+	@cd bilu   && $(MAKE) @build_target@
+	@cd sainv  && $(MAKE) @build_target@
+	@cd rif    && $(MAKE) @build_target@
+	@cd ml     && $(MAKE) @build_target@
 	$(MAKE) BUILD_CURR
 
 build-without-f: $(TARGET)
@@ -106,52 +106,51 @@ $(OBJS): $(HEADERS)
 $(OBJSF):
 
 install-header:
-	@cd nn     && $(MAKE) install-header
-	@cd 33     && $(MAKE) install-header
+	@cd ml     && $(MAKE) install-header
 
 install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
-	@cd nn     && $(MAKE) install
-	@cd 11     && $(MAKE) install
-	@cd 22     && $(MAKE) install
-	@cd 33     && $(MAKE) install
-	@cd 44     && $(MAKE) install
-	@cd 66     && $(MAKE) install
+	@cd ssor   && $(MAKE) install
+	@cd diag   && $(MAKE) install
+	@cd bilu   && $(MAKE) install
+	@cd sainv  && $(MAKE) install
+	@cd rif    && $(MAKE) install
+	@cd ml     && $(MAKE) install
 
 clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
-	@cd nn     && $(MAKE) clean
-	@cd 11     && $(MAKE) clean
-	@cd 22     && $(MAKE) clean
-	@cd 33     && $(MAKE) clean
-	@cd 44     && $(MAKE) clean
-	@cd 66     && $(MAKE) clean
+	@cd ssor   && $(MAKE) clean
+	@cd diag   && $(MAKE) clean
+	@cd bilu   && $(MAKE) clean
+	@cd sainv  && $(MAKE) clean
+	@cd rif    && $(MAKE) clean
+	@cd ml     && $(MAKE) clean
   
 distclean: clean
-	@cd nn     && $(MAKE) distclean
-	@cd 11     && $(MAKE) distclean
-	@cd 22     && $(MAKE) distclean
-	@cd 33     && $(MAKE) distclean
-	@cd 44     && $(MAKE) distclean
-	@cd 66     && $(MAKE) distclean
+	@cd ssor   && $(MAKE) distclean
+	@cd diag   && $(MAKE) distclean
+	@cd bilu   && $(MAKE) distclean
+	@cd sainv  && $(MAKE) distclean
+	@cd rif    && $(MAKE) distclean
+	@cd ml     && $(MAKE) distclean
 
 maintainer-clean:
-	@cd nn     && $(MAKE) maintainer-clean
-	@cd 11     && $(MAKE) maintainer-clean
-	@cd 22     && $(MAKE) maintainer-clean
-	@cd 33     && $(MAKE) maintainer-clean
-	@cd 44     && $(MAKE) maintainer-clean
-	@cd 66     && $(MAKE) maintainer-clean
+	@cd ssor   && $(MAKE) maintainer-clean
+	@cd diag   && $(MAKE) maintainer-clean
+	@cd bilu   && $(MAKE) maintainer-clean
+	@cd sainv  && $(MAKE) maintainer-clean
+	@cd rif    && $(MAKE) maintainer-clean
+	@cd ml     && $(MAKE) maintainer-clean
 
 include .dependf90
 
 depend .dependf90:
 	makedepf90 *.[fF]90 > .dependf90
-	@cd nn     && $(MAKE) depend
-	@cd 11     && $(MAKE) depend
-	@cd 22     && $(MAKE) depend
-	@cd 33     && $(MAKE) depend
-	@cd 44     && $(MAKE) depend
-	@cd 66     && $(MAKE) depend
+	@cd ssor   && $(MAKE) depend
+	@cd diag   && $(MAKE) depend
+	@cd bilu   && $(MAKE) depend
+	@cd sainv  && $(MAKE) depend
+	@cd rif    && $(MAKE) depend
+	@cd ml     && $(MAKE) depend

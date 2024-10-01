@@ -145,18 +145,7 @@ contains
       endif
 
     else if( ipt==3 ) then
-      allocate( fval(10,10) )
-      fval =0.d0
-      fstr_ctrl_get_ELASTICITY = fstr_ctrl_get_data_ex( ctrl, 1, 'rrrrrrrrrr ',    &
-        fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
-        fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
-      if( fstr_ctrl_get_ELASTICITY ==0 ) then
-        do i=1,10
-          do j=1,10
-            matval(100+(i-1)*10+j)=fval(i,j)
-          enddo
-        enddo
-      endif
+      fstr_ctrl_get_ELASTICITY = read_user_matl( ctrl, matval(101:200))
       mattype = USERELASTIC
       nlgeom = INFINITESIMAL
 
@@ -247,18 +236,7 @@ contains
       mattype = ARRUDABOYCE
 
     else if( ipt==4 ) then    !User
-      allocate( fval(10,10) )
-      fval =0.0d0
-      fstr_ctrl_get_HYPERELASTIC = fstr_ctrl_get_data_ex( ctrl, 1, 'rrrrrrrrrr ',    &
-        fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
-        fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
-      if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
-        do i=1,10
-          do j=1,10
-            matval(100+(i-1)*10+j)=fval(i,j)
-          enddo
-        enddo
-      endif
+      fstr_ctrl_get_HYPERELASTIC = read_user_matl( ctrl, matval(101:200))
       mattype = USERHYPERELASTIC
 
       ! MOONEY-ORTHO
@@ -392,8 +370,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt, hipt
-    real(kind=kreal),pointer :: fval(:,:)
-    real(kind=kreal) :: dum, fdum
+    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal) :: phi, psi
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256)    :: s
     type( tTable )        :: mttable
@@ -440,7 +418,7 @@ contains
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return               ! fail in reading plastic
     if( hipt==2 .and. n<2 ) return    ! not enough data
-    if( ( ipt==3 .or. ipt==4 ) .and. hipt>2 ) hipt = 1
+    if( ( ipt==2 .or. ipt==3 ) .and. hipt>2 ) hipt = 1
 
     select case (ipt)
       case (1)  !Mises
@@ -502,27 +480,62 @@ contains
             stop
         end select
       case (2, 3)  ! Mohr-Coulomb, Drucker-Prager
-        call setDigit( 5, 0, mattype )
-        allocate( fval(3,depends+1) )
-        data_fmt = "RRr "
-        fstr_ctrl_get_PLASTICITY                                                         &
-          = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
-        if( fstr_ctrl_get_PLASTICITY ==0 ) then
-          matval(M_PLCONST1) = fval(1,1)    ! c
-          matval(M_PLCONST2) = fval(3,1)    ! H
-          if( ipt==3 ) then     ! Drucker-Prager
-            dum = fval(2,1)*PI/180.d0
-            fdum = 2.d0*sin(dum)/ ( sqrt(3.d0)*(3.d0+sin(dum)) )
-            matval(M_PLCONST3) = fdum
-            fdum = 6.d0* cos(dum)/ ( sqrt(3.d0)*(3.d0+sin(dum)) )
-            matval(M_PLCONST4) = fdum
-          else                  ! Mohr-Coulomb
-            matval(M_PLCONST3) = fval(2,1)*PI/180.d0
+        select case (hipt)
+        case (1)  ! linear hardening
+          allocate( fval(4,n) )
+          data_fmt = "RRrr "
+          fval(4,:) = -1.d0
+          fstr_ctrl_get_PLASTICITY                                                         &
+              = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:) )
+          if( fstr_ctrl_get_PLASTICITY ==0 ) then
+            matval(M_PLCONST1) = fval(1,1)    ! c
+            matval(M_PLCONST2) = fval(3,1)    ! H
+            phi = fval(2,1)*PI/180.d0
+            if( fval(4,1) >= 0.d0 ) then
+              psi = fval(4,1)*PI/180.d0
+            else
+              psi = phi
+            endif
           endif
+        case (2)  ! multilinear hardening
+          if( depends>0 ) then
+            stop "Mohr-Coulomb and Drucker-Prager do not support temperature dependency"
+          endif
+          allocate( fval(2,n) )
+          data_fmt = "Rr "
+          fval(2,:) = -1.d0
+          fstr_ctrl_get_PLASTICITY = &
+              fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+          if( fstr_ctrl_get_PLASTICITY ==0 ) then
+              phi =fval(1,1)*PI/180.d0
+              if( fval(2,1) >= 0.d0 ) then
+                psi = fval(2,1)*PI/180.d0
+              else
+                psi = phi
+              endif
+              if( fval(2,2)/=0.d0 ) then
+                print *, "Multilinear hardening: First plastic strain must be zero"
+                stop
+              endif
+              do i=2,n
+                if( fval(2,i)<0.0 ) &
+                    stop "Multilinear hardening: Error in plastic strain definition"
+              enddo
+            call init_table( mttable,1, 2, n-1, fval(1:2,2:n) )
+            call dict_add_key( dict, MC_YIELD, mttable )
+          endif
+        end select
+        if( ipt==3 ) then     ! Drucker-Prager
+          matval(M_PLCONST3) = 2.d0*sin(phi)/ ( sqrt(3.d0)*(3.d0+sin(phi)) ) ! eta
+          matval(M_PLCONST4) = 6.d0*cos(phi)/ ( sqrt(3.d0)*(3.d0+sin(phi)) ) ! xi
+          matval(M_PLCONST5) = 2.d0*sin(psi)/ ( sqrt(3.d0)*(3.d0+sin(psi)) ) ! etabar
+        else                  ! Mohr-Coulomb
+          matval(M_PLCONST3) = phi
+          matval(M_PLCONST4) = psi
         endif
 
       case(4)
-        fstr_ctrl_get_PLASTICITY = read_user_matl( ctrl, matval )
+        fstr_ctrl_get_PLASTICITY = read_user_matl( ctrl, matval(101:200) )
 
       case default
         stop "Yield function not supported"
@@ -691,17 +704,19 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     real(kind=kreal),intent(out)      :: matval(:)
 
-    integer(kind=kint) :: i, j
+    integer(kind=kint) :: n, i, j
     real(kind=kreal)   :: fval(10,10)
 
     read_user_matl = -1
 
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n > 10 ) stop "Num of data lines for user-defined material exceeds 10"
     fval =0.d0
     if( fstr_ctrl_get_data_array_ex( ctrl, 'rrrrrrrrrr ', fval(1,:), fval(2,:), fval(3,:),  &
       fval(4,:), fval(5,:), fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) ) /= 0 ) return
     do i=1,10
       do j=1,10
-        matval((i-1)*10+j)=fval(i,j)
+        matval((i-1)*10+j)=fval(j,i)
       enddo
     enddo
 

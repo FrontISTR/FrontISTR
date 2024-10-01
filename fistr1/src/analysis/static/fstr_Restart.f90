@@ -48,6 +48,7 @@ contains
     endif
 
     call hecmw_restart_read_real(fstrSOLID%unode)
+    call hecmw_restart_read_real(fstrSOLID%unode_bak)
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
     do i= 1, hecMESH%n_elem
@@ -71,7 +72,7 @@ contains
     if( associated( fstrSOLID%contacts ) ) then
       call hecmw_restart_read_int(nif)
       contactNode = nif(1)
-      do i= 1, size(fstrSOLID%contacts)
+      do i= 1, fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           call hecmw_restart_read_int(nif)
           fstrSOLID%contacts(i)%states(j)%surface = nif(1)
@@ -169,6 +170,7 @@ contains
     end if
 
     call hecmw_restart_add_real(fstrSOLID%unode,size(fstrSOLID%unode))
+    call hecmw_restart_add_real(fstrSOLID%unode_bak,size(fstrSOLID%unode_bak))
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
     do i= 1, hecMESH%n_elem
@@ -201,7 +203,7 @@ contains
     if( associated( fstrSOLID%contacts ) ) then
       nif(1) = contactNode
       call hecmw_restart_add_int(nif,size(nif))
-      do i= 1, size(fstrSOLID%contacts)
+      do i= 1, fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           nif(1) = fstrSOLID%contacts(i)%states(j)%surface
           nif(2) = fstrSOLID%contacts(i)%states(j)%state
@@ -263,7 +265,7 @@ contains
     if(present(contactNode)) then
       call hecmw_restart_read_int(nif)
       contactNode = nif(1)
-      do i= 1, size(fstrSOLID%contacts)
+      do i= 1, fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           call hecmw_restart_read_int(nif)
           fstrSOLID%contacts(i)%states(j)%surface = nif(1)
@@ -349,7 +351,7 @@ contains
     if(present(contactNode)) then
       nif(1) = contactNode
       call hecmw_restart_add_int(nif,size(nif))
-      do i= 1, size(fstrSOLID%contacts)
+      do i= 1, fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           nif(1) = fstrSOLID%contacts(i)%states(j)%surface
           nif(2) = fstrSOLID%contacts(i)%states(j)%state

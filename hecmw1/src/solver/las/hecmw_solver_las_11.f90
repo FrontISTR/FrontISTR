@@ -18,16 +18,17 @@ contains
   !C*** hecmw_matvec_11
   !C***
   !C
-  subroutine hecmw_matvec_11 (hecMESH, hecMAT, X, Y, n, COMMtime)
+  subroutine hecmw_matvec_11 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
 
     implicit none
-    integer(kind=kint):: n
-    real(kind=kreal), dimension(n) :: X, Y
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    real(kind=kreal), optional :: COMMtime
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME
     integer(kind=kint) :: i, j, jS, jE, in
@@ -38,6 +39,7 @@ contains
     END_TIME= HECMW_WTIME()
     if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
+    START_TIME= HECMW_WTIME()
     do i= 1, hecMAT%N
       YV= hecMAT%D(i) * X(i)
       jS= hecMAT%indexL(i-1) + 1
@@ -54,6 +56,8 @@ contains
       enddo
       Y(i)= YV
     enddo
+    END_TIME = hecmw_Wtime()
+    time_Ax = time_Ax + END_TIME - START_TIME
 
   end subroutine hecmw_matvec_11
 
@@ -62,20 +66,21 @@ contains
   !C*** hecmw_matresid_11
   !C***
   !C
-  subroutine hecmw_matresid_11 (hecMESH, hecMAT, X, B, R, COMMtime)
+  subroutine hecmw_matresid_11 (hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
     use hecmw_util
 
     implicit none
     real(kind=kreal) :: X(:), B(:), R(:)
     type (hecmwST_matrix)     :: hecMAT
     type (hecmwST_local_mesh) :: hecMESH
+    real(kind=kreal) :: time_Ax
     real(kind=kreal), optional :: COMMtime
 
     integer(kind=kint) :: i
     real(kind=kreal) :: Tcomm
 
     Tcomm = 0.d0
-    call hecmw_matvec_11 (hecMESH, hecMAT, X, R, hecMAT%NP, Tcomm)
+    call hecmw_matvec_11 (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
 
     do i = 1, hecMAT%N
@@ -89,7 +94,7 @@ contains
   !C*** hecmw_rel_resid_L2_11
   !C***
   !C
-  function hecmw_rel_resid_L2_11 (hecMESH, hecMAT, COMMtime)
+  function hecmw_rel_resid_L2_11 (hecMESH, hecMAT, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_solver_misc
 
@@ -97,6 +102,7 @@ contains
     real(kind=kreal) :: hecmw_rel_resid_L2_11
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH
     type ( hecmwST_matrix     ), intent(in) :: hecMAT
+    real(kind=kreal) :: time_Ax
     real(kind=kreal), optional :: COMMtime
 
     real(kind=kreal) :: r(hecMAT%NDOF*hecMAT%NP)
@@ -108,7 +114,7 @@ contains
     if (bnorm2 == 0.d0) then
       bnorm2 = 1.d0
     endif
-    call hecmw_matresid_11(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, Tcomm)
+    call hecmw_matresid_11(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, time_Ax, Tcomm)
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
     hecmw_rel_resid_L2_11 = sqrt(rnorm2 / bnorm2)
