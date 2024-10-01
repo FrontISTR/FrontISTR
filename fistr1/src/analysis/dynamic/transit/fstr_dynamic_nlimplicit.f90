@@ -426,6 +426,7 @@ contains
     integer, intent(in)                  :: cstep !< current step
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
+    type(hecmwST_matrix), pointer        :: hecMAT0
     type(fstr_eigen)                     :: fstrEIG
     type(fstr_solid)                     :: fstrSOLID
     type(hecmwST_result_data)            :: fstrRESULT
@@ -467,6 +468,7 @@ contains
     integer :: istat
     real(kind=kreal), allocatable :: coord(:)
 
+    nullify(hecMAT0)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -601,7 +603,17 @@ contains
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
-          call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+          if (.not. associated(hecMAT0)) then
+            call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+            allocate(hecMAT0)
+            call hecmw_mat_init(hecMAT0)
+            call hecmw_mat_copy_profile(hecMAT, hecMAT0)
+            call hecmw_mat_copy_val(hecMAT, hecMAT0)
+          else
+            call hecmw_mat_copy_val(hecMAT0, hecMAT)
+          endif
+
+
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
               hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
@@ -667,13 +679,9 @@ contains
 
           ! ----- check convergence
           res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
-          res = sqrt(res)/n_node_global
 
-          if( iter==1 ) res0=res
-          if( res0==0.d0 ) then
-            res0 =1.d0
-          else
-            relres = dabs(res1-res)/res0
+          if(iter == 1)then
+            res0 = res
           endif
 
           ! ----- check convergence
@@ -684,24 +692,14 @@ contains
           endif
           call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
 
+          res = dsqrt(res/res0)
           if( hecMESH%my_rank==0 ) then
-            !            if( mod(i,max(int(fstrDYNAMIC%nout/10),1)) == 0 )   &
-              write(*,'(a,i3,a,2e15.7)') ' - Residual(',iter,') =',res,relres
+              if(hecMESH%my_rank==0) write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
+            if(hecMESH%my_rank==0) write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
             write(*,'(a,1e15.7)') ' - MaxDLag =',maxDLag
-            write(ISTA,'(''iter='',I5,''res/res0='',2E15.7)')iter,res,relres
             write(ISTA,'(a,1e15.7)') ' - MaxDLag =',maxDLag
+            if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag < converg_dlag ) exit
           endif
-
-          ! ----- check convergence
-          !          if( .not.fstr_is_contact_active() ) maxDLag= 0.0d0
-          !          call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
-          !          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag<1.0d-5 .and. iter>1 ) exit
-          if( (res<fstrSOLID%step_ctrl(cstep)%converg  .or.    &
-            relres<fstrSOLID%step_ctrl(cstep)%converg) .and. maxDLag < converg_dlag ) exit
-          res1 = res
-          rf=1.0d0
-          if( iter>1 .and. res>res1 )rf=0.5d0*rf
-          res1=res
 
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMAT%X = 0.0d0
@@ -719,6 +717,7 @@ contains
           call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
             &   fstrDYNAMIC%t_delta,iter, fstrDYNAMIC%strainEnergy )
 
+          if(.not. fstrPARAM%nlgeom) exit
 
           ! ----- update the Lagrange multipliers
           if( fstr_is_contact_active() ) then
@@ -805,6 +804,11 @@ contains
     enddo
     !C
     !C-- end of time step loop
+
+    if (associated(hecMAT0)) then
+      call hecmw_mat_finalize(hecMAT0)
+      deallocate(hecMAT0)
+    endif
 
     time_2 = hecmw_Wtime()
     if( hecMESH%my_rank == 0 ) then

@@ -202,16 +202,10 @@ contains
     if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
 
       if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
-        if(.not. associated( fstrSOLID%contacts ) ) then
-          call fstr_solve_dynamic_nlimplicit(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-            ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-            ,fstrCPL, restrt_step_num )
-        elseif( fstrPARAM%contact_algo == kcaSLagrange ) then
-          call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-            ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-            ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange   &
-            ,conMAT )
-        endif
+        call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
+          ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+          ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange   &
+          ,conMAT )
 
       else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
         call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
