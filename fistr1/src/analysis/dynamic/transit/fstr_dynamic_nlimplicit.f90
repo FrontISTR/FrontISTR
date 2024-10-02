@@ -778,6 +778,8 @@ contains
     real(kreal) :: bsize, a1, a2, a3, b1, b2, b3
     logical :: is_cycle
 
+    is_cycle = .false.
+
     if( fstrPARAM%fg_couple == 1 ) then
       if( fstrPARAM%fg_couple_type>1 ) then
         do j=1, fstrCPL%coupled_node_n
@@ -821,7 +823,6 @@ contains
         call fstr_rcap_send( fstrCPL )
       endif
 
-      is_cycle = .false.
       select case ( fstrPARAM%fg_couple_type )
         case (4)
           call fstr_rcap_get( fstrCPL )
