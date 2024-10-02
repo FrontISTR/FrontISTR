@@ -36,7 +36,7 @@
 			<description>!MESHに必須のパラメータTYPEが見つからない</description>
 		</define>
 		<define type="error" name="E0013">
-			<message>!MESH: This NAME has already defined</message>
+			<message>!MESH: This NAME already defined</message>
 			<description>!MESHで同じ識別子を持つファイルを定義しようとした</description>
 		</define>
 		<define type="error" name="E0014">
@@ -57,7 +57,7 @@
 			<description>!RESULTに必須のパラメータIOが見つからない</description>
 		</define>
 		<define type="error" name="E0023">
-			<message>!RESULT: This NAME has already defined</message>
+			<message>!RESULT: This NAME already defined</message>
 			<description>!RESULTで同じ識別子を持つファイルを定義しようとした</description>
 		</define>
 		<define type="error" name="E0024">
@@ -78,7 +78,7 @@
 			<description>!CONTROLに必須のパラメータNAMEが見つからない</description>
 		</define>
 		<define type="error" name="E0032">
-			<message>!CONTROL: This NAME has already defined</message>
+			<message>!CONTROL: This NAME already defined</message>
 			<description>!CONTROLで同じ識別子を持つファイルを定義しようとした</description>
 		</define>
 		<define type="error" name="E0033">
@@ -99,7 +99,7 @@
 			<description>!RESTARTに必須のパラメータIOが見つからない</description>
 		</define>
 		<define type="error" name="E0043">
-			<message>!RESTART: This NAME has already defined</message>
+			<message>!RESTART: This NAME already defined</message>
 			<description>!RESTARTで同じ識別子を持つファイルを定義しようとした</description>
 		</define>
 		<define type="error" name="E0044">
@@ -120,11 +120,11 @@
 			<description>!MESH GROUPに必須のパラメータNAMEが見つからない</description>
 		</define>
 		<define type="error" name="E0052">
-			<message>!MESH GROUP: This NAME has not defined in !MESH</message>
+			<message>!MESH GROUP: NAME not defined in !MESH</message>
 			<description>!MESHで定義されていないname_IDを使ってメッシュグループを定義しようとした</description>
 		</define>
 		<define type="error" name="E0053">
-			<message>!MESH GROUP: This NAME has already defined</message>
+			<message>!MESH GROUP: NAME already defined</message>
 			<description>!MESH GROUPで同じ識別子を持つグループを定義しようとした</description>
 		</define>
 		<define type="error" name="E0054">
@@ -154,7 +154,7 @@
 			<description>リスタートファイルのクローズに失敗した</description>
 		</define>
 		<define type="error" name="E0103">
-			<message>Restart file has not opened yet</message>
+			<message>Restart file not opened yet</message>
 			<description>リスタートファイルがオープンされていない</description>
 		</define>
 		<define type="error" name="E0104">
@@ -175,7 +175,7 @@
 			<description>結果ファイルのクローズに失敗した</description>
 		</define>
 		<define type="error" name="E0203">
-			<message>Result file has not opened yet</message>
+			<message>Result file not opened yet</message>
 			<description>結果ファイルがオープンされていない</description>
 		</define>
 		<define type="error" name="E0204">
@@ -183,7 +183,7 @@
 			<description>結果ファイル内に予期しないEOFを検出した</description>
 		</define>
 		<define type="error" name="E0205">
-			<message>IO error occurred while reading result file</message>
+			<message>IO error occurred while reading or writing result file</message>
 			<description>結果ファイルの入出力中にIOエラーが発生した</description>
 		</define>
 		<define type="error" name="E0206">

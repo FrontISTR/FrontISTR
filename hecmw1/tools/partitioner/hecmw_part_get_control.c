@@ -79,7 +79,7 @@ static int part_cont_type(void) {
 }
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-/*  partitioning method < METHOD={ RCB | KMETIS | PMETIS } >                  */
+/*  partitioning method < METHOD={ RCB | KMETIS | PMETIS | USER } >                  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 static int part_cont_method(void) {
   int token;
@@ -93,7 +93,7 @@ static int part_cont_method(void) {
     return -1;
   }
 
-  /* { RCB | KMETIS | PMETIS } */
+  /* { RCB | KMETIS | PMETIS | USER } */
   token = HECMW_partlex_next_token();
   switch (token) {
     case HECMW_PARTLEX_V_RCB: /* METHOD=RCB */
@@ -104,6 +104,9 @@ static int part_cont_method(void) {
 
     case HECMW_PARTLEX_V_PMETIS: /* METHOD=PMETIS */
       return HECMW_PART_METHOD_PMETIS;
+
+    case HECMW_PARTLEX_V_USER: /* METHOD=USER */
+      return HECMW_PART_METHOD_USER;
 
     default:
       HECMW_log(HECMW_LOG_ERROR, HECMW_strmsg(HECMW_PART_E_CTRL_METHOD_INVAL));
@@ -272,6 +275,52 @@ static int part_cont_contact(void) {
 }
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*  part file name < PART=filename >                                            */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+static int part_cont_part(char *name) {
+  char *p;
+  int token, is_print_part = 0;
+
+  /* '=' */
+  token = HECMW_partlex_next_token();
+  if (token != '=') {
+    HECMW_log(HECMW_LOG_ERROR, HECMW_strmsg(HECMW_PART_E_CTRL_PART_NOEQ));
+    HECMW_log(HECMW_LOG_DEBUG, "%s:%d:%s (%s)", __FILE__, __LINE__,
+              "part_cont_part", HECMW_partlex_get_text());
+    return -1;
+  }
+
+  /* filename */
+  token = HECMW_partlex_next_token();
+  switch (token) {
+    case HECMW_PARTLEX_NAME:     /* PART=filename */
+    case HECMW_PARTLEX_FILENAME: /* PART=filename */
+      p = HECMW_partlex_get_text();
+      if (strlen(p) > HECMW_FILENAME_LEN) {
+        HECMW_log(HECMW_LOG_ERROR,
+                  HECMW_strmsg(HECMW_PART_E_CTRL_PART_TOO_LONG));
+        HECMW_log(HECMW_LOG_DEBUG, "%s:%d:%s (%s)", __FILE__, __LINE__,
+                  "part_cont_part", HECMW_partlex_get_text());
+        return -1;
+      }
+      strcpy(name, p);
+      is_print_part = 1;
+
+      return is_print_part;
+
+    default:
+      HECMW_log(HECMW_LOG_ERROR, HECMW_strmsg(HECMW_PART_E_CTRL_PART_INVAL));
+      HECMW_log(HECMW_LOG_DEBUG, "%s:%d:%s (%s)", __FILE__, __LINE__,
+                "part_cont_part", HECMW_partlex_get_text());
+      return -1;
+  }
+
+  HECMW_assert(0);
+
+  return -1;
+}
+
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  partitioning directions for RCB partitioning < x, y, z >                  */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 static int part_cont_rcb_divs(int n_domain) {
@@ -387,7 +436,9 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
   cont_data->depth        = -1;
   cont_data->is_print_ucd = -1;
   cont_data->contact      = -1;
+  cont_data->is_print_part= -1;
   strcpy(cont_data->ucd_file_name, "\0");
+  strcpy(cont_data->part_file_name, "\0");
 
   while ((token = HECMW_partlex_next_token()) != HECMW_PARTLEX_NL ||
          (token = HECMW_partlex_next_token())) {
@@ -420,6 +471,11 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
       case HECMW_PARTLEX_K_CONTACT: /* CONTACT */
         cont_data->contact = part_cont_contact();
         if (cont_data->contact < 0) return -1;
+        break;
+
+      case HECMW_PARTLEX_K_PART: /* PART */
+        cont_data->is_print_part = part_cont_part(cont_data->part_file_name);
+        if (cont_data->is_print_part < 0) return -1;
         break;
 
       default:
@@ -494,6 +550,14 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
     cont_data->is_print_ucd = 0;
   }
 
+  if (cont_data->is_print_part < 0) {
+    cont_data->is_print_part = 0;
+  }
+
+  if (cont_data->method == HECMW_PART_METHOD_USER) {
+    cont_data->is_print_part = 0;
+  }
+
   /* partitioning directions ( option for RCB ) */
   if (cont_data->method == HECMW_PART_METHOD_RCB) {
     if (token == EOF) {
@@ -531,6 +595,7 @@ static int part_get_control(struct hecmw_part_cont_data *cont_data) {
     cont_data->depth        = 1;
     cont_data->is_print_ucd = 0;
     cont_data->contact      = HECMW_PART_CONTACT_DEFAULT;
+    cont_data->is_print_part= 0;
     return 0;
   }
 
@@ -607,6 +672,7 @@ static int part_get_control(struct hecmw_part_cont_data *cont_data) {
 
           case HECMW_PART_METHOD_KMETIS:
           case HECMW_PART_METHOD_PMETIS:
+          case HECMW_PART_METHOD_USER:
             HECMW_log(HECMW_LOG_WARN,
                       HECMW_strmsg(HECMW_PART_W_CTRL_DIR_WORCB));
             break;

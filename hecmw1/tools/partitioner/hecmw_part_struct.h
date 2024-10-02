@@ -42,6 +42,10 @@ struct hecmw_part_cont_data {
   int *my_domain;
 
   int contact;
+
+  int is_print_part;
+
+  char part_file_name[HECMW_FILENAME_LEN + 1];
 };
 
 #endif /* INC_HECMW_PART_STRUCT */
