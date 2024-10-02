@@ -711,6 +711,16 @@ contains
             stop
           endif
         endif
+      else if( header_name == '!DAMPING') then
+        if( cid >0 ) then
+          if( fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, fstrSOLID%materials(cid)%variables, &
+              fstrSOLID%materials(cid)%is_elem_Rayleigh_damping_RM, &
+              fstrSOLID%materials(cid)%is_elem_Rayleigh_damping_RK)/=0 )  then
+            write(*,*) '### Error: Fail in read in damping definition : ' , cid
+            write(ILOG,*) '### Error: Fail in read in damping definition : ', cid
+            stop
+          endif
+        endif
       else if( header_name == '!FLUID' ) then
         if( c_material >0 ) then
           if( fstr_ctrl_get_FLUID( ctrl,                                 &

@@ -115,6 +115,9 @@ module mMaterial
   integer(kind=kint), parameter :: M_PLCONST9 = 33
   integer(kind=kint), parameter :: M_PLCONST10 = 34
 
+  integer(kind=kint), parameter :: M_DAMPING_RM = 35
+  integer(kind=kint), parameter :: M_DAMPING_RK = 36
+
   ! Dictionary constants
   character(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
   character(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
@@ -153,6 +156,8 @@ module mMaterial
     integer(kind=kint)         :: n_table           !< size of table
     real(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
     type(DICT_STRUCT), pointer :: dict              !< material properties in dictionaried linked list
+    logical :: is_elem_Rayleigh_damping_RM          !< elemental Rayleigh damping factor
+    logical :: is_elem_Rayleigh_damping_RK          !< elemental Rayleigh damping factor
   end type tMaterial
 
   type(tMaterial), allocatable :: materials(:)
@@ -165,8 +170,10 @@ contains
     material%mtype = -1                  ! not defined yet
     material%nfstatus = 0                ! Default: no status
     material%nlgeom_flag = INFINITESIMAL ! Default: INFINITESIMAL ANALYSIS
-    material%variables =  0.d0           ! not defined yet
-    material%totallyr =  0               ! not defined yet
+    material%variables = 0.d0           ! not defined yet
+    material%totallyr = 0               ! not defined yet
+    material%is_elem_Rayleigh_damping_RM = .false. ! not defined yet
+    material%is_elem_Rayleigh_damping_RK = .false. ! not defined yet
 
     call dict_create( material%dict, 'INIT', DICT_NULL )
   end subroutine
