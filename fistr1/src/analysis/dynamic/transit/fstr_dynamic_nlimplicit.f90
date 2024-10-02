@@ -360,6 +360,7 @@ contains
     real(kind=kreal) :: bsize, res, res1, rf
     real(kind=kreal) :: res0, relres
     real :: time_1, time_2
+    real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
     integer(kind=kint) :: restrt_step_num
     integer(kind=kint) :: ctAlgo
@@ -467,7 +468,7 @@ contains
     converg_dlag = fstrSOLID%step_ctrl(cstep)%converg_lag
     
     !! step = 1,2,....,fstrDYNAMIC%n_step
-    do i= restrt_step_num, fstrDYNAMIC%n_step
+    do i = restrt_step_num, fstrDYNAMIC%n_step
 
       fstrDYNAMIC%i_step = i
       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
@@ -478,9 +479,6 @@ contains
         write(*,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
       endif
 
-      fstrSOLID%dunode(:) =0.d0
-      ! call fstr_UpdateEPState( hecMESH, fstrSOLID )
-
       do j = 1 ,ndof*nnod
         fstrDYNAMIC%VEC1(j) = a1*fstrDYNAMIC%ACC(j,1) + a2*fstrDYNAMIC%VEL(j,1)
         fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
@@ -488,6 +486,13 @@ contains
 
       count_step = 0
       stepcnt = 0
+
+      !C for couple analysis
+      do
+        fstrSOLID%dunode(:) =0.d0
+        ! call fstr_UpdateEPState( hecMESH, fstrSOLID )
+        call fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM, fstrCPL)
+
       loopFORcontactAnalysis: do while( .TRUE. )
         count_step = count_step + 1
 
@@ -530,6 +535,11 @@ contains
             hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
               + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
           enddo
+
+          !C for couple analysis
+          call fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
+            & fstrPARAM, fstrDYNAMIC, fstrCPL, restrt_step_num, PI, i)
+
           do j = 1 ,nn*hecMAT%NP
             hecMAT%D(j)  = c1* hecMAT%D(j)
           enddo
@@ -651,6 +661,13 @@ contains
 
       enddo loopFORcontactAnalysis
 
+        !C for couple analysis
+        call fstr_solve_dynamic_nlimplicit_couple_post(hecMESH, hecMAT, fstrSOLID, &
+          & fstrPARAM, fstrDYNAMIC, fstrCPL, a1, a2, a3, b1, b2, b3, i, is_cycle)
+        if(is_cycle) cycle
+        exit
+      enddo
+
       !C-- new displacement, velocity and acceleration
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
@@ -687,8 +704,8 @@ contains
     !C-- end of time step loop
 
     if (associated(hecMAT0)) then
-      call hecmw_mat_finalize(hecMAT0)
-      deallocate(hecMAT0)
+      !call hecmw_mat_finalize(hecMAT0)
+      !deallocate(hecMAT0)
     endif
 
     time_2 = hecmw_Wtime()
