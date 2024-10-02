@@ -89,6 +89,7 @@ OBJSF = \
         fstr_Restart.@f90objfilepostfix@ \
         fstr_NodalStress.@f90objfilepostfix@ \
         fstr_StiffMatrix.@f90objfilepostfix@ \
+        fstr_CreateMatrix.@f90objfilepostfix@ \
         fstr_Update.@f90objfilepostfix@ \
         readtemp.@f90objfilepostfix@ \
         static_echo.@f90objfilepostfix@ \

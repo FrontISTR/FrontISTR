@@ -700,7 +700,7 @@ contains
   end function fstr_ctrl_get_EXPANSION_COEFF
 
   !----------------------------------------------------------------------
-  !> Read in !EXPANSION_COEFF
+  !> Read in !RAYLEIGH_DAMPING
   integer function fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, matval, is_RM, is_RK )
     integer(kind=kint), intent(in) :: ctrl
     real(kind=kreal), intent(out)  :: matval(:)
