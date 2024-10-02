@@ -376,7 +376,7 @@ contains
     real(kind=kreal),   intent(in)  :: temperature(nn)     !< temperature
 
     real(kind=kreal) :: params(4)
-    integer(kind=kint) :: ctype
+    integer(kind=kint) :: mtype, ctype
     real(kind=kreal) llen, llen0, elem(3,nn)
     real(kind=kreal) direc(3), direc0(3), ratio
     integer(kind=kint) :: i,j
@@ -386,10 +386,10 @@ contains
     params(:) = 0.d0
 
     stiff(:,:) = 0.d0
-    if( ctype ==  .or. ctype == 2 ) then
+    if( ctype == 3 .or. ctype == 2 ) then
 
     ! get connector property
-      call GetConnectorProperty( gausses(1), ctype, params, direc, temperature )
+      !!call GetConnectorProperty( gausses(1), ctype, dof, param, streach )
 
 
       if( ctype == 1 ) then
@@ -449,7 +449,7 @@ contains
     integer(kind=kint) :: i,j
 
     ! get connector property
-    call GetConnectorProperty( gausses(1), ctype, params, direc, TT )
+    !!call GetConnectorProperty( gausses(1), ctype, dof, param, streach )
 
     qf(:) = 0.d0
     if( ctype == 1 .or. ctype == 2 ) then

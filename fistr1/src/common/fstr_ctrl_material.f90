@@ -783,15 +783,16 @@ contains
 
   !----------------------------------------------------------------------
   !> Read in !SPRING_D
-  integer function fstr_ctrl_get_SPRING_D( ctrl, mattype, nlgeom, matval, dict )
+  integer function fstr_ctrl_get_SPRING_D( ctrl, mattype, nlgeom, matval_i, dict )
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    integer(kind=kint), intent(out)   :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
-    integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof
+    integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
     real(kind=kreal),pointer :: fval(:,:)
+    integer(kind=kint),pointer :: ival(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -799,33 +800,85 @@ contains
 
     fstr_ctrl_get_SPRING_D = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
-    if( depends>1 ) depends=1   ! temperature depends only currently
-    depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DOF  ', '# ',           0,   'I',   dof )
+    !rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    !if( depends>1 ) depends=1   ! temperature depends only currently
     nlgeom = INFINITESIMAL   !default value
 
     n = fstr_ctrl_get_data_line_n( ctrl )
-    allocate( fval(1+depends,n) )
+    allocate( fval(1+depends,n), ival(2,n) )
     if( depends==0 ) then
-      data_fmt = "R "
+      data_fmt = "IIR "
       fstr_ctrl_get_SPRING_D = &
-        fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
-    else if( depends==1 ) then
-      data_fmt = "RR "
-      fstr_ctrl_get_SPRING_D = &
-        fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+        fstr_ctrl_get_data_array_ex( ctrl, data_fmt, ival(1,:), ival(2,:), fval(1,:) )
+    !else if( depends==1 ) then
+    !  data_fmt = "IIRR "
+    !  fstr_ctrl_get_SPRING_D = &
+    !    fstr_ctrl_get_data_array_ex( ctrl, data_fmt, ival(1,:), ival(2,:), fval(1,:), fval(2,:) )
     endif
     if( fstr_ctrl_get_SPRING_D ==0 ) then
-      call init_table( mattable, depends, 1+depends,n, fval )
-      write(spkey,'(A,I0)') MC_SPRING,dof
-      call dict_add_key( dict, trim(spkey), mattable )
+      do i=1,n
+        matval_i(M_SPRING_DOF+2*i-1) = ival(1,i) ! first dof
+        matval_i(M_SPRING_DOF+2*i  ) = ival(2,i) ! second dof
+        call init_table( mattable, depends, 1+depends, 1, fval(1,i:i) )
+        write(spkey,'(A,I0)') trim(MC_SPRING),i
+        call dict_add_key( dict, trim(spkey), mattable )
+        call finalize_table( mattable )
+      enddo
     endif
 
-    mattype = CONNECTOR + 2**(dof-1)*100
-    call finalize_table( mattable )
+    mattype = CONNECTOR + 1000 + 100*n
     if( associated(fval) ) deallocate(fval)
+    if( associated(ival) ) deallocate(ival)
   end function fstr_ctrl_get_SPRING_D
 
+  !----------------------------------------------------------------------
+  !> Read in !DASHPOT_D
+  integer function fstr_ctrl_get_DASHPOT_D( ctrl, mattype, nlgeom, matval_i, dict )
+    integer(kind=kint), intent(in)    :: ctrl
+    integer(kind=kint), intent(inout) :: mattype
+    integer(kind=kint), intent(out)   :: nlgeom
+    integer(kind=kint), intent(out)   :: matval_i(:)
+    type(DICT_STRUCT), pointer        :: dict
+
+    integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
+    real(kind=kreal),pointer :: fval(:,:)
+    integer(kind=kint),pointer :: ival(:,:)
+    character(len=HECMW_NAME_LEN) :: data_fmt
+    type( tTable )        :: mattable
+    logical            :: isok
+    character(len=DICT_KEY_LENGTH) :: spkey
+
+    fstr_ctrl_get_DASHPOT_D = -1
+    depends = 0
+    !rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    !if( depends>1 ) depends=1   ! temperature depends only currently
+    nlgeom = INFINITESIMAL   !default value
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    allocate( fval(1+depends,n), ival(2,n) )
+    if( depends==0 ) then
+      data_fmt = "IIR "
+      fstr_ctrl_get_DASHPOT_D = &
+        fstr_ctrl_get_data_array_ex( ctrl, data_fmt, ival(1,:), ival(2,:), fval(1,:) )
+    !else if( depends==1 ) then
+    !  data_fmt = "IIRR "
+    !  fstr_ctrl_get_DASHPOT_D = &
+    !    fstr_ctrl_get_data_array_ex( ctrl, data_fmt, ival(1,:), ival(2,:), fval(1,:), fval(2,:) )
+    endif
+    if( fstr_ctrl_get_DASHPOT_D ==0 ) then
+      do i=1,n
+        matval_i(M_DASHPOT_DOF+2*i-1) = ival(1,i) ! first dof
+        matval_i(M_DASHPOT_DOF+2*i  ) = ival(2,i) ! second dof
+        call init_table( mattable, depends, 1+depends, 1, fval(1,i:i) )
+        write(spkey,'(A,I0)') trim(MC_SPRING),i
+        call dict_add_key( dict, trim(spkey), mattable )
+        call finalize_table( mattable )
+      enddo
+    endif
+
+    mattype = CONNECTOR + 2000 + 100*n
+    if( associated(fval) ) deallocate(fval)
+    if( associated(ival) ) deallocate(ival)
+  end function fstr_ctrl_get_DASHPOT_D
 
 end module fstr_ctrl_material

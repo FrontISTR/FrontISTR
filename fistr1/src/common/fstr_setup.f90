@@ -728,7 +728,19 @@ contains
           if( fstr_ctrl_get_SPRING_D( ctrl,                                        &
               fstrSOLID%materials(cid)%mtype,       &
               fstrSOLID%materials(cid)%nlgeom_flag, &
-              fstrSOLID%materials(cid)%variables,   &
+              fstrSOLID%materials(cid)%variables_i,  &
+              fstrSOLID%materials(cid)%dict)/=0 ) then
+            write(*,*) '### Error: Fail in read in spring_d definition : ' , cid
+            write(ILOG,*) '### Error: Fail in read in spring_d definition : ', cid
+            stop
+          endif
+        endif
+      else if( header_name == '!DASHPOT_D' ) then
+        if( c_material >0 ) then
+          if( fstr_ctrl_get_SPRING_D( ctrl,                                        &
+              fstrSOLID%materials(cid)%mtype,       &
+              fstrSOLID%materials(cid)%nlgeom_flag, &
+              fstrSOLID%materials(cid)%variables_i,  &
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in spring_d definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in spring_d definition : ', cid

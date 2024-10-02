@@ -44,13 +44,8 @@ module mMaterial
   !       2: dashpot dof                        172000
   !       3: dashpot axial                      173000
   !   Fourth digit
-  !     For spring or dashpot, joint etc.
-  !       1: x-direction
-  !       2: y-direction
-  !       3: z-direction
-  !       4: Rx-direction
-  !       5: Ry-direction
-  !       6: Rz-direction
+  !     For spring_d or dashpot_d, joint_d etc.
+  !       k: number of dof param
   !   Fifth digit:
   !     For elastoplastic deformation, hardening law
   !       0: Linear hardening           i.e.  120000
@@ -126,6 +121,9 @@ module mMaterial
   integer(kind=kint), parameter :: M_PLCONST9 = 33
   integer(kind=kint), parameter :: M_PLCONST10 = 34
 
+  integer(kind=kint), parameter :: M_SPRING_DOF  = 0
+  integer(kind=kint), parameter :: M_DASHPOT_DOF = 72
+
   ! Dictionary constants
   character(len=DICT_KEY_LENGTH) :: MC_ISOELASTIC= 'ISOELASTIC'      ! youngs modulus, poisson's ratio
   character(len=DICT_KEY_LENGTH) :: MC_ORTHOELASTIC= 'ORTHOELASTIC'  ! ortho elastic modulus
@@ -159,13 +157,13 @@ module mMaterial
     integer(kind=kint)         :: nfstatus          !< number of status variables
     character(len=30)          :: name              !< material name
     real(kind=kreal)           :: variables(200)    !< material properties
+    integer(kind=kint)         :: variables_i(200)  !< material properties(integer)
     type(tshellmat), pointer   :: shell_var(:)      !< material properties for shell
     integer(kind=kint)         :: totallyr          !< total layer of element
     integer(kind=kint)         :: cdsys_ID          !< ID of material coordinate system
     integer(kind=kint)         :: n_table           !< size of table
     real(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
     type(DICT_STRUCT), pointer :: dict              !< material properties in dictionaried linked list
-    integer(kind=kint)         :: iparam(:)         !< integer material parameters
   end type tMaterial
 
   type(tMaterial), allocatable :: materials(:)
@@ -179,6 +177,7 @@ contains
     material%nfstatus = 0                ! Default: no status
     material%nlgeom_flag = INFINITESIMAL ! Default: INFINITESIMAL ANALYSIS
     material%variables =  0.d0           ! not defined yet
+    material%variables_i =  0            ! not defined yet
     material%totallyr =  0               ! not defined yet
 
     call dict_create( material%dict, 'INIT', DICT_NULL )
