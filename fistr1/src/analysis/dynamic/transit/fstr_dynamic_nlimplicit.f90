@@ -17,6 +17,10 @@ module fstr_dynamic_nlimplicit
   use m_fstr_Restart
   use fstr_matrix_con_contact
   use m_fstr_Residual
+  use mContact
+  use m_addContactStiffness
+  use m_solve_LINEQ_contact
+  use m_dynamic_init_variables
 
   !-------- for couple -------
   use m_dynamic_mat_ass_couple
@@ -95,7 +99,7 @@ contains
     if(fstrDYNAMIC%idx_mas == 1) then
       call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
-      !C-- consistent mass matrix
+    !C-- consistent mass matrix
     else if(fstrDYNAMIC%idx_mas == 2) then
       if( hecMESH%my_rank .eq. 0 ) then
         write(imsg,*) 'stop: consistent mass matrix is not yet available !'
@@ -332,16 +336,8 @@ contains
       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
       ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange  &
       ,conMAT )
-
-    use mContact
-    use m_addContactStiffness
-    use m_solve_LINEQ_contact
-    use m_dynamic_init_variables
-
     implicit none
-    !C
     !C-- global variable
-    !C
     integer, intent(in)                  :: cstep !< current step
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
@@ -356,35 +352,28 @@ contains
     type(fstr_info_contactChange)        :: infoCTChange !< fstr_info_contactChange
     type(hecmwST_matrix)                 :: conMAT
 
-    !C
     !C-- local variable
-    !C
-
     integer(kind=kint) :: nnod, ndof, numnp, nn
     integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
     integer(kind=kint) :: iter
-
-
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: bsize, res, res1, rf
     real(kind=kreal) :: res0, relres
     real :: time_1, time_2
 
     integer(kind=kint) :: restrt_step_num
-
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: max_iter_contact, count_step
     integer(kind=kint) :: stepcnt
     real(kind=kreal)   :: maxDLag, converg_dlag
 
-    logical :: is_mat_symmetric
     integer(kind=kint) :: n_node_global
     integer(kind=kint) :: contact_changed_global
-
-
     integer(kind=kint) ::  nndof,npdof
-    real(kind=kreal),allocatable :: tmp_conB(:)
+    logical :: is_mat_symmetric
     integer :: istat
+    logical :: is_cycle
+    real(kind=kreal),allocatable :: tmp_conB(:)
     real(kind=kreal), allocatable :: coord(:)
 
     nullify(hecMAT0)
@@ -410,14 +399,10 @@ contains
     allocate(coord(hecMESH%n_node*ndof))
     if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
 
-    !!
     !!-- initial value
-    !!
     time_1 = hecmw_Wtime()
 
-    !C
     !C-- check parameters
-    !C
     if(dabs(fstrDYNAMIC%beta) < 1.0e-20) then
       if( hecMESH%my_rank == 0 ) then
         write(imsg,*) 'stop due to Newmark-beta = 0'
@@ -425,32 +410,26 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
 
-
-    !C-- matrix [M]
-    !C-- lumped mass matrix
+    !C-- matrix [M] lumped mass matrix
     if(fstrDYNAMIC%idx_mas == 1) then
-
       call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
-      !C-- consistent mass matrix
+    !C-- consistent mass matrix
     else if(fstrDYNAMIC%idx_mas == 2) then
       if( hecMESH%my_rank .eq. 0 ) then
         write(imsg,*) 'stop: consistent mass matrix is not yet available !'
       endif
       call hecmw_abort( hecmw_comm_get_comm())
     endif
-    !C--
+
     hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
-    !C
+
     !C-- initialize variables
-    !C
     if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 ) &
       call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
-    !C
-    !C
+
     !C-- time step loop
-    !C
     a1 = .5d0/fstrDYNAMIC%beta - 1.d0
     a2 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
     a3 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta*fstrDYNAMIC%t_delta)
@@ -459,7 +438,6 @@ contains
     b3 = fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
     c1 = 1.d0 + fstrDYNAMIC%ray_k*b3
     c2 = a3 + fstrDYNAMIC%ray_m*b3
-
 
     !C-- output of initial state
     if( restrt_step_num == 1 ) then
@@ -485,12 +463,10 @@ contains
     is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
     call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
 
-    !!
-    !!    step = 1,2,....,fstrDYNAMIC%n_step
-    !!
     max_iter_contact = fstrSOLID%step_ctrl(cstep)%max_contiter
     converg_dlag = fstrSOLID%step_ctrl(cstep)%converg_lag
     
+    !! step = 1,2,....,fstrDYNAMIC%n_step
     do i= restrt_step_num, fstrDYNAMIC%n_step
 
       fstrDYNAMIC%i_step = i
@@ -547,7 +523,7 @@ contains
               call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
             endif
           endif
-          !C
+
           !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
           do j=1, hecMESH%n_node*  hecMESH%n_dof
@@ -579,17 +555,6 @@ contains
             call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
             call fstr_AddContactStiffness(cstep,iter,conMAT,hecLagMAT,fstrSOLID)
           endif
-          !
-          !C ********************************************************************************
-          !C for couple analysis
-          if( fstrPARAM%fg_couple == 1) then
-            if( fstrDYNAMIC%i_step > 1 .or. &
-                (fstrDYNAMIC%i_step==1 .and. fstrPARAM%fg_couple_first==1 )) then
-              call fstr_rcap_get( fstrCPL )
-              call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-            endif
-          endif
-          !C ********************************************************************************
 
           !C-- geometrical boundary condition
           call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
@@ -684,11 +649,9 @@ contains
 
         if( count_step > max_iter_contact ) exit loopFORcontactAnalysis
 
-
       enddo loopFORcontactAnalysis
-      !
+
       !C-- new displacement, velocity and acceleration
-      !C
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
         fstrDYNAMIC%ACC (j,2) = -a1*fstrDYNAMIC%ACC(j,1) - a2*fstrDYNAMIC%VEL(j,1) + &
@@ -721,7 +684,6 @@ contains
       endif
 
     enddo
-    !C
     !C-- end of time step loop
 
     if (associated(hecMAT0)) then
