@@ -57,11 +57,6 @@ contains
 
     ndof = hecMAT%NDOF
 
-    ! ----- dummy element
-    if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) &
-      &  call fstr_update_dummy_solid( hecMESH, fstrSOLID, cstep, ttime )
-
-
     ! -------------------------------------------------------------------
     !  CLOAD
     ! -------------------------------------------------------------------
@@ -316,7 +311,13 @@ contains
           &  fstrSOLID%TEMP_rtype, fstrSOLID%TEMP_interval, fstrSOLID%TEMP_factor, ctime, &
           &  fstrSOLID%temperature, fstrSOLID%temp_bak)
       endif
+    endif
 
+    ! ----- dummy element
+    if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) &
+      &  call fstr_update_dummy_solid( hecMESH, fstrSOLID, cstep, ctime )
+
+    if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
       ! ----- element TYPE loop.
       do itype = 1, hecMESH%n_elem_type
 

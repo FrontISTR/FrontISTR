@@ -36,7 +36,8 @@ contains
 
       call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, fstrHEAT%beta)
       if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, delta_time)
-      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrHEAT, next_time, delta_time)
+      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, &
+       & fstrSOLID, fstrHEAT, next_time, delta_time)
 
       hecMATmpc%Iarray(97) = 1 !Need numerical factorization
       bup_n_dof = hecMESH%n_dof
