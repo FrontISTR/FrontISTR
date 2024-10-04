@@ -847,7 +847,7 @@ contains
     ! --- DUMMY flag @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(136) ) then
       ecomp = ecomp + 1
-      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(36), ndof )
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(136), ndof )
     endif
     ! --- ELEM ID @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(39) ) then
@@ -1232,9 +1232,9 @@ contains
     endif
 
     ! --- DUMMY flag @element
-    if( fstrSOLID%output_ctrl(4)%outinfo%on(36) ) then
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(136) ) then
       ecomp = ecomp + 1
-      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(36), ndof )
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(136), ndof )
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'DUMMY'
       do i = 1, hecMESH%n_elem
