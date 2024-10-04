@@ -6,12 +6,13 @@
 module m_heat_mat_ass_capacity
 contains
 
-  subroutine heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, delta_time)
+  subroutine heat_mat_ass_capacity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, delta_time)
     use m_fstr
     use m_heat_LIB_CAPACITY
     implicit none
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
+    type(fstr_solid)         :: fstrSOLID
     type(hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: i, in, j, nodLOCAL(20), ip, inod
     integer(kind=kint) :: itype, iS, iE, ic_type, icel, isect, IMAT, in0, nn
@@ -31,7 +32,7 @@ contains
 
       !$omp parallel default(none), &
         !$omp&  private(icel,isect,IMAT,nn,temp,in0,i,j,nodLOCAL,ecoord,in,thick,surf,inod,lumped,mass), &
-        !$omp&  shared(iS,iE,hecMESH,ic_type,hecMAT,fstrHEAT,delta_time)
+        !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ic_type,hecMAT,fstrHEAT,delta_time)
       !$omp do
       do icel = iS, iE
         if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle

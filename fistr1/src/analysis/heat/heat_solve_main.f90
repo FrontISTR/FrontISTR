@@ -6,7 +6,8 @@
 module m_heat_solve_main
 contains
 
-  subroutine heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, next_time, delta_time)
+  subroutine heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, &
+     & fstrSOLID, fstrPARAM, fstrHEAT, ISTEP, iterALL, next_time, delta_time)
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -18,6 +19,7 @@ contains
     real(kind=kreal)   :: delta_time, next_time
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
+    type(fstr_solid)          :: fstrSOLID
     type(fstr_heat)           :: fstrHEAT
     type(fstr_param)          :: fstrPARAM
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
@@ -32,8 +34,8 @@ contains
       iterALL = iterALL + 1
       hecMAT%X = 0.0d0
 
-      call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrHEAT, fstrHEAT%beta)
-      if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, delta_time)
+      call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, fstrHEAT%beta)
+      if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, delta_time)
       call heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrHEAT, next_time, delta_time)
 
       hecMATmpc%Iarray(97) = 1 !Need numerical factorization
