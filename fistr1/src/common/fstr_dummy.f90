@@ -95,7 +95,7 @@ contains
       enddo
     enddo
 
-    call hecmw_update_1_R(hecMESH,active,hecMESH%n_node)
+    call hecmw_update_R(hecMESH,active,hecMESH%n_node,1)
 
     do i = 1, hecMESH%n_node
       if( active(i) > 0.d0 ) cycle
