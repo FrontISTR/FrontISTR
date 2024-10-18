@@ -928,7 +928,7 @@ contains
       
 
       !----- line search of step length
-      call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
+      call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, iter)
 
       ! ----- update the small displacement and the displacement for 1step
       !       \delta u^k => solver's solution
@@ -1079,7 +1079,7 @@ contains
     enddo
   end subroutine fstr_AddBC_to_direction_vector
 
-  subroutine fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
+  subroutine fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, i_iter)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
@@ -1091,6 +1091,7 @@ contains
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     real(kind=kreal) :: z_k(:)
+    integer :: i_iter
 
 
     real(kind=kreal) :: alpha_S, alpha_E
@@ -1120,18 +1121,21 @@ contains
     h_prime_a = h_prime_0
 
     len_vector = hecMESH%n_node*hecMesh%n_dof
-    z_max = 0.0d0
-    do i=1, len_vector
-      z_max = max(z_max, abs(z_k(i)))
-    end do
-    call MPI_Allreduce                                              &
-    &       (MPI_IN_PLACE, z_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX,              &
-    &        hecMESH%MPI_COMM, ierr)
-    if (z_max==0.0d0) then
-      write(6,*) 'direction for line search is zero-vector'
-      stop
+    if (i_iter==1) then
+      z_max = 0.0d0
+      do i=1, len_vector
+        z_max = max(z_max, abs(z_k(i)))
+      end do
+      call MPI_Allreduce                                              &
+      &       (MPI_IN_PLACE, z_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX,              &
+      &        hecMESH%MPI_COMM, ierr)
+      if (z_max==0.0d0) then
+        write(6,*) 'direction for line search is zero-vector'
+        stop
+      endif
+    else
+     z_max = 1.0d0
     endif
-    z_max = 1.0d0
     alpha_E = 1.0d0 / z_max /C_line_search
 
     do while (h_prime_a < 0.0d0)
