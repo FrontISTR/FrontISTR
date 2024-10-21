@@ -188,12 +188,8 @@ contains
 
     !restart
     if(fstrDYNAMIC%restart_nout < 0 ) then
-      if( .not. associated( fstrSOLID%contacts ) ) then
-        call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
-      else
-        call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-          infoCTChange%contactNode_previous)
-      endif
+      call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+        infoCTChange%contactNode_previous)
       restrt_step_num = restrt_step_num + 1
       fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
       hecMAT%Iarray(98) = 1

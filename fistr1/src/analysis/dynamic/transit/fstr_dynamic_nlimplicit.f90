@@ -704,8 +704,8 @@ contains
     !C-- end of time step loop
 
     if (associated(hecMAT0)) then
-      !call hecmw_mat_finalize(hecMAT0)
-      !deallocate(hecMAT0)
+      call hecmw_mat_finalize(hecMAT0)
+      deallocate(hecMAT0)
     endif
 
     time_2 = hecmw_Wtime()
