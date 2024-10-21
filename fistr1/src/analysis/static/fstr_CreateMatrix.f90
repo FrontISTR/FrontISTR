@@ -31,12 +31,12 @@ contains
 
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
     integer(kind=kint) :: nodLOCAL(20)
-    integer(kind=kint) :: isect, ihead, cdsys_ID
+    integer(kind=kint) :: isect, ihead, cdsys_ID, sec_opt
     real(kind=kreal)   :: stiff_mat(20*6, 20*6)
-    real(kind=kreal)   :: mass_mat(20*6, 20*6)
+    real(kind=kreal)   :: mass_mat(20*6, 20*6), lumped(20*6)
     !real(kind=kreal)   :: lumped_mass(20*6)
     real(kind=kreal)   :: tt(20), ecoord(3,20)
-    real(kind=kreal)   :: thick, rho, length, surf, val
+    real(kind=kreal)   :: thick, rho, length, surf
     real(kind=kreal)   :: u(6,20), du(6,20), coords(3,3), u_prev(6,20)
 
     ! ----- initialize
@@ -58,7 +58,8 @@ contains
       ! ----- element loop
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,cdsys_ID,coords, &
-        !$omp&          material,thick,stiff_mat,isect,ihead,rho, length, surf, mass_mat), &
+        !$omp&          material,thick,stiff_mat,isect,ihead,rho, length, surf, mass_mat, &
+        !$omp&          lumped, sec_opt), &
         !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,time,tincr)
       !$omp do
 
@@ -83,6 +84,7 @@ contains
         isect = hecMESH%section_ID(icel)
         ihead = hecMESH%section%sect_R_index(isect-1)
         cdsys_ID = hecMESH%section%sect_orien_ID(isect)
+        sec_opt = hecMESH%section%sect_opt(isect)
         if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
 
         material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
@@ -94,7 +96,7 @@ contains
           call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick, &
             stiff_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn) )
 
-          !call mass_C2(ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses, sec_opt, thick, mass_mat)
+          call mass_C2(ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses, sec_opt, thick, mass_mat, lumped)
 
         elseif ( ic_type==301 ) then
           call STF_C1( ic_type,nn,ecoord(:,1:nn),thick,fstrSOLID%elements(icel)%gausses(:), &
@@ -120,7 +122,7 @@ contains
               stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3, 1:nn), tt(1:nn) )
           endif
 
-          !call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass_mat)
+          call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass_mat, lumped)
 
         elseif (ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
           if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
@@ -128,7 +130,7 @@ contains
             ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:), &
             stiff_mat(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
 
-          !call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass_mat)
+          call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass_mat, lumped)
 
         else if( ic_type == 511) then
           !call STF_CONNECTOR( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
@@ -161,7 +163,7 @@ contains
 
           rho = material%variables(M_DENSITY)
           thick = material%variables(M_THICK)
-          !call mass_shell(ic_type, nn, ecoord(1:3,1:nn), rho, thick, fstrSOLID%elements(icel)%gausses, mass_mat)
+          call mass_shell(ic_type, nn, ecoord(1:3,1:nn), rho, thick, fstrSOLID%elements(icel)%gausses, mass_mat, lumped)
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
