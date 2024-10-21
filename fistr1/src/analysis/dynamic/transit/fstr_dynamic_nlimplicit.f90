@@ -503,16 +503,19 @@ contains
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
-          if (.not. associated(hecMAT0)) then
+          if (fstrPARAM%nlgeom) then
             call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
-            allocate(hecMAT0)
-            call hecmw_mat_init(hecMAT0)
-            call hecmw_mat_copy_profile(hecMAT, hecMAT0)
-            call hecmw_mat_copy_val(hecMAT, hecMAT0)
           else
-            call hecmw_mat_copy_val(hecMAT0, hecMAT)
+            if (.not. associated(hecMAT0)) then
+              call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+              allocate(hecMAT0)
+              call hecmw_mat_init(hecMAT0)
+              call hecmw_mat_copy_profile(hecMAT, hecMAT0)
+              call hecmw_mat_copy_val(hecMAT, hecMAT0)
+            else
+              call hecmw_mat_copy_val(hecMAT0, hecMAT)
+            endif
           endif
-
 
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
