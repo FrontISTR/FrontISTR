@@ -58,7 +58,7 @@ contains
       ! ----- element loop
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,cdsys_ID,coords, &
-        !$omp&          material,thick,stiff_mat,isect,ihead), &
+        !$omp&          material,thick,stiff_mat,isect,ihead,rho, length, surf, mass_mat), &
         !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,time,tincr)
       !$omp do
 
