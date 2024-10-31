@@ -31,7 +31,7 @@
 			<description>name_IDのTYPEが不正である</description>
 		</define>
 		<define type="warning" name="W1001">
-			<message>Checking element: Element has already defined, updated</message>
+			<message>Checking element: Element already defined, updated</message>
 			<description>要素が既に定義されていたため上書きされた</description>
 		</define>
 		<define type="warning" name="W1002">
@@ -43,7 +43,7 @@
 			<description>要素グループに既に含まれる要素を再度同じ要素グループに追加しようとした</description>
 		</define>
 		<define type="warning" name="W1004">
-			<message>Checking node: Node has already defined, updated</message>
+			<message>Checking node: Node already defined, updated</message>
 			<description>節点が既に定義されていたため上書きされた</description>
 		</define>
 		<define type="warning" name="W1005">
@@ -145,6 +145,10 @@
 		<define type="error" name="E1029">
 			<message>CONTACT: Node group not found</message>
 			<description>接触ペアのスレーブ節点グループが定義されていない</description>
+		</define>
+		<define type="warning" name="W1030">
+			<message>GROUP: ALL is reserved word, ignored</message>
+			<description>ALLは予約済みのグループ名であるため、無視された</description>
 		</define>
 		<define type="error" name="E5001">
 			<message>Failed to open distributed mesh file</message>

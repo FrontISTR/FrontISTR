@@ -167,6 +167,10 @@ extern int HECMW_part_set_log_part_method(int _part_method) {
       strcpy(part_method, "pMETIS");
       break;
 
+    case HECMW_PART_METHOD_USER:
+      strcpy(part_method, "USER");
+      break;
+
     default:
       HECMW_set_error(HECMW_PART_E_INVALID_PMETHOD, "");
       return -1;
