@@ -649,7 +649,7 @@ contains
       id1 = dof1
       id2 = 3+dof2
       stretch = du(dof1,1)-du(dof2,2)
-      dforce = params(1) * stretch
+      dforce = params(1) * stretch / tincr
       if( dof1 == dof2 ) then
         gausses(1)%strain(dof1) = gausses(1)%strain(dof1) + stretch
         gausses(1)%stress(dof1) = gausses(1)%stress(dof1) + dforce
