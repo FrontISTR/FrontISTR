@@ -880,6 +880,7 @@ static int mask_node_dof(struct hecmwST_local_mesh *local_mesh,
 
       /* interface element */
       case HECMW_ETYPE_JTB1:
+      case HECMW_ETYPE_SPGDPT1:
       case HECMW_ETYPE_JTT1:
       case HECMW_ETYPE_JTT2:
       case HECMW_ETYPE_JTQ1:

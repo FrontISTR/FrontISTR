@@ -192,7 +192,7 @@ contains
         call fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM, fstrCPL)
 
       loopFORcontactAnalysis: do while( .TRUE. )
-        count_step = count_step + 1
+      count_step = count_step + 1
 
         ! ----- Inner Iteration
         res0   = 0.d0
@@ -293,8 +293,8 @@ contains
             if(hecMESH%my_rank==0) write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
             write(*,'(a,1e15.7)') ' - MaxDLag =',maxDLag
             write(ISTA,'(a,1e15.7)') ' - MaxDLag =',maxDLag
-            if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag < converg_dlag ) exit
           endif
+          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag < converg_dlag ) exit
 
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMAT%X = 0.0d0
@@ -362,7 +362,7 @@ contains
 
       enddo loopFORcontactAnalysis
 
-        !C for couple analysis
+      !C for couple analysis
         call fstr_solve_dynamic_nlimplicit_couple_post(hecMESH, hecMAT, fstrSOLID, &
           & fstrPARAM, fstrDYNAMIC, fstrCPL, a1, a2, a3, b1, b2, b3, i, is_cycle)
         if(is_cycle) cycle
@@ -395,10 +395,11 @@ contains
       call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYNAMIC%t_delta )
 
       !---  Restart info
-      if( fstrDYNAMIC%restart_nout > 0 .and. &
-          (mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step) ) then
-        call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-          infoCTChange%contactNode_current)
+      if( fstrDYNAMIC%restart_nout > 0 ) then
+        if( mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step ) then
+          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+            infoCTChange%contactNode_current)
+        endif
       endif
 
     enddo
