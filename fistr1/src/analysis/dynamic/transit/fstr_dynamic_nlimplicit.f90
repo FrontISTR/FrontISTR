@@ -502,7 +502,6 @@ contains
         relres = 1.d0
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
-          write(*,*) "test0b",hecMESH%my_rank
           stepcnt=stepcnt+1
           if (fstrPARAM%nlgeom) then
             call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
