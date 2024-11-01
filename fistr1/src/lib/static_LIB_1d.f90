@@ -396,10 +396,10 @@ contains
       call STF_DASHPOT_D( gausses, tincr, stiff )
     endif
 
-    !! if dashpot_a is assigned, add the stiffness to stiff
-    !if( getNumOfSpring_dParam( gausses(1)%pMaterial ) > 0 ) then 
-    !  call STF_DASHPOT_A( gausses, ecoord, u, stiff )
-    !endif
+    ! if dashpot_a is assigned, add the stiffness to stiff
+    if( getNumOfDashpot_aParam( gausses(1)%pMaterial ) > 0 ) then 
+      call STF_DASHPOT_A( gausses, ecoord, u, tincr, stiff )
+    endif
 
   end subroutine
 
@@ -447,10 +447,10 @@ contains
       call UPDATE_DASHPOT_D( gausses, ecoord, du, tincr, qf )
     endif
 
-    !! if dashpot_a is assigned, add the stiffness to stiff
-    !if( getNumOfSpring_dParam( gausses(1)%pMaterial ) > 0 ) then 
-    !  call STF_DASHPOT_A( gausses, ecoord, u, stiff )
-    !endif
+    ! if dashpot_a is assigned, add the stiffness to stiff
+    if( getNumOfDashpot_aParam( gausses(1)%pMaterial ) > 0 ) then 
+      call UPDATE_DASHPOT_A( gausses, ecoord, u, du, tincr, qf )
+    endif
 
     !set stress and strain for output
     gausses(1)%strain_out(:) = gausses(1)%strain(:)
@@ -630,8 +630,8 @@ contains
   subroutine UPDATE_DASHPOT_D( gausses, ecoord, du, tincr, qf )
     type(tGaussStatus), intent(inout)  :: gausses(:)   !< \param [out] status of qudrature points
     real(kind=kreal),   intent(in)     :: ecoord(:,:)  !< \param [in] coordinates of elemental nodes
-    real(kind=kreal),   intent(in)     :: tincr        !< \param [in] time increment
     real(kind=kreal),   intent(in)     :: du(:,:)      !< \param [in] nodal displacement ( solutions of solver )
+    real(kind=kreal),   intent(in)     :: tincr        !< \param [in] time increment
     real(kind=kreal),   intent(out)    :: qf(:)        !< \param [out] Internal Force
 
     ! LOCAL VARIABLES
@@ -658,5 +658,97 @@ contains
       qf(id2) = qf(id2) - dforce
     enddo
   end subroutine
+
+  subroutine STF_DASHPOT_A( gausses, ecoord, u, tincr, stiff )
+    type(tGaussStatus), intent(in)  :: gausses(:)       !< Status of quadrature points
+    real(kind=kreal),   intent(in)  :: ecoord(:,:)      !< Coordinates of elemental nodes
+    real(kind=kreal),   intent(in)  :: u(:,:)           !< Nodal displacement
+    real(kind=kreal),   intent(in)  :: tincr            !< \param [in] time increment
+    real(kind=kreal),   intent(out) :: stiff(:,:)       !< Stiffness matrix
+
+    real(kind=kreal) :: params(1)                             !< Array to store parameters from GetConnectorProperty
+    integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
+    integer(kind=kint) :: i, j, n_ndof, dof1, dof2, id1, id2  !< Integer variables for indexing and degrees of freedom
+    real(kind=kreal) :: llen, elem(3,2)               !< Lengths of deformed and undeformed elements
+    real(kind=kreal) :: direc(3), ratio            !< Direction vectors and length ratio
+
+    ! Retrieve connector properties using the first Gauss point
+    call GetConnectorProperty( gausses(1), M_DASHPOT_AXIAL, 0, params, iparams )
+
+    ! Calculate the current positions of the elemental nodes after displacement
+    elem(1:3,1:2) = ecoord(1:3,1:2) + u(1:3,1:2)
+
+    ! Compute the direction vector for the deformed element
+    direc = elem(1:3,1) - elem(1:3,2)
+    llen = dsqrt( dot_product(direc, direc) ) !< Current length of the element after deformation
+
+    ! Check for near-zero length to avoid division by zero
+    if( llen < 1.d-10 ) then
+      direc(1:3) = 0.d0             !< Set direction to a default value
+      ratio = 1.d0                  !< Set ratio to zero to avoid undefined behavior
+    else
+      direc(1:3) = direc(1:3) / llen        !< Normalize the direction vector
+      ratio = gausses(1)%strain(1) / llen   !< Calculate the length ratio
+    endif
+
+    ! Populate the stiffness matrix
+    do i = 1, 3
+      stiff(i,i) = stiff(i,i) + params(1) * ratio / tincr    !< Diagonal terms based on stiffness and ratio
+      do j = 1, 3
+        stiff(i,j) = stiff(i,j) + params(1) * (1.d0 - ratio) * direc(i) * direc(j) / tincr  !< Off-diagonal terms
+      enddo
+    enddo
+
+    ! Symmetric stiffness matrix assembly for the other degrees of freedom
+    stiff(4:6, 1:3) = -stiff(1:3, 1:3)             !< Negative of the first three rows for the next three rows
+    stiff(1:3, 4:6) = transpose(stiff(4:6, 1:3))   !< Transpose to maintain symmetry
+    stiff(4:6, 4:6) = stiff(1:3, 1:3)              !< Assign the same values to the lower right block
+
+  end subroutine
+
+  subroutine UPDATE_DASHPOT_A( gausses, ecoord, u, du, tincr, qf )
+    type(tGaussStatus), intent(inout)  :: gausses(:)     !< \param [out] status of quadrature points
+    real(kind=kreal),   intent(in)     :: ecoord(:,:)    !< \param [in] coordinates of elemental nodes
+    real(kind=kreal),   intent(in)     :: u(:,:)         !< \param [in] nodal displacements
+    real(kind=kreal),   intent(in)     :: du(:,:)        !< \param [in] additional nodal displacements (solutions of solver)
+    real(kind=kreal),   intent(in)     :: tincr          !< \param [in] time increment
+    real(kind=kreal),   intent(out)    :: qf(:)          !< \param [out] Internal Force vector
+
+    ! LOCAL VARIABLES
+    real(kind=kreal) :: params(1)                      !< Array to store parameters from GetConnectorProperty
+    integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
+    real(kind=kreal) :: llen, llen0, elem(3,2)         !< Lengths of deformed (llen) and undeformed (llen0) elements
+    real(kind=kreal) :: direc(3), direc0(3)            !< Direction vectors for deformed and undeformed elements
+
+    ! Retrieve connector properties for the first Gauss point
+    call GetConnectorProperty( gausses(1), M_DASHPOT_AXIAL, 0, params, iparams )
+
+    ! Calculate the current positions of the elemental nodes after applying displacements
+    elem(1:3,1:2) = ecoord(1:3,1:2) + u(1:3,1:2) + du(1:3,1:2)
+
+    ! Compute the direction vector for the deformed element
+    direc = elem(1:3,1) - elem(1:3,2)
+    llen = dsqrt( dot_product(direc, direc) )  ! Current length of the deformed element
+
+    ! Compute the direction vector for the deformed element at the start of increment
+    direc0 = ecoord(1:3,1) + u(1:3,1) - ecoord(1:3,2) - u(1:3,2)
+    llen0 = dsqrt( dot_product(direc0, direc0) )  ! Original length of the element
+
+    ! Check for near-zero length to avoid division by zero
+    if( llen < 1.d-10 ) then
+      direc(1:3) = 1.d0  ! Set direction to a default value to avoid undefined behavior
+    else
+      direc(1:3) = direc(1:3) / llen  ! Normalize the direction vector to unit length
+    endif
+
+    ! Update strain and stress for the first Gauss point
+    gausses(1)%strain(1) = llen - llen0  ! Calculate strain as the change in length
+    gausses(1)%stress(1) = params(1) * gausses(1)%strain(1) / tincr ! Calculate stress using material properties
+
+    ! Update the internal force vector based on calculated stress
+    qf(1:3) = qf(1:3) + gausses(1)%stress(1)*direc(1:3)  ! Add stress contribution to the first three components
+    qf(4:6) = qf(4:6) - gausses(1)%stress(1)*direc(1:3)  ! Subtract stress contribution for the next three components
+  end subroutine  
+
 
 end module m_static_LIB_1d
