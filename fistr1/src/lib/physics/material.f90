@@ -191,16 +191,11 @@ contains
     material%mtype = -1                  ! not defined yet
     material%nfstatus = 0                ! Default: no status
     material%nlgeom_flag = INFINITESIMAL ! Default: INFINITESIMAL ANALYSIS
-<<<<<<< HEAD
     material%variables = 0.d0           ! not defined yet
+    material%variables_i =  0            ! not defined yet
     material%totallyr = 0               ! not defined yet
     material%is_elem_Rayleigh_damping_RM = .false. ! not defined yet
     material%is_elem_Rayleigh_damping_RK = .false. ! not defined yet
-=======
-    material%variables =  0.d0           ! not defined yet
-    material%variables_i =  0            ! not defined yet
-    material%totallyr =  0               ! not defined yet
->>>>>>> master
 
     call dict_create( material%dict, 'INIT', DICT_NULL )
   end subroutine
