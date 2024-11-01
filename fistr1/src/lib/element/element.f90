@@ -82,6 +82,8 @@ module elementInfo
   integer, parameter :: fe_hex20n   = 362
   integer, parameter :: fe_hex27n   = 363
 
+  integer, parameter :: fe_if_line2n   = 511
+
   integer, parameter :: fe_beam2n   = 611
   integer, parameter :: fe_beam3n   = 612
   integer, parameter :: fe_beam341  = 641
@@ -115,7 +117,7 @@ contains
     integer, intent(in) :: etype    !< element type
 
     select case( etype)
-      case (fe_line2n, fe_line3n)
+      case (fe_line2n, fe_line3n, fe_if_line2n)
         getSpaceDimension = 1
       case (fe_tri3n, fe_tri6n, fe_tri6nc, fe_quad4n, fe_quad8n)
         getSpaceDimension = 2
@@ -129,7 +131,7 @@ contains
     integer, intent(in) :: etype     !< element type
 
     select case (etype)
-      case (fe_line2n, fe_beam2n)
+      case (fe_line2n, fe_beam2n, fe_if_line2n)
         getNumberOfNodes = 2
       case (fe_line3n, fe_beam3n)
         getNumberOfNodes = 3
@@ -166,7 +168,7 @@ contains
     integer, intent(in) :: etype    !< element type
 
     select case (etype)
-      case (fe_line2n, fe_line3n)
+      case (fe_line2n, fe_line3n, fe_if_line2n)
         getNumberOfSubface = 2
       case (fe_tri3n, fe_mitc3_shell, fe_tri6n, fe_tri6nc, fe_tri6n_shell, fe_mitc3_shell361  )
         getNumberOfSubface = 3
@@ -447,7 +449,7 @@ contains
   integer function NumOfQuadPoints( fetype )
     integer, intent(in) :: fetype         !< element type
     select case (fetype)
-      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n , fe_beam341, fe_truss )
+      case (fe_line2n, fe_tri3n, fe_tet4n, fe_beam2n , fe_beam341, fe_truss, fe_if_line2n )
         NumOfQuadPoints = 1
       case ( fe_tri6n )
         NumOfQuadPoints = 3
@@ -518,7 +520,7 @@ contains
         pos(1:3)=gauss3d5(:,np)
       case ( fe_tet10nc )
         pos(1:3)=np
-      case ( fe_line2n )
+      case ( fe_line2n, fe_if_line2n )
         pos(1:1)=gauss1d1(:,np)
       case ( fe_line3n )
         pos(1:1)=gauss1d2(:,np)
@@ -558,7 +560,7 @@ contains
         getWeight = weight3d4(1)
       case ( fe_tet10n, fe_tet4n_pipi )
         getWeight = weight3d5(np)
-      case ( fe_line2n )
+      case ( fe_line2n, fe_if_line2n )
         getWeight = weight1d1(1)
       case ( fe_line3n )
         getWeight = weight1d2(np)
@@ -678,7 +680,7 @@ contains
       case (fe_tet10n)
         ! error check
         call ShapeFunc_tet10n(localcoord,func(1:10))
-      case (fe_line2n)
+      case (fe_line2n, fe_if_line2n)
         !error check
         call ShapeFunc_line2n(localcoord,func(1:2))
       case (fe_line3n)
@@ -908,7 +910,7 @@ contains
     real(kind=kreal) :: deriv(nn,1), gderiv(2,1)
 
     select case (fetype)
-      case (fe_line2n)
+      case (fe_line2n, fe_if_line2n)
         !error check
         call ShapeDeriv_line2n(deriv(1:nn,:))
       case (fe_line3n)

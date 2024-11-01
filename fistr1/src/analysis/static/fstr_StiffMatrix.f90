@@ -122,6 +122,10 @@ contains
             ( ic_type, nn, ecoord(:, 1:nn), fstrSOLID%elements(icel)%gausses(:),                &
             stiffness(1:nn*ndof, 1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
 
+        else if( ic_type == 511) then
+          call STF_CONNECTOR( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
+            stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tincr, tt(1:nn) )
+
         else if( ic_type == 611) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call StiffMat_abort( ic_type, 2 )
           call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &

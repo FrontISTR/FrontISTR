@@ -335,4 +335,45 @@ contains
   !####################################################################
   ! > (Gaku Hashimoto, The University of Tokyo, 2012/11/15)
 
+  subroutine GetConnectorProperty( gauss, ctype, dofid, rparams, iparams, stretch )
+    type( tGaussStatus ), intent(in)         :: gauss          !> status of qudrature point
+    integer(kind=kint), intent(in)           :: ctype          !> connector type
+    integer(kind=kint), intent(in)           :: dofid          !> dofid ( used only in ***_D type connector )
+    real(kind=kreal), intent(out)            :: rparams(:)      !> real paramters
+    integer(kind=kint), intent(out)          :: iparams(:)      !> integer paramters
+    real(kind=kreal), intent(in), optional   :: stretch        !> current stretch
+
+    real(kind=kreal) ina(1), outa(4)
+    logical :: ierr
+    character(len=DICT_KEY_LENGTH) :: cnkey
+
+    rparams(:) = 0.d0
+    iparams(:) = 0
+
+    if( ctype == M_SPRING_DOF ) then ! Dof Spring
+      write(cnkey,'(A,I0)') trim(MC_SPRING),dofid
+      iparams(1) = gauss%pMaterial%variables_i(M_SPRING_D_NDOFFSET+2*dofid  )
+      iparams(2) = gauss%pMaterial%variables_i(M_SPRING_D_NDOFFSET+2*dofid+1)
+    else if( ctype == M_SPRING_AXIAL ) then ! Dof Spring
+      write(cnkey,'(A,A)') trim(MC_SPRING),'_A'
+    else if( ctype == M_DASHPOT_DOF ) then ! Dof Dashpot
+      write(cnkey,'(A,I0)') trim(MC_DASHPOT),dofid
+      iparams(1) = gauss%pMaterial%variables_i(M_DASHPOT_D_NDOFFSET+2*dofid  )
+      iparams(2) = gauss%pMaterial%variables_i(M_DASHPOT_D_NDOFFSET+2*dofid+1)
+    else if( ctype == M_DASHPOT_AXIAL ) then ! Dof Dashpot
+      write(cnkey,'(A,A)') trim(MC_DASHPOT),'_A'
+    else
+      stop "CONNECTOR ctype is not defined"
+    endif
+
+    if( present(stretch) ) then
+      ina(1) = stretch
+      call fetch_TableData( cnkey, gauss%pMaterial%dict, outa(1:1), ierr, ina )
+    else
+      call fetch_TableData( cnkey, gauss%pMaterial%dict, outa(1:1), ierr )
+    endif
+    rparams(1) = outa(1)
+
+  end subroutine
+
 end module m_MatMatrix
