@@ -93,8 +93,10 @@ endif()
 ###############################################################
 # Version number
 ###############################################################
-include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+#include(GetGitRevisionDescription)
+#get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+find_package(Git QUIET)
+execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse HEAD OUTPUT_VARIABLE GIT_SHA1 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 file(READ "VERSION" ver)
 string(REGEX MATCH "[0-9](.[0-9](.[0-9])?)?" vertxt ${ver})
