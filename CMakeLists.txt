@@ -135,8 +135,8 @@ endif()
 # -DWITH_REVOCAP     : compile with REVOCAP_Coupler
 # -DWITH_METIS       : compile with METIS graph partitioning package
 #   -DMETIS_VER_4    : uses METIS-4
-# -DWITH_PARMETIS    : compile with ParMETIS
-#   -DPARMETIS_VER_3 : uses PARMETIS-3
+## -DWITH_PARMETIS    : compile with ParMETIS
+##   -DPARMETIS_VER_3 : uses PARMETIS-3
 # -DWITH_MKL         : compile with MKL PARDISO
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
@@ -151,7 +151,7 @@ option(WITH_MPI "for parallel environment with MPI" ON)
 if(WITH_MPI)
   find_package(MPI)
   set(WITH_MPI "${MPI_FOUND}")
-  find_package(Parmetis)
+  #find_package(Parmetis)
   find_package(Scalapack)
 endif()
 find_package(OpenMP)
@@ -172,8 +172,8 @@ option(WITH_LAPACK "for estimating number of condition" ${LAPACK_FOUND})
 option(WITH_METIS "compile with METIS" ${METIS_FOUND})
 option(METIS_VER_4 "uses METIS-4" OFF)
 option(WITH_MUMPS "compile with MUMPS direct solver" ${MUMPS_FOUND})
-option(WITH_PARMETIS "compile with ParMETIS" ${PARMETIS_FOUND})
-option(PARMETIS_VER_3 "uses METIS-3" OFF)
+#option(WITH_PARMETIS "compile with ParMETIS" ${PARMETIS_FOUND})
+#option(PARMETIS_VER_3 "uses METIS-3" OFF)
 option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
@@ -293,13 +293,13 @@ endif()
 ###################
 # -DWITH_PARMETIS
 ###################
-if(WITH_PARMETIS AND PARMETIS_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
-  if(NOT PARMETIS_VER_3)
-  else()
-  endif()
-endif()
+#if(WITH_PARMETIS AND PARMETIS_FOUND)
+#  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
+#  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
+#  if(NOT PARMETIS_VER_3)
+#  else()
+#  endif()
+#endif()
 
 ###################
 # -DWITH_METIS
