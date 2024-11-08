@@ -283,6 +283,7 @@ contains
           internal_work = internal_work + fstrSOLID%elements(icel)%gausses(ig)%strain_energy
         enddo
       enddo
+      call hecmw_allreduce_R1(hecMESH, internal_work, hecmw_sum)
       ! calc external work
       call hecmw_innerProduct_R(hecMESH,ndof,totload,fstrSOLID%dunode,extenal_work)      
       potential = internal_work - extenal_work
