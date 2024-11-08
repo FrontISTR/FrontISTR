@@ -1116,7 +1116,9 @@ contains
       write(6,*) 'residual vector is not directed to potential decretion.', h_prime_0
       stop
     endif
-    write(6,'(a, 2es27.16e3)') ' h_prime_0, pot_0', h_prime_0, pot_0
+    if( hecMESH%my_rank == 0 ) then
+      write(6,'(a, 2es27.16e3)') ' h_prime_0, pot_0', h_prime_0, pot_0
+    endif
 
     h_prime_a = h_prime_0
 
@@ -1144,7 +1146,9 @@ contains
       call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       call hecmw_innerProduct_R(hecMESH,ndof, hecMat%B, z_k, h_prime_a)
       pot_a = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
-      write(6,'(a, 3es27.16e3)') 'alpha_E, h_prime_a, pot_a', alpha_E, h_prime_a, pot_a
+      if( hecMESH%my_rank == 0 ) then
+        write(6,'(a, 3es27.16e3)') 'alpha_E, h_prime_a, pot_a', alpha_E, h_prime_a, pot_a
+      endif
     enddo
 
 		Q_Wolfe = 1 + Delta_approx_wolfe * Q_Wolfe
@@ -1185,7 +1189,10 @@ contains
       endif
       iter_ls = iter_ls +1
     enddo
-    write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, c_secant, h_prime_c, pot_c', alpha_S, alpha_E, c_secant, h_prime_c, pot_c
+    if( hecMESH%my_rank == 0 ) then
+      write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, c_secant, h_prime_c, pot_c', &
+          &  alpha_S, alpha_E, c_secant, h_prime_c, pot_c
+    endif    
   end subroutine fstr_line_search_along_direction
 
   subroutine fstr_set_secant(a, Fa, b, Fb, c)
