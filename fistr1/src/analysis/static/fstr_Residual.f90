@@ -253,7 +253,7 @@ contains
     integer(kind=kint), intent(in)       :: ptype
     real(kind=kreal)   ::  potential
     !    Local variables
-    integer(kind=kint) :: ndof, i, icel, ig
+    integer(kind=kint) :: ndof, i, icel, icel0, ig
     real(kind=kreal), allocatable :: totdisp(:), totload(:)
     real(kind=kreal) :: factor
     real(kind=kreal) :: extenal_work, internal_work
@@ -278,7 +278,8 @@ contains
     if( ptype == 1 ) then !< asseble strain potential
       ! calc internal work
       internal_work = 0.d0
-      do icel=1,hecMESH%ne_internal
+      do icel0=1,hecMESH%ne_internal
+        icel=hecMESH%elem_internal_list(icel0)
         do ig=1,size(fstrSOLID%elements(icel)%gausses)
           internal_work = internal_work + fstrSOLID%elements(icel)%gausses(ig)%strain_energy
         enddo
