@@ -9,7 +9,8 @@
 #include <string.h>
 #include <math.h>
 #include "hecmw_vis_comm_util.h"
-#include "hecmw_vis_generate_histogram_sf.c"
+#include "hecmw_vis_mem_util.h"
+#include "hecmw_vis_generate_histogram_sf.h"
 #include "hecmw_malloc.h"
 
 static void find_minmax_disp(struct surface_module *sf, Result *result,
