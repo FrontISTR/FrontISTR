@@ -505,17 +505,26 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, tied_method )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
+    integer(kind=kint) :: tied_method
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
     integer(kind=kint) :: rcode
     character(len=80) :: s
+
+    fstr_ctrl_get_CONTACTALGO = -1
+
     algo = kcaSLagrange
     s = 'SLAGRANGE,ALAGRANGE '
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )
-    fstr_ctrl_get_CONTACTALGO = rcode
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo ) /=0) return
+
+    tied_method = ktMETHOD_MPC
+    s = 'MPC,CONTACT '
+    if( fstr_ctrl_get_param_ex( ctrl, 'TIED_METHOD ', s, 0, 'P', tied_method ) /=0) return
+
+    fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition

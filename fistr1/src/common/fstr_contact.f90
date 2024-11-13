@@ -209,12 +209,14 @@ contains
   end subroutine
 
   !> Scanning contact state
-  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, hecMESH, hecMAT, fstrSOLID, infoCTChange, B )
+  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, tied_method, &
+    &  hecMESH, hecMAT, fstrSOLID, infoCTChange, B )
     integer(kind=kint), intent(in)         :: cstep      !< current step number
     integer(kind=kint), intent(in)         :: sub_step   !< current sub-step number
     integer(kind=kint), intent(in)         :: cont_step  !< current contact step number
     real(kind=kreal), intent(in)           :: dt
     integer(kind=kint), intent(in)         :: ctAlgo     !< contact analysis algorithm
+    integer(kind=kint), intent(in)         :: tied_method  !< tiecontact processing method
     type( hecmwST_local_mesh ), intent(inout) :: hecMESH     !< type mesh
     type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
@@ -275,8 +277,12 @@ contains
     enddo
 
     if( is_init .and. ctAlgo == kcaSLAGRANGE ) then
-      call fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, infoCTChange )
-      active = .false.
+      call fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, infoCTChange, tied_method )
+      if( tied_method == ktMETHOD_MPC ) then
+        active = .false.
+      else if ( tied_method == ktMETHOD_CONTACT ) then
+        if( .not. active ) active = .true.
+      endif
     endif
 
     !for output contact state

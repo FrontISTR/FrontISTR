@@ -25,12 +25,13 @@ contains
 ! Create MPC structure from CONTACT, INTERACTION=TIED.
 !======================================================================== 
   !> create mpc setup
-  subroutine fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, infoCTChange )
+  subroutine fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, infoCTChange, tied_method )
     integer(kind=kint), intent(in)         :: cstep      !< current step number
     type( hecmwST_local_mesh ), intent(inout) :: hecMESH     !< type mesh
     type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
+    integer(kind=kint), intent(in)         :: tied_method  !< tiecontact processing method
 
     integer(kind=kint) :: i, j, grpid, n_tied_slave, n_tied_slave_total
     type(tMPCCond), allocatable :: mpcs_old(:), mpcs_new(:), mpcs_all(:)
@@ -59,7 +60,7 @@ contains
       call extract_coeff_tiedcontact( fstrSOLID%contacts(i), mpcs_old, n_tied_slave_total )
 
       ! disable contact for tied
-      fstrSOLID%contacts(i)%group = -1
+      if( tied_method == ktMETHOD_MPC ) fstrSOLID%contacts(i)%group = -1
       do j=1,size(fstrSOLID%contacts(i)%states)
         fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
       enddo
@@ -76,10 +77,14 @@ contains
 
     T(3) = hecmw_Wtime()
     ! create mpc
-    call set_hecmwST_mpc( hecMESH, mpcs_new )
+    if( tied_method == ktMETHOD_MPC ) then
+      call set_hecmwST_mpc( hecMESH, mpcs_new )
+    else if ( tied_method == ktMETHOD_CONTACT ) then
+      call set_contact_structure( cstep, fstrSOLID, mpcs_new )
+    endif
 
     T(4) = hecmw_Wtime()
-    if( myrank == 0 .and. LOGLVL > 0 ) write(*,'(A20,f8.2)') "remove duplication", T(4)-T(3)
+    if( myrank == 0 .and. LOGLVL > 0 ) write(*,'(A20,f8.2)') "set data structure", T(4)-T(3)
   end subroutine fstr_create_coeff_tiedcontact
 
   !> create mpc coeff 
@@ -859,6 +864,46 @@ contains
 
   end subroutine
 
+  subroutine set_contact_structure( cstep, fstrSOLID, mpcs )
+    integer(kind=kint), intent(in)         :: cstep      !< current step number
+    type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
+    type(tMPCCond), allocatable :: mpcs(:)
+
+    integer(kind=kint) :: i, j, grpid, n_mpc, nitem, idof, dof(1:1000)
+
+    do i = 1, size(fstrSOLID%contacts)
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+      if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
+
+      deallocate(fstrSOLID%contacts(i)%slave,fstrSOLID%contacts(i)%states)
+      deallocate(fstrSOLID%contacts(i)%master)
+      n_mpc = size(mpcs)
+      allocate(fstrSOLID%contacts(i)%slave(n_mpc))
+      allocate(fstrSOLID%contacts(i)%states(n_mpc))
+      allocate(fstrSOLID%contacts(i)%master(n_mpc))
+
+      do j=1,n_mpc
+        nitem = mpcs(j)%nitem
+        fstrSOLID%contacts(i)%slave(j) = mpcs(j)%pid(1)
+        fstrSOLID%contacts(i)%states(j)%surface = j
+        fstrSOLID%contacts(i)%master(j)%etype = fe_tri3n
+        allocate(fstrSOLID%contacts(i)%master(j)%nodes(nitem))
+        fstrSOLID%contacts(i)%master(j)%nodes(1:nitem) = mpcs(j)%pid(1:nitem)
+        do idof=1,3
+          fstrSOLID%contacts(i)%states(j)%state = CONTACTSTICK
+          dof(1:nitem) = idof
+          call init_mpc_cond(fstrSOLID%contacts(i)%states(j)%mpc_cond(idof), mpcs(j)%nitem)
+          call set_mpc_cond(fstrSOLID%contacts(i)%states(j)%mpc_cond(idof), &
+            &  nitem, mpcs(j)%pid(1:nitem), dof(1:nitem), mpcs(j)%coeff(1:nitem))
+        enddo
+      enddo
+      exit
+
+    enddo
+  end subroutine
+
+
 !========================================================================
 ! Get new mpcs coeff by singular value decomposition
 !======================================================================== 
@@ -866,20 +911,25 @@ contains
     type(tMPCCond), allocatable, intent(in)  :: mpcs_old(:)
     type(tMPCCond), allocatable, intent(out) :: mpcs_new(:)
 
+
     ! variables for work
     type(tMPCCond), allocatable :: mpcs_work(:)
-
-    integer(kind=kint) :: i
+    integer(kind=kint) :: i, nmpc_remian
+    integer(kind=kint), parameter :: IMAX = 100
 
     allocate(mpcs_work(size(mpcs_old)))
     do i=1,size(mpcs_old)
       call copy_mpc_cond( mpcs_old(i), mpcs_work(i) )
     enddo
 
-    call get_newmpc_by_svd_main( mpcs_work )
-    call get_newmpc_by_svd_main( mpcs_work )
-    call get_newmpc_by_svd_main( mpcs_work )
-    call get_newmpc_by_svd_main( mpcs_work )
+    do i=1,IMAX
+      call get_newmpc_by_svd_main( mpcs_work, nmpc_remian )
+      if( nmpc_remian == 0 ) exit
+      if( i == IMAX ) then
+        write(*,*) "cannot remove duplication for all mpcs, iter, nmpc_remain=",i,nmpc_remian
+        stop
+      endif
+    enddo
 
     allocate(mpcs_new(size(mpcs_work)))
     do i=1,size(mpcs_work)
@@ -893,8 +943,9 @@ contains
   end subroutine
 
   !> get new mpcs coeff by singular value decomposition
-  subroutine get_newmpc_by_svd_main( mpcs_work )
+  subroutine get_newmpc_by_svd_main( mpcs_work, nmpc_remian )
     type(tMPCCond), allocatable, intent(inout)  :: mpcs_work(:)
+    integer(kind=kint), intent(out)  :: nmpc_remian
 
     ! variables for local to global index conversion
     integer(kind=kint) :: n_index, n_expanded
@@ -967,6 +1018,7 @@ contains
       idx = idx + 1
       mpcs_work(idx) = mpc_group_intermaster_all%mpcs(i)
     enddo
+    nmpc_remian = mpc_group_intermaster_all%nitem
 
   end subroutine
 

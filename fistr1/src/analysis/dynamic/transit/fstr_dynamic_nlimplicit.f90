@@ -363,7 +363,7 @@ contains
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
 
     integer(kind=kint) :: restrt_step_num
-    integer(kind=kint) :: ctAlgo
+    integer(kind=kint) :: ctAlgo, tied_method
     integer(kind=kint) :: max_iter_contact, count_step
     integer(kind=kint) :: stepcnt
     real(kind=kreal)   :: maxDLag, converg_dlag
@@ -384,6 +384,7 @@ contains
     call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
     ctAlgo = fstrPARAM%contact_algo
+    tied_method = fstrPARAM%tied_method
 
     if( hecMAT%Iarray(99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH) ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
@@ -451,7 +452,7 @@ contains
 
     if( associated(fstrSOLID%contacts) ) then
       call fstr_scan_contact_state(cstep, restrt_step_num, 0, fstrDYNAMIC%t_delta, ctAlgo, &
-      &  hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B)
+      &  tied_method, hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B)
       ! restructure Matrix for mpc
       call resize_structures( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrEIG )
       call hecmw_mat_recon_withmpc ( hecMESH, hecMAT )
@@ -657,7 +658,7 @@ contains
         endif
 
         call fstr_scan_contact_state(cstep, i, count_step, fstrDYNAMIC%t_delta, &
-        &  ctAlgo, hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B)
+        &  ctAlgo, tied_method, hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B)
 
         if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then
           write(*,*) ' This type of direct solver is not yet available in such case ! '

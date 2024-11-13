@@ -197,7 +197,7 @@ contains
     type (hecmwST_matrix)                 :: conMAT
 
     integer(kind=kint) :: ndof
-    integer(kind=kint) :: ctAlgo
+    integer(kind=kint) :: ctAlgo, tied_method
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: al_step, n_al_step, stepcnt
     real(kind=kreal)   :: tt0, tt, res, res0, res1, maxv, relres, tincr
@@ -214,6 +214,7 @@ contains
     call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
     ctAlgo = fstrPARAM%contact_algo
+    tied_method = fstrPARAM%tied_method
 
     hecMAT%NDOF = hecMESH%n_dof
     ndof = hecMAT%NDOF
@@ -230,7 +231,8 @@ contains
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)
       if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
-      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B )
+      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, tied_method, &
+      &  hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B )
       call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
         call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
@@ -366,7 +368,8 @@ contains
 
       ! ----- deal with contact boundary
       call fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchange )
-      call fstr_scan_contact_state( cstep, sub_step, al_step, dtime, ctAlgo, hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B )
+      call fstr_scan_contact_state( cstep, sub_step, al_step, dtime, ctAlgo, tied_method, &
+      &  hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B )
 
       contact_changed_global = 0
       if( fstr_is_matrixStructure_changed(infoCTChange) ) then
@@ -441,7 +444,7 @@ contains
     type (hecmwST_matrix)                  :: conMAT
 
     integer(kind=kint) :: ndof
-    integer(kind=kint) :: ctAlgo
+    integer(kind=kint) :: ctAlgo, tied_method
     integer(kind=kint) :: i, iter, max_iter_contact
     integer(kind=kint) :: stepcnt, count_step
     real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr, resX
@@ -465,6 +468,7 @@ contains
     endif
 
     ctAlgo = fstrPARAM%contact_algo
+    tied_method = fstrPARAM%tied_method
 
     hecMAT%NDOF = hecMESH%n_dof
     ndof = hecMAT%NDOF
@@ -479,7 +483,8 @@ contains
     fstrSOLID%dunode(:)  = 0.0d0
 
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
-      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B )
+      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, tied_method, &
+      &  hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B )
       ! restructure Matrix for mpc
       call resize_structures_static( hecMESH, hecMAT, fstrSOLID )
       call hecmw_mat_recon_withmpc ( hecMESH, hecMAT )
@@ -634,7 +639,8 @@ contains
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
-      call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B )
+      call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, tied_method, &
+      &  hecMESH, hecMAT, fstrSOLID, infoCTChange, hecMAT%B )
 
       if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_contact_active() ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
