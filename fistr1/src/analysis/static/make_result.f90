@@ -1269,7 +1269,8 @@ contains
 
   end subroutine fstr_make_result
 
-  subroutine fstr_make_static_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, iitem, ncomp, nlyr, clyr )
+  subroutine fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, &
+      &                              iitem, ncomp, eitem, jitem, ecomp, nlyr, clyr )
     use m_fstr
     use m_out
     use m_static_lib

@@ -36,7 +36,7 @@ contains
 
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal)   :: ecoord(3, fstrSOLID%max_ncon)
-    real(kind=kreal)   :: thick
+    real(kind=kreal)   :: thick, thick0(6)
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
 
     real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
@@ -87,7 +87,7 @@ contains
       !element loop
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp, &
-        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux), &
+        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
@@ -101,8 +101,8 @@ contains
 
         thick = 0.d0
         do j = 1, size(fstrSOLID%elements(icel)%gausses)
-          tt0(1:6) = fstrSOLID%elements(icel)%gausses(j)%stress(1:6)
-          thick = thick + dsqrt(dot_product(tt0(1:6),tt0(1:6)))
+          thick0(1:6) = fstrSOLID%elements(icel)%gausses(j)%stress(1:6)
+          thick = thick + dsqrt(dot_product(thick0(1:6),thick0(1:6)))
         enddo
         if( thick < 1.d-10 ) then
           do j = 1, size(fstrSOLID%elements(icel)%gausses)

@@ -142,7 +142,7 @@ contains
       call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, total_time)
       call heat_output_result(hecMESH, fstrHEAT, fstrSOLID, total_step, total_time, outflag)
       call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, total_step, total_time, outflag)
-      call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, is_end, next_time)
+      call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, next_time, outflag)
 
       total_step = total_step + 1
       current_time = next_time

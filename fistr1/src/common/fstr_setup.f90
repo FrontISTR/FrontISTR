@@ -988,8 +988,8 @@ contains
       call fstr_solid_alloc( hecMESH, fstrSOLID )
 
     if( p%PARAM%solution_type == kstHEAT) then
-      p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%freqency
-      p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%freqency
+      p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%frequency
+      p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%frequency
       p%HEAT%dummy = p%SOLID%dummy
     endif
 
@@ -1201,7 +1201,7 @@ contains
 
     ! number of elements
     n_elem = hecMESH%elem_type_index(hecMESH%n_elem_type)
-    allocate( fstrSOLID%elements(hecMESH%n_elem) )
+    allocate( fstrSOLID%elements(n_elem) )
 
     do i=1,n_elem
       fstrSOLID%elements(i)%dummy_flag = kDUM_UNDEFINED
@@ -1209,6 +1209,7 @@ contains
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
       if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
+      if (hecmw_is_etype_interface(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
       if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
