@@ -156,7 +156,7 @@ contains
 
       do ik=iS0,iE0
         icel = hecMESH%elem_group%grp_item(ik)
-        elements(ik)%dummy_flag = kDUM_INACTIVE
+        elements(icel)%dummy_flag = kDUM_INACTIVE
       end do
     end do
 
