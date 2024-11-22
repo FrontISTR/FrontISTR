@@ -928,7 +928,7 @@ contains
       
 
       !----- line search of step length
-      call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, iter)
+      call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
 
       ! ----- update the small displacement and the displacement for 1step
       !       \delta u^k => solver's solution
@@ -1079,7 +1079,28 @@ contains
     enddo
   end subroutine fstr_AddBC_to_direction_vector
 
-  subroutine fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, i_iter)
+  subroutine fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha, h_prime, pot)
+    implicit none
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+    integer, intent(in)                   :: cstep     !< current loading step
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal), intent(in) :: z_k(:)
+    real(kind=kreal), intent(in) :: alpha
+    real(kind=kreal) :: h_prime, pot
+
+    hecMat%X(:) = -alpha*z_k(:)
+    call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+    call hecmw_innerProduct_R(hecMESH, hecMAT%NDOF, hecMat%B, z_k, h_prime)
+    pot = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
+  end subroutine
+
+  subroutine fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
@@ -1091,13 +1112,11 @@ contains
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     real(kind=kreal) :: z_k(:)
-    integer :: i_iter
-
 
     real(kind=kreal) :: alpha_S, alpha_E
-    real(kind=kreal) :: h_prime_0, h_prime_S, h_prime_a, h_prime_c
-    real(kind=kreal) :: pot_0, pot_s, pot_a, pot_c
-    real(kind=kreal) :: c_secant
+    real(kind=kreal) :: h_prime_0, h_prime_S, h_prime_E, h_prime_c
+    real(kind=kreal) :: pot_0, pot_S, pot_E, pot_c
+    real(kind=kreal) :: alpha_c
     logical :: flag_converged
     integer :: ndof, len_vector
     real(kind=kreal) :: res
@@ -1108,22 +1127,18 @@ contains
 
     ndof = hecMAT%NDOF
 
-    alpha_S = 0.0d0
-    hecMat%X(:) = 0.0d0
-    call hecmw_innerProduct_R(hecMESH,ndof, hecMat%B, z_k, h_prime_0)
-    pot_0 = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+    call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, 0.0d0, h_prime_0, pot_0)
     if (h_prime_0 > 0.0d0) then
       write(6,*) 'residual vector is not directed to potential decretion.', h_prime_0
       stop
     endif
-    if( hecMESH%my_rank == 0 ) then
-      write(6,'(a, 2es27.16e3)') ' h_prime_0, pot_0', h_prime_0, pot_0
-    endif
 
-    h_prime_a = h_prime_0
+    alpha_S = 0.0d0
+    h_prime_S = h_prime_0
+    pot_S = pot_0
 
     len_vector = hecMESH%n_node*hecMesh%n_dof
-    if (i_iter==1) then
+    if (iter==1) then
       z_max = 0.0d0
       do i=1, len_vector
         z_max = max(z_max, abs(z_k(i)))
@@ -1140,14 +1155,12 @@ contains
     endif
     alpha_E = 1.0d0 / z_max /C_line_search
 
-    do while (h_prime_a < 0.0d0)
+    h_prime_E = h_prime_0
+    do while (h_prime_E < 0.0d0)
       alpha_E = alpha_E * C_line_search
-      hecMat%X(:) = -alpha_E*z_k(:)
-      call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-      call hecmw_innerProduct_R(hecMESH,ndof, hecMat%B, z_k, h_prime_a)
-      pot_a = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
+      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
       if( hecMESH%my_rank == 0 ) then
-        write(6,'(a, 3es27.16e3)') 'alpha_E, h_prime_a, pot_a', alpha_E, h_prime_a, pot_a
+        write(6,'(a, 3es27.16e3)') 'alpha_E, h_prime_E, pot_E', alpha_E, h_prime_E, pot_E
       endif
     enddo
 
@@ -1156,42 +1169,39 @@ contains
 
     flag_converged = .false.
     iter_ls=1
-    h_prime_S = h_prime_0
     do while (iter_ls<maxiter_ls)
-      call fstr_set_secant(alpha_S, h_prime_S, alpha_E, h_prime_a, c_secant)
-      hecMat%X(:) = -c_secant*z_k(:)
-      call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-      call hecmw_innerProduct_R(hecMESH,ndof,hecMat%B, z_k, h_prime_c)
-      pot_c = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
+      call fstr_set_secant(alpha_S, h_prime_S, alpha_E, h_prime_E, alpha_c)
+      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_c, h_prime_c, pot_c)
 
-      ! write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, c_secant, h_prime_c, pot_c', alpha_S, alpha_E, c_secant, h_prime_c, pot_c
+      ! write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, alpha_c, h_prime_c, pot_c', alpha_S, alpha_E, alpha_c, h_prime_c, pot_c
       ! call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
       ! res = sqrt(res)
       ! write(6,*) 'res: ', res
 
       if (abs( pot_c - pot_0) <= (omega_Wolfe * C_Wolfe) ) then
-        flag_converged = fstr_approx_wolfe_condition(alpha_S, alpha_E, c_secant, &
-          &  h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+        flag_converged = fstr_approx_wolfe_condition(alpha_S, alpha_E, alpha_c, &
+          &  h_prime_0, h_prime_E, h_prime_c, pot_0, pot_E, pot_c)
       else
-        flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, c_secant, &
-          &  h_prime_0, h_prime_a, h_prime_c, pot_0, pot_a, pot_c)
+        flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, alpha_c, &
+          &  h_prime_0, h_prime_E, h_prime_c, pot_0, pot_E, pot_c)
       endif
 
       if (flag_converged) exit
+
       if (h_prime_c < 0.0d0) then
-        alpha_S = c_secant
+        alpha_S = alpha_c
         h_prime_S = h_prime_c
-        pot_s = pot_c
+        pot_S = pot_c
       else
-        alpha_E = c_secant
-        h_prime_a = h_prime_c
-        pot_a = pot_c
+        alpha_E = alpha_c
+        h_prime_E = h_prime_c
+        pot_E = pot_c
       endif
       iter_ls = iter_ls +1
     enddo
     if( hecMESH%my_rank == 0 ) then
-      write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, c_secant, h_prime_c, pot_c', &
-          &  alpha_S, alpha_E, c_secant, h_prime_c, pot_c
+      write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, alpha_c, h_prime_c, pot_c', &
+          &  alpha_S, alpha_E, alpha_c, h_prime_c, pot_c
     endif    
   end subroutine fstr_line_search_along_direction
 
