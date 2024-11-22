@@ -1079,6 +1079,25 @@ contains
     enddo
   end subroutine fstr_AddBC_to_direction_vector
 
+  subroutine fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime, pot)
+    implicit none
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+    integer, intent(in)                   :: cstep     !< current loading step
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal), intent(in) :: z_k(:)
+    real(kind=kreal) :: h_prime, pot
+
+    hecMat%X(:) = 0.0d0
+    call hecmw_innerProduct_R(hecMESH, hecMAT%NDOF, hecMat%B, z_k, h_prime)
+    pot = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+  end subroutine fstr_apply_alpha0
+
   subroutine fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha, h_prime, pot)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -1098,7 +1117,7 @@ contains
     call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
     call hecmw_innerProduct_R(hecMESH, hecMAT%NDOF, hecMat%B, z_k, h_prime)
     pot = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
-  end subroutine
+  end subroutine fstr_apply_alpha
 
   subroutine fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
     implicit none
@@ -1127,7 +1146,7 @@ contains
 
     ndof = hecMAT%NDOF
 
-    call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, 0.0d0, h_prime_0, pot_0)
+    call fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime_0, pot_0)
     if (h_prime_0 > 0.0d0) then
       write(6,*) 'residual vector is not directed to potential decretion.', h_prime_0
       stop
