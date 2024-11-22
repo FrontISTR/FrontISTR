@@ -71,6 +71,37 @@ contains
 
   !C
   !C***
+  !C*** hecmw_absMax_R
+  !C***
+  !C
+  subroutine hecmw_absMax_R (hecMESH, ndof, X, absMax, COMMtime)
+    use hecmw_util
+    use m_hecmw_comm_f
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: ndof
+    real(kind=kreal) :: X(:)
+    real(kind=kreal)          :: absMax
+    real(kind=kreal), optional :: COMMtime
+
+    integer(kind=kint) :: i
+    real(kind=kreal) :: START_TIME, END_TIME
+
+    absMax = 0.0d0
+    do i = 1, hecMESH%nn_internal * ndof
+      absMax = max(absMax, abs(X(i)))
+    end do
+
+    START_TIME= HECMW_WTIME()
+    call hecmw_allreduce_R1 (hecMESH, absMax, hecmw_max)
+    END_TIME= HECMW_WTIME()
+    if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+  end subroutine hecmw_absMax_R
+
+
+  !C
+  !C***
   !C*** hecmw_innerProduct_R_nocomm
   !C***
   !C

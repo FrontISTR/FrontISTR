@@ -23,6 +23,7 @@ module m_fstr_NonLinearMethod
   real(kind=kreal), parameter :: C_line_search=2.0, delta=0.2, sigma=0.9, eps_wolfe=1.0d-6
   real(kind=kreal), parameter :: omega_wolfe=0.001, Delta_approx_wolfe=0.7
   real(kind=kreal) :: C_wolfe, Q_Wolfe
+  integer, parameter :: n_mem_max=10
   integer(kind=kint), parameter :: maxiter_ls = 10
 
 contains
@@ -854,13 +855,12 @@ contains
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
     real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm, pot(3), pot0(3)
-    real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
     integer(kind=kint) :: iterStatus
 
     real(kind=kreal), allocatable :: z_k(:), s_k(:,:), y_k(:,:), g_prev(:), rho_k(:)
     real(kind=kreal) :: sdoty
-    integer, parameter :: n_mem=10
+    integer :: n_mem
     integer :: len_vector
     integer(kind=kint) :: k
 
@@ -880,9 +880,6 @@ contains
     hecMAT%NDOF = hecMESH%n_dof
     NDOF = hecMAT%NDOF
 
-    allocate(P(hecMESH%n_node*NDOF))
-    allocate(coord(hecMESH%n_node*ndof))
-    P = 0.0d0
     stepcnt = 0
 
     tincr = dtime
@@ -896,16 +893,16 @@ contains
 
     len_vector = hecMESH%n_node*ndof
     allocate(z_k(len_vector))
-    allocate(s_k(len_vector, n_mem))
-    allocate(y_k(len_vector, n_mem))
+    allocate(s_k(len_vector, n_mem_max))
+    allocate(y_k(len_vector, n_mem_max))
     allocate(g_prev(len_vector))
-    allocate(rho_k(n_mem))
+    allocate(rho_k(n_mem_max))
     z_k(:) = 0.0d0
     s_k(:,:) = 0.0d0
     y_k(:,:) = 0.0d0
     g_prev(:) = 0.0d0
     rho_k(:) = 0.0d0
-    do i=1,hecMESH%n_node*ndof
+    do i=1,len_vector
       y_k(i,1) = -hecMAT%B(i)
     enddo
 
@@ -913,6 +910,7 @@ contains
     C_wolfe = 0.0d0
     Q_wolfe = 0.0d0
     flag_approx_Wolfe = .false.
+    n_mem = 1
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
       stepcnt = stepcnt+1
@@ -925,7 +923,6 @@ contains
 
       ! ! ----- Set Boundary condition
       call fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
-      
 
       !----- line search of step length
       call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
@@ -950,6 +947,7 @@ contains
       ! if (iterStatus == kitrDiverged) exit
       ! if (iterStatus==kitrFloatingError) return
 
+      n_mem = min(n_mem+1, n_mem_max)
       do k=n_mem, 2, -1
         s_k(:,k) = s_k(:,k-1)
         y_k(:,k) = y_k(:,k-1)
@@ -981,8 +979,6 @@ contains
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
 
     fstrSOLID%CutBack_stat = 0
-    deallocate(coord)
-    deallocate(P)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     fstrSOLID%step_ctrl(cstep)%max_iter = max_iter_bak
@@ -997,7 +993,7 @@ contains
 
     real(kind=kreal), allocatable :: q(:)
     real(kind=kreal) :: alpha(n_mem), beta
-    real(kind=kreal) :: sdotq, ysq, gamma, ydotz
+    real(kind=kreal) :: sdotq, ysq, gamma, ydotz, g_max
     
     integer :: len_vector, ndof
     integer(kind=kint) :: k,i
@@ -1007,9 +1003,6 @@ contains
     allocate(q(len_vector))
 
     q(1:len_vector) = g_prev(1:len_vector)
-    ! do i=1, len_vector
-    !   write(6,*) 'q ', q(i)
-    ! enddo
 
     do k=1, n_mem
       call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,k), q, sdotq)
@@ -1019,12 +1012,15 @@ contains
       enddo
     enddo
     call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,1), y_k(:,1), ysq)
-    if (abs(rho_k(1)) < 1.0d-10) then
-      ! if (ysq < 1.0d-10) then
-        gamma = 1.0d0
-      ! else
-      !   gamma = 1.0d0/ysq
-      ! endif
+    if (n_mem==1) then
+      call hecmw_absMax_R(hecMESH, ndof, g_prev, g_max)
+      if (g_max==0.0d0) then
+        write(6,*) 'gradient of potential is zero-vector'
+        stop
+      endif
+      gamma = 1.0d0/g_max
+    else if (abs(rho_k(1)) < 1.0d-10) then
+      gamma = 1.0d0
     else
       gamma = 1.0d0/(rho_k(1)*ysq)
     endif
@@ -1040,10 +1036,6 @@ contains
         z_k(i)=z_k(i) + s_k(i,k)*(alpha(k)-beta)
       enddo
     enddo
-
-    ! do i=1, len_vector
-    !   z_k(i) = -z_k(i)
-    ! enddo
     deallocate(q)
   end subroutine fstr_calc_direction_LBFGS
 
@@ -1119,6 +1111,31 @@ contains
     pot = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
   end subroutine fstr_apply_alpha
 
+  subroutine fstr_set_line_search_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
+     alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E)
+    implicit none
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+    integer, intent(in)                   :: cstep     !< current loading step
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal) :: z_k(:)
+    real(kind=kreal) :: alpha_S, h_prime_S, pot_S
+    real(kind=kreal) :: alpha_E, h_prime_E, pot_E
+
+    alpha_E = 1.0d0
+    call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
+
+    do while (h_prime_E < 0.0d0)
+      alpha_E = alpha_E * C_line_search
+      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
+    enddo
+  end subroutine fstr_set_line_search_range
+
   subroutine fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -1145,6 +1162,7 @@ contains
     integer :: dummy
 
     ndof = hecMAT%NDOF
+    len_vector = hecMESH%n_node*hecMesh%n_dof
 
     call fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime_0, pot_0)
     if (h_prime_0 > 0.0d0) then
@@ -1155,33 +1173,8 @@ contains
     alpha_S = 0.0d0
     h_prime_S = h_prime_0
     pot_S = pot_0
-
-    len_vector = hecMESH%n_node*hecMesh%n_dof
-    if (iter==1) then
-      z_max = 0.0d0
-      do i=1, len_vector
-        z_max = max(z_max, abs(z_k(i)))
-      end do
-      call MPI_Allreduce                                              &
-      &       (MPI_IN_PLACE, z_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX,              &
-      &        hecMESH%MPI_COMM, ierr)
-      if (z_max==0.0d0) then
-        write(6,*) 'direction for line search is zero-vector'
-        stop
-      endif
-    else
-     z_max = 1.0d0
-    endif
-    alpha_E = 1.0d0 / z_max /C_line_search
-
-    h_prime_E = h_prime_0
-    do while (h_prime_E < 0.0d0)
-      alpha_E = alpha_E * C_line_search
-      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
-      if( hecMESH%my_rank == 0 ) then
-        write(6,'(a, 3es27.16e3)') 'alpha_E, h_prime_E, pot_E', alpha_E, h_prime_E, pot_E
-      endif
-    enddo
+    call fstr_set_line_search_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
+      alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E)
 
 		Q_Wolfe = 1 + Delta_approx_wolfe * Q_Wolfe
 		C_Wolfe = C_Wolfe + (abs(pot_0)-C_Wolfe) / Q_Wolfe
@@ -1192,11 +1185,6 @@ contains
       call fstr_set_secant(alpha_S, h_prime_S, alpha_E, h_prime_E, alpha_c)
       call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_c, h_prime_c, pot_c)
 
-      ! write(6,'(a, 5es27.16e3)') 'alpha_S, alpha_E, alpha_c, h_prime_c, pot_c', alpha_S, alpha_E, alpha_c, h_prime_c, pot_c
-      ! call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
-      ! res = sqrt(res)
-      ! write(6,*) 'res: ', res
-
       if (abs( pot_c - pot_0) <= (omega_Wolfe * C_Wolfe) ) then
         flag_converged = fstr_approx_wolfe_condition(alpha_S, alpha_E, alpha_c, &
           &  h_prime_0, h_prime_E, h_prime_c, pot_0, pot_E, pot_c)
@@ -1204,7 +1192,6 @@ contains
         flag_converged = fstr_wolfe_condition(alpha_S, alpha_E, alpha_c, &
           &  h_prime_0, h_prime_E, h_prime_c, pot_0, pot_E, pot_c)
       endif
-
       if (flag_converged) exit
 
       if (h_prime_c < 0.0d0) then
