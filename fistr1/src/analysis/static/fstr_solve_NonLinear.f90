@@ -1112,7 +1112,7 @@ contains
   end subroutine fstr_apply_alpha
 
   subroutine fstr_init_line_search_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
-     alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E)
+     h_prime_0, pot_0, alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
@@ -1123,16 +1123,47 @@ contains
     integer, intent(in)                   :: cstep     !< current loading step
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
-    real(kind=kreal) :: z_k(:)
+    real(kind=kreal), intent(in) :: z_k(:)
+    real(kind=kreal), intent(in) :: h_prime_0, pot_0
     real(kind=kreal) :: alpha_S, h_prime_S, pot_S
     real(kind=kreal) :: alpha_E, h_prime_E, pot_E
+
+    real(kind=kreal) :: alpha_S_new, h_prime_S_new, pot_S_new
+    real(kind=kreal) :: alpha_E_new, h_prime_E_new, pot_E_new
+    real(kind=kreal) :: alpha_tmp, h_prime_tmp, pot_tmp
+
+    alpha_S = 0.0d0
+    h_prime_S = h_prime_0
+    pot_S = pot_0
 
     alpha_E = 1.0d0
     call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
 
-    do while (h_prime_E < 0.0d0)
-      alpha_E = alpha_E * C_line_search
-      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
+    do while (h_prime_E >= 0.0d0)
+      if (pot_E <= pot_0 + (eps_wolfe*C_Wolfe)) then
+        alpha_S = alpha_E
+        h_prime_S = h_prime_E ! so h_prime_S < 0
+        pot_S = h_prime_S
+
+        alpha_E = alpha_E * C_line_search
+        call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
+      else
+        alpha_tmp = 2.0d0*alpha_E
+        h_prime_tmp = 0.0d0 ! dummy value
+        pot_tmp = 0.0d0 ! dummy value
+        call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
+          alpha_S, h_prime_S, pot_S, alpha_tmp, h_prime_tmp, pot_tmp, alpha_E, h_prime_E, pot_E, &
+          alpha_S_new, h_prime_S_new, pot_S_new, alpha_E_new, h_prime_E_new, pot_E_new)
+
+        alpha_S = alpha_S_new
+        h_prime_S = h_prime_S_new
+        pot_S = pot_S_new
+
+        alpha_E = alpha_E_new
+        h_prime_E = h_prime_E_new
+        pot_E = pot_E_new
+        return
+      end if
     enddo
   end subroutine fstr_init_line_search_range
 
@@ -1154,19 +1185,63 @@ contains
     real(kind=kreal) :: alpha_c, h_prime_c, pot_c
     real(kind=kreal) :: h_prime_0, pot_0
 
-    if (h_prime_c < 0.0d0) then
-      alpha_S = alpha_c
-      h_prime_S = h_prime_c
-      pot_S = pot_c
+    real(kind=kreal) :: alpha_A, h_prime_A, pot_A
+    real(kind=kreal) :: alpha_B, h_prime_B, pot_B
+    real(kind=kreal) :: alpha_a_bar, h_prime_a_bar, pot_a_bar
+    real(kind=kreal) :: alpha_b_bar, h_prime_b_bar, pot_b_bar
+    real(kind=kreal) :: alpha_c_bar, h_prime_c_bar, pot_c_bar
+
+    call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
+      alpha_S, h_prime_S, pot_S, alpha_E, h_prime_E, pot_E, alpha_c, h_prime_c, pot_c, &
+      alpha_A, h_prime_A, pot_A, alpha_B, h_prime_B, pot_B)
+
+    if (alpha_c == alpha_A) then
+      call fstr_set_secant(alpha_S, h_prime_S, alpha_A, h_prime_A, alpha_c_bar)
+      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
+        alpha_c_bar, h_prime_c_bar, pot_c_bar)
+    end if
+    if (alpha_c == alpha_B) then
+      call fstr_set_secant(alpha_B, h_prime_B, alpha_E, h_prime_E, alpha_c_bar)
+      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
+        alpha_c_bar, h_prime_c_bar, pot_c_bar)
+    end if
+
+    if ((alpha_c == alpha_A) .or. (alpha_c == alpha_B)) then
+      call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
+        alpha_A, h_prime_A, pot_A, alpha_B, h_prime_B, pot_B, alpha_c_bar, h_prime_c_bar, pot_c_bar, &
+        alpha_a_bar, h_prime_a_bar, pot_a_bar, alpha_b_bar, h_prime_b_bar, pot_b_bar)
     else
-      alpha_E = alpha_c
-      h_prime_E = h_prime_c
-      pot_E = pot_c
-    endif
+      alpha_a_bar = alpha_A
+      h_prime_a_bar = h_prime_A
+      pot_a_bar = pot_A
+
+      alpha_b_bar = alpha_B
+      h_prime_b_bar = h_prime_B
+      pot_b_bar = pot_B
+    end if
+
+
+    if ((alpha_b_bar - alpha_a_bar) > 0.66*(alpha_E - alpha_S)) then
+      alpha_c_bar = 0.5*(alpha_a_bar+alpha_b_bar)
+      call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
+        alpha_c_bar, h_prime_c_bar, pot_c_bar)
+      call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
+        alpha_A, h_prime_A, pot_A, alpha_B, h_prime_B, pot_B, alpha_c_bar, h_prime_c_bar, pot_c_bar, &
+        alpha_S, h_prime_S, pot_S, alpha_E, h_prime_E, pot_E)
+    else
+      alpha_S = alpha_a_bar
+      h_prime_S = h_prime_a_bar
+      pot_S = pot_a_bar
+
+      alpha_E = alpha_b_bar
+      h_prime_E = h_prime_b_bar
+      pot_E = pot_b_bar
+    end if
   end subroutine fstr_update_range
 
-  subroutine fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
-     alpha_a, alpha_b, alpha_c, h_prime_c, pot_c, alpha_a_bar, alpha_b_bar, pot_0)
+  subroutine fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
+     alpha_a, h_prime_a, pot_a, alpha_b, h_prime_b, pot_b, alpha_c, h_prime_c, pot_c, &
+     alpha_a_bar, h_prime_a_bar, pot_a_bar, alpha_b_bar, h_prime_b_bar, pot_b_bar)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
@@ -1178,8 +1253,12 @@ contains
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
     real(kind=kreal), intent(in) :: z_k(:)
-    real(kind=kreal), intent(in) :: alpha_a, alpha_b, alpha_c, h_prime_c, pot_c, pot_0
-    real(kind=kreal) :: alpha_a_bar, alpha_b_bar
+    real(kind=kreal), intent(in) :: pot_0
+    real(kind=kreal), intent(in) :: alpha_a, h_prime_a, pot_a
+    real(kind=kreal), intent(in) :: alpha_b, h_prime_b, pot_b
+    real(kind=kreal), intent(in) :: alpha_c, h_prime_c, pot_c
+    real(kind=kreal) :: alpha_a_bar, h_prime_a_bar, pot_a_bar
+    real(kind=kreal) :: alpha_b_bar, h_prime_b_bar, pot_b_bar
 
     integer, parameter :: count_max=100
     integer :: count_while
@@ -1189,25 +1268,46 @@ contains
     ! case of NOT (a < c < b)
     if (alpha_c <= alpha_a .or. alpha_b <= alpha_c) then
       alpha_a_bar = alpha_a
+      h_prime_a_bar = h_prime_a
+      pot_a_bar = pot_a
+
       alpha_b_bar = alpha_b
+      h_prime_b_bar = h_prime_b
+      pot_b_bar = pot_b
       return
     end if
 
     if (h_prime_c >= 0.0d0) then
       alpha_a_bar = alpha_a
+      h_prime_a_bar = h_prime_a
+      pot_a_bar = pot_a
+
       alpha_b_bar = alpha_c
+      h_prime_b_bar = h_prime_c
+      pot_b_bar = pot_c
       return
     end if
     ! below here, it can be assumed that h_prime_c<0
 
     if(pot_c <= pot_0 + (eps_wolfe*C_Wolfe)) then
       alpha_a_bar = alpha_c
+      h_prime_a_bar = h_prime_c
+      pot_a_bar = pot_c
+
       alpha_b_bar = alpha_b
+      h_prime_b_bar = h_prime_b
+      pot_b_bar = pot_b
       return
     end if
 
     alpha_a_bar = alpha_a
+    h_prime_a_bar = h_prime_a
+    pot_a_bar = pot_a
+
     alpha_b_bar = alpha_b
+    h_prime_b_bar = h_prime_b
+    pot_b_bar = pot_b
+
     count_while = 0
     do while(count_while < count_max)
       count_while = count_while + 1
@@ -1217,13 +1317,19 @@ contains
 
       if (h_prime_d >= 0.0d0) then
         alpha_b_bar = alpha_d
+        h_prime_b_bar = h_prime_d
+        pot_b_bar = pot_d
         return
       end if
 
       if(pot_d <= pot_0 + (eps_wolfe*C_Wolfe)) then
         alpha_a_bar = alpha_d
+        h_prime_a_bar = h_prime_d
+        pot_a_bar = pot_d
       else
         alpha_b_bar = alpha_d
+        h_prime_b_bar = h_prime_d
+        pot_b_bar = pot_d
       end if
     end do
     write(6,*) 'fstr_get_new_range_with_potential reached loop count max.', hecMESH%my_rank, alpha_a_bar, alpha_b_bar
@@ -1264,10 +1370,7 @@ contains
       stop
     endif
 
-    alpha_S = 0.0d0
-    h_prime_S = h_prime_0
-    pot_S = pot_0
-    call fstr_init_line_search_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
+    call fstr_init_line_search_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime_0, pot_0, &
       alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E)
     if( hecMESH%my_rank == 0 ) then
       write(6,'(a, 6es27.16e3)') 'range initialized: alpha_S, alpha_E, h_prime_S, h_prime_E, pot_S, pot_E', &
@@ -1320,12 +1423,13 @@ contains
     real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
 
     wolfe1_left = pot_c - pot_0
-    wolfe1_right = delta*h_prime_c*alpha_c
+    wolfe1_right = delta*h_prime_0*alpha_c
 
     wolfe2_left = h_prime_c
     wolfe2_right = sigma*h_prime_0
 
     flag_converged = (wolfe1_left<=wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
+    if (flag_converged) write(6,*) 'oWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
   end function fstr_wolfe_condition
 
   function fstr_approx_wolfe_condition(alpha_c, h_prime_c, pot_c, h_prime_0, pot_0) result(flag_converged)
@@ -1345,5 +1449,6 @@ contains
       (wolfe1_left>=wolfe1_right) &
       .and. (wolfe2_left >= wolfe2_right) &
       .and. (pot_c <= pot_0 + (eps_wolfe*C_Wolfe))
+    if (flag_converged) write(6,*) 'aWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right, pot_c, pot_0 + (eps_wolfe*C_Wolfe)
   end function fstr_approx_wolfe_condition
 end module m_fstr_NonLinearMethod
