@@ -205,13 +205,13 @@ contains
     NPL = hecMAT%indexL(N)
     NZ = N + NPU + NPL
 
-    size_matrix = kreal*NZ*NDOF**2 & !> hecMAT%A
-                + kint*(NPU+NPL) & !> hecMAT%item
-                + kint*2*(N+1) !> hecMAT%index
-    size_vector = kreal*N*NDOF & !> y
-                + kreal*NP*NDOF !> x
+    size_matrix = dble(kreal)*dble(NZ)*dble(NDOF)**2.0d0 & !> hecMAT%A
+                + dble(kint)*(dble(NPU)+dble(NPL)) & !> hecMAT%item
+                + dble(kint)*2.0d0*dble(N+1) !> hecMAT%index
+    size_vector = dble(kreal)*dble(N) *dble(NDOF) & !> y
+                + dble(kreal)*dble(NP)*dble(NDOF) !> x
     memory_size = size_matrix + size_vector
-    flop_matrix = 2.0d0*NZ*NDOF**2 !> count opetations of add and multiply
+    flop_matrix = 2.0d0*dble(NZ)*dble(NDOF)**2.0d0 !> count operations of add and multiply
 
     call hecmw_allreduce_R1(hecMESH, memory_size, hecmw_sum)
     call hecmw_allreduce_R1(hecMESH, flop_matrix, hecmw_sum)
