@@ -10,20 +10,21 @@ stages:
     - package
     - deploy
 
-.ubuntu2004:
-    image: ${REGISTRY}/build:ubuntu2004
-.ubuntu2204:
-    image: ${REGISTRY}/build:ubuntu2204
 .artifact_public:
     artifacts:
         paths: ["public"]
         expire_in: 100min
 
+include: 
+    - '.ubuntu2004.yml'
+    - '.ubuntu2204.yml'
+    - '.ubuntu2404.yml'
+
 .build:
     stage: build
     needs: []
     script:
-        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f2)
+        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
         - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
         - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
         - cmake -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI -H.
@@ -31,92 +32,16 @@ stages:
     artifacts:
         paths: ["build/"]
         expire_in: 100min
-build/serial/ubuntu2204:
-    extends: [".build",".ubuntu2204"]
-build/openmp/ubuntu2204:
-    extends: [".build",".ubuntu2204"]
-build/mpi/ubuntu2204:
-    extends: [".build",".ubuntu2204"]
-build/hybrid/ubuntu2204:
-    extends: [".build",".ubuntu2204"]
-build/serial/ubuntu2004:
-    extends: [".build",".ubuntu2004"]
-build/openmp/ubuntu2004:
-    extends: [".build",".ubuntu2004"]
-build/mpi/ubuntu2004:
-    extends: [".build",".ubuntu2004"]
-build/hybrid/ubuntu2004:
-    extends: [".build",".ubuntu2004"]
 
 .test:
     stage: test
     script:
-        - cd build && ctest -L $(echo $CI_JOB_NAME|cut -d/ -f3) --output-on-failure
+        - cd build && ctest -L $(echo $CI_JOB_NAME|cut -d/ -f4) --output-on-failure
     artifacts:
         paths:
             - run_test
         expire_in: 1week
         when: on_failure
-
-test/serial/serial/ubuntu2004:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/serial/ubuntu2004"]
-test/openmp/serial/ubuntu2004:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/openmp/ubuntu2004"]
-test/openmp/openmp/ubuntu2004:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/openmp/ubuntu2004"]
-test/mpi/serial/ubuntu2004:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/mpi/ubuntu2004"]
-test/mpi/mpi/ubuntu2004:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/mpi/ubuntu2004"]
-test/hybrid/serial/ubuntu2004:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/hybrid/ubuntu2004"]
-test/hybrid/openmp/ubuntu2004:
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/hybrid/ubuntu2004"]
-test/hybrid/mpi/ubuntu2004:
-    tags: ["saas-linux-medium-amd64"]
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/hybrid/ubuntu2004"]
-test/hybrid/hybrid/ubuntu2004:
-    tags: ["saas-linux-medium-amd64"]
-    extends: [".test",".ubuntu2004"]
-    needs: ["build/hybrid/ubuntu2004"]
-
-test/serial/serial/ubuntu2204:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/serial/ubuntu2204"]
-test/openmp/serial/ubuntu2204:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/openmp/ubuntu2204"]
-test/openmp/openmp/ubuntu2204:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/openmp/ubuntu2204"]
-test/mpi/serial/ubuntu2204:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/mpi/ubuntu2204"]
-test/mpi/mpi/ubuntu2204:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/mpi/ubuntu2204"]
-test/hybrid/serial/ubuntu2204:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/hybrid/ubuntu2204"]
-test/hybrid/openmp/ubuntu2204:
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/hybrid/ubuntu2204"]
-test/hybrid/mpi/ubuntu2204:
-    tags: ["saas-linux-medium-amd64"]
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/hybrid/ubuntu2204"]
-test/hybrid/hybrid/ubuntu2204:
-    tags: ["saas-linux-medium-amd64"]
-    extends: [".test",".ubuntu2204"]
-    needs: ["build/hybrid/ubuntu2204"]
 
 document:
     image: ${REGISTRY}/document:latest
@@ -125,7 +50,6 @@ document:
     script:
         - cp doc/_redirects public/_redirects
     extends: [".artifact_public"]
-
 
 doxygen:
     image: ${REGISTRY}/document:latest
@@ -137,7 +61,6 @@ doxygen:
         - rm -rf public/doxygen
         - mv build_doc/doc/html public/doxygen
     extends: [".artifact_public"]
-
 
 pages:
     stage: deploy
@@ -237,12 +160,11 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
           ${LIB_ROOT}/lib/mkl_blacs_lp64.1.dll ${LIB_ROOT}/lib/mkl_blacs_intelmpi_lp64.1.dll ${LIB_ROOT}/lib/mkl_core.1.dll ${LIB_ROOT}/lib/mkl_intel_thread.1.dll ${LIB_ROOT}/lib/mkl_rt.1.dll ${LIB_ROOT}/lib/libiomp5md.dll ${LIB_ROOT}/lib/mkl_scalapack_lp64.1.dll
           ${LIB_ROOT}/lib/mkl_def.1.dll
 
-
 .deb:
     stage: package
     script:
-        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f2)
-        - OS=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - OS=$(echo $CI_JOB_NAME|cut -d/ -f2)
+        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
         - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
         - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
         - DEPENDS=()
@@ -265,28 +187,3 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
         - mkdir -p ../public/release/deb
         - mv *.deb ../public/release/deb
     extends: [".artifact_public"]
-
-deb/hybrid/ubuntu2004:
-    needs: ["build/hybrid/ubuntu2004"]
-    extends: [".deb",".ubuntu2004"]
-deb/hybrid/ubuntu2204:
-    needs: ["build/hybrid/ubuntu2204"]
-    extends: [".deb",".ubuntu2204"]
-deb/mpi/ubuntu2004:
-    needs: ["build/mpi/ubuntu2004"]
-    extends: [".deb",".ubuntu2004"]
-deb/mpi/ubuntu2204:
-    needs: ["build/hybrid/ubuntu2204"]
-    extends: [".deb",".ubuntu2204"]
-deb/openmp/ubuntu2004:
-    needs: ["build/openmp/ubuntu2004"]
-    extends: [".deb",".ubuntu2004"]
-deb/openmp/ubuntu2204:
-    needs: ["build/openmp/ubuntu2204"]
-    extends: [".deb",".ubuntu2204"]
-deb/serial/ubuntu2004:
-    needs: ["build/serial/ubuntu2004"]
-    extends: [".deb",".ubuntu2004"]
-deb/serial/ubuntu2204:
-    needs: ["build/serial/ubuntu2204"]
-    extends: [".deb",".ubuntu2204"]
