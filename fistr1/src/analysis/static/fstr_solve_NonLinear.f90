@@ -20,7 +20,7 @@ module m_fstr_NonLinearMethod
 
   implicit none
   ! parameters for line search
-  real(kind=kreal), parameter :: C_line_search=2.0, delta=0.2, sigma=0.9, eps_wolfe=1.0d-6
+  real(kind=kreal), parameter :: C_line_search=2.0, delta=0.2, sigma=0.9, eps_wolfe=1.0d0
   real(kind=kreal), parameter :: omega_wolfe=0.001, Delta_approx_wolfe=0.7
   real(kind=kreal) :: C_wolfe, Q_Wolfe
   integer, parameter :: n_mem_max=10
@@ -1013,12 +1013,13 @@ contains
     enddo
     call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,1), y_k(:,1), ysq)
     if (n_mem==1) then
-      call hecmw_absMax_R(hecMESH, ndof, g_prev, g_max)
-      if (g_max==0.0d0) then
-        write(6,*) 'gradient of potential is zero-vector'
-        stop
-      endif
-      gamma = 1.0d0/g_max
+      ! call hecmw_absMax_R(hecMESH, ndof, g_prev, g_max)
+      ! if (g_max==0.0d0) then
+      !   write(6,*) 'gradient of potential is zero-vector'
+      !   stop
+      ! endif
+      ! gamma = 1.0d0/g_max
+      gamma = 1.0d0
     else if (abs(rho_k(1)) < 1.0d-10) then
       gamma = 1.0d0
     else
@@ -1131,19 +1132,28 @@ contains
     real(kind=kreal) :: alpha_S_new, h_prime_S_new, pot_S_new
     real(kind=kreal) :: alpha_E_new, h_prime_E_new, pot_E_new
     real(kind=kreal) :: alpha_tmp, h_prime_tmp, pot_tmp
+    real(kind=kreal) :: z_max
+    real(kind=kreal) :: pot_eps
+    ! pot_eps = eps_wolfe*C_Wolfe
+    pot_eps = 1.0d100
 
     alpha_S = 0.0d0
     h_prime_S = h_prime_0
     pot_S = pot_0
 
-    alpha_E = 1.0d0
+    if (iter==1) then
+      call hecmw_absMax_R(hecMESH, hecMAT%NDOF, z_k, z_max)
+      alpha_E = 1.0d0/z_max
+    else
+      alpha_E = 1.0d0
+    end if
     call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
 
-    do while (h_prime_E >= 0.0d0)
-      if (pot_E <= pot_0 + (eps_wolfe*C_Wolfe)) then
-        alpha_S = alpha_E
-        h_prime_S = h_prime_E ! so h_prime_S < 0
-        pot_S = h_prime_S
+    do while (h_prime_E < 0.0d0)
+      if (pot_E <= pot_0 + pot_eps) then
+        ! alpha_S = alpha_E
+        ! h_prime_S = h_prime_E ! so h_prime_S < 0
+        ! pot_S = h_prime_S
 
         alpha_E = alpha_E * C_line_search
         call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
@@ -1264,6 +1274,9 @@ contains
     integer :: count_while
     real(kind=kreal) :: alpha_d, h_prime_d, pot_d
     real(kind=kreal) :: theta_ls = 0.5d0
+    real(kind=kreal) :: pot_eps
+    ! pot_eps = eps_wolfe*C_Wolfe
+    pot_eps = 1.0d100
 
     ! case of NOT (a < c < b)
     if (alpha_c <= alpha_a .or. alpha_b <= alpha_c) then
@@ -1289,7 +1302,7 @@ contains
     end if
     ! below here, it can be assumed that h_prime_c<0
 
-    if(pot_c <= pot_0 + (eps_wolfe*C_Wolfe)) then
+    if(pot_c <= pot_0 + pot_eps) then
       alpha_a_bar = alpha_c
       h_prime_a_bar = h_prime_c
       pot_a_bar = pot_c
@@ -1322,7 +1335,7 @@ contains
         return
       end if
 
-      if(pot_d <= pot_0 + (eps_wolfe*C_Wolfe)) then
+      if(pot_d <= pot_0 + pot_eps) then
         alpha_a_bar = alpha_d
         h_prime_a_bar = h_prime_d
         pot_a_bar = pot_d
@@ -1429,7 +1442,7 @@ contains
     wolfe2_right = sigma*h_prime_0
 
     flag_converged = (wolfe1_left<=wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
-    if (flag_converged) write(6,*) 'oWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
+    if (flag_converged) write(6,'(a, 4es27.16e3)') 'oWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
   end function fstr_wolfe_condition
 
   function fstr_approx_wolfe_condition(alpha_c, h_prime_c, pot_c, h_prime_0, pot_0) result(flag_converged)
@@ -1438,6 +1451,10 @@ contains
 
     real(kind=kreal), intent(in) :: alpha_c, h_prime_0, h_prime_c, pot_0, pot_c
     real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
+
+    real(kind=kreal) :: pot_eps
+    ! pot_eps = eps_wolfe*C_Wolfe
+    pot_eps = 1.0d100
 
     wolfe1_left =  ( 2.0 * delta - 1.0d0 ) * h_prime_0
     wolfe1_right = h_prime_c
@@ -1448,7 +1465,7 @@ contains
     flag_converged = &
       (wolfe1_left>=wolfe1_right) &
       .and. (wolfe2_left >= wolfe2_right) &
-      .and. (pot_c <= pot_0 + (eps_wolfe*C_Wolfe))
-    if (flag_converged) write(6,*) 'aWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right, pot_c, pot_0 + (eps_wolfe*C_Wolfe)
+      .and. (pot_c <= pot_0 + pot_eps)
+    if (flag_converged) write(6,'(a, 6es27.16e3)') 'aWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right, pot_c, pot_0 + (eps_wolfe*C_Wolfe)
   end function fstr_approx_wolfe_condition
 end module m_fstr_NonLinearMethod
