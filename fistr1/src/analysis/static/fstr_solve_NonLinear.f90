@@ -1013,13 +1013,12 @@ contains
     enddo
     call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,1), y_k(:,1), ysq)
     if (n_mem==1) then
-      ! call hecmw_absMax_R(hecMESH, ndof, g_prev, g_max)
-      ! if (g_max==0.0d0) then
-      !   write(6,*) 'gradient of potential is zero-vector'
-      !   stop
-      ! endif
-      ! gamma = 1.0d0/g_max
-      gamma = 1.0d0
+      call hecmw_absMax_R(hecMESH, ndof, g_prev, g_max)
+      if (g_max==0.0d0) then
+        write(6,*) 'gradient of potential is zero-vector'
+        stop
+      endif
+      gamma = 1.0d0/g_max
     else if (abs(rho_k(1)) < 1.0d-10) then
       gamma = 1.0d0
     else
@@ -1134,46 +1133,45 @@ contains
     real(kind=kreal) :: alpha_tmp, h_prime_tmp, pot_tmp
     real(kind=kreal) :: z_max
     real(kind=kreal) :: pot_eps
-    ! pot_eps = eps_wolfe*C_Wolfe
-    pot_eps = 1.0d100
+    pot_eps = eps_wolfe*C_Wolfe
 
     alpha_S = 0.0d0
     h_prime_S = h_prime_0
     pot_S = pot_0
 
-    if (iter==1) then
-      call hecmw_absMax_R(hecMESH, hecMAT%NDOF, z_k, z_max)
-      alpha_E = 1.0d0/z_max
-    else
+    ! if (iter==1) then
+    !   call hecmw_absMax_R(hecMESH, hecMAT%NDOF, z_k, z_max)
+    !   alpha_E = 1.0d0/z_max
+    ! else
       alpha_E = 1.0d0
-    end if
+    ! end if
     call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
 
     do while (h_prime_E < 0.0d0)
-      if (pot_E <= pot_0 + pot_eps) then
+      ! if (pot_E <= pot_0 + pot_eps) then
         ! alpha_S = alpha_E
         ! h_prime_S = h_prime_E ! so h_prime_S < 0
         ! pot_S = h_prime_S
 
         alpha_E = alpha_E * C_line_search
         call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
-      else
-        alpha_tmp = 2.0d0*alpha_E
-        h_prime_tmp = 0.0d0 ! dummy value
-        pot_tmp = 0.0d0 ! dummy value
-        call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
-          alpha_S, h_prime_S, pot_S, alpha_tmp, h_prime_tmp, pot_tmp, alpha_E, h_prime_E, pot_E, &
-          alpha_S_new, h_prime_S_new, pot_S_new, alpha_E_new, h_prime_E_new, pot_E_new)
+      ! else
+      !   alpha_tmp = 2.0d0*alpha_E
+      !   h_prime_tmp = 0.0d0 ! dummy value
+      !   pot_tmp = 0.0d0 ! dummy value
+      !   call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
+      !     alpha_S, h_prime_S, pot_S, alpha_tmp, h_prime_tmp, pot_tmp, alpha_E, h_prime_E, pot_E, &
+      !     alpha_S_new, h_prime_S_new, pot_S_new, alpha_E_new, h_prime_E_new, pot_E_new)
 
-        alpha_S = alpha_S_new
-        h_prime_S = h_prime_S_new
-        pot_S = pot_S_new
+      !   alpha_S = alpha_S_new
+      !   h_prime_S = h_prime_S_new
+      !   pot_S = pot_S_new
 
-        alpha_E = alpha_E_new
-        h_prime_E = h_prime_E_new
-        pot_E = pot_E_new
-        return
-      end if
+      !   alpha_E = alpha_E_new
+      !   h_prime_E = h_prime_E_new
+      !   pot_E = pot_E_new
+      !   return
+      ! end if
     enddo
   end subroutine fstr_init_line_search_range
 
@@ -1275,8 +1273,7 @@ contains
     real(kind=kreal) :: alpha_d, h_prime_d, pot_d
     real(kind=kreal) :: theta_ls = 0.5d0
     real(kind=kreal) :: pot_eps
-    ! pot_eps = eps_wolfe*C_Wolfe
-    pot_eps = 1.0d100
+    pot_eps = eps_wolfe*C_Wolfe
 
     ! case of NOT (a < c < b)
     if (alpha_c <= alpha_a .or. alpha_b <= alpha_c) then
@@ -1453,8 +1450,7 @@ contains
     real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
 
     real(kind=kreal) :: pot_eps
-    ! pot_eps = eps_wolfe*C_Wolfe
-    pot_eps = 1.0d100
+    pot_eps = eps_wolfe*C_Wolfe
 
     wolfe1_left =  ( 2.0 * delta - 1.0d0 ) * h_prime_0
     wolfe1_right = h_prime_c
