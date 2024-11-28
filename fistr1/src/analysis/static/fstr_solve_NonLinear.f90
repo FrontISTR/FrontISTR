@@ -20,11 +20,13 @@ module m_fstr_NonLinearMethod
 
   implicit none
   ! parameters for line search
-  real(kind=kreal), parameter :: C_line_search=2.0, delta=0.2, sigma=0.9, eps_wolfe=1.0d0
+  real(kind=kreal), parameter :: C_line_search=2.0, Psi0_line_search=1.0d-2
+  real(kind=kreal), parameter :: delta_wolfe=0.2, sigma_wolfe=0.9, eps_wolfe=1.0d-3
   real(kind=kreal), parameter :: omega_wolfe=0.001, Delta_approx_wolfe=0.7
   real(kind=kreal) :: C_wolfe, Q_Wolfe
   integer, parameter :: n_mem_max=10
   integer(kind=kint), parameter :: maxiter_ls = 10
+  integer(kind=kint), parameter :: pot_type=1
 
 contains
 
@@ -1014,11 +1016,12 @@ contains
     call hecmw_innerProduct_R(hecMESH,ndof,y_k(:,1), y_k(:,1), ysq)
     if (n_mem==1) then
       call hecmw_absMax_R(hecMESH, ndof, g_prev, g_max)
-      if (g_max==0.0d0) then
-        write(6,*) 'gradient of potential is zero-vector'
-        stop
-      endif
-      gamma = 1.0d0/g_max
+      ! if (g_max==0.0d0) then
+      !   write(6,*) 'gradient of potential is zero-vector'
+      !   stop
+      ! endif
+      ! gamma = 1.0d0/g_max
+      gamma = 1.0d0
     else if (abs(rho_k(1)) < 1.0d-10) then
       gamma = 1.0d0
     else
@@ -1087,7 +1090,7 @@ contains
 
     hecMat%X(:) = 0.0d0
     call hecmw_innerProduct_R(hecMESH, hecMAT%NDOF, hecMat%B, z_k, h_prime)
-    pot = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+    pot = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,pot_type)
   end subroutine fstr_apply_alpha0
 
   subroutine fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha, h_prime, pot)
@@ -1108,7 +1111,7 @@ contains
     hecMat%X(:) = -alpha*z_k(:)
     call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
     call hecmw_innerProduct_R(hecMESH, hecMAT%NDOF, hecMat%B, z_k, h_prime)
-    pot = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,1)
+    pot = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,pot_type)
   end subroutine fstr_apply_alpha
 
   subroutine fstr_init_line_search_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
@@ -1139,12 +1142,12 @@ contains
     h_prime_S = h_prime_0
     pot_S = pot_0
 
-    ! if (iter==1) then
-    !   call hecmw_absMax_R(hecMESH, hecMAT%NDOF, z_k, z_max)
-    !   alpha_E = 1.0d0/z_max
-    ! else
+    if (iter==1) then
+      call hecmw_absMax_R(hecMESH, hecMAT%NDOF, z_k, z_max)
+      alpha_E = Psi0_line_search/z_max
+    else
       alpha_E = 1.0d0
-    ! end if
+    end if
     call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
 
     do while (h_prime_E < 0.0d0)
@@ -1204,12 +1207,12 @@ contains
       alpha_A, h_prime_A, pot_A, alpha_B, h_prime_B, pot_B)
 
     if (alpha_c == alpha_A) then
-      call fstr_set_secant(alpha_S, h_prime_S, alpha_A, h_prime_A, alpha_c_bar)
+      call fstr_get_secant(alpha_S, h_prime_S, alpha_A, h_prime_A, alpha_c_bar)
       call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
         alpha_c_bar, h_prime_c_bar, pot_c_bar)
     end if
     if (alpha_c == alpha_B) then
-      call fstr_set_secant(alpha_B, h_prime_B, alpha_E, h_prime_E, alpha_c_bar)
+      call fstr_get_secant(alpha_B, h_prime_B, alpha_E, h_prime_E, alpha_c_bar)
       call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, &
         alpha_c_bar, h_prime_c_bar, pot_c_bar)
     end if
@@ -1393,7 +1396,7 @@ contains
     flag_converged = .false.
     iter_ls=0
     do while (iter_ls<maxiter_ls)
-      call fstr_set_secant(alpha_S, h_prime_S, alpha_E, h_prime_E, alpha_c)
+      call fstr_get_secant(alpha_S, h_prime_S, alpha_E, h_prime_E, alpha_c)
       call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_c, h_prime_c, pot_c)
 
       if (abs( pot_c - pot_0) <= (omega_Wolfe * C_Wolfe) ) then
@@ -1414,7 +1417,7 @@ contains
     endif    
   end subroutine fstr_line_search_along_direction
 
-  subroutine fstr_set_secant(a, Fa, b, Fb, c)
+  subroutine fstr_get_secant(a, Fa, b, Fb, c)
     implicit none
     real(kind=kreal), intent(in) :: a,b, Fa,Fb
     real(kind=kreal), intent(out) :: c
@@ -1423,7 +1426,7 @@ contains
     else
       c = 0.5*a + 0.5*b
     endif
-  end subroutine fstr_set_secant
+  end subroutine fstr_get_secant
 
   function fstr_wolfe_condition(alpha_c, h_prime_c, pot_c, h_prime_0, pot_0) result(flag_converged)
     implicit none
@@ -1433,10 +1436,10 @@ contains
     real(kind=kreal) :: wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
 
     wolfe1_left = pot_c - pot_0
-    wolfe1_right = delta*h_prime_0*alpha_c
+    wolfe1_right = delta_wolfe*h_prime_0*alpha_c
 
     wolfe2_left = h_prime_c
-    wolfe2_right = sigma*h_prime_0
+    wolfe2_right = sigma_wolfe*h_prime_0
 
     flag_converged = (wolfe1_left<=wolfe1_right) .and. (wolfe2_left >= wolfe2_right)
     if (flag_converged) write(6,'(a, 4es27.16e3)') 'oWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right
@@ -1452,11 +1455,11 @@ contains
     real(kind=kreal) :: pot_eps
     pot_eps = eps_wolfe*C_Wolfe
 
-    wolfe1_left =  ( 2.0 * delta - 1.0d0 ) * h_prime_0
+    wolfe1_left =  ( 2.0 * delta_wolfe - 1.0d0 ) * h_prime_0
     wolfe1_right = h_prime_c
 
     wolfe2_left = h_prime_c
-    wolfe2_right = sigma*h_prime_0
+    wolfe2_right = sigma_wolfe*h_prime_0
 
     flag_converged = &
       (wolfe1_left>=wolfe1_right) &
