@@ -40,10 +40,10 @@ contains
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint)                   :: ctsurf, etype, nnode, ndLocal(21) !< contents of type tContact
+    integer(kind=kint)                   :: ctsurf, etype, nnode, ndLocal(200) !< contents of type tContact
     integer(kind=kint)                   :: i, j, k, nlag, id_lagrange, grpid, algtype
     real(kind=kreal)                     :: lagrange
-    real(kind=kreal)                     :: stiffness(21*3 + 1, 21*3 + 1)
+    real(kind=kreal)                     :: stiffness(200*3 + 1, 200*3 + 1)
 
     hecLagMAT%AL_lagrange = 0.0d0
     hecLagMAT%AU_lagrange = 0.0d0
@@ -257,14 +257,14 @@ contains
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(hecmwST_matrix)                 :: conMAT !< type hecmwST_matrix for contact part only
-    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(21) !< contents of type tContact
+    integer(kind=kint) :: ctsurf, etype, nnode, ndLocal(200) !< contents of type tContact
     integer(kind=kint) :: i, j, k, nlag, id_lagrange, algtype
-    real(kind=kreal)   :: ndCoord(21*3) !< nodal coordinates
-    real(kind=kreal)   :: ndu(21*3), ndDu(21*3) !< nodal displacement and its increment
+    real(kind=kreal)   :: ndCoord(200*3) !< nodal coordinates
+    real(kind=kreal)   :: ndu(200*3), ndDu(200*3) !< nodal displacement and its increment
     real(kind=kreal)   :: lagrange !< value of Lagrange multiplier
-    real(kind=kreal)   :: ctForce(21*3+1)      !< contact force vector
-    real(kind=kreal)   :: ctNForce(21*3+1)     !< nodal normal contact force vector
-    real(kind=kreal)   :: ctTForce(21*3+1)     !< nodal tangential contact force vector
+    real(kind=kreal)   :: ctForce(200*3+1)      !< contact force vector
+    real(kind=kreal)   :: ctNForce(200*3+1)     !< nodal normal contact force vector
+    real(kind=kreal)   :: ctTForce(200*3+1)     !< nodal tangential contact force vector
 
     integer(kind=kint) :: cstep !< current calculation step
     integer(kind=kint) :: grpid
