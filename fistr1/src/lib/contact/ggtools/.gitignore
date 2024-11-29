@@ -1,0 +1,21 @@
+# ignore all
+*
+!*/
+
+# allow any
+!*.c
+!*.cpp
+!*.h
+!*.tex
+!*.sty
+!*.f90
+!*Makefile
+!.gitignore
+!*.sh
+!*.md
+!submodule
+!doc/doxyfile
+
+lib
+include
+
