@@ -5,6 +5,7 @@
 !> \brief  This module provides function to calculate to do updates
 module m_fstr_Update
   use m_fstr
+  use m_static_lib
   implicit none
 
   private :: Update_abort
@@ -24,7 +25,6 @@ contains
   !> \endif
   subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, strainEnergy)
     !=====================================================================*
-    use m_static_lib
 
     type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
     type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -46,7 +46,6 @@ contains
 
     real(kind=kreal), optional :: strainEnergy
     real(kind=kreal) :: tmp
-    real(kind=kreal)   :: ddaux(3,3)
 
     ndof = hecMAT%NDOF
     fstrSOLID%QFORCE=0.0d0
@@ -86,7 +85,7 @@ contains
       !element loop
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp, &
-        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux), &
+        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
@@ -132,85 +131,10 @@ contains
         ! ===== calculate the Internal Force
         if( getSpaceDimension( ic_type ) == 2 ) thick = 1.0d0
 
-        if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
-          call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
-            thick,fstrSOLID%elements(icel)%iset,                             &
-            total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
-            tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-
-        else if( ic_type == 301 ) then
-          call UPDATE_C1( ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), du(1:3,1:nn), &
-            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
-
-        else if( ic_type == 361 ) then
-          if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
-            call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-          else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
-            call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
-              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-          else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
-            call UPDATE_C3D8IC( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), cdsys_ID, coords,&
-              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, &
-              fstrSOLID%elements(icel)%aux, ddaux(1:3,1:3), tt(1:nn), tt0(1:nn), ttn(1:nn) )
-            fstrSOLID%elements(icel)%aux(1:3,1:3) = fstrSOLID%elements(icel)%aux(1:3,1:3) + ddaux(1:3,1:3)
-          else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
-            call UPDATE_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
-              qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-          endif
-
-        else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
-          if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
-          call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-
-        else if( ic_type == 511) then
-          call UPDATE_CONNECTOR( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
-            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), tincr )
-  
-        else if( ic_type == 611) then
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          CALL UpdateST_Beam(ic_type, nn, ecoord, total_disp(1:6,1:nn), du(1:6,1:nn), &
-                 &   hecMESH%section%sect_R_item(ihead+1:), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof))
-
-        else if( ic_type == 641 ) then
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Beam_641(ic_type, nn, ecoord, total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
-
-        else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0)
-
-        else if( ic_type == 761 ) then   !for shell-solid mixed analysis
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2)
-
-        else if( ic_type == 781 ) then   !for shell-solid mixed analysis
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 1)
-
-        else if ( ic_type == 3414 ) then
-          if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) &
-            &  call Update_abort( ic_type, 3, fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype )
-          call UPDATE_C3_vp                                                       &
-            ( ic_type, nn, ecoord(:,1:nn), total_disp(1:4,1:nn), du(1:4,1:nn), &
-            fstrSOLID%elements(icel)%gausses(:) )
-          qf = 0.0d0
-
-        else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
-          call UPDATE_C3_SESNS( ic_type, nn, nodLOCAL, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
-            qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
-
-        else
-          write(*, *) '###ERROR### : Element type not supported for nonlinear static analysis'
-          write(*, *) ' ic_type = ', ic_type
-          call hecmw_abort(hecmw_comm_get_comm())
-
-        endif
+        ! ===== Update strain, stress and nodal equivalent force
+        call fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, total_disp, du, ddu, fstrSOLID%sections(isect), & 
+             & hecMESH%section%sect_R_item(ihead+1:), cdsys_ID, coords, qf, fstrSOLID%elements(icel), &
+             & iter, time, tincr, tt, tt0, ttn, thick )
 
         ! ----- calculate the global internal force ( Q(u_{n+1}^{k-1}) )
         do j = 1, nn
@@ -243,6 +167,113 @@ contains
     !C
     call hecmw_update_R(hecMESH,fstrSOLID%QFORCE,hecMESH%n_node, ndof)
   end subroutine fstr_UpdateNewton
+
+  subroutine fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, total_disp, du, ddu, section, sect_R_item, &
+         & cdsys_ID, coords, qf, element, iter, time, tincr, tt, tt0, ttn, thick )
+    integer, intent(in)                :: ic_type      !< element type
+    integer, intent(inout)             :: nn
+    integer, intent(in)                :: ndof
+    integer(kind=kint), intent(inout)  :: nodLOCAL(:)
+    real(kind=kreal),intent(in)        :: ecoord(:,:) 
+    real(kind=kreal),intent(in)        :: total_disp(:,:) 
+    real(kind=kreal),intent(in)        :: du(:,:) 
+    real(kind=kreal),intent(in)        :: ddu(:,:)
+    type(tSection),intent(in)          :: section
+    real(kind=kreal), intent(in)       :: sect_R_item(:)      
+    integer, intent(in)                :: cdsys_ID     
+    real(kind=kreal), intent(inout)    :: coords(3,3) 
+    real(kind=kreal), intent(out)      :: qf(:) 
+    type(tElement), intent(inout)      :: element    
+    integer, intent(in)                :: iter      !< NR iterations
+    real(kind=kreal),intent(in)        :: time      !< current time
+    real(kind=kreal),intent(in)        :: tincr     !< time increment
+    real(kind=kreal),intent(in)        :: tt(:) 
+    real(kind=kreal),intent(in)        :: tt0(:) 
+    real(kind=kreal),intent(in)        :: ttn(:) 
+    real(kind=kreal),intent(in)        :: thick
+
+    real(kind=kreal)   :: ddaux(3,3)
+
+    if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
+      call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),element%gausses(:), &
+        thick,element%iset,                             &
+        total_disp(1:2,1:nn), ddu(1:2,1:nn), qf(1:nn*ndof),              &
+        tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+
+    else if( ic_type == 301 ) then
+      call UPDATE_C1( ic_type,nn,ecoord(:,1:nn), thick, total_disp(1:3,1:nn), du(1:3,1:nn), &
+        qf(1:nn*ndof),element%gausses(:) )
+
+    else if( ic_type == 361 ) then
+      if( section%elemopt361 == kel361FI ) then ! full integration element
+        call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+          qf(1:nn*ndof), element%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+      else if( section%elemopt361 == kel361BBAR ) then ! B-bar element
+        call UPDATE_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
+          qf(1:nn*ndof), element%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+      else if( section%elemopt361 == kel361IC ) then ! incompatible element
+        call UPDATE_C3D8IC( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), cdsys_ID, coords,&
+          qf(1:nn*ndof), element%gausses(:), iter, time, tincr, &
+          element%aux, ddaux(1:3,1:3), tt(1:nn), tt0(1:nn), ttn(1:nn) )
+          element%aux(1:3,1:3) = element%aux(1:3,1:3) + ddaux(1:3,1:3)
+      else if( section%elemopt361 == kel361FBAR ) then ! F-bar element
+        call UPDATE_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
+          qf(1:nn*ndof), element%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+      endif
+
+    else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
+      if( ic_type==341 .and. section%elemopt341 == kel341SESNS ) return ! skip smoothed fem
+      call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+        qf(1:nn*ndof), element%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+
+    else if( ic_type == 511) then
+      call UPDATE_CONNECTOR( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
+        qf(1:nn*ndof),element%gausses(:), tincr )
+
+    else if( ic_type == 611) then
+      if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+      CALL UpdateST_Beam(ic_type, nn, ecoord, total_disp(1:6,1:nn), du(1:6,1:nn), &
+             &   sect_R_item, element%gausses(:), qf(1:nn*ndof))
+
+    else if( ic_type == 641 ) then
+      if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+      call UpdateST_Beam_641(ic_type, nn, ecoord, total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+        &    element%gausses(:), sect_R_item, qf(1:nn*ndof))
+
+    else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
+      if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+      call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+        &              element%gausses(:), qf(1:nn*ndof), thick, 0)
+
+    else if( ic_type == 761 ) then   !for shell-solid mixed analysis
+      if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+      call UpdateST_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+        &              element%gausses(:), qf(1:nn*ndof), thick, 2)
+
+    else if( ic_type == 781 ) then   !for shell-solid mixed analysis
+      if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+      call UpdateST_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+        &              element%gausses(:), qf(1:nn*ndof), thick, 1)
+
+    else if ( ic_type == 3414 ) then
+      if(element%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) &
+        &  call Update_abort( ic_type, 3, element%gausses(1)%pMaterial%mtype )
+      call UPDATE_C3_vp                                                       &
+        ( ic_type, nn, ecoord(:,1:nn), total_disp(1:4,1:nn), du(1:4,1:nn), &
+        element%gausses(:) )
+      qf = 0.0d0
+
+    else if ( ic_type == 881 .or. ic_type == 891 ) then  !for selective es/ns smoothed fem
+      call UPDATE_C3_SESNS( ic_type, nn, nodLOCAL, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
+        qf(1:nn*ndof), element%gausses(:), time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+
+    else
+      write(*, *) '###ERROR### : Element type not supported for nonlinear static analysis'
+      write(*, *) ' ic_type = ', ic_type
+      call hecmw_abort(hecmw_comm_get_comm())
+
+    endif    
+  end subroutine
 
 
   !> Update elastiplastic status
