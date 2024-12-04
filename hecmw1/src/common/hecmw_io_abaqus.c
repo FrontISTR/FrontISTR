@@ -857,7 +857,7 @@ static int read_elset_param_elset(char *elset, int *isAll) {
   }
   if (strcmp(elset, "ALL") == 0) {
     *isAll = 1;
-    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1021, "");
+    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1030, "");
     // return -1;
   }
   return 0;
@@ -1194,7 +1194,7 @@ static int read_element_param_elset(char *elset) {
     return -1;
   }
   if (strcmp(elset, "ALL") == 0) {
-    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1021, "");
+    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1030, "");
     strcpy(elset, "ABAQUS_ESET_ALL");
     // return -1;
   }
@@ -2485,7 +2485,7 @@ static int read_nset_param_nset(char *nset, int *isAll) {
     return -1;
   }
   if (strcmp(nset, "ALL") == 0) {
-    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1021, "");
+    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1030, "");
     strcpy(nset, "ABAQUS_NSET_ALL");
     *isAll = 1;
     // return -1;
@@ -2851,7 +2851,7 @@ static int read_node_param_nset(char *nset, int *isAll) {
     return -1;
   }
   if (strcmp(nset, "ALL") == 0) {
-    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1021, "");
+    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_W1030, "");
     strcpy(nset, "ABAQUS_ESET_ALL");
     *isAll = 1;
     // return -1;

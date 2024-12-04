@@ -47,8 +47,8 @@
 			<description>!PARTITIONの必須のオプションである'METHOD'が見つからない</description>
 		</define>
 		<define type="error" name="E0122">
-			<message>'METHOD' must be 'RCB', 'KMETIS' or 'PMETIS'</message>
-			<description>METHODに指定する値は'RCB'か'KMETIS'か'PMETIS'でなければならない</description>
+			<message>'METHOD' must be 'RCB', 'KMETIS', 'PMETIS' or 'USER'</message>
+			<description>METHODに指定する値は'RCB'か'KMETIS'か'PMETIS'か'USER'でなければならない</description>
 		</define>
 		<define type="error" name="E0123">
 			<message>'=' required after 'METHOD'</message>
@@ -99,8 +99,8 @@
 			<description>UCDファイル名は数字，アルファベット，'.'，'-'，'_'，'/'で始まらなければならない</description>
 		</define>
 		<define type="error" name="E0154">
-			<message>'CONTACT' must be 'AGGREGATE' or 'DEFAULT'</message>
-			<description>不正なパラメータが設定された</description>
+			<message>'CONTACT' must be 'AGGREGATE', 'DISTRIBUTE', 'SIMPLE' or 'DEFAULT'</message>
+			<description>CONTACTに指定する値は'AGGREGATE'か'DISTRIBUTE'か'SIMPLE'か'DEFAULT'でなければならない</description>
 		</define>
 		<define type="error" name="E0161">
 			<message>Partitioning directions must be 'x', 'y' or 'z'</message>
@@ -111,7 +111,7 @@
 			<description>分割軸方向の指定が足りない</description>
 		</define>
 		<define type="warn" name="W0163">
-			<message>Too many partitioning directions are specified</message>
+			<message>Too many partitioning directions specified</message>
 			<description>必要数以上の分割軸方向が指定された</description>
 		</define>
 		<define type="error" name="E0164">
@@ -121,6 +121,18 @@
 		<define type="error" name="W0165">
 			<message>Partitioning directions are specified, although 'METHOD' is not 'RCB'</message>
 			<description>'METHOD'が'RCB'でないにもかかわらず分割軸方向の指定がなされている</description>
+		</define>
+		<define type="error" name="E0171">
+			<message>Part file name is too long</message>
+			<description>Partファイル名が長すぎる</description>
+		</define>
+		<define type="error" name="E0172">
+			<message>'=' required after 'PART'</message>
+			<description>'PART'の後に'='が見つからない</description>
+		</define>
+		<define type="error" name="E0173">
+			<message>Part file name must start with number, alphabet, '.', '-', '_' or '/'</message>
+			<description>Partファイル名は数字，アルファベット，'.'，'-'，'_'，'/'で始まらなければならない</description>
 		</define>
 		<define type="error" name="E0201">
 			<message>Invalid partitioning type found</message>
@@ -155,7 +167,7 @@
 			<description>部分領域番号が0より小さい</description>
 		</define>
 		<define type="error" name="E0302">
-			<message>Sub-domain number must be less than number of sub-domains</message>
+			<message>Sub-domain number must be less than the number of sub-domains</message>
 			<description>部分領域番号が部分領域数を超えている</description>
 		</define>
 		<define type="error" name="E0311">
@@ -167,7 +179,7 @@
 			<description>内部節点数が0より小さい</description>
 		</define>
 		<define type="error" name="E0313">
-			<message>Number of internal nodes must be less than or equal to number of nodes</message>
+			<message>Number of internal nodes must be less than or equal to the number of nodes</message>
 			<description>内部節点数が節点数より大きい</description>
 		</define>
 		<define type="error" name="E0321">
@@ -179,7 +191,7 @@
 			<description>内部要素数が0より小さい</description>
 		</define>
 		<define type="error" name="E0323">
-			<message>Number of internal elements must be less than or equal to number of elements</message>
+			<message>Number of internal elements must be less than or equal to the number of elements</message>
 			<description>内部要素数が要素数より大きい</description>
 		</define>
 		<define type="error" name="E0331">
@@ -191,12 +203,36 @@
 			<description>EQUATION_BLOCKが見つからない</description>
 		</define>
 		<define type="error" name="E0501">
-			<message>Log file has not initialized yet</message>
+			<message>Log file not initialized yet</message>
 			<description>ログファイルの初期化処理が行われていない</description>
 		</define>
 		<define type="warn" name="W0502">
-			<message>Log file for partitioner has already initialized</message>
+			<message>Log file for partitioner already initialized</message>
 			<description>ログファイルの初期化処理が複数回呼び出された</description>
+		</define>
+		<define type="error" name="E0601">
+			<message>Empty domain found in user provided part file</message>
+			<description>ユーザー指定分割に空の領域が見つかった</description>
+		</define>
+		<define type="error" name="E0602">
+			<message>Unexpected EOF</message>
+			<description>予期しないEOFが検出された</description>
+		</define>
+		<define type="error" name="E0603">
+			<message>Invalid format in part file</message>
+			<description>領域分割情報ファイルの書式が不正</description>
+		</define>
+		<define type="error" name="E0604">
+			<message>Invalid sub-domain number in part file</message>
+			<description>領域分割情報ファイル内の領域番号が不正</description>
+		</define>
+		<define type="error" name="E0605">
+			<message>Number of nodes or elems in part file does not match with mesh</message>
+			<description>領域分割情報ファイルの節点数または要素数がメッシュと不一致</description>
+		</define>
+		<define type="error" name="E0606">
+			<message>Number of sub-domains in part file does not match with control file</message>
+			<description>指定された分割数と領域分割情報ファイルの分割数が不一致</description>
 		</define>
 	</table>
 </msg-table>

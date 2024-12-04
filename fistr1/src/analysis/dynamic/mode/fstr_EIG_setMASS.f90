@@ -105,6 +105,7 @@ contains
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
           val = 0.5d0*surf*length*rho
 
+        elseif( ic_type/100 == 5 )then !skip interface element
         else
           write(*,*)"** error setMASS"
         endif

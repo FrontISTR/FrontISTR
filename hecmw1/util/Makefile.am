@@ -7,6 +7,8 @@ LEX              = @lex@
 
 SRCCOMMONDIR     = ../src/common
 
+SRCPARTITIONERDIR = ../tools/partitioner
+
 .SUFFIXES:
 .SUFFIXES: .c .l
 
@@ -25,7 +27,10 @@ LEXSRCCOMMON = \
 	hecmw_ablex.c \
 	hecmw_gflex.c
 
-LEXSRC = $(LEXSRCCOMMON)
+LEXSRCPARTITIONER = \
+	hecmw_partlex.c
+
+LEXSRC = $(LEXSRCCOMMON) $(LEXSRCPARTITIONER)
 
 all: setup-msg setup-lex
 
@@ -35,6 +40,7 @@ setup-msg:
 
 setup-lex: $(LEXSRC)
 	for i in $(LEXSRCCOMMON); do $(MV) $$i $(SRCCOMMONDIR)/.; done
+	for i in $(LEXSRCPARTITIONER); do $(MV) $$i $(SRCPARTITIONERDIR)/.; done
 
 hecmw_ctrllex.c: $(SRCCOMMONDIR)/hecmw_ctrllex.l
 	$(LEX) -t -PHECMW_ctrl $(SRCCOMMONDIR)/hecmw_ctrllex.l > $@
@@ -47,6 +53,9 @@ hecmw_heclex.c: $(SRCCOMMONDIR)/hecmw_heclex.l
 
 hecmw_ablex.c: $(SRCCOMMONDIR)/hecmw_ablex.l
 	$(LEX) -t -PHECMW_ab -i $(SRCCOMMONDIR)/hecmw_ablex.l > $@
+
+hecmw_partlex.c: $(SRCPARTITIONERDIR)/hecmw_partlex.l
+	$(LEX) -t -PHECMW_part $(SRCPARTITIONERDIR)/hecmw_partlex.l > $@
 
 install:
 

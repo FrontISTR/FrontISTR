@@ -1,0 +1,50 @@
+.ubuntu2204:
+    image: ${REGISTRY}/build:ubuntu2204
+build/ubuntu2204/serial:
+    extends: [".build",".ubuntu2204"]
+build/ubuntu2204/openmp:
+    extends: [".build",".ubuntu2204"]
+build/ubuntu2204/mpi:
+    extends: [".build",".ubuntu2204"]
+build/ubuntu2204/hybrid:
+    extends: [".build",".ubuntu2204"]
+test/ubuntu2204/serial/serial:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/serial"]
+test/ubuntu2204/openmp/serial:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/openmp"]
+test/ubuntu2204/openmp/openmp:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/openmp"]
+test/ubuntu2204/mpi/serial:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/mpi"]
+test/ubuntu2204/mpi/mpi:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/mpi"]
+test/ubuntu2204/hybrid/serial:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/hybrid"]
+test/ubuntu2204/hybrid/openmp:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/hybrid"]
+test/ubuntu2204/hybrid/mpi:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/hybrid"]
+test/ubuntu2204/hybrid/hybrid:
+    extends: [".test",".ubuntu2204"]
+    needs: ["build/ubuntu2204/hybrid"]
+    tags: ["saas-linux-medium-amd64"]
+deb/ubuntu2204/hybrid:
+    needs: ["build/ubuntu2204/hybrid"]
+    extends: [".deb",".ubuntu2204"]
+deb/ubuntu2204/mpi:
+    needs: ["build/ubuntu2204/mpi"]
+    extends: [".deb",".ubuntu2204"]
+deb/ubuntu2204/openmp:
+    needs: ["build/ubuntu2204/openmp"]
+    extends: [".deb",".ubuntu2204"]
+deb/ubuntu2204/serial:
+    needs: ["build/ubuntu2204/serial"]
+    extends: [".deb",".ubuntu2204"]
