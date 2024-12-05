@@ -7,10 +7,15 @@
 module m_fstr_StiffMatrix
   use m_fstr
   use m_static_LIB
+  use m_fstr_Update
   implicit none
 
   private
   public :: fstr_StiffMatrix
+
+  integer(kind=kint), parameter :: kstfCONSISTENT = 1 
+  integer(kind=kint), parameter :: kstfNUMERICAL  = 2 
+  integer(kind=kint) :: MATTYPE = kstfNUMERICAL
 
 contains
 
@@ -28,17 +33,29 @@ contains
 
     real(kind=kreal)   :: stiffness(fstrSOLID%max_ncon_stf*6, fstrSOLID%max_ncon_stf*6)
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
-    real(kind=kreal)   :: tt(fstrSOLID%max_ncon), ecoord(3,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: tt(fstrSOLID%max_ncon), tt0(fstrSOLID%max_ncon), ttn(fstrSOLID%max_ncon), ecoord(3,fstrSOLID%max_ncon)
     real(kind=kreal)   :: thick
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
     real(kind=kreal)   :: u(6,fstrSOLID%max_ncon), du(6,fstrSOLID%max_ncon), coords(3,3), u_prev(6,fstrSOLID%max_ncon)
-    integer            :: isect, ihead, cdsys_ID
+    integer            :: isect, ihead, cdsys_ID, initt
 
     ! ----- initialize
     call hecmw_mat_clear( hecMAT )
 
     ndof = hecMAT%NDOF
-    tt(:) = 0.d0
+
+    if( MATTYPE == kstfNUMERICAL ) then
+      ! if initial temperature exists
+      initt = 0
+      if( associated(g_InitialCnd) ) then
+          do j=1,size(g_InitialCnd)
+            if( g_InitialCnd(j)%cond_name=="temperature" ) then
+              initt=j
+              exit
+            endif
+          end do
+      endif
+    endif
 
     do itype= 1, hecMESH%n_elem_type
       is= hecMESH%elem_type_index(itype-1) + 1
@@ -51,9 +68,9 @@ contains
 
       ! ----- element loop
       !$omp parallel default(none), &
-        !$omp&  private(icel,iiS,nn,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,cdsys_ID,coords, &
+        !$omp&  private(icel,iiS,nn,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,tt0,ttn,cdsys_ID,coords, &
         !$omp&          thick,stiffness,isect,ihead), &
-        !$omp&  shared(iS,iE,hecMESH,ndof,fstrSOLID,ic_type,hecMAT,time,tincr)
+        !$omp&  shared(iS,iE,hecMESH,ndof,fstrSOLID,ic_type,hecMAT,time,tincr,initt,g_InitialCnd,MATTYPE)
       !$omp do
       do icel= is, iE
 
@@ -72,6 +89,7 @@ contains
             u(i,j)  = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) + du(i,j)
             u_prev(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof)
           enddo
+          tt(j) = 0.d0
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 )  &
             tt(j)=fstrSOLID%temperature( nodLOCAL(j) )
         enddo
@@ -83,9 +101,32 @@ contains
         thick = hecMESH%section%sect_R_item(ihead+1)
         if( getSpaceDimension( ic_type )==2 ) thick =1.d0
 
-        call fstr_StiffMatrix_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u, du, u_prev, fstrSOLID%sections(isect), & 
-        & hecMESH%section%sect_R_item(ihead+1:), cdsys_ID, coords, stiffness, fstrSOLID%elements(icel), &
-        & time, tincr, tt, thick )
+        if( MATTYPE == kstfCONSISTENT ) then
+          call fstr_StiffMatrix_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u, du, u_prev, fstrSOLID%sections(isect), & 
+            & hecMESH%section%sect_R_item(ihead+1:), cdsys_ID, coords, stiffness, fstrSOLID%elements(icel), &
+            & time, tincr, tt, thick )
+        else if( MATTYPE == kstfNUMERICAL ) then
+          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
+            if( isElastoplastic(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype) .or. &
+                fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
+              tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) )
+            else
+              tt0(j) = 0.d0
+              if( hecMESH%hecmw_flag_initcon == 1 ) tt0(j) = hecMESH%node_init_val_item(nodLOCAL(j))
+              if( initt>0 ) tt0(j) = g_InitialCnd(initt)%realval(nodLOCAL(j))
+            endif
+            ttn(j) = fstrSOLID%last_temp( nodLOCAL(j) )
+          else
+            tt0 = 0.d0
+            ttn = 0.d0
+          endif
+          call fstr_StiffMatrix_elem_numerical( ic_type, nn, ndof, nodLOCAL, ecoord, u, du, u_prev, fstrSOLID%sections(isect), & 
+            & hecMESH%section%sect_R_item(ihead+1:), cdsys_ID, coords, stiffness, fstrSOLID%elements(icel), &
+            & time, tincr, tt, tt0, ttn, thick )
+
+        else
+          stop
+        endif
 
         if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
         !
@@ -201,6 +242,125 @@ contains
     else
       call StiffMat_abort( ic_type, 1 )
     endif    
+  end subroutine
+
+  subroutine fstr_StiffMatrix_elem_numerical( ic_type, nn, ndof, nodLOCAL, ecoord, u, du, u_prev, section, sect_R_item, &
+    & cdsys_ID, coords, stiffness, element, time, tincr, tt, tt0, ttn, thick )
+    integer, intent(in)                :: ic_type      !< element type
+    integer, intent(inout)             :: nn
+    integer, intent(in)                :: ndof
+    integer(kind=kint), intent(inout)  :: nodLOCAL(:)
+    real(kind=kreal),intent(in)        :: ecoord(:,:) 
+    real(kind=kreal),intent(in)        :: u(:,:) 
+    real(kind=kreal),intent(in)        :: du(:,:) 
+    real(kind=kreal),intent(in)        :: u_prev(:,:)
+    type(tSection),intent(in)          :: section
+    real(kind=kreal), intent(in)       :: sect_R_item(:)      
+    integer, intent(in)                :: cdsys_ID     
+    real(kind=kreal), intent(inout)    :: coords(3,3) 
+    real(kind=kreal), intent(out)      :: stiffness(:,:) 
+    type(tElement), intent(inout)      :: element    
+    real(kind=kreal),intent(in)        :: time      !< current time
+    real(kind=kreal),intent(in)        :: tincr     !< time increment
+    real(kind=kreal),intent(in)        :: tt(:) 
+    real(kind=kreal),intent(in)        :: tt0(:) 
+    real(kind=kreal),intent(in)        :: ttn(:) 
+    real(kind=kreal),intent(in)        :: thick
+
+    integer(kind=kint) :: i, idof, idx, j, jdof, jdx
+    real(kind=kreal) :: u_ori(ndof,nn), du_tmp(ndof,nn), ddu(ndof,nn), pdu(1:ndof)
+    real(kind=kreal) :: qfp(ndof*nn),qfm(ndof*nn),qfp2(ndof*nn),qfm2(ndof*nn),tmpval,delta_u
+
+    if( ic_type==341 .and. section%elemopt341 == kel341SESNS ) stop "SELECTIVE ESNS does not support numerical stiffness"
+    if( ic_type==361 .and. section%elemopt361 == kel361IC ) stop " incompatible element does not support numerical stiffness"
+
+    u_ori(1:ndof,1:nn) = u(1:ndof,1:nn)-du(1:ndof,1:nn)
+    ddu(1:ndof,1:nn) = 0.d0
+
+    ! create element size
+    call get_element_size(nn,ndof,ecoord,pdu(1:ndof))
+    pdu(1:ndof) = 1.d-6*pdu(1:ndof)
+
+    do i=1,nn
+      do idof=1,ndof
+        idx = (i-1)*ndof+idof
+        if( dabs(du(idof,i)) < 1.d-8 ) then
+          delta_u = pdu(idof)
+        else
+          delta_u = dabs(du(idof,i))*1.d-6
+        endif
+
+        ! calc f(u+2*ddu)
+        du_tmp(1:ndof,1:nn) = du(1:ndof,1:nn)
+        du_tmp(idof,i) = du_tmp(idof,i) + 2.d0*delta_u
+        call fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u_prev, du_tmp, ddu, section, & 
+        & sect_R_item, cdsys_ID, coords, qfp2, element, &
+        & 1, time, tincr, tt, tt0, ttn, thick )
+
+        ! calc f(u+ddu)
+        du_tmp(1:ndof,1:nn) = du(1:ndof,1:nn)
+        du_tmp(idof,i) = du_tmp(idof,i) + delta_u
+        call fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u_prev, du_tmp, ddu, section, & 
+        & sect_R_item, cdsys_ID, coords, qfp, element, &
+        & 1, time, tincr, tt, tt0, ttn, thick )
+    
+        ! calc f(u-ddu)
+        du_tmp(1:ndof,1:nn) = du(1:ndof,1:nn)
+        du_tmp(idof,i) = du_tmp(idof,i) - delta_u
+        call fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u_prev, du_tmp, ddu, section, & 
+        & sect_R_item, cdsys_ID, coords, qfm, element, &
+        & 1, time, tincr, tt, tt0, ttn, thick )
+
+        ! calc f(u-2*ddu)
+        du_tmp(1:ndof,1:nn) = du(1:ndof,1:nn)
+        du_tmp(idof,i) = du_tmp(idof,i) - 2.d0*delta_u
+        call fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u_prev, du_tmp, ddu, section, & 
+        & sect_R_item, cdsys_ID, coords, qfm2, element, &
+        & 1, time, tincr, tt, tt0, ttn, thick )
+
+        ! calc df/du = (f(u+ddu)-f(u-ddu))/du
+        do j=1,nn
+          do jdof=1,ndof
+            jdx = (j-1)*ndof+jdof
+            ! 5point
+            stiffness(idx,jdx) = (qfm2(jdx)-8.d0*qfm(jdx)+8.d0*qfp(jdx)-qfp2(jdx))/(12.d0*delta_u)
+          enddo
+        enddo
+  
+      enddo
+    enddo
+
+  contains
+
+    subroutine get_element_size(nn,ndof,ecoord,esize)
+      integer, intent(in)             :: nn
+      integer, intent(in)             :: ndof
+        real(kind=kreal),intent(in)   :: ecoord(:,:) 
+      real(kind=kreal),intent(out)    :: esize(:)
+
+      integer(kind=kint) :: i, idof
+      real(kind=kreal) :: minec(3), maxec(3)
+
+      if( nn == 1 ) then
+        esize(1:ndof) = 1.d0
+        return
+      endif
+
+      minec(1:ndof) = ecoord(1:ndof,1)
+      maxec(1:ndof) = ecoord(1:ndof,1)
+
+      do i=2,nn
+        do idof=1,ndof
+          minec(idof) = min(minec(idof),ecoord(idof,i))
+          maxec(idof) = max(maxec(idof),ecoord(idof,i))
+        enddo
+      enddo
+
+      do idof=1,ndof
+        esize(idof) = maxec(idof)-minec(idof)
+      enddo
+    end subroutine
+
   end subroutine
 
   subroutine StiffMat_abort( ic_type, flag, mtype )
