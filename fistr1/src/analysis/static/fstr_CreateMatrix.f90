@@ -47,6 +47,7 @@ contains
 
     ! ----- initialize
     call hecmw_mat_clear( hecMAT )
+    fstrSOLID%DFORCE = 0.0d0
 
     ndof = hecMAT%NDOF
     do itype = 1, hecMESH%n_elem_type
@@ -141,6 +142,7 @@ contains
           call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass_mat, lumped)
 
         else if( ic_type == 511) then
+          !> 帰ってきた stiff が剛性なのかダンパーなのかの判定が必要
           !call STF_CONNECTOR( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
           !  damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn) )
 
@@ -213,8 +215,8 @@ contains
           ray_m = material%variables(M_DAMPING_RM)
           ray_k = material%variables(M_DAMPING_RK)
         else
-          !ray_m = fstrDYNAMIC%ray_m
-          !ray_k = fstrDYNAMIC%ray_k
+          ray_m = fstrDYNAMIC%ray_m
+          ray_k = fstrDYNAMIC%ray_k
         endif
 
         a1 = coef(1)
@@ -225,9 +227,15 @@ contains
         b3 = coef(6)
 
         !> LHS matrix section
-        !if(ic_type == 511)then
-
-        !else
+        if(ic_type == 511)then
+          !> A = b_3 * C
+          do i = 1, nn*ndof
+            do j = 1, nn*ndof
+              mat(j,i) = b3*damp_mat(j,i)
+            enddo
+          enddo
+        else
+          !> A = c_1 * K + c_2 * M
           c1 = 1.d0 + ray_k*b3
           c2 = a3   + ray_m*b3
           do i = 1, nn*ndof
@@ -235,7 +243,7 @@ contains
               mat(j,i) = c1*stiff_mat(j,i) + c2*mass_mat(j,i)
             enddo
           enddo
-        !endif
+        endif
 
         call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, mat)
 
@@ -248,9 +256,16 @@ contains
         df = 0.0d0
         Kb = 0.0d0
 
-        !if(ic_type == 511)then
+        if(ic_type == 511)then
+          !> df = C * vecB
+          do i = 1, nn*ndof
+            do j = 1, nn*ndof
+              df(i) = df(i) + damp_mat(i,j)*vecB(j)
+            enddo
+          enddo
 
-        !else
+        else
+          !> df = R_k * K * vecB + M * vecC
           do i = 1, nn*ndof
             do j = 1, nn*ndof
               Kb(i) = Kb(i) + stiff_mat(i,j)*vecB(j)
@@ -266,7 +281,7 @@ contains
           do i = 1, nn*ndof
             df(i) = df(i) + ray_k*Kb(i)
           enddo
-        !endif
+        endif
 
         do i = 1, nn
           in = nodLOCAL(i)

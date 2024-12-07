@@ -166,11 +166,6 @@ contains
         write(*,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
       endif
 
-!      do j = 1 ,ndof*nnod
-!        fstrDYNAMIC%VEC1(j) = a1*fstrDYNAMIC%ACC(j,1) + a2*fstrDYNAMIC%VEL(j,1)
-!        fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
-!      enddo
-
       count_step = 0
       stepcnt = 0
 
@@ -191,11 +186,9 @@ contains
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
           if (fstrPARAM%nlgeom) then
-            !call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
             call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef )
           else
             if (.not. associated(hecMAT0)) then
-              !call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
               call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef)
               allocate(hecMAT0)
               call hecmw_mat_init(hecMAT0)
@@ -206,27 +199,8 @@ contains
             endif
           endif
 
-          !if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
-          !  do j = 1 ,ndof*nnod
-          !    hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
-          !  enddo
-          !endif
-          !if( fstrDYNAMIC%ray_k/=0.d0 ) then
-          !  if( hecMESH%n_dof == 3 ) then
-          !    call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
-          !  else if( hecMESH%n_dof == 2 ) then
-          !    call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
-          !  else if( hecMESH%n_dof == 6 ) then
-          !    call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
-          !  endif
-          !endif
-
           !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-          !do j=1, hecMESH%n_node*  hecMESH%n_dof
-          !  hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
-          !    + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
-          !enddo
           do j = 1, hecMESH%n_node*hecMESH%n_dof
             hecMAT%B(j) = hecMAT%B(j) - fstrSOLID%QFORCE(j) + fstrSOLID%DFORCE(j)
           end do
@@ -234,23 +208,6 @@ contains
           !C for couple analysis
           call fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
             & fstrPARAM, fstrDYNAMIC, fstrCPL, restrt_step_num, PI, i)
-
-          !do j = 1 ,nn*hecMAT%NP
-          !  hecMAT%D(j)  = c1* hecMAT%D(j)
-          !enddo
-          !do j = 1 ,nn*hecMAT%NPU
-          !  hecMAT%AU(j) = c1* hecMAT%AU(j)
-          !enddo
-          !do j = 1 ,nn*hecMAT%NPL
-          !  hecMAT%AL(j) = c1*hecMAT%AL(j)
-          !enddo
-          !do j=1,nnod
-          !  do kk=1,ndof
-          !    idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
-          !    imm = ndof*(j-1) + kk
-          !    hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIG%mass(imm)
-          !  enddo
-          !enddo
 
           call hecmw_mat_clear( conMAT )
           call hecmw_mat_clear_b( conMAT )
