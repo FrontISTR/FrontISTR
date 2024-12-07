@@ -701,20 +701,20 @@ contains
 
   !----------------------------------------------------------------------
   !> Read in !RAYLEIGH_DAMPING
-  integer function fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, matval, is_RM, is_RK )
+  integer function fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, matval, is_RD )
     integer(kind=kint), intent(in) :: ctrl
     real(kind=kreal), intent(out)  :: matval(:)
     !type(DICT_STRUCT), pointer     :: dict
     integer(kind=kint) :: rcode
     real(kind=kreal) :: RM, RK
-    logical :: is_RM, is_RK
+    logical :: is_RD
 
     rcode = -1
     RM = 0.0d0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'R ', 'RM ', 0, 'R', RM)
     if(rcode == 0)then
       matval(M_DAMPING_RM) = RM
-      is_RM = .true.
+      is_RD = .true.
       fstr_ctrl_get_RAYLEIGH_DAMPING = 0
     else
       fstr_ctrl_get_RAYLEIGH_DAMPING = -1
@@ -725,7 +725,7 @@ contains
     rcode = fstr_ctrl_get_param_ex( ctrl, 'R ', 'RK ', 0, 'R', RK) 
     if(rcode == 0)then
       matval(M_DAMPING_RK) = RK
-      is_RK = .true.
+      is_RD = .true.
       fstr_ctrl_get_RAYLEIGH_DAMPING = 0
     else
       fstr_ctrl_get_RAYLEIGH_DAMPING = -1

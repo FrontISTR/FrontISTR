@@ -21,6 +21,7 @@ module fstr_dynamic_nlimplicit
   use m_addContactStiffness
   use m_solve_LINEQ_contact
   use m_dynamic_init_variables
+  use m_fstr_CreateMatrix
 
   !-------- for couple -------
   use m_dynamic_mat_ass_couple
@@ -51,11 +52,11 @@ contains
     type(hecmwST_matrix)                 :: conMAT
 
     !C-- local variable
-    integer(kind=kint) :: nnod, ndof, numnp, nn
-    integer(kind=kint) :: i, j, ids, ide, ims, ime, kk, idm, imm
-    integer(kind=kint) :: iter
-    real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
-    real(kind=kreal) :: bsize, res, res1, rf
+    integer(kind=kint) :: nnod, ndof, nn
+    integer(kind=kint) :: i, j, iter
+    !ids, ide, ims, ime, kk, idm, imm, numnp, 
+    !integer(kind=kint) :: iter
+    real(kind=kreal) :: bsize, res, res1, rf, coef(6)
     real(kind=kreal) :: res0, relres
     real :: time_1, time_2
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
@@ -66,7 +67,6 @@ contains
     integer(kind=kint) :: stepcnt
     real(kind=kreal)   :: maxDLag, converg_dlag
 
-    integer(kind=kint) :: n_node_global
     integer(kind=kint) :: contact_changed_global
     integer(kind=kint) ::  nndof,npdof
     logical :: is_mat_symmetric
@@ -76,10 +76,6 @@ contains
     real(kind=kreal), allocatable :: coord(:)
 
     nullify(hecMAT0)
-
-    ! sum of n_node among all subdomains (to be used to calc res)
-    n_node_global = hecMESH%nn_internal
-    call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
     ctAlgo = fstrPARAM%contact_algo
 
@@ -129,14 +125,7 @@ contains
       call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
 
     !C-- time step loop
-    a1 = .5d0/fstrDYNAMIC%beta - 1.d0
-    a2 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
-    a3 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta*fstrDYNAMIC%t_delta)
-    b1 = ( .5d0*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0 )*fstrDYNAMIC%t_delta
-    b2 = fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0
-    b3 = fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
-    c1 = 1.d0 + fstrDYNAMIC%ray_k*b3
-    c2 = a3 + fstrDYNAMIC%ray_m*b3
+    call fstr_solve_dynamic_nlimplicit_get_coef(fstrDYNAMIC, coef)
 
     !C-- output of initial state
     if( restrt_step_num == 1 ) then
@@ -177,10 +166,10 @@ contains
         write(*,'('' time step='',i10,'' time='',1pe13.4e3)') i,fstrDYNAMIC%t_curr
       endif
 
-      do j = 1 ,ndof*nnod
-        fstrDYNAMIC%VEC1(j) = a1*fstrDYNAMIC%ACC(j,1) + a2*fstrDYNAMIC%VEL(j,1)
-        fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
-      enddo
+!      do j = 1 ,ndof*nnod
+!        fstrDYNAMIC%VEC1(j) = a1*fstrDYNAMIC%ACC(j,1) + a2*fstrDYNAMIC%VEL(j,1)
+!        fstrDYNAMIC%VEC2(j) = b1*fstrDYNAMIC%ACC(j,1) + b2*fstrDYNAMIC%VEL(j,1)
+!      enddo
 
       count_step = 0
       stepcnt = 0
@@ -202,10 +191,12 @@ contains
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
           if (fstrPARAM%nlgeom) then
-            call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+            !call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+            call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef )
           else
             if (.not. associated(hecMAT0)) then
-              call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+              !call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+              call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef)
               allocate(hecMAT0)
               call hecmw_mat_init(hecMAT0)
               call hecmw_mat_copy_profile(hecMAT, hecMAT0)
@@ -215,48 +206,51 @@ contains
             endif
           endif
 
-          if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
-            do j = 1 ,ndof*nnod
-              hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
-            enddo
-          endif
-          if( fstrDYNAMIC%ray_k/=0.d0 ) then
-            if( hecMESH%n_dof == 3 ) then
-              call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
-            else if( hecMESH%n_dof == 2 ) then
-              call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
-            else if( hecMESH%n_dof == 6 ) then
-              call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
-            endif
-          endif
+          !if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
+          !  do j = 1 ,ndof*nnod
+          !    hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
+          !  enddo
+          !endif
+          !if( fstrDYNAMIC%ray_k/=0.d0 ) then
+          !  if( hecMESH%n_dof == 3 ) then
+          !    call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+          !  else if( hecMESH%n_dof == 2 ) then
+          !    call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+          !  else if( hecMESH%n_dof == 6 ) then
+          !    call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
+          !  endif
+          !endif
 
           !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-          do j=1, hecMESH%n_node*  hecMESH%n_dof
-            hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
-              + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
-          enddo
+          !do j=1, hecMESH%n_node*  hecMESH%n_dof
+          !  hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
+          !    + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
+          !enddo
+          do j = 1, hecMESH%n_node*hecMESH%n_dof
+            hecMAT%B(j) = hecMAT%B(j) - fstrSOLID%QFORCE(j) + fstrSOLID%DFORCE(j)
+          end do
 
           !C for couple analysis
           call fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
             & fstrPARAM, fstrDYNAMIC, fstrCPL, restrt_step_num, PI, i)
 
-          do j = 1 ,nn*hecMAT%NP
-            hecMAT%D(j)  = c1* hecMAT%D(j)
-          enddo
-          do j = 1 ,nn*hecMAT%NPU
-            hecMAT%AU(j) = c1* hecMAT%AU(j)
-          enddo
-          do j = 1 ,nn*hecMAT%NPL
-            hecMAT%AL(j) = c1*hecMAT%AL(j)
-          enddo
-          do j=1,nnod
-            do kk=1,ndof
-              idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
-              imm = ndof*(j-1) + kk
-              hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIG%mass(imm)
-            enddo
-          enddo
+          !do j = 1 ,nn*hecMAT%NP
+          !  hecMAT%D(j)  = c1* hecMAT%D(j)
+          !enddo
+          !do j = 1 ,nn*hecMAT%NPU
+          !  hecMAT%AU(j) = c1* hecMAT%AU(j)
+          !enddo
+          !do j = 1 ,nn*hecMAT%NPL
+          !  hecMAT%AL(j) = c1*hecMAT%AL(j)
+          !enddo
+          !do j=1,nnod
+          !  do kk=1,ndof
+          !    idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
+          !    imm = ndof*(j-1) + kk
+          !    hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIG%mass(imm)
+          !  enddo
+          !enddo
 
           call hecmw_mat_clear( conMAT )
           call hecmw_mat_clear_b( conMAT )
@@ -306,9 +300,10 @@ contains
           call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
 
           ! ----- update the strain, stress, and internal force
-          do j=1,hecMESH%n_node*ndof
-            fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
+          do j = 1, hecMESH%n_node*ndof
+            fstrSOLID%dunode(j)  = fstrSOLID%dunode(j) + hecMAT%X(j)
           enddo
+
           call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
             &   fstrDYNAMIC%t_delta,iter, fstrDYNAMIC%strainEnergy )
 
@@ -364,7 +359,7 @@ contains
 
       !C for couple analysis
         call fstr_solve_dynamic_nlimplicit_couple_post(hecMESH, hecMAT, fstrSOLID, &
-          & fstrPARAM, fstrDYNAMIC, fstrCPL, a1, a2, a3, b1, b2, b3, i, is_cycle)
+          & fstrPARAM, fstrDYNAMIC, fstrCPL, coef, i, is_cycle)
         if(is_cycle) cycle
         exit
       enddo
@@ -372,18 +367,16 @@ contains
       !C-- new displacement, velocity and acceleration
       fstrDYNAMIC%kineticEnergy = 0.0d0
       do j = 1 ,ndof*nnod
-        fstrDYNAMIC%ACC (j,2) = -a1*fstrDYNAMIC%ACC(j,1) - a2*fstrDYNAMIC%VEL(j,1) + &
-          a3*fstrSOLID%dunode(j)
-        fstrDYNAMIC%VEL (j,2) = -b1*fstrDYNAMIC%ACC(j,1) - b2*fstrDYNAMIC%VEL(j,1) + &
-          b3*fstrSOLID%dunode(j)
+        fstrDYNAMIC%ACC (j,2) = -coef(1)*fstrDYNAMIC%ACC(j,1) - coef(2)*fstrDYNAMIC%VEL(j,1) + coef(3)*fstrSOLID%dunode(j)
+        fstrDYNAMIC%VEL (j,2) = -coef(4)*fstrDYNAMIC%ACC(j,1) - coef(5)*fstrDYNAMIC%VEL(j,1) + coef(6)*fstrSOLID%dunode(j)
         fstrDYNAMIC%ACC (j,1) = fstrDYNAMIC%ACC (j,2)
         fstrDYNAMIC%VEL (j,1) = fstrDYNAMIC%VEL (j,2)
 
-        fstrSOLID%unode(j)  = fstrSOLID%unode(j)+fstrSOLID%dunode(j)
+        fstrSOLID%unode(j)    = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
+        fstrDYNAMIC%DISP(j,1) = fstrSOLID%unode(j)
         fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
 
-        fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
-          0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
+        fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + 0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
       enddo
 
       !C-- output new displacement, velocity and acceleration
@@ -417,6 +410,27 @@ contains
 
     deallocate(coord)
   end subroutine fstr_solve_dynamic_nlimplicit_contactSLag
+
+  subroutine fstr_solve_dynamic_nlimplicit_get_coef(fstrDYNAMIC, coef)
+    implicit none
+    type(fstr_dynamic) :: fstrDYNAMIC
+    real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
+    real(kind=kreal) :: coef(6)
+
+    a1 = 0.5d0/fstrDYNAMIC%beta - 1.d0
+    a2 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
+    a3 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta*fstrDYNAMIC%t_delta)
+    b1 = (0.5d0*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0)*fstrDYNAMIC%t_delta
+    b2 = fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0
+    b3 = fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
+
+    coef(1) = a1
+    coef(2) = a2
+    coef(3) = a3
+    coef(4) = b1
+    coef(5) = b2
+    coef(6) = b3
+  end subroutine fstr_solve_dynamic_nlimplicit_get_coef
 
   subroutine fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM, fstrCPL)
     implicit none
@@ -468,7 +482,7 @@ contains
   end subroutine fstr_solve_dynamic_nlimplicit_couple_pre
 
   subroutine fstr_solve_dynamic_nlimplicit_couple_post(hecMESH, hecMAT, fstrSOLID, &
-    & fstrPARAM, fstrDYNAMIC, fstrCPL, a1, a2, a3, b1, b2, b3, i, is_cycle)
+    & fstrPARAM, fstrDYNAMIC, fstrCPL, coef, i, is_cycle)
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix)     :: hecMAT
@@ -476,9 +490,17 @@ contains
     type(fstr_param)         :: fstrPARAM
     type(fstr_dynamic)       :: fstrDYNAMIC
     type(fstr_couple)        :: fstrCPL
+    real(kind=kreal) :: coef(6)
     integer(kint) :: kkk0, kkk1, j, i, revocap_flag
     real(kreal) :: bsize, a1, a2, a3, b1, b2, b3
     logical :: is_cycle
+
+    a1 = coef(1)
+    a2 = coef(2)
+    a3 = coef(3)
+    b1 = coef(4)
+    b2 = coef(5)
+    b3 = coef(6)
 
     is_cycle = .false.
 

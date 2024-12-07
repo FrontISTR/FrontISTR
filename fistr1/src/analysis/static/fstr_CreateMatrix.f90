@@ -15,29 +15,35 @@ contains
 
   !---------------------------------------------------------------------*
   !> \brief 各種要素マトリックスを作成するサブルーチン
-  subroutine fstr_CreateMatrix( hecMESH, hecMAT, fstrSOLID, time, tincr)
-    !---------------------------------------------------------------------*
+  subroutine fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, time, tincr, coef)
+  !---------------------------------------------------------------------*
     use m_static_LIB
     use mMechGauss
     use m_dynamic_mass
 
+    type(fstr_dynamic)                   :: fstrDYNAMIC
     type (hecmwST_local_mesh)  :: hecMESH      !< mesh information
     type (hecmwST_matrix)      :: hecMAT       !< stiff_mat matrix
     type (fstr_solid)          :: fstrSOLID    !< we need boundary conditions of curr step
     real(kind=kreal),intent(in) :: time        !< current time
     real(kind=kreal),intent(in) :: tincr       !< time increment
-
+    real(kind=kreal),intent(in) :: coef(6)     !< time increment
     type( tMaterial ), pointer :: material     !< material information
-
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
     integer(kind=kint) :: nodLOCAL(20)
     integer(kind=kint) :: isect, ihead, cdsys_ID, sec_opt
-    real(kind=kreal)   :: stiff_mat(20*6, 20*6)
+    integer(kind=kint) :: in, jn
+    real(kind=kreal)   :: mat(20*6, 20*6), stiff_mat(20*6, 20*6), damp_mat(20*6, 20*6)
     real(kind=kreal)   :: mass_mat(20*6, 20*6), lumped(20*6)
     !real(kind=kreal)   :: lumped_mass(20*6)
     real(kind=kreal)   :: tt(20), ecoord(3,20)
     real(kind=kreal)   :: thick, rho, length, surf
-    real(kind=kreal)   :: u(6,20), du(6,20), coords(3,3), u_prev(6,20)
+    real(kind=kreal)   :: u(6,20), du(6*20), coords(3,3), u_prev(6,20)
+    real(kind=kreal)   :: Kb(20*6), df(20*6)
+    real(kind=kreal)   :: ray_M, ray_K
+    real(kind=kreal)   :: a1, a2, a3, b1, b2, b3, c1, c2
+    real(kind=kreal)   :: vecA(20*6), vecB(20*6), vecC(20*6)
+    real(kind=kreal)   :: acc(20*6), vec(20*6)
 
     ! ----- initialize
     call hecmw_mat_clear( hecMAT )
@@ -73,8 +79,10 @@ contains
             ecoord(i,j) = hecMESH%node(3*nodLOCAL(j)+i-3)
           enddo
           do i = 1, ndof
-            du(i,j) = fstrSOLID%dunode(ndof*nodLOCAL(j)+i-ndof)
-            u(i,j)  = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) + du(i,j)
+            du(ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
+            vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(in-1)+i,1)
+            acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(in-1)+i,1)
+            u(i,j)      = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) + du(ndof*(j-1)+i)
             u_prev(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof)
           enddo
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 )  &
@@ -134,7 +142,7 @@ contains
 
         else if( ic_type == 511) then
           !call STF_CONNECTOR( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-          !  stiffness(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn) )
+          !  damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn) )
 
         else if( ic_type == 611) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
@@ -200,11 +208,73 @@ contains
           call CreateMat_abort( ic_type, 1 )
         endif
 
-        ! get coefficient matrix
+        !> get coefficients      
+        if( material%is_elem_Rayleigh_damping )then
+          ray_m = material%variables(M_DAMPING_RM)
+          ray_k = material%variables(M_DAMPING_RK)
+        else
+          !ray_m = fstrDYNAMIC%ray_m
+          !ray_k = fstrDYNAMIC%ray_k
+        endif
 
-        ! assembling to global matrix
-        call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiff_mat)
+        a1 = coef(1)
+        a2 = coef(2)
+        a3 = coef(3)
+        b1 = coef(4)
+        b2 = coef(5)
+        b3 = coef(6)
 
+        !> LHS matrix section
+        !if(ic_type == 511)then
+
+        !else
+          c1 = 1.d0 + ray_k*b3
+          c2 = a3   + ray_m*b3
+          do i = 1, nn*ndof
+            do j = 1, nn*ndof
+              mat(j,i) = c1*stiff_mat(j,i) + c2*mass_mat(j,i)
+            enddo
+          enddo
+        !endif
+
+        call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, mat)
+
+        !> RHS vector section
+        do i = 1, nn*ndof
+          vecA(i) = - a3*du(i) + a2*vec(i) + a1*acc(i)
+          vecB(i) = - b3*du(i) + b2*vec(i) + b1*acc(i)
+        enddo
+
+        df = 0.0d0
+        Kb = 0.0d0
+
+        !if(ic_type == 511)then
+
+        !else
+          do i = 1, nn*ndof
+            do j = 1, nn*ndof
+              Kb(i) = Kb(i) + stiff_mat(i,j)*vecB(j)
+            enddo
+          enddo
+
+          do i = 1, nn*ndof
+            vecC(i) = vecA(i) + ray_m*vecB(i)
+          enddo
+
+          df(1:nn*ndof) = matmul(mass_mat(1:1:nn*ndof,1:1:nn*ndof), vecC(1:1:nn*ndof))
+
+          do i = 1, nn*ndof
+            df(i) = df(i) + ray_k*Kb(i)
+          enddo
+        !endif
+
+        do i = 1, nn
+          in = nodLOCAL(i)
+          do j = 1, ndof
+            jn = (in-1)*ndof + j
+            fstrSOLID%DFORCE(jn) = fstrSOLID%DFORCE(jn) + df((i-1)*ndof+j)
+          enddo
+        enddo 
       enddo      ! icel
       !$omp end do
       !$omp end parallel

@@ -714,8 +714,7 @@ contains
       else if( header_name == '!DAMPING') then
         if( cid >0 ) then
           if( fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, fstrSOLID%materials(cid)%variables, &
-              fstrSOLID%materials(cid)%is_elem_Rayleigh_damping_RM, &
-              fstrSOLID%materials(cid)%is_elem_Rayleigh_damping_RK)/=0 )  then
+              fstrSOLID%materials(cid)%is_elem_Rayleigh_damping)/=0 )  then
             write(*,*) '### Error: Fail in read in damping definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in damping definition : ', cid
             stop
@@ -1354,6 +1353,14 @@ contains
       deallocate(fstrSOLID%QFORCE           ,stat=ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, QFORCE>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%DFORCE) ) then
+      deallocate(fstrSOLID%DFORCE           ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, DFORCE>'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
