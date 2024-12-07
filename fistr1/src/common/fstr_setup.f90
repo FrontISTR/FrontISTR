@@ -1107,6 +1107,13 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%DFORCE( ntotal )      ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, DFORCE>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
 
     fstrSOLID%GL(:)=0.d0
     !        fstrSOLID%TOTAL_DISP(:)=0.d0
