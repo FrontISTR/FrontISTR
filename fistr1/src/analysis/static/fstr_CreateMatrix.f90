@@ -66,8 +66,9 @@ contains
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,cdsys_ID,coords, &
         !$omp&          material,thick,stiff_mat,isect,ihead,rho, length, surf, mass_mat, &
-        !$omp&          lumped, sec_opt), &
-        !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,time,tincr)
+        !$omp&          lumped, sec_opt,a1,a2,a3,b1,b2,b3,c1,c2,damp_mat,mat,vecA,vecB,vecC,Kb,df,in,jn), &
+        !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,time,tincr,fstrDYNAMIC, &
+        !$omp&         vec,acc,ray_m,ray_k,coef)
       !$omp do
 
       do icel = iS, iE
@@ -80,9 +81,9 @@ contains
             ecoord(i,j) = hecMESH%node(3*nodLOCAL(j)+i-3)
           enddo
           do i = 1, ndof
-            du(ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
-            vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(in-1)+i,1)
-            acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(in-1)+i,1)
+            du(ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(i-1)+i)
+            vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(i-1)+i,1)
+            acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(i-1)+i,1)
             u(i,j)      = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) + du(ndof*(j-1)+i)
             u_prev(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof)
           enddo
