@@ -277,7 +277,7 @@ contains
             vecC(i) = vecA(i) + ray_m*vecB(i)
           enddo
 
-          df(1:nn*ndof) = matmul(mass_mat(1:1:nn*ndof,1:1:nn*ndof), vecC(1:1:nn*ndof))
+          df(1:nn*ndof) = matmul(mass_mat(1:nn*ndof,1:nn*ndof), vecC(1:nn*ndof))
 
           do i = 1, nn*ndof
             df(i) = df(i) + ray_k*Kb(i)
@@ -290,7 +290,7 @@ contains
             jn = (in-1)*ndof + j
             fstrSOLID%DFORCE(jn) = fstrSOLID%DFORCE(jn) + df((i-1)*ndof+j)
           enddo
-        enddo 
+        enddo
       enddo      ! icel
       !$omp end do
       !$omp end parallel
