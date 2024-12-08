@@ -38,7 +38,7 @@ contains
     !real(kind=kreal)   :: lumped_mass(20*6)
     real(kind=kreal)   :: tt(20), ecoord(3,20)
     real(kind=kreal)   :: thick, rho, length, surf
-    real(kind=kreal)   :: u(6,20), du(6*20), coords(3,3), u_prev(6,20)
+    real(kind=kreal)   :: u(6,20), du(6*20), coords(3,3)
     real(kind=kreal)   :: Kb(20*6), df(20*6)
     real(kind=kreal)   :: ray_M, ray_K
     real(kind=kreal)   :: a1, a2, a3, b1, b2, b3, c1, c2
@@ -76,19 +76,20 @@ contains
         ! ----- nodal coordinate & displacement
         iiS = hecMESH%elem_node_index(icel-1)
         do j = 1, nn
-          nodLOCAL(j)= hecMESH%elem_node_item (iiS+j)
+          in = hecMESH%elem_node_item (iiS+j)
+          nodLOCAL(j) = in
           do i = 1, 3
-            ecoord(i,j) = hecMESH%node(3*nodLOCAL(j)+i-3)
+            ecoord(i,j) = hecMESH%node(3*(in-1)+i)
           enddo
           do i = 1, ndof
-            du(ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(i-1)+i)
-            vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(i-1)+i,1)
-            acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(i-1)+i,1)
-            u(i,j)      = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof) + du(ndof*(j-1)+i)
-            u_prev(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof)
+            du (ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
+            vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(in-1)+i,1)
+            acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(in-1)+i,1)
+            u(i,j) = fstrSOLID%unode(ndof*(in-1)+i) + du(ndof*(j-1)+i)
           enddo
-          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 )  &
+          if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres >0 )then
             tt(j)=fstrSOLID%temperature( nodLOCAL(j) )
+          endif
         enddo
 
         isect = hecMESH%section_ID(icel)
@@ -288,6 +289,7 @@ contains
           in = nodLOCAL(i)
           do j = 1, ndof
             jn = (in-1)*ndof + j
+!$omp atomic
             fstrSOLID%DFORCE(jn) = fstrSOLID%DFORCE(jn) + df((i-1)*ndof+j)
           enddo
         enddo
