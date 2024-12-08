@@ -65,10 +65,10 @@ contains
       ! ----- element loop
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nodLOCAL,i,ecoord,du,u,tt,cdsys_ID,coords, &
-        !$omp&          material,thick,stiff_mat,isect,ihead,rho, length, surf, mass_mat, &
-        !$omp&          lumped, sec_opt,a1,a2,a3,b1,b2,b3,c1,c2,damp_mat,mat,vecA,vecB,vecC,Kb,df,in,jn), &
+        !$omp&          material,thick,stiff_mat,isect,ihead,rho,length,surf,mass_mat,vec,acc, &
+        !$omp&          lumped,sec_opt,a1,a2,a3,b1,b2,b3,c1,c2,damp_mat,mat,vecA,vecB,vecC,Kb,df,in,jn), &
         !$omp&  shared(iS,iE,hecMESH,nn,ndof,fstrSOLID,ic_type,hecMAT,time,tincr,fstrDYNAMIC, &
-        !$omp&         vec,acc,ray_m,ray_k,coef)
+        !$omp&         ray_m,ray_k,coef)
       !$omp do
 
       do icel = iS, iE
