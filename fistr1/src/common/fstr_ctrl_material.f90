@@ -710,6 +710,8 @@ contains
     logical :: is_RD
 
     rcode = -1
+    is_RD = .false.
+
     RM = 0.0d0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'R ', 'RM ', 0, 'R', RM)
     if(rcode == 0)then
