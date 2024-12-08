@@ -185,19 +185,19 @@ contains
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
-          if (fstrPARAM%nlgeom) then
+          !if (fstrPARAM%nlgeom) then
             call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef )
-          else
-            if (.not. associated(hecMAT0)) then
-              call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef)
-              allocate(hecMAT0)
-              call hecmw_mat_init(hecMAT0)
-              call hecmw_mat_copy_profile(hecMAT, hecMAT0)
-              call hecmw_mat_copy_val(hecMAT, hecMAT0)
-            else
-              call hecmw_mat_copy_val(hecMAT0, hecMAT)
-            endif
-          endif
+          !else
+          !  if (.not. associated(hecMAT0)) then
+          !    call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef)
+          !    allocate(hecMAT0)
+          !    call hecmw_mat_init(hecMAT0)
+          !    call hecmw_mat_copy_profile(hecMAT, hecMAT0)
+          !    call hecmw_mat_copy_val(hecMAT, hecMAT0)
+          !  else
+          !    call hecmw_mat_copy_val(hecMAT0, hecMAT)
+          !  endif
+          !endif
 
           !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
