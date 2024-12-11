@@ -432,12 +432,13 @@ contains
   end function
 
   !> This subroutine does backward-Euler return calculation
-  subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, temp, hdflag )
+  subroutine BackwardEuler( matl, stress, plstrain, istat, fstat, plpotential, temp, hdflag )
     type( tMaterial ), intent(in)    :: matl        !< material properties
     real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
     real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
     integer, intent(inout)           :: istat       !< plastic state
     real(kind=kreal), intent(inout)  :: fstat(:)    !< plastic strain, back stress
+    real(kind=kreal), intent(inout)  :: plpotential    !< plastic potential
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
@@ -449,7 +450,7 @@ contains
     ytype = getYieldFunction( matl%mtype )
     select case (ytype)
     case (0)
-      call BackwardEuler_VM( matl, stress, plstrain, istat, fstat, temp, hdflag_in )
+      call BackwardEuler_VM( matl, stress, plstrain, istat, fstat, plpotential, temp, hdflag_in )
     case (1)
       call BackwardEuler_MC( matl, stress, plstrain, istat, fstat, temp, hdflag_in )
     case (2)
@@ -460,12 +461,13 @@ contains
   end subroutine BackwardEuler
 
   !> This subroutine does backward-Euler return calculation for von Mises
-  subroutine BackwardEuler_VM( matl, stress, plstrain, istat, fstat, temp, hdflag )
+  subroutine BackwardEuler_VM( matl, stress, plstrain, istat, fstat, plpotential, temp, hdflag )
     type( tMaterial ), intent(in)    :: matl        !< material properties
     real(kind=kreal), intent(inout)  :: stress(6)   !< trial->real stress
     real(kind=kreal), intent(in)     :: plstrain    !< plastic strain till current substep
     integer, intent(inout)           :: istat       !< plastic state
     real(kind=kreal), intent(inout)  :: fstat(:)    !< plastic strain, back stress
+    real(kind=kreal), intent(inout)  :: plpotential    !< plastic potential
     real(kind=kreal), intent(in)     :: temp  !< temperature
     integer(kind=kint), intent(in)   :: hdflag  !> return only hyd and dev term if specified
 

@@ -562,9 +562,8 @@ contains
     WG=det
     qf(1:nn*ndof) = qf(1:nn*ndof)+matmul( stress(1:6), B(1:6,1:nn*ndof) )*WG
 
-    ! calculate strain energy
-    gausses(1)%strain_energy = 0.5d0*dot_product(gausses(1)%stress(1:6)+gausses(1)%stress_bak(1:6), & 
-    &  gausses(1)%strain(1:6)-gausses(1)%strain_bak(1:6))*WG
+    ! integrate strain energy
+    gausses(1)%strain_energy = gausses(1)%strain_energy*WG
 
   end subroutine
 
