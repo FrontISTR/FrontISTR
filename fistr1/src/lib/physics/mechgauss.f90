@@ -23,6 +23,7 @@ module mMechGauss
     real(kind=kreal)          :: strain_out(6)          !< strain
     real(kind=kreal)          :: stress_out(6)          !< stress
     real(kind=kreal)          :: strain_energy          !< strain energy
+    real(kind=kreal)          :: plpotential            !< plastic potential
   end type
 
   ! ----------------------------------------------------------------------------

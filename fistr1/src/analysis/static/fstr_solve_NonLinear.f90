@@ -1157,7 +1157,8 @@ contains
         ! pot_S = h_prime_S
 
         alpha_E = alpha_E * C_line_search
-        call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
+        call fstr_apply_alpha(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, &
+                                     &  fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
       ! else
       !   alpha_tmp = 2.0d0*alpha_E
       !   h_prime_tmp = 0.0d0 ! dummy value
@@ -1250,8 +1251,8 @@ contains
     end if
   end subroutine fstr_update_range
 
-  subroutine fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
-     alpha_a, h_prime_a, pot_a, alpha_b, h_prime_b, pot_b, alpha_c, h_prime_c, pot_c, &
+  subroutine fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, &
+    fstrPARAM, z_k, pot_0, alpha_a, h_prime_a, pot_a, alpha_b, h_prime_b, pot_b, alpha_c, h_prime_c, pot_c, &
      alpha_a_bar, h_prime_a_bar, pot_a_bar, alpha_b_bar, h_prime_b_bar, pot_b_bar)
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -1383,8 +1384,8 @@ contains
       stop
     endif
 
-    call fstr_init_line_search_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime_0, pot_0, &
-      alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E)
+    call fstr_init_line_search_range(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, &
+    fstrPARAM, z_k, h_prime_0, pot_0, alpha_S, h_prime_S, pot_S,  alpha_E, h_prime_E, pot_E)
     if( hecMESH%my_rank == 0 ) then
       write(6,'(a, 6es27.16e3)') 'range initialized: alpha_S, alpha_E, h_prime_S, h_prime_E, pot_S, pot_E', &
           &  alpha_S, alpha_E, h_prime_S, h_prime_E, pot_S, pot_E
@@ -1465,6 +1466,7 @@ contains
       (wolfe1_left>=wolfe1_right) &
       .and. (wolfe2_left >= wolfe2_right) &
       .and. (pot_c <= pot_0 + pot_eps)
-    if (flag_converged) write(6,'(a, 6es27.16e3)') 'aWolfe: ', wolfe1_left, wolfe1_right, wolfe2_left, wolfe2_right, pot_c, pot_0 + (eps_wolfe*C_Wolfe)
+    if (flag_converged) write(6,'(a, 6es27.16e3)') 'aWolfe: ', wolfe1_left, wolfe1_right, &
+    &  wolfe2_left, wolfe2_right, pot_c, pot_0 + (eps_wolfe*C_Wolfe)
   end function fstr_approx_wolfe_condition
 end module m_fstr_NonLinearMethod
