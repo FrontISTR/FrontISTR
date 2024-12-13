@@ -643,8 +643,8 @@ contains
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
       else
         gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+        gauss%strain_energy = 0.5d0*dot_product(gauss%stress(1:6),dstrain(1:6))
       end if
-      gauss%strain_energy = 0.5d0*dot_product(gauss%stress(1:6),dstrain(1:6))
 
     else if( flag == UPDATELAG ) then
       !  CALL GEOMAT_C3( gauss%stress, mat )
