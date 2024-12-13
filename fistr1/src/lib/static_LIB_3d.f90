@@ -630,7 +630,7 @@ contains
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
         gauss%stress = real(gauss%stress)
       end if
-      gauss%strain_energy = dot_product(gauss%stress_bak(1:6),dstrain(1:6)-gauss%strain_bak(1:6))
+      gauss%strain_energy = gauss%strain_energy_bak+dot_product(gauss%stress_bak(1:6),dstrain(1:6)-gauss%strain_bak(1:6))
       gauss%strain_energy = gauss%strain_energy+0.5d0*dot_product(dstress,dstrain(1:6)-gauss%strain_bak(1:6))
 
       
@@ -644,6 +644,7 @@ contains
       else
         gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
       end if
+      gauss%strain_energy = 0.5d0*dot_product(gauss%stress(1:6),dstrain(1:6))
 
     else if( flag == UPDATELAG ) then
       !  CALL GEOMAT_C3( gauss%stress, mat )
@@ -682,6 +683,8 @@ contains
           end if
         end if
       end if
+      gauss%strain_energy = gauss%strain_energy_bak+dot_product(gauss%stress(1:6),dstrain(1:6)) !s_t*de+de*C*de
+      gauss%strain_energy = gauss%strain_energy-0.5d0*dot_product(dstress(1:6),dstrain(1:6))
 
     end if
 

@@ -480,6 +480,7 @@ contains
     logical          :: kinematic, ierr
     real(kind=kreal) :: betan, back(6)
 
+    plpotential = 0.d0
     kinematic = isKinematicHarden( matl%mtype )
     if( kinematic ) back(1:6) = fstat(8:13)
 
@@ -490,7 +491,7 @@ contains
     J2 = 0.5d0* dot_product( devia(1:3), devia(1:3) ) +  &
       dot_product( devia(4:6), devia(4:6) )
 
-    eqvs = sqrt( 3.d0*J2 )
+    eqvs = dsqrt( 3.d0*J2 )
     yd = calCurrYield( matl, plstrain, temp )
     f = eqvs - yd
 
@@ -555,6 +556,11 @@ contains
     stress(:)= stress(:)+back(:)
 
     fstat(1) = pstrain
+
+    H= calHardenCoeff( matl, pstrain, temp ) !a
+    yd = calCurrYield( matl, plstrain, temp ) !b
+    plpotential = -0.5d0*(eqvs-yd)*(eqvs-yd)/(H+3.d0*G)
+
   end subroutine BackwardEuler_VM
 
   !> This subroutine does backward-Euler return calculation for Mohr-Coulomb

@@ -294,6 +294,7 @@ contains
         do i = 1, ngauss
           fstrSOLID%elements(icel)%gausses(i)%strain_bak = fstrSOLID%elements(icel)%gausses(i)%strain
           fstrSOLID%elements(icel)%gausses(i)%stress_bak = fstrSOLID%elements(icel)%gausses(i)%stress
+          fstrSOLID%elements(icel)%gausses(i)%strain_energy_bak = fstrSOLID%elements(icel)%gausses(i)%strain_energy
         enddo
       enddo
     enddo

@@ -266,7 +266,7 @@ contains
 
     ! Set external load
     do i=1,ndof*hecMESH%n_node
-      totload(i) = fstrSOLID%GL(i)
+      totload(i) = 0.5d0*(fstrSOLID%GL(i)+fstrSOLID%GL0(i))
     end do
     !    Consiter Spring
     call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, totload )
@@ -287,6 +287,7 @@ contains
       call hecmw_allreduce_R1(hecMESH, internal_work, hecmw_sum)
       ! calc external work
       call hecmw_innerProduct_R(hecMESH,ndof,totload,fstrSOLID%dunode,extenal_work)      
+      extenal_work = dot_product(totload,fstrSOLID%dunode)
       potential = internal_work - extenal_work
     else if( ptype == 2 ) then ! multiply internal force with displacement
       ! calc internal work
@@ -305,6 +306,7 @@ contains
     else
       stop "ptype error in fstr_get_potential"
     endif
+    !write(IMSG,*) "internal_work,extenal_work",internal_work,extenal_work
   end function fstr_get_potential
 
   function fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,ptype) result(potential)

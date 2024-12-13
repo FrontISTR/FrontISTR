@@ -127,6 +127,9 @@ contains
     enddo
     ! ----- end of inner loop
 
+    call plot_potential_graph( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
+    restrt_step_num, sub_step, ctime, dtime, iter, tincr )
+
     fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
     fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
@@ -143,6 +146,53 @@ contains
     deallocate(P)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
   end subroutine fstr_Newton
+
+  subroutine plot_potential_graph( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
+    restrt_step_num, sub_step, ctime, dtime, iter, tincr )
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    integer, intent(in)                   :: sub_step  !< substep number of current loading step
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    integer(kind=kint) :: restrt_step_num
+
+    integer(kind=kint) :: iter, i, j
+    integer(kind=kint), parameter :: ntot = 30
+    real(kind=kreal)   :: tincr, alpha, dulen
+    real(kind=kreal) :: pot(3)
+    real(kind=kreal), allocatable :: dunode_bak(:)
+
+    dulen = dsqrt(dot_product(fstrSOLID%dunode(:),fstrSOLID%dunode(:)))
+    write(IMSG,*) "dulen",dulen
+
+    allocate(dunode_bak(size(fstrSOLID%dunode)))
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      dunode_bak(i) = fstrSOLID%dunode(i)
+    enddo
+
+    do i=-ntot,ntot
+      alpha = 5.d-3*dble(i)/dble(ntot)
+      hecMAT%X(:) = alpha*fstrSOLID%dunode(:)
+      do j=1, size(fstrSOLID%dunode)
+        fstrSOLID%dunode(j) = dunode_bak(j)+hecMAT%X(j)
+      enddo
+      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+      pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+      pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
+      pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
+      write(IMSG,'(I4,5(",",1pE16.9))') i,alpha,alpha*dulen,pot(1:3)
+    enddo
+
+    do i=1, size(fstrSOLID%dunode)
+      fstrSOLID%dunode(i) = dunode_bak(i)
+    enddo
+    hecMAT%X(:) = 0.d0
+    call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+  end subroutine
 
 
   !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
@@ -685,6 +735,7 @@ contains
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    fstrSOLID%GL0(:) = fstrSOLID%GL(:) !store external load at du=0
 
     !calc initial potential
     !! initialize du for non-zero Dirichlet condition
