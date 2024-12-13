@@ -384,6 +384,7 @@ module m_fstr
     integer(kind=kint) :: CutBack_stat     !< status of cutback control
 
     real(kind=kreal), pointer :: GL          (:)           !< external force
+    real(kind=kreal), pointer :: GL0         (:)           !< external force
     real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
     real(kind=kreal), pointer :: QFORCE_bak  (:)           !< equivalent nodal force at the beginning of curr step
@@ -710,6 +711,7 @@ contains
     nullify( S%EPSTRAIN_VECT )
     nullify( S%ENQM )
     nullify( S%GL          )
+    nullify( S%GL0         )
     nullify( S%QFORCE      )
     nullify( S%VELOCITY_ngrp_ID )
     nullify( S%VELOCITY_ngrp_type )
