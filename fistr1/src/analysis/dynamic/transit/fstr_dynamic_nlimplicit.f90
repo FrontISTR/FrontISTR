@@ -155,10 +155,10 @@ contains
 
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           if (fstrPARAM%nlgeom) then
-            call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+            call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
           else
             if (.not. associated(hecMAT0)) then
-              call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+              call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
               allocate(hecMAT0)
               call hecmw_mat_init(hecMAT0)
               call hecmw_mat_copy_profile(hecMAT, hecMAT0)
@@ -504,10 +504,10 @@ contains
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
           if (fstrPARAM%nlgeom) then
-            call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+            call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
           else
             if (.not. associated(hecMAT0)) then
-              call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
+              call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta )
               allocate(hecMAT0)
               call hecmw_mat_init(hecMAT0)
               call hecmw_mat_copy_profile(hecMAT, hecMAT0)

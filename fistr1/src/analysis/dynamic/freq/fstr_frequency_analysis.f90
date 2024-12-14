@@ -671,7 +671,7 @@ contains
 
 
     fstrSOLID%dunode = 0.d0
-    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
+    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrPARAM, 0.d0, 0.d0 )
     call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)

@@ -81,6 +81,10 @@ module m_fstr
   integer(kind=kint), parameter :: kFLOADCASE_RE = 1
   integer(kind=kint), parameter :: kFLOADCASE_IM = 2
 
+  !> stiffness calculation
+  integer(kind=kint), parameter :: kstfCONSISTENT = 1 
+  integer(kind=kint), parameter :: kstfNUMERICAL  = 2 
+
   !> PARALLEL EXECUTION
   integer(kind = kint) :: myrank
   integer(kind = kint) :: nprocs
@@ -143,6 +147,7 @@ module m_fstr
   type fstr_param
     integer(kind=kint) :: solution_type !< solution type number
     integer(kind=kint) :: solver_method !< solver method number
+    integer(kind=kint) :: stiffness_type !< stiffness calculation method number
     logical            :: nlgeom        !< is geometrical nonlinearity considered
 
     !> STATIC !HEAT
@@ -972,6 +977,7 @@ contains
     fstrPARAM%solution_type = kstSTATIC
     fstrPARAM%nlgeom        = .false.
     fstrPARAM%solver_method = ksmCG
+    fstrPARAM%stiffness_type = kstfCONSISTENT
 
     !!STATIC !HEAT
     fstrPARAM%analysis_n = 0
@@ -1136,5 +1142,21 @@ contains
       call fstr_solid_phys_zero(fstrSOLID%BEAM)
     end if
   end subroutine fstr_solid_phys_clear
+
+  integer(kind=kint) function is_initial_temperature_exists( g_InitialCnd )
+    implicit none
+    type( tInitialCondition ), pointer :: g_InitialCnd(:)
+    integer(kind=kint) :: j
+
+    is_initial_temperature_exists = 0
+    if( associated(g_InitialCnd) ) then
+      do j=1,size(g_InitialCnd)
+        if( g_InitialCnd(j)%cond_name=="temperature" ) then
+          is_initial_temperature_exists=j
+          exit
+        endif
+      end do
+    endif
+  end function
 
 end module m_fstr

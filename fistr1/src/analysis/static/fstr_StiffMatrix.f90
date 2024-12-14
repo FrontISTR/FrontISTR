@@ -13,21 +13,18 @@ module m_fstr_StiffMatrix
   private
   public :: fstr_StiffMatrix
 
-  integer(kind=kint), parameter :: kstfCONSISTENT = 1 
-  integer(kind=kint), parameter :: kstfNUMERICAL  = 2 
-  integer(kind=kint) :: MATTYPE = kstfNUMERICAL
-
 contains
 
   !---------------------------------------------------------------------*
   !> \brief This subroutine creates tangential stiffness matrix
-  subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, time, tincr)
+  subroutine fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, fstrPARAM, time, tincr)
     !---------------------------------------------------------------------*
     use mMechGauss
 
     type (hecmwST_local_mesh)  :: hecMESH      !< mesh information
     type (hecmwST_matrix)      :: hecMAT       !< linear equation, its right side modified here
     type (fstr_solid)          :: fstrSOLID    !< we need boundary conditions of curr step
+    type (fstr_param)          :: fstrPARAM !< type fstr_param
     real(kind=kreal),intent(in) :: time        !< current time
     real(kind=kreal),intent(in) :: tincr       !< time increment
 
@@ -38,24 +35,14 @@ contains
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
     real(kind=kreal)   :: u(6,fstrSOLID%max_ncon), du(6,fstrSOLID%max_ncon), coords(3,3), u_prev(6,fstrSOLID%max_ncon)
     integer            :: isect, ihead, cdsys_ID, initt
+    integer            :: stftype
 
     ! ----- initialize
     call hecmw_mat_clear( hecMAT )
-
+    stftype = fstrPARAM%stiffness_type
     ndof = hecMAT%NDOF
 
-    if( MATTYPE == kstfNUMERICAL ) then
-      ! if initial temperature exists
-      initt = 0
-      if( associated(g_InitialCnd) ) then
-          do j=1,size(g_InitialCnd)
-            if( g_InitialCnd(j)%cond_name=="temperature" ) then
-              initt=j
-              exit
-            endif
-          end do
-      endif
-    endif
+    if( stftype == kstfNUMERICAL ) initt = is_initial_temperature_exists( g_InitialCnd )
 
     do itype= 1, hecMESH%n_elem_type
       is= hecMESH%elem_type_index(itype-1) + 1
@@ -70,7 +57,7 @@ contains
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,nn,j,nodLOCAL,i,ecoord,du,u,u_prev,tt,tt0,ttn,cdsys_ID,coords, &
         !$omp&          thick,stiffness,isect,ihead), &
-        !$omp&  shared(iS,iE,hecMESH,ndof,fstrSOLID,ic_type,hecMAT,time,tincr,initt,g_InitialCnd,MATTYPE)
+        !$omp&  shared(iS,iE,hecMESH,ndof,fstrSOLID,ic_type,hecMAT,time,tincr,initt,g_InitialCnd,stftype)
       !$omp do
       do icel= is, iE
 
@@ -101,11 +88,11 @@ contains
         thick = hecMESH%section%sect_R_item(ihead+1)
         if( getSpaceDimension( ic_type )==2 ) thick =1.d0
 
-        if( MATTYPE == kstfCONSISTENT ) then
+        if( stftype == kstfCONSISTENT ) then
           call fstr_StiffMatrix_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u, du, u_prev, fstrSOLID%sections(isect), & 
             & hecMESH%section%sect_R_item(ihead+1:), cdsys_ID, coords, stiffness, fstrSOLID%elements(icel), &
             & time, tincr, tt, thick )
-        else if( MATTYPE == kstfNUMERICAL ) then
+        else if( stftype == kstfNUMERICAL ) then
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             if( isElastoplastic(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype) .or. &
                 fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
@@ -274,28 +261,14 @@ contains
     if( ic_type==341 .and. section%elemopt341 == kel341SESNS ) stop "SELECTIVE ESNS does not support numerical stiffness"
     if( ic_type==361 .and. section%elemopt361 == kel361IC ) stop " incompatible element does not support numerical stiffness"
 
-    u_ori(1:ndof,1:nn) = u(1:ndof,1:nn)-du(1:ndof,1:nn)
     ddu(1:ndof,1:nn) = 0.d0
 
-    ! create element size
-    call get_element_size(nn,ndof,ecoord,pdu(1:ndof))
-    pdu(1:ndof) = 1.d-6*pdu(1:ndof)
+    call get_bounding_box(nn,ndof,du,pdu(1:ndof))
+    delta_u = max(1.d-6*max(pdu(1),pdu(2),pdu(3)),1.d-8)
 
     do i=1,nn
       do idof=1,ndof
         idx = (i-1)*ndof+idof
-        if( dabs(du(idof,i)) < 1.d-8 ) then
-          delta_u = pdu(idof)
-        else
-          delta_u = dabs(du(idof,i))*1.d-6
-        endif
-
-        ! calc f(u+2*ddu)
-        du_tmp(1:ndof,1:nn) = du(1:ndof,1:nn)
-        du_tmp(idof,i) = du_tmp(idof,i) + 2.d0*delta_u
-        call fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u_prev, du_tmp, ddu, section, & 
-        & sect_R_item, cdsys_ID, coords, qfp2, element, &
-        & 1, time, tincr, tt, tt0, ttn, thick )
 
         ! calc f(u+ddu)
         du_tmp(1:ndof,1:nn) = du(1:ndof,1:nn)
@@ -305,25 +278,16 @@ contains
         & 1, time, tincr, tt, tt0, ttn, thick )
     
         ! calc f(u-ddu)
-        du_tmp(1:ndof,1:nn) = du(1:ndof,1:nn)
-        du_tmp(idof,i) = du_tmp(idof,i) - delta_u
+        du_tmp(idof,i) = du_tmp(idof,i) - 2.d0*delta_u
         call fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u_prev, du_tmp, ddu, section, & 
         & sect_R_item, cdsys_ID, coords, qfm, element, &
         & 1, time, tincr, tt, tt0, ttn, thick )
 
-        ! calc f(u-2*ddu)
-        du_tmp(1:ndof,1:nn) = du(1:ndof,1:nn)
-        du_tmp(idof,i) = du_tmp(idof,i) - 2.d0*delta_u
-        call fstr_UpdateNewton_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u_prev, du_tmp, ddu, section, & 
-        & sect_R_item, cdsys_ID, coords, qfm2, element, &
-        & 1, time, tincr, tt, tt0, ttn, thick )
-
-        ! calc df/du = (f(u+ddu)-f(u-ddu))/du
+        ! calc df/du as (f(u+ddu)-f(u-ddu))/2du
         do j=1,nn
           do jdof=1,ndof
             jdx = (j-1)*ndof+jdof
-            ! 5point
-            stiffness(idx,jdx) = (qfm2(jdx)-8.d0*qfm(jdx)+8.d0*qfp(jdx)-qfp2(jdx))/(12.d0*delta_u)
+            stiffness(idx,jdx) = (qfp(jdx)-qfm(jdx))/(2.d0*delta_u)
           enddo
         enddo
   
@@ -332,7 +296,7 @@ contains
 
   contains
 
-    subroutine get_element_size(nn,ndof,ecoord,esize)
+    subroutine get_bounding_box(nn,ndof,ecoord,esize)
       integer, intent(in)             :: nn
       integer, intent(in)             :: ndof
         real(kind=kreal),intent(in)   :: ecoord(:,:) 

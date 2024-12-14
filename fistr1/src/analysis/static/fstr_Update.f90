@@ -55,15 +55,7 @@ contains
     tt = 0.d0
 
     ! if initial temperature exists
-    initt = 0
-    if( associated(g_InitialCnd) ) then
-        do j=1,size(g_InitialCnd)
-          if( g_InitialCnd(j)%cond_name=="temperature" ) then
-            initt=j
-            exit
-          endif
-        end do
-    endif
+    initt = is_initial_temperature_exists( g_InitialCnd )
 
     ! --------------------------------------------------------------------
     !      updated
@@ -274,7 +266,6 @@ contains
 
     endif    
   end subroutine
-
 
   !> Update elastiplastic status
   subroutine fstr_UpdateState( hecMESH, fstrSOLID, tincr)
