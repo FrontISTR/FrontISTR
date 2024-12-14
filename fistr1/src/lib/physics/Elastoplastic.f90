@@ -497,9 +497,11 @@ contains
 
     if( abs(f/yd)<tol ) then  ! yielded
       istat = VM_PLASTIC
+      fstat(1) = 0.d0
       return
     elseif( f<0.d0 ) then   ! not yielded or unloading
       istat = VM_ELASTIC
+      fstat(1) = 0.d0
       return
     endif
     if( hdflag == 2 ) return
