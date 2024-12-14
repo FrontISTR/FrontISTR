@@ -9,6 +9,7 @@ module m_fstr_solve_NLGEOM
   use m_static_lib
   use m_static_output
   use m_fstr_NonLinearMethod
+  use m_fstr_QuasiNewton
   use m_fstr_Restart
   use fstr_matrix_con_contact
   use m_fstr_TimeInc
@@ -151,10 +152,14 @@ contains
         time_1 = hecmw_Wtime()
 
         ! analysis algorithm ( Newton-Rapshon Method )
-        write(*,*) "nonliner solver method(1:newton,2:quasi-newton)",fstrPARAM%nlsolver_method
         if( .not. is_interaction_active ) then
-          call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
+          if( fstrPARAM%nlsolver_method == knsmNEWTON ) then
+            call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
             restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
+          else if( fstrPARAM%nlsolver_method == knsmQUASINEWTON ) then
+            call fstr_Quasi_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
+            restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
+          endif
         else
           if( fstrPARAM%contact_algo == kcaSLagrange ) then
             call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT,  &

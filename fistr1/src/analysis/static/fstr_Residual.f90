@@ -287,7 +287,6 @@ contains
       call hecmw_allreduce_R1(hecMESH, internal_work, hecmw_sum)
       ! calc external work
       call hecmw_innerProduct_R(hecMESH,ndof,totload,fstrSOLID%dunode,extenal_work)      
-      extenal_work = dot_product(totload,fstrSOLID%dunode)
       potential = internal_work - extenal_work
     else if( ptype == 2 ) then ! multiply internal force with displacement
       ! calc internal work
