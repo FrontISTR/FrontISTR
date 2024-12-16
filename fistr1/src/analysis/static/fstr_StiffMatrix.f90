@@ -88,7 +88,7 @@ contains
         thick = hecMESH%section%sect_R_item(ihead+1)
         if( getSpaceDimension( ic_type )==2 ) thick =1.d0
 
-        if( stftype == kstfCONSISTENT ) then
+        if( stftype == kstfANALYTICAL ) then
           call fstr_StiffMatrix_elem( ic_type, nn, ndof, nodLOCAL, ecoord, u, du, u_prev, fstrSOLID%sections(isect), & 
             & hecMESH%section%sect_R_item(ihead+1:), cdsys_ID, coords, stiffness, fstrSOLID%elements(icel), &
             & time, tincr, tt, thick )

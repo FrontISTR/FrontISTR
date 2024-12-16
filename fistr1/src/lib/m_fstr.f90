@@ -82,7 +82,7 @@ module m_fstr
   integer(kind=kint), parameter :: kFLOADCASE_IM = 2
 
   !> stiffness calculation
-  integer(kind=kint), parameter :: kstfCONSISTENT = 1 
+  integer(kind=kint), parameter :: kstfANALYTICAL = 1 
   integer(kind=kint), parameter :: kstfNUMERICAL  = 2 
 
   !> PARALLEL EXECUTION
@@ -977,7 +977,7 @@ contains
     fstrPARAM%solution_type = kstSTATIC
     fstrPARAM%nlgeom        = .false.
     fstrPARAM%solver_method = ksmCG
-    fstrPARAM%stiffness_type = kstfCONSISTENT
+    fstrPARAM%stiffness_type = kstfANALYTICAL
 
     !!STATIC !HEAT
     fstrPARAM%analysis_n = 0

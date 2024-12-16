@@ -1798,7 +1798,7 @@ contains
 
     integer(kind=kint) :: rcode
 
-    rcode = fstr_ctrl_get_SOLUTION( ctrl, P%PARAM%solution_type, P%PARAM%nlgeom )
+    rcode = fstr_ctrl_get_SOLUTION( ctrl, P%PARAM%solution_type, P%PARAM%nlgeom, P%PARAM%stiffness_type )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_SOLUTION

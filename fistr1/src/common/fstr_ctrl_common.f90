@@ -36,10 +36,11 @@ contains
 
 
   !> Read in !SOLUTION
-  function fstr_ctrl_get_SOLUTION( ctrl, type, nlgeom )
+  function fstr_ctrl_get_SOLUTION( ctrl, type, nlgeom, stftype )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: type
     logical            :: nlgeom
+    integer(kind=kint) :: stftype
     integer(kind=kint) :: fstr_ctrl_get_SOLUTION
 
     integer(kind=kint) :: ipt
@@ -50,6 +51,9 @@ contains
     s = 'ELEMCHECK,STATIC,EIGEN,HEAT,DYNAMIC,NLSTATIC,STATICEIGEN,NZPROF '
     if( fstr_ctrl_get_param_ex( ctrl,      'TYPE ',     s,    1,   'P',  type )/= 0) return
     type = type -1
+
+    s = 'ANALYTICAL,NUMERICAL '
+    if( fstr_ctrl_get_param_ex( ctrl,    'STF_TYPE ',   s,    0,   'P',  stftype )/= 0) return
 
     ipt=0
     if( fstr_ctrl_get_param_ex( ctrl,    'NONLINEAR ',  '# ',    0,   'E',   ipt )/= 0) return
