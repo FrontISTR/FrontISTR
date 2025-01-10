@@ -186,6 +186,7 @@ module m_fstr
     !> for contact analysis
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
+    type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
 
     !> for auto increment and cutback
     type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control

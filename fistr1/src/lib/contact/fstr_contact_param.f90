@@ -13,6 +13,8 @@ module mContactParam
   private
   public :: tContactParam
   public :: init_ContactParam
+  public :: tContactInterference
+  public :: init_Contact_IF
 
   type tContactParam
     character(HECMW_NAME_LEN) :: name    !< name of contact parameter set
@@ -27,6 +29,14 @@ module mContactParam
     real(kind=kreal) :: TENSILE_FORCE    !< tensile force to be judged as free node
     real(kind=kreal) :: BOX_EXP_RATE     !< recommended: (1.0..2.0] (the smaller the faster, the bigger the safer)
   end type tContactParam
+
+  type tContactInterference
+    integer(kind=kint) :: if_type
+    real(kind=kreal)   :: etime
+    real(kind=kreal)   :: initial_pos
+    real(kind=kreal)   :: end_pos
+    character(HECMW_NAME_LEN) :: cp_name
+  end type tContactInterference
 
 contains
 
@@ -43,5 +53,14 @@ contains
     cparam%TENSILE_FORCE   =-1.d-8
     cparam%BOX_EXP_RATE    = 1.05d0
   end subroutine init_ContactParam
+
+  subroutine init_Contact_IF( contact_if )
+    type(tContactInterference), intent(out) :: contact_if
+    contact_if%if_type     = 1
+    contact_if%etime       = 1.0d0
+    contact_if%initial_pos = 0.d0
+    contact_if%end_pos     = 0.d0
+    contact_if%cp_name = ''
+  end subroutine init_Contact_IF
 
 end module mContactParam
