@@ -817,6 +817,7 @@ contains
     ! F=-MA-KU+F_ext
     loadvecRe_total(:) = -loadvecRe_total(:)+loadvecRe(:)
     loadvecRe_total(:) = -loadvecRe_total(:)+loadvecRe(:)
+    loadvecIm_total(:) = loadvecIm(:)
   end subroutine
 
   subroutine UpdateStress_by_dva(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT, dvaRe, dvaIm)  
