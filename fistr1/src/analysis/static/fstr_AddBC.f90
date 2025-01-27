@@ -16,6 +16,7 @@ contains
     use mContact
     use m_static_LIB_1d
     use m_utilities
+    use m_fstr_TimeInc
     integer, intent(in)                  :: cstep !< current step
     type(hecmwST_local_mesh)             :: hecMESH !< hecmw mesh
     type(hecmwST_matrix)                 :: hecMAT !< hecmw matrix
@@ -26,24 +27,18 @@ contains
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
-    real(kind=kreal)   :: RHS0, RHS, factor
+    real(kind=kreal)   :: RHS0, RHS, factor, factor0, ctime
     integer(kind=kint) :: ndof, grpid, istot
 
     !for rotation
-    integer(kind=kint) :: n_rot, rid
+    integer(kind=kint) :: n_rot, rid, flag_u
     type(tRotInfo)     :: rinfo
     real(kind=kreal)   :: ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3), cddisp(3)
-
+  
     !
     ndof = hecMAT%NDOF
-    factor = fstrSOLID%FACTOR(2)-fstrSOLID%FACTOR(1)
-
-    if( cstep<=fstrSOLID%nstep_tot .and. fstrSOLID%step_ctrl(cstep)%solution==stepVisco ) then
-      factor = 0.d0
-      if( fstrSOLID%FACTOR(1) < 1.d-10 ) factor = 1.d0
-    endif
-    if( iter>1 ) factor=0.d0
+    ctime = fstr_get_time()+fstr_get_timeinc()
 
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
@@ -51,6 +46,19 @@ contains
     !   ----- Prescibed displacement Boundary Conditions
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      flag_u = 1
+      if( iter>1 ) then
+        factor=0.d0
+      else
+        call table_amp(hecMESH,fstrSOLID,cstep,ig0,fstr_get_time(),factor0,flag_u)
+        call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
+        factor = factor - factor0
+        if(fstrSOLID%step_ctrl(cstep)%solution==stepVisco)then
+          factor = 0.d0
+          if(factor0 < 1.d-10) factor = 1.d0
+        endif
+      endif
+
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
       RHS0 = fstrSOLID%BOUNDARY_ngrp_val(ig0)
@@ -117,6 +125,7 @@ contains
     enddo
 
     !Apply rotational boundary condition
+    !need to fix!!
     do rid = 1, n_rot
       if( .not. rinfo%conds(rid)%active ) cycle
       cdiff = 0.d0
