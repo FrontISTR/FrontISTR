@@ -33,14 +33,6 @@ module hecmw_precond_SSOR_44
   integer(kind=kint), pointer :: itemU(:) => null()
   real(kind=kreal), pointer :: ALU(:) => null()
 
-  integer(kind=kint) :: NContact = 0
-  real(kind=kreal), pointer :: CAL(:) => null()
-  real(kind=kreal), pointer :: CAU(:) => null()
-  integer(kind=kint), pointer :: indexCL(:) => null()
-  integer(kind=kint), pointer :: indexCU(:) => null()
-  integer(kind=kint), pointer :: itemCL(:) => null()
-  integer(kind=kint), pointer :: itemCU(:) => null()
-
   integer(kind=kint) :: NColor
   integer(kind=kint), pointer :: COLORindex(:) => null()
   integer(kind=kint), pointer :: perm(:) => null()
@@ -84,11 +76,6 @@ contains
     ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
-    NContact = hecMAT%cmat%n_val
-
-    if (NContact.gt.0) then
-      call hecmw_cmat_LU( hecMAT )
-    endif
 
     if (nthreads == 1) then
       NColor = 1
@@ -133,54 +120,12 @@ contains
     call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
 
-    if (NContact.gt.0) then
-      NPCL = hecMAT%indexCL(N)
-      NPCU = hecMAT%indexCU(N)
-      allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
-      call hecmw_matrix_reorder_profile(N, perm, iperm, &
-        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-        indexCL, indexCU, itemCL, itemCU)
-
-      allocate(CD(16*N), CAL(16*NPCL), CAU(16*NPCU))
-      call hecmw_matrix_reorder_values(N, 4, perm, iperm, &
-        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-        hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
-        indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
-      deallocate(CD)
-
-      call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
-      call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
-    end if
-
     allocate(ALU(16*N))
     ALU  = 0.d0
 
     do ii= 1, 16*N
       ALU(ii) = D(ii)
     enddo
-
-    ! if (NContact.gt.0) then
-    !   do k= 1, hecMAT%cmat%n_val
-    !     if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-    !     ii = iperm( hecMAT%cmat%pair(k)%i )
-    !     ALU(16*ii-15) = ALU(16*ii-15) + hecMAT%cmat%pair(k)%val(1, 1)
-    !     ALU(16*ii-14) = ALU(16*ii-14) + hecMAT%cmat%pair(k)%val(1, 2)
-    !     ALU(16*ii-13) = ALU(16*ii-13) + hecMAT%cmat%pair(k)%val(1, 3)
-    !     ALU(16*ii-12) = ALU(16*ii-12) + hecMAT%cmat%pair(k)%val(1, 4)
-    !     ALU(16*ii-11) = ALU(16*ii-11) + hecMAT%cmat%pair(k)%val(2, 1)
-    !     ALU(16*ii-10) = ALU(16*ii-10) + hecMAT%cmat%pair(k)%val(2, 2)
-    !     ALU(16*ii- 9) = ALU(16*ii- 9) + hecMAT%cmat%pair(k)%val(2, 3)
-    !     ALU(16*ii- 8) = ALU(16*ii- 8) + hecMAT%cmat%pair(k)%val(2, 4)
-    !     ALU(16*ii- 7) = ALU(16*ii- 7) + hecMAT%cmat%pair(k)%val(3, 1)
-    !     ALU(16*ii- 6) = ALU(16*ii- 6) + hecMAT%cmat%pair(k)%val(3, 2)
-    !     ALU(16*ii- 5) = ALU(16*ii- 5) + hecMAT%cmat%pair(k)%val(3, 3)
-    !     ALU(16*ii- 4) = ALU(16*ii- 4) + hecMAT%cmat%pair(k)%val(3, 4)
-    !     ALU(16*ii- 3) = ALU(16*ii- 3) + hecMAT%cmat%pair(k)%val(4, 1)
-    !     ALU(16*ii- 2) = ALU(16*ii- 2) + hecMAT%cmat%pair(k)%val(4, 2)
-    !     ALU(16*ii- 1) = ALU(16*ii- 1) + hecMAT%cmat%pair(k)%val(4, 3)
-    !     ALU(16*ii   ) = ALU(16*ii   ) + hecMAT%cmat%pair(k)%val(4, 4)
-    !   enddo
-    ! endif
 
     do ii= 1, N
       ALUtmp(1,1)= ALU(16*ii-15) * SIGMA_DIAG
@@ -311,7 +256,6 @@ contains
 
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
       !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
       !$omp&private(SW1,SW2,SW3,SW4,X1,X2,X3,X4,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 
@@ -341,23 +285,6 @@ contains
             SW3= SW3 - AL(16*j- 7)*X1 - AL(16*j- 6)*X2 - AL(16*j- 5)*X3 - AL(16*j- 4)*X4
             SW4= SW4 - AL(16*j- 3)*X1 - AL(16*j- 2)*X2 - AL(16*j- 1)*X3 - AL(16*j- 0)*X4
           enddo ! j
-
-          if (NContact.ne.0) then
-            isL= indexCL(i-1)+1
-            ieL= indexCL(i)
-            do j= isL, ieL
-              !k= perm(itemCL(j))
-              k= itemCL(j)
-              X1= ZP(4*k-3)
-              X2= ZP(4*k-2)
-              X3= ZP(4*k-1)
-              X4= ZP(4*k  )
-              SW1= SW1 - CAL(16*j-15)*X1 - CAL(16*j-14)*X2 - CAL(16*j-13)*X3 - CAL(16*j-12)*X4
-              SW2= SW2 - CAL(16*j-11)*X1 - CAL(16*j-10)*X2 - CAL(16*j- 9)*X3 - CAL(16*j- 8)*X4
-              SW3= SW3 - CAL(16*j- 7)*X1 - CAL(16*j- 6)*X2 - CAL(16*j- 5)*X3 - CAL(16*j- 4)*X4
-              SW4= SW4 - CAL(16*j- 3)*X1 - CAL(16*j- 2)*X2 - CAL(16*j- 1)*X3 - CAL(16*j- 0)*X4
-            enddo ! j
-          endif
 
           X1= SW1
           X2= SW2
@@ -411,24 +338,6 @@ contains
 
           enddo ! j
 
-          if (NContact.gt.0) then
-            isU= indexCU(i-1) + 1
-            ieU= indexCU(i)
-            do j= ieU, isU, -1
-              !k= perm(itemCU(j))
-              k= itemCU(j)
-              X1= ZP(4*k-3)
-              X2= ZP(4*k-2)
-              X3= ZP(4*k-1)
-              X4= ZP(4*k  )
-              SW1= SW1 + CAU(16*j-15)*X1 + CAU(16*j-14)*X2 + CAU(16*j-13)*X3 + CAU(16*j-12)*X4
-              SW2= SW2 + CAU(16*j-11)*X1 + CAU(16*j-10)*X2 + CAU(16*j- 9)*X3 + CAU(16*j- 8)*X4
-              SW3= SW3 + CAU(16*j- 7)*X1 + CAU(16*j- 6)*X2 + CAU(16*j- 5)*X3 + CAU(16*j- 4)*X4
-              SW4= SW4 + CAU(16*j- 3)*X1 + CAU(16*j- 2)*X2 + CAU(16*j- 1)*X3 + CAU(16*j- 0)*X4
-
-            enddo ! j
-          endif
-
           X1= SW1
           X2= SW2
           X3= SW3
@@ -475,14 +384,6 @@ contains
       if (associated(indexU)) deallocate(indexU)
       if (associated(itemL)) deallocate(itemL)
       if (associated(itemU)) deallocate(itemU)
-      if (NContact.ne.0) then
-        if (associated(CAL)) deallocate(CAL)
-        if (associated(CAU)) deallocate(CAU)
-        if (associated(indexCL)) deallocate(indexCL)
-        if (associated(indexCU)) deallocate(indexCU)
-        if (associated(itemCL)) deallocate(itemCL)
-        if (associated(itemCU)) deallocate(itemCU)
-      end if
     end if
     nullify(COLORindex)
     nullify(perm)
@@ -495,16 +396,6 @@ contains
     nullify(indexU)
     nullify(itemL)
     nullify(itemU)
-    if (NContact.ne.0) then
-      nullify(CAL)
-      nullify(CAU)
-      nullify(indexCL)
-      nullify(indexCU)
-      nullify(itemCL)
-      nullify(itemCU)
-      call hecmw_cmat_LU_free( hecMAT )
-    endif
-    NContact = 0
   end subroutine hecmw_precond_SSOR_44_clear
 
   subroutine write_debug_info

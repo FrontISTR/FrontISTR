@@ -102,8 +102,6 @@ contains
       enddo
     enddo
 
-    call hecmw_cmat_init (hecMAT%cmat)
-
     call HECMW_varray_int_finalize_all( CLU )
     call HECMW_varray_int_finalize_all( CLL )
 

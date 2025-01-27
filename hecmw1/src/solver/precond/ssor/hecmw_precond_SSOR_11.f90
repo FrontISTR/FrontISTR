@@ -33,14 +33,6 @@ module hecmw_precond_SSOR_11
   integer(kind=kint), pointer :: itemU(:) => null()
   real(kind=kreal), pointer :: ALU(:) => null()
 
-  integer(kind=kint) :: NContact = 0
-  real(kind=kreal), pointer :: CAL(:) => null()
-  real(kind=kreal), pointer :: CAU(:) => null()
-  integer(kind=kint), pointer :: indexCL(:) => null()
-  integer(kind=kint), pointer :: indexCU(:) => null()
-  integer(kind=kint), pointer :: itemCL(:) => null()
-  integer(kind=kint), pointer :: itemCU(:) => null()
-
   integer(kind=kint) :: NColor
   integer(kind=kint), pointer :: COLORindex(:) => null()
   integer(kind=kint), pointer :: perm(:) => null()
@@ -84,11 +76,6 @@ contains
     ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
-    NContact = hecMAT%cmat%n_val
-
-    if (NContact.gt.0) then
-      call hecmw_cmat_LU( hecMAT )
-    endif
 
     if (nthreads == 1) then
       NColor = 1
@@ -133,39 +120,12 @@ contains
     call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
 
-    if (NContact.gt.0) then
-      NPCL = hecMAT%indexCL(N)
-      NPCU = hecMAT%indexCU(N)
-      allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
-      call hecmw_matrix_reorder_profile(N, perm, iperm, &
-        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-        indexCL, indexCU, itemCL, itemCU)
-
-      allocate(CD(N), CAL(NPCL), CAU(NPCU))
-      call hecmw_matrix_reorder_values(N, 1, perm, iperm, &
-        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-        hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
-        indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
-      deallocate(CD)
-
-      call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
-      call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
-    end if
-
     allocate(ALU(N))
     ALU  = 0.d0
 
     do ii= 1, N
       ALU(ii) = D(ii)
     enddo
-
-    if (NContact.gt.0) then
-      do k= 1, hecMAT%cmat%n_val
-        if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-        ii = iperm( hecMAT%cmat%pair(k)%i )
-        ALU(ii) = ALU(ii) + hecMAT%cmat%pair(k)%val(1, 1)
-      enddo
-    endif
 
     !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
     !$omp do
@@ -257,7 +217,6 @@ contains
 
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
       !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
       !$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 
@@ -276,16 +235,6 @@ contains
             X(1)= ZP(k)
             SW(1)= SW(1) - AL(j)*X(1)
           enddo ! j
-
-          if (NContact.ne.0) then
-            isL= indexCL(i-1)+1
-            ieL= indexCL(i)
-            do j= isL, ieL
-              k= itemCL(j)
-              X(1)= ZP(k)
-              SW(1)= SW(1) - CAL(j)*X(1)
-            enddo ! j
-          endif
 
           X = SW
           X(1)= ALU(i  )*  X(1)
@@ -313,16 +262,6 @@ contains
             X(1)= ZP(k)
             SW(1)= SW(1) + AU(j)*X(1)
           enddo ! j
-
-          if (NContact.gt.0) then
-            isU= indexCU(i-1) + 1
-            ieU= indexCU(i)
-            do j= ieU, isU, -1
-              k= itemCU(j)
-              X(1)= ZP(k)
-              SW(1)= SW(1) + CAU(j)*X(1)
-            enddo ! j
-          endif
 
           X = SW
           X(1)= ALU(i)*  X(1)
@@ -359,14 +298,6 @@ contains
       if (associated(indexU)) deallocate(indexU)
       if (associated(itemL)) deallocate(itemL)
       if (associated(itemU)) deallocate(itemU)
-      if (NContact.ne.0) then
-        if (associated(CAL)) deallocate(CAL)
-        if (associated(CAU)) deallocate(CAU)
-        if (associated(indexCL)) deallocate(indexCL)
-        if (associated(indexCU)) deallocate(indexCU)
-        if (associated(itemCL)) deallocate(itemCL)
-        if (associated(itemCU)) deallocate(itemCU)
-      end if
     end if
     nullify(COLORindex)
     nullify(perm)
@@ -379,16 +310,6 @@ contains
     nullify(indexU)
     nullify(itemL)
     nullify(itemU)
-    if (NContact.ne.0) then
-      nullify(CAL)
-      nullify(CAU)
-      nullify(indexCL)
-      nullify(indexCU)
-      nullify(itemCL)
-      nullify(itemCU)
-      call hecmw_cmat_LU_free( hecMAT )
-    endif
-    NContact = 0
     INITIALIZED = .false.
   end subroutine hecmw_precond_SSOR_11_clear
 

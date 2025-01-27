@@ -898,7 +898,6 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     endif
-    call hecmw_cmat_init( hecMAT%cmat )
     hecMAT%D  = 0.0d0
     hecMAT%AL = 0.0d0
     hecMAT%AU = 0.0d0
@@ -961,7 +960,6 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
-    call hecmw_cmat_finalize(hecmAT%cmat)
   end subroutine hecMAT_finalize
 
   !> Initializer of structure fstr_param

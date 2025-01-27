@@ -102,9 +102,6 @@ contains
       call hecmw_clone_matrix(hecMATorig,hecMAT)
     else if (NDOF < hecMATorig%NDOF) then
       call hecmw_abort( hecmw_comm_get_comm() )
-    else
-      call hecmw_blockmatrix_expand(hecMATorig,hecMAT,NDOF)
-      call hecmw_cmat_init(hecMAT%cmat)
     end if
     !  select case(NDOF)
     !    case(1)
