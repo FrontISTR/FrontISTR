@@ -20,7 +20,6 @@ module hecmw_matrix_ass
   public :: hecmw_mat_add_dof
   public :: hecmw_mat_ass_bc
   public :: hecmw_mat_ass_bc_contactlag
-  public :: hecmw_mat_ass_contact
   public :: hecmw_mat_ass_contactlag
   public :: stf_get_block
 
@@ -462,8 +461,6 @@ contains
     enddo
     !*End off - diagonal blocks
 
-    call hecmw_cmat_ass_bc(hecMAT, inode, idof, RHS)
-
   end subroutine hecmw_mat_ass_bc
 
 
@@ -491,40 +488,6 @@ contains
     enddo
 
   end subroutine hecmw_mat_ass_bc_contactlag
-
-  !C
-  !C***
-  !C*** MAT_ASS_CONTACT
-  !C***
-  !C
-  subroutine hecmw_mat_ass_contact(hecMAT, nn, nodLOCAL, stiffness)
-    type (hecmwST_matrix)     :: hecMAT
-    integer(kind=kint) :: nn
-    integer(kind=kint) :: nodLOCAL(:)
-    real(kind=kreal) :: stiffness(:, :)
-    !** Local variables
-    integer(kind=kint) :: ndof, inod_e, jnod_e, inod, jnod
-    real(kind=kreal) :: a(3,3)
-
-    ndof = hecMAT%NDOF
-    if( ndof .ne. 3 ) then
-      write(*,*) '###ERROR### : ndof=',ndof,'; contact matrix supports only ndof==3'
-      call hecmw_abort(hecmw_comm_get_comm())
-      return
-    endif
-
-    do inod_e = 1, nn
-      inod = nodLOCAL(inod_e)
-      do jnod_e = 1, nn
-        jnod = nodLOCAL(jnod_e)
-        !***** Add components
-        call stf_get_block(stiffness, ndof, inod_e, jnod_e, a)
-        call hecmw_cmat_add(hecMAT%cmat, inod, jnod, a)
-      enddo
-    enddo
-    call hecmw_cmat_pack(hecMAT%cmat)
-
-  end subroutine hecmw_mat_ass_contact
 
   !> \brief This subroutine assembles contact stiffness matrix of a contact pair into global stiffness matrix
   subroutine hecmw_mat_ass_contactlag(nnode,ndLocal,id_lagrange,fcoeff,stiffness,hecMAT,hecLagMAT)

@@ -325,11 +325,6 @@ contains
       ! endif
 
     endif
-
-    if (hecMAT%cmat%n_val > 0) then
-      call hecmw_cmat_multvec_add( hecMAT%cmat, X, Y, NP * hecMAT%NDOF )
-    end if
-
   end subroutine hecmw_matvec_33_inner
 
   !C

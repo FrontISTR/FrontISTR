@@ -56,18 +56,6 @@ contains
       end do
     enddo
 
-    if (hecMAT%cmat%n_val.gt.0) then
-      do k= 1, hecMAT%cmat%n_val
-        if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-        ii = hecMAT%cmat%pair(k)%i
-        do i = 1,NDOF
-          do j = 1,NDOF
-            ALU(NDOF2*(ii-1)+(i-1)*NDOF+j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j) + hecMAT%cmat%pair(k)%val(i, j)
-          enddo
-        enddo
-      enddo
-    endif
-
     !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
     !$omp do
     do ii= 1, N

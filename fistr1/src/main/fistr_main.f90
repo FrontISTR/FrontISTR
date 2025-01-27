@@ -160,7 +160,6 @@ contains
     call fstr_init_condition
 
     ! ------- hecMAT setting -------------
-    call hecmw_mat_con(hecMESH, hecMAT)
     hecMAT%NDOF = hecMESH%n_dof
     if( kstHEAT == fstrPR%solution_type ) then
       call heat_init_material (hecMESH,fstrHEAT)
