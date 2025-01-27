@@ -264,7 +264,6 @@ contains
 
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
       !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
       !$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 
