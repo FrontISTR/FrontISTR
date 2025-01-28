@@ -93,7 +93,6 @@ contains
     use hecmw_solver_direct_parallel
     use hecmw_solver_direct_MUMPS
     use hecmw_solver_direct_clusterMKL
-    use hecmw_matrix_contact
     type (hecmwST_local_mesh)     :: hecMESH
     type (hecmwST_matrix)         :: hecMATorig
     type (hecmwST_matrix),pointer :: hecMAT => null()

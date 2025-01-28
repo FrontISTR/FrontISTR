@@ -5,7 +5,6 @@
 
 module hecmw_matrix_misc
   use hecmw_util
-  use hecmw_matrix_contact
   use m_hecmw_comm_f
   implicit none
 
