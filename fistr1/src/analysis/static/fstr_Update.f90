@@ -166,7 +166,7 @@ contains
 
         else if( ic_type == 511) then
           call UPDATE_CONNECTOR( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
-            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), tincr )
+            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
   
         else if( ic_type == 611) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )

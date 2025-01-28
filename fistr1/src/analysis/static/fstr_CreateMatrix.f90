@@ -102,6 +102,10 @@ contains
         thick = material%variables(M_THICK)
         if( getSpaceDimension( ic_type )==2 ) thick =1.d0
 
+        stiff_mat = 0.0d0
+        mass_mat = 0.0d0
+        damp_mat = 0.0d0
+
         if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
           call STF_C2( ic_type,nn,ecoord(1:2,1:nn),fstrSOLID%elements(icel)%gausses(:),thick, &
@@ -144,9 +148,11 @@ contains
           call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass_mat, lumped)
 
         else if( ic_type == 511) then
-          !> 帰ってきた stiff が剛性なのかダンパーなのかの判定が必要
-          !call STF_CONNECTOR( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
-          !  damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn) )
+          call STF_CONNECTOR( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
+            stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
+
+          call DMP_CONNECTOR( ic_type,nn,ecoord(:,1:nn),fstrSOLID%elements(icel)%gausses(:),   &
+            damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
 
         else if( ic_type == 611) then
           if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
@@ -229,20 +235,20 @@ contains
         b3 = coef(6)
 
         !> LHS matrix section
+        !> A = c_1 * K + c_2 * M
+        c1 = 1.d0 + ray_k*b3
+        c2 = a3   + ray_m*b3
+        do i = 1, nn*ndof
+          do j = 1, nn*ndof
+            mat(j,i) = c1*stiff_mat(j,i) + c2*mass_mat(j,i)
+          enddo
+        enddo
+
         if(ic_type == 511)then
           !> A = b_3 * C
           do i = 1, nn*ndof
             do j = 1, nn*ndof
-              mat(j,i) = b3*damp_mat(j,i)
-            enddo
-          enddo
-        else
-          !> A = c_1 * K + c_2 * M
-          c1 = 1.d0 + ray_k*b3
-          c2 = a3   + ray_m*b3
-          do i = 1, nn*ndof
-            do j = 1, nn*ndof
-              mat(j,i) = c1*stiff_mat(j,i) + c2*mass_mat(j,i)
+              mat(j,i) = mat(j,i) + b3*damp_mat(j,i)
             enddo
           enddo
         endif
@@ -258,30 +264,29 @@ contains
         df = 0.0d0
         Kb = 0.0d0
 
+        !> df = R_k * K * vecB + M * vecC
+        do i = 1, nn*ndof
+          do j = 1, nn*ndof
+            Kb(i) = Kb(i) + stiff_mat(i,j)*vecB(j)
+          enddo
+        enddo
+
+        do i = 1, nn*ndof
+          vecC(i) = vecA(i) + ray_m*vecB(i)
+        enddo
+
+        df(1:nn*ndof) = matmul(mass_mat(1:nn*ndof,1:nn*ndof), vecC(1:nn*ndof))
+
+        do i = 1, nn*ndof
+          df(i) = df(i) + ray_k*Kb(i)
+        enddo
+
         if(ic_type == 511)then
           !> df = C * vecB
           do i = 1, nn*ndof
             do j = 1, nn*ndof
               df(i) = df(i) + damp_mat(i,j)*vecB(j)
             enddo
-          enddo
-
-        else
-          !> df = R_k * K * vecB + M * vecC
-          do i = 1, nn*ndof
-            do j = 1, nn*ndof
-              Kb(i) = Kb(i) + stiff_mat(i,j)*vecB(j)
-            enddo
-          enddo
-
-          do i = 1, nn*ndof
-            vecC(i) = vecA(i) + ray_m*vecB(i)
-          enddo
-
-          df(1:nn*ndof) = matmul(mass_mat(1:nn*ndof,1:nn*ndof), vecC(1:nn*ndof))
-
-          do i = 1, nn*ndof
-            df(i) = df(i) + ray_k*Kb(i)
           enddo
         endif
 
