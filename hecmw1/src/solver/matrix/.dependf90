@@ -5,7 +5,6 @@ hecmw_local_matrix.o : hecmw_local_matrix.f90 hecmw_array_util.o hecmw_matrix_mi
 hecmw_mat_ass.o : hecmw_mat_ass.f90 hecmw_matrix_contact.o hecmw_matrix_misc.o 
 hecmw_mat_con.o : hecmw_mat_con.f90 hecmw_matrix_contact.o 
 hecmw_mat_id.o : hecmw_mat_id.f90 
-hecmw_matrix_contact.o : hecmw_matrix_contact.f90 
 hecmw_matrix_contact_lagrange.o : hecmw_matrix_contact_lagrange.f90 
 hecmw_matrix_dump.o : hecmw_matrix_dump.f90 hecmw_matrix_misc.o 
 hecmw_matrix_misc.o : hecmw_matrix_misc.f90 hecmw_matrix_contact.o 

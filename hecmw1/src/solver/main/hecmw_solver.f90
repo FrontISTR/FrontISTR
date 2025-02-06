@@ -93,7 +93,6 @@ contains
     use hecmw_solver_direct_parallel
     use hecmw_solver_direct_MUMPS
     use hecmw_solver_direct_clusterMKL
-    use hecmw_matrix_contact
     type (hecmwST_local_mesh)     :: hecMESH
     type (hecmwST_matrix)         :: hecMATorig
     type (hecmwST_matrix),pointer :: hecMAT => null()
@@ -102,9 +101,6 @@ contains
       call hecmw_clone_matrix(hecMATorig,hecMAT)
     else if (NDOF < hecMATorig%NDOF) then
       call hecmw_abort( hecmw_comm_get_comm() )
-    else
-      call hecmw_blockmatrix_expand(hecMATorig,hecMAT,NDOF)
-      call hecmw_cmat_init(hecMAT%cmat)
     end if
     !  select case(NDOF)
     !    case(1)

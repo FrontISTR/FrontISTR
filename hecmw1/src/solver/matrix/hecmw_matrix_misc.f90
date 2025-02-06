@@ -5,7 +5,6 @@
 
 module hecmw_matrix_misc
   use hecmw_util
-  use hecmw_matrix_contact
   use m_hecmw_comm_f
   implicit none
 
@@ -148,7 +147,6 @@ contains
     hecMAT%D = 0.0d0
     hecMAT%AL = 0.0d0
     hecMAT%AU = 0.0d0
-    call hecmw_cmat_clear( hecMAT%cmat )
     call hecmw_mat_set_penalized( hecMAT, 0 )
     call hecmw_mat_set_penalty_alpha( hecMAT, 0.d0 )
   end subroutine hecmw_mat_clear
@@ -200,8 +198,6 @@ contains
     call hecmw_mat_set_flag_numfact( hecMAT, 1 )
     call hecmw_mat_set_flag_symbfact( hecMAT, 1 )
     call hecmw_mat_set_solver_type( hecMAT, 1 )
-
-    call hecmw_cmat_init( hecMAT%cmat )
   end subroutine hecmw_mat_init
 
   subroutine hecmw_mat_finalize( hecMAT )
@@ -216,7 +212,6 @@ contains
     if (associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
     if (associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
     if (associated(hecMAT%ALU)) deallocate(hecMAT%ALU)
-    call hecmw_cmat_finalize( hecMAT%cmat )
   end subroutine hecmw_mat_finalize
 
   subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )
@@ -821,25 +816,18 @@ contains
     dest%NPL = src%NPL
     dest%NPU = src%NPU
     dest%NDOF = src%NDOF
-    dest%NPCL = src%NPCU
     if (associated(src%D)) dest%D => src%D
     if (associated(src%B)) dest%B => src%B
     if (associated(src%X)) dest%X => src%X
     if (associated(src%ALU)) dest%ALU => src%ALU
     if (associated(src%AL)) dest%AL => src%AL
     if (associated(src%AU)) dest%AU => src%AU
-    if (associated(src%CAL)) dest%CAL => src%CAL
     if (associated(src%indexL)) dest%indexL => src%indexL
     if (associated(src%indexU)) dest%indexU => src%indexU
-    if (associated(src%indexCL)) dest%indexCL => src%indexCL
-    if (associated(src%indexCU)) dest%indexCU => src%indexCU
     if (associated(src%itemL)) dest%itemL => src%itemL
     if (associated(src%itemU)) dest%itemU => src%itemU
-    if (associated(src%itemCL)) dest%itemCL => src%itemCL
-    if (associated(src%itemCU)) dest%itemCU => src%itemCU
     dest%Iarray(:) = src%Iarray(:)
     dest%Rarray(:) = src%Rarray(:)
-    call hecmw_cmat_substitute( dest%cmat, src%cmat )
   end subroutine hecmw_mat_substitute
 
 end module hecmw_matrix_misc

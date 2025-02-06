@@ -6,7 +6,6 @@
 module hecmw_precond_SAINV_33
   use hecmw_util
   use m_hecmw_comm_f
-  use hecmw_matrix_contact
   use hecmw_matrix_misc
   !$ use omp_lib
 
