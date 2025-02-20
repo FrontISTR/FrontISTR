@@ -42,7 +42,7 @@ contains
     real(kind=kreal)   :: tt(20), tt0(20), coords(3, 3), factor
     integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, iS0, iE0, ik, in, i, j
     integer(kind=kint) :: icel, ic_type, nn, is, isect, id, iset, nsize
-    integer(kind=kint) :: itype, iE, ierror, grpid, cdsys_ID, flag_u
+    integer(kind=kint) :: itype, iE, ierror, grpid, cdsys_ID, jj_n_amp
     real(kind=kreal)   :: fval, rho, thick, pa1
     logical :: fg_surf
     integer(kind=kint) :: tstep
@@ -68,8 +68,12 @@ contains
     do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
       grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
       if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-      flag_u = 0
-      call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
+      jj_n_amp = fstrSOLID%CLOAD_ngrp_amp(ig0)
+      if( jj_n_amp <= 0 ) then  ! Amplitude not defined
+        factor = fstrSOLID%FACTOR(2)
+      else
+        call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,ctime,factor)
+      endif
 
       if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
       ig = fstrSOLID%CLOAD_ngrp_ID(ig0)
@@ -144,8 +148,12 @@ contains
     do ig0 = 1, fstrSOLID%DLOAD_ngrp_tot
       grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
       if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
-      flag_u = 10
-      call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
+      jj_n_amp = fstrSOLID%DLOAD_ngrp_amp(ig0)
+      if( jj_n_amp <= 0 ) then  ! Amplitude not defined
+        factor = fstrSOLID%FACTOR(2)
+      else
+        call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,ctime,factor)
+      endif
 
       if( fstr_isLoadActive( fstrSOLID, grpid, cstep-1 ) ) factor = 1.0d0
       ig = fstrSOLID%DLOAD_ngrp_ID(ig0)
