@@ -6,7 +6,6 @@
 module hecmw_matrix_con
   use hecmw_util
   use hecmw_varray_int
-  use hecmw_matrix_contact
   use hecmw_etype
   implicit none
 
@@ -101,8 +100,6 @@ contains
         hecMAT%itemU(kk) = HECMW_varray_int_get_item(CLU(i), k)
       enddo
     enddo
-
-    call hecmw_cmat_init (hecMAT%cmat)
 
     call HECMW_varray_int_finalize_all( CLU )
     call HECMW_varray_int_finalize_all( CLL )

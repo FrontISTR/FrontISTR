@@ -6,7 +6,6 @@
 module hecmw_precond_RIF_nn
   use hecmw_util
   use m_hecmw_comm_f
-  use hecmw_matrix_contact
   use hecmw_matrix_misc
 
   private

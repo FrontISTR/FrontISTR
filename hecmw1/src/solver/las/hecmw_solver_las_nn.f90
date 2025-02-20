@@ -122,7 +122,6 @@ contains
   subroutine hecmw_matvec_nn_inner (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
-    use hecmw_matrix_contact
     use hecmw_matrix_misc
     use hecmw_jad_type
     use hecmw_tuning_fx
@@ -300,14 +299,8 @@ contains
 
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME
-
-
-
     endif
 
-    if (hecMAT%cmat%n_val > 0) then
-      call hecmw_cmat_multvec_add( hecMAT%cmat, X, Y, NP * NDOF )
-    end if
   end subroutine hecmw_matvec_nn_inner
 
 
