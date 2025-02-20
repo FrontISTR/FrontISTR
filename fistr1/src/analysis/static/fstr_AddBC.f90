@@ -27,18 +27,17 @@ contains
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
-    real(kind=kreal)   :: RHS0, RHS, factor, factor0, ctime
+    real(kind=kreal)   :: RHS0, RHS, factor, factor0
     integer(kind=kint) :: ndof, grpid, istot
 
     !for rotation
-    integer(kind=kint) :: n_rot, rid, flag_u
+    integer(kind=kint) :: n_rot, rid, jj_n_amp
     type(tRotInfo)     :: rinfo
     real(kind=kreal)   :: ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3), cddisp(3)
-  
+
     !
     ndof = hecMAT%NDOF
-    ctime = fstr_get_time()+fstr_get_timeinc()
 
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
@@ -46,13 +45,17 @@ contains
     !   ----- Prescibed displacement Boundary Conditions
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
-      flag_u = 1
       if( iter>1 ) then
         factor=0.d0
       else
-        call table_amp(hecMESH,fstrSOLID,cstep,ig0,fstr_get_time(),factor0,flag_u)
-        call table_amp(hecMESH,fstrSOLID,cstep,ig0,ctime,factor,flag_u)
-        factor = factor - factor0
+        jj_n_amp = fstrSOLID%BOUNDARY_ngrp_amp(ig0)
+        if( jj_n_amp <= 0 ) then  ! Amplitude not defined
+          factor = fstrSOLID%FACTOR(2) - fstrSOLID%FACTOR(1)
+        else
+          call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time(),factor0)
+          call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time()+fstr_get_timeinc(),factor)
+          factor = factor - factor0
+        endif
         if(fstrSOLID%step_ctrl(cstep)%solution==stepVisco)then
           factor = 0.d0
           if(factor0 < 1.d-10) factor = 1.d0
