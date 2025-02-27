@@ -72,7 +72,6 @@ contains
   subroutine hecmw_matvec_22_inner (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
-    use hecmw_matrix_contact
     use hecmw_matrix_misc
     use hecmw_jad_type
     use hecmw_tuning_fx

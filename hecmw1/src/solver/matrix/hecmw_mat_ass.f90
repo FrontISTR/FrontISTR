@@ -7,7 +7,6 @@ module hecmw_matrix_ass
   use hecmw_util
   use m_hecmw_comm_f
   use hecmw_matrix_misc
-  use hecmw_matrix_contact
   implicit none
 
   private

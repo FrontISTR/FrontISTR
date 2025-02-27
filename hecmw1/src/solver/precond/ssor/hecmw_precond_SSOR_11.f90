@@ -14,7 +14,6 @@ module hecmw_precond_SSOR_11
   use m_hecmw_matrix_ordering_CM
   use m_hecmw_matrix_ordering_MC
   use hecmw_matrix_reorder
-  use hecmw_matrix_contact
   !$ use omp_lib
 
   private

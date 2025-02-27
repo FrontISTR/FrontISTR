@@ -6,7 +6,6 @@
 module hecmw_matrix_con
   use hecmw_util
   use hecmw_varray_int
-  use hecmw_matrix_contact
   use hecmw_etype
   implicit none
 
