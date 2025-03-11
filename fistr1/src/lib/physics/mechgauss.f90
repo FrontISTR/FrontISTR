@@ -35,6 +35,8 @@ module mMechGauss
     real(kind=kreal), pointer   :: equiForces(:) => null()  !< equivalent forces
     type(tGaussStatus), pointer :: gausses(:) => null()  !< info of qudrature points
     real(kind=kreal), pointer   :: aux(:,:) => null()    !< nodeless dof for incompatible element
+    integer                     :: dummy_flag            !< -1:undefined, 0:defined but inactive, 1:defined and active
+    real(kind=kreal)            :: dummy_coeff           !< coefficient to internal force of dummy element
   end type
 
 contains
