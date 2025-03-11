@@ -14,12 +14,13 @@ contains
   !C*** MAT_ASS_DFLUX
   !C***
   !C
-  subroutine heat_mat_ass_bc_DFLUX( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME, beta )
+  subroutine heat_mat_ass_bc_DFLUX( hecMESH, hecMAT, fstrSOLID, fstrHEAT, CTIME, DTIME, beta )
     use m_heat_get_amplitude
     use m_heat_LIB_DFLUX
     use m_static_LIB_3d
     integer(kind=kint) :: k, icel, ic_type, isect, isuf, iamp, nn, is, j
     real(kind=kreal)   :: CTIME, DTIME, QQ, val, asect, thick, vol, beta
+    type(fstr_solid)         :: fstrSOLID
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
@@ -31,7 +32,7 @@ contains
     !C
     !$omp parallel default(none), &
       !$omp&  private(k,icel,ic_type,isect,isuf,iamp,QQ,val,nn,is,j,nodLOCAL,xx,yy,zz,asect,vect,thick), &
-      !$omp&  shared(fstrHEAT,CTIME,hecMAT,hecMESH)
+      !$omp&  shared(fstrSOLID,fstrHEAT,CTIME,hecMAT,hecMESH)
     !$omp do
     do k = 1, fstrHEAT%Q_SUF_tot
 
@@ -40,6 +41,8 @@ contains
       isect   = hecMESH%section_ID(icel)
       isuf    = fstrHEAT%Q_SUF_surf(k)
       iamp    = fstrHEAT%Q_SUF_ampl(k)
+
+      if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
 
       call heat_get_amplitude( fstrHEAT,iamp,CTIME,QQ )
       val     = fstrHEAT%Q_SUF_val (k) * QQ

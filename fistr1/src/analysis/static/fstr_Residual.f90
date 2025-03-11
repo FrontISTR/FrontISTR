@@ -6,6 +6,7 @@
 
 module m_fstr_Residual
   use hecmw
+  use m_fstr_dummy
   implicit none
 
   public :: fstr_Update_NDForce
@@ -159,7 +160,13 @@ contains
     if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
       & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
+
+    if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) then
+      call fstr_update_dummy_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
+    endif
+    
     call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+
   end subroutine fstr_calc_residual_vector
 
   !> \breaf This subroutine calculate residual vector

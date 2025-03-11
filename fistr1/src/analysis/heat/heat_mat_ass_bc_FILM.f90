@@ -11,7 +11,7 @@ contains
   !C*** MAT_ASS_FILM
   !C***
   !C
-  subroutine heat_mat_ass_bc_FILM( hecMESH, hecMAT, fstrHEAT, CTIME, DTIME, beta )
+  subroutine heat_mat_ass_bc_FILM( hecMESH, hecMAT, fstrSOLID, fstrHEAT, CTIME, DTIME, beta )
 
     use m_fstr
     use m_heat_get_amplitude
@@ -21,6 +21,7 @@ contains
     integer(kind=kint) :: k, icel, isuf, iam1, iam2, ic_type, isect, nn, is, j, mm, m, ic, ip
     integer(kind=kint) :: inod, jp, jnod, isU, ieU, ik, isL, ieL
     real(kind=kreal)   :: CTIME, DTIME, QQ, HH, SINK, thick, beta
+    type(fstr_solid)         :: fstrSOLID
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
@@ -33,15 +34,18 @@ contains
     !$omp parallel default(none), &
       !$omp&  private(k,icel,isuf,iam1,iam2,QQ,HH,SINK,ic_type,isect,nn,is,j,nodLocal, &
       !$omp&  xx,yy,zz,thick,mm,term1,term2,stiff,nsuf,nodSurf,ip,inod,jnod,ic,isU,ieU,ik,jp,isL,ieL), &
-      !$omp&  shared(fstrHEAT,CTIME,hecMAT,hecMESH)
+      !$omp&  shared(fstrSOLID,fstrHEAT,CTIME,hecMAT,hecMESH)
     !$omp do
     do k = 1, fstrHEAT%H_SUF_tot
       icel    = fstrHEAT%H_SUF_elem(k)
+      if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
+
       isuf    = fstrHEAT%H_SUF_surf(k)
       iam1    = fstrHEAT%H_SUF_ampl(k,1)
       iam2    = fstrHEAT%H_SUF_ampl(k,2)
       call heat_get_amplitude ( fstrHEAT, iam1, CTIME, QQ )
       HH      = fstrHEAT%H_SUF_val (k,1) * QQ
+      if( dabs(HH) < 1.d-16 ) cycle
       call heat_get_amplitude ( fstrHEAT, iam2, CTIME, QQ )
       SINK    = fstrHEAT%H_SUF_val (k,2) * QQ
       ic_type = hecMESH%elem_type(icel)

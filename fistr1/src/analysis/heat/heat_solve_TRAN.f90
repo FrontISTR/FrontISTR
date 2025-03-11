@@ -6,7 +6,7 @@
 module m_heat_solve_TRAN
 contains
 
-  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,total_step,current_time )
+  subroutine heat_solve_TRAN ( hecMESH,hecMAT,fstrSOLID,fstrRESULT,fstrPARAM,fstrHEAT,ISTEP,total_step,current_time )
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
@@ -22,6 +22,7 @@ contains
     real(kind=kreal)   :: tmpmax, dltmp, tmpmax_myrank, remain_time
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
+    type(fstr_solid)          :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
@@ -58,8 +59,8 @@ contains
     endif
 
     if(fstrHEAT%is_steady /= 1 .and. total_step == 1) then
-      call heat_output_result(hecMESH, fstrHEAT, 0, total_time, .true.)
-      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, 0, total_time, .true.)
+      call heat_output_result(hecMESH, fstrHEAT, fstrSOLID, 0, total_time, .true.)
+      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, 0, total_time, .true.)
     endif
 
     !C--------------------   START TRANSIENT LOOP   ------------------------
@@ -101,7 +102,8 @@ contains
         call hecmw_abort(hecmw_comm_get_comm())
       endif
 
-      call heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, total_time, delta_time)
+      call heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, &
+       & fstrSOLID, fstrPARAM, fstrHEAT, ISTEP, iterALL, total_time, delta_time)
 
       if(0.0d0 < DELMIN)then
         tmpmax = 0.0d0
@@ -138,9 +140,9 @@ contains
       enddo
 
       call heat_output_log(hecMESH, fstrPARAM, fstrHEAT, total_step, total_time)
-      call heat_output_result(hecMESH, fstrHEAT, total_step, total_time, outflag)
-      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, total_step, total_time, outflag)
-      call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, next_time, is_end)
+      call heat_output_result(hecMESH, fstrHEAT, fstrSOLID, total_step, total_time, outflag)
+      call heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, total_step, total_time, outflag)
+      call heat_output_restart(hecMESH, fstrHEAT, ISTEP, total_step, next_time, outflag)
 
       total_step = total_step + 1
       current_time = next_time
