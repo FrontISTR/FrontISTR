@@ -6,7 +6,7 @@
 module m_fstr_solve_heat
 contains
 
-  subroutine fstr_solve_heat(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT)
+  subroutine fstr_solve_heat(hecMESH, hecMAT, fstrSOLID, fstrRESULT, fstrPARAM, fstrHEAT)
     use m_fstr
     use m_heat_init
     use m_heat_solve_TRAN
@@ -15,6 +15,7 @@ contains
     integer(kind=kint) :: ISTEP
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
+    type(fstr_solid)          :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
     type(fstr_param)          :: fstrPARAM
     type(fstr_heat)           :: fstrHEAT
@@ -52,7 +53,7 @@ contains
         endif
       endif
 
-      call heat_solve_TRAN(hecMESH, hecMAT, fstrRESULT, fstrPARAM, fstrHEAT, ISTEP, total_step, start_time)
+      call heat_solve_TRAN(hecMESH, hecMAT, fstrSOLID, fstrRESULT, fstrPARAM, fstrHEAT, ISTEP, total_step, start_time)
 
       start_time = 0.0d0
     enddo
