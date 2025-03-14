@@ -16,7 +16,6 @@ stages:
         expire_in: 100min
 
 include: 
-    - '.ubuntu2004.yml'
     - '.ubuntu2204.yml'
     - '.ubuntu2404.yml'
 
