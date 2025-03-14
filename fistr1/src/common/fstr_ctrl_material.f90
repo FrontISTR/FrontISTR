@@ -713,7 +713,7 @@ contains
     is_RD = .false.
 
     RM = 0.0d0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'R ', 'RM ', 0, 'R', RM)
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'RM ', '# ', 0, 'R', RM)
     if(rcode == 0)then
       matval(M_DAMPING_RM) = RM
       is_RD = .true.
@@ -724,7 +724,7 @@ contains
     endif
 
     RK = 0.0d0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'R ', 'RK ', 0, 'R', RK) 
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'RK ', '# ', 0, 'R', RK)
     if(rcode == 0)then
       matval(M_DAMPING_RK) = RK
       is_RD = .true.
