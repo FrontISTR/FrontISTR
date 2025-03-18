@@ -93,6 +93,11 @@ module m_fstr
   integer(kind=kint), parameter :: ktMETHOD_MPC = 1
   integer(kind=kint), parameter :: ktMETHOD_CONTACT = 2
 
+  !> TIED EQUATION OUTPUT FLAG
+  integer(kind=kint), parameter :: ktDUMP_NONE = 1
+  integer(kind=kint), parameter :: ktDUMP_ASIS = 2
+  integer(kind=kint), parameter :: ktDUMP_REGULARIZED = 3
+
   !> FILE NAME
   character(len=HECMW_FILENAME_LEN) :: cntfilNAME
   character(len=HECMW_FILENAME_LEN) :: restartfilNAME
@@ -192,6 +197,7 @@ module m_fstr
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
     integer( kind=kint ) :: tied_method        !< tied contact method(mpc or contact)
+    integer( kind=kint ) :: dump_equation      !< dump equation data
 
     !> for auto increment and cutback
     type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control

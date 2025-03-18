@@ -505,10 +505,11 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, tied_method )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, tied_method, dump_equation )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
     integer(kind=kint) :: tied_method
+    integer(kind=kint) :: dump_equation
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
     integer(kind=kint) :: rcode
@@ -523,6 +524,10 @@ contains
     tied_method = ktMETHOD_MPC
     s = 'MPC,CONTACT '
     if( fstr_ctrl_get_param_ex( ctrl, 'TIED_METHOD ', s, 0, 'P', tied_method ) /=0) return
+
+    dump_equation = ktDUMP_NONE
+    s = 'NO,ASIS,YES '
+    if( fstr_ctrl_get_param_ex( ctrl, 'DUMPEQUATION ', s, 0, 'P', dump_equation ) /=0) return
 
     fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO

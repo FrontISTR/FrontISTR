@@ -25,13 +25,15 @@ contains
 ! Create MPC structure from CONTACT, INTERACTION=TIED.
 !======================================================================== 
   !> create mpc setup
-  subroutine fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, infoCTChange, tied_method )
+  subroutine fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, &
+      &  infoCTChange, tied_method, dump_equation )
     integer(kind=kint), intent(in)         :: cstep      !< current step number
     type( hecmwST_local_mesh ), intent(inout) :: hecMESH     !< type mesh
     type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
     integer(kind=kint), intent(in)         :: tied_method  !< tiecontact processing method
+    integer(kind=kint), intent(in)         :: dump_equation
 
     integer(kind=kint) :: i, j, grpid, n_tied_slave, n_tied_slave_total
     type(tMPCCond), allocatable :: mpcs_old(:), mpcs_new(:), mpcs_all(:)
@@ -72,8 +74,18 @@ contains
       write(*,'(A20,f8.2)') "create mpc coeff", T(2)-T(1)
     endif
 
+    ! dump original mpc as equation
+    if( myrank == 0 .and. dump_equation == ktDUMP_ASIS ) then
+      call print_full_mpc_conditions_3d( mpcs_old, hecMESH%global_node_ID )
+    endif
+
     ! update mpcs
     call get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new )
+
+    ! dump updated mpc as equation
+    if( myrank == 0 .and. dump_equation == ktDUMP_REGULARIZED ) then
+      call print_full_mpc_conditions_3d( mpcs_new, hecMESH%global_node_ID )
+    endif
 
     T(3) = hecmw_Wtime()
     ! create mpc

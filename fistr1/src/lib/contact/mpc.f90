@@ -19,6 +19,7 @@ module m_mpc
   public :: expand_mpc_cond
   public :: print_mpc_cond
   public :: print_mpc_conditions
+  public :: print_full_mpc_conditions_3d
 
   integer, parameter :: kint = 4
   integer, parameter :: kreal = 8
@@ -155,36 +156,56 @@ contains
   end subroutine
 
   !> Print out mpc condition in !EQUATION format
-  subroutine print_mpc_cond(fnum, mpc, idlabel)
+  subroutine print_mpc_cond(fnum, mpc, idlabel, doflabel)
     integer, intent(in)             :: fnum !< file number
     type(tMPCCond), intent(in)      :: mpc !< mpc condition
     integer, optional, intent(in)   :: idlabel(:) !< id label for input file
+    integer, optional, intent(in)   :: doflabel !< dof is set to this value if given
 
-    integer(kind=kint) :: i, id
+    integer(kind=kint) :: i, id, dof
 
     write(fnum,"(I0,A)") mpc%nitem,", 0.0"
     do i=1,mpc%nitem
       id = mpc%pid(i)
       if( present(idlabel) ) id = idlabel(id)
-      write(fnum,"(I0,',',I0,',',f12.6)") id,mpc%dof(i),mpc%coeff(i)
+      dof = mpc%dof(i)
+      if( present(doflabel) ) dof = doflabel
+      write(fnum,"(I0,',',I0,',',f20.14)") id,dof,mpc%coeff(i)
     enddo
 
   end subroutine
 
   !> Print out mpc condition in !EQUATION format
-  subroutine print_mpc_conditions(fnum, mpcs, idlabel)
+  subroutine print_mpc_conditions(fnum, mpcs, idlabel, doflabel)
     integer, intent(in)             :: fnum !< file number
     type(tMPCCond), intent(in)      :: mpcs(:) !< mpc condition
     integer, optional, intent(in)   :: idlabel(:) !< id label for input file
+    integer, optional, intent(in)   :: doflabel !< dof is set to this value if given
 
     integer(kind=kint) :: i
 
     write(fnum,'(A)') "!EQUATION"
     do i=1,size(mpcs)
-      call print_mpc_cond(fnum, mpcs(i), idlabel)
+      call print_mpc_cond(fnum, mpcs(i), idlabel, doflabel)
     enddo
   end subroutine
 
+  !> Print out mpc condition in !EQUATION format
+  subroutine print_full_mpc_conditions_3d( mpcs, nodeID )
+    type(tMPCCond), intent(in)   :: mpcs(:) !< mpc condition
+    integer, intent(in)          :: nodeID(:) !< id label for input file
+
+    integer(kind=kint) :: iunit, idof, ifile, ierror
+    character(len=20) :: fname
+
+    do idof = 1, 3
+      write(fname,'(a,i0,a)') 'tied_equation_',idof,'.dat'
+      iunit = 200+idof
+      open(iunit, file=fname, status='replace', iostat=ierror)
+      call print_mpc_conditions(iunit, mpcs, nodeID, idof)
+      close(iunit)
+    enddo
+  end subroutine
 
 end module m_mpc
 
