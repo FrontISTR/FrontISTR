@@ -44,7 +44,7 @@ module m_fstr_NonLinearMethod
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
-    real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm, pot(3), pot0(3)
+    real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm
     real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
     integer(kind=kint) :: iterStatus
@@ -55,18 +55,12 @@ module m_fstr_NonLinearMethod
       isLinear = .true.
     endif
 
-    hecMAT%NDOF = hecMESH%n_dof
-    NDOF = hecMAT%NDOF
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
 
     allocate(P(hecMESH%n_node*NDOF))
     allocate(coord(hecMESH%n_node*ndof))
-
-    tincr = dtime
-    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
-
     P = 0.0d0
     stepcnt = 0
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, pot, pot0, ndof)
 
     ! ----- Inner Iteration, lagrange multiplier constant
     do iter=1,fstrSOLID%step_ctrl(cstep)%max_iter
@@ -109,14 +103,11 @@ module m_fstr_NonLinearMethod
       if( isLinear ) exit
 
       ! ----- check convergence
-      iterStatus = fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep, pot)
+      iterStatus = fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
     enddo
     ! ----- end of inner loop
-
-    call plot_potential_graph( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
-    restrt_step_num, sub_step, ctime, dtime, iter, tincr )
 
     fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
     fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
@@ -134,54 +125,6 @@ module m_fstr_NonLinearMethod
     deallocate(P)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
   end subroutine fstr_Newton
-
-  subroutine plot_potential_graph( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
-    restrt_step_num, sub_step, ctime, dtime, iter, tincr )
-    integer, intent(in)                   :: cstep     !< current loading step
-    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
-    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-    integer, intent(in)                   :: sub_step  !< substep number of current loading step
-    real(kind=kreal), intent(in)          :: ctime     !< current time
-    real(kind=kreal), intent(in)          :: dtime     !< time increment
-    type (fstr_param)                     :: fstrPARAM !< type fstr_param
-    type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint) :: restrt_step_num
-
-    integer(kind=kint) :: iter, i, j
-    integer(kind=kint), parameter :: ntot = 30
-    real(kind=kreal)   :: tincr, alpha, dulen
-    real(kind=kreal) :: pot(3)
-    real(kind=kreal), allocatable :: dunode_bak(:)
-
-    dulen = dsqrt(dot_product(fstrSOLID%dunode(:),fstrSOLID%dunode(:)))
-    write(IMSG,*) "dulen",dulen
-
-    allocate(dunode_bak(size(fstrSOLID%dunode)))
-    do i=1, hecMAT%ndof*hecMESH%n_node
-      dunode_bak(i) = fstrSOLID%dunode(i)
-    enddo
-
-    do i=-ntot,ntot
-      alpha = 5.d-3*dble(i)/dble(ntot)
-      hecMAT%X(:) = alpha*fstrSOLID%dunode(:)
-      do j=1, size(fstrSOLID%dunode)
-        fstrSOLID%dunode(j) = dunode_bak(j)+hecMAT%X(j)
-      enddo
-      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-      pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
-      pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
-      pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
-      write(IMSG,'(I4,5(",",1pE16.9))') i,alpha,alpha*dulen,pot(1:3)
-    enddo
-
-    do i=1, size(fstrSOLID%dunode)
-      fstrSOLID%dunode(i) = dunode_bak(i)
-    enddo
-    hecMAT%X(:) = 0.d0
-    call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-  end subroutine
-
 
   !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
   !> method combined with Nested iteration of augmentation calculation as suggested
@@ -223,17 +166,7 @@ module m_fstr_NonLinearMethod
 
     ctAlgo = fstrPARAM%contact_algo
 
-    hecMAT%NDOF = hecMESH%n_dof
-    ndof = hecMAT%NDOF
-
-    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
-
-    allocate(coord(hecMESH%n_node*ndof))
-
-    tincr = dtime
-    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
-
-    fstrSOLID%dunode(:) = 0.0d0
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)
@@ -253,8 +186,7 @@ module m_fstr_NonLinearMethod
     hecMAT%X = 0.0d0
 
     stepcnt = 0
-
-    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+    allocate(coord(hecMESH%n_node*ndof))
 
     call hecmw_mat_clear_b(conMAT)
 
@@ -473,20 +405,9 @@ module m_fstr_NonLinearMethod
       call  hecmw_abort( hecmw_comm_get_comm() )
     endif
 
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
+
     ctAlgo = fstrPARAM%contact_algo
-
-    hecMAT%NDOF = hecMESH%n_dof
-    ndof = hecMAT%NDOF
-
-    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
-
-    allocate(coord(hecMESH%n_node*ndof))
-
-    tincr = dtime
-    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.0d0
-
-    fstrSOLID%dunode(:)  = 0.0d0
-
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
       call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
@@ -502,19 +423,15 @@ module m_fstr_NonLinearMethod
       call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, is_mat_symmetric)
     endif
 
-    stepcnt = 0
-
-    call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
-
     call hecmw_mat_clear_b(conMAT)
 
     if( fstr_is_contact_active() )  then
       call fstr_ass_load_contact(cstep, hecMESH, conMAT, fstrSOLID, hecLagMAT)
     endif
 
-    fstrSOLID%dunode(:) = 0.0d0
-
+    stepcnt = 0
     count_step = 0
+    allocate(coord(hecMESH%n_node*ndof))
 
     loopFORcontactAnalysis: do while( .TRUE. )
       count_step = count_step+1
@@ -701,7 +618,7 @@ module m_fstr_NonLinearMethod
     fstrSOLID%CutBack_stat = 0
   end subroutine fstr_Newton_contactSLag
 
-  subroutine fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, pot, pot0, ndof)
+  subroutine fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
     use m_fstr_Update
     implicit none
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -710,99 +627,26 @@ module m_fstr_NonLinearMethod
     real(kind=kreal), intent(in)          :: ctime     !< current time
     real(kind=kreal), intent(in)          :: dtime     !< time increment
     type (fstr_param)                     :: fstrPARAM !< type fstr_param
-    real(kind=kreal), intent(in) :: tincr
-    integer(kind=kint) :: iter
+    real(kind=kreal), intent(inout)       :: tincr
+    integer(kind=kint)                    :: iter
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
-    real(kind=kreal), intent(inout) :: pot(3), pot0(3)
-    integer(kind=kint), intent(in) :: ndof
+    integer(kind=kint), intent(inout)     :: ndof
 
-    real(kind=kreal)   :: res
+    hecMAT%NDOF = hecMESH%n_dof
+    ndof = hecMAT%ndof
+
+    tincr = dtime
+    if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
 
     fstrSOLID%dunode(:) = 0.0d0
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
-    fstrSOLID%GL0(:) = fstrSOLID%GL(:) !store external load at du=0
-
-    !calc initial potential
-    !! initialize du for non-zero Dirichlet condition
-    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
-    !! update residual vector
-    call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-
-    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
-    res = sqrt(res)
-    pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
-    pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
-    pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
-    pot0(1:3) = pot(1:3)
-    if( hecMESH%my_rank == 0 ) then
-      write(IMSG,'(A4,7(",",A14))') "iter","residual","p1","p2","p3","diffp1","diffp2","diffp3"
-      write(IMSG,'(I4,7(",",1pE14.7))') 0,res,pot(1:3),pot(1:3)-pot0(1:3)
-    endif
-
-    !! reset du and stress and strain 
-    fstrSOLID%dunode(:) = 0.0d0
-    call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    !end calc initial potential
   end subroutine fstr_init_Newton
 
-
-  !> \breaf This subroutine calculate residual vector
-  subroutine fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    use m_fstr_Update
-    implicit none
-    integer, intent(in)                   :: cstep     !< current loading step
-    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
-    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-    real(kind=kreal), intent(in)          :: ctime     !< current time
-    real(kind=kreal), intent(in)          :: dtime     !< time increment
-    type (fstr_param)                     :: fstrPARAM !< type fstr_param
-    real(kind=kreal), intent(in) :: tincr
-    integer(kind=kint) :: iter
-
-    ! ----- update the strain, stress, and internal force
-    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
-
-    ! ----- Set residual
-    if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
-      & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
-
-    call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
-  end subroutine fstr_calc_residual_vector
-
-  !> \breaf This subroutine calculate residual vector
-  subroutine fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    use m_fstr_Update
-    implicit none
-    integer, intent(in)                   :: cstep     !< current loading step
-    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
-    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-    real(kind=kreal), intent(in)          :: ctime     !< current time
-    real(kind=kreal), intent(in)          :: dtime     !< time increment
-    type (fstr_param)                     :: fstrPARAM !< type fstr_param
-    real(kind=kreal), intent(in) :: tincr
-    integer(kind=kint) :: iter
-
-    integer :: i
-    real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
-
-    do i=1, hecMAT%ndof*hecMESH%n_node
-      dunode_bak(i) = fstrSOLID%dunode(i)
-      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
-    enddo
-    call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    do i=1, hecMAT%ndof*hecMESH%n_node
-      fstrSOLID%dunode(i) = dunode_bak(i)
-    enddo
-  end subroutine fstr_calc_residual_vector_with_X
-
-
   !> \breaf This function check iteration status
-  function fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep, pot) result(iterStatus)
+  function fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep) result(iterStatus)
     implicit none
     integer(kind=kint) :: iterStatus
 
@@ -812,9 +656,8 @@ module m_fstr_NonLinearMethod
     integer(kind=kint), intent(in) :: ndof
     integer(kind=kint), intent(in) :: iter
     integer(kind=kint), intent(in) :: sub_step, cstep
-    real(kind=kreal), intent(inout) :: pot(3)
 
-    real(kind=kreal)   :: res, qnrm, rres, xnrm, dunrm, rxnrm, pot0(3)
+    real(kind=kreal)   :: res, qnrm, rres, xnrm, dunrm, rxnrm
 
     iterStatus = kitrContinue
 
@@ -834,18 +677,12 @@ module m_fstr_NonLinearMethod
     rres = res/qnrm
     rxnrm = xnrm/dunrm
 
-    pot0(1:3) = pot(1:3)
-    pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
-    pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
-    pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
-
     if( hecMESH%my_rank == 0 ) then
       if (qnrm == 1.0d0) then
         write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
       else
         write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
       endif
-      write(IMSG,'(I4,7(",",1pE14.7))') iter,res,pot(1:3),pot(1:3)-pot0(1:3)
     endif
     if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
       if( rres < fstrSOLID%step_ctrl(cstep)%converg .or. &
