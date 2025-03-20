@@ -50,11 +50,9 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
   * CIの中でのビルド環境となるDockerイメージを作成するためのディレクトリ
   * Makefile
     * make allでruntime, build, documentのDockerイメージがビルドされる
-    * runtime と build は、{metis5(無印), metis4} と {ubuntu2004, ubuntu2204} の各組合せで、各4つのイメージを作成
-  * Dockerfile.ubuntu2004
+    * runtime と build は、{metis5(無印), metis4} と ubuntu2204, metis5 と ubuntu2404 の組合せで、各3つのイメージを作成
   * Dockerfile.ubuntu2204
     * 環境を構築するための手順が記載されている
-    * libmumpsとlibtrilinos-mlのパッケージ名(バージョン番号)がubuntu2004とubuntu2204で異なるため、個別に用意されている
     * x86_64環境ではMKLをインストール、その他の環境ではOpenBLASをインストール
   * runtimeイメージ
     * fistr1, hecmw_part1などの実行時に必要な依存ライブラリのみをインストールしたubuntu環境
@@ -103,17 +101,17 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
       > because jobs with needs can start before earlier stages complete.
       > With needs you can only download artifacts from the jobs listed in the needs configuration.
 * build
-  * Dockerイメージ(build:ubuntu2004 or build:ubuntu2204) の中でmakeする。
+  * Dockerイメージ(build:ubuntu2204 or build:ubuntu2404) の中でmakeする。
     * build ディレクトリをアーティファクトとして残す。
-  * build/{serial,openmp,mpi,hybrid}/{ubuntu2004,ubuntu2204} (4x2=8種類)
+  * build/{serial,openmp,mpi,hybrid}/{ubuntu2204,ubuntu2404} (4x2=8種類)
     * 以上8個のジョブを動かす。
     * それぞれ対応するdockerイメージを利用する。
 * test
-  * Dockerイメージ(build:ubuntu2004 or build:ubuntu2204) の中でテストを実施する。
-  * test/serial/serial/{ubuntu2004,ubuntu2204} (2通り)
-  * test/openmp/{serial,openmp}/{ubuntu2004,ubuntu2204} (4通り)
-  * test/mpi/{serial,mpi}/{ubuntu2004,ubuntu2204} (4通り)
-  * test/hybrid/{serial,openmp,mpi,hybrid}/{ubuntu2004,ubuntu2204} (8通り)
+  * Dockerイメージ(build:ubuntu2204 or build:ubuntu2404) の中でテストを実施する。
+  * test/serial/serial/{ubuntu2204,ubuntu2404} (2通り)
+  * test/openmp/{serial,openmp}/{ubuntu2204,ubuntu2404} (4通り)
+  * test/mpi/{serial,mpi}/{ubuntu2204,ubuntu2404} (4通り)
+  * test/hybrid/{serial,openmp,mpi,hybrid}/{ubuntu2204,ubuntu2404} (8通り)
     * 以上18個のジョブを動かす。
     * それぞれ対応するdockerイメージを利用する。
     * needs で対応する build ジョブを指定している。
@@ -147,7 +145,7 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
       * 以上3つのジョブを動かす。
       * それぞれ対応するdockerイメージを利用する
       * 計3種類のzipファイルがアーティファクトの public/release/x86_64-w64xy-mingw32/ ディレクトリに保存される。
-  * deb/{serial,openmp,mpi,hybrid}/{ubuntu2004,ubuntu2204}
+  * deb/{serial,openmp,mpi,hybrid}/{ubuntu2204,ubuntu2404}
     * 以上8個のジョブを動かす。
     * needs で対応する build ジョブを指定している。
       * ビルド結果を適宜利用している。

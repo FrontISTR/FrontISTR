@@ -1,7 +1,7 @@
 variables:
   REGISTRY: registry.gitlab.com/frontistr-commons/frontistr
 
-image: ${REGISTRY}/build:ubuntu2004
+image: ${REGISTRY}/build:ubuntu2204
 
 stages:
     - build
