@@ -646,6 +646,8 @@ contains
       qf(1:nn*ndof)                                                          &
         = qf(1:nn*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
 
+      ! integrate strain energy
+      gausses(LX)%strain_energy = gausses(LX)%strain_energy*WG
     end do
 
   end subroutine Update_C3D8Fbar

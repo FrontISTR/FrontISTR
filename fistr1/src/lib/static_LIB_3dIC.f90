@@ -658,6 +658,9 @@ contains
         = qf(1:nn*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
       qf_a(1:3*ndof)                                                         &
         = qf_a(1:3*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,nn*ndof+1:(nn+3)*ndof) )*WG
+
+      ! integrate strain energy
+      gausses(LX)%strain_energy = gausses(LX)%strain_energy*WG
     end do
 
     ! condence ( qf - [Kda] * [Kaa]-1 * qf_a )

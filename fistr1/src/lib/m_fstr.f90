@@ -51,6 +51,10 @@ module m_fstr
   integer(kind=kint), parameter :: ksmGMRESREN = 6
   integer(kind=kint), parameter :: ksmDIRECT   = 101
 
+  !> nonlinear solver method (nsm)
+  integer(kind=kint), parameter :: knsmNEWTON      = 1
+  integer(kind=kint), parameter :: knsmQUASINEWTON = 2
+
   !> contact analysis algorithm
   integer(kind=kint), parameter :: kcaSLagrange = 1
   integer(kind=kint), parameter :: kcaALagrange = 2
@@ -80,6 +84,13 @@ module m_fstr
 
   integer(kind=kint), parameter :: kFLOADCASE_RE = 1
   integer(kind=kint), parameter :: kFLOADCASE_IM = 2
+
+  !> iteration control
+  integer(kind=kint), parameter :: kitrContinue = 0
+  integer(kind=kint), parameter :: kitrConverged = 1
+  integer(kind=kint), parameter :: kitrDiverged = 2
+  integer(kind=kint), parameter :: kitrFloatingError = 3
+
 
   !> PARALLEL EXECUTION
   integer(kind = kint) :: myrank
@@ -143,6 +154,7 @@ module m_fstr
   type fstr_param
     integer(kind=kint) :: solution_type !< solution type number
     integer(kind=kint) :: solver_method !< solver method number
+    integer(kind=kint) :: nlsolver_method !< solver method number for nonlinear equation
     logical            :: nlgeom        !< is geometrical nonlinearity considered
 
     !> STATIC !HEAT
@@ -372,8 +384,10 @@ module m_fstr
     integer(kind=kint) :: CutBack_stat     !< status of cutback control
 
     real(kind=kreal), pointer :: GL          (:)           !< external force
+    real(kind=kreal), pointer :: GL0         (:)           !< external force
     real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
+    real(kind=kreal), pointer :: QFORCE_bak  (:)           !< equivalent nodal force at the beginning of curr step
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
@@ -697,6 +711,7 @@ contains
     nullify( S%EPSTRAIN_VECT )
     nullify( S%ENQM )
     nullify( S%GL          )
+    nullify( S%GL0         )
     nullify( S%QFORCE      )
     nullify( S%VELOCITY_ngrp_ID )
     nullify( S%VELOCITY_ngrp_type )
@@ -970,6 +985,7 @@ contains
     fstrPARAM%solution_type = kstSTATIC
     fstrPARAM%nlgeom        = .false.
     fstrPARAM%solver_method = ksmCG
+    fstrPARAM%nlsolver_method = knsmNEWTON
 
     !!STATIC !HEAT
     fstrPARAM%analysis_n = 0

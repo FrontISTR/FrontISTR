@@ -330,11 +330,12 @@ contains
   !-------------------------------------------------------------------------------
   !> This subroutine provides to update stress and strain for Mooney-Rivlin material
   !-------------------------------------------------------------------------------
-  subroutine calUpdateElasticMooneyRivlin( matl, sectType, strain, stress, hdflag )
+  subroutine calUpdateElasticMooneyRivlin( matl, sectType, strain, stress, strain_energy, hdflag )
     type( tMaterial ), intent(in) :: matl        !< material properties
     integer, intent(in)           :: sectType    !< not used currently
     real(kind=kreal), intent(out) :: stress(6)   !< 2nd Piola-Kirchhoff stress
     real(kind=kreal), intent(in)  :: strain(6)   !< Green-Lagrangen strain
+    real(kind=kreal), intent(out) :: strain_energy   !< strain energy
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
     integer :: k, l
@@ -373,6 +374,9 @@ contains
     stress(4)=2.d0*dudc(1,2)
     stress(5)=2.d0*dudc(2,3)
     stress(6)=2.d0*dudc(1,3)
+
+    strain_energy = (inv1b-3.d0)*constant(1)+(inv2b-3.d0)*constant(2)  &
+    +(inv3b-1.d0)*(inv3b-1.d0)*constant(3)
 
   end subroutine calUpdateElasticMooneyRivlin
 

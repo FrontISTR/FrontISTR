@@ -75,7 +75,7 @@ contains
     character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2
 
     ! counters
-    integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo, c_amplitude
+    integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_write, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
     integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed
@@ -103,7 +103,7 @@ contains
 
     fstrPARAM%contact_algo = kcaALagrange
 
-    c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
+    c_solution = 0; c_solver   = 0; c_nlsolver = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
@@ -133,6 +133,9 @@ contains
       else if(     header_name == '!SOLUTION' ) then
         c_solution = c_solution + 1
         call fstr_setup_SOLUTION( ctrl, c_solution, P )
+      else if(     header_name == '!NONLINEAR_SOLVER' ) then
+        c_nlsolver = c_nlsolver + 1
+        call fstr_setup_NONLINEAR_SOLVER( ctrl, c_nlsolver, P )
       else if( header_name == '!SOLVER' ) then
         c_solver = c_solver + 1
         call fstr_setup_SOLVER( ctrl, c_solver, P )
@@ -1049,6 +1052,13 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%GL0( ntotal )          ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, GL0>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
     allocate ( fstrSOLID%EFORCE( ntotal )      ,stat=ierror )
     if( ierror /= 0 ) then
       write(idbg,*) 'stop due to allocation error <FSTR_SOLID, EFORCE>'
@@ -1098,14 +1108,23 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%QFORCE_bak( ntotal )      ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, QFORCE_bak>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
 
     fstrSOLID%GL(:)=0.d0
+    fstrSOLID%GL0(:)=0.d0
     !        fstrSOLID%TOTAL_DISP(:)=0.d0
     fstrSOLID%unode(:)      = 0.d0
     fstrSOLID%unode_bak(:)  = 0.d0
     fstrSOLID%dunode(:)     = 0.d0
     fstrSOLID%ddunode(:)    = 0.d0
     fstrSOLID%QFORCE(:)     = 0.d0
+    fstrSOLID%QFORCE_bak(:) = 0.d0
     fstrSOLID%FACTOR( 1:2 ) = 0.d0
 
     ! for MPC
@@ -1802,6 +1821,23 @@ contains
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_SOLUTION
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !NONLINEAR_SOLVER                                                         !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_NONLINEAR_SOLVER( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+
+    rcode = fstr_ctrl_get_NONLINEAR_SOLVER( ctrl, P%PARAM%nlsolver_method )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+  end subroutine fstr_setup_NONLINEAR_SOLVER
 
   !-----------------------------------------------------------------------------!
   !> Read in !SOLVER                                                           !

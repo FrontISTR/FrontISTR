@@ -10,7 +10,7 @@ contains
 
   !>  Add Essential Boundary Conditions
   !------------------------------------------------------------------------------------------*
-  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,conMAT)
+  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,conMAT,RHSvector)
     !------------------------------------------------------------------------------------------*
     use m_fstr
     use mContact
@@ -25,6 +25,7 @@ contains
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint)                   :: iter !< NR iterations
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
+    real(kind=kreal), optional           :: RHSvector(:) !< only Right Hand Side vector
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
     real(kind=kreal)   :: RHS0, RHS, factor, factor0
@@ -110,6 +111,11 @@ contains
           else
             RHS = (RHS0 - fstrSOLID%unode_bak(ndof*(in-1)+idof))*factor
           endif
+          if(present(RHSvector)) then
+            RHSvector(ndof*(in-1)+idof) = RHS
+            ! write(6,*) 'BC: ', ndof*(in-1)+idof, RHS
+            cycle
+          endif
           if(present(conMAT)) then
             call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
           else
@@ -158,6 +164,11 @@ contains
         endif
         do idof = 1, ndof
           RHS = cdiff(idof)-cdiff0(idof)+cddisp(idof)
+          if(present(RHSvector)) then
+            RHSvector(ndof*(in-1)+idof) = RHS
+            ! write(6,*) 'BC(rot): ', ndof*(in-1)+idof, RHS
+            cycle
+          endif
           if(present(conMAT)) then
             call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
           else
