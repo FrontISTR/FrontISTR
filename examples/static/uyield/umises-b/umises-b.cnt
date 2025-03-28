@@ -1,0 +1,59 @@
+!VERSION
+    3
+!SOLUTION, TYPE = NLSTATIC
+# symmetry on x=0, z=0 surfaces
+!BOUNDARY, GRPID = 1
+        1,        1,        3,   0.0
+        2,        2,        3,   0.0
+        3,        3,        3,   0.0
+        4,        1,        1,   0.0
+        4,        3,        3,   0.0
+        5,        1,        1,   0.0
+        8,        1,        1,   0.0
+!BOUNDARY, GRPID = 2
+        5,        2,        2,   0.0
+        6,        2,        2,   0.0
+# isotropic compression
+!DLOAD, GRPID = 1
+        1,       P2,     100.0
+        1,       P4,     100.0
+        1,       P5,     100.0
+# simple shear; gamma_yz = 10%
+!BOUNDARY, GRPID = 3
+        3,        2,        2,   0.0
+        4,        2,        2,   0.0
+        5,        2,        2,   0.1
+        6,        2,        2,   0.1
+        7,        2,        2,   0.1
+        8,        2,        2,   0.1
+!STEP, SUBSTEPS = 1
+  BOUNDARY,    1
+  BOUNDARY,    2
+  LOAD,        1
+!STEP, MAXITER=100
+ 1, 100
+  BOUNDARY,    1
+  BOUNDARY,    3
+  LOAD,        1
+!MATERIAL, NAME=M1
+!ELASTIC
+  10.0E+04,   0.33
+# !PLASTIC, YIELD=MISES
+#   15., 0.0
+!PLASTIC, YIELD=USER
+  15., 0.0
+!WRITE,RESULT,FREQUENCY=1
+!OUTPUT_RES
+   ESTRAIN, ON
+   ESTRESS, ON
+   PL_ISTRAIN, ON
+   PRINC_ESTRESS, ON
+!WRITE,VISUAL,FREQUENCY=10
+!SOLVER, METHOD = CG, PRECOND = 1, ITERLOG = NO, TIMELOG = NO
+ 100, 1
+ 1.0e-8
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type=VTK
+!END

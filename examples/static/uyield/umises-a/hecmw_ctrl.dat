@@ -1,0 +1,12 @@
+!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+umises-a.msh
+!CONTROL,NAME=fstrCNT
+umises-a.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+umises-a.res
+!RESULT,NAME=vis_out,IO=OUT
+umises-a_vis
+!MESH, NAME=part_in,TYPE=HECMW-ENTIRE
+umises-a.msh
+!MESH, NAME=part_out,TYPE=HECMW-DIST
+umises-a.msh
