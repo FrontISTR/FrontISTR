@@ -235,7 +235,7 @@ contains
     character(len=HECMW_NAME_LEN) :: header_name
     integer(kind=kint) :: bcid
     integer(kind=kint) :: i, n, sn, ierr
-    integer(kind=kint) :: bc_n, load_n, contact_n, dummy_n
+    integer(kind=kint) :: bc_n, load_n, contact_n, elemact_n
     real(kind=kreal) :: fn, f1, f2, f3
 
     fstr_ctrl_get_ISTEP = .false.
@@ -293,7 +293,7 @@ contains
     bc_n = 0
     load_n = 0
     contact_n = 0
-    dummy_n = 0
+    elemact_n = 0
     do i=sn,n
       if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, header_name, bcid  )/= 0) return
       if( trim(header_name) == 'BOUNDARY' ) then
@@ -302,8 +302,8 @@ contains
         load_n = load_n +1
       else if( trim(header_name) == 'CONTACT' ) then
         contact_n = contact_n+1
-      else if( trim(header_name) == 'DUMMY' ) then
-        dummy_n = dummy_n+1
+      else if( trim(header_name) == 'ELEMACT' ) then
+        elemact_n = elemact_n+1
       else if( trim(header_name) == 'TEMPERATURE' ) then
         !   steps%Temperature = .true.
       endif
@@ -312,12 +312,12 @@ contains
     if( bc_n>0 ) allocate( steps%Boundary(bc_n) )
     if( load_n>0 ) allocate( steps%Load(load_n) )
     if( contact_n>0 ) allocate( steps%Contact(contact_n) )
-    if( dummy_n>0 ) allocate( steps%Dummy(dummy_n) )
+    if( elemact_n>0 ) allocate( steps%ElemActivation(elemact_n) )
 
     bc_n = 0
     load_n = 0
     contact_n = 0
-    dummy_n = 0
+    elemact_n = 0
     do i=sn,n
       if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, header_name, bcid  )/= 0) return
       if( trim(header_name) == 'BOUNDARY' ) then
@@ -329,9 +329,9 @@ contains
       else if( trim(header_name) == 'CONTACT' ) then
         contact_n = contact_n+1
         steps%Contact(contact_n) = bcid
-      else if( trim(header_name) == 'DUMMY' ) then
-        dummy_n = dummy_n+1
-        steps%Dummy(dummy_n) = bcid
+      else if( trim(header_name) == 'ELEMACT' ) then
+        elemact_n = elemact_n+1
+        steps%ElemActivation(elemact_n) = bcid
       endif
     end do
 
@@ -968,30 +968,38 @@ contains
   end function fstr_ctrl_get_AMPLITUDE
 
   !* ----------------------------------------------------------------------------------------------- *!
-  !> Read in !DUMMY
+  !> Read in !ELEMENT_ACTIVATION
   !* ----------------------------------------------------------------------------------------------- *!
 
-  function fstr_ctrl_get_DUMMY( ctrl, amp, eps, grp_id_name, dtype, thlow, thup )
+  function fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, dtype, state, thlow, thup )
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
     real(kind=kreal) :: eps
     character(len=HECMW_NAME_LEN),target :: grp_id_name(:)
     integer(kind=kint) :: dtype
+    integer(kind=kint) :: state
     real(kind=kreal), target :: thlow(:), thup(:)
-    integer(kind=kint) :: fstr_ctrl_get_DUMMY
+    integer(kind=kint) :: fstr_ctrl_get_ELEMENT_ACTIVATION
 
     character(len=HECMW_NAME_LEN),pointer :: element_id_p
-    real(kind=kreal),pointer :: thlow_p, thup_p
+    real(kind=kreal),pointer :: thlow_p(:), thup_p(:)
     
     integer(kind=kint) :: i, n
     integer(kind=kint) :: rcode
     character(len=HECMW_NAME_LEN) :: data_fmt,s1
     integer(kind=kint) :: lid
+    character(len=HECMW_NAME_LEN) :: state_str
 
-    fstr_ctrl_get_DUMMY = -1
+    fstr_ctrl_get_ELEMENT_ACTIVATION = -1
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'EPSILON ',  '# ',  0, 'R', eps ) /= 0 ) return
+
+    ! Default values
+    state = 1  ! Default is ON
+    state_str = 'ON,OFF'
+    if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', state_str, 0, 'P', state ) /= 0 ) return
+
     dtype = 1
     s1 = 'NONE,STRESS,STRAIN '
     if( fstr_ctrl_get_param_ex( ctrl, 'DEPENDS ', s1, 0, 'P', dtype ) /= 0 ) return
@@ -1002,8 +1010,8 @@ contains
     !! for avoiding stack overflow with intel 9 complier
     !!
     element_id_p => grp_id_name(1)
-    thlow_p => thlow(1)
-    thup_p => thup(1)
+    thlow_p => thlow
+    thup_p => thup
 
     if( dtype == 1 ) then
       write( data_fmt, '(a,a)') 'S', trim(adjustl(s1))
@@ -1013,9 +1021,9 @@ contains
       rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p, thlow_p, thup_p )
     endif
 
-    fstr_ctrl_get_DUMMY = 0
+    fstr_ctrl_get_ELEMENT_ACTIVATION = 0
 
-  end function fstr_ctrl_get_DUMMY
+  end function fstr_ctrl_get_ELEMENT_ACTIVATION
 
 
 end module fstr_ctrl_common

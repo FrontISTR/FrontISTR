@@ -17,7 +17,7 @@ module m_fstr_NonLinearMethod
   use m_fstr_AddBC
   use m_fstr_Residual
   use m_fstr_Restart
-  use m_fstr_dummy
+  use m_fstr_elemact
 
   implicit none
 
@@ -506,8 +506,8 @@ contains
         ! ----- update the strain, stress, and internal force (only QFORCE)
         call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
-        if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) then
-          call fstr_update_dummy_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
+        if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
+          call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
         endif
   
         ! ----- Set residual
@@ -648,7 +648,7 @@ contains
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
-    if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) then
+    if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
       call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, 0)
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)      
     endif

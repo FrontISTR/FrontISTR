@@ -106,7 +106,7 @@ OBJS =
 
 OBJSF = \
         m_step.@f90objfilepostfix@ \
-        m_dummy.@f90objfilepostfix@ \
+        m_element_activation.@f90objfilepostfix@ \
         m_timepoint.@f90objfilepostfix@ \
         m_out.@f90objfilepostfix@ \
         m_common_struct.@f90objfilepostfix@ \

@@ -6,7 +6,7 @@
 
 module m_fstr_Residual
   use hecmw
-  use m_fstr_dummy
+  use m_fstr_elemact
   implicit none
 
   public :: fstr_Update_NDForce
@@ -161,8 +161,8 @@ contains
       & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
 
-    if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) then
-      call fstr_update_dummy_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
+    if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
+      call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
     endif
     
     call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)

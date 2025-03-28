@@ -2,55 +2,61 @@
 ! Copyright (c) 2016 The University of Tokyo
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This module defined dummy data and function
-module m_dummy
+!> This module defined elemact data and function
+module m_elemact
   use hecmw
   use mMechGauss
 
   implicit none
 
-  type tDummy
-    !> DUMMY
-    integer(kind=kint) :: DUMMY_egrp_tot
-    integer(kind=kint), pointer :: DUMMY_egrp_GRPID  (:)  =>null()
-    integer(kind=kint), pointer :: DUMMY_egrp_ID     (:)  =>null()
-    integer(kind=kint), pointer :: DUMMY_egrp_amp    (:)  =>null()
-    real(kind=kreal), pointer   :: DUMMY_egrp_eps    (:)  =>null()
-    integer(kind=kint), pointer :: DUMMY_egrp_depends(:)  =>null()
-    real(kind=kreal), pointer   :: DUMMY_egrp_ts_lower(:)  =>null()
-    real(kind=kreal), pointer   :: DUMMY_egrp_ts_upper(:)  =>null()
+  type tElemact
+    !> ELEMENT_ACTIVATION
+    integer(kind=kint) :: ELEMACT_egrp_tot
+    integer(kind=kint), pointer :: ELEMACT_egrp_GRPID  (:)  =>null()
+    integer(kind=kint), pointer :: ELEMACT_egrp_ID     (:)  =>null()
+    integer(kind=kint), pointer :: ELEMACT_egrp_amp    (:)  =>null()
+    real(kind=kreal), pointer   :: ELEMACT_egrp_eps    (:)  =>null()
+    integer(kind=kint), pointer :: ELEMACT_egrp_depends(:)  =>null()
+    real(kind=kreal), pointer   :: ELEMACT_egrp_ts_lower(:)  =>null()
+    real(kind=kreal), pointer   :: ELEMACT_egrp_ts_upper(:)  =>null()
+    integer(kind=kint), pointer :: ELEMACT_egrp_state  (:)  =>null()  ! Element activation state
   end type
 
-  integer, parameter :: kDUM_UNDEFINED = -1
-  integer, parameter :: kDUM_INACTIVE  = 0
-  integer, parameter :: kDUM_ACTIVE    = 1
+  ! Element status flags
+  integer, parameter :: kELACT_UNDEFINED = -1  ! Undefined state
+  integer, parameter :: kELACT_INACTIVE  = 0   ! Element is active in calculation
+  integer, parameter :: kELACT_ACTIVE    = 1   ! Element is deactivated in calculation
 
-  integer, parameter :: kDUMD_NONE    = 1
-  integer, parameter :: kDUMD_STRESS  = 2
-  integer, parameter :: kDUMD_STRAIN  = 3
+  ! Dependency type flags
+  integer, parameter :: kELACTD_NONE    = 1   ! No dependencies
+  integer, parameter :: kELACTD_STRESS  = 2   ! Stress dependent
+  integer, parameter :: kELACTD_STRAIN  = 3   ! Strain dependent
+  
+  integer, parameter :: kELEM_STATE_ON  = 1  ! Element activation state ON (element is active)
+  integer, parameter :: kELEM_STATE_OFF = 2  ! Element activation state OFF (element is inactive/elemact)
 
 contains
 
-  !< print dummy info
-  subroutine print_dummy_info( dum )
-    type(tDummy), intent(in) :: dum  !< dummy info
+  !< print elemact info
+  subroutine print_elemact_info( elact )
+    type(tElemact), intent(in) :: elact  !< elemact info
 
     integer(kind=kint) :: i
 
-    write(*,'(A,I0)') 'DUMMY_egrp_tot: ', dum%DUMMY_egrp_tot
-    do i=1,dum%DUMMY_egrp_tot
+    write(*,'(A,I0)') 'ELEMACT_egrp_tot: ', elact%ELEMACT_egrp_tot
+    do i=1,elact%ELEMACT_egrp_tot
       write(*,*) 'DUMMY : ',i
-      write(*,*) 'GRPID    : ',dum%DUMMY_egrp_GRPID
-      write(*,*) 'EGRPID   : ',dum%DUMMY_egrp_ID
-      write(*,*) 'AMPLITUDE: ',dum%DUMMY_egrp_amp
-      write(*,*) 'EPSILON  : ',dum%DUMMY_egrp_eps
-      write(*,*) 'DEPENDS  : ',dum%DUMMY_egrp_depends
-      write(*,*) 'THLOWER  : ',dum%DUMMY_egrp_ts_lower
-      write(*,*) 'THUPPER  : ',dum%DUMMY_egrp_ts_upper
+      write(*,*) 'GRPID    : ',elact%ELEMACT_egrp_GRPID
+      write(*,*) 'EGRPID   : ',elact%ELEMACT_egrp_ID
+      write(*,*) 'AMPLITUDE: ',elact%ELEMACT_egrp_amp
+      write(*,*) 'EPSILON  : ',elact%ELEMACT_egrp_eps
+      write(*,*) 'DEPENDS  : ',elact%ELEMACT_egrp_depends
+      write(*,*) 'THLOWER  : ',elact%ELEMACT_egrp_ts_lower
+      write(*,*) 'THUPPER  : ',elact%ELEMACT_egrp_ts_upper
     end do
   end subroutine
 
-  !< stiff matrix of a dummy element
+  !< stiff matrix of a elemact element
   subroutine STF_DUMMY( ndof, nn, ecoord, u, stiff, element )
     use mMechGauss
     integer(kind=kint), intent(in)  :: ndof                   !< degree of freedum
@@ -75,7 +81,7 @@ contains
     dL = 0.33333333333d0*((xmax(1)-xmin(1))+(xmax(2)-xmin(2))+(xmax(3)-xmin(3)))
     if( dL < 1.d-8 ) dL = 1.d0
 
-    coeff = element%dummy_coeff/dL
+    coeff = element%elemact_coeff/dL
     dnn = 1.d0/dble(nn)
     stiff(:,:) = 0.d0
     do i=1,nn
@@ -95,7 +101,7 @@ contains
 
   end subroutine
 
-  !< nodal force vector of a dummy element
+  !< nodal force vector of a elemact element
   subroutine UPDATE_DUMMY( ndof, nn, ecoord, u, du, qf, element )
     use mMechGauss
     integer(kind=kint), intent(in)  :: ndof                   !< degree of freedum
@@ -121,7 +127,7 @@ contains
     dL = 0.33333333333d0*((xmax(1)-xmin(1))+(xmax(2)-xmin(2))+(xmax(3)-xmin(3)))
     if( dL < 1.d-8 ) dL = 1.d0
 
-    coeff = element%dummy_coeff/dL
+    coeff = element%elemact_coeff/dL
     dnn = 1.d0/dble(nn)
     aveu(:) = 0.d0
     do i=1,nn
@@ -152,4 +158,4 @@ contains
   end subroutine
 
 
-end module m_dummy
+end module m_elemact

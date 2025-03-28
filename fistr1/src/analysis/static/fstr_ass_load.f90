@@ -20,7 +20,7 @@ contains
     use m_fstr
     use m_static_lib
     use m_fstr_precheck
-    use m_fstr_dummy
+    use m_fstr_elemact
     use mMechGauss
     use mReadTemp
     use mULoad
@@ -180,8 +180,8 @@ contains
           ic_type = hecMESH%elem_type(icel)
         endif
 
-        !DUMMY
-        if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
+        !ELEMENT ACTIVATION
+        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
 
         if( hecmw_is_etype_link(ic_type) ) cycle
         if( hecmw_is_etype_patch(ic_type) ) cycle
@@ -325,9 +325,9 @@ contains
       endif
     endif
 
-    ! ----- dummy element
-    if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) &
-      &  call fstr_update_dummy_solid( hecMESH, fstrSOLID, cstep, ctime )
+    ! ----- elemact element
+    if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) &
+      &  call fstr_update_elemact_solid( hecMESH, fstrSOLID, cstep, ctime )
 
     if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
       ! ----- element TYPE loop.
@@ -344,8 +344,8 @@ contains
         ! ----- element loop
         do icel = is, iE
 
-          !DUMMY
-          if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
+          !ELEMENT ACTIVATION
+          if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
 
           ! ----- node ID
           is= hecMESH%elem_node_index(icel-1)

@@ -18,7 +18,7 @@ module m_fstr
   use m_step
   use m_out
   use m_timepoint
-  use m_dummy
+  use m_elemact
   use mMechGauss
   use mContactDef
 
@@ -314,8 +314,8 @@ module m_fstr
     integer(kind=kint), pointer :: SPRING_ngrp_amp      (:)
     real(kind=kreal), pointer   :: SPRING_ngrp_val      (:)
 
-    !> DUMMY
-    type(tDummy) :: dummy
+    !> ELEMACT
+    type(tElemact) :: elemact
 
     !> for couple analysis
     integer( kind=kint ) :: COUPLE_ngrp_tot                   !< Following for coupling analysis
@@ -504,8 +504,8 @@ module m_fstr
     integer(kind=kint)  :: WL_tot
     type(tWeldLine), pointer :: weldline(:) => null()
 
-    !> DUMMY
-    type(tDummy) :: dummy
+    !> ELEMACT
+    type(tElemact) :: elemact
   end type fstr_heat
 
   !> Data for DYNAMIC ANSLYSIS  (fstrDYNAMIC)
@@ -1076,14 +1076,14 @@ contains
     fstr_isEmbedActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
   end function
 
-  logical function fstr_isDummyActive( fstrSOLID, nbc, cstep )
+  logical function fstr_isElemActivationActive( fstrSOLID, nbc, cstep )
     type(fstr_solid)    :: fstrSOLID
-    integer, intent(in) :: nbc    !< group id of dummy condition
+    integer, intent(in) :: nbc    !< group id of elemact condition
     integer, intent(in) :: cstep  !< current step number
-    fstr_isDummyActive = .true.
+    fstr_isElemActivationActive = .true.
     if( .not. associated(fstrSOLID%step_ctrl) ) return
     if( cstep>fstrSOLID%nstep_tot ) return
-    fstr_isDummyActive = isDummyActive( nbc, fstrSOLID%step_ctrl(cstep) )
+    fstr_isElemActivationActive = isElemActivationActive( nbc, fstrSOLID%step_ctrl(cstep) )
   end function
 
   !> This subroutine fetch coords defined by local coordinate system

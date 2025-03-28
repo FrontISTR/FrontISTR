@@ -409,14 +409,14 @@ contains
     !  endif
     !endif
 
-    ! --- DUMMY flag @element
+    ! --- ELEMACT flag @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(44) ) then
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(44), ndof )
-      label = 'DUMMY'
+      label = 'ELEMACT'
       work(:) = 0.d0
       do i = 1, hecMESH%n_elem
-        if( fstrSOLID%elements(i)%dummy_flag > 0 ) work(i) = 1.d0
+        if( fstrSOLID%elements(i)%elemact_flag > 0 ) work(i) = 1.d0
       enddo
       call hecmw_result_add( id, nitem, label, work )
     endif
@@ -860,7 +860,7 @@ contains
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(40), ndof )
     endif
-    ! --- DUMMY flag @element
+    ! --- ELEMACT flag @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(44) ) then
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(44), ndof )
@@ -1251,14 +1251,14 @@ contains
       jitem = jitem + nn
     endif
 
-    ! --- DUMMY flag @element
+    ! --- ELEMACT flag @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(44) ) then
       ecomp = ecomp + 1
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(44), ndof )
       fstrRESULT%ne_dof(ecomp) = nn
-      fstrRESULT%elem_label(ecomp) = 'DUMMY'
+      fstrRESULT%elem_label(ecomp) = 'ELEMACT'
       do i = 1, hecMESH%n_elem
-        if( fstrSOLID%elements(i)%dummy_flag > 0 ) then
+        if( fstrSOLID%elements(i)%elemact_flag > 0 ) then
           fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 1.d0
         else
           fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 0.d0

@@ -13,7 +13,7 @@ contains
     use m_heat_mat_ass_capacity
     use m_heat_mat_ass_boundary
     use m_solve_lineq
-    use m_fstr_dummy
+    use m_fstr_elemact
     implicit none
     integer(kind=kint) :: i, iterALL, ISTEP, bup_n_dof
     real(kind=kreal)   :: delta_time, next_time
@@ -26,8 +26,8 @@ contains
     type(hecmwST_matrix), pointer :: hecMATmpc
     logical :: is_congerged
 
-    if( fstrHEAT%dummy%DUMMY_egrp_tot>0 ) &
-      &  call fstr_update_dummy_heat( hecMESH, fstrHEAT%dummy, next_time, fstrSOLID%elements )
+    if( fstrHEAT%elemact%ELEMACT_egrp_tot>0 ) &
+      &  call fstr_update_elemact_heat( hecMESH, fstrHEAT%elemact, next_time, fstrSOLID%elements )
 
     iterALL = 0
     do
@@ -51,8 +51,8 @@ contains
         fstrHEAT%TEMP (i) = hecMAT%X(i)
       enddo
 
-      if( fstrHEAT%dummy%DUMMY_egrp_tot>0 ) &
-        &  call fstr_updatedof_dummy( 1, hecMESH, fstrHEAT%dummy, fstrSOLID%elements, fstrHEAT%TEMP0, fstrHEAT%TEMP )
+      if( fstrHEAT%elemact%ELEMACT_egrp_tot>0 ) &
+        &  call fstr_updatedof_elemact( 1, hecMESH, fstrHEAT%elemact, fstrSOLID%elements, fstrHEAT%TEMP0, fstrHEAT%TEMP )
 
       call heat_check_convergence(hecMESH, fstrHEAT, fstrPARAM, ISTEP, iterALL, is_congerged)
 

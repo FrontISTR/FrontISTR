@@ -44,7 +44,7 @@ module m_step
     integer, pointer :: Boundary(:)=>null()   !< active group of boundary conditions of current step
     integer, pointer :: Load(:)=>null()       !< active group of external load conditions of current step
     integer, pointer :: Contact(:)=>null()    !< active group of contact conditions of current step
-    integer, pointer :: Dummy(:)=>null()      !< active group of dummy conditions of current step
+    integer, pointer :: ElemActivation(:)=>null()      !< active group of elemact conditions of current step
     integer :: timepoint_id                   !< id of timepoint
     integer :: AincParam_id                   !< id of auto increment parameter
   end type
@@ -123,13 +123,13 @@ contains
     if( any( stepinfo%Contact== bnd ) ) isContactActive = .true.
   end function
 
-  !> Is dummy condition in this step active
-  logical function isDummyActive( bnd, stepinfo )
+  !> Is elemact condition in this step active
+  logical function isElemActivationActive( bnd, stepinfo )
     integer, intent(in)           :: bnd      !< group number of boundary condition
     type( step_info ), intent(in) :: stepinfo !< current step info
-    isDummyActive = .false.
-    if( .not. associated( stepinfo%Dummy ) ) return
-    if( any( stepinfo%Dummy== bnd ) ) isDummyActive = .true.
+    isElemActivationActive = .false.
+    if( .not. associated( stepinfo%ElemActivation ) ) return
+    if( any( stepinfo%ElemActivation== bnd ) ) isElemActivationActive = .true.
   end function
 
   !> Finalizer
@@ -138,7 +138,7 @@ contains
     if( associated( step%Boundary ) ) deallocate( step%Boundary )
     if( associated( step%Load ) )     deallocate( step%Load )
     if( associated( step%Contact ) )  deallocate( step%Contact )
-    if( associated( step%Dummy ) )    deallocate( step%Dummy )
+    if( associated( step%ElemActivation ) )    deallocate( step%ElemActivation )
   end subroutine
 
   !> Print out step control
@@ -169,10 +169,10 @@ contains
         write(nfile,*) "  Contact conditions"
         write(nfile,*) ( steps(i)%Contact(j),j=1,nbc )
       endif
-      if( associated( steps(i)%Dummy ) ) then
-        nbc = size( steps(i)%Dummy )
-        write(nfile,*) "  Dummy conditions"
-        write(nfile,*) ( steps(i)%Dummy(j),j=1,nbc )
+      if( associated( steps(i)%ElemActivation ) ) then
+        nbc = size( steps(i)%ElemActivation )
+        write(nfile,*) "  ElemActivation conditions"
+        write(nfile,*) ( steps(i)%ElemActivation(j),j=1,nbc )
       endif
     enddo
   end subroutine

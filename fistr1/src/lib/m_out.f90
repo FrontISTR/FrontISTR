@@ -177,7 +177,7 @@ contains
     outinfo%keyWord(43)  = "PL_ESTRAIN"
     outinfo%vtype(43)    = -1
 
-    outinfo%keyWord(44) = "DUMMY"
+    outinfo%keyWord(44) = "ELEMACT"
     outinfo%vtype(44)   = -1
 
   end subroutine initOutInfo

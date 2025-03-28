@@ -20,7 +20,7 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/heat_LIB_NEUTRAL.f90
   ${CMAKE_CURRENT_LIST_DIR}/heat_LIB_RADIATE.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_common_struct.f90
-  ${CMAKE_CURRENT_LIST_DIR}/m_dummy.f90
+  ${CMAKE_CURRENT_LIST_DIR}/m_element_activation.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_fstr.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_timepoint.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_out.f90

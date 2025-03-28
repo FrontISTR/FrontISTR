@@ -164,11 +164,11 @@ contains
           call StiffMat_abort( ic_type, 1 )
         endif
 
-        ! dummy element
-        if( fstrSOLID%elements(icel)%dummy_flag > 0 ) then
+        ! elemact element
+        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) then
           call STF_DUMMY( ndof, nn, ecoord(:,1:nn), u(1:3,1:nn), &
             &  stiffness(1:nn*ndof, 1:nn*ndof), fstrSOLID%elements(icel) )
-          !stiffness(:,:) = fstrSOLID%elements(icel)%dummy_coeff*stiffness(:,:)
+          !stiffness(:,:) = fstrSOLID%elements(icel)%elemact_coeff*stiffness(:,:)
         end if
         !
         ! ----- CONSTRUCT the GLOBAL MATRIX STARTED

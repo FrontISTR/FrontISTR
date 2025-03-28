@@ -25,7 +25,7 @@ contains
   subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, strainEnergy)
     !=====================================================================*
     use m_static_lib
-    use m_dummy
+    use m_elemact
 
     type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
     type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -225,11 +225,11 @@ contains
 
         endif
 
-        ! dummy element
-        if( fstrSOLID%elements(icel)%dummy_flag > 0 ) then
+        ! elemact element
+        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) then
           call UPDATE_DUMMY( ndof, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), &
             &  du(1:3,1:nn), qf(1:nn*ndof), fstrSOLID%elements(icel) )
-          !qf(:) = fstrSOLID%elements(icel)%dummy_coeff*qf(:)
+          !qf(:) = fstrSOLID%elements(icel)%elemact_coeff*qf(:)
         end if
 
         ! ----- calculate the global internal force ( Q(u_{n+1}^{k-1}) )

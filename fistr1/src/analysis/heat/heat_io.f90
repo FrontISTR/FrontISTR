@@ -88,7 +88,7 @@ contains
 
   subroutine heat_output_result(hecMESH, fstrHEAT, fstrSOLID, tstep, ctime, outflag)
     use m_fstr
-    use m_fstr_dummy
+    use m_fstr_elemact
     implicit none
     type(hecmwST_local_mesh)  :: hecMESH
     type(fstr_heat)           :: fstrHEAT
@@ -114,11 +114,11 @@ contains
       label = 'TEMPERATURE'
       call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 1, label, fstrHEAT%TEMP)
 
-      !dummy state
-      if( fstrHEAT%dummy%DUMMY_egrp_tot > 0 ) then
+      !elemact state
+      if( fstrHEAT%elemact%ELEMACT_egrp_tot > 0 ) then
         allocate(work(hecMESH%n_elem))
-        call output_dummy_flag( hecMESH, fstrSOLID%elements, work )
-        label = 'DUMMY'
+        call output_elemact_flag( hecMESH, fstrSOLID%elements, work )
+        label = 'ELEMACT'
         call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, label, work)
         deallocate(work)
       end if
@@ -131,7 +131,7 @@ contains
 
   subroutine heat_output_visual(hecMESH, fstrRESULT, fstrHEAT, fstrSOLID, tstep, ctime, outflag)
     use m_fstr
-    use m_fstr_dummy
+    use m_fstr_elemact
     use m_hecmw2fstr_mesh_conv
     implicit none
     type(hecmwST_local_mesh)  :: hecMESH
@@ -161,17 +161,17 @@ contains
       fstrRESULT%node_label(1) = 'TEMPERATURE'
       fstrRESULT%node_val_item = fstrHEAT%TEMP
 
-      !dummy state
-      if( fstrHEAT%dummy%DUMMY_egrp_tot > 0 ) then
+      !elemact state
+      if( fstrHEAT%elemact%ELEMACT_egrp_tot > 0 ) then
         fstrRESULT%ne_component = 1
         allocate(fstrRESULT%ne_dof(1))
         allocate(fstrRESULT%elem_label(1))
         allocate(fstrRESULT%elem_val_item(hecMESH%n_elem))
         allocate(work(hecMESH%n_elem))
-        call output_dummy_flag( hecMESH, fstrSOLID%elements, work )
+        call output_elemact_flag( hecMESH, fstrSOLID%elements, work )
 
         fstrRESULT%ne_dof(1) = 1
-        fstrRESULT%elem_label(1) = 'DUMMY'
+        fstrRESULT%elem_label(1) = 'ELEMACT'
         fstrRESULT%elem_val_item = work
         deallocate(work)
       end if

@@ -17,7 +17,7 @@ contains
     use m_fstr
     use m_static_lib
     use m_fstr_precheck
-    use m_fstr_dummy
+    use m_fstr_elemact
     use m_table_dyn
     use m_common_struct
     use m_utilities
@@ -61,11 +61,11 @@ contains
     ndof = hecMAT%NDOF
     call hecmw_mat_clear_b( hecMAT )
 
-    ! ----- dummy element
-    if( fstrSOLID%dummy%DUMMY_egrp_tot > 0 ) then
+    ! ----- elemact element
+    if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
       t_t = fstrDYNAMIC%t_curr
       if( fstrDYNAMIC%idx_eqa == 11 ) t_t = t_t - fstrDYNAMIC%t_delta
-      call fstr_update_dummy_solid( hecMESH, fstrSOLID, 1, t_t )
+      call fstr_update_elemact_solid( hecMESH, fstrSOLID, 1, t_t )
     end if
 
     !C
@@ -173,8 +173,8 @@ contains
           ic_type = hecMESH%elem_type(icel)
         endif
 
-        !DUMMY
-        if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
+        !ELEMENT ACTIVATION
+        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
 
         !C** Create local stiffness
         nn = hecmw_get_max_node(ic_type)
@@ -380,8 +380,8 @@ contains
         !C element loop
         do icel = is, iE
 
-          !DUMMY
-          if( fstrSOLID%elements(icel)%dummy_flag > 0 ) cycle
+          !ELEMENT ACTIVATION
+          if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
 
           !C** node ID
           is= hecMESH%elem_node_index(icel-1)

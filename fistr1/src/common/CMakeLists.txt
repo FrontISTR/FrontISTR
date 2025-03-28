@@ -21,7 +21,7 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_debug_dump.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_precheck.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_rcap_io.F90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_dummy.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_element_activation.f90
 )
 
 target_include_directories(fistr PRIVATE
