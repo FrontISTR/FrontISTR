@@ -18,6 +18,7 @@ contains
 
     integer(kind=kint) :: idum, amp_id, gid
     real(kind=kreal)   :: amp_val
+    integer(kind=kint) :: state, dummy_state
 
     do idum = 1, fstrSOLID%dummy%DUMMY_egrp_tot
       gid = fstrSOLID%dummy%DUMMY_egrp_GRPID(idum)
@@ -36,10 +37,22 @@ contains
         endif
       end if
 
-      if( fstrSOLID%dummy%DUMMY_egrp_depends(idum) == kDUMD_NONE ) then
-        call set_dummy_flag( hecMESH, fstrSOLID%dummy, idum, fstrSOLID%elements, kDUM_ACTIVE, .false. )
+      ! Get the state
+      state = fstrSOLID%dummy%DUMMY_egrp_state(idum)
+
+      ! Set dummy flag based on ELEMENT_ACTIVATION STATE
+      if (state == kELEM_STATE_ON) then
+        ! Active element = set dummy flag to INACTIVE
+        dummy_state = kDUM_INACTIVE
       else
-        call set_dummy_flag( hecMESH, fstrSOLID%dummy, idum, fstrSOLID%elements, kDUM_INACTIVE, .true. )
+        ! Inactive element = set dummy flag to ACTIVE
+        dummy_state = kDUM_ACTIVE
+      endif
+
+      if( fstrSOLID%dummy%DUMMY_egrp_depends(idum) == kDUMD_NONE ) then
+        call set_dummy_flag( hecMESH, fstrSOLID%dummy, idum, fstrSOLID%elements, dummy_state, .false. )
+      else
+        call set_dummy_flag( hecMESH, fstrSOLID%dummy, idum, fstrSOLID%elements, dummy_state, .true. )
       endif
     end do
 
@@ -53,6 +66,7 @@ contains
 
     integer(kind=kint) :: idum, amp_id, gid, dtype
     real(kind=kreal)   :: amp_val, thlow, thup
+    integer(kind=kint) :: state
 
     do idum = 1, fstrSOLID%dummy%DUMMY_egrp_tot
       gid = fstrSOLID%dummy%DUMMY_egrp_GRPID(idum)
@@ -65,6 +79,7 @@ contains
         if( amp_val < 1.d0 ) cycle
       end if
 
+      state = fstrSOLID%dummy%DUMMY_egrp_state(idum)
       call activate_dummy_flag_by_value( hecMESH, fstrSOLID%dummy, idum, fstrSOLID%elements )
     end do
 
@@ -183,6 +198,7 @@ contains
 
     integer(kind=kint) :: ig, iS0, iE0, ik, icel, dtype, ig0
     real(kind=kreal)   :: thlow, thup, stress(6), mises, ps
+    integer(kind=kint) :: state, dummy_flag
 
     if( dumid < 0 .or. dumid > dummy%DUMMY_egrp_tot ) return
     if( dummy%DUMMY_egrp_depends(dumid) == kDUMD_NONE ) return 
@@ -194,29 +210,55 @@ contains
     thlow = dummy%DUMMY_egrp_ts_lower(dumid)
     thup = dummy%DUMMY_egrp_ts_upper(dumid)
 
+    ! Get the state (if not present, use OFF=2 for backward compatibility)
+    state = kELEM_STATE_OFF  ! Default is OFF
+    if (associated(dummy%DUMMY_egrp_state)) then
+      state = dummy%DUMMY_egrp_state(dumid)
+    endif
+
+    ! Determine which dummy flag to set based on state
+    if (state == kELEM_STATE_ON) then
+      dummy_flag = kDUM_INACTIVE  ! Default for ON state: element is active (kDUM_INACTIVE)
+    else
+      dummy_flag = kDUM_ACTIVE    ! Default for OFF state: element is inactive (kDUM_ACTIVE)
+    endif
+
     do ik=iS0,iE0
       icel = hecMESH%elem_group%grp_item(ik)
 
-      if( elements(icel)%dummy_flag == kDUM_ACTIVE ) cycle
+      if( elements(icel)%dummy_flag == dummy_flag ) cycle
 
-      if( dummy%DUMMY_egrp_depends(dumid) == kDUMD_STRESS ) then
-        do ig0=1,size(elements(icel)%gausses)
-          ! get mises
+      do ig0=1,size(elements(icel)%gausses)
+        ! get mises
+        if( dummy%DUMMY_egrp_depends(dumid) == kDUMD_STRESS ) then
           stress(1:6) = elements(icel)%gausses(ig0)%stress(1:6)
-          ps = ( stress(1) + stress(2) + stress(3) ) / 3.0d0
-          mises = 0.5d0 * ( (stress(1)-ps)**2 + (stress(2)-ps)**2 + (stress(3)-ps)**2 )
-          mises = mises + stress(4)**2 + stress(5)**2 + stress(6)**2
-          mises = dsqrt( 3.0d0 * mises )
-          ! check if value is between threshold
-          write(*,*) icel, ig0, mises, thlow, thup
-          if( mises < thlow .or. thup < mises) then
-            write(*,*) icel, ig0, "activated"
+        elseif( dummy%DUMMY_egrp_depends(dumid) == kDUMD_STRAIN ) then
+          stress(1:6) = elements(icel)%gausses(ig0)%strain(1:6)
+        else
+          write(*,*) "Error: Unknown dummy dependency type"
+          return
+        endif
+        ps = ( stress(1) + stress(2) + stress(3) ) / 3.0d0
+        mises = 0.5d0 * ( (stress(1)-ps)**2 + (stress(2)-ps)**2 + (stress(3)-ps)**2 )
+        mises = mises + stress(4)**2 + stress(5)**2 + stress(6)**2
+        mises = dsqrt( 3.0d0 * mises )
+        ! check if value is between threshold
+        ! If value is within threshold range, set the state according to STATE parameter
+        ! Otherwise, set the opposite state
+        if(thlow <= mises .and. mises <= thup) then
+          ! Within threshold: maintain the state specified by STATE parameter
+          elements(icel)%dummy_flag = dummy_flag
+        else
+          ! Outside threshold: set to opposite state
+          if (dummy_flag == kDUM_ACTIVE) then
+            elements(icel)%dummy_flag = kDUM_INACTIVE
+          else
             elements(icel)%dummy_flag = kDUM_ACTIVE
-            elements(icel)%dummy_coeff = dummy%DUMMY_egrp_eps(dumid)
-            exit 
           endif
-        enddo
-      endif
+        endif
+        elements(icel)%dummy_coeff = dummy%DUMMY_egrp_eps(dumid)
+        exit
+      enddo
     end do
 
   end subroutine

@@ -971,18 +971,19 @@ contains
   end function fstr_ctrl_get_AMPLITUDE
 
   !* ----------------------------------------------------------------------------------------------- *!
-  !> Read in !DUMMY
+  !> Read in !ELEMENT_ACTIVATION
   !* ----------------------------------------------------------------------------------------------- *!
 
-  function fstr_ctrl_get_DUMMY( ctrl, amp, eps, grp_id_name, dtype, thlow, thup )
+  function fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, dtype, state, thlow, thup )
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
     real(kind=kreal) :: eps
     character(len=HECMW_NAME_LEN),target :: grp_id_name(:)
     integer(kind=kint) :: dtype
+    integer(kind=kint) :: state
     real(kind=kreal), target :: thlow(:), thup(:)
-    integer(kind=kint) :: fstr_ctrl_get_DUMMY
+    integer(kind=kint) :: fstr_ctrl_get_ELEMENT_ACTIVATION
 
     character(len=HECMW_NAME_LEN),pointer :: element_id_p
     real(kind=kreal),pointer :: thlow_p, thup_p
@@ -991,10 +992,17 @@ contains
     integer(kind=kint) :: rcode
     character(len=HECMW_NAME_LEN) :: data_fmt,s1
     integer(kind=kint) :: lid
+    character(len=HECMW_NAME_LEN) :: state_str
 
-    fstr_ctrl_get_DUMMY = -1
+    fstr_ctrl_get_ELEMENT_ACTIVATION = -1
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'EPSILON ',  '# ',  0, 'R', eps ) /= 0 ) return
+
+    ! Default values
+    state = 1  ! Default is ON
+    state_str = 'ON,OFF'
+    if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', state_str, 0, 'P', state ) /= 0 ) return
+
     dtype = 1
     s1 = 'NONE,STRESS,STRAIN '
     if( fstr_ctrl_get_param_ex( ctrl, 'DEPENDS ', s1, 0, 'P', dtype ) /= 0 ) return
@@ -1016,9 +1024,9 @@ contains
       rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p, thlow_p, thup_p )
     endif
 
-    fstr_ctrl_get_DUMMY = 0
+    fstr_ctrl_get_ELEMENT_ACTIVATION = 0
 
-  end function fstr_ctrl_get_DUMMY
+  end function fstr_ctrl_get_ELEMENT_ACTIVATION
 
 
 end module fstr_ctrl_common

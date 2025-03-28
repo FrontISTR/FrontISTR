@@ -175,9 +175,9 @@ contains
       else if( header_name == '!AMPLITUDE' ) then
         c_amplitude = c_amplitude + 1
         call fstr_setup_AMPLITUDE( ctrl, P )
-      else if( header_name == '!DUMMY' ) then
+      else if( header_name == '!ELEMENT_ACTIVATION' ) then
         c_dummy = c_dummy + 1
-        call fstr_setup_DUMMY( ctrl, c_dummy, P )
+        call fstr_setup_ELEMENT_ACTIVATION( ctrl, c_dummy, P )
 
         !--------------- for static -------------------------
 
@@ -2242,8 +2242,8 @@ end function fstr_setup_INITIAL
   end subroutine fstr_setup_AMPLITUDE
 
 
-  !> Read in !DUMMY
-  subroutine fstr_setup_DUMMY( ctrl, counter, P )
+  !> Read in !ELEMENT_ACTIVATION
+  subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, counter, P )
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2254,7 +2254,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint) :: i, n, old_size, new_size
-    integer(kind=kint) :: gid, dtype
+    integer(kind=kint) :: gid, dtype, state
     real(kind=kreal)   :: eps
     real(kind=kreal), pointer :: thlow(:), thup(:)
 
@@ -2274,14 +2274,15 @@ end function fstr_setup_INITIAL
     call fstr_expand_integer_array ( P%SOLID%dummy%DUMMY_egrp_depends, old_size, new_size )
     call fstr_expand_real_array ( P%SOLID%dummy%DUMMY_egrp_ts_lower, old_size, new_size )
     call fstr_expand_real_array ( P%SOLID%dummy%DUMMY_egrp_ts_upper, old_size, new_size )
+    call fstr_expand_integer_array ( P%SOLID%dummy%DUMMY_egrp_state, old_size, new_size )
 
     allocate( grp_id_name(n), thlow(n), thup(n) )
     amp = ' '
     eps = 1.d-3
-    rcode = fstr_ctrl_get_DUMMY( ctrl, amp, eps, grp_id_name, dtype, thlow, thup )
+    rcode = fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, dtype, state, thlow, thup )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
-    call amp_name_to_id( P%MESH, '!DUMMY', amp, amp_id )
+    call amp_name_to_id( P%MESH, '!ELEMENT_ACTIVATION', amp, amp_id )
     do i=1,n
       P%SOLID%dummy%DUMMY_egrp_amp(old_size+i) = amp_id
       P%SOLID%dummy%DUMMY_egrp_eps(old_size+i) = eps
@@ -2290,11 +2291,12 @@ end function fstr_setup_INITIAL
     P%SOLID%dummy%DUMMY_egrp_depends(old_size+1:new_size) = dtype
     P%SOLID%dummy%DUMMY_egrp_ts_lower(old_size+1:new_size) = thlow(1:n)
     P%SOLID%dummy%DUMMY_egrp_ts_upper(old_size+1:new_size) = thup(1:n)
+    P%SOLID%dummy%DUMMY_egrp_state(old_size+1:new_size) = state
 
-    call elem_grp_name_to_id_ex( P%MESH, '!DUMMY', n, grp_id_name, P%SOLID%dummy%DUMMY_egrp_ID(old_size+1:))
+    call elem_grp_name_to_id_ex( P%MESH, '!ELEMENT_ACTIVATION', n, grp_id_name, P%SOLID%dummy%DUMMY_egrp_ID(old_size+1:))
 
     deallocate( grp_id_name )
-  end subroutine fstr_setup_DUMMY
+  end subroutine fstr_setup_ELEMENT_ACTIVATION
 
 
   !*****************************************************************************!

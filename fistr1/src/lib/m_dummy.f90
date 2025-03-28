@@ -10,7 +10,7 @@ module m_dummy
   implicit none
 
   type tDummy
-    !> DUMMY
+    !> ELEMENT_ACTIVATION
     integer(kind=kint) :: DUMMY_egrp_tot
     integer(kind=kint), pointer :: DUMMY_egrp_GRPID  (:)  =>null()
     integer(kind=kint), pointer :: DUMMY_egrp_ID     (:)  =>null()
@@ -19,15 +19,32 @@ module m_dummy
     integer(kind=kint), pointer :: DUMMY_egrp_depends(:)  =>null()
     real(kind=kreal), pointer   :: DUMMY_egrp_ts_lower(:)  =>null()
     real(kind=kreal), pointer   :: DUMMY_egrp_ts_upper(:)  =>null()
+    integer(kind=kint), pointer :: DUMMY_egrp_state  (:)  =>null()  ! Element activation state
   end type
 
-  integer, parameter :: kDUM_UNDEFINED = -1
-  integer, parameter :: kDUM_INACTIVE  = 0
-  integer, parameter :: kDUM_ACTIVE    = 1
+  ! Element status flags
+  integer, parameter :: kDUM_UNDEFINED = -1  ! Undefined state
+  integer, parameter :: kDUM_INACTIVE  = 0   ! Element is active in calculation
+  integer, parameter :: kDUM_ACTIVE    = 1   ! Element is deactivated in calculation
 
-  integer, parameter :: kDUMD_NONE    = 1
-  integer, parameter :: kDUMD_STRESS  = 2
-  integer, parameter :: kDUMD_STRAIN  = 3
+  ! Dependency type flags
+  integer, parameter :: kDUMD_NONE    = 1   ! No dependencies
+  integer, parameter :: kDUMD_STRESS  = 2   ! Stress dependent
+  integer, parameter :: kDUMD_STRAIN  = 3   ! Strain dependent
+  
+  ! Element activation state flags
+  !
+  ! The ELEMENT_ACTIVATION directive replaces the legacy DUMMY directive with a 
+  ! more intuitive behavior:
+  !   - STATE=ON (kELEM_STATE_ON=1): Element is active and participates in calculations
+  !   - STATE=OFF (kELEM_STATE_OFF=2): Element is deactivated (acts like a dummy element)
+  ! 
+  ! Example usage in control file:
+  !   !ELEMENT_ACTIVATION, STATE=OFF, EPSIRON=0.0, GRPID=1
+  !   PART_1_1
+  !
+  integer, parameter :: kELEM_STATE_ON  = 1  ! Element activation state ON (element is active)
+  integer, parameter :: kELEM_STATE_OFF = 2  ! Element activation state OFF (element is inactive/dummy)
 
 contains
 
