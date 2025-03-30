@@ -1254,12 +1254,21 @@ int fstr_ctrl_get_data_v_f(fstr_ctrl_data *ctrl, int line_no,
   return c_fstr_ctrl_get_data_v(ctrl, line_no, format, va);
 }
 
-int fstr_ctrl_get_data(int *ctrl, int *line_no, const char *format, ...) {
+int fstr_ctrl_get_data_v(int *ctrl, int *line_no, const char *format, ...) {
   va_list va;
   int r;
   va_start(va, format);
   r = fstr_ctrl_get_data_v_f(ctrl_list[*ctrl], *line_no, format, va);
   va_end(va);
+  return r;
+}
+
+int fstr_ctrl_get_data(int *ctrl, int *line_no, const char *format,
+                       void *v1, void *v2, void *v3, void *v4, void *v5, 
+                       void *v6, void *v7, void *v8, void *v9, void *v10) {
+  int r;
+  r = fstr_ctrl_get_data_v(ctrl, line_no, format, 
+                           v1, v2, v3, v4, v5, v6, v7, v8, v9, v10);
   return r;
 }
 
@@ -1280,12 +1289,21 @@ int fstr_ctrl_get_data_ex_v_f(fstr_ctrl_data *ctrl, int line_no,
   return 0;
 }
 
-int fstr_ctrl_get_data_ex(int *ctrl, int *line_no, const char *format, ...) {
+int fstr_ctrl_get_data_ex_v(int *ctrl, int *line_no, const char *format, ...) {
   va_list va;
   int r;
   va_start(va, format);
   r = fstr_ctrl_get_data_ex_v_f(ctrl_list[*ctrl], *line_no, format, va);
   va_end(va);
+  return r;
+}
+
+int fstr_ctrl_get_data_ex(int *ctrl, int *line_no, const char *format,
+                          void *v1, void *v2, void *v3, void *v4, void *v5,
+                          void *v6, void *v7, void *v8, void *v9, void *v10) {
+  int r;
+  r = fstr_ctrl_get_data_ex_v(ctrl, line_no, format,
+                              v1, v2, v3, v4, v5, v6, v7, v8, v9, v10);
   return r;
 }
 
@@ -1308,12 +1326,21 @@ int fstr_ctrl_get_data_array_ex_v_f(fstr_ctrl_data *ctrl, const char *format,
   return 0;
 }
 
-int fstr_ctrl_get_data_array_ex(int *ctrl, const char *format, ...) {
+int fstr_ctrl_get_data_array_ex_v(int *ctrl, const char *format, ...) {
   va_list va;
   int r;
   va_start(va, format);
   r = fstr_ctrl_get_data_array_ex_v_f(ctrl_list[*ctrl], format, va);
   va_end(va);
+  return r;
+}
+
+int fstr_ctrl_get_data_array_ex(int *ctrl, const char *format,
+                                void *v1, void *v2, void *v3, void *v4, void *v5,
+                                void *v6, void *v7, void *v8, void *v9, void *v10) {
+  int r;
+  r = fstr_ctrl_get_data_array_ex_v(ctrl, format,
+                                    v1, v2, v3, v4, v5, v6, v7, v8, v9, v10);
   return r;
 }
 
