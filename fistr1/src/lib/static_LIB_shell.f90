@@ -59,7 +59,6 @@ contains
     !####################################################################
 
     use mMechGauss
-    use gauss_integration
     use m_MatMatrix
 
     !--------------------------------------------------------------------
@@ -135,6 +134,17 @@ contains
     real(kind = kreal) :: Cv_theta(ndof*nn), Cv_w(ndof*nn)
     real(kind = kreal) :: Cv(ndof*nn)
     real(kind = kreal) :: sumlyr
+
+    real(kind = kreal), parameter :: xg2(2) = (/-0.577350269189626D0, 0.577350269189626D0/)
+    real(kind = kreal), parameter :: wgt2(2) = (/1.0D0, 1.0D0/)
+    real(kind = kreal), parameter :: xg3(3) = (/ &
+      -0.7745966692D0,                           &
+      0.0D0,                                     &
+      0.7745966692D0/)
+    real(kind = kreal), parameter :: wgt3(3) = (/ &
+      0.5555555555D0,                            &
+      0.8888888888D0,                            &
+      0.5555555555D0/)
 
     sstable = 0
     flag_dof = 0
@@ -484,7 +494,7 @@ contains
           ! MITC9
         else if( etype .EQ. fe_mitc9_shell ) then
 
-          zeta_ly = xg(ny, ly)
+          zeta_ly = xg3(ly)
 
           ! MITC3
         else if( etype .EQ. fe_mitc3_shell )then
@@ -652,9 +662,26 @@ contains
         do m = 1, n_layer
           sumlyr = sumlyr +2 *gausses(1)%pMaterial%shell_var(m)%weight
         enddo
-        zeta_ly = -1 +sumlyr -gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg(ny, ly))
 
-        w_ly    = wgt(ny, ly)
+        if( etype .EQ. fe_mitc4_shell ) then
+
+          zeta_ly = -1 +sumlyr -gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg2(ly))
+
+          w_ly    = wgt2(ly)
+
+        else if( etype .EQ. fe_mitc9_shell ) then
+
+          zeta_ly = -1 +sumlyr -gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg3(ly))
+
+          w_ly    = wgt3(ly)
+
+        else if( etype .EQ. fe_mitc3_shell ) then
+
+          zeta_ly = -1 +sumlyr -gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg2(ly))
+
+          w_ly    = wgt2(ly)
+
+        end if
 
         !--------------------------------------------------------
 
@@ -1326,7 +1353,6 @@ contains
     !####################################################################
 
     use mMechGauss
-    use gauss_integration
     use m_MatMatrix
 
     !--------------------------------------------------------------------
@@ -2348,7 +2374,6 @@ contains
     use hecmw
     use m_utilities
     use mMechGauss
-    use gauss_integration
 
     type(tGaussStatus), intent(in)   :: gausses(:)
     !--------------------------------------------------------------------
@@ -2406,6 +2431,17 @@ contains
     real(kind = kreal) :: coefx, coefy, coefz
     real(kind = kreal) :: x, y, z
     real(kind = kreal) :: sumlyr
+
+    real(kind = kreal), parameter :: xg2(2) = (/-0.577350269189626D0, 0.577350269189626D0/)
+    real(kind = kreal), parameter :: wgt2(2) = (/1.0D0, 1.0D0/)
+    real(kind = kreal), parameter :: xg3(3) = (/ &
+      -0.7745966692D0,                           &
+      0.0D0,                                     &
+      0.7745966692D0/)
+    real(kind = kreal), parameter :: wgt3(3) = (/ &
+      0.5555555555D0,                            &
+      0.8888888888D0,                            &
+      0.5555555555D0/)
 
     ny = 0
 
@@ -2803,10 +2839,29 @@ contains
           do m = 1, n_layer
             sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%weight
           end do
-          zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg(ny, ly))
 
-          !zeta_ly = xg(ny, ly)
-          w_ly    = wgt(ny, ly)
+          if( etype .EQ. fe_mitc4_shell ) then
+
+            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg2(ly))
+
+            !zeta_ly = xg2(ly)
+            w_ly    = wgt2(ly)
+
+          else if( etype .EQ. fe_mitc9_shell ) then
+
+            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg3(ly))
+
+            !zeta_ly = xg3(ly)
+            w_ly    = wgt3(ly)
+
+          else if( etype .EQ. fe_mitc3_shell ) then
+
+            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg2(ly))
+
+            !zeta_ly = xg2(ly)
+            w_ly    = wgt2(ly)
+
+          end if
 
           !--------------------------------------------------
 
@@ -3023,7 +3078,6 @@ contains
     use hecmw
     use m_utilities
     use mMechGauss
-    use gauss_integration
 
     type(tGaussStatus) :: gausses(:)
     !--------------------------------------------------------------------
@@ -3124,7 +3178,6 @@ contains
     !####################################################################
 
     use mMechGauss
-    use gauss_integration
     use m_MatMatrix
 
     !--------------------------------------------------------------------
@@ -3163,7 +3216,6 @@ contains
     !####################################################################
 
     use mMechGauss
-    use gauss_integration
     use m_MatMatrix
 
     !--------------------------------------------------------------------
@@ -3202,7 +3254,6 @@ contains
     use hecmw
     use m_utilities
     use mMechGauss
-    use gauss_integration
     integer(kind = kint), intent(in) :: etype
     integer(kind = kint), intent(in) :: nn
     real(kind = kreal), intent(in)   :: elem(3,nn)
@@ -3241,6 +3292,17 @@ contains
     real(kind = kreal) :: w_w_w_det
     real(kind = kreal) :: N(3, 6*nn)
     real(kind = kreal) :: sumlyr, totalmass, totdiag
+
+    real(kind = kreal), parameter :: xg2(2) = (/-0.577350269189626D0, 0.577350269189626D0/)
+    real(kind = kreal), parameter :: wgt2(2) = (/1.0D0, 1.0D0/)
+    real(kind = kreal), parameter :: xg3(3) = (/ &
+      -0.7745966692D0,                           &
+      0.0D0,                                     &
+      0.7745966692D0/)
+    real(kind = kreal), parameter :: wgt3(3) = (/ &
+      0.5555555555D0,                            &
+      0.8888888888D0,                            &
+      0.5555555555D0/)
 
     ny = 0; ndof=6
     nsize = ndof*nn
@@ -3396,10 +3458,29 @@ contains
           do m = 1, n_layer
             sumlyr = sumlyr + 2 * gausses(1)%pMaterial%shell_var(m)%weight
           end do
-          zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg(ny, ly))
 
-          !zeta_ly = xg(ny, ly)
-          w_ly    = wgt(ny, ly)
+          if( etype .EQ. fe_mitc4_shell ) then
+
+            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg2(ly))
+
+            !zeta_ly = xg2(ly)
+            w_ly    = wgt2(ly)
+
+          else if( etype .EQ. fe_mitc9_shell ) then
+
+            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg3(ly))
+
+            !zeta_ly = xg3(ly)
+            w_ly    = wgt3(ly)
+
+          else if( etype .EQ. fe_mitc3_shell ) then
+
+            zeta_ly = -1 + sumlyr - gausses(1)%pMaterial%shell_var(n_layer)%weight*(1-xg2(ly))
+
+            !zeta_ly = xg2(ly)
+            w_ly    = wgt2(ly)
+
+          end if
 
           !--------------------------------------------------
 

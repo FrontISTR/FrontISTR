@@ -20,7 +20,6 @@ contains
     ! CALCULATION 3D 4-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -34,17 +33,19 @@ contains
     real(kind=kreal) XL1,XL2,XL3
     real(kind=kreal) X1,X2,X3,X4
     real(kind=kreal) a1,a2,a3,a4,a5,a6
+    real(kind=kreal), parameter :: XG(2) = (/-0.577350269189626D0, 0.577350269189626D0/)
+    real(kind=kreal), parameter :: WGT(2) = (/1.0D0, 1.0D0/)
     !C
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do L3=1,NG
-      XL3=XG(NG,L3)
+      XL3=XG(L3)
       X3 =(XL3+1.0)*0.5
       do L2=1,NG
-        XL2=XG(NG,L2)
+        XL2=XG(L2)
         X2 =(1.0-X3)*(XL2+1.0)*0.5
         do L1=1,NG
-          XL1=XG(NG,L1)
+          XL1=XG(L1)
           X1=(1.0-X2-X3)*(XL1+1.0)*0.5
           ! INTERPOLATION FUNCTION
           X4=1.0-X1-X2-X3
@@ -102,7 +103,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
+          WG=WGT(L1)*WGT(L2)*WGT(L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
           do I = 1, NN
             vol = vol + H(I)*WG
           enddo
@@ -127,7 +128,6 @@ contains
     ! CALCULATION 3D 6-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
     implicit none
     ! I/F VARIABLES
     integer(kind=kint) nline
@@ -142,16 +142,18 @@ contains
     integer(kind=kint) I,L1,L2,LZ
     real(kind=kreal) X1,X2,X3,XL1,XL2,ZI
     real(kind=kreal) a1,a2,a3,a4,a5,a6,a7,a8,a9
+    real(kind=kreal), parameter :: XG(2) = (/-0.577350269189626D0, 0.577350269189626D0/)
+    real(kind=kreal), parameter :: WGT(2) = (/1.0D0, 1.0D0/)
     !C
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do LZ=1,NG
-      ZI=XG(NG,LZ)
+      ZI=XG(LZ)
       do L2=1,NG
-        XL2=XG(NG,L2)
+        XL2=XG(L2)
         X2 =(XL2+1.0)*0.5
         do L1=1,NG
-          XL1=XG(NG,L1)
+          XL1=XG(L1)
           X1=0.5*(1.0-X2)*(XL1+1.0)
           ! INTERPOLATION FUNCTION
           X3=1.0-X1-X2
@@ -219,7 +221,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,LZ)*DET*(1.0-X2)*0.25
+          WG=WGT(L1)*WGT(L2)*WGT(LZ)*DET*(1.0-X2)*0.25
           do I = 1, NN
             vol = vol + H(I)*WG
           enddo
@@ -247,7 +249,6 @@ contains
     ! CALCULATION 3D 8-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -260,15 +261,17 @@ contains
     real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG
     integer(kind=kint) I,LX,LY,LZ
     real(kind=kreal) a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12
+    real(kind=kreal), parameter :: XG(2) = (/-0.577350269189626D0, 0.577350269189626D0/)
+    real(kind=kreal), parameter :: WGT(2) = (/1.0D0, 1.0D0/)
     !C
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do LX=1,NG
-      RI=XG(NG,LX)
+      RI=XG(LX)
       do LY=1,NG
-        SI=XG(NG,LY)
+        SI=XG(LY)
         do LZ=1,NG
-          TI=XG(NG,LZ)
+          TI=XG(LZ)
           RP=1.0+RI
           SP=1.0+SI
           TP=1.0+TI
@@ -341,7 +344,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,LX)*WGT(NG,LY)*WGT(NG,LZ)*DET
+          WG=WGT(LX)*WGT(LY)*WGT(LZ)*DET
           do I=1,NN
             vol = vol + H(i)*WG
           enddo
@@ -374,7 +377,6 @@ contains
     ! CALCULATION 3D 10-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -388,17 +390,25 @@ contains
     real(kind=kreal) XL1,XL2,XL3
     real(kind=kreal) X1,X2,X3,X4
     real(kind=kreal)  a1,a2,AL1,AL2,AL3,AL4,AL5,AL6
+    real(kind=kreal), parameter :: XG(3) = (/ & 
+      -0.7745966692D0,                        &
+      0.0D0,                                  &
+      0.7745966692D0/)
+    real(kind=kreal), parameter :: WGT(3) = (/ &
+      0.5555555555D0,                          &
+      0.8888888888D0,                          &
+      0.5555555555D0/)
     !
     VOL = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do L3=1,NG
-      XL3=XG(NG,L3)
+      XL3=XG(L3)
       X3 =(XL3+1.0)*0.5
       do L2=1,NG
-        XL2=XG(NG,L2)
+        XL2=XG(L2)
         X2 =(1.0-X3)*(XL2+1.0)*0.5
         do L1=1,NG
-          XL1=XG(NG,L1)
+          XL1=XG(L1)
           X1=(1.0-X2-X3)*(XL1+1.0)*0.5
           ! INTERPOLATION FUNCTION
           X4=1.0-X1-X2-X3
@@ -486,7 +496,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
+          WG=WGT(L1)*WGT(L2)*WGT(L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
           do I = 1, NN
             vol = vol + H(I)*WG
           enddo
@@ -523,7 +533,6 @@ contains
     ! CALCULATION 3D 15-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,tline,almax,almin
@@ -536,16 +545,24 @@ contains
     integer(kind=kint) I,L1,L2,LZ
     real(kind=kreal) X1,X2,X3,XL1,XL2,ZI
     real(kind=kreal) a1,a2,AL1,AL2,AL3,AL4,AL5,AL6,AL7,AL8,AL9
+    real(kind=kreal), parameter :: XG(3) = (/ & 
+      -0.7745966692D0,                        &
+      0.0D0,                                  &
+      0.7745966692D0/)
+    real(kind=kreal), parameter :: WGT(3) = (/ &
+      0.5555555555D0,                          &
+      0.8888888888D0,                          &
+      0.5555555555D0/)
     !C
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do LZ=1,NG
-      ZI=XG(NG,LZ)
+      ZI=XG(LZ)
       do L2=1,NG
-        XL2=XG(NG,L2)
+        XL2=XG(L2)
         X2 =(XL2+1.0)*0.5
         do L1=1,NG
-          XL1=XG(NG,L1)
+          XL1=XG(L1)
           X1=0.5*(1.0-X2)*(XL1+1.0)
           ! INTERPOLATION FUNCTION
           X3=1.0-X1-X2
@@ -658,7 +675,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,LZ)*DET*(1.0-X2)*0.25
+          WG=WGT(L1)*WGT(L2)*WGT(LZ)*DET*(1.0-X2)*0.25
           do I = 1, NN
             vol = vol + H(I)*WG
           enddo
@@ -707,7 +724,6 @@ contains
     ! CALCULATION 3D 20-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -720,15 +736,23 @@ contains
     real(kind=kreal) XJ11,XJ21,XJ31,XJ12,XJ22,XJ32,XJ13,XJ23,XJ33,DET,WG
     integer(kind=kint) I,LX,LY,LZ
     real(kind=kreal)  a1,a2,AL1,AL2,AL3,AL4,AL5,AL6,AL7,AL8,AL9,AL10,AL11,AL12
+    real(kind=kreal), parameter :: XG(3) = (/ & 
+      -0.7745966692D0,                        &
+      0.0D0,                                  &
+      0.7745966692D0/)
+    real(kind=kreal), parameter :: WGT(3) = (/ &
+      0.5555555555D0,                          &
+      0.8888888888D0,                          &
+      0.5555555555D0/)
     !C
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do LX=1,NG
-      RI=XG(NG,LX)
+      RI=XG(LX)
       do LY=1,NG
-        SI=XG(NG,LY)
+        SI=XG(LY)
         do LZ=1,NG
-          TI=XG(NG,LZ)
+          TI=XG(LZ)
           RP=1.0+RI
           SP=1.0+SI
           TP=1.0+TI
@@ -849,7 +873,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,LX)*WGT(NG,LY)*WGT(NG,LZ)*DET
+          WG=WGT(LX)*WGT(LY)*WGT(LZ)*DET
           do I=1,NN
             vol = vol + H(I)*WG
           enddo
