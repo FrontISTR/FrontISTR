@@ -1434,6 +1434,16 @@ contains
         do k=i,mcol
           Amat(j,k) = Amat(j,k)-pivot*Amat(i,k)
         enddo
+
+        !! normalize line
+        pivot = dabs(Amat(j,i))
+        do k=i,mcol
+          if( dabs(Amat(j,k)) > pivot ) pivot = dabs(Amat(j,k))
+        enddo
+        pivot = 1.d0/pivot
+        do k=i,mcol
+          Amat(j,k) = pivot*Amat(j,k)
+        enddo
       enddo
     enddo
 
@@ -1545,6 +1555,7 @@ contains
       n_active_mpcs = i-1
       exit
     enddo
+    n_slave = min(n_slave,n_active_mpcs)
     if( n_active_mpcs == n_mpcs ) Amat(:,:) = Amat_ori(:,:) ! do not use
     call solve_dof_with_row_pivoting(Amat,n_active_mpcs,n_index_local,index_local,n_slave)
 
@@ -1655,14 +1666,15 @@ contains
     integer(kind=kint), intent(in)  :: n !< ncol
 
     integer, parameter :: nb = 64
-    integer :: i, info, lda, ldu, ldvt, lwork
+    integer :: i, info, lda, ldu, ldvt, lwork, msize
     real(kind=kreal), allocatable :: b(:), s(:), u(:,:), vt(:,:), work(:)
     real(kind=kreal) :: dummy(1,1)
 
     lda = m
     ldu = m
     ldvt = n
-    allocate (s(n), vt(ldvt,n), u(ldu,m), b(m))
+    msize = min(m,n)
+    allocate (s(msize), vt(ldvt,n), u(ldu,m), b(msize))
 
     lwork = -1
     call dgesvd('A', 'A', m, n, Amat, lda, s, u, ldu, vt, ldvt, dummy, lwork, info)
@@ -1672,13 +1684,15 @@ contains
 
     call dgesvd('A', 'A', m, n, Amat, lda, s, u, ldu, vt, ldvt, work, lwork, info)
 
-    sval(1:m) = s(1:m)
+    sval(:) = 0.d0
+    sval(1:msize) = s(1:msize)
 
     if (info/=0) Then
       Write (*,*) 'Failure in DGESVD. INFO =', info
     endif
 
-    Amat(1:m,1:n) = vt(1:m,1:n)
+    Amat(:,:) = 0.d0
+    Amat(1:msize,1:n) = vt(1:msize,1:n)
   end subroutine
 
   subroutine lufact_coeffmat_trans(Amat,m,n)

@@ -164,13 +164,13 @@ contains
 
     integer(kind=kint) :: i, id, dof
 
-    write(fnum,"(I0,A)") mpc%nitem,", 0.0"
+    write(fnum,*) mpc%nitem,",",0.d0
     do i=1,mpc%nitem
       id = mpc%pid(i)
       if( present(idlabel) ) id = idlabel(id)
       dof = mpc%dof(i)
       if( present(doflabel) ) dof = doflabel
-      write(fnum,"(I0,',',I0,',',f20.14)") id,dof,mpc%coeff(i)
+      write(fnum,*) id,",",dof,",",mpc%coeff(i)
     enddo
 
   end subroutine
