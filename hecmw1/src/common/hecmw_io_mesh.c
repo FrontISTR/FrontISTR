@@ -3955,7 +3955,7 @@ static int post_contact_convert_sgroup(void)
 
 static int post_contact(void) {
   if (post_contact_check_grp()) return -1;
-  if (post_contact_convert_sgroup()) return -1;
+  //if (post_contact_convert_sgroup()) return -1;
 
   return 0;
 }

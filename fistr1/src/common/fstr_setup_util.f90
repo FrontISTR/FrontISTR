@@ -296,8 +296,9 @@ contains
     call set_group_pointers( hecMESH, grp_type_name )
     do id = 1, n_grp
       if( fstr_streqr(grp_name%s(id), name) ) then
-        write(*,*) '### Error: Group already exists: ', name
-        stop
+        write(*,*) '### Warning: Group already exists: ', name
+        return
+        !stop
       endif
     enddo
 
