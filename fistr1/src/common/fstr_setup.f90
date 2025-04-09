@@ -78,7 +78,7 @@ contains
     integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_write, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
-    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed
+    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed, c_contact_if
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
     integer(kind=kint) :: c_fload, c_eigenread
     integer(kind=kint) :: c_couple, c_material
@@ -107,7 +107,7 @@ contains
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0
+    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0; c_contact_if = 0
     c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
     c_couple   = 0; c_material = 0; c_section =0
     c_mpc      = 0; c_weldline = 0; c_initial = 0
@@ -200,6 +200,9 @@ contains
         c_embed = c_embed + n
       else if( header_name == '!CONTACT_PARAM' ) then
         c_contactparam = c_contactparam + 1
+      else if( header_name == '!CONTACT_INTERFERENCE' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        c_contact_if = c_contact_if + n
       else if( header_name == '!MATERIAL' ) then
         c_material = c_material + 1
       else if( header_name == '!TEMPERATURE' ) then
@@ -335,6 +338,12 @@ contains
     do i=0,c_contactparam
       call init_ContactParam( fstrPARAM%contactparam(i) )
     end do
+    if( c_contact_if>0 )then 
+      allocate( fstrPARAM%contact_if( c_contact_if ) )
+      do i=1,c_contact_if
+        call init_Contact_IF( fstrPARAM%contact_if(i) )
+      end do
+    end if
 
     P%SOLID%is_33shell = 0
     P%SOLID%is_33beam  = 0
@@ -424,6 +433,7 @@ contains
     c_output = 0
     c_contact  = 0
     c_contactparam  = 0
+    c_contact_if  = 0
     c_embed = 0
     c_initial = 0
     c_localcoord = 0
@@ -862,6 +872,21 @@ contains
           write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', c_contactparam
           stop
         endif
+      else if( header_name == '!CONTACT_INTERFERENCE' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(c_contact_if+1:n+1) ) /= 0 ) then
+          write(*,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ' , c_contact_if
+          write(ILOG,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ', c_contact_if
+          stop
+        endif
+        do i=1, n
+          if( check_apply_Contact_IF(fstrPARAM%contact_if(c_contact_if+i), fstrSOLID%contacts) /= 0) then
+            write(*,*) '### Error:(INTERFERENCE) Inconsistence of contact_pair in CONTACTS: ' , i+c_contact_if
+            write(ILOG,*) '### Error:(INTERFERENCE)  Inconsistence of contact_pair in CONTACTS: ', i+c_contact_if
+            stop
+          end if
+        end do
+        c_contact_if = c_contact_if + n
       else if( header_name == '!ULOAD' ) then
         if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
           write(*,*) '### Error: Fail in read in ULOAD definition : '
