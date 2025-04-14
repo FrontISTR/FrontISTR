@@ -945,6 +945,8 @@ contains
 
     allocate(mpcs_new(size(mpcs_work)))
     do i=1,size(mpcs_work)
+      !! cutoff small coeff
+      call cutoff_small_coeff( mpcs_work(i), 1.d-4 )
       call copy_mpc_cond( mpcs_work(i), mpcs_new(i) )
     enddo
 
@@ -1032,7 +1034,70 @@ contains
     enddo
     nmpc_remian = mpc_group_intermaster_all%nitem
 
+    call remove_tinycoeff( mpcs_work, nmpc_remian )
   end subroutine
+
+  subroutine remove_tinycoeff(mpcs_work, nmpc_remian)
+    implicit none
+    type(tMPCCond), allocatable, intent(inout) :: mpcs_work(:)
+    integer(kind=kint), intent(inout)          :: nmpc_remian
+
+    integer(kind=kint) :: i, j, k, n
+    real(kind=kreal)   :: max_val, factor, tmp_real
+    integer(kind=kint) :: tmp_int
+
+    do i = 1, size(mpcs_work)
+      n = mpcs_work(i)%nitem
+      if (n <= 1) cycle
+
+      max_val = 0.d0
+      do j = 2, n
+        if ( dabs(mpcs_work(i)%coeff(j)) > max_val ) then
+          max_val = dabs(mpcs_work(i)%coeff(j))
+        end if
+      end do
+
+      if ( dabs(mpcs_work(i)%coeff(1)) > 1.d-6 * max_val ) cycle
+
+      do j = 1, n - 1
+        mpcs_work(i)%coeff(j) = mpcs_work(i)%coeff(j+1)
+        mpcs_work(i)%pid(j)   = mpcs_work(i)%pid(j+1)
+        mpcs_work(i)%dof(j)   = mpcs_work(i)%dof(j+1)
+      end do
+      mpcs_work(i)%nitem = n - 1
+      n = mpcs_work(i)%nitem
+
+      k = 1
+      max_val = abs(mpcs_work(i)%coeff(1))
+      do j = 2, n
+        if ( abs(mpcs_work(i)%coeff(j)) > max_val ) then
+          max_val = abs(mpcs_work(i)%coeff(j))
+          k = j
+        end if
+      end do
+
+      if (k /= 1) then
+        tmp_real = mpcs_work(i)%coeff(1)
+        mpcs_work(i)%coeff(1) = mpcs_work(i)%coeff(k)
+        mpcs_work(i)%coeff(k) = tmp_real
+        tmp_int = mpcs_work(i)%pid(1)
+        mpcs_work(i)%pid(1) = mpcs_work(i)%pid(k)
+        mpcs_work(i)%pid(k) = tmp_int
+        tmp_int = mpcs_work(i)%dof(1)
+        mpcs_work(i)%dof(1) = mpcs_work(i)%dof(k)
+        mpcs_work(i)%dof(k) = tmp_int
+      end if
+
+      factor = mpcs_work(i)%coeff(1)
+      if (factor /= 0.d0) then
+        do j = 1, n
+          mpcs_work(i)%coeff(j) = mpcs_work(i)%coeff(j) / factor
+        end do
+      end if
+
+      nmpc_remian = nmpc_remian + 1
+    end do
+  end subroutine remove_tinycoeff
 
   subroutine compress_pids( mpcs, n_index, index, slave_first, n_slave )
     type(tMPCCond), allocatable, intent(inout)     :: mpcs(:)  !< mpc condition
@@ -1150,16 +1215,6 @@ contains
     enddo
     mpc%nitem = nitem
 
-    !normalize coeff
-    coeff_sum = 0.d0
-    do i=2,mpc%nitem
-      coeff_sum = coeff_sum + mpc%coeff(i) 
-    enddo
-    coeff_sum = -1.d0/coeff_sum
-    do i=2,mpc%nitem
-      mpc%coeff(i) = mpc%coeff(i)*coeff_sum 
-    enddo
-
   end subroutine
 
   subroutine expand_slave_chain( mpcs, n_index, n_expanded )
@@ -1233,11 +1288,6 @@ contains
         call expand_mpc_cond( mpcs(i), mpcs(expsl(j)) )
       enddo
       if( n_expsl > 0 ) n_expanded = n_expanded + 1
-    enddo
-
-    !! cutoff small coeff not to be large equation
-    do i=1,n_mpcs
-      call cutoff_small_coeff( mpcs(i), 1.d-3 )
     enddo
 
   end subroutine
@@ -1394,7 +1444,7 @@ contains
     integer(kind=kint), intent(in)                :: nrow_to_be_solved
 
     integer(kind=kint) :: i, j, k, i_maxpiv, j_maxpiv, tmpidx
-    real(kind=kreal) :: pivot, maxpivot, coeff, coeff2
+    real(kind=kreal) :: pivot, maxpivot, coeff, diff
     real(kind=kreal) :: tmprow(mcol), tmpcol(nrow) ! for swap
 
     ! forward elimination
@@ -1404,7 +1454,7 @@ contains
       do k=i,nrow
         pivot = Amat(k,i)
         if( dabs(pivot) < 1.d-10 ) cycle
-        if( dabs(pivot) > maxpivot ) then
+        if( dabs(pivot) - maxpivot > 1.d-3*maxpivot ) then
           maxpivot = dabs(pivot)
           i_maxpiv = k
         endif
@@ -1436,9 +1486,9 @@ contains
         enddo
 
         !! normalize line
-        pivot = dabs(Amat(j,i))
-        do k=i,mcol
-          if( dabs(Amat(j,k)) > pivot ) pivot = dabs(Amat(j,k))
+        pivot = Amat(j,i)
+        do k=i+1,mcol
+          if( dabs(Amat(j,k)) - dabs(pivot) > 1.d-4 ) pivot = Amat(j,k)
         enddo
         pivot = 1.d0/pivot
         do k=i,mcol
@@ -1630,7 +1680,7 @@ contains
     type(tMPCGroup), intent(inout) :: mpc_group_intermaster_all !< mpc group between master nodes(merged)
 
     integer(kind=kint) :: i, j, nitem, pid, minidx, tmppid
-    real(kind=kreal) :: tmpcoeff
+    real(kind=kreal) :: tmpcoeff, tmpcoeff0
 
     do i=1,mpc_group_intermaster_all%nitem
       nitem = mpc_group_intermaster_all%mpcs(i)%nitem
@@ -1638,10 +1688,17 @@ contains
       minidx = 1
       tmpcoeff = dabs(mpc_group_intermaster_all%mpcs(i)%coeff(1))
       do j=2,nitem
-        pid = mpc_group_intermaster_all%mpcs(i)%pid(j)
-        if( dabs(mpc_group_intermaster_all%mpcs(i)%coeff(j)) > tmpcoeff ) then
-          tmpcoeff = dabs(mpc_group_intermaster_all%mpcs(i)%coeff(j))
+        tmpcoeff0 = dabs(mpc_group_intermaster_all%mpcs(i)%coeff(j))
+        if( tmpcoeff0 > tmpcoeff ) then
+          tmpcoeff = tmpcoeff0
           minidx = j
+        endif
+      enddo
+      do j=1,nitem
+        tmpcoeff0 = dabs(mpc_group_intermaster_all%mpcs(i)%coeff(j))
+        if( dabs(tmpcoeff0-tmpcoeff) < 1.d-4*tmpcoeff ) then
+          minidx = j
+          exit
         endif
       enddo
 
