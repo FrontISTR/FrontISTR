@@ -74,18 +74,8 @@ contains
       write(*,'(A20,f8.2)') "create mpc coeff", T(2)-T(1)
     endif
 
-    ! dump original mpc as equation
-    if( myrank == 0 .and. dump_equation == ktDUMP_ASIS ) then
-      call print_full_mpc_conditions_3d( mpcs_old, hecMESH%global_node_ID )
-    endif
-
     ! update mpcs
-    call get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new )
-
-    ! dump updated mpc as equation
-    if( myrank == 0 .and. dump_equation == ktDUMP_REGULARIZED ) then
-      call print_full_mpc_conditions_3d( mpcs_new, hecMESH%global_node_ID )
-    endif
+    call get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new, dump_equation )
 
     T(3) = hecmw_Wtime()
     ! create mpc
@@ -166,16 +156,61 @@ contains
   end subroutine
 
 !========================================================================
+! Gather global node id
+!======================================================================== 
+  subroutine gather_all_gnid( hecMESH, global_node_ID_all )
+    type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
+    integer(kind=kint), allocatable, intent(inout) :: global_node_ID_all(:)
+
+    integer(kind=kint), allocatable :: displs_nid(:), recvcount_nid(:)
+    integer(kind=kint) :: N_loc, N, offset_node, i
+    integer(kind=kint), allocatable :: item_sendbuf(:), item_recvbuf(:)
+
+    ! create offset of node id
+    N_loc = hecMESH%nn_internal
+    call create_offset( hecMESH, N_loc, recvcount_nid, displs_nid )
+    offset_node = displs_nid(myrank)
+    N = displs_nid(nprocs)
+
+    ! initialize gather array
+    if( myrank == 0 ) then !root process
+      allocate(item_recvbuf(N))
+    else
+      allocate(item_recvbuf(1))
+    endif
+    item_recvbuf(:) = 0
+    allocate(item_sendbuf(N_loc))
+
+    do i=1,N_loc
+      item_sendbuf(i) = hecMESH%global_node_ID(i)
+    enddo
+
+    call hecmw_gatherv_int(item_sendbuf, N_loc, item_recvbuf, recvcount_nid, &
+         & displs_nid(0:nprocs-1), 0, hecMESH%MPI_COMM)
+
+    ! only rank 0 processes the gathered data
+    if( myrank == 0 ) then
+      if(allocated(global_node_ID_all)) deallocate(global_node_ID_all)
+      allocate(global_node_ID_all(N))
+      global_node_ID_all = item_recvbuf
+    endif
+
+    deallocate(item_sendbuf, recvcount_nid, displs_nid)
+  end subroutine
+
+!========================================================================
 ! Remove the excessive constraints of MPC.
 !======================================================================== 
-  subroutine get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new )
+  subroutine get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new, dump_equation )
     type( hecmwST_local_mesh ), intent(inout) :: hecMESH     !< type mesh
     type(hecmwST_matrix), intent(in)         :: hecMAT
     type(tMPCCond), allocatable, intent(inout) :: mpcs_old(:)
     type(tMPCCond), allocatable, intent(inout) :: mpcs_new(:)
+    integer(kind=kint), intent(in)         :: dump_equation
 
     type(tMPCCond), allocatable :: mpcs_all(:), mpcs_all_new(:), mpcs_new_dofremoved(:)
     integer(kind=kint), allocatable :: displs_nid(:)
+    integer(kind=kint), allocatable :: global_node_ID_all(:)
     real(kind=kreal) :: T(6)
 
     T(1) = hecmw_Wtime()
@@ -183,12 +218,24 @@ contains
     ! gather all mpcs_old to rank 0 process
     call gather_all_mpcs( hecMESH, mpcs_old, mpcs_all, displs_nid )
 
+    ! dump original mpc as equation
+    if( dump_equation == ktDUMP_ASIS ) then
+      call gather_all_gnid( hecMESH, global_node_ID_all )
+      if( myrank == 0 ) call print_full_mpc_conditions_3d( mpcs_all, global_node_ID_all )
+    endif
+
     T(2) = hecmw_Wtime()
 
     ! get regular mpc conditions by singular value decomposition
     if( myrank == 0 ) call get_newmpc_by_svd( mpcs_all, mpcs_all_new )
 
     T(3) = hecmw_Wtime()
+
+    ! dump updated mpc as equation
+    if( dump_equation == ktDUMP_REGULARIZED ) then
+      call gather_all_gnid( hecMESH, global_node_ID_all )
+      if( myrank == 0 ) call print_full_mpc_conditions_3d( mpcs_all_new, global_node_ID_all )
+    endif
 
     ! distribute mpc conditions(mpcs_new is still specified by global node id )
     call distribute_mpcs( hecMESH, mpcs_all_new, mpcs_new, displs_nid )
@@ -264,7 +311,7 @@ contains
     nitemall(:) = 0
     itemall(:) = 0
     coeffall(:) = 0.d0
-  allocate(nitem_sendbuf(N_mpc_loc))
+    allocate(nitem_sendbuf(N_mpc_loc))
     allocate(item_sendbuf(N_loc),coeff_sendbuf(N_loc))
 
     idx = 0
