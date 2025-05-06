@@ -136,7 +136,7 @@ module fstr_ctrl_util_f
 
     !!! not used
     function fstr_ctrl_get_data_c( ctrl, line_no, format, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10) &
-        bind(c,name='fstr_ctrl_get_data')
+        bind(c,name='fstr_ctrl_get_data_v10')
       use iso_c_binding
       integer(c_int) :: fstr_ctrl_get_data_c
       integer(c_int) :: ctrl
@@ -146,7 +146,7 @@ module fstr_ctrl_util_f
     end function fstr_ctrl_get_data_c
 
     function fstr_ctrl_get_data_ex_c( ctrl, line_no, format, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10) &
-        bind(c,name='fstr_ctrl_get_data_ex')
+        bind(c,name='fstr_ctrl_get_data_ex_v10')
       use iso_c_binding
       integer(c_int) :: fstr_ctrl_get_data_ex_c
       integer(c_int) :: ctrl
@@ -156,7 +156,7 @@ module fstr_ctrl_util_f
     end function fstr_ctrl_get_data_ex_c
 
     function fstr_ctrl_get_data_array_ex_c( ctrl, format, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10) &
-        bind(c,name='fstr_ctrl_get_data_array_ex')
+        bind(c,name='fstr_ctrl_get_data_array_ex_v10')
       use iso_c_binding
       integer(c_int) :: fstr_ctrl_get_data_array_ex_c
       integer(c_int) :: ctrl
