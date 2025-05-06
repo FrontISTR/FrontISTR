@@ -71,10 +71,10 @@ contains
     character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2
 
     ! counters
-    integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo, c_amplitude
+    integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_write, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
-    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed
+    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed, c_contact_if
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
     integer(kind=kint) :: c_fload, c_eigenread
     integer(kind=kint) :: c_couple, c_material
@@ -99,11 +99,11 @@ contains
 
     fstrPARAM%contact_algo = kcaALagrange
 
-    c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
+    c_solution = 0; c_solver   = 0; c_nlsolver = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0
+    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0; c_contact_if = 0
     c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
     c_couple   = 0; c_material = 0; c_section =0
     c_mpc      = 0; c_weldline = 0; c_initial = 0
@@ -129,6 +129,9 @@ contains
       else if(     header_name == '!SOLUTION' ) then
         c_solution = c_solution + 1
         call fstr_setup_SOLUTION( ctrl, c_solution, P )
+      else if(     header_name == '!NONLINEAR_SOLVER' ) then
+        c_nlsolver = c_nlsolver + 1
+        call fstr_setup_NONLINEAR_SOLVER( ctrl, c_nlsolver, P )
       else if( header_name == '!SOLVER' ) then
         c_solver = c_solver + 1
         call fstr_setup_SOLVER( ctrl, c_solver, P )
@@ -193,6 +196,9 @@ contains
         c_embed = c_embed + n
       else if( header_name == '!CONTACT_PARAM' ) then
         c_contactparam = c_contactparam + 1
+      else if( header_name == '!CONTACT_INTERFERENCE' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        c_contact_if = c_contact_if + n
       else if( header_name == '!MATERIAL' ) then
         c_material = c_material + 1
       else if( header_name == '!TEMPERATURE' ) then
@@ -328,6 +334,12 @@ contains
     do i=0,c_contactparam
       call init_ContactParam( fstrPARAM%contactparam(i) )
     end do
+    if( c_contact_if>0 )then 
+      allocate( fstrPARAM%contact_if( c_contact_if ) )
+      do i=1,c_contact_if
+        call init_Contact_IF( fstrPARAM%contact_if(i) )
+      end do
+    end if
 
     P%SOLID%is_33shell = 0
     P%SOLID%is_33beam  = 0
@@ -417,6 +429,7 @@ contains
     c_output = 0
     c_contact  = 0
     c_contactparam  = 0
+    c_contact_if  = 0
     c_embed = 0
     c_initial = 0
     c_localcoord = 0
@@ -855,6 +868,21 @@ contains
           write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', c_contactparam
           stop
         endif
+      else if( header_name == '!CONTACT_INTERFERENCE' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(c_contact_if+1:n+1) ) /= 0 ) then
+          write(*,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ' , c_contact_if
+          write(ILOG,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ', c_contact_if
+          stop
+        endif
+        do i=1, n
+          if( check_apply_Contact_IF(fstrPARAM%contact_if(c_contact_if+i), fstrSOLID%contacts) /= 0) then
+            write(*,*) '### Error:(INTERFERENCE) Inconsistence of contact_pair in CONTACTS: ' , i+c_contact_if
+            write(ILOG,*) '### Error:(INTERFERENCE)  Inconsistence of contact_pair in CONTACTS: ', i+c_contact_if
+            stop
+          end if
+        end do
+        c_contact_if = c_contact_if + n
       else if( header_name == '!ULOAD' ) then
         if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
           write(*,*) '### Error: Fail in read in ULOAD definition : '
@@ -1045,6 +1073,13 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%GL0( ntotal )          ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, GL0>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
     allocate ( fstrSOLID%EFORCE( ntotal )      ,stat=ierror )
     if( ierror /= 0 ) then
       write(idbg,*) 'stop due to allocation error <FSTR_SOLID, EFORCE>'
@@ -1094,14 +1129,23 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%QFORCE_bak( ntotal )      ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, QFORCE_bak>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
 
     fstrSOLID%GL(:)=0.d0
+    fstrSOLID%GL0(:)=0.d0
     !        fstrSOLID%TOTAL_DISP(:)=0.d0
     fstrSOLID%unode(:)      = 0.d0
     fstrSOLID%unode_bak(:)  = 0.d0
     fstrSOLID%dunode(:)     = 0.d0
     fstrSOLID%ddunode(:)    = 0.d0
     fstrSOLID%QFORCE(:)     = 0.d0
+    fstrSOLID%QFORCE_bak(:) = 0.d0
     fstrSOLID%FACTOR( 1:2 ) = 0.d0
 
     ! for MPC
@@ -1798,6 +1842,23 @@ contains
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_SOLUTION
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !NONLINEAR_SOLVER                                                         !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_NONLINEAR_SOLVER( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+
+    rcode = fstr_ctrl_get_NONLINEAR_SOLVER( ctrl, P%PARAM%nlsolver_method )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+  end subroutine fstr_setup_NONLINEAR_SOLVER
 
   !-----------------------------------------------------------------------------!
   !> Read in !SOLVER                                                           !

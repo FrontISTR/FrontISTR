@@ -100,6 +100,7 @@ OBJSF = \
         fstr_AddContactStiff.@f90objfilepostfix@ \
         fstr_AddBC.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \
+        fstr_solve_QuasiNewton.@f90objfilepostfix@ \
         fstr_solve_NLGEOM.@f90objfilepostfix@
 
 HEADERS =

@@ -55,20 +55,6 @@ contains
       ALU(4*ii-0) = D(4*ii-0)
     enddo
 
-    if (hecMAT%cmat%n_val.gt.0) then
-      do k= 1, hecMAT%cmat%n_val
-        if (hecMAT%cmat%pair(k)%i.ne.hecMAT%cmat%pair(k)%j) cycle
-        ii = hecMAT%cmat%pair(k)%i
-        ALU(4*ii-3) = ALU(4*ii-3) + hecMAT%cmat%pair(k)%val(1, 1)
-        ALU(4*ii-2) = ALU(4*ii-2) + hecMAT%cmat%pair(k)%val(1, 2)
-        ALU(4*ii-1) = ALU(4*ii-1) + hecMAT%cmat%pair(k)%val(2, 1)
-        ALU(4*ii-0) = ALU(4*ii-0) + hecMAT%cmat%pair(k)%val(2, 2)
-      enddo
-
-      !call hecmw_cmat_LU( hecMAT )
-
-    endif
-
     !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
     !$omp do
     do ii= 1, N

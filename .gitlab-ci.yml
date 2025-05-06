@@ -1,7 +1,7 @@
 variables:
   REGISTRY: registry.gitlab.com/frontistr-commons/frontistr
 
-image: ${REGISTRY}/build:ubuntu2004
+image: ${REGISTRY}/build:ubuntu2204
 
 stages:
     - build
@@ -16,7 +16,6 @@ stages:
         expire_in: 100min
 
 include: 
-    - '.ubuntu2004.yml'
     - '.ubuntu2204.yml'
     - '.ubuntu2404.yml'
 

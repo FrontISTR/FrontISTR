@@ -63,6 +63,21 @@ contains
     fstr_ctrl_get_SOLUTION = 0
   end function fstr_ctrl_get_SOLUTION
 
+  !> Read in !NONLINEAR_SOLVER
+  function fstr_ctrl_get_NONLINEAR_SOLVER( ctrl, method )
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: method
+    integer(kind=kint) :: fstr_ctrl_get_NONLINEAR_SOLVER
+
+    integer(kind=kint) :: ipt
+    character(len=80) :: s
+
+    fstr_ctrl_get_NONLINEAR_SOLVER = -1
+
+    s = 'NEWTON,QUASINEWTON '
+    if( fstr_ctrl_get_param_ex( ctrl,      'METHOD ',     s,    1,   'P',  method )/= 0) return
+    fstr_ctrl_get_NONLINEAR_SOLVER = 0
+  end function fstr_ctrl_get_NONLINEAR_SOLVER
 
   !> Read in !SOLVER
   function fstr_ctrl_get_SOLVER( ctrl, method, precond, nset, iterlog, timelog, steplog, nier, &
@@ -241,6 +256,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'MAXCONTITER ',  '# ',  0, 'I', steps%max_contiter )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG ',  '# ',  0, 'R', steps%converg )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG_LAG ',  '# ',  0, 'R', steps%converg_lag )/= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'CONVERG_DDISP ',  '# ',  0, 'R', steps%converg_ddisp )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MAXRES ',  '# ',  0, 'R', steps%maxres )/= 0) return
     amp = ""
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
@@ -693,6 +709,41 @@ contains
 
     fstr_ctrl_get_CONTACTPARAM = 0
   end function fstr_ctrl_get_CONTACTPARAM
+
+  !>  Read in contact interference
+  function fstr_ctrl_get_CONTACT_IF( ctrl, n, contact_if )
+    use fstr_setup_util
+    integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
+    integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
+    !
+    type(tContactInterference), intent(out) :: contact_if(n)    !< contact definition
+    
+    integer           :: rcode, i
+    character(len=30) :: s1 = 'SLAVE,MASTER '
+    character(len=HECMW_NAME_LEN) :: data_fmt,ss
+    character(len=HECMW_NAME_LEN) :: cp_name(n)
+    real(kind=kreal)              :: init_pos(n), end_pos(n)
+    integer(kind=kint)            :: fstr_ctrl_get_CONTACT_IF
+
+    fstr_ctrl_get_CONTACT_IF = -1
+    write(ss,*)  HECMW_NAME_LEN
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s1, 0, 'P', contact_if(1)%if_type ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'END ',  '# ',  0, 'R', contact_if(1)%etime ) /= 0 ) return
+    write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'rr '
+    init_pos = 0.d0; end_pos = 0.d0
+    if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, init_pos, end_pos ) /= 0 ) return
+    do i = 1, n
+      contact_if(i)%if_type     = contact_if(1)%if_type
+      contact_if(i)%etime       = contact_if(1)%etime
+
+      contact_if(i)%cp_name     = cp_name(i)
+      contact_if(i)%initial_pos = - init_pos(i)
+      contact_if(i)%end_pos     = - end_pos(i)
+      if(contact_if(i)%if_type == C_IF_SLAVE .and. init_pos(i) /= 0.d0) contact_if(i)%initial_pos = 0.d0
+    end do
+    fstr_ctrl_get_CONTACT_IF = 0
+
+  end function fstr_ctrl_get_CONTACT_IF
 
   !> Read in !ELEMOPT
   function fstr_ctrl_get_ELEMOPT( ctrl, elemopt361 )

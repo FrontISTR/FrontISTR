@@ -51,6 +51,10 @@ module m_fstr
   integer(kind=kint), parameter :: ksmGMRESREN = 6
   integer(kind=kint), parameter :: ksmDIRECT   = 101
 
+  !> nonlinear solver method (nsm)
+  integer(kind=kint), parameter :: knsmNEWTON      = 1
+  integer(kind=kint), parameter :: knsmQUASINEWTON = 2
+
   !> contact analysis algorithm
   integer(kind=kint), parameter :: kcaSLagrange = 1
   integer(kind=kint), parameter :: kcaALagrange = 2
@@ -80,6 +84,13 @@ module m_fstr
 
   integer(kind=kint), parameter :: kFLOADCASE_RE = 1
   integer(kind=kint), parameter :: kFLOADCASE_IM = 2
+
+  !> iteration control
+  integer(kind=kint), parameter :: kitrContinue = 0
+  integer(kind=kint), parameter :: kitrConverged = 1
+  integer(kind=kint), parameter :: kitrDiverged = 2
+  integer(kind=kint), parameter :: kitrFloatingError = 3
+
 
   !> PARALLEL EXECUTION
   integer(kind = kint) :: myrank
@@ -143,6 +154,7 @@ module m_fstr
   type fstr_param
     integer(kind=kint) :: solution_type !< solution type number
     integer(kind=kint) :: solver_method !< solver method number
+    integer(kind=kint) :: nlsolver_method !< solver method number for nonlinear equation
     logical            :: nlgeom        !< is geometrical nonlinearity considered
 
     !> STATIC !HEAT
@@ -186,6 +198,7 @@ module m_fstr
     !> for contact analysis
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
+    type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
 
     !> for auto increment and cutback
     type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control
@@ -372,8 +385,10 @@ module m_fstr
     integer(kind=kint) :: CutBack_stat     !< status of cutback control
 
     real(kind=kreal), pointer :: GL          (:)           !< external force
+    real(kind=kreal), pointer :: GL0         (:)           !< external force
     real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
+    real(kind=kreal), pointer :: QFORCE_bak  (:)           !< equivalent nodal force at the beginning of curr step
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
@@ -697,6 +712,7 @@ contains
     nullify( S%EPSTRAIN_VECT )
     nullify( S%ENQM )
     nullify( S%GL          )
+    nullify( S%GL0         )
     nullify( S%QFORCE      )
     nullify( S%VELOCITY_ngrp_ID )
     nullify( S%VELOCITY_ngrp_type )
@@ -895,7 +911,6 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     endif
-    call hecmw_cmat_init( hecMAT%cmat )
     hecMAT%D  = 0.0d0
     hecMAT%AL = 0.0d0
     hecMAT%AU = 0.0d0
@@ -958,7 +973,6 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
-    call hecmw_cmat_finalize(hecmAT%cmat)
   end subroutine hecMAT_finalize
 
   !> Initializer of structure fstr_param
@@ -972,6 +986,7 @@ contains
     fstrPARAM%solution_type = kstSTATIC
     fstrPARAM%nlgeom        = .false.
     fstrPARAM%solver_method = ksmCG
+    fstrPARAM%nlsolver_method = knsmNEWTON
 
     !!STATIC !HEAT
     fstrPARAM%analysis_n = 0
@@ -1136,5 +1151,64 @@ contains
       call fstr_solid_phys_zero(fstrSOLID%BEAM)
     end if
   end subroutine fstr_solid_phys_clear
+
+  subroutine table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, time, f_t)
+    type ( hecmwST_local_mesh ), intent(in) :: hecMESH    !< hecmw mesh
+    type ( fstr_solid         ), intent(in) :: fstrSOLID  !< fstr_solid
+    integer(kind=kint), intent(in)          :: cstep      !< curr loading step
+    integer(kind=kint), intent(in)          :: jj_n_amp   !< index of amplitude table
+    real(kind=kreal), intent(in)            :: time       !< loading time(total time)
+    real(kind=kreal), intent(out)           :: f_t        !< loading factor
+
+    integer(kind=kint) :: i
+    integer(kind=kint) :: jj1, jj2
+    integer(kind=kint) :: s1, s2, flag
+    real(kind=kreal) :: t_1, t_2, t_t, f_1, f_2, tincre
+
+    s1 = 0; s2 = 0
+
+    if( jj_n_amp <= 0 ) then  ! Amplitude not defined
+      if(myrank == 0) then
+        write(imsg,*) 'internal error: amplitude table not defined'
+      endif
+      call hecmw_abort( hecmw_comm_get_comm() )
+    endif
+
+    tincre = fstrSOLID%step_ctrl( cstep )%initdt
+    jj1 = hecMESH%amp%amp_index(jj_n_amp - 1)
+    jj2 = hecMESH%amp%amp_index(jj_n_amp)
+
+    jj1 = jj1 + 2
+    t_t = time-fstrSOLID%step_ctrl(cstep)%starttime
+
+    !      if(jj2 .eq. 0) then
+    !         f_t = 1.0
+    if(t_t .gt. hecMESH%amp%amp_table(jj2)) then
+      f_t = hecMESH%amp%amp_val(jj2)
+    else if(t_t .le. hecMESH%amp%amp_table(jj2)) then
+      flag=0
+      do i = jj1, jj2
+        if(t_t .le. hecMESH%amp%amp_table(i)) then
+          s2 = i
+          s1 = i - 1
+          flag = 1
+        endif
+        if( flag == 1 ) exit
+      end do
+
+      t_2 = hecMESH%amp%amp_table(s2)
+      t_1 = hecMESH%amp%amp_table(s1)
+      f_2 = hecMESH%amp%amp_val(s2)
+      f_1 = hecMESH%amp%amp_val(s1)
+      if( t_2-t_1 .lt. 1.0e-20) then
+        if(myrank == 0) then
+          write(imsg,*) 'stop due to t_2-t_1 <= 0'
+        endif
+        call hecmw_abort( hecmw_comm_get_comm())
+      endif
+      f_t = ((t_2*f_1 - t_1*f_2) + (f_2 - f_1)*t_t) / (t_2 - t_1)
+    endif
+
+  end subroutine table_amp
 
 end module m_fstr

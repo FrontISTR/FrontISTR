@@ -10,12 +10,13 @@ contains
 
   !>  Add Essential Boundary Conditions
   !------------------------------------------------------------------------------------------*
-  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,conMAT)
+  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,conMAT,RHSvector)
     !------------------------------------------------------------------------------------------*
     use m_fstr
     use mContact
     use m_static_LIB_1d
     use m_utilities
+    use m_fstr_TimeInc
     integer, intent(in)                  :: cstep !< current step
     type(hecmwST_local_mesh)             :: hecMESH !< hecmw mesh
     type(hecmwST_matrix)                 :: hecMAT !< hecmw matrix
@@ -24,26 +25,20 @@ contains
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint)                   :: iter !< NR iterations
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
+    real(kind=kreal), optional           :: RHSvector(:) !< only Right Hand Side vector
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
-    real(kind=kreal)   :: RHS0, RHS, factor
+    real(kind=kreal)   :: RHS0, RHS, factor, factor0
     integer(kind=kint) :: ndof, grpid, istot
 
     !for rotation
-    integer(kind=kint) :: n_rot, rid
+    integer(kind=kint) :: n_rot, rid, jj_n_amp
     type(tRotInfo)     :: rinfo
     real(kind=kreal)   :: ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3), cddisp(3)
 
     !
     ndof = hecMAT%NDOF
-    factor = fstrSOLID%FACTOR(2)-fstrSOLID%FACTOR(1)
-
-    if( cstep<=fstrSOLID%nstep_tot .and. fstrSOLID%step_ctrl(cstep)%solution==stepVisco ) then
-      factor = 0.d0
-      if( fstrSOLID%FACTOR(1) < 1.d-10 ) factor = 1.d0
-    endif
-    if( iter>1 ) factor=0.d0
 
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
@@ -51,6 +46,24 @@ contains
     !   ----- Prescibed displacement Boundary Conditions
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( iter>1 ) then
+        factor=0.d0
+      else
+        jj_n_amp = fstrSOLID%BOUNDARY_ngrp_amp(ig0)
+        if( jj_n_amp <= 0 ) then  ! Amplitude not defined
+          factor0 = fstrSOLID%FACTOR(1)
+          factor = fstrSOLID%FACTOR(2)
+        else
+          call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time(),factor0)
+          call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time()+fstr_get_timeinc(),factor)
+        endif
+        factor = factor - factor0
+        if(fstrSOLID%step_ctrl(cstep)%solution==stepVisco)then
+          factor = 0.d0
+          if(factor0 < 1.d-10) factor = 1.d0
+        endif
+      endif
+
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
       RHS0 = fstrSOLID%BOUNDARY_ngrp_val(ig0)
@@ -98,6 +111,11 @@ contains
           else
             RHS = (RHS0 - fstrSOLID%unode_bak(ndof*(in-1)+idof))*factor
           endif
+          if(present(RHSvector)) then
+            RHSvector(ndof*(in-1)+idof) = RHS
+            ! write(6,*) 'BC: ', ndof*(in-1)+idof, RHS
+            cycle
+          endif
           if(present(conMAT)) then
             call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
           else
@@ -117,6 +135,7 @@ contains
     enddo
 
     !Apply rotational boundary condition
+    !need to fix!!
     do rid = 1, n_rot
       if( .not. rinfo%conds(rid)%active ) cycle
       cdiff = 0.d0
@@ -145,6 +164,11 @@ contains
         endif
         do idof = 1, ndof
           RHS = cdiff(idof)-cdiff0(idof)+cddisp(idof)
+          if(present(RHSvector)) then
+            RHSvector(ndof*(in-1)+idof) = RHS
+            ! write(6,*) 'BC(rot): ', ndof*(in-1)+idof, RHS
+            cycle
+          endif
           if(present(conMAT)) then
             call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
           else

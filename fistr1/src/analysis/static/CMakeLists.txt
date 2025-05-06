@@ -21,5 +21,6 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/fstr_AddContactStiff.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_AddBC.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_NonLinear.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_QuasiNewton.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_NLGEOM.f90
 )

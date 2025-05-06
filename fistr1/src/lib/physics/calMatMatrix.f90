@@ -112,7 +112,7 @@ contains
     integer(kind=kint), intent(in)      :: hdflag  !> return only hyd and dev term if specified
 
     if( gauss%pMaterial%mtype==NEOHOOKE .or. gauss%pMaterial%mtype==MOONEYRIVLIN ) then
-      call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress, hdflag=hdflag )
+      call calUpdateElasticMooneyRivlin( gauss%pMaterial, sectType, strain, stress, gauss%strain_energy, hdflag=hdflag )
     elseif( gauss%pMaterial%mtype==ARRUDABOYCE ) then ! Arruda-Boyce Hyperelastic material
       call calUpdateElasticArrudaBoyce( gauss%pMaterial, sectType, strain, stress )
     elseif( gauss%pMaterial%mtype==MOONEYRIVLIN_ANISO ) then

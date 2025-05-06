@@ -422,16 +422,6 @@ module hecmw_util
     real(kind=kreal), dimension(3,3) :: val
   end type hecmwST_index_value_pair
 
-  type hecmwST_matrix_contact
-    integer(kind=kint)                      :: n_val
-    integer(kind=kint)                      :: max_val
-    type(hecmwST_index_value_pair), pointer :: pair(:)
-    logical :: checked
-    logical :: sorted
-    integer(kind=kint) :: max_row
-    integer(kind=kint) :: max_col
-  end type hecmwST_matrix_contact
-
   !> Structure for Lagrange multiplier-related part of stiffness matrix
   !> (Lagrange multiplier-related matrix)
   type hecmwST_matrix_lagrange
@@ -452,40 +442,14 @@ module hecmw_util
   end type hecmwST_matrix_lagrange
 
   type hecmwST_matrix
-    integer(kind=kint) ::  N, NP, NPL, NPU, NDOF, NPCL, NPCU
-    !integer(kind=kint) ::  NU, NL  ! used only in mat_con
-    !          integer(kind=kint)  N, NP, NE, NPL, NPU, NU, NL, NDOF
-    !integer(kind=kint) ::  NCOLORtot, NHYP, npLX1, npUX1, NLmax, NUmax, NCOLORk
-    !integer(kind=kint) ::  ITERactual
-
-    !          integer(kind=kint), pointer :: globalNODEID(:)
+    integer(kind=kint) ::  N, NP, NPL, NPU, NDOF
     real(kind=kreal), pointer :: D(:), B(:), X(:), ALU(:)
-    real(kind=kreal), pointer :: AL(:), AU(:), CAL(:), CAU(:)
-    !real(kind=kreal), pointer :: PAL(:), PAU(:)
-    !real(kind=kreal), pointer :: ALUG_L(:), ALUG_U(:)
-    integer(kind=kint), pointer :: indexL(:), indexU(:), indexCL(:), indexCU(:)
-    integer(kind=kint), pointer ::  itemL(:),  itemU(:), itemCL(:),  itemCU(:)
-    !integer(kind=kint), pointer :: INL  (:), INU  (:)  ! used only in mat_con
-    !integer(kind=kint), pointer :: INLmc(:), INUmc(:)
-    !integer(kind=kint), pointer :: IAL  (:,:), IAU  (:,:)  ! used only in mat_con
-    !integer(kind=kint), pointer :: IALmc(:,:), IAUmc(:,:)
-    !integer(kind=kint), pointer :: OLDtoNEW  (:), NEWtoOLD  (:)
-    !integer(kind=kint), pointer :: OLDtoNEWmc(:), NEWtoOLDmc(:)
-    !integer(kind=kint), pointer :: STACKmc   (:), STACKmcG  (:)
-    !integer(kind=kint), pointer :: PEon      (:), COLORon   (:)
-    !integer(kind=kint), pointer :: NEWtoOLD_L(:), OLDtoNEW_L(:)
-    !integer(kind=kint), pointer :: NEWtoOLD_U(:), OLDtoNEW_U(:)
-    !integer(kind=kint), pointer :: LtoU      (:)
-    !integer(kind=kint), pointer :: NLmaxHYP  (:), NUmaxHYP  (:)
-    !integer(kind=kint), pointer :: IVECmc    (:), IVnew     (:)
-    !integer(kind=kint ), pointer:: IWKX(:,:), IW0(:,:), IW(:,:)
-    !integer(kind=kint ), pointer:: IVECT(:), ICHK(:)
+    real(kind=kreal), pointer :: AL(:), AU(:)
+    integer(kind=kint), pointer :: indexL(:), indexU(:)
+    integer(kind=kint), pointer ::  itemL(:),  itemU(:)
     integer(kind=kint ), dimension(100) :: Iarray
     real   (kind=kreal), dimension(100) :: Rarray
     logical :: symmetric = .true.
-    !real   (kind=kreal) :: RESIDactual
-    !          type(hecmwST_matrix_comm) :: comm
-    type(hecmwST_matrix_contact) :: cmat
   end type hecmwST_matrix
 contains
 
@@ -845,11 +809,6 @@ contains
     nullify( P%shared_item )
   end subroutine hecmw_nullify_matrix_comm
 
-  subroutine hecmw_nullify_matrix_contact( P )
-    type( hecmwST_matrix_contact ) :: P
-    nullify( P%pair )
-  end subroutine hecmw_nullify_matrix_contact
-
   subroutine hecmw_nullify_matrix( P )
     type( hecmwST_matrix ) :: P
     nullify( P%D )
@@ -858,51 +817,10 @@ contains
     nullify( P%ALU )
     nullify( P%AL )
     nullify( P%AU )
-    nullify( P%CAL )
-    nullify( P%CAU )
-    !nullify( P%PAL )
-    !nullify( P%PAU )
-    !nullify( P%ALUG_L )
-    !nullify( P%ALUG_U )
     nullify( P%indexL )
     nullify( P%indexU )
     nullify( P%itemL )
     nullify( P%itemU )
-    nullify( P%indexCL )
-    nullify( P%indexCU )
-    nullify( P%itemCL )
-    nullify( P%itemCU )
-    !nullify( P%INL   )
-    !nullify( P%INU   )
-    !nullify( P%INLmc )
-    !nullify( P%INUmc )
-    !nullify( P%IAL   )
-    !nullify( P%IAU   )
-    !nullify( P%IALmc )
-    !nullify( P%IAUmc )
-    !nullify( P%OLDtoNEW   )
-    !nullify( P%NEWtoOLD   )
-    !nullify( P%OLDtoNEWmc )
-    !nullify( P%NEWtoOLDmc )
-    !nullify( P%STACKmc    )
-    !nullify( P%STACKmcG   )
-    !nullify( P%PEon       )
-    !nullify( P%COLORon    )
-    !nullify( P%NEWtoOLD_L )
-    !nullify( P%OLDtoNEW_L )
-    !nullify( P%NEWtoOLD_U )
-    !nullify( P%OLDtoNEW_U )
-    !nullify( P%LtoU       )
-    !nullify( P%NLmaxHYP   )
-    !nullify( P%NUmaxHYP   )
-    !nullify( P%IVECmc     )
-    !nullify( P%IVnew      )
-    !nullify( P%IWKX )
-    !nullify( P%IW0 )
-    !nullify( P%IW )
-    !nullify( P%IVECT )
-    !nullify( P%ICHK )
-    call hecmw_nullify_matrix_contact( P%cmat )
   end subroutine hecmw_nullify_matrix
 
   subroutine hecmw_print_matrix( fname, P )
@@ -939,16 +857,6 @@ contains
     !---- B
     do i=1,P%NDOF * P%NP
       write( nf, * ) P%B(i)
-    enddo
-
-    !--- cmat
-    write( nf, * ) P%cmat%n_val, P%cmat%max_val, P%cmat%max_row,  &
-      P%cmat%max_col, P%cmat%checked, P%cmat%sorted
-    do i=1,P%cmat%n_val
-      write( nf, * ) P%cmat%pair(i)%i,P%cmat%pair(i)%j
-      write( nf, * ) P%cmat%pair(i)%val(1,1), P%cmat%pair(i)%val(1,2), P%cmat%pair(i)%val(1,3)
-      write( nf, * ) P%cmat%pair(i)%val(2,1), P%cmat%pair(i)%val(2,2), P%cmat%pair(i)%val(2,3)
-      write( nf, * ) P%cmat%pair(i)%val(3,1), P%cmat%pair(i)%val(3,2), P%cmat%pair(i)%val(3,3)
     enddo
 
     close( nf )
@@ -1001,19 +909,9 @@ contains
       read( nf, * ) P%B(i)
     enddo
 
-    !--- cmat
-    read( nf, * ) P%cmat%n_val, P%cmat%max_val, P%cmat%max_row,  &
-      P%cmat%max_col, P%cmat%checked, P%cmat%sorted
-    allocate( P%cmat%pair( p%cmat%n_val ) )
-    do i=1,P%cmat%n_val
-      read( nf, * ) P%cmat%pair(i)%i,P%cmat%pair(i)%j
-      read( nf, * ) P%cmat%pair(i)%val(1,1), P%cmat%pair(i)%val(1,2), P%cmat%pair(i)%val(1,3)
-      read( nf, * ) P%cmat%pair(i)%val(2,1), P%cmat%pair(i)%val(2,2), P%cmat%pair(i)%val(2,3)
-      read( nf, * ) P%cmat%pair(i)%val(3,1), P%cmat%pair(i)%val(3,2), P%cmat%pair(i)%val(3,3)
-    enddo
-
     close( nf )
   end subroutine
+
   subroutine hecmw_clone_matrix(hecMATorig,hecMAT)
     type (hecmwST_matrix    ) :: hecMATorig
     type (hecmwST_matrix    ),pointer :: hecMAT
@@ -1036,8 +934,8 @@ contains
     hecMAT%NDOF = hecMATorig%NDOF
     hecMAT%Iarray = hecMATorig%Iarray
     hecMAT%Rarray = hecMATorig%Rarray
-
   end subroutine hecmw_clone_matrix
+
   subroutine hecmw_copy_matrix(hecMATorig,hecMAT)
     type (hecmwST_matrix    ) :: hecMATorig
     type (hecmwST_matrix    ),pointer :: hecMAT
@@ -1073,8 +971,8 @@ contains
     hecMAT%itemU   = hecMATorig%itemU
     hecMAT%Iarray  = hecMATorig%Iarray
     hecMAT%Rarray  = hecMATorig%Rarray
-
   end subroutine hecmw_copy_matrix
+
   subroutine hecmw_blockmatrix_expand(hecMATorig,hecMAT,NDOF)
     type (hecmwST_matrix    ) :: hecMATorig
     type (hecmwST_matrix    ),pointer :: hecMAT

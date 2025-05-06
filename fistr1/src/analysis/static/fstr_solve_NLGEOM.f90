@@ -9,6 +9,7 @@ module m_fstr_solve_NLGEOM
   use m_static_lib
   use m_static_output
   use m_fstr_NonLinearMethod
+  use m_fstr_QuasiNewton
   use m_fstr_Restart
   use fstr_matrix_con_contact
   use m_fstr_TimeInc
@@ -152,8 +153,13 @@ contains
 
         ! analysis algorithm ( Newton-Rapshon Method )
         if( .not. is_interaction_active ) then
-          call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
+          if( fstrPARAM%nlsolver_method == knsmNEWTON ) then
+            call fstr_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
             restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
+          else if( fstrPARAM%nlsolver_method == knsmQUASINEWTON ) then
+            call fstr_Quasi_Newton( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM,   &
+            restart_step_num, sub_step, fstr_get_time(), fstr_get_timeinc() )
+          endif
         else
           if( fstrPARAM%contact_algo == kcaSLagrange ) then
             call fstr_Newton_contactSLag( tot_step, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT,  &
@@ -283,53 +289,15 @@ contains
     real(kind=kreal), intent(in)            :: time       !< loading time(total time)
     real(kind=kreal), intent(out)           :: f_t        !< loading factor
 
-    integer(kind=kint) :: i
-    integer(kind=kint) :: jj_n_amp, jj1, jj2
-    integer(kind=kint) :: s1, s2, flag
-    real(kind=kreal) :: t_1, t_2, t_t, f_1, f_2, tincre
+    integer(kind=kint) :: jj_n_amp
 
-    s1 = 0; s2 = 0
     jj_n_amp = fstrSOLID%step_ctrl( cstep )%amp_id
 
     if( jj_n_amp <= 0 ) then  ! Amplitude not defined
       f_t = (time-fstrSOLID%step_ctrl(cstep)%starttime)/fstrSOLID%step_ctrl(cstep)%elapsetime
       if( f_t>1.d0 ) f_t=1.d0
     else
-      tincre = fstrSOLID%step_ctrl( cstep )%initdt
-      jj1 = hecMESH%amp%amp_index(jj_n_amp - 1)
-      jj2 = hecMESH%amp%amp_index(jj_n_amp)
-
-      jj1 = jj1 + 2
-      t_t = time-fstrSOLID%step_ctrl(cstep)%starttime
-
-      !      if(jj2 .eq. 0) then
-      !         f_t = 1.0
-      if(t_t .gt. hecMESH%amp%amp_table(jj2)) then
-        f_t = hecMESH%amp%amp_val(jj2)
-      else if(t_t .le. hecMESH%amp%amp_table(jj2)) then
-        flag=0
-        do i = jj1, jj2
-          if(t_t .le. hecMESH%amp%amp_table(i)) then
-            s2 = i
-            s1 = i - 1
-            flag = 1
-          endif
-          if( flag == 1 ) exit
-        end do
-
-        t_2 = hecMESH%amp%amp_table(s2)
-        t_1 = hecMESH%amp%amp_table(s1)
-        f_2 = hecMESH%amp%amp_val(s2)
-        f_1 = hecMESH%amp%amp_val(s1)
-        if( t_2-t_1 .lt. 1.0e-20) then
-          if(myrank == 0) then
-            write(imsg,*) 'stop due to t_2-t_1 <= 0'
-          endif
-          call hecmw_abort( hecmw_comm_get_comm())
-        endif
-        f_t = ((t_2*f_1 - t_1*f_2) + (f_2 - f_1)*t_t) / (t_2 - t_1)
-      endif
-
+      call table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, time, f_t)
     endif
 
   end subroutine table_nlsta

@@ -624,12 +624,16 @@ contains
 
     if( flag == INFINITESIMAL ) then
 
-      gauss%stress(1:6) = gauss%stress_bak(1:6) + matmul( D(1:6, 1:6), dstrain(1:6)-gauss%strain_bak(1:6) )
+      dstress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6)-gauss%strain_bak(1:6) )
+      gauss%stress(1:6) = gauss%stress_bak(1:6) + dstress(1:6)
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
         gauss%stress = real(gauss%stress)
       end if
+      gauss%strain_energy = gauss%strain_energy_bak+dot_product(gauss%stress_bak(1:6),dstrain(1:6)-gauss%strain_bak(1:6))
+      gauss%strain_energy = gauss%strain_energy+0.5d0*dot_product(dstress,dstrain(1:6)-gauss%strain_bak(1:6))
 
+      
     else if( flag == TOTALLAG ) then
 
       if( isHyperelastic(mtype) .OR. mtype == USERELASTIC .OR. mtype == USERMATERIAL ) then
@@ -639,6 +643,7 @@ contains
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
       else
         gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+        gauss%strain_energy = 0.5d0*dot_product(gauss%stress(1:6),dstrain(1:6))
       end if
 
     else if( flag == UPDATELAG ) then
@@ -678,12 +683,15 @@ contains
           end if
         end if
       end if
+      gauss%strain_energy = gauss%strain_energy_bak+dot_product(gauss%stress(1:6),dstrain(1:6)) !s_t*de+de*C*de
+      gauss%strain_energy = gauss%strain_energy-0.5d0*dot_product(dstress(1:6),dstrain(1:6))
 
     end if
 
     if( isElastoplastic(mtype) ) then
       call BackwardEuler( gauss%pMaterial, gauss%stress, gauss%plstrain, &
-        gauss%istatus(1), gauss%fstatus, ttc )
+        gauss%istatus(1), gauss%fstatus, gauss%plpotential, ttc )
+        gauss%strain_energy = gauss%strain_energy+gauss%plpotential
     end if
 
     !convert stress/strain measure for output
@@ -960,6 +968,8 @@ contains
       qf(1:nn*ndof)                                                          &
         = qf(1:nn*ndof)+matmul( gausses(LX)%stress(1:6), B(1:6,1:nn*ndof) )*WG
 
+      ! integrate strain energy
+      gausses(LX)%strain_energy = gausses(LX)%strain_energy*WG
     end do
 
   end subroutine UPDATE_C3
