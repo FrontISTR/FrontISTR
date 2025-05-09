@@ -81,6 +81,7 @@ OBJSF = \
 	hecmw_solver_GMRESR.@f90objfilepostfix@ \
 	hecmw_solver_GMRESREN.@f90objfilepostfix@ \
 	hecmw_solver_GPBiCG.@f90objfilepostfix@ \
+	hecmw_solver_CR.@f90objfilepostfix@ \
 	hecmw_solver_Iterative.@f90objfilepostfix@ 
 
 HEADERS =
