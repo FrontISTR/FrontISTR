@@ -23,6 +23,9 @@ module m_contact_lib
   integer, parameter :: CONTACTSSLID = 3
   integer, parameter :: CONTACTFSLID = 4
 
+  !> contact interference type
+  integer, parameter :: C_IF_SLAVE = 1
+  integer, parameter :: C_IF_MASTER = 2
   !> This structure records contact status
   type tContactState
     integer          :: state !< -1:free, 1:in contact, or other needed
@@ -39,6 +42,12 @@ module m_contact_lib
     real(kind=kreal) :: tangentForce_trial(3) !< trial friction force
     real(kind=kreal) :: tangentForce_final(3) !< final friction force
     real(kind=kreal)    :: reldisp(3)
+    !
+    real(kind=kreal)    :: shrink_factor
+    real(kind=kreal)    :: time_factor
+    real(kind=kreal)    :: init_pos
+    real(kind=kreal)    :: end_pos
+    integer             :: interference_flag
   end type
 
 contains
@@ -343,8 +352,20 @@ end subroutine
         if( dabs(1.d0-dabs(normal(count)))<1.D-10 ) normal(count) =sign(1.d0, normal(count))
       enddo
       cstate%distance = dot_product( dxyz, normal )
+    
+      if( cstate%interference_flag == C_IF_SLAVE) then
+        if( cstate%init_pos == 0.d0 .and. cstate%distance < cstate%end_pos) then
+          cstate%init_pos = cstate%distance
+          cstate%time_factor = (cstate%end_pos - cstate%distance) / cstate%time_factor
+          cstate%shrink_factor = cstate%distance
+        end if
+      end if
 
-      if( cstate%distance < distclr*reflen .and. cstate%distance > -5.0d-01*reflen ) isin = .true.
+      if( cstate%interference_flag == 0)then ! not shrink-node
+        if( cstate%distance < distclr*reflen .and. cstate%distance > -5.0d-01*reflen ) isin = .true.
+      else
+        if( cstate%distance < cstate%shrink_factor + distclr*reflen ) isin = .true.
+      end if
 
       if( isin ) then
         if( initstate== CONTACTFREE ) then
@@ -480,6 +501,19 @@ end subroutine
     cstate%tangentForce1(1:3) = coeff(1)*tangent(1:3,1) + coeff(2)*tangent(1:3,2)
 
   end subroutine update_TangentForce
+
+  subroutine set_shrink_factor(ctime, cstate, etime, if_type)
+    real(kind=kreal),intent(in)         :: ctime, etime
+    type(tContactState), intent(inout)  :: cstate        !< Recorde of contact information
+    integer, intent(in)                 :: if_type
+
+    if (if_type == C_IF_SLAVE .and. cstate%init_pos == 0.d0) then
+      cstate%shrink_factor = 0.0d0; return
+    end if
+    cstate%shrink_factor = cstate%time_factor*ctime + cstate%init_pos
+    if(ctime >= etime) cstate%shrink_factor = cstate%end_pos
+
+  end subroutine set_shrink_factor
 
 end module m_contact_lib
 

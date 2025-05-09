@@ -35,7 +35,12 @@ module mContactDef
     integer, pointer              :: slave(:)=>null()        !< slave surface (node)
     real(kind=kreal)              :: fcoeff                  !< coeeficient of friction
     real(kind=kreal)              :: tPenalty                !< tangential penalty
-
+    
+    real(kind=kreal)    :: ctime
+    integer(kind=kint)  :: if_type
+    real(kind=kreal)    :: if_etime
+    real(kind=kreal)    :: initial_pos
+    real(kind=kreal)    :: end_pos
     ! following algorithm
     ! -1: not initialized
     ! 1: TIED-Just rigidly fixed the two surfaces
@@ -245,6 +250,8 @@ contains
       contact%states(ii)%tangentForce_trial(:) = 0.d0
       contact%states(ii)%tangentForce_final(:) = 0.d0
       contact%states(ii)%reldisp(:) = 0.d0
+      contact%states(ii)%time_factor = 0.d0
+      contact%states(ii)%interference_flag = 0
     enddo
     !    endif
 
@@ -386,6 +393,41 @@ contains
     fstr_embed_init = .true.
   end function
 
+  function  check_apply_Contact_IF( contact_if, contacts )
+    type(tContactInterference), intent(inout)     :: contact_if  !< contact definition
+    type(tContact)     :: contacts(:) !< type fstr_solid
+    
+    integer  :: i, j
+    logical  :: isfind
+    integer(kind=kint)            :: check_apply_Contact_IF
+
+    check_apply_Contact_IF = -1
+    ! if contact pair exist?
+    isfind = .false.
+    do i = 1, size(contacts)
+      if( contacts(i)%pair_name == contact_if%cp_name ) then
+        contacts(i)%if_type     = contact_if%if_type
+        contacts(i)%if_etime    = contact_if%etime
+        contacts(i)%initial_pos = contact_if%initial_pos
+        contacts(i)%end_pos     = contact_if%end_pos
+        do j = 1, size(contacts(i)%states)
+          contacts(i)%states(j)%interference_flag = contact_if%if_type
+          contacts(i)%states(j)%init_pos = contact_if%initial_pos
+          contacts(i)%states(j)%end_pos  = contact_if%end_pos
+          if( contact_if%if_type /= C_IF_SLAVE )then
+            contacts(i)%states(j)%time_factor = (contact_if%end_pos - contact_if%initial_pos) / contact_if%etime
+          else
+            contacts(i)%states(j)%time_factor = contact_if%etime
+          end if
+        end do
+        isfind = .true.
+        check_apply_Contact_IF = 0; return
+      endif
+    enddo
+    if( .not. isfind ) return;
+    check_apply_Contact_IF = 0
+
+  end function
 
   !> Reset contact state all to free
   subroutine clear_contact_state( contact )
@@ -477,6 +519,7 @@ contains
       !$omp& reduction(.or.:active) &
       !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
+      if(contact%if_type /= 0) call set_shrink_factor(contact%ctime, contact%states(i), contact%if_etime, contact%if_type)
       slave = contact%slave(i)
       if( contact%states(i)%state==CONTACTSTICK .or. contact%states(i)%state==CONTACTSLIP ) then
         slforce(1:3)=ndforce(3*slave-2:3*slave)
@@ -599,145 +642,145 @@ contains
   !!-# Clear lagrangian multipliers when free to contact
   subroutine scan_embed_state( flag_ctAlgo, embed, currpos, currdisp, ndforce, infoCTChange, &
     nodeID, elemID, is_init, active, mu, B )
-  character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
-  type( tContact ), intent(inout)                  :: embed      !< contact info
-  type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
-  real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
-  real(kind=kreal), intent(in)                     :: currdisp(:)  !< current displacement of each nodes
-  real(kind=kreal), intent(in)                     :: ndforce(:)   !< nodal force
-  integer(kind=kint), intent(in)                   :: nodeID(:)    !< global nodal ID, just for print out
-  integer(kind=kint), intent(in)                   :: elemID(:)    !< global elemental ID, just for print out
-  logical, intent(in)                              :: is_init      !< whether initial scan or not
-  logical, intent(out)                             :: active       !< if any in contact
-  real(kind=kreal), intent(in)                     :: mu           !< penalty
-  real(kind=kreal), optional, target               :: B(:)         !< nodal force residual
+    character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
+    type( tContact ), intent(inout)                  :: embed      !< contact info
+    type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
+    real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
+    real(kind=kreal), intent(in)                     :: currdisp(:)  !< current displacement of each nodes
+    real(kind=kreal), intent(in)                     :: ndforce(:)   !< nodal force
+    integer(kind=kint), intent(in)                   :: nodeID(:)    !< global nodal ID, just for print out
+    integer(kind=kint), intent(in)                   :: elemID(:)    !< global elemental ID, just for print out
+    logical, intent(in)                              :: is_init      !< whether initial scan or not
+    logical, intent(out)                             :: active       !< if any in contact
+    real(kind=kreal), intent(in)                     :: mu           !< penalty
+    real(kind=kreal), optional, target               :: B(:)         !< nodal force residual
 
-  real(kind=kreal)    :: distclr
-  integer(kind=kint)  :: slave, id, etype
-  integer(kind=kint)  :: nn, i, j, iSS, nactive
-  real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
-  real(kind=kreal)    :: nlforce, slforce(3)
-  logical             :: isin
-  integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
-  !
-  integer, pointer :: indexMaster(:),indexCand(:)
-  integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-  logical :: is_cand, is_present_B
-  real(kind=kreal), pointer :: Bp(:)
+    real(kind=kreal)    :: distclr
+    integer(kind=kint)  :: slave, id, etype
+    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
+    real(kind=kreal)    :: nlforce, slforce(3)
+    logical             :: isin
+    integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
+    !
+    integer, pointer :: indexMaster(:),indexCand(:)
+    integer   ::  nMaster,idm,nMasterMax,bktID,nCand
+    logical :: is_cand, is_present_B
+    real(kind=kreal), pointer :: Bp(:)
 
-  if( is_init ) then
-    distclr = embed%cparam%DISTCLR_INIT
-  else
-    distclr = embed%cparam%DISTCLR_FREE
-    active = .false.
+    if( is_init ) then
+      distclr = embed%cparam%DISTCLR_INIT
+    else
+      distclr = embed%cparam%DISTCLR_FREE
+      active = .false.
+      do i= 1, size(embed%slave)
+        if( embed%states(i)%state==CONTACTSTICK ) then
+          active = .true.
+          exit
+        endif
+      enddo
+      return
+    endif
+
+    allocate(contact_surf(size(nodeID)))
+    allocate(states_prev(size(embed%slave)))
+    contact_surf(:) = huge(0)
+    do i = 1, size(embed%slave)
+      states_prev(i) = embed%states(i)%state
+    enddo
+
+    call update_surface_box_info( embed%master, currpos )
+    call update_surface_bucket_info( embed%master, embed%master_bktDB )
+
+    ! for gfortran-10: optional parameter seems not allowed within omp parallel
+    is_present_B = present(B)
+    if( is_present_B ) Bp => B
+
+    !$omp parallel do &
+      !$omp& default(none) &
+      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+      !$omp&         bktID,nCand,indexCand) &
+      !$omp& firstprivate(nMasterMax,is_present_B) &
+      !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
+      !$omp& reduction(.or.:active) &
+      !$omp& schedule(dynamic,1)
     do i= 1, size(embed%slave)
-      if( embed%states(i)%state==CONTACTSTICK ) then
-        active = .true.
-        exit
+      slave = embed%slave(i)
+      if( embed%states(i)%state==CONTACTFREE ) then
+        coord(:) = currpos(3*slave-2:3*slave)
+
+        ! get master candidates from bucketDB
+        bktID = bucketDB_getBucketID(embed%master_bktDB, coord)
+        nCand = bucketDB_getNumCand(embed%master_bktDB, bktID)
+        if (nCand == 0) cycle
+        allocate(indexCand(nCand))
+        call bucketDB_getCand(embed%master_bktDB, bktID, nCand, indexCand)
+
+        nMasterMax = nCand
+        allocate(indexMaster(nMasterMax))
+        nMaster = 0
+
+        ! narrow down candidates
+        do idm= 1, nCand
+          id = indexCand(idm)
+          if (.not. is_in_surface_box( embed%master(id), coord(1:3), embed%cparam%BOX_EXP_RATE )) cycle
+          nMaster = nMaster + 1
+          indexMaster(nMaster) = id
+        enddo
+        deallocate(indexCand)
+
+        if(nMaster == 0) then
+          deallocate(indexMaster)
+          cycle
+        endif
+
+        do idm = 1,nMaster
+          id = indexMaster(idm)
+          etype = embed%master(id)%etype
+          if( mod(etype,10) == 2 ) etype = etype - 1 !search by 1st-order shape function
+          nn = getNumberOfNodes(etype)
+          do j=1,nn
+            iSS = embed%master(id)%nodes(j)
+            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+          enddo
+          call project_Point2SolidElement( coord,etype,nn,elem,embed%master(id)%reflen,embed%states(i), &
+            isin,distclr,localclr=embed%cparam%CLEARANCE )
+          if( .not. isin ) cycle
+          embed%states(i)%surface = id
+          embed%states(i)%multiplier(:) = 0.d0
+          contact_surf(embed%slave(i)) = elemID(embed%master(id)%eid)
+          write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
+            elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
+          exit
+        enddo
+        deallocate(indexMaster)
       endif
     enddo
-    return
-  endif
+    !$omp end parallel do
 
-  allocate(contact_surf(size(nodeID)))
-  allocate(states_prev(size(embed%slave)))
-  contact_surf(:) = huge(0)
-  do i = 1, size(embed%slave)
-    states_prev(i) = embed%states(i)%state
-  enddo
-
-  call update_surface_box_info( embed%master, currpos )
-  call update_surface_bucket_info( embed%master, embed%master_bktDB )
-
-  ! for gfortran-10: optional parameter seems not allowed within omp parallel
-  is_present_B = present(B)
-  if( is_present_B ) Bp => B
-
-  !$omp parallel do &
-    !$omp& default(none) &
-    !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
-    !$omp&         bktID,nCand,indexCand) &
-    !$omp& firstprivate(nMasterMax,is_present_B) &
-    !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
-    !$omp& reduction(.or.:active) &
-    !$omp& schedule(dynamic,1)
-  do i= 1, size(embed%slave)
-    slave = embed%slave(i)
-    if( embed%states(i)%state==CONTACTFREE ) then
-      coord(:) = currpos(3*slave-2:3*slave)
-
-      ! get master candidates from bucketDB
-      bktID = bucketDB_getBucketID(embed%master_bktDB, coord)
-      nCand = bucketDB_getNumCand(embed%master_bktDB, bktID)
-      if (nCand == 0) cycle
-      allocate(indexCand(nCand))
-      call bucketDB_getCand(embed%master_bktDB, bktID, nCand, indexCand)
-
-      nMasterMax = nCand
-      allocate(indexMaster(nMasterMax))
-      nMaster = 0
-
-      ! narrow down candidates
-      do idm= 1, nCand
-        id = indexCand(idm)
-        if (.not. is_in_surface_box( embed%master(id), coord(1:3), embed%cparam%BOX_EXP_RATE )) cycle
-        nMaster = nMaster + 1
-        indexMaster(nMaster) = id
-      enddo
-      deallocate(indexCand)
-
-      if(nMaster == 0) then
-        deallocate(indexMaster)
-        cycle
+    call hecmw_contact_comm_allreduce_i(embed%comm, contact_surf, HECMW_MIN)
+    nactive = 0
+    do i = 1, size(embed%slave)
+      if (embed%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
+        id = embed%states(i)%surface
+        if (abs(contact_surf(embed%slave(i))) /= elemID(embed%master(id)%eid)) then ! that is in contact with other surface
+          embed%states(i)%state = CONTACTFREE                           ! should be freed
+          write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(embed%slave(i))," contact with element", &
+            &  elemID(embed%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
+        else
+          nactive = nactive + 1
+        endif
       endif
-
-      do idm = 1,nMaster
-        id = indexMaster(idm)
-        etype = embed%master(id)%etype
-        if( mod(etype,10) == 2 ) etype = etype - 1 !search by 1st-order shape function
-        nn = getNumberOfNodes(etype)
-        do j=1,nn
-          iSS = embed%master(id)%nodes(j)
-          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-        enddo
-        call project_Point2SolidElement( coord,etype,nn,elem,embed%master(id)%reflen,embed%states(i), &
-          isin,distclr,localclr=embed%cparam%CLEARANCE )
-        if( .not. isin ) cycle
-        embed%states(i)%surface = id
-        embed%states(i)%multiplier(:) = 0.d0
-        contact_surf(embed%slave(i)) = elemID(embed%master(id)%eid)
-        write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
-          elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
-        exit
-      enddo
-      deallocate(indexMaster)
-    endif
-  enddo
-  !$omp end parallel do
-
-  call hecmw_contact_comm_allreduce_i(embed%comm, contact_surf, HECMW_MIN)
-  nactive = 0
-  do i = 1, size(embed%slave)
-    if (embed%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
-      id = embed%states(i)%surface
-      if (abs(contact_surf(embed%slave(i))) /= elemID(embed%master(id)%eid)) then ! that is in contact with other surface
-        embed%states(i)%state = CONTACTFREE                           ! should be freed
-        write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(embed%slave(i))," contact with element", &
-          &  elemID(embed%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
-      else
-        nactive = nactive + 1
+      if (states_prev(i) == CONTACTFREE .and. embed%states(i)%state /= CONTACTFREE) then
+        infoCTChange%free2contact = infoCTChange%free2contact + 1
+      elseif (states_prev(i) /= CONTACTFREE .and. embed%states(i)%state == CONTACTFREE) then
+        infoCTChange%contact2free = infoCTChange%contact2free + 1
       endif
-    endif
-    if (states_prev(i) == CONTACTFREE .and. embed%states(i)%state /= CONTACTFREE) then
-      infoCTChange%free2contact = infoCTChange%free2contact + 1
-    elseif (states_prev(i) /= CONTACTFREE .and. embed%states(i)%state == CONTACTFREE) then
-      infoCTChange%contact2free = infoCTChange%contact2free + 1
-    endif
-  enddo
-  active = (nactive > 0)
-  deallocate(contact_surf)
-  deallocate(states_prev)
-end subroutine scan_embed_state
+    enddo
+    active = (nactive > 0)
+    deallocate(contact_surf)
+    deallocate(states_prev)
+  end subroutine scan_embed_state
 
 
   !> Calculate averaged nodal normal
@@ -1004,7 +1047,7 @@ end subroutine scan_embed_state
     enddo
 
     cstate_tmp%state = contact%states(nslave)%state
-	cstate_tmp%surface = sid0
+    cstate_tmp%surface = sid0
     call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,cstate_tmp, &
       isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos,contact%cparam%CLR_SAME_ELEM )
 

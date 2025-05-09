@@ -270,6 +270,9 @@ contains
 
     integer(kind=kint) :: cstep !< current calculation step
     integer(kind=kint) :: grpid
+    logical            :: if_flag
+    real(kind=kreal)   :: ctime, etime
+    integer(kind=kint) :: if_type
 
     id_lagrange = 0
     if( associated(fstrSOLID%CONT_NFORCE) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
@@ -283,10 +286,17 @@ contains
 
       algtype = fstrSOLID%contacts(i)%algtype
       nlag = fstr_get_num_lagrange_pernode(algtype)
+      if_flag = (fstrSOLID%contacts(i)%if_type /= 0)
+      if(if_flag)then
+        ctime = fstrSOLID%contacts(i)%ctime
+        etime = fstrSOLID%contacts(i)%if_etime
+        if_type = fstrSOLID%contacts(i)%if_type
+      end if
 
       do j = 1, size(fstrSOLID%contacts(i)%slave)
 
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+        if(if_flag) call set_shrink_factor(ctime, fstrSOLID%contacts(i)%states(j), etime, if_type)
 
         ctsurf = fstrSOLID%contacts(i)%states(j)%surface
         etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
@@ -307,6 +317,8 @@ contains
     
           if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
             ! Obtain contact nodal force vector of contact pair
+            if(if_flag) call get_shrink_dummy_surf(fstrSOLID%contacts(i)%states(j),ndCoord, nnode)
+
             call getContactNodalForce(etype,nnode,ndCoord,ndDu,fstrSOLID%contacts(i)%states(j),    &
             fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.true.)
             ! Update non-eqilibrited force vector
@@ -317,7 +329,7 @@ contains
             ! Update non-eqilibrited force vector
             call update_NDForce_contact(nnode,ndLocal,id_lagrange,1.d0,ctNForce,ctTForce,  &
               &  conMAT,fstrSOLID%CONT_NFORCE,fstrSOLID%CONT_FRIC)
-          endif 
+          endif
 
         enddo
       enddo
@@ -561,6 +573,9 @@ contains
     integer(kind=kint) :: algtype, nlag    
     real(kind=kreal)   :: ctNForce(21*3+1)     !< nodal normal contact force vector
     real(kind=kreal)   :: ctTForce(21*3+1)     !< nodal tangential contact force vector
+    logical            :: if_flag
+    real(kind=kreal)   :: ctime, etime
+    integer(kind=kint) :: if_type
 
     np = hecMAT%NP ; ndof = hecMAT%NDOF
 
@@ -574,9 +589,17 @@ contains
       algtype = fstrSOLID%contacts(i)%algtype
       nlag = fstr_get_num_lagrange_pernode(algtype)
 
+      if_flag = (fstrSOLID%contacts(i)%if_type /= 0)
+      if(if_flag)then
+        ctime = fstrSOLID%contacts(i)%ctime
+        etime = fstrSOLID%contacts(i)%if_etime
+        if_type = fstrSOLID%contacts(i)%if_type
+      end if
+
       do j = 1, size(fstrSOLID%contacts(i)%slave)
 
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+        if(if_flag) call set_shrink_factor(ctime, fstrSOLID%contacts(i)%states(j), etime, if_type)
 
         ctsurf = fstrSOLID%contacts(i)%states(j)%surface
         etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
@@ -591,7 +614,7 @@ contains
         do k=1,nlag
           id_lagrange = id_lagrange + 1
           lagrange = fstrSOLID%contacts(i)%states(j)%multiplier(k)
-    
+          if(if_flag) call get_shrink_dummy_surf(fstrSOLID%contacts(i)%states(j),ndCoord, nnode)
           if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
             ! Obtain contact nodal force vector of contact pair
             call getContactNodalForce(etype,nnode,ndCoord,ndu,fstrSOLID%contacts(i)%states(j),    &
@@ -642,6 +665,21 @@ contains
     enddo
 
   end subroutine fstr_ass_load_contact
+
+  subroutine get_shrink_dummy_surf(cstate, coords, nnode)
+    use m_fstr_TimeInc
+    integer(kind=kint)              :: nnode, i
+    type(tContactState)             :: cstate 
+    real(kind=kreal)                :: coords(:), ctime
+    real(kind=kreal)   :: factor, d(3)
+
+    d = - cstate%shrink_factor * cstate%direction(1:3)
+    
+    do i = 1, nnode
+      coords(1+i*3:(i+1)*3) = coords(1+i*3:(i+1)*3) + d(1:3)
+    enddo
+
+  end subroutine get_shrink_dummy_surf
 
 end module m_addContactStiffness
 

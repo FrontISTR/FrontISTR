@@ -408,6 +408,9 @@ module m_fstr_NonLinearMethod
     call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
 
     ctAlgo = fstrPARAM%contact_algo
+    do i=1,fstrSOLID%n_contacts
+      fstrSOLID%contacts(i)%ctime = ctime + dtime
+    enddo
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
       call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
