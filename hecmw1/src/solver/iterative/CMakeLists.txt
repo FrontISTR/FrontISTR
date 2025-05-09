@@ -11,5 +11,6 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_Iterative.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_GMRESR.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_GMRESREN.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_CR.f90
 )
 
