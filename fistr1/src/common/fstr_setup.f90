@@ -1010,7 +1010,7 @@ contains
       enddo
     endif
 
-    if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
+    call fstr_element_init( hecMESH, fstrSOLID, p%PARAM%solution_type )
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
       call fstr_solid_alloc( hecMESH, fstrSOLID )
@@ -1223,12 +1223,13 @@ contains
   end subroutine
 
   !> Initialize elements info in static calculation
-  subroutine fstr_element_init( hecMESH, fstrSOLID )
+  subroutine fstr_element_init( hecMESH, fstrSOLID, solution_type )
     use elementInfo
     use mMechGauss
     use m_fstr
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
+    integer(kind=kint), intent(in)  :: solution_type
 
     integer :: i, j, ng, isect, ndof, id, nn, n_elem
     integer :: ncon_stf
@@ -1246,9 +1247,11 @@ contains
     ! number of elements
     n_elem = hecMESH%elem_type_index(hecMESH%n_elem_type)
     allocate( fstrSOLID%elements(n_elem) )
-
+    
     do i=1,n_elem
       fstrSOLID%elements(i)%dummy_flag = kDUM_UNDEFINED
+      if( solution_type == kstHEAT) cycle !fstrSOLID is used only for dummy element in heat transfer analysis
+
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
