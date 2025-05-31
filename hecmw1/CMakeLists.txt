@@ -5,27 +5,22 @@
 
 project(hecmw C CXX Fortran)
 
-set(hecmw_SOURCES)
-set(hecmw_INCLUDE_DIRS)
-set(hecmw_DEFINITIONS)
-set(hecmw_LIBRARIES)
+#
+# Create the hecmw library target first
+#
+add_library(hecmw STATIC)
 
 #
-# Inherit definitions from fistr options
+# Inherit definitions from FrontISTR options
 #
-set(hecmw_INCLUDE_DIRS ${FrontISTR_INCLUDE_DIRS})
-set(hecmw_DEFINITIONS ${FrontISTR_DEFINITIONS})
-set(hecmw_LIBRARIES ${FrontISTR_LIBRARIES})
+target_include_directories(hecmw PUBLIC ${FrontISTR_INCLUDE_DIRS})
+target_compile_definitions(hecmw PUBLIC ${FrontISTR_DEFINITIONS})
+target_link_libraries(hecmw PUBLIC ${FrontISTR_LIBRARIES})
 
 #
-# Build for libhecmw.a
+# Add subdirectories that will contribute sources to the hecmw target
 #
-include(src/CMakeLists.txt)
-
-add_library(hecmw STATIC ${hecmw_SOURCES})
-target_link_libraries(hecmw ${hecmw_LIBRARIES})
-target_include_directories(hecmw PUBLIC ${hecmw_INCLUDE_DIRS})
-target_compile_definitions(hecmw PUBLIC ${hecmw_DEFINITIONS})
+add_subdirectory(src)
 
 #
 # Build tools
