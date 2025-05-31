@@ -5,52 +5,40 @@
 
 project(fistr CXX Fortran C)
 
-set(fistr_SOURCES)
-set(fistr_INCLUDE_DIRS)
-set(fistr_DEFINITIONS)
-set(fistr_LIBRARIES)
-set(fistr1_SOURCES)
+#
+# Create the fistr library target first
+#
+add_library(fistr STATIC)
 
 #
-# Inherit definitions from fistr options
+# Create the fistr1 executable target
 #
-set(fistr_INCLUDE_DIRS ${FrontISTR_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/hecmw1)
-set(fistr_DEFINITIONS ${FrontISTR_DEFINITIONS})
-set(fistr_LIBRARIES ${FrontISTR_LIBRARIES})
+add_executable(fistr1)
 
 #
-# Build for libfistr.a
+# Inherit definitions from FrontISTR options and link with hecmw
 #
-include(src/CMakeLists.txt)
-add_library(fistr STATIC ${fistr_SOURCES})
-target_link_libraries(fistr hecmw)
-target_include_directories(fistr PUBLIC
-  ${fistr_INCLUDE_DIRS} ${hecmw_INCLUDE_DIRS}
-)
-target_compile_definitions(fistr PUBLIC
-  ${fistr_DEFINITIONS} ${hecmw_DEFINITIONS}
-)
+target_include_directories(fistr PUBLIC ${FrontISTR_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/hecmw1)
+target_compile_definitions(fistr PUBLIC ${FrontISTR_DEFINITIONS})
+target_link_libraries(fistr PUBLIC ${FrontISTR_LIBRARIES} hecmw)
 
 #
-# Build for fistr1 (executable)
+# Add subdirectories that will contribute sources to the fistr targets
 #
-include(src/main/CMakeLists.txt)
-add_executable(fistr1 ${fistr1_SOURCES})
-target_link_libraries(fistr1
-  fistr hecmw ${hecmw_LIBRARIES} ${fistr_LIBRARIES}
+add_subdirectory(src)
+
+#
+# Link fistr1 with fistr and configure additional properties
+#
+target_link_libraries(fistr1 PRIVATE 
+  fistr hecmw
   ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}
 )
 
 set_target_properties(fistr1 PROPERTIES LINKER_LANGUAGE "CXX")
 
 target_include_directories(fistr1 PUBLIC
-  ${fistr_INCLUDE_DIRS}
-  ${hecmw_INCLUDE_DIRS}
   ${CMAKE_Fortran_MODULE_DIRECTORY}
-)
-target_compile_definitions(fistr1 PUBLIC
-  ${fistr_DEFINITIONS}
-  ${hecmw_DEFINITIONS}
 )
 
 #

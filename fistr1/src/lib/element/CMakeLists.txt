@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND fistr_SOURCES
+target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/element.f90
   ${CMAKE_CURRENT_LIST_DIR}/hex20n.f90
   ${CMAKE_CURRENT_LIST_DIR}/hex8n.f90

@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND fistr_SOURCES 
+target_sources(fistr PRIVATE 
   ${CMAKE_CURRENT_LIST_DIR}/hecmw2fstr_connect_conv.c
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_util.c
   ${CMAKE_CURRENT_LIST_DIR}/fstr_sort_index.c
@@ -24,6 +24,6 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/fstr_rcap_io.F90
 )
 
-list(APPEND fistr_INCLUDE_DIRS
+target_include_directories(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
 )

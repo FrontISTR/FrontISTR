@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND fistr_SOURCES
+target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_lanczos_util.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_setMASS.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_EIG_tridiag.f90
