@@ -7,6 +7,6 @@ target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw.f90
 )
 
-target_include_directories(hecmw PRIVATE
+target_include_directories(hecmw PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}
 )
