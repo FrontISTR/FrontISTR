@@ -6,7 +6,7 @@
 ###############################################################
 # CMakeLists.txt for FrontISTR
 ###############################################################
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.20.2)
 
 ###############################################################
 # Check building mode whether out-of-source builds
