@@ -84,7 +84,7 @@ contains
   !> Read in !DYNAMIC
   function fstr_ctrl_get_DYNAMIC( ctrl, nlgeom,      &
       idx_eqa, idx_resp, n_step, t_start, t_end, t_delta, &
-      ganma, beta, idx_mas, idx_dmp, ray_m, ray_k, &
+      gamma, beta, idx_mas, idx_dmp, ray_m, ray_k, &
       nout, node_id, node_id_len, nout_monit, iout_list )
     implicit none
     integer(kind=kint) :: ctrl
@@ -101,7 +101,7 @@ contains
     real(kind=kreal)   :: t_delta
 
     ! Newmark-beta parameter
-    real(kind=kreal)   :: ganma
+    real(kind=kreal)   :: gamma
     real(kind=kreal)   :: beta
 
     ! mass matrix control
@@ -135,7 +135,7 @@ contains
 
     if( fstr_ctrl_get_data_ex( ctrl, 1, 'ii ',   idx_eqa, idx_resp )/=0 ) return
     if( fstr_ctrl_get_data_ex( ctrl, 2, 'rrir ', t_start, t_end, n_step, t_delta )/=0 ) return
-    if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ',   ganma, beta )/=0 ) return
+    if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ',   gamma, beta )/=0 ) return
     if( fstr_ctrl_get_data_ex( ctrl, 4, 'iirr ', idx_mas, idx_dmp, ray_m, ray_k )/=0 ) return
     write(ss,*) node_id_len
     write(data_fmt,'(a,a,a)') 'iS',trim(adjustl(ss)),'i '

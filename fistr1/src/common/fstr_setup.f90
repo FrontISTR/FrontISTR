@@ -1585,7 +1585,7 @@ contains
     fstrDYNAMIC%t_curr   = 0.0d0
     fstrDYNAMIC%t_end    = 1.0
     fstrDYNAMIC%t_delta  = 1.0
-    fstrDYNAMIC%ganma    = 0.5
+    fstrDYNAMIC%gamma    = 0.5
     fstrDYNAMIC%beta     = 0.25
     fstrDYNAMIC%idx_mas  = 1
     fstrDYNAMIC%idx_dmp  = 1
@@ -3510,7 +3510,7 @@ end function fstr_setup_INITIAL
       P%DYN%t_start, &
       P%DYN%t_end,   &
       P%DYN%t_delta, &
-      P%DYN%ganma,   &
+      P%DYN%gamma,   &
       P%DYN%beta,    &
       P%DYN%idx_mas, &
       P%DYN%idx_dmp, &

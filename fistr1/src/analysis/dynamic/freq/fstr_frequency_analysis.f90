@@ -971,7 +971,7 @@ contains
     integer(kind=kint), intent(inout) :: numdisp
     !---- vals
     !---- body
-    t_start  = fstrDYNAMIC%ganma
+    t_start  = fstrDYNAMIC%gamma
     t_end    = fstrDYNAMIC%beta
     dynafreq = fstrDYNAMIC%t_delta
     numdisp  = fstrDYNAMIC%nout
