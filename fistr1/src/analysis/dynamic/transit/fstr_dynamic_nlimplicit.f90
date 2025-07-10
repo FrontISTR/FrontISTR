@@ -582,11 +582,12 @@ contains
             call fstr_AddContactStiffness(cstep,iter,conMAT,hecLagMAT,fstrSOLID)
           endif
 
-          !C-- geometrical boundary condition
-          call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
-          call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
-          call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
           call fstr_Update_NDForce_MPC( hecMESH, hecMAT%B )
+
+          !C-- geometrical boundary condition
+            call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
+            call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
+            call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, stepcnt, conMAT=conMAT)
 
           ! ----- check convergence
           res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)

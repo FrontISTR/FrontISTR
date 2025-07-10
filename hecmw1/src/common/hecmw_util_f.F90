@@ -451,6 +451,16 @@ module hecmw_util
     real(kind=kreal),    pointer  :: Lagrange(:) => null() !< values of Lagrange multipliers
   end type hecmwST_matrix_lagrange
 
+  !> Boundary condition storage structure
+  type hecmwST_bc_store
+    integer(kind=kint), allocatable :: nodes(:)     !< node IDs
+    integer(kind=kint), allocatable :: dofs(:)      !< DOF numbers  
+    real(kind=kreal), allocatable :: values(:)      !< BC values
+    integer(kind=kint), allocatable :: bc_types(:)  !< BC type constants
+    integer(kind=kint) :: n_bc = 0                  !< number of stored BCs
+    integer(kind=kint) :: capacity = 0              !< current capacity
+  end type hecmwST_bc_store
+
   type hecmwST_matrix
     integer(kind=kint) ::  N, NP, NPL, NPU, NDOF, NPCL, NPCU
     !integer(kind=kint) ::  NU, NL  ! used only in mat_con
@@ -486,6 +496,7 @@ module hecmw_util
     !real   (kind=kreal) :: RESIDactual
     !          type(hecmwST_matrix_comm) :: comm
     type(hecmwST_matrix_contact) :: cmat
+    type(hecmwST_bc_store) :: bc_store            !< BC storage for deferred execution
   end type hecmwST_matrix
 contains
 

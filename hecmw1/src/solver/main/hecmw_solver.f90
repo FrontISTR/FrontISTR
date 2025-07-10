@@ -18,6 +18,7 @@ contains
     use hecmw_solver_direct_clusterMKL
     use hecmw_matrix_misc
     use m_hecmw_comm_f
+    use hecmw_matrix_ass
     implicit none
 
     type (hecmwST_matrix), target :: hecMAT
@@ -27,6 +28,8 @@ contains
     integer(kind=kint) :: i, myrank, NDOF
     integer(kind=kint) :: imsg = 51
     NDOF=hecMAT%NDOF
+
+    call hecmw_mat_bc_execute(hecMAT)
 
     !C ERROR CHECK
     if(hecmw_solve_check_zerorhs(hecMESH, hecMAT))then

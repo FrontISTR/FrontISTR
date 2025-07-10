@@ -97,6 +97,7 @@ contains
     if( contact_elim==1 )then
       call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
     else
+      call hecmw_mat_bc_execute(hecMAT, hecLagMAT, conMAT)
       if( solver_type==1 )then
         write(*,*) 'ERROR: iterative solver without elimination not available in contact analysis'
         call hecmw_abort(hecmw_comm_get_comm())

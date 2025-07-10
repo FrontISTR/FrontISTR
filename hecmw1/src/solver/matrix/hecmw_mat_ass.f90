@@ -23,6 +23,17 @@ module hecmw_matrix_ass
   public :: hecmw_mat_ass_contact
   public :: hecmw_mat_ass_contactlag
   public :: stf_get_block
+  public :: hecmw_mat_bc_store_normal
+  public :: hecmw_mat_bc_store_contactlag
+  public :: hecmw_mat_bc_init
+  public :: hecmw_mat_bc_finalize
+  public :: hecmw_mat_bc_store
+  public :: hecmw_mat_bc_execute
+  public :: hecmw_mat_bc_clear
+  
+  ! BC type constants
+  integer(kind=kint), parameter, public :: HECMW_BC_TYPE_NORMAL = 1
+  integer(kind=kint), parameter, public :: HECMW_BC_TYPE_CONTACTLAG = 2
 
 contains
 
@@ -327,7 +338,7 @@ contains
   !C*** MAT_ASS_BC
   !C***
   !C
-  subroutine hecmw_mat_ass_bc(hecMAT, inode, idof, RHS, conMAT)
+  subroutine hecmw_mat_ass_bc_impl(hecMAT, inode, idof, RHS, conMAT)
     type (hecmwST_matrix)     :: hecMAT
     integer(kind=kint) :: inode, idof
     real(kind=kreal) :: RHS, val
@@ -464,12 +475,12 @@ contains
 
     call hecmw_cmat_ass_bc(hecMAT, inode, idof, RHS)
 
-  end subroutine hecmw_mat_ass_bc
+  end subroutine hecmw_mat_ass_bc_impl
 
 
   !> Modify Lagrange multiplier-related part of stiffness matrix and right-hand side vector
   !> for dealing with prescribed displacement boundary condition
-  subroutine hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,inode,idof,RHS)
+  subroutine hecmw_mat_ass_bc_contactlag_impl(hecMAT,hecLagMAT,inode,idof,RHS)
 
     type(hecmwST_matrix)                 :: hecMAT !< hecmwST_matrix
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< hecmwST_matrix_lagrange
@@ -490,6 +501,26 @@ contains
       hecLagMAT%AL_lagrange((k-1)*3+idof) = 0.0d0
     enddo
 
+  end subroutine hecmw_mat_ass_bc_contactlag_impl
+
+  !> New boundary condition interface - immediate execution
+  subroutine hecmw_mat_ass_bc(hecMAT, inode, idof, RHS, conMAT)
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: inode, idof
+    real(kind=kreal) :: RHS
+    type(hecmwST_matrix), optional :: conMAT
+    
+    call hecmw_mat_bc_store_normal(hecMAT, inode, idof, RHS)
+  end subroutine hecmw_mat_ass_bc
+
+  !> New contact lagrange boundary condition interface - immediate execution
+  subroutine hecmw_mat_ass_bc_contactlag(hecMAT, hecLagMAT, inode, idof, RHS)
+    type(hecmwST_matrix) :: hecMAT
+    type(hecmwST_matrix_lagrange) :: hecLagMAT
+    integer(kind=kint) :: inode, idof
+    real(kind=kreal) :: RHS
+    
+    call hecmw_mat_bc_store_contactlag(hecMAT, inode, idof, RHS)
   end subroutine hecmw_mat_ass_bc_contactlag
 
   !C
@@ -587,5 +618,166 @@ contains
     endif
 
   end subroutine hecmw_mat_ass_contactlag
+
+  !> Initialize BC storage
+  subroutine hecmw_mat_bc_init(hecMAT)
+    type(hecmwST_matrix) :: hecMAT
+    
+    hecMAT%bc_store%n_bc = 0
+    hecMAT%bc_store%capacity = 100  ! initial capacity
+    
+    allocate(hecMAT%bc_store%nodes(hecMAT%bc_store%capacity))
+    allocate(hecMAT%bc_store%dofs(hecMAT%bc_store%capacity))
+    allocate(hecMAT%bc_store%values(hecMAT%bc_store%capacity))
+    allocate(hecMAT%bc_store%bc_types(hecMAT%bc_store%capacity))
+  end subroutine hecmw_mat_bc_init
+
+  !> Finalize BC storage
+  subroutine hecmw_mat_bc_finalize(hecMAT)
+    type(hecmwST_matrix) :: hecMAT
+    
+    if (allocated(hecMAT%bc_store%nodes)) deallocate(hecMAT%bc_store%nodes)
+    if (allocated(hecMAT%bc_store%dofs)) deallocate(hecMAT%bc_store%dofs)
+    if (allocated(hecMAT%bc_store%values)) deallocate(hecMAT%bc_store%values)
+    if (allocated(hecMAT%bc_store%bc_types)) deallocate(hecMAT%bc_store%bc_types)
+    
+    hecMAT%bc_store%n_bc = 0
+    hecMAT%bc_store%capacity = 0
+  end subroutine hecmw_mat_bc_finalize
+
+  !> Store boundary condition
+  subroutine hecmw_mat_bc_store(hecMAT, inode, idof, rhs, bc_type)
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: inode, idof, bc_type
+    real(kind=kreal) :: rhs
+    
+    ! Resize if necessary
+    if (hecMAT%bc_store%n_bc >= hecMAT%bc_store%capacity) then
+      call resize_bc_arrays(hecMAT)
+    endif
+    
+    hecMAT%bc_store%n_bc = hecMAT%bc_store%n_bc + 1
+    hecMAT%bc_store%nodes(hecMAT%bc_store%n_bc) = inode
+    hecMAT%bc_store%dofs(hecMAT%bc_store%n_bc) = idof
+    hecMAT%bc_store%values(hecMAT%bc_store%n_bc) = rhs
+    hecMAT%bc_store%bc_types(hecMAT%bc_store%n_bc) = bc_type
+  end subroutine hecmw_mat_bc_store
+
+  !> Execute all stored boundary conditions
+  subroutine hecmw_mat_bc_execute(hecMAT, hecLagMAT, conMAT)
+    type(hecmwST_matrix) :: hecMAT
+    type(hecmwST_matrix_lagrange), optional :: hecLagMAT
+    type(hecmwST_matrix), optional :: conMAT
+    
+    integer(kind=kint) :: i, inode, idof, bc_type
+    real(kind=kreal) :: rhs
+    
+    do i = 1, hecMAT%bc_store%n_bc
+      inode = hecMAT%bc_store%nodes(i)
+      idof = hecMAT%bc_store%dofs(i)
+      rhs = hecMAT%bc_store%values(i)
+      bc_type = hecMAT%bc_store%bc_types(i)
+      
+      if (bc_type == HECMW_BC_TYPE_CONTACTLAG) then
+        if (.not. present(hecLagMAT)) then
+          write(*,*) '###ERROR### : hecLagMAT required for contact lag BC'
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
+        call hecmw_mat_bc_apply_contactlag(hecMAT, hecLagMAT, inode, idof, rhs)
+      else
+        call hecmw_mat_bc_apply_normal(hecMAT, inode, idof, rhs, conMAT)
+      endif
+    enddo
+    
+    ! Clear storage after execution
+    call hecmw_mat_bc_clear(hecMAT)
+  end subroutine hecmw_mat_bc_execute
+
+  !> Clear BC storage
+  subroutine hecmw_mat_bc_clear(hecMAT)
+    type(hecmwST_matrix) :: hecMAT
+    
+    hecMAT%bc_store%n_bc = 0
+  end subroutine hecmw_mat_bc_clear
+
+  !> Resize BC storage arrays
+  subroutine resize_bc_arrays(hecMAT)
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: new_capacity
+    integer(kind=kint), allocatable :: temp_nodes(:), temp_dofs(:), temp_bc_types(:)
+    real(kind=kreal), allocatable :: temp_values(:)
+    
+    new_capacity = hecMAT%bc_store%capacity * 2
+    
+    ! Allocate temporary arrays
+    allocate(temp_nodes(new_capacity))
+    allocate(temp_dofs(new_capacity))
+    allocate(temp_values(new_capacity))
+    allocate(temp_bc_types(new_capacity))
+    
+    ! Copy existing data
+    temp_nodes(1:hecMAT%bc_store%n_bc) = hecMAT%bc_store%nodes(1:hecMAT%bc_store%n_bc)
+    temp_dofs(1:hecMAT%bc_store%n_bc) = hecMAT%bc_store%dofs(1:hecMAT%bc_store%n_bc)
+    temp_values(1:hecMAT%bc_store%n_bc) = hecMAT%bc_store%values(1:hecMAT%bc_store%n_bc)
+    temp_bc_types(1:hecMAT%bc_store%n_bc) = hecMAT%bc_store%bc_types(1:hecMAT%bc_store%n_bc)
+    
+    ! Deallocate old arrays
+    deallocate(hecMAT%bc_store%nodes)
+    deallocate(hecMAT%bc_store%dofs)
+    deallocate(hecMAT%bc_store%values)
+    deallocate(hecMAT%bc_store%bc_types)
+    
+    ! Move temporary arrays to structure
+    call move_alloc(temp_nodes, hecMAT%bc_store%nodes)
+    call move_alloc(temp_dofs, hecMAT%bc_store%dofs)
+    call move_alloc(temp_values, hecMAT%bc_store%values)
+    call move_alloc(temp_bc_types, hecMAT%bc_store%bc_types)
+    
+    hecMAT%bc_store%capacity = new_capacity
+  end subroutine resize_bc_arrays
+
+  !> Apply normal boundary condition (renamed from original)
+  subroutine hecmw_mat_bc_apply_normal(hecMAT, inode, idof, rhs, conMAT)
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: inode, idof
+    real(kind=kreal) :: rhs
+    type(hecmwST_matrix), optional :: conMAT
+    
+    ! Original hecmw_mat_ass_bc implementation
+    if (present(conMAT)) then
+      call hecmw_mat_ass_bc_impl(hecMAT, inode, idof, rhs, conMAT)
+    else
+      call hecmw_mat_ass_bc_impl(hecMAT, inode, idof, rhs)
+    endif
+  end subroutine hecmw_mat_bc_apply_normal
+
+  !> Apply contact lagrange boundary condition (renamed from original)
+  subroutine hecmw_mat_bc_apply_contactlag(hecMAT, hecLagMAT, inode, idof, rhs)
+    type(hecmwST_matrix) :: hecMAT
+    type(hecmwST_matrix_lagrange) :: hecLagMAT
+    integer(kind=kint) :: inode, idof
+    real(kind=kreal) :: rhs
+    
+    ! Original hecmw_mat_ass_bc_contactlag implementation
+    call hecmw_mat_ass_bc_contactlag_impl(hecMAT, hecLagMAT, inode, idof, rhs)
+  end subroutine hecmw_mat_bc_apply_contactlag
+
+  !> Store normal boundary condition for deferred execution
+  subroutine hecmw_mat_bc_store_normal(hecMAT, inode, idof, rhs)
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: inode, idof
+    real(kind=kreal) :: rhs
+    
+    call hecmw_mat_bc_store(hecMAT, inode, idof, rhs, HECMW_BC_TYPE_NORMAL)
+  end subroutine hecmw_mat_bc_store_normal
+
+  !> Store contact lagrange boundary condition for deferred execution
+  subroutine hecmw_mat_bc_store_contactlag(hecMAT, inode, idof, rhs)
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: inode, idof
+    real(kind=kreal) :: rhs
+    
+    call hecmw_mat_bc_store(hecMAT, inode, idof, rhs, HECMW_BC_TYPE_CONTACTLAG)
+  end subroutine hecmw_mat_bc_store_contactlag
 
 end module hecmw_matrix_ass

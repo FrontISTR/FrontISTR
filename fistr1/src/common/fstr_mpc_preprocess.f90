@@ -51,6 +51,14 @@ contains
       n_tied_slave_total = n_tied_slave_total + n_tied_slave
     enddo
 
+    do i = 1, fstrSOLID%n_embeds
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      call create_coeff_tiedcontact( fstrSOLID%embeds(i), n_tied_slave )
+      n_tied_slave_total = n_tied_slave_total + n_tied_slave
+    enddo
+
     ! extract mpc coeff of dof 1
     allocate(mpcs_old(n_tied_slave_total))
     n_tied_slave_total = 0
@@ -65,6 +73,19 @@ contains
       if( tied_method == ktMETHOD_MPC ) fstrSOLID%contacts(i)%group = -1
       do j=1,size(fstrSOLID%contacts(i)%states)
         fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
+      enddo
+    enddo
+
+    do i = 1, fstrSOLID%n_embeds
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      call extract_coeff_tiedcontact( fstrSOLID%embeds(i), mpcs_old, n_tied_slave_total )
+
+      ! disable embed for tied
+      if( tied_method == ktMETHOD_MPC ) fstrSOLID%embeds(i)%group = -1
+      do j=1,size(fstrSOLID%embeds(i)%states)
+        fstrSOLID%embeds(i)%states(j)%state = CONTACTFREE
       enddo
     enddo
 
@@ -920,7 +941,6 @@ contains
         enddo
       enddo
     enddo
-
   end subroutine
 
   subroutine set_contact_structure( cstep, fstrSOLID, mpcs )
@@ -2013,6 +2033,14 @@ contains
     type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid), intent(inout)      :: fstrSOLID   !< type fstr_solid
 
+    type(fstr_solid_physic_val), pointer :: solid_physic_val
+
+    if (associated(fstrSOLID%SOLID) ) then
+      solid_physic_val => fstrSOLID%SOLID
+    elseif (associated(fstrSOLID%SHELL) ) then
+      solid_physic_val => fstrSOLID%SHELL
+    endif
+
     ! resize fstrSOLID
     call resize_real_array( 3*hecMESH%n_node, fstrSOLID%QFORCE )
     call resize_real_array( 3*hecMESH%n_node, fstrSOLID%GL )
@@ -2022,20 +2050,20 @@ contains
     call resize_real_array( 3*hecMESH%n_node, fstrSOLID%CONT_FRIC )
     call resize_real_array( 3*hecMESH%n_node, fstrSOLID%CONT_RELVEL )
     call resize_real_array( hecMESH%n_node, fstrSOLID%CONT_STATE )
-    call resize_real_array( 6*hecMESH%n_node, fstrSOLID%SOLID%STRESS )
-    call resize_real_array( 6*hecMESH%n_node, fstrSOLID%SOLID%STRAIN )
-    call resize_real_array( hecMESH%n_node, fstrSOLID%SOLID%MISES )
-    call resize_real_array( 6*hecMESH%n_elem, fstrSOLID%SOLID%ESTRESS )
-    call resize_real_array( 6*hecMESH%n_elem, fstrSOLID%SOLID%ESTRAIN )
-    call resize_real_array( hecMESH%n_elem, fstrSOLID%SOLID%EMISES )
-    call resize_real_array( 12*hecMESH%n_elem, fstrSOLID%SOLID%ENQM )
-    fstrSOLID%STRAIN => fstrSOLID%SOLID%STRAIN
-    fstrSOLID%STRESS => fstrSOLID%SOLID%STRESS
-    fstrSOLID%MISES  => fstrSOLID%SOLID%MISES
-    fstrSOLID%ESTRAIN => fstrSOLID%SOLID%ESTRAIN
-    fstrSOLID%ESTRESS => fstrSOLID%SOLID%ESTRESS
-    fstrSOLID%EMISES  => fstrSOLID%SOLID%EMISES
-    fstrSOLID%ENQM    => fstrSOLID%SOLID%ENQM
+    call resize_real_array( 6*hecMESH%n_node, solid_physic_val%STRESS )
+    call resize_real_array( 6*hecMESH%n_node, solid_physic_val%STRAIN )
+    call resize_real_array( hecMESH%n_node, solid_physic_val%MISES )
+    call resize_real_array( 6*hecMESH%n_elem, solid_physic_val%ESTRESS )
+    call resize_real_array( 6*hecMESH%n_elem, solid_physic_val%ESTRAIN )
+    call resize_real_array( hecMESH%n_elem, solid_physic_val%EMISES )
+    call resize_real_array( 12*hecMESH%n_elem, solid_physic_val%ENQM )
+    fstrSOLID%STRAIN => solid_physic_val%STRAIN
+    fstrSOLID%STRESS => solid_physic_val%STRESS
+    fstrSOLID%MISES  => solid_physic_val%MISES
+    fstrSOLID%ESTRAIN => solid_physic_val%ESTRAIN
+    fstrSOLID%ESTRESS => solid_physic_val%ESTRESS
+    fstrSOLID%EMISES  => solid_physic_val%EMISES
+    fstrSOLID%ENQM    => solid_physic_val%ENQM
     call resize_real_array( hecMESH%n_dof*hecMESH%n_node, fstrSOLID%unode )
     call resize_real_array( hecMESH%n_dof*hecMESH%n_node, fstrSOLID%dunode )
     call resize_real_array( hecMESH%n_dof*hecMESH%n_node, fstrSOLID%ddunode )

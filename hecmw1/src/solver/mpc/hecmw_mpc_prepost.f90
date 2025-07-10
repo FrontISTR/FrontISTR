@@ -255,6 +255,25 @@ contains
         call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, conMAT, conMATmpc)
         call resize_hecLagMAT(conMAT%NP, conMATmpc%NP, conMAT%NDOF, hecLagMAT)
       endif
+      ! Copy bc_store information from original to MPC matrix
+      if (hecMAT%bc_store%n_bc > 0) then
+        hecMATmpc%bc_store%n_bc = hecMAT%bc_store%n_bc
+        hecMATmpc%bc_store%capacity = hecMAT%bc_store%capacity
+        if (hecMATmpc%bc_store%capacity > 0) then
+          if (allocated(hecMATmpc%bc_store%nodes)) deallocate(hecMATmpc%bc_store%nodes)
+          if (allocated(hecMATmpc%bc_store%dofs)) deallocate(hecMATmpc%bc_store%dofs)
+          if (allocated(hecMATmpc%bc_store%values)) deallocate(hecMATmpc%bc_store%values)
+          if (allocated(hecMATmpc%bc_store%bc_types)) deallocate(hecMATmpc%bc_store%bc_types)
+          allocate(hecMATmpc%bc_store%nodes(hecMATmpc%bc_store%capacity))
+          allocate(hecMATmpc%bc_store%dofs(hecMATmpc%bc_store%capacity))
+          allocate(hecMATmpc%bc_store%values(hecMATmpc%bc_store%capacity))
+          allocate(hecMATmpc%bc_store%bc_types(hecMATmpc%bc_store%capacity))
+          hecMATmpc%bc_store%nodes(:) = hecMAT%bc_store%nodes(:)
+          hecMATmpc%bc_store%dofs(:) = hecMAT%bc_store%dofs(:)
+          hecMATmpc%bc_store%values(:) = hecMAT%bc_store%values(:)
+          hecMATmpc%bc_store%bc_types(:) = hecMAT%bc_store%bc_types(:)
+        endif
+      endif
     end select
 
   end subroutine hecmw_mpc_mat_ass
@@ -311,6 +330,25 @@ contains
       call hecmw_trans_b(hecMESH, hecMAT, hecMAT%B, hecMATmpc%B, time_dumm)
       hecMATmpc%Iarray=hecMAT%Iarray
       hecMATmpc%Rarray=hecMAT%Rarray
+      ! Copy bc_store information from original to MPC matrix
+      if (hecMAT%bc_store%n_bc > 0) then
+        hecMATmpc%bc_store%n_bc = hecMAT%bc_store%n_bc
+        hecMATmpc%bc_store%capacity = hecMAT%bc_store%capacity
+        if (hecMATmpc%bc_store%capacity > 0) then
+          if (allocated(hecMATmpc%bc_store%nodes)) deallocate(hecMATmpc%bc_store%nodes)
+          if (allocated(hecMATmpc%bc_store%dofs)) deallocate(hecMATmpc%bc_store%dofs)
+          if (allocated(hecMATmpc%bc_store%values)) deallocate(hecMATmpc%bc_store%values)
+          if (allocated(hecMATmpc%bc_store%bc_types)) deallocate(hecMATmpc%bc_store%bc_types)
+          allocate(hecMATmpc%bc_store%nodes(hecMATmpc%bc_store%capacity))
+          allocate(hecMATmpc%bc_store%dofs(hecMATmpc%bc_store%capacity))
+          allocate(hecMATmpc%bc_store%values(hecMATmpc%bc_store%capacity))
+          allocate(hecMATmpc%bc_store%bc_types(hecMATmpc%bc_store%capacity))
+          hecMATmpc%bc_store%nodes(:) = hecMAT%bc_store%nodes(:)
+          hecMATmpc%bc_store%dofs(:) = hecMAT%bc_store%dofs(:)
+          hecMATmpc%bc_store%values(:) = hecMAT%bc_store%values(:)
+          hecMATmpc%bc_store%bc_types(:) = hecMAT%bc_store%bc_types(:)
+        endif
+      endif
     end select
 
   end subroutine hecmw_mpc_trans_rhs
