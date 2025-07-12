@@ -60,7 +60,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
