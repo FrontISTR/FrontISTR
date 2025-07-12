@@ -790,7 +790,7 @@ contains
   
     if( vtype == 1 ) then
       vec_all(:) = 0.d0
-      do i= hecMESH%nn_internal+1,hecMESH%n_node
+      do i= 1, hecMESH%n_node
         pid = hecMESH%node_ID(i*2)
         lid = hecMESH%node_ID(i*2-1)
         i0 = (displs(pid) + (lid-1))*ndof
@@ -799,13 +799,19 @@ contains
       enddo
   
       call hecmw_allreduce_R(hecMESH, vec_all, N*ndof, hecmw_sum)
-  
+      do i= 1, hecMESH%n_node
+        pid = hecMESH%node_ID(i*2)
+        lid = hecMESH%node_ID(i*2-1)
+        i0 = (displs(pid) + (lid-1))*ndof
+        if (dot_product(vec_all(i0+1:i0+ndof),vec_all(i0+1:i0+ndof)) == 0.d0) cycle
+        vec((i-1)*ndof+1:i*ndof) = vec_all(i0+1:i0+ndof)
+      enddo  
       do i=1,ndof*N_loc
-        vec(i) = vec(i) + vec_all(offset*ndof+i)
+        vec(i) = vec_all(offset*ndof+i)
       end do
     else if( vtype == 2 ) then
       vec_all(:) = -1000.d0
-      do i= hecMESH%nn_internal+1,hecMESH%n_node
+      do i= 1, hecMESH%n_node
         if( vec(i) == 0.d0 ) cycle
         pid = hecMESH%node_ID(i*2)
         lid = hecMESH%node_ID(i*2-1)
@@ -814,11 +820,13 @@ contains
       enddo
   
       call hecmw_allreduce_R(hecMESH, vec_all, N, hecmw_max)
-  
-      do i=1,N_loc
-        if( vec_all(offset+i) == -1000.d0 ) cycle
-        if( vec(i) < vec_all(offset+i) ) vec(i) = vec_all(offset+i)
-      end do
+      do i= 1, hecMESH%n_node
+        pid = hecMESH%node_ID(i*2)
+        lid = hecMESH%node_ID(i*2-1)
+        i0 = displs(pid) + lid
+        if(vec_all(i0) == -1000.d0) cycle
+        if(vec(i) < vec_all(i0)) vec(i) = vec_all(i0)
+      enddo  
     end if
   
     deallocate(displs,vec_all)
