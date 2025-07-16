@@ -519,7 +519,7 @@ module m_fstr
     integer(kind=kint) :: restart_nin  !input number of restart file
 
     !> Newmark-beta parameter
-    real(kind=kreal)   :: ganma         ! Newmark-beta parameter ganma
+    real(kind=kreal)   :: gamma         ! Newmark-beta parameter gamma
     real(kind=kreal)   :: beta          ! Newmark-beta parameter beta
 
     !> mass matrix control

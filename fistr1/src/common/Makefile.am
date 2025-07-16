@@ -85,7 +85,6 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 #------------------------------------------------------------------------------#
 OBJS = \
 	hecmw2fstr_connect_conv.@cobjfilepostfix@ \
-	fstr_ctrl_util.@cobjfilepostfix@ \
 	fstr_sort_index.@cobjfilepostfix@
 
 OBJSF = \
@@ -106,11 +105,9 @@ OBJSF = \
 	fstr_rcap_io.@f90objfilepostfix@
 
 INCLUDESF = \
-	fstr_ctrl_util_f.inc
 
 HEADERS = \
 	hecmw2fstr_connect_conv.h \
-	fstr_ctrl_util.h \
 	fstr_sort_index.h
 
 #------------------------------------------------------------------------------#

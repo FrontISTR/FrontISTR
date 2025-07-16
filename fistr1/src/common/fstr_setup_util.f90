@@ -7,7 +7,7 @@
 module fstr_setup_util
   use m_fstr
   use hecmw
-  include 'fstr_ctrl_util_f.inc'
+  use fstr_ctrl_util_f
 
   !> container of character array pointer, because of gfortran's bug
   type fstr_str_arr

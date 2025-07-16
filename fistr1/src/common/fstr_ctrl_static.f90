@@ -6,7 +6,7 @@
 module fstr_ctrl_static
   use m_fstr
   use hecmw
-  include 'fstr_ctrl_util_f.inc'
+  use fstr_ctrl_util_f
 
   private :: pc_strupr
 contains
@@ -71,8 +71,7 @@ contains
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target  :: node_id(:)
-    character(len=HECMW_NAME_LEN),pointer :: node_id_p
+    character(len=HECMW_NAME_LEN) :: node_id(:)
     integer(kind=kint) :: node_id_len
     integer(kind=kint),pointer :: dof_ids (:)
     integer(kind=kint),pointer :: dof_ide (:)
@@ -85,9 +84,8 @@ contains
 
     fstr_ctrl_get_BOUNDARY = -1
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
-    node_id_p => node_id(1)
     fstr_ctrl_get_BOUNDARY = &
-      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id_p, dof_ids, dof_ide, value )
+      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id, dof_ids, dof_ide, value )
 
   end function fstr_ctrl_get_BOUNDARY
 
@@ -100,8 +98,7 @@ contains
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target  :: node_id(:)
-    character(len=HECMW_NAME_LEN),pointer :: node_id_p
+    character(len=HECMW_NAME_LEN) :: node_id(:)
     integer(kind=kint) :: node_id_len
     integer(kind=kint),pointer :: dof_id(:)
     real(kind=kreal),pointer :: value(:)
@@ -113,9 +110,8 @@ contains
 
     fstr_ctrl_get_CLOAD = -1
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
-    node_id_p => node_id(1)
     fstr_ctrl_get_CLOAD = &
-      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id_p, dof_id, value )
+      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id, dof_id, value )
 
   end function fstr_ctrl_get_CLOAD
 
@@ -128,15 +124,13 @@ contains
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
     integer(kind=kint) :: follow
-    character(len=HECMW_NAME_LEN),target :: element_id(:)
+    character(len=HECMW_NAME_LEN) :: element_id(:)
     integer(kind=kint) :: element_id_len
     integer(kind=kint),pointer :: load_type(:)
     real(kind=kreal),pointer :: params(:,:)
     integer(kind=kint) :: fstr_ctrl_get_DLOAD
 
     character(len=HECMW_NAME_LEN),pointer :: type_name_list(:)
-    character(len=HECMW_NAME_LEN),pointer :: type_name_list_p
-    character(len=HECMW_NAME_LEN),pointer :: element_id_p
 
     integer(kind=kint) :: i, n
     integer(kind=kint) :: rcode
@@ -155,13 +149,8 @@ contains
 
     n = fstr_ctrl_get_data_line_n(ctrl)
     allocate( type_name_list(n) )
-    !!
-    !! for avoiding stack overflow with intel 9 compiler
-    !!
-    element_id_p => element_id(1)
-    type_name_list_p => type_name_list(1)
 
-      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p, type_name_list_p, &
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id, type_name_list, &
         params(0,:), params(1,:), params(2,:), params(3,:), params(4,:),params(5,:), &
         params(6,:) )
 
@@ -218,7 +207,7 @@ contains
     real(kind=kreal)   :: value
     integer(kind=kint) :: fstr_ctrl_get_REFTEMP,rcode
 
-    rcode = fstr_ctrl_get_data_array_ex( ctrl, 'r ', value )
+    rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'r ', value )
     fstr_ctrl_get_REFTEMP = rcode
 
   end function fstr_ctrl_get_REFTEMP
@@ -234,8 +223,7 @@ contains
     integer(kind=kint) :: tstep
     integer(kind=kint) :: tintl
     integer(kind=kint) :: rtype
-    character(len=HECMW_NAME_LEN), target :: node_id(:)
-    character(len=HECMW_NAME_LEN), pointer:: node_id_p
+    character(len=HECMW_NAME_LEN) :: node_id(:)
     integer(kind=kint) :: node_id_len
     real(kind=kreal),pointer :: value(:)
     integer(kind=kint) :: fstr_ctrl_get_TEMPERATURE, rcode
@@ -255,8 +243,7 @@ contains
     write(ss,*)  node_id_len
     write(data_fmt,'(a,a,a)') 'S',trim(adjustl(ss)),'r '
 
-    node_id_p => node_id(1)
-    rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id_p, value )
+    rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id, value )
     fstr_ctrl_get_TEMPERATURE = rcode
 
   end function fstr_ctrl_get_TEMPERATURE
@@ -270,8 +257,7 @@ contains
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target  :: node_id(:)
-    character(len=HECMW_NAME_LEN),pointer :: node_id_p
+    character(len=HECMW_NAME_LEN) :: node_id(:)
     integer(kind=kint) :: node_id_len
     integer(kind=kint),pointer :: dof_id(:)
     real(kind=kreal),pointer :: value(:)
@@ -283,9 +269,8 @@ contains
 
     fstr_ctrl_get_SPRING = -1
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
-    node_id_p => node_id(1)
     fstr_ctrl_get_SPRING = &
-      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id_p, dof_id, value )
+      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id, dof_id, value )
 
   end function fstr_ctrl_get_SPRING
 
@@ -299,7 +284,7 @@ contains
     character(len=256) :: fname
 
     fstr_ctrl_get_USERLOAD = -1
-    if( fstr_ctrl_get_param_ex( ctrl, 'FILE  ', '# ',           0,   'S',   fname )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'FILE ', '# ',           0,   'S',   fname )/=0 ) return
     if( fname=="" ) stop "You must define a file name before read in user-defined material"
     if( ureadload(fname)/=0 ) return
 

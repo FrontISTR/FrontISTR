@@ -2080,18 +2080,3 @@ void hecmw_dist_copy_f2c_set_if(char *struct_name, char *var_name, void *src,
 
   *err = 0;
 }
-
-void hecmw_dist_copy_f2c_set_if_(char *struct_name, char *var_name, void *src,
-                                 int *err, int slen, int vlen) {
-  hecmw_dist_copy_f2c_set_if(struct_name, var_name, src, err, slen, vlen);
-}
-
-void hecmw_dist_copy_f2c_set_if__(char *struct_name, char *var_name, void *src,
-                                  int *err, int slen, int vlen) {
-  hecmw_dist_copy_f2c_set_if(struct_name, var_name, src, err, slen, vlen);
-}
-
-void HECMW_DIST_COPY_F2C_SET_IF(char *struct_name, char *var_name, void *src,
-                                int *err, int slen, int vlen) {
-  hecmw_dist_copy_f2c_set_if(struct_name, var_name, src, err, slen, vlen);
-}

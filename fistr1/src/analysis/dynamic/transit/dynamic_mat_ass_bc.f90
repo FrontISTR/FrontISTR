@@ -36,6 +36,7 @@ contains
     type(tRotInfo)     :: rinfo
     real(kind=kreal)   :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3), cddisp(3)
+    real(kind=kreal)   :: rotation_factor
     !
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
@@ -125,7 +126,17 @@ contains
         cdiff0 = 0.d0
         cddisp = 0.d0
 
-        if( f_t > 0.d0 ) then
+        if( present(iter) ) then
+          if( iter > 1 ) then
+            rotation_factor = 0.d0  ! No additional rotation for subsequent iterations
+          else
+            rotation_factor = 1.0d0  ! Use the rotation vector as-is (already contains increment)
+          endif
+        else
+          rotation_factor = 1.0d0  ! Use the rotation vector as-is
+        endif
+
+        if( rotation_factor > 0.d0 ) then
           ig = rinfo%conds(rid)%center_ngrp_id
           do idof = 1, ndof
             ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
@@ -140,7 +151,7 @@ contains
         iE0 = hecMESH%node_group%grp_index(ig  )
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
-          if( f_t > 0.d0 ) then
+          if( rotation_factor > 0.d0 ) then
             cdiff0(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in)+fstrSOLID%unode(ndof*(in-1)+1:ndof*in)-ccoord(1:ndof)
             cdiff(1:ndof) = cdiff0(1:ndof)
             call rotate_3dvector_by_Rodrigues_formula(rinfo%conds(rid)%vec(1:ndof),cdiff(1:ndof))

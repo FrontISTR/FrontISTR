@@ -5,9 +5,9 @@
 !> \brief  This module manages step information
 module m_step
   use hecmw
-  implicit none
+  use fstr_ctrl_util_f
 
-  include 'fstr_ctrl_util_f.inc'
+  implicit none
 
   integer, parameter :: stepStatic = 1
   integer, parameter :: stepVisco  = 2

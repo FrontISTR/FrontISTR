@@ -24,11 +24,11 @@ contains
   subroutine hecmw_scatterv_DP(sbuf, sc, disp, rbuf, rc, root, comm)
     use hecmw_util
     implicit none
-    integer(kind=kint) :: sc      !send counts
-    double precision   :: sbuf(sc) !send buffer
-    integer(kind=kint) :: disp    !displacement
+    double precision   :: sbuf(*) !send buffer
+    integer(kind=kint) :: sc(*)   !send counts
+    integer(kind=kint) :: disp(*) !displacement
+    double precision   :: rbuf(*) !receive buffer
     integer(kind=kint) :: rc      !receive counts
-    double precision   :: rbuf(rc) !receive buffer
     integer(kind=kint) :: root
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
