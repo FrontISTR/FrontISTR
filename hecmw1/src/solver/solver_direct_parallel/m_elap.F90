@@ -19,7 +19,6 @@ module m_elap
 contains
 
   subroutine initelap(t,i)
-    include 'mpif.h'
     logical, intent(in) :: t
     integer(kind=kint), intent(in) :: i
     integer(kind=kint) :: ierr

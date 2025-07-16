@@ -394,6 +394,7 @@ module m_fstr_NonLinearMethod
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
 
+    ctAlgo = fstrPARAM%contact_algo
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -405,12 +406,10 @@ module m_fstr_NonLinearMethod
       call  hecmw_abort( hecmw_comm_get_comm() )
     endif
 
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
-
-    ctAlgo = fstrPARAM%contact_algo
     do i=1,fstrSOLID%n_contacts
       fstrSOLID%contacts(i)%ctime = ctime + dtime
     enddo
+    
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
       call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
@@ -425,6 +424,8 @@ module m_fstr_NonLinearMethod
       is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH)
       call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, is_mat_symmetric)
     endif
+
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
 
     call hecmw_mat_clear_b(conMAT)
 

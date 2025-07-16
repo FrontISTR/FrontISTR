@@ -76,13 +76,16 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
 
 #------------------------------------------------------------------------------#
-OBJS =
+OBJS = \
+	fstr_ctrl_util.@cobjfilepostfix@
 
 OBJSF = \
 	utilities.@f90objfilepostfix@ \
-	ttable.@f90objfilepostfix@
+	ttable.@f90objfilepostfix@ \
+	fstr_ctrl_util_f.@f90objfilepostfix@
 
-HEADERS =
+HEADERS = \
+	fstr_ctrl_util.h
 
 #------------------------------------------------------------------------------#
 all: @build_target@

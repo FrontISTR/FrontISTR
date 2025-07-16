@@ -114,9 +114,9 @@ contains
     a1 = 0.5d0/fstrDYNAMIC%beta - 1.0d0
     a2 = 1.0d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
     a3 = 1.0d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta*fstrDYNAMIC%t_delta)
-    b1 = (0.5d0*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.0d0 )*fstrDYNAMIC%t_delta
-    b2 = fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.0d0
-    b3 = fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
+    b1 = (0.5d0*fstrDYNAMIC%gamma/fstrDYNAMIC%beta - 1.0d0 )*fstrDYNAMIC%t_delta
+    b2 = fstrDYNAMIC%gamma/fstrDYNAMIC%beta - 1.0d0
+    b3 = fstrDYNAMIC%gamma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
     c1 = 1.0d0 + fstrDYNAMIC%ray_k*b3
     c2 = a3 + fstrDYNAMIC%ray_m*b3
 
@@ -434,9 +434,9 @@ contains
     a1 = .5d0/fstrDYNAMIC%beta - 1.d0
     a2 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
     a3 = 1.d0/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta*fstrDYNAMIC%t_delta)
-    b1 = ( .5d0*fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0 )*fstrDYNAMIC%t_delta
-    b2 = fstrDYNAMIC%ganma/fstrDYNAMIC%beta - 1.d0
-    b3 = fstrDYNAMIC%ganma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
+    b1 = ( .5d0*fstrDYNAMIC%gamma/fstrDYNAMIC%beta - 1.d0 )*fstrDYNAMIC%t_delta
+    b2 = fstrDYNAMIC%gamma/fstrDYNAMIC%beta - 1.d0
+    b3 = fstrDYNAMIC%gamma/(fstrDYNAMIC%beta*fstrDYNAMIC%t_delta)
     c1 = 1.d0 + fstrDYNAMIC%ray_k*b3
     c2 = a3 + fstrDYNAMIC%ray_m*b3
 

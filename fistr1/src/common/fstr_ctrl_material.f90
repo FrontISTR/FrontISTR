@@ -7,11 +7,10 @@ module fstr_ctrl_material
   use hecmw
   use mMaterial
   use m_table
+  use fstr_ctrl_util_f
   implicit none
 
   private :: read_user_matl
-
-  include 'fstr_ctrl_util_f.inc'
 
 contains
 
@@ -60,7 +59,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -68,7 +67,7 @@ contains
 
     fstr_ctrl_get_ELASTICITY = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = TOTALLAG   !default value
@@ -168,13 +167,13 @@ contains
     real(kind=kreal),intent(out)      :: matval(:)
 
     integer(kind=kint) :: i,j, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256) :: s
 
     fstr_ctrl_get_HYPERELASTIC = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = TOTALLAG   !default value
     if( fstr_ctrl_get_param_ex( ctrl, 'CAUCHY ',  '# ',    0,   'E',   ipt )/= 0) return
@@ -279,14 +278,14 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     character(len=256) :: s
 
     fstr_ctrl_get_VISCOELASTICITY = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
     !depends = 0
     nlgeom = TOTALLAG   !default value
@@ -381,7 +380,7 @@ contains
     ipt = 0; hipt = 0
 
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = UPDATELAG   !default value
@@ -555,14 +554,14 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     character(len=256) :: s
 
     fstr_ctrl_get_VISCOPLASTICITY = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
     nlgeom = UPDATELAG   !default value
     if( fstr_ctrl_get_param_ex( ctrl, 'KIRCHHOFF ',  '# ',    0,   'E',   ipt )/= 0) return
@@ -610,7 +609,7 @@ contains
     real(kind=kreal),intent(out)   :: matval(:)
 
     integer(kind=kint) :: i, rcode, depends
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
 
     data_fmt = "R "
@@ -618,7 +617,7 @@ contains
     fstr_ctrl_get_DENSITY = -1
 
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
 
     allocate( fval(1,depends+1) )
@@ -642,7 +641,7 @@ contains
     type(DICT_STRUCT), pointer     :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     type( tTable )           :: mttable
     character(len=HECMW_NAME_LEN) :: data_fmt, ss
 
@@ -657,7 +656,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  ss, 0, 'P',   ipt    ) /= 0 ) return
 
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
 
     if( ipt==1 ) then
@@ -733,7 +732,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -741,7 +740,7 @@ contains
 
     fstr_ctrl_get_FLUID = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = TOTALLAG   !default value
@@ -791,8 +790,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:)
-    integer(kind=kint),pointer :: ival(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
+    integer(kind=kint),pointer :: ival(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -842,7 +841,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -887,8 +886,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:)
-    integer(kind=kint),pointer :: ival(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
+    integer(kind=kint),pointer :: ival(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -938,7 +937,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok

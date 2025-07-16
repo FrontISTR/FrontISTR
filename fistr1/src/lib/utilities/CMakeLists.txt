@@ -4,6 +4,8 @@
 ###############################################################################
 
 target_sources(fistr PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_util.c
   ${CMAKE_CURRENT_LIST_DIR}/ttable.f90
   ${CMAKE_CURRENT_LIST_DIR}/utilities.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_util_f.f90
 )

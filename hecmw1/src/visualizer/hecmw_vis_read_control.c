@@ -38,7 +38,7 @@ int is_comment_line(char *buf) {
 }
 
 void get_string_item(char *para, char *buf, int *start_location,
-                     char para2[128]) {
+                     char *para2) {
   int i, j;
 
   i = *start_location;
