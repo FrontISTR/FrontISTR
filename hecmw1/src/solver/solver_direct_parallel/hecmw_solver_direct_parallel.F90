@@ -82,10 +82,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-#ifndef HECMW_SERIAL
-    include 'mpif.h'
-#endif
-
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     integer(kind=kint), intent(in) :: ii ! output file handler
@@ -151,8 +147,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine sp_direct_parent(hecMESH, hecMAT)
 
     implicit none
-
-    include 'mpif.h'
 
     !I/O !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
@@ -272,7 +266,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         call MPI_SEND(dm(i)%a%irow, dm(i)%a%nttbr, MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
         call MPI_SEND(dm(i)%a%jcol, dm(i)%a%nttbr, MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(dm(i)%a%val,  dm(i)%a%nttbr*dm(i)%a%ndeg*dm(i)%a%ndeg, MPI_REAL8,ICP,1,MPI_COMM_WORLD,istatus,ierr)
+        call MPI_SEND(dm(i)%a%val,  dm(i)%a%nttbr*dm(i)%a%ndeg*dm(i)%a%ndeg, MPI_REAL8,ICP,1,MPI_COMM_WORLD,ierr)
 
         call MPI_SEND(dm(i)%c%ndeg,   1,MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
         call MPI_SEND(dm(i)%c%nttbr,  1,MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
@@ -281,7 +275,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         call MPI_SEND(dm(i)%c%irow, dm(i)%c%nttbr, MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
         call MPI_SEND(dm(i)%c%jcol, dm(i)%c%nttbr, MPI_INTEGER,ICP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(dm(i)%c%val,  dm(i)%c%nttbr*dm(i)%c%ndeg*dm(i)%c%ndeg, MPI_REAL8,ICP,1,MPI_COMM_WORLD,istatus,ierr)
+        call MPI_SEND(dm(i)%c%val,  dm(i)%c%nttbr*dm(i)%c%ndeg*dm(i)%c%ndeg, MPI_REAL8,ICP,1,MPI_COMM_WORLD,ierr)
       end do
 
       !call MPI_BARRIER(MPI_COMM_WORLD, ierr)
@@ -547,8 +541,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-    include 'mpif.h'
-
     type (child_matrix)  :: cm
 
     real(kind=kreal), allocatable :: b(:,:) ! (ndeg, neqns)
@@ -701,8 +693,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initproc()
     implicit none
-
-    include 'mpif.h'
 
     integer(kind=kint) :: npe, myid
     integer(kind=kint) :: ndiv
@@ -930,7 +920,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
     end if
-    10 continue
+10  continue
     call genpaq(ia,ja,invp_a,iperm_a,lwk2arr,neqns_a,cstr)
 
     !   build up the binary tree
@@ -946,12 +936,12 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(izz0.ne.izz) goto 30
     call rotate(ia, ja, invp_a, iperm_a, lwk2arr,lbtreearr,izz,neqns_a,anc,adjt,ir1)
     goto 10
-    30 continue
+30  continue
     call bringu(dsi%zpiv,iperm_a, invp_a, lwk2arr,izz,neqns_a,ir1)
     goto 10
 
     !   post ordering
-    20 continue
+20  continue
     allocate(lwk3arr(0:neqns_a1),lpordrarr(neqns_a1),dsi%parent(neqns_a1), dsi%nch(neqns_a1), stat=ierr)
     if(ierr .ne. 0) then
       call errtrp('stop due to allocation error.')
@@ -1013,7 +1003,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     dsi%nstop=nstop
     dsi%stage=10
-    1000 continue
+1000 continue
 
     return
   end subroutine matini_para
@@ -1048,7 +1038,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end if
 
     dsi%stage=30
-    1000 continue
+1000 continue
     return
   end subroutine nufct0_child
 
@@ -1067,7 +1057,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
-    include 'mpif.h'
 
     !----------------------------------------------------------------------
     !
@@ -1092,33 +1081,33 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     nch(1)=-1
     do 100 ic=2,nstop-1
       call sum(ic,xlnzr,colno,zln(1,:),diag(1,:),nch,parent,neqns)
-      100 continue
-      !
-      ! phase II
-      ! LDU decompose of C (nstop..neqnsA+neqnsd)
-      !
-      do 200 ic=nstop,neqns
-        call sum1(ic,xlnzr,colno,zln(1,:),diag(1,:),parent,neqns)
-        200 continue
-        !
-        ! phase III
-        ! Update D region.
-        !
+100 continue
+    !
+    ! phase II
+    ! LDU decompose of C (nstop..neqnsA+neqnsd)
+    !
+    do 200 ic=nstop,neqns
+      call sum1(ic,xlnzr,colno,zln(1,:),diag(1,:),parent,neqns)
+200 continue
+    !
+    ! phase III
+    ! Update D region.
+    !
 
-        ! clear dummy diagonal value for D region
-        do i=nstop,neqns
-          diag(:,i)=0.0
-        end do
+    ! clear dummy diagonal value for D region
+    do i=nstop,neqns
+      diag(:,i)=0.0
+    end do
 
-        neqns_c = neqns - nstop + 1
-        call sum2_child(neqns,nstop,xlnzr,colno,zln(1,:),diag(1,:),spdslnidx,spdslnval,nspdsln)
-        ! send D region to parent
-        imp = m_pds_procinfo%imp
-        call MPI_SEND(nspdsln, 1,MPI_INTEGER,IMP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(spdslnidx,  nspdsln,MPI_INTEGER,IMP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(spdslnval,  nspdsln,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(diag(1,nstop),  neqns_c,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
-        return
+    neqns_c = neqns - nstop + 1
+    call sum2_child(neqns,nstop,xlnzr,colno,zln(1,:),diag(1,:),spdslnidx,spdslnval,nspdsln)
+    ! send D region to parent
+    imp = m_pds_procinfo%imp
+    call MPI_SEND(nspdsln, 1,MPI_INTEGER,IMP,1,MPI_COMM_WORLD,ierr)
+    call MPI_SEND(spdslnidx,  nspdsln,MPI_INTEGER,IMP,1,MPI_COMM_WORLD,ierr)
+    call MPI_SEND(spdslnval,  nspdsln,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
+    call MPI_SEND(diag(1,nstop),  neqns_c,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
+    return
   end subroutine nufct1_child
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1137,7 +1126,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
-    include 'mpif.h'
 
     !----------------------------------------------------------------------
     !
@@ -1223,7 +1211,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal), pointer :: spdslnval(:,:)
-    include 'mpif.h'
     !
     !----------------------------------------------------------------------
     !
@@ -1258,39 +1245,39 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     nch(1)=-1
     do 100 ic=2,nstop-1
       call s3um(ic,xlnzr,colno,zln,diag,nch,parent,neqns)
-      100 continue
-      !
-      ! phase II
-      ! LDU decompose of C (nstop..neqnsA+neqnsd)
-      !
-      call elapout('nufct3_child: begin phase II LDU decompose of C') !elap
-      do 200 ic=nstop,neqns
-        call s3um1(ic,xlnzr,colno,zln,diag,nch,parent,neqns)
-        200 continue
+100 continue
+    !
+    ! phase II
+    ! LDU decompose of C (nstop..neqnsA+neqnsd)
+    !
+    call elapout('nufct3_child: begin phase II LDU decompose of C') !elap
+    do 200 ic=nstop,neqns
+      call s3um1(ic,xlnzr,colno,zln,diag,nch,parent,neqns)
+200 continue
 
-        !
-        ! phase III
-        ! Update D region.
-        !
+    !
+    ! phase III
+    ! Update D region.
+    !
 
-        call elapout('nufct3_child: begin phase III update D region') !elap
+    call elapout('nufct3_child: begin phase III update D region') !elap
 
-        ! clear dummy diagonal value for D region ! currently dummy value setting was not done
-        do i=nstop,neqns
-          diag(:,i)=0.0
-        end do
+    ! clear dummy diagonal value for D region ! currently dummy value setting was not done
+    do i=nstop,neqns
+      diag(:,i)=0.0
+    end do
 
-        neqns_c = neqns - nstop + 1
-        call s3um2_child(neqns,nstop,xlnzr,colno,zln,diag,spdslnidx,spdslnval,nspdsln)
+    neqns_c = neqns - nstop + 1
+    call s3um2_child(neqns,nstop,xlnzr,colno,zln,diag,spdslnidx,spdslnval,nspdsln)
 
-        ! send D region to parent
-        imp = m_pds_procinfo%imp
-        call MPI_SEND(nspdsln, 1,MPI_INTEGER,IMP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(spdslnidx,  nspdsln,MPI_INTEGER,IMP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(spdslnval,  nspdsln*9,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
-        call MPI_SEND(diag(1,nstop),  neqns_c*6,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
+    ! send D region to parent
+    imp = m_pds_procinfo%imp
+    call MPI_SEND(nspdsln, 1,MPI_INTEGER,IMP,1,MPI_COMM_WORLD,ierr)
+    call MPI_SEND(spdslnidx,  nspdsln,MPI_INTEGER,IMP,1,MPI_COMM_WORLD,ierr)
+    call MPI_SEND(spdslnval,  nspdsln*9,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
+    call MPI_SEND(diag(1,nstop),  neqns_c*6,MPI_REAL8,IMP,1,MPI_COMM_WORLD,ierr)
 
-        return
+    return
   end subroutine nufct3_child
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1373,7 +1360,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint)          :: nspdsln
     integer(kind=kint), pointer :: spdslnidx(:)
     real(kind=kreal),   pointer :: spdslnval(:,:)
-    include 'mpif.h'
     !----------------------------------------------------------------------
     !
     !     nufctx performs cholesky factorization in row order for every ndeg
@@ -1475,7 +1461,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       call nusolx_child(dsi%xlnzr,dsi%colno,dsi%zln,dsi%diag,dsi%iperm,b,dsi%neqns,dsi%nstop,dsi%ndeg)
     endif
     dsi%stage=40
-    1000 continue
+1000 continue
     return
   end subroutine nusol0_child
 
@@ -1494,8 +1480,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: k, ks, ke, i, j, imp, ierr
     real(kind=kreal), allocatable :: wk(:), wk_d(:)
 
-    include 'mpif.h'
-
     ! forward
 
     !     now nstop is beginning point of C
@@ -1510,60 +1494,60 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do 10 i=1,neqns_a
       wk(i)=b(1,iperm(i))
-      10 continue
+10  continue
 
       ! STEP22: forward substitution for A
-      do 100 i=1,neqns_a
-        ks=xlnzr(i)
-        ke=xlnzr(i+1)-1
-        if(ke.lt.ks) goto 110
-        wk(i)=wk(i)-spdot2(wk,zln(1,:),colno,ks,ke)
-        110    continue
-        100 continue
+    do 100 i=1,neqns_a
+      ks=xlnzr(i)
+      ke=xlnzr(i+1)-1
+      if(ke.lt.ks) goto 110
+      wk(i)=wk(i)-spdot2(wk,zln(1,:),colno,ks,ke)
+110   continue
+100 continue
 
         ! STEP23: forward substitution for C and send it (yi) to parent
-        allocate(wk_d(nstop:neqns), stat=ierr)
-        if(ierr .ne. 0) then
-          call errtrp('stop due to allocation error.')
-        end if
-        wk_d=0
+    allocate(wk_d(nstop:neqns), stat=ierr)
+    if(ierr .ne. 0) then
+      call errtrp('stop due to allocation error.')
+    end if
+    wk_d=0
 
-        do 101 i=nstop,neqns
-          ks=xlnzr(i)
-          ke=xlnzr(i+1)-1
-          if(ke.lt.ks) goto 111
-          wk_d(i)=wk_d(i)-spdot2(wk,zln(1,:),colno,ks,ke)
-          111   continue
-          101 continue
-          imp = m_pds_procinfo%imp
-          call MPI_SEND(wk_d, neqns_c, MPI_REAL8, IMP, 1,MPI_COMM_WORLD, ierr)
+    do 101 i=nstop,neqns
+      ks=xlnzr(i)
+      ke=xlnzr(i+1)-1
+      if(ke.lt.ks) goto 111
+      wk_d(i)=wk_d(i)-spdot2(wk,zln(1,:),colno,ks,ke)
+111   continue
+101 continue
+    imp = m_pds_procinfo%imp
+    call MPI_SEND(wk_d, neqns_c, MPI_REAL8, IMP, 1,MPI_COMM_WORLD, ierr)
 
-          ! STEP24: divide with diagonal matrix
-          do 120 i=1,neqns
-            wk(i)=wk(i)*diag(1,i)
-            120 continue
+    ! STEP24: divide with diagonal matrix
+    do 120 i=1,neqns
+      wk(i)=wk(i)*diag(1,i)
+120 continue
 
-            ! STEP25: receive xd from parent and do backward substitution
-            call MPI_BCAST(wk_d, neqns_c, MPI_REAL8, IMP, MPI_COMM_WORLD, ierr)
+    ! STEP25: receive xd from parent and do backward substitution
+    call MPI_BCAST(wk_d, neqns_c, MPI_REAL8, IMP, MPI_COMM_WORLD, ierr)
 
-            wk(nstop:neqns)=wk_d(nstop:neqns)
+    wk(nstop:neqns)=wk_d(nstop:neqns)
 
-            do 200 i=neqns,1,-1
-              ks=xlnzr(i)
-              ke=xlnzr(i+1)-1
-              if(ke.lt.ks) goto 200
+    do 200 i=neqns,1,-1
+      ks=xlnzr(i)
+      ke=xlnzr(i+1)-1
+      if(ke.lt.ks) goto 200
 
-              do 210 k=ks,ke
-                j=colno(k)
-                wk(j)=wk(j)-wk(i)*zln(1,k)
-                210    continue
-                200 continue
+      do 210 k=ks,ke
+        j=colno(k)
+        wk(j)=wk(j)-wk(i)*zln(1,k)
+210   continue
+200 continue
 
-                ! permutation
-                do 300 i=1,neqns
-                  b(1,iperm(i))=wk(i)
-                  300 continue
-                  return
+    ! permutation
+    do 300 i=1,neqns
+      b(1,iperm(i))=wk(i)
+300 continue
+    return
 
   end subroutine nusol1_child
 
@@ -1585,8 +1569,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal), allocatable :: wk(:,:), wk_d(:,:)
     integer(kind=kint) :: neqns_c, neqns_a, nstop, neqns, ks, ke
     integer(kind=kint) :: i, j, k, l, imp, ierr
-
-    include 'mpif.h'
 
     !now nstop is beginning point of C
     neqns_a = nstop - 1
@@ -1691,8 +1673,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: neqns_c, neqns_a, nstop, neqns, ks, ke
     integer(kind=kint) :: i, j, k, l, imp, ierr
 
-    include 'mpif.h'
-
     !     now nstop is beginning point of C
 
     neqns_a = nstop - 1
@@ -1709,86 +1689,86 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       wk(1,i)=b(1,iperm(i))
       wk(2,i)=b(2,iperm(i))
       wk(3,i)=b(3,iperm(i))
-      10 continue
+10  continue
 
 
-      ! STEP22: forward substitution for A
-      call elapout('nusol3_child: begin forward substitution for A') !elap
+    ! STEP22: forward substitution for A
+    call elapout('nusol3_child: begin forward substitution for A') !elap
 
-      do 100 i=1, neqns_a
-        ks=xlnzr(i)
-        ke=xlnzr(i+1)-1
-        if(ke.lt.ks) goto 110
-        call s3pdot(wk(:,i),wk,zln,colno,ks,ke)
-        110   continue
-        100 continue
-
-
-        ! STEP23: forward substitution for C and send it (yi) to parent
-        call elapout('nusol3_child: begin forward substitution for C') !elap
-        allocate(wk_d(3,nstop:neqns), stat=ierr)
-        if(ierr .ne. 0) then
-          call errtrp('stop due to allocation error.')
-        end if
-        wk_d=0
-
-        do 101 i=nstop,neqns
-          ks=xlnzr(i)
-          ke=xlnzr(i+1)-1
-          if(ke.lt.ks) goto 111
-          call s3pdot(wk_d(:,i),wk,zln,colno,ks,ke)
-          111   continue
-          101 continue
-
-          call elapout('nusol3_child: wait to send wk_d') !elap
-          imp = m_pds_procinfo%imp
-          call MPI_SEND(wk_d, 3*neqns_c, MPI_REAL8, IMP, 1,MPI_COMM_WORLD, ierr)
-
-          ! STEP24: divide with diagonal matrix
-          call elapout('nusol3_child: divide with diagonal matrix') !elap
-          do 120 i=1,neqns_a
-            wk(2,i)=wk(2,i)-wk(1,i)*diag(2,i)
-            wk(3,i)=wk(3,i)-wk(1,i)*diag(4,i)-wk(2,i)*diag(5,i)
-            wk(1,i)=wk(1,i)*diag(1,i)
-            wk(2,i)=wk(2,i)*diag(3,i)
-            wk(3,i)=wk(3,i)*diag(6,i)
-            wk(2,i)=wk(2,i)-wk(3,i)*diag(5,i)
-            wk(1,i)=wk(1,i)-wk(2,i)*diag(2,i)-wk(3,i)*diag(4,i)
-            120 continue
-
-            ! STEP25: receive xd from parent and do backward substitution
-            call elapout('nusol3_child: wait until receive wk_d') !elap
-            call MPI_BCAST(wk_d, 3*neqns_c, MPI_REAL8, IMP, MPI_COMM_WORLD, ierr)
-            call elapout('nusol3_child: end receive wk_d') !elap
-            call elapout('nusol3_child: begin backward substitution') !elap
-
-            wk(:,nstop:neqns)=wk_d(:,nstop:neqns)
-
-            do 200 i=neqns,1,-1
-              ks=xlnzr(i)
-              ke=xlnzr(i+1)-1
-              if(ke.lt.ks) goto 200
-
-              do 210 k=ks,ke
-                j=colno(k)
-
-                wk(1,j)=wk(1,j)-wk(1,i)*zln(1,k)-wk(2,i)*zln(2,k)-wk(3,i)*zln(3,k)
-                wk(2,j)=wk(2,j)-wk(1,i)*zln(4,k)-wk(2,i)*zln(5,k)-wk(3,i)*zln(6,k)
-                wk(3,j)=wk(3,j)-wk(1,i)*zln(7,k)-wk(2,i)*zln(8,k)-wk(3,i)*zln(9,k)
-                210    continue
-                200 continue
-                call elapout('nusol3_child: end backward substitution') !elap
+    do 100 i=1, neqns_a
+      ks=xlnzr(i)
+      ke=xlnzr(i+1)-1
+      if(ke.lt.ks) goto 110
+      call s3pdot(wk(:,i),wk,zln,colno,ks,ke)
+110   continue
+100 continue
 
 
-                ! permutation
-                do 300 i=1,neqns_a
-                  b(1,iperm(i))=wk(1,i)
-                  b(2,iperm(i))=wk(2,i)
-                  b(3,iperm(i))=wk(3,i)
-                  300 continue
+    ! STEP23: forward substitution for C and send it (yi) to parent
+    call elapout('nusol3_child: begin forward substitution for C') !elap
+    allocate(wk_d(3,nstop:neqns), stat=ierr)
+    if(ierr .ne. 0) then
+      call errtrp('stop due to allocation error.')
+    end if
+    wk_d=0
 
-                  call elapout('nusol3_child: end') !elap
-                  return
+    do 101 i=nstop,neqns
+      ks=xlnzr(i)
+      ke=xlnzr(i+1)-1
+      if(ke.lt.ks) goto 111
+      call s3pdot(wk_d(:,i),wk,zln,colno,ks,ke)
+111   continue
+101 continue
+
+    call elapout('nusol3_child: wait to send wk_d') !elap
+    imp = m_pds_procinfo%imp
+    call MPI_SEND(wk_d, 3*neqns_c, MPI_REAL8, IMP, 1,MPI_COMM_WORLD, ierr)
+
+    ! STEP24: divide with diagonal matrix
+    call elapout('nusol3_child: divide with diagonal matrix') !elap
+    do 120 i=1,neqns_a
+      wk(2,i)=wk(2,i)-wk(1,i)*diag(2,i)
+      wk(3,i)=wk(3,i)-wk(1,i)*diag(4,i)-wk(2,i)*diag(5,i)
+      wk(1,i)=wk(1,i)*diag(1,i)
+      wk(2,i)=wk(2,i)*diag(3,i)
+      wk(3,i)=wk(3,i)*diag(6,i)
+      wk(2,i)=wk(2,i)-wk(3,i)*diag(5,i)
+      wk(1,i)=wk(1,i)-wk(2,i)*diag(2,i)-wk(3,i)*diag(4,i)
+120 continue
+
+    ! STEP25: receive xd from parent and do backward substitution
+    call elapout('nusol3_child: wait until receive wk_d') !elap
+    call MPI_BCAST(wk_d, 3*neqns_c, MPI_REAL8, IMP, MPI_COMM_WORLD, ierr)
+    call elapout('nusol3_child: end receive wk_d') !elap
+    call elapout('nusol3_child: begin backward substitution') !elap
+
+    wk(:,nstop:neqns)=wk_d(:,nstop:neqns)
+
+    do 200 i=neqns,1,-1
+      ks=xlnzr(i)
+      ke=xlnzr(i+1)-1
+      if(ke.lt.ks) goto 200
+
+      do 210 k=ks,ke
+        j=colno(k)
+
+        wk(1,j)=wk(1,j)-wk(1,i)*zln(1,k)-wk(2,i)*zln(2,k)-wk(3,i)*zln(3,k)
+        wk(2,j)=wk(2,j)-wk(1,i)*zln(4,k)-wk(2,i)*zln(5,k)-wk(3,i)*zln(6,k)
+        wk(3,j)=wk(3,j)-wk(1,i)*zln(7,k)-wk(2,i)*zln(8,k)-wk(3,i)*zln(9,k)
+210   continue
+200 continue
+    call elapout('nusol3_child: end backward substitution') !elap
+
+
+    ! permutation
+    do 300 i=1,neqns_a
+      b(1,iperm(i))=wk(1,i)
+      b(2,iperm(i))=wk(2,i)
+      b(3,iperm(i))=wk(3,i)
+300 continue
+
+    call elapout('nusol3_child: end') !elap
+    return
   end subroutine nusol3_child
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1804,8 +1784,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal), allocatable :: wk(:,:), wk_d(:,:)
     integer(kind=kint) :: neqns_c, neqns_a, ks, ke, locd, loc1
     integer(kind=kint) :: i, j, k, l, m, n, imp, ierr
-
-    include 'mpif.h'
 
     !now nstop is beginning point of C
     neqns_a = nstop - 1
@@ -2234,72 +2212,72 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         temp(jj,8)=zln(8,k)
         temp(jj,9)=zln(9,k)
         indx(jj)=ic
-        110    continue
-        do 111 k=ks,ke
-          jj=colno(k)
-          zln(4,k)=temp(jj,4)-temp(jj,1)*diag(2,jj)
-          zln(7,k)=temp(jj,7)-temp(jj,1)*diag(4,jj)-zln(4,k)*diag(5,jj)
-          zln(1,k)=temp(jj,1)*diag(1,jj)
-          zln(4,k)=zln(4,k)*diag(3,jj)
-          zln(7,k)=zln(7,k)*diag(6,jj)
-          zln(4,k)=zln(4,k)-zln(7,k)*diag(5,jj)
-          zln(1,k)=zln(1,k)-zln(4,k)*diag(2,jj)-zln(7,k)*diag(4,jj)
-          !
-          zln(5,k)=temp(jj,5)-temp(jj,2)*diag(2,jj)
-          zln(8,k)=temp(jj,8)-temp(jj,2)*diag(4,jj)-zln(5,k)*diag(5,jj)
-          zln(2,k)=temp(jj,2)*diag(1,jj)
-          zln(5,k)=zln(5,k)*diag(3,jj)
-          zln(8,k)=zln(8,k)*diag(6,jj)
-          zln(5,k)=zln(5,k)-zln(8,k)*diag(5,jj)
-          zln(2,k)=zln(2,k)-zln(5,k)*diag(2,jj)-zln(8,k)*diag(4,jj)
-          !
-          zln(6,k)=temp(jj,6)-temp(jj,3)*diag(2,jj)
-          zln(9,k)=temp(jj,9)-temp(jj,3)*diag(4,jj)-zln(6,k)*diag(5,jj)
-          zln(3,k)=temp(jj,3)*diag(1,jj)
-          zln(6,k)=zln(6,k)*diag(3,jj)
-          zln(9,k)=zln(9,k)*diag(6,jj)
-          zln(6,k)=zln(6,k)-zln(9,k)*diag(5,jj)
-          zln(3,k)=zln(3,k)-zln(6,k)*diag(2,jj)-zln(9,k)*diag(4,jj)
-          !        write(60,6000) k,(zln(llll,k),llll=1,9)
-          !6000    format(i6,3d20.10/6x,3d20.10/6x,3d20.10)
-          111    continue
-          !
-          do 112 k=ks,ke
-            jj=colno(k)
-            diag(1,ic)=diag(1,ic)-temp(jj,1)*zln(1,k)-temp(jj,4)*zln(4,k)-temp(jj,7)*zln(7,k)
-            diag(2,ic)=diag(2,ic)-temp(jj,1)*zln(2,k)-temp(jj,4)*zln(5,k)-temp(jj,7)*zln(8,k)
-            diag(3,ic)=diag(3,ic)-temp(jj,2)*zln(2,k)-temp(jj,5)*zln(5,k)-temp(jj,8)*zln(8,k)
-            diag(4,ic)=diag(4,ic)-temp(jj,1)*zln(3,k)-temp(jj,4)*zln(6,k)-temp(jj,7)*zln(9,k)
-            diag(5,ic)=diag(5,ic)-temp(jj,2)*zln(3,k)-temp(jj,5)*zln(6,k)-temp(jj,8)*zln(9,k)
-            diag(6,ic)=diag(6,ic)-temp(jj,3)*zln(3,k)-temp(jj,6)*zln(6,k)-temp(jj,9)*zln(9,k)
-            112    continue
-            do 120 jc=nstop,ic-1
-              loc=loc+1
-              j1=xlnzr(jc)
-              j2=xlnzr(jc+1)
-              do 220 jj=xlnzr(jc),xlnzr(jc+1)-1
-                j=colno(jj)
-                if(indx(j).eq.ic) then
-                  if (ftflag) then
-                    ispdsln=ispdsln+1
-                    ftflag=.false.
-                  end if
-                  spdslnidx(ispdsln)=loc
-                  spdslnval(1,ispdsln)=spdslnval(1,ispdsln)-temp(j,1)*zln(1,jj)-temp(j,4)*zln(4,jj)-temp(j,7)*zln(7,jj)
-                  spdslnval(2,ispdsln)=spdslnval(2,ispdsln)-temp(j,2)*zln(1,jj)-temp(j,5)*zln(4,jj)-temp(j,8)*zln(7,jj)
-                  spdslnval(3,ispdsln)=spdslnval(3,ispdsln)-temp(j,3)*zln(1,jj)-temp(j,6)*zln(4,jj)-temp(j,9)*zln(7,jj)
-                  spdslnval(4,ispdsln)=spdslnval(4,ispdsln)-temp(j,1)*zln(2,jj)-temp(j,4)*zln(5,jj)-temp(j,7)*zln(8,jj)
-                  spdslnval(5,ispdsln)=spdslnval(5,ispdsln)-temp(j,2)*zln(2,jj)-temp(j,5)*zln(5,jj)-temp(j,8)*zln(8,jj)
-                  spdslnval(6,ispdsln)=spdslnval(6,ispdsln)-temp(j,3)*zln(2,jj)-temp(j,6)*zln(5,jj)-temp(j,9)*zln(8,jj)
-                  spdslnval(7,ispdsln)=spdslnval(7,ispdsln)-temp(j,1)*zln(3,jj)-temp(j,4)*zln(6,jj)-temp(j,7)*zln(9,jj)
-                  spdslnval(8,ispdsln)=spdslnval(8,ispdsln)-temp(j,2)*zln(3,jj)-temp(j,5)*zln(6,jj)-temp(j,8)*zln(9,jj)
-                  spdslnval(9,ispdsln)=spdslnval(9,ispdsln)-temp(j,3)*zln(3,jj)-temp(j,6)*zln(6,jj)-temp(j,9)*zln(9,jj)
-                endif
-                220       continue
-                ftflag = .true.
-                120    continue
-                100 continue
-                return
+110   continue
+      do 111 k=ks,ke
+        jj=colno(k)
+        zln(4,k)=temp(jj,4)-temp(jj,1)*diag(2,jj)
+        zln(7,k)=temp(jj,7)-temp(jj,1)*diag(4,jj)-zln(4,k)*diag(5,jj)
+        zln(1,k)=temp(jj,1)*diag(1,jj)
+        zln(4,k)=zln(4,k)*diag(3,jj)
+        zln(7,k)=zln(7,k)*diag(6,jj)
+        zln(4,k)=zln(4,k)-zln(7,k)*diag(5,jj)
+        zln(1,k)=zln(1,k)-zln(4,k)*diag(2,jj)-zln(7,k)*diag(4,jj)
+        !
+        zln(5,k)=temp(jj,5)-temp(jj,2)*diag(2,jj)
+        zln(8,k)=temp(jj,8)-temp(jj,2)*diag(4,jj)-zln(5,k)*diag(5,jj)
+        zln(2,k)=temp(jj,2)*diag(1,jj)
+        zln(5,k)=zln(5,k)*diag(3,jj)
+        zln(8,k)=zln(8,k)*diag(6,jj)
+        zln(5,k)=zln(5,k)-zln(8,k)*diag(5,jj)
+        zln(2,k)=zln(2,k)-zln(5,k)*diag(2,jj)-zln(8,k)*diag(4,jj)
+        !
+        zln(6,k)=temp(jj,6)-temp(jj,3)*diag(2,jj)
+        zln(9,k)=temp(jj,9)-temp(jj,3)*diag(4,jj)-zln(6,k)*diag(5,jj)
+        zln(3,k)=temp(jj,3)*diag(1,jj)
+        zln(6,k)=zln(6,k)*diag(3,jj)
+        zln(9,k)=zln(9,k)*diag(6,jj)
+        zln(6,k)=zln(6,k)-zln(9,k)*diag(5,jj)
+        zln(3,k)=zln(3,k)-zln(6,k)*diag(2,jj)-zln(9,k)*diag(4,jj)
+        !        write(60,6000) k,(zln(llll,k),llll=1,9)
+        !6000    format(i6,3d20.10/6x,3d20.10/6x,3d20.10)
+111   continue
+      !
+      do 112 k=ks,ke
+        jj=colno(k)
+        diag(1,ic)=diag(1,ic)-temp(jj,1)*zln(1,k)-temp(jj,4)*zln(4,k)-temp(jj,7)*zln(7,k)
+        diag(2,ic)=diag(2,ic)-temp(jj,1)*zln(2,k)-temp(jj,4)*zln(5,k)-temp(jj,7)*zln(8,k)
+        diag(3,ic)=diag(3,ic)-temp(jj,2)*zln(2,k)-temp(jj,5)*zln(5,k)-temp(jj,8)*zln(8,k)
+        diag(4,ic)=diag(4,ic)-temp(jj,1)*zln(3,k)-temp(jj,4)*zln(6,k)-temp(jj,7)*zln(9,k)
+        diag(5,ic)=diag(5,ic)-temp(jj,2)*zln(3,k)-temp(jj,5)*zln(6,k)-temp(jj,8)*zln(9,k)
+        diag(6,ic)=diag(6,ic)-temp(jj,3)*zln(3,k)-temp(jj,6)*zln(6,k)-temp(jj,9)*zln(9,k)
+112   continue
+      do 120 jc=nstop,ic-1
+        loc=loc+1
+        j1=xlnzr(jc)
+        j2=xlnzr(jc+1)
+        do 220 jj=xlnzr(jc),xlnzr(jc+1)-1
+          j=colno(jj)
+          if(indx(j).eq.ic) then
+            if (ftflag) then
+              ispdsln=ispdsln+1
+              ftflag=.false.
+            end if
+            spdslnidx(ispdsln)=loc
+            spdslnval(1,ispdsln)=spdslnval(1,ispdsln)-temp(j,1)*zln(1,jj)-temp(j,4)*zln(4,jj)-temp(j,7)*zln(7,jj)
+            spdslnval(2,ispdsln)=spdslnval(2,ispdsln)-temp(j,2)*zln(1,jj)-temp(j,5)*zln(4,jj)-temp(j,8)*zln(7,jj)
+            spdslnval(3,ispdsln)=spdslnval(3,ispdsln)-temp(j,3)*zln(1,jj)-temp(j,6)*zln(4,jj)-temp(j,9)*zln(7,jj)
+            spdslnval(4,ispdsln)=spdslnval(4,ispdsln)-temp(j,1)*zln(2,jj)-temp(j,4)*zln(5,jj)-temp(j,7)*zln(8,jj)
+            spdslnval(5,ispdsln)=spdslnval(5,ispdsln)-temp(j,2)*zln(2,jj)-temp(j,5)*zln(5,jj)-temp(j,8)*zln(8,jj)
+            spdslnval(6,ispdsln)=spdslnval(6,ispdsln)-temp(j,3)*zln(2,jj)-temp(j,6)*zln(5,jj)-temp(j,9)*zln(8,jj)
+            spdslnval(7,ispdsln)=spdslnval(7,ispdsln)-temp(j,1)*zln(3,jj)-temp(j,4)*zln(6,jj)-temp(j,7)*zln(9,jj)
+            spdslnval(8,ispdsln)=spdslnval(8,ispdsln)-temp(j,2)*zln(3,jj)-temp(j,5)*zln(6,jj)-temp(j,8)*zln(9,jj)
+            spdslnval(9,ispdsln)=spdslnval(9,ispdsln)-temp(j,3)*zln(3,jj)-temp(j,6)*zln(6,jj)-temp(j,9)*zln(9,jj)
+          endif
+220     continue
+        ftflag = .true.
+120   continue
+100 continue
+    return
   end subroutine s3um2_child
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2318,33 +2296,33 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ir=0
     do 100 l=1,neqns
       zpiv(l)=1
-      100 continue
+100 continue
 
-      do 200 l=1,nttbr
-        i=irow(l)
-        j=jcol(l)
-        if(i.le.0.or.j.le.0) then
-          ir=-1
-          goto 1000
-        elseif(i.gt.neqns.or.j.gt.neqns) then
-          ir=1
-          goto 1000
-        endif
-        if(i.eq.j) zpiv(i)=0
-        200 continue
+    do 200 l=1,nttbr
+      i=irow(l)
+      j=jcol(l)
+      if(i.le.0.or.j.le.0) then
+        ir=-1
+        goto 1000
+      elseif(i.gt.neqns.or.j.gt.neqns) then
+        ir=1
+        goto 1000
+      endif
+      if(i.eq.j) zpiv(i)=0
+200 continue
 
-        do 310 i=neqns,1,-1
-          if(zpiv(i).eq.0) then
-            neqnsz=i
-            goto 320
-          endif
-          310 continue
-          320 continue
-          1000 continue
-          if(ldbg) write(idbg,*) '# zpivot ########################'
-          if(ldbg) write(idbg,60) (zpiv(i),i=1,neqns)
-          60 format(20i3)
-          return
+    do 310 i=neqns,1,-1
+      if(zpiv(i).eq.0) then
+        neqnsz=i
+        goto 320
+      endif
+310 continue
+320 continue
+1000 continue
+    if(ldbg) write(idbg,*) '# zpivot ########################'
+    if(ldbg) write(idbg,60) (zpiv(i),i=1,neqns)
+60  format(20i3)
+    return
   end subroutine zpivot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2362,71 +2340,71 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do 10 i=1,2*nttbr
       jcpt(i)=0
       jcolno(i)=0
-      10 continue
-      do 20 i=1,neqns
-        jcpt(i)=i+neqns
-        jcolno(i+neqns)=i
-        20 continue
+10  continue
+    do 20 i=1,neqns
+      jcpt(i)=i+neqns
+      jcolno(i+neqns)=i
+20  continue
 
-        k=2*neqns
-        do 100 l=1,nttbr
-          i=irow(l)
-          j=jcol(l)
-          if(i.eq.j) goto 100
-          loc=jcpt(i)
-          locr=i
-          110    continue
-          if(loc.eq.0) goto 120
-          if(jcolno(loc).eq.j) then
-            goto 100
-          elseif(jcolno(loc).gt.j) then
-            goto 130
-          endif
-          locr=loc
-          loc=jcpt(loc)
-          goto 110
-          120    continue
-          k=k+1
-          jcpt(locr)=k
-          jcolno(k)=j
-          goto 150
-          130    continue
-          k=k+1
-          jcpt(locr)=k
-          jcpt(k)=loc
-          jcolno(k)=j
-          150    continue
-          loc=jcpt(j)
-          locr=j
-          160    continue
-          if(loc.eq.0) goto 170
-          if(jcolno(loc).eq.i) then
-            goto 100
-          elseif(jcolno(loc).gt.i) then
-            goto 180
-          endif
-          locr=loc
-          loc=jcpt(loc)
-          goto 160
-          170    continue
-          k=k+1
-          jcpt(locr)=k
-          jcolno(k)=i
-          goto 100
-          180    continue
-          k=k+1
-          jcpt(locr)=k
-          jcpt(k)=loc
-          jcolno(k)=i
-          100 continue
-          if(ldbg) then
-            write(idbg,*) 'jcolno'
-            write(idbg,60) (jcolno(i),i=1,k)
-            write(idbg,*) 'jcpt'
-            write(idbg,60) (jcpt(i),i=1,k)
-            60 format(10i7)
-          endif
-          return
+    k=2*neqns
+    do 100 l=1,nttbr
+      i=irow(l)
+      j=jcol(l)
+      if(i.eq.j) goto 100
+      loc=jcpt(i)
+      locr=i
+110   continue
+      if(loc.eq.0) goto 120
+      if(jcolno(loc).eq.j) then
+        goto 100
+      elseif(jcolno(loc).gt.j) then
+        goto 130
+      endif
+      locr=loc
+      loc=jcpt(loc)
+      goto 110
+120   continue
+      k=k+1
+      jcpt(locr)=k
+      jcolno(k)=j
+      goto 150
+130   continue
+      k=k+1
+      jcpt(locr)=k
+      jcpt(k)=loc
+      jcolno(k)=j
+150   continue
+      loc=jcpt(j)
+      locr=j
+160   continue
+      if(loc.eq.0) goto 170
+      if(jcolno(loc).eq.i) then
+        goto 100
+      elseif(jcolno(loc).gt.i) then
+        goto 180
+      endif
+      locr=loc
+      loc=jcpt(loc)
+      goto 160
+170   continue
+      k=k+1
+      jcpt(locr)=k
+      jcolno(k)=i
+      goto 100
+180   continue
+      k=k+1
+      jcpt(locr)=k
+      jcpt(k)=loc
+      jcolno(k)=i
+100 continue
+    if(ldbg) then
+      write(idbg,*) 'jcolno'
+      write(idbg,60) (jcolno(i),i=1,k)
+      write(idbg,*) 'jcpt'
+      write(idbg,60) (jcpt(i),i=1,k)
+60    format(10i7)
+    endif
+    return
   end subroutine stsmat
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2447,25 +2425,25 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     l=0
     do 100 k=1,neqns
       loc=jcpt(k)
-      110    continue
+110   continue
       if(loc.eq.0) goto 120
       ii=jcolno(loc)
       if(ii.eq.k.or.ii.gt.neqnsz) goto 130
       l=l+1
       ja(l)=ii
-      130    continue
+130   continue
       loc=jcpt(loc)
       goto 110
-      120    ia(k+1)=l+1
-      100 continue
-      if(ldbg) then
-        write(idbg,*) 'stiaja(): ia '
-        write(idbg,60) (ia(i),i=1,neqns+1)
-        write(idbg,*) 'stiaja(): ja '
-        write(idbg,60) (ja(i),i=1,ia(neqns+1))
-      endif
-      60 format(10i7)
-      return
+120   ia(k+1)=l+1
+100 continue
+    if(ldbg) then
+      write(idbg,*) 'stiaja(): ia '
+      write(idbg,60) (ia(i),i=1,neqns+1)
+      write(idbg,*) 'stiaja(): ja '
+      write(idbg,60) (ja(i),i=1,ia(neqns+1))
+    endif
+60  format(10i7)
+    return
   end subroutine stiaja
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2482,8 +2460,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do 100 i=1,neqns
       invp(i)=i
       iperm(i)=i
-      100 continue
-      return
+100 continue
+    return
   end subroutine idntty
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2504,66 +2482,66 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     nofsub=0
     do 10 i=1,xadj(neqns+1)-1
       adjncy(i)=adj0(i)
-      10 continue
-      do 100 node=1,neqns
-        perm(node)=node
-        invp(node)=node
-        marker(node)=0
-        qsize(node)=1
-        qlink(node)=0
-        ndeg=xadj(node+1)-xadj(node)
-        deg(node)=ndeg
-        if(ndeg.lt.mindeg) mindeg=ndeg
-        100 continue
+10  continue
+    do 100 node=1,neqns
+      perm(node)=node
+      invp(node)=node
+      marker(node)=0
+      qsize(node)=1
+      qlink(node)=0
+      ndeg=xadj(node+1)-xadj(node)
+      deg(node)=ndeg
+      if(ndeg.lt.mindeg) mindeg=ndeg
+100 continue
 
-        num=0
-        200 search=1
-        thresh=mindeg
-        mindeg=neqns
-        300 nump1=num+1
-        if(nump1.gt.search) search=nump1
-        do 400 j=search,neqns
-          node=perm(j)
-          if(marker(node).lt.0) goto 400
-          ndeg=deg(node)
-          if(ndeg.le.thresh) goto 500
-          if(ndeg.lt.mindeg) mindeg=ndeg
-          400 continue
-          goto 200
+    num=0
+200 search=1
+    thresh=mindeg
+    mindeg=neqns
+300 nump1=num+1
+    if(nump1.gt.search) search=nump1
+    do 400 j=search,neqns
+      node=perm(j)
+      if(marker(node).lt.0) goto 400
+      ndeg=deg(node)
+      if(ndeg.le.thresh) goto 500
+      if(ndeg.lt.mindeg) mindeg=ndeg
+400 continue
+    goto 200
 
-          500 search=j
-          nofsub=nofsub+deg(node)
-          marker(node)=1
-          call qmdrch(node,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
-          nxnode=node
-          600 num=num+1
-          np=invp(nxnode)
-          ip=perm(num)
-          perm(np)=ip
-          invp(ip)=np
-          perm(num)=nxnode
-          invp(nxnode)=num
-          deg(nxnode)=-1
-          nxnode=qlink(nxnode)
-          if(nxnode.gt.0) goto 600
-          if(rchsze.le.0) goto 800
-          !
-          call qmdupd(xadj,adjncy,rchsze,rchset,deg,qsize,qlink,marker,rchset(rchsze+1:),nbrhd(nhdsze+1:))
-          marker(node)=0
-          do 700 irch=1,rchsze
-            inode=rchset(irch)
-            if(marker(inode).lt.0) goto 700
-            marker(inode)=0
-            ndeg=deg(inode)
-            if(ndeg.lt.mindeg) mindeg=ndeg
-            if(ndeg.gt.thresh) goto 700
-            mindeg=thresh
-            thresh=ndeg
-            search=invp(inode)
-            700 continue
-            if(nhdsze.gt.0) call qmdot(node,xadj,adjncy,marker,rchsze,rchset,nbrhd)
-            800 if(num.lt.neqns) goto 300
-            return
+500 search=j
+    nofsub=nofsub+deg(node)
+    marker(node)=1
+    call qmdrch(node,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
+    nxnode=node
+600 num=num+1
+    np=invp(nxnode)
+    ip=perm(num)
+    perm(np)=ip
+    invp(ip)=np
+    perm(num)=nxnode
+    invp(nxnode)=num
+    deg(nxnode)=-1
+    nxnode=qlink(nxnode)
+    if(nxnode.gt.0) goto 600
+    if(rchsze.le.0) goto 800
+    !
+    call qmdupd(xadj,adjncy,rchsze,rchset,deg,qsize,qlink,marker,rchset(rchsze+1:),nbrhd(nhdsze+1:))
+    marker(node)=0
+    do 700 irch=1,rchsze
+      inode=rchset(irch)
+      if(marker(inode).lt.0) goto 700
+      marker(inode)=0
+      ndeg=deg(inode)
+      if(ndeg.lt.mindeg) mindeg=ndeg
+      if(ndeg.gt.thresh) goto 700
+      mindeg=thresh
+      thresh=ndeg
+      search=invp(inode)
+700 continue
+    if(nhdsze.gt.0) call qmdot(node,xadj,adjncy,marker,rchsze,rchset,nbrhd)
+800 if(num.lt.neqns) goto 300
+    return
   end subroutine genqmd
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2585,27 +2563,27 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do 110 k=xadj(ip),xadj(ip+1)-1
         l=invp(adjncy(k))
         if(l.ge.i) goto 110
-        112       continue
+112     continue
         if(ancstr(l).eq.0) goto 111
         if(ancstr(l).eq.i) goto 110
         it=ancstr(l)
         ancstr(l)=i
         l=it
         goto 112
-        111       continue
+111     continue
         ancstr(l)=i
         parent(l)=i
-        110    continue
-        100 continue
-        do 200 i=1,neqns
-          if(parent(i).eq.0) parent(i)=neqns+1
-          200 continue
-          parent(neqns+1)=0
-          if(ldbg) write(idbg,6010)
-          if(ldbg) write(idbg,6000) (i,parent(i),i=1,neqns)
-          6000 format(2i6)
-          6010 format(' parent')
-          return
+110   continue
+100 continue
+    do 200 i=1,neqns
+      if(parent(i).eq.0) parent(i)=neqns+1
+200 continue
+    parent(neqns+1)=0
+    if(ldbg) write(idbg,6010)
+    if(ldbg) write(idbg,6000) (i,parent(i),i=1,neqns)
+6000 format(2i6)
+6010 format(' parent')
+    return
   end subroutine genpaq
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2624,47 +2602,47 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do 10 i=1,neqns+1
       btree(1,i)=0
       btree(2,i)=0
-      10 continue
-      do 100 i=1,neqns+1
-        ip=parent(i)
-        if(ip.le.0) goto 100
-        ib=btree(1,ip)
-        if(ib.eq.0) then
-          btree(1,ip)=i
+10  continue
+    do 100 i=1,neqns+1
+      ip=parent(i)
+      if(ip.le.0) goto 100
+      ib=btree(1,ip)
+      if(ib.eq.0) then
+        btree(1,ip)=i
+      else
+101     continue
+        inext=btree(2,ib)
+        if(inext.eq.0) then
+          btree(2,ib)=i
         else
-          101       continue
-          inext=btree(2,ib)
-          if(inext.eq.0) then
-            btree(2,ib)=i
-          else
-            ib=inext
-            goto 101
-          endif
+          ib=inext
+          goto 101
         endif
-        100 continue
-        !
-        ! find zeropivot
-        !
-        do 200 i=1,neqns
-          if(zpiv(i).ne.0) then
-            if(btree(1,invp(i)).eq.0) then
-              izz=i
-              goto 210
-            endif
-          endif
-          200 continue
-          izz=0
-          210 continue
-          if(ldbg) write(idbg,6010)
-          if(ldbg) write(idbg,6000) (i,btree(1,i),btree(2,i),i=1,neqns)
-          if(ldbg) write(idbg,6020) izz
-          !     if(idbg1.ge.2) write(10,6100) neqns
-          !     if(idbg1.ge.2) write(10,6100) (btree(1,i),btree(2,i),i=1,neqns)
-          6000 format(i6,'(',2i6,')')
-          6010 format(' binary tree')
-          6020 format(' the first zero pivot is ',i4)
-          6100 format(2i8)
-          return
+      endif
+100 continue
+    !
+    ! find zeropivot
+    !
+    do 200 i=1,neqns
+      if(zpiv(i).ne.0) then
+        if(btree(1,invp(i)).eq.0) then
+          izz=i
+          goto 210
+        endif
+      endif
+200 continue
+    izz=0
+210 continue
+    if(ldbg) write(idbg,6010)
+    if(ldbg) write(idbg,6000) (i,btree(1,i),btree(2,i),i=1,neqns)
+    if(ldbg) write(idbg,6020) izz
+    !     if(idbg1.ge.2) write(10,6100) neqns
+    !     if(idbg1.ge.2) write(10,6100) (btree(1,i),btree(2,i),i=1,neqns)
+6000 format(i6,'(',2i6,')')
+6010 format(' binary tree')
+6020 format(' the first zero pivot is ',i4)
+6100 format(2i8)
+    return
   end subroutine genbtq
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2701,7 +2679,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     nanc=0
     loc=izzz
-    100 continue
+100 continue
     nanc=nanc+1
     anc(nanc)=loc
     loc=parent(loc)
@@ -2711,106 +2689,106 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     !     adjt = Adj(Tree(y))
     l=1
-    200 continue
+200 continue
     do 210 i=1,neqns
       adjt(i)=0
-      210 continue
-      locc=anc(l)
-      220 continue
-      loc=locc
-      locc=btree(1,loc)
-      if(locc.ne.0) goto 220
-      230 continue
-      do 240 k=xadj(iperm(loc)),xadj(iperm(loc)+1)-1
-        adjt(invp(adjncy(k)))=1
-        240 continue
-        if(loc.ge.anc(l)) goto 250
-        locc=btree(2,loc)
-        if(locc.ne.0) goto 220
-        loc=parent(loc)
-        goto 230
-        250 continue
-        do 260 ll=l+1,nanc
-          if(adjt(anc(ll)).eq.0) then
-            l=l+1
-            goto 200
-          endif
-          260 continue
-          if(l.eq.1) goto 500
+210 continue
+    locc=anc(l)
+220 continue
+    loc=locc
+    locc=btree(1,loc)
+    if(locc.ne.0) goto 220
+230 continue
+    do 240 k=xadj(iperm(loc)),xadj(iperm(loc)+1)-1
+      adjt(invp(adjncy(k)))=1
+240 continue
+    if(loc.ge.anc(l)) goto 250
+    locc=btree(2,loc)
+    if(locc.ne.0) goto 220
+    loc=parent(loc)
+    goto 230
+250 continue
+    do 260 ll=l+1,nanc
+      if(adjt(anc(ll)).eq.0) then
+        l=l+1
+        goto 200
+      endif
+260 continue
+    if(l.eq.1) goto 500
 
-          !
-          !  anc(l-1) is the eligible node
-          !
-          ! (1) number the node not in Ancestor(iy)
-          iy=anc(l-1)
-          do 300 i=1,neqns
-            adjt(i)=0
-            300 continue
-            do 310 ll=l,nanc
-              adjt(anc(ll))=1
-              310 continue
-              k=0
-              do 320 ll=1,neqns
-                if(adjt(ll).eq.0) then
-                  k=k+1
-                  invp(iperm(ll))=k
-                endif
-                320 continue
-                ! (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
-                330 continue
-                do 340 i=1,neqns
-                  adjt(i)=0
-                  340 continue
-                  locc=iy
-                  350 continue
-                  loc=locc
-                  locc=btree(1,loc)
-                  if(locc.ne.0) goto 350
-                  360 continue
-                  do 370 kk=xadj(iperm(loc)),xadj(iperm(loc)+1)-1
-                    adjt(invp(adjncy(kk)))=1
-                    370 continue
-                    if(loc.ge.iy) goto 380
-                    locc=btree(2,loc)
-                    if(locc.ne.0) goto 350
-                    loc=parent(loc)
-                    goto 360
-                    380 continue
-                    do 390 ll=l,nanc
-                      if(adjt(anc(ll)).eq.0) then
-                        k=k+1
-                        invp(iperm(anc(ll)))=k
-                      endif
-                      390 continue
-                      ! (3) and finally number the node in Adj(t(iy))
-                      do 400 ll=l,nanc
-                        if(adjt(anc(ll)).ne.0) then
-                          k=k+1
-                          invp(iperm(anc(ll)))=k
-                        endif
-                        400 continue
-                        goto 600
-                        !
-                        ! izz can be numbered last
-                        !
-                        500 continue
-                        k=0
-                        do 510 i=1,neqns
-                          if(i.eq.izzz) goto 510
-                          k=k+1
-                          invp(iperm(i))=k
-                          510 continue
-                          invp(iperm(izzz))=neqns
-                          !
-                          ! set iperm
-                          !
-                          600 continue
-                          do 610 i=1,neqns
-                            iperm(invp(i))=i
-                            610 continue
-                            if(ldbg) write(idbg,6000) (invp(i),i=1,neqns)
-                            6000 format(10i6)
-                            return
+    !
+    !  anc(l-1) is the eligible node
+    !
+    ! (1) number the node not in Ancestor(iy)
+    iy=anc(l-1)
+    do 300 i=1,neqns
+      adjt(i)=0
+300 continue
+    do 310 ll=l,nanc
+      adjt(anc(ll))=1
+310 continue
+    k=0
+    do 320 ll=1,neqns
+      if(adjt(ll).eq.0) then
+        k=k+1
+        invp(iperm(ll))=k
+      endif
+320 continue
+    ! (2) followed by nodes in Ancestor(iy)-Adj(T(iy))
+330   continue
+    do 340 i=1,neqns
+      adjt(i)=0
+340 continue
+    locc=iy
+350 continue
+    loc=locc
+    locc=btree(1,loc)
+    if(locc.ne.0) goto 350
+360 continue
+    do 370 kk=xadj(iperm(loc)),xadj(iperm(loc)+1)-1
+      adjt(invp(adjncy(kk)))=1
+370 continue
+    if(loc.ge.iy) goto 380
+    locc=btree(2,loc)
+    if(locc.ne.0) goto 350
+    loc=parent(loc)
+    goto 360
+380 continue
+    do 390 ll=l,nanc
+      if(adjt(anc(ll)).eq.0) then
+        k=k+1
+        invp(iperm(anc(ll)))=k
+      endif
+390 continue
+    ! (3) and finally number the node in Adj(t(iy))
+    do 400 ll=l,nanc
+      if(adjt(anc(ll)).ne.0) then
+        k=k+1
+        invp(iperm(anc(ll)))=k
+      endif
+400 continue
+    goto 600
+    !
+    ! izz can be numbered last
+    !
+500 continue
+    k=0
+    do 510 i=1,neqns
+      if(i.eq.izzz) goto 510
+      k=k+1
+      invp(iperm(i))=k
+510 continue
+    invp(iperm(izzz))=neqns
+    !
+    ! set iperm
+    !
+600 continue
+    do 610 i=1,neqns
+      iperm(invp(i))=i
+610 continue
+    if(ldbg) write(idbg,6000) (invp(i),i=1,neqns)
+6000 format(10i6)
+    return
   end subroutine rotate
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2841,14 +2819,14 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     irr=0
     ib0=invp(izz)
     ib=ib0
-    100 continue
+100 continue
     if(ib.le.0) goto 1000
     ibp=parent(ib)
     izzp=iperm(ibp)
     if(zpiv(izzp).eq.0) goto 110
     ib=ibp
     goto 100
-    110 continue
+110 continue
     invp(izz)=ibp
     invp(izzp)=ib0
     iperm(ibp)=izz
@@ -2857,15 +2835,15 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do 200 i=1,neqns
         if(invp(iperm(i)).ne.i) goto 210
         if(iperm(invp(i)).ne.i) goto 210
-        200    continue
-        goto 220
-        210    continue
-        write(20,*) 'permutation error'
-        stop
+200   continue
+      goto 220
+210   continue
+      write(20,*) 'permutation error'
+      stop
     endif
-    220 continue
+220 continue
     return
-    1000 continue
+1000 continue
     irr=1
   end subroutine bringu
 
@@ -2884,59 +2862,59 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do 5 i=1,neqns
       mch(i)=0
       pordr(i)=0
-      5 continue
-      l=1
-      locc=neqns+1
-      10 continue
-      loc=locc
-      locc=btree(1,loc)
-      if(locc.ne.0) goto 10
-      locp=qarent(loc)
-      mch(locp)=mch(locp)+1
-      20 continue
-      pordr(loc)=l
-      if(l.ge.neqns) goto 1000
-      l=l+1
-      locc=btree(2,loc)
-      if(locc.ne.0) goto 10
-      loc=qarent(loc)
-      locp=qarent(loc)
-      mch(locp)=mch(locp)+mch(loc)+1
-      goto 20
-      1000 continue
-      do 100 i=1,neqns
-        ipinv=pordr(invp(i))
-        invp(i)=ipinv
-        iperm(ipinv)=i
-        iw(pordr(i))=i
-        100 continue
-        do 110 i=1,neqns
-          invpos=iw(i)
-          nch(i)=mch(invpos)
-          ii=qarent(invpos)
-          if(ii.gt.0.and.ii.le.neqns) then
-            parent(i)=pordr(ii)
-          else
-            parent(i)=qarent(invpos)
-          endif
-          110 continue
-          if(ldbg) write(idbg,6020)
-          if(ldbg) write(idbg,6000) (pordr(i),i=1,neqns)
-          if(ldbg) write(idbg,6030)
-          if(ldbg) write(idbg,6050)
-          if(ldbg) write(idbg,6000) (parent(i),i=1,neqns)
-          if(ldbg) write(idbg,6000) (invp(i),i=1,neqns)
-          if(ldbg) write(idbg,6040)
-          if(ldbg) write(idbg,6000) (iperm(i),i=1,neqns)
-          if(ldbg) write(idbg,6010)
-          if(ldbg) write(idbg,6000) (nch(i),i=1,neqns)
-          6000 format(10i6)
-          6010 format(' nch')
-          6020 format(' post order')
-          6030 format(/' invp ')
-          6040 format(/' iperm ')
-          6050 format(/' parent')
-          return
+5   continue
+    l=1
+    locc=neqns+1
+10  continue
+    loc=locc
+    locc=btree(1,loc)
+    if(locc.ne.0) goto 10
+    locp=qarent(loc)
+    mch(locp)=mch(locp)+1
+20  continue
+    pordr(loc)=l
+    if(l.ge.neqns) goto 1000
+    l=l+1
+    locc=btree(2,loc)
+    if(locc.ne.0) goto 10
+    loc=qarent(loc)
+    locp=qarent(loc)
+    mch(locp)=mch(locp)+mch(loc)+1
+    goto 20
+1000 continue
+    do 100 i=1,neqns
+      ipinv=pordr(invp(i))
+      invp(i)=ipinv
+      iperm(ipinv)=i
+      iw(pordr(i))=i
+100 continue
+    do 110 i=1,neqns
+      invpos=iw(i)
+      nch(i)=mch(invpos)
+      ii=qarent(invpos)
+      if(ii.gt.0.and.ii.le.neqns) then
+        parent(i)=pordr(ii)
+      else
+        parent(i)=qarent(invpos)
+      endif
+110 continue
+    if(ldbg) write(idbg,6020)
+    if(ldbg) write(idbg,6000) (pordr(i),i=1,neqns)
+    if(ldbg) write(idbg,6030)
+    if(ldbg) write(idbg,6050)
+    if(ldbg) write(idbg,6000) (parent(i),i=1,neqns)
+    if(ldbg) write(idbg,6000) (invp(i),i=1,neqns)
+    if(ldbg) write(idbg,6040)
+    if(ldbg) write(idbg,6000) (iperm(i),i=1,neqns)
+    if(ldbg) write(idbg,6010)
+    if(ldbg) write(idbg,6000) (nch(i),i=1,neqns)
+6000 format(10i6)
+6010 format(' nch')
+6020 format(' post order')
+6030 format(/' invp ')
+6040 format(/' iperm ')
+6050 format(/' parent')
+    return
   end subroutine posord
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2963,38 +2941,38 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ik=ik+1
           adjncp(ik)=iq
         endif
-        105    continue
-        m=ik-istart
-        if(m.eq.0) goto 131
-        call qqsort(adjncp(istart+1:),m)
-        lc1=adjncp(istart+1)
-        if(lc1.ge.i) goto 100
-        leaf(l)=lc1
-        l=l+1
-        do 130 k=istart+2,ik
-          lc=adjncp(k)
-          !           if(lc.ge.i) goto 125
-          if(lc1.lt.lc-nch(lc)) then
-            leaf(l)=lc
-            l=l+1
-          endif
-          125       continue
-          lc1=lc
-          130    continue
-          ik=1
-          istart=ik
-          131    continue
-          100 continue
-          xleaf(neqns+1)=l
-          lnleaf=l-1
-          if(ldbg) write(idbg,6020)
-          if(ldbg) write(idbg,6000) (xleaf(i),i=1,neqns+1)
-          if(ldbg) write(idbg,6010) lnleaf
-          if(ldbg) write(idbg,6000) (leaf(i),i=1,lnleaf)
-          return
-          6000 format(10i6)
-          6010 format(' leaf (len = ',i6,')')
-          6020 format(' xleaf')
+105   continue
+      m=ik-istart
+      if(m.eq.0) goto 131
+      call qqsort(adjncp(istart+1:),m)
+      lc1=adjncp(istart+1)
+      if(lc1.ge.i) goto 100
+      leaf(l)=lc1
+      l=l+1
+      do 130 k=istart+2,ik
+        lc=adjncp(k)
+        !           if(lc.ge.i) goto 125
+        if(lc1.lt.lc-nch(lc)) then
+          leaf(l)=lc
+          l=l+1
+        endif
+125     continue
+        lc1=lc
+130   continue
+      ik=1
+      istart=ik
+131   continue
+100 continue
+    xleaf(neqns+1)=l
+    lnleaf=l-1
+    if(ldbg) write(idbg,6020)
+    if(ldbg) write(idbg,6000) (xleaf(i),i=1,neqns+1)
+    if(ldbg) write(idbg,6010) lnleaf
+    if(ldbg) write(idbg,6000) (leaf(i),i=1,lnleaf)
+    return
+6000 format(10i6)
+6010 format(' leaf (len = ',i6,')')
+6020 format(' xleaf')
   end subroutine gnleaf
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3026,7 +3004,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do 110 k=ks,ke-1
         j=nxleaf
         nxleaf=leaf(k+1)
-        105       continue
+105     continue
         if(j.ge.nxleaf) goto 110
         if(j.ge.nstop) then
           goto 100
@@ -3034,17 +3012,17 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         l=l+1
         j=parent(j)
         goto 105
-        110    continue
-        j=leaf(ke)
-        115    continue
-        if(j.ge.nstop) goto 100
-        if(j.ge.i.or.j.eq.0) goto 100
-        l=l+1
-        j=parent(j)
-        goto 115
-        100 continue
-        lncol=l-1
-        return
+110   continue
+      j=leaf(ke)
+115   continue
+      if(j.ge.nstop) goto 100
+      if(j.ge.i.or.j.eq.0) goto 100
+      l=l+1
+      j=parent(j)
+      goto 115
+100 continue
+    lncol=l-1
+    return
   end subroutine countclno
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3072,7 +3050,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do 110 k=ks,ke-1
         j=nxleaf
         nxleaf=leaf(k+1)
-        105       continue
+105     continue
         if(j.ge.nxleaf) goto 110
         if(j.ge.nstop) then
           goto 100
@@ -3081,32 +3059,32 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         l=l+1
         j=parent(j)
         goto 105
-        110    continue
-        j=leaf(ke)
-        115    continue
-        if(j.ge.nstop) goto 100
-        if(j.ge.i.or.j.eq.0) goto 100
-        colno(l)=j
-        l=l+1
-        j=parent(j)
-        goto 115
-        100 continue
-        xlnzr(neqns+1)=l
-        lncol=l-1
-        if(ldbg) write(idbg,6010)
-        !     if(idbg1.ne.0) write(6,6000) (xlnzr(i),i=1,neqns+1)
-        if(ldbg) write(idbg,6020) lncol
-        if(ldbg) then
-          do 200 k=1,neqns
-            write(idbg,6100) k
-            write(idbg,6000) (colno(i),i=xlnzr(k),xlnzr(k+1)-1)
-            200    continue
-        endif
-        6000 format(10i4)
-        6010 format(' xlnzr')
-        6020 format(' colno (lncol =',i10,')')
-        6100 format(/' row = ',i6)
-        return
+110   continue
+      j=leaf(ke)
+115   continue
+      if(j.ge.nstop) goto 100
+      if(j.ge.i.or.j.eq.0) goto 100
+      colno(l)=j
+      l=l+1
+      j=parent(j)
+      goto 115
+100 continue
+    xlnzr(neqns+1)=l
+    lncol=l-1
+    if(ldbg) write(idbg,6010)
+    !     if(idbg1.ne.0) write(6,6000) (xlnzr(i),i=1,neqns+1)
+    if(ldbg) write(idbg,6020) lncol
+    if(ldbg) then
+      do 200 k=1,neqns
+        write(idbg,6100) k
+        write(idbg,6000) (colno(i),i=xlnzr(k),xlnzr(k+1)-1)
+200   continue
+    endif
+6000 format(10i4)
+6010 format(' xlnzr')
+6020 format(' colno (lncol =',i10,')')
+6100 format(/' row = ',i6)
+    return
   end subroutine gnclno
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3136,22 +3114,27 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       rchset(rchsze)=nabor
       marker(nabor)=1
       goto 600
-      200    marker(nabor)=-1
+200   marker(nabor)=-1
       nhdsze=nhdsze+1
       nbrhd(nhdsze)=nabor
-      300    jstrt=xadj(nabor)
+300   jstrt=xadj(nabor)
       jstop=xadj(nabor+1)-1
       do 500 j=jstrt,jstop
         node=adjncy(j)
         nabor=-node
-        if(node) 300,600,400
-        400       if(marker(node).ne.0) goto 500
+        !if(node) 300,600,400
+        if(node<0) then
+          goto 300
+        elseif(node==0) then
+          goto 600
+        endif
+400     if(marker(node).ne.0) goto 500
         rchsze=rchsze+1
         rchset(rchsze)=node
         marker(node)=1
-        500    continue
-        600 continue
-        return
+500   continue
+600 continue
+    return
   end subroutine qmdrch
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3181,31 +3164,31 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         marker(nabor)=-1
         nhdsze=nhdsze+1
         nbrhd(nhdsze)=nabor
-        100    continue
-        200 continue
+100   continue
+200 continue
 
-        if(nhdsze.gt.0) call qmdmrg(xadj,adjncy,deg,qsize,qlink,marker,deg0,nhdsze,nbrhd,rchset,nbrhd(nhdsze+1:))
-        do 600 il=1,nlist
-          node=list(il)
-          mark=marker(node)
-          if(mark.gt.1.or.mark.lt.0) goto 600
-          call qmdrch(node,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
-          deg1=deg0
-          if(rchsze.le.0) goto 400
-          do 300 irch=1,rchsze
-            inode=rchset(irch)
-            deg1=deg1+qsize(inode)
-            marker(inode)=0
-            300    continue
-            400    deg(node)=deg1-1
-            if(nhdsze.le.0) goto 600
-            do 500 inhd=1,nhdsze
-              inode=nbrhd(inhd)
-              marker(inode)=0
-              500    continue
-              600 continue
-              return
-  end subroutine qmdupd
+    if(nhdsze.gt.0) call qmdmrg(xadj,adjncy,deg,qsize,qlink,marker,deg0,nhdsze,nbrhd,rchset,nbrhd(nhdsze+1:))
+    do 600 il=1,nlist
+      node=list(il)
+      mark=marker(node)
+      if(mark.gt.1.or.mark.lt.0) goto 600
+      call qmdrch(node,xadj,adjncy,deg,marker,rchsze,rchset,nhdsze,nbrhd)
+      deg1=deg0
+      if(rchsze.le.0) goto 400
+      do 300 irch=1,rchsze
+        inode=rchset(irch)
+        deg1=deg1+qsize(inode)
+        marker(inode)=0
+300   continue
+400   deg(node)=deg1-1
+      if(nhdsze.le.0) goto 600
+      do 500 inhd=1,nhdsze
+        inode=nbrhd(inhd)
+        marker(inode)=0
+500   continue
+600 continue
+    return
+  endsubroutine qmdupd
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -3229,28 +3212,28 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       irch=irch+1
       adjncy(j)=rchset(irch)
       if(irch.ge.rchsze) goto 400
-      200 continue
-      300 link=adjncy(jstop+1)
-      node=-link
-      if(link.lt.0) goto 100
-      inhd=inhd+1
-      node=nbrhd(inhd)
-      adjncy(jstop+1)=-node
-      goto 100
-      400 adjncy(j+1)=0
-      do 600 irch=1,rchsze
-        node=rchset(irch)
-        if(marker(node).lt.0) goto 600
-        jstrt=xadj(node)
-        jstop=xadj(node+1)-1
-        do 500 j=jstrt,jstop
-          nabor=adjncy(j)
-          if(marker(nabor).ge.0) goto 500
-          adjncy(j)=root
-          goto 600
-          500    continue
-          600 continue
-          return
+200 continue
+300 link=adjncy(jstop+1)
+    node=-link
+    if(link.lt.0) goto 100
+    inhd=inhd+1
+    node=nbrhd(inhd)
+    adjncy(jstop+1)=-node
+    goto 100
+400 adjncy(j+1)=0
+    do 600 irch=1,rchsze
+      node=rchset(irch)
+      if(marker(node).lt.0) goto 600
+      jstrt=xadj(node)
+      jstop=xadj(node+1)-1
+      do 500 j=jstrt,jstop
+        nabor=adjncy(j)
+        if(marker(nabor).ge.0) goto 500
+        adjncy(j)=root
+        goto 600
+500   continue
+600 continue
+    return
   end subroutine qmdot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3270,66 +3253,76 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do 100 inhd=1,nhdsze
       root=nbrhd(inhd)
       marker(root)=0
-      100 continue
-      do 1400 inhd=1,nhdsze
-        root=nbrhd(inhd)
-        marker(root)=-1
-        rchsze=0
-        novrlp=0
-        deg1=0
-        200    jstrt=xadj(root)
-        jstop=xadj(root+1)-1
-        do 600 j=jstrt,jstop
-          nabor=adjncy(j)
-          root=-nabor
-          if(nabor) 200,700,300
-          300       mark=marker(nabor)
-          if(mark)600,400,500
-          400       rchsze=rchsze+1
-          rchset(rchsze)=nabor
-          deg1=deg1+qsize(nabor)
-          marker(nabor)=1
+100 continue
+    do 1400 inhd=1,nhdsze
+      root=nbrhd(inhd)
+      marker(root)=-1
+      rchsze=0
+      novrlp=0
+      deg1=0
+200   jstrt=xadj(root)
+      jstop=xadj(root+1)-1
+      do 600 j=jstrt,jstop
+        nabor=adjncy(j)
+        root=-nabor
+        !if(nabor) 200,700,300
+        if(nabor<0) then
+          goto 200
+        elseif(nabor==0) then
+          goto 700
+        endif
+300     mark=marker(nabor)
+        !if(mark)600,400,500
+        if(mark<0) then
           goto 600
-          500       if(mark.gt.1) goto 600
-          novrlp=novrlp+1
-          ovrlp(novrlp)=nabor
-          marker(nabor)=2
-          600    continue
-          700    head=0
-          mrgsze=0
-          do 1100 iov=1,novrlp
-            node=ovrlp(iov)
-            jstrt=xadj(node)
-            jstop=xadj(node+1)-1
-            do 800 j=jstrt,jstop
-              nabor=adjncy(j)
-              if(marker(nabor).ne.0) goto 800
-              marker(node)=1
-              goto 1100
-              800       continue
-              mrgsze=mrgsze+qsize(node)
-              marker(node)=-1
-              lnode=node
-              900       link=qlink(lnode)
-              if(link.le.0) goto 1000
-              lnode=link
-              goto 900
-              1000       qlink(lnode)=head
-              head=node
-              1100    continue
-              if(head.le.0) goto 1200
-              qsize(head)=mrgsze
-              deg(head)=deg0+deg1-1
-              marker(head)=2
-              1200    root=nbrhd(inhd)
-              marker(root)=0
-              if(rchsze.le.0) goto 1400
-              do 1300 irch=1,rchsze
-                node=rchset(irch)
-                marker(node)=0
-                1300    continue
-                1400 continue
-                return
+        elseif(mark>0) then
+          goto 500
+        endif
+400     rchsze=rchsze+1
+        rchset(rchsze)=nabor
+        deg1=deg1+qsize(nabor)
+        marker(nabor)=1
+        goto 600
+500     if(mark.gt.1) goto 600
+        novrlp=novrlp+1
+        ovrlp(novrlp)=nabor
+        marker(nabor)=2
+600   continue
+700   head=0
+      mrgsze=0
+      do 1100 iov=1,novrlp
+        node=ovrlp(iov)
+        jstrt=xadj(node)
+        jstop=xadj(node+1)-1
+        do 800 j=jstrt,jstop
+          nabor=adjncy(j)
+          if(marker(nabor).ne.0) goto 800
+          marker(node)=1
+          goto 1100
+800     continue
+        mrgsze=mrgsze+qsize(node)
+        marker(node)=-1
+        lnode=node
+900     link=qlink(lnode)
+        if(link.le.0) goto 1000
+        lnode=link
+        goto 900
+1000    qlink(lnode)=head
+        head=node
+1100  continue
+      if(head.le.0) goto 1200
+      qsize(head)=mrgsze
+      deg(head)=deg0+deg1-1
+      marker(head)=2
+1200  root=nbrhd(inhd)
+      marker(root)=0
+      if(rchsze.le.0) goto 1400
+      do 1300 irch=1,rchsze
+        node=rchset(irch)
+        marker(node)=0
+1300  continue
+1400 continue
+    return
   end subroutine qmdmrg
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3466,10 +3459,10 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         itemp=iw(l)
         iw(l)=iw(m)
         iw(m)=itemp
-        110    continue
-        100 continue
-        200 continue
-        return
+110   continue
+100 continue
+200 continue
+    return
   end subroutine qqsort
 
 
@@ -3550,7 +3543,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     else
       call addrx(isw,i,j,aij,dsi%invp,dsi%xlnzr,dsi%colno,dsi%diag,dsi%zln,dsi%dsln,nstop,ndeg,ndeg2,ndeg2l,ir)
     endif
-    1000 continue
+1000 continue
     return
   end subroutine staij1
 
@@ -3582,7 +3575,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     isem = 0
 
-    2 continue
+2   continue
     ks=xlnzr(ic)
     ke=xlnzr(ic+1)
     t=0.0d0
@@ -3598,31 +3591,31 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(indx(j).eq.ic) then
           s=s+temp(j)*zln(jj)
         endif
-        310       continue
-        !           j1=xlnzr(jc)
-        !           jj=xlnzr(jc+1)-j1
-        !           ss=ddoti(jj,zln(j1),colno(j1),temp)
-        !           zz=zln(k)-ddoti(jj,zln(j1),colno(j1),temp)
-        zz=zln(k)-s
-        zln(k)=zz*diag(jc)
-        temp(jc)=zz
-        t=t+zz*zln(k)
-        200    continue
-        piv=diag(ic)-t
-        if(dabs(piv).gt.rmin) then
-          diag(ic)=1.0d0/piv
-        endif
-        1 continue
-        if(isem.eq.1) then
-          isem=0
-          nch(ic)=-1
-          kk=par(ic)
-          nch(kk)=nch(kk)-1
-          isem=1
-        else
-          goto 1
-        endif
-        return
+310   continue
+      !           j1=xlnzr(jc)
+      !           jj=xlnzr(jc+1)-j1
+      !           ss=ddoti(jj,zln(j1),colno(j1),temp)
+      !           zz=zln(k)-ddoti(jj,zln(j1),colno(j1),temp)
+      zz=zln(k)-s
+      zln(k)=zz*diag(jc)
+      temp(jc)=zz
+      t=t+zz*zln(k)
+200 continue
+    piv=diag(ic)-t
+    if(dabs(piv).gt.rmin) then
+      diag(ic)=1.0d0/piv
+    endif
+1   continue
+    if(isem.eq.1) then
+      isem=0
+      nch(ic)=-1
+      kk=par(ic)
+      nch(kk)=nch(kk)-1
+      isem=1
+    else
+      goto 1
+    endif
+    return
   end subroutine sum
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3663,17 +3656,17 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(indx(j).eq.ic) then
           s=s+temp(j)*zln(jj)
         endif
-        310       continue
-        zz=zln(k)-s
-        !           j1=xlnzr(jc)
-        !           jj=xlnzr(jc+1)-j1
-        !           zz=zln(k)-ddoti(jj,zln(j1),colno(j1),temp)
-        zln(k)=zz
-        temp(jc)=zz
-        !           t=t+zz*zz*diag(jc)
-        200    continue
-        !        diag(ic)=diag(ic)-t
-        return
+310   continue
+      zz=zln(k)-s
+      !           j1=xlnzr(jc)
+      !           jj=xlnzr(jc+1)-j1
+      !           zz=zln(k)-ddoti(jj,zln(j1),colno(j1),temp)
+      zln(k)=zz
+      temp(jc)=zz
+      !           t=t+zz*zz*diag(jc)
+200 continue
+    !        diag(ic)=diag(ic)-t
+    return
   end subroutine sum1
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3735,38 +3728,38 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do 100 ic=nstop,neqns
       do 105 i=1,nstop
         temp(i)=0.0d0
-        105    continue
-        ks=xlnzr(ic)
-        ke=xlnzr(ic+1)-1
-        do 110 k=ks,ke
-          jj=colno(k)
-          temp(jj)=zln(k)
-          zln(k)=temp(jj)*diag(jj)
-          indx(jj)=ic
-          diag(ic)=diag(ic)-temp(jj)*zln(k)
-          110    continue
-          do 120 jc=nstop,ic-1
-            s=0.0d0
-            loc=loc+1
-            do 220 jj=xlnzr(jc),xlnzr(jc+1)-1
-              j=colno(jj)
-              if(indx(j).eq.ic) then
-                if (ftflag) then
-                  ispdsln=ispdsln+1
-                  ftflag=.false.
-                end if
-                s=s+temp(j)*zln(jj)
-              endif
-              220       continue
-              spdslnidx(ispdsln)=loc
-              spdslnval(1,ispdsln)=spdslnval(1,ispdsln)-s
-              ftflag = .true.
-              !           j1=xlnzr(jc)
-              !           jj=xlnzr(jc+1)-j1
-              !           dsln(loc)=dsln(loc)-ddoti(jj,zln(j1),colno(j1),temp)
-              120    continue
-              100 continue
-              return
+105   continue
+      ks=xlnzr(ic)
+      ke=xlnzr(ic+1)-1
+      do 110 k=ks,ke
+        jj=colno(k)
+        temp(jj)=zln(k)
+        zln(k)=temp(jj)*diag(jj)
+        indx(jj)=ic
+        diag(ic)=diag(ic)-temp(jj)*zln(k)
+110   continue
+      do 120 jc=nstop,ic-1
+        s=0.0d0
+        loc=loc+1
+        do 220 jj=xlnzr(jc),xlnzr(jc+1)-1
+          j=colno(jj)
+          if(indx(j).eq.ic) then
+            if (ftflag) then
+              ispdsln=ispdsln+1
+              ftflag=.false.
+            end if
+            s=s+temp(j)*zln(jj)
+          endif
+220     continue
+        spdslnidx(ispdsln)=loc
+        spdslnval(1,ispdsln)=spdslnval(1,ispdsln)-s
+        ftflag = .true.
+        !           j1=xlnzr(jc)
+        !           jj=xlnzr(jc+1)-j1
+        !           dsln(loc)=dsln(loc)-ddoti(jj,zln(j1),colno(j1),temp)
+120   continue
+100 continue
+    return
   end subroutine sum2_child
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3795,14 +3788,14 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do 110 j=1,i-1
         dsln(loc)=dsln(loc)-dot_product(dsln(indx(i):indx(i)+j-2),dsln(indx(j):indx(j)+j-2))
         loc=loc+1
-        110    continue
-        temp(1:i-1)=dsln(indx(i):indx(i)+i-2)*diag(1:i-1)
-        diag(i)=diag(i)-dot_product(temp(1:i-1),dsln(indx(i):indx(i)+i-2))
-        dsln(indx(i):indx(i)+i-2)=temp(1:i-1)
-        diag(i)=1.0d0/diag(i)
-        100 continue
-        1000 continue
-        return
+110   continue
+      temp(1:i-1)=dsln(indx(i):indx(i)+i-2)*diag(1:i-1)
+      diag(i)=diag(i)-dot_product(temp(1:i-1),dsln(indx(i):indx(i)+i-2))
+      dsln(indx(i):indx(i)+i-2)=temp(1:i-1)
+      diag(i)=1.0d0/diag(i)
+100 continue
+1000  continue
+    return
   end subroutine sum3
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3831,8 +3824,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do 100 jj=ks,ke
       j=colno(jj)
       s=s+zln(jj)*b(j)
-      100 continue
-      spdot2=s
+100 continue
+    spdot2=s
   end function spdot2
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3850,9 +3843,9 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     s=0.0d0
     do 100 i=1,n
       s=s+a(i)*b(i)
-      100 continue
-      ddot=s
-      return
+100 continue
+    ddot=s
+    return
   end function ddot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3912,14 +3905,14 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(itrans.eq.0) then
           do 3 l=1,ndeg2
             dsln(l,k)=aij(l)
-            3           continue
-            goto 1000
-          else
-            dsln(1,k)=aij(1)
-            dsln(2,k)=aij(3)
-            dsln(3,k)=aij(2)
-            dsln(4,k)=aij(4)
-            goto 1000
+3         continue
+          goto 1000
+        else
+          dsln(1,k)=aij(1)
+          dsln(2,k)=aij(3)
+          dsln(3,k)=aij(2)
+          dsln(4,k)=aij(4)
+          goto 1000
         endif
       endif
     endif
@@ -3934,12 +3927,12 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if(itrans.eq.0) then
               do 4 l=1,ndeg2
                 zln(l,k)=aij(l)
-                4                continue
-              else
-                zln(1,k)=aij(1)
-                zln(2,k)=aij(3)
-                zln(3,k)=aij(2)
-                zln(4,k)=aij(4)
+4             continue
+            else
+              zln(1,k)=aij(1)
+              zln(2,k)=aij(3)
+              zln(3,k)=aij(2)
+              zln(4,k)=aij(4)
             endif
           endif
         else
@@ -3949,21 +3942,21 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if(itrans.eq.0) then
               do 5 l=1,ndeg2
                 zln(l,k)=zln(l,k)+aij(l)
-                5                continue
-              else
-                zln(1,k)=zln(1,k)+aij(1)
-                zln(2,k)=zln(2,k)+aij(3)
-                zln(3,k)=zln(3,k)+aij(2)
-                zln(4,k)=zln(4,k)+aij(4)
+5             continue
+            else
+              zln(1,k)=zln(1,k)+aij(1)
+              zln(2,k)=zln(2,k)+aij(3)
+              zln(3,k)=zln(3,k)+aij(2)
+              zln(4,k)=zln(4,k)+aij(4)
             endif
           endif
         endif
         goto 1000
       endif
-      100 continue
-      ir=20
-      1000 continue
-      return
+100 continue
+    ir=20
+1000 continue
+    return
   end subroutine addr0
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -3996,53 +3989,53 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !$dir max_trips(6)
     do 100 l=1,6
       t(l)=0.0d0
-      100    continue
-      do 200 k=ks,ke-1
-        jc=colno(k)
-        indx(jc)=ic
-        !$dir max_trips(9)
-        do 210 l=1,9
-          zz(l)=zln(l,k)
-          210       continue
-          do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
-            j=colno(jj)
-            if(indx(j).eq.ic) then
-              zz(1)=zz(1)-temp(1,j)*zln(1,jj)-temp(4,j)*zln(4,jj)-temp(7,j)*zln(7,jj)
-              zz(2)=zz(2)-temp(2,j)*zln(1,jj)-temp(5,j)*zln(4,jj)-temp(8,j)*zln(7,jj)
-              zz(3)=zz(3)-temp(3,j)*zln(1,jj)-temp(6,j)*zln(4,jj)-temp(9,j)*zln(7,jj)
-              zz(4)=zz(4)-temp(1,j)*zln(2,jj)-temp(4,j)*zln(5,jj)-temp(7,j)*zln(8,jj)
-              zz(5)=zz(5)-temp(2,j)*zln(2,jj)-temp(5,j)*zln(5,jj)-temp(8,j)*zln(8,jj)
-              zz(6)=zz(6)-temp(3,j)*zln(2,jj)-temp(6,j)*zln(5,jj)-temp(9,j)*zln(8,jj)
-              zz(7)=zz(7)-temp(1,j)*zln(3,jj)-temp(4,j)*zln(6,jj)-temp(7,j)*zln(9,jj)
-              zz(8)=zz(8)-temp(2,j)*zln(3,jj)-temp(5,j)*zln(6,jj)-temp(8,j)*zln(9,jj)
-              zz(9)=zz(9)-temp(3,j)*zln(3,jj)-temp(6,j)*zln(6,jj)-temp(9,j)*zln(9,jj)
-            endif
-            310       continue
+100 continue
+    do 200 k=ks,ke-1
+      jc=colno(k)
+      indx(jc)=ic
+      !$dir max_trips(9)
+      do 210 l=1,9
+        zz(l)=zln(l,k)
+210   continue
+      do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
+        j=colno(jj)
+        if(indx(j).eq.ic) then
+          zz(1)=zz(1)-temp(1,j)*zln(1,jj)-temp(4,j)*zln(4,jj)-temp(7,j)*zln(7,jj)
+          zz(2)=zz(2)-temp(2,j)*zln(1,jj)-temp(5,j)*zln(4,jj)-temp(8,j)*zln(7,jj)
+          zz(3)=zz(3)-temp(3,j)*zln(1,jj)-temp(6,j)*zln(4,jj)-temp(9,j)*zln(7,jj)
+          zz(4)=zz(4)-temp(1,j)*zln(2,jj)-temp(4,j)*zln(5,jj)-temp(7,j)*zln(8,jj)
+          zz(5)=zz(5)-temp(2,j)*zln(2,jj)-temp(5,j)*zln(5,jj)-temp(8,j)*zln(8,jj)
+          zz(6)=zz(6)-temp(3,j)*zln(2,jj)-temp(6,j)*zln(5,jj)-temp(9,j)*zln(8,jj)
+          zz(7)=zz(7)-temp(1,j)*zln(3,jj)-temp(4,j)*zln(6,jj)-temp(7,j)*zln(9,jj)
+          zz(8)=zz(8)-temp(2,j)*zln(3,jj)-temp(5,j)*zln(6,jj)-temp(8,j)*zln(9,jj)
+          zz(9)=zz(9)-temp(3,j)*zln(3,jj)-temp(6,j)*zln(6,jj)-temp(9,j)*zln(9,jj)
+        endif
+310   continue
 
-            call inv33(zln(:,k),zz,diag(:,jc))
+      call inv33(zln(:,k),zz,diag(:,jc))
 
-            !$dir max_trips(9)
-            do 220 l=1,9
-              temp(l,jc)=zz(l)
-              220       continue
-              t(1)=t(1)+zz(1)*zln(1,k)+zz(4)*zln(4,k)+zz(7)*zln(7,k)
-              t(2)=t(2)+zz(1)*zln(2,k)+zz(4)*zln(5,k)+zz(7)*zln(8,k)
-              t(3)=t(3)+zz(2)*zln(2,k)+zz(5)*zln(5,k)+zz(8)*zln(8,k)
-              t(4)=t(4)+zz(1)*zln(3,k)+zz(4)*zln(6,k)+zz(7)*zln(9,k)
-              t(5)=t(5)+zz(2)*zln(3,k)+zz(5)*zln(6,k)+zz(8)*zln(9,k)
-              t(6)=t(6)+zz(3)*zln(3,k)+zz(6)*zln(6,k)+zz(9)*zln(9,k)
-              200    continue
-              !$dir max_trips(6)
-              do 320 l=1,6
-                diag(l,ic)=diag(l,ic)-t(l)
-                320    continue
+      !$dir max_trips(9)
+      do 220 l=1,9
+        temp(l,jc)=zz(l)
+220   continue
+      t(1)=t(1)+zz(1)*zln(1,k)+zz(4)*zln(4,k)+zz(7)*zln(7,k)
+      t(2)=t(2)+zz(1)*zln(2,k)+zz(4)*zln(5,k)+zz(7)*zln(8,k)
+      t(3)=t(3)+zz(2)*zln(2,k)+zz(5)*zln(5,k)+zz(8)*zln(8,k)
+      t(4)=t(4)+zz(1)*zln(3,k)+zz(4)*zln(6,k)+zz(7)*zln(9,k)
+      t(5)=t(5)+zz(2)*zln(3,k)+zz(5)*zln(6,k)+zz(8)*zln(9,k)
+      t(6)=t(6)+zz(3)*zln(3,k)+zz(6)*zln(6,k)+zz(9)*zln(9,k)
+200 continue
+    !$dir max_trips(6)
+    do 320 l=1,6
+      diag(l,ic)=diag(l,ic)-t(l)
+320 continue
 
-                call inv3(diag(:,ic),ir)
-                nch(ic)=-1
-                kk=par(ic)
-                nch(kk)=nch(kk)-1
+    call inv3(diag(:,ic),ir)
+    nch(ic)=-1
+    kk=par(ic)
+    nch(kk)=nch(kk)-1
 
-                return
+    return
   end subroutine s3um
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4071,33 +4064,33 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !$dir max_trip(9)
     do 100 l=1,9
       s(l)=0.0d0
-      100    continue
-      do 200 k=ks,ke-1
-        jc=colno(k)
-        indx(jc)=ic
+100 continue
+    do 200 k=ks,ke-1
+      jc=colno(k)
+      indx(jc)=ic
 
-        do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          if(indx(j).eq.ic) then
-            s(1)=s(1)+temp(1,j)*zln(1,jj)+temp(4,j)*zln(4,jj)+temp(7,j)*zln(7,jj)
-            s(2)=s(2)+temp(2,j)*zln(1,jj)+temp(5,j)*zln(4,jj)+temp(8,j)*zln(7,jj)
-            s(3)=s(3)+temp(3,j)*zln(1,jj)+temp(6,j)*zln(4,jj)+temp(9,j)*zln(7,jj)
-            s(4)=s(4)+temp(1,j)*zln(2,jj)+temp(4,j)*zln(5,jj)+temp(7,j)*zln(8,jj)
-            s(5)=s(5)+temp(2,j)*zln(2,jj)+temp(5,j)*zln(5,jj)+temp(8,j)*zln(8,jj)
-            s(6)=s(6)+temp(3,j)*zln(2,jj)+temp(6,j)*zln(5,jj)+temp(9,j)*zln(8,jj)
-            s(7)=s(7)+temp(1,j)*zln(3,jj)+temp(4,j)*zln(6,jj)+temp(7,j)*zln(9,jj)
-            s(8)=s(8)+temp(2,j)*zln(3,jj)+temp(5,j)*zln(6,jj)+temp(8,j)*zln(9,jj)
-            s(9)=s(9)+temp(3,j)*zln(3,jj)+temp(6,j)*zln(6,jj)+temp(9,j)*zln(9,jj)
-          endif
-          310       continue
-          !$dir max_trip(9)
-          do 320 l=1,9
-            temp(l,jc)=zln(l,k)-s(l)
-            zln(l,k)=temp(l,jc)
-            s(l)=0.0d0
-            320       continue
+      do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
+        j=colno(jj)
+        if(indx(j).eq.ic) then
+          s(1)=s(1)+temp(1,j)*zln(1,jj)+temp(4,j)*zln(4,jj)+temp(7,j)*zln(7,jj)
+          s(2)=s(2)+temp(2,j)*zln(1,jj)+temp(5,j)*zln(4,jj)+temp(8,j)*zln(7,jj)
+          s(3)=s(3)+temp(3,j)*zln(1,jj)+temp(6,j)*zln(4,jj)+temp(9,j)*zln(7,jj)
+          s(4)=s(4)+temp(1,j)*zln(2,jj)+temp(4,j)*zln(5,jj)+temp(7,j)*zln(8,jj)
+          s(5)=s(5)+temp(2,j)*zln(2,jj)+temp(5,j)*zln(5,jj)+temp(8,j)*zln(8,jj)
+          s(6)=s(6)+temp(3,j)*zln(2,jj)+temp(6,j)*zln(5,jj)+temp(9,j)*zln(8,jj)
+          s(7)=s(7)+temp(1,j)*zln(3,jj)+temp(4,j)*zln(6,jj)+temp(7,j)*zln(9,jj)
+          s(8)=s(8)+temp(2,j)*zln(3,jj)+temp(5,j)*zln(6,jj)+temp(8,j)*zln(9,jj)
+          s(9)=s(9)+temp(3,j)*zln(3,jj)+temp(6,j)*zln(6,jj)+temp(9,j)*zln(9,jj)
+        endif
+310   continue
+      !$dir max_trip(9)
+      do 320 l=1,9
+        temp(l,jc)=zln(l,k)-s(l)
+        zln(l,k)=temp(l,jc)
+        s(l)=0.0d0
+320   continue
 
-            200    continue
+200 continue
 
     deallocate(temp,indx)
   end subroutine s3um1
@@ -4136,19 +4129,19 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         ! 111       continue
         dsln(:,loc)=dsln(:,loc)-t(:)
         loc=loc+1
-        110    continue
-        call v3prod(dsln(:,indx(i):indx(i)+i-2), diag,temp,i-1)
-        call d3dotl(t,temp,dsln(:,indx(i):indx(i)+i-2),i-1)
-        !$dir max_trips(6)
-        !        do 112 l=1,6
-        !           diag(l,i)=diag(l,i)-t(l)
-        ! 112    continue
-        diag(:,i)=diag(:,i)-t(1:6)
-        dsln(:,indx(i):indx(i)+i-2)=temp(:,1:i-1)
-        call inv3(diag(:,i),ir)
-        100 continue
-        1000 continue
-        return
+110   continue
+      call v3prod(dsln(:,indx(i):indx(i)+i-2), diag,temp,i-1)
+      call d3dotl(t,temp,dsln(:,indx(i):indx(i)+i-2),i-1)
+      !$dir max_trips(6)
+      !        do 112 l=1,6
+      !           diag(l,i)=diag(l,i)-t(l)
+      ! 112    continue
+      diag(:,i)=diag(:,i)-t(1:6)
+      dsln(:,indx(i):indx(i)+i-2)=temp(:,1:i-1)
+      call inv3(diag(:,i),ir)
+100 continue
+1000  continue
+    return
   end subroutine s3um3
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4176,8 +4169,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       wi(1)=wi(1)-a(1,jj)*b(1,jj)-a(2,jj)*b(4,jj)-a(3,jj)*b(7,jj)
       wi(2)=wi(2)-a(1,jj)*b(2,jj)-a(2,jj)*b(5,jj)-a(3,jj)*b(8,jj)
       wi(3)=wi(3)-a(1,jj)*b(3,jj)-a(2,jj)*b(6,jj)-a(3,jj)*b(9,jj)
-      100 continue
-      return
+100 continue
+    return
   end subroutine d3sdot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4207,8 +4200,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       bi(1)=bi(1)-zln(1,jj)*b(1,j)-zln(4,jj)*b(2,j)-zln(7,jj)*b(3,j)
       bi(2)=bi(2)-zln(2,jj)*b(1,j)-zln(5,jj)*b(2,j)-zln(8,jj)*b(3,j)
       bi(3)=bi(3)-zln(3,jj)*b(1,j)-zln(6,jj)*b(2,j)-zln(9,jj)*b(3,j)
-      100 continue
-      return
+100 continue
+    return
   end subroutine s3pdot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4279,7 +4272,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     dsln(6)=1.0d0/dsln(6)
     !      write(6,*) "dsln",dsln(1),dsln(3),dsln(6)
     return
-    999 continue
+999 continue
     write(ilog,*) "singular"
     dsln(1)=1.0d0
     dsln(2)=0.0d0
@@ -4317,19 +4310,19 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !$dir max_trips(9)
     do 10 l=1,9
       t(l)=0.0d0
-      10 continue
-      do 100 jj=1,n
-        t(1)=t(1)+a(1,jj)*b(1,jj)+a(4,jj)*b(4,jj)+a(7,jj)*b(7,jj)
-        t(2)=t(2)+a(2,jj)*b(1,jj)+a(5,jj)*b(4,jj)+a(8,jj)*b(7,jj)
-        t(3)=t(3)+a(3,jj)*b(1,jj)+a(6,jj)*b(4,jj)+a(9,jj)*b(7,jj)
-        t(4)=t(4)+a(1,jj)*b(2,jj)+a(4,jj)*b(5,jj)+a(7,jj)*b(8,jj)
-        t(5)=t(5)+a(2,jj)*b(2,jj)+a(5,jj)*b(5,jj)+a(8,jj)*b(8,jj)
-        t(6)=t(6)+a(3,jj)*b(2,jj)+a(6,jj)*b(5,jj)+a(9,jj)*b(8,jj)
-        t(7)=t(7)+a(1,jj)*b(3,jj)+a(4,jj)*b(6,jj)+a(7,jj)*b(9,jj)
-        t(8)=t(8)+a(2,jj)*b(3,jj)+a(5,jj)*b(6,jj)+a(8,jj)*b(9,jj)
-        t(9)=t(9)+a(3,jj)*b(3,jj)+a(6,jj)*b(6,jj)+a(9,jj)*b(9,jj)
-        100 continue
-        return
+10  continue
+    do 100 jj=1,n
+      t(1)=t(1)+a(1,jj)*b(1,jj)+a(4,jj)*b(4,jj)+a(7,jj)*b(7,jj)
+      t(2)=t(2)+a(2,jj)*b(1,jj)+a(5,jj)*b(4,jj)+a(8,jj)*b(7,jj)
+      t(3)=t(3)+a(3,jj)*b(1,jj)+a(6,jj)*b(4,jj)+a(9,jj)*b(7,jj)
+      t(4)=t(4)+a(1,jj)*b(2,jj)+a(4,jj)*b(5,jj)+a(7,jj)*b(8,jj)
+      t(5)=t(5)+a(2,jj)*b(2,jj)+a(5,jj)*b(5,jj)+a(8,jj)*b(8,jj)
+      t(6)=t(6)+a(3,jj)*b(2,jj)+a(6,jj)*b(5,jj)+a(9,jj)*b(8,jj)
+      t(7)=t(7)+a(1,jj)*b(3,jj)+a(4,jj)*b(6,jj)+a(7,jj)*b(9,jj)
+      t(8)=t(8)+a(2,jj)*b(3,jj)+a(5,jj)*b(6,jj)+a(8,jj)*b(9,jj)
+      t(9)=t(9)+a(3,jj)*b(3,jj)+a(6,jj)*b(6,jj)+a(9,jj)*b(9,jj)
+100 continue
+    return
   end subroutine d3dot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4368,8 +4361,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       zz(9,i)=zz(9,i)*diag(6,i)
       zz(6,i)=zz(6,i)-zz(9,i)*diag(5,i)
       zz(3,i)=zz(3,i)-zz(6,i)*diag(2,i)-zz(9,i)*diag(4,i)
-      100 continue
-      return
+100 continue
+    return
   end subroutine v3prod
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -4395,16 +4388,16 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !$dir max_trips(6)
     do 10 l=1,6
       t(l)=0.0d0
-      10 continue
-      do 100 jj=1,n
-        t(1)=t(1)+a(1,jj)*b(1,jj)+a(4,jj)*b(4,jj)+a(7,jj)*b(7,jj)
-        t(2)=t(2)+a(2,jj)*b(1,jj)+a(5,jj)*b(4,jj)+a(8,jj)*b(7,jj)
-        t(3)=t(3)+a(2,jj)*b(2,jj)+a(5,jj)*b(5,jj)+a(8,jj)*b(8,jj)
-        t(4)=t(4)+a(3,jj)*b(1,jj)+a(6,jj)*b(4,jj)+a(9,jj)*b(7,jj)
-        t(5)=t(5)+a(3,jj)*b(2,jj)+a(6,jj)*b(5,jj)+a(9,jj)*b(8,jj)
-        t(6)=t(6)+a(3,jj)*b(3,jj)+a(6,jj)*b(6,jj)+a(9,jj)*b(9,jj)
-        100 continue
-        return
+10  continue
+    do 100 jj=1,n
+      t(1)=t(1)+a(1,jj)*b(1,jj)+a(4,jj)*b(4,jj)+a(7,jj)*b(7,jj)
+      t(2)=t(2)+a(2,jj)*b(1,jj)+a(5,jj)*b(4,jj)+a(8,jj)*b(7,jj)
+      t(3)=t(3)+a(2,jj)*b(2,jj)+a(5,jj)*b(5,jj)+a(8,jj)*b(8,jj)
+      t(4)=t(4)+a(3,jj)*b(1,jj)+a(6,jj)*b(4,jj)+a(9,jj)*b(7,jj)
+      t(5)=t(5)+a(3,jj)*b(2,jj)+a(6,jj)*b(5,jj)+a(9,jj)*b(8,jj)
+      t(6)=t(6)+a(3,jj)*b(3,jj)+a(6,jj)*b(6,jj)+a(9,jj)*b(9,jj)
+100 continue
+    return
   end subroutine d3dotl
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4454,19 +4447,19 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(itrans.eq.0) then
         do 110 l=1,ndeg2
           dsln(l,k)=aij(l)
-          110       continue
-          goto 1000
-        else
-          dsln(1,k)=aij(1)
-          dsln(2,k)=aij(4)
-          dsln(3,k)=aij(7)
-          dsln(4,k)=aij(2)
-          dsln(5,k)=aij(5)
-          dsln(6,k)=aij(8)
-          dsln(7,k)=aij(3)
-          dsln(8,k)=aij(6)
-          dsln(9,k)=aij(9)
-          goto 1000
+110     continue
+        goto 1000
+      else
+        dsln(1,k)=aij(1)
+        dsln(2,k)=aij(4)
+        dsln(3,k)=aij(7)
+        dsln(4,k)=aij(2)
+        dsln(5,k)=aij(5)
+        dsln(6,k)=aij(8)
+        dsln(7,k)=aij(3)
+        dsln(8,k)=aij(6)
+        dsln(9,k)=aij(9)
+        goto 1000
       endif
     endif
 
@@ -4478,24 +4471,24 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if(itrans.eq.0) then
           do 120 l=1,ndeg2
             zln(l,k)=aij(l)
-            120          continue
-          else
-            zln(1,k)=aij(1)
-            zln(2,k)=aij(4)
-            zln(3,k)=aij(7)
-            zln(4,k)=aij(2)
-            zln(5,k)=aij(5)
-            zln(6,k)=aij(8)
-            zln(7,k)=aij(3)
-            zln(8,k)=aij(6)
-            zln(9,k)=aij(9)
+120       continue
+        else
+          zln(1,k)=aij(1)
+          zln(2,k)=aij(4)
+          zln(3,k)=aij(7)
+          zln(4,k)=aij(2)
+          zln(5,k)=aij(5)
+          zln(6,k)=aij(8)
+          zln(7,k)=aij(3)
+          zln(8,k)=aij(6)
+          zln(9,k)=aij(9)
         endif
         goto 1000
       endif
-      100 continue
-      ir=20
-      1000 continue
-      return
+100 continue
+    ir=20
+1000 continue
+    return
   end subroutine addr3
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4530,32 +4523,32 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do 210 l=1,4
         s(l)=0.0d0
         zz(l)=zln(l,k)
-        210       continue
-        do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          if(indx(j).eq.ic) then
-            zz(1)=zz(1)-temp(1,j)*zln(1,jj)-temp(3,j)*zln(3,jj)
-            zz(2)=zz(2)-temp(2,j)*zln(1,jj)-temp(4,j)*zln(3,jj)
-            zz(3)=zz(3)-temp(1,j)*zln(2,jj)-temp(3,j)*zln(4,jj)
-            zz(4)=zz(4)-temp(2,j)*zln(2,jj)-temp(4,j)*zln(4,jj)
-          endif
-          310       continue
-          call inv22(zln(:,k),zz,diag(:,jc))
-          do 220 l=1,4
-            temp(l,jc)=zz(l)
-            220       continue
-            t(1)=t(1)+zz(1)*zln(1,k)+zz(3)*zln(3,k)
-            t(2)=t(2)+zz(2)*zln(1,k)+zz(4)*zln(3,k)
-            t(3)=t(3)+zz(2)*zln(2,k)+zz(4)*zln(4,k)
-            200    continue
-            diag(1,ic)=diag(1,ic)-t(1)
-            diag(2,ic)=diag(2,ic)-t(2)
-            diag(3,ic)=diag(3,ic)-t(3)
-            call inv2(diag(:,ic),ir)
-            nch(ic)=-1
-            kk=par(ic)
-            nch(kk)=nch(kk)-1
-            return
+210   continue
+      do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
+        j=colno(jj)
+        if(indx(j).eq.ic) then
+          zz(1)=zz(1)-temp(1,j)*zln(1,jj)-temp(3,j)*zln(3,jj)
+          zz(2)=zz(2)-temp(2,j)*zln(1,jj)-temp(4,j)*zln(3,jj)
+          zz(3)=zz(3)-temp(1,j)*zln(2,jj)-temp(3,j)*zln(4,jj)
+          zz(4)=zz(4)-temp(2,j)*zln(2,jj)-temp(4,j)*zln(4,jj)
+        endif
+310   continue
+      call inv22(zln(:,k),zz,diag(:,jc))
+      do 220 l=1,4
+        temp(l,jc)=zz(l)
+220   continue
+      t(1)=t(1)+zz(1)*zln(1,k)+zz(3)*zln(3,k)
+      t(2)=t(2)+zz(2)*zln(1,k)+zz(4)*zln(3,k)
+      t(3)=t(3)+zz(2)*zln(2,k)+zz(4)*zln(4,k)
+200 continue
+    diag(1,ic)=diag(1,ic)-t(1)
+    diag(2,ic)=diag(2,ic)-t(2)
+    diag(3,ic)=diag(3,ic)-t(3)
+    call inv2(diag(:,ic),ir)
+    nch(ic)=-1
+    kk=par(ic)
+    nch(kk)=nch(kk)-1
+    return
   end subroutine s2um
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4583,26 +4576,26 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ke=xlnzr(ic+1)
     do 100 l=1,4
       s(l)=0.0d0
-      100    continue
-      do 200 k=ks,ke-1
-        jc=colno(k)
-        indx(jc)=ic
-        do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
-          j=colno(jj)
-          if(indx(j).eq.ic) then
-            s(1)=s(1)+temp(1,j)*zln(1,jj)+temp(3,j)*zln(3,jj)
-            s(2)=s(2)+temp(2,j)*zln(1,jj)+temp(4,j)*zln(3,jj)
-            s(3)=s(3)+temp(1,j)*zln(2,jj)+temp(3,j)*zln(4,jj)
-            s(4)=s(4)+temp(2,j)*zln(2,jj)+temp(4,j)*zln(4,jj)
-          endif
-          310       continue
-          do 320 l=1,4
-            temp(l,jc)=zln(l,k)-s(l)
-            zln(l,k)=temp(l,jc)
-            s(l)=0.0d0
-            320       continue
-            200    continue
-            return
+100 continue
+    do 200 k=ks,ke-1
+      jc=colno(k)
+      indx(jc)=ic
+      do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
+        j=colno(jj)
+        if(indx(j).eq.ic) then
+          s(1)=s(1)+temp(1,j)*zln(1,jj)+temp(3,j)*zln(3,jj)
+          s(2)=s(2)+temp(2,j)*zln(1,jj)+temp(4,j)*zln(3,jj)
+          s(3)=s(3)+temp(1,j)*zln(2,jj)+temp(3,j)*zln(4,jj)
+          s(4)=s(4)+temp(2,j)*zln(2,jj)+temp(4,j)*zln(4,jj)
+        endif
+310   continue
+      do 320 l=1,4
+        temp(l,jc)=zln(l,k)-s(l)
+        zln(l,k)=temp(l,jc)
+        s(l)=0.0d0
+320   continue
+200 continue
+    return
   end subroutine s2um1
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4681,27 +4674,27 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         diag(2,ic)=diag(2,ic)-(temp(1,jj)*zln(2,k)+temp(3,jj)*zln(4,k))
         diag(3,ic)=diag(3,ic)-(temp(2,jj)*zln(2,k)+temp(4,jj)*zln(4,k))
         indx(jj)=ic
-        110    continue
-        do 120 jc=nstop,ic-1
-          loc=loc+1
-          do 220 jj=xlnzr(jc),xlnzr(jc+1)-1
-            j=colno(jj)
-            if(indx(j).eq.ic) then
-              if (ftflag) then
-                ispdsln=ispdsln+1
-                ftflag=.false.
-              end if
-              spdslnidx(ispdsln)=loc
-              spdslnval(1,ispdsln)=spdslnval(1,ispdsln)-(temp(1,j)*zln(1,jj)+temp(3,j)*zln(3,jj))
-              spdslnval(2,ispdsln)=spdslnval(2,ispdsln)-(temp(2,j)*zln(1,jj)+temp(4,j)*zln(3,jj))
-              spdslnval(3,ispdsln)=spdslnval(3,ispdsln)-(temp(1,j)*zln(2,jj)+temp(3,j)*zln(4,jj))
-              spdslnval(4,ispdsln)=spdslnval(4,ispdsln)-(temp(2,j)*zln(2,jj)+temp(4,j)*zln(4,jj))
-            endif
-            220       continue
-            ftflag = .true.
-            120    continue
-            100 continue
-            return
+110   continue
+      do 120 jc=nstop,ic-1
+        loc=loc+1
+        do 220 jj=xlnzr(jc),xlnzr(jc+1)-1
+          j=colno(jj)
+          if(indx(j).eq.ic) then
+            if (ftflag) then
+              ispdsln=ispdsln+1
+              ftflag=.false.
+            end if
+            spdslnidx(ispdsln)=loc
+            spdslnval(1,ispdsln)=spdslnval(1,ispdsln)-(temp(1,j)*zln(1,jj)+temp(3,j)*zln(3,jj))
+            spdslnval(2,ispdsln)=spdslnval(2,ispdsln)-(temp(2,j)*zln(1,jj)+temp(4,j)*zln(3,jj))
+            spdslnval(3,ispdsln)=spdslnval(3,ispdsln)-(temp(1,j)*zln(2,jj)+temp(3,j)*zln(4,jj))
+            spdslnval(4,ispdsln)=spdslnval(4,ispdsln)-(temp(2,j)*zln(2,jj)+temp(4,j)*zln(4,jj))
+          endif
+220     continue
+        ftflag = .true.
+120   continue
+100 continue
+    return
   end subroutine s2um2_child
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4778,8 +4771,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do 100 jj=1,n
       wi(1)=wi(1)-a(1,jj)*b(1,jj)-a(2,jj)*b(3,jj)
       wi(2)=wi(2)-a(1,jj)*b(2,jj)-a(2,jj)*b(4,jj)
-      100 continue
-      return
+100 continue
+    return
   end subroutine d2sdot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4808,8 +4801,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       j=colno(jj)
       bi(1)=bi(1)-zln(1,jj)*b(1,j)-zln(3,jj)*b(2,j)
       bi(2)=bi(2)-zln(2,jj)*b(1,j)-zln(4,jj)*b(2,j)
-      100 continue
-      return
+100 continue
+    return
   end subroutine s2pdot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4836,9 +4829,9 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         do 110 m=1,n
           l=l+1
           diag(l,ii)=aij(n,m)
-          110       continue
-          100    continue
-          goto 1000
+110     continue
+100   continue
+      goto 1000
     endif
     itrans=0
     if(jj.gt.ii) then
@@ -4855,16 +4848,16 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         do 120 m=1,ndeg
           do 130 n=1,ndeg
             dsln(n,m,k)=aij(n,m)
-            130          continue
-            120       continue
-            goto 1000
-          else
-            do 140 m=1,ndeg
-              do 150 n=1,ndeg
-                dsln(n,m,k)=aij(m,n)
-                150          continue
-                140       continue
-                goto 1000
+130       continue
+120     continue
+        goto 1000
+      else
+        do 140 m=1,ndeg
+          do 150 n=1,ndeg
+            dsln(n,m,k)=aij(m,n)
+150       continue
+140     continue
+        goto 1000
       endif
     endif
     ks=xlnzr(ii)
@@ -4875,21 +4868,21 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           do 160 m=1,ndeg
             do 170 n=1,ndeg
               zln(n,m,k)=aij(n,m)
-              170             continue
-              160          continue
-            else
-              do 180 m=1,ndeg
-                do 190 n=1,ndeg
-                  zln(n,m,k)=aij(m,n)
-                  190             continue
-                  180          continue
+170         continue
+160       continue
+        else
+          do 180 m=1,ndeg
+            do 190 n=1,ndeg
+              zln(n,m,k)=aij(m,n)
+190         continue
+180       continue
         endif
         goto 1000
       endif
-      200 continue
-      ir=20
-      1000 continue
-      return
+200 continue
+    ir=20
+1000 continue
+    return
   end subroutine addrx
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4913,15 +4906,17 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     !----------------------------------------------------------------------
     !
-    do 221 n=1,ndeg
-      do 221 m=1,ndeg
+    do n=1,ndeg
+      do m=1,ndeg
         t(n,m)=0.0d0
-        do 221 k=1,ndeg
-          do 100 jj=1,l
+        do k=1,ndeg
+          do jj=1,l
             t(n,m)=t(n,m)+a(n,k,jj)*b(m,k,jj)
-            100    continue
-            221    continue
-            return
+          enddo
+        enddo
+      enddo
+    enddo
+    return
   end subroutine dxdot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -4945,15 +4940,17 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     !----------------------------------------------------------------------
     !
-    do 221 n=1,ndeg
-      do 221 m=1,n
+    do n=1,ndeg
+      do m=1,n
         t(n,m)=0.0d0
-        do 221 k=1,ndeg
-          do 100 jj=1,l
+        do k=1,ndeg
+          do jj=1,l
             t(n,m)=t(n,m)+a(n,k,jj)*b(m,k,jj)
-            100    continue
-            221    continue
-            return
+          enddo
+        enddo
+      enddo
+    enddo
+    return
   end subroutine dxdotl
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5012,24 +5009,24 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         do 120 k=1,j-1
           ld=ld+1
           dsln(l)=dsln(l)-dsln(l0+k)*dsln(ld)
-          120       continue
-          ld=ld+1
-          110    continue
-          t=0.0d0
-          k0=0
-          ll=0
-          do 130 k=l-i+2,l
-            ll=ll+1
-            k0=k0+ll
-            tem=dsln(k)*dsln(k0)
-            t=t+tem*dsln(k)
-            dsln(k)=tem
-            130    continue
-            l=l+1
-            dsln(l)=dsln(l)-t
-            dsln(l)=1.0d0/dsln(l)
-            100 continue
-            return
+120     continue
+        ld=ld+1
+110   continue
+      t=0.0d0
+      k0=0
+      ll=0
+      do 130 k=l-i+2,l
+        ll=ll+1
+        k0=k0+ll
+        tem=dsln(k)*dsln(k0)
+        t=t+tem*dsln(k)
+        dsln(k)=tem
+130   continue
+      l=l+1
+      dsln(l)=dsln(l)-t
+      dsln(l)=1.0d0/dsln(l)
+100 continue
+    return
   end subroutine invx
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5045,28 +5042,30 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint) :: i,j,k,l,m,n,loc,loc1
 
     zln=zz
-    do 100 l=1,ndeg
+    do l=1,ndeg
       loc=0
-      do 120 m=1,ndeg
+      do m=1,ndeg
         loc=loc+m
         loc1=loc+m
-        do 120 n=m+1,ndeg
+        do n=m+1,ndeg
           zln(l,n)=zln(l,n)-zln(l,m)*diag(loc1)
           loc1=loc1+n
-          120    continue
-          loc=0
-          do 130 m=1,ndeg
-            loc=loc+m
-            zln(l,m)=zln(l,m)*diag(loc)
-            130    continue
-            do 140 n=ndeg,1,-1
-              loc=loc-1
-              do 140 m=n-1,1,-1
-                zln(l,m)=zln(l,m)-zln(l,n)*diag(loc)
-                loc=loc-1
-                140    continue
-                100 continue
-                return
+        enddo
+      enddo
+      loc=0
+      do m=1,ndeg
+        loc=loc+m
+        zln(l,m)=zln(l,m)*diag(loc)
+      enddo
+      do n=ndeg,1,-1
+        loc=loc-1
+        do m=n-1,1,-1
+          zln(l,m)=zln(l,m)-zln(l,n)*diag(loc)
+          loc=loc-1
+        enddo
+      enddo
+    enddo
+    return
   end subroutine invxx
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5091,13 +5090,15 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     !----------------------------------------------------------------------
     !
-    do 100 jj=ks,ke
+    do jj=ks,ke
       j=colno(jj)
-      do 100 m=1,ndeg
-        do 100 n=1,ndeg
+      do m=1,ndeg
+        do n=1,ndeg
           bi(n)=bi(n)-zln(n,m,jj)*b(m,j)
-          100 continue
-          return
+        enddo
+      enddo
+    enddo
+    return
   end subroutine sxpdot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5126,37 +5127,40 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ke=xlnzr(ic+1)
     t=0.0
 
-    do 200 k=ks,ke-1
+    do k=ks,ke-1
       jc=colno(k)
       indx(jc)=ic
       zz=zln(:,:,k)
-      do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
+      do jj=xlnzr(jc),xlnzr(jc+1)-1
         j=colno(jj)
         if(indx(j).eq.ic) then
-          do 311 m=1,ndeg
-            do 311 n=1,ndeg
-              do 311 kk=1,ndeg
+          do m=1,ndeg
+            do n=1,ndeg
+              do kk=1,ndeg
                 zz(n,m)=zz(n,m)-temp(n,kk,j)*zln(m,kk,jj)
-
-                311             continue
+              enddo
+            enddo
+          enddo
         endif
-        310       continue
-        call invxx(zln(1,1,k),zz,diag(1,jc),ndeg)
-        temp(:,:,jc)=zz
-        loc=0
-        do 221 n=1,ndeg
-          do 221 m=1,n
-            loc=loc+1
-            do 221 kk=1,ndeg
-              t(loc)=t(loc)+zz(n,kk)*zln(m,kk,k)
-              221       continue
-              200    continue
-              diag(:,ic)=diag(:,ic)-t
-              call invx(diag(1,ic),ndeg,ir)
-              nch(ic)=-1
-              kk=par(ic)
-              nch(kk)=nch(kk)-1
-              return
+      enddo
+      call invxx(zln(1,1,k),zz,diag(1,jc),ndeg)
+      temp(:,:,jc)=zz
+      loc=0
+      do n=1,ndeg
+        do m=1,n
+          loc=loc+1
+          do kk=1,ndeg
+            t(loc)=t(loc)+zz(n,kk)*zln(m,kk,k)
+          enddo
+        enddo
+      enddo
+    enddo
+    diag(:,ic)=diag(:,ic)-t
+    call invx(diag(1,ic),ndeg,ir)
+    nch(ic)=-1
+    kk=par(ic)
+    nch(kk)=nch(kk)-1
+    return
   end subroutine sxum
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5181,31 +5185,35 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     end if
     ks=xlnzr(ic)
     ke=xlnzr(ic+1)
-    do 100 m=1,ndeg
-      do 100 n=1,ndeg
+    do m=1,ndeg
+      do n=1,ndeg
         s(n,m)=0.0d0
-        100    continue
-        do 200 k=ks,ke-1
-          jc=colno(k)
-          indx(jc)=ic
-          do 310 jj=xlnzr(jc),xlnzr(jc+1)-1
-            j=colno(jj)
-            if(indx(j).eq.ic) then
-              do 311 m=1,ndeg
-                do 311 n=1,ndeg
-                  do 311 kk=1,ndeg
-                    s(n,m)=s(n,m)+temp(n,kk,j)*zln(m,kk,jj)
-                    311             continue
-            endif
-            310       continue
-            do 320 m=1,ndeg
-              do 320 n=1,ndeg
-                temp(n,m,jc)=zln(n,m,k)-s(n,m)
-                zln(n,m,k)=temp(n,m,jc)
-                s(n,m)=0.0d0
-                320       continue
-                200    continue
-                return
+      enddo
+    enddo
+    do k=ks,ke-1
+      jc=colno(k)
+      indx(jc)=ic
+      do jj=xlnzr(jc),xlnzr(jc+1)-1
+        j=colno(jj)
+        if(indx(j).eq.ic) then
+          do m=1,ndeg
+            do n=1,ndeg
+              do kk=1,ndeg
+                s(n,m)=s(n,m)+temp(n,kk,j)*zln(m,kk,jj)
+              enddo
+            enddo
+          enddo
+        endif
+      enddo
+      do m=1,ndeg
+        do n=1,ndeg
+          temp(n,m,jc)=zln(n,m,k)-s(n,m)
+          zln(n,m,k)=temp(n,m,jc)
+          s(n,m)=0.0d0
+        enddo
+      enddo
+    enddo
+    return
   end subroutine sxum1
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5262,53 +5270,60 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ispdsln=0
     spdslnval=0
     ftflag = .true.
-    do 100 ic=nstop,neqns
+    do ic=nstop,neqns
       ks=xlnzr(ic)
       ke=xlnzr(ic+1)-1
-      do 110 k=ks,ke
+      do k=ks,ke
         jj=colno(k)
-        do 110 m=1,ndeg
-          do 110 n=1,ndeg
+        do m=1,ndeg
+          do n=1,ndeg
             temp(n,m,jj)=zln(n,m,k)
             indx(jj)=ic
-            110    continue
-            do 111 k=ks,ke
-              jj=colno(k)
-              call invxx(zln(1,1,k),temp(1,1,jj),diag(1,jj),ndeg)
-              111    continue
-              !
-              locd=0
-              do 112 n=1,ndeg
-                do 112 m=1,n
-                  locd=locd+1
-                  do 112 k=ks,ke
-                    jj=colno(k)
-                    do 112 kk=1,ndeg
-                      diag(locd,ic)=diag(locd,ic)-temp(n,kk,jj)*zln(m,kk,k)
-                      112       continue
-                      do 120 jc=nstop,ic-1
-                        loc=loc+1
-                        j1=xlnzr(jc)
-                        j2=xlnzr(jc+1)
-                        do 220 jj=xlnzr(jc),xlnzr(jc+1)-1
-                          j=colno(jj)
-                          if(indx(j).eq.ic) then
-                            if (ftflag) then
-                              ispdsln=ispdsln+1
-                              ftflag=.false.
-                            end if
-                            spdslnidx(ispdsln)=loc
-                            do 221 m=1,ndeg
-                              do 221 n=1,ndeg
-                                do 221 k=1,ndeg
-                                  spdslnval(ndeg*(m-1)+n,ispdsln)=spdslnval(ndeg*(m-1)+n,ispdsln)-temp(n,k,j)*zln(m,k,jj)
-                                  221             continue
-                          endif
-                          220       continue
-                          ftflag = .true.
-                          120    continue
-                          100 continue
-                          return
+          enddo
+        enddo
+      enddo
+      do k=ks,ke
+        jj=colno(k)
+        call invxx(zln(1,1,k),temp(1,1,jj),diag(1,jj),ndeg)
+      enddo
+      !
+      locd=0
+      do n=1,ndeg
+        do m=1,n
+          locd=locd+1
+          do k=ks,ke
+            jj=colno(k)
+            do kk=1,ndeg
+              diag(locd,ic)=diag(locd,ic)-temp(n,kk,jj)*zln(m,kk,k)
+            enddo
+          enddo
+        enddo
+      enddo
+      do jc=nstop,ic-1
+        loc=loc+1
+        j1=xlnzr(jc)
+        j2=xlnzr(jc+1)
+        do jj=xlnzr(jc),xlnzr(jc+1)-1
+          j=colno(jj)
+          if(indx(j).eq.ic) then
+            if (ftflag) then
+              ispdsln=ispdsln+1
+              ftflag=.false.
+            end if
+            spdslnidx(ispdsln)=loc
+            do m=1,ndeg
+              do n=1,ndeg
+                do k=1,ndeg
+                  spdslnval(ndeg*(m-1)+n,ispdsln)=spdslnval(ndeg*(m-1)+n,ispdsln)-temp(n,k,j)*zln(m,k,jj)
+                enddo
+              enddo
+            enddo
+          endif
+        enddo
+        ftflag = .true.
+      enddo
+    enddo
+    return
   end subroutine sxum2_child
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5334,29 +5349,31 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     indx(1)=1 ! it will work...
     loc=1
     call invx(diag(1,1),ndeg,ir)
-    do 100 i=2,neqns
+    do i=2,neqns
       indx(i)=loc
-      do 110 j=1,i-1
+      do j=1,i-1
         call dxdot(ndeg,t,dsln(1,1,indx(i)),dsln(1,1,indx(j)),j-1)
-        do 111 m=1,ndeg
-          do 111 n=1,ndeg
+        do m=1,ndeg
+          do n=1,ndeg
             dsln(n,m,loc)=dsln(n,m,loc)-t(n,m)
-            111       continue
-            loc=loc+1
-            110    continue
-            call vxprod(ndeg,ndegl,dsln(1,1,indx(i)),diag,temp,i-1)
-            call dxdotl(ndeg,t,temp,dsln(1,1,indx(i)),i-1)
-            locd=0
-            do 221 n=1,ndeg
-              do 221 m=1,n
-                locd=locd+1
-                diag(locd,i)=diag(locd,i)-t(n,m)
-                221    continue
-                call vcopy(temp,dsln(1,1,indx(i)),ndeg*ndeg*(i-1))
-                call invx(diag(1,i),ndeg,ir)
-                100 continue
-                1000 continue
-                return
+          enddo
+        enddo
+        loc=loc+1
+      enddo
+      call vxprod(ndeg,ndegl,dsln(1,1,indx(i)),diag,temp,i-1)
+      call dxdotl(ndeg,t,temp,dsln(1,1,indx(i)),i-1)
+      locd=0
+      do n=1,ndeg
+        do m=1,n
+          locd=locd+1
+          diag(locd,i)=diag(locd,i)-t(n,m)
+        enddo
+      enddo
+      call vcopy(temp,dsln(1,1,indx(i)),ndeg*ndeg*(i-1))
+      call invx(diag(1,i),ndeg,ir)
+    enddo
+1000  continue
+    return
   end subroutine sxum3
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5393,34 +5410,36 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !----------------------------------------------------------------------
     !
     rel=0.0d0
-    do 10 i=1,neqns
-      do 10 l=1,ndeg
+    do i=1,neqns
+      do l=1,ndeg
         rel=rel+dabs(rhs(l,i))
-        10 continue
-        do 100 k=1,nttbr
-          i=irow(k)
-          j=jcol(k)
-          do 101 l=1,ndeg
-            do 102 m=1,ndeg
-              rhs(l,i)=rhs(l,i)-val(l,m,k)*x(m,j)
-              if(i.ne.j) rhs(l,j)=rhs(l,j)-val(m,l,k)*x(m,i)
-              102    continue
-              101    continue
-              100 continue
-              err=0.0d0
-              do 200 i=1,neqns
-                do 200 l=1,ndeg
-                  err=err+dabs(rhs(l,i))
-                  200 continue
-                  if (m_pds_procinfo%myid .eq. 0) then
-                    write(imsg,6000) err,rel,err/rel
-                  end if
-                  6000 format(' ***verification***(symmetric)'/&
-                    &       'norm(Ax-b)            =  ',1pd20.10/&
-                    &       'norm(b)               =  ',1pd20.10/&
-                    &       'norm(Ax-b)/norm(b)    =  ',1pd20.10)
-                  6010 format(1p4d15.7)
-                  return
+      enddo
+    enddo
+    do k=1,nttbr
+      i=irow(k)
+      j=jcol(k)
+      do l=1,ndeg
+        do m=1,ndeg
+          rhs(l,i)=rhs(l,i)-val(l,m,k)*x(m,j)
+          if(i.ne.j) rhs(l,j)=rhs(l,j)-val(m,l,k)*x(m,i)
+        enddo
+      enddo
+    enddo
+    err=0.0d0
+    do i=1,neqns
+      do l=1,ndeg
+        err=err+dabs(rhs(l,i))
+      enddo
+    enddo
+    if (m_pds_procinfo%myid .eq. 0) then
+      write(imsg,6000) err,rel,err/rel
+    end if
+6000 format(' ***verification***(symmetric)'/&
+      &       'norm(Ax-b)            =  ',1pd20.10/&
+      &       'norm(b)               =  ',1pd20.10/&
+      &       'norm(Ax-b)/norm(b)    =  ',1pd20.10)
+6010 format(1p4d15.7)
+    return
   end subroutine verif0
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5437,8 +5456,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do 100 i=1,n
       call invxx(zz(1,i),zln(1,i),diag(1,i),ndeg)
-      100 continue
-      return
+100 continue
+    return
   end subroutine vxprod
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

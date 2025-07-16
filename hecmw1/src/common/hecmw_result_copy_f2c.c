@@ -290,23 +290,6 @@ void hecmw_result_copy_f2c_set_if(char *struct_name, char *var_name, void *src,
   *err = 0;
 }
 
-void hecmw_result_copy_f2c_set_if_(char *struct_name, char *var_name, void *src,
-                                   int *err, int slen, int vlen) {
-  hecmw_result_copy_f2c_set_if(struct_name, var_name, src, err, slen, vlen);
-}
-
-extern void hecmw_result_copy_f2c_set_if__(char *struct_name, char *var_name,
-                                           void *src, int *err, int slen,
-                                           int vlen) {
-  hecmw_result_copy_f2c_set_if(struct_name, var_name, src, err, slen, vlen);
-}
-
-extern void HECMW_RESULT_COPY_F2C_SET_IF(char *struct_name, char *var_name,
-                                         void *src, int *err, int slen,
-                                         int vlen) {
-  hecmw_result_copy_f2c_set_if(struct_name, var_name, src, err, slen, vlen);
-}
-
 /*----------------------------------------------------------------------------*/
 
 void hecmw_result_write_st_init_if(int *err) {
@@ -322,36 +305,12 @@ void hecmw_result_write_st_init_if(int *err) {
   *err  = 0;
 }
 
-void hecmw_result_write_st_init_if_(int *err) {
-  hecmw_result_write_st_init_if(err);
-}
-
-void hecmw_result_write_st_init_if__(int *err) {
-  hecmw_result_write_st_init_if(err);
-}
-
-void HECMW_RESULT_WRITE_ST_INIT_IF(int *err) {
-  hecmw_result_write_st_init_if(err);
-}
-
 /*----------------------------------------------------------------------------*/
 
 void hecmw_result_write_st_finalize_if(int *err) {
   HECMW_result_free(Result);
 
   *err = 0;
-}
-
-void hecmw_result_write_st_finalize_if_(int *err) {
-  hecmw_result_write_st_finalize_if(err);
-}
-
-void hecmw_result_write_st_finalize_if__(int *err) {
-  hecmw_result_write_st_finalize_if(err);
-}
-
-void HECMW_RESULT_WRITE_ST_FINALIZE_IF(int *err) {
-  hecmw_result_write_st_finalize_if(err);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -373,16 +332,4 @@ void hecmw_result_write_st_by_name_if(char *name_ID, int *err, int len) {
     return;
 
   *err = 0;
-}
-
-void hecmw_result_write_st_by_name_if_(char *name_ID, int *err, int len) {
-  hecmw_result_write_st_by_name_if(name_ID, err, len);
-}
-
-void hecmw_result_write_st_by_name_if__(char *name_ID, int *err, int len) {
-  hecmw_result_write_st_by_name_if(name_ID, err, len);
-}
-
-void HECMW_RESULT_WRITE_ST_BY_NAME_IF(char *name_ID, int *err, int len) {
-  hecmw_result_write_st_by_name_if(name_ID, err, len);
 }

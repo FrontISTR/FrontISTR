@@ -5,7 +5,6 @@
 
 list(APPEND fistr_SOURCES 
   ${CMAKE_CURRENT_LIST_DIR}/hecmw2fstr_connect_conv.c
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_util.c
   ${CMAKE_CURRENT_LIST_DIR}/fstr_sort_index.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw2fstr_mesh_conv.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_setup_util.f90

@@ -2396,27 +2396,6 @@ void hecmw_dist_copy_c2f_isalloc_if(char *struct_name, char *var_name,
   *err = 0; /* no error */
 }
 
-void hecmw_dist_copy_c2f_isalloc_if_(char *struct_name, char *var_name,
-                                     int *is_allocated, int *err,
-                                     int len_struct, int len_var) {
-  hecmw_dist_copy_c2f_isalloc_if(struct_name, var_name, is_allocated, err,
-                                 len_struct, len_var);
-}
-
-void hecmw_dist_copy_c2f_isalloc_if__(char *struct_name, char *var_name,
-                                      int *is_allocated, int *err,
-                                      int len_struct, int len_var) {
-  hecmw_dist_copy_c2f_isalloc_if(struct_name, var_name, is_allocated, err,
-                                 len_struct, len_var);
-}
-
-void HECMW_DIST_COPY_C2F_ISALLOC_IF(char *struct_name, char *var_name,
-                                    int *is_allocated, int *err, int len_struct,
-                                    int len_var) {
-  hecmw_dist_copy_c2f_isalloc_if(struct_name, var_name, is_allocated, err,
-                                 len_struct, len_var);
-}
-
 /*----------------------------------------------------------------------------*/
 
 void hecmw_dist_copy_c2f_set_if(char *struct_name, char *var_name, void *dst,
@@ -2465,22 +2444,4 @@ void hecmw_dist_copy_c2f_set_if(char *struct_name, char *var_name, void *dst,
   }
 
   *err = 0; /* no error */
-}
-
-void hecmw_dist_copy_c2f_set_if_(char *struct_name, char *var_name, void *dst,
-                                 int *err, int len_struct, int len_var) {
-  hecmw_dist_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct,
-                             len_var);
-}
-
-void hecmw_dist_copy_c2f_set_if__(char *struct_name, char *var_name, void *dst,
-                                  int *err, int len_struct, int len_var) {
-  hecmw_dist_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct,
-                             len_var);
-}
-
-void HECMW_DIST_COPY_C2F_SET_IF(char *struct_name, char *var_name, void *dst,
-                                int *err, int len_struct, int len_var) {
-  hecmw_dist_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct,
-                             len_var);
 }

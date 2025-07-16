@@ -14,11 +14,28 @@ module hecmw_dist_copy_f2c_f
   implicit none
 
   private
-  character(len=100) :: sname,vname
-
   public :: hecmw_dist_copy_f2c
 
+  interface
+    subroutine hecmw_dist_copy_f2c_set_if_c(sname, vname, src, ierr, len_s, len_v) &
+        bind(c,name='hecmw_dist_copy_f2c_set_if')
+      use iso_c_binding
+      type(c_ptr),value :: sname, vname
+      type(c_ptr),value :: src
+      integer(c_int) :: ierr
+      integer(c_int),value :: len_s, len_v
+    end subroutine hecmw_dist_copy_f2c_set_if_c
+  end interface
+
 contains
+
+  subroutine hecmw_dist_copy_f2c_set_if(sname, vname, src, ierr)
+    use iso_c_binding
+    character(len=*),target :: sname,vname
+    type(*),dimension(..),target :: src
+    integer(c_int) :: ierr
+    call hecmw_dist_copy_f2c_set_if_c(c_loc(sname), c_loc(vname), c_loc(src), ierr, len(sname), len(vname))
+  end subroutine hecmw_dist_copy_f2c_set_if
 
   subroutine hecmw_dist_copy_f2c(mesh, ierr)
     integer(kind=kint) :: ierr
@@ -74,6 +91,7 @@ contains
   subroutine put_flags(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -106,6 +124,7 @@ contains
   subroutine put_etc(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -136,6 +155,7 @@ contains
   subroutine put_node(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
     vname = 'n_node'
@@ -231,6 +251,7 @@ contains
   subroutine put_elem(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -349,6 +370,7 @@ contains
   subroutine put_comm(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
 
     sname = 'hecmwST_local_mesh'
@@ -426,6 +448,7 @@ contains
   subroutine put_adapt(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     if(mesh%hecmw_flag_adapt == 0) return;
 
@@ -482,6 +505,7 @@ contains
   subroutine put_refine(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -532,6 +556,7 @@ contains
   subroutine put_sect(sect, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_section) :: sect
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_section'
 
@@ -585,6 +610,7 @@ contains
     integer(kind=kint) :: ierr
     type(hecmwST_material),target :: mat
     character(len=HECMW_NAME_LEN),pointer :: name_p
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_material'
 
@@ -644,6 +670,7 @@ contains
   subroutine put_mpc(mpc, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_mpc) :: mpc
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_mpc'
 
@@ -681,6 +708,7 @@ contains
     integer(kind=kint) :: ierr
     type(hecmwST_amplitude) :: amp
     character(len=HECMW_NAME_LEN),pointer :: name_p
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_amplitude'
 
@@ -727,6 +755,7 @@ contains
     integer(kind=kint) :: ierr
     type(hecmwST_node_grp) :: grp
     character(len=HECMW_NAME_LEN),pointer :: name_p
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_node_grp'
 
@@ -793,6 +822,7 @@ contains
     integer(kind=kint) :: ierr
     type(hecmwST_elem_grp) :: grp
     character(len=HECMW_NAME_LEN),pointer :: name_p
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_elem_grp'
 
@@ -853,6 +883,7 @@ contains
     integer(kind=kint) :: ierr
     type(hecmwST_surf_grp) :: grp
     character(len=HECMW_NAME_LEN),pointer :: name_p
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_surf_grp'
 
@@ -913,6 +944,7 @@ contains
     integer(kind=kint) :: ierr
     type(hecmwST_contact_pair) :: cpair
     character(len=HECMW_NAME_LEN),pointer :: name_p
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_contact_pair'
 

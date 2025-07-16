@@ -7,7 +7,7 @@
 module fstr_ctrl_dynamic
   use m_fstr
   use hecmw
-  include 'fstr_ctrl_util_f.inc'
+  use fstr_ctrl_util_f
   private :: fstr_ctrl_get_nval
 contains
 
@@ -20,8 +20,7 @@ contains
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: iType
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target :: node_id(:)
-    character(len=HECMW_NAME_LEN),pointer :: node_id_p
+    character(len=HECMW_NAME_LEN) :: node_id(:)
     integer(kind=kint) :: node_id_len
     integer(kind=kint),pointer :: dof_ids (:)
     integer(kind=kint),pointer :: dof_ide (:)
@@ -39,9 +38,8 @@ contains
     rcode=fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   ss,   0,   'P',   iType  )
 
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
-    node_id_p => node_id(1)
     fstr_ctrl_get_nval = &
-      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id_p, dof_ids, dof_ide, value )
+      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id, dof_ids, dof_ide, value )
 
   end function fstr_ctrl_get_nval
 

@@ -19,9 +19,8 @@ module m_fstr_setup
   use m_out
   use m_step
   use m_utilities
+  use fstr_ctrl_util_f
   implicit none
-
-  include 'fstr_ctrl_util_f.inc'
 
   !> Package of all data needs to initialize
   type fstr_param_pack
@@ -58,9 +57,6 @@ contains
 
     integer, parameter :: MAXOUTFILE = 10
     double precision, parameter :: dpi = 3.14159265358979323846D0
-
-    external fstr_ctrl_get_c_h_name
-    integer(kind=kint) :: fstr_ctrl_get_c_h_name
 
     integer(kind=kint) :: version, result, visual, femap, n_totlyr
     integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror, cparam_id
@@ -129,7 +125,7 @@ contains
     do
       rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
       if(     header_name == '!VERSION' ) then
-        rcode = fstr_ctrl_get_data_array_ex( ctrl, 'i ', version )
+        rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'i ', version )
       else if(     header_name == '!SOLUTION' ) then
         c_solution = c_solution + 1
         call fstr_setup_SOLUTION( ctrl, c_solution, P )
@@ -1962,7 +1958,7 @@ contains
     if( dtype==0 ) then
       data_fmt = "RRRRRRrrr "
       xyzc(:) = 0.d0
-      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, xyza(1), xyza(2),  &
+      if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, xyza(1), xyza(2),  &
         xyza(3), xyzb(1), xyzb(2), xyzb(3), xyzc(1), xyzc(2), xyzc(3) )/=0 ) return
       if( coordsys%sys_type==10 ) then
         ff1 = xyza-xyzc
@@ -1986,7 +1982,7 @@ contains
     else
       coordsys%node_ID(3) = 0   ! global origin
       data_fmt = "IIi "
-      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, coordsys%node_ID(1),  &
+      if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, coordsys%node_ID(1),  &
         coordsys%node_ID(2), coordsys%node_ID(3) )/=0 ) return
       if( coordsys%node_ID(3) == 0 ) then
         nid = node_global_to_local( hecMESH, coordsys%node_ID(1:2), 2 )
@@ -2463,9 +2459,116 @@ end function fstr_setup_INITIAL
   end subroutine fstr_setup_CLOAD
 
   !-----------------------------------------------------------------------------!
-  !> Read !FLOAD                                                        !
+  !> Read in !FLOAD                                                             !
   !-----------------------------------------------------------------------------!
-  include 'fstr_ctrl_freq.f90'
+  subroutine fstr_setup_FLOAD( ctrl, counter, P )
+  !---- args
+    integer(kind=kint)   :: ctrl
+    integer(kind=kint)   :: counter
+    type(fstr_param_pack) :: P
+  !---- vals
+    integer(kind=kint)                  :: rcode
+    character(HECMW_NAME_LEN)           :: amp
+    integer(kind=kint)                  :: amp_id
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal), pointer           :: val_ptr(:)
+    integer(kind=kint), pointer        :: id_ptr(:), type_ptr(:)
+    integer(kind=kint)                  :: i, n, old_size, new_size
+    integer(kind=kint)                  :: gid, loadcase
+  !---- body
+
+    if( P%SOLID%file_type /= kbcfFSTR) return
+
+    !read grpid
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid )
+    !read loadcase (real=1:default, img=2)
+    loadcase = kFLOADCASE_RE
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'LOAD CASE ', '# ', 0, 'I', loadcase)
+    !write(*,*) "loadcase=", loadcase
+    !pause
+
+    !read the num of dataline
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+    old_size = P%FREQ%FLOAD_ngrp_tot
+    new_size = old_size + n
+
+    !expand data array
+    P%FREQ%FLOAD_ngrp_tot = new_size
+    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_GRPID, old_size, new_size )
+    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_ID,    old_size, new_size )
+    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_TYPE,  old_size, new_size )
+    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_DOF,   old_size, new_size )
+    call fstr_expand_real_array   ( P%FREQ%FLOAD_ngrp_valre, old_size, new_size )
+    call fstr_expand_real_array   ( P%FREQ%FLOAD_ngrp_valim, old_size, new_size )
+
+    !fill bc data
+    allocate( grp_id_name(n) )
+    if(loadcase == kFLOADCASE_RE) then
+      val_ptr  => P%FREQ%FLOAD_ngrp_valre(old_size+1:)
+    else if(loadcase == kFLOADCASE_IM) then
+      val_ptr  => P%FREQ%FLOAD_ngrp_valim(old_size+1:)
+    else
+      !error
+      write(*,*)    "Error this load set is not defined!"
+      write(ilog,*) "Error this load set is not defined!"
+      stop
+    end if
+    id_ptr   => P%FREQ%FLOAD_ngrp_DOF(old_size+1:)
+    type_ptr => P%FREQ%FLOAD_ngrp_TYPE(old_size+1:)
+    val_ptr = 0.0D0
+    rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    P%FREQ%FLOAD_ngrp_GRPID(old_size+1:new_size) = gid
+    call nodesurf_grp_name_to_id_ex( P%MESH, '!FLOAD', n, grp_id_name, &
+         P%FREQ%FLOAD_ngrp_ID(old_size+1:), P%FREQ%FLOAD_ngrp_TYPE(old_size+1:))
+
+    deallocate( grp_id_name )
+    return
+
+    contains
+
+    function fstr_ctrl_get_FLOAD(ctrl, node_id, node_id_len, dof_id, value)
+      integer(kind=kint)                    :: ctrl
+      character(len=HECMW_NAME_LEN)        :: node_id(:)  !Node group name
+      integer(kind=kint), pointer          :: dof_id(:)
+      integer(kind=kint)                    :: node_id_len
+      real(kind=kreal), pointer             :: value(:)
+      integer(kind=kint)                    :: fstr_ctrl_get_FLOAD !return value
+      character(len=HECMW_NAME_LEN)        :: data_fmt, ss
+
+      write(ss,*) node_id_len
+      write(data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'IR '
+
+      fstr_ctrl_get_FLOAD = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, node_id, dof_id, value)
+    end function
+
+  end subroutine
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !EIGENREAD                                                         !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_eigenread( ctrl, counter, P )
+  !---- args
+    integer(kind=kint)    :: ctrl
+    integer(kind=kint)    :: counter
+    type(fstr_param_pack) :: P
+  !---- vals
+    integer(kind=kint)                :: filename_len
+    character(len=HECMW_NAME_LEN) :: datafmt, ss
+  !---- body
+
+    filename_len = HECMW_FILENAME_LEN
+    write(ss,*) filename_len
+    write(datafmt, '(a,a,a)') 'S', trim(adjustl(ss)), ' '
+
+    if( fstr_ctrl_get_data_ex( ctrl, 1, datafmt, P%FREQ%eigenlog_filename ) /= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 2, 'ii ', P%FREQ%start_mode, P%FREQ%end_mode ) /= 0) return
+
+    return
+
+  end subroutine
 
   !-----------------------------------------------------------------------------!
   !> Reset !DLOAD                                                        !

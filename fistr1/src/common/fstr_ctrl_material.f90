@@ -7,11 +7,10 @@ module fstr_ctrl_material
   use hecmw
   use mMaterial
   use m_table
+  use fstr_ctrl_util_f
   implicit none
 
   private :: read_user_matl
-
-  include 'fstr_ctrl_util_f.inc'
 
 contains
 
@@ -68,7 +67,7 @@ contains
 
     fstr_ctrl_get_ELASTICITY = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = TOTALLAG   !default value
@@ -174,7 +173,7 @@ contains
 
     fstr_ctrl_get_HYPERELASTIC = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = TOTALLAG   !default value
     if( fstr_ctrl_get_param_ex( ctrl, 'CAUCHY ',  '# ',    0,   'E',   ipt )/= 0) return
@@ -286,7 +285,7 @@ contains
 
     fstr_ctrl_get_VISCOELASTICITY = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
     !depends = 0
     nlgeom = TOTALLAG   !default value
@@ -381,7 +380,7 @@ contains
     ipt = 0; hipt = 0
 
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = UPDATELAG   !default value
@@ -562,7 +561,7 @@ contains
 
     fstr_ctrl_get_VISCOPLASTICITY = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
     nlgeom = UPDATELAG   !default value
     if( fstr_ctrl_get_param_ex( ctrl, 'KIRCHHOFF ',  '# ',    0,   'E',   ipt )/= 0) return
@@ -618,7 +617,7 @@ contains
     fstr_ctrl_get_DENSITY = -1
 
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
 
     allocate( fval(1,depends+1) )
@@ -657,7 +656,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',  ss, 0, 'P',   ipt    ) /= 0 ) return
 
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
 
     if( ipt==1 ) then
@@ -741,7 +740,7 @@ contains
 
     fstr_ctrl_get_FLUID = -1
     depends = 0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES  ', '# ',           0,   'I',   depends )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'DEPENDENCIES ', '# ',           0,   'I',   depends )
     if( depends>1 ) depends=1   ! temperature depends only currently
     if( depends > 3 ) stop "We cannot read dependencies>3 right now"
     nlgeom = TOTALLAG   !default value
