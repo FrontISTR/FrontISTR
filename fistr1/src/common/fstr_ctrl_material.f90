@@ -60,7 +60,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -168,7 +168,7 @@ contains
     real(kind=kreal),intent(out)      :: matval(:)
 
     integer(kind=kint) :: i,j, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256) :: s
 
@@ -279,7 +279,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     character(len=256) :: s
@@ -555,7 +555,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     character(len=256) :: s
@@ -610,7 +610,7 @@ contains
     real(kind=kreal),intent(out)   :: matval(:)
 
     integer(kind=kint) :: i, rcode, depends
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
 
     data_fmt = "R "
@@ -642,7 +642,7 @@ contains
     type(DICT_STRUCT), pointer     :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     type( tTable )           :: mttable
     character(len=HECMW_NAME_LEN) :: data_fmt, ss
 
@@ -733,7 +733,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -791,8 +791,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:)
-    integer(kind=kint),pointer :: ival(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
+    integer(kind=kint),pointer :: ival(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -842,7 +842,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -887,8 +887,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:)
-    integer(kind=kint),pointer :: ival(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
+    integer(kind=kint),pointer :: ival(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -938,7 +938,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:)
+    real(kind=kreal),pointer :: fval(:,:) => null()
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
