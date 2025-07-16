@@ -36,19 +36,19 @@ contains
     dyn_step = fstrDYNAMIC%i_step
     flag_u = 2
 
-    if(dabs(fstrDYNAMIC%ganma) .lt. 1.0e-20) then
+    if(dabs(fstrDYNAMIC%gamma) .lt. 1.0e-20) then
       if( hecMESH%my_rank == 0 ) then
-        write(imsg,*) 'stop due to fstrDYNAMIC%ganma = 0'
+        write(imsg,*) 'stop due to fstrDYNAMIC%gamma = 0'
       end if
       call hecmw_abort( hecmw_comm_get_comm())
     end if
 
     b2 = fstrDYNAMIC%t_delta   &
-      *(fstrDYNAMIC%ganma-fstrDYNAMIC%beta)/fstrDYNAMIC%ganma
+      *(fstrDYNAMIC%gamma-fstrDYNAMIC%beta)/fstrDYNAMIC%gamma
     b3 = fstrDYNAMIC%t_delta**2  &
-      *(fstrDYNAMIC%ganma-2.0*fstrDYNAMIC%beta)    &
-      /(2.0*fstrDYNAMIC%ganma)
-    b4 = fstrDYNAMIC%t_delta*fstrDYNAMIC%beta/fstrDYNAMIC%ganma
+      *(fstrDYNAMIC%gamma-2.0*fstrDYNAMIC%beta)    &
+      /(2.0*fstrDYNAMIC%gamma)
+    b4 = fstrDYNAMIC%t_delta*fstrDYNAMIC%beta/fstrDYNAMIC%gamma
     c1 = 2.0*fstrDYNAMIC%t_delta
 
     NDOF = hecMAT%NDOF
@@ -230,19 +230,19 @@ contains
     dyn_step = fstrDYNAMIC%i_step
     flag_u = 2
 
-    if(dabs(fstrDYNAMIC%ganma) .lt. 1.0e-20) then
+    if(dabs(fstrDYNAMIC%gamma) .lt. 1.0e-20) then
       if( hecMESH%my_rank == 0 ) then
-        write(imsg,*) 'stop due to fstrDYNAMIC%ganma = 0'
+        write(imsg,*) 'stop due to fstrDYNAMIC%gamma = 0'
       end if
       call hecmw_abort( hecmw_comm_get_comm())
     end if
 
     b2 = fstrDYNAMIC%t_delta   &
-      *(fstrDYNAMIC%ganma-fstrDYNAMIC%beta)/fstrDYNAMIC%ganma
+      *(fstrDYNAMIC%gamma-fstrDYNAMIC%beta)/fstrDYNAMIC%gamma
     b3 = fstrDYNAMIC%t_delta**2  &
-      *(fstrDYNAMIC%ganma-2.0*fstrDYNAMIC%beta)    &
-      /(2.0*fstrDYNAMIC%ganma)
-    b4 = fstrDYNAMIC%t_delta*fstrDYNAMIC%beta/fstrDYNAMIC%ganma
+      *(fstrDYNAMIC%gamma-2.0*fstrDYNAMIC%beta)    &
+      /(2.0*fstrDYNAMIC%gamma)
+    b4 = fstrDYNAMIC%t_delta*fstrDYNAMIC%beta/fstrDYNAMIC%gamma
     c1 = 2.0*fstrDYNAMIC%t_delta
 
     NDOF = hecMAT%NDOF
