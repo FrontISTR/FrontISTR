@@ -52,6 +52,7 @@ contains
     !**  Precheck for 3nodes SHELL
     !**
     use hecmw
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),thick,vol,almax,almin
@@ -71,16 +72,14 @@ contains
     real(kind=kreal) G3X,G3Y,G3Z
     real(kind=kreal) XSUM,COEFX,COEFY,COEFZ
     real(kind=kreal) area,a1,a2,a3,a4
-    real(kind=kreal), parameter :: XG(2) = (/-0.577350269189626D0, 0.577350269189626D0/)
-    real(kind=kreal), parameter :: WGT(2) = (/1.0D0, 1.0D0/)
     !
     area = 0.0
     vol  = 0.0
     ! INTEGRATION OVER SURFACE
     do IG2=1,NG
-      SI=XG(IG2)
+      SI=gauss1d2(1,IG2)
       do IG1=1,NG
-        RI=XG(IG1)
+        RI=gauss1d2(1,IG1)
         H(1)=0.25*(1.0-RI)*(1.0-SI)
         H(2)=0.25*(1.0+RI)*(1.0-SI)
         H(3)=0.25*(1.0+RI)*(1.0+SI)
@@ -131,7 +130,7 @@ contains
           -XJ13*XJ22*XJ31                                                 &
           -XJ12*XJ21*XJ33                                                 &
           -XJ11*XJ23*XJ32
-        WG=WGT(IG1)*WGT(IG2)*DET
+        WG=weight1d2(IG1)*weight1d2(IG2)*DET
         do i = 1, NN
           area = area + H(i)*WG
         enddo
