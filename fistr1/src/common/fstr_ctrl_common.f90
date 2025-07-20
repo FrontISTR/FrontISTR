@@ -464,7 +464,7 @@ contains
     use m_out
     integer(kind=kint), intent(in)        :: ctrl      !< readed data
     type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
-    type( output_info ), intent(out)      :: outinfo   !< output information
+    type( output_info ), intent(inout)    :: outinfo   !< output information
 
     integer(kind=kint) :: rcode, ipos
     integer(kind=kint) :: n, i, j
@@ -477,7 +477,6 @@ contains
 
     fstr_ctrl_get_outitem = .false.
 
-    outinfo%grp_id_name = "ALL"
     rcode = fstr_ctrl_get_param_ex( ctrl, 'GROUP ', '# ', 0, 'S', outinfo%grp_id_name )
     ipos = 0
     rcode = fstr_ctrl_get_param_ex( ctrl, 'ACTION ', 'SUM ', 0, 'P', ipos )
