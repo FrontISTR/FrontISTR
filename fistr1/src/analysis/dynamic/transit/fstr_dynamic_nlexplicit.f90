@@ -297,10 +297,11 @@ contains
         fstrDYN%DISP(j,3) = fstrDYN%DISP(j,1)
         fstrDYN%DISP(j,1) = hecMAT%X(j)
         hecMAT%X(j)  = fstrSOLID%dunode(j)
+        fstrDYN%kineticEnergy = fstrDYN%kineticEnergy + 0.5d0*fstrEIG%mass(j)*fstrDYN%VEL(j,1)*fstrDYN%VEL(j,1)
       end do
 
       ! ----- update strain, stress, and internal force
-      call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYN%t_curr, fstrDYN%t_delta, 1 )
+      call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYN%t_curr, fstrDYN%t_delta, 0, fstrDYN%strainEnergy )
 
       do j = 1 ,ndof*nnod
         fstrSOLID%unode(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)

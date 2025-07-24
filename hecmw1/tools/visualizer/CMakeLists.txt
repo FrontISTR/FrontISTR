@@ -3,6 +3,6 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_vis1_SOURCES
+target_sources(hecmw_vis1 PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/visualizer.c
 )

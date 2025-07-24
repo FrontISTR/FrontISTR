@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_part1_SOURCES
+target_sources(hecmw_part1 PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_partlex.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_part_log.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mesh_hash_sort.c

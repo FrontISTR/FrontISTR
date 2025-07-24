@@ -3,6 +3,6 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-include(${CMAKE_SOURCE_LIST_DIR}/adaptation/CMakeLists.txt)
-include(${CMAKE_SOURCE_LIST_DIR}/dynamic_balancing/CMakeLists.txt)
-include(${CMAKE_SOURCE_LIST_DIR}/jacobian/CMakeLists.txt)
+add_subdirectory(adaptation)
+add_subdirectory(dynamic_load_balancing)
+add_subdirectory(jacobian)

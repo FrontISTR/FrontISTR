@@ -6,7 +6,7 @@
 ###############################################################
 # CMakeLists.txt for FrontISTR
 ###############################################################
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.13.4)
 
 ###############################################################
 # Check building mode whether out-of-source builds
@@ -204,7 +204,9 @@ endif()
 if(WITH_MKL)
   set(BLA_VENDOR "Intel10_64lp")
   list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+  if(NOT WITH_MUMPS AND MKL_LIBRARIES)
+    list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+  endif()
   list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MKL")
   set(WITH_LAPACK ON)
 else()
@@ -273,7 +275,16 @@ if(WITH_MUMPS)
       if((SCALAPACK_FOUND AND LAPACK_FOUND) OR SCALAPACK_MKL)
         list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MUMPS")
         list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
-        list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
+        list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES})
+        if(SCALAPACK_LIBRARIES)
+          list(APPEND FrontISTR_LIBRARIES ${SCALAPACK_LIBRARIES})
+        endif()
+        if(LAPACK_LIBRARIES)
+          list(APPEND FrontISTR_LIBRARIES ${LAPACK_LIBRARIES})
+        endif()
+        if(WITH_MKL AND MKL_LIBRARIES)
+          list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+        endif()
         mark_as_advanced(scalapack_DIR)
       else()
         message(WARNING "MUMPS could not be enabled. Please also install scalapack and lapack.")
