@@ -10,7 +10,6 @@ add_subdirectory(user)
 add_subdirectory(utilities)
 
 target_sources(fistr PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/GaussM.f90
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_mass.f90
   ${CMAKE_CURRENT_LIST_DIR}/eigen_LIB.f90
   ${CMAKE_CURRENT_LIST_DIR}/heat_LIB.f90
