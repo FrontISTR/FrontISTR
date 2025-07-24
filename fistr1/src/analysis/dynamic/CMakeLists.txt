@@ -3,6 +3,6 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-include(${CMAKE_CURRENT_LIST_DIR}/freq/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/mode/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/transit/CMakeLists.txt)
+add_subdirectory(freq)
+add_subdirectory(mode)
+add_subdirectory(transit)
