@@ -310,7 +310,7 @@ contains
 
       if( fstrDYN%restart_nout > 0 ) then
         if ( mod(i,fstrDYN%restart_nout).eq.0 .or. i.eq.fstrDYN%n_step ) then
-          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM)
+          call fstr_write_restart_dyna_nl(1,i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM)
         end if
       end if
       !
