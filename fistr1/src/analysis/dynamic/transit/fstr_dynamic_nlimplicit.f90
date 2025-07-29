@@ -32,13 +32,12 @@ contains
 
   !> \brief This subroutine provides function of nonlinear implicit dynamic analysis using the Newmark method.
   !> Standard Lagrange multiplier algorithm for contact analysis is included in this subroutine.
-  subroutine fstr_solve_dynamic_nlimplicit_contactSLag(cstep, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
+  subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-      ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange  &
+      ,fstrCPL,hecLagMAT,restart_step_num,restart_substep_num,infoCTChange  &
       ,conMAT )
     implicit none
     !C-- global variable
-    integer, intent(in)                  :: cstep !< current step
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_matrix), pointer        :: hecMAT0
@@ -57,7 +56,7 @@ contains
     integer(kind=kint) :: i
     real(kind=kreal) :: time_1, time_2
 
-    integer(kind=kint) :: restrt_step_num
+    integer(kind=kint) :: restart_step_num, restart_substep_num, tot_step
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: max_iter_contact
     real(kind=kreal) :: converg_dlag
@@ -114,11 +113,11 @@ contains
     hecMAT%Iarray(97) = 1   !Need numerical factorization
 
     !C-- initialize variables
-    if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. abs(fstrDYNAMIC%ray_m) > 1.0d-15 ) &
+    if( restart_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. abs(fstrDYNAMIC%ray_m) > 1.0d-15 ) &
       call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
 
     !C-- output of initial state
-    if( restrt_step_num == 1 ) then
+    if( restart_step_num == 1 ) then
       call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
@@ -127,12 +126,14 @@ contains
     hecMAT%X(:) =0.d0
 
     call fstr_save_originalMatrixStructure(hecMAT)
-    call fstr_scan_contact_state(cstep, restrt_step_num, 0, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
+    call fstr_scan_contact_state(restart_step_num, restart_step_num, 0, fstrDYNAMIC%t_delta, &
+          ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
 
     call hecmw_mat_copy_profile( hecMAT, conMAT )
 
     if ( fstr_is_contact_active() ) then
-      call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
+      call fstr_mat_con_contact( restart_step_num, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, &
+          infoCTChange, conMAT, fstr_is_contact_active())
     elseif( hecMAT%Iarray(99)==4 ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change solver type to intel MKL direct solver !'
@@ -140,36 +141,39 @@ contains
     endif
     is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
     call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
-
-    max_iter_contact = fstrSOLID%step_ctrl(cstep)%max_contiter
-    converg_dlag = fstrSOLID%step_ctrl(cstep)%converg_lag
     
     !! step = 1,2,....,fstrDYNAMIC%n_step
-    do i = restrt_step_num, fstrDYNAMIC%n_step
 
-      fstrDYNAMIC%i_step = i
-      fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
+    ! fstrDYNAMIC%n_step
 
-      call fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
-          fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
-          restrt_step_num, hecMAT0, i)
+    do tot_step=restart_step_num, fstrSOLID%nstep_tot
+      !do i = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
+      do i = restart_substep_num, fstrDYNAMIC%n_step
 
-      !C-- output new displacement, velocity and acceleration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+        fstrDYNAMIC%i_step = i
+        fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
-      !C-- output result of monitoring node
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+        call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+            fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
+            restart_step_num, hecMAT0, i)
 
-      !---  Restart info
-      if( fstrDYNAMIC%restart_nout > 0 ) then
-        if( mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step ) then
-          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-            infoCTChange%contactNode_current)
+        !C-- output new displacement, velocity and acceleration
+        call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+
+        !C-- output result of monitoring node
+        call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+
+        !---  Restart info
+        if( fstrDYNAMIC%restart_nout > 0 ) then
+          if( mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step ) then
+            call fstr_write_restart_dyna_nl(tot_step,i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+              infoCTChange%contactNode_current)
+          endif
         endif
-      endif
 
+      enddo
+      !C-- end of time step loop
     enddo
-    !C-- end of time step loop
 
     if (associated(hecMAT0)) then
       call hecmw_mat_finalize(hecMAT0)
@@ -181,14 +185,14 @@ contains
       write(ISTA,'(a,f10.2,a)') '         solve (sec) :', time_2 - time_1, 's'
     endif
 
-  end subroutine fstr_solve_dynamic_nlimplicit_contactSLag
+  end subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG
 
   subroutine fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
       fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
-      restrt_step_num, hecMAT0, i)
+      restart_step_num, hecMAT0, i)
     implicit none
     !C-- arguments
-    integer(kind=kint), intent(in)       :: cstep, restrt_step_num, i
+    integer(kind=kint), intent(in)       :: cstep, restart_step_num, i
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_matrix), pointer        :: hecMAT0
@@ -303,7 +307,7 @@ contains
 
         !C for couple analysis
         call fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
-          & fstrPARAM, fstrDYNAMIC, fstrCPL, restrt_step_num, i)
+          & fstrPARAM, fstrDYNAMIC, fstrCPL, restart_step_num, i)
 
         do j = 1 ,nn*hecMAT%NP
           hecMAT%D(j)  = c1* hecMAT%D(j)
@@ -467,7 +471,7 @@ contains
   end subroutine fstr_solve_dynamic_nlimplicit_couple_init
 
   subroutine fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
-    & fstrPARAM, fstrDYNAMIC, fstrCPL, restrt_step_num, i)
+    & fstrPARAM, fstrDYNAMIC, fstrCPL, restart_step_num, i)
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix)     :: hecMAT
@@ -475,7 +479,7 @@ contains
     type(fstr_param)         :: fstrPARAM
     type(fstr_dynamic)       :: fstrDYNAMIC
     type(fstr_couple)        :: fstrCPL
-    integer(kint) :: kkk0, kkk1, j, kk, i, restrt_step_num
+    integer(kint) :: kkk0, kkk1, j, kk, i, restart_step_num
     real(kreal) :: bsize
 
     if( fstrPARAM%fg_couple == 1) then
@@ -490,8 +494,8 @@ contains
         enddo
       endif
       if( fstrPARAM%fg_couple_window > 0 ) then
-        j = i - restrt_step_num + 1
-        kk = fstrDYNAMIC%n_step - restrt_step_num + 1
+        j = i - restart_step_num + 1
+        kk = fstrDYNAMIC%n_step - restart_step_num + 1
         bsize = 0.5*(1.0-cos(2.0*PI*dfloat(j)/dfloat(kk)))
         do kkk0 = 1, fstrCPL%coupled_node_n
           kkk1 = 3 * kkk0

@@ -225,9 +225,10 @@ contains
 
   !> Read in restart file for nonlinear dynamic analysis
   !----------------------------------------------------------------------*
-  subroutine fstr_read_restart_dyna_nl(cstep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
+  subroutine fstr_read_restart_dyna_nl(cstep,substep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
     !----------------------------------------------------------------------*
     integer, intent(out)                  :: cstep       !< current step
+    integer, intent(out)                  :: substep     !< current substep
     integer, intent(out), optional        :: contactNode !< number of contact nodes
     type (hecmwST_local_mesh), intent(in) :: hecMESH     !< hecmw mesh
     type (fstr_solid),intent(inout)       :: fstrSOLID   !< fstr_solid
@@ -241,6 +242,8 @@ contains
 
     call hecmw_restart_read_int(restrt_step)
     cstep = restrt_step(1)
+    call hecmw_restart_read_int(restrt_step)
+    substep = restrt_step(1)
     call hecmw_restart_read_real(fstrSOLID%unode)
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
@@ -304,9 +307,10 @@ contains
 
   !> write out restart file for nonlinear dynamic analysis
   !----------------------------------------------------------------------*
-  subroutine fstr_write_restart_dyna_nl(cstep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
+  subroutine fstr_write_restart_dyna_nl(cstep,substep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
     !----------------------------------------------------------------------*
     integer, intent(in)                   :: cstep      !< current step
+    integer, intent(in)                   :: substep    !< current substep
     integer, intent(in), optional         :: contactNode!< number of contact nodes
     type (hecmwST_local_mesh), intent(in) :: hecMESH    !< hecmw mesh
     type (fstr_solid), intent(in)         :: fstrSOLID  !< fstr_solid
@@ -317,6 +321,8 @@ contains
     real(kind=kreal) :: data(2)
 
     restrt_step(1) = cstep
+    call hecmw_restart_add_int(restrt_step,size(restrt_step))
+    restrt_step(1) = substep
     call hecmw_restart_add_int(restrt_step,size(restrt_step))
     call hecmw_restart_add_real(fstrSOLID%unode,size(fstrSOLID%unode))
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))

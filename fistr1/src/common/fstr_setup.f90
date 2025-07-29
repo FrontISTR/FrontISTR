@@ -327,7 +327,15 @@ contains
     if( c_embed>0 )  allocate( fstrSOLID%embeds( c_embed ) )
     if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
     if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
-    if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
+    if( c_istep>0 ) then
+      allocate( fstrSOLID%step_ctrl( c_istep ) )
+      do i=1, c_istep
+        call init_stepInfo( fstrSOLID%step_ctrl(i) )
+        if( p%PARAM%solution_type==kstDYNAMIC ) then
+          fstrSOLID%step_ctrl(i)%num_substep = fstrDYNAMIC%n_step
+        endif
+      end do
+    endif
     if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
     allocate( fstrPARAM%ainc(0:c_aincparam) )
     do i=0,c_aincparam
@@ -975,6 +983,7 @@ contains
       fstrSOLID%nstep_tot = 1
       allocate( fstrSOLID%step_ctrl(1) )
       call init_stepInfo( fstrSOLID%step_ctrl(1) )
+      if( p%PARAM%solution_type==kstDYNAMIC ) fstrSOLID%step_ctrl(1)%num_substep = fstrDYNAMIC%n_step
       n =  fstrSOLID%BOUNDARY_ngrp_tot
       if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Boundary(n) )
       do i = 1, n
