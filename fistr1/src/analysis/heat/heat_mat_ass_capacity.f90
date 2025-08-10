@@ -16,7 +16,7 @@ contains
     integer(kind=kint) :: i, in, j, nodLOCAL(20), ip, inod
     integer(kind=kint) :: itype, iS, iE, ic_type, icel, isect, IMAT, in0, nn
     real(kind=kreal) :: temp(20), lumped(120), mass(20*6, 20*6), ecoord(3,20)
-    real(kind=kreal) :: delta_time, surf, THICK, ALFA, BETA
+    real(kind=kreal) :: delta_time, surf, THICK, ALPHA, BETA
 
     beta = fstrHEAT%beta
 
