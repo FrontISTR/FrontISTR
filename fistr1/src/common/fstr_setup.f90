@@ -803,10 +803,11 @@ contains
         endif
         if( femap == 1 ) then
           c_output=2
-          write( outctrl%filename, *) 'utable.',myrank,".dat"
+          write( outctrl%filename, '(a,i0,a)') 'utable.',myrank,'.dat'
           outctrl%filenum = IUTB
           call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
           open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE' )
+          fstrSOLID%output_ctrl(c_output)%outinfo%grp_id = 1
         endif
         if( result == 1 ) then
           c_output=3
