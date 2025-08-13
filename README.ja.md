@@ -71,7 +71,7 @@ mpirun -n 4 fistr1    # 4並列で実行
 
 ## 可視化・プリポスト
 
-* **ParaView**（VTKの読み込み）
+* **ParaView**（VTKファイル）
 * **REVOCAP\_PrePost**（メッシュ生成・前処理／実行連携）
 * **FreeCAD FEM\_FrontISTR**（FrontISTR用Workbench）: [https://github.com/FrontISTR/FEM\_FrontISTR](https://github.com/FrontISTR/FEM_FrontISTR)
 
