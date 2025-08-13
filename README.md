@@ -127,6 +127,10 @@ For questions, issues, or contributions:
 
 Please read [`License.txt`](License.txt) carefully before using this software.
 
+## Acknowledgement
+
+The porting to the GPU was carried out with the support of the Information Technology Center, the University of Tokyo.
+
 ---
 
 **Note**: This project uses CMake as the primary build system. While legacy Makefiles are maintained for compatibility, CMake is recommended for new installations and development.
