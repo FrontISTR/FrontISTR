@@ -102,4 +102,4 @@ https://www.frontistr.com/download/
 ## Acknowledgments
 
 FrontISTR is continuously developed by a development community (FrontISTR Commons) consisting of universities, research institutions, and companies. We appreciate the support from related research and development projects (innovative simulation software, etc.).
-The porting to the GPU was carried out with the support of the Information Infrastructure Center, University of Tokyo.
+The porting to the GPU was carried out with the support of the Information Technology Center, the University of Tokyo.
