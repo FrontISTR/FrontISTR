@@ -59,7 +59,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -154,7 +154,7 @@ contains
     endif
 
     call finalize_table( mattable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_ELASTICITY
 
 
@@ -167,7 +167,7 @@ contains
     real(kind=kreal),intent(out)      :: matval(:)
 
     integer(kind=kint) :: i,j, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256) :: s
 
@@ -265,7 +265,7 @@ contains
 
     endif
 
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_HYPERELASTIC
 
 
@@ -278,7 +278,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     character(len=256) :: s
@@ -333,7 +333,7 @@ contains
     endif
 
     call finalize_table( mattable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_VISCOELASTICITY
 
 
@@ -369,7 +369,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt, hipt
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     real(kind=kreal) :: phi, psi
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256)    :: s
@@ -540,7 +540,7 @@ contains
         stop "Yield function not supported"
     end select
 
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
     call finalize_table( mttable )
   end function fstr_ctrl_get_PLASTICITY
 
@@ -554,7 +554,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     character(len=256) :: s
@@ -599,7 +599,7 @@ contains
     endif
 
     call finalize_table( mattable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_VISCOPLASTICITY
 
   !----------------------------------------------------------------------
@@ -609,7 +609,7 @@ contains
     real(kind=kreal),intent(out)   :: matval(:)
 
     integer(kind=kint) :: i, rcode, depends
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
 
     data_fmt = "R "
@@ -628,7 +628,7 @@ contains
       = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
     if( fstr_ctrl_get_DENSITY==0 ) matval(M_DENSITY) = fval(1,1)
 
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
 
   end function fstr_ctrl_get_DENSITY
 
@@ -641,7 +641,7 @@ contains
     type(DICT_STRUCT), pointer     :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     type( tTable )           :: mttable
     character(len=HECMW_NAME_LEN) :: data_fmt, ss
 
@@ -695,7 +695,7 @@ contains
     endif
 
     call finalize_table( mttable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_EXPANSION_COEFF
 
 
@@ -732,7 +732,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -777,7 +777,7 @@ contains
     endif
 
     call finalize_table( mattable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_FLUID
 
   !----------------------------------------------------------------------
@@ -790,8 +790,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:) => null()
-    integer(kind=kint),pointer :: ival(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
+    integer(kind=kint), allocatable :: ival(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -827,8 +827,8 @@ contains
     endif
 
     mattype = CONNECTOR
-    if( associated(fval) ) deallocate(fval)
-    if( associated(ival) ) deallocate(ival)
+    if( allocated(fval) ) deallocate(fval)
+    if( allocated(ival) ) deallocate(ival)
   end function fstr_ctrl_get_SPRING_D
 
   !----------------------------------------------------------------------
@@ -841,7 +841,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -873,7 +873,7 @@ contains
     endif
 
     mattype = CONNECTOR
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_SPRING_A
 
   !----------------------------------------------------------------------
@@ -886,8 +886,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:) => null()
-    integer(kind=kint),pointer :: ival(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
+    integer(kind=kint), allocatable :: ival(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -923,8 +923,8 @@ contains
     endif
 
     mattype = CONNECTOR
-    if( associated(fval) ) deallocate(fval)
-    if( associated(ival) ) deallocate(ival)
+    if( allocated(fval) ) deallocate(fval)
+    if( allocated(ival) ) deallocate(ival)
   end function fstr_ctrl_get_DASHPOT_D
 
   !----------------------------------------------------------------------
@@ -937,7 +937,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -969,7 +969,7 @@ contains
     endif
 
     mattype = CONNECTOR
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_DASHPOT_A
 
 end module fstr_ctrl_material
