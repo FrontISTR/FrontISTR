@@ -1,5 +1,7 @@
 # FrontISTR
 
+![Logo](./doc/FrontISTR_logo.svg)
+
 [![CI Status](https://gitlab.com/frontistr-commons/frontistr/badges/master/pipeline.svg)](https://gitlab.com/frontistr-commons/frontistr/-/pipelines)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://manual.frontistr.com/en/)
 [![License](https://img.shields.io/badge/license-MIT-green)](License.txt)
@@ -79,8 +81,7 @@ mpirun -n 4 fistr1    # Execute with 4 parallel processes
 
 ## Binary Distributions
 
-Download site:
-
+Download site:  
 https://www.frontistr.com/download/
 
 ---
@@ -101,5 +102,5 @@ https://www.frontistr.com/download/
 
 ## Acknowledgments
 
-FrontISTR is continuously developed by a development community (FrontISTR Commons) consisting of universities, research institutions, and companies. We appreciate the support from related research and development projects (innovative simulation software, etc.).
+FrontISTR is continuously developed by a development community (FrontISTR Commons) consisting of universities, research institutions, and companies. We appreciate the support from related research and development projects (innovative simulation software, etc.).  
 The porting to the GPU was carried out with the support of the Information Technology Center, the University of Tokyo.

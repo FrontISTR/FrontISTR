@@ -1,5 +1,7 @@
 # FrontISTR
 
+![Logo](./doc/FrontISTR_logo.svg)
+
 [![CI Status](https://gitlab.com/frontistr-commons/frontistr/badges/master/pipeline.svg)](https://gitlab.com/frontistr-commons/frontistr/-/pipelines)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://manual.frontistr.com/en/)
 [![License](https://img.shields.io/badge/license-MIT-green)](License.txt)
@@ -79,8 +81,7 @@ mpirun -n 4 fistr1    # 4並列で実行
 
 ## バイナリ／配布
 
-ダウンロードサイトはこちら
-
+ダウンロードサイトはこちら  
 https://www.frontistr.com/download/
 
 ---
@@ -101,5 +102,5 @@ https://www.frontistr.com/download/
 
 ## 謝辞
 
-FrontISTRは、大学・研究機関・企業からなる開発コミュニティ（FrontISTR Commons）によって継続的に開発されています。関連する研究開発プロジェクト（革新的シミュレーションソフトウェア等）の支援に感謝します。
+FrontISTRは、大学・研究機関・企業からなる開発コミュニティ（FrontISTR Commons）によって継続的に開発されています。関連する研究開発プロジェクト（革新的シミュレーションソフトウェア等）の支援に感謝します。  
 GPUへの移植について東京大学情報基盤センターの支援に感謝します。
