@@ -150,9 +150,25 @@ contains
     n = fstr_ctrl_get_data_line_n(ctrl)
     allocate( type_name_list(n) )
 
-      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id, type_name_list, &
-        params(0,:), params(1,:), params(2,:), params(3,:), params(4,:),params(5,:), &
-        params(6,:) )
+      block
+        real(kind=kreal) :: params0(n), params1(n), params2(n), params3(n), params4(n), params5(n), params6(n)
+        params0 = params(0,:)
+        params1 = params(1,:)
+        params2 = params(2,:)
+        params3 = params(3,:)
+        params4 = params(4,:)
+        params5 = params(5,:)
+        params6 = params(6,:)
+        rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id, type_name_list, &
+          params0, params1, params2, params3, params4, params5, params6 )
+        params(0,:) = params0
+        params(1,:) = params1
+        params(2,:) = params2
+        params(3,:) = params3
+        params(4,:) = params4
+        params(5,:) = params5
+        params(6,:) = params6
+      end block
 
       if( rcode /= 0 ) then
         deallocate( type_name_list )
