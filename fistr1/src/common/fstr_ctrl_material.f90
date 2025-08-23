@@ -59,7 +59,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -95,13 +95,29 @@ contains
       allocate( fval(2+depends,n) )
       if( depends==0 ) then
         data_fmt = "RR "
-        fstr_ctrl_get_ELASTICITY = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fstr_ctrl_get_ELASTICITY = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+        end block
       endif
       if( depends==1 ) then
         data_fmt = "RRR "
-        fstr_ctrl_get_ELASTICITY = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n), fval3(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fstr_ctrl_get_ELASTICITY = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+        end block
       endif
       if( fstr_ctrl_get_ELASTICITY ==0 ) then
         matval(M_YOUNGS) = fval(1,1)
@@ -117,16 +133,60 @@ contains
       allocate( fval(9+depends,n) )
       if( depends==0 ) then
         data_fmt = "RRRRRRRRR "
-        fstr_ctrl_get_ELASTICITY = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt,    &
-          fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
-          fval(7,:), fval(8,:), fval(9,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n), fval3(n), fval4(n), fval5(n), &
+            fval6(n), fval7(n), fval8(n), fval9(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fval4 = fval(4,:)
+          fval5 = fval(5,:)
+          fval6 = fval(6,:)
+          fval7 = fval(7,:)
+          fval8 = fval(8,:)
+          fval9 = fval(9,:)
+          fstr_ctrl_get_ELASTICITY = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt,    &
+            fval1, fval2, fval3, fval4, fval5, fval6, fval7, fval8, fval9 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+          fval(4,:) = fval4
+          fval(5,:) = fval5
+          fval(6,:) = fval6
+          fval(7,:) = fval7
+          fval(8,:) = fval8
+          fval(9,:) = fval9
+        end block
       else if( depends==1 ) then
         data_fmt = "RRRRRRRRRR "
-        fstr_ctrl_get_ELASTICITY = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt,    &
-          fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), fval(6,:),           &
-          fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n), fval3(n), fval4(n), fval5(n), &
+            fval6(n), fval7(n), fval8(n), fval9(n), fval10(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fval4 = fval(4,:)
+          fval5 = fval(5,:)
+          fval6 = fval(6,:)
+          fval7 = fval(7,:)
+          fval8 = fval(8,:)
+          fval9 = fval(9,:)
+          fval10 = fval(10,:)
+          fstr_ctrl_get_ELASTICITY = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt,    &
+            fval1, fval2, fval3, fval4, fval5, fval6, fval7, fval8, fval9, fval10 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+          fval(4,:) = fval4
+          fval(5,:) = fval5
+          fval(6,:) = fval6
+          fval(7,:) = fval7
+          fval(8,:) = fval8
+          fval(9,:) = fval9
+          fval(10,:) = fval10
+        end block
       endif
       if( fstr_ctrl_get_ELASTICITY ==0 ) then
         isok = .true.
@@ -154,7 +214,7 @@ contains
     endif
 
     call finalize_table( mattable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_ELASTICITY
 
 
@@ -167,7 +227,7 @@ contains
     real(kind=kreal),intent(out)      :: matval(:)
 
     integer(kind=kint) :: i,j, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256) :: s
 
@@ -189,8 +249,15 @@ contains
       fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RR "
-        fstr_ctrl_get_HYPERELASTIC =                           &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+        block
+          real(kind=kreal) :: fval1(depends+1), fval2(depends+1)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fstr_ctrl_get_HYPERELASTIC = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+        end block
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
         if( fval(2,1)==0.d0 ) stop "We cannot deal with incompressible material currently"
@@ -208,8 +275,17 @@ contains
       fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRR "
-        fstr_ctrl_get_HYPERELASTIC =                       &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+        block
+          real(kind=kreal) :: fval1(depends+1), fval2(depends+1), fval3(depends+1)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fstr_ctrl_get_HYPERELASTIC = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+        end block
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
         matval(M_PLCONST1) = fval(1,1)
@@ -224,8 +300,17 @@ contains
       fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRR "
-        fstr_ctrl_get_HYPERELASTIC = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+        block
+          real(kind=kreal) :: fval1(depends+1), fval2(depends+1), fval3(depends+1)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fstr_ctrl_get_HYPERELASTIC = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+        end block
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
         matval(M_PLCONST1) = fval(1,1)
@@ -244,10 +329,33 @@ contains
       fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRRRRrrrrr "
-        fstr_ctrl_get_HYPERELASTIC = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, &
-          fval(1,:), fval(2,:), fval(3,:), fval(4,:), fval(5,:), &
-          fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) )
+        block
+          real(kind=kreal) :: fval1(depends+1), fval2(depends+1), fval3(depends+1), fval4(depends+1), fval5(depends+1), &
+            fval6(depends+1), fval7(depends+1), fval8(depends+1), fval9(depends+1), fval10(depends+1)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fval4 = fval(4,:)
+          fval5 = fval(5,:)
+          fval6 = fval(6,:)
+          fval7 = fval(7,:)
+          fval8 = fval(8,:)
+          fval9 = fval(9,:)
+          fval10 = fval(10,:)
+          fstr_ctrl_get_HYPERELASTIC = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, &
+            fval1, fval2, fval3, fval4, fval5, fval6, fval7, fval8, fval9, fval10 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+          fval(4,:) = fval4
+          fval(5,:) = fval5
+          fval(6,:) = fval6
+          fval(7,:) = fval7
+          fval(8,:) = fval8
+          fval(9,:) = fval9
+          fval(10,:) = fval10
+        end block
       endif
       if( fstr_ctrl_get_HYPERELASTIC ==0 ) then
         matval(M_PLCONST1) = fval(1,1)
@@ -265,7 +373,7 @@ contains
 
     endif
 
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_HYPERELASTIC
 
 
@@ -278,7 +386,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     character(len=256) :: s
@@ -311,14 +419,30 @@ contains
       allocate( fval(2+depends,n) )
       if( depends==0 ) then
         data_fmt = "RR "
-        fstr_ctrl_get_VISCOELASTICITY = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fstr_ctrl_get_VISCOELASTICITY = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+        end block
         if( fval(2,1)==0.d0 ) stop "Error in defining viscoelasticity: Relaxation time cannot be zero!"
       endif
       if( depends==1 ) then
         data_fmt = "RRR "
-        fstr_ctrl_get_VISCOELASTICITY = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n), fval3(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fstr_ctrl_get_VISCOELASTICITY = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+        end block
       endif
       if( fstr_ctrl_get_VISCOELASTICITY ==0 ) then
         call init_table( mattable, 1, 2+depends,n, fval )
@@ -333,7 +457,7 @@ contains
     endif
 
     call finalize_table( mattable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_VISCOELASTICITY
 
 
@@ -369,7 +493,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt, hipt
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     real(kind=kreal) :: phi, psi
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=256)    :: s
@@ -425,8 +549,15 @@ contains
           case (1,5)  ! linear hardening, kinematic hardening
             allocate( fval(2,n) )
             data_fmt = "RR "
-            fstr_ctrl_get_PLASTICITY = &
-              fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+            block
+              real(kind=kreal) :: fval1(n), fval2(n)
+              fval1 = fval(1,:)
+              fval2 = fval(2,:)
+              fstr_ctrl_get_PLASTICITY = &
+                fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2 )
+              fval(1,:) = fval1
+              fval(2,:) = fval2
+            end block
             if( fstr_ctrl_get_PLASTICITY ==0 ) then
               matval(M_PLCONST1) = fval(1,1)
               if(hipt==1) then
@@ -440,8 +571,15 @@ contains
             allocate( fval(depends+2,n) )
             if( depends==0 ) then
               data_fmt = "RR "
-              fstr_ctrl_get_PLASTICITY = &
-                fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+              block
+                real(kind=kreal) :: fval1(n), fval2(n)
+                fval1 = fval(1,:)
+                fval2 = fval(2,:)
+                fstr_ctrl_get_PLASTICITY = &
+                  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2 )
+                fval(1,:) = fval1
+                fval(2,:) = fval2
+              end block
               if( fstr_ctrl_get_PLASTICITY ==0 ) then
                 if( fval(2,1)/=0.d0 ) then
                   print *, "Multilinear hardening: First plastic strain must be zero"
@@ -457,8 +595,17 @@ contains
               endif
             else  ! depends==1
               data_fmt = "RRR "
-              fstr_ctrl_get_PLASTICITY = &
-                fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+              block
+                real(kind=kreal) :: fval1(n), fval2(n), fval3(n)
+                fval1 = fval(1,:)
+                fval2 = fval(2,:)
+                fval3 = fval(3,:)
+                fstr_ctrl_get_PLASTICITY = &
+                  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3 )
+                fval(1,:) = fval1
+                fval(2,:) = fval2
+                fval(3,:) = fval3
+              end block
               if( fstr_ctrl_get_PLASTICITY ==0 ) then
                 call init_table( mttable,2, 2+depends,n, fval )
                 call dict_add_key( dict, MC_YIELD, mttable )
@@ -467,8 +614,17 @@ contains
           case (3, 4, 6)  ! swift, Ramberg-Osgood, Combined
             allocate( fval(3,1) )
             data_fmt = "RRR "
-            fstr_ctrl_get_PLASTICITY = &
-              fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+            block
+              real(kind=kreal) :: fval1(1), fval2(1), fval3(1)
+              fval1 = fval(1,:)
+              fval2 = fval(2,:)
+              fval3 = fval(3,:)
+              fstr_ctrl_get_PLASTICITY = &
+                fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3 )
+              fval(1,:) = fval1
+              fval(2,:) = fval2
+              fval(3,:) = fval3
+            end block
             if( fstr_ctrl_get_PLASTICITY ==0 ) then
               matval(M_PLCONST1) = fval(1,1)
               matval(M_PLCONST2) = fval(2,1)
@@ -484,8 +640,19 @@ contains
           allocate( fval(4,n) )
           data_fmt = "RRrr "
           fval(4,:) = -1.d0
-          fstr_ctrl_get_PLASTICITY                                                         &
-              = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:) )
+          block
+            real(kind=kreal) :: fval1(n), fval2(n), fval3(n), fval4(n)
+            fval1 = fval(1,:)
+            fval2 = fval(2,:)
+            fval3 = fval(3,:)
+            fval4 = fval(4,:)
+            fstr_ctrl_get_PLASTICITY &
+                = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3, fval4 )
+            fval(1,:) = fval1
+            fval(2,:) = fval2
+            fval(3,:) = fval3
+            fval(4,:) = fval4
+          end block
           if( fstr_ctrl_get_PLASTICITY ==0 ) then
             matval(M_PLCONST1) = fval(1,1)    ! c
             matval(M_PLCONST2) = fval(3,1)    ! H
@@ -503,8 +670,15 @@ contains
           allocate( fval(2,n) )
           data_fmt = "Rr "
           fval(2,:) = -1.d0
-          fstr_ctrl_get_PLASTICITY = &
-              fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+          block
+            real(kind=kreal) :: fval1(n), fval2(n)
+            fval1 = fval(1,:)
+            fval2 = fval(2,:)
+            fstr_ctrl_get_PLASTICITY = &
+                fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2 )
+            fval(1,:) = fval1
+            fval(2,:) = fval2
+          end block
           if( fstr_ctrl_get_PLASTICITY ==0 ) then
               phi =fval(1,1)*PI/180.d0
               if( fval(2,1) >= 0.d0 ) then
@@ -540,7 +714,7 @@ contains
         stop "Yield function not supported"
     end select
 
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
     call finalize_table( mttable )
   end function fstr_ctrl_get_PLASTICITY
 
@@ -554,7 +728,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     character(len=256) :: s
@@ -578,13 +752,33 @@ contains
       allocate( fval(3+depends,n) )
       if( depends==0 ) then
         data_fmt = "RRR "
-        fstr_ctrl_get_VISCOPLASTICITY = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n), fval3(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fstr_ctrl_get_VISCOPLASTICITY = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+        end block
       endif
       if( depends==1 ) then
         data_fmt = "RRRR "
-        fstr_ctrl_get_VISCOPLASTICITY = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n), fval3(n), fval4(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fval4 = fval(4,:)
+          fstr_ctrl_get_VISCOPLASTICITY = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3, fval4 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+          fval(4,:) = fval4
+        end block
       endif
       if( fstr_ctrl_get_VISCOPLASTICITY ==0 ) then
         call init_table( mattable, depends, 3+depends,n, fval )
@@ -599,7 +793,7 @@ contains
     endif
 
     call finalize_table( mattable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_VISCOPLASTICITY
 
   !----------------------------------------------------------------------
@@ -609,7 +803,7 @@ contains
     real(kind=kreal),intent(out)   :: matval(:)
 
     integer(kind=kint) :: i, rcode, depends
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
 
     data_fmt = "R "
@@ -624,11 +818,16 @@ contains
     do i=2,1+depends
       data_fmt = data_fmt //"R "
     enddo
-    fstr_ctrl_get_DENSITY                                      &
-      = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
+    block
+      real(kind=kreal) :: fval1(depends+1)
+      fval1 = fval(1,:)
+      fstr_ctrl_get_DENSITY &
+        = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1 )
+      fval(1,:) = fval1
+    end block
     if( fstr_ctrl_get_DENSITY==0 ) matval(M_DENSITY) = fval(1,1)
 
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
 
   end function fstr_ctrl_get_DENSITY
 
@@ -641,7 +840,7 @@ contains
     type(DICT_STRUCT), pointer     :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     type( tTable )           :: mttable
     character(len=HECMW_NAME_LEN) :: data_fmt, ss
 
@@ -665,11 +864,23 @@ contains
         data_fmt = data_fmt //"R "
       enddo
       if( depends==0 ) then
-        fstr_ctrl_get_EXPANSION_COEFF = &
-          fstr_ctrl_get_data_array_ex( ctrl, "R ", fval(1,:) )
+        block
+          real(kind=kreal) :: fval1(n)
+          fval1 = fval(1,:)
+          fstr_ctrl_get_EXPANSION_COEFF = &
+            fstr_ctrl_get_data_array_ex( ctrl, "R ", fval1 )
+          fval(1,:) = fval1
+        end block
       else
-        fstr_ctrl_get_EXPANSION_COEFF = &
-          fstr_ctrl_get_data_array_ex( ctrl, "RR ", fval(1,:), fval(2,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fstr_ctrl_get_EXPANSION_COEFF = &
+            fstr_ctrl_get_data_array_ex( ctrl, "RR ", fval1, fval2 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+        end block
       endif
       if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
         matval(M_EXAPNSION) = fval(1,1)
@@ -682,11 +893,31 @@ contains
         data_fmt = trim(data_fmt) //"R "
       enddo
       if( depends==0 ) then
-        fstr_ctrl_get_EXPANSION_COEFF = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n), fval3(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fstr_ctrl_get_EXPANSION_COEFF = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+        end block
       elseif( depends==1 ) then
-        fstr_ctrl_get_EXPANSION_COEFF = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:), fval(3,:), fval(4,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n), fval3(n), fval4(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fval3 = fval(3,:)
+          fval4 = fval(4,:)
+          fstr_ctrl_get_EXPANSION_COEFF = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2, fval3, fval4 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+          fval(3,:) = fval3
+          fval(4,:) = fval4
+        end block
       endif
       if( fstr_ctrl_get_EXPANSION_COEFF==0 ) then
         call init_table( mttable, depends, 3+depends,n, fval )
@@ -695,7 +926,7 @@ contains
     endif
 
     call finalize_table( mttable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_EXPANSION_COEFF
 
 
@@ -711,8 +942,32 @@ contains
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n > 10 ) stop "Num of data lines for user-defined material exceeds 10"
     fval =0.d0
-    if( fstr_ctrl_get_data_array_ex( ctrl, 'rrrrrrrrrr ', fval(1,:), fval(2,:), fval(3,:),  &
-      fval(4,:), fval(5,:), fval(6,:), fval(7,:), fval(8,:), fval(9,:), fval(10,:) ) /= 0 ) return
+    block
+      real(kind=kreal) :: fval1(10), fval2(10), fval3(10), fval4(10), fval5(10), &
+        fval6(10), fval7(10), fval8(10), fval9(10), fval10(10)
+      fval1 = fval(1,:)
+      fval2 = fval(2,:)
+      fval3 = fval(3,:)
+      fval4 = fval(4,:)
+      fval5 = fval(5,:)
+      fval6 = fval(6,:)
+      fval7 = fval(7,:)
+      fval8 = fval(8,:)
+      fval9 = fval(9,:)
+      fval10 = fval(10,:)
+      if( fstr_ctrl_get_data_array_ex( ctrl, 'rrrrrrrrrr ', fval1, fval2, fval3,  &
+        fval4, fval5, fval6, fval7, fval8, fval9, fval10 ) /= 0 ) return
+      fval(1,:) = fval1
+      fval(2,:) = fval2
+      fval(3,:) = fval3
+      fval(4,:) = fval4
+      fval(5,:) = fval5
+      fval(6,:) = fval6
+      fval(7,:) = fval7
+      fval(8,:) = fval8
+      fval(9,:) = fval9
+      fval(10,:) = fval10
+    end block
     do i=1,10
       do j=1,10
         matval((i-1)*10+j)=fval(j,i)
@@ -732,7 +987,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -755,13 +1010,25 @@ contains
       allocate( fval(1+depends,n) )
       if( depends==0 ) then
         data_fmt = "R "
-        fstr_ctrl_get_FLUID = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
+        block
+          real(kind=kreal) :: fval1(n)
+          fval1 = fval(1,:)
+          fstr_ctrl_get_FLUID = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1 )
+          fval(1,:) = fval1
+        end block
       endif
       if( depends==1 ) then
         data_fmt = "RR "
-        fstr_ctrl_get_FLUID = &
-          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:), fval(2,:) )
+        block
+          real(kind=kreal) :: fval1(n), fval2(n)
+          fval1 = fval(1,:)
+          fval2 = fval(2,:)
+          fstr_ctrl_get_FLUID = &
+            fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1, fval2 )
+          fval(1,:) = fval1
+          fval(2,:) = fval2
+        end block
       endif
       if( fstr_ctrl_get_FLUID ==0 ) then
         matval(M_VISCOCITY) = fval(1,1)
@@ -777,7 +1044,7 @@ contains
     endif
 
     call finalize_table( mattable )
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_FLUID
 
   !----------------------------------------------------------------------
@@ -790,8 +1057,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:) => null()
-    integer(kind=kint),pointer :: ival(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
+    integer(kind=kint), allocatable :: ival(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -807,8 +1074,18 @@ contains
     allocate( fval(1+depends,n), ival(2,n) )
     if( depends==0 ) then
       data_fmt = "IIR "
-      fstr_ctrl_get_SPRING_D = &
-        fstr_ctrl_get_data_array_ex( ctrl, data_fmt, ival(1,:), ival(2,:), fval(1,:) )
+      block
+        integer(kind=kint) :: ival1(n), ival2(n)
+        real(kind=kreal) :: fval1(n)
+        ival1 = ival(1,:)
+        ival2 = ival(2,:)
+        fval1 = fval(1,:)
+        fstr_ctrl_get_SPRING_D = &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, ival1, ival2, fval1 )
+        ival(1,:) = ival1
+        ival(2,:) = ival2
+        fval(1,:) = fval1
+      end block
     !else if( depends==1 ) then
     !  data_fmt = "IIRR "
     !  fstr_ctrl_get_SPRING_D = &
@@ -827,8 +1104,8 @@ contains
     endif
 
     mattype = CONNECTOR
-    if( associated(fval) ) deallocate(fval)
-    if( associated(ival) ) deallocate(ival)
+    if( allocated(fval) ) deallocate(fval)
+    if( allocated(ival) ) deallocate(ival)
   end function fstr_ctrl_get_SPRING_D
 
   !----------------------------------------------------------------------
@@ -841,7 +1118,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -855,8 +1132,13 @@ contains
     allocate( fval(1+depends,n) )
     if( depends==0 ) then
       data_fmt = "R "
-      fstr_ctrl_get_SPRING_A = &
-        fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
+      block
+        real(kind=kreal) :: fval1(n)
+        fval1 = fval(1,:)
+        fstr_ctrl_get_SPRING_A = &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1 )
+        fval(1,:) = fval1
+      end block
     !else if( depends==1 ) then
     !  data_fmt = "IIRR "
     !  fstr_ctrl_get_SPRING_A = &
@@ -873,7 +1155,7 @@ contains
     endif
 
     mattype = CONNECTOR
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_SPRING_A
 
   !----------------------------------------------------------------------
@@ -886,8 +1168,8 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:) => null()
-    integer(kind=kint),pointer :: ival(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
+    integer(kind=kint), allocatable :: ival(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -903,8 +1185,18 @@ contains
     allocate( fval(1+depends,n), ival(2,n) )
     if( depends==0 ) then
       data_fmt = "IIR "
-      fstr_ctrl_get_DASHPOT_D = &
-        fstr_ctrl_get_data_array_ex( ctrl, data_fmt, ival(1,:), ival(2,:), fval(1,:) )
+      block
+        integer(kind=kint) :: ival1(n), ival2(n)
+        real(kind=kreal) :: fval1(n)
+        ival1 = ival(1,:)
+        ival2 = ival(2,:)
+        fval1 = fval(1,:)
+        fstr_ctrl_get_DASHPOT_D = &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, ival1, ival2, fval1 )
+        ival(1,:) = ival1
+        ival(2,:) = ival2
+        fval(1,:) = fval1
+      end block
     !else if( depends==1 ) then
     !  data_fmt = "IIRR "
     !  fstr_ctrl_get_DASHPOT_D = &
@@ -923,8 +1215,8 @@ contains
     endif
 
     mattype = CONNECTOR
-    if( associated(fval) ) deallocate(fval)
-    if( associated(ival) ) deallocate(ival)
+    if( allocated(fval) ) deallocate(fval)
+    if( allocated(ival) ) deallocate(ival)
   end function fstr_ctrl_get_DASHPOT_D
 
   !----------------------------------------------------------------------
@@ -937,7 +1229,7 @@ contains
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
-    real(kind=kreal),pointer :: fval(:,:) => null()
+    real(kind=kreal), allocatable :: fval(:,:)
     character(len=HECMW_NAME_LEN) :: data_fmt
     type( tTable )        :: mattable
     logical            :: isok
@@ -951,8 +1243,13 @@ contains
     allocate( fval(1+depends,n) )
     if( depends==0 ) then
       data_fmt = "R "
-      fstr_ctrl_get_DASHPOT_A = &
-        fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval(1,:) )
+      block
+        real(kind=kreal) :: fval1(n)
+        fval1 = fval(1,:)
+        fstr_ctrl_get_DASHPOT_A = &
+          fstr_ctrl_get_data_array_ex( ctrl, data_fmt, fval1 )
+        fval(1,:) = fval1
+      end block
     !else if( depends==1 ) then
     !  data_fmt = "IIRR "
     !  fstr_ctrl_get_DASHPOT_A = &
@@ -969,7 +1266,7 @@ contains
     endif
 
     mattype = CONNECTOR
-    if( associated(fval) ) deallocate(fval)
+    if( allocated(fval) ) deallocate(fval)
   end function fstr_ctrl_get_DASHPOT_A
 
 end module fstr_ctrl_material
