@@ -156,27 +156,21 @@ contains
         if (iBFGS == 0)then
            call hecmw_precond_apply(hecMESH, hecMAT, vecR, uin(:,1), workPC, Tcomm)
         else
-           do kk= 1, NNDOF
-             tmpVecBFGS(kk)= vecR(kk)
-           enddo
+           call hecmw_copy_R(hecMESH, NDOF, vecR, tmpVecBFGS)
            do k = 1,iBFGS
               idx = idxBFGS(k)
               call hecmw_InnerProduct_R(hecMESH, NDOF, sBFGS(:,idx), yBFGS(:,idx), coef, Tcomm)
               rho(k) = 1.0d0 / coef
               call hecmw_InnerProduct_R(hecMESH, NDOF, sBFGS(:,idx), tmpVecBFGS, coef2, Tcomm)
               alpha(k) = rho(k)*coef2
-              do kk= 1, NNDOF
-                tmpVecBFGS(kk)= tmpVecBFGS(kk) - alpha(k)*yBFGS(kk,idx)
-              enddo
+              call hecmw_axpy_R(hecMESH, NDOF, -alpha(k), yBFGS(:,idx), tmpVecBFGS)
            enddo
            call hecmw_precond_apply(hecMESH, hecMAT, tmpVecBFGS, uin(:,1), workPC, Tcomm)
            do k = iBFGS,1,-1
               idx = idxBFGS(k)
               call hecmw_InnerProduct_R(hecMESH, NDOF, yBFGS(:,idx), uin(:,1), coef, Tcomm)
               coef2 = rho(k) * coef
-              do kk= 1, NNDOF
-                uin(kk,1)= uin(kk,1) + (alpha(k)-coef2)*sBFGS(kk,idx)
-              enddo
+              call hecmw_axpy_R(hecMESH, NDOF, alpha(k)-coef2, sBFGS(:,idx), uin(:,1))
            enddo
         endif
         !C cin(:,1) = A*uin(:,1)
@@ -186,23 +180,17 @@ contains
            !C c_{i}^T cin_{i}
            call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,iOrth), cin(:,iOrth), coef, Tcomm)
 
-           do kk= 1, NNDOF
-             cin(kk,iOrth+1)= cin(kk,iOrth) - coef * c(kk,iOrth)
-             uin(kk,iOrth+1)= uin(kk,iOrth) - coef * u(kk,iOrth)
-           enddo
+           call hecmw_axpyz_R(hecMESH, NDOF, -coef, c(:,iOrth), cin(:,iOrth), cin(:,iOrth+1))
+           call hecmw_axpyz_R(hecMESH, NDOF, -coef, u(:,iOrth), uin(:,iOrth), uin(:,iOrth+1))
         enddo
         call hecmw_InnerProduct_R(hecMESH, NDOF, cin(:,I), cin(:,I), coef, Tcomm)
         coef = 1.0d0 / dsqrt(coef)
-        do kk= 1, NNDOF
-          c(kk,I)= coef * cin(kk,I)
-          u(kk,I)= coef * uin(kk,I)
-        enddo
+        call hecmw_axpby_R(hecMESH, NDOF, coef, 0.0d0, cin(:,I), c(:,I))
+        call hecmw_axpby_R(hecMESH, NDOF, coef, 0.0d0, uin(:,I), u(:,I))
 
         call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,I), vecR, coef, Tcomm)
-        do kk= 1, NNDOF
-             x(kk)=    x(kk) + coef*u(kk,I)
-          vecR(kk)= vecR(kk) - coef*c(kk,I)
-        enddo
+        call hecmw_axpy_R(hecMESH, NDOF,  coef, u(:,I),    X)
+        call hecmw_axpy_R(hecMESH, NDOF, -coef, c(:,I), vecR)
 
         if (NBFGS > 0)then
            iBFGS = iBFGS + 1
@@ -214,10 +202,8 @@ contains
              idxBFGS(NBFGS) = tmpIdx
              iBFGS = iBFGS - 1
            endif
-           do kk= 1, NNDOF
-             yBFGS(kk,idxBFGS(iBFGS))= coef*c(kk,I)
-             sBFGS(kk,idxBFGS(iBFGS))= coef*u(kk,I)
-           enddo
+           call hecmw_axpby_R(hecMESH, NDOF, coef, 0.0d0, c(:,I), yBFGS(:,idxBFGS(iBFGS)))
+           call hecmw_axpby_R(hecMESH, NDOF, coef, 0.0d0, u(:,I), sBFGS(:,idxBFGS(iBFGS)))
         endif
 
 
