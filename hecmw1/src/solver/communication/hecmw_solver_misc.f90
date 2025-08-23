@@ -180,6 +180,34 @@ contains
 
   !C
   !C***
+  !C*** hecmw_axpby_R
+  !C***
+  !C
+  subroutine hecmw_axpby_R (hecMESH, ndof, alpha, beta, X, Y)
+
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: ndof
+    real(kind=kreal) :: X(:), Y(:)
+    real(kind=kreal)          :: alpha, beta
+
+    integer(kind=kint) :: i
+
+    
+    !$OMP PARALLEL
+    !$OMP DO
+    do i = 1, hecMESH%nn_internal * ndof
+      Y(i) = alpha * X(i) + beta * Y(i)
+    end do
+    !$OMP END DO
+    !$OMP END PARALLEL 
+
+  end subroutine hecmw_axpby_R
+
+  !C
+  !C***
   !C*** hecmw_axpyz_R
   !C***
   !C
