@@ -174,9 +174,7 @@ contains
 
       RNORM= dsqrt(DNRM2)
       coef= ONE/RNORM
-      do ik= 1, NNDOF
-        WW(ik,V)= WW(ik,R) * coef
-      enddo
+      call hecmw_axpby_R(hecMESH, NDOF, coef, 0.d0, WW(:,R), WW(:,V))
       !C===
 
       !C
@@ -184,10 +182,8 @@ contains
       !C | {s}= |r|{e1} |
       !C +--------------+
       !C===
+      call hecmw_scale_R(hecMESH, NDOF, ZERO, WW(:,S))
       WW(1 ,S) = RNORM
-      do k = 2, NNDOF
-        WW(k,S) = ZERO
-      enddo
       !C===
 
       !C************************************************ GMRES(m) restart
@@ -214,9 +210,7 @@ contains
         do K= 1, I
           call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,W), WW(:,V+K-1), val, Tcomm)
 
-          do ik= 1, NNDOF
-            WW(ik,W)= WW(ik,W) - val * WW(ik,V+K-1)
-          enddo
+          call hecmw_axpy_R(hecMESH, NDOF, -val, WW(:,V+K-1), WW(:,W))
           H(K,I)= val
         enddo
 
@@ -225,9 +219,7 @@ contains
 
         H(I+1,I)= dsqrt(val)
         coef= ONE / H(I+1,I)
-        do ik= 1, NNDOF
-          WW(ik,V+I+1-1)= WW(ik,W) * coef
-        enddo
+        call hecmw_axpby_R(hecMESH, NDOF, coef, 0.d0, WW(:,W), WW(:,V+I+1-1))
         !C===
 
         !C
@@ -302,22 +294,16 @@ contains
           enddo
 
           !C-- {x}= {x} + {y}{V}
-          do kk= 1, NNDOF
-            WW(kk, AV)= 0.d0
-          enddo
+          call hecmw_scale_R(hecMESH, NDOF, 0.d0, WW(:,AV))
 
           jj= IROW
           do jj= 1, IROW
-            do kk= 1, NNDOF
-              WW(kk,AV)= WW(kk,AV) + WW(jj,Y)*WW(kk,V+jj-1)
-            enddo
+            call hecmw_axpy_R(hecMESH, NDOF, WW(jj,Y), WW(:,V+jj-1), WW(:,AV))
           enddo
 
           call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
-          do kk= 1, NNDOF
-            X(kk)= X(kk) + WW(kk,ZQ)
-          enddo
+          call hecmw_axpy_R(hecMESH, NDOF, 1.d0, WW(:,ZQ), X)
 
           exit OUTER
         endif
@@ -350,22 +336,16 @@ contains
       enddo
 
       !C-- {x}= {x} + {y}{V}
-      do kk= 1, NNDOF
-        WW(kk, AV)= 0.d0
-      enddo
+      call hecmw_scale_R(hecMESH, NDOF, 0.d0, WW(:,AV))
 
       jj= IROW
       do jj= 1, IROW
-        do kk= 1, NNDOF
-          WW(kk,AV)= WW(kk,AV) + WW(jj,Y)*WW(kk,V+jj-1)
-        enddo
+        call hecmw_axpy_R(hecMESH, NDOF, WW(jj,Y), WW(:,V+jj-1), WW(:,AV))
       enddo
 
       call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
-      do kk= 1, NNDOF
-        X(kk)= X(kk) + WW(kk,ZQ)
-      enddo
+      call hecmw_axpy_R(hecMESH, NDOF, 1.d0, WW(:,ZQ), X)
 
       !C
       !C-- Compute residual vector R, find norm, then check for tolerance.
@@ -406,22 +386,16 @@ contains
       enddo
 
       !C-- {x}= {x} + {y}{V}
-      do kk= 1, NNDOF
-        WW(kk, AV)= 0.d0
-      enddo
+      call hecmw_scale_R(hecMESH, NDOF, 0.d0, WW(:,AV))
 
       jj= IROW
       do jj= 1, IROW
-        do kk= 1, NNDOF
-          WW(kk,AV)= WW(kk  ,AV) + WW(jj,Y)*WW(kk  ,V+jj-1)
-        enddo
+        call hecmw_axpy_R(hecMESH, NDOF, WW(jj,Y), WW(:,V+jj-1), WW(:,AV))
       enddo
 
       call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
 
-      do kk= 1, NNDOF
-        X(kk)= X(kk) + WW(kk,ZQ)
-      enddo
+      call hecmw_axpy_R(hecMESH, NDOF, 1.d0, WW(:,ZQ), X)
     end if
 
     call hecmw_solver_scaling_bk(hecMAT)
