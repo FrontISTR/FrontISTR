@@ -14,7 +14,9 @@ module hecmw_precond_SSOR_33
   use m_hecmw_matrix_ordering_CM
   use m_hecmw_matrix_ordering_MC
   use hecmw_matrix_reorder
+#ifndef _OPENACC
   !$ use omp_lib
+#endif
 
   private
 
@@ -80,13 +82,28 @@ contains
       endif
     endif
 
+#ifndef _OPENACC
     !$ nthreads = omp_get_max_threads()
+#endif
 
     N = hecMAT%N
     ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
+#ifdef _OPENACC
+    allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
+    call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
+      hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
+    if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+    call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
+      hecMAT%indexU, hecMAT%itemU, perm_tmp, &
+      NCOLOR_IN, NColor, COLORindex, perm, iperm)
+    if (DEBUG >= 1) write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+    deallocate(perm_tmp)
+
+    !call write_debug_info
+#else
     if (nthreads == 1) then
       NColor = 1
       allocate(COLORindex(0:1), perm(N), iperm(N))
@@ -109,6 +126,7 @@ contains
 
       !call write_debug_info
     endif
+#endif
 
     NPL = 0
     do i=1,N
@@ -144,8 +162,13 @@ contains
       ALU(ii) = D(ii)
     enddo
 
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent private(ALUtmp,PW)
+#else
     !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
     !$omp do
+#endif
     do ii= 1, N
       ALUtmp(1,1)= ALU(9*ii-8) * SIGMA_DIAG
       ALUtmp(1,2)= ALU(9*ii-7)
@@ -178,8 +201,12 @@ contains
       ALU(9*ii-1)= ALUtmp(3,2)
       ALU(9*ii  )= ALUtmp(3,3)
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
     isFirst = .true.
 
@@ -199,7 +226,10 @@ contains
     integer(kind=kint) :: my_rank
     integer(kind=kint) :: ic, i
     if (DEBUG >= 1) write(*,*) 'DEBUG: setting up tuning parameters for SSOR'
+#ifndef _OPENACC
     !$ numOfThread = omp_get_max_threads()
+#endif
+
     numOfBlock = numOfThread * numOfBlockPerThread
     if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
     if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
@@ -250,10 +280,12 @@ contains
     ! added for turning >>>
     integer(kind=kint) :: blockIndex
 
+#ifndef _OPENACC
     if (isFirst) then
       call setup_tuning_parameters
       isFirst = .false.
     endif
+#endif
     ! <<< added for turning
 
     !call start_collection("loopInPrecond33")
@@ -261,17 +293,25 @@ contains
     !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
     !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
+#ifndef _OPENACC
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
       !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
       !$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+#endif
 
     !C-- FORWARD
     do ic=1,NColor
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+#else
       !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
         do i = blockIndexToColorIndex(blockIndex-1)+1, &
             blockIndexToColorIndex(blockIndex)
+#endif
           ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
           iold = perm(i)
           SW1= ZP(3*iold-2)
@@ -301,17 +341,28 @@ contains
           ZP(3*iold-2)= X1
           ZP(3*iold-1)= X2
           ZP(3*iold  )= X3
+#ifdef _OPENACC
+      enddo
+      !$acc end kernels
+#else
         enddo ! i
       enddo ! blockIndex
       !$omp end do
+#endif
     enddo ! ic
 
     !C-- BACKWARD
     do ic=NColor, 1, -1
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+#else
       !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
         do i = blockIndexToColorIndex(blockIndex), &
             blockIndexToColorIndex(blockIndex-1)+1, -1
+#endif
           ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
           !   do i = blockIndexToColorIndex(blockIndex-1)+1, &
             !        blockIndexToColorIndex(blockIndex)
@@ -344,11 +395,18 @@ contains
           ZP(3*iold-2)=  ZP(3*iold-2) - X1
           ZP(3*iold-1)=  ZP(3*iold-1) - X2
           ZP(3*iold  )=  ZP(3*iold  ) - X3
+#ifdef _OPENACC
+      enddo
+      !$acc end kernels
+#else
         enddo ! i
       enddo ! blockIndex
       !$omp end do
+#endif
     enddo ! ic
+#ifndef _OPENACC
     !$omp end parallel
+#endif
 
     !OCL END_CACHE_SUBSECTOR
     !OCL END_CACHE_SECTOR_SIZE
@@ -361,7 +419,9 @@ contains
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: nthreads = 1
+#ifndef _OPENACC
     !$ nthreads = omp_get_max_threads()
+#endif
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)

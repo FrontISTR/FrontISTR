@@ -14,6 +14,9 @@
 #include "hecmw_log.h"
 #ifndef HECMW_SERIAL
 #include "mpi.h"
+#ifdef _OPENACC
+#include <openacc.h>
+#endif
 #else
 #include <unistd.h>
 #endif
@@ -140,6 +143,11 @@ void print_buildinfo(int log_level) {
   printf("  OpenMP:     %d\n", _OPENMP);
 #else
   printf("  OpenMP:     disabled\n");
+#endif
+#ifdef _OPENACC
+  printf("  OpenACC:    %d\n", _OPENACC);
+#else
+  printf("  OpenACC:    disabled\n");
 #endif
   printf("  option:    ");
   printf("\"");
@@ -295,6 +303,18 @@ int main(int argc, char *argv[])
 
 #ifndef HECMW_SERIAL
   MPI_Init(&argc, &argv);
+#ifdef _OPENACC
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  const int ngpus = acc_get_num_devices(acc_device_nvidia);
+  if (ngpus == 0 && rank == 0) {
+    fprintf(stdout, "No GPU devices found.\n");
+  }
+  const int gpuid = ngpus > 0 ? rank % ngpus : -1;
+  if (gpuid >= 0) {
+    acc_set_device_num(gpuid, acc_device_nvidia);
+  }
+#endif
 #endif
   for (i = 0; i < argc; i++) {
     for (p = options; p->option_name != NULL; p++) {

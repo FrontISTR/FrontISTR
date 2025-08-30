@@ -70,6 +70,13 @@ contains
     integer(kind=kint), parameter :: AV = Y  + 1
     integer(kind=kint), parameter :: V  = AV + 1
 
+    !! matrix integration for OpenACC
+#ifdef _OPENACC
+    integer(kind=kint), allocatable :: indexA(:), itemA(:)
+    real(kind=kreal), allocatable   :: A(:)
+    integer(kind=kint) :: nn, NPA, pre, pp, jS, jE, j
+#endif
+
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
     !C
@@ -113,6 +120,51 @@ contains
     !C-- SCALING
     call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
 
+    !C
+    !C-- matrix integration for OpenACC
+#ifdef _OPENACC
+    nn = NDOF * NDOF
+    NPA = NP + hecMAT%NPL + hecMAT%NPU
+    allocate (indexA(0:NP), itemA(NPA), A(nn * NPA))
+    indexA(0) = 0
+
+    pre = 0
+    pp = 0
+    !$acc parallel loop private(i, j, k, pre, pp, jS, jE)
+    do i = 1, NP
+      indexA(i) = i + hecMAT%indexL(i) + hecMAT%indexU(i)
+
+      pre = i - 1 + hecMAT%indexU(i - 1)
+      jS= hecMAT%indexL(i - 1) + 1
+      jE= hecMAT%indexL(i  )
+      do j = jS, jE
+        pp = pre + j
+        itemA(pp) = hecMAT%itemL(j)
+        do k = -nn+1, 0
+          A(nn * pp + k) = hecMAT%AL(nn * j + k)
+        enddo
+      enddo
+
+      pp = i + hecMAT%indexU(i - 1) + hecMAT%indexL(i)
+      itemA(pp) = i
+      do k = -nn+1, 0
+        A(nn * pp + k) = hecMAT%D(nn * i + k)
+      enddo
+
+      pre = i + hecMAT%indexL(i)
+      jS= hecMAT%indexU(i - 1) + 1
+      jE= hecMAT%indexU(i  )
+      do j = jS, jE
+        pp = pre + j
+        itemA(pp) = hecMAT%itemU(j)
+        do k = -nn+1, 0
+          A(nn * pp + k) = hecMAT%AU(nn * j + k)
+        enddo
+      enddo
+    enddo
+    !$acc end parallel
+#endif
+
     !C===
     !C +----------------------+
     !C | SETUP PRECONDITIONER |
@@ -126,7 +178,11 @@ contains
     !C | {r}= {b} - [A]{x0} |
     !C +--------------------+
     !C===
+#ifdef _OPENACC
+    call hecmw_matresid_A(hecMESH, hecMAT, indexA, itemA, A, X, B, WW(:,R), Tcomm)
+#else
     call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+#endif
     !C===
 
     call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
@@ -174,9 +230,12 @@ contains
 
       RNORM= dsqrt(DNRM2)
       coef= ONE/RNORM
+      !$acc kernels
+      !$acc loop independent
       do ik= 1, NNDOF
         WW(ik,V)= WW(ik,R) * coef
       enddo
+      !$acc end kernels
       !C===
 
       !C
@@ -185,9 +244,12 @@ contains
       !C +--------------+
       !C===
       WW(1 ,S) = RNORM
+      !$acc kernels
+      !$acc loop independent
       do k = 2, NNDOF
         WW(k,S) = ZERO
       enddo
+      !$acc end kernels
       !C===
 
       !C************************************************ GMRES(m) restart
@@ -199,9 +261,17 @@ contains
         !C | {w}= [A][Minv]{v} |
         !C +-------------------+
         !C===
+#ifdef _OPENACC
+        call hecmw_precond_apply_A(hecMESH, hecMAT, indexA, itemA, A, WW(:,V+I-1), WW(:,ZQ), WW(:,ZP), Tcomm)
+#else
         call hecmw_precond_apply(hecMESH, hecMAT, WW(:,V+I-1), WW(:,ZQ), WW(:,ZP), Tcomm)
+#endif
 
+#ifdef _OPENACC
+        call hecmw_matvec_A(hecMESH, hecMAT, indexA, itemA, A, WW(:,ZQ), WW(:,W), Tcomm)
+#else
         call hecmw_matvec(hecMESH, hecMAT, WW(:,ZQ), WW(:,W), Tcomm)
+#endif
         !C===
 
         !C
@@ -214,9 +284,12 @@ contains
         do K= 1, I
           call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,W), WW(:,V+K-1), val, Tcomm)
 
+          !$acc kernels
+          !$acc loop independent
           do ik= 1, NNDOF
             WW(ik,W)= WW(ik,W) - val * WW(ik,V+K-1)
           enddo
+          !$acc end kernels
           H(K,I)= val
         enddo
 
@@ -225,9 +298,12 @@ contains
 
         H(I+1,I)= dsqrt(val)
         coef= ONE / H(I+1,I)
+        !$acc kernels
+        !$acc loop independent
         do ik= 1, NNDOF
           WW(ik,V+I+1-1)= WW(ik,W) * coef
         enddo
+        !$acc end kernels
         !C===
 
         !C
@@ -302,22 +378,34 @@ contains
           enddo
 
           !C-- {x}= {x} + {y}{V}
+          !$acc kernels
+          !$acc loop independent
           do kk= 1, NNDOF
             WW(kk, AV)= 0.d0
           enddo
+          !$acc end kernels
 
-          jj= IROW
+          !$acc kernels
+          !$acc loop collapse(2)
           do jj= 1, IROW
             do kk= 1, NNDOF
               WW(kk,AV)= WW(kk,AV) + WW(jj,Y)*WW(kk,V+jj-1)
             enddo
           enddo
+          !$acc end kernels
 
+#ifdef _OPENACC
+          call hecmw_precond_apply_A(hecMESH, hecMAT, indexA, itemA, A, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+#else
           call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+#endif
 
+          !$acc kernels
+          !$acc loop independent
           do kk= 1, NNDOF
             X(kk)= X(kk) + WW(kk,ZQ)
           enddo
+          !$acc end kernels
 
           exit OUTER
         endif
@@ -350,26 +438,42 @@ contains
       enddo
 
       !C-- {x}= {x} + {y}{V}
+      !$acc kernels
+      !$acc loop independent
       do kk= 1, NNDOF
         WW(kk, AV)= 0.d0
       enddo
+      !$acc end kernels
 
-      jj= IROW
+      !$acc kernels
+      !$acc loop collapse(2)
       do jj= 1, IROW
         do kk= 1, NNDOF
           WW(kk,AV)= WW(kk,AV) + WW(jj,Y)*WW(kk,V+jj-1)
         enddo
       enddo
+      !$acc end kernels
 
+#ifdef _OPENACC
+      call hecmw_precond_apply_A(hecMESH, hecMAT, indexA, itemA, A, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+#else
       call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+#endif
 
+      !$acc kernels
+      !$acc loop independent
       do kk= 1, NNDOF
         X(kk)= X(kk) + WW(kk,ZQ)
       enddo
+      !$acc end kernels
 
       !C
       !C-- Compute residual vector R, find norm, then check for tolerance.
+#ifdef _OPENACC
+      call hecmw_matresid_A(hecMESH, hecMAT, indexA, itemA, A, X, B, WW(:,R), Tcomm)
+#else
       call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+#endif
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
 
@@ -406,22 +510,34 @@ contains
       enddo
 
       !C-- {x}= {x} + {y}{V}
+      !$acc kernels
+      !$acc loop independent
       do kk= 1, NNDOF
         WW(kk, AV)= 0.d0
       enddo
+      !$acc end kernels
 
-      jj= IROW
+      !$acc kernels
+      !$acc loop collapse(2)
       do jj= 1, IROW
         do kk= 1, NNDOF
           WW(kk,AV)= WW(kk  ,AV) + WW(jj,Y)*WW(kk  ,V+jj-1)
         enddo
       enddo
+      !$acc end kernels
 
+#ifdef _OPENACC
+      call hecmw_precond_apply_A(hecMESH, hecMAT, indexA, itemA, A, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+#else
       call hecmw_precond_apply(hecMESH, hecMAT, WW(:,AV), WW(:,ZQ), WW(:,ZP), Tcomm)
+#endif
 
+      !$acc kernels
+      !$acc loop independent
       do kk= 1, NNDOF
         X(kk)= X(kk) + WW(kk,ZQ)
       enddo
+      !$acc end kernels
     end if
 
     call hecmw_solver_scaling_bk(hecMAT)

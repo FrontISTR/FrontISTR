@@ -66,6 +66,13 @@ contains
 
     integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R= 50
 
+    !! matrix integration for OpenACC
+#ifdef _OPENACC
+    integer(kind=kint), allocatable :: indexA(:), itemA(:)
+    real(kind=kreal), allocatable   :: A(:)
+    integer(kind=kint) :: nn, NPA, pre, pp, jS, jE, j, k
+#endif
+
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
 
@@ -101,6 +108,51 @@ contains
     !C-- SCALING
     call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
 
+    !C
+    !C-- matrix integration for OpenACC
+#ifdef _OPENACC
+    nn = NDOF * NDOF
+    NPA = NP + hecMAT%NPL + hecMAT%NPU
+    allocate (indexA(0:NP), itemA(NPA), A(nn * NPA))
+    indexA(0) = 0
+
+    pre = 0
+    pp = 0
+    !$acc parallel loop private(i, j, k, pre, pp, jS, jE)
+    do i = 1, NP
+      indexA(i) = i + hecMAT%indexL(i) + hecMAT%indexU(i)
+
+      pre = i - 1 + hecMAT%indexU(i - 1)
+      jS= hecMAT%indexL(i - 1) + 1
+      jE= hecMAT%indexL(i  )
+      do j = jS, jE
+        pp = pre + j
+        itemA(pp) = hecMAT%itemL(j)
+        do k = -nn+1, 0
+          A(nn * pp + k) = hecMAT%AL(nn * j + k)
+        enddo
+      enddo
+
+      pp = i + hecMAT%indexU(i - 1) + hecMAT%indexL(i)
+      itemA(pp) = i
+      do k = -nn+1, 0
+        A(nn * pp + k) = hecMAT%D(nn * i + k)
+      enddo
+
+      pre = i + hecMAT%indexL(i)
+      jS= hecMAT%indexU(i - 1) + 1
+      jE= hecMAT%indexU(i  )
+      do j = jS, jE
+        pp = pre + j
+        itemA(pp) = hecMAT%itemU(j)
+        do k = -nn+1, 0
+          A(nn * pp + k) = hecMAT%AU(nn * j + k)
+        enddo
+      enddo
+    enddo
+    !$acc end parallel
+#endif
+
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       call hecmw_JAD_INIT(hecMAT)
     endif
@@ -120,7 +172,11 @@ contains
     !C | {r0}= {b} - [A]{x0} |
     !C +---------------------+
     !C===
+#ifdef _OPENACC
+    call hecmw_matresid_A(hecMESH, hecMAT, indexA, itemA, A, X, B, WW(:,R), Tcomm)
+#else
     call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+#endif
 
     !C-- compute ||{b}||
     call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
@@ -160,7 +216,11 @@ contains
       !C | {z}= [Minv]{r} |
       !C +----------------+
       !C===
+#ifdef _OPENACC
+      call hecmw_precond_apply_A(hecMESH, hecMAT, indexA, itemA, A, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
+#else
       call hecmw_precond_apply(hecMESH, hecMAT, WW(:,R), WW(:,Z), WW(:,WK), Tcomm)
+#endif
 
 
       !C===
@@ -203,7 +263,11 @@ contains
       !C | {q}= [A] {p} |
       !C +--------------+
       !C===
+#ifdef _OPENACC
+      call hecmw_matvec_A(hecMESH, hecMAT, indexA, itemA, A, WW(:,P), WW(:,Q), Tcomm)
+#else
       call hecmw_matvec(hecMESH, hecMAT, WW(:,P), WW(:,Q), Tcomm)
+#endif
 
       !C===
       !C +---------------------+
@@ -232,7 +296,11 @@ contains
       call hecmw_axpy_R(hecMESH, NDOF, ALPHA, WW(:,P), X)
 
       if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
+#ifdef _OPENACC
+        call hecmw_matresid_A(hecMESH, hecMAT, indexA, itemA, A, X, B, WW(:,R), Tcomm)
+#else
         call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+#endif
       else
         call hecmw_axpy_R(hecMESH, NDOF, -ALPHA, WW(:,Q), WW(:,R))
       endif
@@ -259,7 +327,11 @@ contains
       if ( RESID.le.TOL   ) then
         if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) exit
         !C----- recompute R to make sure it is really converged
+#ifdef _OPENACC
+        call hecmw_matresid_A(hecMESH, hecMAT, indexA, itemA, A, X, B, WW(:,R), Tcomm)
+#else
         call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
+#endif
         call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
         RESID= dsqrt(DNRM2/BNRM2)
         if ( RESID.le.TOL ) exit

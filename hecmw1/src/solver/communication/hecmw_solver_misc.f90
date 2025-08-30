@@ -57,10 +57,16 @@ contains
     integer(kind=kint) :: i
     real(kind=kreal) :: START_TIME, END_TIME
 
+    !$acc serial
     sum = 0.0d0
+    !$acc end serial
+
+    !$acc kernels
+    !$acc loop reduction(+:sum)
     do i = 1, hecMESH%nn_internal * ndof
       sum = sum + X(i)*Y(i)
     end do
+    !$acc end kernels
 
     START_TIME= HECMW_WTIME()
     call hecmw_allreduce_R1 (hecMESH, sum, hecmw_sum)
@@ -141,13 +147,22 @@ contains
     integer(kind=kint) :: i
 
     
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$OMP PARALLEL
     !$OMP DO
+#endif
     do i = 1, hecMESH%nn_internal * ndof
       Y(i) = alpha * X(i) + Y(i) 
     end do
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$OMP END DO
     !$OMP END PARALLEL 
+#endif
 
   end subroutine hecmw_axpy_R
 
@@ -168,13 +183,22 @@ contains
 
     integer(kind=kint) :: i
     
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$OMP PARALLEL
     !$OMP DO
+#endif
     do i = 1, hecMESH%nn_internal * ndof
       Y(i) = X(i) + alpha *  Y(i) 
     end do
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$OMP END DO
     !$OMP END PARALLEL 
+#endif
 
   end subroutine hecmw_xpay_R
 
@@ -249,13 +273,22 @@ contains
     integer(kind=kint) :: i
 
     
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$OMP PARALLEL
     !$OMP DO
+#endif
     do i = 1, hecMESH%nn_internal * ndof
       Y(i) = X(i) 
     end do
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$OMP END DO
     !$OMP END PARALLEL 
+#endif
 
   end subroutine hecmw_copy_R
 

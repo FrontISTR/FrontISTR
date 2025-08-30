@@ -19,6 +19,7 @@ module hecmw_precond
   public :: hecmw_precond_setup
   public :: hecmw_precond_clear
   public :: hecmw_precond_apply
+  public :: hecmw_precond_apply_A
   public :: hecmw_precond_clear_timer
   public :: hecmw_precond_get_timer
 
@@ -146,6 +147,94 @@ contains
     END_TIME = hecmw_Wtime()
     time_precond = time_precond + END_TIME - START_TIME
   end subroutine hecmw_precond_apply
+
+  subroutine hecmw_precond_apply_A(hecMESH, hecMAT, indexA, itemA, A, R, Z, ZP, COMMtime)
+    implicit none
+    type (hecmwST_local_mesh), intent(inout) :: hecMESH
+    type (hecmwST_matrix), intent(inout)     :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(inout) :: R(:)
+    real(kind=kreal), intent(inout) :: Z(:), ZP(:)
+    real(kind=kreal), intent(inout) :: COMMtime
+    integer(kind=kint ) :: i, N, NP, NNDOF, NPNDOF
+    integer(kind=kint) :: iterPREmax, iterPRE
+    real(kind=kreal) :: START_TIME, END_TIME
+
+    START_TIME = hecmw_Wtime()
+
+    N = hecMAT%N
+    NP = hecMAT%NP
+    NNDOF = N * hecMAT%NDOF
+    NPNDOF = NP * hecMAT%NDOF
+
+    if (hecmw_mat_get_iterpremax( hecMAT ).le.0) then
+      !$acc kernels
+      !$acc loop independent
+      do i= 1, NNDOF
+        Z(i)= R(i)
+      enddo
+      !$acc end kernels
+      return
+    endif
+
+    !C {z}= [Minv]{r}
+    !$acc kernels
+    !$acc loop independent
+    do i= 1, NNDOF
+      ZP(i)= R(i)
+    enddo
+    !$acc end kernels
+
+    !$acc kernels
+    !$acc loop independent
+    do i= NNDOF+1, NPNDOF
+      ZP(i) = 0.d0
+    enddo
+    !$acc end kernels
+
+    !$acc kernels
+    !$acc loop independent
+    do i= 1, NPNDOF
+      Z(i)= 0.d0
+    enddo
+    !$acc end kernels
+
+    iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
+    do iterPRE= 1, iterPREmax
+
+      select case(hecmw_mat_get_precond( hecMAT ))
+        case(1,2)
+          call hecmw_precond_SSOR_apply(ZP,hecMAT%NDOF)
+        case(3)
+          call hecmw_precond_DIAG_apply(ZP,hecMAT%NDOF)
+        case(5)
+          call hecmw_precond_ML_apply(ZP,hecMAT%NDOF)
+        case(10:12)
+          call hecmw_precond_BILU_apply(ZP,hecMAT%NDOF)
+        case(20)
+          call hecmw_precond_SAINV_apply(R,ZP,hecMAT%NDOF)
+        case(21)
+          call hecmw_precond_RIF_apply(ZP,hecMAT%NDOF)
+        case default
+      end select
+
+      !C-- additive Schwartz
+      !$acc kernels
+      !$acc loop independent
+      do i= 1, hecMAT%N * hecMAT%NDOF
+        Z(i)= Z(i) + ZP(i)
+      enddo
+      !$acc end kernels
+      if (iterPRE.eq.iterPREmax) exit
+
+      !C--    {ZP} = {R} - [A] {Z}
+      call hecmw_matresid_A (hecMESH, hecMAT, indexA, itemA, A, Z, R, ZP, COMMtime)
+    enddo
+
+    END_TIME = hecmw_Wtime()
+    time_precond = time_precond + END_TIME - START_TIME
+  end subroutine hecmw_precond_apply_A
 
   subroutine hecmw_precond_clear_timer
     implicit none

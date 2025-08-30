@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
 #include "hecmw_config.h"
 #include "hecmw_util.h"
 #include "hecmw_malloc.h"
@@ -258,4 +259,107 @@ char *HECMW_strdup_(const char *s, char *file, int line) {
 error:
   free(str);
   return NULL;
+}
+
+#define SMALL_BUFFER_SIZE 240
+#define BUFFER_NUM 256
+#define POOL_SIZE 64
+void *small_buffer_pool[POOL_SIZE];
+int small_buffer_pool_cap = 0;
+
+void *HECMW_malloc_gpu(size_t size) {
+  if(size <= SMALL_BUFFER_SIZE) {
+    char *r;
+    if(small_buffer_pool_cap > 0) {
+      r = small_buffer_pool[small_buffer_pool_cap - 1];
+      small_buffer_pool_cap--;
+    } else {
+      static char *shared_buffer = NULL;
+      static int shared_buffer_used;
+      if(shared_buffer == NULL) {
+        shared_buffer = (char*)malloc((SMALL_BUFFER_SIZE + 16) * BUFFER_NUM);
+        shared_buffer_used = 0;
+        for(int i = 0; i < BUFFER_NUM; i++) {
+          *(size_t*)(shared_buffer + (SMALL_BUFFER_SIZE + 16) * i) = i + 1;
+        }
+      }
+
+      r = shared_buffer + (SMALL_BUFFER_SIZE + 16) * shared_buffer_used;
+
+      shared_buffer_used++;
+      if(shared_buffer_used >= BUFFER_NUM) {
+        shared_buffer = NULL;
+      }
+    }
+
+    *(size_t*)(r + 8) = size;
+    return r + 16;
+  } else {
+    void *p = malloc(size + 8);
+    *(size_t*)p = size;
+    return (void*)((char*)p + 8);
+  }
+}
+
+void HECMW_free_gpu(void *ptr) {
+  if(ptr != NULL) {
+    int old_size = *(size_t*)((char*)ptr - 8);
+    if(old_size <= SMALL_BUFFER_SIZE) {
+      if(small_buffer_pool_cap >= POOL_SIZE) {
+        void *free_ptr = small_buffer_pool[0];
+        for(int i = 0; i < POOL_SIZE - 1; i++) {
+          small_buffer_pool[i] = small_buffer_pool[i + 1];
+        }
+        small_buffer_pool_cap--;
+
+        int offset = *(size_t*)free_ptr - 1;
+        *(size_t*)free_ptr = 0;
+        char *base = (char*)free_ptr - (SMALL_BUFFER_SIZE + 16) * offset;
+
+        bool in_use = false;
+        for(int i = 0; i < BUFFER_NUM; i++) {
+          if(*(size_t*)(base + (SMALL_BUFFER_SIZE + 16) * i) != 0) {
+            in_use = true;
+            break;
+          }
+        }
+
+        if(!in_use) {
+          free(base);
+        }
+      }
+
+      small_buffer_pool[small_buffer_pool_cap] = (char*)ptr - 16;
+      small_buffer_pool_cap++;
+    } else {
+      free((void*)((char*)ptr - 8));
+    }
+  }
+}
+
+void *HECMW_calloc_gpu(size_t nmemb, size_t size) {
+  void *p = HECMW_malloc_gpu(nmemb * size);
+  memset(p, 0, nmemb * size);
+  return p;
+}
+
+void *HECMW_realloc_gpu(void *ptr, size_t size) {
+  void *p = HECMW_malloc_gpu(size);
+  if(ptr != NULL) {
+    int old_size = *(size_t*)((char*)ptr - 8);
+    int copy_size = old_size;
+    if(copy_size >= size) {
+      copy_size = size;
+    }
+    memcpy(p, ptr, copy_size);
+    HECMW_free_gpu(ptr);
+  }
+  return p;
+}
+
+char *HECMW_strdup_gpu(const char *s) {
+  int l = strlen(s);
+  void *p = HECMW_malloc_gpu(l + 1);
+  memcpy(p, (void*)s, l + 1);
+  return (char*)p;
 }

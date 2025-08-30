@@ -58,6 +58,12 @@ contains
     real   (kind=kreal) :: t_max,t_min,t_avg,t_sd
     real   (kind=kreal) :: alpha,beta
    
+    !! matrix integration for OpenACC
+#ifdef _OPENACC
+    integer(kind=kint), allocatable :: indexA(:), itemA(:)
+    real(kind=kreal), allocatable   :: A(:)
+    integer(kind=kint) :: nn, NPA, pre, pp, jS, jE, j
+#endif
 
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
@@ -95,6 +101,51 @@ contains
     !C
     !C-- SCALING
     call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
+
+    !C
+    !C-- matrix integration for OpenACC
+#ifdef _OPENACC
+    nn = NDOF * NDOF
+    NPA = NP + hecMAT%NPL + hecMAT%NPU
+    allocate (indexA(0:NP), itemA(NPA), A(nn * NPA))
+    indexA(0) = 0
+
+    pre = 0
+    pp = 0
+    !$acc parallel loop private(i, j, k, pre, pp, jS, jE)
+    do i = 1, NP
+      indexA(i) = i + hecMAT%indexL(i) + hecMAT%indexU(i)
+
+      pre = i - 1 + hecMAT%indexU(i - 1)
+      jS= hecMAT%indexL(i - 1) + 1
+      jE= hecMAT%indexL(i  )
+      do j = jS, jE
+        pp = pre + j
+        itemA(pp) = hecMAT%itemL(j)
+        do k = -nn+1, 0
+          A(nn * pp + k) = hecMAT%AL(nn * j + k)
+        enddo
+      enddo
+
+      pp = i + hecMAT%indexU(i - 1) + hecMAT%indexL(i)
+      itemA(pp) = i
+      do k = -nn+1, 0
+        A(nn * pp + k) = hecMAT%D(nn * i + k)
+      enddo
+
+      pre = i + hecMAT%indexL(i)
+      jS= hecMAT%indexU(i - 1) + 1
+      jE= hecMAT%indexU(i  )
+      do j = jS, jE
+        pp = pre + j
+        itemA(pp) = hecMAT%itemU(j)
+        do k = -nn+1, 0
+          A(nn * pp + k) = hecMAT%AU(nn * j + k)
+        enddo
+      enddo
+    enddo
+    !$acc end parallel
+#endif
 
     !C===
     !C +----------------------+
@@ -136,17 +187,32 @@ contains
 
     OUTER: do
 
+#ifdef _OPENACC
+      call hecmw_matresid_A(hecMESH, hecMAT, indexA, itemA, A, X, B, vecR, Tcomm)
+#else
       call hecmw_matresid(hecMESH, hecMAT, X, B, vecR, Tcomm)
+#endif
       do I = 1, NREST
         ITER= ITER + 1
 
         !C Compute  xi(1) = (I-AM^-1)r
         !C Compute eta(1) = M^-1r
+#ifdef _OPENACC
+        call hecmw_precond_apply_A(hecMESH, hecMAT, indexA, itemA, A, vecR, eta(:,1), workPC, Tcomm)
+#else
         call hecmw_precond_apply(hecMESH, hecMAT, vecR, eta(:,1), workPC, Tcomm)
+#endif
+#ifdef _OPENACC
+        call hecmw_matvec_A(hecMESH, hecMAT, indexA, itemA, A, eta(:,1), xi(:,1), Tcomm)
+#else
         call hecmw_matvec(hecMESH, hecMAT, eta(:,1), xi(:,1), Tcomm)
+#endif
+        !$acc kernels
+        !$acc loop independent
         do kk= 1, NNDOF
           xi(kk,1)= vecR(kk) - xi(kk,1)
         enddo
+        !$acc end kernels
 
         do iOrth = 1, I-1
            !C alpha = c_{i}^T xi_{i}
@@ -154,38 +220,58 @@ contains
 
            !C  xi(i+1) =  xi(i) - alpha * c(i)
            !C eta(i+1) = eta(i) + alpha * u(i)
+           !$acc kernels
+           !$acc loop independent
            do kk= 1, NNDOF
               xi(kk,iOrth+1)=  xi(kk,iOrth) - alpha * c(kk,iOrth)
              eta(kk,iOrth+1)= eta(kk,iOrth) + alpha * u(kk,iOrth)
            enddo
+           !$acc end kernels
         enddo
 
         !C Solve M*r = uin(:,1)
+#ifdef _OPENACC
+        call hecmw_precond_apply_A(hecMESH, hecMAT, indexA, itemA, A, xi(:,I), uin(:,1), workPC, Tcomm)
+#else
         call hecmw_precond_apply(hecMESH, hecMAT, xi(:,I), uin(:,1), workPC, Tcomm)
+#endif
         !C cin(:,1) = A*uin(:,1)
+#ifdef _OPENACC
+        call hecmw_matvec_A(hecMESH, hecMAT, indexA, itemA, A, uin(:,1), cin(:,1), Tcomm)
+#else
         call hecmw_matvec(hecMESH, hecMAT, uin(:,1), cin(:,1), Tcomm)
+#endif
 
         do iOrth = 1, I-1
            !C c_{i}^T cin_{i}
            call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,iOrth), cin(:,iOrth), beta, Tcomm)
 
+           !$acc kernels
+           !$acc loop independent
            do kk= 1, NNDOF
              cin(kk,iOrth+1)= cin(kk,iOrth) - coef * c(kk,iOrth)
              uin(kk,iOrth+1)= uin(kk,iOrth) - coef * u(kk,iOrth)
            enddo
+           !$acc end kernels
         enddo
         call hecmw_InnerProduct_R(hecMESH, NDOF, cin(:,I), cin(:,I), coef, Tcomm)
         coef = 1.0d0 / dsqrt(coef)
+        !$acc kernels
+        !$acc loop independent
         do kk= 1, NNDOF
           c(kk,I)= coef * cin(kk,I)
           u(kk,I)= coef * uin(kk,I)
         enddo
+        !$acc end kernels
 
         call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,I), xi(:,I), coef, Tcomm)
+        !$acc kernels
+        !$acc loop independent
         do kk= 1, NNDOF
              x(kk)=  x(kk)   + coef*u(kk,I) + eta(kk,I)
           vecR(kk)= xi(kk,I) - coef*c(kk,I)
         enddo
+        !$acc end kernels
 
         call hecmw_InnerProduct_R(hecMESH, NDOF, vecR, vecR, DNRM2, Tcomm)
 

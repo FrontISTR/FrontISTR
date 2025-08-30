@@ -17,9 +17,11 @@ module hecmw_solver_las
   private
 
   public :: hecmw_matvec
+  public :: hecmw_matvec_A
   public :: hecmw_matvec_set_async
   public :: hecmw_matvec_unset_async
   public :: hecmw_matresid
+  public :: hecmw_matresid_A
   public :: hecmw_rel_resid_L2
   public :: hecmw_Tvec
   public :: hecmw_Ttvec
@@ -64,6 +66,36 @@ contains
     end select
 
   end subroutine hecmw_matvec
+
+  subroutine hecmw_matvec_A (hecMESH, hecMAT, indexA, itemA, A, X, Y, COMMtime)
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout), optional :: COMMtime
+    select case(hecMAT%NDOF)
+      case (3)
+        call hecmw_matvec_33_A(hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+      case (4)
+        call hecmw_matvec_44_A(hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+      case (6)
+        call hecmw_matvec_66_A(hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+      case (1)
+        call hecmw_matvec_11_A(hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+      case (2)
+        call hecmw_matvec_22_A(hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+      case default
+        call hecmw_matvec_nn_A(hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+      ! case default
+      !   call hecmw_matvec_nn(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+    end select
+
+  end subroutine hecmw_matvec_A
 
   !C
   !C***
@@ -115,6 +147,35 @@ contains
         call hecmw_matresid_nn(hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
     end select
   end subroutine hecmw_matresid
+
+  subroutine hecmw_matresid_A (hecMESH, hecMAT, indexA, itemA, A, X, B, R, COMMtime)
+    use hecmw_util
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:), B(:)
+    real(kind=kreal), intent(out) :: R(:)
+    real(kind=kreal), intent(inout), optional :: COMMtime
+
+    select case(hecMAT%NDOF)
+      case (3)
+        call hecmw_matresid_33_A(hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+      case (4)
+        call hecmw_matresid_44_A(hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+      case (6)
+        call hecmw_matresid_66_A(hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+      case (1)
+        call hecmw_matresid_11_A(hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+      case (2)
+        call hecmw_matresid_22_A(hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+      case default
+        call hecmw_matresid_nn_A(hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+      ! case default
+      !   call hecmw_matresid_nn_A(hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
+    end select
+  end subroutine hecmw_matresid_A
 
   !C
   !C***

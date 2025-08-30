@@ -98,8 +98,13 @@ contains
     !C
     !C== Block SCALING
 
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i,X1,X2),shared(N,WW,ALU)
     !$omp do
+#endif
     do i= 1, N
       X1= WW(2*i-1)
       X2= WW(2*i-0)
@@ -109,8 +114,12 @@ contains
       WW(2*i-1)= X1
       WW(2*i-0)= X2
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
   end subroutine hecmw_precond_DIAG_22_apply
 

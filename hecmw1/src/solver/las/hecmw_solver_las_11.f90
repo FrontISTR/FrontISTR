@@ -9,6 +9,8 @@ module hecmw_solver_las_11
 
   public :: hecmw_matvec_11
   public :: hecmw_matresid_11
+  public :: hecmw_matvec_11_A
+  public :: hecmw_matresid_11_A
   public :: hecmw_rel_resid_L2_11
 
 contains
@@ -61,6 +63,50 @@ contains
 
   end subroutine hecmw_matvec_11
 
+  subroutine hecmw_matvec_11_A (hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+    use hecmw_util
+    use m_hecmw_comm_f
+
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
+
+    real(kind=kreal) :: START_TIME, END_TIME
+    integer(kind=kint) :: i, j, jS, jE, in
+    real(kind=kreal) :: YV
+
+    START_TIME= HECMW_WTIME()
+    call hecmw_update_R (hecMESH, X, hecMAT%NP, hecMAT%NDOF)
+    END_TIME= HECMW_WTIME()
+    if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+
+    START_TIME= HECMW_WTIME()
+
+    !$acc kernels
+    !$acc loop independent
+    do i= 1, hecMAT%N
+      YV= 0
+      jS= indexA(i) + 1
+      jE= indexA(i+1)
+      do j= jS, jE
+        in= itemA(j)
+        YV= YV + A(j) * X(in)
+      enddo
+      Y(i)= YV
+    enddo
+    !$acc end kernels
+
+    END_TIME = hecmw_Wtime()
+    time_Ax = time_Ax + END_TIME - START_TIME
+
+  end subroutine hecmw_matvec_11_A
+
   !C
   !C***
   !C*** hecmw_matresid_11
@@ -88,6 +134,35 @@ contains
     enddo
 
   end subroutine hecmw_matresid_11
+
+  subroutine hecmw_matresid_11_A (hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:), B(:)
+    real(kind=kreal), intent(out) :: R(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
+
+    integer(kind=kint) :: i
+    real(kind=kreal) :: Tcomm
+
+    Tcomm = 0.d0
+    call hecmw_matvec_11_A (hecMESH, hecMAT, indexA, itemA, A, X, R, time_Ax, Tcomm)
+    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+
+    !$acc kernels
+    !$acc loop independent
+    do i = 1, hecMAT%N
+      R(i) = B(i) - R(i)
+    enddo
+    !$acc end kernels
+
+  end subroutine hecmw_matresid_11_A
 
   !C
   !C***

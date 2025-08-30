@@ -11,6 +11,8 @@ module hecmw_solver_las_66
 
   public :: hecmw_matvec_66
   public :: hecmw_matresid_66
+  public :: hecmw_matvec_66_A
+  public :: hecmw_matresid_66_A
   public :: hecmw_rel_resid_L2_66
   public :: hecmw_Tvec_66
   public :: hecmw_Ttvec_66
@@ -209,6 +211,97 @@ contains
     endif
   end subroutine hecmw_matvec_66
 
+  subroutine hecmw_matvec_66_A (hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+    use hecmw_util
+    use m_hecmw_comm_f
+    use hecmw_matrix_misc
+    use hecmw_jad_type
+    use hecmw_tuning_fx
+
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
+
+    real(kind=kreal) :: START_TIME, END_TIME, Tcomm
+    integer(kind=kint) :: i, j, jS, jE, in
+    real(kind=kreal) :: YV1, YV2, YV3, X1, X2, X3
+    real(kind=kreal) :: YV4, YV5, YV6, X4, X5, X6
+
+    integer(kind=kint) :: N, NP
+
+    if (hecmw_mat_get_usejad(hecMAT).ne.0) then
+      Tcomm = 0.d0
+      START_TIME = hecmw_Wtime()
+      call hecmw_JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
+      END_TIME = hecmw_Wtime()
+      time_Ax = time_Ax + END_TIME - START_TIME - Tcomm
+      if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+    else
+
+      N = hecMAT%N
+      NP = hecMAT%NP
+
+      START_TIME= HECMW_WTIME()
+      call hecmw_update_R (hecMESH, X, NP, 6)
+      END_TIME= HECMW_WTIME()
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+
+      START_TIME = hecmw_Wtime()
+
+      !$acc kernels
+      !$acc loop independent
+      do i = 1, N
+        X1= X(6*i-5)
+        X2= X(6*i-4)
+        X3= X(6*i-3)
+        X4= X(6*i-2)
+        X5= X(6*i-1)
+        X6= X(6*i  )
+        YV1= 0 
+        YV2= 0 
+        YV3= 0 
+        YV4= 0 
+        YV5= 0 
+        YV6= 0 
+        jS= indexA(i) + 1
+        jE= indexA(i+1)
+        do j= jS, jE
+          in  = itemA(j)
+          X1= X(6*in-5)
+          X2= X(6*in-4)
+          X3= X(6*in-3)
+          X4= X(6*in-2)
+          X5= X(6*in-1)
+          X6= X(6*in  )
+          YV1= YV1 + A(36*j-35)*X1 + A(36*j-34)*X2 + A(36*j-33)*X3 + A(36*j-32)*X4 + A(36*j-31)*X5 + A(36*j-30)*X6
+          YV2= YV2 + A(36*j-29)*X1 + A(36*j-28)*X2 + A(36*j-27)*X3 + A(36*j-26)*X4 + A(36*j-25)*X5 + A(36*j-24)*X6
+          YV3= YV3 + A(36*j-23)*X1 + A(36*j-22)*X2 + A(36*j-21)*X3 + A(36*j-20)*X4 + A(36*j-19)*X5 + A(36*j-18)*X6
+          YV4= YV4 + A(36*j-17)*X1 + A(36*j-16)*X2 + A(36*j-15)*X3 + A(36*j-14)*X4 + A(36*j-13)*X5 + A(36*j-12)*X6
+          YV5= YV5 + A(36*j-11)*X1 + A(36*j-10)*X2 + A(36*j-9 )*X3 + A(36*j-8 )*X4 + A(36*j-7 )*X5 + A(36*j-6 )*X6
+          YV6= YV6 + A(36*j-5 )*X1 + A(36*j-4 )*X2 + A(36*j-3 )*X3 + A(36*j-2 )*X4 + A(36*j-1 )*X5 + A(36*j   )*X6
+        enddo
+        Y(6*i-5)= YV1
+        Y(6*i-4)= YV2
+        Y(6*i-3)= YV3
+        Y(6*i-2)= YV4
+        Y(6*i-1)= YV5
+        Y(6*i  )= YV6
+      enddo
+      !$acc end kernels
+
+      END_TIME = hecmw_Wtime()
+      time_Ax = time_Ax + END_TIME - START_TIME
+
+    endif
+
+  end subroutine hecmw_matvec_66_A
+
   !C
   !C***
   !C*** hecmw_matresid_66
@@ -235,6 +328,32 @@ contains
     enddo
 
   end subroutine hecmw_matresid_66
+
+  subroutine hecmw_matresid_66_A (hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+    use hecmw_util
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:), B(:)
+    real(kind=kreal), intent(out) :: R(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
+
+    integer(kind=kint) :: i
+    real(kind=kreal) :: Tcomm
+
+    Tcomm = 0.d0
+    call hecmw_matvec_66_A (hecMESH, hecMAT, indexA, itemA, A, X, R, time_Ax, Tcomm)
+    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+    !$acc kernels
+    !$acc loop independent
+    do i = 1, hecMAT%N * 6
+      R(i) = B(i) - R(i)
+    enddo
+    !$acc end kernels
+  end subroutine hecmw_matresid_66_A
 
   !C
   !C***

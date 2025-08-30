@@ -17,11 +17,19 @@
 #define HECMW_strdup(s) HECMW_strdup_(s, __FILE__, __LINE__)
 #define HECMW_free(ptr) HECMW_free_(ptr, __FILE__, __LINE__)
 #else
+#ifdef _OPENACC
+#define HECMW_malloc(size) HECMW_malloc_gpu(size)
+#define HECMW_calloc(nmemb, size) HECMW_calloc_gpu(nmemb, size)
+#define HECMW_realloc(ptr, size) HECMW_realloc_gpu(ptr, size)
+#define HECMW_strdup(s) HECMW_strdup_gpu(s)
+#define HECMW_free(ptr) HECMW_free_gpu(ptr)
+#else
 #define HECMW_malloc(size) malloc(size)
 #define HECMW_calloc(nmemb, size) calloc(nmemb, size)
 #define HECMW_realloc(ptr, size) realloc(ptr, size)
 #define HECMW_strdup(s) strdup(s)
 #define HECMW_free(ptr) free(ptr)
+#endif
 #endif
 
 extern void *HECMW_malloc_(size_t size, char *file, int line);
@@ -41,5 +49,15 @@ extern long HECMW_get_memsize(void);
 extern void HECMW_set_autocheck_memleak(int flag);
 
 extern int HECMW_list_meminfo(FILE *fp);
+
+extern void *HECMW_malloc_gpu(size_t size);
+
+extern void *HECMW_calloc_gpu(size_t nmemb, size_t size);
+
+extern void *HECMW_realloc_gpu(void *ptr, size_t size);
+
+extern char *HECMW_strdup_gpu(const char *s);
+
+extern void HECMW_free_gpu(void *ptr);
 
 #endif

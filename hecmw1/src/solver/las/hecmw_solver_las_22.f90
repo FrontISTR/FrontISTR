@@ -8,9 +8,11 @@ module hecmw_solver_las_22
   private
 
   public :: hecmw_matvec_22
+  public :: hecmw_matvec_22_A
   public :: hecmw_matvec_22_set_async
   public :: hecmw_matvec_22_unset_async
   public :: hecmw_matresid_22
+  public :: hecmw_matresid_22_A
   public :: hecmw_rel_resid_L2_22
   public :: hecmw_Tvec_22
   public :: hecmw_Ttvec_22
@@ -54,6 +56,35 @@ contains
 
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
   end subroutine hecmw_matvec_22
+
+  subroutine hecmw_matvec_22_A (hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+    use hecmw_util
+    use hecmw_matrix_misc
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
+
+    real(kind=kreal) :: Tcomm
+    real(kind=kreal), allocatable :: WK(:)
+
+    Tcomm = 0.d0
+
+    if (hecmw_mat_get_flag_mpcmatvec(hecMAT) /= 0) then
+      allocate(WK(hecMAT%NP * hecMAT%NDOF))
+      call hecmw_TtmatTvec_22_A(hecMESH, hecMAT, indexA, itemA, A, X, Y, WK, time_Ax, Tcomm)
+      deallocate(WK)
+    else
+      call hecmw_matvec_22_inner_A(hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, Tcomm)
+    endif
+
+    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+  end subroutine hecmw_matvec_22_A
 
   subroutine hecmw_matvec_22_set_async (hecMAT)
     use hecmw_util
@@ -226,10 +257,73 @@ contains
 
   end subroutine hecmw_matvec_22_inner
 
+  subroutine hecmw_matvec_22_inner_A (hecMESH, hecMAT, indexA, itemA, A, X, Y, time_Ax, COMMtime)
+    use hecmw_util
+    use m_hecmw_comm_f
+    use hecmw_matrix_misc
+    use hecmw_jad_type
+    use hecmw_tuning_fx
 
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
 
+    real(kind=kreal) :: START_TIME, END_TIME, Tcomm
+    integer(kind=kint) :: i, j, jS, jE, in
+    real(kind=kreal) :: YV1, YV2, X1, X2
 
+    integer(kind=kint) :: N, NP
 
+    if (hecmw_JAD_IS_INITIALIZED().ne.0) then
+      Tcomm = 0.d0
+      START_TIME = hecmw_Wtime()
+      call hecmw_JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
+      END_TIME = hecmw_Wtime()
+      time_Ax = time_Ax + END_TIME - START_TIME - Tcomm
+      if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+    else
+      N = hecMAT%N
+      NP = hecMAT%NP
+      START_TIME= HECMW_WTIME()
+      call hecmw_update_R (hecMESH, X, NP, 2)
+      END_TIME= HECMW_WTIME()
+      if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
+
+      START_TIME = hecmw_Wtime()
+
+      !$acc kernels
+      !$acc loop independent
+      do i = 1,N
+        X1= X(2*i-1)
+        X2= X(2*i  )
+        YV1= 0
+        YV2= 0
+        jS= indexA(i) + 1
+        jE= indexA(i+1)
+        do j= jS, jE
+          in  = itemA(j)
+          X1 = X(2*in-1)
+          X2 = X(2*in  )
+          YV1= YV1 + A(4*j-3)*X1 + A(4*j-2)*X2
+          YV2= YV2 + A(4*j-1)*X1 + A(4*j  )*X2
+        enddo
+        Y(2*i-1)= YV1
+        Y(2*i  )= YV2
+      enddo
+      !$acc end kernels
+
+      END_TIME = hecmw_Wtime()
+      time_Ax = time_Ax + END_TIME - START_TIME
+
+    endif
+
+  end subroutine hecmw_matvec_22_inner_A
 
   !C
   !C***
@@ -260,6 +354,32 @@ contains
     !$omp end do
     !$omp end parallel
   end subroutine hecmw_matresid_22
+
+  subroutine hecmw_matresid_22_A (hecMESH, hecMAT, indexA, itemA, A, X, B, R, time_Ax, COMMtime)
+    use hecmw_util
+    implicit none
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:), B(:)
+    real(kind=kreal), intent(out) :: R(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
+
+    integer(kind=kint) :: i
+    real(kind=kreal) :: Tcomm
+
+    Tcomm = 0.d0
+    call hecmw_matvec_22_A (hecMESH, hecMAT, indexA, itemA, A, X, R, time_Ax, Tcomm)
+    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+    !$acc kernels
+    !$acc loop independent
+    do i = 1, hecMAT%N * 2
+      R(i) = B(i) - R(i)
+    enddo
+    !$acc end kernels
+  end subroutine hecmw_matresid_22_A
 
   !C
   !C***
@@ -315,14 +435,25 @@ contains
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
     !$omp do
+#endif
     do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
+#ifndef _OPENACC
     !$omp end do
+#endif
 
+#ifdef _OPENACC
+    !$acc loop independent
+#else
     !$omp do
+#endif
     OUTER: do i= 1, hecMESH%mpc%n_mpc
       do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
         if (hecMESH%mpc%mpc_dof(j) > 2) cycle OUTER
@@ -335,8 +466,12 @@ contains
         Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
       enddo
     enddo OUTER
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
   end subroutine hecmw_Tvec_22
 
@@ -362,14 +497,25 @@ contains
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
     !$omp do
+#endif
     do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
+#ifndef _OPENACC
     !$omp end do
+#endif
 
+#ifdef _OPENACC
+    !$acc loop independent
+#else
     !$omp do
+#endif
     OUTER: do i= 1, hecMESH%mpc%n_mpc
       do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
         if (hecMESH%mpc%mpc_dof(j) > 2) cycle OUTER
@@ -379,12 +525,20 @@ contains
       Y(kk) = 0.d0
       do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
         jj = 2 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+#ifdef _OPENACC
+        !$acc atomic update
+#else
         !omp atomic
+#endif
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
     enddo OUTER
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
   end subroutine hecmw_Ttvec_22
 
@@ -409,6 +563,23 @@ contains
 
   end subroutine hecmw_TtmatTvec_22
 
+  subroutine hecmw_TtmatTvec_22_A (hecMESH, hecMAT, indexA, itemA, A, X, Y, W, time_Ax, COMMtime)
+    use hecmw_util
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    integer(kind=kint), intent(in) :: indexA(:), itemA(:)
+    real(kind=kreal), intent(in) :: A(:)
+    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(out) :: Y(:), W(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout) :: COMMtime
+
+    call hecmw_Tvec_22(hecMESH, X, Y, COMMtime)
+    call hecmw_matvec_22_inner_A(hecMESH, hecMAT, indexA, itemA, A, Y, W, time_Ax, COMMtime)
+    call hecmw_Ttvec_22(hecMESH, W, Y, COMMtime)
+
+  end subroutine hecmw_TtmatTvec_22_A
 
   !C
   !C***

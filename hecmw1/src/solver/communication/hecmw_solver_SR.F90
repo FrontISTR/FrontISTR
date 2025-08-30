@@ -40,6 +40,9 @@ contains
       &                  SOLVER_COMM,my_rank)
 
     use hecmw_util
+#ifdef _OPENACC
+    use openacc
+#endif
     implicit none
     !      include  'mpif.h'
     !      include  'hecmw_config_f.h'
@@ -67,12 +70,27 @@ contains
     data NFLAG/0/
     ! local valiables
     integer(kind=kint ) :: neib,istart,inum,k,kk,ii,ierr,nreq1,nreq2
+#ifdef _OPENACC
+    integer(kind=kint):: ns, nr
+    type(c_devptr) :: WS_dev, WR_dev
+#endif
     !C
     !C-- INIT.
     allocate (sta1(MPI_STATUS_SIZE,NEIBPETOT))
     allocate (sta2(MPI_STATUS_SIZE,NEIBPETOT))
     allocate (req1(NEIBPETOT))
     allocate (req2(NEIBPETOT))
+
+#ifdef _OPENACC
+    ns = STACK_EXPORT(NEIBPETOT)
+    nr = STACK_IMPORT(NEIBPETOT)
+
+    WS_dev = acc_malloc(kreal * m * ns)
+    WR_dev = acc_malloc(kreal * m * nr)
+
+    call acc_map_data(WS, WS_dev, kreal * m * ns)
+    call acc_map_data(WR, WR_dev, kreal * m * nr)
+#endif
 
     !C
     !C-- SEND
@@ -82,15 +100,29 @@ contains
       inum  = STACK_EXPORT(neib  ) - istart
       if (inum==0) cycle
       nreq1=nreq1+1
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent collapse(2)
+      do k= istart+1, istart+inum
+        do kk = 1, m
+          ii = NOD_EXPORT(k)
+          WS(m*(k-1)+kk)= X(m*(ii-1)+kk)
+        enddo
+      enddo
+      !$acc end kernels
+#else
       do k= istart+1, istart+inum
         ii   = NOD_EXPORT(k)
         do kk = 1, m
           WS(m*(k-1)+kk)= X(m*(ii-1)+kk)
         enddo
       enddo
+#endif
 
+      !$acc host_data use_device(WS)
       call MPI_ISEND (WS(m*istart+1), m*inum,MPI_DOUBLE_PRECISION,    &
         &                  NEIBPE(neib), 0, SOLVER_COMM, req1(nreq1), ierr)
+      !$acc end host_data
     enddo
 
     !C
@@ -101,8 +133,10 @@ contains
       inum  = STACK_IMPORT(neib  ) - istart
       if (inum==0) cycle
       nreq2=nreq2+1
+      !$acc host_data use_device(WR)
       call MPI_IRECV (WR(m*istart+1), m*inum, MPI_DOUBLE_PRECISION,   &
         &                  NEIBPE(neib), 0, SOLVER_COMM, req2(nreq2), ierr)
+      !$acc end host_data
     enddo
 
     call MPI_WAITALL (nreq2, req2, sta2, ierr)
@@ -110,17 +144,37 @@ contains
     do neib= 1, NEIBPETOT
       istart= STACK_IMPORT(neib-1)
       inum  = STACK_IMPORT(neib  ) - istart
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent collapse(2)
+      do k= istart+1, istart+inum
+        do kk= 1, m
+          ii = NOD_IMPORT(k)
+          X(m*(ii-1)+kk)= WR(m*(k-1)+kk)
+        enddo
+      enddo
+      !$acc end kernels
+#else
       do k= istart+1, istart+inum
         ii   = NOD_IMPORT(k)
         do kk= 1, m
           X(m*(ii-1)+kk)= WR(m*(k-1)+kk)
         enddo
       enddo
+#endif
     enddo
 
     call MPI_WAITALL (nreq1, req1, sta1, ierr)
 
     deallocate (sta1, sta2, req1, req2)
+
+#ifdef _OPENACC
+    call acc_unmap_data(WS)
+    call acc_unmap_data(WR)
+
+    call acc_free(WS_dev)
+    call acc_free(WR_dev)
+#endif
 #endif
   end subroutine hecmw_solve_send_recv
 

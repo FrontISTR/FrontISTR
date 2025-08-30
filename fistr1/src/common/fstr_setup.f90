@@ -1233,6 +1233,9 @@ contains
     n_elem = hecMESH%elem_type_index(hecMESH%n_elem_type)
     allocate( fstrSOLID%elements(n_elem) )
 
+#ifdef _OPENACC
+    call fstr_module_init_gauss
+#endif
     do i= 1, n_elem
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
@@ -1240,7 +1243,11 @@ contains
       if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
+#ifdef _OPENACC
+      if( ng > 0 ) call fstr_gauss_allocate_GaussStatus( fstrSOLID%elements(i)%gausses, ng )
+#else
       if( ng > 0 ) allocate( fstrSOLID%elements(i)%gausses( ng ) )
+#endif
 
       isect= hecMESH%section_ID(i)
       ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
@@ -1265,7 +1272,11 @@ contains
       enddo
 
       nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
+#ifdef _OPENACC
+      call fstr_gauss_allocate_real(fstrSOLID%elements(i)%equiForces, nn*ndof)
+#else
       allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
+#endif
       fstrSOLID%elements(i)%equiForces = 0.0d0
       if( nn > fstrSOLID%max_ncon ) fstrSOLID%max_ncon = nn
 
@@ -1300,15 +1311,26 @@ contains
         do j=1,size(fstrSOLID%elements(i)%gausses)
           call fstr_finalize_gauss(fstrSOLID%elements(i)%gausses(j))
         enddo
+#ifdef _OPENACC
+        nullify( fstrSOLID%elements(i)%gausses )
+#else
         deallocate( fstrSOLID%elements(i)%gausses )
+#endif
       endif
       if(associated(fstrSOLID%elements(i)%equiForces) ) then
+#ifdef _OPENACC
+        nullify(fstrSOLID%elements(i)%equiForces)
+#else
         deallocate(fstrSOLID%elements(i)%equiForces)
+#endif
       endif
       if( associated(fstrSOLID%elements(i)%aux) ) then
         deallocate(fstrSOLID%elements(i)%aux)
       endif
     enddo
+#ifdef _OPENACC
+    call fstr_module_finalize_gauss
+#endif
 
     deallocate( fstrSOLID%elements )
     if( associated( fstrSOLID%mpc_const ) ) then
