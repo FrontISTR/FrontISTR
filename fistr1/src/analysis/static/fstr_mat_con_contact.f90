@@ -18,6 +18,8 @@ module fstr_matrix_con_contact
   public :: fstr_save_originalMatrixStructure
   public :: fstr_mat_con_contact
   public :: fstr_is_matrixStruct_symmetric
+  public :: fstr_set_lagrange_diagonal
+  public :: fstr_get_lagrange_diagonal
 
   integer(kind=kint), save         :: NPL_org, NPU_org !< original number of non-zero items
   type(nodeRelated), pointer, save :: list_nodeRelated_org(:) => null() !< original structure of matrix
@@ -250,6 +252,47 @@ contains
     fstr_is_matrixStruct_symmetric = (is_in_contact == 0)
 
   end function fstr_is_matrixStruct_symmetric
+
+  !> \brief Set diagonal component value for specified Lagrange multiplier
+  subroutine fstr_set_lagrange_diagonal(hecLagMAT, ilag, value)
+    type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< hecmwST_matrix_lagrange
+    integer(kind=kint), intent(in) :: ilag !< Lagrange multiplier index (1-based)
+    real(kind=kreal), intent(in) :: value !< diagonal component value to set
+
+    if (ilag < 1 .or. ilag > hecLagMAT%num_lagrange) then
+      write(*,*) 'Error in fstr_set_lagrange_diagonal: invalid Lagrange multiplier index', ilag
+      stop
+    endif
+
+    if (.not. associated(hecLagMAT%D_lagrange)) then
+      write(*,*) 'Error in fstr_set_lagrange_diagonal: D_lagrange not allocated'
+      stop
+    endif
+
+    hecLagMAT%D_lagrange(ilag) = value
+
+  end subroutine fstr_set_lagrange_diagonal
+
+  !> \brief Get diagonal component value for specified Lagrange multiplier
+  real(kind=kreal) function fstr_get_lagrange_diagonal(hecLagMAT, ilag)
+    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< hecmwST_matrix_lagrange
+    integer(kind=kint), intent(in) :: ilag !< Lagrange multiplier index (1-based)
+
+    if (ilag < 1 .or. ilag > hecLagMAT%num_lagrange) then
+      write(*,*) 'Error in fstr_get_lagrange_diagonal: invalid Lagrange multiplier index', ilag
+      fstr_get_lagrange_diagonal = 0.0d0
+      return
+    endif
+
+    if (.not. associated(hecLagMAT%D_lagrange)) then
+      write(*,*) 'Error in fstr_get_lagrange_diagonal: D_lagrange not allocated'
+      fstr_get_lagrange_diagonal = 0.0d0
+      return
+    endif
+
+    fstr_get_lagrange_diagonal = hecLagMAT%D_lagrange(ilag)
+
+  end function fstr_get_lagrange_diagonal
 
 
 end module fstr_matrix_con_contact
