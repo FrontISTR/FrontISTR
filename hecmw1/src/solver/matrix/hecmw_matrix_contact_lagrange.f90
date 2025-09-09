@@ -415,6 +415,7 @@ contains
     if(associated(hecLagMAT%itemU_lagrange)) deallocate(hecLagMAT%itemU_lagrange)
     if(associated(hecLagMAT%AL_lagrange)) deallocate(hecLagMAT%AL_lagrange)
     if(associated(hecLagMAT%AU_lagrange)) deallocate(hecLagMAT%AU_lagrange)
+    if(associated(hecLagMAT%D_lagrange)) deallocate(hecLagMAT%D_lagrange)
     if(associated(hecLagMAT%Lagrange)) deallocate(hecLagMAT%Lagrange)
 
     if( is_contact_active ) then
@@ -469,6 +470,11 @@ contains
       allocate(hecLagMAT%AL_lagrange(ndof*numNon0_lagrange), stat=ierr)
       if ( ierr /= 0 ) stop " Allocation error, hecLagMAT%AL_lagrange "
       hecLagMAT%AL_lagrange = 0.0D0
+
+      ! init D_lagrange (diagonal components for Lagrange multipliers)
+      allocate(hecLagMAT%D_lagrange(num_lagrange), stat=ierr)
+      if ( ierr /= 0 ) stop " Allocation error, hecLagMAT%D_lagrange "
+      hecLagMAT%D_lagrange = 0.0D0
 
       ! init Lagrange
       allocate(hecLagMAT%Lagrange(num_lagrange))

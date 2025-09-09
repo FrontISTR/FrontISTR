@@ -480,7 +480,11 @@ contains
         endif
         ! Diag( Only for CSR )
         if (spMAT%type==SPARSE_MATRIX_TYPE_CSR) then
-          spMAT%A(m)=0.d0
+          if (associated(hecLagMAT%D_lagrange)) then
+            spMAT%A(m) = hecLagMAT%D_lagrange(i)
+          else
+            spMAT%A(m) = 0.d0
+          endif
           m=m+1
         end if
       enddo
