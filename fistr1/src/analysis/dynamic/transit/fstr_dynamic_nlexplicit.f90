@@ -109,8 +109,8 @@ contains
         fstrDYN%DISP(j,2) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/ a2 + fstrDYN%ACC (j,1)/ (2.d0*a1) * 4.d0
       end do
 
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+      call fstr_dynamic_Output(1, 0, hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
+      call dynamic_output_monit(1, 0, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
     end if
 
     if( associated( fstrSOLID%contacts ) )  then
@@ -121,7 +121,6 @@ contains
 
     do i= restrt_step_num, fstrDYN%n_step
 
-      fstrDYN%i_step = i
       fstrDYN%t_curr = fstrDYN%t_delta * i
 
       !C-- mechanical boundary condition
@@ -319,8 +318,8 @@ contains
       end if
       !
       !C-- output new displacement, velocity and acceleration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+      call fstr_dynamic_Output(1, i, hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
+      call dynamic_output_monit(1, i, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
 
     enddo
 

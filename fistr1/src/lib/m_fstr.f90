@@ -544,7 +544,6 @@ module m_fstr
     integer(kind=kint) :: nout           ! output interval of result
     integer(kind=kint) :: ngrp_monit     ! node of monitoring result
     integer(kind=kint) :: nout_monit     ! output interval of result monitoring
-    integer(kind=kint) :: i_step         ! step number
     integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output
     ! iout_list(1): displacement
     ! iout_list(2): velocity
