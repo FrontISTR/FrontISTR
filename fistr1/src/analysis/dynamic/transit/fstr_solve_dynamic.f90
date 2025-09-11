@@ -158,7 +158,6 @@ contains
 
     restart_step_num = 1
     restart_substep_num = 1
-    fstrDYNAMIC%i_step = 0
     infoCTChange%contactNode_previous = 0
 
     if(associated(g_InitialCnd))then

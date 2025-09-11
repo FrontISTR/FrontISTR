@@ -27,13 +27,12 @@ contains
     type(hecmwST_matrix), optional :: conMAT
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: dyn_step, flag_u
+    integer(kind=kint) :: flag_u
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0, f_t
 
     if( fstrSOLID%ACCELERATION_type == kbcInitial )return
 
-    dyn_step = fstrDYNAMIC%i_step
     flag_u = 3
 
     b2 = fstrDYNAMIC%t_delta
@@ -215,13 +214,12 @@ contains
     integer, optional :: iter
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: dyn_step, flag_u
+    integer(kind=kint) :: flag_u
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0, f_t
 
     if( fstrSOLID%ACCELERATION_type == kbcInitial )return
 
-    dyn_step = fstrDYNAMIC%i_step
     flag_u = 3
 
     b2 = fstrDYNAMIC%t_delta

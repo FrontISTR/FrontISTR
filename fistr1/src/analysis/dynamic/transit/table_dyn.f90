@@ -67,13 +67,6 @@ contains
         end select
       end if
 
-      if( fstrDYNAMIC%i_step == 0 ) then
-        t_t = fstrDYNAMIC%t_delta*fstrDYNAMIC%i_step
-      end if
-
-      !     if(jj2 .eq. 0) then
-      !        f_t = 1.0
-
       if(t_t .gt. hecMESH%amp%amp_table(jj2)) then
         f_t = hecMESH%amp%amp_val(jj2)
       else if(t_t .le. hecMESH%amp%amp_table(jj2)) then

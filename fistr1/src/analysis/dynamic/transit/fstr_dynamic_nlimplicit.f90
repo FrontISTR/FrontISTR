@@ -118,8 +118,8 @@ contains
 
     !C-- output of initial state
     if( restart_step_num == 1 ) then
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+      call fstr_dynamic_Output(1, 0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+      call dynamic_output_monit(1, 0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
     fstrDYNAMIC%VEC3(:) =0.d0
@@ -147,10 +147,8 @@ contains
     ! fstrDYNAMIC%n_step
 
     do tot_step=restart_step_num, fstrSOLID%nstep_tot
-      !do i = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
-      do i = restart_substep_num, fstrDYNAMIC%n_step
+      do i = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
 
-        fstrDYNAMIC%i_step = i
         fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
         call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
@@ -158,10 +156,10 @@ contains
             restart_step_num, hecMAT0, i)
 
         !C-- output new displacement, velocity and acceleration
-        call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+        call fstr_dynamic_Output(tot_step, i, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
         !C-- output result of monitoring node
-        call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+        call dynamic_output_monit(tot_step, i, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
 
         !---  Restart info
         if( fstrDYNAMIC%restart_nout > 0 ) then

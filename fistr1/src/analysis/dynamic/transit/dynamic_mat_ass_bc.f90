@@ -57,10 +57,8 @@ contains
           if( iter>1 ) then
             RHS=0.d0
           else
-            fstrDYNAMIC%i_step = fstrDYNAMIC%i_step-1
             fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta
             call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t1, flag_u)
-            fstrDYNAMIC%i_step = fstrDYNAMIC%i_step+1
             fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta
             call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
             RHS = RHS * (f_t-f_t1)
