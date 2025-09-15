@@ -10,7 +10,7 @@ contains
 
 
   !>  This subroutine setup disp bundary condition
-  subroutine DYNAMIC_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
     use mContact
@@ -23,6 +23,7 @@ contains
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    real(kind=kreal)                     :: t_curr
     integer, optional                    :: iter
     type(hecmwST_matrix), optional       :: conMAT
 
@@ -57,14 +58,12 @@ contains
           if( iter>1 ) then
             RHS=0.d0
           else
-            fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta
-            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t1, flag_u)
-            fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta
-            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr-fstrDYNAMIC%t_delta, f_t1, flag_u)
+            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
             RHS = RHS * (f_t-f_t1)
           endif
         else
-          call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+          call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
           RHS = RHS * f_t
         endif
 
@@ -189,7 +188,7 @@ contains
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
@@ -224,7 +223,7 @@ contains
   !C***
   !> This subroutine setup initial condition of displacement
   !C***
-  subroutine DYNAMIC_BC_INIT(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC)
+  subroutine DYNAMIC_BC_INIT(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr)
     use m_fstr
     use m_table_dyn
 
@@ -233,6 +232,7 @@ contains
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
     type(fstr_dynamic)       :: fstrDYNAMIC
+    real(kind=kreal)         :: t_curr
 
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
     integer(kind=kint) :: flag_u
@@ -246,7 +246,7 @@ contains
       RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
 
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
       RHS = RHS * f_t
 
       ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
@@ -269,7 +269,7 @@ contains
   end subroutine DYNAMIC_BC_INIT
 
   !>  This subroutine setup disp boundary condition
-  subroutine DYNAMIC_EXPLICIT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, iter)
+  subroutine DYNAMIC_EXPLICIT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr, iter)
     use m_fstr
     use m_table_dyn
     use mContact
@@ -280,6 +280,7 @@ contains
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
+    real(kind=kreal)                     :: t_curr
     integer, optional                    :: iter
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
@@ -306,7 +307,7 @@ contains
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
