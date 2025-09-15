@@ -180,9 +180,9 @@ contains
     endif
 
     if(fstrDYNAMIC%restart_nout >= 0 ) then
-      call dynamic_bc_init   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-      call dynamic_bc_init_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-      call dynamic_bc_init_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+      call dynamic_bc_init   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
+      call dynamic_bc_init_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
+      call dynamic_bc_init_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
     endif
 
     !restart

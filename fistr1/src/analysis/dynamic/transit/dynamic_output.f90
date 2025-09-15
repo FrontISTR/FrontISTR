@@ -9,7 +9,7 @@ contains
 
   !> Output result
   !----------------------------------------------------------------------*
-  subroutine fstr_dynamic_Output( cstep, istep, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM )
+  subroutine fstr_dynamic_Output( cstep, istep, t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM )
     !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
@@ -17,6 +17,7 @@ contains
     use m_hecmw2fstr_mesh_conv
     integer, intent(in)                  :: cstep       !< current step number
     integer, intent(in)                  :: istep       !< current substep number
+    real(kind=kreal), intent(in)         :: t_curr      !< current time
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
     type(fstr_dynamic), intent(in)       :: fstrDYNAMIC
@@ -73,7 +74,7 @@ contains
         (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. istep==maxstep) ) then
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
-      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, fstrDYNAMIC%t_curr, 0, fstrDYNAMIC )
+      call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, t_curr, 0, fstrDYNAMIC )
     endif
 
     if( IVISUAL==1 .and. &
@@ -81,7 +82,7 @@ contains
 
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
-      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, fstrDYNAMIC%t_curr, fstrDYNAMIC )
+      call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, istep )
@@ -353,10 +354,11 @@ contains
   !C================================================================C
   !C-- subroutine dynamic_output_monit
   !C================================================================C
-  subroutine dynamic_output_monit(cstep, istep, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+  subroutine dynamic_output_monit(cstep, istep, t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     use m_fstr
     integer, intent(in)      :: cstep       !< current step number
     integer, intent(in)      :: istep       !< current substep number
+    real(kind=kreal), intent(in) :: t_curr      !< current time
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_param)         :: fstrPARAM
     type(fstr_dynamic)       :: fstrDYNAMIC
@@ -390,28 +392,28 @@ contains
       if( fstrDYNAMIC%iout_list(1)==1 ) then
         iunit = iunitS + fstrDYNAMIC%dynamic_IW4
         write( iunit, '(i10, i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
-          cstep, istep, fstrDYNAMIC%t_curr, jj, &
+          cstep, istep, t_curr, jj, &
           fstrDYNAMIC%DISP( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , idx )
       end if
       !C-- velocity
       if( fstrDYNAMIC%iout_list(2)==1 ) then
         iunit = iunitS + fstrDYNAMIC%dynamic_IW5
         write( iunit, '(i10, i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
-          cstep, istep, fstrDYNAMIC%t_curr, jj, &
+          cstep, istep, t_curr, jj, &
           fstrDYNAMIC%VEL( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , idx )
       end if
       !C-- acceleration
       if( fstrDYNAMIC%iout_list(3)==1 ) then
         iunit = iunitS + fstrDYNAMIC%dynamic_IW6
         write( iunit, '(i10, i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
-          cstep, istep, fstrDYNAMIC%t_curr, jj, &
+          cstep, istep, t_curr, jj, &
           fstrDYNAMIC%ACC( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii , idx )
       end if
       !C-- nodal force
       if( fstrDYNAMIC%iout_list(4)==1 ) then
         iunit = iunitS + fstrDYNAMIC%dynamic_IW7
         write( iunit, '(i10, i10,1pe13.4e3,i10,1p6e13.4e3)' ) &
-          cstep, istep, fstrDYNAMIC%t_curr, jj, &
+          cstep, istep, t_curr, jj, &
           fstrSOLID%QFORCE( hecMESH%n_dof*(ii-1)+1 : hecMESH%n_dof*ii )
       end if
       !C-- strain
@@ -423,7 +425,7 @@ contains
         endif
         iunit = iunitS + fstrDYNAMIC%dynamic_IW8
         write( iunit, '(i10, i10,1pe13.4e3,i10,1p6e13.4e3)') &
-          cstep, istep, fstrDYNAMIC%t_curr, jj, &
+          cstep, istep, t_curr, jj, &
           fstrSOLID%STRAIN( ncmp*(ii-1)+1 : ncmp*ii )
       end if
       !C-- stress
@@ -435,7 +437,7 @@ contains
         endif
         iunit = iunitS + fstrDYNAMIC%dynamic_IW9
         write( iunit, '(i10, i10,1pe13.4e3,i10,1p7e13.4e3)') &
-          cstep, istep, fstrDYNAMIC%t_curr, jj, &
+          cstep, istep, t_curr, jj, &
           fstrSOLID%STRESS( ncmp*(ii-1)+1 : ncmp*ii )
       end if
     enddo
@@ -461,7 +463,7 @@ contains
         endif
         fstrDYNAMIC%totalEnergy = fstrDYNAMIC%kineticEnergy + fstrDYNAMIC%strainEnergy
         write( fstrDYNAMIC%dynamic_IW10, '(i10, i10,1pe13.4e3,1p3e16.4e3)' ) &
-          cstep, istep, fstrDYNAMIC%t_curr, &
+          cstep, istep, t_curr, &
           fstrDYNAMIC%kineticEnergy, fstrDYNAMIC%strainEnergy, fstrDYNAMIC%totalEnergy
       endif
       if( istep==fstrDYNAMIC%n_step ) close(fstrDYNAMIC%dynamic_IW10)

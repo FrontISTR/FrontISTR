@@ -12,7 +12,7 @@ contains
   !> This function sets boundary condition of external load
   !C***
   !C
-  subroutine DYNAMIC_MAT_ASS_LOAD(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
+  subroutine DYNAMIC_MAT_ASS_LOAD(t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
 
     use m_fstr
     use m_static_lib
@@ -23,6 +23,7 @@ contains
     use m_utilities
 
     implicit none
+    real(kind=kreal)         :: t_curr
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
@@ -80,7 +81,7 @@ contains
       val = fstrSOLID%CLOAD_ngrp_val(ig0)
 
       flag_u = 0
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
       val = val*f_t
 
       iS0= hecMESH%node_group%grp_index(ig-1)+1
@@ -232,7 +233,7 @@ contains
         !!!!!!  time history
 
         flag_u = 10
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         do j=1,nsize
           vect(j) = vect(j)*f_t
         enddo
