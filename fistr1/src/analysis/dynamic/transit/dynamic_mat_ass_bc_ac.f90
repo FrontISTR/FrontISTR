@@ -11,12 +11,13 @@ contains
   !> This subrouitne set acceleration boundary condition in dynamic analysis
   !C***
 
-  subroutine DYNAMIC_MAT_ASS_BC_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC_AC(cstep, hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
     use mContact
 
     implicit none
+    integer(kind=kint)                   :: cstep
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID

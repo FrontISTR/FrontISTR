@@ -298,7 +298,7 @@ contains
         endif
 
         !C-- mechanical boundary condition
-        call dynamic_mat_ass_load (t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
+        call dynamic_mat_ass_load (cstep, t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
         do j=1, hecMESH%n_node*  hecMESH%n_dof
           hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
             + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
@@ -335,9 +335,12 @@ contains
         endif
 
         !C-- geometrical boundary condition
-        call dynamic_mat_ass_bc   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
-        call dynamic_mat_ass_bc_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
-        call dynamic_mat_ass_bc_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
+        call dynamic_mat_ass_bc   (cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
+          &  fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
+        call dynamic_mat_ass_bc_vl(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
+          &  fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
+        call dynamic_mat_ass_bc_ac(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
+          &  fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
 
         ! ----- check convergence
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)

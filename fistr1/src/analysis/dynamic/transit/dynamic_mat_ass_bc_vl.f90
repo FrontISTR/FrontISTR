@@ -10,12 +10,13 @@ contains
   !> This subrouitne set velocity boundary condition in dynamic analysis
   !C***
 
-  subroutine DYNAMIC_MAT_ASS_BC_VL(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC_VL(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
     use mContact
 
     implicit none
+    integer(kind=kint) :: cstep 
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
@@ -28,7 +29,7 @@ contains
     integer, optional :: iter
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0, f_t
 
@@ -60,6 +61,8 @@ contains
 
       do ig0 = 1, fstrSOLID%VELOCITY_ngrp_tot
         ig   = fstrSOLID%VELOCITY_ngrp_ID(ig0)
+        grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+        if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
         RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
 
         call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
