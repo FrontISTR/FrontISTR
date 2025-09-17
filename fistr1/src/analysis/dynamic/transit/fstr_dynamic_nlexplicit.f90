@@ -124,7 +124,7 @@ contains
       fstrDYN%t_curr = fstrDYN%t_delta * i
 
       !C-- mechanical boundary condition
-      call dynamic_mat_ass_load (fstrDYN%t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYN, fstrPARAM)
+      call dynamic_mat_ass_load (1, fstrDYN%t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYN, fstrPARAM)
       do j=1, hecMESH%n_node*  hecMESH%n_dof
         hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
       end do
@@ -182,9 +182,6 @@ contains
         call dynamic_explicit_ass_bc(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
         call dynamic_explicit_ass_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
         call dynamic_explicit_ass_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
-        !call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
-        !call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
-        !call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
 
         ! Finish the calculation
         do j = 1 ,ndof*nnod
