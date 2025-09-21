@@ -56,7 +56,7 @@ contains
     integer(kind=kint) :: i
     real(kind=kreal) :: time_1, time_2
 
-    integer(kind=kint) :: restart_step_num, restart_substep_num, tot_step
+    integer(kind=kint) :: restart_step_num, restart_substep_num, tot_step, step_count
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: max_iter_contact
     real(kind=kreal) :: converg_dlag
@@ -118,7 +118,7 @@ contains
 
     !C-- output of initial state
     if( restart_step_num == 1 ) then
-      call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+      call fstr_dynamic_Output(1, 0, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
@@ -142,12 +142,10 @@ contains
     is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
     call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
     
-    !! step = 1,2,....,fstrDYNAMIC%n_step
-
-    ! fstrDYNAMIC%n_step
-
+    step_count = 0
     do tot_step=restart_step_num, fstrSOLID%nstep_tot
       do i = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
+        step_count = step_count + 1
 
         fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
 
@@ -156,7 +154,7 @@ contains
             restart_step_num, hecMAT0, i, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta)
 
         !C-- output new displacement, velocity and acceleration
-        call fstr_dynamic_Output(tot_step, i, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+        call fstr_dynamic_Output(tot_step, i, step_count, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
         !C-- output result of monitoring node
         call dynamic_output_monit(tot_step, i, fstrDYNAMIC%t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
