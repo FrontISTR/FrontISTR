@@ -109,7 +109,7 @@ contains
         fstrDYN%DISP(j,2) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/ a2 + fstrDYN%ACC (j,1)/ (2.d0*a1) * 4.d0
       end do
 
-      call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
+      call fstr_dynamic_Output(1, 0, 0, 0.d0, hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
     end if
 
@@ -315,7 +315,7 @@ contains
       end if
       !
       !C-- output new displacement, velocity and acceleration
-      call fstr_dynamic_Output(1, i, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
+      call fstr_dynamic_Output(1, i, i, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
       call dynamic_output_monit(1, i, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
 
     enddo

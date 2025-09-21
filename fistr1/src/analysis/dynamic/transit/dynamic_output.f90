@@ -9,7 +9,7 @@ contains
 
   !> Output result
   !----------------------------------------------------------------------*
-  subroutine fstr_dynamic_Output( cstep, istep, t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM )
+  subroutine fstr_dynamic_Output( cstep, istep, stepcount, t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM )
     !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
@@ -17,6 +17,7 @@ contains
     use m_hecmw2fstr_mesh_conv
     integer, intent(in)                  :: cstep       !< current step number
     integer, intent(in)                  :: istep       !< current substep number
+    integer, intent(in)                  :: stepcount   !< total step count
     real(kind=kreal), intent(in)         :: t_curr      !< current time
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
@@ -85,7 +86,7 @@ contains
       call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
-      call hecmw_visualize( hecMESH, fstrRESULT, istep )
+      call hecmw_visualize( hecMESH, fstrRESULT, stepcount )
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv( hecMESH )
       call hecmw_result_free( fstrRESULT )
