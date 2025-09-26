@@ -112,7 +112,7 @@ contains
     call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 
     !C-- set arbitrary {r_tld}
-    call hecmw_copy_R(hecMESH, NDOF, WW(:,R), WW(:,RT))
+    call hecmw_copy_R(NNDOF, WW(:,R), WW(:,RT))
 
     !C-- compute ||{b}||
     call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
@@ -162,10 +162,10 @@ contains
       !C===
       if ( iter.gt.1 ) then
         BETA = (RHO/RHO1) * (ALPHA/OMEGA)
-        call hecmw_axpy_R(hecMESH, NDOF, -OMEGA, WW(:,V), WW(:,P))
-        call hecmw_xpay_R(hecMESH, NDOF,   BETA, WW(:,R), WW(:,P))
+        call hecmw_axpy_R(NNDOF, -OMEGA, WW(:,V), WW(:,P))
+        call hecmw_xpay_R(NNDOF,   BETA, WW(:,R), WW(:,P))
       else
-        call hecmw_copy_R(hecMESH, NDOF, WW(:,R), WW(:,P))
+        call hecmw_copy_R(NNDOF, WW(:,R), WW(:,P))
       endif
 
       !C===
@@ -190,7 +190,7 @@ contains
 
       !C
       !C-- {s}= {r} - ALPHA*{V}
-      call hecmw_axpyz_R(hecMESH, NDOF, -ALPHA, WW(:,V), WW(:,R), WW(:,S))
+      call hecmw_axpyz_R(NNDOF, -ALPHA, WW(:,V), WW(:,R), WW(:,S))
 
       !C===
       !C +--------------------+
@@ -225,14 +225,14 @@ contains
       !C | update {x},{r} |
       !C +----------------+
       !C===
-      call hecmw_axpy_R(hecMESH, NDOF, ALPHA, WW(:,PT), X)
-      call hecmw_axpy_R(hecMESH, NDOF, OMEGA, WW(:,ST), X)
+      call hecmw_axpy_R(NNDOF, ALPHA, WW(:,PT), X)
+      call hecmw_axpy_R(NNDOF, OMEGA, WW(:,ST), X)
       !C
       !C--- recompute R sometimes
       if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
         call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
       else
-        call hecmw_axpyz_R(hecMESH, NDOF, -OMEGA, WW(:,T), WW(:,S), WW(:,R))
+        call hecmw_axpyz_R(NNDOF, -OMEGA, WW(:,T), WW(:,S), WW(:,R))
       endif
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)
