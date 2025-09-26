@@ -144,7 +144,7 @@ contains
         !C Compute eta(1) = M^-1r
         call hecmw_precond_apply(hecMESH, hecMAT, vecR, eta(:,1), workPC, Tcomm)
         call hecmw_matvec(hecMESH, hecMAT, eta(:,1), xi(:,1), Tcomm)
-        call hecmw_xpay_R(hecMESH, NDOF, -1.0d0, vecR, xi(:,1))
+        call hecmw_xpay_R(NNDOF, -1.0d0, vecR, xi(:,1))
 
         do iOrth = 1, I-1
            !C alpha = c_{i}^T xi_{i}
@@ -152,8 +152,8 @@ contains
 
            !C  xi(i+1) =  xi(i) - alpha * c(i)
            !C eta(i+1) = eta(i) + alpha * u(i)
-           call hecmw_axpyz_R(hecMESH, NDOF, -alpha, c(:,iOrth),  xi(:,iOrth),  xi(:,iOrth+1))
-           call hecmw_axpyz_R(hecMESH, NDOF,  alpha, u(:,iOrth), eta(:,iOrth), eta(:,iOrth+1))
+           call hecmw_axpyz_R(NNDOF, -alpha, c(:,iOrth),  xi(:,iOrth),  xi(:,iOrth+1))
+           call hecmw_axpyz_R(NNDOF,  alpha, u(:,iOrth), eta(:,iOrth), eta(:,iOrth+1))
         enddo
 
         !C Solve M*r = uin(:,1)
@@ -165,18 +165,18 @@ contains
            !C c_{i}^T cin_{i}
            call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,iOrth), cin(:,iOrth), beta, Tcomm)
 
-           call hecmw_axpyz_R(hecMESH, NDOF, -coef, c(:,iOrth), cin(:,iOrth), cin(:,iOrth+1))
-           call hecmw_axpyz_R(hecMESH, NDOF, -coef, u(:,iOrth), uin(:,iOrth), uin(:,iOrth+1))
+           call hecmw_axpyz_R(NNDOF, -coef, c(:,iOrth), cin(:,iOrth), cin(:,iOrth+1))
+           call hecmw_axpyz_R(NNDOF, -coef, u(:,iOrth), uin(:,iOrth), uin(:,iOrth+1))
         enddo
         call hecmw_InnerProduct_R(hecMESH, NDOF, cin(:,I), cin(:,I), coef, Tcomm)
         coef = 1.0d0 / dsqrt(coef)
-        call hecmw_axpby_R(hecMESH, NDOF, coef, 0.0d0, cin(:,I), c(:,I))
-        call hecmw_axpby_R(hecMESH, NDOF, coef, 0.0d0, uin(:,I), u(:,I))
+        call hecmw_axpby_R(NNDOF, coef, 0.0d0, cin(:,I), c(:,I))
+        call hecmw_axpby_R(NNDOF, coef, 0.0d0, uin(:,I), u(:,I))
 
         call hecmw_InnerProduct_R(hecMESH, NDOF, c(:,I), xi(:,I), coef, Tcomm)
-        call hecmw_axpy_R (hecMESH, NDOF,  coef,   u(:,I), x)
-        call hecmw_axpy_R (hecMESH, NDOF, 1.0d0, eta(:,I), x)
-        call hecmw_axpyz_R(hecMESH, NDOF, -coef,   c(:,I), xi(:,I), vecR)
+        call hecmw_axpy_R (NNDOF,  coef,   u(:,I), x)
+        call hecmw_axpy_R (NNDOF, 1.0d0, eta(:,I), x)
+        call hecmw_axpyz_R(NNDOF, -coef,   c(:,I), xi(:,I), vecR)
 
         call hecmw_InnerProduct_R(hecMESH, NDOF, vecR, vecR, DNRM2, Tcomm)
 
