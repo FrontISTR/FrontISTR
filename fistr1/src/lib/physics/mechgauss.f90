@@ -22,6 +22,9 @@ module mMechGauss
     real(kind=kreal)          :: nqm(12)                !< NQM
     real(kind=kreal)          :: strain_out(6)          !< strain
     real(kind=kreal)          :: stress_out(6)          !< stress
+    real(kind=kreal)          :: strain_energy          !< strain energy
+    real(kind=kreal)          :: strain_energy_bak      !< strain energy
+    real(kind=kreal)          :: plpotential            !< plastic potential
   end type
 
   ! ----------------------------------------------------------------------------
@@ -46,6 +49,8 @@ contains
     gauss%strain_out=0.d0; gauss%stress_out=0.d0
     gauss%plstrain =0.d0
     gauss%nqm =0.d0
+    gauss%strain_energy =0.d0
+    gauss%strain_energy_bak =0.d0
     if( gauss%pMaterial%mtype==USERMATERIAL ) then
       if( gauss%pMaterial%nfstatus> 0 ) then
         allocate( gauss%fstatus(gauss%pMaterial%nfstatus) )
@@ -95,6 +100,7 @@ contains
     gauss2%strain_bak = gauss1%strain_bak
     gauss2%stress_bak = gauss1%stress_bak
     gauss2%plstrain   = gauss1%plstrain
+    gauss2%strain_energy = gauss1%strain_energy
 
     if( associated(gauss1%istatus) .and. associated(gauss2%istatus) ) then
       gauss2%istatus   = gauss1%istatus

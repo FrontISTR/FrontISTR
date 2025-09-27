@@ -15,7 +15,7 @@
 int is_blank_line(char *buf);
 int is_comment_line(char *buf);
 void get_string_item(char *para, char *buf, int *start_location,
-                     char para2[128]);
+                     char *para2);
 int get_int_item(char *para, char *buf, int *start_location);
 double get_double_item(char *para, char *buf, int *start_location);
 int get_keyword_item(char *buf, char *para);

@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPAND hecmw_SOURCES
+target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_transfer_result_c.f90
   ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_transfer_data_c.f90
   ${CMAKE_CURRENT_SOURCE_DIR}/hecmw_transfer_data_c2f.f90

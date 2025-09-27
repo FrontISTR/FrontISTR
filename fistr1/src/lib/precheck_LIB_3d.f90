@@ -20,7 +20,7 @@ contains
     ! CALCULATION 3D 4-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -38,13 +38,13 @@ contains
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do L3=1,NG
-      XL3=XG(NG,L3)
+      XL3=gauss1d2(1,L3)
       X3 =(XL3+1.0)*0.5
       do L2=1,NG
-        XL2=XG(NG,L2)
+        XL2=gauss1d2(1,L2)
         X2 =(1.0-X3)*(XL2+1.0)*0.5
         do L1=1,NG
-          XL1=XG(NG,L1)
+          XL1=gauss1d2(1,L1)
           X1=(1.0-X2-X3)*(XL1+1.0)*0.5
           ! INTERPOLATION FUNCTION
           X4=1.0-X1-X2-X3
@@ -102,7 +102,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
+          WG=weight1d2(L1)*weight1d2(L2)*weight1d2(L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
           do I = 1, NN
             vol = vol + H(I)*WG
           enddo
@@ -127,7 +127,7 @@ contains
     ! CALCULATION 3D 6-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     integer(kind=kint) nline
@@ -146,12 +146,12 @@ contains
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do LZ=1,NG
-      ZI=XG(NG,LZ)
+      ZI=gauss1d2(1,LZ)
       do L2=1,NG
-        XL2=XG(NG,L2)
+        XL2=gauss1d2(1,L2)
         X2 =(XL2+1.0)*0.5
         do L1=1,NG
-          XL1=XG(NG,L1)
+          XL1=gauss1d2(1,L1)
           X1=0.5*(1.0-X2)*(XL1+1.0)
           ! INTERPOLATION FUNCTION
           X3=1.0-X1-X2
@@ -219,7 +219,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,LZ)*DET*(1.0-X2)*0.25
+          WG=weight1d2(L1)*weight1d2(L2)*weight1d2(LZ)*DET*(1.0-X2)*0.25
           do I = 1, NN
             vol = vol + H(I)*WG
           enddo
@@ -247,7 +247,7 @@ contains
     ! CALCULATION 3D 8-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -264,11 +264,11 @@ contains
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do LX=1,NG
-      RI=XG(NG,LX)
+      RI=gauss1d2(1,LX)
       do LY=1,NG
-        SI=XG(NG,LY)
+        SI=gauss1d2(1,LY)
         do LZ=1,NG
-          TI=XG(NG,LZ)
+          TI=gauss1d2(1,LZ)
           RP=1.0+RI
           SP=1.0+SI
           TP=1.0+TI
@@ -341,7 +341,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,LX)*WGT(NG,LY)*WGT(NG,LZ)*DET
+          WG=weight1d2(LX)*weight1d2(LY)*weight1d2(LZ)*DET
           do I=1,NN
             vol = vol + H(i)*WG
           enddo
@@ -374,7 +374,7 @@ contains
     ! CALCULATION 3D 10-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -392,13 +392,13 @@ contains
     VOL = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do L3=1,NG
-      XL3=XG(NG,L3)
+      XL3=gauss1d3(1,L3)
       X3 =(XL3+1.0)*0.5
       do L2=1,NG
-        XL2=XG(NG,L2)
+        XL2=gauss1d3(1,L2)
         X2 =(1.0-X3)*(XL2+1.0)*0.5
         do L1=1,NG
-          XL1=XG(NG,L1)
+          XL1=gauss1d3(1,L1)
           X1=(1.0-X2-X3)*(XL1+1.0)*0.5
           ! INTERPOLATION FUNCTION
           X4=1.0-X1-X2-X3
@@ -486,7 +486,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
+          WG=weight1d3(L1)*weight1d3(L2)*weight1d3(L3)*DET*(1.0-X3)*(1.0-X2-X3)*0.125
           do I = 1, NN
             vol = vol + H(I)*WG
           enddo
@@ -523,7 +523,7 @@ contains
     ! CALCULATION 3D 15-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,tline,almax,almin
@@ -540,12 +540,12 @@ contains
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do LZ=1,NG
-      ZI=XG(NG,LZ)
+      ZI=gauss1d3(1,LZ)
       do L2=1,NG
-        XL2=XG(NG,L2)
+        XL2=gauss1d3(1,L2)
         X2 =(XL2+1.0)*0.5
         do L1=1,NG
-          XL1=XG(NG,L1)
+          XL1=gauss1d3(1,L1)
           X1=0.5*(1.0-X2)*(XL1+1.0)
           ! INTERPOLATION FUNCTION
           X3=1.0-X1-X2
@@ -658,7 +658,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,L1)*WGT(NG,L2)*WGT(NG,LZ)*DET*(1.0-X2)*0.25
+          WG=weight1d3(L1)*weight1d3(L2)*weight1d3(LZ)*DET*(1.0-X2)*0.25
           do I = 1, NN
             vol = vol + H(I)*WG
           enddo
@@ -707,7 +707,7 @@ contains
     ! CALCULATION 3D 20-NODE SOLID ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),vol,almax,almin
@@ -724,11 +724,11 @@ contains
     vol = 0.0
     ! LOOP FOR INTEGRATION POINTS
     do LX=1,NG
-      RI=XG(NG,LX)
+      RI=gauss1d3(1,LX)
       do LY=1,NG
-        SI=XG(NG,LY)
+        SI=gauss1d3(1,LY)
         do LZ=1,NG
-          TI=XG(NG,LZ)
+          TI=gauss1d3(1,LZ)
           RP=1.0+RI
           SP=1.0+SI
           TP=1.0+TI
@@ -849,7 +849,7 @@ contains
             -XJ12*XJ21*XJ33                                                 &
             -XJ11*XJ23*XJ32
           ! WEIGHT VALUE AT GAUSSIAN POINT
-          WG=WGT(NG,LX)*WGT(NG,LY)*WGT(NG,LZ)*DET
+          WG=weight1d3(LX)*weight1d3(LY)*weight1d3(LZ)*DET
           do I=1,NN
             vol = vol + H(I)*WG
           enddo

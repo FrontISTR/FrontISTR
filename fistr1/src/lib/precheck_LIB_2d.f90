@@ -19,7 +19,7 @@ contains
     ! CALCULATION 2D 3 NODE PLANE ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),thick,vol,almax,almin
@@ -38,10 +38,10 @@ contains
     vol  = 0.0
     !* LOOP OVER ALL INTEGRATION POINTS
     do L2=1,NG
-      XL2=XG(NG,L2)
+      XL2=gauss1d2(1,L2)
       X2 =(XL2+1.0)*0.5
       do L1=1,NG
-        XL1=XG(NG,L1)
+        XL1=gauss1d2(1,L1)
         X1=0.5*(1.0-X2)*(XL1+1.0)
         !  INTERPOLATION FUNCTION
         X3=1.0-X1-X2
@@ -73,7 +73,7 @@ contains
           XJ22=XJ22+(HL2(I)-HL3(I))*YY(I)
         enddo
         DET=XJ11*XJ22-XJ21*XJ12
-        WG=WGT(NG,L1)*WGT(NG,L2)*DET*(1.0-X2)*0.25
+        WG=weight1d2(L1)*weight1d2(L2)*DET*(1.0-X2)*0.25
         do I = 1, NN
           area = area + H(I)*WG
         enddo
@@ -95,7 +95,7 @@ contains
     ! CALCULATION 2D 4 NODE PLANE ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),thick,vol,almax,almin
@@ -113,9 +113,9 @@ contains
     vol  = 0.0
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1,NG
-      RI=XG(NG,LX)
+      RI=gauss1d2(1,LX)
       do LY=1,NG
-        SI=XG(NG,LY)
+        SI=gauss1d2(1,LY)
         RP=1.0+RI
         SP=1.0+SI
         RM=1.0-RI
@@ -143,7 +143,7 @@ contains
           XJ22=XJ22+HS(I)*YY(I)
         enddo
         DET=XJ11*XJ22-XJ21*XJ12
-        WG=WGT(NG,LX)*WGT(NG,LY)*DET
+        WG=weight1d2(LX)*weight1d2(LY)*DET
         do I = 1, NN
           area = area + H(I)*WG
         enddo
@@ -166,7 +166,7 @@ contains
     ! CALCULATION 2D 6 NODE PLANE ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),thick,vol,tline,almax,almin
@@ -186,10 +186,10 @@ contains
     vol  = 0.0
     !* LOOP OVER ALL INTEGRATION POINTS
     do L2=1,NG
-      XL2=XG(NG,L2)
+      XL2=gauss1d3(1,L2)
       X2 =(XL2+1.0)*0.5
       do L1=1,NG
-        XL1=XG(NG,L1)
+        XL1=gauss1d3(1,L1)
         X1=0.5*(1.0-X2)*(XL1+1.0)
         !  INTERPOLATION FUNCTION
         X3=1.0-X1-X2
@@ -233,7 +233,7 @@ contains
           XJ22=XJ22+(HL2(I)-HL3(I))*YY(I)
         enddo
         DET=XJ11*XJ22-XJ21*XJ12
-        WG=WGT(NG,L1)*WGT(NG,L2)*DET*(1.0-X2)*0.25
+        WG=weight1d3(L1)*weight1d3(L2)*DET*(1.0-X2)*0.25
         do I = 1, NN
           area = area + H(I)*WG
         enddo
@@ -261,7 +261,7 @@ contains
     ! CALCULATION 2D 8 NODE PLANE ELEMENT
     !
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),thick,vol,almax,almin
@@ -282,9 +282,9 @@ contains
     vol  = 0.0
     !* LOOP OVER ALL INTEGRATION POINTS
     do LX=1,NG
-      RI=XG(NG,LX)
+      RI=gauss1d3(1,LX)
       do LY=1,NG
-        SI=XG(NG,LY)
+        SI=gauss1d3(1,LY)
         RP=1.0+RI
         SP=1.0+SI
         RM=1.0-RI
@@ -324,7 +324,7 @@ contains
           XJ22=XJ22+HS(I)*YY(I)
         enddo
         DET=XJ11*XJ22-XJ21*XJ12
-        WG=WGT(NG,LX)*WGT(NG,LY)*DET
+        WG=weight1d3(LX)*weight1d3(LY)*DET
         do I = 1, NN
           area = area + H(I)*WG
         enddo

@@ -19,9 +19,8 @@ module m_fstr_setup
   use m_out
   use m_step
   use m_utilities
+  use fstr_ctrl_util_f
   implicit none
-
-  include 'fstr_ctrl_util_f.inc'
 
   !> Package of all data needs to initialize
   type fstr_param_pack
@@ -59,9 +58,6 @@ contains
     integer, parameter :: MAXOUTFILE = 10
     double precision, parameter :: dpi = 3.14159265358979323846D0
 
-    external fstr_ctrl_get_c_h_name
-    integer(kind=kint) :: fstr_ctrl_get_c_h_name
-
     integer(kind=kint) :: version, result, visual, femap, n_totlyr
     integer(kind=kint) :: rcode, n, i, j, cid, nout, nin, ierror, cparam_id
     character(len=HECMW_NAME_LEN) :: header_name, fname(MAXOUTFILE)
@@ -75,10 +71,10 @@ contains
     character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2
 
     ! counters
-    integer(kind=kint) :: c_solution, c_solver, c_step, c_write, c_echo, c_amplitude
+    integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_write, c_echo, c_amplitude
     integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
-    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed
+    integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed, c_contact_if
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
     integer(kind=kint) :: c_fload, c_eigenread
     integer(kind=kint) :: c_couple, c_material
@@ -103,11 +99,11 @@ contains
 
     fstrPARAM%contact_algo = kcaALagrange
 
-    c_solution = 0; c_solver   = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
+    c_solution = 0; c_solver   = 0; c_nlsolver = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
-    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0
+    c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0; c_contact_if = 0
     c_dynamic  = 0; c_velocity = 0; c_acceleration = 0
     c_couple   = 0; c_material = 0; c_section =0
     c_mpc      = 0; c_weldline = 0; c_initial = 0
@@ -129,10 +125,13 @@ contains
     do
       rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
       if(     header_name == '!VERSION' ) then
-        rcode = fstr_ctrl_get_data_array_ex( ctrl, 'i ', version )
+        rcode = fstr_ctrl_get_data_ex( ctrl, 1, 'i ', version )
       else if(     header_name == '!SOLUTION' ) then
         c_solution = c_solution + 1
         call fstr_setup_SOLUTION( ctrl, c_solution, P )
+      else if(     header_name == '!NONLINEAR_SOLVER' ) then
+        c_nlsolver = c_nlsolver + 1
+        call fstr_setup_NONLINEAR_SOLVER( ctrl, c_nlsolver, P )
       else if( header_name == '!SOLVER' ) then
         c_solver = c_solver + 1
         call fstr_setup_SOLVER( ctrl, c_solver, P )
@@ -197,6 +196,9 @@ contains
         c_embed = c_embed + n
       else if( header_name == '!CONTACT_PARAM' ) then
         c_contactparam = c_contactparam + 1
+      else if( header_name == '!CONTACT_INTERFERENCE' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        c_contact_if = c_contact_if + n
       else if( header_name == '!MATERIAL' ) then
         c_material = c_material + 1
       else if( header_name == '!TEMPERATURE' ) then
@@ -332,6 +334,12 @@ contains
     do i=0,c_contactparam
       call init_ContactParam( fstrPARAM%contactparam(i) )
     end do
+    if( c_contact_if>0 )then 
+      allocate( fstrPARAM%contact_if( c_contact_if ) )
+      do i=1,c_contact_if
+        call init_Contact_IF( fstrPARAM%contact_if(i) )
+      end do
+    end if
 
     P%SOLID%is_33shell = 0
     P%SOLID%is_33beam  = 0
@@ -421,6 +429,7 @@ contains
     c_output = 0
     c_contact  = 0
     c_contactparam  = 0
+    c_contact_if  = 0
     c_embed = 0
     c_initial = 0
     c_localcoord = 0
@@ -868,6 +877,21 @@ contains
           write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', c_contactparam
           stop
         endif
+      else if( header_name == '!CONTACT_INTERFERENCE' ) then
+        n = fstr_ctrl_get_data_line_n( ctrl )
+        if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(c_contact_if+1:n+1) ) /= 0 ) then
+          write(*,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ' , c_contact_if
+          write(ILOG,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ', c_contact_if
+          stop
+        endif
+        do i=1, n
+          if( check_apply_Contact_IF(fstrPARAM%contact_if(c_contact_if+i), fstrSOLID%contacts) /= 0) then
+            write(*,*) '### Error:(INTERFERENCE) Inconsistence of contact_pair in CONTACTS: ' , i+c_contact_if
+            write(ILOG,*) '### Error:(INTERFERENCE)  Inconsistence of contact_pair in CONTACTS: ', i+c_contact_if
+            stop
+          end if
+        end do
+        c_contact_if = c_contact_if + n
       else if( header_name == '!ULOAD' ) then
         if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
           write(*,*) '### Error: Fail in read in ULOAD definition : '
@@ -1058,6 +1082,13 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%GL0( ntotal )          ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, GL0>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
     allocate ( fstrSOLID%EFORCE( ntotal )      ,stat=ierror )
     if( ierror /= 0 ) then
       write(idbg,*) 'stop due to allocation error <FSTR_SOLID, EFORCE>'
@@ -1114,14 +1145,23 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%QFORCE_bak( ntotal )      ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, QFORCE_bak>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
 
     fstrSOLID%GL(:)=0.d0
+    fstrSOLID%GL0(:)=0.d0
     !        fstrSOLID%TOTAL_DISP(:)=0.d0
     fstrSOLID%unode(:)      = 0.d0
     fstrSOLID%unode_bak(:)  = 0.d0
     fstrSOLID%dunode(:)     = 0.d0
     fstrSOLID%ddunode(:)    = 0.d0
     fstrSOLID%QFORCE(:)     = 0.d0
+    fstrSOLID%QFORCE_bak(:) = 0.d0
     fstrSOLID%FACTOR( 1:2 ) = 0.d0
 
     ! for MPC
@@ -1565,7 +1605,7 @@ contains
     fstrDYNAMIC%t_curr   = 0.0d0
     fstrDYNAMIC%t_end    = 1.0
     fstrDYNAMIC%t_delta  = 1.0
-    fstrDYNAMIC%ganma    = 0.5
+    fstrDYNAMIC%gamma    = 0.5
     fstrDYNAMIC%beta     = 0.25
     fstrDYNAMIC%idx_mas  = 1
     fstrDYNAMIC%idx_dmp  = 1
@@ -1828,6 +1868,23 @@ contains
   end subroutine fstr_setup_SOLUTION
 
   !-----------------------------------------------------------------------------!
+  !> Read in !NONLINEAR_SOLVER                                                         !
+  !-----------------------------------------------------------------------------!
+
+  subroutine fstr_setup_NONLINEAR_SOLVER( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+
+    rcode = fstr_ctrl_get_NONLINEAR_SOLVER( ctrl, P%PARAM%nlsolver_method )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+  end subroutine fstr_setup_NONLINEAR_SOLVER
+
+  !-----------------------------------------------------------------------------!
   !> Read in !SOLVER                                                           !
   !-----------------------------------------------------------------------------!
 
@@ -1925,7 +1982,7 @@ contains
     if( dtype==0 ) then
       data_fmt = "RRRRRRrrr "
       xyzc(:) = 0.d0
-      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, xyza(1), xyza(2),  &
+      if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, xyza(1), xyza(2),  &
         xyza(3), xyzb(1), xyzb(2), xyzb(3), xyzc(1), xyzc(2), xyzc(3) )/=0 ) return
       if( coordsys%sys_type==10 ) then
         ff1 = xyza-xyzc
@@ -1949,7 +2006,7 @@ contains
     else
       coordsys%node_ID(3) = 0   ! global origin
       data_fmt = "IIi "
-      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, coordsys%node_ID(1),  &
+      if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, coordsys%node_ID(1),  &
         coordsys%node_ID(2), coordsys%node_ID(3) )/=0 ) return
       if( coordsys%node_ID(3) == 0 ) then
         nid = node_global_to_local( hecMESH, coordsys%node_ID(1:2), 2 )
@@ -2426,9 +2483,116 @@ end function fstr_setup_INITIAL
   end subroutine fstr_setup_CLOAD
 
   !-----------------------------------------------------------------------------!
-  !> Read !FLOAD                                                        !
+  !> Read in !FLOAD                                                             !
   !-----------------------------------------------------------------------------!
-  include 'fstr_ctrl_freq.f90'
+  subroutine fstr_setup_FLOAD( ctrl, counter, P )
+  !---- args
+    integer(kind=kint)   :: ctrl
+    integer(kind=kint)   :: counter
+    type(fstr_param_pack) :: P
+  !---- vals
+    integer(kind=kint)                  :: rcode
+    character(HECMW_NAME_LEN)           :: amp
+    integer(kind=kint)                  :: amp_id
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    real(kind=kreal), pointer           :: val_ptr(:)
+    integer(kind=kint), pointer        :: id_ptr(:), type_ptr(:)
+    integer(kind=kint)                  :: i, n, old_size, new_size
+    integer(kind=kint)                  :: gid, loadcase
+  !---- body
+
+    if( P%SOLID%file_type /= kbcfFSTR) return
+
+    !read grpid
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid )
+    !read loadcase (real=1:default, img=2)
+    loadcase = kFLOADCASE_RE
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'LOAD CASE ', '# ', 0, 'I', loadcase)
+    !write(*,*) "loadcase=", loadcase
+    !pause
+
+    !read the num of dataline
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+    old_size = P%FREQ%FLOAD_ngrp_tot
+    new_size = old_size + n
+
+    !expand data array
+    P%FREQ%FLOAD_ngrp_tot = new_size
+    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_GRPID, old_size, new_size )
+    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_ID,    old_size, new_size )
+    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_TYPE,  old_size, new_size )
+    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_DOF,   old_size, new_size )
+    call fstr_expand_real_array   ( P%FREQ%FLOAD_ngrp_valre, old_size, new_size )
+    call fstr_expand_real_array   ( P%FREQ%FLOAD_ngrp_valim, old_size, new_size )
+
+    !fill bc data
+    allocate( grp_id_name(n) )
+    if(loadcase == kFLOADCASE_RE) then
+      val_ptr  => P%FREQ%FLOAD_ngrp_valre(old_size+1:)
+    else if(loadcase == kFLOADCASE_IM) then
+      val_ptr  => P%FREQ%FLOAD_ngrp_valim(old_size+1:)
+    else
+      !error
+      write(*,*)    "Error this load set is not defined!"
+      write(ilog,*) "Error this load set is not defined!"
+      stop
+    end if
+    id_ptr   => P%FREQ%FLOAD_ngrp_DOF(old_size+1:)
+    type_ptr => P%FREQ%FLOAD_ngrp_TYPE(old_size+1:)
+    val_ptr = 0.0D0
+    rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    P%FREQ%FLOAD_ngrp_GRPID(old_size+1:new_size) = gid
+    call nodesurf_grp_name_to_id_ex( P%MESH, '!FLOAD', n, grp_id_name, &
+         P%FREQ%FLOAD_ngrp_ID(old_size+1:), P%FREQ%FLOAD_ngrp_TYPE(old_size+1:))
+
+    deallocate( grp_id_name )
+    return
+
+    contains
+
+    function fstr_ctrl_get_FLOAD(ctrl, node_id, node_id_len, dof_id, value)
+      integer(kind=kint)                    :: ctrl
+      character(len=HECMW_NAME_LEN)        :: node_id(:)  !Node group name
+      integer(kind=kint), pointer          :: dof_id(:)
+      integer(kind=kint)                    :: node_id_len
+      real(kind=kreal), pointer             :: value(:)
+      integer(kind=kint)                    :: fstr_ctrl_get_FLOAD !return value
+      character(len=HECMW_NAME_LEN)        :: data_fmt, ss
+
+      write(ss,*) node_id_len
+      write(data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'IR '
+
+      fstr_ctrl_get_FLOAD = fstr_ctrl_get_data_array_ex(ctrl, data_fmt, node_id, dof_id, value)
+    end function
+
+  end subroutine
+
+  !-----------------------------------------------------------------------------!
+  !> Read in !EIGENREAD                                                         !
+  !-----------------------------------------------------------------------------!
+  subroutine fstr_setup_eigenread( ctrl, counter, P )
+  !---- args
+    integer(kind=kint)    :: ctrl
+    integer(kind=kint)    :: counter
+    type(fstr_param_pack) :: P
+  !---- vals
+    integer(kind=kint)                :: filename_len
+    character(len=HECMW_NAME_LEN) :: datafmt, ss
+  !---- body
+
+    filename_len = HECMW_FILENAME_LEN
+    write(ss,*) filename_len
+    write(datafmt, '(a,a,a)') 'S', trim(adjustl(ss)), ' '
+
+    if( fstr_ctrl_get_data_ex( ctrl, 1, datafmt, P%FREQ%eigenlog_filename ) /= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 2, 'ii ', P%FREQ%start_mode, P%FREQ%end_mode ) /= 0) return
+
+    return
+
+  end subroutine
 
   !-----------------------------------------------------------------------------!
   !> Reset !DLOAD                                                        !
@@ -3473,7 +3637,7 @@ end function fstr_setup_INITIAL
       P%DYN%t_start, &
       P%DYN%t_end,   &
       P%DYN%t_delta, &
-      P%DYN%ganma,   &
+      P%DYN%gamma,   &
       P%DYN%beta,    &
       P%DYN%idx_mas, &
       P%DYN%idx_dmp, &

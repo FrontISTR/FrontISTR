@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND neu2fstr_SOURCES
+target_sources(neu2fstr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/cconv_mat.cpp
   ${CMAKE_CURRENT_LIST_DIR}/CConvMessage.cpp
   ${CMAKE_CURRENT_LIST_DIR}/conv_neu2hec.cpp
@@ -12,7 +12,7 @@ list(APPEND neu2fstr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/conv_neu2fstr_heat.cpp
 )
 
-list(APPEND neu2fstr_INCLUDE_DIRS
+target_include_directories(neu2fstr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
 )
 

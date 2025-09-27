@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND fistr_SOURCES
+target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Ctrl_TimeInc.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Cutback.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Spring.f90
@@ -22,5 +22,6 @@ list(APPEND fistr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/fstr_AddContactStiff.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_AddBC.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_NonLinear.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_QuasiNewton.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_solve_NLGEOM.f90
 )

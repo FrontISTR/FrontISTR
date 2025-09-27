@@ -16,7 +16,6 @@ contains
     !**  Precheck for 3nodes SHELL
     !**
     use hecmw
-    use gauss_integration
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),thick,vol,almax,almin
@@ -53,7 +52,7 @@ contains
     !**  Precheck for 3nodes SHELL
     !**
     use hecmw
-    use gauss_integration
+    use Quadrature
     implicit none
     ! I/F VARIABLES
     real(kind=kreal) XX(*),YY(*),ZZ(*),thick,vol,almax,almin
@@ -78,9 +77,9 @@ contains
     vol  = 0.0
     ! INTEGRATION OVER SURFACE
     do IG2=1,NG
-      SI=XG(NG,IG2)
+      SI=gauss1d2(1,IG2)
       do IG1=1,NG
-        RI=XG(NG,IG1)
+        RI=gauss1d2(1,IG1)
         H(1)=0.25*(1.0-RI)*(1.0-SI)
         H(2)=0.25*(1.0+RI)*(1.0-SI)
         H(3)=0.25*(1.0+RI)*(1.0+SI)
@@ -131,7 +130,7 @@ contains
           -XJ13*XJ22*XJ31                                                 &
           -XJ12*XJ21*XJ33                                                 &
           -XJ11*XJ23*XJ32
-        WG=WGT(NG,IG1)*WGT(NG,IG2)*DET
+        WG=weight1d2(IG1)*weight1d2(IG2)*DET
         do i = 1, NN
           area = area + H(i)*WG
         enddo

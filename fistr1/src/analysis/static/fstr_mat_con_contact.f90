@@ -89,7 +89,7 @@ contains
           num_lagrange = num_lagrange + nlag
         enddo
       enddo
-  endif
+    endif
 
     ! Get original list of related nodes
     call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active,list_nodeRelated_org,list_nodeRelated)

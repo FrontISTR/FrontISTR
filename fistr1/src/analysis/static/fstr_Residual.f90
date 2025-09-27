@@ -14,6 +14,7 @@ module m_fstr_Residual
   public :: fstr_get_norm_contact
   public :: fstr_get_norm_para_contact
   public :: fstr_get_x_norm_contact
+  public :: fstr_get_potential
 
   private :: fstr_Update_NDForce_MPC
 
@@ -135,6 +136,59 @@ contains
     enddo
   end subroutine fstr_Update_NDForce_SPC
 
+
+  !> \breaf This subroutine calculate residual vector
+  subroutine fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+    use m_fstr_Update
+    use m_fstr_ass_load
+    implicit none
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+
+    ! ----- update the strain, stress, and internal force
+    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+
+    ! ----- Set residual
+    if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &
+      & call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM )
+
+    call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
+  end subroutine fstr_calc_residual_vector
+
+  !> \breaf This subroutine calculate residual vector
+  subroutine fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+    use m_fstr_Update
+    implicit none
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    real(kind=kreal), intent(in) :: tincr
+    integer(kind=kint) :: iter
+
+    integer :: i
+    real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
+
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      dunode_bak(i) = fstrSOLID%dunode(i)
+      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+    enddo
+    call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      fstrSOLID%dunode(i) = dunode_bak(i)
+    enddo
+  end subroutine fstr_calc_residual_vector_with_X
+
   !> Calculate magnitude of a real vector
   real(kind=kreal) function fstr_get_residual( force, hecMESH )
     use m_fstr
@@ -239,5 +293,145 @@ contains
     call hecmw_allreduce_R1(hecMESH, rhsX, hecmw_sum)
 
   end function fstr_get_x_norm_contact
+
+  !C---------------------------------------------------------------------*
+  function fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype) result(potential)
+    use m_fstr
+    use mULoad
+    use m_fstr_spring
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    type(hecmwST_matrix), intent(inout)  :: hecMAT !< linear equation, its right side modified here
+    type(fstr_solid), intent(inout)      :: fstrSOLID !< we need boundary conditions of curr step
+    integer(kind=kint), intent(in)       :: ptype
+    real(kind=kreal)   ::  potential
+    !    Local variables
+    integer(kind=kint) :: ndof, i, icel, icel0, ig
+    real(kind=kreal), allocatable :: totdisp(:), totload(:)
+    real(kind=kreal) :: factor
+    real(kind=kreal) :: extenal_work, internal_work
+
+    ndof = hecMAT%NDOF
+    factor = fstrSOLID%factor(2)
+    potential = 0.d0
+
+    allocate(totload(ndof*hecMESH%n_node))
+
+    ! Set external load
+    do i=1,ndof*hecMESH%n_node
+      totload(i) = 0.5d0*(fstrSOLID%GL(i)+fstrSOLID%GL0(i))
+    end do
+    !    Consiter Spring
+    call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, totload )
+    !    Consider Uload
+    call uResidual( cstep, factor, totload )
+    !    Consider EQUATION condition
+    call fstr_Update_NDForce_MPC( hecMESH, totload )
+
+    if( ptype == 1 ) then !< assemble strain potential
+      ! calc internal work
+      internal_work = 0.d0
+      do icel0=1,hecMESH%ne_internal
+        icel=hecMESH%elem_internal_list(icel0)
+        do ig=1,size(fstrSOLID%elements(icel)%gausses)
+          internal_work = internal_work + fstrSOLID%elements(icel)%gausses(ig)%strain_energy
+        enddo
+      enddo
+      call hecmw_allreduce_R1(hecMESH, internal_work, hecmw_sum)
+      ! calc external work
+      call hecmw_innerProduct_R(hecMESH,ndof,totload,fstrSOLID%dunode,extenal_work)      
+      potential = internal_work - extenal_work
+    else if( ptype == 2 ) then ! multiply internal force with displacement
+      ! calc internal work
+      call hecmw_innerProduct_R(hecMESH,ndof,0.5d0*(fstrSOLID%QFORCE+fstrSOLID%QFORCE_bak),fstrSOLID%dunode,internal_work)
+      ! calc external work
+      call hecmw_innerProduct_R(hecMESH,ndof,totload,fstrSOLID%dunode,extenal_work)
+      potential = internal_work - extenal_work
+    else if( ptype == 3 ) then ! norm of residual
+      ! Consider internal force
+      totload(:) = fstrSOLID%QFORCE(:) - totload(:)
+      !    Consider SPC condition
+      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, totload )
+      ! calc norm of residual
+      call hecmw_innerProduct_R(hecMESH,ndof,totload,totload,potential)
+      potential = dsqrt(potential)
+    else
+      stop "ptype error in fstr_get_potential"
+    endif
+    !write(IMSG,*) "internal_work,extenal_work",internal_work,extenal_work
+  end function fstr_get_potential
+
+  function fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,ptype) result(potential)
+    use m_fstr
+    use mULoad
+    use m_fstr_spring
+    implicit none
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    type(hecmwST_matrix), intent(inout)  :: hecMAT !< linear equation, its right side modified here
+    type(fstr_solid), intent(inout)      :: fstrSOLID !< we need boundary conditions of curr step
+    integer(kind=kint), intent(in)       :: ptype
+    real(kind=kreal)   ::  potential
+
+    integer :: i
+    real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
+
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      dunode_bak(i) = fstrSOLID%dunode(i)
+      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+    enddo
+    potential = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype)
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      fstrSOLID%dunode(i) = dunode_bak(i)
+    enddo
+  end function fstr_get_potential_with_X
+
+  subroutine plot_potential_graph( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
+    restrt_step_num, sub_step, ctime, dtime, iter, tincr )
+    use m_fstr
+    integer, intent(in)                   :: cstep     !< current loading step
+    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
+    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
+    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
+    integer, intent(in)                   :: sub_step  !< substep number of current loading step
+    real(kind=kreal), intent(in)          :: ctime     !< current time
+    real(kind=kreal), intent(in)          :: dtime     !< time increment
+    type (fstr_param)                     :: fstrPARAM !< type fstr_param
+    type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    integer(kind=kint) :: restrt_step_num
+
+    integer(kind=kint) :: iter, i, j
+    integer(kind=kint), parameter :: ntot = 30
+    real(kind=kreal)   :: tincr, alpha, dulen
+    real(kind=kreal) :: pot(3)
+    real(kind=kreal), allocatable :: dunode_bak(:)
+
+    dulen = dsqrt(dot_product(fstrSOLID%dunode(:),fstrSOLID%dunode(:)))
+    write(IMSG,*) "dulen",dulen
+
+    allocate(dunode_bak(size(fstrSOLID%dunode)))
+    do i=1, hecMAT%ndof*hecMESH%n_node
+      dunode_bak(i) = fstrSOLID%dunode(i)
+    enddo
+
+    do i=-ntot,ntot
+      alpha = 5.d-3*dble(i)/dble(ntot)
+      hecMAT%X(:) = alpha*fstrSOLID%dunode(:)
+      do j=1, size(fstrSOLID%dunode)
+        fstrSOLID%dunode(j) = dunode_bak(j)+hecMAT%X(j)
+      enddo
+      call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+      pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
+      pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
+      pot(3) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,3)
+      write(IMSG,'(I4,5(",",1pE16.9))') i,alpha,alpha*dulen,pot(1:3)
+    enddo
+
+    do i=1, size(fstrSOLID%dunode)
+      fstrSOLID%dunode(i) = dunode_bak(i)
+    enddo
+    hecMAT%X(:) = 0.d0
+    call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
+  end subroutine
 
 end module m_fstr_Residual

@@ -110,7 +110,6 @@ OBJSF = \
         m_out.@f90objfilepostfix@ \
         m_common_struct.@f90objfilepostfix@ \
         m_fstr.@f90objfilepostfix@ \
-        GaussM.@f90objfilepostfix@ \
         dynamic_mass.@f90objfilepostfix@ \
         static_LIB_1d.@f90objfilepostfix@ \
         static_LIB_2d.@f90objfilepostfix@ \

@@ -5,9 +5,9 @@
 !> \brief  This module manages step information
 module m_step
   use hecmw
-  implicit none
+  use fstr_ctrl_util_f
 
-  include 'fstr_ctrl_util_f.inc'
+  implicit none
 
   integer, parameter :: stepStatic = 1
   integer, parameter :: stepVisco  = 2
@@ -27,8 +27,9 @@ module m_step
     character( len=80 ) :: CONTROL            !< control type, such as arclength etc
     character( len=80 ) :: ConvControl        !< Judgement of convergency, such as nodal force residual
     !< disp increment, energy
-    real(kind=kreal)    :: converg            !< value of convergent judgement
+    real(kind=kreal)    :: converg            !< value of convergent judgement (residual force)
     real(kind=kreal)    :: converg_lag        !< value of convergent judgement (Lagrange)
+    real(kind=kreal)    :: converg_ddisp      !< value of convergent judgement (disp increment)
     real(kind=kreal)    :: maxres             !< upper bound of NR residual
 
     integer :: num_substep                    !< substeps user given
@@ -77,6 +78,7 @@ contains
     stepinfo%starttime = 0.d0
     stepinfo%converg = 1.d-3
     stepinfo%converg_lag = 1.d-4
+    stepinfo%converg_ddisp = 1.d-8
     stepinfo%maxres = 1.d+10
     stepinfo%timepoint_id = 0
     stepinfo%AincParam_id = 0
