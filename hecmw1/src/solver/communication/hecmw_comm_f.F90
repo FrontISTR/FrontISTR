@@ -380,25 +380,32 @@ contains
     integer(kind=kint) :: i
     real(kind=kreal), dimension(n) :: tmp
     type(c_devptr) :: tmp_dev
-
-    tmp_dev = acc_malloc(kreal * n)
-    call acc_map_data(tmp, tmp_dev, kreal * n)
-    !$acc serial
-    do i = 1, n
-      tmp(i) = val(i)
-    enddo
-    !$acc end serial
 #endif
 
-    allocate (VALM(n))
-    VALM= 0.d0
+    allocate(VALM(n))
+    VALM = 0.d0
+
     if (ntag .eq. hecmw_sum) then
 #ifdef _OPENACC
-      !$acc host_data use_device(tmp)
-      call MPI_allREDUCE                                              &
-        &       (tmp, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM,              &
-        &        hecMESH%MPI_COMM, ierr)
-      !$acc end host_data
+      if (acc_is_present(val, int(kreal * n, c_size_t))) then
+        tmp_dev = acc_malloc(int(kreal * n, c_size_t))
+        call acc_map_data(tmp, tmp_dev, int(kreal * n, c_size_t))
+        !$acc serial
+        do i = 1, n
+          tmp(i) = val(i)
+        enddo
+        !$acc end serial
+        !$acc host_data use_device(tmp)
+        call MPI_allREDUCE(tmp, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM, &
+                           hecMESH%MPI_COMM, ierr)
+        !$acc end host_data
+        call acc_unmap_data(tmp)
+        call acc_free(tmp_dev)
+      else
+        call MPI_allREDUCE                                            &
+          &     (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM,              &
+          &      hecMESH%MPI_COMM, ierr)
+      endif
 #else
       call MPI_allREDUCE                                              &
         &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM,              &
@@ -417,11 +424,6 @@ contains
         &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MIN,              &
         &        hecMESH%MPI_COMM, ierr)
     endif
-
-#ifdef _OPENACC
-    call acc_unmap_data(tmp)
-    call acc_free(tmp_dev)
-#endif
 
     val= VALM
     deallocate (VALM)
