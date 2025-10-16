@@ -191,14 +191,23 @@ contains
   end subroutine
 
   !> Print out mpc condition in !EQUATION format
-  subroutine print_full_mpc_conditions_3d( mpcs, nodeID )
-    type(tMPCCond), intent(in)   :: mpcs(:) !< mpc condition
-    integer, intent(in)          :: nodeID(:) !< id label for input file
+  subroutine print_full_mpc_conditions_3d( mpcs, nodeID, target_dof )
+    type(tMPCCond), intent(in)   :: mpcs(:)
+    integer, intent(in)          :: nodeID(:)
+    integer, intent(in), optional :: target_dof
 
-    integer(kind=kint) :: iunit, idof, ifile, ierror
+    integer(kind=kint) :: iunit, idof, idof_start, idof_end, ierror
     character(len=20) :: fname
 
-    do idof = 1, 3
+    if( present(target_dof) ) then
+      idof_start = target_dof
+      idof_end = target_dof
+    else
+      idof_start = 1
+      idof_end = 3
+    endif
+
+    do idof = idof_start, idof_end
       write(fname,'(a,i0,a)') 'tied_equation_',idof,'.dat'
       iunit = 200+idof
       open(iunit, file=fname, status='replace', iostat=ierror)

@@ -12,7 +12,7 @@ module mMPCPreprocess
   implicit none
 
   private
-  public :: fstr_create_coeff_tiedcontact
+  public :: fstr_regularize_mpc
   public :: resize_structures
   public :: resize_structures_static
 
@@ -25,90 +25,113 @@ contains
 ! Create MPC structure from CONTACT, INTERACTION=TIED.
 !======================================================================== 
   !> create mpc setup
-  subroutine fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, &
-      &  infoCTChange, tied_method, dump_equation )
-    integer(kind=kint), intent(in)         :: cstep      !< current step number
-    type( hecmwST_local_mesh ), intent(inout) :: hecMESH     !< type mesh
+  subroutine fstr_regularize_mpc( cstep, hecMESH, hecMAT, fstrSOLID, &
+      &  tied_method, dump_equation )
+    integer(kind=kint), intent(in)         :: cstep
+    type( hecmwST_local_mesh ), intent(inout) :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
-    type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
-    type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
-    integer(kind=kint), intent(in)         :: tied_method  !< tiecontact processing method
+    type(fstr_solid), intent(inout)        :: fstrSOLID
+    integer(kind=kint), intent(in)         :: tied_method
     integer(kind=kint), intent(in)         :: dump_equation
-
-    integer(kind=kint) :: i, j, grpid, n_tied_slave, n_tied_slave_total
-    type(tMPCCond), allocatable :: mpcs_old(:), mpcs_new(:), mpcs_all(:)
+    integer(kind=kint) :: i, j, idof, grpid, n_tied_slave, n_tied_slave_total
+    type(tMPCCond), allocatable :: mpcs_old(:), mpcs_new(:)
+    type(tMPCCond), allocatable :: mpcs_combined(:)
+    type(tMPCCond), allocatable :: mpcs_existing_dof1(:), mpcs_existing_dof2(:), mpcs_existing_dof3(:)
+    type(tMPCCond), allocatable :: mpcs_dof1(:), mpcs_dof2(:), mpcs_dof3(:)
+    integer(kind=kint), allocatable :: displs_nid(:)
     real(kind=kreal) :: T(6)
 
     T(1) = hecmw_Wtime()
-    ! create original mpc coeff
     n_tied_slave_total = 0
     do i = 1, fstrSOLID%n_contacts
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
       if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
-
       call create_coeff_tiedcontact( fstrSOLID%contacts(i), n_tied_slave )
       n_tied_slave_total = n_tied_slave_total + n_tied_slave
     enddo
-
     do i = 1, fstrSOLID%n_embeds
       grpid = fstrSOLID%embeds(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
-
       call create_coeff_tiedcontact( fstrSOLID%embeds(i), n_tied_slave )
       n_tied_slave_total = n_tied_slave_total + n_tied_slave
     enddo
 
-    ! extract mpc coeff of dof 1
-    allocate(mpcs_old(n_tied_slave_total))
-    n_tied_slave_total = 0
-    do i = 1, fstrSOLID%n_contacts
-      grpid = fstrSOLID%contacts(i)%group
-      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
-      if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
-
-      call extract_coeff_tiedcontact( fstrSOLID%contacts(i), mpcs_old, n_tied_slave_total )
-
-      ! disable contact for tied
-      if( tied_method == ktMETHOD_MPC ) fstrSOLID%contacts(i)%group = -1
-      do j=1,size(fstrSOLID%contacts(i)%states)
-        fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
+    if( n_tied_slave_total > 0 ) then
+      allocate(mpcs_old(n_tied_slave_total))
+      n_tied_slave_total = 0
+      do i = 1, fstrSOLID%n_contacts
+        grpid = fstrSOLID%contacts(i)%group
+        if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+        if( fstrSOLID%contacts(i)%algtype /= CONTACTTIED ) cycle
+        call extract_coeff_tiedcontact( fstrSOLID%contacts(i), mpcs_old, n_tied_slave_total )
+        if( tied_method == ktMETHOD_MPC ) fstrSOLID%contacts(i)%group = -1
+        do j=1,size(fstrSOLID%contacts(i)%states)
+          fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
+        enddo
       enddo
-    enddo
-
-    do i = 1, fstrSOLID%n_embeds
-      grpid = fstrSOLID%embeds(i)%group
-      if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
-
-      call extract_coeff_tiedcontact( fstrSOLID%embeds(i), mpcs_old, n_tied_slave_total )
-
-      ! disable embed for tied
-      if( tied_method == ktMETHOD_MPC ) fstrSOLID%embeds(i)%group = -1
-      do j=1,size(fstrSOLID%embeds(i)%states)
-        fstrSOLID%embeds(i)%states(j)%state = CONTACTFREE
+      do i = 1, fstrSOLID%n_embeds
+        grpid = fstrSOLID%embeds(i)%group
+        if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
+        call extract_coeff_tiedcontact( fstrSOLID%embeds(i), mpcs_old, n_tied_slave_total )
+        if( tied_method == ktMETHOD_MPC ) fstrSOLID%embeds(i)%group = -1
+        do j=1,size(fstrSOLID%embeds(i)%states)
+          fstrSOLID%embeds(i)%states(j)%state = CONTACTFREE
+        enddo
       enddo
-    enddo
+    else
+      allocate(mpcs_old(0))
+    endif
 
     T(2) = hecmw_Wtime()
     if( myrank == 0 .and. LOGLVL > 0 ) then
-      write(*,'(A)') "create_coeff_tiedcontact timelog"
+      write(*,'(A)') "fstr_regularize_mpc timelog"
       write(*,'(A20,f8.2)') "create mpc coeff", T(2)-T(1)
     endif
 
-    ! update mpcs
-    call get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new, dump_equation )
-
-    T(3) = hecmw_Wtime()
-    ! create mpc
-    if( tied_method == ktMETHOD_MPC ) then
-      call set_hecmwST_mpc( hecMESH, mpcs_new )
-    else if ( tied_method == ktMETHOD_CONTACT ) then
-      call set_contact_structure( cstep, fstrSOLID, mpcs_new )
+    if( hecMESH%mpc%n_mpc == 0 ) then
+      if( n_tied_slave_total == 0 ) return
+      call get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new, dump_equation )
+      T(3) = hecmw_Wtime()
+      if( tied_method == ktMETHOD_MPC ) then
+        call set_hecmwST_mpc( hecMESH, mpcs_new, .true. )
+      else if ( tied_method == ktMETHOD_CONTACT ) then
+        call set_contact_structure( cstep, fstrSOLID, mpcs_new, .true. )
+      endif
+    else
+      ! Extract existing MPCs for each DOF separately
+      call extract_existing_mpc_by_target_dof(hecMESH, 1, mpcs_existing_dof1)
+      call extract_existing_mpc_by_target_dof(hecMESH, 2, mpcs_existing_dof2)
+      call extract_existing_mpc_by_target_dof(hecMESH, 3, mpcs_existing_dof3)
+      
+      ! Merge with tied MPCs and process each DOF
+      call merge_mpcs_by_dof(mpcs_old, mpcs_existing_dof1, 1, mpcs_combined)
+      deallocate(mpcs_existing_dof1)
+      call get_newmpc( hecMESH, hecMAT, mpcs_combined, mpcs_dof1, dump_equation, 1, .true., displs_nid )
+      deallocate(mpcs_combined)
+      
+      call merge_mpcs_by_dof(mpcs_old, mpcs_existing_dof2, 2, mpcs_combined)
+      deallocate(mpcs_existing_dof2)
+      call get_newmpc( hecMESH, hecMAT, mpcs_combined, mpcs_dof2, dump_equation, 2, .true. )
+      deallocate(mpcs_combined)
+      
+      call merge_mpcs_by_dof(mpcs_old, mpcs_existing_dof3, 3, mpcs_combined)
+      deallocate(mpcs_existing_dof3)
+      call get_newmpc( hecMESH, hecMAT, mpcs_combined, mpcs_dof3, dump_equation, 3, .true. )
+      deallocate(mpcs_combined)
+      
+      T(3) = hecmw_Wtime()
+      if( tied_method == ktMETHOD_MPC ) then
+        call set_hecmwST_mpc( hecMESH, mpcs_dof1, .false., mpcs_dof2, mpcs_dof3 )
+      else if ( tied_method == ktMETHOD_CONTACT ) then
+        call set_contact_structure_multi_dof( cstep, fstrSOLID, mpcs_dof1, mpcs_dof2, mpcs_dof3 )
+      endif
+      deallocate(mpcs_dof1, mpcs_dof2, mpcs_dof3, displs_nid)
     endif
 
     T(4) = hecmw_Wtime()
     if( myrank == 0 .and. LOGLVL > 0 ) write(*,'(A20,f8.2)') "set data structure", T(4)-T(3)
-  end subroutine fstr_create_coeff_tiedcontact
+  end subroutine fstr_regularize_mpc
 
   !> create mpc coeff 
   subroutine create_coeff_tiedcontact( contact, n_tied_slave )
@@ -222,24 +245,30 @@ contains
 !========================================================================
 ! Remove the excessive constraints of MPC.
 !======================================================================== 
-  subroutine get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new, dump_equation )
-    type( hecmwST_local_mesh ), intent(inout) :: hecMESH     !< type mesh
+  subroutine get_newmpc( hecMESH, hecMAT, mpcs_old, mpcs_new, dump_equation, target_dof, skip_reconst, displs_nid_out )
+    type( hecmwST_local_mesh ), intent(inout) :: hecMESH
     type(hecmwST_matrix), intent(in)         :: hecMAT
     type(tMPCCond), allocatable, intent(inout) :: mpcs_old(:)
     type(tMPCCond), allocatable, intent(inout) :: mpcs_new(:)
     integer(kind=kint), intent(in)         :: dump_equation
+    integer(kind=kint), intent(in), optional :: target_dof
+    logical, intent(in), optional :: skip_reconst
+    integer(kind=kint), allocatable, intent(out), optional :: displs_nid_out(:)
 
     type(tMPCCond), allocatable :: mpcs_all(:), mpcs_all_new(:), mpcs_new_dofremoved(:)
     integer(kind=kint), allocatable :: displs_nid(:)
     integer(kind=kint), allocatable :: global_node_ID_all(:)
+    integer(kind=kint) :: i
+    logical :: do_reconst
     real(kind=kreal) :: T(6)
+
+    do_reconst = .true.
+    if( present(skip_reconst) ) do_reconst = .not. skip_reconst
 
     T(1) = hecmw_Wtime()
 
-    ! gather all mpcs_old to rank 0 process
     call gather_all_mpcs( hecMESH, mpcs_old, mpcs_all, displs_nid )
 
-    ! dump original mpc as equation
     if( dump_equation == ktDUMP_ASIS ) then
       call gather_all_gnid( hecMESH, global_node_ID_all )
       if( myrank == 0 ) call print_full_mpc_conditions_3d( mpcs_all, global_node_ID_all )
@@ -247,12 +276,10 @@ contains
 
     T(2) = hecmw_Wtime()
 
-    ! get regular mpc conditions by singular value decomposition
     if( myrank == 0 ) call get_newmpc_by_svd( mpcs_all, mpcs_all_new )
 
     T(3) = hecmw_Wtime()
 
-    ! dump updated mpc as equation
     if( dump_equation == ktDUMP_REGULARIZED ) then
       call gather_all_gnid( hecMESH, global_node_ID_all )
       if( myrank == 0 ) call print_full_mpc_conditions_3d( mpcs_all_new, global_node_ID_all )
@@ -261,23 +288,32 @@ contains
     ! distribute mpc conditions(mpcs_new is still specified by global node id )
     call distribute_mpcs( hecMESH, mpcs_all_new, mpcs_new, displs_nid )
 
+    ! Set DOF to target_dof if specified
+    if( present(target_dof) ) then
+      do i = 1, size(mpcs_new)
+        mpcs_new(i)%dof(:) = target_dof
+      enddo
+    endif
+
     T(4) = hecmw_Wtime()
 
-    ! create new connectivity by dof remove
-    call create_new_connectivity_by_slave_dofremove( hecMESH, hecMAT, displs_nid, mpcs_new, mpcs_new_dofremoved )
+    if( do_reconst ) then
+      call create_new_connectivity_by_slave_dofremove( hecMESH, hecMAT, displs_nid, mpcs_new, mpcs_new_dofremoved )
+      T(5) = hecmw_Wtime()
+      call reconst_commtable( hecMESH, mpcs_new, displs_nid )
+      T(6) = hecmw_Wtime()
+      if( myrank == 0 .and. LOGLVL > 0 ) then
+        write(*,'(A20,f8.2)') "gather_all_mpcs", T(2)-T(1)
+        write(*,'(A20,f8.2)') "get_newmpc_by_svd", T(3)-T(2)
+        write(*,'(A20,f8.2)') "distribute_mpcs", T(4)-T(3)
+        write(*,'(A20,f8.2)') "create_new_connectivity", T(5)-T(4)
+        write(*,'(A20,f8.2)') "reconst_commtable", T(6)-T(5)
+      endif
+    endif
 
-    T(5) = hecmw_Wtime()
-
-    ! re-construct communication table
-    call reconst_commtable( hecMESH, mpcs_new, displs_nid )
-
-    T(6) = hecmw_Wtime()
-    if( myrank == 0 .and. LOGLVL > 0 ) then
-      write(*,'(A20,f8.2)') "gather_all_mpcs", T(2)-T(1)
-      write(*,'(A20,f8.2)') "get_newmpc_by_svd", T(3)-T(2)
-      write(*,'(A20,f8.2)') "distribute_mpcs", T(4)-T(3)
-      write(*,'(A20,f8.2)') "create_new_connectivity", T(5)-T(4)
-      write(*,'(A20,f8.2)') "reconst_commtable", T(6)-T(5)
+    if( present(displs_nid_out) ) then
+      allocate(displs_nid_out(size(displs_nid)))
+      displs_nid_out = displs_nid
     endif
   end subroutine
 
@@ -902,53 +938,128 @@ contains
 
   end subroutine
 
-  subroutine set_hecmwST_mpc( hecMESH, mpcs )
-    type( hecmwST_local_mesh ), intent(inout) :: hecMESH     !< type mesh
+  subroutine set_hecmwST_mpc( hecMESH, mpcs, replicate_dof, mpcs2, mpcs3 )
+    type( hecmwST_local_mesh ), intent(inout) :: hecMESH
     type(tMPCCond), allocatable :: mpcs(:)
+    logical, intent(in), optional :: replicate_dof
+    type(tMPCCond), allocatable, optional :: mpcs2(:), mpcs3(:)
+
+    integer(kind=kint) :: i, j, idof, count, idx
+    logical :: do_replicate
+    type(tMPCCond), allocatable :: mpcs_all(:)
+    integer(kind=kint) :: n_total
+
+    do_replicate = .true.
+    if( present(replicate_dof) ) do_replicate = replicate_dof
+
+    if( hecMESH%mpc%n_mpc > 0 ) then
+      deallocate(hecMESH%mpc%mpc_index, hecMESH%mpc%mpc_item, &
+                 hecMESH%mpc%mpc_dof, hecMESH%mpc%mpc_val, hecMESH%mpc%mpc_const)
+    endif
+
+    if( present(mpcs2) .and. present(mpcs3) ) then
+      n_total = size(mpcs) + size(mpcs2) + size(mpcs3)
+      allocate(mpcs_all(n_total))
+      idx = 0
+      do i = 1, size(mpcs)
+        idx = idx + 1
+        call copy_mpc_cond(mpcs(i), mpcs_all(idx))
+      enddo
+      do i = 1, size(mpcs2)
+        idx = idx + 1
+        call copy_mpc_cond(mpcs2(i), mpcs_all(idx))
+      enddo
+      do i = 1, size(mpcs3)
+        idx = idx + 1
+        call copy_mpc_cond(mpcs3(i), mpcs_all(idx))
+      enddo
+      call set_hecmwST_mpc_impl(hecMESH, mpcs_all, .false.)
+      do i = 1, n_total
+        call finalize_mpc_cond(mpcs_all(i))
+      enddo
+      deallocate(mpcs_all)
+    else
+      call set_hecmwST_mpc_impl(hecMESH, mpcs, do_replicate)
+    endif
+  end subroutine
+
+  subroutine set_hecmwST_mpc_impl( hecMESH, mpcs, replicate_dof )
+    type( hecmwST_local_mesh ), intent(inout) :: hecMESH
+    type(tMPCCond), allocatable :: mpcs(:)
+    logical, intent(in) :: replicate_dof
 
     integer(kind=kint) :: i, j, idof, count, idx
 
-    if( hecMESH%mpc%n_mpc > 0 ) stop "currently cannot use mpc and tied contact together"
-
-    hecMESH%mpc%n_mpc = 3*size(mpcs)
-    !if( associated(hecMESH%mpc%mpc_index) ) deallocate(hecMESH%mpc%mpc_index)
-    allocate(hecMESH%mpc%mpc_index(0:hecMESH%mpc%n_mpc))
-    hecMESH%mpc%mpc_index(0) = 0
-    idx = 0
-    count = 0
-    do idof=1,3
-      do i=1,size(mpcs)
-        idx = idx + 1
-        count = count + mpcs(i)%nitem
-        hecMESH%mpc%mpc_index(idx) = count
+    if( replicate_dof ) then
+      hecMESH%mpc%n_mpc = 3*size(mpcs)
+      allocate(hecMESH%mpc%mpc_index(0:hecMESH%mpc%n_mpc))
+      hecMESH%mpc%mpc_index(0) = 0
+      idx = 0
+      count = 0
+      do idof=1,3
+        do i=1,size(mpcs)
+          idx = idx + 1
+          count = count + mpcs(i)%nitem
+          hecMESH%mpc%mpc_index(idx) = count
+        enddo
       enddo
-    enddo
-    allocate(hecMESH%mpc%mpc_item(count))
-    allocate(hecMESH%mpc%mpc_dof(count))
-    allocate(hecMESH%mpc%mpc_val(count))
-    allocate(hecMESH%mpc%mpc_const(count))
-    !set value from mpcs
-    idx = 0
-    count = 0
-    do idof=1,3
+      allocate(hecMESH%mpc%mpc_item(count))
+      allocate(hecMESH%mpc%mpc_dof(count))
+      allocate(hecMESH%mpc%mpc_val(count))
+      allocate(hecMESH%mpc%mpc_const(count))
+      idx = 0
+      do idof=1,3
+        do i=1,size(mpcs)
+          do j=1,mpcs(i)%nitem
+            idx = idx + 1
+            hecMESH%mpc%mpc_item(idx) = mpcs(i)%pid(j)
+            hecMESH%mpc%mpc_dof(idx) = idof
+            hecMESH%mpc%mpc_val(idx) = mpcs(i)%coeff(j)
+            hecMESH%mpc%mpc_const(idx) = 0.d0
+          enddo
+        enddo
+      enddo
+    else
+      hecMESH%mpc%n_mpc = size(mpcs)
+      allocate(hecMESH%mpc%mpc_index(0:hecMESH%mpc%n_mpc))
+      hecMESH%mpc%mpc_index(0) = 0
+      count = 0
+      do i=1,size(mpcs)
+        count = count + mpcs(i)%nitem
+        hecMESH%mpc%mpc_index(i) = count
+      enddo
+      allocate(hecMESH%mpc%mpc_item(count))
+      allocate(hecMESH%mpc%mpc_dof(count))
+      allocate(hecMESH%mpc%mpc_val(count))
+      allocate(hecMESH%mpc%mpc_const(count))
+      idx = 0
       do i=1,size(mpcs)
         do j=1,mpcs(i)%nitem
           idx = idx + 1
           hecMESH%mpc%mpc_item(idx) = mpcs(i)%pid(j)
-          hecMESH%mpc%mpc_dof(idx) = idof
+          hecMESH%mpc%mpc_dof(idx) = mpcs(i)%dof(j)
           hecMESH%mpc%mpc_val(idx) = mpcs(i)%coeff(j)
           hecMESH%mpc%mpc_const(idx) = 0.d0
         enddo
       enddo
-    enddo
-  end subroutine
+    endif
+  end subroutine set_hecmwST_mpc_impl
 
-  subroutine set_contact_structure( cstep, fstrSOLID, mpcs )
-    integer(kind=kint), intent(in)         :: cstep      !< current step number
-    type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
+  subroutine set_contact_structure( cstep, fstrSOLID, mpcs, replicate_dof )
+    integer(kind=kint), intent(in)         :: cstep
+    type(fstr_solid), intent(inout)        :: fstrSOLID
     type(tMPCCond), allocatable :: mpcs(:)
+    logical, intent(in), optional :: replicate_dof
 
     integer(kind=kint) :: i, j, grpid, n_mpc, nitem, idof, dof(1:1000)
+    logical :: do_replicate
+
+    do_replicate = .true.
+    if( present(replicate_dof) ) do_replicate = replicate_dof
+
+    if( .not. do_replicate ) then
+      stop "set_contact_structure with replicate_dof=.false. not implemented yet"
+    endif
 
     do i = 1, size(fstrSOLID%contacts)
       grpid = fstrSOLID%contacts(i)%group
@@ -2070,6 +2181,118 @@ contains
     hecMAT%NP = hecMESH%n_node
     call resize_real_array( 3*hecMESH%n_node, hecMAT%X )
     call resize_real_array( 3*hecMESH%n_node, hecMAT%B )
+  end subroutine
+
+  subroutine extract_existing_mpc_by_target_dof(hecMESH, target_dof, mpcs_by_target_dof)
+    type( hecmwST_local_mesh ), intent(in) :: hecMESH
+    integer(kind=kint), intent(in) :: target_dof
+    type(tMPCCond), allocatable, intent(out) :: mpcs_by_target_dof(:)
+    
+    integer(kind=kint) :: i, j, k, impc, n_mpc, iS, iE, first_dof, count
+    
+    ! First pass: count MPCs with target_dof
+    n_mpc = hecMESH%mpc%n_mpc
+    count = 0
+    do impc = 1, n_mpc
+      iS = hecMESH%mpc%mpc_index(impc-1) + 1
+      first_dof = hecMESH%mpc%mpc_dof(iS)
+      if( first_dof == target_dof ) count = count + 1
+    enddo
+    
+    ! Second pass: extract and copy MPCs with target_dof
+    allocate(mpcs_by_target_dof(count))
+    k = 0
+    do impc = 1, n_mpc
+      iS = hecMESH%mpc%mpc_index(impc-1) + 1
+      iE = hecMESH%mpc%mpc_index(impc)
+      first_dof = hecMESH%mpc%mpc_dof(iS)
+      if( first_dof /= target_dof ) cycle
+      
+      k = k + 1
+      call init_mpc_cond(mpcs_by_target_dof(k), iE-iS+1)
+      do j = iS, iE
+        mpcs_by_target_dof(k)%pid(j-iS+1) = hecMESH%mpc%mpc_item(j)
+        mpcs_by_target_dof(k)%dof(j-iS+1) = hecMESH%mpc%mpc_dof(j)
+        mpcs_by_target_dof(k)%coeff(j-iS+1) = hecMESH%mpc%mpc_val(j)
+      enddo
+    enddo
+  end subroutine
+
+  subroutine merge_mpcs_by_dof(mpcs_tied, mpcs_existing, target_dof, mpcs_combined)
+    type(tMPCCond), allocatable, intent(in) :: mpcs_tied(:)
+    type(tMPCCond), allocatable, intent(in) :: mpcs_existing(:)
+    integer(kind=kint), intent(in) :: target_dof
+    type(tMPCCond), allocatable, intent(out) :: mpcs_combined(:)
+    integer(kind=kint) :: n_tied, n_existing, n_total, i, idx
+
+    n_tied = size(mpcs_tied)
+    n_existing = size(mpcs_existing)
+    n_total = n_tied + n_existing
+    allocate(mpcs_combined(n_total))
+    
+    ! Copy tied MPCs and set DOF to target_dof
+    do i = 1, n_tied
+      call copy_mpc_cond(mpcs_tied(i), mpcs_combined(i))
+      mpcs_combined(i)%dof(:) = target_dof
+    enddo
+    
+    ! Copy existing MPCs and set DOF to target_dof
+    idx = n_tied
+    do i = 1, n_existing
+      idx = idx + 1
+      call copy_mpc_cond(mpcs_existing(i), mpcs_combined(idx))
+      mpcs_combined(idx)%dof(:) = target_dof
+    enddo
+  end subroutine
+
+  subroutine reconst_matrix_structure_multi_dof( hecMESH, hecMAT, mpcs_dof1, mpcs_dof2, mpcs_dof3, displs_nid_in )
+    type( hecmwST_local_mesh ), intent(inout) :: hecMESH
+    type(hecmwST_matrix), intent(in)         :: hecMAT
+    type(tMPCCond), allocatable, intent(in) :: mpcs_dof1(:), mpcs_dof2(:), mpcs_dof3(:)
+    integer(kind=kint), allocatable, intent(in) :: displs_nid_in(:)
+    type(tMPCCond), allocatable :: mpcs_all(:)
+    integer(kind=kint), allocatable :: displs_nid(:)
+    integer(kind=kint) :: i, n_total, idx
+    real(kind=kreal) :: T(2)
+
+    n_total = size(mpcs_dof1) + size(mpcs_dof2) + size(mpcs_dof3)
+    allocate(mpcs_all(n_total))
+    idx = 0
+    do i = 1, size(mpcs_dof1)
+      idx = idx + 1
+      call copy_mpc_cond(mpcs_dof1(i), mpcs_all(idx))
+    enddo
+    do i = 1, size(mpcs_dof2)
+      idx = idx + 1
+      call copy_mpc_cond(mpcs_dof2(i), mpcs_all(idx))
+    enddo
+    do i = 1, size(mpcs_dof3)
+      idx = idx + 1
+      call copy_mpc_cond(mpcs_dof3(i), mpcs_all(idx))
+    enddo
+
+    T(1) = hecmw_Wtime()
+    allocate(displs_nid(size(displs_nid_in)))
+    displs_nid = displs_nid_in
+    
+    call reconst_commtable( hecMESH, mpcs_all, displs_nid )
+    T(2) = hecmw_Wtime()
+
+    if( myrank == 0 .and. LOGLVL > 0 ) then
+      write(*,'(A20,f8.2)') "reconst_commtable", T(2)-T(1)
+    endif
+
+    do i = 1, n_total
+      call finalize_mpc_cond(mpcs_all(i))
+    enddo
+    deallocate(mpcs_all, displs_nid)
+  end subroutine
+
+  subroutine set_contact_structure_multi_dof(cstep, fstrSOLID, mpcs_dof1, mpcs_dof2, mpcs_dof3)
+    integer(kind=kint), intent(in) :: cstep
+    type(fstr_solid), intent(inout) :: fstrSOLID
+    type(tMPCCond), allocatable, intent(in) :: mpcs_dof1(:), mpcs_dof2(:), mpcs_dof3(:)
+    stop "set_contact_structure_multi_dof not implemented yet"
   end subroutine
 
 end module mMPCPreprocess

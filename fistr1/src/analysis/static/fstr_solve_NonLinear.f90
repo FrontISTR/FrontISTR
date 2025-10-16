@@ -17,6 +17,7 @@ module m_fstr_NonLinearMethod
   use m_fstr_AddBC
   use m_fstr_Residual
   use m_fstr_Restart
+  use mMPCPreprocess
 
   implicit none
 
@@ -47,6 +48,15 @@ contains
     real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm
     real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
+
+    if( cstep==1 .and. sub_step==restrt_step_num .and. hecMESH%mpc%n_mpc > 0 ) then
+      call fstr_regularize_mpc( cstep, hecMESH, hecMAT, fstrSOLID, ktMETHOD_MPC, fstrPARAM%dump_equation )
+      ! Reconstruct matrix structure with MPC connections
+      call resize_structures_static( hecMESH, hecMAT, fstrSOLID )
+      call hecmw_mat_recon_withmpc ( hecMESH, hecMAT )
+      call hecMAT_finalize( hecMAT )
+      call hecMAT_init( hecMAT )
+    endif
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 

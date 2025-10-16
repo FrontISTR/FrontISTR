@@ -278,7 +278,7 @@ contains
     enddo
 
     if( is_init .and. ctAlgo == kcaSLAGRANGE ) then
-      call fstr_create_coeff_tiedcontact( cstep, hecMESH, hecMAT, fstrSOLID, infoCTChange, tied_method, dump_equation )
+      call fstr_regularize_mpc( cstep, hecMESH, hecMAT, fstrSOLID, tied_method, dump_equation )
       if( tied_method == ktMETHOD_MPC ) then
         active = .false.
       else if ( tied_method == ktMETHOD_CONTACT ) then
