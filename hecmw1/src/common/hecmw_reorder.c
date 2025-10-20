@@ -200,7 +200,7 @@ static int old2new_node_init_val(struct hecmwST_local_mesh *local_mesh,
 /*----------------------------------------------------------------------------*/
 static int old2new_elem_node_item(struct hecmwST_local_mesh *local_mesh,
                                   int *node_old2new) {
-  int i;
+  long long i;
 
   for (i = 0; i < local_mesh->elem_node_index[local_mesh->n_elem]; i++) {
     local_mesh->elem_node_item[i] =
@@ -322,13 +322,15 @@ static int old2new_elem_type(struct hecmwST_local_mesh *local_mesh,
 /*----------------------------------------------------------------------------*/
 static int old2new_elem_node(struct hecmwST_local_mesh *local_mesh,
                              int *elem_new2old) {
-  int *new_index, *old_index;
+  long long *new_index;
+  long long *old_index;
   int *new_item, *old_item;
   int old_id;
-  int counter;
-  int i, j;
+  long long counter;
+  int i;
+  long long j;
 
-  new_index = HECMW_calloc(local_mesh->n_elem + 1, sizeof(int));
+  new_index = HECMW_calloc(local_mesh->n_elem + 1, sizeof(long long));
   if (new_index == NULL) {
     HECMW_set_error(HECMW_COMMON_E_ALLOCATION, "");
     return -1;
@@ -808,7 +810,8 @@ extern int HECMW_reorder_elem_type(struct hecmwST_local_mesh *local_mesh) {
 static int mask_node_dof_inner(struct hecmwST_local_mesh *local_mesh,
                                char *node_flag, const int is, const int ie,
                                const int n_comp, const int n_dof) {
-  int nidx, node;
+  long long nidx;
+  int node;
   int i, j;
 
   for (i = is; i < ie; i++) {
