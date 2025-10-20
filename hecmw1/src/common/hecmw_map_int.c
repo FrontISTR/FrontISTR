@@ -311,6 +311,121 @@ int HECMW_map_int_mark(struct hecmw_map_int *map, int key) {
   return HECMW_SUCCESS;
 }
 
+/* Comparison function for qsort */
+static int int_compare(const void *a, const void *b) {
+  int arg1 = *(const int *)a;
+  int arg2 = *(const int *)b;
+  if (arg1 < arg2) return -1;
+  if (arg1 > arg2) return 1;
+  return 0;
+}
+
+int HECMW_map_int_mark_batch(struct hecmw_map_int *map, 
+                              const int *keys, size_t n_keys,
+                              int *first_missing_key) {
+  int *sorted_keys = NULL;
+  size_t i, key_idx = 0, map_idx = 0;
+  int ret = HECMW_SUCCESS;
+
+  HECMW_assert(map);
+  HECMW_assert(keys || n_keys == 0);
+  HECMW_assert(map->mark);
+  HECMW_assert(map->sorted);
+
+  if (n_keys == 0) return HECMW_SUCCESS;
+
+  /* Allocate and copy keys array */
+  sorted_keys = (int *)HECMW_malloc(sizeof(int) * n_keys);
+  if (sorted_keys == NULL) return HECMW_ERROR;
+  
+  memcpy(sorted_keys, keys, sizeof(int) * n_keys);
+
+  /* Sort the keys array: O(n_keys * log(n_keys)) */
+  qsort(sorted_keys, n_keys, sizeof(int), int_compare);
+
+  /* Merge operation: O(n_keys + map->n_val)
+   * Both sorted_keys and map->pairs are sorted, so we can scan linearly */
+  while (key_idx < n_keys && map_idx < map->n_val) {
+    int key = sorted_keys[key_idx];
+    int map_key = map->pairs[map_idx].key;
+
+    if (key == map_key) {
+      /* Found: mark it */
+      size_t local = map->pairs[map_idx].local;
+      HECMW_bit_array_set(map->mark, local);
+      
+      /* Skip duplicate keys in input */
+      key_idx++;
+      while (key_idx < n_keys && sorted_keys[key_idx] == key) {
+        key_idx++;
+      }
+    } else if (key < map_key) {
+      /* Key not found in map */
+      if (first_missing_key != NULL) {
+        *first_missing_key = key;
+      }
+      ret = HECMW_ERROR;
+      goto cleanup;
+    } else {
+      /* map_key < key: advance map index */
+      map_idx++;
+    }
+  }
+
+  /* Check if there are unprocessed keys (all would be missing) */
+  if (key_idx < n_keys) {
+    if (first_missing_key != NULL) {
+      *first_missing_key = sorted_keys[key_idx];
+    }
+    ret = HECMW_ERROR;
+  }
+
+cleanup:
+  HECMW_free(sorted_keys);
+  return ret;
+}
+
+int HECMW_map_int_key2local_batch(const struct hecmw_map_int *map,
+                                   const int *keys, size_t n_keys,
+                                   size_t *locals) {
+  size_t i, map_idx = 0;
+
+  HECMW_assert(map && keys && locals);
+  HECMW_assert(map->sorted);
+
+  /* For each key, do binary search */
+  for (i = 0; i < n_keys; i++) {
+    size_t left = 0, right = map->n_val - 1, center;
+    int key = keys[i];
+    int found = 0;
+
+    /* Binary search */
+    while (left <= right) {
+      center = (left + right) / 2;
+      int ckey = map->pairs[center].key;
+
+      if (ckey < key) {
+        left = center + 1;
+      } else if (ckey > key) {
+        if (center == 0) break;  /* Avoid underflow */
+        right = center - 1;
+      } else {
+        /* Found */
+        locals[i] = map->pairs[center].local;
+        found = 1;
+        break;
+      }
+    }
+
+    if (!found) {
+      /* Key not found */
+      return HECMW_ERROR;
+    }
+  }
+
+  return HECMW_SUCCESS;
+}
+
 int HECMW_map_int_iter_next_unmarked(struct hecmw_map_int *map, int *key,
                                      void **value) {
   HECMW_assert(map);

@@ -61,6 +61,14 @@ extern int HECMW_map_int_mark_init(struct hecmw_map_int *map);
 
 extern int HECMW_map_int_mark(struct hecmw_map_int *map, int key);
 
+extern int HECMW_map_int_mark_batch(struct hecmw_map_int *map, 
+                                     const int *keys, size_t n_keys,
+                                     int *first_missing_key);
+
+extern int HECMW_map_int_key2local_batch(const struct hecmw_map_int *map,
+                                          const int *keys, size_t n_keys,
+                                          size_t *locals);
+
 extern int HECMW_map_int_iter_next_unmarked(struct hecmw_map_int *map, int *key,
                                             void **value);
 
