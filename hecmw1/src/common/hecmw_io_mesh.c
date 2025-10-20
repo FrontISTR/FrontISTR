@@ -1716,7 +1716,8 @@ static int setup_node(struct hecmwST_local_mesh *mesh) {
 }
 
 static int setup_elem(struct hecmwST_local_mesh *mesh) {
-  int i, j, n, id;
+  int id;
+  size_t i, j, n;
   size_t size, ncon;
   struct hecmw_io_element *p;
 
@@ -1819,17 +1820,47 @@ static int setup_elem(struct hecmwST_local_mesh *mesh) {
     return -1;
   }
 
-  /* set elem_ID, global_elem_ID, elem_internal_list, elem_type */
+  /* Batch conversion: collect all node IDs first */
+  int *all_node_ids = (int *)HECMW_malloc(sizeof(int) * ncon);
+  size_t *local_ids = (size_t *)HECMW_malloc(sizeof(size_t) * ncon);
+  if (all_node_ids == NULL || local_ids == NULL) {
+    HECMW_free(all_node_ids);
+    HECMW_free(local_ids);
+    set_err(errno, "Failed to allocate memory for batch conversion");
+    return -1;
+  }
+
+  /* Collect all node IDs */
+  size_t node_idx = 0;
   HECMW_map_int_iter_init(_elem);
   for (i = 0; HECMW_map_int_iter_next(_elem, &id, (void **)&p); i++) {
-    int start;
+    n = mesh->elem_node_index[i + 1] - mesh->elem_node_index[i];
+    for (j = 0; j < n; j++) {
+      all_node_ids[node_idx++] = p->node[j];
+    }
+  }
+  HECMW_assert(node_idx == ncon);
 
-    /* connectivity */
+  /* Batch convert all node IDs to local IDs */
+  if (HECMW_map_int_key2local_batch(_node, all_node_ids, ncon, local_ids) != HECMW_SUCCESS) {
+    HECMW_free(all_node_ids);
+    HECMW_free(local_ids);
+    set_err(errno, "Failed to convert node IDs to local indices");
+    return -1;
+  }
+
+  /* set elem_ID, global_elem_ID, elem_internal_list, elem_type, elem_node_item */
+  node_idx = 0;
+  HECMW_map_int_iter_init(_elem);
+  for (i = 0; HECMW_map_int_iter_next(_elem, &id, (void **)&p); i++) {
+    size_t start;
+
+    /* connectivity - copy from pre-converted local_ids (convert to 1-based indexing) */
     n     = mesh->elem_node_index[i + 1] - mesh->elem_node_index[i];
     start = mesh->elem_node_index[i];
     for (j = 0; j < n; j++) {
       HECMW_assert(start + j <= mesh->elem_node_index[mesh->n_elem]);
-      mesh->elem_node_item[start + j] = get_gid2lid_node(p->node[j]);
+      mesh->elem_node_item[start + j] = local_ids[node_idx++] + 1;
     }
 
     mesh->elem_ID[2 * i]        = i + 1;
@@ -1840,6 +1871,11 @@ static int setup_elem(struct hecmwST_local_mesh *mesh) {
   }
 
   HECMW_assert(i == mesh->n_elem);
+  HECMW_assert(node_idx == ncon);
+
+  /* Cleanup */
+  HECMW_free(all_node_ids);
+  HECMW_free(local_ids);
 
   return 0;
 }
@@ -1906,29 +1942,57 @@ static int setup_ngrp(struct hecmwST_local_mesh *mesh) {
     return -1;
   }
 
-  /* set */
+  /* Batch conversion: collect all node IDs first */
+  int *all_node_ids = (int *)HECMW_malloc(sizeof(int) * nnode);
+  size_t *local_ids = (size_t *)HECMW_malloc(sizeof(size_t) * nnode);
+  if (all_node_ids == NULL || local_ids == NULL) {
+    HECMW_free(all_node_ids);
+    HECMW_free(local_ids);
+    set_err(errno, "Failed to allocate memory for batch conversion");
+    return -1;
+  }
+
+  /* Collect all node IDs and set grp_index */
+  size_t node_idx = 0;
   ngrp->grp_index[0] = 0;
   for (i = 0, p = _ngrp; p; p = p->next, i++) {
-    int start = ngrp->grp_index[i], nid;
+    int nid;
 
     HECMW_set_int_iter_init(p->node);
     for (j = 0; HECMW_set_int_iter_next(p->node, &nid); j++) {
-      HECMW_assert(start + j < nnode);
-
-      ngrp->grp_item[start + j] = get_gid2lid_node(nid);
-
-      HECMW_assert(ngrp->grp_item[start + j] > 0);
+      all_node_ids[node_idx++] = nid;
     }
 
     ngrp->grp_index[i + 1] = ngrp->grp_index[i] + j;
     ngrp->grp_name[i]      = HECMW_strdup(p->name);
     if (ngrp->grp_name[i] == NULL) {
+      HECMW_free(all_node_ids);
+      HECMW_free(local_ids);
       set_err(errno, "");
       return -1;
     }
   }
 
+  HECMW_assert(node_idx == nnode);
   HECMW_assert(ngrp->grp_index[ngrp->n_grp] == nnode);
+
+  /* Batch convert all node IDs to local IDs */
+  if (HECMW_map_int_key2local_batch(_node, all_node_ids, nnode, local_ids) != HECMW_SUCCESS) {
+    HECMW_free(all_node_ids);
+    HECMW_free(local_ids);
+    set_err(errno, "Failed to convert node IDs to local indices");
+    return -1;
+  }
+
+  /* Copy local IDs to grp_item (convert to 1-based indexing) */
+  for (i = 0; i < nnode; i++) {
+    ngrp->grp_item[i] = local_ids[i] + 1;
+    HECMW_assert(ngrp->grp_item[i] > 0);
+  }
+
+  /* Cleanup */
+  HECMW_free(all_node_ids);
+  HECMW_free(local_ids);
 
   mesh->node_group = ngrp;
 
@@ -1996,32 +2060,58 @@ static int setup_egrp(struct hecmwST_local_mesh *mesh) {
     return -1;
   }
 
-  /* set */
+  /* Batch conversion: collect all element IDs first */
+  int *all_elem_ids = (int *)HECMW_malloc(sizeof(int) * nelem);
+  size_t *local_ids = (size_t *)HECMW_malloc(sizeof(size_t) * nelem);
+  if (all_elem_ids == NULL || local_ids == NULL) {
+    HECMW_free(all_elem_ids);
+    HECMW_free(local_ids);
+    set_err(errno, "Failed to allocate memory for batch conversion");
+    return -1;
+  }
+
+  /* Collect all element IDs and set grp_index */
+  size_t elem_idx = 0;
   egrp->grp_index[0] = 0;
   for (i = 0, p = _egrp; p; p = p->next, i++) {
     int eid;
 
     HECMW_set_int_iter_init(p->elem);
     for (j = 0; HECMW_set_int_iter_next(p->elem, &eid); j++) {
-      int start = egrp->grp_index[i];
-
-      HECMW_assert(start + j < nelem);
-
-      egrp->grp_item[start + j] = get_gid2lid_elem(eid);
-
-      HECMW_assert(egrp->grp_item[start + j] > 0);
+      all_elem_ids[elem_idx++] = eid;
     }
 
     egrp->grp_index[i + 1] = egrp->grp_index[i] + j;
     egrp->grp_name[i]      = HECMW_strdup(p->name);
 
     if (egrp->grp_name[i] == NULL) {
+      HECMW_free(all_elem_ids);
+      HECMW_free(local_ids);
       set_err(errno, "");
       return -1;
     }
   }
 
+  HECMW_assert(elem_idx == nelem);
   HECMW_assert(egrp->grp_index[egrp->n_grp] == nelem);
+
+  /* Batch convert all element IDs to local IDs */
+  if (HECMW_map_int_key2local_batch(_elem, all_elem_ids, nelem, local_ids) != HECMW_SUCCESS) {
+    HECMW_free(all_elem_ids);
+    HECMW_free(local_ids);
+    set_err(errno, "Failed to convert element IDs to local indices");
+    return -1;
+  }
+
+  /* Copy local IDs to grp_item (convert to 1-based indexing) */
+  for (i = 0; i < nelem; i++) {
+    egrp->grp_item[i] = local_ids[i] + 1;
+    HECMW_assert(egrp->grp_item[i] > 0);
+  }
+
+  /* Cleanup */
+  HECMW_free(all_elem_ids);
+  HECMW_free(local_ids);
 
   mesh->elem_group = egrp;
 
@@ -3121,6 +3211,11 @@ static int post_node(void) {
 static int post_elem_check_node_existence(void) {
   int i, j, ncon, id;
   struct hecmw_io_element *p;
+  int *all_nodes = NULL;
+  size_t total_nodes = 0;
+  size_t node_idx = 0;
+  int missing_node = 0;
+  int ret = 0;
 
   HECMW_assert(global_node_ID_max > 0);
 
@@ -3128,24 +3223,48 @@ static int post_elem_check_node_existence(void) {
     return -1;
   }
 
+  /* Step 1: Count total number of node references */
+  HECMW_map_int_iter_init(_elem);
+  for (i = 0; HECMW_map_int_iter_next(_elem, &id, (void **)&p); i++) {
+    ncon = HECMW_get_max_node(p->type);
+    HECMW_assert(ncon > 0);
+    total_nodes += ncon;
+  }
+
+  if (total_nodes == 0) {
+    return 0;  /* No nodes to check */
+  }
+
+  /* Step 2: Allocate array for all node IDs */
+  all_nodes = (int *)HECMW_malloc(sizeof(int) * total_nodes);
+  if (all_nodes == NULL) {
+    set_err(errno, "Failed to allocate memory for node array");
+    return -1;
+  }
+
+  /* Step 3: Collect all node IDs */
   HECMW_map_int_iter_init(_elem);
   for (i = 0; HECMW_map_int_iter_next(_elem, &id, (void **)&p); i++) {
     ncon = HECMW_get_max_node(p->type);
 
-    HECMW_assert(ncon > 0);
-
     for (j = 0; j < ncon; j++) {
       HECMW_assert(p->node[j] > 0);
       HECMW_assert(p->node[j] <= global_node_ID_max);
-
-      if (HECMW_map_int_mark(_node, p->node[j])) {
-        set_err(HECMW_IO_E1027, "Node %d does not exist", p->node[j]);
-        return -1;
-      }
+      all_nodes[node_idx++] = p->node[j];
     }
   }
 
-  return 0;
+  HECMW_assert(node_idx == total_nodes);
+
+  /* Step 4: Batch mark operation (optimized) */
+  if (HECMW_map_int_mark_batch(_node, all_nodes, total_nodes, &missing_node)) {
+    set_err(HECMW_IO_E1027, "Node %d does not exist", missing_node);
+    ret = -1;
+  }
+
+  /* Cleanup */
+  HECMW_free(all_nodes);
+  return ret;
 }
 
 static char *post_elem_make_matname(int id, char *buf, int bufsize) {

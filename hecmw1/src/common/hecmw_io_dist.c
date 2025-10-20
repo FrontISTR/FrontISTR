@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
+#include <limits.h>
 #include "hecmw_struct.h"
 #include "hecmw_util.h"
 #include "hecmw_dist_alloc.h"
@@ -130,6 +131,29 @@ static int get_int_ary(int *ary, int n, FILE *fp) {
       HECMW_set_error(HECMW_IO_E5003, "");
       return -1;
     }
+  }
+
+  return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*  Generic: read int array and convert to long long array                   */
+/*----------------------------------------------------------------------------*/
+static int get_int_to_longlong_ary(long long *ary, size_t n, FILE *fp) {
+  int rtc;
+  size_t i;
+  int tmp;
+
+  for (i = 0; i < n; i++) {
+    rtc = fscanf(fp, "%d", &tmp);
+    if (rtc < 1) {
+      HECMW_set_error(HECMW_IO_E5004, "");
+      return -1;
+    } else if (rtc == EOF) {
+      HECMW_set_error(HECMW_IO_E5003, "");
+      return -1;
+    }
+    ary[i] = (long long)tmp;
   }
 
   return 0;
@@ -572,12 +596,12 @@ static int get_elem_info(struct hecmwST_local_mesh *mesh, FILE *fp) {
 
   if (mesh->n_elem_gross > 0) {
     /* elem_node_index */
-    if ((mesh->elem_node_index = (int *)HECMW_malloc(
-             sizeof(int) * (mesh->n_elem_gross + 1))) == NULL) {
+    if ((mesh->elem_node_index = (long long *)HECMW_malloc(
+             sizeof(long long) * (mesh->n_elem_gross + 1))) == NULL) {
       HECMW_set_error(errno, "");
       return -1;
     }
-    if (get_int_ary(mesh->elem_node_index, mesh->n_elem_gross + 1, fp)) {
+    if (get_int_to_longlong_ary(mesh->elem_node_index, mesh->n_elem_gross + 1, fp)) {
       return -1;
     }
 
@@ -1854,6 +1878,43 @@ static int print_int_ary(const int *ary, int n, int cols, FILE *fp) {
 }
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*  Generic: print long long array as int array with overflow check          */
+/*  (for distributed mesh file compatibility)                                */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+static int print_longlong_as_int_ary(const long long *ary, size_t n, int cols, 
+                                      FILE *fp, const char *name) {
+  int rtc;
+  size_t i;
+
+  if (n <= 0) return 0;
+
+  for (i = 0; i < n; i++) {
+    /* Overflow check */
+    if (ary[i] > INT_MAX || ary[i] < INT_MIN) {
+      HECMW_set_error(HECMW_IO_E5004, 
+        "%s[%zu]=%lld exceeds INT range after partitioning", 
+        name ? name : "array", i, ary[i]);
+      return -1;
+    }
+    
+    rtc = fprintf(fp, "%d%c", (int)ary[i], ((int)(i + 1)) % cols ? ' ' : '\n');
+    if (rtc < 0) {
+      HECMW_set_error(HECMW_IO_E5004, "");
+      return -1;
+    }
+  }
+  if (n % cols) {
+    rtc = fprintf(fp, "\n");
+    if (rtc < 0) {
+      HECMW_set_error(HECMW_IO_E5004, "");
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  print double (array)                                                      */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 static int print_double_ary(const double *ary, int n, int cols, FILE *fp) {
@@ -2154,8 +2215,8 @@ static int print_elem_info(const struct hecmwST_local_mesh *mesh, FILE *fp) {
   }
 
   /* elem_node_index */
-  if (print_int_ary(mesh->elem_node_index, mesh->n_elem_gross + 1, COLS_INT_DEF,
-                    fp)) {
+  if (print_longlong_as_int_ary(mesh->elem_node_index, mesh->n_elem_gross + 1, 
+                                 COLS_INT_DEF, fp, "elem_node_index")) {
     return -1;
   }
 
