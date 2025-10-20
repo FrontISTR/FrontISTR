@@ -8,6 +8,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "hecmw_util.h"
 #include "hecmw_io.h"
@@ -28,6 +29,18 @@ int main(int argc, char **argv) {
   HECMW_log(HECMW_LOG_INFO, "Reading mesh file...");
   global_mesh = HECMW_get_mesh("part_in");
   if (global_mesh == NULL) goto error;
+
+  /* Debug output for large mesh analysis */
+  HECMW_log(HECMW_LOG_INFO, "Mesh loaded: nodes=%d, elements=%d", 
+            global_mesh->n_node, global_mesh->n_elem);
+  
+  if (global_mesh->elem_node_index && global_mesh->n_elem > 0) {
+    size_t total_connectivity = global_mesh->elem_node_index[global_mesh->n_elem];
+    if (total_connectivity > INT_MAX) {
+      HECMW_log(HECMW_LOG_INFO, "Total element connectivity entries: %zu", total_connectivity);
+      HECMW_log(HECMW_LOG_WARN, "WARNING: Element connectivity count exceeds 32-bit integer limit %d!", INT_MAX);
+    }
+  }
 
   local_mesh = HECMW_partition(global_mesh);
   if (local_mesh == NULL) goto error;
