@@ -27,7 +27,8 @@ from doxygen_index import (
     load_indices,
     search_and_rank,
     find_members_by_name,
-    find_compounds_by_name
+    find_compounds_by_name,
+    trace_dependencies_tree
 )
 from doxygen_parser import parse_memberdef, parse_compounddef
 from doxygen_xml_cache import load_xml_element
@@ -355,6 +356,151 @@ def get_compounddef(
     
     # Parse and return compounddef details
     return parse_compounddef(compounddef)
+
+
+@app.tool()
+def trace_call_dependencies(
+    ctx: Context,
+    name: str,
+    direction: str = "forward",
+    max_depth: int = 3
+) -> Dict:
+    """
+    Trace call dependencies recursively and return a tree structure.
+    
+    Use this when you need to:
+    - Analyze multi-level function call chains
+    - Understand impact of code changes (backward tracing)
+    - Find all execution paths from a starting point
+    - Detect circular dependencies
+    - Plan refactoring by understanding call hierarchies
+    
+    This tool uses a hybrid approach:
+    - Tree structure showing all call paths
+    - Duplicate detection to prevent explosion
+    - Cycle detection for circular references
+    
+    Args:
+        name: Starting function/subroutine name (case-insensitive).
+              Examples: "fstr_newton", "dynamic_mat_ass_load"
+        direction: Trace direction:
+                  "forward" - trace functions THIS function calls (default)
+                  "backward" - trace functions that call THIS function
+        max_depth: Maximum depth to traverse (1-5, default: 3)
+                  Depth 1: direct calls only (same as get_memberdef)
+                  Depth 2-3: typical analysis depth
+                  Depth 4-5: deep analysis (may be slow)
+    
+    Returns:
+        Dictionary with tree structure and summary:
+        {
+            "tree": {
+                "name": str,              # Function name
+                "file": str,              # Source file
+                "line": int,              # Line number
+                "kind": str,              # function|subroutine
+                "depth": int,             # Current depth (0 = root)
+                "calls": [                # Child nodes (recursive structure)
+                    {
+                        "name": str,
+                        "depth": int,
+                        "duplicate": bool,        # True if seen in another path
+                        "first_seen_at": str,     # Original path where first seen
+                        "cycle_detected": bool,   # True if circular reference
+                        "cycle_path": str,        # Path showing the cycle
+                        "max_depth_reached": bool,# True if stopped at max_depth
+                        "calls": [...]            # Further nested calls
+                    }
+                ]
+            },
+            "summary": {
+                "start_function": str,    # Starting function name
+                "direction": str,         # forward or backward
+                "max_depth": int,         # Maximum depth setting
+                "total_nodes": int,       # Total nodes in tree
+                "unique_functions": int,  # Number of unique functions
+                "duplicates": int,        # Number of duplicate occurrences
+                "cycles_found": int,      # Number of circular references detected
+                "deepest_path": int       # Actual deepest path in tree
+            }
+        }
+    
+    Examples:
+        - Find what fstr_newton calls (3 levels):
+          trace_call_dependencies("fstr_newton", direction="forward", max_depth=3)
+        
+        - Find what calls fstr_stiffmatrix (2 levels):
+          trace_call_dependencies("fstr_stiffmatrix", direction="backward", max_depth=2)
+        
+        - Quick check (1 level, same as get_memberdef):
+          trace_call_dependencies("fstr_newton", max_depth=1)
+    
+    Note: For depth=1, consider using get_memberdef() which provides more details.
+          This tool is optimized for multi-level dependency analysis.
+    """
+    # Validate parameters
+    if direction not in ["forward", "backward"]:
+        return {"error": f"Invalid direction: '{direction}'. Must be 'forward' or 'backward'"}
+    
+    if not isinstance(max_depth, int) or max_depth < 1 or max_depth > 10:
+        return {"error": f"Invalid max_depth: {max_depth}. Must be integer between 1 and 10"}
+    
+    if max_depth > 5:
+        return {
+            "warning": f"max_depth={max_depth} may be slow and produce large results",
+            "recommendation": "Consider using max_depth=3-5 for typical analysis"
+        }
+    
+    # Build dependency tree
+    tree = trace_dependencies_tree(
+        MEMBER_INDEX,
+        name,
+        direction,
+        max_depth
+    )
+    
+    if tree is None:
+        return {"error": f"Function '{name}' not found"}
+    
+    # Calculate summary statistics
+    def count_nodes(node: Dict) -> tuple[int, set, int, int]:
+        """Return (total_nodes, unique_names, duplicates, cycles)"""
+        total = 1
+        names = {node["name"]}
+        duplicates = 1 if node.get("duplicate") else 0
+        cycles = 1 if node.get("cycle_detected") else 0
+        
+        for child in node.get("calls", []):
+            child_total, child_names, child_dup, child_cycles = count_nodes(child)
+            total += child_total
+            names.update(child_names)
+            duplicates += child_dup
+            cycles += child_cycles
+        
+        return total, names, duplicates, cycles
+    
+    def max_depth_in_tree(node: Dict) -> int:
+        """Find the deepest path in the tree"""
+        if not node.get("calls"):
+            return node.get("depth", 0)
+        return max(max_depth_in_tree(child) for child in node["calls"])
+    
+    total_nodes, unique_names, duplicates, cycles = count_nodes(tree)
+    deepest = max_depth_in_tree(tree)
+    
+    return {
+        "tree": tree,
+        "summary": {
+            "start_function": name,
+            "direction": direction,
+            "max_depth": max_depth,
+            "total_nodes": total_nodes,
+            "unique_functions": len(unique_names),
+            "duplicates": duplicates,
+            "cycles_found": cycles,
+            "deepest_path": deepest
+        }
+    }
 
 
 def main():
