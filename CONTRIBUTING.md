@@ -1,4 +1,10 @@
 # Contribution Guides
+
+## Development Tools
+
+### AI-Assisted Development
+For AI-assisted code analysis and development, see [ai-tools/README.md](ai-tools/README.md).
+
 ## Bug reports 
 - support(atmark)frontistr.org
 
