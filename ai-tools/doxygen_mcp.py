@@ -13,128 +13,30 @@ Usage: python doxygen_mcp.py --xml <xml_dir> --html <html_dir>
 from __future__ import annotations
 import argparse
 import sys
-import re
 from pathlib import Path
-import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional
 
 from mcp.server.fastmcp import FastMCP, Context
+
+# Add current directory to path for module imports
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Import internal modules
+from doxygen_index import (
+    load_indices,
+    search_and_rank,
+    find_members_by_name,
+    find_compounds_by_name
+)
+from doxygen_parser import parse_memberdef, parse_compounddef
+from doxygen_xml_cache import load_xml_element
 
 app = FastMCP("doxygen")
 
 # Global data structures
 MEMBER_INDEX: List[Dict] = []  # Index of all members
 COMPOUND_INDEX: List[Dict] = []  # Index of all compounds
-XML_CACHE: Dict[str, ET.Element] = {}  # Cache parsed XML files
-XML_DIR: Optional[Path] = None
-HTML_ROOT: Optional[Path] = None
-
-
-def load_indices(xml_dir: Path, html_root: Path) -> tuple[List[Dict], List[Dict]]:
-    """
-    Load member and compound indices from Doxygen XML files.
-    
-    Returns:
-        (member_index, compound_index)
-    """
-    members = []
-    compounds = []
-    
-    for xml_path in xml_dir.rglob("*.xml"):
-        if xml_path.name == "index.xml":
-            continue
-            
-        try:
-            tree = ET.parse(xml_path)
-            root = tree.getroot()
-        except ET.ParseError:
-            continue
-        
-        # Process compounds
-        for compounddef in root.findall(".//compounddef"):
-            compound_id = compounddef.get("id", "")
-            compound_kind = compounddef.get("kind", "")
-            compound_name_elem = compounddef.find("compoundname")
-            
-            if compound_name_elem is not None and compound_name_elem.text:
-                compound_name = compound_name_elem.text.strip()
-                
-                # Location
-                loc = compounddef.find("location")
-                file_path = loc.get("file", "") if loc is not None else ""
-                line_num = loc.get("line", "") if loc is not None else ""
-                try:
-                    line_int = int(line_num) if line_num else None
-                except ValueError:
-                    line_int = None
-                
-                # Brief description
-                brief_elem = compounddef.find("briefdescription/para")
-                brief = brief_elem.text.strip() if brief_elem is not None and brief_elem.text else ""
-                
-                compounds.append({
-                    "compoundname": compound_name,
-                    "kind": compound_kind,
-                    "file": file_path,
-                    "line": line_int,
-                    "briefdescription": brief,
-                    "compoundid": compound_id,
-                    "xml_file": str(xml_path)
-                })
-            
-            # Process members within this compound
-            for memberdef in compounddef.findall(".//memberdef"):
-                member_id = memberdef.get("id", "")
-                member_kind = memberdef.get("kind", "")
-                name_elem = memberdef.find("name")
-                
-                if name_elem is not None and name_elem.text:
-                    member_name = name_elem.text.strip()
-                    
-                    # Location
-                    loc = memberdef.find("location")
-                    file_path = loc.get("file", "") if loc is not None else ""
-                    line_num = loc.get("line", "") if loc is not None else ""
-                    try:
-                        line_int = int(line_num) if line_num else None
-                    except ValueError:
-                        line_int = None
-                    
-                    # Brief description
-                    brief_elem = memberdef.find("briefdescription/para")
-                    brief = brief_elem.text.strip() if brief_elem is not None and brief_elem.text else ""
-                    
-                    members.append({
-                        "name": member_name,
-                        "kind": member_kind,
-                        "file": file_path,
-                        "line": line_int,
-                        "compoundname": compound_name if 'compound_name' in locals() else "",
-                        "briefdescription": brief,
-                        "memberid": member_id,
-                        "xml_file": str(xml_path)
-                    })
-    
-    return members, compounds
-
-
-def score_match(item: Dict, tokens: List[str], path_filters: List[str]) -> int:
-    """Calculate relevance score for search results."""
-    score = 0
-    name = (item.get("name") or item.get("compoundname") or "").lower()
-    file_path = (item.get("file") or "").lower().replace("\\", "/")
-    
-    for token in tokens:
-        if token in name:
-            score += 3
-        if token in file_path:
-            score += 2
-    
-    for pattern in path_filters:
-        if pattern.lower().replace("\\", "/") in file_path:
-            score += 1
-    
-    return score
 
 
 @app.tool()
@@ -185,37 +87,7 @@ def search_members(
         - Find all subroutines with "newton": kind=["subroutine"], query="newton"
         - Find matrix functions in analysis: query="matrix", file_pattern="*/analysis/*"
     """
-    tokens = [t.lower() for t in re.split(r"\s+", query.strip()) if t.strip()]
-    kind_set = set(k.lower() for k in (kind or []))
-    
-    candidates = []
-    for member in MEMBER_INDEX:
-        # Filter by kind
-        if kind_set and member.get("kind", "").lower() not in kind_set:
-            continue
-        
-        # Filter by file pattern
-        if file_pattern:
-            file_path = member.get("file", "").lower().replace("\\", "/")
-            if file_pattern.lower() not in file_path:
-                continue
-        
-        # Calculate score
-        score = score_match(member, tokens, [file_pattern] if file_pattern else [])
-        if score > 0 or not tokens:
-            candidates.append((score, member))
-    
-    # Sort by score and name
-    candidates.sort(key=lambda x: (-x[0], x[1].get("name", "")))
-    
-    # Return top results
-    results = [m for _, m in candidates[:max(1, limit)]]
-    
-    # Remove xml_file from results (internal use only)
-    for r in results:
-        r.pop("xml_file", None)
-    
-    return results
+    return search_and_rank(MEMBER_INDEX, query, kind, file_pattern, limit)
 
 
 @app.tool()
@@ -263,129 +135,7 @@ def search_compounds(
         - Find type definitions: kind=["struct"], query="tParam"
         - Find files in analysis: kind=["file"], query="analysis"
     """
-    tokens = [t.lower() for t in re.split(r"\s+", query.strip()) if t.strip()]
-    kind_set = set(k.lower() for k in (kind or []))
-    
-    candidates = []
-    for compound in COMPOUND_INDEX:
-        # Filter by kind
-        if kind_set and compound.get("kind", "").lower() not in kind_set:
-            continue
-        
-        # Calculate score
-        score = score_match(compound, tokens, [])
-        if score > 0 or not tokens:
-            candidates.append((score, compound))
-    
-    # Sort by score and name
-    candidates.sort(key=lambda x: (-x[0], x[1].get("compoundname", "")))
-    
-    # Return top results
-    results = [c for _, c in candidates[:max(1, limit)]]
-    
-    # Remove xml_file from results
-    for r in results:
-        r.pop("xml_file", None)
-    
-    return results
-
-
-def extract_text(element: Optional[ET.Element]) -> str:
-    """Extract all text content from an XML element."""
-    if element is None:
-        return ""
-    return ET.tostring(element, encoding='unicode', method='text').strip()
-
-
-def parse_memberdef(memberdef: ET.Element) -> Dict:
-    """Parse a memberdef XML element into a dictionary."""
-    result = {}
-    
-    # Attributes
-    for attr in ["id", "kind", "prot", "static", "const", "explicit", "inline", "virt"]:
-        val = memberdef.get(attr)
-        if val:
-            result[attr] = val
-    
-    # Simple text elements
-    for tag in ["name", "type", "definition", "argsstring", "qualifiedname", "initializer"]:
-        elem = memberdef.find(tag)
-        if elem is not None:
-            text = extract_text(elem)
-            if text:
-                result[tag] = text
-    
-    # Description elements
-    brief_elem = memberdef.find("briefdescription/para")
-    if brief_elem is not None:
-        result["briefdescription"] = extract_text(brief_elem)
-    
-    detailed_elem = memberdef.find("detaileddescription")
-    if detailed_elem is not None:
-        result["detaileddescription"] = extract_text(detailed_elem)
-    
-    # Parameters
-    params = []
-    for param in memberdef.findall("param"):
-        param_dict = {}
-        for tag in ["type", "declname", "defname", "array", "defval"]:
-            elem = param.find(tag)
-            if elem is not None:
-                text = extract_text(elem)
-                if text:
-                    param_dict[tag] = text
-        if param_dict:
-            params.append(param_dict)
-    if params:
-        result["param"] = params
-    
-    # Location
-    loc = memberdef.find("location")
-    if loc is not None:
-        loc_dict = {}
-        for attr in ["file", "line", "column", "bodyfile", "bodystart", "bodyend"]:
-            val = loc.get(attr)
-            if val:
-                try:
-                    loc_dict[attr] = int(val) if attr in ["line", "column", "bodystart", "bodyend"] else val
-                except ValueError:
-                    loc_dict[attr] = val
-        if loc_dict:
-            result["location"] = loc_dict
-    
-    # References (functions this member calls)
-    references = []
-    for ref in memberdef.findall("references"):
-        ref_dict = {"name": extract_text(ref)}
-        for attr in ["refid", "compoundref", "startline", "endline"]:
-            val = ref.get(attr)
-            if val:
-                try:
-                    ref_dict[attr] = int(val) if attr in ["startline", "endline"] else val
-                except ValueError:
-                    ref_dict[attr] = val
-        if ref_dict.get("name"):
-            references.append(ref_dict)
-    if references:
-        result["references"] = references
-    
-    # Referenced by (functions that call this member)
-    referencedby = []
-    for ref in memberdef.findall("referencedby"):
-        ref_dict = {"name": extract_text(ref)}
-        for attr in ["refid", "compoundref", "startline", "endline"]:
-            val = ref.get(attr)
-            if val:
-                try:
-                    ref_dict[attr] = int(val) if attr in ["startline", "endline"] else val
-                except ValueError:
-                    ref_dict[attr] = val
-        if ref_dict.get("name"):
-            referencedby.append(ref_dict)
-    if referencedby:
-        result["referencedby"] = referencedby
-    
-    return result
+    return search_and_rank(COMPOUND_INDEX, query, kind, None, limit)
 
 
 @app.tool()
@@ -475,8 +225,7 @@ def get_memberdef(
         When multiple matches exist, the first match is returned with a warning in _multiple_matches.
     """
     # Find the member in index
-    name_lower = name.lower()
-    candidates = [m for m in MEMBER_INDEX if m.get("name", "").lower() == name_lower]
+    candidates = find_members_by_name(MEMBER_INDEX, name)
     
     if not candidates:
         return {"error": f"Member '{name}' not found"}
@@ -493,130 +242,24 @@ def get_memberdef(
             "basic_info": member
         }
     
-    try:
-        # Parse XML file
-        if xml_file not in XML_CACHE:
-            tree = ET.parse(xml_file)
-            XML_CACHE[xml_file] = tree.getroot()
-        
-        root = XML_CACHE[xml_file]
-        
-        # Find the memberdef by id
-        memberdef = root.find(f".//*[@id='{member_id}']")
-        if memberdef is None:
-            return {"error": "Member not found in XML"}
-        
-        # Parse and return memberdef details
-        result = parse_memberdef(memberdef)
-        
-        # Add warning if multiple matches exist
-        if len(candidates) > 1:
-            result["_multiple_matches"] = {
-                "total": len(candidates),
-                "selected": f"{member.get('compoundname')} in {member.get('file')}",
-                "others": [
-                    f"{c.get('compoundname')} in {c.get('file')}"
-                    for c in candidates[1:4]  # Show up to 3 others
-                ]
-            }
-        
-        return result
-        
-    except Exception as e:
-        return {"error": f"Failed to parse XML: {str(e)}"}
-
-
-def parse_compounddef(compounddef: ET.Element) -> Dict:
-    """Parse a compounddef XML element into a dictionary."""
-    result = {}
+    # Load XML element
+    memberdef = load_xml_element(xml_file, member_id)
+    if memberdef is None:
+        return {"error": "Member not found in XML"}
     
-    # Attributes
-    for attr in ["id", "kind", "language", "prot"]:
-        val = compounddef.get(attr)
-        if val:
-            result[attr] = val
+    # Parse and return memberdef details
+    result = parse_memberdef(memberdef)
     
-    # Compound name
-    name_elem = compounddef.find("compoundname")
-    if name_elem is not None:
-        result["compoundname"] = extract_text(name_elem)
-    
-    # Title (for pages/groups)
-    title_elem = compounddef.find("title")
-    if title_elem is not None:
-        result["title"] = extract_text(title_elem)
-    
-    # Descriptions
-    brief_elem = compounddef.find("briefdescription/para")
-    if brief_elem is not None:
-        result["briefdescription"] = extract_text(brief_elem)
-    
-    detailed_elem = compounddef.find("detaileddescription")
-    if detailed_elem is not None:
-        result["detaileddescription"] = extract_text(detailed_elem)
-    
-    # Section defs (member groups)
-    sections = []
-    for sectiondef in compounddef.findall("sectiondef"):
-        section_dict = {"kind": sectiondef.get("kind", "")}
-        header_elem = sectiondef.find("header")
-        if header_elem is not None:
-            section_dict["header"] = extract_text(header_elem)
-        
-        members = []
-        for memberdef in sectiondef.findall("memberdef"):
-            member_dict = parse_memberdef(memberdef)
-            if member_dict:
-                members.append(member_dict)
-        
-        if members:
-            section_dict["memberdef"] = members
-        sections.append(section_dict)
-    
-    if sections:
-        result["sectiondef"] = sections
-    
-    # Location
-    loc = compounddef.find("location")
-    if loc is not None:
-        loc_dict = {}
-        for attr in ["file", "line", "column"]:
-            val = loc.get(attr)
-            if val:
-                try:
-                    loc_dict[attr] = int(val) if attr in ["line", "column"] else val
-                except ValueError:
-                    loc_dict[attr] = val
-        if loc_dict:
-            result["location"] = loc_dict
-    
-    # Inner classes/namespaces
-    for tag in ["innerclass", "innernamespace", "innerfile", "innerdir"]:
-        inners = []
-        for inner in compounddef.findall(tag):
-            inner_dict = {"name": extract_text(inner)}
-            for attr in ["refid", "prot"]:
-                val = inner.get(attr)
-                if val:
-                    inner_dict[attr] = val
-            if inner_dict.get("name"):
-                inners.append(inner_dict)
-        if inners:
-            result[tag] = inners
-    
-    # Base/derived classes
-    for tag in ["basecompoundref", "derivedcompoundref"]:
-        refs = []
-        for ref in compounddef.findall(tag):
-            ref_dict = {"name": extract_text(ref)}
-            for attr in ["refid", "prot", "virt"]:
-                val = ref.get(attr)
-                if val:
-                    ref_dict[attr] = val
-            if ref_dict.get("name"):
-                refs.append(ref_dict)
-        if refs:
-            result[tag] = refs
+    # Add warning if multiple matches exist
+    if len(candidates) > 1:
+        result["_multiple_matches"] = {
+            "total": len(candidates),
+            "selected": f"{member.get('compoundname')} in {member.get('file')}",
+            "others": [
+                f"{c.get('compoundname')} in {c.get('file')}"
+                for c in candidates[1:4]  # Show up to 3 others
+            ]
+        }
     
     return result
 
@@ -693,8 +336,7 @@ def get_compounddef(
         For module functions, look in sectiondef with kind "func" or "public-func".
     """
     # Find the compound in index
-    name_lower = name.lower()
-    candidates = [c for c in COMPOUND_INDEX if c.get("compoundname", "").lower() == name_lower]
+    candidates = find_compounds_by_name(COMPOUND_INDEX, name)
     
     if not candidates:
         return {"error": f"Compound '{name}' not found"}
@@ -706,24 +348,13 @@ def get_compounddef(
     if not xml_file or not compound_id:
         return {"error": "No XML details available", "basic_info": compound}
     
-    try:
-        # Parse XML file
-        if xml_file not in XML_CACHE:
-            tree = ET.parse(xml_file)
-            XML_CACHE[xml_file] = tree.getroot()
-        
-        root = XML_CACHE[xml_file]
-        
-        # Find the compounddef by id
-        compounddef = root.find(f".//*[@id='{compound_id}']")
-        if compounddef is None:
-            return {"error": "Compound not found in XML", "basic_info": compound}
-        
-        # Parse and return compounddef details
-        return parse_compounddef(compounddef)
-        
-    except Exception as e:
-        return {"error": f"Failed to parse XML: {str(e)}", "basic_info": compound}
+    # Load XML element
+    compounddef = load_xml_element(xml_file, compound_id)
+    if compounddef is None:
+        return {"error": "Compound not found in XML", "basic_info": compound}
+    
+    # Parse and return compounddef details
+    return parse_compounddef(compounddef)
 
 
 def main():
@@ -735,22 +366,20 @@ def main():
     args = parser.parse_args()
     
     xml_dir = Path(args.xml).resolve()
-    html_dir = Path(args.html).resolve()
+    html_root = Path(args.html).resolve()
     
     if not xml_dir.exists():
         print(f"[doxygen-mcp] ERROR: XML directory not found: {xml_dir}", file=sys.stderr)
         sys.exit(2)
     
-    if not html_dir.exists():
-        print(f"[doxygen-mcp] WARNING: HTML directory not found: {html_dir}", file=sys.stderr)
+    if not html_root.exists():
+        print(f"[doxygen-mcp] WARNING: HTML directory not found: {html_root}", file=sys.stderr)
     
     # Load indices
-    global MEMBER_INDEX, COMPOUND_INDEX, XML_DIR, HTML_ROOT
-    XML_DIR = xml_dir
-    HTML_ROOT = html_dir
+    global MEMBER_INDEX, COMPOUND_INDEX
     
     print(f"[doxygen-mcp] Loading indices from {xml_dir}...", file=sys.stderr)
-    MEMBER_INDEX, COMPOUND_INDEX = load_indices(xml_dir, html_dir)
+    MEMBER_INDEX, COMPOUND_INDEX = load_indices(xml_dir)
     
     print(f"[doxygen-mcp] Loaded {len(MEMBER_INDEX)} members, {len(COMPOUND_INDEX)} compounds", file=sys.stderr)
     
