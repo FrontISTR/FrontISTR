@@ -221,3 +221,141 @@ def find_compounds_by_name(compound_index: List[Dict], name: str) -> List[Dict]:
     """
     name_lower = name.lower()
     return [c for c in compound_index if c.get("compoundname", "").lower() == name_lower]
+
+
+def trace_dependencies_tree(
+    member_index: List[Dict],
+    name: str,
+    direction: str,
+    max_depth: int,
+    current_depth: int = 0,
+    current_path: Optional[List[str]] = None,
+    visited_global: Optional[Dict[str, str]] = None
+) -> Optional[Dict]:
+    """
+    Recursively trace call dependencies and build a tree structure.
+    
+    This function implements a hybrid approach:
+    - Tree structure with all paths visible
+    - Duplicate detection to prevent explosion
+    - Cycle detection for circular dependencies
+    
+    Args:
+        member_index: Member index to search
+        name: Function/subroutine name to trace
+        direction: "forward" (calls) or "backward" (callers)
+        max_depth: Maximum depth to traverse
+        current_depth: Current recursion depth
+        current_path: Current path (for cycle detection)
+        visited_global: Global visited nodes (for duplicate detection)
+        
+    Returns:
+        Tree node dictionary or None if not found
+    """
+    from doxygen_xml_cache import load_xml_element
+    from doxygen_parser import parse_memberdef
+    
+    # Initialize tracking structures
+    if current_path is None:
+        current_path = []
+    if visited_global is None:
+        visited_global = {}
+    
+    # Check cycle (same function in current path)
+    if name in current_path:
+        path_str = " → ".join(current_path + [name])
+        return {
+            "name": name,
+            "depth": current_depth,
+            "cycle_detected": True,
+            "cycle_path": path_str,
+            "calls": []
+        }
+    
+    # Find member in index
+    candidates = find_members_by_name(member_index, name)
+    if not candidates:
+        return None
+    
+    member = candidates[0]
+    
+    # Build basic node info
+    node = {
+        "name": name,
+        "file": member.get("file", ""),
+        "line": member.get("line"),
+        "kind": member.get("kind", ""),
+        "depth": current_depth
+    }
+    
+    # Check if this is a duplicate (seen in another path)
+    path_str = " → ".join(current_path + [name])
+    if name in visited_global:
+        node["duplicate"] = True
+        node["first_seen_at"] = visited_global[name]
+        node["calls"] = []
+        return node
+    
+    # Mark as visited
+    visited_global[name] = path_str
+    
+    # Stop if max depth reached
+    if current_depth >= max_depth:
+        node["calls"] = []
+        node["max_depth_reached"] = True
+        return node
+    
+    # Get detailed member info to find dependencies
+    xml_file = member.get("xml_file")
+    member_id = member.get("memberid")
+    
+    if not xml_file or not member_id:
+        node["calls"] = []
+        return node
+    
+    memberdef = load_xml_element(xml_file, member_id)
+    if memberdef is None:
+        node["calls"] = []
+        return node
+    
+    parsed = parse_memberdef(memberdef)
+    
+    # Get dependencies based on direction
+    if direction == "forward":
+        deps = parsed.get("references", [])
+    else:  # backward
+        deps = parsed.get("referencedby", [])
+    
+    # Recursively trace dependencies
+    calls = []
+    new_path = current_path + [name]
+    
+    for dep in deps:
+        dep_name = dep.get("name", "")
+        if not dep_name:
+            continue
+        
+        # Strip namespace prefix if present (e.g., "m_fstr::func" -> "func")
+        if "::" in dep_name:
+            dep_name = dep_name.split("::")[-1]
+        
+        # Skip self-references (Doxygen may incorrectly detect function return value assignments as calls)
+        if dep_name.lower() == name.lower():
+            continue
+        
+        child_node = trace_dependencies_tree(
+            member_index,
+            dep_name,
+            direction,
+            max_depth,
+            current_depth + 1,
+            new_path,
+            visited_global
+        )
+        
+        if child_node:
+            calls.append(child_node)
+    
+    node["calls"] = calls
+    return node
+
