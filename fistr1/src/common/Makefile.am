@@ -123,7 +123,6 @@ $(F90TARGET): $(OBJSF)
 
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.
-	$(CP) $(INCLUDESF) $(FSTRINCDIR)/.
 
 install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(FSTRINCDIR)/.
