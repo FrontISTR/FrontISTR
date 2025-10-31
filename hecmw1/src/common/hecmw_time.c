@@ -7,15 +7,18 @@
 
 double HECMW_Wtime(void) {
 #ifndef HECMW_SERIAL
-  double t;
-  t = MPI_Wtime();
-  return t;
+  return MPI_Wtime();
 #else
-  struct timeb t;
-  double sec;
-  ftime(&t);
-  sec = t.time + (double)t.millitm * 1e-3;
-  return sec;
+  #if defined(CLOCK_MONOTONIC)
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+      return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
+    }
+  #endif
+  /* Fallback for systems without CLOCK_MONOTONIC */
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (double)tv.tv_sec + (double)tv.tv_usec * 1e-6;
 #endif
 }
 
@@ -23,7 +26,13 @@ double HECMW_Wtick(void) {
 #ifndef HECMW_SERIAL
   return MPI_Wtick();
 #else
-  return 1e-3;
+  #if defined(CLOCK_MONOTONIC)
+    struct timespec res;
+    if (clock_getres(CLOCK_MONOTONIC, &res) == 0) {
+      return (double)res.tv_sec + (double)res.tv_nsec * 1e-9;
+    }
+  #endif
+  return 1e-6;  /* gettimeofday microsecond resolution */
 #endif
 }
 

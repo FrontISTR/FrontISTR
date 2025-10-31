@@ -129,7 +129,7 @@ static char *base_name(const char *path) {
 
 static char *get_bdname(const char *path, int type) {
   const char *p, *q;
-  static char bname[HECMW_FILENAME_LEN + 1];
+  static char bname[HECMW_FILENAME_LEN + 16];
   char drive[10] = "";
 
   if (has_drive(path)) {
@@ -149,9 +149,9 @@ static char *get_bdname(const char *path, int type) {
       errno = ENAMETOOLONG;
       return NULL;
     }
-    sprintf(bname, "%s%s", drive, q);
+    snprintf(bname, sizeof(bname), "%s%s", drive, q);
   } else {
-    sprintf(bname, "%s", q);
+    snprintf(bname, sizeof(bname), "%s", q);
   }
   return bname;
 }

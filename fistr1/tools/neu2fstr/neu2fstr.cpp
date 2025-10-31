@@ -206,16 +206,16 @@ void create_comment(char *s, bool fg_mesh) {
   }
 
   strcat(s, ss);
-  sprintf(ss, " Date&Time: %s\n", date_time);
+  snprintf(ss, sizeof(ss), " Date&Time: %s\n", date_time);
   strcat(s, ss);
-  sprintf(ss, " Original : %s\n", neu_name);
+  snprintf(ss, sizeof(ss), " Original : %s\n", neu_name);
   strcat(s, ss);
 
   if (fg_mesh) {
-    sprintf(ss, " Control  : %s\n", ctrl_name);
+    snprintf(ss, sizeof(ss), " Control  : %s\n", ctrl_name);
 
   } else {
-    sprintf(ss, " Mesh     : %s\n", mesh_name);
+    snprintf(ss, sizeof(ss), " Mesh     : %s\n", mesh_name);
   }
 
   strcat(s, ss);

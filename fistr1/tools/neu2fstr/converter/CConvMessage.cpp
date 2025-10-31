@@ -29,10 +29,10 @@ CConvMessage::CConvMessage(int No, const char *op_msg, ...) : no(No) {
 
 const char *CConvMessage::Msg() {
   if (option_msg[0] != 0) {
-    sprintf(msg, "##Error: %s : %s", ERROR_MSG[no], option_msg);
+    snprintf(msg, sizeof(msg), "##Error: %s : %s", ERROR_MSG[no], option_msg);
 
   } else {
-    sprintf(msg, "##Error: %s", ERROR_MSG[no]);
+    snprintf(msg, sizeof(msg), "##Error: %s", ERROR_MSG[no]);
   }
 
   return msg;
