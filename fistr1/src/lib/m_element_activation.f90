@@ -24,16 +24,13 @@ module m_elemact
 
   ! Element status flags
   integer, parameter :: kELACT_UNDEFINED = -1  ! Undefined state
-  integer, parameter :: kELACT_INACTIVE  = 0   ! Element is active in calculation
-  integer, parameter :: kELACT_ACTIVE    = 1   ! Element is deactivated in calculation
+  integer, parameter :: kELACT_ACTIVE  = 0   ! Element is active in calculation
+  integer, parameter :: kELACT_INACTIVE = 1   ! Element is inactive (deactivated) in calculation
 
   ! Dependency type flags
   integer, parameter :: kELACTD_NONE    = 1   ! No dependencies
   integer, parameter :: kELACTD_STRESS  = 2   ! Stress dependent
   integer, parameter :: kELACTD_STRAIN  = 3   ! Strain dependent
-  
-  integer, parameter :: kELEM_STATE_ON  = 1  ! Element activation state ON (element is active)
-  integer, parameter :: kELEM_STATE_OFF = 2  ! Element activation state OFF (element is inactive/elemact)
 
 contains
 

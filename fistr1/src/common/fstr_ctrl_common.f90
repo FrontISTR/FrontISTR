@@ -996,9 +996,10 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'EPSILON ',  '# ',  0, 'R', eps ) /= 0 ) return
 
     ! Default values
-    state = 1  ! Default is ON
+    state = 0  ! Default is ACTIVE (0-based: 0=ACTIVE, 1=INACTIVE)
     state_str = 'ON,OFF'
     if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', state_str, 0, 'P', state ) /= 0 ) return
+    state = state - 1  ! Convert from 1-based (ON=1, OFF=2) to 0-based (ACTIVE=0, INACTIVE=1)
 
     dtype = 1
     s1 = 'NONE,STRESS,STRAIN '

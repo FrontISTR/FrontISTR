@@ -18,12 +18,12 @@ contains
 
     integer(kind=kint) :: idum, amp_id, gid
     real(kind=kreal)   :: amp_val
-    integer(kind=kint) :: state, elemact_state
+    integer(kind=kint) :: state
 
     do idum = 1, fstrSOLID%elemact%ELEMACT_egrp_tot
       gid = fstrSOLID%elemact%ELEMACT_egrp_GRPID(idum)
       if( .not. fstr_isElemActivationActive( fstrSOLID, gid, cstep ) ) then
-        call set_elemact_flag( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, kELACT_INACTIVE, .false. )
+        call set_elemact_flag( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, kELACT_ACTIVE, .false. )
         cycle
       endif
 
@@ -32,27 +32,18 @@ contains
       if( amp_id > 0 ) then
         call hecmw_get_amplitude_value(hecMESH%amp, amp_id, ctime, amp_val)
         if( amp_val < 1.d0 ) then
-          call set_elemact_flag( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, kELACT_INACTIVE, .false. )
+          call set_elemact_flag( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, kELACT_ACTIVE, .false. )
           cycle
         endif
       end if
 
-      ! Get the state
+      ! Get the state and set the elemact flag
       state = fstrSOLID%elemact%ELEMACT_egrp_state(idum)
 
-      ! Set elemact flag based on ELEMENT_ACTIVATION STATE
-      if (state == kELEM_STATE_ON) then
-        ! Active element = set elemact flag to INACTIVE
-        elemact_state = kELACT_INACTIVE
-      else
-        ! Inactive element = set elemact flag to ACTIVE
-        elemact_state = kELACT_ACTIVE
-      endif
-
       if( fstrSOLID%elemact%ELEMACT_egrp_depends(idum) == kELACTD_NONE ) then
-        call set_elemact_flag( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, elemact_state, .false. )
+        call set_elemact_flag( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, state, .false. )
       else
-        call set_elemact_flag( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, elemact_state, .true. )
+        call set_elemact_flag( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, state, .true. )
       endif
     end do
 
@@ -184,7 +175,7 @@ contains
 
     do ik=iS0,iE0
       icel = hecMESH%elem_group%grp_item(ik)
-      elements(icel)%elemact_flag = kELACT_ACTIVE
+      elements(icel)%elemact_flag = kELACT_INACTIVE
       elements(icel)%elemact_coeff = elemact%ELEMACT_egrp_eps(dumid)
     end do
 
@@ -198,7 +189,7 @@ contains
 
     integer(kind=kint) :: ig, iS0, iE0, ik, icel, dtype, ig0
     real(kind=kreal)   :: thlow, thup, stress(6), mises, ps
-    integer(kind=kint) :: state, elemact_flag
+    integer(kind=kint) :: state
 
     if( dumid < 0 .or. dumid > elemact%ELEMACT_egrp_tot ) return
     if( elemact%ELEMACT_egrp_depends(dumid) == kELACTD_NONE ) return 
@@ -210,23 +201,16 @@ contains
     thlow = elemact%ELEMACT_egrp_ts_lower(dumid)
     thup = elemact%ELEMACT_egrp_ts_upper(dumid)
 
-    ! Get the state (if not present, use OFF=2 for backward compatibility)
-    state = kELEM_STATE_OFF  ! Default is OFF
+    ! Get the state (if not present, use INACTIVE for backward compatibility)
+    state = kELACT_INACTIVE  ! Default is INACTIVE
     if (associated(elemact%ELEMACT_egrp_state)) then
       state = elemact%ELEMACT_egrp_state(dumid)
-    endif
-
-    ! Determine which elemact flag to set based on state
-    if (state == kELEM_STATE_ON) then
-      elemact_flag = kELACT_INACTIVE  ! Default for ON state: element is active (kELACT_INACTIVE)
-    else
-      elemact_flag = kELACT_ACTIVE    ! Default for OFF state: element is inactive (kELACT_ACTIVE)
     endif
 
     do ik=iS0,iE0
       icel = hecMESH%elem_group%grp_item(ik)
 
-      if( elements(icel)%elemact_flag == elemact_flag ) cycle
+      if( elements(icel)%elemact_flag == state ) cycle
 
       do ig0=1,size(elements(icel)%gausses)
         ! get mises
@@ -242,18 +226,15 @@ contains
         mises = 0.5d0 * ( (stress(1)-ps)**2 + (stress(2)-ps)**2 + (stress(3)-ps)**2 )
         mises = mises + stress(4)**2 + stress(5)**2 + stress(6)**2
         mises = dsqrt( 3.0d0 * mises )
-        ! check if value is between threshold
-        ! If value is within threshold range, set the state according to STATE parameter
-        ! Otherwise, set the opposite state
+        ! Check if value is between threshold
         if(thlow <= mises .and. mises <= thup) then
-          ! Within threshold: maintain the state specified by STATE parameter
-          elements(icel)%elemact_flag = elemact_flag
+          elements(icel)%elemact_flag = state
         else
-          ! Outside threshold: set to opposite state
-          if (elemact_flag == kELACT_ACTIVE) then
-            elements(icel)%elemact_flag = kELACT_INACTIVE
-          else
+          ! Toggle state
+          if (state == kELACT_INACTIVE) then
             elements(icel)%elemact_flag = kELACT_ACTIVE
+          else
+            elements(icel)%elemact_flag = kELACT_INACTIVE
           endif
         endif
         elements(icel)%elemact_coeff = elemact%ELEMACT_egrp_eps(dumid)
