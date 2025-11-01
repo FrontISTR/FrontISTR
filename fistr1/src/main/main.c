@@ -116,7 +116,6 @@ void print_buildinfo(int log_level) {
   printf("git_hash:     %s\n", GIT_HASH );
   printf("build:\n");
   printf("  date:       %s\n", BUILD_DATE );
-  printf("");
 #ifdef WITH_MPI
   printf("  MPI:       \"%d.%d", MPI_VERSION, MPI_SUBVERSION);
 #if defined(MVAPITCH2_VERSION)

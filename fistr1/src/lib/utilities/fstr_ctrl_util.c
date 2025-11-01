@@ -16,8 +16,9 @@
 #define buffsize 256
 #define STR_SIZE buffsize
 #define FILE_NAME_SIZE 512
+#define ERR_MSG_SIZE 1024
 
-char err_msg[buffsize];
+char err_msg[ERR_MSG_SIZE];
 
 void c_fstr_ctrl_get_err_msg(char *buff) { strcpy(buff, err_msg); }
 

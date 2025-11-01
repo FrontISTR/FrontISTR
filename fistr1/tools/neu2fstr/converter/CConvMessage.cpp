@@ -13,7 +13,7 @@ const char ERROR_MSG[][80] = {"No error",
                               "Invalid element property",
                               "Not supported property of element"};
 
-char CConvMessage::msg[256] = "";
+char CConvMessage::msg[CONV_MSG_SIZE] = "";
 
 CConvMessage::CConvMessage(int No, const char *op_msg, ...) : no(No) {
   if (op_msg[0] == 0) {
