@@ -154,7 +154,7 @@ contains
 
     outval = 0.d0
     do icel = 1, hecMESH%n_elem
-      if( elements(icel)%elemact_flag > 0 ) outval(icel) = 1.d0
+      if( elements(icel)%elemact_flag == kELACT_INACTIVE ) outval(icel) = 1.d0
     end do
 
   end subroutine
