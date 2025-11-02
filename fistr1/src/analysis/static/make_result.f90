@@ -416,7 +416,7 @@ contains
       label = 'ELEMACT'
       work(:) = 0.d0
       do i = 1, hecMESH%n_elem
-        if( fstrSOLID%elements(i)%elemact_flag > 0 ) work(i) = 1.d0
+        if( fstrSOLID%elements(i)%elemact_flag == kELACT_INACTIVE ) work(i) = 1.d0
       enddo
       call hecmw_result_add( id, nitem, label, work )
     endif
