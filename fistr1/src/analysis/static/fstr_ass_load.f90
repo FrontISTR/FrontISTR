@@ -181,7 +181,7 @@ contains
         endif
 
         !ELEMENT ACTIVATION
-        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
 
         if( hecmw_is_etype_link(ic_type) ) cycle
         if( hecmw_is_etype_patch(ic_type) ) cycle
