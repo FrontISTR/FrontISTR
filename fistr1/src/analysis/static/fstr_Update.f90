@@ -226,7 +226,7 @@ contains
         endif
 
         ! elemact element
-        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) then
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
           call UPDATE_DUMMY( ndof, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), &
             &  du(1:3,1:nn), qf(1:nn*ndof), fstrSOLID%elements(icel) )
           !qf(:) = fstrSOLID%elements(icel)%elemact_coeff*qf(:)
