@@ -163,6 +163,13 @@ contains
         else
           call StiffMat_abort( ic_type, 1 )
         endif
+
+        ! elemact element
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
+          call STF_DUMMY( ndof, nn, ecoord(:,1:nn), u(1:3,1:nn), &
+            &  stiffness(1:nn*ndof, 1:nn*ndof), fstrSOLID%elements(icel) )
+          !stiffness(:,:) = fstrSOLID%elements(icel)%elemact_coeff*stiffness(:,:)
+        end if
         !
         ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
         call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiffness)

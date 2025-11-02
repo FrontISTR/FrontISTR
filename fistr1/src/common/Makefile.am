@@ -89,6 +89,7 @@ OBJS = \
 
 OBJSF = \
 	hecmw2fstr_mesh_conv.@f90objfilepostfix@ \
+	fstr_element_activation.@f90objfilepostfix@ \
 	fstr_setup_util.@f90objfilepostfix@ \
 	fstr_ctrl_modifier.@f90objfilepostfix@ \
 	fstr_contact.@f90objfilepostfix@ \
