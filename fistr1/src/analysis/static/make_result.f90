@@ -1258,7 +1258,7 @@ contains
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'ELEMACT'
       do i = 1, hecMESH%n_elem
-        if( fstrSOLID%elements(i)%elemact_flag > 0 ) then
+        if( fstrSOLID%elements(i)%elemact_flag == kELACT_INACTIVE ) then
           fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 1.d0
         else
           fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 0.d0
