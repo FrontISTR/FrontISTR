@@ -1400,7 +1400,7 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
 
   int icell_type[1];
   float xyz[3];
-  char keyword[7];
+  char keyword[8];
   char title[70];
   float version;
   int stepno;
@@ -1464,7 +1464,7 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
     if (fp == NULL)
       HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output file");
     fprintf(stderr, "Start writing binary output for AVS UCD format\n");
-    snprintf(keyword, 7, "AVS UCD");
+    snprintf(keyword, sizeof(keyword), "AVS UCD");
     version = 1.0;
 #ifdef CONVERSE_ORDER
     SWAP_FLOAT(version);

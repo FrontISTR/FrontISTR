@@ -15,7 +15,7 @@ add_library(hecmw STATIC)
 #
 target_include_directories(hecmw PUBLIC ${FrontISTR_INCLUDE_DIRS})
 target_compile_definitions(hecmw PUBLIC ${FrontISTR_DEFINITIONS})
-target_link_libraries(hecmw PUBLIC ${FrontISTR_LIBRARIES})
+target_link_libraries(hecmw PRIVATE ${FrontISTR_LIBRARIES})
 
 #
 # Add subdirectories that will contribute sources to the hecmw target

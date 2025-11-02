@@ -16,8 +16,9 @@
 #define buffsize 256
 #define STR_SIZE buffsize
 #define FILE_NAME_SIZE 512
+#define ERR_MSG_SIZE 1024
 
-char err_msg[buffsize];
+char err_msg[ERR_MSG_SIZE];
 
 void c_fstr_ctrl_get_err_msg(char *buff) { strcpy(buff, err_msg); }
 
@@ -1365,7 +1366,7 @@ void fstr_ctrl_dump(int *ctrl) { c_fstr_ctrl_dump(ctrl_list[*ctrl]); }
 
 static void set_param_err_msg(fstr_ctrl_data *ctrl, const char *param_name,
                               const char *msg) {
-  sprintf(err_msg, "fstr control file error(param): line:%d, %s, %s\n",
+  snprintf(err_msg, sizeof(err_msg), "fstr control file error(param): line:%d, %s, %s\n",
           c_fstr_ctrl_get_current_header_line_no(ctrl), param_name, msg);
 }
 
@@ -1374,7 +1375,7 @@ static void set_param_err_msg(fstr_ctrl_data *ctrl, const char *param_name,
 static void set_data_err_msg(fstr_ctrl_data *ctrl, int line, int data_no,
                              const char *msg) {
   line += c_fstr_ctrl_get_current_header_line_no(ctrl);
-  sprintf(err_msg, "fstr control file error(data): line:%d, column:%d : %s\n",
+  snprintf(err_msg, sizeof(err_msg), "fstr control file error(data): line:%d, column:%d : %s\n",
           line, data_no, msg);
 }
 

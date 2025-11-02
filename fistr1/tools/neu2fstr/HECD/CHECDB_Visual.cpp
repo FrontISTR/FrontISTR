@@ -218,6 +218,11 @@ int CVis_ViewParams::ReadVisValue(char *s, int n, double *value) {
 }
 
 int CVis_ViewParams::ReadVisValue(char *s, int n, char *value) {
+  // Handle NULL pointer case (when called from strtok continuation)
+  if (s == NULL) {
+    return 0;
+  }
+  
   cleanup_token(s);
   int len = strlen(s);
 
