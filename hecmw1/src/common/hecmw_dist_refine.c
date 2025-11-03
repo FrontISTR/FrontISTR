@@ -3666,7 +3666,7 @@ static int copy_amp_info(const struct hecmwST_amplitude *amp,
 
   ref_amp->n_amp = amp->n_amp;
 
-  if (amp->n_amp == 0) {
+  if (amp->n_amp <= 0) {
     ref_amp->amp_name            = NULL;
     ref_amp->amp_type_definition = NULL;
     ref_amp->amp_type_time       = NULL;

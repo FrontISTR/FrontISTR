@@ -35,7 +35,7 @@ contains
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ic_type,hecMAT,fstrHEAT,delta_time)
       !$omp do
       do icel = iS, iE
-        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
         isect = hecMESH%section_ID(icel)
         IMAT = hecMESH%section%sect_mat_ID_item(isect)
         in0 = hecMESH%elem_node_index(icel-1)

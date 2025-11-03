@@ -174,7 +174,7 @@ contains
         endif
 
         !ELEMENT ACTIVATION
-        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
 
         !C** Create local stiffness
         nn = hecmw_get_max_node(ic_type)
@@ -381,7 +381,7 @@ contains
         do icel = is, iE
 
           !ELEMENT ACTIVATION
-          if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
+          if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
 
           !C** node ID
           is= hecMESH%elem_node_index(icel-1)

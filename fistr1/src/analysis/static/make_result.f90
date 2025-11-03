@@ -416,7 +416,7 @@ contains
       label = 'ELEMACT'
       work(:) = 0.d0
       do i = 1, hecMESH%n_elem
-        if( fstrSOLID%elements(i)%elemact_flag > 0 ) work(i) = 1.d0
+        if( fstrSOLID%elements(i)%elemact_flag == kELACT_INACTIVE ) work(i) = 1.d0
       enddo
       call hecmw_result_add( id, nitem, label, work )
     endif
@@ -1258,7 +1258,7 @@ contains
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'ELEMACT'
       do i = 1, hecMESH%n_elem
-        if( fstrSOLID%elements(i)%elemact_flag > 0 ) then
+        if( fstrSOLID%elements(i)%elemact_flag == kELACT_INACTIVE ) then
           fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 1.d0
         else
           fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 0.d0

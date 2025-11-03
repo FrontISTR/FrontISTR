@@ -102,11 +102,11 @@ static char *make_filename(char *dir, char *subdir, char *prefix, char *file,
   strcpy(filename, "");
 
   if (dir && strlen(dir) > 0) {
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    HECMW_snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
 
     if ((strlen(dir) + strlen(separator)) > HECMW_FILENAME_LEN) return NULL;
 
-    sprintf(filename, "%s%s", dir, separator);
+    HECMW_snprintf(filename, HECMW_FILENAME_LEN + 1, "%s%s", dir, separator);
   }
 
   if (subdir && strlen(subdir) > 0) {

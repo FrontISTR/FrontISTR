@@ -165,7 +165,7 @@ contains
         endif
 
         ! elemact element
-        if( fstrSOLID%elements(icel)%elemact_flag > 0 ) then
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
           call STF_DUMMY( ndof, nn, ecoord(:,1:nn), u(1:3,1:nn), &
             &  stiffness(1:nn*ndof, 1:nn*ndof), fstrSOLID%elements(icel) )
           !stiffness(:,:) = fstrSOLID%elements(icel)%elemact_coeff*stiffness(:,:)

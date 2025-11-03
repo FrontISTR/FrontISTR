@@ -124,7 +124,7 @@ contains
       if(ic_type == 3414) cycle
 
       do icel = iS, iE
-        if( elements(icel)%elemact_flag > 0 ) cycle
+        if( elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
         in0 = hecMESH%elem_node_index(icel-1)
         nn = hecmw_get_max_node(ic_type)
         do i = 1, nn
@@ -154,7 +154,7 @@ contains
 
     outval = 0.d0
     do icel = 1, hecMESH%n_elem
-      if( elements(icel)%elemact_flag > 0 ) outval(icel) = 1.d0
+      if( elements(icel)%elemact_flag == kELACT_INACTIVE ) outval(icel) = 1.d0
     end do
 
   end subroutine

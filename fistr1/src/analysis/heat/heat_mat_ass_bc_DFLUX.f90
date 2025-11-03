@@ -42,7 +42,7 @@ contains
       isuf    = fstrHEAT%Q_SUF_surf(k)
       iamp    = fstrHEAT%Q_SUF_ampl(k)
 
-      if( fstrSOLID%elements(icel)%elemact_flag > 0 ) cycle
+      if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
 
       call heat_get_amplitude( fstrHEAT,iamp,CTIME,QQ )
       val     = fstrHEAT%Q_SUF_val (k) * QQ
