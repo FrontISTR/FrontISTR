@@ -7,7 +7,8 @@
 module m_heat_mat_ass_boundary
 contains
 
-  subroutine heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrHEAT, next_time, delta_time)
+  subroutine heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, &
+     & fstrSOLID, fstrHEAT, next_time, delta_time)
     use m_fstr
     use m_heat_mat_ass_bc_CFLUX
     use m_heat_mat_ass_bc_DFLUX
@@ -15,6 +16,7 @@ contains
     use m_heat_mat_ass_bc_FILM
     use m_heat_mat_ass_bc_RADIATE
     implicit none
+    type(fstr_solid) :: fstrSOLID
     type(fstr_heat) :: fstrHEAT
     type(hecmwST_matrix) :: hecMAT
     type(hecmwST_matrix), pointer :: hecMATmpc
@@ -28,10 +30,10 @@ contains
     call heat_mat_ass_bc_CFLUX(hecMAT, fstrHEAT, next_time, delta_time, beta)
 
     !> !DFLUX
-    call heat_mat_ass_bc_DFLUX(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
+    call heat_mat_ass_bc_DFLUX(hecMESH, hecMAT, fstrSOLID, fstrHEAT, next_time, delta_time, beta)
 
     !> !FILM
-    call heat_mat_ass_bc_FILM(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
+    call heat_mat_ass_bc_FILM(hecMESH, hecMAT, fstrSOLID, fstrHEAT, next_time, delta_time, beta)
 
     !> !RADIATE
     call heat_mat_ass_bc_RADIATE(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)

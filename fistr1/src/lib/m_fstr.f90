@@ -18,6 +18,7 @@ module m_fstr
   use m_step
   use m_out
   use m_timepoint
+  use m_elemact
   use mMechGauss
   use mContactDef
 
@@ -313,6 +314,9 @@ module m_fstr
     integer(kind=kint), pointer :: SPRING_ngrp_amp      (:)
     real(kind=kreal), pointer   :: SPRING_ngrp_val      (:)
 
+    !> ELEMACT
+    type(tElemact) :: elemact
+
     !> for couple analysis
     integer( kind=kint ) :: COUPLE_ngrp_tot                   !< Following for coupling analysis
     integer( kind=kint ),pointer :: COUPLE_ngrp_ID(:)
@@ -376,7 +380,7 @@ module m_fstr
     integer(kind=kint), pointer :: is_rot(:) => null()
     integer(kind=kint) :: elemopt361
     logical            :: is_smoothing_active
-    real(kind=kreal)   :: FACTOR     (2)   !< factor of incrementation
+    real(kind=kreal)   :: FACTOR     (2)      !< factor of incrementation
     !< 1:time t  2: time t+dt
     !> for increment control
     integer(kind=kint) :: NRstat_i(10)     !< statistics of newton iteration (integer)
@@ -499,6 +503,9 @@ module m_fstr
 
     integer(kind=kint)  :: WL_tot
     type(tWeldLine), pointer :: weldline(:) => null()
+
+    !> ELEMACT
+    type(tElemact) :: elemact
   end type fstr_heat
 
   !> Data for DYNAMIC ANSLYSIS  (fstrDYNAMIC)
@@ -1067,6 +1074,16 @@ contains
     if( .not. associated(fstrSOLID%step_ctrl) ) return
     if( cstep>fstrSOLID%nstep_tot ) return
     fstr_isEmbedActive = isContactActive( nbc, fstrSOLID%step_ctrl(cstep) )
+  end function
+
+  logical function fstr_isElemActivationActive( fstrSOLID, nbc, cstep )
+    type(fstr_solid)    :: fstrSOLID
+    integer, intent(in) :: nbc    !< group id of elemact condition
+    integer, intent(in) :: cstep  !< current step number
+    fstr_isElemActivationActive = .true.
+    if( .not. associated(fstrSOLID%step_ctrl) ) return
+    if( cstep>fstrSOLID%nstep_tot ) return
+    fstr_isElemActivationActive = isElemActivationActive( nbc, fstrSOLID%step_ctrl(cstep) )
   end function
 
   !> This subroutine fetch coords defined by local coordinate system
