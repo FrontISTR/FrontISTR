@@ -2456,6 +2456,16 @@ end function fstr_setup_INITIAL
 
     deallocate( grp_id_name )
 
+    if( P%MESH%n_refine > 0 ) then
+      do i=1,n
+        if( hecmw_ngrp_get_number(P%MESH, P%SOLID%CLOAD_NGRP_ID(old_size+i)) > 1 ) then
+          write(*,*) 'fstr control file error : !CLOAD : cannot be used with NGRP when mesh is refined'
+          write(ILOG,*) 'fstr control file error : !CLOAD : cannot be used with NGRP when mesh is refined'
+          call fstr_ctrl_err_stop
+        endif
+      enddo
+    endif
+
   end subroutine fstr_setup_CLOAD
 
   !-----------------------------------------------------------------------------!
