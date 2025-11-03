@@ -182,17 +182,17 @@ contains
     type( tParamAutoInc ), intent(out) :: aincparam !< auto increment parameter
 
     aincparam%name      = ''
-    aincparam%ainc_Rs   = 0.25d0
-    aincparam%ainc_Rl   = 1.25d0
+    aincparam%ainc_Rs   = 0.5d0
+    aincparam%ainc_Rl   = 1.75d0
     aincparam%NRbound_s = 0
-    aincparam%NRbound_s(knstMAXIT) = 10
-    aincparam%NRbound_s(knstSUMIT) = 50
+    aincparam%NRbound_s(knstMAXIT) = 20
+    aincparam%NRbound_s(knstSUMIT) = 100
     aincparam%NRbound_s(knstCITER) = 10
     aincparam%NRbound_l = 0
-    aincparam%NRbound_l(knstMAXIT) = 1
-    aincparam%NRbound_l(knstSUMIT) = 1
-    aincparam%NRbound_l(knstCITER) = 1
-    aincparam%NRtimes_s = 1
+    aincparam%NRbound_l(knstMAXIT) = 10
+    aincparam%NRbound_l(knstSUMIT) = 50
+    aincparam%NRbound_l(knstCITER) = 5
+    aincparam%NRtimes_s = 2
     aincparam%NRtimes_l = 2
     aincparam%ainc_Rc   = 0.25d0
     aincparam%CBbound   = 5
