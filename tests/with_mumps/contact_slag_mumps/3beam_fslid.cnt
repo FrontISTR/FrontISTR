@@ -51,7 +51,7 @@ CP2,0.0,50.0
 #####       STEP CONTROL      #####
 ###################################
 !STEP, INC_TYPE=AUTO, SUBSTEPS=200
-0.1, 1.0, 1E-5, 1.0
+0.1, 1.0, 1E-5, 0.1
 BOUNDARY,1
 LOAD,1
 CONTACT,1
