@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include "hecmw_struct.h"
 #include "hecmw_util.h"
 #include "hecmw_dist_free.h"
@@ -12,6 +13,26 @@
 #include "hecmw_dist_copy_c2f.h"
 
 static struct hecmwST_local_mesh *mesh;
+
+/*-----------------------------------------------------------------------------
+ * Generic conversion utilities
+ */
+static int convert_longlong_to_int_ary(const long long *src, int *dst, 
+                                        size_t n, const char *name) {
+  size_t i;
+  
+  for (i = 0; i < n; i++) {
+    if (src[i] > INT_MAX || src[i] < INT_MIN) {
+      HECMW_set_error(HECMW_ALL_E0102, 
+        "mesh copy(C->Fortran): %s[%zu]=%lld exceeds INT range", 
+        name ? name : "array", i, src[i]);
+      return -1;
+    }
+    dst[i] = (int)src[i];
+  }
+  
+  return 0;
+}
 
 /*-----------------------------------------------------------------------------
  * SetFunc
@@ -468,14 +489,16 @@ static int set_elem_type_item(void *dst) {
 }
 
 static int set_elem_node_index(void *dst) {
-  void *src;
-  int size;
-
+  int *dst_int = (int *)dst;
+  
   if (mesh->n_elem_gross <= 0) return 0;
 
-  src  = mesh->elem_node_index;
-  size = sizeof(*mesh->elem_node_index) * (mesh->n_elem_gross + 1);
-  memcpy(dst, src, size);
+  /* Convert long long array to int array with overflow check */
+  if (convert_longlong_to_int_ary(mesh->elem_node_index, dst_int, 
+                                    mesh->n_elem_gross + 1, 
+                                    "elem_node_index") != 0) {
+    return -1;
+  }
 
   return 0;
 }

@@ -12,6 +12,21 @@
 static struct hecmwST_local_mesh *mesh;
 
 /*-----------------------------------------------------------------------------
+ * Generic conversion utilities for int to long long array conversion
+ * (for distributed mesh compatibility between Fortran and C)
+ */
+
+static int convert_int_to_longlong_ary(const int *src, long long *dst, size_t n) {
+  size_t i;
+  
+  for (i = 0; i < n; i++) {
+    dst[i] = (long long)src[i];
+  }
+  
+  return 0;
+}
+
+/*-----------------------------------------------------------------------------
  * SetFunc
  */
 
@@ -382,16 +397,23 @@ static int set_elem_type_item(void *src) {
 }
 
 static int set_elem_node_index(void *src) {
-  int size;
+  int *src_int = (int *)src;
+  size_t n;
 
   if (mesh->n_elem_gross <= 0) return 0;
-  size = sizeof(*mesh->elem_node_index) * (mesh->n_elem_gross + 1);
-  mesh->elem_node_index = HECMW_malloc(size);
+  
+  n = mesh->n_elem_gross + 1;
+  mesh->elem_node_index = HECMW_malloc(sizeof(long long) * n);
   if (mesh->elem_node_index == NULL) {
     HECMW_set_error(errno, "");
     return -1;
   }
-  memcpy(mesh->elem_node_index, src, size);
+  
+  /* Convert int array to long long array */
+  if (convert_int_to_longlong_ary(src_int, mesh->elem_node_index, n) != 0) {
+    return -1;
+  }
+  
   return 0;
 }
 
