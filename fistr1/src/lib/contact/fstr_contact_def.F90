@@ -233,7 +233,6 @@ contains
       endif
     enddo
     allocate( contact%slave(nslave) )
-    allocate( contact%states(nslave) )
     ii = 0
     do i=is,ie
       if(.not.present(myrank)) then
@@ -242,20 +241,10 @@ contains
       endif
       ii = ii + 1
       contact%slave(ii) = hecMESH%node_group%grp_item(i)
-      contact%states(ii)%state = -1
-      contact%states(ii)%multiplier(:) = 0.d0
-      contact%states(ii)%tangentForce(:) = 0.d0
-      contact%states(ii)%tangentForce1(:) = 0.d0
-      contact%states(ii)%tangentForce_trial(:) = 0.d0
-      contact%states(ii)%tangentForce_final(:) = 0.d0
-      contact%states(ii)%reldisp(:) = 0.d0
-      contact%states(ii)%time_factor = 0.d0
-      contact%states(ii)%interference_flag = 0
     enddo
-    !    endif
 
     ! contact state
-    !      allocate( contact%states(nslave) )
+    allocate( contact%states(nslave) )
     do i=1,nslave
       call contact_state_init( contact%states(i) )
     enddo
@@ -332,10 +321,7 @@ contains
 
     endif
 
-    !call update_surface_reflen( embed%master, hecMESH%node )
-
     ! slave surface
-    !    if( contact%ctype==1 ) then
     cgrp = embed%surf_id1
     if( cgrp<=0 ) return
     is= hecMESH%node_group%grp_index(cgrp-1) + 1
@@ -354,7 +340,6 @@ contains
       endif
     enddo
     allocate( embed%slave(nslave) )
-    allocate( embed%states(nslave) )
     ii = 0
     do i=is,ie
       if(.not.present(myrank)) then
@@ -363,18 +348,10 @@ contains
       endif
       ii = ii + 1
       embed%slave(ii) = hecMESH%node_group%grp_item(i)
-      embed%states(ii)%state = -1
-      embed%states(ii)%multiplier(:) = 0.d0
-      embed%states(ii)%tangentForce(:) = 0.d0
-      embed%states(ii)%tangentForce1(:) = 0.d0
-      embed%states(ii)%tangentForce_trial(:) = 0.d0
-      embed%states(ii)%tangentForce_final(:) = 0.d0
-      embed%states(ii)%reldisp(:) = 0.d0
     enddo
-    !    endif
 
-    ! contact state
-    !      allocate( contact%states(nslave) )
+    ! embed state
+    allocate( embed%states(nslave) )
     do i=1,nslave
       call contact_state_init( embed%states(i) )
     enddo
