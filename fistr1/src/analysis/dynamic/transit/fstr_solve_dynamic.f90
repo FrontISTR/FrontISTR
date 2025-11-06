@@ -207,10 +207,16 @@ contains
     if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
 
       if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
-        call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
-          ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-          ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange   &
-          ,conMAT )
+        if(hecMAT%NDOF == 4) then   ! NDOF=4 uses nlimplicit
+          call fstr_solve_dynamic_nlimplicit(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
+            ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+            ,fstrCPL,restrt_step_num)
+        else
+          call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
+            ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
+            ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange   &
+            ,conMAT )
+        endif
 
       else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
         call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
