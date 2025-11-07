@@ -143,8 +143,6 @@ contains
         if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
 
         ! ===== calculate the Internal Force
-        if( getSpaceDimension( ic_type ) == 2 ) thick = 1.0d0
-
         if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
           call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
             thick,fstrSOLID%elements(icel)%iset,                             &
