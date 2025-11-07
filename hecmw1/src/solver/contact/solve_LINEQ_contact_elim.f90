@@ -486,6 +486,8 @@ contains
     real(kind=kreal),              intent(out) :: BLs_inv(:)    !< inverse of diagonal BLs matrix
     !
     integer(kind=kint) :: ilag, ls, le, l, j, jdof, idx
+    real(kind=kreal)   :: val
+    real(kind=kreal), parameter :: EPS = 1.0d-30
 
     if (hecLagMAT%num_lagrange == 0) return
 
@@ -498,7 +500,13 @@ contains
         do jdof=1,ndof
           idx=(j-1)*ndof+jdof
           if (idx==slaves4lag(ilag)) then
-            BLs_inv(ilag) = 1.0d0/hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
+            val = hecLagMAT%AL_lagrange((l-1)*ndof+jdof)
+            ! Use safe division to avoid NaN
+            if (abs(val) < EPS) then
+              BLs_inv(ilag) = sign(1.0d0/EPS, val)
+            else
+              BLs_inv(ilag) = 1.0d0/val
+            endif
             exit lloop
           endif
         enddo
@@ -516,6 +524,8 @@ contains
     real(kind=kreal),              intent(out) :: BUs_inv(:)    !< inverse of diagonal BUs matrix
     !
     integer(kind=kint) :: ilag, i, idof, js, je, j, k
+    real(kind=kreal)   :: val
+    real(kind=kreal), parameter :: EPS = 1.0d-30
 
     if (hecLagMAT%num_lagrange == 0) return
 
@@ -528,7 +538,13 @@ contains
       do j=js,je
         k=hecLagMAT%itemU_lagrange(j)
         if (k==ilag) then
-          BUs_inv(ilag) = 1.0d0/hecLagMAT%AU_lagrange((j-1)*ndof+idof)
+          val = hecLagMAT%AU_lagrange((j-1)*ndof+idof)
+          ! Use safe division to avoid NaN
+          if (abs(val) < EPS) then
+            BUs_inv(ilag) = sign(1.0d0/EPS, val)
+          else
+            BUs_inv(ilag) = 1.0d0/val
+          endif
           exit
         endif
       enddo
