@@ -267,6 +267,12 @@ contains
       fstrSOLID%EMISES(i) = get_mises(fstrSOLID%ESTRESS(6*(i-1)+1:6*(i-1)+6))
     enddo
 
+    !C** calculate Elemental Plastic Strain
+    do i = 1, hecMESH%n_elem
+      if (.not. associated(fstrSOLID%elements(i)%gausses)) cycle
+      fstrSOLID%EPLSTRAIN(i) = get_pl_estrain(fstrSOLID%elements(i)%gausses)
+    enddo
+
     if( flag33 == 1 )then
       if( fstrSOLID%output_ctrl(3)%outinfo%on(27) .or. fstrSOLID%output_ctrl(4)%outinfo%on(27) ) then
         do nlyr = 1, ntot_lyr
@@ -700,6 +706,20 @@ contains
 
   end function get_mises
 
+  function get_pl_estrain(gausses)
+    implicit none
+    real(kind=kreal) :: get_pl_estrain
+    type(tGaussStatus) :: gausses(:)
+    integer(kind=kint) :: i
+
+    get_pl_estrain = 0.d0
+    do i = 1, size(gausses)
+      get_pl_estrain = get_pl_estrain + gausses(i)%plstrain
+    enddo
+    get_pl_estrain = get_pl_estrain / size(gausses) 
+
+  end function get_pl_estrain
+
   !> Calculate NODAL STRESS of plane elements
   !----------------------------------------------------------------------*
   subroutine fstr_NodalStress2D( hecMESH, fstrSOLID )
@@ -1088,6 +1108,13 @@ contains
     do i = 1, hecMESH%n_elem
       fstrSOLID%EMISES(i) = get_mises(fstrSOLID%ESTRESS(6*(i-1)+1:6*(i-1)+6))
     enddo
+
+    !C** calculate Elemental Plastic Strain
+    do i = 1, hecMESH%n_elem
+      if (.not. associated(fstrSOLID%elements(i)%gausses)) cycle
+      fstrSOLID%EPLSTRAIN(i) = get_pl_estrain(fstrSOLID%elements(i)%gausses)
+    enddo
+
     deallocate( nnumber )
 
   end subroutine fstr_NodalStress6D
