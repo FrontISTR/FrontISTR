@@ -263,9 +263,11 @@ contains
       deallocate(hecMAT0)
     endif
 
-    time_2 = hecmw_Wtime()
+    !  message
     if( hecMESH%my_rank == 0 ) then
-      write(ISTA,'(a,f10.2,a)') '         solve (sec) :', time_2 - time_1, 's'
+      call fstr_TimeInc_PrintSTATUS_final(.true.)
+      write(IMSG,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
+      write(*,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
     endif
 
   end subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG
@@ -498,7 +500,7 @@ contains
         end if
         fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
         fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
-        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
+        if( iter > fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
         if( res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) fstrSOLID%NRstat_i(knstDRESN) = 2
         return
       end if
@@ -531,6 +533,8 @@ contains
 
     enddo loopFORcontactAnalysis
 
+    fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
+
     !C for couple analysis
       call fstr_solve_dynamic_nlimplicit_couple_post(hecMESH, hecMAT, fstrSOLID, &
         & fstrPARAM, fstrDYNAMIC, fstrCPL, a1, a2, a3, b1, b2, b3, istep, is_cycle)
@@ -558,6 +562,7 @@ contains
     call fstr_UpdateState( hecMESH, fstrSOLID, t_delta )
 
     deallocate(coord)
+    fstrSOLID%CutBack_stat = 0
   end subroutine fstr_Newton_dynamic_contactSLag
 
   subroutine fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM, fstrCPL)
