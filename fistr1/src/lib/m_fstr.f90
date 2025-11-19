@@ -336,6 +336,7 @@ module m_fstr
     real(kind=kreal), pointer :: ESTRESS(:)   !< elemental stress
     real(kind=kreal), pointer :: ESTRAIN(:)   !< elemental strain
     real(kind=kreal), pointer :: EMISES(:)    !< elemental MISES
+    real(kind=kreal), pointer :: EPLSTRAIN(:)    !< elemental plastic strain
 
     real(kind=kreal), pointer :: EPSTRESS(:)   !< elemental principal stress
     real(kind=kreal), pointer :: EPSTRAIN(:)   !< elemental principal strain
@@ -713,6 +714,7 @@ contains
     nullify( S%ESTRESS )
     nullify( S%ESTRAIN )
     nullify( S%EMISES )
+    nullify( S%EPLSTRAIN )
     nullify( S%EPSTRESS )
     nullify( S%EPSTRAIN )
     nullify( S%EPSTRESS_VECT )
@@ -1146,6 +1148,7 @@ contains
     phys%ESTRAIN = 0.0d0
     phys%ESTRESS = 0.0d0
     phys%EMISES  = 0.0d0
+    phys%EPLSTRAIN  = 0.0d0
     phys%ENQM    = 0.0d0
   end subroutine fstr_solid_phys_zero
 
