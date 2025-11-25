@@ -2417,10 +2417,10 @@ end function fstr_setup_INITIAL
     allocate( grp_id_name(n) )
     allocate( dof_ids (n) )
     allocate( dof_ide (n) )
+    allocate( val_ptr(n) )
 
     amp = ' '
-    val_ptr => P%SOLID%BOUNDARY_ngrp_val(old_size+1:)
-    val_ptr = 0
+    val_ptr = 0.0d0
     rcode = fstr_ctrl_get_BOUNDARY( ctrl, amp, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr)
     if( rcode /= 0 ) call fstr_ctrl_err_stop
     call amp_name_to_id( P%MESH, '!BOUNDARY', amp, amp_id )
@@ -2438,6 +2438,7 @@ end function fstr_setup_INITIAL
         write(ILOG,*) 'fstr control file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
         call fstr_ctrl_err_stop
       end if
+      P%SOLID%BOUNDARY_ngrp_val(old_size+i) = val_ptr(i)
       P%SOLID%BOUNDARY_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
       P%SOLID%BOUNDARY_ngrp_amp(old_size+i) = amp_id
     end do
@@ -2445,6 +2446,11 @@ end function fstr_setup_INITIAL
     deallocate( grp_id_name )
     deallocate( dof_ids )
     deallocate( dof_ide )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( dof_ids )
+    nullify( dof_ide )
+    nullify( val_ptr )
     !  else
     !   ! NASTRAN ---------------------------------------------
     !
