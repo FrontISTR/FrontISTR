@@ -82,7 +82,7 @@ docker/fistr1:
   image: docker:latest
   extends: [".nodeppackage",".artifact_public"]
   services:
-    - docker:latest-dind
+    - docker:28-dind
   script:
     - apk add curl make
     - mkdir -p /root/.docker/cli-plugins
