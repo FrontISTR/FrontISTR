@@ -2567,7 +2567,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint)                  :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal), pointer           :: val_ptr(:)
-    integer(kind=kint), pointer        :: id_ptr(:), type_ptr(:)
+    integer(kind=kint), pointer        :: id_ptr(:)
     integer(kind=kint)                  :: i, n, old_size, new_size
     integer(kind=kint)                  :: gid, loadcase
   !---- body
@@ -2600,26 +2600,38 @@ end function fstr_setup_INITIAL
 
     !fill bc data
     allocate( grp_id_name(n) )
+    allocate( id_ptr(n) )
+    allocate( val_ptr(n) )
+    id_ptr  = 0
+    val_ptr = 0.0d0
+    rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
     if(loadcase == kFLOADCASE_RE) then
-      val_ptr  => P%FREQ%FLOAD_ngrp_valre(old_size+1:)
+      do i = 1, n
+        P%FREQ%FLOAD_ngrp_DOF(old_size+i) = id_ptr(i)
+        P%FREQ%FLOAD_ngrp_valre(old_size+i) = val_ptr(i)
+      enddo
     else if(loadcase == kFLOADCASE_IM) then
-      val_ptr  => P%FREQ%FLOAD_ngrp_valim(old_size+1:)
+      do i = 1, n
+        P%FREQ%FLOAD_ngrp_DOF(old_size+i) = id_ptr(i)
+        P%FREQ%FLOAD_ngrp_valim(old_size+i) = val_ptr(i)
+      enddo
     else
       !error
       write(*,*)    "Error this load set is not defined!"
       write(ilog,*) "Error this load set is not defined!"
       stop
     end if
-    id_ptr   => P%FREQ%FLOAD_ngrp_DOF(old_size+1:)
-    type_ptr => P%FREQ%FLOAD_ngrp_TYPE(old_size+1:)
-    val_ptr = 0.0D0
-    rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
-    if( rcode /= 0 ) call fstr_ctrl_err_stop
     P%FREQ%FLOAD_ngrp_GRPID(old_size+1:new_size) = gid
     call nodesurf_grp_name_to_id_ex( P%MESH, '!FLOAD', n, grp_id_name, &
          P%FREQ%FLOAD_ngrp_ID(old_size+1:), P%FREQ%FLOAD_ngrp_TYPE(old_size+1:))
 
     deallocate( grp_id_name )
+    deallocate( id_ptr )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( id_ptr )
+    nullify( val_ptr )
     return
 
     contains
