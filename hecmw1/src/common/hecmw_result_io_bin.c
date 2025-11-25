@@ -77,7 +77,10 @@ static int bin_output_result_header(FILE *fp) {
 
   /* header */
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
-    sprintf(ResIO.head,"%s %d.%d",ResIO.head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
+    char temp_head[HECMW_HEADER_LEN + 16];
+    snprintf(temp_head, sizeof(temp_head), "%s %d.%d", ResIO.head, HECMW_RESULT_FILEVER_MAJOR, HECMW_RESULT_FILEVER_MINOR);
+    strncpy(ResIO.head, temp_head, HECMW_HEADER_LEN);
+    ResIO.head[HECMW_HEADER_LEN] = '\0';
   }
   rc = hecmw_write_bin(fp,"S", ResIO.head);
   if(rc < 0) {

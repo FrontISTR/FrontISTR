@@ -317,7 +317,7 @@ contains
     
           if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
             ! Obtain contact nodal force vector of contact pair
-            if(if_flag) call get_shrink_dummy_surf(fstrSOLID%contacts(i)%states(j),ndCoord, nnode)
+            if(if_flag) call get_shrink_elemact_surf(fstrSOLID%contacts(i)%states(j),ndCoord, nnode)
 
             call getContactNodalForce(etype,nnode,ndCoord,ndDu,fstrSOLID%contacts(i)%states(j),    &
             fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.true.)
@@ -614,7 +614,7 @@ contains
         do k=1,nlag
           id_lagrange = id_lagrange + 1
           lagrange = fstrSOLID%contacts(i)%states(j)%multiplier(k)
-          if(if_flag) call get_shrink_dummy_surf(fstrSOLID%contacts(i)%states(j),ndCoord, nnode)
+          if(if_flag) call get_shrink_elemact_surf(fstrSOLID%contacts(i)%states(j),ndCoord, nnode)
           if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
             ! Obtain contact nodal force vector of contact pair
             call getContactNodalForce(etype,nnode,ndCoord,ndu,fstrSOLID%contacts(i)%states(j),    &
@@ -666,7 +666,7 @@ contains
 
   end subroutine fstr_ass_load_contact
 
-  subroutine get_shrink_dummy_surf(cstate, coords, nnode)
+  subroutine get_shrink_elemact_surf(cstate, coords, nnode)
     use m_fstr_TimeInc
     integer(kind=kint)              :: nnode, i
     type(tContactState)             :: cstate 
@@ -679,7 +679,7 @@ contains
       coords(1+i*3:(i+1)*3) = coords(1+i*3:(i+1)*3) + d(1:3)
     enddo
 
-  end subroutine get_shrink_dummy_surf
+  end subroutine get_shrink_elemact_surf
 
 end module m_addContactStiffness
 

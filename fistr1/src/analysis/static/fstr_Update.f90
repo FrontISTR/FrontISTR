@@ -25,6 +25,7 @@ contains
   subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, strainEnergy)
     !=====================================================================*
     use m_static_lib
+    use m_elemact
 
     type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
     type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -35,7 +36,7 @@ contains
 
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal)   :: ecoord(3, fstrSOLID%max_ncon)
-    real(kind=kreal)   :: thick
+    real(kind=kreal)   :: thick, thick0(6)
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
 
     real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
@@ -86,7 +87,7 @@ contains
       !element loop
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp, &
-        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux), &
+        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
@@ -97,6 +98,18 @@ contains
         iiS = hecMESH%elem_node_index(icel-1)
         nn = hecMESH%elem_node_index(icel)-iiS
         !if( nn>150 ) stop "elemental nodes > 150!"
+
+        thick = 0.d0
+        do j = 1, size(fstrSOLID%elements(icel)%gausses)
+          thick0(1:6) = fstrSOLID%elements(icel)%gausses(j)%stress(1:6)
+          thick = thick + dsqrt(dot_product(thick0(1:6),thick0(1:6)))
+        enddo
+        if( thick < 1.d-10 ) then
+          do j = 1, size(fstrSOLID%elements(icel)%gausses)
+            if( associated(fstrSOLID%elements(icel)%gausses(j)%fstatus) ) &
+              &  fstrSOLID%elements(icel)%gausses(j)%fstatus = 0.d0
+          enddo
+        end if
 
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item (iiS+j)
@@ -130,8 +143,6 @@ contains
         if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
 
         ! ===== calculate the Internal Force
-        if( getSpaceDimension( ic_type ) == 2 ) thick = 1.0d0
-
         if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
           call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
             thick,fstrSOLID%elements(icel)%iset,                             &
@@ -211,6 +222,13 @@ contains
           call hecmw_abort(hecmw_comm_get_comm())
 
         endif
+
+        ! elemact element
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
+          call UPDATE_DUMMY( ndof, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), &
+            &  du(1:3,1:nn), qf(1:nn*ndof), fstrSOLID%elements(icel) )
+          !qf(:) = fstrSOLID%elements(icel)%elemact_coeff*qf(:)
+        end if
 
         ! ----- calculate the global internal force ( Q(u_{n+1}^{k-1}) )
         do j = 1, nn

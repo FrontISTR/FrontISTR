@@ -289,8 +289,8 @@ contains
         do i = 1, hecMESH%n_elem
           if( associated(fstrSOLID%elements(i)%gausses) ) then
             if( k <= size(fstrSOLID%elements(i)%gausses) ) then
-              work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
-            endif
+            work(i) = fstrSOLID%elements(i)%gausses(k)%plstrain
+          endif
           endif
         enddo
         call hecmw_result_add( id, nitem, label, work )
@@ -408,6 +408,18 @@ contains
     !    iitem = iitem + nn
     !  endif
     !endif
+
+    ! --- ELEMACT flag @element
+    if( fstrSOLID%output_ctrl(3)%outinfo%on(44) ) then
+      id = HECMW_RESULT_DTYPE_ELEM
+      nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(44), ndof )
+      label = 'ELEMACT'
+      work(:) = 0.d0
+      do i = 1, hecMESH%n_elem
+        if( fstrSOLID%elements(i)%elemact_flag == kELACT_INACTIVE ) work(i) = 1.d0
+      enddo
+      call hecmw_result_add( id, nitem, label, work )
+    endif
 
     ! --- WRITE
     nameID = 'fstrRES'
@@ -848,6 +860,11 @@ contains
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(40), ndof )
     endif
+    ! --- ELEMACT flag @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(44) ) then
+      ecomp = ecomp + 1
+      eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(44), ndof )
+    endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     fstrRESULT%ng_component = gcomp
@@ -1233,10 +1250,27 @@ contains
       enddo
       jitem = jitem + nn
     endif
+
+    ! --- ELEMACT flag @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(44) ) then
+      ecomp = ecomp + 1
+      nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(44), ndof )
+      fstrRESULT%ne_dof(ecomp) = nn
+      fstrRESULT%elem_label(ecomp) = 'ELEMACT'
+      do i = 1, hecMESH%n_elem
+        if( fstrSOLID%elements(i)%elemact_flag == kELACT_INACTIVE ) then
+          fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 1.d0
+        else
+          fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 0.d0
+        end if
+      enddo
+      jitem = jitem + nn
+    endif
+
   end subroutine fstr_make_result
 
   subroutine fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, &
-     &                              iitem, ncomp, eitem, jitem, ecomp, nlyr, clyr )
+      &                              iitem, ncomp, eitem, jitem, ecomp, nlyr, clyr )
     use m_fstr
     use m_out
     use m_static_lib

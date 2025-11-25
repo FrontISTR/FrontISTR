@@ -73,13 +73,27 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		fprintf (outfp, "</PCells>\n");
 		fprintf (outfp, "<PPointData>\n");
 		for(i=0; i<data->nn_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->node_label[i], data->nn_dof[i]);
+			if(
+				strcmp(data->node_label[i], "NodalPrincipalSTRAIN") == 0 ||
+				strcmp(data->node_label[i], "NodalPrincipalSTRESS") == 0
+			) {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"ascii\"/>\n", data->node_label[i], data->nn_dof[i]);
+			} else {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->node_label[i], data->nn_dof[i]);
+			}
 		}
 		fprintf (outfp, "</PPointData>\n");
 		fprintf (outfp, "<PCellData>\n");
 		fprintf (outfp, "<PDataArray type=\"Int16\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"ascii\"/>\n");
 		for(i=0; i<data->ne_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			if(
+				strcmp(data->elem_label[i], "ElementalPrincipalSTRAIN") == 0 ||
+				strcmp(data->elem_label[i], "ElementalPrincipalSTRESS") == 0
+			) {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"ascii\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			} else {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			}
 		}
 		fprintf (outfp, "</PCellData>\n");
 		for(i=0; i<petot; i++){
@@ -258,12 +272,26 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		fprintf (outfp, "</PCells>\n");
 		fprintf (outfp, "<PPointData>\n");
 		for(i=0; i<data->nn_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->node_label[i], data->nn_dof[i]);
+			if(
+				strcmp(data->node_label[i], "NodalPrincipalSTRAIN") == 0 ||
+				strcmp(data->node_label[i], "NodalPrincipalSTRESS") == 0
+			) {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"appended\"/>\n", data->node_label[i], data->nn_dof[i]);
+			} else {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->node_label[i], data->nn_dof[i]);
+			}
 		}
 		fprintf (outfp, "</PPointData>\n");
 		fprintf (outfp, "<PCellData>\n");
 		for(i=0; i<data->ne_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			if(
+				strcmp(data->elem_label[i], "ElementalPrincipalSTRAIN") == 0 ||
+				strcmp(data->elem_label[i], "ElementalPrincipalSTRESS") == 0
+			) {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"appended\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			} else {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			}
 		}
 		fprintf (outfp, "<PDataArray type=\"Int32\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"appended\"/>\n");
 		fprintf (outfp, "</PCellData>\n");

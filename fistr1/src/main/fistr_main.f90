@@ -343,7 +343,7 @@ contains
       write(IMSG,*) ' ***   STAGE Heat analysis    **'
     endif
 
-    call fstr_solve_HEAT( hecMESH, hecMAT, fstrRESULT, fstrPR, fstrHEAT )
+    call fstr_solve_HEAT( hecMESH, hecMAT, fstrSOLID, fstrRESULT, fstrPR, fstrHEAT )
 
   end subroutine fstr_heat_analysis
 
