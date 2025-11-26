@@ -1798,6 +1798,7 @@ contains
       P%SOLID%ESTRAIN => phys%ESTRAIN
       P%SOLID%ESTRESS => phys%ESTRESS
       P%SOLID%EMISES  => phys%EMISES
+      P%SOLID%EPLSTRAIN  => phys%EPLSTRAIN
       P%SOLID%ENQM    => phys%ENQM
       allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ) )
     end if
