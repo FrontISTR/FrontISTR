@@ -591,8 +591,8 @@ contains
 
           res = dsqrt(res/res0)
           if( hecMESH%my_rank==0 ) then
-              if(hecMESH%my_rank==0) write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
-            if(hecMESH%my_rank==0) write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
+            write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
+            write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
             write(*,'(a,1e15.7)') ' - MaxDLag =',maxDLag
             write(ISTA,'(a,1e15.7)') ' - MaxDLag =',maxDLag
           endif
