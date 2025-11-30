@@ -75,14 +75,14 @@ contains
     if (is_contact == 0) then
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: no contact'
       solver_type = hecmw_mat_get_solver_type(hecMAT)
-      if (solver_type == 1) then
+      if (solver_type == 1 .and. SymType == 1) then
         ! use CG because the matrix is symmetric
         method_org = hecmw_mat_get_method(hecMAT)
         call hecmw_mat_set_method(hecMAT, 1)
       endif
       ! solve
       call solve_with_MPC(hecMESH, hecMAT)
-      if (solver_type == 1) then
+      if (solver_type == 1 .and. SymType == 1) then
         ! restore solver setting
         call hecmw_mat_set_method(hecMAT, method_org)
       endif
