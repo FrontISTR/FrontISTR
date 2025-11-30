@@ -595,19 +595,10 @@ contains
 
     ! --- PLASTIC STRAIN @element
     if( fstrSOLID%output_ctrl(3)%outinfo%on(43) ) then
-      id = 2
+      id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(43), ndof )
-      ngauss = fstrSOLID%maxn_gauss
       label = 'ElementalPLSTRAIN'//trim(clyr)
-      do i = 1, hecMESH%n_elem
-        work(i) = 0.d0
-        do j = 1, size(fstrSOLID%elements(i)%gausses) 
-          work(i) = work(i) + fstrSOLID%elements(i)%gausses(j)%plstrain
-        enddo
-        work(i) = work(i) / size(fstrSOLID%elements(i)%gausses) 
-        RES%EPLSTRAIN(i) = work(i)
-      enddo
-      call hecmw_result_add( id, nitem, label, work )
+      call hecmw_result_add( id, nitem, label, RES%EPLSTRAIN )
     endif
     deallocate( work )
   
