@@ -176,7 +176,7 @@ contains
 
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
 
-    integer(kind=kint) :: flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: RHS, f_t, t_curr
 
     if( fstrSOLID%VELOCITY_type == kbcTransit )return
@@ -187,7 +187,8 @@ contains
     do ig0 = 1, fstrSOLID%VELOCITY_ngrp_tot
       ig   = fstrSOLID%VELOCITY_ngrp_ID(ig0)
       RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
-
+      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, 1 ) ) cycle
 
       call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
       RHS = RHS * f_t

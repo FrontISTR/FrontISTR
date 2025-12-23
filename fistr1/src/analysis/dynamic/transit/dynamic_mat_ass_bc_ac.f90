@@ -168,7 +168,7 @@ contains
 
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
     !!!
-    integer(kind=kint) :: flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: RHS, f_t
 
     if( fstrSOLID%ACCELERATION_type == kbcTransit )return
@@ -180,6 +180,8 @@ contains
     NDOF = hecMAT%NDOF
     do ig0 = 1, fstrSOLID%ACCELERATION_ngrp_tot
       ig   = fstrSOLID%ACCELERATION_ngrp_ID(ig0)
+      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, 1 ) ) cycle
       RHS  = fstrSOLID%ACCELERATION_ngrp_val(ig0)
 
       !!!!!!  time history
