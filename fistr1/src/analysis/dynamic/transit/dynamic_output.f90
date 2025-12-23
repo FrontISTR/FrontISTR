@@ -9,23 +9,23 @@ contains
 
   !> Output result
   !----------------------------------------------------------------------*
-  subroutine fstr_dynamic_Output( cstep, istep, stepcount, t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM )
+  subroutine fstr_dynamic_Output( cstep, istep, t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, outflag )
     !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
     use m_make_result
     use m_hecmw2fstr_mesh_conv
     integer, intent(in)                  :: cstep       !< current step number
-    integer, intent(in)                  :: istep       !< current substep number
-    integer, intent(in)                  :: stepcount   !< total step count
+    integer, intent(in)                  :: istep       !< total step count
     real(kind=kreal), intent(in)         :: t_curr      !< current time
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)      :: fstrSOLID
     type(fstr_dynamic), intent(in)       :: fstrDYNAMIC
     type(fstr_param), intent(in)         :: fstrPARAM
+    logical, intent(in)                  :: outflag     !< if true, result will be output regardless of istep
 
     type(hecmwST_result_data) :: fstrRESULT
-    integer(kind=kint) :: i, j, ndof, maxstep, interval, fnum, is, iE, gid
+    integer(kind=kint) :: i, j, ndof, fnum, is, iE, gid
 
     ndof = hecMESH%n_dof
 
@@ -53,15 +53,13 @@ contains
     if( associated( fstrSOLID%contacts ) ) &
       &  call setup_contact_output_variables( hecMESH, fstrSOLID, -1 )
 
-    maxstep = fstrSOLID%step_ctrl(cstep)%num_substep
-    
-    if( (mod(istep,fstrSOLID%output_ctrl(1)%frequency)==0 .or. istep==maxstep) ) then
+    if( (mod(istep,fstrSOLID%output_ctrl(1)%frequency)==0 .or. outflag) ) then
       fnum = fstrSOLID%output_ctrl(1)%filenum
       call fstr_dynamic_post( fnum, cstep, istep, hecMESH, fstrSOLID, fstrDYNAMIC )
     endif
 
     if( fstrSOLID%output_ctrl(2)%outinfo%grp_id>0 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(2)%frequency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(2)%frequency)==0 .or. outflag) ) then
       is = fstrSOLID%output_ctrl(2)%outinfo%grp_id
       fnum = fstrSOLID%output_ctrl(2)%filenum
       do i = hecMESH%node_group%grp_index(is-1)+1, hecMESH%node_group%grp_index(is)
@@ -72,21 +70,21 @@ contains
     endif
 
     if( IRESULT==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, t_curr, 0, fstrDYNAMIC )
     endif
 
     if( IVISUAL==1 .and. &
-        (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. istep==maxstep) ) then
+        (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. outflag) ) then
 
       if( associated( fstrSOLID%contacts ) ) &
         &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
       call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init
-      call hecmw_visualize( hecMESH, fstrRESULT, stepcount )
+      call hecmw_visualize( hecMESH, fstrRESULT, istep )
       call hecmw_visualize_finalize
       call hecmw2fstr_mesh_conv( hecMESH )
       call hecmw_result_free( fstrRESULT )

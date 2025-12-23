@@ -65,6 +65,7 @@ contains
     real(kind=kreal) :: converg_dlag
     type(fstr_info_contactChange)        :: infoCTChange_bak
 
+    logical :: is_OutPoint
     integer(kind=kint) :: n_node_global
     logical :: is_mat_symmetric, is_interaction_active
 
@@ -126,7 +127,7 @@ contains
 
     !C-- output of initial state
     if( restart_step_num == 1 ) then
-      call fstr_dynamic_Output(1, 0, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+      call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, .true.)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
@@ -226,8 +227,11 @@ contains
 
         step_count = step_count + 1
 
+        ! ----- Result output (include visualize output)
+        is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
+          & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
         !C-- output new displacement, velocity and acceleration
-        call fstr_dynamic_Output(tot_step, i, step_count, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+        call fstr_dynamic_Output(tot_step, step_count, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, is_OutPoint)
 
         !C-- output result of monitoring node
         call dynamic_output_monit(tot_step, i, fstrDYNAMIC%t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
