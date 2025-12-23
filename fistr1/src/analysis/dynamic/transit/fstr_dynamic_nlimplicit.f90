@@ -535,6 +535,17 @@ contains
 
       if( count_step > max_iter_contact ) exit loopFORcontactAnalysis
 
+      ! ----- check divergence
+      if( count_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
+        if( hecMESH%my_rank == 0) then
+          write(   *,'(a,i5,a,i5)') '     ### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', istep
+        end if
+        fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
+        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        fstrSOLID%NRstat_i(knstDRESN) = 3
+        return
+      end if
+
     enddo loopFORcontactAnalysis
 
     fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
