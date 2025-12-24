@@ -269,9 +269,9 @@ contains
   !> Read in !SPRING
   !* ----------------------------------------------------------------------------------------------- *!
 
-  function fstr_ctrl_get_SPRING( ctrl, amp, node_id, node_id_len, dof_id, value )
+  function fstr_ctrl_get_SPRING( ctrl, amp, node_id, node_id_len, dof_id, value, incremental )
     implicit none
-    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: ctrl, incremental
     character(len=HECMW_NAME_LEN) :: amp
     character(len=HECMW_NAME_LEN) :: node_id(:)
     integer(kind=kint) :: node_id_len
@@ -285,6 +285,9 @@ contains
 
     fstr_ctrl_get_SPRING = -1
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
+    incremental = incremental + 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'INCREMENTAL ','NO,YES ', 0, 'P', incremental ) /= 0) return
+    incremental = incremental - 1
     fstr_ctrl_get_SPRING = &
       fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id, dof_id, value )
 

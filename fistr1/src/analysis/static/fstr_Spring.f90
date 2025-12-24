@@ -5,6 +5,7 @@
 !> \brief  This module provides functions to deal with spring force
 
 module m_fstr_spring
+  use m_fstr_TimeInc
   implicit none
 contains
 
@@ -17,10 +18,8 @@ contains
     type (fstr_solid),intent(inout)      :: fstrSOLID   !< fstr_solid
     type (fstr_param),intent(inout)      :: fstrPARAM   !< analysis control parameters
 
-    integer(kind=kint) :: grpid, ndof, ig0, ig, ityp, iS0, iE0, ik, in, idx, num
-    real(kind=kreal) :: fval, factor
-
-    factor = fstrSOLID%factor(2)
+    integer(kind=kint) :: grpid, ndof, ig0, ig, ityp, iS0, iE0, ik, in, idx, num, jj_n_amp
+    real(kind=kreal) :: fval, factor, ctime
 
     ndof = hecMAT%NDOF
     do ig0= 1, fstrSOLID%SPRING_ngrp_tot
@@ -29,7 +28,19 @@ contains
       ig= fstrSOLID%SPRING_ngrp_ID(ig0)
       ityp= fstrSOLID%SPRING_ngrp_DOF(ig0)
       fval= fstrSOLID%SPRING_ngrp_val(ig0)
-      if( fval < 0.d0 ) fval = -fval*(1.d0-factor)
+      jj_n_amp = fstrSOLID%SPRING_ngrp_amp(ig0)
+      if (jj_n_amp <= 0) then  ! Amplitude not defined
+        factor = fstrSOLID%FACTOR(2)
+        if( fval < 0.d0 ) fval = -fval*(1.d0-factor)
+      else
+        ctime = fstr_get_time()+fstr_get_timeinc()
+        call table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
+        if( fval < 0.d0 )then
+          fval = -fval*(1.d0-factor)
+        else
+          fval = fval*factor
+        end if
+      endif
 
       iS0= hecMESH%node_group%grp_index(ig-1) + 1
       iE0= hecMESH%node_group%grp_index(ig  )
@@ -49,27 +60,39 @@ contains
     type (fstr_solid), intent(in)        :: fstrSOLID  !< we need boundary conditions of curr step
     real(kind=kreal), intent(inout)      :: B(:)       !< right hand side
     !    Local variables
-    integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idx,num
-    integer(kind=kint) :: grpid
-    real(kind=kreal) :: fval, factor
-
-    factor = fstrSOLID%factor(2)
+    integer(kind=kint) ndof,ig0,ig,ityp,iS0,iE0,ik,in,idx,num,jj_n_amp
+    integer(kind=kint) :: grpid, incremental
+    real(kind=kreal) :: fval, factor, ctime
 
     ndof = hecMESH%n_dof
     do ig0= 1, fstrSOLID%SPRING_ngrp_tot
       grpid = fstrSOLID%SPRING_ngrp_GRPID(ig0)
       if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+      incremental = fstrSOLID%SPRING_incremental(ig0)
       ig= fstrSOLID%SPRING_ngrp_ID(ig0)
       ityp= fstrSOLID%SPRING_ngrp_DOF(ig0)
       fval= fstrSOLID%SPRING_ngrp_val(ig0)
-      if( fval < 0.d0 ) fval = -fval*(1.d0-factor)
+      jj_n_amp = fstrSOLID%SPRING_ngrp_amp(ig0)
+      if (jj_n_amp <= 0) then  ! Amplitude not defined
+        factor = fstrSOLID%FACTOR(2)
+        if( fval < 0.d0 ) fval = -fval*(1.d0-factor)
+      else
+        ctime = fstr_get_time()+fstr_get_timeinc()
+        call table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
+        if( fval < 0.d0 )then
+          fval = -fval*(1.d0-factor)
+        else
+          fval = fval*factor
+        end if
+      endif
 
       iS0= hecMESH%node_group%grp_index(ig-1) + 1
       iE0= hecMESH%node_group%grp_index(ig  )
       do ik= iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
         idx = ndof * (in - 1) + ityp
-        B(idx) = B(idx) - fval * ( fstrSOLID%dunode( idx ) + fstrSOLID%unode( idx ) )
+        ! incremental=1: resist the displacement increment of the current step only
+        B(idx) = B(idx) - fval * ( fstrSOLID%dunode( idx ) + fstrSOLID%unode( idx ) * (1-incremental) )
       enddo
     enddo
   end subroutine fstr_Update_NDForce_spring
