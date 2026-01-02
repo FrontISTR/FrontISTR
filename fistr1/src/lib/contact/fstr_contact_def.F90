@@ -18,6 +18,7 @@ module mContactDef
   use bucket_search
   use mContactParam
   use fstr_ctrl_util_f
+  use m_fstr_contact_smoothing
 
   implicit none
 
@@ -47,6 +48,7 @@ module mContactDef
     ! 3: SSLID-Small sliding contact( no position but with contact state change)
     ! 4: FSLID-Finite sliding contact (both changes in contact state and position possible)
     integer                       :: algtype                 !< algorithm flag
+    integer                       :: smoothing               !< kcsNONE or kcsNAGATA
 
     logical                       :: mpced                   !< if turns into mpc condition
     logical                       :: symmetric               !< if symmetrizalized in friction calculation
@@ -428,27 +430,49 @@ contains
 
   !> Wrapper for project_Point2Element that takes tSurfElement structure
   !! This subroutine handles element coordinate extraction from tSurfElement
-  subroutine project_Point2SurfElement(xyz, surf, currpos, cstate, isin, distclr, ctpos, localclr)
-    real(kind=kreal), intent(in)              :: xyz(3)        !< coordinates of slave point
-    type(tSurfElement), intent(in)            :: surf          !< surface element structure
-    real(kind=kreal), intent(in)              :: currpos(:)    !< current coordinate of all nodes
-    type(tContactState), intent(inout)        :: cstate        !< contact state
-    logical, intent(out)                      :: isin          !< in contact or not
-    real(kind=kreal), intent(in)              :: distclr       !< clearance of contact distance
-    real(kind=kreal), optional, intent(in)    :: ctpos(2)      !< current contact position (natural coord)
-    real(kind=kreal), optional, intent(in)    :: localclr      !< clearance of contact local coord
+  subroutine project_Point2SurfElement(xyz, surf, currpos, cstate, isin, distclr, ctpos, localclr, smoothing)
+    real(kind=kreal), intent(in)              :: xyz(3)
+    type(tSurfElement), intent(in)            :: surf
+    real(kind=kreal), intent(in)              :: currpos(:)
+    type(tContactState), intent(inout)        :: cstate
+    logical, intent(out)                      :: isin
+    real(kind=kreal), intent(in)              :: distclr
+    real(kind=kreal), optional, intent(in)    :: ctpos(2)
+    real(kind=kreal), optional, intent(in)    :: localclr
+    integer(kind=kint), intent(in)            :: smoothing
 
-    integer(kind=kint) :: nn, j, iSS
+    integer(kind=kint) :: nn, j, iSS, etype_use, nn_use
     real(kind=kreal)   :: elem(3, l_max_elem_node)
+    real(kind=kreal)   :: elem_tri3n(3, 3)
 
-    ! Extract element coordinates from surf structure
     nn = size(surf%nodes)
     do j = 1, nn
       iSS = surf%nodes(j)
       elem(1:3, j) = currpos(3*iSS-2:3*iSS)
     enddo
 
-    call project_Point2Element(xyz, surf%etype, nn, elem, surf%reflen, cstate, &
+    if (smoothing == kcsNAGATA) then
+      if (surf%etype == fe_tri3n) then
+        elem_tri3n = elem(1:3, 1:3)
+        call reorder_tri3n_to_tri6n(elem_tri3n, surf%intermediate_points, elem(1:3,1:6))
+        etype_use = fe_tri6n
+        nn_use = 6
+      else if (surf%etype == fe_quad4n) then
+        do j = 1, nn
+          elem(1:3, nn+j) = surf%intermediate_points(1:3, j)
+        enddo
+        etype_use = fe_quad8n
+        nn_use = 8
+      else
+        etype_use = surf%etype
+        nn_use = nn
+      endif
+    else
+      etype_use = surf%etype
+      nn_use = nn
+    endif
+
+    call project_Point2Element(xyz, etype_use, nn_use, elem, surf%reflen, cstate, &
                                isin, distclr, ctpos, localclr)
 
   end subroutine project_Point2SurfElement
@@ -506,6 +530,11 @@ contains
       states_prev(i) = contact%states(i)%state
     enddo
 
+    if( contact%smoothing == kcsNAGATA ) then
+      call update_surface_normal( contact%master, currpos )
+      call create_intermediate_points( contact%master, currpos, contact%pair_name )
+    endif
+    
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
 
@@ -584,15 +613,15 @@ contains
         do idm = 1,nMaster
           id = indexMaster(idm)
           call project_Point2SurfElement( coord, contact%master(id), currpos, &
-            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE )
+            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
           etype = contact%master(id)%etype
           iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
-          if( iSS>0 ) &
-            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
-              contact%states(i)%direction(:) )
+          !if( iSS>0 ) &
+          !  call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
+          !    contact%states(i)%direction(:) )
           contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
           write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
             elemID(contact%master(id)%eid),       &
@@ -935,13 +964,14 @@ contains
     enddo
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
       contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
+      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM, &
+      smoothing=contact%smoothing )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
         call project_Point2SurfElement( coord, contact%master(sid), currpos, &
           contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-          localclr=contact%cparam%CLEARANCE )
+          localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -966,7 +996,7 @@ contains
           if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
             contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-            localclr=contact%cparam%CLEARANCE )
+            localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -1036,7 +1066,8 @@ contains
     cstate_tmp%surface = sid0
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
       cstate_tmp, isin, contact%cparam%DISTCLR_NOCHECK, &
-      contact%states(nslave)%lpos, contact%cparam%CLR_SAME_ELEM )
+      contact%states(nslave)%lpos, contact%cparam%CLR_SAME_ELEM, &
+      smoothing=contact%smoothing )
 
     if( isin ) then
       etype = contact%master(sid0)%etype
@@ -1410,13 +1441,14 @@ contains
     enddo
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
       contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
+      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM, &
+      smoothing=contact%smoothing )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
         call project_Point2SurfElement( coord, contact%master(sid), currpos, &
           contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-          localclr=contact%cparam%CLEARANCE )
+          localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -1439,7 +1471,7 @@ contains
           if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
             contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-            localclr=contact%cparam%CLEARANCE )
+            localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -1573,7 +1605,8 @@ contains
         do idm = 1,nMaster
           id = indexMaster(idm)
           call project_Point2SurfElement( coord, contact%master(id), currpos, &
-            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE )
+            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE, &
+            smoothing=contact%smoothing )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
