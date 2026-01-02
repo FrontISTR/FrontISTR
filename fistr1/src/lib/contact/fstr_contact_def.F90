@@ -47,6 +47,7 @@ module mContactDef
     ! 3: SSLID-Small sliding contact( no position but with contact state change)
     ! 4: FSLID-Finite sliding contact (both changes in contact state and position possible)
     integer                       :: algtype                 !< algorithm flag
+    integer                       :: smoothing               !< kcsNONE or kcsNAGATA
 
     logical                       :: mpced                   !< if turns into mpc condition
     logical                       :: symmetric               !< if symmetrizalized in friction calculation

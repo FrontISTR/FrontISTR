@@ -463,7 +463,7 @@ contains
       elseif( header_name == '!CONTACT' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( .not. fstr_ctrl_get_CONTACT( ctrl, n, fstrSOLID%contacts(c_contact+1:c_contact+n)   &
-            ,ee, pp, rho, alpha, P%PARAM%contact_algo, mName ) ) then
+            ,ee, pp, rho, alpha, P%PARAM%contact_algo, mName, k ) ) then
           write(*,*) '### Error: Fail in read in contact condition : ', c_contact
           write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
           stop
@@ -480,6 +480,7 @@ contains
         if( rho>0.d0 ) cgn = rho
         if( alpha>0.d0 ) cgt = alpha
         do i=1,n
+          fstrSOLID%contacts(c_contact+i)%smoothing = k
           if( .not. fstr_contact_check( fstrSOLID%contacts(c_contact+i), P%MESH ) ) then
             write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_contact
             write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_contact
@@ -498,7 +499,7 @@ contains
         ! ----- EMBED condition setting
       elseif( header_name == '!EMBED' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
-        if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(c_embed+1:c_embed+n), mName ) ) then
+        if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(c_embed+1:c_embed+n), mName, k ) ) then
           write(*,*) '### Error: Fail in read in embed condition : ', c_embed
           write(ILOG,*) '### Error: Fail in read in embed condition : ', c_embed
           stop
@@ -510,6 +511,7 @@ contains
           endif
         enddo
         do i=1,n
+          fstrSOLID%embeds(c_embed+i)%smoothing = k
           if( .not. fstr_contact_check( fstrSOLID%embeds(c_embed+i), P%MESH ) ) then
             write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_embed
             write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_embed
