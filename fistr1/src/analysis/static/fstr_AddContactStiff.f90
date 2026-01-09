@@ -18,6 +18,8 @@ module m_addContactStiffness
   use fstr_matrix_con_contact
   use hecmw_matrix_ass
   use m_fstr_Residual
+  use mSurfElement
+  use m_fstr_contact_smoothing
 
   implicit none
 
@@ -154,13 +156,14 @@ contains
   !! This subroutine constructs the mapping matrices based on contact_disc.md section 10:
   !!   Tm = [I_3; -N_1*I_3; -N_2*I_3; ...; -N_n*I_3]  (size: 3 x 3*(nnode+1))
   !!   Tt = Pt * Tm  where Pt = I_3 - n x n            (computed only if fcoeff /= 0)
-  subroutine computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt)
+  subroutine computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt, smoothing_type)
     implicit none
     
     ! Input arguments
     type(tContactState), intent(in) :: ctState         !< contact state (contains lpos and direction)
     type(tSurfElement), intent(in)  :: tSurf           !< surface element structure
     real(kind=kreal), intent(in)    :: fcoeff          !< friction coefficient (if 0, Tt not computed)
+    integer(kind=kint), optional, intent(in) :: smoothing_type  !< kcsNONE or kcsNAGATA
     
     ! Output arguments
     real(kind=kreal), intent(out)   :: Tm(3, 3*(l_max_surface_node+1)) !< relative displacement mapping matrix
@@ -169,7 +172,9 @@ contains
     ! Local variables
     integer(kind=kint) :: i, j
     integer(kind=kint) :: nnode !< number of nodes of master segment
+    integer(kind=kint) :: smoothing
     real(kind=kreal)   :: shapefunc(l_max_surface_node) !< shape functions [N_1, N_2, ..., N_n]
+    real(kind=kreal)   :: P_matrix(3, 3*l_max_surface_node)  !< Nagata interpolation matrix
     real(kind=kreal)   :: normal(3)       !< normal vector (unit vector)
     real(kind=kreal)   :: Pt(3,3)         !< tangential projection operator Pt = I - n⊗n
     
@@ -177,24 +182,40 @@ contains
     Tt = 0.0d0
 
     nnode = size(tSurf%nodes)
-    
-    call getShapeFunc(tSurf%etype, ctState%lpos(:), shapefunc)
-    
-    ! Get normal vector from contact state
     normal(1:3) = ctState%direction(1:3)
     
-    ! Construct Tm = [I_3; -N_1*I_3; -N_2*I_3; ...; -N_n*I_3]
-    ! First block (slave node): Identity matrix I_3
-    Tm(1,1) = 1.0d0
-    Tm(2,2) = 1.0d0
-    Tm(3,3) = 1.0d0
+    ! Determine smoothing type
+    smoothing = kcsNONE
+    if (present(smoothing_type)) smoothing = smoothing_type
     
-    ! Remaining blocks (master nodes): -N_i * I_3
-    do i = 1, nnode
-      Tm(1, i*3+1) = -shapefunc(i)
-      Tm(2, i*3+2) = -shapefunc(i)
-      Tm(3, i*3+3) = -shapefunc(i)
-    enddo
+    ! Construct Tm
+    if (smoothing == kcsNAGATA .and. associated(tSurf%vertex_normals)) then
+      ! Use Nagata patch interpolation
+      call compute_interpolation_matrix_P(tSurf%etype, nnode, ctState%lpos, &
+                                          tSurf%vertex_normals, P_matrix)
+      
+      ! Tm = [I_3; -P_matrix]
+      Tm(1,1) = 1.0d0
+      Tm(2,2) = 1.0d0
+      Tm(3,3) = 1.0d0
+      Tm(1:3, 4:3*(nnode+1)) = -P_matrix(1:3, 1:3*nnode)
+      
+    else
+      ! Standard linear shape functions
+      call getShapeFunc(tSurf%etype, ctState%lpos, shapefunc)
+      
+      ! First block (slave node): Identity matrix I_3
+      Tm(1,1) = 1.0d0
+      Tm(2,2) = 1.0d0
+      Tm(3,3) = 1.0d0
+      
+      ! Remaining blocks (master nodes): -N_i * I_3
+      do i = 1, nnode
+        Tm(1, i*3+1) = -shapefunc(i)
+        Tm(2, i*3+2) = -shapefunc(i)
+        Tm(3, i*3+3) = -shapefunc(i)
+      enddo
+    endif
     
     ! Compute Tt only if friction coefficient is non-zero
     if (fcoeff /= 0.0d0) then
@@ -210,7 +231,7 @@ contains
       enddo
       
       ! Compute Tt = Pt * Tm using matrix multiplication
-      Tt(1:3, 1:3*(l_max_surface_node+1)) = matmul(Pt(1:3,1:3), Tm(1:3, 1:3*(l_max_surface_node+1)))
+      Tt(1:3, 1:3*(nnode+1)) = matmul(Pt(1:3,1:3), Tm(1:3, 1:3*(nnode+1)))
     endif
     
   end subroutine computeTm_Tt

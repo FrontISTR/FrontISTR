@@ -27,6 +27,7 @@ module mSurfElement
     real(kind=kreal)                :: xavg(3)              !< current coordinate of element center
     real(kind=kreal)                :: dmax                 !< half length of edge of cube that include surf
     integer(kind=kint)              :: bktID                !< bucket ID
+    real(kind=kreal), pointer       :: vertex_normals(:,:)=>null()  !< (3,nnode) unit normals for Nagata patch
   end type tSurfElement
 
   integer(kind=kint), parameter, private :: DEBUG = 0
@@ -62,6 +63,8 @@ contains
     surf%xavg(:) =  0.d0
     surf%dmax    = -1.d0
     surf%bktID   = -1
+    allocate( surf%vertex_normals(3,n) )
+    surf%vertex_normals(:,:) = 0.d0
   end subroutine
 
   !> Memory management subroutine
@@ -69,6 +72,7 @@ contains
     type(tSurfElement), intent(inout) :: surf   !< surface element
     if( associated(surf%nodes) ) deallocate( surf%nodes )
     if( associated(surf%neighbor) ) deallocate( surf%neighbor )
+    if( associated(surf%vertex_normals) ) deallocate( surf%vertex_normals )
   end subroutine
 
   !> Write out elemental surface

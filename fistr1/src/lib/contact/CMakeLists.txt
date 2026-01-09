@@ -9,4 +9,5 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_contact_param.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_contact_def.F90
   ${CMAKE_CURRENT_LIST_DIR}/surf_ele.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_contact_smoothing.f90
 )
