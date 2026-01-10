@@ -78,9 +78,10 @@ contains
           if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
             ! Obtain contact stiffness matrix of contact pair
             call getContactStiffness(fstrSOLID%contacts(i)%states(j),fstrSOLID%contacts(i)%master(ctsurf),iter,  &
-              fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,stiffness)
+              fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,stiffness,fstrSOLID%contacts(i)%smoothing)
           else if( algtype == CONTACTTIED ) then
-            call getTiedStiffness(fstrSOLID%contacts(i)%states(j),fstrSOLID%contacts(i)%master(ctsurf),k,stiffness)
+            call getTiedStiffness(fstrSOLID%contacts(i)%states(j),fstrSOLID%contacts(i)%master(ctsurf),k,stiffness,&
+              fstrSOLID%contacts(i)%smoothing)
           endif 
     
           ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
@@ -118,13 +119,14 @@ contains
   end subroutine fstr_AddContactStiffness
 
   !> \brief This subroutine obtains contact stiffness matrix of contact pair
-  subroutine getTiedStiffness(ctState,tSurf,idof,stiffness)
+  subroutine getTiedStiffness(ctState,tSurf,idof,stiffness,smoothing_type)
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint)  :: nnode !< number of nodes of master segment
     integer(kind=kint)  :: idof
     real(kind=kreal)    :: stiffness(:,:) !< contact stiffness matrix
+    integer(kind=kint), optional :: smoothing_type !< kcsNONE or kcsNAGATA
 
     integer(kind=kint)  :: i, j
     real(kind=kreal)    :: nTm((l_max_surface_node+1)*3)
@@ -135,7 +137,7 @@ contains
     stiffness = 0.0d0
 
     ! Compute Tm matrix
-    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt)
+    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt, smoothing_type)
 
     ! Create unit vector in idof direction
     e_idof = 0.0d0
@@ -189,18 +191,7 @@ contains
     if (present(smoothing_type)) smoothing = smoothing_type
     
     ! Construct Tm
-    if (smoothing == kcsNAGATA .and. associated(tSurf%vertex_normals)) then
-      ! Use Nagata patch interpolation
-      call compute_interpolation_matrix_P(tSurf%etype, nnode, ctState%lpos, &
-                                          tSurf%vertex_normals, P_matrix)
-      
-      ! Tm = [I_3; -P_matrix]
-      Tm(1,1) = 1.0d0
-      Tm(2,2) = 1.0d0
-      Tm(3,3) = 1.0d0
-      Tm(1:3, 4:3*(nnode+1)) = -P_matrix(1:3, 1:3*nnode)
-      
-    else
+    if ( smoothing == kcsNONE ) then
       ! Standard linear shape functions
       call getShapeFunc(tSurf%etype, ctState%lpos, shapefunc)
       
@@ -215,6 +206,18 @@ contains
         Tm(2, i*3+2) = -shapefunc(i)
         Tm(3, i*3+3) = -shapefunc(i)
       enddo
+
+    else if ( smoothing == kcsNAGATA ) then
+      ! Use Nagata patch interpolation
+      call compute_interpolation_matrix_P(tSurf%etype, nnode, ctState%lpos, &
+                                          tSurf%vertex_normals, P_matrix)
+      
+      ! Tm = [I_3; -P_matrix]
+      Tm(1,1) = 1.0d0
+      Tm(2,2) = 1.0d0
+      Tm(3,3) = 1.0d0
+      Tm(1:3, 4:3*(nnode+1)) = -P_matrix(1:3, 1:3*nnode)
+      
     endif
     
     ! Compute Tt only if friction coefficient is non-zero
@@ -237,13 +240,14 @@ contains
   end subroutine computeTm_Tt
 
   !> \brief This subroutine obtains contact stiffness matrix of contact pair
-  subroutine getContactStiffness(ctState,tSurf,iter,tPenalty,fcoeff,lagrange,stiffness)
+  subroutine getContactStiffness(ctState,tSurf,iter,tPenalty,fcoeff,lagrange,stiffness,smoothing_type)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint)  :: iter
     integer(kind=kint)  :: nnode !< number of nodes of master segment
+    integer(kind=kint), optional :: smoothing_type !< kcsNONE or kcsNAGATA
     integer(kind=kint)  :: i, j
     real(kind=kreal)    :: normal(3)
     real(kind=kreal)    :: shapefunc(l_max_surface_node) !< normal vector at target point; shape functions
@@ -262,7 +266,7 @@ contains
     stiffness = 0.0d0
 
     ! Compute Tm and Tt matrices using standard shape functions
-    call computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt)
+    call computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt, smoothing_type)
 
     normal(1:3) = ctState%direction(1:3)
 
@@ -389,13 +393,14 @@ contains
             if(if_flag) call get_shrink_elemact_surf(fstrSOLID%contacts(i)%states(j),ndCoord, nnode)
 
             call getContactNodalForce(fstrSOLID%contacts(i)%states(j),fstrSOLID%contacts(i)%master(ctsurf),ndCoord,ndDu,    &
-            fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.true.)
+            fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.true.,&
+            fstrSOLID%contacts(i)%smoothing)
             ! Update non-eqilibrited force vector
             call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,  &
               &  conMAT,fstrSOLID%CONT_NFORCE,fstrSOLID%CONT_FRIC)
           else if( algtype == CONTACTTIED ) then
             call getTiedNodalForce(fstrSOLID%contacts(i)%states(j),fstrSOLID%contacts(i)%master(ctsurf),k,ndu, & 
-              &  lagrange,ctNForce,ctTForce)
+              &  lagrange,ctNForce,ctTForce,fstrSOLID%contacts(i)%smoothing)
             ! Update non-eqilibrited force vector
             call update_NDForce_contact(nnode,ndLocal,id_lagrange,1.d0,ctNForce,ctTForce,  &
               &  conMAT,fstrSOLID%CONT_NFORCE,fstrSOLID%CONT_FRIC)
@@ -447,7 +452,7 @@ contains
   end subroutine fstr_Update_NDForce_contact
 
   !> \brief This subroutine obtains contact nodal force vector of contact pair
-  subroutine getTiedNodalForce(ctState,tSurf,idof,ndu,lagrange,ctNForce,ctTForce)
+  subroutine getTiedNodalForce(ctState,tSurf,idof,ndu,lagrange,ctNForce,ctTForce,smoothing_type)
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
@@ -457,6 +462,7 @@ contains
     real(kind=kreal)   :: lagrange !< value of Lagrange multiplier
     real(kind=kreal)       :: ctNForce(:)  !< tied contact force vector
     real(kind=kreal)       :: ctTForce(:)  !< tied contact force vector
+    integer(kind=kint), optional :: smoothing_type !< kcsNONE or kcsNAGATA
 
     integer(kind=kint) :: j
     real(kind=kreal)   :: normal(3) !< normal vector at target point
@@ -471,7 +477,7 @@ contains
     ctTForce = 0.0d0
 
     ! Compute Tm matrix
-    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt)
+    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt, smoothing_type)
 
     normal(1:3) = ctState%direction(1:3)
 
@@ -499,12 +505,13 @@ contains
   end subroutine 
 
   !> \brief This subroutine obtains contact nodal force vector of contact pair
-  subroutine getContactNodalForce(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag)
+  subroutine getContactNodalForce(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag,smoothing_type)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint) :: nnode !< type of master segment; number of nodes of master segment
+    integer(kind=kint), optional :: smoothing_type !< kcsNONE or kcsNAGATA
     integer(kind=kint) :: j
     real(kind=kreal)   :: fcoeff, tPenalty !< friction coefficient; tangential penalty
     real(kind=kreal)   :: lagrange !< value of Lagrange multiplier
@@ -524,8 +531,8 @@ contains
     ctNForce = 0.0d0
     ctTForce = 0.0d0
 
-    ! Compute Tm matrix (Tt not needed, pass fcoeff=0 to skip)
-    call computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt)
+    ! Compute Tm matrix
+    call computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt, smoothing_type)
 
     normal(1:3) = ctState%direction(1:3)
 
@@ -688,7 +695,7 @@ contains
                &  hecMAT,fstrSOLID%CONT_NFORCE,fstrSOLID%CONT_FRIC)
           else if( algtype == CONTACTTIED ) then
             call getTiedNodalForce(fstrSOLID%contacts(i)%states(j),fstrSOLID%contacts(i)%master(ctsurf),k,ndu,&
-              &  lagrange,ctNForce,ctTForce)
+              &  lagrange,ctNForce,ctTForce,fstrSOLID%contacts(i)%smoothing)
             ! Update non-eqilibrited force vector
             call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,hecMAT,fstrSOLID%CONT_NFORCE)
           endif 
