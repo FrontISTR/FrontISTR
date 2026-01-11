@@ -18,6 +18,7 @@ module mContactDef
   use bucket_search
   use mContactParam
   use fstr_ctrl_util_f
+  use m_fstr_contact_smoothing
 
   implicit none
 
@@ -507,6 +508,8 @@ contains
       states_prev(i) = contact%states(i)%state
     enddo
 
+    if( contact%smoothing == kcsNAGATA ) call update_surface_normal( contact%master, currpos )
+ 
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
 

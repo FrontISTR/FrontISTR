@@ -60,9 +60,8 @@ module m_fstr
   integer(kind=kint), parameter :: kcaSLagrange = 1
   integer(kind=kint), parameter :: kcaALagrange = 2
 
-  !> contact smoothing type (cs)
-  integer(kind=kint), parameter :: kcsNONE   = 0
-  integer(kind=kint), parameter :: kcsNAGATA = 1
+  !> contact smoothing type (cs) - imported from m_contact_lib
+  public :: kcsNONE, kcsNAGATA
 
   !> boundary condition file type (bcf)
   integer(kind=kint), parameter :: kbcfFSTR     =   0  ! BC described in fstr control file (default)

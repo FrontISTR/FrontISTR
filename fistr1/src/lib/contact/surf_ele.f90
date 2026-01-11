@@ -317,4 +317,46 @@ contains
     if (DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: end'
   end subroutine update_surface_bucket_info
 
+  !> Compute vertex normals for a single surface element (geometric calculation only)
+  subroutine calc_surf_vertex_normals( surf, elem )
+    use elementInfo, only: getVertexCoord, SurfaceNormal
+    type(tSurfElement), intent(inout) :: surf       !< surface element
+    real(kind=kreal), intent(in)      :: elem(3,*)  !< element coordinates
+    
+    integer(kind=kint) :: j, nn, etype
+    real(kind=kreal) :: cnpos(2), normal(3)
+    
+    etype = surf%etype
+    nn = size(surf%nodes)
+    
+    do j = 1, nn
+      call getVertexCoord(etype, j, cnpos)
+      normal = SurfaceNormal(etype, nn, cnpos, elem)
+      normal = normal / dsqrt(dot_product(normal, normal))
+      surf%vertex_normals(:, j) = normal
+    enddo
+    
+  end subroutine calc_surf_vertex_normals
+
+  !> Calculate vertex normals for all surface elements (geometric calculation only)
+  subroutine calc_all_surf_vertex_normals( surf, currpos )
+    type(tSurfElement), intent(inout) :: surf(:)    !< surface elements
+    real(kind=kreal), intent(in)      :: currpos(:) !< current coordinate of all nodes
+    
+    integer(kind=kint) :: i, j, nn, iSS
+    real(kind=kreal) :: elem(3, l_max_elem_node)
+    
+    !$omp parallel do default(none) private(i,j,nn,iSS,elem) shared(surf,currpos)
+    do i = 1, size(surf)
+      nn = size(surf(i)%nodes)
+      do j = 1, nn
+        iSS = surf(i)%nodes(j)
+        elem(1:3, j) = currpos(3*iSS-2:3*iSS)
+      enddo
+      call calc_surf_vertex_normals(surf(i), elem(1:3,1:nn))
+    enddo
+    !$omp end parallel do
+    
+  end subroutine calc_all_surf_vertex_normals
+
 end module mSurfElement

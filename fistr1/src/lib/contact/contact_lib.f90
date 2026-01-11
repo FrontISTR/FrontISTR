@@ -23,6 +23,10 @@ module m_contact_lib
   integer, parameter :: CONTACTSSLID = 3
   integer, parameter :: CONTACTFSLID = 4
 
+  !> contact smoothing type
+  integer, parameter :: kcsNONE   = 0
+  integer, parameter :: kcsNAGATA = 1
+
   !> contact interference type
   integer, parameter :: C_IF_SLAVE = 1
   integer, parameter :: C_IF_MASTER = 2

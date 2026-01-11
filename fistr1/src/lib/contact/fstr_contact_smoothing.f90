@@ -7,6 +7,7 @@ module m_fstr_contact_smoothing
   use hecmw, only: kint, kreal
   use elementInfo
   use m_utilities, only: calInverse
+  use mSurfElement, only: tSurfElement
   implicit none
 
   ! Tikhonov regularization parameter
@@ -15,8 +16,56 @@ module m_fstr_contact_smoothing
   private
   public :: compute_Cab
   public :: compute_interpolation_matrix_P
+  public :: update_surface_normal
 
 contains
+
+  subroutine update_surface_normal( surf, currpos )
+    use mSurfElement, only: calc_all_surf_vertex_normals
+    type(tSurfElement), intent(inout) :: surf(:)    !< surface elements
+    real(kind=kreal), intent(in) :: currpos(:)      !< current coordinate of all nodes
+
+    integer(kind=kint) :: i, j, nn, gnode, max_node
+    real(kind=kreal) :: normal(3)
+    real(kind=kreal), allocatable :: vnormal(:,:)
+    integer(kind=kint), allocatable :: vcount(:)
+    
+    if (size(surf) == 0) return
+    
+    ! Calculate geometric normals at vertices
+    call calc_all_surf_vertex_normals(surf, currpos)
+    
+    ! Apply smoothing by averaging normals at shared vertices
+    max_node = maxval([(maxval(surf(i)%nodes), i=1,size(surf))])
+    allocate(vnormal(3, max_node), vcount(max_node))
+    vnormal = 0.0d0
+    vcount = 0
+    
+    do i = 1, size(surf)
+      nn = size(surf(i)%nodes)
+      do j = 1, nn
+        gnode = surf(i)%nodes(j)
+        vnormal(:, gnode) = vnormal(:, gnode) + surf(i)%vertex_normals(:, j)
+        vcount(gnode) = vcount(gnode) + 1
+      enddo
+    enddo
+    
+    do i = 1, size(surf)
+      nn = size(surf(i)%nodes)
+      do j = 1, nn
+        gnode = surf(i)%nodes(j)
+        if (vcount(gnode) > 0) then
+          normal = vnormal(:, gnode) / dble(vcount(gnode))
+          normal = normal / dsqrt(dot_product(normal, normal))
+          surf(i)%vertex_normals(:, j) = normal
+        endif
+      enddo
+    enddo
+    
+    deallocate(vnormal, vcount)
+
+  end subroutine update_surface_normal
+
 
   !> Compute Cab correction matrices for edge (a,b)
   !! Kab = (Aab^T*Aab + eps*I)^-1 * Aab^T * D * Aab
