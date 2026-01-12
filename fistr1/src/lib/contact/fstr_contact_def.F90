@@ -510,7 +510,7 @@ contains
 
     if( contact%smoothing == kcsNAGATA ) then
       call update_surface_normal( contact%master, currpos )
-      call create_intermediate_points( contact%master, currpos )
+      call create_intermediate_points( contact%master, currpos, contact%pair_name )
     endif
     
     call update_surface_box_info( contact%master, currpos )

@@ -5,6 +5,7 @@
 !> \brief Contact surface smoothing using Nagata patch interpolation
 module m_fstr_contact_smoothing
   use hecmw, only: kint, kreal
+  use hecmw_util, only: HECMW_NAME_LEN
   use elementInfo
   use m_utilities, only: calInverse
   use mSurfElement, only: tSurfElement
@@ -12,6 +13,8 @@ module m_fstr_contact_smoothing
 
   ! Tikhonov regularization parameter
   real(kind=kreal), parameter, private :: NAGATA_EPSILON = 1.0d-8
+
+  integer(kind=kint), parameter, private :: DEBUG = 0
 
   private
   public :: compute_Cab
@@ -180,9 +183,11 @@ contains
 
   end subroutine compute_interpolation_matrix_P
 
-  subroutine create_intermediate_points( surf, currpos )
+  subroutine create_intermediate_points( surf, currpos, contact_name )
     type(tSurfElement), intent(inout) :: surf(:)    !< surface elements
     real(kind=kreal), intent(in) :: currpos(:)      !< current coordinate of all nodes
+    character(len=HECMW_NAME_LEN), intent(in) :: contact_name   !< name of contact surface
+
     integer(kind=kint) :: i
     
     if (size(surf) == 0) return
@@ -192,6 +197,10 @@ contains
       call create_intermediate_points_single(surf(i), currpos)
     enddo
     !$omp end parallel do
+
+    if( DEBUG > 0 ) then
+      call print_surface_elements_to_vtk(surf, currpos, contact_name)
+    end if  
 
   end subroutine create_intermediate_points
 
@@ -237,4 +246,115 @@ contains
 
   end subroutine create_intermediate_points_single
   
+  subroutine print_surface_elements_to_vtk( surf, currpos, contact_name )
+    type(tSurfElement), intent(in) :: surf(:)    !< surface elements
+    real(kind=kreal), intent(in) :: currpos(:)   !< current coordinate of all nodes
+    character(len=HECMW_NAME_LEN), intent(in) :: contact_name   !< name of contact surface
+
+    integer(kind=kint), parameter :: VTK_UNIT = 99
+    integer(kind=kint) :: i, j, nn, n_tri, n_quad, n_elem, n_points, n_cells_size, node_id, inode
+    real(kind=kreal) :: coord(3), normal(3)
+    character(len=256) :: filename
+
+    ! Count valid elements
+    n_tri = 0
+    n_quad = 0
+    do i = 1, size(surf)
+      if (surf(i)%etype == fe_tri3n) then
+        n_tri = n_tri + 1
+      else if (surf(i)%etype == fe_quad4n) then
+        n_quad = n_quad + 1
+      endif
+    enddo
+
+    n_elem = n_tri + n_quad
+    if (n_elem == 0) return
+
+    ! Calculate total points and cells size
+    n_points = n_tri * 6 + n_quad * 8
+    n_cells_size = n_tri * 7 + n_quad * 9  ! tri: 1+6, quad: 1+8
+
+    ! Open VTK file
+    filename = trim(contact_name) // '_nagata_debug.vtk'
+    open(unit=VTK_UNIT, file=filename, status='replace', action='write', form='formatted')
+
+    ! Write header
+    write(VTK_UNIT, '(A)') '# vtk DataFile Version 3.0'
+    write(VTK_UNIT, '(A,A)') 'Nagata patch debug: ', trim(contact_name)
+    write(VTK_UNIT, '(A)') 'ASCII'
+    write(VTK_UNIT, '(A)') 'DATASET UNSTRUCTURED_GRID'
+    write(VTK_UNIT, *)
+
+    ! Write POINTS
+    write(VTK_UNIT, '(A,I0,A)') 'POINTS ', n_points, ' float'
+    do i = 1, size(surf)
+      if (surf(i)%etype == fe_tri3n .or. surf(i)%etype == fe_quad4n) then
+        nn = size(surf(i)%nodes)
+        ! Output vertex coordinates
+        do j = 1, nn
+          inode = surf(i)%nodes(j)
+          coord(1:3) = currpos(3*(inode-1)+1 : 3*inode)
+          write(VTK_UNIT, '(3(E15.7,1X))') coord(1), coord(2), coord(3)
+        enddo
+        ! Output intermediate point coordinates
+        do j = 1, nn
+          coord(1:3) = surf(i)%intermediate_points(1:3, j)
+          write(VTK_UNIT, '(3(E15.7,1X))') coord(1), coord(2), coord(3)
+        enddo
+      endif
+    enddo
+    write(VTK_UNIT, *)
+
+    ! Write CELLS
+    write(VTK_UNIT, '(A,I0,1X,I0)') 'CELLS ', n_elem, n_cells_size
+    node_id = 0
+    do i = 1, size(surf)
+      if (surf(i)%etype == fe_tri3n) then
+        write(VTK_UNIT, '(I0,1X,I0,1X,I0,1X,I0,1X,I0,1X,I0,1X,I0)') &
+          6, node_id, node_id+1, node_id+2, node_id+3, node_id+4, node_id+5
+        node_id = node_id + 6
+      else if (surf(i)%etype == fe_quad4n) then
+        write(VTK_UNIT, '(I0,1X,I0,1X,I0,1X,I0,1X,I0,1X,I0,1X,I0,1X,I0,1X,I0)') &
+          8, node_id, node_id+1, node_id+2, node_id+3, node_id+4, node_id+5, node_id+6, node_id+7
+        node_id = node_id + 8
+      endif
+    enddo
+    write(VTK_UNIT, *)
+
+    ! Write CELL_TYPES
+    write(VTK_UNIT, '(A,I0)') 'CELL_TYPES ', n_elem
+    do i = 1, size(surf)
+      if (surf(i)%etype == fe_tri3n) then
+        write(VTK_UNIT, '(I0)') 22  ! VTK_QUADRATIC_TRIANGLE
+      else if (surf(i)%etype == fe_quad4n) then
+        write(VTK_UNIT, '(I0)') 23  ! VTK_QUADRATIC_QUAD
+      endif
+    enddo
+    write(VTK_UNIT, *)
+
+    ! Write POINT_DATA - VECTORS (vertex normals)
+    write(VTK_UNIT, '(A,I0)') 'POINT_DATA ', n_points
+    write(VTK_UNIT, '(A)') 'VECTORS vertex_normal float'
+    do i = 1, size(surf)
+      if (surf(i)%etype == fe_tri3n .or. surf(i)%etype == fe_quad4n) then
+        nn = size(surf(i)%nodes)
+        ! Output vertex normals
+        do j = 1, nn
+          normal(1:3) = surf(i)%vertex_normals(1:3, j)
+          write(VTK_UNIT, '(3(E15.7,1X))') normal(1), normal(2), normal(3)
+        enddo
+        ! Output zero normals for intermediate points
+        do j = 1, nn
+          write(VTK_UNIT, '(A)') '0.0 0.0 0.0'
+        enddo
+      endif
+    enddo
+
+    close(VTK_UNIT)
+
+    write(*,'(A,A)') 'VTK debug file written: ', trim(filename)
+
+  end subroutine print_surface_elements_to_vtk
+
+
 end module m_fstr_contact_smoothing
