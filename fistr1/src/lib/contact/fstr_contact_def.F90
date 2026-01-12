@@ -426,6 +426,33 @@ contains
     endif
   end function
 
+  !> Wrapper for project_Point2Element that takes tSurfElement structure
+  !! This subroutine handles element coordinate extraction from tSurfElement
+  subroutine project_Point2SurfElement(xyz, surf, currpos, cstate, isin, distclr, ctpos, localclr)
+    real(kind=kreal), intent(in)              :: xyz(3)        !< coordinates of slave point
+    type(tSurfElement), intent(in)            :: surf          !< surface element structure
+    real(kind=kreal), intent(in)              :: currpos(:)    !< current coordinate of all nodes
+    type(tContactState), intent(inout)        :: cstate        !< contact state
+    logical, intent(out)                      :: isin          !< in contact or not
+    real(kind=kreal), intent(in)              :: distclr       !< clearance of contact distance
+    real(kind=kreal), optional, intent(in)    :: ctpos(2)      !< current contact position (natural coord)
+    real(kind=kreal), optional, intent(in)    :: localclr      !< clearance of contact local coord
+
+    integer(kind=kint) :: nn, j, iSS
+    real(kind=kreal)   :: elem(3, l_max_elem_node)
+
+    ! Extract element coordinates from surf structure
+    nn = size(surf%nodes)
+    do j = 1, nn
+      iSS = surf%nodes(j)
+      elem(1:3, j) = currpos(3*iSS-2:3*iSS)
+    enddo
+
+    call project_Point2Element(xyz, surf%etype, nn, elem, surf%reflen, cstate, &
+                               isin, distclr, ctpos, localclr)
+
+  end subroutine project_Point2SurfElement
+
   !> This subroutine update contact states, which include
   !!-# Free to contact or contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
@@ -447,7 +474,7 @@ contains
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
-    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
+    real(kind=kreal)    :: coord(3)
     real(kind=kreal)    :: nlforce, slforce(3)
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
@@ -488,7 +515,7 @@ contains
 
     !$omp parallel do &
       !$omp& default(none) &
-      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+      !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,is_cand,idm,etype,isin, &
       !$omp&         bktID,nCand,indexCand) &
       !$omp& firstprivate(nMasterMax,is_present_B) &
       !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf,is_init) &
@@ -556,17 +583,12 @@ contains
 
         do idm = 1,nMaster
           id = indexMaster(idm)
-          etype = contact%master(id)%etype
-          nn = size( contact%master(id)%nodes )
-          do j=1,nn
-            iSS = contact%master(id)%nodes(j)
-            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-          enddo
-          call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,contact%states(i), &
-            isin,distclr,localclr=contact%cparam%CLEARANCE )
+          call project_Point2SurfElement( coord, contact%master(id), currpos, &
+            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
+          etype = contact%master(id)%etype
           iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
           if( iSS>0 ) &
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
@@ -769,7 +791,7 @@ contains
     real(kind=kreal), intent(in)   :: lpos(:)     !< local coordinate of contact position
     real(kind=kreal), intent(out)  :: normal(3)   !< averaged node nomral
     integer(kind=kint) :: cnode, i, j, cnt, nd1, gn, etype, iSS, nn,cgn
-    real(kind=kreal) :: cnpos(2), elem(3, l_max_elem_node )
+    real(kind=kreal) :: cnpos(2), elem(3, l_max_elem_node)
     integer(kind=kint) :: cnode1, cnode2, gn1, gn2, nsurf, cgn1, cgn2, isin_n
     real(kind=kreal) :: x=0, normal_n(3), lpos_n(2)
 
@@ -891,7 +913,7 @@ contains
 
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
-    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
+    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node), elem0(3, l_max_elem_node)
     logical            :: isin
     real(kind=kreal)    :: opos(2), odirec(3)
     integer(kind=kint) :: bktID, nCand, idm
@@ -909,22 +931,17 @@ contains
     nn = getNumberOfNodes( etype )
     do j=1,nn
       iSS = contact%master(sid0)%nodes(j)
-      elem(1:3,j)=currpos(3*iSS-2:3*iSS)
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
-    call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
-      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos(1:2),contact%cparam%CLR_SAME_ELEM )
+    call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
+      contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
-        etype = contact%master(sid)%etype
-        nn = getNumberOfNodes( etype )
-        do j=1,nn
-          iSS = contact%master(sid)%nodes(j)
-          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-        enddo
-        call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-          isin,contact%cparam%DISTCLR_NOCHECK,localclr=contact%cparam%CLEARANCE )
+        call project_Point2SurfElement( coord, contact%master(sid), currpos, &
+          contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+          localclr=contact%cparam%CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -947,14 +964,9 @@ contains
             if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           endif
           if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
-          etype = contact%master(sid)%etype
-          nn = size( contact%master(sid)%nodes )
-          do j=1,nn
-            iSS = contact%master(sid)%nodes(j)
-            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-          enddo
-          call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-               isin,contact%cparam%DISTCLR_NOCHECK,localclr=contact%cparam%CLEARANCE )
+          call project_Point2SurfElement( coord, contact%master(sid), currpos, &
+            contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+            localclr=contact%cparam%CLEARANCE )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -979,7 +991,16 @@ contains
         if( flag_ctAlgo=='ALagrange' )  &
           call reset_contact_force( contact, currpos, nslave, sid0, opos, odirec, B )
       endif
-      if( flag_ctAlgo=='SLagrange' ) call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
+      if( flag_ctAlgo=='SLagrange' ) then
+        ! Setup elem array for update_TangentForce
+        etype = contact%master(contact%states(nslave)%surface)%etype
+        nn = size(contact%master(contact%states(nslave)%surface)%nodes)
+        do j=1,nn
+          iSS = contact%master(contact%states(nslave)%surface)%nodes(j)
+          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
+        enddo
+        call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
+      endif
       iSS = isInsideElement( etype, contact%states(nslave)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
       if( iSS>0 ) &
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
@@ -998,16 +1019,11 @@ contains
     type( tContact ), intent(inout)                  :: contact      !< contact info
     real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
 
-    integer(kind=kint) :: slave, sid0, sid, etype
-    integer(kind=kint) :: nn, i, j, iSS
-    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
+    integer(kind=kint) :: slave, sid0, etype, iSS
+    real(kind=kreal)    :: coord(3)
     logical            :: isin
     real(kind=kreal)    :: opos(2), odirec(3)
-    integer(kind=kint) :: bktID, nCand, idm
-    integer(kind=kint), allocatable :: indexCand(:)
     type(tContactState) :: cstate_tmp  !< Recorde of contact information
-
-    sid = 0
 
     slave = contact%slave(nslave)
     coord(:) = currpos(3*slave-2:3*slave)
@@ -1015,19 +1031,15 @@ contains
     sid0 = contact%states(nslave)%surface
     opos = contact%states(nslave)%lpos(1:2)
     odirec = contact%states(nslave)%direction
-    etype = contact%master(sid0)%etype
-    nn = getNumberOfNodes( etype )
-    do j=1,nn
-      iSS = contact%master(sid0)%nodes(j)
-      elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-    enddo
 
     cstate_tmp%state = contact%states(nslave)%state
     cstate_tmp%surface = sid0
-    call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,cstate_tmp, &
-      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos,contact%cparam%CLR_SAME_ELEM )
+    call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
+      cstate_tmp, isin, contact%cparam%DISTCLR_NOCHECK, &
+      contact%states(nslave)%lpos, contact%cparam%CLR_SAME_ELEM )
 
     if( isin ) then
+      etype = contact%master(sid0)%etype
       iSS = isInsideElement( etype, cstate_tmp%lpos, contact%cparam%CLR_CAL_NORM )
       if( iSS>0 ) &
         call cal_node_normal( cstate_tmp%surface, iSS, contact%master, currpos, &
@@ -1499,7 +1511,7 @@ contains
 
     integer(kind=kint) :: slave, sid0, sid, etype
     integer(kind=kint) :: nn, i, j, iSS
-    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node ), elem0(3, l_max_elem_node )
+    real(kind=kreal)    :: coord(3), elem0(3, l_max_elem_node )
     logical            :: isin
     real(kind=kreal)    :: opos(2), odirec(3)
     integer(kind=kint) :: bktID, nCand, idm
@@ -1517,22 +1529,17 @@ contains
     nn = getNumberOfNodes( etype )
     do j=1,nn
       iSS = contact%master(sid0)%nodes(j)
-      elem(1:3,j)=currpos(3*iSS-2:3*iSS)
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
-    call project_Point2Element( coord,etype,nn,elem,contact%master(sid0)%reflen,contact%states(nslave), &
-      isin,contact%cparam%DISTCLR_NOCHECK,contact%states(nslave)%lpos(1:2),contact%cparam%CLR_SAME_ELEM )
+    call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
+      contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
-        etype = contact%master(sid)%etype
-        nn = getNumberOfNodes( etype )
-        do j=1,nn
-          iSS = contact%master(sid)%nodes(j)
-          elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-        enddo
-        call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-          isin,contact%cparam%DISTCLR_NOCHECK,localclr=contact%cparam%CLEARANCE )
+        call project_Point2SurfElement( coord, contact%master(sid), currpos, &
+          contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+          localclr=contact%cparam%CLEARANCE )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -1553,14 +1560,9 @@ contains
           if( sid==sid0 ) cycle
           if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
-          etype = contact%master(sid)%etype
-          nn = size( contact%master(sid)%nodes )
-          do j=1,nn
-            iSS = contact%master(sid)%nodes(j)
-            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-          enddo
-          call project_Point2Element( coord,etype,nn,elem,contact%master(sid)%reflen,contact%states(nslave), &
-               isin,contact%cparam%DISTCLR_NOCHECK,localclr=contact%cparam%CLEARANCE )
+          call project_Point2SurfElement( coord, contact%master(sid), currpos, &
+            contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+            localclr=contact%cparam%CLEARANCE )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -1613,7 +1615,7 @@ contains
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
-    real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
+    real(kind=kreal)    :: coord(3)
     real(kind=kreal)    :: nlforce
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
@@ -1650,7 +1652,7 @@ contains
 
     !$omp parallel do &
       !$omp& default(none) &
-      !$omp& private(i,slave,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+      !$omp& private(i,slave,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,is_cand,idm,etype,isin, &
       !$omp&         bktID,nCand,indexCand) &
       !$omp& firstprivate(nMasterMax) &
       !$omp& shared(contact,infoCTChange,currpos,currdisp,nodeID,elemID,distclr,contact_surf) &
@@ -1693,17 +1695,12 @@ contains
 
         do idm = 1,nMaster
           id = indexMaster(idm)
-          etype = contact%master(id)%etype
-          nn = size( contact%master(id)%nodes )
-          do j=1,nn
-            iSS = contact%master(id)%nodes(j)
-            elem(1:3,j)=currpos(3*iSS-2:3*iSS)
-          enddo
-          call project_Point2Element( coord,etype,nn,elem,contact%master(id)%reflen,contact%states(i), &
-            isin,distclr,localclr=contact%cparam%CLEARANCE )
+          call project_Point2SurfElement( coord, contact%master(id), currpos, &
+            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
+          etype = contact%master(id)%etype
           iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
           if( iSS>0 ) &
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
