@@ -21,8 +21,39 @@ module m_fstr_contact_smoothing
   public :: compute_interpolation_matrix_P
   public :: update_surface_normal
   public :: create_intermediate_points
+  public :: reorder_tri3n_to_tri6n
 
 contains
+
+  !> Reorder triangle vertices and midpoints from fe_tri3n to fe_tri6n order
+  !! fe_tri3n: v1(xi), v2(et), v3(st), m1(xi-et), m2(et-st), m3(st-xi)
+  !! fe_tri6n: v1(st), v2(xi), v3(et), m4(xi-st), m5(xi-et), m6(et-st)
+  subroutine reorder_tri3n_to_tri6n(vertices_in, midpoints_in, nodes_out)
+    real(kind=kreal), intent(in)  :: vertices_in(3,3)   ! fe_tri3n vertices
+    real(kind=kreal), intent(in)  :: midpoints_in(3,3)  ! fe_tri3n midpoints
+    real(kind=kreal), intent(out) :: nodes_out(3,6)     ! fe_tri6n nodes
+    
+    ! Reorder vertices: xi,et,st -> st,xi,et
+    nodes_out(1:3, 1) = vertices_in(1:3, 3)  ! st
+    nodes_out(1:3, 2) = vertices_in(1:3, 1)  ! xi
+    nodes_out(1:3, 3) = vertices_in(1:3, 2)  ! et
+    
+    ! Reorder midpoints: xi-et,et-st,st-xi -> xi-st,xi-et,et-st
+    nodes_out(1:3, 4) = midpoints_in(1:3, 3)  ! xi-st (was st-xi, same point)
+    nodes_out(1:3, 5) = midpoints_in(1:3, 1)  ! xi-et
+    nodes_out(1:3, 6) = midpoints_in(1:3, 2)  ! et-st
+  end subroutine reorder_tri3n_to_tri6n
+
+  !> Reorder vertex normals from fe_tri3n to fe_tri6n order
+  subroutine reorder_normals_tri3n_to_tri6n(normals_in, normals_out)
+    real(kind=kreal), intent(in)  :: normals_in(3,3)   ! fe_tri3n order
+    real(kind=kreal), intent(out) :: normals_out(3,3)  ! fe_tri6n order
+    
+    ! xi,et,st -> st,xi,et
+    normals_out(1:3, 1) = normals_in(1:3, 3)  ! st
+    normals_out(1:3, 2) = normals_in(1:3, 1)  ! xi
+    normals_out(1:3, 3) = normals_in(1:3, 2)  ! et
+  end subroutine reorder_normals_tri3n_to_tri6n
 
   subroutine update_surface_normal( surf, currpos )
     use mSurfElement, only: calc_all_surf_vertex_normals
@@ -140,6 +171,7 @@ contains
     real(kind=kreal) :: Cab_31_3(3,3), Cab_31_1(3,3)
     real(kind=kreal) :: P1(3,3), P2(3,3), P3(3,3)
     real(kind=kreal) :: I3(3,3)
+    real(kind=kreal) :: normals_tri6n(3,3)
     integer(kind=kint) :: i, j
 
     P_matrix = 0.0d0
@@ -152,31 +184,23 @@ contains
 
     select case(etype)
     case(fe_tri3n)
-      ! Get quadratic shape functions for 6-node triangle
-      ! N(1:3) are vertex functions, N(4:6) are edge functions
       call getShapeFunc(fe_tri6n, lpos, N)
+      call reorder_normals_tri3n_to_tri6n(vertex_normals, normals_tri6n)
       
-      ! For Nagata patch, use hierarchical decomposition:
-      ! Vertex contributions use linear parts, edge contributions use quadratic parts
+      ! Compute Cab for fe_tri6n edges: (st-xi), (xi-et), (et-st)
+      call compute_Cab(normals_tri6n(:,1), normals_tri6n(:,2), Cab_31_3, Cab_31_1)
+      call compute_Cab(normals_tri6n(:,2), normals_tri6n(:,3), Cab_12_1, Cab_12_2)
+      call compute_Cab(normals_tri6n(:,3), normals_tri6n(:,1), Cab_23_2, Cab_23_3)
 
-      ! Compute Cab for 3 edges: (1,2), (2,3), (3,1)
-      call compute_Cab(vertex_normals(:,1), vertex_normals(:,2), Cab_12_1, Cab_12_2)
-      call compute_Cab(vertex_normals(:,2), vertex_normals(:,3), Cab_23_2, Cab_23_3)
-      call compute_Cab(vertex_normals(:,3), vertex_normals(:,1), Cab_31_3, Cab_31_1)
+      ! P matrices for fe_tri6n: st, xi, et
+      P1 = N(1) * I3 + N(4) * Cab_31_3 + N(6) * Cab_23_3
+      P2 = N(2) * I3 + N(4) * Cab_31_1 + N(5) * Cab_12_1
+      P3 = N(3) * I3 + N(5) * Cab_12_2 + N(6) * Cab_23_2
 
-      ! P1 = N1*I + N4*Cab_12_1 + N6*Cab_31_1
-      P1 = N(1) * I3 + N(4) * Cab_12_1 + N(6) * Cab_31_1
-
-      ! P2 = N2*I + N4*Cab_12_2 + N5*Cab_23_2
-      P2 = N(2) * I3 + N(4) * Cab_12_2 + N(5) * Cab_23_2
-
-      ! P3 = N3*I + N5*Cab_23_3 + N6*Cab_31_3
-      P3 = N(3) * I3 + N(5) * Cab_23_3 + N(6) * Cab_31_3
-
-      ! Assemble P = [P1, P2, P3]
-      P_matrix(1:3, 1:3) = P1
-      P_matrix(1:3, 4:6) = P2
-      P_matrix(1:3, 7:9) = P3
+      ! Assemble P in fe_tri3n order: xi, et, st
+      P_matrix(1:3, 1:3) = P2
+      P_matrix(1:3, 4:6) = P3
+      P_matrix(1:3, 7:9) = P1
 
     case default
       write(*,*) "Error: compute_interpolation_matrix_P - Unsupported element type for Nagata patch.",etype
@@ -240,7 +264,6 @@ contains
       surf%intermediate_points(:,1) = matmul(Cab_12_1(1:3,1:3), elem(1:3,1)) + matmul(Cab_12_2(1:3,1:3), elem(1:3,2))
       surf%intermediate_points(:,2) = matmul(Cab_23_2(1:3,1:3), elem(1:3,2)) + matmul(Cab_23_3(1:3,1:3), elem(1:3,3))
       surf%intermediate_points(:,3) = matmul(Cab_31_3(1:3,1:3), elem(1:3,3)) + matmul(Cab_31_1(1:3,1:3), elem(1:3,1))
-
     case default
       write(*,*) "Error: create_intermediate_points - Unsupported element type for Nagata patch.",etype
       stop 

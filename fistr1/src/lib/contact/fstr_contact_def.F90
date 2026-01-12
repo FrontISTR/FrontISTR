@@ -443,6 +443,7 @@ contains
 
     integer(kind=kint) :: nn, j, iSS, etype_use, nn_use
     real(kind=kreal)   :: elem(3, l_max_elem_node)
+    real(kind=kreal)   :: elem_tri3n(3, 3)
 
     nn = size(surf%nodes)
     do j = 1, nn
@@ -451,13 +452,15 @@ contains
     enddo
 
     if (smoothing == kcsNAGATA) then
-      do j = 1, nn
-        elem(1:3, nn+j) = surf%intermediate_points(1:3, j)
-      enddo
       if (surf%etype == fe_tri3n) then
+        elem_tri3n = elem(1:3, 1:3)
+        call reorder_tri3n_to_tri6n(elem_tri3n, surf%intermediate_points, elem(1:3,1:6))
         etype_use = fe_tri6n
         nn_use = 6
       else if (surf%etype == fe_quad4n) then
+        do j = 1, nn
+          elem(1:3, nn+j) = surf%intermediate_points(1:3, j)
+        enddo
         etype_use = fe_quad8n
         nn_use = 8
       else
