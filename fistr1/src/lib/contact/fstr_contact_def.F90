@@ -508,8 +508,11 @@ contains
       states_prev(i) = contact%states(i)%state
     enddo
 
-    if( contact%smoothing == kcsNAGATA ) call update_surface_normal( contact%master, currpos )
- 
+    if( contact%smoothing == kcsNAGATA ) then
+      call update_surface_normal( contact%master, currpos )
+      call create_intermediate_points( contact%master, currpos )
+    endif
+    
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
 

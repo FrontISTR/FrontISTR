@@ -28,6 +28,7 @@ module mSurfElement
     real(kind=kreal)                :: dmax                 !< half length of edge of cube that include surf
     integer(kind=kint)              :: bktID                !< bucket ID
     real(kind=kreal), pointer       :: vertex_normals(:,:)=>null()  !< (3,nnode) unit normals for Nagata patch
+    real(kind=kreal), pointer       :: intermediate_points(:,:)=>null()  !< (3,nnode) intermediate points for Nagata patch
   end type tSurfElement
 
   integer(kind=kint), parameter, private :: DEBUG = 0
@@ -73,6 +74,7 @@ contains
     if( associated(surf%nodes) ) deallocate( surf%nodes )
     if( associated(surf%neighbor) ) deallocate( surf%neighbor )
     if( associated(surf%vertex_normals) ) deallocate( surf%vertex_normals )
+    if( associated(surf%intermediate_points) ) deallocate( surf%intermediate_points )
   end subroutine
 
   !> Write out elemental surface

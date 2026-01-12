@@ -17,6 +17,7 @@ module m_fstr_contact_smoothing
   public :: compute_Cab
   public :: compute_interpolation_matrix_P
   public :: update_surface_normal
+  public :: create_intermediate_points
 
 contains
 
@@ -65,7 +66,6 @@ contains
     deallocate(vnormal, vcount)
 
   end subroutine update_surface_normal
-
 
   !> Compute Cab correction matrices for edge (a,b)
   !! Kab = (Aab^T*Aab + eps*I)^-1 * Aab^T * D * Aab
@@ -180,4 +180,61 @@ contains
 
   end subroutine compute_interpolation_matrix_P
 
+  subroutine create_intermediate_points( surf, currpos )
+    type(tSurfElement), intent(inout) :: surf(:)    !< surface elements
+    real(kind=kreal), intent(in) :: currpos(:)      !< current coordinate of all nodes
+    integer(kind=kint) :: i
+    
+    if (size(surf) == 0) return
+
+    !$omp parallel do private(i)
+    do i = 1, size(surf)
+      call create_intermediate_points_single(surf(i), currpos)
+    enddo
+    !$omp end parallel do
+
+  end subroutine create_intermediate_points
+
+  subroutine create_intermediate_points_single( surf, currpos )
+    type(tSurfElement), intent(inout) :: surf    !< surface element
+    real(kind=kreal), intent(in) :: currpos(:)      !< current coordinate of all nodes
+    
+    integer(kind=kint) :: i, etype
+    real(kind=kreal) :: elem(3,3)
+    real(kind=kreal), pointer :: vertex_normals(:,:)
+    real(kind=kreal) :: Cab_12_1(3,3), Cab_12_2(3,3)
+    real(kind=kreal) :: Cab_23_2(3,3), Cab_23_3(3,3)
+    real(kind=kreal) :: Cab_31_3(3,3), Cab_31_1(3,3)
+
+    etype = surf%etype
+    vertex_normals => surf%vertex_normals
+
+    select case(etype)
+    case(fe_tri3n)
+
+      if (.not. associated(surf%intermediate_points)) then
+        allocate(surf%intermediate_points(3,3))
+      end if
+
+      do i=1,3
+        elem(1:3,i) = currpos(3*(surf%nodes(i)-1)+1 : 3*surf%nodes(i))
+      enddo
+
+      ! Compute Cab for 3 edges: (1,2), (2,3), (3,1)
+      call compute_Cab(vertex_normals(:,1), vertex_normals(:,2), Cab_12_1, Cab_12_2)
+      call compute_Cab(vertex_normals(:,2), vertex_normals(:,3), Cab_23_2, Cab_23_3)
+      call compute_Cab(vertex_normals(:,3), vertex_normals(:,1), Cab_31_3, Cab_31_1)
+
+      ! intermediate point
+      surf%intermediate_points(:,1) = matmul(Cab_12_1(1:3,1:3), elem(1:3,1)) + matmul(Cab_12_2(1:3,1:3), elem(1:3,2))
+      surf%intermediate_points(:,2) = matmul(Cab_23_2(1:3,1:3), elem(1:3,2)) + matmul(Cab_23_3(1:3,1:3), elem(1:3,3))
+      surf%intermediate_points(:,3) = matmul(Cab_31_3(1:3,1:3), elem(1:3,3)) + matmul(Cab_31_1(1:3,1:3), elem(1:3,1))
+
+    case default
+      write(*,*) "Error: create_intermediate_points - Unsupported element type for Nagata patch.",etype
+      stop 
+    end select
+
+  end subroutine create_intermediate_points_single
+  
 end module m_fstr_contact_smoothing
