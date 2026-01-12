@@ -12,7 +12,7 @@ module m_fstr_contact_smoothing
   implicit none
 
   ! Tikhonov regularization parameter
-  real(kind=kreal), parameter, private :: NAGATA_EPSILON = 1.0d-8
+  real(kind=kreal), parameter, private :: NAGATA_EPSILON = 1.0d-4
 
   integer(kind=kint), parameter, private :: DEBUG = 0
 
@@ -82,6 +82,7 @@ contains
 
     real(kind=kreal) :: Aab(2,3), D(2,2), AtA(3,3), AtA_inv(3,3)
     real(kind=kreal) :: Kab(3,3), temp(3,2), temp2(3,3)
+    real(kind=kreal) :: epsilon
     integer(kind=kint) :: i
 
     ! Build Aab = [na^T; nb^T]
@@ -95,8 +96,9 @@ contains
 
     ! Compute AtA = Aab^T * Aab + eps*I
     AtA = matmul(transpose(Aab), Aab)
+    epsilon = (AtA(1,1)+AtA(2,2)+AtA(3,3)) * NAGATA_EPSILON
     do i = 1, 3
-      AtA(i,i) = AtA(i,i) + NAGATA_EPSILON
+      AtA(i,i) = AtA(i,i) + epsilon
     enddo
 
     ! Invert AtA using calInverse
