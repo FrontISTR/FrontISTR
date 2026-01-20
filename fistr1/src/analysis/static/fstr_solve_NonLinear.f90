@@ -247,6 +247,10 @@ contains
         ! ----- update the strain, stress, and internal force
         call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
+        if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
+          call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
+        endif
+                
         ! ----- Set residual
         if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 )                                 &
           call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
