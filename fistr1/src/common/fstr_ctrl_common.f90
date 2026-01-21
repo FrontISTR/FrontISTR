@@ -967,59 +967,65 @@ contains
 
   end function fstr_ctrl_get_AMPLITUDE
 
-  !* ----------------------------------------------------------------------------------------------- *!
   !> Read in !ELEMENT_ACTIVATION
-  !* ----------------------------------------------------------------------------------------------- *!
-
-  function fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, dtype, state, thlow, thup )
+  function fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, mode, measure, state, thlow, thup )
     implicit none
     integer(kind=kint) :: ctrl
     character(len=HECMW_NAME_LEN) :: amp
     real(kind=kreal) :: eps
     character(len=HECMW_NAME_LEN),target :: grp_id_name(:)
-    integer(kind=kint) :: dtype
-    integer(kind=kint) :: state
+    integer(kind=kint) :: mode     ! 1=FIXED, 2=AMPLITUDE, 3=DAMAGE
+    integer(kind=kint) :: measure  ! 1=NONE, 2=STRESS, 3=STRAIN
+    integer(kind=kint) :: state    ! 0=ACTIVE, 1=INACTIVE
     real(kind=kreal), target :: thlow(:), thup(:)
     integer(kind=kint) :: fstr_ctrl_get_ELEMENT_ACTIVATION
 
     character(len=HECMW_NAME_LEN),pointer :: element_id_p
     real(kind=kreal),pointer :: thlow_p(:), thup_p(:)
-    
-    integer(kind=kint) :: i, n
-    integer(kind=kint) :: rcode
-    character(len=HECMW_NAME_LEN) :: data_fmt,s1
-    integer(kind=kint) :: lid
-    character(len=HECMW_NAME_LEN) :: state_str
+    integer(kind=kint) :: rcode, n
+    character(len=HECMW_NAME_LEN) :: data_fmt, s1
 
     fstr_ctrl_get_ELEMENT_ACTIVATION = -1
-    if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
-    if( fstr_ctrl_get_param_ex( ctrl, 'EPSILON ',  '# ',  0, 'R', eps ) /= 0 ) return
+    
+    ! MODE (required)
+    if( fstr_ctrl_get_param_ex( ctrl, 'MODE ', 'FIXED,AMPLITUDE,DAMAGE', 1, 'P', mode ) /= 0 ) return
+    
+    ! Mode-specific parameters
+    if( mode == 1 ) then
+      ! FIXED: STATE required
+      if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', 'ON,OFF', 1, 'P', state ) /= 0 ) return
+      state = state - 1
+      measure = 1
+      amp = ''
+    elseif( mode == 2 ) then
+      ! AMPLITUDE: AMP required
+      if( fstr_ctrl_get_param_ex( ctrl, 'AMP ', '# ', 1, 'S', amp ) /= 0 ) return
+      state = 0
+      measure = 1
+    elseif( mode == 3 ) then
+      ! DAMAGE: MEASURE required
+      if( fstr_ctrl_get_param_ex( ctrl, 'MEASURE ', 'STRESS,STRAIN', 1, 'P', measure ) /= 0 ) return
+      measure = measure + 1
+      state = 0
+      amp = ''
+    endif
+    
+    ! EPSILON (optional)
+    eps = 1.0d-6
+    if( fstr_ctrl_get_param_ex( ctrl, 'EPSILON ', '# ', 0, 'R', eps ) /= 0 ) return
 
-    ! Default values
-    state = 0  ! Default is ACTIVE (0-based: 0=ACTIVE, 1=INACTIVE)
-    state_str = 'ON,OFF'
-    if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', state_str, 0, 'P', state ) /= 0 ) return
-    state = state - 1  ! Convert from 1-based (ON=1, OFF=2) to 0-based (ACTIVE=0, INACTIVE=1)
-
-    dtype = 1
-    s1 = 'NONE,STRESS,STRAIN '
-    if( fstr_ctrl_get_param_ex( ctrl, 'DEPENDS ', s1, 0, 'P', dtype ) /= 0 ) return
-
-    write(s1,*)  HECMW_NAME_LEN
+    write(s1,*) HECMW_NAME_LEN
     n = fstr_ctrl_get_data_line_n(ctrl)
-    !!
-    !! for avoiding stack overflow with intel 9 complier
-    !!
     element_id_p => grp_id_name(1)
     thlow_p => thlow
     thup_p => thup
 
-    if( dtype == 1 ) then
+    if( mode == 3 ) then
+      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(s1)), 'RR'
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p, thlow_p, thup_p )
+    else
       write( data_fmt, '(a,a)') 'S', trim(adjustl(s1))
       rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p )
-    else
-      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(s1)),'RR'
-      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p, thlow_p, thup_p )
     endif
 
     fstr_ctrl_get_ELEMENT_ACTIVATION = 0
