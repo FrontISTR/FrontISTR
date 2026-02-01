@@ -619,9 +619,9 @@ contains
           contact%states(i)%multiplier(:) = 0.d0
           etype = contact%master(id)%etype
           iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
-          if( iSS>0 ) &
-            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
-              contact%states(i)%direction(:) )
+          !if( iSS>0 ) &
+          !  call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
+          !    contact%states(i)%direction(:) )
           contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
           write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
             elemID(contact%master(id)%eid),       &

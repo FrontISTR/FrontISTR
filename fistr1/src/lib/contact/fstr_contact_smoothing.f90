@@ -14,7 +14,7 @@ module m_fstr_contact_smoothing
   ! Tikhonov regularization parameter
   real(kind=kreal), parameter, private :: NAGATA_EPSILON = 1.0d-4
 
-  integer(kind=kint), parameter, private :: DEBUG = 0
+  integer(kind=kint), parameter, private :: DEBUG = 1
 
   private
   public :: compute_Cab
@@ -104,15 +104,15 @@ contains
   !> Compute Cab correction matrices for edge (a,b)
   !! Kab = (Aab^T*Aab + eps*I)^-1 * Aab^T * D * Aab
   !! Cab_a = 0.5*I - Kab, Cab_b = 0.5*I + Kab
-  subroutine compute_Cab(na_vec, nb_vec, Cab_a, Cab_b)
+  subroutine compute_Cab_old(na_vec, nb_vec, Cab_a, Cab_b)
     implicit none
     real(kind=kreal), intent(in)  :: na_vec(3)   ! unit normal at vertex a
     real(kind=kreal), intent(in)  :: nb_vec(3)   ! unit normal at vertex b
     real(kind=kreal), intent(out) :: Cab_a(3,3)  ! correction matrix for vertex a
     real(kind=kreal), intent(out) :: Cab_b(3,3)  ! correction matrix for vertex b
 
-    real(kind=kreal) :: Aab(2,3), D(2,2), AtA(3,3), AtA_inv(3,3)
-    real(kind=kreal) :: Kab(3,3), temp(3,2), temp2(3,3)
+    real(kind=kreal) :: Aab(2,3), AtA(3,3), AtA_orig(3,3), AtA_inv(3,3)
+    real(kind=kreal) :: P(3,3)
     real(kind=kreal) :: epsilon
     integer(kind=kint) :: i
 
@@ -120,38 +120,103 @@ contains
     Aab(1,:) = na_vec(:)
     Aab(2,:) = nb_vec(:)
 
-    ! D = diag(-1/4, +1/4)
-    D = 0.0d0
-    D(1,1) = -0.25d0
-    D(2,2) =  0.25d0
-
-    ! Compute AtA = Aab^T * Aab + eps*I
+    ! Compute AtA = Aab^T * Aab
     AtA = matmul(transpose(Aab), Aab)
+    AtA_orig = AtA
+
+    ! Regularize: AtA_reg = AtA + eps*I
     epsilon = (AtA(1,1)+AtA(2,2)+AtA(3,3)) * NAGATA_EPSILON
     do i = 1, 3
       AtA(i,i) = AtA(i,i) + epsilon
     enddo
 
-    ! Invert AtA using calInverse
+    ! Invert AtA_reg using calInverse
     AtA_inv = AtA
     call calInverse(3, AtA_inv)
 
-    ! Compute Kab = AtA_inv * Aab^T * D * Aab
-    temp = matmul(transpose(Aab), D)     ! (3,2) = (3,2) * (2,2)
-    temp2 = matmul(temp, Aab)            ! (3,3) = (3,2) * (2,3)
-    Kab = matmul(AtA_inv, temp2)         ! (3,3) = (3,3) * (3,3)
+    ! Compute P = AtA_inv * AtA_orig
+    P = matmul(AtA_inv, AtA_orig)
 
-    ! Cab_a = 0.5*I - Kab
-    Cab_a = -Kab
+    ! Cab_a = 0.5*I + 0.25*P
+    Cab_a = 0.25d0 * P
     do i = 1, 3
       Cab_a(i,i) = Cab_a(i,i) + 0.5d0
     enddo
 
-    ! Cab_b = 0.5*I + Kab
-    Cab_b = Kab
+    ! Cab_b = 0.5*I - 0.25*P
+    Cab_b = -0.25d0 * P
     do i = 1, 3
       Cab_b(i,i) = Cab_b(i,i) + 0.5d0
     enddo
+
+  end subroutine compute_Cab_old
+
+  subroutine compute_Cab(na_vec, nb_vec, Cab_a, Cab_b)
+    implicit none
+    real(kind=kreal), intent(in)  :: na_vec(3)   ! unit normal at vertex a (n1)
+    real(kind=kreal), intent(in)  :: nb_vec(3)   ! unit normal at vertex b (n2)
+    real(kind=kreal), intent(out) :: Cab_a(3,3)
+    real(kind=kreal), intent(out) :: Cab_b(3,3)
+
+    real(kind=kreal) :: I3(3,3)
+    real(kind=kreal) :: m(3), mnorm
+    real(kind=kreal) :: a1, a2
+    real(kind=kreal) :: beta, den, K
+    real(kind=kreal) :: r(3)      ! r = a2*nb - a1*na
+    real(kind=kreal) :: Q(3,3)    ! outer(m, r)
+    integer(kind=kint) :: i, j
+
+    ! Identity
+    I3 = 0.0d0
+    do i=1,3
+      I3(i,i) = 1.0d0
+    enddo
+
+    ! m = normalize(na + nb)
+    m(:) = na_vec(:) + nb_vec(:)
+    mnorm = sqrt( m(1)*m(1) + m(2)*m(2) + m(3)*m(3) )
+
+    ! Fallback when na ~ -nb (average nearly zero)
+    if (mnorm < 1.0d-12) then
+      m(:) = na_vec(:)
+      mnorm = 1.0d0
+    else
+      m(:) = m(:) / mnorm
+    endif
+
+    ! a1 = m·na, a2 = m·nb
+    a1 = m(1)*na_vec(1) + m(2)*na_vec(2) + m(3)*na_vec(3)
+    a2 = m(1)*nb_vec(1) + m(2)*nb_vec(2) + m(3)*nb_vec(3)
+
+    ! Regularization for alpha (beta >= 0)
+    ! Option 1: fixed dimensionless parameter
+    beta = NAGATA_EPSILON   ! << define e.g. 1e-3 .. 1e-1 (see notes below)
+
+    den = 16.0d0*(a1*a1 + a2*a2) + beta
+
+    ! If den too small, do no curvature (midpoint)
+    if (den < 1.0d-20) then
+      Cab_a = 0.5d0 * I3
+      Cab_b = 0.5d0 * I3
+      return
+    endif
+
+    K = 4.0d0 / den
+
+    ! r = a2*nb - a1*na  (3-vector)
+    r(:) = a2*nb_vec(:) - a1*na_vec(:)
+
+    ! Q = outer(m, r) = m * r^T  (3x3)
+    do i=1,3
+      do j=1,3
+        Q(i,j) = m(i) * r(j)
+      enddo
+    enddo
+
+    ! Cab_a = 0.5*I - K*Q
+    ! Cab_b = 0.5*I + K*Q
+    Cab_a = 0.5d0*I3 - K*Q
+    Cab_b = 0.5d0*I3 + K*Q
 
   end subroutine compute_Cab
 
