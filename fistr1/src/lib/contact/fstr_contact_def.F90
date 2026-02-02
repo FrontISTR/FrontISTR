@@ -1189,11 +1189,11 @@ contains
       ! normal component
       elemg = 0.d0
       do j=1,nn
-        elemg(:) = elemg(:)+shapefunc(j)*elemdisp(:,j)
+        elemg(:) = elemg(:)+shapefunc(j)*(elemcrd(:,j)+elemdisp(:,j))
       enddo
-      dg(:) = ddisp(3*slave-2:3*slave) -  elemg(:)
+      dg(:) = coord(3*slave-2:3*slave)+disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave) -  elemg(:)
       dgn = dot_product( contact%states(i)%direction, dg )
-      nrlforce = contact%states(i)%multiplier(1)- mu*(contact%states(i)%wkdist-dgn)
+      nrlforce = contact%states(i)%multiplier(1) + mu*dgn
       B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-nrlforce*contact%states(i)%direction
 
       do j=1,nn
@@ -1313,13 +1313,13 @@ contains
       ! normal component
       elemg = 0.d0
       do j=1,nn
-        elemg(:) = elemg(:)+shapefunc(j)*elemdisp(:,j)
+        elemg(:) = elemg(:)+shapefunc(j)*(elemcrd(:,j)+elemdisp(:,j))
       enddo
-      dg(:) = ddisp(3*slave-2:3*slave) -  elemg(:)
+      dg(:) = coord(3*slave-2:3*slave)+disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave) -  elemg(:)
       dgn = dot_product( contact%states(i)%direction, dg )
-      contact%states(i)%wkdist = contact%states(i)%wkdist-dgn
-      contact%states(i)%multiplier(1) = contact%states(i)%multiplier(1)- mu*contact%states(i)%wkdist
-      contact%states(i)%distance = contact%states(i)%distance - dgn
+      contact%states(i)%wkdist = -dgn
+      contact%states(i)%multiplier(1) = contact%states(i)%multiplier(1) - mu*contact%states(i)%wkdist
+      contact%states(i)%distance = contact%states(i)%wkdist
       cnt = cnt+1
       lgnt(1) = lgnt(1)- contact%states(i)%wkdist
 
