@@ -230,11 +230,13 @@ contains
     real(kind=kreal), intent(in)    :: vertex_normals(3,nnode)  ! unit normals at vertices
     real(kind=kreal), intent(out)   :: P_matrix(3,nnode*3)      ! interpolation matrix
 
-    real(kind=kreal) :: N(6)
+    real(kind=kreal) :: N(8)
     real(kind=kreal) :: Cab_12_1(3,3), Cab_12_2(3,3)
     real(kind=kreal) :: Cab_23_2(3,3), Cab_23_3(3,3)
     real(kind=kreal) :: Cab_31_3(3,3), Cab_31_1(3,3)
-    real(kind=kreal) :: P1(3,3), P2(3,3), P3(3,3)
+    real(kind=kreal) :: Cab_34_3(3,3), Cab_34_4(3,3)
+    real(kind=kreal) :: Cab_41_4(3,3), Cab_41_1(3,3)
+    real(kind=kreal) :: P1(3,3), P2(3,3), P3(3,3), P4(3,3)
     real(kind=kreal) :: I3(3,3)
     real(kind=kreal) :: normals_tri6n(3,3)
     integer(kind=kint) :: i, j
@@ -266,6 +268,27 @@ contains
       P_matrix(1:3, 1:3) = P2
       P_matrix(1:3, 4:6) = P3
       P_matrix(1:3, 7:9) = P1
+
+    case(fe_quad4n)
+      call getShapeFunc(fe_quad8n, lpos, N)
+      
+      ! Compute Cab for 4 edges: (1,2), (2,3), (3,4), (4,1)
+      call compute_Cab(vertex_normals(:,1), vertex_normals(:,2), Cab_12_1, Cab_12_2)
+      call compute_Cab(vertex_normals(:,2), vertex_normals(:,3), Cab_23_2, Cab_23_3)
+      call compute_Cab(vertex_normals(:,3), vertex_normals(:,4), Cab_34_3, Cab_34_4)
+      call compute_Cab(vertex_normals(:,4), vertex_normals(:,1), Cab_41_4, Cab_41_1)
+
+      ! P matrices for fe_quad8n: node 1, 2, 3, 4
+      P1 = N(1) * I3 + N(5) * Cab_12_1 + N(8) * Cab_41_1
+      P2 = N(2) * I3 + N(5) * Cab_12_2 + N(6) * Cab_23_2
+      P3 = N(3) * I3 + N(6) * Cab_23_3 + N(7) * Cab_34_3
+      P4 = N(4) * I3 + N(7) * Cab_34_4 + N(8) * Cab_41_4
+
+      ! Assemble P in fe_quad4n order: 1, 2, 3, 4
+      P_matrix(1:3, 1:3) = P1
+      P_matrix(1:3, 4:6) = P2
+      P_matrix(1:3, 7:9) = P3
+      P_matrix(1:3, 10:12) = P4
 
     case default
       write(*,*) "Error: compute_interpolation_matrix_P - Unsupported element type for Nagata patch.",etype
@@ -300,11 +323,13 @@ contains
     real(kind=kreal), intent(in) :: currpos(:)      !< current coordinate of all nodes
     
     integer(kind=kint) :: i, etype
-    real(kind=kreal) :: elem(3,3)
+    real(kind=kreal) :: elem(3,4)
     real(kind=kreal), pointer :: vertex_normals(:,:)
     real(kind=kreal) :: Cab_12_1(3,3), Cab_12_2(3,3)
     real(kind=kreal) :: Cab_23_2(3,3), Cab_23_3(3,3)
     real(kind=kreal) :: Cab_31_3(3,3), Cab_31_1(3,3)
+    real(kind=kreal) :: Cab_34_3(3,3), Cab_34_4(3,3)
+    real(kind=kreal) :: Cab_41_4(3,3), Cab_41_1(3,3)
 
     etype = surf%etype
     vertex_normals => surf%vertex_normals
@@ -329,6 +354,29 @@ contains
       surf%intermediate_points(:,1) = matmul(Cab_12_1(1:3,1:3), elem(1:3,1)) + matmul(Cab_12_2(1:3,1:3), elem(1:3,2))
       surf%intermediate_points(:,2) = matmul(Cab_23_2(1:3,1:3), elem(1:3,2)) + matmul(Cab_23_3(1:3,1:3), elem(1:3,3))
       surf%intermediate_points(:,3) = matmul(Cab_31_3(1:3,1:3), elem(1:3,3)) + matmul(Cab_31_1(1:3,1:3), elem(1:3,1))
+
+    case(fe_quad4n)
+
+      if (.not. associated(surf%intermediate_points)) then
+        allocate(surf%intermediate_points(3,4))
+      end if
+
+      do i=1,4
+        elem(1:3,i) = currpos(3*(surf%nodes(i)-1)+1 : 3*surf%nodes(i))
+      enddo
+
+      ! Compute Cab for 4 edges: (1,2), (2,3), (3,4), (4,1)
+      call compute_Cab(vertex_normals(:,1), vertex_normals(:,2), Cab_12_1, Cab_12_2)
+      call compute_Cab(vertex_normals(:,2), vertex_normals(:,3), Cab_23_2, Cab_23_3)
+      call compute_Cab(vertex_normals(:,3), vertex_normals(:,4), Cab_34_3, Cab_34_4)
+      call compute_Cab(vertex_normals(:,4), vertex_normals(:,1), Cab_41_4, Cab_41_1)
+
+      ! intermediate points
+      surf%intermediate_points(:,1) = matmul(Cab_12_1(1:3,1:3), elem(1:3,1)) + matmul(Cab_12_2(1:3,1:3), elem(1:3,2))
+      surf%intermediate_points(:,2) = matmul(Cab_23_2(1:3,1:3), elem(1:3,2)) + matmul(Cab_23_3(1:3,1:3), elem(1:3,3))
+      surf%intermediate_points(:,3) = matmul(Cab_34_3(1:3,1:3), elem(1:3,3)) + matmul(Cab_34_4(1:3,1:3), elem(1:3,4))
+      surf%intermediate_points(:,4) = matmul(Cab_41_4(1:3,1:3), elem(1:3,4)) + matmul(Cab_41_1(1:3,1:3), elem(1:3,1))
+
     case default
       write(*,*) "Error: create_intermediate_points - Unsupported element type for Nagata patch.",etype
       stop 
