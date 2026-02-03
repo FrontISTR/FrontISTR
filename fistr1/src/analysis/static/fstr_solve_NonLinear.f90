@@ -256,7 +256,7 @@ contains
 
         if( fstr_is_contact_active() ) then
           call hecmw_mat_clear_b( conMAT )
-          call fstr_update_contact0(hecMESH, fstrSOLID, conMAT%B)
+          call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
         endif
         !    Consider SPC condition
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
@@ -518,8 +518,8 @@ contains
           call fstr_Update_NDForce(cstep,hecMESH,hecMAT,fstrSOLID,conMAT )
 
         if( fstr_is_contact_active() )  then
-            call hecmw_mat_clear_b( conMAT )
-          call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+          call hecmw_mat_clear_b( conMAT )
+          call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
         endif
 
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
@@ -600,7 +600,7 @@ contains
 
       if( fstr_is_contact_active() )  then
           call hecmw_mat_clear_b( conMAT )
-        call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
       endif
 
     enddo loopFORcontactAnalysis
