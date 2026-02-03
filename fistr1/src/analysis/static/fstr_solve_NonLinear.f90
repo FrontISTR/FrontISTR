@@ -336,7 +336,7 @@ contains
 
       if( fstr_is_contact_active() )  then
         call hecmw_mat_clear_b( conMAT )
-        call fstr_update_contact0(hecMESH, fstrSOLID, conMAT%B)
+        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
       endif
 
     enddo

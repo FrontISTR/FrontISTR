@@ -418,28 +418,6 @@ contains
     if( nc>0 ) gnt = gnt/nc
   end subroutine
 
-  !> Update lagrangian multiplier
-  subroutine fstr_ass_load_contactAlag( hecMESH, fstrSOLID, B )
-    type( hecmwST_local_mesh ), intent(in) :: hecMESH
-    type(fstr_solid), intent(inout)        :: fstrSOLID
-    real(kind=kreal), intent(inout)        :: B(:)        !< nodal force residual
-
-    integer(kind=kint) :: i, algtype
-
-    do i = 1, fstrSOLID%n_contacts
-      algtype = fstrSOLID%contacts(i)%algtype
-      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-        call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, B )
-      else if( algtype == CONTACTTIED ) then
-        call calcu_tied_force0( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
-      endif
-    enddo
-
-    do i = 1, fstrSOLID%n_embeds
-      call calcu_tied_force0( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
-    enddo
-  end subroutine
-
   !> Update tangent force
   subroutine fstr_update_contact_TangentForce( fstrSOLID )
     type(fstr_solid), intent(inout)        :: fstrSOLID
