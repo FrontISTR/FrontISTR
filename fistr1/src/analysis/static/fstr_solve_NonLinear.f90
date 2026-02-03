@@ -457,7 +457,7 @@ contains
           conMAT%X = 0.0d0
 
         if( fstr_is_contact_active() ) then
-          call fstr_AddContactStiffness(cstep,iter,conMAT,hecLagMAT,fstrSOLID)
+          call fstr_AddContactStiffness(cstep,ctAlgo,iter,conMAT,hecLagMAT,fstrSOLID)
         endif
 
         ! ----- Set Boundary condition
