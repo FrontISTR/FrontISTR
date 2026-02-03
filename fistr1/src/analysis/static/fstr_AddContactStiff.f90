@@ -344,34 +344,10 @@ contains
       grpid = fstrSOLID%embeds(i)%group
       if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      do j = 1, size(fstrSOLID%embeds(i)%slave)
+      call calcu_contact_ndforce_NodeSurf( ctAlgo, fstrSOLID%embeds(i), hecMESH%node(:), fstrSOLID%unode(:), &
+        fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), id_lagrange, conMAT, &
+        fstrSOLID%EMBED_NFORCE, fstrSOLID%EMBED_NFORCE )
 
-        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
-
-        ctsurf = fstrSOLID%embeds(i)%states(j)%surface
-        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
-        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
-        ndLocal(2:nnode+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(1:nnode)
-        do k = 1, nnode+1
-          ndDu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%dunode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
-          ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndDu((k-1)*3+1:(k-1)*3+3)
-          ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
-        enddo
-
-        do k=1,3
-          id_lagrange = id_lagrange + 1
-          lagrange = hecLagMAT%Lagrange(id_lagrange)
-  
-          fstrSOLID%embeds(i)%states(j)%multiplier(k) = hecLagMAT%Lagrange(id_lagrange)
-    
-          call getTiedNodalForce_Slag(fstrSOLID%embeds(i)%states(j),&
-           &  fstrSOLID%embeds(i)%master(ctsurf),k,ndu,lagrange,ctNForce,ctTForce)
-          ! Update non-eqilibrited force vector
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,-1.d0,ctNForce,ctTForce,  &
-          &  conMAT,fstrSOLID%EMBED_NFORCE,fstrSOLID%EMBED_NFORCE)
-
-        enddo
-      enddo
     enddo
 
     !    Consider SPC condition
@@ -463,7 +439,7 @@ contains
               &  lagrange,ctNForce,ctTForce)
             ! Update non-eqilibrited force vector
             call update_NDForce_contact(nnode,ndLocal,id_lagrange,1.d0,ctNForce,ctTForce,  &
-              &  conMAT,CONT_NFORCE,CONT_FRIC)
+              &  conMAT,CONT_NFORCE)
           end do
 
         else if( ctAlgo == kcaALagrange ) then
@@ -473,7 +449,7 @@ contains
           lagrange,ctNForce,ctTForce)
           ! Update non-eqilibrited force vector
           call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,  &
-            &  conMAT,CONT_NFORCE,CONT_FRIC)
+            &  conMAT,CONT_NFORCE)
 
         end if
 
