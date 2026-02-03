@@ -224,7 +224,7 @@ contains
           call fstr_set_contact_penalty( maxv )
         endif
         if( fstr_is_contact_active() ) then
-          call fstr_contactBC( cstep, iter, hecMESH, conMAT, fstrSOLID )
+          call fstr_AddContactStiffness(cstep,ctAlgo,iter,hecMESH,conMAT,hecLagMAT,fstrSOLID)
         endif
 
         ! ----- Set Boundary condition
@@ -457,7 +457,7 @@ contains
           conMAT%X = 0.0d0
 
         if( fstr_is_contact_active() ) then
-          call fstr_AddContactStiffness(cstep,ctAlgo,iter,conMAT,hecLagMAT,fstrSOLID)
+          call fstr_AddContactStiffness(cstep,ctAlgo,iter,hecMESH,conMAT,hecLagMAT,fstrSOLID)
         endif
 
         ! ----- Set Boundary condition
