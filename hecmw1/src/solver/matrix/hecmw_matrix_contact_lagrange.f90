@@ -419,8 +419,14 @@ contains
     if(associated(hecLagMAT%AL_lagrange)) deallocate(hecLagMAT%AL_lagrange)
     if(associated(hecLagMAT%AU_lagrange)) deallocate(hecLagMAT%AU_lagrange)
     if(associated(hecLagMAT%Lagrange)) deallocate(hecLagMAT%Lagrange)
+    if(associated(hecLagMAT%lag_node_table)) deallocate(hecLagMAT%lag_node_table)
 
     if( is_contact_active ) then
+      ! init lag_node_table
+      allocate(hecLagMAT%lag_node_table(np), stat=ierr)
+      if ( ierr /= 0) stop " Allocation error, hecLagMAT%lag_node_table "
+      hecLagMAT%lag_node_table = 0
+
       ! init indexU_lagrange
       allocate(hecLagMAT%indexU_lagrange(0:np), stat=ierr)
       if ( ierr /= 0) stop " Allocation error, hecLagMAT%indexU_lagrange "
