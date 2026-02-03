@@ -204,7 +204,7 @@ contains
 
     type(fstr_solid)                        :: fstrSOLID                !< type fstr_solid
     type(hecmwST_matrix_lagrange)          :: hecLagMAT            !< hecmwST_matrix_lagrange
-    integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag
+    integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag, slave_node
 
     id_lagrange = 0
 
@@ -215,6 +215,8 @@ contains
 
       do j = 1, size(fstrSOLID%contacts(i)%slave)
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+        slave_node = fstrSOLID%contacts(i)%slave(j)
+        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
         do k=1,nlag
           id_lagrange = id_lagrange + 1
           hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
@@ -226,6 +228,8 @@ contains
       nlag = 3
       do j = 1, size(fstrSOLID%embeds(i)%slave)
         if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+        slave_node = fstrSOLID%embeds(i)%slave(j)
+        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
         do k=1,nlag
           id_lagrange = id_lagrange + 1
           hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
