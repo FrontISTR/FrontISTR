@@ -52,8 +52,6 @@ contains
     hecLagMAT%AL_lagrange = 0.0d0
     hecLagMAT%AU_lagrange = 0.0d0
 
-    id_lagrange = 0
-
     do i = 1, fstrSOLID%n_contacts
 
       grpid = fstrSOLID%contacts(i)%group
@@ -70,6 +68,7 @@ contains
         nnode = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
         ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
         ndLocal(2:nnode+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(1:nnode)
+        id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
 
         do k=1,nlag
           id_lagrange = id_lagrange + 1
@@ -103,6 +102,7 @@ contains
         nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
         ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
         ndLocal(2:nnode+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(1:nnode)
+        id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
 
         do k=1,3
           id_lagrange = id_lagrange + 1
@@ -348,7 +348,6 @@ contains
     real(kind=kreal)   :: ctime, etime
     integer(kind=kint) :: if_type
 
-    id_lagrange = 0
     if( associated(fstrSOLID%CONT_NFORCE) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
     if( associated(fstrSOLID%CONT_FRIC) ) fstrSOLID%CONT_FRIC(:) = 0.d0
     if( associated(fstrSOLID%EMBED_NFORCE) ) fstrSOLID%EMBED_NFORCE(:) = 0.d0
@@ -381,6 +380,7 @@ contains
           ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndDu((k-1)*3+1:(k-1)*3+3)
           ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
         enddo
+        id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
 
         do k=1,nlag
           id_lagrange = id_lagrange + 1
@@ -429,6 +429,7 @@ contains
           ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndDu((k-1)*3+1:(k-1)*3+3)
           ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
         enddo
+        id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
 
         do k=1,3
           id_lagrange = id_lagrange + 1
@@ -651,8 +652,6 @@ contains
 
     np = hecMAT%NP ; ndof = hecMAT%NDOF
 
-    id_lagrange = 0
-
     do i = 1, fstrSOLID%n_contacts
 
       grpid = fstrSOLID%contacts(i)%group
@@ -681,6 +680,7 @@ contains
           ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
           ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
         enddo
+        id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
 
         do k=1,nlag
           id_lagrange = id_lagrange + 1
@@ -722,6 +722,7 @@ contains
           ndu((k-1)*3+1:(k-1)*3+3) = fstrSOLID%unode((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
           ndCoord((k-1)*3+1:(k-1)*3+3) = hecMESH%node((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
         enddo
+        id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
 
         do k=1,3
           id_lagrange = id_lagrange + 1
