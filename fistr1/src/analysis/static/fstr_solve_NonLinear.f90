@@ -192,6 +192,7 @@ contains
      ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
     if( .not. fstr_is_contact_active() ) n_al_step = 1
+    call hecmw_allreduce_I1(hecMESH, n_al_step, HECMW_MAX)
 
     do al_step = 1, n_al_step
 
