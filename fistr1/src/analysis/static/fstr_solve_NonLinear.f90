@@ -18,6 +18,7 @@ module m_fstr_NonLinearMethod
   use m_fstr_Residual
   use m_fstr_Restart
   use m_fstr_elemact
+  use fstr_matrix_con_contact
 
   implicit none
 

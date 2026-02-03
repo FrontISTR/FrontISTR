@@ -22,15 +22,13 @@ module m_addContactStiffness
 
   implicit none
 
+  private
+
   public :: fstr_AddContactStiffness
   public :: fstr_Update_NDForce_contact
   public :: update_NDForce_contact
   public :: fstr_ass_load_contact
-
-  private :: computeTm_Tt
-  private :: getContactStiffness
-  private :: getContactNodalForce
-  private :: getTrialFricForceANDcheckFricState
+  public :: fstr_ass_load_contactAlag
 
 contains
 
@@ -416,13 +414,10 @@ contains
     end if
 
     if( ctAlgo == kcaALagrange) then
-      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-        call calcu_contact_force0( contact, coord(:), disp(:)  &
-        , ddisp(:), contact%fcoeff, mu, mut, conMAT%B )
-      else if( algtype == CONTACTTIED ) then
+      if( algtype == CONTACTTIED ) then
         call calcu_tied_force0( contact, disp(:), ddisp(:), mu, conMAT%B )
+        return
       endif
-      return
     endif
 
     do j = 1, size(contact%slave)
@@ -447,18 +442,20 @@ contains
         if( ctAlgo == kcaSLagrange ) then
           id_lagrange = id_lagrange + 1
           lagrange = lagrange_array(id_lagrange)
-          contact%states(j)%multiplier(1) = lagrange
-
-          call getContactNodalForce(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
+          call getContactNodalForce_Slag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
           contact%tPenalty,contact%fcoeff,lagrange,ctNForce,ctTForce,.true.)
-          ! Update non-eqilibrited force vector
-          call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,  &
-            &  conMAT,CONT_NFORCE,CONT_FRIC)
-          
+
         else if( ctAlgo == kcaALagrange ) then
           id_lagrange = 0
           lagrange = 0.d0
+          call getContactNodalForce_Alag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
+          contact%tPenalty,contact%fcoeff,lagrange,ctNForce,ctTForce,.true.)
+
         end if
+
+        ! Update non-eqilibrited force vector
+        call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce,  &
+          &  conMAT,CONT_NFORCE,CONT_FRIC)
 
       else if( algtype == CONTACTTIED ) then
 
@@ -486,84 +483,7 @@ contains
 
   end subroutine calcu_contact_ndforce_NodeSurf
 
-  !>\brief This subroutine updates contact condition as follows:
-  !!-# Contact force from multiplier and disp increment
-  !!-# Update nodal force residual
-  subroutine calcu_contact_force0( contact, coord, disp, ddisp, fcoeff, mu,     &
-      mut, B )
-    type( tContact ), intent(inout)   :: contact        !< contact info
-    real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate
-    real(kind=kreal), intent(in)      :: disp(:)        !< disp till current step
-    real(kind=kreal), intent(in)      :: ddisp(:)       !< disp till current substep
-    real(kind=kreal), intent(in)      :: fcoeff         !< frictional coeff
-    real(kind=kreal), intent(in)      :: mu, mut        !< penalty
-    real(kind=kreal), intent(inout)   :: B(:)           !< nodal force residual
 
-    integer(kind=kint)  :: slave,  etype, master
-    integer(kind=kint)  :: nn, i, j, iSS
-    real(kind=kreal)    :: nrlforce, elemdisp(3,l_max_elem_node), tangent(3,2)
-    real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
-    real(kind=kreal)    :: dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
-    real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-    real(kind=kreal)    :: fric(2), f3(3*l_max_elem_node+3), edisp(3*l_max_elem_node+3)
-
-    do i= 1, size(contact%slave)
-      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
-      slave = contact%slave(i)
-      edisp(1:3) = ddisp(3*slave-2:3*slave)
-      master = contact%states(i)%surface
-
-      nn = size( contact%master(master)%nodes )
-      etype = contact%master(master)%etype
-      do j=1,nn
-        iSS = contact%master(master)%nodes(j)
-        elemdisp(:,j) = ddisp(3*iSS-2:3*iSS)
-        edisp(3*j+1:3*j+3) = ddisp(3*iSS-2:3*iSS)
-        elemcrd(:,j) = coord(3*iSS-2:3*iSS)+disp(3*iSS-2:3*iSS)
-      enddo
-      call getShapeFunc( etype, contact%states(i)%lpos(1:2), shapefunc )
-
-      ! normal component
-      elemg = 0.d0
-      do j=1,nn
-        elemg(:) = elemg(:)+shapefunc(j)*(elemcrd(:,j)+elemdisp(:,j))
-      enddo
-      dg(:) = coord(3*slave-2:3*slave)+disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave) -  elemg(:)
-      dgn = dot_product( contact%states(i)%direction, dg )
-      nrlforce = contact%states(i)%multiplier(1) + mu*dgn
-      B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-nrlforce*contact%states(i)%direction
-
-      do j=1,nn
-        iSS = contact%master(master)%nodes(j)
-        B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)+nrlforce*        &
-          shapefunc(j)*contact%states(i)%direction
-      enddo
-
-      if( fcoeff==0.d0 ) cycle
-      ! tangent component
-      call DispIncreMatrix( contact%states(i)%lpos(1:2), etype, nn, elemcrd, tangent,   &
-        metric, dispmat )
-      dxi(1) = dot_product( dispmat(1,1:nn*3+3), edisp(1:nn*3+3) )
-      dxi(2) = dot_product( dispmat(2,1:nn*3+3), edisp(1:nn*3+3) )
-      dxy(:) = matmul( metric, dxi )
-      fric(1:2) = contact%states(i)%multiplier(2:3) + mut*dxy(1:2)
-      f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
-
-      if(  contact%states(i)%state==CONTACTSLIP ) then
-        dgn = dsqrt( f3(1)*f3(1)+f3(2)*f3(2)+f3(3)*f3(3) )
-        f3(:) = f3(:)*fcoeff*contact%states(i)%multiplier(1)/dgn
-      endif
-      B(3*slave-2:3*slave) = B(3*slave-2:3*slave)-f3(1:3)
-      do j=1,nn
-        iSS = contact%master(master)%nodes(j)
-        B(3*iSS-2:3*iSS) = B(3*iSS-2:3*iSS)-f3(3*j+1:3*j+3)
-      enddo
-    enddo
-  end subroutine calcu_contact_force0
-
-  !>\brief This subroutine updates contact condition as follows:
-  !!-# Contact force from multiplier and disp increment
-  !!-# Update nodal force residual
   subroutine calcu_tied_force0( contact, disp, ddisp, mu, B )
     type( tContact ), intent(inout)   :: contact        !< contact info
     real(kind=kreal), intent(in)      :: disp(:)        !< disp till current step
@@ -662,7 +582,7 @@ contains
   end subroutine 
 
   !> \brief This subroutine obtains contact nodal force vector of contact pair
-  subroutine getContactNodalForce(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag)
+  subroutine getContactNodalForce_Slag(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
@@ -681,6 +601,8 @@ contains
 
     real(kind=kreal)   :: Tm(3, 3*(l_max_surface_node+1)), Tt(3, 3*(l_max_surface_node+1)) !< mapping matrices
     real(kind=kreal)   :: relativeDisp(3) !< relative displacement
+
+    ctState%multiplier(1) = lagrange
 
     nnode = size(tSurf%nodes)
 
@@ -726,7 +648,110 @@ contains
 
     endif
 
-  end subroutine getContactNodalForce
+  end subroutine getContactNodalForce_Slag
+
+  !> \brief This subroutine obtains contact nodal force vector of contact pair for ALagrange
+  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag)
+
+    use mSurfElement
+    use mContact, only: mu, mut
+    type(tContactState) :: ctState !< type tContactState
+    type(tSurfElement)  :: tSurf !< surface element structure
+    integer(kind=kint) :: nnode !< number of nodes of master segment
+    integer(kind=kint) :: j
+    real(kind=kreal)   :: fcoeff, tPenalty !< friction coefficient; tangential penalty (tPenalty not used, mut used instead)
+    real(kind=kreal)   :: lagrange !< not used for ALagrange (kept for interface compatibility)
+    real(kind=kreal)   :: ndCoord(:), ndDu(:) !< nodal coordinates (coord+disp+ddisp); nodal displacement increment (ddisp)
+    real(kind=kreal)   :: ctNForce(:) !< contact normal force vector
+    real(kind=kreal)   :: ctTForce(:) !< contact tangential force vector
+    logical            :: cflag  !< not used for ALagrange (kept for interface compatibility)
+
+    real(kind=kreal)   :: normal(3) !< normal vector at target point
+    real(kind=kreal)   :: shapefunc(l_max_surface_node)
+    real(kind=kreal)   :: elemcrd(3, l_max_elem_node) !< master node coords (coord+disp, for DispIncreMatrix)
+    real(kind=kreal)   :: edisp(3*l_max_elem_node+3) !< displacement increment
+    real(kind=kreal)   :: elemg(3), dg(3) !< interpolated master position; gap vector
+    real(kind=kreal)   :: dgn, nrlforce !< normal gap; normal force
+    real(kind=kreal)   :: tangent(3,2), metric(2,2), dispmat(2,l_max_elem_node*3+3)
+    real(kind=kreal)   :: dxi(2), dxy(2), fric(2), f3(3*l_max_elem_node+3)
+
+    nnode = size(tSurf%nodes)
+
+    ctNForce = 0.0d0
+    ctTForce = 0.0d0
+
+    normal(1:3) = ctState%direction(1:3)
+
+    call getShapeFunc( tSurf%etype, ctState%lpos(1:2), shapefunc )
+
+    ! Compute interpolated master position using current coordinates
+    ! elemg = sum_j shapefunc(j) * ndCoord(master_j)
+    elemg = 0.d0
+    do j = 1, nnode
+      elemg(1:3) = elemg(1:3) + shapefunc(j) * ndCoord(j*3+1:j*3+3)
+    enddo
+
+    ! Gap vector: slave current position - interpolated master position
+    dg(1:3) = ndCoord(1:3) - elemg(1:3)
+
+    ! Normal gap
+    dgn = dot_product( normal, dg )
+
+    ! Normal force: multiplier + penalty * gap
+    nrlforce = ctState%multiplier(1) + mu*dgn
+
+    ! Slave node force: -nrlforce * normal
+    ctNForce(1:3) = -nrlforce * normal(1:3)
+
+    ! Master node forces: +nrlforce * shapefunc(j) * normal
+    do j = 1, nnode
+      ctNForce(j*3+1:j*3+3) = nrlforce * shapefunc(j) * normal(1:3)
+    enddo
+
+    ! Lagrange row (not used in ALagrange, set to 0)
+    ctNForce((nnode+1)*3+1) = 0.d0
+
+    if( fcoeff == 0.d0 ) return
+
+    ! --- Tangent component ---
+
+    ! Prepare elemcrd = ndCoord - ndDu (i.e., coord + disp) for DispIncreMatrix
+    do j = 1, nnode
+      elemcrd(1:3, j) = ndCoord(j*3+1:j*3+3) - ndDu(j*3+1:j*3+3)
+    enddo
+
+    ! Prepare edisp from ndDu
+    edisp(1:3) = ndDu(1:3)  ! slave
+    do j = 1, nnode
+      edisp(j*3+1:j*3+3) = ndDu(j*3+1:j*3+3)  ! master nodes
+    enddo
+
+    call DispIncreMatrix( ctState%lpos(1:2), tSurf%etype, nnode, elemcrd(:,1:nnode), tangent, metric, dispmat )
+
+    dxi(1) = dot_product( dispmat(1,1:nnode*3+3), edisp(1:nnode*3+3) )
+    dxi(2) = dot_product( dispmat(2,1:nnode*3+3), edisp(1:nnode*3+3) )
+    dxy(1:2) = matmul( metric, dxi )
+
+    fric(1:2) = ctState%multiplier(2:3) + mut*dxy(1:2)
+    f3(1:nnode*3+3) = fric(1)*dispmat(1,1:nnode*3+3) + fric(2)*dispmat(2,1:nnode*3+3)
+
+    if( ctState%state == CONTACTSLIP ) then
+      dgn = dsqrt( f3(1)*f3(1) + f3(2)*f3(2) + f3(3)*f3(3) )
+      f3(1:nnode*3+3) = f3(1:nnode*3+3) * fcoeff * ctState%multiplier(1) / dgn
+    endif
+
+    ! Slave node friction force
+    ctTForce(1:3) = -f3(1:3)
+
+    ! Master node friction forces
+    do j = 1, nnode
+      ctTForce(j*3+1:j*3+3) = -f3(j*3+1:j*3+3)
+    enddo
+
+    ! Lagrange row (not used in ALagrange, set to 0)
+    ctTForce((nnode+1)*3+1) = 0.d0
+
+  end subroutine getContactNodalForce_Alag
 
 
   !> \brief This subroutine calculates trial friction force and checks friction state
@@ -844,7 +869,7 @@ contains
           if(if_flag) call get_shrink_elemact_surf(fstrSOLID%contacts(i)%states(j),ndCoord, nnode)
           if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
             ! Obtain contact nodal force vector of contact pair
-            call getContactNodalForce(fstrSOLID%contacts(i)%states(j),fstrSOLID%contacts(i)%master(ctsurf),ndCoord,ndu,    &
+            call getContactNodalForce_Slag(fstrSOLID%contacts(i)%states(j),fstrSOLID%contacts(i)%master(ctsurf),ndCoord,ndu,    &
             fstrSOLID%contacts(i)%tPenalty,fstrSOLID%contacts(i)%fcoeff,lagrange,ctNForce,ctTForce,.false.)
             ! Update non-eqilibrited force vector
             call update_NDForce_contact(nnode,ndLocal,id_lagrange,lagrange,ctNForce,ctTForce, & 
