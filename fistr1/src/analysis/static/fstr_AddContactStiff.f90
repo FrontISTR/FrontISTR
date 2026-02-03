@@ -29,6 +29,7 @@ module m_addContactStiffness
   public :: update_NDForce_contact
   public :: fstr_ass_load_contact
   public :: fstr_ass_load_contactAlag
+  public :: fstr_contactBC
 
 contains
 
@@ -54,7 +55,7 @@ contains
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      call calcu_contact_stiffness_NodeSurf( fstrSOLID%contacts(i), iter, hecLagMAT%Lagrange(:), &
+      call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), iter, hecLagMAT%Lagrange(:), &
         id_lagrange, hecMAT, hecLagMAT )
 
     enddo
@@ -64,7 +65,7 @@ contains
       grpid = fstrSOLID%embeds(i)%group
       if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      call calcu_contact_stiffness_NodeSurf( fstrSOLID%embeds(i), iter, hecLagMAT%Lagrange(:), &
+      call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%embeds(i), iter, hecLagMAT%Lagrange(:), &
         id_lagrange, hecMAT, hecLagMAT )
 
     enddo
@@ -73,8 +74,9 @@ contains
 
   !>\brief This subroutine calculates contact stiffness for each contact pair
   !! and assembles it into global stiffness matrix
-  subroutine calcu_contact_stiffness_NodeSurf(contact, iter, lagrange_array, &
+  subroutine calcu_contact_stiffness_NodeSurf( ctAlgo, contact, iter, lagrange_array, &
       id_lagrange, hecMAT, hecLagMAT)
+    integer(kind=kint), intent(in)             :: ctAlgo  !< contact analysis algorithm
     type(tContact), intent(inout)              :: contact         !< contact info
     integer(kind=kint), intent(in)             :: iter            !< iteration number
     real(kind=kreal), intent(in)               :: lagrange_array(:) !< Lagrange multiplier array
@@ -83,12 +85,11 @@ contains
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT     !< Lagrange matrix
 
     integer(kind=kint) :: ctsurf, nnode, ndLocal(21)
-    integer(kind=kint) :: j, k, nlag, algtype
+    integer(kind=kint) :: j, k, algtype
     real(kind=kreal)   :: lagrange
     real(kind=kreal)   :: stiffness(21*3 + 1, 21*3 + 1)
 
     algtype = contact%algtype
-    nlag = fstr_get_num_lagrange_pernode(algtype)
 
     do j = 1, size(contact%slave)
 
@@ -99,28 +100,133 @@ contains
       ndLocal(1) = contact%slave(j)
       ndLocal(2:nnode+1) = contact%master(ctsurf)%nodes(1:nnode)
 
-      do k = 1, nlag
-        id_lagrange = id_lagrange + 1
-        lagrange = lagrange_array(id_lagrange)
+      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
 
-        if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+        if( ctAlgo == kcaSLagrange ) then
+          id_lagrange = id_lagrange + 1
+          lagrange = lagrange_array(id_lagrange)
           ! Obtain contact stiffness matrix of contact pair
-          call getContactStiffness(contact%states(j), contact%master(ctsurf), iter, &
+          call getContactStiffness_Slag(contact%states(j), contact%master(ctsurf), iter, &
             contact%tPenalty, contact%fcoeff, lagrange, stiffness)
-          ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
-          call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, hecMAT, hecLagMAT)
-        else if( algtype == CONTACTTIED ) then
-          call getTiedStiffness(contact%states(j), contact%master(ctsurf), k, stiffness)
-          ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
-          call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, 0.d0, stiffness, hecMAT, hecLagMAT)
-        endif
-      enddo
+
+        else if( ctAlgo == kcaALagrange ) then
+
+        end if
+
+        ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
+        call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, hecMAT, hecLagMAT)
+
+      else if( algtype == CONTACTTIED ) then
+
+        if( ctAlgo == kcaSLagrange ) then
+          do k = 1, 3
+            id_lagrange = id_lagrange + 1
+            lagrange = lagrange_array(id_lagrange)
+
+            call getTiedStiffness_Slag(contact%states(j), contact%master(ctsurf), k, stiffness)
+            ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
+            call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, 0.d0, stiffness, hecMAT, hecLagMAT)
+          enddo
+
+        else if( ctAlgo == kcaALagrange ) then
+
+        end if
+
+      endif
+      
+
     enddo
 
   end subroutine calcu_contact_stiffness_NodeSurf
 
+  !> Introduce contact stiff into global stiff matrix or mpc conditions into hecMESH
+  subroutine fstr_contactBC( cstep, iter, hecMESH, hecMAT, fstrSOLID )
+    use fstr_ctrl_modifier
+    integer(kind=kint)                       :: cstep     !< current loading step
+    integer(kind=kint), intent(in)           :: iter      !< NR iterations
+    type (hecmwST_local_mesh), intent(inout) :: hecMESH   !< type mesh
+    type (hecmwST_matrix), intent(inout)     :: hecMAT    !< type matrix
+    type(fstr_solid), intent(inout)          :: fstrSOLID !< type fstr_solid
+
+    integer(kind=kint), parameter :: NDOF=3
+
+    integer(kind=kint) :: i, j, k, m, nnode, nd, etype, grpid
+    integer(kind=kint) :: ctsurf, ndLocal(l_max_surface_node+1)
+    integer(kind=kint) :: algtype    
+    real(kind=kreal) :: factor, elecoord( 3, l_max_surface_node)
+    real(kind=kreal) :: stiff(l_max_surface_node*3+3, l_max_surface_node*3+3)
+    real(kind=kreal) :: nrlforce, force(l_max_surface_node*3+3)
+
+    factor = fstrSOLID%FACTOR(2)
+
+    do i=1,fstrSOLID%n_contacts
+
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      algtype = fstrSOLID%contacts(i)%algtype
+
+      do j=1, size(fstrSOLID%contacts(i)%slave)
+        if( fstrSOLID%contacts(i)%states(j)%state==CONTACTFREE ) cycle   ! free
+        ctsurf = fstrSOLID%contacts(i)%states(j)%surface          ! contacting surface
+        etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
+        do k=1,nnode
+          ndLocal(k+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(k)
+          elecoord(1:3,k)=hecMESH%node(3*ndLocal(k+1)-2:3*ndLocal(k+1))
+        enddo
+        if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+          call contact2stiff( algtype, fstrSOLID%contacts(i)%states(j),    &
+          etype, nnode, elecoord(:,:), mu, mut, fstrSOLID%contacts(i)%fcoeff,    &
+          fstrSOLID%contacts(i)%symmetric, stiff(:,:), force(:) )
+        else if( algtype == CONTACTTIED ) then
+          call tied2stiff( algtype, fstrSOLID%contacts(i)%states(j),    &
+          etype, nnode, mu, mut, stiff(:,:), force(:) )
+        endif
+        ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
+        call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiff)
+
+        if( iter>1 ) cycle
+        !  if( fstrSOLID%contacts(i)%states(j)%multiplier(1)/=0.d0 ) cycle
+        ! In case of new contact nodes, add enforced disp constraint
+        fstrSOLID%contacts(i)%states(j)%wkdist = fstrSOLID%contacts(i)%states(j)%distance
+        nrlforce = -mu*fstrSOLID%contacts(i)%states(j)%distance
+        force(1:nnode*NDOF+NDOF) = force(1:nnode*NDOF+NDOF)*nrlforce
+        do m=1,nnode+1
+          nd = ndLocal(m)
+          do k=1,NDOF
+            hecMAT%B(NDOF*(nd-1)+k)=hecMAT%B(NDOF*(nd-1)+k)-force((m-1)*NDOF+k)
+          enddo
+        enddo
+
+      enddo
+    enddo
+
+    do i=1,fstrSOLID%n_embeds
+      grpid = fstrSOLID%embeds(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+      do j=1, size(fstrSOLID%embeds(i)%slave)
+        if( fstrSOLID%embeds(i)%states(j)%state==CONTACTFREE ) cycle   ! free
+        ctsurf = fstrSOLID%embeds(i)%states(j)%surface          ! contacting surface
+        etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
+        nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
+        ndLocal(1) = fstrSOLID%embeds(i)%slave(j)
+        do k=1,nnode
+          ndLocal(k+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(k)
+          elecoord(1:3,k)=hecMESH%node(3*ndLocal(k+1)-2:3*ndLocal(k+1))
+        enddo
+        call tied2stiff( algtype, fstrSOLID%embeds(i)%states(j),    &
+        etype, nnode, mu, mut, stiff(:,:), force(:) )
+        ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
+        call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiff)
+      enddo
+    enddo
+
+  end subroutine
+
   !> \brief This subroutine obtains contact stiffness matrix of contact pair
-  subroutine getTiedStiffness(ctState,tSurf,idof,stiffness)
+  subroutine getTiedStiffness_Slag(ctState,tSurf,idof,stiffness)
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
@@ -152,7 +258,7 @@ contains
       stiffness(i,j) = nTm(j);  stiffness(j,i) = nTm(j)
     enddo
 
-  end subroutine getTiedStiffness
+  end subroutine getTiedStiffness_Slag
 
   !> \brief Compute Tm (relative displacement mapping) and optionally Tt (tangential mapping)
   !! This subroutine constructs the mapping matrices based on contact_disc.md section 10:
@@ -220,7 +326,7 @@ contains
   end subroutine computeTm_Tt
 
   !> \brief This subroutine obtains contact stiffness matrix of contact pair
-  subroutine getContactStiffness(ctState,tSurf,iter,tPenalty,fcoeff,lagrange,stiffness)
+  subroutine getContactStiffness_Slag(ctState,tSurf,iter,tPenalty,fcoeff,lagrange,stiffness)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
@@ -302,7 +408,7 @@ contains
       endif
     endif
 
-  end subroutine getContactStiffness
+  end subroutine getContactStiffness_Slag
 
   !> \brief This subroutine obtains contact nodal force vector of each contact pair
   !! and assembles it into right-hand side vector to update non-equilibrated nodal force vector.
