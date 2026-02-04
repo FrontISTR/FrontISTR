@@ -9,7 +9,6 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw2fstr_mesh_conv.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_setup_util.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_modifier.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_contact.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_common.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_material.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_static.f90

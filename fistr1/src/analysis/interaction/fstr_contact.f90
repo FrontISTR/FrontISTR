@@ -6,6 +6,7 @@
 module mContact
 
   use mContactDef
+  use m_fstr_contact_lib
   use hecmw
   use m_fstr
   implicit none

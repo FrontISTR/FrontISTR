@@ -95,9 +95,7 @@ OBJSF = \
         make_result.@f90objfilepostfix@ \
         fstr_ass_load.@f90objfilepostfix@ \
         static_output.@f90objfilepostfix@ \
-        fstr_mat_con_contact.@f90objfilepostfix@ \
         fstr_Residual.@f90objfilepostfix@ \
-        fstr_AddContactStiff.@f90objfilepostfix@ \
         fstr_AddBC.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \
         fstr_solve_QuasiNewton.@f90objfilepostfix@ \
