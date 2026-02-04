@@ -20,6 +20,18 @@ module mContactDef
 
   implicit none
 
+  real(kind=kreal), save :: mu=1.d10  !< penalty, default value
+  real(kind=kreal), save :: mut=1.d6  !< penalty along tangent direction
+  real(kind=kreal), save :: cdotp=1.d3  !< mu=cdotp*maxval
+
+  real(kind=kreal), save :: cgn=1.d-5 !< convergent condition of penetration
+  real(kind=kreal), save :: cgt=1.d-3 !< convergent condition of relative tangent disp
+
+  real(kind=kreal), save :: gnt(2)    !< 1:current average penetration;
+  !< 2:current relative tangent displacement
+  real(kind=kreal), save :: bakgnt(2) !< 1:current average penetration;
+  !< 2:current relative tangent displacement!
+
   integer, parameter :: CONTACTUNKNOWN = -1
   !> contact state definition
   integer, parameter :: CONTACTFREE = -1
@@ -502,6 +514,19 @@ contains
       is_active_contact = .false.
     endif
   end function
+
+  !> Write out the contact definition read from mesh file
+  subroutine print_contatct_pair( file, pair )
+    integer(kind=kint), intent(in)           :: file
+    type( hecmwST_contact_pair ), intent(in) :: pair
+
+    integer(kind=kint) :: i
+    write(file,*) "Number of contact pair", pair%n_pair
+    do i=1,pair%n_pair
+      write(file,*) trim(pair%name(i)), pair%type(i), pair%slave_grp_id(i)  &
+        ,pair%master_grp_id(i), pair%slave_orisgrp_id(i)
+    enddo
+  end subroutine
 
 
 end module mContactDef
