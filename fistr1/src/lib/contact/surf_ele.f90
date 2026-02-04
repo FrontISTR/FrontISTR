@@ -6,7 +6,11 @@
 !>  It provides basic definition of surface elements (trianglar and quadrilateral)
 !!  and functions for fetching its neighborhood information
 module mSurfElement
-  use hecmw, only: kint, kreal
+  use hecmw_util
+  use elementInfo
+  use m_utilities
+  use bucket_search
+
   implicit none
 
   integer(kind=kint), parameter       :: l_max_surface_node =20
@@ -35,7 +39,6 @@ contains
 
   !> Initializer
   subroutine initialize_surf( eid, etype, nsurf, surf )
-    use elementInfo
     integer(kind=kint), intent(in)    :: eid    !< element ID
     integer(kind=kint), intent(in)    :: etype  !< element type
     integer(kind=kint), intent(in)    :: nsurf  !< surface ID
@@ -85,9 +88,6 @@ contains
 
   !> Find neighboring surface elements
   subroutine find_surface_neighbor( surf, bktDB )
-    use m_utilities
-    use hecmw_util
-    use bucket_search
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
     type(bucketDB), intent(in) :: bktDB            !< bucket info
     integer(kind=kint) :: i, j, ii,jj, nd1, nd2, nsurf
@@ -154,7 +154,6 @@ contains
 
   !> Tracing next contact position
   integer(kind=kint) function next_position( surf, cpos )
-    use elementInfo
     type(tSurfElement), intent(in) :: surf      !< current surface element
     real(kind=kreal), intent(in)   :: cpos(2)   !< current position(local coordinate)
 
@@ -217,7 +216,6 @@ contains
 
   !> Compute reference length of surface elements
   subroutine update_surface_reflen( surf, coord )
-    use elementInfo
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
     real(kind=kreal), intent(in)      :: coord(:)  !< current coordinate of all nodes
     real(kind=kreal) :: elem(3, l_max_surface_node), r0(2)
@@ -277,7 +275,6 @@ contains
 
   !> Update bucket info for searching surface elements
   subroutine update_surface_bucket_info(surf, bktDB)
-    use bucket_search
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
     type(bucketDB), intent(inout) :: bktDB         !< bucket info
     real(kind=kreal) :: x_min(3), x_max(3), d_max
