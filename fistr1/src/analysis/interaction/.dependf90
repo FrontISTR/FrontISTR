@@ -1,0 +1,12 @@
+fstr_contact_geom.o : fstr_contact_geom.f90 
+fstr_contact_interference.o : fstr_contact_interference.f90 
+fstr_contact_elem_common.o : fstr_contact_elem_common.f90 fstr_contact_geom.o 
+fstr_contact_elem_slag.o : fstr_contact_elem_slag.f90 fstr_contact_elem_common.o 
+fstr_contact_elem_alag.o : fstr_contact_elem_alag.f90 fstr_contact_elem_common.o 
+fstr_contact_element.o : fstr_contact_element.f90 fstr_contact_elem_common.o fstr_contact_elem_slag.o fstr_contact_elem_alag.o 
+fstr_contact_assembly.o : fstr_contact_assembly.f90 fstr_contact_element.o fstr_contact_interference.o 
+fstr_contact_search.o : fstr_contact_search.f90 fstr_contact_geom.o fstr_contact_element.o fstr_contact_interference.o 
+fstr_contact_mpc.o : fstr_contact_mpc.f90 fstr_contact_element.o 
+fstr_contact_output.o : fstr_contact_output.f90 fstr_contact_geom.o 
+fstr_contact.o : fstr_contact.f90 fstr_contact_assembly.o fstr_contact_element.o fstr_contact_geom.o fstr_contact_search.o fstr_contact_mpc.o fstr_contact_output.o 
+fstr_mat_con_contact.o : fstr_mat_con_contact.f90 

@@ -19,6 +19,8 @@ module m_fstr_NonLinearMethod
   use m_fstr_Restart
   use m_fstr_elemact
   use fstr_matrix_con_contact
+  use mContact
+  use m_solve_LINEQ_contact
 
   implicit none
 
@@ -129,9 +131,6 @@ contains
   !> by Simo & Laursen (Compu & Struct, Vol42, pp97-116, 1992 )
   subroutine fstr_Newton_contactALag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM,                   &
       restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange, conMAT )
-    use mContact
-    use m_addContactStiffness
-    use m_solve_LINEQ_contact
 
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -188,7 +187,12 @@ contains
 
     call hecmw_mat_clear_b(conMAT)
 
-    if( fstr_is_contact_active() ) call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+    if( fstr_is_contact_active() ) then
+      call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+      !    Consider SPC condition
+      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
+      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+    endif
 
      ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
@@ -343,6 +347,9 @@ contains
       if( fstr_is_contact_active() )  then
         call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+        !    Consider SPC condition
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
       endif
 
     enddo
@@ -367,10 +374,6 @@ contains
   !> Standard Lagrange multiplier algorithm for contact analysis is incoluded in this subroutine.
   subroutine fstr_Newton_contactSLag( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT,                  &
       restart_step_num, restart_substep_num, sub_step, ctime, dtime, infoCTChange, conMAT )
-
-    use mContact
-    use m_addContactStiffness
-    use m_solve_LINEQ_contact
 
     integer, intent(in)                    :: cstep        !< current loading step
     type (hecmwST_local_mesh)              :: hecMESH      !< hecmw mesh
@@ -435,6 +438,9 @@ contains
 
     if( fstr_is_contact_active() )  then
       call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+      !    Consider SPC condition
+      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
+      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
     endif
 
     stepcnt = 0
@@ -526,6 +532,9 @@ contains
         if( fstr_is_contact_active() )  then
           call hecmw_mat_clear_b( conMAT )
           call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+          !    Consider SPC condition
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
         endif
 
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
@@ -609,6 +618,9 @@ contains
       if( fstr_is_contact_active() )  then
           call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+        !    Consider SPC condition
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
       endif
 
     enddo loopFORcontactAnalysis
