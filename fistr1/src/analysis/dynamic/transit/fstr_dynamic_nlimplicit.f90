@@ -18,7 +18,6 @@ module fstr_dynamic_nlimplicit
   use fstr_matrix_con_contact
   use m_fstr_Residual
   use mContact
-  use m_addContactStiffness
   use m_solve_LINEQ_contact
   use m_dynamic_init_variables
 
