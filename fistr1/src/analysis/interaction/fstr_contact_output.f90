@@ -20,6 +20,7 @@ module m_fstr_contact_output
   public :: setup_contact_elesurf_for_area
   public :: calc_contact_area
   public :: fstr_setup_parancon_contactvalue
+  public :: update_contact_state_vectors
 
   private :: calc_nodalarea_surfelement
 
@@ -295,5 +296,26 @@ contains
 
     deallocate(displs,vec_all)
   end subroutine
+
+  !> Update contact state output vectors (CONT_RELVEL, CONT_STATE)
+  subroutine update_contact_state_vectors( contact, dt, relvel_vec, state_vec )
+    type( tContact ), intent(in)      :: contact        !< contact info
+    real(kind=kreal), intent(in)      :: dt             !< time increment
+    real(kind=kreal), intent(inout)   :: relvel_vec(:) !< relative velocity vector
+    real(kind=kreal), intent(inout)   :: state_vec(:)  !< contact state vector
+
+    integer(kind=kint)  :: i, slave
+
+    do i= 1, size(contact%slave)
+      slave = contact%slave(i)
+      if( state_vec(slave) < 0.1d0 .or. contact%states(i)%state > 0 ) &
+      &  state_vec(slave) = dble(contact%states(i)%state)
+
+      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
+      if( dt < 1.d-16 ) cycle ! too small delta t
+      relvel_vec(3*slave-2:3*slave) = contact%states(i)%reldisp(1:3)/dt
+    enddo
+
+  end subroutine update_contact_state_vectors
 
 end module m_fstr_contact_output
