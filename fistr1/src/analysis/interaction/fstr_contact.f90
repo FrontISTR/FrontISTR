@@ -51,9 +51,8 @@ module mContact
   public :: setup_contact_elesurf_for_area
   public :: calc_contact_area
   public :: fstr_setup_parancon_contactvalue
-
-  ! Internal utilities
-  private :: set_contact_state_vector
+  public :: update_contact_state_vectors
+  public :: fstr_update_contact_state_vectors
 
 contains
 
@@ -212,11 +211,6 @@ contains
     if( is_init .and. ctAlgo == kcaSLAGRANGE .and. fstrSOLID%n_contacts > 0 ) &
     &  call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
 
-    !for output contact state
-    do i=1,fstrSOLID%n_contacts
-      call set_contact_state_vector( fstrSOLID%contacts(i), dt, fstrSOLID%CONT_RELVEL, fstrSOLID%CONT_STATE )
-    enddo
-
     infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
 
@@ -314,16 +308,20 @@ contains
       fstr_is_matrixStructure_changed = .true.
   end function
 
-  subroutine fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchanged )
+  subroutine fstr_update_contact_multiplier( cstep, hecMESH, fstrSOLID, ctchanged )
+    integer(kind=kint), intent(in)        :: cstep
     type( hecmwST_local_mesh ), intent(in) :: hecMESH
     type(fstr_solid), intent(inout)        :: fstrSOLID
     logical, intent(out)                   :: ctchanged
 
-    integer(kind=kint) :: i, nc, algtype
+    integer(kind=kint) :: i, nc, algtype, grpid
 
     gnt = 0.d0;  ctchanged = .false.
     nc = fstrSOLID%n_contacts+fstrSOLID%n_embeds
     do i=1, fstrSOLID%n_contacts
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
         call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
@@ -343,34 +341,34 @@ contains
   end subroutine
 
   !> Update tangent force
-  subroutine fstr_update_contact_TangentForce( fstrSOLID )
+  subroutine fstr_update_contact_TangentForce( cstep, fstrSOLID )
+    integer(kind=kint), intent(in)        :: cstep
     type(fstr_solid), intent(inout)        :: fstrSOLID
 
-    integer(kind=kint) :: i
+    integer(kind=kint) :: i, grpid
 
     do i=1, fstrSOLID%n_contacts
+
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
       call update_contact_TangentForce( fstrSOLID%contacts(i) )
     enddo
   end subroutine
 
-  subroutine set_contact_state_vector( contact, dt, relvel_vec, state_vec )
-    type( tContact ), intent(in)      :: contact        !< contact info
-    real(kind=kreal), intent(in)      :: dt
-    real(kind=kreal), intent(inout)   :: relvel_vec(:)       !< mesh coordinate
-    real(kind=kreal), intent(inout)   :: state_vec(:)        !< disp till current now
+  !> Update contact state output vectors for all contacts
+  subroutine fstr_update_contact_state_vectors( fstrSOLID, dt )
+    type(fstr_solid), intent(inout)        :: fstrSOLID
+    real(kind=kreal), intent(in)           :: dt  !< time increment
 
-    integer(kind=kint)  :: i, slave
+    integer(kind=kint) :: i
 
-    do i= 1, size(contact%slave)
-      slave = contact%slave(i)
-      if( state_vec(slave) < 0.1d0 .or. contact%states(i)%state > 0 ) &
-      &  state_vec(slave) = dble(contact%states(i)%state)
+    if( associated( fstrSOLID%CONT_RELVEL ) ) fstrSOLID%CONT_RELVEL(:) = 0.d0
+    if( associated( fstrSOLID%CONT_STATE ) ) fstrSOLID%CONT_STATE(:) = 0.d0
 
-      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
-      if( dt < 1.d-16 ) cycle ! too small delta t
-      relvel_vec(3*slave-2:3*slave) = contact%states(i)%reldisp(1:3)/dt
+    do i=1, fstrSOLID%n_contacts
+      call update_contact_state_vectors( fstrSOLID%contacts(i), dt, fstrSOLID%CONT_RELVEL, fstrSOLID%CONT_STATE )
     enddo
-
-  end subroutine set_contact_state_vector
+  end subroutine
 
 end module mContact
