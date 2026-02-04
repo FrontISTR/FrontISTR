@@ -626,7 +626,7 @@ contains
     enddo
 
     call fstr_UpdateState(hecMESH, fstrSOLID, tincr)
-    call fstr_update_contact_TangentForce( fstrSOLID )
+    call fstr_update_contact_TangentForce( cstep, fstrSOLID )
     if( fstrSOLID%n_embeds > 0 .and. paraContactFlag ) then
       call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%EMBED_NFORCE,1)
       call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
