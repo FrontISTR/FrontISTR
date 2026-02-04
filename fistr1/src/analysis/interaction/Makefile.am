@@ -83,10 +83,18 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-        fstr_contact_lib.@f90objfilepostfix@ \
+        fstr_contact_geom.@f90objfilepostfix@ \
+        fstr_contact_interference.@f90objfilepostfix@ \
+        fstr_contact_elem_common.@f90objfilepostfix@ \
+        fstr_contact_elem_slag.@f90objfilepostfix@ \
+        fstr_contact_elem_alag.@f90objfilepostfix@ \
+        fstr_contact_element.@f90objfilepostfix@ \
+        fstr_contact_search.@f90objfilepostfix@ \
+        fstr_contact_assembly.@f90objfilepostfix@ \
+        fstr_contact_mpc.@f90objfilepostfix@ \
+        fstr_contact_output.@f90objfilepostfix@ \
         fstr_contact.@f90objfilepostfix@ \
-        fstr_mat_con_contact.@f90objfilepostfix@ \
-        fstr_AddContactStiff.@f90objfilepostfix@
+        fstr_mat_con_contact.@f90objfilepostfix@
 
 HEADERS =
 
