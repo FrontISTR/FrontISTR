@@ -526,9 +526,10 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
+    integer(kind=kint) :: augiter
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
     integer(kind=kint) :: rcode
@@ -536,7 +537,13 @@ contains
     algo = kcaSLagrange
     s = 'SLAGRANGE,ALAGRANGE '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )
-    fstr_ctrl_get_CONTACTALGO = rcode
+    if( rcode /= 0 ) then
+      fstr_ctrl_get_CONTACTALGO = rcode
+      return
+    endif
+    augiter = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'AUGITER ', '# ', 0, 'I', augiter )
+    fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
