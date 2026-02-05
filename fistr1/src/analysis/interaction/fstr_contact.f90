@@ -75,8 +75,8 @@ contains
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), iter, hecLagMAT%Lagrange(:), &
-        hecMAT, hecLagMAT )
+      call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+        iter, hecLagMAT%Lagrange(:), hecMAT, hecLagMAT)
 
     enddo
 
@@ -85,8 +85,8 @@ contains
       grpid = fstrSOLID%embeds(i)%group
       if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%embeds(i), hecMESH%node(:), iter, hecLagMAT%Lagrange(:), &
-        hecMAT, hecLagMAT )
+      call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%embeds(i), hecMESH%node(:), fstrSOLID%unode(:), &
+        iter, hecLagMAT%Lagrange(:), hecMAT, hecLagMAT)
 
     enddo
 
@@ -308,10 +308,13 @@ contains
       fstr_is_matrixStructure_changed = .true.
   end function
 
-  subroutine fstr_update_contact_multiplier( cstep, hecMESH, fstrSOLID, ctchanged )
+  subroutine fstr_update_contact_multiplier( cstep, ctAlgo, hecMESH, hecLagMAT, fstrSOLID, conMAT, ctchanged )
     integer(kind=kint), intent(in)        :: cstep
+    integer(kind=kint), intent(in)        :: ctAlgo
     type( hecmwST_local_mesh ), intent(in) :: hecMESH
+    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID
+    type(hecmwST_matrix), intent(inout)    :: conMAT
     logical, intent(out)                   :: ctchanged
 
     integer(kind=kint) :: i, nc, algtype, grpid
@@ -325,7 +328,8 @@ contains
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
         call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
-          , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged )
+          , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged, &
+          ctAlgo, hecLagMAT, conMAT, fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC )
       else if( algtype == CONTACTTIED ) then
         call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
         &  mu, ctchanged )

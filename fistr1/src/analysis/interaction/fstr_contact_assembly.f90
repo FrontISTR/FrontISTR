@@ -10,6 +10,7 @@ module m_fstr_contact_assembly
   use mContactDef
   use m_fstr_contact_element
   use m_fstr_contact_interference
+  use m_fstr_contact_elem_alag
   implicit none
 
 contains
@@ -47,7 +48,7 @@ contains
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
   subroutine update_contact_multiplier( contact, coord, disp, ddisp, fcoeff, mu, mut,   &
-    gnt, ctchanged )
+    gnt, ctchanged, ctAlgo, hecLagMAT, conMAT, CONT_NFORCE, CONT_FRIC )
     type( tContact ), intent(inout)   :: contact        !< contact info
     real(kind=kreal), intent(in)      :: coord(:)       !< mesh coordinate
     real(kind=kreal), intent(in)      :: disp(:)        !< disp till current step
@@ -56,77 +57,47 @@ contains
     real(kind=kreal), intent(in)      :: mu, mut        !< penalty
     real(kind=kreal), intent(out)     :: gnt(2)         !< convergency information
     logical, intent(inout)            :: ctchanged      !< if contact state changes
+    integer(kind=kint), intent(in)    :: ctAlgo         !< contact algorithm
+    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT  !< Lagrange matrix
+    type(hecmwST_matrix), intent(inout) :: conMAT       !< contact matrix
+    real(kind=kreal), pointer         :: CONT_NFORCE(:) !< contact normal force
+    real(kind=kreal), pointer         :: CONT_FRIC(:)   !< contact friction force
 
-    integer(kind=kint)  :: slave,  etype, master
-    integer(kind=kint)  :: nn, i, j, iSS, cnt
-    real(kind=kreal)    :: elemdisp(3,l_max_elem_node), tangent(3,2)
-    real(kind=kreal)    :: dg(3), elemg(3), elemcrd(3, l_max_elem_node )
-    real(kind=kreal)    :: dgn, dxi(2), dxy(2), shapefunc(l_max_surface_node)
-    real(kind=kreal)    :: metric(2,2), dispmat(2,l_max_elem_node*3+3)
-    real(kind=kreal)    :: lgnt(2), fric(2), f3(3*l_max_elem_node+3), edisp(3*l_max_elem_node+3)
+    integer(kind=kint)  :: slave, etype, master
+    integer(kind=kint)  :: nn, i, cnt
+    real(kind=kreal)    :: lgnt(2)
+    integer(kind=kint)  :: ndLocal(l_max_elem_node+1)
+    real(kind=kreal)    :: ctNForce(l_max_elem_node*3+3)
+    real(kind=kreal)    :: ctTForce(l_max_elem_node*3+3)
 
-    cnt =0; lgnt(:)=0.d0
-    do i= 1, size(contact%slave)
-      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
+    cnt = 0
+    lgnt(:) = 0.d0
+    
+    do i = 1, size(contact%slave)
+      if(contact%states(i)%state == CONTACTFREE) cycle   ! not in contact
+      
       slave = contact%slave(i)
-      edisp(1:3) = ddisp(3*slave-2:3*slave)
       master = contact%states(i)%surface
-
-      nn = size( contact%master(master)%nodes )
+      nn = size(contact%master(master)%nodes)
       etype = contact%master(master)%etype
-      do j=1,nn
-        iSS = contact%master(master)%nodes(j)
-        elemdisp(:,j) = ddisp(3*iSS-2:3*iSS)
-        edisp(3*j+1:3*j+3) = ddisp(3*iSS-2:3*iSS)
-        elemcrd(:,j) = coord(3*iSS-2:3*iSS)+disp(3*iSS-2:3*iSS)
-      enddo
-      call getShapeFunc( etype, contact%states(i)%lpos(1:2), shapefunc )
 
-      ! normal component
-      elemg = 0.d0
-      do j=1,nn
-        elemg(:) = elemg(:)+shapefunc(j)*(elemcrd(:,j)+elemdisp(:,j))
-      enddo
-      dg(:) = coord(3*slave-2:3*slave)+disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave) -  elemg(:)
-      dgn = dot_product( contact%states(i)%direction, dg )
-      contact%states(i)%wkdist = -dgn
-      contact%states(i)%multiplier(1) = contact%states(i)%multiplier(1) - mu*contact%states(i)%wkdist
-      contact%states(i)%distance = contact%states(i)%wkdist
-      cnt = cnt+1
-      lgnt(1) = lgnt(1)- contact%states(i)%wkdist
+      ndLocal(1) = slave
+      ndLocal(2:nn+1) = contact%master(master)%nodes(1:nn)
 
-      if( fcoeff==0.d0 ) cycle
-      ! tangent component
-      call DispIncreMatrix( contact%states(i)%lpos(1:2), etype, nn, elemcrd, tangent,   &
-        metric, dispmat )
-      dxi(1) = dot_product( dispmat(1,1:nn*3+3), edisp(1:nn*3+3) )
-      dxi(2) = dot_product( dispmat(2,1:nn*3+3), edisp(1:nn*3+3) )
-      dxy(:) = matmul( metric, dxi )
-      fric(1:2) = contact%states(i)%multiplier(2:3) + mut*dxy(1:2)
-      f3(:) = fric(1)*dispmat(1,:)+fric(2)*dispmat(2,:)
-      dgn = dsqrt( f3(1)*f3(1)+f3(2)*f3(2)+f3(3)*f3(3) )
-      if( contact%states(i)%multiplier(1)>0.d0 ) then
-        if(  dgn > fcoeff*contact%states(i)%multiplier(1) ) then
-          if( contact%states(i)%state==CONTACTSTICK ) then
-            ctchanged= .true.
-            print *, "Node", slave, "to slip state",dgn, fcoeff*contact%states(i)%multiplier(1)
-          endif
-          contact%states(i)%state = CONTACTSLIP
-          fric(:) = fric(:)*fcoeff*contact%states(i)%multiplier(1)/dgn
-        else
-          if( contact%states(i)%state==CONTACTSLIP ) then
-            ctchanged= .true.
-            print *, "Node", slave, "to stick state",dgn, fcoeff*contact%states(i)%multiplier(1)
-          endif
-          contact%states(i)%state = CONTACTSTICK
-        endif
-      endif
-      contact%states(i)%multiplier(2:3) = fric(:)
-      dxy(:) = matmul( dg, tangent )
-      lgnt(2) = lgnt(2)+dsqrt( dxy(1)*dxy(1)+dxy(2)*dxy(2) )
+      ! Update multiplier and calculate forces
+      call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
+        mu, mut, fcoeff, etype, lgnt, ctchanged, ctNForce, ctTForce)
+      
+      ! Assemble forces to conMAT (id_lagrange=0 for ALagrange)
+      call update_NDForce_contact(nn, ndLocal(1:nn+1), 0, 0.d0, ctNForce, ctTForce, &
+        conMAT, CONT_NFORCE, CONT_FRIC)
+      
+      cnt = cnt + 1
     enddo
-    if(cnt>0) lgnt(:) = lgnt(:)/cnt
+    
+    if(cnt > 0) lgnt(:) = lgnt(:) / cnt
     gnt = gnt + lgnt
+      
   end subroutine update_contact_multiplier
 
   !> This subroutine update lagrangian multiplier and the
@@ -198,11 +169,12 @@ contains
 
   !>\brief This subroutine calculates contact stiffness for each contact pair
   !! and assembles it into global stiffness matrix
-  subroutine calcu_contact_stiffness_NodeSurf( ctAlgo, contact, coord, iter, lagrange_array, &
+  subroutine calcu_contact_stiffness_NodeSurf( ctAlgo, contact, coord, disp, iter, lagrange_array, &
     hecMAT, hecLagMAT)
     integer(kind=kint), intent(in)             :: ctAlgo          !< contact analysis algorithm
     type(tContact), intent(inout)              :: contact         !< contact info
     real(kind=kreal), intent(in)               :: coord(:)        !< mesh coordinate
+    real(kind=kreal), intent(in)               :: disp(:)         !< displacement
     integer(kind=kint), intent(in)             :: iter            !< iteration number
     real(kind=kreal), intent(in)               :: lagrange_array(:) !< Lagrange multiplier array
     type(hecmwST_matrix), intent(inout)        :: hecMAT          !< global stiffness matrix
@@ -229,9 +201,9 @@ contains
       ndLocal(1) = contact%slave(j)
       ndLocal(2:nnode+1) = contact%master(ctsurf)%nodes(1:nnode)
 
-      ! Prepare master node coordinates for ALagrange
+      ! Prepare master node coordinates for ALagrange (deformed configuration)
       do k = 1, nnode
-        elecoord(1:3, k) = coord(3*ndLocal(k+1)-2:3*ndLocal(k+1))
+        elecoord(1:3, k) = coord(3*ndLocal(k+1)-2:3*ndLocal(k+1)) + disp(3*ndLocal(k+1)-2:3*ndLocal(k+1))
       enddo
 
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
@@ -247,7 +219,7 @@ contains
           call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, hecMAT, hecLagMAT)
 
         else if( ctAlgo == kcaALagrange ) then
-          call getContactStiffness_Alag(contact%states(j), etype, nnode, elecoord(:,1:nnode), &
+          call getContactStiffness_Alag(contact%states(j), contact%master(ctsurf), elecoord(:,1:nnode), &
             contact%fcoeff, contact%symmetric, stiffness, force)
 
           ! Assemble contact stiffness matrix into global stiffness matrix

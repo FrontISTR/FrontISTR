@@ -16,73 +16,83 @@ module m_fstr_contact_elem_alag
   public :: getContactNodalForce_Alag
   public :: getTiedStiffness_Alag
   public :: getTiedNodalForce_Alag
+  public :: updateContactMultiplier_Alag
 
 contains
 
-  subroutine getContactStiffness_Alag(cstate, etype, nnode, ele, fcoeff, symm, stiff, force)
+  subroutine getContactStiffness_Alag(cstate, tSurf, ele, fcoeff, symm, stiff, force)
 
-    type(tContactState), intent(in) :: cstate          !< contact state
-    integer, intent(in)             :: etype           !< type of contacting surface
-    integer, intent(in)             :: nnode           !< number of elemental nodes
-    real(kind=kreal), intent(in)    :: ele(3,nnode)    !< coord of surface element
+    type(tContactState), intent(inout) :: cstate       !< contact state (inout for projection info)
+    type(tSurfElement), intent(in)  :: tSurf           !< surface element structure
+    real(kind=kreal), intent(in)    :: ele(:,:)        !< coord of surface element
     real(kind=kreal), intent(in)    :: fcoeff          !< friction coefficient
     logical, intent(in)             :: symm            !< symmetricalize
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
     real(kind=kreal), intent(out)   :: force(:)        !< contact force direction
 
-    integer          :: i, j
-    real(kind=kreal) :: shapefunc(nnode)
-    real(kind=kreal) :: N(nnode*3+3), dispmat(2,nnode*3+3)
+    integer          :: i, j, nnode
+    real(kind=kreal) :: Bn(size(tSurf%nodes)*3+3), Ht(2,size(tSurf%nodes)*3+3), Gt(2,size(tSurf%nodes)*3+3)
     real(kind=kreal) :: metric(2,2)
-    real(kind=kreal) :: det, inverse(2,2), ff(2), cff(2)
-    real(kind=kreal) :: dum11(nnode*3+3,nnode*3+3), dum12(nnode*3+3,nnode*3+3)
-    real(kind=kreal) :: dum21(nnode*3+3,nnode*3+3), dum22(nnode*3+3,nnode*3+3)
-    real(kind=kreal) :: tangent(3,2)
+    real(kind=kreal) :: A(2,2)       !< 2D local tangent operator
+    real(kind=kreal) :: norm_trial, alpha_proj, that(2)
+    real(kind=kreal) :: K_fric(size(tSurf%nodes)*3+3,size(tSurf%nodes)*3+3)  !< friction stiffness
+    real(kind=kreal) :: HtA(2,size(tSurf%nodes)*3+3), tmp_vec(2)
+    real(kind=kreal) :: dummy_force(size(tSurf%nodes)*3+3)  !< dummy for computeFrictionForce_ALag
+    real(kind=kreal) :: zero_disp(size(tSurf%nodes)*3+3)   !< zero displacement for trial friction
 
-    call getShapeFunc( etype, cstate%lpos(1:2), shapefunc )
-    N(1:3) = cstate%direction(1:3)
-    do i = 1, nnode
-      N(i*3+1:i*3+3) = -shapefunc(i) * cstate%direction(1:3)
-    enddo
+    nnode = size(tSurf%nodes)
+
+    ! Use common mapping routine to compute Bn, metric, Ht, Gt
+    call computeContactMaps_ALag(cstate, tSurf, ele, Bn, metric, Ht, Gt)
+
+    ! Normal stiffness: stiff = mu * Bn * Bn^T
     do j = 1, nnode*3+3
       do i = 1, nnode*3+3
-        stiff(i,j) = mu * N(i) * N(j)
+        stiff(i,j) = mu * Bn(i) * Bn(j)
       enddo
     enddo
-    force(1:nnode*3+3) = N(:)
-
-    if( fcoeff /= 0.d0 ) &
-      call DispIncreMatrix( cstate%lpos(1:2), etype, nnode, ele, tangent, metric, dispmat )
+    force(1:nnode*3+3) = Bn(:)
 
     ! frictional component
     if( fcoeff /= 0.d0 ) then
-      forall(i=1:nnode*3+3, j=1:nnode*3+3)
-        dum11(i,j) = mut * dispmat(1,i) * dispmat(1,j)
-        dum12(i,j) = mut * dispmat(1,i) * dispmat(2,j)
-        dum21(i,j) = mut * dispmat(2,i) * dispmat(1,j)
-        dum22(i,j) = mut * dispmat(2,i) * dispmat(2,j)
-      end forall
-      stiff(1:nnode*3+3,1:nnode*3+3) = stiff(1:nnode*3+3,1:nnode*3+3) &
-        + metric(1,1)*dum11 + metric(1,2)*dum12 &
-        + metric(2,1)*dum21 + metric(2,2)*dum22
+      ! Compute trial friction info for consistent tangent
+      ! Use zero displacement to get projection parameters from current multiplier state
+      zero_disp = 0.0d0  ! zero displacement increment
+      call computeFrictionForce_ALag(cstate, fcoeff, cstate%multiplier(1), metric, &
+                                      Ht, Gt, zero_disp, nnode*3+3, dummy_force, &
+                                      norm_trial=norm_trial, alpha=alpha_proj, that=that)
 
-      if( cstate%state == CONTACTSLIP ) then
-        det = metric(1,1)*metric(2,2) - metric(1,2)*metric(2,1)
-        if( det == 0.d0 ) stop "Math error in contact stiff calculation"
-        inverse(1,1) = metric(2,2) / det
-        inverse(2,1) = -metric(2,1) / det
-        inverse(1,2) = -metric(1,2) / det
-        inverse(2,2) = metric(1,1) / det
-        ff(:) = cstate%multiplier(2:3)
-        cff(:) = matmul( inverse, ff )
-        ff(:) = ff(:) / dsqrt( ff(1)*ff(1) + ff(2)*ff(2) )
-        cff(:) = cff(:) / dsqrt( cff(1)*cff(1) + cff(2)*cff(2) )
-        stiff(1:nnode*3+3,1:nnode*3+3) = stiff(1:nnode*3+3,1:nnode*3+3) - &
-          ( cff(1)*ff(1)*metric(1,1) + cff(2)*ff(1)*metric(1,2) )*dum11 - &
-          ( cff(2)*ff(2)*metric(1,2) + cff(1)*ff(2)*metric(1,1) )*dum21 - &
-          ( cff(1)*ff(1)*metric(1,2) + cff(2)*ff(1)*metric(2,2) )*dum12 - &
-          ( cff(2)*ff(2)*metric(2,2) + cff(1)*ff(2)*metric(1,2) )*dum22
+      ! Construct 2D local tangent operator A
+      if( cstate%multiplier(1) <= 0.0d0 .or. alpha_proj <= 1.0d-20 ) then
+        ! No friction: A = 0
+        A = 0.0d0
+      else if( alpha_proj >= 0.999d0 .or. norm_trial < 1.0d-20 ) then
+        ! Stick: A = mut*I
+        A(1,1) = mut
+        A(2,2) = mut
+        A(1,2) = 0.0d0
+        A(2,1) = 0.0d0
+      else
+        ! Slip: A = alpha*mut*(I - that⊗that)
+        A(1,1) = alpha_proj * mut * (1.0d0 - that(1)*that(1))
+        A(1,2) = alpha_proj * mut * (-that(1)*that(2))
+        A(2,1) = alpha_proj * mut * (-that(2)*that(1))
+        A(2,2) = alpha_proj * mut * (1.0d0 - that(2)*that(2))
       endif
+
+      ! Compute friction stiffness: K_fric = Ht^T * A * Gt
+      ! First: HtA = A^T * Ht (2 x edof)
+      HtA(1:2,1:nnode*3+3) = matmul(transpose(A), Ht(1:2,1:nnode*3+3))
+      ! Then: K_fric = Ht^T * HtA = Ht^T * A^T * Ht (but we want Ht^T * A * Gt)
+      ! Correct: K_fric(i,j) = Ht(:,i)^T * A * Gt(:,j)
+      do j = 1, nnode*3+3
+        tmp_vec = matmul(A, Gt(1:2,j))
+        do i = 1, nnode*3+3
+          K_fric(i,j) = dot_product(Ht(1:2,i), tmp_vec)
+        enddo
+      enddo
+
+      stiff(1:nnode*3+3,1:nnode*3+3) = stiff(1:nnode*3+3,1:nnode*3+3) + K_fric(1:nnode*3+3,1:nnode*3+3)
     endif
 
   end subroutine getContactStiffness_Alag
@@ -102,46 +112,39 @@ contains
     logical            :: cflag  !< not used for ALagrange (kept for interface compatibility)
 
     real(kind=kreal)   :: normal(3) !< normal vector at target point
-    real(kind=kreal)   :: shapefunc(l_max_surface_node)
-    real(kind=kreal)   :: elemcrd(3, l_max_elem_node) !< master node coords (coord+disp, for DispIncreMatrix)
+    real(kind=kreal)   :: Bn(3*l_max_elem_node+3) !< normal distribution vector
+    real(kind=kreal)   :: Ht(2,3*l_max_elem_node+3), Gt(2,3*l_max_elem_node+3) !< tangent and covariant maps
+    real(kind=kreal)   :: elemcrd(3, l_max_elem_node) !< master node coords (coord+disp, for computeContactMaps_ALag)
     real(kind=kreal)   :: edisp(3*l_max_elem_node+3) !< displacement increment
-    real(kind=kreal)   :: elemg(3), dg(3) !< interpolated master position; gap vector
     real(kind=kreal)   :: dgn, nrlforce !< normal gap; normal force
-    real(kind=kreal)   :: tangent(3,2), metric(2,2), dispmat(2,l_max_elem_node*3+3)
-    real(kind=kreal)   :: dxi(2), dxy(2), fric(2), f3(3*l_max_elem_node+3)
+    real(kind=kreal)   :: metric(2,2)
+    integer(kind=kint) :: edof  !< element vector size (nnode*3+3)
 
     nnode = size(tSurf%nodes)
+    edof = nnode*3+3
 
     ctNForce = 0.0d0
     ctTForce = 0.0d0
 
     normal(1:3) = ctState%direction(1:3)
 
-    call getShapeFunc( tSurf%etype, ctState%lpos(1:2), shapefunc )
-
-    ! Compute interpolated master position using current coordinates
-    ! elemg = sum_j shapefunc(j) * ndCoord(master_j)
-    elemg = 0.d0
+    ! Prepare elemcrd = ndCoord - ndDu (i.e., coord + disp) for computeContactMaps_ALag
     do j = 1, nnode
-      elemg(1:3) = elemg(1:3) + shapefunc(j) * ndCoord(j*3+1:j*3+3)
+      elemcrd(1:3, j) = ndCoord(j*3+1:j*3+3) - ndDu(j*3+1:j*3+3)
     enddo
 
-    ! Gap vector: slave current position - interpolated master position
-    dg(1:3) = ndCoord(1:3) - elemg(1:3)
+    ! Use common mapping routine to compute Bn, metric, Ht, Gt
+    call computeContactMaps_ALag(ctState, tSurf, elemcrd(:,1:nnode), &
+                                  Bn, metric, Ht, Gt)
 
-    ! Normal gap
-    dgn = dot_product( normal, dg )
+    ! Normal gap: dgn = Bn^T * ndCoord (using normal distribution vector)
+    dgn = dot_product( Bn(1:edof), ndCoord(1:edof) )
 
     ! Normal force: multiplier + penalty * gap
     nrlforce = ctState%multiplier(1) + mu*dgn
 
-    ! Slave node force: -nrlforce * normal
-    ctNForce(1:3) = -nrlforce * normal(1:3)
-
-    ! Master node forces: +nrlforce * shapefunc(j) * normal
-    do j = 1, nnode
-      ctNForce(j*3+1:j*3+3) = nrlforce * shapefunc(j) * normal(1:3)
-    enddo
+    ! Distribute normal force using Bn: ctNForce = -nrlforce * Bn
+    ctNForce(1:edof) = -nrlforce * Bn(1:edof)
 
     ! Lagrange row (not used in ALagrange, set to 0)
     ctNForce((nnode+1)*3+1) = 0.d0
@@ -150,43 +153,106 @@ contains
 
     ! --- Tangent component ---
 
-    ! Prepare elemcrd = ndCoord - ndDu (i.e., coord + disp) for DispIncreMatrix
-    do j = 1, nnode
-      elemcrd(1:3, j) = ndCoord(j*3+1:j*3+3) - ndDu(j*3+1:j*3+3)
-    enddo
-
     ! Prepare edisp from ndDu
     edisp(1:3) = ndDu(1:3)  ! slave
     do j = 1, nnode
       edisp(j*3+1:j*3+3) = ndDu(j*3+1:j*3+3)  ! master nodes
     enddo
 
-    call DispIncreMatrix( ctState%lpos(1:2), tSurf%etype, nnode, elemcrd(:,1:nnode), tangent, metric, dispmat )
-
-    dxi(1) = dot_product( dispmat(1,1:nnode*3+3), edisp(1:nnode*3+3) )
-    dxi(2) = dot_product( dispmat(2,1:nnode*3+3), edisp(1:nnode*3+3) )
-    dxy(1:2) = matmul( metric, dxi )
-
-    fric(1:2) = ctState%multiplier(2:3) + mut*dxy(1:2)
-    f3(1:nnode*3+3) = fric(1)*dispmat(1,1:nnode*3+3) + fric(2)*dispmat(2,1:nnode*3+3)
-
-    if( ctState%state == CONTACTSLIP ) then
-      dgn = dsqrt( f3(1)*f3(1) + f3(2)*f3(2) + f3(3)*f3(3) )
-      f3(1:nnode*3+3) = f3(1:nnode*3+3) * fcoeff * ctState%multiplier(1) / dgn
-    endif
-
-    ! Slave node friction force
-    ctTForce(1:3) = -f3(1:3)
-
-    ! Master node friction forces
-    do j = 1, nnode
-      ctTForce(j*3+1:j*3+3) = -f3(j*3+1:j*3+3)
-    enddo
+    ! Compute friction force using common routine
+    call computeFrictionForce_ALag(ctState, fcoeff, ctState%multiplier(1), metric, &
+                                    Ht, Gt, edisp, edof, ctTForce)
 
     ! Lagrange row (not used in ALagrange, set to 0)
     ctTForce((nnode+1)*3+1) = 0.d0
 
   end subroutine getContactNodalForce_Alag
+
+  subroutine updateContactMultiplier_Alag(ctState,ndLocal,coord,disp,ddisp,mu,mut,fcoeff,etype,lgnt,ctchanged,ctNForce,ctTForce)
+
+    type(tContactState), intent(inout)   :: ctState             !< contact state
+    integer(kind=kint), intent(in)       :: ndLocal(:)          !< global node numbers (slave + master)
+    real(kind=kreal), intent(in)         :: coord(:)            !< mesh coordinate
+    real(kind=kreal), intent(in)         :: disp(:)             !< disp till current step
+    real(kind=kreal), intent(in)         :: ddisp(:)            !< disp till current substep
+    real(kind=kreal), intent(in)         :: mu, mut             !< penalty parameters
+    real(kind=kreal), intent(in)         :: fcoeff              !< friction coefficient
+    integer(kind=kint), intent(in)       :: etype               !< element type
+    real(kind=kreal), intent(inout)      :: lgnt(2)             !< convergence metrics
+    logical, intent(inout)               :: ctchanged           !< contact state changed flag
+    real(kind=kreal), intent(out)        :: ctNForce(:)         !< contact normal force vector
+    real(kind=kreal), intent(out)        :: ctTForce(:)         !< contact tangential force vector
+
+    integer(kind=kint)  :: nnode !< number of master nodes
+    integer(kind=kint)  :: slave, j
+    real(kind=kreal)    :: Bn(3*l_max_elem_node+3) !< normal distribution vector
+    real(kind=kreal)    :: Ht(2,3*l_max_elem_node+3), Gt(2,3*l_max_elem_node+3) !< tangent and covariant maps
+    real(kind=kreal)    :: elemcrd(3,l_max_elem_node) !< master node coords (coord+disp, for computeContactMaps_ALag)
+    real(kind=kreal)    :: curpos(3*l_max_elem_node+3) !< current positions (coord+disp+ddisp)
+    real(kind=kreal)    :: edisp(3*l_max_elem_node+3) !< displacement increment
+    real(kind=kreal)    :: dgn, nrlforce !< normal gap; normal force
+    real(kind=kreal)    :: metric(2,2)
+    real(kind=kreal)    :: dxy(2)        !< for convergence check
+    integer(kind=kint)  :: edof  !< element vector size (nnode*3+3)
+    type(tSurfElement)  :: tSurf_tmp  !< temporary surface element for computeContactMaps_ALag
+
+    nnode = size(ndLocal) - 1
+    slave = ndLocal(1)
+    edof = nnode*3+3
+
+    ctNForce = 0.0d0
+    ctTForce = 0.0d0
+
+    ! Prepare elemcrd (coord+disp) and current positions (coord+disp+ddisp)
+    curpos(1:3) = coord(3*slave-2:3*slave) + disp(3*slave-2:3*slave) + ddisp(3*slave-2:3*slave)
+    edisp(1:3) = ddisp(3*slave-2:3*slave)
+    do j = 1, nnode
+      elemcrd(1:3,j) = coord(3*ndLocal(j+1)-2:3*ndLocal(j+1)) + disp(3*ndLocal(j+1)-2:3*ndLocal(j+1))
+      curpos(j*3+1:j*3+3) = elemcrd(1:3,j) + ddisp(3*ndLocal(j+1)-2:3*ndLocal(j+1))
+      edisp(j*3+1:j*3+3) = ddisp(3*ndLocal(j+1)-2:3*ndLocal(j+1))
+    enddo
+
+    ! Build temporary tSurf for computeContactMaps_ALag
+    allocate(tSurf_tmp%nodes(nnode))
+    tSurf_tmp%etype = etype
+    tSurf_tmp%nodes = ndLocal(2:nnode+1)
+
+    ! Use common mapping routine to compute Bn, metric, Ht, Gt
+    call computeContactMaps_ALag(ctState, tSurf_tmp, elemcrd(:,1:nnode), &
+                                  Bn, metric, Ht, Gt)
+
+    ! Normal gap: dgn = Bn^T * curpos (using normal distribution vector)
+    dgn = dot_product( Bn(1:edof), curpos(1:edof) )
+
+    ! Update multiplier and working distance
+    ctState%wkdist = -dgn
+    ctState%multiplier(1) = ctState%multiplier(1) - mu*ctState%wkdist
+    ctState%distance = ctState%wkdist
+    lgnt(1) = lgnt(1) - ctState%wkdist
+
+    ! Normal force: use updated multiplier
+    nrlforce = ctState%multiplier(1)
+
+    ! Distribute normal force using Bn: ctNForce = -nrlforce * Bn
+    ctNForce(1:edof) = -nrlforce * Bn(1:edof)
+
+    if( fcoeff == 0.d0 ) return
+
+    ! --- Tangent component ---
+
+    ! Compute friction force with multiplier update and state check
+    call computeFrictionForce_ALag(ctState, fcoeff, ctState%multiplier(1), metric, &
+                                    Ht, Gt, edisp, edof, ctTForce, &
+                                    update_multiplier=.true., slave_id=slave, ctchanged=ctchanged)
+
+    ! Tangent displacement for convergence check: use Gt to project curpos directly
+    dxy = matmul( Gt(:,1:edof), curpos(1:edof) )
+    lgnt(2) = lgnt(2) + dsqrt( dxy(1)*dxy(1) + dxy(2)*dxy(2) )
+
+    ! Clean up temporary surface element
+    deallocate(tSurf_tmp%nodes)
+
+  end subroutine updateContactMultiplier_Alag
 
   subroutine getTiedStiffness_Alag(cstate, etype, nnode, stiff, force)
 
