@@ -143,6 +143,41 @@ contains
 
   end subroutine fstr_Update_NDForce_contact
 
+  !> Calculate reference stiffness for all contact pairs (System Level)
+  subroutine fstr_calc_contact_refStiff(cstep, hecMESH, hecMAT, fstrSOLID)
+    use hecmw_matrix_misc
+    integer(kind=kint), intent(in)       :: cstep
+    type(hecmwST_local_mesh)             :: hecMESH
+    type(hecmwST_matrix)                 :: hecMAT
+    type(fstr_solid)                     :: fstrSOLID
+    
+    integer(kind=kint) :: i, grpid, ndof
+    real(kind=kreal), pointer :: diag(:)
+    
+    ndof = hecMAT%NDOF
+    
+    ! Extract diagonal components once (efficient, called only once)
+    diag => hecmw_mat_diag(hecMAT)
+    
+    ! Loop over contact pairs
+    do i = 1, fstrSOLID%n_contacts
+      grpid = fstrSOLID%contacts(i)%group
+      if(.not. fstr_isContactActive(fstrSOLID, grpid, cstep)) cycle
+      
+      call calc_contact_pair_refStiff(fstrSOLID%contacts(i), diag, ndof, hecMESH)
+    enddo
+    
+    ! Same for embeds
+    do i = 1, fstrSOLID%n_embeds
+      grpid = fstrSOLID%embeds(i)%group
+      if(.not. fstr_isEmbedActive(fstrSOLID, grpid, cstep)) cycle
+      
+      call calc_contact_pair_refStiff(fstrSOLID%embeds(i), diag, ndof, hecMESH)
+    enddo
+    
+    deallocate(diag)
+  end subroutine fstr_calc_contact_refStiff
+
   !> Scanning contact state
   subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )
     integer(kind=kint), intent(in)         :: cstep      !< current step number
@@ -190,10 +225,10 @@ contains
       endif
       if( present(B) ) then
         call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-        & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu, B )
+        & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, B )
       else
         call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-        & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu )
+        & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
       endif
       if( .not. active ) active = iactive
     enddo
@@ -204,7 +239,7 @@ contains
         call clear_contact_state(fstrSOLID%embeds(i));  cycle
       endif
       call scan_embed_state( flag_ctAlgo, fstrSOLID%embeds(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-      & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, mu )
+      & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
       if( .not. active ) active = iactive
     enddo
 
@@ -264,13 +299,6 @@ contains
     fstrSOLID%ddunode = 0.d0
   end subroutine
 
-  subroutine fstr_set_contact_penalty( maxv )
-    real(kind=kreal), intent(in) :: maxv
-    mu = cdotp * maxv
-    if( gnt(1)<1.d-3 ) mu=cdotp*10.d0* maxv
-    bakgnt = 0.d0
-  end subroutine
-
   logical function fstr_is_contact_active()
     fstr_is_contact_active = active
   end function
@@ -327,18 +355,18 @@ contains
 
       algtype = fstrSOLID%contacts(i)%algtype
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-        call update_contact_multiplier( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
-          , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, gnt, ctchanged, &
-          ctAlgo, hecLagMAT, conMAT, fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC )
+        call update_contact_multiplier( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, &
+          hecMESH, hecLagMAT, conMAT, fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC, gnt, ctchanged )
       else if( algtype == CONTACTTIED ) then
         call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
-        &  mu, ctchanged )
+        &  ctchanged )
       endif
     enddo
 
     do i=1, fstrSOLID%n_embeds
       call update_tied_multiplier( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
-      &  mu, ctchanged )
+      &  ctchanged )
     enddo
 
     if( nc>0 ) gnt = gnt/nc

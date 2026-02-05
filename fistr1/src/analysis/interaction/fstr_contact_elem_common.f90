@@ -173,8 +173,8 @@ contains
   !!   alpha: (optional) projection ratio = min(1, r/norm_trial), r=fcoeff*lambda_n
   !!   that: (optional) normalized direction = fric_trial/norm_trial (2D)
   subroutine computeFrictionForce_ALag(ctState, fcoeff, lambda_n, metric, Ht, Gt, edisp, edof, ctTForce, &
-                                        update_multiplier, slave_id, ctchanged, &
-                                        norm_trial, alpha, that)
+                                        mut, update_multiplier, slave_id, ctchanged, &
+                                        norm_trial, alpha, that, jump_ratio)
     implicit none
 
     type(tContactState), intent(inout) :: ctState       !< contact state (inout for multiplier update)
@@ -186,12 +186,14 @@ contains
     real(kind=kreal), intent(in)       :: edisp(:)      !< displacement increment
     integer(kind=kint), intent(in)     :: edof          !< element DOF size
     real(kind=kreal), intent(out)      :: ctTForce(:)   !< friction force vector
+    real(kind=kreal), intent(in)       :: mut           !< tangential penalty parameter
     logical, optional, intent(in)      :: update_multiplier !< if true, update multiplier and check state
     integer(kind=kint), optional, intent(in) :: slave_id     !< slave node ID for debug print
     logical, optional, intent(inout)   :: ctchanged     !< flag for state change
     real(kind=kreal), optional, intent(out) :: norm_trial !< norm of fric_trial (for stiffness)
     real(kind=kreal), optional, intent(out) :: alpha      !< projection ratio (for stiffness)
     real(kind=kreal), optional, intent(out) :: that(2)    !< normalized direction (for stiffness)
+    real(kind=kreal), optional, intent(out) :: jump_ratio !< stick trial / slip limit force ratio
 
     real(kind=kreal) :: dxy(2)       !< tangent displacement (2D local)
     real(kind=kreal) :: fric(2)      !< trial friction force (2D local)
@@ -205,6 +207,7 @@ contains
 
     ctTForce = 0.0d0
     do_update = .false.
+    if(present(jump_ratio)) jump_ratio = 0.0d0
     if(present(update_multiplier)) do_update = update_multiplier
 
     ! Compute inverse of metric tensor (2x2)
@@ -253,6 +256,8 @@ contains
         if( ctState%state == CONTACTSTICK ) then
           if(present(ctchanged)) ctchanged = .true.
           if(present(slave_id)) print *, "Node", slave_id, "to slip state", norm_fric, fcoeff*lambda_n
+          if(present(jump_ratio) .and. lambda_n > 1.0e-20 .and. norm_fric > 1.0e-20) &
+            &  jump_ratio = norm_fric / (fcoeff*lambda_n)
         endif
         ctState%state = CONTACTSLIP
         fric(1:2) = fric(1:2) * alpha_local

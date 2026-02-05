@@ -20,11 +20,12 @@ module m_fstr_contact_elem_alag
 
 contains
 
-  subroutine getContactStiffness_Alag(cstate, tSurf, ele, fcoeff, symm, stiff, force)
+  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force)
 
     type(tContactState), intent(inout) :: cstate       !< contact state (inout for projection info)
     type(tSurfElement), intent(in)  :: tSurf           !< surface element structure
     real(kind=kreal), intent(in)    :: ele(:,:)        !< coord of surface element
+    real(kind=kreal), intent(in)    :: mu, mut         !< penalty parameters
     real(kind=kreal), intent(in)    :: fcoeff          !< friction coefficient
     logical, intent(in)             :: symm            !< symmetricalize
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
@@ -60,7 +61,7 @@ contains
       zero_disp = 0.0d0  ! zero displacement increment
       call computeFrictionForce_ALag(cstate, fcoeff, cstate%multiplier(1), metric, &
                                       Ht, Gt, zero_disp, nnode*3+3, dummy_force, &
-                                      norm_trial=norm_trial, alpha=alpha_proj, that=that)
+                                      mut, norm_trial=norm_trial, alpha=alpha_proj, that=that)
 
       ! Construct 2D local tangent operator A
       if( cstate%multiplier(1) <= 0.0d0 .or. alpha_proj <= 1.0d-20 ) then
@@ -97,14 +98,15 @@ contains
 
   end subroutine getContactStiffness_Alag
 
-  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag)
+  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,lagrange,ctNForce,ctTForce,cflag)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint) :: nnode !< number of nodes of master segment
     integer(kind=kint) :: j
-    real(kind=kreal)   :: fcoeff, tPenalty !< friction coefficient; tangential penalty (tPenalty not used, mut used instead)
+    real(kind=kreal), intent(in) :: mu, mut !< penalty parameters
+    real(kind=kreal)   :: fcoeff !< friction coefficient
     real(kind=kreal)   :: lagrange !< not used for ALagrange (kept for interface compatibility)
     real(kind=kreal)   :: ndCoord(:), ndDu(:) !< nodal coordinates (coord+disp+ddisp); nodal displacement increment (ddisp)
     real(kind=kreal)   :: ctNForce(:) !< contact normal force vector
@@ -161,14 +163,16 @@ contains
 
     ! Compute friction force using common routine
     call computeFrictionForce_ALag(ctState, fcoeff, ctState%multiplier(1), metric, &
-                                    Ht, Gt, edisp, edof, ctTForce)
+                                    Ht, Gt, edisp, edof, ctTForce, &
+                                    mut)
 
     ! Lagrange row (not used in ALagrange, set to 0)
     ctTForce((nnode+1)*3+1) = 0.d0
 
   end subroutine getContactNodalForce_Alag
 
-  subroutine updateContactMultiplier_Alag(ctState,ndLocal,coord,disp,ddisp,mu,mut,fcoeff,etype,lgnt,ctchanged,ctNForce,ctTForce)
+  subroutine updateContactMultiplier_Alag(ctState,ndLocal,coord,disp,ddisp,&
+     &  mu,mut,fcoeff,etype,lgnt,ctchanged,ctNForce,ctTForce,jump_ratio)
 
     type(tContactState), intent(inout)   :: ctState             !< contact state
     integer(kind=kint), intent(in)       :: ndLocal(:)          !< global node numbers (slave + master)
@@ -182,6 +186,7 @@ contains
     logical, intent(inout)               :: ctchanged           !< contact state changed flag
     real(kind=kreal), intent(out)        :: ctNForce(:)         !< contact normal force vector
     real(kind=kreal), intent(out)        :: ctTForce(:)         !< contact tangential force vector
+    real(kind=kreal), intent(out)        :: jump_ratio          !< stick trial / slip limit force ratio
 
     integer(kind=kint)  :: nnode !< number of master nodes
     integer(kind=kint)  :: slave, j
@@ -243,7 +248,9 @@ contains
     ! Compute friction force with multiplier update and state check
     call computeFrictionForce_ALag(ctState, fcoeff, ctState%multiplier(1), metric, &
                                     Ht, Gt, edisp, edof, ctTForce, &
-                                    update_multiplier=.true., slave_id=slave, ctchanged=ctchanged)
+                                    mut, &
+                                    update_multiplier=.true., slave_id=slave, ctchanged=ctchanged, &
+                                    jump_ratio=jump_ratio)
 
     ! Tangent displacement for convergence check: use Gt to project curpos directly
     dxy = matmul( Gt(:,1:edof), curpos(1:edof) )
@@ -254,9 +261,10 @@ contains
 
   end subroutine updateContactMultiplier_Alag
 
-  subroutine getTiedStiffness_Alag(cstate, etype, nnode, stiff, force)
+  subroutine getTiedStiffness_Alag(cstate, mu, etype, nnode, stiff, force)
 
     type(tContactState), intent(in) :: cstate          !< contact state
+    real(kind=kreal), intent(in)    :: mu              !< penalty parameter
     integer, intent(in)             :: etype           !< type of contacting surface
     integer, intent(in)             :: nnode           !< number of elemental nodes
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
@@ -283,14 +291,14 @@ contains
 
   end subroutine getTiedStiffness_Alag
 
-  subroutine getTiedNodalForce_Alag(ctState,tSurf,ndu,lagrange,ctNForce,ctTForce)
+  subroutine getTiedNodalForce_Alag(ctState,tSurf,ndu,mu,ctNForce,ctTForce)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint)  :: nnode !< number of nodes of master segment
     real(kind=kreal)   :: ndu(:) !< nodal total displacement (disp+ddisp)
-    real(kind=kreal)   :: lagrange !< not used for ALagrange (kept for interface compatibility)
+    real(kind=kreal), intent(in) :: mu !< penalty parameter
     real(kind=kreal)   :: ctNForce(:)  !< contact force vector
     real(kind=kreal)   :: ctTForce(:)  !< contact force vector (not used for tied)
 

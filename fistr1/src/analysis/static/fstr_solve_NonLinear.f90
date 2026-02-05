@@ -20,6 +20,7 @@ module m_fstr_NonLinearMethod
   use m_fstr_elemact
   use fstr_matrix_con_contact
   use mContact
+  use m_fstr_contact_assembly
   use m_solve_LINEQ_contact
 
   implicit none
@@ -255,7 +256,7 @@ contains
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: al_step, n_al_step, stepcnt, count_step
-    real(kind=kreal)   :: tt0, tt, res, res0, res1, maxv, relres, tincr
+    real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr
     integer(kind=kint) :: restart_step_num, restart_substep_num
     logical            :: convg, ctchange
     integer(kind=kint) :: n_node_global
@@ -325,8 +326,7 @@ contains
 
           ! ----- Contact
           if( is_first_Stiffmatrixcall ) then
-            maxv = hecmw_mat_diag_max( hecMAT, hecMESH )
-            call fstr_set_contact_penalty( maxv )
+            call fstr_calc_contact_refStiff(cstep, hecMESH, hecMAT, fstrSOLID)
             is_first_Stiffmatrixcall = .false.
           endif
           if( fstr_is_contact_active() ) then
