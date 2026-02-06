@@ -346,7 +346,7 @@ contains
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    integer(kind=kint)  :: i, iSS, nactive
     real(kind=kreal)    :: coord(3)
     real(kind=kreal)    :: nlforce, slforce(3)
     logical             :: isin
@@ -354,7 +354,7 @@ contains
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-    logical :: is_cand, is_present_B
+    logical :: is_present_B
     real(kind=kreal), pointer :: Bp(:)
 
     if( is_init ) then
@@ -388,7 +388,7 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,is_cand,idm,etype,isin, &
+    !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,iSS,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand) &
     !$omp& firstprivate(nMasterMax,is_present_B) &
     !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,Bp,distclr,contact_surf,is_init) &
@@ -524,15 +524,13 @@ contains
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    integer(kind=kint)  :: i, iSS, nactive
     real(kind=kreal)    :: coord(3)
-    real(kind=kreal)    :: nlforce
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-    logical :: is_cand
 
     if( is_init ) then
       distclr = contact%cparam%DISTCLR_INIT
@@ -562,7 +560,7 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,is_cand,idm,etype,isin, &
+    !$omp& private(i,slave,id,coord,indexMaster,nMaster,iSS,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand) &
     !$omp& firstprivate(nMasterMax) &
     !$omp& shared(contact,infoCTChange,currpos,currdisp,nodeID,elemID,distclr,contact_surf) &
@@ -671,13 +669,12 @@ contains
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
-    real(kind=kreal)    :: nlforce, slforce(3)
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-    logical :: is_cand, is_present_B
+    logical :: is_present_B
     real(kind=kreal), pointer :: Bp(:)
 
     if( is_init ) then
@@ -710,7 +707,7 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+    !$omp& private(i,slave,id,coord,indexMaster,nMaster,nn,j,iSS,elem,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand) &
     !$omp& firstprivate(nMasterMax,is_present_B) &
     !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,Bp,distclr,contact_surf) &

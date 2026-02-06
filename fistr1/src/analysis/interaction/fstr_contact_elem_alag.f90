@@ -261,33 +261,33 @@ contains
 
   end subroutine updateContactMultiplier_Alag
 
-  subroutine getTiedStiffness_Alag(cstate, mu, etype, nnode, stiff, force)
+  subroutine getTiedStiffness_Alag(cstate, tSurf, mu, stiff, force)
 
     type(tContactState), intent(in) :: cstate          !< contact state
+    type(tSurfElement), intent(in)  :: tSurf           !< surface element structure
     real(kind=kreal), intent(in)    :: mu              !< penalty parameter
-    integer, intent(in)             :: etype           !< type of contacting surface
-    integer, intent(in)             :: nnode           !< number of elemental nodes
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
     real(kind=kreal), intent(out)   :: force(:)        !< contact force direction
 
-    integer          :: i, j, k
-    real(kind=kreal) :: shapefunc(nnode)
-    real(kind=kreal) :: N(nnode*3+3)
+    integer          :: i, j, nnode, edof
+    real(kind=kreal) :: Tm(3, 3*(l_max_surface_node+1))
+    real(kind=kreal) :: Tt(3, 3*(l_max_surface_node+1))  !< unused, required by computeTm_Tt interface
+
+    nnode = size(tSurf%nodes)
+    edof = nnode*3+3
 
     stiff = 0.d0
 
-    call getShapeFunc( etype, cstate%lpos(1:2), shapefunc )
-    N(1) = 1.d0
-    N(2:nnode+1) = -shapefunc(1:nnode)
+    ! Use common mapping routine to compute Tm
+    call computeTm_Tt(cstate, tSurf, 0.0d0, Tm, Tt)
 
-    do j = 1, nnode+1
-      do k = 1, nnode+1
-        do i = 1, 3
-          stiff(3*k-3+i, 3*j-3+i) = mu * N(k) * N(j)
-        enddo
+    ! Tied stiffness: stiff = mu * Tm^T * Tm
+    do j = 1, edof
+      do i = 1, edof
+        stiff(i,j) = mu * dot_product(Tm(1:3,i), Tm(1:3,j))
       enddo
     enddo
-    force(1:nnode*3+3) = N(:)
+    force(1:edof) = 0.d0  ! not used for tied (3-direction constraint)
 
   end subroutine getTiedStiffness_Alag
 
@@ -302,45 +302,29 @@ contains
     real(kind=kreal)   :: ctNForce(:)  !< contact force vector
     real(kind=kreal)   :: ctTForce(:)  !< contact force vector (not used for tied)
 
-    integer(kind=kint) :: j
-    real(kind=kreal)   :: shapefunc(l_max_surface_node)
-    real(kind=kreal)   :: edisp(3*l_max_elem_node+3) !< total displacement
+    integer(kind=kint) :: edof
+    real(kind=kreal)   :: Tm(3, 3*(l_max_surface_node+1))  !< relative displacement mapping matrix
+    real(kind=kreal)   :: Tt(3, 3*(l_max_surface_node+1))  !< unused, required by computeTm_Tt interface
     real(kind=kreal)   :: dg(3) !< gap vector
     real(kind=kreal)   :: nrlforce(3) !< nodal force (3 components)
 
     nnode = size(tSurf%nodes)
+    edof = nnode*3+3
 
     ctNForce = 0.0d0
     ctTForce = 0.0d0
 
-    ! Prepare total displacement: edisp = ndu
-    ! edisp(1:3) = slave node
-    edisp(1:3) = ndu(1:3)
+    ! Use common mapping routine to compute Tm
+    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt)
 
-    ! edisp(4:6, 7:9, ...) = master nodes
-    do j = 1, nnode
-      edisp(j*3+1:j*3+3) = ndu(j*3+1:j*3+3)
-    enddo
-
-    call getShapeFunc( tSurf%etype, ctState%lpos(1:2), shapefunc )
-
-    ! Gap vector: slave displacement - interpolated master displacement
-    ! dg = edisp(slave) - sum_j shapefunc(j) * edisp(master_j)
-    dg(1:3) = edisp(1:3)
-    do j = 1, nnode
-      dg(1:3) = dg(1:3) - shapefunc(j) * edisp(j*3+1:j*3+3)
-    enddo
+    ! Gap vector: dg = Tm * ndu (3-component relative displacement)
+    dg(1:3) = matmul(Tm(1:3, 1:edof), ndu(1:edof))
 
     ! Force: multiplier + penalty * gap (3 components)
     nrlforce(1:3) = ctState%multiplier(1:3) + mu*dg(1:3)
 
-    ! Slave node force: -nrlforce
-    ctNForce(1:3) = -nrlforce(1:3)
-
-    ! Master node forces: +shapefunc(j) * nrlforce
-    do j = 1, nnode
-      ctNForce(j*3+1:j*3+3) = shapefunc(j) * nrlforce(1:3)
-    enddo
+    ! Distribute force: ctNForce = -Tm^T * nrlforce
+    ctNForce(1:edof) = -matmul(transpose(Tm(1:3, 1:edof)), nrlforce(1:3))
 
     ! Lagrange row (not used in ALagrange, set to 0)
     ctNForce((nnode+1)*3+1) = 0.d0

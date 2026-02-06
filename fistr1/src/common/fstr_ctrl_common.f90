@@ -598,8 +598,9 @@ contains
       do rcode=1,n
         call fstr_strupr(cp_name(rcode))
         contact(rcode)%pair_name = cp_name(rcode)
+      contact(rcode)%nPenalty = 5.0d0
         contact(rcode)%fcoeff = 0.d0
-        contact(rcode)%tPenalty = 1.d+4
+        contact(rcode)%tPenalty = 1.d0
       enddo
     endif
 

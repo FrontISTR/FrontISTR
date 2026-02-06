@@ -65,7 +65,7 @@ contains
     type(hecmwST_matrix)                 :: hecMAT !< type hecmwST_matrix
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
-    integer(kind=kint)                   :: i, grpid, id_lagrange
+    integer(kind=kint)                   :: i, grpid
 
     if( associated(hecLagMAT%AL_lagrange) ) hecLagMAT%AL_lagrange = 0.0d0
     if( associated(hecLagMAT%AU_lagrange) ) hecLagMAT%AU_lagrange = 0.0d0
@@ -102,18 +102,9 @@ contains
     type(fstr_solid)                     :: fstrSOLID !< type fstr_solid
     type(hecmwST_matrix_lagrange) :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(hecmwST_matrix)                 :: conMAT !< type hecmwST_matrix for contact part only
-    integer(kind=kint) :: ctsurf, nnode, ndLocal(21) !< contents of type tContact
-    integer(kind=kint) :: i, j, k, nlag, id_lagrange, algtype
-    real(kind=kreal)   :: ndCoord(21*3) !< nodal coordinates
-    real(kind=kreal)   :: ndu(21*3), ndDu(21*3) !< nodal displacement and its increment
-    real(kind=kreal)   :: lagrange !< value of Lagrange multiplier
-    real(kind=kreal)   :: ctNForce(21*3+1)     !< nodal normal contact force vector
-    real(kind=kreal)   :: ctTForce(21*3+1)     !< nodal tangential contact force vector
+    integer(kind=kint) :: i
 
     integer(kind=kint) :: grpid
-    logical            :: if_flag
-    real(kind=kreal)   :: ctime, etime
-    integer(kind=kint) :: if_type
 
     if( associated(fstrSOLID%CONT_NFORCE) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
     if( associated(fstrSOLID%CONT_FRIC) ) fstrSOLID%CONT_FRIC(:) = 0.d0
@@ -336,13 +327,12 @@ contains
       fstr_is_matrixStructure_changed = .true.
   end function
 
-  subroutine fstr_update_contact_multiplier( cstep, ctAlgo, hecMESH, hecLagMAT, fstrSOLID, conMAT, ctchanged )
+  subroutine fstr_update_contact_multiplier( cstep, ctAlgo, hecMESH, hecLagMAT, fstrSOLID, ctchanged )
     integer(kind=kint), intent(in)        :: cstep
     integer(kind=kint), intent(in)        :: ctAlgo
     type( hecmwST_local_mesh ), intent(in) :: hecMESH
     type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
     type(fstr_solid), intent(inout)        :: fstrSOLID
-    type(hecmwST_matrix), intent(inout)    :: conMAT
     logical, intent(out)                   :: ctchanged
 
     integer(kind=kint) :: i, nc, algtype, grpid
@@ -357,7 +347,7 @@ contains
       if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
         call update_contact_multiplier( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
           fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, &
-          hecMESH, hecLagMAT, conMAT, fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC, gnt, ctchanged )
+          hecMESH, hecLagMAT, gnt, ctchanged )
       else if( algtype == CONTACTTIED ) then
         call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
         &  ctchanged )

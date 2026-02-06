@@ -360,11 +360,9 @@ contains
             call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
           call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, conMAT)
+          call hecmw_mat_clear_b( conMAT )
+          call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
 
-          if( fstr_is_contact_active() ) then
-            call hecmw_mat_clear_b( conMAT )
-            call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
-          endif
           !    Consider SPC condition
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
@@ -409,15 +407,13 @@ contains
         fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
         fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
 
+        call fstr_update_contact_multiplier( cstep, ctAlgo, hecMESH, hecLagMAT, fstrSOLID, ctchange )
 
+        ! ----- Set residual for next newton iteration
         call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, conMAT)
-
-
-        if( fstr_is_contact_active() ) then
-          call hecmw_mat_clear_b( conMAT )
-          ! ----- deal with contact boundary
-          call fstr_update_contact_multiplier( cstep, ctAlgo, hecMESH, hecLagMAT, fstrSOLID, conMAT, ctchange )
-        endif
+        ! ----- deal with contact boundary
+        call hecmw_mat_clear_b( conMAT )
+        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
