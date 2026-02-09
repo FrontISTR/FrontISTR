@@ -55,6 +55,7 @@ module elementInfo
   use shape_tet10n
   use shape_prism6n
   use shape_prism15n
+  use m_utilities, only: cross_product
   implicit none
 
   integer, parameter, private :: kreal = kind(0.0d0)
@@ -570,6 +571,74 @@ contains
     end select
   end function
 
+  subroutine getIntPoint4ss( fetype, np, pos, n_intp, shapefunc )
+    use Quadrature
+    integer, intent(in)           :: fetype    !< element type
+    integer, intent(in)           :: np, n_intp        !< number of curr quadrature point
+    real(kind=kreal), intent(out) :: pos(:)    !< natural coord of curr quadrature point
+    real(kind=kreal), intent(out), optional :: shapefunc(:)
+    integer :: a, b
+
+    select case (fetype)
+      case ( fe_tri3n )
+        pos(1:2)=gauss2d7(:,np)
+      case ( fe_quad4n )
+        select case(n_intp)
+        case(4)
+          pos(1:2)=gauss2d2(:,np)
+        case(16)
+          pos(1:2)=gauss2d16(:,np)
+        case(100)
+          a = mod((np-1), 10); b = (np-1) / 10
+          pos(1:2) = [-0.9d0+0.2d0*a,-0.9d0+0.2d0*b]
+        end select
+      case default
+        ! error message
+        stop "element type not defined-qp"
+    end select
+
+    if(present(shapefunc)) call getShapeFunc( fetype, pos, shapefunc )
+
+  end subroutine
+
+  subroutine getWeightAndN4ss( fetype, nn, n_intp, elecoord, weight, N )
+    integer, intent(in)           :: fetype    !< element type
+    integer, intent(in)           :: nn, n_intp       !< number of curr quadrature point
+    real(kind=kreal), intent(in)  :: elecoord(:,:)
+    real(kind=kreal), intent(out) :: weight(:), N(:,:)
+    real(kind=kreal)              :: ncoord(2), det(n_intp)
+    integer                       :: intp
+
+    do intp = 1, n_intp
+      call getIntPoint4ss( fetype, intp, ncoord, n_intp, N(intp,:))
+      call getSurfaceJacobian_det( fetype, nn, ncoord, elecoord, det(intp) )
+      weight(intp) = getWeight_ss(fetype, intp, n_intp) * det(intp)  
+    enddo
+  end subroutine
+
+  real(kind=kreal) function getWeight_ss( fetype, np, n_intp )
+    use Quadrature
+    integer, intent(in)           :: fetype       !< element type
+    integer, intent(in)           :: np, n_intp           !< number of curr quadrature point
+
+    select case (fetype)
+      case (fe_tri3n)
+        getWeight_ss = weight2d7(np)
+      case ( fe_quad4n, fe_mitc4_shell )
+        select case(n_intp)
+        case(4)
+          getWeight_ss = weight2d2(np)
+        case(16)
+          getWeight_ss = weight2d16(np)
+        case(100)
+          getWeight_ss = 0.04d0
+        end select
+      case default
+        ! error message
+        stop "element type not defined-qp"
+    end select
+  end function
+
   !************************************
   !    Following shape function information
   !************************************
@@ -863,6 +932,46 @@ contains
       inverse(3,2)=DUM*(-jacobian(1,1)*jacobian(3,2)+jacobian(3,1)*jacobian(1,2) )
       inverse(3,3)=DUM*( jacobian(1,1)*jacobian(2,2)-jacobian(2,1)*jacobian(1,2) )
     endif
+  end subroutine
+  
+  subroutine getSurfaceJacobian_det(fetype, nn, localcoord, elecoord, det)
+    integer, intent(in)           :: fetype          !< element type
+    integer, intent(in)           :: nn              !< number of element nodes
+    real(kind=kreal), intent(in)  :: localcoord(:)   !< curr position with natural coord
+    real(kind=kreal), intent(in)  :: elecoord(:,:)   !< nodal coord of curr element
+    real(kind=kreal), intent(out) :: det             
+    real(kind=kreal) :: g1(3), g2(3), n(3), deriv(nn,2)
+    integer :: i, j
+
+
+    call getShapeDeriv( fetype, localCoord(:), deriv(:,:) )
+    g1 = 0.0D0
+    g2 = 0.0D0
+    do i = 1, 3
+      do j = 1, nn
+        g1(i) = g1(i) + deriv(j,1) * elecoord(i,j)
+        g2(i) = g2(i) + deriv(j,2) * elecoord(i,j)
+      end do
+    end do
+
+    call cross_product(g1, g2, n)
+    det = dsqrt(dot_product(n,n))
+  end subroutine
+
+  subroutine get_intp_weights(etype, nn, n_intp, elecoord, weight)
+    integer, intent(in)           :: etype
+    integer, intent(in)           :: nn, n_intp
+    real(kind=kreal), intent(in)  :: elecoord(:,:)
+    real(kind=kreal), intent(out) :: weight(:)
+    integer :: intp
+    real(kind=kreal) :: ncoord(2), det
+    
+    ncoord = 0.d0; det = 0.d0
+    do intp = 1, n_intp
+      call getIntPoint4ss( etype, intp, ncoord, n_intp)
+      call getSurfaceJacobian_det( etype, nn, ncoord, elecoord, det )
+      weight(intp) = getWeight_ss(etype, intp, n_intp) * det
+    enddo
   end subroutine
 
   !> Calculate  normal of 3d-surface

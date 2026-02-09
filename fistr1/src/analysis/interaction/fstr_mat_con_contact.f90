@@ -66,11 +66,16 @@ contains
     logical, intent(in)                  :: is_contact_active
 
     integer(kind=kint)                   :: i, j, grpid
+    integer(kind=kint)                   :: count_n2s, count_s2s
     integer(kind=kint)                   :: nlag !< number of Lagrange multipliers per node
 
+    count_n2s = 0
+    count_s2s = 0
     num_lagrange = 0
     if( contact_algo == kcaSLagrange ) then
       do i = 1, fstrSOLID%n_contacts
+        if(fstrSOLID%contacts(i)%method == CONTACTN2S) count_n2s = count_n2s + 1
+        if(fstrSOLID%contacts(i)%method == CONTACTS2S) count_s2s = count_s2s + 1
         grpid = fstrSOLID%contacts(i)%group
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
         nlag = fstr_get_num_lagrange_pernode(fstrSOLID%contacts(i)%algtype)
@@ -81,6 +86,7 @@ contains
       enddo
 
       do i = 1, fstrSOLID%n_embeds
+        count_n2s = count_n2s + 1
         grpid = fstrSOLID%embeds(i)%group
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
         nlag = 3
@@ -93,13 +99,19 @@ contains
 
     ! Get original list of related nodes
     call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active,list_nodeRelated_org,list_nodeRelated)
+    call get_lag_node_list(fstrSOLID, hecLagMAT, hecMAT%NP)
 
     ! Construct new list of related nodes and Lagrange multipliers
     countNon0LU_node = NPL_org + NPU_org
     countNon0LU_lagrange = 0
-    if( is_contact_active ) call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,contact_algo, &
-    &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
-
+    if( is_contact_active )then
+      if(count_n2s > 0) &
+        call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,contact_algo, &
+        &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
+      if(count_s2s > 0) &
+        call getNewListOFrelatednodesANDLagrangeMultipliers_ss(cstep,contact_algo, &
+        &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated,hecLagMAT%lag_node_table)
+    endif
     ! Construct new matrix structure(hecMAT&hecLagMAT)
     numNon0_node = countNon0LU_node/2
     numNon0_lagrange = countNon0LU_lagrange/2
@@ -116,6 +128,43 @@ contains
       call fstr_copy_lagrange_contact(fstrSOLID,hecLagMAT)
 
   end subroutine fstr_mat_con_contact
+
+  subroutine get_lag_node_list(fstrSOLID, hecLagMAT, np)
+    type(fstr_solid)                        :: fstrSOLID                !< type fstr_solid
+    type(hecmwST_matrix_lagrange)          :: hecLagMAT            !< hecmwST_matrix_lagrange
+    integer (kind=kint)                    :: np                      !< total number of nodes
+    integer (kind=kint)                    :: id_lagrange, algtype, i, j, nlag, slave_node, ierr
+
+    ! init lag_node_table
+    allocate(hecLagMAT%lag_node_table(np), stat=ierr)
+    if ( ierr /= 0) stop " Allocation error, hecLagMAT%lag_node_table "
+    hecLagMAT%lag_node_table = 0
+    id_lagrange = 0
+
+    do i = 1, fstrSOLID%n_contacts
+
+      algtype = fstrSOLID%contacts(i)%algtype
+      nlag = fstr_get_num_lagrange_pernode(algtype)
+
+      do j = 1, size(fstrSOLID%contacts(i)%slave)
+        if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+        slave_node = fstrSOLID%contacts(i)%slave(j)
+        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
+        id_lagrange = id_lagrange + nlag
+      enddo
+    enddo
+
+    do i = 1, fstrSOLID%n_embeds
+      nlag = 3
+      do j = 1, size(fstrSOLID%embeds(i)%slave)
+        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+        slave_node = fstrSOLID%embeds(i)%slave(j)
+        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
+        id_lagrange = id_lagrange + nlag
+      enddo
+    enddo
+
+  end subroutine get_lag_node_list
 
   !> Construct new list of related nodes and Lagrange multipliers. Here, a procedure similar to HEC_MW is used.
   subroutine getNewListOFrelatednodesANDLagrangeMultipliers( &
@@ -259,5 +308,61 @@ contains
 
   end function fstr_is_matrixStruct_symmetric
 
+  subroutine getNewListOFrelatednodesANDLagrangeMultipliers_ss( &
+      & cstep, contact_algo, np, fstrSOLID, countNon0LU_node, countNon0LU_lagrange, list_nodeRelated, lag_node_table )
+    integer(kind=kint),intent(in)             :: cstep !< current loading step
+    integer(kind=kint),intent(in)             :: contact_algo !< contact algo
+    integer(kind=kint),intent(in)             :: np !< total number of nodes
+    type(fstr_solid),intent(in)               :: fstrSOLID !< type fstr_solid
+    integer(kind=kint), intent(inout)         :: countNon0LU_node, countNon0LU_lagrange !< counters of node-based number of non-zero items
+    type(nodeRelated), pointer, intent(inout) :: list_nodeRelated(:) !< nodeRelated structure of matrix
+    integer(kind=kint), intent(in)         :: lag_node_table(:) !< table of Lagrange multipliers
+    integer(kind=kint)            :: grpid !< contact pairs group ID
+    integer(kind=kint)            :: ctsurf, etype, nnode_s,nnode_m, ndLocal(l_max_surface_node + 1) !< contents of type tContact
+    integer(kind=kint)            :: i, j, k, l, m, nlag, algtype, id_lag, slave
+    real(kind=kreal)              :: fcoeff !< friction coefficient
+    logical                       :: necessary_to_insert_node
+    integer(kind=kint), allocatable :: lag_list(:) 
+    permission = .true.
+    
+    do i = 1, fstrSOLID%n_contacts
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      fcoeff = fstrSOLID%contacts(i)%fcoeff
+      necessary_to_insert_node = ( fcoeff /= 0.0d0 .or. contact_algo == kcaALagrange )
+
+      algtype = fstrSOLID%contacts(i)%algtype
+      nlag = fstr_get_num_lagrange_pernode(algtype)
+      if( contact_algo == kcaALagrange ) nlag = 1
+
+      do j = 1, size(fstrSOLID%contacts(i)%slave_surf)
+        if( fstrSOLID%contacts(i)%slave_surf(j)%state == CONTACTFREE ) cycle
+        nnode_s = size(fstrSOLID%contacts(i)%slave_surf(j)%nodes)
+        do k = 1, fstrSOLID%contacts(i)%slave_surf(j)%n_intp
+          if(fstrSOLID%contacts(i)%slave_surf(j)%states(k)%state == CONTACTFREE ) cycle
+          ctsurf = fstrSOLID%contacts(i)%slave_surf(j)%states(k)%surface
+          etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
+          if( etype/=fe_tri3n .and. etype/=fe_quad4n ) &
+            stop " ##Error: This element type is not supported in contact analysis !!! "
+          nnode_m = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
+          ndLocal(2:1+nnode_m) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(:)
+          
+          do l = 1, nnode_s
+            ndLocal(1) = fstrSOLID%contacts(i)%slave_surf(j)%nodes(l)
+            slave = fstrSOLID%contacts(i)%slave_surf(j)%nslave_index(l)
+            if(fstrSOLID%contacts(i)%states(slave)%state == CONTACTFREE) cycle
+            id_lag = lag_node_table( ndLocal(1) ) - 1
+            do m = 1, nlag
+              if( contact_algo == kcaSLagrange ) id_lag = id_lag + 1
+              call hecmw_ass_nodeRelated_from_contact_pair(np, nnode_m, ndLocal, id_lag, permission, &
+                & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+            enddo
+          enddo
+        enddo
+      enddo
+    enddo
+
+  end subroutine getNewListOFrelatednodesANDLagrangeMultipliers_ss
 
 end module fstr_matrix_con_contact

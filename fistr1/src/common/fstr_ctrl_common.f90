@@ -559,7 +559,7 @@ contains
     real(kind=kreal), intent(out)      :: ttol           !< tolrence along contact tangent
     character(len=*), intent(out)      :: cpname         !< name of contact parameter
 
-    integer           :: rcode, ipt
+    integer           :: rcode, ipt, mortar
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
@@ -612,7 +612,10 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '# ', 0, 'R', ttol ) /= 0 ) return
     cpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
-    
+    mortar = 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'MORTAR ','NO,YES ', 0, 'P', mortar ) /= 0) return
+    contact%method = mortar
+
     ! Set penalty coefficients to contact structure if specified (for ALagrange method)
     if( np > 0.d0 ) then
       do rcode=1,n

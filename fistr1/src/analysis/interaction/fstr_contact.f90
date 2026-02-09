@@ -74,10 +74,13 @@ contains
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
-
-      call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-        iter, hecLagMAT%Lagrange(:), hecMAT, hecLagMAT)
-
+      if(fstrSOLID%contacts(i)%method == CONTACTN2S)then
+        call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          iter, hecLagMAT%Lagrange(:), hecMAT, hecLagMAT)
+      else if(fstrSOLID%contacts(i)%method == CONTACTS2S)then
+        call calcu_contact_stiffness_SurfSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          iter, hecLagMAT%Lagrange(:), hecMAT, hecLagMAT )
+      endif
     enddo
 
     do i = 1, fstrSOLID%n_embeds
@@ -114,10 +117,15 @@ contains
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
-
-      call calcu_contact_ndforce_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-        fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
-        fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC, hecLagMAT )
+      if(fstrSOLID%contacts(i)%method == CONTACTN2S)then
+        call calcu_contact_ndforce_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
+          fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC, hecLagMAT )
+      else if(fstrSOLID%contacts(i)%method == CONTACTS2S)then
+        call calcu_contact_ndforce_SurfSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
+          fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC, hecLagMAT )
+      end if
 
     enddo
 
@@ -216,10 +224,16 @@ contains
       endif
       if( present(B) ) then
         call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-        & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, B )
+          & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, B )
+        if(fstrSOLID%contacts(i)%method == CONTACTS2S) &
+          call scan_contact_state_ss( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+            & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, B )
       else
         call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-        & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
+          & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
+        if(fstrSOLID%contacts(i)%method == CONTACTS2S) &
+          call scan_contact_state_ss( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+            & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
       endif
       if( .not. active ) active = iactive
     enddo

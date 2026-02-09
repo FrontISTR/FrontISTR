@@ -83,6 +83,68 @@ contains
 
   end subroutine computeTm_Tt
 
+  subroutine computeTm_Tt_Dmortar(ctState, mSurf, fcoeff, Tm, Tt, weight,phi,shapefunc_s)
+    implicit none
+    
+    ! Input arguments
+    type(tContactState), intent(in) :: ctState         !< contact state at intp
+    type(tSurfElement), intent(in)  :: mSurf           !< master surf
+    real(kind=kreal), intent(in)    :: fcoeff          !< friction coefficient (if 0, Tt not computed)
+    
+    ! Output arguments
+    real(kind=kreal), intent(out)   :: Tm(3, 3*(l_max_surface_node+1)) !< relative displacement mapping matrix
+    real(kind=kreal), intent(out)   :: Tt(3, 3*(l_max_surface_node+1)) !< tangential mapping matrix
+    
+    ! Local variables
+    integer(kind=kint) :: i, j
+    integer(kind=kint) :: nnode_m !< number of nodes of master segment
+    integer(kind=kint) :: smoothing
+    real(kind=kreal)   :: shapefunc(l_max_surface_node) !< shape functions [N_1, N_2, ..., N_n]
+    real(kind=kreal)   :: P_matrix(3, 3*l_max_surface_node)  !< Nagata interpolation matrix
+    real(kind=kreal)   :: normal(3)       !< normal vector (unit vector)
+    real(kind=kreal)   :: Pt(3,3)         !< tangential projection operator Pt = I - n⊗n
+    real(kind=kreal)   :: weight,phi,shapefunc_s,shapefunc_m(4)
+    
+    Tm = 0.0d0
+    Tt = 0.0d0
+
+    nnode_m = size(mSurf%nodes)
+    call getShapeFunc(mSurf%etype, ctState%lpos(1:2), shapefunc_m)
+
+    ! Get normal vector from contact state
+    normal(1:3) = ctState%direction(1:3)
+    
+    ! First block (slave node): Identity matrix I_3
+    Tm(1,1) = phi* shapefunc_s* weight
+    Tm(2,2) = phi* shapefunc_s* weight
+    Tm(3,3) = phi* shapefunc_s* weight
+    
+    ! Remaining blocks (master nodes): -N_i * I_3
+    do i = 1, nnode_m
+      Tm(1, i*3+1) = - phi*shapefunc_m(i)*weight
+      Tm(2, i*3+2) = - phi*shapefunc_m(i)*weight
+      Tm(3, i*3+3) = - phi*shapefunc_m(i)*weight
+    enddo
+    
+    ! Compute Tt only if friction coefficient is non-zero
+    if (fcoeff /= 0.0d0) then
+      ! Construct tangential projection operator Pt = I_3 - n x n
+      do i = 1, 3
+        do j = 1, 3
+          if (i == j) then
+            Pt(i,j) = 1.0d0 - normal(i)*normal(j)
+          else
+            Pt(i,j) = -normal(i)*normal(j)
+          endif
+        enddo
+      enddo
+      
+      ! Compute Tt = Pt * Tm using matrix multiplication
+      Tt(1:3, 1:3*(nnode_m+1)) = matmul(Pt(1:3,1:3), Tm(1:3, 1:3*(nnode_m+1)))
+    endif
+    
+  end subroutine computeTm_Tt_Dmortar
+
   !> \brief Compute contact maps for ALag method (normal distribution and tangential displacement maps)
   !! This subroutine constructs the mapping matrices for ALag contact using computeTm_Tt as the core:
   !!   Bn: normal force distribution vector [n; -N_1*n; -N_2*n; ...; -N_n*n] (size: nnode*3+3)

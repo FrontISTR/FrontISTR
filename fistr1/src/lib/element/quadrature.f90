@@ -9,9 +9,11 @@
 !>     gauss2d1: quad, 1-point integration (1 integration point)
 !>     gauss2d2: quad, 2-point integration (4 integration points)
 !>     gauss2d3: quad, 3-point integration (9 integration points)
+!>     gauss2d16: quad, 4-point integration (16 integration points)
 !>     gauss2d4: tri, 1 integration point
 !>     gauss2d5: tri, 3 integration points
 !>     gauss2d6: tri, 4 integeration points
+!>     gauss2d7: tri, 7 integeration points
 !>     gauss3d1: hex, 1-point integration (1 integration point)
 !>     gauss3d2: hex, 2-point integration (8 integration points)
 !>     gauss3d3: hex, 3-point integration (27 integration points)
@@ -31,17 +33,16 @@ module Quadrature
 
   real(kind=kreal) ::                                               &
     gauss1d1(1,1),gauss1d2(1,2),gauss1d3(1,3),                       &
-    gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),         &
-    gauss2d5(2,3),gauss2d6(2,4),gauss3d1(3,1),gauss3d2(3,8),         &
+    gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d16(2,16),gauss2d4(2,1),         &
+    gauss2d5(2,3),gauss2d6(2,4),gauss2d7(2,7),gauss3d1(3,1),gauss3d2(3,8),         &
     gauss3d3(3,27),gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),       &
     gauss3d7(3,2),gauss3d8(3,9),gauss3d9(3,18),gauss3d10(3,6),       &
     gauss3d12(3,5),    &
-    weight1d1(1),weight1d2(2),weight1d3(3),                          &
-    weight2d1(1),weight2d2(4),weight2d3(9),weight2d4(1),             &
-    weight2d5(3),weight2d6(4),weight3d1(1),weight3d2(8),             &
-    weight3d3(27),weight3d4(1),weight3d5(4),weight3d6(15),           &
-    weight3d7(2),weight3d8(9),weight3d9(18),weight3d10(6),           &
-    weight3d12(5)
+    weight1d1(1),weight1d2(2),weight1d3(3),weight2d1(1),weight2d2(4),             &
+    weight2d3(9),weight2d16(16),weight2d4(1),weight2d5(3),weight2d6(4),weight2d7(7),  &
+    weight3d1(1),weight3d2(8),weight3d3(27),weight3d4(1),            &
+    weight3d5(4),weight3d6(15),weight3d7(2),weight3d8(9),            &
+    weight3d9(18),weight3d10(6), weight3d12(5)
 
 
   data gauss1d1 /0.d0/
@@ -67,6 +68,24 @@ module Quadrature
     -0.d0,0.774596669241483d0,                                        &
     0.774596669241483d0,0.774596669241483d0/
   !
+  data gauss2d16 /                                           &
+    -0.8611363116d0, -0.8611363116d0,                        &
+    -0.3399810436d0, -0.8611363116d0,                        &
+     0.3399810436d0, -0.8611363116d0,                        &
+     0.8611363116d0, -0.8611363116d0,                        &
+    -0.8611363116d0, -0.3399810436d0,                        &
+    -0.3399810436d0, -0.3399810436d0,                        &
+     0.3399810436d0, -0.3399810436d0,                        &
+     0.8611363116d0, -0.3399810436d0,                        &
+    -0.8611363116d0,  0.3399810436d0,                        &
+    -0.3399810436d0,  0.3399810436d0,                        &
+     0.3399810436d0,  0.3399810436d0,                        &
+     0.8611363116d0,  0.3399810436d0,                        &
+    -0.8611363116d0,  0.8611363116d0,                        &
+    -0.3399810436d0,  0.8611363116d0,                        &
+     0.3399810436d0,  0.8611363116d0,                        &
+     0.8611363116d0,  0.8611363116d0/
+  !
   data gauss2d4 /0.333333333333333d0,0.333333333333333d0/
   !
   data gauss2d5 /                                                   &
@@ -79,6 +98,15 @@ module Quadrature
     0.666666666666667d0,0.166666666666667d0,                          &
     0.166666666666667d0,0.666666666666667d0,                          &
     0.333333333333333d0,0.333333333333333d0/
+  !
+  data gauss2d7 / &
+    0.333333333333333d0,0.333333333333333d0, &
+    0.797426985353087d0,0.101286507323456d0, &
+    0.101286507323456d0,0.797426985353087d0, &
+    0.101286507323456d0,0.101286507323456d0, &
+    0.470142064105115d0,0.059715871789770d0, &
+    0.059715871789770d0,0.470142064105115d0, &
+    0.470142064105115d0,0.470142064105115d0/
   !
   data gauss3d1 /0.,0.,0./
   !
@@ -212,14 +240,25 @@ module Quadrature
     0.493827160493827d0,0.790123456790123d0,0.493827160493827d0,        &
     0.308641975308642d0,0.493827160493827d0,0.308641975308642d0/
   !
+  data weight2d16 /                                                     &
+    0.12100299328560d0,0.22685185185185d0,0.22685185185185d0,0.12100299328560d0,        &
+    0.22685185185185d0,0.42529330301069d0,0.42529330301069d0,0.22685185185185d0,        &
+    0.22685185185185d0,0.42529330301069d0,0.42529330301069d0,0.22685185185185d0,        &
+    0.12100299328560d0,0.22685185185185d0,0.22685185185185d0,0.12100299328560d0/
+  !
   data weight2d4 /0.5d0/
   !
   data weight2d5 /                                                     &
     0.166666666666666d0,0.166666666666666d0,0.166666666666666d0/
-
+  !
   data weight2d6 /                                                     &
     0.5d0,0.5d0,0.5d0,0.5d0/
   !
+  data weight2d7 / &
+    0.112500000000000d0,0.062969590272413d0,0.062969590272413d0, & 
+    0.062969590272413d0,0.066197076394253d0,0.066197076394253d0, & 
+    0.066197076394253d0/
+!
   data weight3d1 /8.d0/
   !
   data weight3d2 /1.d0,1.d0,1.d0,1.d0,1.d0,1.d0,1.d0,1.d0/

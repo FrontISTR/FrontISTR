@@ -33,12 +33,18 @@ module mContactDef
   integer, parameter :: CONTACTFREE = -1
   integer, parameter :: CONTACTSTICK = 1
   integer, parameter :: CONTACTSLIP = 2
-
+  integer, parameter :: CONTACTACTIVE = 10
+  integer, parameter :: CONTACTINACTIVE = -1 !!!! dbg-later
+  
   !> contact type or algorithm definition
   integer, parameter :: CONTACTTIED = 1
   integer, parameter :: CONTACTGLUED = 2
   integer, parameter :: CONTACTSSLID = 3
   integer, parameter :: CONTACTFSLID = 4
+
+  !> contact method
+  integer, parameter :: CONTACTN2S = 1
+  integer, parameter :: CONTACTS2S = 2
 
   !> contact interference type
   integer, parameter :: C_IF_SLAVE = 1
@@ -68,6 +74,19 @@ module mContactDef
     integer             :: interference_flag
   end type
 
+  !> Structure to define contact surface
+  type tContactSurf
+    integer(kind=kint)              :: eid                  !< elemental index(global)
+    integer(kind=kint)              :: etype                !< type of surface element
+    integer(kind=kint), pointer     :: nodes(:)=>null()     !< nodes index(global)
+    integer(kind=kint)              :: state
+    integer(kind=kint)              :: n_intp               !< num of surface integral point
+    type(tContactState), pointer    :: states(:)=>null()    !< contact states of slave surf
+    integer(kind=kint), pointer     :: nslave_index(:)=>null()     !< nodes index(global)
+    real(kind=kreal), pointer       :: phi(:,:)=>null()  
+    integer(kind=kint), pointer     :: msurf_list(:)=>null()     !< nodes index(global)
+  end type tContactSurf
+
   !> Structure to includes all info needed by contact calculation
   type tContact
     ! following contact definition
@@ -84,6 +103,8 @@ module mContactDef
     real(kind=kreal)              :: tPenalty                !< tangential penalty coefficient
     real(kind=kreal)              :: refStiff                !< reference stiffness for penalty calculation
     
+    type(tContactSurf), pointer   :: slave_surf(:)=>null()       
+
     real(kind=kreal)    :: ctime
     integer(kind=kint)  :: if_type
     real(kind=kreal)    :: if_etime
@@ -96,6 +117,7 @@ module mContactDef
     ! 3: SSLID-Small sliding contact( no position but with contact state change)
     ! 4: FSLID-Finite sliding contact (both changes in contact state and position possible)
     integer                       :: algtype                 !< algorithm flag
+    integer                       :: method                  !< ndoe-surf or surf-surf
 
     logical                       :: mpced                   !< if turns into mpc condition
     logical                       :: symmetric               !< if symmetrizalized in friction calculation
@@ -248,7 +270,9 @@ contains
 
     integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
     integer  :: count,nodeID
-
+    integer, allocatable  :: slave_index(:)
+    allocate( slave_index(hecMESH%n_node) )
+    slave_index(:) = 0
     fstr_contact_init = .false.
 
     contact%cparam => cparam
@@ -328,6 +352,7 @@ contains
       endif
       ii = ii + 1
       contact%slave(ii) = hecMESH%node_group%grp_item(i)
+      slave_index(contact%slave(ii)) = ii
     enddo
 
     ! contact state
@@ -341,6 +366,74 @@ contains
     call bucketDB_init( contact%master_bktDB )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
     call find_surface_neighbor( contact%master, contact%master_bktDB )
+
+    if(contact%method == CONTACTS2S) then
+      !  slave surface
+      cgrp = contact%surf_id1_sgrp
+      if( cgrp<=0 ) return
+      is= hecMESH%surf_group%grp_index(cgrp-1) + 1
+      ie= hecMESH%surf_group%grp_index(cgrp  )
+
+      if(present(myrank)) then
+        ! PARA_CONTACT
+        count = 0
+        do i=is,ie
+          ic   = hecMESH%surf_group%grp_item(2*i-1)
+          if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+          count = count + 1
+        enddo
+        allocate( contact%slave_surf(count) )
+        count = 0
+        do i=is,ie
+          ic   = hecMESH%surf_group%grp_item(2*i-1)
+          if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+          count = count + 1
+          nsurf = hecMESH%surf_group%grp_item(2*i)
+          ic_type = hecMESH%elem_type(ic)
+          call initialize_csurf( ic, ic_type, nsurf, contact%slave_surf(count) )
+          iss = hecMESH%elem_node_index(ic-1)
+          do j=1, size( contact%slave_surf(count)%nodes )
+            nn = contact%slave_surf(count)%nodes(j)
+            contact%slave_surf(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+            contact%slave_surf(count)%nslave_index(j) = slave_index(hecMESH%elem_node_item( iss+nn ))
+          enddo
+        enddo
+
+      else
+        ! not PARA_CONTACT
+        allocate( contact%slave_surf(ie-is+1) )
+        do i=is,ie
+          ic   = hecMESH%surf_group%grp_item(2*i-1)
+          nsurf = hecMESH%surf_group%grp_item(2*i)
+          ic_type = hecMESH%elem_type(ic)
+          call initialize_csurf( ic, ic_type, nsurf, contact%slave_surf(i-is+1) )
+          iss = hecMESH%elem_node_index(ic-1)
+          do j=1, size( contact%slave_surf(i-is+1)%nodes )
+            nn = contact%slave_surf(i-is+1)%nodes(j)
+            contact%slave_surf(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+            contact%slave_surf(i-is+1)%nslave_index(j) = slave_index(hecMESH%elem_node_item( iss+nn ))
+          enddo
+        enddo
+
+      endif
+
+      ! state for each integration points
+      do i=1, size( contact%slave_surf )
+        nn = contact%slave_surf(i)%n_intp
+        allocate( contact%slave_surf(i)%states(nn) )
+        do j = 1, contact%slave_surf(i)%n_intp
+          contact%slave_surf(i)%states(j)%state = -1
+          contact%slave_surf(i)%states(j)%multiplier(:) = 0.d0
+          contact%slave_surf(i)%states(j)%tangentForce(:) = 0.d0
+          contact%slave_surf(i)%states(j)%tangentForce1(:) = 0.d0
+          contact%slave_surf(i)%states(j)%tangentForce_trial(:) = 0.d0
+          contact%slave_surf(i)%states(j)%tangentForce_final(:) = 0.d0
+          contact%slave_surf(i)%states(j)%reldisp(:) = 0.d0
+          contact%slave_surf(i)%states(j)%time_factor = 0.d0
+          contact%slave_surf(i)%states(j)%interference_flag = 0
+        enddo
+      enddo
+    endif
 
     ! initialize contact communication table
     call hecmw_contact_comm_init( contact%comm, hecMESH, 1, nslave, contact%slave )
@@ -531,5 +624,247 @@ contains
     enddo
   end subroutine
 
+  !> Initializer
+  subroutine initialize_csurf( eid, etype, nsurf, surf )
+    use elementInfo
+    integer(kind=kint), intent(in)    :: eid    !< element ID
+    integer(kind=kint), intent(in)    :: etype  !< element type
+    integer(kind=kint), intent(in)    :: nsurf  !< surface ID
+    type(tContactSurf), intent(inout) :: surf   !< surface element
+    integer(kind=kint) :: i, n, outtype, nodes(100)
+    surf%eid = eid
+
+    call getSubFace( etype, nsurf, outtype, nodes )
+    surf%etype = outtype
+    n=getNumberOfNodes( outtype )
+    if(surf%etype == fe_quad4n )then
+      ! surf%n_intp = 1
+      ! surf%n_intp = 4
+      surf%n_intp = 16
+      ! surf%n_intp = 100
+    else if(surf%etype == fe_tri3n )then
+      surf%n_intp = 7
+    end if
+    allocate( surf%nodes(n) )
+    allocate( surf%nslave_index(n) )
+    surf%nodes(1:n)=nodes(1:n)
+    surf%nslave_index(:)= 0
+
+    allocate( surf%phi(surf%n_intp,n) )
+    allocate( surf%msurf_list(surf%n_intp) )
+    surf%msurf_list(:) = -1
+  end subroutine
+  
+  subroutine getDualShapfunc(slave_surf, nn, n_intp, elecoord, weight, N, success)
+    type(tContactSurf), intent(inout):: slave_surf
+    integer, intent(in)           :: nn, n_intp
+    real(kind=kreal), intent(in)  :: elecoord(:,:), weight(:), N(:,:)
+    integer :: intp, i, j, k, info,counter
+    real(kind=kreal) :: Me(nn,nn), Ae(nn,nn), ncoord(2)
+    real(kind=kreal) :: De(nn), det(n_intp)
+    real(kind=kreal) :: biorth_check(nn,nn), sum_check
+    logical, intent(out) :: success
+    logical, parameter :: debug_check = .true.
+    
+    ! 積分点での形状関数とヤコビアンを計算
+    Ae = 0.d0
+
+    ! De = ∫ N_i dA を計算（対角ベクトル）
+    De = 0.0d0
+    success = .true.
+    do j = 1, nn
+      do intp = 1, n_intp
+        if( slave_surf%states(intp)%state == CONTACTFREE ) cycle
+        De(j) = De(j) + N(intp,j) * weight(intp)
+      end do
+    end do
+    ! write(*,*) 'De = ∫ N_i dA:'
+    ! do i = 1, nn
+    !   write(*,'(A,I2,A,4E15.6)') '  De(', i, ') = ', De(i)
+    ! end do
+    ! Me = ∫ N_j N_k dA を計算
+    Me = 0.0d0
+    do j = 1, nn
+      do k = 1, nn
+        do intp = 1, n_intp
+          if( slave_surf%states(intp)%state == CONTACTFREE ) cycle
+          Me(j,k) = Me(j,k) + N(intp,j)*N(intp,k)* weight(intp)
+        end do
+      end do
+    end do
+    ! write(*,*) 'Me_jk = ∫ N_j N_k dA (m_els):'
+    ! do i = 1, nn
+    !   write(*,'(A,I2,A,4E15.6)') '  Me(', i, ') = ', Me(i,:)
+    ! end do
+
+    ! 3. Me の逆行列を計算（対称行列用 Cholesky 分解）
+    !    Me は対称正定値なので dpotrf/dpotri を使用
+    call dpotrf('U', nn, Me, nn, info)
+    if (info /= 0) then
+      write(*,*) 'Error in dpotrf (Cholesky factorization), info=', info
+      write(*,*) 'Matrix may not be positive definite'
+      success = .false.
+      return
+      stop
+    endif
+    
+    call dpotri('U', nn, Me, nn, info)
+    if (info /= 0) then
+      write(*,*) 'Error in dpotri (inverse calculation), info=', info
+      success = .false.
+      return
+      stop
+    endif
+    
+    ! dpotri は上三角のみ計算するので、下三角を埋める
+    do j = 1, nn
+      do k = j+1, nn
+        Me(k,j) = Me(j,k)
+      end do
+    end do
+
+    ! Ae = W_j × (Me^-1)_jk を計算
+    !    これが Dual basis 関数の展開係数
+    do j = 1, nn
+      do k = 1, nn
+        Ae(j,k) = De(j) * Me(j,k)
+      end do
+    end do
+
+    ! Ae(1,:) = Ae(1,:)+Ae(2,:)
+    ! Ae(4,:) = Ae(4,:)+Ae(3,:)
+
+    ! Ae(2,:) = 0.0d0
+    ! Ae(3,:) = 0.0d0
+
+    ! write(*,*) 'Ae (pslavdual):'
+    ! do i = 1, nn
+    !   write(*,'(A,I2,A,4E15.6)') '  Ae(', i, ') = ', Ae(i,:)
+    ! end do
+
+    ! φ_j(積分点) = Σ_k Ae_jk N_k(積分点) を計算
+    !    各積分点で Dual basis 関数を評価
+    slave_surf%phi = 0.0d0
+    do intp = 1, n_intp
+      if( slave_surf%states(intp)%state == CONTACTFREE ) cycle
+      do j = 1, nn
+        do k = 1, nn
+          slave_surf%phi(intp,j) = slave_surf%phi(intp,j) + Ae(j,k) * N(intp,k)
+        end do
+      end do
+    end do
+
+    ! 6. Biorthogonality 条件の検証（デバッグ用）
+    !    ∫ φ_i N_j dA ≈ W_i δ_ij を確認
+    if (debug_check) then
+      ! write(*,*) '=== Dual Shape Function Verification ==='
+      ! write(*,*) 'Number of nodes:', nn
+      ! write(*,*) 'Number of integration points:', n_intp
+      
+      ! Biorthogonality check: ∫ φ_i N_j dA
+      ! W と M の計算と同じ積分点のみを使用
+      biorth_check = 0.0d0
+      do intp = 1, n_intp
+        do i = 1, nn
+          do j = 1, nn
+            biorth_check(i,j) = biorth_check(i,j) + &
+                                slave_surf%phi(intp,i) * N(intp,j) * weight(intp)
+          end do
+        end do
+      end do
+      
+      ! write(*,*) 'Biorthogonality check (∫ φ_i N_j dA):'
+      ! write(*,*) '  (Should be W_i for i=j, zero for i≠j)'
+      ! do i = 1, nn
+      !   write(*,'(A,I2,A)', advance='no') '  Row ', i, ':'
+      !   do j = 1, nn
+      !     write(*,'(E12.4)', advance='no') biorth_check(i,j)
+      !   end do
+      !   write(*,*)
+      ! end do
+      
+      ! 最大誤差を計算
+      ! write(*,*) 'Maximum errors:'
+      do i = 1, nn
+        ! 対角成分の誤差（W_i との差）
+        ! write(*,'(A,I2,A,E15.6)') '  Diagonal(', i, ') error: ', &
+        !                           abs(biorth_check(i,i) - De(i))
+        ! 非対角成分の誤差（ゼロとの差）
+        do j = 1, nn
+          if (i /= j) then
+            if (abs(biorth_check(i,j)) > 1.0d-8) then
+              write(*,'(A,I2,A,I2,A,E15.6)') '  Off-diagonal(', i, ',', j, &
+                                             ') error: ', abs(biorth_check(i,j))
+              success = .false.
+              return
+            endif
+          endif
+        end do
+      end do
+      
+      ! Partition of unity check: Σ_i φ_i = 1
+      ! W と M の計算と同じ積分点のみを使用
+      ! write(*,*) 'Partition of unity check (Σ φ_i at each integration point):'
+      ! do intp = 1, n_intp
+      !   if( slave_surf%states(intp)%state == CONTACTFREE ) cycle
+      !   sum_check = 0.0d0
+      !   do i = 1, nn
+      !     sum_check = sum_check + slave_surf%phi(intp,i)
+      !   end do
+      !   write(*,'(A,I3,A,E15.6,A,E15.6)') '  Intp ', intp, ': sum = ', &
+      !                                     sum_check, ', error = ', abs(sum_check - 1.0d0)
+      ! end do
+      
+      ! write(*,*) '========================================='
+    endif
+
+  end subroutine
+
+  subroutine switch_intp_contact(slave_surf, num, nstate)
+    type(tContactSurf), intent(inout):: slave_surf
+    integer, intent(in)           :: num, nstate
+    integer :: n_intp, i, intp_list(25), state
+    logical, parameter :: debug_check = .true.
+
+    n_intp = 4
+    if (nstate == CONTACTFREE) then
+      state = CONTACTINACTIVE
+    else
+      state = CONTACTACTIVE
+      slave_surf%state = CONTACTACTIVE
+    end if
+
+    select case (slave_surf%etype)
+      case ( fe_tri3n )
+        select case (num)
+          case (1)
+            intp_list(1:4) = [1,4,5,6]
+          case (2)
+            intp_list(1:4) = [1,2,5,7]
+          case (3)
+            intp_list(1:4) = [1,3,6,7]
+        end select
+      case ( fe_quad4n )
+        select case (num)
+          case (1)
+            intp_list(1:4) = [1,2,5,6]
+          case (2)
+            intp_list(1:4) = [3,4,7,8]
+          case (3)
+            intp_list(1:4) = [11,12,15,16]
+          case (4)
+            intp_list(1:4) = [9,10,13,14]
+        end select
+      case default
+        ! error message
+        stop "element type not defined-qp"
+    end select
+
+    do i = 1, n_intp
+      if (slave_surf%states(intp_list(i))%state > 0 .and. state > 0) cycle !!!! dbg-later
+      slave_surf%states(intp_list(i))%state = state
+    end do
+
+  end subroutine switch_intp_contact
 
 end module mContactDef
