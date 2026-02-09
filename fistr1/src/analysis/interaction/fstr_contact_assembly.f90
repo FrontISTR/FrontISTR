@@ -100,7 +100,8 @@ contains
       if( present(cont_fric) ) cont_fric(idx:idx+2) = cont_fric(idx:idx+2) + ctTForce((i-1)*3+1:(i-1)*3+3)
     enddo
 
-    if( id_lagrange > 0 ) hecMAT%B(np*ndof+id_lagrange) = hecMAT%B(np*ndof+id_lagrange) + ctNForce((nnode+1)*3+1)+ctTForce((nnode+1)*3+1)
+    if( id_lagrange > 0 ) &
+    hecMAT%B(np*ndof+id_lagrange) = hecMAT%B(np*ndof+id_lagrange) + ctNForce((nnode+1)*3+1)+ctTForce((nnode+1)*3+1)
 
   end subroutine update_NDForce_contact
 

@@ -879,8 +879,8 @@ contains
     endif
     !$omp parallel do &
       !$omp& default(none) &
-      !$omp& private(i,slave,id,nlforce,nlforces,coord,ncoord,surf_node_pos,sfunc,indexMaster,nMaster,nnode_s,nnode_m,normal,j,iSS,elem,is_cand,idm,etype,isin, &
-      !$omp&         bktID,nCand,indexCand) &
+      !$omp& private(i,slave,id,nlforce,nlforces,coord,ncoord,surf_node_pos,sfunc,indexMaster,nMaster,nnode_s,nnode_m, &
+      !$omp&         normal,j,iSS,elem,is_cand,idm,etype,isin,bktID,nCand,indexCand) &
       !$omp& firstprivate(nMasterMax,is_present_B) &
       !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,Bp,distclr,contact_surf,is_init) &
       !$omp& reduction(.or.:active) &
@@ -904,7 +904,8 @@ contains
       enddo
       do j = 1, contact%slave_surf(i)%n_intp
         if(contact%slave_surf(i)%states(j)%state==CONTACTINACTIVE) cycle
-        if(contact%if_type /= 0) call set_shrink_factor(contact%ctime, contact%slave_surf(i)%states(j), contact%if_etime, contact%if_type)
+        if(contact%if_type /= 0) &
+         call set_shrink_factor(contact%ctime, contact%slave_surf(i)%states(j), contact%if_etime, contact%if_type)
         
         if( contact%slave_surf(i)%states(j)%state==CONTACTSTICK .or. contact%slave_surf(i)%states(j)%state==CONTACTSLIP ) then
           id = contact%slave_surf(i)%states(j)%surface
@@ -982,8 +983,8 @@ contains
                 contact%slave_surf(i)%states(j)%direction(:) )
             ! contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
             contact%slave_surf(i)%msurf_list(j) = id
-            write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Element",elemID(contact%slave_surf(i)%eid)," contact with element", &
-              elemID(contact%master(id)%eid),       &
+            write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') &
+              "Element",elemID(contact%slave_surf(i)%eid)," contact with element", elemID(contact%master(id)%eid),       &
               " with distance ", contact%slave_surf(i)%states(j)%distance," at ",contact%slave_surf(i)%states(j)%lpos(1:2), &
               " along direction ", contact%slave_surf(i)%states(j)%direction," rank=",hecmw_comm_get_rank()
             exit
@@ -1016,7 +1017,8 @@ contains
 
   end subroutine scan_contact_state_ss
 
-  subroutine track_contact_position_ss( flag_ctAlgo, eid, coord, state, contact, currpos, currdisp, infoCTChange, nodeID, elemID, B )
+  subroutine track_contact_position_ss( flag_ctAlgo, eid, coord, state, contact, currpos, currdisp, infoCTChange,&
+     nodeID, elemID, B )
     character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
     integer, intent(in)                             :: eid       !< slave elem
     type( tContact ), intent(inout)                  :: contact      !< contact info

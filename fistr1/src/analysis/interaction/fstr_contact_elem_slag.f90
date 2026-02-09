@@ -20,8 +20,6 @@ module m_fstr_contact_elem_slag
 contains
 
   subroutine getContactStiffness_Slag(ctState,tSurf,iter,tPenalty,fcoeff,lagrange,stiffness)
-
-    use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint)  :: iter
@@ -103,8 +101,6 @@ contains
   end subroutine getContactStiffness_Slag
 
   subroutine getContactStiffness_Slag_ss(ctState,tSurf,iter,tPenalty,fcoeff,lagrange,stiffness,weight,phi,shapefunc_s)
-
-    use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint)  :: iter
@@ -253,7 +249,8 @@ contains
 
   end subroutine getContactNodalForce_Slag
 
-  subroutine getContactNodalForce_Slag_ss(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag,weight,phi,shapefunc_s)
+  subroutine getContactNodalForce_Slag_ss(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,&
+    cflag,weight,phi,shapefunc_s)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
