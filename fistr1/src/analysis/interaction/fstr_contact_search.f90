@@ -48,7 +48,6 @@ contains
     !> checking the contact element of last step
     sid0 = contact%states(nslave)%surface
     opos = contact%states(nslave)%lpos(1:2)
-    odirec = contact%states(nslave)%direction
     etype = contact%master(sid0)%etype
     nn = getNumberOfNodes( etype )
     do j=1,nn
@@ -161,6 +160,7 @@ contains
     real(kind=kreal)    :: nlforce
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
+    real(kind=kreal)    :: effective_near_dist, distclr_use
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
@@ -198,11 +198,14 @@ contains
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
 
+    ! Compute effective near distance for CONTACTNEAR detection
+    effective_near_dist = contact%cparam%NEAR_DIST
+
     !$omp parallel do &
     !$omp& default(none) &
     !$omp& private(i,slave,id,nlforce,coord,indexMaster,nMaster,iSS,idm,etype,isin, &
-    !$omp&         bktID,nCand,indexCand) &
-    !$omp& firstprivate(nMasterMax,is_implicit) &
+    !$omp&         bktID,nCand,indexCand,distclr_use) &
+    !$omp& firstprivate(nMasterMax,is_implicit,effective_near_dist) &
     !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,distclr,contact_surf,is_init) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
@@ -241,6 +244,45 @@ contains
           endif
         endif
 
+      else if( contact%states(i)%state==CONTACTNEAR ) then
+        ! NEAR tracking: re-project on current master surface
+        coord(:) = currpos(3*slave-2:3*slave)
+        id = contact%states(i)%surface
+        if (effective_near_dist > 0.0d0) then
+          distclr_use = max(distclr, effective_near_dist / contact%master(id)%reflen)
+        else
+          distclr_use = distclr
+        end if
+        call project_Point2SurfElement( coord, contact%master(id), currpos, &
+          contact%states(i), isin, distclr_use, &
+          contact%states(i)%lpos(1:2), contact%cparam%CLR_SAME_ELEM, smoothing=contact%smoothing )
+        if (isin) then
+          if (contact%states(i)%distance <= distclr * contact%master(id)%reflen) then
+            ! Within contact threshold -> upgrade to STICK
+            contact%states(i)%state = CONTACTSTICK
+            contact%states(i)%multiplier(:) = 0.d0
+            write(*,'(A,i10,A,i10,A,i6)') "Node",nodeID(slave)," upgraded NEAR->STICK on element", &
+              elemID(contact%master(id)%eid)," rank=",hecmw_comm_get_rank()
+          else if (contact%states(i)%distance > effective_near_dist) then
+            ! Beyond NEAR range -> free
+            contact%states(i)%state = CONTACTFREE
+            contact%states(i)%multiplier(:) = 0.d0
+          end if
+          ! else: stay NEAR
+          if (.not. is_contact_free(contact%states(i)%state)) then
+            etype = contact%master(id)%etype
+            iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
+            if( iSS>0 ) &
+              call cal_node_normal( id, iSS, contact%master, currpos, &
+              contact%states(i)%lpos(1:2), contact%states(i)%direction(:) )
+            contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+          end if
+        else
+          ! Lost projection -> free
+          contact%states(i)%state = CONTACTFREE
+          contact%states(i)%multiplier(:) = 0.d0
+        end if
+
       else if( contact%states(i)%state==CONTACTFREE ) then
         if( contact%algtype == CONTACTTIED .and. .not. is_init ) cycle
         coord(:) = currpos(3*slave-2:3*slave)
@@ -272,9 +314,20 @@ contains
 
         do idm = 1,nMaster
           id = indexMaster(idm)
+          ! Expand distclr for NEAR detection
+          if (effective_near_dist > 0.0d0) then
+            distclr_use = max(distclr, effective_near_dist / contact%master(id)%reflen)
+          else
+            distclr_use = distclr
+          end if
           call project_Point2SurfElement( coord, contact%master(id), currpos, &
-            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
+            contact%states(i), isin, distclr_use, localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( .not. isin ) cycle
+          ! Classify: STICK or NEAR
+          if (effective_near_dist > 0.0d0 .and. &
+              contact%states(i)%distance > distclr * contact%master(id)%reflen) then
+            contact%states(i)%state = CONTACTNEAR
+          end if
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
           etype = contact%master(id)%etype
@@ -283,10 +336,16 @@ contains
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
             contact%states(i)%direction(:) )
           contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
-          write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
-            elemID(contact%master(id)%eid),       &
-            " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
-            " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
+          if (contact%states(i)%state == CONTACTNEAR) then
+            write(*,'(A,i10,A,i10,A,f7.3,A,i6)') "Node",nodeID(slave)," near element", &
+              elemID(contact%master(id)%eid), &
+              " with distance ", contact%states(i)%distance," rank=",hecmw_comm_get_rank()
+          else
+            write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
+              elemID(contact%master(id)%eid),       &
+              " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
+              " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
+          end if
           exit
         enddo
         deallocate(indexMaster)
@@ -303,19 +362,19 @@ contains
     call hecmw_contact_comm_allreduce_i(contact%comm, contact_surf, HECMW_MIN)
     nactive = 0
     do i = 1, size(contact%slave)
-      if (contact%states(i)%state /= CONTACTFREE) then                    ! any slave in contact
+      if (.not. is_contact_free(contact%states(i)%state)) then             ! any slave in contact or near
         id = contact%states(i)%surface
         if (abs(contact_surf(contact%slave(i))) /= elemID(contact%master(id)%eid)) then ! that is in contact with other surface
           contact%states(i)%state = CONTACTFREE                           ! should be freed
           write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i))," contact with element", &
           &  elemID(contact%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
-        else
+        else if (is_contact_active(contact%states(i)%state)) then
           nactive = nactive + 1
         endif
       endif
-      if (states_prev(i) == CONTACTFREE .and. contact%states(i)%state /= CONTACTFREE) then
+      if (is_contact_free(states_prev(i)) .and. .not. is_contact_free(contact%states(i)%state)) then
         infoCTChange%free2contact = infoCTChange%free2contact + 1
-      elseif (states_prev(i) /= CONTACTFREE .and. contact%states(i)%state == CONTACTFREE) then
+      elseif (.not. is_contact_free(states_prev(i)) .and. is_contact_free(contact%states(i)%state)) then
         infoCTChange%contact2free = infoCTChange%contact2free + 1
       endif
     enddo
@@ -501,9 +560,9 @@ contains
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
       do j=1, size(fstrSOLID%contacts(i)%slave)
-        if( fstrSOLID%contacts(i)%states(j)%state==CONTACTFREE ) cycle   ! free
+        if( is_contact_free(fstrSOLID%contacts(i)%states(j)%state) ) cycle   ! free
         slave = fstrSOLID%contacts(i)%slave(j)
-        if( states(slave) == CONTACTFREE ) then
+        if( is_contact_free(states(slave)) ) then
           states(slave) = fstrSOLID%contacts(i)%states(j)%state
           id = fstrSOLID%contacts(i)%states(j)%surface
           do k=1,size( fstrSOLID%contacts(i)%master(id)%nodes )
