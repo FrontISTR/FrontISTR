@@ -199,7 +199,11 @@ contains
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
 
     ! Compute effective near distance for CONTACTNEAR detection
+    ! If damping is configured (damp_gact > 0), use it as the near distance
     effective_near_dist = contact%cparam%NEAR_DIST
+    if (contact%damp_gact > 0.0d0) then
+      effective_near_dist = max(effective_near_dist, contact%damp_gact)
+    endif
 
     !$omp parallel do &
     !$omp& default(none) &

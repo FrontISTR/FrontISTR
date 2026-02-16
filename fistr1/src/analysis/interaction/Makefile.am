@@ -89,6 +89,7 @@ OBJSF = \
         fstr_contact_elem_common.@f90objfilepostfix@ \
         fstr_contact_elem_slag.@f90objfilepostfix@ \
         fstr_contact_elem_alag.@f90objfilepostfix@ \
+        fstr_contact_damping.@f90objfilepostfix@ \
         fstr_contact_element.@f90objfilepostfix@ \
         fstr_contact_search.@f90objfilepostfix@ \
         fstr_contact_assembly.@f90objfilepostfix@ \

@@ -23,7 +23,7 @@ contains
   !! This subroutine constructs the mapping matrices based on contact_disc.md section 10:
   !!   Tm = [I_3; -N_1*I_3; -N_2*I_3; ...; -N_n*I_3]  (size: 3 x 3*(nnode+1))
   !!   Tt = Pt * Tm  where Pt = I_3 - n x n            (computed only if fcoeff /= 0)
-  subroutine computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt, smoothing_type)
+  subroutine computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt, smoothing_type, Bn)
     implicit none
 
     ! Input arguments
@@ -35,6 +35,7 @@ contains
     ! Output arguments
     real(kind=kreal), intent(out)   :: Tm(3, 3*(l_max_surface_node+1)) !< relative displacement mapping matrix
     real(kind=kreal), intent(out)   :: Tt(3, 3*(l_max_surface_node+1)) !< tangential mapping matrix
+    real(kind=kreal), optional, intent(out) :: Bn(:)   !< normal distribution vector Bn = Tm^T * n (nnode*3+3)
 
     ! Local variables
     integer(kind=kint) :: i, j
@@ -85,6 +86,12 @@ contains
 
     endif
 
+    ! Optionally compute normal distribution vector: Bn = Tm^T * n
+    if (present(Bn)) then
+      Bn(:) = 0.0d0
+      Bn(1:3*(nnode+1)) = matmul(transpose(Tm(1:3, 1:3*(nnode+1))), normal(1:3))
+    endif
+
     ! Compute Tt only if friction coefficient is non-zero
     if (fcoeff /= 0.0d0) then
       ! Construct tangential projection operator Pt = I_3 - n x n
@@ -131,7 +138,6 @@ contains
 
     ! Local variables
     integer(kind=kint) :: nnode, ndof
-    real(kind=kreal)   :: normal(3)       !< normal vector (unit vector)
     real(kind=kreal)   :: tangent(3,2)    !< tangent basis (temporary for DispIncreMatrix)
     real(kind=kreal)   :: Tm(3, 3*(l_max_surface_node+1)) !< relative displacement mapping (from computeTm_Tt)
     real(kind=kreal)   :: Tt(3, 3*(l_max_surface_node+1)) !< tangential mapping (unused for ALag)
@@ -141,21 +147,13 @@ contains
     metric(:,:) = 0.0d0
     Ht(:,:) = 0.0d0
     Gt(:,:) = 0.0d0
-    Tm(:,:) = 0.0d0
-    Tt(:,:) = 0.0d0
 
     nnode = size(tSurf%nodes)
     ndof = nnode*3 + 3
 
     ! Call computeTm_Tt as the core routine (fcoeff=0 since we don't need Tt for ALag)
-    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt, smoothing_type)
-
-    ! Get normal vector from contact state
-    normal(1:3) = ctState%direction(1:3)
-
-    ! Construct normal distribution vector Bn from Tm
-    ! Bn = Tm^T * normal
-    Bn(1:ndof) = matmul(transpose(Tm(1:3, 1:ndof)), normal(1:3))
+    ! Bn is computed inside computeTm_Tt as Tm^T * normal
+    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt, smoothing_type, Bn=Bn)
 
     ! Call DispIncreMatrix to get tangent displacement map and metric
     ! DispIncreMatrix returns: tangent basis, metric tensor, and displacement increment matrix
