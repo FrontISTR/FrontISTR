@@ -137,7 +137,7 @@ contains
     max_jump_ratio = 0.0d0
     
     do i = 1, size(contact%slave)
-      if(contact%states(i)%state == CONTACTFREE) cycle   ! not in contact
+      if(.not. is_contact_active(contact%states(i)%state)) cycle   ! only STICK/SLIP
       
       slave = contact%slave(i)
       master = contact%states(i)%surface
@@ -196,7 +196,7 @@ contains
     mu = contact%nPenalty * contact%refStiff
 
     do i= 1, size(contact%slave)
-      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
+      if( .not. is_contact_active(contact%states(i)%state) ) cycle   ! only STICK/SLIP
       slave = contact%slave(i)
       edisp(1:3) = disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave)
       master = contact%states(i)%surface
@@ -236,7 +236,7 @@ contains
     integer(kind=kint)  :: i
 
     do i= 1, size(contact%slave)
-      if( contact%states(i)%state==CONTACTFREE ) then
+      if( .not. is_contact_active(contact%states(i)%state) ) then
         contact%states(i)%tangentForce(1:3) = 0.d0
         contact%states(i)%tangentForce_trial(1:3) = 0.d0
         contact%states(i)%tangentForce_final(1:3) = 0.d0
@@ -273,7 +273,7 @@ contains
 
     do j = 1, size(contact%slave)
 
-      if( contact%states(j)%state == CONTACTFREE ) cycle
+      if( .not. is_contact_active(contact%states(j)%state) ) cycle
 
       ctsurf = contact%states(j)%surface
       etype = contact%master(ctsurf)%etype
@@ -384,7 +384,7 @@ contains
 
     do j = 1, size(contact%slave)
 
-      if( contact%states(j)%state == CONTACTFREE ) cycle
+      if( .not. is_contact_active(contact%states(j)%state) ) cycle
       if(if_flag) call set_shrink_factor(ctime, contact%states(j), etime, if_type)
 
       ctsurf = contact%states(j)%surface

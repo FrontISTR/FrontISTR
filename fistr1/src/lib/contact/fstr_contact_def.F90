@@ -32,6 +32,7 @@ module mContactDef
   integer, parameter :: CONTACTUNKNOWN = -1
   !> contact state definition
   integer, parameter :: CONTACTFREE = -1
+  integer, parameter :: CONTACTNEAR = 0    !< near contact: projection info available, no LM constraint
   integer, parameter :: CONTACTSTICK = 1
   integer, parameter :: CONTACTSLIP = 2
 
@@ -163,6 +164,24 @@ contains
     type(tContactState), intent(inout) :: cstate2 !< contact state
     cstate2 = cstate1
   end subroutine
+
+  !> Whether the contact state has active LM constraint (STICK or SLIP)
+  pure logical function is_contact_active(state)
+    integer, intent(in) :: state
+    is_contact_active = (state >= CONTACTSTICK)
+  end function
+
+  !> Whether the contact state has valid projection info (NEAR, STICK, or SLIP)
+  pure logical function has_projection(state)
+    integer, intent(in) :: state
+    has_projection = (state >= CONTACTNEAR)
+  end function
+
+  !> Whether the contact state is completely free (no projection info)
+  pure logical function is_contact_free(state)
+    integer, intent(in) :: state
+    is_contact_free = (state == CONTACTFREE)
+  end function
 
   !> Print out contact state
   subroutine print_contact_state(fnum, cstate)

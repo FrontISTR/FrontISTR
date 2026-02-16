@@ -309,7 +309,7 @@ contains
       if( state_vec(slave) < 0.1d0 .or. contact%states(i)%state > 0 ) &
       &  state_vec(slave) = dble(contact%states(i)%state)
 
-      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
+      if( is_contact_free(contact%states(i)%state) ) cycle   ! not in contact or near
       if( dt < 1.d-16 ) cycle ! too small delta t
       relvel_vec(3*slave-2:3*slave) = contact%states(i)%reldisp(1:3)/dt
     enddo
