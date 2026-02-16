@@ -563,6 +563,7 @@ contains
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
     real(kind=kreal)  :: fcoeff(n),tPenalty(n)
+    real(kind=kreal)  :: damp_alpha, damp_gact
 
     write(ss,*)  HECMW_NAME_LEN
 
@@ -585,33 +586,40 @@ contains
 
     if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
       write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
-    if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
-    do rcode=1,n
-      call fstr_strupr(cp_name(rcode))
-      contact(rcode)%pair_name = cp_name(rcode)
-      contact(rcode)%fcoeff = fcoeff(rcode)
-      contact(rcode)%nPenalty = 5.0d0
-      contact(rcode)%tPenalty = tPenalty(rcode)
-      contact(rcode)%refStiff = 1.d0
-    enddo
+      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      do rcode=1,n
+        call fstr_strupr(cp_name(rcode))
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = fcoeff(rcode)
+        contact(rcode)%nPenalty = 5.0d0
+        contact(rcode)%tPenalty = tPenalty(rcode)
+        contact(rcode)%refStiff = 1.d0
+        contact(rcode)%damp_alpha = 0.0d0
+        contact(rcode)%damp_gact = 0.0d0
+      enddo
     else if( contact(1)%algtype==CONTACTTIED ) then
       write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
       if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
       do rcode=1,n
         call fstr_strupr(cp_name(rcode))
         contact(rcode)%pair_name = cp_name(rcode)
-      contact(rcode)%nPenalty = 5.0d0
+        contact(rcode)%nPenalty = 5.0d0
         contact(rcode)%fcoeff = 0.d0
         contact(rcode)%tPenalty = 1.d0
+        contact(rcode)%damp_alpha = 0.0d0
+        contact(rcode)%damp_gact = 0.0d0
       enddo
     endif
 
     np = 0.d0;  tp=0.d0
     ntol = 0.d0;  ttol=0.d0
+    damp_alpha = 0.0d0;  damp_gact = 0.0d0
     if( fstr_ctrl_get_param_ex( ctrl, 'NPENALTY ',  '# ',  0, 'R', np ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TPENALTY ', '# ', 0, 'R', tp ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'NTOL ',  '# ',  0, 'R', ntol ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '# ', 0, 'R', ttol ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DAMP_ALPHA ', '# ', 0, 'R', damp_alpha ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DAMP_GACT ',  '# ', 0, 'R', damp_gact  ) /= 0 ) return
     cpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
     
@@ -624,6 +632,16 @@ contains
     if( tp > 0.d0 ) then
       do rcode=1,n
         contact(rcode)%tPenalty = tp
+      enddo
+    endif
+    if( damp_alpha > 0.0d0 ) then
+      do rcode=1,n
+        contact(rcode)%damp_alpha = damp_alpha
+      enddo
+    endif
+    if( damp_gact > 0.0d0 ) then
+      do rcode=1,n
+        contact(rcode)%damp_gact = damp_gact
       enddo
     endif
     

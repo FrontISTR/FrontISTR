@@ -93,6 +93,8 @@ module mContactDef
     real(kind=kreal)              :: nPenalty                !< normal penalty coefficient
     real(kind=kreal)              :: tPenalty                !< tangential penalty coefficient
     real(kind=kreal)              :: refStiff                !< reference stiffness for penalty calculation
+    real(kind=kreal)              :: damp_alpha              !< damping coefficient (dimensionless, scaled by refStiff)
+    real(kind=kreal)              :: damp_gact               !< damping activation distance [length] (<=0: disabled)
     
     real(kind=kreal)    :: ctime
     integer(kind=kint)  :: if_type
@@ -485,6 +487,8 @@ contains
     embed%nPenalty = 1.0d0     ! default normal penalty coefficient
     embed%tPenalty = 0.1d0     ! default tangential penalty coefficient
     embed%refStiff = 0.0d0     ! will be calculated after first stiffness assembly
+    embed%damp_alpha = 0.0d0
+    embed%damp_gact = 0.0d0
 
     embed%symmetric = .true.
     fstr_embed_init = .true.

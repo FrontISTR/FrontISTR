@@ -10,6 +10,7 @@ module fstr_matrix_con_contact
 
   use m_fstr
   use elementInfo
+  use m_fstr_contact_damping, only: is_damping_enabled
 
   implicit none
   private
@@ -132,7 +133,8 @@ contains
     integer(kind=kint)            :: ctsurf, etype, nnode, ndLocal(l_max_surface_node + 1) !< contents of type tContact
     integer(kind=kint)            :: i, j, k, nlag, algtype
     real(kind=kreal)              :: fcoeff !< friction coefficient
-    logical                       :: necessary_to_insert_node
+    logical                       :: necessary_to_insert_node, necessary_to_insert_node_pair
+    logical                       :: is_contact_active_flag, is_damping_active_flag
 
     count_lagrange = 0
     do i = 1, fstrSOLID%n_contacts
@@ -149,21 +151,40 @@ contains
       if( algtype == CONTACTTIED ) permission = .true.
 
       do j = 1, size(fstrSOLID%contacts(i)%slave)
+        ! stick or sliding contact is active
+        is_contact_active_flag = is_contact_active(fstrSOLID%contacts(i)%states(j)%state)
+        ! damping is active
+        is_damping_active_flag = fstrSOLID%contacts(i)%states(j)%state == CONTACTNEAR .and. &
+          &  is_damping_enabled(fstrSOLID%contacts(i))
+        
+        if( is_contact_active_flag .or. is_damping_active_flag ) then
 
-        if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
-        ctsurf = fstrSOLID%contacts(i)%states(j)%surface
-        etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
-        if( etype/=fe_tri3n .and. etype/=fe_quad4n ) &
-          stop " ##Error: This element type is not supported in contact analysis !!! "
-        nnode = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
-        ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
-        ndLocal(2:nnode+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(1:nnode)
+          ctsurf = fstrSOLID%contacts(i)%states(j)%surface
+          etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
+          if( etype/=fe_tri3n .and. etype/=fe_quad4n ) &
+            stop " ##Error: This element type is not supported in contact analysis !!! "
+          nnode = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
+          ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
+          ndLocal(2:nnode+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(1:nnode)
 
-        do k=1,nlag
-          if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
-          call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
-          & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
-        enddo
+          ! For CONTACTNEAR damping (especially S-Lagrange + frictionless),
+          ! we still need slave-master connectivity to assemble damping terms.
+          necessary_to_insert_node_pair = necessary_to_insert_node .or. is_damping_active_flag
+
+          if( is_contact_active_flag ) then
+            do k=1,nlag
+              if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
+              call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
+              & necessary_to_insert_node_pair, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+            enddo
+          else
+            ! NEAR damping only: no Lagrange multiplier, insert connectivity once
+            call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, 0, permission, &
+            & necessary_to_insert_node_pair, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+          endif
+              
+        end if
+
       enddo
 
     enddo
