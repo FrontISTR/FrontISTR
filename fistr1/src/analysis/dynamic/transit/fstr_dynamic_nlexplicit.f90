@@ -364,7 +364,7 @@ contains
       wkarray = 0.0d0
       do i=1,fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
-          if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+          if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
           if( fstrSOLID%contacts(i)%states(j)%distance>epsilon(1.d0) ) then
             fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
             cycle
@@ -391,7 +391,7 @@ contains
       if(iter > 0)then
         do i=1,fstrSOLID%n_contacts
           do j= 1, size(fstrSOLID%contacts(i)%slave)
-            if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+            if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
             slave = fstrSOLID%contacts(i)%slave(j)
             sid = fstrSOLID%contacts(i)%states(j)%surface
             nn = size( fstrSOLID%contacts(i)%master(sid)%nodes )
@@ -411,7 +411,7 @@ contains
       wkarray = 0.d0
       do i=1,fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
-          if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+          if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
           slave = fstrSOLID%contacts(i)%slave(j)
           sid = fstrSOLID%contacts(i)%states(j)%surface
           nn = size( fstrSOLID%contacts(i)%master(sid)%nodes )
