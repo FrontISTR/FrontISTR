@@ -333,6 +333,10 @@ contains
         call init_stepInfo( fstrSOLID%step_ctrl(i) )
         if( p%PARAM%solution_type==kstDYNAMIC ) then
           fstrSOLID%step_ctrl(i)%num_substep = fstrDYNAMIC%n_step
+          fstrSOLID%step_ctrl(i)%initdt      = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(i)%elapsetime  = fstrDYNAMIC%t_end - fstrDYNAMIC%t_start
+          fstrSOLID%step_ctrl(i)%mindt       = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(i)%maxdt       = fstrDYNAMIC%t_delta
         endif
       end do
     endif
@@ -989,7 +993,13 @@ contains
       fstrSOLID%nstep_tot = 1
       allocate( fstrSOLID%step_ctrl(1) )
       call init_stepInfo( fstrSOLID%step_ctrl(1) )
-      if( p%PARAM%solution_type==kstDYNAMIC ) fstrSOLID%step_ctrl(1)%num_substep = fstrDYNAMIC%n_step
+      if( p%PARAM%solution_type==kstDYNAMIC ) then
+        fstrSOLID%step_ctrl(1)%num_substep = fstrDYNAMIC%n_step
+        fstrSOLID%step_ctrl(1)%initdt      = fstrDYNAMIC%t_delta
+        fstrSOLID%step_ctrl(1)%elapsetime  = fstrDYNAMIC%t_end - fstrDYNAMIC%t_start
+        fstrSOLID%step_ctrl(1)%mindt       = fstrDYNAMIC%t_delta
+        fstrSOLID%step_ctrl(1)%maxdt       = fstrDYNAMIC%t_delta
+      endif
       n =  fstrSOLID%BOUNDARY_ngrp_tot
       if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Boundary(n) )
       do i = 1, n
