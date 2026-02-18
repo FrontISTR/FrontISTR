@@ -22,6 +22,7 @@ module fstr_dynamic_nlimplicit
   use m_dynamic_init_variables
   use m_fstr_TimeInc
   use m_fstr_Cutback
+  use m_fstr_spring
 
   !-------- for couple -------
   use m_dynamic_mat_ass_couple
@@ -383,6 +384,8 @@ contains
           endif
         endif
 
+        call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
+
         if( abs(fstrDYNAMIC%ray_k) > 1.0d-15 .or. abs(fstrDYNAMIC%ray_m) > 1.0d-15 ) then
           do j = 1 ,ndof*nnod
             hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
@@ -404,6 +407,8 @@ contains
           hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
             + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
         enddo
+
+        call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
 
         !C for couple analysis
         call fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
