@@ -567,7 +567,7 @@ contains
 
           if( fstr_is_contact_active() ) then
             call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
-            call fstr_AddContactStiffness(cstep,iter,conMAT,hecLagMAT,fstrSOLID)
+            call fstr_AddContactStiffness(cstep,ctAlgo,iter,hecMESH,hecMAT,hecLagMAT,fstrSOLID)
           endif
 
           !C-- geometrical boundary condition
