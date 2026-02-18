@@ -198,8 +198,6 @@ contains
             infoCTChange%contactNode_previous)
         endif
       endif
-      restart_step_num = restart_step_num + 1
-      restart_substep_num = restart_substep_num + 1
       fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
       hecMAT%Iarray(98) = 1
     end if

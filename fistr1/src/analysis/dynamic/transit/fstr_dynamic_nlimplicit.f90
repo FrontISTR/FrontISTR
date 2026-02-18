@@ -240,9 +240,9 @@ contains
 
         !---  Restart info
         if( fstrDYNAMIC%restart_nout > 0 ) then
-          if( mod(i,fstrDYNAMIC%restart_nout).eq.0 .or. i.eq.fstrDYNAMIC%n_step ) then
-            call fstr_write_restart_dyna_nl(tot_step,i,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-              infoCTChange%contactNode_current)
+          if( mod(step_count,fstrDYNAMIC%restart_nout).eq.0 ) then
+            call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+              .false.,infoCTChange%contactNode_current)
           endif
         endif
 
@@ -260,6 +260,13 @@ contains
 
         sub_step = sub_step + 1
       enddo
+
+      !--- Restart at the end of step
+      if( fstrDYNAMIC%restart_nout > 0 ) then
+        call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+          .true.,infoCTChange%contactNode_current)
+      endif
+
       restart_substep_num = 1
       !C-- end of time step loop
     enddo
