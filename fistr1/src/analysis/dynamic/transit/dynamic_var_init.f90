@@ -26,7 +26,7 @@ contains
 
     integer(kind=kint) :: j
 
-    call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+    call dynamic_mat_ass_load (0.d0, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
 
     if( fstrSOLID%VELOCITY_type == kbcInitial ) then
       do j = 1, hecMESH%n_node*hecMESH%n_dof
