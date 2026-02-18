@@ -10,7 +10,7 @@ contains
   !> This subrouitne set velocity boundary condition in dynamic analysis
   !C***
 
-  subroutine DYNAMIC_MAT_ASS_BC_VL(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC_VL(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
     use mContact
@@ -22,18 +22,18 @@ contains
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    real(kind=kreal)                     :: t_curr
     type(hecmwST_matrix), optional       :: conMAT
 
     integer, optional :: iter
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: dyn_step, flag_u
+    integer(kind=kint) :: flag_u
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0, f_t
 
     if( fstrSOLID%VELOCITY_type == kbcInitial )return
 
-    dyn_step = fstrDYNAMIC%i_step
     flag_u = 2
 
     if(dabs(fstrDYNAMIC%gamma) .lt. 1.0e-20) then
@@ -62,7 +62,7 @@ contains
         ig   = fstrSOLID%VELOCITY_ngrp_ID(ig0)
         RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
         RHS0 = RHS
 
@@ -125,7 +125,7 @@ contains
         ig   = fstrSOLID%VELOCITY_ngrp_ID(ig0)
         RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
         RHS0 = RHS
 
@@ -161,7 +161,7 @@ contains
   !C***
   !> This function sets initial condition of velocity
   !C***
-  subroutine DYNAMIC_BC_INIT_VL(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC)
+  subroutine DYNAMIC_BC_INIT_VL(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr)
     use m_fstr
     use m_table_dyn
 
@@ -174,7 +174,7 @@ contains
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
 
     integer(kind=kint) :: flag_u
-    real(kind=kreal)   :: RHS, f_t
+    real(kind=kreal)   :: RHS, f_t, t_curr
 
     if( fstrSOLID%VELOCITY_type == kbcTransit )return
 
@@ -186,7 +186,7 @@ contains
       RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
 
 
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
       RHS = RHS * f_t
 
       ityp = fstrSOLID%VELOCITY_ngrp_type(ig0)
@@ -208,7 +208,7 @@ contains
     return
   end subroutine DYNAMIC_BC_INIT_VL
 
-  subroutine DYNAMIC_EXPLICIT_ASS_VL(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, iter)
+  subroutine DYNAMIC_EXPLICIT_ASS_VL(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, t_curr, iter)
     use m_fstr
     use m_table_dyn
     use mContact
@@ -218,16 +218,16 @@ contains
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
+    real(kind=kreal)                     :: t_curr
     integer, optional :: iter
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: dyn_step, flag_u
+    integer(kind=kint) :: flag_u
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0, f_t
 
     if( fstrSOLID%VELOCITY_type == kbcInitial )return
 
-    dyn_step = fstrDYNAMIC%i_step
     flag_u = 2
 
     if(dabs(fstrDYNAMIC%gamma) .lt. 1.0e-20) then
@@ -252,7 +252,7 @@ contains
         ig   = fstrSOLID%VELOCITY_ngrp_ID(ig0)
         RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
         RHS0 = RHS
 
