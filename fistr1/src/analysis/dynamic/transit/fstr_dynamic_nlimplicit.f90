@@ -566,7 +566,7 @@ contains
           conMAT%X = 0.0d0
 
           if( fstr_is_contact_active() ) then
-            call fstr_Update_NDForce_contact(cstep,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+            call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
             call fstr_AddContactStiffness(cstep,iter,conMAT,hecLagMAT,fstrSOLID)
           endif
 
