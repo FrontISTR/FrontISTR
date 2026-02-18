@@ -109,8 +109,8 @@ contains
         fstrDYN%DISP(j,2) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/ a2 + fstrDYN%ACC (j,1)/ (2.d0*a1) * 4.d0
       end do
 
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+      call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
+      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
     end if
 
     if( associated( fstrSOLID%contacts ) )  then
@@ -121,11 +121,10 @@ contains
 
     do i= restrt_step_num, fstrDYN%n_step
 
-      fstrDYN%i_step = i
       fstrDYN%t_curr = fstrDYN%t_delta * i
 
       !C-- mechanical boundary condition
-      call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYN, fstrPARAM)
+      call dynamic_mat_ass_load (fstrDYN%t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYN, fstrPARAM)
       do j=1, hecMESH%n_node*  hecMESH%n_dof
         hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
       end do
@@ -180,9 +179,9 @@ contains
         !C
         !C-- geometrical boundary condition
 
-        call dynamic_explicit_ass_bc(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
-        call dynamic_explicit_ass_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
-        call dynamic_explicit_ass_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN)
+        call dynamic_explicit_ass_bc(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
+        call dynamic_explicit_ass_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
+        call dynamic_explicit_ass_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
         !call dynamic_mat_ass_bc   (hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
         !call dynamic_mat_ass_bc_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
         !call dynamic_mat_ass_bc_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrPARAM, hecLagMAT)
@@ -319,8 +318,8 @@ contains
       end if
       !
       !C-- output new displacement, velocity and acceleration
-      call fstr_dynamic_Output(hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
-      call dynamic_output_monit(hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+      call fstr_dynamic_Output(1, i, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM)
+      call dynamic_output_monit(1, i, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
 
     enddo
 

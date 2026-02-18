@@ -158,7 +158,6 @@ contains
 
     restart_step_num = 1
     restart_substep_num = 1
-    fstrDYNAMIC%i_step = 0
     infoCTChange%contactNode_previous = 0
 
     if(associated(g_InitialCnd))then
@@ -181,9 +180,9 @@ contains
     endif
 
     if(fstrDYNAMIC%restart_nout >= 0 ) then
-      call dynamic_bc_init   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-      call dynamic_bc_init_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-      call dynamic_bc_init_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+      call dynamic_bc_init   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
+      call dynamic_bc_init_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
+      call dynamic_bc_init_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
     endif
 
     !restart
