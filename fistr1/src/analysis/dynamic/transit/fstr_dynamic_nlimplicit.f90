@@ -20,6 +20,8 @@ module fstr_dynamic_nlimplicit
   use mContact
   use m_solve_LINEQ_contact
   use m_dynamic_init_variables
+  use m_fstr_TimeInc
+  use m_fstr_Cutback
 
   !-------- for couple -------
   use m_dynamic_mat_ass_couple
@@ -52,16 +54,23 @@ contains
 
     !C-- local variable
     integer(kind=kint) :: nnod, ndof, nn
-    integer(kind=kint) :: i
-    real(kind=kreal) :: time_1, time_2
+    integer(kind=kint) :: i, tot_step_print, CBbound
+    real(kind=kreal) :: time_1, time_2, factor
+    integer(kind=kint) :: sub_step
 
     integer(kind=kint) :: restart_step_num, restart_substep_num, tot_step, step_count
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: max_iter_contact
     real(kind=kreal) :: converg_dlag
+    type(fstr_info_contactChange)        :: infoCTChange_bak
 
+    logical :: is_OutPoint
     integer(kind=kint) :: n_node_global
-    logical :: is_mat_symmetric
+    logical :: is_mat_symmetric, is_interaction_active
+
+    if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
+
+    is_interaction_active = ( associated( fstrSOLID%contacts ) .or. associated( fstrSOLID%embeds ) )
 
     nullify(hecMAT0)
 
@@ -117,7 +126,7 @@ contains
 
     !C-- output of initial state
     if( restart_step_num == 1 ) then
-      call fstr_dynamic_Output(1, 0, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+      call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, .true.)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
@@ -140,21 +149,91 @@ contains
     endif
     is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
     call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
+
+    fstrSOLID%FACTOR = 0.0d0
+    call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
+    call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
     
     step_count = 0
     do tot_step=restart_step_num, fstrSOLID%nstep_tot
-      do i = restart_substep_num, fstrSOLID%step_ctrl(tot_step)%num_substep
-        if (ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",i
-        step_count = step_count + 1
+      tot_step_print = tot_step+restart_step_num-1
+      if(hecMESH%my_rank==0) write(*,*) ''
+      if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step_print
 
-        fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
+      sub_step = restart_substep_num
+      do while(.true.)
+        if (ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",sub_step
+        ! ----- time history of factor
+        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
+          &  fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+
+        fstrDYNAMIC%t_curr = fstr_get_time()
+        fstrDYNAMIC%t_delta = fstr_get_timeinc()
 
         call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
             fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
-            restart_step_num, hecMAT0, i, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta)
+            restart_step_num, hecMAT0, sub_step, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta)
 
+        ! Time Increment
+        if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
+          &  tot_step_print, sub_step, fstrSOLID%NRstat_i, fstrSOLID%NRstat_r,   &
+          &  fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
+        if( fstr_cutback_active() ) then
+
+          if( fstrSOLID%CutBack_stat == 0 ) then ! converged
+            call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )  ! save analysis state
+            call fstr_proceed_time()             ! current time += time increment
+            fstrDYNAMIC%t_curr = fstr_get_time()
+
+          else                                   ! not converged
+            CBbound = fstrPARAM%ainc(fstrSOLID%step_ctrl(tot_step)%AincParam_id)%CBbound
+            if( fstrSOLID%CutBack_stat == CBbound ) then
+              if( hecMESH%my_rank == 0 ) then
+                write(*,*) 'Number of successive cutback reached max number: ',CBbound
+                call fstr_TimeInc_PrintSTATUS_final(.false.)
+              endif
+              call hecmw_abort( hecmw_comm_get_comm() )
+            endif
+            call fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )  ! load analysis state
+            call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
+
+            ! restore matrix structure for slagrange contact analysis
+            if( is_interaction_active .and. fstrPARAM%contact_algo == kcaSLagrange ) then
+              call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
+                &  infoCTChange, conMAT, fstr_is_contact_active())
+              conMAT%B(:) = 0.0d0
+              call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
+            endif
+            if( hecMESH%my_rank == 0 ) write(*,*) '### State has been restored at time =',fstr_get_time()
+
+            !stop if # of substeps reached upper bound.
+            if( sub_step == fstrSOLID%step_ctrl(tot_step)%num_substep ) then
+              if( hecMESH%my_rank == 0 ) then
+                write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
+                  & tot_step_print, '  time=', fstr_get_time()
+              endif
+              call hecmw_abort( hecmw_comm_get_comm())
+            endif
+
+            ! output time
+            time_2 = hecmw_Wtime()
+            if( hecMESH%my_rank==0) write(IMSG,'(a,",",2(I8,","),f10.2)') &
+              &  'step, substep, solve (sec) :', tot_step_print, sub_step, time_2 - time_1
+            cycle
+          endif
+        else
+          if( fstrSOLID%CutBack_stat > 0 ) stop
+          call fstr_proceed_time() ! current time += time increment
+          fstrDYNAMIC%t_curr = fstr_get_time()
+        endif
+
+        step_count = step_count + 1
+
+        ! ----- Result output (include visualize output)
+        is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
+          & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
         !C-- output new displacement, velocity and acceleration
-        call fstr_dynamic_Output(tot_step, i, step_count, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+        call fstr_dynamic_Output(tot_step, step_count, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, is_OutPoint)
 
         !C-- output result of monitoring node
         call dynamic_output_monit(tot_step, i, fstrDYNAMIC%t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
@@ -167,7 +246,21 @@ contains
           endif
         endif
 
+        !if time reached the end time of step, exit loop.
+        if( fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) ) exit
+
+        if( sub_step == fstrSOLID%step_ctrl(tot_step)%num_substep ) then
+          if( hecMESH%my_rank == 0 ) then
+            write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
+              & tot_step_print, '  time=', fstr_get_time()
+          endif
+          if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS_final(.false.)
+          stop !stop if # of substeps reached upper bound.
+        endif
+
+        sub_step = sub_step + 1
       enddo
+      restart_substep_num = 1
       !C-- end of time step loop
     enddo
 
@@ -176,9 +269,11 @@ contains
       deallocate(hecMAT0)
     endif
 
-    time_2 = hecmw_Wtime()
+    !  message
     if( hecMESH%my_rank == 0 ) then
-      write(ISTA,'(a,f10.2,a)') '         solve (sec) :', time_2 - time_1, 's'
+      call fstr_TimeInc_PrintSTATUS_final(.true.)
+      write(IMSG,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
+      write(*,'("### FSTR_SOLVE_NLGEOM FINISHED!")')
     endif
 
   end subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG
@@ -218,6 +313,8 @@ contains
     real(kind=kreal) :: converg_dlag
     real(kind=kreal), allocatable :: coord(:)
 
+    fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
+
     !C-- initialize local variables
     ctAlgo = fstrPARAM%contact_algo
     max_iter_contact = fstrSOLID%step_ctrl(cstep)%max_contiter
@@ -237,7 +334,6 @@ contains
     c2 = a3 + fstrDYNAMIC%ray_m*b3
 
     if(hecMESH%my_rank==0) then
-      write(ISTA,'('' time step='',i10,'' time='',1pe13.4e3)') istep,t_curr
       write(*,'(A)')'-------------------------------------------------'
       write(*,'('' time step='',i10,'' time='',1pe13.4e3)') istep,t_curr
     endif
@@ -296,7 +392,7 @@ contains
         endif
 
         !C-- mechanical boundary condition
-        call dynamic_mat_ass_load (cstep, t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
+        call dynamic_mat_ass_load (cstep, t_curr+t_delta, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
         do j=1, hecMESH%n_node*  hecMESH%n_dof
           hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
             + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
@@ -334,11 +430,11 @@ contains
 
         !C-- geometrical boundary condition
         call dynamic_mat_ass_bc   (cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
-          &  fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
+          &  fstrPARAM, hecLagMAT, t_curr+t_delta, stepcnt, conMAT=conMAT)
         call dynamic_mat_ass_bc_vl(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
-          &  fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
+          &  fstrPARAM, hecLagMAT, t_curr+t_delta, stepcnt, conMAT=conMAT)
         call dynamic_mat_ass_bc_ac(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
-          &  fstrPARAM, hecLagMAT, t_curr, stepcnt, conMAT=conMAT)
+          &  fstrPARAM, hecLagMAT, t_curr+t_delta, stepcnt, conMAT=conMAT)
 
         ! ----- check convergence
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
@@ -356,14 +452,9 @@ contains
         call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
 
         res = dsqrt(res/res0)
-        if( fstrPARAM%nlgeom .and. ndof /= 4 ) then
-          if( hecMESH%my_rank==0 ) then
-            write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
-            write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
-            write(*,'(a,1e15.7)') ' - MaxDLag =',maxDLag
-            write(ISTA,'(a,1e15.7)') ' - MaxDLag =',maxDLag
-          endif
-          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag < converg_dlag ) exit
+        if( hecMESH%my_rank==0 ) then
+          write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
+          write(*,'(a,1e15.7)') ' - MaxDLag =',maxDLag
         endif
         if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag < converg_dlag ) exit
 
@@ -372,6 +463,15 @@ contains
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         call solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,1.0D0,fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        ! ----- check matrix solver error
+        if( istat /= 0 ) then
+          if( hecMESH%my_rank == 0) then
+            write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', istep
+          end if
+          fstrSOLID%NRstat_i(knstDRESN) = 4
+          fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+          return
+        end if
 
         ! ----- update external nodal displacement increments
         call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
@@ -396,15 +496,20 @@ contains
         endif
       enddo
 
+      fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
+      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
+
       ! -----  not convergence
-      if( iter>fstrSOLID%step_ctrl(cstep)%max_iter ) then
-        if( hecMESH%my_rank==0) then
-          write(ILOG,*) '### Fail to Converge  : at step=', istep
-          write(ISTA,*) '### Fail to Converge  : at step=', istep
-          write(   *,*) '     ### Fail to Converge  : at step=', istep
-        endif
-        stop
-      endif
+      if( iter>fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) then
+        if( hecMESH%my_rank == 0) then
+          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', istep
+        end if
+        fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
+        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        if( iter > fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
+        if( res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) fstrSOLID%NRstat_i(knstDRESN) = 2
+        return
+      end if
 
       call fstr_scan_contact_state(cstep, istep, count_step, t_delta, ctAlgo, &
                                    hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
@@ -432,7 +537,20 @@ contains
 
       if( count_step > max_iter_contact ) exit loopFORcontactAnalysis
 
+      ! ----- check divergence
+      if( count_step >= fstrSOLID%step_ctrl(cstep)%max_contiter ) then
+        if( hecMESH%my_rank == 0) then
+          write(   *,'(a,i5,a,i5)') '     ### Contact failed to Converge  : at total_step=', cstep, '  sub_step=', istep
+        end if
+        fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
+        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        fstrSOLID%NRstat_i(knstDRESN) = 3
+        return
+      end if
+
     enddo loopFORcontactAnalysis
+
+    fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
 
     !C for couple analysis
       call fstr_solve_dynamic_nlimplicit_couple_post(hecMESH, hecMAT, fstrSOLID, &
@@ -461,6 +579,7 @@ contains
     call fstr_UpdateState( hecMESH, fstrSOLID, t_delta )
 
     deallocate(coord)
+    fstrSOLID%CutBack_stat = 0
   end subroutine fstr_Newton_dynamic_contactSLag
 
   subroutine fstr_solve_dynamic_nlimplicit_couple_init(fstrPARAM, fstrCPL)
