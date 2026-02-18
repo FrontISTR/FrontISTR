@@ -640,6 +640,10 @@ contains
           stop
         endif
 
+        ! ----- compute CONT_NFORCE/CONT_FRIC for output
+        if( fstr_is_contact_active() ) &
+          call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+
         call fstr_scan_contact_state(cstep, i, count_step, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
 
         if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then

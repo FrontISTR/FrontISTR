@@ -474,9 +474,7 @@ contains
             cparam_id = i; exit
           endif
         enddo
-        ! initialize contact condition
-        if( ee>0.d0 ) cdotp = ee
-        if( pp>0.d0 ) mut = pp
+        ! initialize contact condition (cdotp and mut are now obsolete - penalty is in tContact)
         if( rho>0.d0 ) cgn = rho
         if( alpha>0.d0 ) cgt = alpha
         do i=1,n

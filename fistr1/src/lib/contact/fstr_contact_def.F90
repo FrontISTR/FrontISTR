@@ -20,10 +20,6 @@ module mContactDef
 
   implicit none
 
-  real(kind=kreal), save :: mu=1.d10  !< penalty, default value
-  real(kind=kreal), save :: mut=1.d6  !< penalty along tangent direction
-  real(kind=kreal), save :: cdotp=1.d3  !< mu=cdotp*maxval
-
   real(kind=kreal), save :: cgn=1.d-5 !< convergent condition of penetration
   real(kind=kreal), save :: cgt=1.d-3 !< convergent condition of relative tangent disp
 
@@ -47,6 +43,10 @@ module mContactDef
   !> contact interference type
   integer, parameter :: C_IF_SLAVE = 1
   integer, parameter :: C_IF_MASTER = 2
+
+  !> purpose flag for contact force calculation
+  integer, parameter :: kctForResidual = 1  !< compute contact force for residual (conMAT%B)
+  integer, parameter :: kctForOutput   = 2  !< compute contact force for output (CONT_NFORCE/CONT_FRIC)
 
   !> This structure records contact status
   type tContactState
@@ -84,7 +84,9 @@ module mContactDef
     type(tSurfElement), pointer   :: master(:)=>null()       !< master surface (element )
     integer, pointer              :: slave(:)=>null()        !< slave surface (node)
     real(kind=kreal)              :: fcoeff                  !< coeeficient of friction
-    real(kind=kreal)              :: tPenalty                !< tangential penalty
+    real(kind=kreal)              :: nPenalty                !< normal penalty coefficient
+    real(kind=kreal)              :: tPenalty                !< tangential penalty coefficient
+    real(kind=kreal)              :: refStiff                !< reference stiffness for penalty calculation
     
     real(kind=kreal)    :: ctime
     integer(kind=kint)  :: if_type
@@ -453,6 +455,11 @@ contains
 
     ! initialize contact communication table
     call hecmw_contact_comm_init( embed%comm, hecMESH, 1, nslave, embed%slave )
+
+    ! initialize penalty coefficients
+    embed%nPenalty = 1.0d0     ! default normal penalty coefficient
+    embed%tPenalty = 0.1d0     ! default tangential penalty coefficient
+    embed%refStiff = 0.0d0     ! will be calculated after first stiffness assembly
 
     embed%symmetric = .true.
     fstr_embed_init = .true.
