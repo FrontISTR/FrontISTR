@@ -188,7 +188,7 @@ contains
 
     call hecmw_mat_clear_b(conMAT)
 
-    if( fstr_is_contact_active() ) call fstr_ass_load_contactAlag( hecMESH, fstrSOLID, conMAT%B )
+    if( fstr_is_contact_active() ) call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
 
      ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrSOLID%step_ctrl(cstep)%max_contiter
@@ -223,7 +223,7 @@ contains
           call fstr_set_contact_penalty( maxv )
         endif
         if( fstr_is_contact_active() ) then
-          call fstr_contactBC( cstep, iter, hecMESH, conMAT, fstrSOLID )
+          call fstr_AddContactStiffness(cstep,ctAlgo,iter,hecMESH,conMAT,hecLagMAT,fstrSOLID)
         endif
 
         ! ----- Set Boundary condition
@@ -428,7 +428,7 @@ contains
     call hecmw_mat_clear_b(conMAT)
 
     if( fstr_is_contact_active() )  then
-      call fstr_ass_load_contact(cstep, hecMESH, conMAT, fstrSOLID, hecLagMAT)
+      call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
     endif
 
     stepcnt = 0
@@ -456,7 +456,7 @@ contains
           conMAT%X = 0.0d0
 
         if( fstr_is_contact_active() ) then
-          call fstr_AddContactStiffness(cstep,iter,conMAT,hecLagMAT,fstrSOLID)
+          call fstr_AddContactStiffness(cstep,ctAlgo,iter,hecMESH,conMAT,hecLagMAT,fstrSOLID)
         endif
 
         ! ----- Set Boundary condition
