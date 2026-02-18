@@ -3808,6 +3808,10 @@ end function fstr_setup_INITIAL
     integer(kind=kint),pointer :: dof_ide (:)
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint) :: i, j, n, old_size, new_size
+    integer(kind=kint) :: gid
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid  )
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
@@ -3815,6 +3819,7 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%VELOCITY_ngrp_tot = new_size
 
+    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_GRPID, old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_ID  , old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_type, old_size, new_size )
     call fstr_expand_real_array    (P%SOLID%VELOCITY_ngrp_val , old_size, new_size )
@@ -3836,6 +3841,7 @@ end function fstr_setup_INITIAL
     call amp_name_to_id( P%MESH, '!VELOCITY', amp, amp_id )
     call node_grp_name_to_id_ex( P%MESH, '!VELOCITY', &
       n, grp_id_name, P%SOLID%VELOCITY_ngrp_ID(old_size+1:))
+    P%SOLID%VELOCITY_ngrp_GRPID(old_size+1:new_size) = gid
 
     j = old_size+1
     do i = 1, n
@@ -3880,7 +3886,10 @@ end function fstr_setup_INITIAL
     integer(kind=kint),pointer :: dof_ide (:)
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint) :: i, j, n, old_size, new_size
+    integer(kind=kint) :: gid
 
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid  )
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
@@ -3888,6 +3897,7 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%ACCELERATION_ngrp_tot = new_size
 
+    call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_GRPID, old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_ID  , old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_type, old_size, new_size )
     call fstr_expand_real_array    (P%SOLID%ACCELERATION_ngrp_val , old_size, new_size )
@@ -3909,6 +3919,7 @@ end function fstr_setup_INITIAL
     call amp_name_to_id( P%MESH, '!ACCELERATION', amp, amp_id )
     call node_grp_name_to_id_ex( P%MESH, '!ACCELERATION', &
       n, grp_id_name, P%SOLID%ACCELERATION_ngrp_ID(old_size+1:))
+    P%SOLID%ACCELERATION_ngrp_GRPID(old_size+1:new_size) = gid
 
     j = old_size+1
     do i = 1, n

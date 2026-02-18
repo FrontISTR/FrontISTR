@@ -12,7 +12,7 @@ contains
   !> This function sets boundary condition of external load
   !C***
   !C
-  subroutine DYNAMIC_MAT_ASS_LOAD(t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
+  subroutine DYNAMIC_MAT_ASS_LOAD(cstep, t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
 
     use m_fstr
     use m_static_lib
@@ -23,6 +23,7 @@ contains
     use m_utilities
 
     implicit none
+    integer(kind=kint)       :: cstep
     real(kind=kreal)         :: t_curr
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
@@ -37,7 +38,7 @@ contains
     integer(kind=kint) :: nodLocal(20)
     real(kind=kreal)   :: tt(20), tt0(20), coords(3,3)
     real(kind=kreal),pointer:: temp(:)
-    integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, iS0, iE0, ik, in, i, j
+    integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, iS0, iE0, ik, in, i, j, grpid
     integer(kind=kint) :: icel, ic_type, nn, is, isect, id, iset, nsize
     integer(kind=kint) :: itype, iE, cdsys_ID
     real(kind=kreal)   :: val, rho, thick, pa1
@@ -76,6 +77,9 @@ contains
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
 
     do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
+      grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
+      if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+
       ig = fstrSOLID%CLOAD_ngrp_ID(ig0)
       ityp = fstrSOLID%CLOAD_ngrp_DOF(ig0)
       val = fstrSOLID%CLOAD_ngrp_val(ig0)
