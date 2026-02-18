@@ -149,13 +149,11 @@ contains
     real(kind=kreal), optional        :: localclr      !< clearance of contact local coord
 
     integer          ::  count,order, initstate
-    real(kind=kreal)  ::  determ, inverse(3,3)
+    real(kind=kreal)  ::  inverse(3,3)
     real(kind=kreal)  ::  sfunc(nn), deriv(nn,3)
     real(kind=kreal)  ::  r(3), dr(3), r_tmp(3)        ! natural coordinate
     real(kind=kreal)  ::  xyz_out(3)                   ! curr. projection position
     real(kind=kreal)  ::  dist_last,dist_now, dxyz(3)  ! dist between the point and its projection
-    real(kind=kreal)  ::  tangent(3,2)                 ! base vectors in tangent space
-    real(kind=kreal)  ::  dF(2),d2F(2,2),normal(3)
     real(kind=kreal),parameter :: eps = 1.0D-8
     real(kind=kreal)  ::  clr, tol, factor
 

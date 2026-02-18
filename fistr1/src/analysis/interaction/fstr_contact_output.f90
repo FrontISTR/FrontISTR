@@ -84,7 +84,6 @@ contains
 
     integer(kind=kint) :: i, j, k, sgrp_id, iS, iE, eid, sid, n_cdsurfs
     logical, pointer :: cdef_surf(:,:)
-    real(kind=kreal), pointer   :: coord(:)
 
     if( associated(fstrSOLID%CONT_SGRP_ID) ) deallocate(fstrSOLID%CONT_SGRP_ID)
 
@@ -142,9 +141,9 @@ contains
     integer(kind=kint), intent(in)               :: flag          !< set 1 if called in NR iteration
 
     integer(kind=kint), parameter :: NDOF=3
-    integer(kind=kint) :: i, isuf, icel, sid, etype, nn, iS, stype, idx
+    integer(kind=kint) :: i, isuf, icel, sid, etype, nn, iS, idx
     integer(kind=kint) :: ndlocal(l_max_elem_node)
-    real(kind=kreal), pointer   :: coord(:)
+    real(kind=kreal), allocatable :: coord(:)
     real(kind=kreal)   :: ecoord(NDOF,l_max_elem_node), vect(l_max_elem_node)
 
     fstrSOLID%CONT_AREA(:) = 0.d0
@@ -233,8 +232,7 @@ contains
     real(kind=kreal), pointer, intent(inout)  :: vec(:)
     integer(kind=kint), intent(in)            :: vtype !1:value, 2:state
     !
-    real(kind=kreal) ::  rhsB
-    integer(kind=kint) ::  i,j,N,i0,N_loc,nndof
+    integer(kind=kint) ::  i,N,i0,N_loc
     integer(kind=kint) :: offset, pid, lid
     integer(kind=kint), allocatable :: displs(:)
     real(kind=kreal), allocatable   :: vec_all(:)

@@ -115,14 +115,13 @@ contains
   end subroutine reset_contact_force
 
   !> This subroutine tracks down next contact position after a finite slide
-  subroutine track_contact_position( flag_ctAlgo, nslave, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, B )
+  subroutine track_contact_position( flag_ctAlgo, nslave, contact, currpos, currdisp, infoCTChange, nodeID, elemID, B )
     character(len=9), intent(in)                    :: flag_ctAlgo  !< contact analysis algorithm flag
     integer, intent(in)                             :: nslave       !< slave node
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
     real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
     real(kind=kreal), intent(in)                     :: currdisp(:)    !< current displacement of each nodes
-    real(kind=kreal), intent(in)                     :: mu           !< penalty
     integer(kind=kint), intent(in)                  :: nodeID(:)    !< global nodal ID, just for print out
     integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
     real(kind=kreal), intent(inout)                  :: B(:)         !< nodal force residual
@@ -332,7 +331,7 @@ contains
   !!-# Free to contact or contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
   subroutine scan_contact_state( flag_ctAlgo, contact, currpos, currdisp, ndforce, infoCTChange, &
-    nodeID, elemID, is_init, active, mu, B )
+    nodeID, elemID, is_init, active, B )
     character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
@@ -343,12 +342,11 @@ contains
     integer(kind=kint), intent(in)                   :: elemID(:)    !< global elemental ID, just for print out
     logical, intent(in)                              :: is_init      !< whether initial scan or not
     logical, intent(out)                             :: active       !< if any in contact
-    real(kind=kreal), intent(in)                     :: mu           !< penalty
     real(kind=kreal), optional, target               :: B(:)         !< nodal force residual
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    integer(kind=kint)  :: i, iSS, nactive
     real(kind=kreal)    :: coord(3)
     real(kind=kreal)    :: nlforce, slforce(3)
     logical             :: isin
@@ -356,7 +354,7 @@ contains
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-    logical :: is_cand, is_present_B
+    logical :: is_present_B
     real(kind=kreal), pointer :: Bp(:)
 
     if( is_init ) then
@@ -390,10 +388,10 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,is_cand,idm,etype,isin, &
+    !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,iSS,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand) &
     !$omp& firstprivate(nMasterMax,is_present_B) &
-    !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf,is_init) &
+    !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,Bp,distclr,contact_surf,is_init) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
     do i= 1, size(contact%slave)
@@ -420,7 +418,7 @@ contains
         if( contact%algtype /= CONTACTFSLID .or. (.not. is_present_B) ) then   ! small slide problem
           contact_surf(contact%slave(i)) = -elemID(contact%master(id)%eid)
         else
-          call track_contact_position( flag_ctAlgo, i, contact, currpos, currdisp, mu, infoCTChange, nodeID, elemID, Bp )
+          call track_contact_position( flag_ctAlgo, i, contact, currpos, currdisp, infoCTChange, nodeID, elemID, Bp )
           if( contact%states(i)%state /= CONTACTFREE ) then
             id = contact%states(i)%surface
             contact_surf(contact%slave(i)) = -elemID(contact%master(id)%eid)
@@ -526,15 +524,13 @@ contains
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    integer(kind=kint)  :: i, iSS, nactive
     real(kind=kreal)    :: coord(3)
-    real(kind=kreal)    :: nlforce
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-    logical :: is_cand
 
     if( is_init ) then
       distclr = contact%cparam%DISTCLR_INIT
@@ -564,7 +560,7 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,is_cand,idm,etype,isin, &
+    !$omp& private(i,slave,id,coord,indexMaster,nMaster,iSS,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand) &
     !$omp& firstprivate(nMasterMax) &
     !$omp& shared(contact,infoCTChange,currpos,currdisp,nodeID,elemID,distclr,contact_surf) &
@@ -656,7 +652,7 @@ contains
   !!-# Free to contact or contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
   subroutine scan_embed_state( flag_ctAlgo, embed, currpos, currdisp, ndforce, infoCTChange, &
-    nodeID, elemID, is_init, active, mu, B )
+    nodeID, elemID, is_init, active, B )
     character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
     type( tContact ), intent(inout)                  :: embed      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
@@ -667,20 +663,18 @@ contains
     integer(kind=kint), intent(in)                   :: elemID(:)    !< global elemental ID, just for print out
     logical, intent(in)                              :: is_init      !< whether initial scan or not
     logical, intent(out)                             :: active       !< if any in contact
-    real(kind=kreal), intent(in)                     :: mu           !< penalty
     real(kind=kreal), optional, target               :: B(:)         !< nodal force residual
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
     integer(kind=kint)  :: nn, i, j, iSS, nactive
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
-    real(kind=kreal)    :: nlforce, slforce(3)
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
     integer, pointer :: indexMaster(:),indexCand(:)
     integer   ::  nMaster,idm,nMasterMax,bktID,nCand
-    logical :: is_cand, is_present_B
+    logical :: is_present_B
     real(kind=kreal), pointer :: Bp(:)
 
     if( is_init ) then
@@ -713,10 +707,10 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,slforce,id,nlforce,coord,indexMaster,nMaster,nn,j,iSS,elem,is_cand,idm,etype,isin, &
+    !$omp& private(i,slave,id,coord,indexMaster,nMaster,nn,j,iSS,elem,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand) &
     !$omp& firstprivate(nMasterMax,is_present_B) &
-    !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,mu,nodeID,elemID,Bp,distclr,contact_surf) &
+    !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,Bp,distclr,contact_surf) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
     do i= 1, size(embed%slave)

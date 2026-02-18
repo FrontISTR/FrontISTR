@@ -28,7 +28,6 @@ contains
     integer(kind=kint)  :: nnode !< number of nodes of master segment
     integer(kind=kint)  :: i, j
     real(kind=kreal)    :: normal(3)
-    real(kind=kreal)    :: shapefunc(l_max_surface_node) !< normal vector at target point; shape functions
     real(kind=kreal)    :: nTm((l_max_surface_node + 1)*3) !< vector
     real(kind=kreal)    :: fcoeff, tPenalty !< friction coefficient; tangential penalty
     real(kind=kreal)    :: lagrange !< value of Lagrange multiplier
@@ -121,7 +120,6 @@ contains
     logical            :: cflag  !< is necessary to update tangentForce_final
 
     real(kind=kreal)   :: Tm(3, 3*(l_max_surface_node+1)), Tt(3, 3*(l_max_surface_node+1)) !< mapping matrices
-    real(kind=kreal)   :: relativeDisp(3) !< relative displacement
 
     ctState%multiplier(1) = lagrange
 
