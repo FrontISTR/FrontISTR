@@ -10,13 +10,14 @@ contains
 
 
   !>  This subroutine setup disp bundary condition
-  subroutine DYNAMIC_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC(cstep, hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
     use mContact
     use m_utilities
 
     implicit none
+    integer, intent(in)                  :: cstep !< current step
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
@@ -29,7 +30,7 @@ contains
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
 
-    integer(kind=kint) :: flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: RHS, f_t, f_t1
 
     !for rotation
@@ -52,6 +53,8 @@ contains
 
       do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+        grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+        if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
         if( present(iter) ) then
@@ -235,7 +238,7 @@ contains
     real(kind=kreal)         :: t_curr
 
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: RHS, f_t
 
     flag_u = 1
@@ -244,7 +247,8 @@ contains
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
       RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
-
+      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, 1 ) ) cycle
 
       call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
       RHS = RHS * f_t
