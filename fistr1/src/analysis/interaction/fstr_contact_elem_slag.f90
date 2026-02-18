@@ -10,6 +10,7 @@ module m_fstr_contact_elem_slag
   use mSurfElement
   use m_fstr_contact_geom
   use m_fstr_contact_elem_common
+  use m_fstr_contact_smoothing
   implicit none
 
   public :: getContactStiffness_Slag
@@ -19,7 +20,7 @@ module m_fstr_contact_elem_slag
 
 contains
 
-  subroutine getContactStiffness_Slag(ctState,tSurf,iter,tPenalty,fcoeff,lagrange,stiffness)
+  subroutine getContactStiffness_Slag(ctState,tSurf,iter,tPenalty,fcoeff,lagrange,stiffness,smoothing_type)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
@@ -37,13 +38,14 @@ contains
     real(kind=kreal)    :: Tm(3, 3*(l_max_surface_node+1)), Tt(3, 3*(l_max_surface_node+1)) !< mapping matrices
     real(kind=kreal)    :: q((l_max_surface_node+1)*3)  !< q = Tm^T * tangent (for slip)
     real(kind=kreal)    :: dot_tn  !< tangent · normal (for slip)
+    integer(kind=kint), optional :: smoothing_type !< kcsNONE or kcsNAGATA
 
     nnode = size(tSurf%nodes)
 
     stiffness = 0.0d0
 
     ! Compute Tm and Tt matrices using standard shape functions
-    call computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt)
+    call computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt, smoothing_type)
 
     normal(1:3) = ctState%direction(1:3)
 
@@ -102,12 +104,13 @@ contains
 
   end subroutine getContactStiffness_Slag
 
-  subroutine getContactNodalForce_Slag(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag)
+  subroutine getContactNodalForce_Slag(ctState,tSurf,ndCoord,ndDu,tPenalty,fcoeff,lagrange,ctNForce,ctTForce,cflag,smoothing_type)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint) :: nnode !< type of master segment; number of nodes of master segment
+    integer(kind=kint), optional :: smoothing_type !< kcsNONE or kcsNAGATA
     integer(kind=kint) :: j
     real(kind=kreal)   :: fcoeff, tPenalty !< friction coefficient; tangential penalty
     real(kind=kreal)   :: lagrange !< value of Lagrange multiplier
@@ -128,8 +131,8 @@ contains
     ctNForce = 0.0d0
     ctTForce = 0.0d0
 
-    ! Compute Tm matrix (Tt not needed, pass fcoeff=0 to skip)
-    call computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt)
+    ! Compute Tm matrix
+    call computeTm_Tt(ctState, tSurf, fcoeff, Tm, Tt, smoothing_type)
 
     normal(1:3) = ctState%direction(1:3)
 
@@ -169,13 +172,14 @@ contains
 
   end subroutine getContactNodalForce_Slag
 
-  subroutine getTiedStiffness_Slag(ctState,tSurf,idof,stiffness)
+  subroutine getTiedStiffness_Slag(ctState,tSurf,idof,stiffness,smoothing_type)
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
     integer(kind=kint)  :: nnode !< number of nodes of master segment
     integer(kind=kint)  :: idof
     real(kind=kreal)    :: stiffness(:,:) !< contact stiffness matrix
+    integer(kind=kint), optional :: smoothing_type !< kcsNONE or kcsNAGATA
 
     integer(kind=kint)  :: i, j
     real(kind=kreal)    :: nTm((l_max_surface_node+1)*3)
@@ -186,7 +190,7 @@ contains
     stiffness = 0.0d0
 
     ! Compute Tm matrix
-    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt)
+    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt, smoothing_type)
 
     ! Create unit vector in idof direction
     e_idof = 0.0d0
@@ -203,7 +207,7 @@ contains
 
   end subroutine getTiedStiffness_Slag
 
-  subroutine getTiedNodalForce_Slag(ctState,tSurf,idof,ndu,lagrange,ctNForce,ctTForce)
+  subroutine getTiedNodalForce_Slag(ctState,tSurf,idof,ndu,lagrange,ctNForce,ctTForce,smoothing_type)
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
     type(tSurfElement)  :: tSurf !< surface element structure
@@ -213,6 +217,7 @@ contains
     real(kind=kreal)   :: lagrange !< value of Lagrange multiplier
     real(kind=kreal)       :: ctNForce(:)  !< tied contact force vector
     real(kind=kreal)       :: ctTForce(:)  !< tied contact force vector
+    integer(kind=kint), optional :: smoothing_type !< kcsNONE or kcsNAGATA
 
     integer(kind=kint) :: j
     real(kind=kreal)   :: normal(3) !< normal vector at target point
@@ -227,7 +232,7 @@ contains
     ctTForce = 0.0d0
 
     ! Compute Tm matrix
-    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt)
+    call computeTm_Tt(ctState, tSurf, 0.0d0, Tm, Tt, smoothing_type)
 
     normal(1:3) = ctState%direction(1:3)
 

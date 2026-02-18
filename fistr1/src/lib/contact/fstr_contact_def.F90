@@ -17,6 +17,7 @@ module mContactDef
   use m_hecmw_contact_comm
   use bucket_search
   use mContactParam
+  use m_fstr_contact_smoothing
 
   implicit none
 
@@ -39,6 +40,10 @@ module mContactDef
   integer, parameter :: CONTACTGLUED = 2
   integer, parameter :: CONTACTSSLID = 3
   integer, parameter :: CONTACTFSLID = 4
+
+  !> contact smoothing type
+  integer, parameter :: kcsNONE   = 0
+  integer, parameter :: kcsNAGATA = 1
 
   !> contact interference type
   integer, parameter :: C_IF_SLAVE = 1
@@ -100,6 +105,7 @@ module mContactDef
     ! 3: SSLID-Small sliding contact( no position but with contact state change)
     ! 4: FSLID-Finite sliding contact (both changes in contact state and position possible)
     integer                       :: algtype                 !< algorithm flag
+    integer                       :: smoothing               !< kcsNONE or kcsNAGATA
 
     logical                       :: mpced                   !< if turns into mpc condition
     logical                       :: symmetric               !< if symmetrizalized in friction calculation

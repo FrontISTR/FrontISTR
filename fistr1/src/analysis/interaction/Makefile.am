@@ -83,6 +83,7 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
+        fstr_contact_smoothing.@f90objfilepostfix@ \
         fstr_contact_geom.@f90objfilepostfix@ \
         fstr_contact_interference.@f90objfilepostfix@ \
         fstr_contact_elem_common.@f90objfilepostfix@ \

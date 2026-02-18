@@ -545,7 +545,7 @@ contains
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname )
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname, smoothing )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
@@ -556,6 +556,7 @@ contains
     real(kind=kreal), intent(out)      :: ntol           !< tolrence along contact nomral
     real(kind=kreal), intent(out)      :: ttol           !< tolrence along contact tangent
     character(len=*), intent(out)      :: cpname         !< name of contact parameter
+    integer(kind=kint), intent(out)    :: smoothing     !< kcsNONE or kcsNAGATA
 
     integer           :: rcode, ipt
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
@@ -571,6 +572,9 @@ contains
     rcode = fstr_ctrl_get_param_ex( ctrl, 'INTERACTION ', s1, 0, 'P', contact(1)%algtype )
     if( contact(1)%algtype==CONTACTGLUED ) contact(1)%algtype=CONTACTFSLID  ! not complemented yet
     if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', contact(1)%group )/=0) return
+    smoothing = kcsNONE + 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'SMOOTHING ', 'NONE,NAGATA ', 0, 'P', smoothing ) /= 0 ) return
+    smoothing = smoothing - 1
     do rcode=2,n
       contact(rcode)%ctype = contact(1)%ctype
       contact(rcode)%group = contact(1)%group
@@ -627,12 +631,13 @@ contains
   end function fstr_ctrl_get_CONTACT
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_EMBED( ctrl, n, embed, cpname )
+  logical function fstr_ctrl_get_EMBED( ctrl, n, embed, cpname, smoothing )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
     type(tContact), intent(out)       :: embed(n)      !< embed definition
     character(len=*), intent(out)     :: cpname         !< name of contact parameter
+    integer(kind=kint), intent(out)   :: smoothing     !< kcsNONE or kcsNAGATA
 
     integer           :: rcode, ipt
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
@@ -648,6 +653,9 @@ contains
     embed(1)%ctype = 1   ! pure slave-master contact; default value
     embed(1)%algtype = CONTACTTIED ! small sliding contact; default value
     if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', embed(1)%group )/=0) return
+    smoothing = kcsNONE + 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'SMOOTHING ', 'NONE,NAGATA ', 0, 'P', smoothing ) /= 0 ) return
+    smoothing = smoothing - 1
     do rcode=2,n
       embed(rcode)%ctype = embed(1)%ctype
       embed(rcode)%group = embed(1)%group

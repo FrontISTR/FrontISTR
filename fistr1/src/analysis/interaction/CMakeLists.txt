@@ -4,6 +4,7 @@
 ###############################################################################
 
 target_sources(fistr PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_contact_smoothing.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_contact_geom.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_contact_interference.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_contact_elem_common.f90

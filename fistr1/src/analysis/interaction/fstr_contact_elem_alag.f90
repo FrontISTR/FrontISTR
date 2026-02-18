@@ -10,6 +10,7 @@ module m_fstr_contact_elem_alag
   use mSurfElement
   use m_fstr_contact_geom
   use m_fstr_contact_elem_common
+  use m_fstr_contact_smoothing
   implicit none
 
   public :: getContactStiffness_Alag
@@ -20,7 +21,7 @@ module m_fstr_contact_elem_alag
 
 contains
 
-  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force)
+  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force, smoothing_type)
 
     type(tContactState), intent(inout) :: cstate       !< contact state (inout for projection info)
     type(tSurfElement), intent(in)  :: tSurf           !< surface element structure
@@ -30,6 +31,7 @@ contains
     logical, intent(in)             :: symm            !< symmetricalize
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
     real(kind=kreal), intent(out)   :: force(:)        !< contact force direction
+    integer(kind=kint), optional, intent(in) :: smoothing_type  !< kcsNONE or kcsNAGATA
 
     integer          :: i, j, nnode
     real(kind=kreal) :: Bn(size(tSurf%nodes)*3+3), Ht(2,size(tSurf%nodes)*3+3), Gt(2,size(tSurf%nodes)*3+3)
@@ -44,7 +46,7 @@ contains
     nnode = size(tSurf%nodes)
 
     ! Use common mapping routine to compute Bn, metric, Ht, Gt
-    call computeContactMaps_ALag(cstate, tSurf, ele, Bn, metric, Ht, Gt)
+    call computeContactMaps_ALag(cstate, tSurf, ele, Bn, metric, Ht, Gt, smoothing_type)
 
     ! Normal stiffness: stiff = mu * Bn * Bn^T
     do j = 1, nnode*3+3
@@ -98,7 +100,7 @@ contains
 
   end subroutine getContactStiffness_Alag
 
-  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,lagrange,ctNForce,ctTForce,cflag)
+  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,lagrange,ctNForce,ctTForce,cflag,smoothing_type)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
@@ -112,6 +114,7 @@ contains
     real(kind=kreal)   :: ctNForce(:) !< contact normal force vector
     real(kind=kreal)   :: ctTForce(:) !< contact tangential force vector
     logical            :: cflag  !< not used for ALagrange (kept for interface compatibility)
+    integer(kind=kint), optional, intent(in) :: smoothing_type  !< kcsNONE or kcsNAGATA
 
     real(kind=kreal)   :: normal(3) !< normal vector at target point
     real(kind=kreal)   :: Bn(3*l_max_elem_node+3) !< normal distribution vector
@@ -137,7 +140,7 @@ contains
 
     ! Use common mapping routine to compute Bn, metric, Ht, Gt
     call computeContactMaps_ALag(ctState, tSurf, elemcrd(:,1:nnode), &
-                                  Bn, metric, Ht, Gt)
+                                  Bn, metric, Ht, Gt, smoothing_type)
 
     ! Normal gap: dgn = Bn^T * ndCoord (using normal distribution vector)
     dgn = dot_product( Bn(1:edof), ndCoord(1:edof) )
@@ -172,7 +175,7 @@ contains
   end subroutine getContactNodalForce_Alag
 
   subroutine updateContactMultiplier_Alag(ctState,ndLocal,coord,disp,ddisp,&
-     &  mu,mut,fcoeff,etype,lgnt,ctchanged,ctNForce,ctTForce,jump_ratio)
+     &  mu,mut,fcoeff,tSurf,lgnt,ctchanged,ctNForce,ctTForce,jump_ratio,smoothing_type)
 
     type(tContactState), intent(inout)   :: ctState             !< contact state
     integer(kind=kint), intent(in)       :: ndLocal(:)          !< global node numbers (slave + master)
@@ -181,12 +184,13 @@ contains
     real(kind=kreal), intent(in)         :: ddisp(:)            !< disp till current substep
     real(kind=kreal), intent(in)         :: mu, mut             !< penalty parameters
     real(kind=kreal), intent(in)         :: fcoeff              !< friction coefficient
-    integer(kind=kint), intent(in)       :: etype               !< element type
+    type(tSurfElement), intent(in)       :: tSurf               !< surface element structure (with vertex_normals for Nagata)
     real(kind=kreal), intent(inout)      :: lgnt(2)             !< convergence metrics
     logical, intent(inout)               :: ctchanged           !< contact state changed flag
     real(kind=kreal), intent(out)        :: ctNForce(:)         !< contact normal force vector
     real(kind=kreal), intent(out)        :: ctTForce(:)         !< contact tangential force vector
     real(kind=kreal), intent(out)        :: jump_ratio          !< stick trial / slip limit force ratio
+    integer(kind=kint), optional, intent(in) :: smoothing_type  !< kcsNONE or kcsNAGATA
 
     integer(kind=kint)  :: nnode !< number of master nodes
     integer(kind=kint)  :: slave, j
@@ -199,7 +203,6 @@ contains
     real(kind=kreal)    :: metric(2,2)
     real(kind=kreal)    :: dxy(2)        !< for convergence check
     integer(kind=kint)  :: edof  !< element vector size (nnode*3+3)
-    type(tSurfElement)  :: tSurf_tmp  !< temporary surface element for computeContactMaps_ALag
 
     nnode = size(ndLocal) - 1
     slave = ndLocal(1)
@@ -217,14 +220,9 @@ contains
       edisp(j*3+1:j*3+3) = ddisp(3*ndLocal(j+1)-2:3*ndLocal(j+1))
     enddo
 
-    ! Build temporary tSurf for computeContactMaps_ALag
-    allocate(tSurf_tmp%nodes(nnode))
-    tSurf_tmp%etype = etype
-    tSurf_tmp%nodes = ndLocal(2:nnode+1)
-
     ! Use common mapping routine to compute Bn, metric, Ht, Gt
-    call computeContactMaps_ALag(ctState, tSurf_tmp, elemcrd(:,1:nnode), &
-                                  Bn, metric, Ht, Gt)
+    call computeContactMaps_ALag(ctState, tSurf, elemcrd(:,1:nnode), &
+                                  Bn, metric, Ht, Gt, smoothing_type)
 
     ! Normal gap: dgn = Bn^T * curpos (using normal distribution vector)
     dgn = dot_product( Bn(1:edof), curpos(1:edof) )
@@ -255,9 +253,6 @@ contains
     ! Tangent displacement for convergence check: use Gt to project curpos directly
     dxy = matmul( Gt(:,1:edof), curpos(1:edof) )
     lgnt(2) = lgnt(2) + dsqrt( dxy(1)*dxy(1) + dxy(2)*dxy(2) )
-
-    ! Clean up temporary surface element
-    deallocate(tSurf_tmp%nodes)
 
   end subroutine updateContactMultiplier_Alag
 
