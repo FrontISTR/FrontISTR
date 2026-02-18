@@ -388,30 +388,6 @@ contains
     fstrSOLID%ddunode = 0.d0
   end subroutine
 
-  !> Update lagrangian multiplier
-  subroutine fstr_update_contact0( hecMESH, fstrSOLID, B )
-    type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
-    type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
-    real(kind=kreal), intent(inout)        :: B(:)        !< nodal force residual
-
-    integer(kind=kint) :: i, algtype
-
-    do i=1, fstrSOLID%n_contacts
-      !   if( contacts(i)%mpced ) cycle
-      algtype = fstrSOLID%contacts(i)%algtype
-      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-        call calcu_contact_force0( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:)  &
-        , fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, mu, mut, B )
-      else if( algtype == CONTACTTIED ) then
-        call calcu_tied_force0( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
-      endif
-    enddo
-
-    do i=1, fstrSOLID%n_embeds
-      call calcu_tied_force0( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
-    enddo
-
-  end subroutine
 
   !> Update lagrangian multiplier
   subroutine fstr_update_contact_multiplier( hecMESH, fstrSOLID, ctchanged )
@@ -440,28 +416,6 @@ contains
     enddo
 
     if( nc>0 ) gnt = gnt/nc
-  end subroutine
-
-  !> Update lagrangian multiplier
-  subroutine fstr_ass_load_contactAlag( hecMESH, fstrSOLID, B )
-    type( hecmwST_local_mesh ), intent(in) :: hecMESH
-    type(fstr_solid), intent(inout)        :: fstrSOLID
-    real(kind=kreal), intent(inout)        :: B(:)        !< nodal force residual
-
-    integer(kind=kint) :: i, algtype
-
-    do i = 1, fstrSOLID%n_contacts
-      algtype = fstrSOLID%contacts(i)%algtype
-      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-        call ass_contact_force( fstrSOLID%contacts(i), hecMESH%node, fstrSOLID%unode, B )
-      else if( algtype == CONTACTTIED ) then
-        call calcu_tied_force0( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
-      endif
-    enddo
-
-    do i = 1, fstrSOLID%n_embeds
-      call calcu_tied_force0( fstrSOLID%embeds(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), mu, B )
-    enddo
   end subroutine
 
   !> Update tangent force
