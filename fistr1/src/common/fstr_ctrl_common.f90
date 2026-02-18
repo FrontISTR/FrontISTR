@@ -226,7 +226,7 @@ contains
     use m_step
     integer(kind=kint), intent(in)        :: ctrl      !< ctrl file
     type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
-    type(step_info), intent(out)          :: steps     !< step control info
+    type(step_info), intent(inout)        :: steps     !< step control info
     character(len=*), intent(out)         :: tpname    !< name of timepoints
     character(len=*), intent(out)         :: apname    !< name of auto increment parameter
 
@@ -244,7 +244,6 @@ contains
     write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'I '
     write( data_fmt1, '(a,a,a)') 'S', trim(adjustl(ss)),'rrr '
 
-    call init_stepInfo(steps)
     steps%solution = stepStatic
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   'STATIC,VISCO ', 0, 'P', steps%solution )/= 0) return
     steps%inc_type = stepFixedInc
