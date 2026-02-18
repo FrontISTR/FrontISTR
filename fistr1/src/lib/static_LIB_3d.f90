@@ -603,7 +603,7 @@ contains
     integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
 
     integer(kind=kint) :: mtype, i, j, k
-    integer(kind=kint) :: isEp, hdflag_in
+    integer(kind=kint) :: isEp, hdflag_in, log_valid
     real(kind=kreal)   :: D(6,6), dstress(6), dumstress(3,3), dum(3,3), trD, det
     real(kind=kreal)   :: tensor(6)     !< tensor
     real(kind=kreal)   :: eigval(3)     !< vector containing the eigvalches
@@ -736,27 +736,38 @@ contains
         tensor(6) = dum(3,1)
         call get_principal(tensor, eigval, princ)
 
-        do k=1,3
-          if( eigval(k) <= 0.d0 ) stop "Fail to calc log strain: stretch<0"
-          eigval(k) = 0.5d0*dlog(eigval(k)) !log(sqrt(lambda))
-          norm = dsqrt(dot_product(princ(1:3,k),princ(1:3,k)))
-          if( norm <= 0.d0 ) stop "Fail to calc log strain: stretch direction vector=0"
-          princ(1:3,k) = princ(1:3,k)/norm
-        end do
-        do i=1,3
-          do j=1,3
-            dum(i,j) = 0.d0
-            do k=1,3
-              dum(i,j) = dum(i,j) + eigval(k)*princ(i,k)*princ(j,k)
-            end do
+        if( any(eigval(1:3) <= 0.d0) ) then
+          gauss%strain_out(1:6) = gauss%strain(1:6)
+        else
+          log_valid = 1
+          do k=1,3
+            norm = dsqrt(dot_product(princ(1:3,k),princ(1:3,k)))
+            if( norm <= 1.0d-15 ) then
+              log_valid = 0
+              exit
+            end if
+            eigval(k) = 0.5d0*dlog(eigval(k))
+            princ(1:3,k) = princ(1:3,k)/norm
           end do
-        end do
-        gauss%strain_out(1) = dum(1,1)
-        gauss%strain_out(2) = dum(2,2)
-        gauss%strain_out(3) = dum(3,3)
-        gauss%strain_out(4) = 2.d0*dum(1,2)
-        gauss%strain_out(5) = 2.d0*dum(2,3)
-        gauss%strain_out(6) = 2.d0*dum(3,1)
+          if( log_valid == 0 ) then
+            gauss%strain_out(1:6) = gauss%strain(1:6)
+          else
+            do i=1,3
+              do j=1,3
+                dum(i,j) = 0.d0
+                do k=1,3
+                  dum(i,j) = dum(i,j) + eigval(k)*princ(i,k)*princ(j,k)
+                end do
+              end do
+            end do
+            gauss%strain_out(1) = dum(1,1)
+            gauss%strain_out(2) = dum(2,2)
+            gauss%strain_out(3) = dum(3,3)
+            gauss%strain_out(4) = 2.d0*dum(1,2)
+            gauss%strain_out(5) = 2.d0*dum(2,3)
+            gauss%strain_out(6) = 2.d0*dum(3,1)
+          end if
+        end if
       endif
 
     else
