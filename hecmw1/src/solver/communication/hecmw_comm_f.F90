@@ -468,6 +468,33 @@ contains
 #endif
   end subroutine hecmw_allreduce_I1
 
+  subroutine hecmw_allreduce_L1 (hecMESH, flag, ntag)
+    use hecmw_util
+    implicit none
+    integer(kind=kint):: ntag
+    logical :: flag
+    type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+    integer(kind=kint):: ierr
+    logical :: flagM
+
+    flagM = .false.
+    if (ntag .eq. hecmw_lor) then
+      call MPI_allREDUCE                                              &
+        &       (flag, flagM, 1, MPI_LOGICAL, MPI_LOR,                    &
+        &        hecMESH%MPI_COMM, ierr)
+    endif
+
+    if (ntag .eq. hecmw_land) then
+      call MPI_allREDUCE                                              &
+        &       (flag, flagM, 1, MPI_LOGICAL, MPI_LAND,                   &
+        &        hecMESH%MPI_COMM, ierr)
+    endif
+
+    flag = flagM
+#endif
+  end subroutine hecmw_allreduce_L1
+
   !C
   !C***
   !C*** hecmw_bcast_R
