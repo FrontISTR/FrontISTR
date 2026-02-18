@@ -1,3 +1,4 @@
+fstr_contact_smoothing.o : fstr_contact_smoothing.f90 
 fstr_contact_geom.o : fstr_contact_geom.f90 
 fstr_contact_interference.o : fstr_contact_interference.f90 
 fstr_contact_elem_common.o : fstr_contact_elem_common.f90 fstr_contact_geom.o 

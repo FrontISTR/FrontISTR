@@ -150,7 +150,7 @@ contains
       ! Update multiplier and calculate forces
       call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
         contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
-        fcoeff, etype, lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local)
+        fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
       
       ! Track maximum jump ratio
       max_jump_ratio = max(max_jump_ratio, jump_ratio_local)
@@ -293,7 +293,7 @@ contains
           id_lagrange = id_lagrange + 1
           lagrange = lagrange_array(id_lagrange)
           call getContactStiffness_Slag(contact%states(j), contact%master(ctsurf), iter, &
-            contact%tPenalty, contact%fcoeff, lagrange, stiffness)
+            contact%tPenalty, contact%fcoeff, lagrange, stiffness, smoothing_type=contact%smoothing)
 
           ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
           call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, conMAT, hecLagMAT)
@@ -307,7 +307,7 @@ contains
             call getContactStiffness_Alag(contact%states(j), contact%master(ctsurf), elecoord(:,1:nnode), &
               contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
               contact%fcoeff, contact%symmetric, stiffness, force, &
-              edisp=eledisp(1:nnode*3+3), iter=iter)
+              smoothing_type=contact%smoothing, edisp=eledisp(1:nnode*3+3), iter=iter)
 
           ! Assemble contact stiffness matrix into global stiffness matrix
           call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)
@@ -323,7 +323,8 @@ contains
             id_lagrange = id_lagrange + 1
             lagrange = lagrange_array(id_lagrange)
 
-            call getTiedStiffness_Slag(contact%states(j), contact%master(ctsurf), k, stiffness)
+            call getTiedStiffness_Slag(contact%states(j), contact%master(ctsurf), k, stiffness, &
+              contact%smoothing)
             ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
             call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, 0.d0, stiffness, conMAT, hecLagMAT)
           enddo
@@ -414,13 +415,13 @@ contains
           id_lagrange = id_lagrange + 1
           lagrange = lagrange_array(id_lagrange)
           call getContactNodalForce_Slag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
-            contact%tPenalty,contact%fcoeff,lagrange,ctNForce,ctTForce,.true.)
+            contact%tPenalty,contact%fcoeff,lagrange,ctNForce,ctTForce,.true.,contact%smoothing)
 
         else if( ctAlgo == kcaALagrange ) then
           id_lagrange = 0
           lagrange = 0.d0
           call getContactNodalForce_Alag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
-            mu_n, mu_t, contact%fcoeff,lagrange,ctNForce,ctTForce,.true.)
+            mu_n, mu_t, contact%fcoeff,lagrange,ctNForce,ctTForce,.true.,contact%smoothing)
 
         end if
 
@@ -441,7 +442,7 @@ contains
             contact%states(j)%multiplier(k) = lagrange
 
             call getTiedNodalForce_Slag(contact%states(j),contact%master(ctsurf),k,ndu, &
-            &  lagrange,ctNForce,ctTForce)
+            &  lagrange,ctNForce,ctTForce,contact%smoothing)
             if( purpose == kctForResidual ) then
               call assemble_contact_force_residual(nnode,ndLocal,id_lagrange,ctNForce,ctTForce,conMAT)
             else

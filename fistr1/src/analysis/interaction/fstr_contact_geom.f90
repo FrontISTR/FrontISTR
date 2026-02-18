@@ -7,6 +7,7 @@ module m_fstr_contact_geom
   use hecmw
   use elementInfo
   use mContactDef
+  use m_fstr_contact_smoothing
   implicit none
 
   public :: cal_node_normal
@@ -221,7 +222,7 @@ contains
 
   !> Wrapper for project_Point2Element that takes tSurfElement structure
   !! This subroutine handles element coordinate extraction from tSurfElement
-  subroutine project_Point2SurfElement(xyz, surf, currpos, cstate, isin, distclr, ctpos, localclr)
+  subroutine project_Point2SurfElement(xyz, surf, currpos, cstate, isin, distclr, ctpos, localclr, smoothing)
     real(kind=kreal), intent(in)              :: xyz(3)        !< coordinates of slave point
     type(tSurfElement), intent(in)            :: surf          !< surface element structure
     real(kind=kreal), intent(in)              :: currpos(:)    !< current coordinate of all nodes
@@ -230,9 +231,11 @@ contains
     real(kind=kreal), intent(in)              :: distclr       !< clearance of contact distance
     real(kind=kreal), optional, intent(in)    :: ctpos(2)      !< current contact position (natural coord)
     real(kind=kreal), optional, intent(in)    :: localclr      !< clearance of contact local coord
+    integer(kind=kint), intent(in)            :: smoothing     !< kcsNONE or kcsNAGATA
 
-    integer(kind=kint) :: nn, j, iSS
+    integer(kind=kint) :: nn, j, iSS, etype_use, nn_use
     real(kind=kreal)   :: elem(3, l_max_elem_node)
+    real(kind=kreal)   :: elem_tri3n(3, 3)
 
     ! Extract element coordinates from surf structure
     nn = size(surf%nodes)
@@ -241,7 +244,28 @@ contains
       elem(1:3, j) = currpos(3*iSS-2:3*iSS)
     enddo
 
-    call project_Point2Element(xyz, surf%etype, nn, elem, surf%reflen, cstate, &
+    if (smoothing == kcsNAGATA) then
+      if (surf%etype == fe_tri3n) then
+        elem_tri3n = elem(1:3, 1:3)
+        call reorder_tri3n_to_tri6n(elem_tri3n, surf%intermediate_points, elem(1:3,1:6))
+        etype_use = fe_tri6n
+        nn_use = 6
+      else if (surf%etype == fe_quad4n) then
+        do j = 1, nn
+          elem(1:3, nn+j) = surf%intermediate_points(1:3, j)
+        enddo
+        etype_use = fe_quad8n
+        nn_use = 8
+      else
+        etype_use = surf%etype
+        nn_use = nn
+      endif
+    else
+      etype_use = surf%etype
+      nn_use = nn
+    endif
+
+    call project_Point2Element(xyz, etype_use, nn_use, elem, surf%reflen, cstate, &
       isin, distclr, ctpos, localclr)
 
   end subroutine project_Point2SurfElement
@@ -328,7 +352,8 @@ contains
     cstate_tmp%surface = sid0
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
       cstate_tmp, isin, contact%cparam%DISTCLR_NOCHECK, &
-      contact%states(nslave)%lpos, contact%cparam%CLR_SAME_ELEM )
+      contact%states(nslave)%lpos, contact%cparam%CLR_SAME_ELEM, &
+      smoothing=contact%smoothing )
 
     if( isin ) then
       etype = contact%master(sid0)%etype

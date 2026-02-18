@@ -12,6 +12,7 @@ module m_fstr_contact_search
   use m_fstr_contact_geom
   use m_fstr_contact_element
   use m_fstr_contact_interference
+  use m_fstr_contact_smoothing
   implicit none
 
 contains
@@ -150,13 +151,13 @@ contains
     enddo
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
       contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
+      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM, smoothing=contact%smoothing )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
         call project_Point2SurfElement( coord, contact%master(sid), currpos, &
           contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-          localclr=contact%cparam%CLEARANCE )
+          localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -181,7 +182,7 @@ contains
           if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
             contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-            localclr=contact%cparam%CLEARANCE )
+            localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -262,13 +263,13 @@ contains
     enddo
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
       contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
+      contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM, smoothing=contact%smoothing )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
         call project_Point2SurfElement( coord, contact%master(sid), currpos, &
           contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-          localclr=contact%cparam%CLEARANCE )
+          localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
         if( isin ) then
           contact%states(nslave)%surface = sid
           exit
@@ -291,7 +292,7 @@ contains
           if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
             contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
-            localclr=contact%cparam%CLEARANCE )
+            localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( isin ) then
             contact%states(nslave)%surface = sid
             exit
@@ -331,7 +332,7 @@ contains
   !!-# Free to contact or contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
   subroutine scan_contact_state( flag_ctAlgo, contact, currpos, currdisp, ndforce, infoCTChange, &
-    nodeID, elemID, is_init, active, B )
+    nodeID, elemID, is_init, active, B, hecMESH )
     character(len=9), intent(in)                     :: flag_ctAlgo  !< contact analysis algorithm flag
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
@@ -343,6 +344,7 @@ contains
     logical, intent(in)                              :: is_init      !< whether initial scan or not
     logical, intent(out)                             :: active       !< if any in contact
     real(kind=kreal), optional, target               :: B(:)         !< nodal force residual
+    type( hecmwST_local_mesh ), intent(in), optional :: hecMESH      !< mesh for MPI communication
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
@@ -378,6 +380,11 @@ contains
     do i = 1, size(contact%slave)
       states_prev(i) = contact%states(i)%state
     enddo
+
+    if( contact%smoothing == kcsNAGATA ) then
+      call update_surface_normal( contact%master, currpos, hecMESH )
+      call create_intermediate_points( contact%master, currpos, contact%pair_name )
+    endif
 
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
@@ -457,7 +464,7 @@ contains
         do idm = 1,nMaster
           id = indexMaster(idm)
           call project_Point2SurfElement( coord, contact%master(id), currpos, &
-            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE )
+            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
@@ -512,7 +519,7 @@ contains
   !!-# Free to contact or contact to free state changes
   !!-# Clear lagrangian multipliers when free to contact
   subroutine scan_contact_state_exp( contact, currpos, currdisp, infoCTChange, &
-    nodeID, elemID, is_init, active )
+    nodeID, elemID, is_init, active, hecMESH )
     type( tContact ), intent(inout)                 :: contact      !< contact info
     type( fstr_info_contactChange ), intent(inout)  :: infoCTChange !< contact change info
     real(kind=kreal), intent(in)                    :: currpos(:)   !< current coordinate of each nodes
@@ -521,6 +528,7 @@ contains
     integer(kind=kint), intent(in)                  :: elemID(:)    !< global elemental ID, just for print out
     logical, intent(in)                             :: is_init      !< whether initial scan or not
     logical, intent(out)                            :: active       !< if any in contact
+    type( hecmwST_local_mesh ), intent(in), optional :: hecMESH     !< mesh for MPI communication
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
@@ -554,6 +562,11 @@ contains
     do i = 1, size(contact%slave)
       states_prev(i) = contact%states(i)%state
     enddo
+
+    if( contact%smoothing == kcsNAGATA ) then
+      call update_surface_normal( contact%master, currpos, hecMESH )
+      call create_intermediate_points( contact%master, currpos, contact%pair_name )
+    endif
 
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
@@ -604,7 +617,7 @@ contains
         do idm = 1,nMaster
           id = indexMaster(idm)
           call project_Point2SurfElement( coord, contact%master(id), currpos, &
-            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE )
+            contact%states(i), isin, distclr, localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( .not. isin ) cycle
           contact%states(i)%surface = id
           contact%states(i)%multiplier(:) = 0.d0
@@ -846,3 +859,4 @@ contains
   end subroutine
 
 end module m_fstr_contact_search
+
