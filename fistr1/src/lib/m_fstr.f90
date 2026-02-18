@@ -198,6 +198,7 @@ module m_fstr
 
     !> for contact analysis
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
+    integer( kind=kint ) :: augiter            !< augmentation iteration for ALagrange algorithm
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
     type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
 
@@ -1021,6 +1022,10 @@ contains
 
     ! for restart control
     fstrPARAM%restart_version = 5
+
+    ! for contact analysis
+    fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange
+    fstrPARAM%augiter = 2                  ! default augmentation iteration for ALagrange
 
     ! index table for global node ID sorting
 

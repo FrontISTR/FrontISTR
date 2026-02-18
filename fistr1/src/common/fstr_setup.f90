@@ -3986,7 +3986,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: rcode
 
 
-    rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo )
+    rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo, P%PARAM%augiter )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_CONTACTALGO

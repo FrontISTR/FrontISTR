@@ -72,7 +72,7 @@ contains
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
     fstrSOLID%GL0(:) = fstrSOLID%GL(:) !store external load at du=0
 
     !! initialize du for non-zero Dirichlet condition
