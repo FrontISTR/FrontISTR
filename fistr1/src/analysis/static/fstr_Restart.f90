@@ -225,11 +225,12 @@ contains
 
   !> Read in restart file for nonlinear dynamic analysis
   !----------------------------------------------------------------------*
-  subroutine fstr_read_restart_dyna_nl(cstep,substep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode)
+  subroutine fstr_read_restart_dyna_nl(cstep,substep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,contactNode,step_count)
     !----------------------------------------------------------------------*
     integer, intent(out)                  :: cstep       !< current step
     integer, intent(out)                  :: substep     !< current substep
     integer, intent(out), optional        :: contactNode !< number of contact nodes
+    integer, intent(out), optional        :: step_count  !< total step count for result output
     type (hecmwST_local_mesh), intent(in) :: hecMESH     !< hecmw mesh
     type (fstr_solid),intent(inout)       :: fstrSOLID   !< fstr_solid
     type ( fstr_dynamic), intent(inout)   :: fstrDYNAMIC
@@ -301,16 +302,22 @@ contains
       call hecmw_restart_read_real(fstrSOLID%elements(i)%equiForces)
     enddo
 
-    !--- Read is_StepFinished flag and adjust cstep/substep
-    call hecmw_restart_read_int(restrt_step)
-    if( restrt_step(1) == 1 ) then
-      ! Step was finished: restart from next step, substep 1
+    !--- Read shift_time and step_count (aligned with static restart)
+    call hecmw_restart_read_real(data)
+    if( present(step_count) ) then
+      step_count = nint(data(2))
+    endif
+    ! Determine if step was finished: shift_time == t_curr means step completed
+    if( dabs(fstrDYNAMIC%t_curr - data(1)) < 1.d-10 ) then
       cstep = cstep + 1
       substep = 1
     else
-      ! Step was not finished: restart from next substep in same step
       substep = substep + 1
     endif
+    ! Always shift start times (same as static restart)
+    do i = 1, size(fstrSOLID%step_ctrl)
+      fstrSOLID%step_ctrl(i)%starttime = fstrSOLID%step_ctrl(i)%starttime + data(1)
+    end do
 
     call hecmw_restart_close()
 
@@ -318,12 +325,14 @@ contains
 
   !> write out restart file for nonlinear dynamic analysis
   !----------------------------------------------------------------------*
-  subroutine fstr_write_restart_dyna_nl(cstep,substep,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,is_StepFinished,contactNode)
+  subroutine fstr_write_restart_dyna_nl(cstep,substep,hecMESH,fstrSOLID, &
+    fstrDYNAMIC,fstrPARAM,is_StepFinished,contactNode,step_count)
     !----------------------------------------------------------------------*
     integer, intent(in)                   :: cstep      !< current step
     integer, intent(in)                   :: substep    !< current substep
     logical, intent(in)                   :: is_StepFinished !< whether the step has finished
     integer, intent(in), optional         :: contactNode!< number of contact nodes
+    integer, intent(in), optional         :: step_count !< total step count for result output
     type (hecmwST_local_mesh), intent(in) :: hecMESH    !< hecmw mesh
     type (fstr_solid), intent(in)         :: fstrSOLID  !< fstr_solid
     type ( fstr_dynamic), intent(in)      :: fstrDYNAMIC
@@ -404,13 +413,19 @@ contains
       call hecmw_restart_add_real(fstrSOLID%elements(i)%equiForces,size(fstrSOLID%elements(i)%equiForces))
     enddo
 
-    !--- is_StepFinished flag
+    !--- shift_time and step_count (aligned with static restart times(3) and restrt_step(3))
+    !  shift_time = ctime when step finished, starttime when step in progress
     if( is_StepFinished ) then
-      restrt_step(1) = 1
+      data(1) = fstrDYNAMIC%t_curr
     else
-      restrt_step(1) = 0
+      data(1) = fstrSOLID%step_ctrl(cstep)%starttime
     endif
-    call hecmw_restart_add_int(restrt_step,size(restrt_step))
+    if( present(step_count) ) then
+      data(2) = dble(step_count)
+    else
+      data(2) = 0.d0
+    endif
+    call hecmw_restart_add_real(data,size(data))
 
     call hecmw_restart_write()
 
