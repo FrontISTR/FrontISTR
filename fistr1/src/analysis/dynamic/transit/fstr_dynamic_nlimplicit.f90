@@ -37,7 +37,7 @@ contains
   subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
       ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
       ,fstrCPL,hecLagMAT,restart_step_num,restart_substep_num,infoCTChange  &
-      ,conMAT )
+      ,conMAT,restart_step_count )
     implicit none
     !C-- global variable
     type(hecmwST_local_mesh)             :: hecMESH
@@ -59,7 +59,7 @@ contains
     real(kind=kreal) :: time_1, time_2, factor
     integer(kind=kint) :: sub_step
 
-    integer(kind=kint) :: restart_step_num, restart_substep_num, tot_step, step_count
+    integer(kind=kint) :: restart_step_num, restart_substep_num, restart_step_count, tot_step, step_count
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: max_iter_contact
     real(kind=kreal) :: converg_dlag
@@ -155,8 +155,8 @@ contains
     call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
     
-    step_count = 0
-    do tot_step=restart_step_num, fstrSOLID%nstep_tot
+    step_count = restart_step_count
+    do tot_step=1, fstrSOLID%nstep_tot
       tot_step_print = tot_step+restart_step_num-1
       if(hecMESH%my_rank==0) write(*,*) ''
       if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step_print
@@ -243,7 +243,7 @@ contains
         if( fstrDYNAMIC%restart_nout > 0 ) then
           if( mod(step_count,fstrDYNAMIC%restart_nout).eq.0 ) then
             call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-              .false.,infoCTChange%contactNode_current)
+              .false.,infoCTChange%contactNode_current,step_count)
           endif
         endif
 
@@ -265,7 +265,7 @@ contains
       !--- Restart at the end of step
       if( fstrDYNAMIC%restart_nout > 0 ) then
         call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-          .true.,infoCTChange%contactNode_current)
+          .true.,infoCTChange%contactNode_current,step_count)
       endif
 
       restart_substep_num = 1
