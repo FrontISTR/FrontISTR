@@ -236,16 +236,30 @@ contains
     type ( fstr_dynamic), intent(inout)   :: fstrDYNAMIC
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(1),nif(2),naux(2)
-    real(kind=kreal) :: data(2)
+    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1),naux(2),dyna_int(1)
+    real(kind=kreal) :: times(3),dyna_data(1)
 
     call hecmw_restart_open()
 
+    !--- Common header (same format as static restart) ---
     call hecmw_restart_read_int(restrt_step)
-    cstep = restrt_step(1)
-    call hecmw_restart_read_int(restrt_step)
-    substep = restrt_step(1)
+    if( fstrPARAM%restart_version >= 5 ) then
+      if( myrank == 0 ) write(*,*) 'Reading dynamic restart file as new format(>=ver5.0)'
+      call hecmw_restart_read_real(times)
+      call hecmw_restart_read_int(fstrSOLID%NRstat_i)
+      call hecmw_restart_read_real(fstrSOLID%NRstat_r)
+      call hecmw_restart_read_int(istat)
+    else
+      if( myrank == 0 ) write(*,*) 'Reading dynamic restart file as old format(<ver5.0)'
+    endif
+    call hecmw_restart_read_int(nload_prev)
+    if( nload_prev(1)>0 ) then
+      allocate(fstrSOLID%step_ctrl_restart%Load(nload_prev(1)))
+      call hecmw_restart_read_int(fstrSOLID%step_ctrl_restart%Load)
+    endif
+
     call hecmw_restart_read_real(fstrSOLID%unode)
+    call hecmw_restart_read_real(fstrSOLID%unode_bak)
     call hecmw_restart_read_real(fstrSOLID%QFORCE)
 
     do i= 1, hecMESH%n_elem
@@ -283,11 +297,11 @@ contains
       enddo
     endif
 
-    call hecmw_restart_read_int(restrt_step)
-    fstrDYNAMIC%idx_eqa = restrt_step(1)
-    call hecmw_restart_read_real(data)
-    fstrDYNAMIC%t_curr = data(1)
-    fstrDYNAMIC%strainEnergy = data(2)
+    !--- Dynamic-specific data ---
+    call hecmw_restart_read_int(dyna_int)
+    fstrDYNAMIC%idx_eqa = dyna_int(1)
+    call hecmw_restart_read_real(dyna_data)
+    fstrDYNAMIC%strainEnergy = dyna_data(1)
     if( fstrDYNAMIC%idx_eqa == 1 ) then
       call hecmw_restart_read_real(fstrDYNAMIC%DISP(:,1))
       call hecmw_restart_read_real(fstrDYNAMIC%VEL(:,1))
@@ -302,24 +316,33 @@ contains
       call hecmw_restart_read_real(fstrSOLID%elements(i)%equiForces)
     enddo
 
-    !--- Read shift_time and step_count (aligned with static restart)
-    call hecmw_restart_read_real(data)
-    if( present(step_count) ) then
-      step_count = nint(data(2))
-    endif
-    ! Determine if step was finished: shift_time == t_curr means step completed
-    if( dabs(fstrDYNAMIC%t_curr - data(1)) < 1.d-10 ) then
-      cstep = cstep + 1
-      substep = 1
-    else
-      substep = substep + 1
-    endif
-    ! Always shift start times (same as static restart)
-    do i = 1, size(fstrSOLID%step_ctrl)
-      fstrSOLID%step_ctrl(i)%starttime = fstrSOLID%step_ctrl(i)%starttime + data(1)
-    end do
-
     call hecmw_restart_close()
+
+    !--- Restore step info (same logic as static restart) ---
+    cstep = restrt_step(1)
+    substep = restrt_step(2) + 1
+    if( present(step_count) ) step_count = restrt_step(3)
+    if( fstrPARAM%restart_version >= 5 ) then
+      fstrDYNAMIC%t_curr = times(1)
+      fstrDYNAMIC%t_delta = times(2)
+      fstrSOLID%AutoINC_stat = istat(1)
+      if( dabs(times(1)-times(3)) < 1.d-10 ) then
+        cstep = cstep + 1
+        substep = 1
+      endif
+      do i=1,size(fstrSOLID%step_ctrl)
+        fstrSOLID%step_ctrl(i)%starttime = fstrSOLID%step_ctrl(i)%starttime + times(3)
+      end do
+    else
+      fstrDYNAMIC%t_curr = fstrSOLID%step_ctrl(cstep)%starttime
+      fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + dble(substep-1)*fstrSOLID%step_ctrl(cstep)%initdt
+      fstrDYNAMIC%t_delta = fstrSOLID%step_ctrl(cstep)%initdt
+      if( dabs(fstrDYNAMIC%t_curr-fstrSOLID%step_ctrl(cstep)%starttime &
+        -fstrSOLID%step_ctrl(cstep)%elapsetime) < 1.d-10 ) then
+        cstep = cstep + 1
+        substep = 1
+      endif
+    endif
 
   end subroutine fstr_read_restart_dyna_nl
 
@@ -338,14 +361,37 @@ contains
     type ( fstr_dynamic), intent(in)      :: fstrDYNAMIC
     type(fstr_param), intent(in)          :: fstrPARAM
 
-    integer :: i,j,restrt_step(1),nif(2),naux(2)
-    real(kind=kreal) :: data(2)
+    integer :: i,j,restrt_step(3),nif(2),istat(1),nload_prev(1),naux(2),dyna_int(1)
+    real(kind=kreal) :: times(3),dyna_data(1)
 
+    !--- Common header (same format as static restart) ---
     restrt_step(1) = cstep
+    restrt_step(2) = substep
+    if( present(step_count) ) then
+      restrt_step(3) = step_count
+    else
+      restrt_step(3) = 0
+    endif
     call hecmw_restart_add_int(restrt_step,size(restrt_step))
-    restrt_step(1) = substep
-    call hecmw_restart_add_int(restrt_step,size(restrt_step))
+    if( fstrPARAM%restart_version >= 5 ) then
+      times(1) = fstrDYNAMIC%t_curr
+      times(2) = fstrDYNAMIC%t_delta
+      if( is_StepFinished ) then
+        times(3) = fstrDYNAMIC%t_curr
+      else
+        times(3) = fstrSOLID%step_ctrl(cstep)%starttime
+      end if
+      call hecmw_restart_add_real(times,size(times))
+      call hecmw_restart_add_int(fstrSOLID%NRstat_i,size(fstrSOLID%NRstat_i))
+      call hecmw_restart_add_real(fstrSOLID%NRstat_r,size(fstrSOLID%NRstat_r))
+      istat(1) = fstrSOLID%AutoINC_stat
+      call hecmw_restart_add_int(istat,1)
+    endif
+    nload_prev(1) = 0
+    call hecmw_restart_add_int(nload_prev,1)
+
     call hecmw_restart_add_real(fstrSOLID%unode,size(fstrSOLID%unode))
+    call hecmw_restart_add_real(fstrSOLID%unode_bak,size(fstrSOLID%unode_bak))
     call hecmw_restart_add_real(fstrSOLID%QFORCE,size(fstrSOLID%QFORCE))
 
     do i= 1, hecMESH%n_elem
@@ -394,11 +440,11 @@ contains
       enddo
     endif
 
-    restrt_step(1) = fstrDYNAMIC%idx_eqa
-    call hecmw_restart_add_int(restrt_step,size(restrt_step))
-    data(1) = fstrDYNAMIC%t_curr
-    data(2) = fstrDYNAMIC%strainEnergy
-    call hecmw_restart_add_real(data,size(data))
+    !--- Dynamic-specific data ---
+    dyna_int(1) = fstrDYNAMIC%idx_eqa
+    call hecmw_restart_add_int(dyna_int,1)
+    dyna_data(1) = fstrDYNAMIC%strainEnergy
+    call hecmw_restart_add_real(dyna_data,size(dyna_data))
     if( fstrDYNAMIC%idx_eqa == 1 ) then
       call hecmw_restart_add_real(fstrDYNAMIC%DISP(:,1),size(fstrDYNAMIC%DISP(:,1)))
       call hecmw_restart_add_real(fstrDYNAMIC%VEL(:,1),size(fstrDYNAMIC%VEL(:,1)))
@@ -412,20 +458,6 @@ contains
       if (hecmw_is_etype_patch( fstrSOLID%elements(i)%etype )) cycle
       call hecmw_restart_add_real(fstrSOLID%elements(i)%equiForces,size(fstrSOLID%elements(i)%equiForces))
     enddo
-
-    !--- shift_time and step_count (aligned with static restart times(3) and restrt_step(3))
-    !  shift_time = ctime when step finished, starttime when step in progress
-    if( is_StepFinished ) then
-      data(1) = fstrDYNAMIC%t_curr
-    else
-      data(1) = fstrSOLID%step_ctrl(cstep)%starttime
-    endif
-    if( present(step_count) ) then
-      data(2) = dble(step_count)
-    else
-      data(2) = 0.d0
-    endif
-    call hecmw_restart_add_real(data,size(data))
 
     call hecmw_restart_write()
 

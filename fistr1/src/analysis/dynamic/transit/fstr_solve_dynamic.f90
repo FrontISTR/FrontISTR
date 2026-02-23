@@ -204,6 +204,7 @@ contains
       fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
       hecMAT%Iarray(98) = 1
       call fstr_set_time(fstrDYNAMIC%t_curr)
+      call fstr_set_timeinc_base(fstrDYNAMIC%t_delta)
     end if
 
     if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
