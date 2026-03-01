@@ -77,7 +77,10 @@ contains
     real(kind=kreal), intent(in)           :: ctime        !< current analysis time
 
     integer(kind=kint) :: idum, amp_id, gid
+    integer(kind=kint) :: n_changed_local, n_changed_total
     real(kind=kreal)   :: amp_val
+
+    n_changed_total = 0
 
     do idum = 1, fstrSOLID%elemact%ELEMACT_egrp_tot
       gid = fstrSOLID%elemact%ELEMACT_egrp_GRPID(idum)
@@ -91,8 +94,16 @@ contains
       end if
 
       ! No amplitude: use stress-based control
-      call activate_elemact_flag_by_value( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements )
+      n_changed_local = 0
+      call activate_elemact_flag_by_value( hecMESH, fstrSOLID%elemact, idum, fstrSOLID%elements, n_changed_local )
+      n_changed_total = n_changed_total + n_changed_local
     end do
+
+    fstrSOLID%elemact%ELEMACT_n_changed = n_changed_total
+
+    if( hecMESH%my_rank == 0 .and. n_changed_total > 0 ) then
+      write(*,'(a,i6,a)') ' *** ELEMACT: ', n_changed_total, ' element(s) changed state (ACTIVE -> INACTIVE)'
+    endif
 
   end subroutine
 
@@ -201,16 +212,19 @@ contains
 
   end subroutine
 
-  subroutine activate_elemact_flag_by_value( hecMESH, elemact, dumid, elements )
+  subroutine activate_elemact_flag_by_value( hecMESH, elemact, dumid, elements, n_changed )
     type(hecmwST_local_mesh), intent(in)   :: hecMESH      !< mesh information
     type(tElemact), intent(in)               :: elemact        !< elemact info
     integer(kind=kint), intent(in)         :: dumid        !< elemact id
     type(tElement), pointer, intent(inout) :: elements(:)  !< elements info(elemact flags will be updated)
+    integer(kind=kint), intent(out)        :: n_changed    !< number of elements that changed state
 
     integer(kind=kint) :: ig, iS0, iE0, ik, icel, dtype, ig0
+    integer(kind=kint) :: old_flag
     real(kind=kreal)   :: thlow, thup, stress(6), mises, ps
     integer(kind=kint) :: target_state  ! Target state from control file (STATE=ON/OFF)
 
+    n_changed = 0
     if( dumid < 0 .or. dumid > elemact%ELEMACT_egrp_tot ) return
     if( elemact%ELEMACT_egrp_depends(dumid) == kELACTD_NONE ) return 
 
@@ -261,10 +275,12 @@ contains
         mises = dsqrt( 3.0d0 * mises )
         
         ! If stress is OUT OF RANGE [thlow, thup], deactivate the element
+        old_flag = elements(icel)%elemact_flag
         if( .not. (thlow <= mises .and. mises <= thup) ) then
           elements(icel)%elemact_flag = kELACT_INACTIVE
         endif
-        ! If IN RANGE, keep ACTIVE (elements(icel)%elemact_flag unchanged)
+        ! Count state change
+        if( elements(icel)%elemact_flag /= old_flag ) n_changed = n_changed + 1
         
         elements(icel)%elemact_coeff = elemact%ELEMACT_egrp_eps(dumid)
         exit
