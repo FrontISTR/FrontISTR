@@ -282,7 +282,15 @@ contains
 
         ! ----- check convergence
         if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-          relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) exit
+          relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
+          if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 .and. &
+              fstrSOLID%elemact%ELEMACT_n_changed > 0 .and. &
+              hecMESH%my_rank == 0 ) then
+            write(*,'(a,i6,a)') ' *** ELEMACT WARNING: converged while ', &
+              fstrSOLID%elemact%ELEMACT_n_changed, ' element(s) changed state this iteration'
+          endif
+          exit
+        endif
         res1 = res
 
         ! ----- check divergence and NaN
@@ -540,7 +548,15 @@ contains
 
         ! ----- check convergence
         if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-          relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) exit
+          relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
+          if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 .and. &
+              fstrSOLID%elemact%ELEMACT_n_changed > 0 .and. &
+              hecMESH%my_rank == 0 ) then
+            write(*,'(a,i6,a)') ' *** ELEMACT WARNING: converged while ', &
+              fstrSOLID%elemact%ELEMACT_n_changed, ' element(s) changed state this iteration'
+          endif
+          exit
+        endif
         res1 = res
 
         ! ----- check divergence and NaN
@@ -701,8 +717,14 @@ contains
     if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
       if( rres < fstrSOLID%step_ctrl(cstep)%converg .or. &
           rxnrm < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
-          iterStatus=kitrConverged
-          return
+        if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 .and. &
+            fstrSOLID%elemact%ELEMACT_n_changed > 0 .and. &
+            hecMESH%my_rank == 0 ) then
+          write(*,'(a,i6,a)') ' *** ELEMACT WARNING: converged while ', &
+            fstrSOLID%elemact%ELEMACT_n_changed, ' element(s) changed state this iteration'
+        endif
+        iterStatus=kitrConverged
+        return
       endif
     endif
 
