@@ -143,6 +143,7 @@ endif()
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
 # -DWITH_DOC         : generate API documents
 # -DOLD_RES_FORMAT   : use old style result file( comment and global output disabled)
+# -DWITH_NETCDF      : compile with NetCDF (for Exodus II output)
 
 ###################
 # Find external packages
@@ -163,6 +164,7 @@ find_package(Refiner)
 find_package(Revocap)
 find_package(Trilinos)
 find_package(Doxygen)
+find_package(NetCDF)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_DOC "Generate API documents." ${WITH_DOC})
 option(WINDOWS "build on windows" ${WINDOWS})
@@ -178,6 +180,7 @@ option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
 option(OLD_RES_FORMAT "use old style result file" ${OLD_RES_FORMAT})
+option(WITH_NETCDF "compile with NetCDF (for Exodus II output)" ${NETCDF_FOUND})
 option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
 
@@ -340,6 +343,19 @@ if(WITH_LAPACK)
   endif()
 endif()
 
+###################
+# -DWITH_NETCDF
+###################
+if(WITH_NETCDF)
+  if(NETCDF_FOUND)
+    list(APPEND FrontISTR_DEFINITIONS "WITH_NETCDF")
+    list(APPEND FrontISTR_INCLUDE_DIRS ${NETCDF_INCLUDE_PATH})
+    list(APPEND FrontISTR_LIBRARIES ${NETCDF_LIBRARIES})
+  else()
+    message(WARNING "NetCDF not found, Exodus output disabled")
+    set(WITH_NETCDF OFF)
+  endif()
+endif()
 
 ###################
 # -DOLD_RES_FORMAT

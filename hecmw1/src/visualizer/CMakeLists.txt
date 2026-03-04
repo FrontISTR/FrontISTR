@@ -24,6 +24,7 @@ target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_subimage_composite_sf.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_output_femap.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_output_vtk.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_output_exo.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_endian.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_pvr_main.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_comm_util.c

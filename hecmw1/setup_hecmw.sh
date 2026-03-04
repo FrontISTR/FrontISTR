@@ -21,6 +21,7 @@ WITHMUMPS=0
 WITHMKL=0
 WITHML=0
 WITHLAPACK=0
+WITHNETCDF=0
 OLDRESFORMAT=0
 
 #
@@ -140,6 +141,8 @@ do
 		WITHML=1
 	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
 		WITHLAPACK=1
+	elif [ "\"$i\"" = "\"-with-netcdf\"" -o "\"$i\"" = "\"--with-netcdf\"" ]; then
+		WITHNETCDF=1
 	elif [ "\"$i\"" = "\"-old-res-format\"" -o "\"$i\"" = "\"--old-res-format\"" ]; then
 		OLDRESFORMAT=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
@@ -178,6 +181,7 @@ do
 			--with-mkl              compile with MKL PARDISO
 			--with-ml               compile with ML
 			--with-lapack           compile with LAPACK
+			--with-netcdf           compile with NetCDF (for Exodus II output)
 			--only-message          only create error message files
 			--only-lex              only perform lexical analyzer
 			--remove-makefiles      remove all MAKEFILEs
@@ -199,6 +203,7 @@ do
 			--with-mkl              compile with MKL PARDISO
 			--with-ml               compile with ML
 			--with-lapack           compile with LAPACK
+			--with-netcdf           compile with NetCDF (for Exodus II output)
 			-h, --help              show help (this message)
 		EOF
 		exit 1
@@ -419,6 +424,15 @@ if [ ${MESSAGEONLY} -eq 0 -a ${LEXONLY} -eq 0 ]; then
 	#
 	if [ ${WITHLAPACK} -eq 1 ]; then
 		F90FLAGS="${F90FLAGS} -DHECMW_WITH_LAPACK"
+	fi
+
+	#
+	# with NetCDF
+	#
+	if [ ${WITHNETCDF} -eq 1 ]; then
+		HECMW_CFLAGS="${HECMW_CFLAGS} -DWITH_NETCDF -I${NETCDFINCDIR}"
+		HECMW_LDFLAGS="${HECMW_LDFLAGS} -L${NETCDFLIBDIR} ${NETCDFLIBS}"
+		HECMW_F90LDFLAGS="${HECMW_F90LDFLAGS} -L${NETCDFLIBDIR} ${NETCDFLIBS}"
 	fi
 
 	#
