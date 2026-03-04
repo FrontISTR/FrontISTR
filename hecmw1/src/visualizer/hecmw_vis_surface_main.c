@@ -16,6 +16,7 @@
 #include "hecmw_vis_combine.h"
 #include "hecmw_fstr_output_femap.h"
 #include "hecmw_fstr_output_vtk.h"
+#include "hecmw_fstr_output_exo.h"
 #include "hecmw_malloc.h"
 
 static void conv_compname_integer(struct surface_module *sf,
@@ -109,6 +110,12 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
     return;
   } else if(sf[1].output_type==16) {
     HECMW_bin_vtk_output(mesh, data, body, outfile1, VIS_COMM);
+    return;
+  } else if(sf[1].output_type==18) {
+    HECMW_exodus_output(mesh, data, body, outfile1, VIS_COMM);      
+    return;
+  } else if(sf[1].output_type==19) {
+    HECMW_exodus_step_output(mesh, data, body, outfile1, VIS_COMM);
     return;
   }
 

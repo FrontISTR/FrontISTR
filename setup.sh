@@ -56,6 +56,8 @@ do
     echo "#define WITH_ML" >> ./fistr1/src/main/FrontISTRConfig.h
 	elif [ "\"$i\"" = "\"-with-lapack\"" -o "\"$i\"" = "\"--with-lapack\"" ]; then
     echo "#define WITH_LAPACK" >> ./fistr1/src/main/FrontISTRConfig.h
+    elif [ "\"$i\"" = "\"-with-netcdf\"" -o "\"$i\"" = "\"--with-netcdf\"" ]; then
+    echo "#define WITH_NETCDF" >> ./fistr1/src/main/FrontISTRConfig.h
   fi
 done
 
