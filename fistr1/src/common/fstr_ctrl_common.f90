@@ -988,12 +988,12 @@ contains
     fstr_ctrl_get_ELEMENT_ACTIVATION = -1
     
     ! MODE (required)
-    if( fstr_ctrl_get_param_ex( ctrl, 'MODE ', 'FIXED,AMPLITUDE,DAMAGE', 1, 'P', mode ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'MODE ', 'FIXED,AMPLITUDE,DAMAGE ', 1, 'P', mode ) /= 0 ) return
     
     ! Mode-specific parameters
     if( mode == 1 ) then
       ! FIXED: STATE required
-      if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', 'ON,OFF', 1, 'P', state ) /= 0 ) return
+      if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', 'ON,OFF ', 1, 'P', state ) /= 0 ) return
       state = state - 1
       measure = 1
       amp = ''
@@ -1004,7 +1004,7 @@ contains
       measure = 1
     elseif( mode == 3 ) then
       ! DAMAGE: MEASURE required
-      if( fstr_ctrl_get_param_ex( ctrl, 'MEASURE ', 'STRESS,STRAIN', 1, 'P', measure ) /= 0 ) return
+      if( fstr_ctrl_get_param_ex( ctrl, 'MEASURE ', 'STRESS,STRAIN ', 1, 'P', measure ) /= 0 ) return
       measure = measure + 1
       state = 0
       amp = ''
