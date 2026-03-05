@@ -66,21 +66,9 @@ contains
     real(kind=kreal),   intent(out) :: stiff(:,:)             !< stiff matrix
 
     integer(kind=kint) :: i,j,k,m,n
-    real(kind=kreal)   :: dnn, coeff, xmax(3), xmin(3), dL
+    real(kind=kreal)   :: dnn, coeff
 
-    !get average element size
-    xmax(1:3) = ecoord(1:3,1)
-    xmin(1:3) = ecoord(1:3,1)
-    do i=2,nn
-      do k=1,ndof
-        if( ecoord(k,i) > xmax(k) ) xmax(k) = ecoord(k,i)
-        if( ecoord(k,i) < xmin(k) ) xmin(k) = ecoord(k,i)
-      end do
-    end do
-    dL = 0.33333333333d0*((xmax(1)-xmin(1))+(xmax(2)-xmin(2))+(xmax(3)-xmin(3)))
-    if( dL < 1.d-8 ) dL = 1.d0
-
-    coeff = element%elemact_coeff/dL
+    coeff = element%elemact_coeff
     dnn = 1.d0/dble(nn)
     stiff(:,:) = 0.d0
     do i=1,nn
@@ -112,21 +100,9 @@ contains
     real(kind=kreal),   intent(out) :: qf(:)                  !< Internal Force
 
     integer(kind=kint) :: i,k,m
-    real(kind=kreal)   :: dnn, coeff, aveu(3), xmax(3), xmin(3), dL
+    real(kind=kreal)   :: dnn, coeff, aveu(3)
 
-    !get average element size
-    xmax(1:3) = ecoord(1:3,1)
-    xmin(1:3) = ecoord(1:3,1)
-    do i=2,nn
-      do k=1,ndof
-        if( ecoord(k,i) > xmax(k) ) xmax(k) = ecoord(k,i)
-        if( ecoord(k,i) < xmin(k) ) xmin(k) = ecoord(k,i)
-      end do
-    end do
-    dL = 0.33333333333d0*((xmax(1)-xmin(1))+(xmax(2)-xmin(2))+(xmax(3)-xmin(3)))
-    if( dL < 1.d-8 ) dL = 1.d0
-
-    coeff = element%elemact_coeff/dL
+    coeff = element%elemact_coeff
     dnn = 1.d0/dble(nn)
     aveu(:) = 0.d0
     do i=1,nn
