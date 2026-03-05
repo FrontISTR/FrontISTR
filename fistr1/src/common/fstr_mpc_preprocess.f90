@@ -17,7 +17,7 @@ module mMPCPreprocess
   public :: resize_structures_static
 
   integer(kind=kint), parameter :: LOGLVL=1
-  integer(kind=kint), parameter :: DEBUG=0
+  integer(kind=kint), parameter :: DEBUG=1
 
 contains
 
@@ -276,7 +276,21 @@ contains
 
     T(2) = hecmw_Wtime()
 
-    if( myrank == 0 ) call get_newmpc_by_svd( mpcs_all, mpcs_all_new )
+    if( myrank == 0 ) then
+      ! Check input MPC coefficient sums
+      if( DEBUG > 0 ) then
+        write(109,*) "=== INPUT MPCs ==="
+        do i=1,size(mpcs_all)
+          if( mpcs_all(i)%nitem >= 2 ) then
+            write(109,'(A,I4,A,I3,A,F12.6)') &
+              " input_mpc", i, " nitem=", mpcs_all(i)%nitem, &
+              " master_sum=", sum(mpcs_all(i)%coeff(2:mpcs_all(i)%nitem))
+          endif
+        enddo
+        write(109,*) "=== END INPUT MPCs ==="
+      endif
+      call get_newmpc_by_svd( mpcs_all, mpcs_all_new )
+    endif
 
     T(3) = hecmw_Wtime()
 
@@ -1123,9 +1137,44 @@ contains
 
     allocate(mpcs_new(size(mpcs_work)))
     do i=1,size(mpcs_work)
+      !! check coefficient sum BEFORE cutoff
+      if( DEBUG > 0 .and. mpcs_work(i)%nitem >= 2 ) then
+        write(109,'(A,I4,A,I3,A,F12.6)') &
+          " MPC", i, " nitem=", mpcs_work(i)%nitem, &
+          " master_sum_before_cutoff=", sum(mpcs_work(i)%coeff(2:mpcs_work(i)%nitem))
+      endif
       !! cutoff small coeff
       call cutoff_small_coeff( mpcs_work(i), 1.d-4 )
       call copy_mpc_cond( mpcs_work(i), mpcs_new(i) )
+      !! check coefficient sum AFTER cutoff and for single-term
+      if( DEBUG > 0 .and. mpcs_new(i)%nitem >= 2 ) then
+        write(109,'(A,I4,A,I3,A,F12.6)') &
+          " MPC", i, " nitem=", mpcs_new(i)%nitem, &
+          " master_sum_after_cutoff=", sum(mpcs_new(i)%coeff(2:mpcs_new(i)%nitem))
+      endif
+      if( mpcs_new(i)%nitem == 1 ) then
+        write(*,*) "WARNING: single-term MPC detected after SVD regularization"
+        write(*,*) "  mpc index=", i, " pid=", mpcs_new(i)%pid(1), &
+          &  " dof=", mpcs_new(i)%dof(1), " coeff=", mpcs_new(i)%coeff(1)
+      endif
+      if( mpcs_new(i)%nitem >= 2 ) then
+        block
+          real(kind=kreal) :: msum
+          integer(kind=kint) :: jj
+          msum = sum(mpcs_new(i)%coeff(2:mpcs_new(i)%nitem))
+          if( dabs(msum + 1.d0) > 0.01d0 ) then
+            write(*,'(A,I4,A,I3,A,F10.6)') &
+              "[DUMP] get_newmpc_by_svd final: master_sum != -1! MPC", i, &
+              " nitem=", mpcs_new(i)%nitem, " master_sum=", msum
+            write(*,'(A)') "  Terms:"
+            do jj=1,mpcs_new(i)%nitem
+              write(*,'(A,I6,A,I2,A,E16.8)') &
+                "    pid=", mpcs_new(i)%pid(jj), " dof=", mpcs_new(i)%dof(jj), &
+                " coeff=", mpcs_new(i)%coeff(jj)
+            enddo
+          endif
+        end block
+      endif
     enddo
 
     do i=1,size(mpcs_work)
@@ -1220,8 +1269,9 @@ contains
     type(tMPCCond), allocatable, intent(inout) :: mpcs_work(:)
     integer(kind=kint), intent(inout)          :: nmpc_remian
 
-    integer(kind=kint) :: i, j, k, n
+    integer(kind=kint) :: i, j, k, n, n_before
     real(kind=kreal)   :: max_val, factor, tmp_real
+    real(kind=kreal)   :: coeff1_before, master_sum_before
     integer(kind=kint) :: tmp_int
 
     do i = 1, size(mpcs_work)
@@ -1236,6 +1286,24 @@ contains
       end do
 
       if ( dabs(mpcs_work(i)%coeff(1)) > 1.d-6 * max_val ) cycle
+
+      ! === DUMP: save state before removal ===
+      n_before = n
+      coeff1_before = mpcs_work(i)%coeff(1)
+      master_sum_before = sum(mpcs_work(i)%coeff(2:n))
+      if( n == 2 ) then
+        write(*,'(A)') "[DUMP] remove_tinycoeff: 2-term MPC, will become nitem=1!"
+        write(*,'(A,I4)') "  mpc index in mpcs_work = ", i
+        write(*,'(A,I4,A,I2,A,E16.8)') &
+          "  term1: pid=", mpcs_work(i)%pid(1), " dof=", mpcs_work(i)%dof(1), &
+          " coeff=", mpcs_work(i)%coeff(1)
+        write(*,'(A,I4,A,I2,A,E16.8)') &
+          "  term2: pid=", mpcs_work(i)%pid(2), " dof=", mpcs_work(i)%dof(2), &
+          " coeff=", mpcs_work(i)%coeff(2)
+        write(*,'(A,E16.8,A,E16.8)') &
+          "  coeff(1)/max_val = ", dabs(mpcs_work(i)%coeff(1))/max_val, &
+          "  threshold = ", 1.d-6
+      endif
 
       do j = 1, n - 1
         mpcs_work(i)%coeff(j) = mpcs_work(i)%coeff(j+1)
@@ -1272,6 +1340,20 @@ contains
           mpcs_work(i)%coeff(j) = mpcs_work(i)%coeff(j) / factor
         end do
       end if
+
+      ! === DUMP: result after removal + renormalize ===
+      if( n_before == 2 ) then
+        write(*,'(A,I3)') "  After removal: nitem=", mpcs_work(i)%nitem
+        write(*,'(A,I4,A,E16.8)') &
+          "  result: pid=", mpcs_work(i)%pid(1), " coeff=", mpcs_work(i)%coeff(1)
+      endif
+      if( n >= 2 ) then
+        write(*,'(A,I4,A,I3,A,E16.8,A,E16.8)') &
+          "[DUMP] remove_tinycoeff result: mpc", i, &
+          " nitem=", mpcs_work(i)%nitem, &
+          " master_sum_before=", master_sum_before, &
+          " master_sum_after=", sum(mpcs_work(i)%coeff(2:mpcs_work(i)%nitem))
+      endif
 
       nmpc_remian = nmpc_remian + 1
     end do
@@ -1377,11 +1459,23 @@ contains
     type(tMPCCond), intent(inout) :: mpc
     real(kind=kreal), intent(in)  :: threshold
 
-    integer(kind=kint) :: i, nitem
+    integer(kind=kint) :: i, nitem, nitem_before
     real(kind=kreal)   :: coeff_sum
+    real(kind=kreal)   :: master_sum_before
+    ! save original for dump
+    integer(kind=kint) :: pid_orig(mpc%nitem), dof_orig(mpc%nitem)
+    real(kind=kreal)   :: coeff_orig(mpc%nitem)
+    integer(kind=kint) :: nitem_orig
 
     ! suppose coeff(1) == 1. if not, do nothing
     if( dabs(mpc%coeff(1)-1.d0) > 1.d-6 ) return
+
+    ! save original state for diagnostics
+    nitem_orig = mpc%nitem
+    pid_orig(1:nitem_orig) = mpc%pid(1:nitem_orig)
+    dof_orig(1:nitem_orig) = mpc%dof(1:nitem_orig)
+    coeff_orig(1:nitem_orig) = mpc%coeff(1:nitem_orig)
+    master_sum_before = sum(mpc%coeff(2:nitem_orig))
 
     nitem = 1
     do i=2,mpc%nitem
@@ -1392,6 +1486,23 @@ contains
       mpc%coeff(nitem) = mpc%coeff(i) 
     enddo
     mpc%nitem = nitem
+
+    ! === DUMP: nitem==1 detected in cutoff_small_coeff ===
+    if( nitem == 1 .and. nitem_orig >= 2 ) then
+      write(*,'(A)') "[DUMP] cutoff_small_coeff: nitem reduced to 1!"
+      write(*,'(A,I3,A,I3,A,E12.4)') &
+        "  nitem_before=", nitem_orig, "  nitem_after=", nitem, &
+        "  threshold=", threshold
+      write(*,'(A,E16.8)') "  master_sum_before_cutoff=", master_sum_before
+      write(*,'(A)') "  Original MPC terms:"
+      do i=1,nitem_orig
+        write(*,'(A,I4,A,I2,A,E16.8,A,L1)') &
+          "    pid=",pid_orig(i)," dof=",dof_orig(i), &
+          " coeff=",coeff_orig(i), &
+          "  cut=", (i>=2 .and. dabs(coeff_orig(i))<threshold)
+      enddo
+      write(*,'(A,I4,A,E16.8)') "  Surviving: pid=",mpc%pid(1)," coeff=",mpc%coeff(1)
+    endif
 
   end subroutine
 
@@ -1714,6 +1825,7 @@ contains
     real(kind=kreal), parameter :: threshold = 1.d-4
     integer(kind=kint) :: pid(n_index),dof(n_index)
     real(kind=kreal)   :: coeff(n_index)
+    real(kind=kreal)   :: row_sum
 
     nitem = 0
     do i=1,n_index
@@ -1732,6 +1844,23 @@ contains
       coeff(nitem) = Arow(i)
     enddo
     call set_mpc_cond(mpc, nitem, pid(1:nitem), dof(1:nitem), coeff(1:nitem))
+
+    ! === DUMP: nitem==1 detected in set_mpc_from_row_Amat ===
+    if( nitem <= 1 ) then
+      write(*,'(A)') "[DUMP] set_mpc_from_row_Amat: nitem<=1 detected!"
+      write(*,'(A,I3,A,I3)') "  nitem=", nitem, "  n_index=", n_index
+      row_sum = 0.d0
+      write(*,'(A)') "  Arow (full, before threshold):"
+      do i=1,n_index
+        row_sum = row_sum + Arow(i)
+        write(*,'(A,I4,A,E16.8,A,L1)') "    col",i," = ",Arow(i), &
+          &  "  cut=", (dabs(Arow(i)) < threshold)
+      enddo
+      write(*,'(A,E16.8)') "  Arow total sum = ", row_sum
+      if( nitem == 1 ) then
+        write(*,'(A,I4,A,E16.8)') "  surviving: pid=",pid(1)," coeff=",coeff(1)
+      endif
+    endif
   end subroutine
 
   subroutine regularize_mpc_bysvd( mpc_group, mpc_group_intermaster )
@@ -1792,6 +1921,12 @@ contains
       write(109,*) index_local(1:n_index_local)
       write(109,*) "sval",sval
       call print_densemat(Amat(1:n_active_mpcs,1:n_index_local),n_active_mpcs,n_index_local,109)
+      ! check row sums
+      do i=1,n_active_mpcs
+        write(109,'(A,I3,A,E14.6,A,F12.6)') &
+          " Amat row", i, " sum=", sum(Amat(i,1:n_index_local)), &
+          " master_sum(2:)=", sum(Amat(i,2:n_index_local))
+      enddo
     endif
 
     ! set new coeff to mpc_group
@@ -1799,6 +1934,19 @@ contains
     do i=1,n_slave
       call finalize_mpc_cond( mpc_group%mpcs(i) )
       call set_mpc_from_row_Amat( mpc_group%mpcs(i), Amat(i,:), n_index_local )
+      ! === DUMP: check slave MPC after set_mpc_from_row_Amat ===
+      if( mpc_group%mpcs(i)%nitem == 1 ) then
+        write(*,'(A,I3,A,I3,A,I3)') &
+          "[DUMP] regularize_mpc_bysvd slave: nitem=1! row=", i, &
+          " n_mpcs=", n_mpcs, " n_active=", n_active_mpcs
+        write(*,'(A)') "  Amat row (before threshold):"
+        write(*,'(10E14.6)') Amat(i,1:n_index_local)
+        write(*,'(A,E14.6)') "  row_sum=", sum(Amat(i,1:n_index_local))
+        write(*,'(A)') "  sval:"
+        write(*,'(10E14.6)') sval(1:n_mpcs)
+        write(*,'(A)') "  index_local:"
+        write(*,'(10I6)') index_local(1:n_index_local)
+      endif
     enddo
     call expand_pids( mpc_group%mpcs(1:n_slave), index_local )
 
@@ -1812,6 +1960,38 @@ contains
       allocate(mpc_group_intermaster%mpcs(mpc_group_intermaster%nitem))
       do i=n_slave+1,n_active_mpcs
         call set_mpc_from_row_Amat( mpc_group_intermaster%mpcs(i-n_slave), Amat(i,:), n_index_local )
+        ! === DUMP: check intermaster MPC after set_mpc_from_row_Amat ===
+        if( mpc_group_intermaster%mpcs(i-n_slave)%nitem == 1 ) then
+          write(*,'(A,I3,A,I3,A,I3)') &
+            "[DUMP] regularize_mpc_bysvd intermaster: nitem=1! row=", i, &
+            " n_mpcs=", n_mpcs, " n_active=", n_active_mpcs
+          write(*,'(A)') "  Amat row (before threshold):"
+          write(*,'(10E14.6)') Amat(i,1:n_index_local)
+          write(*,'(A,E14.6)') "  row_sum=", sum(Amat(i,1:n_index_local))
+          write(*,'(A)') "  sval:"
+          write(*,'(10E14.6)') sval(1:n_mpcs)
+          write(*,'(A)') "  index_local:"
+          write(*,'(10I6)') index_local(1:n_index_local)
+        endif
+        ! === DUMP: check intermaster MPC master_sum ===
+        if( mpc_group_intermaster%mpcs(i-n_slave)%nitem >= 2 ) then
+          block
+            real(kind=kreal) :: ms
+            ms = sum(mpc_group_intermaster%mpcs(i-n_slave)%coeff( &
+              & 2:mpc_group_intermaster%mpcs(i-n_slave)%nitem))
+            if( dabs(ms + 1.d0) > 0.01d0 ) then
+              write(*,'(A,I3,A,I3,A,F10.4)') &
+                "[DUMP] regularize_mpc_bysvd intermaster: master_sum != -1!" // &
+                " row=", i, " nitem=", mpc_group_intermaster%mpcs(i-n_slave)%nitem, &
+                " master_sum=", ms
+              write(*,'(A)') "  Amat row (before threshold):"
+              write(*,'(10E14.6)') Amat(i,1:n_index_local)
+              write(*,'(A,E14.6)') "  row_sum=", sum(Amat(i,1:n_index_local))
+              write(*,'(A)') "  All sval:"
+              write(*,'(10E14.6)') sval(1:n_mpcs)
+            endif
+          end block
+        endif
       enddo
       call expand_pids( mpc_group_intermaster%mpcs(1:mpc_group_intermaster%nitem), index_local )
 
