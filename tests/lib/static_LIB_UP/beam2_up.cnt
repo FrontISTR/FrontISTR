@@ -1,0 +1,43 @@
+##
+## Cantilever beam bending test for UP (u-p) formulation — refined mesh
+##   Mesh: 10x2x2 hex (40 elements), L=5, b=h=1
+##   Material: E=1000, nu=0.499999 (nearly incompressible)
+##   Load: tip concentrated force F=-2.0 (y-dir) at 3 nodes (LOAD_TIP)
+##         F_per_node = -2/3 = -0.6667
+##   BC: fixed end x=0 (FIX_X)
+##   Solver: MUMPS direct, NLSTATIC 10 substeps
+##
+## Purpose:
+##   Show convergence toward Timoshenko beam theory with mesh refinement
+##   while maintaining volumetric-locking-free behavior (UP formulation).
+##
+## Results (step 10, full load):
+##   UP:  tip deflection uy = -0.955 ( 92% of Timoshenko theory)
+##   FI:  tip deflection uy = -0.031 (  3% of Timoshenko theory) <- locking!
+##   Timoshenko theory:       -1.036
+##   Volume change: UP -0.058%, FI -0.002%
+##   Refinement 5x1x1 -> 10x2x2: UP improves 132% -> 92% (converging).
+##   FI remains locked at ~3% regardless of mesh refinement.
+##
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,LOG
+!WRITE,RESULT
+!SOLVER,METHOD=MUMPS,ITERLOG=NO,TIMELOG=NO
+ 10000, 1
+ 1.0e-08, 1.00, 0.0
+!BOUNDARY, GRPID=1
+ FIX_X,1,1
+ FIX_X,2,2
+ FIX_X,3,3
+!CLOAD, GRPID=1
+ LOAD_TIP,2,-0.666666666667
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1.0000E+03, 4.99999E-01
+!SECTION, SECNUM=1, FORM361=UP
+!STEP, SUBSTEPS=10, CONVERG=1.0E-06
+ BOUNDARY,1
+ LOAD,1
+!END
