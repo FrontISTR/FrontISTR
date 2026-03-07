@@ -85,16 +85,12 @@
       ! we suppose the same material type in the element
       flag = gausses(1)%pMaterial%nlgeom_flag
 
-      IF( .NOT. PRESENT( u ) ) flag = INFINITE    ! enforce to infinite deformation analysis
+      IF( .NOT. PRESENT( u ) ) flag = INFINITESIMAL    ! enforce to infinitesimal deformation analysis
 
       elem(:, :) = ecoord(:, :)
 
-      IF( flag .NE. 1 ) THEN
-
-       WRITE(6, *) 'Error: this formulation should be the total Lagrangian.'
-
-       RETURN
-
+      IF( flag == INFINITESIMAL ) THEN
+       gdispderiv(:,:) = 0.0D0
       END IF
 
 !--------------------------------------------------------------------
@@ -112,7 +108,11 @@
        !--------------------------------------------------------
 
        ! Displacement gradient
-       gdispderiv(1:3, 1:3) = MATMUL( u(1:3, 1:nn), gderiv(1:nn, 1:3) )
+       IF( flag == TOTALLAG ) THEN
+        gdispderiv(1:3, 1:3) = MATMUL( u(1:3, 1:nn), gderiv(1:nn, 1:3) )
+       ELSE
+        gdispderiv(1:3, 1:3) = 0.0D0
+       END IF
 
        !--------------------------------------------------------
 
@@ -234,7 +234,9 @@
 
        !--------------------------------------------------------
 
-       ! calculate the initial stress matrix
+       ! calculate the initial stress matrix (Total Lagrangian only)
+       IF( flag == TOTALLAG ) THEN
+
        stress(1:6) = gausses(lx)%stress
 
        !--------------------------------------------------------
@@ -307,6 +309,8 @@
         stiff(isize, jsize) = stiff(isize, jsize)+wg*DOT_PRODUCT( bn(:, isize), sbn(:, jsize) )
 
        END FORALL
+
+       END IF ! flag == TOTALLAG (geometric stiffness)
 
        !--------------------------------------------------------
 
@@ -469,12 +473,8 @@
 
       totaldisp(:, :) = u(:, :)+( du(:, :)-ddu(:, :) )
 
-      IF( flag .NE. 1 ) THEN
-
-       WRITE(6, *) 'Error: this formulation should be the total Lagrangian.'
-
-       RETURN
-
+      IF( flag == INFINITESIMAL ) THEN
+       gdispderiv(:,:) = 0.0D0
       END IF
 
 !--------------------------------------------------------------------
@@ -492,7 +492,9 @@
        !--------------------------------------------------------
 
        ! Displacement gradient
-       gdispderiv(1:3, 1:3) = MATMUL( totaldisp(1:3, 1:nn), gderiv(1:nn, 1:3) )
+       IF( flag == TOTALLAG ) THEN
+        gdispderiv(1:3, 1:3) = MATMUL( totaldisp(1:3, 1:nn), gderiv(1:nn, 1:3) )
+       END IF
        !do isize = 1, 3
        ! do nb_p = 1, 3
        !  write(6, *) isize, nb_p, gdispderiv(isize, nb_p)
@@ -598,6 +600,7 @@
 
        !--------------------------------------------------------
 
+       IF( flag == TOTALLAG ) THEN
        DO nb = 1, nn
 
         jsize1 = 3*(nb-1)+1
@@ -627,13 +630,12 @@
 
        END DO
 
-       !--------------------------------------------------------
-
        DO jsize = 1, 3*nn
 
         b(:, jsize) = b(:, jsize)+b1(:, jsize)
 
        END DO
+       END IF ! flag == TOTALLAG (1st pass)
 
        !--------------------------------------------------------
 
@@ -783,19 +785,24 @@
        dstrain(6) = gdispderiv(3, 1)+gdispderiv(1, 3)
        dstrain(:) = dstrain(:)-epsth(:)
 
-       ! Green-Lagrange strain
+       ! Green-Lagrange strain (Total Lagrangian only)
+       IF( flag == TOTALLAG ) THEN
        dstrain(1) = dstrain(1)+0.5D0*DOT_PRODUCT( gdispderiv(:, 1), gdispderiv(:, 1) )
        dstrain(2) = dstrain(2)+0.5D0*DOT_PRODUCT( gdispderiv(:, 2), gdispderiv(:, 2) )
        dstrain(3) = dstrain(3)+0.5D0*DOT_PRODUCT( gdispderiv(:, 3), gdispderiv(:, 3) )
        dstrain(4) = dstrain(4)+DOT_PRODUCT( gdispderiv(:, 1), gdispderiv(:, 2) )
        dstrain(5) = dstrain(5)+DOT_PRODUCT( gdispderiv(:, 2), gdispderiv(:, 3) )
        dstrain(6) = dstrain(6)+DOT_PRODUCT( gdispderiv(:, 1), gdispderiv(:, 3) )
+       END IF
 
        !--------------------------------------------------------
 
        gausses(lx)%strain(1:6) = dstrain(1:6)+epsth(:)
 
        CALL StressUpdate_up( gausses(lx), d3, dstrain, gausses(lx)%stress, lambda_lx, g )
+
+       gausses(lx)%stress_out(1:6) = gausses(lx)%stress(1:6)
+       gausses(lx)%strain_out(1:6) = gausses(lx)%strain(1:6)
 
        !--------------------------------------------------------
 
@@ -859,8 +866,9 @@
 
        END DO
 
-       !--------------------------------------------------------
+       !--- B1 nonlinear (Total Lagrangian only) ---
 
+       IF( flag == TOTALLAG ) THEN
        DO nb = 1, nn
 
         jsize1 = 3*(nb-1)+1
@@ -890,13 +898,12 @@
 
        END DO
 
-       !--------------------------------------------------------
-
        DO jsize = 1, 3*nn
 
         b(:, jsize) = b(:, jsize)+b1(:, jsize)
 
        END DO
+       END IF ! flag == TOTALLAG (2nd pass)
 
        !--------------------------------------------------------
 
