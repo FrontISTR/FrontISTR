@@ -195,9 +195,15 @@ contains
     
     !$OMP PARALLEL
     !$OMP DO
-    do i = 1, n
-      Y(i) = alpha * X(i) + beta * Y(i)
-    end do
+    if (beta == 0.d0) then
+      do i = 1, n
+        Y(i) = alpha * X(i)
+      end do
+    else
+      do i = 1, n
+        Y(i) = alpha * X(i) + beta * Y(i)
+      end do
+    end if
     !$OMP END DO
     !$OMP END PARALLEL 
 
@@ -247,9 +253,15 @@ contains
     
     !$OMP PARALLEL
     !$OMP DO
-    do i = 1, n
-      X(i) = alpha * X(i) 
-    end do
+    if (alpha == 0.d0) then
+      do i = 1, n
+        X(i) = 0.d0
+      end do
+    else
+      do i = 1, n
+        X(i) = alpha * X(i) 
+      end do
+    end if
     !$OMP END DO
     !$OMP END PARALLEL 
 
