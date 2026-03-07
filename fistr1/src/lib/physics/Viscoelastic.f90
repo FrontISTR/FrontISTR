@@ -41,8 +41,8 @@ contains
 
     if(mtype==VISCOELASTIC+2) then   ! Arrhenius
 
-      hsn = -mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
-      hsn1 = -mvar(2)*( 1.d0/(tn1-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+      hsn = -mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )
+      hsn1 = -mvar(2)*( 1.d0/(tn1-mvar(3))-1.d0/(mvar(1)-mvar(3)) )
 
     else   ! WLF
 
@@ -76,7 +76,7 @@ contains
     real(kind=kreal)  ::  hsn
 
     if(mtype==VISCOELASTIC+2) then   ! Arrhenius
-      hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )/mvar(4)
+      hsn = mvar(2)*( 1.d0/(tn-mvar(3))-1.d0/(mvar(1)-mvar(3)) )
     else   ! WLF
       hsn = mvar(2)*( tn-mvar(1) )/ (mvar(3)+tn-mvar(1) )*dlog(10.d0)
     endif
