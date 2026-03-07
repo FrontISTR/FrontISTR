@@ -87,7 +87,8 @@ contains
       !element loop
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp, &
-        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0), &
+        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0, &
+        !$omp&  lambda,ddlambda), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)

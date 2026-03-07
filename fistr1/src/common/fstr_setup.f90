@@ -1288,6 +1288,7 @@ contains
           allocate( fstrSOLID%elements(i)%aux(3,3) )
           fstrSOLID%elements(i)%aux = 0.0d0
         endif
+        fstrSOLID%elements(i)%p(1) = 0.0d0
       endif
 
     enddo

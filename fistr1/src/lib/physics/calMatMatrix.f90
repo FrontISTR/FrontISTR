@@ -376,4 +376,98 @@ contains
 
   end subroutine
 
+  !> Calculate material matrix for u-p mixed formulation
+  !> Returns deviatoric tangent D, volumetric coupling vector d2,
+  !> inverse of penalty parameter alpha_inv, and volumetric constraint g
+  subroutine MatlMatrix_up( gauss, sectType, D, lambda, d2, alpha_inv, g, dtime, temperature )
+    type( tGaussStatus ), intent(in) :: gauss
+    integer, intent(in)              :: sectType
+    real(kind=kreal), intent(out)    :: D(:,:)
+    real(kind=kreal), intent(in)     :: lambda
+    real(kind=kreal), intent(out)    :: d2(6)
+    real(kind=kreal), intent(out)    :: alpha_inv
+    real(kind=kreal), intent(out)    :: g
+    real(kind=kreal), intent(in)     :: dtime
+    real(kind=kreal), intent(in), optional :: temperature
+
+    real(kind=kreal) :: Dfull(6,6), Dvol(6,6)
+    real(kind=kreal) :: EE, PP, KK, GG, ina(1), outa(2)
+    logical :: ierr
+    type( tMaterial ), pointer :: matl
+
+    matl => gauss%pMaterial
+
+    ! Get elastic constants
+    if( present(temperature) ) then
+      ina(1) = temperature
+      call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
+    else
+      ierr = .true.
+    endif
+    if( ierr ) then
+      EE = matl%variables(M_YOUNGS)
+      PP = matl%variables(M_POISSON)
+    else
+      EE = outa(1)
+      PP = outa(2)
+    endif
+
+    KK = EE / (3.0D0 * (1.0D0 - 2.0D0*PP))  ! bulk modulus
+    GG = EE / (2.0D0 * (1.0D0 + PP))         ! shear modulus
+
+    ! Full elastic matrix (deviatoric part only: hdflag=1 means K=0)
+    if( present(temperature) ) then
+      call calElasticMatrix( matl, sectType, D, temperature, hdflag=1 )
+    else
+      call calElasticMatrix( matl, sectType, D, 0.0D0, hdflag=1 )
+    endif
+
+    ! Add pressure contribution to stress: S = S_dev + lambda * I
+    ! d2 = dS/dlambda = I (identity in Voigt notation for normal components)
+    d2(1) = 1.0D0
+    d2(2) = 1.0D0
+    d2(3) = 1.0D0
+    d2(4) = 0.0D0
+    d2(5) = 0.0D0
+    d2(6) = 0.0D0
+
+    ! alpha_inv = 1/kappa (inverse of bulk modulus, compressibility parameter)
+    alpha_inv = 1.0D0 / KK
+
+    ! g = volumetric strain (tr(E) for Green-Lagrange strain)
+    g = gauss%strain(1) + gauss%strain(2) + gauss%strain(3)
+
+  end subroutine MatlMatrix_up
+
+  !> Update stress for u-p mixed formulation
+  !> Computes deviatoric stress from strain and adds pressure contribution
+  subroutine StressUpdate_up( gauss, sectType, strain, stress, lambda, g )
+    type( tGaussStatus ), intent(inout) :: gauss
+    integer, intent(in)                 :: sectType
+    real(kind=kreal), intent(in)        :: strain(6)
+    real(kind=kreal), intent(out)       :: stress(6)
+    real(kind=kreal), intent(in)        :: lambda
+    real(kind=kreal), intent(out)       :: g
+
+    real(kind=kreal) :: D(6,6)
+    type( tMaterial ), pointer :: matl
+
+    matl => gauss%pMaterial
+
+    ! Deviatoric elastic matrix (K=0, i.e. hdflag=1)
+    call calElasticMatrix( matl, sectType, D, 0.0D0, hdflag=1 )
+
+    ! Deviatoric stress = D_dev * strain
+    stress(1:6) = MATMUL( D(1:6,1:6), strain(1:6) )
+
+    ! Add pressure (Lagrange multiplier) contribution: S = S_dev + lambda * I
+    stress(1) = stress(1) + lambda
+    stress(2) = stress(2) + lambda
+    stress(3) = stress(3) + lambda
+
+    ! Volumetric constraint: g = tr(E)
+    g = strain(1) + strain(2) + strain(3)
+
+  end subroutine StressUpdate_up
+
 end module m_MatMatrix

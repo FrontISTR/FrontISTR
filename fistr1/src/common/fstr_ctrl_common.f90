@@ -349,7 +349,7 @@ contains
     integer(kind=kint),save       :: cache = 1
     character(len=HECMW_NAME_LEN) :: sect_orien
     character(19) :: form341list = 'FI,SELECTIVE_ESNS '
-    character(16) :: form361list = 'FI,BBAR,IC,FBAR '
+    character(19) :: form361list = 'FI,BBAR,IC,FBAR,UP '
 
     fstr_ctrl_get_SECTION = -1
 
