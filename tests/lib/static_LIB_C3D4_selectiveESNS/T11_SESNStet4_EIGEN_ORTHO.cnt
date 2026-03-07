@@ -1,0 +1,50 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=EIGEN
+!EIGEN
+ 5, 1.0e-8, 60
+!WRITE,LOG
+!WRITE,RESULT,FREQUENCY=1000000
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRAIN,OFF
+NSTRESS,OFF
+NMISES,ON
+ESTRAIN,OFF
+ESTRESS,OFF
+EMISES,ON
+ISTRESS,ON
+!SOLVER, METHOD=MUMPS, PRECOND=1, NSET=0, ITERLOG=NO, TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_3,1,1
+ SET_3,2,2
+ SET_3,3,3
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC, TYPE=ORTHOTROPIC
+ 1.50000000E+01, 1.50000000E+01, 3.00000000E+00, 3.00000000E-01, 1.00000000E-02, 1.00000000E-02, 5.77000000E+00, 5.00000000E-01, 5.00000000E-01
+!DENSITY
+ 1.0
+!ORIENTATION, NAME=coord, DEFINITION=COORDINATES
+ 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0
+!SECTION,SECNUM=1,FORM341=SELECTIVE_ESNS,ORIENTATION=coord
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1, MAXITER=10
+BOUNDARY,1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+!END
