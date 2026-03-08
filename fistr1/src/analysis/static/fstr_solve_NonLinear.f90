@@ -249,10 +249,6 @@ contains
 
         if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
           call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
-          ! If element states changed, recompute QFORCE with new states
-          if( fstrSOLID%elemact%ELEMACT_n_changed > 0 ) then
-            call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
-          endif
         endif
                 
         ! ----- Set residual
@@ -287,16 +283,7 @@ contains
         ! ----- check convergence
         if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
           relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
-          ! Defer convergence while elements are changing state
-          if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 .and. &
-              fstrSOLID%elemact%ELEMACT_n_changed > 0 ) then
-            if( hecMESH%my_rank == 0 ) then
-              write(*,'(a,i6,a)') ' *** ELEMACT: deferring convergence, ', &
-                fstrSOLID%elemact%ELEMACT_n_changed, ' element(s) changed state this iteration'
-            endif
-          else
-            exit
-          endif
+          exit
         endif
         res1 = res
 
@@ -527,10 +514,6 @@ contains
 
         if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
           call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
-          ! If element states changed, recompute QFORCE with new states
-          if( fstrSOLID%elemact%ELEMACT_n_changed > 0 ) then
-            call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
-          endif
         endif
   
         ! ----- Set residual
@@ -560,16 +543,7 @@ contains
         ! ----- check convergence
         if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
           relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
-          ! Defer convergence while elements are changing state
-          if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 .and. &
-              fstrSOLID%elemact%ELEMACT_n_changed > 0 ) then
-            if( hecMESH%my_rank == 0 ) then
-              write(*,'(a,i6,a)') ' *** ELEMACT: deferring convergence, ', &
-                fstrSOLID%elemact%ELEMACT_n_changed, ' element(s) changed state this iteration'
-            endif
-          else
-            exit
-          endif
+          exit
         endif
         res1 = res
 
@@ -731,17 +705,8 @@ contains
     if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
       if( rres < fstrSOLID%step_ctrl(cstep)%converg .or. &
           rxnrm < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
-        ! Defer convergence while elements are changing state
-        if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 .and. &
-            fstrSOLID%elemact%ELEMACT_n_changed > 0 ) then
-          if( hecMESH%my_rank == 0 ) then
-            write(*,'(a,i6,a)') ' *** ELEMACT: deferring convergence, ', &
-              fstrSOLID%elemact%ELEMACT_n_changed, ' element(s) changed state this iteration'
-          endif
-        else
-          iterStatus=kitrConverged
-          return
-        endif
+        iterStatus=kitrConverged
+        return
       endif
     endif
 

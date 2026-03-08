@@ -163,11 +163,6 @@ contains
 
     if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
       call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
-      ! If element states changed, recompute QFORCE with new states
-      ! so that the residual (F_ext - QFORCE) is consistent
-      if( fstrSOLID%elemact%ELEMACT_n_changed > 0 ) then
-        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
-      endif
     endif
     
     call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
