@@ -278,11 +278,11 @@ contains
         old_flag = elements(icel)%elemact_flag
         if( .not. (thlow <= mises .and. mises <= thup) ) then
           elements(icel)%elemact_flag = kELACT_INACTIVE
+          elements(icel)%elemact_coeff = elemact%ELEMACT_egrp_eps(dumid)
         endif
         ! Count state change
         if( elements(icel)%elemact_flag /= old_flag ) n_changed = n_changed + 1
         
-        elements(icel)%elemact_coeff = elemact%ELEMACT_egrp_eps(dumid)
         exit
       enddo
     end do
