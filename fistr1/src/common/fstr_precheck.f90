@@ -411,7 +411,7 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
     type (hecmwST_matrix)     :: hecMAT
 
-    integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio
+    integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio, ierr
     real(kind=kreal) :: rnum, dens, cond
     character :: fileid*3
 
@@ -430,7 +430,8 @@ contains
     cond = 1.0d0
     !rnum = (7.25d0)*10.0d0/dble(hecMAT%N)
 
-    open(fio,file='nonzero.dat.'//fileid, status='replace')
+    open(fio,file='nonzero.dat.'//fileid, status='replace', iostat=ierr)
+    if( ierr /= 0 ) return
     !write(fio,"(a,f12.5,i0)")"##magic number 10 : 7.2, ",rnum,hecMAT%N
     do i= 1, n
       jS= hecMAT%indexL(i-1) + 1
@@ -444,7 +445,8 @@ contains
     enddo
     close(fio)
 
-    open(fio,file='nonzero.plt.'//fileid, status='replace')
+    open(fio,file='nonzero.plt.'//fileid, status='replace', iostat=ierr)
+    if( ierr /= 0 ) return
     if(ftype == 4)then
       write(fio,"(a)")'set terminal png size 1500,1500'
     else

@@ -810,7 +810,10 @@ contains
           write( outctrl%filename, *) 'utable.',myrank,".dat"
           outctrl%filenum = IUTB
           call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
-          open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE' )
+          open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE', iostat=ierror )
+          if( ierror /= 0 ) then
+            write(*,*) 'Warning: cannot open output file: ', trim(outctrl%filename)
+          endif
         endif
         if( result == 1 ) then
           c_output=3

@@ -828,9 +828,11 @@ contains
     type( hecmwST_matrix ), intent(in) :: P
 
     integer :: i, nf, nBlock
+    integer :: io_stat
     nf = 777
     nBlock = P%NDOF * P%NDOF
-    open( unit=nf, file=fname)
+    open( unit=nf, file=fname, iostat=io_stat)
+    if( io_stat /= 0 ) return
     write( nf, * ) P%N,P%NP,P%NPL,P%NPU,P%NDOF
     !---- index
     do i=0, P%NP
