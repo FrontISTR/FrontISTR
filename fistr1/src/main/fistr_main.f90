@@ -246,7 +246,7 @@ contains
       endif
     endif
 
-    open (IDBG,file = dbgfileNAME, status = 'replace')
+    open (IDBG,file = dbgfileNAME, status = 'replace', iostat=stat)
     write(IDBG,'(''####''a80)') dbgfileNAME
     if( stat /= 0 ) then
       call fstr_setup_util_err_stop( '### Cannot open debug file :'//dbgfileNAME )
