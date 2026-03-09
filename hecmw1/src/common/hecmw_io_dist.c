@@ -1965,7 +1965,10 @@ static int print_header(const struct hecmwST_local_mesh *mesh, FILE *fp) {
   char header[HECMW_HEADER_LEN + 1];
 
   strcpy(header, HEADER_STRING);
-  rtc = sprintf(header + strlen(header), "%d", mesh->hecmw_flag_version);
+  {
+    size_t len = strlen(header);
+    rtc = snprintf(header + len, sizeof(header) - len, "%d", mesh->hecmw_flag_version);
+  }
   if (rtc < 0) {
     HECMW_set_error(HECMW_IO_E5004, "");
     return -1;

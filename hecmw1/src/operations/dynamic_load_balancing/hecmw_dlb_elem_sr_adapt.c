@@ -493,8 +493,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
   for (i               = 9; i < mesh->hecmw_n_file; i++)
     new_mesh->files[i] = (char *)calloc(128, sizeof(char));
 
-  sprintf(new_mesh->header, "%s", mesh->header);
-  sprintf(new_mesh->gridfile, "%s", mesh->gridfile);
+  snprintf(new_mesh->header, sizeof(new_mesh->header), "%s", mesh->header);
+  snprintf(new_mesh->gridfile, sizeof(new_mesh->gridfile), "%s", mesh->gridfile);
   new_mesh->hecmw_flag_adapt     = mesh->hecmw_flag_adapt;
   new_mesh->hecmw_flag_initcon   = mesh->hecmw_flag_initcon;
   new_mesh->hecmw_flag_parttype  = mesh->hecmw_flag_parttype;
@@ -1316,7 +1316,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
       new_mesh->node_group->grp_name[m] = (char *)calloc(128, sizeof(char));
       if (new_mesh->node_group->grp_name[m] == NULL)
         HECMW_dlb_memory_exit("new_mesh: grp_name");
-      strcpy(new_mesh->node_group->grp_name[m], mesh->node_group->grp_name[m]);
+      strncpy(new_mesh->node_group->grp_name[m], mesh->node_group->grp_name[m], 127);
+      new_mesh->node_group->grp_name[m][127] = '\0';
     }
   }
   if (mesh->elem_group->n_grp > 0) {
@@ -1326,7 +1327,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
       new_mesh->elem_group->grp_name[m] = (char *)calloc(128, sizeof(char));
       if (new_mesh->elem_group->grp_name[m] == NULL)
         HECMW_dlb_memory_exit("new_mesh: grp_name");
-      strcpy(new_mesh->elem_group->grp_name[m], mesh->elem_group->grp_name[m]);
+      strncpy(new_mesh->elem_group->grp_name[m], mesh->elem_group->grp_name[m], 127);
+      new_mesh->elem_group->grp_name[m][127] = '\0';
     }
   }
   if (mesh->surf_group->n_grp > 0) {
@@ -1336,7 +1338,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
       new_mesh->surf_group->grp_name[m] = (char *)calloc(128, sizeof(char));
       if (new_mesh->surf_group->grp_name[m] == NULL)
         HECMW_dlb_memory_exit("new_mesh: grp_name");
-      strcpy(new_mesh->surf_group->grp_name[m], mesh->surf_group->grp_name[m]);
+      strncpy(new_mesh->surf_group->grp_name[m], mesh->surf_group->grp_name[m], 127);
+      new_mesh->surf_group->grp_name[m][127] = '\0';
     }
   }
 
@@ -2026,7 +2029,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
     if (new_data->nn_dof == NULL) HECMW_dlb_memory_exit("new_data: nn_dof");
     for (i = 0; i < new_data->nn_component; i++) {
       new_data->nn_dof[i] = data->nn_dof[i];
-      strcpy(new_data->node_label[i], data->node_label[i]);
+      strncpy(new_data->node_label[i], data->node_label[i], 127);
+      new_data->node_label[i][127] = '\0';
     }
   }
   if (new_data->ne_component > 0) {
@@ -2038,7 +2042,8 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
     if (new_data->ne_dof == NULL) HECMW_dlb_memory_exit("new_data: ne_dof");
     for (i = 0; i < new_data->ne_component; i++) {
       new_data->ne_dof[i] = data->ne_dof[i];
-      strcpy(new_data->elem_label[i], data->elem_label[i]);
+      strncpy(new_data->elem_label[i], data->elem_label[i], 127);
+      new_data->elem_label[i][127] = '\0';
     }
   }
   if (new_data->nn_component > 0) {
@@ -2520,7 +2525,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
         HECMW_dlb_memory_exit("new_mesh: material");
       for (i = 0; i < new_mesh->material->n_mat; i++) {
         new_mesh->material->mat_name[i] = (char *)calloc(128, sizeof(char));
-        sprintf(new_mesh->material->mat_name[i], "%s",
+        snprintf(new_mesh->material->mat_name[i], 128, "%s",
                 mesh->material->mat_name[i]);
       }
       new_mesh->material->mat_item_index =
@@ -2746,7 +2751,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
         HECMW_dlb_memory_exit("new_mesh: material");
       for (i = 0; i < new_mesh->material->n_mat; i++) {
         new_mesh->material->mat_name[i] = (char *)calloc(128, sizeof(char));
-        sprintf(new_mesh->material->mat_name[i], "%s",
+        snprintf(new_mesh->material->mat_name[i], 128, "%s",
                 mesh->material->mat_name[i]);
       }
       new_mesh->material->mat_item_index =

@@ -403,7 +403,9 @@ static int bin_output_result_header_ST(struct hecmwST_result_data *result,
 
   /* header */
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
-    sprintf(head,"%s %d.%d",head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
+    char tmp[HECMW_HEADER_LEN+1];
+    snprintf(tmp, sizeof(tmp), "%s %d.%d", head, HECMW_RESULT_FILEVER_MAJOR, HECMW_RESULT_FILEVER_MINOR);
+    memcpy(head, tmp, sizeof(head));
   }
   rc = hecmw_write_bin(fp, "S", header);
   if(rc < 0) {
@@ -705,7 +707,12 @@ static int bin_input_result_header(struct hecmwST_result_data *result, FILE *fp)
   }
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     ptr = strtok(Line_Buf, " ");
-    sprintf(Line_Buf, "%s", ptr);
+    if(ptr != Line_Buf) {
+      size_t len = strlen(ptr);
+      memmove(Line_Buf, ptr, len + 1);
+    } else {
+      ptr[strlen(ptr)] = '\0';
+    }
   }
   strcpy( ResIO.head, Line_Buf );
 

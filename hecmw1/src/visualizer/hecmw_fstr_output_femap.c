@@ -1755,8 +1755,8 @@ else {
     fwrite(&tmp_int_conv, 4, 1, fp);
     for (j = 0; j < data->nn_component; j++) {
       for (ii = 0; ii < data->nn_dof[j]; ii++) {
-        sprintf(nodedata_label, "%s%d\n", data->node_label[j], ii + 1);
-        sprintf(nodedata_unit, "%s", "m/s");
+        snprintf(nodedata_label, sizeof(nodedata_label), "%s%d\n", data->node_label[j], ii + 1);
+        snprintf(nodedata_unit, sizeof(nodedata_unit), "%s", "m/s");
         num_nodeveclen = 1;
 #ifdef CONVERSE_ORDER
         SWAP_INT(num_nodeveclen);

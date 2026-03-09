@@ -698,7 +698,7 @@ int c_fstr_ctrl_get_param_ex(fstr_ctrl_data *ctrl, const char *param_name,
       break;
 
     case FSTR_CTRL_RCODE_PARAM_RANGE_ERROR: /* range error */
-      sprintf(s, ": type range fail(%s)", value_list);
+      snprintf(s, sizeof(s), ": type range fail(%s)", value_list);
       set_param_err_msg(ctrl, param_name, s);
       break;
 
@@ -1406,7 +1406,7 @@ static void set_record_data_line_err_msg(fstr_ctrl_data *ctrl, int r) {
       break;
 
     default:
-      sprintf(msg, "data line unknown error (r:%d)", r);
+      snprintf(msg, sizeof(msg), "data line unknown error (r:%d)", r);
   }
 
   set_data_err_msg(ctrl, line_no, pos, msg);

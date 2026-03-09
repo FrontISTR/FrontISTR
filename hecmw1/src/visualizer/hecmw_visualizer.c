@@ -91,31 +91,31 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
       tp1                = tp1->next_psf;
       if (psf->num_of_psf > 1) {
         if (timestep >= 1000) {
-          sprintf(outfile1, "%s_psf%d.%d", outfile, visual_id + 1, timestep);
-          sprintf(body, "%s_psf%d.%d", buf1, visual_id + 1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_psf%d.%d", outfile, visual_id + 1, timestep);
+          snprintf(body, sizeof(body), "%s_psf%d.%d", buf1, visual_id + 1, timestep);
         } else if ((timestep >= 100) && (timestep <= 999)) {
-          sprintf(outfile1, "%s_psf%d.0%d", outfile, visual_id + 1, timestep);
-          sprintf(body, "%s_psf%d.0%d", buf1, visual_id + 1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_psf%d.0%d", outfile, visual_id + 1, timestep);
+          snprintf(body, sizeof(body), "%s_psf%d.0%d", buf1, visual_id + 1, timestep);
         } else if ((timestep >= 10) && (timestep <= 99)) {
-          sprintf(outfile1, "%s_psf%d.00%d", outfile, visual_id + 1, timestep);
-          sprintf(body, "%s_psf%d.00%d", buf1, visual_id + 1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_psf%d.00%d", outfile, visual_id + 1, timestep);
+          snprintf(body, sizeof(body), "%s_psf%d.00%d", buf1, visual_id + 1, timestep);
         } else if (timestep <= 9) {
-          sprintf(outfile1, "%s_psf%d.000%d", outfile, visual_id + 1, timestep);
-          sprintf(body, "%s_psf%d.000%d", buf1, visual_id + 1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_psf%d.000%d", outfile, visual_id + 1, timestep);
+          snprintf(body, sizeof(body), "%s_psf%d.000%d", buf1, visual_id + 1, timestep);
         }
       } else {
         if (timestep >= 1000) {
-          sprintf(outfile1, "%s_psf.%d", outfile, timestep);
-          sprintf(body, "%s_psf.%d", buf1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_psf.%d", outfile, timestep);
+          snprintf(body, sizeof(body), "%s_psf.%d", buf1, timestep);
         } else if ((timestep >= 100) && (timestep <= 999)) {
-          sprintf(outfile1, "%s_psf.0%d", outfile, timestep);
-          sprintf(body, "%s_psf.0%d", buf1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_psf.0%d", outfile, timestep);
+          snprintf(body, sizeof(body), "%s_psf.0%d", buf1, timestep);
         } else if ((timestep >= 10) && (timestep <= 99)) {
-          sprintf(outfile1, "%s_psf.00%d", outfile, timestep);
-          sprintf(body, "%s_psf.00%d", buf1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_psf.00%d", outfile, timestep);
+          snprintf(body, sizeof(body), "%s_psf.00%d", buf1, timestep);
         } else if (timestep <= 9) {
-          sprintf(outfile1, "%s_psf.000%d", outfile, timestep);
-          sprintf(body, "%s_psf.000%d", buf1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_psf.000%d", outfile, timestep);
+          snprintf(body, sizeof(body), "%s_psf.000%d", buf1, timestep);
         }
       }
       HECMW_vis_psf_rendering(mesh, data, &timestep, sf, sr, stat_para_sf,
@@ -136,24 +136,24 @@ int HECMW_visualize(struct hecmwST_local_mesh *mesh,
       tv1                = tv1->next_pvr;
       if (pvr->num_of_pvr > 1) {
         if (timestep >= 1000)
-          sprintf(outfile1, "%s_pvr%d.%d", outfile, visual_id + 1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_pvr%d.%d", outfile, visual_id + 1, timestep);
         else if ((timestep >= 100) && (timestep <= 999))
-          sprintf(outfile1, "%s_pvr%d.0%d", outfile, visual_id + 1, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_pvr%d.0%d", outfile, visual_id + 1, timestep);
         else if ((timestep >= 10) && (timestep <= 99))
-          sprintf(outfile1, "%s_pvr%d.00%d", outfile, visual_id + 1,
+          snprintf(outfile1, sizeof(outfile1), "%s_pvr%d.00%d", outfile, visual_id + 1,
                   timestep);
         else if (timestep <= 9)
-          sprintf(outfile1, "%s_pvr%d.000%d", outfile, visual_id + 1,
+          snprintf(outfile1, sizeof(outfile1), "%s_pvr%d.000%d", outfile, visual_id + 1,
                   timestep);
       } else {
         if (timestep >= 1000)
-          sprintf(outfile1, "%s_pvr.%d", outfile, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_pvr.%d", outfile, timestep);
         else if ((timestep >= 100) && (timestep <= 999))
-          sprintf(outfile1, "%s_pvr.0%d", outfile, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_pvr.0%d", outfile, timestep);
         else if ((timestep >= 10) && (timestep <= 99))
-          sprintf(outfile1, "%s_pvr.00%d", outfile, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_pvr.00%d", outfile, timestep);
         else if (timestep <= 9)
-          sprintf(outfile1, "%s_pvr.000%d", outfile, timestep);
+          snprintf(outfile1, sizeof(outfile1), "%s_pvr.000%d", outfile, timestep);
       }
       HECMW_vis_pvr_rendering(mesh, data, &timestep, &init_flag,
                               pvr->num_of_pvr, vr, stat_para_vr, outfile1,

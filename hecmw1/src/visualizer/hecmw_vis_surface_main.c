@@ -100,9 +100,8 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
     return;
   }
   if (sf[1].output_type == 10) {
-    char buf[16];
-    sprintf(buf, "_%d.inp", mynode);
-    strcat(outfile1, buf);
+    size_t len = strlen(outfile1);
+    snprintf(outfile1 + len, HECMW_FILENAME_LEN - len, "_%d.inp", mynode);
     HECMW_separate_avs_output(mesh, data, outfile1);
     return;
   } else if(sf[1].output_type==15) {

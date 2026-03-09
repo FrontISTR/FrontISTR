@@ -426,7 +426,7 @@ static void register_node(struct hecmwST_local_mesh *mesh) {
   {
     char fname[256];
     FILE *fp_dump;
-    sprintf(fname, "dump_rcapSetNode64.%d", HECMW_comm_get_rank());
+    snprintf(fname, sizeof(fname), "dump_rcapSetNode64.%d", HECMW_comm_get_rank());
     fp_dump = fopen(fname, "w");
     if (fp_dump == NULL) {
       fprintf(stderr, "Error: cannot open file %s\n", fname);
@@ -454,14 +454,14 @@ static void register_node_groups(struct hecmwST_node_grp *grp) {
     int start  = grp->grp_index[i];
     int num    = grp->grp_index[i + 1] - start;
     int *array = grp->grp_item + start;
-    sprintf(rcap_name, "NG_%s", grp->grp_name[i]);
+    snprintf(rcap_name, sizeof(rcap_name), "NG_%s", grp->grp_name[i]);
 
 #ifdef DEBUG_REFINER
     HECMW_log(HECMW_LOG_DEBUG, "RCAP: calling rcapAppendNodeGroup(dataname=%s, num=%d, nodeArray)\n", rcap_name, num);
     {
       char fname[256];
       FILE *fp_dump;
-      sprintf(fname, "dump_rcapAppendNodeGroup_%s.%d", grp->grp_name[i], HECMW_comm_get_rank());
+      snprintf(fname, sizeof(fname), "dump_rcapAppendNodeGroup_%s.%d", grp->grp_name[i], HECMW_comm_get_rank());
       fp_dump = fopen(fname, "w");
       if (fp_dump == NULL) {
         fprintf(stderr, "Error: cannot open file %s\n", fname);
@@ -508,7 +508,7 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
         return HECMW_ERROR;
     }
 
-    sprintf(rcap_name, "SG_%s", grp->grp_name[i]);
+    snprintf(rcap_name, sizeof(rcap_name), "SG_%s", grp->grp_name[i]);
     num   = HECMW_varray_int_nval(&other) / 2;
     array = HECMW_varray_int_get_v(&other);
 
@@ -517,7 +517,7 @@ static int register_surf_groups(struct hecmwST_local_mesh *mesh) {
     {
       char fname[256];
       FILE *fp_dump;
-      sprintf(fname, "dump_rcapAppendFaceGroup_%s.%d", grp->grp_name[i], HECMW_comm_get_rank());
+      snprintf(fname, sizeof(fname), "dump_rcapAppendFaceGroup_%s.%d", grp->grp_name[i], HECMW_comm_get_rank());
       fp_dump = fopen(fname, "w");
       if (fp_dump == NULL) {
         fprintf(stderr, "Error: cannot open file %s\n", fname);
@@ -736,7 +736,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
       {
         char fname[256];
         FILE *fp_dump;
-        sprintf(fname, "dump_rcapRefineElement_pre_%d.%d", etype, HECMW_comm_get_rank());
+        snprintf(fname, sizeof(fname), "dump_rcapRefineElement_pre_%d.%d", etype, HECMW_comm_get_rank());
         fp_dump = fopen(fname, "w");
         if (fp_dump == NULL) {
           fprintf(stderr, "Error: cannot open file %s\n", fname);
@@ -830,7 +830,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
       {
         char fname[256];
         FILE *fp_dump;
-        sprintf(fname, "dump_rcapRefineElement_%d.%d", etype, HECMW_comm_get_rank());
+        snprintf(fname, sizeof(fname), "dump_rcapRefineElement_%d.%d", etype, HECMW_comm_get_rank());
         fp_dump = fopen(fname, "w");
         if (fp_dump == NULL) {
           fprintf(stderr, "Error: cannot open file %s\n", fname);
@@ -909,7 +909,7 @@ static int refine_node(struct hecmwST_local_mesh *mesh,
   {
     char fname[256];
     FILE *fp_dump;
-    sprintf(fname, "dump_rcapGetNodeSeq64.%d", HECMW_comm_get_rank());
+    snprintf(fname, sizeof(fname), "dump_rcapGetNodeSeq64.%d", HECMW_comm_get_rank());
     fp_dump = fopen(fname, "w");
     if (fp_dump == NULL) {
       fprintf(stderr, "Error: cannot open file %s\n", fname);
@@ -967,7 +967,7 @@ static int refine_node_group_info(struct hecmwST_node_grp *grp,
   ref_grp->grp_index[1] = ref_n_node_gross;
   /* other groups */
   for (i = 1; i < grp->n_grp; i++) {
-    sprintf(rcap_name, "NG_%s", grp->grp_name[i]);
+    snprintf(rcap_name, sizeof(rcap_name), "NG_%s", grp->grp_name[i]);
     ref_grp->grp_index[i + 1] =
         ref_grp->grp_index[i] + rcapGetNodeGroupCount(rcap_name);
   }
@@ -990,7 +990,7 @@ static int refine_node_group_info(struct hecmwST_node_grp *grp,
       int num   = ref_grp->grp_index[i + 1] - start;
       if (num > 0) {
         int *array = ref_grp->grp_item + start;
-        sprintf(rcap_name, "NG_%s", grp->grp_name[i]);
+        snprintf(rcap_name, sizeof(rcap_name), "NG_%s", grp->grp_name[i]);
         rcapGetNodeGroup(rcap_name, num, array);
       }
     }
@@ -1207,7 +1207,7 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
     int num_sh, num_other;
 
     /* count surfaces except for shell/patch */
-    sprintf(rcap_name, "SG_%s", grp->grp_name[i]);
+    snprintf(rcap_name, sizeof(rcap_name), "SG_%s", grp->grp_name[i]);
     num_other = rcapGetFaceGroupCount(rcap_name);
 
     /* count shell/patch surfaces */
@@ -1247,7 +1247,7 @@ static int refine_surf_group_info(struct hecmwST_local_mesh *mesh,
     array_ref = ref_grp->grp_item + start_ref * 2;
 
     /* get surfaces from REVOCAP_Refiner */
-    sprintf(rcap_name, "SG_%s", grp->grp_name[i]);
+    snprintf(rcap_name, sizeof(rcap_name), "SG_%s", grp->grp_name[i]);
     num_ref = rcapGetFaceGroupCount(rcap_name);
     rcapGetFaceGroup(rcap_name, num_ref, array_ref);
 
@@ -2127,7 +2127,7 @@ static void write_refined_shared_in_ucd(const struct hecmwST_local_mesh *mesh,
   int j, k, l, nid;
   int n_shared_elem = HECMW_varray_int_nval(shared + i);
   int n_shared_node = HECMW_varray_int_nval(shared_nodes + i);
-  sprintf(fname, "shared_%d_%d.inp", mesh->my_rank, irank);
+  snprintf(fname, sizeof(fname), "shared_%d_%d.inp", mesh->my_rank, irank);
   HECMW_log(HECMW_LOG_DEBUG, "writing refined shared elements to %s\n", fname);
   fp = fopen(fname, "w");
   if (fp == NULL) {
