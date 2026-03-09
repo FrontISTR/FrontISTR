@@ -162,11 +162,11 @@ scanf("%lf  %lf",&mivalue[i], &mavalue[i]);
     }
 
     if (sf[1].output_type == 1)
-      strcat(outfile, ".inp");
+      strncat(outfile, ".inp", HECMW_FILENAME_LEN - strlen(outfile) - 1);
     else if (sf[1].output_type == 2)
-      strcat(outfile, ".fec");
+      strncat(outfile, ".fec", HECMW_FILENAME_LEN - strlen(outfile) - 1);
     else if (sf[1].output_type == 4)
-      strcat(outfile, ".neu");
+      strncat(outfile, ".neu", HECMW_FILENAME_LEN - strlen(outfile) - 1);
 
     outfp = fopen(outfile, "w");
 

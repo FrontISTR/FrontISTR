@@ -511,12 +511,12 @@ static int read_input(int msgno_invalid_token) {
   } else {
     char separator[10];
     char *dname = HECMW_dirname(grid_filename);
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
     if (strlen(dname) + strlen(separator) + strlen(p) > HECMW_FILENAME_LEN) {
       set_err(HECMW_IO_E0002, "");
       return -1;
     }
-    sprintf(include_filename, "%s%s%s", dname, separator, p);
+    snprintf(include_filename, HECMW_FILENAME_LEN + 1, "%s%s%s", dname, separator, p);
   }
   return 0;
 }
@@ -3989,7 +3989,7 @@ static int read_boundary(void) {
         isNodeInput = 1;
 
         /* add node to group */
-        sprintf(nset, "BND%d", nbound);
+        snprintf(nset, sizeof(nset), "BND%d", nbound);
         if (HECMW_io_add_ngrp(nset, n, node) < 0) return -1;
         HECMW_free(node);
       }
@@ -4067,7 +4067,7 @@ static int read_cload(void) {
       if (n != 0) {
         isCload = 1;
 
-        sprintf(nset, "CLOAD%d", ncload);
+        snprintf(nset, sizeof(nset), "CLOAD%d", ncload);
         if (HECMW_io_add_ngrp(nset, n, node) < 0) return -1;
         HECMW_free(node);
       }
@@ -4144,7 +4144,7 @@ static int read_dload(void) {
       if (n != 0) {
         isDload = 1;
         /* add node to group */
-        sprintf(elset, "DLOAD%d", ndload);
+        snprintf(elset, sizeof(elset), "DLOAD%d", ndload);
         if (HECMW_io_add_egrp(elset, n, elem) < 0) return -1;
         HECMW_free(elem);
       }

@@ -39,7 +39,7 @@ char *HECMW_strmsg(int msgno) {
   }
   if (p == NULL) p = get_msgent(msgno);
   if (p == NULL) p = &msg_unknown;
-  sprintf(msg_buf, "%s: %s(%d)", p->msgno_str, p->msg, msgno);
+  snprintf(msg_buf, sizeof(msg_buf), "%s: %s(%d)", p->msgno_str, p->msg, msgno);
   return msg_buf;
 }
 

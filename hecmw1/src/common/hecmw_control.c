@@ -110,7 +110,7 @@ static char *make_filename(char *dir, char *subdir, char *prefix, char *file,
   }
 
   if (subdir && strlen(subdir) > 0) {
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
 
     if ((strlen(filename) + strlen(subdir) + strlen(separator)) >
         HECMW_FILENAME_LEN)
@@ -121,7 +121,7 @@ static char *make_filename(char *dir, char *subdir, char *prefix, char *file,
   }
 
   if (prefix && strlen(prefix) > 0) {
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
 
     if ((strlen(filename) + strlen(prefix) + strlen(separator)) >
         HECMW_FILENAME_LEN)
@@ -142,7 +142,7 @@ static char *make_filename(char *dir, char *subdir, char *prefix, char *file,
   }
 
   if (flag_rank) {
-    sprintf(rank, ".%d", myrank);
+    snprintf(rank, sizeof(rank), ".%d", myrank);
 
     if ((strlen(filename) + strlen(rank)) > HECMW_FILENAME_LEN) return NULL;
 
@@ -163,15 +163,15 @@ static char *make_filename_r(char *dir, char *subdir, char *prefix, char *file,
   HECMW_assert( filename );
 
   if (dir && strlen(dir) > 0) {
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
 
     if ((strlen(dir) + strlen(separator)) > filename_len) return NULL;
 
-    sprintf(filename, "%s%s", dir, separator);
+    snprintf(filename, filename_len + 1, "%s%s", dir, separator);
   }
 
   if (subdir && strlen(subdir) > 0) {
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
 
     if ((strlen(filename) + strlen(subdir) + strlen(separator)) >
         filename_len)
@@ -182,7 +182,7 @@ static char *make_filename_r(char *dir, char *subdir, char *prefix, char *file,
   }
 
   if (prefix && strlen(prefix) > 0) {
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
 
     if ((strlen(filename) + strlen(prefix) + strlen(separator)) >
         filename_len)
@@ -203,7 +203,7 @@ static char *make_filename_r(char *dir, char *subdir, char *prefix, char *file,
   }
 
   if (flag_rank) {
-    sprintf(rank, ".%d", myrank);
+    snprintf(rank, sizeof(rank), ".%d", myrank);
 
     if ((strlen(filename) + strlen(rank)) > filename_len) return NULL;
 
@@ -2081,7 +2081,7 @@ static struct hecmw_ctrl_meshfiles *make_meshfiles_struct(
   char *fname;
   char *retval;
   struct hecmw_ctrl_meshfiles *files;
-  char prefix[10];
+  char prefix[32];
   files = HECMW_malloc(sizeof(*files));
 
   if (files == NULL) {
@@ -2139,7 +2139,7 @@ static struct hecmw_ctrl_meshfiles *make_meshfiles_struct(
     } else {
       if (subdir_on && nrank > nlimit) {
         irank = myrank / nlimit;
-        sprintf(prefix, "TRUNK%d", irank);
+        snprintf(prefix, sizeof(prefix), "TRUNK%d", irank);
         retval = make_filename_r("MESH", NULL, prefix, ment->filename, "", myrank,
                                  flag_rank, fname, HECMW_FILENAME_LEN);
 
@@ -2227,7 +2227,7 @@ static char *get_result_file(char *name_ID, int istep, int n_rank,
   int nrank, myrank, irank;
   char *fname, *retfname;
   struct result_entry *result;
-  char subname[10], prefix[10];
+  char subname[32], prefix[32];
   result = get_result_entry(name_ID);
 
   if (result == NULL) {
@@ -2250,14 +2250,14 @@ static char *get_result_file(char *name_ID, int istep, int n_rank,
                           flag_rank_none);
 
   } else if (subdir_on && nrank > nlimit) {
-    sprintf(subname, "STEP%d", istep);
+    snprintf(subname, sizeof(subname), "STEP%d", istep);
     irank = myrank / nlimit;
-    sprintf(prefix, "TRUNK%d", irank);
+    snprintf(prefix, sizeof(prefix), "TRUNK%d", irank);
     fname = make_filename(name_ID, subname, prefix, result->filename, "",
                           myrank, flag_rank_none);
 
   } else if (subdir_on) {
-    sprintf(subname, "STEP%d", istep);
+    snprintf(subname, sizeof(subname), "STEP%d", istep);
     fname = make_filename(name_ID, subname, NULL, result->filename, "", myrank,
                           flag_rank_none);
 
@@ -2342,7 +2342,7 @@ char *HECMW_ctrl_get_restart_file(char *name_ID) {
   int nrank, myrank, irank;
   char *fname, *retfname;
   struct restart_entry *restart;
-  char prefix[10];
+  char prefix[32];
   restart = get_restart_entry(name_ID);
 
   if (restart == NULL) {
@@ -2356,7 +2356,7 @@ char *HECMW_ctrl_get_restart_file(char *name_ID) {
 
   if (subdir_on && nrank > nlimit) {
     irank = myrank / nlimit;
-    sprintf(prefix, "TRUNK%d", irank);
+    snprintf(prefix, sizeof(prefix), "TRUNK%d", irank);
     fname =
         make_filename(name_ID, NULL, prefix, restart->filename, "", myrank, 1);
 
@@ -2387,7 +2387,7 @@ char *HECMW_ctrl_get_restart_file_by_io(int io) {
   int nrank, myrank, irank;
   char *fname, *retfname;
   struct restart_entry *p;
-  char prefix[10];
+  char prefix[32];
   p = get_restart_entry_by_io(io);
 
   if (p == NULL) {
@@ -2400,7 +2400,7 @@ char *HECMW_ctrl_get_restart_file_by_io(int io) {
 
   if (subdir_on && nrank > nlimit) {
     irank = myrank / nlimit;
-    sprintf(prefix, "TRUNK%d", irank);
+    snprintf(prefix, sizeof(prefix), "TRUNK%d", irank);
     fname = make_filename(p->name_ID, NULL, prefix, p->filename, "", myrank, 1);
 
   } else if (subdir_on) {
@@ -2456,15 +2456,15 @@ int HECMW_ctrl_make_subdir(char *filename) {
   mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
 #endif
   strcpy(fname, filename);
-  sprintf(separator, "%c", HECMW_get_path_separator());
+  snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
 #if defined(__WIN32__) || defined(__WIN64__)
   /* strtok is thread-safe on Windows */
   token = strtok(fname, separator);
-  sprintf(dirname, "%s", token);
+  snprintf(dirname, sizeof(dirname), "%s", token);
   token = strtok(NULL, separator);
 #else
   token = strtok_r(fname, separator, &saveptr);
-  sprintf(dirname, "%s", token);
+  snprintf(dirname, sizeof(dirname), "%s", token);
   token = strtok_r(NULL, separator, &saveptr);
 #endif
 

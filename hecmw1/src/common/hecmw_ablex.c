@@ -3824,6 +3824,11 @@ HECMW_ablex_switch_to_include(const char *filename)
 		HECMW_set_error(HECMW_IO_E0005, "File: %s, %s", filename, strerror(errno));
 		return -1;
 	}
+	if(strlen(filename) > HECMW_FILENAME_LEN) {
+		HECMW_set_error(HECMW_IO_E0004, "Filename too long: %s", filename);
+		fclose(incfp);
+		return -1;
+	}
 	strcpy(include_filename, filename);
 	prev_state = YY_CURRENT_BUFFER;
 	yy_switch_to_buffer(yy_create_buffer(incfp, YY_BUF_SIZE));
