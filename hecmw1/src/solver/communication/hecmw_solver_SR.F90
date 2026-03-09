@@ -153,8 +153,10 @@ contains
     integer(kind=kint ) :: neib,istart,inum,k,kk,ii,ierr,i,nreq1,nreq2
     !C
     !C-- INIT.
-    allocate (WS(M*STACK_EXPORT(NEIBPETOT)))
-    allocate (WR(M*STACK_IMPORT(NEIBPETOT)))
+    allocate (WS(M*STACK_EXPORT(NEIBPETOT)), stat=ierr)
+    if( ierr /= 0 ) stop "Allocation error: WS in hecmw_solver_SR"
+    allocate (WR(M*STACK_IMPORT(NEIBPETOT)), stat=ierr)
+    if( ierr /= 0 ) stop "Allocation error: WR in hecmw_solver_SR"
     allocate (req1(NEIBPETOT))
     allocate (req2(NEIBPETOT))
     !C
