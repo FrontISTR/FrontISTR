@@ -189,13 +189,12 @@ n_vertex[24], double scr_area[4],
     f1=fopen("frame.dat", "w");
         if(f1==NULL) {
                 fprintf(stderr, "cannot open the frame output file\n");
-                exit(0);
+                HECMW_vis_print_exit("cannot open the frame output file");
         }
         for(i=0;i<8;i++) {
                 if(fabs(n_vertex[i*3+2]-view_point[2])<EPSILON) {
-                        fprintf(stderr, " The viewpoint position is not
-correct\n");
-                        exit(0);
+                        fprintf(stderr, " The viewpoint position is not\ncorrect\n");
+                        HECMW_vis_print_exit("The viewpoint position is not correct");
                 }
                 p[i][0]=view_point[0]-view_point[2]/(n_vertex[i*3+2]-view_point[2])*
                         (n_vertex[i*3]-view_point[0]);

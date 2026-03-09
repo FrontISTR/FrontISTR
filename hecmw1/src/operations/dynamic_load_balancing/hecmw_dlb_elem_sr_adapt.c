@@ -106,7 +106,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
   test_fp = fopen(test_file, "w");
   if (test_fp == NULL) {
     fprintf(stderr, "Cannot open test_file\n");
-    exit(0);
+    exit(EXIT_FAILURE);
   }
 #endif
 /*	fprintf(test_fp, "%d\n", mesh->ne_internal);
@@ -143,7 +143,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
 #ifdef test
   sprintf(test_file, "test5.%d", mynode);
   test_fp2 = fopen(test_file, "w");
-  if (test_fp == NULL) HECMW_dlb_print_exit("Cannot open test_file\n");
+  if (test_fp2 == NULL) HECMW_dlb_print_exit("Cannot open test_file\n");
 #endif
 
   /* 1: first update new partition to include import nodes */
