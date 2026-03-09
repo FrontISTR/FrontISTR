@@ -4,6 +4,7 @@
  *****************************************************************************/
 
 #include "hecmw_vis_ray_trace.h"
+#include "hecmw_vis_mem_util.h"
 
 #include "hecmw_font_texture.h"
 #include "hecmw_malloc.h"
@@ -64,12 +65,13 @@ void generate_histogram_graph(double tmincolor, double tmaxcolor, double *var,
     fp = fopen("histogram.bmp", "wb");
     if (fp == NULL) {
       fprintf(stderr, "Cannot generate the histogram output file\n");
-      exit(0);
+      HECMW_vis_print_exit("Cannot generate the histogram output file");
     }
     graph = (double *)HECMW_calloc(400 * 530 * 3, sizeof(double));
     if (graph == NULL) {
       fprintf(stderr, "There is no enough memory for graph\n");
-      exit(0);
+      fclose(fp);
+      HECMW_vis_print_exit("There is no enough memory for graph");
     }
     for (i = 0; i < 400 * 530 * 3; i++) graph[i] = 0.0;
     max_number                                   = 0;
@@ -324,7 +326,7 @@ void output_histogram(double tmincolor, double tmaxcolor, double *var,
     fp = fopen("histogram.file", "w");
     if (fp == NULL) {
       fprintf(stderr, "Cannot generate the histogram output file\n");
-      exit(0);
+      HECMW_vis_print_exit("Cannot generate the histogram output file");
     }
     for (i = 0; i < 100; i++)
       fprintf(fp, "%d   %d   -----(%lf --- %lf)\n", i, t_count[i],

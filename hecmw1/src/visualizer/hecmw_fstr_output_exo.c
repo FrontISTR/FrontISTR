@@ -397,6 +397,8 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
     /* Allocate index arrays and fill element indices for each block */
     for (j = 0; j < num_blocks; j++) {
         blocks[j].elem_indices = (int *)HECMW_malloc(sizeof(int) * blocks[j].num_elem);
+        if (blocks[j].elem_indices == NULL)
+            HECMW_vis_print_exit("HECMW_malloc failed for block elem_indices");
         blocks[j].num_elem = 0; /* reset count, will re-fill */
     }
     for (i = 0; i < n_elem; i++) {
@@ -645,6 +647,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
             double *cx = (double *)HECMW_malloc(sizeof(double) * n_node);
             double *cy = (double *)HECMW_malloc(sizeof(double) * n_node);
             double *cz = (double *)HECMW_malloc(sizeof(double) * n_node);
+            if (cx == NULL || cy == NULL || cz == NULL) {
+                HECMW_free(cx); HECMW_free(cy); HECMW_free(cz);
+                HECMW_vis_print_exit("HECMW_malloc failed for coordinate arrays");
+            }
             for (i = 0; i < n_node; i++) {
                 cx[i] = mesh->node[3 * i];
                 cy[i] = mesh->node[3 * i + 1];
@@ -670,6 +676,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         {
             int *eb_stat = (int *)HECMW_malloc(sizeof(int) * num_blocks);
             int *eb_ids  = (int *)HECMW_malloc(sizeof(int) * num_blocks);
+            if (eb_stat == NULL || eb_ids == NULL) {
+                HECMW_free(eb_stat); HECMW_free(eb_ids);
+                HECMW_vis_print_exit("HECMW_malloc failed for element block arrays");
+            }
             for (j = 0; j < num_blocks; j++) {
                 eb_stat[j] = 1;      /* active */
                 eb_ids[j]  = j + 1;  /* block ID = 1,2,3,... */
@@ -682,6 +692,8 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         /* --- [OPTIONAL] Element block names --- */
         {
             char *names_buf = (char *)HECMW_malloc(num_blocks * EXO_MAX_STR_LENGTH);
+            if (names_buf == NULL)
+                HECMW_vis_print_exit("HECMW_malloc failed for block names");
             for (j = 0; j < num_blocks; j++) {
                 char label[EXO_MAX_STR_LENGTH];
                 snprintf(label, EXO_MAX_STR_LENGTH, "block_%d_%s", j + 1, blocks[j].exo_name);
@@ -699,6 +711,8 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
             int etype = blocks[j].hecmw_type;
             int node_shift = get_node_shift(etype);
             int *conn = (int *)HECMW_malloc(sizeof(int) * ne * nn);
+            if (conn == NULL)
+                HECMW_vis_print_exit("HECMW_malloc failed for connectivity");
 
             for (i = 0; i < ne; i++) {
                 int ei = blocks[j].elem_indices[i]; /* original element index */
@@ -743,6 +757,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         {
             int *nmap = (int *)HECMW_malloc(sizeof(int) * n_node);
             int *emap = (int *)HECMW_malloc(sizeof(int) * n_elem);
+            if (nmap == NULL || emap == NULL) {
+                HECMW_free(nmap); HECMW_free(emap);
+                HECMW_vis_print_exit("HECMW_malloc failed for node/elem maps");
+            }
             /* Use global IDs if available, otherwise sequential */
             if (mesh->global_node_ID != NULL) {
                 for (i = 0; i < n_node; i++) nmap[i] = mesh->global_node_ID[i];
@@ -762,6 +780,8 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         /* --- Nodal variable names --- */
         if (total_nod_var > 0) {
             char *name_buf = (char *)HECMW_malloc(total_nod_var * EXO_MAX_STR_LENGTH);
+            if (name_buf == NULL)
+                HECMW_vis_print_exit("HECMW_malloc failed for nodal variable names");
             int vi = 0;
             for (i = 0; i < data->nn_component; i++) {
                 const char **suffixes = get_comp_suffixes(data->nn_dof[i], data->node_label[i]);
@@ -786,6 +806,8 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         /* --- Element variable names --- */
         if (total_elem_var > 0) {
             char *name_buf = (char *)HECMW_malloc(total_elem_var * EXO_MAX_STR_LENGTH);
+            if (name_buf == NULL)
+                HECMW_vis_print_exit("HECMW_malloc failed for element variable names");
             int vi = 0;
             for (i = 0; i < data->ne_component; i++) {
                 const char **suffixes = get_comp_suffixes(data->ne_dof[i], data->elem_label[i]);
@@ -810,6 +832,8 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         /* --- Element variable truth table (all 1s: every var in every block) --- */
         if (total_elem_var > 0) {
             int *tab = (int *)HECMW_malloc(sizeof(int) * num_blocks * total_elem_var);
+            if (tab == NULL)
+                HECMW_vis_print_exit("HECMW_malloc failed for truth table");
             for (i = 0; i < num_blocks * total_elem_var; i++) tab[i] = 1;
             stat = nc_put_var_int(ncid, var_elem_var_tab, tab);
             NCERR(stat);
@@ -866,6 +890,8 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
                 stat = nc_inq_varid(ncid, vname, &varid); NCERR(stat);
 
                 double *vals = (double *)HECMW_malloc(sizeof(double) * n_node);
+                if (vals == NULL)
+                    HECMW_vis_print_exit("HECMW_malloc failed for nodal values");
                 for (j = 0; j < n_node; j++) {
                     vals[j] = data->node_val_item[j * data_tot_n + comp_shift + k];
                 }
@@ -895,6 +921,8 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
 
                     int ne = blocks[j].num_elem;
                     double *vals = (double *)HECMW_malloc(sizeof(double) * ne);
+                    if (vals == NULL)
+                        HECMW_vis_print_exit("HECMW_malloc failed for element values");
                     int ei_idx;
                     for (ei_idx = 0; ei_idx < ne; ei_idx++) {
                         int ei = blocks[j].elem_indices[ei_idx];
