@@ -379,13 +379,16 @@ contains
     if ( ierr /= 0 ) stop " Allocation error, hecMAT%AU "
     hecMAT%AU = 0.0D0
 
-    allocate(hecMAT%D(np*ndof2+num_lagrange))
+    allocate(hecMAT%D(np*ndof2+num_lagrange), stat=ierr)
+    if ( ierr /= 0 ) stop " Allocation error, hecMAT%D "
     hecMAT%D = 0.0D0
 
-    allocate(hecMAT%B(np*ndof+num_lagrange))
+    allocate(hecMAT%B(np*ndof+num_lagrange), stat=ierr)
+    if ( ierr /= 0 ) stop " Allocation error, hecMAT%B "
     hecMAT%B = 0.0D0
 
-    allocate(hecMAT%X(np*ndof+num_lagrange))
+    allocate(hecMAT%X(np*ndof+num_lagrange), stat=ierr)
+    if ( ierr /= 0 ) stop " Allocation error, hecMAT%X "
     hecMAT%X = 0.0D0
 
   end subroutine
