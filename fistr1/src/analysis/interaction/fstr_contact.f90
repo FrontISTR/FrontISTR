@@ -93,42 +93,39 @@ contains
   end subroutine fstr_AddContactStiffness
 
   !> \brief Compute contact forces for residual vector (conMAT%B).
-  subroutine fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+  subroutine fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
     integer(kind=kint), intent(in)       :: cstep
     integer(kind=kint), intent(in)       :: ctAlgo
     type(hecmwST_local_mesh)             :: hecMESH
-    type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid)                     :: fstrSOLID
     type(hecmwST_matrix_lagrange)        :: hecLagMAT
     type(hecmwST_matrix)                 :: conMAT
 
-    call fstr_contact_ndforce_core(kctForResidual,cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+    call fstr_contact_ndforce_core(kctForResidual,cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
   end subroutine fstr_Update_NDForce_contact
 
   !> \brief Compute contact forces for output (CONT_NFORCE/CONT_FRIC).
-  subroutine fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+  subroutine fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
     integer(kind=kint), intent(in)       :: cstep
     integer(kind=kint), intent(in)       :: ctAlgo
     type(hecmwST_local_mesh)             :: hecMESH
-    type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid)                     :: fstrSOLID
     type(hecmwST_matrix_lagrange)        :: hecLagMAT
     type(hecmwST_matrix)                 :: conMAT
 
-    call fstr_contact_ndforce_core(kctForOutput,cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+    call fstr_contact_ndforce_core(kctForOutput,cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
   end subroutine fstr_calc_contact_output_force
 
   !> \brief Core routine: compute contact nodal forces for all contact/embed pairs.
   !! purpose == kctForResidual: assemble into conMAT%B
   !! purpose == kctForOutput:   store into CONT_NFORCE/CONT_FRIC (zero-cleared first)
-  subroutine fstr_contact_ndforce_core(purpose,cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+  subroutine fstr_contact_ndforce_core(purpose,cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
     integer(kind=kint), intent(in)       :: purpose
     integer(kind=kint), intent(in)       :: cstep
     integer(kind=kint), intent(in)       :: ctAlgo
     type(hecmwST_local_mesh)             :: hecMESH
-    type(hecmwST_matrix)                 :: hecMAT
     type(fstr_solid)                     :: fstrSOLID
     type(hecmwST_matrix_lagrange)        :: hecLagMAT
     type(hecmwST_matrix)                 :: conMAT
