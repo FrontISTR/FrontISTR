@@ -62,7 +62,7 @@ contains
     endif
 
     if( fstr_is_contact_active() ) then
-      call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+      call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
       !    Consider SPC condition
       call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
       call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
@@ -365,7 +365,7 @@ contains
 
           call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, conMAT)
           call hecmw_mat_clear_b( conMAT )
-          call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+          call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
           !    Consider SPC condition
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
@@ -417,7 +417,7 @@ contains
         call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID, conMAT)
         ! ----- deal with contact boundary
         call hecmw_mat_clear_b( conMAT )
-        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
@@ -427,7 +427,7 @@ contains
 
       ! ----- compute CONT_NFORCE/CONT_FRIC for output
       if( fstr_is_contact_active() ) &
-        call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+        call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
       ! ----- deal with contact boundary
       call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B )
@@ -462,7 +462,7 @@ contains
 
       if( fstr_is_contact_active() )  then
         call hecmw_mat_clear_b( conMAT )
-        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
@@ -638,7 +638,7 @@ contains
 
         if( fstr_is_contact_active() )  then
           call hecmw_mat_clear_b( conMAT )
-          call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+          call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
           !    Consider SPC condition
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
@@ -683,7 +683,7 @@ contains
 
       ! ----- compute CONT_NFORCE/CONT_FRIC for output
       if( fstr_is_contact_active() ) &
-        call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+        call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
       fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sum of iter)
@@ -728,7 +728,7 @@ contains
 
       if( fstr_is_contact_active() )  then
           call hecmw_mat_clear_b( conMAT )
-        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+        call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
         call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)

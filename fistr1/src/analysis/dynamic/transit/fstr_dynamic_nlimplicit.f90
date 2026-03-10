@@ -565,8 +565,8 @@ contains
           conMAT%X = 0.0d0
 
           if( fstr_is_contact_active() ) then
-            call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
-            call fstr_AddContactStiffness(cstep,ctAlgo,iter,hecMESH,hecMAT,hecLagMAT,fstrSOLID)
+            call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
+            call fstr_AddContactStiffness(cstep,ctAlgo,iter,hecMESH,conMAT,hecLagMAT,fstrSOLID)
           endif
 
           !C-- geometrical boundary condition
@@ -642,7 +642,7 @@ contains
 
         ! ----- compute CONT_NFORCE/CONT_FRIC for output
         if( fstr_is_contact_active() ) &
-          call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecMAT,hecLagMAT,fstrSOLID,conMAT)
+          call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
         call fstr_scan_contact_state(cstep, i, count_step, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange, hecMAT%B)
 
