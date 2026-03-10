@@ -250,14 +250,14 @@ contains
   !>\brief This subroutine calculates contact stiffness for each contact pair
   !! and assembles it into global stiffness matrix
   subroutine calcu_contact_stiffness_NodeSurf( ctAlgo, contact, coord, disp, iter, lagrange_array, &
-    hecMAT, hecLagMAT)
+    conMAT, hecLagMAT)
     integer(kind=kint), intent(in)             :: ctAlgo          !< contact analysis algorithm
     type(tContact), intent(inout)              :: contact         !< contact info
     real(kind=kreal), intent(in)               :: coord(:)        !< mesh coordinate
     real(kind=kreal), intent(in)               :: disp(:)         !< displacement
     integer(kind=kint), intent(in)             :: iter            !< iteration number
     real(kind=kreal), intent(in)               :: lagrange_array(:) !< Lagrange multiplier array
-    type(hecmwST_matrix), intent(inout)        :: hecMAT          !< global stiffness matrix
+    type(hecmwST_matrix), intent(inout)        :: conMAT          !< contact stiffness matrix
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT     !< Lagrange matrix
 
     integer(kind=kint) :: ctsurf, nnode, ndLocal(21), etype
@@ -294,7 +294,7 @@ contains
             contact%tPenalty, contact%fcoeff, lagrange, stiffness)
 
           ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
-          call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, hecMAT, hecLagMAT)
+          call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, conMAT, hecLagMAT)
 
         else if( ctAlgo == kcaALagrange ) then
           call getContactStiffness_Alag(contact%states(j), contact%master(ctsurf), elecoord(:,1:nnode), &
@@ -302,7 +302,7 @@ contains
             contact%fcoeff, contact%symmetric, stiffness, force)
 
           ! Assemble contact stiffness matrix into global stiffness matrix
-          call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiffness)
+          call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)
 
         end if
 
@@ -317,7 +317,7 @@ contains
 
             call getTiedStiffness_Slag(contact%states(j), contact%master(ctsurf), k, stiffness)
             ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
-            call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, 0.d0, stiffness, hecMAT, hecLagMAT)
+            call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, 0.d0, stiffness, conMAT, hecLagMAT)
           enddo
 
         else if( ctAlgo == kcaALagrange ) then
@@ -325,7 +325,7 @@ contains
             contact%nPenalty * contact%refStiff, stiffness, force)
 
           ! Assemble contact stiffness matrix into global stiffness matrix
-          call hecmw_mat_ass_elem(hecMAT, nnode+1, ndLocal, stiffness)
+          call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)
 
         end if
 
