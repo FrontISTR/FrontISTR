@@ -62,6 +62,7 @@ contains
     endif
 
     if( fstr_is_contact_active() ) then
+      call hecmw_mat_clear_b(conMAT)
       call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
       !    Consider SPC condition
       call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
@@ -293,8 +294,6 @@ contains
 
     stepcnt = 0
     allocate(coord(hecMESH%n_node*ndof))
-
-    call hecmw_mat_clear_b(conMAT)
 
     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrPARAM%augiter
@@ -547,8 +546,6 @@ contains
     endif
 
     call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
-
-    call hecmw_mat_clear_b(conMAT)
 
     stepcnt = 0
     count_step = 0
