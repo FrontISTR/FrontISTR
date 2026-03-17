@@ -2254,7 +2254,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint) :: i, n, old_size, new_size
-    integer(kind=kint) :: gid, dtype, state
+    integer(kind=kint) :: gid, mode, measure, state
     real(kind=kreal)   :: eps
     real(kind=kreal), pointer :: thlow(:), thup(:)
 
@@ -2279,7 +2279,7 @@ end function fstr_setup_INITIAL
     allocate( grp_id_name(n), thlow(n), thup(n) )
     amp = ' '
     eps = 1.d-3
-    rcode = fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, dtype, state, thlow, thup )
+    rcode = fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, mode, measure, state, thlow, thup )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     call amp_name_to_id( P%MESH, '!ELEMENT_ACTIVATION', amp, amp_id )
@@ -2288,7 +2288,7 @@ end function fstr_setup_INITIAL
       P%SOLID%elemact%ELEMACT_egrp_eps(old_size+i) = eps
     end do
     P%SOLID%elemact%ELEMACT_egrp_GRPID(old_size+1:new_size) = gid
-    P%SOLID%elemact%ELEMACT_egrp_depends(old_size+1:new_size) = dtype
+    P%SOLID%elemact%ELEMACT_egrp_depends(old_size+1:new_size) = measure
     P%SOLID%elemact%ELEMACT_egrp_ts_lower(old_size+1:new_size) = thlow(1:n)
     P%SOLID%elemact%ELEMACT_egrp_ts_upper(old_size+1:new_size) = thup(1:n)
     P%SOLID%elemact%ELEMACT_egrp_state(old_size+1:new_size) = state

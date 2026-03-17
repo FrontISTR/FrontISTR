@@ -20,6 +20,8 @@ module m_elemact
     real(kind=kreal), pointer   :: ELEMACT_egrp_ts_lower(:)  =>null()
     real(kind=kreal), pointer   :: ELEMACT_egrp_ts_upper(:)  =>null()
     integer(kind=kint), pointer :: ELEMACT_egrp_state  (:)  =>null()  ! Element activation state
+    integer(kind=kint) :: ELEMACT_n_changed = 0  ! Number of elements that changed state in last update
+    logical :: ELEMACT_conv_deferred = .false.   ! True if convergence was deferred due to state change (once per substep)
   end type
 
   ! Element status flags
