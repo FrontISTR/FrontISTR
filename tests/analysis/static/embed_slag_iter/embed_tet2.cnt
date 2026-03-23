@@ -20,7 +20,10 @@
  SET_1,3,3
 !DLOAD, GRPID=1
 SURF_1,S,0.1
-!EMBED, GRPID=1
+!CONTACT_PARAM, NAME=CPARAM1
+1.0e-4,  5.0e-3,  1.0e-2,  1.0e-4
+1.0e-6,  1.0e-6,  1.0,    -1.0e-8,  1.05
+!EMBED, CONTACTPARAM=CPARAM1, GRPID=1
 IP1
 ###################################
 #####         MATERIAL        #####

@@ -137,7 +137,7 @@ class CVis_PSR : public CVis_ViewParams {
   };
   double initial_line_color[3];  // default:{0,0,1}
   double deform_line_color[3];   // default:{0,0,1}
-  char output_type[3];           // "AVS"(default), "BMP"
+  char output_type[4];           // "AVS"(default), "BMP" (including null terminator)
 
   // for surface_style == surface_style_equivalent ---------
 

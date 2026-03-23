@@ -43,14 +43,14 @@ contains
   subroutine init_ContactParam( cparam )
     type(tContactParam), intent(out) :: cparam
     cparam%name            = ''
-    cparam%CLEARANCE       = 1.d-4
+    cparam%CLEARANCE       = 1.d-2
     cparam%CLR_SAME_ELEM   = 5.d-3
     cparam%CLR_DIFFLPOS    = 1.d-2
     cparam%CLR_CAL_NORM    = 1.d-4
-    cparam%DISTCLR_INIT    = 1.d-6
+    cparam%DISTCLR_INIT    = 1.d-2
     cparam%DISTCLR_FREE    =-1.d-6
     cparam%DISTCLR_NOCHECK = 1.d0
-    cparam%TENSILE_FORCE   =-1.d-8
+    cparam%TENSILE_FORCE   =-1.d-2
     cparam%BOX_EXP_RATE    = 1.05d0
   end subroutine init_ContactParam
 

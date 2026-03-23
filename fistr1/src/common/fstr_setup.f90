@@ -72,7 +72,7 @@ contains
 
     ! counters
     integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_write, c_echo, c_amplitude
-    integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring
+    integer(kind=kint) :: c_static, c_boundary, c_cload, c_dload, c_temperature, c_reftemp, c_spring, c_elemact
     integer(kind=kint) :: c_heat, c_fixtemp, c_cflux, c_dflux, c_sflux, c_film, c_sfilm, c_radiate, c_sradiate
     integer(kind=kint) :: c_eigen, c_contact, c_contactparam, c_embed, c_contact_if
     integer(kind=kint) :: c_dynamic, c_velocity, c_acceleration
@@ -101,6 +101,7 @@ contains
 
     c_solution = 0; c_solver   = 0; c_nlsolver = 0; c_step   = 0; c_output = 0; c_echo = 0; c_amplitude = 0
     c_static   = 0; c_boundary = 0; c_cload  = 0; c_dload = 0; c_temperature = 0; c_reftemp = 0; c_spring = 0;
+    c_elemact = 0;
     c_heat     = 0; c_fixtemp  = 0; c_cflux  = 0; c_dflux = 0; c_sflux = 0
     c_film     = 0; c_sfilm    = 0; c_radiate= 0; c_sradiate = 0
     c_eigen    = 0; c_contact  = 0; c_contactparam = 0; c_embed  = 0; c_contact_if = 0
@@ -170,6 +171,9 @@ contains
       else if( header_name == '!AMPLITUDE' ) then
         c_amplitude = c_amplitude + 1
         call fstr_setup_AMPLITUDE( ctrl, P )
+      else if( header_name == '!ELEMENT_ACTIVATION' ) then
+        c_elemact = c_elemact + 1
+        call fstr_setup_ELEMENT_ACTIVATION( ctrl, c_elemact, P )
 
         !--------------- for static -------------------------
 
@@ -1004,9 +1008,14 @@ contains
         n = n + 1
         fstrSOLID%step_ctrl(1)%Load(n) = fstrSOLID%SPRING_ngrp_GRPID(i)
       enddo
+      n = fstrSOLID%elemact%ELEMACT_egrp_tot
+      if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%ElemActivation(n) )
+      do i = 1, n
+        fstrSOLID%step_ctrl(1)%ElemActivation(i) = fstrSOLID%elemact%ELEMACT_egrp_GRPID(i)
+      enddo
     endif
 
-    if( p%PARAM%solution_type /= kstHEAT) call fstr_element_init( hecMESH, fstrSOLID )
+    call fstr_element_init( hecMESH, fstrSOLID, p%PARAM%solution_type )
     if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC .or.   &
       p%PARAM%solution_type==kstEIGEN  .or. p%PARAM%solution_type==kstSTATICEIGEN )  &
       call fstr_solid_alloc( hecMESH, fstrSOLID )
@@ -1014,6 +1023,7 @@ contains
     if( p%PARAM%solution_type == kstHEAT) then
       p%PARAM%fg_irres = fstrSOLID%output_ctrl(3)%frequency
       p%PARAM%fg_iwres = fstrSOLID%output_ctrl(4)%frequency
+      p%HEAT%elemact = p%SOLID%elemact
     endif
 
     n_totlyr = 1
@@ -1225,12 +1235,13 @@ contains
   end subroutine
 
   !> Initialize elements info in static calculation
-  subroutine fstr_element_init( hecMESH, fstrSOLID )
+  subroutine fstr_element_init( hecMESH, fstrSOLID, solution_type )
     use elementInfo
     use mMechGauss
     use m_fstr
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
+    integer(kind=kint), intent(in)  :: solution_type
 
     integer :: i, j, ng, isect, ndof, id, nn, n_elem
     integer :: ncon_stf
@@ -1248,15 +1259,18 @@ contains
     ! number of elements
     n_elem = hecMESH%elem_type_index(hecMESH%n_elem_type)
     allocate( fstrSOLID%elements(n_elem) )
+    
+    do i=1,n_elem
+      fstrSOLID%elements(i)%elemact_flag = kELACT_UNDEFINED
+      if( solution_type == kstHEAT) cycle !fstrSOLID is used only for elemact element in heat transfer analysis
 
-    do i= 1, n_elem
       fstrSOLID%elements(i)%etype = hecMESH%elem_type(i)
       if( hecMESH%elem_type(i)==301 ) fstrSOLID%elements(i)%etype=111
       if (hecmw_is_etype_link(fstrSOLID%elements(i)%etype)) cycle
       if (hecmw_is_etype_patch(fstrSOLID%elements(i)%etype)) cycle
       ng = NumOfQuadPoints( fstrSOLID%elements(i)%etype )
       if( ng > fstrSOLID%maxn_gauss ) fstrSOLID%maxn_gauss = ng
-      if( ng > 0 ) allocate( fstrSOLID%elements(i)%gausses( ng ) )
+      if(ng>0) allocate( fstrSOLID%elements(i)%gausses( ng ) )
 
       isect= hecMESH%section_ID(i)
       ndof = getSpaceDimension( fstrSOLID%elements(i)%etype )
@@ -1808,6 +1822,7 @@ contains
       P%SOLID%ESTRAIN => phys%ESTRAIN
       P%SOLID%ESTRESS => phys%ESTRESS
       P%SOLID%EMISES  => phys%EMISES
+      P%SOLID%EPLSTRAIN  => phys%EPLSTRAIN
       P%SOLID%ENQM    => phys%ENQM
       allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ) )
     end if
@@ -2251,6 +2266,63 @@ end function fstr_setup_INITIAL
   end subroutine fstr_setup_AMPLITUDE
 
 
+  !> Read in !ELEMENT_ACTIVATION
+  subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, counter, P )
+    implicit none
+    integer(kind=kint) :: ctrl
+    integer(kind=kint) :: counter
+    type(fstr_param_pack) :: P
+
+    integer(kind=kint) :: rcode
+    character(HECMW_NAME_LEN) :: amp
+    integer(kind=kint) :: amp_id
+    character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
+    integer(kind=kint) :: i, n, old_size, new_size
+    integer(kind=kint) :: gid, mode, measure, state
+    real(kind=kreal)   :: eps
+    real(kind=kreal), pointer :: thlow(:), thup(:)
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',            0, 'I', gid  )
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    if( n == 0 ) return
+    old_size = P%SOLID%elemact%ELEMACT_egrp_tot
+    new_size = old_size + n
+    P%SOLID%elemact%ELEMACT_egrp_tot = new_size
+
+    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_GRPID, old_size, new_size )
+    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_ID,  old_size, new_size )
+    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_amp, old_size, new_size )
+    call fstr_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_eps, old_size, new_size )
+    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_depends, old_size, new_size )
+    call fstr_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_ts_lower, old_size, new_size )
+    call fstr_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_ts_upper, old_size, new_size )
+    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_state, old_size, new_size )
+
+    allocate( grp_id_name(n), thlow(n), thup(n) )
+    amp = ' '
+    eps = 1.d-3
+    rcode = fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, mode, measure, state, thlow, thup )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+
+    call amp_name_to_id( P%MESH, '!ELEMENT_ACTIVATION', amp, amp_id )
+    do i=1,n
+      P%SOLID%elemact%ELEMACT_egrp_amp(old_size+i) = amp_id
+      P%SOLID%elemact%ELEMACT_egrp_eps(old_size+i) = eps
+    end do
+    P%SOLID%elemact%ELEMACT_egrp_GRPID(old_size+1:new_size) = gid
+    P%SOLID%elemact%ELEMACT_egrp_depends(old_size+1:new_size) = measure
+    P%SOLID%elemact%ELEMACT_egrp_ts_lower(old_size+1:new_size) = thlow(1:n)
+    P%SOLID%elemact%ELEMACT_egrp_ts_upper(old_size+1:new_size) = thup(1:n)
+    P%SOLID%elemact%ELEMACT_egrp_state(old_size+1:new_size) = state
+
+    call elem_grp_name_to_id_ex( P%MESH, '!ELEMENT_ACTIVATION', n, grp_id_name, P%SOLID%elemact%ELEMACT_egrp_ID(old_size+1:))
+
+    deallocate( grp_id_name )
+  end subroutine fstr_setup_ELEMENT_ACTIVATION
+
+
   !*****************************************************************************!
   !* HEADERS FOR STATIC ANALYSIS ***********************************************!
   !*****************************************************************************!
@@ -2370,10 +2442,10 @@ end function fstr_setup_INITIAL
     allocate( grp_id_name(n) )
     allocate( dof_ids (n) )
     allocate( dof_ide (n) )
+    allocate( val_ptr(n) )
 
     amp = ' '
-    val_ptr => P%SOLID%BOUNDARY_ngrp_val(old_size+1:)
-    val_ptr = 0
+    val_ptr = 0.0d0
     rcode = fstr_ctrl_get_BOUNDARY( ctrl, amp, grp_id_name, HECMW_NAME_LEN, dof_ids, dof_ide, val_ptr)
     if( rcode /= 0 ) call fstr_ctrl_err_stop
     call amp_name_to_id( P%MESH, '!BOUNDARY', amp, amp_id )
@@ -2391,6 +2463,7 @@ end function fstr_setup_INITIAL
         write(ILOG,*) 'fstr control file error : !BOUNDARY : range of dof_ids and dof_ide is from 1 to 6'
         call fstr_ctrl_err_stop
       end if
+      P%SOLID%BOUNDARY_ngrp_val(old_size+i) = val_ptr(i)
       P%SOLID%BOUNDARY_ngrp_type(old_size+i) = 10 * dof_ids(i) + dof_ide(i)
       P%SOLID%BOUNDARY_ngrp_amp(old_size+i) = amp_id
     end do
@@ -2398,6 +2471,11 @@ end function fstr_setup_INITIAL
     deallocate( grp_id_name )
     deallocate( dof_ids )
     deallocate( dof_ide )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( dof_ids )
+    nullify( dof_ide )
+    nullify( val_ptr )
     !  else
     !   ! NASTRAN ---------------------------------------------
     !
@@ -2460,10 +2538,11 @@ end function fstr_setup_INITIAL
     ! > Keiji Suemitsu (20140624)
 
     allocate( grp_id_name(n))
+    allocate( id_ptr(n) )
+    allocate( val_ptr(n) )
     amp = ' '
-    val_ptr => P%SOLID%CLOAD_ngrp_val(old_size+1:)
-    id_ptr =>P%SOLID%CLOAD_ngrp_DOF(old_size+1:)
-    val_ptr = 0
+    id_ptr = 0
+    val_ptr = 0.0d0
     rcode = fstr_ctrl_get_CLOAD( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
@@ -2474,11 +2553,28 @@ end function fstr_setup_INITIAL
     call amp_name_to_id( P%MESH, '!CLOAD', amp, amp_id )
     do i=1,n
       P%SOLID%CLOAD_ngrp_amp(old_size+i) = amp_id
+      P%SOLID%CLOAD_ngrp_DOF(old_size+i) = id_ptr(i)
+      P%SOLID%CLOAD_ngrp_val(old_size+i) = val_ptr(i)
     end do
     P%SOLID%CLOAD_ngrp_GRPID(old_size+1:new_size) = gid
     call node_grp_name_to_id_ex( P%MESH, '!CLOAD', n, grp_id_name, P%SOLID%CLOAD_ngrp_ID(old_size+1:))
 
     deallocate( grp_id_name )
+    deallocate( id_ptr )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( id_ptr )
+    nullify( val_ptr )
+
+    if( P%MESH%n_refine > 0 ) then
+      do i=1,n
+        if( hecmw_ngrp_get_number(P%MESH, P%SOLID%CLOAD_NGRP_ID(old_size+i)) > 1 ) then
+          write(*,*) 'fstr control file error : !CLOAD : cannot be used with NGRP when mesh is refined'
+          write(ILOG,*) 'fstr control file error : !CLOAD : cannot be used with NGRP when mesh is refined'
+          call fstr_ctrl_err_stop
+        endif
+      enddo
+    endif
 
   end subroutine fstr_setup_CLOAD
 
@@ -2496,7 +2592,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint)                  :: amp_id
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal), pointer           :: val_ptr(:)
-    integer(kind=kint), pointer        :: id_ptr(:), type_ptr(:)
+    integer(kind=kint), pointer        :: id_ptr(:)
     integer(kind=kint)                  :: i, n, old_size, new_size
     integer(kind=kint)                  :: gid, loadcase
   !---- body
@@ -2529,26 +2625,38 @@ end function fstr_setup_INITIAL
 
     !fill bc data
     allocate( grp_id_name(n) )
+    allocate( id_ptr(n) )
+    allocate( val_ptr(n) )
+    id_ptr  = 0
+    val_ptr = 0.0d0
+    rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
     if(loadcase == kFLOADCASE_RE) then
-      val_ptr  => P%FREQ%FLOAD_ngrp_valre(old_size+1:)
+      do i = 1, n
+        P%FREQ%FLOAD_ngrp_DOF(old_size+i) = id_ptr(i)
+        P%FREQ%FLOAD_ngrp_valre(old_size+i) = val_ptr(i)
+      enddo
     else if(loadcase == kFLOADCASE_IM) then
-      val_ptr  => P%FREQ%FLOAD_ngrp_valim(old_size+1:)
+      do i = 1, n
+        P%FREQ%FLOAD_ngrp_DOF(old_size+i) = id_ptr(i)
+        P%FREQ%FLOAD_ngrp_valim(old_size+i) = val_ptr(i)
+      enddo
     else
       !error
       write(*,*)    "Error this load set is not defined!"
       write(ilog,*) "Error this load set is not defined!"
       stop
     end if
-    id_ptr   => P%FREQ%FLOAD_ngrp_DOF(old_size+1:)
-    type_ptr => P%FREQ%FLOAD_ngrp_TYPE(old_size+1:)
-    val_ptr = 0.0D0
-    rcode = fstr_ctrl_get_FLOAD( ctrl, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr)
-    if( rcode /= 0 ) call fstr_ctrl_err_stop
     P%FREQ%FLOAD_ngrp_GRPID(old_size+1:new_size) = gid
     call nodesurf_grp_name_to_id_ex( P%MESH, '!FLOAD', n, grp_id_name, &
          P%FREQ%FLOAD_ngrp_ID(old_size+1:), P%FREQ%FLOAD_ngrp_TYPE(old_size+1:))
 
     deallocate( grp_id_name )
+    deallocate( id_ptr )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( id_ptr )
+    nullify( val_ptr )
     return
 
     contains
@@ -2663,13 +2771,13 @@ end function fstr_setup_INITIAL
     ! > Keiji Suemitsu (20140624)
 
     allocate( grp_id_name(n))
+    allocate( lid_ptr(n) )
     allocate( new_params(0:6,n))
     allocate( fg_surface(n))
     new_params = 0
     amp = ' '
     follow = P%SOLID%DLOAD_follow
     if( .not. P%PARAM%nlgeom ) follow = 0
-    lid_ptr => P%SOLID%DLOAD_ngrp_LID(old_size+1:)
     rcode = fstr_ctrl_get_DLOAD( ctrl, amp, follow, &
       grp_id_name, HECMW_NAME_LEN,    &
       lid_ptr, new_params )
@@ -2678,6 +2786,7 @@ end function fstr_setup_INITIAL
     P%SOLID%DLOAD_follow = follow
     do i=1,n
       P%SOLID%DLOAD_ngrp_amp(old_size+i) = amp_id
+      P%SOLID%DLOAD_ngrp_LID(old_size+i) = lid_ptr(i)
       do j=0, 6
         P%SOLID%DLOAD_ngrp_params(j,old_size+i) = new_params(j,i)
       end do
@@ -2686,8 +2795,13 @@ end function fstr_setup_INITIAL
     P%SOLID%DLOAD_ngrp_GRPID(old_size+1:new_size) = gid
     call dload_grp_name_to_id_ex( P%MESH, n, grp_id_name, fg_surface, P%SOLID%DLOAD_ngrp_ID(old_size+1:))
     deallocate( grp_id_name )
+    deallocate( lid_ptr )
     deallocate( new_params )
     deallocate( fg_surface )
+    nullify( grp_id_name )
+    nullify( lid_ptr )
+    nullify( new_params )
+    nullify( fg_surface )
   end subroutine fstr_setup_DLOAD
 
 
@@ -2704,7 +2818,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: rcode, gid
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     real(kind=kreal),pointer :: val_ptr(:)
-    integer(kind=kint) :: n, old_size, new_size
+    integer(kind=kint) :: i, n, old_size, new_size
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
 
@@ -2723,7 +2837,8 @@ end function fstr_setup_INITIAL
     call fstr_expand_real_array    ( P%SOLID%TEMP_ngrp_val,old_size, new_size )
 
     allocate( grp_id_name(n))
-    val_ptr => P%SOLID%TEMP_ngrp_val( old_size+1: )
+    allocate( val_ptr(n) )
+    val_ptr = 0.0d0
 
     rcode = fstr_ctrl_get_TEMPERATURE( ctrl,      &
       P%SOLID%TEMP_irres,           &
@@ -2733,6 +2848,11 @@ end function fstr_setup_INITIAL
       grp_id_name, HECMW_NAME_LEN,  &
       val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
+    do i = 1, n
+      P%SOLID%TEMP_ngrp_val(old_size+i) = val_ptr(i)
+    enddo
+    deallocate( val_ptr )
+    nullify( val_ptr )
 
     P%SOLID%TEMP_ngrp_GRPID(old_size+1:new_size) = gid
     if( n > 0 ) then
@@ -2781,21 +2901,29 @@ end function fstr_setup_INITIAL
     call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_amp, old_size, new_size )
 
     allocate( grp_id_name(n))
+    allocate( id_ptr(n) )
+    allocate( val_ptr(n) )
     amp = ' '
-    val_ptr => P%SOLID%SPRING_ngrp_val(old_size+1:)
-    id_ptr =>P%SOLID%SPRING_ngrp_DOF(old_size+1:)
-    val_ptr = 0
+    id_ptr = 0
+    val_ptr = 0.0d0
     rcode = fstr_ctrl_get_SPRING( ctrl, amp, grp_id_name, HECMW_NAME_LEN, id_ptr, val_ptr )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     call amp_name_to_id( P%MESH, '!SPRING', amp, amp_id )
     do i=1,n
       P%SOLID%SPRING_ngrp_amp(old_size+i) = amp_id
+      P%SOLID%SPRING_ngrp_DOF(old_size+i) = id_ptr(i)
+      P%SOLID%SPRING_ngrp_val(old_size+i) = val_ptr(i)
     end do
     P%SOLID%SPRING_ngrp_GRPID(old_size+1:new_size) = gid
     call node_grp_name_to_id_ex( P%MESH, '!SPRING', n, grp_id_name, P%SOLID%SPRING_ngrp_ID(old_size+1:))
 
     deallocate( grp_id_name )
+    deallocate( id_ptr )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( id_ptr )
+    nullify( val_ptr )
 
   end subroutine fstr_setup_SPRING
 
@@ -3694,10 +3822,10 @@ end function fstr_setup_INITIAL
     allocate( grp_id_name(n))
     allocate( dof_ids (n))
     allocate( dof_ide (n))
+    allocate( val_ptr(n) )
 
     amp = ''
-    val_ptr => P%SOLID%VELOCITY_ngrp_val(old_size+1:)
-    val_ptr = 0
+    val_ptr = 0.0d0
     rcode = fstr_ctrl_get_VELOCITY( ctrl,  vType, amp,   &
       grp_id_name, HECMW_NAME_LEN,  &
       dof_ids, dof_ide, val_ptr )
@@ -3716,12 +3844,18 @@ end function fstr_setup_INITIAL
       end if
       P%SOLID%VELOCITY_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
       P%SOLID%VELOCITY_ngrp_amp(j) = amp_id
+      P%SOLID%VELOCITY_ngrp_val(old_size+i) = val_ptr(i)
       j = j+1
     end do
 
     deallocate( grp_id_name )
     deallocate( dof_ids )
     deallocate( dof_ide )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( dof_ids )
+    nullify( dof_ide )
+    nullify( val_ptr )
 
   end subroutine fstr_setup_VELOCITY
 
@@ -3761,10 +3895,10 @@ end function fstr_setup_INITIAL
     allocate( grp_id_name(n))
     allocate( dof_ids (n))
     allocate( dof_ide (n))
+    allocate( val_ptr(n))
 
     amp = ' '
-    val_ptr => P%SOLID%ACCELERATION_ngrp_val(old_size+1:)
-    val_ptr = 0
+    val_ptr = 0.0d0
     rcode = fstr_ctrl_get_ACCELERATION( ctrl,  aType, amp,   &
       grp_id_name, HECMW_NAME_LEN,  &
       dof_ids, dof_ide,  val_ptr)
@@ -3783,12 +3917,18 @@ end function fstr_setup_INITIAL
       end if
       P%SOLID%ACCELERATION_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
       P%SOLID%ACCELERATION_ngrp_amp(j) = amp_id
+      P%SOLID%ACCELERATION_ngrp_val(old_size+i) = val_ptr(i)
       j = j+1
     end do
 
     deallocate( grp_id_name )
     deallocate( dof_ids )
     deallocate( dof_ide )
+    deallocate( val_ptr )
+    nullify( grp_id_name )
+    nullify( dof_ids )
+    nullify( dof_ide )
+    nullify( val_ptr )
   end subroutine fstr_setup_ACCELERATION
 
 

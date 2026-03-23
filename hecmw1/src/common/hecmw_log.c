@@ -77,7 +77,7 @@ int HECMW_openlog(const char *logfile, int loglv, int options) {
     HECMW_set_error(HECMW_UTIL_E9011, "Filename too long");
     return -1;
   }
-  sprintf(logfilename, "%s%s", logfile, rank);
+  HECMW_snprintf(logfilename, sizeof(logfilename), "%s%s", logfile, rank);
 
   loglv &= HECMW_LOG_ALL;
   if (!loglv) {
@@ -136,7 +136,7 @@ int HECMW_closelog(int id) {
   }
 
   p = (struct log_ent *)&logent[id];
-  if (p->fp == NULL) {
+  if (p->fp != NULL) {
     if (fclose(p->fp)) {
       HECMW_set_error(HECMW_UTIL_E9013, "File %s, %s", p->file,
                       strerror(errno));

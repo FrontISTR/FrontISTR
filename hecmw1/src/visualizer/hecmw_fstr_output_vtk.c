@@ -60,9 +60,19 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
+		fprintf (outfp, "<FieldData>\n");
 		for(i=0; i<data->ng_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"/>\n", data->global_label[i], data->ng_dof[i]);
+			shift=0;
+			for(j=0; j<i; j++) shift += data->ng_dof[j];
+			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\">",
+				strcmp(data->global_label[i], "TOTALTIME") == 0 ? "TimeValue" : data->global_label[i],
+				data->ng_dof[i]);
+			for(k=0; k<data->ng_dof[i]; k++){
+				fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
+			}
+			fprintf (outfp, "</DataArray>\n");
 		}
+		fprintf (outfp, "</FieldData>\n");
 		fprintf (outfp, "<PPoints>\n");
 		fprintf (outfp, "<PDataArray type=\"Float32\" NumberOfComponents=\"3\"/>\n");
 		fprintf (outfp, "</PPoints>\n");
@@ -73,13 +83,27 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		fprintf (outfp, "</PCells>\n");
 		fprintf (outfp, "<PPointData>\n");
 		for(i=0; i<data->nn_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->node_label[i], data->nn_dof[i]);
+			if(
+				strcmp(data->node_label[i], "NodalPrincipalSTRAIN") == 0 ||
+				strcmp(data->node_label[i], "NodalPrincipalSTRESS") == 0
+			) {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"ascii\"/>\n", data->node_label[i], data->nn_dof[i]);
+			} else {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->node_label[i], data->nn_dof[i]);
+			}
 		}
 		fprintf (outfp, "</PPointData>\n");
 		fprintf (outfp, "<PCellData>\n");
 		fprintf (outfp, "<PDataArray type=\"Int16\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"ascii\"/>\n");
 		for(i=0; i<data->ne_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			if(
+				strcmp(data->elem_label[i], "ElementalPrincipalSTRAIN") == 0 ||
+				strcmp(data->elem_label[i], "ElementalPrincipalSTRESS") == 0
+			) {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"ascii\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			} else {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			}
 		}
 		fprintf (outfp, "</PCellData>\n");
 		for(i=0; i<petot; i++){
@@ -98,15 +122,17 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	fprintf (outfp, "<UnstructuredGrid>\n");
 	fprintf (outfp, "<FieldData>\n");
 	for(i=0; i<data->ng_component; i++){
-		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"  >\n", data->global_label[i], data->ng_dof[i]);
+		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"  >\n",
+			strcmp(data->global_label[i], "TOTALTIME") == 0 ? "TimeValue" : data->global_label[i],
+			data->ng_dof[i]);
 		shift=0;
 		for(j=0; j<i; j++){
 			shift += data->ng_dof[j];
 		}
-    for(k=0; k<data->ng_dof[i]; k++){
-      fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
-    }
-    fprintf (outfp, "\n");
+	for(k=0; k<data->ng_dof[i]; k++){
+		fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
+	}
+	fprintf (outfp, "\n");
 		fprintf (outfp, "</DataArray>\n");
 	}
 	fprintf (outfp, "</FieldData>\n");
@@ -245,9 +271,19 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\" header_type=\"UInt32\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
+		fprintf (outfp, "<FieldData>\n");
 		for(i=0; i<data->ng_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"/>\n", data->global_label[i], data->ng_dof[i]);
+			shift=0;
+			for(j=0; j<i; j++) shift += data->ng_dof[j];
+			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\">",
+				strcmp(data->global_label[i], "TOTALTIME") == 0 ? "TimeValue" : data->global_label[i],
+				data->ng_dof[i]);
+			for(k=0; k<data->ng_dof[i]; k++){
+				fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
+			}
+			fprintf (outfp, "</DataArray>\n");
 		}
+		fprintf (outfp, "</FieldData>\n");
 		fprintf (outfp, "<PPoints>\n");
 		fprintf (outfp, "<PDataArray type=\"Float32\" NumberOfComponents=\"3\"/>\n");
 		fprintf (outfp, "</PPoints>\n");
@@ -258,12 +294,26 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		fprintf (outfp, "</PCells>\n");
 		fprintf (outfp, "<PPointData>\n");
 		for(i=0; i<data->nn_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->node_label[i], data->nn_dof[i]);
+			if(
+				strcmp(data->node_label[i], "NodalPrincipalSTRAIN") == 0 ||
+				strcmp(data->node_label[i], "NodalPrincipalSTRESS") == 0
+			) {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"appended\"/>\n", data->node_label[i], data->nn_dof[i]);
+			} else {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->node_label[i], data->nn_dof[i]);
+			}
 		}
 		fprintf (outfp, "</PPointData>\n");
 		fprintf (outfp, "<PCellData>\n");
 		for(i=0; i<data->ne_component; i++){
-			fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			if(
+				strcmp(data->elem_label[i], "ElementalPrincipalSTRAIN") == 0 ||
+				strcmp(data->elem_label[i], "ElementalPrincipalSTRESS") == 0
+			) {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" ComponentName0=\"1st\" ComponentName1=\"2nd\" ComponentName2=\"3rd\" format=\"appended\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			} else {
+				fprintf (outfp, "<PDataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\"/>\n", data->elem_label[i], data->ne_dof[i]);
+			}
 		}
 		fprintf (outfp, "<PDataArray type=\"Int32\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"appended\"/>\n");
 		fprintf (outfp, "</PCellData>\n");
@@ -310,15 +360,17 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	fprintf (outfp, "<UnstructuredGrid>\n");
 	fprintf (outfp, "<FieldData>\n");
 	for(i=0; i<data->ng_component; i++){
-		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"  >\n", data->global_label[i], data->ng_dof[i]);
+		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfTuples=\"%d\"  >\n",
+			strcmp(data->global_label[i], "TOTALTIME") == 0 ? "TimeValue" : data->global_label[i],
+			data->ng_dof[i]);
 		shift=0;
 		for(j=0; j<i; j++){
 			shift += data->ng_dof[j];
 		}
-    for(k=0; k<data->ng_dof[i]; k++){
-      fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
-    }
-    fprintf (outfp, "\n");
+	for(k=0; k<data->ng_dof[i]; k++){
+		fprintf (outfp, "%e ", (float)data->global_val_item[k+shift]);
+	}
+	fprintf (outfp, "\n");
 		fprintf (outfp, "</DataArray>\n");
 	}
 	fprintf (outfp, "</FieldData>\n");

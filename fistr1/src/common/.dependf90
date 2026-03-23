@@ -1,16 +1,15 @@
 fstr_contact.o : fstr_contact.f90 fstr_ctrl_modifier.o 
-fstr_ctrl_common.o : fstr_ctrl_common.f90 fstr_ctrl_util_f.inc fstr_setup_util.o fstr_contact.o 
-fstr_ctrl_dynamic.o : fstr_ctrl_dynamic.f90 fstr_ctrl_util_f.inc 
-fstr_ctrl_eigen.o : fstr_ctrl_eigen.f90 fstr_ctrl_util_f.inc 
-fstr_ctrl_freq.o : fstr_ctrl_freq.f90 
-fstr_ctrl_heat.o : fstr_ctrl_heat.f90 fstr_ctrl_util_f.inc fstr_setup_util.o 
-fstr_ctrl_material.o : fstr_ctrl_material.f90 fstr_ctrl_util_f.inc 
+fstr_ctrl_common.o : fstr_ctrl_common.f90 ../../include/fstr_ctrl_util_f.mod fstr_setup_util.o fstr_contact.o 
+fstr_ctrl_dynamic.o : fstr_ctrl_dynamic.f90 ../../include/fstr_ctrl_util_f.mod 
+fstr_ctrl_eigen.o : fstr_ctrl_eigen.f90 ../../include/fstr_ctrl_util_f.mod 
+fstr_ctrl_heat.o : fstr_ctrl_heat.f90 ../../include/fstr_ctrl_util_f.mod fstr_setup_util.o 
+fstr_ctrl_material.o : fstr_ctrl_material.f90 ../../include/fstr_ctrl_util_f.mod 
 fstr_ctrl_modifier.o : fstr_ctrl_modifier.f90 fstr_setup_util.o 
-fstr_ctrl_static.o : fstr_ctrl_static.f90 fstr_ctrl_util_f.inc 
+fstr_ctrl_static.o : fstr_ctrl_static.f90 ../../include/fstr_ctrl_util_f.mod 
 fstr_debug_dump.o : fstr_debug_dump.f90 
 fstr_get_prop.o : fstr_get_prop.f90 
 fstr_precheck.o : fstr_precheck.f90 
 fstr_rcap_io.o : fstr_rcap_io.F90 
-fstr_setup.o : fstr_setup.f90 fstr_ctrl_freq.f90 fstr_ctrl_util_f.inc fstr_get_prop.o fstr_contact.o fstr_ctrl_material.o fstr_ctrl_dynamic.o fstr_ctrl_eigen.o fstr_ctrl_heat.o fstr_ctrl_static.o fstr_ctrl_common.o fstr_setup_util.o 
-fstr_setup_util.o : fstr_setup_util.f90 fstr_ctrl_util_f.inc 
+fstr_setup.o : fstr_setup.f90 ../../include/fstr_ctrl_util_f.mod fstr_get_prop.o fstr_contact.o fstr_ctrl_material.o fstr_ctrl_dynamic.o fstr_ctrl_eigen.o fstr_ctrl_heat.o fstr_ctrl_static.o fstr_ctrl_common.o fstr_setup_util.o 
+fstr_setup_util.o : fstr_setup_util.f90 ../../include/fstr_ctrl_util_f.mod 
 hecmw2fstr_mesh_conv.o : hecmw2fstr_mesh_conv.f90 

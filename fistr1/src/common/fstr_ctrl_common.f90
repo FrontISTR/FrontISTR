@@ -235,7 +235,7 @@ contains
     character(len=HECMW_NAME_LEN) :: header_name
     integer(kind=kint) :: bcid
     integer(kind=kint) :: i, n, sn, ierr
-    integer(kind=kint) :: bc_n, load_n, contact_n
+    integer(kind=kint) :: bc_n, load_n, contact_n, elemact_n
     real(kind=kreal) :: fn, f1, f2, f3
 
     fstr_ctrl_get_ISTEP = .false.
@@ -293,6 +293,7 @@ contains
     bc_n = 0
     load_n = 0
     contact_n = 0
+    elemact_n = 0
     do i=sn,n
       if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, header_name, bcid  )/= 0) return
       if( trim(header_name) == 'BOUNDARY' ) then
@@ -301,6 +302,8 @@ contains
         load_n = load_n +1
       else if( trim(header_name) == 'CONTACT' ) then
         contact_n = contact_n+1
+      else if( trim(header_name) == 'ELEMACT' ) then
+        elemact_n = elemact_n+1
       else if( trim(header_name) == 'TEMPERATURE' ) then
         !   steps%Temperature = .true.
       endif
@@ -309,10 +312,12 @@ contains
     if( bc_n>0 ) allocate( steps%Boundary(bc_n) )
     if( load_n>0 ) allocate( steps%Load(load_n) )
     if( contact_n>0 ) allocate( steps%Contact(contact_n) )
+    if( elemact_n>0 ) allocate( steps%ElemActivation(elemact_n) )
 
     bc_n = 0
     load_n = 0
     contact_n = 0
+    elemact_n = 0
     do i=sn,n
       if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, header_name, bcid  )/= 0) return
       if( trim(header_name) == 'BOUNDARY' ) then
@@ -324,6 +329,9 @@ contains
       else if( trim(header_name) == 'CONTACT' ) then
         contact_n = contact_n+1
         steps%Contact(contact_n) = bcid
+      else if( trim(header_name) == 'ELEMACT' ) then
+        elemact_n = elemact_n+1
+        steps%ElemActivation(elemact_n) = bcid
       endif
     end do
 
@@ -568,13 +576,13 @@ contains
 
     if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
       write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
-      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
-      do rcode=1,n
+    if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+    do rcode=1,n
         call fstr_strupr(cp_name(rcode))
-        contact(rcode)%pair_name = cp_name(rcode)
-        contact(rcode)%fcoeff = fcoeff(rcode)
-        contact(rcode)%tPenalty = tPenalty(rcode)
-      enddo
+      contact(rcode)%pair_name = cp_name(rcode)
+      contact(rcode)%fcoeff = fcoeff(rcode)
+      contact(rcode)%tPenalty = tPenalty(rcode)
+    enddo
     else if( contact(1)%algtype==CONTACTTIED ) then
       write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
       if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
@@ -958,5 +966,71 @@ contains
     fstr_ctrl_get_AMPLITUDE = 0
 
   end function fstr_ctrl_get_AMPLITUDE
+
+  !> Read in !ELEMENT_ACTIVATION
+  function fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, mode, measure, state, thlow, thup )
+    implicit none
+    integer(kind=kint) :: ctrl
+    character(len=HECMW_NAME_LEN) :: amp
+    real(kind=kreal) :: eps
+    character(len=HECMW_NAME_LEN),target :: grp_id_name(:)
+    integer(kind=kint) :: mode     ! 1=FIXED, 2=AMPLITUDE, 3=DAMAGE
+    integer(kind=kint) :: measure  ! 1=NONE, 2=STRESS, 3=STRAIN
+    integer(kind=kint) :: state    ! 0=ACTIVE, 1=INACTIVE
+    real(kind=kreal), target :: thlow(:), thup(:)
+    integer(kind=kint) :: fstr_ctrl_get_ELEMENT_ACTIVATION
+
+    character(len=HECMW_NAME_LEN),pointer :: element_id_p
+    real(kind=kreal),pointer :: thlow_p(:), thup_p(:)
+    integer(kind=kint) :: rcode, n
+    character(len=HECMW_NAME_LEN) :: data_fmt, s1
+
+    fstr_ctrl_get_ELEMENT_ACTIVATION = -1
+    
+    ! MODE (required)
+    if( fstr_ctrl_get_param_ex( ctrl, 'MODE ', 'FIXED,AMPLITUDE,DAMAGE ', 1, 'P', mode ) /= 0 ) return
+    
+    ! Mode-specific parameters
+    if( mode == 1 ) then
+      ! FIXED: STATE required
+      if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', 'ON,OFF ', 1, 'P', state ) /= 0 ) return
+      state = state - 1
+      measure = 1
+      amp = ''
+    elseif( mode == 2 ) then
+      ! AMPLITUDE: AMP required
+      if( fstr_ctrl_get_param_ex( ctrl, 'AMP ', '# ', 1, 'S', amp ) /= 0 ) return
+      state = 0
+      measure = 1
+    elseif( mode == 3 ) then
+      ! DAMAGE: MEASURE required
+      if( fstr_ctrl_get_param_ex( ctrl, 'MEASURE ', 'STRESS,STRAIN ', 1, 'P', measure ) /= 0 ) return
+      measure = measure + 1
+      state = 0
+      amp = ''
+    endif
+    
+    ! EPSILON (optional)
+    eps = 1.0d-6
+    if( fstr_ctrl_get_param_ex( ctrl, 'EPSILON ', '# ', 0, 'R', eps ) /= 0 ) return
+
+    write(s1,*) HECMW_NAME_LEN
+    n = fstr_ctrl_get_data_line_n(ctrl)
+    element_id_p => grp_id_name(1)
+    thlow_p => thlow
+    thup_p => thup
+
+    if( mode == 3 ) then
+      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(s1)), 'RR'
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p, thlow_p, thup_p )
+    else
+      write( data_fmt, '(a,a)') 'S', trim(adjustl(s1))
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p )
+    endif
+
+    fstr_ctrl_get_ELEMENT_ACTIVATION = 0
+
+  end function fstr_ctrl_get_ELEMENT_ACTIVATION
+
 
 end module fstr_ctrl_common

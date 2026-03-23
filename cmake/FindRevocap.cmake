@@ -64,6 +64,6 @@ endif()
 mark_as_advanced(REVOCAP_INCLUDE_PATH REVOCAP_RCAP_LIBRARY REVOCAP_RCAPF_LIBRARY)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(REVOCAP_Coupler
+find_package_handle_standard_args(Revocap
   DEFAULT_MSG REVOCAP_LIBRARIES REVOCAP_INCLUDE_PATH)
 

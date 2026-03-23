@@ -346,8 +346,8 @@ contains
                                      &  fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
       ! else
       !   alpha_tmp = 2.0d0*alpha_E
-      !   h_prime_tmp = 0.0d0 ! dummy value
-      !   pot_tmp = 0.0d0 ! dummy value
+      !   h_prime_tmp = 0.0d0 ! elemact value
+      !   pot_tmp = 0.0d0 ! elemact value
       !   call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
       !     alpha_S, h_prime_S, pot_S, alpha_tmp, h_prime_tmp, pot_tmp, alpha_E, h_prime_E, pot_E, &
       !     alpha_S_new, h_prime_S_new, pot_S_new, alpha_E_new, h_prime_E_new, pot_E_new)
@@ -558,7 +558,7 @@ contains
 
     integer(kind=kint) :: i, ierr, iter_ls
     real(kind=kreal) :: z_max
-    integer :: dummy
+    integer :: elemact
 
     ndof = hecMAT%NDOF
     len_vector = hecMESH%n_node*hecMesh%n_dof

@@ -247,7 +247,11 @@ contains
       if( any(fstrSOLID%contacts(:)%fcoeff /= 0.0d0) )  is_in_contact = 1
     endif
     call hecmw_allreduce_I1(hecMESH, is_in_contact, HECMW_MAX)
-    fstr_is_matrixStruct_symmetric = (is_in_contact == 0)
+    if( is_in_contact == 0 .and. hecMESH%n_dof /= 4 ) then
+      fstr_is_matrixStruct_symmetric = .true.
+    else
+      fstr_is_matrixStruct_symmetric = .false.
+    endif
 
   end function fstr_is_matrixStruct_symmetric
 

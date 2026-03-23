@@ -156,6 +156,7 @@ contains
     
     !! step = 1,2,....,fstrDYNAMIC%n_step
     do i = restrt_step_num, fstrDYNAMIC%n_step
+      if (ndof == 4 .and. hecMESH%my_rank==0) write(*,'(a,i5)')"iter: ",i
 
       fstrDYNAMIC%i_step = i
       fstrDYNAMIC%t_curr = fstrDYNAMIC%t_delta * i
@@ -200,7 +201,7 @@ contains
           !endif
 
           !C-- mechanical boundary condition
-          call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM)
+          call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
           do j = 1, hecMESH%n_node*hecMESH%n_dof
             hecMAT%B(j) = hecMAT%B(j) - fstrSOLID%QFORCE(j) + fstrSOLID%DFORCE(j)
           end do
@@ -239,13 +240,15 @@ contains
           call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
 
           res = dsqrt(res/res0)
-          if( hecMESH%my_rank==0 ) then
-              if(hecMESH%my_rank==0) write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
-            if(hecMESH%my_rank==0) write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
-            write(*,'(a,1e15.7)') ' - MaxDLag =',maxDLag
-            write(ISTA,'(a,1e15.7)') ' - MaxDLag =',maxDLag
+          if( fstrPARAM%nlgeom .and. ndof /= 4 ) then
+            if( hecMESH%my_rank==0 ) then
+              write(*,'(a,i5,a,1pe12.4)')"iter: ",iter,", res: ",res
+              write(ISTA,'(''iter='',I5,''- Residual'',E15.7)')iter,res
+              write(*,'(a,1e15.7)') ' - MaxDLag =',maxDLag
+              write(ISTA,'(a,1e15.7)') ' - MaxDLag =',maxDLag
+            endif
+            if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag < converg_dlag ) exit
           endif
-          if( res<fstrSOLID%step_ctrl(cstep)%converg .and. maxDLag < converg_dlag ) exit
 
           !   ----  For Parallel Contact with Multi-Partition Domains
           hecMAT%X = 0.0d0
@@ -265,6 +268,7 @@ contains
             &   fstrDYNAMIC%t_delta,iter, fstrDYNAMIC%strainEnergy )
 
           if(.not. fstrPARAM%nlgeom) exit
+          if(ndof == 4) exit
 
           ! ----- update the Lagrange multipliers
           if( fstr_is_contact_active() ) then

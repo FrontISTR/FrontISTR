@@ -41,7 +41,10 @@ CONTACT_NTRACTION,ON
 ###################################
 #####   CONTACT DEFINITIONS   #####
 ###################################
-!CONTACT, INTERACTION=FSLID, GRPID=1
+!CONTACT_PARAM, NAME=CPARAM1
+1.0e-4,  5.0e-3,  1.0e-2,  1.0e-4
+1.0e-6,  1.0e-6,  1.0,    -1.0e-8,  1.05
+!CONTACT, INTERACTION=FSLID, CONTACTPARAM=CPARAM1, GRPID=1
 CP1, 0.2, 50.0
 ###################################
 #####         MATERIAL        #####
@@ -53,7 +56,7 @@ CP1, 0.2, 50.0
 #####       STEP CONTROL      #####
 ###################################
 #!STEP, INC_TYPE=AUTO, SUBSTEPS=200
-#0.2, 1.0, 1E-5, 1.0
+#0.2, 1.0, 1E-5, 0.2
 !STEP, SUBSTEPS=1
 BOUNDARY,1
 BOUNDARY,2

@@ -310,7 +310,11 @@ contains
 
       if( fstrDYN%restart_nout > 0 ) then
         if ( mod(i,fstrDYN%restart_nout).eq.0 .or. i.eq.fstrDYN%n_step ) then
-          call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM)
+          if( associated( fstrSOLID%contacts ) )  then
+            call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,infoCTChange%contactNode_current)
+          else
+            call fstr_write_restart_dyna_nl(i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM)
+          end if
         end if
       end if
       !

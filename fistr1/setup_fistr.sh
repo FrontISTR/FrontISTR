@@ -12,6 +12,7 @@ WITHREFINER=0
 WITHMKL=0
 WITHMUMPS=0
 WITHML=0
+WITHNETCDF=0
 
 BUILDTARGET="build-default"
 NOBUILDTARGET="no-build"
@@ -74,6 +75,8 @@ do
 		WITHMUMPS=1
 	elif [ "\"$i\"" = "\"-with-ml\"" -o "\"$i\"" = "\"--with-ml\"" ]; then
 		WITHML=1
+	elif [ "\"$i\"" = "\"-with-netcdf\"" -o "\"$i\"" = "\"--with-netcdf\"" ]; then
+		WITHNETCDF=1
 	elif [ "\"$i\"" = "\"-remove-makefiles\"" -o "\"$i\"" = "\"--remove-makefiles\"" ]; then
 		REMOVEMAKEFILES=1
 	elif [ "\"$i\"" = "\"-gather-makefiles\"" -o "\"$i\"" = "\"--gather-makefiles\"" ]; then
@@ -91,6 +94,7 @@ do
 			--with-mkl              link mkl
 			--with-mumps            link mumps
 			--with-ml               link ml
+			--with-netcdf			link NetCDF
 			--remove-makefiles      remove all MAKEFILEs
 			--gather-makefiles      archive all MAKEFILEs
 			--show-all-options      print all options (show this message)
@@ -109,6 +113,7 @@ do
 			--with-mkl              link mkl
 			--with-mumps            link mumps
 			--with-ml               link ml
+			--with-netcdf			link NetCDF
 			-h, --help              show help(this message)
 		EOF
 		exit 1
@@ -254,6 +259,15 @@ fi
 if [ ${WITHML} -ne 1 ]; then
 	ML_LDFLAGS=""
 	ML_F90LDFLAGS=""
+fi
+
+#
+# with netcdf
+#
+if [ ${WITHNETCDF} -eq 1 ]; then
+	HECMW_CFLAGS="${HECMW_CFLAGS} -DWITH_NETCDF -I${NETCDFINCDIR}"
+	HECMW_LDFLAGS="${HECMW_LDFLAGS} -L${NETCDFLIBDIR} ${NETCDFLIBS}"
+	HECMW_F90LDFLAGS="${HECMW_F90LDFLAGS} -L${NETCDFLIBDIR} ${NETCDFLIBS}"
 fi
 
 #

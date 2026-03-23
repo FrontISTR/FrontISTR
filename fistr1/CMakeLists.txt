@@ -20,7 +20,7 @@ add_executable(fistr1)
 #
 target_include_directories(fistr PUBLIC ${FrontISTR_INCLUDE_DIRS} ${CMAKE_BINARY_DIR}/hecmw1)
 target_compile_definitions(fistr PUBLIC ${FrontISTR_DEFINITIONS})
-target_link_libraries(fistr PUBLIC ${FrontISTR_LIBRARIES} hecmw)
+target_link_libraries(fistr PUBLIC hecmw)
 
 #
 # Add subdirectories that will contribute sources to the fistr targets
@@ -31,7 +31,7 @@ add_subdirectory(src)
 # Link fistr1 with fistr and configure additional properties
 #
 target_link_libraries(fistr1 PRIVATE 
-  fistr hecmw
+  fistr
   ${CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES}
 )
 

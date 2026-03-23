@@ -83,7 +83,6 @@ contains
         cdsys_ID = hecMESH%section%sect_orien_ID(isect)
         if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
         thick = hecMESH%section%sect_R_item(ihead+1)
-        if( getSpaceDimension( ic_type )==2 ) thick =1.d0
         material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
 
         if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
@@ -163,6 +162,13 @@ contains
         else
           call StiffMat_abort( ic_type, 1 )
         endif
+
+        ! elemact element
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
+          call STF_DUMMY( ndof, nn, ecoord(:,1:nn), u(1:3,1:nn), &
+            &  stiffness(1:nn*ndof, 1:nn*ndof), fstrSOLID%elements(icel) )
+          !stiffness(:,:) = fstrSOLID%elements(icel)%elemact_coeff*stiffness(:,:)
+        end if
         !
         ! ----- CONSTRUCT the GLOBAL MATRIX STARTED
         call hecmw_mat_ass_elem(hecMAT, nn, nodLOCAL, stiffness)

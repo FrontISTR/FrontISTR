@@ -843,13 +843,17 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf,
                         sf[k].output_type = 16;
                       else if (strncmp(para1, "COMP_VTK", 8) == 0)
                         sf[k].output_type = 17;
+                      else if (strncmp(para1, "EXODUS", 6) == 0)
+                        sf[k].output_type = 18;
+                      else if (strncmp(para1, "STEP_EXODUS", 11) == 0)
+                        sf[k].output_type = 19;
                       else {
                         fprintf(stderr,
                                 "ERROR: HEC-MW-VIS-E1001: output_type is not "
                                 "correct\n");
                         HECMW_vis_print_exit(
                             "AVS or BMP or VIS_FEMAP_NEUTRAL or "
-                            "FSTR_FEMAP_NEUTRAL");
+                            "FSTR_FEMAP_NEUTRAL or VTK or BIN_VTK or EXODUS or STEP_EXODUS");
                       }
                       break;
                     case 21:
@@ -1245,9 +1249,9 @@ exit(0);
               }
             }
             if (stat_para[20] == 0) sf[k].output_type = 1;
-            if ((sf[k].output_type < 1) || (sf[k].output_type > 16)) {
+            if ((sf[k].output_type < 1) || (sf[k].output_type > 19)) {
               if (mynode == 0)
-                fprintf(stderr, "the output_type only can be 1 -- 16\n");
+                fprintf(stderr, "the output_type only can be 1 -- 19\n");
               HECMW_vis_print_exit("pls input and run again");
             }
             if (stat_para[22] == 0) sf[k].normalize_flag    = 0;

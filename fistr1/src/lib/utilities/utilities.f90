@@ -299,7 +299,7 @@ contains
     real(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
     data EPS/1.0E-35/
     DET=1.d0
-    LR = 0.0d0
+    LR = 0
     do I=1,NN
       IP(I)=I
     enddo
@@ -362,6 +362,45 @@ contains
     enddo
 
   end subroutine calInverse
+
+  !> Solve A x = b for dense NN x NN system (Gaussian elimination with partial pivoting)
+  subroutine calSolve(NN, A, b)
+    integer, intent(in)             :: NN
+    real(kind=kreal), intent(inout) :: A(NN,NN)  !> coefficient matrix (destroyed on exit)
+    real(kind=kreal), intent(inout) :: b(NN)     !> RHS on entry, solution on exit
+
+    integer          :: i, j, k, imax
+    real(kind=kreal) :: w, piv
+
+    ! Forward elimination
+    do k = 1, NN-1
+      imax = k
+      do i = k+1, NN
+        if( dabs(A(i,k)) > dabs(A(imax,k)) ) imax = i
+      end do
+      if( imax /= k ) then
+        do j = k, NN
+          w = A(k,j);  A(k,j) = A(imax,j);  A(imax,j) = w
+        end do
+        w = b(k);  b(k) = b(imax);  b(imax) = w
+      end if
+      piv = A(k,k)
+      do i = k+1, NN
+        w = A(i,k) / piv
+        do j = k+1, NN
+          A(i,j) = A(i,j) - w * A(k,j)
+        end do
+        b(i) = b(i) - w * b(k)
+      end do
+    end do
+    ! Back substitution
+    do i = NN, 1, -1
+      do j = i+1, NN
+        b(i) = b(i) - A(i,j) * b(j)
+      end do
+      b(i) = b(i) / A(i,i)
+    end do
+  end subroutine calSolve
 
   subroutine cross_product(v1,v2,vn)
     real(kind=kreal),intent(in)  ::  v1(3),v2(3)

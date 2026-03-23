@@ -74,6 +74,7 @@ target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_etype_f.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_varray_int_f.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_io.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_amplitude_f.f90
 )
 
 target_include_directories(hecmw PUBLIC

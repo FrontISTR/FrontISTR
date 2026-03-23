@@ -17,7 +17,7 @@ add_executable(hecmw_vis1)
 #
 foreach(target hec2rcap hecmw_part1 rmerge rconv hecmw_vis1)
   set_target_properties(${target} PROPERTIES LINKER_LANGUAGE "CXX")
-  target_link_libraries(${target} PRIVATE hecmw ${FrontISTR_LIBRARIES})
+  target_link_libraries(${target} PRIVATE hecmw)
   target_include_directories(${target} PUBLIC ${FrontISTR_INCLUDE_DIRS})
   target_compile_definitions(${target} PUBLIC ${FrontISTR_DEFINITIONS})
 endforeach()

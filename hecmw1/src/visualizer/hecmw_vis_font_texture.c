@@ -334,7 +334,7 @@ void mark_time_label(double font_size, int xr, int yr, double font_color[3],
   int i, j, m;
   int start_ys, start_xs, scale, len_step;
   double vv;
-  char buf[128], buf1[128], buf2[128], buf3[128];
+  char buf[300], buf1[128], buf2[140], buf3[140];
   int output7[7][7], tmp1, tmp2;
 
   font_size = 2.5;
@@ -366,7 +366,7 @@ void mark_time_label(double font_size, int xr, int yr, double font_color[3],
     buf3[0] = '0';
   }
 
-  sprintf(buf, "%s%s.%s%s", "T=", buf2, buf3, "s");
+  snprintf(buf, sizeof(buf), "%s%s.%s%s", "T=", buf2, buf3, "s");
 
   for (m = 0; m < max_len_step + 6; m++) {
     font7_generate(buf[max_len_step + 5 - m], output7);
