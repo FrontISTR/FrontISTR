@@ -209,9 +209,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if(is_33shell == 1 .or. ndof == 6)then
-      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "      " )
+      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "                " )
     else
-      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "      " )
+      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "                " )
     endif
 
     !laminated shell
@@ -1059,10 +1059,10 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(is_33shell == 1 .or. ndof == 6)then
       call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
-        & fstrSOLID%SHELL, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "      " )
+        & fstrSOLID%SHELL, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "                " )
     else
       call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
-        & fstrSOLID%SOLID, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "      " )
+        & fstrSOLID%SOLID, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "                " )
     endif
 
     !laminated shell
