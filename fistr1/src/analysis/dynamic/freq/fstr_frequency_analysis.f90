@@ -734,7 +734,7 @@ contains
     s = size(vector)
     do i=1, s
       if(i == 1) then
-        write(*,'("eigenvec",i2.2,":[",e12.5", ")') im, vector(i)
+        write(*,'("eigenvec",i2.2,":[",e12.5,", ")') im, vector(i)
       else if(i /= s) then
         write(*,'(e12.5,", ")') vector(i)
       else
