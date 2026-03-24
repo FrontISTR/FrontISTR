@@ -28,7 +28,7 @@ static void count_data_components(struct hecmwST_result_data *data,
 
 static void femap_write_elem(FILE *outfp, int mynode, int n_elem, int n_node,
                              int *global_elem_ID, int *elem_ID, int *elem_type,
-                             int *section_ID, int *elem_node_index,
+                             int *section_ID, long long *elem_node_index,
                              int *elem_node_item, int *global_node_ID,
                              int *sect_opt) {
   int i, j, m;
@@ -208,8 +208,9 @@ void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
   int tmp_int, tn_component, tmp_int2, te_component;
   double *tmp_recv_d, *tmp_send_d;
   int *tmp_recv_i, *tmp_elem_ID, *tmp_elem_type, *tmp_elem_global_ID,
-      *tmp_elem_node_index, *tmp_elem_node_item, *tmp_section_ID,
+      *tmp_elem_node_item, *tmp_section_ID,
       *tmp_node_global_ID, *tmp_send_i;
+  long long *tmp_elem_node_index;
   int disp_comp, stress_comp, disp_base, stress_base, name_len;
   int temp_comp, temp_base;
   FILE *outfp;
@@ -288,7 +289,7 @@ void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
                  VIS_COMM);
       HECMW_Send(mesh->section_ID, mesh->n_elem, HECMW_INT, MASTER_PE, 0,
                  VIS_COMM);
-      HECMW_Send(mesh->elem_node_index, mesh->n_elem + 1, HECMW_INT, MASTER_PE,
+      HECMW_Send(mesh->elem_node_index, mesh->n_elem + 1, HECMW_LONG_LONG, MASTER_PE,
                  0, VIS_COMM);
       HECMW_Send(mesh->elem_node_item, mesh->elem_node_index[mesh->n_elem],
                  HECMW_INT, MASTER_PE, 0, VIS_COMM);
@@ -314,7 +315,7 @@ void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
         tmp_elem_ID         = (int *)HECMW_calloc(tmp_int * 2, sizeof(int));
         tmp_elem_type       = (int *)HECMW_calloc(tmp_int, sizeof(int));
         tmp_section_ID      = (int *)HECMW_calloc(tmp_int, sizeof(int));
-        tmp_elem_node_index = (int *)HECMW_calloc(tmp_int + 1, sizeof(int));
+        tmp_elem_node_index = (long long *)HECMW_calloc(tmp_int + 1, sizeof(long long));
         if ((tmp_elem_global_ID == NULL) || (tmp_elem_ID == NULL) ||
             (tmp_elem_type == NULL) || (tmp_section_ID == NULL))
           HECMW_vis_memory_exit("tmp recv");
@@ -327,7 +328,7 @@ void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
                    VIS_COMM, &stat);
         HECMW_Recv(tmp_section_ID, tmp_int, HECMW_INT, j, HECMW_ANY_TAG,
                    VIS_COMM, &stat);
-        HECMW_Recv(tmp_elem_node_index, tmp_int + 1, HECMW_INT, j,
+        HECMW_Recv(tmp_elem_node_index, tmp_int + 1, HECMW_LONG_LONG, j,
                    HECMW_ANY_TAG, VIS_COMM, &stat);
 
         tmp_elem_node_item =
@@ -815,7 +816,7 @@ static const int *avs_elem_node_order(int elem_type) {
 
 static void avs_write_elem_conn(FILE *outfp, int mynode, int n_elem,
                                 int *elem_ID, int *elem_type,
-                                int *elem_node_index, int *elem_node_item,
+                                long long *elem_node_index, int *elem_node_item,
                                 int *global_elem_ID, int *global_node_ID,
                                 int *node_ID, int flag_global_ID,
                                 int flag_skip_external, int flag_oldUCD,
@@ -1107,7 +1108,7 @@ static void avs_output(struct hecmwST_local_mesh *mesh,
                  VIS_COMM);
       HECMW_Send(mesh->elem_type, mesh->n_elem, HECMW_INT, MASTER_PE, 0,
                  VIS_COMM);
-      HECMW_Send(mesh->elem_node_index, mesh->n_elem + 1, HECMW_INT, MASTER_PE,
+      HECMW_Send(mesh->elem_node_index, mesh->n_elem + 1, HECMW_LONG_LONG, MASTER_PE,
                  0, VIS_COMM);
       HECMW_Send(mesh->elem_node_item, mesh->elem_node_index[mesh->n_elem],
                  HECMW_INT, MASTER_PE, 0, VIS_COMM);
@@ -1147,7 +1148,7 @@ static void avs_output(struct hecmwST_local_mesh *mesh,
         int tmp_n_node;
         int *tmp_elem_ID;
         int *tmp_elem_type;
-        int *tmp_elem_node_index;
+        long long *tmp_elem_node_index;
         int *tmp_elem_node_item;
         int *tmp_global_elem_ID;
         int *tmp_global_node_ID;
@@ -1158,7 +1159,7 @@ static void avs_output(struct hecmwST_local_mesh *mesh,
 
         tmp_elem_ID         = (int *)HECMW_calloc(tmp_n_elem * 2, sizeof(int));
         tmp_elem_type       = (int *)HECMW_calloc(tmp_n_elem, sizeof(int));
-        tmp_elem_node_index = (int *)HECMW_calloc(tmp_n_elem + 1, sizeof(int));
+        tmp_elem_node_index = (long long *)HECMW_calloc(tmp_n_elem + 1, sizeof(long long));
         if ((tmp_elem_ID == NULL) || (tmp_elem_type == NULL) ||
             (tmp_elem_node_index == NULL))
           HECMW_vis_memory_exit(
@@ -1168,7 +1169,7 @@ static void avs_output(struct hecmwST_local_mesh *mesh,
                    VIS_COMM, &stat);
         HECMW_Recv(tmp_elem_type, tmp_n_elem, HECMW_INT, j, HECMW_ANY_TAG,
                    VIS_COMM, &stat);
-        HECMW_Recv(tmp_elem_node_index, tmp_n_elem + 1, HECMW_INT, j,
+        HECMW_Recv(tmp_elem_node_index, tmp_n_elem + 1, HECMW_LONG_LONG, j,
                    HECMW_ANY_TAG, VIS_COMM, &stat);
 
         tmp_elem_node_item =
@@ -1393,8 +1394,9 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
   int ielm, nn[20], tmp_int, tn_component, tmp_int2, te_component, tmp_nn[20];
   double *tmp_recv_d, *tmp_send_d;
   int *tmp_recv_i, *tmp_elem_ID, *tmp_elem_type, *tmp_elem_global_ID,
-      *tmp_elem_node_index, *tmp_elem_node_item, *tmp_section_ID,
+      *tmp_elem_node_item, *tmp_section_ID,
       *tmp_node_global_ID;
+  long long *tmp_elem_node_index;
   FILE *fp, *fp2;
   int total_n_node, total_n_elem;
 
@@ -1608,7 +1610,7 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
                  VIS_COMM);
       HECMW_Send(mesh->elem_ID, mesh->n_elem * 2, HECMW_INT, MASTER_PE, 0,
                  VIS_COMM);
-      HECMW_Send(mesh->elem_node_index, mesh->n_elem + 1, HECMW_INT, MASTER_PE,
+      HECMW_Send(mesh->elem_node_index, mesh->n_elem + 1, HECMW_LONG_LONG, MASTER_PE,
                  0, VIS_COMM);
       HECMW_Send(mesh->elem_node_item, mesh->elem_node_index[mesh->n_elem],
                  HECMW_INT, MASTER_PE, 0, VIS_COMM);
@@ -1682,7 +1684,7 @@ else {
         tmp_elem_ID         = (int *)HECMW_calloc(tmp_int * 2, sizeof(int));
         tmp_elem_type       = (int *)HECMW_calloc(tmp_int, sizeof(int));
         tmp_section_ID      = (int *)HECMW_calloc(tmp_int, sizeof(int));
-        tmp_elem_node_index = (int *)HECMW_calloc(tmp_int + 1, sizeof(int));
+        tmp_elem_node_index = (long long *)HECMW_calloc(tmp_int + 1, sizeof(long long));
         if ((tmp_elem_global_ID == NULL) || (tmp_elem_ID == NULL) ||
             (tmp_elem_type == NULL) || (tmp_section_ID == NULL))
           HECMW_vis_memory_exit("tmp recv");
@@ -1690,7 +1692,7 @@ else {
                    VIS_COMM, &stat);
         HECMW_Recv(tmp_elem_ID, tmp_int * 2, HECMW_INT, j, HECMW_ANY_TAG,
                    VIS_COMM, &stat);
-        HECMW_Recv(tmp_elem_node_index, tmp_int + 1, HECMW_INT, j,
+        HECMW_Recv(tmp_elem_node_index, tmp_int + 1, HECMW_LONG_LONG, j,
                    HECMW_ANY_TAG, VIS_COMM, &stat);
         tmp_elem_node_item =
             (int *)HECMW_calloc(tmp_elem_node_index[tmp_int], sizeof(int));
