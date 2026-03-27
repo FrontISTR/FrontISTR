@@ -1,0 +1,8 @@
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+ mix_model.msh
+!CONTROL, NAME=fstrCNT
+ mix_model_761.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ mix_model_761.res
+!RESULT, NAME=vis_out, IO=OUT
+ mix_model_761_vis
