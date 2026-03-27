@@ -391,8 +391,10 @@ contains
         fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
         fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
         fstrSOLID%materials(cid)%mtype = ELASTIC
-        fstrSOLID%materials(cid)%totallyr = n_totlyr
-        fstrSOLID%materials(cid)%shell_var => shmat
+        if( hecMESH%section%sect_type(i) == 2 ) then
+          fstrSOLID%materials(cid)%totallyr = n_totlyr
+          fstrSOLID%materials(cid)%shell_var => shmat
+        endif
       enddo
     endif
 
