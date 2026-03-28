@@ -48,15 +48,17 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		outfile = p+1;
 	}
 
-	sprintf(file_vtu, "%s/%s.%d.vtu", outfile1, outfile, myrank);
+	snprintf(file_vtu, sizeof(file_vtu), "%s/%s.%d.vtu", outfile1, outfile, myrank);
 	if(HECMW_ctrl_make_subdir(file_vtu)) {
 		HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output directory");
 	}
 
 	if (myrank == 0) {
 		/* outpu pvtu file */
-		sprintf(file_pvtu, "%s.pvtu", outfile1);
+		snprintf(file_pvtu, sizeof(file_pvtu), "%s.pvtu", outfile1);
 		outfp = fopen (file_pvtu, "w");
+		if (!outfp)
+			HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output file");
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
@@ -107,7 +109,7 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		}
 		fprintf (outfp, "</PCellData>\n");
 		for(i=0; i<petot; i++){
-			sprintf (buf, "./%s/%s.%d.vtu", outfile, outfile, i);
+			snprintf (buf, sizeof(buf), "./%s/%s.%d.vtu", outfile, outfile, i);
 			fprintf (outfp, "<Piece Source=\"%s\"/>\n", buf);
 		}
 		fprintf (outfp, "</PUnstructuredGrid>\n");
@@ -117,6 +119,8 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 
 	/* output vtu file */
 	outfp = fopen (file_vtu, "w");
+	if (!outfp)
+		HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output file");
 	fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 	fprintf (outfp, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\">\n");
 	fprintf (outfp, "<UnstructuredGrid>\n");
@@ -259,15 +263,17 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		data_tot_e += data->ne_dof[i];
 	}
 
-	sprintf(file_vtu,  "%s/%s.%d.vtu", outfile1, outfile, myrank);
+	snprintf(file_vtu,  sizeof(file_vtu), "%s/%s.%d.vtu", outfile1, outfile, myrank);
 	if(HECMW_ctrl_make_subdir(file_vtu)) {
 		HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output directory");
 	}
 
 	if (myrank == 0) {
 		/* outpu pvtu file */
-		sprintf(file_pvtu, "%s.pvtu", outfile1);
+		snprintf(file_pvtu, sizeof(file_pvtu), "%s.pvtu", outfile1);
 		outfp = fopen (file_pvtu, "wb");
+		if (!outfp)
+			HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output file");
 		fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 		fprintf (outfp, "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"%s\" header_type=\"UInt32\">\n", HECMW_endian_str());
 		fprintf (outfp, "<PUnstructuredGrid>\n");
@@ -318,7 +324,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		fprintf (outfp, "<PDataArray type=\"Int32\" Name=\"Mesh_Type\" NumberOfComponents=\"1\" format=\"appended\"/>\n");
 		fprintf (outfp, "</PCellData>\n");
 		for(i=0; i<petot; i++){
-			sprintf (buf,  "./%s/%s.%d.vtu", outfile, outfile, i);
+			snprintf (buf, sizeof(buf), "./%s/%s.%d.vtu", outfile, outfile, i);
 			fprintf (outfp, "<Piece Source=\"%s\"/>\n", buf);
 		}
 		fprintf (outfp, "</PUnstructuredGrid>\n");
@@ -355,6 +361,8 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	}
 
 	outfp = fopen (file_vtu, "wb");
+	if (!outfp)
+		HECMW_vis_print_exit("ERROR: HEC-MW-VIS-E0009: Cannot open output file");
 	fprintf (outfp, "<?xml version=\"1.0\"?>\n");
 	fprintf (outfp, "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"%s\" header_type=\"UInt32\">\n", HECMW_endian_str());
 	fprintf (outfp, "<UnstructuredGrid>\n");

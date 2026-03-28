@@ -248,6 +248,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
       for (j = 0; j < data->ng_component; j++) {
         res[i]->result->ng_dof[j]     = data->ng_dof[j];
         res[i]->result->global_label[j] = HECMW_strdup(data->global_label[j]);
+        if (!res[i]->result->global_label[j]) return NULL;
       }
 
       res[i]->result->nn_component = data->nn_component;
@@ -260,6 +261,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
       for (j = 0; j < data->nn_component; j++) {
         res[i]->result->nn_dof[j]     = data->nn_dof[j];
         res[i]->result->node_label[j] = HECMW_strdup(data->node_label[j]);
+        if (!res[i]->result->node_label[j]) return NULL;
         num += data->nn_dof[j];
       }
 
@@ -302,6 +304,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
       for (j = 0; j < data->ne_component; j++) {
         res[i]->result->ne_dof[j]     = data->ne_dof[j];
         res[i]->result->elem_label[j] = HECMW_strdup(data->elem_label[j]);
+        if (!res[i]->result->elem_label[j]) return NULL;
         num += data->ne_dof[j];
       }
 
@@ -377,20 +380,31 @@ struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
     eitem += res[0]->result->ne_dof[i];
 
   data             = HECMW_malloc(sizeof(struct hecmwST_result_data));
+  if (!data) return NULL;
   data->ng_dof     = HECMW_malloc(res[0]->result->ng_component * sizeof(int));
+  if (!data->ng_dof) return NULL;
   data->global_label = HECMW_malloc(res[0]->result->ng_component * sizeof(char*));
+  if (!data->global_label) return NULL;
   data->global_val_item = HECMW_malloc(gitem * sizeof(double));
+  if (!data->global_val_item) return NULL;
   data->nn_dof     = HECMW_malloc(res[0]->result->nn_component * sizeof(int));
+  if (!data->nn_dof) return NULL;
   data->node_label = HECMW_malloc(res[0]->result->nn_component * sizeof(char*));
+  if (!data->node_label) return NULL;
   data->node_val_item = HECMW_malloc(nitem * glt->node_n * sizeof(double));
+  if (!data->node_val_item) return NULL;
   data->ne_dof     = HECMW_malloc(res[0]->result->ne_component * sizeof(int));
+  if (!data->ne_dof) return NULL;
   data->elem_label = HECMW_malloc(res[0]->result->ne_component * sizeof(char*));
+  if (!data->elem_label) return NULL;
   data->elem_val_item = HECMW_malloc(eitem * glt->elem_n * sizeof(double));
+  if (!data->elem_val_item) return NULL;
 
   data->ng_component = res[0]->result->ng_component;
   for (i = 0; i < res[0]->result->ng_component; i++) {
     data->ng_dof[i]     = res[0]->result->ng_dof[i];
     data->global_label[i] = HECMW_strdup(res[0]->result->global_label[i]);
+    if (!data->global_label[i]) return NULL;
   }
   for (i = 0; i < gitem; i++) {
     data->global_val_item[i] = res[0]->result->global_val_item[i];
@@ -410,6 +424,7 @@ struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
   for (i = 0; i < res[0]->result->nn_component; i++) {
     data->nn_dof[i]     = res[0]->result->nn_dof[i];
     data->node_label[i] = HECMW_strdup(res[0]->result->node_label[i]);
+    if (!data->node_label[i]) return NULL;
   }
 
   count = 0;
@@ -432,6 +447,7 @@ struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
   for (i = 0; i < res[0]->result->ne_component; i++) {
     data->ne_dof[i]     = res[0]->result->ne_dof[i];
     data->elem_label[i] = HECMW_strdup(res[0]->result->elem_label[i]);
+    if (!data->elem_label[i]) return NULL;
   }
 
   return data;

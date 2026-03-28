@@ -400,7 +400,9 @@ static int output_result_header_ST(struct hecmwST_result_data *result, char *hea
 
   /* header */
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
-    sprintf(head,"%s %d.%d",head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
+    char tmp[HECMW_HEADER_LEN+1];
+    snprintf(tmp, sizeof(tmp), "%s %d.%d", head, HECMW_RESULT_FILEVER_MAJOR, HECMW_RESULT_FILEVER_MINOR);
+    memcpy(head, tmp, sizeof(head));
   }
   rc = fprintf(fp, "%s\n", head);
   if(rc < 0) {
@@ -754,7 +756,12 @@ static int input_result_header(struct hecmwST_result_data *result, FILE *fp) {
   Line_Buf[ strlen(Line_Buf)-1 ] = 0;/* remove CR/LF*/
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     ptr = strtok(Line_Buf, " ");
-    sprintf(Line_Buf, "%s", ptr);
+    if(ptr != Line_Buf) {
+      size_t len = strlen(ptr);
+      memmove(Line_Buf, ptr, len + 1);
+    } else {
+      ptr[strlen(ptr)] = '\0';
+    }
   }
   strcpy( ResIO.head, Line_Buf );
 
@@ -843,7 +850,7 @@ static int input_result_global(struct hecmwST_result_data *result, FILE *fp) {
     if(get_line(Line_Buf, sizeof(Line_Buf), fp) < 0) {
       return -1;
     }
-    rc = sscanf(Line_Buf, "%s", label);
+    rc = sscanf(Line_Buf, "%63s", label);
     if(rc == EOF) {
       HECMW_set_error(HECMW_UTIL_E0204, "");
       return -1;
@@ -983,7 +990,7 @@ static int input_result_node(struct hecmwST_result_data *result, int n_node, FIL
     if(get_line(Line_Buf, sizeof(Line_Buf), fp) < 0) {
       return -1;
     }
-    rc = sscanf(Line_Buf, "%s", label);
+    rc = sscanf(Line_Buf, "%63s", label);
     if(rc == EOF) {
       HECMW_set_error(HECMW_UTIL_E0204, "");
       return -1;
@@ -1106,7 +1113,7 @@ static int input_result_elem(struct hecmwST_result_data *result, int n_elem, FIL
     if(get_line(Line_Buf, sizeof(Line_Buf), fp) < 0) {
       return -1;
     }
-    rc = sscanf(Line_Buf, "%s", label);
+    rc = sscanf(Line_Buf, "%63s", label);
     if(rc == EOF) {
       HECMW_set_error(HECMW_UTIL_E0204, "");
       return -1;

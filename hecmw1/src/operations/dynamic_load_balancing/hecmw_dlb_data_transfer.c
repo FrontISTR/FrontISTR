@@ -194,9 +194,9 @@ void hecmw_dlb_c2f_finalize_() {
   if (new_mesh->import_index != NULL) free(new_mesh->import_index);
   if (new_mesh->import_item != NULL) free(new_mesh->import_item);
   if (new_mesh->export_index != NULL) free(new_mesh->export_index);
-  if (new_mesh->import_item != NULL) free(new_mesh->export_item);
+  if (new_mesh->export_item != NULL) free(new_mesh->export_item);
   if (new_mesh->shared_index != NULL) free(new_mesh->shared_index);
-  if (new_mesh->import_item != NULL) free(new_mesh->shared_item);
+  if (new_mesh->shared_item != NULL) free(new_mesh->shared_item);
 
   if (new_mesh->when_i_was_refined_node != NULL)
     free(new_mesh->when_i_was_refined_node);
@@ -508,7 +508,7 @@ void hecmw_set_data_(int *ivar, int *i_free, double *U, double *P, double
 *)calloc(v.node->t_component*v.mesh->n_node,sizeof(double));
         if(v.node->data==NULL) {
                 fprintf(stderr, "There is no enough memory for v.node->data\n");
-                exit(0);
+                exit(EXIT_FAILURE);
         }
 
 

@@ -1062,18 +1062,18 @@ if(endj>vr->yr) endj=vr->yr;
             sprintf(fname, "%s.%d.%d.bmp", outfile1, *timestep, ii);
                            */
                           if (*timestep >= 1000)
-                            sprintf(timestep_str, "%d", *timestep);
+                            snprintf(timestep_str, sizeof(timestep_str), "%d", *timestep);
                           else if (*timestep >= 100)
-                            sprintf(timestep_str, "0%d", *timestep);
+                            snprintf(timestep_str, sizeof(timestep_str), "0%d", *timestep);
                           else if (*timestep >= 10)
-                            sprintf(timestep_str, "00%d", *timestep);
+                            snprintf(timestep_str, sizeof(timestep_str), "00%d", *timestep);
                           else
-                            sprintf(timestep_str, "000%d", *timestep);
+                            snprintf(timestep_str, sizeof(timestep_str), "000%d", *timestep);
                           if (ii >= 10)
-                            sprintf(rotate_str, "%d", ii);
+                            snprintf(rotate_str, sizeof(rotate_str), "%d", ii);
                           else
-                            sprintf(rotate_str, "0%d", ii);
-                          sprintf(fname, "%s.%s.%s.bmp", outfile, timestep_str,
+                            snprintf(rotate_str, sizeof(rotate_str), "0%d", ii);
+                          snprintf(fname, sizeof(fname), "%s.%s.%s.bmp", outfile, timestep_str,
                                   rotate_str);
 
                           FP = fopen(fname, "wb");
