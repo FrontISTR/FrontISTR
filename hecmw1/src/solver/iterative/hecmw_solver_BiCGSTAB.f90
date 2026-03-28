@@ -168,12 +168,7 @@ contains
 #endif
 
     !C-- set arbitrary {r_tld}
-    !$acc kernels
-    !$acc loop independent
-    do i=1, NNDOF
-      WW(i,RT) = WW(i,R)
-    enddo
-    !$acc end kernels
+    call hecmw_copy_R(NNDOF, WW(:,R), WW(:,RT))
 
     !C-- compute ||{b}||
     call hecmw_InnerProduct_R(hecMESH, NDOF, B, B, BNRM2, Tcomm)
@@ -223,19 +218,10 @@ contains
       !C===
       if ( iter.gt.1 ) then
         BETA = (RHO/RHO1) * (ALPHA/OMEGA)
-        !$acc kernels
-        !$acc loop independent
-        do i = 1, NNDOF
-          WW(i,P) = WW(i,R) + BETA * (WW(i,P) - OMEGA * WW(i,V))
-        enddo
-        !$acc end kernels
+        call hecmw_axpy_R(NNDOF, -OMEGA, WW(:,V), WW(:,P))
+        call hecmw_xpay_R(NNDOF,   BETA, WW(:,R), WW(:,P))
       else
-        !$acc kernels
-        !$acc loop independent
-        do i = 1, NNDOF
-          WW(i,P) = WW(i,R)
-        enddo
-        !$acc end kernels
+        call hecmw_copy_R(NNDOF, WW(:,R), WW(:,P))
       endif
 
       !C===
@@ -268,12 +254,7 @@ contains
 
       !C
       !C-- {s}= {r} - ALPHA*{V}
-      !$acc kernels
-      !$acc loop independent
-      do i = 1, NNDOF
-        WW(i,S) = WW(i,R) - ALPHA * WW(i,V)
-      enddo
-      !$acc end kernels
+      call hecmw_axpyz_R(NNDOF, -ALPHA, WW(:,V), WW(:,R), WW(:,S))
 
       !C===
       !C +--------------------+
@@ -316,12 +297,8 @@ contains
       !C | update {x},{r} |
       !C +----------------+
       !C===
-      !$acc kernels
-      !$acc loop independent
-      do i = 1, NNDOF
-        X (i) = X(i) + ALPHA * WW(i,PT) + OMEGA * WW(i,ST)
-      enddo
-      !$acc end kernels
+      call hecmw_axpy_R(NNDOF, ALPHA, WW(:,PT), X)
+      call hecmw_axpy_R(NNDOF, OMEGA, WW(:,ST), X)
       !C
       !C--- recompute R sometimes
       if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
@@ -331,12 +308,7 @@ contains
         call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
 #endif
       else
-        !$acc kernels
-        !$acc loop independent
-        do i = 1, NNDOF
-          WW(i,R) = WW(i,S) - OMEGA * WW(i,T)
-        enddo
-        !$acc end kernels
+        call hecmw_axpyz_R(NNDOF, -OMEGA, WW(:,T), WW(:,S), WW(:,R))
       endif
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)

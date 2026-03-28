@@ -23,10 +23,8 @@ ELEMACT,ON
  PART_1_1_FIX,3,3
 !CLOAD, GRPID=1
 SET_1, 1, 1.0
-!ELEMENT_ACTIVATION, MODE=FIXED, STATE=OFF, EPSILON=1.0E-3, GRPID=1
-PART_1_1_DUM1
-!ELEMENT_ACTIVATION, MODE=FIXED, STATE=OFF, EPSILON=1.0E-3, GRPID=2
-PART_1_1_DUM2
+!ELEMENT_ACTIVATION, MODE=DAMAGE, MEASURE=STRESS, EPSILON=1.0E-3, GRPID=1
+PART_1_1_DUM1, -1.0, 0.0001
 ###################################
 #####         MATERIAL        #####
 ###################################
@@ -39,19 +37,11 @@ PART_1_1_DUM2
 !STEP, SUBSTEPS=1
 BOUNDARY,1
 LOAD,1
-!STEP, SUBSTEPS=1
-BOUNDARY,1
-LOAD,1
 ELEMACT,1
-!STEP, SUBSTEPS=1
-BOUNDARY,1
-LOAD,1
-ELEMACT,1
-ELEMACT,2
 ###################################
 #####      FOR VISUALIZER     #####
 ###################################
-!WRITE,VISUAL
+#!WRITE,VISUAL
 !VISUAL, method=PSR
 !surface_num=1
 !surface 1

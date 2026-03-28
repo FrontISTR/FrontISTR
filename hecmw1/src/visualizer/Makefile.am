@@ -86,6 +86,7 @@ PSF_OBJS = \
 	hecmw_vis_subimage_composite_sf.@cobjfilepostfix@ \
 	hecmw_fstr_output_femap.@cobjfilepostfix@ \
 	hecmw_fstr_output_vtk.@cobjfilepostfix@ \
+	hecmw_fstr_output_exo.@cobjfilepostfix@ \
 	hecmw_fstr_endian.@cobjfilepostfix@
 
 PVR_OBJS = \
@@ -113,6 +114,7 @@ OBJS = \
 
 HEADERS = \
 	hecmw_fstr_output_femap.h \
+	hecmw_fstr_output_exo.h \
 	hecmw_vis_SF_geom.h \
 	hecmw_vis_bmp.h \
 	hecmw_vis_calc_attr.h \

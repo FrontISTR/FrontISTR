@@ -1822,7 +1822,7 @@ static int setup_elem(struct hecmwST_local_mesh *mesh) {
   /* set elem_ID, global_elem_ID, elem_internal_list, elem_type */
   HECMW_map_int_iter_init(_elem);
   for (i = 0; HECMW_map_int_iter_next(_elem, &id, (void **)&p); i++) {
-    int start;
+    size_t start;
 
     /* connectivity */
     n     = mesh->elem_node_index[i + 1] - mesh->elem_node_index[i];

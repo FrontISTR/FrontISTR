@@ -134,13 +134,12 @@ contains
   !C*** hecmw_axpy_R
   !C***
   !C
-  subroutine hecmw_axpy_R (hecMESH, ndof, alpha, X, Y)
+  subroutine hecmw_axpy_R (n, alpha, X, Y)
 
     use hecmw_util
 
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: ndof
+    integer(kind=kint) :: n
     real(kind=kreal) :: X(:), Y(:)
     real(kind=kreal)          :: alpha
 
@@ -154,7 +153,7 @@ contains
     !$OMP PARALLEL
     !$OMP DO
 #endif
-    do i = 1, hecMESH%nn_internal * ndof
+    do i = 1, n
       Y(i) = alpha * X(i) + Y(i) 
     end do
 #ifdef _OPENACC
@@ -171,13 +170,12 @@ contains
   !C*** hecmw_xpay_R
   !C***
   !C
-  subroutine hecmw_xpay_R (hecMESH, ndof, alpha, X, Y)
+  subroutine hecmw_xpay_R (n, alpha, X, Y)
 
     use hecmw_util
 
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: ndof
+    integer(kind=kint) :: n
     real(kind=kreal) :: X(:), Y(:)
     real(kind=kreal)          :: alpha
 
@@ -190,7 +188,7 @@ contains
     !$OMP PARALLEL
     !$OMP DO
 #endif
-    do i = 1, hecMESH%nn_internal * ndof
+    do i = 1, n
       Y(i) = X(i) + alpha *  Y(i) 
     end do
 #ifdef _OPENACC
@@ -204,29 +202,92 @@ contains
 
   !C
   !C***
-  !C*** hecmw_axpyz_R
+  !C*** hecmw_axpby_R
   !C***
   !C
-  subroutine hecmw_axpyz_R (hecMESH, ndof, alpha, X, Y, Z)
+  subroutine hecmw_axpby_R (n, alpha, beta, X, Y)
 
     use hecmw_util
 
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: ndof
+    integer(kind=kint) :: n
+    real(kind=kreal) :: X(:), Y(:)
+    real(kind=kreal)          :: alpha, beta
+
+    integer(kind=kint) :: i
+
+    
+    if (beta == 0.d0) then
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+#else
+      !$OMP PARALLEL
+      !$OMP DO
+#endif
+      do i = 1, n
+        Y(i) = alpha * X(i)
+      end do
+#ifdef _OPENACC
+      !$acc end kernels
+#else
+      !$OMP END DO
+      !$OMP END PARALLEL
+#endif
+    else
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+#else
+      !$OMP PARALLEL
+      !$OMP DO
+#endif
+      do i = 1, n
+        Y(i) = alpha * X(i) + beta * Y(i)
+      end do
+#ifdef _OPENACC
+      !$acc end kernels
+#else
+      !$OMP END DO
+      !$OMP END PARALLEL
+#endif
+    end if
+
+  end subroutine hecmw_axpby_R
+
+  !C
+  !C***
+  !C*** hecmw_axpyz_R
+  !C***
+  !C
+  subroutine hecmw_axpyz_R (n, alpha, X, Y, Z)
+
+    use hecmw_util
+
+    implicit none
+    integer(kind=kint) :: n
     real(kind=kreal) :: X(:), Y(:), Z(:)
     real(kind=kreal)          :: alpha
 
     integer(kind=kint) :: i
 
     
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$OMP PARALLEL
     !$OMP DO
-    do i = 1, hecMESH%nn_internal * ndof
+#endif
+    do i = 1, n
       Z(i) = alpha * X(i) + Y(i) 
     end do
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$OMP END DO
     !$OMP END PARALLEL 
+#endif
   end subroutine hecmw_axpyz_R
 
   !C
@@ -234,25 +295,52 @@ contains
   !C*** hecmw_scale_R
   !C***
   !C
-  subroutine hecmw_scale_R (hecMESH, ndof, alpha, X)
+  subroutine hecmw_scale_R (n, alpha, X)
 
     use hecmw_util
 
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: ndof
+    integer(kind=kint) :: n
     real(kind=kreal) :: X(:)
     real(kind=kreal)          :: alpha
 
     integer(kind=kint) :: i
     
-    !$OMP PARALLEL
-    !$OMP DO
-    do i = 1, hecMESH%nn_internal * ndof
-      X(i) = alpha * X(i) 
-    end do
-    !$OMP END DO
-    !$OMP END PARALLEL 
+    if (alpha == 0.d0) then
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+#else
+      !$OMP PARALLEL
+      !$OMP DO
+#endif
+      do i = 1, n
+        X(i) = 0.d0
+      end do
+#ifdef _OPENACC
+      !$acc end kernels
+#else
+      !$OMP END DO
+      !$OMP END PARALLEL
+#endif
+    else
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+#else
+      !$OMP PARALLEL
+      !$OMP DO
+#endif  
+      do i = 1, n
+        X(i) = alpha * X(i) 
+      end do
+#ifdef _OPENACC
+      !$acc end kernels
+#else
+      !$OMP END DO
+      !$OMP END PARALLEL
+#endif
+    end if
 
   end subroutine hecmw_scale_R
 
@@ -261,13 +349,12 @@ contains
   !C*** hecmw_copy_R
   !C***
   !C
-  subroutine hecmw_copy_R (hecMESH, ndof, X, Y)
+  subroutine hecmw_copy_R (n, X, Y)
 
     use hecmw_util
 
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    integer(kind=kint) :: ndof
+    integer(kind=kint) :: n
     real(kind=kreal) :: X(:), Y(:)
 
     integer(kind=kint) :: i
@@ -280,7 +367,7 @@ contains
     !$OMP PARALLEL
     !$OMP DO
 #endif
-    do i = 1, hecMESH%nn_internal * ndof
+    do i = 1, n
       Y(i) = X(i) 
     end do
 #ifdef _OPENACC
