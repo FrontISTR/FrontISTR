@@ -616,7 +616,7 @@ contains
     type (fstr_solid)         :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
     integer(kind=kint)        :: istep
-    real(kind=kreal) :: time
+    real(kind=kreal) :: time, coords(3,3)
     type(fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
     integer(kind=kint) :: n_lyr, ntot_lyr, it, coef33, is_33shell, is_33beam
     integer(kind=kint) :: i, j, k, ndof, mdof, gcomp, gitem, ncomp, nitem, iitem, ecomp, eitem, jitem, nn, mm
@@ -840,6 +840,11 @@ contains
     if( fstrSOLID%output_ctrl(4)%outinfo%on(34) ) then
       ecomp = ecomp + 1
       eitem = eitem + n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(34), ndof )
+    endif
+    ! --- ORIENTATION @element
+    if( fstrSOLID%output_ctrl(4)%outinfo%on(42) ) then
+      ecomp = ecomp + 3*coef33
+      eitem = eitem + 3*n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(42), ndof )*coef33
     endif
     ! --- ELEM ID @element
     if( fstrSOLID%output_ctrl(4)%outinfo%on(39) ) then
@@ -1282,7 +1287,8 @@ contains
     character(len=12)                :: cnum
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, eitem, nn, mm, ngauss, it
     integer(kind=kint) :: iitem, ncomp, jitem, ecomp, nlyr
-
+    integer(kind=kint) :: isect, cdsys_ID, serr
+    real(kind=kreal) :: coords(3,3), coordsys(3, 3)
     ndof = hecMESH%n_dof
 
     ! --- STRAIN @node
@@ -1504,6 +1510,33 @@ contains
         fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = RES%EPLSTRAIN(i)
       enddo
       jitem = jitem + nn
+    endif
+
+    ! --- ORIENTATION @elem
+    if(fstrSOLID%output_ctrl(4)%outinfo%on(42)) then
+      do i = 1, 3
+        write(cnum,'(i0)')i
+        ecomp = ecomp + 1
+        nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(42), ndof )
+        fstrRESULT%ne_dof(ecomp) = nn
+        fstrRESULT%elem_label(ecomp) = 'ORIENTATION'//trim(cnum)
+      enddo
+      do i = 1, hecMESH%n_elem
+        isect = hecMESH%section_ID(i)
+        cdsys_ID = hecMESH%section%sect_orien_ID(isect)
+        if(cdsys_ID == -1) then
+          coordsys(:,:) = 0.0d0
+        else
+          call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords, i)
+          call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
+        endif
+        do j = 1, 3
+          do k = 1, 3
+            fstrRESULT%elem_val_item(eitem*(i-1)+jitem+nn*(j-1)+k) = coordsys(j,k)
+          enddo
+        enddo
+      enddo
+      jitem = jitem + 3*nn
     endif
 
   end subroutine fstr_make_result_main

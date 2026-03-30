@@ -1105,17 +1105,33 @@ contains
   end function
 
   !> This subroutine fetch coords defined by local coordinate system
-  subroutine get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
+  subroutine get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords, icel )
     integer, intent(in)             :: cdsys_ID      !< id of local coordinate
+    integer, intent(in)             :: icel      !< id of element
     type(hecmwST_local_mesh)       :: hecMESH       !< mesh information
     type(fstr_solid), intent(inout) :: fstrSOLID     !< fstr_solid
     real(kind=kreal), intent(out)   :: coords(3,3)
-    integer :: ik
+    integer :: ik, local_nid, iSS
 
     coords = 0.d0
     if( cdsys_ID>0 ) then
       if( isCoordNeeds(g_LocalCoordSys(cdsys_ID)) ) then
         coords=g_LocalCoordSys(cdsys_ID)%CoordSys
+      elseif( g_LocalCoordSys(cdsys_ID)%sys_type == 12 ) then
+        iSS = hecMESH%elem_node_index(icel-1)
+        !
+        local_nid=g_LocalCoordSys(cdsys_ID)%node_ID(1)
+        ik = hecMESH%elem_node_item(iSS+local_nid)
+        coords(1,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
+          + fstrSOLID%dunode(3*ik-2:3*ik)
+        local_nid=g_LocalCoordSys(cdsys_ID)%node_ID(2)
+        ik = hecMESH%elem_node_item(iSS+local_nid)
+        coords(2,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
+          + fstrSOLID%dunode(3*ik-2:3*ik)
+        local_nid=g_LocalCoordSys(cdsys_ID)%node_ID(3)
+        ik = hecMESH%elem_node_item(iSS+local_nid)
+        coords(3,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &
+          + fstrSOLID%dunode(3*ik-2:3*ik)
       else
         ik=g_LocalCoordSys(cdsys_ID)%node_ID(1)
         coords(1,:)= hecMESH%node(3*ik-2:3*ik)+fstrSOLID%unode(3*ik-2:3*ik)  &

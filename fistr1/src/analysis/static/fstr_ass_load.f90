@@ -440,11 +440,11 @@ contains
           ! ----- section  Data
           isect = hecMESH%section_ID(icel)
           cdsys_ID = hecMESH%section%sect_orien_ID(isect)
-          call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
-          
-          if (ndof == 2) then
-            id = hecMESH%section%sect_opt(isect)
-            if (id == 0) then
+          call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords, icel)
+
+          if( ndof == 2 ) then
+            id=hecMESH%section%sect_opt(isect)
+            if( id==0 ) then
               iset = 1
             else if (id == 1) then
               iset = 0
