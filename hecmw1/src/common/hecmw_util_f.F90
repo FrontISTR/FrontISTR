@@ -24,6 +24,8 @@ module hecmw_util
   integer(kind=kint),parameter :: hecmw_prod             = 46802
   integer(kind=kint),parameter :: hecmw_max              = 46803
   integer(kind=kint),parameter :: hecmw_min              = 46804
+  integer(kind=kint),parameter :: hecmw_lor              = 46805
+  integer(kind=kint),parameter :: hecmw_land             = 46806
   integer(kind=kint),parameter :: hecmw_integer          = 53951
   integer(kind=kint),parameter :: hecmw_single_precision = 53952
   integer(kind=kint),parameter :: hecmw_double_precision = 53953
@@ -439,6 +441,8 @@ module hecmw_util
     real(kind=kreal),    pointer  :: AU_lagrange(:) => null() !< values of non-zero items in upper part
 
     real(kind=kreal),    pointer  :: Lagrange(:) => null() !< values of Lagrange multipliers
+
+    integer(kind=kint), pointer  :: lag_node_table(:) => null() !< node_ID to lag_ID mapping table (size: total nodes)
   end type hecmwST_matrix_lagrange
 
   type hecmwST_matrix

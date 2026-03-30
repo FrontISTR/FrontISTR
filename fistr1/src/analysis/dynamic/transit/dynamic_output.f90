@@ -73,7 +73,7 @@ contains
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. istep==maxstep) ) then
       if( associated( fstrSOLID%contacts ) ) &
-        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3, fstrDYNAMIC%t_delta )
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, fstrDYNAMIC%t_curr, 0, fstrDYNAMIC )
     endif
 
@@ -81,7 +81,7 @@ contains
         (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. istep==maxstep) ) then
 
       if( associated( fstrSOLID%contacts ) ) &
-        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4, fstrDYNAMIC%t_delta )
       call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, fstrDYNAMIC%t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init

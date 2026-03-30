@@ -98,17 +98,17 @@ contains
     countNon0LU_node = NPL_org + NPU_org
     countNon0LU_lagrange = 0
     if( is_contact_active ) call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,contact_algo, &
-       &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
+    &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
 
     ! Construct new matrix structure(hecMAT&hecLagMAT)
     numNon0_node = countNon0LU_node/2
     numNon0_lagrange = countNon0LU_lagrange/2
     call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
-      & numNon0_node, num_lagrange, list_nodeRelated, hecMAT)
+    & numNon0_node, num_lagrange, list_nodeRelated, hecMAT)
     call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
-      & numNon0_node, num_lagrange, list_nodeRelated, conMAT)
+    & numNon0_node, num_lagrange, list_nodeRelated, conMAT)
     if( contact_algo == kcaSLagrange ) call hecmw_construct_hecLagMAT_from_nodeRelated(hecMAT%NP, &
-      & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active, list_nodeRelated, hecLagMAT)
+    & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active, list_nodeRelated, hecLagMAT)
     call hecmw_finalize_nodeRelated(list_nodeRelated)
 
     ! Copy Lagrange multipliers
@@ -119,7 +119,7 @@ contains
 
   !> Construct new list of related nodes and Lagrange multipliers. Here, a procedure similar to HEC_MW is used.
   subroutine getNewListOFrelatednodesANDLagrangeMultipliers( &
-      & cstep, contact_algo, np, fstrSOLID, countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
+  & cstep, contact_algo, np, fstrSOLID, countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
     integer(kind=kint),intent(in)             :: cstep !< current loading step
     integer(kind=kint),intent(in)             :: contact_algo !< contact algo
     integer(kind=kint),intent(in)             :: np !< total number of nodes
@@ -162,7 +162,7 @@ contains
         do k=1,nlag
           if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
           call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
-            & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+          & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
         enddo
       enddo
 
@@ -191,7 +191,7 @@ contains
         do k=1,nlag
           if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
           call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
-            & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+          & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
         enddo
       enddo
 
@@ -204,7 +204,7 @@ contains
 
     type(fstr_solid)                        :: fstrSOLID                !< type fstr_solid
     type(hecmwST_matrix_lagrange)          :: hecLagMAT            !< hecmwST_matrix_lagrange
-    integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag
+    integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag, slave_node
 
     id_lagrange = 0
 
@@ -215,6 +215,8 @@ contains
 
       do j = 1, size(fstrSOLID%contacts(i)%slave)
         if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+        slave_node = fstrSOLID%contacts(i)%slave(j)
+        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
         do k=1,nlag
           id_lagrange = id_lagrange + 1
           hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
@@ -226,6 +228,8 @@ contains
       nlag = 3
       do j = 1, size(fstrSOLID%embeds(i)%slave)
         if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+        slave_node = fstrSOLID%embeds(i)%slave(j)
+        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
         do k=1,nlag
           id_lagrange = id_lagrange + 1
           hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
