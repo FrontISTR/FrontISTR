@@ -53,7 +53,7 @@ CP2, 0.0
 ###################################
 #####       STEP CONTROL      #####
 ###################################
-!STEP, MAXITER=20, INC_TYPE=AUTO, SUBSTEPS=200, CONVERG=1.0E-3
+!STEP, MAXITER=20, INC_TYPE=AUTO, SUBSTEPS=200, CONVERG=1.0E-4
 0.1, 1.0, 1E-5, 0.1
 BOUNDARY,1
 LOAD,1

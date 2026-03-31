@@ -249,12 +249,13 @@ contains
 
   !>\brief This subroutine calculates contact stiffness for each contact pair
   !! and assembles it into global stiffness matrix
-  subroutine calcu_contact_stiffness_NodeSurf( ctAlgo, contact, coord, disp, iter, lagrange_array, &
+  subroutine calcu_contact_stiffness_NodeSurf( ctAlgo, contact, coord, disp, ddisp, iter, lagrange_array, &
     conMAT, hecLagMAT)
     integer(kind=kint), intent(in)             :: ctAlgo          !< contact analysis algorithm
     type(tContact), intent(inout)              :: contact         !< contact info
     real(kind=kreal), intent(in)               :: coord(:)        !< mesh coordinate
     real(kind=kreal), intent(in)               :: disp(:)         !< displacement
+    real(kind=kreal), intent(in)               :: ddisp(:)        !< displacement increment
     integer(kind=kint), intent(in)             :: iter            !< iteration number
     real(kind=kreal), intent(in)               :: lagrange_array(:) !< Lagrange multiplier array
     type(hecmwST_matrix), intent(inout)        :: conMAT          !< contact stiffness matrix
@@ -265,6 +266,7 @@ contains
     real(kind=kreal)   :: lagrange
     real(kind=kreal)   :: stiffness((l_max_surface_node+1)*3+1, (l_max_surface_node+1)*3+1)
     real(kind=kreal)   :: elecoord(3, l_max_surface_node)  !< master node coordinates
+    real(kind=kreal)   :: eledisp(l_max_surface_node*3+3)  !< element displacement increment for friction
     real(kind=kreal)   :: force(l_max_surface_node*3+3)    !< contact force direction
 
     algtype = contact%algtype
@@ -297,9 +299,15 @@ contains
           call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, conMAT, hecLagMAT)
 
         else if( ctAlgo == kcaALagrange ) then
-          call getContactStiffness_Alag(contact%states(j), contact%master(ctsurf), elecoord(:,1:nnode), &
-            contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
-            contact%fcoeff, contact%symmetric, stiffness, force)
+            ! Build element displacement increment for consistent tangent evaluation
+            eledisp(1:3) = ddisp(3*ndLocal(1)-2:3*ndLocal(1))
+            do k = 1, nnode
+              eledisp(k*3+1:k*3+3) = ddisp(3*ndLocal(k+1)-2:3*ndLocal(k+1))
+            enddo
+            call getContactStiffness_Alag(contact%states(j), contact%master(ctsurf), elecoord(:,1:nnode), &
+              contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
+              contact%fcoeff, contact%symmetric, stiffness, force, &
+              edisp=eledisp(1:nnode*3+3))
 
           ! Assemble contact stiffness matrix into global stiffness matrix
           call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)

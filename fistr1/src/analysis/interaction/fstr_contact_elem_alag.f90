@@ -20,7 +20,7 @@ module m_fstr_contact_elem_alag
 
 contains
 
-  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force)
+  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force, edisp)
 
     type(tContactState), intent(inout) :: cstate       !< contact state (inout for projection info)
     type(tSurfElement), intent(in)  :: tSurf           !< surface element structure
@@ -30,16 +30,17 @@ contains
     logical, intent(in)             :: symm            !< symmetricalize
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
     real(kind=kreal), intent(out)   :: force(:)        !< contact force direction
+    real(kind=kreal), optional, intent(in) :: edisp(:)  !< displacement increment for friction evaluation
 
     integer          :: i, j, nnode
     real(kind=kreal) :: Bn(size(tSurf%nodes)*3+3), Ht(2,size(tSurf%nodes)*3+3), Gt(2,size(tSurf%nodes)*3+3)
     real(kind=kreal) :: metric(2,2)
     real(kind=kreal) :: A(2,2)       !< 2D local tangent operator
-    real(kind=kreal) :: norm_trial, alpha_proj, that(2)
+    real(kind=kreal) :: alpha_proj
     real(kind=kreal) :: K_fric(size(tSurf%nodes)*3+3,size(tSurf%nodes)*3+3)  !< friction stiffness
-    real(kind=kreal) :: HtA(2,size(tSurf%nodes)*3+3), tmp_vec(2)
+    real(kind=kreal) :: tmp_vec(2)
     real(kind=kreal) :: dummy_force(size(tSurf%nodes)*3+3)  !< dummy for computeFrictionForce_ALag
-    real(kind=kreal) :: zero_disp(size(tSurf%nodes)*3+3)   !< zero displacement for trial friction
+    real(kind=kreal) :: eval_disp(size(tSurf%nodes)*3+3)   !< displacement for trial friction evaluation
 
     nnode = size(tSurf%nodes)
 
@@ -56,38 +57,41 @@ contains
 
     ! frictional component
     if( fcoeff /= 0.d0 ) then
-      ! Compute trial friction info for consistent tangent
-      ! Use zero displacement to get projection parameters from current multiplier state
-      zero_disp = 0.0d0  ! zero displacement increment
-      call computeFrictionForce_ALag(cstate, fcoeff, cstate%multiplier(1), metric, &
-                                      Ht, Gt, zero_disp, nnode*3+3, dummy_force, &
-                                      mut, norm_trial=norm_trial, alpha=alpha_proj, that=that)
-
-      ! Construct 2D local tangent operator A
-      if( cstate%multiplier(1) <= 0.0d0 .or. alpha_proj <= 1.0d-20 ) then
-        ! No friction: A = 0
-        A = 0.0d0
-      else if( alpha_proj >= 0.999d0 .or. norm_trial < 1.0d-20 ) then
-        ! Stick: A = mut*I
-        A(1,1) = mut
-        A(2,2) = mut
-        A(1,2) = 0.0d0
-        A(2,1) = 0.0d0
+      ! Evaluate trial friction at current displacement for consistent tangent
+      if( present(edisp) ) then
+        eval_disp(1:nnode*3+3) = edisp(1:nnode*3+3)
       else
-        ! Slip: A = alpha*mut*(I - that⊗that)
-        A(1,1) = alpha_proj * mut * (1.0d0 - that(1)*that(1))
-        A(1,2) = alpha_proj * mut * (-that(1)*that(2))
-        A(2,1) = alpha_proj * mut * (-that(2)*that(1))
-        A(2,2) = alpha_proj * mut * (1.0d0 - that(2)*that(2))
+        eval_disp = 0.0d0
+      endif
+      call computeFrictionForce_ALag(cstate, fcoeff, cstate%multiplier(1), metric, &
+                                      Ht, Gt, eval_disp, nnode*3+3, dummy_force, &
+                                      mut, alpha=alpha_proj)
+
+      ! Friction tangent operator A in 2D metric space:  K_fric = Ht^T * A * Ht
+      if( cstate%multiplier(1) <= 0.0d0 .or. alpha_proj <= 1.0d-20 ) then
+        ! No normal contact force: no friction contribution
+        A = 0.0d0
+      else if( alpha_proj >= 0.999d0 ) then
+        ! Stick: A = mu_t * M (exact)
+        A(1,1) = mut * metric(1,1)
+        A(1,2) = mut * metric(1,2)
+        A(2,1) = mut * metric(2,1)
+        A(2,2) = mut * metric(2,2)
+      else
+        ! Slip: A = alpha * mu_t * M (approximate; direction correction omitted)
+        !   Exact tangent is alpha*mu_t*(M - t_hat (x) t_hat) where t_hat = g/||g||_M,
+        !   but (M - t_hat (x) t_hat) has a zero eigenvalue along the slip direction, which can cause Newton oscillation.
+        !   Using alpha*mu_t*M instead retains positive stiffness in all directions;
+        !   the augmented Lagrangian outer loop still drives the solution to the correct equilibrium.
+        A(1,1) = alpha_proj * mut * metric(1,1)
+        A(1,2) = alpha_proj * mut * metric(1,2)
+        A(2,1) = alpha_proj * mut * metric(2,1)
+        A(2,2) = alpha_proj * mut * metric(2,2)
       endif
 
-      ! Compute friction stiffness: K_fric = Ht^T * A * Gt
-      ! First: HtA = A^T * Ht (2 x edof)
-      HtA(1:2,1:nnode*3+3) = matmul(transpose(A), Ht(1:2,1:nnode*3+3))
-      ! Then: K_fric = Ht^T * HtA = Ht^T * A^T * Ht (but we want Ht^T * A * Gt)
-      ! Correct: K_fric(i,j) = Ht(:,i)^T * A * Gt(:,j)
+      ! Compute friction stiffness: K_fric = Ht^T * A * Ht (consistent tangent)
       do j = 1, nnode*3+3
-        tmp_vec = matmul(A, Gt(1:2,j))
+        tmp_vec = matmul(A, Ht(1:2,j))
         do i = 1, nnode*3+3
           K_fric(i,j) = dot_product(Ht(1:2,i), tmp_vec)
         enddo

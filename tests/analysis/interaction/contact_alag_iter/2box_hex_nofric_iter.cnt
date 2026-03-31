@@ -65,7 +65,7 @@ CP1,0.0
 ###################################
 #####       STEP CONTROL      #####
 ###################################
-!STEP, MAXITER=8, SUBSTEPS=1, CONVERG=1.0E-4
+!STEP, MAXITER=8, SUBSTEPS=1, CONVERG=1.0E-5
 BOUNDARY,1
 BOUNDARY,2
 BOUNDARY,3

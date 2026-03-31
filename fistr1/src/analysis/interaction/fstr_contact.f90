@@ -76,7 +76,7 @@ contains
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
       call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-        iter, hecLagMAT%Lagrange(:), conMAT, hecLagMAT)
+        fstrSOLID%dunode(:), iter, hecLagMAT%Lagrange(:), conMAT, hecLagMAT)
 
     enddo
 
@@ -86,7 +86,7 @@ contains
       if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
 
       call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%embeds(i), hecMESH%node(:), fstrSOLID%unode(:), &
-        iter, hecLagMAT%Lagrange(:), conMAT, hecLagMAT)
+        fstrSOLID%dunode(:), iter, hecLagMAT%Lagrange(:), conMAT, hecLagMAT)
 
     enddo
 
