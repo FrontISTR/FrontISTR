@@ -523,6 +523,10 @@ contains
         return
       end if
 
+      ! ----- compute CONT_NFORCE/CONT_FRIC for output
+      if( fstr_is_contact_active() ) &
+        call fstr_calc_contact_output_force(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
+
       call fstr_scan_contact_state(cstep, istep, count_step, t_delta, ctAlgo, &
                                    hecMESH, fstrSOLID, infoCTChange)
 
