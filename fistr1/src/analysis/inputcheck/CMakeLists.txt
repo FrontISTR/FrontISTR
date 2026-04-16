@@ -3,8 +3,9 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-add_subdirectory(dynamic)
-add_subdirectory(heat)
-add_subdirectory(inputcheck)
-add_subdirectory(static)
-add_subdirectory(interaction)
+target_sources(fistr PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_precheck.f90
+  ${CMAKE_CURRENT_LIST_DIR}/precheck_LIB_2d.f90
+  ${CMAKE_CURRENT_LIST_DIR}/precheck_LIB_3d.f90
+  ${CMAKE_CURRENT_LIST_DIR}/precheck_LIB_shell.f90
+)
