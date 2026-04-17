@@ -5,6 +5,6 @@
 
 add_subdirectory(dynamic)
 add_subdirectory(heat)
-add_subdirectory(inputcheck)
+add_subdirectory(precheck)
 add_subdirectory(static)
 add_subdirectory(interaction)

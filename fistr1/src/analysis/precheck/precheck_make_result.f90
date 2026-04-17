@@ -3,18 +3,18 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module constructs result data for ELEMCHECK visualization/result output
-module m_inputcheck_make_result
+module m_precheck_make_result
 
   implicit none
 
   private
-  public :: inputcheck_make_result
-  public :: inputcheck_write_result
+  public :: precheck_make_result
+  public :: precheck_write_result
 
 contains
 
   !> Build hecmwST_result_data for visualization via hecmw_visualize
-  subroutine inputcheck_make_result(hecMESH, fstrRESULT, elem_vol, elem_asp)
+  subroutine precheck_make_result(hecMESH, fstrRESULT, elem_vol, elem_asp)
     use hecmw
     use m_fstr
     implicit none
@@ -135,10 +135,10 @@ contains
       fstrRESULT%elem_val_item(n_eitem*(ie-1) + i) = elem_asp(ie)
     enddo
 
-  end subroutine inputcheck_make_result
+  end subroutine precheck_make_result
 
   !> Write check results to result file via hecmw_result_add/write interface
-  subroutine inputcheck_write_result(hecMESH, elem_vol, elem_asp)
+  subroutine precheck_write_result(hecMESH, elem_vol, elem_asp)
     use hecmw
     use m_fstr
     use hecmw_result
@@ -236,6 +236,6 @@ contains
     deallocate(work_n)
     deallocate(work_e)
 
-  end subroutine inputcheck_write_result
+  end subroutine precheck_write_result
 
-end module m_inputcheck_make_result
+end module m_precheck_make_result

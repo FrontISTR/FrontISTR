@@ -3,7 +3,7 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> This module provides mesh quality check functions for ELEMCHECK
-module m_inputcheck_mesh_quality
+module m_precheck_mesh_quality
 
   use hecmw
   use m_fstr
@@ -14,23 +14,23 @@ module m_inputcheck_mesh_quality
   implicit none
 
   private
-  public :: inputcheck_mesh_quality
+  public :: precheck_mesh_quality
 
 contains
 
   !> Get section thickness
-  subroutine inputcheck_get_thickness(hecMESH, mid, thick)
+  subroutine precheck_get_thickness(hecMESH, mid, thick)
     type(hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: mid, ihead
     real(kind=kreal)   :: thick
 
     ihead = hecMESH%section%sect_R_index(mid-1)
     thick = hecMESH%section%sect_R_item(ihead+1)
-  end subroutine inputcheck_get_thickness
+  end subroutine precheck_get_thickness
 
   !> Mesh quality check (element volume, aspect ratio)
   !! Returns per-element volume and aspect ratio in elem_vol/elem_asp arrays
-  subroutine inputcheck_mesh_quality(hecMESH, hecMAT, elem_vol, elem_asp)
+  subroutine precheck_mesh_quality(hecMESH, hecMAT, elem_vol, elem_asp)
     implicit none
 
     type(hecmwST_matrix)     :: hecMAT
@@ -119,7 +119,7 @@ contains
         if    ( ic_type.eq.111 ) then
           isect = hecMESH%section_ID(ie)
           mid = hecMESH%section%sect_mat_ID_item(isect)
-          call inputcheck_get_thickness( hecMESH,mid,AA )
+          call precheck_get_thickness( hecMESH,mid,AA )
           al = sqrt( (xx(2)-xx(1))**2+(yy(2)-yy(1))**2+(zz(2)-zz(1))**2 )
           nline = 1
           tline = al
@@ -187,7 +187,7 @@ contains
 
         isect = hecMESH%section_ID(ie)
         mid = hecMESH%section%sect_mat_ID_item(isect)
-        call inputcheck_get_thickness( hecMESH,mid,AA )
+        call precheck_get_thickness( hecMESH,mid,AA )
 
         if    ( ic_type.eq.111 ) then
           al = sqrt( (xx(2)-xx(1))**2+(yy(2)-yy(1))**2 )
@@ -249,7 +249,7 @@ contains
 
         isect = hecMESH%section_ID(ie)
         mid = hecMESH%section%sect_mat_ID_item(isect)
-        call inputcheck_get_thickness( hecMESH,mid,AA )
+        call precheck_get_thickness( hecMESH,mid,AA )
 
         if    ( ic_type.eq.111 ) then
           al = sqrt( (xx(2)-xx(1))**2+(yy(2)-yy(1))**2+(zz(2)-zz(1))**2 )
@@ -326,6 +326,6 @@ contains
       write(*,*)    ' MAXIMUM ASPECT RATIO  = ',TOTmax(3)
     endif
 
-  end subroutine inputcheck_mesh_quality
+  end subroutine precheck_mesh_quality
 
-end module m_inputcheck_mesh_quality
+end module m_precheck_mesh_quality

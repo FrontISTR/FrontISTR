@@ -7,8 +7,8 @@ module m_fstr_precheck
 
   use hecmw
   use m_fstr
-  use m_inputcheck_mesh_quality
-  use m_inputcheck_make_result
+  use m_precheck_mesh_quality
+  use m_precheck_make_result
   use m_hecmw2fstr_mesh_conv
 
   implicit none
@@ -51,11 +51,11 @@ contains
       allocate(elem_asp(hecMESH%n_elem))
 
       ! Mesh quality check
-      call inputcheck_mesh_quality(hecMESH, hecMAT, elem_vol, elem_asp)
-      write(IDBG,*) 'inputcheck_mesh_quality: OK'
+      call precheck_mesh_quality(hecMESH, hecMAT, elem_vol, elem_asp)
+      write(IDBG,*) 'precheck_mesh_quality: OK'
 
       ! Build visualization result data and output
-      call inputcheck_make_result(hecMESH, fstrRESULT, elem_vol, elem_asp)
+      call precheck_make_result(hecMESH, fstrRESULT, elem_vol, elem_asp)
       if(IVISUAL == 1) then
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
@@ -68,7 +68,7 @@ contains
 
       ! Write result file
       if(IRESULT == 1) then
-        call inputcheck_write_result(hecMESH, elem_vol, elem_asp)
+        call precheck_write_result(hecMESH, elem_vol, elem_asp)
         write(IDBG,*) 'elemcheck result file: OK'
       endif
 
