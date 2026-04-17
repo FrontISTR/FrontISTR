@@ -22,6 +22,10 @@ int HECMW_visualize_init_by_comm(HECMW_Comm comm);
 int HECMW_visualize(struct hecmwST_local_mesh *mesh,
                     struct hecmwST_result_data *result, int timestep);
 
+int HECMW_visualize_by_addfname(struct hecmwST_local_mesh *mesh,
+                                struct hecmwST_result_data *result,
+                                int timestep, char *addfname);
+
 int HECMW_visualize_finalize(void);
 
 #endif /* HECMW_VISUALIZER_H_INCLUDED */

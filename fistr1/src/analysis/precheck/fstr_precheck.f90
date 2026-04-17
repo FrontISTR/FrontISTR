@@ -59,10 +59,10 @@ contains
       if(IVISUAL == 1) then
         call fstr2hecmw_mesh_conv(hecMESH)
         call hecmw_visualize_init
-        call hecmw_visualize(hecMESH, fstrRESULT, 1)
+        call hecmw_visualize_by_addfname(hecMESH, fstrRESULT, 0, '_precheck')
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
-        write(IDBG,*) 'elemcheck visualization: OK'
+        write(IDBG,*) 'precheck visualization: OK'
       endif
       call hecmw_result_free(fstrRESULT)
 

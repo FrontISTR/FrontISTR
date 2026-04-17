@@ -149,7 +149,7 @@ contains
 
     integer(kind=kint) :: ig, j, jS, jE, idx, ie, isect, cid
     integer(kind=kint) :: n_ngrp, n_egrp, n_sgrp
-    character(len=HECMW_NAME_LEN) :: header, comment, label, nameID
+    character(len=HECMW_NAME_LEN) :: header, comment, label, nameID, addfname
     real(kind=kreal), allocatable :: work_n(:), work_e(:)
 
     allocate(work_n(hecMESH%n_node))
@@ -157,7 +157,7 @@ contains
 
     header  = '*fstrresult'
     comment = 'elemcheck_result'
-    call hecmw_result_init(hecMESH, 1, header, comment)
+    call hecmw_result_init(hecMESH, 0, header, comment)
 
     n_ngrp = hecMESH%node_group%n_grp
     n_egrp = hecMESH%elem_group%n_grp
@@ -230,7 +230,8 @@ contains
 
     ! --- WRITE ---
     nameID = 'fstrRES'
-    call hecmw_result_write_by_name(nameID)
+    addfname = '_precheck'
+    call hecmw_result_write_by_addfname(nameID, addfname)
     call hecmw_result_finalize
 
     deallocate(work_n)
