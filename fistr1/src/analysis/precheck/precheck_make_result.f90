@@ -149,7 +149,9 @@ contains
 
     integer(kind=kint) :: ig, j, jS, jE, idx, ie, isect, cid
     integer(kind=kint) :: n_ngrp, n_egrp, n_sgrp
-    character(len=HECMW_NAME_LEN) :: header, comment, label, nameID, addfname
+    character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN) :: comment
+    character(len=HECMW_NAME_LEN) :: label, nameID, addfname
     real(kind=kreal), allocatable :: work_n(:), work_e(:)
 
     allocate(work_n(hecMESH%n_node))

@@ -121,15 +121,32 @@ int HECMW_result_write_ST_by_name(char *name_ID,
 
 int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
   char *basename, filename[HECMW_FILENAME_LEN + 1];
+  char base_mod[HECMW_FILENAME_LEN + 1];
   int fg_text, myrank, ret;
+  char *dot;
 
   if ((basename = HECMW_ctrl_get_result_fileheader(name_ID, ResIO.istep,
                                                    &fg_text)) == NULL)
     return -1;
 
+  /* Insert addfname before the last '.' in basename.
+     e.g. basename="model.res", addfname="_precheck" -> "model_precheck.res" */
+  strncpy(base_mod, basename, HECMW_FILENAME_LEN);
+  base_mod[HECMW_FILENAME_LEN] = '\0';
+  dot = strrchr(base_mod, '.');
+  if (dot != NULL) {
+    char suffix[HECMW_FILENAME_LEN + 1];
+    strncpy(suffix, dot, HECMW_FILENAME_LEN);
+    suffix[HECMW_FILENAME_LEN] = '\0';
+    *dot = '\0';
+    snprintf(dot, HECMW_FILENAME_LEN - (dot - base_mod), "%s%s", addfname, suffix);
+  } else {
+    strncat(base_mod, addfname, HECMW_FILENAME_LEN - strlen(base_mod));
+  }
+
   myrank = HECMW_comm_get_rank();
-  ret    = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s%s.%d.%d", basename,
-                 addfname, myrank, ResIO.istep);
+  ret    = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d.%d", base_mod,
+                 myrank, ResIO.istep);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
 

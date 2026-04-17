@@ -1,0 +1,10 @@
+!VERSION
+ 3
+!SOLUTION, TYPE=ELEMCHECK
+!WRITE,RESULT
+#!WRITE,VISUAL
+!VISUAL,method=PSR
+!surface_num=1
+!surface 1
+!output_type=VTK
+!END
