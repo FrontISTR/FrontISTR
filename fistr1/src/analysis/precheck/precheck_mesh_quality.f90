@@ -46,6 +46,10 @@ contains
     integer(kind=kint) :: nodLOCAL(20), NTOTsum(1)
     integer(kind=kint) :: nonzero
     integer(kind=kint) :: NTOTbuf(2)
+    !  Element type counts: 3-digit codes only (<=999). 4-digit codes (2322, 3414, 3422, 1031-1042) are internal/deprecated
+    !  variants or patch elements not processed by precheck; warn and skip if encountered.
+    integer(kind=kint), parameter :: ETYPE_CODE_MAX = 999
+    integer(kind=kint) :: etype_count(ETYPE_CODE_MAX), i_etype
     real(kind=kreal)   :: ntdof2
     real(kind=kreal)   :: al, almin, almax, AA, thick, vol, avvol
     real(kind=kreal)   :: tvol, tvmax, tvmin, tlmax, tlmin, asp, aspmax
@@ -92,20 +96,32 @@ contains
     write(ILOG,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
 
     !C Global summary to stdout (rank 0 only)
-    !  nn_internal: excludes shared nodes to avoid double-counting
-    !  n_elem: elements are partitioned without overlap, so sum gives global count
-    !  NZ/Sparsity: cannot be correctly globalized (shared-node coupling), ILOG only
     NTOTsum(1) = hecMESH%nn_internal
     call hecmw_allREDUCE_I(hecMESH, NTOTsum, 1, hecmw_sum)
     NTOTbuf(1) = hecMESH%n_elem
     NTOTbuf(2) = nelem_wo_mpc
     call hecmw_allREDUCE_I(hecMESH, NTOTbuf, 2, hecmw_sum)
+    etype_count(:) = 0
+    do itype = 1, hecMESH%n_elem_type
+      ic_type = hecMESH%elem_type_item(itype)
+      if( ic_type .ge. 1 .and. ic_type .le. ETYPE_CODE_MAX ) then
+        etype_count(ic_type) = etype_count(ic_type) + hecMESH%elem_type_index(itype) - hecMESH%elem_type_index(itype-1)
+      else
+        write(ILOG,"(a,i6,a)") '  %%%  WARNING %%% Element type ', ic_type, ' is out of range for Mesh Summary count'
+      endif
+    enddo
+    call hecmw_allREDUCE_I(hecMESH, etype_count, ETYPE_CODE_MAX, hecmw_sum)
     if( hecMESH%my_rank .eq. 0 ) then
       write(*,"(a)") '###  Mesh Summary  ###'
       write(*,"(a,i12)") '  Num of node       :',NTOTsum(1)
       write(*,"(a,i12)") '  Num of DOF        :',NTOTsum(1)*hecMESH%n_dof
       write(*,"(a,i12)") '  Num of elem       :',NTOTbuf(1)
       write(*,"(a,i12)") '   ** w/o MPC/Patch :',NTOTbuf(2)
+      do i_etype = 1, ETYPE_CODE_MAX
+        if( etype_count(i_etype) .gt. 0 ) then
+          write(*,"(a,i5,a,i12)") '  Num of ',i_etype,':',etype_count(i_etype)
+        endif
+      enddo
     endif
 
     !C 3D
