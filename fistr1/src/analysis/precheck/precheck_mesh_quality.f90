@@ -36,12 +36,16 @@ contains
     real(kind=kreal), intent(out) :: elem_vol(:)
     real(kind=kreal), intent(out) :: elem_asp(:)
 
+    !** Parameters
+    real(kind=kreal), parameter :: aspect_warn_threshold = 50.0d0
+
     !** Local variables
     integer(kind=kint) :: nelem, mid, j, isect, nline, tline, icel, iiS
     integer(kind=kint) :: ndof2, nelem_wo_mpc
     integer(kind=kint) :: ie, ia, jelem, ic_type, nn, jS, jE, itype
     integer(kind=kint) :: nodLOCAL(20), NTOTsum(1)
     integer(kind=kint) :: nonzero
+    integer(kind=kint) :: NTOTbuf(2)
     real(kind=kreal)   :: ntdof2
     real(kind=kreal)   :: al, almin, almax, AA, thick, vol, avvol
     real(kind=kreal)   :: tvol, tvmax, tvmin, tlmax, tlmin, asp, aspmax
@@ -59,16 +63,14 @@ contains
     tlmin  = 1.0e+20
     aspmax = 0.0
 
-    !C Mesh Summary
-    write(ILOG,"(a)") '###  Mesh Summary  ###'
-    write(ILOG,"(a,i12)") '  Num of node:',hecMESH%n_node
-    write(*   ,"(a,i12)") '  Num of node:',hecMESH%n_node
-    write(ILOG,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
-    write(*   ,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
+    !C Mesh Summary (local values to ILOG, global values to stdout via rank 0)
     ndof2  = hecMESH%n_dof**2
-    ntdof2 = dble(hecMESH%n_node*hecMESH%n_dof)**2
+
+    !C Local summary to log file
+    write(ILOG,"(a)") '###  Mesh Summary (local)  ###'
+    write(ILOG,"(a,i12)") '  Num of node:',hecMESH%n_node
+    write(ILOG,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
     write(ILOG,"(a,i12)") '  Num of elem:',hecMESH%n_elem
-    write(*   ,"(a,i12)") '  Num of elem:',hecMESH%n_elem
     nelem_wo_mpc = 0
     do itype = 1, hecMESH%n_elem_type
       jS = hecMESH%elem_type_index(itype-1)
@@ -78,19 +80,33 @@ contains
            nelem_wo_mpc = nelem_wo_mpc + jE-jS
     enddo
     write(ILOG,"(a,i12)") '   ** w/o MPC/Patch:',nelem_wo_mpc
-    write(*   ,"(a,i12)") '   ** w/o MPC/Patch:',nelem_wo_mpc
     do itype = 1, hecMESH%n_elem_type
       jS = hecMESH%elem_type_index(itype-1)
       jE = hecMESH%elem_type_index(itype  )
       ic_type = hecMESH%elem_type_item(itype)
       write(ILOG,"(a,i4,a,i12)") '  Num of ',ic_type,':',jE-jS
-      write(*   ,"(a,i4,a,i12)") '  Num of ',ic_type,':',jE-jS
     enddo
     nonzero = ndof2*(hecMAT%NP + hecMAT%NPU + hecMAT%NPL)
     write(ILOG,"(a,i12)") '  Num of NZ  :',nonzero
-    write(*   ,"(a,i12)") '  Num of NZ  :',nonzero
+    ntdof2 = dble(hecMESH%n_node*hecMESH%n_dof)**2
     write(ILOG,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
-    write(*   ,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
+
+    !C Global summary to stdout (rank 0 only)
+    !  nn_internal: excludes shared nodes to avoid double-counting
+    !  n_elem: elements are partitioned without overlap, so sum gives global count
+    !  NZ/Sparsity: cannot be correctly globalized (shared-node coupling), ILOG only
+    NTOTsum(1) = hecMESH%nn_internal
+    call hecmw_allREDUCE_I(hecMESH, NTOTsum, 1, hecmw_sum)
+    NTOTbuf(1) = hecMESH%n_elem
+    NTOTbuf(2) = nelem_wo_mpc
+    call hecmw_allREDUCE_I(hecMESH, NTOTbuf, 2, hecmw_sum)
+    if( hecMESH%my_rank .eq. 0 ) then
+      write(*,"(a)") '###  Mesh Summary  ###'
+      write(*,"(a,i12)") '  Num of node       :',NTOTsum(1)
+      write(*,"(a,i12)") '  Num of DOF        :',NTOTsum(1)*hecMESH%n_dof
+      write(*,"(a,i12)") '  Num of elem       :',NTOTbuf(1)
+      write(*,"(a,i12)") '   ** w/o MPC/Patch :',NTOTbuf(2)
+    endif
 
     !C 3D
     if( hecMESH%n_dof .eq. 3 ) then
@@ -148,8 +164,9 @@ contains
         asp = almax/almin
         elem_asp(ie) = asp
         if( asp.gt.aspmax ) aspmax = asp
-        if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+        if( asp.gt.aspect_warn_threshold ) then
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem, &
+               &        ' exceeds ',aspect_warn_threshold
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif
@@ -206,8 +223,9 @@ contains
         asp = almax/almin
         elem_asp(ie) = asp
         if( asp.gt.aspmax ) aspmax = asp
-        if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+        if( asp.gt.aspect_warn_threshold ) then
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem, &
+               &        ' exceeds ',aspect_warn_threshold
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif
@@ -265,24 +283,27 @@ contains
         asp = almax/almin
         elem_asp(ie) = asp
         if( asp.gt.aspmax ) aspmax = asp
-        if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
+        if( asp.gt.aspect_warn_threshold ) then
+          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem, &
+               &        ' exceeds ',aspect_warn_threshold
           write(ILOG,*) '      Maximum length =',almax
           write(ILOG,*) '      Minimum length =',almin
         endif
       enddo
     endif
 
-    !C Summary
+    !C Local Summary (per-rank, to ILOG only)
     avvol = tvol / nelem
-    write(ILOG,*) '###  Sub Summary  ###'
-    write(ILOG,*) ' Total Volumes in this region        = ',tvol
-    write(ILOG,*) ' Average Volume of elements          = ',avvol
-    write(ILOG,*) ' Maximum Volume of elements          = ',tvmax
-    write(ILOG,*) ' Minimum Volume of elements          = ',tvmin
-    write(ILOG,*) ' Maximum length of element edges     = ',tlmax
-    write(ILOG,*) ' Minimum length of element edges     = ',tlmin
-    write(ILOG,*) ' Maximum aspect ratio in this region = ',aspmax
+    write(ILOG,*) '###  Local Summary  ###'
+    write(ILOG,*) '  Total volume                = ',tvol
+    write(ILOG,*) '  Average volume of elements  = ',avvol
+    write(ILOG,*) '  Maximum volume of elements  = ',tvmax
+    write(ILOG,*) '  Minimum volume of elements  = ',tvmin
+    write(ILOG,*) '  Maximum edge length         = ',tlmax
+    write(ILOG,*) '  Minimum edge length         = ',tlmin
+    write(ILOG,*) '  Maximum aspect ratio        = ',aspmax
+
+    !C Global Summary (allreduce, rank 0 outputs to both ILOG and stdout)
     TOTsum(1) = tvol
     call hecmw_allREDUCE_R(hecMESH,TOTsum,1,hecmw_sum)
     NTOTsum(1) = nelem
@@ -297,20 +318,20 @@ contains
     if( hecMESH%my_rank .eq. 0 ) then
       avvol = TOTsum(1) / NTOTsum(1)
       write(ILOG,*) '###  Global Summary  ###'
-      write(ILOG,*) ' TOTAL VOLUME = ',TOTsum(1)
-      write(*,*)    ' TOTAL VOLUME = ',TOTsum(1)
-      write(ILOG,*) ' AVERAGE VOLUME OF ELEMENTS = ',avvol
-      write(*,*)    ' AVERAGE VOLUME OF ELEMENTS = ',avvol
-      write(ILOG,*) ' MAXIMUM VOLUME OF ELEMENTS = ',TOTmax(1)
-      write(*,*)    ' MAXIMUM VOLUME OF ELEMENTS = ',TOTmax(1)
-      write(ILOG,*) ' MINIMUM VOLUME OF ELEMENTS = ',TOTmin(1)
-      write(*,*)    ' MINIMUM VOLUME OF ELEMENTS = ',TOTmin(1)
-      write(ILOG,*) ' MAXIMUM LENGTH OF ELEMENT EDGES = ',TOTmax(2)
-      write(*,*)    ' MAXIMUM LENGTH OF ELEMENT EDGES = ',TOTmax(2)
-      write(ILOG,*) ' MINIMUM LENGTH OF ELEMENT EDGES = ',TOTmin(2)
-      write(*,*)    ' MINIMUM LENGTH OF ELEMENT EDGES = ',TOTmin(2)
-      write(ILOG,*) ' MAXIMUM ASPECT RATIO  = ',TOTmax(3)
-      write(*,*)    ' MAXIMUM ASPECT RATIO  = ',TOTmax(3)
+      write(ILOG,*) '  Total volume                = ',TOTsum(1)
+      write(*,*)    '  Total volume                = ',TOTsum(1)
+      write(ILOG,*) '  Average volume of elements  = ',avvol
+      write(*,*)    '  Average volume of elements  = ',avvol
+      write(ILOG,*) '  Maximum volume of elements  = ',TOTmax(1)
+      write(*,*)    '  Maximum volume of elements  = ',TOTmax(1)
+      write(ILOG,*) '  Minimum volume of elements  = ',TOTmin(1)
+      write(*,*)    '  Minimum volume of elements  = ',TOTmin(1)
+      write(ILOG,*) '  Maximum edge length         = ',TOTmax(2)
+      write(*,*)    '  Maximum edge length         = ',TOTmax(2)
+      write(ILOG,*) '  Minimum edge length         = ',TOTmin(2)
+      write(*,*)    '  Minimum edge length         = ',TOTmin(2)
+      write(ILOG,*) '  Maximum aspect ratio        = ',TOTmax(3)
+      write(*,*)    '  Maximum aspect ratio        = ',TOTmax(3)
     endif
 
   end subroutine precheck_mesh_quality
