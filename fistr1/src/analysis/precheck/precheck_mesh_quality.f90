@@ -7,9 +7,7 @@ module m_precheck_mesh_quality
 
   use hecmw
   use m_fstr
-  use m_precheck_LIB_2d
-  use m_precheck_LIB_3d
-  use m_precheck_LIB_shell
+  use m_precheck_LIB_elements
 
   implicit none
 
@@ -106,6 +104,9 @@ contains
           write(ILOG,*) jelem, ' This Element cannot be checked. Type=',ic_type
           cycle
         endif
+        vol = 0.0d0
+        almax = 0.0d0
+        almin = 0.0d0
         nn = hecmw_get_max_node(ic_type)
         jS = hecMESH%elem_node_index(ie-1)
         jE = hecMESH%elem_node_index(ie)
@@ -126,23 +127,11 @@ contains
           vol = AA*al
           almax = al
           almin = al
-        elseif( ic_type.eq.341 ) then
-          call PRE_341 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.351 ) then
-          call PRE_351 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.361 ) then
-          call PRE_361 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.342 ) then
-          call PRE_342 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.352 ) then
-          call PRE_352 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.362 ) then
-          call PRE_362 ( xx,yy,zz,vol,almax,almin )
+        elseif( hecmw_is_etype_solid(ic_type) ) then
+          call precheck_calc_vol_asp(ic_type, nn, xx, yy, zz, 0.0d0, vol, almax, almin)
         elseif( ic_type.eq.641 ) then
           vol = 1.0d-12
-        elseif( ic_type.eq.761 ) then
-          vol = 1.0d-12
-        elseif( ic_type.eq.781 ) then
+        elseif( ic_type.eq.761 .or. ic_type.eq.781 ) then
           vol = 1.0d-12
         endif
 
@@ -177,6 +166,9 @@ contains
           write(ILOG,*) jelem, ' This Element cannot be checked. Type=',ic_type
           cycle
         endif
+        vol = 0.0d0
+        almax = 0.0d0
+        almin = 0.0d0
         nn = hecmw_get_max_node(ic_type)
         jS = hecMESH%elem_node_index(ie-1)
         do j = 1, nn
@@ -195,14 +187,8 @@ contains
           if( al.gt.tlmax ) tlmax = al
           if( al.lt.tlmin ) tlmin = al
           aspmax = 1.0
-        elseif( ic_type.eq.231 ) then
-          call PRE_231 ( xx,yy,AA,vol,almax,almin )
-        elseif( ic_type.eq.241 ) then
-          call PRE_241 ( xx,yy,AA,vol,almax,almin )
-        elseif( ic_type.eq.232 ) then
-          call PRE_232 ( xx,yy,AA,vol,almax,almin )
-        elseif( ic_type.eq.242 ) then
-          call PRE_242 ( xx,yy,AA,vol,almax,almin )
+        elseif( hecmw_is_etype_surface(ic_type) ) then
+          call precheck_calc_vol_asp(ic_type, nn, xx, yy, zz, AA, vol, almax, almin)
         else
           vol = 0.0
         endif
@@ -238,6 +224,9 @@ contains
           write(ILOG,*) jelem, ' This Element cannot be checked. Type=',ic_type
           cycle
         endif
+        vol = 0.0d0
+        almax = 0.0d0
+        almin = 0.0d0
         nn = hecmw_get_max_node(ic_type)
         jS = hecMESH%elem_node_index(ie-1)
         do j = 1, nn
@@ -259,10 +248,8 @@ contains
           if( al.gt.tlmax ) tlmax = al
           if( al.lt.tlmin ) tlmin = al
           aspmax = 1.0
-        elseif( ic_type.eq.731 ) then
-          call PRE_731 ( xx,yy,zz,AA,vol,almax,almin )
-        elseif( ic_type.eq.741 ) then
-          call PRE_741 ( xx,yy,zz,AA,vol,almax,almin )
+        elseif( ic_type.eq.731 .or. ic_type.eq.741 ) then
+          call precheck_calc_vol_asp(ic_type, nn, xx, yy, zz, AA, vol, almax, almin)
         endif
 
         if( vol.le.0.0 ) then
