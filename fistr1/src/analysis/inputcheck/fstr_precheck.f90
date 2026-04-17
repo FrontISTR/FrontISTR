@@ -2,424 +2,111 @@
 ! Copyright (c) 2019 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> This module provides function to check input data of IFSTR solver
+!> This module provides the entry point for ELEMCHECK (pre-analysis input validation)
 module m_fstr_precheck
+
+  use hecmw
+  use m_fstr
+  use m_inputcheck_mesh_quality
+  use m_inputcheck_make_result
+  use m_hecmw2fstr_mesh_conv
+
+  implicit none
+
 contains
 
-  !=============================================================================!
-  !> fstr_input_precheck                                                        !
-  !=============================================================================!
-
-  subroutine fstr_input_precheck( hecMESH, hecMAT, fstrSOLID )
-    use m_fstr
+  !> Main entry point (called from fistr_main)
+  subroutine fstr_input_precheck(hecMESH, hecMAT, fstrSOLID)
     implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    type(fstr_solid), intent(in)          :: fstrSOLID
-    integer(kint) :: i, cid
+    type(hecmwST_local_mesh), intent(inout) :: hecMESH
+    type(hecmwST_matrix), intent(in)        :: hecMAT
+    type(fstr_solid), intent(in)            :: fstrSOLID
 
+    integer(kind=kint) :: i, cid
+    real(kind=kreal), allocatable :: elem_vol(:), elem_asp(:)
+    type(hecmwST_result_data) :: fstrRESULT
+
+    ! Density check for eigen/dynamic analysis
     if(fstrPR%solution_type == kstEIGEN .or. &
        fstrPR%solution_type == kstSTATICEIGEN .or. &
-       fstrPR%solution_type == kstDYNAMIC)then
+       fstrPR%solution_type == kstDYNAMIC) then
       do i = 1, hecMESH%section%n_sect
         if(hecMESH%section%sect_type(i) == 4) cycle
         cid = hecMESH%section%sect_mat_ID_item(i)
-
-        if(fstrSOLID%materials(cid)%variables(M_DENSITY) == 0.0d0)then
+        if(fstrSOLID%materials(cid)%variables(M_DENSITY) == 0.0d0) then
           write(*,*) "*** error: density is not assigned or set to zero"
           call hecmw_abort(hecmw_comm_get_comm())
         endif
       enddo
     endif
 
-    if(fstrPR%solution_type == kstPRECHECK)then
-      if(myrank == 0)then
+    if(fstrPR%solution_type == kstPRECHECK) then
+      if(myrank == 0) then
         write(IMSG,*)
-        write(IMSG,*) " ****   STAGE Precheck  **"
+        write(IMSG,*) ' ****   STAGE Precheck  **'
       endif
-      call fstr_precheck_elem(hecMESH, hecMAT)
-      write(IDBG,*) "fstr_precheck_elem: OK"
+
+      ! Allocate element quality arrays
+      allocate(elem_vol(hecMESH%n_elem))
+      allocate(elem_asp(hecMESH%n_elem))
+
+      ! Mesh quality check
+      call inputcheck_mesh_quality(hecMESH, hecMAT, elem_vol, elem_asp)
+      write(IDBG,*) 'inputcheck_mesh_quality: OK'
+
+      ! Build visualization result data and output
+      call inputcheck_make_result(hecMESH, fstrRESULT, elem_vol, elem_asp)
+      if(IVISUAL == 1) then
+        call fstr2hecmw_mesh_conv(hecMESH)
+        call hecmw_visualize_init
+        call hecmw_visualize(hecMESH, fstrRESULT, 1)
+        call hecmw_visualize_finalize
+        call hecmw2fstr_mesh_conv(hecMESH)
+        write(IDBG,*) 'elemcheck visualization: OK'
+      endif
+      call hecmw_result_free(fstrRESULT)
+
+      ! Write result file
+      if(IRESULT == 1) then
+        call inputcheck_write_result(hecMESH, elem_vol, elem_asp)
+        write(IDBG,*) 'elemcheck result file: OK'
+      endif
+
+      deallocate(elem_vol)
+      deallocate(elem_asp)
     endif
 
-    if(fstrPR%solution_type == kstNZPROF)then
+    if(fstrPR%solution_type == kstNZPROF) then
       call hecmw_nonzero_profile(hecMESH, hecMAT)
     endif
   end subroutine fstr_input_precheck
 
-  subroutine fstr_get_thickness(hecMESH,mid,thick)
+  subroutine fstr_get_thickness(hecMESH, mid, thick)
     use hecmw
     use m_fstr
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: mid, ihead
     real(kind=kreal)   :: thick
 
     ihead = hecMESH%section%sect_R_index(mid-1)
     thick = hecMESH%section%sect_R_item(ihead+1)
-    !  if(thick.LE.0.0) then
-    !      write(*,*) "Zero thickness <= 0 is illegal"
-    !      call hecmw_abort( hecmw_comm_get_comm())
-    !  endif
   end subroutine fstr_get_thickness
-  !C
-  !C***
-  !C*** Pre Check for FSTR solver
-  !C***
-  !C
-  subroutine fstr_precheck ( hecMESH, hecMAT, soltype )
-    use m_fstr
-    implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    type (hecmwST_matrix )    :: hecMAT
-    integer(kind=kint)        :: soltype
 
-    if(myrank .EQ. 0) then
-      write(IMSG,*)
-      write(IMSG,*) ' ****   STAGE PreCheck  **'
-    endif
-
-    call fstr_precheck_elem ( hecMESH, hecMAT )
-    write(IDBG,*) 'fstr_precheck_elem: OK'
-
-    !C
-    !C Output sparsity pattern
-    !C
-    if( soltype == kstNZPROF )then
-      call hecmw_nonzero_profile(hecMESH, hecMAT)
-    endif
-
-  end subroutine fstr_precheck
-  !C
-  !C
-  subroutine fstr_precheck_elem ( hecMESH, hecMAT )
-    use m_fstr
-    use m_precheck_LIB_2d
-    use m_precheck_LIB_3d
-    use m_precheck_LIB_shell
-
-    implicit none
-
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    type (fstr_solid)         :: fstrSOLID
-
-    !** Local variables
-    integer(kind=kint) :: nelem, mid, j, isect, nline, tline, icel, iiS
-    integer(kind=kint) :: ndof2, nelem_wo_mpc
-    integer(kind=kint) :: ie, ia, jelem, ic_type, nn, jS, jE, itype
-    integer(kind=kint) :: nodLOCAL(20),NTOTsum(1)
-    integer(kind=kint) :: nonzero
-    real(kind=kreal)   :: ntdof2
-    real(kind=kreal)   :: al, almin, almax, AA, thick, vol, avvol
-    real(kind=kreal)   :: tvol, tvmax, tvmin, tlmax, tlmin, asp, aspmax
-    real(kind=kreal)   :: xx(20),yy(20),zz(20)
-    real(kind=kreal)   :: TOTsum(1),TOTmax(3),TOTmin(2)
-    !C
-    !C INIT
-    !C
-    nelem  = 0
-    tvol   = 0.0
-    tvmax  = 0.0
-    tvmin  = 1.0e+20
-    tlmax  = 0.0
-    tlmin  = 1.0e+20
-    aspmax = 0.0
-
-    !C
-    !C Mesh Summary
-    !C
-    write(ILOG,"(a)") '###  Mesh Summary  ###'
-    write(ILOG,"(a,i12)") '  Num of node:',hecMESH%n_node
-    write(*   ,"(a,i12)") '  Num of node:',hecMESH%n_node
-    write(ILOG,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
-    write(*   ,"(a,i12)") '  Num of DOF :',hecMESH%n_node*hecMESH%n_dof
-    ndof2  = hecMESH%n_dof**2
-    ntdof2 = dble(hecMESH%n_node*hecMESH%n_dof)**2
-    write(ILOG,"(a,i12)") '  Num of elem:',hecMESH%n_elem
-    write(*   ,"(a,i12)") '  Num of elem:',hecMESH%n_elem
-    nelem_wo_mpc = 0
-    do itype = 1, hecMESH%n_elem_type
-      jS = hecMESH%elem_type_index(itype-1)
-      jE = hecMESH%elem_type_index(itype  )
-      ic_type = hecMESH%elem_type_item(itype)
-      if(.not. (hecmw_is_etype_link(ic_type) .or. hecmw_is_etype_patch(ic_type))) &
-           nelem_wo_mpc = nelem_wo_mpc + jE-jS
-    enddo
-    write(ILOG,"(a,i12)") '   ** w/o MPC/Patch:',nelem_wo_mpc
-    write(*   ,"(a,i12)") '   ** w/o MPC/Patch:',nelem_wo_mpc
-    do itype = 1, hecMESH%n_elem_type
-      jS = hecMESH%elem_type_index(itype-1)
-      jE = hecMESH%elem_type_index(itype  )
-      ic_type = hecMESH%elem_type_item(itype)
-      write(ILOG,"(a,i4,a,i12)") '  Num of ',ic_type,':',jE-jS
-      write(*   ,"(a,i4,a,i12)") '  Num of ',ic_type,':',jE-jS
-    enddo
-    nonzero = ndof2*(hecMAT%NP + hecMAT%NPU + hecMAT%NPL)
-    write(ILOG,"(a,i12)") '  Num of NZ  :',nonzero
-    write(*   ,"(a,i12)") '  Num of NZ  :',nonzero
-    write(ILOG,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
-    write(*   ,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"
-
-    !C
-    !C 3D
-    !C
-    if( hecMESH%n_dof .eq. 3 ) then
-      do ie = 1, hecMESH%n_elem
-        ia = hecMESH%elem_ID(ie*2)
-        if( ia.ne.hecMESH%my_rank ) cycle
-        !          je = hecMESH%elem_ID(ie*2-1)
-        jelem = hecMESH%global_elem_ID(ie)
-        !C
-        ic_type = hecMESH%elem_type(ie)
-        !C
-        if (.not. (hecmw_is_etype_rod(ic_type) .or. hecmw_is_etype_solid(ic_type) &
-            & .or. HECMW_is_etype_beam(ic_type) .or. HECMW_is_etype_shell(ic_type))) then
-          write(ILOG,*) jelem, ' This Element cannot be checked. Type=',ic_type
-          cycle
-        endif
-        nn = hecmw_get_max_node(ic_type)
-        !C
-        jS = hecMESH%elem_node_index(ie-1)
-        jE = hecMESH%elem_node_index(ie)
-
-        do j = 1, nn
-          nodLOCAL(j) = hecMESH%elem_node_item (jS+j)
-          xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
-          yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
-          zz(j) = hecMESH%node(3*nodLOCAL(j)  )
-        enddo
-        !C
-        if    ( ic_type.eq.111 ) then
-          isect = hecMESH%section_ID(ie)
-          mid = hecMESH%section%sect_mat_ID_item(isect)
-          call fstr_get_thickness( hecMESH,mid,AA )
-          al = sqrt( (xx(2)-xx(1))**2+(yy(2)-yy(1))**2+(zz(2)-zz(1))**2 )
-          nline = 1
-          tline = al
-          vol = AA*al
-          almax = al
-          almin = al
-        elseif( ic_type.eq.341 ) then
-          call PRE_341 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.351 ) then
-          call PRE_351 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.361 ) then
-          call PRE_361 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.342 ) then
-          call PRE_342 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.352 ) then
-          call PRE_352 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.362 ) then
-          call PRE_362 ( xx,yy,zz,vol,almax,almin )
-        elseif( ic_type.eq.641 ) then
-          vol = 1.0d-12
-        elseif( ic_type.eq.761 ) then
-          vol = 1.0d-12
-        elseif( ic_type.eq.781 ) then
-          vol = 1.0d-12
-        endif
-        !C
-        if( vol.le.0.0 ) then
-          write(ILOG,*) '  %%%  ERROR %%%  Volume of Element no.=',jelem,' is zero or negative.'
-        endif
-        nelem = nelem + 1
-        tvol = tvol + vol
-        if( vol.gt.tvmax ) tvmax = vol
-        if( vol.lt.tvmin ) tvmin = vol
-        if( almax.gt.tlmax ) tlmax = almax
-        if( almin.lt.tlmin ) tlmin = almin
-        asp = almax/almin
-        if( asp.gt.aspmax ) aspmax = asp
-        if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
-          write(ILOG,*) '      Maximum length =',almax
-          write(ILOG,*) '      Minimum length =',almin
-        endif
-      enddo
-      !C
-      !C 2D
-      !C
-    elseif( hecMESH%n_dof .eq. 2 ) then
-      do ie = 1, hecMESH%n_elem
-        ia = hecMESH%elem_ID(ie*2)
-        if( ia.ne.hecMESH%my_rank ) cycle
-        !          je = hecMESH%elem_ID(ie*2-1)
-        jelem = hecMESH%global_elem_ID(ie)
-        !C
-        ic_type = hecMESH%elem_type(ie)
-        !C
-        if (.not. (hecmw_is_etype_rod(ic_type) .or. hecmw_is_etype_surface(ic_type))) then
-          write(ILOG,*) jelem, ' This Element cannot be checked. Type=',ic_type
-          cycle
-        endif
-        nn = hecmw_get_max_node(ic_type)
-        !C
-        jS = hecMESH%elem_node_index(ie-1)
-        do j = 1, nn
-          nodLOCAL(j) = hecMESH%elem_node_item (jS+j)
-          xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
-          yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
-        enddo
-        !C
-        isect = hecMESH%section_ID(ie)
-        mid = hecMESH%section%sect_mat_ID_item(isect)
-        call fstr_get_thickness( hecMESH,mid,AA )
-        !C
-        if    ( ic_type.eq.111 ) then
-          al = sqrt( (xx(2)-xx(1))**2+(yy(2)-yy(1))**2 )
-          vol = AA*al
-          if( al.gt.tlmax ) tlmax = al
-          if( al.lt.tlmin ) tlmin = al
-          aspmax = 1.0
-        elseif( ic_type.eq.231 ) then
-          call PRE_231 ( xx,yy,AA,vol,almax,almin )
-        elseif( ic_type.eq.241 ) then
-          call PRE_241 ( xx,yy,AA,vol,almax,almin )
-        elseif( ic_type.eq.232 ) then
-          call PRE_232 ( xx,yy,AA,vol,almax,almin )
-        elseif( ic_type.eq.242 ) then
-          call PRE_242 ( xx,yy,AA,vol,almax,almin )
-        else
-          vol = 0.0
-        endif
-        !C
-        if( vol.le.0.0 ) then
-          write(ILOG,*) '  %%%  ERROR %%%  Volume of Element no.=',jelem,' is zero or negative.'
-        endif
-        nelem = nelem + 1
-        tvol = tvol + vol
-        if( vol.gt.tvmax ) tvmax = vol
-        if( vol.lt.tvmin ) tvmin = vol
-        if( almax.gt.tlmax ) tlmax = almax
-        if( almin.lt.tlmin ) tlmin = almin
-        asp = almax/almin
-        if( asp.gt.aspmax ) aspmax = asp
-        if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
-          write(ILOG,*) '      Maximum length =',almax
-          write(ILOG,*) '      Minimum length =',almin
-        endif
-      enddo
-      !C
-      !C SHELL
-      !C
-    elseif( hecMESH%n_dof .eq. 6 ) then
-      do ie = 1, hecMESH%n_elem
-        ia = hecMESH%elem_ID(ie*2)
-        if( ia.ne.hecMESH%my_rank ) cycle
-        !          je = hecMESH%elem_ID(ie*2-1)
-        jelem = hecMESH%global_elem_ID(ie)
-        !C
-        ic_type = hecMESH%elem_type(ie)
-        !C
-        if (.not. (hecmw_is_etype_beam(ic_type) .or. hecmw_is_etype_shell(ic_type))) then
-          write(ILOG,*) jelem, ' This Element cannot be checked. Type=',ic_type
-          cycle
-        endif
-        nn = hecmw_get_max_node(ic_type)
-        !C
-        jS = hecMESH%elem_node_index(ie-1)
-        do j = 1, nn
-          nodLOCAL(j) = hecMESH%elem_node_item (jS+j)
-          xx(j) = hecMESH%node(3*nodLOCAL(j)-2)
-          yy(j) = hecMESH%node(3*nodLOCAL(j)-1)
-          zz(j) = hecMESH%node(3*nodLOCAL(j)  )
-        enddo
-        !C
-        isect = hecMESH%section_ID(ie)
-        mid = hecMESH%section%sect_mat_ID_item(isect)
-        call fstr_get_thickness( hecMESH,mid,AA )
-        !C
-        if    ( ic_type.eq.111 ) then
-          al = sqrt( (xx(2)-xx(1))**2+(yy(2)-yy(1))**2+(zz(2)-zz(1))**2 )
-          nline = nline + 1
-          tline = tline + al
-          vol = AA*al
-          if( al.gt.tlmax ) tlmax = al
-          if( al.lt.tlmin ) tlmin = al
-          aspmax = 1.0
-        elseif( ic_type.eq.731 ) then
-          call PRE_731 ( xx,yy,zz,AA,vol,almax,almin )
-        elseif( ic_type.eq.741 ) then
-          call PRE_741 ( xx,yy,zz,AA,vol,almax,almin )
-        endif
-        !C
-        if( vol.le.0.0 ) then
-          write(ILOG,*) '  %%%  ERROR %%%  Volume of Element no.=',jelem,' is zero or negative.'
-        endif
-        nelem = nelem + 1
-        tvol = tvol + vol
-        if( vol.gt.tvmax ) tvmax = vol
-        if( vol.lt.tvmin ) tvmin = vol
-        if( almax.gt.tlmax ) tlmax = almax
-        if( almin.lt.tlmin ) tlmin = almin
-        asp = almax/almin
-        if( asp.gt.aspmax ) aspmax = asp
-        if( asp.gt.50 ) then
-          write(ILOG,*) '  %%%  WARNING %%% Aspect ratio of Element no.=',jelem,' exceeds 50.'
-          write(ILOG,*) '      Maximum length =',almax
-          write(ILOG,*) '      Minimum length =',almin
-        endif
-      enddo
-    endif
-    !C
-    avvol = tvol / nelem
-    write(ILOG,*) '###  Sub Summary  ###'
-    write(ILOG,*) ' Total Volumes in this region        = ',tvol
-    write(ILOG,*) ' Average Volume of elements          = ',avvol
-    write(ILOG,*) ' Maximum Volume of elements          = ',tvmax
-    write(ILOG,*) ' Minimum Volume of elements          = ',tvmin
-    write(ILOG,*) ' Maximum length of element edges     = ',tlmax
-    write(ILOG,*) ' Minimum length of element edges     = ',tlmin
-
-    write(ILOG,*) ' Maximum aspect ratio in this region = ',aspmax
-    TOTsum(1) = tvol
-    call hecmw_allREDUCE_R(hecMESH,TOTsum,1,hecmw_sum)
-    NTOTsum(1) = nelem
-    call hecmw_allREDUCE_I(hecMESH,NTOTsum,1,hecmw_sum)
-    TOTmax(1) = tvmax
-    TOTmax(2) = tlmax
-    TOTmax(3) = aspmax
-    call hecmw_allREDUCE_R(hecMESH,TOTmax,3,hecmw_max)
-    TOTmin(1) = tvmin
-    TOTmin(2) = tlmin
-    call hecmw_allREDUCE_R(hecMESH,TOTmin,2,hecmw_min)
-    if( hecMESH%my_rank .eq. 0 ) then
-      avvol = TOTsum(1) / NTOTsum(1)
-      write(ILOG,*) '###  Global Summary  ###'
-      write(ILOG,*) ' TOTAL VOLUME = ',TOTsum(1)
-      write(*,*)    ' TOTAL VOLUME = ',TOTsum(1)
-      write(ILOG,*) ' AVERAGE VOLUME OF ELEMENTS = ',avvol
-      write(*,*)    ' AVERAGE VOLUME OF ELEMENTS = ',avvol
-      write(ILOG,*) ' MAXIMUM VOLUME OF ELEMENTS = ',TOTmax(1)
-      write(*,*)    ' MAXIMUM VOLUME OF ELEMENTS = ',TOTmax(1)
-      write(ILOG,*) ' MINIMUM VOLUME OF ELEMENTS = ',TOTmin(1)
-      write(*,*)    ' MINIMUM VOLUME OF ELEMENTS = ',TOTmin(1)
-      write(ILOG,*) ' MAXIMUM LENGTH OF ELEMENT EDGES = ',TOTmax(2)
-      write(*,*)    ' MAXIMUM LENGTH OF ELEMENT EDGES = ',TOTmax(2)
-      write(ILOG,*) ' MINIMUM LENGTH OF ELEMENT EDGES = ',TOTmin(2)
-      write(*,*)    ' MINIMUM LENGTH OF ELEMENT EDGES = ',TOTmin(2)
-      write(ILOG,*) ' MAXIMUM ASPECT RATIO  = ',TOTmax(3)
-      write(*,*)    ' MAXIMUM ASPECT RATIO  = ',TOTmax(3)
-    endif
-    !C
-  end subroutine fstr_precheck_elem
-
+  !> Non-zero profile output for gnuplot visualization
   subroutine hecmw_nonzero_profile(hecMESH, hecMAT)
     use hecmw_util
     implicit none
-    type (hecmwST_local_mesh) :: hecMESH
-    type (hecmwST_matrix)     :: hecMAT
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix)     :: hecMAT
 
-    integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio, ierr
+    integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio
     real(kind=kreal) :: rnum, dens, cond
     character :: fileid*3
 
     fio = 70 + hecMESH%my_rank
     write(fileid,"(i3.3)")hecMESH%my_rank
 
-    !ftype = 2: eps
-    !ftype = 4: png
     ftype = 4
 
     n = hecMAT%N
@@ -428,11 +115,8 @@ contains
     dens = 100*dble(nnz)/dble(9*n*n)
     rnum = (7.21d0+0.01*dlog10(dble(hecMAT%N)))*10.0d0/dble(hecMAT%N)
     cond = 1.0d0
-    !rnum = (7.25d0)*10.0d0/dble(hecMAT%N)
 
-    open(fio,file='nonzero.dat.'//fileid, status='replace', iostat=ierr)
-    if( ierr /= 0 ) return
-    !write(fio,"(a,f12.5,i0)")"##magic number 10 : 7.2, ",rnum,hecMAT%N
+    open(fio,file='nonzero.dat.'//fileid, status='replace')
     do i= 1, n
       jS= hecMAT%indexL(i-1) + 1
       jE= hecMAT%indexL(i  )
@@ -445,8 +129,7 @@ contains
     enddo
     close(fio)
 
-    open(fio,file='nonzero.plt.'//fileid, status='replace', iostat=ierr)
-    if( ierr /= 0 ) return
+    open(fio,file='nonzero.plt.'//fileid, status='replace')
     if(ftype == 4)then
       write(fio,"(a)")'set terminal png size 1500,1500'
     else
@@ -483,9 +166,6 @@ contains
     write(*,*)''
     write(*,*)' ### Command recommendation'
     write(*,*)' gnuplot -persist "nonzero.plt"'
-
-    !call system('gnuplot -persist "nonzero.plt"')
-    !open(fio,file='nonzero.dat',status='old')
-    !close(fio,status="delete")
   end subroutine hecmw_nonzero_profile
+
 end module m_fstr_precheck

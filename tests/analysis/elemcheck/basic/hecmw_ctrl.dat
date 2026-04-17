@@ -1,0 +1,8 @@
+!MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
+ elemcheck.msh
+!CONTROL, NAME=fstrCNT
+ elemcheck.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ elemcheck.res
+!RESULT, NAME=vis_out, IO=OUT
+ elemcheck_vis
