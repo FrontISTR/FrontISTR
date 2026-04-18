@@ -40,7 +40,7 @@ contains
     real(kind=kreal), parameter :: aspect_warn_threshold = 50.0d0
 
     !** Local variables
-    integer(kind=kint) :: nelem, mid, j, isect, nline, tline, icel, iiS
+    integer(kind=kint) :: nelem, mid, j, isect, icel, iiS
     integer(kind=kint) :: ndof2, nelem_wo_mpc
     integer(kind=kint) :: ie, ia, jelem, ic_type, nn, jS, jE, itype
     integer(kind=kint) :: nodLOCAL(20), NTOTsum(1)
@@ -154,8 +154,6 @@ contains
           mid = hecMESH%section%sect_mat_ID_item(isect)
           call precheck_get_thickness( hecMESH,mid,AA )
           al = sqrt( (xx(2)-xx(1))**2+(yy(2)-yy(1))**2+(zz(2)-zz(1))**2 )
-          nline = 1
-          tline = al
           vol = AA*al
           almax = al
           almin = al
@@ -164,6 +162,8 @@ contains
         elseif( ic_type.eq.641 ) then
           vol = 1.0d-12
         elseif( ic_type.eq.761 .or. ic_type.eq.781 ) then
+          ! 2nd-order shell: volume/edge calculation not yet implemented in elementInfo;
+          ! use dummy value to avoid zero-volume error
           vol = 1.0d-12
         endif
 
@@ -276,8 +276,6 @@ contains
 
         if    ( ic_type.eq.111 ) then
           al = sqrt( (xx(2)-xx(1))**2+(yy(2)-yy(1))**2+(zz(2)-zz(1))**2 )
-          nline = nline + 1
-          tline = tline + al
           vol = AA*al
           if( al.gt.tlmax ) tlmax = al
           if( al.lt.tlmin ) tlmin = al

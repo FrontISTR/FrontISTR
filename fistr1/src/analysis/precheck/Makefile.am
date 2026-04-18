@@ -4,15 +4,15 @@ MPILIBDIR               = @mpilibdir@
 MPIINCDIR               = @mpiincdir@
 MPILIBS                 = @mpilibs@
 
-HECMWDIR                = ../../../hecmw1
+HECMWDIR                = ../../../../hecmw1
 HECMWBINDIR             = $(HECMWDIR)/bin
 HECMWLIBDIR             = $(HECMWDIR)/lib
 HECMWINCDIR             = $(HECMWDIR)/include
 HECMWLIBS               = @hecmwlibs@
 
-FSTRBINDIR              = ../../bin
-FSTRLIBDIR              = ../../lib
-FSTRINCDIR              = ../../include
+FSTRBINDIR              = ../../../bin
+FSTRLIBDIR              = ../../../lib
+FSTRINCDIR              = ../../../include
 FSTRLIBS                = @fstrlibs@
 
 REVOCAPDIR              = @revocapdir@
@@ -34,21 +34,18 @@ FSTR_LDFLAGS            = @fstr_ldflags@
 ALL_LDFLAGS             = $(FSTR_LDFLAGS) $(HECMW_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS                = @optflags@
 
-REVOCAP_F90FLAGS        = @revocap_f90flags@
-REVOCAP_F90LDFLAGS      = @revocap_f90ldflags@
-
 F90                     = @f90@
 F90FLAGS                = @f90flags@
 BASE_F90FLAGS           = @base_f90flags@
 MPI_F90FLAGS            = @mpi_f90flags@
 HECMW_F90FLAGS          = @hecmw_f90flags@
 FSTR_F90FLAGS           = @fstr_f90flags@
-ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS) $(REVOCAP_F90FLAGS)
+ALL_F90FLAGS            = $(BASE_F90FLAGS) $(FSTR_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS)
 F90LDFLAGS              = @f90ldflags@
 MPI_F90LDFLAGS          = @mpi_f90ldflags@
 HECMW_F90LDFLAGS        = @hecmw_f90ldflags@
 FSTR_F90LDFLAGS         = @fstr_f90ldflags@
-ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS) $(REVOCAP_F90LDFLAGS)
+ALL_F90LDFLAGS          = $(FSTR_F90LDFLAGS) $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
 F90FPP                  = @f90fpp@
 F90OPTFLAGS             = @f90optflags@
 
@@ -67,47 +64,15 @@ COBJFILEPOSTFIX         = @cobjfilepostfix@
 F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 
 #------------------------------------------------------------------------------#
-.SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ .@f90objfilepostfix@ .c .f90 .F90 .f
-
-.c.@cobjfilepostfix@:
-	$(CC) -c $(ALL_CFLAGS) $(OPTFLAGS) $< -o $@
-
-.f90.@f90objfilepostfix@:
-	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
-
-.F90.@f90objfilepostfix@:
-	$(F90) -c $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS) $< -o $@
-
-.f.@f90objfilepostfix@:
-	$(F90) -c $(ALL_F90FLAGS) $(F90OPTFLAGS) $< -o $@
-
-#------------------------------------------------------------------------------#
-OBJS = \
-	hecmw2fstr_connect_conv.@cobjfilepostfix@ \
-	fstr_sort_index.@cobjfilepostfix@
+OBJS =
 
 OBJSF = \
-	hecmw2fstr_mesh_conv.@f90objfilepostfix@ \
-	fstr_element_activation.@f90objfilepostfix@ \
-	fstr_setup_util.@f90objfilepostfix@ \
-	fstr_ctrl_modifier.@f90objfilepostfix@ \
-	fstr_ctrl_common.@f90objfilepostfix@ \
-	fstr_ctrl_material.@f90objfilepostfix@ \
-	fstr_ctrl_static.@f90objfilepostfix@ \
-	fstr_ctrl_heat.@f90objfilepostfix@ \
-	fstr_ctrl_eigen.@f90objfilepostfix@ \
-	fstr_ctrl_dynamic.@f90objfilepostfix@ \
-	fstr_get_prop.@f90objfilepostfix@ \
-	fstr_setup.@f90objfilepostfix@ \
-	fstr_debug_dump.@f90objfilepostfix@ \
-	fstr_rcap_io.@f90objfilepostfix@
+        fstr_precheck.@f90objfilepostfix@ \
+        precheck_mesh_quality.@f90objfilepostfix@ \
+        precheck_make_result.@f90objfilepostfix@ \
+        precheck_LIB_elements.@f90objfilepostfix@
 
-INCLUDESF = \
-
-HEADERS = \
-	hecmw2fstr_connect_conv.h \
-	fstr_sort_index.h
+HEADERS =
 
 #------------------------------------------------------------------------------#
 all: @build_target@
@@ -128,7 +93,7 @@ install-module: $(OBJSF)
 
 $(OBJS): $(HEADERS)
 
-$(OBJSF): $(INCLUDESF)
+$(OBJSF):
 
 install:
 
