@@ -41,10 +41,7 @@ contains
     endif
 
     if(fstrPR%solution_type == kstPRECHECK) then
-      if(myrank == 0) then
-        write(IMSG,*)
-        write(IMSG,*) ' ****   STAGE Precheck  **'
-      endif
+      if(myrank == 0) write(*,*) ' ****   Start Precheck   ****'
 
       ! Allocate element quality arrays
       allocate(elem_vol(hecMESH%n_elem))
@@ -52,7 +49,11 @@ contains
 
       ! Mesh quality check
       call precheck_mesh_quality(hecMESH, hecMAT, elem_vol, elem_asp)
-      write(IDBG,*) 'precheck_mesh_quality: OK'
+
+      ! Write result file
+      if(IRESULT == 1) then
+        call precheck_write_result(hecMESH, elem_vol, elem_asp)
+      endif
 
       ! Build visualization result data and output
       call precheck_make_result(hecMESH, fstrRESULT, elem_vol, elem_asp)
@@ -62,18 +63,13 @@ contains
         call hecmw_visualize_by_addfname(hecMESH, fstrRESULT, 0, '_precheck')
         call hecmw_visualize_finalize
         call hecmw2fstr_mesh_conv(hecMESH)
-        write(IDBG,*) 'precheck visualization: OK'
       endif
       call hecmw_result_free(fstrRESULT)
 
-      ! Write result file
-      if(IRESULT == 1) then
-        call precheck_write_result(hecMESH, elem_vol, elem_asp)
-        write(IDBG,*) 'elemcheck result file: OK'
-      endif
-
       deallocate(elem_vol)
       deallocate(elem_asp)
+
+      if(myrank == 0) write(*,*) ' ****   End Precheck   ****'
     endif
 
     if(fstrPR%solution_type == kstNZPROF) then
