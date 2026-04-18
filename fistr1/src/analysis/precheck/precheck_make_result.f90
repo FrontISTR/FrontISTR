@@ -17,6 +17,7 @@ contains
   subroutine precheck_make_result(hecMESH, fstrRESULT, elem_vol, elem_asp)
     use hecmw
     use m_fstr
+    use elementInfo
     implicit none
     type(hecmwST_local_mesh), intent(in)     :: hecMESH
     type(hecmwST_result_data), intent(inout) :: fstrRESULT
@@ -26,14 +27,16 @@ contains
     integer(kind=kint) :: n_ncomp, n_ecomp, n_nitem, n_eitem
     integer(kind=kint) :: i, j, ie, ig, jS, jE, idx, isect, cid
     integer(kind=kint) :: n_ngrp, n_egrp, n_sgrp
+    integer(kind=kint) :: ic, isurf, ic_type, stype, nn, j0, k
+    integer(kind=kint) :: snode(20)
 
     n_ngrp = hecMESH%node_group%n_grp
     n_egrp = hecMESH%elem_group%n_grp
     n_sgrp = hecMESH%surf_group%n_grp
 
-    ! Node components: node groups
-    n_ncomp = n_ngrp
-    n_nitem = n_ngrp  ! each is scalar (dof=1)
+    ! Node components: node groups + surf groups (as node flags)
+    n_ncomp = n_ngrp + n_sgrp
+    n_nitem = n_ngrp + n_sgrp  ! each is scalar (dof=1)
 
     ! Element components: elem groups + surf groups + MATERIAL_ID + SECTION_ID + VOLUME + ASPECT_RATIO
     n_ecomp = n_egrp + n_sgrp + 4
@@ -76,6 +79,28 @@ contains
       enddo
     enddo
 
+    ! --- Fill surface group node flags ---
+    do ig = 1, n_sgrp
+      fstrRESULT%node_label(n_ngrp + ig) = 'SGRP_' // trim(hecMESH%surf_group%grp_name(ig))
+      jS = hecMESH%surf_group%grp_index(ig-1)
+      jE = hecMESH%surf_group%grp_index(ig)
+      do j = jS+1, jE
+        ic = hecMESH%surf_group%grp_item(2*j-1)  ! element ID
+        isurf = hecMESH%surf_group%grp_item(2*j)  ! face number
+        if(ic < 1 .or. ic > hecMESH%n_elem) cycle
+        ic_type = hecMESH%elem_type(ic)
+        call getSubFace(ic_type, isurf, stype, snode)
+        nn = getNumberOfNodes(stype)
+        j0 = hecMESH%elem_node_index(ic-1)
+        do k = 1, nn
+          idx = hecMESH%elem_node_item(j0 + snode(k))
+          if(idx >= 1 .and. idx <= hecMESH%n_node) then
+            fstrRESULT%node_val_item(n_nitem*(idx-1) + n_ngrp + ig) = 1.0d0
+          endif
+        enddo
+      enddo
+    enddo
+
     ! --- Fill element group flags ---
     do ig = 1, n_egrp
       fstrRESULT%elem_label(ig) = 'EGRP_' // trim(hecMESH%elem_group%grp_name(ig))
@@ -91,7 +116,7 @@ contains
 
     ! --- Fill surface group (element with face number) ---
     do ig = 1, n_sgrp
-      fstrRESULT%elem_label(n_egrp + ig) = 'SGRP_' // trim(hecMESH%surf_group%grp_name(ig))
+      fstrRESULT%elem_label(n_egrp + ig) = 'SGRP_FACE_' // trim(hecMESH%surf_group%grp_name(ig))
       jS = hecMESH%surf_group%grp_index(ig-1)
       jE = hecMESH%surf_group%grp_index(ig)
       do j = jS+1, jE
@@ -142,6 +167,7 @@ contains
     use hecmw
     use m_fstr
     use hecmw_result
+    use elementInfo
     implicit none
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     real(kind=kreal), intent(in)         :: elem_vol(:)
@@ -149,6 +175,8 @@ contains
 
     integer(kind=kint) :: ig, j, jS, jE, idx, ie, isect, cid
     integer(kind=kint) :: n_ngrp, n_egrp, n_sgrp
+    integer(kind=kint) :: ic, isurf, ic_type, stype, nn, j0, k
+    integer(kind=kint) :: snode(20)
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN) :: comment
     character(len=HECMW_NAME_LEN) :: label, nameID, addfname
@@ -178,6 +206,28 @@ contains
       call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 1, label, work_n)
     enddo
 
+    ! --- Surface groups (node flags) ---
+    do ig = 1, n_sgrp
+      work_n = 0.0d0
+      jS = hecMESH%surf_group%grp_index(ig-1)
+      jE = hecMESH%surf_group%grp_index(ig)
+      do j = jS+1, jE
+        ic = hecMESH%surf_group%grp_item(2*j-1)
+        isurf = hecMESH%surf_group%grp_item(2*j)
+        if(ic < 1 .or. ic > hecMESH%n_elem) cycle
+        ic_type = hecMESH%elem_type(ic)
+        call getSubFace(ic_type, isurf, stype, snode)
+        nn = getNumberOfNodes(stype)
+        j0 = hecMESH%elem_node_index(ic-1)
+        do k = 1, nn
+          idx = hecMESH%elem_node_item(j0 + snode(k))
+          if(idx >= 1 .and. idx <= hecMESH%n_node) work_n(idx) = 1.0d0
+        enddo
+      enddo
+      label = 'SGRP_' // trim(hecMESH%surf_group%grp_name(ig))
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 1, label, work_n)
+    enddo
+
     ! --- Element groups ---
     do ig = 1, n_egrp
       work_e = 0.0d0
@@ -202,7 +252,7 @@ contains
           work_e(idx) = dble(hecMESH%surf_group%grp_item(2*j))
         endif
       enddo
-      label = 'SGRP_' // trim(hecMESH%surf_group%grp_name(ig))
+      label = 'SGRP_FACE_' // trim(hecMESH%surf_group%grp_name(ig))
       call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, label, work_e)
     enddo
 
