@@ -307,7 +307,7 @@ contains
             call getContactStiffness_Alag(contact%states(j), contact%master(ctsurf), elecoord(:,1:nnode), &
               contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
               contact%fcoeff, contact%symmetric, stiffness, force, &
-              edisp=eledisp(1:nnode*3+3))
+              edisp=eledisp(1:nnode*3+3), iter=iter)
 
           ! Assemble contact stiffness matrix into global stiffness matrix
           call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)

@@ -20,7 +20,7 @@ module m_fstr_contact_elem_alag
 
 contains
 
-  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force, edisp)
+  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force, edisp, iter)
 
     type(tContactState), intent(inout) :: cstate       !< contact state (inout for projection info)
     type(tSurfElement), intent(in)  :: tSurf           !< surface element structure
@@ -31,16 +31,18 @@ contains
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
     real(kind=kreal), intent(out)   :: force(:)        !< contact force direction
     real(kind=kreal), optional, intent(in) :: edisp(:)  !< displacement increment for friction evaluation
+    integer(kind=kint), intent(in) :: iter    !< NR iteration number (for tangent switching)
 
     integer          :: i, j, nnode
     real(kind=kreal) :: Bn(size(tSurf%nodes)*3+3), Ht(2,size(tSurf%nodes)*3+3), Gt(2,size(tSurf%nodes)*3+3)
     real(kind=kreal) :: metric(2,2)
     real(kind=kreal) :: A(2,2)       !< 2D local tangent operator
-    real(kind=kreal) :: alpha_proj
+    real(kind=kreal) :: alpha_proj, that_dir(2)
     real(kind=kreal) :: K_fric(size(tSurf%nodes)*3+3,size(tSurf%nodes)*3+3)  !< friction stiffness
     real(kind=kreal) :: tmp_vec(2)
     real(kind=kreal) :: dummy_force(size(tSurf%nodes)*3+3)  !< dummy for computeFrictionForce_ALag
     real(kind=kreal) :: eval_disp(size(tSurf%nodes)*3+3)   !< displacement for trial friction evaluation
+    integer(kind=kint) :: iter_local
 
     nnode = size(tSurf%nodes)
 
@@ -65,7 +67,7 @@ contains
       endif
       call computeFrictionForce_ALag(cstate, fcoeff, cstate%multiplier(1), metric, &
                                       Ht, Gt, eval_disp, nnode*3+3, dummy_force, &
-                                      mut, alpha=alpha_proj)
+                                      mut, alpha=alpha_proj, that=that_dir)
 
       ! Friction tangent operator A in 2D metric space:  K_fric = Ht^T * A * Ht
       if( cstate%multiplier(1) <= 0.0d0 .or. alpha_proj <= 1.0d-20 ) then
@@ -78,15 +80,24 @@ contains
         A(2,1) = mut * metric(2,1)
         A(2,2) = mut * metric(2,2)
       else
-        ! Slip: A = alpha * mu_t * M (approximate; direction correction omitted)
-        !   Exact tangent is alpha*mu_t*(M - t_hat (x) t_hat) where t_hat = g/||g||_M,
-        !   but (M - t_hat (x) t_hat) has a zero eigenvalue along the slip direction, which can cause Newton oscillation.
-        !   Using alpha*mu_t*M instead retains positive stiffness in all directions;
-        !   the augmented Lagrangian outer loop still drives the solution to the correct equilibrium.
-        A(1,1) = alpha_proj * mut * metric(1,1)
-        A(1,2) = alpha_proj * mut * metric(1,2)
-        A(2,1) = alpha_proj * mut * metric(2,1)
-        A(2,2) = alpha_proj * mut * metric(2,2)
+        ! Slip: switch tangent by NR iteration count for stability.
+        !   iter <= 2: A = alpha*mu_t*M  (stable, no directional correction)
+        !   iter >= 3: A = alpha*mu_t*(M - t_hat x t_hat)  (consistent tangent)
+        ! The first two NR steps use M to let t_hat stabilize; after that the consistent tangent is used to regain quadratic convergence.
+        iter_local = 1
+        if( present(iter) ) iter_local = iter
+
+        if( iter_local <= 2 ) then
+          A(1,1) = alpha_proj * mut * metric(1,1)
+          A(1,2) = alpha_proj * mut * metric(1,2)
+          A(2,1) = alpha_proj * mut * metric(2,1)
+          A(2,2) = alpha_proj * mut * metric(2,2)
+        else
+          A(1,1) = alpha_proj * mut * (metric(1,1) - that_dir(1)*that_dir(1))
+          A(1,2) = alpha_proj * mut * (metric(1,2) - that_dir(1)*that_dir(2))
+          A(2,1) = alpha_proj * mut * (metric(2,1) - that_dir(2)*that_dir(1))
+          A(2,2) = alpha_proj * mut * (metric(2,2) - that_dir(2)*that_dir(2))
+        endif
       endif
 
       ! Compute friction stiffness: K_fric = Ht^T * A * Ht (consistent tangent)
