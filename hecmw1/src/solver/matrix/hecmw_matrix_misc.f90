@@ -212,7 +212,6 @@ contains
     if (associated(hecMAT%indexU)) deallocate(hecMAT%indexU)
     if (associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
     if (associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
-    if (associated(hecMAT%ALU)) deallocate(hecMAT%ALU)
   end subroutine hecmw_mat_finalize
 
   subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )
@@ -840,7 +839,6 @@ contains
     if (associated(src%D)) dest%D => src%D
     if (associated(src%B)) dest%B => src%B
     if (associated(src%X)) dest%X => src%X
-    if (associated(src%ALU)) dest%ALU => src%ALU
     if (associated(src%AL)) dest%AL => src%AL
     if (associated(src%AU)) dest%AU => src%AU
     if (associated(src%indexL)) dest%indexL => src%indexL
