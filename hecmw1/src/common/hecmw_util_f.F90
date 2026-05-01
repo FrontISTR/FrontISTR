@@ -447,7 +447,7 @@ module hecmw_util
 
   type hecmwST_matrix
     integer(kind=kint) ::  N, NP, NPL, NPU, NDOF
-    real(kind=kreal), pointer :: D(:), B(:), X(:), ALU(:)
+    real(kind=kreal), pointer :: D(:), B(:), X(:)
     real(kind=kreal), pointer :: AL(:), AU(:)
     integer(kind=kint), pointer :: indexL(:), indexU(:)
     integer(kind=kint), pointer ::  itemL(:),  itemU(:)
@@ -818,7 +818,6 @@ contains
     nullify( P%D )
     nullify( P%B )
     nullify( P%X )
-    nullify( P%ALU )
     nullify( P%AL )
     nullify( P%AU )
     nullify( P%indexL )
