@@ -42,7 +42,6 @@ contains
     real(kind=kreal) :: tmp_vec(2)
     real(kind=kreal) :: dummy_force(size(tSurf%nodes)*3+3)  !< dummy for computeFrictionForce_ALag
     real(kind=kreal) :: eval_disp(size(tSurf%nodes)*3+3)   !< displacement for trial friction evaluation
-    integer(kind=kint) :: iter_local
 
     nnode = size(tSurf%nodes)
 
@@ -84,10 +83,7 @@ contains
         !   iter <= 2: A = alpha*mu_t*M  (stable, no directional correction)
         !   iter >= 3: A = alpha*mu_t*(M - t_hat x t_hat)  (consistent tangent)
         ! The first two NR steps use M to let t_hat stabilize; after that the consistent tangent is used to regain quadratic convergence.
-        iter_local = 1
-        if( present(iter) ) iter_local = iter
-
-        if( iter_local <= 2 ) then
+        if( iter <= 2 ) then
           A(1,1) = alpha_proj * mut * metric(1,1)
           A(1,2) = alpha_proj * mut * metric(1,2)
           A(2,1) = alpha_proj * mut * metric(2,1)
