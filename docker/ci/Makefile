@@ -1,5 +1,6 @@
 CI_REGISTRY_IMAGE  ?= registry.gitlab.com/frontistr-commons/frontistr
 ARCH  ?= x86_64,aarch64,ppc64le,s390x
+ARCH_2604  ?= x86_64,aarch64,ppc64le
 all: runtime build document
 
 login:
@@ -12,13 +13,13 @@ endif
 runtime: builder
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2204 -f Dockerfile.ubuntu2204 . --target runtime
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2404 -f Dockerfile.ubuntu2404 . --target runtime
-	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2604 -f Dockerfile.ubuntu2604 . --target runtime
+	docker buildx build --push --builder multiarch --platform $(ARCH_2604) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2604 -f Dockerfile.ubuntu2604 . --target runtime
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/runtime:ubuntu2204-metis4 -f Dockerfile.ubuntu2204 . --target runtime
 build: builder
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:ubuntu2204 -f Dockerfile.ubuntu2204 . --target build
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:ubuntu2204-metis4 -f Dockerfile.ubuntu2204 . --target build-metis4
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:ubuntu2404 -f Dockerfile.ubuntu2404 . --target build
-	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/build:ubuntu2604 -f Dockerfile.ubuntu2604 . --target build
+	docker buildx build --push --builder multiarch --platform $(ARCH_2604) -t $(CI_REGISTRY_IMAGE)/build:ubuntu2604 -f Dockerfile.ubuntu2604 . --target build
 document: builder
 	docker buildx build --push --builder multiarch --platform x86_64 -t $(CI_REGISTRY_IMAGE)/document      -f Dockerfile.ubuntu2204      . --target document
 builder:
