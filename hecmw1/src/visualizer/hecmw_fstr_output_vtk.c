@@ -19,7 +19,7 @@
 void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
 	int i, j, k;
-	int jS, jE;
+	long long jS, jE;
 	int myrank, petot, steptot;
 	int n_node, n_elem, shift, etype;
 	int data_tot_n, data_tot_e;
@@ -157,13 +157,16 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		if(mesh->elem_type[i]==641) shift=2;
 		if(mesh->elem_type[i]==761) shift=3;
 		if(mesh->elem_type[i]==781) shift=4;
-		if(mesh->elem_type[i]==342){
-			for(j=jS; j<jE-shift; j++){
-				fprintf (outfp, "%d ", mesh->elem_node_item[jS+table342[j-jS]]-1);
-			}
-		}else{
-			for(j=jS; j<jE-shift; j++){
-				fprintf (outfp, "%d ", mesh->elem_node_item[j]-1);
+		{
+			long long jj;
+			if(mesh->elem_type[i]==342){
+				for(jj=jS; jj<jE-shift; jj++){
+					fprintf (outfp, "%d ", mesh->elem_node_item[jS+table342[jj-jS]]-1);
+				}
+			}else{
+				for(jj=jS; jj<jE-shift; jj++){
+					fprintf (outfp, "%d ", mesh->elem_node_item[jj]-1);
+				}
 			}
 		}
 		fprintf (outfp, "\n");
@@ -233,7 +236,7 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *data, char *outfile, char *outfile1, HECMW_Comm VIS_COMM)
 {
 	int i, j, k;
-	int jS, jE;
+	long long jS, jE;
 	int myrank, petot, steptot;
 	int n_node, n_elem, shift, etype;
 	int data_tot_n, data_tot_e, in, ioffset;
@@ -437,15 +440,18 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 		if(mesh->elem_type[i]==641) shift=2;
 		if(mesh->elem_type[i]==761) shift=3;
 		if(mesh->elem_type[i]==781) shift=4;
-		if(mesh->elem_type[i]==342){
-			for(j=jS; j<jE-shift; j++){
-				in = (int)mesh->elem_node_item[jS+table342[j-jS]]-1;
-				fwrite (&in, sizeof(int), 1, outfp);
-			}
-		}else{
-			for(j=jS; j<jE-shift; j++){
-				in = (int)mesh->elem_node_item[j]-1;
-				fwrite (&in, sizeof(int), 1, outfp);
+		{
+			long long jj;
+			if(mesh->elem_type[i]==342){
+				for(jj=jS; jj<jE-shift; jj++){
+					in = (int)mesh->elem_node_item[jS+table342[jj-jS]]-1;
+					fwrite (&in, sizeof(int), 1, outfp);
+				}
+			}else{
+				for(jj=jS; jj<jE-shift; jj++){
+					in = (int)mesh->elem_node_item[jj]-1;
+					fwrite (&in, sizeof(int), 1, outfp);
+				}
 			}
 		}
 	}

@@ -1716,7 +1716,8 @@ static int setup_node(struct hecmwST_local_mesh *mesh) {
 }
 
 static int setup_elem(struct hecmwST_local_mesh *mesh) {
-  int i, j, n, id;
+  int i, j, id;
+  long long n;
   size_t size, ncon;
   struct hecmw_io_element *p;
 

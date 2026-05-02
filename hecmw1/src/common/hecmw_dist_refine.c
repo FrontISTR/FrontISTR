@@ -704,7 +704,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
   int i, j;
   int n_elem_ref_tot;
   size_t n_enode_ref_tot;
-  int *elem_node_index_ref;
+  long long *elem_node_index_ref;
   int *elem_node_item_ref;
 
   HECMW_log(HECMW_LOG_DEBUG, "Original Element Count = %d\n", mesh->n_elem_gross);
@@ -779,7 +779,7 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
    * allocate memory
    */
   ref_mesh->elem_node_index =
-      (int *)HECMW_malloc(sizeof(int) * (n_elem_ref_tot + 1));
+      (long long *)HECMW_malloc(sizeof(long long) * (n_elem_ref_tot + 1));
   if (ref_mesh->elem_node_index == NULL) {
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
@@ -800,7 +800,8 @@ static int refine_element(struct hecmwST_local_mesh *mesh,
   elem_node_item_ref           = ref_mesh->elem_node_item;
   n_elem_ref_tot               = 0;
   for (i = 0; i < mesh->n_elem_type; i++) {
-    int etype, istart, iend, n_elem, etype_rcap, n_elem_ref, nn, jstart;
+    int etype, istart, iend, n_elem, etype_rcap, n_elem_ref, nn;
+    long long jstart;
     int *elem_node_item;
     etype  = mesh->elem_type_item[i];
     istart = mesh->elem_type_index[i];
@@ -1753,7 +1754,8 @@ static int get_rcap_elem_max_node(int etype_rcap) {
 static int determine_node_rank_of_purely_external_elems(
   const struct hecmwST_local_mesh *mesh,
   struct hecmwST_local_mesh *ref_mesh) {
-  int eid, rank, nn, k, nid;
+  int eid, rank, k, nid;
+  long long nn;
   int *elem_nodes;
 
   for (eid = 1; eid <= ref_mesh->n_elem_gross; eid++) {
@@ -2014,7 +2016,7 @@ static void write_elem_with_mismatching_refinement(const struct hecmwST_local_me
     for (j = 0; j < n_shared_elem; j++) {
       int eid = HECMW_varray_int_get(shared + i, j);
       int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid-1];
-      int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
+      long long nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
       for (k = 0; k < nn; k++) {
         nid = elem_nodes[k];
         /* find local ID within shared_nodes */
@@ -2094,7 +2096,7 @@ static void write_elem_with_mismatching_refinement(const struct hecmwST_local_me
       if (is_error) {
         int eid = HECMW_varray_int_get(shared + i, j);
         int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid-1];
-        int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
+        long long nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
         HECMW_log(HECMW_LOG_ERROR, "elem local ID: %d\n", eid);
         for (k = 0; k < nn; k++) {
           nid = elem_nodes[k];
@@ -2142,7 +2144,7 @@ static void write_refined_shared_in_ucd(const struct hecmwST_local_mesh *mesh,
       int eid = HECMW_varray_int_get(shared + i, j);
       int etype = ref_mesh->elem_type[eid-1];
       int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid-1];
-      int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
+      long long nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid-1];
       int *index_ucd = conv_index_ucd2hec(etype);
       HECMW_assert(index_ucd);
       fprintf(fp, "%d 0 %s", j+1, HECMW_get_ucd_label(etype));
@@ -2232,7 +2234,7 @@ static int check_node_rank(const struct hecmwST_local_mesh *mesh,
     HECMW_varray_int_init(shared_nodes + i);
     for (j = 0; j < HECMW_varray_int_nval(shared + i); j++) {
       int eid = HECMW_varray_int_get(shared + i, j);
-      int nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid - 1];
+      long long nn = ref_mesh->elem_node_index[eid] - ref_mesh->elem_node_index[eid - 1];
       int *elem_nodes = ref_mesh->elem_node_item + ref_mesh->elem_node_index[eid - 1];
 
       for (k = 0; k < nn; k++) {
@@ -4006,10 +4008,13 @@ static int reorder_nodes(struct hecmwST_local_mesh *mesh, int *old2new,
    * Update using old2new
    */
   /* elem_node_item */
-  for (i = 0; i < mesh->elem_node_index[mesh->n_elem_gross]; i++) {
-    int old                 = mesh->elem_node_item[i];
-    int new                 = old2new[old - 1] + 1;
-    mesh->elem_node_item[i] = new;
+  {
+    long long ii;
+    for (ii = 0; ii < mesh->elem_node_index[mesh->n_elem_gross]; ii++) {
+      int old                 = mesh->elem_node_item[ii];
+      int new                 = old2new[old - 1] + 1;
+      mesh->elem_node_item[ii] = new;
+    }
   }
   /* import_item */
   for (i = 0; i < mesh->import_index[mesh->n_neighbor_pe]; i++) {
@@ -4301,8 +4306,8 @@ static int reorder_elems(struct hecmwST_local_mesh *mesh, int *old2new,
   }
   /* elem_node_index, elem_node_item */
   {
-    int *new_elem_node_index =
-        (int *)HECMW_malloc(sizeof(int) * (mesh->n_elem_gross + 1));
+    long long *new_elem_node_index =
+        (long long *)HECMW_malloc(sizeof(long long) * (mesh->n_elem_gross + 1));
     int *new_elem_node_item = (int *)HECMW_malloc(
         sizeof(int) * mesh->elem_node_index[mesh->n_elem_gross]);
     if (new_elem_node_index == NULL || new_elem_node_item == NULL) {
@@ -4312,15 +4317,15 @@ static int reorder_elems(struct hecmwST_local_mesh *mesh, int *old2new,
     new_elem_node_index[0] = 0;
     for (i = 0; i < mesh->n_elem_gross; i++) {
       int old = new2old[i];
-      int nn  = mesh->elem_node_index[old + 1] - mesh->elem_node_index[old];
+      long long nn  = mesh->elem_node_index[old + 1] - mesh->elem_node_index[old];
       new_elem_node_index[i + 1] = new_elem_node_index[i] + nn;
     }
     for (i = 0; i < mesh->n_elem_gross; i++) {
       int old       = new2old[i];
-      int start_old = mesh->elem_node_index[old];
-      int start_new = new_elem_node_index[i];
-      int nn        = new_elem_node_index[i + 1] - start_new;
-      int j;
+      long long start_old = mesh->elem_node_index[old];
+      long long start_new = new_elem_node_index[i];
+      long long nn        = new_elem_node_index[i + 1] - start_new;
+      long long j;
       for (j                              = 0; j < nn; j++)
         new_elem_node_item[start_new + j] = mesh->elem_node_item[start_old + j];
     }

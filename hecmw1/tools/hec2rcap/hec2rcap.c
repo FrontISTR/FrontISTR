@@ -94,7 +94,7 @@ int conv_elem( struct hecmwST_local_mesh* mesh, FILE* fp )
 		}
 		for( icel = is; icel<ie; icel++ ) {
 			int eid = mesh->global_elem_ID[icel];
-			int n0 = mesh->elem_node_index[icel];
+			long long n0 = mesh->elem_node_index[icel];
 			fprintf( fp, "%d", eid );
 			if( etype_count > 1 ) {
 				switch( etype ) {
