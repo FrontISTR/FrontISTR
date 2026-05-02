@@ -1,0 +1,50 @@
+.ubuntu2604:
+    image: ${REGISTRY}/build:ubuntu2604
+build/ubuntu2604/serial:
+    extends: [".build",".ubuntu2604"]
+build/ubuntu2604/openmp:
+    extends: [".build",".ubuntu2604"]
+build/ubuntu2604/mpi:
+    extends: [".build",".ubuntu2604"]
+build/ubuntu2604/hybrid:
+    extends: [".build",".ubuntu2604"]
+test/ubuntu2604/serial/serial:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/serial"]
+test/ubuntu2604/openmp/serial:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/openmp"]
+test/ubuntu2604/openmp/openmp:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/openmp"]
+test/ubuntu2604/mpi/serial:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/mpi"]
+test/ubuntu2604/mpi/mpi:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/mpi"]
+test/ubuntu2604/hybrid/serial:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/hybrid"]
+test/ubuntu2604/hybrid/openmp:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/hybrid"]
+test/ubuntu2604/hybrid/mpi:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/hybrid"]
+test/ubuntu2604/hybrid/hybrid:
+    extends: [".test",".ubuntu2604"]
+    needs: ["build/ubuntu2604/hybrid"]
+    tags: ["saas-linux-medium-amd64"]
+deb/ubuntu2604/hybrid:
+    needs: ["build/ubuntu2604/hybrid"]
+    extends: [".deb",".ubuntu2604"]
+deb/ubuntu2604/mpi:
+    needs: ["build/ubuntu2604/mpi"]
+    extends: [".deb",".ubuntu2604"]
+deb/ubuntu2604/openmp:
+    needs: ["build/ubuntu2604/openmp"]
+    extends: [".deb",".ubuntu2604"]
+deb/ubuntu2604/serial:
+    needs: ["build/ubuntu2604/serial"]
+    extends: [".deb",".ubuntu2604"]
