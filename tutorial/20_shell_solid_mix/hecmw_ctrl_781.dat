@@ -1,5 +1,5 @@
 !MESH, NAME=fstrMSH, TYPE=HECMW-ENTIRE
- mix_model.msh
+ mix_model_781.msh
 !CONTROL, NAME=fstrCNT
  mix_model_781.cnt
 !RESULT, NAME=fstrRES, IO=OUT
