@@ -90,8 +90,8 @@ contains
     real(kind=kreal) :: YV1, YV2, X1, X2
 
     integer(kind=kint) :: N, NP
-    integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
-    real(kind=kreal), pointer :: AL(:), AU(:), D(:)
+    integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:), indexA(:), itemA(:)
+    real(kind=kreal), pointer :: AL(:), AU(:), D(:), A(:)
 
     ! added for turning >>>
     integer, parameter :: numOfBlockPerThread = 100
@@ -117,13 +117,17 @@ contains
       NP = hecMAT%NP
       indexL => hecMAT%indexL
       indexU => hecMAT%indexU
+      indexA => hecMAT%indexA
       itemL => hecMAT%itemL
       itemU => hecMAT%itemU
+      itemA => hecMAT%itemA
       AL => hecMAT%AL
       AU => hecMAT%AU
       D => hecMAT%D
+      A => hecMAT%A
 
       ! added for turning >>>
+#ifndef _OPENACC
       if (.not. isFirst) then
         numOfBlock = numOfThread * numOfBlockPerThread
         if (endPos(numOfBlock-1) .ne. N-1) then
@@ -163,6 +167,7 @@ contains
 
         isFirst = .false.
       endif
+#endif
       ! <<< added for turning
 
       START_TIME= HECMW_WTIME()
@@ -178,6 +183,28 @@ contains
       !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
       !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+      do i = 1,N
+        X1= X(2*i-1)
+        X2= X(2*i  )
+        YV1= 0
+        YV2= 0
+        jS= indexA(i) + 1
+        jE= indexA(i+1)
+        do j= jS, jE
+          in  = itemA(j)
+          X1 = X(2*in-1)
+          X2 = X(2*in  )
+          YV1= YV1 + A(4*j-3)*X1 + A(4*j-2)*X2
+          YV2= YV2 + A(4*j-1)*X1 + A(4*j  )*X2
+        enddo
+        Y(2*i-1)= YV1
+        Y(2*i  )= YV2
+      enddo
+      !$acc end kernels
+#else
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,X1,X2,YV1,YV2,jS,jE,j,in,threadNum,blockNum,blockIndex) &
         !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
@@ -215,6 +242,7 @@ contains
       enddo
 
       !$OMP END PARALLEL
+#endif
 
       !OCL END_CACHE_SUBSECTOR
       !OCL END_CACHE_SECTOR_SIZE
@@ -252,13 +280,22 @@ contains
     Tcomm = 0.d0
     call hecmw_matvec_22 (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i),shared(hecMAT,R,B)
     !$omp do
+#endif
     do i = 1, hecMAT%N * 2
       R(i) = B(i) - R(i)
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
   end subroutine hecmw_matresid_22
 
   !C
@@ -315,14 +352,25 @@ contains
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
     !$omp do
+#endif
     do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
+#ifndef _OPENACC
     !$omp end do
+#endif
 
+#ifdef _OPENACC
+    !$acc loop independent
+#else
     !$omp do
+#endif
     OUTER: do i= 1, hecMESH%mpc%n_mpc
       do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
         if (hecMESH%mpc%mpc_dof(j) > 2) cycle OUTER
@@ -335,8 +383,12 @@ contains
         Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
       enddo
     enddo OUTER
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
   end subroutine hecmw_Tvec_22
 
@@ -362,14 +414,25 @@ contains
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
     !$omp do
+#endif
     do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
+#ifndef _OPENACC
     !$omp end do
+#endif
 
+#ifdef _OPENACC
+    !$acc loop independent
+#else
     !$omp do
+#endif
     OUTER: do i= 1, hecMESH%mpc%n_mpc
       do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
         if (hecMESH%mpc%mpc_dof(j) > 2) cycle OUTER
@@ -379,12 +442,20 @@ contains
       Y(kk) = 0.d0
       do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
         jj = 2 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+#ifdef _OPENACC
+        !$acc atomic update
+#else
         !omp atomic
+#endif
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
     enddo OUTER
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
   end subroutine hecmw_Ttvec_22
 

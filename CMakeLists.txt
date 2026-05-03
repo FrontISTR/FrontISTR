@@ -124,6 +124,18 @@ if(WIN32)
   set(WINDOWS TRUE)
 endif()
 
+# NVIDIA Compiler
+if(CMAKE_C_COMPILER_ID MATCHES "NVHPC" OR CMAKE_C_COMPILER_ID MATCHES "PGI")
+  set(CMAKE_C_FLAGS
+    "${CMAKE_C_FLAGS} -acc -Minfo=accel -gpu=cc80,mem:managed")
+  set(CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} -acc -Minfo=accel -gpu=cc80,mem:managed")
+  set(CMAKE_Fortran_FLAGS
+    "${CMAKE_Fortran_FLAGS} -acc -Minfo=accel -gpu=cc80,mem:managed -Mstack_arrays")
+  # Remove libnvc to prevent GPU detection issues with OpenACC
+  # See: https://forums.developer.nvidia.com/t/failed-cuda-device-detection-when-explicitly-linking-libnvc/203225
+  list(REMOVE_ITEM CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES nvc)
+endif()
 ###############################################################
 # Options
 ###############################################################

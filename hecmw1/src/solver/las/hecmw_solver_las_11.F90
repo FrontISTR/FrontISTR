@@ -40,6 +40,21 @@ contains
     if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
     START_TIME= HECMW_WTIME()
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+    do i= 1, hecMAT%N
+      YV= 0
+      jS= hecMAT%indexA(i) + 1
+      jE= hecMAT%indexA(i+1)
+      do j= jS, jE
+        in= hecMAT%itemA(j)
+        YV= YV + hecMAT%A(j) * X(in)
+      enddo
+      Y(i)= YV
+    enddo
+    !$acc end kernels
+#else
     do i= 1, hecMAT%N
       YV= hecMAT%D(i) * X(i)
       jS= hecMAT%indexL(i-1) + 1
@@ -56,6 +71,7 @@ contains
       enddo
       Y(i)= YV
     enddo
+#endif
     END_TIME = hecmw_Wtime()
     time_Ax = time_Ax + END_TIME - START_TIME
 
@@ -83,9 +99,12 @@ contains
     call hecmw_matvec_11 (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
 
+    !$acc kernels
+    !$acc loop independent
     do i = 1, hecMAT%N
       R(i) = B(i) - R(i)
     enddo
+    !$acc end kernels
 
   end subroutine hecmw_matresid_11
 

@@ -366,6 +366,9 @@ contains
   !C
   subroutine hecmw_allreduce_R (hecMESH, val, n, ntag)
     use hecmw_util
+#ifdef _OPENACC
+    use openacc
+#endif
     implicit none
     integer(kind=kint):: n, ntag
     real(kind=kreal), dimension(n) :: val
@@ -373,13 +376,34 @@ contains
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
     real(kind=kreal), dimension(:), allocatable :: VALM
+#ifdef _OPENACC
+    integer(kind=kint) :: i
+    real(kind=kreal), dimension(n) :: tmp
+    type(c_devptr) :: tmp_dev
+
+    tmp_dev = acc_malloc(kreal * n)
+    call acc_map_data(tmp, tmp_dev, kreal * n)
+    !$acc serial
+    do i = 1, n
+      tmp(i) = val(i)
+    enddo
+    !$acc end serial
+#endif
 
     allocate (VALM(n))
     VALM= 0.d0
     if (ntag .eq. hecmw_sum) then
+#ifdef _OPENACC
+      !$acc host_data use_device(tmp)
+      call MPI_allREDUCE                                              &
+        &       (tmp, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM,              &
+        &        hecMESH%MPI_COMM, ierr)
+      !$acc end host_data
+#else
       call MPI_allREDUCE                                              &
         &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM,              &
         &        hecMESH%MPI_COMM, ierr)
+#endif
     endif
 
     if (ntag .eq. hecmw_max) then
@@ -394,6 +418,11 @@ contains
         &        hecMESH%MPI_COMM, ierr)
     endif
 
+#ifdef _OPENACC
+    call acc_unmap_data(tmp)
+    call acc_free(tmp_dev)
+#endif
+
     val= VALM
     deallocate (VALM)
 #endif
@@ -407,7 +436,9 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     real(kind=kreal), dimension(1) :: val
+    !$acc serial
     val(1) = s
+    !$acc end serial
     call hecmw_allreduce_R(hecMESH, val, 1, ntag )
     s = val(1)
 #endif

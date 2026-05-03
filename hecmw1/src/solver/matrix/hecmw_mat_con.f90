@@ -87,6 +87,7 @@ contains
 
     hecMAT%NPL = hecMAT%indexL(hecMAT%NP)
     hecMAT%NPU = hecMAT%indexU(hecMAT%NP)
+    hecMAT%NPA = hecMAT%NP + hecMAT%NPL + hecMAT%NPU
 
     allocate (hecMAT%itemL(hecMAT%NPL), hecMAT%itemU(hecMAT%NPU))
 

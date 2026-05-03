@@ -446,11 +446,14 @@ module hecmw_util
   end type hecmwST_matrix_lagrange
 
   type hecmwST_matrix
-    integer(kind=kint) ::  N, NP, NPL, NPU, NDOF
+    integer(kind=kint) ::  N, NP, NPL, NPU, NPA, NDOF
     real(kind=kreal), pointer :: D(:), B(:), X(:)
     real(kind=kreal), pointer :: AL(:), AU(:)
+    real(kind=kreal), pointer :: A(:)
     integer(kind=kint), pointer :: indexL(:), indexU(:)
+    integer(kind=kint), pointer :: indexA(:)
     integer(kind=kint), pointer ::  itemL(:),  itemU(:)
+    integer(kind=kint), pointer ::  itemA(:)
     integer(kind=kint ), dimension(100) :: Iarray
     real   (kind=kreal), dimension(100) :: Rarray
     logical :: symmetric = .true.
@@ -820,10 +823,13 @@ contains
     nullify( P%X )
     nullify( P%AL )
     nullify( P%AU )
+    nullify( P%A )
     nullify( P%indexL )
     nullify( P%indexU )
+    nullify( P%indexA )
     nullify( P%itemL )
     nullify( P%itemU )
+    nullify( P%itemA )
   end subroutine hecmw_nullify_matrix
 
   subroutine hecmw_print_matrix( fname, P )

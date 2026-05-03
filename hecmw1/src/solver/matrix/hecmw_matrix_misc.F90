@@ -98,6 +98,7 @@ module hecmw_matrix_misc
   public :: hecmw_mat_diag
   public :: hecmw_mat_recycle_precond_setting
   public :: hecmw_mat_substitute
+  public :: hecmw_mat_integrate
 
   integer, parameter :: IDX_I_ITER               = 1
   integer, parameter :: IDX_I_METHOD             = 2
@@ -848,5 +849,64 @@ contains
     dest%Iarray(:) = src%Iarray(:)
     dest%Rarray(:) = src%Rarray(:)
   end subroutine hecmw_mat_substitute
+
+  !> Integrate matrix components into a single array for efficient access
+  !>
+  !> This subroutine combines the lower (AL), diagonal (D), and upper (AU) 
+  !> components of the matrix into a single array (A) for each non-zero entry. 
+  !> The indexA and itemA arrays are also constructed to map the original 
+  !> matrix structure to the integrated format. This is particularly useful for 
+  !> GPU computations where coalesced memory access is important.
+  !>
+  !> @note This subroutine is a no-op on CPU-only builds.
+  !>
+  !> @note This subroutine is only compiled when _OPENACC is defined, 
+  !> indicating that it is intended for use in an OpenACC parallel environment.
+  subroutine hecmw_mat_integrate( hecMAT )
+    type (hecmwST_matrix), intent(inout) :: hecMAT
+#ifdef _OPENACC
+    integer(kind=kint) :: i, j, k, nn, pre, pp, jS, jE
+
+    nn = hecMAT%NDOF * hecMAT%NDOF
+    allocate (hecMAT%indexA(0:hecMAT%NP))
+    allocate (hecMAT%itemA(hecMAT%NPA))
+    hecMAT%indexA(0) = 0
+
+    pre = 0
+    pp = 0
+    !$acc parallel loop private(i, j, k, pre, pp, jS, jE)
+    do i = 1, hecMAT%NP
+      indexA(i) = i + hecMAT%indexL(i) + hecMAT%indexU(i)
+
+      pre = i - 1 + hecMAT%indexU(i - 1)
+      jS= hecMAT%indexL(i - 1) + 1
+      jE= hecMAT%indexL(i  )
+      do j = jS, jE
+        pp = pre + j
+        hecMAT%itemA(pp) = hecMAT%itemL(j)
+        do k = -nn+1, 0
+          hecMAT%A(nn * pp + k) = hecMAT%AL(nn * j + k)
+        enddo
+      enddo
+
+      pp = i + hecMAT%indexU(i - 1) + hecMAT%indexL(i)
+      hecMAT%itemA(pp) = i
+      do k = -nn+1, 0
+        hecMAT%A(nn * pp + k) = hecMAT%D(nn * i + k)
+      enddo
+
+      pre = i + hecMAT%indexL(i)
+      jS= hecMAT%indexU(i - 1) + 1
+      jE= hecMAT%indexU(i  )
+      do j = jS, jE
+        pp = pre + j
+        hecMAT%itemA(pp) = hecMAT%itemU(j)
+        do k = -nn+1, 0
+          hecMAT%A(nn * pp + k) = hecMAT%AU(nn * j + k)
+        enddo
+      enddo
+    enddo
+#endif
+  end subroutine hecmw_mat_integrate
 
 end module hecmw_matrix_misc

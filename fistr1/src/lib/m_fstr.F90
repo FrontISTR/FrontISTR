@@ -914,11 +914,23 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
+#ifdef _OPENACC
+    allocate (hecMAT%A(nn*(hecMAT%NPA))        ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(*,*) "##ERROR : not enough memory"
+      write(idbg,*) 'stop due to allocation error'
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm() )
+    endif
+#endif
     hecMAT%D  = 0.0d0
     hecMAT%AL = 0.0d0
     hecMAT%AU = 0.0d0
     hecMAT%B  = 0.0d0
     hecMAT%X  = 0.0d0
+#ifdef _OPENACC
+    hecMAT%A  = 0.0d0
+#endif
   end subroutine hecMAT_init
 
   subroutine hecMAT_finalize( hecMAT )
@@ -961,6 +973,14 @@ contains
     endif
     if( associated(HECMAT%X) ) then
       deallocate(hecMAT%X                   ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(hecMAT%A) ) then
+      deallocate(hecMAT%A                   ,stat=ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error'
         call flush(idbg)

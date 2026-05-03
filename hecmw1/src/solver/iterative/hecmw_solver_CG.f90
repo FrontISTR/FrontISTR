@@ -101,6 +101,14 @@ contains
     !C-- SCALING
     call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
 
+    !C
+    !C-- matrix integration for OpenACC
+    !C
+    !C  @note:
+    !C   Combine hecMAT%AL, D, and AU into a single matrix for GPU execution.
+    !C   This is a no-op for CPU builds.
+    call hecmw_mat_integrate(hecMAT)
+
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       call hecmw_JAD_INIT(hecMAT)
     endif

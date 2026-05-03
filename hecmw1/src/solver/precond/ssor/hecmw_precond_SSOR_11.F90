@@ -5,22 +5,24 @@
 
 !C
 !C***
-!C*** module hecmw_precond_SSOR_66
+!C*** module hecmw_precond_SSOR_11
 !C***
 !C
-module hecmw_precond_SSOR_66
+module hecmw_precond_SSOR_11
   use hecmw_util
   use hecmw_matrix_misc
   use m_hecmw_matrix_ordering_CM
   use m_hecmw_matrix_ordering_MC
   use hecmw_matrix_reorder
+#ifndef _OPENACC
   !$ use omp_lib
+#endif
 
   private
 
-  public:: hecmw_precond_SSOR_66_setup
-  public:: hecmw_precond_SSOR_66_apply
-  public:: hecmw_precond_SSOR_66_clear
+  public:: hecmw_precond_SSOR_11_setup
+  public:: hecmw_precond_SSOR_11_apply
+  public:: hecmw_precond_SSOR_11_clear
 
   integer(kind=kint) :: N
   real(kind=kreal), pointer :: D(:) => null()
@@ -39,16 +41,18 @@ module hecmw_precond_SSOR_66
 
   logical, save :: isFirst = .true.
 
+  logical, save :: INITIALIZED = .false.
+
 contains
 
-  subroutine hecmw_precond_SSOR_66_setup(hecMAT)
+  subroutine hecmw_precond_SSOR_11_setup(hecMAT)
     implicit none
-    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NPL, NPU, NPCL, NPCU
     real   (kind=kreal), allocatable :: CD(:)
     integer(kind=kint ) :: NCOLOR_IN
     real   (kind=kreal) :: SIGMA_DIAG
-    real   (kind=kreal) :: ALUtmp(6,6), PW(6)
+    real   (kind=kreal) :: ALUtmp(1,1), PW(1)
     integer(kind=kint ) :: ii, i, j, k
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
@@ -57,13 +61,38 @@ contains
     !t0 = hecmw_Wtime()
     !write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
 
+    if (INITIALIZED) then
+      if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
+        call hecmw_precond_SSOR_11_clear(hecMAT)
+      else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
+        call hecmw_precond_SSOR_11_clear(hecMAT) ! TEMPORARY
+      else
+        return
+      endif
+    endif
+
+#ifndef _OPENACC
     !$ nthreads = omp_get_max_threads()
+#endif
 
     N = hecMAT%N
     ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
+#ifdef _OPENACC
+    allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
+    call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
+      hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
+    !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+    call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
+      hecMAT%indexU, hecMAT%itemU, perm_tmp, &
+      NCOLOR_IN, NColor, COLORindex, perm, iperm)
+    !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+    deallocate(perm_tmp)
+
+    !call write_debug_info
+#else
     if (nthreads == 1) then
       NColor = 1
       allocate(COLORindex(0:1), perm(N), iperm(N))
@@ -73,14 +102,6 @@ contains
         perm(i) = i
         iperm(i) = i
       end do
-
-      D => hecMAT%D
-      AL => hecMAT%AL
-      AU => hecMAT%AU
-      indexL => hecMAT%indexL
-      indexU => hecMAT%indexU
-      itemL => hecMAT%itemL
-      itemU => hecMAT%itemU
     else
       allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
@@ -93,142 +114,71 @@ contains
       deallocate(perm_tmp)
 
       !call write_debug_info
+    endif
+#endif
 
-      NPL = hecMAT%indexL(N)
-      NPU = hecMAT%indexU(N)
-      allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
-      call hecmw_matrix_reorder_profile(N, perm, iperm, &
-        hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
-        indexL, indexU, itemL, itemU)
-      !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+    NPL = hecMAT%indexL(N)
+    NPU = hecMAT%indexU(N)
+    allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
+    call hecmw_matrix_reorder_profile(N, perm, iperm, &
+      hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+      indexL, indexU, itemL, itemU)
+    !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
-      call check_ordering
+    !call check_ordering
 
-      allocate(D(36*N), AL(36*NPL), AU(36*NPU))
-      call hecmw_matrix_reorder_values(N, 6, perm, iperm, &
-        hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
-        hecMAT%AL, hecMAT%AU, hecMAT%D, &
-        indexL, indexU, itemL, itemU, AL, AU, D)
-      !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+    allocate(D(N), AL(NPL), AU(NPU))
+    call hecmw_matrix_reorder_values(N, 1, perm, iperm, &
+      hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+      hecMAT%AL, hecMAT%AU, hecMAT%D, &
+      indexL, indexU, itemL, itemU, AL, AU, D)
+    !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
-      call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
-      call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
-    end if
+    call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
+    call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
 
-    allocate(ALU(36*N))
+    allocate(ALU(N))
     ALU  = 0.d0
 
-    do ii= 1, 36*N
+    do ii= 1, N
       ALU(ii) = D(ii)
     enddo
 
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent private(ALUtmp)
+#else
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+    !$omp do
+#endif
     do ii= 1, N
-      ALUtmp(1,1)= ALU(36*ii-35) * SIGMA_DIAG
-      ALUtmp(1,2)= ALU(36*ii-34)
-      ALUtmp(1,3)= ALU(36*ii-33)
-      ALUtmp(1,4)= ALU(36*ii-32)
-      ALUtmp(1,5)= ALU(36*ii-31)
-      ALUtmp(1,6)= ALU(36*ii-30)
-
-      ALUtmp(2,1)= ALU(36*ii-29)
-      ALUtmp(2,2)= ALU(36*ii-28) * SIGMA_DIAG
-      ALUtmp(2,3)= ALU(36*ii-27)
-      ALUtmp(2,4)= ALU(36*ii-26)
-      ALUtmp(2,5)= ALU(36*ii-25)
-      ALUtmp(2,6)= ALU(36*ii-24)
-
-      ALUtmp(3,1)= ALU(36*ii-23)
-      ALUtmp(3,2)= ALU(36*ii-22)
-      ALUtmp(3,3)= ALU(36*ii-21) * SIGMA_DIAG
-      ALUtmp(3,4)= ALU(36*ii-20)
-      ALUtmp(3,5)= ALU(36*ii-19)
-      ALUtmp(3,6)= ALU(36*ii-18)
-
-      ALUtmp(4,1)= ALU(36*ii-17)
-      ALUtmp(4,2)= ALU(36*ii-16)
-      ALUtmp(4,3)= ALU(36*ii-15)
-      ALUtmp(4,4)= ALU(36*ii-14) * SIGMA_DIAG
-      ALUtmp(4,5)= ALU(36*ii-13)
-      ALUtmp(4,6)= ALU(36*ii-12)
-
-      ALUtmp(5,1)= ALU(36*ii-11)
-      ALUtmp(5,2)= ALU(36*ii-10)
-      ALUtmp(5,3)= ALU(36*ii-9 )
-      ALUtmp(5,4)= ALU(36*ii-8 )
-      ALUtmp(5,5)= ALU(36*ii-7 ) * SIGMA_DIAG
-      ALUtmp(5,6)= ALU(36*ii-6 )
-
-      ALUtmp(6,1)= ALU(36*ii-5 )
-      ALUtmp(6,2)= ALU(36*ii-4 )
-      ALUtmp(6,3)= ALU(36*ii-3 )
-      ALUtmp(6,4)= ALU(36*ii-2 )
-      ALUtmp(6,5)= ALU(36*ii-1 )
-      ALUtmp(6,6)= ALU(36*ii   ) * SIGMA_DIAG
-
-      do k= 1, 6
-        ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
-        do i= k+1, 6
-          ALUtmp(i,k)= ALUtmp(i,k) * ALUtmp(k,k)
-          do j= k+1, 6
-            PW(j)= ALUtmp(i,j) - ALUtmp(i,k)*ALUtmp(k,j)
-          enddo
-          do j= k+1, 6
-            ALUtmp(i,j)= PW(j)
-          enddo
-        enddo
-      enddo
-
-      ALU(36*ii-35)= ALUtmp(1,1)
-      ALU(36*ii-34)= ALUtmp(1,2)
-      ALU(36*ii-33)= ALUtmp(1,3)
-      ALU(36*ii-32)= ALUtmp(1,4)
-      ALU(36*ii-31)= ALUtmp(1,5)
-      ALU(36*ii-30)= ALUtmp(1,6)
-      ALU(36*ii-29)= ALUtmp(2,1)
-      ALU(36*ii-28)= ALUtmp(2,2)
-      ALU(36*ii-27)= ALUtmp(2,3)
-      ALU(36*ii-26)= ALUtmp(2,4)
-      ALU(36*ii-25)= ALUtmp(2,5)
-      ALU(36*ii-24)= ALUtmp(2,6)
-      ALU(36*ii-23)= ALUtmp(3,1)
-      ALU(36*ii-22)= ALUtmp(3,2)
-      ALU(36*ii-21)= ALUtmp(3,3)
-      ALU(36*ii-20)= ALUtmp(3,4)
-      ALU(36*ii-19)= ALUtmp(3,5)
-      ALU(36*ii-18)= ALUtmp(3,6)
-      ALU(36*ii-17)= ALUtmp(4,1)
-      ALU(36*ii-16)= ALUtmp(4,2)
-      ALU(36*ii-15)= ALUtmp(4,3)
-      ALU(36*ii-14)= ALUtmp(4,4)
-      ALU(36*ii-13)= ALUtmp(4,5)
-      ALU(36*ii-12)= ALUtmp(4,6)
-      ALU(36*ii-11)= ALUtmp(5,1)
-      ALU(36*ii-10)= ALUtmp(5,2)
-      ALU(36*ii-9 )= ALUtmp(5,3)
-      ALU(36*ii-8 )= ALUtmp(5,4)
-      ALU(36*ii-7 )= ALUtmp(5,5)
-      ALU(36*ii-6 )= ALUtmp(5,6)
-      ALU(36*ii-5 )= ALUtmp(6,1)
-      ALU(36*ii-4 )= ALUtmp(6,2)
-      ALU(36*ii-3 )= ALUtmp(6,3)
-      ALU(36*ii-2 )= ALUtmp(6,4)
-      ALU(36*ii-1 )= ALUtmp(6,5)
-      ALU(36*ii   )= ALUtmp(6,6)
+      ALUtmp(1,1)= ALU(ii) * SIGMA_DIAG
+      ALUtmp(1,1)= 1.d0/ALUtmp(1,1)
+      ALU(ii)= ALUtmp(1,1)
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
+    !$omp end do
+    !$omp end parallel
+#endif
 
     isFirst = .true.
 
+    INITIALIZED = .true.
+    hecMAT%Iarray(98) = 0 ! symbolic setup done
+    hecMAT%Iarray(97) = 0 ! numerical setup done
+
     !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
-  end subroutine hecmw_precond_SSOR_66_setup
+  end subroutine hecmw_precond_SSOR_11_setup
 
-  subroutine hecmw_precond_SSOR_66_apply(ZP)
+  subroutine hecmw_precond_SSOR_11_apply(ZP)
     use hecmw_tuning_fx
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
-    real(kind=kreal) :: X1, X2, X3, X4, X5, X6
-    real(kind=kreal) :: SW1, SW2, SW3, SW4, SW5, SW6
+    real(kind=kreal) :: SW(1), X(1)
 
     ! added for turning >>>
     integer(kind=kint), parameter :: numOfBlockPerThread = 100
@@ -240,6 +190,7 @@ contains
     real(kind=kreal) :: numOfElementPerBlock
     integer(kind=kint) :: my_rank
 
+#ifndef _OPENACC
     if (isFirst) then
       !$ numOfThread = omp_get_max_threads()
       numOfBlock = numOfThread * numOfBlockPerThread
@@ -279,161 +230,118 @@ contains
       enddo
       numOfBlock = blockIndex
 
-      call hecmw_tuning_fx_calc_sector_cache( N, 3, &
+      call hecmw_tuning_fx_calc_sector_cache( N, 2, &
         sectorCacheSize0, sectorCacheSize1 )
 
       isFirst = .false.
     endif
+#endif
     ! <<< added for turning
 
-    !call start_collection("loopInPrecond66")
+    !call start_collection("loopInPrecond33")
 
     !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
     !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
+#ifndef _OPENACC
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
       !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
-      !$omp&private(SW1,SW2,SW3,SW4,SW5,SW6,X1,X2,X3,X4,X5,X6,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+      !$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+#endif
 
     !C-- FORWARD
     do ic=1,NColor
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent private(X,SW)
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+#else
       !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
         do i = blockIndexToColorIndex(blockIndex-1)+1, &
             blockIndexToColorIndex(blockIndex)
-          ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
+#endif
           iold = perm(i)
-          SW1= ZP(6*iold-5)
-          SW2= ZP(6*iold-4)
-          SW3= ZP(6*iold-3)
-          SW4= ZP(6*iold-2)
-          SW5= ZP(6*iold-1)
-          SW6= ZP(6*iold  )
+          SW(1)= ZP(iold)
           isL= indexL(i-1)+1
           ieL= indexL(i)
           do j= isL, ieL
-            !k= perm(itemL(j))
             k= itemL(j)
-            X1= ZP(6*k-5)
-            X2= ZP(6*k-4)
-            X3= ZP(6*k-3)
-            X4= ZP(6*k-2)
-            X5= ZP(6*k-1)
-            X6= ZP(6*k  )
-            SW1= SW1 -AL(36*j-35)*X1 -AL(36*j-34)*X2 -AL(36*j-33)*X3 -AL(36*j-32)*X4 -AL(36*j-31)*X5 -AL(36*j-30)*X6
-            SW2= SW2 -AL(36*j-29)*X1 -AL(36*j-28)*X2 -AL(36*j-27)*X3 -AL(36*j-26)*X4 -AL(36*j-25)*X5 -AL(36*j-24)*X6
-            SW3= SW3 -AL(36*j-23)*X1 -AL(36*j-22)*X2 -AL(36*j-21)*X3 -AL(36*j-20)*X4 -AL(36*j-19)*X5 -AL(36*j-18)*X6
-            SW4= SW4 -AL(36*j-17)*X1 -AL(36*j-16)*X2 -AL(36*j-15)*X3 -AL(36*j-14)*X4 -AL(36*j-13)*X5 -AL(36*j-12)*X6
-            SW5= SW5 -AL(36*j-11)*X1 -AL(36*j-10)*X2 -AL(36*j-9 )*X3 -AL(36*j-8 )*X4 -AL(36*j-7 )*X5 -AL(36*j-6 )*X6
-            SW6= SW6 -AL(36*j-5 )*X1 -AL(36*j-4 )*X2 -AL(36*j-3 )*X3 -AL(36*j-2 )*X4 -AL(36*j-1 )*X5 -AL(36*j   )*X6
+            X(1)= ZP(k)
+            SW(1)= SW(1) - AL(j)*X(1)
           enddo ! j
 
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X4= SW4
-          X5= SW5
-          X6= SW6
-          X2= X2 -ALU(36*i-29)*X1
-          X3= X3 -ALU(36*i-23)*X1 -ALU(36*i-22)*X2
-          X4= X4 -ALU(36*i-17)*X1 -ALU(36*i-16)*X2 -ALU(36*i-5)*X3
-          X5= X5 -ALU(36*i-11)*X1 -ALU(36*i-10)*X2 -ALU(36*i-9)*X3 -ALU(36*i-8)*X4
-          X6= X6 -ALU(36*i-5 )*X1 -ALU(36*i-4 )*X2 -ALU(36*i-3)*X3 -ALU(36*i-2)*X4 -ALU(36*i-1)*X5
-          X6= ALU(36*i   )*  X6
-          X5= ALU(36*i-7 )*( X5 -ALU(36*i-6)*X6 )
-          X4= ALU(36*i-14)*( X4 -ALU(36*i-12)*X6 -ALU(36*i-13)*X5)
-          X3= ALU(36*i-21)*( X3 -ALU(36*i-18)*X6 -ALU(36*i-19)*X5 -ALU(36*i-20)*X4)
-          X2= ALU(36*i-28)*( X2 -ALU(36*i-24)*X6 -ALU(36*i-25)*X5 -ALU(36*i-26)*X4 -ALU(36*i-27)*X3)
-          X1= ALU(36*i-35)*( X1 -ALU(36*i-30)*X6 -ALU(36*i-31)*X5 -ALU(36*i-32)*X4 -ALU(36*i-33)*X3 -ALU(36*i-34)*X2)
-          ZP(6*iold-5)= X1
-          ZP(6*iold-4)= X2
-          ZP(6*iold-3)= X3
-          ZP(6*iold-2)= X4
-          ZP(6*iold-1)= X5
-          ZP(6*iold  )= X6
+          X = SW
+          X(1)= ALU(i  )*  X(1)
+          ZP(iold)= X(1)
+#ifdef _OPENACC
+      enddo
+      !$acc end kernels
+#else
         enddo ! i
       enddo ! blockIndex
       !$omp end do
+#endif
     enddo ! ic
 
     !C-- BACKWARD
     do ic=NColor, 1, -1
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent private(X,SW)
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+#else
       !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
         do i = blockIndexToColorIndex(blockIndex), &
             blockIndexToColorIndex(blockIndex-1)+1, -1
+#endif
           ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
           !   do i = blockIndexToColorIndex(blockIndex-1)+1, &
             !        blockIndexToColorIndex(blockIndex)
           !   do i = endPos(threadNum, ic), startPos(threadNum, ic), -1
-          SW1= 0.d0
-          SW2= 0.d0
-          SW3= 0.d0
-          SW4= 0.d0
-          SW5= 0.d0
-          SW6= 0.d0
+          SW= 0.d0
           isU= indexU(i-1) + 1
           ieU= indexU(i)
           do j= ieU, isU, -1
-            !k= perm(itemU(j))
             k= itemU(j)
-            X1= ZP(6*k-5)
-            X2= ZP(6*k-4)
-            X3= ZP(6*k-3)
-            X4= ZP(6*k-2)
-            X5= ZP(6*k-1)
-            X6= ZP(6*k  )
-            SW1= SW1 +AU(36*j-35)*X1 +AU(36*j-34)*X2 +AU(36*j-33)*X3 +AU(36*j-32)*X4 +AU(36*j-31)*X5 +AU(36*j-30)*X6
-            SW2= SW2 +AU(36*j-29)*X1 +AU(36*j-28)*X2 +AU(36*j-27)*X3 +AU(36*j-26)*X4 +AU(36*j-25)*X5 +AU(36*j-24)*X6
-            SW3= SW3 +AU(36*j-23)*X1 +AU(36*j-22)*X2 +AU(36*j-21)*X3 +AU(36*j-20)*X4 +AU(36*j-19)*X5 +AU(36*j-18)*X6
-            SW4= SW4 +AU(36*j-17)*X1 +AU(36*j-16)*X2 +AU(36*j-15)*X3 +AU(36*j-14)*X4 +AU(36*j-13)*X5 +AU(36*j-12)*X6
-            SW5= SW5 +AU(36*j-11)*X1 +AU(36*j-10)*X2 +AU(36*j-9 )*X3 +AU(36*j-8 )*X4 +AU(36*j-7 )*X5 +AU(36*j-6 )*X6
-            SW6= SW6 +AU(36*j-5 )*X1 +AU(36*j-4 )*X2 +AU(36*j-3 )*X3 +AU(36*j-2 )*X4 +AU(36*j-1 )*X5 +AU(36*j   )*X6
+            X(1)= ZP(k)
+            SW(1)= SW(1) + AU(j)*X(1)
           enddo ! j
 
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X4= SW4
-          X5= SW5
-          X6= SW6
-          X2= X2 -ALU(36*i-29)*X1
-          X3= X3 -ALU(36*i-23)*X1 -ALU(36*i-22)*X2
-          X4= X4 -ALU(36*i-17)*X1 -ALU(36*i-16)*X2 -ALU(36*i-5)*X3
-          X5= X5 -ALU(36*i-11)*X1 -ALU(36*i-10)*X2 -ALU(36*i-9)*X3 -ALU(36*i-8)*X4
-          X6= X6 -ALU(36*i-5 )*X1 -ALU(36*i-4 )*X2 -ALU(36*i-3)*X3 -ALU(36*i-2)*X4 -ALU(36*i-1)*X5
-          X6= ALU(36*i   )*  X6
-          X5= ALU(36*i-7 )*( X5 -ALU(36*i-6)*X6 )
-          X4= ALU(36*i-14)*( X4 -ALU(36*i-12)*X6 -ALU(36*i-13)*X5)
-          X3= ALU(36*i-21)*( X3 -ALU(36*i-18)*X6 -ALU(36*i-19)*X5 -ALU(36*i-20)*X4)
-          X2= ALU(36*i-28)*( X2 -ALU(36*i-24)*X6 -ALU(36*i-25)*X5 -ALU(36*i-26)*X4 -ALU(36*i-27)*X3)
-          X1= ALU(36*i-35)*( X1 -ALU(36*i-30)*X6 -ALU(36*i-31)*X5 -ALU(36*i-32)*X4 -ALU(36*i-33)*X3 -ALU(36*i-34)*X2)
+          X = SW
+          X(1)= ALU(i)*  X(1)
+
           iold = perm(i)
-          ZP(6*iold-5)= ZP(6*iold-5) -X1
-          ZP(6*iold-4)= ZP(6*iold-4) -X2
-          ZP(6*iold-3)= ZP(6*iold-3) -X3
-          ZP(6*iold-2)= ZP(6*iold-2) -X4
-          ZP(6*iold-1)= ZP(6*iold-1) -X5
-          ZP(6*iold  )= ZP(6*iold  ) -X6
+          ZP(iold)=  ZP(iold) - X(1)
+#ifdef _OPENACC
+      enddo
+      !$acc end kernels
+#else
         enddo ! i
       enddo ! blockIndex
       !$omp end do
+#endif
     enddo ! ic
+#ifndef _OPENACC
     !$omp end parallel
+#endif
 
     !OCL END_CACHE_SUBSECTOR
     !OCL END_CACHE_SECTOR_SIZE
 
-    !call stop_collection("loopInPrecond66")
+    !call stop_collection("loopInPrecond33")
 
-  end subroutine hecmw_precond_SSOR_66_apply
+  end subroutine hecmw_precond_SSOR_11_apply
 
-  subroutine hecmw_precond_SSOR_66_clear(hecMAT)
+  subroutine hecmw_precond_SSOR_11_clear(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: nthreads = 1
+#ifndef _OPENACC
     !$ nthreads = omp_get_max_threads()
+#endif
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
@@ -458,7 +366,8 @@ contains
     nullify(indexU)
     nullify(itemL)
     nullify(itemU)
-  end subroutine hecmw_precond_SSOR_66_clear
+    INITIALIZED = .false.
+  end subroutine hecmw_precond_SSOR_11_clear
 
   subroutine write_debug_info
     implicit none
@@ -524,4 +433,4 @@ contains
     !--------------------< debug: shizawa
   end subroutine check_ordering
 
-end module     hecmw_precond_SSOR_66
+end module     hecmw_precond_SSOR_11
