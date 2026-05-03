@@ -911,7 +911,7 @@ void put_neutral_head(FILE *outfp) {
 void put_neutral_601(FILE *outfp, struct hecmwST_local_mesh *mesh) {
   int i;
   int im;
-  double ee, pp, rh0, alfa, gg;
+  double ee, pp, rh0, alpha, gg;
   double rdum[10];
 
   fprintf(outfp, "   -1\n");
@@ -930,7 +930,7 @@ void put_neutral_601(FILE *outfp, struct hecmwST_local_mesh *mesh) {
     ee      = mesh->material->mat_val[im * 4];
     pp      = mesh->material->mat_val[im * 4 + 1];
     rh0     = mesh->material->mat_val[im * 4 + 2];
-    alfa    = mesh->material->mat_val[im * 4 + 3];
+    alpha    = mesh->material->mat_val[im * 4 + 3];
     gg      = ee * 0.5 / (1.0 + pp);
     rdum[0] = ee;
     rdum[1] = ee;
@@ -946,13 +946,13 @@ void put_neutral_601(FILE *outfp, struct hecmwST_local_mesh *mesh) {
     rdum[1] = 0.0;
     rdum[2] = 0.0;
     rdum[3] = rdum[4] = rdum[5] = 0.0;
-    rdum[6]                     = alfa;
+    rdum[6]                     = alpha;
     rdum[7] = rdum[8] = 0.0;
-    rdum[9]           = alfa;
+    rdum[9]           = alpha;
     for (i = 0; i < 10; i++) fprintf(outfp, "%9.2e,", rdum[i]);
     fprintf(outfp, "\n");
     rdum[0] = 0.0;
-    rdum[1] = alfa;
+    rdum[1] = alpha;
     rdum[2] = 0.0;
     rdum[3] = rdum[4] = rdum[5] = 0.0;
     rdum[6]                     = 0.0;
