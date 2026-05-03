@@ -25,9 +25,6 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/m_timepoint.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_out.f90
   ${CMAKE_CURRENT_LIST_DIR}/m_step.f90
-  ${CMAKE_CURRENT_LIST_DIR}/precheck_LIB_2d.f90
-  ${CMAKE_CURRENT_LIST_DIR}/precheck_LIB_3d.f90
-  ${CMAKE_CURRENT_LIST_DIR}/precheck_LIB_shell.f90
   ${CMAKE_CURRENT_LIST_DIR}/solve_LINEQ.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_LIB_1d.f90

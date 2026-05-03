@@ -128,9 +128,6 @@ OBJSF = \
         heat_LIB_FILM.@f90objfilepostfix@ \
         heat_LIB_NEUTRAL.@f90objfilepostfix@ \
         heat_LIB_RADIATE.@f90objfilepostfix@ \
-        precheck_LIB_2d.@f90objfilepostfix@ \
-        precheck_LIB_3d.@f90objfilepostfix@ \
-        precheck_LIB_shell.@f90objfilepostfix@ \
         solve_LINEQ.@f90objfilepostfix@ \
         static_LIB.@f90objfilepostfix@ \
         eigen_LIB.@f90objfilepostfix@ \
