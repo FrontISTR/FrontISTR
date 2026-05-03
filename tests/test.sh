@@ -161,7 +161,7 @@ check_executable $mpirun
 check_executable $compare_res
 
 if [ "$mpirun_options" = "not_set" ]; then
-  if [ "$($mpirun --version 2> /dev/null | grep 'open-mpi')" != "" ]; then
+  if [ "$(mpicc --showme:version 2> /dev/null | grep -i 'open[ -]mpi')" != "" ]; then
     mpirun_options="--oversubscribe --allow-run-as-root"
   else
     mpirun_options=""
