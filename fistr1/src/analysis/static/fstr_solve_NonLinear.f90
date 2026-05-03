@@ -317,7 +317,7 @@ contains
         do iter = 1,fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt = stepcnt+1
 
-          call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
+          call fstr_CreateMatrix( hecMESH, hecMAT, fstrSOLID, ctime, tincr )
           call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
           call hecmw_mat_clear( conMAT )
