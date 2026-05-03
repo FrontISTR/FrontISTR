@@ -55,7 +55,7 @@ end module
 module fstr_frequency_analysis
 
   use m_fstr
-  use m_fstr_StiffMatrix
+  use m_fstr_CreateMatrix
   use m_fstr_AddBC
   use m_fstr_EIG_setMASS
   use fstr_frequency_visout
@@ -671,7 +671,7 @@ contains
 
 
     fstrSOLID%dunode = 0.d0
-    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
+    call fstr_CreateMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
     call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)

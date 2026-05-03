@@ -12,7 +12,6 @@ module fstr_dynamic_nlimplicit
   use m_dynamic_mat_ass_bc
   use m_dynamic_mat_ass_bc_vl
   use m_dynamic_mat_ass_load
-  use m_fstr_StiffMatrix
   use m_fstr_Update
   use m_fstr_Restart
   use fstr_matrix_con_contact
@@ -187,10 +186,10 @@ contains
         do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt=stepcnt+1
           !if (fstrPARAM%nlgeom) then
-            call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef )
+            call fstr_CreateMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, fstrDYNAMIC, coef )
           !else
           !  if (.not. associated(hecMAT0)) then
-          !    call fstr_CreateMatrix( fstrDYNAMIC, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, coef)
+          !    call fstr_CreateMatrix( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, fstrDYNAMIC, coef)
           !    allocate(hecMAT0)
           !    call hecmw_mat_init(hecMAT0)
           !    call hecmw_mat_copy_profile(hecMAT, hecMAT0)

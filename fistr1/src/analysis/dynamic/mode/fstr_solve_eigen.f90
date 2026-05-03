@@ -11,7 +11,7 @@ contains
       & fstrRESULT, fstrPARAM, hecLagMAT)
     use hecmw_util
     use m_fstr
-    use m_fstr_StiffMatrix
+    use m_fstr_CreateMatrix
     use m_fstr_AddBC
     use m_fstr_EIG_setMASS
     use m_fstr_EIG_lanczos
@@ -39,7 +39,7 @@ contains
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     fstrSOLID%dunode = 0.0d0
-    call fstr_StiffMatrix(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
+    call fstr_CreateMatrix(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
     call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)

@@ -9,7 +9,6 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Spring.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Restart.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_NodalStress.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_StiffMatrix.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_CreateMatrix.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Update.f90
   ${CMAKE_CURRENT_LIST_DIR}/readtemp.f90
