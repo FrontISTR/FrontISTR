@@ -474,9 +474,7 @@ contains
             cparam_id = i; exit
           endif
         enddo
-        ! initialize contact condition
-        if( ee>0.d0 ) cdotp = ee
-        if( pp>0.d0 ) mut = pp
+        ! initialize contact condition (cdotp and mut are now obsolete - penalty is in tContact)
         if( rho>0.d0 ) cgn = rho
         if( alpha>0.d0 ) cgt = alpha
         do i=1,n
@@ -819,7 +817,10 @@ contains
           write( outctrl%filename, *) 'utable.',myrank,".dat"
           outctrl%filenum = IUTB
           call fstr_copy_outctrl(fstrSOLID%output_ctrl(c_output), outctrl)
-          open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE' )
+          open( unit=outctrl%filenum, file=outctrl%filename, status='REPLACE', iostat=ierror )
+          if( ierror /= 0 ) then
+            write(*,*) 'Warning: cannot open output file: ', trim(outctrl%filename)
+          endif
         endif
         if( result == 1 ) then
           c_output=3
@@ -1198,7 +1199,11 @@ contains
     end do
     if( .not. fstrSOLID%is_smoothing_active ) return
 
-    allocate(is_selem_list(hecMESH%n_elem))
+    allocate(is_selem_list(hecMESH%n_elem), stat=i)
+    if( i /= 0 ) then
+      write(*,*) 'Allocation error: is_selem_list'
+      return
+    endif
     is_selem_list(:) = .false.
 
     do i=1,hecMESH%n_elem
@@ -1777,16 +1782,24 @@ contains
   subroutine fstr_setup_post_phys_alloc(phys, NDOF, n_node, n_elem)
     implicit none
     type(fstr_solid_physic_val), pointer :: phys
-    integer(kind=kint) :: NDOF, n_node, n_elem, mdof
+    integer(kind=kint) :: NDOF, n_node, n_elem, mdof, istat
     mdof = (NDOF*NDOF+NDOF)/2;
-    allocate ( phys%STRAIN  (mdof*n_node))
-    allocate ( phys%STRESS  (mdof*n_node))
-    allocate ( phys%MISES   (     n_node))
-    allocate ( phys%ESTRAIN (mdof*n_elem))
-    allocate ( phys%ESTRESS (mdof*n_elem))
-    allocate ( phys%EMISES  (     n_elem))
-    allocate ( phys%EPLSTRAIN (   n_elem))
-    allocate ( phys%ENQM    (12*n_elem))
+    allocate ( phys%STRAIN  (mdof*n_node), stat=istat)
+    if( istat /= 0 ) stop "Allocation error: phys%STRAIN"
+    allocate ( phys%STRESS  (mdof*n_node), stat=istat)
+    if( istat /= 0 ) stop "Allocation error: phys%STRESS"
+    allocate ( phys%MISES   (     n_node), stat=istat)
+    if( istat /= 0 ) stop "Allocation error: phys%MISES"
+    allocate ( phys%ESTRAIN (mdof*n_elem), stat=istat)
+    if( istat /= 0 ) stop "Allocation error: phys%ESTRAIN"
+    allocate ( phys%ESTRESS (mdof*n_elem), stat=istat)
+    if( istat /= 0 ) stop "Allocation error: phys%ESTRESS"
+    allocate ( phys%EMISES  (     n_elem), stat=istat)
+    if( istat /= 0 ) stop "Allocation error: phys%EMISES"
+    allocate ( phys%EPLSTRAIN (   n_elem), stat=istat)
+    if( istat /= 0 ) stop "Allocation error: phys%EPLSTRAIN"
+    allocate ( phys%ENQM    (12*n_elem), stat=istat)
+    if( istat /= 0 ) stop "Allocation error: phys%ENQM"
   end subroutine fstr_setup_post_phys_alloc
 
   subroutine fstr_setup_post( ctrl, P )
@@ -1824,7 +1837,8 @@ contains
       P%SOLID%EMISES  => phys%EMISES
       P%SOLID%EPLSTRAIN  => phys%EPLSTRAIN
       P%SOLID%ENQM    => phys%ENQM
-      allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ) )
+      allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ), stat=i )
+      if( i /= 0 ) stop "Allocation error: REACTION"
     end if
 
     if( P%PARAM%fg_visual == kON )then
@@ -4012,7 +4026,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: rcode
 
 
-    rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo )
+    rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo, P%PARAM%augiter )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_CONTACTALGO

@@ -40,7 +40,7 @@ contains
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname, cnum
-    character(len=6), allocatable   :: clyr(:)
+    character(len=16), allocatable   :: clyr(:)
     logical :: is_dynamic
 
     tnstrain => fstrSOLID%TNSTRAIN
@@ -209,9 +209,9 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if(is_33shell == 1 .or. ndof == 6)then
-      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "      " )
+      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "                " )
     else
-      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "      " )
+      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "                " )
     endif
 
     !laminated shell
@@ -452,8 +452,8 @@ contains
 
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
-    character(len=6)                :: clyr
-    character(len=4)                :: cnum
+    character(len=16)                :: clyr
+    character(len=12)                :: cnum
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
     real(kind=kreal), allocatable   :: work(:)
 
@@ -623,8 +623,8 @@ contains
     integer(kind=kint) :: idx
     real(kind=kreal), pointer :: tnstrain(:), testrain(:)
     real(kind=kreal), allocatable   ::unode(:)
-    character(len=4) :: cnum
-    character(len=6), allocatable   :: clyr(:)
+    character(len=12) :: cnum
+    character(len=16), allocatable   :: clyr(:)
     logical :: is_dynamic
 
     is_dynamic = present(fstrDYNAMIC)
@@ -1059,10 +1059,10 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     if(is_33shell == 1 .or. ndof == 6)then
       call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
-        & fstrSOLID%SHELL, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "      " )
+        & fstrSOLID%SHELL, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "                " )
     else
       call fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, &
-        & fstrSOLID%SOLID, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "      " )
+        & fstrSOLID%SOLID, nitem, iitem, ncomp, eitem, jitem, ecomp, 1, "                " )
     endif
 
     !laminated shell
@@ -1278,8 +1278,8 @@ contains
 
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
-    character(len=6)                :: clyr
-    character(len=4)                :: cnum
+    character(len=16)                :: clyr
+    character(len=12)                :: cnum
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, eitem, nn, mm, ngauss, it
     integer(kind=kint) :: iitem, ncomp, jitem, ecomp, nlyr
 
@@ -1633,7 +1633,7 @@ contains
 
   end subroutine fstr_reorder_node_beam
 
-  subroutine setup_contact_output_variables( hecMESH, fstrSOLID, phase )
+  subroutine setup_contact_output_variables( hecMESH, fstrSOLID, phase, dtime )
     use m_fstr
     use hecmw_util
     use mContact
@@ -1641,11 +1641,12 @@ contains
     type(hecmwST_local_mesh), intent(in)  :: hecMESH
     type (fstr_solid), intent(inout)      :: fstrSOLID
     integer(kind=kint), intent(in)        :: phase !< -1:clear,3:result,4:vis
+    real(kind=kreal), optional, intent(in) :: dtime   !< time increment for CONT_RELVEL calculation
 
     integer(kind=kint), parameter :: nval = 10
     logical, save :: updated(nval) = .false.
     integer(kind=kint) :: ndof, i
-    real(kind=kreal) :: area
+    real(kind=kreal) :: area, dt_use
 
     ndof = hecMESH%n_dof
 
@@ -1655,6 +1656,16 @@ contains
     else
       if( phase /= 3 .and. phase /= 4 ) return !irregular case
     end if
+
+    ! Update contact state vectors if dtime is provided
+    if( present(dtime) .and. dtime > 0.d0 ) then
+      dt_use = dtime
+    else
+      dt_use = 1.d0  ! default value if dtime not available
+    endif
+    if( .not. updated(3) .and. .not. updated(4) ) then
+      call fstr_update_contact_state_vectors( fstrSOLID, dt_use )
+    endif
 
     ! --- CONTACT NORMAL FORCE @node
     if( fstrSOLID%output_ctrl(phase)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then

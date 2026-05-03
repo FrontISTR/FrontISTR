@@ -517,8 +517,8 @@ static void set_error_of_field_convert(const char* file_name, int line_no,
   } else
     strcpy(val_str, "NULL");
 
-  sprintf(line, "%s:%d:", file_name, line_no);
-  sprintf(msg,
+  snprintf(line, sizeof(line), "%s:%d:", file_name, line_no);
+  snprintf(msg, sizeof(msg),
           "Cannot convert '%s'(%s) to '%s' value ('%s' (field.%d) in '%s')",
           param_val, val_str, type_s, param_name, field_no, bulk_name);
 
@@ -533,8 +533,8 @@ static void set_error_of_blank_field(const char* file_name, int line_no,
   char line[256];
   char msg[256];
 
-  sprintf(line, "%s:%d:", file_name, line_no);
-  sprintf(msg, "Cannot be blank field ('%s' (no.%d) in '%s')", param_name,
+  snprintf(line, sizeof(line), "%s:%d:", file_name, line_no);
+  snprintf(msg, sizeof(msg), "Cannot be blank field ('%s' (no.%d) in '%s')", param_name,
           field_no, bulk_name);
 
   HECMW_set_error(HECMW_IO_HEC_E0001, "%s%s", line, msg); /* JP-135 */

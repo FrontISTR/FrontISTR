@@ -177,6 +177,14 @@ extern int HECMW_Bcast(void *buffer, int count, HECMW_Datatype datatype,
       goto error;
     }
 
+  } else if (datatype == HECMW_LONG_LONG) {
+    rtc = MPI_Bcast(buffer, count, MPI_LONG_LONG, root, comm);
+
+    if (rtc != MPI_SUCCESS) {
+      HECMW_set_error(HECMW_ALL_E1003, "MPI_Bcast");
+      goto error;
+    }
+
   } else {
     HECMW_set_error(HECMW_ALL_E1003, "Invalid data type is found");
     goto error;
@@ -213,6 +221,14 @@ extern int HECMW_Send(void *buffer, int count, HECMW_Datatype datatype,
 
   } else if (datatype == HECMW_CHAR) {
     rtc = MPI_Send(buffer, count, MPI_CHAR, dest, tag, comm);
+
+    if (rtc != MPI_SUCCESS) {
+      HECMW_set_error(HECMW_ALL_E1003, "MPI_Send");
+      goto error;
+    }
+
+  } else if (datatype == HECMW_LONG_LONG) {
+    rtc = MPI_Send(buffer, count, MPI_LONG_LONG, dest, tag, comm);
 
     if (rtc != MPI_SUCCESS) {
       HECMW_set_error(HECMW_ALL_E1003, "MPI_Send");
@@ -262,6 +278,14 @@ extern int HECMW_Recv(void *buffer, int count, HECMW_Datatype datatype,
       goto error;
     }
 
+  } else if (datatype == HECMW_LONG_LONG) {
+    rtc = MPI_Recv(buffer, count, MPI_LONG_LONG, source, tag, comm, status);
+
+    if (rtc != MPI_SUCCESS) {
+      HECMW_set_error(HECMW_ALL_E1003, "MPI_Recv");
+      goto error;
+    }
+
   } else {
     HECMW_set_error(HECMW_ALL_E1003, "Invalid data type is found");
     goto error;
@@ -299,6 +323,14 @@ extern int HECMW_Isend(void *buffer, int count, HECMW_Datatype datatype,
 
   } else if (datatype == HECMW_CHAR) {
     rtc = MPI_Isend(buffer, count, MPI_CHAR, dest, tag, comm, request);
+
+    if (rtc != MPI_SUCCESS) {
+      HECMW_set_error(HECMW_ALL_E1003, "MPI_Isend");
+      goto error;
+    }
+
+  } else if (datatype == HECMW_LONG_LONG) {
+    rtc = MPI_Isend(buffer, count, MPI_LONG_LONG, dest, tag, comm, request);
 
     if (rtc != MPI_SUCCESS) {
       HECMW_set_error(HECMW_ALL_E1003, "MPI_Isend");
@@ -348,6 +380,14 @@ extern int HECMW_Irecv(void *buffer, int count, HECMW_Datatype datatype,
       goto error;
     }
 
+  } else if (datatype == HECMW_LONG_LONG) {
+    rtc = MPI_Irecv(buffer, count, MPI_LONG_LONG, source, tag, comm, request);
+
+    if (rtc != MPI_SUCCESS) {
+      HECMW_set_error(HECMW_ALL_E1003, "MPI_Irecv");
+      goto error;
+    }
+
   } else {
     HECMW_set_error(HECMW_ALL_E1003, "Invalid data type is found");
     goto error;
@@ -377,6 +417,9 @@ extern int HECMW_Allreduce(void *sendbuf, void *recvbuf, int count,
 
   } else if (datatype == HECMW_CHAR) {
     _datatype = MPI_CHAR;
+
+  } else if (datatype == HECMW_LONG_LONG) {
+    _datatype = MPI_LONG_LONG;
 
   } else {
     HECMW_set_error(HECMW_ALL_E1003, "Invalid data type is found");
@@ -418,6 +461,9 @@ error:
   } else if (datatype == HECMW_CHAR) {
     memcpy(recvbuf, sendbuf, sizeof(char) * count);
 
+  } else if (datatype == HECMW_LONG_LONG) {
+    memcpy(recvbuf, sendbuf, sizeof(long long) * count);
+
   } else {
     HECMW_set_error(HECMW_ALL_E1003, "Invalid data type is found");
     goto error;
@@ -446,6 +492,9 @@ extern int HECMW_Allgather(void *sendbuf, int sendcount,
   } else if (sendtype == HECMW_CHAR) {
     _sendtype = MPI_CHAR;
 
+  } else if (sendtype == HECMW_LONG_LONG) {
+    _sendtype = MPI_LONG_LONG;
+
   } else {
     HECMW_set_error(HECMW_ALL_E1003, "Invalid data type is found");
     goto error;
@@ -459,6 +508,9 @@ extern int HECMW_Allgather(void *sendbuf, int sendcount,
 
   } else if (recvtype == HECMW_CHAR) {
     _recvtype = MPI_CHAR;
+
+  } else if (recvtype == HECMW_LONG_LONG) {
+    _recvtype = MPI_LONG_LONG;
 
   } else {
     HECMW_set_error(HECMW_ALL_E1003, "Invalid data type is found");

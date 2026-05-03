@@ -95,6 +95,10 @@ static int read_input(int msgno_invalid_token) {
     return -1;
   }
   if (HECMW_is_absolute_path(p)) {
+    if (strlen(p) > HECMW_FILENAME_LEN) {
+      set_err(HECMW_IO_E0002, "");
+      return -1;
+    }
     strcpy(include_filename, p);
   } else {
     char separator[10];

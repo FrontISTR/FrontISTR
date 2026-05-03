@@ -344,7 +344,7 @@ void mark_time_label(double font_size, int xr, int yr, double font_color[3],
   vv        = start_time + (double)timestep * time_interval;
   tmp1      = (int)vv;
   tmp2      = (int)((vv - (double)tmp1) * 100.0);
-  sprintf(buf1, "%d", tmp1);
+  snprintf(buf1, sizeof(buf1), "%d", tmp1);
   len_step = strlen(buf1);
 
   if (len_step < max_len_step) {
@@ -355,10 +355,10 @@ void mark_time_label(double font_size, int xr, int yr, double font_color[3],
 
     buf2[max_len_step] = '\0';
   } else {
-    sprintf(buf2, "%s", buf1);
+    snprintf(buf2, sizeof(buf2), "%s", buf1);
   }
 
-  sprintf(buf3, "%d", tmp2);
+  snprintf(buf3, sizeof(buf3), "%d", tmp2);
 
   if (strlen(buf3) < 2) {
     buf3[2] = '\0';
@@ -564,7 +564,7 @@ void generate_color_bar(int scale_marking_on, double font_size,
         }
 
         start_xs = 10;
-        sprintf(buf, "%10.2E", vv);
+        snprintf(buf, sizeof(buf), "%10.2E", vv);
 
         for (m = 0; m < 10; m++) {
           if (type == 1) {
@@ -700,7 +700,7 @@ void generate_color_bar(int scale_marking_on, double font_size,
                      (int)7 * scale / 2;
 
         start_xs = 10;
-        sprintf(buf, "%10.2E", vv);
+        snprintf(buf, sizeof(buf), "%10.2E", vv);
         for (m = 0; m < 10; m++) {
           if (type == 1) {
             font5_generate(buf[9 - m], output5);
@@ -755,7 +755,7 @@ void generate_color_bar(int scale_marking_on, double font_size,
                                (end_y - start_y) +
                            start_y);
           start_xs = 10;
-          sprintf(buf, "%10.2E", 0.0);
+          snprintf(buf, sizeof(buf), "%10.2E", 0.0);
 
           for (m = 0; m < 10; m++) {
             if (type == 1) {
@@ -862,7 +862,7 @@ unsigned short int change_short_int_order(unsigned short int n) {
   char c_buf[10], newc_buf[10], changed_buf[10];
   unsigned short int i, m, digit;
 
-  sprintf(c_buf, "%x", n);
+  snprintf(c_buf, sizeof(c_buf), "%x", n);
   m = 0;
 
   while (c_buf[m] != '\0') m++;
@@ -893,7 +893,7 @@ unsigned int change_unsigned_int_order(unsigned int n) {
   char c_buf[10], newc_buf[10], changed_buf[10], changed2_buf[10];
   unsigned int i, m, digit;
 
-  sprintf(c_buf, "%x", n);
+  snprintf(c_buf, sizeof(c_buf), "%x", n);
   m = 0;
 
   for (i = 0; i < 8; i++) {
@@ -939,7 +939,7 @@ int change_int_order(int n) {
   char c_buf[10], newc_buf[10], changed_buf[10], changed2_buf[10];
   int i, m, digit;
 
-  sprintf(c_buf, "%x", n);
+  snprintf(c_buf, sizeof(c_buf), "%x", n);
   m = 0;
 
   for (i = 0; i < 8; i++) {

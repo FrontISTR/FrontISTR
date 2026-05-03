@@ -198,6 +198,7 @@ module m_fstr
 
     !> for contact analysis
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
+    integer( kind=kint ) :: augiter            !< augmentation iteration for ALagrange algorithm
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
     type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
 
@@ -916,19 +917,11 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    allocate (hecMAT%ALU(nn*hecMAT%N)         ,stat=ierror )
-    if( ierror /= 0 ) then
-      write(*,*) "##ERROR : not enough memory"
-      write(idbg,*) 'stop due to allocation error'
-      call flush(idbg)
-      call hecmw_abort( hecmw_comm_get_comm() )
-    endif
     hecMAT%D  = 0.0d0
     hecMAT%AL = 0.0d0
     hecMAT%AU = 0.0d0
     hecMAT%B  = 0.0d0
     hecMAT%X  = 0.0d0
-    hecMAT%ALU = 0.0d0
   end subroutine hecMAT_init
 
   subroutine hecMAT_finalize( hecMAT )
@@ -977,14 +970,6 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
-    if( associated(hecMAT%ALU) ) then
-      deallocate(hecMAT%ALU                 ,stat=ierror)
-      if( ierror /= 0 ) then
-        write(idbg,*) 'stop due to deallocation error'
-        call flush(idbg)
-        call hecmw_abort( hecmw_comm_get_comm())
-      end if
-    endif
   end subroutine hecMAT_finalize
 
   !> Initializer of structure fstr_param
@@ -1024,6 +1009,10 @@ contains
 
     ! for restart control
     fstrPARAM%restart_version = 5
+
+    ! for contact analysis
+    fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange
+    fstrPARAM%augiter = 2                  ! default augmentation iteration for ALagrange
 
     ! index table for global node ID sorting
 

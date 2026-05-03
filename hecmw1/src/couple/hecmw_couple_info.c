@@ -230,7 +230,8 @@ static int init_intracomm_info(void) {
       }
       p = p->next;
 
-      strcpy(p->unit_id, unit_ids->ids[i]);
+      strncpy(p->unit_id, unit_ids->ids[i], HECMW_NAME_LEN);
+      p->unit_id[HECMW_NAME_LEN] = '\0';
       p->comm = alloc_struct_comm();
       if (p->comm == NULL) goto error;
 
@@ -298,9 +299,12 @@ static int init_intercomm_info(void) {
                                         unit2_id, HECMW_NAME_LEN + 1) == NULL)
         goto error;
 
-      strcpy(p->couple_id, couple_ids->ids[i]);
-      strcpy(p->unit1_id, unit1_id);
-      strcpy(p->unit2_id, unit2_id);
+      strncpy(p->couple_id, couple_ids->ids[i], HECMW_NAME_LEN);
+      p->couple_id[HECMW_NAME_LEN] = '\0';
+      strncpy(p->unit1_id, unit1_id, HECMW_NAME_LEN);
+      p->unit1_id[HECMW_NAME_LEN] = '\0';
+      strncpy(p->unit2_id, unit2_id, HECMW_NAME_LEN);
+      p->unit2_id[HECMW_NAME_LEN] = '\0';
       if ((p->comm = alloc_struct_comm()) == NULL) goto error;
 
       p->next = NULL;
@@ -339,7 +343,8 @@ static int init_couple_info(void) {
     p->unit2_grp = NULL;
     p->next      = NULL;
 
-    strcpy(p->boundary_id, boundary_id);
+    strncpy(p->boundary_id, boundary_id, HECMW_NAME_LEN);
+    p->boundary_id[HECMW_NAME_LEN] = '\0';
     if (HECMW_couple_ctrl_get_couple_id(boundary_id, p->couple_id,
                                         HECMW_NAME_LEN + 1) == NULL)
       goto error;

@@ -155,7 +155,7 @@ static int identify_surface(char *buf) {
   para[j] = '\0';
   flag    = 1;
   len_tmp = strlen(para);
-  sprintf(para1, "%s", para);
+  snprintf(para1, sizeof(para1), "%s", para);
   for (ii = 0; ii < len_tmp; ii++) {
     para[ii] = tolower(para1[ii]);
   }
@@ -674,11 +674,11 @@ void HECMW_vis_read_control(FILE *fp, int pesize, int mynode, PSF_link *psf,
           cont_flag = 0;
       }
       for (k = 1; k < surface_num + 1; k++) {
-        sprintf(sf[k].data_comp_name, "%s", "NULL");
-        sprintf(sf[k].color_comp_name, "%s", "NULL");
-        sprintf(sf[k].data_subcomp_name, "%s", "NULL");
-        sprintf(sf[k].color_subcomp_name, "%s", "NULL");
-        sprintf(sf[k].disp_comp_name, "%s", "NULL");
+        snprintf(sf[k].data_comp_name, sizeof(sf[k].data_comp_name), "%s", "NULL");
+        snprintf(sf[k].color_comp_name, sizeof(sf[k].color_comp_name), "%s", "NULL");
+        snprintf(sf[k].data_subcomp_name, sizeof(sf[k].data_subcomp_name), "%s", "NULL");
+        snprintf(sf[k].color_subcomp_name, sizeof(sf[k].color_subcomp_name), "%s", "NULL");
+        snprintf(sf[k].disp_comp_name, sizeof(sf[k].disp_comp_name), "%s", "NULL");
         sf[k].data_comp      = -1;
         sf[k].data_subcomp   = -1;
         sf[k].color_comp     = -1;
@@ -1296,7 +1296,7 @@ HECMW_vis_print_exit("Please re-input again");
               HECMW_vis_print_exit("Please re-input again");
             }
             if ((stat_para[63] == 0) && (stat_para[64] == 0))
-              sprintf(sf[k].disp_comp_name, "%s", "DISPLACEMENT");
+              snprintf(sf[k].disp_comp_name, sizeof(sf[k].disp_comp_name), "%s", "DISPLACEMENT");
             if (stat_para[65] == 0) {
               sf[k].initial_line_color[0] = 0.2;
               sf[k].initial_line_color[1] = 0.2;
@@ -1791,8 +1791,8 @@ fprintf(stderr, "*********current PSF number= %d\n", psf->num_of_psf);
       vr->projection_style = 1;
       vr->color_comp       = -1;
       vr->color_subcomp    = -1;
-      sprintf(vr->color_comp_name, "%s", "NULL");
-      sprintf(vr->color_subcomp_name, "%s", "NULL");
+      snprintf(vr->color_comp_name, sizeof(vr->color_comp_name), "%s", "NULL");
+      snprintf(vr->color_subcomp_name, sizeof(vr->color_subcomp_name), "%s", "NULL");
 
       if (cont_flag == 1)
         while (get_keyword_visual(buf) == 0) {
@@ -2274,10 +2274,10 @@ if((stat_para[12]==1) && (vr->surface_opacity<0.0)) {
         HECMW_vis_print_exit("please re-input x resolution again");
       }
       if (stat_para[25] == 0) {
-        sprintf(vr->color_comp_name, "%s", "NULL");
+        snprintf(vr->color_comp_name, sizeof(vr->color_comp_name), "%s", "NULL");
       }
       if (stat_para[26] == 0) {
-        sprintf(vr->color_subcomp_name, "%s", "norm");
+        snprintf(vr->color_subcomp_name, sizeof(vr->color_subcomp_name), "%s", "norm");
       }
       if (stat_para[22] == 1) {
         vr->nv_xyz[0] = pesize;
@@ -2491,8 +2491,8 @@ void set_default_vr( Parameter_vr *vr,int stat_para[NUM_CONTROL_PVR],  int pesiz
 	 vr->scale_marking_on=0;
 	 vr->rotate_style=0;
 	 vr->color_system_type=1;
-	 sprintf(vr->color_comp_name,"%s", "NULL");
-	 sprintf(vr->color_subcomp_name,"%s", "norm");
+	 snprintf(vr->color_comp_name, sizeof(vr->color_comp_name), "%s", "NULL");
+	 snprintf(vr->color_subcomp_name, sizeof(vr->color_subcomp_name), "%s", "norm");
 	 vr->nv_xyz[0]=pesize;
 	 vr->nv_xyz[1]=1;
 	 vr->nv_xyz[2]=1;

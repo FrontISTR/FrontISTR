@@ -526,17 +526,22 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
+    integer(kind=kint) :: augiter
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
     integer(kind=kint) :: rcode
     character(len=80) :: s
-    algo = kcaSLagrange
     s = 'SLAGRANGE,ALAGRANGE '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )
-    fstr_ctrl_get_CONTACTALGO = rcode
+    if( rcode /= 0 ) then
+      fstr_ctrl_get_CONTACTALGO = rcode
+      return
+    endif
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'AUGITER ', '# ', 0, 'I', augiter )
+    fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
@@ -558,8 +563,6 @@ contains
     character(len=HECMW_NAME_LEN) :: cp_name(n)
     real(kind=kreal)  :: fcoeff(n),tPenalty(n)
 
-    tPenalty = 1.0d6
-
     write(ss,*)  HECMW_NAME_LEN
 
     fstr_ctrl_get_CONTACT = .false.
@@ -574,14 +577,18 @@ contains
       contact(rcode)%algtype = contact(1)%algtype
     end do
 
+    tPenalty = 0.5d0
+
     if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
       write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
     if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
     do rcode=1,n
-        call fstr_strupr(cp_name(rcode))
+      call fstr_strupr(cp_name(rcode))
       contact(rcode)%pair_name = cp_name(rcode)
       contact(rcode)%fcoeff = fcoeff(rcode)
+      contact(rcode)%nPenalty = 5.0d0
       contact(rcode)%tPenalty = tPenalty(rcode)
+      contact(rcode)%refStiff = 1.d0
     enddo
     else if( contact(1)%algtype==CONTACTTIED ) then
       write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
@@ -589,8 +596,9 @@ contains
       do rcode=1,n
         call fstr_strupr(cp_name(rcode))
         contact(rcode)%pair_name = cp_name(rcode)
+      contact(rcode)%nPenalty = 5.0d0
         contact(rcode)%fcoeff = 0.d0
-        contact(rcode)%tPenalty = 1.d+4
+        contact(rcode)%tPenalty = 1.d0
       enddo
     endif
 
@@ -602,6 +610,19 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '# ', 0, 'R', ttol ) /= 0 ) return
     cpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
+    
+    ! Set penalty coefficients to contact structure if specified (for ALagrange method)
+    if( np > 0.d0 ) then
+      do rcode=1,n
+        contact(rcode)%nPenalty = np
+      enddo
+    endif
+    if( tp > 0.d0 ) then
+      do rcode=1,n
+        contact(rcode)%tPenalty = tp
+      enddo
+    endif
+    
     fstr_ctrl_get_CONTACT = .true.
   end function fstr_ctrl_get_CONTACT
 

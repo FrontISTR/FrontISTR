@@ -89,6 +89,7 @@ contains
     integer(kind=kint)            :: numnode, numelm, startmode, endmode, nummode, ndof, im, in, ntotal, vistype
     integer(kind=kint)            :: numfreq, idnode, numdisp
     integer(kind=kint)            :: freqiout(3)
+    integer(kind=kint)            :: ierr
     integer(kind=kint), parameter :: ilogin = 9056
     real(kind=kreal), allocatable :: eigenvalue(:), loadvecRe(:), loadvecIm(:)
     real(kind=kreal), allocatable :: bjre(:), bjim(:), dvaRe(:), dvaIm(:), disp(:), vel(:), acc(:)
@@ -143,7 +144,11 @@ contains
     write(ilog,*) "start mode=", startmode
     write(*,   *) "end mode=", endmode
     write(ilog,*) "end mode=", endmode
-    open(unit=ilogin, file=trim(fstrFREQ%eigenlog_filename), status="OLD", action="READ")
+    open(unit=ilogin, file=trim(fstrFREQ%eigenlog_filename), status="OLD", action="READ", iostat=ierr)
+    if( ierr /= 0 ) then
+      write(*,*) "Error: cannot open eigenlog file: ", trim(fstrFREQ%eigenlog_filename)
+      call hecmw_abort( hecmw_comm_get_comm() )
+    endif
     call read_eigen_values(ilogin, startmode, endmode, eigenvalue, freqData%eigOmega)
     !call read_eigen_vector(ilogin, startmode, endmode, ndof, numnode, freqData%eigVector)
     close(ilogin)
@@ -729,7 +734,7 @@ contains
     s = size(vector)
     do i=1, s
       if(i == 1) then
-        write(*,'("eigenvec",i2.2,":[",e12.5", ")') im, vector(i)
+        write(*,'("eigenvec",i2.2,":[",e12.5,", ")') im, vector(i)
       else if(i /= s) then
         write(*,'(e12.5,", ")') vector(i)
       else

@@ -95,6 +95,7 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_penalty_alpha
 
   public :: hecmw_mat_diag_max
+  public :: hecmw_mat_diag
   public :: hecmw_mat_recycle_precond_setting
   public :: hecmw_mat_substitute
 
@@ -211,7 +212,6 @@ contains
     if (associated(hecMAT%indexU)) deallocate(hecMAT%indexU)
     if (associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
     if (associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
-    if (associated(hecMAT%ALU)) deallocate(hecMAT%ALU)
   end subroutine hecmw_mat_finalize
 
   subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )
@@ -787,6 +787,26 @@ contains
     call hecmw_allREDUCE_R1(hecMESH, hecmw_mat_diag_max, hecmw_max)
   end function hecmw_mat_diag_max
 
+  !> Extract diagonal components from matrix D into a 1D vector
+  !> Returns: diag(i) = D(ndof*ndof*(node-1) + (dof-1)*ndof + dof) for node i, dof component
+  !> Size of returned vector = NDOF * NP
+  function hecmw_mat_diag(hecMAT) result(diag)
+    type(hecmwST_matrix), intent(in), target :: hecMAT
+    real(kind=kreal), pointer :: diag(:)
+    integer(kind=kint) :: i, k, idx, ndof, np
+    
+    ndof = hecMAT%NDOF
+    np = hecMAT%NP
+    allocate(diag(ndof * np))
+    
+    do i = 1, np
+      do k = 1, ndof
+        idx = ndof * ndof * (i - 1) + (k-1) * ndof + k
+        diag(ndof * (i - 1) + k) = hecMAT%D(idx)
+      enddo
+    enddo
+  end function hecmw_mat_diag
+
   subroutine hecmw_mat_recycle_precond_setting( hecMAT )
     type (hecmwST_matrix) :: hecMAT
     integer(kind=kint) :: nrecycle, maxrecycle
@@ -819,7 +839,6 @@ contains
     if (associated(src%D)) dest%D => src%D
     if (associated(src%B)) dest%B => src%B
     if (associated(src%X)) dest%X => src%X
-    if (associated(src%ALU)) dest%ALU => src%ALU
     if (associated(src%AL)) dest%AL => src%AL
     if (associated(src%AU)) dest%AU => src%AU
     if (associated(src%indexL)) dest%indexL => src%indexL

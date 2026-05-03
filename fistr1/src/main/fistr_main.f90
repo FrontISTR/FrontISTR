@@ -240,14 +240,14 @@ contains
 
     if( myrank == 0 ) then
       open (ISTA,file = stafileNAME, status = 'replace', iostat=stat )
-      write(ISTA,'(''####''a80)') stafileNAME
+      write(ISTA,'(''####'',a80)') stafileNAME
       if( stat /= 0 ) then
         call fstr_setup_util_err_stop( '### Cannot open status file :'//stafileNAME )
       endif
     endif
 
-    open (IDBG,file = dbgfileNAME, status = 'replace')
-    write(IDBG,'(''####''a80)') dbgfileNAME
+    open (IDBG,file = dbgfileNAME, status = 'replace', iostat=stat)
+    write(IDBG,'(''####'',a80)') dbgfileNAME
     if( stat /= 0 ) then
       call fstr_setup_util_err_stop( '### Cannot open debug file :'//dbgfileNAME )
     endif

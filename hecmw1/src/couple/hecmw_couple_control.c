@@ -276,7 +276,7 @@ extern void HECMW_couple_free_boundary_ids(
     for (i = 0; i < boundary_ids->n_boundary; i++) {
       HECMW_free(boundary_ids->ids[i]);
     }
-    HECMW_free(boundary_ids);
+    HECMW_free(boundary_ids->ids);
   }
   HECMW_free(boundary_ids);
   boundary_ids = NULL;
