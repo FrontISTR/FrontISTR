@@ -74,9 +74,10 @@ void find_new_v4(int new_v4[12]) {
 void add8_adj_link(Adj_find *adj_link, int id_elem,
                    struct hecmwST_local_mesh *mesh, int new_v8[24]) {
   Adj_find *p1, *p2;
-  int i, j, k, m;
+  int i, k, m;
+  long long j;
   int new_v, id_node, flag_hit;
-  int ncon;
+  long long ncon;
 
   ncon = mesh->elem_node_index[id_elem + 1] - mesh->elem_node_index[id_elem];
   if (ncon != 8)
@@ -123,9 +124,10 @@ void add8_adj_link(Adj_find *adj_link, int id_elem,
 void add6_adj_link(Adj_find *adj_link, int id_elem,
                    struct hecmwST_local_mesh *mesh, int new_v6[18]) {
   Adj_find *p1, *p2;
-  int i, j, k, m;
+  int i, k, m;
+  long long j;
   int new_v, id_node, flag_hit;
-  int ncon;
+  long long ncon;
 
   ncon = mesh->elem_node_index[id_elem + 1] - mesh->elem_node_index[id_elem];
   if (ncon != 6)
@@ -172,9 +174,10 @@ void add6_adj_link(Adj_find *adj_link, int id_elem,
 void add4_adj_link(Adj_find *adj_link, int id_elem,
                    struct hecmwST_local_mesh *mesh, int new_v4[12]) {
   Adj_find *p1, *p2;
-  int i, j, k, m;
+  int i, k, m;
+  long long j;
   int new_v, id_node, flag_hit;
-  int ncon;
+  long long ncon;
 
   ncon = mesh->elem_node_index[id_elem + 1] - mesh->elem_node_index[id_elem];
   if (ncon != 4)

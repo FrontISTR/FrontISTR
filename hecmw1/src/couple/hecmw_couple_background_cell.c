@@ -63,7 +63,8 @@ static int elem_size_by_elem(const struct hecmwST_local_mesh *mesh,
                              double *max_dx, double *max_dy, double *max_dz) {
   double min_x, min_y, min_z, max_x, max_y, max_z, dx, dy, dz, coord_x, coord_y,
       coord_z;
-  int elem, node, i, j;
+  int elem, node, i;
+  long long j;
 
   *min_dx = *min_dy = *min_dz = INFINITE;
   *max_dx = *max_dy = *max_dz = 0.0;
@@ -110,7 +111,8 @@ static int elem_size_by_surf(const struct hecmwST_local_mesh *mesh,
                              double *max_dx, double *max_dy, double *max_dz) {
   double min_x, min_y, min_z, max_x, max_y, max_z, dx, dy, dz, coord_x, coord_y,
       coord_z;
-  int elem, node, i, j;
+  int elem, node, i;
+  long long j;
 
   *min_dx = *min_dy = *min_dz = INFINITE;
   *max_dx = *max_dy = *max_dz = 0.0;

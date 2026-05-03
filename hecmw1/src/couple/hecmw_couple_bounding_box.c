@@ -91,7 +91,8 @@ extern struct hecmw_couple_bounding_box *HECMW_couple_set_bounding_box(
   struct hecmw_couple_bounding_box *bbox = NULL;
   double length_x, length_y, length_z, coord_x, coord_y, coord_z, half_coef;
   double min_x, min_y, min_z, max_x, max_y, max_z;
-  int elem, node, i, j;
+  int elem, node, i;
+  long long j;
 
   if (boundary_id == NULL) {
     HECMW_set_error(HECMWCPL_E_INVALID_ARG,

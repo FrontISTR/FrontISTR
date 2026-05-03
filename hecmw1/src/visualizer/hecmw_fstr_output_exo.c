@@ -140,7 +140,7 @@ static const ElemTypeMap* get_elem_type_map(int hecmw_type)
 /*============================================================================
  * Helper: get node shift for special element types (same as VTK output)
  *============================================================================*/
-static int get_node_shift(int hecmw_type)
+static long long get_node_shift(int hecmw_type)
 {
     switch (hecmw_type) {
         case 641: return 2;
@@ -156,9 +156,9 @@ static int get_node_shift(int hecmw_type)
  *============================================================================*/
 static int get_effective_n_nodes(struct hecmwST_local_mesh *mesh, int elem_idx)
 {
-    int jS = mesh->elem_node_index[elem_idx];
-    int jE = mesh->elem_node_index[elem_idx + 1];
-    int shift = get_node_shift(mesh->elem_type[elem_idx]);
+    long long jS = mesh->elem_node_index[elem_idx];
+    long long jE = mesh->elem_node_index[elem_idx + 1];
+    long long shift = get_node_shift(mesh->elem_type[elem_idx]);
     return jE - jS - shift;
 }
 
@@ -246,7 +246,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
                    int per_step)
 {
     int i, j, k;
-    int jS, jE;
+    long long jS, jE;
     int myrank, petot;
     int n_node, n_elem, shift;
     int data_tot_n, data_tot_e;

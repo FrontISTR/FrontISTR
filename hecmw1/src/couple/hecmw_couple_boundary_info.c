@@ -300,7 +300,8 @@ error:
 static int set_boundary_node_by_elem(const struct hecmwST_local_mesh *mesh,
                                      struct hecmw_couple_boundary *boundary) {
   int *mask = NULL;
-  int elem, node, size, n, i, j;
+  int elem, node, size, n, i;
+  long long j;
 
   /* mask boundary nodes */
   mask = (int *)HECMW_malloc(sizeof(int) * mesh->n_node);
@@ -476,7 +477,8 @@ error:
 static int set_boundary_node_by_surf(const struct hecmwST_local_mesh *mesh,
                                      struct hecmw_couple_boundary *boundary) {
   int *mask = NULL;
-  int elem, surf, node, node_index, offset, size, n, i, j;
+  int elem, surf, node, offset, size, n, i, j;
+  long long node_index;
 
   /* mask boundary nodes */
   mask = (int *)HECMW_malloc(sizeof(int) * mesh->n_node);

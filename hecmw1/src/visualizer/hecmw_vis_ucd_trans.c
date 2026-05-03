@@ -160,9 +160,10 @@ fprintf(outfp, "%lf\n", 0.0);
   /*---------find minmax value of mesh  ----------------*/
   for (i = 0; i < mesh->n_elem; i++) {
     if (mesh->elem_type[i] < 400) {
-      for (j = mesh->elem_node_index[i]; j < mesh->elem_node_index[i + 1];
-           j++) {
-        nodeid                     = mesh->elem_node_item[j];
+      long long jj;
+      for (jj = mesh->elem_node_index[i]; jj < mesh->elem_node_index[i + 1];
+           jj++) {
+        nodeid                     = mesh->elem_node_item[jj];
         x                          = mesh->node[(nodeid - 1) * 3];
         y                          = mesh->node[(nodeid - 1) * 3 + 1];
         z                          = mesh->node[2 + (nodeid - 1) * 3];
