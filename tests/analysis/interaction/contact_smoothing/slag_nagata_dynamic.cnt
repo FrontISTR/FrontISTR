@@ -1,0 +1,69 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=DYNAMIC, NONLINEAR
+!DYNAMIC
+ 1, 1
+ 0.0, 0.002, 2, 0.001
+ 0.5, 0.25
+ 1, 1, 0.0, 0.0
+ 1000, 3121, 100
+ 1, 1, 1, 1, 1, 1
+!CONTACT_ALGO,TYPE=SLAGRANGE
+!WRITE,LOG
+!WRITE,RESULT
+!OUTPUT_RES
+CONTACT_NFORCE, ON
+CONTACT_FRICTION, ON
+!OUTPUT_VIS
+CONTACT_NFORCE, ON
+CONTACT_FRICTION, ON
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, AMP=AMP1, GRPID=1
+ BOX_BOTTOM, 1, 2, 0.0
+ ROT_POINTS, 1, 1, 1.0
+ ROT_POINTS2, 1, 1, 1.0
+ ALL, 3, 3
+ ROT_POINTS, 2, 2, -0.05
+ ROT_POINTS2, 2, 2, -0.05
+!CLOAD
+ CENTER, 2, -0.01
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT_PARAM, NAME=CPARAM1
+1.0e-4,  5.0e-2,  1.0e-1,  1.0e-4
+1.0e-6, -1.0e-6,  1.0,    -1.0e-8,  1.05
+!CONTACT, INTERACTION=FSLID, GRPID=1, SMOOTHING=NAGATA, CONTACTPARAM=CPARAM1
+CP1,0.2
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1000, 0.3
+!DENSITY
+ 1.0E-4
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, MAXITER=10
+BOUNDARY, 1
+CONTACT, 1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+#!WRITE,VISUAL
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = BIN_VTK
+!END

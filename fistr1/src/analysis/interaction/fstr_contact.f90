@@ -192,7 +192,7 @@ contains
   end subroutine fstr_calc_contact_refStiff
 
   !> Scanning contact state
-  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, hecMESH, fstrSOLID, infoCTChange, B )
+  subroutine fstr_scan_contact_state( cstep, sub_step, cont_step, dt, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
     integer(kind=kint), intent(in)         :: cstep      !< current step number
     integer(kind=kint), intent(in)         :: sub_step   !< current sub-step number
     integer(kind=kint), intent(in)         :: cont_step  !< current contact step number
@@ -201,8 +201,6 @@ contains
     type( hecmwST_local_mesh ), intent(in) :: hecMESH     !< type mesh
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
-    !      logical, intent(inout)                 :: changed     !< if contact state changed
-    real(kind=kreal), optional             :: B(:)        !< nodal force residual
     character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag
     integer(kind=kint) :: i, grpid
     logical :: iactive, is_init
@@ -236,13 +234,11 @@ contains
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
         call clear_contact_state(fstrSOLID%contacts(i));  cycle
       endif
-      if( present(B) ) then
-        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-        & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, B )
-      else
-        call scan_contact_state( flag_ctAlgo, fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-        & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
-      endif
+      call scan_contact_state( fstrSOLID%contacts(i), &
+      & fstrSOLID%ddunode(:), fstrSOLID%dunode(:), infoCTChange, &
+      & hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), &
+      & is_init, iactive, hecMESH=hecMESH, &
+      & flag_ctAlgo=flag_ctAlgo, ndforce=fstrSOLID%QFORCE(:) )
       if( .not. active ) active = iactive
     enddo
 
@@ -301,8 +297,8 @@ contains
       !     call clear_contact_state(fstrSOLID%contacts(i));  cycle
       !   endif
 
-      call scan_contact_state_exp( fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
-      & infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
+      call scan_contact_state( fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
+      & infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, hecMESH )
 
       infoCTChange%active = infoCTChange%active .or. iactive
     enddo

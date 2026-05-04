@@ -17,6 +17,7 @@ module mContactDef
   use m_hecmw_contact_comm
   use bucket_search
   use mContactParam
+  use m_fstr_contact_smoothing
 
   implicit none
 
@@ -31,6 +32,7 @@ module mContactDef
   integer, parameter :: CONTACTUNKNOWN = -1
   !> contact state definition
   integer, parameter :: CONTACTFREE = -1
+  integer, parameter :: CONTACTNEAR = 0    !< near contact: projection info available, no LM constraint
   integer, parameter :: CONTACTSTICK = 1
   integer, parameter :: CONTACTSLIP = 2
 
@@ -39,6 +41,10 @@ module mContactDef
   integer, parameter :: CONTACTGLUED = 2
   integer, parameter :: CONTACTSSLID = 3
   integer, parameter :: CONTACTFSLID = 4
+
+  !> contact smoothing type
+  integer, parameter :: kcsNONE   = 0
+  integer, parameter :: kcsNAGATA = 1
 
   !> contact interference type
   integer, parameter :: C_IF_SLAVE = 1
@@ -87,6 +93,8 @@ module mContactDef
     real(kind=kreal)              :: nPenalty                !< normal penalty coefficient
     real(kind=kreal)              :: tPenalty                !< tangential penalty coefficient
     real(kind=kreal)              :: refStiff                !< reference stiffness for penalty calculation
+    real(kind=kreal)              :: damp_alpha              !< damping coefficient (dimensionless, scaled by refStiff)
+    real(kind=kreal)              :: damp_gact               !< damping activation distance [length] (<=0: disabled)
     
     real(kind=kreal)    :: ctime
     integer(kind=kint)  :: if_type
@@ -100,6 +108,7 @@ module mContactDef
     ! 3: SSLID-Small sliding contact( no position but with contact state change)
     ! 4: FSLID-Finite sliding contact (both changes in contact state and position possible)
     integer                       :: algtype                 !< algorithm flag
+    integer                       :: smoothing               !< kcsNONE or kcsNAGATA
 
     logical                       :: mpced                   !< if turns into mpc condition
     logical                       :: symmetric               !< if symmetrizalized in friction calculation
@@ -157,6 +166,24 @@ contains
     type(tContactState), intent(inout) :: cstate2 !< contact state
     cstate2 = cstate1
   end subroutine
+
+  !> Whether the contact state has active LM constraint (STICK or SLIP)
+  pure logical function is_contact_active(state)
+    integer, intent(in) :: state
+    is_contact_active = (state >= CONTACTSTICK)
+  end function
+
+  !> Whether the contact state has valid projection info (NEAR, STICK, or SLIP)
+  pure logical function has_projection(state)
+    integer, intent(in) :: state
+    has_projection = (state >= CONTACTNEAR)
+  end function
+
+  !> Whether the contact state is completely free (no projection info)
+  pure logical function is_contact_free(state)
+    integer, intent(in) :: state
+    is_contact_free = (state == CONTACTFREE)
+  end function
 
   !> Print out contact state
   subroutine print_contact_state(fnum, cstate)
@@ -460,6 +487,8 @@ contains
     embed%nPenalty = 1.0d0     ! default normal penalty coefficient
     embed%tPenalty = 0.1d0     ! default tangential penalty coefficient
     embed%refStiff = 0.0d0     ! will be calculated after first stiffness assembly
+    embed%damp_alpha = 0.0d0
+    embed%damp_gact = 0.0d0
 
     embed%symmetric = .true.
     fstr_embed_init = .true.

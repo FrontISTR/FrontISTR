@@ -21,6 +21,7 @@ module m_fstr
   use m_elemact
   use mMechGauss
   use mContactDef
+  use m_fstr_contact_smoothing
 
   implicit none
 

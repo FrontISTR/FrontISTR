@@ -10,6 +10,7 @@ module fstr_matrix_con_contact
 
   use m_fstr
   use elementInfo
+  use m_fstr_contact_damping, only: is_damping_enabled
 
   implicit none
   private
@@ -49,7 +50,7 @@ contains
 
   !> \brief this subroutine reconstructs node-based (stiffness) matrix structure
   !> \corresponding to contact state
-  subroutine fstr_mat_con_contact(cstep,contact_algo,hecMAT,fstrSOLID,hecLagMAT,infoCTChange,conMAT,is_contact_active)
+  subroutine fstr_mat_con_contact(cstep,contact_algo,hecMAT,fstrSOLID,hecLagMAT,infoCTChange,conMAT,is_contact_active_flag)
 
     integer(kind=kint)                   :: cstep !< current loading step
     integer(kind=kint)                   :: contact_algo !< current loading step
@@ -63,7 +64,7 @@ contains
     integer(kind=kint)                   :: numNon0_node, numNon0_lagrange !< node-based number of displacement-related non-zero items in half of the matrix
     !< node-based number of Lagrange multiplier-related non-zero items in half of the matrix
     type (hecmwST_matrix)                :: conMAT
-    logical, intent(in)                  :: is_contact_active
+    logical, intent(in)                  :: is_contact_active_flag
 
     integer(kind=kint)                   :: i, j, grpid
     integer(kind=kint)                   :: nlag !< number of Lagrange multipliers per node
@@ -75,7 +76,7 @@ contains
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
         nlag = fstr_get_num_lagrange_pernode(fstrSOLID%contacts(i)%algtype)
         do j = 1, size(fstrSOLID%contacts(i)%slave)
-          if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+          if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
           num_lagrange = num_lagrange + nlag
         enddo
       enddo
@@ -85,19 +86,19 @@ contains
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
         nlag = 3
         do j = 1, size(fstrSOLID%embeds(i)%slave)
-          if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+          if( .not. is_contact_active(fstrSOLID%embeds(i)%states(j)%state) ) cycle
           num_lagrange = num_lagrange + nlag
         enddo
       enddo
     endif
 
     ! Get original list of related nodes
-    call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active,list_nodeRelated_org,list_nodeRelated)
+    call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active_flag,list_nodeRelated_org,list_nodeRelated)
 
     ! Construct new list of related nodes and Lagrange multipliers
     countNon0LU_node = NPL_org + NPU_org
     countNon0LU_lagrange = 0
-    if( is_contact_active ) call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,contact_algo, &
+    if( is_contact_active_flag ) call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,contact_algo, &
     &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
 
     ! Construct new matrix structure(hecMAT&hecLagMAT)
@@ -108,11 +109,11 @@ contains
     call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
     & numNon0_node, num_lagrange, list_nodeRelated, conMAT)
     if( contact_algo == kcaSLagrange ) call hecmw_construct_hecLagMAT_from_nodeRelated(hecMAT%NP, &
-    & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active, list_nodeRelated, hecLagMAT)
+    & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active_flag, list_nodeRelated, hecLagMAT)
     call hecmw_finalize_nodeRelated(list_nodeRelated)
 
     ! Copy Lagrange multipliers
-    if( is_contact_active .and. contact_algo == kcaSLagrange ) &
+    if( is_contact_active_flag .and. contact_algo == kcaSLagrange ) &
       call fstr_copy_lagrange_contact(fstrSOLID,hecLagMAT)
 
   end subroutine fstr_mat_con_contact
@@ -132,7 +133,8 @@ contains
     integer(kind=kint)            :: ctsurf, etype, nnode, ndLocal(l_max_surface_node + 1) !< contents of type tContact
     integer(kind=kint)            :: i, j, k, nlag, algtype
     real(kind=kreal)              :: fcoeff !< friction coefficient
-    logical                       :: necessary_to_insert_node
+    logical                       :: necessary_to_insert_node, necessary_to_insert_node_pair
+    logical                       :: is_contact_active_flag, is_damping_active_flag
 
     count_lagrange = 0
     do i = 1, fstrSOLID%n_contacts
@@ -149,21 +151,40 @@ contains
       if( algtype == CONTACTTIED ) permission = .true.
 
       do j = 1, size(fstrSOLID%contacts(i)%slave)
+        ! stick or sliding contact is active
+        is_contact_active_flag = is_contact_active(fstrSOLID%contacts(i)%states(j)%state)
+        ! damping is active
+        is_damping_active_flag = fstrSOLID%contacts(i)%states(j)%state == CONTACTNEAR .and. &
+          &  is_damping_enabled(fstrSOLID%contacts(i))
+        
+        if( is_contact_active_flag .or. is_damping_active_flag ) then
 
-        if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
-        ctsurf = fstrSOLID%contacts(i)%states(j)%surface
-        etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
-        if( etype/=fe_tri3n .and. etype/=fe_quad4n ) &
-          stop " ##Error: This element type is not supported in contact analysis !!! "
-        nnode = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
-        ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
-        ndLocal(2:nnode+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(1:nnode)
+          ctsurf = fstrSOLID%contacts(i)%states(j)%surface
+          etype = fstrSOLID%contacts(i)%master(ctsurf)%etype
+          if( etype/=fe_tri3n .and. etype/=fe_quad4n ) &
+            stop " ##Error: This element type is not supported in contact analysis !!! "
+          nnode = size(fstrSOLID%contacts(i)%master(ctsurf)%nodes)
+          ndLocal(1) = fstrSOLID%contacts(i)%slave(j)
+          ndLocal(2:nnode+1) = fstrSOLID%contacts(i)%master(ctsurf)%nodes(1:nnode)
 
-        do k=1,nlag
-          if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
-          call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
-          & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
-        enddo
+          ! For CONTACTNEAR damping (especially S-Lagrange + frictionless),
+          ! we still need slave-master connectivity to assemble damping terms.
+          necessary_to_insert_node_pair = necessary_to_insert_node .or. is_damping_active_flag
+
+          if( is_contact_active_flag ) then
+            do k=1,nlag
+              if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
+              call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
+              & necessary_to_insert_node_pair, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+            enddo
+          else
+            ! NEAR damping only: no Lagrange multiplier, insert connectivity once
+            call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, 0, permission, &
+            & necessary_to_insert_node_pair, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+          endif
+              
+        end if
+
       enddo
 
     enddo
@@ -181,7 +202,7 @@ contains
 
       do j = 1, size(fstrSOLID%embeds(i)%slave)
 
-        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+        if( .not. is_contact_active(fstrSOLID%embeds(i)%states(j)%state) ) cycle
         ctsurf = fstrSOLID%embeds(i)%states(j)%surface
         etype = fstrSOLID%embeds(i)%master(ctsurf)%etype
         nnode = size(fstrSOLID%embeds(i)%master(ctsurf)%nodes)
@@ -214,7 +235,7 @@ contains
       nlag = fstr_get_num_lagrange_pernode(algtype)
 
       do j = 1, size(fstrSOLID%contacts(i)%slave)
-        if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
+        if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
         slave_node = fstrSOLID%contacts(i)%slave(j)
         hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
         do k=1,nlag
@@ -227,7 +248,7 @@ contains
     do i = 1, fstrSOLID%n_embeds
       nlag = 3
       do j = 1, size(fstrSOLID%embeds(i)%slave)
-        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
+        if( .not. is_contact_active(fstrSOLID%embeds(i)%states(j)%state) ) cycle
         slave_node = fstrSOLID%embeds(i)%slave(j)
         hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
         do k=1,nlag

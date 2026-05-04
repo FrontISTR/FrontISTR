@@ -11,6 +11,7 @@ module m_fstr_contact_assembly
   use m_fstr_contact_element
   use m_fstr_contact_interference
   use m_fstr_contact_elem_alag
+  use m_fstr_contact_damping
   implicit none
 
   public :: calc_contact_pair_refStiff
@@ -137,7 +138,7 @@ contains
     max_jump_ratio = 0.0d0
     
     do i = 1, size(contact%slave)
-      if(contact%states(i)%state == CONTACTFREE) cycle   ! not in contact
+      if(.not. is_contact_active(contact%states(i)%state)) cycle   ! only STICK/SLIP
       
       slave = contact%slave(i)
       master = contact%states(i)%surface
@@ -150,7 +151,7 @@ contains
       ! Update multiplier and calculate forces
       call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
         contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
-        fcoeff, etype, lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local)
+        fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
       
       ! Track maximum jump ratio
       max_jump_ratio = max(max_jump_ratio, jump_ratio_local)
@@ -196,7 +197,7 @@ contains
     mu = contact%nPenalty * contact%refStiff
 
     do i= 1, size(contact%slave)
-      if( contact%states(i)%state==CONTACTFREE ) cycle   ! not in contact
+      if( .not. is_contact_active(contact%states(i)%state) ) cycle   ! only STICK/SLIP
       slave = contact%slave(i)
       edisp(1:3) = disp(3*slave-2:3*slave)+ddisp(3*slave-2:3*slave)
       master = contact%states(i)%surface
@@ -236,7 +237,7 @@ contains
     integer(kind=kint)  :: i
 
     do i= 1, size(contact%slave)
-      if( contact%states(i)%state==CONTACTFREE ) then
+      if( .not. is_contact_active(contact%states(i)%state) ) then
         contact%states(i)%tangentForce(1:3) = 0.d0
         contact%states(i)%tangentForce_trial(1:3) = 0.d0
         contact%states(i)%tangentForce_final(1:3) = 0.d0
@@ -268,12 +269,19 @@ contains
     real(kind=kreal)   :: elecoord(3, l_max_surface_node)  !< master node coordinates
     real(kind=kreal)   :: eledisp(l_max_surface_node*3+3)  !< element displacement increment for friction
     real(kind=kreal)   :: force(l_max_surface_node*3+3)    !< contact force direction
+    logical            :: is_contact_active_flag, is_damping_active_flag
 
     algtype = contact%algtype
 
     do j = 1, size(contact%slave)
 
-      if( contact%states(j)%state == CONTACTFREE ) cycle
+      ! stick or sliding contact is active
+      is_contact_active_flag = is_contact_active(contact%states(j)%state)
+      ! damping is active
+      is_damping_active_flag = contact%states(j)%state == CONTACTNEAR .and. &
+        &  is_damping_enabled(contact)
+
+      if( .not. is_contact_active_flag .and. .not. is_damping_active_flag ) cycle
 
       ctsurf = contact%states(j)%surface
       etype = contact%master(ctsurf)%etype
@@ -286,19 +294,21 @@ contains
         elecoord(1:3, k) = coord(3*ndLocal(k+1)-2:3*ndLocal(k+1)) + disp(3*ndLocal(k+1)-2:3*ndLocal(k+1))
       enddo
 
-      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+      if( is_contact_active_flag ) then
 
-        if( ctAlgo == kcaSLagrange ) then
-          id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
-          id_lagrange = id_lagrange + 1
-          lagrange = lagrange_array(id_lagrange)
-          call getContactStiffness_Slag(contact%states(j), contact%master(ctsurf), iter, &
-            contact%tPenalty, contact%fcoeff, lagrange, stiffness)
+        if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
 
-          ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
-          call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, conMAT, hecLagMAT)
+          if( ctAlgo == kcaSLagrange ) then
+            id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
+            id_lagrange = id_lagrange + 1
+            lagrange = lagrange_array(id_lagrange)
+            call getContactStiffness_Slag(contact%states(j), contact%master(ctsurf), iter, &
+              contact%tPenalty, contact%fcoeff, lagrange, stiffness, smoothing_type=contact%smoothing)
 
-        else if( ctAlgo == kcaALagrange ) then
+            ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
+            call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, contact%fcoeff, stiffness, conMAT, hecLagMAT)
+
+          else if( ctAlgo == kcaALagrange ) then
             ! Build element displacement increment for consistent tangent evaluation
             eledisp(1:3) = ddisp(3*ndLocal(1)-2:3*ndLocal(1))
             do k = 1, nnode
@@ -307,35 +317,45 @@ contains
             call getContactStiffness_Alag(contact%states(j), contact%master(ctsurf), elecoord(:,1:nnode), &
               contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
               contact%fcoeff, contact%symmetric, stiffness, force, &
-              edisp=eledisp(1:nnode*3+3), iter=iter)
+              smoothing_type=contact%smoothing, edisp=eledisp(1:nnode*3+3), iter=iter)
 
-          ! Assemble contact stiffness matrix into global stiffness matrix
-          call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)
+            ! Assemble contact stiffness matrix into global stiffness matrix
+            call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)
 
-        end if
+          end if
 
+        else if( algtype == CONTACTTIED ) then
 
-      else if( algtype == CONTACTTIED ) then
+          if( ctAlgo == kcaSLagrange ) then
+            id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
+            do k = 1, 3
+              id_lagrange = id_lagrange + 1
+              lagrange = lagrange_array(id_lagrange)
 
-        if( ctAlgo == kcaSLagrange ) then
-          id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
-          do k = 1, 3
-            id_lagrange = id_lagrange + 1
-            lagrange = lagrange_array(id_lagrange)
+              call getTiedStiffness_Slag(contact%states(j), contact%master(ctsurf), k, stiffness, &
+                contact%smoothing)
+              ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
+              call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, 0.d0, stiffness, conMAT, hecLagMAT)
+            enddo
 
-            call getTiedStiffness_Slag(contact%states(j), contact%master(ctsurf), k, stiffness)
-            ! Assemble contact stiffness matrix of contact pair into global stiffness matrix
-            call hecmw_mat_ass_contactlag(nnode, ndLocal, id_lagrange, 0.d0, stiffness, conMAT, hecLagMAT)
-          enddo
+          else if( ctAlgo == kcaALagrange ) then
+            call getTiedStiffness_Alag(contact%states(j), contact%master(ctsurf), &
+              contact%nPenalty * contact%refStiff, stiffness, force)
 
-        else if( ctAlgo == kcaALagrange ) then
-          call getTiedStiffness_Alag(contact%states(j), contact%master(ctsurf), &
-            contact%nPenalty * contact%refStiff, stiffness, force)
+            ! Assemble contact stiffness matrix into global stiffness matrix
+            call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)
 
-          ! Assemble contact stiffness matrix into global stiffness matrix
-          call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)
+          end if
 
-        end if
+        endif
+
+      else if( is_damping_active_flag ) then
+        call getDampingStiffness(contact%states(j), contact%master(ctsurf), &
+          contact%damp_alpha * contact%refStiff, contact%damp_gact, &
+          stiffness, smoothing_type=contact%smoothing)
+
+        ! Assemble full damping stiffness for slave+master contact element
+        call hecmw_mat_ass_elem(conMAT, nnode+1, ndLocal, stiffness)
 
       endif
 
@@ -370,6 +390,7 @@ contains
     real(kind=kreal)   :: ctTForce(21*3+1)
     real(kind=kreal)   :: mu_n, mu_t
     logical            :: if_flag
+    logical            :: is_contact_active_flag, is_damping_active_flag
     real(kind=kreal)   :: ctime, etime
     integer(kind=kint) :: if_type
 
@@ -383,8 +404,13 @@ contains
 
     do j = 1, size(contact%slave)
 
-      if( contact%states(j)%state == CONTACTFREE ) cycle
-      if(if_flag) call set_shrink_factor(ctime, contact%states(j), etime, if_type)
+      ! stick or sliding contact is active
+      is_contact_active_flag = is_contact_active(contact%states(j)%state)
+      ! damping is active (residual only)
+      is_damping_active_flag = (purpose == kctForResidual) .and. &
+        contact%states(j)%state == CONTACTNEAR .and. is_damping_enabled(contact)
+
+      if( .not. is_contact_active_flag .and. .not. is_damping_active_flag ) cycle
 
       ctsurf = contact%states(j)%surface
       nnode = size(contact%master(ctsurf)%nodes)
@@ -396,70 +422,85 @@ contains
         ndCoord((k-1)*3+1:(k-1)*3+3) = coord((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
       enddo
 
-      ! --- Determine penalty parameters: zero for output (multiplier-only)
-      if( ctAlgo == kcaALagrange .and. purpose == kctForOutput ) then
-        mu_n = 0.0d0
-        mu_t = 0.0d0
-      else
-        mu_n = contact%nPenalty * contact%refStiff
-        mu_t = contact%tPenalty * contact%refStiff
-      endif
+      if( is_contact_active_flag ) then
 
-      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-        ! Obtain contact nodal force vector of contact pair
-        if(if_flag) call get_shrink_elemact_surf(contact%states(j),ndCoord, nnode)
+        if(if_flag) call set_shrink_factor(ctime, contact%states(j), etime, if_type)
 
-        if( ctAlgo == kcaSLagrange ) then
-          id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
-          id_lagrange = id_lagrange + 1
-          lagrange = lagrange_array(id_lagrange)
-          call getContactNodalForce_Slag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
-            contact%tPenalty,contact%fcoeff,lagrange,ctNForce,ctTForce,.true.)
-
-        else if( ctAlgo == kcaALagrange ) then
-          id_lagrange = 0
-          lagrange = 0.d0
-          call getContactNodalForce_Alag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
-            mu_n, mu_t, contact%fcoeff,lagrange,ctNForce,ctTForce,.true.)
-
-        end if
-
-        ! Assemble contact force
-        if( purpose == kctForResidual ) then
-          call assemble_contact_force_residual(nnode,ndLocal,id_lagrange,ctNForce,ctTForce,conMAT)
+        ! --- Determine penalty parameters: zero for output (multiplier-only)
+        if( ctAlgo == kcaALagrange .and. purpose == kctForOutput ) then
+          mu_n = 0.0d0
+          mu_t = 0.0d0
         else
-          call assemble_contact_force_output(nnode,ndLocal,ctNForce,ctTForce,CONT_NFORCE,CONT_FRIC)
+          mu_n = contact%nPenalty * contact%refStiff
+          mu_t = contact%tPenalty * contact%refStiff
         endif
 
-      else if( algtype == CONTACTTIED ) then
+        if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
+          ! Obtain contact nodal force vector of contact pair
+          if(if_flag) call get_shrink_elemact_surf(contact%states(j),ndCoord, nnode)
 
-        if( ctAlgo == kcaSLagrange ) then
-          id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
-          do k=1,3
+          if( ctAlgo == kcaSLagrange ) then
+            id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
             id_lagrange = id_lagrange + 1
             lagrange = lagrange_array(id_lagrange)
-            contact%states(j)%multiplier(k) = lagrange
+            call getContactNodalForce_Slag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
+              contact%tPenalty,contact%fcoeff,lagrange,ctNForce,ctTForce,.true.,contact%smoothing)
 
-            call getTiedNodalForce_Slag(contact%states(j),contact%master(ctsurf),k,ndu, &
-            &  lagrange,ctNForce,ctTForce)
+          else if( ctAlgo == kcaALagrange ) then
+            id_lagrange = 0
+            lagrange = 0.d0
+            call getContactNodalForce_Alag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
+              mu_n, mu_t, contact%fcoeff,lagrange,ctNForce,ctTForce,.true.,contact%smoothing)
+
+          end if
+
+          ! Assemble contact force
+          if( purpose == kctForResidual ) then
+            call assemble_contact_force_residual(nnode,ndLocal,id_lagrange,ctNForce,ctTForce,conMAT)
+          else
+            call assemble_contact_force_output(nnode,ndLocal,ctNForce,ctTForce,CONT_NFORCE,CONT_FRIC)
+          endif
+
+        else if( algtype == CONTACTTIED ) then
+
+          if( ctAlgo == kcaSLagrange ) then
+            id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
+            do k=1,3
+              id_lagrange = id_lagrange + 1
+              lagrange = lagrange_array(id_lagrange)
+              contact%states(j)%multiplier(k) = lagrange
+
+              call getTiedNodalForce_Slag(contact%states(j),contact%master(ctsurf),k,ndu, &
+              &  lagrange,ctNForce,ctTForce,contact%smoothing)
+              if( purpose == kctForResidual ) then
+                call assemble_contact_force_residual(nnode,ndLocal,id_lagrange,ctNForce,ctTForce,conMAT)
+              else
+                call assemble_contact_force_output(nnode,ndLocal,ctNForce,ctTForce,CONT_NFORCE)
+              endif
+            end do
+
+          else if( ctAlgo == kcaALagrange ) then
+            id_lagrange = 0
+            call getTiedNodalForce_Alag(contact%states(j),contact%master(ctsurf),ndu,    &
+              mu_n, ctNForce,ctTForce)
             if( purpose == kctForResidual ) then
               call assemble_contact_force_residual(nnode,ndLocal,id_lagrange,ctNForce,ctTForce,conMAT)
             else
               call assemble_contact_force_output(nnode,ndLocal,ctNForce,ctTForce,CONT_NFORCE)
             endif
-          end do
 
-        else if( ctAlgo == kcaALagrange ) then
-          id_lagrange = 0
-          call getTiedNodalForce_Alag(contact%states(j),contact%master(ctsurf),ndu,    &
-            mu_n, ctNForce,ctTForce)
-          if( purpose == kctForResidual ) then
-            call assemble_contact_force_residual(nnode,ndLocal,id_lagrange,ctNForce,ctTForce,conMAT)
-          else
-            call assemble_contact_force_output(nnode,ndLocal,ctNForce,ctTForce,CONT_NFORCE)
-          endif
+          end if
 
-        end if
+        endif
+
+      else if( is_damping_active_flag ) then
+
+        call getDampingNodalForce(contact%states(j), contact%master(ctsurf), ndDu, &
+          contact%damp_alpha * contact%refStiff, contact%damp_gact, &
+          ctNForce, ctTForce, smoothing_type=contact%smoothing)
+
+        ! Assemble damping force for slave+master contact element
+        call assemble_contact_force_residual(nnode,ndLocal,0,ctNForce,ctTForce,conMAT)
 
       endif
 

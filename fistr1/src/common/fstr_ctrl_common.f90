@@ -545,7 +545,7 @@ contains
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname )
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname, smoothing )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
@@ -556,12 +556,14 @@ contains
     real(kind=kreal), intent(out)      :: ntol           !< tolrence along contact nomral
     real(kind=kreal), intent(out)      :: ttol           !< tolrence along contact tangent
     character(len=*), intent(out)      :: cpname         !< name of contact parameter
+    integer(kind=kint), intent(out)    :: smoothing     !< kcsNONE or kcsNAGATA
 
     integer           :: rcode, ipt
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
     real(kind=kreal)  :: fcoeff(n),tPenalty(n)
+    real(kind=kreal)  :: damp_alpha, damp_gact
 
     write(ss,*)  HECMW_NAME_LEN
 
@@ -571,6 +573,9 @@ contains
     rcode = fstr_ctrl_get_param_ex( ctrl, 'INTERACTION ', s1, 0, 'P', contact(1)%algtype )
     if( contact(1)%algtype==CONTACTGLUED ) contact(1)%algtype=CONTACTFSLID  ! not complemented yet
     if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', contact(1)%group )/=0) return
+    smoothing = kcsNONE + 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'SMOOTHING ', 'NONE,NAGATA ', 0, 'P', smoothing ) /= 0 ) return
+    smoothing = smoothing - 1
     do rcode=2,n
       contact(rcode)%ctype = contact(1)%ctype
       contact(rcode)%group = contact(1)%group
@@ -581,33 +586,40 @@ contains
 
     if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
       write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
-    if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
-    do rcode=1,n
-      call fstr_strupr(cp_name(rcode))
-      contact(rcode)%pair_name = cp_name(rcode)
-      contact(rcode)%fcoeff = fcoeff(rcode)
-      contact(rcode)%nPenalty = 5.0d0
-      contact(rcode)%tPenalty = tPenalty(rcode)
-      contact(rcode)%refStiff = 1.d0
-    enddo
+      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      do rcode=1,n
+        call fstr_strupr(cp_name(rcode))
+        contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%fcoeff = fcoeff(rcode)
+        contact(rcode)%nPenalty = 5.0d0
+        contact(rcode)%tPenalty = tPenalty(rcode)
+        contact(rcode)%refStiff = 1.d0
+        contact(rcode)%damp_alpha = 0.0d0
+        contact(rcode)%damp_gact = 0.0d0
+      enddo
     else if( contact(1)%algtype==CONTACTTIED ) then
       write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
       if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
       do rcode=1,n
         call fstr_strupr(cp_name(rcode))
         contact(rcode)%pair_name = cp_name(rcode)
-      contact(rcode)%nPenalty = 5.0d0
+        contact(rcode)%nPenalty = 5.0d0
         contact(rcode)%fcoeff = 0.d0
         contact(rcode)%tPenalty = 1.d0
+        contact(rcode)%damp_alpha = 0.0d0
+        contact(rcode)%damp_gact = 0.0d0
       enddo
     endif
 
     np = 0.d0;  tp=0.d0
     ntol = 0.d0;  ttol=0.d0
+    damp_alpha = 0.0d0;  damp_gact = 0.0d0
     if( fstr_ctrl_get_param_ex( ctrl, 'NPENALTY ',  '# ',  0, 'R', np ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TPENALTY ', '# ', 0, 'R', tp ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'NTOL ',  '# ',  0, 'R', ntol ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '# ', 0, 'R', ttol ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DAMP_ALPHA ', '# ', 0, 'R', damp_alpha ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DAMP_GACT ',  '# ', 0, 'R', damp_gact  ) /= 0 ) return
     cpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
     
@@ -622,17 +634,28 @@ contains
         contact(rcode)%tPenalty = tp
       enddo
     endif
+    if( damp_alpha > 0.0d0 ) then
+      do rcode=1,n
+        contact(rcode)%damp_alpha = damp_alpha
+      enddo
+    endif
+    if( damp_gact > 0.0d0 ) then
+      do rcode=1,n
+        contact(rcode)%damp_gact = damp_gact
+      enddo
+    endif
     
     fstr_ctrl_get_CONTACT = .true.
   end function fstr_ctrl_get_CONTACT
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_EMBED( ctrl, n, embed, cpname )
+  logical function fstr_ctrl_get_EMBED( ctrl, n, embed, cpname, smoothing )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
     type(tContact), intent(out)       :: embed(n)      !< embed definition
     character(len=*), intent(out)     :: cpname         !< name of contact parameter
+    integer(kind=kint), intent(out)   :: smoothing     !< kcsNONE or kcsNAGATA
 
     integer           :: rcode, ipt
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
@@ -648,6 +671,9 @@ contains
     embed(1)%ctype = 1   ! pure slave-master contact; default value
     embed(1)%algtype = CONTACTTIED ! small sliding contact; default value
     if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', embed(1)%group )/=0) return
+    smoothing = kcsNONE + 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'SMOOTHING ', 'NONE,NAGATA ', 0, 'P', smoothing ) /= 0 ) return
+    smoothing = smoothing - 1
     do rcode=2,n
       embed(rcode)%ctype = embed(1)%ctype
       embed(rcode)%group = embed(1)%group
