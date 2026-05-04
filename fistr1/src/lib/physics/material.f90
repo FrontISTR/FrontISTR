@@ -171,7 +171,7 @@ module mMaterial
     character(len=30)          :: name              !< material name
     real(kind=kreal)           :: variables(200)    !< material properties
     integer(kind=kint)         :: variables_i(200)  !< material properties(integer)
-    type(tshellmat), pointer   :: shell_var(:)      !< material properties for shell
+    type(tshellmat), pointer   :: shell_var(:) => null() !< material properties for shell
     integer(kind=kint)         :: totallyr          !< total layer of element
     integer(kind=kint)         :: cdsys_ID          !< ID of material coordinate system
     integer(kind=kint)         :: n_table           !< size of table
