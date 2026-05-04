@@ -3,23 +3,21 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 
-module hecmw_solver_las_nn
+module hecmw_solver_las_44
   use hecmw_util
   implicit none
 
   private
 
-  public :: hecmw_matvec_nn
-  public :: hecmw_matvec_nn_set_async
-  public :: hecmw_matvec_nn_unset_async
-  public :: hecmw_matresid_nn
-  public :: hecmw_rel_resid_L2_nn
-  public :: hecmw_Tvec_nn
-  public :: hecmw_Ttvec_nn
-  public :: hecmw_TtmatTvec_nn
-  public :: hecmw_mat_diag_sr_nn
-  public :: hecmw_mat_add_nn
-  public :: hecmw_mat_multiple_nn
+  public :: hecmw_matvec_44
+  public :: hecmw_matvec_44_set_async
+  public :: hecmw_matvec_44_unset_async
+  public :: hecmw_matresid_44
+  public :: hecmw_rel_resid_L2_44
+  public :: hecmw_Tvec_44
+  public :: hecmw_Ttvec_44
+  public :: hecmw_TtmatTvec_44
+  public :: hecmw_mat_diag_sr_44
 
   ! ! for communication hiding in matvec
   ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
@@ -30,10 +28,10 @@ contains
 
   !C
   !C***
-  !C*** hecmw_matvec_nn
+  !C*** hecmw_matvec_44
   !C***
   !C
-  subroutine hecmw_matvec_nn (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+  subroutine hecmw_matvec_44 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_matrix_misc
     implicit none
@@ -51,75 +49,43 @@ contains
 
     if (hecmw_mat_get_flag_mpcmatvec(hecMAT) /= 0) then
       allocate(WK(hecMAT%NP * hecMAT%NDOF))
-      call hecmw_TtmatTvec_nn(hecMESH, hecMAT, X, Y, WK, time_Ax, Tcomm)
+      call hecmw_TtmatTvec_44(hecMESH, hecMAT, X, Y, WK, time_Ax, Tcomm)
       deallocate(WK)
     else
-      call hecmw_matvec_nn_inner(hecMESH, hecMAT, X, Y, time_Ax, Tcomm)
+      call hecmw_matvec_44_inner(hecMESH, hecMAT, X, Y, time_Ax, Tcomm)
     endif
 
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
-  end subroutine hecmw_matvec_nn
+  end subroutine hecmw_matvec_44
 
   !C
   !C***
-  !C*** hecmw_matvec_nn_set_async
+  !C*** hecmw_matvec_44_set_async
   !C***
   !C
-  subroutine hecmw_matvec_nn_set_async (hecMAT)
+  subroutine hecmw_matvec_44_set_async (hecMAT)
     use hecmw_util
     implicit none
     type (hecmwST_matrix), intent(in) :: hecMAT
-    ! integer(kind=kint) :: i, j, jS, jE, idx, in
 
-    ! allocate(index_o(0:hecMAT%N))
-    ! index_o(0) = 0
-    ! do i = 1, hecMAT%N
-    !   jS= hecMAT%indexU(i-1) + 1
-    !   jE= hecMAT%indexU(i  )
-    !   idx = index_o(i-1)
-    !   do j= jS, jE
-    !     in  = hecMAT%itemU(j)
-    !     if (in <= hecMAT%N) cycle
-    !     idx = idx + 1
-    !   enddo
-    !   index_o(i) = idx
-    ! enddo
-    ! allocate(item_o(idx))
-    ! allocate(A_o(idx*9))
-    ! do i = 1, hecMAT%N
-    !   jS= hecMAT%indexU(i-1) + 1
-    !   jE= hecMAT%indexU(i  )
-    !   idx = index_o(i-1)
-    !   do j= jS, jE
-    !     in  = hecMAT%itemU(j)
-    !     if (in <= hecMAT%N) cycle
-    !     idx = idx + 1
-    !     item_o(idx) = hecMAT%itemU(j) - hecMAT%N
-    !     A_o(9*idx-8:9*idx) = hecMAT%AU(9*j-8:9*j)
-    !   enddo
-    ! enddo
-    ! async_matvec_flg = .true.
-  end subroutine hecmw_matvec_nn_set_async
+  end subroutine hecmw_matvec_44_set_async
 
   !C
   !C***
-  !C*** hecmw_matvec_nn_unset_async
+  !C*** hecmw_matvec_44_unset_async
   !C***
   !C
-  subroutine hecmw_matvec_nn_unset_async
+  subroutine hecmw_matvec_44_unset_async
     implicit none
-    ! if (allocated(index_o)) deallocate(index_o)
-    ! if (allocated(item_o)) deallocate(item_o)
-    ! if (allocated(A_o)) deallocate(A_o)
-    ! async_matvec_flg = .false.
-  end subroutine hecmw_matvec_nn_unset_async
+
+  end subroutine hecmw_matvec_44_unset_async
 
   !C
   !C***
-  !C*** hecmw_matvec_nn_inner ( private subroutine )
+  !C*** hecmw_matvec_44_inner ( private subroutine )
   !C***
   !C
-  subroutine hecmw_matvec_nn_inner (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+  subroutine hecmw_matvec_44_inner (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
     use hecmw_matrix_misc
@@ -136,12 +102,12 @@ contains
     real(kind=kreal), intent(inout), optional :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME, Tcomm
-    integer(kind=kint) :: i, j, k, l, jS, jE, in
-    real(kind=kreal) :: YV(hecMAT%NDOF), XV(hecMAT%NDOF)
+    integer(kind=kint) :: i, j, jS, jE, in
+    real(kind=kreal) :: YV1, YV2, YV3, YV4, X1, X2, X3, X4
 
-    integer(kind=kint) :: N, NP, NDOF, NDOF2
-    integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
-    real(kind=kreal), pointer :: AL(:), AU(:), D(:)
+    integer(kind=kint) :: N, NP
+    integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:), indexA(:), itemA(:)
+    real(kind=kreal), pointer :: AL(:), AU(:), D(:), A(:)
 
     ! added for turning >>>
     integer, parameter :: numOfBlockPerThread = 100
@@ -167,15 +133,17 @@ contains
       NP = hecMAT%NP
       indexL => hecMAT%indexL
       indexU => hecMAT%indexU
+      indexA => hecMAT%indexA
       itemL => hecMAT%itemL
       itemU => hecMAT%itemU
+      itemA => hecMAT%itemA
       AL => hecMAT%AL
       AU => hecMAT%AU
       D => hecMAT%D
-      NDOF =  hecMAT%NDOF
-      NDOF2 = NDOF*NDOF
+      A => hecMAT%A
 
       ! added for turning >>>
+#ifndef _OPENACC
       if (.not. isFirst) then
         numOfBlock = numOfThread * numOfBlockPerThread
         if (endPos(numOfBlock-1) .ne. N-1) then
@@ -216,101 +184,133 @@ contains
             !      startPos(i), endPos(i)
         end do
 
-        call hecmw_tuning_fx_calc_sector_cache(NP, NDOF, &
+        call hecmw_tuning_fx_calc_sector_cache(NP, 4, &
           sectorCacheSize0, sectorCacheSize1)
 
         isFirst = .false.
       endif
+#endif
       ! <<< added for turning
 
       START_TIME= HECMW_WTIME()
-      ! if (async_matvec_flg) then
-      !   call hecmw_update_3_R_async (hecMESH, X, NP, ireq)
-      ! else
-      call hecmw_update_R (hecMESH, X, NP, NDOF)
+
+      call hecmw_update_R (hecMESH, X, NP, 4)
+
       ! endif
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
       START_TIME = hecmw_Wtime()
 
-      !call fapp_start("loopInMatvec33", 1, 0)
-      !call start_collection("loopInMatvec33")
+      !call fapp_start("loopInMatvec44", 1, 0)
+      !call start_collection("loopInMatvec44")
 
       !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
       !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+      do i = 1, N
+        X1= X(4*i-3)
+        X2= X(4*i-2)
+        X3= X(4*i-1)
+        X4= X(4*i  )
+        YV1= 0
+        YV2= 0
+        YV3= 0
+        YV4= 0
+        jS= indexA(i) + 1
+        jE= indexA(i+1)
+        do j= jS, jE
+          in  = itemA(j)
+          X1= X(4*in-3)
+          X2= X(4*in-2)
+          X3= X(4*in-1)
+          X4= X(4*in  )
+          YV1= YV1 + A(16*j-15)*X1 + A(16*j-14)*X2 + A(16*j-13)*X3 + A(16*j-12)*X4
+          YV2= YV2 + A(16*j-11)*X1 + A(16*j-10)*X2 + A(16*j- 9)*X3 + A(16*j- 8)*X4
+          YV3= YV3 + A(16*j- 7)*X1 + A(16*j- 6)*X2 + A(16*j- 5)*X3 + A(16*j- 4)*X4
+          YV4= YV4 + A(16*j- 3)*X1 + A(16*j- 2)*X2 + A(16*j- 1)*X3 + A(16*j   )*X4
+        enddo
+        Y(4*i-3)= YV1
+        Y(4*i-2)= YV2
+        Y(4*i-1)= YV3
+        Y(4*i  )= YV4
+      enddo
+      !$acc end kernels
+#else
       !$OMP PARALLEL DEFAULT(NONE) &
-        !$OMP&PRIVATE(i,XV,YV,jS,jE,j,k,l,in,threadNum,blockNum,blockIndex) &
-        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,NDOF,NDOF2,async_matvec_flg)
+        !$OMP&PRIVATE(i,X1,X2,X3,X4,YV1,YV2,YV3,YV4,jS,jE,j,in,threadNum,blockNum,blockIndex) &
+        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
         blockIndex = blockNum * numOfThread  + threadNum
         do i = startPos(blockIndex), endPos(blockIndex)
-          do k=1,NDOF
-            XV(k) = X(NDOF*(i-1)+k)
-          end do
-          YV(:)=0.0d0
-          do k=1,NDOF
-            do l=1,NDOF
-              YV(k)=YV(k)+D(NDOF2*(i-1)+(k-1)*NDOF+l)*XV(l)
-            end do
-          end do
+          X1= X(4*i-3)
+          X2= X(4*i-2)
+          X3= X(4*i-1)
+          X4= X(4*i  )
+          YV1= D(16*i-15)*X1 + D(16*i-14)*X2 + D(16*i-13)*X3 + D(16*i-12)*X4
+          YV2= D(16*i-11)*X1 + D(16*i-10)*X2 + D(16*i- 9)*X3 + D(16*i- 8)*X4
+          YV3= D(16*i- 7)*X1 + D(16*i- 6)*X2 + D(16*i- 5)*X3 + D(16*i- 4)*X4
+          YV4= D(16*i- 3)*X1 + D(16*i- 2)*X2 + D(16*i- 1)*X3 + D(16*i   )*X4
+
           jS= indexL(i-1) + 1
           jE= indexL(i  )
           do j= jS, jE
             in  = itemL(j)
-            do k=1,NDOF
-              XV(k) = X(NDOF*(in-1)+k)
-            end do
-            do k=1,NDOF
-              do l=1,NDOF
-                YV(k)=YV(k)+AL(NDOF2*(j-1)+(k-1)*NDOF+l)*XV(l)
-              end do
-            end do
+            X1= X(4*in-3)
+            X2= X(4*in-2)
+            X3= X(4*in-1)
+            X4= X(4*in  )
+            YV1= YV1 + AL(16*j-15)*X1 + AL(16*j-14)*X2 + AL(16*j-13)*X3 + AL(16*j-12)*X4
+            YV2= YV2 + AL(16*j-11)*X1 + AL(16*j-10)*X2 + AL(16*j- 9)*X3 + AL(16*j- 8)*X4
+            YV3= YV3 + AL(16*j- 7)*X1 + AL(16*j- 6)*X2 + AL(16*j- 5)*X3 + AL(16*j- 4)*X4
+            YV4= YV4 + AL(16*j- 3)*X1 + AL(16*j- 2)*X2 + AL(16*j- 1)*X3 + AL(16*j   )*X4
           enddo
           jS= indexU(i-1) + 1
           jE= indexU(i  )
           do j= jS, jE
             in  = itemU(j)
             ! if (async_matvec_flg .and. in > N) cycle
-            do k=1,NDOF
-              XV(k) = X(NDOF*(in-1)+k)
-            end do
-            do k=1,NDOF
-              do l=1,NDOF
-                YV(k)=YV(k)+AU(NDOF2*(j-1)+(k-1)*NDOF+l)*XV(l)
-              end do
-            end do
+            X1= X(4*in-3)
+            X2= X(4*in-2)
+            X3= X(4*in-1)
+            X4= X(4*in  )
+            YV1= YV1 + AU(16*j-15)*X1 + AU(16*j-14)*X2 + AU(16*j-13)*X3 + AU(16*j-12)*X4
+            YV2= YV2 + AU(16*j-11)*X1 + AU(16*j-10)*X2 + AU(16*j- 9)*X3 + AU(16*j- 8)*X4
+            YV3= YV3 + AU(16*j- 7)*X1 + AU(16*j- 6)*X2 + AU(16*j- 5)*X3 + AU(16*j- 4)*X4
+            YV4= YV4 + AU(16*j- 3)*X1 + AU(16*j- 2)*X2 + AU(16*j- 1)*X3 + AU(16*j   )*X4
           enddo
-          do k=1,NDOF
-            Y(NDOF*(i-1)+k) = YV(k)
-          end do
+          Y(4*i-3)= YV1
+          Y(4*i-2)= YV2
+          Y(4*i-1)= YV3
+          Y(4*i  )= YV4
         enddo
       enddo
       !$OMP END PARALLEL
+#endif
 
       !OCL END_CACHE_SUBSECTOR
       !OCL END_CACHE_SECTOR_SIZE
 
-      !call stop_collection("loopInMatvec33")
-      !call fapp_stop("loopInMatvec33", 1, 0)
+      !call stop_collection("loopInMatvec44")
+      !call fapp_stop("loopInMatvec44", 1, 0)
 
       END_TIME = hecmw_Wtime()
       time_Ax = time_Ax + END_TIME - START_TIME
+
     endif
-
-  end subroutine hecmw_matvec_nn_inner
-
-
+  end subroutine hecmw_matvec_44_inner
 
   !C
   !C***
-  !C*** hecmw_matresid_nn
+  !C*** hecmw_matresid_44
   !C***
   !C
-  subroutine hecmw_matresid_nn (hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
+  subroutine hecmw_matresid_44 (hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -324,27 +324,36 @@ contains
     real(kind=kreal) :: Tcomm
 
     Tcomm = 0.d0
-    call hecmw_matvec_nn (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
+    call hecmw_matvec_44 (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i),shared(hecMAT,R,B)
     !$omp do
-    do i = 1, hecMAT%N * hecMAT%NDOF
+#endif
+    do i = 1, hecMAT%N * 4
       R(i) = B(i) - R(i)
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
-  end subroutine hecmw_matresid_nn
+#endif
+  end subroutine hecmw_matresid_44
 
   !C
   !C***
-  !C*** hecmw_rel_resid_L2_nn
+  !C*** hecmw_rel_resid_L2_44
   !C***
   !C
-  function hecmw_rel_resid_L2_nn (hecMESH, hecMAT, time_Ax, COMMtime)
+  function hecmw_rel_resid_L2_44 (hecMESH, hecMAT, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_solver_misc
     implicit none
-    real(kind=kreal) :: hecmw_rel_resid_L2_nn
+    real(kind=kreal) :: hecmw_rel_resid_L2_44
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH
     type ( hecmwST_matrix     ), intent(in) :: hecMAT
     real(kind=kreal), intent(inout) :: time_Ax
@@ -362,26 +371,25 @@ contains
     if (bnorm2 == 0.d0) then
       bnorm2 = 1.d0
     endif
-    call hecmw_matresid_nn(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, time_Ax, Tcomm)
+    call hecmw_matresid_44(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, time_Ax, Tcomm)
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
-    hecmw_rel_resid_L2_nn = sqrt(rnorm2 / bnorm2)
+    hecmw_rel_resid_L2_44 = sqrt(rnorm2 / bnorm2)
 
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
 
     deallocate(r)
-  end function hecmw_rel_resid_L2_nn
+  end function hecmw_rel_resid_L2_44
 
   !C
   !C***
-  !C*** hecmw_Tvec_nn
+  !C*** hecmw_Tvec_44
   !C***
   !C
-  subroutine hecmw_Tvec_nn (hecMESH, ndof, X, Y, COMMtime)
+  subroutine hecmw_Tvec_44 (hecMESH, X, Y, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
-    integer(kind=kint), intent(in) :: ndof
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
@@ -390,46 +398,60 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, X, hecMESH%n_node, ndof)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 4)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
-    !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y),firstprivate(ndof)
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
+    !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
     !$omp do
-    do i= 1, hecMESH%nn_internal * ndof
+#endif
+    do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
+#ifndef _OPENACC
     !$omp end do
+#endif
 
+#ifdef _OPENACC
+    !$acc loop independent
+#else
     !$omp do
+#endif
     OUTER: do i= 1, hecMESH%mpc%n_mpc
       do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
-        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+        if (hecMESH%mpc%mpc_dof(j) > 4) cycle OUTER
       enddo
       k = hecMESH%mpc%mpc_index(i-1) + 1
-      kk = ndof * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
+      kk = 4 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       Y(kk) = 0.d0
       do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
-        jj = ndof * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+        jj = 4 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
         Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
       enddo
     enddo OUTER
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
-  end subroutine hecmw_Tvec_nn
+  end subroutine hecmw_Tvec_44
 
   !C
   !C***
-  !C*** hecmw_Ttvec_nn
+  !C*** hecmw_Ttvec_44
   !C***
   !C
-  subroutine hecmw_Ttvec_nn (hecMESH, ndof, X, Y, COMMtime)
+  subroutine hecmw_Ttvec_44 (hecMESH, X, Y, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
-    integer(kind=kint), intent(in) :: ndof
     real(kind=kreal), intent(in) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
@@ -438,43 +460,61 @@ contains
     integer(kind=kint) :: i, j, jj, k, kk
 
     START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, X, hecMESH%n_node,ndof)
+    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 4)
     END_TIME= HECMW_WTIME()
     COMMtime = COMMtime + END_TIME - START_TIME
 
-    !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y),firstprivate(ndof)
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
+    !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
     !$omp do
-    do i= 1, hecMESH%nn_internal * ndof
+#endif
+    do i= 1, hecMESH%nn_internal * hecMESH%n_dof
       Y(i)= X(i)
     enddo
+#ifndef _OPENACC
     !$omp end do
+#endif
 
+#ifdef _OPENACC
+    !$acc loop independent
+#else
     !$omp do
+#endif
     OUTER: do i= 1, hecMESH%mpc%n_mpc
       do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
-        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+        if (hecMESH%mpc%mpc_dof(j) > 4) cycle OUTER
       enddo
       k = hecMESH%mpc%mpc_index(i-1) + 1
-      kk = ndof * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
+      kk = 4 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
       Y(kk) = 0.d0
       do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
-        jj = ndof * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
-        !$omp atomic
+        jj = 4 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
+#ifdef _OPENACC
+        !$acc atomic update
+#else
+        !omp atomic
+#endif
         Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
       enddo
     enddo OUTER
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
-
-  end subroutine hecmw_Ttvec_nn
+  end subroutine hecmw_Ttvec_44
 
   !C
   !C***
-  !C*** hecmw_TtmatTvec_nn
+  !C*** hecmw_TtmatTvec_44
   !C***
   !C
-  subroutine hecmw_TtmatTvec_nn (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
+  subroutine hecmw_TtmatTvec_44 (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
     use hecmw_util
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -484,18 +524,19 @@ contains
     real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout) :: COMMtime
 
-    call hecmw_Tvec_nn(hecMESH, hecMAT%NDOF, X, Y, COMMtime)
-    call hecmw_matvec_nn_inner(hecMESH, hecMAT, Y, W, time_Ax, COMMtime)
-    call hecmw_Ttvec_nn(hecMESH, hecMAT%NDOF, W, Y, COMMtime)
+    call hecmw_Tvec_44(hecMESH, X, Y, COMMtime)
+    call hecmw_matvec_44_inner(hecMESH, hecMAT, Y, W, time_Ax, COMMtime)
+    call hecmw_Ttvec_44(hecMESH, W, Y, COMMtime)
 
-  end subroutine hecmw_TtmatTvec_nn
+  end subroutine hecmw_TtmatTvec_44
+
 
   !C
   !C***
-  !C*** hecmw_mat_diag_sr_nn
+  !C*** hecmw_mat_diag_sr_44
   !C***
   !C
-  subroutine hecmw_mat_diag_sr_nn(hecMESH, hecMAT, COMMtime)
+  subroutine hecmw_mat_diag_sr_44(hecMESH, hecMAT, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
     implicit none
@@ -504,70 +545,30 @@ contains
     real(kind=kreal), intent(inout), optional :: COMMtime
     real(kind=kreal), allocatable :: W(:,:)
     real(kind=kreal), pointer :: D(:)
-    integer(kind=kint) :: ip, NDOF, i, j
+    integer(kind=kint) :: ip
     real(kind=kreal) :: START_TIME, END_TIME
-    NDOF = hecMAT%NDOF
-    allocate(W(NDOF*hecMAT%NP,NDOF))
+    allocate(W(4*hecMAT%NP,4))
     D => hecMAT%D
     do ip= 1, hecMAT%N
-      do i=1,NDOF
-        do j=1,NDOF
-          W(NDOF*(ip-1)+i,j) = D(NDOF*NDOF*(ip-1)+(i-1)*NDOF+j)
-        end do
-      end do
+      W(4*ip-3,1)= D(16*ip-15); W(4*ip-3,2)= D(16*ip-14); W(4*ip-3,3)= D(16*ip-13); W(4*ip-3,4)= D(16*ip-12)
+      W(4*ip-2,1)= D(16*ip-11); W(4*ip-2,2)= D(16*ip-10); W(4*ip-2,3)= D(16*ip- 9); W(4*ip-2,4)= D(16*ip- 8)
+      W(4*ip-1,1)= D(16*ip- 7); W(4*ip-1,2)= D(16*ip- 6); W(4*ip-1,3)= D(16*ip- 5); W(4*ip-1,4)= D(16*ip- 4)
+      W(4*ip  ,1)= D(16*ip- 3); W(4*ip  ,2)= D(16*ip- 2); W(4*ip  ,3)= D(16*ip- 1); W(4*ip  ,4)= D(16*ip   )
     enddo
     START_TIME= HECMW_WTIME()
-    do i=1,NDOF
-      call hecmw_update_R (hecMESH, W(:,i), hecMAT%NP, NDOF)
-    end do
+    call hecmw_update_R (hecMESH, W(:,1), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,2), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,3), hecMAT%NP, 4)
+    call hecmw_update_R (hecMESH, W(:,4), hecMAT%NP, 4)
     END_TIME= HECMW_WTIME()
     if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
     do ip= hecMAT%N+1, hecMAT%NP
-      do i=1,NDOF
-        do j=1,NDOF
-          D(NDOF*NDOF*(ip-1)+(i-1)*NDOF+j) = W(NDOF*(ip-1)+i,j)
-        end do
-      end do
+      D(16*ip-15)= W(4*ip-3,1); D(16*ip-14)= W(4*ip-3,2); D(16*ip-13)= W(4*ip-3,3); D(16*ip-12)= W(4*ip-3,4)
+      D(16*ip-11)= W(4*ip-2,1); D(16*ip-10)= W(4*ip-2,2); D(16*ip- 9)= W(4*ip-2,3); D(16*ip- 8)= W(4*ip-2,4)
+      D(16*ip- 7)= W(4*ip-1,1); D(16*ip- 6)= W(4*ip-1,2); D(16*ip- 5)= W(4*ip-1,3); D(16*ip- 4)= W(4*ip-1,4)
+      D(16*ip- 3)= W(4*ip  ,1); D(16*ip- 2)= W(4*ip  ,2); D(16*ip- 1)= W(4*ip  ,3); D(16*ip   )= W(4*ip  ,4)
     enddo
     deallocate(W)
-  end subroutine hecmw_mat_diag_sr_nn
+  end subroutine hecmw_mat_diag_sr_44
 
-  subroutine hecmw_mat_add_nn(hecMAT1, hecMAT2, hecMAT3)
-    use hecmw_util
-    implicit none
-    type (hecmwST_matrix)     :: hecMAT1, hecMAT2, hecMAT3
-    integer(kind=kint) :: i
-
-    do i = 1, hecMAT1%NP*hecMAT1%NDOF*hecMAT1%NDOF
-      hecMAT3%D(i) = hecMAT1%D(i) + hecMAT2%D(i)
-    enddo
-
-    do i = 1, hecMAT1%NPU*hecMAT1%NDOF*hecMAT1%NDOF
-      hecMAT3%AU(i) = hecMAT1%AU(i) + hecMAT2%AU(i)
-    enddo
-
-    do i = 1, hecMAT1%NPL*hecMAT1%NDOF*hecMAT1%NDOF
-      hecMAT3%AL(i) = hecMAT1%AL(i) + hecMAT2%AL(i)
-    enddo
-  end subroutine hecmw_mat_add_nn
-
-  subroutine hecmw_mat_multiple_nn(hecMAT, alpha)
-    use hecmw_util
-    implicit none
-    type (hecmwST_matrix)     :: hecMAT
-    real(kind=kreal), intent(in) :: alpha
-    integer(kind=kint) :: i
-
-    do i = 1, hecMAT%NP*hecMAT%NDOF*hecMAT%NDOF
-      hecMAT%D(i) = alpha*hecMAT%D(i)
-    enddo
-
-    do i = 1, hecMAT%NPU*hecMAT%NDOF*hecMAT%NDOF
-      hecMAT%AU(i) = alpha*hecMAT%AU(i)
-    enddo
-
-    do i = 1, hecMAT%NPL*hecMAT%NDOF*hecMAT%NDOF
-      hecMAT%AL(i) = alpha*hecMAT%AL(i)
-    enddo
-  end subroutine hecmw_mat_multiple_nn
-end module hecmw_solver_las_nn
+end module hecmw_solver_las_44

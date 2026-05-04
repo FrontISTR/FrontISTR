@@ -76,13 +76,22 @@ contains
     !C
     !C== Block SCALING
 
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i),shared(N,WW,ALU)
     !$omp do
+#endif
     do i= 1, N
       WW(i)= ALU(i)*WW(i)
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
   end subroutine hecmw_precond_DIAG_11_apply
 

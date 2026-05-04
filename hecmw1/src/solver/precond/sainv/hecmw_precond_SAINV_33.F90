@@ -7,7 +7,9 @@ module hecmw_precond_SAINV_33
   use hecmw_util
   use m_hecmw_comm_f
   use hecmw_matrix_misc
+#ifndef _OPENACC
   !$ use omp_lib
+#endif
 
   private
 
@@ -123,10 +125,17 @@ contains
     integer(kind=kint) :: in, i, j, isL, ieL, isU, ieU
     real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
 
+#ifndef _OPENACC
     !$OMP PARALLEL DEFAULT(NONE) &
       !$OMP&PRIVATE(i,X1,X2,X3,SW1,SW2,SW3,j,in,isL,ieL,isU,ieU) &
       !$OMP&SHARED(N,SAINVD,SAINVL,SAINVU,inumFI1U,FI1U,inumFI1L,FI1L,R,T,ZP)
+#endif
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$OMP DO
+#endif
     !C-- FORWARD
     do i= 1, N
       SW1= 0.0d0
@@ -153,8 +162,18 @@ contains
       T(3*i-1)= (X2 + SAINVD(9*i-7)*X1 + SW2)*SAINVD(9*i-4)
       T(3*i  )= (X3 + SAINVD(9*i-6)*X1 + SAINVD(9*i-3)*X2 + SW3)*SAINVD(9*i  )
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$OMP END DO
+#endif
+
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$OMP DO
+#endif
     !C-- BACKWARD
     do i= 1, N
       SW1= 0.0d0
@@ -181,8 +200,14 @@ contains
       ZP(3*i-1)= X2 + SW2 + SAINVD(9*i-3)*X3
       ZP(3*i  )= X3 + SW3
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$OMP END DO
+#endif
+#ifndef _OPENACC
     !$OMP END PARALLEL
+#endif
 
   end subroutine hecmw_precond_SAINV_33_apply
 
@@ -194,15 +219,17 @@ contains
     implicit none
     type (hecmwST_matrix)     :: hecMAT
 
-    integer(kind=kint) :: i, j, jS, jE, in, itr
+    integer(kind=kint) :: i, j, jS, jE, in, itr, NP
     real(kind=krealp) :: X1, X2, X3, dd, dd1, dd2, dd3, dtemp(3)
     real(kind=krealp) :: FILTER
     real(kind=krealp), allocatable :: zz(:), vv(:)
 
     FILTER= hecMAT%Rarray(5)
 
-    allocate (vv(3*hecMAT%NP))
-    allocate (zz(3*hecMAT%NP))
+    NP = hecMAT%NP
+
+    allocate (vv(3*NP))
+    allocate (zz(3*NP))
     do itr=1,N
 
       !------------------------------ iitr = 1 ----------------------------------------
@@ -259,11 +286,19 @@ contains
       !dtemp(1) = SAINVD(9*itr-8)
       !dtemp(2) = SAINVD(9*itr-4)
 
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+#else
+!      !$OMP PARALLEL DEFAULT(NONE) &
+!        !$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
+!        !$OMP&FIRSTPRIVATE(vv) &
+!        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
-        !$OMP&FIRSTPRIVATE(vv) &
-        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
+        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L,vv)
       !$OMP DO
+#endif
       do i=itr,N
         SAINVD(9*i-8) = vv(3*i-2)
         SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
@@ -280,8 +315,12 @@ contains
           SAINVD(9*i  )= SAINVD(9*i  ) + X1*SAINVL(9*j-2) + X2*SAINVL(9*j-1) + X3*SAINVL(9*j  )
         enddo
       enddo
+#ifdef _OPENACC
+      !$acc end kernels
+#else
       !$OMP END DO
       !$OMP END PARALLEL
+#endif
 
       !Update D
       dd = 1.0d0/SAINVD(9*itr-8)
@@ -410,11 +449,19 @@ contains
       !{d}={v^t}{z_j}
       dtemp(1) = SAINVD(9*itr-8)
 
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+#else
+!      !$OMP PARALLEL DEFAULT(NONE) &
+!        !$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
+!        !$OMP&FIRSTPRIVATE(vv) &
+!        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
-        !$OMP&FIRSTPRIVATE(vv) &
-        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
+        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L,vv)
       !$OMP DO
+#endif
       do i=itr,N
         SAINVD(9*i-8) = vv(3*i-2)
         SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
@@ -431,8 +478,12 @@ contains
           SAINVD(9*i  )= SAINVD(9*i  ) + X1*SAINVL(9*j-2) + X2*SAINVL(9*j-1) + X3*SAINVL(9*j  )
         enddo
       enddo
+#ifdef _OPENACC
+      !$acc end kernels
+#else
       !$OMP END DO
       !$OMP END PARALLEL
+#endif
 
       !Update D
       dd = 1.0d0/SAINVD(9*itr-4)
@@ -551,11 +602,19 @@ contains
       dtemp(1) = SAINVD(9*itr-8)
       dtemp(2) = SAINVD(9*itr-4)
 
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+#else
+!      !$OMP PARALLEL DEFAULT(NONE) &
+!        !$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
+!        !$OMP&FIRSTPRIVATE(vv) &
+!        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,j,jS,jE,in,X1,X2,X3) &
-        !$OMP&FIRSTPRIVATE(vv) &
-        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L)
+        !$OMP&SHARED(N,itr,SAINVD,SAINVL,inumFI1L,FI1L,vv)
       !$OMP DO
+#endif
       do i=itr,N
         SAINVD(9*i-8) = vv(3*i-2)
         SAINVD(9*i-4) = vv(3*i-2)*SAINVD(9*i-7)   + vv(3*i-1)
@@ -572,8 +631,12 @@ contains
           SAINVD(9*i  )= SAINVD(9*i  ) + X1*SAINVL(9*j-2) + X2*SAINVL(9*j-1) + X3*SAINVL(9*j  )
         enddo
       enddo
+#ifdef _OPENACC
+      !$acc end kernels
+#else
       !$OMP END DO
       !$OMP END PARALLEL
+#endif
 
       !Update D
       dd = 1.0d0/SAINVD(9*itr  )

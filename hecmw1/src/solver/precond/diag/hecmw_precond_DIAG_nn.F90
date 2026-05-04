@@ -100,8 +100,14 @@ contains
 
     !C
     !C== Block SCALING
+
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#else
     !$omp parallel default(none),private(i,j,k,X),shared(N,WW,ALU,NDOF)
     !$omp do
+#endif
     do i= 1, N
       do j=1,NDOF
         X(j)=WW(NDOF*(i-1)+j)
@@ -122,8 +128,12 @@ contains
       end do
 
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
   end subroutine hecmw_precond_DIAG_nn_apply
 

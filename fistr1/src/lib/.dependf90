@@ -8,7 +8,7 @@ heat_LIB_FILM.o : heat_LIB_FILM.f90
 heat_LIB_NEUTRAL.o : heat_LIB_NEUTRAL.f90 m_fstr.o 
 heat_LIB_RADIATE.o : heat_LIB_RADIATE.f90 
 m_common_struct.o : m_common_struct.f90 
-m_fstr.o : m_fstr.f90 m_timepoint.o m_out.o m_step.o m_common_struct.o 
+m_fstr.o : m_fstr.F90 m_timepoint.o m_out.o m_step.o m_common_struct.o 
 m_out.o : m_out.f90 
 m_step.o : m_step.f90 
 m_timepoint.o : m_timepoint.f90 

@@ -45,8 +45,8 @@ contains
     real(kind=kreal) :: YV4, YV5, YV6, X4, X5, X6
 
     integer(kind=kint) :: N, NP
-    integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:)
-    real(kind=kreal), pointer :: AL(:), AU(:), D(:)
+    integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:), indexA(:), itemA(:)
+    real(kind=kreal), pointer :: AL(:), AU(:), D(:), A(:)
 
     ! added for turning >>>
     integer, parameter :: numOfBlockPerThread = 100
@@ -72,13 +72,17 @@ contains
       NP = hecMAT%NP
       indexL => hecMAT%indexL
       indexU => hecMAT%indexU
+      indexA => hecMAT%indexA
       itemL => hecMAT%itemL
       itemU => hecMAT%itemU
+      itemA => hecMAT%itemA
       AL => hecMAT%AL
       AU => hecMAT%AU
       D => hecMAT%D
+      A => hecMAT%A
 
       ! added for turning >>>
+#ifndef _OPENACC
       if (isFirst .eqv. .true.) then
         !$ numOfThread = omp_get_max_threads()
         numOfBlock = numOfThread * numOfBlockPerThread
@@ -117,6 +121,7 @@ contains
 
         isFirst = .false.
       endif
+#endif
       ! <<< added for turning
 
       START_TIME= HECMW_WTIME()
@@ -132,6 +137,48 @@ contains
       !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
       !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent
+      do i = 1, N
+        X1= X(6*i-5)
+        X2= X(6*i-4)
+        X3= X(6*i-3)
+        X4= X(6*i-2)
+        X5= X(6*i-1)
+        X6= X(6*i  )
+        YV1= 0
+        YV2= 0
+        YV3= 0
+        YV4= 0
+        YV5= 0
+        YV6= 0
+        jS= indexA(i) + 1
+        jE= indexA(i+1)
+        do j= jS, jE
+          in  = itemA(j)
+          X1= X(6*in-5)
+          X2= X(6*in-4)
+          X3= X(6*in-3)
+          X4= X(6*in-2)
+          X5= X(6*in-1)
+          X6= X(6*in  )
+          YV1= YV1 + A(36*j-35)*X1 + A(36*j-34)*X2 + A(36*j-33)*X3 + A(36*j-32)*X4 + A(36*j-31)*X5 + A(36*j-30)*X6
+          YV2= YV2 + A(36*j-29)*X1 + A(36*j-28)*X2 + A(36*j-27)*X3 + A(36*j-26)*X4 + A(36*j-25)*X5 + A(36*j-24)*X6
+          YV3= YV3 + A(36*j-23)*X1 + A(36*j-22)*X2 + A(36*j-21)*X3 + A(36*j-20)*X4 + A(36*j-19)*X5 + A(36*j-18)*X6
+          YV4= YV4 + A(36*j-17)*X1 + A(36*j-16)*X2 + A(36*j-15)*X3 + A(36*j-14)*X4 + A(36*j-13)*X5 + A(36*j-12)*X6
+          YV5= YV5 + A(36*j-11)*X1 + A(36*j-10)*X2 + A(36*j-9 )*X3 + A(36*j-8 )*X4 + A(36*j-7 )*X5 + A(36*j-6 )*X6
+          YV6= YV6 + A(36*j-5 )*X1 + A(36*j-4 )*X2 + A(36*j-3 )*X3 + A(36*j-2 )*X4 + A(36*j-1 )*X5 + A(36*j   )*X6
+        enddo
+        Y(6*i-5)= YV1
+        Y(6*i-4)= YV2
+        Y(6*i-3)= YV3
+        Y(6*i-2)= YV4
+        Y(6*i-1)= YV5
+        Y(6*i  )= YV6
+      enddo
+      !$acc end kernels
+#else
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,X1,X2,X3,X4,X5,X6,YV1,YV2,YV3,YV4,YV5,YV6,jS,jE,j,in,threadNum,blockNum,blockIndex) &
         !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
@@ -196,6 +243,7 @@ contains
         enddo
       enddo
       !$OMP END PARALLEL
+#endif
 
       !OCL END_CACHE_SUBSECTOR
       !OCL END_CACHE_SECTOR_SIZE
@@ -230,9 +278,16 @@ contains
     Tcomm = 0.d0
     call hecmw_matvec_66 (hecMESH, hecMAT, X, R, time_Ax, Tcomm)
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent
+#endif
     do i = 1, hecMAT%N * 6
       R(i) = B(i) - R(i)
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#endif
 
   end subroutine hecmw_matresid_66
 

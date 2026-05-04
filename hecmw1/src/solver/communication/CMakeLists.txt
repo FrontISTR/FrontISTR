@@ -8,7 +8,7 @@ target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_SR_i.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_comm_f.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_comm_contact_f.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_misc.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_misc.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_comm_group.f90
 )
 

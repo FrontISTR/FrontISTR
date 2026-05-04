@@ -5,22 +5,24 @@
 
 !C
 !C***
-!C*** module hecmw_precond_SSOR_33
+!C*** module hecmw_precond_SSOR_nn
 !C***
 !C
-module hecmw_precond_SSOR_33
+module hecmw_precond_SSOR_nn
   use hecmw_util
   use hecmw_matrix_misc
   use m_hecmw_matrix_ordering_CM
   use m_hecmw_matrix_ordering_MC
   use hecmw_matrix_reorder
+#ifndef _OPENACC
   !$ use omp_lib
+#endif
 
   private
 
-  public:: hecmw_precond_SSOR_33_setup
-  public:: hecmw_precond_SSOR_33_apply
-  public:: hecmw_precond_SSOR_33_clear
+  public:: hecmw_precond_SSOR_nn_setup
+  public:: hecmw_precond_SSOR_nn_apply
+  public:: hecmw_precond_SSOR_nn_clear
 
   integer(kind=kint) :: N
   real(kind=kreal), pointer :: D(:) => null()
@@ -41,52 +43,58 @@ module hecmw_precond_SSOR_33
 
   logical, save :: INITIALIZED = .false.
 
-  ! for tuning
-  integer(kind=kint), parameter :: numOfBlockPerThread = 100
-  integer(kind=kint), save :: numOfThread = 1, numOfBlock
-  integer(kind=kint), save, allocatable :: icToBlockIndex(:)
-  integer(kind=kint), save, allocatable :: blockIndexToColorIndex(:)
-  integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
-
-  integer(kind=kint), parameter :: DEBUG = 0
-
 contains
 
-  subroutine hecmw_precond_SSOR_33_setup(hecMAT)
+  subroutine hecmw_precond_SSOR_nn_setup(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NPL, NPU, NPCL, NPCU
     real   (kind=kreal), allocatable :: CD(:)
     integer(kind=kint ) :: NCOLOR_IN
     real   (kind=kreal) :: SIGMA_DIAG
-    real   (kind=kreal) :: ALUtmp(3,3), PW(3)
-    integer(kind=kint ) :: ii, i, j, k
+    real   (kind=kreal) :: ALUtmp(hecMAT%NDOF,hecMAT%NDOF), PW(hecMAT%NDOF)
+    integer(kind=kint ) :: ii, i, j, k, NDOF, NDOF2
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
-    real   (kind=kreal) :: t0
+    !real   (kind=kreal) :: t0
 
-    if (DEBUG >= 1) then
-      t0 = hecmw_Wtime()
-      write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
-    endif
+    !t0 = hecmw_Wtime()
+    !write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
-        call hecmw_precond_SSOR_33_clear(hecMAT)
+        call hecmw_precond_SSOR_nn_clear(hecMAT)
       else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
-        call hecmw_precond_SSOR_33_clear(hecMAT) ! TEMPORARY
+        call hecmw_precond_SSOR_nn_clear(hecMAT) ! TEMPORARY
       else
         return
       endif
     endif
 
+#ifndef _OPENACC
     !$ nthreads = omp_get_max_threads()
+#endif
 
     N = hecMAT%N
-    ! N = hecMAT%NP
+    NDOF=hecMAT%NDOF
+    NDOF2=NDOF*NDOF
+
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
+#ifdef _OPENACC
+    allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
+    call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
+      hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
+    !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+    call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
+      hecMAT%indexU, hecMAT%itemU, perm_tmp, &
+      NCOLOR_IN, NColor, COLORindex, perm, iperm)
+    !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+    deallocate(perm_tmp)
+
+    !call write_debug_info
+#else
     if (nthreads == 1) then
       NColor = 1
       allocate(COLORindex(0:1), perm(N), iperm(N))
@@ -100,86 +108,82 @@ contains
       allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
         hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
-      if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+      !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
       call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
         hecMAT%indexU, hecMAT%itemU, perm_tmp, &
         NCOLOR_IN, NColor, COLORindex, perm, iperm)
-      if (DEBUG >= 1) write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+      !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
       deallocate(perm_tmp)
 
       !call write_debug_info
     endif
+#endif
 
-    NPL = 0
-    do i=1,N
-      do j=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
-        if( hecMAT%itemU(j) > N ) exit
-        NPL = NPL + 1
-      enddo
-    enddo
-    NPL = max(hecMAT%indexL(N),NPL)
+    NPL = hecMAT%indexL(N)
     NPU = hecMAT%indexU(N)
     allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
     call hecmw_matrix_reorder_profile(N, perm, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       indexL, indexU, itemL, itemU)
-    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+    !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
     !call check_ordering
 
-    allocate(D(9*N), AL(9*NPL), AU(9*NPU))
-    call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
+    allocate(D(NDOF2*N), AL(NDOF2*NPL), AU(NDOF2*NPU))
+    call hecmw_matrix_reorder_values(N, NDOF, perm, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       hecMAT%AL, hecMAT%AU, hecMAT%D, &
       indexL, indexU, itemL, itemU, AL, AU, D)
-    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+    !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
     call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
 
-    allocate(ALU(9*N))
+    allocate(ALU(NDOF2*N))
     ALU  = 0.d0
 
-    do ii= 1, 9*N
+    do ii= 1, NDOF2*N
       ALU(ii) = D(ii)
     enddo
 
-    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+#ifdef _OPENACC
+    !$acc kernels
+    !$acc loop independent private(ALUtmp,PW)
+#else
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
     !$omp do
+#endif
     do ii= 1, N
-      ALUtmp(1,1)= ALU(9*ii-8) * SIGMA_DIAG
-      ALUtmp(1,2)= ALU(9*ii-7)
-      ALUtmp(1,3)= ALU(9*ii-6)
-      ALUtmp(2,1)= ALU(9*ii-5)
-      ALUtmp(2,2)= ALU(9*ii-4) * SIGMA_DIAG
-      ALUtmp(2,3)= ALU(9*ii-3)
-      ALUtmp(3,1)= ALU(9*ii-2)
-      ALUtmp(3,2)= ALU(9*ii-1)
-      ALUtmp(3,3)= ALU(9*ii  ) * SIGMA_DIAG
-      do k= 1, 3
+      do i = 1, NDOF
+        do j =  1, NDOF
+          ALUtmp(i,j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)
+          if (i==j) ALUtmp(i,j)=ALUtmp(i,j)*SIGMA_DIAG
+        end do
+      end do
+      do k= 1, NDOF
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
-        do i= k+1, 3
+        do i= k+1, NDOF
           ALUtmp(i,k)= ALUtmp(i,k) * ALUtmp(k,k)
-          do j= k+1, 3
+          do j= k+1, NDOF
             PW(j)= ALUtmp(i,j) - ALUtmp(i,k)*ALUtmp(k,j)
           enddo
-          do j= k+1, 3
+          do j= k+1, NDOF
             ALUtmp(i,j)= PW(j)
           enddo
         enddo
       enddo
-      ALU(9*ii-8)= ALUtmp(1,1)
-      ALU(9*ii-7)= ALUtmp(1,2)
-      ALU(9*ii-6)= ALUtmp(1,3)
-      ALU(9*ii-5)= ALUtmp(2,1)
-      ALU(9*ii-4)= ALUtmp(2,2)
-      ALU(9*ii-3)= ALUtmp(2,3)
-      ALU(9*ii-2)= ALUtmp(3,1)
-      ALU(9*ii-1)= ALUtmp(3,2)
-      ALU(9*ii  )= ALUtmp(3,3)
+      do i = 1, NDOF
+        do j =  1, NDOF
+          ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)= ALUtmp(i,j)
+        end do
+      end do
     enddo
+#ifdef _OPENACC
+    !$acc end kernels
+#else
     !$omp end do
     !$omp end parallel
+#endif
 
     isFirst = .true.
 
@@ -187,73 +191,74 @@ contains
     hecMAT%Iarray(98) = 0 ! symbolic setup done
     hecMAT%Iarray(97) = 0 ! numerical setup done
 
-    if (DEBUG >= 1) write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
+    !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
-  end subroutine hecmw_precond_SSOR_33_setup
+  end subroutine hecmw_precond_SSOR_nn_setup
 
-  subroutine setup_tuning_parameters
+  subroutine hecmw_precond_SSOR_nn_apply(ZP, NDOF)
     use hecmw_tuning_fx
     implicit none
+    real(kind=kreal), intent(inout) :: ZP(:)
+    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k, NDOF, NDOF2, idof,jdof
+    real(kind=kreal) :: SW(NDOF), X(NDOF)
+
+    ! added for turning >>>
+    integer(kind=kint), parameter :: numOfBlockPerThread = 100
+    integer(kind=kint), save :: numOfThread = 1, numOfBlock
+    integer(kind=kint), save, allocatable :: icToBlockIndex(:)
+    integer(kind=kint), save, allocatable :: blockIndexToColorIndex(:)
+    integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
     integer(kind=kint) :: blockIndex, elementCount, numOfElement, ii
     real(kind=kreal) :: numOfElementPerBlock
     integer(kind=kint) :: my_rank
-    integer(kind=kint) :: ic, i
-    if (DEBUG >= 1) write(*,*) 'DEBUG: setting up tuning parameters for SSOR'
-    !$ numOfThread = omp_get_max_threads()
-    numOfBlock = numOfThread * numOfBlockPerThread
-    if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
-    if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
-    allocate (icToBlockIndex(0:NColor), &
-         blockIndexToColorIndex(0:numOfBlock + NColor))
-    numOfElement = N + indexL(N) + indexU(N)
-    numOfElementPerBlock = dble(numOfElement) / numOfBlock
-    blockIndex = 0
-    icToBlockIndex = -1
-    icToBlockIndex(0) = 0
-    blockIndexToColorIndex = -1
-    blockIndexToColorIndex(0) = 0
-    my_rank = hecmw_comm_get_rank()
-    ! write(9000+my_rank,*) &
-    !      '# numOfElementPerBlock =', numOfElementPerBlock
-    ! write(9000+my_rank,*) &
-    !      '# ic, blockIndex, colorIndex, elementCount'
-    do ic = 1, NColor
-      elementCount = 0
-      ii = 1
-      do i = COLORindex(ic-1)+1, COLORindex(ic)
-        elementCount = elementCount + 1
-        elementCount = elementCount + (indexL(i) - indexL(i-1))
-        elementCount = elementCount + (indexU(i) - indexU(i-1))
-        if (elementCount > ii * numOfElementPerBlock &
-             .or. i == COLORindex(ic)) then
-          ii = ii + 1
-          blockIndex = blockIndex + 1
-          blockIndexToColorIndex(blockIndex) = i
-          ! write(9000+my_rank,*) ic, blockIndex, &
-          !      blockIndexToColorIndex(blockIndex), elementCount
-        endif
-      enddo
-      icToBlockIndex(ic) = blockIndex
-    enddo
-    numOfBlock = blockIndex
 
-    call hecmw_tuning_fx_calc_sector_cache( N, 3, &
-         sectorCacheSize0, sectorCacheSize1 )
-  end subroutine setup_tuning_parameters
-
-  subroutine hecmw_precond_SSOR_33_apply(ZP)
-    implicit none
-    real(kind=kreal), intent(inout) :: ZP(:)
-    integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
-    real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
-
-    ! added for turning >>>
-    integer(kind=kint) :: blockIndex
-
+    NDOF2=NDOF*NDOF
+#ifndef _OPENACC
     if (isFirst) then
-      call setup_tuning_parameters
+      !$ numOfThread = omp_get_max_threads()
+      numOfBlock = numOfThread * numOfBlockPerThread
+      if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
+      if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
+      allocate (icToBlockIndex(0:NColor), &
+        blockIndexToColorIndex(0:numOfBlock + NColor))
+      numOfElement = N + indexL(N) + indexU(N)
+      numOfElementPerBlock = dble(numOfElement) / numOfBlock
+      blockIndex = 0
+      icToBlockIndex = -1
+      icToBlockIndex(0) = 0
+      blockIndexToColorIndex = -1
+      blockIndexToColorIndex(0) = 0
+      my_rank = hecmw_comm_get_rank()
+      ! write(9000+my_rank,*) &
+        !      '# numOfElementPerBlock =', numOfElementPerBlock
+      ! write(9000+my_rank,*) &
+        !      '# ic, blockIndex, colorIndex, elementCount'
+      do ic = 1, NColor
+        elementCount = 0
+        ii = 1
+        do i = COLORindex(ic-1)+1, COLORindex(ic)
+          elementCount = elementCount + 1
+          elementCount = elementCount + (indexL(i) - indexL(i-1))
+          elementCount = elementCount + (indexU(i) - indexU(i-1))
+          if (elementCount > ii * numOfElementPerBlock &
+              .or. i == COLORindex(ic)) then
+            ii = ii + 1
+            blockIndex = blockIndex + 1
+            blockIndexToColorIndex(blockIndex) = i
+            ! write(9000+my_rank,*) ic, blockIndex, &
+              !      blockIndexToColorIndex(blockIndex), elementCount
+          endif
+        enddo
+        icToBlockIndex(ic) = blockIndex
+      enddo
+      numOfBlock = blockIndex
+
+      call hecmw_tuning_fx_calc_sector_cache( N, NDOF, &
+        sectorCacheSize0, sectorCacheSize1 )
+
       isFirst = .false.
     endif
+#endif
     ! <<< added for turning
 
     !call start_collection("loopInPrecond33")
@@ -261,107 +266,141 @@ contains
     !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
     !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
+#ifndef _OPENACC
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
-      !$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,NDOF,NDOF2) &
+      !$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex,idof,jdof)
+#endif
 
     !C-- FORWARD
     do ic=1,NColor
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent private(X,SW)
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+#else
       !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
         do i = blockIndexToColorIndex(blockIndex-1)+1, &
             blockIndexToColorIndex(blockIndex)
-          ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
+#endif
           iold = perm(i)
-          SW1= ZP(3*iold-2)
-          SW2= ZP(3*iold-1)
-          SW3= ZP(3*iold  )
+          do idof = 1, NDOF
+            SW(idof) = ZP(NDOF*(iold-1)+idof)
+          end do
           isL= indexL(i-1)+1
           ieL= indexL(i)
           do j= isL, ieL
-            !k= perm(itemL(j))
             k= itemL(j)
-            X1= ZP(3*k-2)
-            X2= ZP(3*k-1)
-            X3= ZP(3*k  )
-            SW1= SW1 - AL(9*j-8)*X1 - AL(9*j-7)*X2 - AL(9*j-6)*X3
-            SW2= SW2 - AL(9*j-5)*X1 - AL(9*j-4)*X2 - AL(9*j-3)*X3
-            SW3= SW3 - AL(9*j-2)*X1 - AL(9*j-1)*X2 - AL(9*j  )*X3
+            do idof = 1, NDOF
+              X(idof) = ZP(NDOF*(k-1)+idof)
+            end do
+            do idof = 1, NDOF
+              do jdof = 1, NDOF
+                SW(idof) = SW(idof) - AL(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
+              end do
+            end do
           enddo ! j
 
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - ALU(9*i-5)*X1
-          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
-          X3= ALU(9*i  )*  X3
-          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
-          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
-          ZP(3*iold-2)= X1
-          ZP(3*iold-1)= X2
-          ZP(3*iold  )= X3
+          X = SW
+          do idof = 2,NDOF
+            do jdof = 1, idof-1
+              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof )*X(jdof)
+            end do
+          end do
+          do idof = NDOF, 1, -1
+            do jdof = NDOF, idof+1, -1
+              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+jdof)*X(jdof)
+            end do
+            X(idof) = ALU(NDOF2*(i-1)+(NDOF+1)*(idof-1)+1)*X(idof)
+          end do
+          ZP(NDOF*(iold-1)+1:NDOF*(iold-1)+NDOF) = X(1:NDOF)
+
+#ifdef _OPENACC
+      enddo
+      !$acc end kernels
+#else
         enddo ! i
       enddo ! blockIndex
       !$omp end do
+#endif
     enddo ! ic
 
     !C-- BACKWARD
     do ic=NColor, 1, -1
+#ifdef _OPENACC
+      !$acc kernels
+      !$acc loop independent private(X,SW)
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+#else
       !$omp do schedule (static, 1)
       do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
         do i = blockIndexToColorIndex(blockIndex), &
             blockIndexToColorIndex(blockIndex-1)+1, -1
+#endif
           ! do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
           !   do i = blockIndexToColorIndex(blockIndex-1)+1, &
             !        blockIndexToColorIndex(blockIndex)
           !   do i = endPos(threadNum, ic), startPos(threadNum, ic), -1
-          SW1= 0.d0
-          SW2= 0.d0
-          SW3= 0.d0
+          SW= 0.d0
           isU= indexU(i-1) + 1
           ieU= indexU(i)
           do j= ieU, isU, -1
-            !k= perm(itemU(j))
             k= itemU(j)
-            X1= ZP(3*k-2)
-            X2= ZP(3*k-1)
-            X3= ZP(3*k  )
-            SW1= SW1 + AU(9*j-8)*X1 + AU(9*j-7)*X2 + AU(9*j-6)*X3
-            SW2= SW2 + AU(9*j-5)*X1 + AU(9*j-4)*X2 + AU(9*j-3)*X3
-            SW3= SW3 + AU(9*j-2)*X1 + AU(9*j-1)*X2 + AU(9*j  )*X3
+            do idof = 1, NDOF
+              X(idof) = ZP(NDOF*(k-1)+idof)
+            end do
+            do idof = 1, NDOF
+              do jdof = 1, NDOF
+                SW(idof) = SW(idof) + AU(NDOF2*(j-1)+NDOF*(idof-1)+jdof)*X(jdof)
+              end do
+            end do
           enddo ! j
 
-          X1= SW1
-          X2= SW2
-          X3= SW3
-          X2= X2 - ALU(9*i-5)*X1
-          X3= X3 - ALU(9*i-2)*X1 - ALU(9*i-1)*X2
-          X3= ALU(9*i  )*  X3
-          X2= ALU(9*i-4)*( X2 - ALU(9*i-3)*X3 )
-          X1= ALU(9*i-8)*( X1 - ALU(9*i-6)*X3 - ALU(9*i-7)*X2)
+          X = SW
+          do idof = 2, NDOF
+            do k = 1,idof-1
+              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)
+            end do
+          end do
+          do idof = NDOF, 1, -1
+            do k = NDOF, idof+1, -1
+              X(idof) = X(idof) - ALU(NDOF2*(i-1)+NDOF*(idof-1)+k)*X(k)
+            end do
+            X(idof) = ALU(NDOF2*(i-1)+(NDOF+1)*(idof-1)+1)*X(idof)
+          end do
           iold = perm(i)
-          ZP(3*iold-2)=  ZP(3*iold-2) - X1
-          ZP(3*iold-1)=  ZP(3*iold-1) - X2
-          ZP(3*iold  )=  ZP(3*iold  ) - X3
+          do idof = 1, NDOF
+            ZP(NDOF*(iold-1)+idof) = ZP(NDOF*(iold-1)+idof) - X(idof)
+          end do
+#ifdef _OPENACC
+      enddo
+      !$acc end kernels
+#else
         enddo ! i
       enddo ! blockIndex
       !$omp end do
+#endif
     enddo ! ic
+#ifndef _OPENACC
     !$omp end parallel
+#endif
 
     !OCL END_CACHE_SUBSECTOR
     !OCL END_CACHE_SECTOR_SIZE
 
     !call stop_collection("loopInPrecond33")
 
-  end subroutine hecmw_precond_SSOR_33_apply
+  end subroutine hecmw_precond_SSOR_nn_apply
 
-  subroutine hecmw_precond_SSOR_33_clear(hecMAT)
+  subroutine hecmw_precond_SSOR_nn_clear(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: nthreads = 1
+#ifndef _OPENACC
     !$ nthreads = omp_get_max_threads()
+#endif
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
@@ -387,7 +426,7 @@ contains
     nullify(itemL)
     nullify(itemU)
     INITIALIZED = .false.
-  end subroutine hecmw_precond_SSOR_33_clear
+  end subroutine hecmw_precond_SSOR_nn_clear
 
   subroutine write_debug_info
     implicit none
@@ -453,4 +492,4 @@ contains
     !--------------------< debug: shizawa
   end subroutine check_ordering
 
-end module     hecmw_precond_SSOR_33
+end module     hecmw_precond_SSOR_nn
