@@ -511,7 +511,7 @@ static void set_error_of_field_convert(const char* file_name, int line_no,
     char s[20];
     strcpy(val_str, "H");
     for (i = 0; i < IFF_FIELD_SIZE && param_val[i]; i++) {
-      sprintf(s, "%x", param_val[i]);
+      snprintf(s, sizeof(s), "%x", param_val[i]);
       strcat(val_str, s);
     }
   } else
@@ -945,7 +945,7 @@ static int iff_add_auto_pointer(char* iff1, char* iff2, int* counter) {
   if (iff_is_blank_field(iff2, 0)) {
     if (iff_is_blank_field(iff1, IFF_LAST_FIELD)) {
       char pointer[IFF_FIELD_SIZE];
-      sprintf(pointer, "+%d", *counter);
+      snprintf(pointer, sizeof(pointer), "+%d", *counter);
       (*counter)++;
       iff_set_field(iff1, IFF_LAST_FIELD, pointer);
       iff_set_field(iff2, 0, pointer);
@@ -1661,7 +1661,7 @@ static int iff_bulk_get_param_list(iff_bulk_t* bulk, const char* format,
 
       if (R == 0) { /* JP-248 */
         if (arr_fg)
-          sprintf(param_name, "%s%d", param_name_p, i + 1);
+          snprintf(param_name, sizeof(param_name), "%s%d", param_name_p, i + 1);
         else
           strcpy(param_name, param_name_p);
         set_error_of_field_convert(grid_filename, line_no, field_no,
@@ -1670,7 +1670,7 @@ static int iff_bulk_get_param_list(iff_bulk_t* bulk, const char* format,
         return -1;
       } else if (i < ness_n && R == 2) { /* JP-249 */
         if (arr_fg)
-          sprintf(param_name, "%s%d", param_name_p, i + 1);
+          snprintf(param_name, sizeof(param_name), "%s%d", param_name_p, i + 1);
         else
           strcpy(param_name, param_name_p);
         set_error_of_blank_field(grid_filename, line_no, field_no,
@@ -1783,14 +1783,14 @@ static int iff_bulk_get_param_list_pattern(iff_bulk_t* bulk, const char* format,
       if (r == 1) {
         param_list_p[i] = param; /* JP-258 */
       } else if (r == 0) {       /* error */
-        sprintf(param_name, "%s%d", param_name_head[i], index + 1);
+        snprintf(param_name, sizeof(param_name), "%s%d", param_name_head[i], index + 1);
         set_error_of_field_convert(grid_filename, line_no, field_no,
                                    iff_bulk_get_name(bulk), param_name, field,
                                    type);
         return -1;
       }
       if (state != 0 && state != r) {
-        sprintf(param_name, "%s%d", param_name_head[i], index + 1);
+        snprintf(param_name, sizeof(param_name), "%s%d", param_name_head[i], index + 1);
         set_error_of_field_convert(grid_filename, line_no, field_no,
                                    iff_bulk_get_name(bulk), param_name, field,
                                    type);
@@ -2872,7 +2872,7 @@ static int iff_bulk_parse_solid_elem(iff_bulk_t* bulk, int first_etype,
   char grp_name[HECMW_NAME_LEN + 1];
   int EID_List[1];
 
-  sprintf(format, "UUU%d/%d", g_number, g_ness_number);
+  snprintf(format, sizeof(format), "UUU%d/%d", g_number, g_ness_number);
 
   iff_bulk_get_param_list(bulk, format, result, &EID, "EID", &PID, "PID", G,
                           "G");

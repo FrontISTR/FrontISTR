@@ -811,7 +811,7 @@ static int is_spdup_available(const struct hecmwST_local_mesh *global_mesh) {
 static char *get_dist_file_name(char *header, int domain, char *fname) {
   char s_domain[HECMW_NAME_LEN + 1];
 
-  sprintf(s_domain, "%d", domain);
+  snprintf(s_domain, sizeof(s_domain), "%d", domain);
 
   strcpy(fname, header);
   strcat(fname, ".");

@@ -73,7 +73,7 @@ void CNFData::Load(const char *fname) {
 
   if (!fp) {
     char s[256];
-    sprintf(s, ": %s", fname);
+    snprintf(s, sizeof(s), ": %s", fname);
     throw CNFError(NFE_OPEN_ERROR, s);
   }
 
@@ -127,7 +127,7 @@ void CNFData::Load(const char *fname) {
         } else {
           non_supported_block_list.insert(BlockID);
           char s[256];
-          sprintf(s, ": %d", (int)BlockID);
+          snprintf(s, sizeof(s), ": %d", (int)BlockID);
           CNFWarning w(NFW_NON_SUPPORTED_DATA_BLOCK, s, line);
           PrintMessage(w.Msg());
           SkipDataBlock();
@@ -155,7 +155,7 @@ void CNFData::Save(const char *fname) {
 
   if (!fp) {
     char s[256];
-    sprintf(s, ": %s", fname);
+    snprintf(s, sizeof(s), ": %s", fname);
     throw CNFError(NFE_OPEN_ERROR, s);
   }
 
@@ -467,7 +467,7 @@ static void float_write(FILE *fp, double x) {
   }
 
   char buff[256];
-  sprintf(buff, "%lf", x);
+  snprintf(buff, sizeof(buff), "%lf", x);
 
   char* p = &buff[strlen(buff)-1];
   while( buff < p && *p == '0') p--;

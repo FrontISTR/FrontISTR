@@ -251,7 +251,7 @@ void test_mesh_() {
 
   HECMW_Comm_rank(mesh->HECMW_COMM, &mynode);
   HECMW_Comm_size(mesh->HECMW_COMM, &pesize);
-  /*    sprintf(test_file, "test1.%d", mynode);
+  /*    snprintf(test_file, sizeof(test_file), "test1.%d", mynode);
           test_fp=fopen(test_file, "w");
           for(i=0;i<mesh->import_index[mesh->n_neighbor_pe];i++)
                   fprintf(test_fp, "%d\n", mesh->import_item[i]);

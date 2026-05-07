@@ -102,7 +102,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
   }
 
 #ifdef TEST
-  sprintf(test_file, "test3.%d", mynode);
+  snprintf(test_file, sizeof(test_file), "test3.%d", mynode);
   test_fp = fopen(test_file, "w");
   if (test_fp == NULL) {
     fprintf(stderr, "Cannot open test_file\n");
@@ -141,7 +141,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
         fclose(test_fp);
 */
 #ifdef test
-  sprintf(test_file, "test5.%d", mynode);
+  snprintf(test_file, sizeof(test_file), "test5.%d", mynode);
   test_fp2 = fopen(test_file, "w");
   if (test_fp2 == NULL) HECMW_dlb_print_exit("Cannot open test_file\n");
 #endif

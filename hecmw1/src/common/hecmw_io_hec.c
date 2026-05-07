@@ -103,12 +103,12 @@ static int read_input(int msgno_invalid_token) {
   } else {
     char separator[10];
     char *dname = HECMW_dirname(grid_filename);
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
     if (strlen(dname) + strlen(separator) + strlen(p) > HECMW_FILENAME_LEN) {
       set_err(HECMW_IO_E0002, "");
       return -1;
     }
-    sprintf(include_filename, "%s%s%s", dname, separator, p);
+    snprintf(include_filename, sizeof(include_filename), "%s%s%s", dname, separator, p);
   }
   return 0;
 }

@@ -194,7 +194,7 @@ int main( int argc, char** argv )
 		ptoken = ntoken;
 		ntoken = strtok( NULL, "/" );
 	}
-	sprintf( rcap_fname, "%s%s.%d", dirname, rcap_fname_header, mesh->my_rank );
+	snprintf( rcap_fname, sizeof(rcap_fname), "%s%s.%d", dirname, rcap_fname_header, mesh->my_rank );
 
 	fp = fopen( rcap_fname, "w" );
 	if( !fp ) {

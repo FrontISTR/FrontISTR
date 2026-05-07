@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
       ptoken = ntoken;
       ntoken = strtok(NULL, "/");
     }
-    sprintf(out_fname, "%s%s.%d", dirname, out_fheader, step);
+    snprintf(out_fname, sizeof(out_fname), "%s%s.%d", dirname, out_fheader, step);
     fstr_out_log("output to %s .. ", out_fname);
     HECMW_result_get_header(header);
     HECMW_result_get_comment(comment);

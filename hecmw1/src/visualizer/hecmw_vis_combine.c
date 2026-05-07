@@ -258,7 +258,7 @@ fclose(outfp);
         coord = (double *)HECMW_calloc(n_vertex[i] * 3, sizeof(double));
         HECMW_Recv(coord, n_vertex[i] * 3, HECMW_DOUBLE, i, HECMW_ANY_TAG,
                    VIS_COMM, &stat);
-        /*  sprintf(outfile3, "%s.%d.%d.tmp", outfile1, *timestep, i);
+        /*  snprintf(outfile3, sizeof(outfile3), "%s.%d.%d.tmp", outfile1, *timestep, i);
 tmpfp=fopen(outfile3, "r");
 if(tmpfp==NULL) {
 fprintf(stderr, "cannot open the tmpfile %s\n");

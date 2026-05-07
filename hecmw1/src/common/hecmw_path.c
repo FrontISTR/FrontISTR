@@ -75,7 +75,7 @@ static char *dir_name(const char *path) {
   }
 
   if (p == path) {
-    sprintf(dname, "%c", isslash(*p) ? PATH_SEPARATOR : '.');
+    snprintf(dname, sizeof(dname), "%c", isslash(*p) ? PATH_SEPARATOR : '.');
     return dname;
   } else {
     do {
@@ -108,7 +108,7 @@ static char *base_name(const char *path) {
   }
 
   if (ep == path && isslash(*ep)) {
-    sprintf(bname, "%c", PATH_SEPARATOR);
+    snprintf(bname, sizeof(bname), "%c", PATH_SEPARATOR);
     return bname;
   }
 
@@ -134,7 +134,7 @@ static char *get_bdname(const char *path, int type) {
 
   if (has_drive(path)) {
     p = path + 2;
-    sprintf(drive, "%.2s", path);
+    snprintf(drive, sizeof(drive), "%.2s", path);
   } else {
     p = path;
   }

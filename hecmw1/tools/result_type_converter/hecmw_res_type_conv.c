@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
 
     fileheader =
         HECMW_ctrl_get_result_fileheader("fstrRES", i, &fg_text);
-    sprintf(resultfile, "%s.%d.%d", fileheader, mynode, i);
+    snprintf(resultfile, sizeof(resultfile), "%s.%d.%d", fileheader, mynode, i);
     fprintf(stdout, "Input file : %s\n", resultfile);
     data = HECMW_result_read_by_fname(resultfile);
     if (!data) {
@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
         ptoken = ntoken;
         ntoken = strtok(NULL, "/");
       }
-      sprintf(resultfile, "%s%s.%d.%d", dirname, out_file, mynode, i);
+      snprintf(resultfile, sizeof(resultfile), "%s%s.%d.%d", dirname, out_file, mynode, i);
     }
     fprintf(stdout, "Output file : %s\n", resultfile);
 

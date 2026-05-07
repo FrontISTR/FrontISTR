@@ -23,11 +23,11 @@ const char *CNFError::Msg() {
   strcpy(msg, "##Error");
 
   if (line >= 0) {
-    sprintf(s, "(line:%d", line);
+    snprintf(s, sizeof(s), "(line:%d", line);
     strcat(msg, s);
 
     if (column > 0) {
-      sprintf(s, ",col:%d", column);
+      snprintf(s, sizeof(s), ",col:%d", column);
       strcat(msg, s);
     }
 
@@ -45,11 +45,11 @@ const char *CNFWarning::Msg() {
   strcpy(msg, "##Warning");
 
   if (line >= 0) {
-    sprintf(s, "(line:%d", line);
+    snprintf(s, sizeof(s), "(line:%d", line);
     strcat(msg, s);
 
     if (column > 0) {
-      sprintf(s, ",col:%d", column);
+      snprintf(s, sizeof(s), ",col:%d", column);
       strcat(msg, s);
     }
 

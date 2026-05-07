@@ -89,7 +89,7 @@ void remove_cr(char *s) {
 
 void ftos(double x, char *s) {
   char buff[256];
-  sprintf(buff, "%.10lg", x);
+  snprintf(buff, sizeof(buff), "%.10lg", x);
   char *p     = buff;
   bool fg_dot = false;
 

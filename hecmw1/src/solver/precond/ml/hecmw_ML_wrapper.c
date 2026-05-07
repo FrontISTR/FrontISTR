@@ -265,7 +265,7 @@ void ml_options_print(struct ml_options *mlopt, FILE *fp, int myrank, int loglev
     break;
   }
   if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML num of max levels is %d\n", mlopt->MaxLevels);
-  sprintf(optstr[3], "MaxLevels=%d", mlopt->MaxLevels);
+  snprintf(optstr[3], sizeof(optstr[3]), "MaxLevels=%d", mlopt->MaxLevels);
   switch (mlopt->CoarsenScheme) {
   case UncoupledMIS:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is UncoupledMIS\n");
@@ -289,9 +289,9 @@ void ml_options_print(struct ml_options *mlopt, FILE *fp, int myrank, int loglev
     break;
   }
   if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML num of smoother sweeps is %d\n", mlopt->NumSweeps);
-  sprintf(optstr[5], "NumSweeps=%d", mlopt->NumSweeps);
+  snprintf(optstr[5], sizeof(optstr[5]), "NumSweeps=%d", mlopt->NumSweeps);
   if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML max coarse size is %d\n", mlopt->MaxCoarseSize);
-  sprintf(optstr[6], "MaxCoarseSize=%d", mlopt->MaxCoarseSize);
+  snprintf(optstr[6], sizeof(optstr[6]), "MaxCoarseSize=%d", mlopt->MaxCoarseSize);
   if (loglevel >= 1 && myrank == 0) {
     fprintf(fp, "INFO: ML options: %s %s %s %s %s %s %s\n",
             optstr[0], optstr[1], optstr[2], optstr[3], optstr[4], optstr[5], optstr[6]);

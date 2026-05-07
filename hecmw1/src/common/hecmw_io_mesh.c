@@ -3155,7 +3155,7 @@ static char *post_elem_make_matname(int id, char *buf, int bufsize) {
   HECMW_assert(buf);
   HECMW_assert(bufsize > 0);
 
-  sprintf(buf, "%s%d", matname, id);
+  snprintf(buf, bufsize, "%s%d", matname, id);
 
   return buf;
 }

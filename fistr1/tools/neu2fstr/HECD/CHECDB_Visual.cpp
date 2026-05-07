@@ -71,7 +71,7 @@ void CVis_ViewParams::WriteVisParam(class CHECData *hecd, const char *name,
   va_start(va, fmt);
   char buff[256];
   char ss[256];
-  sprintf(buff, "!%s", name);
+  snprintf(buff, sizeof(buff), "!%s", name);
   int n = strlen(fmt);
 
   if (n > 1) {
@@ -88,12 +88,12 @@ void CVis_ViewParams::WriteVisParam(class CHECData *hecd, const char *name,
         break;
 
       case 'I':
-        sprintf(ss, "%d", va_arg(va, int));
+        snprintf(ss, sizeof(ss), "%d", va_arg(va, int));
         strcat(buff, ss);
         break;
 
       case 'F':
-        sprintf(ss, "%lg", va_arg(va, double));
+        snprintf(ss, sizeof(ss), "%lg", va_arg(va, double));
         strcat(buff, ss);
         break;
 
@@ -112,7 +112,7 @@ void CVis_ViewParams::WriteVisPArry(class CHECData *hecd, const char *name,
   char ss[256];
   int *ip;
   double *dp;
-  sprintf(buff, "!%s", name);
+  snprintf(buff, sizeof(buff), "!%s", name);
 
   if (n > 1) {
     strcat(buff, " =");
@@ -126,13 +126,13 @@ void CVis_ViewParams::WriteVisPArry(class CHECData *hecd, const char *name,
 
     switch (type) {
       case 'I':
-        sprintf(ss, "%d", *ip);
+        snprintf(ss, sizeof(ss), "%d", *ip);
         strcat(buff, ss);
         ip++;
         break;
 
       case 'F':
-        sprintf(ss, "%lg", *dp);
+        snprintf(ss, sizeof(ss), "%lg", *dp);
         strcat(buff, ss);
         dp++;
         break;

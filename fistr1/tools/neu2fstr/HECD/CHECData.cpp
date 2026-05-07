@@ -83,16 +83,16 @@ void CHECData::WriteHeader(const char *name, const char *fmt, ...) {
 
     switch (*c) {
       case 'I':
-        sprintf(s, "%d", va_arg(va, int));
+        snprintf(s, sizeof(s), "%d", va_arg(va, int));
         break;
 
       case 'F':
-        // sprintf(s, "%lg", va_arg(va, double));
+        // snprintf(s, sizeof(s), "%lg", va_arg(va, double));
         ftos(va_arg(va, double), s);
         break;
 
       case 'S':
-        sprintf(s, "%s", va_arg(va, char *));
+        snprintf(s, sizeof(s), "%s", va_arg(va, char *));
         break;
 
       default:
@@ -130,16 +130,16 @@ void CHECData::WriteParameter(const char *fmt, ...) {
 
     switch (*c) {
       case 'I':
-        sprintf(s, "%d", va_arg(va, int));
+        snprintf(s, sizeof(s), "%d", va_arg(va, int));
         break;
 
       case 'F':
-        // sprintf(s, "%lg", va_arg(va, double));
+        // snprintf(s, sizeof(s), "%lg", va_arg(va, double));
         ftos(va_arg(va, double), s);
         break;
 
       case 'S':
-        sprintf(s, "%s", va_arg(va, char *));
+        snprintf(s, sizeof(s), "%s", va_arg(va, char *));
         break;
 
       default:
@@ -173,16 +173,16 @@ void CHECData::WriteData(const char *fmt, ...) {
 
     switch (*c) {
       case 'I':
-        sprintf(s, "%d", va_arg(va, int));
+        snprintf(s, sizeof(s), "%d", va_arg(va, int));
         break;
 
       case 'F':
-        // sprintf(s, "%lg", va_arg(va, double));
+        // snprintf(s, sizeof(s), "%lg", va_arg(va, double));
         ftos(va_arg(va, double), s);
         break;
 
       case 'S':
-        sprintf(s, "%s", va_arg(va, char *));
+        snprintf(s, sizeof(s), "%s", va_arg(va, char *));
         break;
 
       default:
@@ -208,16 +208,16 @@ void CHECData::AddDataLineItems(const char *fmt, ...) {
   for (int i = 0; i < n; i++, c++) {
     switch (*c) {
       case 'I':
-        sprintf(s, "%d", va_arg(va, int));
+        snprintf(s, sizeof(s), "%d", va_arg(va, int));
         break;
 
       case 'F':
-        // sprintf(s, "%lg", va_arg(va, double));
+        // snprintf(s, sizeof(s), "%lg", va_arg(va, double));
         ftos(va_arg(va, double), s);
         break;
 
       case 'S':
-        sprintf(s, "%s", va_arg(va, char *));
+        snprintf(s, sizeof(s), "%s", va_arg(va, char *));
         break;
 
       default:

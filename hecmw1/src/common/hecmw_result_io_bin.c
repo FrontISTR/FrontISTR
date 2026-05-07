@@ -31,7 +31,7 @@ static int write_bin_header(FILE* fp) {
   n = strlen(s);
   if( fwrite( s, sizeof(char), n, fp) != n ) return -1;
   n = sizeof(long);
-  sprintf( nbyte, "%2zd", n );
+  snprintf( nbyte, sizeof(nbyte), "%2zd", n );
   if( fwrite( nbyte, sizeof(char), 2, fp) != 2 ) return -1;
   return 0;
 }
