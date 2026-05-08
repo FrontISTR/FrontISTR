@@ -334,7 +334,7 @@ contains
         if( p%PARAM%solution_type==kstDYNAMIC ) then
           fstrSOLID%step_ctrl(i)%num_substep = fstrDYNAMIC%n_step
           fstrSOLID%step_ctrl(i)%initdt      = fstrDYNAMIC%t_delta
-          fstrSOLID%step_ctrl(i)%elapsetime  = fstrDYNAMIC%t_end - fstrDYNAMIC%t_start
+          fstrSOLID%step_ctrl(i)%elapsetime  = dble(fstrDYNAMIC%n_step) * fstrDYNAMIC%t_delta
           fstrSOLID%step_ctrl(i)%mindt       = fstrDYNAMIC%t_delta
           fstrSOLID%step_ctrl(i)%maxdt       = fstrDYNAMIC%t_delta
         endif
@@ -565,6 +565,16 @@ contains
           write(*,*) '### Error: Fail in read in step definition : ' , c_istep
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
           stop
+        endif
+        ! For DYNAMIC fixed-increment: timing is always governed by !DYNAMIC, not !STEP defaults.
+        ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
+        ! Only override initdt/elapsetime/mindt/maxdt; keep num_substep as-is (may be set via SUBSTEPS=).
+        if( p%PARAM%solution_type==kstDYNAMIC .and. &
+          & fstrSOLID%step_ctrl(c_istep)%inc_type == stepFixedInc ) then
+          fstrSOLID%step_ctrl(c_istep)%initdt      = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(c_istep)%elapsetime  = dble(fstrDYNAMIC%n_step) * fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(c_istep)%mindt       = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(c_istep)%maxdt       = fstrDYNAMIC%t_delta
         endif
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
@@ -996,7 +1006,7 @@ contains
       if( p%PARAM%solution_type==kstDYNAMIC ) then
         fstrSOLID%step_ctrl(1)%num_substep = fstrDYNAMIC%n_step
         fstrSOLID%step_ctrl(1)%initdt      = fstrDYNAMIC%t_delta
-        fstrSOLID%step_ctrl(1)%elapsetime  = fstrDYNAMIC%t_end - fstrDYNAMIC%t_start
+        fstrSOLID%step_ctrl(1)%elapsetime  = dble(fstrDYNAMIC%n_step) * fstrDYNAMIC%t_delta
         fstrSOLID%step_ctrl(1)%mindt       = fstrDYNAMIC%t_delta
         fstrSOLID%step_ctrl(1)%maxdt       = fstrDYNAMIC%t_delta
       endif

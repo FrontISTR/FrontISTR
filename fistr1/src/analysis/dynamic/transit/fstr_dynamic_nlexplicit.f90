@@ -18,6 +18,7 @@ module fstr_dynamic_nlexplicit
   use m_dynamic_mat_ass_couple
   use m_fstr_rcap_io
   use mContact
+  use m_fstr_TimeInc
 
 contains
 
@@ -52,6 +53,7 @@ contains
     real(kind=kreal) :: time_1, time_2
     integer(kind=kint) :: restrt_step_num
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
+    integer(kind=kint) :: tot_step, sub_step, step_count
 
     a1 = 0.0d0; a2 = 0.0d0; a3 = 0.0d0; b1 = 0.0d0; b2 = 0.0d0; b3 = 0.0d0
     c1 = 0.0d0; c2 = 0.0d0
@@ -119,16 +121,42 @@ contains
         & fstrDYN%DISP(:,2),fstrSOLID%ddunode)
     endif
 
-    do i= restrt_step_num, fstrDYN%n_step
+    step_count = 0
+    do tot_step = 1, fstrSOLID%nstep_tot
+      if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step
 
-      fstrDYN%t_curr = fstrDYN%t_delta * i
+      sub_step = restrt_step_num
+      do while(.true.)
+        call fstr_TimeInc_SetTimeIncrement( fstrSOLID%step_ctrl(tot_step), fstrPARAM, sub_step, &
+          & fstrSOLID%NRstat_i, fstrSOLID%NRstat_r, fstrSOLID%AutoINC_stat, fstrSOLID%CutBack_stat )
 
-      call fstr_advance_dynamic_explicit( 1, i, &
-          hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrEIG, fstrDYN, fstrPARAM, &
-          fstrCPL, infoCTChange, &
-          restrt_step_num, ndof, nnod, a1, a2, a3, b1, b2, b3, prevB, &
-          (i .eq. fstrDYN%n_step) )
+        fstrDYN%t_curr = fstr_get_time()
+        fstrDYN%t_delta = fstr_get_timeinc()
 
+        step_count = step_count + 1
+
+        call fstr_advance_dynamic_explicit( tot_step, sub_step, &
+            hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrEIG, fstrDYN, fstrPARAM, &
+            fstrCPL, infoCTChange, &
+            restrt_step_num, ndof, nnod, a1, a2, a3, b1, b2, b3, prevB, &
+            fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) )
+
+        call fstr_proceed_time()
+        fstrDYN%t_curr = fstr_get_time()
+
+        if( fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) ) exit
+
+        if( sub_step == fstrSOLID%step_ctrl(tot_step)%num_substep ) then
+          if( hecMESH%my_rank == 0 ) then
+            write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
+              & tot_step, '  time=', fstr_get_time()
+          endif
+          call hecmw_abort( hecmw_comm_get_comm())
+        endif
+
+        sub_step = sub_step + 1
+      enddo
+      restrt_step_num = 1
     enddo
 
     if( fstrPARAM%fg_couple == 1) then
