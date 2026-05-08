@@ -113,13 +113,10 @@ contains
             fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) )
 
         ! ----- Result output (include visualize output)
-        is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
-          & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
+        ! Evaluate isTimePoint before time advance, then OR with isStepFinished after
+        is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM )
 
-          !C-- output new displacement, velocity and acceleration
-        call fstr_dynamic_Output(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, is_OutPoint)
-
-        !C-- output result of monitoring node
+          !C-- output result of monitoring node
         call dynamic_output_monit(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
 
         if( fstrDYN%restart_nout > 0 ) then
@@ -131,6 +128,12 @@ contains
 
         call fstr_proceed_time()
         fstrDYN%t_curr = fstr_get_time()
+
+        ! isStepFinished must be evaluated after fstr_proceed_time
+        is_OutPoint = is_OutPoint .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
+
+          !C-- output new displacement, velocity and acceleration
+        call fstr_dynamic_Output(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, is_OutPoint)
 
         if( fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) ) exit
 
