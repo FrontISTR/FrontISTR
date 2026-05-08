@@ -48,15 +48,12 @@ contains
     integer(kind=kint) :: iiii5, iexit
     integer(kind=kint) :: revocap_flag
     real(kind=kreal), allocatable :: prevB(:)
-    real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: bsize, res
     real(kind=kreal) :: time_1, time_2
     integer(kind=kint) :: restrt_step_num
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
     integer(kind=kint) :: tot_step, sub_step, step_count
-
-    a1 = 0.0d0; a2 = 0.0d0; a3 = 0.0d0; b1 = 0.0d0; b2 = 0.0d0; b3 = 0.0d0
-    c1 = 0.0d0; c2 = 0.0d0
+    logical :: is_OutPoint
 
     call hecmw_mpc_mat_init_explicit(hecMESH, hecMAT, hecMATmpc)
 
@@ -81,36 +78,10 @@ contains
 
     fstrSOLID%dunode(:) =0.d0
 
-    a1 = 1.d0/fstrDYN%t_delta**2
-    a2 = 1.d0/(2.d0*fstrDYN%t_delta)
+    call fstr_prepare_dynamic_explicit( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYN, &
+      & ndof, nnod, restrt_step_num )
 
-    call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
-    call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
-
-    allocate(mark(hecMAT%NP * hecMAT%NDOF))
-    call hecmw_mpc_mark_slave(hecMESH, hecMAT, mark)
-
-    do j = 1 ,ndof*nnod
-      fstrDYN%VEC1(j) = (a1 + a2 *fstrDYN%ray_m) * fstrEIG%mass(j)
-      if(mark(j) == 1) fstrDYN%VEC1(j) = 1.d0
-      if(dabs(fstrDYN%VEC1(j)) < 1.0e-20) then
-        if( hecMESH%my_rank == 0 ) then
-          write(*,*) 'stop due to fstrDYN%VEC(j) = 0 ,  j = ', j
-          write(imsg,*) 'stop due to fstrDYN%VEC(j) = 0 ,  j = ', j
-        end if
-        call hecmw_abort( hecmw_comm_get_comm())
-      endif
-    end do
-
-    deallocate(mark)
-
-    !C-- output of initial state
     if( restrt_step_num == 1 ) then
-      do j = 1 ,ndof*nnod
-        fstrDYN%DISP(j,3) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/(2.d0*a2)  + fstrDYN%ACC (j,1)/ (2.d0*a1)
-        fstrDYN%DISP(j,2) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/ a2 + fstrDYN%ACC (j,1)/ (2.d0*a1) * 4.d0
-      end do
-
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, .true.)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
     end if
@@ -138,8 +109,25 @@ contains
         call fstr_advance_dynamic_explicit( tot_step, sub_step, &
             hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrEIG, fstrDYN, fstrPARAM, &
             fstrCPL, infoCTChange, &
-            restrt_step_num, ndof, nnod, a1, a2, a3, b1, b2, b3, prevB, &
+            restrt_step_num, ndof, nnod, prevB, &
             fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) )
+
+        ! ----- Result output (include visualize output)
+        is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
+          & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
+
+          !C-- output new displacement, velocity and acceleration
+        call fstr_dynamic_Output(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, is_OutPoint)
+
+        !C-- output result of monitoring node
+        call dynamic_output_monit(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+
+        if( fstrDYN%restart_nout > 0 ) then
+          if ( mod(sub_step,fstrDYN%restart_nout).eq.0 ) then
+            call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
+              .false.,infoCTChange%contactNode_current)
+          end if
+        end if
 
         call fstr_proceed_time()
         fstrDYN%t_curr = fstr_get_time()
@@ -156,6 +144,13 @@ contains
 
         sub_step = sub_step + 1
       enddo
+
+      if( fstrDYN%restart_nout > 0 ) then
+        if ( mod(sub_step,fstrDYN%restart_nout).eq.0 ) then
+          call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
+            .true.,infoCTChange%contactNode_current)
+        end if
+      end if
       restrt_step_num = 1
     enddo
 
@@ -176,11 +171,66 @@ contains
 
   end subroutine fstr_solve_dynamic_nlexplicit
 
+  !> \brief Prepare initial state for explicit dynamic analysis (central difference).
+  !!
+  !! Computes the diagonal effective mass VEC1 = (1/dt^2 + ray_m/(2*dt)) * mass
+  !! and the virtual past displacements DISP(:,3) = u(-dt), DISP(:,2) = u(-2*dt)
+  !! used to start the central-difference scheme. All scheme-specific
+  !! coefficients are local to this subroutine.
+  subroutine fstr_prepare_dynamic_explicit( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYN, &
+      ndof, nnod, restrt_step_num )
+    implicit none
+    type(hecmwST_local_mesh), intent(inout) :: hecMESH
+    type(hecmwST_matrix), intent(inout)     :: hecMAT
+    type(fstr_solid), intent(inout)         :: fstrSOLID
+    type(fstr_eigen), intent(inout)         :: fstrEIG
+    type(fstr_dynamic), intent(inout)       :: fstrDYN
+    integer(kind=kint), intent(in)          :: ndof
+    integer(kind=kint), intent(in)          :: nnod
+    integer(kind=kint), intent(in)          :: restrt_step_num
+
+    integer(kind=kint), allocatable :: mark(:)
+    integer(kind=kint) :: j
+    real(kind=kreal)   :: a1, a2
+
+    a1 = 1.d0/fstrDYN%t_delta**2
+    a2 = 1.d0/(2.d0*fstrDYN%t_delta)
+
+    call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
+    call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
+
+    allocate(mark(hecMAT%NP * hecMAT%NDOF))
+    call hecmw_mpc_mark_slave(hecMESH, hecMAT, mark)
+
+    do j = 1 ,ndof*nnod
+      fstrDYN%VEC1(j) = (a1 + a2 *fstrDYN%ray_m) * fstrEIG%mass(j)
+      if(mark(j) == 1) fstrDYN%VEC1(j) = 1.d0
+      if(dabs(fstrDYN%VEC1(j)) < 1.0e-20) then
+        if( hecMESH%my_rank == 0 ) then
+          write(*,*) 'stop due to fstrDYN%VEC(j) = 0 ,  j = ', j
+          write(imsg,*) 'stop due to fstrDYN%VEC(j) = 0 ,  j = ', j
+        end if
+        call hecmw_abort( hecmw_comm_get_comm())
+      endif
+    end do
+
+    deallocate(mark)
+
+    !C-- virtual past displacements for central-difference startup
+    if( restrt_step_num == 1 ) then
+      do j = 1 ,ndof*nnod
+        fstrDYN%DISP(j,3) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/(2.d0*a2)  + fstrDYN%ACC (j,1)/ (2.d0*a1)
+        fstrDYN%DISP(j,2) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/ a2 + fstrDYN%ACC (j,1)/ (2.d0*a1) * 4.d0
+      end do
+    endif
+
+  end subroutine fstr_prepare_dynamic_explicit
+
   !> \brief Advance one time step of explicit dynamic analysis
   subroutine fstr_advance_dynamic_explicit( cstep, istep, &
       hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrEIG, fstrDYN, fstrPARAM, &
       fstrCPL, infoCTChange, &
-      restrt_step_num, ndof, nnod, a1, a2, a3, b1, b2, b3, prevB, &
+      restrt_step_num, ndof, nnod, prevB, &
       is_last_step )
     implicit none
     integer(kind=kint), intent(in)               :: cstep           !< current loading step
@@ -197,7 +247,6 @@ contains
     integer(kind=kint), intent(in)               :: restrt_step_num
     integer(kind=kint), intent(in)               :: ndof
     integer(kind=kint), intent(in)               :: nnod
-    real(kind=kreal), intent(in)                 :: a1, a2, a3, b1, b2, b3
     real(kind=kreal), allocatable, intent(inout) :: prevB(:)
     logical, intent(in)                          :: is_last_step
 
@@ -205,6 +254,15 @@ contains
     integer(kind=kint) :: revocap_flag
     real(kind=kreal)   :: bsize
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
+    real(kind=kreal)   :: a1, a2
+    real(kind=kreal)   :: b1, b2, b3, a3
+
+    !C-- central-difference coefficients (depend only on dt)
+    a1 = 1.d0/fstrDYN%t_delta**2
+    a2 = 1.d0/(2.d0*fstrDYN%t_delta)
+    !C-- coupling-only coefficients (kept zero for central difference)
+    a3 = 0.d0
+    b1 = 0.d0; b2 = 0.d0; b3 = 0.d0
 
     !C-- mechanical boundary condition
     call dynamic_mat_ass_load (cstep, fstrDYN%t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYN, fstrPARAM)
@@ -386,22 +444,6 @@ contains
       fstrSOLID%unode(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
     end do
     call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYN%t_delta )
-
-    if( fstrDYN%restart_nout > 0 ) then
-      if ( mod(istep,fstrDYN%restart_nout).eq.0 .or. is_last_step ) then
-        if( associated( fstrSOLID%contacts ) )  then
-          call fstr_write_restart_dyna_nl(cstep,istep,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
-            .false.,infoCTChange%contactNode_current)
-        else
-          call fstr_write_restart_dyna_nl(cstep,istep,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
-            .false.)
-        end if
-      end if
-    end if
-    !
-    !C-- output new displacement, velocity and acceleration
-    call fstr_dynamic_Output(cstep, istep, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, is_last_step)
-    call dynamic_output_monit(cstep, istep, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
 
   end subroutine fstr_advance_dynamic_explicit
 
