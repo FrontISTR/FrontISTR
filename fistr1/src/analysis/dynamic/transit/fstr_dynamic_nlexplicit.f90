@@ -123,202 +123,11 @@ contains
 
       fstrDYN%t_curr = fstrDYN%t_delta * i
 
-      !C-- mechanical boundary condition
-      call dynamic_mat_ass_load (1, fstrDYN%t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYN, fstrPARAM)
-      do j=1, hecMESH%n_node*  hecMESH%n_dof
-        hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
-      end do
-
-      !C ********************************************************************************
-      !C for couple analysis
-      if( fstrPARAM%fg_couple == 1 ) then
-        if( fstrPARAM%fg_couple_type==5 .or. &
-            fstrPARAM%fg_couple_type==6 ) then
-          do j = 1, hecMAT%NP * ndof
-            prevB(j) = hecMAT%B(j)
-          enddo
-        endif
-      endif
-      do
-        if( fstrPARAM%fg_couple == 1 ) then
-          if( fstrPARAM%fg_couple_type==1 .or. &
-            fstrPARAM%fg_couple_type==3 .or. &
-            fstrPARAM%fg_couple_type==5 ) call fstr_rcap_get( fstrCPL )
-          if( fstrPARAM%fg_couple_first /= 0 ) then
-            bsize = dfloat( i ) / dfloat( fstrPARAM%fg_couple_first )
-            if( bsize > 1.0 ) bsize = 1.0
-            do kkk0 = 1, fstrCPL%coupled_node_n
-              kkk1 = 3 * kkk0
-              fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
-              fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
-              fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
-            enddo
-          endif
-          if( fstrPARAM%fg_couple_window > 0 ) then
-            j = i - restrt_step_num + 1
-            kk = fstrDYN%n_step - restrt_step_num + 1
-            bsize = 0.5*(1.0-cos(2.0*PI*dfloat(j)/dfloat(kk)))
-            do kkk0 = 1, fstrCPL%coupled_node_n
-              kkk1 = 3 * kkk0
-              fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
-              fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
-              fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
-            enddo
-          endif
-          call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
-        endif
-        !C ********************************************************************************
-
-        call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
-
-        do j = 1 ,ndof*nnod
-          hecMATmpc%B(j) = hecMATmpc%B(j) + 2.d0*a1* fstrEIG%mass(j) * fstrDYN%DISP(j,1)  &
-            + (- a1 + a2 * fstrDYN%ray_m) * fstrEIG%mass(j) * fstrDYN%DISP(j,3)
-        end do
-
-        !C
-        !C-- geometrical boundary condition
-
-        call dynamic_explicit_ass_bc(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
-        call dynamic_explicit_ass_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
-        call dynamic_explicit_ass_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
-
-        ! Finish the calculation
-        do j = 1 ,ndof*nnod
-          hecMATmpc%X(j) = hecMATmpc%B(j) / fstrDYN%VEC1(j)
-          if(dabs(hecMATmpc%X(j)) > 1.0d+5) then
-            if( hecMESH%my_rank == 0 ) then
-              print *, 'Displacement increment too large, please adjust your step size!',i,hecMATmpc%X(j)
-              write(imsg,*) 'Displacement increment too large, please adjust your step size!',i,hecMATmpc%B(j),fstrDYN%VEC1(j)
-            end if
-            call hecmw_abort( hecmw_comm_get_comm())
-          end if
-        end do
-        call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
-
-        !C *****************************************************
-        !C for couple analysis
-        if( fstrPARAM%fg_couple == 1 ) then
-          if( fstrPARAM%fg_couple_type>1 ) then
-            do j=1, fstrCPL%coupled_node_n
-              if( fstrCPL%dof == 3 ) then
-                kkk0 = j*3
-                kkk1 = fstrCPL%coupled_node(j)*3
-
-                fstrCPL%disp (kkk0-2) = hecMAT%X(kkk1-2)
-                fstrCPL%disp (kkk0-1) = hecMAT%X(kkk1-1)
-                fstrCPL%disp (kkk0  ) = hecMAT%X(kkk1  )
-
-                fstrCPL%velo (kkk0-2) = -b1*fstrDYN%ACC(kkk1-2,1) - b2*fstrDYN%VEL(kkk1-2,1) + &
-                  b3*( hecMAT%X(kkk1-2) - fstrDYN%DISP(kkk1-2,1) )
-                fstrCPL%velo (kkk0-1) = -b1*fstrDYN%ACC(kkk1-1,1) - b2*fstrDYN%VEL(kkk1-1,1) + &
-                  b3*( hecMAT%X(kkk1-1) - fstrDYN%DISP(kkk1-1,1) )
-                fstrCPL%velo (kkk0  ) = -b1*fstrDYN%ACC(kkk1,1) - b2*fstrDYN%VEL(kkk1,1) + &
-                  b3*( hecMAT%X(kkk1) - fstrDYN%DISP(kkk1,1) )
-                fstrCPL%accel(kkk0-2) = -a1*fstrDYN%ACC(kkk1-2,1) - a2*fstrDYN%VEL(kkk1-2,1) + &
-                  a3*( hecMAT%X(kkk1-2) - fstrDYN%DISP(kkk1-2,1) )
-                fstrCPL%accel(kkk0-1) = -a1*fstrDYN%ACC(kkk1-1,1) - a2*fstrDYN%VEL(kkk1-1,1) + &
-                  a3*( hecMAT%X(kkk1-1) - fstrDYN%DISP(kkk1-1,1) )
-                fstrCPL%accel(kkk0  ) = -a1*fstrDYN%ACC(kkk1,1) - a2*fstrDYN%VEL(kkk1,1) + &
-                  a3*( hecMAT%X(kkk1) - fstrDYN%DISP(kkk1,1) )
-              else
-                kkk0 = j*2
-                kkk1 = fstrCPL%coupled_node(j)*2
-
-                fstrCPL%disp (kkk0-1) = hecMAT%X(kkk1-1)
-                fstrCPL%disp (kkk0  ) = hecMAT%X(kkk1  )
-
-                fstrCPL%velo (kkk0-1) = -b1*fstrDYN%ACC(kkk1-1,1) - b2*fstrDYN%VEL(kkk1-1,1) + &
-                  b3*( hecMAT%X(kkk1-1) - fstrDYN%DISP(kkk1-1,1) )
-                fstrCPL%velo (kkk0  ) = -b1*fstrDYN%ACC(kkk1,1) - b2*fstrDYN%VEL(kkk1,1) + &
-                  b3*( hecMAT%X(kkk1) - fstrDYN%DISP(kkk1,1) )
-                fstrCPL%accel(kkk0-1) = -a1*fstrDYN%ACC(kkk1-1,1) - a2*fstrDYN%VEL(kkk1-1,1) + &
-                  a3*( hecMAT%X(kkk1-1) - fstrDYN%DISP(kkk1-1,1) )
-                fstrCPL%accel(kkk0  ) = -a1*fstrDYN%ACC(kkk1,1) - a2*fstrDYN%VEL(kkk1,1) + &
-                  a3*( hecMAT%X(kkk1) - fstrDYN%DISP(kkk1,1) )
-              endif
-            end do
-            call fstr_rcap_send( fstrCPL )
-          endif
-
-          select case ( fstrPARAM%fg_couple_type )
-            case (4)
-              call fstr_rcap_get( fstrCPL )
-            case (5)
-              call fstr_get_convergence( revocap_flag )
-              if( revocap_flag==0 ) then
-                do j = 1, hecMAT%NP * ndof
-                  hecMAT%B(j) = prevB(j)
-                enddo
-                cycle
-              endif
-            case (6)
-              call fstr_get_convergence( revocap_flag )
-              if( revocap_flag==0 ) then
-                do j = 1, hecMAT%NP * ndof
-                  hecMAT%B(j) = prevB(j)
-                enddo
-                call fstr_rcap_get( fstrCPL )
-                cycle
-              else
-                if( i /= fstrDYN%n_step ) call fstr_rcap_get( fstrCPL )
-              endif
-          end select
-        endif
-        exit
-      enddo
-
-      !C *****************************************************
-      !C-- contact corrector
-      !C
-      do j = 1 ,ndof*nnod
-        fstrSOLID%unode(j)  = fstrDYN%DISP(j,1)
-        fstrSOLID%dunode(j)  = hecMAT%X(j)-fstrDYN%DISP(j,1)
-      enddo
-      if( associated( fstrSOLID%contacts ) )  then
-        !call fstr_scan_contact_state( 1, fstrDYN%t_delta, kcaSLAGRANGE, hecMESH, fstrSOLID, infoCTChange )
-        call forward_increment_Lagrange(1,ndof,fstrDYN%VEC1,hecMESH,fstrSOLID,infoCTChange,&
-          & fstrDYN%DISP(:,2),fstrSOLID%ddunode)
-        do j = 1 ,ndof*nnod
-          hecMAT%X(j)  = hecMAT%X(j) + fstrSOLID%ddunode(j)
-        enddo
-      endif
-
-      !C-- new displacement, velocity and acceleration
-      do j = 1 ,ndof*nnod
-        fstrDYN%ACC (j,1) = a1*(hecMAT%X(j) - 2.d0*fstrDYN%DISP(j,1) + fstrDYN%DISP(j,3))
-        fstrDYN%VEL (j,1) = a2*(hecMAT%X(j) - fstrDYN%DISP(j,3))
-        fstrSOLID%unode(j)  = fstrDYN%DISP(j,1)
-        fstrSOLID%dunode(j)  = hecMAT%X(j)-fstrDYN%DISP(j,1)
-        fstrDYN%DISP(j,3) = fstrDYN%DISP(j,1)
-        fstrDYN%DISP(j,1) = hecMAT%X(j)
-        hecMAT%X(j)  = fstrSOLID%dunode(j)
-        fstrDYN%kineticEnergy = fstrDYN%kineticEnergy + 0.5d0*fstrEIG%mass(j)*fstrDYN%VEL(j,1)*fstrDYN%VEL(j,1)
-      end do
-
-      ! ----- update strain, stress, and internal force
-      call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYN%t_curr, fstrDYN%t_delta, 0, fstrDYN%strainEnergy )
-
-      do j = 1 ,ndof*nnod
-        fstrSOLID%unode(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
-      end do
-      call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYN%t_delta )
-
-      if( fstrDYN%restart_nout > 0 ) then
-        if ( mod(i,fstrDYN%restart_nout).eq.0 .or. i.eq.fstrDYN%n_step ) then
-          if( associated( fstrSOLID%contacts ) )  then
-            call fstr_write_restart_dyna_nl(1,i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
-              .false.,infoCTChange%contactNode_current)
-          else
-            call fstr_write_restart_dyna_nl(1,i,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
-              .false.)
-          end if
-        end if
-      end if
-      !
-      !C-- output new displacement, velocity and acceleration
-      call fstr_dynamic_Output(1, i, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, (i .eq. fstrDYN%n_step))
-      call dynamic_output_monit(1, i, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+      call fstr_advance_dynamic_explicit( 1, i, &
+          hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrEIG, fstrDYN, fstrPARAM, &
+          fstrCPL, infoCTChange, &
+          restrt_step_num, ndof, nnod, a1, a2, a3, b1, b2, b3, prevB, &
+          (i .eq. fstrDYN%n_step) )
 
     enddo
 
@@ -338,6 +147,235 @@ contains
     call hecmw_mpc_mat_finalize_explicit(hecMESH, hecMAT, hecMATmpc)
 
   end subroutine fstr_solve_dynamic_nlexplicit
+
+  !> \brief Advance one time step of explicit dynamic analysis
+  subroutine fstr_advance_dynamic_explicit( cstep, istep, &
+      hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrEIG, fstrDYN, fstrPARAM, &
+      fstrCPL, infoCTChange, &
+      restrt_step_num, ndof, nnod, a1, a2, a3, b1, b2, b3, prevB, &
+      is_last_step )
+    implicit none
+    integer(kind=kint), intent(in)               :: cstep           !< current loading step
+    integer(kind=kint), intent(in)               :: istep           !< current sub-step (time step index)
+    type(hecmwST_local_mesh), intent(inout)      :: hecMESH
+    type(hecmwST_matrix), intent(inout)          :: hecMAT
+    type(hecmwST_matrix), pointer, intent(inout) :: hecMATmpc
+    type(fstr_solid), intent(inout)              :: fstrSOLID
+    type(fstr_eigen), intent(inout)              :: fstrEIG
+    type(fstr_dynamic), intent(inout)            :: fstrDYN
+    type(fstr_param), intent(inout)              :: fstrPARAM
+    type(fstr_couple), intent(inout)             :: fstrCPL
+    type(fstr_info_contactChange), intent(inout) :: infoCTChange
+    integer(kind=kint), intent(in)               :: restrt_step_num
+    integer(kind=kint), intent(in)               :: ndof
+    integer(kind=kint), intent(in)               :: nnod
+    real(kind=kreal), intent(in)                 :: a1, a2, a3, b1, b2, b3
+    real(kind=kreal), allocatable, intent(inout) :: prevB(:)
+    logical, intent(in)                          :: is_last_step
+
+    integer(kind=kint) :: j, kk, kkk0, kkk1
+    integer(kind=kint) :: revocap_flag
+    real(kind=kreal)   :: bsize
+    real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
+
+    !C-- mechanical boundary condition
+    call dynamic_mat_ass_load (cstep, fstrDYN%t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYN, fstrPARAM)
+    do j=1, hecMESH%n_node*  hecMESH%n_dof
+      hecMAT%B(j)=hecMAT%B(j)-fstrSOLID%QFORCE(j)
+    end do
+
+    !C ********************************************************************************
+    !C for couple analysis
+    if( fstrPARAM%fg_couple == 1 ) then
+      if( fstrPARAM%fg_couple_type==5 .or. &
+          fstrPARAM%fg_couple_type==6 ) then
+        do j = 1, hecMAT%NP * ndof
+          prevB(j) = hecMAT%B(j)
+        enddo
+      endif
+    endif
+    do
+      if( fstrPARAM%fg_couple == 1 ) then
+        if( fstrPARAM%fg_couple_type==1 .or. &
+          fstrPARAM%fg_couple_type==3 .or. &
+          fstrPARAM%fg_couple_type==5 ) call fstr_rcap_get( fstrCPL )
+        if( fstrPARAM%fg_couple_first /= 0 ) then
+          bsize = dfloat( istep ) / dfloat( fstrPARAM%fg_couple_first )
+          if( bsize > 1.0 ) bsize = 1.0
+          do kkk0 = 1, fstrCPL%coupled_node_n
+            kkk1 = 3 * kkk0
+            fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+            fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+            fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+          enddo
+        endif
+        if( fstrPARAM%fg_couple_window > 0 ) then
+          j = istep - restrt_step_num + 1
+          kk = fstrDYN%n_step - restrt_step_num + 1
+          bsize = 0.5*(1.0-cos(2.0*PI*dfloat(j)/dfloat(kk)))
+          do kkk0 = 1, fstrCPL%coupled_node_n
+            kkk1 = 3 * kkk0
+            fstrCPL%trac(kkk1-2) = bsize * fstrCPL%trac(kkk1-2)
+            fstrCPL%trac(kkk1-1) = bsize * fstrCPL%trac(kkk1-1)
+            fstrCPL%trac(kkk1  ) = bsize * fstrCPL%trac(kkk1  )
+          enddo
+        endif
+        call dynamic_mat_ass_couple( hecMESH, hecMAT, fstrSOLID, fstrCPL )
+      endif
+      !C ********************************************************************************
+
+      call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+
+      do j = 1 ,ndof*nnod
+        hecMATmpc%B(j) = hecMATmpc%B(j) + 2.d0*a1* fstrEIG%mass(j) * fstrDYN%DISP(j,1)  &
+          + (- a1 + a2 * fstrDYN%ray_m) * fstrEIG%mass(j) * fstrDYN%DISP(j,3)
+      end do
+
+      !C
+      !C-- geometrical boundary condition
+
+      call dynamic_explicit_ass_bc(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
+      call dynamic_explicit_ass_vl(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
+      call dynamic_explicit_ass_ac(hecMESH, hecMATmpc, fstrSOLID, fstrDYN, fstrDYN%t_curr)
+
+      ! Finish the calculation
+      do j = 1 ,ndof*nnod
+        hecMATmpc%X(j) = hecMATmpc%B(j) / fstrDYN%VEC1(j)
+        if(dabs(hecMATmpc%X(j)) > 1.0d+5) then
+          if( hecMESH%my_rank == 0 ) then
+            print *, 'Displacement increment too large, please adjust your step size!',istep,hecMATmpc%X(j)
+            write(imsg,*) 'Displacement increment too large, please adjust your step size!',istep,hecMATmpc%B(j),fstrDYN%VEC1(j)
+          end if
+          call hecmw_abort( hecmw_comm_get_comm())
+        end if
+      end do
+      call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
+
+      !C *****************************************************
+      !C for couple analysis
+      if( fstrPARAM%fg_couple == 1 ) then
+        if( fstrPARAM%fg_couple_type>1 ) then
+          do j=1, fstrCPL%coupled_node_n
+            if( fstrCPL%dof == 3 ) then
+              kkk0 = j*3
+              kkk1 = fstrCPL%coupled_node(j)*3
+
+              fstrCPL%disp (kkk0-2) = hecMAT%X(kkk1-2)
+              fstrCPL%disp (kkk0-1) = hecMAT%X(kkk1-1)
+              fstrCPL%disp (kkk0  ) = hecMAT%X(kkk1  )
+
+              fstrCPL%velo (kkk0-2) = -b1*fstrDYN%ACC(kkk1-2,1) - b2*fstrDYN%VEL(kkk1-2,1) + &
+                b3*( hecMAT%X(kkk1-2) - fstrDYN%DISP(kkk1-2,1) )
+              fstrCPL%velo (kkk0-1) = -b1*fstrDYN%ACC(kkk1-1,1) - b2*fstrDYN%VEL(kkk1-1,1) + &
+                b3*( hecMAT%X(kkk1-1) - fstrDYN%DISP(kkk1-1,1) )
+              fstrCPL%velo (kkk0  ) = -b1*fstrDYN%ACC(kkk1,1) - b2*fstrDYN%VEL(kkk1,1) + &
+                b3*( hecMAT%X(kkk1) - fstrDYN%DISP(kkk1,1) )
+              fstrCPL%accel(kkk0-2) = -a1*fstrDYN%ACC(kkk1-2,1) - a2*fstrDYN%VEL(kkk1-2,1) + &
+                a3*( hecMAT%X(kkk1-2) - fstrDYN%DISP(kkk1-2,1) )
+              fstrCPL%accel(kkk0-1) = -a1*fstrDYN%ACC(kkk1-1,1) - a2*fstrDYN%VEL(kkk1-1,1) + &
+                a3*( hecMAT%X(kkk1-1) - fstrDYN%DISP(kkk1-1,1) )
+              fstrCPL%accel(kkk0  ) = -a1*fstrDYN%ACC(kkk1,1) - a2*fstrDYN%VEL(kkk1,1) + &
+                a3*( hecMAT%X(kkk1) - fstrDYN%DISP(kkk1,1) )
+            else
+              kkk0 = j*2
+              kkk1 = fstrCPL%coupled_node(j)*2
+
+              fstrCPL%disp (kkk0-1) = hecMAT%X(kkk1-1)
+              fstrCPL%disp (kkk0  ) = hecMAT%X(kkk1  )
+
+              fstrCPL%velo (kkk0-1) = -b1*fstrDYN%ACC(kkk1-1,1) - b2*fstrDYN%VEL(kkk1-1,1) + &
+                b3*( hecMAT%X(kkk1-1) - fstrDYN%DISP(kkk1-1,1) )
+              fstrCPL%velo (kkk0  ) = -b1*fstrDYN%ACC(kkk1,1) - b2*fstrDYN%VEL(kkk1,1) + &
+                b3*( hecMAT%X(kkk1) - fstrDYN%DISP(kkk1,1) )
+              fstrCPL%accel(kkk0-1) = -a1*fstrDYN%ACC(kkk1-1,1) - a2*fstrDYN%VEL(kkk1-1,1) + &
+                a3*( hecMAT%X(kkk1-1) - fstrDYN%DISP(kkk1-1,1) )
+              fstrCPL%accel(kkk0  ) = -a1*fstrDYN%ACC(kkk1,1) - a2*fstrDYN%VEL(kkk1,1) + &
+                a3*( hecMAT%X(kkk1) - fstrDYN%DISP(kkk1,1) )
+            endif
+          end do
+          call fstr_rcap_send( fstrCPL )
+        endif
+
+        select case ( fstrPARAM%fg_couple_type )
+          case (4)
+            call fstr_rcap_get( fstrCPL )
+          case (5)
+            call fstr_get_convergence( revocap_flag )
+            if( revocap_flag==0 ) then
+              do j = 1, hecMAT%NP * ndof
+                hecMAT%B(j) = prevB(j)
+              enddo
+              cycle
+            endif
+          case (6)
+            call fstr_get_convergence( revocap_flag )
+            if( revocap_flag==0 ) then
+              do j = 1, hecMAT%NP * ndof
+                hecMAT%B(j) = prevB(j)
+              enddo
+              call fstr_rcap_get( fstrCPL )
+              cycle
+            else
+              if( .not. is_last_step ) call fstr_rcap_get( fstrCPL )
+            endif
+        end select
+      endif
+      exit
+    enddo
+
+    !C *****************************************************
+    !C-- contact corrector
+    !C
+    do j = 1 ,ndof*nnod
+      fstrSOLID%unode(j)  = fstrDYN%DISP(j,1)
+      fstrSOLID%dunode(j)  = hecMAT%X(j)-fstrDYN%DISP(j,1)
+    enddo
+    if( associated( fstrSOLID%contacts ) )  then
+      !call fstr_scan_contact_state( cstep, fstrDYN%t_delta, kcaSLAGRANGE, hecMESH, fstrSOLID, infoCTChange )
+      call forward_increment_Lagrange(cstep,ndof,fstrDYN%VEC1,hecMESH,fstrSOLID,infoCTChange,&
+        & fstrDYN%DISP(:,2),fstrSOLID%ddunode)
+      do j = 1 ,ndof*nnod
+        hecMAT%X(j)  = hecMAT%X(j) + fstrSOLID%ddunode(j)
+      enddo
+    endif
+
+    !C-- new displacement, velocity and acceleration
+    do j = 1 ,ndof*nnod
+      fstrDYN%ACC (j,1) = a1*(hecMAT%X(j) - 2.d0*fstrDYN%DISP(j,1) + fstrDYN%DISP(j,3))
+      fstrDYN%VEL (j,1) = a2*(hecMAT%X(j) - fstrDYN%DISP(j,3))
+      fstrSOLID%unode(j)  = fstrDYN%DISP(j,1)
+      fstrSOLID%dunode(j)  = hecMAT%X(j)-fstrDYN%DISP(j,1)
+      fstrDYN%DISP(j,3) = fstrDYN%DISP(j,1)
+      fstrDYN%DISP(j,1) = hecMAT%X(j)
+      hecMAT%X(j)  = fstrSOLID%dunode(j)
+      fstrDYN%kineticEnergy = fstrDYN%kineticEnergy + 0.5d0*fstrEIG%mass(j)*fstrDYN%VEL(j,1)*fstrDYN%VEL(j,1)
+    end do
+
+    ! ----- update strain, stress, and internal force
+    call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYN%t_curr, fstrDYN%t_delta, 0, fstrDYN%strainEnergy )
+
+    do j = 1 ,ndof*nnod
+      fstrSOLID%unode(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)
+    end do
+    call fstr_UpdateState( hecMESH, fstrSOLID, fstrDYN%t_delta )
+
+    if( fstrDYN%restart_nout > 0 ) then
+      if ( mod(istep,fstrDYN%restart_nout).eq.0 .or. is_last_step ) then
+        if( associated( fstrSOLID%contacts ) )  then
+          call fstr_write_restart_dyna_nl(cstep,istep,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
+            .false.,infoCTChange%contactNode_current)
+        else
+          call fstr_write_restart_dyna_nl(cstep,istep,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
+            .false.)
+        end if
+      end if
+    end if
+    !
+    !C-- output new displacement, velocity and acceleration
+    call fstr_dynamic_Output(cstep, istep, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, is_last_step)
+    call dynamic_output_monit(cstep, istep, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
+
+  end subroutine fstr_advance_dynamic_explicit
 
   !< This subroutine implements Forward increment Lagrange multiplier method( NJ Carpenter et al. Int.J.Num.Meth.Eng.,32(1991),103-128 )
   subroutine forward_increment_Lagrange(cstep,ndof,mmat,hecMESH,fstrSOLID,infoCTChange,wkarray,uc)
