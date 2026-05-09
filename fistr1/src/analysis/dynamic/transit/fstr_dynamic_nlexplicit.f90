@@ -27,7 +27,7 @@ contains
   !C================================================================C
   subroutine fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
       ,fstrDYN,fstrRESULT,fstrPARAM,infoCTChange &
-      ,fstrCPL, restrt_step_num )
+      ,fstrCPL, restrt_step_num, restrt_step_count )
     implicit none
     type(hecmwST_local_mesh)             :: hecMESH
     type(hecmwST_matrix)                 :: hecMAT
@@ -51,6 +51,7 @@ contains
     real(kind=kreal) :: bsize, res
     real(kind=kreal) :: time_1, time_2
     integer(kind=kint) :: restrt_step_num
+    integer(kind=kint) :: restrt_step_count
     real(kind=kreal), parameter :: PI = 3.14159265358979323846D0
     integer(kind=kint) :: tot_step, sub_step, step_count
     logical :: is_OutPoint
@@ -79,9 +80,9 @@ contains
     fstrSOLID%dunode(:) =0.d0
 
     call fstr_prepare_dynamic_explicit( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYN, &
-      & ndof, nnod, restrt_step_num )
+      & ndof, nnod, restrt_step_count )
 
-    if( restrt_step_num == 1 ) then
+    if( restrt_step_count == 0 ) then
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, .true.)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
     end if
@@ -92,7 +93,7 @@ contains
         & fstrDYN%DISP(:,2),fstrSOLID%ddunode)
     endif
 
-    step_count = 0
+    step_count = restrt_step_count
     do tot_step = 1, fstrSOLID%nstep_tot
       if(hecMESH%my_rank==0) write(*,'(a,i5)') ' loading step=',tot_step
 
@@ -120,9 +121,9 @@ contains
         call dynamic_output_monit(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
 
         if( fstrDYN%restart_nout > 0 ) then
-          if ( mod(sub_step,fstrDYN%restart_nout).eq.0 ) then
+          if ( mod(step_count,fstrDYN%restart_nout).eq.0 ) then
             call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
-              .false.,infoCTChange%contactNode_current)
+              .false.,infoCTChange%contactNode_current,step_count)
           end if
         end if
 
@@ -133,7 +134,7 @@ contains
         is_OutPoint = is_OutPoint .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
 
           !C-- output new displacement, velocity and acceleration
-        call fstr_dynamic_Output(tot_step, sub_step, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, is_OutPoint)
+        call fstr_dynamic_Output(tot_step, step_count, fstrDYN%t_curr, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, is_OutPoint)
 
         if( fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) ) ) exit
 
@@ -149,10 +150,8 @@ contains
       enddo
 
       if( fstrDYN%restart_nout > 0 ) then
-        if ( mod(sub_step,fstrDYN%restart_nout).eq.0 ) then
-          call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
-            .true.,infoCTChange%contactNode_current)
-        end if
+        call fstr_write_restart_dyna_nl(tot_step,sub_step,hecMESH,fstrSOLID,fstrDYN,fstrPARAM,&
+          .true.,infoCTChange%contactNode_current,step_count)
       end if
       restrt_step_num = 1
     enddo
@@ -181,7 +180,7 @@ contains
   !! used to start the central-difference scheme. All scheme-specific
   !! coefficients are local to this subroutine.
   subroutine fstr_prepare_dynamic_explicit( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYN, &
-      ndof, nnod, restrt_step_num )
+      ndof, nnod, restrt_step_count )
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type(hecmwST_matrix), intent(inout)     :: hecMAT
@@ -190,7 +189,7 @@ contains
     type(fstr_dynamic), intent(inout)       :: fstrDYN
     integer(kind=kint), intent(in)          :: ndof
     integer(kind=kint), intent(in)          :: nnod
-    integer(kind=kint), intent(in)          :: restrt_step_num
+    integer(kind=kint), intent(in)          :: restrt_step_count
 
     integer(kind=kint), allocatable :: mark(:)
     integer(kind=kint) :: j
@@ -220,7 +219,7 @@ contains
     deallocate(mark)
 
     !C-- virtual past displacements for central-difference startup
-    if( restrt_step_num == 1 ) then
+    if( restrt_step_count == 0 ) then
       do j = 1 ,ndof*nnod
         fstrDYN%DISP(j,3) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/(2.d0*a2)  + fstrDYN%ACC (j,1)/ (2.d0*a1)
         fstrDYN%DISP(j,2) = fstrDYN%DISP(j,1) - fstrDYN%VEL (j,1)/ a2 + fstrDYN%ACC (j,1)/ (2.d0*a1) * 4.d0

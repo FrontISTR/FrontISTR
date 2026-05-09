@@ -213,7 +213,7 @@ contains
       else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
         call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
           ,fstrDYNAMIC,fstrRESULT,fstrPARAM,infoCTChange &
-          ,fstrCPL, restart_substep_num )
+          ,fstrCPL, restart_substep_num, restart_step_count )
       endif
 
     else if(fstrDYNAMIC%idx_resp == 2) then  ! frequency response analysis
