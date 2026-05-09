@@ -193,13 +193,8 @@ contains
         call fstr_read_restart_dyna_nl(restart_step_num,restart_substep_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
           infoCTChange%contactNode_previous,restart_step_count)
       elseif(fstrDYNAMIC%idx_eqa == 11) then
-        if( .not. associated( fstrSOLID%contacts ) ) then
-          call fstr_read_restart_dyna_nl(restart_step_num,restart_substep_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-            step_count=restart_step_count)
-        else
-          call fstr_read_restart_dyna_nl(restart_step_num,restart_substep_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-            infoCTChange%contactNode_previous,restart_step_count)
-        endif
+        call fstr_read_restart_dyna_nl(restart_step_num,restart_substep_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+          infoCTChange%contactNode_previous,restart_step_count)
       endif
       fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
       hecMAT%Iarray(98) = 1
