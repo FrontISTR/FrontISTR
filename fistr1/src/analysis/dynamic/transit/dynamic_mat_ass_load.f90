@@ -308,7 +308,8 @@ contains
 
               do j = 1, nn
                 do i = 1, ndof
-                  call hecmw_mat_set_B_i(hecMAT, ndof*(nodLOCAL(j)-1)+i, hecmw_mat_get_B_i(hecMAT, ndof*(nodLOCAL(j)-1)+i)+r(ndof*(j-1)+i))
+                  call hecmw_mat_set_B_i(hecMAT, ndof*(nodLOCAL(j)-1)+i, &
+                    hecmw_mat_get_B_i(hecMAT, ndof*(nodLOCAL(j)-1)+i)+r(ndof*(j-1)+i))
                 enddo
               enddo
             enddo ! icel

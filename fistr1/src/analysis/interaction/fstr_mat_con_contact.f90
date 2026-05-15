@@ -93,7 +93,8 @@ contains
     endif
 
     ! Get original list of related nodes
-    call hecmw_init_nodeRelated_from_org(hecmw_mat_get_NP(hecMAT),num_lagrange,is_contact_active_flag,list_nodeRelated_org,list_nodeRelated)
+    call hecmw_init_nodeRelated_from_org(hecmw_mat_get_NP(hecMAT),num_lagrange, &
+      is_contact_active_flag,list_nodeRelated_org,list_nodeRelated)
 
     ! Construct new list of related nodes and Lagrange multipliers
     countNon0LU_node = NPL_org + NPU_org

@@ -39,7 +39,8 @@ contains
     if(fstrEIG%is_free)then
       do i = 1, NP
         do j = 1, NDOF
-          call hecmw_mat_set_D_i(hecMAT, NDOF2*(i-1) + (NDOF+1)*(j-1) + 1, hecmw_mat_get_D_i(hecMAT, NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) + sigma * mass(NDOF*(i-1) + j))
+          call hecmw_mat_set_D_i(hecMAT, NDOF2*(i-1) + (NDOF+1)*(j-1) + 1, &
+            hecmw_mat_get_D_i(hecMAT, NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) + sigma * mass(NDOF*(i-1) + j))
         enddo
       enddo
     endif

@@ -86,7 +86,8 @@ contains
     enddo
 
     if( id_lagrange > 0 ) then
-      call hecmw_mat_set_B_i(conMAT, hecmw_mat_get_NP(conMAT)*hecmw_mat_get_NDOF(conMAT)+id_lagrange, ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1))
+      call hecmw_mat_set_B_i(conMAT, hecmw_mat_get_NP(conMAT)*hecmw_mat_get_NDOF(conMAT)+id_lagrange, &
+        ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1))
     endif
 
   end subroutine assemble_contact_force_residual

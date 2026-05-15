@@ -178,14 +178,16 @@ contains
             else if( hecMESH%n_dof == 2 ) then
               call hecmw_matvec (hecMESH, hecMAT, hecmw_mat_get_X(hecMAT), fstrDYNAMIC%VEC3)
             else if( hecMESH%n_dof == 6 ) then
-              call matvec(fstrDYNAMIC%VEC3, hecmw_mat_get_X(hecMAT), hecMAT, ndof, hecmw_mat_get_D(hecMAT), hecmw_mat_get_AU(hecMAT), hecmw_mat_get_AL(hecMAT))
+              call matvec(fstrDYNAMIC%VEC3, hecmw_mat_get_X(hecMAT), hecMAT, ndof, &
+                hecmw_mat_get_D(hecMAT), hecmw_mat_get_AU(hecMAT), hecmw_mat_get_AL(hecMAT))
             endif
           endif
 
           !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
           do j=1, hecMESH%n_node*  hecMESH%n_dof
-            call hecmw_mat_set_B_i(hecMAT, j, hecmw_mat_get_B_i(hecMAT, j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j) &
+            call hecmw_mat_set_B_i(hecMAT, j, hecmw_mat_get_B_i(hecMAT, j)- fstrSOLID%QFORCE(j) &
+              + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j) &
               + fstrDYNAMIC%ray_m* hecmw_mat_get_X_i(hecMAT, j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j))
           enddo
 
@@ -528,14 +530,16 @@ contains
             else if( hecMESH%n_dof == 2 ) then
               call hecmw_matvec (hecMESH, hecMAT, hecmw_mat_get_X(hecMAT), fstrDYNAMIC%VEC3)
             else if( hecMESH%n_dof == 6 ) then
-              call matvec(fstrDYNAMIC%VEC3, hecmw_mat_get_X(hecMAT), hecMAT, ndof, hecmw_mat_get_D(hecMAT), hecmw_mat_get_AU(hecMAT), hecmw_mat_get_AL(hecMAT))
+              call matvec(fstrDYNAMIC%VEC3, hecmw_mat_get_X(hecMAT), hecMAT, ndof, &
+                hecmw_mat_get_D(hecMAT), hecmw_mat_get_AU(hecMAT), hecmw_mat_get_AL(hecMAT))
             endif
           endif
 
           !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
           do j=1, hecMESH%n_node*  hecMESH%n_dof
-            call hecmw_mat_set_B_i(hecMAT, j, hecmw_mat_get_B_i(hecMAT, j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
+            call hecmw_mat_set_B_i(hecMAT, j, hecmw_mat_get_B_i(hecMAT, j)- fstrSOLID%QFORCE(j) &
+              + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
               + fstrDYNAMIC%ray_m* hecmw_mat_get_X_i(hecMAT, j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j))
           enddo
 
@@ -624,7 +628,8 @@ contains
             maxDLag = 0.0d0
             do j=1,hecLagMAT%num_lagrange
               hecLagMAT%lagrange(j) = hecLagMAT%lagrange(j) + hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j)
-              if(dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))>maxDLag) maxDLag=dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))
+              if(dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))>maxDLag) &
+                maxDLag=dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))
               !              write(*,*)'Lagrange:', j,hecLagMAT%lagrange(j),hecMAT%X(hecMESH%n_node*ndof+j)
             enddo
           endif
