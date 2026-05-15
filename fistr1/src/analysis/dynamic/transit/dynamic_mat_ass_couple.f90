@@ -129,9 +129,9 @@ contains
         do i=1, node_n
           j=3*node(i)
 
-          hecMAT%B(j-2)=hecMAT%B(j-2) + vx
-          hecMAT%B(j-1)=hecMAT%B(j-1) + vy
-          hecMAT%B(j  )=hecMAT%B(j  ) + vz
+          call hecmw_mat_set_B_i(hecMAT, j-2, hecmw_mat_get_B_i(hecMAT, j-2) + vx)
+          call hecmw_mat_set_B_i(hecMAT, j-1, hecmw_mat_get_B_i(hecMAT, j-1) + vy)
+          call hecmw_mat_set_B_i(hecMAT, j, hecmw_mat_get_B_i(hecMAT, j) + vz)
         end do
       end do
     end do

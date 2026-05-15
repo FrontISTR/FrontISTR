@@ -46,9 +46,9 @@ contains
 
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 
-    hecMAT%NDOF = hecMESH%n_dof
+    call hecmw_mat_set_NDOF(hecMAT, hecMESH%n_dof)
 
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     nn = ndof*ndof
 
     is_interaction_active = ( associated( fstrSOLID%contacts ) .or. associated( fstrSOLID%embeds ) )
@@ -95,7 +95,7 @@ contains
     if( fstrSOLID%restart_nout < 0 ) then
       call fstr_read_restart(restart_step_num,restart_substep_num,step_count,ctime,dtime,hecMESH,fstrSOLID, &
         fstrPARAM,infoCTChange%contactNode_previous)
-      hecMAT%Iarray(98) = 1
+      call hecmw_mat_set_Iarray(hecMAT, 98, 1)
       call fstr_set_time( ctime )
       call fstr_set_timeinc_base( dtime )
       fstrSOLID%restart_nout = - fstrSOLID%restart_nout
@@ -196,7 +196,7 @@ contains
             if( is_interaction_active .and. fstrPARAM%contact_algo == kcaSLagrange ) then
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
                 &  infoCTChange, conMAT, fstr_is_contact_active())
-              conMAT%B(:) = 0.0d0
+              call hecmw_mat_fill_B(conMAT, 0.0d0)
               call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH))
             endif
             if( hecMESH%my_rank == 0 ) write(*,*) '### State has been restored at time =',fstr_get_time()

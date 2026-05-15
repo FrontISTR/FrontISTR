@@ -76,15 +76,17 @@ contains
     type(hecmwST_matrix), intent(inout)  :: conMAT             !< contact matrix
 
     integer(kind=kint) :: i, inod, idx
+    real(kind=kreal), pointer :: pB(:)
 
+    pB => hecmw_mat_get_B(conMAT)
     do i = 1, nnode + 1
       inod = ndLocal(i)
       idx = (inod-1)*3+1
-      conMAT%B(idx:idx+2) = conMAT%B(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3) + ctTForce((i-1)*3+1:(i-1)*3+3)
+      pB(idx:idx+2) = pB(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3) + ctTForce((i-1)*3+1:(i-1)*3+3)
     enddo
 
     if( id_lagrange > 0 ) then
-      conMAT%B(conMAT%NP*conMAT%NDOF+id_lagrange) = ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1)
+      call hecmw_mat_set_B_i(conMAT, hecmw_mat_get_NP(conMAT)*hecmw_mat_get_NDOF(conMAT)+id_lagrange, ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1))
     endif
 
   end subroutine assemble_contact_force_residual

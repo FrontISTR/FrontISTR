@@ -38,7 +38,7 @@ contains
     real(kind=kreal)   :: cdisp(3), cddisp(3)
     real(kind=kreal)   :: rotation_factor
     !
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
     fstrSOLID%REACTION = 0.d0
@@ -141,7 +141,7 @@ contains
           do idof = 1, ndof
             ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
             cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
-            cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMAT%B)
+            cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecmw_mat_get_B(hecMAT))
           enddo
           ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
         endif
@@ -186,7 +186,7 @@ contains
       !C=============================C
     else if( fstrDYNAMIC%idx_eqa == 11 ) then
       !C
-      NDOF = hecMAT%NDOF
+      NDOF = hecmw_mat_get_NDOF(hecMAT)
       do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
@@ -205,7 +205,7 @@ contains
           in = hecMESH%node_group%grp_item(ik)
 
           do idof = idofS, idofE
-            hecMAT%B        (NDOF*in-(NDOF-idof)) = RHS
+            call hecmw_mat_set_B_i(hecMAT, NDOF*in-(NDOF-idof), RHS)
             fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
 
             !for output reaction force
@@ -241,7 +241,7 @@ contains
     real(kind=kreal)   :: RHS, f_t
 
     flag_u = 1
-    NDOF = hecMAT%NDOF
+    NDOF = hecmw_mat_get_NDOF(hecMAT)
 
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
@@ -295,7 +295,7 @@ contains
     real(kind=kreal)   :: theta, normal(3), direc(3), ccoord(3), cdiff(3), cdiff0(3)
     real(kind=kreal)   :: cdisp(3), cddisp(3)
     !
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
     fstrSOLID%REACTION = 0.d0
@@ -303,7 +303,7 @@ contains
     flag_u = 1
 
       !C
-      NDOF = hecMAT%NDOF
+      NDOF = hecmw_mat_get_NDOF(hecMAT)
       do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
@@ -322,7 +322,7 @@ contains
           in = hecMESH%node_group%grp_item(ik)
 
           do idof = idofS, idofE
-            hecMAT%B(NDOF*in-(NDOF-idof)) = RHS*fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
+            call hecmw_mat_set_B_i(hecMAT, NDOF*in-(NDOF-idof), RHS*fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)))
         !    fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
 
             !for output reaction force

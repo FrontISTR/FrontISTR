@@ -38,7 +38,7 @@ contains
     real(kind=kreal)   :: cdisp(3), cddisp(3)
 
     !
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
 
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
@@ -147,7 +147,7 @@ contains
         do idof = 1, ndof
           ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
           cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
-          cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMAT%B)
+          cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecmw_mat_get_B(hecMAT))
         enddo
         ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
       endif

@@ -133,15 +133,15 @@ contains
       !$omp end parallel
     enddo
 
-    allocate(S(hecMAT%NP))
+    allocate(S(hecmw_mat_get_NP(hecMAT)))
     S = 0.0d0
 
     call hecmw_matvec(hecMESH, hecMAT, fstrHEAT%TEMP0, S)
 
-    hecMAT%D  = beta*hecMAT%D
-    hecMAT%AU = beta*hecMAT%AU
-    hecMAT%AL = beta*hecMAT%AL
-    hecMAT%B  = hecMAT%B - ALPHA*S
+    call hecmw_mat_copy_D(hecMAT, beta*hecmw_mat_get_D(hecMAT))
+    call hecmw_mat_copy_AU(hecMAT, beta*hecmw_mat_get_AU(hecMAT))
+    call hecmw_mat_copy_AL(hecMAT, beta*hecmw_mat_get_AL(hecMAT))
+    call hecmw_mat_copy_B(hecMAT, hecmw_mat_get_B(hecMAT) - ALPHA*S)
 
     deallocate(S)
 

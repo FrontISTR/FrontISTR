@@ -135,7 +135,7 @@ contains
 
       do ip = 1, mm
         !$omp atomic
-        hecMAT%B(nodSurf(ip)) = hecMAT%B(nodSurf(ip)) - term2(ip)
+        call hecmw_mat_set_B_i(hecMAT, nodSurf(ip), hecmw_mat_get_B_i(hecMAT, nodSurf(ip)) - term2(ip))
       end do
 
       !C

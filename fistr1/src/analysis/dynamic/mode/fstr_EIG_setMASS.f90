@@ -34,8 +34,8 @@ contains
       write(IMSG,*)"* mass matrix generation"
     endif
 
-    N  = hecMAT%N
-    NP = hecMAT%NP
+    N  = hecmw_mat_get_N(hecMAT)
+    NP = hecmw_mat_get_NP(hecMAT)
     NDOF = hecMESH%n_dof
 
     allocate(fstrEIG%mass(NP*NDOF))

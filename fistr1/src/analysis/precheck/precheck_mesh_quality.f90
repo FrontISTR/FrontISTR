@@ -90,7 +90,7 @@ contains
       ic_type = hecMESH%elem_type_item(itype)
       write(ILOG,"(a,i4,a,i12)") '  Num of ',ic_type,':',jE-jS
     enddo
-    nonzero = ndof2*(hecMAT%NP + hecMAT%NPU + hecMAT%NPL)
+    nonzero = ndof2*(hecmw_mat_get_NP(hecMAT) + hecmw_mat_get_NPU(hecMAT) + hecmw_mat_get_NPL(hecMAT))
     write(ILOG,"(a,i12)") '  Num of NZ  :',nonzero
     ntdof2 = dble(hecMESH%n_node*hecMESH%n_dof)**2
     write(ILOG,"(a,1pe12.5,a)") '  Sparsity   :',100.0d0*dble(nonzero)/dble(ntdof2),"[%]"

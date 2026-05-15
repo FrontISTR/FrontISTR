@@ -105,20 +105,20 @@ contains
 
     ftype = 4
 
-    n = hecMAT%N
+    n = hecmw_mat_get_N(hecMAT)
     ndof = 3*n
-    nnz = 9*n + 9*2*hecMAT%indexL(n)
+    nnz = 9*n + 9*2*hecmw_mat_get_indexL_i(hecMAT, n)
     dens = 100*dble(nnz)/dble(9*n*n)
-    rnum = (7.21d0+0.01*dlog10(dble(hecMAT%N)))*10.0d0/dble(hecMAT%N)
+    rnum = (7.21d0+0.01*dlog10(dble(hecmw_mat_get_N(hecMAT))))*10.0d0/dble(hecmw_mat_get_N(hecMAT))
     cond = 1.0d0
 
     open(fio,file='nonzero.dat.'//fileid, status='replace')
     do i= 1, n
-      jS= hecMAT%indexL(i-1) + 1
-      jE= hecMAT%indexL(i  )
+      jS= hecmw_mat_get_indexL_i(hecMAT, i-1) + 1
+      jE= hecmw_mat_get_indexL_i(hecMAT, i)
       write(fio,"(i0,a,i0)")i,"  ",i
       do j= jS, jE
-        in = hecMAT%itemL(j)
+        in = hecmw_mat_get_itemL_i(hecMAT, j)
         write(fio,"(i0,a,i0)")i, "  ",in
         write(fio,"(i0,a,i0)")in,"  ",i
       enddo

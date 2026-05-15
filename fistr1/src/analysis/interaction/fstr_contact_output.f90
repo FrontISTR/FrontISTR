@@ -31,37 +31,37 @@ contains
     type(hecmwST_matrix)   :: hecMAT         !< type hecmwST_matrix
 
     if( .not. associated(fstrSOLID%CONT_NFORCE) ) then
-      allocate( fstrSOLID%CONT_NFORCE(hecMAT%NP*3) )
+      allocate( fstrSOLID%CONT_NFORCE(hecmw_mat_get_NP(hecMAT)*3) )
       fstrSOLID%CONT_NFORCE(:) = 0.d0
     end if
 
     if( .not. associated(fstrSOLID%CONT_FRIC) ) then
-      allocate( fstrSOLID%CONT_FRIC(hecMAT%NP*3) )
+      allocate( fstrSOLID%CONT_FRIC(hecmw_mat_get_NP(hecMAT)*3) )
       fstrSOLID%CONT_FRIC(:) = 0.d0
     end if
 
     if( .not. associated(fstrSOLID%CONT_RELVEL) ) then
-      allocate( fstrSOLID%CONT_RELVEL(hecMAT%NP*3) )
+      allocate( fstrSOLID%CONT_RELVEL(hecmw_mat_get_NP(hecMAT)*3) )
       fstrSOLID%CONT_RELVEL(:) = 0.d0
     end if
 
     if( .not. associated(fstrSOLID%CONT_STATE) ) then
-      allocate( fstrSOLID%CONT_STATE(hecMAT%NP*1) )
+      allocate( fstrSOLID%CONT_STATE(hecmw_mat_get_NP(hecMAT)*1) )
       fstrSOLID%CONT_STATE(:) = 0.d0
     end if
 
     if( .not. associated(fstrSOLID%CONT_AREA) ) then
-      allocate( fstrSOLID%CONT_AREA(hecMAT%NP) )
+      allocate( fstrSOLID%CONT_AREA(hecmw_mat_get_NP(hecMAT)) )
       fstrSOLID%CONT_AREA(:) = 0.d0
     end if
 
     if( .not. associated(fstrSOLID%CONT_NTRAC) ) then
-      allocate( fstrSOLID%CONT_NTRAC(hecMAT%NP*3) )
+      allocate( fstrSOLID%CONT_NTRAC(hecmw_mat_get_NP(hecMAT)*3) )
       fstrSOLID%CONT_NTRAC(:) = 0.d0
     end if
 
     if( .not. associated(fstrSOLID%CONT_FTRAC) ) then
-      allocate( fstrSOLID%CONT_FTRAC(hecMAT%NP*3) )
+      allocate( fstrSOLID%CONT_FTRAC(hecmw_mat_get_NP(hecMAT)*3) )
       fstrSOLID%CONT_FTRAC(:) = 0.d0
     end if
 
@@ -72,7 +72,7 @@ contains
     type(hecmwST_matrix)   :: hecMAT         !< type hecmwST_matrix
 
     if( .not. associated(fstrSOLID%EMBED_NFORCE) ) then
-      allocate( fstrSOLID%EMBED_NFORCE(hecMAT%NP*3) )
+      allocate( fstrSOLID%EMBED_NFORCE(hecmw_mat_get_NP(hecMAT)*3) )
       fstrSOLID%EMBED_NFORCE(:) = 0.d0
     end if
   end subroutine

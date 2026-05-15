@@ -46,9 +46,9 @@ contains
     DELMAX = fstrHEAT%STEP_DELMAX(ISTEP)
 
     is_end = .false.
-    hecMAT%NDOF = 1
-    hecMAT%Iarray(98) = 1 !Assembly complete
-    hecMAT%X = 0.0d0
+    call hecmw_mat_set_NDOF(hecMAT, 1)
+    call hecmw_mat_set_Iarray(hecMAT, 98, 1)!Assembly complete
+    call hecmw_mat_fill_X(hecMAT, 0.0d0)
 
     if(fstrHEAT%beta == -1.0d0)then
       if(fstrHEAT%is_steady == 1)then

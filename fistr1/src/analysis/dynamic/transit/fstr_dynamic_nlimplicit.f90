@@ -76,9 +76,9 @@ contains
     n_node_global = hecMESH%nn_internal
     call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
-    hecMAT%NDOF=hecMESH%n_dof
+    call hecmw_mat_set_NDOF(hecMAT, hecMESH%n_dof)
     nnod=hecMESH%n_node
-    ndof=hecMAT%NDOF
+    ndof=hecmw_mat_get_NDOF(hecMAT)
     nn  =ndof*ndof
 
     allocate(coord(hecMESH%n_node*ndof))
@@ -106,8 +106,8 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
 
-    hecMAT%Iarray(98) = 1   !Assembly complete
-    hecMAT%Iarray(97) = 1   !Need numerical factorization
+    call hecmw_mat_set_Iarray(hecMAT, 98, 1)!Assembly complete
+    call hecmw_mat_set_Iarray(hecMAT, 97, 1)!Need numerical factorization
 
     !C-- time step loop
     a1 = 0.5d0/fstrDYNAMIC%beta - 1.0d0
@@ -126,7 +126,7 @@ contains
     endif
 
     fstrDYNAMIC%VEC3(:) =0.0d0
-    hecMAT%X(:) =0.0d0
+    call hecmw_mat_fill_X(hecMAT, 0.0d0)
 
     !! step = 1,2,....,fstrDYNAMIC%n_step
     do i = restrt_step_num, fstrDYNAMIC%n_step
@@ -169,24 +169,24 @@ contains
 
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
-              hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
+              call hecmw_mat_set_X_i(hecMAT, j, fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j))
             enddo
           endif
           if( fstrDYNAMIC%ray_k/=0.d0 ) then
             if( hecMESH%n_dof == 3 ) then
-              call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+              call hecmw_matvec (hecMESH, hecMAT, hecmw_mat_get_X(hecMAT), fstrDYNAMIC%VEC3)
             else if( hecMESH%n_dof == 2 ) then
-              call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+              call hecmw_matvec (hecMESH, hecMAT, hecmw_mat_get_X(hecMAT), fstrDYNAMIC%VEC3)
             else if( hecMESH%n_dof == 6 ) then
-              call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
+              call matvec(fstrDYNAMIC%VEC3, hecmw_mat_get_X(hecMAT), hecMAT, ndof, hecmw_mat_get_D(hecMAT), hecmw_mat_get_AU(hecMAT), hecmw_mat_get_AL(hecMAT))
             endif
           endif
 
           !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
           do j=1, hecMESH%n_node*  hecMESH%n_dof
-            hecMAT%B(j) = hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j) &
-              + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
+            call hecmw_mat_set_B_i(hecMAT, j, hecmw_mat_get_B_i(hecMAT, j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j) &
+              + fstrDYNAMIC%ray_m* hecmw_mat_get_X_i(hecMAT, j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j))
           enddo
 
           !C ********************************************************************************
@@ -194,20 +194,20 @@ contains
           call fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
             & fstrPARAM, fstrDYNAMIC, fstrCPL, restrt_step_num, PI, i)
 
-          do j = 1 ,nn*hecMAT%NP
-            hecMAT%D(j)  = c1* hecMAT%D(j)
+          do j = 1 ,nn*hecmw_mat_get_NP(hecMAT)
+            call hecmw_mat_set_D_i(hecMAT, j, c1* hecmw_mat_get_D_i(hecMAT, j))
           enddo
-          do j = 1 ,nn*hecMAT%NPU
-            hecMAT%AU(j) = c1* hecMAT%AU(j)
+          do j = 1 ,nn*hecmw_mat_get_NPU(hecMAT)
+            call hecmw_mat_set_AU_i(hecMAT, j, c1* hecmw_mat_get_AU_i(hecMAT, j))
           enddo
-          do j = 1 ,nn*hecMAT%NPL
-            hecMAT%AL(j) = c1*hecMAT%AL(j)
+          do j = 1 ,nn*hecmw_mat_get_NPL(hecMAT)
+            call hecmw_mat_set_AL_i(hecMAT, j, c1*hecmw_mat_get_AL_i(hecMAT, j))
           enddo
           do j=1,nnod
             do kk=1,ndof
               idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
               imm = ndof*(j-1) + kk
-              hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIG%mass(imm)
+              call hecmw_mat_set_D_i(hecMAT, idm, hecmw_mat_get_D_i(hecMAT, idm) + c2*fstrEIG%mass(imm))
             enddo
           enddo
 
@@ -219,8 +219,8 @@ contains
           call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
 
           !C-- RHS LOAD VECTOR CHECK
-          numnp=hecMATmpc%NP
-          call hecmw_InnerProduct_R(hecMESH, ndof, hecMATmpc%B, hecMATmpc%B, bsize)
+          numnp=hecmw_mat_get_NP(hecMATmpc)
+          call hecmw_InnerProduct_R(hecMESH, ndof, hecmw_mat_get_B(hecMATmpc), hecmw_mat_get_B(hecMATmpc), bsize)
 
           if(iter == 1)then
             resb = bsize
@@ -235,13 +235,13 @@ contains
           endif
 
           !C-- linear solver [A]{X} = {B}
-          hecMATmpc%X = 0.0d0
+          call hecmw_mat_fill_X(hecMATmpc, 0.0d0)
           if( iexit .ne. 1 ) then
             if( fstrPARAM%nlgeom ) then
               if( iter == 1 ) then
-                hecMATmpc%Iarray(97) = 2   !Force numerical factorization
+                call hecmw_mat_set_Iarray(hecMATmpc, 97, 2)!Force numerical factorization
               else
-                hecMATmpc%Iarray(97) = 1   !Need numerical factorization
+                call hecmw_mat_set_Iarray(hecMATmpc, 97, 1)!Need numerical factorization
               endif
               call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
             endif
@@ -253,7 +253,7 @@ contains
           call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
           do j=1,hecMESH%n_node*ndof
-            fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
+            fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecmw_mat_get_X_i(hecMAT, j)
           enddo
           ! ----- update the strain, stress, and internal force
           call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
@@ -384,16 +384,16 @@ contains
 
     ctAlgo = fstrPARAM%contact_algo
 
-    if( hecMAT%Iarray(99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH) ) then
+    if( hecmw_mat_get_Iarray(hecMAT, 99)==4 .and. .not.fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH) ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please use intel MKL direct solver !'
       call  hecmw_abort(hecmw_comm_get_comm())
     endif
 
-    hecMAT%NDOF=hecMESH%n_dof
+    call hecmw_mat_set_NDOF(hecMAT, hecMESH%n_dof)
 
     nnod=hecMESH%n_node
-    ndof=hecMAT%NDOF
+    ndof=hecmw_mat_get_NDOF(hecMAT)
     nn=ndof*ndof
 
     allocate(coord(hecMESH%n_node*ndof))
@@ -422,8 +422,8 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
 
-    hecMAT%Iarray(98) = 1   !Assembly complete
-    hecMAT%Iarray(97) = 1   !Need numerical factorization
+    call hecmw_mat_set_Iarray(hecMAT, 98, 1)!Assembly complete
+    call hecmw_mat_set_Iarray(hecMAT, 97, 1)!Need numerical factorization
 
     !C-- initialize variables
     if( restrt_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. fstrDYNAMIC%ray_m /= 0.0d0 ) &
@@ -446,7 +446,7 @@ contains
     endif
 
     fstrDYNAMIC%VEC3(:) =0.d0
-    hecMAT%X(:) =0.d0
+    call hecmw_mat_fill_X(hecMAT, 0.d0)
 
     call fstr_save_originalMatrixStructure(hecMAT)
     call fstr_scan_contact_state(cstep, restrt_step_num, 0, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange)
@@ -455,7 +455,7 @@ contains
 
     if ( fstr_is_contact_active() ) then
       call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
-    elseif( hecMAT%Iarray(99)==4 ) then
+    elseif( hecmw_mat_get_Iarray(hecMAT, 99)==4 ) then
       write(*,*) ' This type of direct solver is not yet available in such case ! '
       write(*,*) ' Please change solver type to intel MKL direct solver !'
       call  hecmw_abort(hecmw_comm_get_comm())
@@ -519,50 +519,50 @@ contains
 
           if( fstrDYNAMIC%ray_k/=0.d0 .or. fstrDYNAMIC%ray_m/=0.d0 ) then
             do j = 1 ,ndof*nnod
-              hecMAT%X(j) = fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j)
+              call hecmw_mat_set_X_i(hecMAT, j, fstrDYNAMIC%VEC2(j) - b3*fstrSOLID%dunode(j))
             enddo
           endif
           if( fstrDYNAMIC%ray_k/=0.d0 ) then
             if( hecMESH%n_dof == 3 ) then
-              call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+              call hecmw_matvec (hecMESH, hecMAT, hecmw_mat_get_X(hecMAT), fstrDYNAMIC%VEC3)
             else if( hecMESH%n_dof == 2 ) then
-              call hecmw_matvec (hecMESH, hecMAT, hecMAT%X, fstrDYNAMIC%VEC3)
+              call hecmw_matvec (hecMESH, hecMAT, hecmw_mat_get_X(hecMAT), fstrDYNAMIC%VEC3)
             else if( hecMESH%n_dof == 6 ) then
-              call matvec(fstrDYNAMIC%VEC3, hecMAT%X, hecMAT, ndof, hecMAT%D, hecMAT%AU, hecMAT%AL)
+              call matvec(fstrDYNAMIC%VEC3, hecmw_mat_get_X(hecMAT), hecMAT, ndof, hecmw_mat_get_D(hecMAT), hecmw_mat_get_AU(hecMAT), hecmw_mat_get_AL(hecMAT))
             endif
           endif
 
           !C-- mechanical boundary condition
           call dynamic_mat_ass_load (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter)
           do j=1, hecMESH%n_node*  hecMESH%n_dof
-            hecMAT%B(j)=hecMAT%B(j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
-              + fstrDYNAMIC%ray_m* hecMAT%X(j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j)
+            call hecmw_mat_set_B_i(hecMAT, j, hecmw_mat_get_B_i(hecMAT, j)- fstrSOLID%QFORCE(j) + fstrEIG%mass(j)*( fstrDYNAMIC%VEC1(j)-a3*fstrSOLID%dunode(j)   &
+              + fstrDYNAMIC%ray_m* hecmw_mat_get_X_i(hecMAT, j) ) + fstrDYNAMIC%ray_k*fstrDYNAMIC%VEC3(j))
           enddo
 
           !C for couple analysis
           call fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
             & fstrPARAM, fstrDYNAMIC, fstrCPL, restrt_step_num, PI, i)
 
-          do j = 1 ,nn*hecMAT%NP
-            hecMAT%D(j)  = c1* hecMAT%D(j)
+          do j = 1 ,nn*hecmw_mat_get_NP(hecMAT)
+            call hecmw_mat_set_D_i(hecMAT, j, c1* hecmw_mat_get_D_i(hecMAT, j))
           enddo
-          do j = 1 ,nn*hecMAT%NPU
-            hecMAT%AU(j) = c1* hecMAT%AU(j)
+          do j = 1 ,nn*hecmw_mat_get_NPU(hecMAT)
+            call hecmw_mat_set_AU_i(hecMAT, j, c1* hecmw_mat_get_AU_i(hecMAT, j))
           enddo
-          do j = 1 ,nn*hecMAT%NPL
-            hecMAT%AL(j) = c1*hecMAT%AL(j)
+          do j = 1 ,nn*hecmw_mat_get_NPL(hecMAT)
+            call hecmw_mat_set_AL_i(hecMAT, j, c1*hecmw_mat_get_AL_i(hecMAT, j))
           enddo
           do j=1,nnod
             do kk=1,ndof
               idm = nn*(j-1)+1 + (ndof+1)*(kk-1)
               imm = ndof*(j-1) + kk
-              hecMAT%D(idm) = hecMAT%D(idm) + c2*fstrEIG%mass(imm)
+              call hecmw_mat_set_D_i(hecMAT, idm, hecmw_mat_get_D_i(hecMAT, idm) + c2*fstrEIG%mass(imm))
             enddo
           enddo
 
           call hecmw_mat_clear( conMAT )
           call hecmw_mat_clear_b( conMAT )
-          conMAT%X = 0.0d0
+          call hecmw_mat_fill_X(conMAT, 0.0d0)
 
           if( fstr_is_contact_active() ) then
             call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
@@ -601,17 +601,17 @@ contains
           endif
 
           !   ----  For Parallel Contact with Multi-Partition Domains
-          hecMAT%X = 0.0d0
+          call hecmw_mat_fill_X(hecMAT, 0.0d0)
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           call solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,1.0D0,fstr_is_contact_active())
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
           ! ----- update external nodal displacement increments
-          call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
+          call hecmw_update_R (hecMESH, hecmw_mat_get_X(hecMAT), hecmw_mat_get_NP(hecMAT), hecmw_mat_get_NDOF(hecMAT))
 
           ! ----- update the strain, stress, and internal force
           do j=1,hecMESH%n_node*ndof
-            fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
+            fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecmw_mat_get_X_i(hecMAT, j)
           enddo
           call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC%t_curr, &
             &   fstrDYNAMIC%t_delta,iter, fstrDYNAMIC%strainEnergy )
@@ -623,8 +623,8 @@ contains
           if( fstr_is_contact_active() ) then
             maxDLag = 0.0d0
             do j=1,hecLagMAT%num_lagrange
-              hecLagMAT%lagrange(j) = hecLagMAT%lagrange(j) + hecMAT%X(hecMESH%n_node*ndof+j)
-              if(dabs(hecMAT%X(hecMESH%n_node*ndof+j))>maxDLag) maxDLag=dabs(hecMAT%X(hecMESH%n_node*ndof+j))
+              hecLagMAT%lagrange(j) = hecLagMAT%lagrange(j) + hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j)
+              if(dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))>maxDLag) maxDLag=dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))
               !              write(*,*)'Lagrange:', j,hecLagMAT%lagrange(j),hecMAT%X(hecMESH%n_node*ndof+j)
             enddo
           endif
@@ -646,7 +646,7 @@ contains
 
         call fstr_scan_contact_state(cstep, i, count_step, fstrDYNAMIC%t_delta, ctAlgo, hecMESH, fstrSOLID, infoCTChange)
 
-        if( hecMAT%Iarray(99)==4 .and. .not. fstr_is_contact_active() ) then
+        if( hecmw_mat_get_Iarray(hecMAT, 99)==4 .and. .not. fstr_is_contact_active() ) then
           write(*,*) ' This type of direct solver is not yet available in such case ! '
           write(*,*) ' Please use intel MKL direct solver !'
           call  hecmw_abort(hecmw_comm_get_comm())

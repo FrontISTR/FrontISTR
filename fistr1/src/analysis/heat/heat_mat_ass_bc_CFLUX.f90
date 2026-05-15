@@ -26,7 +26,7 @@ contains
       in = fstrHEAT%Q_NOD_node(ib)
       ia = fstrHEAT%Q_NOD_ampl(ib)
       call heat_get_amplitude ( fstrHEAT,ia,CTIME,QQ )
-      hecMAT%B(in) = hecMAT%B(in) + QQ*fstrHEAT%Q_NOD_val(ib)
+      call hecmw_mat_set_B_i(hecMAT, in, hecmw_mat_get_B_i(hecMAT, in) + QQ*fstrHEAT%Q_NOD_val(ib))
     enddo
 
     return

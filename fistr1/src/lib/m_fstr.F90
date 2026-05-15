@@ -14,6 +14,7 @@
 !> \brief  This module defines common data and basic structures for analysis
 module m_fstr
   use hecmw
+  use hecmw_matrix_api
   use m_common_struct
   use m_step
   use m_out
@@ -837,78 +838,78 @@ contains
     implicit none
     type(hecmwST_matrix) :: hecMAT
 
-    hecMAT%Iarray(1) =  100    ! = nier
-    hecMAT%Iarray(2) =    1    ! = method
-    hecMAT%Iarray(3) =    1    ! = precond
-    hecMAT%Iarray(4) =    0    ! = nset
-    hecMAT%Iarray(5) =    1    ! = iterpremax
-    hecMAT%Iarray(6) =   10    ! = nrest
-    hecMAT%Iarray(7) =    0    ! = scaling
-    hecMAT%Iarray(21)=  kNO    ! = iterlog
-    hecMAT%Iarray(22)=  kNO    ! = timelog
-    hecMAT%Iarray(31)=    0    ! = dumptype
-    hecMAT%Iarray(32)=    0    ! = dumpexit
-    hecMAT%Iarray(33)=    0    ! = usejad
-    hecMAT%Iarray(34)=   10    ! = ncolor_in
-    hecMAT%Iarray(13)=    0    ! = mpc_method
-    hecMAT%Iarray(14)=    0    ! = estcond
-    hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
-    hecMAT%Iarray(41)=    0    ! = solver_opt1
-    hecMAT%Iarray(42)=    0    ! = solver_opt2
-    hecMAT%Iarray(43)=    0    ! = solver_opt3
-    hecMAT%Iarray(44)=    0    ! = solver_opt4
-    hecMAT%Iarray(45)=    0    ! = solver_opt5
-    hecMAT%Iarray(46)=    0    ! = solver_opt6
+    call hecmw_mat_set_Iarray(hecMAT,  1, 100   )  ! = nier
+    call hecmw_mat_set_Iarray(hecMAT,  2,   1   )  ! = method
+    call hecmw_mat_set_Iarray(hecMAT,  3,   1   )  ! = precond
+    call hecmw_mat_set_Iarray(hecMAT,  4,   0   )  ! = nset
+    call hecmw_mat_set_Iarray(hecMAT,  5,   1   )  ! = iterpremax
+    call hecmw_mat_set_Iarray(hecMAT,  6,  10   )  ! = nrest
+    call hecmw_mat_set_Iarray(hecMAT,  7,   0   )  ! = scaling
+    call hecmw_mat_set_Iarray(hecMAT, 21, kNO   )  ! = iterlog
+    call hecmw_mat_set_Iarray(hecMAT, 22, kNO   )  ! = timelog
+    call hecmw_mat_set_Iarray(hecMAT, 31,   0   )  ! = dumptype
+    call hecmw_mat_set_Iarray(hecMAT, 32,   0   )  ! = dumpexit
+    call hecmw_mat_set_Iarray(hecMAT, 33,   0   )  ! = usejad
+    call hecmw_mat_set_Iarray(hecMAT, 34,  10   )  ! = ncolor_in
+    call hecmw_mat_set_Iarray(hecMAT, 13,   0   )  ! = mpc_method
+    call hecmw_mat_set_Iarray(hecMAT, 14,   0   )  ! = estcond
+    call hecmw_mat_set_Iarray(hecMAT, 35,   3   )  ! = maxrecycle_precond
+    call hecmw_mat_set_Iarray(hecMAT, 41,   0   )  ! = solver_opt1
+    call hecmw_mat_set_Iarray(hecMAT, 42,   0   )  ! = solver_opt2
+    call hecmw_mat_set_Iarray(hecMAT, 43,   0   )  ! = solver_opt3
+    call hecmw_mat_set_Iarray(hecMAT, 44,   0   )  ! = solver_opt4
+    call hecmw_mat_set_Iarray(hecMAT, 45,   0   )  ! = solver_opt5
+    call hecmw_mat_set_Iarray(hecMAT, 46,   0   )  ! = solver_opt6
 
-    hecMAT%Rarray(1) =  1.0e-8 ! = resid
-    hecMAT%Rarray(2) =  1.0    ! = sigma_diag
-    hecMAT%Rarray(3) =  0.0    ! = sigma
-    hecMAT%Rarray(4) =  0.1    ! = thresh
-    hecMAT%Rarray(5) =  0.1    ! = filter
-    hecMAT%Rarray(11)=  1.0e+4 ! = penalty
+    call hecmw_mat_set_Rarray(hecMAT,  1, 1.0e-8_kreal)  ! = resid
+    call hecmw_mat_set_Rarray(hecMAT,  2, 1.0_kreal   )  ! = sigma_diag
+    call hecmw_mat_set_Rarray(hecMAT,  3, 0.0_kreal   )  ! = sigma
+    call hecmw_mat_set_Rarray(hecMAT,  4, 0.1_kreal   )  ! = thresh
+    call hecmw_mat_set_Rarray(hecMAT,  5, 0.1_kreal   )  ! = filter
+    call hecmw_mat_set_Rarray(hecMAT, 11, 1.0e+4_kreal)  ! = penalty
 
-    hecMAT%Iarray(96) =   0    ! nrecycle_precond
-    hecMAT%Iarray(97) = kYES   ! flag_numfact
-    hecMAT%Iarray(98) = kYES   ! flag_symbfact
-    hecMAT%Iarray(99) = kYES   ! indirect method
+    call hecmw_mat_set_Iarray(hecMAT, 96,   0  )  ! nrecycle_precond
+    call hecmw_mat_set_Iarray(hecMAT, 97, kYES )  ! flag_numfact
+    call hecmw_mat_set_Iarray(hecMAT, 98, kYES )  ! flag_symbfact
+    call hecmw_mat_set_Iarray(hecMAT, 99, kYES )  ! indirect method
   end subroutine fstr_mat_init
 
   subroutine hecMAT_init( hecMAT )
     implicit none
     type( hecmwST_matrix ) :: hecMAT
     integer ::  ndof, nn, ierror
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     nn = ndof*ndof
-    allocate (hecMAT%AL(nn*hecMAT%NPL)        ,stat=ierror )
+    call hecmw_mat_alloc_AL(hecMAT, nn*hecmw_mat_get_NPL(hecMAT), ierror)
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    allocate (hecMAT%AU(nn*hecMAT%NPU)        ,stat=ierror )
+    call hecmw_mat_alloc_AU(hecMAT, nn*hecmw_mat_get_NPU(hecMAT), ierror)
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    allocate (hecMAT%B(ndof*hecMAT%NP)          ,stat=ierror )
+    call hecmw_mat_alloc_B(hecMAT, ndof*hecmw_mat_get_NP(hecMAT), ierror)
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    hecMAT%B(:)=0.d0
-    allocate (hecMAT%D(nn*hecMAT%NP)          ,stat=ierror )
+    call hecmw_mat_fill_B(hecMAT, 0.d0)
+    call hecmw_mat_alloc_D(hecMAT, nn*hecmw_mat_get_NP(hecMAT), ierror)
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-    allocate (hecMAT%X(ndof*hecMAT%NP)          ,stat=ierror )
+    call hecmw_mat_alloc_X(hecMAT, ndof*hecmw_mat_get_NP(hecMAT), ierror)
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
@@ -916,7 +917,7 @@ contains
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
 #ifdef _OPENACC
-    allocate (hecMAT%A(nn*(hecMAT%NPA))        ,stat=ierror )
+    call hecmw_mat_alloc_A(hecMAT, nn*hecmw_mat_get_NPA(hecMAT), ierror)
     if( ierror /= 0 ) then
       write(*,*) "##ERROR : not enough memory"
       write(idbg,*) 'stop due to allocation error'
@@ -924,13 +925,13 @@ contains
       call hecmw_abort( hecmw_comm_get_comm() )
     endif
 #endif
-    hecMAT%D  = 0.0d0
-    hecMAT%AL = 0.0d0
-    hecMAT%AU = 0.0d0
-    hecMAT%B  = 0.0d0
-    hecMAT%X  = 0.0d0
+    call hecmw_mat_fill_D (hecMAT, 0.0d0)
+    call hecmw_mat_fill_AL(hecMAT, 0.0d0)
+    call hecmw_mat_fill_AU(hecMAT, 0.0d0)
+    call hecmw_mat_fill_B (hecMAT, 0.0d0)
+    call hecmw_mat_fill_X (hecMAT, 0.0d0)
 #ifdef _OPENACC
-    hecMAT%A  = 0.0d0
+    call hecmw_mat_fill_A (hecMAT, 0.0d0)
 #endif
   end subroutine hecMAT_init
 
@@ -938,50 +939,50 @@ contains
     implicit none
     type( hecmwST_matrix ) :: hecMAT
     integer ::  ndof, nn, ierror
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     nn = ndof*ndof
-    if( associated(hecMAT%AL) ) then
-      deallocate(hecMAT%AL                  ,stat=ierror)
+    if( hecmw_mat_is_assoc_AL(hecMAT) ) then
+      call hecmw_mat_dealloc_AL(hecMAT, ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
-    if( associated(hecMAT%AU) ) then
-      deallocate(hecMAT%AU                  ,stat=ierror)
+    if( hecmw_mat_is_assoc_AU(hecMAT) ) then
+      call hecmw_mat_dealloc_AU(hecMAT, ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
-    if( associated(hecMAT%B) ) then
-      deallocate(hecMAT%B                   ,stat=ierror)
+    if( hecmw_mat_is_assoc_B(hecMAT) ) then
+      call hecmw_mat_dealloc_B(hecMAT, ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
-    if( associated(hecMAT%D) ) then
-      deallocate(hecMAT%D                   ,stat=ierror)
+    if( hecmw_mat_is_assoc_D(hecMAT) ) then
+      call hecmw_mat_dealloc_D(hecMAT, ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
-    if( associated(HECMAT%X) ) then
-      deallocate(hecMAT%X                   ,stat=ierror)
+    if( hecmw_mat_is_assoc_X(hecMAT) ) then
+      call hecmw_mat_dealloc_X(hecMAT, ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
     endif
-    if( associated(hecMAT%A) ) then
-      deallocate(hecMAT%A                   ,stat=ierror)
+    if( hecmw_mat_is_assoc_A(hecMAT) ) then
+      call hecmw_mat_dealloc_A(hecMAT, ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error'
         call flush(idbg)

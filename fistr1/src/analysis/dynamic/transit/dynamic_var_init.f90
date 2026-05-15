@@ -30,12 +30,12 @@ contains
 
     if( fstrSOLID%VELOCITY_type == kbcInitial ) then
       do j = 1, hecMESH%n_node*hecMESH%n_dof
-        fstrDYNAMIC%ACC(j,1)=(hecMAT%B(j)-fstrDYNAMIC%ray_m*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,1))/&
+        fstrDYNAMIC%ACC(j,1)=(hecmw_mat_get_B_i(hecMAT, j)-fstrDYNAMIC%ray_m*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,1))/&
           fstrEIG%mass(j)
       enddo
     elseif( fstrSOLID%ACCELERATION_type == kbcInitial ) then
       do j = 1, hecMESH%n_node*hecMESH%n_dof
-        fstrDYNAMIC%VEL(j,1)=(hecMAT%B(j)-fstrEIG%mass(j)*fstrDYNAMIC%ACC(j,1))/&
+        fstrDYNAMIC%VEL(j,1)=(hecmw_mat_get_B_i(hecMAT, j)-fstrEIG%mass(j)*fstrDYNAMIC%ACC(j,1))/&
           (fstrDYNAMIC%ray_m*fstrEIG%mass(j))
       enddo
     endif

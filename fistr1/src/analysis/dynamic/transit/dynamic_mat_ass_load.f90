@@ -51,14 +51,15 @@ contains
     real(kind=kreal)   :: ecoord(3, 20)
     real(kind=kreal)   :: v(6, 20),  dv(6, 20), r(6*20)
     real(kind=kreal)   :: RHS
-    real(kind=kreal)   :: unode_tmp(hecMAT%NDOF*hecMESH%n_node)
+    real(kind=kreal)   :: unode_tmp(hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node)
 
     !for torque load
     integer(kind=kint) :: n_rot, rid, n_nodes, idof
     type(tRotInfo)   :: rinfo
     real(kind=kreal) :: tval, normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
+    real(kind=kreal), pointer :: pB(:)
 
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     call hecmw_mat_clear_b( hecMAT )
 
     ! ----- elemact element
@@ -100,7 +101,7 @@ contains
 
       do ik = iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
-        hecMAT%B( ndof*(in-1)+ityp ) = hecMAT%B( ndof*(in-1)+ityp )+val
+        call hecmw_mat_set_B_i(hecMAT, ndof*(in-1)+ityp, hecmw_mat_get_B_i(hecMAT, ndof*(in-1)+ityp)+val)
       enddo
     enddo
 
@@ -139,7 +140,8 @@ contains
           call hecmw_abort( hecmw_comm_get_comm() )
         endif
         vect(1:ndof) = (tval/val)*vect(1:ndof)
-        hecMAT%B(ndof*(in-1)+1:ndof*in) = hecMAT%B(ndof*(in-1)+1:ndof*in)+vect(1:ndof)
+        pB => hecmw_mat_get_B(hecMAT)
+        pB(ndof*(in-1)+1:ndof*in) = pB(ndof*(in-1)+1:ndof*in)+vect(1:ndof)
       enddo
     enddo
     if( n_rot > 0 ) call fstr_RotInfo_finalize(rinfo)
@@ -239,7 +241,7 @@ contains
         !
         !C** Add vector
         do j = 1, nsize
-          hecMAT%B( iwk(j) )=hecMAT%B( iwk(j) )+vect(j)
+          call hecmw_mat_set_B_i(hecMAT, iwk(j), hecmw_mat_get_B_i(hecMAT, iwk(j))+vect(j))
         enddo
       enddo
     enddo
@@ -306,7 +308,7 @@ contains
 
               do j = 1, nn
                 do i = 1, ndof
-                  hecMAT%B(ndof*(nodLOCAL(j)-1)+i) = hecMAT%B(ndof*(nodLOCAL(j)-1)+i)+r(ndof*(j-1)+i)
+                  call hecmw_mat_set_B_i(hecMAT, ndof*(nodLOCAL(j)-1)+i, hecmw_mat_get_B_i(hecMAT, ndof*(nodLOCAL(j)-1)+i)+r(ndof*(j-1)+i))
                 enddo
               enddo
             enddo ! icel
@@ -328,7 +330,7 @@ contains
               enddo
               do j = 1, nn
                 do i = 1, ndof
-                  hecMAT%B(ndof*(nodLOCAL(j)-1)+i) = 0.0D0
+                  call hecmw_mat_set_B_i(hecMAT, ndof*(nodLOCAL(j)-1)+i, 0.0D0)
                 enddo
               enddo
             enddo
@@ -460,7 +462,7 @@ contains
           endif
           !C** Add vector
           do j = 1, ndof*nn
-            hecMAT%B( iwk(j) ) = hecMAT%B( iwk(j) )+vect(j)
+            call hecmw_mat_set_B_i(hecMAT, iwk(j), hecmw_mat_get_B_i(hecMAT, iwk(j))+vect(j))
           enddo
         enddo
       enddo

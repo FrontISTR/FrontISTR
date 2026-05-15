@@ -17,6 +17,7 @@ module hecmw
   use hecmw_io
   use hecmw_local_matrix
   use hecmw_logging
+  use hecmw_matrix_api
   use hecmw_matrix_ass
   use hecmw_matrix_con
   use hecmw_matrix_contact_lagrange

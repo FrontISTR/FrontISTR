@@ -51,7 +51,7 @@ contains
     b4 = fstrDYNAMIC%t_delta*fstrDYNAMIC%beta/fstrDYNAMIC%gamma
     c1 = 2.0*fstrDYNAMIC%t_delta
 
-    NDOF = hecMAT%NDOF
+    NDOF = hecmw_mat_get_NDOF(hecMAT)
 
     !C=============================C
     !C-- implicit dynamic analysis
@@ -141,7 +141,7 @@ contains
           do idof = idofS, idofE
             RHS = fstrDYNAMIC%DISP(NDOF*in-(NDOF-idof),3)    &
               + c1*RHS0
-            hecMAT%B        (NDOF*in-(NDOF-idof)) = RHS
+            call hecmw_mat_set_B_i(hecMAT, NDOF*in-(NDOF-idof), RHS)
             fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
 
             !for output reaction force
@@ -179,7 +179,7 @@ contains
     if( fstrSOLID%VELOCITY_type == kbcTransit )return
 
     flag_u = 2
-    NDOF = hecMAT%NDOF
+    NDOF = hecmw_mat_get_NDOF(hecMAT)
 
     do ig0 = 1, fstrSOLID%VELOCITY_ngrp_tot
       ig   = fstrSOLID%VELOCITY_ngrp_ID(ig0)
@@ -245,7 +245,7 @@ contains
     b4 = fstrDYNAMIC%t_delta*fstrDYNAMIC%beta/fstrDYNAMIC%gamma
     c1 = 2.0*fstrDYNAMIC%t_delta
 
-    NDOF = hecMAT%NDOF
+    NDOF = hecmw_mat_get_NDOF(hecMAT)
 
       !C
       do ig0 = 1, fstrSOLID%VELOCITY_ngrp_tot
@@ -268,7 +268,7 @@ contains
           do idof = idofS, idofE
             RHS = fstrDYNAMIC%DISP(NDOF*in-(NDOF-idof),3)    &
               + c1*RHS0
-            hecMAT%B(NDOF*in-(NDOF-idof)) = RHS* fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
+            call hecmw_mat_set_B_i(hecMAT, NDOF*in-(NDOF-idof), RHS* fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)))
        !     fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
 
             !for output reaction force

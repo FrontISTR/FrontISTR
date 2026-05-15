@@ -32,14 +32,14 @@ contains
     iterALL = 0
     do
       iterALL = iterALL + 1
-      hecMAT%X = 0.0d0
+      call hecmw_mat_fill_X(hecMAT, 0.0d0)
 
       call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, fstrHEAT%beta)
       if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, delta_time)
       call heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, &
        & fstrSOLID, fstrHEAT, next_time, delta_time)
 
-      hecMATmpc%Iarray(97) = 1 !Need numerical factorization
+      call hecmw_mat_set_Iarray(hecMATmpc, 97, 1)!Need numerical factorization
       bup_n_dof = hecMESH%n_dof
       hecMESH%n_dof = 1
       call solve_LINEQ(hecMESHmpc, hecMATmpc)
@@ -48,7 +48,7 @@ contains
 
       do i = 1, hecMESH%n_node
         fstrHEAT%TEMPC(i) = fstrHEAT%TEMP(i)
-        fstrHEAT%TEMP (i) = hecMAT%X(i)
+        fstrHEAT%TEMP (i) = hecmw_mat_get_X_i(hecMAT, i)
       enddo
 
       if( fstrHEAT%elemact%ELEMACT_egrp_tot>0 ) &

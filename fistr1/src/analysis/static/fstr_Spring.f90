@@ -22,7 +22,7 @@ contains
 
     factor = fstrSOLID%factor(2)
 
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     do ig0= 1, fstrSOLID%SPRING_ngrp_tot
       grpid = fstrSOLID%SPRING_ngrp_GRPID(ig0)
       if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -36,7 +36,7 @@ contains
       do ik= iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
         idx = ndof**2 * (in - 1) + ndof * (ityp - 1) + ityp
-        hecMAT%D(idx) = hecMAT%D(idx) + fval
+        call hecmw_mat_set_D_i(hecMAT, idx, hecmw_mat_get_D_i(hecMAT, idx) + fval)
       enddo
     enddo
 

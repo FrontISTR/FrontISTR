@@ -60,7 +60,7 @@ contains
     call process_thermal_loads(cstep, ctime, hecMESH, hecMAT, fstrSOLID)
     
     ! Process spring forces
-    call fstr_Update_NDForce_spring(cstep, hecMESH, fstrSOLID, hecMAT%B)
+    call fstr_Update_NDForce_spring(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
     
   end subroutine fstr_ass_load
 
@@ -342,10 +342,10 @@ contains
     integer(kind=kint) :: i
     
     do i = 1, hecMESH%n_node * hecMESH%n_dof
-      hecMAT%B(i) = fstrSOLID%GL(i) - fstrSOLID%QFORCE(i)
+      call hecmw_mat_set_B_i(hecMAT, i, fstrSOLID%GL(i) - fstrSOLID%QFORCE(i))
     enddo
     
-    do i = 1, hecMAT%NDOF * hecMAT%NP
+    do i = 1, hecmw_mat_get_NDOF(hecMAT) * hecmw_mat_get_NP(hecMAT)
       !thermal load is not considered
       fstrSOLID%EFORCE(i) = fstrSOLID%GL(i)
     enddo
@@ -463,7 +463,7 @@ contains
                                vect(1:nn*ndof))
             
             do j = 1, ndof*nn
-              hecMAT%B(iwk(j)) = hecMAT%B(iwk(j)) + vect(j)
+              call hecmw_mat_set_B_i(hecMAT, iwk(j), hecmw_mat_get_B_i(hecMAT, iwk(j)) + vect(j))
             enddo
             cycle
           endif
@@ -474,7 +474,7 @@ contains
           ! Calculate thermal load based on element type
           call calculate_thermal_load(ic_type, nn, xx, yy, zz, tt, tt0, isect, ndof, &
                                      hecMESH, fstrSOLID, icel, vect, cdsys_ID, local_coords, &
-                                     iset, pa1, iwk, hecMAT%B)
+                                     iset, pa1, iwk, hecmw_mat_get_B(hecMAT))
         enddo
       enddo
     endif

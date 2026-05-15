@@ -65,8 +65,8 @@ contains
       isLinear = .true.
     endif
 
-    hecMAT%NDOF = hecMESH%n_dof
-    NDOF = hecMAT%NDOF
+    call hecmw_mat_set_NDOF(hecMAT, hecMESH%n_dof)
+    NDOF = hecmw_mat_get_NDOF(hecMAT)
 
     stepcnt = 0
 
@@ -92,7 +92,7 @@ contains
     g_prev(:) = 0.0d0
     rho_k(:) = 0.0d0
     do i=1,len_vector
-      y_k(i,1) = -hecMAT%B(i)
+      y_k(i,1) = -hecmw_mat_get_B_i(hecMAT, i)
     enddo
 
     ! parameter to judge Wolfe/approx Wolfe selection
@@ -106,7 +106,7 @@ contains
 
       ! ----- calculate search direction by limited BFGS method
       do i=1,hecMESH%n_node*ndof
-          g_prev(i) = -hecMAT%B(i)
+          g_prev(i) = -hecmw_mat_get_B_i(hecMAT, i)
       enddo
       call fstr_calc_direction_LBFGS(hecMesh, g_prev, s_k, y_k, rho_k, z_k, n_mem)
 
@@ -120,7 +120,7 @@ contains
       !       \delta u^k => solver's solution
       !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
       do i = 1, hecMESH%n_node*ndof
-        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecmw_mat_get_X_i(hecMAT, i)
       enddo
 
       !! set du for non-zero Dirichlet condition
@@ -142,8 +142,8 @@ contains
       enddo
 
       do i = 1, hecMESH%n_node*ndof
-        s_k(i,1) = hecMAT%X(i)
-        y_k(i,1) = -hecMAT%B(i) - g_prev(i)
+        s_k(i,1) = hecmw_mat_get_X_i(hecMAT, i)
+        y_k(i,1) = -hecmw_mat_get_B_i(hecMAT, i) - g_prev(i)
       enddo
       call hecmw_innerProduct_R(hecMESH,ndof,s_k(:,1), y_k(:,1), sdoty)
       if (abs(sdoty) < 1.0d-10) then
@@ -273,8 +273,8 @@ contains
     real(kind=kreal), intent(in) :: z_k(:)
     real(kind=kreal) :: h_prime, pot
 
-    hecMat%X(:) = 0.0d0
-    call hecmw_innerProduct_R(hecMESH, hecMAT%NDOF, hecMat%B, z_k, h_prime)
+    call hecmw_mat_fill_X(hecMat, 0.0d0)
+    call hecmw_innerProduct_R(hecMESH, hecmw_mat_get_NDOF(hecMAT), hecmw_mat_get_B(hecMat), z_k, h_prime)
     pot = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,pot_type)
   end subroutine fstr_apply_alpha0
 
@@ -292,10 +292,12 @@ contains
     real(kind=kreal), intent(in) :: z_k(:)
     real(kind=kreal), intent(in) :: alpha
     real(kind=kreal) :: h_prime, pot
+    real(kind=kreal), pointer :: pX(:)
 
-    hecMat%X(:) = -alpha*z_k(:)
+    pX => hecmw_mat_get_X(hecMat)
+    pX(:) = -alpha*z_k(:)
     call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    call hecmw_innerProduct_R(hecMESH, hecMAT%NDOF, hecMat%B, z_k, h_prime)
+    call hecmw_innerProduct_R(hecMESH, hecmw_mat_get_NDOF(hecMAT), hecmw_mat_get_B(hecMat), z_k, h_prime)
     pot = fstr_get_potential_with_X(cstep,hecMESH,hecMAT,fstrSOLID,pot_type)
   end subroutine fstr_apply_alpha
 
@@ -328,7 +330,7 @@ contains
     pot_S = pot_0
 
     if (iter==1) then
-      call hecmw_absMax_R(hecMESH, hecMAT%NDOF, z_k, z_max)
+      call hecmw_absMax_R(hecMESH, hecmw_mat_get_NDOF(hecMAT), z_k, z_max)
       alpha_E = Psi0_line_search/z_max
     else
       alpha_E = 1.0d0
@@ -560,7 +562,7 @@ contains
     real(kind=kreal) :: z_max
     integer :: elemact
 
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     len_vector = hecMESH%n_node*hecMesh%n_dof
 
     call fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime_0, pot_0)

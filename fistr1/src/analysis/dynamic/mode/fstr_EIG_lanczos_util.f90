@@ -21,8 +21,8 @@ contains
     real(kind=kreal), pointer     :: q(:), mass(:), filter(:)
     logical :: is_free
 
-    N      = hecMAT%N
-    NP     = hecMAT%NP
+    N      = hecmw_mat_get_N(hecMAT)
+    NP     = hecmw_mat_get_NP(hecMAT)
     NDOF   = hecMESH%n_dof
     NDOF2  = NDOF*NDOF
     NNDOF  = N *NDOF
@@ -39,7 +39,7 @@ contains
     if(fstrEIG%is_free)then
       do i = 1, NP
         do j = 1, NDOF
-          hecMAT%D(NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) = hecMAT%D(NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) + sigma * mass(NDOF*(i-1) + j)
+          call hecmw_mat_set_D_i(hecMAT, NDOF2*(i-1) + (NDOF+1)*(j-1) + 1, hecmw_mat_get_D_i(hecMAT, NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) + sigma * mass(NDOF*(i-1) + j))
         enddo
       enddo
     endif

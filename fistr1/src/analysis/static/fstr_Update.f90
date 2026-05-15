@@ -49,7 +49,7 @@ contains
     real(kind=kreal) :: tmp
     real(kind=kreal)   :: ddaux(3,3)
 
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     fstrSOLID%QFORCE=0.0d0
 
     tt0 = 0.d0
@@ -117,7 +117,7 @@ contains
             ecoord(i,j) = hecMESH%node(3*nodLOCAL(j)+i-3)
           enddo
           do i = 1, ndof
-            ddu(i,j) = hecMAT%X(ndof*nodLOCAL(j)+i-ndof)
+            ddu(i,j) = hecmw_mat_get_X_i(hecMAT, ndof*nodLOCAL(j)+i-ndof)
             du(i,j)  = fstrSOLID%dunode(ndof*nodLOCAL(j)+i-ndof)
             total_disp(i,j) = fstrSOLID%unode(ndof*nodLOCAL(j)+i-ndof)
           enddo

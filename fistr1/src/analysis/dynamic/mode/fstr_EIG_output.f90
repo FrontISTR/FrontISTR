@@ -21,8 +21,8 @@ contains
     real(kind=kreal), allocatable :: s(:), t(:), u(:), r(:)
     real(kind=kreal), pointer     :: mass(:), eigval(:), eigvec(:,:)
 
-    N      = hecMAT%N
-    NP     = hecMAT%NP
+    N      = hecmw_mat_get_N(hecMAT)
+    NP     = hecmw_mat_get_NP(hecMAT)
     NDOF   = hecMESH%n_dof
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
@@ -129,8 +129,8 @@ contains
     character(len=HECMW_NAME_LEN)   :: nameID
 
     nget   = fstrEIG%nget
-    NDOF   = hecMAT%NDOF
-    NPNDOF = hecMAT%NP*hecMAT%NDOF
+    NDOF   = hecmw_mat_get_NDOF(hecMAT)
+    NPNDOF = hecmw_mat_get_NP(hecMAT)*hecmw_mat_get_NDOF(hecMAT)
     !totalmpc = hecMESH%mpc%n_mpc
     !call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
 
@@ -157,7 +157,7 @@ contains
       !  endif
       !endif
 
-      call hecmw_update_R(hecMESH, X, hecMAT%NP, NDOF)
+      call hecmw_update_R(hecMESH, X, hecmw_mat_get_NP(hecMAT), NDOF)
 
       if( IRESULT.eq.1 ) then
         header = "*fstrresult"
@@ -185,7 +185,7 @@ contains
         fstrRESULT%global_val_item(1) = egval(1)
         allocate(fstrRESULT%nn_dof(1))
         allocate(fstrRESULT%node_label(1))
-        allocate(fstrRESULT%node_val_item(NDOF*hecMAT%NP))
+        allocate(fstrRESULT%node_val_item(NDOF*hecmw_mat_get_NP(hecMAT)))
         fstrRESULT%nn_dof(1) = NDOF
         fstrRESULT%node_label(1) = 'DISPLACEMENT'
         fstrRESULT%node_val_item = X
@@ -217,7 +217,7 @@ contains
     real(kind=kreal)   :: pi, angle, freq, pf(3), em(3)
     real(kind=kreal), pointer :: eigval(:)
 
-    NDOF = hecMAT%NDOF
+    NDOF = hecmw_mat_get_NDOF(hecMAT)
     nget = fstrEIG%nget
     iter = fstrEIG%iter
     PI   = 4.0d0 * datan(1.0d0)

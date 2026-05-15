@@ -473,21 +473,21 @@ contains
     type(hecmwST_matrix) :: hecMAT
 
     integer(kind=kint) :: ndof, i, is, ie, j, icol, ki, kj, ix, iy, ip, nn
-    real(kind=kreal)   :: D(ndof*ndof*hecMAT%NP)
-    real(kind=kreal)   :: AU(ndof*ndof*hecMAT%NPU)
-    real(kind=kreal)   :: AL(ndof*ndof*hecMAT%NPL)
-    real(kind=kreal)   :: x(ndof*hecMAT%NP)
-    real(kind=kreal)   :: y(ndof*hecMAT%NP)
+    real(kind=kreal)   :: D(ndof*ndof*hecmw_mat_get_NP(hecMAT))
+    real(kind=kreal)   :: AU(ndof*ndof*hecmw_mat_get_NPU(hecMAT))
+    real(kind=kreal)   :: AL(ndof*ndof*hecmw_mat_get_NPL(hecMAT))
+    real(kind=kreal)   :: x(ndof*hecmw_mat_get_NP(hecMAT))
+    real(kind=kreal)   :: y(ndof*hecmw_mat_get_NP(hecMAT))
 
     nn=ndof*ndof
 
     y=0.0d0
 
-    do i=1,hecMAT%NP
-      is=hecMAT%indexU(i-1)+1
-      ie=hecMAT%indexU(i)
+    do i=1,hecmw_mat_get_NP(hecMAT)
+      is=hecmw_mat_get_indexU_i(hecMAT, i-1)+1
+      ie=hecmw_mat_get_indexU_i(hecMAT, i)
       do j=is,ie
-        icol=hecMAT%itemU(j)
+        icol=hecmw_mat_get_itemU_i(hecMAT, j)
         do ki=1,ndof
           iy=ndof*(i-1)+ki
           do kj=1,ndof
@@ -499,11 +499,11 @@ contains
       enddo
     enddo
 
-    do i=1,hecMAT%NP
-      is=hecMAT%indexL(i-1)+1
-      ie=hecMAT%indexL(i)
+    do i=1,hecmw_mat_get_NP(hecMAT)
+      is=hecmw_mat_get_indexL_i(hecMAT, i-1)+1
+      ie=hecmw_mat_get_indexL_i(hecMAT, i)
       do j=is,ie
-        icol=hecMAT%itemL(j)
+        icol=hecmw_mat_get_itemL_i(hecMAT, j)
         do ki=1,ndof
           iy=ndof*(i-1)+ki
           do kj=1,ndof
@@ -515,7 +515,7 @@ contains
       enddo
     enddo
 
-    do i=1,hecMAT%NP
+    do i=1,hecmw_mat_get_NP(hecMAT)
       do ki=1,ndof
         iy=ndof*(i-1)+ki
         do kj=1,ndof

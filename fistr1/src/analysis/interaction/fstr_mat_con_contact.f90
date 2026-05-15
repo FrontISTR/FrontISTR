@@ -93,23 +93,23 @@ contains
     endif
 
     ! Get original list of related nodes
-    call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active_flag,list_nodeRelated_org,list_nodeRelated)
+    call hecmw_init_nodeRelated_from_org(hecmw_mat_get_NP(hecMAT),num_lagrange,is_contact_active_flag,list_nodeRelated_org,list_nodeRelated)
 
     ! Construct new list of related nodes and Lagrange multipliers
     countNon0LU_node = NPL_org + NPU_org
     countNon0LU_lagrange = 0
     if( is_contact_active_flag ) call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,contact_algo, &
-    &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
+    &  hecmw_mat_get_NP(hecMAT),fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
 
     ! Construct new matrix structure(hecMAT&hecLagMAT)
     numNon0_node = countNon0LU_node/2
     numNon0_lagrange = countNon0LU_lagrange/2
-    call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
+    call hecmw_construct_hecMAT_from_nodeRelated(hecmw_mat_get_N(hecMAT), hecmw_mat_get_NP(hecMAT), hecmw_mat_get_NDOF(hecMAT), &
     & numNon0_node, num_lagrange, list_nodeRelated, hecMAT)
-    call hecmw_construct_hecMAT_from_nodeRelated(hecMAT%N, hecMAT%NP, hecMAT%NDOF, &
+    call hecmw_construct_hecMAT_from_nodeRelated(hecmw_mat_get_N(hecMAT), hecmw_mat_get_NP(hecMAT), hecmw_mat_get_NDOF(hecMAT), &
     & numNon0_node, num_lagrange, list_nodeRelated, conMAT)
-    if( contact_algo == kcaSLagrange ) call hecmw_construct_hecLagMAT_from_nodeRelated(hecMAT%NP, &
-    & hecMAT%NDOF, num_lagrange, numNon0_lagrange, is_contact_active_flag, list_nodeRelated, hecLagMAT)
+    if( contact_algo == kcaSLagrange ) call hecmw_construct_hecLagMAT_from_nodeRelated(hecmw_mat_get_NP(hecMAT), &
+    & hecmw_mat_get_NDOF(hecMAT), num_lagrange, numNon0_lagrange, is_contact_active_flag, list_nodeRelated, hecLagMAT)
     call hecmw_finalize_nodeRelated(list_nodeRelated)
 
     ! Copy Lagrange multipliers

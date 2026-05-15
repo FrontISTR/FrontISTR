@@ -161,11 +161,11 @@ contains
 
     ! ------- hecMAT setting -------------
     call hecmw_mat_con(hecMESH, hecMAT)
-    hecMAT%NDOF = hecMESH%n_dof
+    call hecmw_mat_set_NDOF(hecMAT, hecMESH%n_dof)
     if( kstHEAT == fstrPR%solution_type ) then
       call heat_init_material (hecMESH,fstrHEAT)
       call heat_init_amplitude(hecMESH,fstrHEAT)
-      hecMAT%NDOF = 1
+      call hecmw_mat_set_NDOF(hecMAT, 1)
     endif
     call hecMAT_init( hecMAT )
   end subroutine fstr_init
@@ -264,13 +264,13 @@ contains
 
     ! loading boundary conditions etc. from fstr control file or nastran mesh file
     ! and setup parameters ...
-    svRarray(:) = hecMAT%Rarray(:)
-    svIarray(:) = hecMAT%Iarray(:)
+    svRarray(:) = hecmw_mat_get_Rarray_all(hecMAT)
+    svIarray(:) = hecmw_mat_get_Iarray_all(hecMAT)
 
     call fstr_setup( cntfileNAME, hecMESH, fstrPR, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
 
-    hecMAT%Rarray(:) = svRarray(:)
-    hecMAT%Iarray(:) = svIarray(:)
+    call hecmw_mat_set_Rarray_all(hecMAT, svRarray(:))
+    call hecmw_mat_set_Iarray_all(hecMAT, svIarray(:))
 
     call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID )
 

@@ -31,8 +31,8 @@ contains
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
     logical :: is_converge
 
-    N      = hecMAT%N
-    NP     = hecMAT%NP
+    N      = hecmw_mat_get_N(hecMAT)
+    NP     = hecmw_mat_get_NP(hecMAT)
     NDOF   = hecMESH%n_dof
     NNDOF  = N *NDOF
     NPNDOF = NP*NDOF
@@ -119,12 +119,12 @@ contains
     Q(1)%q = 0.0d0
     Tri%alpha = 0.0d0
     Tri%beta  = 0.0d0
-    hecMAT%X  = 0.0d0
+    call hecmw_mat_fill_X(hecMAT, 0.0d0)
 
     call lanczos_set_initial_value(hecMESH, hecMAT, fstrEIG, fstrEIG%eigvec, p, Q(1)%q, Tri%beta(1))
 
-    hecMAT%Iarray(98) = 1 !Assembly complete
-    hecMAT%Iarray(97) = 1 !Need numerical factorization
+    call hecmw_mat_set_Iarray(hecMAT, 98, 1)!Assembly complete
+    call hecmw_mat_set_Iarray(hecMAT, 97, 1)!Need numerical factorization
 
     if(myrank == 0)then
       write(IMSG,*)
@@ -134,7 +134,7 @@ contains
     do iter = 1, maxiter-1
       !> q = A^{-1} p
       do i = 1, NPNDOF
-        hecMAT%B(i) = p(i)
+        call hecmw_mat_set_B_i(hecMAT, i, p(i))
       enddo
 
       call solve_LINEQ(hecMESH, hecMAT)
@@ -142,7 +142,7 @@ contains
       allocate(Q(iter+1)%q(NPNDOF))
 
       do i = 1, NPNDOF
-        t(i) = hecMAT%X(i) * fstrEIG%filter(i)
+        t(i) = hecmw_mat_get_X_i(hecMAT, i) * fstrEIG%filter(i)
       enddo
 
       !> t = t - beta * q_{i-1}

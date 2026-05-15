@@ -45,24 +45,24 @@ contains
 
     !    Set residual load
     do idof=1, hecMESH%n_node*  hecMESH%n_dof
-      hecMAT%B(idof)=fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof)
+      call hecmw_mat_set_B_i(hecMAT, idof, fstrSOLID%GL(idof)-fstrSOLID%QFORCE(idof))
     end do
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
 
-    call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecMAT%B )
+    call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT) )
 
     !    Consider Uload
-    call uResidual( cstep, factor, hecMAT%B )
+    call uResidual( cstep, factor, hecmw_mat_get_B(hecMAT) )
 
     !    Consider EQUATION condition
-    call fstr_Update_NDForce_MPC( hecMESH, hecMAT%B )
+    call fstr_Update_NDForce_MPC( hecMESH, hecmw_mat_get_B(hecMAT) )
 
     !    Consider SPC condition
-    call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
-    if(present(conMAT)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, conMAT%B )
+    call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT) )
+    if(present(conMAT)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT) )
 
     !
-    call hecmw_update_R(hecMESH,hecMAT%B,hecMESH%n_node, ndof)
+    call hecmw_update_R(hecMESH,hecmw_mat_get_B(hecMAT),hecMESH%n_node, ndof)
   end subroutine fstr_Update_NDForce
 
   subroutine fstr_Update_NDForce_MPC( hecMESH, B )
@@ -184,14 +184,14 @@ contains
     integer(kind=kint) :: iter
 
     integer :: i
-    real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
+    real(kind=kreal) :: dunode_bak(hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node)
 
-    do i=1, hecMAT%ndof*hecMESH%n_node
+    do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
-      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecmw_mat_get_X_i(hecMAT, i)
     enddo
     call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    do i=1, hecMAT%ndof*hecMESH%n_node
+    do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
   end subroutine fstr_calc_residual_vector_with_X
@@ -228,11 +228,11 @@ contains
     integer :: i, i0, ndof
     if( flag=='residualForce' )then
       ndof = hecMESH%n_dof
-      call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,tmp1)
+      call hecmw_innerProduct_R(hecMESH,ndof,hecmw_mat_get_B(hecMAT),hecmw_mat_get_B(hecMAT),tmp1)
       tmp2 = 0.0d0
       i0 = hecMESH%n_node*ndof
       do i=1,hecLagMAT%num_lagrange
-        bi = hecMAT%B(i0+i)
+        bi = hecmw_mat_get_B_i(hecMAT, i0+i)
         tmp2 = tmp2 + bi*bi
       enddo
       call hecmw_allreduce_R1(hecMESH,tmp2,HECMW_SUM)
@@ -256,22 +256,23 @@ contains
     real(kind=kreal), allocatable   :: rhs_con(:)
     real(kind=kreal), pointer :: rhs_lag(:)
 
-    ndof = conMAT%ndof
-    nndof = conMAT%N * ndof
-    npndof = conMAT%NP * ndof
+    ndof = hecmw_mat_get_NDOF(conMAT)
+    nndof = hecmw_mat_get_N(conMAT) * ndof
+    npndof = hecmw_mat_get_NP(conMAT) * ndof
     num_lagrange = hecLagMAT%num_lagrange
 
     allocate(rhs_con(npndof))
     do i=1,npndof
-      rhs_con(i) = conMAT%B(i)
+      rhs_con(i) = hecmw_mat_get_B_i(conMAT, i)
     enddo
-    call hecmw_assemble_R(hecMESH, rhs_con, conMAT%NP, conMAT%NDOF)
+    call hecmw_assemble_R(hecMESH, rhs_con, hecmw_mat_get_NP(conMAT), hecmw_mat_get_NDOF(conMAT))
 
     do i=1,nndof
-      rhs_con(i) = rhs_con(i) + hecMAT%B(i)
+      rhs_con(i) = rhs_con(i) + hecmw_mat_get_B_i(hecMAT, i)
     enddo
 
-    rhs_lag => conMAT%B(npndof+1:npndof+num_lagrange)
+    rhs_lag => hecmw_mat_get_B(conMAT)
+    rhs_lag => rhs_lag(npndof+1:npndof+num_lagrange)
 
     rhsB = dot_product(rhs_con(1:nndof), rhs_con(1:nndof)) + dot_product(rhs_lag(:), rhs_lag(:))
     call hecmw_allreduce_R1(hecMESH, rhsB, hecmw_sum)
@@ -288,14 +289,14 @@ contains
     real(kind=kreal)   ::  rhsX
     integer(kind=kint) :: nndof, npndof, i
 
-    nndof = hecMAT%N * hecMAT%NDOF
-    npndof = hecMAT%NP * hecMAT%NDOF
+    nndof = hecmw_mat_get_N(hecMAT) * hecmw_mat_get_NDOF(hecMAT)
+    npndof = hecmw_mat_get_NP(hecMAT) * hecmw_mat_get_NDOF(hecMAT)
     rhsX = 0.d0
     do i=1,nndof
-      rhsX = rhsX + hecMAT%X(i) ** 2
+      rhsX = rhsX + hecmw_mat_get_X_i(hecMAT, i) ** 2
     end do
     do i=1,hecLagMAT%num_lagrange
-      rhsX = rhsX + hecMAT%X(npndof+i) ** 2
+      rhsX = rhsX + hecmw_mat_get_X_i(hecMAT, npndof+i) ** 2
     end do
     call hecmw_allreduce_R1(hecMESH, rhsX, hecmw_sum)
 
@@ -318,7 +319,7 @@ contains
     real(kind=kreal) :: factor
     real(kind=kreal) :: extenal_work, internal_work
 
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     factor = fstrSOLID%factor(2)
     potential = 0.d0
 
@@ -381,14 +382,14 @@ contains
     real(kind=kreal)   ::  potential
 
     integer :: i
-    real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
+    real(kind=kreal) :: dunode_bak(hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node)
 
-    do i=1, hecMAT%ndof*hecMESH%n_node
+    do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
-      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecmw_mat_get_X_i(hecMAT, i)
     enddo
     potential = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype)
-    do i=1, hecMAT%ndof*hecMESH%n_node
+    do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
   end function fstr_get_potential_with_X
@@ -412,20 +413,22 @@ contains
     real(kind=kreal)   :: tincr, alpha, dulen
     real(kind=kreal) :: pot(3)
     real(kind=kreal), allocatable :: dunode_bak(:)
+    real(kind=kreal), pointer :: pX(:)
 
     dulen = dsqrt(dot_product(fstrSOLID%dunode(:),fstrSOLID%dunode(:)))
     write(IMSG,*) "dulen",dulen
 
     allocate(dunode_bak(size(fstrSOLID%dunode)))
-    do i=1, hecMAT%ndof*hecMESH%n_node
+    do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
     enddo
 
     do i=-ntot,ntot
       alpha = 5.d-3*dble(i)/dble(ntot)
-      hecMAT%X(:) = alpha*fstrSOLID%dunode(:)
+      pX => hecmw_mat_get_X(hecMAT)
+      pX(:) = alpha*fstrSOLID%dunode(:)
       do j=1, size(fstrSOLID%dunode)
-        fstrSOLID%dunode(j) = dunode_bak(j)+hecMAT%X(j)
+        fstrSOLID%dunode(j) = dunode_bak(j)+hecmw_mat_get_X_i(hecMAT, j)
       enddo
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
@@ -437,7 +440,7 @@ contains
     do i=1, size(fstrSOLID%dunode)
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
-    hecMAT%X(:) = 0.d0
+    call hecmw_mat_fill_X(hecMAT, 0.d0)
     call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
   end subroutine
 

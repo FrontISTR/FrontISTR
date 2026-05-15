@@ -115,14 +115,14 @@ contains
 
       do j = 1, nn
         !$omp atomic
-        hecMAT%B( nodLOCAL(j) ) = hecMAT%B( nodLOCAL(j) ) - vect(j)
+        call hecmw_mat_set_B_i(hecMAT, nodLOCAL(j), hecmw_mat_get_B_i(hecMAT, nodLOCAL(j)) - vect(j))
       enddo
     enddo
     !$omp end do
     !$omp end parallel
 
     if( fstrHEAT%WL_tot>0 ) then
-      allocate( Bbak(size(hecMAT%B)) )
+      allocate( Bbak(size(hecmw_mat_get_B(hecMAT))) )
 
       do ig0 = 1, fstrHEAT%WL_tot
         ig = fstrHEAT%weldline(ig0)%egrpid
@@ -184,7 +184,7 @@ contains
 
         if( vol>0 ) then
           Bbak = Bbak/vol
-          hecMAT%B = hecMAT%B + Bbak
+          call hecmw_mat_copy_B(hecMAT, hecmw_mat_get_B(hecMAT) + Bbak)
         endif
       enddo
 

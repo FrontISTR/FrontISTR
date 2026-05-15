@@ -39,7 +39,7 @@ contains
     ! ----- initialize
     call hecmw_mat_clear( hecMAT )
 
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     tt(:) = 0.d0
 
     do itype= 1, hecMESH%n_elem_type

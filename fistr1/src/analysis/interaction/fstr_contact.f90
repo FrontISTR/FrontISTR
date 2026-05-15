@@ -167,7 +167,7 @@ contains
     integer(kind=kint) :: i, grpid, ndof
     real(kind=kreal), pointer :: diag(:)
     
-    ndof = hecMAT%NDOF
+    ndof = hecmw_mat_get_NDOF(hecMAT)
     
     ! Extract diagonal components once (efficient, called only once)
     diag => hecmw_mat_diag(hecMAT)

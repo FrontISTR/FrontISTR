@@ -45,8 +45,8 @@ contains
     integer(kind=kint), intent(in)        :: ctAlgo    !< contact algorithm
     type (hecmwST_matrix)                 :: conMAT    !< contact matrix
 
-    hecMAT%NDOF = hecMESH%n_dof
-    ndof = hecMAT%ndof
+    call hecmw_mat_set_NDOF(hecMAT, hecMESH%n_dof)
+    ndof = hecmw_mat_get_NDOF(hecMAT)
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
@@ -65,8 +65,8 @@ contains
       call hecmw_mat_clear_b(conMAT)
       call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
       !    Consider SPC condition
-      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
-      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
+      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
     endif
 
   end subroutine fstr_init_Newton
@@ -87,9 +87,9 @@ contains
 
     iterStatus = kitrContinue
 
-    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
+    call hecmw_InnerProduct_R(hecMESH, ndof, hecmw_mat_get_B(hecMAT), hecmw_mat_get_B(hecMAT), res)
     res = sqrt(res)
-    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%X, hecMAT%X, xnrm)
+    call hecmw_InnerProduct_R(hecMESH, ndof, hecmw_mat_get_X(hecMAT), hecmw_mat_get_X(hecMAT), xnrm)
     xnrm = sqrt(xnrm)
     call hecmw_innerProduct_R(hecMESH, ndof, fstrSOLID%QFORCE, fstrSOLID%QFORCE, qnrm)
     qnrm = sqrt(qnrm)
@@ -188,13 +188,13 @@ contains
       call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
 
       !----- SOLVE [Kt]{du}={R}
-      if( sub_step == restrt_step_num .and. iter == 1 ) hecMATmpc%Iarray(98) = 1
+      if( sub_step == restrt_step_num .and. iter == 1 ) call hecmw_mat_set_Iarray(hecMATmpc, 98, 1)
       if( iter == 1 ) then
-        hecMATmpc%Iarray(97) = 2   !Force numerical factorization
+        call hecmw_mat_set_Iarray(hecMATmpc, 97, 2)!Force numerical factorization
       else
-        hecMATmpc%Iarray(97) = 1   !Need numerical factorization
+        call hecmw_mat_set_Iarray(hecMATmpc, 97, 1)!Need numerical factorization
       endif
-      hecMATmpc%X = 0.0d0
+      call hecmw_mat_fill_X(hecMATmpc, 0.0d0)
       call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
       call solve_LINEQ(hecMESHmpc,hecMATmpc)
       call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
@@ -204,7 +204,7 @@ contains
       !       \delta u^k => solver's solution
       !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
       do i = 1, hecMESH%n_node*ndof
-        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecmw_mat_get_X_i(hecMAT, i)
       enddo
 
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
@@ -282,7 +282,7 @@ contains
       call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
         call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
-      elseif( hecMAT%Iarray(99)==4 ) then
+      elseif( hecmw_mat_get_Iarray(hecMAT, 99)==4 ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
         call hecmw_abort(hecmw_comm_get_comm())
@@ -290,7 +290,7 @@ contains
       call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, .true.)
     endif
 
-    hecMAT%X = 0.0d0
+    call hecmw_mat_fill_X(hecMAT, 0.0d0)
 
     stepcnt = 0
     allocate(coord(hecMESH%n_node*ndof))
@@ -321,7 +321,7 @@ contains
           call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
           call hecmw_mat_clear( conMAT )
-          conMAT%X = 0.0d0
+          call hecmw_mat_fill_X(conMAT, 0.0d0)
 
           ! ----- Contact
           if( is_first_Stiffmatrixcall ) then
@@ -337,18 +337,18 @@ contains
 
           !----- SOLVE [Kt]{du}={R}
           ! ----  For Parallel Contact with Multi-Partition Domains
-          hecMAT%X = 0.0d0
+          call hecmw_mat_fill_X(hecMAT, 0.0d0)
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
-          call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMESH%n_dof)
+          call hecmw_update_R (hecMESH, hecmw_mat_get_X(hecMAT), hecmw_mat_get_NP(hecMAT), hecMESH%n_dof)
 
           ! ----- update the small displacement and the displacement for 1step
           !       \delta u^k => solver's solution
           !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
           do i = 1, hecMESH%n_node*ndof
-            fstrSOLID%dunode(i) = fstrSOLID%dunode(i)+hecMAT%X(i)
+            fstrSOLID%dunode(i) = fstrSOLID%dunode(i)+hecmw_mat_get_X_i(hecMAT, i)
           enddo
 
           ! ----- update the strain, stress, and internal force
@@ -367,8 +367,8 @@ contains
           call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
           !    Consider SPC condition
-          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
-          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
 
           !res = fstr_get_residual(hecMAT%B, hecMESH)
           res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
@@ -418,8 +418,8 @@ contains
         call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
 
       enddo
       ! ----- end of augmentation loop
@@ -463,8 +463,8 @@ contains
         call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
       endif
 
     enddo loopFORcontactAnalysis
@@ -520,7 +520,7 @@ contains
     n_node_global = hecMESH%nn_internal
     call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
-    if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH) ) then
+    if( hecmw_mat_get_Iarray(hecMAT, 99) == 4 .and. .not. fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH) ) then
       write(*, *) ' This type of direct solver is not yet available in such case ! '
       write(*, *) ' Please use intel MKL direct solver !'
       call  hecmw_abort( hecmw_comm_get_comm() )
@@ -536,7 +536,7 @@ contains
         call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
         call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
-      elseif( hecMAT%Iarray(99)==4 ) then
+      elseif( hecmw_mat_get_Iarray(hecMAT, 99)==4 ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
         call hecmw_abort(hecmw_comm_get_comm())
@@ -569,7 +569,7 @@ contains
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
           call hecmw_mat_clear( conMAT )
-          conMAT%X = 0.0d0
+          call hecmw_mat_fill_X(conMAT, 0.0d0)
 
         if( fstr_is_contact_active() ) then
           call fstr_AddContactStiffness(cstep,ctAlgo,iter,hecMESH,conMAT,hecLagMAT,fstrSOLID)
@@ -578,11 +578,11 @@ contains
         ! ----- Set Boundary condition
         call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, conMAT)
 
-        nndof = hecMAT%N*hecMAT%ndof
+        nndof = hecmw_mat_get_N(hecMAT)*hecmw_mat_get_NDOF(hecMAT)
 
         !----- SOLVE [Kt]{du}={R}
         ! ----  For Parallel Contact with Multi-Partition Domains
-        hecMAT%X = 0.0d0
+        call hecmw_mat_fill_X(hecMAT, 0.0d0)
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         q_residual = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
         call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
@@ -599,7 +599,7 @@ contains
 
         x_residual = fstr_get_x_norm_contact(hecMAT,hecLagMAT,hecMESH)
 
-        call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%X,hecMAT%X,resX)
+        call hecmw_innerProduct_R(hecMESH,ndof,hecmw_mat_get_X(hecMAT),hecmw_mat_get_X(hecMAT),resX)
         resX = sqrt(resX)/n_node_global
 
         if( hecMESH%my_rank==0 ) then
@@ -610,13 +610,13 @@ contains
 
         ! ----- update the small displacement and the displacement for 1step
         do i = 1, hecMESH%n_node*ndof
-          fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
+          fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecmw_mat_get_X_i(hecMAT, i)
         enddo
 
         ! ----- update the Lagrange multipliers
         if( fstr_is_contact_active() ) then
           do i = 1, hecLagMAT%num_lagrange
-            hecLagMAT%lagrange(i) = hecLagMAT%lagrange(i)+hecMAT%X(hecMESH%n_node*ndof+i)
+            hecLagMAT%lagrange(i) = hecLagMAT%lagrange(i)+hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+i)
           enddo
         endif
 
@@ -637,8 +637,8 @@ contains
           call hecmw_mat_clear_b( conMAT )
           call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
           !    Consider SPC condition
-          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
-          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
         endif
 
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
@@ -687,7 +687,7 @@ contains
 
       call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
 
-      if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_contact_active() ) then
+      if( hecmw_mat_get_Iarray(hecMAT, 99) == 4 .and. .not. fstr_is_contact_active() ) then
         write(*, *) ' This type of direct solver is not yet available in such case ! '
         write(*, *) ' Please use intel MKL direct solver !'
         call  hecmw_abort( hecmw_comm_get_comm() )
@@ -727,8 +727,8 @@ contains
           call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
       endif
 
     enddo loopFORcontactAnalysis
@@ -745,7 +745,7 @@ contains
     call fstr_update_contact_TangentForce( cstep, fstrSOLID )
     if( fstrSOLID%n_embeds > 0 .and. paraContactFlag ) then
       call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%EMBED_NFORCE,1)
-      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
+      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT) )
     endif
 
     deallocate(coord)

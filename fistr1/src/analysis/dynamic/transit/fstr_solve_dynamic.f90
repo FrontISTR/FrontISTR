@@ -162,7 +162,7 @@ contains
     infoCTChange%contactNode_previous = 0
 
     if(associated(g_InitialCnd))then
-      ndof = HECMAT%NDOF
+      ndof = hecmw_mat_get_NDOF(HECMAT)
       do j = 1, size(g_InitialCnd)
         if(g_InitialCnd(j)%cond_name == "velocity")then
           do i= 1, hecMESH%n_node
@@ -201,7 +201,7 @@ contains
       endif
       restrt_step_num = restrt_step_num + 1
       fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
-      hecMAT%Iarray(98) = 1
+      call hecmw_mat_set_Iarray(hecMAT, 98, 1)
     end if
 
     if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis

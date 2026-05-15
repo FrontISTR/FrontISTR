@@ -93,9 +93,9 @@ contains
         do ip = 1, nn
           inod = nodLOCAL(ip)
           !$omp atomic
-          hecMAT%D(inod) = hecMAT%D(inod) + lumped(ip) / delta_time
+          call hecmw_mat_set_D_i(hecMAT, inod, hecmw_mat_get_D_i(hecMAT, inod) + lumped(ip) / delta_time)
           !$omp atomic
-          hecMAT%B(inod) = hecMAT%B(inod) + lumped(ip)*temp(ip) / delta_time
+          call hecmw_mat_set_B_i(hecMAT, inod, hecmw_mat_get_B_i(hecMAT, inod) + lumped(ip)*temp(ip) / delta_time)
         enddo
       enddo
       !$omp end do
