@@ -35,6 +35,9 @@ contains
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< hecmw mesh
     type(fstr_solid), intent(inout)      :: fstrSOLID !< fstr_solid
     type(fstr_param), intent(inout)      :: fstrPARAM !< analysis control parameters
+    real(kind=kreal), pointer            :: pB(:)
+
+    pB => hecmw_mat_get_B(hecMAT)
 
     ! Initialize the global load vector
     fstrSOLID%GL(:) = 0.0d0
@@ -60,7 +63,7 @@ contains
     call process_thermal_loads(cstep, ctime, hecMESH, hecMAT, fstrSOLID)
     
     ! Process spring forces
-    call fstr_Update_NDForce_spring(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
+    call fstr_Update_NDForce_spring(cstep, hecMESH, fstrSOLID, pB)
     
   end subroutine fstr_ass_load
 
@@ -368,7 +371,9 @@ contains
     real(kind=kreal)   :: factor, fval, pa1
     real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20), tt0(20), coords(3,3), vect(60)
     real(kind=kreal)   :: local_coords(3,3)  ! Local copy for coordinate transformation
-    
+    real(kind=kreal), pointer :: pB(:)
+
+    pB => hecmw_mat_get_B(hecMAT)
     ndof = hecMESH%n_dof
     
     if (fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0) then
@@ -474,7 +479,7 @@ contains
           ! Calculate thermal load based on element type
           call calculate_thermal_load(ic_type, nn, xx, yy, zz, tt, tt0, isect, ndof, &
                                      hecMESH, fstrSOLID, icel, vect, cdsys_ID, local_coords, &
-                                     iset, pa1, iwk, hecmw_mat_get_B(hecMAT))
+                                     iset, pa1, iwk, pB)
         enddo
       enddo
     endif
