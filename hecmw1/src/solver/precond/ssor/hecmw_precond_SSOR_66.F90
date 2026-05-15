@@ -281,7 +281,7 @@ contains
     real(kind=kreal) :: X1, X2, X3, X4, X5, X6
     real(kind=kreal) :: SW1, SW2, SW3, SW4, SW5, SW6
 
-    ! added for turning >>>
+    ! added for tuning >>>
     integer(kind=kint), parameter :: numOfBlockPerThread = 100
     integer(kind=kint), save :: numOfThread = 1, numOfBlock
     integer(kind=kint), save, allocatable :: icToBlockIndex(:)
@@ -337,14 +337,14 @@ contains
       isFirst = .false.
     endif
 #endif
-    ! <<< added for turning
+    ! <<< added for tuning
 
+#ifndef _OPENACC
     !call start_collection("loopInPrecond66")
 
     !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
     !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
-#ifndef _OPENACC
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
       !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
@@ -499,12 +499,12 @@ contains
     enddo ! ic
 #ifndef _OPENACC
     !$omp end parallel
-#endif
 
     !OCL END_CACHE_SUBSECTOR
     !OCL END_CACHE_SECTOR_SIZE
 
     !call stop_collection("loopInPrecond66")
+#endif
 
   end subroutine hecmw_precond_SSOR_66_apply
 
