@@ -18,7 +18,10 @@ contains
     integer(kind=kint) :: itype, iS, iE, ic_type, icel, isect, IMAT, in0, nn
     real(kind=kreal) :: temp(20), lumped(120), mass(20*6, 20*6), ecoord(3,20)
     real(kind=kreal) :: delta_time, surf, THICK, ALPHA, BETA
+    real(kind=kreal), pointer :: pD(:), pB(:)
 
+    pD => hecmw_mat_get_D(hecMAT)
+    pB => hecmw_mat_get_B(hecMAT)
     beta = fstrHEAT%beta
 
     do itype = 1, hecMESH%n_elem_type
@@ -32,7 +35,7 @@ contains
 
       !$omp parallel default(none), &
         !$omp&  private(icel,isect,IMAT,nn,temp,in0,i,j,nodLOCAL,ecoord,in,thick,surf,inod,lumped,mass), &
-        !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ic_type,hecMAT,fstrHEAT,delta_time)
+        !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ic_type,hecMAT,fstrHEAT,delta_time,pD,pB)
       !$omp do
       do icel = iS, iE
         if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
@@ -93,9 +96,9 @@ contains
         do ip = 1, nn
           inod = nodLOCAL(ip)
           !$omp atomic
-          call hecmw_mat_set_D_i(hecMAT, inod, hecmw_mat_get_D_i(hecMAT, inod) + lumped(ip) / delta_time)
+          pD(inod) = pD(inod) + lumped(ip) / delta_time
           !$omp atomic
-          call hecmw_mat_set_B_i(hecMAT, inod, hecmw_mat_get_B_i(hecMAT, inod) + lumped(ip)*temp(ip) / delta_time)
+          pB(inod) = pB(inod) + lumped(ip)*temp(ip) / delta_time
         enddo
       enddo
       !$omp end do

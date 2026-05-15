@@ -28,11 +28,13 @@ contains
     real(kind=kreal)   :: vect(20), ss(2000)
     integer(kind=kint) :: ig0, ig, iS0, iE0, nodLocal(20)
     real(kind=kreal), allocatable :: Bbak(:)
+    real(kind=kreal), pointer :: pB(:)
 
+    pB => hecmw_mat_get_B(hecMAT)
     !C
     !$omp parallel default(none), &
       !$omp&  private(k,icel,ic_type,isect,isuf,iamp,QQ,val,nn,is,j,nodLOCAL,xx,yy,zz,asect,vect,thick), &
-      !$omp&  shared(fstrSOLID,fstrHEAT,CTIME,hecMAT,hecMESH)
+      !$omp&  shared(fstrSOLID,fstrHEAT,CTIME,hecMAT,hecMESH,pB)
     !$omp do
     do k = 1, fstrHEAT%Q_SUF_tot
 
@@ -115,7 +117,7 @@ contains
 
       do j = 1, nn
         !$omp atomic
-        call hecmw_mat_set_B_i(hecMAT, nodLOCAL(j), hecmw_mat_get_B_i(hecMAT, nodLOCAL(j)) - vect(j))
+        pB(nodLOCAL(j)) = pB(nodLOCAL(j)) - vect(j)
       enddo
     enddo
     !$omp end do

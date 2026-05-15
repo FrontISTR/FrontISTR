@@ -28,7 +28,9 @@ contains
     real(kind=kreal)   :: xx(20), yy(20), zz(20), tt(20)
     real(kind=kreal)   :: term1(64), term2(20), stiff(8,8)
     integer(kind=kint) :: nodLocal(20), nsuf(8), nodSurf(8)
+    real(kind=kreal), pointer :: pB(:)
 
+    pB => hecmw_mat_get_B(hecMAT)
     TZERO = hecMESH%zero_temp
     !C
     do k = 1, fstrHEAT%R_SUF_tot
@@ -125,7 +127,7 @@ contains
       !C
       do ip = 1, mm
         !$omp atomic
-        call hecmw_mat_set_B_i(hecMAT, nodSurf(ip), hecmw_mat_get_B_i(hecMAT, nodSurf(ip)) - term2(ip))
+        pB(nodSurf(ip)) = pB(nodSurf(ip)) - term2(ip)
       end do
       !C
     enddo

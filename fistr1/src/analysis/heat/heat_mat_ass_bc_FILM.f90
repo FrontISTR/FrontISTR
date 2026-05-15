@@ -29,12 +29,14 @@ contains
     real(kind=kreal)   :: xx(20), yy(20), zz(20)
     real(kind=kreal)   :: term1(64), term2(20), stiff(8,8)
     integer(kind=kint) :: nodLocal(20), nsuf(8), nodSurf(8)
+    real(kind=kreal), pointer :: pB(:)
 
+    pB => hecmw_mat_get_B(hecMAT)
 !C
     !$omp parallel default(none), &
       !$omp&  private(k,icel,isuf,iam1,iam2,QQ,HH,SINK,ic_type,isect,nn,is,j,nodLocal, &
       !$omp&  xx,yy,zz,thick,mm,term1,term2,stiff,nsuf,nodSurf,ip,inod,jnod,ic,isU,ieU,ik,jp,isL,ieL), &
-      !$omp&  shared(fstrSOLID,fstrHEAT,CTIME,hecMAT,hecMESH)
+      !$omp&  shared(fstrSOLID,fstrHEAT,CTIME,hecMAT,hecMESH,pB)
     !$omp do
     do k = 1, fstrHEAT%H_SUF_tot
       icel    = fstrHEAT%H_SUF_elem(k)
@@ -135,7 +137,7 @@ contains
 
       do ip = 1, mm
         !$omp atomic
-        call hecmw_mat_set_B_i(hecMAT, nodSurf(ip), hecmw_mat_get_B_i(hecMAT, nodSurf(ip)) - term2(ip))
+        pB(nodSurf(ip)) = pB(nodSurf(ip)) - term2(ip)
       end do
 
       !C
