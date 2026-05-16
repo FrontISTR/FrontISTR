@@ -43,7 +43,8 @@ contains
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
-    fstrSOLID%REACTION = 0.d0
+    ! Note: fstrSOLID%REACTION is updated in fstr_Update_REACTION_SPC after fstr_UpdateNewton,
+    ! so that the output reflects the converged QFORCE of the current (sub)step.
 
     flag_u = 1
     !C=============================C
@@ -111,9 +112,6 @@ contains
                 call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
-
-            !for output reaction force
-            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           enddo
         enddo
 
@@ -171,9 +169,6 @@ contains
                 call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
-
-            !for output reaction force
-            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           enddo
         enddo
       enddo
@@ -207,9 +202,6 @@ contains
           do idof = idofS, idofE
             hecMAT%B        (NDOF*in-(NDOF-idof)) = RHS
             fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo
@@ -301,7 +293,7 @@ contains
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
-    fstrSOLID%REACTION = 0.d0
+    ! Note: fstrSOLID%REACTION is updated in fstr_Update_REACTION_SPC after fstr_UpdateNewton.
 
     flag_u = 1
 
@@ -327,9 +319,6 @@ contains
           do idof = idofS, idofE
             hecMAT%B(NDOF*in-(NDOF-idof)) = RHS*fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
         !    fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo

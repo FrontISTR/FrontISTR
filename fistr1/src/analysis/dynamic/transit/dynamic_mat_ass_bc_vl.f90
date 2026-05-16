@@ -109,9 +109,6 @@ contains
                 call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           enddo
         enddo
       enddo
@@ -146,9 +143,6 @@ contains
               + c1*RHS0
             hecMAT%B        (NDOF*in-(NDOF-idof)) = RHS
             fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo
@@ -274,9 +268,6 @@ contains
               + c1*RHS0
             hecMAT%B(NDOF*in-(NDOF-idof)) = RHS* fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
        !     fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo

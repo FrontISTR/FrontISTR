@@ -14,6 +14,7 @@ module fstr_dynamic_nlexplicit
   use m_dynamic_mat_ass_bc_vl
   use m_dynamic_mat_ass_load
   use m_fstr_Update
+  use m_fstr_Residual
   use m_fstr_Restart
   use m_dynamic_mat_ass_couple
   use m_fstr_rcap_io
@@ -441,6 +442,9 @@ contains
 
     ! ----- update strain, stress, and internal force
     call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYN%t_curr, fstrDYN%t_delta, 0, fstrDYN%strainEnergy )
+
+    ! ----- update reaction force at constrained DOFs using converged QFORCE
+    call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
 
     do j = 1 ,ndof*nnod
       fstrSOLID%unode(j) = fstrSOLID%unode(j) + fstrSOLID%dunode(j)

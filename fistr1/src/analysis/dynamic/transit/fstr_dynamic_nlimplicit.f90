@@ -495,6 +495,9 @@ contains
         call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, t_curr, &
           &   t_delta,iter, fstrDYNAMIC%strainEnergy )
 
+        ! ----- update reaction force at constrained DOFs using converged QFORCE
+        call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
+
         if(.not. fstrPARAM%nlgeom) exit
 
         ! ----- update the Lagrange multipliers
