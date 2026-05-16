@@ -57,8 +57,7 @@ contains
   subroutine hecmw_precond_SSOR_33_setup(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint ) :: NPL, NPU, NPCL, NPCU
-    real   (kind=kreal), allocatable :: CD(:)
+    integer(kind=kint ) :: NPL, NPU
     integer(kind=kint ) :: NCOLOR_IN
     real   (kind=kreal) :: SIGMA_DIAG
     real   (kind=kreal) :: ALUtmp(3,3), PW(3)
