@@ -566,13 +566,12 @@ contains
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
           stop
         endif
-        ! For DYNAMIC fixed-increment: timing is always governed by !DYNAMIC, not !STEP defaults.
+        ! For DYNAMIC fixed-increment: keep the !DYNAMIC time increment while preserving !STEP duration.
         ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
-        ! Only override initdt/elapsetime/mindt/maxdt; keep num_substep as-is (may be set via SUBSTEPS=).
+        ! Only override initdt/mindt/maxdt; keep elapsetime and num_substep as-is.
         if( p%PARAM%solution_type==kstDYNAMIC .and. &
           & fstrSOLID%step_ctrl(c_istep)%inc_type == stepFixedInc ) then
           fstrSOLID%step_ctrl(c_istep)%initdt      = fstrDYNAMIC%t_delta
-          fstrSOLID%step_ctrl(c_istep)%elapsetime  = dble(fstrDYNAMIC%n_step) * fstrDYNAMIC%t_delta
           fstrSOLID%step_ctrl(c_istep)%mindt       = fstrDYNAMIC%t_delta
           fstrSOLID%step_ctrl(c_istep)%maxdt       = fstrDYNAMIC%t_delta
         endif
