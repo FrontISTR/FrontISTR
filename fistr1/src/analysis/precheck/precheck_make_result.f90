@@ -266,19 +266,23 @@ contains
         work_e(ie) = 0.0d0
       endif
     enddo
-    call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, 'MATERIAL_ID', work_e)
+    label = 'MATERIAL_ID'
+    call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, label, work_e)
 
     ! --- SECTION_ID ---
     do ie = 1, hecMESH%n_elem
       work_e(ie) = dble(hecMESH%section_ID(ie))
     enddo
-    call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, 'SECTION_ID', work_e)
+    label = 'SECTION_ID'
+    call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, label, work_e)
 
     ! --- VOLUME ---
-    call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, 'VOLUME', elem_vol)
+    label = 'VOLUME'
+    call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, label, elem_vol)
 
     ! --- ASPECT_RATIO ---
-    call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, 'ASPECT_RATIO', elem_asp)
+    label = 'ASPECT_RATIO'
+    call hecmw_result_add(HECMW_RESULT_DTYPE_ELEM, 1, label, elem_asp)
 
     ! --- WRITE ---
     nameID = 'fstrRES'
