@@ -48,8 +48,7 @@ contains
   subroutine hecmw_precond_SSOR_22_setup(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint ) :: NPL, NPU, NPCL, NPCU
-    real   (kind=kreal), allocatable :: CD(:)
+    integer(kind=kint ) :: NPL, NPU
     integer(kind=kint ) :: NCOLOR_IN
     real   (kind=kreal) :: SIGMA_DIAG
     real   (kind=kreal) :: ALUtmp(2,2), PW(2)
@@ -197,7 +196,7 @@ contains
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
     real(kind=kreal) :: SW(2), X(2)
 
-    ! added for turning >>>
+    ! added for tuning >>>
     integer(kind=kint), parameter :: numOfBlockPerThread = 100
     integer(kind=kint), save :: numOfThread = 1, numOfBlock
     integer(kind=kint), save, allocatable :: icToBlockIndex(:)
@@ -253,14 +252,14 @@ contains
       isFirst = .false.
     endif
 #endif
-    ! <<< added for turning
+    ! <<< added for tuning
 
+#ifndef _OPENACC
     !call start_collection("loopInPrecond33")
 
     !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
     !OCL CACHE_SUBSECTOR_ASSIGN(ZP)
 
-#ifndef _OPENACC
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
       !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
@@ -356,12 +355,12 @@ contains
     enddo ! ic
 #ifndef _OPENACC
     !$omp end parallel
-#endif
 
     !OCL END_CACHE_SUBSECTOR
     !OCL END_CACHE_SECTOR_SIZE
 
     !call stop_collection("loopInPrecond33")
+#endif
 
   end subroutine hecmw_precond_SSOR_22_apply
 
