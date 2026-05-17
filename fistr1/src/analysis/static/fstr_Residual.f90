@@ -40,8 +40,10 @@ contains
     !    Local variables
     integer(kind=kint) :: ndof, idof
     real(kind=kreal)   :: factor
+    real(kind=kreal), pointer :: pB(:), pCB(:)
 
     factor = fstrSOLID%factor(2)
+    pB => hecmw_mat_get_B(hecMAT)
 
     !    Set residual load
     do idof=1, hecMESH%n_node*  hecMESH%n_dof
@@ -49,20 +51,23 @@ contains
     end do
     ndof = hecmw_mat_get_NDOF(hecMAT)
 
-    call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT) )
+    call fstr_Update_NDForce_spring( cstep, hecMESH, fstrSOLID, pB )
 
     !    Consider Uload
-    call uResidual( cstep, factor, hecmw_mat_get_B(hecMAT) )
+    call uResidual( cstep, factor, pB )
 
     !    Consider EQUATION condition
-    call fstr_Update_NDForce_MPC( hecMESH, hecmw_mat_get_B(hecMAT) )
+    call fstr_Update_NDForce_MPC( hecMESH, pB )
 
     !    Consider SPC condition
-    call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT) )
-    if(present(conMAT)) call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT) )
+    call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, pB )
+    if(present(conMAT)) then
+      pCB => hecmw_mat_get_B(conMAT)
+      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, pCB )
+    endif
 
     !
-    call hecmw_update_R(hecMESH,hecmw_mat_get_B(hecMAT),hecMESH%n_node, ndof)
+    call hecmw_update_R(hecMESH, pB, hecMESH%n_node, ndof)
   end subroutine fstr_Update_NDForce
 
   subroutine fstr_Update_NDForce_MPC( hecMESH, B )

@@ -44,6 +44,7 @@ contains
     integer(kind=kint), intent(inout)     :: ndof
     integer(kind=kint), intent(in)        :: ctAlgo    !< contact algorithm
     type (hecmwST_matrix)                 :: conMAT    !< contact matrix
+    real(kind=kreal), pointer             :: pB(:), pCB(:)
 
     call hecmw_mat_set_NDOF(hecMAT, hecMESH%n_dof)
     ndof = hecmw_mat_get_NDOF(hecMAT)
@@ -65,8 +66,10 @@ contains
       call hecmw_mat_clear_b(conMAT)
       call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
       !    Consider SPC condition
-      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
-      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
+      pB => hecmw_mat_get_B(hecMAT)
+      pCB => hecmw_mat_get_B(conMAT)
+      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pB)
+      call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pCB)
     endif
 
   end subroutine fstr_init_Newton
@@ -265,6 +268,7 @@ contains
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
     logical            :: is_first_Stiffmatrixcall
+    real(kind=kreal), pointer :: pB(:), pCB(:), pX(:)
 
 
     ! sum of n_node among all subdomains (to be used to calc res)
@@ -342,8 +346,8 @@ contains
           call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
-          call hecmw_update_R (hecMESH, hecmw_mat_get_X(hecMAT), hecmw_mat_get_NP(hecMAT), hecMESH%n_dof)
-
+          pX => hecmw_mat_get_X(hecMAT)
+          call hecmw_update_R (hecMESH, pX, hecmw_mat_get_NP(hecMAT), hecMESH%n_dof)
           ! ----- update the small displacement and the displacement for 1step
           !       \delta u^k => solver's solution
           !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
@@ -367,8 +371,10 @@ contains
           call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
           !    Consider SPC condition
-          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
-          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
+          pB => hecmw_mat_get_B(hecMAT)
+          pCB => hecmw_mat_get_B(conMAT)
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pB)
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pCB)
 
           !res = fstr_get_residual(hecMAT%B, hecMESH)
           res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
@@ -418,8 +424,10 @@ contains
         call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
+        pB => hecmw_mat_get_B(hecMAT)
+        pCB => hecmw_mat_get_B(conMAT)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pB)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pCB)
 
       enddo
       ! ----- end of augmentation loop
@@ -463,8 +471,10 @@ contains
         call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
+        pB => hecmw_mat_get_B(hecMAT)
+        pCB => hecmw_mat_get_B(conMAT)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pB)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pCB)
       endif
 
     enddo loopFORcontactAnalysis
@@ -513,6 +523,7 @@ contains
     real(kreal)        :: q_residual,x_residual
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
+    real(kind=kreal), pointer :: pB(:), pCB(:)
 
     ctAlgo = fstrPARAM%contact_algo
 
@@ -637,8 +648,10 @@ contains
           call hecmw_mat_clear_b( conMAT )
           call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
           !    Consider SPC condition
-          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
-          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
+          pB => hecmw_mat_get_B(hecMAT)
+          pCB => hecmw_mat_get_B(conMAT)
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pB)
+          call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pCB)
         endif
 
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
@@ -727,8 +740,10 @@ contains
           call hecmw_mat_clear_b( conMAT )
         call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
         !    Consider SPC condition
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT))
-        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(conMAT))
+        pB => hecmw_mat_get_B(hecMAT)
+        pCB => hecmw_mat_get_B(conMAT)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pB)
+        call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, pCB)
       endif
 
     enddo loopFORcontactAnalysis
@@ -745,7 +760,8 @@ contains
     call fstr_update_contact_TangentForce( cstep, fstrSOLID )
     if( fstrSOLID%n_embeds > 0 .and. paraContactFlag ) then
       call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%EMBED_NFORCE,1)
-      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecmw_mat_get_B(hecMAT) )
+      pB => hecmw_mat_get_B(hecMAT)
+      call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, pB )
     endif
 
     deallocate(coord)

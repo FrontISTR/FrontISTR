@@ -368,6 +368,7 @@ contains
     integer(kind=kint) :: max_iter_contact, count_step
     integer(kind=kint) :: stepcnt
     real(kind=kreal)   :: maxDLag, converg_dlag
+    real(kind=kreal), pointer :: pX(:)
 
     integer(kind=kint) :: n_node_global
     integer(kind=kint) :: contact_changed_global
@@ -611,7 +612,8 @@ contains
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
 
           ! ----- update external nodal displacement increments
-          call hecmw_update_R (hecMESH, hecmw_mat_get_X(hecMAT), hecmw_mat_get_NP(hecMAT), hecmw_mat_get_NDOF(hecMAT))
+          pX => hecmw_mat_get_X(hecMAT)
+          call hecmw_update_R (hecMESH, pX, hecmw_mat_get_NP(hecMAT), hecmw_mat_get_NDOF(hecMAT))
 
           ! ----- update the strain, stress, and internal force
           do j=1,hecMESH%n_node*ndof
