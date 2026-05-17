@@ -79,7 +79,7 @@ int HECMW_result_write_by_name(char *name_ID) {
            HECMW_ctrl_get_result_file(name_ID, ResIO.istep, &fg_text)) == NULL)
     return -1;
 
-  ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, ResIO.istep);
+  ret = snprintf(filename, sizeof(filename), "%s.%d", basename, ResIO.istep);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
 
@@ -102,7 +102,7 @@ int HECMW_result_write_ST_by_name(char *name_ID,
            HECMW_ctrl_get_result_file(name_ID, ResIO.istep, &fg_text)) == NULL)
     return -1;
 
-  ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, ResIO.istep);
+  ret = snprintf(filename, sizeof(filename), "%s.%d", basename, ResIO.istep);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
 
@@ -139,13 +139,13 @@ int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
     strncpy(suffix, dot, HECMW_FILENAME_LEN);
     suffix[HECMW_FILENAME_LEN] = '\0';
     *dot = '\0';
-    snprintf(dot, HECMW_FILENAME_LEN - (dot - base_mod), "%s%s", addfname, suffix);
+    snprintf(dot, sizeof(base_mod) - (dot - base_mod), "%s%s", addfname, suffix);
   } else {
     strncat(base_mod, addfname, HECMW_FILENAME_LEN - strlen(base_mod));
   }
 
   myrank = HECMW_comm_get_rank();
-  ret    = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d.%d", base_mod,
+  ret    = snprintf(filename, sizeof(filename), "%s.%d.%d", base_mod,
                  myrank, ResIO.istep);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
@@ -168,7 +168,7 @@ int HECMW_result_checkfile_by_name(char *name_ID, int i_step) {
                                              &fg_text)) == NULL)
     return -1;
 
-  ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, i_step);
+  ret = snprintf(filename, sizeof(filename), "%s.%d", basename, i_step);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
 
@@ -201,7 +201,7 @@ struct hecmwST_result_data *HECMW_result_read_by_name(char *name_ID,
                                              &fg_text)) == NULL)
     return NULL;
 
-  ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, i_step);
+  ret = snprintf(filename, sizeof(filename), "%s.%d", basename, i_step);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return NULL;
 

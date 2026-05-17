@@ -516,7 +516,7 @@ static int read_input(int msgno_invalid_token) {
       set_err(HECMW_IO_E0002, "");
       return -1;
     }
-    snprintf(include_filename, HECMW_FILENAME_LEN + 1, "%s%s%s", dname, separator, p);
+    snprintf(include_filename, sizeof(include_filename), "%s%s%s", dname, separator, p);
   }
   return 0;
 }

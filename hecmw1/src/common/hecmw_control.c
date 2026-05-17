@@ -106,7 +106,7 @@ static char *make_filename(char *dir, char *subdir, char *prefix, char *file,
 
     if ((strlen(dir) + strlen(separator)) > HECMW_FILENAME_LEN) return NULL;
 
-    HECMW_snprintf(filename, HECMW_FILENAME_LEN + 1, "%s%s", dir, separator);
+    HECMW_snprintf(filename, sizeof(filename), "%s%s", dir, separator);
   }
 
   if (subdir && strlen(subdir) > 0) {

@@ -331,10 +331,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
          *   parallel: {basename}.step{NNNN}.exo.{nprocs}.{rank}  (Nemesis)
          */
         if (petot == 1) {
-            snprintf(file_exo, HECMW_FILENAME_LEN, "%s/%s.step%04d.exo",
+            snprintf(file_exo, sizeof(file_exo), "%s/%s.step%04d.exo",
                     dir_exo, basename_exo, time_step_count);
         } else {
-            snprintf(file_exo, HECMW_FILENAME_LEN, "%s/%s.step%04d.exo.%d.%d",
+            snprintf(file_exo, sizeof(file_exo), "%s/%s.step%04d.exo.%d.%d",
                     dir_exo, basename_exo, time_step_count, petot, myrank);
         }
     } else {
@@ -345,10 +345,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
          */
         if (time_step_count == 0) {
             if (petot == 1) {
-                snprintf(file_exo, HECMW_FILENAME_LEN, "%s/%s.exo",
+                snprintf(file_exo, sizeof(file_exo), "%s/%s.exo",
                         dir_exo, basename_exo);
             } else {
-                snprintf(file_exo, HECMW_FILENAME_LEN, "%s/%s.exo.%d.%d",
+                snprintf(file_exo, sizeof(file_exo), "%s/%s.exo.%d.%d",
                         dir_exo, basename_exo, petot, myrank);
             }
         }
@@ -485,10 +485,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         int dim_nod_per_el[MAX_ELEM_BLOCKS];
         for (j = 0; j < num_blocks; j++) {
             char dname[EXO_MAX_STR_LENGTH];
-            snprintf(dname, EXO_MAX_STR_LENGTH, "num_el_in_blk%d", j + 1);
+            snprintf(dname, sizeof(dname), "num_el_in_blk%d", j + 1);
             stat = nc_def_dim(ncid, dname, (size_t)blocks[j].num_elem, &dim_el_in_blk[j]);
             NCERR(stat);
-            snprintf(dname, EXO_MAX_STR_LENGTH, "num_nod_per_el%d", j + 1);
+            snprintf(dname, sizeof(dname), "num_nod_per_el%d", j + 1);
             stat = nc_def_dim(ncid, dname, (size_t)blocks[j].nod_per_elem, &dim_nod_per_el[j]);
             NCERR(stat);
         }
@@ -553,7 +553,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         int var_connect[MAX_ELEM_BLOCKS];
         for (j = 0; j < num_blocks; j++) {
             char vname[EXO_MAX_STR_LENGTH];
-            snprintf(vname, EXO_MAX_STR_LENGTH, "connect%d", j + 1);
+            snprintf(vname, sizeof(vname), "connect%d", j + 1);
             int dims2[2] = {dim_el_in_blk[j], dim_nod_per_el[j]};
             stat = nc_def_var(ncid, vname, NC_INT, 2, dims2, &var_connect[j]);
             NCERR(stat);
@@ -593,7 +593,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
 
             for (i = 0; i < total_nod_var; i++) {
                 char vname[EXO_MAX_STR_LENGTH];
-                snprintf(vname, EXO_MAX_STR_LENGTH, "vals_nod_var%d", i + 1);
+                snprintf(vname, sizeof(vname), "vals_nod_var%d", i + 1);
                 int dims_ts_nn[2] = {dim_time_step, dim_num_nodes};
                 stat = nc_def_var(ncid, vname, NC_DOUBLE, 2, dims_ts_nn, &var_vals_nod[i]);
                 NCERR(stat);
@@ -622,7 +622,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
             for (i = 0; i < total_elem_var; i++) {
                 for (j = 0; j < num_blocks; j++) {
                     char vname[EXO_MAX_STR_LENGTH];
-                    snprintf(vname, EXO_MAX_STR_LENGTH, "vals_elem_var%deb%d", i + 1, j + 1);
+                    snprintf(vname, sizeof(vname), "vals_elem_var%deb%d", i + 1, j + 1);
                     int dims_ts_eb[2] = {dim_time_step, dim_el_in_blk[j]};
                     stat = nc_def_var(ncid, vname, NC_DOUBLE, 2, dims_ts_eb,
                                       &var_vals_elem[i * num_blocks + j]);
@@ -696,7 +696,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
                 HECMW_vis_print_exit("HECMW_malloc failed for block names");
             for (j = 0; j < num_blocks; j++) {
                 char label[EXO_MAX_STR_LENGTH];
-                snprintf(label, EXO_MAX_STR_LENGTH, "block_%d_%s", j + 1, blocks[j].exo_name);
+                snprintf(label, sizeof(label), "block_%d_%s", j + 1, blocks[j].exo_name);
                 pad_string(&names_buf[j * EXO_MAX_STR_LENGTH], EXO_MAX_STR_LENGTH, label);
             }
             stat = nc_put_var_text(ncid, var_eb_names, names_buf);
@@ -788,10 +788,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
                 for (k = 0; k < data->nn_dof[i]; k++) {
                     char vname[EXO_MAX_STR_LENGTH];
                     if (suffixes != NULL) {
-                        snprintf(vname, EXO_MAX_STR_LENGTH, "%s%s",
+                        snprintf(vname, sizeof(vname), "%s%s",
                                  data->node_label[i], suffixes[k]);
                     } else {
-                        snprintf(vname, EXO_MAX_STR_LENGTH, "%s_%d",
+                        snprintf(vname, sizeof(vname), "%s_%d",
                                  data->node_label[i], k + 1);
                     }
                     pad_string(&name_buf[vi * EXO_MAX_STR_LENGTH], EXO_MAX_STR_LENGTH, vname);
@@ -814,10 +814,10 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
                 for (k = 0; k < data->ne_dof[i]; k++) {
                     char vname[EXO_MAX_STR_LENGTH];
                     if (suffixes != NULL) {
-                        snprintf(vname, EXO_MAX_STR_LENGTH, "%s%s",
+                        snprintf(vname, sizeof(vname), "%s%s",
                                  data->elem_label[i], suffixes[k]);
                     } else {
-                        snprintf(vname, EXO_MAX_STR_LENGTH, "%s_%d",
+                        snprintf(vname, sizeof(vname), "%s_%d",
                                  data->elem_label[i], k + 1);
                     }
                     pad_string(&name_buf[vi * EXO_MAX_STR_LENGTH], EXO_MAX_STR_LENGTH, vname);
@@ -885,7 +885,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         for (i = 0; i < data->nn_component; i++) {
             for (k = 0; k < data->nn_dof[i]; k++) {
                 char vname[EXO_MAX_STR_LENGTH];
-                snprintf(vname, EXO_MAX_STR_LENGTH, "vals_nod_var%d", vi + 1);
+                snprintf(vname, sizeof(vname), "vals_nod_var%d", vi + 1);
                 int varid;
                 stat = nc_inq_varid(ncid, vname, &varid); NCERR(stat);
 
@@ -915,7 +915,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
                 /* Write for each block */
                 for (j = 0; j < num_blocks; j++) {
                     char vname[EXO_MAX_STR_LENGTH];
-                    snprintf(vname, EXO_MAX_STR_LENGTH, "vals_elem_var%deb%d", vi + 1, j + 1);
+                    snprintf(vname, sizeof(vname), "vals_elem_var%deb%d", vi + 1, j + 1);
                     int varid;
                     stat = nc_inq_varid(ncid, vname, &varid); NCERR(stat);
 

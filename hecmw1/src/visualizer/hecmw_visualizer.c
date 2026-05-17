@@ -192,8 +192,8 @@ int HECMW_visualize_by_addfname(struct hecmwST_local_mesh *mesh,
   buf1_raw = HECMW_ctrl_get_result_filebody("vis_out");
 
   /* Insert addfname suffix */
-  snprintf(outfile, HECMW_FILENAME_LEN, "%s%s", outfile_raw, addfname);
-  snprintf(buf1, HECMW_FILENAME_LEN, "%s%s", buf1_raw, addfname);
+  snprintf(outfile, sizeof(outfile), "%s%s", outfile_raw, addfname);
+  snprintf(buf1, sizeof(buf1), "%s%s", buf1_raw, addfname);
   HECMW_free(outfile_raw);
   HECMW_free(buf1_raw);
 
