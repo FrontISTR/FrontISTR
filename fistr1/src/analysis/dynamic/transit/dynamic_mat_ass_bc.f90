@@ -43,8 +43,6 @@ contains
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
-    ! Note: fstrSOLID%REACTION is updated in fstr_Update_REACTION_SPC after fstr_UpdateNewton,
-    ! so that the output reflects the converged QFORCE of the current (sub)step.
 
     flag_u = 1
     !C=============================C
@@ -293,7 +291,6 @@ contains
     ndof = hecMAT%NDOF
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
-    ! Note: fstrSOLID%REACTION is updated in fstr_Update_REACTION_SPC after fstr_UpdateNewton.
 
     flag_u = 1
 

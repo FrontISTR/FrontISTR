@@ -130,8 +130,6 @@ contains
       enddo
     enddo
 
-    !    Update REACTION using current QFORCE
-    call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
   end subroutine fstr_Update_NDForce_SPC
 
   !> Set fstrSOLID%REACTION at constrained DOFs using current fstrSOLID%QFORCE.
