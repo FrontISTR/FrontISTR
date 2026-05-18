@@ -133,25 +133,25 @@ static void remove_cr(char* line);
 static void skip_to_begin_bulk(FILE* fp, int* line_no);
 
 /* JP-35 */
-static char* ngrp_name_by_GID(int gid, char* name);
+static char* ngrp_name_by_GID(int gid, char* name, size_t size);
 
 /* JP-36 */
-static char* egrp_name_by_PID(int pid, char* name);
+static char* egrp_name_by_PID(int pid, char* name, size_t size);
 
 /* JP-37 */
-static char* egrp_name_by_SID(int sid, char* name);
+static char* egrp_name_by_SID(int sid, char* name, size_t size);
 
 /* JP-38 */
-static char* ngrp_name_by_SID_GID(int sid, int gid, char* name);
+static char* ngrp_name_by_SID_GID(int sid, int gid, char* name, size_t size);
 
 /* JP-39 */
-static char* ngrp_name_by_SID(int sid, int sub_id, char* name);
+static char* ngrp_name_by_SID(int sid, int sub_id, char* name, size_t size);
 
 /* JP-40 */
-static char* matrial_name_by_MID(int mid, char* name);
+static char* matrial_name_by_MID(int mid, char* name, size_t size);
 
 /* JP-41 */
-static char* egrp_CTRIAX6_name_by_MID(int mid, char* name);
+static char* egrp_CTRIAX6_name_by_MID(int mid, char* name, size_t size);
 
 /* JP-42 */
 static int is_CTRIAX6_egrp_name(char* name, int* mid);
@@ -578,8 +578,8 @@ static void skip_to_begin_bulk(FILE* fp, int* line_no) {
 
 /* JP-139 */
 
-static char* ngrp_name_by_GID(int gid, char* name) {
-  sprintf(name, "G%d", gid);
+static char* ngrp_name_by_GID(int gid, char* name, size_t size) {
+  snprintf(name, size, "G%d", gid);
   return name;
 }
 
@@ -587,8 +587,8 @@ static char* ngrp_name_by_GID(int gid, char* name) {
  */
 /* JP-140 */
 
-static char* egrp_name_by_PID(int pid, char* name) {
-  sprintf(name, "P%d", pid);
+static char* egrp_name_by_PID(int pid, char* name, size_t size) {
+  snprintf(name, size, "P%d", pid);
   return name;
 }
 
@@ -596,9 +596,9 @@ static char* egrp_name_by_PID(int pid, char* name) {
  */
 /* JP-141 */
 
-static char* create_SID_grp_name(char* name) {
+static char* create_SID_grp_name(char* name, size_t size) {
   static int SID_counter = 1;
-  sprintf(name, "SID%d", SID_counter);
+  snprintf(name, size, "SID%d", SID_counter);
   SID_counter++;
   return name;
 }
@@ -607,9 +607,9 @@ static char* create_SID_grp_name(char* name) {
  */
 /* JP-142 */
 
-static char* egrp_name_by_SID(int sid, char* name) {
-  /* sprintf( name, "S%d", sid); */
-  create_SID_grp_name(name);
+static char* egrp_name_by_SID(int sid, char* name, size_t size) {
+  /* snprintf( name, size, "S%d", sid); */
+  create_SID_grp_name(name, size);
   return name;
 }
 
@@ -617,9 +617,9 @@ static char* egrp_name_by_SID(int sid, char* name) {
  */
 /* JP-143 */
 
-static char* ngrp_name_by_SID_GID(int sid, int gid, char* name) {
-  /* sprintf( name, "S%dG%d", sid, gid); */
-  create_SID_grp_name(name);
+static char* ngrp_name_by_SID_GID(int sid, int gid, char* name, size_t size) {
+  /* snprintf( name, size, "S%dG%d", sid, gid); */
+  create_SID_grp_name(name, size);
   return name;
 }
 
@@ -627,9 +627,9 @@ static char* ngrp_name_by_SID_GID(int sid, int gid, char* name) {
  */
 /* JP-144 */
 
-static char* ngrp_name_by_SID(int sid, int sub_id, char* name) {
-  /* sprintf( name, "SID%d-%d", sid, sub_id); */
-  create_SID_grp_name(name);
+static char* ngrp_name_by_SID(int sid, int sub_id, char* name, size_t size) {
+  /* snprintf( name, size, "SID%d-%d", sid, sub_id); */
+  create_SID_grp_name(name, size);
   return name;
 }
 
@@ -637,8 +637,8 @@ static char* ngrp_name_by_SID(int sid, int sub_id, char* name) {
  */
 /* JP-145 */
 
-static char* matrial_name_by_MID(int mid, char* name) {
-  sprintf(name, "M%d", mid);
+static char* matrial_name_by_MID(int mid, char* name, size_t size) {
+  snprintf(name, size, "M%d", mid);
   return name;
 }
 
@@ -648,8 +648,8 @@ static char* matrial_name_by_MID(int mid, char* name) {
 
 #define CTRIAX6_EGRP_NAME_HEADER "CTRIAX6-"
 
-static char* egrp_CTRIAX6_name_by_MID(int mid, char* name) {
-  sprintf(name, "%s%d", CTRIAX6_EGRP_NAME_HEADER, mid);
+static char* egrp_CTRIAX6_name_by_MID(int mid, char* name, size_t size) {
+  snprintf(name, size, "%s%d", CTRIAX6_EGRP_NAME_HEADER, mid);
   return name;
 }
 
@@ -2211,7 +2211,7 @@ static int iff_bulk_parse_MAT1(iff_bulk_t* bulk) {
     int sub_n[item_n] = {2, 1, 1};
     double data[4 + item_n];
 
-    matrial_name_by_MID(MID, name);
+    matrial_name_by_MID(MID, name, sizeof(name));
 
     i         = 0;
     data[i++] = E;
@@ -2268,7 +2268,7 @@ static int iff_bulk_parse_MAT4(iff_bulk_t* bulk) {
     int sub_n[item_n] = {1, 1, 1};
     double data[3 + item_n];
 
-    matrial_name_by_MID(MID, name);
+    matrial_name_by_MID(MID, name, sizeof(name));
 
     i         = 0;
     data[i++] = K;
@@ -2368,8 +2368,8 @@ static int iff_bulk_parse_PROD(iff_bulk_t* bulk) {
   iff_bulk_get_param_list(bulk, format, result, &PID, "PID", &MID, "MID", &A,
                           "A", &J, "J", &C, "C", &NSM, "NSM");
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name));
-  strcpy(sect.material, matrial_name_by_MID(MID, grp_name));
+  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  strcpy(sect.material, matrial_name_by_MID(MID, grp_name, sizeof(grp_name)));
   sect.composite = 1;
   sect.secopt    = 0;
 
@@ -2423,8 +2423,8 @@ static int iff_bulk_parse_PSHELL(iff_bulk_t* bulk) {
                           "MID3", &TS_S, "TS/S", &NSM, "NSM", &Z1, "Z1", &Z2,
                           "Z2", &MID4, "MID4");
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name));
-  strcpy(sect.material, matrial_name_by_MID(MID1, grp_name));
+  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  strcpy(sect.material, matrial_name_by_MID(MID1, grp_name, sizeof(grp_name)));
   sect.composite = 1;
   sect.secopt    = 0;
 
@@ -2492,8 +2492,8 @@ static int iff_bulk_parse_PSOLID(iff_bulk_t* bulk) {
 
   sect.type = HECMW_SECT_TYPE_SOLID;
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name));
-  strcpy(sect.material, matrial_name_by_MID(MID, grp_name));
+  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  strcpy(sect.material, matrial_name_by_MID(MID, grp_name, sizeof(grp_name)));
   sect.composite = 1; /* JP-340 */
 
   sect.secopt = 0; /* JP-341 */
@@ -2535,7 +2535,7 @@ static int iff_bulk_parse_CROD(iff_bulk_t* bulk) {
     return -1;
 
   EID_List[0] = EID;
-  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name), 1, EID_List) == -1)
+  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name, sizeof(grp_name)), 1, EID_List) == -1)
     return -1;
 
   if (HECMW_io_add_egrp("ALL", 1, EID_List) == -1) return -1;
@@ -2601,7 +2601,7 @@ static int surface_elem_store(int bulk_type, unsigned int EID, unsigned int PID,
 
   if (HECMW_io_add_egrp("ALL", 1, EID_List) == -1) return -1;
 
-  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name), 1, EID_List) == -1)
+  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name, sizeof(grp_name)), 1, EID_List) == -1)
     return -1;
 
   return 0;
@@ -2620,7 +2620,7 @@ static int surface_elem_type_decide(void) {
 
   node = pshell_mid2_list.root;
   while (node) {
-    egrp_name_by_PID(node->PID, grp_name);
+    egrp_name_by_PID(node->PID, grp_name, sizeof(grp_name));
     id_array = HECMW_io_get_elem_in_egrp(grp_name);
     if (id_array) {
       for (i = 0; i < id_array->n; i++) {
@@ -2895,7 +2895,7 @@ static int iff_bulk_parse_solid_elem(iff_bulk_t* bulk, int first_etype,
   /* JP-396 */
 
   EID_List[0] = EID;
-  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name), 1, EID_List) == -1)
+  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name, sizeof(grp_name)), 1, EID_List) == -1)
     return -1;
 
   if (HECMW_io_add_egrp("ALL", 1, EID_List) == -1) return -1;
@@ -2978,14 +2978,14 @@ static int iff_bulk_parse_CTRIAX6(iff_bulk_t* bulk) {
     char grp_name[HECMW_NAME_LEN + 1];
     int EID_List[1];
 
-    egrp_CTRIAX6_name_by_MID(MID, grp_name);
+    egrp_CTRIAX6_name_by_MID(MID, grp_name, sizeof(grp_name));
     egrp = HECMW_io_get_egrp(grp_name);
 
     if (!egrp) { /* JP-407 */
       char mat_name[HECMW_NAME_LEN + 1];
       struct hecmw_io_section sect;
       strcpy(sect.egrp, grp_name);
-      strcpy(sect.material, matrial_name_by_MID(MID, mat_name));
+      strcpy(sect.material, matrial_name_by_MID(MID, mat_name, sizeof(mat_name)));
       sect.composite            = 1;                        /* JP-408 */
       sect.secopt               = HECMW_SECT_OPT_ASYMMETRY; /* JP-409 */
       sect.type                 = HECMW_SECT_TYPE_SOLID;

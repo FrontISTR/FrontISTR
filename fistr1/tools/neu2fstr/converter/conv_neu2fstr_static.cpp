@@ -17,7 +17,7 @@
 using namespace std;
 using namespace n2h_util;
 
-static void ItoA(int i, char *s) { sprintf(s, "%d", i); }
+static void ItoA(int i, char *s, size_t n) { snprintf(s, n, "%d", i); }
 
 static int mesh_dof = 3;
 
@@ -193,7 +193,7 @@ static void SetBoundary(CNFData &neu, CHECData &hec) {
 
       for (iter = bitem[i].begin(); iter != bitem[i].end(); iter++) {
         char name[256];
-        ItoA(iter->nid, name);
+        ItoA(iter->nid, name, sizeof(name));
         int dof = i + 1;
         CFSTRDB_Boundary::CItem item(name, dof, dof, iter->value);
         bc->ItemList.push_back(item);
@@ -234,7 +234,7 @@ static void SetCLoad(CNFData &neu, CHECData &hec) {
         if (siter->dof_face[i] == 0) continue;
 
         char name[256];
-        ItoA(siter->loadID, name);
+        ItoA(siter->loadID, name, sizeof(name));
         int dof = i + 1;
         CFSTRDB_CLoad::CItem item(name, dof, siter->value[i]);
         cload->ItemList.push_back(item);
@@ -334,7 +334,7 @@ static void SetDLoad(CNFData &neu, CHECData &hec) {
           CFSTRDB_DLoad::TYPE_P0 + hec_face_no(hec_e_type, surf_no, fg_front);
       double load = fg_front ? siter->value[0] : -siter->value[0];
       char name[256];
-      ItoA(siter->loadID, name);
+      ItoA(siter->loadID, name, sizeof(name));
       CFSTRDB_DLoad::CItem item(name, load_type);
       item.param[0] = load;
       dload->ItemList.push_back(item);

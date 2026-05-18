@@ -118,7 +118,7 @@ static int visualize_render(struct hecmwST_local_mesh *mesh,
         }
       }
       HECMW_vis_psf_rendering(mesh, data, &timestep, sf, sr, stat_para_sf,
-                              outfile1, body, VIS_COMM);
+                              outfile1, sizeof(outfile1), body, VIS_COMM);
       init_flag = 0;
     }
   }
