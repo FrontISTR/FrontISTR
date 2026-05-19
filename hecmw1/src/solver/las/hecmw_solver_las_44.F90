@@ -214,8 +214,8 @@ contains
         YV2= 0
         YV3= 0
         YV4= 0
-        jS= indexA(i) + 1
-        jE= indexA(i+1)
+        jS= indexA(i-1) + 1
+        jE= indexA(i)
         do j= jS, jE
           in  = itemA(j)
           X1= X(4*in-3)
