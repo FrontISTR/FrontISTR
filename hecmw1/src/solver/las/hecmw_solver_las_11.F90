@@ -45,8 +45,8 @@ contains
     !$acc loop independent
     do i= 1, hecMAT%N
       YV= 0
-      jS= hecMAT%indexA(i) + 1
-      jE= hecMAT%indexA(i+1)
+      jS= hecMAT%indexA(i-1) + 1
+      jE= hecMAT%indexA(i)
       do j= jS, jE
         in= hecMAT%itemA(j)
         YV= YV + hecMAT%A(j) * X(in)
