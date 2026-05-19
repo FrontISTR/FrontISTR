@@ -876,7 +876,7 @@ contains
     pp = 0
     !$acc parallel loop private(i, j, k, pre, pp, jS, jE)
     do i = 1, hecMAT%NP
-      indexA(i) = i + hecMAT%indexL(i) + hecMAT%indexU(i)
+      hecMAT%indexA(i) = i + hecMAT%indexL(i) + hecMAT%indexU(i)
 
       pre = i - 1 + hecMAT%indexU(i - 1)
       jS= hecMAT%indexL(i - 1) + 1
