@@ -327,7 +327,19 @@ contains
     if( c_embed>0 )  allocate( fstrSOLID%embeds( c_embed ) )
     if( c_weldline>0 ) allocate( fstrHEAT%weldline( c_weldline ) )
     if( c_initial>0 ) allocate( g_InitialCnd( c_initial ) )
-    if( c_istep>0 ) allocate( fstrSOLID%step_ctrl( c_istep ) )
+    if( c_istep>0 ) then
+      allocate( fstrSOLID%step_ctrl( c_istep ) )
+      do i=1, c_istep
+        call init_stepInfo( fstrSOLID%step_ctrl(i) )
+        if( p%PARAM%solution_type==kstDYNAMIC ) then
+          fstrSOLID%step_ctrl(i)%num_substep = fstrDYNAMIC%n_step
+          fstrSOLID%step_ctrl(i)%initdt      = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(i)%elapsetime  = dble(fstrDYNAMIC%n_step) * fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(i)%mindt       = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(i)%maxdt       = fstrDYNAMIC%t_delta
+        endif
+      end do
+    endif
     if( c_localcoord>0 ) allocate( g_LocalCoordSys(c_localcoord) )
     allocate( fstrPARAM%ainc(0:c_aincparam) )
     do i=0,c_aincparam
@@ -553,6 +565,15 @@ contains
           write(*,*) '### Error: Fail in read in step definition : ' , c_istep
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
           stop
+        endif
+        ! For DYNAMIC fixed-increment: keep the !DYNAMIC time increment while preserving !STEP duration.
+        ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
+        ! Only override initdt/mindt/maxdt; keep elapsetime and num_substep as-is.
+        if( p%PARAM%solution_type==kstDYNAMIC .and. &
+          & fstrSOLID%step_ctrl(c_istep)%inc_type == stepFixedInc ) then
+          fstrSOLID%step_ctrl(c_istep)%initdt      = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(c_istep)%mindt       = fstrDYNAMIC%t_delta
+          fstrSOLID%step_ctrl(c_istep)%maxdt       = fstrDYNAMIC%t_delta
         endif
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
@@ -981,6 +1002,13 @@ contains
       fstrSOLID%nstep_tot = 1
       allocate( fstrSOLID%step_ctrl(1) )
       call init_stepInfo( fstrSOLID%step_ctrl(1) )
+      if( p%PARAM%solution_type==kstDYNAMIC ) then
+        fstrSOLID%step_ctrl(1)%num_substep = fstrDYNAMIC%n_step
+        fstrSOLID%step_ctrl(1)%initdt      = fstrDYNAMIC%t_delta
+        fstrSOLID%step_ctrl(1)%elapsetime  = dble(fstrDYNAMIC%n_step) * fstrDYNAMIC%t_delta
+        fstrSOLID%step_ctrl(1)%mindt       = fstrDYNAMIC%t_delta
+        fstrSOLID%step_ctrl(1)%maxdt       = fstrDYNAMIC%t_delta
+      endif
       n =  fstrSOLID%BOUNDARY_ngrp_tot
       if( n>0 ) allocate( fstrSOLID%step_ctrl(1)%Boundary(n) )
       do i = 1, n
@@ -3802,6 +3830,10 @@ end function fstr_setup_INITIAL
     integer(kind=kint),pointer :: dof_ide (:)
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint) :: i, j, n, old_size, new_size
+    integer(kind=kint) :: gid
+
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid  )
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
@@ -3809,6 +3841,7 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%VELOCITY_ngrp_tot = new_size
 
+    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_GRPID, old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_ID  , old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_type, old_size, new_size )
     call fstr_expand_real_array    (P%SOLID%VELOCITY_ngrp_val , old_size, new_size )
@@ -3830,6 +3863,7 @@ end function fstr_setup_INITIAL
     call amp_name_to_id( P%MESH, '!VELOCITY', amp, amp_id )
     call node_grp_name_to_id_ex( P%MESH, '!VELOCITY', &
       n, grp_id_name, P%SOLID%VELOCITY_ngrp_ID(old_size+1:))
+    P%SOLID%VELOCITY_ngrp_GRPID(old_size+1:new_size) = gid
 
     j = old_size+1
     do i = 1, n
@@ -3874,7 +3908,10 @@ end function fstr_setup_INITIAL
     integer(kind=kint),pointer :: dof_ide (:)
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint) :: i, j, n, old_size, new_size
+    integer(kind=kint) :: gid
 
+    gid = 1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid  )
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
@@ -3882,6 +3919,7 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%ACCELERATION_ngrp_tot = new_size
 
+    call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_GRPID, old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_ID  , old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_type, old_size, new_size )
     call fstr_expand_real_array    (P%SOLID%ACCELERATION_ngrp_val , old_size, new_size )
@@ -3903,6 +3941,7 @@ end function fstr_setup_INITIAL
     call amp_name_to_id( P%MESH, '!ACCELERATION', amp, amp_id )
     call node_grp_name_to_id_ex( P%MESH, '!ACCELERATION', &
       n, grp_id_name, P%SOLID%ACCELERATION_ngrp_ID(old_size+1:))
+    P%SOLID%ACCELERATION_ngrp_GRPID(old_size+1:new_size) = gid
 
     j = old_size+1
     do i = 1, n

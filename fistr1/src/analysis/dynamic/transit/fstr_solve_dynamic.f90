@@ -10,6 +10,7 @@ module fstr_solver_dynamic
   use fstr_dynamic_nlexplicit
   use fstr_dynamic_nlimplicit
   use fstr_frequency_analysis  !Frequency analysis module
+  use m_fstr_TimeInc
 
 contains
 
@@ -36,8 +37,7 @@ contains
     type(hecmwST_matrix)                 :: conMAT
     integer(kind=kint) :: i, j, num_monit, ig, is, iE, ik, in, ing, iunitS, iunit, ierror, flag, limit
     character(len=HECMW_FILENAME_LEN) :: fname, header
-    integer(kind=kint) :: restrt_step_num, ndof
-    integer(kind=kint) :: restrt_step(1)
+    integer(kind=kint) :: restart_step_num, restart_substep_num, restart_step_count, ndof
 
     num_monit = 0
 
@@ -157,8 +157,9 @@ contains
 
     ! ---- restart
 
-    restrt_step_num = 1
-    fstrDYNAMIC%i_step = 0
+    restart_step_num = 1
+    restart_substep_num = 1
+    restart_step_count = 0
     infoCTChange%contactNode_previous = 0
 
     if(associated(g_InitialCnd))then
@@ -181,41 +182,38 @@ contains
     endif
 
     if(fstrDYNAMIC%restart_nout >= 0 ) then
-      call dynamic_bc_init   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-      call dynamic_bc_init_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
-      call dynamic_bc_init_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC)
+      call dynamic_bc_init   (hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
+      call dynamic_bc_init_vl(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
+      call dynamic_bc_init_ac(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%t_curr)
     endif
 
     !restart
     if(fstrDYNAMIC%restart_nout < 0 ) then
       if( fstrDYNAMIC%idx_eqa == 1 ) then
-        call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-          infoCTChange%contactNode_previous)
+        call fstr_read_restart_dyna_nl(restart_step_num,restart_substep_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+          infoCTChange%contactNode_previous,restart_step_count)
       elseif(fstrDYNAMIC%idx_eqa == 11) then
-        if( .not. associated( fstrSOLID%contacts ) ) then
-          call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM)
-        else
-          call fstr_read_restart_dyna_nl(restrt_step_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
-            infoCTChange%contactNode_previous)
-        endif
+        call fstr_read_restart_dyna_nl(restart_step_num,restart_substep_num,hecMESH,fstrSOLID,fstrDYNAMIC,fstrPARAM,&
+          infoCTChange%contactNode_previous,restart_step_count)
       endif
-      restrt_step_num = restrt_step_num + 1
       fstrDYNAMIC%restart_nout = - fstrDYNAMIC%restart_nout
       hecMAT%Iarray(98) = 1
+      call fstr_set_time(fstrDYNAMIC%t_curr)
+      call fstr_set_timeinc_base(fstrDYNAMIC%t_delta)
     end if
 
     if(fstrDYNAMIC%idx_resp == 1) then   ! time history analysis
 
       if(fstrDYNAMIC%idx_eqa == 1) then     ! implicit dynamic analysis
-        call fstr_solve_dynamic_nlimplicit_contactSLag(1, hecMESH,hecMAT,fstrSOLID,fstrEIG   &
+        call FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
           ,fstrDYNAMIC,fstrRESULT,fstrPARAM &
-          ,fstrCPL,hecLagMAT,restrt_step_num,infoCTChange   &
-          ,conMAT )
+          ,fstrCPL,hecLagMAT,restart_step_num,restart_substep_num,infoCTChange   &
+          ,conMAT,restart_step_count )
 
       else if(fstrDYNAMIC%idx_eqa == 11) then  ! explicit dynamic analysis
         call fstr_solve_dynamic_nlexplicit(hecMESH,hecMAT,fstrSOLID,fstrEIG   &
           ,fstrDYNAMIC,fstrRESULT,fstrPARAM,infoCTChange &
-          ,fstrCPL, restrt_step_num )
+          ,fstrCPL, restart_substep_num, restart_step_count )
       endif
 
     else if(fstrDYNAMIC%idx_resp == 2) then  ! frequency response analysis
@@ -230,7 +228,7 @@ contains
       if( hecMESH%my_rank .eq. 0 ) then
         call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, &
           fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, hecLagMAT, &
-          restrt_step_num)
+          restart_substep_num)
       end if
     end if
 

@@ -228,6 +228,8 @@ contains
     enddo
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
+    !    Update REACTION using current QFORCE
+    call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
 
     fstrSOLID%CutBack_stat = 0
     deallocate(coord)
@@ -478,6 +480,9 @@ contains
     fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
+
+    !    Update REACTION using current QFORCE
+    call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
 
     deallocate(coord)
     fstrSOLID%CutBack_stat = 0
@@ -747,6 +752,8 @@ contains
       call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%EMBED_NFORCE,1)
       call fstr_Update_NDForce_SPC( cstep, hecMESH, fstrSOLID, hecMAT%B )
     endif
+    !    Update REACTION using current QFORCE
+    call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
 
     deallocate(coord)
     fstrSOLID%CutBack_stat = 0
