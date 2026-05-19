@@ -147,8 +147,8 @@ contains
         YV4= 0
         YV5= 0
         YV6= 0
-        jS= indexA(i) + 1
-        jE= indexA(i+1)
+        jS= indexA(i-1) + 1
+        jE= indexA(i)
         do j= jS, jE
           in  = itemA(j)
           X1= X(6*in-5)

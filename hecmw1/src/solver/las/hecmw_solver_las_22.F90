@@ -185,8 +185,8 @@ contains
         X2= X(2*i  )
         YV1= 0
         YV2= 0
-        jS= indexA(i) + 1
-        jE= indexA(i+1)
+        jS= indexA(i-1) + 1
+        jE= indexA(i)
         do j= jS, jE
           in  = itemA(j)
           X1 = X(2*in-1)

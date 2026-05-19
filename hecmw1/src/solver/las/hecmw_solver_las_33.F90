@@ -245,8 +245,8 @@ contains
         YV1= 0
         YV2= 0
         YV3= 0
-        jS= indexA(i) + 1
-        jE= indexA(i+1)
+        jS= indexA(i-1) + 1
+        jE= indexA(i)
         do j = jS, jE
           in = itemA(j)
           X1= X(3*in-2)

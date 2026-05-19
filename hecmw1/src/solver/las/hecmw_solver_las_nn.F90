@@ -247,8 +247,8 @@ contains
           XV(k) = X(NDOF*(i-1)+k)
         end do
         YV(:)=0.0d0
-        jS= indexA(i) + 1
-        jE= indexA(i+1)
+        jS= indexA(i-1) + 1
+        jE= indexA(i)
         do j= jS, jE
           in  = itemA(j)
           do k=1,NDOF
