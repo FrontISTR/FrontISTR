@@ -906,6 +906,7 @@ contains
         enddo
       enddo
     enddo
+    !$acc end parallel
 #endif
   end subroutine hecmw_mat_integrate
 
