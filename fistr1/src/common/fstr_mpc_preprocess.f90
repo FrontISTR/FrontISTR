@@ -1378,20 +1378,48 @@ contains
     real(kind=kreal), intent(in)  :: threshold
 
     integer(kind=kint) :: i, nitem
-    real(kind=kreal)   :: coeff_sum
+    real(kind=kreal)   :: csum
 
-    ! suppose coeff(1) == 1. if not, do nothing
-    if( dabs(mpc%coeff(1)-1.d0) > 1.d-6 ) return
+    if( mpc%nitem <= 1 ) return
 
-    nitem = 1
-    do i=2,mpc%nitem
-      if( dabs(mpc%coeff(i)) < threshold ) cycle
-      nitem = nitem + 1
-      mpc%pid(nitem) = mpc%pid(i) 
-      mpc%dof(nitem) = mpc%dof(i) 
-      mpc%coeff(nitem) = mpc%coeff(i) 
-    enddo
-    mpc%nitem = nitem
+    ! Slave MPC: coeff(1) should be ~1.0
+    if( dabs(mpc%coeff(1)-1.d0) <= 1.d-6 ) then
+      ! Remove small master coefficients
+      nitem = 1
+      do i=2,mpc%nitem
+        if( dabs(mpc%coeff(i)) < threshold ) cycle
+        nitem = nitem + 1
+        mpc%pid(nitem) = mpc%pid(i)
+        mpc%dof(nitem) = mpc%dof(i)
+        mpc%coeff(nitem) = mpc%coeff(i)
+      enddo
+      mpc%nitem = nitem
+
+      ! Enforce sum=0: adjust coeff(1) so that slave = -sum(masters)
+      if( nitem > 1 ) then
+        csum = 0.d0
+        do i = 2, nitem
+          csum = csum + mpc%coeff(i)
+        enddo
+        if( dabs(csum + mpc%coeff(1)) > 1.d-4 ) then
+          write(*,'(A,ES12.4,A,I4)') &
+            & "  ** WARNING: cutoff_small_coeff residual sum=", &
+            & mpc%coeff(1) + csum, " nitem=", nitem
+        endif
+        mpc%coeff(1) = -csum
+      endif
+    else
+      ! Non-slave MPC at final stage: unexpected, warn if sum != 0
+      csum = 0.d0
+      do i = 1, mpc%nitem
+        csum = csum + mpc%coeff(i)
+      enddo
+      if( dabs(csum) > 1.d-6 ) then
+        write(*,'(A,ES12.4,A,ES12.4,A,I4)') &
+          & "  ** WARNING: cutoff_small_coeff non-slave coeff(1)=", &
+          & mpc%coeff(1), " sum=", csum, " nitem=", mpc%nitem
+      endif
+    endif
 
   end subroutine
 
@@ -1629,6 +1657,7 @@ contains
     do i=1,nrow_to_be_solved
       ! row pivoting
       maxpivot = 0.d0
+      i_maxpiv = 0
       do k=i,nrow
         pivot = Amat(k,i)
         if( dabs(pivot) < 1.d-10 ) cycle
@@ -1714,6 +1743,7 @@ contains
     real(kind=kreal), parameter :: threshold = 1.d-4
     integer(kind=kint) :: pid(n_index),dof(n_index)
     real(kind=kreal)   :: coeff(n_index)
+    real(kind=kreal)   :: csum
 
     nitem = 0
     do i=1,n_index
@@ -1731,6 +1761,24 @@ contains
       pid(nitem) = i
       coeff(nitem) = Arow(i)
     enddo
+
+    ! Enforce sum=0 after threshold cutoff: adjust leading coefficient
+    ! to compensate for removed small terms, then renormalize to coeff(1)=1
+    if( nitem > 0 ) then
+      csum = 0.d0
+      do i = 1, nitem
+        csum = csum + coeff(i)
+      enddo
+      coeff(1) = coeff(1) - csum
+      ! Renormalize so that coeff(1) = 1 exactly (sum=0 is preserved by scaling)
+      if( dabs(coeff(1)) > 1.d-10 ) then
+        csum = coeff(1)
+        do i = 1, nitem
+          coeff(i) = coeff(i) / csum
+        enddo
+      endif
+    endif
+
     call set_mpc_cond(mpc, nitem, pid(1:nitem), dof(1:nitem), coeff(1:nitem))
   end subroutine
 
@@ -1745,6 +1793,7 @@ contains
     ! variables for svd
     real(kind=kreal), allocatable :: Amat(:,:), Amat_ori(:,:), sval(:), Vs_inv(:,:)
     integer(kind=kint) :: n_slave, n_active_mpcs
+    real(kind=kreal)   :: csum
 
     n_mpcs = mpc_group%nitem
     if( n_mpcs == 1 ) return !do nothing for single mpc
@@ -1784,7 +1833,23 @@ contains
       exit
     enddo
     n_slave = min(n_slave,n_active_mpcs)
-    if( n_active_mpcs == n_mpcs ) Amat(:,:) = Amat_ori(:,:) ! do not use
+    if( n_active_mpcs == n_mpcs ) then
+      Amat(:,:) = Amat_ori(:,:) ! do not use SVD result
+    else
+      ! Enforce sum=0 on active V^T rows before Gaussian elimination
+      ! (only needed when SVD result is used, i.e. redundant constraints exist)
+      do i = 1, n_active_mpcs
+        csum = 0.d0
+        do j = 1, n_index_local
+          csum = csum + Amat(i,j)
+        enddo
+        if( dabs(csum) > 1.d-8 ) then
+          write(*,'(A,I6,A,ES12.4)') &
+            & "  ** WARNING: svd row sum ", i, " sum=", csum
+        endif
+        Amat(i,1:n_index_local) = Amat(i,1:n_index_local) - csum / dble(n_index_local)
+      enddo
+    endif
     call solve_dof_with_row_pivoting(Amat,n_active_mpcs,n_index_local,index_local,n_slave)
 
     if( DEBUG > 0 .and. n_mpcs > 1 ) then !debug
