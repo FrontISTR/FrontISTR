@@ -203,6 +203,7 @@ contains
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
     character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag
     integer(kind=kint) :: i, grpid
+    integer(kind=kint) :: s_f2c, s_c2f, s_emov, s_islid, s_act
     logical :: iactive, is_init
 
     if( associated( fstrSOLID%CONT_RELVEL ) ) fstrSOLID%CONT_RELVEL(:) = 0.d0
@@ -258,6 +259,23 @@ contains
     infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
 
+    ! Output summary of contact state changes (always on; per-node detail requires CONTACT_LOG_LEVEL>=1)
+    ! allreduce must be called by all ranks regardless of local counts
+    s_f2c   = infoCTChange%free2contact
+    s_c2f   = infoCTChange%contact2free
+    s_emov  = infoCTChange%contact2neighbor
+    s_islid = infoCTChange%contact2diffLpos
+    s_act   = infoCTChange%contactNode_current
+    call hecmw_allreduce_I1(hecMESH, s_f2c,   HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_c2f,   HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_emov,  HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_islid, HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_act,   HECMW_SUM)
+    if (hecmw_comm_get_rank() == 0) then
+      write(*,'(A,i0,A,i0,A,i0,A,i0,A,i0)') ' Contact change: Free2Cont=', s_f2c, ', Cont2Free=', s_c2f, &
+        ', ElemMoved=', s_emov, ', InElemSlid=', s_islid, ', ActiveNodes=', s_act
+    end if
+
     if( .not. active ) then
       if( associated( fstrSOLID%CONT_NFORCE ) ) fstrSOLID%CONT_NFORCE(:) = 0.d0
       if( associated( fstrSOLID%CONT_FRIC ) ) fstrSOLID%CONT_FRIC(:) = 0.d0
@@ -273,6 +291,7 @@ contains
     type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
     integer(kind=kint) :: i
+    integer(kind=kint) :: s_f2c, s_c2f, s_emov, s_islid, s_act
     logical :: iactive, is_init
 
 
@@ -305,6 +324,24 @@ contains
 
     infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
+
+    ! Output summary of contact state changes (always on; per-node detail requires CONTACT_LOG_LEVEL>=1)
+    ! allreduce must be called by all ranks regardless of local counts
+    s_f2c   = infoCTChange%free2contact
+    s_c2f   = infoCTChange%contact2free
+    s_emov  = infoCTChange%contact2neighbor
+    s_islid = infoCTChange%contact2diffLpos
+    s_act   = infoCTChange%contactNode_current
+    call hecmw_allreduce_I1(hecMESH, s_f2c,   HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_c2f,   HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_emov,  HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_islid, HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_act,   HECMW_SUM)
+    if (hecmw_comm_get_rank() == 0) then
+      write(*,'(A,i0,A,i0,A,i0,A,i0,A,i0)') ' Contact change: Free2Cont=', s_f2c, ', Cont2Free=', s_c2f, &
+        ', ElemMoved=', s_emov, ', InElemSlid=', s_islid, ', ActiveNodes=', s_act
+    end if
+
     fstrSOLID%ddunode = 0.d0
   end subroutine
 
