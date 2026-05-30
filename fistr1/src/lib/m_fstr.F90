@@ -396,6 +396,7 @@ module m_fstr
     real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
     real(kind=kreal), pointer :: QFORCE_bak  (:)           !< equivalent nodal force at the beginning of curr step
+    real(kind=kreal), pointer :: DFORCE      (:)           !< force on dynamic analysis
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
@@ -423,6 +424,7 @@ module m_fstr
     ! ######################################################
     real(kind=kreal), pointer :: unode_bkup(:)     => null() !< disp at the beginning of curr step (backup)
     real(kind=kreal), pointer :: QFORCE_bkup(:)    => null() !< equivalent nodal force (backup)
+    real(kind=kreal), pointer :: DFORCE_bkup(:)    => null() !< equivalent nodal force (backup)
     real(kind=kreal), pointer :: last_temp_bkup(:) => null()
     type( tElement ), pointer :: elements_bkup(:)  =>null()  !< elements information (backup)
     type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
@@ -724,6 +726,7 @@ contains
     nullify( S%GL          )
     nullify( S%GL0         )
     nullify( S%QFORCE      )
+    nullify( S%DFORCE      )
     nullify( S%VELOCITY_ngrp_GRPID )
     nullify( S%VELOCITY_ngrp_ID )
     nullify( S%VELOCITY_ngrp_type )

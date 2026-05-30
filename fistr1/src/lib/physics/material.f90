@@ -177,6 +177,7 @@ module mMaterial
     integer(kind=kint)         :: n_table           !< size of table
     real(kind=kreal), pointer  :: table(:)=>null()  !< material properties in tables
     type(DICT_STRUCT), pointer :: dict              !< material properties in dictionaried linked list
+    logical :: is_elem_Rayleigh_damping             !< elemental Rayleigh damping factor
   end type tMaterial
 
   type(tMaterial), allocatable :: materials(:)
@@ -189,9 +190,10 @@ contains
     material%mtype = -1                  ! not defined yet
     material%nfstatus = 0                ! Default: no status
     material%nlgeom_flag = INFINITESIMAL ! Default: INFINITESIMAL ANALYSIS
-    material%variables =  0.d0           ! not defined yet
+    material%variables = 0.d0           ! not defined yet
     material%variables_i =  0            ! not defined yet
-    material%totallyr =  0               ! not defined yet
+    material%totallyr = 0               ! not defined yet
+    material%is_elem_Rayleigh_damping = .false. ! not defined yet
 
     call dict_create( material%dict, 'INIT', DICT_NULL )
   end subroutine
