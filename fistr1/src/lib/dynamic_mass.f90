@@ -4,6 +4,7 @@
 !-------------------------------------------------------------------------------
 !>  This module contains subroutines used in 3d eigen analysis for
 module m_dynamic_mass
+  use m_fstr
 
 contains
 
@@ -154,6 +155,58 @@ contains
     is_lumped = .true.
     if(is_lumped) call get_lumped_mass(nn, ndof, mass, lumped)
   end subroutine mass_C3
+
+  subroutine mass_S3(surf, thick, rho, mass)
+    implicit none
+    real(kind=kreal) :: surf
+    real(kind=kreal) :: thick
+    real(kind=kreal) :: rho
+    real(kind=kreal), intent(out) :: mass(:,:)
+    integer(kint) :: i
+    mass = 0.0d0
+    do i = 1, 9
+      mass(i,i) = surf*thick*rho/3.0d0
+    enddo
+  end subroutine mass_S3
+
+  subroutine mass_S4(surf, thick, rho, mass)
+    implicit none
+    real(kind=kreal) :: surf
+    real(kind=kreal) :: thick
+    real(kind=kreal) :: rho
+    real(kind=kreal), intent(out) :: mass(:,:)
+    integer(kint) :: i
+    mass = 0.0d0
+    do i = 1, 12
+      mass(i,i) = surf*thick*rho/4.0d0
+    enddo
+  end subroutine mass_S4
+
+  subroutine mass_Beam(surf, length, rho, mass)
+    implicit none
+    real(kind=kreal) :: surf
+    real(kind=kreal) :: length
+    real(kind=kreal) :: rho
+    real(kind=kreal), intent(out) :: mass(:,:)
+    integer(kint) :: i
+    mass = 0.0d0
+    do i = 1, 12
+      mass(i,i) = 0.5d0*surf*length*rho
+    enddo
+  end subroutine mass_Beam
+
+  subroutine mass_Beam_33(surf, length, rho, mass)
+    implicit none
+    real(kind=kreal) :: surf
+    real(kind=kreal) :: length
+    real(kind=kreal) :: rho
+    real(kind=kreal), intent(out) :: mass(:,:)
+    integer(kint) :: i
+    mass = 0.0d0
+    do i = 1, 12
+      mass(i,i) = 0.5d0*surf*length*rho
+    enddo
+  end subroutine mass_Beam_33
 
   subroutine get_lumped_mass(nn, ndof, mass, lumped)
     use hecmw
