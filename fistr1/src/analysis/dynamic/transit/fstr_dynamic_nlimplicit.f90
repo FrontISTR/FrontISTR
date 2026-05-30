@@ -12,7 +12,7 @@ module fstr_dynamic_nlimplicit
   use m_dynamic_mat_ass_bc
   use m_dynamic_mat_ass_bc_vl
   use m_dynamic_mat_ass_load
-  use m_fstr_CreateMatrix
+  use m_fstr_CreateMatrix_and_DampingForce
   use m_fstr_Update
   use m_fstr_Restart
   use fstr_matrix_con_contact
@@ -374,7 +374,7 @@ contains
 
       do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
         stepcnt=stepcnt+1
-        call fstr_CreateMatrix( hecMESH, hecMAT, fstrSOLID, t_curr, t_delta, fstrDYNAMIC, coef )
+        call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, t_curr, t_delta, fstrDYNAMIC, coef )
 
         call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
