@@ -338,18 +338,14 @@ contains
     integer(kind=kint) :: slave, sid0, etype, iSS
     real(kind=kreal)    :: coord(3)
     logical            :: isin
-    real(kind=kreal)    :: opos(2), odirec(3)
-    type(tContactState) :: cstate_tmp  !< Recorde of contact information
+    type(tContactState) :: cstate_tmp
 
     slave = contact%slave(nslave)
     coord(:) = currpos(3*slave-2:3*slave)
     !> checking the contact element of last step
     sid0 = contact%states(nslave)%surface
-    opos = contact%states(nslave)%lpos(1:2)
-    odirec = contact%states(nslave)%direction
 
-    cstate_tmp%state = contact%states(nslave)%state
-    cstate_tmp%surface = sid0
+    cstate_tmp = contact%states(nslave)
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
       cstate_tmp, isin, contact%cparam%DISTCLR_NOCHECK, &
       contact%states(nslave)%lpos, contact%cparam%CLR_SAME_ELEM, &
@@ -379,7 +375,7 @@ contains
     integer(kind=kint) :: cnode, i, j, cnt, nd1, gn, etype, iSS, nn,cgn
     real(kind=kreal) :: cnpos(2), elem(3, l_max_elem_node)
     integer(kind=kint) :: cnode1, cnode2, gn1, gn2, nsurf, cgn1, cgn2, isin_n
-    real(kind=kreal) :: x=0, normal_n(3), lpos_n(2)
+    real(kind=kreal) :: x, normal_n(3), lpos_n(2)
 
     if( 1 <= isin .and. isin <= 4 ) then  ! corner
       cnode = isin
