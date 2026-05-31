@@ -15,6 +15,8 @@ module m_fstr_contact_search
   use m_fstr_contact_smoothing
   implicit none
 
+  integer(kind=kint), parameter :: CONTACT_LOG_LEVEL = 0  !< Set >= 1 to enable per-node contact log output (for debugging)
+
 contains
 
   !> This subroutine tracks down next contact position after a finite slide
@@ -104,7 +106,7 @@ contains
           infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         endif
       else
-        write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
+        if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
           elemID(contact%master(sid)%eid), " with distance ",      &
           contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(1:2)
         !$omp atomic
@@ -125,7 +127,7 @@ contains
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
         contact%states(nslave)%lpos(1:2), contact%states(nslave)%direction(:) )
     else if( .not. isin ) then
-      write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
+      if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
       contact%states(nslave)%state = CONTACTFREE
       contact%states(nslave)%multiplier(:) = 0.d0
     endif
@@ -229,7 +231,7 @@ contains
         if( nlforce < contact%cparam%TENSILE_FORCE ) then
           contact%states(i)%state = CONTACTFREE
           contact%states(i)%multiplier(:) = 0.d0
-          write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
+          if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
             elemID(contact%master(id)%eid), " with tensile force ", nlforce
           cycle
         endif
@@ -265,7 +267,7 @@ contains
             ! Within contact threshold -> upgrade to STICK
             contact%states(i)%state = CONTACTSTICK
             contact%states(i)%multiplier(:) = 0.d0
-            write(*,'(A,i10,A,i10,A,i6)') "Node",nodeID(slave)," upgraded NEAR->STICK on element", &
+            if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,i6)') "Node",nodeID(slave)," upgraded NEAR->STICK on element", &
               elemID(contact%master(id)%eid)," rank=",hecmw_comm_get_rank()
           else if (contact%states(i)%distance > effective_near_dist) then
             ! Beyond NEAR range -> free
@@ -340,15 +342,17 @@ contains
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
             contact%states(i)%direction(:) )
           contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
-          if (contact%states(i)%state == CONTACTNEAR) then
-            write(*,'(A,i10,A,i10,A,f7.3,A,i6)') "Node",nodeID(slave)," near element", &
-              elemID(contact%master(id)%eid), &
-              " with distance ", contact%states(i)%distance," rank=",hecmw_comm_get_rank()
-          else
-            write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
-              elemID(contact%master(id)%eid),       &
-              " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
-              " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
+          if (CONTACT_LOG_LEVEL >= 1) then
+            if (contact%states(i)%state == CONTACTNEAR) then
+              write(*,'(A,i10,A,i10,A,f7.3,A,i6)') "Node",nodeID(slave)," near element", &
+                elemID(contact%master(id)%eid), &
+                " with distance ", contact%states(i)%distance," rank=",hecmw_comm_get_rank()
+            else
+              write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
+                elemID(contact%master(id)%eid),       &
+                " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
+                " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
+            end if
           end if
           exit
         enddo
@@ -370,8 +374,10 @@ contains
         id = contact%states(i)%surface
         if (abs(contact_surf(contact%slave(i))) /= elemID(contact%master(id)%eid)) then ! that is in contact with other surface
           contact%states(i)%state = CONTACTFREE                           ! should be freed
-          write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i))," contact with element", &
-          &  elemID(contact%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
+          if (CONTACT_LOG_LEVEL >= 1) &
+          &  write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i)), &
+          &  " contact with element",elemID(contact%master(id)%eid), &
+          &  " in rank",hecmw_comm_get_rank()," freed due to duplication"
         else if (is_contact_active(contact%states(i)%state)) then
           nactive = nactive + 1
         endif
@@ -497,7 +503,7 @@ contains
           embed%states(i)%surface = id
           embed%states(i)%multiplier(:) = 0.d0
           contact_surf(embed%slave(i)) = elemID(embed%master(id)%eid)
-          write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
+          if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
             elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
           exit
         enddo
@@ -513,7 +519,7 @@ contains
         id = embed%states(i)%surface
         if (abs(contact_surf(embed%slave(i))) /= elemID(embed%master(id)%eid)) then ! that is in contact with other surface
           embed%states(i)%state = CONTACTFREE                           ! should be freed
-          write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(embed%slave(i))," contact with element", &
+          if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(embed%slave(i))," contact with element", &
           &  elemID(embed%master(id)%eid), " in rank",hecmw_comm_get_rank()," freed due to duplication"
         else
           nactive = nactive + 1
@@ -576,7 +582,7 @@ contains
         else !found duplicate tied contact slave node
           fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
           infoCTChange%free2contact = infoCTChange%free2contact - 1
-          write(*,'(A,i10,A,i6,A,i6,A)') "Node",hecMESH%global_node_ID(slave), &
+          if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i6,A,i6,A)') "Node",hecMESH%global_node_ID(slave), &
             " in rank",hecmw_comm_get_rank()," freed due to duplication"
         endif
       enddo
