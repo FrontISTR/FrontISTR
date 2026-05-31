@@ -747,6 +747,15 @@ contains
             stop
           endif
         endif
+      else if( header_name == '!DAMPING') then
+        if( cid >0 ) then
+          if( fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, fstrSOLID%materials(cid)%variables, &
+              fstrSOLID%materials(cid)%is_elem_Rayleigh_damping)/=0 )  then
+            write(*,*) '### Error: Fail in read in damping definition : ' , cid
+            write(ILOG,*) '### Error: Fail in read in damping definition : ', cid
+            stop
+          endif
+        endif
       else if( header_name == '!FLUID' ) then
         if( c_material >0 ) then
           if( fstr_ctrl_get_FLUID( ctrl,                                 &
@@ -1173,6 +1182,13 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    allocate ( fstrSOLID%DFORCE( ntotal )      ,stat=ierror )
+    if( ierror /= 0 ) then
+      write(idbg,*) 'stop due to allocation error <FSTR_SOLID, DFORCE>'
+      write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+      call flush(idbg)
+      call hecmw_abort( hecmw_comm_get_comm())
+    end if
     allocate ( fstrSOLID%QFORCE_bak( ntotal )      ,stat=ierror )
     if( ierror /= 0 ) then
       write(idbg,*) 'stop due to allocation error <FSTR_SOLID, QFORCE_bak>'
@@ -1436,6 +1452,14 @@ contains
       deallocate(fstrSOLID%QFORCE           ,stat=ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, QFORCE>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%DFORCE) ) then
+      deallocate(fstrSOLID%DFORCE           ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, DFORCE>'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
