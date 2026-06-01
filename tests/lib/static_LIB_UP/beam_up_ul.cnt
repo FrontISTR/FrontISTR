@@ -1,0 +1,34 @@
+##
+## Cantilever beam bending, UP (u-p) formulation, Updated Lagrangian (UPDATELAG)
+##   Mesh: 5x1x1 hex (beam_up_ul.msh), L=5, b=h=1
+##   Material: E=1000, nu=0.499999 (nearly incompressible), !ELASTIC,CAUCHY -> UPDATELAG
+##   Load: tip force -1.0 at SET_4 (2 nodes), fixed end SET_1, NLSTATIC 10 substeps
+##
+## Purpose:
+##   Verify the UPDATELAG branch of the UP element. Same model/load as the
+##   TOTALLAG case (beam_up.cnt); the final-step tip deflection must be close
+##   to it (uy_UL = -1.4095 vs uy_TL = -1.4139, ~0.3% diff), confirming the
+##   two formulations give a consistent solution. Newton converges in 5-6 iters.
+##
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,LOG
+!WRITE,RESULT
+!SOLVER,METHOD=MUMPS,ITERLOG=NO,TIMELOG=NO
+ 10000, 1
+ 1.0e-08, 1.00, 0.0
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+ SET_1,2,2
+ SET_1,3,3
+!CLOAD, GRPID=1
+ SET_4,2,-1.0
+!MATERIAL, NAME=MATERIAL1
+!ELASTIC, CAUCHY
+ 1.0000E+03, 4.99999E-01
+!SECTION, SECNUM=1, FORM361=UP
+!STEP, SUBSTEPS=10, CONVERG=1.0E-06
+ BOUNDARY,1
+ LOAD,1
+!END

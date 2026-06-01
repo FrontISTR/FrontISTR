@@ -1,0 +1,33 @@
+##
+## Cantilever beam bending, UP (u-p) formulation, LINEAR analysis (INFINITESIMAL)
+##   Mesh: 5x1x1 hex (beam_up_inf.msh), L=5, b=h=1
+##   Material: E=1000, nu=0.499999 (nearly incompressible), !ELASTIC (TYPE=STATIC -> INFINITESIMAL)
+##   Load: tip force -1.0 at SET_4 (2 nodes), fixed end SET_1
+##
+## Purpose:
+##   Verify the UP element is free of volumetric locking in the LINEAR regime
+##   (nu->0.5). The tip deflection must be O(1) (uy ~= -1.40 on this coarse mesh,
+##   cf. Timoshenko theory -1.04), NOT locked (full-integration gives ~ -0.03).
+##
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!WRITE,LOG
+!WRITE,RESULT
+!SOLVER,METHOD=MUMPS,ITERLOG=NO,TIMELOG=NO
+ 10000, 1
+ 1.0e-08, 1.00, 0.0
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+ SET_1,2,2
+ SET_1,3,3
+!CLOAD, GRPID=1
+ SET_4,2,-1.0
+!MATERIAL, NAME=MATERIAL1
+!ELASTIC
+ 1.0000E+03, 4.99999E-01
+!SECTION, SECNUM=1, FORM361=UP
+!STEP
+ BOUNDARY,1
+ LOAD,1
+!END
