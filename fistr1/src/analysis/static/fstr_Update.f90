@@ -179,8 +179,8 @@ contains
               lambda(1) = -0.5D0*fstrSOLID%elements(icel)%p(1)
               CALL Update_C3_up                                                                      &
                    ( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), &
-                     qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, tincr,                &
-                     1, lambda, ddlambda, tt(1:nn), tt0(1:nn) )
+                     cdsys_ID, coords, qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:),           &
+                     iter, time, tincr, 1, lambda, ddlambda, tt(1:nn), tt0(1:nn) )
               lambda(1) = lambda(1) + ddlambda(1)
               fstrSOLID%elements(icel)%p(1) = -2.0D0*lambda(1)
           endif
