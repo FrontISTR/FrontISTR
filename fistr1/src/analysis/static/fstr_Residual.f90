@@ -11,6 +11,7 @@ module m_fstr_Residual
 
   public :: fstr_Update_NDForce
   public :: fstr_Update_NDForce_SPC
+  public :: fstr_Update_REACTION_SPC
   public :: fstr_get_residual
   public :: fstr_get_norm_contact
   public :: fstr_assemble_residual_contact
@@ -105,16 +106,14 @@ contains
     !    Local variables
     integer(kind=kint) ndof, ig0, ig, ityp, iS0, iE0, ik, in, idof1, idof2, idof
     integer(kind=kint) :: grpid
-    real(kind=kreal) :: rhs
 
     ndof = hecMESH%n_dof
-    fstrSOLID%REACTION = 0.d0
 
+    !    Clear RHS at constrained DOFs (SPC)
     do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
       ig= fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-      rhs= fstrSOLID%BOUNDARY_ngrp_val(ig0)
       ityp= fstrSOLID%BOUNDARY_ngrp_type(ig0)
       iS0= hecMESH%node_group%grp_index(ig-1) + 1
       iE0= hecMESH%node_group%grp_index(ig  )
@@ -128,7 +127,45 @@ contains
         end if
         do idof=idof1,idof2
           B( ndof*(in-1) + idof ) = 0.d0
-          !for output reaction force
+        enddo
+      enddo
+    enddo
+  end subroutine fstr_Update_NDForce_SPC
+
+  !> Set fstrSOLID%REACTION at constrained DOFs using current fstrSOLID%QFORCE.
+  !> Constrained DOFs are enumerated from BOUNDARY_ngrp_*, and (when present)
+  !> VELOCITY_ngrp_* / ACCELERATION_ngrp_* with non-initial type. This subroutine
+  !> must be called after fstr_UpdateNewton so that REACTION reflects the
+  !> converged internal nodal force of the current (sub)step.
+  subroutine fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
+    use m_fstr
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    type(fstr_solid), intent(in)         :: fstrSOLID !< constraints and QFORCE
+    !    Local variables
+    integer(kind=kint) :: ndof, ig0, ig, ityp, iS0, iE0, ik, in, idof1, idof2, idof
+    integer(kind=kint) :: grpid
+
+    ndof = hecMESH%n_dof
+    fstrSOLID%REACTION = 0.d0
+
+    ! displacement boundary
+    do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
+      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
+      ig= fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+      ityp= fstrSOLID%BOUNDARY_ngrp_type(ig0)
+      iS0= hecMESH%node_group%grp_index(ig-1) + 1
+      iE0= hecMESH%node_group%grp_index(ig  )
+      do ik= iS0, iE0
+        in   = hecMESH%node_group%grp_item(ik)
+        idof1 = ityp/10
+        idof2 = ityp - idof1*10
+        if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then
+          idof1 = 1
+          idof2 = ndof
+        end if
+        do idof=idof1,idof2
           fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           !count embed force as reaction force
           if( associated(fstrSOLID%EMBED_NFORCE) ) fstrSOLID%REACTION(ndof*(in-1)+idof) = &
@@ -136,7 +173,47 @@ contains
         enddo
       enddo
     enddo
-  end subroutine fstr_Update_NDForce_SPC
+
+    ! velocity boundary (dynamic only; following type constrains the DOF)
+    if( fstrSOLID%VELOCITY_type /= kbcInitial ) then
+      do ig0= 1, fstrSOLID%VELOCITY_ngrp_tot
+        grpid = fstrSOLID%VELOCITY_ngrp_GRPID(ig0)
+        if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
+        ig= fstrSOLID%VELOCITY_ngrp_ID(ig0)
+        ityp= fstrSOLID%VELOCITY_ngrp_type(ig0)
+        iS0= hecMESH%node_group%grp_index(ig-1) + 1
+        iE0= hecMESH%node_group%grp_index(ig  )
+        idof1 = ityp/10
+        idof2 = ityp - idof1*10
+        do ik= iS0, iE0
+          in   = hecMESH%node_group%grp_item(ik)
+          do idof=idof1,idof2
+            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
+          enddo
+        enddo
+      enddo
+    endif
+
+    ! acceleration boundary (dynamic only; following type constrains the DOF)
+    if( fstrSOLID%ACCELERATION_type /= kbcInitial ) then
+      do ig0= 1, fstrSOLID%ACCELERATION_ngrp_tot
+        grpid = fstrSOLID%ACCELERATION_ngrp_GRPID(ig0)
+        if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
+        ig= fstrSOLID%ACCELERATION_ngrp_ID(ig0)
+        ityp= fstrSOLID%ACCELERATION_ngrp_type(ig0)
+        iS0= hecMESH%node_group%grp_index(ig-1) + 1
+        iE0= hecMESH%node_group%grp_index(ig  )
+        idof1 = ityp/10
+        idof2 = ityp - idof1*10
+        do ik= iS0, iE0
+          in   = hecMESH%node_group%grp_item(ik)
+          do idof=idof1,idof2
+            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
+          enddo
+        enddo
+      enddo
+    endif
+  end subroutine fstr_Update_REACTION_SPC
 
 
   !> \breaf This subroutine calculate residual vector
