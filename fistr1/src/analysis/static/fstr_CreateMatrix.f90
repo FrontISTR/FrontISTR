@@ -198,7 +198,7 @@ contains
     real(kind=kreal),   intent(inout) :: lumped(:)
 
     type(tMaterial), pointer :: material
-    integer(kind=kint) :: isect, ihead, cdsys_ID, sec_opt
+    integer(kind=kint) :: isect, ihead, cdsys_ID, sec_opt, i, j
     real(kind=kreal) :: coords(3,3), thick
     real(kind=kreal) :: rho, length, surf
     real(kind=kreal) :: shell_nddisp(6,fstrSOLID%max_ncon)
@@ -298,7 +298,7 @@ contains
         shell_du(:, :) = 0.0d0
         do j = 1, nn
           do i = 1, min(ndof, 6)
-            shell_du(i,j) = du(ndof*(j-1)+i)
+            shell_du(i,j) = fstrSOLID%dunode(ndof*(nodLOCAL(j)-1)+i)
           enddo
         enddo
         call ShellComposeNodalDisplacement( ndof, nn, u_prev(1:6,1:nn), shell_du(1:6,1:nn), &
