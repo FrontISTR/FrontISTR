@@ -139,9 +139,7 @@ contains
       ! ----- update the small displacement and the displacement for 1step
       !       \delta u^k => solver's solution
       !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
-      do i = 1, hecMESH%n_node*ndof
-        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
-      enddo
+      call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
 
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
 
@@ -164,9 +162,7 @@ contains
 
     ! ----- update the total displacement
     ! u_{n+1} = u_{n} + \Delta u_{n+1}
-    do i=1,hecMESH%n_node*ndof
-      fstrSOLID%unode(i) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
-    enddo
+    call fstr_commit_shell_rotation_increment( hecMESH, fstrSOLID, ndof )
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
     !    Update REACTION using current QFORCE
@@ -293,9 +289,7 @@ contains
           ! ----- update the small displacement and the displacement for 1step
           !       \delta u^k => solver's solution
           !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
-          do i = 1, hecMESH%n_node*ndof
-            fstrSOLID%dunode(i) = fstrSOLID%dunode(i)+hecMAT%X(i)
-          enddo
+          call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
 
           ! ----- update the strain, stress, and internal force
           call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
@@ -397,9 +391,7 @@ contains
 
     ! ----- update the total displacement
     ! u_{n+1} = u_{n} + \Delta u_{n+1}
-    do i=1,hecMESH%n_node*ndof
-      fstrSOLID%unode(i) = fstrSOLID%unode(i)+fstrSOLID%dunode(i)
-    enddo
+    call fstr_commit_shell_rotation_increment( hecMESH, fstrSOLID, ndof )
 
     fstrSOLID%NRstat_i(knstCITER) = count_step ! logging contact iteration
 
@@ -542,9 +534,7 @@ contains
         endif
 
         ! ----- update the small displacement and the displacement for 1step
-        do i = 1, hecMESH%n_node*ndof
-          fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
-        enddo
+        call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
 
         ! ----- update the Lagrange multipliers
         if( fstr_is_contact_active() ) then
@@ -653,9 +643,7 @@ contains
 
     ! ----- update the total displacement
     !       u_{n+1} = u_{n} + \Delta u_{n+1}
-    do i = 1, hecMESH%n_node*ndof
-      fstrSOLID%unode(i) = fstrSOLID%unode(i)+fstrSOLID%dunode(i)
-    enddo
+    call fstr_commit_shell_rotation_increment( hecMESH, fstrSOLID, ndof )
 
     call fstr_UpdateState(hecMESH, fstrSOLID, tincr)
     call fstr_update_contact_TangentForce( cstep, fstrSOLID )
