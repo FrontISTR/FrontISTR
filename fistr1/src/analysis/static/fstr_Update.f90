@@ -26,6 +26,7 @@ contains
     !=====================================================================*
     use m_static_lib
     use m_elemact
+    use mMaterial, only: INFINITESIMAL, TOTALLAG, isElastic
 
     type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
     type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -40,6 +41,8 @@ contains
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
 
     real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: shell_director(3, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: shell_ref_director(3, fstrSOLID%max_ncon)
     real(kind=kreal)   :: tt(fstrSOLID%max_ncon), tt0(fstrSOLID%max_ncon), ttn(fstrSOLID%max_ncon)
     real(kind=kreal)   :: qf(fstrSOLID%max_ncon*6), coords(3, 3)
     integer            :: isect, ihead, cdsys_ID
@@ -51,6 +54,7 @@ contains
 
     ndof = hecMAT%NDOF
     fstrSOLID%QFORCE=0.0d0
+    call fstr_ensure_shell_rotation_state( hecMESH, fstrSOLID, ndof )
 
     tt0 = 0.d0
     ttn = 0.d0
@@ -86,7 +90,7 @@ contains
 
       !element loop
       !$omp parallel default(none), &
-        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp, &
+        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp,shell_director,shell_ref_director, &
         !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
@@ -177,7 +181,7 @@ contains
 
         else if( ic_type == 511) then
           call UPDATE_CONNECTOR( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
-            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
+            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), tincr )
   
         else if( ic_type == 611) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
@@ -190,9 +194,26 @@ contains
             &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
 
         else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0)
+          if( fstrPR%nlgeom ) then
+            if( .not. ( ic_type == 741 .and. nn == 4 &
+              .and. fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag == TOTALLAG &
+              .and. isElastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) ) &
+              call Update_abort( ic_type, 2 )
+          endif
+          if( ic_type == 741 .and. nn == 4 &
+            .and. fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag == TOTALLAG &
+            .and. isElastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) then
+            call fstr_get_shell_trial_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn) )
+            call fstr_get_shell_reference_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
+              shell_ref_director(1:3,1:nn) )
+            call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+              &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0, &
+              &              element=fstrSOLID%elements(icel), nddirector=shell_director(1:3,1:nn), &
+              &              ndrefdirector=shell_ref_director(1:3,1:nn))
+          else
+            call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), &
+              &              du(1:ndof,1:nn), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0)
+          endif
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
@@ -274,6 +295,7 @@ contains
     type(fstr_solid) :: fstrSOLID   !< fstr_solid
     real(kind=kreal) :: tincr
     integer(kind=kint) :: itype, is, iE, ic_type, icel, ngauss, i
+    integer(kind=kint) :: ishell
 
     if( associated( fstrSOLID%temperature ) ) then
       do i = 1, hecMESH%n_node
@@ -314,6 +336,17 @@ contains
           fstrSOLID%elements(icel)%gausses(i)%stress_bak = fstrSOLID%elements(icel)%gausses(i)%stress
           fstrSOLID%elements(icel)%gausses(i)%strain_energy_bak = fstrSOLID%elements(icel)%gausses(i)%strain_energy
         enddo
+
+        if( associated( fstrSOLID%elements(icel)%shell_layer_gausses ) ) then
+          do ishell = 1, size( fstrSOLID%elements(icel)%shell_layer_gausses )
+            fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_bak = &
+              fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain
+            fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%stress_bak = &
+              fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%stress
+            fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_energy_bak = &
+              fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_energy
+          enddo
+        endif
       enddo
     enddo
 
@@ -322,6 +355,458 @@ contains
     end do
 
   end subroutine fstr_UpdateState
+
+  subroutine fstr_set_identity_triad( triad )
+    implicit none
+
+    real(kind=kreal), intent(out) :: triad(3, 3)
+
+    triad(:, :) = 0.0D0
+    triad(1, 1) = 1.0D0
+    triad(2, 2) = 1.0D0
+    triad(3, 3) = 1.0D0
+
+  end subroutine fstr_set_identity_triad
+
+  subroutine fstr_reference_shell_triad( nn, ecoord, inode, triad )
+    use m_static_LIB_shell, only: ShellOrthonormalizeTriad
+    implicit none
+
+    integer(kind=kint), intent(in) :: nn
+    integer(kind=kint), intent(in) :: inode
+    real(kind=kreal), intent(in)  :: ecoord(3, nn)
+    real(kind=kreal), intent(out) :: triad(3, 3)
+
+    real(kind=kreal) :: xi, eta
+    real(kind=kreal) :: dndxi(4), dndeta(4)
+    real(kind=kreal) :: g1(3), g2(3), e0(3), trial(3, 3), normv
+    integer(kind=kint) :: i
+
+    call fstr_set_identity_triad( trial )
+    if( nn /= 4 ) then
+      triad(1:3, 1:3) = trial(1:3, 1:3)
+      return
+    endif
+
+    call fstr_mitc4_shape_deriv( 0.0D0, 0.0D0, dndxi, dndeta )
+    e0(1:3) = 0.0D0
+    do i = 1, 4
+      e0(1:3) = e0(1:3) + dndxi(i)*ecoord(1:3, i)
+    end do
+
+    select case( inode )
+    case( 1 )
+      xi = -1.0D0
+      eta = -1.0D0
+    case( 2 )
+      xi =  1.0D0
+      eta = -1.0D0
+    case( 3 )
+      xi =  1.0D0
+      eta =  1.0D0
+    case default
+      xi = -1.0D0
+      eta =  1.0D0
+    end select
+
+    call fstr_mitc4_shape_deriv( xi, eta, dndxi, dndeta )
+    g1(1:3) = 0.0D0
+    g2(1:3) = 0.0D0
+    do i = 1, 4
+      g1(1:3) = g1(1:3) + dndxi(i)*ecoord(1:3, i)
+      g2(1:3) = g2(1:3) + dndeta(i)*ecoord(1:3, i)
+    end do
+
+    trial(1, 3) = g1(2)*g2(3) - g1(3)*g2(2)
+    trial(2, 3) = g1(3)*g2(1) - g1(1)*g2(3)
+    trial(3, 3) = g1(1)*g2(2) - g1(2)*g2(1)
+
+    trial(1, 2) = trial(2, 3)*e0(3) - trial(3, 3)*e0(2)
+    trial(2, 2) = trial(3, 3)*e0(1) - trial(1, 3)*e0(3)
+    trial(3, 2) = trial(1, 3)*e0(2) - trial(2, 3)*e0(1)
+    normv = dsqrt( dot_product( trial(1:3, 2), trial(1:3, 2) ) )
+    if( normv > 1.0D-14 ) trial(1:3, 2) = trial(1:3, 2)/normv
+
+    trial(1, 1) = trial(2, 2)*trial(3, 3) - trial(3, 2)*trial(2, 3)
+    trial(2, 1) = trial(3, 2)*trial(1, 3) - trial(1, 2)*trial(3, 3)
+    trial(3, 1) = trial(1, 2)*trial(2, 3) - trial(2, 2)*trial(1, 3)
+
+    call ShellOrthonormalizeTriad( trial, triad )
+
+  end subroutine fstr_reference_shell_triad
+
+  subroutine fstr_mitc4_shape_deriv( xi, eta, dndxi, dndeta )
+    implicit none
+
+    real(kind=kreal), intent(in)  :: xi, eta
+    real(kind=kreal), intent(out) :: dndxi(4), dndeta(4)
+
+    dndxi(1) = -0.25D0*(1.0D0-eta)
+    dndxi(2) =  0.25D0*(1.0D0-eta)
+    dndxi(3) =  0.25D0*(1.0D0+eta)
+    dndxi(4) = -0.25D0*(1.0D0+eta)
+
+    dndeta(1) = -0.25D0*(1.0D0-xi)
+    dndeta(2) = -0.25D0*(1.0D0+xi)
+    dndeta(3) =  0.25D0*(1.0D0+xi)
+    dndeta(4) =  0.25D0*(1.0D0-xi)
+
+  end subroutine fstr_mitc4_shape_deriv
+
+  subroutine fstr_store_shell_triad_node( fstrSOLID, node_id, triad, mode )
+    implicit none
+
+    type (fstr_solid), intent(inout)  :: fstrSOLID
+    integer(kind=kint), intent(in)    :: node_id, mode
+    real(kind=kreal), intent(in)      :: triad(3, 3)
+
+    integer(kind=kint) :: base
+
+    if( node_id <= 0 ) return
+    if( node_id > size(fstrSOLID%shell_rot_state) ) return
+    if( fstrSOLID%shell_rot_state(node_id) /= 0 ) return
+
+    base = 9*(node_id-1)
+    fstrSOLID%shell_rot_state(node_id) = mode
+    ! initialize reference and current shell triads
+    fstrSOLID%shell_ref_triad(base+1:base+3) = triad(1:3, 1)
+    fstrSOLID%shell_ref_triad(base+4:base+6) = triad(1:3, 2)
+    fstrSOLID%shell_ref_triad(base+7:base+9) = triad(1:3, 3)
+    fstrSOLID%shell_triad(base+1:base+3) = triad(1:3, 1)
+    fstrSOLID%shell_triad(base+4:base+6) = triad(1:3, 2)
+    fstrSOLID%shell_triad(base+7:base+9) = triad(1:3, 3)
+    fstrSOLID%shell_triad_bak(base+1:base+9) = fstrSOLID%shell_triad(base+1:base+9)
+    fstrSOLID%shell_dtriad(base+1:base+9) = fstrSOLID%shell_triad(base+1:base+9)
+    fstrSOLID%shell_drill(node_id) = 0.0D0
+    fstrSOLID%shell_drill_bak(node_id) = 0.0D0
+    fstrSOLID%shell_ddrill(node_id) = 0.0D0
+
+  end subroutine fstr_store_shell_triad_node
+
+  subroutine fstr_ensure_shell_rotation_state( hecMESH, fstrSOLID, ndof )
+    use elementInfo, only: fe_mitc4_shell
+    use mMaterial, only: TOTALLAG, isElastic
+    use m_static_LIB_shell, only: ShellOrthonormalizeTriad
+    implicit none
+
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (fstr_solid), intent(inout)      :: fstrSOLID
+    integer(kind=kint), intent(in)        :: ndof
+
+    integer(kind=kint) :: itype, is, iE, ic_type, icel, iiS, nn, j, node_id
+    integer(kind=kint), allocatable :: node_mode(:), node_count(:)
+    real(kind=kreal), allocatable :: director_sum(:,:), tangent_sum(:,:)
+    real(kind=kreal) :: ecoord(3, 8), triad(3, 3), trial(3, 3)
+    real(kind=kreal) :: director(3), tangent(3), ref_axis(3), normv, proj
+
+    if( .not. associated(fstrSOLID%shell_rot_state) ) return
+
+    allocate( director_sum(3, hecMESH%n_node) )
+    allocate( tangent_sum(3, hecMESH%n_node) )
+    allocate( node_mode(hecMESH%n_node) )
+    allocate( node_count(hecMESH%n_node) )
+    director_sum(:, :) = 0.0D0
+    tangent_sum(:, :) = 0.0D0
+    node_mode(:) = 0
+    node_count(:) = 0
+
+    do itype = 1, hecMESH%n_elem_type
+      is = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype)
+      ic_type = hecMESH%elem_type_item(itype)
+      if( ic_type /= fe_mitc4_shell ) cycle
+      do icel = is, iE
+        iiS = hecMESH%elem_node_index(icel-1)
+        nn = hecMESH%elem_node_index(icel) - iiS
+        if( nn /= 4 ) cycle
+        if( .not. associated( fstrSOLID%elements(icel)%gausses ) ) cycle
+        if( fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag /= TOTALLAG ) cycle
+        if( .not. isElastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) cycle
+
+        do j = 1, min(nn, 8)
+          node_id = hecMESH%elem_node_item(iiS+j)
+          ecoord(1:3, j) = hecMESH%node(3*node_id-2:3*node_id)
+        end do
+
+        if( ndof >= 6 ) then
+          do j = 1, nn
+            call fstr_reference_shell_triad( nn, ecoord(1:3, 1:nn), j, triad )
+            node_id = hecMESH%elem_node_item(iiS+j)
+            if( node_id <= 0 .or. node_id > hecMESH%n_node ) cycle
+            if( fstrSOLID%shell_rot_state(node_id) /= 0 ) cycle
+            ! average shell triads at shared nodes
+            director_sum(1:3, node_id) = director_sum(1:3, node_id) + triad(1:3, 3)
+            tangent_sum(1:3, node_id) = tangent_sum(1:3, node_id) + triad(1:3, 1)
+            node_count(node_id) = node_count(node_id) + 1
+            node_mode(node_id) = 1
+          end do
+        endif
+      end do
+    end do
+
+    do node_id = 1, hecMESH%n_node
+      if( node_count(node_id) <= 0 ) cycle
+      if( fstrSOLID%shell_rot_state(node_id) /= 0 ) cycle
+
+      director(1:3) = director_sum(1:3, node_id)
+      normv = dsqrt( dot_product( director(1:3), director(1:3) ) )
+      if( normv <= 1.0D-14 ) then
+        call fstr_set_identity_triad( triad )
+        call fstr_store_shell_triad_node( fstrSOLID, node_id, triad, node_mode(node_id) )
+        cycle
+      endif
+      director(1:3) = director(1:3)/normv
+
+      tangent(1:3) = tangent_sum(1:3, node_id)
+      proj = dot_product( tangent(1:3), director(1:3) )
+      tangent(1:3) = tangent(1:3) - proj*director(1:3)
+      normv = dsqrt( dot_product( tangent(1:3), tangent(1:3) ) )
+      if( normv <= 1.0D-14 ) then
+        ref_axis(1:3) = (/ 1.0D0, 0.0D0, 0.0D0 /)
+        if( dabs(director(1)) > 0.9D0 ) ref_axis(1:3) = (/ 0.0D0, 1.0D0, 0.0D0 /)
+        proj = dot_product( ref_axis(1:3), director(1:3) )
+        tangent(1:3) = ref_axis(1:3) - proj*director(1:3)
+        normv = dsqrt( dot_product( tangent(1:3), tangent(1:3) ) )
+      endif
+      tangent(1:3) = tangent(1:3)/normv
+
+      call fstr_set_identity_triad( trial )
+      trial(1:3, 1) = tangent(1:3)
+      trial(1:3, 3) = director(1:3)
+      call ShellOrthonormalizeTriad( trial, triad )
+      call fstr_store_shell_triad_node( fstrSOLID, node_id, triad, node_mode(node_id) )
+    end do
+
+    deallocate( director_sum )
+    deallocate( tangent_sum )
+    deallocate( node_mode )
+    deallocate( node_count )
+
+  end subroutine fstr_ensure_shell_rotation_state
+
+  subroutine fstr_reset_shell_rotation_increment( hecMESH, fstrSOLID, ndof )
+    implicit none
+
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (fstr_solid), intent(inout)      :: fstrSOLID
+    integer(kind=kint), intent(in)        :: ndof
+
+    call fstr_ensure_shell_rotation_state( hecMESH, fstrSOLID, ndof )
+    if( .not. associated(fstrSOLID%shell_triad) ) return
+
+    fstrSOLID%shell_dtriad(:) = fstrSOLID%shell_triad(:)
+    fstrSOLID%shell_ddrill(:) = fstrSOLID%shell_drill(:)
+
+  end subroutine fstr_reset_shell_rotation_increment
+
+  subroutine fstr_begin_shell_rotation_step( hecMESH, fstrSOLID, ndof )
+    implicit none
+
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (fstr_solid), intent(inout)      :: fstrSOLID
+    integer(kind=kint), intent(in)        :: ndof
+
+    call fstr_ensure_shell_rotation_state( hecMESH, fstrSOLID, ndof )
+    if( .not. associated(fstrSOLID%shell_triad) ) return
+
+    fstrSOLID%shell_triad_bak(:) = fstrSOLID%shell_triad(:)
+    fstrSOLID%shell_drill_bak(:) = fstrSOLID%shell_drill(:)
+    fstrSOLID%shell_dtriad(:) = fstrSOLID%shell_triad(:)
+    fstrSOLID%shell_ddrill(:) = fstrSOLID%shell_drill(:)
+
+  end subroutine fstr_begin_shell_rotation_step
+
+  subroutine fstr_get_shell_trial_directors( fstrSOLID, thick, nn, nodLOCAL, directors )
+    implicit none
+
+    type (fstr_solid), intent(in)      :: fstrSOLID
+    real(kind=kreal), intent(in)       :: thick
+    integer(kind=kint), intent(in)     :: nn
+    integer(kind=kint), intent(in)     :: nodLOCAL(:)
+    real(kind=kreal), intent(out)      :: directors(3, nn)
+
+    integer(kind=kint) :: j, node_id, base
+
+    directors(:, :) = 0.0D0
+    if( .not. associated(fstrSOLID%shell_dtriad) ) return
+
+    do j = 1, nn
+      node_id = nodLOCAL(j)
+      if( node_id <= 0 .or. node_id > size(fstrSOLID%shell_rot_state) ) cycle
+      base = 9*(node_id-1)
+      directors(1:3, j) = 0.5D0*thick*fstrSOLID%shell_dtriad(base+7:base+9)
+    end do
+
+  end subroutine fstr_get_shell_trial_directors
+
+  subroutine fstr_get_shell_current_directors( fstrSOLID, thick, nn, nodLOCAL, directors )
+    implicit none
+
+    type (fstr_solid), intent(in)      :: fstrSOLID
+    real(kind=kreal), intent(in)       :: thick
+    integer(kind=kint), intent(in)     :: nn
+    integer(kind=kint), intent(in)     :: nodLOCAL(:)
+    real(kind=kreal), intent(out)      :: directors(3, nn)
+
+    integer(kind=kint) :: j, node_id, base
+
+    directors(:, :) = 0.0D0
+    if( .not. associated(fstrSOLID%shell_triad) ) return
+
+    do j = 1, nn
+      node_id = nodLOCAL(j)
+      if( node_id <= 0 .or. node_id > size(fstrSOLID%shell_rot_state) ) cycle
+      base = 9*(node_id-1)
+      directors(1:3, j) = 0.5D0*thick*fstrSOLID%shell_triad(base+7:base+9)
+    end do
+
+  end subroutine fstr_get_shell_current_directors
+
+  subroutine fstr_get_shell_reference_directors( fstrSOLID, thick, nn, nodLOCAL, directors )
+    implicit none
+
+    type (fstr_solid), intent(in)      :: fstrSOLID
+    real(kind=kreal), intent(in)       :: thick
+    integer(kind=kint), intent(in)     :: nn
+    integer(kind=kint), intent(in)     :: nodLOCAL(:)
+    real(kind=kreal), intent(out)      :: directors(3, nn)
+
+    integer(kind=kint) :: j, node_id, base
+
+    directors(:, :) = 0.0D0
+    if( .not. associated(fstrSOLID%shell_ref_triad) ) return
+
+    do j = 1, nn
+      node_id = nodLOCAL(j)
+      if( node_id <= 0 .or. node_id > size(fstrSOLID%shell_rot_state) ) cycle
+      base = 9*(node_id-1)
+      directors(1:3, j) = 0.5D0*thick*fstrSOLID%shell_ref_triad(base+7:base+9)
+    end do
+
+  end subroutine fstr_get_shell_reference_directors
+
+  subroutine fstr_mark_shell_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
+    use elementInfo, only: fe_mitc4_shell
+    use mMaterial, only: TOTALLAG, isElastic
+    implicit none
+
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (fstr_solid), intent(in)         :: fstrSOLID
+    integer(kind=kint), intent(in)        :: ndof
+    integer(kind=kint), intent(out)       :: shell_node_mode(:)
+
+    integer(kind=kint) :: itype, is, iE, ic_type, icel, iiS, nn, j, node_id
+
+    shell_node_mode(:) = 0
+    do itype = 1, hecMESH%n_elem_type
+      is = hecMESH%elem_type_index(itype-1) + 1
+      iE = hecMESH%elem_type_index(itype)
+      ic_type = hecMESH%elem_type_item(itype)
+      if( ic_type /= fe_mitc4_shell ) cycle
+      do icel = is, iE
+        iiS = hecMESH%elem_node_index(icel-1)
+        nn = hecMESH%elem_node_index(icel) - iiS
+        if( nn /= 4 ) cycle
+        if( .not. associated( fstrSOLID%elements(icel)%gausses ) ) cycle
+        if( fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag /= TOTALLAG ) cycle
+        if( .not. isElastic( fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype ) ) cycle
+
+        if( ndof >= 6 ) then
+          do j = 1, nn
+            node_id = hecMESH%elem_node_item(iiS+j)
+            if( node_id > 0 .and. node_id <= size(shell_node_mode) ) shell_node_mode(node_id) = 1
+          end do
+        endif
+      end do
+    end do
+
+  end subroutine fstr_mark_shell_rotation_nodes
+
+  subroutine fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, ndof, x )
+    use m_static_LIB_shell, only: ShellUpdateTriadWithIncrement, ShellComposeRotationVector
+    implicit none
+
+    type (hecmwST_local_mesh), intent(in)    :: hecMESH
+    type (fstr_solid), intent(inout)         :: fstrSOLID
+    integer(kind=kint), intent(in)           :: ndof
+    real(kind=kreal), intent(in)             :: x(:)
+
+    integer(kind=kint) :: node_id, idx, base
+    real(kind=kreal) :: theta_inc(3), theta_compat(3)
+    real(kind=kreal) :: triad_old(3, 3), triad_new(3, 3), drill_new
+    integer(kind=kint), allocatable :: shell_node_mode(:)
+
+    call fstr_ensure_shell_rotation_state( hecMESH, fstrSOLID, ndof )
+    allocate( shell_node_mode(hecMESH%n_node) )
+    call fstr_mark_shell_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
+
+    do node_id = 1, hecMESH%n_node
+      idx = ndof*(node_id-1)
+      if( shell_node_mode(node_id) == 1 ) then
+        fstrSOLID%dunode(idx+1:idx+3) = fstrSOLID%dunode(idx+1:idx+3) + x(idx+1:idx+3)
+        theta_inc(1:3) = x(idx+4:idx+6)
+        base = 9*(node_id-1)
+        triad_old(1:3, 1) = fstrSOLID%shell_dtriad(base+1:base+3)
+        triad_old(1:3, 2) = fstrSOLID%shell_dtriad(base+4:base+6)
+        triad_old(1:3, 3) = fstrSOLID%shell_dtriad(base+7:base+9)
+        call ShellUpdateTriadWithIncrement( triad_old, fstrSOLID%shell_ddrill(node_id), &
+          theta_inc, triad_new, drill_new )
+        fstrSOLID%shell_dtriad(base+1:base+3) = triad_new(1:3, 1)
+        fstrSOLID%shell_dtriad(base+4:base+6) = triad_new(1:3, 2)
+        fstrSOLID%shell_dtriad(base+7:base+9) = triad_new(1:3, 3)
+        fstrSOLID%shell_ddrill(node_id) = drill_new
+        ! update nodal rotation vector for output
+        call ShellComposeRotationVector( fstrSOLID%dunode(idx+4:idx+6), x(idx+4:idx+6), theta_compat )
+        fstrSOLID%dunode(idx+4:idx+6) = theta_compat(1:3)
+        if( ndof > 6 ) then
+          fstrSOLID%dunode(idx+7:idx+ndof) = fstrSOLID%dunode(idx+7:idx+ndof) + x(idx+7:idx+ndof)
+        endif
+      else
+        fstrSOLID%dunode(idx+1:idx+ndof) = fstrSOLID%dunode(idx+1:idx+ndof) + x(idx+1:idx+ndof)
+      endif
+    end do
+
+    deallocate( shell_node_mode )
+
+  end subroutine fstr_update_shell_rotation_increment
+
+  subroutine fstr_commit_shell_rotation_increment( hecMESH, fstrSOLID, ndof )
+    use m_static_LIB_shell, only: ShellComposeRotationVector
+    implicit none
+
+    type (hecmwST_local_mesh), intent(in)    :: hecMESH
+    type (fstr_solid), intent(inout)         :: fstrSOLID
+    integer(kind=kint), intent(in)           :: ndof
+
+    integer(kind=kint) :: node_id, idx, base
+    real(kind=kreal) :: theta_compat(3)
+    integer(kind=kint), allocatable :: shell_node_mode(:)
+
+    call fstr_ensure_shell_rotation_state( hecMESH, fstrSOLID, ndof )
+    allocate( shell_node_mode(hecMESH%n_node) )
+    call fstr_mark_shell_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
+
+    do node_id = 1, hecMESH%n_node
+      idx = ndof*(node_id-1)
+      if( shell_node_mode(node_id) == 1 ) then
+        fstrSOLID%unode(idx+1:idx+3) = fstrSOLID%unode(idx+1:idx+3) + fstrSOLID%dunode(idx+1:idx+3)
+        base = 9*(node_id-1)
+        fstrSOLID%shell_triad(base+1:base+9) = fstrSOLID%shell_dtriad(base+1:base+9)
+        fstrSOLID%shell_drill(node_id) = fstrSOLID%shell_ddrill(node_id)
+        ! update nodal rotation vector for output
+        call ShellComposeRotationVector( fstrSOLID%unode(idx+4:idx+6), fstrSOLID%dunode(idx+4:idx+6), theta_compat )
+        fstrSOLID%unode(idx+4:idx+6) = theta_compat(1:3)
+        if( ndof > 6 ) then
+          fstrSOLID%unode(idx+7:idx+ndof) = fstrSOLID%unode(idx+7:idx+ndof) + fstrSOLID%dunode(idx+7:idx+ndof)
+        endif
+      else
+        fstrSOLID%unode(idx+1:idx+ndof) = fstrSOLID%unode(idx+1:idx+ndof) + fstrSOLID%dunode(idx+1:idx+ndof)
+      endif
+    end do
+
+    deallocate( shell_node_mode )
+
+  end subroutine fstr_commit_shell_rotation_increment
 
   subroutine Update_abort( ic_type, flag, mtype )
     integer(kind=kint), intent(in) :: ic_type

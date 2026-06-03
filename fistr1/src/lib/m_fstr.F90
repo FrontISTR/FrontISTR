@@ -21,7 +21,6 @@ module m_fstr
   use m_elemact
   use mMechGauss
   use mContactDef
-  use m_fstr_contact_smoothing
 
   implicit none
 
@@ -396,11 +395,18 @@ module m_fstr
     real(kind=kreal), pointer :: EFORCE      (:)           !< external force
     real(kind=kreal), pointer :: QFORCE      (:)           !< equivalent nodal force
     real(kind=kreal), pointer :: QFORCE_bak  (:)           !< equivalent nodal force at the beginning of curr step
-    real(kind=kreal), pointer :: DFORCE      (:)           !< force on dynamic analysis
     real(kind=kreal), pointer :: unode(:)      => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
     real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp increment
+    integer(kind=kint), pointer :: shell_rot_state(:) => null() !< 0:inactive, 1:MITC4
+    real(kind=kreal), pointer :: shell_ref_triad(:) => null()   !< reference shell nodal triads, fixed after initialization
+    real(kind=kreal), pointer :: shell_triad(:)     => null()   !< converged shell nodal triads, 9 values/node
+    real(kind=kreal), pointer :: shell_triad_bak(:) => null()   !< shell nodal triads at the beginning of curr step
+    real(kind=kreal), pointer :: shell_dtriad(:)    => null()   !< current Newton trial shell nodal triads
+    real(kind=kreal), pointer :: shell_drill(:)     => null()   !< converged drilling scalar per node
+    real(kind=kreal), pointer :: shell_drill_bak(:) => null()   !< drilling scalar at the beginning of curr step
+    real(kind=kreal), pointer :: shell_ddrill(:)    => null()   !< current Newton trial drilling scalar per node
     real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
     real(kind=kreal), pointer :: temp_bak(:)   => null()
     real(kind=kreal), pointer :: last_temp(:)  => null()
@@ -424,8 +430,9 @@ module m_fstr
     ! ######################################################
     real(kind=kreal), pointer :: unode_bkup(:)     => null() !< disp at the beginning of curr step (backup)
     real(kind=kreal), pointer :: QFORCE_bkup(:)    => null() !< equivalent nodal force (backup)
-    real(kind=kreal), pointer :: DFORCE_bkup(:)    => null() !< equivalent nodal force (backup)
     real(kind=kreal), pointer :: last_temp_bkup(:) => null()
+    real(kind=kreal), pointer :: shell_triad_bkup(:) => null()
+    real(kind=kreal), pointer :: shell_drill_bkup(:) => null()
     type( tElement ), pointer :: elements_bkup(:)  =>null()  !< elements information (backup)
     type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
     type( tContact ), pointer :: embeds_bkup(:)  =>null()  !< contact information (backup)
@@ -549,6 +556,7 @@ module m_fstr
     integer(kind=kint) :: nout           ! output interval of result
     integer(kind=kint) :: ngrp_monit     ! node of monitoring result
     integer(kind=kint) :: nout_monit     ! output interval of result monitoring
+    integer(kind=kint) :: i_step         ! step number
     integer(kind=kint) :: iout_list(6)   ! 0:not output  1:output
     ! iout_list(1): displacement
     ! iout_list(2): velocity
@@ -726,13 +734,10 @@ contains
     nullify( S%GL          )
     nullify( S%GL0         )
     nullify( S%QFORCE      )
-    nullify( S%DFORCE      )
-    nullify( S%VELOCITY_ngrp_GRPID )
     nullify( S%VELOCITY_ngrp_ID )
     nullify( S%VELOCITY_ngrp_type )
     nullify( S%VELOCITY_ngrp_amp )
     nullify( S%VELOCITY_ngrp_val )
-    nullify( S%ACCELERATION_ngrp_GRPID )
     nullify( S%ACCELERATION_ngrp_ID )
     nullify( S%ACCELERATION_ngrp_type )
     nullify( S%ACCELERATION_ngrp_amp )
@@ -919,23 +924,11 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm() )
     end if
-#ifdef _OPENACC
-    allocate (hecMAT%A(nn*(hecMAT%NPA))        ,stat=ierror )
-    if( ierror /= 0 ) then
-      write(*,*) "##ERROR : not enough memory"
-      write(idbg,*) 'stop due to allocation error'
-      call flush(idbg)
-      call hecmw_abort( hecmw_comm_get_comm() )
-    endif
-#endif
     hecMAT%D  = 0.0d0
     hecMAT%AL = 0.0d0
     hecMAT%AU = 0.0d0
     hecMAT%B  = 0.0d0
     hecMAT%X  = 0.0d0
-#ifdef _OPENACC
-    hecMAT%A  = 0.0d0
-#endif
   end subroutine hecMAT_init
 
   subroutine hecMAT_finalize( hecMAT )
@@ -978,14 +971,6 @@ contains
     endif
     if( associated(HECMAT%X) ) then
       deallocate(hecMAT%X                   ,stat=ierror)
-      if( ierror /= 0 ) then
-        write(idbg,*) 'stop due to deallocation error'
-        call flush(idbg)
-        call hecmw_abort( hecmw_comm_get_comm())
-      end if
-    endif
-    if( associated(hecMAT%A) ) then
-      deallocate(hecMAT%A                   ,stat=ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error'
         call flush(idbg)

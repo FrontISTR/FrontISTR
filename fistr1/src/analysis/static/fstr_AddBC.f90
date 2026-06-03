@@ -15,8 +15,10 @@ contains
     use m_fstr
     use mContact
     use m_static_LIB_1d
+    use m_static_LIB_shell, only: ShellRelativeRotationVector
     use m_utilities
     use m_fstr_TimeInc
+    use m_fstr_Update, only: fstr_mark_shell_rotation_nodes
     integer, intent(in)                  :: cstep !< current step
     type(hecmwST_local_mesh)             :: hecMESH !< hecmw mesh
     type(hecmwST_matrix)                 :: hecMAT !< hecmw matrix
@@ -27,9 +29,14 @@ contains
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
     real(kind=kreal), optional           :: RHSvector(:) !< only Right Hand Side vector
 
-    integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, iS0, iE0, ik, in
+    integer(kind=kint) :: ig0, ig, ig1, ig_node, ityp, idofS, idofE, idof, idofS1, idofE1
+    integer(kind=kint) :: idof1, iS0, iE0, iS1, iE1, ik, ik1, in
     real(kind=kreal)   :: RHS0, RHS, factor, factor0
     integer(kind=kint) :: ndof, grpid, istot
+    integer(kind=kint) :: rot_dof_offset, rot_idofS, rot_idofE
+    integer(kind=kint), allocatable :: shell_node_mode(:)
+    logical :: target_found(3), use_shell_rotation_bc, node_in_group
+    real(kind=kreal) :: theta_old(3), theta_target(3), theta_increment(3)
 
     !for rotation
     integer(kind=kint) :: n_rot, rid, jj_n_amp
@@ -39,6 +46,10 @@ contains
 
     !
     ndof = hecMAT%NDOF
+    if( ndof >= 6 ) then
+      allocate( shell_node_mode(hecMESH%n_node) )
+      call fstr_mark_shell_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
+    endif
 
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
@@ -106,10 +117,57 @@ contains
         in = hecMESH%node_group%grp_item(ik)
         !
         do idof = idofS, idofE
-          if( istot == 0 ) then
-            RHS = RHS0*factor
-          else
-            RHS = (RHS0 - fstrSOLID%unode_bak(ndof*(in-1)+idof))*factor
+          use_shell_rotation_bc = .false.
+          if( istot /= 0 .and. allocated(shell_node_mode) ) then
+            rot_dof_offset = -1
+            if( shell_node_mode(in) == 1 .and. ndof >= 6 .and. idof >= 4 .and. idof <= 6 ) then
+              rot_dof_offset = 3
+            endif
+            if( rot_dof_offset >= 0 ) then
+              theta_old(1:3) = fstrSOLID%unode_bak(ndof*(in-1)+rot_dof_offset+1: &
+                ndof*(in-1)+rot_dof_offset+3)
+              theta_target(1:3) = theta_old(1:3)
+              target_found(1:3) = .false.
+              do ig1 = 1, fstrSOLID%BOUNDARY_ngrp_tot
+                if( .not. fstr_isBoundaryActive( fstrSOLID, fstrSOLID%BOUNDARY_ngrp_GRPID(ig1), cstep ) ) cycle
+                if( fstrSOLID%BOUNDARY_ngrp_rotID(ig1) > 0 ) cycle
+                if( fstrSOLID%BOUNDARY_ngrp_istot(ig1) == 0 ) cycle
+                ig_node = fstrSOLID%BOUNDARY_ngrp_ID(ig1)
+                iS1 = hecMESH%node_group%grp_index(ig_node-1) + 1
+                iE1 = hecMESH%node_group%grp_index(ig_node  )
+                node_in_group = .false.
+                do ik1 = iS1, iE1
+                  if( hecMESH%node_group%grp_item(ik1) == in ) then
+                    node_in_group = .true.
+                    exit
+                  endif
+                enddo
+                if( .not. node_in_group ) cycle
+                ityp = fstrSOLID%BOUNDARY_ngrp_type(ig1)
+                idofS1 = ityp/10
+                idofE1 = ityp - idofS1*10
+                rot_idofS = rot_dof_offset + 1
+                rot_idofE = rot_dof_offset + 3
+                do idof1 = max(idofS1, rot_idofS), min(idofE1, rot_idofE)
+                  theta_target(idof1-rot_dof_offset) = fstrSOLID%BOUNDARY_ngrp_val(ig1)
+                  target_found(idof1-rot_dof_offset) = .true.
+                enddo
+              enddo
+              if( all(target_found(1:3)) ) then
+                ! finite rotation boundary increment
+                theta_target(1:3) = theta_old(1:3) + factor*(theta_target(1:3) - theta_old(1:3))
+                call ShellRelativeRotationVector( theta_old, theta_target, theta_increment )
+                RHS = theta_increment(idof-rot_dof_offset)
+                use_shell_rotation_bc = .true.
+              endif
+            endif
+          endif
+          if( .not. use_shell_rotation_bc ) then
+            if( istot == 0 ) then
+              RHS = RHS0*factor
+            else
+              RHS = (RHS0 - fstrSOLID%unode_bak(ndof*(in-1)+idof))*factor
+            endif
           endif
           if(present(RHSvector)) then
             RHSvector(ndof*(in-1)+idof) = RHS
@@ -186,6 +244,7 @@ contains
       enddo
     enddo
     if( n_rot > 0 ) call fstr_RotInfo_finalize(rinfo)
+    if( allocated(shell_node_mode) ) deallocate( shell_node_mode )
 
     !
     !   ------ Truss element Diagonal Modification
