@@ -249,7 +249,8 @@ contains
 
   !> \breaf This subroutine calculate residual vector
   subroutine fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    use m_fstr_Update, only: fstr_UpdateNewton, fstr_update_shell_rotation_increment
+    use m_fstr_Update, only: fstr_UpdateNewton
+    use m_fstr_NodalKinematics, only: fstr_apply_solution_increment
     implicit none
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -276,7 +277,7 @@ contains
       allocate(shell_ddrill_bak(size(fstrSOLID%shell_ddrill)))
       shell_ddrill_bak(:) = fstrSOLID%shell_ddrill(:)
     endif
-    call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
+    call fstr_apply_solution_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
     call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
     do i=1, hecMAT%ndof*hecMESH%n_node
       fstrSOLID%dunode(i) = dunode_bak(i)
@@ -508,7 +509,7 @@ contains
     use m_fstr
     use mULoad
     use m_fstr_spring
-    use m_fstr_Update, only: fstr_update_shell_rotation_increment
+    use m_fstr_NodalKinematics, only: fstr_apply_solution_increment
     implicit none
     integer(kind=kint), intent(in)       :: cstep !< current step
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
@@ -532,7 +533,7 @@ contains
       allocate(shell_ddrill_bak(size(fstrSOLID%shell_ddrill)))
       shell_ddrill_bak(:) = fstrSOLID%shell_ddrill(:)
     endif
-    call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
+    call fstr_apply_solution_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
     potential = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype)
     do i=1, hecMAT%ndof*hecMESH%n_node
       fstrSOLID%dunode(i) = dunode_bak(i)
@@ -550,7 +551,7 @@ contains
   subroutine plot_potential_graph( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
     restrt_step_num, sub_step, ctime, dtime, iter, tincr )
     use m_fstr
-    use m_fstr_Update, only: fstr_update_shell_rotation_increment
+    use m_fstr_NodalKinematics, only: fstr_apply_solution_increment
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
@@ -591,7 +592,7 @@ contains
       fstrSOLID%dunode(:) = dunode_bak(:)
       if( allocated(shell_dtriad_bak) ) fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
       if( allocated(shell_ddrill_bak) ) fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
-      call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
+      call fstr_apply_solution_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
       pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)

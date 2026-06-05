@@ -18,7 +18,7 @@ contains
     use m_static_LIB_shell, only: ShellRelativeRotationVector
     use m_utilities
     use m_fstr_TimeInc
-    use m_fstr_Update, only: fstr_mark_shell_rotation_nodes
+    use m_fstr_NodalKinematics, only: fstr_mark_finite_rotation_nodes
     integer, intent(in)                  :: cstep !< current step
     type(hecmwST_local_mesh)             :: hecMESH !< hecmw mesh
     type(hecmwST_matrix)                 :: hecMAT !< hecmw matrix
@@ -48,7 +48,7 @@ contains
     ndof = hecMAT%NDOF
     if( ndof >= 6 ) then
       allocate( shell_node_mode(hecMESH%n_node) )
-      call fstr_mark_shell_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
+      call fstr_mark_finite_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
     endif
 
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot

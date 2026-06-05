@@ -33,7 +33,7 @@ contains
     use mMechGauss
     use m_dynamic_mass
     use m_elemact
-    use m_fstr_Update, only: fstr_ensure_shell_rotation_state
+    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state
 
     type(hecmwST_local_mesh)              :: hecMESH      !< mesh information
     type(hecmwST_matrix)                  :: hecMAT       !< system matrix
@@ -66,7 +66,7 @@ contains
     endif
 
     ndof = hecMAT%NDOF
-    call fstr_ensure_shell_rotation_state( hecMESH, fstrSOLID, ndof )
+    call fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
 
     do itype = 1, hecMESH%n_elem_type
       iS = hecMESH%elem_type_index(itype-1) + 1
@@ -182,8 +182,8 @@ contains
     use m_static_LIB_shell, only: ShellComposeNodalDisplacement
     use mMechGauss
     use m_dynamic_mass
-    use m_fstr_Update, only: fstr_get_shell_trial_directors, fstr_get_shell_reference_directors
-    use mMaterial, only: TOTALLAG, isElastic
+    use m_fstr_NodalKinematics, only: fstr_get_shell_trial_directors, fstr_get_shell_reference_directors, &
+      fstr_uses_finite_rotation_kinematics
 
     integer(kind=kint), intent(in)    :: ic_type, ndof
     integer(kind=kint), intent(inout) :: nn  ! some legacy STF_* routines mutate this
@@ -289,12 +289,7 @@ contains
       endif
 
     else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-      if( material%nlgeom_flag /= INFINITESIMAL ) then
-        if( .not. ( ic_type == 741 .and. nn == 4 .and. material%nlgeom_flag == TOTALLAG &
-          .and. isElastic( material%mtype ) ) ) call CreateMat_abort( ic_type, 2 )
-      endif
-      if( ic_type == 741 .and. nn == 4 .and. material%nlgeom_flag == TOTALLAG &
-          .and. isElastic( material%mtype ) ) then
+      if( fstr_uses_finite_rotation_kinematics( ic_type, nn, material ) ) then
         shell_du(:, :) = 0.0d0
         do j = 1, nn
           do i = 1, min(ndof, 6)
@@ -311,6 +306,7 @@ contains
           &              element=fstrSOLID%elements(icel), nddirector=shell_director(1:3,1:nn), &
           &              ndrefdirector=shell_ref_director(1:3,1:nn))
       else
+        if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
         call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           &              stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0)
       endif

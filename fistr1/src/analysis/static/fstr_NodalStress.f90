@@ -1098,7 +1098,7 @@ contains
   subroutine fstr_NodalStress6D( hecMESH, fstrSOLID )
     !----------------------------------------------------------------------*
     use m_static_lib
-    use m_fstr_Update, only: fstr_ensure_shell_rotation_state, fstr_get_shell_current_directors, &
+    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state, fstr_get_shell_current_directors, &
       fstr_get_shell_reference_directors
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
@@ -1120,7 +1120,7 @@ contains
     if( .not. associated(fstrSOLID%is_rot) ) allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
     fstrSOLID%is_rot = 0
-    call fstr_ensure_shell_rotation_state(hecMESH, fstrSOLID, 6)
+    call fstr_ensure_finite_rotation_state(hecMESH, fstrSOLID, 6)
 
     !C +-------------------------------+
     !C | according to ELEMENT TYPE     |

@@ -10,7 +10,7 @@ module m_fstr_solve_NLGEOM
   use m_static_output
   use m_fstr_NonLinearMethod
   use m_fstr_QuasiNewton
-  use m_fstr_Update, only: fstr_begin_shell_rotation_step
+  use m_fstr_NodalKinematics, only: fstr_begin_nodal_kinematics_step
   use m_fstr_Restart
   use fstr_matrix_con_contact
   use m_fstr_TimeInc
@@ -105,7 +105,7 @@ contains
     endif
 
     fstrSOLID%FACTOR = 0.0d0
-    call fstr_begin_shell_rotation_step( hecMESH, fstrSOLID, hecMAT%NDOF )
+    call fstr_begin_nodal_kinematics_step( hecMESH, fstrSOLID, hecMAT%NDOF )
     call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
 
@@ -121,7 +121,7 @@ contains
       endif
       call fstr_UpdateState( hecMESH, fstrSOLID, 0.0d0 )
 
-      call fstr_begin_shell_rotation_step( hecMESH, fstrSOLID, hecMAT%NDOF )
+      call fstr_begin_nodal_kinematics_step( hecMESH, fstrSOLID, hecMAT%NDOF )
       fstrSOLID%unode_bak(:) = fstrSOLID%unode(:)
 
       ! -------------------------------------------------------------------------
