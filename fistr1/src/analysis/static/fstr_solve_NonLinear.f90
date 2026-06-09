@@ -18,6 +18,7 @@ module m_fstr_NonLinearMethod
   use m_fstr_Residual
   use m_fstr_Restart
   use m_fstr_elemact
+  use m_fstr_IterationControl
   use fstr_matrix_con_contact
   use mContact
   use m_fstr_contact_assembly
@@ -70,71 +71,6 @@ contains
     endif
 
   end subroutine fstr_init_Newton
-
-  !> \breaf This function check iteration status
-  function fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep) result(iterStatus)
-    implicit none
-    integer(kind=kint) :: iterStatus
-
-    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-    type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
-    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-    integer(kind=kint), intent(in) :: ndof
-    integer(kind=kint), intent(in) :: iter
-    integer(kind=kint), intent(in) :: sub_step, cstep
-
-    real(kind=kreal)   :: res, qnrm, rres, xnrm, dunrm, rxnrm
-
-    iterStatus = kitrContinue
-
-    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%B, hecMAT%B, res)
-    res = sqrt(res)
-    call hecmw_InnerProduct_R(hecMESH, ndof, hecMAT%X, hecMAT%X, xnrm)
-    xnrm = sqrt(xnrm)
-    call hecmw_innerProduct_R(hecMESH, ndof, fstrSOLID%QFORCE, fstrSOLID%QFORCE, qnrm)
-    qnrm = sqrt(qnrm)
-    if (qnrm < 1.0d-8) qnrm = 1.0d0
-    if( iter == 1 ) then
-      dunrm = xnrm
-    else
-      call hecmw_InnerProduct_R(hecMESH, ndof, fstrSOLID%dunode, fstrSOLID%dunode, dunrm)
-      dunrm = sqrt(dunrm)
-    endif
-    rres = res/qnrm
-    rxnrm = xnrm/dunrm
-
-    if( hecMESH%my_rank == 0 ) then
-      if (qnrm == 1.0d0) then
-        write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual(abs):", rres, ", disp.corr.:", rxnrm
-      else
-        write(*,"(a,i8,a,1pe11.4,a,1pe11.4)")" iter:", iter, ", residual:", rres, ", disp.corr.:", rxnrm
-      endif
-    endif
-    if( hecmw_mat_get_flag_diverged(hecMAT) == kNO ) then
-      if( rres < fstrSOLID%step_ctrl(cstep)%converg .or. &
-          rxnrm < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
-          iterStatus=kitrConverged
-          return
-      endif
-    endif
-
-    ! ----- check divergence and NaN
-    if ( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. rres > fstrSOLID%step_ctrl(cstep)%maxres) &
-      iterStatus = kitrDiverged
-    if (rres /= rres ) iterStatus = kitrFloatingError
-    if (iterStatus /= kitrContinue) then
-      if( hecMESH%my_rank == 0) then
-        write(ILOG,'(a,i5,a,i5)') '### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-        write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-      end if
-      fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
-      fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
-      fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
-      if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
-      if( rres > fstrSOLID%step_ctrl(cstep)%maxres .or. rres /= rres ) fstrSOLID%NRstat_i(knstDRESN) = 2
-      return
-    end if
-  end function fstr_check_iteration_converged
 
   !> \brief This subroutine solve nonlinear solid mechanics problems by Newton-Raphson
   !> method
@@ -212,7 +148,12 @@ contains
       if( isLinear ) exit
 
       ! ----- check convergence
-      iterStatus = fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep)
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+          ndof, iter, sub_step, cstep, &
+          hecMAT%B, 0, &
+          res, res, &
+          0, &
+          iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
     enddo
@@ -267,6 +208,8 @@ contains
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
     logical            :: is_first_Stiffmatrixcall
+    integer(kind=kint)  :: iterStatus, nresid
+    real(kind=kreal), allocatable :: resid_work(:)
 
 
     ! sum of n_node among all subdomains (to be used to calc res)
@@ -296,6 +239,7 @@ contains
 
     stepcnt = 0
     allocate(coord(hecMESH%n_node*ndof))
+    allocate(resid_work(hecMESH%n_node*ndof + conMAT%NP*ndof))
 
     ! ----- Augmentation loop. In case of no contact, it is inactive
     n_al_step = fstrPARAM%augiter
@@ -373,38 +317,18 @@ contains
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
 
           !res = fstr_get_residual(hecMAT%B, hecMESH)
-          res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
-          ! ----- Gather global residual
-          res = sqrt(res)/n_node_global
-          if( iter == 1 ) res0 = res
-          if( res0 == 0.0d0 ) then
-            res0 = 1.0d0
-          else
-            relres = dabs( res1-res )/res0
-          endif
-
-          if( hecMESH%my_rank == 0 ) then
-            write(*, '(a,i3,a,2e15.7)') ' - Residual(',iter,') =', res, relres
-          endif
-
-          ! ----- check convergence
-          if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-            relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) exit
-          res1 = res
-
-          ! ----- check divergence and NaN
-          if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) then
-            if( hecMESH%my_rank == 0) then
-              write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-            end if
-            fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
-            fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
-            fstrSOLID%NRstat_i(knstCITER) = al_step                                 ! logging contact iteration
-            fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
-            if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
-            if( res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) fstrSOLID%NRstat_i(knstDRESN) = 2
+          call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
+          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+              ndof, iter, sub_step, cstep, &
+              resid_work, nresid, &
+              res0, res1, &
+              n_node_global, &
+              iterStatus)
+          if (iterStatus == kitrConverged) exit
+          if (iterStatus == kitrDiverged .or. iterStatus == kitrFloatingError) then
+            fstrSOLID%NRstat_i(knstCITER) = al_step
             return
-          end if
+          endif
 
         enddo
         ! ----- end of inner loop
@@ -485,6 +409,7 @@ contains
     call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
 
     deallocate(coord)
+    deallocate(resid_work)
     fstrSOLID%CutBack_stat = 0
   end subroutine fstr_Newton_contactALag
 
@@ -518,6 +443,8 @@ contains
     real(kreal)        :: q_residual,x_residual
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
+    integer(kind=kint)  :: iterStatus, nresid
+    real(kind=kreal), allocatable :: resid_work(:)
 
     ctAlgo = fstrPARAM%contact_algo
 
@@ -555,6 +482,7 @@ contains
     stepcnt = 0
     count_step = 0
     allocate(coord(hecMESH%n_node*ndof))
+    allocate(resid_work(hecMESH%n_node*ndof + conMAT%NP*ndof))
 
     loopFORcontactAnalysis: do while( .TRUE. )
       count_step = count_step+1
@@ -648,37 +576,20 @@ contains
 
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
 
-        res = sqrt(res)/n_node_global
-        if( iter == 1 ) res0 = res
-        if( res0 == 0.0d0 ) then
-          res0 =1.0d0
-        else
-          relres = dabs( res1-res )/res0
-        endif
-        if( hecMESH%my_rank == 0 ) then
-          write(*, '(a,i3,a,2e15.7)') ' - Residual(',iter,') =',res,relres
-        endif
-
-        ! ----- check convergence
-        if( res < fstrSOLID%step_ctrl(cstep)%converg  .or.     &
-          relres < fstrSOLID%step_ctrl(cstep)%converg_ddisp ) then
+        call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+            ndof, iter, sub_step, cstep, &
+            resid_work, nresid, &
+            res0, res1, &
+            n_node_global, &
+            iterStatus)
+        if (iterStatus == kitrConverged) then
           exit
         endif
-        res1 = res
-
-        ! ----- check divergence and NaN
-        if( iter == fstrSOLID%step_ctrl(cstep)%max_iter .or. res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) then
-          if( hecMESH%my_rank == 0) then
-            write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-          end if
-          fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
-          fstrSOLID%NRstat_i(knstSUMIT) = fstrSOLID%NRstat_i(knstSUMIT) + iter    ! logging newton iteration(sumofiter)
-          fstrSOLID%NRstat_i(knstCITER) = count_step                              ! logging contact iteration
-          fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
-          if( iter == fstrSOLID%step_ctrl(cstep)%max_iter ) fstrSOLID%NRstat_i(knstDRESN) = 1
-          if( res > fstrSOLID%step_ctrl(cstep)%maxres .or. res /= res ) fstrSOLID%NRstat_i(knstDRESN) = 2
+        if (iterStatus == kitrDiverged .or. iterStatus == kitrFloatingError) then
+          fstrSOLID%NRstat_i(knstCITER) = count_step
           return
-        end if
+        endif
 
       enddo
       ! ----- end of inner loop
@@ -756,6 +667,7 @@ contains
     call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
 
     deallocate(coord)
+    deallocate(resid_work)
     fstrSOLID%CutBack_stat = 0
   end subroutine fstr_Newton_contactSLag
 

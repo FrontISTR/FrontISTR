@@ -14,6 +14,7 @@ module m_fstr_Residual
   public :: fstr_Update_REACTION_SPC
   public :: fstr_get_residual
   public :: fstr_get_norm_contact
+  public :: fstr_assemble_residual_contact
   public :: fstr_get_norm_para_contact
   public :: fstr_get_x_norm_contact
   public :: fstr_get_potential
@@ -319,6 +320,47 @@ contains
       call hecmw_innerProduct_R(hecMESH,ndof,fstrSOLID%QFORCE,fstrSOLID%QFORCE,fstr_get_norm_contact)
     endif
   end function
+
+  !> \brief Assemble contact residual vector (hecMAT%B + conMAT%B + Lagrange) into a single vector.
+  !>
+  !> This is the assembly part extracted from fstr_get_norm_para_contact so that
+  !> the assembled vector can be reused (e.g. by convergence check routines)
+  !> without recomputing it.
+  subroutine fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_vec, nresid)
+    use m_fstr
+    implicit none
+    type(hecmwST_matrix), intent(in)          :: hecMAT
+    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
+    type(hecmwST_matrix), intent(in)          :: conMAT
+    type(hecmwST_local_mesh), intent(in)      :: hecMESH
+    real(kind=kreal), intent(out)             :: resid_vec(:)
+    integer(kind=kint), intent(out)           :: nresid
+
+    integer(kind=kint) :: i, ndof, nndof, npndof, num_lagrange
+
+    ndof = conMAT%ndof
+    nndof = conMAT%N * ndof
+    npndof = conMAT%NP * ndof
+    num_lagrange = hecLagMAT%num_lagrange
+    nresid = nndof + num_lagrange
+
+    ! Copy conMAT%B and assemble across MPI
+    do i = 1, npndof
+      resid_vec(i) = conMAT%B(i)
+    enddo
+    call hecmw_assemble_R(hecMESH, resid_vec, conMAT%NP, conMAT%NDOF)
+
+    ! Add hecMAT%B (node DOFs only)
+    do i = 1, nndof
+      resid_vec(i) = resid_vec(i) + hecMAT%B(i)
+    enddo
+
+    ! Copy Lagrange multiplier residual
+    do i = 1, num_lagrange
+      resid_vec(nndof + i) = conMAT%B(npndof + i)
+    enddo
+
+  end subroutine fstr_assemble_residual_contact
 
   !
   function fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH) result(rhsB)
