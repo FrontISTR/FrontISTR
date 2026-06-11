@@ -401,6 +401,14 @@ module m_fstr
     real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
     real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp increment
+    integer(kind=kint), pointer :: shell_rot_state(:) => null() !< 0:inactive, 1:MITC4
+    real(kind=kreal), pointer :: shell_ref_triad(:) => null()   !< reference shell nodal triads, fixed after initialization
+    real(kind=kreal), pointer :: shell_triad(:)     => null()   !< converged shell nodal triads, 9 values/node
+    real(kind=kreal), pointer :: shell_triad_bak(:) => null()   !< shell nodal triads at the beginning of curr step
+    real(kind=kreal), pointer :: shell_dtriad(:)    => null()   !< current Newton trial shell nodal triads
+    real(kind=kreal), pointer :: shell_drill(:)     => null()   !< converged drilling scalar per node
+    real(kind=kreal), pointer :: shell_drill_bak(:) => null()   !< drilling scalar at the beginning of curr step
+    real(kind=kreal), pointer :: shell_ddrill(:)    => null()   !< current Newton trial drilling scalar per node
     real(kind=kreal), pointer :: temperature(:)=> null()   !< =temperature
     real(kind=kreal), pointer :: temp_bak(:)   => null()
     real(kind=kreal), pointer :: last_temp(:)  => null()
@@ -426,6 +434,8 @@ module m_fstr
     real(kind=kreal), pointer :: QFORCE_bkup(:)    => null() !< equivalent nodal force (backup)
     real(kind=kreal), pointer :: DFORCE_bkup(:)    => null() !< equivalent nodal force (backup)
     real(kind=kreal), pointer :: last_temp_bkup(:) => null()
+    real(kind=kreal), pointer :: shell_triad_bkup(:) => null()
+    real(kind=kreal), pointer :: shell_drill_bkup(:) => null()
     type( tElement ), pointer :: elements_bkup(:)  =>null()  !< elements information (backup)
     type( tContact ), pointer :: contacts_bkup(:)  =>null()  !< contact information (backup)
     type( tContact ), pointer :: embeds_bkup(:)  =>null()  !< contact information (backup)

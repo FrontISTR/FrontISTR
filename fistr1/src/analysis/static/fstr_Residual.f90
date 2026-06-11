@@ -129,7 +129,6 @@ contains
         enddo
       enddo
     enddo
-
   end subroutine fstr_Update_NDForce_SPC
 
   !> Set fstrSOLID%REACTION at constrained DOFs using current fstrSOLID%QFORCE.
@@ -249,7 +248,7 @@ contains
 
   !> \breaf This subroutine calculate residual vector
   subroutine fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    use m_fstr_Update
+    use m_fstr_Update, only: fstr_UpdateNewton, fstr_update_shell_rotation_increment
     implicit none
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -263,15 +262,32 @@ contains
 
     integer :: i
     real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
+    real(kind=kreal), allocatable :: shell_dtriad_bak(:), shell_ddrill_bak(:)
 
     do i=1, hecMAT%ndof*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
-      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
     enddo
+    if( associated(fstrSOLID%shell_dtriad) ) then
+      allocate(shell_dtriad_bak(size(fstrSOLID%shell_dtriad)))
+      shell_dtriad_bak(:) = fstrSOLID%shell_dtriad(:)
+    endif
+    if( associated(fstrSOLID%shell_ddrill) ) then
+      allocate(shell_ddrill_bak(size(fstrSOLID%shell_ddrill)))
+      shell_ddrill_bak(:) = fstrSOLID%shell_ddrill(:)
+    endif
+    call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
     call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
     do i=1, hecMAT%ndof*hecMESH%n_node
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
+    if( allocated(shell_dtriad_bak) ) then
+      fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
+      deallocate(shell_dtriad_bak)
+    endif
+    if( allocated(shell_ddrill_bak) ) then
+      fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
+      deallocate(shell_ddrill_bak)
+    endif
   end subroutine fstr_calc_residual_vector_with_X
 
   !> Calculate magnitude of a real vector
@@ -450,6 +466,7 @@ contains
     use m_fstr
     use mULoad
     use m_fstr_spring
+    use m_fstr_Update, only: fstr_update_shell_rotation_increment
     implicit none
     integer(kind=kint), intent(in)       :: cstep !< current step
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
@@ -460,20 +477,38 @@ contains
 
     integer :: i
     real(kind=kreal) :: dunode_bak(hecMAT%ndof*hecMESH%n_node)
+    real(kind=kreal), allocatable :: shell_dtriad_bak(:), shell_ddrill_bak(:)
 
     do i=1, hecMAT%ndof*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
-      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
     enddo
+    if( associated(fstrSOLID%shell_dtriad) ) then
+      allocate(shell_dtriad_bak(size(fstrSOLID%shell_dtriad)))
+      shell_dtriad_bak(:) = fstrSOLID%shell_dtriad(:)
+    endif
+    if( associated(fstrSOLID%shell_ddrill) ) then
+      allocate(shell_ddrill_bak(size(fstrSOLID%shell_ddrill)))
+      shell_ddrill_bak(:) = fstrSOLID%shell_ddrill(:)
+    endif
+    call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
     potential = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype)
     do i=1, hecMAT%ndof*hecMESH%n_node
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
+    if( allocated(shell_dtriad_bak) ) then
+      fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
+      deallocate(shell_dtriad_bak)
+    endif
+    if( allocated(shell_ddrill_bak) ) then
+      fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
+      deallocate(shell_ddrill_bak)
+    endif
   end function fstr_get_potential_with_X
 
   subroutine plot_potential_graph( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
     restrt_step_num, sub_step, ctime, dtime, iter, tincr )
     use m_fstr
+    use m_fstr_Update, only: fstr_update_shell_rotation_increment
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
@@ -490,6 +525,7 @@ contains
     real(kind=kreal)   :: tincr, alpha, dulen
     real(kind=kreal) :: pot(3)
     real(kind=kreal), allocatable :: dunode_bak(:)
+    real(kind=kreal), allocatable :: shell_dtriad_bak(:), shell_ddrill_bak(:)
 
     dulen = dsqrt(dot_product(fstrSOLID%dunode(:),fstrSOLID%dunode(:)))
     write(IMSG,*) "dulen",dulen
@@ -498,13 +534,22 @@ contains
     do i=1, hecMAT%ndof*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
     enddo
+    if( associated(fstrSOLID%shell_dtriad) ) then
+      allocate(shell_dtriad_bak(size(fstrSOLID%shell_dtriad)))
+      shell_dtriad_bak(:) = fstrSOLID%shell_dtriad(:)
+    endif
+    if( associated(fstrSOLID%shell_ddrill) ) then
+      allocate(shell_ddrill_bak(size(fstrSOLID%shell_ddrill)))
+      shell_ddrill_bak(:) = fstrSOLID%shell_ddrill(:)
+    endif
 
     do i=-ntot,ntot
       alpha = 5.d-3*dble(i)/dble(ntot)
       hecMAT%X(:) = alpha*fstrSOLID%dunode(:)
-      do j=1, size(fstrSOLID%dunode)
-        fstrSOLID%dunode(j) = dunode_bak(j)+hecMAT%X(j)
-      enddo
+      fstrSOLID%dunode(:) = dunode_bak(:)
+      if( allocated(shell_dtriad_bak) ) fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
+      if( allocated(shell_ddrill_bak) ) fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
+      call fstr_update_shell_rotation_increment( hecMESH, fstrSOLID, hecMAT%ndof, hecMAT%X )
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
       pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
@@ -515,6 +560,14 @@ contains
     do i=1, size(fstrSOLID%dunode)
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
+    if( allocated(shell_dtriad_bak) ) then
+      fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
+      deallocate(shell_dtriad_bak)
+    endif
+    if( allocated(shell_ddrill_bak) ) then
+      fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
+      deallocate(shell_ddrill_bak)
+    endif
     hecMAT%X(:) = 0.d0
     call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
   end subroutine
