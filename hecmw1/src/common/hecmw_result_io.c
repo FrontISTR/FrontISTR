@@ -82,7 +82,7 @@ void HECMW_result_io_finalize() {
   ResIO.elem_list = NULL;
 
   ResIO.nnode = ResIO.nelem = 0;
-  strcpy(ResIO.head, "");
+  ResIO.head[0] = '\0';
 
   if (ResIO.MPC_exist) {
     ResIO.MPC_exist = 0;

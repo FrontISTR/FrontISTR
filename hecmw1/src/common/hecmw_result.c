@@ -141,7 +141,7 @@ int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
     *dot = '\0';
     snprintf(dot, sizeof(base_mod) - (dot - base_mod), "%s%s", addfname, suffix);
   } else {
-    strncat(base_mod, addfname, HECMW_FILENAME_LEN - strlen(base_mod));
+    strncat(base_mod, addfname, sizeof(base_mod) - strlen(base_mod) - 1);
   }
 
   myrank = HECMW_comm_get_rank();
@@ -218,13 +218,13 @@ int HECMW_result_get_nnode(void) { return ResIO.nnode; }
 
 int HECMW_result_get_nelem(void) { return ResIO.nelem; }
 
-char *HECMW_result_get_header(char *buff) {
-  strcpy(buff, ResIO.head);
+char *HECMW_result_get_header(char *buff, size_t buff_size) {
+  snprintf(buff, buff_size, "%s", ResIO.head);
   return buff;
 }
 
-char *HECMW_result_get_comment(char *buff) {
-  strcpy(buff, ResIO.comment_line);
+char *HECMW_result_get_comment(char *buff, size_t buff_size) {
+  snprintf(buff, buff_size, "%s", ResIO.comment_line);
   return buff;
 }
 

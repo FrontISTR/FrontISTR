@@ -763,7 +763,7 @@ static int input_result_header(struct hecmwST_result_data *result, FILE *fp) {
       ptr[strlen(ptr)] = '\0';
     }
   }
-  strcpy( ResIO.head, Line_Buf );
+  snprintf(ResIO.head, sizeof(ResIO.head), "%s", Line_Buf);
 
   return 0;
 }
@@ -782,7 +782,7 @@ static int input_result_global(struct hecmwST_result_data *result, FILE *fp) {
     return -1;
   }
   Line_Buf[ strlen(Line_Buf)-1 ] = 0;/* remove CR/LF*/
-  strcpy( ResIO.comment_line, Line_Buf );
+  snprintf(ResIO.comment_line, sizeof(ResIO.comment_line), "%s", Line_Buf);
 
 
   /* skip global header */

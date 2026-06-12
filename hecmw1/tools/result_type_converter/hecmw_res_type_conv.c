@@ -140,8 +140,8 @@ int main(int argc, char **argv) {
 
     n_node = HECMW_result_get_nnode();
     n_elem = HECMW_result_get_nelem();
-    HECMW_result_get_header(header);
-    HECMW_result_get_comment(comment);
+    HECMW_result_get_header(header, sizeof(header));
+    HECMW_result_get_comment(comment, sizeof(comment));
     rcode = HECMW_result_io_txt_write_ST_by_fname(resultfile, data, n_node, n_elem,
                                                header, comment);
     if (rcode) {

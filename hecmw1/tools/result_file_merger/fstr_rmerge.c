@@ -225,8 +225,8 @@ int main(int argc, char** argv) {
     }
     snprintf(out_fname, sizeof(out_fname), "%s%s.%d", dirname, out_fheader, step);
     fstr_out_log("output to %s .. ", out_fname);
-    HECMW_result_get_header(header);
-    HECMW_result_get_comment(comment);
+    HECMW_result_get_header(header, sizeof(header));
+    HECMW_result_get_comment(comment, sizeof(comment));
     HECMW_result_init(glmesh, step, header, comment);
     if (binary) {
       rcode = HECMW_result_io_bin_write_ST_by_fname(out_fname, data, glt->node_n,

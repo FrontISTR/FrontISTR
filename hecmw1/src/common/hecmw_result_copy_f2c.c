@@ -326,8 +326,8 @@ void hecmw_result_write_st_by_name_if(char *name_ID, int *err, int len) {
       NULL)
     return;
 
-  HECMW_result_get_header(head);
-  HECMW_result_get_comment(comment);
+  HECMW_result_get_header(head, sizeof(head));
+  HECMW_result_get_comment(comment, sizeof(comment));
   if (HECMW_result_write_ST_by_name(name_ID_str, Result, NNode, NElem, head, comment))
     return;
 

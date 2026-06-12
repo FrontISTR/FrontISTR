@@ -714,7 +714,7 @@ static int bin_input_result_header(struct hecmwST_result_data *result, FILE *fp)
       ptr[strlen(ptr)] = '\0';
     }
   }
-  strcpy( ResIO.head, Line_Buf );
+  snprintf(ResIO.head, sizeof(ResIO.head), "%s", Line_Buf);
 
   return 0;
 }
@@ -731,7 +731,7 @@ static int bin_input_result_global(struct hecmwST_result_data *result, FILE *fp)
     HECMW_set_error(HECMW_UTIL_E0205, "comment");
     return -1;
   }
-  strcpy( ResIO.comment_line, Line_Buf );
+  snprintf(ResIO.comment_line, sizeof(ResIO.comment_line), "%s", Line_Buf);
 
   /* skip global header */
   if(hecmw_read_bin(fp, "S", Line_Buf)) {
