@@ -19,7 +19,7 @@ CFSTRData::CFSTRData() : CHECData() {}
 //=============================================================================
 
 bool CFSTRData::SaveMesh(const char *file_name, const char *comment) {
-  strcpy(fname, file_name);
+  snprintf(fname, sizeof(fname), "%s", file_name);
   fp = fopen(fname, "w");
 
   if (!fp) return false;
@@ -42,7 +42,7 @@ bool CFSTRData::SaveMesh(const char *file_name, const char *comment) {
 }
 
 bool CFSTRData::SaveCtrl(const char *file_name, const char *comment) {
-  strcpy(fname, file_name);
+  snprintf(fname, sizeof(fname), "%s", file_name);
   fp = fopen(fname, "w");
 
   if (!fp) return false;
@@ -78,8 +78,7 @@ void CFSTRData::WriteComment(FILE *fp, const char *comment) {
   if (n == 0) return;
 
   char *buff = new char[n + 1];
-  strcpy(buff, comment);
-  char *p = strtok(buff, "\r\n");
+  snprintf(buff, n + 1, "%s", comment);
 
   while (p) {
     if (*p == '#') {

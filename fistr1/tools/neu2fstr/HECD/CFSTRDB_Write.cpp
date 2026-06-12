@@ -20,11 +20,12 @@ void CFSTRDB_Write::Clear() { result = visual = 0; }
 
 void CFSTRDB_Write::Write(CHECData *hecd) {
   char header_s[256];
-  strcpy(header_s, "!WRITE");
+  size_t len = snprintf(header_s, sizeof(header_s), "!WRITE");
 
-  if (result) strcat(header_s, ",RESULT");
+  if (result)
+    len += snprintf(header_s + len, sizeof(header_s) - len, ",RESULT");
 
-  if (visual) strcat(header_s, ",VISUAL");
+  if (visual) snprintf(header_s + len, sizeof(header_s) - len, ",VISUAL");
 
   hecd->WriteHeader(header_s);
 }
