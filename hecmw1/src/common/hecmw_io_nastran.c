@@ -344,7 +344,7 @@ static int iff_operation(iff_bulk_list_t* bulk_list, char* iff, int line_no);
 /* JP-116 */
 static void file_stack_init(void);                              /* JP-117 */
 static int file_stack_push(char* fname, FILE* fp, int lineno);  /* JP-118 */
-static int file_stack_pop(char* fname, FILE** fp, int* lineno); /* JP-119 */
+static int file_stack_pop(char* fname, size_t fname_len, FILE** fp, int* lineno); /* JP-119 */
 static int file_stack_clear(void);                              /* JP-120 */
 static int file_stack_check(const char* fname);                 /* JP-121 */
 
@@ -487,20 +487,20 @@ static void set_error_of_field_convert(const char* file_name, int line_no,
   switch (type) {
     case 's':
     case 'S':
-      strcpy(type_s, "string");
+      snprintf(type_s, sizeof(type_s), "string");
       break;
     case 'i':
     case 'I':
     case 'u':
     case 'U':
-      strcpy(type_s, "integer");
+      snprintf(type_s, sizeof(type_s), "integer");
       break;
     case 'd':
     case 'D':
-      strcpy(type_s, "real");
+      snprintf(type_s, sizeof(type_s), "real");
       break;
     case '_':
-      strcpy(type_s, "blank");
+      snprintf(type_s, sizeof(type_s), "blank");
       break;
     default:
       HECMW_assert(0);
@@ -509,13 +509,12 @@ static void set_error_of_field_convert(const char* file_name, int line_no,
   if (param_val) {
     int i;
     char s[20];
-    strcpy(val_str, "H");
+    size_t len = snprintf(val_str, sizeof(val_str), "H");
     for (i = 0; i < IFF_FIELD_SIZE && param_val[i]; i++) {
-      snprintf(s, sizeof(s), "%x", param_val[i]);
-      strcat(val_str, s);
+      len += snprintf(val_str + len, sizeof(val_str) - len, "%x", param_val[i]);
     }
   } else
-    strcpy(val_str, "NULL");
+    snprintf(val_str, sizeof(val_str), "NULL");
 
   snprintf(line, sizeof(line), "%s:%d:", file_name, line_no);
   snprintf(msg, sizeof(msg),
@@ -1081,9 +1080,11 @@ static int iff_field_to_param(char* field, char type, void* param,
       if (field == NULL || field[0] == 0)
         R = 2;
       else {
-        strcpy((char*)param, field);
+        size_t param_len = IFF_FIELD_BUFFER_SIZE;
+        snprintf((char*)param, param_len, "%s", field);
         R = 1;
       }
+      break;
     case '_':
       /* JP-189 */
       R = 1; /* JP-190 */
@@ -1663,7 +1664,7 @@ static int iff_bulk_get_param_list(iff_bulk_t* bulk, const char* format,
         if (arr_fg)
           snprintf(param_name, sizeof(param_name), "%s%d", param_name_p, i + 1);
         else
-          strcpy(param_name, param_name_p);
+          snprintf(param_name, sizeof(param_name), "%s", param_name_p);
         set_error_of_field_convert(grid_filename, line_no, field_no,
                                    iff_bulk_get_name(bulk), param_name, field,
                                    type);
@@ -1672,7 +1673,7 @@ static int iff_bulk_get_param_list(iff_bulk_t* bulk, const char* format,
         if (arr_fg)
           snprintf(param_name, sizeof(param_name), "%s%d", param_name_p, i + 1);
         else
-          strcpy(param_name, param_name_p);
+          snprintf(param_name, sizeof(param_name), "%s", param_name_p);
         set_error_of_blank_field(grid_filename, line_no, field_no,
                                  iff_bulk_get_name(bulk), param_name);
         return -1;
@@ -2162,7 +2163,7 @@ static struct hecmw_io_material* create_mat_struct(const char* name, int item_n,
     matitem[i].subitem = matsubitem;
   }
 
-  strcpy(mat->name, name);
+  snprintf(mat->name, sizeof(mat->name), "%s", name);
   mat->nitem = item_n;
   mat->item  = matitem;
   mat->next  = NULL;
@@ -2368,8 +2369,8 @@ static int iff_bulk_parse_PROD(iff_bulk_t* bulk) {
   iff_bulk_get_param_list(bulk, format, result, &PID, "PID", &MID, "MID", &A,
                           "A", &J, "J", &C, "C", &NSM, "NSM");
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
-  strcpy(sect.material, matrial_name_by_MID(MID, grp_name, sizeof(grp_name)));
+  snprintf(sect.egrp, sizeof(sect.egrp), "%s", egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  snprintf(sect.material, sizeof(sect.material), "%s", matrial_name_by_MID(MID, grp_name, sizeof(grp_name)));
   sect.composite = 1;
   sect.secopt    = 0;
 
@@ -2423,8 +2424,8 @@ static int iff_bulk_parse_PSHELL(iff_bulk_t* bulk) {
                           "MID3", &TS_S, "TS/S", &NSM, "NSM", &Z1, "Z1", &Z2,
                           "Z2", &MID4, "MID4");
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
-  strcpy(sect.material, matrial_name_by_MID(MID1, grp_name, sizeof(grp_name)));
+  snprintf(sect.egrp, sizeof(sect.egrp), "%s", egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  snprintf(sect.material, sizeof(sect.material), "%s", matrial_name_by_MID(MID1, grp_name, sizeof(grp_name)));
   sect.composite = 1;
   sect.secopt    = 0;
 
@@ -2484,7 +2485,7 @@ static int iff_bulk_parse_PSOLID(iff_bulk_t* bulk) {
   IN[0]     = 0;
   STRESS[0] = 0;
   ISOP[0]   = 0;
-  strcpy(FCTN, "SMECH");
+  snprintf(FCTN, sizeof(FCTN), "%s", "SMECH");
 
   iff_bulk_get_param_list(bulk, format, result, &PID, "PID", &MID, "MID",
                           &CORDM, "CORDM", IN, "IN", STRESS, "STRESS", ISOP,
@@ -2492,8 +2493,8 @@ static int iff_bulk_parse_PSOLID(iff_bulk_t* bulk) {
 
   sect.type = HECMW_SECT_TYPE_SOLID;
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
-  strcpy(sect.material, matrial_name_by_MID(MID, grp_name, sizeof(grp_name)));
+  snprintf(sect.egrp, sizeof(sect.egrp), "%s", egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  snprintf(sect.material, sizeof(sect.material), "%s", matrial_name_by_MID(MID, grp_name, sizeof(grp_name)));
   sect.composite = 1; /* JP-340 */
 
   sect.secopt = 0; /* JP-341 */
@@ -2984,8 +2985,8 @@ static int iff_bulk_parse_CTRIAX6(iff_bulk_t* bulk) {
     if (!egrp) { /* JP-407 */
       char mat_name[HECMW_NAME_LEN + 1];
       struct hecmw_io_section sect;
-      strcpy(sect.egrp, grp_name);
-      strcpy(sect.material, matrial_name_by_MID(MID, mat_name, sizeof(mat_name)));
+      snprintf(sect.egrp, sizeof(sect.egrp), "%s", grp_name);
+      snprintf(sect.material, sizeof(sect.material), "%s", matrial_name_by_MID(MID, mat_name, sizeof(mat_name)));
       sect.composite            = 1;                        /* JP-408 */
       sect.secopt               = HECMW_SECT_OPT_ASYMMETRY; /* JP-409 */
       sect.type                 = HECMW_SECT_TYPE_SOLID;
@@ -3068,7 +3069,7 @@ static int iff_bulk_parse_INCLUDE(iff_bulk_t* bulk) {
 
   buff[0] = 0;
   for (i = 0; i < FIELD_NUMBER; i++) {
-    strcat(buff, iff_get_field(iff, i));
+    strncat(buff, iff_get_field(iff, i), sizeof(buff) - strlen(buff) - 1);
   }
 
   /* JP-423 */
@@ -3343,7 +3344,7 @@ static int file_stack_push(char* fname, FILE* fp, int lineno) {
   }
 
   file_stack[file_stack_pos].fp = fp;
-  strcpy(file_stack[file_stack_pos].filename, fname);
+  snprintf(file_stack[file_stack_pos].filename, sizeof(file_stack[file_stack_pos].filename), "%s", fname);
   file_stack[file_stack_pos].lineno = lineno;
 
   file_stack_pos++;
@@ -3354,7 +3355,7 @@ static int file_stack_push(char* fname, FILE* fp, int lineno) {
  */
 /* JP-449 */
 
-static int file_stack_pop(char* fname, FILE** fp, int* lineno) {
+static int file_stack_pop(char* fname, size_t fname_len, FILE** fp, int* lineno) {
   if (file_stack_pos <= 0) {
     /* JP-450 */
     return -1;
@@ -3363,7 +3364,7 @@ static int file_stack_pop(char* fname, FILE** fp, int* lineno) {
   file_stack_pos--;
 
   *fp = file_stack[file_stack_pos].fp;
-  strcpy(fname, file_stack[file_stack_pos].filename);
+  snprintf(fname, fname_len, "%s", file_stack[file_stack_pos].filename);
   *lineno = file_stack[file_stack_pos].lineno;
 
   return 0;
@@ -3446,7 +3447,7 @@ static int nastran_file_open(const char* filename) {
   }
 
   c_fp = fp;
-  strcpy(c_filename, filename);
+  snprintf(c_filename, sizeof(c_filename), "%s", filename);
   c_lineno = 0;
 
   HECMW_io_set_gridfile((char*)filename);
@@ -3471,10 +3472,10 @@ static int nastran_file_close() {
     return -1;
   }
 
-  if (file_stack_pop(c_filename, &c_fp, &c_lineno)) {
+  if (file_stack_pop(c_filename, sizeof(c_filename), &c_fp, &c_lineno)) {
     HECMW_io_set_gridfile("Unknown");
     c_fp = NULL;
-    strcpy(c_filename, "Unknown");
+    snprintf(c_filename, sizeof(c_filename), "%s", "Unknown");
     return 1;
   } else {
     return 0;
@@ -3584,7 +3585,7 @@ int HECMW_read_nastran_mesh(const char* filename) {
           return -1;
   }
 
-  strcpy(grid_filename, filename);
+  snprintf(grid_filename, sizeof(grid_filename), "%s", filename);
   HECMW_io_set_gridfile(grid_filename);
 
   ---------------------------------------- */
@@ -3616,7 +3617,7 @@ struct hecmwST_local_mesh* HECMW_get_nastran_mesh(const char* filename) {
   if (local_mesh == NULL) return NULL;
   if (HECMW_io_finalize()) return NULL;
 
-  strcpy(grid_filename, "Unknown");
+  snprintf(grid_filename, sizeof(grid_filename), "%s", "Unknown");
 
   return local_mesh;
 }
