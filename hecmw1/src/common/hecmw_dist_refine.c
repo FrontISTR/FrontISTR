@@ -3201,7 +3201,7 @@ static int copy_global_info(const struct hecmwST_local_mesh *mesh,
   ref_mesh->hecmw_flag_partdepth   = mesh->hecmw_flag_partdepth;
   ref_mesh->hecmw_flag_version     = mesh->hecmw_flag_version;
   ref_mesh->hecmw_flag_partcontact = mesh->hecmw_flag_partcontact;
-  strcpy(ref_mesh->gridfile, mesh->gridfile);
+  snprintf(ref_mesh->gridfile, sizeof(ref_mesh->gridfile), "%s", mesh->gridfile);
   ref_mesh->hecmw_n_file       = mesh->hecmw_n_file;
 
   /* files */
@@ -3222,7 +3222,7 @@ static int copy_global_info(const struct hecmwST_local_mesh *mesh,
     ref_mesh->files = NULL;
   }
 
-  strcpy(ref_mesh->header, mesh->header);
+  snprintf(ref_mesh->header, sizeof(ref_mesh->header), "%s", mesh->header);
   ref_mesh->zero_temp = mesh->zero_temp;
 
   return HECMW_SUCCESS;

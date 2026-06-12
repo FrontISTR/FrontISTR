@@ -61,7 +61,7 @@ static char *dir_name(const char *path) {
   static char dname[HECMW_FILENAME_LEN + 1];
 
   if (path == NULL || strlen(path) == 0) {
-    strcpy(dname, ".");
+    snprintf(dname, sizeof(dname), ".");
     return dname;
   }
 
@@ -98,7 +98,7 @@ static char *base_name(const char *path) {
   static char bname[HECMW_FILENAME_LEN + 1];
 
   if (path == NULL || strlen(path) == 0) {
-    strcpy(bname, ".");
+    snprintf(bname, sizeof(bname), ".");
     return bname;
   }
 
