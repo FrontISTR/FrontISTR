@@ -17,7 +17,7 @@ void HECMW_vis_combine(struct surface_module *sf,
                        struct hecmwST_result_data *data, int tvertex,
                        int tpatch, int *color_list, double *minvalue,
                        double *maxvalue, Result *result, char *outfile,
-                       HECMW_Comm VIS_COMM);
+                       size_t outfile_size, HECMW_Comm VIS_COMM);
 void put_neutral_head(FILE *outfp);
 void put_neutral_601(FILE *outfp, struct hecmwST_local_mesh *mesh);
 void put_neutral_402(FILE *outfp, struct hecmwST_local_mesh *mesh);

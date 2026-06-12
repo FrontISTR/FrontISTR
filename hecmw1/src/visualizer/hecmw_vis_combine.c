@@ -59,7 +59,7 @@ void HECMW_vis_combine(struct surface_module *sf,
                        struct hecmwST_result_data *data, int tvertex,
                        int tpatch, int *color_list, double *minvalue,
                        double *maxvalue, Result *result, char *outfile,
-                       HECMW_Comm VIS_COMM) {
+                       size_t outfile_size, HECMW_Comm VIS_COMM) {
   int i, j, ii;
   double color, *mivalue, *mavalue;
   int mynode, pesize;
@@ -162,11 +162,11 @@ scanf("%lf  %lf",&mivalue[i], &mavalue[i]);
     }
 
     if (sf[1].output_type == 1)
-      strncat(outfile, ".inp", HECMW_FILENAME_LEN - strlen(outfile) - 1);
+      strncat(outfile, ".inp", outfile_size - strlen(outfile) - 1);
     else if (sf[1].output_type == 2)
-      strncat(outfile, ".fec", HECMW_FILENAME_LEN - strlen(outfile) - 1);
+      strncat(outfile, ".fec", outfile_size - strlen(outfile) - 1);
     else if (sf[1].output_type == 4)
-      strncat(outfile, ".neu", HECMW_FILENAME_LEN - strlen(outfile) - 1);
+      strncat(outfile, ".neu", outfile_size - strlen(outfile) - 1);
 
     outfp = fopen(outfile, "w");
 

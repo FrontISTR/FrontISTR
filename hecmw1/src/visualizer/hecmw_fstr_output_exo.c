@@ -310,7 +310,7 @@ void exodus_output(struct hecmwST_local_mesh *mesh,
         dir_exo[HECMW_FILENAME_LEN - 1] = '\0';
         p = strrchr(dir_exo, '.');
         if (p != NULL) *p = '\0'; /* "vis_out_psf.0001" -> "vis_out_psf" */
-        strncat(dir_exo, "_exo", HECMW_FILENAME_LEN - strlen(dir_exo) - 1);
+        strncat(dir_exo, "_exo", sizeof(dir_exo) - strlen(dir_exo) - 1);
         /* dir_exo = "vis_out_psf_exo" */
 
         /* Build basename: strip directory prefix and timestep suffix from outfile */

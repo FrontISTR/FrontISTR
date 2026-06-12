@@ -2192,10 +2192,7 @@ ptr--;
 
 {
 char buf[128];
-strcat(fname, ".");
-snprintf(buf, sizeof(buf), "%d.%d", v->count, ii);
-strcat(fname, buf);
-strcat(fname, ".bmp");
+snprintf(fname + strlen(fname), sizeof(fname) - strlen(fname), ".%d.%d.bmp", v->count, ii);
 }
 
          */
