@@ -37,7 +37,7 @@ extern int HECMW_part_set_ctrl_file_name(char *fname) {
     goto error;
   }
 
-  strcpy(ctrl_file_name, fname);
+  snprintf(ctrl_file_name, sizeof(ctrl_file_name), "%s", fname);
 
   return 0;
 
@@ -192,7 +192,7 @@ static int part_cont_depth(void) {
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  ucd file name < UCD=filename >                                            */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int part_cont_ucd(char *name) {
+static int part_cont_ucd(char *name, size_t name_len) {
   char *p;
   int token, is_print_ucd = 0;
 
@@ -218,7 +218,7 @@ static int part_cont_ucd(char *name) {
                   "part_cont_ucd", HECMW_partlex_get_text());
         return -1;
       }
-      strcpy(name, p);
+      snprintf(name, name_len, "%s", p);
       is_print_ucd = 1;
 
       return is_print_ucd;
@@ -277,7 +277,7 @@ static int part_cont_contact(void) {
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  part file name < PART=filename >                                            */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-static int part_cont_part(char *name) {
+static int part_cont_part(char *name, size_t name_len) {
   char *p;
   int token, is_print_part = 0;
 
@@ -303,7 +303,7 @@ static int part_cont_part(char *name) {
                   "part_cont_part", HECMW_partlex_get_text());
         return -1;
       }
-      strcpy(name, p);
+      snprintf(name, name_len, "%s", p);
       is_print_part = 1;
 
       return is_print_part;
@@ -437,8 +437,8 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
   cont_data->is_print_ucd = -1;
   cont_data->contact      = -1;
   cont_data->is_print_part= -1;
-  strcpy(cont_data->ucd_file_name, "\0");
-  strcpy(cont_data->part_file_name, "\0");
+  cont_data->ucd_file_name[0] = '\0';
+  cont_data->part_file_name[0] = '\0';
 
   while ((token = HECMW_partlex_next_token()) != HECMW_PARTLEX_NL ||
          (token = HECMW_partlex_next_token())) {
@@ -464,7 +464,8 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
         break;
 
       case HECMW_PARTLEX_K_UCD: /* UCD */
-        cont_data->is_print_ucd = part_cont_ucd(cont_data->ucd_file_name);
+        cont_data->is_print_ucd = part_cont_ucd(cont_data->ucd_file_name,
+                                                sizeof(cont_data->ucd_file_name));
         if (cont_data->is_print_ucd < 0) return -1;
         break;
 
@@ -474,7 +475,8 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
         break;
 
       case HECMW_PARTLEX_K_PART: /* PART */
-        cont_data->is_print_part = part_cont_part(cont_data->part_file_name);
+        cont_data->is_print_part = part_cont_part(cont_data->part_file_name,
+                                                  sizeof(cont_data->part_file_name));
         if (cont_data->is_print_part < 0) return -1;
         break;
 
