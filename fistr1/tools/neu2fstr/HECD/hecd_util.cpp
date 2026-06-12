@@ -12,8 +12,9 @@ namespace hecd_util {
 
 void cleanup_token(char *s) {
   char buff[256];
+  size_t s_size = strlen(s) + 1;
   cleanup_token(s, buff);
-  strcpy(s, buff);
+  snprintf(s, s_size, "%s", buff);
 }
 
 void cleanup_token(char *src, char *dest) {

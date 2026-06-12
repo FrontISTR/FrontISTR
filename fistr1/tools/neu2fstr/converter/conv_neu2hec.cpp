@@ -101,7 +101,7 @@ static bool set_conv_mat(CNFData &neu, int id, cconv_mat &m) {
 
 static void SetHeader(CNFData &neu, CHECData &hec) {
   CHECDB_Header *header = new CHECDB_Header();
-  strcpy(header->title, neu.title);
+  snprintf(header->title, sizeof(header->title), "%s", neu.title);
   hec.DB.push_back(header);
 }
 

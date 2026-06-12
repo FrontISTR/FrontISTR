@@ -104,7 +104,7 @@ static
 CHECDB_NGroup* create_new_ngrp( CHECData& hec, const char* name )
 {
   CHECDB_NGroup* ngrp = new CHECDB_NGroup();
-  strcpy( ngrp->name, name );
+  snprintf( ngrp->name, sizeof(ngrp->name), "%s", name );
   return ngrp;
 }
 */
