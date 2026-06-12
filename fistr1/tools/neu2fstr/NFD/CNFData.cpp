@@ -68,7 +68,7 @@ void CNFData::Load(const char *fname) {
   nf_int BlockID;
   CNFDataBlock *block;
   int fg_block_continue;
-  strcpy(neu_file, fname);
+  snprintf(neu_file, sizeof(neu_file), "%s", fname);
   fp = fopen(fname, "r");
 
   if (!fp) {
@@ -150,7 +150,7 @@ void CNFData::Load(const char *fname) {
 //*****************************************************************************
 
 void CNFData::Save(const char *fname) {
-  strcpy(neu_file, fname);
+  snprintf(neu_file, sizeof(neu_file), "%s", fname);
   fp = fopen(fname, "w");
 
   if (!fp) {
@@ -213,7 +213,7 @@ void CNFData::StoreDataBlock(CNFDataBlock *block) {
   switch (block->DataBlockID) {
     case 100:
       version = ((CNFDB_100 *)block)->version;
-      strcpy(title, ((CNFDB_100 *)block)->title);
+      snprintf(title, sizeof(title), "%s", ((CNFDB_100 *)block)->title);
       delete block;
       break;
       GENRATE_CODE(402)
@@ -257,7 +257,7 @@ void CNFData::PrintMessage(const char *msg) {
 //*****************************************************************************
 
 void CNFData::ReadRecStart(char *buff) {
-  strcpy(rec_buff, buff);
+  snprintf(rec_buff, sizeof(rec_buff), "%s", buff);
   fg_rec_first = TRUE;
   rec_column   = 0;
 }
@@ -335,7 +335,7 @@ void CNFData::ReadRecord(char *buff, const char *fmt, ...) {
 
 int CNFData::ReadLine(char *buff, int size) {
   if (!fg_line_buff_empty) {
-    strcpy(buff, line_buff);
+    snprintf(buff, size, "%s", line_buff);
     fg_line_buff_empty = TRUE;
     return READLINE_SUCESS;
   }
@@ -387,7 +387,7 @@ void CNFData::ReadStr(char *buff, char *s, int size) {
 }
 
 void CNFData::PushBackLine(char *buff) {
-  strcpy(line_buff, buff);
+  snprintf(line_buff, sizeof(line_buff), "%s", buff);
   fg_line_buff_empty = FALSE;
 }
 
@@ -550,7 +550,7 @@ bool CNFData::WriteDataBlock(FILE *fp, int id) {
     case 100: {
       CNFDB_100 DB100;
       DB100.version = version;
-      strcpy(DB100.title, title);
+      snprintf(DB100.title, sizeof(DB100.title), "%s", title);
       WriteBlockSeparator(fp);
       fprintf(fp, "   100\n");
 
