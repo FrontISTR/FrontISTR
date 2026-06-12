@@ -42,15 +42,15 @@ void fstr_out_log(const char* fmt, ...) {
  * @brief Read all distributed meshes
  */
 
-static int get_dist_fname(char* name_ID, char* fheader, int* fg_single,
-                          int* refine, int nrank, int irank) {
+static int get_dist_fname(char* name_ID, char* fheader, size_t fheader_len,
+                          int* fg_single, int* refine, int nrank, int irank) {
   struct hecmw_ctrl_meshfiles* files;
 
   files = HECMW_ctrl_get_meshfiles_header_sub(name_ID, nrank, irank);
   if (!files) return -1;
 
   if (files->n_mesh == 1) {
-    strcpy(fheader, files->meshfiles[0].filename);
+    snprintf(fheader, fheader_len, "%s", files->meshfiles[0].filename);
     if (files->meshfiles[0].type == HECMW_CTRL_FTYPE_HECMW_DIST) {
       *fg_single = 0;
     } else {
@@ -103,7 +103,8 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
   char fname[HECMW_FILENAME_LEN + 1];
   struct hecmwST_local_mesh** mesh;
 
-  if (get_dist_fname(name_ID, fheader, &fg_single, refine, nrank, 0)) return NULL;
+  if (get_dist_fname(name_ID, fheader, sizeof(fheader), &fg_single, refine,
+                     nrank, 0)) return NULL;
 
   if (fg_single) {
     fstr_out_log("mesh file type is NOT HECMW_DIST.\n");
@@ -125,7 +126,8 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
       if (nrank == 0) {
         snprintf(fname, sizeof(fname), "%s.%d", fheader, i);
       } else {
-        get_dist_fname(name_ID, fheader, &fg_single, refine, nrank, i);
+        get_dist_fname(name_ID, fheader, sizeof(fheader), &fg_single, refine,
+                       nrank, i);
         snprintf(fname, sizeof(fname), "%s.%d", fheader, i);
       }
       fstr_out_log("loading dist mesh from %s\n", fname);

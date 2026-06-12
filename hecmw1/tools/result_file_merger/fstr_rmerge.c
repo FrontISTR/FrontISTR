@@ -44,8 +44,8 @@ void help(void) {
   printf(" -i [step]      : interval step number (default:%d)\n", INTID_DEFAULT);
 }
 
-void set_fname(int argc, char** argv, char* out_fheader, int* binary,
-               int *nrank, int *strid, int *endid, int *intid) {
+void set_fname(int argc, char** argv, char* out_fheader, size_t out_fheader_len,
+               int* binary, int *nrank, int *strid, int *endid, int *intid) {
   int i;
   char* fheader = NULL;
 
@@ -126,7 +126,7 @@ void set_fname(int argc, char** argv, char* out_fheader, int* binary,
     help();
     exit(-1);
   } else {
-    strcpy(out_fheader, fheader);
+    snprintf(out_fheader, out_fheader_len, "%s", fheader);
   }
 }
 
@@ -156,7 +156,8 @@ int main(int argc, char** argv) {
 
   if (HECMW_init(&argc, &argv)) error_stop();
 
-  set_fname(argc, argv, out_fheader, &binary, &nrank, &strid, &endid, &intid);
+  set_fname(argc, argv, out_fheader, sizeof(out_fheader), &binary, &nrank,
+            &strid, &endid, &intid);
   fstr_out_log("out file name header is %s\n", out_fheader);
 
   mesh = fstr_get_all_local_mesh("fstrMSH", nrank, &area_n, &refine);

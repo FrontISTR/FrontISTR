@@ -41,7 +41,7 @@ int set_params(int argc, char **argv) {
         return -1;
       }
       i++;
-      strcpy(out_file, argv[i]);
+      snprintf(out_file, sizeof(out_file), "%s", argv[i]);
     } else if (strcmp(argv[i], "-s") == 0) {
       if (argc == i + 1) {
         fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
