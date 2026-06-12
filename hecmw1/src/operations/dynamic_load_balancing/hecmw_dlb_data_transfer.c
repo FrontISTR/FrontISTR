@@ -276,7 +276,8 @@ void hecmw_dist_get_result_c_() {
   return;
 }
 
-void set_label_name(int n_component, char *label_name_f, char **label_name) {
+void set_label_name(int n_component, char *label_name_f, char **label_name,
+                    size_t label_len) {
   int i, j, k;
   char str_tmp[128];
   j = 0;
@@ -291,7 +292,7 @@ void set_label_name(int n_component, char *label_name_f, char **label_name) {
     }
 
     str_tmp[k] = '\0';
-    strcpy(label_name[i], str_tmp);
+    snprintf(label_name[i], label_len, "%s", str_tmp);
   }
   return;
 }
@@ -311,7 +312,7 @@ void hecmw_set_result_node_(int *nn_component, int *nn_dof, char *node_label,
   data->node_label   = (char **)calloc(data->nn_component, sizeof(char *));
   for (i                = 0; i < data->nn_component; i++)
     data->node_label[i] = (char *)calloc(128, sizeof(char));
-  set_label_name(data->nn_component, node_label, data->node_label);
+  set_label_name(data->nn_component, node_label, data->node_label, 128);
   data->node_val_item = node_val_item;
   return;
 }
@@ -341,7 +342,7 @@ void hecmw_set_result_elem_(int *ne_component, int *ne_dof, char *elem_label,
   data->elem_label   = (char **)calloc(data->ne_component, sizeof(char *));
   for (i                = 0; i < data->ne_component; i++)
     data->elem_label[i] = (char *)calloc(128, sizeof(char));
-  set_label_name(data->ne_component, elem_label, data->elem_label);
+  set_label_name(data->ne_component, elem_label, data->elem_label, 128);
   data->elem_val_item = elem_val_item;
   return;
 }
@@ -418,7 +419,8 @@ void hecmw_set_mesh_adaptation_(int *CoarseGridLevels, int *HOWmanyADAPTATIONs,
 }
 
 
-void set_grp_name(int n_group, char *grp_name_f, char **grp_name)
+void set_grp_name(int n_group, char *grp_name_f, char **grp_name,
+                  size_t grp_name_len)
 {
    int i,j, k;
    char str_tmp[128];
@@ -435,7 +437,7 @@ void set_grp_name(int n_group, char *grp_name_f, char **grp_name)
       }
 
       str_tmp[k] = '\0';
-      strcpy(grp_name[i], str_tmp);
+      snprintf(grp_name[i], grp_name_len, "%s", str_tmp);
     }
         return;
 }
@@ -452,7 +454,7 @@ void hecmw_set_grp_info_node_(int *n_grp,int *grp_index, char *grp_name_f, int
         for(i=0;i<*n_grp;i++)
                 v.grp->node_grp.enum_grp_name[i]=(char *)calloc(128,
 sizeof(char));
-        set_grp_name(*n_grp, grp_name_f, v.grp->node_grp.enum_grp_name);
+        set_grp_name(*n_grp, grp_name_f, v.grp->node_grp.enum_grp_name, 128);
         v.grp->node_grp.enum_grp_node=grp_node;
         return;
 }
@@ -468,7 +470,7 @@ void hecmw_set_grp_info_elem_(int *n_grp,int *grp_index, char *grp_name_f, int
         for(i=0;i<*n_grp;i++)
                 v.grp->elem_grp.enum_grp_name[i]=(char *)calloc(128,
 sizeof(char));
-        set_grp_name(*n_grp, grp_name_f, v.grp->elem_grp.enum_grp_name);
+        set_grp_name(*n_grp, grp_name_f, v.grp->elem_grp.enum_grp_name, 128);
         v.grp->elem_grp.enum_grp_node=grp_node;
         return;
 }
@@ -483,7 +485,7 @@ void hecmw_set_grp_info_surf_(int *n_grp,int *grp_index, char *grp_name_f, int
         v.grp->surf_grp_name=(char **)calloc(*n_grp, sizeof(char *));
         for(i=0;i<*n_grp;i++)
                 v.grp->surf_grp_name[i]=(char *)calloc(128, sizeof(char));
-        set_grp_name(*n_grp, grp_name_f, v.grp->surf_grp_name);
+        set_grp_name(*n_grp, grp_name_f, v.grp->surf_grp_name, 128);
         v.grp->surf_grp_node=grp_node;
         return;
 }
