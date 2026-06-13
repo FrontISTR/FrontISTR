@@ -1669,7 +1669,6 @@ extern struct hecmw_couple_ctrl_boundary_ids *HECMW_couple_get_boundary_ids(
 extern char *HECMW_couple_ctrl_get_unit_id(const char *couple_id,
                                            int unit_specifier, char *buf,
                                            int bufsize) {
-  int len;
   char *retbuf, *unit_id;
   struct couple_info_by_ctrl *p;
 
@@ -1700,13 +1699,8 @@ extern char *HECMW_couple_ctrl_get_unit_id(const char *couple_id,
       return NULL;
     }
   } else {
-    len = strlen(unit_id);
-    if (bufsize <= len) {
-      len = bufsize - 1;
-    }
-    strncpy(buf, unit_id, len);
-    buf[len] = '\0';
-    retbuf   = buf;
+    snprintf(buf, bufsize, "%s", unit_id);
+    retbuf = buf;
   }
 
   return retbuf;
@@ -1714,7 +1708,6 @@ extern char *HECMW_couple_ctrl_get_unit_id(const char *couple_id,
 
 extern char *HECMW_couple_ctrl_get_couple_id(const char *boundary_id, char *buf,
                                              int bufsize) {
-  int len;
   char *retbuf;
   struct boundary_info_by_ctrl *p;
 
@@ -1737,13 +1730,8 @@ extern char *HECMW_couple_ctrl_get_couple_id(const char *boundary_id, char *buf,
       return NULL;
     }
   } else {
-    len = strlen(p->couple_id);
-    if (bufsize <= len) {
-      len = bufsize - 1;
-    }
-    strncpy(buf, p->couple_id, len);
-    buf[len] = '\0';
-    retbuf   = buf;
+    snprintf(buf, bufsize, "%s", p->couple_id);
+    retbuf = buf;
   }
 
   return retbuf;

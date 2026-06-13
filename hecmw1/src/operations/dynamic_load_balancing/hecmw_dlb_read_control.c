@@ -187,7 +187,8 @@ int HECMW_dlb_get_keyword_repart(char *buf, Control_para *ctl_para) {
           HECMW_dlb_print_exit("ERROR: HEC-MW-VIS-E0007:The control parameter
      format error: method only can be PSR or PVR");
           */
-  strncpy(ctl_para->adaptive_repartition, "off", 3);
+  snprintf(ctl_para->adaptive_repartition,
+           sizeof(ctl_para->adaptive_repartition), "off");
 
   while ((buf[i] == ',') || (buf[i] == ' ')) i++;
   while (buf[i] != '\n') {
@@ -203,7 +204,8 @@ int HECMW_dlb_get_keyword_repart(char *buf, Control_para *ctl_para) {
         (strncmp(para, "METHOD", 6) == 0)) {
       HECMW_dlb_get_string_item(para, buf, &i, para2);
       if ((strncmp(para, "ADAPT", 5) == 0) || (strncmp(para, "adapt", 5) == 0))
-        strncpy(ctl_para->adaptive_repartition, "on", 2);
+        snprintf(ctl_para->adaptive_repartition,
+                 sizeof(ctl_para->adaptive_repartition), "on");
     }
 
     while ((buf[i] == ',') || (buf[i] == ' ')) i++;
@@ -351,7 +353,8 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para,
   }
   /* check the parameters */
   /*		  if(stat_para[0]==0) {
-                            strncpy(ctl_para->adaptive_repartition, "off", 3);
+                            snprintf(ctl_para->adaptive_repartition,
+                                     sizeof(ctl_para->adaptive_repartition), "off");
                     }
 
                     if((strncmp(ctl_para->adaptive_repartition, "on", 2)!=0) &&
@@ -426,7 +429,8 @@ void hecmw_dlb_set_default_control(Control_para *ctl_para,
                                    int pesize) {
   int i;
 
-  strncpy(ctl_para->adaptive_repartition, "on", 3);
+  snprintf(ctl_para->adaptive_repartition,
+           sizeof(ctl_para->adaptive_repartition), "on");
   ctl_para->num_criteria = 1;
 
   ctl_para->balance_rate    = (float *)calloc(1, sizeof(float));
