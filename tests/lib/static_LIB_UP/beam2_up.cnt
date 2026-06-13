@@ -5,7 +5,7 @@
 ##   Load: tip concentrated force F=-2.0 (y-dir) at 3 nodes (LOAD_TIP)
 ##         F_per_node = -2/3 = -0.6667
 ##   BC: fixed end x=0 (FIX_X)
-##   Solver: MUMPS direct, NLSTATIC 10 substeps
+##   Solver: CG (iterative), NLSTATIC 10 substeps
 ##
 ## Purpose:
 ##   Show convergence toward Timoshenko beam theory with mesh refinement
@@ -24,9 +24,12 @@
 !SOLUTION, TYPE=NLSTATIC
 !WRITE,LOG
 !WRITE,RESULT
-!SOLVER,METHOD=MUMPS,ITERLOG=NO,TIMELOG=NO
+## CG solves the displacement-only system (element-level static condensation of
+## the pressure DOF -> SPD). nu=0.499999 penalty conditioning limits the relative
+## residual to ~6e-5, so the tolerance is 1e-4 (matches the direct solver to ~1e-7).
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
  10000, 1
- 1.0e-08, 1.00, 0.0
+ 1.0e-04, 1.00, 0.0
 !BOUNDARY, GRPID=1
  FIX_X,1,1
  FIX_X,2,2
