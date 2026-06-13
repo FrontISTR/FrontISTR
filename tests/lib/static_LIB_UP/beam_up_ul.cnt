@@ -1,7 +1,7 @@
 ##
 ## Cantilever beam bending, UP (u-p) formulation, Updated Lagrangian (UPDATELAG)
 ##   Mesh: 5x1x1 hex (beam_up_ul.msh), L=5, b=h=1
-##   Material: E=1000, nu=0.499999 (nearly incompressible), !ELASTIC,CAUCHY -> UPDATELAG
+##   Material: E=1000, nu=0.4999 (nearly incompressible), !ELASTIC,CAUCHY -> UPDATELAG
 ##   Load: tip force -1.0 at SET_4 (2 nodes), fixed end SET_1, NLSTATIC 10 substeps
 ##
 ## Purpose:
@@ -15,12 +15,12 @@
 !SOLUTION, TYPE=NLSTATIC
 !WRITE,LOG
 !WRITE,RESULT
-## CG solves the displacement-only system (element-level static condensation of
-## the pressure DOF -> SPD). nu=0.499999 penalty conditioning limits the relative
-## residual to ~6e-5, so the tolerance is 1e-4 (matches the direct solver to ~1e-7).
+## CG solves the displacement-only system: the pressure DOF is statically condensed
+## at the element level (constant element pressure), leaving an SPD displacement
+## matrix, so no direct solver (MUMPS) is required.
 !SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
  10000, 1
- 1.0e-04, 1.00, 0.0
+ 1.0e-06, 1.00, 0.0
 !BOUNDARY, GRPID=1
  SET_1,1,1
  SET_1,2,2
@@ -29,7 +29,7 @@
  SET_4,2,-1.0
 !MATERIAL, NAME=MATERIAL1
 !ELASTIC, CAUCHY
- 1.0000E+03, 4.99999E-01
+ 1.0000E+03, 4.9990E-01
 !SECTION, SECNUM=1, FORM361=UP
 !STEP, SUBSTEPS=10, CONVERG=1.0E-06
  BOUNDARY,1
