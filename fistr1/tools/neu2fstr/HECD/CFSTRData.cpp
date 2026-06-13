@@ -79,6 +79,7 @@ void CFSTRData::WriteComment(FILE *fp, const char *comment) {
 
   char *buff = new char[n + 1];
   snprintf(buff, n + 1, "%s", comment);
+  char *p = strtok(buff, "\r\n");
 
   while (p) {
     if (*p == '#') {
