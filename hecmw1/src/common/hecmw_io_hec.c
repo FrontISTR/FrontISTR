@@ -1698,7 +1698,7 @@ static int read_equation(void) {
 /*----------------------------------------------------------------------------*/
 
 static int read_header(void) {
-  int token, len;
+  int token;
   char *p;
   struct hecmw_io_header *header;
 
@@ -1723,11 +1723,8 @@ static int read_header(void) {
   }
   p = HECMW_heclex_get_text();
   while (*p && *p == ' ') p++;
-  if (p == NULL) p                = "";
-  len                             = strlen(p);
-  if (len > HECMW_HEADER_LEN) len = HECMW_HEADER_LEN;
-  strncpy(header->header, p, len);
-  header->header[len] = '\0';
+  if (p == NULL) p = "";
+  snprintf(header->header, sizeof(header->header), "%s", p);
 
   /* Note:
    * NL is ignored by LEX until the end of the header data.

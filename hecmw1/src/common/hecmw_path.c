@@ -87,8 +87,7 @@ static char *dir_name(const char *path) {
     errno = ENAMETOOLONG;
     return NULL;
   }
-  strncpy(dname, path, p - path + 1);
-  dname[p - path + 1] = '\0';
+  snprintf(dname, sizeof(dname), "%.*s", (int)(p - path + 1), path);
 
   return dname;
 }
@@ -121,8 +120,7 @@ static char *base_name(const char *path) {
     errno = ENAMETOOLONG;
     return NULL;
   }
-  strncpy(bname, sp, ep - sp + 1);
-  bname[ep - sp + 1] = '\0';
+  snprintf(bname, sizeof(bname), "%.*s", (int)(ep - sp + 1), sp);
 
   return bname;
 }

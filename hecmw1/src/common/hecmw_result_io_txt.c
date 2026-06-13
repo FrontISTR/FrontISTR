@@ -29,8 +29,7 @@ static int output_result_header(FILE *fp) {
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     char temp_head[HECMW_HEADER_LEN + 16];
     snprintf(temp_head, sizeof(temp_head), "%s %d.%d", ResIO.head, HECMW_RESULT_FILEVER_MAJOR, HECMW_RESULT_FILEVER_MINOR);
-    strncpy(ResIO.head, temp_head, HECMW_HEADER_LEN);
-    ResIO.head[HECMW_HEADER_LEN] = '\0';
+    snprintf(ResIO.head, sizeof(ResIO.head), "%s", temp_head);
   }
   rc = fprintf(fp, "%s\n", ResIO.head);
   if(rc < 0) {

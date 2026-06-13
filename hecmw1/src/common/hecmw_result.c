@@ -131,13 +131,11 @@ int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
 
   /* Insert addfname before the last '.' in basename.
      e.g. basename="model.res", addfname="_precheck" -> "model_precheck.res" */
-  strncpy(base_mod, basename, HECMW_FILENAME_LEN);
-  base_mod[HECMW_FILENAME_LEN] = '\0';
+  snprintf(base_mod, sizeof(base_mod), "%s", basename);
   dot = strrchr(base_mod, '.');
   if (dot != NULL) {
     char suffix[HECMW_FILENAME_LEN + 1];
-    strncpy(suffix, dot, HECMW_FILENAME_LEN);
-    suffix[HECMW_FILENAME_LEN] = '\0';
+    snprintf(suffix, sizeof(suffix), "%s", dot);
     *dot = '\0';
     snprintf(dot, sizeof(base_mod) - (dot - base_mod), "%s%s", addfname, suffix);
   } else {
