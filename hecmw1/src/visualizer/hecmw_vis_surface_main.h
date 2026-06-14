@@ -15,7 +15,8 @@
 void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
                              struct hecmwST_result_data *data, int *timestep,
                              struct surface_module *sf, Parameter_rendering *sr,
-                             int stat_para[NUM_CONTROL_PSF], char *outfile1, char *body,
+                             int stat_para[NUM_CONTROL_PSF], char *outfile1,
+                             size_t outfile1size, char *body,
                              HECMW_Comm VIS_COMM);
 
 #endif /* HECMW_VIS_SURFACE_MAIN_H_INCLUDED */

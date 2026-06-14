@@ -200,7 +200,7 @@ static void femap_write_elem(FILE *outfp, int mynode, int n_elem, int n_node,
 
 void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
                              struct hecmwST_result_data *data, char *outfile,
-                             HECMW_Comm VIS_COMM) {
+                             size_t outfile_size, HECMW_Comm VIS_COMM) {
   int i, j, k, m;
   int mynode, pesize;
   HECMW_Status stat;
@@ -220,7 +220,7 @@ void HECMW_fstr_output_femap(struct hecmwST_local_mesh *mesh,
 
   /* open file */
   if (mynode == 0) {
-    strcat(outfile, ".neu");
+    strncat(outfile, ".neu", outfile_size - strlen(outfile) - 1);
     outfp = fopen(outfile, "w");
 
     if (!outfp)
@@ -1471,7 +1471,7 @@ void HECMW_bin_avs_output(struct hecmwST_local_mesh *mesh,
 #ifdef CONVERSE_ORDER
     SWAP_FLOAT(version);
 #endif
-    strcpy(title, "ucd binary test data");
+    snprintf(title, sizeof(title), "ucd binary test data");
     stepno = 1;
 #ifdef CONVERSE_ORDER
     SWAP_INT(stepno);

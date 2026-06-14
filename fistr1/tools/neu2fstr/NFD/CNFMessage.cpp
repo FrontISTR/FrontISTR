@@ -19,45 +19,35 @@ static char WARNING_MSG[][80] = {"Non supported data block"};
 char CNFMessage::msg[256] = "";
 
 const char *CNFError::Msg() {
-  char s[256];
-  strcpy(msg, "##Error");
+  size_t len = snprintf(msg, sizeof(msg), "##Error");
 
   if (line >= 0) {
-    sprintf(s, "(line:%d", line);
-    strcat(msg, s);
+    len += snprintf(msg + len, sizeof(msg) - len, "(line:%d", line);
 
     if (column > 0) {
-      sprintf(s, ",col:%d", column);
-      strcat(msg, s);
+      len += snprintf(msg + len, sizeof(msg) - len, ",col:%d", column);
     }
 
-    strcat(msg, ")");
+    len += snprintf(msg + len, sizeof(msg) - len, ")");
   }
 
-  strcat(msg, ": ");
-  strcat(msg, ERROR_MSG[no]);
-  strcat(msg, option_msg);
+  snprintf(msg + len, sizeof(msg) - len, ": %s%s", ERROR_MSG[no], option_msg);
   return msg;
 }
 
 const char *CNFWarning::Msg() {
-  char s[256];
-  strcpy(msg, "##Warning");
+  size_t len = snprintf(msg, sizeof(msg), "##Warning");
 
   if (line >= 0) {
-    sprintf(s, "(line:%d", line);
-    strcat(msg, s);
+    len += snprintf(msg + len, sizeof(msg) - len, "(line:%d", line);
 
     if (column > 0) {
-      sprintf(s, ",col:%d", column);
-      strcat(msg, s);
+      len += snprintf(msg + len, sizeof(msg) - len, ",col:%d", column);
     }
 
-    strcat(msg, ")");
+    len += snprintf(msg + len, sizeof(msg) - len, ")");
   }
 
-  strcat(msg, ": ");
-  strcat(msg, WARNING_MSG[no]);
-  strcat(msg, option_msg);
+  snprintf(msg + len, sizeof(msg) - len, ": %s%s", WARNING_MSG[no], option_msg);
   return msg;
 }

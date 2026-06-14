@@ -118,7 +118,7 @@ static int visualize_render(struct hecmwST_local_mesh *mesh,
         }
       }
       HECMW_vis_psf_rendering(mesh, data, &timestep, sf, sr, stat_para_sf,
-                              outfile1, body, VIS_COMM);
+                              outfile1, sizeof(outfile1), body, VIS_COMM);
       init_flag = 0;
     }
   }
@@ -192,8 +192,8 @@ int HECMW_visualize_by_addfname(struct hecmwST_local_mesh *mesh,
   buf1_raw = HECMW_ctrl_get_result_filebody("vis_out");
 
   /* Insert addfname suffix */
-  snprintf(outfile, HECMW_FILENAME_LEN, "%s%s", outfile_raw, addfname);
-  snprintf(buf1, HECMW_FILENAME_LEN, "%s%s", buf1_raw, addfname);
+  snprintf(outfile, sizeof(outfile), "%s%s", outfile_raw, addfname);
+  snprintf(buf1, sizeof(buf1), "%s%s", buf1_raw, addfname);
   HECMW_free(outfile_raw);
   HECMW_free(buf1_raw);
 

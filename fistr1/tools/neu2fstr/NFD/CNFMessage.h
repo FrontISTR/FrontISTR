@@ -42,7 +42,7 @@ class CNFMessage {
 
   CNFMessage(int No = 0, const char* opt_msg = "", int Line = -1, int Col = -1)
       : no(No), line(Line), column(Col) {
-    strcpy(option_msg, opt_msg);
+    snprintf(option_msg, sizeof(option_msg), "%s", opt_msg);
   }
   virtual ~CNFMessage() {}
   virtual const char* Msg() = 0;

@@ -23,7 +23,7 @@ CConvMessage::CConvMessage(int No, const char *op_msg, ...) : no(No) {
 
   va_list va;
   va_start(va, op_msg);
-  vsprintf(option_msg, op_msg, va);
+  vsnprintf(option_msg, sizeof(option_msg), op_msg, va);
   va_end(va);
 }
 

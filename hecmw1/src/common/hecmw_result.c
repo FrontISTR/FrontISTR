@@ -79,7 +79,7 @@ int HECMW_result_write_by_name(char *name_ID) {
            HECMW_ctrl_get_result_file(name_ID, ResIO.istep, &fg_text)) == NULL)
     return -1;
 
-  ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, ResIO.istep);
+  ret = snprintf(filename, sizeof(filename), "%s.%d", basename, ResIO.istep);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
 
@@ -102,7 +102,7 @@ int HECMW_result_write_ST_by_name(char *name_ID,
            HECMW_ctrl_get_result_file(name_ID, ResIO.istep, &fg_text)) == NULL)
     return -1;
 
-  ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, ResIO.istep);
+  ret = snprintf(filename, sizeof(filename), "%s.%d", basename, ResIO.istep);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
 
@@ -131,21 +131,19 @@ int HECMW_result_write_by_addfname(char *name_ID, char *addfname) {
 
   /* Insert addfname before the last '.' in basename.
      e.g. basename="model.res", addfname="_precheck" -> "model_precheck.res" */
-  strncpy(base_mod, basename, HECMW_FILENAME_LEN);
-  base_mod[HECMW_FILENAME_LEN] = '\0';
+  snprintf(base_mod, sizeof(base_mod), "%s", basename);
   dot = strrchr(base_mod, '.');
   if (dot != NULL) {
     char suffix[HECMW_FILENAME_LEN + 1];
-    strncpy(suffix, dot, HECMW_FILENAME_LEN);
-    suffix[HECMW_FILENAME_LEN] = '\0';
+    snprintf(suffix, sizeof(suffix), "%s", dot);
     *dot = '\0';
-    snprintf(dot, HECMW_FILENAME_LEN - (dot - base_mod), "%s%s", addfname, suffix);
+    snprintf(dot, sizeof(base_mod) - (dot - base_mod), "%s%s", addfname, suffix);
   } else {
-    strncat(base_mod, addfname, HECMW_FILENAME_LEN - strlen(base_mod));
+    strncat(base_mod, addfname, sizeof(base_mod) - strlen(base_mod) - 1);
   }
 
   myrank = HECMW_comm_get_rank();
-  ret    = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d.%d", base_mod,
+  ret    = snprintf(filename, sizeof(filename), "%s.%d.%d", base_mod,
                  myrank, ResIO.istep);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
@@ -168,7 +166,7 @@ int HECMW_result_checkfile_by_name(char *name_ID, int i_step) {
                                              &fg_text)) == NULL)
     return -1;
 
-  ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, i_step);
+  ret = snprintf(filename, sizeof(filename), "%s.%d", basename, i_step);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return -1;
 
@@ -201,7 +199,7 @@ struct hecmwST_result_data *HECMW_result_read_by_name(char *name_ID,
                                              &fg_text)) == NULL)
     return NULL;
 
-  ret = snprintf(filename, HECMW_FILENAME_LEN + 1, "%s.%d", basename, i_step);
+  ret = snprintf(filename, sizeof(filename), "%s.%d", basename, i_step);
   HECMW_free(basename);
   if (ret > HECMW_FILENAME_LEN) return NULL;
 
@@ -218,13 +216,13 @@ int HECMW_result_get_nnode(void) { return ResIO.nnode; }
 
 int HECMW_result_get_nelem(void) { return ResIO.nelem; }
 
-char *HECMW_result_get_header(char *buff) {
-  strcpy(buff, ResIO.head);
+char *HECMW_result_get_header(char *buff, size_t buff_size) {
+  snprintf(buff, buff_size, "%s", ResIO.head);
   return buff;
 }
 
-char *HECMW_result_get_comment(char *buff) {
-  strcpy(buff, ResIO.comment_line);
+char *HECMW_result_get_comment(char *buff, size_t buff_size) {
+  snprintf(buff, buff_size, "%s", ResIO.comment_line);
   return buff;
 }
 

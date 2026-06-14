@@ -40,7 +40,7 @@ extern int HECMW_init_for_partition(int argc, char **argv) {
   int counter;
   char control_file_name[HECMW_FILENAME_LEN + 1];
 
-  strcpy(control_file_name, DEFAULT_CONTROL_FILE_NAME);
+  snprintf(control_file_name, sizeof(control_file_name), "%s", DEFAULT_CONTROL_FILE_NAME);
 
   if (argc > 1) {
     counter = 1;
@@ -56,7 +56,7 @@ extern int HECMW_init_for_partition(int argc, char **argv) {
                           "control file for partitioner");
           goto error;
         }
-        strcpy(control_file_name, argv[counter]);
+        snprintf(control_file_name, sizeof(control_file_name), "%s", argv[counter]);
         counter++;
 
       }else if (!strcmp(argv[counter], "-d")) {

@@ -32,6 +32,6 @@ bool CHECDB_Header::Read(CHECData *hecd, char *header_line) {
     return true;
   }
 
-  strcpy(title, line);
+  snprintf(title, sizeof(title), "%s", line);
   return true;
 }

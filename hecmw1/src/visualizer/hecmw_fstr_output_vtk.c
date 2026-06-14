@@ -178,7 +178,7 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 		if(mesh->elem_type[i]==641) shift+=2;
 		if(mesh->elem_type[i]==761) shift+=3;
 		if(mesh->elem_type[i]==781) shift+=4;
-		fprintf (outfp, "%d ", mesh->elem_node_index[i+1]-shift);
+		fprintf (outfp, "%lld ", mesh->elem_node_index[i+1]-shift);
 	}
 	fprintf (outfp, "\n");
 	fprintf (outfp, "</DataArray>\n");

@@ -1631,14 +1631,16 @@ static int reconstruct_node_grp(struct hecmwST_local_mesh *local_mesh,
     HECMW_set_error(HECMW_COMMON_E_ALLOCATION, "");
     return -1;
   }
+  const size_t grp_name_len = HECMW_NAME_LEN + 1;
   grp->grp_name[grp->n_grp - 1] =
-      (char *)HECMW_malloc(sizeof(char *) * (HECMW_NAME_LEN + 1));
+      (char *)HECMW_malloc(sizeof(char *) * grp_name_len);
   if (grp->grp_name[grp->n_grp - 1] == NULL) {
     HECMW_set_error(HECMW_COMMON_E_ALLOCATION, "");
     return -1;
   }
 
-  strcpy(grp->grp_name[grp->n_grp - 1], HECMW_COMMON_EQUATION_BLOCK_NAME);
+  snprintf(grp->grp_name[grp->n_grp - 1], grp_name_len, "%s",
+           HECMW_COMMON_EQUATION_BLOCK_NAME);
 
   /* member of node group */
   grp->grp_item = (int *)HECMW_realloc(

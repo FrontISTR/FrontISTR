@@ -17,7 +17,7 @@ CFSTRDB_Solver::CFSTRDB_Solver() : CFSTRDataBlock(FSTRDB_SOLVER) { Clear(); }
 CFSTRDB_Solver::~CFSTRDB_Solver() { Clear(); }
 
 void CFSTRDB_Solver::Clear() {
-  strcpy(method, "CG");
+  snprintf(method, sizeof(method), "CG");
   precond = 1;
   nset    = 0;
   iterlog = 1;
