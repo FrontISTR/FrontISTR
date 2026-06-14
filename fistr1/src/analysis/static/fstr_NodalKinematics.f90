@@ -9,27 +9,24 @@
 !> a simple vector addition to the nodal degrees of freedom.
 !>
 !> Currently the only element type that activates this path is MITC4 shell (741)
-!> under Total Lagrangian kinematics with an elastic material.  The predicate
-!> fstr_uses_finite_rotation_kinematics() is the single place that encodes this
-!> maturity restriction; all other code in this module is element-type-agnostic.
+!> under Total Lagrangian kinematics with an elastic material.  The predicate is
+!> shared with setup so the nodal state is allocated only when this path is used.
 !>
 !> Design notes:
 !>  - The element-level rotation algebra (exp/log maps, triad updates) lives in
 !>    m_static_LIB_shell.  This module only orchestrates per-node state and the
 !>    application of the global solution increment.
 !>  - To extend finite-rotation support to beam elements, Updated Lagrangian or
-!>    inelastic materials, update fstr_uses_finite_rotation_kinematics() and add
-!>    element-specific frame initialisation; the solver and update paths need no
-!>    change.
+!>    inelastic materials, update the shared predicate and add element-specific
+!>    frame initialisation; the solver and update paths need no change.
 module m_fstr_NodalKinematics
   use m_fstr
+  use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
   implicit none
 
   private
 
-  public :: fstr_uses_finite_rotation_kinematics
   public :: fstr_ensure_finite_rotation_state
-  public :: fstr_mark_finite_rotation_nodes
   public :: fstr_begin_nodal_kinematics_step
   public :: fstr_apply_solution_increment
   public :: fstr_commit_solution_increment
@@ -38,24 +35,6 @@ module m_fstr_NodalKinematics
   public :: fstr_get_shell_reference_directors
 
 contains
-
-  !> Eligibility predicate for the finite-rotation kinematics path.
-  !>
-  !> NOTE: support is currently limited to MITC4 (741), 4 nodes, Total Lagrangian,
-  !>       elastic material.  This is a maturity restriction, not a design
-  !>       assumption.  This routine is the single place that encodes it.  To
-  !>       extend to Updated Lagrangian or inelastic materials, relax the
-  !>       conditions here only; the solver, update and stress paths need no change.
-  logical function fstr_uses_finite_rotation_kinematics( etype, nn, material )
-    use elementInfo, only: fe_mitc4_shell
-    use mMaterial, only: tMaterial, TOTALLAG, isElastic
-    integer(kind=kint), intent(in) :: etype
-    integer(kind=kint), intent(in) :: nn
-    type(tMaterial), intent(in)    :: material
-
-    fstr_uses_finite_rotation_kinematics = ( etype == fe_mitc4_shell .and. nn == 4 &
-      .and. material%nlgeom_flag == TOTALLAG .and. isElastic( material%mtype ) )
-  end function fstr_uses_finite_rotation_kinematics
 
   !> Build the per-node reference frames once, by averaging element shell triads
   !> at shared nodes. Already-initialized nodes are left untouched, so repeated
@@ -75,6 +54,8 @@ contains
     real(kind=kreal) :: ecoord(3, 8), triad(3, 3), trial(3, 3)
     real(kind=kreal) :: director(3), tangent(3), ref_axis(3), normv, proj
 
+    if( .not. fstrSOLID%has_finite_rotation_kinematics ) return
+    if( fstrSOLID%finite_rotation_state_ready ) return
     if( .not. associated(fstrSOLID%shell_rot_state) ) return
 
     allocate( director_sum(3, hecMESH%n_node) )
@@ -156,44 +137,9 @@ contains
     deallocate( tangent_sum )
     deallocate( node_mode )
     deallocate( node_count )
+    fstrSOLID%finite_rotation_state_ready = .true.
 
   end subroutine fstr_ensure_finite_rotation_state
-
-  !> Flag nodes (1) that belong to a finite-rotation shell element.
-  subroutine fstr_mark_finite_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
-    use elementInfo, only: fe_mitc4_shell
-    implicit none
-
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (fstr_solid), intent(in)         :: fstrSOLID
-    integer(kind=kint), intent(in)        :: ndof
-    integer(kind=kint), intent(out)       :: shell_node_mode(:)
-
-    integer(kind=kint) :: itype, is, iE, ic_type, icel, iiS, nn, j, node_id
-
-    shell_node_mode(:) = 0
-    do itype = 1, hecMESH%n_elem_type
-      is = hecMESH%elem_type_index(itype-1) + 1
-      iE = hecMESH%elem_type_index(itype)
-      ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type /= fe_mitc4_shell ) cycle
-      do icel = is, iE
-        iiS = hecMESH%elem_node_index(icel-1)
-        nn = hecMESH%elem_node_index(icel) - iiS
-        if( .not. associated( fstrSOLID%elements(icel)%gausses ) ) cycle
-        if( .not. fstr_uses_finite_rotation_kinematics( ic_type, nn, &
-            fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) cycle
-
-        if( ndof >= 6 ) then
-          do j = 1, nn
-            node_id = hecMESH%elem_node_item(iiS+j)
-            if( node_id > 0 .and. node_id <= size(shell_node_mode) ) shell_node_mode(node_id) = 1
-          end do
-        endif
-      end do
-    end do
-
-  end subroutine fstr_mark_finite_rotation_nodes
 
   !> Snapshot the converged rotation state at the start of a load step and reset
   !> the Newton trial state to it.
@@ -231,15 +177,26 @@ contains
     integer(kind=kint) :: node_id, idx, base
     real(kind=kreal) :: theta_inc(3), theta_compat(3)
     real(kind=kreal) :: triad_old(3, 3), triad_new(3, 3), drill_new
-    integer(kind=kint), allocatable :: shell_node_mode(:)
 
+    if( .not. fstrSOLID%has_finite_rotation_kinematics ) then
+      do node_id = 1, hecMESH%n_node
+        idx = ndof*(node_id-1)
+        fstrSOLID%dunode(idx+1:idx+ndof) = fstrSOLID%dunode(idx+1:idx+ndof) + x(idx+1:idx+ndof)
+      end do
+      return
+    endif
     call fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
-    allocate( shell_node_mode(hecMESH%n_node) )
-    call fstr_mark_finite_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
+    if( .not. associated(fstrSOLID%shell_node_mode) ) then
+      do node_id = 1, hecMESH%n_node
+        idx = ndof*(node_id-1)
+        fstrSOLID%dunode(idx+1:idx+ndof) = fstrSOLID%dunode(idx+1:idx+ndof) + x(idx+1:idx+ndof)
+      end do
+      return
+    endif
 
     do node_id = 1, hecMESH%n_node
       idx = ndof*(node_id-1)
-      if( shell_node_mode(node_id) == 1 ) then
+      if( fstrSOLID%shell_node_mode(node_id) == 1 ) then
         fstrSOLID%dunode(idx+1:idx+3) = fstrSOLID%dunode(idx+1:idx+3) + x(idx+1:idx+3)
         theta_inc(1:3) = x(idx+4:idx+6)
         base = 9*(node_id-1)
@@ -263,8 +220,6 @@ contains
       endif
     end do
 
-    deallocate( shell_node_mode )
-
   end subroutine fstr_apply_solution_increment
 
   !> Commit the converged step increment dunode into the total displacement unode.
@@ -281,15 +236,26 @@ contains
 
     integer(kind=kint) :: node_id, idx, base
     real(kind=kreal) :: theta_compat(3)
-    integer(kind=kint), allocatable :: shell_node_mode(:)
 
+    if( .not. fstrSOLID%has_finite_rotation_kinematics ) then
+      do node_id = 1, hecMESH%n_node
+        idx = ndof*(node_id-1)
+        fstrSOLID%unode(idx+1:idx+ndof) = fstrSOLID%unode(idx+1:idx+ndof) + fstrSOLID%dunode(idx+1:idx+ndof)
+      end do
+      return
+    endif
     call fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
-    allocate( shell_node_mode(hecMESH%n_node) )
-    call fstr_mark_finite_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
+    if( .not. associated(fstrSOLID%shell_node_mode) ) then
+      do node_id = 1, hecMESH%n_node
+        idx = ndof*(node_id-1)
+        fstrSOLID%unode(idx+1:idx+ndof) = fstrSOLID%unode(idx+1:idx+ndof) + fstrSOLID%dunode(idx+1:idx+ndof)
+      end do
+      return
+    endif
 
     do node_id = 1, hecMESH%n_node
       idx = ndof*(node_id-1)
-      if( shell_node_mode(node_id) == 1 ) then
+      if( fstrSOLID%shell_node_mode(node_id) == 1 ) then
         fstrSOLID%unode(idx+1:idx+3) = fstrSOLID%unode(idx+1:idx+3) + fstrSOLID%dunode(idx+1:idx+3)
         base = 9*(node_id-1)
         fstrSOLID%shell_triad(base+1:base+9) = fstrSOLID%shell_dtriad(base+1:base+9)
@@ -304,8 +270,6 @@ contains
         fstrSOLID%unode(idx+1:idx+ndof) = fstrSOLID%unode(idx+1:idx+ndof) + fstrSOLID%dunode(idx+1:idx+ndof)
       endif
     end do
-
-    deallocate( shell_node_mode )
 
   end subroutine fstr_commit_solution_increment
 

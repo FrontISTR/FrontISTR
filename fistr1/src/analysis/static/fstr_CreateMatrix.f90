@@ -182,8 +182,8 @@ contains
     use m_static_LIB_shell, only: ShellComposeNodalDisplacement
     use mMechGauss
     use m_dynamic_mass
-    use m_fstr_NodalKinematics, only: fstr_get_shell_trial_directors, fstr_get_shell_reference_directors, &
-      fstr_uses_finite_rotation_kinematics
+    use m_fstr_NodalKinematics, only: fstr_get_shell_trial_directors, fstr_get_shell_reference_directors
+    use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
 
     integer(kind=kint), intent(in)    :: ic_type, ndof
     integer(kind=kint), intent(inout) :: nn  ! some legacy STF_* routines mutate this

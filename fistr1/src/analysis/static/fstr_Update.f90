@@ -26,9 +26,9 @@ contains
     !=====================================================================*
     use m_static_lib
     use m_elemact
-    use m_fstr_NodalKinematics, only: fstr_uses_finite_rotation_kinematics, &
-      fstr_ensure_finite_rotation_state, fstr_get_shell_trial_directors, &
+    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state, fstr_get_shell_trial_directors, &
       fstr_get_shell_reference_directors
+    use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
 
     type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
     type (hecmwST_local_mesh)   :: hecMESH   !< mesh information

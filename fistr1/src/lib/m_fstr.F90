@@ -401,6 +401,9 @@ module m_fstr
     real(kind=kreal), pointer :: unode_bak(:)  => null()   !< disp at the beginning of curr step
     real(kind=kreal), pointer :: dunode(:)     => null()   !< curr total disp
     real(kind=kreal), pointer :: ddunode(:)    => null()   !< =hecMESH%X, disp increment
+    logical :: has_finite_rotation_kinematics
+    logical :: finite_rotation_state_ready
+    integer(kind=kint), pointer :: shell_node_mode(:) => null() !< 0:inactive, 1:finite-rotation shell node
     integer(kind=kint), pointer :: shell_rot_state(:) => null() !< 0:inactive, 1:MITC4
     real(kind=kreal), pointer :: shell_ref_triad(:) => null()   !< reference shell nodal triads, fixed after initialization
     real(kind=kreal), pointer :: shell_triad(:)     => null()   !< converged shell nodal triads, 9 values/node
