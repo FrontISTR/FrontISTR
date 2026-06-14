@@ -4,6 +4,7 @@
 ###############################################################################
 
 target_sources(fistr PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_CheckConvergence.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Ctrl_TimeInc.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Cutback.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Spring.f90
