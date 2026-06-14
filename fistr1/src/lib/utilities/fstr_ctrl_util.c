@@ -20,7 +20,9 @@
 
 char err_msg[ERR_MSG_SIZE];
 
-void c_fstr_ctrl_get_err_msg(char *buff) { strcpy(buff, err_msg); }
+void c_fstr_ctrl_get_err_msg(char *buff, size_t buff_size) {
+  snprintf(buff, buff_size, "%s", err_msg);
+}
 
 static void set_param_err_msg(fstr_ctrl_data *ctrl, const char *param_name,
                               const char *msg);
@@ -178,8 +180,9 @@ static int set_fstr_ctrl_data(const char *fname, fstr_ctrl_data *ctrl) {
       }
     }
 
+    size_t line_size = strlen(buff) + 1;
     ctrl->rec[rec_count].line_no = line_no;
-    ctrl->rec[rec_count].line = HECMW_malloc(sizeof(char) * (strlen(buff) + 1));
+    ctrl->rec[rec_count].line = HECMW_malloc(sizeof(char) * line_size);
 
     if (ctrl->rec[rec_count].line == NULL) {
       printf("Not enough memory\n");
@@ -188,7 +191,7 @@ static int set_fstr_ctrl_data(const char *fname, fstr_ctrl_data *ctrl) {
 
     /* Strupr( buff ); */
     remove_cr(buff);
-    strcpy(ctrl->rec[rec_count].line, buff);
+    snprintf(ctrl->rec[rec_count].line, line_size, "%s", buff);
     rec_count++;
   }
 
@@ -332,7 +335,8 @@ int c_fstr_ctrl_get_rec_number(fstr_ctrl_data *ctrl) {
 /*-----------------------------------------------------------------------------------*/
 /* JP-3 */
 
-int c_fstr_ctrl_get_line(fstr_ctrl_data *ctrl, int rec_no, char *buff) {
+int c_fstr_ctrl_get_line(fstr_ctrl_data *ctrl, int rec_no, char *buff,
+                         size_t buff_size) {
   if (!ctrl) {
     return -1;
   }
@@ -341,7 +345,7 @@ int c_fstr_ctrl_get_line(fstr_ctrl_data *ctrl, int rec_no, char *buff) {
     return -1;
   }
 
-  strcpy(buff, ctrl->rec[rec_no].line);
+  snprintf(buff, buff_size, "%s", ctrl->rec[rec_no].line);
   return 0;
 }
 
@@ -587,7 +591,7 @@ int c_fstr_ctrl_get_param(fstr_ctrl_data *ctrl, const char *param_name,
   }
 
   h_pos = ctrl->header_pos[h_index];
-  strcpy(header, ctrl->rec[h_pos].line);
+  snprintf(header, sizeof(header), "%s", ctrl->rec[h_pos].line);
   {
     char *token;
     char *param_pos;
@@ -733,7 +737,7 @@ int c_fstr_ctrl_get_data_line_n(fstr_ctrl_data *ctrl) {
 /* JP-13 */
 
 int c_fstr_ctrl_copy_data_line(fstr_ctrl_data *ctrl, int line_no,
-                               char *data_line) {
+                               char *data_line, size_t data_line_len) {
   int data_line_n;
   int h_index;
   int data_pos;
@@ -745,7 +749,7 @@ int c_fstr_ctrl_copy_data_line(fstr_ctrl_data *ctrl, int line_no,
 
   h_index  = ctrl->current_header_index;
   data_pos = ctrl->header_pos[h_index] + line_no;
-  strcpy(data_line, ctrl->rec[data_pos].line);
+  snprintf(data_line, data_line_len, "%s", ctrl->rec[data_pos].line);
   return 0;
 }
 
@@ -759,7 +763,8 @@ int c_fstr_ctrl_get_data_n_in_line(fstr_ctrl_data *ctrl, int line_no,
   char *token;
   int err;
   int counter;
-  err = c_fstr_ctrl_copy_data_line(ctrl, line_no, data_line);
+  err = c_fstr_ctrl_copy_data_line(ctrl, line_no, data_line,
+                                   sizeof(data_line));
 
   if (err) {
     return -1;
@@ -836,7 +841,8 @@ int c_fstr_ctrl_get_data_v(fstr_ctrl_data *ctrl, int line_no,
   char buff[buffsize * 2]  = { '\0' };
   format_conv(format, format_c, array_size);
   error_pos = -1;
-  err       = c_fstr_ctrl_copy_data_line(ctrl, line_no, data_line);
+  err       = c_fstr_ctrl_copy_data_line(ctrl, line_no, data_line,
+                                         sizeof(data_line));
 
   if (err) {
     int i = 0;
@@ -903,7 +909,7 @@ int c_fstr_ctrl_get_data_v(fstr_ctrl_data *ctrl, int line_no,
       }
 
       if ((char)type == 'S') {
-        strcpy(buff, (char *)val_p);
+        snprintf(buff, sizeof(buff), "%s", (char *)val_p);
         strcpy_c2f((char *)val_p, array_size[counter], buff);
       }
 
@@ -997,7 +1003,7 @@ int c_fstr_ctrl_get_data_array_v(fstr_ctrl_data *ctrl, const char *format,
 
     for (j = 0; j < column_n; j++) {
       if (fg_fortran_get_data_array_v && toupper(fmt[j]) == 'S') {
-        strcpy(buff, (char *)param[j]);
+        snprintf(buff, sizeof(buff), "%s", (char *)param[j]);
         strcpy_c2f((char *)param[j], array_size[j], buff);
       }
 
@@ -1124,7 +1130,8 @@ int fstr_ctrl_get_rec_number(int *ctrl) {
 int fstr_ctrl_get_line(int *ctrl, int *rec_no, char *buff, int *buff_size) {
   char c_buff[STR_SIZE] = { '\0' };
 
-  if (c_fstr_ctrl_get_line(ctrl_list[*ctrl], *rec_no, c_buff)) {
+  if (c_fstr_ctrl_get_line(ctrl_list[*ctrl], *rec_no, c_buff,
+                           sizeof(c_buff))) {
     return -1;
   }
 
@@ -1192,7 +1199,7 @@ int fstr_ctrl_get_param(int *ctrl, const char *param_name,
 
   if (rcode == 0 && (*type == 'S' || *type == 's')) {
     char buff[HECMW_NAME_LEN + 1];
-    strcpy(buff, (char *)val);
+    snprintf(buff, sizeof(buff), "%s", (char *)val);
     strcpy_c2f((char *)val, HECMW_NAME_LEN, buff);
   }
 
@@ -1215,7 +1222,7 @@ int fstr_ctrl_get_param_ex(int *ctrl, const char *param_name,
   if (rcode_of_get_param == FSTR_CTRL_RCODE_PARAM_SUCCESS &&
       (*type == 'S' || *type == 's')) {
     char buff[HECMW_NAME_LEN + 1] = { '\0' };
-    strcpy(buff, (char *)val);
+    snprintf(buff, sizeof(buff), "%s", (char *)val);
     strcpy_c2f((char *)val, HECMW_NAME_LEN, buff);
   }
 
@@ -1386,23 +1393,23 @@ static void set_record_data_line_err_msg(fstr_ctrl_data *ctrl, int r) {
 
   switch (r) {
     case 0:
-      strcpy(msg, "no error");
+      snprintf(msg, sizeof(msg), "no error");
       break;
 
     case FSTR_CTRL_RCODE_DATA_TYPE_ERROR:
-      strcpy(msg, "data type converting error");
+      snprintf(msg, sizeof(msg), "data type converting error");
       break;
 
     case FSTR_CTRL_RCODE_DATA_RANGE_ERROR:
-      strcpy(msg, "data range error");
+      snprintf(msg, sizeof(msg), "data range error");
       break;
 
     case FSTR_CTRL_RCODE_DATA_NOTHING:
-      strcpy(msg, "data must exist");
+      snprintf(msg, sizeof(msg), "data must exist");
       break;
 
     case FSTR_CTRL_RCODE_DATA_LINE_NOTHING:
-      strcpy(msg, "data line does not exist");
+      snprintf(msg, sizeof(msg), "data line does not exist");
       break;
 
     default:
@@ -1423,7 +1430,7 @@ static char *gettoken(const char *line) {
   int is_null = 0;
 
   if (line) {
-    strcpy(buff, line);
+    snprintf(buff, sizeof(buff), "%s", line);
     h = p = buff;
 
   } else {

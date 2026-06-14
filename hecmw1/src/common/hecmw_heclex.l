@@ -280,7 +280,7 @@ HECMW_heclex_switch_to_include(const char *filename)
 		HECMW_set_error(HECMW_IO_E0005, "File: %s, %s", filename, strerror(errno));
 		return -1;
 	}
-	strcpy(include_filename, filename);
+	snprintf(include_filename, sizeof(include_filename), "%s", filename);
 	prev_state = YY_CURRENT_BUFFER;
 	yy_switch_to_buffer(yy_create_buffer(incfp, YY_BUF_SIZE));
 	lineno_inc = 1;

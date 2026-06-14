@@ -10,27 +10,27 @@
 
 namespace n2h_util {
 
-inline void create_ngrp_name(int id, char* name) {
-  sprintf(name, "NGRP%d", id);
+inline void create_ngrp_name(int id, char* name, size_t size) {
+  snprintf(name, size, "NGRP%d", id);
 }
-inline void create_boundary_ngrp_name(int id, char* name) {
-  sprintf(name, "BOUNDARY%d", id);
+inline void create_boundary_ngrp_name(int id, char* name, size_t size) {
+  snprintf(name, size, "BOUNDARY%d", id);
 }
-inline void create_cload_ngrp_name(int id, char* name) {
-  sprintf(name, "CLOAD%d", id);
+inline void create_cload_ngrp_name(int id, char* name, size_t size) {
+  snprintf(name, size, "CLOAD%d", id);
 }
-inline void create_dload_ngrp_name(int id, char* name) {
-  sprintf(name, "DLOAD%d", id);
+inline void create_dload_ngrp_name(int id, char* name, size_t size) {
+  snprintf(name, size, "DLOAD%d", id);
 }
-inline void create_egrp_name(int id, char* name) {
-  sprintf(name, "EGRP%d", id);
+inline void create_egrp_name(int id, char* name, size_t size) {
+  snprintf(name, size, "EGRP%d", id);
 }
-inline void create_sgrp_name(int id, char* name) {
-  sprintf(name, "SGRP%d", id);
+inline void create_sgrp_name(int id, char* name, size_t size) {
+  snprintf(name, size, "SGRP%d", id);
 }
-inline void create_mat_name(int id, char* name) { sprintf(name, "MAT%d", id); }
-inline void create_egrp_name_for_sec(int id, char* name) {
-  sprintf(name, "SECT%d", id);
+inline void create_mat_name(int id, char* name, size_t size) { snprintf(name, size, "MAT%d", id); }
+inline void create_egrp_name_for_sec(int id, char* name, size_t size) {
+  snprintf(name, size, "SECT%d", id);
 }
 
 inline int hec_face_no(int hec_etype, int neu_face, int& fg_front) {

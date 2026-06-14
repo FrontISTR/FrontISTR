@@ -80,7 +80,7 @@ int HECMW_vis_surface_compute(Surface *sff, struct hecmwST_local_mesh *mesh,
 sff->color_comp, sff->color_subcomp, sff->cont_equ[6],
 sff->cont_equ[7], sff->cont_equ[8],sff->cont_equ[9]);
 
-sprintf(test_file, "test_ucd.%d.%d.inp", time_step, mynode);
+snprintf(test_file, sizeof(test_file), "test_ucd.%d.%d.inp", time_step, mynode);
 write_mesh_display(test_file, mesh, data);
 HECMW_Barrier(VIS_COMM);
      */

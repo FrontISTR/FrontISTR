@@ -96,7 +96,7 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode,
           write2_mesh_display(orig_filename, mesh, node);
 
 
-          sprintf(orig_filename, "orig_mesh.%d.inp", mynode);
+          snprintf(orig_filename, sizeof(orig_filename), "orig_mesh.%d.inp", mynode);
 
           write_mesh_display(orig_filename, mesh, node);
   */
@@ -119,7 +119,7 @@ void redistribute_mesh(GraphType *graph, Result_part *result, int mynode,
 
   resultfile =
       HECMW_ctrl_get_result_fileheader("result-out", buf2, HECMW_FILENAME_LEN);
-  sprintf(resultfile_dist, "%s.%d", resultfile, mynode);
+  snprintf(resultfile_dist, sizeof(resultfile_dist), "%s.%d", resultfile, mynode);
   HECMW_put_result_from_structure(new_mesh, new_data, resultfile_dist);
 
   /*   free(node->data);
@@ -132,13 +132,13 @@ graph->vtxdist, new_vtxdist, global_new2old,
 free(global_new2old);
 free(new_vtxdist);
 */
-  /*   sprintf(orig_file, "orig_mesh.%d.inp", mynode);
+  /*   snprintf(orig_file, sizeof(orig_file), "orig_mesh.%d.inp", mynode);
      write_dist_mesh_display(orig_file, mesh, data);
 
-     sprintf(test_file, "bala_mesh.%d.inp", mynode);
+     snprintf(test_file, sizeof(test_file), "bala_mesh.%d.inp", mynode);
      write_dist_mesh_display(test_file, new_mesh, new_data);
   */
-  /*  sprintf(test_file, "test_result.%d", mynode);
+  /*  snprintf(test_file, sizeof(test_file), "test_result.%d", mynode);
 
     if ((fp = fopen(test_file, "w")) == NULL) {
       fprintf(stderr, "output file error: %s\n", test_file);

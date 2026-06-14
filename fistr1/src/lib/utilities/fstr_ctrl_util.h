@@ -66,7 +66,7 @@ extern fstr_ctrl_data* ctrl_list[ctrl_list_size];
  * @param buff buffer for copied message
  */
 
-void c_fstr_ctrl_get_err_msg(char* buff);
+void c_fstr_ctrl_get_err_msg(char* buff, size_t buff_size);
 
 /* =================================================================================
  */
@@ -98,7 +98,8 @@ int c_fstr_ctrl_get_rec_number(fstr_ctrl_data* ctrl);
  * @return record number without comment and blank lines
  */
 
-int c_fstr_ctrl_get_line(fstr_ctrl_data* ctrl, int rec_no, char* buff);
+int c_fstr_ctrl_get_line(fstr_ctrl_data* ctrl, int rec_no, char* buff,
+                         size_t buff_size);
 
 /* =================================================================================
  */
@@ -213,7 +214,7 @@ int c_fstr_ctrl_get_data_line_n(fstr_ctrl_data* ctrl);
 /* JP-0 */
 
 int c_fstr_ctrl_copy_data_line(fstr_ctrl_data* ctrl, int line_no,
-                               char* data_line);
+                               char* data_line, size_t data_line_len);
 
 /* =================================================================================
  */

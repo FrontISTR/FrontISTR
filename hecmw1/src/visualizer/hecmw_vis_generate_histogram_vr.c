@@ -103,7 +103,7 @@ void generate_histogram_graph_vr(double tmincolor, double tmaxcolor,
       value    = tmincolor + (tmaxcolor - tmincolor) / 10.0 * k;
       start_ys = start_y + (int)((double)500.0 / 10 * k) - (int)7 / 2;
       start_xs = 15;
-      sprintf(buf, "%3.2E", value);
+      snprintf(buf, sizeof(buf), "%3.2E", value);
       for (m = 0; m < 9; m++) {
         font7_generate(buf[8 - m], output7);
         for (j = 0; j < 7; j++)

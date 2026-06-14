@@ -133,25 +133,25 @@ static void remove_cr(char* line);
 static void skip_to_begin_bulk(FILE* fp, int* line_no);
 
 /* JP-35 */
-static char* ngrp_name_by_GID(int gid, char* name);
+static char* ngrp_name_by_GID(int gid, char* name, size_t size);
 
 /* JP-36 */
-static char* egrp_name_by_PID(int pid, char* name);
+static char* egrp_name_by_PID(int pid, char* name, size_t size);
 
 /* JP-37 */
-static char* egrp_name_by_SID(int sid, char* name);
+static char* egrp_name_by_SID(int sid, char* name, size_t size);
 
 /* JP-38 */
-static char* ngrp_name_by_SID_GID(int sid, int gid, char* name);
+static char* ngrp_name_by_SID_GID(int sid, int gid, char* name, size_t size);
 
 /* JP-39 */
-static char* ngrp_name_by_SID(int sid, int sub_id, char* name);
+static char* ngrp_name_by_SID(int sid, int sub_id, char* name, size_t size);
 
 /* JP-40 */
-static char* matrial_name_by_MID(int mid, char* name);
+static char* matrial_name_by_MID(int mid, char* name, size_t size);
 
 /* JP-41 */
-static char* egrp_CTRIAX6_name_by_MID(int mid, char* name);
+static char* egrp_CTRIAX6_name_by_MID(int mid, char* name, size_t size);
 
 /* JP-42 */
 static int is_CTRIAX6_egrp_name(char* name, int* mid);
@@ -344,7 +344,7 @@ static int iff_operation(iff_bulk_list_t* bulk_list, char* iff, int line_no);
 /* JP-116 */
 static void file_stack_init(void);                              /* JP-117 */
 static int file_stack_push(char* fname, FILE* fp, int lineno);  /* JP-118 */
-static int file_stack_pop(char* fname, FILE** fp, int* lineno); /* JP-119 */
+static int file_stack_pop(char* fname, size_t fname_len, FILE** fp, int* lineno); /* JP-119 */
 static int file_stack_clear(void);                              /* JP-120 */
 static int file_stack_check(const char* fname);                 /* JP-121 */
 
@@ -487,20 +487,20 @@ static void set_error_of_field_convert(const char* file_name, int line_no,
   switch (type) {
     case 's':
     case 'S':
-      strcpy(type_s, "string");
+      snprintf(type_s, sizeof(type_s), "string");
       break;
     case 'i':
     case 'I':
     case 'u':
     case 'U':
-      strcpy(type_s, "integer");
+      snprintf(type_s, sizeof(type_s), "integer");
       break;
     case 'd':
     case 'D':
-      strcpy(type_s, "real");
+      snprintf(type_s, sizeof(type_s), "real");
       break;
     case '_':
-      strcpy(type_s, "blank");
+      snprintf(type_s, sizeof(type_s), "blank");
       break;
     default:
       HECMW_assert(0);
@@ -509,13 +509,12 @@ static void set_error_of_field_convert(const char* file_name, int line_no,
   if (param_val) {
     int i;
     char s[20];
-    strcpy(val_str, "H");
+    size_t len = snprintf(val_str, sizeof(val_str), "H");
     for (i = 0; i < IFF_FIELD_SIZE && param_val[i]; i++) {
-      sprintf(s, "%x", param_val[i]);
-      strcat(val_str, s);
+      len += snprintf(val_str + len, sizeof(val_str) - len, "%x", param_val[i]);
     }
   } else
-    strcpy(val_str, "NULL");
+    snprintf(val_str, sizeof(val_str), "NULL");
 
   snprintf(line, sizeof(line), "%s:%d:", file_name, line_no);
   snprintf(msg, sizeof(msg),
@@ -578,8 +577,8 @@ static void skip_to_begin_bulk(FILE* fp, int* line_no) {
 
 /* JP-139 */
 
-static char* ngrp_name_by_GID(int gid, char* name) {
-  sprintf(name, "G%d", gid);
+static char* ngrp_name_by_GID(int gid, char* name, size_t size) {
+  snprintf(name, size, "G%d", gid);
   return name;
 }
 
@@ -587,8 +586,8 @@ static char* ngrp_name_by_GID(int gid, char* name) {
  */
 /* JP-140 */
 
-static char* egrp_name_by_PID(int pid, char* name) {
-  sprintf(name, "P%d", pid);
+static char* egrp_name_by_PID(int pid, char* name, size_t size) {
+  snprintf(name, size, "P%d", pid);
   return name;
 }
 
@@ -596,9 +595,9 @@ static char* egrp_name_by_PID(int pid, char* name) {
  */
 /* JP-141 */
 
-static char* create_SID_grp_name(char* name) {
+static char* create_SID_grp_name(char* name, size_t size) {
   static int SID_counter = 1;
-  sprintf(name, "SID%d", SID_counter);
+  snprintf(name, size, "SID%d", SID_counter);
   SID_counter++;
   return name;
 }
@@ -607,9 +606,9 @@ static char* create_SID_grp_name(char* name) {
  */
 /* JP-142 */
 
-static char* egrp_name_by_SID(int sid, char* name) {
-  /* sprintf( name, "S%d", sid); */
-  create_SID_grp_name(name);
+static char* egrp_name_by_SID(int sid, char* name, size_t size) {
+  /* snprintf( name, size, "S%d", sid); */
+  create_SID_grp_name(name, size);
   return name;
 }
 
@@ -617,9 +616,9 @@ static char* egrp_name_by_SID(int sid, char* name) {
  */
 /* JP-143 */
 
-static char* ngrp_name_by_SID_GID(int sid, int gid, char* name) {
-  /* sprintf( name, "S%dG%d", sid, gid); */
-  create_SID_grp_name(name);
+static char* ngrp_name_by_SID_GID(int sid, int gid, char* name, size_t size) {
+  /* snprintf( name, size, "S%dG%d", sid, gid); */
+  create_SID_grp_name(name, size);
   return name;
 }
 
@@ -627,9 +626,9 @@ static char* ngrp_name_by_SID_GID(int sid, int gid, char* name) {
  */
 /* JP-144 */
 
-static char* ngrp_name_by_SID(int sid, int sub_id, char* name) {
-  /* sprintf( name, "SID%d-%d", sid, sub_id); */
-  create_SID_grp_name(name);
+static char* ngrp_name_by_SID(int sid, int sub_id, char* name, size_t size) {
+  /* snprintf( name, size, "SID%d-%d", sid, sub_id); */
+  create_SID_grp_name(name, size);
   return name;
 }
 
@@ -637,8 +636,8 @@ static char* ngrp_name_by_SID(int sid, int sub_id, char* name) {
  */
 /* JP-145 */
 
-static char* matrial_name_by_MID(int mid, char* name) {
-  sprintf(name, "M%d", mid);
+static char* matrial_name_by_MID(int mid, char* name, size_t size) {
+  snprintf(name, size, "M%d", mid);
   return name;
 }
 
@@ -648,8 +647,8 @@ static char* matrial_name_by_MID(int mid, char* name) {
 
 #define CTRIAX6_EGRP_NAME_HEADER "CTRIAX6-"
 
-static char* egrp_CTRIAX6_name_by_MID(int mid, char* name) {
-  sprintf(name, "%s%d", CTRIAX6_EGRP_NAME_HEADER, mid);
+static char* egrp_CTRIAX6_name_by_MID(int mid, char* name, size_t size) {
+  snprintf(name, size, "%s%d", CTRIAX6_EGRP_NAME_HEADER, mid);
   return name;
 }
 
@@ -945,7 +944,7 @@ static int iff_add_auto_pointer(char* iff1, char* iff2, int* counter) {
   if (iff_is_blank_field(iff2, 0)) {
     if (iff_is_blank_field(iff1, IFF_LAST_FIELD)) {
       char pointer[IFF_FIELD_SIZE];
-      sprintf(pointer, "+%d", *counter);
+      snprintf(pointer, sizeof(pointer), "+%d", *counter);
       (*counter)++;
       iff_set_field(iff1, IFF_LAST_FIELD, pointer);
       iff_set_field(iff2, 0, pointer);
@@ -1081,9 +1080,11 @@ static int iff_field_to_param(char* field, char type, void* param,
       if (field == NULL || field[0] == 0)
         R = 2;
       else {
-        strcpy((char*)param, field);
+        size_t param_len = IFF_FIELD_BUFFER_SIZE;
+        snprintf((char*)param, param_len, "%s", field);
         R = 1;
       }
+      break;
     case '_':
       /* JP-189 */
       R = 1; /* JP-190 */
@@ -1661,18 +1662,18 @@ static int iff_bulk_get_param_list(iff_bulk_t* bulk, const char* format,
 
       if (R == 0) { /* JP-248 */
         if (arr_fg)
-          sprintf(param_name, "%s%d", param_name_p, i + 1);
+          snprintf(param_name, sizeof(param_name), "%s%d", param_name_p, i + 1);
         else
-          strcpy(param_name, param_name_p);
+          snprintf(param_name, sizeof(param_name), "%s", param_name_p);
         set_error_of_field_convert(grid_filename, line_no, field_no,
                                    iff_bulk_get_name(bulk), param_name, field,
                                    type);
         return -1;
       } else if (i < ness_n && R == 2) { /* JP-249 */
         if (arr_fg)
-          sprintf(param_name, "%s%d", param_name_p, i + 1);
+          snprintf(param_name, sizeof(param_name), "%s%d", param_name_p, i + 1);
         else
-          strcpy(param_name, param_name_p);
+          snprintf(param_name, sizeof(param_name), "%s", param_name_p);
         set_error_of_blank_field(grid_filename, line_no, field_no,
                                  iff_bulk_get_name(bulk), param_name);
         return -1;
@@ -1783,14 +1784,14 @@ static int iff_bulk_get_param_list_pattern(iff_bulk_t* bulk, const char* format,
       if (r == 1) {
         param_list_p[i] = param; /* JP-258 */
       } else if (r == 0) {       /* error */
-        sprintf(param_name, "%s%d", param_name_head[i], index + 1);
+        snprintf(param_name, sizeof(param_name), "%s%d", param_name_head[i], index + 1);
         set_error_of_field_convert(grid_filename, line_no, field_no,
                                    iff_bulk_get_name(bulk), param_name, field,
                                    type);
         return -1;
       }
       if (state != 0 && state != r) {
-        sprintf(param_name, "%s%d", param_name_head[i], index + 1);
+        snprintf(param_name, sizeof(param_name), "%s%d", param_name_head[i], index + 1);
         set_error_of_field_convert(grid_filename, line_no, field_no,
                                    iff_bulk_get_name(bulk), param_name, field,
                                    type);
@@ -2162,7 +2163,7 @@ static struct hecmw_io_material* create_mat_struct(const char* name, int item_n,
     matitem[i].subitem = matsubitem;
   }
 
-  strcpy(mat->name, name);
+  snprintf(mat->name, sizeof(mat->name), "%s", name);
   mat->nitem = item_n;
   mat->item  = matitem;
   mat->next  = NULL;
@@ -2211,7 +2212,7 @@ static int iff_bulk_parse_MAT1(iff_bulk_t* bulk) {
     int sub_n[item_n] = {2, 1, 1};
     double data[4 + item_n];
 
-    matrial_name_by_MID(MID, name);
+    matrial_name_by_MID(MID, name, sizeof(name));
 
     i         = 0;
     data[i++] = E;
@@ -2268,7 +2269,7 @@ static int iff_bulk_parse_MAT4(iff_bulk_t* bulk) {
     int sub_n[item_n] = {1, 1, 1};
     double data[3 + item_n];
 
-    matrial_name_by_MID(MID, name);
+    matrial_name_by_MID(MID, name, sizeof(name));
 
     i         = 0;
     data[i++] = K;
@@ -2368,8 +2369,8 @@ static int iff_bulk_parse_PROD(iff_bulk_t* bulk) {
   iff_bulk_get_param_list(bulk, format, result, &PID, "PID", &MID, "MID", &A,
                           "A", &J, "J", &C, "C", &NSM, "NSM");
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name));
-  strcpy(sect.material, matrial_name_by_MID(MID, grp_name));
+  snprintf(sect.egrp, sizeof(sect.egrp), "%s", egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  snprintf(sect.material, sizeof(sect.material), "%s", matrial_name_by_MID(MID, grp_name, sizeof(grp_name)));
   sect.composite = 1;
   sect.secopt    = 0;
 
@@ -2423,8 +2424,8 @@ static int iff_bulk_parse_PSHELL(iff_bulk_t* bulk) {
                           "MID3", &TS_S, "TS/S", &NSM, "NSM", &Z1, "Z1", &Z2,
                           "Z2", &MID4, "MID4");
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name));
-  strcpy(sect.material, matrial_name_by_MID(MID1, grp_name));
+  snprintf(sect.egrp, sizeof(sect.egrp), "%s", egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  snprintf(sect.material, sizeof(sect.material), "%s", matrial_name_by_MID(MID1, grp_name, sizeof(grp_name)));
   sect.composite = 1;
   sect.secopt    = 0;
 
@@ -2484,7 +2485,7 @@ static int iff_bulk_parse_PSOLID(iff_bulk_t* bulk) {
   IN[0]     = 0;
   STRESS[0] = 0;
   ISOP[0]   = 0;
-  strcpy(FCTN, "SMECH");
+  snprintf(FCTN, sizeof(FCTN), "%s", "SMECH");
 
   iff_bulk_get_param_list(bulk, format, result, &PID, "PID", &MID, "MID",
                           &CORDM, "CORDM", IN, "IN", STRESS, "STRESS", ISOP,
@@ -2492,8 +2493,8 @@ static int iff_bulk_parse_PSOLID(iff_bulk_t* bulk) {
 
   sect.type = HECMW_SECT_TYPE_SOLID;
 
-  strcpy(sect.egrp, egrp_name_by_PID(PID, grp_name));
-  strcpy(sect.material, matrial_name_by_MID(MID, grp_name));
+  snprintf(sect.egrp, sizeof(sect.egrp), "%s", egrp_name_by_PID(PID, grp_name, sizeof(grp_name)));
+  snprintf(sect.material, sizeof(sect.material), "%s", matrial_name_by_MID(MID, grp_name, sizeof(grp_name)));
   sect.composite = 1; /* JP-340 */
 
   sect.secopt = 0; /* JP-341 */
@@ -2535,7 +2536,7 @@ static int iff_bulk_parse_CROD(iff_bulk_t* bulk) {
     return -1;
 
   EID_List[0] = EID;
-  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name), 1, EID_List) == -1)
+  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name, sizeof(grp_name)), 1, EID_List) == -1)
     return -1;
 
   if (HECMW_io_add_egrp("ALL", 1, EID_List) == -1) return -1;
@@ -2601,7 +2602,7 @@ static int surface_elem_store(int bulk_type, unsigned int EID, unsigned int PID,
 
   if (HECMW_io_add_egrp("ALL", 1, EID_List) == -1) return -1;
 
-  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name), 1, EID_List) == -1)
+  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name, sizeof(grp_name)), 1, EID_List) == -1)
     return -1;
 
   return 0;
@@ -2620,7 +2621,7 @@ static int surface_elem_type_decide(void) {
 
   node = pshell_mid2_list.root;
   while (node) {
-    egrp_name_by_PID(node->PID, grp_name);
+    egrp_name_by_PID(node->PID, grp_name, sizeof(grp_name));
     id_array = HECMW_io_get_elem_in_egrp(grp_name);
     if (id_array) {
       for (i = 0; i < id_array->n; i++) {
@@ -2872,7 +2873,7 @@ static int iff_bulk_parse_solid_elem(iff_bulk_t* bulk, int first_etype,
   char grp_name[HECMW_NAME_LEN + 1];
   int EID_List[1];
 
-  sprintf(format, "UUU%d/%d", g_number, g_ness_number);
+  snprintf(format, sizeof(format), "UUU%d/%d", g_number, g_ness_number);
 
   iff_bulk_get_param_list(bulk, format, result, &EID, "EID", &PID, "PID", G,
                           "G");
@@ -2895,7 +2896,7 @@ static int iff_bulk_parse_solid_elem(iff_bulk_t* bulk, int first_etype,
   /* JP-396 */
 
   EID_List[0] = EID;
-  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name), 1, EID_List) == -1)
+  if (HECMW_io_add_egrp(egrp_name_by_PID(PID, grp_name, sizeof(grp_name)), 1, EID_List) == -1)
     return -1;
 
   if (HECMW_io_add_egrp("ALL", 1, EID_List) == -1) return -1;
@@ -2978,14 +2979,14 @@ static int iff_bulk_parse_CTRIAX6(iff_bulk_t* bulk) {
     char grp_name[HECMW_NAME_LEN + 1];
     int EID_List[1];
 
-    egrp_CTRIAX6_name_by_MID(MID, grp_name);
+    egrp_CTRIAX6_name_by_MID(MID, grp_name, sizeof(grp_name));
     egrp = HECMW_io_get_egrp(grp_name);
 
     if (!egrp) { /* JP-407 */
       char mat_name[HECMW_NAME_LEN + 1];
       struct hecmw_io_section sect;
-      strcpy(sect.egrp, grp_name);
-      strcpy(sect.material, matrial_name_by_MID(MID, mat_name));
+      snprintf(sect.egrp, sizeof(sect.egrp), "%s", grp_name);
+      snprintf(sect.material, sizeof(sect.material), "%s", matrial_name_by_MID(MID, mat_name, sizeof(mat_name)));
       sect.composite            = 1;                        /* JP-408 */
       sect.secopt               = HECMW_SECT_OPT_ASYMMETRY; /* JP-409 */
       sect.type                 = HECMW_SECT_TYPE_SOLID;
@@ -3068,7 +3069,7 @@ static int iff_bulk_parse_INCLUDE(iff_bulk_t* bulk) {
 
   buff[0] = 0;
   for (i = 0; i < FIELD_NUMBER; i++) {
-    strcat(buff, iff_get_field(iff, i));
+    strncat(buff, iff_get_field(iff, i), sizeof(buff) - strlen(buff) - 1);
   }
 
   /* JP-423 */
@@ -3343,7 +3344,7 @@ static int file_stack_push(char* fname, FILE* fp, int lineno) {
   }
 
   file_stack[file_stack_pos].fp = fp;
-  strcpy(file_stack[file_stack_pos].filename, fname);
+  snprintf(file_stack[file_stack_pos].filename, sizeof(file_stack[file_stack_pos].filename), "%s", fname);
   file_stack[file_stack_pos].lineno = lineno;
 
   file_stack_pos++;
@@ -3354,7 +3355,7 @@ static int file_stack_push(char* fname, FILE* fp, int lineno) {
  */
 /* JP-449 */
 
-static int file_stack_pop(char* fname, FILE** fp, int* lineno) {
+static int file_stack_pop(char* fname, size_t fname_len, FILE** fp, int* lineno) {
   if (file_stack_pos <= 0) {
     /* JP-450 */
     return -1;
@@ -3363,7 +3364,7 @@ static int file_stack_pop(char* fname, FILE** fp, int* lineno) {
   file_stack_pos--;
 
   *fp = file_stack[file_stack_pos].fp;
-  strcpy(fname, file_stack[file_stack_pos].filename);
+  snprintf(fname, fname_len, "%s", file_stack[file_stack_pos].filename);
   *lineno = file_stack[file_stack_pos].lineno;
 
   return 0;
@@ -3446,7 +3447,7 @@ static int nastran_file_open(const char* filename) {
   }
 
   c_fp = fp;
-  strcpy(c_filename, filename);
+  snprintf(c_filename, sizeof(c_filename), "%s", filename);
   c_lineno = 0;
 
   HECMW_io_set_gridfile((char*)filename);
@@ -3471,10 +3472,10 @@ static int nastran_file_close() {
     return -1;
   }
 
-  if (file_stack_pop(c_filename, &c_fp, &c_lineno)) {
+  if (file_stack_pop(c_filename, sizeof(c_filename), &c_fp, &c_lineno)) {
     HECMW_io_set_gridfile("Unknown");
     c_fp = NULL;
-    strcpy(c_filename, "Unknown");
+    snprintf(c_filename, sizeof(c_filename), "%s", "Unknown");
     return 1;
   } else {
     return 0;
@@ -3584,7 +3585,7 @@ int HECMW_read_nastran_mesh(const char* filename) {
           return -1;
   }
 
-  strcpy(grid_filename, filename);
+  snprintf(grid_filename, sizeof(grid_filename), "%s", filename);
   HECMW_io_set_gridfile(grid_filename);
 
   ---------------------------------------- */
@@ -3616,7 +3617,7 @@ struct hecmwST_local_mesh* HECMW_get_nastran_mesh(const char* filename) {
   if (local_mesh == NULL) return NULL;
   if (HECMW_io_finalize()) return NULL;
 
-  strcpy(grid_filename, "Unknown");
+  snprintf(grid_filename, sizeof(grid_filename), "%s", "Unknown");
 
   return local_mesh;
 }

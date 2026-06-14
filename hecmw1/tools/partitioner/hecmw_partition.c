@@ -808,15 +808,9 @@ static int is_spdup_available(const struct hecmwST_local_mesh *global_mesh) {
 
 /*================================================================================================*/
 
-static char *get_dist_file_name(char *header, int domain, char *fname) {
-  char s_domain[HECMW_NAME_LEN + 1];
-
-  sprintf(s_domain, "%d", domain);
-
-  strcpy(fname, header);
-  strcat(fname, ".");
-  strcat(fname, s_domain);
-
+static char *get_dist_file_name(char *header, int domain, char *fname,
+                                size_t fname_size) {
+  snprintf(fname, fname_size, "%s.%d", header, domain);
   return fname;
 }
 
@@ -6099,7 +6093,8 @@ static int set_elem_local2global_mod(
 
 static int const_gridfile(const struct hecmwST_local_mesh *global_mesh,
                           struct hecmwST_local_mesh *local_mesh) {
-  strcpy(local_mesh->gridfile, global_mesh->gridfile);
+  snprintf(local_mesh->gridfile, sizeof(local_mesh->gridfile), "%s",
+           global_mesh->gridfile);
 
   return RTC_NORMAL;
 }
@@ -6120,7 +6115,8 @@ static int const_files(const struct hecmwST_local_mesh *global_mesh,
 
 static int const_header(const struct hecmwST_local_mesh *global_mesh,
                         struct hecmwST_local_mesh *local_mesh) {
-  strcpy(local_mesh->header, global_mesh->header);
+  snprintf(local_mesh->header, sizeof(local_mesh->header), "%s",
+           global_mesh->header);
 
   return RTC_NORMAL;
 }
@@ -8836,6 +8832,7 @@ static int print_ucd_entire_set_node_data(
   int size;
   int nn_item;
   int i;
+  const size_t label_len = HECMW_NAME_LEN + 1;
 
   result_data->nn_component = 1;
 
@@ -8859,13 +8856,13 @@ static int print_ucd_entire_set_node_data(
   }
   for (i = 0; i < result_data->nn_component; i++) {
     result_data->node_label[i] =
-        (char *)HECMW_malloc(sizeof(char) * (HECMW_NAME_LEN + 1));
+        (char *)HECMW_malloc(sizeof(char) * label_len);
     if (result_data->node_label[i] == NULL) {
       HECMW_set_error(errno, "");
       goto error;
     }
   }
-  strcpy(result_data->node_label[0], "rank_of_node");
+  snprintf(result_data->node_label[0], label_len, "rank_of_node");
 
   for (nn_item = 0, i = 0; i < result_data->nn_component; i++) {
     nn_item += result_data->nn_dof[i];
@@ -8920,6 +8917,7 @@ static int print_ucd_entire_set_elem_data(
   int size;
   int ne_item;
   int i;
+  const size_t label_len = HECMW_NAME_LEN + 1;
 
   result_data->ne_component = 1;
 
@@ -8943,13 +8941,13 @@ static int print_ucd_entire_set_elem_data(
   }
   for (i = 0; i < result_data->ne_component; i++) {
     result_data->elem_label[i] =
-        (char *)HECMW_malloc(sizeof(char) * (HECMW_NAME_LEN + 1));
+        (char *)HECMW_malloc(sizeof(char) * label_len);
     if (result_data->elem_label[i] == NULL) {
       HECMW_set_error(errno, "");
       goto error;
     }
   }
-  strcpy(result_data->elem_label[0], "partitioning_image");
+  snprintf(result_data->elem_label[0], label_len, "partitioning_image");
 
   /* modify element information*/
   for (i = 0; i < global_mesh->n_elem; i++) {
@@ -9189,7 +9187,7 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
       }
 
       get_dist_file_name(ofheader->meshfiles[0].filename, current_domain,
-                         ofname);
+                         ofname, sizeof(ofname));
       HECMW_assert(ofname != NULL);
 
       HECMW_log(HECMW_LOG_DEBUG,
@@ -9407,7 +9405,7 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
       }
 
       get_dist_file_name(ofheader->meshfiles[0].filename, current_domain,
-                         ofname);
+                         ofname, sizeof(ofname));
       HECMW_assert(ofname != NULL);
 
       HECMW_log(HECMW_LOG_DEBUG,

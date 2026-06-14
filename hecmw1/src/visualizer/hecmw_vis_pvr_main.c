@@ -1059,7 +1059,7 @@ if(endj>vr->yr) endj=vr->yr;
 
         outfile1[k] = '\0';
 
-            sprintf(fname, "%s.%d.%d.bmp", outfile1, *timestep, ii);
+            snprintf(fname, sizeof(fname), "%s.%d.%d.bmp", outfile1, *timestep, ii);
                            */
                           if (*timestep >= 1000)
                             snprintf(timestep_str, sizeof(timestep_str), "%d", *timestep);

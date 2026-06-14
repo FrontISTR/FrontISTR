@@ -94,7 +94,7 @@ void transform_ucd_pvr(struct hecmwST_result_data *data, double *node1,
   c_range[1]                     = -1.0E17;
   /*  for(i=0;i<nstep;i++) {
     tstep=step_start+step_increment*i;
-   sprintf(infile, "%s.%d.%d.inp", resultfile, tstep, my_rank);
+   snprintf(infile, sizeof(infile), "%s.%d.%d.inp", resultfile, tstep, my_rank);
 if ((infp = fopen(infile, "r")) == NULL) {
   fprintf(stderr, "There is no such an input data file %s:\n", infile);
   exit (0);

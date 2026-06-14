@@ -101,7 +101,7 @@ static bool set_conv_mat(CNFData &neu, int id, cconv_mat &m) {
 
 static void SetHeader(CNFData &neu, CHECData &hec) {
   CHECDB_Header *header = new CHECDB_Header();
-  strcpy(header->title, neu.title);
+  snprintf(header->title, sizeof(header->title), "%s", neu.title);
   hec.DB.push_back(header);
 }
 
@@ -468,7 +468,7 @@ static void SetElement(CNFData &neu, CHECData &hec) {
 //-----------------------------------------------------------------------------
 
 static void set_material_static(CHECDB_Material *hec_m, CNFDB_601 *m) {
-  create_mat_name(m->ID, hec_m->name);
+  create_mat_name(m->ID, hec_m->name, sizeof(hec_m->name));
   // ITEM 1 -- E & poisson
   {
     CHECDB_Material::CItem item;
@@ -500,7 +500,7 @@ static void set_material_static(CHECDB_Material *hec_m, CNFDB_601 *m) {
 }
 
 static void set_material_heat(CHECDB_Material *hec_m, CNFDB_601 *m) {
-  create_mat_name(m->ID, hec_m->name);
+  create_mat_name(m->ID, hec_m->name, sizeof(hec_m->name));
   // ITEM 1 - density
   {
     CHECDB_Material::CItem item;
@@ -611,8 +611,8 @@ static void SetSection(CNFData &neu, CHECData &hec) {
   for (iter = neu.DB_402.begin(); iter != neu.DB_402.end(); iter++) {
     CNFDB_402 *p        = *iter;
     CHECDB_Section *sec = new CHECDB_Section();
-    create_egrp_name_for_sec(p->ID, sec->egrp);
-    create_mat_name(p->matID, sec->material);
+    create_egrp_name_for_sec(p->ID, sec->egrp, sizeof(sec->egrp));
+    create_mat_name(p->matID, sec->material, sizeof(sec->material));
     bool fg_nothing = false;
 
     switch (p->type) {
@@ -721,7 +721,7 @@ static void GenerateEGroupForSection(CHECData &hec) {
 
     } else {
       eg = new CHECDB_EGroup();
-      create_egrp_name_for_sec(e->sec_id, eg->name);
+      create_egrp_name_for_sec(e->sec_id, eg->name, sizeof(eg->name));
       eg_list.push_back(eg_rec_t(e->sec_id, eg));
     }
 
