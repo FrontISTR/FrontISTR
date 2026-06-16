@@ -80,6 +80,8 @@ module hecmw_matrix_misc
 
   public :: hecmw_mat_set_solver_opt
   public :: hecmw_mat_get_solver_opt
+  public :: hecmw_mat_set_solver_ropt
+  public :: hecmw_mat_get_solver_ropt
 
   public :: hecmw_mat_set_resid
   public :: hecmw_mat_get_resid
@@ -143,6 +145,9 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_R_FILTER        = 5
   integer, parameter :: IDX_R_PENALTY       = 11
   integer, parameter :: IDX_R_PENALTY_ALPHA = 12
+  ! real-valued solver options, mirroring the integer SOLVER_OPT block (41:50)
+  integer, parameter :: IDX_R_SOLVER_OPT_S  = 41
+  integer, parameter :: IDX_R_SOLVER_OPT_E  = 50
 
 contains
 
@@ -687,6 +692,22 @@ contains
     nopt = IDX_I_SOLVER_OPT_E - IDX_I_SOLVER_OPT_S + 1
     solver_opt(1:nopt) = hecMAT%Iarray(IDX_I_SOLVER_OPT_S:IDX_I_SOLVER_OPT_E)
   end subroutine hecmw_mat_get_solver_opt
+
+  subroutine hecmw_mat_set_solver_ropt( hecMAT, solver_ropt )
+    type(hecmwST_matrix) :: hecMAT
+    real(kind=kreal) :: solver_ropt(:)
+    integer(kind=kint) :: nopt
+    nopt = IDX_R_SOLVER_OPT_E - IDX_R_SOLVER_OPT_S + 1
+    hecMAT%Rarray(IDX_R_SOLVER_OPT_S:IDX_R_SOLVER_OPT_E) = solver_ropt(1:nopt)
+  end subroutine hecmw_mat_set_solver_ropt
+
+  subroutine hecmw_mat_get_solver_ropt( hecMAT, solver_ropt )
+    type(hecmwST_matrix) :: hecMAT
+    real(kind=kreal) :: solver_ropt(:)
+    integer(kind=kint) :: nopt
+    nopt = IDX_R_SOLVER_OPT_E - IDX_R_SOLVER_OPT_S + 1
+    solver_ropt(1:nopt) = hecMAT%Rarray(IDX_R_SOLVER_OPT_S:IDX_R_SOLVER_OPT_E)
+  end subroutine hecmw_mat_get_solver_ropt
 
   subroutine hecmw_mat_set_resid( hecMAT, resid )
     type(hecmwST_matrix) :: hecMAT

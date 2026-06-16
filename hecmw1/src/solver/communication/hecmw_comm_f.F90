@@ -198,6 +198,133 @@ contains
 #endif
   end subroutine hecmw_alltoall_int
 
+  subroutine hecmw_allgatherv_int(sbuf, sc, rbuf, rcs, disp, comm)
+    use hecmw_util
+    implicit none
+    integer(kind=kint) :: sbuf(*) !send buffer
+    integer(kind=kint) :: sc      !send count
+    integer(kind=kint) :: rbuf(*) !receive buffer
+    integer(kind=kint) :: rcs(*)  !receive counts
+    integer(kind=kint) :: disp(*) !displacements
+    integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    call MPI_allgatherv( sbuf, sc, MPI_INTEGER, &
+      &     rbuf, rcs, disp, MPI_INTEGER, comm, ierr )
+#else
+    rbuf(disp(1)+1:disp(1)+sc) = sbuf(1:sc)
+#endif
+  end subroutine hecmw_allgatherv_int
+
+  subroutine hecmw_allgatherv_real(sbuf, sc, rbuf, rcs, disp, comm)
+    use hecmw_util
+    implicit none
+    real(kind=kreal)   :: sbuf(*) !send buffer
+    integer(kind=kint) :: sc      !send count
+    real(kind=kreal)   :: rbuf(*) !receive buffer
+    integer(kind=kint) :: rcs(*)  !receive counts
+    integer(kind=kint) :: disp(*) !displacements
+    integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    call MPI_allgatherv( sbuf, sc, MPI_REAL8, &
+      &     rbuf, rcs, disp, MPI_REAL8, comm, ierr )
+#else
+    rbuf(disp(1)+1:disp(1)+sc) = sbuf(1:sc)
+#endif
+  end subroutine hecmw_allgatherv_real
+
+  subroutine hecmw_alltoallv_int(sbuf, scs, sdisp, rbuf, rcs, rdisp, comm)
+    use hecmw_util
+    implicit none
+    integer(kind=kint) :: sbuf(*)  !send buffer
+    integer(kind=kint) :: scs(*)   !send counts
+    integer(kind=kint) :: sdisp(*) !send displacements
+    integer(kind=kint) :: rbuf(*)  !receive buffer
+    integer(kind=kint) :: rcs(*)   !receive counts
+    integer(kind=kint) :: rdisp(*) !receive displacements
+    integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    call MPI_alltoallv( sbuf, scs, sdisp, MPI_INTEGER, &
+      &     rbuf, rcs, rdisp, MPI_INTEGER, comm, ierr )
+#else
+    rbuf(rdisp(1)+1:rdisp(1)+rcs(1)) = sbuf(sdisp(1)+1:sdisp(1)+scs(1))
+#endif
+  end subroutine hecmw_alltoallv_int
+
+  subroutine hecmw_alltoallv_real(sbuf, scs, sdisp, rbuf, rcs, rdisp, comm)
+    use hecmw_util
+    implicit none
+    real(kind=kreal)   :: sbuf(*)  !send buffer
+    integer(kind=kint) :: scs(*)   !send counts
+    integer(kind=kint) :: sdisp(*) !send displacements
+    real(kind=kreal)   :: rbuf(*)  !receive buffer
+    integer(kind=kint) :: rcs(*)   !receive counts
+    integer(kind=kint) :: rdisp(*) !receive displacements
+    integer(kind=kint) :: comm
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    call MPI_alltoallv( sbuf, scs, sdisp, MPI_REAL8, &
+      &     rbuf, rcs, rdisp, MPI_REAL8, comm, ierr )
+#else
+    rbuf(rdisp(1)+1:rdisp(1)+rcs(1)) = sbuf(sdisp(1)+1:sdisp(1)+scs(1))
+#endif
+  end subroutine hecmw_alltoallv_real
+
+  !> Allreduce over an explicit communicator (ntag = hecmw_sum / hecmw_max /
+  !! hecmw_min).  Unlike hecmw_allreduce_I, takes a raw comm so callers with their
+  !! own communicator (e.g. SA-AMG coarse levels) need not pass a hecMESH.
+  subroutine hecmw_allreduce_I_comm(val, n, ntag, comm)
+    use hecmw_util
+    implicit none
+    integer(kind=kint) :: n, ntag, comm
+    integer(kind=kint) :: val(*)
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    ! VALM is an automatic (host) array on purpose: an allocatable would land in
+    ! managed memory under -gpu=mem:managed, making MPI_allreduce src=host/dst=managed
+    ! -- CUDA-aware MPI (HPC-X UCC) rejects asymmetric src/dst memory types.
+    integer(kind=kint) :: VALM(n)
+    VALM = 0
+    if (ntag .eq. hecmw_sum) call MPI_allreduce(val, VALM, n, MPI_INTEGER, MPI_SUM, comm, ierr)
+    if (ntag .eq. hecmw_max) call MPI_allreduce(val, VALM, n, MPI_INTEGER, MPI_MAX, comm, ierr)
+    if (ntag .eq. hecmw_min) call MPI_allreduce(val, VALM, n, MPI_INTEGER, MPI_MIN, comm, ierr)
+    val(1:n) = VALM(1:n)
+#endif
+  end subroutine hecmw_allreduce_I_comm
+
+  subroutine hecmw_allreduce_R_comm(val, n, ntag, comm)
+    use hecmw_util
+    implicit none
+    integer(kind=kint) :: n, ntag, comm
+    real(kind=kreal) :: val(*)
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    ! VALM automatic (host) -- see hecmw_allreduce_I_comm: an allocatable would be
+    ! managed under -gpu=mem:managed and trip the CUDA-aware MPI asymmetric-memtype error.
+    real(kind=kreal) :: VALM(n)
+    VALM = 0.d0
+    if (ntag .eq. hecmw_sum) call MPI_allreduce(val, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM, comm, ierr)
+    if (ntag .eq. hecmw_max) call MPI_allreduce(val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MAX, comm, ierr)
+    if (ntag .eq. hecmw_min) call MPI_allreduce(val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MIN, comm, ierr)
+    val(1:n) = VALM(1:n)
+#endif
+  end subroutine hecmw_allreduce_R_comm
+
+  !> Number of ranks in an explicit communicator (1 when serial).
+  subroutine hecmw_comm_size(comm, isize)
+    use hecmw_util
+    implicit none
+    integer(kind=kint) :: comm, isize
+#ifndef HECMW_SERIAL
+    integer(kind=kint) :: ierr
+    call MPI_comm_size(comm, isize, ierr)
+#else
+    isize = 1
+#endif
+  end subroutine hecmw_comm_size
+
   subroutine hecmw_isend_int(sbuf, sc, dest, &
       &     tag, comm, req)
     use hecmw_util

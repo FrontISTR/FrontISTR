@@ -2148,6 +2148,7 @@ contains
     !   sigma      => svRarray(3)
     !   thresh     => svRarray(4)
     !   filter     => svRarray(5)
+    !   solver_ropt=> svRarray(41:50)
 
     rcode = fstr_ctrl_get_SOLVER( ctrl,                      &
       svIarray(2), svIarray(3), svIarray(4), svIarray(21), svIarray(22), svIarray(23),&
@@ -2155,7 +2156,7 @@ contains
       svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
       svIarray(35), svIarray(41:50), svIarray(15), &
       svRarray(1), svRarray(2), svRarray(3),                &
-      svRarray(4), svRarray(5), svIarray(24) )
+      svRarray(4), svRarray(5), svRarray(41:50), svIarray(24) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     if( svIarray(2) <= 100 ) then

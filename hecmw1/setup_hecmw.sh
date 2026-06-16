@@ -80,6 +80,7 @@ LIBSRCDIRS="\
 	src/solver/precond/diag \
 	src/solver/precond/ml \
 	src/solver/precond/rif \
+	src/solver/precond/saamg \
 	src/solver/precond/sainv \
 	src/solver/precond/ssor \
 	src/solver/precond \

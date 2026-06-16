@@ -1,1 +1,2 @@
 hecmw_precond.o : hecmw_precond.f90 
+hecmw_precond_rbm.o : hecmw_precond_rbm.f90 

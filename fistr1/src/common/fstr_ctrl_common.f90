@@ -84,7 +84,7 @@ contains
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, contact_elim, &
-      resid, singma_diag, sigma, thresh, filter, loglevel )
+      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
     integer(kind=kint) :: precond
@@ -112,6 +112,7 @@ contains
     real(kind=kreal) :: sigma
     real(kind=kreal) :: thresh
     real(kind=kreal) :: filter
+    real(kind=kreal) :: solver_ropt(10)
     integer(kind=kint) :: loglevel
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
@@ -136,7 +137,7 @@ contains
 
     ! JP-0
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD ',   mlist,              1,   'P',   method  ) /= 0) return
-    if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,4,5,6,7,8,9,10,11,12,20,21,30,31,32 ' ,0, 'I', precond ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,4,5,6,7,8,9,10,11,12,20,21,22,30,31,32 ' ,0, 'I', precond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'NSET ',    '0,-1,+1 ',          0,   'I',   nset    ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ITERLOG ', 'NO,YES ',           0,   'P',   iter ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TIMELOG ', 'NO,YES,VERBOSE ',   0,   'P',   time ) /= 0) return
@@ -188,6 +189,23 @@ contains
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
            solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
            solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) return
+    else if( precond == 22 ) then
+      ! SA-AMG options.  Two optional data lines; trailing entries may be omitted.
+      ! 0 = use the built-in default for each.  Slots 1-4/6-7 mirror the ML (PRECOND=5)
+      ! layout so an ML option line carries over (see hecmw_ML_wrapper.c).
+      ! (verbose has no slot here: enable diagnostics via !SOLVER LOGLEVEL>=1.)
+      !  line 3 (integers):
+      !    1 coarse_solver (0=auto/1=smoother/2=dense/3=mumps), 2 smoother (0/1=Chebyshev only),
+      !    3 cycle (0/1=V,2=W), 4 max_level, 5 max_size, 6 cheb_deg, 7 coarse_size,
+      !    8 min_size, 9 verify, 10 dump_vtk
+      !  line 4 (reals):    theta, cheb_alpha, safety
+      solver_opt(1:10) = 0
+      solver_ropt(1:10) = 0.0d0
+      if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
+           solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
+           solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) solver_opt(1:10) = 0
+      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrr ', &
+           solver_ropt(1), solver_ropt(2), solver_ropt(3) )/= 0) solver_ropt(1:10) = 0.0d0
     else if( method == 101 ) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt(1) )/= 0) return
     end if

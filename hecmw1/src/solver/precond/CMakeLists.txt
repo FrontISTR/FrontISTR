@@ -7,6 +7,7 @@ add_subdirectory(bilu)
 add_subdirectory(diag)
 add_subdirectory(ml)
 add_subdirectory(rif)
+add_subdirectory(saamg)
 add_subdirectory(sainv)
 add_subdirectory(ssor)
 
