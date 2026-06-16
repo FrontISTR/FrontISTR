@@ -156,7 +156,7 @@ contains
     real(kind = kreal) :: D(5, 5), B(5, ndof*nn), DB(5, ndof*nn)
     real(kind = kreal) :: tmpstiff(ndof*nn, ndof*nn)
     real(kind = kreal) :: qf_tmp(ndof*nn), qf_mix(ndof*nn), qf_disp(ndof*nn)
-    real(kind = kreal) :: Sv_force(5)
+    real(kind = kreal) :: Sv_force(5), geo_term
     real(kind = kreal) :: S_global(3, 3), Smat(9, 9)
     real(kind = kreal) :: BN(9, ndof*nn), SBN(9, ndof*nn)
     real(kind = kreal) :: elem(3, nn)
@@ -164,6 +164,9 @@ contains
     real(kind = kreal) :: xi_lx, eta_lx, zeta_ly
     real(kind = kreal) :: w_w_lx, w_ly
     real(kind = kreal) :: B_di(5, ndof*nn, 6, 3, 7)
+    real(kind = kreal) :: BG1_di(3, ndof*nn, 6, 3, 7)
+    real(kind = kreal) :: BG2_di(3, ndof*nn, 6, 3, 7)
+    real(kind = kreal) :: BG3_di(3, ndof*nn, 6, 3, 7)
     real(kind = kreal) :: B1(3, ndof*nn), B2(3, ndof*nn), &
       B3(3, ndof*nn)
     real(kind = kreal), allocatable :: B2rot(:, :, :, :)
@@ -302,6 +305,9 @@ contains
 
     elem(:, :) = ecoord(:, :)
     if( flag == UPDATELAG ) elem(:, :) = elem(:, :) + shell_disp(1:3, :)
+    BG1_di(:, :, :, :, :) = 0.0D0
+    BG2_di(:, :, :, :, :) = 0.0D0
+    BG3_di(:, :, :, :, :) = 0.0D0
 
     !--------------------------------------------------------------------
 
@@ -844,6 +850,32 @@ contains
                 B_di(5, jsize6, ip, it, ly) = aa3(3)+cc1(3)
               endif
 
+              ! First variations of g1/g2/g3 at tying points, used by the MITC4 shear geometric stiffness.
+              BG1_di(1:3, jsize1, ip, it, ly) = (/ shapederiv(nb, 1), 0.0D0, 0.0D0 /)
+              BG1_di(1:3, jsize2, ip, it, ly) = (/ 0.0D0, shapederiv(nb, 1), 0.0D0 /)
+              BG1_di(1:3, jsize3, ip, it, ly) = (/ 0.0D0, 0.0D0, shapederiv(nb, 1) /)
+              BG2_di(1:3, jsize1, ip, it, ly) = (/ shapederiv(nb, 2), 0.0D0, 0.0D0 /)
+              BG2_di(1:3, jsize2, ip, it, ly) = (/ 0.0D0, shapederiv(nb, 2), 0.0D0 /)
+              BG2_di(1:3, jsize3, ip, it, ly) = (/ 0.0D0, 0.0D0, shapederiv(nb, 2) /)
+              if( use_director_tangent ) then
+                do m = 1, 3
+                  jsize = ndof*(nb-1)+3+m
+                  BG1_di(1:3, jsize, ip, it, ly) = dudxi_rot_deriv(1:3, m)
+                  BG2_di(1:3, jsize, ip, it, ly) = dudeta_rot_deriv(1:3, m)
+                  BG3_di(1:3, jsize, ip, it, ly) = dudzeta_rot_deriv(1:3, m)
+                end do
+              else
+                BG1_di(1:3, jsize4, ip, it, ly) = (/ 0.0D0, -dudxi_rot(3, nb), dudxi_rot(2, nb) /)
+                BG1_di(1:3, jsize5, ip, it, ly) = (/ dudxi_rot(3, nb), 0.0D0, -dudxi_rot(1, nb) /)
+                BG1_di(1:3, jsize6, ip, it, ly) = (/ -dudxi_rot(2, nb), dudxi_rot(1, nb), 0.0D0 /)
+                BG2_di(1:3, jsize4, ip, it, ly) = (/ 0.0D0, -dudeta_rot(3, nb), dudeta_rot(2, nb) /)
+                BG2_di(1:3, jsize5, ip, it, ly) = (/ dudeta_rot(3, nb), 0.0D0, -dudeta_rot(1, nb) /)
+                BG2_di(1:3, jsize6, ip, it, ly) = (/ -dudeta_rot(2, nb), dudeta_rot(1, nb), 0.0D0 /)
+                BG3_di(1:3, jsize4, ip, it, ly) = (/ 0.0D0, -dudzeta_rot(3, nb), dudzeta_rot(2, nb) /)
+                BG3_di(1:3, jsize5, ip, it, ly) = (/ dudzeta_rot(3, nb), 0.0D0, -dudzeta_rot(1, nb) /)
+                BG3_di(1:3, jsize6, ip, it, ly) = (/ -dudzeta_rot(2, nb), dudzeta_rot(1, nb), 0.0D0 /)
+              endif
+
             end do
 
             !-------------------------------------------------
@@ -1078,7 +1110,6 @@ contains
               e1_hat_mat, e2_hat_mat, e3_hat_mat, cg1_mat, cg2_mat, cg3_mat, &
               alpha, n_layer)
           endif
-
           !--------------------------------------------------
 
           g1_tl(:) = g1(:)
@@ -1507,60 +1538,87 @@ contains
           !--------------------------------------------------
 
           if( add_geo_stiff ) then
-            S_global(:, :) = 0.0D0
-            S_global(:, :) = S_global(:, :) &
-              +Sv_force(1)*outer_product3(e1_hat_mat, e1_hat_mat) &
-              +Sv_force(2)*outer_product3(e2_hat_mat, e2_hat_mat) &
-              +Sv_force(3)*(outer_product3(e1_hat_mat, e2_hat_mat) &
-              +outer_product3(e2_hat_mat, e1_hat_mat)) &
-              +Sv_force(4)*(outer_product3(e2_hat_mat, e3_hat_mat) &
-              +outer_product3(e3_hat_mat, e2_hat_mat)) &
-              +Sv_force(5)*(outer_product3(e1_hat_mat, e3_hat_mat) &
-              +outer_product3(e3_hat_mat, e1_hat_mat))
-
-            BN(1:9, 1:ndof*nn) = 0.0D0
-            do jsize = 1, ndof*nn
-              BN(1, jsize) = B1(1, jsize)*cg1_mat(1) + B2(1, jsize)*cg2_mat(1) &
-                +B3(1, jsize)*cg3_mat(1)
-              BN(2, jsize) = B1(2, jsize)*cg1_mat(1) + B2(2, jsize)*cg2_mat(1) &
-                +B3(2, jsize)*cg3_mat(1)
-              BN(3, jsize) = B1(3, jsize)*cg1_mat(1) + B2(3, jsize)*cg2_mat(1) &
-                +B3(3, jsize)*cg3_mat(1)
-              BN(4, jsize) = B1(1, jsize)*cg1_mat(2) + B2(1, jsize)*cg2_mat(2) &
-                +B3(1, jsize)*cg3_mat(2)
-              BN(5, jsize) = B1(2, jsize)*cg1_mat(2) + B2(2, jsize)*cg2_mat(2) &
-                +B3(2, jsize)*cg3_mat(2)
-              BN(6, jsize) = B1(3, jsize)*cg1_mat(2) + B2(3, jsize)*cg2_mat(2) &
-                +B3(3, jsize)*cg3_mat(2)
-              BN(7, jsize) = B1(1, jsize)*cg1_mat(3) + B2(1, jsize)*cg2_mat(3) &
-                +B3(1, jsize)*cg3_mat(3)
-              BN(8, jsize) = B1(2, jsize)*cg1_mat(3) + B2(2, jsize)*cg2_mat(3) &
-                +B3(2, jsize)*cg3_mat(3)
-              BN(9, jsize) = B1(3, jsize)*cg1_mat(3) + B2(3, jsize)*cg2_mat(3) &
-                +B3(3, jsize)*cg3_mat(3)
-            end do
-
-            Smat(:, :) = 0.0D0
-            do j = 1, 3
-              Smat(j  , j  ) = S_global(1, 1)
-              Smat(j  , j+3) = S_global(1, 2)
-              Smat(j  , j+6) = S_global(1, 3)
-              Smat(j+3, j  ) = S_global(2, 1)
-              Smat(j+3, j+3) = S_global(2, 2)
-              Smat(j+3, j+6) = S_global(2, 3)
-              Smat(j+6, j  ) = S_global(3, 1)
-              Smat(j+6, j+3) = S_global(3, 2)
-              Smat(j+6, j+6) = S_global(3, 3)
-            end do
-
-            SBN(1:9, 1:ndof*nn) = matmul(Smat(1:9, 1:9), BN(1:9, 1:ndof*nn))
-            do jsize=1,ndof*nn
-              do isize=1,ndof*nn
-                tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
-                  +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
-                  *dot_product(BN(:, isize), SBN(:, jsize))
+            if( etype == fe_mitc4_shell .and. use_tl_green ) then
+              ! Match the MITC4 residual: membrane terms use the integration point, shear terms use tying points.
+              do jsize=1,ndof*nn
+                do isize=1,ndof*nn
+                  geo_term = Sv_force(1)*dot_product(B1(1:3, isize), B1(1:3, jsize)) &
+                    +Sv_force(2)*dot_product(B2(1:3, isize), B2(1:3, jsize)) &
+                    +Sv_force(3)*(dot_product(B1(1:3, isize), B2(1:3, jsize)) &
+                    +dot_product(B2(1:3, isize), B1(1:3, jsize))) &
+                    +Sv_force(4)*(0.5D0*(1.0D0-xi_lx) &
+                    *(dot_product(BG2_di(1:3, isize, 4, 1, ly), BG3_di(1:3, jsize, 4, 1, ly)) &
+                    +dot_product(BG3_di(1:3, isize, 4, 1, ly), BG2_di(1:3, jsize, 4, 1, ly))) &
+                    +0.5D0*(1.0D0+xi_lx) &
+                    *(dot_product(BG2_di(1:3, isize, 2, 1, ly), BG3_di(1:3, jsize, 2, 1, ly)) &
+                    +dot_product(BG3_di(1:3, isize, 2, 1, ly), BG2_di(1:3, jsize, 2, 1, ly)))) &
+                    +Sv_force(5)*(0.5D0*(1.0D0-eta_lx) &
+                    *(dot_product(BG3_di(1:3, isize, 1, 1, ly), BG1_di(1:3, jsize, 1, 1, ly)) &
+                    +dot_product(BG1_di(1:3, isize, 1, 1, ly), BG3_di(1:3, jsize, 1, 1, ly))) &
+                    +0.5D0*(1.0D0+eta_lx) &
+                    *(dot_product(BG3_di(1:3, isize, 3, 1, ly), BG1_di(1:3, jsize, 3, 1, ly)) &
+                    +dot_product(BG1_di(1:3, isize, 3, 1, ly), BG3_di(1:3, jsize, 3, 1, ly))))
+                  tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
+                    +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
+                    *geo_term
+                end do
               end do
-            end do
+            else
+              S_global(:, :) = 0.0D0
+              S_global(:, :) = S_global(:, :) &
+                +Sv_force(1)*outer_product3(e1_hat_mat, e1_hat_mat) &
+                +Sv_force(2)*outer_product3(e2_hat_mat, e2_hat_mat) &
+                +Sv_force(3)*(outer_product3(e1_hat_mat, e2_hat_mat) &
+                +outer_product3(e2_hat_mat, e1_hat_mat)) &
+                +Sv_force(4)*(outer_product3(e2_hat_mat, e3_hat_mat) &
+                +outer_product3(e3_hat_mat, e2_hat_mat)) &
+                +Sv_force(5)*(outer_product3(e1_hat_mat, e3_hat_mat) &
+                +outer_product3(e3_hat_mat, e1_hat_mat))
+
+              BN(1:9, 1:ndof*nn) = 0.0D0
+              do jsize = 1, ndof*nn
+                BN(1, jsize) = B1(1, jsize)*cg1_mat(1) + B2(1, jsize)*cg2_mat(1) &
+                  +B3(1, jsize)*cg3_mat(1)
+                BN(2, jsize) = B1(2, jsize)*cg1_mat(1) + B2(2, jsize)*cg2_mat(1) &
+                  +B3(2, jsize)*cg3_mat(1)
+                BN(3, jsize) = B1(3, jsize)*cg1_mat(1) + B2(3, jsize)*cg2_mat(1) &
+                  +B3(3, jsize)*cg3_mat(1)
+                BN(4, jsize) = B1(1, jsize)*cg1_mat(2) + B2(1, jsize)*cg2_mat(2) &
+                  +B3(1, jsize)*cg3_mat(2)
+                BN(5, jsize) = B1(2, jsize)*cg1_mat(2) + B2(2, jsize)*cg2_mat(2) &
+                  +B3(2, jsize)*cg3_mat(2)
+                BN(6, jsize) = B1(3, jsize)*cg1_mat(2) + B2(3, jsize)*cg2_mat(2) &
+                  +B3(3, jsize)*cg3_mat(2)
+                BN(7, jsize) = B1(1, jsize)*cg1_mat(3) + B2(1, jsize)*cg2_mat(3) &
+                  +B3(1, jsize)*cg3_mat(3)
+                BN(8, jsize) = B1(2, jsize)*cg1_mat(3) + B2(2, jsize)*cg2_mat(3) &
+                  +B3(2, jsize)*cg3_mat(3)
+                BN(9, jsize) = B1(3, jsize)*cg1_mat(3) + B2(3, jsize)*cg2_mat(3) &
+                  +B3(3, jsize)*cg3_mat(3)
+              end do
+
+              Smat(:, :) = 0.0D0
+              do j = 1, 3
+                Smat(j  , j  ) = S_global(1, 1)
+                Smat(j  , j+3) = S_global(1, 2)
+                Smat(j  , j+6) = S_global(1, 3)
+                Smat(j+3, j  ) = S_global(2, 1)
+                Smat(j+3, j+3) = S_global(2, 2)
+                Smat(j+3, j+6) = S_global(2, 3)
+                Smat(j+6, j  ) = S_global(3, 1)
+                Smat(j+6, j+3) = S_global(3, 2)
+                Smat(j+6, j+6) = S_global(3, 3)
+              end do
+
+              SBN(1:9, 1:ndof*nn) = matmul(Smat(1:9, 1:9), BN(1:9, 1:ndof*nn))
+              do jsize=1,ndof*nn
+                do isize=1,ndof*nn
+                  tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
+                    +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
+                    *dot_product(BN(:, isize), SBN(:, jsize))
+                end do
+              end do
+            endif
             if( use_director_tangent ) then
               do nb = 1, nn
                 do n = 1, 3
