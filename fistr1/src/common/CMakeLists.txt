@@ -16,6 +16,7 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_eigen.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_ctrl_dynamic.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_get_prop.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_FiniteRotationKinematics.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_setup.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_debug_dump.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_rcap_io.F90

@@ -8,6 +8,7 @@ module m_fstr_QuasiNewton
 
   use m_fstr_NonLinearMethod
   use m_fstr_IterationControl
+  use m_fstr_NodalKinematics, only: fstr_apply_solution_increment, fstr_commit_solution_increment
 
   implicit none
   ! parameters for line search
@@ -120,9 +121,7 @@ contains
       ! ----- update the small displacement and the displacement for 1step
       !       \delta u^k => solver's solution
       !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
-      do i = 1, hecMESH%n_node*ndof
-        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
-      enddo
+      call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
 
       !! set du for non-zero Dirichlet condition
       ! call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
@@ -165,9 +164,7 @@ contains
 
     ! ----- update the total displacement
     ! u_{n+1} = u_{n} + \Delta u_{n+1}
-    do i=1,hecMESH%n_node*ndof
-      fstrSOLID%unode(i) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
-    enddo
+      call fstr_commit_solution_increment( hecMESH, fstrSOLID, ndof )
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
 

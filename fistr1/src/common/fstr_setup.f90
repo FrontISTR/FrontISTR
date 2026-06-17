@@ -1105,12 +1105,16 @@ contains
 
     fstrSOLID%restart_nout= 0
     fstrSOLID%is_smoothing_active = .false.
+    fstrSOLID%has_finite_rotation_kinematics = .false.
+    fstrSOLID%finite_rotation_state_ready = .false.
 
   end subroutine fstr_solid_init
 
   !> Initializer of structure fstr_solid
   subroutine fstr_solid_alloc( hecMESH, fstrSOLID )
     use m_fstr
+    use m_fstr_FiniteRotationKinematics, only: fstr_has_finite_rotation_kinematics, &
+      fstr_mark_finite_rotation_nodes
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
 
@@ -1118,6 +1122,9 @@ contains
 
     ndof=hecMESH%n_dof
     ntotal=ndof*hecMESH%n_node
+    fstrSOLID%has_finite_rotation_kinematics = &
+      fstr_has_finite_rotation_kinematics( hecMESH, fstrSOLID )
+    fstrSOLID%finite_rotation_state_ready = .false.
 
     allocate ( fstrSOLID%GL( ntotal )          ,stat=ierror )
     if( ierror /= 0 ) then
@@ -1175,6 +1182,72 @@ contains
       call flush(idbg)
       call hecmw_abort( hecmw_comm_get_comm())
     end if
+    if( fstrSOLID%has_finite_rotation_kinematics ) then
+      allocate ( fstrSOLID%shell_node_mode( hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_node_mode>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+      call fstr_mark_finite_rotation_nodes( hecMESH, fstrSOLID, ndof, fstrSOLID%shell_node_mode )
+      allocate ( fstrSOLID%shell_rot_state( hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_rot_state>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+      allocate ( fstrSOLID%shell_ref_triad( 9*hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_ref_triad>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+      allocate ( fstrSOLID%shell_triad( 9*hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_triad>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+      allocate ( fstrSOLID%shell_triad_bak( 9*hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_triad_bak>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+      allocate ( fstrSOLID%shell_dtriad( 9*hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_dtriad>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+      allocate ( fstrSOLID%shell_drill( hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_drill>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+      allocate ( fstrSOLID%shell_drill_bak( hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_drill_bak>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+      allocate ( fstrSOLID%shell_ddrill( hecMESH%n_node )  ,stat=ierror )
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to allocation error <FSTR_SOLID, shell_ddrill>'
+        write(idbg,*) '  rank = ', hecMESH%my_rank,'  ierror = ',ierror
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    end if
     allocate ( fstrSOLID%QFORCE( ntotal )      ,stat=ierror )
     if( ierror /= 0 ) then
       write(idbg,*) 'stop due to allocation error <FSTR_SOLID, QFORCE>'
@@ -1204,6 +1277,14 @@ contains
     fstrSOLID%unode_bak(:)  = 0.d0
     fstrSOLID%dunode(:)     = 0.d0
     fstrSOLID%ddunode(:)    = 0.d0
+    if( associated(fstrSOLID%shell_rot_state) ) fstrSOLID%shell_rot_state(:) = 0
+    if( associated(fstrSOLID%shell_ref_triad) ) fstrSOLID%shell_ref_triad(:) = 0.d0
+    if( associated(fstrSOLID%shell_triad) )     fstrSOLID%shell_triad(:)     = 0.d0
+    if( associated(fstrSOLID%shell_triad_bak) ) fstrSOLID%shell_triad_bak(:) = 0.d0
+    if( associated(fstrSOLID%shell_dtriad) )    fstrSOLID%shell_dtriad(:)    = 0.d0
+    if( associated(fstrSOLID%shell_drill) )     fstrSOLID%shell_drill(:)     = 0.d0
+    if( associated(fstrSOLID%shell_drill_bak) ) fstrSOLID%shell_drill_bak(:) = 0.d0
+    if( associated(fstrSOLID%shell_ddrill) )    fstrSOLID%shell_ddrill(:)    = 0.d0
     fstrSOLID%QFORCE(:)     = 0.d0
     fstrSOLID%QFORCE_bak(:) = 0.d0
     fstrSOLID%FACTOR( 1:2 ) = 0.d0
@@ -1276,12 +1357,13 @@ contains
   subroutine fstr_element_init( hecMESH, fstrSOLID, solution_type )
     use elementInfo
     use mMechGauss
+    use mMaterial, only: TOTALLAG, isElastic
     use m_fstr
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
     integer(kind=kint), intent(in)  :: solution_type
 
-    integer :: i, j, ng, isect, ndof, id, nn, n_elem
+    integer :: i, j, ng, isect, ndof, id, nn, n_elem, nthick
     integer :: ncon_stf
 
     if( hecMESH%n_elem <=0 ) then
@@ -1331,6 +1413,13 @@ contains
         fstrSOLID%elements(i)%gausses(j)%pMaterial => fstrSOLID%materials(id)
         call fstr_init_gauss( fstrSOLID%elements(i)%gausses( j )  )
       enddo
+      nthick = 0
+      if( fstrSOLID%elements(i)%etype == fe_mitc4_shell &
+        .and. fstrSOLID%materials(id)%nlgeom_flag == TOTALLAG &
+        .and. isElastic( fstrSOLID%materials(id)%mtype ) ) &
+        nthick = fstr_shell_num_thickness_points( fstrSOLID%elements(i)%etype )
+      if( nthick > 0 ) call fstr_init_shell_layer_gausses( fstrSOLID%elements(i), ng, &
+        fstrSOLID%materials(id)%totallyr, nthick )
 
       nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
       allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
@@ -1354,6 +1443,7 @@ contains
 
   !> Finalizer of fstr_solid
   subroutine fstr_solid_finalize( fstrSOLID )
+    use mMechGauss, only: fstr_finalize_shell_layer_gausses
     type(fstr_solid) :: fstrSOLID
     integer :: i, j, ierror
     if( associated(fstrSOLID%materials) ) then
@@ -1370,6 +1460,7 @@ contains
         enddo
         deallocate( fstrSOLID%elements(i)%gausses )
       endif
+      call fstr_finalize_shell_layer_gausses( fstrSOLID%elements(i) )
       if(associated(fstrSOLID%elements(i)%equiForces) ) then
         deallocate(fstrSOLID%elements(i)%equiForces)
       endif
@@ -1444,6 +1535,78 @@ contains
       deallocate(fstrSOLID%ddunode       ,stat=ierror)
       if( ierror /= 0 ) then
         write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, ddunode>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_node_mode) ) then
+      deallocate(fstrSOLID%shell_node_mode       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_node_mode>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_rot_state) ) then
+      deallocate(fstrSOLID%shell_rot_state       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_rot_state>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_ref_triad) ) then
+      deallocate(fstrSOLID%shell_ref_triad       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_ref_triad>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_triad) ) then
+      deallocate(fstrSOLID%shell_triad       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_triad>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_triad_bak) ) then
+      deallocate(fstrSOLID%shell_triad_bak       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_triad_bak>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_dtriad) ) then
+      deallocate(fstrSOLID%shell_dtriad       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_dtriad>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_drill) ) then
+      deallocate(fstrSOLID%shell_drill       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_drill>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_drill_bak) ) then
+      deallocate(fstrSOLID%shell_drill_bak       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_drill_bak>'
+        call flush(idbg)
+        call hecmw_abort( hecmw_comm_get_comm())
+      end if
+    endif
+    if( associated(fstrSOLID%shell_ddrill) ) then
+      deallocate(fstrSOLID%shell_ddrill       ,stat=ierror)
+      if( ierror /= 0 ) then
+        write(idbg,*) 'stop due to deallocation error <FSTR_SOLID, shell_ddrill>'
         call flush(idbg)
         call hecmw_abort( hecmw_comm_get_comm())
       end if
