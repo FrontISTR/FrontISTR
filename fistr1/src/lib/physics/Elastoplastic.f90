@@ -505,8 +505,12 @@ contains
     if( hdflag == 2 ) return
 
     istat = VM_PLASTIC      ! yielded
-    KH = 0.d0; KK=0.d0; betan=0.d0; back(:)=0.d0
-    if( kinematic ) betan = calCurrKinematic( matl, plstrain )
+    KH = 0.d0; KK=0.d0; betan=0.d0
+    if( kinematic ) then
+      betan = calCurrKinematic( matl, plstrain )  ! keep back = alpha_n (loaded above) so it accumulates at fstat update and is restored into stress
+    else
+      back(:)=0.d0
+    endif
 
     ina(1) = temp
     call fetch_TableData(MC_ISOELASTIC, matl%dict, ee, ierr, ina)
