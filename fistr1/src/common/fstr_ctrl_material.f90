@@ -930,39 +930,41 @@ contains
   end function fstr_ctrl_get_EXPANSION_COEFF
 
   !----------------------------------------------------------------------
-  !> Read in !RAYLEIGH_DAMPING
+  !> Read in !DAMPING (element-wise Rayleigh damping)
+  !!
+  !! Format:
+  !!   !DAMPING, TYPE=RAYLEIGH
+  !!    Rm, Rk
+  !!
+  !! TYPE selects the damping model and is optional (currently only RAYLEIGH
+  !! is supported, which is also the default). The mass-proportional
+  !! coefficient Rm (alpha) and the stiffness-proportional coefficient Rk
+  !! (beta) are read from the following data line.
   integer function fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, matval, is_RD )
     integer(kind=kint), intent(in) :: ctrl
     real(kind=kreal), intent(out)  :: matval(:)
-    !type(DICT_STRUCT), pointer     :: dict
-    integer(kind=kint) :: rcode
+    logical, intent(out)           :: is_RD
+    integer(kind=kint) :: ipt
     real(kind=kreal) :: RM, RK
-    logical :: is_RD
+    character(len=HECMW_NAME_LEN) :: type_list
 
-    rcode = -1
+    fstr_ctrl_get_RAYLEIGH_DAMPING = -1
     is_RD = .false.
 
-    RM = 0.0d0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'RM ', '# ', 0, 'R', RM)
-    if(rcode == 0)then
-      matval(M_DAMPING_RM) = RM
-      is_RD = .true.
-      fstr_ctrl_get_RAYLEIGH_DAMPING = 0
-    else
-      fstr_ctrl_get_RAYLEIGH_DAMPING = -1
-      return
-    endif
+    ! --- option TYPE: damping model selection (only RAYLEIGH supported) ---
+    type_list = 'RAYLEIGH '
+    ipt = 1  ! default
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', type_list, 0, 'P', ipt ) /= 0 ) return
 
+    ! --- data line: Rm (mass-proportional), Rk (stiffness-proportional) ---
+    RM = 0.0d0
     RK = 0.0d0
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'RK ', '# ', 0, 'R', RK)
-    if(rcode == 0)then
-      matval(M_DAMPING_RK) = RK
-      is_RD = .true.
-      fstr_ctrl_get_RAYLEIGH_DAMPING = 0
-    else
-      fstr_ctrl_get_RAYLEIGH_DAMPING = -1
-      return
-    endif
+    if( fstr_ctrl_get_data_ex( ctrl, 1, 'rr ', RM, RK ) /= 0 ) return
+
+    matval(M_DAMPING_RM) = RM
+    matval(M_DAMPING_RK) = RK
+    is_RD = .true.
+    fstr_ctrl_get_RAYLEIGH_DAMPING = 0
   end function fstr_ctrl_get_RAYLEIGH_DAMPING
 
   integer function read_user_matl( ctrl, matval )
