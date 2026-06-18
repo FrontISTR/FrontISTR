@@ -1,0 +1,35 @@
+#  Frequency-response analysis (mode superposition) of a cantilever beam.
+#  Reads pre-computed eigenmodes (beam_eig.log + beam_eig.res.0.* committed as
+#  fixtures); test.sh provides them via !RESULT,NAME=result-in,IO=IN.
+#  Exercises every !FLOAD combination: LOAD CASE = 1 (real) / 2 (imaginary)
+#  x target = node / node-group / surface-group.
+#  Hand-check: the response peaks at the natural frequencies 14952 / 15003 Hz
+#  (cf. eigenmodes in beam_eig.log and V&V doc 9.1 frequency-response table).
+!VERSION
+ 3
+!WRITE,RESULT
+!SOLUTION, TYPE=DYNAMIC
+!DYNAMIC
+ 11 , 2
+ 14000, 16000, 10, 15000.0
+ 0.0, 6.6e-5
+ 1, 1, 0.0, 7.2E-7
+ 10, 2, 1
+ 1, 1, 1, 1, 1, 1
+!EIGENREAD
+ beam_eig.log
+ 1, 3
+!BOUNDARY
+ _PickedSet4, 1, 3, 0.0
+!FLOAD, LOAD CASE=1
+ 8,           2, 1.0
+ _PickedSet6, 2, 1.0
+ LOADSURF,    2, 0.3
+!FLOAD, LOAD CASE=2
+ 8,           3, 0.5
+ _PickedSet6, 3, 0.5
+ LOADSURF,    3, 0.3
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+!END

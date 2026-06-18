@@ -58,6 +58,20 @@ for path in $(find . -not -path "./_archive/*" -type f -name "*.msh" ); do
   fi
 
   pushd $dir
+  # frequency-response: regenerate the eigenmode fixtures first (mode-superposition input)
+  if [ -e ${mesh%.msh}_eigen.cnt ]; then
+    rm -f ${mesh%.msh}_eig.res.* ${mesh%.msh}_eig.log
+cat <<EOLE > hecmw_ctrl.dat
+!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+${mesh}
+!CONTROL,NAME=fstrCNT
+${mesh%.msh}_eigen.cnt
+!RESULT,NAME=fstrRES,IO=OUT
+${mesh%.msh}_eig.res
+EOLE
+    $fistr1 -t 1
+    mv 0.log ${mesh%.msh}_eig.log
+  fi
 cat <<EOL > hecmw_ctrl.dat
 !MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
 ${mesh}
@@ -69,7 +83,13 @@ ${res}
 ${mesh}
 
 EOL
+  # frequency-response: map eigenmode fixtures (result-in) and dynamic result (fstrDYNA)
+  if [ -e ${mesh%.msh}_eigen.cnt ]; then
+    printf '!RESULT,NAME=result-in,IO=IN\n%s\n' "${mesh%.msh}_eig.res" >> hecmw_ctrl.dat
+    printf '!RESULT,NAME=fstrDYNA,IO=OUT\n%s\n' "${mesh%.msh}_dyna.res" >> hecmw_ctrl.dat
+  fi
   $fistr1 -t 1
   rm -f hecmw_ctrl.dat FSTR.msg 0.log FSTR.sta FSTR.dbg.0 hecmw_vis.ini dyna*.txt
+  rm -fr ${mesh%.msh}_dyna.res* ${mesh%.msh}.vis*
   popd
 done

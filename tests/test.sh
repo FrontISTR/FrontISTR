@@ -181,6 +181,8 @@ for mesh_path in $(find $target -type f -name "*.msh"); do
   cnt_rst=${mesh%.msh}_restart.cnt
   res=${mesh%.msh}.res
   rst=${mesh%.msh}.restart
+  eiglog=${mesh%.msh}_eig.log    # frequency-response: pre-computed eigenvalue log (fixture)
+  eigres=${mesh%.msh}_eig.res    # frequency-response: pre-computed eigenvector result (fixture)
 
   if [ ! -e $ref_dir/$cnt ]; then
     echo_err "*.cnt file for $mesh_path is not found. Skip this mesh file."
@@ -199,6 +201,10 @@ for mesh_path in $(find $target -type f -name "*.msh"); do
   if [ -e $ref_dir/istrain.dat ]; then
     cp -r $ref_dir/istrain.dat $test_dir
   fi
+  # frequency-response: stage the pre-computed eigen fixtures read via !EIGENREAD / result-in
+  if [ -e $ref_dir/$eiglog ]; then
+    cp -r $ref_dir/${mesh%.msh}_eig.* $test_dir
+  fi
   [ $mpi_num_process -gt 1 ] && MESHTYPE=HECMW-DIST || MESHTYPE=HECMW-ENTIRE
 cat <<EOL > hecmw_ctrl.dat
 !MESH, NAME=fstrMSH,TYPE=$MESHTYPE
@@ -216,6 +222,12 @@ ${mesh}
 !MESH, NAME=part_out,TYPE=HECMW-DIST
 ${mesh}
 EOL
+  # frequency-response: map the pre-computed eigenvector result as read-only input
+  # and the dynamic result as output (both required by the mode-superposition solver)
+  if [ -e $ref_dir/$eiglog ]; then
+    printf '!RESULT,NAME=result-in,IO=IN\n%s\n' "$eigres" >> hecmw_ctrl.dat
+    printf '!RESULT,NAME=fstrDYNA,IO=OUT\n%s\n' "${mesh%.msh}_dyna.res" >> hecmw_ctrl.dat
+  fi
   if [ -e $ref_dir/is_tet_tet2.txt ]; then
     echo "!TET_TET2, ON" >> hecmw_ctrl.dat
   fi
