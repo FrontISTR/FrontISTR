@@ -21,7 +21,8 @@
 !! MATERIAL (element-wise Rayleigh damping)
 !!
 !MATERIAL, NAME=M1
-!DAMPING, RM=0.5, RK=1.0e-3
+!DAMPING, TYPE=RAYLEIGH
+ 0.5, 1.0e-3
 !!
 !! SOLVER CONTROL
 !!
