@@ -16,6 +16,7 @@ FrontISTR is an open-source **large-scale parallel finite element method structu
 ## Key Features
 
 * **Large-scale Parallel**: MPI (distributed memory) + OpenMP (shared memory)
+* **GPU Acceleration**: NVIDIA GPU support via OpenACC
 * **Analysis Types**
   * Static analysis, dynamic analysis (implicit/explicit methods)
   * Large deformation, contact, nonlinear materials (elastoplastic, hyperelastic, creep, viscoelastic, etc.)
@@ -35,6 +36,9 @@ FrontISTR is an open-source **large-scale parallel finite element method structu
 * **Required Libraries for Parallel Computing**
   * **MPI** (Open MPI / MPICH, etc.)
   * **METIS** (domain decomposition)
+* **For GPU Acceleration**
+  * **NVIDIA HPC SDK** (NVIDIA compilers, profilers, etc.)
+  * **NVIDIA HPC-X** (communication libraries, *recommended*)
 * **Optional Libraries**
   * **BLAS/LAPACK** (used in some features. OpenBLAS/MKL, etc.)
   * **MUMPS** (parallel direct solver) + **ScaLAPACK** (required for MUMPS)
@@ -50,6 +54,10 @@ mkdir build && cd build
 cmake ..
 make -j$(nproc)
 ```
+
+> Note:
+>
+> - For a GPU build, make sure to specify the NVIDIA compilers.
 
 ---
 

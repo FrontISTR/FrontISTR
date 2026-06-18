@@ -213,6 +213,11 @@ contains
     if (associated(hecMAT%indexU)) deallocate(hecMAT%indexU)
     if (associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
     if (associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
+#ifdef _OPENACC
+    if (associated(hecMAT%A)) deallocate(hecMAT%A)
+    if (associated(hecMAT%indexA)) deallocate(hecMAT%indexA)
+    if (associated(hecMAT%itemA)) deallocate(hecMAT%itemA)
+#endif
   end subroutine hecmw_mat_finalize
 
   subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )
@@ -868,6 +873,11 @@ contains
     integer(kind=kint) :: i, j, k, nn, pre, pp, jS, jE
 
     nn = hecMAT%NDOF * hecMAT%NDOF
+    hecMAT%NPA = hecMAT%NP + hecMAT%NPL + hecMAT%NPU
+    if (associated(hecMAT%A))      deallocate(hecMAT%A)
+    if (associated(hecMAT%indexA)) deallocate(hecMAT%indexA)
+    if (associated(hecMAT%itemA))  deallocate(hecMAT%itemA)
+    allocate (hecMAT%A(nn * hecMAT%NPA))
     allocate (hecMAT%indexA(0:hecMAT%NP))
     allocate (hecMAT%itemA(hecMAT%NPA))
     hecMAT%indexA(0) = 0

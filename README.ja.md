@@ -16,6 +16,7 @@ FrontISTRはオープンソースの**大規模並列有限要素法構造解析
 ## 主な特徴
 
 * **大規模並列**: MPI（分散メモリ）＋ OpenMP（共有メモリ）
+* **GPU対応**: OpenACCによるNVIDIA GPU対応
 * **解析種別**
   * 静解析、動解析（陰解法・陽解法）
   * 大変形、接触、非線形材料（弾塑性・超弾性・クリープ・粘弾性 等）
@@ -35,6 +36,9 @@ FrontISTRはオープンソースの**大規模並列有限要素法構造解析
 * **並列計算時の必須ライブラリ**
   * **MPI**（Open MPI / MPICH 等）
   * **METIS**（領域分割）
+* **GPU利用時**
+  * **NVIDIA HPC SDK**（NVIDIAコンパイラ・プロファイラ 等）
+  * **NVIDIA HPC-X**（通信ライブラリ、*推奨*）
 * **オプションのライブラリ**
   * **BLAS/LAPACK**（一部機能で利用。OpenBLAS/MKL 等）
   * **MUMPS**（並列直接法）＋ **ScaLAPACK**（MUMPSに必要）
@@ -50,6 +54,10 @@ mkdir build && cd build
 cmake ..
 make -j$(nproc)
 ```
+
+> Note:
+>
+> - GPUビルドの場合は、NVIDIAコンパイラを指定してください。
 
 ---
 
