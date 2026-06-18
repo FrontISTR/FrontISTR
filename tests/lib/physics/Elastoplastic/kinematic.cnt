@@ -9,6 +9,7 @@
 #   strain path: 0 -> 0.05 (tension) -> 0.01 (reverse)
 #   hand-calc: sigma_xx ~ +2931 at eps=0.05 ; sigma_xx ~ 0 at eps=0.01 after reversal
 #   (isotropic hardening would give sigma_xx ~ -1000 at eps=0.01: Bauschinger signature)
+#   checked snapshots: .10 = tension peak (eps=0.05), .20 = reversal end (eps=0.01)
 !BOUNDARY, GRPID = 1
         1,        1,        3,   0.0
         4,        1,        1,   0.0
@@ -28,7 +29,7 @@
 !STEP, SUBSTEPS = 10, CONVERG=1.E-8
   BOUNDARY,    1
   BOUNDARY,    2
-!STEP, SUBSTEPS = 8, CONVERG=1.E-8
+!STEP, SUBSTEPS = 10, CONVERG=1.E-8
   BOUNDARY,    1
   BOUNDARY,    3
 !MATERIAL, NAME=M1
@@ -36,7 +37,7 @@
   10.0E+04,   0.3
 !PLASTIC, HARDEN=KINEMATIC
   1000., 1.0E+05
-!WRITE, RESULT, FREQUENCY=2
+!WRITE, RESULT, FREQUENCY=10
 !ELEMENT_OUTPUT, POSITION=INTEG
    STRAIN
    STRESS
