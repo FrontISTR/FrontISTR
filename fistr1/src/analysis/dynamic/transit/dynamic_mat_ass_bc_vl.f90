@@ -65,8 +65,7 @@ contains
         if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
         RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-        RHS = RHS * f_t
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
         RHS0 = RHS
 
         ityp = fstrSOLID%VELOCITY_ngrp_type(ig0)
@@ -125,8 +124,7 @@ contains
         ig   = fstrSOLID%VELOCITY_ngrp_ID(ig0)
         RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-        RHS = RHS * f_t
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
         RHS0 = RHS
 
         ityp = fstrSOLID%VELOCITY_ngrp_type(ig0)
@@ -184,8 +182,7 @@ contains
       grpid = fstrSOLID%VELOCITY_ngrp_GRPID(ig0)
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, 1 ) ) cycle
 
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-      RHS = RHS * f_t
+      call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
 
       ityp = fstrSOLID%VELOCITY_ngrp_type(ig0)
 
@@ -250,8 +247,7 @@ contains
         ig   = fstrSOLID%VELOCITY_ngrp_ID(ig0)
         RHS  = fstrSOLID%VELOCITY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-        RHS = RHS * f_t
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
         RHS0 = RHS
 
         ityp = fstrSOLID%VELOCITY_ngrp_type(ig0)

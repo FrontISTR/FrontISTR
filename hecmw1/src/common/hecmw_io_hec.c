@@ -205,11 +205,14 @@ static int read_amp_param_time(int *time) {
     return -1;
   }
   token = HECMW_heclex_next_token();
-  if (token != HECMW_HECLEX_K_STEP_TIME) {
+  if (token == HECMW_HECLEX_K_STEP_TIME) {
+    *time = HECMW_AMP_TYPETIME_STEP;
+  } else if (token == HECMW_HECLEX_K_TOTAL_TIME) {
+    *time = HECMW_AMP_TYPETIME_TOTAL;
+  } else {
     set_err_token(token, HECMW_IO_HEC_E0100, "Invalid TIME");
     return -1;
   }
-  *time = HECMW_AMP_TYPETIME_STEP;
   return 0;
 }
 

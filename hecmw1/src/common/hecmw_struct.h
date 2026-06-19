@@ -63,6 +63,7 @@ struct hecmwST_amplitude {
 
   int *amp_type_time;
 #define HECMW_AMP_TYPETIME_STEP 1 /* 1:STEP_TIME(default) */
+#define HECMW_AMP_TYPETIME_TOTAL 2 /* 2:TOTAL_TIME */
 
   int *amp_type_value;
 #define HECMW_AMP_TYPEVAL_RELATIVE 1 /* 1:RELATIVE(default) */
