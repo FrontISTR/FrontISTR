@@ -75,7 +75,7 @@ contains
     
     integer(kind=kint) :: n_rot, rid, n_nodes, idof, ndof
     integer(kind=kint) :: ig0, ig, ityp, iS0, iE0, ik, in, grpid, jj_n_amp
-    real(kind=kreal)   :: factor, fval, tval
+    real(kind=kreal)   :: aval, fval, tval
     real(kind=kreal)   :: normal(3), direc(3), ccoord(3), cdisp(3), cdiff(3)
     real(kind=kreal)   :: vect(60)
     type(tRotInfo)     :: rinfo
@@ -90,17 +90,18 @@ contains
     do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
       grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
       if (.not. fstr_isLoadActive(fstrSOLID, grpid, cstep)) cycle
-      jj_n_amp = fstrSOLID%CLOAD_ngrp_amp(ig0)
-      if (jj_n_amp <= 0) then  ! Amplitude not defined
-        factor = fstrSOLID%FACTOR(2)
-      else
-        call table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
-      endif
-      
-      if (fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) factor = 1.0d0
       ig = fstrSOLID%CLOAD_ngrp_ID(ig0)
       ityp = fstrSOLID%CLOAD_ngrp_DOF(ig0)
       fval = fstrSOLID%CLOAD_ngrp_val(ig0)
+      jj_n_amp = fstrSOLID%CLOAD_ngrp_amp(ig0)
+      aval = fval
+      if (jj_n_amp <= 0) then  ! Amplitude not defined
+        aval = fstrSOLID%FACTOR(2) * fval
+      else
+        call fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, aval)
+      endif
+
+      if (fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) aval = fval
       iS0 = hecMESH%node_group%grp_index(ig-1) + 1
       iE0 = hecMESH%node_group%grp_index(ig)
 
@@ -112,13 +113,13 @@ contains
           rinfo%conds(rid)%torque_ngrp_id = ig
         endif
         if (ityp > ndof) ityp = ityp - ndof
-        rinfo%conds(rid)%vec(ityp) = factor * fval
+        rinfo%conds(rid)%vec(ityp) = aval
         cycle
       endif
 
       do ik = iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
-        fstrSOLID%GL(ndof*(in-1)+ityp) = fstrSOLID%GL(ndof*(in-1)+ityp) + factor*fval
+        fstrSOLID%GL(ndof*(in-1)+ityp) = fstrSOLID%GL(ndof*(in-1)+ityp) + aval
       enddo
     enddo
 
@@ -192,9 +193,10 @@ contains
       if (jj_n_amp <= 0) then  ! Amplitude not defined
         factor = fstrSOLID%factor(2)
       else
-        call table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
+        factor = 1.0d0
+        call fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
       endif
-      
+
       if (fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) factor = 1.0d0
       ig = fstrSOLID%DLOAD_ngrp_ID(ig0)
       ltype = fstrSOLID%DLOAD_ngrp_LID(ig0)

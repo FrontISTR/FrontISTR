@@ -1187,20 +1187,23 @@ contains
     end if
   end subroutine fstr_solid_phys_clear
 
-  subroutine table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, time, f_t)
+  !> \brief Evaluate the amplitude-scaled target value a(t) for static analysis.
+  !!
+  !! On entry `value` holds the nominal card value; on exit it holds the full
+  !! target value a(t). The card time is resolved as STEP time by default
+  !! (TIME=TOTAL keeps the total time); the actual interpolation, end-point
+  !! clamping and RELATIVE/ABSOLUTE handling are delegated to the canonical
+  !! evaluator hecmw_get_amplitude_value so that static and dynamic analyses
+  !! share a single amplitude evaluator.
+  subroutine fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, time, value)
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH    !< hecmw mesh
     type ( fstr_solid         ), intent(in) :: fstrSOLID  !< fstr_solid
     integer(kind=kint), intent(in)          :: cstep      !< curr loading step
-    integer(kind=kint), intent(in)          :: jj_n_amp   !< index of amplitude table
+    integer(kind=kint), intent(in)          :: jj_n_amp   !< amplitude id (>0)
     real(kind=kreal), intent(in)            :: time       !< loading time(total time)
-    real(kind=kreal), intent(out)           :: f_t        !< loading factor
+    real(kind=kreal), intent(inout)         :: value      !< in:nominal value, out:a(t)
 
-    integer(kind=kint) :: i
-    integer(kind=kint) :: jj1, jj2
-    integer(kind=kint) :: s1, s2, flag
-    real(kind=kreal) :: t_1, t_2, t_t, f_1, f_2, tincre
-
-    s1 = 0; s2 = 0
+    real(kind=kreal) :: t_eval
 
     if( jj_n_amp <= 0 ) then  ! Amplitude not defined
       if(myrank == 0) then
@@ -1209,41 +1212,14 @@ contains
       call hecmw_abort( hecmw_comm_get_comm() )
     endif
 
-    tincre = fstrSOLID%step_ctrl( cstep )%initdt
-    jj1 = hecMESH%amp%amp_index(jj_n_amp - 1)
-    jj2 = hecMESH%amp%amp_index(jj_n_amp)
-
-    jj1 = jj1 + 2
-    t_t = time-fstrSOLID%step_ctrl(cstep)%starttime
-
-    !      if(jj2 .eq. 0) then
-    !         f_t = 1.0
-    if(t_t .gt. hecMESH%amp%amp_table(jj2)) then
-      f_t = hecMESH%amp%amp_val(jj2)
-    else if(t_t .le. hecMESH%amp%amp_table(jj2)) then
-      flag=0
-      do i = jj1, jj2
-        if(t_t .le. hecMESH%amp%amp_table(i)) then
-          s2 = i
-          s1 = i - 1
-          flag = 1
-        endif
-        if( flag == 1 ) exit
-      end do
-
-      t_2 = hecMESH%amp%amp_table(s2)
-      t_1 = hecMESH%amp%amp_table(s1)
-      f_2 = hecMESH%amp%amp_val(s2)
-      f_1 = hecMESH%amp%amp_val(s1)
-      if( t_2-t_1 .lt. 1.0e-20) then
-        if(myrank == 0) then
-          write(imsg,*) 'stop due to t_2-t_1 <= 0'
-        endif
-        call hecmw_abort( hecmw_comm_get_comm())
-      endif
-      f_t = ((t_2*f_1 - t_1*f_2) + (f_2 - f_1)*t_t) / (t_2 - t_1)
+    if( hecMESH%amp%amp_type_time(jj_n_amp) == HECMW_AMP_TYPETIME_TOTAL ) then
+      t_eval = time
+    else
+      t_eval = time - fstrSOLID%step_ctrl(cstep)%starttime
     endif
 
-  end subroutine table_amp
+    call hecmw_get_amplitude_value(hecMESH%amp, jj_n_amp, t_eval, value)
+
+  end subroutine fstr_get_amplitude
 
 end module m_fstr

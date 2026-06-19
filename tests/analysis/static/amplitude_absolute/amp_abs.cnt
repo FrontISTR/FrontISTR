@@ -1,0 +1,34 @@
+!VERSION
+    5
+!SOLUTION, TYPE = NLSTATIC
+# VALUE=ABSOLUTE: the prescribed magnitude is the amplitude table value itself,
+# independent of the load card value. Here the CLOAD card value is 7.0 but the
+# ABSOLUTE amplitude reaches 50.0, so the applied load is 50.0 (NOT 7.0*50.0).
+# This produces the same response as a plain CLOAD of 50.0 driven by a
+# RELATIVE amplitude of 1.0 (verified equal to 7 significant figures).
+!BOUNDARY, GRPID = 1
+ 1, 1,3, 0.0
+ 2, 1,3, 0.0
+ 3, 1,3, 0.0
+ 4, 1,3, 0.0
+ 5, 1,3, 0.0
+ 6, 1,3, 0.0
+ 7, 1,3, 0.0
+ 8, 1,2, 0.0
+!CLOAD, GRPID = 1, AMP=AMP1
+ 8, 3, 7.0
+!STEP, SUBSTEPS = 2, CONVERG=1.E-8
+  BOUNDARY,    1
+  LOAD, 1
+!MATERIAL, NAME=M1
+!ELASTIC
+  10.0E+04,   0.3
+!WRITE, RESULT, FREQUENCY=1
+!OUTPUT_RES
+ DISP, ON
+ NSTRESS, OFF
+ NMISES, OFF
+!SOLVER, METHOD = CG, PRECOND = 3, ITERLOG = NO, TIMELOG = NO
+  10000,       1
+ 1.0E-8,     1.0,     0.0
+!END

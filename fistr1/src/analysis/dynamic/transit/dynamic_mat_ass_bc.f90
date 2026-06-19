@@ -60,13 +60,14 @@ contains
           if( iter>1 ) then
             RHS=0.d0
           else
-            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr-fstrDYNAMIC%t_delta, f_t1, flag_u)
-            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-            RHS = RHS * (f_t-f_t1)
+            f_t1 = RHS
+            call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr-fstrDYNAMIC%t_delta, f_t1, flag_u)
+            f_t = RHS
+            call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
+            RHS = f_t - f_t1
           endif
         else
-          call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-          RHS = RHS * f_t
+          call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
         endif
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
@@ -184,8 +185,7 @@ contains
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-        RHS = RHS * f_t
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
 
@@ -240,8 +240,7 @@ contains
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, 1 ) ) cycle
 
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-      RHS = RHS * f_t
+      call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
 
       ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
 
@@ -300,8 +299,7 @@ contains
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-        RHS = RHS * f_t
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
 

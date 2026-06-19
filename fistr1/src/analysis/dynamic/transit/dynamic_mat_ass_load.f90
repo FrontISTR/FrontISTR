@@ -85,8 +85,7 @@ contains
       val = fstrSOLID%CLOAD_ngrp_val(ig0)
 
       flag_u = 0
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-      val = val*f_t
+      call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, val, flag_u)
 
       iS0= hecMESH%node_group%grp_index(ig-1)+1
       iE0= hecMESH%node_group%grp_index(ig  )
@@ -237,7 +236,8 @@ contains
         !!!!!!  time history
 
         flag_u = 10
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
+        f_t = 1.0d0
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         do j=1,nsize
           vect(j) = vect(j)*f_t
         enddo

@@ -124,6 +124,7 @@ module hecmw_util
   integer(kind=kint),parameter :: HECMW_AMP_TYPEDEF_TABULAR  = 1
   !C      for hecmwST_amplitude%amp_type_time
   integer(kind=kint),parameter :: HECMW_AMP_TYPETIME_STEP    = 1
+  integer(kind=kint),parameter :: HECMW_AMP_TYPETIME_TOTAL   = 2
   !C      for hecmwST_amplitude%amp_type_value
   integer(kind=kint),parameter :: HECMW_AMP_TYPEVAL_RELATIVE = 1
   integer(kind=kint),parameter :: HECMW_AMP_TYPEVAL_ABSOLUTE = 2

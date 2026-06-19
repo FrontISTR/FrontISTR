@@ -54,8 +54,10 @@ contains
           factor0 = fstrSOLID%FACTOR(1)
           factor = fstrSOLID%FACTOR(2)
         else
-          call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time(),factor0)
-          call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time()+fstr_get_timeinc(),factor)
+          factor0 = 1.d0
+          call fstr_get_amplitude(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time(),factor0)
+          factor = 1.d0
+          call fstr_get_amplitude(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time()+fstr_get_timeinc(),factor)
         endif
         factor = factor - factor0
         if(fstrSOLID%step_ctrl(cstep)%amp_default_type==stepAmpStep)then
