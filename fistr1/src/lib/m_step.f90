@@ -13,6 +13,8 @@ module m_step
   integer, parameter :: stepVisco  = 2
   integer, parameter :: stepFixedInc = 1
   integer, parameter :: stepAutoInc  = 2
+  integer, parameter :: stepAmpRamp = 1  ! prescribed disp. ramped over the step (default for static)
+  integer, parameter :: stepAmpStep = 2  ! prescribed disp. applied in full at step start (default for visco)
 
   ! statistics of newton iteration
   integer(kind=kint),parameter :: knstMAXIT  = 1 ! maximum number of newton iteration
@@ -36,6 +38,7 @@ module m_step
     integer :: max_iter                       !< max number of iteration
     integer :: max_contiter                   !< max number of contact iteration
     integer :: amp_id                         !< id of amplitude definition
+    integer :: amp_default_type               !< default sub-step loading of prescribed disp.; stepAmpRamp/stepAmpStep
     real(kind=kreal) :: initdt                !< time increment
     real(kind=kreal) :: elapsetime            !< elapse time of this step
     real(kind=kreal) :: mindt                 !< lower bound of time increment
@@ -72,6 +75,7 @@ contains
     stepinfo%max_iter = 50
     stepinfo%max_contiter = 10
     stepinfo%amp_id = -1
+    stepinfo%amp_default_type = stepAmpRamp
     stepinfo%initdt = 1.d0
     stepinfo%mindt = 1.d-4
     stepinfo%maxdt = 1.d0

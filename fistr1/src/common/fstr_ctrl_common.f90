@@ -262,6 +262,11 @@ contains
     if( len( trim(amp) )>0 ) then
       call amp_name_to_id( hecMESH, '!STEP', amp, steps%amp_id )
     endif
+    ! AMPLITUDE = RAMP | STEP : default sub-step application of prescribed displacements.
+    ! Default preserves current behavior (static=RAMP, visco=STEP).
+    steps%amp_default_type = stepAmpRamp
+    if( steps%solution == stepVisco ) steps%amp_default_type = stepAmpStep
+    if( fstr_ctrl_get_param_ex( ctrl, 'AMPLITUDE ', 'RAMP,STEP ', 0, 'P', steps%amp_default_type )/= 0) return
     tpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'TIMEPOINTS ',  '# ',  0, 'S', tpname )/= 0) return
     apname=""

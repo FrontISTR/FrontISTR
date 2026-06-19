@@ -1,0 +1,32 @@
+!VERSION
+    5
+!SOLUTION, TYPE = NLSTATIC
+# Prescribed displacement WITHOUT a per-card AMP: the sub-step application is
+# governed by !STEP, AMPLITUDE. With AMPLITUDE=STEP the full value is applied
+# at the first sub-step (z=0.1 already at t=0.5), instead of the default ramp.
+!BOUNDARY, GRPID = 1
+ 1, 1,3, 0.0
+ 2, 1,3, 0.0
+ 3, 1,3, 0.0
+ 4, 1,3, 0.0
+ 5, 1,2, 0.0
+ 6, 1,2, 0.0
+ 7, 1,2, 0.0
+ 8, 1,2, 0.0
+!BOUNDARY, GRPID = 2
+ 5, 3,3, 0.1
+ 6, 3,3, 0.1
+ 7, 3,3, 0.1
+ 8, 3,3, 0.1
+!STEP, SUBSTEPS = 2, CONVERG=1.E-8, AMPLITUDE=STEP
+  BOUNDARY,    1
+  BOUNDARY,    2
+!WRITE, RESULT, FREQUENCY=1
+!OUTPUT_RES
+ DISP, ON
+ NSTRESS, OFF
+ NMISES, OFF
+!SOLVER, METHOD = CG, PRECOND = 3, ITERLOG = NO, TIMELOG = NO
+  10000,       1
+ 1.0E-8,     1.0,     0.0
+!END

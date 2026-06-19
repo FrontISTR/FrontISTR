@@ -58,7 +58,7 @@ contains
           call table_amp(hecMESH,fstrSOLID,cstep,jj_n_amp,fstr_get_time()+fstr_get_timeinc(),factor)
         endif
         factor = factor - factor0
-        if(fstrSOLID%step_ctrl(cstep)%solution==stepVisco)then
+        if(fstrSOLID%step_ctrl(cstep)%amp_default_type==stepAmpStep)then
           factor = 0.d0
           if(factor0 < 1.d-10) factor = 1.d0
         endif
