@@ -101,7 +101,11 @@ contains
         call fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, aval)
       endif
 
-      if (fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) aval = fval
+      ! A load continuing from a previous step is held at its nominal value,
+      ! BUT only when no amplitude is given. An explicit AMP= prescribes the
+      ! load's time history, so it is honored in every active step (consistent
+      ! with the dynamic load path, which has no such override).
+      if (jj_n_amp <= 0 .and. fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) aval = fval
       iS0 = hecMESH%node_group%grp_index(ig-1) + 1
       iE0 = hecMESH%node_group%grp_index(ig)
 
@@ -211,7 +215,9 @@ contains
         endif
       endif
 
-      if (fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) factor = 1.0d0
+      ! Continuing load held at nominal only when no amplitude is given;
+      ! an explicit AMP= is honored in every active step (see CLOAD above).
+      if (jj_n_amp <= 0 .and. fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) factor = 1.0d0
       ! ----- START & END
       fg_surf = (ltype == 100)
       if( fg_surf ) then                  ! surface group
