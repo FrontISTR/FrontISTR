@@ -180,7 +180,7 @@ contains
     integer(kind=kint) :: isect, id, iset, ihead, nsize, grpid, i, j, jj_n_amp
     integer(kind=kint) :: iwk(60), nodLocal(20)
     real(kind=kreal)   :: xx(20), yy(20), zz(20), vect(60), params(0:6)
-    real(kind=kreal)   :: factor, rho, thick, pa1
+    real(kind=kreal)   :: factor, aval, rho, thick, pa1
     logical            :: fg_surf
     type(tMaterial), pointer :: material
     
@@ -190,19 +190,28 @@ contains
       grpid = fstrSOLID%DLOAD_ngrp_GRPID(ig0)
       if (.not. fstr_isLoadActive(fstrSOLID, grpid, cstep)) cycle
       jj_n_amp = fstrSOLID%DLOAD_ngrp_amp(ig0)
-      if (jj_n_amp <= 0) then  ! Amplitude not defined
-        factor = fstrSOLID%factor(2)
-      else
-        factor = 1.0d0
-        call fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
-      endif
-
-      if (fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) factor = 1.0d0
       ig = fstrSOLID%DLOAD_ngrp_ID(ig0)
       ltype = fstrSOLID%DLOAD_ngrp_LID(ig0)
       do i = 0, 6
         params(i) = fstrSOLID%DLOAD_ngrp_params(i, ig0)
       enddo
+      if (jj_n_amp <= 0) then  ! Amplitude not defined
+        factor = fstrSOLID%factor(2)
+      else
+        ! params(0) is the load magnitude (pressure / body force value,
+        ! gravity acceleration, or angular velocity). Passing it to the
+        ! evaluator lets VALUE=ABSOLUTE replace the magnitude with the
+        ! amplitude value, while VALUE=RELATIVE reduces the factor to a(t).
+        aval = params(0)
+        call fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, aval)
+        if (dabs(params(0)) > 1.d-30) then
+          factor = aval / params(0)
+        else
+          factor = 1.0d0
+        endif
+      endif
+
+      if (fstr_isLoadActive(fstrSOLID, grpid, cstep-1)) factor = 1.0d0
       ! ----- START & END
       fg_surf = (ltype == 100)
       if( fg_surf ) then                  ! surface group
