@@ -2,8 +2,12 @@
     5
 !SOLUTION, TYPE = NLSTATIC
 # TIME=TOTAL TIME: the amplitude is evaluated against the accumulated total
-# time, not the step-local time. The load (GRPID=2) is activated only in the
-# 2nd step so it is governed solely by the amplitude (no cross-step reset).
+# time, not the step-local time. The load (GRPID=2) is introduced only in
+# step 2, so step 1 carries no load (zero displacement) and step 2 cleanly
+# isolates the time-basis effect (total t=2.0 vs step-local t=1.0).
+# (A load that is active across multiple steps still honors its amplitude in
+#  every step; that behavior is locked by the amplitude_continue test.)
+#
 # At the end of step 2 the total time is 2.0, where AMP1 = 1.0, so the load is
 # 100.0. Under the default STEP TIME the same curve would give AMP1(t_local=1.0)
 # = 0.5 (load 50.0); TOTAL TIME therefore yields ~2x the response.
