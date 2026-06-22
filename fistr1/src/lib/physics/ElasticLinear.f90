@@ -412,6 +412,9 @@ contains
           il = index_l(js)
 
           c_hat(ii, ij, ik, il) = D_hat(is, js)
+          c_hat(ij, ii, ik, il) = D_hat(is, js)   ! minor symmetry i<->j (Bug #764/#765)
+          c_hat(ii, ij, il, ik) = D_hat(is, js)   ! minor symmetry k<->l
+          c_hat(ij, ii, il, ik) = D_hat(is, js)   ! minor symmetry i<->j & k<->l
 
         end do
       end do
