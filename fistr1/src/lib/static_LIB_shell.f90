@@ -4764,7 +4764,7 @@ contains
 
             !--------------------------------------------
 
-            w_w_w_det = w_w_lx*w_ly*det
+            w_w_w_det = w_w_lx*w_ly*det*gausses(1)%pMaterial%shell_var(n_layer)%weight
             mass(1:nsize,1:nsize) = mass(1:nsize,1:nsize)+ matmul( transpose(N), N )*w_w_w_det*rho
             totalmass = totalmass + w_w_w_det*rho
             !--------------------------------------------
