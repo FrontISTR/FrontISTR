@@ -105,11 +105,251 @@ contains
 
   end subroutine shell_basis_from_covariant
 
+  !--------------------------------------------------------------------
+  subroutine ShellStressVectorToTensor( stress, tensor )
+    implicit none
+
+    real(kind=kreal), intent(in)  :: stress(6)
+    real(kind=kreal), intent(out) :: tensor(3, 3)
+
+    tensor(:, :) = 0.0D0
+    tensor(1, 1) = stress(1)
+    tensor(2, 2) = stress(2)
+    tensor(3, 3) = stress(3)
+    tensor(1, 2) = stress(4)
+    tensor(2, 1) = tensor(1, 2)
+    tensor(2, 3) = stress(5)
+    tensor(3, 2) = tensor(2, 3)
+    tensor(3, 1) = stress(6)
+    tensor(1, 3) = tensor(3, 1)
+
+  end subroutine ShellStressVectorToTensor
+
+  !--------------------------------------------------------------------
+  subroutine ShellSpinVectorToTensor( spin_vec, tensor )
+    implicit none
+
+    real(kind=kreal), intent(in)  :: spin_vec(3)
+    real(kind=kreal), intent(out) :: tensor(3, 3)
+
+    tensor(:, :) = 0.0D0
+    tensor(1, 2) = spin_vec(1)
+    tensor(2, 1) = -spin_vec(1)
+    tensor(2, 3) = spin_vec(2)
+    tensor(3, 2) = -spin_vec(2)
+    tensor(3, 1) = spin_vec(3)
+    tensor(1, 3) = -spin_vec(3)
+
+  end subroutine ShellSpinVectorToTensor
+
+  !--------------------------------------------------------------------
+  subroutine ShellTensorToStressVector( tensor, stress )
+    implicit none
+
+    real(kind=kreal), intent(in)  :: tensor(3, 3)
+    real(kind=kreal), intent(out) :: stress(6)
+
+    stress(1) = tensor(1, 1)
+    stress(2) = tensor(2, 2)
+    stress(3) = tensor(3, 3)
+    stress(4) = tensor(1, 2)
+    stress(5) = tensor(2, 3)
+    stress(6) = tensor(3, 1)
+
+  end subroutine ShellTensorToStressVector
+
+  !--------------------------------------------------------------------
+  subroutine ShellSpinVectorFromGradient( grad, e1_hat, e2_hat, e3_hat, spin_vec )
+    implicit none
+
+    real(kind=kreal), intent(in)  :: grad(3, 3)
+    real(kind=kreal), intent(in)  :: e1_hat(3), e2_hat(3), e3_hat(3)
+    real(kind=kreal), intent(out) :: spin_vec(3)
+
+    real(kind=kreal) :: spin_tensor(3, 3)
+
+    spin_tensor(:, :) = 0.5D0*( grad(:, :) - transpose( grad(:, :) ) )
+    spin_vec(1) = dot_product( e1_hat, matmul( spin_tensor, e2_hat ) )
+    spin_vec(2) = dot_product( e2_hat, matmul( spin_tensor, e3_hat ) )
+    spin_vec(3) = dot_product( e3_hat, matmul( spin_tensor, e1_hat ) )
+
+  end subroutine ShellSpinVectorFromGradient
+
+  !--------------------------------------------------------------------
+  subroutine ShellObjectiveStressIncrement( stress_old, dstrain, spin, dstress_obj, trace_coeff )
+    implicit none
+
+    real(kind=kreal), intent(in)  :: stress_old(6), dstrain(6), spin(3, 3)
+    real(kind=kreal), intent(out) :: dstress_obj(6)
+    real(kind=kreal), intent(in), optional :: trace_coeff
+
+    real(kind=kreal) :: dstress_spin(6), dstress_trace(6)
+
+    call ShellObjectiveSpinStressIncrement( stress_old, spin, dstress_spin )
+    call ShellObjectiveTraceStressIncrement( stress_old, dstrain, dstress_trace, trace_coeff )
+    dstress_obj(1:6) = dstress_spin(1:6)+dstress_trace(1:6)
+
+  end subroutine ShellObjectiveStressIncrement
+
+  !--------------------------------------------------------------------
+  subroutine ShellObjectiveSpinStressIncrement( stress_old, spin, dstress_spin )
+    implicit none
+
+    real(kind=kreal), intent(in)  :: stress_old(6), spin(3, 3)
+    real(kind=kreal), intent(out) :: dstress_spin(6)
+
+    real(kind=kreal) :: stress_tensor(3, 3), dstress_tensor(3, 3)
+
+    call ShellStressVectorToTensor( stress_old, stress_tensor )
+    dstress_tensor(:, :) = matmul( spin, stress_tensor ) &
+      - matmul( stress_tensor, spin )
+    call ShellTensorToStressVector( dstress_tensor, dstress_spin )
+
+  end subroutine ShellObjectiveSpinStressIncrement
+
+  !--------------------------------------------------------------------
+  subroutine ShellObjectiveTraceStressIncrement( stress_old, dstrain, dstress_trace, trace_coeff )
+    implicit none
+
+    real(kind=kreal), intent(in)  :: stress_old(6), dstrain(6)
+    real(kind=kreal), intent(out) :: dstress_trace(6)
+    real(kind=kreal), intent(in), optional :: trace_coeff
+
+    real(kind=kreal) :: stress_tensor(3, 3), dstress_tensor(3, 3)
+    real(kind=kreal) :: trD, coeff
+
+    call ShellStressVectorToTensor( stress_old, stress_tensor )
+    coeff = 1.0D0
+    if( present( trace_coeff ) ) coeff = trace_coeff
+    trD = coeff*(dstrain(1)+dstrain(2))+dstrain(3)
+    dstress_tensor(:, :) = -stress_tensor(:, :)*trD
+    call ShellTensorToStressVector( dstress_tensor, dstress_trace )
+
+  end subroutine ShellObjectiveTraceStressIncrement
+
+  !--------------------------------------------------------------------
+  real(kind=kreal) function ShellPlaneStressTraceCoeff( gauss, n_layer )
+    use mMechGauss
+    use mMaterial, only: M_POISSON, MC_ISOELASTIC, getElasticType
+    implicit none
+
+    type(tGaussStatus), intent(in) :: gauss
+    integer(kind=kint), intent(in) :: n_layer
+
+    real(kind=kreal) :: nu, outa(2)
+    logical :: ierr
+
+    ! Isotropic plane-stress trace coefficient for the UL stress update.
+    ShellPlaneStressTraceCoeff = 1.0D0
+    if( .not. associated( gauss%pMaterial ) ) return
+    if( getElasticType( gauss%pMaterial%mtype ) == 1 ) then
+      stop "MITC4 shell UL orthotropic trace correction is not supported"
+    endif
+    nu = gauss%pMaterial%variables(M_POISSON)
+    call fetch_TableData(MC_ISOELASTIC, gauss%pMaterial%dict, outa, ierr)
+    if( associated( gauss%pMaterial%shell_var ) ) then
+      if( n_layer >= 1 .and. n_layer <= size( gauss%pMaterial%shell_var ) ) then
+        if( gauss%pMaterial%shell_var(n_layer)%ortho == 0 ) then
+          if( ierr ) then
+            nu = gauss%pMaterial%shell_var(n_layer)%pp
+          else
+            nu = outa(2)
+          endif
+        else
+          stop "MITC4 shell UL orthotropic trace correction is not supported"
+        endif
+      else if( .not. ierr ) then
+        nu = outa(2)
+      endif
+    else if( .not. ierr ) then
+      nu = outa(2)
+    endif
+
+    if( abs(1.0D0-nu) > 1.0D-12 ) then
+      ShellPlaneStressTraceCoeff = (1.0D0-2.0D0*nu)/(1.0D0-nu)
+    endif
+
+  end function ShellPlaneStressTraceCoeff
+
+  !--------------------------------------------------------------------
+  subroutine ShellAddStressVectorToDB( dstress, j, DB )
+    implicit none
+
+    integer(kind=kint), intent(in) :: j
+    real(kind=kreal), intent(in)    :: dstress(6)
+    real(kind=kreal), intent(inout) :: DB(:, :)
+
+    DB(1, j) = DB(1, j)+dstress(1)
+    DB(2, j) = DB(2, j)+dstress(2)
+    DB(3, j) = DB(3, j)+dstress(4)
+    DB(4, j) = DB(4, j)+dstress(5)
+    DB(5, j) = DB(5, j)+dstress(6)
+
+  end subroutine ShellAddStressVectorToDB
+
+  !--------------------------------------------------------------------
+  subroutine ShellAddULObjectiveSpinTangent( stress_old, ncol, Bspin, DB )
+    implicit none
+
+    integer(kind=kint), intent(in) :: ncol
+    real(kind=kreal), intent(in)    :: stress_old(6)
+    real(kind=kreal), intent(in)    :: Bspin(3, ncol)
+    real(kind=kreal), intent(inout) :: DB(5, ncol)
+
+    integer(kind=kint) :: j
+    real(kind=kreal) :: spin_tensor(3, 3), dstress_spin(6)
+
+    do j = 1, ncol
+      call ShellSpinVectorToTensor( Bspin(1:3, j), spin_tensor )
+      call ShellObjectiveSpinStressIncrement( stress_old, spin_tensor, dstress_spin )
+      call ShellAddStressVectorToDB( dstress_spin, j, DB )
+    end do
+
+  end subroutine ShellAddULObjectiveSpinTangent
+
+  !--------------------------------------------------------------------
+  subroutine ShellAddULObjectiveTraceTangent( stress_old, ncol, B, DB, trace_coeff )
+    implicit none
+
+    integer(kind=kint), intent(in) :: ncol
+    real(kind=kreal), intent(in)    :: stress_old(6)
+    real(kind=kreal), intent(in)    :: B(5, ncol)
+    real(kind=kreal), intent(inout) :: DB(5, ncol)
+    real(kind=kreal), intent(in), optional :: trace_coeff
+
+    integer(kind=kint) :: j
+    real(kind=kreal) :: dstrain_col(6), dstress_trace(6)
+
+    do j = 1, ncol
+      dstrain_col(:) = 0.0D0
+      dstrain_col(1) = B(1, j)
+      dstrain_col(2) = B(2, j)
+      call ShellObjectiveTraceStressIncrement( stress_old, dstrain_col, dstress_trace, trace_coeff )
+      call ShellAddStressVectorToDB( dstress_trace, j, DB )
+    end do
+
+  end subroutine ShellAddULObjectiveTraceTangent
+
+  !--------------------------------------------------------------------
+  subroutine ShellAddULObjectiveTangent( stress_old, ncol, B, Bspin, DB, trace_coeff )
+    implicit none
+
+    integer(kind=kint), intent(in) :: ncol
+    real(kind=kreal), intent(in)    :: stress_old(6)
+    real(kind=kreal), intent(in)    :: B(5, ncol), Bspin(3, ncol)
+    real(kind=kreal), intent(inout) :: DB(5, ncol)
+    real(kind=kreal), intent(in), optional :: trace_coeff
+
+    call ShellAddULObjectiveSpinTangent( stress_old, ncol, Bspin, DB )
+    call ShellAddULObjectiveTraceTangent( stress_old, ncol, B, DB, trace_coeff )
+
+  end subroutine ShellAddULObjectiveTangent
+
 
   !####################################################################
   subroutine STF_Shell_MITC                                           &
       (etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag, nddisp, element, qf_stress, include_geo_stiff, &
-      nddirector, ndrefdirector)
+      nddirector, ndrefdirector, nddrill)
     !####################################################################
 
     use mMechGauss
@@ -133,6 +373,7 @@ contains
     logical, intent(in), optional :: include_geo_stiff
     real(kind = kreal), intent(in), optional :: nddirector(3, nn)
     real(kind = kreal), intent(in), optional :: ndrefdirector(3, nn)
+    real(kind = kreal), intent(in), optional :: nddrill(nn)
 
     !--------------------------------------------------------------------
 
@@ -154,8 +395,10 @@ contains
     integer :: n_layer,n_totlyr, sstable(24)
 
     real(kind = kreal) :: D(5, 5), B(5, ndof*nn), DB(5, ndof*nn)
+    real(kind = kreal) :: Bspin(3, ndof*nn), grad_col(3, 3), stress_old_vec(6)
     real(kind = kreal) :: tmpstiff(ndof*nn, ndof*nn)
     real(kind = kreal) :: qf_tmp(ndof*nn), qf_mix(ndof*nn), qf_disp(ndof*nn)
+    real(kind = kreal) :: qf_stress_integrand(ndof*nn), vol_deriv(ndof*nn)
     real(kind = kreal) :: Sv_force(5), geo_term
     real(kind = kreal) :: S_global(3, 3), Smat(9, 9)
     real(kind = kreal) :: BN(9, ndof*nn), SBN(9, ndof*nn)
@@ -180,6 +423,7 @@ contains
     real(kind = kreal) :: bb1(3), bb2(3), bb3(3)
     real(kind = kreal) :: cc1(3), cc2(3)
     real(kind = kreal) :: alpha
+    real(kind = kreal) :: trace_coeff
     real(kind = kreal) :: xxi_lx, eeta_lx
     real(kind = kreal) :: xxi_di(6, 3), eeta_di(6, 3)
     real(kind = kreal) :: h(nn, 3)
@@ -220,7 +464,11 @@ contains
       Cv31(ndof*nn), Cv32(ndof*nn)
     real(kind = kreal) :: Cv_theta(ndof*nn), Cv_w(ndof*nn)
     real(kind = kreal) :: Cv(ndof*nn)
-    real(kind = kreal) :: Cv_disp
+    real(kind = kreal) :: Cv_w_second(3, 3, nn)
+    real(kind = kreal) :: Cv_disp, Cv_deriv, Cv_deriv_disp
+    real(kind = kreal) :: Cv12_2, Cv13_2, Cv21_2, Cv23_2, Cv31_2, Cv32_2
+    real(kind = kreal) :: drill_axis(3), rot_projector(3, 3), hrot(3, 3)
+    real(kind = kreal) :: hess_coeff, drill_coeff, axis_norm
     real(kind = kreal) :: director_inc(3), director_ref(3), director_deriv(3, 3)
     real(kind = kreal) :: director_second(3, 3, 3)
     logical :: finite_rotation_director, add_geo_stiff, use_tl_green, use_director_tangent
@@ -285,7 +533,7 @@ contains
     flag = gausses(1)%pMaterial%nlgeom_flag
 
     if( .not. present( nddisp ) ) flag = INFINITESIMAL
-    finite_rotation_director = flag == TOTALLAG .and. ndof_shell >= 6 &
+    finite_rotation_director = ( flag == TOTALLAG .or. flag == UPDATELAG ) .and. ndof_shell >= 6 &
       .and. etype == fe_mitc4_shell .and. nn == 4 &
       .and. isElastic(gausses(1)%pMaterial%mtype)
     use_director_tangent = finite_rotation_director .and. etype == fe_mitc4_shell .and. nn == 4 &
@@ -313,11 +561,11 @@ contains
 
     tmpstiff(:, :) = 0.0D0
     qf_tmp(:) = 0.0D0
+    qf_disp(:) = 0.0D0
+    do nb = 1, nn
+      qf_disp(ndof*(nb-1)+1:ndof*(nb-1)+ndof_shell) = shell_disp(1:ndof_shell, nb)
+    end do
     if( present( qf_stress ) ) then
-      qf_disp(:) = 0.0D0
-      do nb = 1, nn
-        qf_disp(ndof*(nb-1)+1:ndof*(nb-1)+ndof_shell) = shell_disp(1:ndof_shell, nb)
-      end do
       qf_stress(1:ndof*nn) = 0.0D0
     endif
 
@@ -1136,6 +1384,7 @@ contains
 
           ! [ B L ] matrix
           B(:, :) = 0.0D0
+          Bspin(:, :) = 0.0D0
           if( use_director_tangent ) B2rot(:, :, :, :) = 0.0D0
           do nb = 1, nn
 
@@ -1214,6 +1463,26 @@ contains
             B(4, jsize3) = shapederiv(nb, 2)*g3(3)
             B(5, jsize3) = shapederiv(nb, 1)*g3(3)
 
+            if( flag == UPDATELAG ) then
+              grad_col(:, :) = 0.0D0
+              grad_col(1, 1) = shapederiv(nb, 1)*cg1(1)+shapederiv(nb, 2)*cg2(1)
+              grad_col(1, 2) = shapederiv(nb, 1)*cg1(2)+shapederiv(nb, 2)*cg2(2)
+              grad_col(1, 3) = shapederiv(nb, 1)*cg1(3)+shapederiv(nb, 2)*cg2(3)
+              call ShellSpinVectorFromGradient( grad_col, e1_hat, e2_hat, e3_hat, Bspin(1:3, jsize1) )
+
+              grad_col(:, :) = 0.0D0
+              grad_col(2, 1) = shapederiv(nb, 1)*cg1(1)+shapederiv(nb, 2)*cg2(1)
+              grad_col(2, 2) = shapederiv(nb, 1)*cg1(2)+shapederiv(nb, 2)*cg2(2)
+              grad_col(2, 3) = shapederiv(nb, 1)*cg1(3)+shapederiv(nb, 2)*cg2(3)
+              call ShellSpinVectorFromGradient( grad_col, e1_hat, e2_hat, e3_hat, Bspin(1:3, jsize2) )
+
+              grad_col(:, :) = 0.0D0
+              grad_col(3, 1) = shapederiv(nb, 1)*cg1(1)+shapederiv(nb, 2)*cg2(1)
+              grad_col(3, 2) = shapederiv(nb, 1)*cg1(2)+shapederiv(nb, 2)*cg2(2)
+              grad_col(3, 3) = shapederiv(nb, 1)*cg1(3)+shapederiv(nb, 2)*cg2(3)
+              call ShellSpinVectorFromGradient( grad_col, e1_hat, e2_hat, e3_hat, Bspin(1:3, jsize3) )
+            endif
+
             if( use_director_tangent ) then
               do m = 1, 3
                 jsize = ndof*(nb-1)+3+m
@@ -1225,6 +1494,19 @@ contains
                   +dot_product(dudzeta_rot_deriv(1:3, m), g2)
                 B(5, jsize) = dot_product(dudxi_rot_deriv(1:3, m), g3) &
                   +dot_product(dudzeta_rot_deriv(1:3, m), g1)
+                if( flag == UPDATELAG ) then
+                  grad_col(:, :) = 0.0D0
+                  grad_col(1:3, 1) = dudxi_rot_deriv(1:3, m)*cg1(1) &
+                    +dudeta_rot_deriv(1:3, m)*cg2(1) &
+                    +dudzeta_rot_deriv(1:3, m)*cg3(1)
+                  grad_col(1:3, 2) = dudxi_rot_deriv(1:3, m)*cg1(2) &
+                    +dudeta_rot_deriv(1:3, m)*cg2(2) &
+                    +dudzeta_rot_deriv(1:3, m)*cg3(2)
+                  grad_col(1:3, 3) = dudxi_rot_deriv(1:3, m)*cg1(3) &
+                    +dudeta_rot_deriv(1:3, m)*cg2(3) &
+                    +dudzeta_rot_deriv(1:3, m)*cg3(3)
+                  call ShellSpinVectorFromGradient( grad_col, e1_hat, e2_hat, e3_hat, Bspin(1:3, jsize) )
+                endif
               end do
               do n = 1, 3
                 do m = 1, 3
@@ -1435,6 +1717,17 @@ contains
 
           DB(1:5, 1:ndof*nn) = matmul( D, B(1:5, 1:ndof*nn ) )
 
+          if( flag == UPDATELAG ) then
+            if( ishell > 0 ) then
+              stress_old_vec(1:6) = element%shell_layer_gausses(ishell)%stress_bak(1:6)
+              trace_coeff = ShellPlaneStressTraceCoeff(element%shell_layer_gausses(ishell), n_layer)
+            else
+              stress_old_vec(1:6) = gausses(lx)%stress_bak(1:6)
+              trace_coeff = ShellPlaneStressTraceCoeff(gausses(lx), n_layer)
+            endif
+            call ShellAddULObjectiveTangent( stress_old_vec, ndof*nn, B, Bspin, DB, trace_coeff=trace_coeff )
+          endif
+
           !--------------------------------------------------
 
           do jsize=1,ndof*nn 
@@ -1451,6 +1744,7 @@ contains
           B1(:, :) = 0.0D0
           B2(:, :) = 0.0D0
           B3(:, :) = 0.0D0
+          Cv_w_second(:, :, :) = 0.0D0
           do nb = 1, nn
 
             jsize1 = ndof*(nb-1)+1
@@ -1524,6 +1818,12 @@ contains
                 *a_over_2_v3_deriv(1:3, 1:3, nb)
               dudzeta_rot_deriv(1:3, 1:3) = shapefunc(nb) &
                 *a_over_2_v3_deriv(1:3, 1:3, nb)
+              dudxi_rot_second(1:3, 1:3, 1:3) = shapederiv(nb, 1)*zeta_ly &
+                *a_over_2_v3_second(1:3, 1:3, 1:3, nb)
+              dudeta_rot_second(1:3, 1:3, 1:3) = shapederiv(nb, 2)*zeta_ly &
+                *a_over_2_v3_second(1:3, 1:3, 1:3, nb)
+              dudzeta_rot_second(1:3, 1:3, 1:3) = shapefunc(nb) &
+                *a_over_2_v3_second(1:3, 1:3, 1:3, nb)
 
               do m = 1, 3
                 jsize = ndof*(nb-1)+3+m
@@ -1531,15 +1831,72 @@ contains
                 B2(1:3, jsize) = dudeta_rot_deriv(1:3, m)
                 B3(1:3, jsize) = dudzeta_rot_deriv(1:3, m)
               end do
+              do n = 1, 3
+                do m = 1, 3
+                  Cv12_2 = ( cg1_mat(1)*dudxi_rot_second(2, m, n) &
+                    +cg2_mat(1)*dudeta_rot_second(2, m, n) &
+                    +cg3_mat(1)*dudzeta_rot_second(2, m, n) ) &
+                    -( cg1_mat(2)*dudxi_rot_second(1, m, n) &
+                    +cg2_mat(2)*dudeta_rot_second(1, m, n) &
+                    +cg3_mat(2)*dudzeta_rot_second(1, m, n) )
+                  Cv13_2 = ( cg1_mat(1)*dudxi_rot_second(3, m, n) &
+                    +cg2_mat(1)*dudeta_rot_second(3, m, n) &
+                    +cg3_mat(1)*dudzeta_rot_second(3, m, n) ) &
+                    -( cg1_mat(3)*dudxi_rot_second(1, m, n) &
+                    +cg2_mat(3)*dudeta_rot_second(1, m, n) &
+                    +cg3_mat(3)*dudzeta_rot_second(1, m, n) )
+                  Cv21_2 = ( cg1_mat(2)*dudxi_rot_second(1, m, n) &
+                    +cg2_mat(2)*dudeta_rot_second(1, m, n) &
+                    +cg3_mat(2)*dudzeta_rot_second(1, m, n) ) &
+                    -( cg1_mat(1)*dudxi_rot_second(2, m, n) &
+                    +cg2_mat(1)*dudeta_rot_second(2, m, n) &
+                    +cg3_mat(1)*dudzeta_rot_second(2, m, n) )
+                  Cv23_2 = ( cg1_mat(2)*dudxi_rot_second(3, m, n) &
+                    +cg2_mat(2)*dudeta_rot_second(3, m, n) &
+                    +cg3_mat(2)*dudzeta_rot_second(3, m, n) ) &
+                    -( cg1_mat(3)*dudxi_rot_second(2, m, n) &
+                    +cg2_mat(3)*dudeta_rot_second(2, m, n) &
+                    +cg3_mat(3)*dudzeta_rot_second(2, m, n) )
+                  Cv31_2 = ( cg1_mat(3)*dudxi_rot_second(1, m, n) &
+                    +cg2_mat(3)*dudeta_rot_second(1, m, n) &
+                    +cg3_mat(3)*dudzeta_rot_second(1, m, n) ) &
+                    -( cg1_mat(1)*dudxi_rot_second(3, m, n) &
+                    +cg2_mat(1)*dudeta_rot_second(3, m, n) &
+                    +cg3_mat(1)*dudzeta_rot_second(3, m, n) )
+                  Cv32_2 = ( cg1_mat(3)*dudxi_rot_second(2, m, n) &
+                    +cg2_mat(3)*dudeta_rot_second(2, m, n) &
+                    +cg3_mat(3)*dudzeta_rot_second(2, m, n) ) &
+                    -( cg1_mat(2)*dudxi_rot_second(3, m, n) &
+                    +cg2_mat(2)*dudeta_rot_second(3, m, n) &
+                    +cg3_mat(2)*dudzeta_rot_second(3, m, n) )
+                  Cv_w_second(m, n, nb) = v1_i(1)*Cv12_2*v2_i(2) &
+                    +v1_i(1)*Cv13_2*v2_i(3) &
+                    +v1_i(2)*Cv21_2*v2_i(1) &
+                    +v1_i(2)*Cv23_2*v2_i(3) &
+                    +v1_i(3)*Cv31_2*v2_i(1) &
+                    +v1_i(3)*Cv32_2*v2_i(2)
+                end do
+              end do
             endif
 
           end do
 
           !--------------------------------------------------
 
+          if( flag == UPDATELAG ) then
+            do jsize = 1, ndof*nn
+              vol_deriv(jsize) = dot_product(cg1(1:3), B1(1:3, jsize)) &
+                +dot_product(cg2(1:3), B2(1:3, jsize)) &
+                +dot_product(cg3(1:3), B3(1:3, jsize))
+              qf_stress_integrand(jsize) = dot_product(Sv_force(1:5), B(1:5, jsize))
+            end do
+          endif
+
+          !--------------------------------------------------
+
           if( add_geo_stiff ) then
-            if( etype == fe_mitc4_shell .and. use_tl_green ) then
-              ! Match the MITC4 residual: membrane terms use the integration point, shear terms use tying points.
+            if( etype == fe_mitc4_shell .and. ( use_tl_green .or. flag == UPDATELAG ) ) then
+              ! Match the MITC4 residual integration points.
               do jsize=1,ndof*nn
                 do isize=1,ndof*nn
                   geo_term = Sv_force(1)*dot_product(B1(1:3, isize), B1(1:3, jsize)) &
@@ -1619,15 +1976,115 @@ contains
                 end do
               end do
             endif
-            if( use_director_tangent ) then
+            if( flag == UPDATELAG ) then
+              do jsize=1,ndof*nn
+                do isize=1,ndof*nn
+                  tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
+                    +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
+                    *qf_stress_integrand(isize)*vol_deriv(jsize)
+                end do
+              end do
+            endif
+            if( use_director_tangent .and. use_tl_green ) then
+              ! Director stress stiffness in the director/drilling split.
               do nb = 1, nn
+                drill_axis(1:3) = a_over_2_v3(1:3, nb)
+                axis_norm = sqrt(sum(drill_axis(1:3)*drill_axis(1:3)))
+                if( axis_norm > 0.0D0 ) then
+                  drill_axis(1:3) = drill_axis(1:3)/axis_norm
+                else
+                  drill_axis(1:3) = (/ 0.0D0, 0.0D0, 1.0D0 /)
+                endif
+                rot_projector(:, :) = 0.0D0
+                do i = 1, 3
+                  rot_projector(i, i) = 1.0D0
+                end do
+                do i = 1, 3
+                  do j = 1, 3
+                    rot_projector(i, j) = rot_projector(i, j)-drill_axis(i)*drill_axis(j)
+                  end do
+                end do
+                do n = 1, 3
+                  do m = 1, 3
+                    hrot(m, n) = dot_product(Sv_force(1:5), B2rot(1:5, m, n, nb))
+                  end do
+                end do
                 do n = 1, 3
                   jsize = ndof*(nb-1)+3+n
                   do m = 1, 3
                     isize = ndof*(nb-1)+3+m
+                    hess_coeff = 0.0D0
+                    do j = 1, 3
+                      do i = 1, 3
+                        hess_coeff = hess_coeff &
+                          +rot_projector(i, m)*hrot(i, j)*rot_projector(j, n)
+                      end do
+                    end do
+                    drill_coeff = 0.0D0
+                    do i = 1, 3
+                      drill_coeff = drill_coeff+drill_axis(i)*hrot(i, n)
+                    end do
+                    do j = 1, 3
+                      do i = 1, 3
+                        drill_coeff = drill_coeff &
+                          +rot_projector(i, n)*hrot(i, j)*drill_axis(j)
+                      end do
+                    end do
                     tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
                       +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
-                      *dot_product(Sv_force(1:5), B2rot(1:5, m, n, nb))
+                      *(hess_coeff+drill_axis(m)*drill_coeff)
+                  end do
+                end do
+              end do
+            endif
+            if( use_director_tangent .and. flag == UPDATELAG ) then
+              ! Current-frame counterpart of the director/drilling split.
+              do nb = 1, nn
+                drill_axis(1:3) = a_over_2_v3(1:3, nb)
+                axis_norm = sqrt(sum(drill_axis(1:3)*drill_axis(1:3)))
+                if( axis_norm > 0.0D0 ) then
+                  drill_axis(1:3) = drill_axis(1:3)/axis_norm
+                else
+                  drill_axis(1:3) = (/ 0.0D0, 0.0D0, 1.0D0 /)
+                endif
+                rot_projector(:, :) = 0.0D0
+                do i = 1, 3
+                  rot_projector(i, i) = 1.0D0
+                end do
+                do i = 1, 3
+                  do j = 1, 3
+                    rot_projector(i, j) = rot_projector(i, j)-drill_axis(i)*drill_axis(j)
+                  end do
+                end do
+                do n = 1, 3
+                  do m = 1, 3
+                    hrot(m, n) = dot_product(Sv_force(1:5), B2rot(1:5, m, n, nb))
+                  end do
+                end do
+                do n = 1, 3
+                  jsize = ndof*(nb-1)+3+n
+                  do m = 1, 3
+                    isize = ndof*(nb-1)+3+m
+                    hess_coeff = 0.0D0
+                    do j = 1, 3
+                      do i = 1, 3
+                        hess_coeff = hess_coeff &
+                          +rot_projector(i, m)*hrot(i, j)*rot_projector(j, n)
+                      end do
+                    end do
+                    drill_coeff = 0.0D0
+                    do i = 1, 3
+                      drill_coeff = drill_coeff+drill_axis(i)*hrot(i, n)
+                    end do
+                    do j = 1, 3
+                      do i = 1, 3
+                        drill_coeff = drill_coeff &
+                          +rot_projector(i, n)*hrot(i, j)*drill_axis(j)
+                      end do
+                    end do
+                    tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
+                      +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
+                      *(hess_coeff+drill_axis(m)*drill_coeff)
                   end do
                 end do
               end do
@@ -1728,8 +2185,15 @@ contains
 
           !--------------------------------------------------
 
+          Cv_disp = dot_product( Cv(1:ndof*nn), qf_disp(1:ndof*nn) )
+          if( finite_rotation_director .and. present( nddrill ) ) then
+            Cv_disp = -0.5D0*dot_product( Cv_w(1:ndof*nn), qf_disp(1:ndof*nn) )
+            do nb = 1, nn
+              Cv_disp = Cv_disp + shapefunc(nb)*nddrill(nb)
+            end do
+          endif
+
           if( present( qf_stress ) ) then
-            Cv_disp = dot_product( Cv(1:ndof*nn), qf_disp(1:ndof*nn) )
             qf_tmp(1:ndof*nn) = qf_tmp(1:ndof*nn) &
               +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
               *alpha*Cv(1:ndof*nn)*Cv_disp
@@ -1747,6 +2211,28 @@ contains
 
             end do
           end do
+
+          if( use_director_tangent ) then
+            do nb = 1, nn
+              do n = 1, 3
+                jsize = ndof*(nb-1)+3+n
+                Cv_deriv_disp = 0.0D0
+                do m = 1, 3
+                  isize = ndof*(nb-1)+3+m
+                  Cv_deriv = -0.5D0*Cv_w_second(m, n, nb)
+                  Cv_deriv_disp = Cv_deriv_disp + Cv_deriv*qf_disp(isize)
+                  tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
+                    +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
+                    *alpha*Cv_deriv*Cv_disp
+                end do
+                do isize = 1, ndof*nn
+                  tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
+                    +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
+                    *alpha*Cv(isize)*Cv_deriv_disp
+                end do
+              end do
+            end do
+          endif
 
 
           !--------------------------------------------------
@@ -2234,14 +2720,15 @@ contains
   subroutine ElementStress_Shell_MITC                  &
       (etype, nn, ndof, ecoord, gausses, edisp, &
       strain, stress, thick, zeta, n_layer, n_totlyr, surface_gauss_points, &
-      local_strain, local_stress, local_stress_override, nddirector, ndrefdirector)
+      local_strain, local_stress, local_stress_override, nddirector, ndrefdirector, &
+      ndbase_disp, local_spin)
     !####################################################################
 
     use m_fstr, only: OPSSTYPE, kOPSS_SOLUTION
     use m_utilities, only: get_principal
     use mMechGauss
     use m_MatMatrix
-    use mMaterial, only: INFINITESIMAL, TOTALLAG, isElastic
+    use mMaterial, only: INFINITESIMAL, TOTALLAG, UPDATELAG, isElastic
 
     !--------------------------------------------------------------------
 
@@ -2261,6 +2748,8 @@ contains
     real(kind = kreal), intent(in), optional :: local_stress_override(:,:)
     real(kind = kreal), intent(in), optional :: nddirector(3, nn)
     real(kind = kreal), intent(in), optional :: ndrefdirector(3, nn)
+    real(kind = kreal), intent(in), optional :: ndbase_disp(6, nn)
+    real(kind = kreal), intent(out), optional :: local_spin(:, :, :)
 
     !--------------------------------------------------------------------
 
@@ -2323,6 +2812,7 @@ contains
     real(kind = kreal) :: stretch_b(3, 3), tensor(6), eigval(3), princ(3, 3)
     real(kind = kreal) :: cauchy(3, 3), logstrain(3, 3), cg_metric(3, 3)
     real(kind = kreal) :: eig_norm
+    real(kind = kreal) :: grad_inc(3, 3), spin_global(3, 3), spin_inc(3, 3)
     logical :: use_surface_gauss
     logical :: finite_rotation_director
     logical :: use_gl_strain
@@ -2332,7 +2822,7 @@ contains
     use_surface_gauss = .false.
     if( present( surface_gauss_points ) ) use_surface_gauss = surface_gauss_points
     flag = gausses(1)%pMaterial%nlgeom_flag
-    finite_rotation_director = flag == TOTALLAG &
+    finite_rotation_director = ( flag == TOTALLAG .or. flag == UPDATELAG ) &
       .and. etype == fe_mitc4_shell .and. nn == 4 &
       .and. isElastic(gausses(1)%pMaterial%mtype)
     ! Green-Lagrange strain and spatial output for elastic MITC4
@@ -2374,6 +2864,8 @@ contains
     !--------------------------------------------------------------------
 
     elem(:, :) = ecoord(:, :)
+    if( flag == UPDATELAG .and. present( ndbase_disp ) ) elem(:, :) = elem(:, :) + ndbase_disp(1:3, :)
+    if( flag == UPDATELAG ) elem(:, :) = elem(:, :) + 0.5D0*edisp(1:3, :)
 
     !--------------------------------------------------------------------
 
@@ -2657,7 +3149,11 @@ contains
       if( finite_rotation_director ) then
         if( present( nddirector ) ) then
           a_over_2_theta_cross_v3(1:3, nb) = nddirector(1:3, nb) - a_over_2_v3(1:3, nb)
-          a_over_2_v3(1:3, nb) = nddirector(1:3, nb)
+          if( flag == UPDATELAG ) then
+            a_over_2_v3(1:3, nb) = a_over_2_v3(1:3, nb) + 0.5D0*a_over_2_theta_cross_v3(1:3, nb)
+          else
+            a_over_2_v3(1:3, nb) = nddirector(1:3, nb)
+          endif
         else
           call ShellDirectorIncrement( theta(1:3, nb), a_over_2_v3(1:3, nb), &
             a_over_2_theta_cross_v3(1:3, nb) )
@@ -3039,6 +3535,31 @@ contains
         end do
 
       end do
+
+      !--------------------------------------------------
+
+      if( present( local_spin ) ) then
+        grad_inc(:, :) = 0.0D0
+        do i = 1, 3
+          grad_inc(i, 1) = dudxi(i)*cg1(1) + dudeta(i)*cg2(1) + dudzeta(i)*cg3(1)
+          grad_inc(i, 2) = dudxi(i)*cg1(2) + dudeta(i)*cg2(2) + dudzeta(i)*cg3(2)
+          grad_inc(i, 3) = dudxi(i)*cg1(3) + dudeta(i)*cg2(3) + dudzeta(i)*cg3(3)
+        end do
+        spin_global(:, :) = 0.5D0*( grad_inc(:, :) - transpose( grad_inc(:, :) ) )
+        spin_inc(1, 1) = dot_product( e1_hat, matmul( spin_global, e1_hat ) )
+        spin_inc(1, 2) = dot_product( e1_hat, matmul( spin_global, e2_hat ) )
+        spin_inc(1, 3) = dot_product( e1_hat, matmul( spin_global, e3_hat ) )
+        spin_inc(2, 1) = dot_product( e2_hat, matmul( spin_global, e1_hat ) )
+        spin_inc(2, 2) = dot_product( e2_hat, matmul( spin_global, e2_hat ) )
+        spin_inc(2, 3) = dot_product( e2_hat, matmul( spin_global, e3_hat ) )
+        spin_inc(3, 1) = dot_product( e3_hat, matmul( spin_global, e1_hat ) )
+        spin_inc(3, 2) = dot_product( e3_hat, matmul( spin_global, e2_hat ) )
+        spin_inc(3, 3) = dot_product( e3_hat, matmul( spin_global, e3_hat ) )
+        if( lx <= size(local_spin, 1) .and. size(local_spin, 2) >= 3 &
+          .and. size(local_spin, 3) >= 3 ) then
+          local_spin(lx, 1:3, 1:3) = spin_inc(1:3, 1:3)
+        endif
+      endif
 
       !--------------------------------------------------
 
@@ -3507,13 +4028,52 @@ contains
   !####################################################################
 
   !####################################################################
+  subroutine UpdateStressShellUL_Elastic( gauss, dstrain, dstress, spin, trace_coeff )
+    !####################################################################
+
+    use mMechGauss
+
+    !--------------------------------------------------------------------
+
+    type(tGaussStatus), intent(inout) :: gauss
+    real(kind = kreal), intent(in)    :: dstrain(6)
+    real(kind = kreal), intent(in)    :: dstress(6)
+    real(kind = kreal), intent(in)    :: spin(3, 3)
+    real(kind = kreal), intent(in), optional :: trace_coeff
+
+    !--------------------------------------------------------------------
+
+    real(kind = kreal) :: dstress_obj(6)
+
+    !--------------------------------------------------------------------
+
+    call ShellObjectiveStressIncrement( gauss%stress_bak(1:6), dstrain(1:6), spin(1:3, 1:3), &
+      dstress_obj, trace_coeff )
+
+    gauss%strain(1:6) = gauss%strain_bak(1:6) + dstrain(1:6)
+    gauss%stress(1:6) = gauss%stress_bak(1:6) + dstress_obj(1:6) + dstress(1:6)
+
+    gauss%strain_energy = gauss%strain_energy_bak &
+      + dot_product( gauss%stress(1:6), dstrain(1:6) )
+    gauss%strain_energy = gauss%strain_energy &
+      - 0.5D0*dot_product( dstress(1:6), dstrain(1:6) )
+    gauss%strain_out(1:6) = gauss%strain(1:6)
+    gauss%stress_out(1:6) = gauss%stress(1:6)
+
+    return
+
+    !####################################################################
+  end subroutine UpdateStressShellUL_Elastic
+  !####################################################################
+
+  !####################################################################
   subroutine UpdateShellLayerGauss_Shell_MITC                  &
-      (etype, nn, ndof, ecoord, element, edisp, thick, nddirector, ndrefdirector)
+      (etype, nn, ndof, ecoord, element, edisp, thick, nddirector, ndrefdirector, ndbase_disp)
     !####################################################################
 
     use mMechGauss
     use Quadrature
-    use mMaterial, only: isElastic
+    use mMaterial, only: UPDATELAG, isElastic
 
     !--------------------------------------------------------------------
 
@@ -3526,13 +4086,17 @@ contains
     real(kind = kreal), intent(in)   :: thick
     real(kind = kreal), intent(in), optional :: nddirector(3, nn)
     real(kind = kreal), intent(in), optional :: ndrefdirector(3, nn)
+    real(kind = kreal), intent(in), optional :: ndbase_disp(6, nn)
 
     !--------------------------------------------------------------------
 
     integer(kind = kint) :: ng, ig, ilayer, ithick, ishell, ierr
+    integer(kind = kint) :: flag
     real(kind = kreal) :: zeta, weight
+    real(kind = kreal) :: trace_coeff
     real(kind = kreal) :: gpstrain(9, 6), gpstress(9, 6)
     real(kind = kreal) :: local_gpstrain(9, 6), local_gpstress(9, 6)
+    real(kind = kreal) :: local_spin(9, 3, 3)
 
     !--------------------------------------------------------------------
 
@@ -3542,6 +4106,7 @@ contains
     if( .not. ( etype == fe_mitc4_shell .and. nn == 4 &
       .and. isElastic(element%gausses(1)%pMaterial%mtype) ) ) return
 
+    flag = element%gausses(1)%pMaterial%nlgeom_flag
     ng = NumOfQuadPoints( etype )
     if( ng <= 0 .or. ng > 9 ) return
 
@@ -3554,20 +4119,29 @@ contains
         gpstress(:, :) = 0.0d0
         local_gpstrain(:, :) = 0.0d0
         local_gpstress(:, :) = 0.0d0
+        local_spin(:, :, :) = 0.0d0
         call ElementStress_Shell_MITC( etype, nn, ndof, ecoord, element%gausses, edisp, &
           gpstrain(1:ng, 1:6), gpstress(1:ng, 1:6), thick, zeta, ilayer, element%shell_nlayer, &
           surface_gauss_points=.true., local_strain=local_gpstrain(1:ng, 1:6), &
-          local_stress=local_gpstress(1:ng, 1:6), nddirector=nddirector, ndrefdirector=ndrefdirector )
+          local_stress=local_gpstress(1:ng, 1:6), nddirector=nddirector, ndrefdirector=ndrefdirector, &
+          ndbase_disp=ndbase_disp, local_spin=local_spin(1:ng, 1:3, 1:3) )
 
         do ig = 1, ng
           ishell = fstr_shell_layer_gauss_index( element, ig, ilayer, ithick )
           if( ishell <= 0 ) cycle
-          element%shell_layer_gausses(ishell)%strain(1:6) = local_gpstrain(ig, 1:6)
-          element%shell_layer_gausses(ishell)%stress(1:6) = local_gpstress(ig, 1:6)
-          element%shell_layer_gausses(ishell)%strain_energy = &
-            0.5d0*dot_product( local_gpstress(ig, 1:6), local_gpstrain(ig, 1:6) )
-          element%shell_layer_gausses(ishell)%strain_out(1:6) = gpstrain(ig, 1:6)
-          element%shell_layer_gausses(ishell)%stress_out(1:6) = gpstress(ig, 1:6)
+          if( flag == UPDATELAG ) then
+            trace_coeff = ShellPlaneStressTraceCoeff(element%shell_layer_gausses(ishell), ilayer)
+            call UpdateStressShellUL_Elastic( element%shell_layer_gausses(ishell), &
+              local_gpstrain(ig, 1:6), local_gpstress(ig, 1:6), local_spin(ig, 1:3, 1:3), &
+              trace_coeff=trace_coeff )
+          else
+            element%shell_layer_gausses(ishell)%strain(1:6) = local_gpstrain(ig, 1:6)
+            element%shell_layer_gausses(ishell)%stress(1:6) = local_gpstress(ig, 1:6)
+            element%shell_layer_gausses(ishell)%strain_energy = &
+              0.5d0*dot_product( local_gpstress(ig, 1:6), local_gpstrain(ig, 1:6) )
+            element%shell_layer_gausses(ishell)%strain_out(1:6) = gpstrain(ig, 1:6)
+            element%shell_layer_gausses(ishell)%stress_out(1:6) = gpstress(ig, 1:6)
+          endif
         enddo
       enddo
     enddo
@@ -4351,14 +4925,15 @@ contains
   end subroutine DL_Shell_33
 
   !####################################################################
-  ! this subroutine can be used only for linear analysis
+  ! Update shell stress and equivalent nodal force.
   subroutine UpdateST_Shell_MITC                                           &
-      (etype, nn, ndof, ecoord, u, du, gausses, qf, thick, mixflag, nddisp, element, nddirector, ndrefdirector)
+      (etype, nn, ndof, ecoord, u, du, gausses, qf, thick, mixflag, nddisp, element, nddirector, ndrefdirector, &
+      ndcurdirector, nddrill)
     !####################################################################
 
     use mMechGauss
     use m_MatMatrix
-    use mMaterial, only: TOTALLAG, isElastic
+    use mMaterial, only: TOTALLAG, UPDATELAG, isElastic
 
     !--------------------------------------------------------------------
 
@@ -4376,21 +4951,30 @@ contains
     type(tElement), intent(inout), optional :: element
     real(kind = kreal), intent(in), optional :: nddirector(3, nn)
     real(kind = kreal), intent(in), optional :: ndrefdirector(3, nn)
+    real(kind = kreal), intent(in), optional :: ndcurdirector(3, nn)
+    real(kind = kreal), intent(in), optional :: nddrill(nn)
     !--------------------------------------------------------------------
 
     real(kind = kreal)   :: stiff(nn*ndof, nn*ndof), totaldisp(nn*ndof), edisp(6, nn), qf_direct(nn*ndof)
+    real(kind = kreal)   :: incdisp(6, nn), basedisp(6, nn)
     integer(kind = kint) :: i
+    integer(kind = kint) :: flag
     logical :: use_stress_force
 
+    flag = gausses(1)%pMaterial%nlgeom_flag
     use_stress_force = present( element ) .and. &
       etype == fe_mitc4_shell .and. nn == 4 .and. &
-      gausses(1)%pMaterial%nlgeom_flag == TOTALLAG .and. &
+      ( flag == TOTALLAG .or. flag == UPDATELAG ) .and. &
       isElastic( gausses(1)%pMaterial%mtype )
 
     totaldisp = 0.d0
     edisp(:, :) = 0.0d0
+    incdisp(:, :) = 0.0d0
+    basedisp(:, :) = 0.0d0
     do i=1,nn
       totaldisp(ndof*(i-1)+1:ndof*i) = u(1:ndof,i) + du(1:ndof,i)
+      basedisp(1:6, i) = u(1:6, i)
+      incdisp(1:6, i) = du(1:6, i)
       if( use_stress_force ) then
         edisp(1:3, i) = u(1:3, i) + du(1:3, i)
         call ShellComposeRotationVector( u(4:6, i), du(4:6, i), edisp(4:6, i) )
@@ -4399,25 +4983,50 @@ contains
       endif
     end do
 
-    ! equivalent nodal force from TL stress for elastic MITC4
+    ! Equivalent nodal force from layer stress.
     qf_direct(:) = 0.0d0
 
     if( use_stress_force ) then
-      call UpdateShellLayerGauss_Shell_MITC( &
-        etype, nn, ndof, ecoord, element, edisp, thick, nddirector=nddirector, ndrefdirector=ndrefdirector )
-      if( present( nddisp ) ) then
-        call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
-          mixflag, nddisp=nddisp, element=element, qf_stress=qf_direct, &
-          include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector)
+      if( flag == UPDATELAG ) then
+        if( present( ndcurdirector ) ) then
+          call UpdateShellLayerGauss_Shell_MITC( &
+            etype, nn, ndof, ecoord, element, incdisp, thick, nddirector=nddirector, &
+            ndrefdirector=ndcurdirector, ndbase_disp=basedisp )
+        else
+          call UpdateShellLayerGauss_Shell_MITC( &
+            etype, nn, ndof, ecoord, element, incdisp, thick, nddirector=nddirector, &
+            ndrefdirector=ndrefdirector, ndbase_disp=basedisp )
+        endif
       else
-        call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
-          mixflag, nddisp=edisp, element=element, qf_stress=qf_direct, &
-          include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector)
+        call UpdateShellLayerGauss_Shell_MITC( &
+          etype, nn, ndof, ecoord, element, edisp, thick, nddirector=nddirector, ndrefdirector=ndrefdirector )
+      endif
+      if( present( nddisp ) ) then
+        if( flag == UPDATELAG .and. present( ndcurdirector ) ) then
+          call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
+            mixflag, nddisp=nddisp, element=element, qf_stress=qf_direct, &
+            include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndcurdirector, nddrill=nddrill)
+        else
+          call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
+            mixflag, nddisp=nddisp, element=element, qf_stress=qf_direct, &
+            include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector, nddrill=nddrill)
+        endif
+      else
+        if( flag == UPDATELAG .and. present( ndcurdirector ) ) then
+          call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
+            mixflag, nddisp=edisp, element=element, qf_stress=qf_direct, &
+            include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndcurdirector, nddrill=nddrill)
+        else
+          call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
+            mixflag, nddisp=edisp, element=element, qf_stress=qf_direct, &
+            include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector, nddrill=nddrill)
+        endif
       endif
     else
       if( present( nddisp ) ) then
         call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
-          mixflag, nddisp=nddisp, include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector)
+          mixflag, nddisp=nddisp, include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector, &
+          nddrill=nddrill)
       else
         call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag)
       endif

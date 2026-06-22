@@ -8,7 +8,7 @@ module m_fstr_FiniteRotationKinematics
   use hecmw
   use elementInfo, only: fe_mitc4_shell
   use m_fstr, only: fstr_solid
-  use mMaterial, only: tMaterial, TOTALLAG, isElastic
+  use mMaterial, only: tMaterial, TOTALLAG, UPDATELAG, isElastic
   implicit none
 
   private
@@ -25,7 +25,8 @@ contains
     type(tMaterial), intent(in)    :: material
 
     fstr_uses_finite_rotation_kinematics = ( etype == fe_mitc4_shell .and. nn == 4 &
-      .and. material%nlgeom_flag == TOTALLAG .and. isElastic( material%mtype ) )
+      .and. ( material%nlgeom_flag == TOTALLAG .or. material%nlgeom_flag == UPDATELAG ) &
+      .and. isElastic( material%mtype ) )
   end function fstr_uses_finite_rotation_kinematics
 
   logical function fstr_has_finite_rotation_kinematics( hecMESH, fstrSOLID )

@@ -182,8 +182,10 @@ contains
     use m_static_LIB_shell, only: ShellComposeNodalDisplacement
     use mMechGauss
     use m_dynamic_mass
-    use m_fstr_NodalKinematics, only: fstr_get_shell_trial_directors, fstr_get_shell_reference_directors
+    use m_fstr_NodalKinematics, only: fstr_get_shell_trial_directors, fstr_get_shell_trial_drilling, &
+      fstr_get_shell_reference_directors, fstr_get_shell_current_directors
     use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
+    use mMaterial, only: UPDATELAG
 
     integer(kind=kint), intent(in)    :: ic_type, ndof
     integer(kind=kint), intent(inout) :: nn  ! some legacy STF_* routines mutate this
@@ -205,6 +207,8 @@ contains
     real(kind=kreal) :: shell_du(6,fstrSOLID%max_ncon)
     real(kind=kreal) :: shell_director(3,fstrSOLID%max_ncon)
     real(kind=kreal) :: shell_ref_director(3,fstrSOLID%max_ncon)
+    real(kind=kreal) :: shell_base_director(3,fstrSOLID%max_ncon)
+    real(kind=kreal) :: shell_drill(fstrSOLID%max_ncon)
 
     ! ----- section / material context
     isect = hecMESH%section_ID(icel)
@@ -299,12 +303,18 @@ contains
         call ShellComposeNodalDisplacement( ndof, nn, u_prev(1:6,1:nn), shell_du(1:6,1:nn), &
           shell_nddisp(1:6,1:nn) )
         call fstr_get_shell_trial_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn) )
+        call fstr_get_shell_trial_drilling( fstrSOLID, nn, nodLOCAL(1:nn), shell_drill(1:nn) )
         call fstr_get_shell_reference_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
           shell_ref_director(1:3,1:nn) )
+        shell_base_director(1:3,1:nn) = shell_ref_director(1:3,1:nn)
+        if( material%nlgeom_flag == UPDATELAG ) then
+          call fstr_get_shell_current_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
+            shell_base_director(1:3,1:nn) )
+        endif
         call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           &              stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0, nddisp=shell_nddisp(1:6,1:nn), &
           &              element=fstrSOLID%elements(icel), nddirector=shell_director(1:3,1:nn), &
-          &              ndrefdirector=shell_ref_director(1:3,1:nn))
+          &              ndrefdirector=shell_base_director(1:3,1:nn), nddrill=shell_drill(1:nn))
       else
         if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
         call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses(:), &
