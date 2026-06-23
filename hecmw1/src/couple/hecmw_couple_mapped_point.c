@@ -102,7 +102,8 @@ static struct hecmw_couple_mapped_point *set_mapped_point_by_elem(
     const struct hecmw_couple_boundary *boundary_dst) {
   struct hecmw_couple_mapped_point *mapped_point = NULL;
   double coord_x_sum, coord_y_sum, coord_z_sum;
-  int elem, node, max_node, i, j;
+  int elem, node, max_node, i;
+  long long j;
 
   mapped_point = HECMW_couple_alloc_mapped_point();
   if (mapped_point == NULL) return NULL;

@@ -718,7 +718,7 @@ HECMW_free(req1);
 HECMW_free(req2);
        */
       /* fourth, output result file */
-      /*	sprintf(filename, "%s-%d.%d", outfile, node->iter, m1);
+      /*	snprintf(filename, sizeof(filename), "%s-%d.%d", outfile, node->iter, m1);
 if ((fp = fopen(filename, "w")) == NULL) {
 fprintf(stderr, "output file error\n");
 exit(1);

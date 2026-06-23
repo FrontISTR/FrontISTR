@@ -230,7 +230,7 @@ static int init_intracomm_info(void) {
       }
       p = p->next;
 
-      strcpy(p->unit_id, unit_ids->ids[i]);
+      snprintf(p->unit_id, sizeof(p->unit_id), "%s", unit_ids->ids[i]);
       p->comm = alloc_struct_comm();
       if (p->comm == NULL) goto error;
 
@@ -298,9 +298,9 @@ static int init_intercomm_info(void) {
                                         unit2_id, HECMW_NAME_LEN + 1) == NULL)
         goto error;
 
-      strcpy(p->couple_id, couple_ids->ids[i]);
-      strcpy(p->unit1_id, unit1_id);
-      strcpy(p->unit2_id, unit2_id);
+      snprintf(p->couple_id, sizeof(p->couple_id), "%s", couple_ids->ids[i]);
+      snprintf(p->unit1_id, sizeof(p->unit1_id), "%s", unit1_id);
+      snprintf(p->unit2_id, sizeof(p->unit2_id), "%s", unit2_id);
       if ((p->comm = alloc_struct_comm()) == NULL) goto error;
 
       p->next = NULL;
@@ -339,7 +339,7 @@ static int init_couple_info(void) {
     p->unit2_grp = NULL;
     p->next      = NULL;
 
-    strcpy(p->boundary_id, boundary_id);
+    snprintf(p->boundary_id, sizeof(p->boundary_id), "%s", boundary_id);
     if (HECMW_couple_ctrl_get_couple_id(boundary_id, p->couple_id,
                                         HECMW_NAME_LEN + 1) == NULL)
       goto error;
@@ -1023,7 +1023,6 @@ extern char *HECMW_couple_get_unit_id(const char *boundary_id,
   struct couple_info *couple;
   struct hecmw_couple_info *couple_info;
   char *unit_id, *ret_buf;
-  int len;
 
   if (boundary_id == NULL) {
     HECMW_set_error(HECMWCPL_E_INVALID_ARG,
@@ -1049,13 +1048,8 @@ extern char *HECMW_couple_get_unit_id(const char *boundary_id,
       return NULL;
     }
   } else {
-    len = strlen(unit_id);
-    if (bufsize <= len) {
-      len = bufsize - 1;
-    }
-    strncpy(buf, unit_id, len);
-    buf[len] = '\0';
-    ret_buf  = buf;
+    snprintf(buf, bufsize, "%s", unit_id);
+    ret_buf = buf;
   }
 
   return ret_buf;

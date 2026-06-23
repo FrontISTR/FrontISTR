@@ -5,6 +5,7 @@
 
 module hecmw
   use hecmw_allocate
+  use hecmw_amplitude
   use hecmw_control
   use hecmw_dist_copy_c2f_f
   use hecmw_dist_copy_f2c_f

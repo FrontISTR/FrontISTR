@@ -94,7 +94,7 @@ static int ucd_print(const struct hecmwST_local_mesh *mesh,
                      const struct hecmwST_result_data *result,
                      const char *ofname, int flag_oldUCD) {
   int nn_item = 0, ne_item = 0;
-  int node_index;
+  long long node_index;
   int i, j;
   FILE *fp;
 

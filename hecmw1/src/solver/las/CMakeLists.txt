@@ -3,13 +3,13 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_11.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_22.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_33.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_44.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_66.f90
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_nn.f90
+target_sources(hecmw PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_11.F90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_22.F90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_33.F90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_44.F90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_66.F90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las_nn.F90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_las.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_jadm_33.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_jadm_44.f90

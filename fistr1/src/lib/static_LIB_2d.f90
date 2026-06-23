@@ -486,9 +486,11 @@ contains
       if(ISET==2) then
         call getShapeFunc( ETYPE, localcoord, H(:) )
         RR=dot_product( H(1:NN), ecoord(1,1:NN) )
+        WG=WG*RR*2.d0*PAI
       else
         RR=THICK
         H(:)=0.d0
+        WG=WG*RR
       end if
       do J=1,NN
         B(1,2*J-1)=gderiv(J,1)

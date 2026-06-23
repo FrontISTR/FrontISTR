@@ -25,6 +25,10 @@ contains
   subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, strainEnergy)
     !=====================================================================*
     use m_static_lib
+    use m_elemact
+    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state, fstr_get_shell_trial_directors, &
+      fstr_get_shell_reference_directors
+    use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
 
     type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
     type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -35,10 +39,12 @@ contains
 
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal)   :: ecoord(3, fstrSOLID%max_ncon)
-    real(kind=kreal)   :: thick
+    real(kind=kreal)   :: thick, thick0(6)
     integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
 
     real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: shell_director(3, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: shell_ref_director(3, fstrSOLID%max_ncon)
     real(kind=kreal)   :: tt(fstrSOLID%max_ncon), tt0(fstrSOLID%max_ncon), ttn(fstrSOLID%max_ncon)
     real(kind=kreal)   :: qf(fstrSOLID%max_ncon*6), coords(3, 3)
     integer            :: isect, ihead, cdsys_ID
@@ -50,6 +56,7 @@ contains
 
     ndof = hecMAT%NDOF
     fstrSOLID%QFORCE=0.0d0
+    call fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
 
     tt0 = 0.d0
     ttn = 0.d0
@@ -85,8 +92,8 @@ contains
 
       !element loop
       !$omp parallel default(none), &
-        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp, &
-        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux), &
+        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp,shell_director,shell_ref_director, &
+        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
@@ -97,6 +104,18 @@ contains
         iiS = hecMESH%elem_node_index(icel-1)
         nn = hecMESH%elem_node_index(icel)-iiS
         !if( nn>150 ) stop "elemental nodes > 150!"
+
+        thick = 0.d0
+        do j = 1, size(fstrSOLID%elements(icel)%gausses)
+          thick0(1:6) = fstrSOLID%elements(icel)%gausses(j)%stress(1:6)
+          thick = thick + dsqrt(dot_product(thick0(1:6),thick0(1:6)))
+        enddo
+        if( thick < 1.d-10 ) then
+          do j = 1, size(fstrSOLID%elements(icel)%gausses)
+            if( associated(fstrSOLID%elements(icel)%gausses(j)%fstatus) ) &
+              &  fstrSOLID%elements(icel)%gausses(j)%fstatus = 0.d0
+          enddo
+        end if
 
         do j = 1, nn
           nodLOCAL(j) = hecMESH%elem_node_item (iiS+j)
@@ -130,8 +149,6 @@ contains
         if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
 
         ! ===== calculate the Internal Force
-        if( getSpaceDimension( ic_type ) == 2 ) thick = 1.0d0
-
         if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
           call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
             thick,fstrSOLID%elements(icel)%iset,                             &
@@ -166,7 +183,7 @@ contains
 
         else if( ic_type == 511) then
           call UPDATE_CONNECTOR( ic_type,nn,ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), &
-            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:), tincr )
+            qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
   
         else if( ic_type == 611) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
@@ -179,9 +196,20 @@ contains
             &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
 
         else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0)
+          if( fstr_uses_finite_rotation_kinematics( ic_type, nn, &
+              fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) then
+            call fstr_get_shell_trial_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn) )
+            call fstr_get_shell_reference_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
+              shell_ref_director(1:3,1:nn) )
+            call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+              &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0, &
+              &              element=fstrSOLID%elements(icel), nddirector=shell_director(1:3,1:nn), &
+              &              ndrefdirector=shell_ref_director(1:3,1:nn))
+          else
+            if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+            call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), &
+              &              du(1:ndof,1:nn), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0)
+          endif
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
@@ -211,6 +239,13 @@ contains
           call hecmw_abort(hecmw_comm_get_comm())
 
         endif
+
+        ! elemact element
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
+          call UPDATE_DUMMY( ndof, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), &
+            &  du(1:3,1:nn), qf(1:nn*ndof), fstrSOLID%elements(icel) )
+          !qf(:) = fstrSOLID%elements(icel)%elemact_coeff*qf(:)
+        end if
 
         ! ----- calculate the global internal force ( Q(u_{n+1}^{k-1}) )
         do j = 1, nn
@@ -256,6 +291,7 @@ contains
     type(fstr_solid) :: fstrSOLID   !< fstr_solid
     real(kind=kreal) :: tincr
     integer(kind=kint) :: itype, is, iE, ic_type, icel, ngauss, i
+    integer(kind=kint) :: ishell
 
     if( associated( fstrSOLID%temperature ) ) then
       do i = 1, hecMESH%n_node
@@ -296,6 +332,17 @@ contains
           fstrSOLID%elements(icel)%gausses(i)%stress_bak = fstrSOLID%elements(icel)%gausses(i)%stress
           fstrSOLID%elements(icel)%gausses(i)%strain_energy_bak = fstrSOLID%elements(icel)%gausses(i)%strain_energy
         enddo
+
+        if( associated( fstrSOLID%elements(icel)%shell_layer_gausses ) ) then
+          do ishell = 1, size( fstrSOLID%elements(icel)%shell_layer_gausses )
+            fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_bak = &
+              fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain
+            fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%stress_bak = &
+              fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%stress
+            fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_energy_bak = &
+              fstrSOLID%elements(icel)%shell_layer_gausses(ishell)%strain_energy
+          enddo
+        endif
       enddo
     enddo
 

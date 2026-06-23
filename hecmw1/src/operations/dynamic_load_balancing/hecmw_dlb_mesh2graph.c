@@ -74,9 +74,10 @@ void find_new_v4(int new_v4[12]) {
 void add8_adj_link(Adj_find *adj_link, int id_elem,
                    struct hecmwST_local_mesh *mesh, int new_v8[24]) {
   Adj_find *p1, *p2;
-  int i, j, k, m;
+  int i, k, m;
+  long long j;
   int new_v, id_node, flag_hit;
-  int ncon;
+  long long ncon;
 
   ncon = mesh->elem_node_index[id_elem + 1] - mesh->elem_node_index[id_elem];
   if (ncon != 8)
@@ -106,7 +107,7 @@ void add8_adj_link(Adj_find *adj_link, int id_elem,
           p1 = (Adj_find *)malloc(sizeof(Adj_find));
           if (p1 == NULL) {
             fprintf(stderr, "There is no enough memory for p1 in adj_link\n");
-            exit(0);
+            exit(EXIT_FAILURE);
           }
           p2 = adj_link[id_node].next_vertex;
           adj_link[id_node].vertex_num++;
@@ -123,9 +124,10 @@ void add8_adj_link(Adj_find *adj_link, int id_elem,
 void add6_adj_link(Adj_find *adj_link, int id_elem,
                    struct hecmwST_local_mesh *mesh, int new_v6[18]) {
   Adj_find *p1, *p2;
-  int i, j, k, m;
+  int i, k, m;
+  long long j;
   int new_v, id_node, flag_hit;
-  int ncon;
+  long long ncon;
 
   ncon = mesh->elem_node_index[id_elem + 1] - mesh->elem_node_index[id_elem];
   if (ncon != 6)
@@ -155,7 +157,7 @@ void add6_adj_link(Adj_find *adj_link, int id_elem,
           p1 = (Adj_find *)malloc(sizeof(Adj_find));
           if (p1 == NULL) {
             fprintf(stderr, "There is no enough memory for p1 in adj_link\n");
-            exit(0);
+            exit(EXIT_FAILURE);
           }
           p2 = adj_link[id_node].next_vertex;
           adj_link[id_node].vertex_num++;
@@ -172,9 +174,10 @@ void add6_adj_link(Adj_find *adj_link, int id_elem,
 void add4_adj_link(Adj_find *adj_link, int id_elem,
                    struct hecmwST_local_mesh *mesh, int new_v4[12]) {
   Adj_find *p1, *p2;
-  int i, j, k, m;
+  int i, k, m;
+  long long j;
   int new_v, id_node, flag_hit;
-  int ncon;
+  long long ncon;
 
   ncon = mesh->elem_node_index[id_elem + 1] - mesh->elem_node_index[id_elem];
   if (ncon != 4)
@@ -350,7 +353,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
   }
   adj_link_free(adj_link, mesh->nn_internal);
   /*
-          sprintf(test_file, "test.%d", mynode);
+          snprintf(test_file, sizeof(test_file), "test.%d", mynode);
           fp_test=fopen(test_file, "w");
           tmp_int=0;
       for(i=0;i<mesh->n_internal;i++) {
@@ -435,7 +438,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
       fp_wgts = fopen(ctl_para->vwgt_filename, "r");
       if (fp_wgts == NULL) {
         fprintf(stderr, "control file wrong: vwgt_filename\n");
-        exit(0);
+        exit(EXIT_FAILURE);
       }
       for (i = 0; i < mesh->nn_internal; i++) fscanf(fp_wgts, "%d", &vwgts[i]);
       fclose(fp_wgts);
@@ -452,7 +455,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
       fp_wgts = fopen(ctl_para->adjwgt_filename, "r");
       if (fp_wgts == NULL) {
         fprintf(stderr, "control file wrong: adjwgt_filename\n");
-        exit(0);
+        exit(EXIT_FAILURE);
       }
       for (i = 0; i < graph->xadj[mesh->nn_internal]; i++)
         fscanf(fp_wgts, "%d", &adjwgts[i]);
@@ -470,7 +473,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
       fp_wgts = fopen(ctl_para->vwgt_filename, "r");
       if (fp_wgts == NULL) {
         fprintf(stderr, "control file wrong: vwgt_filename\n");
-        exit(0);
+        exit(EXIT_FAILURE);
       }
       for (i = 0; i < mesh->nn_internal; i++) fscanf(fp_wgts, "%d", &vwgts[i]);
       fclose(fp_wgts);
@@ -479,7 +482,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
       fp_wgts = fopen(ctl_para->adjwgt_filename, "r");
       if (fp_wgts == NULL) {
         fprintf(stderr, "control file wrong: adjwgt_filename\n");
-        exit(0);
+        exit(EXIT_FAILURE);
       }
       for (i = 0; i < graph->xadj[mesh->nn_internal]; i++)
         fscanf(fp_wgts, "%d", &adjwgts[i]);
@@ -510,7 +513,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
       fp_wgts = fopen(ctl_para->vwgt_filename, "r");
       if (fp_wgts == NULL) {
         fprintf(stderr, "control file wrong: vwgt_filename\n");
-        exit(0);
+        exit(EXIT_FAILURE);
       }
       for (i = 0; i < mesh->nn_internal; i++) fscanf(fp_wgts, "%d", &vwgts[i]);
       fclose(fp_wgts);
@@ -527,7 +530,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
       fp_wgts = fopen(ctl_para->adjwgt_filename, "r");
       if (fp_wgts == NULL) {
         fprintf(stderr, "control file wrong: adjwgt_filename\n");
-        exit(0);
+        exit(EXIT_FAILURE);
       }
       for (i = 0; i < graph->xadj[mesh->nn_internal]; i++)
         fscanf(fp_wgts, "%d", &adjwgts[i]);
@@ -545,7 +548,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
       fp_wgts = fopen(ctl_para->vwgt_filename, "r");
       if (fp_wgts == NULL) {
         fprintf(stderr, "control file wrong: vwgt_filename\n");
-        exit(0);
+        exit(EXIT_FAILURE);
       }
       for (i = 0; i < mesh->nn_internal; i++) fscanf(fp_wgts, "%d", &vwgts[i]);
       fclose(fp_wgts);
@@ -554,7 +557,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
       fp_wgts = fopen(ctl_para->adjwgt_filename, "r");
       if (fp_wgts == NULL) {
         fprintf(stderr, "control file wrong: adjwgt_filename\n");
-        exit(0);
+        exit(EXIT_FAILURE);
       }
       for (i = 0; i < graph->xadj[mesh->nn_internal]; i++)
         fscanf(fp_wgts, "%d", &adjwgts[i]);

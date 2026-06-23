@@ -28,6 +28,7 @@ contains
 
     integer(kind=kint) :: istep, i, j
     integer(kind=kint) :: ng
+    integer(kind=kint) :: nthick
     integer(kind=kint) :: ncont, nstate
 
     do istep=1,fstrSOLID%nstep_tot
@@ -40,6 +41,8 @@ contains
     !(1)nodal values
     allocate(fstrSOLID%unode_bkup(size(fstrSOLID%unode)))
     allocate(fstrSOLID%QFORCE_bkup(size(fstrSOLID%QFORCE)))
+    if( associated(fstrSOLID%shell_triad) ) allocate(fstrSOLID%shell_triad_bkup(size(fstrSOLID%shell_triad)))
+    if( associated(fstrSOLID%shell_drill) ) allocate(fstrSOLID%shell_drill_bkup(size(fstrSOLID%shell_drill)))
     if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
       allocate(fstrSOLID%last_temp_bkup(size(fstrSOLID%last_temp)))
     endif
@@ -55,6 +58,9 @@ contains
         fstrSOLID%elements_bkup(i)%gausses(j)%pMaterial => fstrSOLID%elements(i)%gausses(j)%pMaterial
         call fstr_init_gauss( fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
+      nthick = fstr_shell_num_thickness_points( fstrSOLID%elements(i)%etype )
+      if( nthick > 0 ) call fstr_init_shell_layer_gausses( fstrSOLID%elements_bkup(i), ng, &
+        fstrSOLID%elements(i)%shell_nlayer, nthick )
       if( associated( fstrSOLID%elements(i)%aux ) ) then
         allocate( fstrSOLID%elements_bkup(i)%aux(3,3) )
       endif
@@ -96,6 +102,8 @@ contains
     !(1)nodal values
     if( associated(fstrSOLID%unode_bkup) ) deallocate(fstrSOLID%unode_bkup)
     if( associated(fstrSOLID%QFORCE_bkup) ) deallocate(fstrSOLID%QFORCE_bkup)
+    if( associated(fstrSOLID%shell_triad_bkup) ) deallocate(fstrSOLID%shell_triad_bkup)
+    if( associated(fstrSOLID%shell_drill_bkup) ) deallocate(fstrSOLID%shell_drill_bkup)
     if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
       if( associated(fstrSOLID%last_temp_bkup) ) deallocate(fstrSOLID%last_temp_bkup)
     endif
@@ -109,6 +117,7 @@ contains
         call fstr_finalize_gauss( fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
       deallocate( fstrSOLID%elements_bkup(i)%gausses )
+      call fstr_finalize_shell_layer_gausses( fstrSOLID%elements_bkup(i) )
       if( associated( fstrSOLID%elements_bkup(i)%aux ) ) then
         deallocate( fstrSOLID%elements_bkup(i)%aux )
       endif
@@ -155,6 +164,16 @@ contains
     do i=1,size(fstrSOLID%QFORCE)
       fstrSOLID%QFORCE_bkup(i) = fstrSOLID%QFORCE(i)
     end do
+    if( associated(fstrSOLID%shell_triad_bkup) ) then
+      do i=1,size(fstrSOLID%shell_triad)
+        fstrSOLID%shell_triad_bkup(i) = fstrSOLID%shell_triad(i)
+      end do
+    endif
+    if( associated(fstrSOLID%shell_drill_bkup) ) then
+      do i=1,size(fstrSOLID%shell_drill)
+        fstrSOLID%shell_drill_bkup(i) = fstrSOLID%shell_drill(i)
+      end do
+    endif
     if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
       do i=1,size(fstrSOLID%last_temp)
         fstrSOLID%last_temp_bkup(i) = fstrSOLID%last_temp(i)
@@ -169,6 +188,7 @@ contains
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements(i)%gausses(j), fstrSOLID%elements_bkup(i)%gausses(j) )
       end do
+      call fstr_copy_shell_layer_gausses( fstrSOLID%elements(i), fstrSOLID%elements_bkup(i) )
       if( associated( fstrSOLID%elements(i)%aux ) ) then
         fstrSOLID%elements_bkup(i)%aux(:,:) = fstrSOLID%elements(i)%aux(:,:)
       endif
@@ -218,6 +238,18 @@ contains
     do i=1,size(fstrSOLID%QFORCE)
       fstrSOLID%QFORCE(i) = fstrSOLID%QFORCE_bkup(i)
     end do
+    if( associated(fstrSOLID%shell_triad_bkup) ) then
+      do i=1,size(fstrSOLID%shell_triad)
+        fstrSOLID%shell_triad(i) = fstrSOLID%shell_triad_bkup(i)
+        fstrSOLID%shell_dtriad(i) = fstrSOLID%shell_triad_bkup(i)
+      end do
+    endif
+    if( associated(fstrSOLID%shell_drill_bkup) ) then
+      do i=1,size(fstrSOLID%shell_drill)
+        fstrSOLID%shell_drill(i) = fstrSOLID%shell_drill_bkup(i)
+        fstrSOLID%shell_ddrill(i) = fstrSOLID%shell_drill_bkup(i)
+      end do
+    endif
     if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
       do i=1,size(fstrSOLID%last_temp)
         fstrSOLID%last_temp(i) = fstrSOLID%last_temp_bkup(i)
@@ -232,6 +264,7 @@ contains
       do j=1,ng
         call fstr_copy_gauss( fstrSOLID%elements_bkup(i)%gausses(j), fstrSOLID%elements(i)%gausses(j) )
       end do
+      call fstr_copy_shell_layer_gausses( fstrSOLID%elements_bkup(i), fstrSOLID%elements(i) )
       if( associated( fstrSOLID%elements(i)%aux ) ) then
         fstrSOLID%elements(i)%aux(:,:) = fstrSOLID%elements_bkup(i)%aux(:,:)
       endif

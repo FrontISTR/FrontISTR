@@ -1007,18 +1007,25 @@ contains
     endif
   end subroutine Curvature
 
-  !> Return natural coordinate of the center of surface element
+  !> Return natural coordinate of the center of element
   subroutine getElementCenter( fetype, localcoord )
-    integer, intent(in)           :: fetype            !< type of surface element
-    real(kind=kreal), intent(out) :: localcoord(2)     !< center coordinate
+    integer, intent(in)           :: fetype            !< type of element
+    real(kind=kreal), intent(out) :: localcoord(:)     !< center coordinate
 
     select case (fetype)
       case (fe_tri3n, fe_tri6n, fe_tri6nc)
-        localcoord(:) = 1.d0/3.d0
+        localcoord(1:2) = 1.d0/3.d0
       case (fe_quad4n, fe_quad8n)
-        localcoord(:) = 0.d0
+        localcoord(1:2) = 0.d0
+      case (fe_tet4n, fe_tet10n, fe_tet10nc)
+        localcoord(1:3) = 1.d0/4.d0
+      case (fe_prism6n, fe_prism15n)
+        localcoord(1) = 1.d0/3.d0
+        localcoord(2) = 1.d0/3.d0
+        localcoord(3) = 0.d0
+      case (fe_hex8n, fe_hex20n, fe_hex27n)
+        localcoord(1:3) = 0.d0
       case default
-        ! error message
         localcoord(:) = 0.d0
     end select
   end subroutine getElementCenter

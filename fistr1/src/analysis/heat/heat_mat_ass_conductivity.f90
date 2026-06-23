@@ -5,7 +5,7 @@
 module m_heat_mat_ass_conductivity
 contains
 
-  subroutine heat_mat_ass_conductivity( hecMESH,hecMAT,fstrHEAT,beta )
+  subroutine heat_mat_ass_conductivity( hecMESH,hecMAT,fstrSOLID,fstrHEAT,beta )
     use hecmw
     use m_fstr
     use m_heat_lib
@@ -13,17 +13,18 @@ contains
     implicit none
     type(fstr_heat)          :: fstrHEAT
     type(hecmwST_matrix)     :: hecMAT
+    type(fstr_solid)         :: fstrSOLID
     type(hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: itype, is, iE, ic_type, icel, isect, IMAT, ntab, itab, NDOF
     integer(kind=kint) :: in0, nn, i, in, j, nodLOCAL(20), jsect, ic, ip, inod, jp, jnod, isU, ieU, ik, isL, ieL
-    real(kind=kreal)   :: beta, TZERO, ALFA, temp(1000), funcA(1000), funcB(1000), TT(20), T0(20), SS(400)
+    real(kind=kreal)   :: beta, TZERO, ALPHA, temp(1000), funcA(1000), funcB(1000), TT(20), T0(20), SS(400)
     real(kind=kreal)   :: asect, thick, GTH, GHH, GR1, GR2
     real(kind=kreal) :: lumped(20), stiff(20, 20), ecoord(3,20)
     real(kind=kreal), allocatable :: S(:)
 
     NDOF = hecMESH%n_dof
     TZERO = hecMESH%zero_temp
-    ALFA = 1.0 - beta
+    ALPHA = 1.0 - beta
 
     call hecmw_mat_clear(hecMAT)
     call hecmw_mat_clear_b(hecMAT)
@@ -38,9 +39,10 @@ contains
       !$omp parallel default(none), &
         !$omp&  private(icel,isect,IMAT,ntab,itab,temp,funcA,funcB,in0,nn,i,j,nodLOCAL,SS,TT,GTH,GHH,GR1,GR2,ecoord,&
         !$omp&          stiff,in,ASECT,thick,jsect), &
-        !$omp&  shared(iS,iE,hecMESH,ic_type,hecMAT,fstrHEAT,TZERO)
+        !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ic_type,hecMAT,fstrHEAT,TZERO)
       !$omp do
       do icel = iS, iE
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
         isect = hecMESH%section_ID(icel)
         IMAT = hecMESH%section%sect_mat_ID_item(isect)
 
@@ -139,7 +141,7 @@ contains
     hecMAT%D  = beta*hecMAT%D
     hecMAT%AU = beta*hecMAT%AU
     hecMAT%AL = beta*hecMAT%AL
-    hecMAT%B  = hecMAT%B - ALFA*S
+    hecMAT%B  = hecMAT%B - ALPHA*S
 
     deallocate(S)
 

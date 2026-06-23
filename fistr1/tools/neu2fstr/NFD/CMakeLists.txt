@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND neu2fstr_SOURCES
+target_sources(neu2fstr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/CNFData.cpp
   ${CMAKE_CURRENT_LIST_DIR}/CNFDB_100.cpp
   ${CMAKE_CURRENT_LIST_DIR}/CNFDB_402.cpp
@@ -17,7 +17,7 @@ list(APPEND neu2fstr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/CNFMessage.cpp
 )
 
-list(APPEND neu2fstr_INCLUDE_DIRS
+target_include_directories(neu2fstr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
 )
 

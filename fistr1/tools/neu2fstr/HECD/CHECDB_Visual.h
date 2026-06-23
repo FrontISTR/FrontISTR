@@ -109,7 +109,7 @@ class CVis_PSR : public CVis_ViewParams {
     display_method_contour
   };
   char color_comp_name[100];
-  char color_subcomp_name[4];  // "norm", "x"(default), "y" or "z"
+  char color_subcomp_name[5];  // "norm", "x"(default), "y" or "z"
   int color_comp;              // default:0
   int color_subcomp;           // default:1
   int iso_number;              // default:5
@@ -137,12 +137,12 @@ class CVis_PSR : public CVis_ViewParams {
   };
   double initial_line_color[3];  // default:{0,0,1}
   double deform_line_color[3];   // default:{0,0,1}
-  char output_type[3];           // "AVS"(default), "BMP"
+  char output_type[4];           // "AVS"(default), "BMP" (including null terminator)
 
   // for surface_style == surface_style_equivalent ---------
 
   char data_comp_name[100];
-  char data_subcomp_name[4];  // "norm", "x"(default), "y" or "z"
+  char data_subcomp_name[5];  // "norm", "x"(default), "y" or "z"
   int data_comp;              // default:0
   int data_subcomp;           // default:1
   double iso_value;

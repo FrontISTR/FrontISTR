@@ -267,6 +267,12 @@ contains
       fstrSOLID%EMISES(i) = get_mises(fstrSOLID%ESTRESS(6*(i-1)+1:6*(i-1)+6))
     enddo
 
+    !C** calculate Elemental Plastic Strain
+    do i = 1, hecMESH%n_elem
+      if (.not. associated(fstrSOLID%elements(i)%gausses)) cycle
+      fstrSOLID%EPLSTRAIN(i) = get_pl_estrain(fstrSOLID%elements(i)%gausses)
+    enddo
+
     if( flag33 == 1 )then
       if( fstrSOLID%output_ctrl(3)%outinfo%on(27) .or. fstrSOLID%output_ctrl(4)%outinfo%on(27) ) then
         do nlyr = 1, ntot_lyr
@@ -319,10 +325,12 @@ contains
     integer(kind=kint), allocatable :: irow(:), jcol(:), asect(:)
     real(kind=kreal), allocatable :: stress_hyd(:), strain_hyd(:)
     real(kind=kreal), allocatable :: stress_dev(:)
+    real(kind=kreal), allocatable :: plstrain_dev(:)
     real(kind=kreal) :: stress_hyd_ndave(6), strain_hyd_ndave(6)
     real(kind=kreal) :: stress_dev_ndave(6), strain_dev_ndave(6)
     real(kind=kreal), allocatable :: n_dup_dev(:), n_dup_hyd(:)
     real(kind=kreal)   :: edstrain(6), edstress(6)
+    real(kind=kreal)   :: edplstrain
 
     nnode = hecMESH%n_node
     nsize = size(Nodal_STRAIN)
@@ -364,11 +372,13 @@ contains
     ! add stress/strain from smoothed elements
     allocate(stress_hyd(6*nlen), strain_hyd(6*nlen))
     allocate(stress_dev(6*nlen))
+    allocate(plstrain_dev(nlen))
     allocate(n_dup_dev(nlen),n_dup_hyd(nlen))
 
     stress_hyd(:) = 0.d0
     strain_hyd(:) = 0.d0
     stress_dev(:) = 0.d0
+    plstrain_dev(:) = 0.d0
     n_dup_hyd(:) = 0.d0
     n_dup_dev(:) = 0.d0
     do itype = 1, hecMESH%n_elem_type
@@ -400,6 +410,9 @@ contains
           tmpval(1:6) = fstrSOLID%elements(icel)%gausses(1)%stress_out(1:6)
           stress_dev(6*idx(1)-5:6*idx(1)) = stress_dev(6*idx(1)-5:6*idx(1)) + tmpval(1:6)
           stress_dev(6*idx(2)-5:6*idx(2)) = stress_dev(6*idx(2)-5:6*idx(2)) + tmpval(1:6)
+          !plastic strain
+          plstrain_dev(idx(1)) = plstrain_dev(idx(1)) + fstrSOLID%elements(icel)%gausses(1)%plstrain
+          plstrain_dev(idx(2)) = plstrain_dev(idx(2)) + fstrSOLID%elements(icel)%gausses(1)%plstrain
           !number of duplication
           n_dup_dev(idx(1)) = n_dup_dev(idx(1)) + 1.d0
           n_dup_dev(idx(2)) = n_dup_dev(idx(2)) + 1.d0
@@ -412,6 +425,7 @@ contains
       do j=irow(i-1)+1,irow(i)
         if( n_dup_dev(j) < 1.0d-8 ) cycle
         stress_dev(6*j-5:6*j) = stress_dev(6*j-5:6*j)/n_dup_dev(j)
+        plstrain_dev(j) = plstrain_dev(j)/n_dup_dev(j)
       end do
     end do
 
@@ -454,25 +468,29 @@ contains
         jS = hecMESH%elem_node_index(icel-1)
         edstrain(1:6) = 0.d0
         edstress(1:6) = 0.d0
+        edplstrain = 0.d0
         do i=1,4
           nd = hecMESH%elem_node_item(jS+i)
           idx(1) = search_idx_SENES( irow, asect, hecMESH%elem_node_item(jS+i), isect )
           edstrain(1:6) = edstrain(1:6) + strain_hyd(6*idx(1)-5:6*idx(1))
           edstress(1:6) = edstress(1:6) + stress_hyd(6*idx(1)-5:6*idx(1)) + stress_dev(6*idx(1)-5:6*idx(1))
+          edplstrain = edplstrain + plstrain_dev(idx(1))
         end do
         edstrain(1:6) = 0.25d0*edstrain(1:6)
         edstress(1:6) = 0.25d0*edstress(1:6)
+        edplstrain = 0.25d0*edplstrain
 
         Elemental_STRAIN(6*(icel-1)+1:6*(icel-1)+6) = Elemental_STRAIN(6*(icel-1)+1:6*(icel-1)+6) + edstrain(1:6)
         Elemental_STRESS(6*(icel-1)+1:6*(icel-1)+6) = Elemental_STRESS(6*(icel-1)+1:6*(icel-1)+6) + edstress(1:6)
 
         fstrSOLID%elements(icel)%gausses(1)%strain_out(1:6) = Elemental_STRAIN(6*(icel-1)+1:6*(icel-1)+6)
         fstrSOLID%elements(icel)%gausses(1)%stress_out(1:6) = Elemental_STRESS(6*(icel-1)+1:6*(icel-1)+6)
+        fstrSOLID%elements(icel)%gausses(1)%plstrain = edplstrain
       end do
     enddo
 
     deallocate(stress_hyd, strain_hyd)
-    deallocate(stress_dev)
+    deallocate(stress_dev, plstrain_dev)
     deallocate(n_dup_dev, n_dup_hyd)
 
   end subroutine
@@ -535,7 +553,120 @@ contains
           & + weight*(0.5d0*layer%PLUS%ESTRESS(6*(icel-1)+j) + 0.5d0*layer%MINUS%ESTRESS(6*(icel-1)+j))
       enddo
     enddo
+    call set_shell_layer_surface_results(fstrSOLID%elements(icel), fstrSOLID, icel)
+    call get_shell_layer_gauss_average(fstrSOLID%elements(icel), estrain, estress)
   end subroutine fstr_getavg_shell
+
+  subroutine set_shell_layer_surface_results(element, fstrSOLID, icel)
+    implicit none
+    type(tElement), intent(in) :: element
+    type(fstr_solid), intent(inout) :: fstrSOLID
+    integer(kind=kint), intent(in) :: icel
+    integer(kind=kint) :: ilayer
+    real(kind=kreal) :: estrain(6), estress(6)
+
+    if( .not. associated(element%shell_layer_gausses) ) return
+    if( element%shell_nlayer <= 0 ) return
+
+    do ilayer = 1, element%shell_nlayer
+      call get_shell_layer_surface_average(element, ilayer, 1, estrain, estress)
+      fstrSOLID%SHELL%LAYER(ilayer)%PLUS%ESTRAIN(6*(icel-1)+1:6*(icel-1)+6) = estrain(1:6)
+      fstrSOLID%SHELL%LAYER(ilayer)%PLUS%ESTRESS(6*(icel-1)+1:6*(icel-1)+6) = estress(1:6)
+      call get_shell_layer_surface_average(element, ilayer, -1, estrain, estress)
+      fstrSOLID%SHELL%LAYER(ilayer)%MINUS%ESTRAIN(6*(icel-1)+1:6*(icel-1)+6) = estrain(1:6)
+      fstrSOLID%SHELL%LAYER(ilayer)%MINUS%ESTRESS(6*(icel-1)+1:6*(icel-1)+6) = estress(1:6)
+    enddo
+  end subroutine set_shell_layer_surface_results
+
+  subroutine get_shell_layer_surface_average(element, ilayer, flag, estrain, estress)
+    implicit none
+    type(tElement), intent(in) :: element
+    integer(kind=kint), intent(in) :: ilayer, flag
+    real(kind=kreal), intent(out) :: estrain(6), estress(6)
+    integer(kind=kint) :: ig, ithick, ishell, ierr, surface_ithick, npoint
+    real(kind=kreal) :: zeta_layer, weight, surface_zeta
+
+    estrain(1:6) = 0.0d0
+    estress(1:6) = 0.0d0
+    if( .not. associated(element%shell_layer_gausses) ) return
+    if( .not. associated(element%gausses) ) return
+    if( element%shell_nlayer <= 0 .or. element%shell_nthick <= 0 ) return
+
+    surface_ithick = 0
+    if( flag > 0 ) then
+      surface_zeta = -huge(1.0d0)
+    else
+      surface_zeta = huge(1.0d0)
+    endif
+
+    do ithick = 1, element%shell_nthick
+      call fstr_shell_layer_quadrature(element, ilayer, ithick, zeta_layer, weight, ierr)
+      if( ierr /= 0 ) cycle
+      if( flag > 0 ) then
+        if( zeta_layer > surface_zeta ) then
+          surface_zeta = zeta_layer
+          surface_ithick = ithick
+        endif
+      else
+        if( zeta_layer < surface_zeta ) then
+          surface_zeta = zeta_layer
+          surface_ithick = ithick
+        endif
+      endif
+    enddo
+    if( surface_ithick <= 0 ) return
+
+    npoint = 0
+    do ig = 1, size(element%gausses)
+      ishell = fstr_shell_layer_gauss_index(element, ig, ilayer, surface_ithick)
+      if( ishell <= 0 ) cycle
+      estrain(1:6) = estrain(1:6) + element%shell_layer_gausses(ishell)%strain_out(1:6)
+      estress(1:6) = estress(1:6) + element%shell_layer_gausses(ishell)%stress_out(1:6)
+      npoint = npoint + 1
+    enddo
+    if( npoint > 0 ) then
+      estrain(1:6) = estrain(1:6) / npoint
+      estress(1:6) = estress(1:6) / npoint
+    endif
+  end subroutine get_shell_layer_surface_average
+
+  subroutine get_shell_layer_gauss_average(element, estrain, estress)
+    implicit none
+    type(tElement), intent(in) :: element
+    real(kind=kreal), intent(inout) :: estrain(6), estress(6)
+    integer(kind=kint) :: ig, ilayer, ithick, ishell, ierr
+    real(kind=kreal) :: zeta_layer, weight, total_weight
+    real(kind=kreal) :: avg_strain(6), avg_stress(6)
+
+    if( .not. associated(element%shell_layer_gausses) ) return
+    if( .not. associated(element%gausses) ) return
+    if( element%shell_nlayer <= 0 .or. element%shell_nthick <= 0 ) return
+
+    avg_strain(1:6) = 0.0d0
+    avg_stress(1:6) = 0.0d0
+    total_weight = 0.0d0
+
+    do ig = 1, size(element%gausses)
+      do ilayer = 1, element%shell_nlayer
+        do ithick = 1, element%shell_nthick
+          ishell = fstr_shell_layer_gauss_index(element, ig, ilayer, ithick)
+          if( ishell <= 0 ) cycle
+          call fstr_shell_layer_quadrature(element, ilayer, ithick, zeta_layer, weight, ierr)
+          if( ierr /= 0 ) cycle
+          avg_strain(1:6) = avg_strain(1:6) &
+            + element%shell_layer_gausses(ishell)%strain_out(1:6) * weight
+          avg_stress(1:6) = avg_stress(1:6) &
+            + element%shell_layer_gausses(ishell)%stress_out(1:6) * weight
+          total_weight = total_weight + weight
+        enddo
+      enddo
+    enddo
+
+    if( total_weight > 0.0d0 ) then
+      estrain(1:6) = avg_strain(1:6) / total_weight
+      estress(1:6) = avg_stress(1:6) / total_weight
+    endif
+  end subroutine get_shell_layer_gauss_average
 
   !----------------------------------------------------------------------*
   subroutine NodalStress_INV3( etype, ni, gausses, func, edstrain, edstress, tdstrain )
@@ -699,6 +830,22 @@ contains
     get_mises = dsqrt( 3.0d0 * smises )
 
   end function get_mises
+
+  function get_pl_estrain(gausses)
+    implicit none
+    real(kind=kreal) :: get_pl_estrain
+    type(tGaussStatus), intent(in) :: gausses(:)
+    integer(kind=kint) :: i
+
+    get_pl_estrain = 0.d0
+    if( size(gausses) <= 0 ) return
+
+    do i = 1, size(gausses)
+      get_pl_estrain = get_pl_estrain + gausses(i)%plstrain
+    enddo
+    get_pl_estrain = get_pl_estrain / size(gausses) 
+
+  end function get_pl_estrain
 
   !> Calculate NODAL STRESS of plane elements
   !----------------------------------------------------------------------*
@@ -951,12 +1098,15 @@ contains
   subroutine fstr_NodalStress6D( hecMESH, fstrSOLID )
     !----------------------------------------------------------------------*
     use m_static_lib
+    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state, fstr_get_shell_current_directors, &
+      fstr_get_shell_reference_directors
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     !C** local variables
     integer(kind=kint) :: itype, icel, is, iE, jS, i, j, k, it, ic, ic_type, nn, isect, ihead, ID_area
     integer(kind=kint) :: nodLOCAL(20), n_layer, ntot_lyr, nlyr, n_totlyr, com_total_layer, shellmatl
     real(kind=kreal)   :: ecoord(3,9), edisp(6,9), estrain(6), estress(6), ndstrain(9,6), ndstress(9,6)
+    real(kind=kreal)   :: shell_director(3,9), shell_ref_director(3,9)
     real(kind=kreal)   :: thick, thick_layer
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, t11, t22, t33, t12, t23, t13, ps, smises, tmises
     integer(kind=kint), allocatable :: nnumber(:)
@@ -970,6 +1120,7 @@ contains
     if( .not. associated(fstrSOLID%is_rot) ) allocate( fstrSOLID%is_rot(hecMESH%n_node) )
     nnumber = 0
     fstrSOLID%is_rot = 0
+    call fstr_ensure_finite_rotation_state(hecMESH, fstrSOLID, 6)
 
     !C +-------------------------------+
     !C | according to ELEMENT TYPE     |
@@ -1005,9 +1156,20 @@ contains
         !--- calculate elemental stress and strain
         if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
           ntot_lyr = fstrSOLID%elements(icel)%gausses(1)%pMaterial%totallyr
+          if( ic_type == 741 ) then
+            call fstr_get_shell_current_directors(fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn))
+            call fstr_get_shell_reference_directors(fstrSOLID, thick, nn, nodLOCAL(1:nn), &
+              shell_ref_director(1:3,1:nn))
+          endif
           do nlyr=1,ntot_lyr
-            call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-              & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, ntot_lyr)
+            if( ic_type == 741 ) then
+              call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, ntot_lyr, &
+                & nddirector=shell_director(1:3,1:nn), ndrefdirector=shell_ref_director(1:3,1:nn))
+            else
+              call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, ntot_lyr)
+            endif
             do j = 1, nn
               i = nodLOCAL(j)
               layer => fstrSOLID%SHELL%LAYER(nlyr)%PLUS
@@ -1019,8 +1181,14 @@ contains
               enddo
             enddo
             !minus section
-            call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-              & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, ntot_lyr)
+            if( ic_type == 741 ) then
+              call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, ntot_lyr, &
+                & nddirector=shell_director(1:3,1:nn), ndrefdirector=shell_ref_director(1:3,1:nn))
+            else
+              call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
+                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, ntot_lyr)
+            endif
             do j = 1, nn
               i = nodLOCAL(j)
               layer => fstrSOLID%SHELL%LAYER(nlyr)%MINUS
@@ -1065,6 +1233,7 @@ contains
 
     do nlyr = 1, ntot_lyr
       do i = 1, hecMESH%n_node
+        if( nnumber(i) == 0 ) cycle
         fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  = &
           & fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRAIN(6*(i-1)+1:6*(i-1)+6)  / nnumber(i)
         fstrSOLID%SHELL%LAYER(nlyr)%PLUS%STRESS(6*(i-1)+1:6*(i-1)+6)  = &
@@ -1088,6 +1257,13 @@ contains
     do i = 1, hecMESH%n_elem
       fstrSOLID%EMISES(i) = get_mises(fstrSOLID%ESTRESS(6*(i-1)+1:6*(i-1)+6))
     enddo
+
+    !C** calculate Elemental Plastic Strain
+    do i = 1, hecMESH%n_elem
+      if (.not. associated(fstrSOLID%elements(i)%gausses)) cycle
+      fstrSOLID%EPLSTRAIN(i) = get_pl_estrain(fstrSOLID%elements(i)%gausses)
+    enddo
+
     deallocate( nnumber )
 
   end subroutine fstr_NodalStress6D

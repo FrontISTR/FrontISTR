@@ -52,9 +52,88 @@ module hecmw_result
   integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_ELEM   = 2
   integer(kind=kint), parameter :: HECMW_RESULT_DTYPE_GLOBAL = 3
 
-  character(len=HECMW_NAME_LEN) :: sname,vname
+  interface
+    subroutine hecmw_result_copy_f2c_set_if_c(sname, vname, src, ierr, len_s, len_v) &
+        bind(c,name='hecmw_result_copy_f2c_set_if')
+      use iso_c_binding
+      type(c_ptr), value :: sname, vname
+      type(c_ptr), value :: src
+      integer(c_int) :: ierr
+      integer(c_int), value :: len_s, len_v
+    end subroutine hecmw_result_copy_f2c_set_if_c
+    subroutine hecmw_result_write_st_init_if(ierr) &
+        bind(c,name='hecmw_result_write_st_init_if')
+      use iso_c_binding
+      integer(c_int) :: ierr
+    end subroutine hecmw_result_write_st_init_if
+    subroutine hecmw_result_write_st_finalize_if(ierr) &
+        bind(c,name='hecmw_result_write_st_finalize_if')
+      use iso_c_binding
+      integer(c_int) :: ierr
+    end subroutine hecmw_result_write_st_finalize_if
+    subroutine hecmw_result_write_st_by_name_if_c(name_ID, ierr, len) &
+        bind(c,name='hecmw_result_write_st_by_name_if')
+      use iso_c_binding
+      type(c_ptr), value :: name_ID
+      integer(c_int) :: ierr
+      integer(c_int), value :: len
+    end subroutine hecmw_result_write_st_by_name_if_c
+
+    subroutine hecmw_result_copy_c2f_set_if_c(sname, vname, dst, ierr, len_s, len_v) &
+        bind(c,name='hecmw_result_copy_c2f_set_if')
+      use iso_c_binding
+      type(c_ptr), value :: sname, vname
+      type(c_ptr), value :: dst
+      integer(c_int) :: ierr
+      integer(c_int), value :: len_s, len_v
+    end subroutine hecmw_result_copy_c2f_set_if_c
+    subroutine hecmw_result_read_by_name_if_c(name_ID, i_step, n_node, n_elem, ierr, len) &
+        bind(c,name='hecmw_result_read_by_name_if')
+      use iso_c_binding
+      type(c_ptr), value :: name_id
+      integer(c_int) :: i_step, n_node, n_elem, ierr
+      integer(c_int), value :: len
+    end subroutine hecmw_result_read_by_name_if_c
+    subroutine hecmw_result_read_finalize_if(ierr) &
+        bind(c,name='hecmw_result_read_finalize_if')
+      use iso_c_binding
+      integer(c_int) :: ierr
+    end subroutine hecmw_result_read_finalize_if
+  end interface
 
 contains
+
+  subroutine hecmw_result_copy_f2c_set_if(sname, vname, src, ierr)
+    use iso_c_binding
+    character(len=*), target :: sname,vname
+    type(*), dimension(..), target :: src
+    integer(c_int) :: ierr
+    call hecmw_result_copy_f2c_set_if_c(c_loc(sname), c_loc(vname), c_loc(src), ierr, len(sname), len(vname))
+  end subroutine hecmw_result_copy_f2c_set_if
+
+  subroutine hecmw_result_write_st_by_name_if(name_ID, ierr)
+    use iso_c_binding
+    character(len=*), target :: name_ID
+    integer(c_int) :: ierr
+    call hecmw_result_write_st_by_name_if_c(c_loc(name_ID), ierr, len(name_ID))
+  end subroutine hecmw_result_write_st_by_name_if
+
+  subroutine hecmw_result_copy_c2f_set_if(sname, vname, dst, ierr)
+    use iso_c_binding
+    character(len=*), target :: sname,vname
+    type(*), dimension(..), target :: dst
+    integer(c_int) :: ierr
+    call hecmw_result_copy_c2f_set_if_c(c_loc(sname), c_loc(vname), c_loc(dst), ierr, len(sname), len(vname))
+  end subroutine hecmw_result_copy_c2f_set_if
+
+  subroutine hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, ierr)
+    use iso_c_binding
+    character(len=*), target :: name_ID
+    integer(c_int) :: i_step, n_node, n_elem, ierr
+    call hecmw_result_read_by_name_if_c(c_loc(name_ID), i_step, n_node, n_elem, ierr, len(name_ID))
+  end subroutine hecmw_result_read_by_name_if
+
+
 
   !C=============================================================================
   !C nullify pointer
@@ -163,6 +242,7 @@ contains
   subroutine  put_global_component( result_data, ierr )
     type(hecmwST_result_data), intent(in)    :: result_data
     integer(kind=kint),        intent(inout) :: ierr
+    character(len=HECMW_NAME_LEN) :: sname,vname
 
     sname = "hecmwST_result_data"
 
@@ -188,6 +268,7 @@ contains
   subroutine  put_node_component( result_data, ierr )
     type(hecmwST_result_data), intent(in)    :: result_data
     integer(kind=kint),        intent(inout) :: ierr
+    character(len=HECMW_NAME_LEN) :: sname,vname
 
     sname = "hecmwST_result_data"
 
@@ -213,6 +294,7 @@ contains
   subroutine  put_elem_component( result_data, ierr )
     type(hecmwST_result_data), intent(in)    :: result_data
     integer(kind=kint),        intent(inout) :: ierr
+    character(len=HECMW_NAME_LEN) :: sname,vname
 
     sname = "hecmwST_result_data"
 
@@ -335,6 +417,7 @@ contains
   subroutine get_global_component(result, n_global, ierr)
     integer(kind=kint) :: n_global, ierr
     type(hecmwST_result_data) :: result
+    character(len=HECMW_NAME_LEN) :: sname,vname
 
     sname = 'hecmwST_result_data'
 
@@ -364,6 +447,7 @@ contains
   subroutine get_node_component(result, n_node, ierr)
     integer(kind=kint) :: n_node, ierr
     type(hecmwST_result_data) :: result
+    character(len=HECMW_NAME_LEN) :: sname,vname
 
     sname = 'hecmwST_result_data'
 
@@ -393,6 +477,7 @@ contains
   subroutine get_elem_component(result, n_elem, ierr)
     integer(kind=kint) :: n_elem, ierr
     type(hecmwST_result_data) :: result
+    character(len=HECMW_NAME_LEN) :: sname,vname
 
     sname = 'hecmwST_result_data'
 

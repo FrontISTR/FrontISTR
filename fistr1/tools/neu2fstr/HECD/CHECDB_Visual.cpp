@@ -70,31 +70,28 @@ void CVis_ViewParams::WriteVisParam(class CHECData *hecd, const char *name,
   va_list va;
   va_start(va, fmt);
   char buff[256];
-  char ss[256];
-  sprintf(buff, "!%s", name);
+  size_t len = snprintf(buff, sizeof(buff), "!%s", name);
   int n = strlen(fmt);
 
   if (n > 1) {
-    strcat(buff, " =");
+    len += snprintf(buff + len, sizeof(buff) - len, " =");
   }
 
   for (int i = 0; i < n; i++) {
-    strcat(buff, " ");
+    len += snprintf(buff + len, sizeof(buff) - len, " ");
     char c = fmt[i];
 
     switch (c) {
       case 'S':
-        strcat(buff, va_arg(va, char *));
+        len += snprintf(buff + len, sizeof(buff) - len, "%s", va_arg(va, char *));
         break;
 
       case 'I':
-        sprintf(ss, "%d", va_arg(va, int));
-        strcat(buff, ss);
+        len += snprintf(buff + len, sizeof(buff) - len, "%d", va_arg(va, int));
         break;
 
       case 'F':
-        sprintf(ss, "%lg", va_arg(va, double));
-        strcat(buff, ss);
+        len += snprintf(buff + len, sizeof(buff) - len, "%lg", va_arg(va, double));
         break;
 
       default:
@@ -109,31 +106,28 @@ void CVis_ViewParams::WriteVisParam(class CHECData *hecd, const char *name,
 void CVis_ViewParams::WriteVisPArry(class CHECData *hecd, const char *name,
                                     char type, int n, void *p) {
   char buff[256];
-  char ss[256];
   int *ip;
   double *dp;
-  sprintf(buff, "!%s", name);
+  size_t len = snprintf(buff, sizeof(buff), "!%s", name);
 
   if (n > 1) {
-    strcat(buff, " =");
+    len += snprintf(buff + len, sizeof(buff) - len, " =");
   }
 
   ip = (int *)p;
   dp = (double *)p;
 
   for (int i = 0; i < n; i++) {
-    strcat(buff, ", ");
+    len += snprintf(buff + len, sizeof(buff) - len, ", ");
 
     switch (type) {
       case 'I':
-        sprintf(ss, "%d", *ip);
-        strcat(buff, ss);
+        len += snprintf(buff + len, sizeof(buff) - len, "%d", *ip);
         ip++;
         break;
 
       case 'F':
-        sprintf(ss, "%lg", *dp);
-        strcat(buff, ss);
+        len += snprintf(buff + len, sizeof(buff) - len, "%lg", *dp);
         dp++;
         break;
 
@@ -218,12 +212,17 @@ int CVis_ViewParams::ReadVisValue(char *s, int n, double *value) {
 }
 
 int CVis_ViewParams::ReadVisValue(char *s, int n, char *value) {
+  // Handle NULL pointer case (when called from strtok continuation)
+  if (s == NULL) {
+    return 0;
+  }
+  
   cleanup_token(s);
   int len = strlen(s);
 
-  if (len > n) return 0;
+  if (len >= n) return 0;
 
-  strcpy(value, s);
+  snprintf(value, n, "%s", s);
   return len;
 }
 
@@ -262,7 +261,7 @@ T *CVis_ViewParams::ReadVisPArry(char *s, int &n, const char *fmt) {
 
 bool CVis_ViewParams::ReadData(const char *line) {
   char buff[256];
-  strcpy(buff, line);
+  snprintf(buff, sizeof(buff), "%s", line);
   char *header = strtok(buff, " =,\r\n\t");
 
   if (header[0] == 0 || header[0] != '!') return false;
@@ -352,7 +351,7 @@ void CVis_PSR::Init() {
   surface_style      = surface_style_boundary;
   display_method     = display_method_color;
   color_comp_name[0] = 0;
-  strcpy(color_subcomp_name, "x");
+  snprintf(color_subcomp_name, sizeof(color_subcomp_name), "x");
   color_comp            = 0;
   color_subcomp         = 1;
   iso_number            = 5;
@@ -370,10 +369,10 @@ void CVis_PSR::Init() {
   deform_line_color[0]  = 0;
   deform_line_color[1]  = 0;
   deform_line_color[2]  = 1;
-  strcpy(output_type, "AVS");
+  snprintf(output_type, sizeof(output_type), "AVS");
   // for surface_style == surface_style_equivalent ---------
   data_comp_name[0] = 0;
-  strcpy(data_subcomp_name, "x");
+  snprintf(data_subcomp_name, sizeof(data_subcomp_name), "x");
   data_comp    = 0;
   data_subcomp = 1;
   iso_value    = 0;
@@ -458,7 +457,7 @@ bool CVis_PSR::ReadData(const char *line) {
   if (CVis_ViewParams::ReadData(line)) return true;
 
   char buff[256];
-  strcpy(buff, line);
+  snprintf(buff, sizeof(buff), "%s", line);
   char *header = strtok(buff, " =,\r\n\t");
 
   if (header[0] == 0 || header[0] != '!') return false;
@@ -484,7 +483,7 @@ bool CVis_PSR::ReadData(const char *line) {
   GENERATE_CODE(surface_style, 1, dummy)
   GENERATE_CODE(display_method, 1, dummy)
   GENERATE_CODEA(color_comp_name, 100, dummy)
-  GENERATE_CODEA(color_subcomp_name, 4, dummy)
+  GENERATE_CODEA(color_subcomp_name, 5, dummy)
   GENERATE_CODE(color_comp, 1, dummy)
   GENERATE_CODE(color_subcomp, 1, dummy)
   GENERATE_CODE(iso_number, 1, dummy)
@@ -497,10 +496,10 @@ bool CVis_PSR::ReadData(const char *line) {
   GENERATE_CODE(deform_style, 1, dummy)
   GENERATE_CODEA(initial_line_color, 3, dummy)
   GENERATE_CODEA(deform_line_color, 3, dummy)
-  GENERATE_CODEA(output_type, 3, dummy)
+  GENERATE_CODEA(output_type, 4, dummy)
   // for surface_style == surface_style_equivalent ---------
   GENERATE_CODEA(data_comp_name, 100, dummy)
-  GENERATE_CODEA(data_subcomp_name, 4, dummy)
+  GENERATE_CODEA(data_subcomp_name, 5, dummy)
   GENERATE_CODE(data_comp, 1, dummy)
   GENERATE_CODE(data_subcomp, 1, dummy)
   GENERATE_CODE(iso_value, 1, dummy)
@@ -597,7 +596,7 @@ bool CVis_PVR::ReadData(const char *line) {
   if (CVis_ViewParams::ReadData(line)) return true;
 
   char buff[256];
-  strcpy(buff, line);
+  snprintf(buff, sizeof(buff), "%s", line);
   char *header = strtok(buff, " =,\r\n\t");
 
   if (header[0] == 0 || header[0] != '!') return false;

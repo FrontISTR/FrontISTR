@@ -193,7 +193,11 @@ contains
     enddo
     if (DEBUG >= 1) write(0,*) 'DEBUG: bucketDB_setup: ndiv, d: ', bktdb%ndiv, bktdb%d
     call assert(all(bktdb%d > 0.d0), 'bucketDB_setup: invalid bktdb%d')
-    allocate(bktdb%buckets(bktdb%ndiv(1), bktdb%ndiv(2), bktdb%ndiv(3)))
+    allocate(bktdb%buckets(bktdb%ndiv(1), bktdb%ndiv(2), bktdb%ndiv(3)), stat=i)
+    if( i /= 0 ) then
+      write(*,*) 'Allocation error: bktdb%buckets', bktdb%ndiv
+      call hecmw_abort(hecmw_comm_get_comm())
+    endif
     do k = 1, bktdb%ndiv(3)
       do j = 1, bktdb%ndiv(2)
         do i = 1, bktdb%ndiv(1)

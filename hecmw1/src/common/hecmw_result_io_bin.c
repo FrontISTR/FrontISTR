@@ -31,7 +31,7 @@ static int write_bin_header(FILE* fp) {
   n = strlen(s);
   if( fwrite( s, sizeof(char), n, fp) != n ) return -1;
   n = sizeof(long);
-  sprintf( nbyte, "%2zd", n );
+  snprintf( nbyte, sizeof(nbyte), "%2zd", n );
   if( fwrite( nbyte, sizeof(char), 2, fp) != 2 ) return -1;
   return 0;
 }
@@ -77,7 +77,9 @@ static int bin_output_result_header(FILE *fp) {
 
   /* header */
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
-    sprintf(ResIO.head,"%s %d.%d",ResIO.head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
+    char temp_head[HECMW_HEADER_LEN + 16];
+    snprintf(temp_head, sizeof(temp_head), "%s %d.%d", ResIO.head, HECMW_RESULT_FILEVER_MAJOR, HECMW_RESULT_FILEVER_MINOR);
+    snprintf(ResIO.head, sizeof(ResIO.head), "%s", temp_head);
   }
   rc = hecmw_write_bin(fp,"S", ResIO.head);
   if(rc < 0) {
@@ -400,7 +402,9 @@ static int bin_output_result_header_ST(struct hecmwST_result_data *result,
 
   /* header */
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
-    sprintf(head,"%s %d.%d",head,HECMW_RESULT_FILEVER_MAJOR,HECMW_RESULT_FILEVER_MINOR);
+    char tmp[HECMW_HEADER_LEN+1];
+    snprintf(tmp, sizeof(tmp), "%s %d.%d", head, HECMW_RESULT_FILEVER_MAJOR, HECMW_RESULT_FILEVER_MINOR);
+    memcpy(head, tmp, sizeof(head));
   }
   rc = hecmw_write_bin(fp, "S", header);
   if(rc < 0) {
@@ -702,9 +706,14 @@ static int bin_input_result_header(struct hecmwST_result_data *result, FILE *fp)
   }
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     ptr = strtok(Line_Buf, " ");
-    sprintf(Line_Buf, "%s", ptr);
+    if(ptr != Line_Buf) {
+      size_t len = strlen(ptr);
+      memmove(Line_Buf, ptr, len + 1);
+    } else {
+      ptr[strlen(ptr)] = '\0';
+    }
   }
-  strcpy( ResIO.head, Line_Buf );
+  snprintf(ResIO.head, sizeof(ResIO.head), "%s", Line_Buf);
 
   return 0;
 }
@@ -721,7 +730,7 @@ static int bin_input_result_global(struct hecmwST_result_data *result, FILE *fp)
     HECMW_set_error(HECMW_UTIL_E0205, "comment");
     return -1;
   }
-  strcpy( ResIO.comment_line, Line_Buf );
+  snprintf(ResIO.comment_line, sizeof(ResIO.comment_line), "%s", Line_Buf);
 
   /* skip global header */
   if(hecmw_read_bin(fp, "S", Line_Buf)) {

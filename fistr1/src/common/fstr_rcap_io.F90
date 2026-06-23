@@ -133,12 +133,12 @@ contains
     write(IDBG,*) "fstr_rcap_finalize: start"
 
     if( fstrPARAM%fg_couple /= 1 ) return
-    deallocate( fstrCPL%coupled_node )
-    deallocate( fstrCPL%trac )
-    deallocate( fstrCPL%disp )
-    deallocate( fstrCPL%velo )
-    deallocate( fstrCPL%accel )
-    deallocate( fstrCPL%index )
+    if( associated(fstrCPL%coupled_node) ) deallocate( fstrCPL%coupled_node )
+    if( associated(fstrCPL%trac) )         deallocate( fstrCPL%trac )
+    if( associated(fstrCPL%disp) )         deallocate( fstrCPL%disp )
+    if( associated(fstrCPL%velo) )         deallocate( fstrCPL%velo )
+    if( associated(fstrCPL%accel) )        deallocate( fstrCPL%accel )
+    if( associated(fstrCPL%index) )        deallocate( fstrCPL%index )
 
     write(IDBG,*) "fstr_rcap_finalize: calling rcapf_finalize"
 

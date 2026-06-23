@@ -51,6 +51,7 @@ contains
       if(hecmw_is_etype_link(ic_type)) cycle
       if(hecmw_is_etype_patch(ic_type)) cycle
       if(ic_type == 3414) cycle
+      if(ic_type == 881 .or. ic_type == 891) cycle  !skip selective ES/NS smoothed elements (mass uses original 341)
 
       do icel = iS, iE
         jS = hecMESH%elem_node_index(icel-1)

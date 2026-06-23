@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
+target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_couple_comm.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_couple_copy_c2f.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_couple_copy_f2c.c
@@ -47,6 +47,6 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_couple_finalize_f.f90
 )
 
-list(APPEND hecmw_INCLUDE_DIRS
+target_include_directories(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
 )

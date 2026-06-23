@@ -71,15 +71,17 @@ struct hecmwST_local_mesh *HECMW_get_mesh(char *name_ID) {
 
   if (files->n_mesh == 1 &&
       files->meshfiles[0].type == HECMW_CTRL_FTYPE_HECMW_DIST) {
-    strcpy(filename, files->meshfiles[0].filename);
+    snprintf(filename, sizeof(filename), "%s", files->meshfiles[0].filename);
     mesh = HECMW_get_dist_mesh(filename);
   } else {
     mesh = get_entire_mesh(files);
   }
 
-  strcpy(filename, files->meshfiles[0].filename);
-  strtok(filename, ".");
-  strcat(filename, ".rnf");
+  char *dot;
+  snprintf(filename, sizeof(filename), "%s", files->meshfiles[0].filename);
+  dot = strchr(filename, '.');
+  if (dot != NULL) *dot = '\0';
+  strncat(filename, ".rnf", sizeof(filename) - strlen(filename) - 1);
   if ((fp = fopen(filename, "r")) == NULL) {
     cad_filename = NULL;
   } else {

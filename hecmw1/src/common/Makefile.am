@@ -151,6 +151,7 @@ OBJSF = \
 	hecmw_logging.@f90objfilepostfix@ \
 	hecmw_msgno_f.@f90objfilepostfix@ \
 	hecmw_msg_f.@f90objfilepostfix@ \
+	hecmw_amplitude_f.@f90objfilepostfix@ \
 	hecmw_control_f.@f90objfilepostfix@ \
 	hecmw_result_f.@f90objfilepostfix@ \
 	hecmw_restart_f.@f90objfilepostfix@ \

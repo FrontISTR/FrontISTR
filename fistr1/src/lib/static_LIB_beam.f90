@@ -735,7 +735,6 @@ contains
     use m_fstr
     use m_utilities
     use mMechGauss
-    use gauss_integration
 
     !--------------------------------------------------------------------
 

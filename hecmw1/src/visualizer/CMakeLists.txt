@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
+target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_surface_main.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_comm_util.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_mem_util.c
@@ -24,6 +24,7 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_subimage_composite_sf.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_output_femap.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_output_vtk.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_output_exo.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_fstr_endian.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_pvr_main.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_vis_comm_util.c
@@ -44,7 +45,7 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_visualizer.c
 )
 
-list(APPEND hecmw_INCLUDE_DIRS
+target_include_directories(hecmw PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}
 )
 

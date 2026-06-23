@@ -127,10 +127,10 @@ void HECMW_print_vmsg(int loglv, int msgno, const char *fmt, va_list ap) {
   char msg[HECMW_MSG_LEN + 1];
   char vmsg[HECMW_MSG_LEN + 1];
 
-  HECMW_snprintf(msg, sizeof(msg), "%s", HECMW_strmsg(msgno));
+  size_t len = snprintf(msg, sizeof(msg), "%s", HECMW_strmsg(msgno));
   HECMW_vsnprintf(vmsg, sizeof(vmsg), fmt, ap);
   if (strlen(vmsg) > 0) {
-    HECMW_snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " (%s)", vmsg);
+    snprintf(msg + len, sizeof(msg) - len, " (%s)", vmsg);
   }
   HECMW_log(loglv, msg);
 }

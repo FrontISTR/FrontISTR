@@ -43,6 +43,12 @@ MUMPSDIR       = $(HOME)/MUMPS_4.10.0
 MUMPSINCDIR    = $(MUMPSDIR)/include
 MUMPSLIBDIR    = $(MUMPSDIR)/lib
 
+# NetCDF (for Exodus II output)
+NETCDFDIR      =
+NETCDFINCDIR   = $(NETCDFDIR)/include
+NETCDFLIBDIR   = $(NETCDFDIR)/lib
+NETCDFLIBS     = -lnetcdf
+
 # MKL PARDISO
 MKLDIR     = $(HOME)/
 MKLINCDIR  = $(MKLDIR)/include

@@ -1,0 +1,80 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC, NONLINER
+!CONTACT_ALGO,TYPE=ALAGRANGE
+!WRITE,RESULT
+!WRITE,LOG
+!OUTPUT_RES
+CONTACT_NFORCE, ON
+CONTACT_TFORCE, ON
+!OUTPUT_VIS
+CONTACT_NFORCE, ON
+CONTACT_TFORCE, ON
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ BOX_BOTTOM, 1, 3, 0.0
+!BOUNDARY, GRPID=1
+ CENTER, 3, 3, 0.0
+!BOUNDARY, GRPID=2
+ CENTER, 1, 1, 0.0
+ CENTER, 2, 2, -0.03
+!BOUNDARY, GRPID=2
+ ROT_POINTS, 1, 1, 0.0
+ ROT_POINTS, 2, 2, -0.03
+ ROT_POINTS2, 1, 1, 0.0
+ ROT_POINTS2, 2, 2, -0.03
+!BOUNDARY, GRPID=3
+ CENTER, 1, 1, 0.5
+ CENTER, 2, 2, 0.0
+!BOUNDARY, ROT_CENTER=CENTER_O,GRPID=3
+ ROT_POINTS, 1, 1, 0.0
+ ROT_POINTS, 2, 2, 0.0
+ ROT_POINTS, 3, 3, -0.5
+!BOUNDARY, ROT_CENTER=CENTER_O,GRPID=3
+ ROT_POINTS2, 1, 1, 0.0
+ ROT_POINTS2, 2, 2, 0.0
+ ROT_POINTS2, 3, 3, -0.5
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT_PARAM, NAME=CPARAM1
+1.0e-4,  5.0e-2,  1.0e-1,  1.0e-4
+1.0e-6, -1.0e-6,  1.0,    -1.0e-8,  1.05
+!CONTACT, INTERACTION=FSLID, GRPID=1, SMOOTHING=NAGATA, CONTACTPARAM=CPARAM1
+CP1,0.2
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1000, 0.3
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1
+BOUNDARY,1
+BOUNDARY,2
+CONTACT,1
+!STEP, SUBSTEPS=2000, INC_TYPE=AUTO
+0.2, 1.0, 1.0E-6, 0.2
+BOUNDARY,1
+BOUNDARY,3
+CONTACT,1
+###################################
+#####      FOR VISUALIZER     #####
+###################################
+#!WRITE,VISUAL
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = BIN_VTK
+!END

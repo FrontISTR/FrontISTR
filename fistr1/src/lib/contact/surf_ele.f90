@@ -6,7 +6,11 @@
 !>  It provides basic definition of surface elements (trianglar and quadrilateral)
 !!  and functions for fetching its neighborhood information
 module mSurfElement
-  use hecmw, only: kint, kreal
+  use hecmw_util
+  use elementInfo
+  use m_utilities
+  use bucket_search
+
   implicit none
 
   integer(kind=kint), parameter       :: l_max_surface_node =20
@@ -27,6 +31,8 @@ module mSurfElement
     real(kind=kreal)                :: xavg(3)              !< current coordinate of element center
     real(kind=kreal)                :: dmax                 !< half length of edge of cube that include surf
     integer(kind=kint)              :: bktID                !< bucket ID
+    real(kind=kreal), pointer       :: vertex_normals(:,:)=>null()  !< (3,nnode) unit normals for Nagata patch
+    real(kind=kreal), pointer       :: intermediate_points(:,:)=>null()  !< (3,nnode) intermediate points for Nagata patch
   end type tSurfElement
 
   integer(kind=kint), parameter, private :: DEBUG = 0
@@ -35,7 +41,6 @@ contains
 
   !> Initializer
   subroutine initialize_surf( eid, etype, nsurf, surf )
-    use elementInfo
     integer(kind=kint), intent(in)    :: eid    !< element ID
     integer(kind=kint), intent(in)    :: etype  !< element type
     integer(kind=kint), intent(in)    :: nsurf  !< surface ID
@@ -62,6 +67,8 @@ contains
     surf%xavg(:) =  0.d0
     surf%dmax    = -1.d0
     surf%bktID   = -1
+    allocate( surf%vertex_normals(3,n) )
+    surf%vertex_normals(:,:) = 0.d0
   end subroutine
 
   !> Memory management subroutine
@@ -69,6 +76,8 @@ contains
     type(tSurfElement), intent(inout) :: surf   !< surface element
     if( associated(surf%nodes) ) deallocate( surf%nodes )
     if( associated(surf%neighbor) ) deallocate( surf%neighbor )
+    if( associated(surf%vertex_normals) ) deallocate( surf%vertex_normals )
+    if( associated(surf%intermediate_points) ) deallocate( surf%intermediate_points )
   end subroutine
 
   !> Write out elemental surface
@@ -85,9 +94,6 @@ contains
 
   !> Find neighboring surface elements
   subroutine find_surface_neighbor( surf, bktDB )
-    use m_utilities
-    use hecmw_util
-    use bucket_search
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
     type(bucketDB), intent(in) :: bktDB            !< bucket info
     integer(kind=kint) :: i, j, ii,jj, nd1, nd2, nsurf
@@ -154,7 +160,6 @@ contains
 
   !> Tracing next contact position
   integer(kind=kint) function next_position( surf, cpos )
-    use elementInfo
     type(tSurfElement), intent(in) :: surf      !< current surface element
     real(kind=kreal), intent(in)   :: cpos(2)   !< current position(local coordinate)
 
@@ -217,7 +222,6 @@ contains
 
   !> Compute reference length of surface elements
   subroutine update_surface_reflen( surf, coord )
-    use elementInfo
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
     real(kind=kreal), intent(in)      :: coord(:)  !< current coordinate of all nodes
     real(kind=kreal) :: elem(3, l_max_surface_node), r0(2)
@@ -277,7 +281,6 @@ contains
 
   !> Update bucket info for searching surface elements
   subroutine update_surface_bucket_info(surf, bktDB)
-    use bucket_search
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
     type(bucketDB), intent(inout) :: bktDB         !< bucket info
     real(kind=kreal) :: x_min(3), x_max(3), d_max
@@ -312,5 +315,47 @@ contains
     enddo
     if (DEBUG >= 1) write(0,*) 'DEBUG: update_surface_bucket_info: end'
   end subroutine update_surface_bucket_info
+
+  !> Compute vertex normals for a single surface element (geometric calculation only)
+  subroutine calc_surf_vertex_normals( surf, elem )
+    use elementInfo, only: getVertexCoord, SurfaceNormal
+    type(tSurfElement), intent(inout) :: surf       !< surface element
+    real(kind=kreal), intent(in)      :: elem(3,*)  !< element coordinates
+    
+    integer(kind=kint) :: j, nn, etype
+    real(kind=kreal) :: cnpos(2), normal(3)
+    
+    etype = surf%etype
+    nn = size(surf%nodes)
+    
+    do j = 1, nn
+      call getVertexCoord(etype, j, cnpos)
+      normal = SurfaceNormal(etype, nn, cnpos, elem)
+      normal = normal / dsqrt(dot_product(normal, normal))
+      surf%vertex_normals(:, j) = normal
+    enddo
+    
+  end subroutine calc_surf_vertex_normals
+
+  !> Calculate vertex normals for all surface elements (geometric calculation only)
+  subroutine calc_all_surf_vertex_normals( surf, currpos )
+    type(tSurfElement), intent(inout) :: surf(:)    !< surface elements
+    real(kind=kreal), intent(in)      :: currpos(:) !< current coordinate of all nodes
+    
+    integer(kind=kint) :: i, j, nn, iSS
+    real(kind=kreal) :: elem(3, l_max_elem_node)
+    
+    !$omp parallel do default(none) private(i,j,nn,iSS,elem) shared(surf,currpos)
+    do i = 1, size(surf)
+      nn = size(surf(i)%nodes)
+      do j = 1, nn
+        iSS = surf(i)%nodes(j)
+        elem(1:3, j) = currpos(3*iSS-2:3*iSS)
+      enddo
+      call calc_surf_vertex_normals(surf(i), elem(1:3,1:nn))
+    enddo
+    !$omp end parallel do
+    
+  end subroutine calc_all_surf_vertex_normals
 
 end module mSurfElement

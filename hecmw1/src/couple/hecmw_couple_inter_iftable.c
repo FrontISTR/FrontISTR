@@ -825,7 +825,8 @@ static struct map_info_to_bgcell *map_elem_to_bgcell(
   struct link_list *bgcell_elem_list       = NULL, *p;
   double coord_x, coord_y, coord_z, min_x, min_y, min_z, max_x, max_y, max_z;
   int min_l, min_m, min_n, max_l, max_m, max_n;
-  int bgcell, elem, node, ic, i, j, l, m, n;
+  int bgcell, elem, node, ic, i, l, m, n;
+  long long j;
 
   map_to_bgcell = (struct map_info_to_bgcell *)HECMW_malloc(
       sizeof(struct map_info_to_bgcell));
@@ -964,7 +965,8 @@ static struct map_info_to_bgcell *map_surf_to_bgcell(
   struct link_list *bgcell_surf_list       = NULL, *p;
   double coord_x, coord_y, coord_z, min_x, min_y, min_z, max_x, max_y, max_z;
   int min_l, min_m, min_n, max_l, max_m, max_n;
-  int bgcell, elem, node, ic, i, j, l, m, n;
+  int bgcell, elem, node, ic, i, l, m, n;
+  long long j;
 
   /* allocation */
   map_to_bgcell = (struct map_info_to_bgcell *)HECMW_malloc(

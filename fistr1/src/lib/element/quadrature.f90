@@ -30,21 +30,23 @@ module Quadrature
   integer, parameter, private :: kreal = kind(0.0d0)
 
   real(kind=kreal) ::                                               &
-    gauss1d1(1,1),gauss1d2(1,2),                                     &
+    gauss1d1(1,1),gauss1d2(1,2),gauss1d3(1,3),                       &
     gauss2d1(2,1),gauss2d2(2,4),gauss2d3(2,9),gauss2d4(2,1),         &
     gauss2d5(2,3),gauss2d6(2,4),gauss3d1(3,1),gauss3d2(3,8),         &
     gauss3d3(3,27),gauss3d4(3,1),gauss3d5(3,4),gauss3d6(3,15),       &
     gauss3d7(3,2),gauss3d8(3,9),gauss3d9(3,18),gauss3d10(3,6),       &
     gauss3d12(3,5),    &
-    weight1d1(1),weight1d2(2),weight2d1(1),weight2d2(4),             &
-    weight2d3(9),weight2d4(1),weight2d5(3),weight2d6(4),             &
-    weight3d1(1),weight3d2(8),weight3d3(27),weight3d4(1),            &
-    weight3d5(4),weight3d6(15),weight3d7(2),weight3d8(9),            &
-    weight3d9(18),weight3d10(6), weight3d12(5)
+    weight1d1(1),weight1d2(2),weight1d3(3),                          &
+    weight2d1(1),weight2d2(4),weight2d3(9),weight2d4(1),             &
+    weight2d5(3),weight2d6(4),weight3d1(1),weight3d2(8),             &
+    weight3d3(27),weight3d4(1),weight3d5(4),weight3d6(15),           &
+    weight3d7(2),weight3d8(9),weight3d9(18),weight3d10(6),           &
+    weight3d12(5)
 
 
   data gauss1d1 /0.d0/
   data gauss1d2 /-0.577350269189626d0, 0.577350269189626d0/
+  data gauss1d3 /-0.774596669241483d0, 0.d0, 0.774596669241483d0/
   !
   data gauss2d1 /0.d0,0.d0/
   !
@@ -198,6 +200,8 @@ module Quadrature
   !
   data weight1d1 /2.d0/
   data weight1d2 /1.d0,1.d0/
+  data weight1d3 /                                                     &
+    0.555555555555556d0,0.888888888888889d0,0.555555555555556d0/
   !
   data weight2d1 /4.d0/
   !

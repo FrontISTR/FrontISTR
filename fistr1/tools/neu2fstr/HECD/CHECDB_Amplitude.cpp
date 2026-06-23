@@ -14,9 +14,9 @@ using namespace std;
 CHECDB_Amplitude::CHECDB_Amplitude()
     : CHECDataBlock(HECDB_AMPLITUDE), ItemList() {
   name[0] = 0;
-  strcpy(definition, "TABULAR");
-  strcpy(time, "STEP TIME");
-  strcpy(value, "RLATIVE");
+  snprintf(definition, sizeof(definition), "TABULAR");
+  snprintf(time, sizeof(time), "STEP TIME");
+  snprintf(value, sizeof(value), "RLATIVE");
 }
 
 CHECDB_Amplitude::~CHECDB_Amplitude() {}

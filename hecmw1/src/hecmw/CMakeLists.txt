@@ -3,10 +3,10 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
+target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw.f90
 )
 
-list(APPEND hecmw_INCLUDE_DIRS
+target_include_directories(hecmw PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}
 )

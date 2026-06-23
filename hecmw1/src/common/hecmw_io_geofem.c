@@ -25,8 +25,7 @@ static void do_logging(int loglv, int msgno, int add_location, const char *fmt,
   if (add_location) {
     char *s                = "";
     if (strlen(msg) > 0) s = ": ";
-    HECMW_snprintf(line, sizeof(line), "%s:%d%s", grid_filename,
-                   HECMW_gflex_get_lineno(), s);
+    snprintf(line, sizeof(line), "%s:%d%s", grid_filename, HECMW_gflex_get_lineno(), s);
   }
   if (loglv == HECMW_LOG_ERROR) {
     HECMW_set_error(msgno, "%s%s", line, msg);
@@ -376,7 +375,7 @@ static int read_ngrp(void) {
       set_err(HECMW_IO_E0001, "");
       return -1;
     }
-    strcpy(name, p);
+    snprintf(name, sizeof(name), "%s", p);
 
     /* NODgrpITEM */
     n    = grp_index[i + 1] - grp_index[i];
@@ -483,7 +482,7 @@ static int read_egrp(void) {
       set_err(HECMW_IO_E0001, "");
       return -1;
     }
-    strcpy(name, p);
+    snprintf(name, sizeof(name), "%s", p);
 
     /* ELMgrpITEM */
     n    = grp_index[i + 1] - grp_index[i];
@@ -590,7 +589,7 @@ static int read_sgrp(void) {
       set_err(HECMW_IO_E0001, "");
       return -1;
     }
-    strcpy(name, p);
+    snprintf(name, sizeof(name), "%s", p);
 
     /* SUFgrpITEM */
     n    = grp_index[i + 1] - grp_index[i];
@@ -681,7 +680,7 @@ int HECMW_read_geofem_mesh(const char *filename) {
     return -1;
   }
 
-  strcpy(grid_filename, filename);
+  snprintf(grid_filename, sizeof(grid_filename), "%s", filename);
   HECMW_io_set_gridfile(grid_filename);
 
   if ((fp = fopen(filename, "r")) == NULL) {
@@ -703,7 +702,7 @@ int HECMW_read_geofem_mesh(const char *filename) {
     return -1;
   }
 
-  strcpy(grid_filename, "Unknown");
+  snprintf(grid_filename, sizeof(grid_filename), "Unknown");
 
   return 0;
 }
@@ -719,7 +718,7 @@ struct hecmwST_local_mesh *HECMW_get_geofem_mesh(const char *filename) {
   if (local_mesh == NULL) return NULL;
   if (HECMW_io_finalize()) return NULL;
 
-  strcpy(grid_filename, "Unknown");
+  snprintf(grid_filename, sizeof(grid_filename), "Unknown");
 
   return local_mesh;
 }

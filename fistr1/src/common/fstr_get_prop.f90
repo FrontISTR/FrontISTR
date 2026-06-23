@@ -241,12 +241,12 @@ contains
       do i=1,n_totlyr
         tmp = tmp + shell_var(i)%weight
       enddo
+      if(tmp /= 1.0d0)then
+        write(IMSG,"(a)")"### NOTICE: Total thickness is not equal to the sum of laminated layers' thickness"
+      endif
       do i=1,n_totlyr
         shell_var(i)%weight = shell_var(i)%weight / tmp
       enddo
-      if(tmp == 1.0d0)then
-        write(IMSG,"(a)")"### NOTICCE: Total thickness is not equal to the sum of laminated layers' thickness"
-      endif
     endif
 
   end subroutine fstr_get_prop_shell

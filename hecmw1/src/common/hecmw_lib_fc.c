@@ -37,8 +37,7 @@ char *HECMW_strcpy_f2c(const char *fstr, int flen) {
     HECMW_set_error(errno, "");
     return NULL;
   }
-  strncpy(s, fstr, len);
-  s[len] = '\0';
+  snprintf(s, len + 1, "%.*s", len, fstr);
   return s;
 }
 
@@ -64,8 +63,7 @@ char *HECMW_strcpy_f2c_r(const char *fstr, int flen, char *buf, int bufsize) {
   if (len > bufsize - 1) {
     len = bufsize - 1;
   }
-  strncpy(buf, fstr, len);
-  buf[len] = '\0';
+  snprintf(buf, bufsize, "%.*s", len, fstr);
   return buf;
 }
 
@@ -84,6 +82,6 @@ int HECMW_strcpy_c2f(const char *cstr, char *fstr, int flen) {
     clen = flen;
   }
   memset(fstr, ' ', flen);
-  strncpy(fstr, cstr, clen);
+  if (clen > 0) memcpy(fstr, cstr, clen);
   return flen;
 }

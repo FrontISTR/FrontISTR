@@ -107,5 +107,5 @@ else()
 endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(MUMPS
+find_package_handle_standard_args(Mumps
   DEFAULT_MSG MUMPS_LIBRARIES MUMPS_INCLUDE_PATH)

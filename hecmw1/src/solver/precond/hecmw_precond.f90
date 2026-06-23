@@ -97,22 +97,36 @@ contains
     NPNDOF = NP * hecMAT%NDOF
 
     if (hecmw_mat_get_iterpremax( hecMAT ).le.0) then
+      !$acc kernels
+      !$acc loop independent
       do i= 1, NNDOF
         Z(i)= R(i)
       enddo
+      !$acc end kernels
       return
     endif
 
     !C {z}= [Minv]{r}
+    !$acc kernels
+    !$acc loop independent
     do i= 1, NNDOF
       ZP(i)= R(i)
     enddo
+    !$acc end kernels
+
+    !$acc kernels
+    !$acc loop independent
     do i= NNDOF+1, NPNDOF
       ZP(i) = 0.d0
     enddo
+    !$acc end kernels
+
+    !$acc kernels
+    !$acc loop independent
     do i= 1, NPNDOF
       Z(i)= 0.d0
     enddo
+    !$acc end kernels
 
     iterPREmax = hecmw_mat_get_iterpremax( hecMAT )
     do iterPRE= 1, iterPREmax
@@ -134,9 +148,12 @@ contains
       end select
 
       !C-- additive Schwartz
+      !$acc kernels
+      !$acc loop independent
       do i= 1, hecMAT%N * hecMAT%NDOF
         Z(i)= Z(i) + ZP(i)
       enddo
+      !$acc end kernels
       if (iterPRE.eq.iterPREmax) exit
 
       !C--    {ZP} = {R} - [A] {Z}

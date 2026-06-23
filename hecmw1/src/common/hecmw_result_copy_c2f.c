@@ -276,25 +276,6 @@ void hecmw_result_copy_c2f_set_if(char *struct_name, char *var_name, void *dst,
   *err = 0;
 }
 
-void hecmw_result_copy_c2f_set_if_(char *struct_name, char *var_name, void *dst,
-                                   int *err, int len_struct, int len_var) {
-  hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct,
-                               len_var);
-}
-
-void hecmw_result_copy_c2f_set_if__(char *struct_name, char *var_name,
-                                    void *dst, int *err, int len_struct,
-                                    int len_var) {
-  hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct,
-                               len_var);
-}
-
-void HECMW_RESULT_COPY_C2F_SET_IF(char *struct_name, char *var_name, void *dst,
-                                  int *err, int len_struct, int len_var) {
-  hecmw_result_copy_c2f_set_if(struct_name, var_name, dst, err, len_struct,
-                               len_var);
-}
-
 /*----------------------------------------------------------------------------*/
 
 void hecmw_result_read_by_name_if(char *name_ID, int *i_step,
@@ -318,26 +299,6 @@ void hecmw_result_read_by_name_if(char *name_ID, int *i_step,
   *err = 0;
 }
 
-void hecmw_result_read_by_name_if_(char *name_ID, int *i_step,
-                                   int *n_node, int *n_elem, int *err,
-                                   int len) {
-  hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, err,
-                               len);
-}
-
-void hecmw_result_read_by_name_if__(char *name_ID, int *i_step,
-                                    int *n_node, int *n_elem, int *err,
-                                    int len) {
-  hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, err,
-                               len);
-}
-
-void HECMW_RESULT_READ_BY_NAME_IF(char *name_ID, int *i_step,
-                                  int *n_node, int *n_elem, int *err, int len) {
-  hecmw_result_read_by_name_if(name_ID, i_step, n_node, n_elem, err,
-                               len);
-}
-
 /*----------------------------------------------------------------------------*/
 
 void hecmw_result_read_finalize_if(int *err) {
@@ -346,16 +307,4 @@ void hecmw_result_read_finalize_if(int *err) {
   HECMW_result_free_nodeID();
   HECMW_result_free_elemID();
   *err = 0;
-}
-
-void hecmw_result_read_finalize_if_(int *err) {
-  hecmw_result_read_finalize_if(err);
-}
-
-void hecmw_result_read_finalize_if__(int *err) {
-  hecmw_result_read_finalize_if(err);
-}
-
-void HECMW_RESULT_READ_FINALIZE_IF(int *err) {
-  hecmw_result_read_finalize_if(err);
 }

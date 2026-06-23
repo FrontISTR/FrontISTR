@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
+target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_CG.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_BiCGSTAB.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_solver_GMRES.f90

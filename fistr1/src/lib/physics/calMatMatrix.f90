@@ -65,7 +65,7 @@ contains
       if( i==0 ) then
         call calElasticMatrix( matl, sectTYPE, matrix, temperature, hdflag=hdflag_in )
       elseif(  i==1 ) then
-        call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature )
+        call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature, hdflag=hdflag_in )
       else
         print *, "Elasticity type", matl%mtype, "not supported"
         stop

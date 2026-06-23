@@ -30,16 +30,14 @@ void CFSTRDB_SRadiate::Write(CHECData *hecd) {
 
   if (ItemList.size() == 0) return;
 
-  strcpy(buff, "!SRADIATE");
+  size_t len = snprintf(buff, sizeof(buff), "!SRADIATE");
 
   if (amp1[0] != 0) {
-    strcat(buff, ",AMP1=");
-    strcat(buff, amp1);
+    len += snprintf(buff + len, sizeof(buff) - len, ",AMP1=%s", amp1);
   }
 
   if (amp2[0] != 0) {
-    strcat(buff, ",AMP2=");
-    strcat(buff, amp2);
+    snprintf(buff + len, sizeof(buff) - len, ",AMP2=%s", amp2);
   }
 
   hecd->WriteHeader(buff);

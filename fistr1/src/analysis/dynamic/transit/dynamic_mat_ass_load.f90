@@ -12,16 +12,19 @@ contains
   !> This function sets boundary condition of external load
   !C***
   !C
-  subroutine DYNAMIC_MAT_ASS_LOAD(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
+  subroutine DYNAMIC_MAT_ASS_LOAD(cstep, t_curr, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, iter )
 
     use m_fstr
     use m_static_lib
     use m_fstr_precheck
+    use m_fstr_elemact
     use m_table_dyn
     use m_common_struct
     use m_utilities
 
     implicit none
+    integer(kind=kint)       :: cstep
+    real(kind=kreal)         :: t_curr
     type(hecmwST_matrix)     :: hecMAT
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
@@ -35,7 +38,7 @@ contains
     integer(kind=kint) :: nodLocal(20)
     real(kind=kreal)   :: tt(20), tt0(20), coords(3,3)
     real(kind=kreal),pointer:: temp(:)
-    integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, iS0, iE0, ik, in, i, j
+    integer(kind=kint) :: ndof, ig0, ig, ityp, ltype, iS0, iE0, ik, in, i, j, grpid
     integer(kind=kint) :: icel, ic_type, nn, is, isect, id, iset, nsize
     integer(kind=kint) :: itype, iE, cdsys_ID
     real(kind=kreal)   :: val, rho, thick, pa1
@@ -44,7 +47,7 @@ contains
 
     integer(kind=kint) :: flag_u, ierror
     integer(kind=kint), optional :: iter
-    real(kind=kreal) :: f_t
+    real(kind=kreal) :: f_t, t_t
 
     integer(kind=kint) :: iiS, idofS, idofE
     real(kind=kreal)   :: ecoord(3, 20)
@@ -59,6 +62,14 @@ contains
 
     ndof = hecMAT%NDOF
     call hecmw_mat_clear_b( hecMAT )
+
+    ! ----- elemact element
+    if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
+      t_t = fstrDYNAMIC%t_curr
+      if( fstrDYNAMIC%idx_eqa == 11 ) t_t = t_t - fstrDYNAMIC%t_delta
+      call fstr_update_elemact_solid( hecMESH, fstrSOLID, 1, t_t )
+    end if
+
     !C
     !C CLOAD
     !C
@@ -66,12 +77,15 @@ contains
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
 
     do ig0 = 1, fstrSOLID%CLOAD_ngrp_tot
+      grpid = fstrSOLID%CLOAD_ngrp_GRPID(ig0)
+      if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
+
       ig = fstrSOLID%CLOAD_ngrp_ID(ig0)
       ityp = fstrSOLID%CLOAD_ngrp_DOF(ig0)
       val = fstrSOLID%CLOAD_ngrp_val(ig0)
 
       flag_u = 0
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
       val = val*f_t
 
       iS0= hecMESH%node_group%grp_index(ig-1)+1
@@ -163,6 +177,10 @@ contains
           icel    = hecMESH%elem_group%grp_item(ik)
           ic_type = hecMESH%elem_type(icel)
         endif
+
+        !ELEMENT ACTIVATION
+        if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
+
         !C** Create local stiffness
         nn = hecmw_get_max_node(ic_type)
         !C** node ID
@@ -219,7 +237,7 @@ contains
         !!!!!!  time history
 
         flag_u = 10
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         do j=1,nsize
           vect(j) = vect(j)*f_t
         enddo
@@ -366,6 +384,10 @@ contains
         nn = hecmw_get_max_node(ic_type)
         !C element loop
         do icel = is, iE
+
+          !ELEMENT ACTIVATION
+          if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
+
           !C** node ID
           is= hecMESH%elem_node_index(icel-1)
           do j=1,nn

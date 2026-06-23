@@ -94,7 +94,7 @@ int conv_elem( struct hecmwST_local_mesh* mesh, FILE* fp )
 		}
 		for( icel = is; icel<ie; icel++ ) {
 			int eid = mesh->global_elem_ID[icel];
-			int n0 = mesh->elem_node_index[icel];
+			long long n0 = mesh->elem_node_index[icel];
 			fprintf( fp, "%d", eid );
 			if( etype_count > 1 ) {
 				switch( etype ) {
@@ -194,7 +194,7 @@ int main( int argc, char** argv )
 		ptoken = ntoken;
 		ntoken = strtok( NULL, "/" );
 	}
-	sprintf( rcap_fname, "%s%s.%d", dirname, rcap_fname_header, mesh->my_rank );
+	snprintf( rcap_fname, sizeof(rcap_fname), "%s%s.%d", dirname, rcap_fname_header, mesh->my_rank );
 
 	fp = fopen( rcap_fname, "w" );
 	if( !fp ) {

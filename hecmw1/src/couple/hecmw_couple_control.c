@@ -276,7 +276,7 @@ extern void HECMW_couple_free_boundary_ids(
     for (i = 0; i < boundary_ids->n_boundary; i++) {
       HECMW_free(boundary_ids->ids[i]);
     }
-    HECMW_free(boundary_ids);
+    HECMW_free(boundary_ids->ids);
   }
   HECMW_free(boundary_ids);
   boundary_ids = NULL;
@@ -344,7 +344,7 @@ extern void HECMW_couple_ctrl_free(void) {
 
 /*================================================================================================*/
 
-static int get_unit_name(char *unit_id) {
+static int get_unit_name(char *unit_id, size_t unit_id_len) {
   int token;
   char *s;
 
@@ -370,7 +370,7 @@ static int get_unit_name(char *unit_id) {
                     HECMW_ctrllex_get_lineno());
     return -1;
   }
-  strcpy(unit_id, s);
+  snprintf(unit_id, unit_id_len, "%s", s);
 
   return 0;
 }
@@ -476,7 +476,7 @@ static int get_unit_1st_line(struct unit_info_by_ctrl *p) {
                         HECMW_ctrllex_get_lineno());
         return -1;
       }
-      if (get_unit_name(p->unit_id)) return -1;
+      if (get_unit_name(p->unit_id, sizeof(p->unit_id))) return -1;
       is_specified_name = 1;
 
       /* NPROC=<number-of-processes> */
@@ -588,7 +588,7 @@ extern int HECMW_couple_ctrl_unit(void) {
 
 /*================================================================================================*/
 
-static int get_couple_name(char *couple_id) {
+static int get_couple_name(char *couple_id, size_t couple_id_len) {
   int token;
   char *s;
 
@@ -614,7 +614,7 @@ static int get_couple_name(char *couple_id) {
                     HECMW_ctrllex_get_lineno());
     return -1;
   }
-  strcpy(couple_id, s);
+  snprintf(couple_id, couple_id_len, "%s", s);
 
   return 0;
 }
@@ -648,7 +648,7 @@ static int get_couple_type(int *type) {
   return 0;
 }
 
-static int get_couple_unit1(char *unit1_id) {
+static int get_couple_unit1(char *unit1_id, size_t unit1_id_len) {
   int token;
   char *s;
 
@@ -678,12 +678,12 @@ static int get_couple_unit1(char *unit1_id) {
     HECMW_set_error(HECMWCPL_E_UNDEF_UNIT_ID, "%s", s);
     return -1;
   }
-  strcpy(unit1_id, s);
+  snprintf(unit1_id, unit1_id_len, "%s", s);
 
   return 0;
 }
 
-static int get_couple_unit2(char *unit2_id) {
+static int get_couple_unit2(char *unit2_id, size_t unit2_id_len) {
   int token;
   char *s;
 
@@ -713,7 +713,7 @@ static int get_couple_unit2(char *unit2_id) {
     HECMW_set_error(HECMWCPL_E_UNDEF_UNIT_ID, "%s", s);
     return -1;
   }
-  strcpy(unit2_id, s);
+  snprintf(unit2_id, unit2_id_len, "%s", s);
 
   return 0;
 }
@@ -743,7 +743,7 @@ static int get_couple_1st_line(struct couple_info_by_ctrl *p) {
                         HECMW_ctrllex_get_lineno());
         return -1;
       }
-      if (get_couple_name(p->couple_id)) return -1;
+      if (get_couple_name(p->couple_id, sizeof(p->couple_id))) return -1;
       is_specified_name = 1;
 
       /* TYPE=<couple-type> */
@@ -765,7 +765,7 @@ static int get_couple_1st_line(struct couple_info_by_ctrl *p) {
                         HECMW_ctrllex_get_lineno());
         return -1;
       }
-      if (get_couple_unit1(p->unit1_id)) return -1;
+      if (get_couple_unit1(p->unit1_id, sizeof(p->unit1_id))) return -1;
       is_specified_unit1 = 1;
 
       /* UNIT2=<name-of-unit2> */
@@ -776,7 +776,7 @@ static int get_couple_1st_line(struct couple_info_by_ctrl *p) {
                         HECMW_ctrllex_get_lineno());
         return -1;
       }
-      if (get_couple_unit2(p->unit2_id)) return -1;
+      if (get_couple_unit2(p->unit2_id, sizeof(p->unit2_id))) return -1;
       is_specified_unit2 = 1;
 
       /* New Line */
@@ -851,7 +851,7 @@ extern int HECMW_couple_ctrl_couple(void) {
 
 /*------------------------------------------------------------------------------------------------*/
 
-static int get_boundary_name(char *boundary_id) {
+static int get_boundary_name(char *boundary_id, size_t boundary_id_len) {
   int token;
   char *s;
 
@@ -879,12 +879,12 @@ static int get_boundary_name(char *boundary_id) {
                     HECMW_ctrllex_get_lineno());
     return -1;
   }
-  strcpy(boundary_id, s);
+  snprintf(boundary_id, boundary_id_len, "%s", s);
 
   return 0;
 }
 
-static int get_boundary_couple(char *couple_id) {
+static int get_boundary_couple(char *couple_id, size_t couple_id_len) {
   int token;
   char *s;
 
@@ -916,7 +916,7 @@ static int get_boundary_couple(char *couple_id) {
     HECMW_set_error(HECMWCPL_E_UNDEF_COUPLE_ID, "%s", s);
     return -1;
   }
-  strcpy(couple_id, s);
+  snprintf(couple_id, couple_id_len, "%s", s);
 
   return 0;
 }
@@ -1095,7 +1095,7 @@ static int get_boundary_1st_line(struct boundary_info_by_ctrl *p) {
                         HECMW_ctrllex_get_lineno());
         return -1;
       }
-      if (get_boundary_name(p->boundary_id) != HECMW_SUCCESS) return -1;
+      if (get_boundary_name(p->boundary_id, sizeof(p->boundary_id)) != HECMW_SUCCESS) return -1;
       is_specified_name = 1;
 
       /* COUPLE=<name-of-couple> */
@@ -1106,7 +1106,7 @@ static int get_boundary_1st_line(struct boundary_info_by_ctrl *p) {
                         HECMW_ctrllex_get_lineno());
         return -1;
       }
-      if (get_boundary_couple(p->couple_id) != HECMW_SUCCESS) return -1;
+      if (get_boundary_couple(p->couple_id, sizeof(p->couple_id)) != HECMW_SUCCESS) return -1;
       is_specified_couple = 1;
 
       /* DIRECTION=<coupling-direction> */
@@ -1295,7 +1295,7 @@ static int get_boundary_group_inner(struct link_list_s *p, int *counter) {
       return -1;
     }
     p = p->next;
-    strcpy(p->name, s);
+    snprintf(p->name, sizeof(p->name), "%s", s);
     p->next = NULL;
     (*counter)++;
 
@@ -1669,7 +1669,6 @@ extern struct hecmw_couple_ctrl_boundary_ids *HECMW_couple_get_boundary_ids(
 extern char *HECMW_couple_ctrl_get_unit_id(const char *couple_id,
                                            int unit_specifier, char *buf,
                                            int bufsize) {
-  int len;
   char *retbuf, *unit_id;
   struct couple_info_by_ctrl *p;
 
@@ -1700,13 +1699,8 @@ extern char *HECMW_couple_ctrl_get_unit_id(const char *couple_id,
       return NULL;
     }
   } else {
-    len = strlen(unit_id);
-    if (bufsize <= len) {
-      len = bufsize - 1;
-    }
-    strncpy(buf, unit_id, len);
-    buf[len] = '\0';
-    retbuf   = buf;
+    snprintf(buf, bufsize, "%s", unit_id);
+    retbuf = buf;
   }
 
   return retbuf;
@@ -1714,7 +1708,6 @@ extern char *HECMW_couple_ctrl_get_unit_id(const char *couple_id,
 
 extern char *HECMW_couple_ctrl_get_couple_id(const char *boundary_id, char *buf,
                                              int bufsize) {
-  int len;
   char *retbuf;
   struct boundary_info_by_ctrl *p;
 
@@ -1737,13 +1730,8 @@ extern char *HECMW_couple_ctrl_get_couple_id(const char *boundary_id, char *buf,
       return NULL;
     }
   } else {
-    len = strlen(p->couple_id);
-    if (bufsize <= len) {
-      len = bufsize - 1;
-    }
-    strncpy(buf, p->couple_id, len);
-    buf[len] = '\0';
-    retbuf   = buf;
+    snprintf(buf, bufsize, "%s", p->couple_id);
+    retbuf = buf;
   }
 
   return retbuf;

@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
+target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_hash.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_init.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_finalize.c
@@ -74,9 +74,10 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_etype_f.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_varray_int_f.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_io.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_amplitude_f.f90
 )
 
-list(APPEND hecmw_INCLUDE_DIRS
+target_include_directories(hecmw PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}
 )
 

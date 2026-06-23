@@ -59,7 +59,7 @@ void HECMW_vis_combine(struct surface_module *sf,
                        struct hecmwST_result_data *data, int tvertex,
                        int tpatch, int *color_list, double *minvalue,
                        double *maxvalue, Result *result, char *outfile,
-                       HECMW_Comm VIS_COMM) {
+                       size_t outfile_size, HECMW_Comm VIS_COMM) {
   int i, j, ii;
   double color, *mivalue, *mavalue;
   int mynode, pesize;
@@ -162,11 +162,11 @@ scanf("%lf  %lf",&mivalue[i], &mavalue[i]);
     }
 
     if (sf[1].output_type == 1)
-      strcat(outfile, ".inp");
+      strncat(outfile, ".inp", outfile_size - strlen(outfile) - 1);
     else if (sf[1].output_type == 2)
-      strcat(outfile, ".fec");
+      strncat(outfile, ".fec", outfile_size - strlen(outfile) - 1);
     else if (sf[1].output_type == 4)
-      strcat(outfile, ".neu");
+      strncat(outfile, ".neu", outfile_size - strlen(outfile) - 1);
 
     outfp = fopen(outfile, "w");
 
@@ -258,7 +258,7 @@ fclose(outfp);
         coord = (double *)HECMW_calloc(n_vertex[i] * 3, sizeof(double));
         HECMW_Recv(coord, n_vertex[i] * 3, HECMW_DOUBLE, i, HECMW_ANY_TAG,
                    VIS_COMM, &stat);
-        /*  sprintf(outfile3, "%s.%d.%d.tmp", outfile1, *timestep, i);
+        /*  snprintf(outfile3, sizeof(outfile3), "%s.%d.%d.tmp", outfile1, *timestep, i);
 tmpfp=fopen(outfile3, "r");
 if(tmpfp==NULL) {
 fprintf(stderr, "cannot open the tmpfile %s\n");
@@ -911,7 +911,7 @@ void put_neutral_head(FILE *outfp) {
 void put_neutral_601(FILE *outfp, struct hecmwST_local_mesh *mesh) {
   int i;
   int im;
-  double ee, pp, rh0, alfa, gg;
+  double ee, pp, rh0, alpha, gg;
   double rdum[10];
 
   fprintf(outfp, "   -1\n");
@@ -930,7 +930,7 @@ void put_neutral_601(FILE *outfp, struct hecmwST_local_mesh *mesh) {
     ee      = mesh->material->mat_val[im * 4];
     pp      = mesh->material->mat_val[im * 4 + 1];
     rh0     = mesh->material->mat_val[im * 4 + 2];
-    alfa    = mesh->material->mat_val[im * 4 + 3];
+    alpha    = mesh->material->mat_val[im * 4 + 3];
     gg      = ee * 0.5 / (1.0 + pp);
     rdum[0] = ee;
     rdum[1] = ee;
@@ -946,13 +946,13 @@ void put_neutral_601(FILE *outfp, struct hecmwST_local_mesh *mesh) {
     rdum[1] = 0.0;
     rdum[2] = 0.0;
     rdum[3] = rdum[4] = rdum[5] = 0.0;
-    rdum[6]                     = alfa;
+    rdum[6]                     = alpha;
     rdum[7] = rdum[8] = 0.0;
-    rdum[9]           = alfa;
+    rdum[9]           = alpha;
     for (i = 0; i < 10; i++) fprintf(outfp, "%9.2e,", rdum[i]);
     fprintf(outfp, "\n");
     rdum[0] = 0.0;
-    rdum[1] = alfa;
+    rdum[1] = alpha;
     rdum[2] = 0.0;
     rdum[3] = rdum[4] = rdum[5] = 0.0;
     rdum[6]                     = 0.0;

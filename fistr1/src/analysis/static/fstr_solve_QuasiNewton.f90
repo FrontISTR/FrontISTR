@@ -7,6 +7,8 @@
 module m_fstr_QuasiNewton
 
   use m_fstr_NonLinearMethod
+  use m_fstr_IterationControl
+  use m_fstr_NodalKinematics, only: fstr_apply_solution_increment, fstr_commit_solution_increment
 
   implicit none
   ! parameters for line search
@@ -72,7 +74,7 @@ contains
 
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
-    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof)
+    call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, 0, hecMAT)
     fstrSOLID%GL0(:) = fstrSOLID%GL(:) !store external load at du=0
 
     !! initialize du for non-zero Dirichlet condition
@@ -119,16 +121,19 @@ contains
       ! ----- update the small displacement and the displacement for 1step
       !       \delta u^k => solver's solution
       !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
-      do i = 1, hecMESH%n_node*ndof
-        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecMAT%X(i)
-      enddo
+      call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
 
       !! set du for non-zero Dirichlet condition
       ! call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
  
       ! ----- check convergence
-      iterStatus = fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep )
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+          ndof, iter, sub_step, cstep, &
+          hecMAT%B, 0, &
+          res, res, &
+          0, &
+          iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
       ! if (iterStatus == kitrDiverged) exit
@@ -159,9 +164,7 @@ contains
 
     ! ----- update the total displacement
     ! u_{n+1} = u_{n} + \Delta u_{n+1}
-    do i=1,hecMESH%n_node*ndof
-      fstrSOLID%unode(i) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
-    enddo
+      call fstr_commit_solution_increment( hecMESH, fstrSOLID, ndof )
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
 
@@ -346,8 +349,8 @@ contains
                                      &  fstrPARAM, z_k, alpha_E, h_prime_E, pot_E)
       ! else
       !   alpha_tmp = 2.0d0*alpha_E
-      !   h_prime_tmp = 0.0d0 ! dummy value
-      !   pot_tmp = 0.0d0 ! dummy value
+      !   h_prime_tmp = 0.0d0 ! elemact value
+      !   pot_tmp = 0.0d0 ! elemact value
       !   call fstr_get_new_range_with_potential(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, pot_0, &
       !     alpha_S, h_prime_S, pot_S, alpha_tmp, h_prime_tmp, pot_tmp, alpha_E, h_prime_E, pot_E, &
       !     alpha_S_new, h_prime_S_new, pot_S_new, alpha_E_new, h_prime_E_new, pot_E_new)
@@ -558,7 +561,7 @@ contains
 
     integer(kind=kint) :: i, ierr, iter_ls
     real(kind=kreal) :: z_max
-    integer :: dummy
+    integer :: elemact
 
     ndof = hecMAT%NDOF
     len_vector = hecMESH%n_node*hecMesh%n_dof

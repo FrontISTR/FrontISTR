@@ -61,7 +61,7 @@ static char *dir_name(const char *path) {
   static char dname[HECMW_FILENAME_LEN + 1];
 
   if (path == NULL || strlen(path) == 0) {
-    strcpy(dname, ".");
+    snprintf(dname, sizeof(dname), ".");
     return dname;
   }
 
@@ -75,7 +75,7 @@ static char *dir_name(const char *path) {
   }
 
   if (p == path) {
-    sprintf(dname, "%c", isslash(*p) ? PATH_SEPARATOR : '.');
+    snprintf(dname, sizeof(dname), "%c", isslash(*p) ? PATH_SEPARATOR : '.');
     return dname;
   } else {
     do {
@@ -87,8 +87,7 @@ static char *dir_name(const char *path) {
     errno = ENAMETOOLONG;
     return NULL;
   }
-  strncpy(dname, path, p - path + 1);
-  dname[p - path + 1] = '\0';
+  snprintf(dname, sizeof(dname), "%.*s", (int)(p - path + 1), path);
 
   return dname;
 }
@@ -98,7 +97,7 @@ static char *base_name(const char *path) {
   static char bname[HECMW_FILENAME_LEN + 1];
 
   if (path == NULL || strlen(path) == 0) {
-    strcpy(bname, ".");
+    snprintf(bname, sizeof(bname), ".");
     return bname;
   }
 
@@ -108,7 +107,7 @@ static char *base_name(const char *path) {
   }
 
   if (ep == path && isslash(*ep)) {
-    sprintf(bname, "%c", PATH_SEPARATOR);
+    snprintf(bname, sizeof(bname), "%c", PATH_SEPARATOR);
     return bname;
   }
 
@@ -121,20 +120,19 @@ static char *base_name(const char *path) {
     errno = ENAMETOOLONG;
     return NULL;
   }
-  strncpy(bname, sp, ep - sp + 1);
-  bname[ep - sp + 1] = '\0';
+  snprintf(bname, sizeof(bname), "%.*s", (int)(ep - sp + 1), sp);
 
   return bname;
 }
 
 static char *get_bdname(const char *path, int type) {
   const char *p, *q;
-  static char bname[HECMW_FILENAME_LEN + 1];
+  static char bname[HECMW_FILENAME_LEN + 16];
   char drive[10] = "";
 
   if (has_drive(path)) {
     p = path + 2;
-    sprintf(drive, "%.2s", path);
+    snprintf(drive, sizeof(drive), "%.2s", path);
   } else {
     p = path;
   }
@@ -149,9 +147,9 @@ static char *get_bdname(const char *path, int type) {
       errno = ENAMETOOLONG;
       return NULL;
     }
-    sprintf(bname, "%s%s", drive, q);
+    snprintf(bname, sizeof(bname), "%s%s", drive, q);
   } else {
-    sprintf(bname, "%s", q);
+    snprintf(bname, sizeof(bname), "%s", q);
   }
   return bname;
 }

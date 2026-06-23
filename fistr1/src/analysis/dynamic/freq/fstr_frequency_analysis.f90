@@ -55,7 +55,7 @@ end module
 module fstr_frequency_analysis
 
   use m_fstr
-  use m_fstr_StiffMatrix
+  use m_fstr_CreateMatrix_and_DampingForce
   use m_fstr_AddBC
   use m_fstr_EIG_setMASS
   use fstr_frequency_visout
@@ -89,6 +89,7 @@ contains
     integer(kind=kint)            :: numnode, numelm, startmode, endmode, nummode, ndof, im, in, ntotal, vistype
     integer(kind=kint)            :: numfreq, idnode, numdisp
     integer(kind=kint)            :: freqiout(3)
+    integer(kind=kint)            :: ierr
     integer(kind=kint), parameter :: ilogin = 9056
     real(kind=kreal), allocatable :: eigenvalue(:), loadvecRe(:), loadvecIm(:)
     real(kind=kreal), allocatable :: bjre(:), bjim(:), dvaRe(:), dvaIm(:), disp(:), vel(:), acc(:)
@@ -143,7 +144,11 @@ contains
     write(ilog,*) "start mode=", startmode
     write(*,   *) "end mode=", endmode
     write(ilog,*) "end mode=", endmode
-    open(unit=ilogin, file=trim(fstrFREQ%eigenlog_filename), status="OLD", action="READ")
+    open(unit=ilogin, file=trim(fstrFREQ%eigenlog_filename), status="OLD", action="READ", iostat=ierr)
+    if( ierr /= 0 ) then
+      write(*,*) "Error: cannot open eigenlog file: ", trim(fstrFREQ%eigenlog_filename)
+      call hecmw_abort( hecmw_comm_get_comm() )
+    endif
     call read_eigen_values(ilogin, startmode, endmode, eigenvalue, freqData%eigOmega)
     !call read_eigen_vector(ilogin, startmode, endmode, ndof, numnode, freqData%eigVector)
     close(ilogin)
@@ -671,7 +676,7 @@ contains
 
 
     fstrSOLID%dunode = 0.d0
-    call fstr_StiffMatrix( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
+    call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
     call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
@@ -729,7 +734,7 @@ contains
     s = size(vector)
     do i=1, s
       if(i == 1) then
-        write(*,'("eigenvec",i2.2,":[",e12.5", ")') im, vector(i)
+        write(*,'("eigenvec",i2.2,":[",e12.5,", ")') im, vector(i)
       else if(i /= s) then
         write(*,'(e12.5,", ")') vector(i)
       else
@@ -971,7 +976,7 @@ contains
     integer(kind=kint), intent(inout) :: numdisp
     !---- vals
     !---- body
-    t_start  = fstrDYNAMIC%ganma
+    t_start  = fstrDYNAMIC%gamma
     t_end    = fstrDYNAMIC%beta
     dynafreq = fstrDYNAMIC%t_delta
     numdisp  = fstrDYNAMIC%nout

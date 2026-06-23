@@ -42,15 +42,15 @@ void fstr_out_log(const char* fmt, ...) {
  * @brief Read all distributed meshes
  */
 
-static int get_dist_fname(char* name_ID, char* fheader, int* fg_single,
-                          int* refine, int nrank, int irank) {
+static int get_dist_fname(char* name_ID, char* fheader, size_t fheader_len,
+                          int* fg_single, int* refine, int nrank, int irank) {
   struct hecmw_ctrl_meshfiles* files;
 
   files = HECMW_ctrl_get_meshfiles_header_sub(name_ID, nrank, irank);
   if (!files) return -1;
 
   if (files->n_mesh == 1) {
-    strcpy(fheader, files->meshfiles[0].filename);
+    snprintf(fheader, fheader_len, "%s", files->meshfiles[0].filename);
     if (files->meshfiles[0].type == HECMW_CTRL_FTYPE_HECMW_DIST) {
       *fg_single = 0;
     } else {
@@ -73,7 +73,7 @@ static int get_area_n(char* fheader) {
   int area = 0;
 
   while (1) {
-    sprintf(buff, "%s.%d", fheader, area);
+    snprintf(buff, sizeof(buff), "%s.%d", fheader, area);
     fstr_out_log("try open : %s  ... ", buff);
     fp = fopen(buff, "r");
     if (!fp) {
@@ -103,7 +103,8 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
   char fname[HECMW_FILENAME_LEN + 1];
   struct hecmwST_local_mesh** mesh;
 
-  if (get_dist_fname(name_ID, fheader, &fg_single, refine, nrank, 0)) return NULL;
+  if (get_dist_fname(name_ID, fheader, sizeof(fheader), &fg_single, refine,
+                     nrank, 0)) return NULL;
 
   if (fg_single) {
     fstr_out_log("mesh file type is NOT HECMW_DIST.\n");
@@ -123,10 +124,11 @@ struct hecmwST_local_mesh** fstr_get_all_local_mesh(char* name_ID,
     mesh = HECMW_malloc(area_n * sizeof(struct hecmwST_local_mesh*));
     for (i = 0; i < area_n; i++) {
       if (nrank == 0) {
-        sprintf(fname, "%s.%d", fheader, i);
+        snprintf(fname, sizeof(fname), "%s.%d", fheader, i);
       } else {
-        get_dist_fname(name_ID, fheader, &fg_single, refine, nrank, i);
-        sprintf(fname, "%s.%d", fheader, i);
+        get_dist_fname(name_ID, fheader, sizeof(fheader), &fg_single, refine,
+                       nrank, i);
+        snprintf(fname, sizeof(fname), "%s.%d", fheader, i);
       }
       fstr_out_log("loading dist mesh from %s\n", fname);
       mesh[i] = HECMW_get_dist_mesh(fname);
@@ -176,7 +178,7 @@ int fstr_get_step_n(char* name_ID, int nrank) {
 
   step = 1;
   while (1) {
-    sprintf(fname, "%s.0.%d", fheader, step);
+    snprintf(fname, sizeof(fname), "%s.0.%d", fheader, step);
     fstr_out_log("try open : %s  ... ", fname);
     fp = fopen(fname, "r");
     if (!fp) {
@@ -223,7 +225,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
                name_ID, step, nrank, i, &fg_text)) == NULL)
         return 0;
     }
-    sprintf(fname, "%s.%d.%d", fheader, i, step);
+    snprintf(fname, sizeof(fname), "%s.%d.%d", fheader, i, step);
     data = HECMW_result_read_by_fname(fname);
     if (!data) return NULL;
     nnode    = HECMW_result_get_nnode();
@@ -248,6 +250,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
       for (j = 0; j < data->ng_component; j++) {
         res[i]->result->ng_dof[j]     = data->ng_dof[j];
         res[i]->result->global_label[j] = HECMW_strdup(data->global_label[j]);
+        if (!res[i]->result->global_label[j]) return NULL;
       }
 
       res[i]->result->nn_component = data->nn_component;
@@ -260,6 +263,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
       for (j = 0; j < data->nn_component; j++) {
         res[i]->result->nn_dof[j]     = data->nn_dof[j];
         res[i]->result->node_label[j] = HECMW_strdup(data->node_label[j]);
+        if (!res[i]->result->node_label[j]) return NULL;
         num += data->nn_dof[j];
       }
 
@@ -302,6 +306,7 @@ fstr_res_info** fstr_get_all_result(char* name_ID, int step, int area_n,
       for (j = 0; j < data->ne_component; j++) {
         res[i]->result->ne_dof[j]     = data->ne_dof[j];
         res[i]->result->elem_label[j] = HECMW_strdup(data->elem_label[j]);
+        if (!res[i]->result->elem_label[j]) return NULL;
         num += data->ne_dof[j];
       }
 
@@ -377,20 +382,31 @@ struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
     eitem += res[0]->result->ne_dof[i];
 
   data             = HECMW_malloc(sizeof(struct hecmwST_result_data));
+  if (!data) return NULL;
   data->ng_dof     = HECMW_malloc(res[0]->result->ng_component * sizeof(int));
+  if (!data->ng_dof) return NULL;
   data->global_label = HECMW_malloc(res[0]->result->ng_component * sizeof(char*));
+  if (!data->global_label) return NULL;
   data->global_val_item = HECMW_malloc(gitem * sizeof(double));
+  if (!data->global_val_item) return NULL;
   data->nn_dof     = HECMW_malloc(res[0]->result->nn_component * sizeof(int));
+  if (!data->nn_dof) return NULL;
   data->node_label = HECMW_malloc(res[0]->result->nn_component * sizeof(char*));
+  if (!data->node_label) return NULL;
   data->node_val_item = HECMW_malloc(nitem * glt->node_n * sizeof(double));
+  if (!data->node_val_item) return NULL;
   data->ne_dof     = HECMW_malloc(res[0]->result->ne_component * sizeof(int));
+  if (!data->ne_dof) return NULL;
   data->elem_label = HECMW_malloc(res[0]->result->ne_component * sizeof(char*));
+  if (!data->elem_label) return NULL;
   data->elem_val_item = HECMW_malloc(eitem * glt->elem_n * sizeof(double));
+  if (!data->elem_val_item) return NULL;
 
   data->ng_component = res[0]->result->ng_component;
   for (i = 0; i < res[0]->result->ng_component; i++) {
     data->ng_dof[i]     = res[0]->result->ng_dof[i];
     data->global_label[i] = HECMW_strdup(res[0]->result->global_label[i]);
+    if (!data->global_label[i]) return NULL;
   }
   for (i = 0; i < gitem; i++) {
     data->global_val_item[i] = res[0]->result->global_val_item[i];
@@ -410,6 +426,7 @@ struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
   for (i = 0; i < res[0]->result->nn_component; i++) {
     data->nn_dof[i]     = res[0]->result->nn_dof[i];
     data->node_label[i] = HECMW_strdup(res[0]->result->node_label[i]);
+    if (!data->node_label[i]) return NULL;
   }
 
   count = 0;
@@ -432,6 +449,7 @@ struct hecmwST_result_data* fstr_all_result(fstr_glt* glt, fstr_res_info** res,
   for (i = 0; i < res[0]->result->ne_component; i++) {
     data->ne_dof[i]     = res[0]->result->ne_dof[i];
     data->elem_label[i] = HECMW_strdup(res[0]->result->elem_label[i]);
+    if (!data->elem_label[i]) return NULL;
   }
 
   return data;

@@ -11,29 +11,30 @@ contains
   !> This subrouitne set acceleration boundary condition in dynamic analysis
   !C***
 
-  subroutine DYNAMIC_MAT_ASS_BC_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC_AC(cstep, hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
     use mContact
 
     implicit none
+    integer(kind=kint)                   :: cstep
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    real(kind=kreal)                     :: t_curr
     integer, optional :: iter
     type(hecmwST_matrix), optional :: conMAT
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: dyn_step, flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0, f_t
 
     if( fstrSOLID%ACCELERATION_type == kbcInitial )return
 
-    dyn_step = fstrDYNAMIC%i_step
     flag_u = 3
 
     b2 = fstrDYNAMIC%t_delta
@@ -50,9 +51,11 @@ contains
 
       do ig0 = 1, fstrSOLID%ACCELERATION_ngrp_tot
         ig   = fstrSOLID%ACCELERATION_ngrp_ID(ig0)
+        grpid = fstrSOLID%ACCELERATION_ngrp_GRPID(ig0)
+        if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
         RHS  = fstrSOLID%ACCELERATION_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
         RHS0 = RHS
 
@@ -96,9 +99,6 @@ contains
                 call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           enddo
         enddo
 
@@ -116,7 +116,7 @@ contains
         ig   = fstrSOLID%ACCELERATION_ngrp_ID(ig0)
         RHS  = fstrSOLID%ACCELERATION_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
         RHS0 = RHS
 
@@ -136,9 +136,6 @@ contains
               +  c1*RHS0
             hecMAT%B        (NDOF*in-(NDOF-idof)) = RHS
             fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo
@@ -154,7 +151,7 @@ contains
   !C***
   !> This function sets initial condition of acceleration
   !C***
-  subroutine DYNAMIC_BC_INIT_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC)
+  subroutine DYNAMIC_BC_INIT_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr)
     use m_fstr
     use m_table_dyn
 
@@ -163,10 +160,11 @@ contains
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
     type(fstr_dynamic)       :: fstrDYNAMIC
+    real(kind=kreal)         :: t_curr
 
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
     !!!
-    integer(kind=kint) :: flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: RHS, f_t
 
     if( fstrSOLID%ACCELERATION_type == kbcTransit )return
@@ -178,10 +176,12 @@ contains
     NDOF = hecMAT%NDOF
     do ig0 = 1, fstrSOLID%ACCELERATION_ngrp_tot
       ig   = fstrSOLID%ACCELERATION_ngrp_ID(ig0)
+      grpid = fstrSOLID%ACCELERATION_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, 1 ) ) cycle
       RHS  = fstrSOLID%ACCELERATION_ngrp_val(ig0)
 
       !!!!!!  time history
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
       RHS = RHS * f_t
       !!!!!!
       ityp = fstrSOLID%ACCELERATION_ngrp_type(ig0)
@@ -204,7 +204,7 @@ contains
     return
   end subroutine DYNAMIC_BC_INIT_AC
 
-  subroutine DYNAMIC_EXPLICIT_ASS_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, iter)
+  subroutine DYNAMIC_EXPLICIT_ASS_AC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr, iter)
     use m_fstr
     use m_table_dyn
     use mContact
@@ -212,16 +212,16 @@ contains
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
+    real(kind=kreal)                     :: t_curr
     integer, optional :: iter
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: dyn_step, flag_u
+    integer(kind=kint) :: flag_u
     real(kind=kreal)   :: b2, b3, b4, c1
     real(kind=kreal)   :: RHS, RHS0, f_t
 
     if( fstrSOLID%ACCELERATION_type == kbcInitial )return
 
-    dyn_step = fstrDYNAMIC%i_step
     flag_u = 3
 
     b2 = fstrDYNAMIC%t_delta
@@ -235,7 +235,7 @@ contains
         ig   = fstrSOLID%ACCELERATION_ngrp_ID(ig0)
         RHS  = fstrSOLID%ACCELERATION_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
         RHS0 = RHS
 
@@ -255,9 +255,6 @@ contains
               +  c1*RHS0
             hecMAT%B(NDOF*in-(NDOF-idof)) = RHS* fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
          !   fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo

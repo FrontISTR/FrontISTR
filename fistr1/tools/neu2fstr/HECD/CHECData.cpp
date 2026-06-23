@@ -39,7 +39,7 @@ void CHECData::StoreDataBlock(CHECDataBlock *block) { DB.push_back(block); }
 //=============================================================================
 
 bool CHECData::Save(const char *file_name) {
-  strcpy(fname, file_name);
+  snprintf(fname, sizeof(fname), "%s", file_name);
   fp = fopen(fname, "w");
 
   if (!fp) return false;
@@ -71,35 +71,30 @@ void CHECData::WriteHeader(const char *name, const char *fmt, ...) {
   int n   = strlen(fmt);
   char *c = (char *)fmt;
   char line[256];
-  char param[256];
   char s[256];
-  strcpy(line, name);
+  size_t len = snprintf(line, sizeof(line), "%s", name);
 
   for (int i = 0; i < n; i++, c++) {
-    strcpy(param, va_arg(va, char *));
-    strcat(line, ",");
-    strcat(line, param);
-    strcat(line, "=");
+    len += snprintf(line + len, sizeof(line) - len, ",%s=", va_arg(va, char *));
 
     switch (*c) {
       case 'I':
-        sprintf(s, "%d", va_arg(va, int));
+        snprintf(s, sizeof(s), "%d", va_arg(va, int));
         break;
 
       case 'F':
-        // sprintf(s, "%lg", va_arg(va, double));
+        // snprintf(s, sizeof(s), "%lg", va_arg(va, double));
         ftos(va_arg(va, double), s);
         break;
 
       case 'S':
-        sprintf(s, "%s", va_arg(va, char *));
+        snprintf(s, sizeof(s), "%s", va_arg(va, char *));
         break;
 
       default:
         assert(0);
     }
-
-    strcat(line, s);
+    len += snprintf(line + len, sizeof(line) - len, "%s", s);
   }
 
   fprintf(fp, "%s\n", line);
@@ -116,37 +111,31 @@ void CHECData::WriteParameter(const char *fmt, ...) {
   int n   = strlen(fmt);
   char *c = (char *)fmt;
   char line[256];
-  char param[256];
   char s[256];
-  strcpy(line, "!");
+  size_t len = snprintf(line, sizeof(line), "!");
 
   for (int i = 0; i < n; i++, c++) {
-    strcpy(param, va_arg(va, char *));
-
-    if (i != 0) strcat(line, ",");
-
-    strcat(line, param);
-    strcat(line, "=");
+    if (i != 0) len += snprintf(line + len, sizeof(line) - len, ",");
+    len += snprintf(line + len, sizeof(line) - len, "%s=", va_arg(va, char *));
 
     switch (*c) {
       case 'I':
-        sprintf(s, "%d", va_arg(va, int));
+        snprintf(s, sizeof(s), "%d", va_arg(va, int));
         break;
 
       case 'F':
-        // sprintf(s, "%lg", va_arg(va, double));
+        // snprintf(s, sizeof(s), "%lg", va_arg(va, double));
         ftos(va_arg(va, double), s);
         break;
 
       case 'S':
-        sprintf(s, "%s", va_arg(va, char *));
+        snprintf(s, sizeof(s), "%s", va_arg(va, char *));
         break;
 
       default:
         assert(0);
     }
-
-    strcat(line, s);
+    len += snprintf(line + len, sizeof(line) - len, "%s", s);
   }
 
   fprintf(fp, "%s\n", line);
@@ -166,30 +155,30 @@ void CHECData::WriteData(const char *fmt, ...) {
   char *c = (char *)fmt;
   char line[256];
   char s[256];
+  size_t len = 0;
   line[0] = 0;
 
   for (int i = 0; i < n; i++, c++) {
-    if (i != 0) strcat(line, ",");
+    if (i != 0) len += snprintf(line + len, sizeof(line) - len, ",");
 
     switch (*c) {
       case 'I':
-        sprintf(s, "%d", va_arg(va, int));
+        snprintf(s, sizeof(s), "%d", va_arg(va, int));
         break;
 
       case 'F':
-        // sprintf(s, "%lg", va_arg(va, double));
+        // snprintf(s, sizeof(s), "%lg", va_arg(va, double));
         ftos(va_arg(va, double), s);
         break;
 
       case 'S':
-        sprintf(s, "%s", va_arg(va, char *));
+        snprintf(s, sizeof(s), "%s", va_arg(va, char *));
         break;
 
       default:
         assert(0);
     }
-
-    strcat(line, s);
+    len += snprintf(line + len, sizeof(line) - len, "%s", s);
   }
 
   fprintf(fp, "%s\n", line);
@@ -204,28 +193,27 @@ void CHECData::AddDataLineItems(const char *fmt, ...) {
   int n   = strlen(fmt);
   char *c = (char *)fmt;
   char s[256];
+  size_t len = strlen(data_line_buffer);
 
   for (int i = 0; i < n; i++, c++) {
     switch (*c) {
       case 'I':
-        sprintf(s, "%d", va_arg(va, int));
+        snprintf(s, sizeof(s), "%d", va_arg(va, int));
         break;
 
       case 'F':
-        // sprintf(s, "%lg", va_arg(va, double));
+        // snprintf(s, sizeof(s), "%lg", va_arg(va, double));
         ftos(va_arg(va, double), s);
         break;
 
       case 'S':
-        sprintf(s, "%s", va_arg(va, char *));
+        snprintf(s, sizeof(s), "%s", va_arg(va, char *));
         break;
 
       default:
         assert(0);
     }
-
-    strcat(data_line_buffer, s);
-    strcat(data_line_buffer, ",");
+    len += snprintf(data_line_buffer + len, sizeof(data_line_buffer) - len, "%s,", s);
   }
 
   va_end(va);
@@ -267,7 +255,7 @@ bool CHECData::Load(const char *file_name) {
 bool CHECData::AddLoad(const char *file_name) {
   line_count       = 0;
   fg_header_pushed = false;
-  strcpy(fname, file_name);
+  snprintf(fname, sizeof(fname), "%s", file_name);
   fp = fopen(fname, "r");
 
   if (!fp) return false;
@@ -308,7 +296,7 @@ bool CHECData::ReadLine(char *s, int size) {
   line_count++;
 
   if (fg_header_pushed) {
-    strcpy(s, header_line_buffer);
+    snprintf(s, size, "%s", header_line_buffer);
     fg_header_pushed = false;
     return true;
   }
@@ -326,7 +314,7 @@ bool CHECData::ReadLine(char *s, int size) {
 }
 
 void CHECData::PushReadLine(const char *s) {
-  strcpy(header_line_buffer, s);
+  snprintf(header_line_buffer, sizeof(header_line_buffer), "%s", s);
   fg_header_pushed = true;
   line_count--;
 }
@@ -415,7 +403,7 @@ bool CHECData::vParseParameter(char *line, int *rcode, const char *fmt,
   int *ip;
 
   for (i = 0; i < param_n; i++) {
-    strcpy(param_name[i], va_arg(va, char *));
+    snprintf(param_name[i], sizeof(param_name[i]), "%s", va_arg(va, char *));
     param[i] = va_arg(va, void *);
     rcode[i] = 0;
 

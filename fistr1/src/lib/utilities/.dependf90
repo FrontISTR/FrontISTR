@@ -2,3 +2,4 @@ dictionary.o : dictionary.f90 linkedlist.f90
 linkedlist.o : linkedlist.f90 
 ttable.o : ttable.f90 linkedlist.f90 dictionary.f90 
 utilities.o : utilities.f90 
+fstr_ctrl_util_f.o : fstr_ctrl_util_f.f90

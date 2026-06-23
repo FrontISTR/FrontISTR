@@ -1,0 +1,42 @@
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!WRITE,LOG
+!WRITE,RESULT
+!OUTPUT_RES
+ EMISES,ON
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 100, 1
+ 1.0e-08, 1.0, 0.0
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ X0, 1, 1, 0.0
+ NALL, 2, 3, 0.0
+!BOUNDARY, GRPID=2
+ X1, 1, 1, 0.0001
+!TEMPERATURE, GRPID=1
+ NALL, 125.0
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1000.0, 0.3
+!VISCOELASTIC
+ 0.5, 1.0
+!TRS, DEFINITION=ARRHENIUS
+ 50.0, 500.0, -273.15
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, TYPE=VISCO, CONVERG=1.0E-6
+ 1.0, 1.0
+ BOUNDARY, 1
+ BOUNDARY, 2
+ LOAD, 1
+!END

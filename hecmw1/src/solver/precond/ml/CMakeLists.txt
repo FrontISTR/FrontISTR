@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND hecmw_SOURCES
+target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_ML_helper_33_c.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_ML_helper_nn_c.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_ML_wrapper.c
@@ -15,7 +15,7 @@ list(APPEND hecmw_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_ML.f90
 )
 
-list(APPEND hecmw_INCLUDE_DIRS
+target_include_directories(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
 )
 

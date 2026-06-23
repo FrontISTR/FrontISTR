@@ -187,7 +187,8 @@ int HECMW_dlb_get_keyword_repart(char *buf, Control_para *ctl_para) {
           HECMW_dlb_print_exit("ERROR: HEC-MW-VIS-E0007:The control parameter
      format error: method only can be PSR or PVR");
           */
-  strncpy(ctl_para->adaptive_repartition, "off", 3);
+  snprintf(ctl_para->adaptive_repartition,
+           sizeof(ctl_para->adaptive_repartition), "off");
 
   while ((buf[i] == ',') || (buf[i] == ' ')) i++;
   while (buf[i] != '\n') {
@@ -203,7 +204,8 @@ int HECMW_dlb_get_keyword_repart(char *buf, Control_para *ctl_para) {
         (strncmp(para, "METHOD", 6) == 0)) {
       HECMW_dlb_get_string_item(para, buf, &i, para2);
       if ((strncmp(para, "ADAPT", 5) == 0) || (strncmp(para, "adapt", 5) == 0))
-        strncpy(ctl_para->adaptive_repartition, "on", 2);
+        snprintf(ctl_para->adaptive_repartition,
+                 sizeof(ctl_para->adaptive_repartition), "on");
     }
 
     while ((buf[i] == ',') || (buf[i] == ' ')) i++;
@@ -230,14 +232,6 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para,
 
   fp = fopen(contfile, "r");
   if (fp == NULL) HECMW_dlb_print_exit("Cannot find the control input file");
-  for (i = 0; i < NUM_CONTROL_PARAS; i++) {
-    parameters[i] = (char *)calloc(128, sizeof(char));
-    if (parameters[i] == NULL) {
-      fprintf(stderr, "There is no enough memory for parameters\n");
-      exit(0);
-    }
-  }
-
   parameters[0] = "adaptive_repartition";
   len_para[0]   = 11;
   parameters[1] = "num_of_criteria";
@@ -359,7 +353,8 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para,
   }
   /* check the parameters */
   /*		  if(stat_para[0]==0) {
-                            strncpy(ctl_para->adaptive_repartition, "off", 3);
+                            snprintf(ctl_para->adaptive_repartition,
+                                     sizeof(ctl_para->adaptive_repartition), "off");
                     }
 
                     if((strncmp(ctl_para->adaptive_repartition, "on", 2)!=0) &&
@@ -379,7 +374,7 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para,
         stderr,
         "#### HEC-MW-DLB-E1001: num_of_criteria should be greater than 0\n");
     fprintf(stderr, "Please re-input a correct one\n");
-    exit(0);
+    exit(EXIT_FAILURE);
   }
   if (stat_para[2] == 0) {
     ctl_para->balance_rate =
@@ -392,7 +387,7 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para,
       fprintf(stderr,
               "#### HEC-MW-DLB-E1002: The balance rate should be >=1.0\n");
       fprintf(stderr, "Please input again\n");
-      exit(0);
+      exit(EXIT_FAILURE);
     }
   }
 
@@ -404,14 +399,14 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para,
         stderr,
         "#### HEC-MW-DLB-E1003: The num_of_repartition cannot less than 1\n");
     fprintf(stderr, "Please input again\n");
-    exit(0);
+    exit(EXIT_FAILURE);
   }
   if (stat_para[4] == 0) {
     ctl_para->itr_rate = 10000.0;
   }
   if (ctl_para->itr_rate < 0.0) {
     fprintf(stderr, "#### HEC-MW-DLB-E1004:itr_rate cannot be less than 0.0\n");
-    exit(0);
+    exit(EXIT_FAILURE);
   }
 
   if (stat_para[5] == 0) {
@@ -419,7 +414,7 @@ void hecmw_dlb_read_control(char *contfile, Control_para *ctl_para,
   }
   if ((ctl_para->wgtflag < 0) || (ctl_para->wgtflag > 3)) {
     fprintf(stderr, "#### HEC-MW-DLB-E1005:wgtflag only can be in 0--3\n");
-    exit(0);
+    exit(EXIT_FAILURE);
   }
   if (stat_para[8] == 0) {
     ctl_para->machine_wgt = (float *)calloc(pesize, sizeof(float));
@@ -434,7 +429,8 @@ void hecmw_dlb_set_default_control(Control_para *ctl_para,
                                    int pesize) {
   int i;
 
-  strncpy(ctl_para->adaptive_repartition, "on", 3);
+  snprintf(ctl_para->adaptive_repartition,
+           sizeof(ctl_para->adaptive_repartition), "on");
   ctl_para->num_criteria = 1;
 
   ctl_para->balance_rate    = (float *)calloc(1, sizeof(float));

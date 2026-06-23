@@ -192,7 +192,7 @@ struct hecmwST_local_mesh {
   int n_elem_type;
   int *elem_type_index;
   int *elem_type_item;
-  int *elem_node_index;
+  long long *elem_node_index;
   int *elem_node_item;
   int *section_ID;
   int *elem_mat_ID_index;

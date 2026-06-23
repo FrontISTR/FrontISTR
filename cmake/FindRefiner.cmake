@@ -52,6 +52,6 @@ endif()
 mark_as_advanced(REFINER_INCLUDE_PATH REFINER_LIBRARIES REFINER_SYSTEM_NAME)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(REVOCAP_Refiner
+find_package_handle_standard_args(Refiner
   DEFAULT_MSG REFINER_LIBRARIES REFINER_INCLUDE_PATH)
 

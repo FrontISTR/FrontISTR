@@ -72,12 +72,12 @@ int HECMW_openlog(const char *logfile, int loglv, int options) {
     HECMW_set_error(HECMW_UTIL_E9011, "Not specified log filename");
     return -1;
   }
-  HECMW_snprintf(rank, sizeof(rank), ".%d", HECMW_comm_get_rank());
+  snprintf(rank, sizeof(rank), ".%d", HECMW_comm_get_rank());
   if ((strlen(logfile) + strlen(rank)) > HECMW_FILENAME_LEN) {
     HECMW_set_error(HECMW_UTIL_E9011, "Filename too long");
     return -1;
   }
-  sprintf(logfilename, "%s%s", logfile, rank);
+  snprintf(logfilename, sizeof(logfilename), "%s%s", logfile, rank);
 
   loglv &= HECMW_LOG_ALL;
   if (!loglv) {
@@ -109,7 +109,7 @@ int HECMW_openlog(const char *logfile, int loglv, int options) {
     return -1;
   }
   /* regist new log entry */
-  strcpy(newent->file, logfilename);
+  snprintf(newent->file, sizeof(newent->file), "%s", logfilename);
   newent->lv  = loglv;
   newent->opt = options;
   if (enable_by_rank && loglv & loglevels) {
@@ -136,7 +136,7 @@ int HECMW_closelog(int id) {
   }
 
   p = (struct log_ent *)&logent[id];
-  if (p->fp == NULL) {
+  if (p->fp != NULL) {
     if (fclose(p->fp)) {
       HECMW_set_error(HECMW_UTIL_E9013, "File %s, %s", p->file,
                       strerror(errno));
@@ -158,9 +158,9 @@ static void output_log(int loglv, const char *fmt, va_list ap, FILE *fp) {
 
   /* date */
   if (HECMW_get_date_r(p, HECMW_MSG_LEN) == NULL) {
-    strncpy(p, "Could not get date", HECMW_MSG_LEN);
+    snprintf(p, sizeof(p), "Could not get date");
   }
-  strcpy(buf, p);
+  snprintf(buf, sizeof(buf), "%s", p);
 
 #ifndef HECMW_SERIAL
   {
@@ -192,7 +192,7 @@ static void output_log(int loglv, const char *fmt, va_list ap, FILE *fp) {
   for (i = 0; i < sizeof(hecmw_loglv_table) / sizeof(hecmw_loglv_table[0]);
        i++) {
     if (hecmw_loglv_table[i].loglv == loglv) {
-      strncpy(p, hecmw_loglv_table[i].str, HECMW_MSG_LEN);
+      snprintf(p, sizeof(p), "%s", hecmw_loglv_table[i].str);
       break;
     }
   }

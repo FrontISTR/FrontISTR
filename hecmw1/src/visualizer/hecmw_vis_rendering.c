@@ -34,7 +34,7 @@ void HECMW_vis_rendering_surface(struct surface_module *sf,
                                  HECMW_Comm VIS_COMM, int timestep)
 
 {
-  char fname[128];
+  char fname[HECMW_FILENAME_LEN + 1];
   int i, j, k, m, ii, iii, m1, m2, mmm, mmm1, jjj;
   int pesize, mynode;
   FILE *outfp;
@@ -414,7 +414,7 @@ for(j=0;j<3;j++)
       } else if ((sr->color_mapping_bar_on == 0) &&
                  (sr->scale_marking_on == 0) && (sr->time_mark_on == 1)) {
         char buf3[128];
-        sprintf(buf3, "%d",
+        snprintf(buf3, sizeof(buf3), "%d",
                 (int)(start_time + time_interval * (double)end_timestep));
         len_step   = strlen(buf3);
         scale_type = 2;
@@ -2144,7 +2144,7 @@ t2=t3;
          */
 
         /*output result in image of master pe */
-        /*	  sprintf(rname, "%s-%d", outfile,
+        /*	  snprintf(rname, sizeof(rname), "%s-%d", outfile,
 step_start+time_step*step_interv);
 
 if ((outfp = fopen(rname, "w")) == NULL) {
@@ -2192,34 +2192,31 @@ ptr--;
 
 {
 char buf[128];
-strcat(fname, ".");
-sprintf(buf, "%d.%d", v->count, ii);
-strcat(fname, buf);
-strcat(fname, ".bmp");
+snprintf(fname + strlen(fname), sizeof(fname) - strlen(fname), ".%d.%d.bmp", v->count, ii);
 }
 
          */
         if ((sr->rotate_style > 0) && (sr->deform_num_of_frames < 2)) {
           if (ii >= 10)
-            sprintf(fname, "%s.%d.bmp", outfile, ii);
+            snprintf(fname, sizeof(fname), "%s.%d.bmp", outfile, ii);
           else
-            sprintf(fname, "%s.0%d.bmp", outfile, ii);
+            snprintf(fname, sizeof(fname), "%s.0%d.bmp", outfile, ii);
         }
         if ((sr->rotate_style > 0) && (sr->deform_num_of_frames > 1)) {
           if (jjj >= 10)
-            sprintf(fname, "%s.%d.%d.bmp", outfile, ii, jjj);
+            snprintf(fname, sizeof(fname), "%s.%d.%d.bmp", outfile, ii, jjj);
           else
-            sprintf(fname, "%s.%d.0%d.bmp", outfile, ii, jjj);
+            snprintf(fname, sizeof(fname), "%s.%d.0%d.bmp", outfile, ii, jjj);
         }
         if ((sr->rotate_style == 0) && (sr->deform_num_of_frames > 1)) {
           if (jjj >= 10)
-            sprintf(fname, "%s.%d.bmp", outfile, jjj);
+            snprintf(fname, sizeof(fname), "%s.%d.bmp", outfile, jjj);
           else
-            sprintf(fname, "%s.0%d.bmp", outfile, jjj);
+            snprintf(fname, sizeof(fname), "%s.0%d.bmp", outfile, jjj);
         }
 
         if ((sr->rotate_style == 0) && (sr->deform_num_of_frames < 2))
-          sprintf(fname, "%s.bmp", outfile);
+          snprintf(fname, sizeof(fname), "%s.bmp", outfile);
 
         outfp = fopen(fname, "wb");
 

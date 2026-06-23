@@ -14,7 +14,7 @@
 using namespace std;
 using namespace n2h_util;
 
-static void ItoA(int i, char *s) { sprintf(s, "%d", i); }
+static void ItoA(int i, char *s, size_t n) { snprintf(s, n, "%d", i); }
 
 //-----------------------------------------------------------------------------
 // FIXTEMP
@@ -79,7 +79,7 @@ static void SetFixtemp(CNFData &neu, CHECData &hec) {
 
     for (it = ntlist.begin(); it != ntlist.end(); it++) {
       char name[256];
-      ItoA(it->nid, name);
+      ItoA(it->nid, name, sizeof(name));
       CFSTRDB_Fixtemp::CItem item(name, it->value);
       dblock->ItemList.push_back(item);
     }
@@ -109,7 +109,7 @@ static void SetCFlux(CNFData &neu, CHECData &hec) {
       if (siter->loadtype != FEA_load_nHeatFlux) continue;
 
       char name[256];
-      ItoA(siter->loadID, name);
+      ItoA(siter->loadID, name, sizeof(name));
       CFSTRDB_CFlux::CItem item(name, siter->value[0]);
       dblock->ItemList.push_back(item);
     }
@@ -167,7 +167,7 @@ static void SetDFlux(CNFData &neu, CHECData &hec) {
       }
 
       char name[256];
-      ItoA(siter->loadID, name);
+      ItoA(siter->loadID, name, sizeof(name));
       CFSTRDB_DFlux::CItem item(name, load_type, load);
       dblock->ItemList.push_back(item);
     }
@@ -213,7 +213,7 @@ static void SetFilm(CNFData &neu, CHECData &hec) {
       int load_type =
           CFSTRDB_Film::TYPE_F0 + hec_face_no(hec_e_type, surf_no, fg_front);
       char name[256];
-      ItoA(siter->loadID, name);
+      ItoA(siter->loadID, name, sizeof(name));
       CFSTRDB_Film::CItem item(name, load_type, value, sink);
       dblock->ItemList.push_back(item);
     }
@@ -259,7 +259,7 @@ static void SetRadiate(CNFData &neu, CHECData &hec) {
       int load_type =
           CFSTRDB_Radiate::TYPE_R0 + hec_face_no(hec_e_type, surf_no, fg_front);
       char name[256];
-      ItoA(siter->loadID, name);
+      ItoA(siter->loadID, name, sizeof(name));
       CFSTRDB_Radiate::CItem item(name, load_type, value, sink);
       dblock->ItemList.push_back(item);
     }

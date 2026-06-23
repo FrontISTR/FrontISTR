@@ -282,7 +282,7 @@ contains
     write(*,*) 't_start  ', d%t_start
     write(*,*) 't_end    ', d%t_end
     write(*,*) 't_delta  ', d%t_delta
-    write(*,*) 'ganma    ', d%ganma
+    write(*,*) 'gamma    ', d%gamma
     write(*,*) 'beta     ', d%beta
     write(*,*) 'idx_mas  ', d%idx_mas
     write(*,*) 'idx_dmp  ', d%idx_dmp

@@ -6,31 +6,38 @@
 module m_heat_solve_main
 contains
 
-  subroutine heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrPARAM, fstrHEAT, ISTEP, iterALL, next_time, delta_time)
+  subroutine heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, &
+     & fstrSOLID, fstrPARAM, fstrHEAT, ISTEP, iterALL, next_time, delta_time)
     use m_fstr
     use m_heat_mat_ass_conductivity
     use m_heat_mat_ass_capacity
     use m_heat_mat_ass_boundary
     use m_solve_lineq
+    use m_fstr_elemact
     implicit none
     integer(kind=kint) :: i, iterALL, ISTEP, bup_n_dof
     real(kind=kreal)   :: delta_time, next_time
     type(hecmwST_local_mesh)  :: hecMESH
     type(hecmwST_matrix)      :: hecMAT
+    type(fstr_solid)          :: fstrSOLID
     type(fstr_heat)           :: fstrHEAT
     type(fstr_param)          :: fstrPARAM
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_matrix), pointer :: hecMATmpc
     logical :: is_congerged
 
+    if( fstrHEAT%elemact%ELEMACT_egrp_tot>0 ) &
+      &  call fstr_update_elemact_heat( hecMESH, fstrHEAT%elemact, next_time, fstrSOLID%elements )
+
     iterALL = 0
     do
       iterALL = iterALL + 1
       hecMAT%X = 0.0d0
 
-      call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrHEAT, fstrHEAT%beta)
-      if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrHEAT, delta_time)
-      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, fstrHEAT, next_time, delta_time)
+      call heat_mat_ass_conductivity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, fstrHEAT%beta)
+      if(fstrHEAT%is_steady == 0) call heat_mat_ass_capacity(hecMESH, hecMAT, fstrSOLID, fstrHEAT, delta_time)
+      call heat_mat_ass_boundary(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, &
+       & fstrSOLID, fstrHEAT, next_time, delta_time)
 
       hecMATmpc%Iarray(97) = 1 !Need numerical factorization
       bup_n_dof = hecMESH%n_dof
@@ -43,6 +50,9 @@ contains
         fstrHEAT%TEMPC(i) = fstrHEAT%TEMP(i)
         fstrHEAT%TEMP (i) = hecMAT%X(i)
       enddo
+
+      if( fstrHEAT%elemact%ELEMACT_egrp_tot>0 ) &
+        &  call fstr_updatedof_elemact( 1, hecMESH, fstrHEAT%elemact, fstrSOLID%elements, fstrHEAT%TEMP0, fstrHEAT%TEMP )
 
       call heat_check_convergence(hecMESH, fstrHEAT, fstrPARAM, ISTEP, iterALL, is_congerged)
 

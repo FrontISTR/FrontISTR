@@ -7,7 +7,7 @@
 module fstr_ctrl_dynamic
   use m_fstr
   use hecmw
-  include 'fstr_ctrl_util_f.inc'
+  use fstr_ctrl_util_f
   private :: fstr_ctrl_get_nval
 contains
 
@@ -20,8 +20,7 @@ contains
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: iType
     character(len=HECMW_NAME_LEN) :: amp
-    character(len=HECMW_NAME_LEN),target :: node_id(:)
-    character(len=HECMW_NAME_LEN),pointer :: node_id_p
+    character(len=HECMW_NAME_LEN) :: node_id(:)
     integer(kind=kint) :: node_id_len
     integer(kind=kint),pointer :: dof_ids (:)
     integer(kind=kint),pointer :: dof_ide (:)
@@ -39,9 +38,8 @@ contains
     rcode=fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   ss,   0,   'P',   iType  )
 
     if( fstr_ctrl_get_param_ex( ctrl, 'AMP ',  '# ',  0, 'S', amp )/= 0) return
-    node_id_p => node_id(1)
     fstr_ctrl_get_nval = &
-      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id_p, dof_ids, dof_ide, value )
+      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, node_id, dof_ids, dof_ide, value )
 
   end function fstr_ctrl_get_nval
 
@@ -84,7 +82,7 @@ contains
   !> Read in !DYNAMIC
   function fstr_ctrl_get_DYNAMIC( ctrl, nlgeom,      &
       idx_eqa, idx_resp, n_step, t_start, t_end, t_delta, &
-      ganma, beta, idx_mas, idx_dmp, ray_m, ray_k, &
+      gamma, beta, idx_mas, idx_dmp, ray_m, ray_k, &
       nout, node_id, node_id_len, nout_monit, iout_list )
     implicit none
     integer(kind=kint) :: ctrl
@@ -101,7 +99,7 @@ contains
     real(kind=kreal)   :: t_delta
 
     ! Newmark-beta parameter
-    real(kind=kreal)   :: ganma
+    real(kind=kreal)   :: gamma
     real(kind=kreal)   :: beta
 
     ! mass matrix control
@@ -135,7 +133,7 @@ contains
 
     if( fstr_ctrl_get_data_ex( ctrl, 1, 'ii ',   idx_eqa, idx_resp )/=0 ) return
     if( fstr_ctrl_get_data_ex( ctrl, 2, 'rrir ', t_start, t_end, n_step, t_delta )/=0 ) return
-    if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ',   ganma, beta )/=0 ) return
+    if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ',   gamma, beta )/=0 ) return
     if( fstr_ctrl_get_data_ex( ctrl, 4, 'iirr ', idx_mas, idx_dmp, ray_m, ray_k )/=0 ) return
     write(ss,*) node_id_len
     write(data_fmt,'(a,a,a)') 'iS',trim(adjustl(ss)),'i '

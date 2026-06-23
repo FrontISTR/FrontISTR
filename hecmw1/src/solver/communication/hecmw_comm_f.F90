@@ -24,11 +24,11 @@ contains
   subroutine hecmw_scatterv_DP(sbuf, sc, disp, rbuf, rc, root, comm)
     use hecmw_util
     implicit none
-    integer(kind=kint) :: sc      !send counts
-    double precision   :: sbuf(sc) !send buffer
-    integer(kind=kint) :: disp    !displacement
+    double precision   :: sbuf(*) !send buffer
+    integer(kind=kint) :: sc(*)   !send counts
+    integer(kind=kint) :: disp(*) !displacement
+    double precision   :: rbuf(*) !receive buffer
     integer(kind=kint) :: rc      !receive counts
-    double precision   :: rbuf(rc) !receive buffer
     integer(kind=kint) :: root
     integer(kind=kint) :: comm
 #ifndef HECMW_SERIAL
@@ -372,30 +372,31 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    real(kind=kreal), dimension(:), allocatable :: VALM
+    real(kind=kreal), dimension(:), allocatable :: VALM, sbuf
 
-    allocate (VALM(n))
+    allocate (VALM(n), sbuf(n))
+    sbuf= val
     VALM= 0.d0
     if (ntag .eq. hecmw_sum) then
       call MPI_allREDUCE                                              &
-        &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM,              &
+        &       (sbuf, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM,             &
         &        hecMESH%MPI_COMM, ierr)
     endif
 
     if (ntag .eq. hecmw_max) then
       call MPI_allREDUCE                                              &
-        &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MAX,              &
+        &       (sbuf, VALM, n, MPI_DOUBLE_PRECISION, MPI_MAX,             &
         &        hecMESH%MPI_COMM, ierr)
     endif
 
     if (ntag .eq. hecmw_min) then
       call MPI_allREDUCE                                              &
-        &       (val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MIN,              &
+        &       (sbuf, VALM, n, MPI_DOUBLE_PRECISION, MPI_MIN,             &
         &        hecMESH%MPI_COMM, ierr)
     endif
 
     val= VALM
-    deallocate (VALM)
+    deallocate (VALM, sbuf)
 #endif
   end subroutine hecmw_allreduce_R
 
@@ -426,31 +427,32 @@ contains
     type (hecmwST_local_mesh) :: hecMESH
 #ifndef HECMW_SERIAL
     integer(kind=kint):: ierr
-    integer(kind=kint), dimension(:), allocatable :: VALM
+    integer(kind=kint), dimension(:), allocatable :: VALM, sbuf
 
-    allocate (VALM(n))
+    allocate (VALM(n), sbuf(n))
+    sbuf= val
     VALM= 0
     if (ntag .eq. hecmw_sum) then
       call MPI_allREDUCE                                              &
-        &       (val, VALM, n, MPI_INTEGER, MPI_SUM,                       &
+        &       (sbuf, VALM, n, MPI_INTEGER, MPI_SUM,                      &
         &        hecMESH%MPI_COMM, ierr)
     endif
 
     if (ntag .eq. hecmw_max) then
       call MPI_allREDUCE                                              &
-        &       (val, VALM, n, MPI_INTEGER, MPI_MAX,                       &
+        &       (sbuf, VALM, n, MPI_INTEGER, MPI_MAX,                      &
         &        hecMESH%MPI_COMM, ierr)
     endif
 
     if (ntag .eq. hecmw_min) then
       call MPI_allREDUCE                                              &
-        &       (val, VALM, n, MPI_INTEGER, MPI_MIN,                       &
+        &       (sbuf, VALM, n, MPI_INTEGER, MPI_MIN,                      &
         &        hecMESH%MPI_COMM, ierr)
     endif
 
 
     val= VALM
-    deallocate (VALM)
+    deallocate (VALM, sbuf)
 #endif
   end subroutine hecmw_allreduce_I
 
@@ -467,6 +469,33 @@ contains
     s = val(1)
 #endif
   end subroutine hecmw_allreduce_I1
+
+  subroutine hecmw_allreduce_L1 (hecMESH, flag, ntag)
+    use hecmw_util
+    implicit none
+    integer(kind=kint):: ntag
+    logical :: flag
+    type (hecmwST_local_mesh) :: hecMESH
+#ifndef HECMW_SERIAL
+    integer(kind=kint):: ierr
+    logical :: flagM
+
+    flagM = .false.
+    if (ntag .eq. hecmw_lor) then
+      call MPI_allREDUCE                                              &
+        &       (flag, flagM, 1, MPI_LOGICAL, MPI_LOR,                    &
+        &        hecMESH%MPI_COMM, ierr)
+    endif
+
+    if (ntag .eq. hecmw_land) then
+      call MPI_allREDUCE                                              &
+        &       (flag, flagM, 1, MPI_LOGICAL, MPI_LAND,                   &
+        &        hecMESH%MPI_COMM, ierr)
+    endif
+
+    flag = flagM
+#endif
+  end subroutine hecmw_allreduce_L1
 
   !C
   !C***

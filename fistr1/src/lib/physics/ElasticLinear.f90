@@ -12,13 +12,14 @@ module m_ElasticLinear
 contains
 
   !> Calculate isotropic elastic matrix
+  !> hdflag: 0=full, 1=deviatoric only (edge-smoothed, etype=891), 2=volumetric only (node-smoothed, etype=881)
   subroutine calElasticMatrix( matl, sectType, D, temp, hdflag  )
     type( tMaterial ), intent(in) :: matl       !> material properties
     integer, intent(in)           :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(out) :: D(:,:)     !> elastic matrix
     real(kind=kreal), intent(in)  :: temp       !> temperature
     real(kind=kreal) :: EE, PP, COEF1, COEF2, ina(1), outa(2)
-    integer(kind=kint), intent(in), optional :: hdflag  !> return only hyd and dev term if specified
+    integer(kind=kint), intent(in), optional :: hdflag  !> volumetric/deviatoric flag for selective ES/NS
     logical :: ierr
     real(kind=kreal) :: K, G
 
@@ -105,16 +106,22 @@ contains
 
 
   !> Calculate orthotropic elastic matrix
-  subroutine calElasticMatrix_ortho( matl, sectType, bij, DMAT, temp  )
+  !> bij: rotation matrix from material axes to global axes, supplied via !SECTION ORIENTATION= (mandatory)
+  !> hdflag: 0=full, 1=deviatoric only (edge-smoothed, etype=891), 2=volumetric only (node-smoothed, etype=881)
+  !>   volumetric part uses projector split: c = 1 / sum(S(1:3,1:3)), D_vol = c * m*m^T
+  subroutine calElasticMatrix_ortho( matl, sectType, bij, DMAT, temp, hdflag  )
     use m_utilities
     type( tMaterial ), intent(in) :: matl       !> material properties
     integer, intent(in)           :: sectType   !> plane strain/stress or 3D
-    real(kind=kreal), intent(in)  :: bij(3,3)   !> director
+    real(kind=kreal), intent(in)  :: bij(3,3)   !> director (from !SECTION ORIENTATION=; mandatory for orthotropic)
     real(kind=kreal), intent(out) :: DMAT(:,:)  !> elastic matrix
     real(kind=kreal), intent(in)  :: temp       !> temperature
+    integer(kind=kint), intent(in), optional :: hdflag  !> volumetric/deviatoric flag for selective ES/NS
     real(kind=kreal) :: E1, E2, E3, G12, G23, G13, nyu12, nyu23,nyu13
     real(kind=kreal) :: nyu21,nyu32,nyu31, delta1, ina(1), outa(9)
     real(kind=kreal) :: tm(6,6)
+    real(kind=kreal) :: cvol, DVOL(6,6), AMAT(6,6), uvec(6)
+    integer :: ii, jj
     logical :: ierr
 
     ina(1) = temp
@@ -156,6 +163,27 @@ contains
 
     dmat = matmul( transpose(tm), dmat)
     dmat = matmul( dmat, (tm) )
+
+    ! Projector split for selective ES/NS: c = 1/(m^T D^{-1} m), D_vol = c m m^T
+    if( present(hdflag) ) then
+      if( hdflag == 1 .or. hdflag == 2 ) then
+        AMAT(:,:) = DMAT(:,:)
+        uvec(:) = 0.d0;  uvec(1) = 1.d0;  uvec(2) = 1.d0;  uvec(3) = 1.d0
+        call calSolve(6, AMAT, uvec)
+        cvol = 1.d0 / (uvec(1) + uvec(2) + uvec(3))
+        DVOL(:,:) = 0.d0
+        do ii = 1, 3
+          do jj = 1, 3
+            DVOL(ii, jj) = cvol
+          end do
+        end do
+        if( hdflag == 1 ) then
+          DMAT(:,:) = DMAT(:,:) - DVOL(:,:)
+        else if( hdflag == 2 ) then
+          DMAT(:,:) = DVOL(:,:)
+        end if
+      end if
+    end if
 
   end subroutine
 

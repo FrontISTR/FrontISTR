@@ -41,7 +41,7 @@ PUSH2,2,-0.1
 #####       STEP CONTROL      #####
 ###################################
 !STEP, SUBSTEPS=100, MAXITER=10, INC_TYPE=AUTO, CONVERG=1.0E-6
-0.2, 1.0, 0.001, 0.1
+0.2, 1.0, 0.001, 0.2
 BOUNDARY,1
 LOAD,1
 LOAD,2

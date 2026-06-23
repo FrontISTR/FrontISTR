@@ -9,7 +9,7 @@ contains
 
   !> Output result
   !----------------------------------------------------------------------*
-  subroutine fstr_static_Output( cstep, istep, time, hecMESH, fstrSOLID, fstrPARAM, flag, outflag )
+  subroutine fstr_static_Output( cstep, istep, time, hecMESH, fstrSOLID, fstrPARAM, flag, outflag, dtime )
     !----------------------------------------------------------------------*
     use m_fstr
     use m_fstr_NodalStress
@@ -24,6 +24,7 @@ contains
     type (fstr_param       )              :: fstrPARAM    !< analysis control parameters
     integer, intent(in)                   :: flag
     logical, intent(in)                   :: outflag     !< if true, result will be output regardless of istep
+    real(kind=kreal), optional, intent(in) :: dtime       !< time increment for contact output
 
     type ( hecmwST_result_data ) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, fnum, is, iE, gid
@@ -62,16 +63,26 @@ contains
 
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
-      if( associated( fstrSOLID%contacts ) ) &
-        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3 )
+      if( associated( fstrSOLID%contacts ) ) then
+        if( present(dtime) ) then
+          call setup_contact_output_variables( hecMESH, fstrSOLID, 3, dtime )
+        else
+          call setup_contact_output_variables( hecMESH, fstrSOLID, 3, fstrSOLID%step_ctrl(cstep)%initdt )
+        endif
+      endif
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, 0 )
     endif
 
     if( IVISUAL==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. outflag) ) then
 
-      if( associated( fstrSOLID%contacts ) ) &
-        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4 )
+      if( associated( fstrSOLID%contacts ) ) then
+        if( present(dtime) ) then
+          call setup_contact_output_variables( hecMESH, fstrSOLID, 4, dtime )
+        else
+          call setup_contact_output_variables( hecMESH, fstrSOLID, 4, fstrSOLID%step_ctrl(cstep)%initdt )
+        endif
+      endif
       call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init

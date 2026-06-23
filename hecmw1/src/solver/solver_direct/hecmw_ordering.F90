@@ -79,8 +79,9 @@ contains
     integer(kind=kint), intent(in) :: perm(:), iperm(:)
     integer(kind=kint), parameter :: F_ORG = 901
     integer(kind=kint), parameter :: F_NEW = 902
-    integer(kind=kint) :: i, j, irow, jcol
-    open(F_ORG, file='nzprof_org.txt', status='replace')
+    integer(kind=kint) :: i, j, irow, jcol, io_stat
+    open(F_ORG, file='nzprof_org.txt', status='replace', iostat=io_stat)
+    if( io_stat /= 0 ) return
     do irow = 1, N
       i = irow
       do j = index(i), index(i+1)-1
@@ -89,7 +90,8 @@ contains
       end do
     end do
     close(F_ORG)
-    open(F_NEW, file='nzprof_new.txt', status='replace')
+    open(F_NEW, file='nzprof_new.txt', status='replace', iostat=io_stat)
+    if( io_stat /= 0 ) return
     do irow = 1, N
       i = perm(irow)
       do j = index(i), index(i+1)-1
@@ -105,8 +107,9 @@ contains
     integer(kind=kint), intent(in) :: N
     integer(kind=kint), intent(in) :: perm(:), iperm(:)
     integer(kind=kint), parameter :: F_PERM = 903
-    integer(kind=kint) :: i
-    open(F_PERM, file='perm_iperm.txt', status='replace')
+    integer(kind=kint) :: i, io_stat
+    open(F_PERM, file='perm_iperm.txt', status='replace', iostat=io_stat)
+    if( io_stat /= 0 ) return
     do i = 1, N
       write(F_PERM,*) perm(i), iperm(i)
     end do

@@ -10,6 +10,7 @@ module m_fstr_solve_NLGEOM
   use m_static_output
   use m_fstr_NonLinearMethod
   use m_fstr_QuasiNewton
+  use m_fstr_NodalKinematics, only: fstr_begin_nodal_kinematics_step
   use m_fstr_Restart
   use fstr_matrix_con_contact
   use m_fstr_TimeInc
@@ -100,10 +101,11 @@ contains
       call fstr_set_timeinc_base( dtime )
       fstrSOLID%restart_nout = - fstrSOLID%restart_nout
     else
-      call fstr_static_Output( 1, 0, 0.d0, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, .true. )
+      call fstr_static_Output( 1, 0, 0.d0, hecMESH, fstrSOLID, fstrPARAM, fstrPR%solution_type, .true., 0.d0 )
     endif
 
     fstrSOLID%FACTOR = 0.0d0
+    call fstr_begin_nodal_kinematics_step( hecMESH, fstrSOLID, hecMAT%NDOF )
     call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
 
@@ -119,6 +121,7 @@ contains
       endif
       call fstr_UpdateState( hecMESH, fstrSOLID, 0.0d0 )
 
+      call fstr_begin_nodal_kinematics_step( hecMESH, fstrSOLID, hecMAT%NDOF )
       fstrSOLID%unode_bak(:) = fstrSOLID%unode(:)
 
       ! -------------------------------------------------------------------------
@@ -235,7 +238,7 @@ contains
         is_OutPoint = fstr_TimeInc_isTimePoint( fstrSOLID%step_ctrl(tot_step), fstrPARAM ) &
           & .or. fstr_TimeInc_isStepFinished( fstrSOLID%step_ctrl(tot_step) )
         call fstr_static_Output( tot_step, step_count, fstr_get_time(), hecMESH, fstrSOLID, fstrPARAM, &
-          &                      fstrPR%solution_type, is_OutPoint )
+          &                      fstrPR%solution_type, is_OutPoint, fstr_get_timeinc() )
 
         time_2 = hecmw_Wtime()
         if( hecMESH%my_rank==0 ) then

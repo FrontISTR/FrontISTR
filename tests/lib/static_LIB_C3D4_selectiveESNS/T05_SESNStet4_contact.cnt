@@ -25,7 +25,10 @@ SURF_3,S,1.
 ###################################
 #####   CONTACT DEFINITIONS   #####
 ###################################
-!CONTACT, INTERACTION=FSLID, GRPID=1
+!CONTACT_PARAM, NAME=CPARAM1
+1.0e-4,  5.0e-3,  1.0e-2,  1.0e-4
+1.0e-6,  1.0e-6,  1.0,    -1.0e-8,  1.05
+!CONTACT, INTERACTION=FSLID, CONTACTPARAM=CPARAM1, GRPID=1
 CP1,0.00000000E+00,5.0E+2
 ###################################
 #####         MATERIAL        #####

@@ -75,10 +75,9 @@ contains
     real(kind=kreal), intent(in)  :: tensor(6)          !< tensor
     real(kind=kreal), intent(out) :: eigval(3)     !< eigenvalues
 
-    real(kind=kreal) :: I1,I2,I3,R,sita,Q, X(3,3), XX(3,3), II(3,3)
+    real(kind=kreal) :: I1,I2,I3,R,theta,Q, X(3,3), XX(3,3)
+    real(kind=kreal), parameter :: SMALL = 1.0d-10
 
-    II(:,:)=0.d0
-    II(1,1)=1.d0;  II(2,2)=1.d0;  II(3,3)=1.d0
     X(1,1)=tensor(1); X(2,2)=tensor(2); X(3,3)=tensor(3)
     X(1,2)=tensor(4); X(2,1)=X(1,2)
     X(2,3)=tensor(5); X(3,2)=X(2,3)
@@ -92,11 +91,49 @@ contains
 
     R=(-2.d0*I1*I1*I1+9.d0*I1*I2-27.d0*I3)/54.d0
     Q=(I1*I1-3.d0*I2)/9.d0
-    sita = acos(R/dsqrt(Q*Q*Q))
 
-    eigval(1) = -2.d0*Q*cos(sita/3.d0)+I1/3.d0
-    eigval(2) = -2.d0*Q*cos((sita+2.d0*PI)/3.d0)+I1/3.d0
-    eigval(3) = -2.d0*Q*cos((sita-2.d0*PI)/3.d0)+I1/3.d0
+    ! Check discriminant to ensure all eigenvalues are real
+    ! For a 3x3 symmetric matrix, Delta = R^2 - Q^3 must be negative or zero
+    if(R*R - Q*Q*Q > SMALL) then
+      write(*,*) 'ERROR in tensor_eigen3: Discriminant R^2 - Q^3 > 0'
+      write(*,*) 'This indicates the algorithm has numerical issues.'
+      write(*,*) 'Discriminant =', R*R - Q*Q*Q
+      stop 'Eigenvalue calculation failed - possible numerical error'
+    endif
+
+    ! Add handling for special cases (when Q is close to 0)
+    if(abs(Q) < SMALL) then
+      ! Matrix has nearly equal diagonal elements (e.g. close to identity matrix)
+      eigval(1) = I1/3.d0
+      eigval(2) = I1/3.d0
+      eigval(3) = I1/3.d0
+    else
+      ! For Q^3 sufficiently small, address numerical stability
+      if(abs(Q*Q*Q) < SMALL) then
+        ! Q^3 is very small, but not zero - special handling
+        if(abs(R) < SMALL) then
+          ! Both R and Q^3 small means nearly triple root
+          eigval(1) = I1/3.d0
+          eigval(2) = I1/3.d0
+          eigval(3) = I1/3.d0
+        else
+          ! When Q^3 is very small, determine theta based on sign of R only
+          ! This avoids division by a very small number which could cause instability
+          if(R >= 0.0d0) then
+            theta = 0.0d0      ! R > 0 case
+          else
+            theta = PI         ! R < 0 case
+          endif
+        endif
+      else
+        ! Ensure R/sqrt(Q^3) is within [-1,1] for numerical stability
+        theta = acos(max(-1.0d0, min(1.0d0, R/dsqrt(Q*Q*Q))))
+      endif
+
+      eigval(1) = -2.d0*dsqrt(Q)*cos(theta/3.d0)+I1/3.d0
+      eigval(2) = -2.d0*dsqrt(Q)*cos((theta+2.d0*PI)/3.d0)+I1/3.d0
+      eigval(3) = -2.d0*dsqrt(Q)*cos((theta-2.d0*PI)/3.d0)+I1/3.d0
+    endif
 
   end subroutine
 
@@ -262,7 +299,7 @@ contains
     real(kind=kreal) :: W,WMAX,PIVOT,API,EPS,DET
     data EPS/1.0E-35/
     DET=1.d0
-    LR = 0.0d0
+    LR = 0
     do I=1,NN
       IP(I)=I
     enddo
@@ -325,6 +362,45 @@ contains
     enddo
 
   end subroutine calInverse
+
+  !> Solve A x = b for dense NN x NN system (Gaussian elimination with partial pivoting)
+  subroutine calSolve(NN, A, b)
+    integer, intent(in)             :: NN
+    real(kind=kreal), intent(inout) :: A(NN,NN)  !> coefficient matrix (destroyed on exit)
+    real(kind=kreal), intent(inout) :: b(NN)     !> RHS on entry, solution on exit
+
+    integer          :: i, j, k, imax
+    real(kind=kreal) :: w, piv
+
+    ! Forward elimination
+    do k = 1, NN-1
+      imax = k
+      do i = k+1, NN
+        if( dabs(A(i,k)) > dabs(A(imax,k)) ) imax = i
+      end do
+      if( imax /= k ) then
+        do j = k, NN
+          w = A(k,j);  A(k,j) = A(imax,j);  A(imax,j) = w
+        end do
+        w = b(k);  b(k) = b(imax);  b(imax) = w
+      end if
+      piv = A(k,k)
+      do i = k+1, NN
+        w = A(i,k) / piv
+        do j = k+1, NN
+          A(i,j) = A(i,j) - w * A(k,j)
+        end do
+        b(i) = b(i) - w * b(k)
+      end do
+    end do
+    ! Back substitution
+    do i = NN, 1, -1
+      do j = i+1, NN
+        b(i) = b(i) - A(i,j) * b(j)
+      end do
+      b(i) = b(i) / A(i,i)
+    end do
+  end subroutine calSolve
 
   subroutine cross_product(v1,v2,vn)
     real(kind=kreal),intent(in)  ::  v1(3),v2(3)

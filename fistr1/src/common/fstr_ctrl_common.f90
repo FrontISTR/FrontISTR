@@ -9,10 +9,9 @@ module fstr_ctrl_common
   use hecmw
   use mContact
   use m_timepoint
+  use fstr_ctrl_util_f
 
   implicit none
-
-  include 'fstr_ctrl_util_f.inc'
 
   private :: pc_strupr
 
@@ -227,7 +226,7 @@ contains
     use m_step
     integer(kind=kint), intent(in)        :: ctrl      !< ctrl file
     type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
-    type(step_info), intent(out)          :: steps     !< step control info
+    type(step_info), intent(inout)        :: steps     !< step control info
     character(len=*), intent(out)         :: tpname    !< name of timepoints
     character(len=*), intent(out)         :: apname    !< name of auto increment parameter
 
@@ -236,7 +235,7 @@ contains
     character(len=HECMW_NAME_LEN) :: header_name
     integer(kind=kint) :: bcid
     integer(kind=kint) :: i, n, sn, ierr
-    integer(kind=kint) :: bc_n, load_n, contact_n
+    integer(kind=kint) :: bc_n, load_n, contact_n, elemact_n
     real(kind=kreal) :: fn, f1, f2, f3
 
     fstr_ctrl_get_ISTEP = .false.
@@ -245,7 +244,6 @@ contains
     write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)), 'I '
     write( data_fmt1, '(a,a,a)') 'S', trim(adjustl(ss)),'rrr '
 
-    call init_stepInfo(steps)
     steps%solution = stepStatic
     if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ',   'STATIC,VISCO ', 0, 'P', steps%solution )/= 0) return
     steps%inc_type = stepFixedInc
@@ -294,6 +292,7 @@ contains
     bc_n = 0
     load_n = 0
     contact_n = 0
+    elemact_n = 0
     do i=sn,n
       if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, header_name, bcid  )/= 0) return
       if( trim(header_name) == 'BOUNDARY' ) then
@@ -302,6 +301,8 @@ contains
         load_n = load_n +1
       else if( trim(header_name) == 'CONTACT' ) then
         contact_n = contact_n+1
+      else if( trim(header_name) == 'ELEMACT' ) then
+        elemact_n = elemact_n+1
       else if( trim(header_name) == 'TEMPERATURE' ) then
         !   steps%Temperature = .true.
       endif
@@ -310,10 +311,12 @@ contains
     if( bc_n>0 ) allocate( steps%Boundary(bc_n) )
     if( load_n>0 ) allocate( steps%Load(load_n) )
     if( contact_n>0 ) allocate( steps%Contact(contact_n) )
+    if( elemact_n>0 ) allocate( steps%ElemActivation(elemact_n) )
 
     bc_n = 0
     load_n = 0
     contact_n = 0
+    elemact_n = 0
     do i=sn,n
       if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, header_name, bcid  )/= 0) return
       if( trim(header_name) == 'BOUNDARY' ) then
@@ -325,6 +328,9 @@ contains
       else if( trim(header_name) == 'CONTACT' ) then
         contact_n = contact_n+1
         steps%Contact(contact_n) = bcid
+      else if( trim(header_name) == 'ELEMACT' ) then
+        elemact_n = elemact_n+1
+        steps%ElemActivation(elemact_n) = bcid
       endif
     end do
 
@@ -425,8 +431,7 @@ contains
     integer(kind=kint) :: fg_type                        !< if type
     integer(kind=kint) :: fg_first                       !< if first
     integer(kind=kint) :: fg_window                      !< if window
-    character(len=HECMW_NAME_LEN),target  :: surf_id(:)  !< surface id
-    character(len=HECMW_NAME_LEN),pointer :: surf_id_p   !< surface id
+    character(len=HECMW_NAME_LEN) :: surf_id(:)          !< surface id
     integer(kind=kint) :: surf_id_len
     integer(kind=kint) :: fstr_ctrl_get_COUPLE
 
@@ -439,9 +444,8 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'ISTEP ', '# ', 0, 'I', fg_first )/= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'WINDOW ', '# ', 0, 'I', fg_window )/= 0) return
 
-    surf_id_p => surf_id(1)
     fstr_ctrl_get_COUPLE = &
-      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surf_id_p )
+      fstr_ctrl_get_data_array_ex( ctrl, data_fmt, surf_id )
 
   end function fstr_ctrl_get_COUPLE
 
@@ -521,21 +525,26 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
+    integer(kind=kint) :: augiter
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
     integer(kind=kint) :: rcode
     character(len=80) :: s
-    algo = kcaSLagrange
     s = 'SLAGRANGE,ALAGRANGE '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )
-    fstr_ctrl_get_CONTACTALGO = rcode
+    if( rcode /= 0 ) then
+      fstr_ctrl_get_CONTACTALGO = rcode
+      return
+    endif
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'AUGITER ', '# ', 0, 'I', augiter )
+    fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname )
+  logical function fstr_ctrl_get_CONTACT( ctrl, n, contact, np, tp, ntol, ttol, ctAlgo, cpname, smoothing )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
@@ -546,14 +555,14 @@ contains
     real(kind=kreal), intent(out)      :: ntol           !< tolrence along contact nomral
     real(kind=kreal), intent(out)      :: ttol           !< tolrence along contact tangent
     character(len=*), intent(out)      :: cpname         !< name of contact parameter
+    integer(kind=kint), intent(out)    :: smoothing     !< kcsNONE or kcsNAGATA
 
     integer           :: rcode, ipt
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
     real(kind=kreal)  :: fcoeff(n),tPenalty(n)
-
-    tPenalty = 1.0d6
+    real(kind=kreal)  :: damp_alpha, damp_gact
 
     write(ss,*)  HECMW_NAME_LEN
 
@@ -563,20 +572,29 @@ contains
     rcode = fstr_ctrl_get_param_ex( ctrl, 'INTERACTION ', s1, 0, 'P', contact(1)%algtype )
     if( contact(1)%algtype==CONTACTGLUED ) contact(1)%algtype=CONTACTFSLID  ! not complemented yet
     if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', contact(1)%group )/=0) return
+    smoothing = kcsNONE + 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'SMOOTHING ', 'NONE,NAGATA ', 0, 'P', smoothing ) /= 0 ) return
+    smoothing = smoothing - 1
     do rcode=2,n
       contact(rcode)%ctype = contact(1)%ctype
       contact(rcode)%group = contact(1)%group
       contact(rcode)%algtype = contact(1)%algtype
     end do
 
+    tPenalty = 0.5d0
+
     if( contact(1)%algtype==CONTACTSSLID .or. contact(1)%algtype==CONTACTFSLID ) then
       write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
-      if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
+      if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
       do rcode=1,n
         call fstr_strupr(cp_name(rcode))
         contact(rcode)%pair_name = cp_name(rcode)
         contact(rcode)%fcoeff = fcoeff(rcode)
+        contact(rcode)%nPenalty = 5.0d0
         contact(rcode)%tPenalty = tPenalty(rcode)
+        contact(rcode)%refStiff = 1.d0
+        contact(rcode)%damp_alpha = 0.0d0
+        contact(rcode)%damp_gact = 0.0d0
       enddo
     else if( contact(1)%algtype==CONTACTTIED ) then
       write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
@@ -584,29 +602,59 @@ contains
       do rcode=1,n
         call fstr_strupr(cp_name(rcode))
         contact(rcode)%pair_name = cp_name(rcode)
+        contact(rcode)%nPenalty = 5.0d0
         contact(rcode)%fcoeff = 0.d0
-        contact(rcode)%tPenalty = 1.d+4
+        contact(rcode)%tPenalty = 1.d0
+        contact(rcode)%damp_alpha = 0.0d0
+        contact(rcode)%damp_gact = 0.0d0
       enddo
     endif
 
     np = 0.d0;  tp=0.d0
     ntol = 0.d0;  ttol=0.d0
+    damp_alpha = 0.0d0;  damp_gact = 0.0d0
     if( fstr_ctrl_get_param_ex( ctrl, 'NPENALTY ',  '# ',  0, 'R', np ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TPENALTY ', '# ', 0, 'R', tp ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'NTOL ',  '# ',  0, 'R', ntol ) /= 0 ) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TTOL ', '# ', 0, 'R', ttol ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DAMP_ALPHA ', '# ', 0, 'R', damp_alpha ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'DAMP_GACT ',  '# ', 0, 'R', damp_gact  ) /= 0 ) return
     cpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
+    
+    ! Set penalty coefficients to contact structure if specified (for ALagrange method)
+    if( np > 0.d0 ) then
+      do rcode=1,n
+        contact(rcode)%nPenalty = np
+      enddo
+    endif
+    if( tp > 0.d0 ) then
+      do rcode=1,n
+        contact(rcode)%tPenalty = tp
+      enddo
+    endif
+    if( damp_alpha > 0.0d0 ) then
+      do rcode=1,n
+        contact(rcode)%damp_alpha = damp_alpha
+      enddo
+    endif
+    if( damp_gact > 0.0d0 ) then
+      do rcode=1,n
+        contact(rcode)%damp_gact = damp_gact
+      enddo
+    endif
+    
     fstr_ctrl_get_CONTACT = .true.
   end function fstr_ctrl_get_CONTACT
 
   !>  Read in contact definition
-  logical function fstr_ctrl_get_EMBED( ctrl, n, embed, cpname )
+  logical function fstr_ctrl_get_EMBED( ctrl, n, embed, cpname, smoothing )
     use fstr_setup_util
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
     type(tContact), intent(out)       :: embed(n)      !< embed definition
     character(len=*), intent(out)     :: cpname         !< name of contact parameter
+    integer(kind=kint), intent(out)   :: smoothing     !< kcsNONE or kcsNAGATA
 
     integer           :: rcode, ipt
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
@@ -622,6 +670,9 @@ contains
     embed(1)%ctype = 1   ! pure slave-master contact; default value
     embed(1)%algtype = CONTACTTIED ! small sliding contact; default value
     if( fstr_ctrl_get_param_ex( ctrl, 'GRPID ', '# ', 1, 'I', embed(1)%group )/=0) return
+    smoothing = kcsNONE + 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'SMOOTHING ', 'NONE,NAGATA ', 0, 'P', smoothing ) /= 0 ) return
+    smoothing = smoothing - 1
     do rcode=2,n
       embed(rcode)%ctype = embed(1)%ctype
       embed(rcode)%group = embed(1)%group
@@ -712,6 +763,41 @@ contains
 
     fstr_ctrl_get_CONTACTPARAM = 0
   end function fstr_ctrl_get_CONTACTPARAM
+
+  !>  Read in contact interference
+  function fstr_ctrl_get_CONTACT_IF( ctrl, n, contact_if )
+    use fstr_setup_util
+    integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
+    integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
+    !
+    type(tContactInterference), intent(out) :: contact_if(n)    !< contact definition
+    
+    integer           :: rcode, i
+    character(len=30) :: s1 = 'SLAVE,MASTER '
+    character(len=HECMW_NAME_LEN) :: data_fmt,ss
+    character(len=HECMW_NAME_LEN) :: cp_name(n)
+    real(kind=kreal)              :: init_pos(n), end_pos(n)
+    integer(kind=kint)            :: fstr_ctrl_get_CONTACT_IF
+
+    fstr_ctrl_get_CONTACT_IF = -1
+    write(ss,*)  HECMW_NAME_LEN
+    if( fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s1, 0, 'P', contact_if(1)%if_type ) /= 0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'END ',  '# ',  0, 'R', contact_if(1)%etime ) /= 0 ) return
+    write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'rr '
+    init_pos = 0.d0; end_pos = 0.d0
+    if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, init_pos, end_pos ) /= 0 ) return
+    do i = 1, n
+      contact_if(i)%if_type     = contact_if(1)%if_type
+      contact_if(i)%etime       = contact_if(1)%etime
+
+      contact_if(i)%cp_name     = cp_name(i)
+      contact_if(i)%initial_pos = - init_pos(i)
+      contact_if(i)%end_pos     = - end_pos(i)
+      if(contact_if(i)%if_type == C_IF_SLAVE .and. init_pos(i) /= 0.d0) contact_if(i)%initial_pos = 0.d0
+    end do
+    fstr_ctrl_get_CONTACT_IF = 0
+
+  end function fstr_ctrl_get_CONTACT_IF
 
   !> Read in !ELEMOPT
   function fstr_ctrl_get_ELEMOPT( ctrl, elemopt361 )
@@ -926,5 +1012,71 @@ contains
     fstr_ctrl_get_AMPLITUDE = 0
 
   end function fstr_ctrl_get_AMPLITUDE
+
+  !> Read in !ELEMENT_ACTIVATION
+  function fstr_ctrl_get_ELEMENT_ACTIVATION( ctrl, amp, eps, grp_id_name, mode, measure, state, thlow, thup )
+    implicit none
+    integer(kind=kint) :: ctrl
+    character(len=HECMW_NAME_LEN) :: amp
+    real(kind=kreal) :: eps
+    character(len=HECMW_NAME_LEN),target :: grp_id_name(:)
+    integer(kind=kint) :: mode     ! 1=FIXED, 2=AMPLITUDE, 3=DAMAGE
+    integer(kind=kint) :: measure  ! 1=NONE, 2=STRESS, 3=STRAIN
+    integer(kind=kint) :: state    ! 0=ACTIVE, 1=INACTIVE
+    real(kind=kreal), target :: thlow(:), thup(:)
+    integer(kind=kint) :: fstr_ctrl_get_ELEMENT_ACTIVATION
+
+    character(len=HECMW_NAME_LEN),pointer :: element_id_p
+    real(kind=kreal),pointer :: thlow_p(:), thup_p(:)
+    integer(kind=kint) :: rcode, n
+    character(len=HECMW_NAME_LEN) :: data_fmt, s1
+
+    fstr_ctrl_get_ELEMENT_ACTIVATION = -1
+    
+    ! MODE (required)
+    if( fstr_ctrl_get_param_ex( ctrl, 'MODE ', 'FIXED,AMPLITUDE,DAMAGE ', 1, 'P', mode ) /= 0 ) return
+    
+    ! Mode-specific parameters
+    if( mode == 1 ) then
+      ! FIXED: STATE required
+      if( fstr_ctrl_get_param_ex( ctrl, 'STATE ', 'ON,OFF ', 1, 'P', state ) /= 0 ) return
+      state = state - 1
+      measure = 1
+      amp = ''
+    elseif( mode == 2 ) then
+      ! AMPLITUDE: AMP required
+      if( fstr_ctrl_get_param_ex( ctrl, 'AMP ', '# ', 1, 'S', amp ) /= 0 ) return
+      state = 0
+      measure = 1
+    elseif( mode == 3 ) then
+      ! DAMAGE: MEASURE required
+      if( fstr_ctrl_get_param_ex( ctrl, 'MEASURE ', 'STRESS,STRAIN ', 1, 'P', measure ) /= 0 ) return
+      measure = measure + 1
+      state = 0
+      amp = ''
+    endif
+    
+    ! EPSILON (optional)
+    eps = 1.0d-6
+    if( fstr_ctrl_get_param_ex( ctrl, 'EPSILON ', '# ', 0, 'R', eps ) /= 0 ) return
+
+    write(s1,*) HECMW_NAME_LEN
+    n = fstr_ctrl_get_data_line_n(ctrl)
+    element_id_p => grp_id_name(1)
+    thlow_p => thlow
+    thup_p => thup
+
+    if( mode == 3 ) then
+      write( data_fmt, '(a,a,a)') 'S', trim(adjustl(s1)), 'RR'
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p, thlow_p, thup_p )
+    else
+      write( data_fmt, '(a,a)') 'S', trim(adjustl(s1))
+      rcode = fstr_ctrl_get_data_array_ex( ctrl, data_fmt, element_id_p )
+    endif
+
+    fstr_ctrl_get_ELEMENT_ACTIVATION = 0
+
+  end function fstr_ctrl_get_ELEMENT_ACTIVATION
+
 
 end module fstr_ctrl_common

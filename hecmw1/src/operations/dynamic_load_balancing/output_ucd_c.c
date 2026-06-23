@@ -44,9 +44,12 @@ void write_dist_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh,
         fprintf(fp, " tet ");
       else
         fprintf(fp, " prism ");
-      for (j = new_mesh->elem_node_index[tmp_int];
-           j < new_mesh->elem_node_index[tmp_int + 1]; j++)
-        fprintf(fp, "%d ", new_mesh->elem_node_item[j]);
+      {
+        long long jj;
+        for (jj = new_mesh->elem_node_index[tmp_int];
+             jj < new_mesh->elem_node_index[tmp_int + 1]; jj++)
+          fprintf(fp, "%d ", new_mesh->elem_node_item[jj]);
+      }
       fprintf(fp, "\n");
     }
   }
@@ -160,9 +163,12 @@ void write_one_mesh_display(char *outfile, struct hecmwST_local_mesh *new_mesh,
         fprintf(fp, " tet ");
       else
         fprintf(fp, " prism ");
-      for (j = new_mesh->elem_node_index[tmp_int];
-           j < new_mesh->elem_node_index[tmp_int + 1]; j++)
-        fprintf(fp, "%d ", new_mesh->elem_node_item[j]);
+      {
+        long long jj;
+        for (jj = new_mesh->elem_node_index[tmp_int];
+             jj < new_mesh->elem_node_index[tmp_int + 1]; jj++)
+          fprintf(fp, "%d ", new_mesh->elem_node_item[jj]);
+      }
       fprintf(fp, "\n");
     }
   }

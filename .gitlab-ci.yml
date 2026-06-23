@@ -82,16 +82,21 @@ docker/fistr1:
   image: docker:latest
   extends: [".nodeppackage",".artifact_public"]
   services:
-    - docker:dind
+    - docker:28-dind
   script:
     - apk add curl make
     - mkdir -p /root/.docker/cli-plugins
     - curl -sSLo /root/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.10.4/buildx-v0.10.4.linux-amd64
     - chmod +x /root/.docker/cli-plugins/docker-buildx
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    - apk add make
     - cd docker/container
-    - make push
+    - |
+      if [ "$CI_PROJECT_PATH" = "frontistr-commons/frontistr" ]; then
+        make push
+      else
+        echo "Skipping push (fork pipeline: $CI_PROJECT_PATH)"
+        make build
+      fi
   tags:
     - gitlab-org-docker
 
@@ -175,7 +180,7 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
         - DEPENDS+=("libmkl-core,libmkl-intel-lp64,libmkl-gnu-thread,libmkl-scalapack-lp64,libmkl-blacs-openmpi-lp64")
         - cd build
         - PACKAGE_NAME=FrontISTR$([ $TYPE != "hybrid" ] && echo "-$TYPE" || true)
-        - VERSION=$(echo $CI_COMMIT_REF_SLUG|sed -e 's/^v\([0-9]\+[\.][0-9]\+[\.]\?[0-9]*.*$\)/\1/g')
+        - VERSION=$(echo $CI_COMMIT_REF_SLUG|sed -e 's/^v\([0-9]\+[\.][0-9]\+[\.]\?[0-9]*.*\)/\1/g')
         - DEBIAN_VERSION=0+$OS
         - echo 'set(CPACK_PACKAGE_NAME "'$PACKAGE_NAME'")' >> CPackConfig.cmake
         - echo 'set(CPACK_PACKAGE_FILE_NAME "'$PACKAGE_NAME'_'$VERSION'-'$DEBIAN_VERSION'_'$(dpkg --print-architecture)'")' >> CPackConfig.cmake

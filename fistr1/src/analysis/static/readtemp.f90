@@ -46,7 +46,11 @@ contains
 
     real(kind=kreal), pointer :: temp0(:,:)
 
-    allocate(temp0(2,size(temp)))
+    allocate(temp0(2,size(temp)), stat=i)
+    if( i /= 0 ) then
+      write(*,*) 'Allocation error: temp0'
+      call hecmw_abort(hecmw_comm_get_comm())
+    endif
 
     nstep_active = (nstep-sstep)/interval + 1
     kt = floor(factor*dble(nstep_active)-1.d-10)
@@ -104,7 +108,11 @@ contains
     logical :: flg_read1, flg_read2
     real(kind=kreal), allocatable :: temp0(:,:)
 
-    allocate(temp0(2,size(temp)))
+    allocate(temp0(2,size(temp)), stat=ierr)
+    if( ierr /= 0 ) then
+      write(*,*) 'Allocation error: temp0'
+      call hecmw_abort(hecmw_comm_get_comm())
+    endif
     flg_read1 = .false.
     flg_read2 = .false.
     ! read first 2 results at first call

@@ -13,7 +13,7 @@ const char ERROR_MSG[][80] = {"No error",
                               "Invalid element property",
                               "Not supported property of element"};
 
-char CConvMessage::msg[256] = "";
+char CConvMessage::msg[CONV_MSG_SIZE] = "";
 
 CConvMessage::CConvMessage(int No, const char *op_msg, ...) : no(No) {
   if (op_msg[0] == 0) {
@@ -23,16 +23,16 @@ CConvMessage::CConvMessage(int No, const char *op_msg, ...) : no(No) {
 
   va_list va;
   va_start(va, op_msg);
-  vsprintf(option_msg, op_msg, va);
+  vsnprintf(option_msg, sizeof(option_msg), op_msg, va);
   va_end(va);
 }
 
 const char *CConvMessage::Msg() {
   if (option_msg[0] != 0) {
-    sprintf(msg, "##Error: %s : %s", ERROR_MSG[no], option_msg);
+    snprintf(msg, sizeof(msg), "##Error: %s : %s", ERROR_MSG[no], option_msg);
 
   } else {
-    sprintf(msg, "##Error: %s", ERROR_MSG[no]);
+    snprintf(msg, sizeof(msg), "##Error: %s", ERROR_MSG[no]);
   }
 
   return msg;

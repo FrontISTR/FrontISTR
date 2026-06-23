@@ -21,6 +21,10 @@ else
 	docker login -u gitlab-ci-token -p $(CI_JOB_TOKEN) $(CI_REGISTRY_IMAGE)
 endif
 
+build:
+	-docker buildx create --name multiarch --driver docker-container
+	docker buildx build --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/fistr1:$(TAG) -f Dockerfile     --target fistr1 ../..
+
 push: login
 	-docker buildx create --name multiarch --driver docker-container
 	docker buildx build --push --builder multiarch --platform $(ARCH) -t $(CI_REGISTRY_IMAGE)/fistr1:$(TAG) -f Dockerfile     --target fistr1 ../..

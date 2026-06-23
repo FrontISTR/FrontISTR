@@ -88,18 +88,18 @@ OBJSF = \
         fstr_Spring.@f90objfilepostfix@ \
         fstr_Restart.@f90objfilepostfix@ \
         fstr_NodalStress.@f90objfilepostfix@ \
-        fstr_StiffMatrix.@f90objfilepostfix@ \
+        fstr_CreateMatrix.@f90objfilepostfix@ \
+        fstr_NodalKinematics.@f90objfilepostfix@ \
         fstr_Update.@f90objfilepostfix@ \
         readtemp.@f90objfilepostfix@ \
         static_echo.@f90objfilepostfix@ \
         make_result.@f90objfilepostfix@ \
         fstr_ass_load.@f90objfilepostfix@ \
         static_output.@f90objfilepostfix@ \
-        fstr_mat_con_contact.@f90objfilepostfix@ \
         fstr_Residual.@f90objfilepostfix@ \
-        fstr_AddContactStiff.@f90objfilepostfix@ \
         fstr_AddBC.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \
+        fstr_solve_QuasiNewton.@f90objfilepostfix@ \
         fstr_solve_NLGEOM.@f90objfilepostfix@
 
 HEADERS =

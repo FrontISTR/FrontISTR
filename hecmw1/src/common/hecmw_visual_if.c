@@ -13,6 +13,7 @@
 #include "hecmw_result_copy_f2c.h"
 #include "hecmw_dist_free.h"
 #include "hecmw_visualizer.h"
+#include "hecmw_lib_fc.h"
 
 static struct hecmwST_local_mesh *mesh;
 static struct hecmwST_result_data *result;
@@ -103,6 +104,33 @@ void hecmw_visualize_if__(int *step, int *err) {
 
 void HECMW_VISUALIZE_IF(int *step, int *err) {
   hecmw_visualize_if(step, err);
+}
+
+/*----------------------------------------------------------------------------*/
+void hecmw_visualize_by_addfname_if(int *step, char *addfname, int *err,
+                                    int len) {
+  char addfname_str[HECMW_NAME_LEN + 1];
+  *err = 1;
+  if (HECMW_strcpy_f2c_r(addfname, len, addfname_str, sizeof(addfname_str)) ==
+      NULL)
+    return;
+  if (HECMW_visualize_by_addfname(mesh, result, *step, addfname_str)) return;
+  *err = 0;
+}
+
+void hecmw_visualize_by_addfname_if_(int *step, char *addfname, int *err,
+                                     int len) {
+  hecmw_visualize_by_addfname_if(step, addfname, err, len);
+}
+
+void hecmw_visualize_by_addfname_if__(int *step, char *addfname, int *err,
+                                      int len) {
+  hecmw_visualize_by_addfname_if(step, addfname, err, len);
+}
+
+void HECMW_VISUALIZE_BY_ADDFNAME_IF(int *step, char *addfname, int *err,
+                                    int len) {
+  hecmw_visualize_by_addfname_if(step, addfname, err, len);
 }
 
 /*----------------------------------------------------------------------------*/

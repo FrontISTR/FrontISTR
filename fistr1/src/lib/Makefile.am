@@ -106,11 +106,11 @@ OBJS =
 
 OBJSF = \
         m_step.@f90objfilepostfix@ \
+        m_element_activation.@f90objfilepostfix@ \
         m_timepoint.@f90objfilepostfix@ \
         m_out.@f90objfilepostfix@ \
         m_common_struct.@f90objfilepostfix@ \
         m_fstr.@f90objfilepostfix@ \
-        GaussM.@f90objfilepostfix@ \
         dynamic_mass.@f90objfilepostfix@ \
         static_LIB_1d.@f90objfilepostfix@ \
         static_LIB_2d.@f90objfilepostfix@ \
@@ -128,9 +128,6 @@ OBJSF = \
         heat_LIB_FILM.@f90objfilepostfix@ \
         heat_LIB_NEUTRAL.@f90objfilepostfix@ \
         heat_LIB_RADIATE.@f90objfilepostfix@ \
-        precheck_LIB_2d.@f90objfilepostfix@ \
-        precheck_LIB_3d.@f90objfilepostfix@ \
-        precheck_LIB_shell.@f90objfilepostfix@ \
         solve_LINEQ.@f90objfilepostfix@ \
         static_LIB.@f90objfilepostfix@ \
         eigen_LIB.@f90objfilepostfix@ \

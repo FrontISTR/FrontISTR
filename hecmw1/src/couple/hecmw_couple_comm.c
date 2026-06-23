@@ -115,6 +115,25 @@ extern int HECMW_couple_inter_send_recv(
                         neighbor_pe_recv[i], 0, comm, &request_recv[i]);
       if (rtc != 0) goto error;
     }
+  } else if (datatype == HECMW_LONG_LONG) {
+    long long *_sendbuf = (long long *)sendbuf;
+    long long *_recvbuf = (long long *)recvbuf;
+
+    /* send */
+    for (i = 0; i < n_neighbor_pe_send; i++) {
+      rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]],
+                        sendbuf_index[i + 1] - sendbuf_index[i], HECMW_LONG_LONG,
+                        neighbor_pe_send[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
+
+    /* receive */
+    for (i = 0; i < n_neighbor_pe_recv; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], HECMW_LONG_LONG,
+                        neighbor_pe_recv[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
   } else {
     HECMW_set_error(HECMWCPL_E_MPI_DATATYPE, "");
     goto error;
@@ -240,6 +259,25 @@ extern int HECMW_couple_intra_send_recv(int n_neighbor_pe, int *neighbor_pe,
                         neighbor_pe[i], 0, comm, &request_recv[i]);
       if (rtc != 0) goto error;
     }
+  } else if (datatype == HECMW_LONG_LONG) {
+    long long *_sendbuf = (long long *)sendbuf;
+    long long *_recvbuf = (long long *)recvbuf;
+
+    /* send */
+    for (i = 0; i < n_neighbor_pe; i++) {
+      rtc = HECMW_Isend(&_sendbuf[sendbuf_index[i]],
+                        sendbuf_index[i + 1] - sendbuf_index[i], datatype,
+                        neighbor_pe[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
+
+    /* receive */
+    for (i = 0; i < n_neighbor_pe; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], datatype,
+                        neighbor_pe[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
   } else {
     HECMW_set_error(HECMWCPL_E_MPI_DATATYPE, "");
     goto error;
@@ -349,6 +387,24 @@ extern int HECMW_couple_bcast(int n_neighbor_pe_send, int *neighbor_pe_send,
   } else if (datatype == HECMW_CHAR) {
     char *_sendbuf = (char *)sendbuf;
     char *_recvbuf = (char *)recvbuf;
+
+    /* send */
+    for (i = 0; i < n_neighbor_pe_send; i++) {
+      rtc = HECMW_Isend(&_sendbuf[0], sendbuf_size, datatype,
+                        neighbor_pe_send[i], 0, comm, &request_send[i]);
+      if (rtc != 0) goto error;
+    }
+
+    /* receive */
+    for (i = 0; i < n_neighbor_pe_recv; i++) {
+      rtc = HECMW_Irecv(&_recvbuf[recvbuf_index[i]],
+                        recvbuf_index[i + 1] - recvbuf_index[i], datatype,
+                        neighbor_pe_recv[i], 0, comm, &request_recv[i]);
+      if (rtc != 0) goto error;
+    }
+  } else if (datatype == HECMW_LONG_LONG) {
+    long long *_sendbuf = (long long *)sendbuf;
+    long long *_recvbuf = (long long *)recvbuf;
 
     /* send */
     for (i = 0; i < n_neighbor_pe_send; i++) {

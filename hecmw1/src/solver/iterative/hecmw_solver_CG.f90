@@ -101,6 +101,14 @@ contains
     !C-- SCALING
     call hecmw_solver_scaling_fw(hecMESH, hecMAT, Tcomm)
 
+    !C
+    !C-- matrix integration for OpenACC
+    !C
+    !C  @note:
+    !C   Combine hecMAT%AL, D, and AU into a single matrix for GPU execution.
+    !C   This is a no-op for CPU builds.
+    call hecmw_mat_integrate(hecMAT)
+
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       call hecmw_JAD_INIT(hecMAT)
     endif
@@ -192,10 +200,10 @@ contains
       !C +-----------------------------+
       !C===
       if ( ITER.eq.1 ) then
-        call hecmw_copy_R(hecMESH, NDOF, WW(:,Z), WW(:,P))
+        call hecmw_copy_R(NNDOF, WW(:,Z), WW(:,P))
       else
         BETA = RHO / RHO1
-        call hecmw_xpay_R(hecMESH, NDOF, BETA, WW(:,Z), WW(:,P))
+        call hecmw_xpay_R(NNDOF, BETA, WW(:,Z), WW(:,P))
       endif
 
       !C===
@@ -229,12 +237,12 @@ contains
       !C | {r}= {r} - ALPHA*{q} |
       !C +----------------------+
       !C===
-      call hecmw_axpy_R(hecMESH, NDOF, ALPHA, WW(:,P), X)
+      call hecmw_axpy_R(NNDOF, ALPHA, WW(:,P), X)
 
       if ( mod(ITER,N_ITER_RECOMPUTE_R)==0 ) then
         call hecmw_matresid(hecMESH, hecMAT, X, B, WW(:,R), Tcomm)
       else
-        call hecmw_axpy_R(hecMESH, NDOF, -ALPHA, WW(:,Q), WW(:,R))
+        call hecmw_axpy_R(NNDOF, -ALPHA, WW(:,Q), WW(:,R))
       endif
 
       call hecmw_InnerProduct_R(hecMESH, NDOF, WW(:,R), WW(:,R), DNRM2, Tcomm)

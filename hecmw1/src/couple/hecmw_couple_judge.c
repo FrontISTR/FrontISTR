@@ -151,7 +151,8 @@ extern int HECMW_couple_judge_tet1(const struct hecmwST_local_mesh *local_mesh,
                                    double coord_py, double coord_pz,
                                    double *dot_product, double *distance) {
   double coord_x[4], coord_y[4], coord_z[4], _dot_product[4], _distance[4];
-  int node_index, node_id, n_positive;
+  long long node_index;
+  int node_id, n_positive;
   int i;
 
   node_index = local_mesh->elem_node_index[elem - 1];
@@ -200,7 +201,8 @@ extern int HECMW_couple_judge_hex1(const struct hecmwST_local_mesh *local_mesh,
                                    double coord_py, double coord_pz,
                                    double *dot_product, double *distance) {
   double coord_x[8], coord_y[8], coord_z[8], _dot_product[8], _distance[8];
-  int node_index, node_id, n_positive, i;
+  long long node_index;
+  int node_id, n_positive, i;
 
   node_index = local_mesh->elem_node_index[elem - 1];
   for (i = 0; i < 8; i++) {

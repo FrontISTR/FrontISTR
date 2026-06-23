@@ -130,11 +130,11 @@ extern int HECMW_part_set_log_part_type(int _part_type) {
 
   switch (_part_type) {
     case HECMW_PART_TYPE_NODE_BASED:
-      strcpy(part_type, "NODE-BASED");
+      snprintf(part_type, sizeof(part_type), "NODE-BASED");
       break;
 
     case HECMW_PART_TYPE_ELEMENT_BASED:
-      strcpy(part_type, "ELEMENT-BASED");
+      snprintf(part_type, sizeof(part_type), "ELEMENT-BASED");
       break;
 
     default:
@@ -156,19 +156,19 @@ extern int HECMW_part_set_log_part_method(int _part_method) {
 
   switch (_part_method) {
     case HECMW_PART_METHOD_RCB:
-      strcpy(part_method, "RCB");
+      snprintf(part_method, sizeof(part_method), "RCB");
       break;
 
     case HECMW_PART_METHOD_KMETIS:
-      strcpy(part_method, "kMETIS");
+      snprintf(part_method, sizeof(part_method), "kMETIS");
       break;
 
     case HECMW_PART_METHOD_PMETIS:
-      strcpy(part_method, "pMETIS");
+      snprintf(part_method, sizeof(part_method), "pMETIS");
       break;
 
     case HECMW_PART_METHOD_USER:
-      strcpy(part_method, "USER");
+      snprintf(part_method, sizeof(part_method), "USER");
       break;
 
     default:
@@ -203,23 +203,23 @@ extern int HECMW_part_set_log_part_contact(int _part_contact) {
 
   switch (_part_contact) {
     case HECMW_PART_CONTACT_AGGREGATE:
-      strcpy(part_contact, "AGGREGATE");
+      snprintf(part_contact, sizeof(part_contact), "AGGREGATE");
       break;
 
     case HECMW_PART_CONTACT_DISTRIBUTE:
-      strcpy(part_contact, "DISTRIBUTE");
+      snprintf(part_contact, sizeof(part_contact), "DISTRIBUTE");
       break;
 
     case HECMW_PART_CONTACT_SIMPLE:
-      strcpy(part_contact, "SIMPLE");
+      snprintf(part_contact, sizeof(part_contact), "SIMPLE");
       break;
 
     case HECMW_PART_CONTACT_DEFAULT:
-      strcpy(part_contact, "DEFAULT");
+      snprintf(part_contact, sizeof(part_contact), "DEFAULT");
       break;
 
     default:
-      strcpy(part_contact, "not set");
+      snprintf(part_contact, sizeof(part_contact), "not set");
       break;
   }
 

@@ -51,6 +51,8 @@ typedef MPI_Fint HECMW_Fint;
 
 #define HECMW_CHAR ((HECMW_Datatype)10003)
 
+#define HECMW_LONG_LONG ((HECMW_Datatype)10004)
+
 #define HECMW_MIN ((HECMW_Op)20001)
 
 #define HECMW_MAX ((HECMW_Op)20002)

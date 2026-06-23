@@ -85,14 +85,13 @@ F90OBJFILEPOSTFIX       = @f90objfilepostfix@
 #------------------------------------------------------------------------------#
 OBJS = \
 	hecmw2fstr_connect_conv.@cobjfilepostfix@ \
-	fstr_ctrl_util.@cobjfilepostfix@ \
 	fstr_sort_index.@cobjfilepostfix@
 
 OBJSF = \
 	hecmw2fstr_mesh_conv.@f90objfilepostfix@ \
+	fstr_element_activation.@f90objfilepostfix@ \
 	fstr_setup_util.@f90objfilepostfix@ \
 	fstr_ctrl_modifier.@f90objfilepostfix@ \
-	fstr_contact.@f90objfilepostfix@ \
 	fstr_ctrl_common.@f90objfilepostfix@ \
 	fstr_ctrl_material.@f90objfilepostfix@ \
 	fstr_ctrl_static.@f90objfilepostfix@ \
@@ -100,17 +99,15 @@ OBJSF = \
 	fstr_ctrl_eigen.@f90objfilepostfix@ \
 	fstr_ctrl_dynamic.@f90objfilepostfix@ \
 	fstr_get_prop.@f90objfilepostfix@ \
+	fstr_FiniteRotationKinematics.@f90objfilepostfix@ \
 	fstr_setup.@f90objfilepostfix@ \
 	fstr_debug_dump.@f90objfilepostfix@ \
-	fstr_precheck.@f90objfilepostfix@ \
 	fstr_rcap_io.@f90objfilepostfix@
 
 INCLUDESF = \
-	fstr_ctrl_util_f.inc
 
 HEADERS = \
 	hecmw2fstr_connect_conv.h \
-	fstr_ctrl_util.h \
 	fstr_sort_index.h
 
 #------------------------------------------------------------------------------#
@@ -126,7 +123,6 @@ $(F90TARGET): $(OBJSF)
 
 install-header:
 	$(CP) $(HEADERS) $(FSTRINCDIR)/.
-	$(CP) $(INCLUDESF) $(FSTRINCDIR)/.
 
 install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(FSTRINCDIR)/.

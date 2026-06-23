@@ -6,7 +6,7 @@
 ###############################################################
 # CMakeLists.txt for FrontISTR
 ###############################################################
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.13.4)
 
 ###############################################################
 # Check building mode whether out-of-source builds
@@ -124,6 +124,18 @@ if(WIN32)
   set(WINDOWS TRUE)
 endif()
 
+# NVIDIA Compiler
+if(CMAKE_C_COMPILER_ID MATCHES "NVHPC" OR CMAKE_C_COMPILER_ID MATCHES "PGI")
+  set(CMAKE_C_FLAGS
+    "${CMAKE_C_FLAGS} -acc -Minfo=accel -gpu=ccnative,mem:managed")
+  set(CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS} -acc -Minfo=accel -gpu=ccnative,mem:managed")
+  set(CMAKE_Fortran_FLAGS
+    "${CMAKE_Fortran_FLAGS} -acc -Minfo=accel -gpu=ccnative,mem:managed -Mstack_arrays")
+  # Remove libnvc to prevent GPU detection issues with OpenACC
+  # See: https://forums.developer.nvidia.com/t/failed-cuda-device-detection-when-explicitly-linking-libnvc/203225
+  list(REMOVE_ITEM CMAKE_Fortran_IMPLICIT_LINK_LIBRARIES nvc)
+endif()
 ###############################################################
 # Options
 ###############################################################
@@ -143,6 +155,7 @@ endif()
 # -DWITH_ML          : compile with Trilinos multigrid preconditioning package
 # -DWITH_DOC         : generate API documents
 # -DOLD_RES_FORMAT   : use old style result file( comment and global output disabled)
+# -DWITH_NETCDF      : compile with NetCDF (for Exodus II output)
 
 ###################
 # Find external packages
@@ -163,6 +176,7 @@ find_package(Refiner)
 find_package(Revocap)
 find_package(Trilinos)
 find_package(Doxygen)
+find_package(NetCDF)
 option(WITH_TOOLS "compile tools" ON)
 option(WITH_DOC "Generate API documents." ${WITH_DOC})
 option(WINDOWS "build on windows" ${WINDOWS})
@@ -178,6 +192,7 @@ option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
 option(OLD_RES_FORMAT "use old style result file" ${OLD_RES_FORMAT})
+option(WITH_NETCDF "compile with NetCDF (for Exodus II output)" ${NETCDF_FOUND})
 option(DEBUG_EXTRA "enable memory leak check (only for gcc4.9 <)" OFF)
 feature_summary(WHAT ALL)
 
@@ -203,8 +218,12 @@ endif()
 ###################
 if(WITH_MKL)
   set(BLA_VENDOR "Intel10_64lp")
-  list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
-  list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+  if(NOT "${MKL_INCLUDE_PATH}" STREQUAL "/usr/include")
+    list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
+  endif()
+  if(NOT WITH_MUMPS AND MKL_LIBRARIES)
+    list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+  endif()
   list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MKL")
   set(WITH_LAPACK ON)
 else()
@@ -272,8 +291,19 @@ if(WITH_MUMPS)
     if(WITH_MPI)
       if((SCALAPACK_FOUND AND LAPACK_FOUND) OR SCALAPACK_MKL)
         list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MUMPS")
-        list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
-        list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES} ${SCALAPACK_LIBRARIES})
+        if(NOT "${MUMPS_INCLUDE_PATH}" STREQUAL "/usr/include")
+          list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
+        endif()
+        list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES})
+        if(SCALAPACK_LIBRARIES)
+          list(APPEND FrontISTR_LIBRARIES ${SCALAPACK_LIBRARIES})
+        endif()
+        if(LAPACK_LIBRARIES)
+          list(APPEND FrontISTR_LIBRARIES ${LAPACK_LIBRARIES})
+        endif()
+        if(WITH_MKL AND MKL_LIBRARIES)
+          list(APPEND FrontISTR_LIBRARIES ${MKL_LIBRARIES})
+        endif()
         mark_as_advanced(scalapack_DIR)
       else()
         message(WARNING "MUMPS could not be enabled. Please also install scalapack and lapack.")
@@ -281,7 +311,9 @@ if(WITH_MUMPS)
       endif()
     else()
       list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_MUMPS")
-      list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
+      if(NOT "${MUMPS_INCLUDE_PATH}" STREQUAL "/usr/include")
+        list(APPEND FrontISTR_INCLUDE_DIRS ${MUMPS_INCLUDE_PATH})
+      endif()
       list(APPEND FrontISTR_LIBRARIES ${MUMPS_LIBRARIES})
     endif()
   else()
@@ -306,7 +338,9 @@ endif()
 # -DMETIS_VER_4
 ###################
 if(WITH_METIS AND METIS_FOUND)
-  list(APPEND FrontISTR_INCLUDE_DIRS ${METIS_INCLUDE_PATH})
+  if(NOT "${METIS_INCLUDE_PATH}" STREQUAL "/usr/include")
+    list(APPEND FrontISTR_INCLUDE_DIRS ${METIS_INCLUDE_PATH})
+  endif()
   list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_METIS")
   list(APPEND FrontISTR_DEFINITIONS "HECMW_PART_WITH_METIS")
   list(APPEND FrontISTR_LIBRARIES ${METIS_LIBRARIES})
@@ -329,6 +363,21 @@ if(WITH_LAPACK)
   endif()
 endif()
 
+###################
+# -DWITH_NETCDF
+###################
+if(WITH_NETCDF)
+  if(NETCDF_FOUND)
+    list(APPEND FrontISTR_DEFINITIONS "WITH_NETCDF")
+    if(NOT "${NETCDF_INCLUDE_PATH}" STREQUAL "/usr/include")
+      list(APPEND FrontISTR_INCLUDE_DIRS ${NETCDF_INCLUDE_PATH})
+    endif()
+    list(APPEND FrontISTR_LIBRARIES ${NETCDF_LIBRARIES})
+  else()
+    message(WARNING "NetCDF not found, Exodus output disabled")
+    set(WITH_NETCDF OFF)
+  endif()
+endif()
 
 ###################
 # -DOLD_RES_FORMAT

@@ -20,12 +20,15 @@ enum {
   CONV_NO_SUPPORTED_ELEM_PROP
 };
 
+#define CONV_OPTION_MSG_SIZE 256
+#define CONV_MSG_SIZE 512
+
 class CConvMessage {
  protected:
-  static char msg[256];
+  static char msg[CONV_MSG_SIZE];
 
  public:
-  char option_msg[256];
+  char option_msg[CONV_OPTION_MSG_SIZE];
   int no;
   CConvMessage(int No = 0, const char* op_msg = "", ...);
   virtual const char* Msg();

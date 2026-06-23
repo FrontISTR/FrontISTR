@@ -3,7 +3,7 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-list(APPEND neu2fstr_SOURCES
+target_sources(neu2fstr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecd_util.cpp
   ${CMAKE_CURRENT_LIST_DIR}/CHECData.cpp
   ${CMAKE_CURRENT_LIST_DIR}/HECDB_util.cpp
@@ -43,7 +43,7 @@ list(APPEND neu2fstr_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/CFSTRDB_Write.cpp
 )
 
-list(APPEND neu2fstr_INCLUDE_DIRS
+target_include_directories(neu2fstr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
 )
 

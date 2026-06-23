@@ -3,13 +3,13 @@
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-include(${CMAKE_CURRENT_LIST_DIR}/bilu/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/diag/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/ml/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/rif/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/sainv/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/ssor/CMakeLists.txt)
+add_subdirectory(bilu)
+add_subdirectory(diag)
+add_subdirectory(ml)
+add_subdirectory(rif)
+add_subdirectory(sainv)
+add_subdirectory(ssor)
 
-list(APPEND hecmw_SOURCES
+target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond.f90
 )

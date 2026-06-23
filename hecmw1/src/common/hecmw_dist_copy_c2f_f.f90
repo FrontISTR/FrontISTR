@@ -9,11 +9,43 @@ module hecmw_dist_copy_c2f_f
   implicit none
 
   private
-  character(len=100) :: sname,vname
-
   public :: hecmw_dist_copy_c2f
 
+  interface
+    subroutine hecmw_dist_copy_c2f_isalloc_if_c(sname, vname, is_allocated, ierr, len_s, len_v) &
+        bind(c,name='hecmw_dist_copy_c2f_isalloc_if')
+      use iso_c_binding
+      type(c_ptr),value :: sname, vname
+      integer(c_int) :: is_allocated, ierr
+      integer(c_int),value :: len_s, len_v
+    end subroutine hecmw_dist_copy_c2f_isalloc_if_c
+
+    subroutine hecmw_dist_copy_c2f_set_if_c(sname, vname, dst, ierr, len_s, len_v) &
+        bind(c,name='hecmw_dist_copy_c2f_set_if')
+      use iso_c_binding
+      type(c_ptr),value :: sname, vname
+      type(c_ptr),value :: dst
+      integer(c_int) :: ierr
+      integer(c_int),value :: len_s, len_v
+    end subroutine hecmw_dist_copy_c2f_set_if_c
+  end interface
+
 contains
+
+  subroutine hecmw_dist_copy_c2f_isalloc_if(sname, vname, is_allocated, ierr)
+    use iso_c_binding
+    character(len=*),target :: sname,vname
+    integer(c_int) :: is_allocated, ierr
+    call hecmw_dist_copy_c2f_isalloc_if_c(c_loc(sname), c_loc(vname), is_allocated, ierr, len(sname), len(vname))
+  end subroutine hecmw_dist_copy_c2f_isalloc_if
+
+  subroutine hecmw_dist_copy_c2f_set_if(sname, vname, dst, ierr)
+    use iso_c_binding
+    character(len=*),target :: sname,vname
+    type(*),dimension(..),target :: dst
+    integer(c_int) :: ierr
+    call hecmw_dist_copy_c2f_set_if_c(c_loc(sname), c_loc(vname), c_loc(dst), ierr, len(sname), len(vname))
+  end subroutine hecmw_dist_copy_c2f_set_if
 
   subroutine hecmw_dist_copy_c2f(mesh, ierr)
     integer(kind=kint) :: ierr
@@ -69,6 +101,7 @@ contains
   subroutine get_flags(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -101,6 +134,7 @@ contains
   subroutine get_etc(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -132,6 +166,7 @@ contains
   subroutine get_node(mesh, ierr)
     integer(kind=kint) :: ierr,is_allocated
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -245,6 +280,7 @@ contains
   subroutine get_elem(mesh, ierr)
     integer(kind=kint) :: ierr,is_allocated
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -385,6 +421,7 @@ contains
   subroutine get_comm(mesh, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
 
     sname = 'hecmwST_local_mesh'
@@ -471,6 +508,7 @@ contains
   subroutine get_adapt(mesh, ierr)
     integer(kind=kint) :: ierr,is_allocated
     type(hecmwST_local_mesh) :: mesh
+    character(len=100) :: sname,vname
 
 
     sname = 'hecmwST_local_mesh'
@@ -560,6 +598,7 @@ contains
     integer(kind=kint) :: ierr,is_allocated
     type(hecmwST_local_mesh), target :: mesh
     type(hecmwST_refine_origin), pointer :: reforg
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_local_mesh'
 
@@ -638,6 +677,7 @@ contains
   subroutine get_sect(sect, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_section) :: sect
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_section'
 
@@ -701,6 +741,7 @@ contains
   subroutine get_mat(mat, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_material) :: mat
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_material'
 
@@ -765,6 +806,7 @@ contains
   subroutine get_mpc(mpc, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_mpc) :: mpc
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_mpc'
 
@@ -806,6 +848,7 @@ contains
   subroutine get_amp(amp, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_amplitude) :: amp
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_amplitude'
 
@@ -857,6 +900,7 @@ contains
   subroutine get_ngrp(grp, ierr)
     integer(kind=kint) :: ierr,is_allocated
     type(hecmwST_node_grp) :: grp
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_node_grp'
 
@@ -934,6 +978,7 @@ contains
   subroutine get_egrp(grp, ierr)
     integer(kind=kint) :: ierr,is_allocated
     type(hecmwST_elem_grp) :: grp
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_elem_grp'
 
@@ -1003,6 +1048,7 @@ contains
   subroutine get_sgrp(grp, ierr)
     integer(kind=kint) :: ierr,is_allocated
     type(hecmwST_surf_grp) :: grp
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_surf_grp'
 
@@ -1072,6 +1118,7 @@ contains
   subroutine get_contact_pair(cpair, ierr)
     integer(kind=kint) :: ierr
     type(hecmwST_contact_pair) :: cpair
+    character(len=100) :: sname,vname
 
     sname = 'hecmwST_contact_pair'
 

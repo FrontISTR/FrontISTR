@@ -106,7 +106,8 @@ contains
     write(fname,'(A,I0,A,I0)') 'sparse-matrix-',num_call,'.coo.',myrank
     num_call = num_call + 1
     write(*,*) 'Dumping sparse matrix to ', fname
-    open(91,file=fname)
+    open(91,file=fname,iostat=i)
+    if( i /= 0 ) return
     if (spMAT%type == SPARSE_MATRIX_TYPE_CSR) then
       if (spMAT%symtype == SPARSE_MATRIX_SYMTYPE_ASYM) &
         write(91,*) '%SPARSE MATRIX CSR ASYM'
