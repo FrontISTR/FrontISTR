@@ -191,16 +191,26 @@ void vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data *da
 	fprintf (outfp, "</Cells>\n");
 	fprintf (outfp, "<PointData>\n");
 	for(i=0; i<data->nn_component; i++){
-		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\">\n", data->node_label[i], data->nn_dof[i]);
 		shift=0;
 		for(j=0; j<i; j++){
 			shift += data->nn_dof[j];
 		}
-		for(j=0; j<n_node; j++){
-			for(k=0; k<data->nn_dof[i]; k++){
-				fprintf (outfp, "%e ", (float)data->node_val_item[j*data_tot_n+k+shift]);
+		if (strcmp(data->node_label[i], "DISPLACEMENT") == 0 && data->nn_dof[i] == 2) {
+			// Convert 2D displacement to 3D
+			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"3\" format=\"ascii\">\n", data->node_label[i]);
+			for(j=0; j<n_node; j++){
+				fprintf (outfp, "%e %e 0.0\n",
+					(float)data->node_val_item[j*data_tot_n+shift],
+					(float)data->node_val_item[j*data_tot_n+shift+1]);
 			}
-			fprintf (outfp, "\n");
+		} else {
+			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"ascii\">\n", data->node_label[i], data->nn_dof[i]);
+			for(j=0; j<n_node; j++){
+				for(k=0; k<data->nn_dof[i]; k++){
+					fprintf (outfp, "%e ", (float)data->node_val_item[j*data_tot_n+k+shift]);
+				}
+				fprintf (outfp, "\n");
+			}
 		}
 		fprintf (outfp, "</DataArray>\n");
 	}
@@ -241,6 +251,7 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	int n_node, n_elem, shift, etype;
 	int data_tot_n, data_tot_e, in, ioffset;
 	int *offset;
+	int is_disp2d=0;
 	uint8_t uint8;
 	uint16_t uint16;
 	uint32_t uint32;
@@ -401,7 +412,13 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 	fprintf (outfp, "<PointData>\n");
 
 	for(i=0; i<data->nn_component; i++){
-		fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\" offset=\"%d\">\n", data->node_label[i], data->nn_dof[i], offset[4+i]);
+		if (strcmp(data->node_label[i], "DISPLACEMENT") == 0 && data->nn_dof[i] == 2) {
+			// Convert 2D displacement to 3D
+			is_disp2d = 1;
+			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"3\" format=\"appended\" offset=\"%d\">\n", data->node_label[i], offset[4+i]);
+		} else {
+			fprintf (outfp, "<DataArray type=\"Float32\" Name=\"%s\" NumberOfComponents=\"%d\" format=\"appended\" offset=\"%d\">\n", data->node_label[i], data->nn_dof[i], offset[4+i]);
+		}
 		fprintf (outfp, "</DataArray>\n");
 	}
 
@@ -485,9 +502,19 @@ void bin_vtk_output (struct hecmwST_local_mesh *mesh, struct hecmwST_result_data
 			shift += data->nn_dof[j];
 		}
 		for(j=0; j<n_node; j++){
-			for(k=0; k<data->nn_dof[i]; k++){
-				val = (float)data->node_val_item[j*data_tot_n+k+shift];
-				fwrite (&val, sizeof(float), 1, outfp);
+			if (is_disp2d) {
+				// Convert 2D displacement to 3D
+				val1 = (float)data->node_val_item[j*data_tot_n+shift];
+				val2 = (float)data->node_val_item[j*data_tot_n+shift+1];
+				val3 = 0.0;
+				fwrite (&val1, sizeof(float), 1, outfp);
+				fwrite (&val2, sizeof(float), 1, outfp);
+				fwrite (&val3, sizeof(float), 1, outfp);
+			} else {
+				for(k=0; k<data->nn_dof[i]; k++){
+					val = (float)data->node_val_item[j*data_tot_n+k+shift];
+					fwrite (&val, sizeof(float), 1, outfp);
+				}
 			}
 		}
 	}
