@@ -550,6 +550,7 @@ contains
     enddo
 
     call fstr_UpdateState( hecMESH, fstrSOLID, t_delta )
+    call fstr_update_contact_TangentForce( cstep, fstrSOLID )
 
     deallocate(coord)
     deallocate(resid_work)
