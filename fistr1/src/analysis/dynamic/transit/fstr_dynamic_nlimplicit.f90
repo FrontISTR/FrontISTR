@@ -464,17 +464,22 @@ contains
         ! ----- update reaction force at constrained DOFs using converged QFORCE
         call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
 
-        if(.not. fstrPARAM%nlgeom) exit
-
         ! ----- update the Lagrange multipliers
+        ! Done before the nlgeom early-exit so the multipliers are accumulated
+        ! even for infinitesimal analysis. Otherwise hecLagMAT%lagrange stays
+        ! zero when NONLINEAR is not specified, and the contact output forces
+        ! CONT_NFORCE/CONT_FRIC (computed from the multipliers) are always zero
+        ! even though contact is enforced. Matches the unconditional update in
+        ! the static path (fstr_solve_NonLinear).
         if( fstr_is_contact_active() ) then
           maxDLag = 0.0d0
           do j=1,hecLagMAT%num_lagrange
             hecLagMAT%lagrange(j) = hecLagMAT%lagrange(j) + hecMAT%X(hecMESH%n_node*ndof+j)
             if(dabs(hecMAT%X(hecMESH%n_node*ndof+j))>maxDLag) maxDLag=dabs(hecMAT%X(hecMESH%n_node*ndof+j))
-            !              write(*,*)'Lagrange:', j,hecLagMAT%lagrange(j),hecMAT%X(hecMESH%n_node*ndof+j)
           enddo
         endif
+
+        if(.not. fstrPARAM%nlgeom) exit
       enddo
 
       fstrSOLID%NRstat_i(knstMAXIT) = max(fstrSOLID%NRstat_i(knstMAXIT),iter) ! logging newton iteration(maxtier)
