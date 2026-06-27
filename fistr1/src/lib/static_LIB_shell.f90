@@ -125,24 +125,6 @@ contains
 
   end subroutine ShellStressVectorToTensor
 
-  !--------------------------------------------------------------------
-  subroutine ShellSpinVectorToTensor( spin_vec, tensor )
-    implicit none
-
-    real(kind=kreal), intent(in)  :: spin_vec(3)
-    real(kind=kreal), intent(out) :: tensor(3, 3)
-
-    tensor(:, :) = 0.0D0
-    tensor(1, 2) = spin_vec(1)
-    tensor(2, 1) = -spin_vec(1)
-    tensor(2, 3) = spin_vec(2)
-    tensor(3, 2) = -spin_vec(2)
-    tensor(3, 1) = spin_vec(3)
-    tensor(1, 3) = -spin_vec(3)
-
-  end subroutine ShellSpinVectorToTensor
-
-  !--------------------------------------------------------------------
   subroutine ShellTensorToStressVector( tensor, stress )
     implicit none
 
@@ -159,53 +141,16 @@ contains
   end subroutine ShellTensorToStressVector
 
   !--------------------------------------------------------------------
-  subroutine ShellSpinVectorFromGradient( grad, e1_hat, e2_hat, e3_hat, spin_vec )
+  subroutine ShellObjectiveStressIncrement( stress_old, dstrain, dstress_obj, trace_coeff )
     implicit none
 
-    real(kind=kreal), intent(in)  :: grad(3, 3)
-    real(kind=kreal), intent(in)  :: e1_hat(3), e2_hat(3), e3_hat(3)
-    real(kind=kreal), intent(out) :: spin_vec(3)
-
-    real(kind=kreal) :: spin_tensor(3, 3)
-
-    spin_tensor(:, :) = 0.5D0*( grad(:, :) - transpose( grad(:, :) ) )
-    spin_vec(1) = dot_product( e1_hat, matmul( spin_tensor, e2_hat ) )
-    spin_vec(2) = dot_product( e2_hat, matmul( spin_tensor, e3_hat ) )
-    spin_vec(3) = dot_product( e3_hat, matmul( spin_tensor, e1_hat ) )
-
-  end subroutine ShellSpinVectorFromGradient
-
-  !--------------------------------------------------------------------
-  subroutine ShellObjectiveStressIncrement( stress_old, dstrain, spin, dstress_obj, trace_coeff )
-    implicit none
-
-    real(kind=kreal), intent(in)  :: stress_old(6), dstrain(6), spin(3, 3)
+    real(kind=kreal), intent(in)  :: stress_old(6), dstrain(6)
     real(kind=kreal), intent(out) :: dstress_obj(6)
     real(kind=kreal), intent(in), optional :: trace_coeff
 
-    real(kind=kreal) :: dstress_spin(6), dstress_trace(6)
-
-    call ShellObjectiveSpinStressIncrement( stress_old, spin, dstress_spin )
-    call ShellObjectiveTraceStressIncrement( stress_old, dstrain, dstress_trace, trace_coeff )
-    dstress_obj(1:6) = dstress_spin(1:6)+dstress_trace(1:6)
+    call ShellObjectiveTraceStressIncrement( stress_old, dstrain, dstress_obj, trace_coeff )
 
   end subroutine ShellObjectiveStressIncrement
-
-  !--------------------------------------------------------------------
-  subroutine ShellObjectiveSpinStressIncrement( stress_old, spin, dstress_spin )
-    implicit none
-
-    real(kind=kreal), intent(in)  :: stress_old(6), spin(3, 3)
-    real(kind=kreal), intent(out) :: dstress_spin(6)
-
-    real(kind=kreal) :: stress_tensor(3, 3), dstress_tensor(3, 3)
-
-    call ShellStressVectorToTensor( stress_old, stress_tensor )
-    dstress_tensor(:, :) = matmul( spin, stress_tensor ) &
-      - matmul( stress_tensor, spin )
-    call ShellTensorToStressVector( dstress_tensor, dstress_spin )
-
-  end subroutine ShellObjectiveSpinStressIncrement
 
   !--------------------------------------------------------------------
   subroutine ShellObjectiveTraceStressIncrement( stress_old, dstrain, dstress_trace, trace_coeff )
@@ -288,26 +233,6 @@ contains
   end subroutine ShellAddStressVectorToDB
 
   !--------------------------------------------------------------------
-  subroutine ShellAddULObjectiveSpinTangent( stress_old, ncol, Bspin, DB )
-    implicit none
-
-    integer(kind=kint), intent(in) :: ncol
-    real(kind=kreal), intent(in)    :: stress_old(6)
-    real(kind=kreal), intent(in)    :: Bspin(3, ncol)
-    real(kind=kreal), intent(inout) :: DB(5, ncol)
-
-    integer(kind=kint) :: j
-    real(kind=kreal) :: spin_tensor(3, 3), dstress_spin(6)
-
-    do j = 1, ncol
-      call ShellSpinVectorToTensor( Bspin(1:3, j), spin_tensor )
-      call ShellObjectiveSpinStressIncrement( stress_old, spin_tensor, dstress_spin )
-      call ShellAddStressVectorToDB( dstress_spin, j, DB )
-    end do
-
-  end subroutine ShellAddULObjectiveSpinTangent
-
-  !--------------------------------------------------------------------
   subroutine ShellAddULObjectiveTraceTangent( stress_old, ncol, B, DB, trace_coeff )
     implicit none
 
@@ -331,16 +256,15 @@ contains
   end subroutine ShellAddULObjectiveTraceTangent
 
   !--------------------------------------------------------------------
-  subroutine ShellAddULObjectiveTangent( stress_old, ncol, B, Bspin, DB, trace_coeff )
+  subroutine ShellAddULObjectiveTangent( stress_old, ncol, B, DB, trace_coeff )
     implicit none
 
     integer(kind=kint), intent(in) :: ncol
     real(kind=kreal), intent(in)    :: stress_old(6)
-    real(kind=kreal), intent(in)    :: B(5, ncol), Bspin(3, ncol)
+    real(kind=kreal), intent(in)    :: B(5, ncol)
     real(kind=kreal), intent(inout) :: DB(5, ncol)
     real(kind=kreal), intent(in), optional :: trace_coeff
 
-    call ShellAddULObjectiveSpinTangent( stress_old, ncol, Bspin, DB )
     call ShellAddULObjectiveTraceTangent( stress_old, ncol, B, DB, trace_coeff )
 
   end subroutine ShellAddULObjectiveTangent
@@ -395,7 +319,7 @@ contains
     integer :: n_layer,n_totlyr, sstable(24)
 
     real(kind = kreal) :: D(5, 5), B(5, ndof*nn), DB(5, ndof*nn)
-    real(kind = kreal) :: Bspin(3, ndof*nn), grad_col(3, 3), stress_old_vec(6)
+    real(kind = kreal) :: stress_old_vec(6)
     real(kind = kreal) :: tmpstiff(ndof*nn, ndof*nn)
     real(kind = kreal) :: qf_tmp(ndof*nn), qf_mix(ndof*nn), qf_disp(ndof*nn)
     real(kind = kreal) :: qf_stress_integrand(ndof*nn), vol_deriv(ndof*nn)
@@ -1384,7 +1308,6 @@ contains
 
           ! [ B L ] matrix
           B(:, :) = 0.0D0
-          Bspin(:, :) = 0.0D0
           if( use_director_tangent ) B2rot(:, :, :, :) = 0.0D0
           do nb = 1, nn
 
@@ -1463,26 +1386,6 @@ contains
             B(4, jsize3) = shapederiv(nb, 2)*g3(3)
             B(5, jsize3) = shapederiv(nb, 1)*g3(3)
 
-            if( flag == UPDATELAG ) then
-              grad_col(:, :) = 0.0D0
-              grad_col(1, 1) = shapederiv(nb, 1)*cg1(1)+shapederiv(nb, 2)*cg2(1)
-              grad_col(1, 2) = shapederiv(nb, 1)*cg1(2)+shapederiv(nb, 2)*cg2(2)
-              grad_col(1, 3) = shapederiv(nb, 1)*cg1(3)+shapederiv(nb, 2)*cg2(3)
-              call ShellSpinVectorFromGradient( grad_col, e1_hat, e2_hat, e3_hat, Bspin(1:3, jsize1) )
-
-              grad_col(:, :) = 0.0D0
-              grad_col(2, 1) = shapederiv(nb, 1)*cg1(1)+shapederiv(nb, 2)*cg2(1)
-              grad_col(2, 2) = shapederiv(nb, 1)*cg1(2)+shapederiv(nb, 2)*cg2(2)
-              grad_col(2, 3) = shapederiv(nb, 1)*cg1(3)+shapederiv(nb, 2)*cg2(3)
-              call ShellSpinVectorFromGradient( grad_col, e1_hat, e2_hat, e3_hat, Bspin(1:3, jsize2) )
-
-              grad_col(:, :) = 0.0D0
-              grad_col(3, 1) = shapederiv(nb, 1)*cg1(1)+shapederiv(nb, 2)*cg2(1)
-              grad_col(3, 2) = shapederiv(nb, 1)*cg1(2)+shapederiv(nb, 2)*cg2(2)
-              grad_col(3, 3) = shapederiv(nb, 1)*cg1(3)+shapederiv(nb, 2)*cg2(3)
-              call ShellSpinVectorFromGradient( grad_col, e1_hat, e2_hat, e3_hat, Bspin(1:3, jsize3) )
-            endif
-
             if( use_director_tangent ) then
               do m = 1, 3
                 jsize = ndof*(nb-1)+3+m
@@ -1494,19 +1397,6 @@ contains
                   +dot_product(dudzeta_rot_deriv(1:3, m), g2)
                 B(5, jsize) = dot_product(dudxi_rot_deriv(1:3, m), g3) &
                   +dot_product(dudzeta_rot_deriv(1:3, m), g1)
-                if( flag == UPDATELAG ) then
-                  grad_col(:, :) = 0.0D0
-                  grad_col(1:3, 1) = dudxi_rot_deriv(1:3, m)*cg1(1) &
-                    +dudeta_rot_deriv(1:3, m)*cg2(1) &
-                    +dudzeta_rot_deriv(1:3, m)*cg3(1)
-                  grad_col(1:3, 2) = dudxi_rot_deriv(1:3, m)*cg1(2) &
-                    +dudeta_rot_deriv(1:3, m)*cg2(2) &
-                    +dudzeta_rot_deriv(1:3, m)*cg3(2)
-                  grad_col(1:3, 3) = dudxi_rot_deriv(1:3, m)*cg1(3) &
-                    +dudeta_rot_deriv(1:3, m)*cg2(3) &
-                    +dudzeta_rot_deriv(1:3, m)*cg3(3)
-                  call ShellSpinVectorFromGradient( grad_col, e1_hat, e2_hat, e3_hat, Bspin(1:3, jsize) )
-                endif
               end do
               do n = 1, 3
                 do m = 1, 3
@@ -1717,7 +1607,7 @@ contains
 
           DB(1:5, 1:ndof*nn) = matmul( D, B(1:5, 1:ndof*nn ) )
 
-          if( flag == UPDATELAG ) then
+          if( flag == UPDATELAG .and. etype == fe_mitc4_shell .and. nn == 4 ) then
             if( ishell > 0 ) then
               stress_old_vec(1:6) = element%shell_layer_gausses(ishell)%stress_bak(1:6)
               trace_coeff = ShellPlaneStressTraceCoeff(element%shell_layer_gausses(ishell), n_layer)
@@ -1725,7 +1615,7 @@ contains
               stress_old_vec(1:6) = gausses(lx)%stress_bak(1:6)
               trace_coeff = ShellPlaneStressTraceCoeff(gausses(lx), n_layer)
             endif
-            call ShellAddULObjectiveTangent( stress_old_vec, ndof*nn, B, Bspin, DB, trace_coeff=trace_coeff )
+            call ShellAddULObjectiveTangent( stress_old_vec, ndof*nn, B, DB, trace_coeff=trace_coeff )
           endif
 
           !--------------------------------------------------
@@ -2721,7 +2611,7 @@ contains
       (etype, nn, ndof, ecoord, gausses, edisp, &
       strain, stress, thick, zeta, n_layer, n_totlyr, surface_gauss_points, &
       local_strain, local_stress, local_stress_override, nddirector, ndrefdirector, &
-      ndbase_disp, local_spin)
+      ndbase_disp)
     !####################################################################
 
     use m_fstr, only: OPSSTYPE, kOPSS_SOLUTION
@@ -2749,7 +2639,6 @@ contains
     real(kind = kreal), intent(in), optional :: nddirector(3, nn)
     real(kind = kreal), intent(in), optional :: ndrefdirector(3, nn)
     real(kind = kreal), intent(in), optional :: ndbase_disp(6, nn)
-    real(kind = kreal), intent(out), optional :: local_spin(:, :, :)
 
     !--------------------------------------------------------------------
 
@@ -2812,7 +2701,6 @@ contains
     real(kind = kreal) :: stretch_b(3, 3), tensor(6), eigval(3), princ(3, 3)
     real(kind = kreal) :: cauchy(3, 3), logstrain(3, 3), cg_metric(3, 3)
     real(kind = kreal) :: eig_norm
-    real(kind = kreal) :: grad_inc(3, 3), spin_global(3, 3), spin_inc(3, 3)
     logical :: use_surface_gauss
     logical :: finite_rotation_director
     logical :: use_gl_strain
@@ -3538,29 +3426,6 @@ contains
 
       !--------------------------------------------------
 
-      if( present( local_spin ) ) then
-        grad_inc(:, :) = 0.0D0
-        do i = 1, 3
-          grad_inc(i, 1) = dudxi(i)*cg1(1) + dudeta(i)*cg2(1) + dudzeta(i)*cg3(1)
-          grad_inc(i, 2) = dudxi(i)*cg1(2) + dudeta(i)*cg2(2) + dudzeta(i)*cg3(2)
-          grad_inc(i, 3) = dudxi(i)*cg1(3) + dudeta(i)*cg2(3) + dudzeta(i)*cg3(3)
-        end do
-        spin_global(:, :) = 0.5D0*( grad_inc(:, :) - transpose( grad_inc(:, :) ) )
-        spin_inc(1, 1) = dot_product( e1_hat, matmul( spin_global, e1_hat ) )
-        spin_inc(1, 2) = dot_product( e1_hat, matmul( spin_global, e2_hat ) )
-        spin_inc(1, 3) = dot_product( e1_hat, matmul( spin_global, e3_hat ) )
-        spin_inc(2, 1) = dot_product( e2_hat, matmul( spin_global, e1_hat ) )
-        spin_inc(2, 2) = dot_product( e2_hat, matmul( spin_global, e2_hat ) )
-        spin_inc(2, 3) = dot_product( e2_hat, matmul( spin_global, e3_hat ) )
-        spin_inc(3, 1) = dot_product( e3_hat, matmul( spin_global, e1_hat ) )
-        spin_inc(3, 2) = dot_product( e3_hat, matmul( spin_global, e2_hat ) )
-        spin_inc(3, 3) = dot_product( e3_hat, matmul( spin_global, e3_hat ) )
-        if( lx <= size(local_spin, 1) .and. size(local_spin, 2) >= 3 &
-          .and. size(local_spin, 3) >= 3 ) then
-          local_spin(lx, 1:3, 1:3) = spin_inc(1:3, 1:3)
-        endif
-      endif
-
       !--------------------------------------------------
 
       if( use_gl_strain ) then
@@ -4028,7 +3893,7 @@ contains
   !####################################################################
 
   !####################################################################
-  subroutine UpdateStressShellUL_Elastic( gauss, dstrain, dstress, spin, trace_coeff )
+  subroutine UpdateStressShellUL_Elastic( gauss, dstrain, dstress, trace_coeff )
     !####################################################################
 
     use mMechGauss
@@ -4038,7 +3903,6 @@ contains
     type(tGaussStatus), intent(inout) :: gauss
     real(kind = kreal), intent(in)    :: dstrain(6)
     real(kind = kreal), intent(in)    :: dstress(6)
-    real(kind = kreal), intent(in)    :: spin(3, 3)
     real(kind = kreal), intent(in), optional :: trace_coeff
 
     !--------------------------------------------------------------------
@@ -4047,8 +3911,7 @@ contains
 
     !--------------------------------------------------------------------
 
-    call ShellObjectiveStressIncrement( gauss%stress_bak(1:6), dstrain(1:6), spin(1:3, 1:3), &
-      dstress_obj, trace_coeff )
+    call ShellObjectiveStressIncrement( gauss%stress_bak(1:6), dstrain(1:6), dstress_obj, trace_coeff )
 
     gauss%strain(1:6) = gauss%strain_bak(1:6) + dstrain(1:6)
     gauss%stress(1:6) = gauss%stress_bak(1:6) + dstress_obj(1:6) + dstress(1:6)
@@ -4096,7 +3959,6 @@ contains
     real(kind = kreal) :: trace_coeff
     real(kind = kreal) :: gpstrain(9, 6), gpstress(9, 6)
     real(kind = kreal) :: local_gpstrain(9, 6), local_gpstress(9, 6)
-    real(kind = kreal) :: local_spin(9, 3, 3)
 
     !--------------------------------------------------------------------
 
@@ -4119,12 +3981,11 @@ contains
         gpstress(:, :) = 0.0d0
         local_gpstrain(:, :) = 0.0d0
         local_gpstress(:, :) = 0.0d0
-        local_spin(:, :, :) = 0.0d0
         call ElementStress_Shell_MITC( etype, nn, ndof, ecoord, element%gausses, edisp, &
           gpstrain(1:ng, 1:6), gpstress(1:ng, 1:6), thick, zeta, ilayer, element%shell_nlayer, &
           surface_gauss_points=.true., local_strain=local_gpstrain(1:ng, 1:6), &
           local_stress=local_gpstress(1:ng, 1:6), nddirector=nddirector, ndrefdirector=ndrefdirector, &
-          ndbase_disp=ndbase_disp, local_spin=local_spin(1:ng, 1:3, 1:3) )
+          ndbase_disp=ndbase_disp )
 
         do ig = 1, ng
           ishell = fstr_shell_layer_gauss_index( element, ig, ilayer, ithick )
@@ -4132,8 +3993,7 @@ contains
           if( flag == UPDATELAG ) then
             trace_coeff = ShellPlaneStressTraceCoeff(element%shell_layer_gausses(ishell), ilayer)
             call UpdateStressShellUL_Elastic( element%shell_layer_gausses(ishell), &
-              local_gpstrain(ig, 1:6), local_gpstress(ig, 1:6), local_spin(ig, 1:3, 1:3), &
-              trace_coeff=trace_coeff )
+              local_gpstrain(ig, 1:6), local_gpstress(ig, 1:6), trace_coeff=trace_coeff )
           else
             element%shell_layer_gausses(ishell)%strain(1:6) = local_gpstrain(ig, 1:6)
             element%shell_layer_gausses(ishell)%stress(1:6) = local_gpstress(ig, 1:6)
