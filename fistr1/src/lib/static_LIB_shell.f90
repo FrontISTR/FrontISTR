@@ -273,7 +273,7 @@ contains
   !####################################################################
   subroutine STF_Shell_MITC                                           &
       (etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag, nddisp, element, qf_stress, include_geo_stiff, &
-      nddirector, ndrefdirector, nddrill)
+      nddirector, ndrefdirector, ndcurdirector, nddrill)
     !####################################################################
 
     use mMechGauss
@@ -297,6 +297,7 @@ contains
     logical, intent(in), optional :: include_geo_stiff
     real(kind = kreal), intent(in), optional :: nddirector(3, nn)
     real(kind = kreal), intent(in), optional :: ndrefdirector(3, nn)
+    real(kind = kreal), intent(in), optional :: ndcurdirector(3, nn)
     real(kind = kreal), intent(in), optional :: nddrill(nn)
 
     !--------------------------------------------------------------------
@@ -756,8 +757,9 @@ contains
       a_over_2_v3(2, nb) = 0.5D0*thick*v3(2, nb)
       a_over_2_v3(3, nb) = 0.5D0*thick*v3(3, nb)
       a_over_2_v3_ref(1:3, nb) = a_over_2_v3(1:3, nb)
-      if( finite_rotation_director .and. present( ndrefdirector ) ) then
-        ! reference nodal director
+      if( finite_rotation_director .and. flag == UPDATELAG .and. present( ndcurdirector ) ) then
+        a_over_2_v3_ref(1:3, nb) = ndcurdirector(1:3, nb)
+      else if( finite_rotation_director .and. present( ndrefdirector ) ) then
         a_over_2_v3_ref(1:3, nb) = ndrefdirector(1:3, nb)
       endif
 
@@ -4862,31 +4864,21 @@ contains
           etype, nn, ndof, ecoord, element, edisp, thick, nddirector=nddirector, ndrefdirector=ndrefdirector )
       endif
       if( present( nddisp ) ) then
-        if( flag == UPDATELAG .and. present( ndcurdirector ) ) then
-          call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
-            mixflag, nddisp=nddisp, element=element, qf_stress=qf_direct, &
-            include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndcurdirector, nddrill=nddrill)
-        else
-          call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
-            mixflag, nddisp=nddisp, element=element, qf_stress=qf_direct, &
-            include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector, nddrill=nddrill)
-        endif
+        call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
+          mixflag, nddisp=nddisp, element=element, qf_stress=qf_direct, &
+          include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector, &
+          ndcurdirector=ndcurdirector, nddrill=nddrill)
       else
-        if( flag == UPDATELAG .and. present( ndcurdirector ) ) then
-          call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
-            mixflag, nddisp=edisp, element=element, qf_stress=qf_direct, &
-            include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndcurdirector, nddrill=nddrill)
-        else
-          call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
-            mixflag, nddisp=edisp, element=element, qf_stress=qf_direct, &
-            include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector, nddrill=nddrill)
-        endif
+        call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
+          mixflag, nddisp=edisp, element=element, qf_stress=qf_direct, &
+          include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector, &
+          ndcurdirector=ndcurdirector, nddrill=nddrill)
       endif
     else
       if( present( nddisp ) ) then
         call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, &
           mixflag, nddisp=nddisp, include_geo_stiff=.false., nddirector=nddirector, ndrefdirector=ndrefdirector, &
-          nddrill=nddrill)
+          ndcurdirector=ndcurdirector, nddrill=nddrill)
       else
         call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag)
       endif
