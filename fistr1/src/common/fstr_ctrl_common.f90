@@ -84,7 +84,7 @@ contains
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, contact_elim, &
-      resid, singma_diag, sigma, thresh, filter )
+      resid, singma_diag, sigma, thresh, filter, loglevel )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
     integer(kind=kint) :: precond
@@ -112,6 +112,7 @@ contains
     real(kind=kreal) :: sigma
     real(kind=kreal) :: thresh
     real(kind=kreal) :: filter
+    integer(kind=kint) :: loglevel
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
     character(100) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' 
@@ -148,6 +149,11 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACT_ELIM ','# ',            0,   'I',contact_elim ) /= 0) return
+    ! diagnostic verbosity, independent of TIMELOG.  -1 = "unset": each consumer
+    ! (ML / SA-AMG) then falls back to its previous default, so behavior is
+    ! unchanged unless LOGLEVEL is given explicitly.
+    loglevel = -1
+    if( fstr_ctrl_get_param_ex( ctrl, 'LOGLEVEL ','# ',               0,   'I',loglevel ) /= 0) return
     ! JP-1
     if( method > number_number ) then  ! JP-2
       method = method - number_number

@@ -2130,6 +2130,7 @@ contains
     !   iterlog    => svIarray(21)
     !   timelog    => svIarray(22)
     !   steplog    => svIarray(23)
+    !   loglevel   => svIarray(24)
     !   dumptype   => svIarray(31)
     !   dumpexit   => svIarray(32)
     !   usejad     => svIarray(33)
@@ -2154,7 +2155,7 @@ contains
       svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
       svIarray(35), svIarray(41:50), svIarray(15), &
       svRarray(1), svRarray(2), svRarray(3),                &
-      svRarray(4), svRarray(5) )
+      svRarray(4), svRarray(5), svIarray(24) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     if( svIarray(2) <= 100 ) then

@@ -46,6 +46,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_iterlog
   public :: hecmw_mat_set_timelog
   public :: hecmw_mat_get_timelog
+  public :: hecmw_mat_set_loglevel
+  public :: hecmw_mat_get_loglevel
   public :: hecmw_mat_set_dump
   public :: hecmw_mat_get_dump
   public :: hecmw_mat_set_dump_exit
@@ -115,6 +117,7 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_CONTACT_ELIM       = 15
   integer, parameter :: IDX_I_ITERLOG            = 21
   integer, parameter :: IDX_I_TIMELOG            = 22
+  integer, parameter :: IDX_I_LOGLEVEL           = 24   ! 23 is steplog (svIarray)
   integer, parameter :: IDX_I_DUMP               = 31
   integer, parameter :: IDX_I_DUMP_EXIT          = 32
   integer, parameter :: IDX_I_USEJAD             = 33
@@ -178,6 +181,7 @@ contains
     call hecmw_mat_set_scaling( hecMAT, 0 )
     call hecmw_mat_set_iterlog( hecMAT, 0 )
     call hecmw_mat_set_timelog( hecMAT, 0 )
+    call hecmw_mat_set_loglevel( hecMAT, -1 )   ! -1 = unset: consumers fall back to their default
     call hecmw_mat_set_dump( hecMAT, 0 )
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
@@ -496,6 +500,23 @@ contains
 
     hecmw_mat_get_timelog = hecMAT%Iarray(IDX_I_TIMELOG)
   end function hecmw_mat_get_timelog
+
+  !> Diagnostic verbosity level, set independently of TIMELOG via the !SOLVER
+  !! LOGLEVEL keyword (defaults to TIMELOG when LOGLEVEL is omitted).  Used by the
+  !! preconditioners (ML, SA-AMG) to control their setup/solve log verbosity.
+  subroutine hecmw_mat_set_loglevel( hecMAT, loglevel )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: loglevel
+
+    hecMAT%Iarray(IDX_I_LOGLEVEL) = loglevel
+  end subroutine hecmw_mat_set_loglevel
+
+  function hecmw_mat_get_loglevel( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_loglevel
+    type(hecmwST_matrix) :: hecMAT
+
+    hecmw_mat_get_loglevel = hecMAT%Iarray(IDX_I_LOGLEVEL)
+  end function hecmw_mat_get_loglevel
 
   function hecmw_mat_get_dump( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_dump
