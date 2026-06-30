@@ -212,7 +212,8 @@ subroutine hecmw_ML_get_loglevel(id, level)
   type(hecmwST_matrix), pointer :: hecMAT
   type(hecmwST_local_mesh), pointer :: hecMESH
   call hecmw_mat_id_get(id, hecMAT, hecMESH)
-  level = hecmw_mat_get_timelog(hecMAT)
+  level = hecmw_mat_get_loglevel(hecMAT)        ! independent LOGLEVEL ...
+  if (level < 0) level = hecmw_mat_get_timelog(hecMAT)   ! ... unset -> fall back to TIMELOG
 end subroutine hecmw_ML_get_loglevel
 
 subroutine hecmw_ml_get_opt(id, opt, ierr)
