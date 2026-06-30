@@ -1,0 +1,37 @@
+!!
+!! SA-AMG (PRECOND=22) test : non-symmetric solver (friction contact)
+!! NLSTATIC + SLAGRANGE friction contact -> BiCGSTAB -> SA-AMG non-symmetric
+!! coarsest (sym=0).  coarsest solver forced to dense LU (iopt(3)=1) -> no
+!! external library dependency.  element 361 (NDOF=3 solid).
+!!
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO, TYPE=SLAGRANGE
+!WRITE, RESULT
+!OUTPUT_RES
+DISP, ON
+!SOLVER, METHOD=BiCGSTAB, PRECOND=22, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-08, 1.0, 0.0
+ 2
+!BOUNDARY, GRPID=1
+ SET_1, 1, 1
+!BOUNDARY, GRPID=2
+ SET_2, 2, 2
+!BOUNDARY, GRPID=3
+ SET_3, 3, 3
+!BOUNDARY, GRPID=4
+ SET_4, 3, 3, -0.1
+!CONTACT, INTERACTION=FSLID, GRPID=1
+CP1, 0.3, 5.0E+2
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+!STEP, SUBSTEPS=1
+BOUNDARY, 1
+BOUNDARY, 2
+BOUNDARY, 3
+BOUNDARY, 4
+CONTACT, 1
+!END

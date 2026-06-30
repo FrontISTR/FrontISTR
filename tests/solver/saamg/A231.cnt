@@ -1,0 +1,14 @@
+!!
+!! SA-AMG (PRECOND=22) test : NDOF=2 plane (element 231)
+!! coarsest solver forced to dense LDL^T (iopt(3)=1) -> no external library dependency
+!!
+!BOUNDARY
+  FIX, 1, 2,  0.0
+!CLOAD
+  CL1, 2, -1.0
+!SOLVER,METHOD=CG,PRECOND=22,ITERLOG=NO,TIMELOG=NO
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+ 2
+!WRITE,RESULT
+!END
