@@ -1,0 +1,46 @@
+########################################################
+## Dynamic EXPLICIT analysis: rotational velocity BC
+##   Rigid rotation of a 2-hex column about the z-axis
+##   through the origin (node group CENTER = node 1).
+##   Angular velocity wz = 0.1 rad/s imposed on all nodes
+##   via !VELOCITY, ROT_CENTER=CENTER (explicit path).
+##   Check: nodal velocity v = w x (x - x_center).
+########################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=DYNAMIC
+!DYNAMIC
+ 11 , 1
+ 0.0, 1.0e-3, 10, 1.0e-4
+ 0.5, 0.25
+ 1, 1, 0.0, 0.0
+ 100, 1, 100
+ 1, 1, 1, 1, 1, 1
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!VELOCITY, TYPE=TRANSIT, ROT_CENTER=CENTER
+ ALLN, 1, 1, 0.0
+ ALLN, 2, 2, 0.0
+ ALLN, 3, 3, 0.1
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MAT1
+!ELASTIC
+ 1.00000000E+02, 3.00000000E-01
+!DENSITY
+ 1.00000000E-03
+###################################
+#####       SOLVER CONTROL    #####
+###################################
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=NO,TIMELOG=NO
+ 500000, 2
+ 1.00e-08, 1.00, 0.0
+!STEP
+!WRITE,RESULT,FREQUENCY=5
+!OUTPUT_RES
+ DISP,ON
+ VEL,ON
+ ACC,ON
+!END
