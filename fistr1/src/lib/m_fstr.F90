@@ -268,6 +268,9 @@ module m_fstr
     integer(kind=kint), pointer :: VELOCITY_ngrp_type   (:)  =>null()
     integer(kind=kint), pointer :: VELOCITY_ngrp_amp    (:)  =>null()
     real(kind=kreal), pointer   :: VELOCITY_ngrp_val    (:)  =>null()
+    integer(kind=kint) :: VELOCITY_ngrp_rot                     !< number of rotational velocity boundary conditions
+    integer(kind=kint), pointer :: VELOCITY_ngrp_rotID    (:) =>null()
+    integer(kind=kint), pointer :: VELOCITY_ngrp_centerID (:) =>null()
 
     !> ACCELERATION
     integer(kind=kint) :: ACCELERATION_type
@@ -746,6 +749,8 @@ contains
     nullify( S%VELOCITY_ngrp_type )
     nullify( S%VELOCITY_ngrp_amp )
     nullify( S%VELOCITY_ngrp_val )
+    nullify( S%VELOCITY_ngrp_rotID )
+    nullify( S%VELOCITY_ngrp_centerID )
     nullify( S%ACCELERATION_ngrp_GRPID )
     nullify( S%ACCELERATION_ngrp_ID )
     nullify( S%ACCELERATION_ngrp_type )
