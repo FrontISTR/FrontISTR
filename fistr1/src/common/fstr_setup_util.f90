@@ -718,7 +718,7 @@ contains
         end if
       end do
       if( grp_ID(i) == -1 ) then
-        write(msg,*) '### Error: ', header_name,' : Node group "',&
+        write(msg,*) '### Error: ', header_name,' : Element group "',&
           grp_id_name(i),'" does not exist.'
         call fstr_setup_util_err_stop(msg)
       end if
