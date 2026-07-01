@@ -1100,6 +1100,7 @@ contains
     fstrSOLID%TEMP_rtype        = 1
     fstrSOLID%TEMP_factor       = 1.d0
     fstrSOLID%VELOCITY_ngrp_tot = 0
+    fstrSOLID%VELOCITY_ngrp_rot = 0
     fstrSOLID%ACCELERATION_ngrp_tot = 0
     fstrSOLID%COUPLE_ngrp_tot   = 0
 
@@ -4010,8 +4011,8 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
     integer(kind=kint) :: vType
-    character(HECMW_NAME_LEN) :: amp
-    integer(kind=kint) :: amp_id
+    character(HECMW_NAME_LEN) :: amp, rotc_name(1)
+    integer(kind=kint) :: amp_id, rotc_id(1), n_rotc
     character(HECMW_NAME_LEN), pointer :: grp_id_name(:)
     integer(kind=kint),pointer :: dof_ids (:)
     integer(kind=kint),pointer :: dof_ide (:)
@@ -4021,6 +4022,18 @@ end function fstr_setup_INITIAL
 
     gid = 1
     rcode = fstr_ctrl_get_param_ex( ctrl, 'GRPID ',  '# ',  0, 'I', gid  )
+
+    ! get center of rotation ( same syntax as !BOUNDARY,ROT_CENTER= )
+    rotc_name = ' '
+    rotc_id = -1
+    n_rotc = -1
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'ROT_CENTER ', '# ', 0, 'S', rotc_name )
+    if( rcode /= 0 ) call fstr_ctrl_err_stop
+    if( rotc_name(1) /= ' ' ) then
+      P%SOLID%VELOCITY_ngrp_rot = P%SOLID%VELOCITY_ngrp_rot + 1
+      n_rotc = P%SOLID%VELOCITY_ngrp_rot
+      call node_grp_name_to_id_ex( P%MESH, '!VELOCITY,ROT_CENTER=', 1, rotc_name, rotc_id)
+    endif
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) return
@@ -4033,6 +4046,8 @@ end function fstr_setup_INITIAL
     call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_type, old_size, new_size )
     call fstr_expand_real_array    (P%SOLID%VELOCITY_ngrp_val , old_size, new_size )
     call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_amp , old_size, new_size )
+    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_rotID, old_size, new_size )
+    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_centerID, old_size, new_size )
 
     allocate( grp_id_name(n))
     allocate( dof_ids (n))
@@ -4051,6 +4066,10 @@ end function fstr_setup_INITIAL
     call node_grp_name_to_id_ex( P%MESH, '!VELOCITY', &
       n, grp_id_name, P%SOLID%VELOCITY_ngrp_ID(old_size+1:))
     P%SOLID%VELOCITY_ngrp_GRPID(old_size+1:new_size) = gid
+
+    ! set up information about rotation ( default value is set if ROT_CENTER is not given.)
+    P%SOLID%VELOCITY_ngrp_rotID(old_size+1:) = n_rotc
+    P%SOLID%VELOCITY_ngrp_centerID(old_size+1:) = rotc_id(1)
 
     j = old_size+1
     do i = 1, n
