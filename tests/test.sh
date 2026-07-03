@@ -119,6 +119,7 @@ target=.
 fistr1=fistr1
 hecmw_part1=hecmw_part1
 rmerge=rmerge
+mpicc=$(which mpicc)
 mpirun=$(which mpirun)
 mpirun_options=not_set
 always_mpirun=false
@@ -157,11 +158,12 @@ compare_res=$FRONTISTR_HOME/tests/compare_res.pl
 check_executable $fistr1
 check_executable $hecmw_part1
 check_executable $rmerge
+check_executable $mpicc
 check_executable $mpirun
 check_executable $compare_res
 
 if [ "$mpirun_options" = "not_set" ]; then
-  if [ "$(mpicc --showme:version 2> /dev/null | grep -i 'open[ -]mpi')" != "" ]; then
+  if [ "$($mpicc --showme:version 2> /dev/null | grep -i 'open[ -]mpi')" != "" ]; then
     mpirun_options="--oversubscribe --allow-run-as-root"
   else
     mpirun_options=""
