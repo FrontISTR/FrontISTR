@@ -120,11 +120,13 @@ contains
   logical function fstr_TimeInc_isStepFinished( stepinfo )
     type(step_info), intent(in)  :: stepinfo
 
-    real(kind=kreal) :: endtime, remain_time
+    real(kind=kreal) :: endtime, tolerance
 
     endtime = stepinfo%starttime + stepinfo%elapsetime
-    remain_time = (endtime-current_time)/stepinfo%elapsetime
-    fstr_TimeInc_isStepFinished = (remain_time < 1.d-12)
+    ! roundoff error of current_time scales with the absolute time, which can
+    ! exceed a tolerance based only on elapsetime when elapsetime << |endtime|
+    tolerance = 1.d-12 * max(stepinfo%elapsetime, dabs(endtime))
+    fstr_TimeInc_isStepFinished = (endtime-current_time < tolerance)
   end function
 
   !! true if current time is time point
