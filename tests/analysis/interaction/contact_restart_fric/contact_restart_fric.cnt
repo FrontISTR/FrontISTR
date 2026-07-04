@@ -1,0 +1,66 @@
+##############################################################
+## Frictional contact restart regression test (issue #550)
+## Full run (no restart): 2 loading steps x 2 substeps.
+## Its result is the reference. The *_half.cnt + *_restart.cnt
+## pair reruns the same loading split across a restart, and the
+## resumed result must match this reference (the bug appeared in
+## step 2, i.e. res.0.3 / res.0.4). Solver-independent, so this
+## uses the built-in iterative solver (no MUMPS required).
+##############################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO,TYPE=SLAGRANGE
+!WRITE,RESULT,FREQUENCY=1
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRESS,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_STATE,ON
+!WRITE,LOG
+!SOLVER,METHOD=GMRES,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+!BOUNDARY, GRPID=2
+ SET_2,2,2
+!BOUNDARY, GRPID=3
+ SET_3,3,3
+!BOUNDARY, GRPID=4
+ SET_4,3,3,-0.05
+!BOUNDARY, GRPID=5
+ SET_4,3,3,-0.10
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1
+CP1,0.3,5.0E+2
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=2, CONVERG=1.0E-6
+BOUNDARY,1
+BOUNDARY,2
+BOUNDARY,3
+BOUNDARY,4
+CONTACT,1
+!STEP, SUBSTEPS=2, CONVERG=1.0E-6
+BOUNDARY,1
+BOUNDARY,2
+BOUNDARY,3
+BOUNDARY,5
+CONTACT,1
+!END

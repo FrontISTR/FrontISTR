@@ -1,0 +1,55 @@
+##############################################################
+## Restart run 2/2 (issue #550): resumes from the step-1 restart
+## file (FREQUENCY=-1) and runs step 2. The resulting res.0.3 /
+## res.0.4 must match contact_restart_fric.res from the full run.
+##############################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO,TYPE=SLAGRANGE
+!RESTART,FREQUENCY=-1
+!WRITE,RESULT,FREQUENCY=1
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRESS,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_STATE,ON
+!WRITE,LOG
+!SOLVER,METHOD=GMRES,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+!BOUNDARY, GRPID=2
+ SET_2,2,2
+!BOUNDARY, GRPID=3
+ SET_3,3,3
+!BOUNDARY, GRPID=5
+ SET_4,3,3,-0.10
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1
+CP1,0.3,5.0E+2
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=2, CONVERG=1.0E-6
+BOUNDARY,1
+BOUNDARY,2
+BOUNDARY,3
+BOUNDARY,5
+CONTACT,1
+!END
