@@ -11,7 +11,7 @@
 #include "hecmw_io_mesh.h"
 #include "hecmw_io_hec.h"
 #include "hecmw_io_geofem.h"
-#include "hecmw_io_abaqus.h"
+#include "hecmw_io_inp.h"
 #include "hecmw_io_dist.h"
 #include "hecmw_dist_refine.h"
 #include "hecmw_dist_free.h"
@@ -37,8 +37,8 @@ static struct hecmwST_local_mesh *get_entire_mesh(
       case HECMW_CTRL_FTYPE_GEOFEM:
         if (HECMW_read_geofem_mesh(file->filename)) return NULL;
         break;
-      case HECMW_CTRL_FTYPE_ABAQUS:
-        if (HECMW_read_abaqus_mesh(file->filename)) return NULL;
+      case HECMW_CTRL_FTYPE_INP:
+        if (HECMW_read_inp_mesh(file->filename)) return NULL;
         break;
       default:
         HECMW_assert(0);

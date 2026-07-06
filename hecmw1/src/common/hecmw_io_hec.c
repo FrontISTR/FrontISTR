@@ -266,7 +266,7 @@ static int read_amp_data(char *name, int type, int definition, int time,
     }
     t = HECMW_heclex_get_number();
 
-    /* type ABAQUS*/
+    /* type INP*/
     if (type == HECMW_HECLEX_K_TIMEVALUE) {
       tmp = val;
       val = t;
@@ -4334,8 +4334,8 @@ static int read_connectivity(void) {
     case HECMW_HECLEX_K_HECMW:
       type = HECMW_CONNTYPE_HECMW;
       break;
-    case HECMW_HECLEX_K_ABAQUS:
-      type = HECMW_CONNTYPE_ABAQUS;
+    case HECMW_HECLEX_K_INP:
+      type = HECMW_CONNTYPE_INP;
       break;
     case HECMW_HECLEX_K_NASTRAN:
       type = HECMW_CONNTYPE_NASTRAN;

@@ -20,7 +20,7 @@ static char ctrl_filename[HECMW_FILENAME_LEN + 1];
 
 static int table_entire_mesh[] = {
     HECMW_CTRL_FTYPE_HECMW_ENTIRE, HECMW_CTRL_FTYPE_GEOFEM,
-    HECMW_CTRL_FTYPE_ABAQUS,       HECMW_CTRL_FTYPE_NASTRAN,
+    HECMW_CTRL_FTYPE_INP,          HECMW_CTRL_FTYPE_NASTRAN,
     HECMW_CTRL_FTYPE_FEMAP,
 };
 
@@ -761,8 +761,8 @@ static int read_mesh_head_param_type(int *type) {
   } else if (token == HECMW_CTRLLEX_K_GEOFEM) {
     *type = HECMW_CTRL_FTYPE_GEOFEM;
 
-  } else if (token == HECMW_CTRLLEX_K_ABAQUS) {
-    *type = HECMW_CTRL_FTYPE_ABAQUS;
+  } else if (token == HECMW_CTRLLEX_K_INP) {
+    *type = HECMW_CTRL_FTYPE_INP;
 
   } else if (token == HECMW_CTRLLEX_K_NASTRAN) {
     *type = HECMW_CTRL_FTYPE_NASTRAN;

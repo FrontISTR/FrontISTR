@@ -17,7 +17,7 @@ struct hecmw_ctrl_meshfile {
 
 #define HECMW_CTRL_FTYPE_GEOFEM 3
 
-#define HECMW_CTRL_FTYPE_ABAQUS 4
+#define HECMW_CTRL_FTYPE_INP 4
 
 #define HECMW_CTRL_FTYPE_NASTRAN 5
 

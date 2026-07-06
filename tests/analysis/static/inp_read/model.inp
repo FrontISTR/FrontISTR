@@ -1,0 +1,21 @@
+*HEADING
+ Minimal inp mesh for the !MESH,TYPE=INP keyword test (single C3D8 hexahedron)
+*NODE
+1, 0.0, 0.0, 0.0
+2, 1.0, 0.0, 0.0
+3, 1.0, 1.0, 0.0
+4, 0.0, 1.0, 0.0
+5, 0.0, 0.0, 1.0
+6, 1.0, 0.0, 1.0
+7, 1.0, 1.0, 1.0
+8, 0.0, 1.0, 1.0
+*ELEMENT, TYPE=C3D8, ELSET=ALL
+1, 1, 2, 3, 4, 5, 6, 7, 8
+*NSET, NSET=FIX
+1, 2, 3, 4
+*NSET, NSET=TOP
+5, 6, 7, 8
+*MATERIAL, NAME=STEEL
+*ELASTIC
+210000.0, 0.3
+*SOLID SECTION, ELSET=ALL, MATERIAL=STEEL

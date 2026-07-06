@@ -219,8 +219,13 @@ contains
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)
-      if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
-      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      if( restart_step_num > 1 .or. restart_substep_num > 1 ) then
+        call fstr_set_contact_active( infoCTChange%contactNode_previous > 0 )
+        infoCTChange%contactNode_current = infoCTChange%contactNode_previous
+      else
+        if(hecMESH%my_rank==0) write(*,*) "---Scanning initial contact state---"
+        call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      endif
       call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
         call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
@@ -457,7 +462,12 @@ contains
 
     if( cstep==1 .and. sub_step==restart_substep_num  ) then
       call fstr_save_originalMatrixStructure(hecMAT)
-      call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      if( restart_step_num > 1 .or. restart_substep_num > 1 ) then
+        call fstr_set_contact_active( infoCTChange%contactNode_previous > 0 )
+        infoCTChange%contactNode_current = infoCTChange%contactNode_previous
+      else
+        call fstr_scan_contact_state( cstep, sub_step, 0, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
+      endif
         call hecmw_mat_copy_profile( hecMAT, conMAT )
       if ( fstr_is_contact_active() ) then
         call fstr_mat_con_contact(cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())

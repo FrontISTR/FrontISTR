@@ -376,4 +376,107 @@ contains
 
   end subroutine
 
+  !> Calculate material matrix for u-p mixed formulation
+  !> Returns deviatoric tangent D, volumetric coupling vector d2,
+  !> inverse of penalty parameter alpha_inv, and volumetric constraint g
+  !> Inverse of the bulk modulus (1/K) for the u-p mixed formulation.
+  !> Evaluated from the isotropic elastic constants (E, nu). For materials whose
+  !> volumetric response is not characterised by (E, nu) this is an approximation;
+  !> full multi-material support is left as future work.
+  subroutine getBulkModulusInv( matl, temperature, alpha_inv )
+    type( tMaterial ), intent(in) :: matl        !> material properties
+    real(kind=kreal), intent(in)  :: temperature !> current temperature
+    real(kind=kreal), intent(out) :: alpha_inv   !> 1/K
+    real(kind=kreal) :: EE, PP, KK, ina(1), outa(2)
+    logical :: ierr
+
+    ina(1) = temperature
+    call fetch_TableData( MC_ISOELASTIC, matl%dict, outa, ierr, ina )
+    if( ierr ) then
+      EE = matl%variables(M_YOUNGS)
+      PP = matl%variables(M_POISSON)
+    else
+      EE = outa(1)
+      PP = outa(2)
+    endif
+
+    KK = EE / ( 3.0D0*( 1.0D0-2.0D0*PP ) )  ! bulk modulus
+    alpha_inv = 1.0D0 / KK
+  end subroutine getBulkModulusInv
+
+  !> Constitutive matrix for the u-p mixed formulation.
+  !> Returns the deviatoric tangent D (K=0), the volumetric coupling vector d2,
+  !> the inverse bulk modulus alpha_inv and the volumetric strain g.
+  subroutine MatlMatrix_up( gauss, sectType, D, lambda, d2, alpha_inv, g, time, dtime, cdsys, temperature )
+    type( tGaussStatus ), intent(in) :: gauss
+    integer, intent(in)              :: sectType
+    real(kind=kreal), intent(out)    :: D(:,:)
+    real(kind=kreal), intent(in)     :: lambda
+    real(kind=kreal), intent(out)    :: d2(6)
+    real(kind=kreal), intent(out)    :: alpha_inv
+    real(kind=kreal), intent(out)    :: g
+    real(kind=kreal), intent(in)     :: time          !> current time
+    real(kind=kreal), intent(in)     :: dtime         !> time increment
+    real(kind=kreal), intent(in)     :: cdsys(3,3)    !> material coordinate system
+    real(kind=kreal), intent(in), optional :: temperature
+
+    real(kind=kreal) :: temp
+    type( tMaterial ), pointer :: matl
+
+    matl => gauss%pMaterial
+
+    temp = 0.0D0
+    if( present(temperature) ) temp = temperature
+
+    ! Deviatoric tangent (hdflag=1 sets K=0). MatlMatrix dispatches over every
+    ! material type, so the material branching is not duplicated here.
+    call MatlMatrix( gauss, sectType, D, time, dtime, cdsys, temp, hdflag=1 )
+
+    ! d2 = dS/dlambda = I (Voigt notation: normal components only)
+    d2(1:3) = 1.0D0
+    d2(4:6) = 0.0D0
+
+    ! alpha_inv = 1/K (compressibility parameter)
+    call getBulkModulusInv( matl, temp, alpha_inv )
+
+    ! g = volumetric strain = tr(strain)
+    g = gauss%strain(1) + gauss%strain(2) + gauss%strain(3)
+
+  end subroutine MatlMatrix_up
+
+  !> Update stress for the u-p mixed formulation.
+  !> Deviatoric stress from the material law (K=0) plus the pressure lambda.
+  subroutine StressUpdate_up( gauss, sectType, strain, stress, lambda, g, cdsys )
+    type( tGaussStatus ), intent(inout) :: gauss
+    integer, intent(in)                 :: sectType
+    real(kind=kreal), intent(in)        :: strain(6)
+    real(kind=kreal), intent(out)       :: stress(6)
+    real(kind=kreal), intent(in)        :: lambda
+    real(kind=kreal), intent(out)       :: g
+    real(kind=kreal), intent(in)        :: cdsys(3,3)  !> material coordinate system
+
+    real(kind=kreal) :: D(6,6)
+    type( tMaterial ), pointer :: matl
+
+    matl => gauss%pMaterial
+
+    if( isElastic(matl%mtype) ) then
+      ! elastic : StressUpdate has no elastic branch, so S_dev = D_dev*strain here
+      call calElasticMatrix( matl, sectType, D, 0.0D0, hdflag=1 )
+      stress(1:6) = matmul( D(1:6,1:6), strain(1:6) )
+    else
+      ! hyperelastic / user material : deviatoric stress via StressUpdate (hdflag=1)
+      call StressUpdate( gauss, sectType, strain, stress, cdsys, temp=0.0D0, tempn=0.0D0, hdflag=1 )
+    endif
+
+    ! pressure (Lagrange multiplier) contribution: S = S_dev + lambda*I
+    stress(1) = stress(1) + lambda
+    stress(2) = stress(2) + lambda
+    stress(3) = stress(3) + lambda
+
+    ! volumetric strain g = tr(strain)
+    g = strain(1) + strain(2) + strain(3)
+
+  end subroutine StressUpdate_up
+
 end module m_MatMatrix

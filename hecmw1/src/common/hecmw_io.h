@@ -7,7 +7,7 @@
 #define HECMW_IO_INCLUDED
 
 #include "hecmw_geometric.h"
-#include "hecmw_ablex.h"
+#include "hecmw_inplex.h"
 #include "hecmw_gflex.h"
 #include "hecmw_dist.h"
 #include "hecmw_dist_copy_f2c.h"
@@ -19,7 +19,7 @@
 #include "hecmw_io_geofem.h"
 #include "hecmw_io_get_mesh.h"
 #include "hecmw_io_hec.h"
-#include "hecmw_io_abaqus.h"
+#include "hecmw_io_inp.h"
 #include "hecmw_io_mesh.h"
 #include "hecmw_io_put_mesh.h"
 #include "hecmw_io_struct.h"

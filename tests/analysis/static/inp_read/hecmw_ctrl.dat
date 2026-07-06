@@ -1,0 +1,8 @@
+!MESH, NAME=fstrMSH, TYPE=INP
+ model.inp
+!CONTROL, NAME=fstrCNT
+ model.cnt
+!RESULT, NAME=fstrRES, IO=OUT
+ model.res
+!RESULT, NAME=vis_out, IO=OUT
+ model_vis

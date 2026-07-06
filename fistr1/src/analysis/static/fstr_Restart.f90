@@ -82,6 +82,8 @@ contains
           call hecmw_restart_read_real(fstrSOLID%contacts(i)%states(j)%multiplier)
           call hecmw_restart_read_real(fstrSOLID%contacts(i)%states(j)%tangentForce_trial)
           call hecmw_restart_read_real(fstrSOLID%contacts(i)%states(j)%tangentForce_final)
+          fstrSOLID%contacts(i)%states(j)%tangentForce(1:3)  = fstrSOLID%contacts(i)%states(j)%tangentForce_final(1:3)
+          fstrSOLID%contacts(i)%states(j)%tangentForce1(1:3) = fstrSOLID%contacts(i)%states(j)%tangentForce_final(1:3)
         enddo
       enddo
     endif
@@ -293,6 +295,8 @@ contains
           call hecmw_restart_read_real(fstrSOLID%contacts(i)%states(j)%multiplier)
           call hecmw_restart_read_real(fstrSOLID%contacts(i)%states(j)%tangentForce_trial)
           call hecmw_restart_read_real(fstrSOLID%contacts(i)%states(j)%tangentForce_final)
+          fstrSOLID%contacts(i)%states(j)%tangentForce(1:3)  = fstrSOLID%contacts(i)%states(j)%tangentForce_final(1:3)
+          fstrSOLID%contacts(i)%states(j)%tangentForce1(1:3) = fstrSOLID%contacts(i)%states(j)%tangentForce_final(1:3)
         enddo
       enddo
     endif
