@@ -523,6 +523,14 @@ contains
               call TLOAD_C3D8Fbar                                                            &
                 ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
                            fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords)
+      else if (fstrSOLID%sections(isect)%elemopt361 == kel361UP) then
+              ! UP element : reuse the standard C3 thermal load. Note the thermal
+              ! strain is volumetric and TLOAD_C3 uses the full elastic matrix, so
+              ! this is not strictly consistent with the u-p deviatoric/pressure
+              ! split (see report); provided for basic thermal loading support.
+              call TLOAD_C3                                                          &
+                ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
+                fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
       endif
     
     else if (ic_type == 341 .or. ic_type == 351 .or. &

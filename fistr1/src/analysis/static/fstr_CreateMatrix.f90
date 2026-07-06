@@ -243,6 +243,10 @@ contains
       else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
         call STF_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
+      else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then ! UP (u-p mixed) element
+        call STF_C3_up( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, &
+          1, fstrSOLID%elements(icel)%p, u(1:3,1:nn), tt(1:nn) )
       endif
 
       if( is_dynamic ) call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, mass_mat, lumped)

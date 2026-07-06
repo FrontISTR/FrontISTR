@@ -51,7 +51,7 @@ contains
     integer            :: ndim, initt
 
     real(kind=kreal), optional :: strainEnergy
-    real(kind=kreal) :: tmp
+    real(kind=kreal) :: tmp, lambda(1), ddlambda(1)
     real(kind=kreal)   :: ddaux(3,3)
 
     ndof = hecMAT%NDOF
@@ -93,7 +93,8 @@ contains
       !element loop
       !$omp parallel default(none), &
         !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp,shell_director,shell_ref_director, &
-        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0), &
+        !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0, &
+        !$omp&  lambda,ddlambda), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
@@ -174,8 +175,15 @@ contains
           else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
             call UPDATE_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords,    &
               qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), iter, time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
+          else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then ! UP element
+              lambda(1) = -0.5D0*fstrSOLID%elements(icel)%p(1)
+              CALL Update_C3_up                                                                      &
+                   ( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), ddu(1:3,1:nn), &
+                     cdsys_ID, coords, qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:),           &
+                     iter, time, tincr, 1, lambda, ddlambda, tt(1:nn), tt0(1:nn) )
+              lambda(1) = lambda(1) + ddlambda(1)
+              fstrSOLID%elements(icel)%p(1) = -2.0D0*lambda(1)
           endif
-
         else if (ic_type == 341 .or. ic_type == 351 .or. ic_type == 342 .or. ic_type == 352 .or. ic_type == 362 ) then
           if( ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS ) cycle ! skip smoothed fem
           call UPDATE_C3( ic_type, nn, ecoord(:,1:nn), total_disp(1:3,1:nn), du(1:3,1:nn), cdsys_ID, coords, &
