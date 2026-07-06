@@ -1106,6 +1106,7 @@ contains
     integer(kind=kint) :: itype, icel, is, iE, jS, i, j, k, it, ic, ic_type, nn, isect, ihead, ID_area
     integer(kind=kint) :: nodLOCAL(20), n_layer, ntot_lyr, nlyr, n_totlyr, com_total_layer, shellmatl
     real(kind=kreal)   :: ecoord(3,9), edisp(6,9), estrain(6), estress(6), ndstrain(9,6), ndstress(9,6)
+    real(kind=kreal)   :: enqm(12)
     real(kind=kreal)   :: shell_director(3,9), shell_ref_director(3,9)
     real(kind=kreal)   :: thick, thick_layer
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, t11, t22, t33, t12, t23, t13, ps, smises, tmises
@@ -1129,10 +1130,11 @@ contains
       is = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype  )
       ic_type = hecMESH%elem_type_item(itype)
-      if( .not. hecmw_is_etype_shell(ic_type) ) then
+      if( .not. (hecmw_is_etype_shell(ic_type) .or. ic_type == 611) ) then
         ntot_lyr = 0
         cycle
       end if
+      if( ic_type == 611 ) ntot_lyr = 0  !< beam has no shell layers
       nn = hecmw_get_max_node( ic_type )
       !C** element loop
       do icel = is, iE
@@ -1154,7 +1156,18 @@ contains
         ihead = hecMESH%section%sect_R_index(isect-1)
         thick = hecMESH%section%sect_R_item(ihead+1)
         !--- calculate elemental stress and strain
-        if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
+        if( ic_type == 611 ) then !< 2-node beam section
+          estrain  = 0.0d0
+          estress  = 0.0d0
+          enqm     = 0.0d0
+          ndstrain = 0.0d0
+          ndstress = 0.0d0
+          call NodalStress_Beam( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, &
+            &     hecMESH%section%sect_R_item(ihead+1:), edisp(1:6,1:nn),                 &
+            &     ndstrain(1:nn,1:6), ndstress(1:nn,1:6) )
+          call ElementalStress_Beam( fstrSOLID%elements(icel)%gausses, estrain, estress, enqm )
+          fstrSOLID%ENQM(icel*12-11:icel*12) = enqm(1:12)
+        else if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
           ntot_lyr = fstrSOLID%elements(icel)%gausses(1)%pMaterial%totallyr
           if( ic_type == 741 ) then
             call fstr_get_shell_current_directors(fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn))
