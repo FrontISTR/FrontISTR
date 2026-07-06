@@ -121,7 +121,7 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 !ZERO		{ return flag_header ? HECMW_HECLEX_H_ZERO : ' '; }
 
 
-ABAQUS		{ set_flag_header(0); return HECMW_HECLEX_K_ABAQUS; }
+INP		{ set_flag_header(0); return HECMW_HECLEX_K_INP; }
 ABSOLUTE	{ set_flag_header(0); return HECMW_HECLEX_K_ABSOLUTE; }
 BEAM		{ set_flag_header(0); return HECMW_HECLEX_K_BEAM; }
 COMPOSITE	{ set_flag_header(0); return HECMW_HECLEX_K_COMPOSITE; }

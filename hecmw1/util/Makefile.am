@@ -24,7 +24,7 @@ MSGDEFMASTER = msg_master.xml
 LEXSRCCOMMON = \
 	hecmw_ctrllex.c \
 	hecmw_heclex.c \
-	hecmw_ablex.c \
+	hecmw_inplex.c \
 	hecmw_gflex.c
 
 LEXSRCPARTITIONER = \
@@ -51,8 +51,8 @@ hecmw_gflex.c: $(SRCCOMMONDIR)/hecmw_gflex.l
 hecmw_heclex.c: $(SRCCOMMONDIR)/hecmw_heclex.l
 	$(LEX) -t -PHECMW_hec $(SRCCOMMONDIR)/hecmw_heclex.l > $@
 
-hecmw_ablex.c: $(SRCCOMMONDIR)/hecmw_ablex.l
-	$(LEX) -t -PHECMW_ab -i $(SRCCOMMONDIR)/hecmw_ablex.l > $@
+hecmw_inplex.c: $(SRCCOMMONDIR)/hecmw_inplex.l
+	$(LEX) -t -PHECMW_inp -i $(SRCCOMMONDIR)/hecmw_inplex.l > $@
 
 hecmw_partlex.c: $(SRCPARTITIONERDIR)/hecmw_partlex.l
 	$(LEX) -t -PHECMW_part $(SRCPARTITIONERDIR)/hecmw_partlex.l > $@

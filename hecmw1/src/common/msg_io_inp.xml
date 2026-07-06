@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="x-euc-jp-unicode"?>
 
 <msg-table>
-	<table prefix="HECMW-IO-ABAQUS">
+	<table prefix="HECMW-IO-INP">
 		<define type="error" name="E0001">
-			<message>Failed to open ABAQUS mesh file</message>
-			<description>ABAQSUメッシュファイルのオープンに失敗した</description>
+			<message>Failed to open INP mesh file</message>
+			<description>INPメッシュファイルのオープンに失敗した</description>
 		</define>
 		<define type="error" name="E0002">
-			<message>Failed to close ABAQUS mesh file</message>
-			<description>ABAQUSメッシュファイルのクローズに失敗した</description>
+			<message>Failed to close INP mesh file</message>
+			<description>INPメッシュファイルのクローズに失敗した</description>
 		</define>
 		<define type="error" name="E0003">
 			<message>Unexpected EOF found</message>
