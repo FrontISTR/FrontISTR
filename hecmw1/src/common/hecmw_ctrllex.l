@@ -46,7 +46,7 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 ^!SUBDIR	{ set_flag_header(1); return HECMW_CTRLLEX_H_SUBDIR; }
 !SUBDIR		{ return flag_header ? HECMW_CTRLLEX_H_SUBDIR : ' '; }
 
-ABAQUS			{ set_flag_header(0); return HECMW_CTRLLEX_K_ABAQUS; }
+INP			{ set_flag_header(0); return HECMW_CTRLLEX_K_INP; }
 DIR				{ set_flag_header(0); return HECMW_CTRLLEX_K_DIR; }
 FEMAP			{ set_flag_header(0); return HECMW_CTRLLEX_K_FEMAP; }
 GeoFEM			{ set_flag_header(0); return HECMW_CTRLLEX_K_GEOFEM; }

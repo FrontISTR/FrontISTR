@@ -5,7 +5,7 @@
 
 #ifndef HECMW_H_INCLUDED
 #define HECMW_H_INCLUDED
-#include "hecmw_ablex.h"
+#include "hecmw_inplex.h"
 #include "hecmw_bit_array.h"
 #include "hecmw_comm.h"
 #include "hecmw_common.h"
@@ -30,7 +30,7 @@
 #include "hecmw_heclex.h"
 #include "hecmw_init.h"
 #include "hecmw_io.h"
-#include "hecmw_io_abaqus.h"
+#include "hecmw_io_inp.h"
 #include "hecmw_io_dist.h"
 #include "hecmw_io_geofem.h"
 #include "hecmw_io_get_mesh.h"

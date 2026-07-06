@@ -13,7 +13,7 @@ struct conn_conv {
   int connectivity[HECMW_MAX_NODE_MAX];
 };
 
-static struct conn_conv conn_conv_abaqus[] = {
+static struct conn_conv conn_conv_inp[] = {
     {232, {1, 2, 3, 6, 4, 5}},
     {342, {1, 2, 3, 4, 7, 5, 6, 8, 9, 10}},
     {352, {1, 2, 3, 4, 5, 6, 9, 7, 8, 12, 10, 11, 13, 14, 15}},
@@ -58,8 +58,8 @@ int HECMW_convert_connectivity(int from, int hecmw_etype, int *conn) {
     case HECMW_CONNTYPE_HECMW:
       return 0;
 
-    case HECMW_CONNTYPE_ABAQUS:
-      from_table = conn_conv_abaqus;
+    case HECMW_CONNTYPE_INP:
+      from_table = conn_conv_inp;
       break;
 #if 0
 

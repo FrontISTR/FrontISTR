@@ -1,0 +1,16 @@
+# Static elastic analysis of a single C3D8 hexahedron read from an inp mesh
+# (used to confirm !MESH,TYPE=INP dispatches to the inp reader and the analysis runs)
+!VERSION
+ 3
+!SOLUTION, TYPE=STATIC
+!BOUNDARY
+ FIX, 1, 3, 0.0
+!CLOAD
+ TOP, 3, 10.0
+!WRITE, RESULT
+!WRITE, VISUAL
+!VISUAL, method=PSR
+!surface_num=1
+!surface 1
+!output_type = BIN_VTK
+!END
