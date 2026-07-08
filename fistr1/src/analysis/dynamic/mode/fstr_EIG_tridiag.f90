@@ -85,7 +85,13 @@ contains
     chk = 0.0d0
     max_eigval = maxval(alpha)
     do i = 1, min(nget, iter)
-      resid = dabs(Tri%beta(iter+1)*L(iter,i))/max_eigval
+      if (dabs(alpha(idx)) > 0.0d0) then
+        ! Divide by the eigenvalue of the mode itself.
+        resid = dabs(Tri%beta(iter+1)*L(iter,i))/dabs(alpha(idx))
+      else
+        ! An eigenvalue of zero indicates a numerical crash and the system stops.
+        call hecmw_abort( hecmw_comm_get_comm() )
+      endif
       chk = max(chk, resid)
       if(tolerance < resid) is_converge = .false.
     enddo
