@@ -51,13 +51,16 @@ sub func{
       @global_header_num=(); @global_header_name=();
       for (my $i=0;$i<(int(($global_header_cnt-1)/10)+1);$i++){ push(@global_header_num,split(/\s+/,<DF>)) }
       for (my $i=0;$i<$global_header_cnt;$i++) { chomp($line=<DF>); push(@global_header_name,$line);}
-      my $ii;
+      my $ii = 0;
+      my $l;
       my $pline; $pline += $_ for @global_header_num; $pline = int(($pline+(5-1))/5);
-      for (my $j=0;$j<$pline;$j++) { my $line = <DF>; $l .= $line; }
+      for (my $i=0;$i<$pline;$i++) { my $line = <DF>; $l .= $line; }
       my @p = split(/\s+/,$l);
-      for (my $k=0;$k<$global_header_num[$j];$k++){
-        $norm{$global_header_name[$j]} += $p[$ii]**2;
-        $ii++;
+      for (my $j=0;$j<=$#global_header_num;$j++){
+        for (my $k=0;$k<$global_header_num[$j];$k++){
+          $norm{$global_header_name[$j]} += $p[$ii]**2;
+          $ii++;
+        }
       }
     }
 
