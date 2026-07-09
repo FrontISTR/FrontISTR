@@ -1805,7 +1805,8 @@ contains
     fstrEIG%nget        = 5
     fstrEIG%maxiter     = 60
     fstrEIG%iter        = 0
-    fstrEIG%sigma       = 0.0d0
+    !fstrEIG%sigma       = 0.0d0
+    fstrEIG%sigma       = 0.01d0
     fstrEIG%tolerance   = 1.0d-6
     fstrEIG%totalmass   = 0.0d0
   end subroutine fstr_eigen_init
@@ -3945,7 +3946,7 @@ end function fstr_setup_INITIAL
 
     integer(kind=kint) :: rcode
 
-    rcode = fstr_ctrl_get_EIGEN( ctrl, P%EIGEN%nget, P%EIGEN%tolerance, P%EIGEN%maxiter)
+    rcode = fstr_ctrl_get_EIGEN( ctrl, P%EIGEN%nget, P%EIGEN%tolerance, P%EIGEN%maxiter, P%EIGEN%sigma)
     if( rcode /= 0) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_EIGEN
