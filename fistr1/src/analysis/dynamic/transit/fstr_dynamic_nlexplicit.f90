@@ -333,7 +333,8 @@ contains
         if(dabs(hecmw_mat_get_X_i(hecMATmpc, j)) > 1.0d+5) then
           if( hecMESH%my_rank == 0 ) then
             print *, 'Displacement increment too large, please adjust your step size!',istep,hecmw_mat_get_X_i(hecMATmpc, j)
-            write(imsg,*) 'Displacement increment too large, please adjust your step size!',istep,hecmw_mat_get_B_i(hecMATmpc, j),fstrDYN%VEC1(j)
+            write(imsg,*) 'Displacement increment too large, please adjust your step size!', &
+              & istep,hecmw_mat_get_B_i(hecMATmpc, j),fstrDYN%VEC1(j)
           end if
           call hecmw_abort( hecmw_comm_get_comm())
         end if

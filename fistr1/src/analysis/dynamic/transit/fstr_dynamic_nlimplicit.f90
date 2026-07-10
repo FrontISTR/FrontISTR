@@ -477,7 +477,8 @@ contains
           maxDLag = 0.0d0
           do j=1,hecLagMAT%num_lagrange
             hecLagMAT%lagrange(j) = hecLagMAT%lagrange(j) + hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j)
-            if(dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))>maxDLag) maxDLag=dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))
+            if(dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))>maxDLag) &
+              & maxDLag=dabs(hecmw_mat_get_X_i(hecMAT, hecMESH%n_node*ndof+j))
           enddo
         endif
 
