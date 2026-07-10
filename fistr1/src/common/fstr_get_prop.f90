@@ -226,7 +226,7 @@ contains
           shell_var(count)%g12   = hecMESH%material%mat_val(mpos+i+3)
           shell_var(count)%g23   = hecMESH%material%mat_val(mpos+i+4)
           shell_var(count)%g31   = hecMESH%material%mat_val(mpos+i+5)
-          shell_var(count)%angle = hecMESH%material%mat_val(mpos+i+6)
+          shell_var(count)%angle = hecMESH%material%mat_val(mpos+i+6) / 180.0D0 * (4.0D0*datan(1.0D0))
           shell_var(count)%weight= hecMESH%material%mat_val(mpos+i+7)
           i=i+8
         else

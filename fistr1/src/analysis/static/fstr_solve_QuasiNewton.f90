@@ -7,6 +7,8 @@
 module m_fstr_QuasiNewton
 
   use m_fstr_NonLinearMethod
+  use m_fstr_IterationControl
+  use m_fstr_NodalKinematics, only: fstr_apply_solution_increment, fstr_commit_solution_increment
 
   implicit none
   ! parameters for line search
@@ -119,16 +121,19 @@ contains
       ! ----- update the small displacement and the displacement for 1step
       !       \delta u^k => solver's solution
       !       \Delta u_{n+1}^{k} = \Delta u_{n+1}^{k-1} + \delta u^k
-      do i = 1, hecMESH%n_node*ndof
-        fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecmw_mat_get_X_i(hecMAT, i)
-      enddo
+      call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecmw_mat_get_X(hecMAT) )
 
       !! set du for non-zero Dirichlet condition
       ! call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
  
       ! ----- check convergence
-      iterStatus = fstr_check_iteration_converged(hecMESH, hecMAT, fstrSOLID, ndof, iter, sub_step, cstep )
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+          ndof, iter, sub_step, cstep, &
+          hecmw_mat_get_B(hecMAT), 0, &
+          res, res, &
+          0, &
+          iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
       ! if (iterStatus == kitrDiverged) exit
@@ -159,9 +164,7 @@ contains
 
     ! ----- update the total displacement
     ! u_{n+1} = u_{n} + \Delta u_{n+1}
-    do i=1,hecMESH%n_node*ndof
-      fstrSOLID%unode(i) = fstrSOLID%unode(i) + fstrSOLID%dunode(i)
-    enddo
+      call fstr_commit_solution_increment( hecMESH, fstrSOLID, ndof )
 
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
 

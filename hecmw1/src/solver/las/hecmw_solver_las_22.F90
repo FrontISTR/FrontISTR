@@ -93,7 +93,7 @@ contains
     integer(kind=kint), pointer :: indexL(:), itemL(:), indexU(:), itemU(:), indexA(:), itemA(:)
     real(kind=kreal), pointer :: AL(:), AU(:), D(:), A(:)
 
-    ! added for turning >>>
+    ! added for tuning >>>
     integer, parameter :: numOfBlockPerThread = 100
     logical, save :: isFirst = .true.
     integer, save :: numOfThread = 1
@@ -102,7 +102,7 @@ contains
     integer(kind=kint) :: threadNum, blockNum, numOfBlock
     integer(kind=kint) :: numOfElement, elementCount, blockIndex
     real(kind=kreal) :: numOfElementPerBlock
-    ! <<< added for turning
+    ! <<< added for tuning
 
     if (hecmw_JAD_IS_INITIALIZED().ne.0) then
       Tcomm = 0.d0
@@ -126,7 +126,7 @@ contains
       D => hecMAT%D
       A => hecMAT%A
 
-      ! added for turning >>>
+      ! added for tuning >>>
 #ifndef _OPENACC
       if (.not. isFirst) then
         numOfBlock = numOfThread * numOfBlockPerThread
@@ -168,7 +168,7 @@ contains
         isFirst = .false.
       endif
 #endif
-      ! <<< added for turning
+      ! <<< added for tuning
 
       START_TIME= HECMW_WTIME()
       call hecmw_update_R (hecMESH, X, NP, 2)
@@ -176,12 +176,6 @@ contains
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
       START_TIME = hecmw_Wtime()
-
-      !call fapp_start("loopInMatvec33", 1, 0)
-      !call start_collection("loopInMatvec33")
-
-      !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
-      !OCL CACHE_SUBSECTOR_ASSIGN(X)
 
 #ifdef _OPENACC
       !$acc kernels
@@ -191,8 +185,8 @@ contains
         X2= X(2*i  )
         YV1= 0
         YV2= 0
-        jS= indexA(i) + 1
-        jE= indexA(i+1)
+        jS= indexA(i-1) + 1
+        jE= indexA(i)
         do j= jS, jE
           in  = itemA(j)
           X1 = X(2*in-1)
@@ -205,6 +199,12 @@ contains
       enddo
       !$acc end kernels
 #else
+      !call fapp_start("loopInMatvec33", 1, 0)
+      !call start_collection("loopInMatvec33")
+
+      !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
+      !OCL CACHE_SUBSECTOR_ASSIGN(X)
+
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,X1,X2,YV1,YV2,jS,jE,j,in,threadNum,blockNum,blockIndex) &
         !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
@@ -242,10 +242,10 @@ contains
       enddo
 
       !$OMP END PARALLEL
-#endif
 
       !OCL END_CACHE_SUBSECTOR
       !OCL END_CACHE_SECTOR_SIZE
+#endif
 
 
       END_TIME = hecmw_Wtime()

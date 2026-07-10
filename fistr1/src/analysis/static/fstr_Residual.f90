@@ -11,8 +11,10 @@ module m_fstr_Residual
 
   public :: fstr_Update_NDForce
   public :: fstr_Update_NDForce_SPC
+  public :: fstr_Update_REACTION_SPC
   public :: fstr_get_residual
   public :: fstr_get_norm_contact
+  public :: fstr_assemble_residual_contact
   public :: fstr_get_norm_para_contact
   public :: fstr_get_x_norm_contact
   public :: fstr_get_potential
@@ -109,16 +111,14 @@ contains
     !    Local variables
     integer(kind=kint) ndof, ig0, ig, ityp, iS0, iE0, ik, in, idof1, idof2, idof
     integer(kind=kint) :: grpid
-    real(kind=kreal) :: rhs
 
     ndof = hecMESH%n_dof
-    fstrSOLID%REACTION = 0.d0
 
+    !    Clear RHS at constrained DOFs (SPC)
     do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
       ig= fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-      rhs= fstrSOLID%BOUNDARY_ngrp_val(ig0)
       ityp= fstrSOLID%BOUNDARY_ngrp_type(ig0)
       iS0= hecMESH%node_group%grp_index(ig-1) + 1
       iE0= hecMESH%node_group%grp_index(ig  )
@@ -132,7 +132,45 @@ contains
         end if
         do idof=idof1,idof2
           B( ndof*(in-1) + idof ) = 0.d0
-          !for output reaction force
+        enddo
+      enddo
+    enddo
+  end subroutine fstr_Update_NDForce_SPC
+
+  !> Set fstrSOLID%REACTION at constrained DOFs using current fstrSOLID%QFORCE.
+  !> Constrained DOFs are enumerated from BOUNDARY_ngrp_*, and (when present)
+  !> VELOCITY_ngrp_* / ACCELERATION_ngrp_* with non-initial type. This subroutine
+  !> must be called after fstr_UpdateNewton so that REACTION reflects the
+  !> converged internal nodal force of the current (sub)step.
+  subroutine fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
+    use m_fstr
+    integer(kind=kint), intent(in)       :: cstep !< current step
+    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
+    type(fstr_solid), intent(in)         :: fstrSOLID !< constraints and QFORCE
+    !    Local variables
+    integer(kind=kint) :: ndof, ig0, ig, ityp, iS0, iE0, ik, in, idof1, idof2, idof
+    integer(kind=kint) :: grpid
+
+    ndof = hecMESH%n_dof
+    fstrSOLID%REACTION = 0.d0
+
+    ! displacement boundary
+    do ig0= 1, fstrSOLID%BOUNDARY_ngrp_tot
+      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
+      ig= fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+      ityp= fstrSOLID%BOUNDARY_ngrp_type(ig0)
+      iS0= hecMESH%node_group%grp_index(ig-1) + 1
+      iE0= hecMESH%node_group%grp_index(ig  )
+      do ik= iS0, iE0
+        in   = hecMESH%node_group%grp_item(ik)
+        idof1 = ityp/10
+        idof2 = ityp - idof1*10
+        if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then
+          idof1 = 1
+          idof2 = ndof
+        end if
+        do idof=idof1,idof2
           fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           !count embed force as reaction force
           if( associated(fstrSOLID%EMBED_NFORCE) ) fstrSOLID%REACTION(ndof*(in-1)+idof) = &
@@ -140,7 +178,47 @@ contains
         enddo
       enddo
     enddo
-  end subroutine fstr_Update_NDForce_SPC
+
+    ! velocity boundary (dynamic only; following type constrains the DOF)
+    if( fstrSOLID%VELOCITY_type /= kbcInitial ) then
+      do ig0= 1, fstrSOLID%VELOCITY_ngrp_tot
+        grpid = fstrSOLID%VELOCITY_ngrp_GRPID(ig0)
+        if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
+        ig= fstrSOLID%VELOCITY_ngrp_ID(ig0)
+        ityp= fstrSOLID%VELOCITY_ngrp_type(ig0)
+        iS0= hecMESH%node_group%grp_index(ig-1) + 1
+        iE0= hecMESH%node_group%grp_index(ig  )
+        idof1 = ityp/10
+        idof2 = ityp - idof1*10
+        do ik= iS0, iE0
+          in   = hecMESH%node_group%grp_item(ik)
+          do idof=idof1,idof2
+            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
+          enddo
+        enddo
+      enddo
+    endif
+
+    ! acceleration boundary (dynamic only; following type constrains the DOF)
+    if( fstrSOLID%ACCELERATION_type /= kbcInitial ) then
+      do ig0= 1, fstrSOLID%ACCELERATION_ngrp_tot
+        grpid = fstrSOLID%ACCELERATION_ngrp_GRPID(ig0)
+        if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
+        ig= fstrSOLID%ACCELERATION_ngrp_ID(ig0)
+        ityp= fstrSOLID%ACCELERATION_ngrp_type(ig0)
+        iS0= hecMESH%node_group%grp_index(ig-1) + 1
+        iE0= hecMESH%node_group%grp_index(ig  )
+        idof1 = ityp/10
+        idof2 = ityp - idof1*10
+        do ik= iS0, iE0
+          in   = hecMESH%node_group%grp_item(ik)
+          do idof=idof1,idof2
+            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
+          enddo
+        enddo
+      enddo
+    endif
+  end subroutine fstr_Update_REACTION_SPC
 
 
   !> \breaf This subroutine calculate residual vector
@@ -176,7 +254,8 @@ contains
 
   !> \breaf This subroutine calculate residual vector
   subroutine fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
-    use m_fstr_Update
+    use m_fstr_Update, only: fstr_UpdateNewton
+    use m_fstr_NodalKinematics, only: fstr_apply_solution_increment
     implicit none
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
@@ -190,15 +269,32 @@ contains
 
     integer :: i
     real(kind=kreal) :: dunode_bak(hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node)
+    real(kind=kreal), allocatable :: shell_dtriad_bak(:), shell_ddrill_bak(:)
 
     do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
-      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecmw_mat_get_X_i(hecMAT, i)
     enddo
+    if( associated(fstrSOLID%shell_dtriad) ) then
+      allocate(shell_dtriad_bak(size(fstrSOLID%shell_dtriad)))
+      shell_dtriad_bak(:) = fstrSOLID%shell_dtriad(:)
+    endif
+    if( associated(fstrSOLID%shell_ddrill) ) then
+      allocate(shell_ddrill_bak(size(fstrSOLID%shell_ddrill)))
+      shell_ddrill_bak(:) = fstrSOLID%shell_ddrill(:)
+    endif
+    call fstr_apply_solution_increment( hecMESH, fstrSOLID, hecmw_mat_get_NDOF(hecMAT), hecmw_mat_get_X(hecMAT) )
     call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
     do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
+    if( allocated(shell_dtriad_bak) ) then
+      fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
+      deallocate(shell_dtriad_bak)
+    endif
+    if( allocated(shell_ddrill_bak) ) then
+      fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
+      deallocate(shell_ddrill_bak)
+    endif
   end subroutine fstr_calc_residual_vector_with_X
 
   !> Calculate magnitude of a real vector
@@ -247,6 +343,47 @@ contains
     endif
   end function
 
+  !> \brief Assemble contact residual vector (hecMAT%B + conMAT%B + Lagrange) into a single vector.
+  !>
+  !> This is the assembly part extracted from fstr_get_norm_para_contact so that
+  !> the assembled vector can be reused (e.g. by convergence check routines)
+  !> without recomputing it.
+  subroutine fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_vec, nresid)
+    use m_fstr
+    implicit none
+    type(hecmwST_matrix), intent(in)          :: hecMAT
+    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT
+    type(hecmwST_matrix), intent(in)          :: conMAT
+    type(hecmwST_local_mesh), intent(in)      :: hecMESH
+    real(kind=kreal), intent(out)             :: resid_vec(:)
+    integer(kind=kint), intent(out)           :: nresid
+
+    integer(kind=kint) :: i, ndof, nndof, npndof, num_lagrange
+
+    ndof = hecmw_mat_get_NDOF(conMAT)
+    nndof = hecmw_mat_get_N(conMAT) * ndof
+    npndof = hecmw_mat_get_NP(conMAT) * ndof
+    num_lagrange = hecLagMAT%num_lagrange
+    nresid = nndof + num_lagrange
+
+    ! Copy conMAT%B and assemble across MPI
+    do i = 1, npndof
+      resid_vec(i) = hecmw_mat_get_B_i(conMAT, i)
+    enddo
+    call hecmw_assemble_R(hecMESH, resid_vec, hecmw_mat_get_NP(conMAT), hecmw_mat_get_NDOF(conMAT))
+
+    ! Add hecMAT%B (node DOFs only)
+    do i = 1, nndof
+      resid_vec(i) = resid_vec(i) + hecmw_mat_get_B_i(hecMAT, i)
+    enddo
+
+    ! Copy Lagrange multiplier residual
+    do i = 1, num_lagrange
+      resid_vec(nndof + i) = hecmw_mat_get_B_i(conMAT, npndof + i)
+    enddo
+
+  end subroutine fstr_assemble_residual_contact
+
   !
   function fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH) result(rhsB)
     use m_fstr
@@ -260,6 +397,7 @@ contains
     integer(kind=kint) ::  i,ndof,nndof,npndof,num_lagrange
     real(kind=kreal), allocatable   :: rhs_con(:)
     real(kind=kreal), pointer :: rhs_lag(:)
+    real(kind=kreal), pointer :: pCB(:)
 
     ndof = hecmw_mat_get_NDOF(conMAT)
     nndof = hecmw_mat_get_N(conMAT) * ndof
@@ -276,8 +414,8 @@ contains
       rhs_con(i) = rhs_con(i) + hecmw_mat_get_B_i(hecMAT, i)
     enddo
 
-    rhs_lag => hecmw_mat_get_B(conMAT)
-    rhs_lag => rhs_lag(npndof+1:npndof+num_lagrange)
+    pCB => hecmw_mat_get_B(conMAT)
+    rhs_lag => pCB(npndof+1:npndof+num_lagrange)
 
     rhsB = dot_product(rhs_con(1:nndof), rhs_con(1:nndof)) + dot_product(rhs_lag(:), rhs_lag(:))
     call hecmw_allreduce_R1(hecMESH, rhsB, hecmw_sum)
@@ -378,6 +516,7 @@ contains
     use m_fstr
     use mULoad
     use m_fstr_spring
+    use m_fstr_NodalKinematics, only: fstr_apply_solution_increment
     implicit none
     integer(kind=kint), intent(in)       :: cstep !< current step
     type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
@@ -388,20 +527,38 @@ contains
 
     integer :: i
     real(kind=kreal) :: dunode_bak(hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node)
+    real(kind=kreal), allocatable :: shell_dtriad_bak(:), shell_ddrill_bak(:)
 
     do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
-      fstrSOLID%dunode(i) = fstrSOLID%dunode(i) + hecmw_mat_get_X_i(hecMAT, i)
     enddo
+    if( associated(fstrSOLID%shell_dtriad) ) then
+      allocate(shell_dtriad_bak(size(fstrSOLID%shell_dtriad)))
+      shell_dtriad_bak(:) = fstrSOLID%shell_dtriad(:)
+    endif
+    if( associated(fstrSOLID%shell_ddrill) ) then
+      allocate(shell_ddrill_bak(size(fstrSOLID%shell_ddrill)))
+      shell_ddrill_bak(:) = fstrSOLID%shell_ddrill(:)
+    endif
+    call fstr_apply_solution_increment( hecMESH, fstrSOLID, hecmw_mat_get_NDOF(hecMAT), hecmw_mat_get_X(hecMAT) )
     potential = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype)
     do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
+    if( allocated(shell_dtriad_bak) ) then
+      fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
+      deallocate(shell_dtriad_bak)
+    endif
+    if( allocated(shell_ddrill_bak) ) then
+      fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
+      deallocate(shell_ddrill_bak)
+    endif
   end function fstr_get_potential_with_X
 
   subroutine plot_potential_graph( cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
     restrt_step_num, sub_step, ctime, dtime, iter, tincr )
     use m_fstr
+    use m_fstr_NodalKinematics, only: fstr_apply_solution_increment
     integer, intent(in)                   :: cstep     !< current loading step
     type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
     type (hecmwST_matrix)                 :: hecMAT    !< hecmw matrix
@@ -418,6 +575,7 @@ contains
     real(kind=kreal)   :: tincr, alpha, dulen
     real(kind=kreal) :: pot(3)
     real(kind=kreal), allocatable :: dunode_bak(:)
+    real(kind=kreal), allocatable :: shell_dtriad_bak(:), shell_ddrill_bak(:)
     real(kind=kreal), pointer :: pX(:)
 
     dulen = dsqrt(dot_product(fstrSOLID%dunode(:),fstrSOLID%dunode(:)))
@@ -427,14 +585,23 @@ contains
     do i=1, hecmw_mat_get_NDOF(hecMAT)*hecMESH%n_node
       dunode_bak(i) = fstrSOLID%dunode(i)
     enddo
+    if( associated(fstrSOLID%shell_dtriad) ) then
+      allocate(shell_dtriad_bak(size(fstrSOLID%shell_dtriad)))
+      shell_dtriad_bak(:) = fstrSOLID%shell_dtriad(:)
+    endif
+    if( associated(fstrSOLID%shell_ddrill) ) then
+      allocate(shell_ddrill_bak(size(fstrSOLID%shell_ddrill)))
+      shell_ddrill_bak(:) = fstrSOLID%shell_ddrill(:)
+    endif
 
     do i=-ntot,ntot
       alpha = 5.d-3*dble(i)/dble(ntot)
       pX => hecmw_mat_get_X(hecMAT)
       pX(:) = alpha*fstrSOLID%dunode(:)
-      do j=1, size(fstrSOLID%dunode)
-        fstrSOLID%dunode(j) = dunode_bak(j)+hecmw_mat_get_X_i(hecMAT, j)
-      enddo
+      fstrSOLID%dunode(:) = dunode_bak(:)
+      if( allocated(shell_dtriad_bak) ) fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
+      if( allocated(shell_ddrill_bak) ) fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
+      call fstr_apply_solution_increment( hecMESH, fstrSOLID, hecmw_mat_get_NDOF(hecMAT), hecmw_mat_get_X(hecMAT) )
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
       pot(1) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,1)
       pot(2) = fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,2)
@@ -445,6 +612,14 @@ contains
     do i=1, size(fstrSOLID%dunode)
       fstrSOLID%dunode(i) = dunode_bak(i)
     enddo
+    if( allocated(shell_dtriad_bak) ) then
+      fstrSOLID%shell_dtriad(:) = shell_dtriad_bak(:)
+      deallocate(shell_dtriad_bak)
+    endif
+    if( allocated(shell_ddrill_bak) ) then
+      fstrSOLID%shell_ddrill(:) = shell_ddrill_bak(:)
+      deallocate(shell_ddrill_bak)
+    endif
     call hecmw_mat_fill_X(hecMAT, 0.d0)
     call fstr_calc_residual_vector_with_X(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
   end subroutine

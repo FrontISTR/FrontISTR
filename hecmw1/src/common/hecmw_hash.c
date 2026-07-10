@@ -170,7 +170,7 @@ int hecmw_hash_p_put(hecmw_hash_p *hash, const char *key, void *value) {
 
   list      = &(bin->list[n]);
   list->key = new_key;
-  strcpy(list->key, key);
+  snprintf(list->key, key_len + 1, "%s", key);
   list->value   = value;
   list->hashkey = hashkey;
   bin->n++;

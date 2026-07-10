@@ -256,7 +256,7 @@ void HECMW_dist_print_elem(const struct hecmwST_local_mesh *mesh, FILE *fp) {
     if (i != 0 && i % NITEM == 0) {
       fprintf(fp, "\n");
     }
-    fprintf(fp, "%d ", mesh->elem_node_index[i]);
+    fprintf(fp, "%lld ", mesh->elem_node_index[i]);
   }
   fprintf(fp, "\n");
 

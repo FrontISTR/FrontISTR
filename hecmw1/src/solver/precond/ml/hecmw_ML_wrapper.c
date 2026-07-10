@@ -225,73 +225,73 @@ void ml_options_print(struct ml_options *mlopt, FILE *fp, int myrank, int loglev
   switch (mlopt->CoarseSolver) {
   case Smoother:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is smoother\n");
-    strcpy(optstr[0], "Smoother");
+    snprintf(optstr[0], sizeof(optstr[0]), "Smoother");
     break;
   case KLU:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is KLU\n");
-    strcpy(optstr[0], "KLU");
+    snprintf(optstr[0], sizeof(optstr[0]), "KLU");
     break;
   case MUMPS:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarse solver is MUMPS\n");
-    strcpy(optstr[0], "MUMPS");
+    snprintf(optstr[0], sizeof(optstr[0]), "MUMPS");
     break;
   }
   switch (mlopt->SmootherType) {
   case Cheby:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML smoother is Cheby\n");
-    strcpy(optstr[1], "Cheby");
+    snprintf(optstr[1], sizeof(optstr[1]), "Cheby");
     break;
   case SymBlockGaussSeidel:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML smoother is SymBlockGaussSeidel\n");
-    strcpy(optstr[1], "SymBlockGaussSeidel");
+    snprintf(optstr[1], sizeof(optstr[1]), "SymBlockGaussSeidel");
     break;
   case Jacobi:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML smoother is Jacobi\n");
-    strcpy(optstr[1], "Jacobi");
+    snprintf(optstr[1], sizeof(optstr[1]), "Jacobi");
     break;
   }
   switch (mlopt->MGType) {
   case ML_MGV:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is V-cycle\n");
-    strcpy(optstr[2], "V-cycle");
+    snprintf(optstr[2], sizeof(optstr[2]), "V-cycle");
     break;
   case ML_MGW:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is W-cycle\n");
-    strcpy(optstr[2], "W-cycle");
+    snprintf(optstr[2], sizeof(optstr[2]), "W-cycle");
     break;
   case ML_MGFULLV:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML multigrid type is Full-V-cycle\n");
-    strcpy(optstr[2], "Full-V-cycle");
+    snprintf(optstr[2], sizeof(optstr[2]), "Full-V-cycle");
     break;
   }
   if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML num of max levels is %d\n", mlopt->MaxLevels);
-  sprintf(optstr[3], "MaxLevels=%d", mlopt->MaxLevels);
+  snprintf(optstr[3], sizeof(optstr[3]), "MaxLevels=%d", mlopt->MaxLevels);
   switch (mlopt->CoarsenScheme) {
   case UncoupledMIS:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is UncoupledMIS\n");
-    strcpy(optstr[4], "UncoupledMIS");
+    snprintf(optstr[4], sizeof(optstr[4]), "UncoupledMIS");
     break;
   case METIS:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is METIS\n");
-    strcpy(optstr[4], "METIS");
+    snprintf(optstr[4], sizeof(optstr[4]), "METIS");
     break;
   case ParMETIS:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is ParMETIS\n");
-    strcpy(optstr[4], "ParMETIS");
+    snprintf(optstr[4], sizeof(optstr[4]), "ParMETIS");
     break;
   case Zoltan:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is Zoltan\n");
-    strcpy(optstr[4], "Zoltan");
+    snprintf(optstr[4], sizeof(optstr[4]), "Zoltan");
     break;
   case DD:
     if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML coarsening scheme is DD\n");
-    strcpy(optstr[4], "DD");
+    snprintf(optstr[4], sizeof(optstr[4]), "DD");
     break;
   }
   if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML num of smoother sweeps is %d\n", mlopt->NumSweeps);
-  sprintf(optstr[5], "NumSweeps=%d", mlopt->NumSweeps);
+  snprintf(optstr[5], sizeof(optstr[5]), "NumSweeps=%d", mlopt->NumSweeps);
   if (loglevel >= 2 && myrank == 0) fprintf(fp, "INFO: ML max coarse size is %d\n", mlopt->MaxCoarseSize);
-  sprintf(optstr[6], "MaxCoarseSize=%d", mlopt->MaxCoarseSize);
+  snprintf(optstr[6], sizeof(optstr[6]), "MaxCoarseSize=%d", mlopt->MaxCoarseSize);
   if (loglevel >= 1 && myrank == 0) {
     fprintf(fp, "INFO: ML options: %s %s %s %s %s %s %s\n",
             optstr[0], optstr[1], optstr[2], optstr[3], optstr[4], optstr[5], optstr[6]);

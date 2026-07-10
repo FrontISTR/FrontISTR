@@ -2144,7 +2144,7 @@ t2=t3;
          */
 
         /*output result in image of master pe */
-        /*	  sprintf(rname, "%s-%d", outfile,
+        /*	  snprintf(rname, sizeof(rname), "%s-%d", outfile,
 step_start+time_step*step_interv);
 
 if ((outfp = fopen(rname, "w")) == NULL) {
@@ -2192,10 +2192,7 @@ ptr--;
 
 {
 char buf[128];
-strcat(fname, ".");
-sprintf(buf, "%d.%d", v->count, ii);
-strcat(fname, buf);
-strcat(fname, ".bmp");
+snprintf(fname + strlen(fname), sizeof(fname) - strlen(fname), ".%d.%d.bmp", v->count, ii);
 }
 
          */

@@ -20,7 +20,7 @@ static char ctrl_filename[HECMW_FILENAME_LEN + 1];
 
 static int table_entire_mesh[] = {
     HECMW_CTRL_FTYPE_HECMW_ENTIRE, HECMW_CTRL_FTYPE_GEOFEM,
-    HECMW_CTRL_FTYPE_ABAQUS,       HECMW_CTRL_FTYPE_NASTRAN,
+    HECMW_CTRL_FTYPE_INP,          HECMW_CTRL_FTYPE_NASTRAN,
     HECMW_CTRL_FTYPE_FEMAP,
 };
 
@@ -99,54 +99,50 @@ static char *make_filename(char *dir, char *subdir, char *prefix, char *file,
   static char filename[HECMW_FILENAME_LEN + 1];
   char rank[10];
   char separator[10];
-  strcpy(filename, "");
+  size_t len = 0;
+
+  filename[0] = '\0';
+  snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
 
   if (dir && strlen(dir) > 0) {
-    HECMW_snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
-
     if ((strlen(dir) + strlen(separator)) > HECMW_FILENAME_LEN) return NULL;
 
-    HECMW_snprintf(filename, HECMW_FILENAME_LEN + 1, "%s%s", dir, separator);
+    len += snprintf(filename + len, sizeof(filename) - len, "%s%s", dir,
+                    separator);
   }
 
   if (subdir && strlen(subdir) > 0) {
-    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
-
-    if ((strlen(filename) + strlen(subdir) + strlen(separator)) >
-        HECMW_FILENAME_LEN)
+    if ((len + strlen(subdir) + strlen(separator)) > HECMW_FILENAME_LEN)
       return NULL;
 
-    strcat(filename, subdir);
-    strcat(filename, separator);
+    len += snprintf(filename + len, sizeof(filename) - len, "%s%s", subdir,
+                    separator);
   }
 
   if (prefix && strlen(prefix) > 0) {
-    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
-
-    if ((strlen(filename) + strlen(prefix) + strlen(separator)) >
-        HECMW_FILENAME_LEN)
+    if ((len + strlen(prefix) + strlen(separator)) > HECMW_FILENAME_LEN)
       return NULL;
 
-    strcat(filename, prefix);
-    strcat(filename, separator);
+    len += snprintf(filename + len, sizeof(filename) - len, "%s%s", prefix,
+                    separator);
   }
 
-  if ((strlen(filename) + strlen(file)) > HECMW_FILENAME_LEN) return NULL;
+  if ((len + strlen(file)) > HECMW_FILENAME_LEN) return NULL;
 
-  strcat(filename, file);
+  len += snprintf(filename + len, sizeof(filename) - len, "%s", file);
 
   if (suffix) {
-    if ((strlen(filename) + strlen(suffix)) > HECMW_FILENAME_LEN) return NULL;
+    if ((len + strlen(suffix)) > HECMW_FILENAME_LEN) return NULL;
 
-    strcat(filename, suffix);
+    len += snprintf(filename + len, sizeof(filename) - len, "%s", suffix);
   }
 
   if (flag_rank) {
     snprintf(rank, sizeof(rank), ".%d", myrank);
 
-    if ((strlen(filename) + strlen(rank)) > HECMW_FILENAME_LEN) return NULL;
+    if ((len + strlen(rank)) > HECMW_FILENAME_LEN) return NULL;
 
-    strcat(filename, rank);
+    len += snprintf(filename + len, sizeof(filename) - len, "%s", rank);
   }
 
   return filename;
@@ -158,56 +154,48 @@ static char *make_filename_r(char *dir, char *subdir, char *prefix, char *file,
                              char *filename, int filename_len) {
   char rank[10];
   char separator[10];
-  strcpy(filename, "");
+  size_t flen = (size_t)filename_len;
+  size_t len  = 0;
 
   HECMW_assert( filename );
 
+  filename[0] = '\0';
+  snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
+
   if (dir && strlen(dir) > 0) {
-    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
+    if ((strlen(dir) + strlen(separator)) > flen) return NULL;
 
-    if ((strlen(dir) + strlen(separator)) > filename_len) return NULL;
-
-    snprintf(filename, filename_len + 1, "%s%s", dir, separator);
+    len += snprintf(filename + len, flen + 1 - len, "%s%s", dir, separator);
   }
 
   if (subdir && strlen(subdir) > 0) {
-    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
+    if ((len + strlen(subdir) + strlen(separator)) > flen) return NULL;
 
-    if ((strlen(filename) + strlen(subdir) + strlen(separator)) >
-        filename_len)
-      return NULL;
-
-    strcat(filename, subdir);
-    strcat(filename, separator);
+    len += snprintf(filename + len, flen + 1 - len, "%s%s", subdir, separator);
   }
 
   if (prefix && strlen(prefix) > 0) {
-    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
+    if ((len + strlen(prefix) + strlen(separator)) > flen) return NULL;
 
-    if ((strlen(filename) + strlen(prefix) + strlen(separator)) >
-        filename_len)
-      return NULL;
-
-    strcat(filename, prefix);
-    strcat(filename, separator);
+    len += snprintf(filename + len, flen + 1 - len, "%s%s", prefix, separator);
   }
 
-  if ((strlen(filename) + strlen(file)) > filename_len) return NULL;
+  if ((len + strlen(file)) > flen) return NULL;
 
-  strcat(filename, file);
+  len += snprintf(filename + len, flen + 1 - len, "%s", file);
 
   if (suffix) {
-    if ((strlen(filename) + strlen(suffix)) > filename_len) return NULL;
+    if ((len + strlen(suffix)) > flen) return NULL;
 
-    strcat(filename, suffix);
+    len += snprintf(filename + len, flen + 1 - len, "%s", suffix);
   }
 
   if (flag_rank) {
     snprintf(rank, sizeof(rank), ".%d", myrank);
 
-    if ((strlen(filename) + strlen(rank)) > filename_len) return NULL;
+    if ((len + strlen(rank)) > flen) return NULL;
 
-    strcat(filename, rank);
+    len += snprintf(filename + len, flen + 1 - len, "%s", rank);
   }
 
   return filename;
@@ -662,8 +650,8 @@ static void do_logging(int loglv, int msgno, int add_location, const char *fmt,
 
     if (strlen(msg) > 0) s = ": ";
 
-    HECMW_snprintf(line, sizeof(line), "%s:%d%s", ctrl_filename,
-                   HECMW_ctrllex_get_lineno(), s);
+    snprintf(line, sizeof(line), "%s:%d%s", ctrl_filename,
+             HECMW_ctrllex_get_lineno(), s);
   }
 
   HECMW_set_error(msgno, "%s%s", line, msg);
@@ -715,7 +703,7 @@ static int read_mesh_header(void) {
   return 0;
 }
 
-static int read_mesh_head_param_name(char *name) {
+static int read_mesh_head_param_name(char *name, size_t name_len) {
   int token;
   char *p;
   token = HECMW_ctrllex_next_token();
@@ -741,7 +729,7 @@ static int read_mesh_head_param_name(char *name) {
     return -1;
   }
 
-  strcpy(name, p);
+  snprintf(name, name_len, "%s", p);
 
   /* check */
   if (get_mesh_entry(name) || get_mesh_grp_entry(name)) {
@@ -773,8 +761,8 @@ static int read_mesh_head_param_type(int *type) {
   } else if (token == HECMW_CTRLLEX_K_GEOFEM) {
     *type = HECMW_CTRL_FTYPE_GEOFEM;
 
-  } else if (token == HECMW_CTRLLEX_K_ABAQUS) {
-    *type = HECMW_CTRL_FTYPE_ABAQUS;
+  } else if (token == HECMW_CTRLLEX_K_INP) {
+    *type = HECMW_CTRL_FTYPE_INP;
 
   } else if (token == HECMW_CTRLLEX_K_NASTRAN) {
     *type = HECMW_CTRL_FTYPE_NASTRAN;
@@ -910,7 +898,7 @@ static int read_mesh(void) {
 
       if (token == HECMW_CTRLLEX_K_NAME) {
         /* must */
-        if (read_mesh_head_param_name(name)) return -1;
+        if (read_mesh_head_param_name(name, sizeof(name))) return -1;
 
         flag_name = 1;
 
@@ -1009,7 +997,7 @@ static int read_meshgrp_header(void) {
   return 0;
 }
 
-static int read_meshgrp_head_param_name(char *name) {
+static int read_meshgrp_head_param_name(char *name, size_t name_len) {
   int token;
   char *p;
   token = HECMW_ctrllex_next_token();
@@ -1035,7 +1023,7 @@ static int read_meshgrp_head_param_name(char *name) {
     return -1;
   }
 
-  strcpy(name, p);
+  snprintf(name, name_len, "%s", p);
 
   /* check */
   if (get_mesh_entry(name) || get_mesh_grp_entry(name)) {
@@ -1163,7 +1151,7 @@ static int read_meshgrp(void) {
 
       if (token == HECMW_CTRLLEX_K_NAME) {
         /* must */
-        if (read_meshgrp_head_param_name(name)) return -1;
+        if (read_meshgrp_head_param_name(name, sizeof(name))) return -1;
 
         flag_name = 1;
 
@@ -1230,7 +1218,7 @@ static int read_result_head(void) {
   return 0;
 }
 
-static int read_result_param_name(char *name) {
+static int read_result_param_name(char *name, size_t name_len) {
   int token;
   char *p;
   token = HECMW_ctrllex_next_token();
@@ -1256,7 +1244,7 @@ static int read_result_param_name(char *name) {
     return -1;
   }
 
-  strcpy(name, p);
+  snprintf(name, name_len, "%s", p);
 
   /* check */
   if (get_result_entry(name)) {
@@ -1402,7 +1390,7 @@ static int read_result(void) {
 
       if (token == HECMW_CTRLLEX_K_NAME) {
         /* must */
-        if (read_result_param_name(name)) return -1;
+        if (read_result_param_name(name, sizeof(name))) return -1;
 
         flag_name = 1;
 
@@ -1485,7 +1473,7 @@ static int read_restart_head(void) {
   return 0;
 }
 
-static int read_restart_param_name(char *name) {
+static int read_restart_param_name(char *name, size_t name_len) {
   int token;
   char *p;
   token = HECMW_ctrllex_next_token();
@@ -1511,7 +1499,7 @@ static int read_restart_param_name(char *name) {
     return -1;
   }
 
-  strcpy(name, p);
+  snprintf(name, name_len, "%s", p);
 
   /* check */
   if (get_restart_entry(name)) {
@@ -1614,7 +1602,7 @@ static int read_restart(void) {
 
       if (token == HECMW_CTRLLEX_K_NAME) {
         /* must */
-        if (read_restart_param_name(name)) return -1;
+        if (read_restart_param_name(name, sizeof(name))) return -1;
 
         flag_name = 1;
 
@@ -1694,7 +1682,7 @@ static int read_control_head(void) {
   return 0;
 }
 
-static int read_control_head_param_name(char *name) {
+static int read_control_head_param_name(char *name, size_t name_len) {
   int token;
   char *p;
   token = HECMW_ctrllex_next_token();
@@ -1720,7 +1708,7 @@ static int read_control_head_param_name(char *name) {
     return -1;
   }
 
-  strcpy(name, p);
+  snprintf(name, name_len, "%s", p);
 
   /* check */
   if (get_ctrl_entry(name)) {
@@ -1797,7 +1785,7 @@ static int read_control(void) {
 
       if (token == HECMW_CTRLLEX_K_NAME) {
         /* must */
-        if (read_control_head_param_name(name)) return -1;
+        if (read_control_head_param_name(name, sizeof(name))) return -1;
 
         flag_name = 1;
 
@@ -2027,7 +2015,7 @@ int HECMW_ctrl_init_ex(const char *ctrlfile) {
     return -1;
   }
 
-  strcpy(ctrl_filename, ctrlfile);
+  snprintf(ctrl_filename, sizeof(ctrl_filename), "%s", ctrlfile);
   HECMW_log(HECMW_LOG_DEBUG, "Control file is '%s'", ctrl_filename);
 
   if ((fp = fopen(ctrl_filename, "r")) == NULL) {
@@ -2284,8 +2272,7 @@ static char *get_result_file(char *name_ID, int istep, int n_rank,
 
 static char *get_filename_body(char *file) {
   static char filename[HECMW_FILENAME_LEN+1];
-  strcpy(filename, "");
-  strcat(filename, file);
+  snprintf(filename, sizeof(filename), "%s", file);
   return filename;
 }
 

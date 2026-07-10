@@ -34,7 +34,8 @@ Connect_inf *global_connect;
 void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
                              struct hecmwST_result_data *data, int *timestep,
                              struct surface_module *sf, Parameter_rendering *sr,
-                             int stat_para[NUM_CONTROL_PSF], char *outfile1, char *body,
+                             int stat_para[NUM_CONTROL_PSF], char *outfile1,
+                             size_t outfile1size, char *body,
                              HECMW_Comm VIS_COMM) {
   int pesize, mynode;
   Surface *sff;
@@ -80,13 +81,13 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
         if (outfile1[ii] == '.') outfile1[ii] = '_';
         ii++;
       }
-      HECMW_fstr_output_femap(mesh, data, outfile1, VIS_COMM);
+      HECMW_fstr_output_femap(mesh, data, outfile1, outfile1size, VIS_COMM);
       return;
     }
   }
   if ((sf[1].output_type == 6) || (sf[1].output_type == 7) ||
       (sf[1].output_type == 8) || (sf[1].output_type == 9)) {
-    strcat(outfile1, ".inp");
+    strncat(outfile1, ".inp", outfile1size - strlen(outfile1) - 1);
     if (sf[1].output_type == 6) {
       HECMW_avs_output(mesh, data, outfile1, VIS_COMM);
     } else if (sf[1].output_type == 8) {
@@ -101,7 +102,7 @@ void HECMW_vis_psf_rendering(struct hecmwST_local_mesh *mesh,
   }
   if (sf[1].output_type == 10) {
     size_t len = strlen(outfile1);
-    snprintf(outfile1 + len, HECMW_FILENAME_LEN - len, "_%d.inp", mynode);
+    snprintf(outfile1 + len, outfile1size - len, "_%d.inp", mynode);
     HECMW_separate_avs_output(mesh, data, outfile1);
     return;
   } else if(sf[1].output_type==15) {
@@ -284,7 +285,7 @@ loopnum++;*/
   if ((sf[1].output_type == 1) || (sf[1].output_type == 2) ||
       (sf[1].output_type == 4))
     HECMW_vis_combine(sf, mesh, data, tvertex, tpatch, color_list, minvalue,
-                      maxvalue, result, outfile1, VIS_COMM);
+                      maxvalue, result, outfile1, outfile1size, VIS_COMM);
   else if (sf[1].output_type == 3)
     HECMW_vis_rendering_surface(sf, sr, mesh, data, tvertex, tpatch, color_list,
                                 minvalue, maxvalue, result, outfile1, stat_para,

@@ -353,7 +353,7 @@ void mesh2graph(struct hecmwST_local_mesh *mesh, GraphType *graph,
   }
   adj_link_free(adj_link, mesh->nn_internal);
   /*
-          sprintf(test_file, "test.%d", mynode);
+          snprintf(test_file, sizeof(test_file), "test.%d", mynode);
           fp_test=fopen(test_file, "w");
           tmp_int=0;
       for(i=0;i<mesh->n_internal;i++) {

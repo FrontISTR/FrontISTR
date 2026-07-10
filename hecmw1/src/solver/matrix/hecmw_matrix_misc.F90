@@ -213,6 +213,11 @@ contains
     if (associated(hecMAT%indexU)) deallocate(hecMAT%indexU)
     if (associated(hecMAT%itemL)) deallocate(hecMAT%itemL)
     if (associated(hecMAT%itemU)) deallocate(hecMAT%itemU)
+#ifdef _OPENACC
+    if (associated(hecMAT%A)) deallocate(hecMAT%A)
+    if (associated(hecMAT%indexA)) deallocate(hecMAT%indexA)
+    if (associated(hecMAT%itemA)) deallocate(hecMAT%itemA)
+#endif
   end subroutine hecmw_mat_finalize
 
   subroutine hecmw_mat_copy_profile( hecMATorg, hecMAT )
@@ -868,6 +873,11 @@ contains
     integer(kind=kint) :: i, j, k, nn, pre, pp, jS, jE
 
     nn = hecMAT%NDOF * hecMAT%NDOF
+    hecMAT%NPA = hecMAT%NP + hecMAT%NPL + hecMAT%NPU
+    if (associated(hecMAT%A))      deallocate(hecMAT%A)
+    if (associated(hecMAT%indexA)) deallocate(hecMAT%indexA)
+    if (associated(hecMAT%itemA))  deallocate(hecMAT%itemA)
+    allocate (hecMAT%A(nn * hecMAT%NPA))
     allocate (hecMAT%indexA(0:hecMAT%NP))
     allocate (hecMAT%itemA(hecMAT%NPA))
     hecMAT%indexA(0) = 0
@@ -876,7 +886,7 @@ contains
     pp = 0
     !$acc parallel loop private(i, j, k, pre, pp, jS, jE)
     do i = 1, hecMAT%NP
-      indexA(i) = i + hecMAT%indexL(i) + hecMAT%indexU(i)
+      hecMAT%indexA(i) = i + hecMAT%indexL(i) + hecMAT%indexU(i)
 
       pre = i - 1 + hecMAT%indexU(i - 1)
       jS= hecMAT%indexL(i - 1) + 1
@@ -906,6 +916,7 @@ contains
         enddo
       enddo
     enddo
+    !$acc end parallel
 #endif
   end subroutine hecmw_mat_integrate
 

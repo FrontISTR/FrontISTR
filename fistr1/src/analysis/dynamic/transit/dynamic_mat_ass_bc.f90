@@ -10,25 +10,27 @@ contains
 
 
   !>  This subroutine setup disp bundary condition
-  subroutine DYNAMIC_MAT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC(cstep, hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
     use mContact
     use m_utilities
 
     implicit none
+    integer, intent(in)                  :: cstep !< current step
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    real(kind=kreal)                     :: t_curr
     integer, optional                    :: iter
     type(hecmwST_matrix), optional       :: conMAT
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
 
-    integer(kind=kint) :: flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: RHS, f_t, f_t1
 
     !for rotation
@@ -41,7 +43,6 @@ contains
     ndof = hecmw_mat_get_NDOF(hecMAT)
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
-    fstrSOLID%REACTION = 0.d0
 
     flag_u = 1
     !C=============================C
@@ -51,22 +52,20 @@ contains
 
       do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+        grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+        if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
         if( present(iter) ) then
           if( iter>1 ) then
             RHS=0.d0
           else
-            fstrDYNAMIC%i_step = fstrDYNAMIC%i_step-1
-            fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr - fstrDYNAMIC%t_delta
-            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t1, flag_u)
-            fstrDYNAMIC%i_step = fstrDYNAMIC%i_step+1
-            fstrDYNAMIC%t_curr = fstrDYNAMIC%t_curr + fstrDYNAMIC%t_delta
-            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr-fstrDYNAMIC%t_delta, f_t1, flag_u)
+            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
             RHS = RHS * (f_t-f_t1)
           endif
         else
-          call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+          call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
           RHS = RHS * f_t
         endif
 
@@ -111,9 +110,6 @@ contains
                 call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
-
-            !for output reaction force
-            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           enddo
         enddo
 
@@ -171,9 +167,6 @@ contains
                 call hecmw_mat_ass_bc_contactlag(hecMAT,hecLagMAT,in,idof,RHS)
               endif
             endif
-
-            !for output reaction force
-            fstrSOLID%REACTION(ndof*(in-1)+idof) = fstrSOLID%QFORCE(ndof*(in-1)+idof)
           enddo
         enddo
       enddo
@@ -191,7 +184,7 @@ contains
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
@@ -207,9 +200,6 @@ contains
           do idof = idofS, idofE
             call hecmw_mat_set_B_i(hecMAT, NDOF*in-(NDOF-idof), RHS)
             fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo
@@ -226,7 +216,7 @@ contains
   !C***
   !> This subroutine setup initial condition of displacement
   !C***
-  subroutine DYNAMIC_BC_INIT(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC)
+  subroutine DYNAMIC_BC_INIT(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr)
     use m_fstr
     use m_table_dyn
 
@@ -235,9 +225,10 @@ contains
     type(hecmwST_local_mesh) :: hecMESH
     type(fstr_solid)         :: fstrSOLID
     type(fstr_dynamic)       :: fstrDYNAMIC
+    real(kind=kreal)         :: t_curr
 
     integer(kind=kint) :: NDOF, ig0, ig, ityp, iS0, iE0, ik, in, idofS, idofE, idof
-    integer(kind=kint) :: flag_u
+    integer(kind=kint) :: flag_u, grpid
     real(kind=kreal)   :: RHS, f_t
 
     flag_u = 1
@@ -246,9 +237,10 @@ contains
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
       ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
       RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
+      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
+      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, 1 ) ) cycle
 
-
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
       RHS = RHS * f_t
 
       ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
@@ -271,7 +263,7 @@ contains
   end subroutine DYNAMIC_BC_INIT
 
   !>  This subroutine setup disp boundary condition
-  subroutine DYNAMIC_EXPLICIT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, iter)
+  subroutine DYNAMIC_EXPLICIT_ASS_BC(hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, t_curr, iter)
     use m_fstr
     use m_table_dyn
     use mContact
@@ -282,6 +274,7 @@ contains
     type(hecmwST_local_mesh)             :: hecMESH
     type(fstr_solid)                     :: fstrSOLID
     type(fstr_dynamic)                   :: fstrDYNAMIC
+    real(kind=kreal)                     :: t_curr
     integer, optional                    :: iter
 
     integer(kind=kint) :: ig0, ig, ityp, NDOF, iS0, iE0, ik, in, idofS, idofE, idof
@@ -298,7 +291,6 @@ contains
     ndof = hecmw_mat_get_NDOF(hecMAT)
     n_rot = fstrSOLID%BOUNDARY_ngrp_rot
     if( n_rot > 0 ) call fstr_RotInfo_init(n_rot, rinfo)
-    fstrSOLID%REACTION = 0.d0
 
     flag_u = 1
 
@@ -308,7 +300,7 @@ contains
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, f_t, flag_u)
+        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
         RHS = RHS * f_t
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
@@ -324,9 +316,6 @@ contains
           do idof = idofS, idofE
             call hecmw_mat_set_B_i(hecMAT, NDOF*in-(NDOF-idof), RHS*fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)))
         !    fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
-
-            !for output reaction force
-            fstrSOLID%REACTION(NDOF*(in-1)+idof) = fstrSOLID%QFORCE(NDOF*(in-1)+idof)
           end do
         enddo
       enddo

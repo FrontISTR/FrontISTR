@@ -29,8 +29,7 @@ static int output_result_header(FILE *fp) {
   if( HECMW_RESULT_FILEVER_MAJOR > 1 ){
     char temp_head[HECMW_HEADER_LEN + 16];
     snprintf(temp_head, sizeof(temp_head), "%s %d.%d", ResIO.head, HECMW_RESULT_FILEVER_MAJOR, HECMW_RESULT_FILEVER_MINOR);
-    strncpy(ResIO.head, temp_head, HECMW_HEADER_LEN);
-    ResIO.head[HECMW_HEADER_LEN] = '\0';
+    snprintf(ResIO.head, sizeof(ResIO.head), "%s", temp_head);
   }
   rc = fprintf(fp, "%s\n", ResIO.head);
   if(rc < 0) {
@@ -763,7 +762,7 @@ static int input_result_header(struct hecmwST_result_data *result, FILE *fp) {
       ptr[strlen(ptr)] = '\0';
     }
   }
-  strcpy( ResIO.head, Line_Buf );
+  snprintf(ResIO.head, sizeof(ResIO.head), "%s", Line_Buf);
 
   return 0;
 }
@@ -782,7 +781,7 @@ static int input_result_global(struct hecmwST_result_data *result, FILE *fp) {
     return -1;
   }
   Line_Buf[ strlen(Line_Buf)-1 ] = 0;/* remove CR/LF*/
-  strcpy( ResIO.comment_line, Line_Buf );
+  snprintf(ResIO.comment_line, sizeof(ResIO.comment_line), "%s", Line_Buf);
 
 
   /* skip global header */

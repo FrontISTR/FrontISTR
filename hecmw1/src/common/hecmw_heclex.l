@@ -121,7 +121,7 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 !ZERO		{ return flag_header ? HECMW_HECLEX_H_ZERO : ' '; }
 
 
-ABAQUS		{ set_flag_header(0); return HECMW_HECLEX_K_ABAQUS; }
+INP		{ set_flag_header(0); return HECMW_HECLEX_K_INP; }
 ABSOLUTE	{ set_flag_header(0); return HECMW_HECLEX_K_ABSOLUTE; }
 BEAM		{ set_flag_header(0); return HECMW_HECLEX_K_BEAM; }
 COMPOSITE	{ set_flag_header(0); return HECMW_HECLEX_K_COMPOSITE; }
@@ -280,7 +280,7 @@ HECMW_heclex_switch_to_include(const char *filename)
 		HECMW_set_error(HECMW_IO_E0005, "File: %s, %s", filename, strerror(errno));
 		return -1;
 	}
-	strcpy(include_filename, filename);
+	snprintf(include_filename, sizeof(include_filename), "%s", filename);
 	prev_state = YY_CURRENT_BUFFER;
 	yy_switch_to_buffer(yy_create_buffer(incfp, YY_BUF_SIZE));
 	lineno_inc = 1;

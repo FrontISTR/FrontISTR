@@ -4,12 +4,14 @@
 ###############################################################################
 
 target_sources(fistr PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_CheckConvergence.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Ctrl_TimeInc.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Cutback.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Spring.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Restart.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_NodalStress.f90
-  ${CMAKE_CURRENT_LIST_DIR}/fstr_StiffMatrix.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_CreateMatrix.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_NodalKinematics.f90
   ${CMAKE_CURRENT_LIST_DIR}/fstr_Update.f90
   ${CMAKE_CURRENT_LIST_DIR}/readtemp.f90
   ${CMAKE_CURRENT_LIST_DIR}/static_echo.f90

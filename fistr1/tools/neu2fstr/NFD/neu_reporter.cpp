@@ -22,12 +22,13 @@ FILE* wfp;
 // etc.
 //=============================================================================
 
-static void get_fname_from_path(char* fname, const char* path) {
+static void get_fname_from_path(char* fname, size_t fname_size,
+                                const char* path) {
   int n   = strlen(path);
   char* p = (char*)&path[n - 1];
   while (path < p && (*p != '\\') && (*p != '/')) p--;
   if ((*p == '\\') || (*p == '/')) p++;
-  strcpy(fname, p);
+  snprintf(fname, fname_size, "%s", p);
 }
 
 //-----------------------------------------------------------------------------
@@ -93,19 +94,19 @@ ccmd_rec::ccmd_rec() : cmd(0) {
 }
 
 ccmd_rec::ccmd_rec(const char* n) : cmd(0) {
-  strcpy(name, n);
+  snprintf(name, sizeof(name), "%s", n);
   help[0] = 0;
 }
 
 ccmd_rec::ccmd_rec(const char* n, const char* h, void (*f)()) {
-  strcpy(name, n);
-  strcpy(help, h);
+  snprintf(name, sizeof(name), "%s", n);
+  snprintf(help, sizeof(help), "%s", h);
   cmd = f;
 }
 
 ccmd_rec::ccmd_rec(const ccmd_rec& rec) {
-  strcpy(name, rec.name);
-  strcpy(help, rec.help);
+  snprintf(name, sizeof(name), "%s", rec.name);
+  snprintf(help, sizeof(help), "%s", rec.help);
   cmd = rec.cmd;
 }
 
@@ -206,7 +207,7 @@ void cmd_close_outfile() {
 #define help_cmd_write_summary "write summary of loaded neutral data"
 void cmd_write_summary() {
   char fname[256];
-  get_fname_from_path(fname, data.neu_file);
+  get_fname_from_path(fname, sizeof(fname), data.neu_file);
 
   fprintf(wfp, "summary of %s\n", fname);
   data.WriteSummary(wfp);
@@ -282,7 +283,9 @@ void command_line() {
 // main & etc.
 //=============================================================================
 
-void set_run_name(char* argv0) { get_fname_from_path(run_name, argv0); }
+void set_run_name(char* argv0) {
+  get_fname_from_path(run_name, sizeof(run_name), argv0);
+}
 
 void help() {
   cout << "Neutral File Reporter Ver.1.0" << endl;

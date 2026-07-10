@@ -96,13 +96,14 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
   int *new_vtxdist;
   int *new2old, *count_elem_index, *new_tmp, *new_tmp2, *old2new;
   double t1, t2;
+  const size_t name_buf_size = 128;
 
   if (mynode == 0) {
     t1 = HECMW_Wtime();
   }
 
 #ifdef TEST
-  sprintf(test_file, "test3.%d", mynode);
+  snprintf(test_file, sizeof(test_file), "test3.%d", mynode);
   test_fp = fopen(test_file, "w");
   if (test_fp == NULL) {
     fprintf(stderr, "Cannot open test_file\n");
@@ -141,7 +142,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
         fclose(test_fp);
 */
 #ifdef test
-  sprintf(test_file, "test5.%d", mynode);
+  snprintf(test_file, sizeof(test_file), "test5.%d", mynode);
   test_fp2 = fopen(test_file, "w");
   if (test_fp2 == NULL) HECMW_dlb_print_exit("Cannot open test_file\n");
 #endif
@@ -493,7 +494,7 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
   new_mesh->hecmw_n_file = mesh->hecmw_n_file;
   new_mesh->files        = (char **)calloc(mesh->hecmw_n_file, sizeof(char *));
   for (i               = 9; i < mesh->hecmw_n_file; i++)
-    new_mesh->files[i] = (char *)calloc(128, sizeof(char));
+    new_mesh->files[i] = (char *)calloc(name_buf_size, sizeof(char));
 
   snprintf(new_mesh->header, sizeof(new_mesh->header), "%s", mesh->header);
   snprintf(new_mesh->gridfile, sizeof(new_mesh->gridfile), "%s", mesh->gridfile);
@@ -1315,33 +1316,33 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
     new_mesh->node_group->grp_name =
         (char **)calloc(mesh->node_group->n_grp, sizeof(char *));
     for (m = 0; m < mesh->node_group->n_grp; m++) {
-      new_mesh->node_group->grp_name[m] = (char *)calloc(128, sizeof(char));
+      new_mesh->node_group->grp_name[m] = (char *)calloc(name_buf_size, sizeof(char));
       if (new_mesh->node_group->grp_name[m] == NULL)
         HECMW_dlb_memory_exit("new_mesh: grp_name");
-      strncpy(new_mesh->node_group->grp_name[m], mesh->node_group->grp_name[m], 127);
-      new_mesh->node_group->grp_name[m][127] = '\0';
+      snprintf(new_mesh->node_group->grp_name[m], name_buf_size, "%s",
+               mesh->node_group->grp_name[m]);
     }
   }
   if (mesh->elem_group->n_grp > 0) {
     new_mesh->elem_group->grp_name =
         (char **)calloc(mesh->elem_group->n_grp, sizeof(char *));
     for (m = 0; m < mesh->elem_group->n_grp; m++) {
-      new_mesh->elem_group->grp_name[m] = (char *)calloc(128, sizeof(char));
+      new_mesh->elem_group->grp_name[m] = (char *)calloc(name_buf_size, sizeof(char));
       if (new_mesh->elem_group->grp_name[m] == NULL)
         HECMW_dlb_memory_exit("new_mesh: grp_name");
-      strncpy(new_mesh->elem_group->grp_name[m], mesh->elem_group->grp_name[m], 127);
-      new_mesh->elem_group->grp_name[m][127] = '\0';
+      snprintf(new_mesh->elem_group->grp_name[m], name_buf_size, "%s",
+               mesh->elem_group->grp_name[m]);
     }
   }
   if (mesh->surf_group->n_grp > 0) {
     new_mesh->surf_group->grp_name =
         (char **)calloc(mesh->surf_group->n_grp, sizeof(char *));
     for (m = 0; m < mesh->surf_group->n_grp; m++) {
-      new_mesh->surf_group->grp_name[m] = (char *)calloc(128, sizeof(char));
+      new_mesh->surf_group->grp_name[m] = (char *)calloc(name_buf_size, sizeof(char));
       if (new_mesh->surf_group->grp_name[m] == NULL)
         HECMW_dlb_memory_exit("new_mesh: grp_name");
-      strncpy(new_mesh->surf_group->grp_name[m], mesh->surf_group->grp_name[m], 127);
-      new_mesh->surf_group->grp_name[m][127] = '\0';
+      snprintf(new_mesh->surf_group->grp_name[m], name_buf_size, "%s",
+               mesh->surf_group->grp_name[m]);
     }
   }
 
@@ -2033,12 +2034,11 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
     new_data->node_label =
         (char **)calloc(new_data->nn_component, sizeof(char *));
     for (i                    = 0; i < new_data->nn_component; i++)
-      new_data->node_label[i] = (char *)calloc(128, sizeof(char));
+      new_data->node_label[i] = (char *)calloc(name_buf_size, sizeof(char));
     if (new_data->nn_dof == NULL) HECMW_dlb_memory_exit("new_data: nn_dof");
     for (i = 0; i < new_data->nn_component; i++) {
       new_data->nn_dof[i] = data->nn_dof[i];
-      strncpy(new_data->node_label[i], data->node_label[i], 127);
-      new_data->node_label[i][127] = '\0';
+      snprintf(new_data->node_label[i], name_buf_size, "%s", data->node_label[i]);
     }
   }
   if (new_data->ne_component > 0) {
@@ -2046,12 +2046,11 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
     new_data->elem_label =
         (char **)calloc(new_data->ne_component, sizeof(char *));
     for (i                    = 0; i < new_data->ne_component; i++)
-      new_data->elem_label[i] = (char *)calloc(128, sizeof(char));
+      new_data->elem_label[i] = (char *)calloc(name_buf_size, sizeof(char));
     if (new_data->ne_dof == NULL) HECMW_dlb_memory_exit("new_data: ne_dof");
     for (i = 0; i < new_data->ne_component; i++) {
       new_data->ne_dof[i] = data->ne_dof[i];
-      strncpy(new_data->elem_label[i], data->elem_label[i], 127);
-      new_data->elem_label[i][127] = '\0';
+      snprintf(new_data->elem_label[i], name_buf_size, "%s", data->elem_label[i]);
     }
   }
   if (new_data->nn_component > 0) {
@@ -2535,9 +2534,9 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
       if (new_mesh->material->mat_name == NULL)
         HECMW_dlb_memory_exit("new_mesh: material");
       for (i = 0; i < new_mesh->material->n_mat; i++) {
-        new_mesh->material->mat_name[i] = (char *)calloc(128, sizeof(char));
-        snprintf(new_mesh->material->mat_name[i], 128, "%s",
-                mesh->material->mat_name[i]);
+        new_mesh->material->mat_name[i] = (char *)calloc(name_buf_size, sizeof(char));
+        snprintf(new_mesh->material->mat_name[i], name_buf_size, "%s",
+                 mesh->material->mat_name[i]);
       }
       new_mesh->material->mat_item_index =
           (int *)calloc(new_mesh->material->n_mat + 1, sizeof(int));
@@ -2761,9 +2760,9 @@ void mesh_migration_adapt(int mynode, int pesize, Result_part *result,
       if (new_mesh->material->mat_name == NULL)
         HECMW_dlb_memory_exit("new_mesh: material");
       for (i = 0; i < new_mesh->material->n_mat; i++) {
-        new_mesh->material->mat_name[i] = (char *)calloc(128, sizeof(char));
-        snprintf(new_mesh->material->mat_name[i], 128, "%s",
-                mesh->material->mat_name[i]);
+        new_mesh->material->mat_name[i] = (char *)calloc(name_buf_size, sizeof(char));
+        snprintf(new_mesh->material->mat_name[i], name_buf_size, "%s",
+                 mesh->material->mat_name[i]);
       }
       new_mesh->material->mat_item_index =
           (int *)calloc(new_mesh->material->n_mat + 1, sizeof(int));

@@ -19,15 +19,11 @@ int HECMW_set_verror(int errorno, const char *fmt, va_list ap) {
 
   hecmw_errno = errorno;
 
-  HECMW_snprintf(hecmw_errmsg, sizeof(hecmw_errmsg), "%s",
-                 HECMW_strmsg(errorno));
+  size_t len = snprintf(hecmw_errmsg, sizeof(hecmw_errmsg), "%s", HECMW_strmsg(errorno));
   HECMW_vsnprintf(errmsg, sizeof(errmsg), fmt, ap);
 
-  if (strlen(errmsg) > 0) {
-    HECMW_snprintf(hecmw_errmsg + strlen(hecmw_errmsg),
-                   sizeof(hecmw_errmsg) - strlen(hecmw_errmsg), " (%s)",
-                   errmsg);
-  }
+  if (strlen(errmsg) > 0)
+    snprintf(hecmw_errmsg + len, sizeof(hecmw_errmsg) - len, " (%s)", errmsg);
 
   HECMW_print_error();
 

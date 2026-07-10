@@ -102,9 +102,9 @@ void CNFDB_507::cgeometric_load_rec::copy_from(
   var_mode   = r.var_mode;
   var_funcID = r.var_funcID;
   // ##12
-  strcpy(var_name, r.var_name);
+  snprintf(var_name, sizeof(var_name), "%s", r.var_name);
   // ##13
-  strcpy(var_equation, r.var_equation);
+  snprintf(var_equation, sizeof(var_equation), "%s", r.var_equation);
 
   // ##14-17
   for (i = 0; i < 4; i++) {

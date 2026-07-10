@@ -27,9 +27,9 @@ target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_reorder.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_gflex.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_heclex.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_ablex.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_inplex.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_io_hec.c
-  ${CMAKE_CURRENT_LIST_DIR}/hecmw_io_abaqus.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_io_inp.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_io_nastran_dummy.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_io_geofem.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_io_dist.c

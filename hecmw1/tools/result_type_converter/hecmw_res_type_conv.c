@@ -41,7 +41,7 @@ int set_params(int argc, char **argv) {
         return -1;
       }
       i++;
-      strcpy(out_file, argv[i]);
+      snprintf(out_file, sizeof(out_file), "%s", argv[i]);
     } else if (strcmp(argv[i], "-s") == 0) {
       if (argc == i + 1) {
         fprintf(stderr, "Error : parameter required after %s\n", argv[i]);
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
 
     fileheader =
         HECMW_ctrl_get_result_fileheader("fstrRES", i, &fg_text);
-    sprintf(resultfile, "%s.%d.%d", fileheader, mynode, i);
+    snprintf(resultfile, sizeof(resultfile), "%s.%d.%d", fileheader, mynode, i);
     fprintf(stdout, "Input file : %s\n", resultfile);
     data = HECMW_result_read_by_fname(resultfile);
     if (!data) {
@@ -134,14 +134,14 @@ int main(int argc, char **argv) {
         ptoken = ntoken;
         ntoken = strtok(NULL, "/");
       }
-      sprintf(resultfile, "%s%s.%d.%d", dirname, out_file, mynode, i);
+      snprintf(resultfile, sizeof(resultfile), "%s%s.%d.%d", dirname, out_file, mynode, i);
     }
     fprintf(stdout, "Output file : %s\n", resultfile);
 
     n_node = HECMW_result_get_nnode();
     n_elem = HECMW_result_get_nelem();
-    HECMW_result_get_header(header);
-    HECMW_result_get_comment(comment);
+    HECMW_result_get_header(header, sizeof(header));
+    HECMW_result_get_comment(comment, sizeof(comment));
     rcode = HECMW_result_io_txt_write_ST_by_fname(resultfile, data, n_node, n_elem,
                                                header, comment);
     if (rcode) {

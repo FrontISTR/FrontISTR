@@ -20,7 +20,7 @@ int HECMW_put_mesh(struct hecmwST_local_mesh *mesh, char *name_ID) {
 
   file = &files->meshfiles[0];
 
-  strcpy(filename, files->meshfiles[0].filename);
+  snprintf(filename, sizeof(filename), "%s", files->meshfiles[0].filename);
   if (HECMW_put_dist_mesh(mesh, filename)) return -1;
 
   HECMW_ctrl_free_meshfiles(files);

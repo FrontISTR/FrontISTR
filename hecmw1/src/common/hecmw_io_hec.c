@@ -39,8 +39,7 @@ static void do_logging(int loglv, int msgno, int add_location, const char *fmt,
     char *s                = "";
     if (strlen(msg) > 0) s = ": ";
     p = HECMW_heclex_is_including() ? include_filename : grid_filename;
-    HECMW_snprintf(line, sizeof(line), "%s:%d%s", p, HECMW_heclex_get_lineno(),
-                   s);
+    snprintf(line, sizeof(line), "%s:%d%s", p, HECMW_heclex_get_lineno(), s);
   }
   if (loglv == HECMW_LOG_ERROR) {
     HECMW_set_error(msgno, "%s%s", line, msg);
@@ -99,16 +98,16 @@ static int read_input(int msgno_invalid_token) {
       set_err(HECMW_IO_E0002, "");
       return -1;
     }
-    strcpy(include_filename, p);
+    snprintf(include_filename, sizeof(include_filename), "%s", p);
   } else {
     char separator[10];
     char *dname = HECMW_dirname(grid_filename);
-    sprintf(separator, "%c", HECMW_get_path_separator());
+    snprintf(separator, sizeof(separator), "%c", HECMW_get_path_separator());
     if (strlen(dname) + strlen(separator) + strlen(p) > HECMW_FILENAME_LEN) {
       set_err(HECMW_IO_E0002, "");
       return -1;
     }
-    sprintf(include_filename, "%s%s%s", dname, separator, p);
+    snprintf(include_filename, sizeof(include_filename), "%s%s%s", dname, separator, p);
   }
   return 0;
 }
@@ -134,7 +133,7 @@ static int read_amp_head(void) {
   return 0;
 }
 
-static int read_amp_param_name(char *name) {
+static int read_amp_param_name(char *name, size_t name_len) {
   int token;
   char *p;
 
@@ -154,7 +153,7 @@ static int read_amp_param_name(char *name) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(name, p);
+  snprintf(name, name_len, "%s", p);
   HECMW_toupper(name);
   if (HECMW_io_is_reserved_name(name)) {
     set_err(HECMW_IO_E0003, "");
@@ -267,7 +266,7 @@ static int read_amp_data(char *name, int type, int definition, int time,
     }
     t = HECMW_heclex_get_number();
 
-    /* type ABAQUS*/
+    /* type INP*/
     if (type == HECMW_HECLEX_K_TIMEVALUE) {
       tmp = val;
       val = t;
@@ -332,7 +331,7 @@ static int read_amplitude(void) {
       token = HECMW_heclex_next_token();
       if (token == HECMW_HECLEX_K_NAME) {
         /* must */
-        if (read_amp_param_name(name)) return -1;
+        if (read_amp_param_name(name, sizeof(name))) return -1;
         flag_name = 1;
       } else if (token == HECMW_HECLEX_K_TYPE) {
         /* optional */
@@ -425,7 +424,7 @@ static int read_contact_or_insert_pair_head(int *last_token, int *type) {
   return 0;
 }
 
-static int read_contact_pair_param_name(char *name) {
+static int read_contact_pair_param_name(char *name, size_t name_len) {
   int token;
   char *p;
 
@@ -445,7 +444,7 @@ static int read_contact_pair_param_name(char *name) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(name, p);
+  snprintf(name, name_len, "%s", p);
   HECMW_toupper(name);
   if (HECMW_io_is_reserved_name(name)) {
     set_err(HECMW_IO_E0003, "");
@@ -582,7 +581,7 @@ static int read_contact_pair(void) {
       token = HECMW_heclex_next_token();
       if (token == HECMW_HECLEX_K_NAME) {
         /* must */
-        if (read_contact_pair_param_name(name)) return -1;
+        if (read_contact_pair_param_name(name, sizeof(name))) return -1;
         flag_name = 1;
       } else if (token == HECMW_HECLEX_K_TYPE) {
         /* optional */
@@ -678,7 +677,7 @@ static int read_egrp_head(void) {
   return 0;
 }
 
-static int read_egrp_param_egrp(char *egrp) {
+static int read_egrp_param_egrp(char *egrp, size_t egrp_len) {
   int token;
   char *p;
 
@@ -698,7 +697,7 @@ static int read_egrp_param_egrp(char *egrp) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(egrp, p);
+  snprintf(egrp, egrp_len, "%s", p);
   HECMW_toupper(egrp);
   if (HECMW_io_is_reserved_name(egrp)) {
     set_err(HECMW_IO_E0003, "");
@@ -909,7 +908,7 @@ static int read_egroup(void) {
       token = HECMW_heclex_next_token();
       if (token == HECMW_HECLEX_K_EGRP) {
         /* must */
-        if (read_egrp_param_egrp(egrp)) return -1;
+        if (read_egrp_param_egrp(egrp, sizeof(egrp))) return -1;
         flag_egrp = 1;
       } else if (token == HECMW_HECLEX_K_GENERATE) {
         /* oprtional */
@@ -1018,7 +1017,7 @@ static int read_elem_param_type(int *type) {
   return 0;
 }
 
-static int read_elem_param_egrp(char *egrp) {
+static int read_elem_param_egrp(char *egrp, size_t egrp_len) {
   int token;
   char *p;
 
@@ -1038,7 +1037,7 @@ static int read_elem_param_egrp(char *egrp) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(egrp, p);
+  snprintf(egrp, egrp_len, "%s", p);
   HECMW_toupper(egrp);
   if (HECMW_io_is_reserved_name(egrp)) {
     set_err(HECMW_IO_E0003, "");
@@ -1200,7 +1199,7 @@ static int read_element(void) {
         flag_type = 1;
       } else if (token == HECMW_HECLEX_K_EGRP) {
         /* optional */
-        if (read_elem_param_egrp(egrp)) return -1;
+        if (read_elem_param_egrp(egrp, sizeof(egrp))) return -1;
         flag_egrp = 1;
       } else if (token == HECMW_HECLEX_K_MATITEM) {
         /* optional */
@@ -1458,7 +1457,7 @@ static int read_equation_data_line2(int neq, double cnst) {
           return -1;
         }
         mpcitem[i].node = HECMW_heclex_get_number();
-        strcpy(mpcitem[i].ngrp, "");
+        mpcitem[i].ngrp[0] = '\0';
         is_node = 1;
       } else if (token == HECMW_HECLEX_NAME) {
         char *p = HECMW_heclex_get_text();
@@ -1470,7 +1469,7 @@ static int read_equation_data_line2(int neq, double cnst) {
           set_err(HECMW_IO_E0001, "");
           return -1;
         }
-        strcpy(mpcitem[i].ngrp, p);
+        snprintf(mpcitem[i].ngrp, sizeof(mpcitem[i].ngrp), "%s", p);
         HECMW_toupper(mpcitem[i].ngrp);
         if (HECMW_io_is_reserved_name(mpcitem[i].ngrp)) {
           set_err(HECMW_IO_E0003, "");
@@ -1575,7 +1574,7 @@ static int read_equation_data_line2(int neq, double cnst) {
       return -1;
     }
     mpcitem[0].node = HECMW_heclex_get_number();
-    strcpy(mpcitem[0].ngrp, "");
+    mpcitem[0].ngrp[0] = '\0';
     mpcitem[0].a = 1.0;
 
     /* ',' */
@@ -1590,7 +1589,7 @@ static int read_equation_data_line2(int neq, double cnst) {
       return -1;
     }
     mpcitem[1].node = HECMW_heclex_get_number();
-    strcpy(mpcitem[1].ngrp, "");
+    mpcitem[1].ngrp[0] = '\0';
     mpcitem[1].a = -1.0;
 
     /* add 1 */
@@ -1699,7 +1698,7 @@ static int read_equation(void) {
 /*----------------------------------------------------------------------------*/
 
 static int read_header(void) {
-  int token, len;
+  int token;
   char *p;
   struct hecmw_io_header *header;
 
@@ -1724,11 +1723,8 @@ static int read_header(void) {
   }
   p = HECMW_heclex_get_text();
   while (*p && *p == ' ') p++;
-  if (p == NULL) p                = "";
-  len                             = strlen(p);
-  if (len > HECMW_HEADER_LEN) len = HECMW_HEADER_LEN;
-  strncpy(header->header, p, len);
-  header->header[len] = '\0';
+  if (p == NULL) p = "";
+  snprintf(header->header, sizeof(header->header), "%s", p);
 
   /* Note:
    * NL is ignored by LEX until the end of the header data.
@@ -2227,7 +2223,7 @@ static int read_material_head(void) {
   return 0;
 }
 
-static int read_material_param_name(char *name) {
+static int read_material_param_name(char *name, size_t name_len) {
   int token;
   char *p;
 
@@ -2247,7 +2243,7 @@ static int read_material_param_name(char *name) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(name, p);
+  snprintf(name, name_len, "%s", p);
   HECMW_toupper(name);
   if (HECMW_io_is_reserved_name(name)) {
     set_err(HECMW_IO_E0003, "");
@@ -2328,7 +2324,7 @@ static int read_material_data(int item, char *name) {
   }
 
   /* set */
-  strcpy(mat->name, name);
+  snprintf(mat->name, sizeof(mat->name), "%s", name);
   mat->nitem = item;
   mat->item  = matitem;
   mat->next  = NULL;
@@ -2363,7 +2359,7 @@ static int read_material(void) {
       token = HECMW_heclex_next_token();
       if (token == HECMW_HECLEX_K_NAME) {
         /* must */
-        if (read_material_param_name(name)) return -1;
+        if (read_material_param_name(name, sizeof(name))) return -1;
         flag_name = 1;
       } else if (token == HECMW_HECLEX_K_ITEM) {
         /* optioanal */
@@ -2460,7 +2456,7 @@ static int read_ngrp_head(void) {
   return 0;
 }
 
-static int read_ngrp_param_ngrp(char *ngrp) {
+static int read_ngrp_param_ngrp(char *ngrp, size_t ngrp_len) {
   int token;
   char *p;
 
@@ -2480,7 +2476,7 @@ static int read_ngrp_param_ngrp(char *ngrp) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(ngrp, p);
+  snprintf(ngrp, ngrp_len, "%s", p);
   HECMW_toupper(ngrp);
   if (HECMW_io_is_reserved_name(ngrp)) {
     set_err(HECMW_IO_E0003, "");
@@ -2692,7 +2688,7 @@ static int read_ngroup(void) {
       token = HECMW_heclex_next_token();
       if (token == HECMW_HECLEX_K_NGRP) {
         /* must */
-        if (read_ngrp_param_ngrp(ngrp)) return -1;
+        if (read_ngrp_param_ngrp(ngrp, sizeof(ngrp))) return -1;
         flag_ngrp = 1;
       } else if (token == HECMW_HECLEX_K_GENERATE) {
         /* oprtional */
@@ -2794,7 +2790,7 @@ static int read_node_param_system(int *system) {
   return 0;
 }
 
-static int read_node_param_ngrp(char *ngrp) {
+static int read_node_param_ngrp(char *ngrp, size_t ngrp_len) {
   int token;
   char *p;
 
@@ -2814,7 +2810,7 @@ static int read_node_param_ngrp(char *ngrp) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(ngrp, p);
+  snprintf(ngrp, ngrp_len, "%s", p);
   HECMW_toupper(ngrp);
   if (HECMW_io_is_reserved_name(ngrp)) {
     set_err(HECMW_IO_E0003, "");
@@ -2990,7 +2986,7 @@ static int read_node(void) {
         flag_system = 1;
       } else if (token == HECMW_HECLEX_K_NGRP) {
         /* optional */
-        if (read_node_param_ngrp(ngrp)) return -1;
+        if (read_node_param_ngrp(ngrp, sizeof(ngrp))) return -1;
         flag_ngrp = 1;
       } else if (token == HECMW_HECLEX_K_INPUT) {
         /* optional */
@@ -3093,7 +3089,7 @@ static int read_section_param_type(int *type) {
   return 0;
 }
 
-static int read_section_param_egrp(char *egrp) {
+static int read_section_param_egrp(char *egrp, size_t egrp_len) {
   int token;
   char *p;
 
@@ -3113,7 +3109,7 @@ static int read_section_param_egrp(char *egrp) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(egrp, p);
+  snprintf(egrp, egrp_len, "%s", p);
   HECMW_toupper(egrp);
   if (HECMW_io_is_reserved_name(egrp)) {
     set_err(HECMW_IO_E0003, "");
@@ -3122,7 +3118,7 @@ static int read_section_param_egrp(char *egrp) {
   return 0;
 }
 
-static int read_section_param_material(char *material) {
+static int read_section_param_material(char *material, size_t material_len) {
   int token;
   char *p;
 
@@ -3142,7 +3138,7 @@ static int read_section_param_material(char *material) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(material, p);
+  snprintf(material, material_len, "%s", p);
   HECMW_toupper(material);
   if (HECMW_io_is_reserved_name(material)) {
     set_err(HECMW_IO_E0003, "");
@@ -3573,7 +3569,7 @@ static int read_section(void) {
         flag_type = 1;
       } else if (token == HECMW_HECLEX_K_EGRP) {
         /* must */
-        if (read_section_param_egrp(egrp)) return -1;
+        if (read_section_param_egrp(egrp, sizeof(egrp))) return -1;
         flag_egrp = 1;
       } else if (token == HECMW_HECLEX_K_MATERIAL) {
         /* optional */
@@ -3581,7 +3577,7 @@ static int read_section(void) {
           set_err(HECMW_IO_HEC_E1703, "");
           return -1;
         }
-        if (read_section_param_material(material)) return -1;
+        if (read_section_param_material(material, sizeof(material))) return -1;
         flag_material = 1;
 #if 0
 			} else if(token == HECMW_HECLEX_K_COMPOSITE) {
@@ -3689,8 +3685,8 @@ static int read_section(void) {
       HECMW_assert(flag_egrp);
 
       /* set */
-      strcpy(sect.egrp, egrp);
-      strcpy(sect.material, material);
+      snprintf(sect.egrp, sizeof(sect.egrp), "%s", egrp);
+      snprintf(sect.material, sizeof(sect.material), "%s", material);
       sect.composite = composite;
       sect.secopt    = secopt;
       sect.type      = type;
@@ -3731,7 +3727,7 @@ static int read_sgrp_head(void) {
   return 0;
 }
 
-static int read_sgrp_param_sgrp(char *sgrp) {
+static int read_sgrp_param_sgrp(char *sgrp, size_t sgrp_len) {
   int token;
   char *p;
 
@@ -3751,7 +3747,7 @@ static int read_sgrp_param_sgrp(char *sgrp) {
     set_err(HECMW_IO_E0001, "");
     return -1;
   }
-  strcpy(sgrp, p);
+  snprintf(sgrp, sgrp_len, "%s", p);
   HECMW_toupper(sgrp);
   if (HECMW_io_is_reserved_name(sgrp)) {
     set_err(HECMW_IO_E0003, "");
@@ -3893,7 +3889,7 @@ static int read_sgroup(void) {
       token = HECMW_heclex_next_token();
       if (token == HECMW_HECLEX_K_SGRP) {
         /* must */
-        if (read_sgrp_param_sgrp(sgrp)) return -1;
+        if (read_sgrp_param_sgrp(sgrp, sizeof(sgrp))) return -1;
         flag_sgrp = 1;
       } else if (token == HECMW_HECLEX_K_INPUT) {
         /* oprtional */
@@ -4338,8 +4334,8 @@ static int read_connectivity(void) {
     case HECMW_HECLEX_K_HECMW:
       type = HECMW_CONNTYPE_HECMW;
       break;
-    case HECMW_HECLEX_K_ABAQUS:
-      type = HECMW_CONNTYPE_ABAQUS;
+    case HECMW_HECLEX_K_INP:
+      type = HECMW_CONNTYPE_INP;
       break;
     case HECMW_HECLEX_K_NASTRAN:
       type = HECMW_CONNTYPE_NASTRAN;
@@ -4455,7 +4451,7 @@ int HECMW_read_entire_mesh(const char *filename) {
     return -1;
   }
 
-  strcpy(grid_filename, filename);
+  snprintf(grid_filename, sizeof(grid_filename), "%s", filename);
   HECMW_io_set_gridfile(grid_filename);
 
   if ((fp = fopen(filename, "r")) == NULL) {
@@ -4477,7 +4473,7 @@ int HECMW_read_entire_mesh(const char *filename) {
     return -1;
   }
 
-  strcpy(grid_filename, "Unknown");
+  snprintf(grid_filename, sizeof(grid_filename), "Unknown");
 
   return 0;
 }
@@ -4493,7 +4489,7 @@ struct hecmwST_local_mesh *HECMW_get_entire_mesh(const char *filename) {
   if (local_mesh == NULL) return NULL;
   if (HECMW_io_finalize()) return NULL;
 
-  strcpy(grid_filename, "Unknown");
+  snprintf(grid_filename, sizeof(grid_filename), "Unknown");
 
   return local_mesh;
 }

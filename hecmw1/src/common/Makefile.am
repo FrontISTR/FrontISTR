@@ -81,7 +81,7 @@ LEXSRC = \
 	hecmw_ctrllex.c \
 	hecmw_gflex.c \
 	hecmw_heclex.c \
-	hecmw_ablex.c
+	hecmw_inplex.c
 
 MSGSRC = \
 	hecmw_msgno.h \
@@ -112,9 +112,9 @@ OBJS = \
 	hecmw_reorder.@cobjfilepostfix@ \
 	hecmw_gflex.@cobjfilepostfix@ \
 	hecmw_heclex.@cobjfilepostfix@ \
-	hecmw_ablex.@cobjfilepostfix@ \
+	hecmw_inplex.@cobjfilepostfix@ \
 	hecmw_io_hec.@cobjfilepostfix@ \
-	hecmw_io_abaqus.@cobjfilepostfix@ \
+	hecmw_io_inp.@cobjfilepostfix@ \
 	hecmw_io_nastran_dummy.@cobjfilepostfix@ \
 	hecmw_io_geofem.@cobjfilepostfix@ \
 	hecmw_io_dist.@cobjfilepostfix@ \
@@ -198,7 +198,7 @@ HEADERS = \
 	hecmw_dist_free.h \
 	hecmw_dist_refine.h \
 	hecmw_geometric.h \
-	hecmw_ablex.h \
+	hecmw_inplex.h \
 	hecmw_gflex.h \
 	hecmw_heclex.h \
 	hecmw_io.h \
@@ -207,7 +207,7 @@ HEADERS = \
 	hecmw_io_nastran.h \
 	hecmw_io_get_mesh.h \
 	hecmw_io_hec.h \
-	hecmw_io_abaqus.h \
+	hecmw_io_inp.h \
 	hecmw_io_mesh.h \
 	hecmw_io_put_mesh.h \
 	hecmw_io_struct.h \

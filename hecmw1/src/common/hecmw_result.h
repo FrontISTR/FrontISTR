@@ -42,8 +42,8 @@ extern struct hecmwST_result_data *HECMW_result_read_by_fname(char *filename);
 
 extern int HECMW_result_get_nnode(void);
 extern int HECMW_result_get_nelem(void);
-extern char *HECMW_result_get_header(char *buff);
-extern char *HECMW_result_get_comment(char *buff);
+extern char *HECMW_result_get_header(char *buff, size_t buff_size);
+extern char *HECMW_result_get_comment(char *buff, size_t buff_size);
 extern int *HECMW_result_get_nodeID(int *buff);
 extern int *HECMW_result_get_elemID(int *buff);
 extern void HECMW_result_free_nodeID(void);
