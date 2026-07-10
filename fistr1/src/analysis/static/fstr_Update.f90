@@ -27,7 +27,7 @@ contains
     use m_static_lib
     use m_elemact
     use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state, fstr_get_shell_trial_directors, &
-      fstr_get_shell_reference_directors
+      fstr_get_shell_trial_drilling, fstr_get_shell_current_directors, fstr_get_shell_reference_directors
     use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
 
     type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
@@ -44,7 +44,9 @@ contains
 
     real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
     real(kind=kreal)   :: shell_director(3, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: shell_cur_director(3, fstrSOLID%max_ncon)
     real(kind=kreal)   :: shell_ref_director(3, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: shell_drill(fstrSOLID%max_ncon)
     real(kind=kreal)   :: tt(fstrSOLID%max_ncon), tt0(fstrSOLID%max_ncon), ttn(fstrSOLID%max_ncon)
     real(kind=kreal)   :: qf(fstrSOLID%max_ncon*6), coords(3, 3)
     integer            :: isect, ihead, cdsys_ID
@@ -92,7 +94,9 @@ contains
 
       !element loop
       !$omp parallel default(none), &
-        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp,shell_director,shell_ref_director, &
+        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp,shell_director,shell_cur_director, &
+        !$omp&  shell_ref_director, &
+        !$omp&  shell_drill, &
         !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0, &
         !$omp&  lambda,ddlambda), &
         !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
@@ -207,12 +211,16 @@ contains
           if( fstr_uses_finite_rotation_kinematics( ic_type, nn, &
               fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) then
             call fstr_get_shell_trial_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn) )
+            call fstr_get_shell_trial_drilling( fstrSOLID, nn, nodLOCAL(1:nn), shell_drill(1:nn) )
+            call fstr_get_shell_current_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
+              shell_cur_director(1:3,1:nn) )
             call fstr_get_shell_reference_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
               shell_ref_director(1:3,1:nn) )
             call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
               &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0, &
               &              element=fstrSOLID%elements(icel), nddirector=shell_director(1:3,1:nn), &
-              &              ndrefdirector=shell_ref_director(1:3,1:nn))
+              &              ndrefdirector=shell_ref_director(1:3,1:nn), &
+              &              ndcurdirector=shell_cur_director(1:3,1:nn), nddrill=shell_drill(1:nn))
           else
             if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
             call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), &

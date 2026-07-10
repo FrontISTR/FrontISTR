@@ -1357,7 +1357,7 @@ contains
   subroutine fstr_element_init( hecMESH, fstrSOLID, solution_type )
     use elementInfo
     use mMechGauss
-    use mMaterial, only: TOTALLAG, isElastic
+    use mMaterial, only: TOTALLAG, UPDATELAG, isElastic
     use m_fstr
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
@@ -1415,7 +1415,8 @@ contains
       enddo
       nthick = 0
       if( fstrSOLID%elements(i)%etype == fe_mitc4_shell &
-        .and. fstrSOLID%materials(id)%nlgeom_flag == TOTALLAG &
+        .and. ( fstrSOLID%materials(id)%nlgeom_flag == TOTALLAG &
+        .or. fstrSOLID%materials(id)%nlgeom_flag == UPDATELAG ) &
         .and. isElastic( fstrSOLID%materials(id)%mtype ) ) &
         nthick = fstr_shell_num_thickness_points( fstrSOLID%elements(i)%etype )
       if( nthick > 0 ) call fstr_init_shell_layer_gausses( fstrSOLID%elements(i), ng, &

@@ -8,17 +8,9 @@
 !> drilling scalar) needed when the Newton solution increment cannot be applied as
 !> a simple vector addition to the nodal degrees of freedom.
 !>
-!> Currently the only element type that activates this path is MITC4 shell (741)
-!> under Total Lagrangian kinematics with an elastic material.  The predicate is
-!> shared with setup so the nodal state is allocated only when this path is used.
-!>
-!> Design notes:
-!>  - The element-level rotation algebra (exp/log maps, triad updates) lives in
-!>    m_static_LIB_shell.  This module only orchestrates per-node state and the
-!>    application of the global solution increment.
-!>  - To extend finite-rotation support to beam elements, Updated Lagrangian or
-!>    inelastic materials, update the shared predicate and add element-specific
-!>    frame initialisation; the solver and update paths need no change.
+!> This path is used by elastic MITC4 shell (741) under Total/Updated
+!> Lagrangian kinematics.  Element-level rotation algebra lives in
+!> m_static_LIB_shell; this module stores and advances the nodal frame state.
 module m_fstr_NodalKinematics
   use m_fstr
   use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
@@ -31,6 +23,7 @@ module m_fstr_NodalKinematics
   public :: fstr_apply_solution_increment
   public :: fstr_commit_solution_increment
   public :: fstr_get_shell_trial_directors
+  public :: fstr_get_shell_trial_drilling
   public :: fstr_get_shell_current_directors
   public :: fstr_get_shell_reference_directors
 
@@ -296,6 +289,28 @@ contains
     end do
 
   end subroutine fstr_get_shell_trial_directors
+
+  !> Drilling scalar from the current Newton trial frame.
+  subroutine fstr_get_shell_trial_drilling( fstrSOLID, nn, nodLOCAL, drilling )
+    implicit none
+
+    type (fstr_solid), intent(in)      :: fstrSOLID
+    integer(kind=kint), intent(in)     :: nn
+    integer(kind=kint), intent(in)     :: nodLOCAL(:)
+    real(kind=kreal), intent(out)      :: drilling(nn)
+
+    integer(kind=kint) :: j, node_id
+
+    drilling(:) = 0.0D0
+    if( .not. associated(fstrSOLID%shell_ddrill) ) return
+
+    do j = 1, nn
+      node_id = nodLOCAL(j)
+      if( node_id <= 0 .or. node_id > size(fstrSOLID%shell_ddrill) ) cycle
+      drilling(j) = fstrSOLID%shell_ddrill(node_id)
+    end do
+
+  end subroutine fstr_get_shell_trial_drilling
 
   !> Half-thickness director from the converged frame (triad).
   subroutine fstr_get_shell_current_directors( fstrSOLID, thick, nn, nodLOCAL, directors )
