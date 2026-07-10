@@ -39,7 +39,7 @@ contains
 
     allocate(fstrEIG%filter(NPNDOF))
     fstrEIG%filter = 1.0d0
-    fstrEIG%sigma = 0.01d0
+    !fstrEIG%sigma = 0.01d0
 
     jn = 0
     do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
