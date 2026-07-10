@@ -40,7 +40,7 @@ contains
     integer(kind=kint) :: fstr_ctrl_get_EIGEN
 
     ! JP-16
-    fstr_ctrl_get_EIGEN = fstr_ctrl_get_data_ex( ctrl, 1,  'Iri ',  nget, tolerance, maxiter, sigma )
+    fstr_ctrl_get_EIGEN = fstr_ctrl_get_data_ex( ctrl, 1,  'Irir ',  nget, tolerance, maxiter, sigma )
 
   end function fstr_ctrl_get_EIGEN
 
