@@ -3,13 +3,13 @@
 ![Logo](./doc/FrontISTR_logo.svg)
 
 [![CI Status](https://gitlab.com/frontistr-commons/frontistr/badges/master/pipeline.svg)](https://gitlab.com/frontistr-commons/frontistr/-/pipelines)
-[![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://manual.frontistr.com/en/)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://frontistr-commons.gitlab.io/frontistr_documents/en/)
 [![License](https://img.shields.io/badge/license-MIT-green)](License.txt)
 
 FrontISTR is an open-source **large-scale parallel finite element method structural analysis software**. It provides analysis capabilities necessary for industrial and academic practical work, including nonlinear deformation stress, eigenvalue, frequency response, and heat conduction analyses with material nonlinearity, large deformation, and contact. The license is **MIT License**.
 
 * Official Website: [https://www.frontistr.com](https://www.frontistr.com)
-* Official Documentation: [https://manual.frontistr.com/en/](https://manual.frontistr.com/en/) (English) / [https://manual.frontistr.com/ja/](https://manual.frontistr.com/ja/) (Japanese)
+* Official Documentation: [https://frontistr-commons.gitlab.io/frontistr_documents/en/](https://frontistr-commons.gitlab.io/frontistr_documents/en/) (English) / [https://frontistr-commons.gitlab.io/frontistr_documents/](https://frontistr-commons.gitlab.io/frontistr_documents/) (Japanese)
 
 ---
 

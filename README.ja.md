@@ -3,13 +3,13 @@
 ![Logo](./doc/FrontISTR_logo.svg)
 
 [![CI Status](https://gitlab.com/frontistr-commons/frontistr/badges/master/pipeline.svg)](https://gitlab.com/frontistr-commons/frontistr/-/pipelines)
-[![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://manual.frontistr.com/en/)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://frontistr-commons.gitlab.io/frontistr_documents/en/)
 [![License](https://img.shields.io/badge/license-MIT-green)](License.txt)
 
 FrontISTRはオープンソースの**大規模並列有限要素法構造解析ソフトウェア**です。材料非線形・大変形・接触を含む非線形の変形応力・固有値・周波数応答・熱伝導など、産業／学術の実務で必要な解析機能を備えています。ライセンスは **MIT License** です。
 
 * 公式サイト: [https://www.frontistr.com](https://www.frontistr.com)
-* 公式ドキュメント: [https://manual.frontistr.com/en/](https://manual.frontistr.com/en/) （英語） / [https://manual.frontistr.com/ja/](https://manual.frontistr.com/ja/) （日本語）
+* 公式ドキュメント: [https://frontistr-commons.gitlab.io/frontistr_documents/en/](https://frontistr-commons.gitlab.io/frontistr_documents/en/) （英語） / [https://frontistr-commons.gitlab.io/frontistr_documents/](https://frontistr-commons.gitlab.io/frontistr_documents/) （日本語）
 
 ---
 
