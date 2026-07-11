@@ -1357,7 +1357,7 @@ contains
   subroutine fstr_element_init( hecMESH, fstrSOLID, solution_type )
     use elementInfo
     use mMechGauss
-    use mMaterial, only: TOTALLAG, UPDATELAG, isElastic
+    use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
     use m_fstr
     type(hecmwST_local_mesh),target :: hecMESH
     type(fstr_solid)                :: fstrSOLID
@@ -1409,20 +1409,18 @@ contains
         stop "Error in element's section definition"
       id = hecMESH%section%sect_mat_ID_item(isect)
       fstrSOLID%materials(id)%cdsys_ID = hecMESH%section%sect_orien_ID(isect)
+      nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
       do j=1,ng
         fstrSOLID%elements(i)%gausses(j)%pMaterial => fstrSOLID%materials(id)
         call fstr_init_gauss( fstrSOLID%elements(i)%gausses( j )  )
       enddo
       nthick = 0
-      if( fstrSOLID%elements(i)%etype == fe_mitc4_shell &
-        .and. ( fstrSOLID%materials(id)%nlgeom_flag == TOTALLAG &
-        .or. fstrSOLID%materials(id)%nlgeom_flag == UPDATELAG ) &
-        .and. isElastic( fstrSOLID%materials(id)%mtype ) ) &
+      if( fstr_uses_finite_rotation_kinematics( fstrSOLID%elements(i)%etype, nn, &
+        fstrSOLID%materials(id) ) ) &
         nthick = fstr_shell_num_thickness_points( fstrSOLID%elements(i)%etype )
       if( nthick > 0 ) call fstr_init_shell_layer_gausses( fstrSOLID%elements(i), ng, &
         fstrSOLID%materials(id)%totallyr, nthick )
 
-      nn = hecMESH%elem_node_index(i)-hecMESH%elem_node_index(i-1)
       allocate(fstrSOLID%elements(i)%equiForces(nn*ndof))
       fstrSOLID%elements(i)%equiForces = 0.0d0
       if( nn > fstrSOLID%max_ncon ) fstrSOLID%max_ncon = nn

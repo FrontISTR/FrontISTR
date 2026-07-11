@@ -6,6 +6,7 @@
 module m_static_LIB_shell
   use hecmw, only : kint, kreal
   use elementInfo
+  use m_fstr_FiniteRotationKinematics, only: fstr_is_finite_rotation_shell_element
 
   !--------------------------------------------------------------------
 
@@ -51,6 +52,13 @@ module m_static_LIB_shell
   !--------------------------------------------------------------------
 
 contains
+
+  logical function ShellSupportsFiniteRotationKinematics( etype, nn )
+    implicit none
+    integer(kind=kint), intent(in) :: etype, nn
+
+    ShellSupportsFiniteRotationKinematics = fstr_is_finite_rotation_shell_element( etype, nn )
+  end function ShellSupportsFiniteRotationKinematics
 
   pure function outer_product3(a, b) result(ab)
 
@@ -459,14 +467,13 @@ contains
 
     if( .not. present( nddisp ) ) flag = INFINITESIMAL
     finite_rotation_director = ( flag == TOTALLAG .or. flag == UPDATELAG ) .and. ndof_shell >= 6 &
-      .and. etype == fe_mitc4_shell .and. nn == 4 &
+      .and. ShellSupportsFiniteRotationKinematics( etype, nn ) &
       .and. isElastic(gausses(1)%pMaterial%mtype)
-    use_director_tangent = finite_rotation_director .and. etype == fe_mitc4_shell .and. nn == 4 &
-      .and. isElastic(gausses(1)%pMaterial%mtype)
+    use_director_tangent = finite_rotation_director .and. isElastic(gausses(1)%pMaterial%mtype)
     add_geo_stiff = flag /= INFINITESIMAL
     if( present( include_geo_stiff ) ) add_geo_stiff = add_geo_stiff .and. include_geo_stiff
-    ! Green-Lagrange strain for elastic MITC4
-    use_tl_green = flag == TOTALLAG .and. etype == fe_mitc4_shell .and. nn == 4 &
+    ! Green-Lagrange strain for elastic finite-rotation shell elements.
+    use_tl_green = flag == TOTALLAG .and. ShellSupportsFiniteRotationKinematics( etype, nn ) &
       .and. isElastic(gausses(1)%pMaterial%mtype)
     if( use_director_tangent ) then
       allocate( B2rot(5, 3, 3, nn) )
@@ -1148,7 +1155,7 @@ contains
 
           !--------------------------------------------------
 
-          if( use_tl_green .and. etype == fe_mitc4_shell ) then
+          if( use_tl_green ) then
             ! reference shell geometry for TL quadrature weight
             g1_weight(:) = 0.0D0
             g2_weight(:) = 0.0D0
@@ -1167,7 +1174,7 @@ contains
 
           !--------------------------------------------------
 
-          if( use_tl_green .and. etype == fe_mitc4_shell ) then
+          if( use_tl_green ) then
             ! Green-Lagrange membrane and bending strain
             dudxi_trans(:) = 0.0D0
             dudeta_trans(:) = 0.0D0
@@ -1186,7 +1193,7 @@ contains
             +g1(2)*( g2(3)*g3(1)-g2(1)*g3(3) ) &
             +g1(3)*( g2(1)*g3(2)-g2(2)*g3(1) )
 
-          if( .not. ( use_tl_green .and. etype == fe_mitc4_shell ) ) det_weight = det
+          if( .not. use_tl_green ) det_weight = det
 
           det_inv = 1.0D0/det
 
@@ -1260,7 +1267,7 @@ contains
           cg1_mat(:) = cg1(:)
           cg2_mat(:) = cg2(:)
           cg3_mat(:) = cg3(:)
-          if( use_tl_green .and. etype == fe_mitc4_shell ) then
+          if( use_tl_green ) then
             call shell_basis_from_covariant(g1_weight, g2_weight, g3_weight, &
               e1_hat_mat, e2_hat_mat, e3_hat_mat, cg1_mat, cg2_mat, cg3_mat, det_mat)
           endif
@@ -2061,9 +2068,22 @@ contains
             Cv_theta(jsize1) = 0.0D0
             Cv_theta(jsize2) = 0.0D0
             Cv_theta(jsize3) = 0.0D0
-            Cv_theta(jsize4) = v3_i(1)*shapefunc(nb)
-            Cv_theta(jsize5) = v3_i(2)*shapefunc(nb)
-            Cv_theta(jsize6) = v3_i(3)*shapefunc(nb)
+            if( finite_rotation_director .and. present( nddrill ) ) then
+              drill_axis(1:3) = a_over_2_v3(1:3, nb)
+              axis_norm = sqrt(sum(drill_axis(1:3)*drill_axis(1:3)))
+              if( axis_norm > 0.0D0 ) then
+                drill_axis(1:3) = drill_axis(1:3)/axis_norm
+              else
+                drill_axis(1:3) = v3_i(1:3)
+              endif
+              Cv_theta(jsize4) = drill_axis(1)*shapefunc(nb)
+              Cv_theta(jsize5) = drill_axis(2)*shapefunc(nb)
+              Cv_theta(jsize6) = drill_axis(3)*shapefunc(nb)
+            else
+              Cv_theta(jsize4) = v3_i(1)*shapefunc(nb)
+              Cv_theta(jsize5) = v3_i(2)*shapefunc(nb)
+              Cv_theta(jsize6) = v3_i(3)*shapefunc(nb)
+            endif
 
           end do
 
@@ -2112,6 +2132,16 @@ contains
                 do m = 1, 3
                   isize = ndof*(nb-1)+3+m
                   Cv_deriv = -0.5D0*Cv_w_second(m, n, nb)
+                  if( finite_rotation_director .and. present( nddrill ) ) then
+                    drill_axis(1:3) = a_over_2_v3(1:3, nb)
+                    axis_norm = sqrt(sum(drill_axis(1:3)*drill_axis(1:3)))
+                    if( axis_norm > 0.0D0 ) then
+                      drill_axis(1:3) = drill_axis(1:3)/axis_norm
+                      drill_coeff = dot_product(drill_axis(1:3), a_over_2_v3_deriv(1:3, n, nb))
+                      Cv_deriv = Cv_deriv + shapefunc(nb) &
+                        *(a_over_2_v3_deriv(m, n, nb) - drill_axis(m)*drill_coeff)/axis_norm
+                    endif
+                  endif
                   Cv_deriv_disp = Cv_deriv_disp + Cv_deriv*qf_disp(isize)
                   tmpstiff(isize, jsize) = tmpstiff(isize, jsize) &
                     +w_w_w_det*gausses(1)%pMaterial%shell_var(n_layer)%weight &
@@ -2125,7 +2155,6 @@ contains
               end do
             end do
           endif
-
 
           !--------------------------------------------------
 
@@ -2713,10 +2742,10 @@ contains
     if( present( surface_gauss_points ) ) use_surface_gauss = surface_gauss_points
     flag = gausses(1)%pMaterial%nlgeom_flag
     finite_rotation_director = ( flag == TOTALLAG .or. flag == UPDATELAG ) &
-      .and. etype == fe_mitc4_shell .and. nn == 4 &
+      .and. ShellSupportsFiniteRotationKinematics( etype, nn ) &
       .and. isElastic(gausses(1)%pMaterial%mtype)
-    ! Green-Lagrange strain and spatial output for elastic MITC4
-    use_gl_strain = flag == TOTALLAG .and. etype == fe_mitc4_shell .and. nn == 4 &
+    ! Green-Lagrange strain and spatial output for elastic finite-rotation shell elements.
+    use_gl_strain = flag == TOTALLAG .and. ShellSupportsFiniteRotationKinematics( etype, nn ) &
       .and. isElastic(gausses(1)%pMaterial%mtype)
 
     !--------------------------------------------------------------------
@@ -3305,7 +3334,7 @@ contains
 
       !--------------------------------------------------
 
-      if( use_gl_strain .and. etype == fe_mitc4_shell ) then
+      if( use_gl_strain ) then
         dudxi_trans(:) = 0.0D0
         dudeta_trans(:) = 0.0D0
         do na = 1, nn
@@ -3613,7 +3642,7 @@ contains
       cg1_mat(:) = cg1(:)
       cg2_mat(:) = cg2(:)
       cg3_mat(:) = cg3(:)
-      if( use_gl_strain .and. etype == fe_mitc4_shell ) then
+      if( use_gl_strain ) then
         call shell_basis_from_covariant(g1_ref, g2_ref, g3_ref, &
           e1_hat_mat, e2_hat_mat, e3_hat_mat, cg1_mat, cg2_mat, cg3_mat, det_mat)
       endif
@@ -3669,7 +3698,7 @@ contains
         local_stress(lx, 6) = Sv(5)
       endif
 
-      if( use_gl_strain .and. etype == fe_mitc4_shell ) then
+      if( use_gl_strain ) then
         g1(:) = g1_ref(:)
         g2(:) = g2_ref(:)
         g3(:) = g3_ref(:)
@@ -3807,7 +3836,7 @@ contains
         +E(3, 1)*cg3(3)*cg1(1)   &
         +E(3, 2)*cg3(3)*cg2(1) )
 
-      if( use_gl_strain .and. etype == fe_mitc4_shell .and. OPSSTYPE == kOPSS_SOLUTION ) then
+      if( use_gl_strain .and. OPSSTYPE == kOPSS_SOLUTION ) then
         jac = det_cur/det_ref
         if( jac == 0.0d0 ) stop "Fail to convert shell stress: detF=0"
 
@@ -3967,7 +3996,7 @@ contains
     if( .not. associated( element%gausses ) ) return
     if( .not. associated( element%shell_layer_gausses ) ) return
     if( element%shell_nlayer <= 0 .or. element%shell_nthick <= 0 ) return
-    if( .not. ( etype == fe_mitc4_shell .and. nn == 4 &
+    if( .not. ( ShellSupportsFiniteRotationKinematics( etype, nn ) &
       .and. isElastic(element%gausses(1)%pMaterial%mtype) ) ) return
 
     flag = element%gausses(1)%pMaterial%nlgeom_flag
@@ -4825,7 +4854,7 @@ contains
 
     flag = gausses(1)%pMaterial%nlgeom_flag
     use_stress_force = present( element ) .and. &
-      etype == fe_mitc4_shell .and. nn == 4 .and. &
+      ShellSupportsFiniteRotationKinematics( etype, nn ) .and. &
       ( flag == TOTALLAG .or. flag == UPDATELAG ) .and. &
       isElastic( gausses(1)%pMaterial%mtype )
 

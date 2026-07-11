@@ -16,15 +16,23 @@ module m_fstr_FiniteRotationKinematics
   public :: fstr_uses_finite_rotation_kinematics
   public :: fstr_has_finite_rotation_kinematics
   public :: fstr_mark_finite_rotation_nodes
+  public :: fstr_is_finite_rotation_shell_element
 
 contains
+
+  logical function fstr_is_finite_rotation_shell_element( etype, nn )
+    integer(kind=kint), intent(in) :: etype
+    integer(kind=kint), intent(in) :: nn
+
+    fstr_is_finite_rotation_shell_element = etype == fe_mitc4_shell .and. nn == 4
+  end function fstr_is_finite_rotation_shell_element
 
   logical function fstr_uses_finite_rotation_kinematics( etype, nn, material )
     integer(kind=kint), intent(in) :: etype
     integer(kind=kint), intent(in) :: nn
     type(tMaterial), intent(in)    :: material
 
-    fstr_uses_finite_rotation_kinematics = ( etype == fe_mitc4_shell .and. nn == 4 &
+    fstr_uses_finite_rotation_kinematics = ( fstr_is_finite_rotation_shell_element( etype, nn ) &
       .and. ( material%nlgeom_flag == TOTALLAG .or. material%nlgeom_flag == UPDATELAG ) &
       .and. isElastic( material%mtype ) )
   end function fstr_uses_finite_rotation_kinematics
