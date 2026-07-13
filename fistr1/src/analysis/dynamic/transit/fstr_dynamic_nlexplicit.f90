@@ -90,6 +90,7 @@ contains
 
     if( associated( fstrSOLID%contacts ) )  then
       call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
       call forward_increment_Lagrange(1,ndof,fstrDYN%VEC1,hecMESH,fstrSOLID,infoCTChange,&
         & fstrDYN%DISP(:,2),fstrSOLID%ddunode)
     endif
