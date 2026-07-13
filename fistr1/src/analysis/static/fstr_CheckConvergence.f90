@@ -276,10 +276,8 @@ contains
       if( fstrPR%nlgeom .and. ndof /= 4 ) then
         if( hecMESH%my_rank == 0 ) then
           write(*,'(a,i5,a,1pe12.4)') "iter: ", iter, ", res: ", res_normalized
-          write(ISTA,'(''iter='',I5,''- Residual'',E15.7)') iter, res_normalized
           if( present(maxDLag) ) then
             write(*,'(a,1e15.7)') ' - MaxDLag =', maxDLag
-            write(ISTA,'(a,1e15.7)') ' - MaxDLag =', maxDLag
           endif
         endif
         if( present(maxDLag) .and. present(converg_dlag) ) then
