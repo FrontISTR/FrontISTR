@@ -94,7 +94,10 @@ contains
     ndof=hecMAT%NDOF
     nn=ndof*ndof
 
-    if( associated( fstrSOLID%contacts ) ) call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+    if( associated( fstrSOLID%contacts ) ) then
+      call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
+    endif
 
     !!-- initial value
     time_1 = hecmw_Wtime()
