@@ -229,13 +229,18 @@ contains
     cmt_c%import_index(0) = 0; cmt_c%export_index(0) = 0
     allocate(cmark(ncnode)); cmark = 0
 
-    ! coarse import: distinct halo coarse ids per fine-import neighbor (count, fill)
+    ! coarse import: distinct halo coarse ids per fine-import neighbor (count, fill).
+    ! NB: excluded nodes (agg id 0, no off-diagonal coupling) can appear in the
+    ! import/export lists; guard with a separate cycle -- Fortran .and. does NOT
+    ! short-circuit, so "c > 0 .and. cmark(c) /= neib" may still evaluate cmark(0)
+    ! (out of bounds; caught by -fcheck=bounds on the mobile_case contact deck).
     do neib = 1, nnb
       ks = cmt%import_index(neib-1)+1; ke = cmt%import_index(neib)
       cnt = 0
       do h = ks, ke
         c = agg_loc(cmt%import_item(h))
-        if (c > 0 .and. cmark(c) /= neib) then; cmark(c) = neib; cnt = cnt + 1; end if
+        if (c <= 0) cycle
+        if (cmark(c) /= neib) then; cmark(c) = neib; cnt = cnt + 1; end if
       end do
       cmt_c%import_index(neib) = cmt_c%import_index(neib-1) + cnt
     end do
@@ -246,7 +251,8 @@ contains
       pos = cmt_c%import_index(neib-1)
       do h = ks, ke
         c = agg_loc(cmt%import_item(h))
-        if (c > 0 .and. cmark(c) /= neib) then
+        if (c <= 0) cycle
+        if (cmark(c) /= neib) then
           cmark(c) = neib; pos = pos + 1; cmt_c%import_item(pos) = c
         end if
       end do
@@ -259,7 +265,8 @@ contains
       cnt = 0
       do e = ks, ke
         c = aggr(cmt%export_item(e))
-        if (c > 0 .and. cmark(c) /= neib) then; cmark(c) = neib; cnt = cnt + 1; end if
+        if (c <= 0) cycle
+        if (cmark(c) /= neib) then; cmark(c) = neib; cnt = cnt + 1; end if
       end do
       cmt_c%export_index(neib) = cmt_c%export_index(neib-1) + cnt
     end do
@@ -270,7 +277,8 @@ contains
       pos = cmt_c%export_index(neib-1)
       do e = ks, ke
         c = aggr(cmt%export_item(e))
-        if (c > 0 .and. cmark(c) /= neib) then
+        if (c <= 0) cycle
+        if (cmark(c) /= neib) then
           cmark(c) = neib; pos = pos + 1; cmt_c%export_item(pos) = c
         end if
       end do

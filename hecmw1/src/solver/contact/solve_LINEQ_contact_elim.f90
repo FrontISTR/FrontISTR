@@ -24,6 +24,23 @@ module m_solve_LINEQ_contact_elim
   logical, save :: INITIALIZED = .false.
   integer, save :: SymType = 0
 
+  ! Structure signature of the previously solved system.  The converted system
+  ! (hecTKT) is rebuilt from scratch every call, and its sparsity/halo (even NP)
+  ! changes when the contact state changes -- that is a STRUCTURE change, but this
+  ! path historically raised only Iarray(97) ("values changed").  Preconditioners
+  ! that cache structure across solves under the Iarray(98)/(97) recycling contract
+  ! (e.g. SA-AMG) then reuse a stale hierarchy (observed: out-of-bounds fine matvec
+  ! / heap corruption on mobile_case np=8).  We therefore compare the structure
+  ! (sizes + pattern hash) against the previous call and raise Iarray(98) when it
+  ! differs.  The verdict is allreduced so every rank takes the same setup path
+  ! (refresh and rebuild have different collective patterns -> a per-rank decision
+  ! deadlocks).  PREV_BRANCH additionally forces a rebuild when switching between
+  ! the contact (hecTKT) and no-contact (hecMAT) branches, which solve different
+  ! matrix objects.
+  integer(kind=kint), save :: PREV_SIG(4) = -1   !< [N, NP, NPL, NPU] of previous system
+  integer(kind=8),    save :: PREV_HASH = 0      !< pattern hash of previous system
+  integer(kind=kint), save :: PREV_BRANCH = 0    !< 0=none, 1=no-contact, 2=contact
+
   integer, parameter :: DEBUG = 0  ! 0: no message, 1: some messages, 2: more messages, 3: even more messages
   logical, parameter :: DEBUG_VECTOR = .false.
   logical, parameter :: DEBUG_MATRIX = .false.
@@ -42,6 +59,7 @@ contains
 
     hecMAT%Iarray(98) = 1
     hecMAT%Iarray(97) = 1
+    PREV_SIG = -1; PREV_HASH = 0; PREV_BRANCH = 0
 
     if (is_sym) then
       SymType = 1
@@ -74,6 +92,11 @@ contains
 
     if (is_contact == 0) then
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: no contact'
+      ! switching from the contact branch: the previously solved system was hecTKT
+      ! (different structure) -> report a structure change (is_contact is already
+      ! allreduced, so this decision is rank-uniform)
+      if (PREV_BRANCH /= 1) hecMAT%Iarray(98) = 1
+      PREV_BRANCH = 1
       solver_type = hecmw_mat_get_solver_type(hecMAT)
       if (solver_type == 1 .and. SymType == 1) then
         ! use CG because the matrix is symmetric
@@ -88,6 +111,10 @@ contains
       endif
     else
       if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: with contact'
+      ! switching from the no-contact branch: invalidate the stored signature so the
+      ! first converted system after the switch reports a structure change
+      if (PREV_BRANCH /= 2) then; PREV_SIG = -1; PREV_HASH = 0; end if
+      PREV_BRANCH = 2
       call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
     endif
 
@@ -121,6 +148,43 @@ contains
     call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
   end subroutine solve_with_MPC
+
+  !> \brief Compare the (freshly rebuilt) system's structure against the previous
+  !> call and raise the structure-change recycling flag (Iarray(98)) when it
+  !> differs.  The verdict is allreduced so every rank takes the same
+  !> preconditioner-setup path.
+  subroutine notify_structure_change(hecMESH, hecTKT)
+    type(hecmwST_local_mesh), intent(in)    :: hecMESH  !< original mesh (global comm)
+    type(hecmwST_matrix),     intent(inout) :: hecTKT   !< system about to be solved
+    integer(kind=kint) :: sig(4), changed
+    integer(kind=8)    :: h
+    sig = (/ hecTKT%N, hecTKT%NP, hecTKT%NPL, hecTKT%NPU /)
+    h = pattern_hash(hecTKT)
+    changed = 0
+    if (any(sig /= PREV_SIG) .or. h /= PREV_HASH) changed = 1
+    call hecmw_allreduce_I1(hecMESH, changed, hecmw_max)
+    if (changed /= 0) hecTKT%Iarray(98) = 1
+    PREV_SIG = sig; PREV_HASH = h
+  end subroutine notify_structure_change
+
+  !> \brief Order-sensitive rotate-xor hash of the sparsity pattern (index + item
+  !> arrays).  O(nnz) integer ops per solve -- negligible next to the solve itself.
+  function pattern_hash(hecMAT) result(h)
+    type(hecmwST_matrix), intent(in) :: hecMAT
+    integer(kind=8)    :: h
+    integer(kind=kint) :: i
+    h = 0_8
+    do i = 0, hecMAT%NP
+      h = ieor(ishftc(h, 5), int(hecMAT%indexL(i), 8))
+      h = ieor(ishftc(h, 7), int(hecMAT%indexU(i), 8))
+    end do
+    do i = 1, hecMAT%NPL
+      h = ieor(ishftc(h, 5), int(hecMAT%itemL(i), 8))
+    end do
+    do i = 1, hecMAT%NPU
+      h = ieor(ishftc(h, 7), int(hecMAT%itemU(i), 8))
+    end do
+  end function pattern_hash
 
   !> \brief Solve with elimination of Lagrange-multipliers
   !>
@@ -191,6 +255,10 @@ contains
         slaves4lag, BLs_inv, conCOMM, hecTKT)
     t2 = hecmw_wtime()
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: converted equation ', t2-t1
+
+    ! report a structure change to the solver/preconditioner when the converted
+    ! system's structure differs from the previous call (see PREV_SIG)
+    call notify_structure_change(hecMESH, hecTKT)
 
     t1 = t2
     call solve_with_MPC(hecMESHtmp, hecTKT)

@@ -15,7 +15,8 @@ module hecmw_precond_SAAMG
        hecmw_mat_get_loglevel, hecmw_mat_get_timelog
   use hecmw_precond_SAAMG_adapt
   use hecmw_precond_SAAMG_comm,      only: hecmwST_saamg_comm, hecmw_saamg_comm_free, &
-       hecmw_saamg_comm_allreduce_sum_r, hecmw_saamg_check_alloc, hecmw_saamg_lapack_available
+       hecmw_saamg_comm_allreduce_sum_r, hecmw_saamg_comm_allreduce_sum_int, &
+       hecmw_saamg_check_alloc, hecmw_saamg_lapack_available
   use hecmw_precond_SAAMG_core,      only: hecmwST_saamg_hier, hecmw_saamg_setup, &
        hecmw_saamg_refresh, hecmw_saamg_apply, hecmw_saamg_free
   use hecmw_precond_SAAMG_coarse_mumps, only: hecmw_saamg_cmumps_available
@@ -39,6 +40,18 @@ module hecmw_precond_SAAMG
   logical,            save :: INITIALIZED = .false.
   integer(kind=kint), save :: g_n = 0          !< finest internal dof count (= N*NDOF)
   integer(kind=kint), save :: g_id = 0         !< hecmw_mat_id handle for the fine-level matvec hook
+  ! Size part of the structure signature of the matrix the hierarchy was built
+  ! from.  The recycling flags (Iarray(98)/(97)) are a caller-side CONTRACT:
+  ! structure changes must be reported via Iarray(98).  The one known caller whose
+  ! structure can change under a values-only flag -- the contact-elimination path,
+  ! whose reduced system depends on a value-driven slave-dof choice -- now detects
+  ! this itself and raises Iarray(98) at the source (notify_structure_change in
+  ! solve_LINEQ_contact_elim; full pattern hash there).  This O(1) size check is
+  ! kept as a last-resort safety net against OTHER contract violations: a stale
+  ! hierarchy applied to a matrix of different size corrupts memory (observed on
+  ! mobile_case np=8 before the fixes).  On mismatch we fall through to a full
+  ! rebuild (notice under LOGLEVEL>=1).
+  integer(kind=kint), save :: g_sig(4) = 0     !< [N, NP, NPL, NPU] at build time
 
 contains
 
@@ -50,7 +63,7 @@ contains
     type(hecmwST_saamg_bcsr)    :: A
     type(hecmwST_saamg_params) :: prm
     real(kind=kreal), allocatable :: B(:,:)
-    integer(kind=kint) :: ndof, nint, iopt(10), m, astat, myrank
+    integer(kind=kint) :: ndof, nint, iopt(10), m, astat, myrank, sig_bad
     real(kind=kreal)   :: ropt(10)
     logical            :: will_use_mumps
 
@@ -64,21 +77,33 @@ contains
       call hecmw_abort(hecmw_comm_get_comm())
     end if
 
-    ! nothing changed -> reuse the hierarchy as-is (also covers precond recycling)
-    if (INITIALIZED .and. hecMAT%Iarray(98) == 0 .and. hecMAT%Iarray(97) == 0) then
-      call saamg_register_mat(hecMAT, hecMESH)   ! keep the matvec hook pointing at the current matrix
-      return
-    end if
-
-    ! structure unchanged, values changed -> numeric-only refresh (Newton reuse):
-    ! reuse aggregation / coarse comm table / tentative P-hat, recompute the rest.
-    if (INITIALIZED .and. hecMAT%Iarray(98) == 0 .and. hecMAT%Iarray(97) == 1) then
-      call saamg_register_mat(hecMAT, hecMESH)   ! refresh the fine-level matvec hook to the new values
-      call hecmw_saamg_from_hecmat(hecMAT, A, include_halo=.true.)
-      call hecmw_saamg_refresh(g_dh, A)
-      call hecmw_saamg_bcsr_free(A)
-      hecMAT%Iarray(97) = 0
-      return
+    ! Recycle-flag branches below are guarded by the structure signature (g_sig):
+    ! the flags are a caller-side contract that some callers break (see g_sig
+    ! comment).  The verdict MUST be identical on every rank -- reuse / refresh /
+    ! rebuild all execute different collective patterns, so a per-rank decision
+    ! deadlocks (one rank's contact state can change while another's does not).
+    ! Hence the local check is allreduced before branching.
+    if (INITIALIZED .and. hecMAT%Iarray(98) == 0) then
+      sig_bad = 0
+      if (.not. sig_sizes_match(hecMAT)) sig_bad = 1
+      call hecmw_saamg_comm_allreduce_sum_int(g_cmt, sig_bad)
+      if (sig_bad > 0) then
+        if (hecmw_mat_get_loglevel(hecMAT) >= 1 .and. hecmw_comm_get_rank() == 0) write(*,'(a)') &
+          '#### SA-AMG: matrix structure changed under a values-only recycle flag -- full rebuild'
+      else if (hecMAT%Iarray(97) == 0) then
+        ! nothing changed -> reuse the hierarchy as-is (also covers precond recycling)
+        call saamg_register_mat(hecMAT, hecMESH)   ! keep the matvec hook pointing at the current matrix
+        return
+      else
+        ! structure unchanged, values changed -> numeric-only refresh (Newton reuse):
+        ! reuse aggregation / coarse comm table / tentative P-hat, recompute the rest.
+        call saamg_register_mat(hecMAT, hecMESH)   ! refresh the fine-level matvec hook to the new values
+        call hecmw_saamg_from_hecmat(hecMAT, A, include_halo=.true.)
+        call hecmw_saamg_refresh(g_dh, A)
+        call hecmw_saamg_bcsr_free(A)
+        hecMAT%Iarray(97) = 0
+        return
+      end if
     end if
 
     ! structure changed -> full rebuild
@@ -196,10 +221,20 @@ contains
     deallocate(B)
 
     g_n = nint*ndof
+    g_sig = (/ hecMAT%N, hecMAT%NP, hecMAT%NPL, hecMAT%NPU /)
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0
     hecMAT%Iarray(97) = 0
   end subroutine hecmw_precond_SAAMG_setup
+
+  !> O(1) part of the structure signature: matrix/halo sizes.
+  logical function sig_sizes_match(hecMAT) result(ok)
+    implicit none
+    type(hecmwST_matrix), intent(in) :: hecMAT
+    ok = (g_sig(1) == hecMAT%N .and. g_sig(2) == hecMAT%NP .and. &
+          g_sig(3) == hecMAT%NPL .and. g_sig(4) == hecMAT%NPU)
+  end function sig_sizes_match
+
 
   !> Dump the finest-level aggregation to a per-rank VTK point cloud (ParaView).
   !! Each rank writes its internal nodes (coords from the mesh) colored by the GLOBAL
@@ -243,6 +278,7 @@ contains
       call hecmw_saamg_comm_free(g_cmt)
       INITIALIZED = .false.
       g_n = 0
+      g_sig = 0
     end if
     if (g_id > 0) then; call hecmw_mat_id_clear(g_id); g_id = 0; end if
   end subroutine hecmw_precond_SAAMG_clear
