@@ -135,6 +135,12 @@ contains
     !   6 = Chebyshev degree  (ML NumSweeps)
     !   7 = coarse size       (ML MaxCoarseSize)
     !   8 = min aggregate size / 9 = verify / 10 = dump_vtk  (SA-AMG-specific)
+    ! Real line: 1 = theta (strength threshold), 2 = cheb_alpha, 3 = safety,
+    !            4 = taper_k (coarsening taper, 3-1: 0 = default 100, > 0 = use as K,
+    !                         < 0 = disable the taper / legacy behavior)
+    !            5 = agg_order (aggregation seed-scan ordering: 0 = default (BFS),
+    !                         < 0 = natural node order / legacy, 1..4 = explicit mode
+    !                         (1=bfs, 2=gid-hash, 3=mindeg, 4=maxdeg))
     call hecmw_mat_get_solver_opt(hecMAT, iopt)
     myrank = hecmw_comm_get_rank()
     ! slot 1: coarsest solver.  The external encoding (ML CoarseSolver-compatible)
@@ -179,6 +185,16 @@ contains
     if (ropt(1) > 0.0d0) prm%theta      = ropt(1)
     if (ropt(2) > 0.0d0) prm%cheb_alpha = ropt(2)
     if (ropt(3) > 0.0d0) prm%safety     = ropt(3)
+    ! real slot 4: coarsening-taper K (integer carried on the real line; the int
+    ! line is fully occupied).  0 = default (prm%taper_k = 100), > 0 = use as K,
+    ! < 0 = disable the taper (legacy pre-taper coarsening).
+    ! (int(x+0.5), not the intrinsic nint(): a local variable `nint` shadows it.)
+    if (ropt(4) > 0.0d0) prm%taper_k = int(ropt(4) + 0.5d0, kind=kint)
+    if (ropt(4) < 0.0d0) prm%taper_k = 0
+    ! real slot 5: aggregation seed-scan ordering.  0 = default (BFS), < 0 = natural
+    ! (legacy), 1..4 = explicit mode.
+    if (ropt(5) > 0.0d0 .and. ropt(5) < 4.5d0) prm%agg_order = int(ropt(5) + 0.5d0, kind=kint)
+    if (ropt(5) < 0.0d0) prm%agg_order = 0
     ! symmetric (CG, sym=1) vs non-symmetric (BiCGSTAB/GMRES, sym=0): the latter uses a
     ! general (SYM=0 / LU) coarsest so the actual non-symmetric coarse is factored exactly.
     prm%symmetric = (sym == 1)

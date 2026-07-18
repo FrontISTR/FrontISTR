@@ -137,7 +137,7 @@ contains
   !!   ncnode           total coarse nodes referenced locally (internal + halo)
   !!   cmt_c            coarse communication table (nint=naggr_local, nnode=ncnode)
   subroutine hecmw_saamg_coarsen_struct(A, cmt, min_size, max_size, theta, m, &
-       aggr, naggr_local, agg_loc, ncnode, cmt_c, my_coarse_off, chalo_gid)
+       aggr, naggr_local, agg_loc, ncnode, cmt_c, my_coarse_off, chalo_gid, agg_order)
     type(hecmwST_saamg_bcsr), intent(in)  :: A
     type(hecmwST_saamg_comm), intent(in)  :: cmt
     integer(kind=kint),     intent(in)  :: min_size, max_size, m
@@ -152,19 +152,31 @@ contains
     !! F4b checks do not need them; the F4c Galerkin does (local<->global cols).
     integer(kind=kint), optional,              intent(out) :: my_coarse_off
     integer(kind=kint), optional, allocatable, intent(out) :: chalo_gid(:)
+    !> seed-scan ordering (prm%agg_order; absent = 1 = BFS default)
+    integer(kind=kint), optional,              intent(in)  :: agg_order
 
     type(hecmwST_saamg_nodegraph) :: g
     integer(kind=kint), allocatable :: agg_global(:), counts(:), displs(:), halo_gid(:), cmark(:)
-    integer(kind=kint) :: nb, nint, nnode, nprocs, my_off, i, r, gg, t, found, nhc
-    integer(kind=kint) :: neib, nnb, h, e, c, ks, ke, cnt, pos
+    integer(kind=kint), allocatable :: g2h(:)
+    integer(kind=kint) :: nb, nint, nnode, nprocs, my_off, i, r, gg, t, nhc
+    integer(kind=kint) :: neib, nnb, h, e, c, ks, ke, cnt, pos, omode
 
     nb    = A%nb
     nint  = A%n / nb
     nnode = A%ncol / nb
 
-    ! 1. uncoupled aggregation (build_nodegraph drops halo neighbors automatically)
+    ! 1. uncoupled aggregation (build_nodegraph drops halo neighbors automatically).
+    ! Seed-scan ordering: BFS by default (uniform contiguous aggregates; see
+    ! prm%agg_order for the measured rationale and the alternatives).
+    omode = 1
+    if (present(agg_order)) omode = agg_order
     call hecmw_saamg_build_nodegraph(A, g, theta)
-    call hecmw_saamg_aggregate(g, min_size, max_size, aggr, naggr_local)
+    if (omode == 2 .and. allocated(cmt%gnode)) then
+      call hecmw_saamg_aggregate(g, min_size, max_size, aggr, naggr_local, &
+           order_mode=omode, gid=cmt%gnode)
+    else
+      call hecmw_saamg_aggregate(g, min_size, max_size, aggr, naggr_local, order_mode=omode)
+    end if
     call hecmw_saamg_nodegraph_free(g)
 
     ! 2. coarse global numbering: offset = sum of naggr_local over lower ranks
@@ -185,23 +197,23 @@ contains
     call hecmw_saamg_comm_update_i(cmt, 1, agg_global)
 
     ! 4. localize: internal coarse -> 1..naggr_local, remote coarse -> naggr_local+1..ncnode
+    ! (direct-address map global coarse id -> halo slot: O(1) lookup instead of a
+    !  linear scan of halo_gid; first-encounter append order unchanged.)
     allocate(agg_loc(nnode)); agg_loc = 0
     allocate(halo_gid(nnode)); nhc = 0
+    allocate(g2h(displs(nprocs+1))); g2h = 0
     do i = 1, nint
       agg_loc(i) = aggr(i)
     end do
     do i = nint+1, nnode
       gg = agg_global(i)
       if (gg == 0) cycle
-      found = 0
-      do t = 1, nhc
-        if (halo_gid(t) == gg) then; found = t; exit; end if
-      end do
-      if (found == 0) then
-        nhc = nhc + 1; halo_gid(nhc) = gg; found = nhc
+      if (g2h(gg) == 0) then
+        nhc = nhc + 1; halo_gid(nhc) = gg; g2h(gg) = nhc
       end if
-      agg_loc(i) = naggr_local + found
+      agg_loc(i) = naggr_local + g2h(gg)
     end do
+    deallocate(g2h)
     ncnode = naggr_local + nhc
 
     if (present(my_coarse_off)) my_coarse_off = my_off
@@ -466,10 +478,10 @@ contains
     integer(kind=kint),              intent(out) :: nt
     integer(kind=kint),     intent(in)  :: mem_level   !< >=2 prints the [mem] peak probes (Pext/Ac_loc/buffers)
     type(hecmwST_saamg_bcsr) :: Pext, Pt, Ac_loc
-    integer(kind=kint), allocatable :: gcolbuf(:), gext(:), extbuf(:), bcnt(:), boff(:)
+    integer(kind=kint), allocatable :: gcolbuf(:), gext(:), extbuf(:), bcnt(:), boff(:), g2e(:)
     real(kind=kreal),   allocatable :: gvalbuf(:)
     integer(kind=kint) :: nb, nint, nnode, ntot, bs, i, t, base, s, cn, gcn, pos
-    integer(kind=kint) :: nexth, gnode, ext, found, ncext, ib, ecn, r, cc, erow, ecol, b0, astat
+    integer(kind=kint) :: nexth, gnode, ext, ncext, ib, ecn, r, cc, erow, ecol, b0, astat, ncg
     real(kind=kreal) :: v
 
     nb = P%nb; nint = cmt%nint; nnode = cmt%nnode; bs = nb*m
@@ -512,6 +524,15 @@ contains
     !  Pext's block storage is filled in place -- avoids holding ~2x Pext on level 1).
     allocate(gext(ntot), extbuf(ntot), stat=astat); nexth = 0
     call hecmw_saamg_check_alloc(astat, 'galerkin Pext localize (gext/extbuf)')
+    ! direct-address map global coarse node id -> external slot (0 = unseen): O(1)
+    ! lookup instead of a linear scan of gext (which is quadratic when the deep
+    ! levels carry many coarse nodes).  Global ids are contiguous 1..ncg, so the
+    ! map is a small per-level scratch (<= global coarse nodes).  First-encounter
+    ! append order into gext is unchanged -> bit-identical Pext.
+    ncg = hecmw_saamg_nc_global(cmt, naggr_local)
+    allocate(g2e(ncg), stat=astat)
+    call hecmw_saamg_check_alloc(astat, 'galerkin Pext localize (g2e)')
+    g2e = 0
     allocate(Pext%browptr(nnode+1)); Pext%browptr(1) = 1
     do i = 1, nnode                              ! pass 1: localize coarse nodes
       base = boff(i)
@@ -520,17 +541,16 @@ contains
         if (gnode > my_off .and. gnode <= my_off+naggr_local) then
           ext = gnode - my_off
         else
-          found = 0
-          do t = 1, nexth
-            if (gext(t) == gnode) then; found = t; exit; end if
-          end do
-          if (found == 0) then; nexth = nexth + 1; gext(nexth) = gnode; found = nexth; end if
-          ext = naggr_local + found
+          if (g2e(gnode) == 0) then
+            nexth = nexth + 1; gext(nexth) = gnode; g2e(gnode) = nexth
+          end if
+          ext = naggr_local + g2e(gnode)
         end if
         extbuf(base+s) = ext
       end do
       Pext%browptr(i+1) = Pext%browptr(i) + bcnt(i)
     end do
+    deallocate(g2e)
     ncext = naggr_local + nexth
     Pext%n = nnode*nb; Pext%ncol = ncext*m; Pext%nb = nb; Pext%mb = m
     Pext%nbrow = nnode; Pext%nbcol = ncext
@@ -621,11 +641,11 @@ contains
     integer(kind=kint), optional, intent(in) :: mem_level    !< >=2 prints [mem] peak probes (default off)
     integer(kind=kint), allocatable :: gti(:), gtj(:), si(:), sj(:), ri(:), rj(:)
     real(kind=kreal),   allocatable :: gtv(:), sv(:), rv(:)
-    integer(kind=kint), allocatable :: coff(:), scnt(:), spos(:), lti(:), ltj(:), chalo_op(:)
+    integer(kind=kint), allocatable :: coff(:), scnt(:), spos(:), lti(:), ltj(:), chalo_op(:), g2h(:)
     real(kind=kreal),   allocatable :: ltv(:)
     integer(kind=kint), allocatable :: sperm(:)
     integer(kind=kint) :: nt, nprocs, jp, t, gnode, r, nrecv, grow, gcol, gcnode, gcdof
-    integer(kind=kint) :: lcnode, found, nhc, ncnode_op, mlv
+    integer(kind=kint) :: lcnode, nhc, ncnode_op, mlv, astat
 
     mlv = 0; if (present(mem_level)) mlv = mem_level
     call ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, mlv)
@@ -662,24 +682,29 @@ contains
     ! columns are directly valid in cmt_op (no re-localization needed in the V-cycle).
     allocate(lti(max(nrecv,1)), ltj(max(nrecv,1)), ltv(max(nrecv,1)), chalo_op(max(nrecv+ncnode,1)))
     nhc = ncnode - naggr_local
-    do jp = 1, nhc; chalo_op(jp) = chalo_gid(jp); end do
+    ! direct-address map global coarse node id -> halo slot (0 = unseen): O(1)
+    ! lookup instead of a linear scan of chalo_op (quadratic when the deep levels
+    ! carry many coarse nodes).  Pre-seeded with the 1-ring set in P's order and
+    ! appended in first-encounter order, exactly as before -> bit-identical A_next.
+    allocate(g2h(coff(nprocs)), stat=astat)
+    call hecmw_saamg_check_alloc(astat, 'galerkin column localize (g2h)')
+    g2h = 0
+    do jp = 1, nhc; chalo_op(jp) = chalo_gid(jp); g2h(chalo_gid(jp)) = jp; end do
     do t = 1, nrecv
       grow = ri(t); gcol = rj(t)
       gcnode = (gcol-1)/m + 1; gcdof = mod(gcol-1, m) + 1
       if (gcnode > my_off .and. gcnode <= my_off+naggr_local) then
         lcnode = gcnode - my_off
       else
-        found = 0
-        do jp = 1, nhc
-          if (chalo_op(jp) == gcnode) then; found = jp; exit; end if
-        end do
-        if (found == 0) then; nhc = nhc + 1; chalo_op(nhc) = gcnode; found = nhc; end if
-        lcnode = naggr_local + found
+        if (g2h(gcnode) == 0) then
+          nhc = nhc + 1; chalo_op(nhc) = gcnode; g2h(gcnode) = nhc
+        end if
+        lcnode = naggr_local + g2h(gcnode)
       end if
       lti(t) = grow - my_off*m                 ! local owned row dof (1..naggr_local*m)
       ltj(t) = (lcnode-1)*m + gcdof; ltv(t) = rv(t)
     end do
-    deallocate(ri, rj, rv)
+    deallocate(ri, rj, rv, g2h)
     ncnode_op = naggr_local + nhc
     call hecmw_saamg_bcsr_from_triplets(naggr_local*m, ncnode_op*m, m, lti, ltj, ltv, nrecv, A_next)
 
@@ -1126,7 +1151,7 @@ contains
         if (prm%timelog >= 2) call report_time(dh%lev(l)%cmt, l, 'coarsest solve', saamg_wtime()-ts)
         exit
       end if
-      call build_coarse_level(dh, l, B, m, omega, Bnext, stalled)
+      call build_coarse_level(dh, l, B, m, omega, nglob, Bnext, stalled)
       if (stalled) then
         ts = saamg_wtime()
         call make_coarsest(dh, l)
@@ -1203,20 +1228,35 @@ contains
   !> Coarsen level l -> level l+1 (distributed): uncoupled aggregation + tentative
   !! P-hat + smoothed P + distributed Galerkin.  Bnext = owned coarse near-kernel.
   !! stalled = the coarsening barely reduced the size (treat l as the coarsest).
-  subroutine build_coarse_level(dh, l, B, m, omega, Bnext, stalled)
+  !! nglob = global dof of level l (already allreduced by the setup loop).
+  subroutine build_coarse_level(dh, l, B, m, omega, nglob, Bnext, stalled)
     type(hecmwST_saamg_hier), intent(inout) :: dh
-    integer(kind=kint),          intent(in)    :: l, m
+    integer(kind=kint),          intent(in)    :: l, m, nglob
     real(kind=kreal),            intent(in)    :: B(:,:), omega
     real(kind=kreal), allocatable, intent(out) :: Bnext(:,:)
     logical,                     intent(out)   :: stalled
     integer(kind=kint), allocatable :: aggr(:), agg_loc(:)
     real(kind=kreal),   allocatable :: bcoarse(:,:)
-    integer(kind=kint) :: na_glob, nf_glob, i, nint
+    integer(kind=kint) :: na_glob, nf_glob, i, nint, lmax_size
     real(kind=kreal) :: ts
     ts = saamg_wtime()
+    ! Coarsening taper (levels >= 2): cap the effective max_size so each level
+    ! keeps at least ~taper_k aggregates GLOBALLY.  Without it, phase-1 cores on
+    ! the (Galerkin-densified) deep-level graphs swallow whole components and the
+    ! coarsest collapses to ~1 aggregate per rank -> weak coarse correction and
+    ! many Krylov iterations, worst at low rank counts (see coarsening-taper-plan).
+    ! The finest level always uses the full max_size (aggressive coarsening there
+    ! is what keeps operator complexity low); the global count keeps the rule
+    ! partition-independent.
+    lmax_size = dh%prm%max_size
+    if (l >= 2 .and. dh%prm%taper_k > 0) then
+      lmax_size = min(dh%prm%max_size, &
+           max(dh%prm%min_size, (nglob / dh%lev(l)%A%nb) / dh%prm%taper_k))
+    end if
     call hecmw_saamg_coarsen_struct(dh%lev(l)%A, dh%lev(l)%cmt, dh%prm%min_size, &
-         dh%prm%max_size, dh%prm%theta, m, aggr, dh%lev(l)%naggr_local, agg_loc, &
-         dh%lev(l)%ncnode, dh%lev(l)%cmt_c, dh%lev(l)%my_off, dh%lev(l)%chalo_gid)
+         lmax_size, dh%prm%theta, m, aggr, dh%lev(l)%naggr_local, agg_loc, &
+         dh%lev(l)%ncnode, dh%lev(l)%cmt_c, dh%lev(l)%my_off, dh%lev(l)%chalo_gid, &
+         agg_order=dh%prm%agg_order)
     ! capture the finest aggregation (global coarse-node id per internal node) for VTK
     if (l == 1 .and. dh%prm%dump_vtk) then
       nint = dh%lev(1)%A%n / dh%lev(1)%A%nb

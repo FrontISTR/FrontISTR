@@ -189,16 +189,119 @@ contains
     close(iu)
   end subroutine hecmw_saamg_write_vtk
 
+  !> Build the phase-1 seed-scan order (see hecmw_saamg_aggregate).
+  subroutine build_scan_order(g, omode, gid, order)
+    type(hecmwST_saamg_nodegraph), intent(in)  :: g
+    integer(kind=kint),            intent(in)  :: omode
+    integer(kind=kint), optional,  intent(in)  :: gid(:)
+    integer(kind=kint),            intent(out) :: order(:)
+    integer(kind=kint), allocatable :: key(:), visited(:), queue(:)
+    integer(kind=kint) :: n, i, k, pos, qh, qt, s
+    integer(kind=8) :: h
+    n = g%n
+    select case (omode)
+    case (1)   ! BFS (graph) order: layer-by-layer tiling from the first node
+      allocate(visited(n), queue(n)); visited = 0
+      pos = 0
+      do s = 1, n
+        if (visited(s) /= 0) cycle
+        qh = 1; qt = 1; queue(1) = s; visited(s) = 1
+        do while (qh <= qt)
+          i = queue(qh); qh = qh + 1
+          pos = pos + 1; order(pos) = i
+          do k = g%index(i)+1, g%index(i+1)
+            if (visited(g%item(k)) == 0) then
+              visited(g%item(k)) = 1; qt = qt + 1; queue(qt) = g%item(k)
+            end if
+          end do
+        end do
+      end do
+      deallocate(visited, queue)
+    case (2)   ! deterministic hash order of node ids (partition-independent
+               ! priority when gid carries GLOBAL ids)
+      allocate(key(n))
+      do i = 1, n
+        if (present(gid)) then; h = int(gid(i), 8); else; h = int(i, 8); end if
+        h = ieor(h, ishft(h, 21)); h = ieor(h, ishft(h, -35)); h = ieor(h, ishft(h, 4))
+        h = h * 2685821657736338717_8
+        key(i) = int(iand(h, 2147483647_8), kind=kint)
+      end do
+      call sort_by_key(key, order, n)
+      deallocate(key)
+    case (3, 4)  ! degree order (3 = min first, 4 = max first)
+      allocate(key(n))
+      do i = 1, n
+        key(i) = g%index(i+1) - g%index(i)
+        if (omode == 4) key(i) = -key(i)
+      end do
+      call sort_by_key(key, order, n)
+      deallocate(key)
+    case default  ! natural (legacy)
+      do i = 1, n
+        order(i) = i
+      end do
+    end select
+  end subroutine build_scan_order
+
+  !> Stable index sort: order = indices of key ascending (ties by index).
+  subroutine sort_by_key(key, order, n)
+    integer(kind=kint), intent(in)  :: key(:)
+    integer(kind=kint), intent(out) :: order(:)
+    integer(kind=kint), intent(in)  :: n
+    integer(kind=kint), allocatable :: work(:), kwork(:), karr(:)
+    integer(kind=kint) :: i
+    allocate(work(n), kwork(n), karr(n))
+    do i = 1, n
+      order(i) = i
+    end do
+    karr(1:n) = key(1:n)
+    call msort(karr, order, kwork, work, 1, n)
+    deallocate(work, kwork, karr)
+  contains
+    recursive subroutine msort(k, idx, kw, iw, lo, hi)
+      integer(kind=kint), intent(inout) :: k(:), idx(:), kw(:), iw(:)
+      integer(kind=kint), intent(in) :: lo, hi
+      integer(kind=kint) :: mid, a, b, c
+      if (hi - lo < 1) return
+      mid = (lo + hi) / 2
+      call msort(k, idx, kw, iw, lo, mid)
+      call msort(k, idx, kw, iw, mid+1, hi)
+      a = lo; b = mid + 1; c = lo
+      do while (a <= mid .and. b <= hi)
+        if (k(a) <= k(b)) then
+          kw(c) = k(a); iw(c) = idx(a); a = a + 1
+        else
+          kw(c) = k(b); iw(c) = idx(b); b = b + 1
+        end if
+        c = c + 1
+      end do
+      do while (a <= mid); kw(c) = k(a); iw(c) = idx(a); a = a + 1; c = c + 1; end do
+      do while (b <= hi);  kw(c) = k(b); iw(c) = idx(b); b = b + 1; c = c + 1; end do
+      k(lo:hi) = kw(lo:hi); idx(lo:hi) = iw(lo:hi)
+    end subroutine msort
+  end subroutine sort_by_key
+
   !> Vanek 3-phase aggregation + min-size forced merge.
   !! aggr(1:n): 1..naggr for aggregated nodes, 0 for excluded nodes.
-  subroutine hecmw_saamg_aggregate(g, min_size, max_size, aggr, naggr)
+  !> order_mode (optional): phase-1 seed-scan ordering.  Phase 1 builds a
+  !! distance-2 maximal independent set of seeds -- the only freedom is WHICH
+  !! admissible seed is taken first, and that decides the aggregate shapes:
+  !! 0/absent = natural node order (legacy; kept as the no-argument default so the
+  !! standalone harness stays bit-stable), 1 = BFS (graph) order (the production
+  !! default via prm%agg_order: contiguous tiling -> uniform aggregates, much
+  !! better on badly numbered meshes), 2 = hash order of gid (deterministic
+  !! pseudo-random; with global ids the seed priority is partition-independent),
+  !! 3 = min-degree first, 4 = max-degree first.  gid: node ids for mode 2.
+  subroutine hecmw_saamg_aggregate(g, min_size, max_size, aggr, naggr, order_mode, gid)
     implicit none
     type(hecmwST_saamg_nodegraph), intent(in)  :: g
     integer(kind=kint),          intent(in)  :: min_size, max_size
     integer(kind=kint), allocatable, intent(out) :: aggr(:)
     integer(kind=kint),          intent(out) :: naggr
-    integer(kind=kint), allocatable :: state(:), state1(:), sz(:)
-    integer(kind=kint) :: n, i, k
+    integer(kind=kint), optional, intent(in) :: order_mode
+    integer(kind=kint), optional, intent(in) :: gid(:)
+    integer(kind=kint), allocatable :: state(:), state1(:), sz(:), order(:)
+    integer(kind=kint) :: n, i, k, csz, ii, omode
 
     n = g%n
     allocate(state(n), state1(n), sz(n))
@@ -209,22 +312,36 @@ contains
       if (g%index(i+1) == g%index(i)) state(i) = -1
     end do
 
-    ! --- phase 1: cores of diameter <= 2 ---
-    ! Seed at a node whose whole neighborhood is still free, then take the seed
-    ! plus all its neighbors.  Phase 1 is intentionally left uncapped: the
-    ! resulting moderately-large cores (tens of nodes on dense meshes) coarsen
-    ! aggressively and keep the smoothed Galerkin operators sparse (low operator
-    ! complexity).  Oversized aggregates are prevented in phase 3, not here.
+    omode = 0
+    if (present(order_mode)) omode = order_mode
+    allocate(order(n))
+    call build_scan_order(g, omode, gid, order)
+
+    ! --- phase 1: cores of diameter <= 2, capped at max_size ---
+    ! Seed at a node whose whole neighborhood is still free, then absorb its
+    ! neighbors up to max_size nodes.  On fine-level FE graphs the node degree
+    ! (~27) is far below the default max_size (96), so the cap is inert there and
+    ! the moderately-large cores coarsen aggressively (low operator complexity).
+    ! The cap matters on the Galerkin-densified DEEP-level graphs, where one
+    ! uncapped core can swallow a whole component: the coarsening taper (see
+    ! build_coarse_level) shrinks max_size at deep levels, and phase 1 must
+    ! honor it or the taper has no effect (phases 2/3 alone cannot undo an
+    ! oversized phase-1 core).
     naggr = 0
-    do i = 1, n
+    do ii = 1, n
+      i = order(ii)
       if (state(i) /= 0) cycle
       if (.not. all_neighbors_free(g, state, i)) cycle
       naggr = naggr + 1
       state(i) = naggr
+      csz = 1
       do k = g%index(i)+1, g%index(i+1)
+        if (csz >= max_size) exit
         state(g%item(k)) = naggr
+        csz = csz + 1
       end do
     end do
+    deallocate(order)
     state1 = state   ! snapshot of phase-1 membership
 
     sz = 0

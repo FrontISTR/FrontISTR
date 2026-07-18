@@ -167,7 +167,7 @@ contains
 
     call hecmw_saamg_from_hecmat(hecMAT, Afull, include_halo=.true.)
     call hecmw_saamg_coarsen_struct(Afull, cmt, prm%min_size, prm%max_size, &
-         prm%theta, m, aggr, naggr_local, agg_loc, ncnode, cmt_c)
+         prm%theta, m, aggr, naggr_local, agg_loc, ncnode, cmt_c, agg_order=prm%agg_order)
     call hecmw_saamg_verify_commtable(cmt_c, ok)
 
     nprocs = hecmw_saamg_comm_size(cmt)
@@ -208,7 +208,7 @@ contains
 
     call hecmw_saamg_from_hecmat(hecMAT, Afull, include_halo=.true.)
     call hecmw_saamg_coarsen_struct(Afull, cmt, prm%min_size, prm%max_size, &
-         prm%theta, m, aggr, naggr_local, agg_loc, ncnode, cmt_c)
+         prm%theta, m, aggr, naggr_local, agg_loc, ncnode, cmt_c, agg_order=prm%agg_order)
 
     np = hecMESH%n_node; ni = hecMESH%nn_internal; nrow = np*ndof
     ! rigid-body near-kernel over ALL nodes, ZERO centroid (rank-consistent)
@@ -273,7 +273,8 @@ contains
 
     call hecmw_saamg_from_hecmat(hecMAT, Afull, include_halo=.true.)
     call hecmw_saamg_coarsen_struct(Afull, cmt, prm%min_size, prm%max_size, &
-         prm%theta, m, aggr, naggr_local, agg_loc, ncnode, cmt_c, my_off, chalo_gid)
+         prm%theta, m, aggr, naggr_local, agg_loc, ncnode, cmt_c, my_off, chalo_gid, &
+         agg_order=prm%agg_order)
 
     np = hecMESH%n_node; ni = hecMESH%nn_internal; nir = ni*ndof
     allocate(Bext(np*ndof, m)); Bext = 0.0d0

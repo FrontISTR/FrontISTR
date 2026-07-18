@@ -27,6 +27,24 @@ module hecmw_precond_SAAMG_param
                                               !! marginally faster on very large meshes; 96 keeps a
                                               !! safety margin (~64 nodes/agg vs ML UncoupledMIS ~35).
     real(kind=kreal)   :: theta      = 0.0d0  !< strength-of-connection threshold (0 = structural graph)
+    integer(kind=kint) :: taper_k    = 100    !< coarsening taper: at levels >= 2 cap the effective
+                                              !! max_size at (global nodes)/taper_k, i.e. keep at least
+                                              !! ~taper_k aggregates per level so the deep levels shrink
+                                              !! gradually instead of collapsing into a few aggregates
+                                              !! (weak coarse correction, worst at low rank counts --
+                                              !! uncoupled aggregation floors the coarsest at ~1 aggregate
+                                              !! per rank).  Measured: Mold 3M np=1 W-cycle 740 -> 169
+                                              !! iters, total 3.7x; high np neutral.  0 = off (legacy).
+    integer(kind=kint) :: agg_order  = 1      !< phase-1 seed-scan ordering of the aggregation
+                                              !! (the seeds form a distance-2 MIS; the ordering decides
+                                              !! WHICH admissible seed is taken first and thus the
+                                              !! aggregate shapes): 0 = natural node order (legacy),
+                                              !! 1 = BFS/graph order (default; contiguous tiling ->
+                                              !! uniform aggregates.  Measured: never worse than natural
+                                              !! except Mold np=1/4, and much better on badly numbered
+                                              !! meshes: 3M np=8 W 284->162, 33M 230->172, v6 36->28
+                                              !! beating ML, contact total iters -36%),
+                                              !! 2 = gid-hash, 3 = min-degree, 4 = max-degree (experimental)
     integer(kind=kint) :: lanczos_iter = 10   !< Lanczos iterations for lambda_max(D^{-1}A)
     real(kind=kreal)   :: safety     = 1.1d0  !< eigenvalue safety factor
     integer(kind=kint) :: max_level  = 20     !< hierarchy depth cap

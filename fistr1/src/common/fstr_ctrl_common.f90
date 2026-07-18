@@ -196,16 +196,19 @@ contains
       ! (verbose has no slot here: enable diagnostics via !SOLVER LOGLEVEL>=1.)
       !  line 3 (integers):
       !    1 coarse_solver (0=auto/1=smoother/2=dense/3=mumps), 2 smoother (0/1=Chebyshev only),
-      !    3 cycle (0/1=V,2=W), 4 max_level, 5 max_size, 6 cheb_deg, 7 coarse_size,
+      !    3 cycle (0=default(W)/1=V/2=W), 4 max_level, 5 max_size, 6 cheb_deg, 7 coarse_size,
       !    8 min_size, 9 verify, 10 dump_vtk
-      !  line 4 (reals):    theta, cheb_alpha, safety
+      !  line 4 (reals):    theta, cheb_alpha, safety,
+      !    taper_k (coarsening taper: 0=default(100), >0=use as K, <0=disable),
+      !    agg_order (aggregation seed ordering: 0=default(BFS), <0=natural/legacy,
+      !               1..4=explicit mode)
       solver_opt(1:10) = 0
       solver_ropt(1:10) = 0.0d0
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
            solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
            solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) solver_opt(1:10) = 0
-      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrr ', &
-           solver_ropt(1), solver_ropt(2), solver_ropt(3) )/= 0) solver_ropt(1:10) = 0.0d0
+      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrr ', &
+           solver_ropt(1), solver_ropt(2), solver_ropt(3), solver_ropt(4), solver_ropt(5) )/= 0) solver_ropt(1:10) = 0.0d0
     else if( method == 101 ) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt(1) )/= 0) return
     end if
