@@ -34,6 +34,8 @@ contains
     use m_dynamic_mass
     use m_elemact
     use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state
+    use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics, &
+      ShellComposeNodalDisplacement
 
     type(hecmwST_local_mesh)              :: hecMESH      !< mesh information
     type(hecmwST_matrix)                  :: hecMAT       !< system matrix
@@ -49,10 +51,15 @@ contains
     real(kind=kreal)   :: mass_mat(20*6, 20*6), damp_mat(20*6, 20*6)
     real(kind=kreal)   :: mat(20*6, 20*6), lumped(20*6)
     real(kind=kreal)   :: tt(fstrSOLID%max_ncon), ecoord(3,fstrSOLID%max_ncon)
-    real(kind=kreal)   :: u(6,fstrSOLID%max_ncon), du(6*20), u_prev(6,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: u(6,fstrSOLID%max_ncon), u_inc(6,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: du(6*20), u_prev(6,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: triad_tri(9,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: triad_cur(9,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: triad_ref(9,fstrSOLID%max_ncon)
+    real(kind=kreal)   :: shell_drill(fstrSOLID%max_ncon)
     real(kind=kreal)   :: vecA(20*6), vecB(20*6)
     real(kind=kreal)   :: acc(20*6), vec(20*6), df(20*6)
-    real(kind=kreal)   :: a1, a2, a3, b1, b2, b3
+    real(kind=kreal)   :: a1, a2, a3, b1, b2, b3, thick
     type(tMaterial), pointer :: material
     logical            :: is_dynamic
 
@@ -80,8 +87,9 @@ contains
       nn = hecmw_get_max_node(ic_type)
 
       !$omp parallel default(none), &
-        !$omp&  private(icel,iiS,nn,j,nodLOCAL,i,in,jn,ecoord,du,u,u_prev,tt, &
-        !$omp&          material,stiff_mat,mass_mat,damp_mat, &
+        !$omp&  private(icel,iiS,nn,j,nodLOCAL,i,in,jn,ecoord,du,u,u_inc,u_prev,tt, &
+        !$omp&          triad_tri,triad_cur,triad_ref,shell_drill, &
+        !$omp&          material,thick,stiff_mat,mass_mat,damp_mat, &
         !$omp&          lumped,mat,df,vec,acc,vecA,vecB), &
         !$omp&  shared(iS,iE,hecMESH,ndof,fstrSOLID,ic_type,hecMAT,time,tincr,fstrDYNAMIC, &
         !$omp&         is_dynamic,a1,a2,a3,b1,b2,b3)
@@ -99,12 +107,13 @@ contains
             ecoord(i,j) = hecMESH%node(3*(in-1)+i)
           enddo
           do i = 1, ndof
-            du(ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
-            u(i,j) = fstrSOLID%unode(ndof*(in-1)+i) + du(ndof*(j-1)+i)
+            u_inc(i,j) = fstrSOLID%dunode(ndof*(in-1)+i)
             u_prev(i,j) = fstrSOLID%unode(ndof*(in-1)+i)
+            u(i,j) = u_prev(i,j)+u_inc(i,j)
           enddo
           if( is_dynamic ) then
             do i = 1, ndof
+              du (ndof*(j-1)+i) = fstrSOLID%dunode(ndof*(in-1)+i)
               vec(ndof*(j-1)+i) = fstrDYNAMIC%VEL(ndof*(in-1)+i,1)
               acc(ndof*(j-1)+i) = fstrDYNAMIC%ACC(ndof*(in-1)+i,1)
             enddo
@@ -112,7 +121,24 @@ contains
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
           endif
+          if( ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 ) then
+            triad_tri(1:9,j) = 0.0D0
+            triad_cur(1:9,j) = 0.0D0
+            triad_ref(1:9,j) = 0.0D0
+            shell_drill(j) = 0.0D0
+            if( associated(fstrSOLID%shell_dtriad) )    triad_tri(1:9,j) = fstrSOLID%shell_dtriad(9*(in-1)+1:9*(in-1)+9)
+            if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(9*(in-1)+1:9*(in-1)+9)
+            if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(9*(in-1)+1:9*(in-1)+9)
+            if( associated(fstrSOLID%shell_ddrill) )    shell_drill(j) = fstrSOLID%shell_ddrill(in)
+          endif
         enddo
+
+        if( ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 ) then
+          material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
+          if( fstr_uses_finite_rotation_kinematics(ic_type, nn, material) ) then
+            call ShellComposeNodalDisplacement(ndof, nn, u_prev(1:6,1:nn), u_inc(1:6,1:nn), u(1:6,1:nn))
+          endif
+        endif
 
         ! ----- inactive element : assemble dummy stiffness and skip the rest
         if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) then
@@ -130,6 +156,7 @@ contains
 
         call calc_stiff_and_mass_elem( ic_type, nn, ndof, ecoord, u, u_prev, tt, &
           time, tincr, is_dynamic, fstrSOLID, hecMESH, icel, nodLOCAL, &
+          triad_tri, triad_cur, triad_ref, shell_drill, &
           stiff_mat, mass_mat, damp_mat, lumped )
 
         ! ----- assemble system matrix (and the dynamic damping force)
@@ -176,15 +203,12 @@ contains
   !! contains the proper inertia contribution.
   subroutine calc_stiff_and_mass_elem( ic_type, nn, ndof, ecoord, u, u_prev, tt, &
       time, tincr, is_dynamic, fstrSOLID, hecMESH, icel, nodLOCAL, &
+      triad_tri, triad_cur, triad_ref, shell_drill, &
       stiff_mat, mass_mat, damp_mat, lumped )
   !---------------------------------------------------------------------*
     use m_static_LIB
-    use m_static_LIB_shell, only: ShellComposeNodalDisplacement
     use mMechGauss
     use m_dynamic_mass
-    use m_fstr_NodalKinematics, only: fstr_get_shell_trial_directors, fstr_get_shell_trial_drilling, &
-      fstr_get_shell_reference_directors, fstr_get_shell_current_directors
-    use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
 
     integer(kind=kint), intent(in)    :: ic_type, ndof
     integer(kind=kint), intent(inout) :: nn  ! some legacy STF_* routines mutate this
@@ -195,19 +219,15 @@ contains
     type(hecmwST_local_mesh),       intent(in)    :: hecMESH
     integer(kind=kint),             intent(in)    :: icel
     integer(kind=kint),             intent(inout) :: nodLOCAL(:)
+    real(kind=kreal),   intent(in)    :: triad_tri(:,:), triad_cur(:,:)
+    real(kind=kreal),   intent(in)    :: triad_ref(:,:), shell_drill(:)
     real(kind=kreal),   intent(inout) :: stiff_mat(:,:), mass_mat(:,:), damp_mat(:,:)
     real(kind=kreal),   intent(inout) :: lumped(:)
 
     type(tMaterial), pointer :: material
-    integer(kind=kint) :: isect, ihead, cdsys_ID, sec_opt, i, j
+    integer(kind=kint) :: isect, ihead, cdsys_ID, sec_opt
     real(kind=kreal) :: coords(3,3), thick
     real(kind=kreal) :: rho, length, surf
-    real(kind=kreal) :: shell_nddisp(6,fstrSOLID%max_ncon)
-    real(kind=kreal) :: shell_du(6,fstrSOLID%max_ncon)
-    real(kind=kreal) :: shell_director(3,fstrSOLID%max_ncon)
-    real(kind=kreal) :: shell_cur_director(3,fstrSOLID%max_ncon)
-    real(kind=kreal) :: shell_ref_director(3,fstrSOLID%max_ncon)
-    real(kind=kreal) :: shell_drill(fstrSOLID%max_ncon)
 
     ! ----- section / material context
     isect = hecMESH%section_ID(icel)
@@ -296,31 +316,11 @@ contains
       endif
 
     else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-      if( fstr_uses_finite_rotation_kinematics( ic_type, nn, material ) ) then
-        shell_du(:, :) = 0.0d0
-        do j = 1, nn
-          do i = 1, min(ndof, 6)
-            shell_du(i,j) = fstrSOLID%dunode(ndof*(nodLOCAL(j)-1)+i)
-          enddo
-        enddo
-        call ShellComposeNodalDisplacement( ndof, nn, u_prev(1:6,1:nn), shell_du(1:6,1:nn), &
-          shell_nddisp(1:6,1:nn) )
-        call fstr_get_shell_trial_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn) )
-        call fstr_get_shell_trial_drilling( fstrSOLID, nn, nodLOCAL(1:nn), shell_drill(1:nn) )
-        call fstr_get_shell_current_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
-          shell_cur_director(1:3,1:nn) )
-        call fstr_get_shell_reference_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
-          shell_ref_director(1:3,1:nn) )
-        call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-          &              stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0, nddisp=shell_nddisp(1:6,1:nn), &
-          &              element=fstrSOLID%elements(icel), nddirector=shell_director(1:3,1:nn), &
-          &              ndrefdirector=shell_ref_director(1:3,1:nn), &
-          &              ndcurdirector=shell_cur_director(1:3,1:nn), nddrill=shell_drill(1:nn))
-      else
-        if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-        call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-          &              stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0)
-      endif
+      call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0, nddisp=u(1:ndof,1:nn), &
+        element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:nn), &
+        ndreftriad=triad_ref(1:9,1:nn), &
+        ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
 
       if( is_dynamic ) then
         rho = material%variables(M_DENSITY)

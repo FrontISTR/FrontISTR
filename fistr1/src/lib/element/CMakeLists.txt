@@ -17,6 +17,7 @@ target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/quadrature.f90
   ${CMAKE_CURRENT_LIST_DIR}/tet10n.f90
   ${CMAKE_CURRENT_LIST_DIR}/tet4n.f90
+  ${CMAKE_CURRENT_LIST_DIR}/tying.f90
   ${CMAKE_CURRENT_LIST_DIR}/tri3n.f90
   ${CMAKE_CURRENT_LIST_DIR}/tri6n.f90
 )

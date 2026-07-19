@@ -155,11 +155,11 @@ contains
           ntot_lyr = fstrSOLID%elements(icel)%gausses(1)%pMaterial%totallyr
           do nlyr=1,ntot_lyr
             call ElementStress_Shell_MITC( 741, 4, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-              & ndstrain(1:4,1:6), ndstress(1:4,1:6), thick, 1.0d0, nlyr, ntot_lyr)
+              & ndstrain(1:4,1:6), ndstress(1:4,1:6), thick, 1.0d0, nlyr)
             call fstr_Stress_add_shelllyr(4,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:4,1:6),ndstress(1:4,1:6),1)
             !minus section
             call ElementStress_Shell_MITC( 741, 4, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-              & ndstrain(1:4,1:6), ndstress(1:4,1:6), thick,-1.0d0, nlyr, ntot_lyr)
+              & ndstrain(1:4,1:6), ndstress(1:4,1:6), thick,-1.0d0, nlyr)
             call fstr_Stress_add_shelllyr(4,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:4,1:6),ndstress(1:4,1:6),-1)
           enddo
           call fstr_getavg_shell(4,fstrSOLID,icel,nodLOCAL,ndstrain(1:4,1:6),ndstress(1:4,1:6),estrain,estress)
@@ -177,11 +177,11 @@ contains
           ntot_lyr = fstrSOLID%elements(icel)%gausses(1)%pMaterial%totallyr
           do nlyr=1,ntot_lyr
             call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-              & ndstrain(1:3,1:6), ndstress(1:3,1:6), thick, 1.0d0, nlyr, ntot_lyr)
+              & ndstrain(1:3,1:6), ndstress(1:3,1:6), thick, 1.0d0, nlyr)
             call fstr_Stress_add_shelllyr(3,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:3,1:6),ndstress(1:3,1:6),1)
             !minus section
             call ElementStress_Shell_MITC( 731, 3, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-              & ndstrain(1:3,1:6), ndstress(1:3,1:6), thick,-1.0d0, nlyr, ntot_lyr)
+              & ndstrain(1:3,1:6), ndstress(1:3,1:6), thick,-1.0d0, nlyr)
             call fstr_Stress_add_shelllyr(3,fstrSOLID,icel,nodLOCAL,nlyr,ndstrain(1:3,1:6),ndstress(1:3,1:6),-1)
           enddo
           call fstr_getavg_shell(3,fstrSOLID,icel,nodLOCAL,ndstrain(1:3,1:6),ndstress(1:3,1:6),estrain,estress)
@@ -1098,16 +1098,15 @@ contains
   subroutine fstr_NodalStress6D( hecMESH, fstrSOLID )
     !----------------------------------------------------------------------*
     use m_static_lib
-    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state, fstr_get_shell_current_directors, &
-      fstr_get_shell_reference_directors
+    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     !C** local variables
-    integer(kind=kint) :: itype, icel, is, iE, jS, i, j, k, it, ic, ic_type, nn, isect, ihead, ID_area
+    integer(kind=kint) :: itype, icel, is, iE, jS, i, j, k, it, ic, ic_type, nn, isect, ihead, ID_area, nbase
     integer(kind=kint) :: nodLOCAL(20), n_layer, ntot_lyr, nlyr, n_totlyr, com_total_layer, shellmatl
     real(kind=kreal)   :: ecoord(3,9), edisp(6,9), estrain(6), estress(6), ndstrain(9,6), ndstress(9,6)
     real(kind=kreal)   :: enqm(12)
-    real(kind=kreal)   :: shell_director(3,9), shell_ref_director(3,9)
+    real(kind=kreal)   :: triad_cur(9,9), triad_ref(9,9)
     real(kind=kreal)   :: thick, thick_layer
     real(kind=kreal)   :: s11, s22, s33, s12, s23, s13, t11, t22, t33, t12, t23, t13, ps, smises, tmises
     integer(kind=kint), allocatable :: nnumber(:)
@@ -1170,18 +1169,22 @@ contains
         else if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then
           ntot_lyr = fstrSOLID%elements(icel)%gausses(1)%pMaterial%totallyr
           if( ic_type == 741 ) then
-            call fstr_get_shell_current_directors(fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn))
-            call fstr_get_shell_reference_directors(fstrSOLID, thick, nn, nodLOCAL(1:nn), &
-              shell_ref_director(1:3,1:nn))
+            do j = 1, nn
+              nbase = 9*(nodLOCAL(j)-1)
+              triad_cur(1:9,j) = 0.0D0
+              triad_ref(1:9,j) = 0.0D0
+              if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(nbase+1:nbase+9)
+              if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(nbase+1:nbase+9)
+            enddo
           endif
           do nlyr=1,ntot_lyr
             if( ic_type == 741 ) then
               call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, ntot_lyr, &
-                & nddirector=shell_director(1:3,1:nn), ndrefdirector=shell_ref_director(1:3,1:nn))
+                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, &
+                & ndtriad=triad_cur(1:9,1:nn), ndreftriad=triad_ref(1:9,1:nn))
             else
               call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr, ntot_lyr)
+                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick, 1.0d0, nlyr)
             endif
             do j = 1, nn
               i = nodLOCAL(j)
@@ -1196,11 +1199,11 @@ contains
             !minus section
             if( ic_type == 741 ) then
               call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, ntot_lyr, &
-                & nddirector=shell_director(1:3,1:nn), ndrefdirector=shell_ref_director(1:3,1:nn))
+                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, &
+                & ndtriad=triad_cur(1:9,1:nn), ndreftriad=triad_ref(1:9,1:nn))
             else
               call ElementStress_Shell_MITC( ic_type, nn, 6, ecoord, fstrSOLID%elements(icel)%gausses, edisp, &
-                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr, ntot_lyr)
+                & ndstrain(1:nn,1:6), ndstress(1:nn,1:6), thick,-1.0d0, nlyr)
             endif
             do j = 1, nn
               i = nodLOCAL(j)

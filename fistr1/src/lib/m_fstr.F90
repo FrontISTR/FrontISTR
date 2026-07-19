@@ -1032,7 +1032,7 @@ contains
     fstrPARAM%fg_couple_window= 0
 
     ! for restart control
-    fstrPARAM%restart_version = 5
+    fstrPARAM%restart_version = 6
 
     ! for contact analysis
     fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange

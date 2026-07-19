@@ -13,3 +13,4 @@ tet10n.o : tet10n.f90
 tet4n.o : tet4n.f90 
 tri3n.o : tri3n.f90 
 tri6n.o : tri6n.f90 
+tying.o : tying.f90 element.o

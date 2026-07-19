@@ -19,16 +19,16 @@ contains
   !> \if AS
   !>    \par Subroutine Structure
   !>    -# Update displacement      \f$ u_{n+1}^{(k)} = u_{n+1}^{(k-1)} + \delta u^{(k)} \f$
-  !>    -# Update stress and strain \f$ \varepsilon_{n+1}^{(k)} = \varepsilon_{n+1}^{(k-1)} + \delta \varepsilon^{(k)} \f$, \f$ \sigma_{n+1}^{(k)} = \sigma_{n+1}^{(k-1)} + \delta \sigma^{(k)} \f$
+  !>    -# Update stress and strain
+  !>       \f$ \varepsilon_{n+1}^{(k)} = \varepsilon_{n+1}^{(k-1)} + \delta \varepsilon^{(k)} \f$,
+  !>       \f$ \sigma_{n+1}^{(k)} = \sigma_{n+1}^{(k-1)} + \delta \sigma^{(k)} \f$
   !>    -# Upcate internal (equivalent nodal) force  \f$ Q_{n+1}^{(k-1)} ( u_{n+1}^{(k-1)} ) \f$
   !> \endif
   subroutine fstr_UpdateNewton ( hecMESH, hecMAT, fstrSOLID, time, tincr,iter, strainEnergy)
     !=====================================================================*
     use m_static_lib
     use m_elemact
-    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state, fstr_get_shell_trial_directors, &
-      fstr_get_shell_trial_drilling, fstr_get_shell_current_directors, fstr_get_shell_reference_directors
-    use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
+    use m_fstr_NodalKinematics, only: fstr_ensure_finite_rotation_state
 
     type (hecmwST_matrix)       :: hecMAT    !< linear equation, its right side modified here
     type (hecmwST_local_mesh)   :: hecMESH   !< mesh information
@@ -40,12 +40,12 @@ contains
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal)   :: ecoord(3, fstrSOLID%max_ncon)
     real(kind=kreal)   :: thick, thick0(6)
-    integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j
+    integer(kind=kint) :: ndof, itype, is, iE, ic_type, nn, icel, iiS, i, j, nbase
 
     real(kind=kreal)   :: total_disp(6, fstrSOLID%max_ncon), du(6, fstrSOLID%max_ncon), ddu(6, fstrSOLID%max_ncon)
-    real(kind=kreal)   :: shell_director(3, fstrSOLID%max_ncon)
-    real(kind=kreal)   :: shell_cur_director(3, fstrSOLID%max_ncon)
-    real(kind=kreal)   :: shell_ref_director(3, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: triad_tri(9, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: triad_cur(9, fstrSOLID%max_ncon)
+    real(kind=kreal)   :: triad_ref(9, fstrSOLID%max_ncon)
     real(kind=kreal)   :: shell_drill(fstrSOLID%max_ncon)
     real(kind=kreal)   :: tt(fstrSOLID%max_ncon), tt0(fstrSOLID%max_ncon), ttn(fstrSOLID%max_ncon)
     real(kind=kreal)   :: qf(fstrSOLID%max_ncon*6), coords(3, 3)
@@ -94,8 +94,8 @@ contains
 
       !element loop
       !$omp parallel default(none), &
-        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,ecoord,ddu,du,total_disp,shell_director,shell_cur_director, &
-        !$omp&  shell_ref_director, &
+        !$omp&  private(icel,iiS,j,nn,nodLOCAL,i,nbase,ecoord,ddu,du,total_disp,triad_tri,triad_cur, &
+        !$omp&  triad_ref, &
         !$omp&  shell_drill, &
         !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0, &
         !$omp&  lambda,ddlambda), &
@@ -153,6 +153,20 @@ contains
         cdsys_ID = hecMESH%section%sect_orien_ID(isect)
         if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
 
+        if (ic_type == 741 .or. ic_type == 743 .or. ic_type == 731) then
+          do j = 1, nn
+            nbase = 9*(nodLOCAL(j)-1)
+            triad_tri(1:9,j) = 0.0D0
+            triad_cur(1:9,j) = 0.0D0
+            triad_ref(1:9,j) = 0.0D0
+            shell_drill(j) = 0.0D0
+            if( associated(fstrSOLID%shell_dtriad) )    triad_tri(1:9,j) = fstrSOLID%shell_dtriad(nbase+1:nbase+9)
+            if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(nbase+1:nbase+9)
+            if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(nbase+1:nbase+9)
+            if( associated(fstrSOLID%shell_ddrill) )    shell_drill(j) = fstrSOLID%shell_ddrill(nodLOCAL(j))
+          enddo
+        endif
+
         ! ===== calculate the Internal Force
         if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
           call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
@@ -208,33 +222,20 @@ contains
             &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
 
         else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-          if( fstr_uses_finite_rotation_kinematics( ic_type, nn, &
-              fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) then
-            call fstr_get_shell_trial_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), shell_director(1:3,1:nn) )
-            call fstr_get_shell_trial_drilling( fstrSOLID, nn, nodLOCAL(1:nn), shell_drill(1:nn) )
-            call fstr_get_shell_current_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
-              shell_cur_director(1:3,1:nn) )
-            call fstr_get_shell_reference_directors( fstrSOLID, thick, nn, nodLOCAL(1:nn), &
-              shell_ref_director(1:3,1:nn) )
-            call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-              &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0, &
-              &              element=fstrSOLID%elements(icel), nddirector=shell_director(1:3,1:nn), &
-              &              ndrefdirector=shell_ref_director(1:3,1:nn), &
-              &              ndcurdirector=shell_cur_director(1:3,1:nn), nddrill=shell_drill(1:nn))
-          else
-            if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-            call UpdateST_Shell_MITC(ic_type, nn, ndof, ecoord(1:3, 1:nn), total_disp(1:ndof,1:nn), &
-              &              du(1:ndof,1:nn), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0)
-          endif
+          call UPDATE_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), total_disp(1:ndof,1:nn), &
+            du(1:ndof,1:nn), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 0, &
+            element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:nn), &
+            ndreftriad=triad_ref(1:9,1:nn), &
+            ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+          call UPDATE_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2)
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+          call UPDATE_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 1)
 
         else if ( ic_type == 3414 ) then

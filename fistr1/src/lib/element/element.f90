@@ -484,6 +484,55 @@ contains
     end select
   end function
 
+  !> Obtains the number of through-thickness quadrature points of a shell element.
+  integer function NumOfShellThicknessQuadPoints( etype )
+    integer, intent(in) :: etype
+
+    select case (etype)
+      case (fe_mitc3_shell, fe_mitc4_shell, fe_mitc3_shell361, fe_mitc4_shell361)
+        NumOfShellThicknessQuadPoints = 2
+      case (fe_mitc9_shell)
+        NumOfShellThicknessQuadPoints = 3
+      case default
+        NumOfShellThicknessQuadPoints = -1
+    end select
+  end function NumOfShellThicknessQuadPoints
+
+  !> Fetch the through-thickness quadrature coordinate of a shell element.
+  subroutine getShellThicknessQuadPoint( etype, np, zeta )
+    use Quadrature, only: gauss1d2, gauss1d3
+    integer, intent(in) :: etype, np
+    real(kind=kreal), intent(out) :: zeta
+
+    if (np < 1 .or. np > NumOfShellThicknessQuadPoints(etype)) then
+      stop "invalid shell thickness quadrature point"
+    endif
+
+    select case (etype)
+      case (fe_mitc3_shell, fe_mitc4_shell, fe_mitc3_shell361, fe_mitc4_shell361)
+        zeta = gauss1d2(1, np)
+      case (fe_mitc9_shell)
+        zeta = gauss1d3(1, np)
+    end select
+  end subroutine getShellThicknessQuadPoint
+
+  !> Fetch the through-thickness quadrature weight of a shell element.
+  real(kind=kreal) function getShellThicknessWeight( etype, np )
+    use Quadrature, only: weight1d2, weight1d3
+    integer, intent(in) :: etype, np
+
+    if (np < 1 .or. np > NumOfShellThicknessQuadPoints(etype)) then
+      stop "invalid shell thickness quadrature point"
+    endif
+
+    select case (etype)
+      case (fe_mitc3_shell, fe_mitc4_shell, fe_mitc3_shell361, fe_mitc4_shell361)
+        getShellThicknessWeight = weight1d2(np)
+      case (fe_mitc9_shell)
+        getShellThicknessWeight = weight1d3(np)
+    end select
+  end function getShellThicknessWeight
+
   !> Fetch the coordinate of gauss point
   subroutine getQuadPoint( fetype, np, pos )
     use Quadrature

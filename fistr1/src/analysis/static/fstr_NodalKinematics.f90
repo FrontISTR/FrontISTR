@@ -9,11 +9,12 @@
 !> a simple vector addition to the nodal degrees of freedom.
 !>
 !> This path is used by elastic MITC4 shell (741) under Total/Updated
-!> Lagrangian kinematics.  Element-level rotation algebra lives in
-!> m_static_LIB_shell; this module stores and advances the nodal frame state.
+!> Lagrangian kinematics. Finite-rotation algebra lives in
+!> m_fstr_FiniteRotationKinematics; this module stores and advances the nodal frame state.
 module m_fstr_NodalKinematics
   use m_fstr
-  use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics
+  use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics, &
+    ShellOrthonormalizeTriad, ShellUpdateTriadWithIncrement, ShellComposeRotationVector
   implicit none
 
   private
@@ -22,10 +23,6 @@ module m_fstr_NodalKinematics
   public :: fstr_begin_nodal_kinematics_step
   public :: fstr_apply_solution_increment
   public :: fstr_commit_solution_increment
-  public :: fstr_get_shell_trial_directors
-  public :: fstr_get_shell_trial_drilling
-  public :: fstr_get_shell_current_directors
-  public :: fstr_get_shell_reference_directors
 
 contains
 
@@ -34,7 +31,6 @@ contains
   !> calls are idempotent.
   subroutine fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
     use elementInfo, only: fe_mitc4_shell
-    use m_static_LIB_shell, only: ShellOrthonormalizeTriad
     implicit none
 
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -159,7 +155,6 @@ contains
   !> nodes the translational part is added directly while the rotational part is
   !> composed onto the trial nodal frame (dtriad) and drilling scalar.
   subroutine fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, x )
-    use m_static_LIB_shell, only: ShellUpdateTriadWithIncrement, ShellComposeRotationVector
     implicit none
 
     type (hecmwST_local_mesh), intent(in)    :: hecMESH
@@ -220,7 +215,6 @@ contains
   !> For finite-rotation shell nodes the converged trial frame (dtriad) and
   !> drilling scalar become the new reference state.
   subroutine fstr_commit_solution_increment( hecMESH, fstrSOLID, ndof )
-    use m_static_LIB_shell, only: ShellComposeRotationVector
     implicit none
 
     type (hecmwST_local_mesh), intent(in)    :: hecMESH
@@ -266,100 +260,6 @@ contains
 
   end subroutine fstr_commit_solution_increment
 
-  !> Half-thickness director from the current Newton trial frame (dtriad).
-  subroutine fstr_get_shell_trial_directors( fstrSOLID, thick, nn, nodLOCAL, directors )
-    implicit none
-
-    type (fstr_solid), intent(in)      :: fstrSOLID
-    real(kind=kreal), intent(in)       :: thick
-    integer(kind=kint), intent(in)     :: nn
-    integer(kind=kint), intent(in)     :: nodLOCAL(:)
-    real(kind=kreal), intent(out)      :: directors(3, nn)
-
-    integer(kind=kint) :: j, node_id, base
-
-    directors(:, :) = 0.0D0
-    if( .not. associated(fstrSOLID%shell_dtriad) ) return
-
-    do j = 1, nn
-      node_id = nodLOCAL(j)
-      if( node_id <= 0 .or. node_id > size(fstrSOLID%shell_rot_state) ) cycle
-      base = 9*(node_id-1)
-      directors(1:3, j) = 0.5D0*thick*fstrSOLID%shell_dtriad(base+7:base+9)
-    end do
-
-  end subroutine fstr_get_shell_trial_directors
-
-  !> Drilling scalar from the current Newton trial frame.
-  subroutine fstr_get_shell_trial_drilling( fstrSOLID, nn, nodLOCAL, drilling )
-    implicit none
-
-    type (fstr_solid), intent(in)      :: fstrSOLID
-    integer(kind=kint), intent(in)     :: nn
-    integer(kind=kint), intent(in)     :: nodLOCAL(:)
-    real(kind=kreal), intent(out)      :: drilling(nn)
-
-    integer(kind=kint) :: j, node_id
-
-    drilling(:) = 0.0D0
-    if( .not. associated(fstrSOLID%shell_ddrill) ) return
-
-    do j = 1, nn
-      node_id = nodLOCAL(j)
-      if( node_id <= 0 .or. node_id > size(fstrSOLID%shell_ddrill) ) cycle
-      drilling(j) = fstrSOLID%shell_ddrill(node_id)
-    end do
-
-  end subroutine fstr_get_shell_trial_drilling
-
-  !> Half-thickness director from the converged frame (triad).
-  subroutine fstr_get_shell_current_directors( fstrSOLID, thick, nn, nodLOCAL, directors )
-    implicit none
-
-    type (fstr_solid), intent(in)      :: fstrSOLID
-    real(kind=kreal), intent(in)       :: thick
-    integer(kind=kint), intent(in)     :: nn
-    integer(kind=kint), intent(in)     :: nodLOCAL(:)
-    real(kind=kreal), intent(out)      :: directors(3, nn)
-
-    integer(kind=kint) :: j, node_id, base
-
-    directors(:, :) = 0.0D0
-    if( .not. associated(fstrSOLID%shell_triad) ) return
-
-    do j = 1, nn
-      node_id = nodLOCAL(j)
-      if( node_id <= 0 .or. node_id > size(fstrSOLID%shell_rot_state) ) cycle
-      base = 9*(node_id-1)
-      directors(1:3, j) = 0.5D0*thick*fstrSOLID%shell_triad(base+7:base+9)
-    end do
-
-  end subroutine fstr_get_shell_current_directors
-
-  !> Half-thickness director from the fixed reference frame (ref_triad).
-  subroutine fstr_get_shell_reference_directors( fstrSOLID, thick, nn, nodLOCAL, directors )
-    implicit none
-
-    type (fstr_solid), intent(in)      :: fstrSOLID
-    real(kind=kreal), intent(in)       :: thick
-    integer(kind=kint), intent(in)     :: nn
-    integer(kind=kint), intent(in)     :: nodLOCAL(:)
-    real(kind=kreal), intent(out)      :: directors(3, nn)
-
-    integer(kind=kint) :: j, node_id, base
-
-    directors(:, :) = 0.0D0
-    if( .not. associated(fstrSOLID%shell_ref_triad) ) return
-
-    do j = 1, nn
-      node_id = nodLOCAL(j)
-      if( node_id <= 0 .or. node_id > size(fstrSOLID%shell_rot_state) ) cycle
-      base = 9*(node_id-1)
-      directors(1:3, j) = 0.5D0*thick*fstrSOLID%shell_ref_triad(base+7:base+9)
-    end do
-
-  end subroutine fstr_get_shell_reference_directors
-
   ! ---------------------------------------------------------------------------
   ! Private helpers: reference-frame construction at element nodes.
   ! ---------------------------------------------------------------------------
@@ -380,7 +280,6 @@ contains
   !> normal (g1 x g2), e2 = e3 x e0, e1 = e2 x e3, then orthonormalized.
   subroutine fstr_reference_shell_triad( nn, ecoord, inode, triad )
     use elementInfo, only: fe_mitc4_shell, getShapeDeriv
-    use m_static_LIB_shell, only: ShellOrthonormalizeTriad
     implicit none
 
     integer(kind=kint), intent(in) :: nn
