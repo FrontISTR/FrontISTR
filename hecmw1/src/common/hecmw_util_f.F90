@@ -473,18 +473,8 @@ contains
     call hecmw_init_ex(ctrlfile)
   end subroutine hecmw_init
 
-
-  !C
-  !C***
-  !C*** HECMW_INIT_EX
-  !C***
-  !C
-  !C    INIT. HECMW-FEM process's
-  !C
-  subroutine hecmw_init_ex(ctrlfile)
-    character(len=HECMW_FILENAME_LEN):: ctrlfile
+  subroutine hecmw_comm_init
     integer(kind=kint) :: ierr
-
 #ifndef HECMW_SERIAL
     !call MPI_INIT (ierr)
     call MPI_COMM_SIZE (MPI_COMM_WORLD, hecmw_PETOT, ierr)
@@ -498,7 +488,28 @@ contains
     hecmw_group=0
     ierr=0
 #endif
+    if(ierr /= 0) then
+      call  hecmw_abort( hecmw_comm_get_comm( ) )
+    endif
+  end subroutine hecmw_comm_init
 
+  subroutine hecmw_init_nocontrol()
+    call hecmw_comm_init()
+    call hecmw_comm_init_if(hecmw_comm, hecmw_PETOT, hecmw_rank, hecmw_group)
+  end subroutine
+
+  !C
+  !C***
+  !C*** HECMW_INIT_EX
+  !C***
+  !C
+  !C    INIT. HECMW-FEM process's
+  !C
+  subroutine hecmw_init_ex(ctrlfile)
+    character(len=HECMW_FILENAME_LEN):: ctrlfile
+    integer(kind=kint) :: ierr
+
+    call hecmw_comm_init()
     call hecmw_comm_init_if(hecmw_comm, hecmw_PETOT, hecmw_rank, hecmw_group)
 
     call hecmw_ctrl_init_ex_if(ctrlfile, ierr)
