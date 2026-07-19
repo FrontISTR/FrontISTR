@@ -6,8 +6,7 @@
 module m_static_LIB_shell
   use hecmw, only : kint, kreal, hecmw_abort, hecmw_comm_get_comm
   use elementInfo
-  use MITC_Tying, only: NumOfTyingSets, NumOfTyingPoints, getTyingPoint, &
-    mitc9_xi_sign, mitc9_eta_sign
+  use MITC_Tying, only: NumOfTyingSets, NumOfTyingPoints, getTyingPoint, mitc9_xi_sign, mitc9_eta_sign
   use m_utilities, only: cross_product
   use m_fstr_FiniteRotationKinematics, only: fstr_is_finite_rotation_shell_element, &
     ShellRotationVectorToMatrix, ShellComposeRotationVector, ShellSkewMatrix
@@ -19,6 +18,10 @@ module m_static_LIB_shell
   !> Upper bound on the number of terms in the MITC assumed-strain (tying) operator.
   !> MITC9 is the largest case: 6 tying points x 5 target components.
   integer(kind=kint), parameter :: MAX_TYING_TERMS = 64
+  !> Natural-coordinate direction indices used in grouped basis arrays.
+  integer(kind=kint), parameter :: SHELL_XI = 1_kint
+  integer(kind=kint), parameter :: SHELL_ETA = 2_kint
+  integer(kind=kint), parameter :: SHELL_ZETA = 3_kint
 
 
   public :: STF_Shell_MITC
@@ -74,13 +77,27 @@ contains
   end function outer_product3
 
   !--------------------------------------------------------------------
-  !> Determinant of the covariant shell basis.
-  pure real(kind=kreal) function ShellMITC_CovariantJacobian(basis_xi, basis_eta, basis_zeta)
-    real(kind=kreal), intent(in) :: basis_xi(3), basis_eta(3), basis_zeta(3)
+  !> Pack the symmetric part of a 3x3 matrix into the five shell strain components.
+  pure function ShellMITC_SymmetricComponents(matrix) result(components)
+    real(kind=kreal), intent(in) :: matrix(3, 3)
+    real(kind=kreal) :: components(5)
 
-    ShellMITC_CovariantJacobian = basis_xi(1)*(basis_eta(2)*basis_zeta(3)-basis_eta(3)*basis_zeta(2)) &
-      +basis_xi(2)*(basis_eta(3)*basis_zeta(1)-basis_eta(1)*basis_zeta(3)) &
-      +basis_xi(3)*(basis_eta(1)*basis_zeta(2)-basis_eta(2)*basis_zeta(1))
+    components = (/ matrix(1, 1), matrix(2, 2), matrix(1, 2)+matrix(2, 1), matrix(2, 3)+matrix(3, 2), &
+      matrix(3, 1)+matrix(1, 3) /)
+  end function ShellMITC_SymmetricComponents
+
+  !--------------------------------------------------------------------
+  !> Determinant of the covariant shell basis.
+  pure real(kind=kreal) function ShellMITC_CovariantJacobian(covariant_basis)
+    real(kind=kreal), intent(in) :: covariant_basis(3, 3)
+
+    ShellMITC_CovariantJacobian = covariant_basis(1, SHELL_XI) &
+      *(covariant_basis(2, SHELL_ETA)*covariant_basis(3, SHELL_ZETA) &
+      -covariant_basis(3, SHELL_ETA)*covariant_basis(2, SHELL_ZETA)) +covariant_basis(2, SHELL_XI) &
+      *(covariant_basis(3, SHELL_ETA)*covariant_basis(1, SHELL_ZETA) &
+      -covariant_basis(1, SHELL_ETA)*covariant_basis(3, SHELL_ZETA)) +covariant_basis(3, SHELL_XI) &
+      *(covariant_basis(1, SHELL_ETA)*covariant_basis(2, SHELL_ZETA) &
+      -covariant_basis(2, SHELL_ETA)*covariant_basis(1, SHELL_ZETA))
   end function ShellMITC_CovariantJacobian
 
   pure real(kind=kreal) function ShellMITC_TyingZeta(etype, zeta)
@@ -112,8 +129,7 @@ contains
     if( .not. has_nodal_state ) kinematics = INFINITESIMAL
     ndof_shell = min(ndof, 6_kint)
     finite_rotation = (kinematics == TOTALLAG .or. kinematics == UPDATELAG) &
-      .and. ndof_shell >= 6 .and. fstr_is_finite_rotation_shell_element(etype, nn) &
-      .and. isElastic(gauss%pMaterial%mtype)
+      .and. ndof_shell >= 6 .and. fstr_is_finite_rotation_shell_element(etype, nn) .and. isElastic(gauss%pMaterial%mtype)
     use_director_tangent = finite_rotation
     use_green_lagrange = kinematics == TOTALLAG .and. finite_rotation
     add_geometric_stiffness = kinematics /= INFINITESIMAL
@@ -131,8 +147,7 @@ contains
   !> Prepare the evaluation coordinates and nodal directors shared by STF/UPDATE.
   subroutine ShellMITC_PrepareNodalKinematics(etype, nn, thick, kinematics, finite_rotation, &
       use_director_tangent, need_second_tangent, ecoord, nodal_state, ndtriad, ndreftriad, &
-      ndcurtriad, evaluation_coords, v1, v2, v3, director, reference_director, &
-      director_tangent, director_second_tangent)
+      ndcurtriad, evaluation_coords, v1, v2, v3, director, reference_director, director_tangent, director_second_tangent)
     use mMaterial, only: UPDATELAG
     implicit none
 
@@ -150,82 +165,89 @@ contains
     if( kinematics == UPDATELAG ) evaluation_coords = evaluation_coords+nodal_state(1:3, :)
     call ShellMITC_SetupNodalDirectors(etype, nn, thick, kinematics, evaluation_coords, &
       nodal_state, finite_rotation, use_director_tangent, need_second_tangent, ndtriad, &
-      ndreftriad, ndcurtriad, v1, v2, v3, director, reference_director, director_tangent, &
-      director_second_tangent)
+      ndreftriad, ndcurtriad, v1, v2, v3, director, reference_director, director_tangent, director_second_tangent)
   end subroutine ShellMITC_PrepareNodalKinematics
 
   !--------------------------------------------------------------------
   !> Evaluate shell covariant basis vectors at one point.
-  subroutine ShellMITC_CovariantBasis(nn, coords, director, zeta, shapefunc, shapederiv, &
-      basis_xi, basis_eta, basis_zeta)
+  subroutine ShellMITC_CovariantBasis(nn, coords, director, zeta, shapefunc, shapederiv, covariant_basis)
     implicit none
 
     integer(kind=kint), intent(in) :: nn
     real(kind=kreal), intent(in) :: coords(3, nn), director(3, nn)
     real(kind=kreal), intent(in) :: zeta, shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal), intent(out) :: basis_xi(3), basis_eta(3), basis_zeta(3)
+    real(kind=kreal), intent(out) :: covariant_basis(3, 3)
 
-    basis_xi = matmul(coords+zeta*director, shapederiv(:, 1))
-    basis_eta = matmul(coords+zeta*director, shapederiv(:, 2))
-    basis_zeta = matmul(director, shapefunc)
+    covariant_basis(:, SHELL_XI:SHELL_ETA) = matmul(coords+zeta*director, shapederiv)
+    covariant_basis(:, SHELL_ZETA) = matmul(director, shapefunc)
 
   end subroutine ShellMITC_CovariantBasis
 
   !--------------------------------------------------------------------
   !> Build the nodal director contributions to the point basis variation.
-  subroutine ShellMITC_DirectorContributions(nn, director, zeta, shapefunc, shapederiv, &
-      contribution_xi, contribution_eta, contribution_zeta)
+  subroutine ShellMITC_DirectorContributions(nn, director, zeta, shapefunc, shapederiv, director_contribution)
     implicit none
 
     integer(kind=kint), intent(in) :: nn
     real(kind=kreal), intent(in) :: director(3, nn)
     real(kind=kreal), intent(in) :: zeta, shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal), intent(out) :: contribution_xi(3, nn)
-    real(kind=kreal), intent(out) :: contribution_eta(3, nn)
-    real(kind=kreal), intent(out) :: contribution_zeta(3, nn)
+    real(kind=kreal), intent(out) :: director_contribution(3, nn, 3)
 
     integer :: node
 
     do node = 1, nn
-      contribution_xi(:, node) = zeta*shapederiv(node, 1)*director(:, node)
-      contribution_eta(:, node) = zeta*shapederiv(node, 2)*director(:, node)
-      contribution_zeta(:, node) = shapefunc(node)*director(:, node)
+      director_contribution(:, node, SHELL_XI) = zeta*shapederiv(node, SHELL_XI)*director(:, node)
+      director_contribution(:, node, SHELL_ETA) = zeta*shapederiv(node, SHELL_ETA)*director(:, node)
+      director_contribution(:, node, SHELL_ZETA) = shapefunc(node)*director(:, node)
     end do
   end subroutine ShellMITC_DirectorContributions
-
-  pure subroutine ShellMITC_BasisFromCovariant(g1, g2, g3, e1_hat, e2_hat, e3_hat, cg1, cg2, cg3, det)
-    real(kind=kreal), intent(in) :: g1(3), g2(3), g3(3)
-    real(kind=kreal), intent(out) :: e1_hat(3), e2_hat(3), e3_hat(3)
-    real(kind=kreal), intent(out) :: cg1(3), cg2(3), cg3(3)
+  pure subroutine ShellMITC_BasisFromCovariant(covariant_basis, local_basis, reciprocal_basis, det)
+    real(kind=kreal), intent(in) :: covariant_basis(3, 3)
+    real(kind=kreal), intent(out) :: local_basis(3, 3), reciprocal_basis(3, 3)
     real(kind=kreal), intent(out) :: det
 
-    real(kind=kreal) :: det_inv, g3_abs, e1_abs, e2_abs
+    real(kind=kreal) :: det_inv, basis_norm
 
-    det = ShellMITC_CovariantJacobian(g1, g2, g3)
+    det = ShellMITC_CovariantJacobian(covariant_basis)
     det_inv = 1.0D0/det
 
-    cg1(1) = det_inv*(g2(2)*g3(3)-g2(3)*g3(2))
-    cg1(2) = det_inv*(g2(3)*g3(1)-g2(1)*g3(3))
-    cg1(3) = det_inv*(g2(1)*g3(2)-g2(2)*g3(1))
-    cg2(1) = det_inv*(g3(2)*g1(3)-g3(3)*g1(2))
-    cg2(2) = det_inv*(g3(3)*g1(1)-g3(1)*g1(3))
-    cg2(3) = det_inv*(g3(1)*g1(2)-g3(2)*g1(1))
-    cg3(1) = det_inv*(g1(2)*g2(3)-g1(3)*g2(2))
-    cg3(2) = det_inv*(g1(3)*g2(1)-g1(1)*g2(3))
-    cg3(3) = det_inv*(g1(1)*g2(2)-g1(2)*g2(1))
+    reciprocal_basis(1, SHELL_XI) = det_inv *(covariant_basis(2, SHELL_ETA)*covariant_basis(3, SHELL_ZETA) &
+      -covariant_basis(3, SHELL_ETA)*covariant_basis(2, SHELL_ZETA))
+    reciprocal_basis(2, SHELL_XI) = det_inv *(covariant_basis(3, SHELL_ETA)*covariant_basis(1, SHELL_ZETA) &
+      -covariant_basis(1, SHELL_ETA)*covariant_basis(3, SHELL_ZETA))
+    reciprocal_basis(3, SHELL_XI) = det_inv *(covariant_basis(1, SHELL_ETA)*covariant_basis(2, SHELL_ZETA) &
+      -covariant_basis(2, SHELL_ETA)*covariant_basis(1, SHELL_ZETA))
+    reciprocal_basis(1, SHELL_ETA) = det_inv *(covariant_basis(2, SHELL_ZETA)*covariant_basis(3, SHELL_XI) &
+      -covariant_basis(3, SHELL_ZETA)*covariant_basis(2, SHELL_XI))
+    reciprocal_basis(2, SHELL_ETA) = det_inv *(covariant_basis(3, SHELL_ZETA)*covariant_basis(1, SHELL_XI) &
+      -covariant_basis(1, SHELL_ZETA)*covariant_basis(3, SHELL_XI))
+    reciprocal_basis(3, SHELL_ETA) = det_inv *(covariant_basis(1, SHELL_ZETA)*covariant_basis(2, SHELL_XI) &
+      -covariant_basis(2, SHELL_ZETA)*covariant_basis(1, SHELL_XI))
+    reciprocal_basis(1, SHELL_ZETA) = det_inv *(covariant_basis(2, SHELL_XI)*covariant_basis(3, SHELL_ETA) &
+      -covariant_basis(3, SHELL_XI)*covariant_basis(2, SHELL_ETA))
+    reciprocal_basis(2, SHELL_ZETA) = det_inv *(covariant_basis(3, SHELL_XI)*covariant_basis(1, SHELL_ETA) &
+      -covariant_basis(1, SHELL_XI)*covariant_basis(3, SHELL_ETA))
+    reciprocal_basis(3, SHELL_ZETA) = det_inv *(covariant_basis(1, SHELL_XI)*covariant_basis(2, SHELL_ETA) &
+      -covariant_basis(2, SHELL_XI)*covariant_basis(1, SHELL_ETA))
 
-    g3_abs = dsqrt(dot_product(g3, g3))
-    e3_hat = g3/g3_abs
-    e1_hat(1) = g2(2)*e3_hat(3)-g2(3)*e3_hat(2)
-    e1_hat(2) = g2(3)*e3_hat(1)-g2(1)*e3_hat(3)
-    e1_hat(3) = g2(1)*e3_hat(2)-g2(2)*e3_hat(1)
-    e1_abs = dsqrt(dot_product(e1_hat, e1_hat))
-    e1_hat = e1_hat/e1_abs
-    e2_hat(1) = e3_hat(2)*e1_hat(3)-e3_hat(3)*e1_hat(2)
-    e2_hat(2) = e3_hat(3)*e1_hat(1)-e3_hat(1)*e1_hat(3)
-    e2_hat(3) = e3_hat(1)*e1_hat(2)-e3_hat(2)*e1_hat(1)
-    e2_abs = dsqrt(dot_product(e2_hat, e2_hat))
-    e2_hat = e2_hat/e2_abs
+    basis_norm = dsqrt(dot_product(covariant_basis(:, SHELL_ZETA), covariant_basis(:, SHELL_ZETA)))
+    local_basis(:, SHELL_ZETA) = covariant_basis(:, SHELL_ZETA)/basis_norm
+    local_basis(1, SHELL_XI) = covariant_basis(2, SHELL_ETA)*local_basis(3, SHELL_ZETA) &
+      -covariant_basis(3, SHELL_ETA)*local_basis(2, SHELL_ZETA)
+    local_basis(2, SHELL_XI) = covariant_basis(3, SHELL_ETA)*local_basis(1, SHELL_ZETA) &
+      -covariant_basis(1, SHELL_ETA)*local_basis(3, SHELL_ZETA)
+    local_basis(3, SHELL_XI) = covariant_basis(1, SHELL_ETA)*local_basis(2, SHELL_ZETA) &
+      -covariant_basis(2, SHELL_ETA)*local_basis(1, SHELL_ZETA)
+    basis_norm = dsqrt(dot_product(local_basis(:, SHELL_XI), local_basis(:, SHELL_XI)))
+    local_basis(:, SHELL_XI) = local_basis(:, SHELL_XI)/basis_norm
+    local_basis(1, SHELL_ETA) = local_basis(2, SHELL_ZETA)*local_basis(3, SHELL_XI) &
+      -local_basis(3, SHELL_ZETA)*local_basis(2, SHELL_XI)
+    local_basis(2, SHELL_ETA) = local_basis(3, SHELL_ZETA)*local_basis(1, SHELL_XI) &
+      -local_basis(1, SHELL_ZETA)*local_basis(3, SHELL_XI)
+    local_basis(3, SHELL_ETA) = local_basis(1, SHELL_ZETA)*local_basis(2, SHELL_XI) &
+      -local_basis(2, SHELL_ZETA)*local_basis(1, SHELL_XI)
+    basis_norm = dsqrt(dot_product(local_basis(:, SHELL_ETA), local_basis(:, SHELL_ETA)))
+    local_basis(:, SHELL_ETA) = local_basis(:, SHELL_ETA)/basis_norm
   end subroutine ShellMITC_BasisFromCovariant
 
   !--------------------------------------------------------------------
@@ -234,147 +256,93 @@ contains
   !> Second variations remain outside this routine and are evaluated by STF only.
   subroutine ShellMITC_PreparePointKinematics(etype, nn, use_green_lagrange, reference_coords, &
       evaluation_coords, translation, director, reference_director, zeta, shapefunc, &
-      shapederiv, basis_xi, basis_eta, basis_zeta, tangent_basis_xi, tangent_basis_eta, &
-      reciprocal_xi, reciprocal_eta, reciprocal_zeta, local_xi, local_eta, local_zeta, &
-      material_reciprocal_xi, material_reciprocal_eta, material_reciprocal_zeta, &
-      material_local_xi, material_local_eta, material_local_zeta, integration_jacobian, &
-      director_contribution_xi, director_contribution_eta, director_contribution_zeta)
+      shapederiv, covariant_basis, tangent_basis, reciprocal_basis, local_basis, &
+      material_reciprocal_basis, material_local_basis, integration_jacobian, director_contribution)
     implicit none
 
     integer(kind=kint), intent(in) :: etype, nn
     logical, intent(in) :: use_green_lagrange
     real(kind=kreal), intent(in) :: reference_coords(3, nn), evaluation_coords(3, nn)
-    real(kind=kreal), intent(in) :: translation(3, nn), director(3, nn), reference_director(3, nn)
+    real(kind=kreal), intent(in) :: translation(3, nn), director(3, nn)
+    real(kind=kreal), intent(in) :: reference_director(3, nn)
     real(kind=kreal), intent(in) :: zeta, shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal), intent(out) :: basis_xi(3), basis_eta(3), basis_zeta(3)
-    real(kind=kreal), intent(out) :: tangent_basis_xi(3), tangent_basis_eta(3)
-    real(kind=kreal), intent(out) :: reciprocal_xi(3), reciprocal_eta(3), reciprocal_zeta(3)
-    real(kind=kreal), intent(out) :: local_xi(3), local_eta(3), local_zeta(3)
-    real(kind=kreal), intent(out) :: material_reciprocal_xi(3), material_reciprocal_eta(3)
-    real(kind=kreal), intent(out) :: material_reciprocal_zeta(3)
-    real(kind=kreal), intent(out) :: material_local_xi(3), material_local_eta(3), material_local_zeta(3)
+    real(kind=kreal), intent(out) :: covariant_basis(3, 3), tangent_basis(3, 2)
+    real(kind=kreal), intent(out) :: reciprocal_basis(3, 3), local_basis(3, 3)
+    real(kind=kreal), intent(out) :: material_reciprocal_basis(3, 3)
+    real(kind=kreal), intent(out) :: material_local_basis(3, 3)
     real(kind=kreal), intent(out) :: integration_jacobian
-    real(kind=kreal), intent(out) :: director_contribution_xi(3, nn)
-    real(kind=kreal), intent(out) :: director_contribution_eta(3, nn)
-    real(kind=kreal), intent(out) :: director_contribution_zeta(3, nn)
+    real(kind=kreal), intent(out) :: director_contribution(3, nn, 3)
 
-    real(kind=kreal) :: reference_basis_xi(3), reference_basis_eta(3), reference_basis_zeta(3)
+    real(kind=kreal) :: reference_basis(3, 3), translation_gradient(3, 2)
     real(kind=kreal) :: current_jacobian, material_jacobian
-    real(kind=kreal) :: translation_gradient_xi(3), translation_gradient_eta(3)
 
-    call ShellMITC_DirectorContributions(nn, director, zeta, shapefunc, shapederiv, &
-      director_contribution_xi, director_contribution_eta, director_contribution_zeta)
-    call ShellMITC_CovariantBasis(nn, evaluation_coords, director, zeta, shapefunc, shapederiv, &
-      basis_xi, basis_eta, basis_zeta)
-    if( abs(ShellMITC_CovariantJacobian(basis_xi, basis_eta, basis_zeta)) <= tiny(1.0D0) ) &
+    call ShellMITC_DirectorContributions(nn, director, zeta, shapefunc, shapederiv, director_contribution)
+    call ShellMITC_CovariantBasis(nn, evaluation_coords, director, zeta, shapefunc, shapederiv, covariant_basis)
+    if( abs(ShellMITC_CovariantJacobian(covariant_basis)) <= tiny(1.0D0) ) &
       stop "Invalid shell Jacobian"
     if( use_green_lagrange ) then
-      translation_gradient_xi = matmul(translation, shapederiv(:, 1))
-      translation_gradient_eta = matmul(translation, shapederiv(:, 2))
-      basis_xi = basis_xi+translation_gradient_xi
-      basis_eta = basis_eta+translation_gradient_eta
+      translation_gradient = matmul(translation, shapederiv)
+      covariant_basis(:, SHELL_XI:SHELL_ETA) = covariant_basis(:, SHELL_XI:SHELL_ETA)+translation_gradient
     endif
-    call ShellMITC_BasisFromCovariant(basis_xi, basis_eta, basis_zeta, local_xi, local_eta, &
-      local_zeta, reciprocal_xi, reciprocal_eta, reciprocal_zeta, current_jacobian)
+    call ShellMITC_BasisFromCovariant(covariant_basis, local_basis, reciprocal_basis, current_jacobian)
 
-    tangent_basis_xi = basis_xi
-    tangent_basis_eta = basis_eta
-    material_local_xi = local_xi
-    material_local_eta = local_eta
-    material_local_zeta = local_zeta
-    material_reciprocal_xi = reciprocal_xi
-    material_reciprocal_eta = reciprocal_eta
-    material_reciprocal_zeta = reciprocal_zeta
+    tangent_basis = covariant_basis(:, SHELL_XI:SHELL_ETA)
+    material_local_basis = local_basis
+    material_reciprocal_basis = reciprocal_basis
     integration_jacobian = current_jacobian
 
     if( .not. use_green_lagrange ) return
 
-    call ShellMITC_CovariantBasis(nn, reference_coords, reference_director, zeta, shapefunc, &
-      shapederiv, reference_basis_xi, reference_basis_eta, reference_basis_zeta)
-    call ShellMITC_BasisFromCovariant(reference_basis_xi, reference_basis_eta, &
-      reference_basis_zeta, material_local_xi, material_local_eta, material_local_zeta, &
-      material_reciprocal_xi, material_reciprocal_eta, material_reciprocal_zeta, &
-      material_jacobian)
-    integration_jacobian = ShellMITC_CovariantJacobian(reference_basis_xi, reference_basis_eta, &
-      reference_basis_zeta)
+    call ShellMITC_CovariantBasis(nn, reference_coords, reference_director, zeta, shapefunc, shapederiv, reference_basis)
+    call ShellMITC_BasisFromCovariant(reference_basis, material_local_basis, material_reciprocal_basis, material_jacobian)
+    integration_jacobian = ShellMITC_CovariantJacobian(reference_basis)
 
     ! Preserve the existing element-specific tangent basis construction.
     if( etype == fe_mitc9_shell ) then
-      tangent_basis_xi = tangent_basis_xi+translation_gradient_xi
-      tangent_basis_eta = tangent_basis_eta+translation_gradient_eta
+      tangent_basis = tangent_basis + translation_gradient
     else if( etype /= fe_mitc4_shell ) then
-      basis_xi = basis_xi+translation_gradient_xi
-      basis_eta = basis_eta+translation_gradient_eta
-      tangent_basis_xi = basis_xi
-      tangent_basis_eta = basis_eta
+      covariant_basis(:, SHELL_XI:SHELL_ETA) = covariant_basis(:, SHELL_XI:SHELL_ETA) + translation_gradient
+      tangent_basis = covariant_basis(:, SHELL_XI:SHELL_ETA)
     endif
   end subroutine ShellMITC_PreparePointKinematics
 
   !--------------------------------------------------------------------
   !> Evaluate the ordinary shell strain at one point before MITC interpolation.
   subroutine ShellMITC_EvaluatePointStrain(nn, zeta, shapefunc, shapederiv, translation, &
-      director_increment, basis_xi, basis_eta, basis_zeta, use_green_lagrange, strain, &
-      reference_basis_xi, reference_basis_eta, reference_basis_zeta, current_basis_xi, &
-      current_basis_eta, current_basis_zeta, reference_jacobian, current_jacobian)
+      director_increment, covariant_basis, use_green_lagrange, strain, reference_basis, &
+      current_basis, reference_jacobian, current_jacobian)
     implicit none
 
     integer(kind=kint), intent(in) :: nn
     real(kind=kreal), intent(in) :: zeta, shapefunc(nn), shapederiv(nn, 2)
     real(kind=kreal), intent(in) :: translation(3, nn), director_increment(3, nn)
-    real(kind=kreal), intent(in) :: basis_xi(3), basis_eta(3), basis_zeta(3)
+    real(kind=kreal), intent(in) :: covariant_basis(3, 3)
     logical, intent(in) :: use_green_lagrange
     real(kind=kreal), intent(out) :: strain(5)
-    real(kind=kreal), intent(out) :: reference_basis_xi(3), reference_basis_eta(3), reference_basis_zeta(3)
-    real(kind=kreal), intent(out) :: current_basis_xi(3), current_basis_eta(3), current_basis_zeta(3)
+    real(kind=kreal), intent(out) :: reference_basis(3, 3), current_basis(3, 3)
     real(kind=kreal), intent(out) :: reference_jacobian, current_jacobian
 
-    real(kind=kreal) :: displacement_gradient_xi(3), displacement_gradient_eta(3)
-    real(kind=kreal) :: displacement_gradient_zeta(3)
-    real(kind=kreal) :: translation_gradient_xi(3), translation_gradient_eta(3)
+    real(kind=kreal) :: displacement_gradient(3, 3), translation_gradient(3, 2)
 
-    displacement_gradient_xi = matmul(translation+zeta*director_increment, shapederiv(:, 1))
-    displacement_gradient_eta = matmul(translation+zeta*director_increment, shapederiv(:, 2))
-    displacement_gradient_zeta = matmul(director_increment, shapefunc)
+    displacement_gradient(:, SHELL_XI:SHELL_ETA) = matmul(translation+zeta*director_increment, shapederiv)
+    displacement_gradient(:, SHELL_ZETA) = matmul(director_increment, shapefunc)
 
-    reference_basis_xi = basis_xi
-    reference_basis_eta = basis_eta
-    reference_basis_zeta = basis_zeta
-    current_basis_xi = basis_xi
-    current_basis_eta = basis_eta
-    current_basis_zeta = basis_zeta
+    reference_basis = covariant_basis
+    current_basis = covariant_basis
 
     if( use_green_lagrange ) then
-      translation_gradient_xi = matmul(translation, shapederiv(:, 1))
-      translation_gradient_eta = matmul(translation, shapederiv(:, 2))
-      current_basis_xi = basis_xi+translation_gradient_xi
-      current_basis_eta = basis_eta+translation_gradient_eta
-      reference_basis_xi = current_basis_xi-displacement_gradient_xi
-      reference_basis_eta = current_basis_eta-displacement_gradient_eta
-      reference_basis_zeta = current_basis_zeta-displacement_gradient_zeta
+      translation_gradient = matmul(translation, shapederiv)
+      current_basis(:, SHELL_XI:SHELL_ETA) = covariant_basis(:, SHELL_XI:SHELL_ETA)+translation_gradient
+      reference_basis = current_basis-displacement_gradient
 
-      strain(1) = 0.5D0*(dot_product(current_basis_xi, current_basis_xi) &
-        -dot_product(reference_basis_xi, reference_basis_xi))
-      strain(2) = 0.5D0*(dot_product(current_basis_eta, current_basis_eta) &
-        -dot_product(reference_basis_eta, reference_basis_eta))
-      strain(3) = dot_product(current_basis_xi, current_basis_eta) &
-        -dot_product(reference_basis_xi, reference_basis_eta)
-      strain(4) = dot_product(current_basis_eta, current_basis_zeta) &
-        -dot_product(reference_basis_eta, reference_basis_zeta)
-      strain(5) = dot_product(current_basis_zeta, current_basis_xi) &
-        -dot_product(reference_basis_zeta, reference_basis_xi)
+      strain = 0.5D0*ShellMITC_SymmetricComponents( matmul(transpose(current_basis), current_basis) &
+        -matmul(transpose(reference_basis), reference_basis))
     else
-      strain(1) = dot_product(basis_xi, displacement_gradient_xi)
-      strain(2) = dot_product(basis_eta, displacement_gradient_eta)
-      strain(3) = dot_product(basis_xi, displacement_gradient_eta) &
-        +dot_product(displacement_gradient_xi, basis_eta)
-      strain(4) = dot_product(basis_eta, displacement_gradient_zeta) &
-        +dot_product(displacement_gradient_eta, basis_zeta)
-      strain(5) = dot_product(basis_zeta, displacement_gradient_xi) &
-        +dot_product(displacement_gradient_zeta, basis_xi)
+      strain = ShellMITC_SymmetricComponents( matmul(transpose(covariant_basis), displacement_gradient))
     endif
 
-    reference_jacobian = ShellMITC_CovariantJacobian(reference_basis_xi, reference_basis_eta, reference_basis_zeta)
-    current_jacobian = ShellMITC_CovariantJacobian(current_basis_xi, current_basis_eta, current_basis_zeta)
+    reference_jacobian = ShellMITC_CovariantJacobian(reference_basis)
+    current_jacobian = ShellMITC_CovariantJacobian(current_basis)
 
   end subroutine ShellMITC_EvaluatePointStrain
 
@@ -502,8 +470,7 @@ contains
   !> Nodal frames (triads) are packed as e1(1:3), e2(4:6), e3=director axis(7:9).
   !> The director itself (0.5*thick*e3) is computed here, once, for every caller.
   subroutine ShellMITC_SetupNodalDirectors(etype, nn, thick, flag, elem, shell_disp, &
-      finite_rotation_director, use_director_tangent, need_second_tangent, &
-      ndtriad, ndreftriad, ndcurtriad, &
+      finite_rotation_director, use_director_tangent, need_second_tangent, ndtriad, ndreftriad, ndcurtriad, &
       v1, v2, v3, a_over_2_v3, a_over_2_v3_ref, a_over_2_v3_deriv, a_over_2_v3_second)
     use mMaterial, only: UPDATELAG
     implicit none
@@ -552,8 +519,7 @@ contains
         if (use_director_tangent) then
           a_over_2_v3_deriv(:, :, nb) = ShellSkewMatrix(a_over_2_v3(:, nb))
           if( need_second_tangent ) then
-            call ShellDirectorIncrementalSecondDeriv(a_over_2_v3(:, nb), &
-              a_over_2_v3_second(:, :, :, nb))
+            call ShellDirectorIncrementalSecondDeriv(a_over_2_v3(:, nb), a_over_2_v3_second(:, :, :, nb))
           endif
         endif
       endif
@@ -569,8 +535,7 @@ contains
   !> so UPDATE can retain only the B matrix while STF also keeps geometric-stiffness data.
   subroutine ShellMITC_EvaluateTyingPointVariation(etype, nn, ndof, tying_set, tying_point, &
       zeta_tying, elem, shell_disp, director, director_tangent, use_green_lagrange, &
-      use_director_tangent, point_B, point_basis_variation_xi, point_basis_variation_eta, &
-      point_basis_variation_zeta, director_second_tangent, point_director_second_variation)
+      use_director_tangent, point_B, point_basis_variation, director_second_tangent, point_director_second_variation)
     implicit none
 
     integer(kind=kint), intent(in) :: etype, nn, ndof, tying_set, tying_point
@@ -579,57 +544,42 @@ contains
     real(kind=kreal), intent(in) :: director_tangent(3, 3, nn)
     logical, intent(in) :: use_green_lagrange, use_director_tangent
     real(kind=kreal), intent(out) :: point_B(5, ndof*nn)
-    real(kind=kreal), intent(out) :: point_basis_variation_xi(3, ndof*nn)
-    real(kind=kreal), intent(out) :: point_basis_variation_eta(3, ndof*nn)
-    real(kind=kreal), intent(out) :: point_basis_variation_zeta(3, ndof*nn)
+    real(kind=kreal), intent(out) :: point_basis_variation(3, ndof*nn, 3)
     real(kind=kreal), intent(in), optional :: director_second_tangent(3, 3, 3, nn)
     real(kind=kreal), intent(out), optional :: point_director_second_variation(5, 3, 3, nn)
 
     real(kind=kreal) :: naturalcoord(2), shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal) :: director_contribution_xi(3, nn), director_contribution_eta(3, nn)
-    real(kind=kreal) :: director_contribution_zeta(3, nn)
-    real(kind=kreal) :: kinematic_basis_xi(3), kinematic_basis_eta(3), basis_zeta(3)
-    real(kind=kreal) :: membrane_basis_xi(3), membrane_basis_eta(3)
-    real(kind=kreal) :: translation_gradient_xi(3), translation_gradient_eta(3)
+    real(kind=kreal) :: director_contribution(3, nn, 3)
+    real(kind=kreal) :: kinematic_basis(3, 3), membrane_basis(3, 2)
+    real(kind=kreal) :: translation_gradient(3, 2)
 
     call getTyingPoint(etype, tying_set, tying_point, naturalcoord)
     call getShapeFunc(etype, naturalcoord, shapefunc)
     call getShapeDeriv(etype, naturalcoord, shapederiv)
 
-    call ShellMITC_DirectorContributions(nn, director, zeta_tying, shapefunc, shapederiv, &
-      director_contribution_xi, director_contribution_eta, director_contribution_zeta)
-    call ShellMITC_CovariantBasis(nn, elem, director, zeta_tying, shapefunc, shapederiv, &
-      kinematic_basis_xi, kinematic_basis_eta, basis_zeta)
-    if( abs(ShellMITC_CovariantJacobian(kinematic_basis_xi, kinematic_basis_eta, basis_zeta)) &
-        <= tiny(1.0D0) ) stop "Invalid shell Jacobian"
+    call ShellMITC_DirectorContributions(nn, director, zeta_tying, shapefunc, shapederiv, director_contribution)
+    call ShellMITC_CovariantBasis(nn, elem, director, zeta_tying, shapefunc, shapederiv, kinematic_basis)
+    if( abs(ShellMITC_CovariantJacobian(kinematic_basis)) <= tiny(1.0D0) ) &
+      stop "Invalid shell Jacobian"
 
-    membrane_basis_xi = kinematic_basis_xi
-    membrane_basis_eta = kinematic_basis_eta
+    membrane_basis = kinematic_basis(:, SHELL_XI:SHELL_ETA)
     if( use_green_lagrange ) then
-      translation_gradient_xi = matmul(shell_disp(1:3, :), shapederiv(:, 1))
-      translation_gradient_eta = matmul(shell_disp(1:3, :), shapederiv(:, 2))
+      translation_gradient = matmul(shell_disp(1:3, :), shapederiv)
       if( etype == fe_mitc9_shell ) then
-        membrane_basis_xi = membrane_basis_xi+translation_gradient_xi
-        membrane_basis_eta = membrane_basis_eta+translation_gradient_eta
+        membrane_basis = membrane_basis+translation_gradient
       else
-        kinematic_basis_xi = kinematic_basis_xi+translation_gradient_xi
-        kinematic_basis_eta = kinematic_basis_eta+translation_gradient_eta
-        membrane_basis_xi = kinematic_basis_xi
-        membrane_basis_eta = kinematic_basis_eta
+        kinematic_basis(:, SHELL_XI:SHELL_ETA) = kinematic_basis(:, SHELL_XI:SHELL_ETA)+translation_gradient
+        membrane_basis = kinematic_basis(:, SHELL_XI:SHELL_ETA)
       endif
     endif
 
     call ShellMITC_BuildFirstStrainVariation(nn, ndof, zeta_tying, shapefunc, shapederiv, &
-      kinematic_basis_xi, kinematic_basis_eta, basis_zeta, membrane_basis_xi, membrane_basis_eta, &
-      director_contribution_xi, director_contribution_eta, director_contribution_zeta, &
-      director_tangent, use_director_tangent, point_B, point_basis_variation_xi, &
-      point_basis_variation_eta, point_basis_variation_zeta)
+      kinematic_basis, membrane_basis, director_contribution, director_tangent, &
+      use_director_tangent, point_B, point_basis_variation)
 
-    if( use_director_tangent .and. present(director_second_tangent) .and. &
-        present(point_director_second_variation) ) then
+    if( use_director_tangent .and. present(director_second_tangent) .and. present(point_director_second_variation) ) then
       call ShellMITC_BuildDirectorSecondVariation(nn, zeta_tying, shapefunc, shapederiv, &
-        kinematic_basis_xi, kinematic_basis_eta, basis_zeta, director_second_tangent, &
-        point_director_second_variation)
+        kinematic_basis, director_second_tangent, point_director_second_variation)
     endif
   end subroutine ShellMITC_EvaluateTyingPointVariation
 
@@ -648,17 +598,14 @@ contains
 
     integer :: tying_set, tying_point
     real(kind=kreal) :: point_B(5, ndof*nn)
-    real(kind=kreal) :: point_basis_variation_xi(3, ndof*nn)
-    real(kind=kreal) :: point_basis_variation_eta(3, ndof*nn)
-    real(kind=kreal) :: point_basis_variation_zeta(3, ndof*nn)
+    real(kind=kreal) :: point_basis_variation(3, ndof*nn, 3)
 
     tying_B = 0.0D0
     do tying_set = 1, NumOfTyingSets(etype)
       do tying_point = 1, NumOfTyingPoints(etype, tying_set)
         call ShellMITC_EvaluateTyingPointVariation(etype, nn, ndof, tying_set, tying_point, &
           zeta_tying, elem, shell_disp, director, director_tangent, use_green_lagrange, &
-          use_director_tangent, point_B, point_basis_variation_xi, &
-          point_basis_variation_eta, point_basis_variation_zeta)
+          use_director_tangent, point_B, point_basis_variation)
         tying_B(:, :, tying_point, tying_set) = point_B
       end do
     end do
@@ -668,8 +615,7 @@ contains
   !> Evaluate all first/second variations needed by STF at one zeta.
   subroutine ShellMITC_EvaluateTyingStiffnessDataAtZeta(etype, nn, ndof, zeta_tying, &
       elem, shell_disp, director, director_tangent, director_second_tangent, &
-      use_green_lagrange, use_director_tangent, tying_B, tying_basis_variation_xi, &
-      tying_basis_variation_eta, tying_basis_variation_zeta, tying_director_second_variation)
+      use_green_lagrange, use_director_tangent, tying_B, tying_basis_variation, tying_director_second_variation)
     implicit none
 
     integer(kind=kint), intent(in) :: etype, nn, ndof
@@ -679,22 +625,16 @@ contains
     real(kind=kreal), intent(in) :: director_second_tangent(3, 3, 3, nn)
     logical, intent(in) :: use_green_lagrange, use_director_tangent
     real(kind=kreal), intent(out) :: tying_B(5, ndof*nn, 6, 3)
-    real(kind=kreal), intent(out) :: tying_basis_variation_xi(3, ndof*nn, 6, 3)
-    real(kind=kreal), intent(out) :: tying_basis_variation_eta(3, ndof*nn, 6, 3)
-    real(kind=kreal), intent(out) :: tying_basis_variation_zeta(3, ndof*nn, 6, 3)
+    real(kind=kreal), intent(out) :: tying_basis_variation(3, ndof*nn, 3, 6, 3)
     real(kind=kreal), intent(out) :: tying_director_second_variation(5, 3, 3, nn, 6, 3)
 
     integer :: tying_set, tying_point
     real(kind=kreal) :: point_B(5, ndof*nn)
-    real(kind=kreal) :: point_basis_variation_xi(3, ndof*nn)
-    real(kind=kreal) :: point_basis_variation_eta(3, ndof*nn)
-    real(kind=kreal) :: point_basis_variation_zeta(3, ndof*nn)
+    real(kind=kreal) :: point_basis_variation(3, ndof*nn, 3)
     real(kind=kreal) :: point_director_second_variation(5, 3, 3, nn)
 
     tying_B = 0.0D0
-    tying_basis_variation_xi = 0.0D0
-    tying_basis_variation_eta = 0.0D0
-    tying_basis_variation_zeta = 0.0D0
+    tying_basis_variation = 0.0D0
     tying_director_second_variation = 0.0D0
 
     do tying_set = 1, NumOfTyingSets(etype)
@@ -702,21 +642,15 @@ contains
         if( use_director_tangent ) then
           call ShellMITC_EvaluateTyingPointVariation(etype, nn, ndof, tying_set, tying_point, &
             zeta_tying, elem, shell_disp, director, director_tangent, use_green_lagrange, &
-            use_director_tangent, point_B, point_basis_variation_xi, &
-            point_basis_variation_eta, point_basis_variation_zeta, &
-            director_second_tangent, point_director_second_variation)
-          tying_director_second_variation(:, :, :, :, tying_point, tying_set) = &
-            point_director_second_variation
+            use_director_tangent, point_B, point_basis_variation, director_second_tangent, point_director_second_variation)
+          tying_director_second_variation(:, :, :, :, tying_point, tying_set) = point_director_second_variation
         else
           call ShellMITC_EvaluateTyingPointVariation(etype, nn, ndof, tying_set, tying_point, &
             zeta_tying, elem, shell_disp, director, director_tangent, use_green_lagrange, &
-            use_director_tangent, point_B, point_basis_variation_xi, &
-            point_basis_variation_eta, point_basis_variation_zeta)
+            use_director_tangent, point_B, point_basis_variation)
         endif
         tying_B(:, :, tying_point, tying_set) = point_B
-        tying_basis_variation_xi(:, :, tying_point, tying_set) = point_basis_variation_xi
-        tying_basis_variation_eta(:, :, tying_point, tying_set) = point_basis_variation_eta
-        tying_basis_variation_zeta(:, :, tying_point, tying_set) = point_basis_variation_zeta
+        tying_basis_variation(:, :, :, tying_point, tying_set) = point_basis_variation
       end do
     end do
   end subroutine ShellMITC_EvaluateTyingStiffnessDataAtZeta
@@ -724,66 +658,49 @@ contains
   !--------------------------------------------------------------------
   !> Build the first strain variation and the covariant-basis variations.
   subroutine ShellMITC_BuildFirstStrainVariation(nn, ndof, zeta, shapefunc, shapederiv, &
-      kinematic_basis_xi, kinematic_basis_eta, basis_zeta, membrane_basis_xi, membrane_basis_eta, &
-      director_contribution_xi, director_contribution_eta, director_contribution_zeta, &
-      director_tangent, use_director_tangent, strain_variation, basis_variation_xi, &
-      basis_variation_eta, basis_variation_zeta)
+      kinematic_basis, membrane_basis, director_contribution, director_tangent, &
+      use_director_tangent, strain_variation, basis_variation)
     implicit none
 
     integer(kind=kint), intent(in) :: nn, ndof
     real(kind=kreal), intent(in) :: zeta, shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal), intent(in) :: kinematic_basis_xi(3), kinematic_basis_eta(3), basis_zeta(3)
-    real(kind=kreal), intent(in) :: membrane_basis_xi(3), membrane_basis_eta(3)
-    real(kind=kreal), intent(in) :: director_contribution_xi(3, nn)
-    real(kind=kreal), intent(in) :: director_contribution_eta(3, nn)
-    real(kind=kreal), intent(in) :: director_contribution_zeta(3, nn)
+    real(kind=kreal), intent(in) :: kinematic_basis(3, 3), membrane_basis(3, 2)
+    real(kind=kreal), intent(in) :: director_contribution(3, nn, 3)
     real(kind=kreal), intent(in) :: director_tangent(3, 3, nn)
     logical, intent(in) :: use_director_tangent
     real(kind=kreal), intent(out) :: strain_variation(5, ndof*nn)
-    real(kind=kreal), intent(out) :: basis_variation_xi(3, ndof*nn)
-    real(kind=kreal), intent(out) :: basis_variation_eta(3, ndof*nn)
-    real(kind=kreal), intent(out) :: basis_variation_zeta(3, ndof*nn)
+    real(kind=kreal), intent(out) :: basis_variation(3, ndof*nn, 3)
 
     integer :: node, component, dof_index, rotation_start
 
-    basis_variation_xi = 0.0D0
-    basis_variation_eta = 0.0D0
-    basis_variation_zeta = 0.0D0
+    basis_variation = 0.0D0
     do node = 1, nn
       do component = 1, min(3, ndof)
         dof_index = ndof*(node-1)+component
-        basis_variation_xi(component, dof_index) = shapederiv(node, 1)
-        basis_variation_eta(component, dof_index) = shapederiv(node, 2)
+        basis_variation(component, dof_index, SHELL_XI:SHELL_ETA) = shapederiv(node, :)
       end do
       if( ndof < 6 ) cycle
 
       rotation_start = ndof*(node-1)+4
       if( use_director_tangent ) then
-        basis_variation_xi(:, rotation_start:rotation_start+2) = &
-          shapederiv(node, 1)*zeta*director_tangent(:, :, node)
-        basis_variation_eta(:, rotation_start:rotation_start+2) = &
-          shapederiv(node, 2)*zeta*director_tangent(:, :, node)
-        basis_variation_zeta(:, rotation_start:rotation_start+2) = &
-          shapefunc(node)*director_tangent(:, :, node)
+        basis_variation(:, rotation_start:rotation_start+2, SHELL_XI) = &
+          shapederiv(node, SHELL_XI)*zeta*director_tangent(:, :, node)
+        basis_variation(:, rotation_start:rotation_start+2, SHELL_ETA) = &
+          shapederiv(node, SHELL_ETA)*zeta*director_tangent(:, :, node)
+        basis_variation(:, rotation_start:rotation_start+2, SHELL_ZETA) = shapefunc(node)*director_tangent(:, :, node)
       else
-        basis_variation_xi(:, rotation_start:rotation_start+2) = &
-          ShellSkewMatrix(director_contribution_xi(:, node))
-        basis_variation_eta(:, rotation_start:rotation_start+2) = &
-          ShellSkewMatrix(director_contribution_eta(:, node))
-        basis_variation_zeta(:, rotation_start:rotation_start+2) = &
-          ShellSkewMatrix(director_contribution_zeta(:, node))
+        basis_variation(:, rotation_start:rotation_start+2, SHELL_XI) = &
+          ShellSkewMatrix(director_contribution(:, node, SHELL_XI))
+        basis_variation(:, rotation_start:rotation_start+2, SHELL_ETA) = &
+          ShellSkewMatrix(director_contribution(:, node, SHELL_ETA))
+        basis_variation(:, rotation_start:rotation_start+2, SHELL_ZETA) = &
+          ShellSkewMatrix(director_contribution(:, node, SHELL_ZETA))
       endif
     end do
 
     do dof_index = 1, ndof*nn
-      strain_variation(1, dof_index) = dot_product(basis_variation_xi(:, dof_index), kinematic_basis_xi)
-      strain_variation(2, dof_index) = dot_product(basis_variation_eta(:, dof_index), kinematic_basis_eta)
-      strain_variation(3, dof_index) = dot_product(basis_variation_xi(:, dof_index), kinematic_basis_eta) &
-        +dot_product(basis_variation_eta(:, dof_index), kinematic_basis_xi)
-      strain_variation(4, dof_index) = dot_product(basis_variation_eta(:, dof_index), basis_zeta) &
-        +dot_product(basis_variation_zeta(:, dof_index), kinematic_basis_eta)
-      strain_variation(5, dof_index) = dot_product(basis_variation_xi(:, dof_index), basis_zeta) &
-        +dot_product(basis_variation_zeta(:, dof_index), kinematic_basis_xi)
+      strain_variation(:, dof_index) = ShellMITC_SymmetricComponents( &
+        matmul(transpose(basis_variation(:, dof_index, :)), kinematic_basis))
     end do
 
     ! In the TL MITC9 formulation only the translational membrane columns use
@@ -791,10 +708,10 @@ contains
     do node = 1, nn
       do component = 1, min(3, ndof)
         dof_index = ndof*(node-1)+component
-        strain_variation(1, dof_index) = shapederiv(node, 1)*membrane_basis_xi(component)
-        strain_variation(2, dof_index) = shapederiv(node, 2)*membrane_basis_eta(component)
-        strain_variation(3, dof_index) = shapederiv(node, 1)*membrane_basis_eta(component) &
-          +shapederiv(node, 2)*membrane_basis_xi(component)
+        strain_variation(1, dof_index) = shapederiv(node, SHELL_XI)*membrane_basis(component, SHELL_XI)
+        strain_variation(2, dof_index) = shapederiv(node, SHELL_ETA)*membrane_basis(component, SHELL_ETA)
+        strain_variation(3, dof_index) = shapederiv(node, SHELL_XI)*membrane_basis(component, SHELL_ETA) &
+          +shapederiv(node, SHELL_ETA)*membrane_basis(component, SHELL_XI)
       end do
     end do
   end subroutine ShellMITC_BuildFirstStrainVariation
@@ -802,39 +719,27 @@ contains
   !--------------------------------------------------------------------
   !> Build the director contribution to the second strain variation used by STF.
   subroutine ShellMITC_BuildDirectorSecondVariation(nn, zeta, shapefunc, shapederiv, &
-      kinematic_basis_xi, kinematic_basis_eta, basis_zeta, director_second_tangent, &
-      director_second_variation)
+      kinematic_basis, director_second_tangent, director_second_variation)
     implicit none
 
     integer(kind=kint), intent(in) :: nn
     real(kind=kreal), intent(in) :: zeta, shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal), intent(in) :: kinematic_basis_xi(3), kinematic_basis_eta(3), basis_zeta(3)
+    real(kind=kreal), intent(in) :: kinematic_basis(3, 3)
     real(kind=kreal), intent(in) :: director_second_tangent(3, 3, 3, nn)
     real(kind=kreal), intent(out) :: director_second_variation(5, 3, 3, nn)
 
     integer :: node, m, n
-    real(kind=kreal) :: second_basis_xi(3), second_basis_eta(3), second_basis_zeta(3)
+    real(kind=kreal) :: second_basis(3, 3)
 
     director_second_variation = 0.0D0
     do node = 1, nn
       do n = 1, 3
         do m = 1, 3
-          second_basis_xi = shapederiv(node, 1)*zeta*director_second_tangent(:, m, n, node)
-          second_basis_eta = shapederiv(node, 2)*zeta*director_second_tangent(:, m, n, node)
-          second_basis_zeta = shapefunc(node)*director_second_tangent(:, m, n, node)
-          director_second_variation(1, m, n, node) = &
-            dot_product(second_basis_xi, kinematic_basis_xi)
-          director_second_variation(2, m, n, node) = &
-            dot_product(second_basis_eta, kinematic_basis_eta)
-          director_second_variation(3, m, n, node) = &
-            dot_product(second_basis_xi, kinematic_basis_eta) &
-            +dot_product(second_basis_eta, kinematic_basis_xi)
-          director_second_variation(4, m, n, node) = &
-            dot_product(second_basis_eta, basis_zeta) &
-            +dot_product(second_basis_zeta, kinematic_basis_eta)
-          director_second_variation(5, m, n, node) = &
-            dot_product(second_basis_xi, basis_zeta) &
-            +dot_product(second_basis_zeta, kinematic_basis_xi)
+          second_basis(:, SHELL_XI) = zeta*shapederiv(node, SHELL_XI) *director_second_tangent(:, m, n, node)
+          second_basis(:, SHELL_ETA) = zeta*shapederiv(node, SHELL_ETA) *director_second_tangent(:, m, n, node)
+          second_basis(:, SHELL_ZETA) = shapefunc(node) *director_second_tangent(:, m, n, node)
+          director_second_variation(:, m, n, node) = ShellMITC_SymmetricComponents( &
+            matmul(transpose(second_basis), kinematic_basis))
         end do
       end do
     end do
@@ -866,8 +771,7 @@ contains
       source_component(1:4) = (/ 4, 4, 5, 5 /)
       tying_point (1:4) = (/ 4, 2, 1, 3 /)
       tying_group (1:4) = (/ 1, 1, 1, 1 /)
-      coefficient  (1:4) = (/ 0.5D0*( 1.0D0-xi ), 0.5D0*( 1.0D0+xi ), &
-        0.5D0*( 1.0D0-eta ), 0.5D0*( 1.0D0+eta ) /)
+      coefficient  (1:4) = (/ 0.5D0*( 1.0D0-xi ), 0.5D0*( 1.0D0+xi ), 0.5D0*( 1.0D0-eta ), 0.5D0*( 1.0D0+eta ) /)
 
     else if( etype == fe_mitc9_shell ) then
       xxi  = xi /dsqrt( 1.0D0/3.0D0 )
@@ -980,25 +884,29 @@ contains
 
   !--------------------------------------------------------------------
   !> Second variation of strain component c for the basis variations at dof i and dof j.
-  pure real(kind=kreal) function ShellMITC_StrainSecondVariationPair(component, &
-      basis_xi_i, basis_eta_i, basis_zeta_i, basis_xi_j, basis_eta_j, basis_zeta_j)
+  pure real(kind=kreal) function ShellMITC_StrainSecondVariationPair(component, basis_variation_i, basis_variation_j)
     implicit none
 
     integer, intent(in) :: component
-    real(kind=kreal), intent(in) :: basis_xi_i(3), basis_eta_i(3), basis_zeta_i(3)
-    real(kind=kreal), intent(in) :: basis_xi_j(3), basis_eta_j(3), basis_zeta_j(3)
+    real(kind=kreal), intent(in) :: basis_variation_i(3, 3), basis_variation_j(3, 3)
 
     select case( component )
       case( 1 )
-        ShellMITC_StrainSecondVariationPair = dot_product(basis_xi_i, basis_xi_j)
+        ShellMITC_StrainSecondVariationPair = dot_product( basis_variation_i(:, SHELL_XI), basis_variation_j(:, SHELL_XI))
       case( 2 )
-        ShellMITC_StrainSecondVariationPair = dot_product(basis_eta_i, basis_eta_j)
+        ShellMITC_StrainSecondVariationPair = dot_product( basis_variation_i(:, SHELL_ETA), basis_variation_j(:, SHELL_ETA))
       case( 3 )
-        ShellMITC_StrainSecondVariationPair = dot_product(basis_xi_i, basis_eta_j)+dot_product(basis_eta_i, basis_xi_j)
+        ShellMITC_StrainSecondVariationPair = dot_product( &
+          basis_variation_i(:, SHELL_XI), basis_variation_j(:, SHELL_ETA)) &
+          +dot_product(basis_variation_i(:, SHELL_ETA), basis_variation_j(:, SHELL_XI))
       case( 4 )
-        ShellMITC_StrainSecondVariationPair = dot_product(basis_eta_i, basis_zeta_j)+dot_product(basis_zeta_i, basis_eta_j)
+        ShellMITC_StrainSecondVariationPair = dot_product( &
+          basis_variation_i(:, SHELL_ETA), basis_variation_j(:, SHELL_ZETA)) &
+          +dot_product(basis_variation_i(:, SHELL_ZETA), basis_variation_j(:, SHELL_ETA))
       case( 5 )
-        ShellMITC_StrainSecondVariationPair = dot_product(basis_zeta_i, basis_xi_j)+dot_product(basis_xi_i, basis_zeta_j)
+        ShellMITC_StrainSecondVariationPair = dot_product( &
+          basis_variation_i(:, SHELL_ZETA), basis_variation_j(:, SHELL_XI)) &
+          +dot_product(basis_variation_i(:, SHELL_XI), basis_variation_j(:, SHELL_ZETA))
       case default
         ShellMITC_StrainSecondVariationPair = 0.0D0
     end select
@@ -1009,50 +917,44 @@ contains
   !> Assemble initial-stress, volume-change and director geometric stiffness.
   subroutine ShellMITC_AddGeometricStiffness(etype, nn, ndof, kinematics, &
       use_director_tangent, use_green_lagrange, add_geometric_stiffness, &
-      xi, eta, integration_weight, layer_weight, &
-      stress, B, B1, B2, B3, tying_basis_variation_xi, tying_basis_variation_eta, tying_basis_variation_zeta, cg1, cg2, cg3, &
-      e1_hat_mat, e2_hat_mat, e3_hat_mat, cg1_mat, cg2_mat, cg3_mat, B2rot, a_over_2_v3, stiff)
+      xi, eta, integration_weight, layer_weight, stress, B, basis_variation, &
+      tying_basis_variation, reciprocal_basis, material_local_basis, material_reciprocal_basis, B2rot, director, stiff)
     use mMaterial, only: UPDATELAG
     implicit none
 
     integer(kind=kint), intent(in) :: etype, nn, ndof, kinematics
-    logical, intent(in) :: use_director_tangent, use_green_lagrange, add_geometric_stiffness
+    logical, intent(in) :: use_director_tangent, use_green_lagrange
+    logical, intent(in) :: add_geometric_stiffness
     real(kind=kreal), intent(in) :: xi, eta, integration_weight, layer_weight
     real(kind=kreal), intent(in) :: stress(5), B(5, ndof*nn)
-    real(kind=kreal), intent(in) :: B1(3, ndof*nn), B2(3, ndof*nn), B3(3, ndof*nn)
-    real(kind=kreal), intent(in) :: tying_basis_variation_xi(3, ndof*nn, 6, 3)
-    real(kind=kreal), intent(in) :: tying_basis_variation_eta(3, ndof*nn, 6, 3)
-    real(kind=kreal), intent(in) :: tying_basis_variation_zeta(3, ndof*nn, 6, 3)
-    real(kind=kreal), intent(in) :: cg1(3), cg2(3), cg3(3)
-    real(kind=kreal), intent(in) :: e1_hat_mat(3), e2_hat_mat(3), e3_hat_mat(3)
-    real(kind=kreal), intent(in) :: cg1_mat(3), cg2_mat(3), cg3_mat(3)
+    real(kind=kreal), intent(in) :: basis_variation(3, ndof*nn, 3)
+    real(kind=kreal), intent(in) :: tying_basis_variation(3, ndof*nn, 3, 6, 3)
+    real(kind=kreal), intent(in) :: reciprocal_basis(3, 3)
+    real(kind=kreal), intent(in) :: material_local_basis(3, 3)
+    real(kind=kreal), intent(in) :: material_reciprocal_basis(3, 3)
     real(kind=kreal), intent(in) :: B2rot(5, 3, 3, nn)
-    real(kind=kreal), intent(in) :: a_over_2_v3(3, nn)
+    real(kind=kreal), intent(in) :: director(3, nn)
     real(kind=kreal), intent(inout) :: stiff(ndof*nn, ndof*nn)
 
-    integer :: j, isize, jsize, k, c, ip, it, nterms
+    integer :: isize, jsize, k, c, ip, it, nterms
     integer :: target_component(MAX_TYING_TERMS), source_component(MAX_TYING_TERMS)
     integer :: tying_point(MAX_TYING_TERMS), tying_group(MAX_TYING_TERMS)
     real(kind=kreal) :: coefficient(MAX_TYING_TERMS)
     logical :: replaced_component(5)
     real(kind=kreal) :: qf_stress_integrand(ndof*nn), vol_deriv(ndof*nn)
-    real(kind=kreal) :: geo_term, S_global(3, 3), Smat(9, 9)
-    real(kind=kreal) :: BN(9, ndof*nn), SBN(9, ndof*nn)
+    real(kind=kreal) :: geo_term, local_stress(3, 3), S_global(3, 3)
+    real(kind=kreal) :: basis_gradient(3, 3, ndof*nn)
+    real(kind=kreal) :: stress_basis_gradient(3, 3, ndof*nn)
 
     if( kinematics == UPDATELAG ) then
       do jsize = 1, ndof*nn
-        vol_deriv(jsize) = dot_product(cg1(1:3), B1(1:3, jsize)) +dot_product(cg2(1:3), B2(1:3, jsize)) &
-          +dot_product(cg3(1:3), B3(1:3, jsize))
-        qf_stress_integrand(jsize) = dot_product(stress(1:5), B(1:5, jsize))
+        vol_deriv(jsize) = sum(reciprocal_basis*basis_variation(:, jsize, :))
+        qf_stress_integrand(jsize) = dot_product(stress, B(:, jsize))
       end do
     endif
 
-    !--------------------------------------------------
-
     if( add_geometric_stiffness ) then
       if( use_green_lagrange .or. kinematics == UPDATELAG ) then
-        ! Second variation of the assumed strain: tied components are interpolated from the
-        ! tying points with the same operator as the B-matrix, untied ones use the point basis.
         call ShellMITC_EvaluateTyingOperator(etype, xi, eta, nterms, target_component, &
           source_component, tying_point, tying_group, coefficient, replaced_component)
         do jsize = 1, ndof*nn
@@ -1060,72 +962,46 @@ contains
             geo_term = 0.0D0
             do c = 1, 5
               if( replaced_component(c) ) cycle
-              geo_term = geo_term+stress(c) &
-                *ShellMITC_StrainSecondVariationPair(c, B1(1:3, isize), B2(1:3, isize), B3(1:3, isize), &
-                B1(1:3, jsize), B2(1:3, jsize), B3(1:3, jsize))
+              geo_term = geo_term+stress(c)*ShellMITC_StrainSecondVariationPair(c, &
+                basis_variation(:, isize, :), basis_variation(:, jsize, :))
             end do
             do k = 1, nterms
               ip = tying_point(k)
               it = tying_group(k)
               geo_term = geo_term+stress(target_component(k))*coefficient(k) &
-                *ShellMITC_StrainSecondVariationPair(source_component(k), tying_basis_variation_xi(1:3, isize, ip, it), &
-                tying_basis_variation_eta(1:3, isize, ip, it), tying_basis_variation_zeta(1:3, isize, ip, it), &
-                tying_basis_variation_xi(1:3, jsize, ip, it), tying_basis_variation_eta(1:3, jsize, ip, it), &
-                tying_basis_variation_zeta(1:3, jsize, ip, it))
+                *ShellMITC_StrainSecondVariationPair(source_component(k), tying_basis_variation(:, isize, :, ip, it), &
+                tying_basis_variation(:, jsize, :, ip, it))
             end do
-            stiff(isize, jsize) = stiff(isize, jsize) +integration_weight*layer_weight *geo_term
+            stiff(isize, jsize) = stiff(isize, jsize) +integration_weight*layer_weight*geo_term
           end do
         end do
       else
-        S_global(:, :) = 0.0D0
-        S_global(:, :) = S_global(:, :) +stress(1)*outer_product3(e1_hat_mat, e1_hat_mat) &
-          +stress(2)*outer_product3(e2_hat_mat, e2_hat_mat) +stress(3)*(outer_product3(e1_hat_mat, e2_hat_mat) &
-          +outer_product3(e2_hat_mat, e1_hat_mat)) +stress(4)*(outer_product3(e2_hat_mat, e3_hat_mat) &
-          +outer_product3(e3_hat_mat, e2_hat_mat)) +stress(5)*(outer_product3(e1_hat_mat, e3_hat_mat) &
-          +outer_product3(e3_hat_mat, e1_hat_mat))
+        local_stress = reshape((/ stress(1), stress(3), stress(5), &
+          stress(3), stress(2), stress(4), stress(5), stress(4), 0.0D0 /), (/ 3, 3 /))
+        S_global = matmul(material_local_basis, matmul(local_stress, transpose(material_local_basis)))
 
-        BN(1:9, 1:ndof*nn) = 0.0D0
         do jsize = 1, ndof*nn
-          BN(1, jsize) = B1(1, jsize)*cg1_mat(1) + B2(1, jsize)*cg2_mat(1) +B3(1, jsize)*cg3_mat(1)
-          BN(2, jsize) = B1(2, jsize)*cg1_mat(1) + B2(2, jsize)*cg2_mat(1) +B3(2, jsize)*cg3_mat(1)
-          BN(3, jsize) = B1(3, jsize)*cg1_mat(1) + B2(3, jsize)*cg2_mat(1) +B3(3, jsize)*cg3_mat(1)
-          BN(4, jsize) = B1(1, jsize)*cg1_mat(2) + B2(1, jsize)*cg2_mat(2) +B3(1, jsize)*cg3_mat(2)
-          BN(5, jsize) = B1(2, jsize)*cg1_mat(2) + B2(2, jsize)*cg2_mat(2) +B3(2, jsize)*cg3_mat(2)
-          BN(6, jsize) = B1(3, jsize)*cg1_mat(2) + B2(3, jsize)*cg2_mat(2) +B3(3, jsize)*cg3_mat(2)
-          BN(7, jsize) = B1(1, jsize)*cg1_mat(3) + B2(1, jsize)*cg2_mat(3) +B3(1, jsize)*cg3_mat(3)
-          BN(8, jsize) = B1(2, jsize)*cg1_mat(3) + B2(2, jsize)*cg2_mat(3) +B3(2, jsize)*cg3_mat(3)
-          BN(9, jsize) = B1(3, jsize)*cg1_mat(3) + B2(3, jsize)*cg2_mat(3) +B3(3, jsize)*cg3_mat(3)
+          basis_gradient(:, :, jsize) = matmul(basis_variation(:, jsize, :), transpose(material_reciprocal_basis))
+          stress_basis_gradient(:, :, jsize) = matmul(basis_gradient(:, :, jsize), S_global)
         end do
-
-        Smat(:, :) = 0.0D0
-        do j = 1, 3
-          Smat(j  , j  ) = S_global(1, 1)
-          Smat(j  , j+3) = S_global(1, 2)
-          Smat(j  , j+6) = S_global(1, 3)
-          Smat(j+3, j  ) = S_global(2, 1)
-          Smat(j+3, j+3) = S_global(2, 2)
-          Smat(j+3, j+6) = S_global(2, 3)
-          Smat(j+6, j  ) = S_global(3, 1)
-          Smat(j+6, j+3) = S_global(3, 2)
-          Smat(j+6, j+6) = S_global(3, 3)
-        end do
-
-        SBN(1:9, 1:ndof*nn) = matmul(Smat(1:9, 1:9), BN(1:9, 1:ndof*nn))
-        do jsize=1,ndof*nn
-          do isize=1,ndof*nn
-            stiff(isize, jsize) = stiff(isize, jsize) +integration_weight*layer_weight *dot_product(BN(:, isize), SBN(:, jsize))
+        do jsize = 1, ndof*nn
+          do isize = 1, ndof*nn
+            stiff(isize, jsize) = stiff(isize, jsize) +integration_weight*layer_weight*sum( &
+              basis_gradient(:, :, isize)*stress_basis_gradient(:, :, jsize))
           end do
         end do
       endif
       if( kinematics == UPDATELAG ) then
-        do jsize=1,ndof*nn
-          do isize=1,ndof*nn
-            stiff(isize, jsize) = stiff(isize, jsize) +integration_weight*layer_weight *qf_stress_integrand(isize)*vol_deriv(jsize)
+        do jsize = 1, ndof*nn
+          do isize = 1, ndof*nn
+            stiff(isize, jsize) = stiff(isize, jsize) &
+              +integration_weight*layer_weight*qf_stress_integrand(isize)*vol_deriv(jsize)
           end do
         end do
       endif
       if( use_director_tangent .and. (use_green_lagrange .or. kinematics == UPDATELAG) ) then
-        call ShellMITC_AddDirectorStressStiffness(nn, ndof, integration_weight, layer_weight, stress, B2rot, a_over_2_v3, stiff)
+        call ShellMITC_AddDirectorStressStiffness(nn, ndof, integration_weight, layer_weight, &
+          stress, B2rot, director, stiff)
       endif
     endif
 
@@ -1134,35 +1010,31 @@ contains
   !--------------------------------------------------------------------
   !> Build the director second variation used by the drilling term.
   subroutine ShellMITC_BuildDrillingSecondVariation(nn, zeta, shapefunc, shapederiv, &
-      director_second_tangent, reciprocal_xi, reciprocal_eta, reciprocal_zeta, local_xi, local_eta, &
-      use_director_tangent, drilling_second_variation)
+      director_second_tangent, reciprocal_basis, local_basis, use_director_tangent, drilling_second_variation)
     implicit none
 
     integer(kind=kint), intent(in) :: nn
     real(kind=kreal), intent(in) :: zeta, shapefunc(nn), shapederiv(nn, 2)
     real(kind=kreal), intent(in) :: director_second_tangent(3, 3, 3, nn)
-    real(kind=kreal), intent(in) :: reciprocal_xi(3), reciprocal_eta(3), reciprocal_zeta(3)
-    real(kind=kreal), intent(in) :: local_xi(3), local_eta(3)
+    real(kind=kreal), intent(in) :: reciprocal_basis(3, 3), local_basis(3, 3)
     logical, intent(in) :: use_director_tangent
     real(kind=kreal), intent(out) :: drilling_second_variation(3, 3, nn)
 
     integer :: node, m, n
-    real(kind=kreal) :: second_basis_xi(3), second_basis_eta(3), second_basis_zeta(3)
-    real(kind=kreal) :: skew_gradient(3, 3)
+    real(kind=kreal) :: second_basis(3, 3), skew_gradient(3, 3)
 
     drilling_second_variation = 0.0D0
     if( .not. use_director_tangent ) return
     do node = 1, nn
       do n = 1, 3
         do m = 1, 3
-          second_basis_xi = shapederiv(node, 1)*zeta*director_second_tangent(:, m, n, node)
-          second_basis_eta = shapederiv(node, 2)*zeta*director_second_tangent(:, m, n, node)
-          second_basis_zeta = shapefunc(node)*director_second_tangent(:, m, n, node)
-          skew_gradient = outer_product3(reciprocal_xi, second_basis_xi) &
-            +outer_product3(reciprocal_eta, second_basis_eta) &
-            +outer_product3(reciprocal_zeta, second_basis_zeta)
+          second_basis(:, SHELL_XI) = shapederiv(node, SHELL_XI)*zeta*director_second_tangent(:, m, n, node)
+          second_basis(:, SHELL_ETA) = shapederiv(node, SHELL_ETA)*zeta*director_second_tangent(:, m, n, node)
+          second_basis(:, SHELL_ZETA) = shapefunc(node)*director_second_tangent(:, m, n, node)
+          skew_gradient = matmul(reciprocal_basis, transpose(second_basis))
           skew_gradient = skew_gradient-transpose(skew_gradient)
-          drilling_second_variation(m, n, node) = dot_product(local_xi, matmul(skew_gradient, local_eta))
+          drilling_second_variation(m, n, node) = dot_product( local_basis(:, SHELL_XI), &
+            matmul(skew_gradient, local_basis(:, SHELL_ETA)))
         end do
       end do
     end do
@@ -1172,14 +1044,14 @@ contains
   !--------------------------------------------------------------------
   !> Build the drilling compatibility vector and its generalized strain.
   subroutine ShellMITC_BuildDrillingVector(nn, ndof, finite_rotation_director, shapefunc, &
-      v1, v2, v3, cg1, cg2, cg3, B1, B2, B3, displacement, director, nddrill, Cv, Cv_disp)
+      point_triad, reciprocal_basis, basis_variation, displacement, director, nddrill, Cv, Cv_disp)
     implicit none
 
     integer(kind=kint), intent(in) :: nn, ndof
     logical, intent(in) :: finite_rotation_director
-    real(kind=kreal), intent(in) :: shapefunc(nn), v1(3), v2(3), v3(3)
-    real(kind=kreal), intent(in) :: cg1(3), cg2(3), cg3(3)
-    real(kind=kreal), intent(in) :: B1(3, ndof*nn), B2(3, ndof*nn), B3(3, ndof*nn)
+    real(kind=kreal), intent(in) :: shapefunc(nn), point_triad(3, 3)
+    real(kind=kreal), intent(in) :: reciprocal_basis(3, 3)
+    real(kind=kreal), intent(in) :: basis_variation(3, ndof*nn, 3)
     real(kind=kreal), intent(in) :: displacement(ndof*nn), director(3, nn)
     real(kind=kreal), intent(in), optional :: nddrill(nn)
     real(kind=kreal), intent(out) :: Cv(ndof*nn), Cv_disp
@@ -1189,23 +1061,23 @@ contains
     real(kind=kreal) :: cmat(3, 3), drill_axis(3), axis_norm
 
     do j = 1, ndof*nn
-      cmat = outer_product3(cg1, B1(:, j))+outer_product3(cg2, B2(:, j)) +outer_product3(cg3, B3(:, j))
+      cmat = matmul(reciprocal_basis, transpose(basis_variation(:, j, :)))
       cmat = cmat-transpose(cmat)
-      Cv_w(j) = dot_product(v1, matmul(cmat, v2))
+      Cv_w(j) = dot_product(point_triad(:, SHELL_XI), matmul(cmat, point_triad(:, SHELL_ETA)))
     end do
 
     Cv_theta = 0.0D0
     if( ndof >= 6 ) then
       do nb = 1, nn
         jrot = ndof*(nb-1)+4
-        drill_axis = v3
+        drill_axis = point_triad(:, SHELL_ZETA)
         if( finite_rotation_director .and. present(nddrill) ) then
           drill_axis = director(:, nb)
           axis_norm = sqrt(dot_product(drill_axis, drill_axis))
           if( axis_norm > 0.0D0 ) then
             drill_axis = drill_axis/axis_norm
           else
-            drill_axis = v3
+            drill_axis = point_triad(:, SHELL_ZETA)
           endif
         endif
         Cv_theta(jrot:jrot+2) = shapefunc(nb)*drill_axis
@@ -1397,15 +1269,12 @@ contains
     real(kind=kreal), intent(in) :: elem(3, nn), edisp(6, nn)
     real(kind=kreal), intent(in) :: director(3, nn), director_increment(3, nn)
     logical, intent(in) :: use_green_lagrange
-    !> Tying-point strain ordered as (e11, e22, 2*e12, 2*e23, 2*e31).
     real(kind=kreal), intent(out) :: tying_strain(5, 6, 3)
 
     integer :: tying_set, tying_point
     real(kind=kreal) :: tying_zeta, naturalcoord(2)
     real(kind=kreal) :: shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal) :: basis_xi(3), basis_eta(3), basis_zeta(3)
-    real(kind=kreal) :: reference_basis_xi(3), reference_basis_eta(3), reference_basis_zeta(3)
-    real(kind=kreal) :: current_basis_xi(3), current_basis_eta(3), current_basis_zeta(3)
+    real(kind=kreal) :: covariant_basis(3, 3), reference_basis(3, 3), current_basis(3, 3)
     real(kind=kreal) :: reference_jacobian, current_jacobian, point_strain(5)
 
     tying_strain = 0.0D0
@@ -1416,14 +1285,12 @@ contains
         call getTyingPoint(etype, tying_set, tying_point, naturalcoord)
         call getShapeFunc(etype, naturalcoord, shapefunc)
         call getShapeDeriv(etype, naturalcoord, shapederiv)
-        call ShellMITC_CovariantBasis(nn, elem, director, tying_zeta, shapefunc, shapederiv, &
-          basis_xi, basis_eta, basis_zeta)
-        if( abs(ShellMITC_CovariantJacobian(basis_xi, basis_eta, basis_zeta)) <= tiny(1.0D0) ) &
+        call ShellMITC_CovariantBasis(nn, elem, director, tying_zeta, shapefunc, shapederiv, covariant_basis)
+        if( abs(ShellMITC_CovariantJacobian(covariant_basis)) <= tiny(1.0D0) ) &
           stop "Invalid shell Jacobian"
-        call ShellMITC_EvaluatePointStrain(nn, tying_zeta, shapefunc, shapederiv, edisp(1:3, :), &
-          director_increment, basis_xi, basis_eta, basis_zeta, use_green_lagrange, point_strain, &
-          reference_basis_xi, reference_basis_eta, reference_basis_zeta, current_basis_xi, &
-          current_basis_eta, current_basis_zeta, reference_jacobian, current_jacobian)
+        call ShellMITC_EvaluatePointStrain(nn, tying_zeta, shapefunc, shapederiv, &
+          edisp(1:3, :), director_increment, covariant_basis, use_green_lagrange, &
+          point_strain, reference_basis, current_basis, reference_jacobian, current_jacobian)
         tying_strain(:, tying_point, tying_set) = point_strain
       end do
     end do
@@ -1436,8 +1303,7 @@ contains
   !> call (a_over_2_v3, a_over_2_v3_ref, a_over_2_v3_deriv) into the stress-evaluation
   !> configuration (elem, director, director_increment). Does not recompute directors itself.
   subroutine ShellMITC_SetupStressKinematics(nn, ecoord, kinematics, finite_rotation, edisp, &
-      nddirector, ndrefdirector, nddirector_deriv, ndbase_disp, elem, director, &
-      director_increment)
+      nddirector, ndrefdirector, nddirector_deriv, ndbase_disp, elem, director, director_increment)
     use mMaterial, only: UPDATELAG
     implicit none
 
@@ -1472,12 +1338,9 @@ contains
   !--------------------------------------------------------------------
   !> Evaluate the MITC assumed strain and stress-evaluation bases at one point.
   subroutine ShellMITC_EvaluateAssumedStrain(etype, nn, naturalcoord, zeta, elem, edisp, &
-      director, director_increment, use_green_lagrange, tying_strain, dstrain, strain_tensor, &
-      basis_xi, basis_eta, basis_zeta, reciprocal_xi, reciprocal_eta, reciprocal_zeta, &
-      material_local_xi, material_local_eta, material_local_zeta, material_reciprocal_xi, &
-      material_reciprocal_eta, material_reciprocal_zeta, reference_basis_xi, &
-      reference_basis_eta, reference_basis_zeta, current_basis_xi, current_basis_eta, &
-      current_basis_zeta, reference_jacobian, current_jacobian)
+      director, director_increment, use_green_lagrange, tying_strain, dstrain, &
+      strain_tensor, covariant_basis, reciprocal_basis, material_local_basis, &
+      material_reciprocal_basis, reference_basis, current_basis, reference_jacobian, current_jacobian)
     implicit none
 
     integer(kind=kint), intent(in) :: etype, nn
@@ -1487,16 +1350,10 @@ contains
     logical, intent(in) :: use_green_lagrange
     real(kind=kreal), intent(in) :: tying_strain(5, 6, 3)
     real(kind=kreal), intent(out) :: dstrain(6), strain_tensor(3, 3)
-    real(kind=kreal), intent(out) :: basis_xi(3), basis_eta(3), basis_zeta(3)
-    real(kind=kreal), intent(out) :: reciprocal_xi(3), reciprocal_eta(3), reciprocal_zeta(3)
-    real(kind=kreal), intent(out) :: material_local_xi(3), material_local_eta(3)
-    real(kind=kreal), intent(out) :: material_local_zeta(3)
-    real(kind=kreal), intent(out) :: material_reciprocal_xi(3), material_reciprocal_eta(3)
-    real(kind=kreal), intent(out) :: material_reciprocal_zeta(3)
-    real(kind=kreal), intent(out) :: reference_basis_xi(3), reference_basis_eta(3)
-    real(kind=kreal), intent(out) :: reference_basis_zeta(3)
-    real(kind=kreal), intent(out) :: current_basis_xi(3), current_basis_eta(3)
-    real(kind=kreal), intent(out) :: current_basis_zeta(3)
+    real(kind=kreal), intent(out) :: covariant_basis(3, 3), reciprocal_basis(3, 3)
+    real(kind=kreal), intent(out) :: material_local_basis(3, 3)
+    real(kind=kreal), intent(out) :: material_reciprocal_basis(3, 3)
+    real(kind=kreal), intent(out) :: reference_basis(3, 3), current_basis(3, 3)
     real(kind=kreal), intent(out) :: reference_jacobian, current_jacobian
 
     integer :: k, c, nterms
@@ -1505,24 +1362,19 @@ contains
     real(kind=kreal) :: coefficient(MAX_TYING_TERMS)
     logical :: replaced_component(5)
     real(kind=kreal) :: shapefunc(nn), shapederiv(nn, 2), strain(5)
-    real(kind=kreal) :: local_xi(3), local_eta(3), local_zeta(3)
-    real(kind=kreal) :: jacobian, material_jacobian
+    real(kind=kreal) :: local_basis(3, 3), jacobian, material_jacobian
 
     call getShapeFunc(etype, naturalcoord, shapefunc)
     call getShapeDeriv(etype, naturalcoord, shapederiv)
-    call ShellMITC_CovariantBasis(nn, elem, director, zeta, shapefunc, shapederiv, &
-      basis_xi, basis_eta, basis_zeta)
-    if( abs(ShellMITC_CovariantJacobian(basis_xi, basis_eta, basis_zeta)) <= tiny(1.0D0) ) &
+    call ShellMITC_CovariantBasis(nn, elem, director, zeta, shapefunc, shapederiv, covariant_basis)
+    if( abs(ShellMITC_CovariantJacobian(covariant_basis)) <= tiny(1.0D0) ) &
       stop "Invalid shell Jacobian"
-    call ShellMITC_BasisFromCovariant(basis_xi, basis_eta, basis_zeta, local_xi, local_eta, &
-      local_zeta, reciprocal_xi, reciprocal_eta, reciprocal_zeta, jacobian)
+    call ShellMITC_BasisFromCovariant(covariant_basis, local_basis, reciprocal_basis, jacobian)
     call ShellMITC_EvaluatePointStrain(nn, zeta, shapefunc, shapederiv, edisp(1:3, :), &
-      director_increment, basis_xi, basis_eta, basis_zeta, use_green_lagrange, strain, &
-      reference_basis_xi, reference_basis_eta, reference_basis_zeta, current_basis_xi, &
-      current_basis_eta, current_basis_zeta, reference_jacobian, current_jacobian)
+      director_increment, covariant_basis, use_green_lagrange, strain, reference_basis, &
+      current_basis, reference_jacobian, current_jacobian)
     call ShellMITC_EvaluateTyingOperator(etype, naturalcoord(1), naturalcoord(2), nterms, &
-      target_component, source_component, tying_point, tying_group, coefficient, &
-      replaced_component)
+      target_component, source_component, tying_point, tying_group, coefficient, replaced_component)
     do c = 1, 5
       if( replaced_component(c) ) strain(c) = 0.0D0
     end do
@@ -1541,17 +1393,10 @@ contains
     strain_tensor(3, 1) = 0.5D0*strain(5)
     strain_tensor(1, 3) = strain_tensor(3, 1)
 
-    material_local_xi = local_xi
-    material_local_eta = local_eta
-    material_local_zeta = local_zeta
-    material_reciprocal_xi = reciprocal_xi
-    material_reciprocal_eta = reciprocal_eta
-    material_reciprocal_zeta = reciprocal_zeta
+    material_local_basis = local_basis
+    material_reciprocal_basis = reciprocal_basis
     if( use_green_lagrange ) then
-      call ShellMITC_BasisFromCovariant(reference_basis_xi, reference_basis_eta, &
-        reference_basis_zeta, material_local_xi, material_local_eta, material_local_zeta, &
-        material_reciprocal_xi, material_reciprocal_eta, material_reciprocal_zeta, &
-        material_jacobian)
+      call ShellMITC_BasisFromCovariant(reference_basis, material_local_basis, material_reciprocal_basis, material_jacobian)
     endif
 
     dstrain = (/ strain(1), strain(2), 0.0D0, strain(3), strain(4), strain(5) /)
@@ -1561,8 +1406,7 @@ contains
   !> Calculate shell stress and optionally update the integration-point state.
   !> The constitutive matrix is local to this routine, as in Update_Stress3D.
   subroutine ShellMITC_UpdateStress(flag, update_state, gauss, n_layer, dstrain, &
-      material_local_xi, material_local_eta, material_local_zeta, material_reciprocal_xi, &
-      material_reciprocal_eta, material_reciprocal_zeta, stress, alpha)
+      material_local_basis, material_reciprocal_basis, stress, alpha)
     use mMechGauss
     use m_MatMatrix
     use mMaterial, only: UPDATELAG
@@ -1573,30 +1417,26 @@ contains
     logical, intent(in) :: update_state
     type(tGaussStatus), intent(inout) :: gauss
     real(kind=kreal), intent(in) :: dstrain(6)
-    real(kind=kreal), intent(in) :: material_local_xi(3), material_local_eta(3)
-    real(kind=kreal), intent(in) :: material_local_zeta(3)
-    real(kind=kreal), intent(in) :: material_reciprocal_xi(3), material_reciprocal_eta(3)
-    real(kind=kreal), intent(in) :: material_reciprocal_zeta(3)
+    real(kind=kreal), intent(in) :: material_local_basis(3, 3)
+    real(kind=kreal), intent(in) :: material_reciprocal_basis(3, 3)
     real(kind=kreal), intent(out) :: stress(6), alpha
 
     real(kind=kreal) :: D(5, 5), strain(5), stress_shell(5)
     real(kind=kreal) :: dstress(6), dstress_trace(6), trace_coeff
 
     strain = (/ dstrain(1), dstrain(2), dstrain(4), dstrain(5), dstrain(6) /)
-    call MatlMatrix_Shell(gauss, Shell, D, material_local_xi, material_local_eta, &
-      material_local_zeta, material_reciprocal_xi, material_reciprocal_eta, &
-      material_reciprocal_zeta, alpha, n_layer)
+    call MatlMatrix_Shell(gauss, Shell, D, material_local_basis(:, SHELL_XI), &
+      material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), material_reciprocal_basis(:, SHELL_XI), &
+      material_reciprocal_basis(:, SHELL_ETA), material_reciprocal_basis(:, SHELL_ZETA), alpha, n_layer)
 
     stress_shell = matmul(D, strain)
-    dstress = (/ stress_shell(1), stress_shell(2), 0.0D0, stress_shell(3), &
-      stress_shell(4), stress_shell(5) /)
+    dstress = (/ stress_shell(1), stress_shell(2), 0.0D0, stress_shell(3), stress_shell(4), stress_shell(5) /)
     stress = dstress
     if( .not. update_state ) return
 
     if( flag == UPDATELAG ) then
       trace_coeff = ShellPlaneStressTraceCoeff(gauss, n_layer)
-      call ShellObjectiveTraceStressIncrement(gauss%stress_bak(1:6), dstrain, &
-        dstress_trace, trace_coeff)
+      call ShellObjectiveTraceStressIncrement(gauss%stress_bak(1:6), dstrain, dstress_trace, trace_coeff)
       gauss%strain(1:6) = gauss%strain_bak(1:6)+dstrain
       gauss%stress(1:6) = gauss%stress_bak(1:6)+dstress_trace+dstress
       gauss%strain_energy = gauss%strain_energy_bak+dot_product(gauss%stress(1:6), dstrain)
@@ -1611,46 +1451,38 @@ contains
 
   !--------------------------------------------------------------------
   !> Transform shell-local stress and strain to the requested output measure.
-  subroutine ShellMITC_TransformOutput(use_gl_strain, S, E, g1_in, g2_in, g3_in, &
-      cg1_in, cg2_in, cg3_in, g1_ref, g2_ref, g3_ref, g1_cur, g2_cur, g3_cur, det_ref, det_cur, strain_out, stress_out)
+  subroutine ShellMITC_TransformOutput(use_gl_strain, S, E, covariant_basis, &
+      reciprocal_basis, reference_basis, current_basis, det_ref, det_cur, strain_out, stress_out)
     use m_fstr, only: OPSSTYPE, kOPSS_SOLUTION
     use m_utilities, only: get_principal
     implicit none
 
     logical, intent(in) :: use_gl_strain
     real(kind=kreal), intent(in) :: S(3, 3), E(3, 3)
-    real(kind=kreal), intent(in) :: g1_in(3), g2_in(3), g3_in(3)
-    real(kind=kreal), intent(in) :: cg1_in(3), cg2_in(3), cg3_in(3)
-    real(kind=kreal), intent(in) :: g1_ref(3), g2_ref(3), g3_ref(3)
-    real(kind=kreal), intent(in) :: g1_cur(3), g2_cur(3), g3_cur(3)
+    real(kind=kreal), intent(in) :: covariant_basis(3, 3), reciprocal_basis(3, 3)
+    real(kind=kreal), intent(in) :: reference_basis(3, 3), current_basis(3, 3)
     real(kind=kreal), intent(in) :: det_ref, det_cur
     real(kind=kreal), intent(out) :: strain_out(6), stress_out(6)
 
     integer :: i
-    real(kind=kreal) :: basis(3, 3), cbasis(3, 3), ref_cbasis(3, 3), cur_basis(3, 3)
+    real(kind=kreal) :: output_basis(3, 3), output_reciprocal_basis(3, 3)
+    real(kind=kreal) :: reference_reciprocal_basis(3, 3), reference_local_basis(3, 3)
     real(kind=kreal) :: stress_tensor(3, 3), strain_tensor(3, 3)
     real(kind=kreal) :: stretch_b(3, 3), tensor(6), eigval(3), princ(3, 3)
-    real(kind=kreal) :: logstrain(3, 3), cg_metric(3, 3), e1(3), e2(3), e3(3)
+    real(kind=kreal) :: logstrain(3, 3), cg_metric(3, 3)
     real(kind=kreal) :: det, jac, eig_norm
 
-    basis(:, 1) = g1_in
-    basis(:, 2) = g2_in
-    basis(:, 3) = g3_in
-    cbasis(:, 1) = cg1_in
-    cbasis(:, 2) = cg2_in
-    cbasis(:, 3) = cg3_in
+    output_basis = covariant_basis
+    output_reciprocal_basis = reciprocal_basis
 
     if( use_gl_strain ) then
-      basis(:, 1) = g1_ref
-      basis(:, 2) = g2_ref
-      basis(:, 3) = g3_ref
-      call ShellMITC_BasisFromCovariant(g1_ref, g2_ref, g3_ref, e1, e2, e3, &
-        ref_cbasis(:, 1), ref_cbasis(:, 2), ref_cbasis(:, 3), det)
-      cbasis(:, :) = ref_cbasis(:, :)
+      output_basis = reference_basis
+      call ShellMITC_BasisFromCovariant(reference_basis, reference_local_basis, reference_reciprocal_basis, det)
+      output_reciprocal_basis = reference_reciprocal_basis
     endif
 
-    stress_tensor = matmul(basis, matmul(S, transpose(basis)))
-    strain_tensor = matmul(cbasis, matmul(E, transpose(cbasis)))
+    stress_tensor = matmul(output_basis, matmul(S, transpose(output_basis)))
+    strain_tensor = matmul(output_reciprocal_basis, matmul(E, transpose(output_reciprocal_basis)))
     call ShellTensorToStressVector(stress_tensor, stress_out)
     strain_out(1:3) = (/ strain_tensor(1, 1), strain_tensor(2, 2), strain_tensor(3, 3) /)
     ! The finite-rotation Green-Lagrange output reports the tensor shear (no
@@ -1667,12 +1499,9 @@ contains
     jac = det_cur/det_ref
     if( abs(jac) <= tiny(1.0D0) ) stop "Fail to convert shell stress: detF=0"
 
-    cur_basis(:, 1) = g1_cur
-    cur_basis(:, 2) = g2_cur
-    cur_basis(:, 3) = g3_cur
-    stress_tensor = matmul(cur_basis, matmul(S, transpose(cur_basis)))/jac
-    cg_metric = matmul(transpose(ref_cbasis), ref_cbasis)
-    stretch_b = matmul(cur_basis, matmul(cg_metric, transpose(cur_basis)))
+    stress_tensor = matmul(current_basis, matmul(S, transpose(current_basis)))/jac
+    cg_metric = matmul(transpose(reference_reciprocal_basis), reference_reciprocal_basis)
+    stretch_b = matmul(current_basis, matmul(cg_metric, transpose(current_basis)))
 
     call ShellTensorToStressVector(stretch_b, tensor)
     call get_principal(tensor, eigval, princ)
@@ -1684,7 +1513,7 @@ contains
       princ(:, i) = princ(:, i)/eig_norm
     end do
 
-    logstrain(:, :) = 0.0D0
+    logstrain = 0.0D0
     do i = 1, 3
       logstrain = logstrain+eigval(i)*outer_product3(princ(:, i), princ(:, i))
     end do
@@ -1826,22 +1655,15 @@ contains
     real(kind=kreal) :: integration_weight, layer_weight
     real(kind=kreal) :: naturalcoord(2), shapefunc(nn), shapederiv(nn, 2)
     real(kind=kreal) :: D(5, 5), B(5, ndof*nn), DB(5, ndof*nn)
-    real(kind=kreal) :: B1(3, ndof*nn), B2(3, ndof*nn), B3(3, ndof*nn)
+    real(kind=kreal) :: basis_variation(3, ndof*nn, 3)
     real(kind=kreal) :: stress_vec(5), stress_old_vec(6), alpha, trace_coeff
-    real(kind=kreal) :: v1_i(3), v2_i(3), v3_i(3)
-    real(kind=kreal) :: basis_xi(3), basis_eta(3), basis_zeta(3)
-    real(kind=kreal) :: tangent_basis_xi(3), tangent_basis_eta(3)
-    real(kind=kreal) :: reciprocal_xi(3), reciprocal_eta(3), reciprocal_zeta(3)
-    real(kind=kreal) :: local_xi(3), local_eta(3), local_zeta(3)
-    real(kind=kreal) :: material_reciprocal_xi(3), material_reciprocal_eta(3)
-    real(kind=kreal) :: material_reciprocal_zeta(3)
-    real(kind=kreal) :: material_local_xi(3), material_local_eta(3), material_local_zeta(3)
-    real(kind=kreal) :: dudxi_rot(3, nn), dudeta_rot(3, nn), dudzeta_rot(3, nn)
+    real(kind=kreal) :: point_triad(3, 3), covariant_basis(3, 3)
+    real(kind=kreal) :: tangent_basis(3, 2), reciprocal_basis(3, 3), local_basis(3, 3)
+    real(kind=kreal) :: material_reciprocal_basis(3, 3), material_local_basis(3, 3)
+    real(kind=kreal) :: director_contribution(3, nn, 3)
     real(kind=kreal) :: director_second_variation(5, 3, 3, nn)
     real(kind=kreal) :: tying_B(5, ndof*nn, 6, 3)
-    real(kind=kreal) :: tying_basis_variation_xi(3, ndof*nn, 6, 3)
-    real(kind=kreal) :: tying_basis_variation_eta(3, ndof*nn, 6, 3)
-    real(kind=kreal) :: tying_basis_variation_zeta(3, ndof*nn, 6, 3)
+    real(kind=kreal) :: tying_basis_variation(3, ndof*nn, 3, 6, 3)
     real(kind=kreal) :: tying_director_second_variation(5, 3, 3, nn, 6, 3)
     real(kind=kreal) :: Cv(ndof*nn), Cv_disp, Cv_w_second(3, 3, nn)
 
@@ -1856,14 +1678,11 @@ contains
       tying_zeta = ShellMITC_TyingZeta(etype, 0.0D0)
       call ShellMITC_EvaluateTyingStiffnessDataAtZeta(etype, nn, ndof, tying_zeta, &
         elem, shell_disp, director, director_tangent, director_second_tangent, &
-        use_green_lagrange, use_director_tangent, tying_B, tying_basis_variation_xi, &
-        tying_basis_variation_eta, tying_basis_variation_zeta, &
-        tying_director_second_variation)
+        use_green_lagrange, use_director_tangent, tying_B, tying_basis_variation, tying_director_second_variation)
     endif
 
     do ly = 1, ny
-      call fstr_shell_layer_quadrature_gauss(etype, gausses(1), ilayer, ly, &
-        zeta_ly, thickness_weight, ierr)
+      call fstr_shell_layer_quadrature_gauss(etype, gausses(1), ilayer, ly, zeta_ly, thickness_weight, ierr)
       if( ierr /= 0 ) cycle
 
       ! MITC9 tying data depend on the physical thickness coordinate.
@@ -1871,30 +1690,25 @@ contains
         tying_zeta = ShellMITC_TyingZeta(etype, zeta_ly)
         call ShellMITC_EvaluateTyingStiffnessDataAtZeta(etype, nn, ndof, tying_zeta, &
           elem, shell_disp, director, director_tangent, director_second_tangent, &
-          use_green_lagrange, use_director_tangent, tying_B, tying_basis_variation_xi, &
-          tying_basis_variation_eta, tying_basis_variation_zeta, &
-          tying_director_second_variation)
+          use_green_lagrange, use_director_tangent, tying_B, tying_basis_variation, tying_director_second_variation)
       endif
 
       do lx = 1, NumOfQuadPoints(etype)
         call getQuadPoint(etype, lx, naturalcoord)
-        xi_lx = naturalcoord(1)
-        eta_lx = naturalcoord(2)
+        xi_lx = naturalcoord(SHELL_XI)
+        eta_lx = naturalcoord(SHELL_ETA)
         surface_weight = getWeight(etype, lx)
         call getShapeFunc(etype, naturalcoord, shapefunc)
         call getShapeDeriv(etype, naturalcoord, shapederiv)
 
-        v1_i = matmul(v1, shapefunc)
-        v2_i = matmul(v2, shapefunc)
-        v3_i = matmul(v3, shapefunc)
+        point_triad(:, SHELL_XI) = matmul(v1, shapefunc)
+        point_triad(:, SHELL_ETA) = matmul(v2, shapefunc)
+        point_triad(:, SHELL_ZETA) = matmul(v3, shapefunc)
 
         call ShellMITC_PreparePointKinematics(etype, nn, use_green_lagrange, ecoord, elem, &
           shell_disp(1:3, :), director, reference_director, zeta_ly, shapefunc, shapederiv, &
-          basis_xi, basis_eta, basis_zeta, tangent_basis_xi, tangent_basis_eta, reciprocal_xi, &
-          reciprocal_eta, reciprocal_zeta, local_xi, local_eta, local_zeta, &
-          material_reciprocal_xi, material_reciprocal_eta, material_reciprocal_zeta, &
-          material_local_xi, material_local_eta, material_local_zeta, integration_jacobian, &
-          dudxi_rot, dudeta_rot, dudzeta_rot)
+          covariant_basis, tangent_basis, reciprocal_basis, local_basis, &
+          material_reciprocal_basis, material_local_basis, integration_jacobian, director_contribution)
 
         if( add_geometric_stiffness .and. present(element) ) then
           ishell = fstr_shell_layer_gauss_index(element, lx, ilayer, ly)
@@ -1904,23 +1718,21 @@ contains
 
         if( ishell > 0 ) then
           call MatlMatrix_Shell(element%shell_layer_gausses(ishell), Shell, D, &
-            material_local_xi, material_local_eta, material_local_zeta, &
-            material_reciprocal_xi, material_reciprocal_eta, &
-            material_reciprocal_zeta, alpha, ilayer)
+            material_local_basis(:, SHELL_XI), material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), &
+            material_reciprocal_basis(:, SHELL_XI), material_reciprocal_basis(:, SHELL_ETA), &
+            material_reciprocal_basis(:, SHELL_ZETA), alpha, ilayer)
         else
-          call MatlMatrix_Shell(gausses(lx), Shell, D, material_local_xi, &
-            material_local_eta, material_local_zeta, material_reciprocal_xi, &
-            material_reciprocal_eta, material_reciprocal_zeta, alpha, ilayer)
+          call MatlMatrix_Shell(gausses(lx), Shell, D, &
+            material_local_basis(:, SHELL_XI), material_local_basis(:, SHELL_ETA), material_local_basis(:, SHELL_ZETA), &
+            material_reciprocal_basis(:, SHELL_XI), material_reciprocal_basis(:, SHELL_ETA), &
+            material_reciprocal_basis(:, SHELL_ZETA), alpha, ilayer)
         endif
 
         call ShellMITC_BuildFirstStrainVariation(nn, ndof, zeta_ly, shapefunc, shapederiv, &
-          basis_xi, basis_eta, basis_zeta, tangent_basis_xi, tangent_basis_eta, &
-          dudxi_rot, dudeta_rot, dudzeta_rot, director_tangent, use_director_tangent, &
-          B, B1, B2, B3)
+          covariant_basis, tangent_basis, director_contribution, director_tangent, use_director_tangent, B, basis_variation)
         if( use_director_tangent ) then
           call ShellMITC_BuildDirectorSecondVariation(nn, zeta_ly, shapefunc, shapederiv, &
-            basis_xi, basis_eta, basis_zeta, director_second_tangent, &
-            director_second_variation)
+            covariant_basis, director_second_tangent, director_second_variation)
         endif
 
         if( use_director_tangent ) then
@@ -1934,10 +1746,8 @@ contains
 
         if( add_geometric_stiffness ) then
           if( ishell > 0 ) then
-            stress_vec = (/ element%shell_layer_gausses(ishell)%stress(1), &
-              element%shell_layer_gausses(ishell)%stress(2), &
-              element%shell_layer_gausses(ishell)%stress(4), &
-              element%shell_layer_gausses(ishell)%stress(5), &
+            stress_vec = (/ element%shell_layer_gausses(ishell)%stress(1), element%shell_layer_gausses(ishell)%stress(2), &
+              element%shell_layer_gausses(ishell)%stress(4), element%shell_layer_gausses(ishell)%stress(5), &
               element%shell_layer_gausses(ishell)%stress(6) /)
           else
             stress_vec = (/ gausses(lx)%stress(1), gausses(lx)%stress(2), &
@@ -1954,8 +1764,7 @@ contains
             stress_old_vec = gausses(lx)%stress_bak(1:6)
             trace_coeff = ShellPlaneStressTraceCoeff(gausses(lx), ilayer)
           endif
-          call ShellAddULObjectiveTraceTangent(stress_old_vec, ndof*nn, B, DB, &
-            trace_coeff=trace_coeff)
+          call ShellAddULObjectiveTraceTangent(stress_old_vec, ndof*nn, B, DB, trace_coeff=trace_coeff)
         endif
 
         do jsize = 1, ndof*nn
@@ -1967,24 +1776,17 @@ contains
 
         call ShellMITC_AddGeometricStiffness(etype, nn, ndof, kinematics, &
           use_director_tangent, use_green_lagrange, add_geometric_stiffness, &
-          xi_lx, eta_lx, integration_weight, layer_weight, stress_vec, B, B1, B2, B3, &
-          tying_basis_variation_xi, tying_basis_variation_eta, &
-          tying_basis_variation_zeta, reciprocal_xi, reciprocal_eta, reciprocal_zeta, &
-          material_local_xi, material_local_eta, material_local_zeta, &
-          material_reciprocal_xi, material_reciprocal_eta, material_reciprocal_zeta, &
-          director_second_variation, director, stiff_work)
+          xi_lx, eta_lx, integration_weight, layer_weight, stress_vec, B, &
+          basis_variation, tying_basis_variation, reciprocal_basis, material_local_basis, &
+          material_reciprocal_basis, director_second_variation, director, stiff_work)
 
         call ShellMITC_BuildDrillingSecondVariation(nn, zeta_ly, shapefunc, shapederiv, &
-          director_second_tangent, material_reciprocal_xi, material_reciprocal_eta, &
-          material_reciprocal_zeta, v1_i, v2_i, use_director_tangent, Cv_w_second)
+          director_second_tangent, material_reciprocal_basis, point_triad, use_director_tangent, Cv_w_second)
         call ShellMITC_BuildDrillingVector(nn, ndof, finite_rotation, shapefunc, &
-          v1_i, v2_i, v3_i, material_reciprocal_xi, material_reciprocal_eta, &
-          material_reciprocal_zeta, B1, B2, B3, nodal_kinematic_dofs, &
-          director, nddrill, Cv, Cv_disp)
+          point_triad, material_reciprocal_basis, basis_variation, nodal_kinematic_dofs, director, nddrill, Cv, Cv_disp)
         call ShellMITC_AddDrillingStiffness(nn, ndof, finite_rotation, &
           use_director_tangent, shapefunc, Cv, Cv_disp, Cv_w_second, nodal_kinematic_dofs, &
-          director, director_tangent, alpha, integration_weight, layer_weight, &
-          nddrill, stiff_work)
+          director, director_tangent, alpha, integration_weight, layer_weight, nddrill, stiff_work)
       end do
     end do
   end subroutine ShellMITC_IntegrateStiffnessLayer
@@ -2027,28 +1829,18 @@ contains
     real(kind=kreal) :: integration_weight, layer_weight
     real(kind=kreal) :: naturalcoord(2), shapefunc(nn), shapederiv(nn, 2)
     real(kind=kreal) :: B(5, ndof*nn), strain_vec(5), stress_vec(5), alpha
-    real(kind=kreal) :: B1(3, ndof*nn), B2(3, ndof*nn), B3(3, ndof*nn)
-    real(kind=kreal) :: v1_i(3), v2_i(3), v3_i(3)
-    real(kind=kreal) :: basis_xi(3), basis_eta(3), basis_zeta(3)
-    real(kind=kreal) :: tangent_basis_xi(3), tangent_basis_eta(3)
-    real(kind=kreal) :: reciprocal_xi(3), reciprocal_eta(3), reciprocal_zeta(3)
-    real(kind=kreal) :: local_xi(3), local_eta(3), local_zeta(3)
-    real(kind=kreal) :: material_reciprocal_xi(3), material_reciprocal_eta(3)
-    real(kind=kreal) :: material_reciprocal_zeta(3)
-    real(kind=kreal) :: material_local_xi(3), material_local_eta(3), material_local_zeta(3)
-    real(kind=kreal) :: dudxi_rot(3, nn), dudeta_rot(3, nn), dudzeta_rot(3, nn)
+    real(kind=kreal) :: basis_variation(3, ndof*nn, 3), point_triad(3, 3)
+    real(kind=kreal) :: covariant_basis(3, 3), tangent_basis(3, 2)
+    real(kind=kreal) :: reciprocal_basis(3, 3), local_basis(3, 3)
+    real(kind=kreal) :: material_reciprocal_basis(3, 3), material_local_basis(3, 3)
+    real(kind=kreal) :: director_contribution(3, nn, 3)
     real(kind=kreal) :: tying_B(5, ndof*nn, 6, 3), tying_strain(5, 6, 3)
     real(kind=kreal) :: dstrain(6), stress(6), strain_out(6), stress_out(6)
     real(kind=kreal) :: strain_tensor(3, 3), stress_tensor(3, 3)
-    real(kind=kreal) :: stress_basis_xi(3), stress_basis_eta(3), stress_basis_zeta(3)
-    real(kind=kreal) :: stress_reciprocal_xi(3), stress_reciprocal_eta(3)
-    real(kind=kreal) :: stress_reciprocal_zeta(3)
-    real(kind=kreal) :: stress_material_local_xi(3), stress_material_local_eta(3)
-    real(kind=kreal) :: stress_material_local_zeta(3)
-    real(kind=kreal) :: stress_material_reciprocal_xi(3), stress_material_reciprocal_eta(3)
-    real(kind=kreal) :: stress_material_reciprocal_zeta(3)
-    real(kind=kreal) :: reference_basis_xi(3), reference_basis_eta(3), reference_basis_zeta(3)
-    real(kind=kreal) :: current_basis_xi(3), current_basis_eta(3), current_basis_zeta(3)
+    real(kind=kreal) :: stress_covariant_basis(3, 3), stress_reciprocal_basis(3, 3)
+    real(kind=kreal) :: stress_material_local_basis(3, 3)
+    real(kind=kreal) :: stress_material_reciprocal_basis(3, 3)
+    real(kind=kreal) :: reference_basis(3, 3), current_basis(3, 3)
     real(kind=kreal) :: reference_jacobian, current_jacobian
     real(kind=kreal) :: Cv(ndof*nn), Cv_disp
 
@@ -2058,32 +1850,28 @@ contains
     if( etype /= fe_mitc9_shell ) then
       tying_zeta = ShellMITC_TyingZeta(etype, 0.0D0)
       call ShellMITC_EvaluateTyingBAtZeta(etype, nn, ndof, tying_zeta, evaluation_coords, &
-        total_nodal_state, director, director_tangent, use_green_lagrange, &
-        use_director_tangent, tying_B)
+        total_nodal_state, director, director_tangent, use_green_lagrange, use_director_tangent, tying_B)
     endif
 
     do ly = 1, ny
-      call fstr_shell_layer_quadrature_gauss(etype, gausses(1), ilayer, ly, &
-        zeta_ly, thickness_weight, ierr)
+      call fstr_shell_layer_quadrature_gauss(etype, gausses(1), ilayer, ly, zeta_ly, thickness_weight, ierr)
       if( ierr /= 0 ) cycle
 
       if( etype == fe_mitc9_shell ) then
         tying_zeta = ShellMITC_TyingZeta(etype, zeta_ly)
         call ShellMITC_EvaluateTyingBAtZeta(etype, nn, ndof, tying_zeta, evaluation_coords, &
-          total_nodal_state, director, director_tangent, use_green_lagrange, &
-          use_director_tangent, tying_B)
+          total_nodal_state, director, director_tangent, use_green_lagrange, use_director_tangent, tying_B)
       endif
 
       if( update_state ) then
         call ShellMITC_EvaluateTyingStrains(etype, nn, zeta_ly, stress_elem, &
-          strain_nodal_state, stress_director, stress_director_increment, &
-          use_green_lagrange, tying_strain)
+          strain_nodal_state, stress_director, stress_director_increment, use_green_lagrange, tying_strain)
       endif
 
       do lx = 1, NumOfQuadPoints(etype)
         call getQuadPoint(etype, lx, naturalcoord)
-        xi = naturalcoord(1)
-        eta = naturalcoord(2)
+        xi = naturalcoord(SHELL_XI)
+        eta = naturalcoord(SHELL_ETA)
         surface_weight = getWeight(etype, lx)
         call getShapeFunc(etype, naturalcoord, shapefunc)
         call getShapeDeriv(etype, naturalcoord, shapederiv)
@@ -2107,50 +1895,32 @@ contains
         if( update_state ) then
           call ShellMITC_EvaluateAssumedStrain(etype, nn, naturalcoord, zeta_ly, stress_elem, &
             strain_nodal_state, stress_director, stress_director_increment, &
-            use_green_lagrange, tying_strain, dstrain, strain_tensor, stress_basis_xi, &
-            stress_basis_eta, stress_basis_zeta, stress_reciprocal_xi, stress_reciprocal_eta, &
-            stress_reciprocal_zeta, stress_material_local_xi, stress_material_local_eta, &
-            stress_material_local_zeta, stress_material_reciprocal_xi, &
-            stress_material_reciprocal_eta, stress_material_reciprocal_zeta, &
-            reference_basis_xi, reference_basis_eta, reference_basis_zeta, &
-            current_basis_xi, current_basis_eta, current_basis_zeta, &
-            reference_jacobian, current_jacobian)
+            use_green_lagrange, tying_strain, dstrain, strain_tensor, stress_covariant_basis, stress_reciprocal_basis, &
+            stress_material_local_basis, stress_material_reciprocal_basis, &
+            reference_basis, current_basis, reference_jacobian, current_jacobian)
         endif
 
-        v1_i = matmul(v1, shapefunc)
-        v2_i = matmul(v2, shapefunc)
-        v3_i = matmul(v3, shapefunc)
+        point_triad(:, SHELL_XI) = matmul(v1, shapefunc)
+        point_triad(:, SHELL_ETA) = matmul(v2, shapefunc)
+        point_triad(:, SHELL_ZETA) = matmul(v3, shapefunc)
         call ShellMITC_PreparePointKinematics(etype, nn, use_green_lagrange, ecoord, &
           evaluation_coords, total_nodal_state(1:3, :), director, reference_director, &
-          zeta_ly, shapefunc, shapederiv, basis_xi, basis_eta, basis_zeta, &
-          tangent_basis_xi, tangent_basis_eta, reciprocal_xi, reciprocal_eta, &
-          reciprocal_zeta, local_xi, local_eta, local_zeta, material_reciprocal_xi, &
-          material_reciprocal_eta, material_reciprocal_zeta, material_local_xi, &
-          material_local_eta, material_local_zeta, integration_jacobian, &
-          dudxi_rot, dudeta_rot, dudzeta_rot)
+          zeta_ly, shapefunc, shapederiv, covariant_basis, tangent_basis, reciprocal_basis, &
+          local_basis, material_reciprocal_basis, material_local_basis, integration_jacobian, director_contribution)
 
         call ShellMITC_BuildFirstStrainVariation(nn, ndof, zeta_ly, shapefunc, shapederiv, &
-          basis_xi, basis_eta, basis_zeta, tangent_basis_xi, tangent_basis_eta, &
-          dudxi_rot, dudeta_rot, dudzeta_rot, director_tangent, &
-          use_director_tangent, B, B1, B2, B3)
+          covariant_basis, tangent_basis, director_contribution, director_tangent, use_director_tangent, B, basis_variation)
         call ShellMITC_ApplyAssumedStrain(etype, nn, ndof, xi, eta, tying_B, B)
 
         if( .not. update_state ) then
           strain_vec = matmul(B, nodal_kinematic_dofs)
-          dstrain = (/ strain_vec(1), strain_vec(2), 0.0D0, strain_vec(3), &
-            strain_vec(4), strain_vec(5) /)
-          stress_material_local_xi = material_local_xi
-          stress_material_local_eta = material_local_eta
-          stress_material_local_zeta = material_local_zeta
-          stress_material_reciprocal_xi = material_reciprocal_xi
-          stress_material_reciprocal_eta = material_reciprocal_eta
-          stress_material_reciprocal_zeta = material_reciprocal_zeta
+          dstrain = (/ strain_vec(1), strain_vec(2), 0.0D0, strain_vec(3), strain_vec(4), strain_vec(5) /)
+          stress_material_local_basis = material_local_basis
+          stress_material_reciprocal_basis = material_reciprocal_basis
         endif
 
         call ShellMITC_UpdateStress(kinematics, store_state, gauss, ilayer, dstrain, &
-          stress_material_local_xi, stress_material_local_eta, stress_material_local_zeta, &
-          stress_material_reciprocal_xi, stress_material_reciprocal_eta, &
-          stress_material_reciprocal_zeta, stress, alpha)
+          stress_material_local_basis, stress_material_reciprocal_basis, stress, alpha)
 
         if( store_state ) then
           if( kinematics == UPDATELAG ) then
@@ -2159,10 +1929,8 @@ contains
           else
             call ShellStressVectorToTensor(stress, stress_tensor)
             call ShellMITC_TransformOutput(use_green_lagrange, stress_tensor, strain_tensor, &
-              stress_basis_xi, stress_basis_eta, stress_basis_zeta, stress_reciprocal_xi, &
-              stress_reciprocal_eta, stress_reciprocal_zeta, reference_basis_xi, &
-              reference_basis_eta, reference_basis_zeta, current_basis_xi, current_basis_eta, &
-              current_basis_zeta, reference_jacobian, current_jacobian, strain_out, stress_out)
+              stress_covariant_basis, stress_reciprocal_basis, reference_basis, &
+              current_basis, reference_jacobian, current_jacobian, strain_out, stress_out)
             gauss%strain_out(1:6) = strain_out
             gauss%stress_out(1:6) = stress_out
           endif
@@ -2173,14 +1941,11 @@ contains
         qf_work = qf_work+integration_weight*layer_weight*matmul(stress_vec, B)
 
         call ShellMITC_BuildDrillingVector(nn, ndof, finite_rotation, shapefunc, &
-          v1_i, v2_i, v3_i, material_reciprocal_xi, material_reciprocal_eta, &
-          material_reciprocal_zeta, B1, B2, B3, nodal_kinematic_dofs, &
-          director, nddrill, Cv, Cv_disp)
+          point_triad, material_reciprocal_basis, basis_variation, nodal_kinematic_dofs, director, nddrill, Cv, Cv_disp)
         qf_work = qf_work+integration_weight*layer_weight*alpha*Cv*Cv_disp
       end do
     end do
   end subroutine ShellMITC_IntegrateInternalForceLayer
-
 
   !=====================================================================
   ! Public shell element entry points
@@ -2229,15 +1994,13 @@ contains
 
     call ShellMITC_PrepareNodalKinematics(etype, nn, thick, kinematics, finite_rotation, &
       use_director_tangent, use_director_tangent, ecoord, shell_disp, ndtriad, ndreftriad, &
-      ndcurtriad, elem, v1, v2, v3, director, reference_director, director_tangent, &
-      director_second_tangent)
+      ndcurtriad, elem, v1, v2, v3, director, reference_director, director_tangent, director_second_tangent)
 
     stiff = 0.0D0
     stiff_work = 0.0D0
     nodal_kinematic_dofs = 0.0D0
     do nb = 1, nn
-      nodal_kinematic_dofs(ndof*(nb-1)+1:ndof*(nb-1)+ndof_shell) = &
-        shell_disp(1:ndof_shell, nb)
+      nodal_kinematic_dofs(ndof*(nb-1)+1:ndof*(nb-1)+ndof_shell) = shell_disp(1:ndof_shell, nb)
     end do
 
     nlayer = gausses(1)%pMaterial%totallyr
@@ -2288,13 +2051,9 @@ contains
     real(kind=kreal) :: tying_strain(5, 6, 3)
     real(kind=kreal) :: point_strain(6), point_stress(6), alpha
     real(kind=kreal) :: strain_tensor(3, 3), stress_tensor(3, 3)
-    real(kind=kreal) :: basis_xi(3), basis_eta(3), basis_zeta(3)
-    real(kind=kreal) :: reciprocal_xi(3), reciprocal_eta(3), reciprocal_zeta(3)
-    real(kind=kreal) :: material_local_xi(3), material_local_eta(3), material_local_zeta(3)
-    real(kind=kreal) :: material_reciprocal_xi(3), material_reciprocal_eta(3)
-    real(kind=kreal) :: material_reciprocal_zeta(3)
-    real(kind=kreal) :: reference_basis_xi(3), reference_basis_eta(3), reference_basis_zeta(3)
-    real(kind=kreal) :: current_basis_xi(3), current_basis_eta(3), current_basis_zeta(3)
+    real(kind=kreal) :: covariant_basis(3, 3), reciprocal_basis(3, 3)
+    real(kind=kreal) :: material_local_basis(3, 3), material_reciprocal_basis(3, 3)
+    real(kind=kreal) :: reference_basis(3, 3), current_basis(3, 3)
     real(kind=kreal) :: reference_jacobian, current_jacobian
 
     use_surface_gauss = .false.
@@ -2314,8 +2073,7 @@ contains
       a_over_2_v3_deriv=a_over_2_v3_deriv, a_over_2_v3_second=a_over_2_v3_second)
 
     call ShellMITC_SetupStressKinematics(nn, ecoord, kinematics, finite_rotation, edisp, &
-      a_over_2_v3, a_over_2_v3_ref, a_over_2_v3_deriv, ndbase_disp, elem, director, &
-      director_increment)
+      a_over_2_v3, a_over_2_v3_ref, a_over_2_v3_deriv, ndbase_disp, elem, director, director_increment)
 
     call ShellMITC_EvaluateTyingStrains(etype, nn, zeta, elem, edisp, director, &
       director_increment, use_green_lagrange, tying_strain)
@@ -2333,37 +2091,28 @@ contains
 
       call ShellMITC_EvaluateAssumedStrain(etype, nn, naturalcoord, zeta_ly, elem, edisp, &
         director, director_increment, use_green_lagrange, tying_strain, point_strain, &
-        strain_tensor, basis_xi, basis_eta, basis_zeta, reciprocal_xi, reciprocal_eta, &
-        reciprocal_zeta, material_local_xi, material_local_eta, material_local_zeta, &
-        material_reciprocal_xi, material_reciprocal_eta, material_reciprocal_zeta, &
-        reference_basis_xi, reference_basis_eta, reference_basis_zeta, current_basis_xi, &
-        current_basis_eta, current_basis_zeta, reference_jacobian, current_jacobian)
+        strain_tensor, covariant_basis, reciprocal_basis, material_local_basis, &
+        material_reciprocal_basis, reference_basis, current_basis, reference_jacobian, current_jacobian)
 
       if( present(local_stress_override) .and. lx <= size(local_stress_override, 1) &
           .and. size(local_stress_override, 2) >= 6 ) then
-        point_stress = (/ local_stress_override(lx, 1), &
-          local_stress_override(lx, 2), 0.0D0, local_stress_override(lx, 4), &
+        point_stress = (/ local_stress_override(lx, 1), local_stress_override(lx, 2), 0.0D0, local_stress_override(lx, 4), &
           local_stress_override(lx, 5), local_stress_override(lx, 6) /)
       else
         gauss_work = gausses(lx)
         call ShellMITC_UpdateStress(kinematics, update_state, gauss_work, n_layer, &
-          point_strain, material_local_xi, material_local_eta, material_local_zeta, &
-          material_reciprocal_xi, material_reciprocal_eta, material_reciprocal_zeta, &
-          point_stress, alpha)
+          point_strain, material_local_basis, material_reciprocal_basis, point_stress, alpha)
       endif
 
       call ShellStressVectorToTensor(point_stress, stress_tensor)
       call ShellMITC_TransformOutput(use_green_lagrange, stress_tensor, strain_tensor, &
-        basis_xi, basis_eta, basis_zeta, reciprocal_xi, reciprocal_eta, reciprocal_zeta, &
-        reference_basis_xi, reference_basis_eta, reference_basis_zeta, current_basis_xi, &
-        current_basis_eta, current_basis_zeta, reference_jacobian, current_jacobian, &
-        strain(lx, 1:6), stress(lx, 1:6))
+        covariant_basis, reciprocal_basis, reference_basis, current_basis, &
+        reference_jacobian, current_jacobian, strain(lx, 1:6), stress(lx, 1:6))
       if( present(local_strain) ) local_strain(lx, 1:6) = point_strain
       if( present(local_stress) ) local_stress(lx, 1:6) = point_stress
     end do
 
   end subroutine ElementStress_Shell_MITC
-
 
   !--------------------------------------------------------------------
   !> Calculate the distributed load vector of a MITC shell element.
@@ -2383,7 +2132,7 @@ contains
     real(kind=kreal) :: elem(3, nn)
     real(kind=kreal) :: v1(3, nn), v2(3, nn), v3(3, nn), director(3, nn)
     real(kind=kreal) :: naturalcoord(2), shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal) :: g1(3), g2(3), g3(3), normal_jac(3), N(3, ndof*nn)
+    real(kind=kreal) :: covariant_basis(3, 3), normal_jac(3), N(3, ndof*nn)
     real(kind=kreal) :: body_force(3), position(3), origin(3), axis(3), radial(3)
     real(kind=kreal) :: val, zeta, surface_weight, thickness_weight, integration_weight, projection
 
@@ -2403,9 +2152,8 @@ contains
         surface_weight = getWeight(etype, lx)
         call getShapeFunc(etype, naturalcoord, shapefunc)
         call getShapeDeriv(etype, naturalcoord, shapederiv)
-        g1 = matmul(elem, shapederiv(:, 1))
-        g2 = matmul(elem, shapederiv(:, 2))
-        call cross_product(g1, g2, normal_jac)
+        covariant_basis(:, SHELL_XI:SHELL_ETA) = matmul(elem, shapederiv)
+        call cross_product(covariant_basis(:, SHELL_XI), covariant_basis(:, SHELL_ETA), normal_jac)
         do nb = 1, nn
           jsize = ndof*(nb-1)
           vect(jsize+1:jsize+3) = vect(jsize+1:jsize+3) + surface_weight*shapefunc(nb)*normal_jac*val
@@ -2423,10 +2171,8 @@ contains
             surface_weight = getWeight(etype, lx)
             call getShapeFunc(etype, naturalcoord, shapefunc)
             call getShapeDeriv(etype, naturalcoord, shapederiv)
-            call ShellMITC_CovariantBasis(nn, elem, director, zeta, shapefunc, shapederiv, &
-              g1, g2, g3)
-            integration_weight = surface_weight*thickness_weight &
-              *ShellMITC_CovariantJacobian(g1, g2, g3)
+            call ShellMITC_CovariantBasis(nn, elem, director, zeta, shapefunc, shapederiv, covariant_basis)
+            integration_weight = surface_weight*thickness_weight *ShellMITC_CovariantJacobian(covariant_basis)
             call ShellMITC_BuildInterpolationMatrix(nn, ndof, zeta, shapefunc, director, N)
 
             body_force = 0.0D0
@@ -2523,8 +2269,7 @@ contains
       strain_nodal_state(1:ndof_shell, nb) = total_nodal_state(1:ndof_shell, nb)
       step_base_nodal_state(1:ndof_shell, nb) = u(1:ndof_shell, nb)
       if( finite_rotation ) then
-        call ShellComposeRotationVector(u(4:6, nb), du(4:6, nb), &
-          total_nodal_state(4:6, nb))
+        call ShellComposeRotationVector(u(4:6, nb), du(4:6, nb), total_nodal_state(4:6, nb))
         strain_nodal_state(4:6, nb) = total_nodal_state(4:6, nb)
       endif
     end do
@@ -2535,8 +2280,7 @@ contains
 
     nodal_kinematic_dofs = 0.0D0
     do nb = 1, nn
-      nodal_kinematic_dofs(ndof*(nb-1)+1:ndof*(nb-1)+ndof_shell) = &
-        total_nodal_state(1:ndof_shell, nb)
+      nodal_kinematic_dofs(ndof*(nb-1)+1:ndof*(nb-1)+ndof_shell) = total_nodal_state(1:ndof_shell, nb)
     end do
     qf_work = 0.0D0
     director_second_tangent = 0.0D0
@@ -2546,8 +2290,7 @@ contains
 
     call ShellMITC_PrepareNodalKinematics(etype, nn, thick, kinematics, finite_rotation, &
       use_director_tangent, .false., ecoord, total_nodal_state, ndtriad, ndreftriad, &
-      ndcurtriad, evaluation_coords, v1, v2, v3, director, reference_director, &
-      director_tangent, director_second_tangent)
+      ndcurtriad, evaluation_coords, v1, v2, v3, director, reference_director, director_tangent, director_second_tangent)
 
     if( update_state ) then
       call ShellMITC_SetupStressKinematics(nn, ecoord, kinematics, finite_rotation, &
@@ -2561,8 +2304,7 @@ contains
         finite_rotation, use_director_tangent, use_green_lagrange, update_state, &
         ecoord, evaluation_coords, total_nodal_state, strain_nodal_state, gausses, element, &
         v1, v2, v3, director, reference_director, director_tangent, stress_elem, &
-        stress_director, stress_director_increment, &
-        nodal_kinematic_dofs, nddrill, qf_work)
+        stress_director, stress_director_increment, nodal_kinematic_dofs, nddrill, qf_work)
     end do
 
     qf(1:ndof*nn) = qf_work
@@ -2630,7 +2372,7 @@ contains
     integer(kind=kint) :: ierr_quad
     real(kind=kreal) :: v1(3, nn), v2(3, nn), v3(3, nn), director(3, nn)
     real(kind=kreal) :: naturalcoord(2), shapefunc(nn), shapederiv(nn, 2)
-    real(kind=kreal) :: g1(3), g2(3), g3(3), N(3, ndof*nn)
+    real(kind=kreal) :: covariant_basis(3, 3), N(3, ndof*nn)
     real(kind=kreal) :: zeta, surface_weight, thickness_weight, integration_weight, layer_weight
     real(kind=kreal) :: totalmass, totdiag
 
@@ -2652,10 +2394,8 @@ contains
           surface_weight = getWeight(etype, lx)
           call getShapeFunc(etype, naturalcoord, shapefunc)
           call getShapeDeriv(etype, naturalcoord, shapederiv)
-          call ShellMITC_CovariantBasis(nn, elem, director, zeta, shapefunc, shapederiv, &
-            g1, g2, g3)
-          integration_weight = surface_weight*thickness_weight &
-            *ShellMITC_CovariantJacobian(g1, g2, g3)*layer_weight
+          call ShellMITC_CovariantBasis(nn, elem, director, zeta, shapefunc, shapederiv, covariant_basis)
+          integration_weight = surface_weight*thickness_weight *ShellMITC_CovariantJacobian(covariant_basis)*layer_weight
           call ShellMITC_BuildInterpolationMatrix(nn, ndof, zeta, shapefunc, director, N)
           mass(1:nsize, 1:nsize) = mass(1:nsize, 1:nsize) + rho*integration_weight*matmul(transpose(N), N)
           totalmass = totalmass+rho*integration_weight
