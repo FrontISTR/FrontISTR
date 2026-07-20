@@ -45,6 +45,20 @@ module hecmw_precond_SAAMG_param
                                               !! meshes: 3M np=8 W 284->162, 33M 230->172, v6 36->28
                                               !! beating ML, contact total iters -36%),
                                               !! 2 = gid-hash, 3 = min-degree, 4 = max-degree (experimental)
+    logical            :: galerkin_lowmem = .false. !< Galerkin Ac = P^T A P memory/speed mode.
+                                              !! .false. (default) = 2-stage at EVERY level: materialize
+                                              !!   C = A*Pext then P^T*C.  Clean SpGEMM kernels + reuse ->
+                                              !!   fastest setup (Mold 3M np=8: 10.4 -> 5.0 s, iters
+                                              !!   unchanged), but C is the setup memory high-water mark
+                                              !!   (level 1: +1.4 GB peak on 3M).
+                                              !! .true. (low-memory) = FUSE THE FINEST LEVEL ONLY (l==1),
+                                              !!   2-stage on the deep levels.  The finest level's C=A*P is
+                                              !!   the memory peak; fusing just that level removes the peak
+                                              !!   (same peak as fusing all levels -- deep-level C is ~1/30
+                                              !!   and never the high-water mark), while the cheap deep
+                                              !!   levels keep the fast 2-stage kernels.  Use when
+                                              !!   memory-bound at scale.  (Fusing ALL levels is strictly
+                                              !!   worse: same peak, slower -- so it is not offered.)
     integer(kind=kint) :: lanczos_iter = 10   !< Lanczos iterations for lambda_max(D^{-1}A)
     real(kind=kreal)   :: safety     = 1.1d0  !< eigenvalue safety factor
     integer(kind=kint) :: max_level  = 20     !< hierarchy depth cap

@@ -21,7 +21,8 @@ module hecmw_precond_SAAMG_core
        hecmw_saamg_bcsr_from_triplets, &
        hecmw_saamg_matvec, hecmw_saamg_matvec_d, &
        hecmw_saamg_spgemm, hecmw_saamg_bcsr_transpose, hecmw_saamg_bcsr_copy, &
-       hecmw_saamg_bcsr_move, hecmw_saamg_triple_blk, hecmw_saamg_transpose_blk_rows
+       hecmw_saamg_bcsr_move, hecmw_saamg_triple_blk, hecmw_saamg_transpose_blk_rows, &
+       hecmw_saamg_spgemm_blk
   use hecmw_precond_SAAMG_smoother,  only: hecmwST_saamg_blockdiag, hecmw_saamg_blockdiag_setup, &
        hecmw_saamg_blockdiag_apply, hecmw_saamg_blockdiag_matvec, hecmw_saamg_blockdiag_free, &
        hecmwST_saamg_chebyshev, hecmw_saamg_cheb_setup, hecmw_saamg_tridiag_max_eig
@@ -468,7 +469,7 @@ contains
   !! (galerkin_global, coarsest) and the distributed assembly (galerkin).  Rows are
   !! EXTENDED coarse nodes (some owned by other ranks) -> caller gathers or routes by
   !! row owner.  (Pext/C/Ac_loc construction unchanged from the original routine.)
-  subroutine ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, mem_level)
+  subroutine ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, mem_level, fuse_this_level)
     type(hecmwST_saamg_bcsr), intent(in)  :: A, P
     type(hecmwST_saamg_comm), intent(in)  :: cmt
     integer(kind=kint),     intent(in)  :: naggr_local, my_off, m
@@ -477,12 +478,16 @@ contains
     real(kind=kreal),   allocatable, intent(out) :: gtv(:)
     integer(kind=kint),              intent(out) :: nt
     integer(kind=kint),     intent(in)  :: mem_level   !< >=2 prints the [mem] peak probes (Pext/Ac_loc/buffers)
-    type(hecmwST_saamg_bcsr) :: Pext, Pt, Ac_loc
+    logical, optional,      intent(in)  :: fuse_this_level  !< .true. = fused triple product for THIS level
+                                                       !! (no A*Pext intermediate -> low peak mem, slower);
+                                                       !! absent/.false. = 2-stage (materialize A*Pext, faster)
+    type(hecmwST_saamg_bcsr) :: Pext, Pt, Ac_loc, C
     integer(kind=kint), allocatable :: gcolbuf(:), gext(:), extbuf(:), bcnt(:), boff(:), g2e(:)
     real(kind=kreal),   allocatable :: gvalbuf(:)
     integer(kind=kint) :: nb, nint, nnode, ntot, bs, i, t, base, s, cn, gcn, pos
     integer(kind=kint) :: nexth, gnode, ext, ncext, ib, ecn, r, cc, erow, ecol, b0, astat, ncg
     real(kind=kreal) :: v
+    logical :: use_fused
 
     nb = P%nb; nint = cmt%nint; nnode = cmt%nnode; bs = nb*m
 
@@ -568,11 +573,25 @@ contains
     deallocate(gcolbuf, gvalbuf, extbuf, bcnt, boff)
     if (mem_level >= 2) call report_mem(cmt, '  galerkin: after Pext  ')
 
-    ! FUSED Galerkin: Ac_loc = Pint^T A Pext computed directly (no A*Pext intermediate
-    ! -- the large level-1 product that dominates setup memory).  Pt = (Pext's internal
-    ! rows)^T = Pint^T, formed without an explicit Pint copy.
+    ! Galerkin Ac_loc = Pint^T A Pext.  Pt = (Pext's internal rows)^T = Pint^T,
+    ! formed without an explicit Pint copy.  Two implementations (identical result
+    ! up to rounding; see prm%galerkin_lowmem):
+    !   2-stage (default): materialize C = A*Pext, then Pt*C.  Clean SpGEMM kernels
+    !     + reuse of A*Pext -> ~2x faster setup (Mold 3M np=8: 10.4 -> 5.0 s), at a
+    !     larger peak (C is the level-1 memory high-water mark).
+    !   fused: triple product with no A*Pext intermediate -> lower peak memory; for
+    !     memory-bound runs at scale.
+    use_fused = .false.; if (present(fuse_this_level)) use_fused = fuse_this_level
     call hecmw_saamg_transpose_blk_rows(Pext, nint, Pt)
-    call hecmw_saamg_triple_blk(Pt, A, Pext, Ac_loc)
+    if (use_fused) then
+      call hecmw_saamg_triple_blk(Pt, A, Pext, Ac_loc)
+    else
+      call hecmw_saamg_spgemm_blk(A, Pext, C)       ! C = A Pext (nint rows)
+      if (mem_level >= 2) call report_mem(cmt, '  galerkin: after C=A*P ')
+      call hecmw_saamg_spgemm_blk(Pt, C, Ac_loc)    ! Ac_loc = Pt C
+      Ac_loc%nb = m; Ac_loc%mb = m
+      call hecmw_saamg_bcsr_free(C)
+    end if
     if (mem_level >= 2) call report_mem(cmt, '  galerkin: after Ac_loc')
     call hecmw_saamg_bcsr_free(Pt); call hecmw_saamg_bcsr_free(Pext)
 
@@ -607,17 +626,20 @@ contains
   !! global coarse operator (identical on every rank).  Used ONLY at the coarsest
   !! level now (the distributed levels use hecmw_saamg_galerkin).
   subroutine hecmw_saamg_galerkin_global(A, cmt, P, naggr_local, ncnode, &
-       my_off, chalo_gid, m, Ac_global)
+       my_off, chalo_gid, m, Ac_global, fuse_this_level)
     type(hecmwST_saamg_bcsr), intent(in)  :: A, P
     type(hecmwST_saamg_comm), intent(in)  :: cmt
     integer(kind=kint),     intent(in)  :: naggr_local, ncnode, my_off, m
     integer(kind=kint),     intent(in)  :: chalo_gid(:)
     type(hecmwST_saamg_bcsr), intent(out) :: Ac_global
+    logical, optional,      intent(in)  :: fuse_this_level
     integer(kind=kint), allocatable :: gti(:), gtj(:), agti(:), agtj(:)
     real(kind=kreal),   allocatable :: gtv(:), agtv(:)
     integer(kind=kint) :: nt, ntot, nc_global, idummy
+    logical :: fu
     idummy = ncnode
-    call ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, 0)
+    fu = .false.; if (present(fuse_this_level)) fu = fuse_this_level
+    call ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, 0, fu)
     nc_global = hecmw_saamg_nc_global(cmt, naggr_local)
     call hecmw_saamg_comm_allgatherv_triplets(cmt, nt, gti, gtj, gtv, ntot, agti, agtj, agtv)
     call hecmw_saamg_bcsr_from_triplets(nc_global*m, nc_global*m, m, agti, agtj, agtv, ntot, Ac_global)
@@ -630,7 +652,7 @@ contains
   !! duplicates; and build the coarse OPERATOR comm table cmt_op from A_next's column
   !! sparsity.  Each global Ac(I,J) is summed exactly once on its owner.
   subroutine hecmw_saamg_galerkin(A, cmt, P, naggr_local, ncnode, my_off, chalo_gid, m, &
-       A_next, cmt_op, gplan, mem_level)
+       A_next, cmt_op, gplan, mem_level, fuse_this_level)
     type(hecmwST_saamg_bcsr), intent(in)  :: A, P
     type(hecmwST_saamg_comm), intent(in)  :: cmt
     integer(kind=kint),     intent(in)  :: naggr_local, ncnode, my_off, m
@@ -639,6 +661,7 @@ contains
     type(hecmwST_saamg_comm), intent(out) :: cmt_op
     type(hecmwST_saamg_gplan), optional, intent(out) :: gplan  !< S4: record refresh routing
     integer(kind=kint), optional, intent(in) :: mem_level    !< >=2 prints [mem] peak probes (default off)
+    logical, optional,      intent(in) :: fuse_this_level              !< Galerkin product form (see prm%galerkin_lowmem)
     integer(kind=kint), allocatable :: gti(:), gtj(:), si(:), sj(:), ri(:), rj(:)
     real(kind=kreal),   allocatable :: gtv(:), sv(:), rv(:)
     integer(kind=kint), allocatable :: coff(:), scnt(:), spos(:), lti(:), ltj(:), chalo_op(:), g2h(:)
@@ -646,9 +669,11 @@ contains
     integer(kind=kint), allocatable :: sperm(:)
     integer(kind=kint) :: nt, nprocs, jp, t, gnode, r, nrecv, grow, gcol, gcnode, gcdof
     integer(kind=kint) :: lcnode, nhc, ncnode_op, mlv, astat
+    logical :: fu
 
     mlv = 0; if (present(mem_level)) mlv = mem_level
-    call ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, mlv)
+    fu = .false.; if (present(fuse_this_level)) fu = fuse_this_level
+    call ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, mlv, fu)
 
     nprocs = hecmw_saamg_comm_size(cmt)
     allocate(coff(0:nprocs))
@@ -732,18 +757,21 @@ contains
   !! are recomputed (SpGEMM) and re-routed (values-only Alltoallv).  A_next must be
   !! the pattern produced by the matching hecmw_saamg_galerkin call.
   subroutine hecmw_saamg_galerkin_refresh(A, cmt, P, naggr_local, my_off, chalo_gid, m, &
-       gplan, A_next)
+       gplan, A_next, fuse_this_level)
     type(hecmwST_saamg_bcsr),  intent(in)    :: A, P
     type(hecmwST_saamg_comm),  intent(in)    :: cmt
     integer(kind=kint),      intent(in)    :: naggr_local, my_off, m
     integer(kind=kint),      intent(in)    :: chalo_gid(:)
     type(hecmwST_saamg_gplan), intent(in)    :: gplan
     type(hecmwST_saamg_bcsr),  intent(inout) :: A_next  !< pattern reused, values overwritten
+    logical, optional,       intent(in)    :: fuse_this_level
     integer(kind=kint), allocatable :: gti(:), gtj(:)
     real(kind=kreal),   allocatable :: gtv(:), sv(:), rv(:)
     integer(kind=kint) :: nt, t, nrecv
+    logical :: fu
 
-    call ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, 0)
+    fu = .false.; if (present(fuse_this_level)) fu = fuse_this_level
+    call ac_global_triplets(A, cmt, P, naggr_local, my_off, chalo_gid, m, gti, gtj, gtv, nt, 0, fu)
     deallocate(gti, gtj)                       ! positions unchanged -> not needed
     ! reorder values into the cached send-buffer order, route values only
     allocate(sv(max(nt,1)))
@@ -1292,9 +1320,12 @@ contains
     ! Galerkin first (it builds its own internal P^T); defer dh%Pt (only the V-cycle
     ! apply needs it) so it is not held during the memory-heavy A*Pext / P^T*C products.
     ts = saamg_wtime()
+    ! low-memory mode fuses ONLY the finest level (l==1), which holds the memory
+    ! peak (A*P intermediate); the cheap deep levels stay 2-stage for speed.
     call hecmw_saamg_galerkin(dh%lev(l)%A, dh%lev(l)%cmt, dh%lev(l)%P, dh%lev(l)%naggr_local, &
          dh%lev(l)%ncnode, dh%lev(l)%my_off, dh%lev(l)%chalo_gid, m, dh%lev(l+1)%A, dh%lev(l+1)%cmt, &
-         dh%lev(l)%gplan, mem_level=dh%prm%loglevel)
+         dh%lev(l)%gplan, mem_level=dh%prm%loglevel, &
+         fuse_this_level=(dh%prm%galerkin_lowmem .and. l == 1))
     if (dh%prm%loglevel >= 2) call report_mem(dh%lev(l)%cmt, 'L  after galerkin      ')
     if (dh%prm%timelog >= 2) call report_time(dh%lev(l)%cmt, l, 'galerkin      ', saamg_wtime()-ts)
     call hecmw_saamg_bcsr_transpose(dh%lev(l)%P, dh%lev(l)%Pt)
@@ -1421,7 +1452,8 @@ contains
       ! recompute A_{l+1} values into its existing pattern via the cached plan
       call hecmw_saamg_galerkin_refresh(dh%lev(l)%A, dh%lev(l)%cmt, dh%lev(l)%P, &
            dh%lev(l)%naggr_local, dh%lev(l)%my_off, dh%lev(l)%chalo_gid, dh%m, &
-           dh%lev(l)%gplan, dh%lev(l+1)%A)
+           dh%lev(l)%gplan, dh%lev(l+1)%A, &
+           fuse_this_level=(dh%prm%galerkin_lowmem .and. l == 1))
     end do
     call warn_if_indefinite(dh)
   end subroutine hecmw_saamg_refresh

@@ -201,14 +201,17 @@ contains
       !  line 4 (reals):    theta, cheb_alpha, safety,
       !    taper_k (coarsening taper: 0=default(100), >0=use as K, <0=disable),
       !    agg_order (aggregation seed ordering: 0=default(BFS), <0=natural/legacy,
-      !               1..4=explicit mode)
+      !               1..4=explicit mode),
+      !    galerkin_lowmem (Ac product form: 0=default(2-stage,faster),
+      !               >0=low-memory (fuse finest level only))
       solver_opt(1:10) = 0
       solver_ropt(1:10) = 0.0d0
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
            solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
            solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) solver_opt(1:10) = 0
-      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrr ', &
-           solver_ropt(1), solver_ropt(2), solver_ropt(3), solver_ropt(4), solver_ropt(5) )/= 0) solver_ropt(1:10) = 0.0d0
+      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrrr ', &
+           solver_ropt(1), solver_ropt(2), solver_ropt(3), solver_ropt(4), solver_ropt(5), &
+           solver_ropt(6) )/= 0) solver_ropt(1:10) = 0.0d0
     else if( method == 101 ) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt(1) )/= 0) return
     end if

@@ -141,6 +141,9 @@ contains
     !            5 = agg_order (aggregation seed-scan ordering: 0 = default (BFS),
     !                         < 0 = natural node order / legacy, 1..4 = explicit mode
     !                         (1=bfs, 2=gid-hash, 3=mindeg, 4=maxdeg))
+    !            6 = galerkin_lowmem (Ac=P^T A P: 0 = default (2-stage everywhere,
+    !                         faster), > 0 = low-memory (fuse the finest level only,
+    !                         same peak as fully fused but faster; deep levels 2-stage))
     call hecmw_mat_get_solver_opt(hecMAT, iopt)
     myrank = hecmw_comm_get_rank()
     ! slot 1: coarsest solver.  The external encoding (ML CoarseSolver-compatible)
@@ -195,6 +198,9 @@ contains
     ! (legacy), 1..4 = explicit mode.
     if (ropt(5) > 0.0d0 .and. ropt(5) < 4.5d0) prm%agg_order = int(ropt(5) + 0.5d0, kind=kint)
     if (ropt(5) < 0.0d0) prm%agg_order = 0
+    ! real slot 6: Galerkin memory/speed mode.  0 = default (2-stage every level),
+    ! > 0 = low-memory (fuse the finest level only; same peak as fully fused, faster).
+    if (ropt(6) > 0.0d0) prm%galerkin_lowmem = .true.
     ! symmetric (CG, sym=1) vs non-symmetric (BiCGSTAB/GMRES, sym=0): the latter uses a
     ! general (SYM=0 / LU) coarsest so the actual non-symmetric coarse is factored exactly.
     prm%symmetric = (sym == 1)
