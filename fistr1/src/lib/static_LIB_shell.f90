@@ -459,7 +459,8 @@ contains
       N(3, jsize+3) = shapefunc(nb)
       if (ndof >= 6) then
         urot = zeta*shapefunc(nb)*director(:, nb)
-        N(:, jsize+4:jsize+6) = ShellSkewMatrix(urot)
+        ! ShellRotationGradient(v) = -ShellSkewMatrix(v) (transpose of a skew matrix).
+        N(:, jsize+4:jsize+6) = -ShellSkewMatrix(urot)
       endif
     end do
   end subroutine ShellMITC_BuildInterpolationMatrix
@@ -517,7 +518,8 @@ contains
           a_over_2_v3(:, nb) = matmul(rotmat, director_ref)
         endif
         if (use_director_tangent) then
-          a_over_2_v3_deriv(:, :, nb) = ShellSkewMatrix(a_over_2_v3(:, nb))
+          ! ShellRotationGradient(v) = -ShellSkewMatrix(v) (transpose of a skew matrix).
+          a_over_2_v3_deriv(:, :, nb) = -ShellSkewMatrix(a_over_2_v3(:, nb))
           if( need_second_tangent ) then
             call ShellDirectorIncrementalSecondDeriv(a_over_2_v3(:, nb), a_over_2_v3_second(:, :, :, nb))
           endif
@@ -525,7 +527,7 @@ contains
       endif
 
       if (.not. use_director_tangent) then
-        a_over_2_v3_deriv(:, :, nb) = ShellSkewMatrix(a_over_2_v3(:, nb))
+        a_over_2_v3_deriv(:, :, nb) = -ShellSkewMatrix(a_over_2_v3(:, nb))
       endif
     end do
   end subroutine ShellMITC_SetupNodalDirectors
@@ -689,12 +691,13 @@ contains
           shapederiv(node, SHELL_ETA)*zeta*director_tangent(:, :, node)
         basis_variation(:, rotation_start:rotation_start+2, SHELL_ZETA) = shapefunc(node)*director_tangent(:, :, node)
       else
+        ! ShellRotationGradient(v) = -ShellSkewMatrix(v) (transpose of a skew matrix).
         basis_variation(:, rotation_start:rotation_start+2, SHELL_XI) = &
-          ShellSkewMatrix(director_contribution(:, node, SHELL_XI))
+          -ShellSkewMatrix(director_contribution(:, node, SHELL_XI))
         basis_variation(:, rotation_start:rotation_start+2, SHELL_ETA) = &
-          ShellSkewMatrix(director_contribution(:, node, SHELL_ETA))
+          -ShellSkewMatrix(director_contribution(:, node, SHELL_ETA))
         basis_variation(:, rotation_start:rotation_start+2, SHELL_ZETA) = &
-          ShellSkewMatrix(director_contribution(:, node, SHELL_ZETA))
+          -ShellSkewMatrix(director_contribution(:, node, SHELL_ZETA))
       endif
     end do
 
