@@ -28,7 +28,7 @@ contains
     real(kind=kreal), optional        :: ctpos(2)      !< curr contact position( natural coord )
     real(kind=kreal), optional        :: localclr      !< clearance of contact local coord
 
-    integer          ::  count,order, initstate
+    integer          ::  count,order
     real(kind=kreal)  ::  determ, inverse(2,2)
     real(kind=kreal)  ::  sfunc(nn), curv(3,2,2)
     real(kind=kreal)  ::  r(2), dr(2), r_tmp(2)        ! natural coordinate
@@ -39,7 +39,6 @@ contains
     real(kind=kreal),parameter :: eps = 1.0D-8
     real(kind=kreal)  ::  clr, tol, factor
 
-    initstate = cstate%state
     clr = 1.d-4
     if( present( localclr ) ) clr=localclr
     if( present( ctpos ) ) then
@@ -95,8 +94,10 @@ contains
       if( tol<eps ) exit
     enddo
 
+    ! The contact state itself is left untouched until the candidate is
+    ! accepted, so that a failed attempt does not destroy the stick or slip
+    ! state that a subsequent candidate has to inherit.
     isin = .false.
-    cstate%state = CONTACTFREE
     if( isInsideElement( etype, r, clr )>=0 ) then
       dxyz(:)=xyz_out(:)-xyz(:)
       normal(:) = SurfaceNormal( etype, nn, r, elemt(1:3,1:nn) )
@@ -122,11 +123,7 @@ contains
       end if
 
       if( isin ) then
-        if( initstate== CONTACTFREE ) then
-          cstate%state = CONTACTSTICK
-        else
-          cstate%state = initstate
-        endif
+        if( cstate%state == CONTACTFREE ) cstate%state = CONTACTSTICK
         cstate%gpos(:)=xyz_out(:)
         cstate%lpos(1:2)=r(:)
         cstate%direction(:) = normal(:)
@@ -149,7 +146,7 @@ contains
     real(kind=kreal), optional        :: ctpos(3)      !< curr contact position( natural coord )
     real(kind=kreal), optional        :: localclr      !< clearance of contact local coord
 
-    integer          ::  count,order, initstate
+    integer          ::  count,order
     real(kind=kreal)  ::  inverse(3,3)
     real(kind=kreal)  ::  sfunc(nn), deriv(nn,3)
     real(kind=kreal)  ::  r(3), dr(3), r_tmp(3)        ! natural coordinate
@@ -158,7 +155,6 @@ contains
     real(kind=kreal),parameter :: eps = 1.0D-8
     real(kind=kreal)  ::  clr, tol, factor
 
-    initstate = cstate%state
     clr = 1.d-4
     if( present( localclr ) ) clr=localclr
     if( present( ctpos ) ) then
@@ -200,7 +196,6 @@ contains
     enddo
 
     isin = .false.
-    cstate%state = CONTACTFREE
     if( isInside3DElement( etype, r, clr )>=0 ) then
       dxyz(:)=xyz_out(:)-xyz(:)
       cstate%distance = dsqrt(dot_product( dxyz, dxyz ))
@@ -208,11 +203,7 @@ contains
       if( cstate%distance < distclr ) isin = .true.
 
       if( isin ) then
-        if( initstate== CONTACTFREE ) then
-          cstate%state = CONTACTSTICK
-        else
-          cstate%state = initstate
-        endif
+        if( cstate%state == CONTACTFREE ) cstate%state = CONTACTSTICK
         cstate%gpos(:)=xyz_out(:)
         cstate%direction(:) = (/1.d0,0.d0,0.d0/)
         cstate%lpos(1:3)=r(:)
