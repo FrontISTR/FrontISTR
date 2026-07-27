@@ -1,7 +1,7 @@
 !!
 !! SA-AMG (PRECOND=22) test : non-symmetric solver (friction contact)
 !! NLSTATIC + SLAGRANGE friction contact -> BiCGSTAB -> SA-AMG non-symmetric
-!! coarsest (sym=0).  coarsest solver forced to dense LU (iopt(3)=1) -> no
+!! coarsest (sym=0).  coarsest solver forced to dense LU (coarse_solver=2 (int slot1)) -> no
 !! external library dependency.  element 361 (NDOF=3 solid).
 !!
 !VERSION
