@@ -191,27 +191,30 @@ contains
            solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) return
     else if( precond == 22 ) then
       ! SA-AMG options.  Two optional data lines; trailing entries may be omitted.
-      ! 0 = use the built-in default for each.  Slots 1-4/6-7 mirror the ML (PRECOND=5)
-      ! layout so an ML option line carries over (see hecmw_ML_wrapper.c).
+      ! 0 = use the built-in default for each.  Integer slots 1-7 mirror the ML
+      ! (PRECOND=5) layout so an ML option line carries over (hecmw_ML_wrapper.c
+      ! reads opt[0..6] = slots 1-7); slots 8-10 are SA-AMG-specific.  ML does not
+      ! read the real line at all.
       ! (verbose has no slot here: enable diagnostics via !SOLVER LOGLEVEL>=1.)
       !  line 3 (integers):
       !    1 coarse_solver (0=auto/1=smoother/2=dense/3=mumps), 2 smoother (0/1=Chebyshev only),
-      !    3 cycle (0=default(W)/1=V/2=W), 4 max_level, 5 max_size, 6 cheb_deg, 7 coarse_size,
-      !    8 min_size, 9 verify, 10 dump_vtk
+      !    3 cycle (0=default(W)/1=V/2=W), 4 max_level,
+      !    5 RESERVED (ML CoarsenScheme: ignored with a warning), 6 cheb_deg, 7 coarse_size,
+      !    8 max_size, 9 galerkin_lowmem (0=default(2-stage,faster),
+      !               >0=low-memory (fuse finest level only)), 10 RESERVED
       !  line 4 (reals):    theta, cheb_alpha, safety,
       !    taper_k (coarsening taper: 0=default(100), >0=use as K, <0=disable),
       !    agg_order (aggregation seed ordering: 0=default(BFS), <0=natural/legacy,
       !               1..4=explicit mode),
-      !    galerkin_lowmem (Ac product form: 0=default(2-stage,faster),
-      !               >0=low-memory (fuse finest level only))
+      !    min_size, verify (0=off/>0=on), dump_vtk (0=off/>0=on)
       solver_opt(1:10) = 0
       solver_ropt(1:10) = 0.0d0
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
            solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
            solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) solver_opt(1:10) = 0
-      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrrr ', &
+      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrrrrr ', &
            solver_ropt(1), solver_ropt(2), solver_ropt(3), solver_ropt(4), solver_ropt(5), &
-           solver_ropt(6) )/= 0) solver_ropt(1:10) = 0.0d0
+           solver_ropt(6), solver_ropt(7), solver_ropt(8) )/= 0) solver_ropt(1:10) = 0.0d0
     else if( method == 101 ) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt(1) )/= 0) return
     end if

@@ -124,26 +124,35 @@ contains
     nint = hecMAT%N
 
     ! map control-file options; 0 = keep default.  Integer line (Iarray 41:50) and
-    ! real line (Rarray 41:50).  Slots 1-4/6-7 mirror the ML (PRECOND=5) layout so
-    ! ML users can reuse the same option line (see fstr_ctrl_common precond==22 and
-    ! hecmw_ML_wrapper.c); slots 5/8/9/10 hold SA-AMG-specific knobs.
+    ! real line (Rarray 41:50).  Integer slots 1-7 mirror the ML (PRECOND=5) layout
+    ! so ML users can reuse the same option line (see fstr_ctrl_common precond==22
+    ! and hecmw_ML_wrapper.c, which reads opt[0..6] = slots 1-7); slots 8-10 are
+    ! outside what ML reads and hold SA-AMG-specific knobs.  The real line is not
+    ! read by ML at all, so it carries the remaining knobs (including a few integer
+    ! ones, rounded on read).
     !   1 = coarsest solver  (ML CoarseSolver: 0=auto, 1=Smoother, 2=dense, 3=MUMPS)
     !   2 = smoother type     (ML SmootherType: 0/1=Chebyshev; 2/3 N/A -> Chebyshev)
     !   3 = cycle             (ML MGType: 0=default(=W)/1=V, 2=W; 3=FullV N/A -> W)
     !   4 = max levels        (ML MaxLevels)
-    !   5 = max aggregate size (SA-AMG-specific; ML slot is CoarsenScheme, no analog)
+    !   5 = RESERVED          (ML CoarsenScheme; SA-AMG is always uncoupled -> warn
+    !                          and ignore.  Deliberately kept unused: an ML deck
+    !                          carries 1..5 here, which used to be silently taken as
+    !                          max_size and wrecked the hierarchy)
     !   6 = Chebyshev degree  (ML NumSweeps)
     !   7 = coarse size       (ML MaxCoarseSize)
-    !   8 = min aggregate size / 9 = verify / 10 = dump_vtk  (SA-AMG-specific)
+    !   8 = max aggregate size (SA-AMG-specific: the aggressive-coarsening lever)
+    !   9 = galerkin_lowmem   (Ac=P^T A P: 0 = default (2-stage everywhere, faster),
+    !                          > 0 = low-memory (fuse the finest level only, same
+    !                          peak as fully fused but faster; deep levels 2-stage))
+    !  10 = RESERVED          (free slot for future SA-AMG-specific knobs)
     ! Real line: 1 = theta (strength threshold), 2 = cheb_alpha, 3 = safety,
     !            4 = taper_k (coarsening taper, 3-1: 0 = default 100, > 0 = use as K,
     !                         < 0 = disable the taper / legacy behavior)
     !            5 = agg_order (aggregation seed-scan ordering: 0 = default (BFS),
     !                         < 0 = natural node order / legacy, 1..4 = explicit mode
     !                         (1=bfs, 2=gid-hash, 3=mindeg, 4=maxdeg))
-    !            6 = galerkin_lowmem (Ac=P^T A P: 0 = default (2-stage everywhere,
-    !                         faster), > 0 = low-memory (fuse the finest level only,
-    !                         same peak as fully fused but faster; deep levels 2-stage))
+    !            6 = min aggregate size (0 = default 3)
+    !            7 = verify (0 = off, > 0 = on) / 8 = dump_vtk (0 = off, > 0 = on)
     call hecmw_mat_get_solver_opt(hecMAT, iopt)
     myrank = hecmw_comm_get_rank()
     ! slot 1: coarsest solver.  The external encoding (ML CoarseSolver-compatible)
@@ -173,23 +182,31 @@ contains
         '#### SA-AMG: invalid cycle ', iopt(3), ' (ignored) -- using default (W)'
     end select
     if (iopt(4) > 0) prm%max_level = iopt(4)   ! ML MaxLevels
-    if (iopt(5) > 0) prm%max_size  = iopt(5)   ! SA-AMG-specific (aggressive coarsening lever)
+    ! slot 5: reserved.  ML puts CoarsenScheme here (1..5 = UncoupledMIS/METIS/
+    ! ParMETIS/Zoltan/DD); SA-AMG always uses uncoupled aggregation, so the value is
+    ! ignored -- but say so, otherwise a reused ML option line looks like it selects
+    ! a coarsening scheme.
+    if (iopt(5) /= 0 .and. myrank == 0) then
+      write(*,'(a,i0,a)') '#### SA-AMG: int slot5 (ML CoarsenScheme) = ', iopt(5), &
+           ' is ignored -- SA-AMG always uses uncoupled aggregation'
+      write(*,'(a)')      '####         (max aggregate size is int slot8)'
+    end if
     if (iopt(6) > 0) prm%cheb_deg  = iopt(6)   ! ML NumSweeps (Chebyshev degree)
     if (iopt(7) > 0) prm%coarse_size = iopt(7) ! ML MaxCoarseSize
-    if (iopt(8) > 0) prm%min_size  = iopt(8)   ! SA-AMG-specific
+    if (iopt(8) > 0) prm%max_size  = iopt(8)   ! SA-AMG-specific (aggressive coarsening lever)
+    if (iopt(9) > 0) prm%galerkin_lowmem = .true.  ! SA-AMG-specific (fuse the finest level only)
     ! verbose has no iopt slot: enable it via !SOLVER LOGLEVEL>=1 (independent of
     ! TIMELOG; LOGLEVEL unset = -1 leaves verbose off).
     prm%loglevel = hecmw_mat_get_loglevel(hecMAT)   ! independent LOGLEVEL (-1 if unset); >=2 -> [mem] probes
     prm%verbose  = (prm%loglevel >= 1)
     prm%timelog  = hecmw_mat_get_timelog(hecMAT)    ! !SOLVER TIMELOG (2=VERBOSE -> per-section [time] probes)
-    prm%verify   = (iopt(9) == 1)
-    prm%dump_vtk = (iopt(10) == 1)   ! write finest aggregation to saamg_agg.<rank>.vtk
     call hecmw_mat_get_solver_ropt(hecMAT, ropt)
     if (ropt(1) > 0.0d0) prm%theta      = ropt(1)
     if (ropt(2) > 0.0d0) prm%cheb_alpha = ropt(2)
     if (ropt(3) > 0.0d0) prm%safety     = ropt(3)
-    ! real slot 4: coarsening-taper K (integer carried on the real line; the int
-    ! line is fully occupied).  0 = default (prm%taper_k = 100), > 0 = use as K,
+    ! real slot 4: coarsening-taper K (an integer carried on the real line: the int
+    ! line is reserved for the ML-compatible and high-traffic knobs, and the taper is
+    ! rarely touched).  0 = default (prm%taper_k = 100), > 0 = use as K,
     ! < 0 = disable the taper (legacy pre-taper coarsening).
     ! (int(x+0.5), not the intrinsic nint(): a local variable `nint` shadows it.)
     if (ropt(4) > 0.0d0) prm%taper_k = int(ropt(4) + 0.5d0, kind=kint)
@@ -198,9 +215,12 @@ contains
     ! (legacy), 1..4 = explicit mode.
     if (ropt(5) > 0.0d0 .and. ropt(5) < 4.5d0) prm%agg_order = int(ropt(5) + 0.5d0, kind=kint)
     if (ropt(5) < 0.0d0) prm%agg_order = 0
-    ! real slot 6: Galerkin memory/speed mode.  0 = default (2-stage every level),
-    ! > 0 = low-memory (fuse the finest level only; same peak as fully fused, faster).
-    if (ropt(6) > 0.0d0) prm%galerkin_lowmem = .true.
+    ! real slot 6: min aggregate size (integer carried on the real line; rarely
+    ! touched -- it only sets the forced-merge threshold for leftover aggregates).
+    if (ropt(6) > 0.0d0) prm%min_size = int(ropt(6) + 0.5d0, kind=kint)
+    ! real slots 7/8: diagnostics (0 = off, > 0 = on), alongside LOGLEVEL/TIMELOG.
+    prm%verify   = (ropt(7) > 0.0d0)
+    prm%dump_vtk = (ropt(8) > 0.0d0)   ! write finest aggregation to saamg_agg.<rank>.vtk
     ! symmetric (CG, sym=1) vs non-symmetric (BiCGSTAB/GMRES, sym=0): the latter uses a
     ! general (SYM=0 / LU) coarsest so the actual non-symmetric coarse is factored exactly.
     prm%symmetric = (sym == 1)
