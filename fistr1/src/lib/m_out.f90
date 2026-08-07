@@ -171,8 +171,8 @@ contains
     outinfo%keyWord(41) = "NOT ASSIGNED"
     outinfo%vtype(41)   = -1
 
-    outinfo%keyWord(42) = "NOT ASSIGNED"
-    outinfo%vtype(42)   = -1
+    outinfo%keyWord(42) = "ORIENTATION"
+    outinfo%vtype(42)   = -2
 
     outinfo%keyWord(43)  = "PL_ESTRAIN"
     outinfo%vtype(43)    = -1

@@ -83,7 +83,7 @@ contains
 
     if( stype==0 ) then  ! given coordinates
       outsys = coordsys%CoordSys
-    elseif( stype==1 ) then    ! given nodes id
+    elseif( stype>=1 ) then    ! given nodes id
       xyza = coords(1,:)-coords(3,:)
       xyzb = coords(2,:)-coords(3,:)
       call cross_product(xyza,xyzb,xyzc)

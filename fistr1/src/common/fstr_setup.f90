@@ -2196,7 +2196,7 @@ contains
     coordsys%sys_type = 10
 
     nid = 1
-    data_fmt = 'COORDINATES,NODES '
+    data_fmt = 'COORDINATES,NODES,LOCAL_NODES '
     if( fstr_ctrl_get_param_ex( ctrl, 'DEFINITION ', data_fmt, 0, 'P', nid )/=0 ) return
     dtype = nid-1
     coordsys%sys_type = coordsys%sys_type + dtype
@@ -2234,6 +2234,18 @@ contains
       data_fmt = "IIi "
       if( fstr_ctrl_get_data_ex( ctrl, 1, data_fmt, coordsys%node_ID(1),  &
         coordsys%node_ID(2), coordsys%node_ID(3) )/=0 ) return
+      ! DEFINITION=LOCAL_NODES: three local node numbers (1..number of nodes of
+      ! the element) defining the coordinate system of each element. All three
+      ! are mandatory here, unlike the third node of DEFINITION=NODES.
+      if( dtype==2 ) then
+        if( maxval(coordsys%node_ID(1:3)) > 10 .or. minval(coordsys%node_ID(1:3)) < 1 ) then
+          write(*,*) "!ORIENTATION, DEFINITION=LOCAL_NODES needs three local node numbers (1-10)!"
+          write(IDBG,*) "!ORIENTATION, DEFINITION=LOCAL_NODES needs three local node numbers (1-10)!"
+          return
+        endif
+        fstr_setup_ORIENTATION = 0
+        return
+      endif
       if( coordsys%node_ID(3) == 0 ) then
         nid = node_global_to_local( hecMESH, coordsys%node_ID(1:2), 2 )
         if( nid/=0 .and. nid/=2 ) then

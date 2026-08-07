@@ -215,7 +215,7 @@ contains
     cdsys_ID = hecMESH%section%sect_orien_ID(isect)
     sec_opt = hecMESH%section%sect_opt(isect)
     coords = 0.0d0
-    if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords)
+    if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords, icel)
 
     material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
     thick = hecMESH%section%sect_R_item(ihead+1)

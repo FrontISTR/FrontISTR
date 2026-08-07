@@ -407,7 +407,7 @@ contains
           !C** section  ID
           isect= hecMESH%section_ID(icel)
           cdsys_ID = fstrSOLID%elements(icel)%gausses(1)%pMaterial%cdsys_ID
-          call get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords )
+          call get_coordsys( cdsys_ID, hecMESH, fstrSOLID, coords, icel )
 
           !C** Section Data
           if( ndof .eq. 2 ) then
