@@ -316,6 +316,7 @@ module m_fstr
     integer(kind=kint), pointer :: SPRING_ngrp_DOF      (:)
     integer(kind=kint), pointer :: SPRING_ngrp_amp      (:)
     real(kind=kreal), pointer   :: SPRING_ngrp_val      (:)
+    integer(kind=kint), pointer :: SPRING_incremental   (:)    !< resist only the current increment or not
 
     !> ELEMACT
     type(tElemact) :: elemact
@@ -720,6 +721,7 @@ contains
     nullify( S%SPRING_ngrp_DOF )
     nullify( S%SPRING_ngrp_amp )
     nullify( S%SPRING_ngrp_val )
+    nullify( S%SPRING_incremental )
     nullify( S%STRESS )
     nullify( S%STRAIN )
     nullify( S%MISES )
