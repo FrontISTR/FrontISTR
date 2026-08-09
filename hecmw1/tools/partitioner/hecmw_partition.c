@@ -2618,7 +2618,7 @@ static int metis_partition_nb_contact_agg(
   struct hecmw_graph graph1, graph2;
   const int ncon = 1;
 
-  HECMW_assert(global_mesh->hecmw_flag_partcontact ==
+  HECMW_assert(HECMW_partcontact_get_mode(global_mesh->hecmw_flag_partcontact) ==
                HECMW_FLAG_PARTCONTACT_AGGREGATE);
 
   node_graph_index = (idx_t *)HECMW_calloc(global_mesh->n_node + 1, sizeof(idx_t));
@@ -2785,8 +2785,10 @@ static int metis_partition_nb_contact_dist(
   int *mark        = NULL;
 
   HECMW_assert(
-      global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_SIMPLE ||
-      global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_DISTRIBUTE);
+      HECMW_partcontact_get_mode(global_mesh->hecmw_flag_partcontact) ==
+          HECMW_FLAG_PARTCONTACT_SIMPLE ||
+      HECMW_partcontact_get_mode(global_mesh->hecmw_flag_partcontact) ==
+          HECMW_FLAG_PARTCONTACT_DISTRIBUTE);
 
   node_graph_index = (idx_t *)HECMW_calloc(global_mesh->n_node + 1, sizeof(idx_t));
   if (node_graph_index == NULL) {
@@ -2807,7 +2809,8 @@ static int metis_partition_nb_contact_dist(
 
   HECMW_log(HECMW_LOG_DEBUG, "Creation of node graph done\n");
 
-  if (global_mesh->hecmw_flag_partcontact == HECMW_FLAG_PARTCONTACT_SIMPLE) {
+  if (HECMW_partcontact_get_mode(global_mesh->hecmw_flag_partcontact) ==
+      HECMW_FLAG_PARTCONTACT_SIMPLE) {
     HECMW_log(HECMW_LOG_DEBUG, "Partitioning mode: contact-simple\n");
 
     ncon        = 1;
@@ -2970,7 +2973,7 @@ static int metis_partition_nb(struct hecmwST_local_mesh *global_mesh,
                               const struct hecmw_part_cont_data *cont_data,
                               const struct hecmw_part_edge_data *edge_data) {
   if (global_mesh->contact_pair->n_pair > 0) {
-    switch (global_mesh->hecmw_flag_partcontact) {
+    switch (HECMW_partcontact_get_mode(global_mesh->hecmw_flag_partcontact)) {
       case HECMW_FLAG_PARTCONTACT_AGGREGATE:
         return metis_partition_nb_contact_agg(global_mesh, cont_data,
                                               edge_data);
@@ -3881,8 +3884,9 @@ static int mask_additional_overlap_elem(
   return RTC_NORMAL;
 }
 
-static int mask_contact_slave_surf(const struct hecmwST_local_mesh *global_mesh,
-                                   char *elem_flag, char *node_flag) {
+static int mask_contact_replicate_slave_to_master_owner(
+    const struct hecmwST_local_mesh *global_mesh, char *elem_flag,
+    char *node_flag) {
   int i, j;
   long long k;
   int elem, node, selem;
@@ -4083,6 +4087,26 @@ static int mask_contact_slave_surf(const struct hecmwST_local_mesh *global_mesh,
   return RTC_NORMAL;
 }
 
+static int mask_contact_replicate_by_owner(
+    const struct hecmwST_local_mesh *global_mesh, char *elem_flag,
+    char *node_flag) {
+  switch (HECMW_partcontact_get_owner(global_mesh->hecmw_flag_partcontact)) {
+    case HECMW_FLAG_PARTCONTACT_OWNER_MASTER:
+      return mask_contact_replicate_slave_to_master_owner(global_mesh, elem_flag,
+                                                          node_flag);
+
+    case HECMW_FLAG_PARTCONTACT_OWNER_SLAVE:
+      HECMW_set_error(HECMW_PART_E_INV_ARG,
+                      "CONTACT_OWNER=SLAVE is not implemented yet");
+      return RTC_ERROR;
+
+    default:
+      HECMW_set_error(HECMW_PART_E_INV_ARG,
+                      "unknown CONTACT_OWNER in hecmw_flag_partcontact");
+      return RTC_ERROR;
+  }
+}
+
 static int mask_mesh_status_nb(const struct hecmwST_local_mesh *global_mesh,
                                char *node_flag, char *elem_flag,
                                int current_domain) {
@@ -4146,7 +4170,7 @@ static int mask_mesh_status_nb(const struct hecmwST_local_mesh *global_mesh,
   }
 
   if (global_mesh->contact_pair->n_pair > 0) {
-    rtc = mask_contact_slave_surf(global_mesh, elem_flag, node_flag);
+    rtc = mask_contact_replicate_by_owner(global_mesh, elem_flag, node_flag);
     if (rtc != RTC_NORMAL) goto error;
   }
 
@@ -4307,7 +4331,7 @@ static int mask_neighbor_domain_nb_mod(
   return RTC_NORMAL;
 }
 
-static int mask_neighbor_domain_nb_contact(
+static int mask_neighbor_domain_nb_contact_master_owner(
     const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
     const char *elem_flag, char *domain_flag) {
   int i, j;
@@ -4402,6 +4426,26 @@ static int mask_neighbor_domain_nb_contact(
   return RTC_NORMAL;
 }
 
+static int mask_neighbor_domain_nb_contact_by_owner(
+    const struct hecmwST_local_mesh *global_mesh, const char *node_flag,
+    const char *elem_flag, char *domain_flag) {
+  switch (HECMW_partcontact_get_owner(global_mesh->hecmw_flag_partcontact)) {
+    case HECMW_FLAG_PARTCONTACT_OWNER_MASTER:
+      return mask_neighbor_domain_nb_contact_master_owner(
+          global_mesh, node_flag, elem_flag, domain_flag);
+
+    case HECMW_FLAG_PARTCONTACT_OWNER_SLAVE:
+      HECMW_set_error(HECMW_PART_E_INV_ARG,
+                      "CONTACT_OWNER=SLAVE is not implemented yet");
+      return RTC_ERROR;
+
+    default:
+      HECMW_set_error(HECMW_PART_E_INV_ARG,
+                      "unknown CONTACT_OWNER in hecmw_flag_partcontact");
+      return RTC_ERROR;
+  }
+}
+
 static int mask_neighbor_domain_eb(const struct hecmwST_local_mesh *global_mesh,
                                    const char *elem_flag, char *domain_flag) {
   int i;
@@ -4480,9 +4524,11 @@ static int create_neighbor_info(const struct hecmwST_local_mesh *global_mesh,
       }
       if (rtc != RTC_NORMAL) goto error;
 
-      rtc = mask_neighbor_domain_nb_contact(global_mesh, node_flag, elem_flag,
-                                            domain_flag);
-      if (rtc != RTC_NORMAL) goto error;
+      if (global_mesh->contact_pair->n_pair > 0) {
+        rtc = mask_neighbor_domain_nb_contact_by_owner(
+            global_mesh, node_flag, elem_flag, domain_flag);
+        if (rtc != RTC_NORMAL) goto error;
+      }
 
       break;
 
@@ -9097,6 +9143,19 @@ static int init_partition(struct hecmwST_local_mesh *global_mesh,
       default:
         cont_data->contact = HECMW_PART_CONTACT_SIMPLE;
         global_mesh->hecmw_flag_partcontact = HECMW_FLAG_PARTCONTACT_SIMPLE;
+        break;
+    }
+
+    switch (cont_data->contact_owner) {
+      case HECMW_PART_CONTACT_OWNER_SLAVE:
+        global_mesh->hecmw_flag_partcontact |=
+            HECMW_FLAG_PARTCONTACT_OWNER_SLAVE;
+        break;
+
+      case HECMW_PART_CONTACT_OWNER_MASTER:
+      default:
+        global_mesh->hecmw_flag_partcontact |=
+            HECMW_FLAG_PARTCONTACT_OWNER_MASTER;
         break;
     }
   }

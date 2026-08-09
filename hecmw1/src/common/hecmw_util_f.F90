@@ -395,6 +395,14 @@ module hecmw_util
   integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_DISTRIBUTE = 2
   integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_SIMPLE     = 3
 
+  !C      the mode above occupies bits 0-7, the ownership scheme bit 8.  OWNER_MASTER must stay zero so that a
+  !C      distributed mesh holding a bare mode value reads back as the master-owner scheme.  Test with
+  !C      hecmw_partcontact_get_mode()/_get_owner(), never for equality against the whole flag.
+  integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_MODE_MASK    = 255
+  integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_OWNER_MASK   = 256
+  integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_OWNER_MASTER = 0
+  integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_OWNER_SLAVE  = 256
+
   !C
   !C +--------+
   !C | MATRIX |
@@ -460,6 +468,23 @@ module hecmw_util
     logical :: symmetric = .true.
   end type hecmwST_matrix
 contains
+
+  !C
+  !C***
+  !C*** HECMW_PARTCONTACT_GET_MODE / HECMW_PARTCONTACT_GET_OWNER
+  !C***
+  !C
+  !C    UNPACK hecmw_flag_partcontact, so that its bit layout stays internal to HEC-MW
+  !C
+  pure integer(kind=kint) function hecmw_partcontact_get_mode( flag_partcontact )
+    integer(kind=kint), intent(in) :: flag_partcontact
+    hecmw_partcontact_get_mode = iand( flag_partcontact, HECMW_FLAG_PARTCONTACT_MODE_MASK )
+  end function hecmw_partcontact_get_mode
+
+  pure integer(kind=kint) function hecmw_partcontact_get_owner( flag_partcontact )
+    integer(kind=kint), intent(in) :: flag_partcontact
+    hecmw_partcontact_get_owner = iand( flag_partcontact, HECMW_FLAG_PARTCONTACT_OWNER_MASK )
+  end function hecmw_partcontact_get_owner
 
   !C
   !C***

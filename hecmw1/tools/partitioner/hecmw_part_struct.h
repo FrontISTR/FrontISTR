@@ -43,6 +43,8 @@ struct hecmw_part_cont_data {
 
   int contact;
 
+  int contact_owner;
+
   int is_print_part;
 
   char part_file_name[HECMW_FILENAME_LEN + 1];
