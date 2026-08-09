@@ -119,18 +119,12 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
       * アーティファクトに build ステージの成果物があるのでそれを利用しテストを行う。
   * テストの詳細は[tests/README.ja.md](https://gitlab.com/FrontISTR-Commons/FrontISTR/-/blob/master/tests/README.ja.md?ref_type=heads)
 * document
-  * document
-    * FrontISTR_manual のgitlab-ciで作られるものへのリダイレクトをアーティファクトの public/_redirects に書き出す。
-      * FrontISTR_manualの方でも以下が行われている
-        * ビルド環境Dockerイメージ作成
-        * コミットごとのビルド(.gitlab-ci.yml)
-    * ドキュメント管理についてFrontISTR_manual リポジトリへ移行しFrontISTR リポジトリでは何も行わないようになったため、形骸化している。
-      * _redirects のコピーを行うだけなので、document:latest イメージを使う必要もない。
   * doxygen
     * APIドキュメントの生成
     * アーティファクトの public/doxygen ディレクトリに書き出す。
     * document:latest イメージを実行環境として使う。
     * [FrontISTR Documents](https://frontistr-commons.gitlab.io/FrontISTR/)
+  * ユーザマニュアルは FrontISTR_manual リポジトリで管理・公開されており([FrontISTR Manual](https://manual.frontistr.com/))、本リポジトリでは何も行わない。
 * package
   * Debian package, Docker container, Windows binary の生成を行う。
   * docker/fistr1
@@ -156,9 +150,9 @@ GitLabを使用して、FrontISTRプロジェクトに対して包括的なCI/CD
 * deploy
   * pages(masterブランチにおいてのみ実行)
     * document, packageにおける成果物(publicディレクトリ)をそのまま保持
-      * document ステージで生成したリダイレクトや doxygen
+      * document ステージで生成した doxygen
       * package ステージで生成した Debian package や Windows binary
-    * 古いリンクからのリダイレクトを public/_redirects に追記
+    * Windows binary の古いリンクからのリダイレクトを public/_redirects に追記
     * gitlab-pagesの機能でpublicディレクトリが永続化され、中身がwebに公開される
 
 全ブランチの全コミットについて build, test, document, package ステージが実行される。
