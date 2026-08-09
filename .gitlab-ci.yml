@@ -42,14 +42,6 @@ include:
         expire_in: 1week
         when: on_failure
 
-document:
-    image: ${REGISTRY}/document:latest
-    stage: document
-    needs: []
-    script:
-        - cp doc/_redirects public/_redirects
-    extends: [".artifact_public"]
-
 doxygen:
     image: ${REGISTRY}/document:latest
     stage: document
