@@ -488,6 +488,29 @@ contains
 
   !C
   !C***
+  !C*** HECMW_HAS_INTERNAL_NODE
+  !C***
+  !C
+  !C    TEST WHETHER AN ELEMENT TOUCHES AN INTERNAL NODE OF THIS RANK
+  !C
+  !C    Local node numbering places the internal nodes first, so a local node id
+  !C    greater than nn_internal belongs to another rank.
+  !C
+  pure logical function hecmw_has_internal_node( hecMESH, nn, nodLOCAL )
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in)       :: nn
+    integer(kind=kint), intent(in)       :: nodLOCAL(:)
+    integer(kind=kint) :: j
+
+    hecmw_has_internal_node = .true.
+    do j = 1, nn
+      if( nodLOCAL(j) <= hecMESH%nn_internal ) return
+    enddo
+    hecmw_has_internal_node = .false.
+  end function hecmw_has_internal_node
+
+  !C
+  !C***
   !C*** HECMW_INIT
   !C***
   !C

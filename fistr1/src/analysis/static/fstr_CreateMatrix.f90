@@ -91,6 +91,10 @@ contains
         ! ----- nodal coordinate & displacement
         iiS = hecMESH%elem_node_index(icel-1)
         nn  = hecMESH%elem_node_index(icel) - iiS
+
+        ! ----- rows beyond nn_internal are not equations, so an element with no internal node assembles nothing used here
+        if( .not. hecmw_has_internal_node( hecMESH, nn, hecMESH%elem_node_item(iiS+1:iiS+nn) ) ) cycle
+
         tt(:) = 0.d0
         do j = 1, nn
           in = hecMESH%elem_node_item(iiS+j)
