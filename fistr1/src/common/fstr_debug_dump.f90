@@ -322,6 +322,62 @@ contains
     end do
   end subroutine dump_fstr_couple
 
+  !> This subroutine prints out how the contact data of each pair is spread over the ranks.
+  !> It goes to the debug file rather than stdout so that solver logs stay comparable between builds.
+  subroutine dump_contact_layout( hecMESH, fstrSOLID )
+    implicit none
+    type( hecmwST_local_mesh ) :: hecMESH
+    type( fstr_solid )         :: fstrSOLID
+
+    integer(kind=kint) :: ie, js, je, j, i, n_ghost
+    logical            :: has_internal
+    character(len=6)   :: owner
+
+    owner = 'MASTER'
+    if( hecmw_partcontact_get_owner( hecMESH%hecmw_flag_partcontact ) == HECMW_FLAG_PARTCONTACT_OWNER_SLAVE ) &
+      &  owner = 'SLAVE'
+
+    n_ghost = 0
+    do ie = 1, hecMESH%n_elem
+      js = hecMESH%elem_node_index(ie-1) + 1
+      je = hecMESH%elem_node_index(ie)
+      has_internal = .false.
+      do j = js, je
+        if( hecMESH%elem_node_item(j) <= hecMESH%nn_internal ) then
+          has_internal = .true.
+          exit
+        endif
+      enddo
+      if( .not. has_internal ) n_ghost = n_ghost + 1
+    enddo
+
+    write(IDBG,'(A,i6,A,i10,A,i10,A,i10)') 'CONTACT_LAYOUT mesh: rank=', hecMESH%my_rank, &
+      &  ' n_node=', hecMESH%n_node, ' n_elem=', hecMESH%n_elem, &
+      &  ' n_elem_without_internal_node=', n_ghost
+
+    write(IDBG,'(A,i6,A,i6)') 'CONTACT_LAYOUT neighbor: rank=', hecMESH%my_rank, &
+      &  ' n_neighbor_pe=', hecMESH%n_neighbor_pe
+    if( hecMESH%n_neighbor_pe > 0 ) then
+      write(IDBG,'(A,i6,A,100i6)') 'CONTACT_LAYOUT neighbor_pe: rank=', hecMESH%my_rank, &
+        &  ' pe=', hecMESH%neighbor_pe(1:hecMESH%n_neighbor_pe)
+    endif
+
+    do i = 1, fstrSOLID%n_contacts
+      write(IDBG,'(A,i6,A,i6,A,A,A,i10,A,i10)') 'CONTACT_LAYOUT contact: rank=', hecMESH%my_rank, &
+        &  ' id=', i, ' owner=', owner, &
+        &  ' n_slave=', size(fstrSOLID%contacts(i)%slave), &
+        &  ' n_master=', size(fstrSOLID%contacts(i)%master)
+    enddo
+
+    do i = 1, fstrSOLID%n_embeds
+      write(IDBG,'(A,i6,A,i6,A,A,A,i10,A,i10)') 'CONTACT_LAYOUT embed: rank=', hecMESH%my_rank, &
+        &  ' id=', i, ' owner=', owner, &
+        &  ' n_slave=', size(fstrSOLID%embeds(i)%slave), &
+        &  ' n_master=', size(fstrSOLID%embeds(i)%master)
+    enddo
+
+    call flush(IDBG)
+  end subroutine dump_contact_layout
 
 end module fstr_debug_dump
 

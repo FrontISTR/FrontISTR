@@ -498,11 +498,7 @@ contains
             write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_contact
             stop
           else
-            if(paraContactFlag) then
-              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id), myrank)
-            else
-              isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id))
-            endif
+            isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id))
             !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
           endif
         enddo
@@ -529,11 +525,7 @@ contains
             write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_embed
             stop
           else
-            if(paraContactFlag) then
-              isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id), myrank)
-            else
-              isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id))
-            endif
+            isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id))
           endif
         enddo
         c_embed = c_embed+n

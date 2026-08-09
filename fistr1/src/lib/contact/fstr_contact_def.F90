@@ -270,19 +270,47 @@ contains
     fstr_contact_check = .true.
   end function
 
+  !>  Number of slave nodes of this contact owned by the current rank
+  integer(kind=kint) function fstr_count_internal_slaves( contact, hecMESH )
+    type(tContact), intent(in)        :: contact  !< contact definition
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+
+    integer  :: i, is, ie, cgrp
+
+    fstr_count_internal_slaves = 0
+
+    cgrp = contact%surf_id1
+    if( cgrp<=0 ) return
+    is= hecMESH%node_group%grp_index(cgrp-1) + 1
+    ie= hecMESH%node_group%grp_index(cgrp  )
+    do i=is,ie
+      if( hecMESH%node_group%grp_item(i) <= hecMESH%nn_internal ) then
+        fstr_count_internal_slaves = fstr_count_internal_slaves + 1
+      endif
+    enddo
+  end function
+
   !>  Initializer of tContactState
-  logical function fstr_contact_init( contact, hecMESH, cparam, myrank )
+  logical function fstr_contact_init( contact, hecMESH, cparam )
     type(tContact), intent(inout)     :: contact  !< contact definition
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
     type(tContactParam), target       :: cparam   !< contact parameter
-    integer(kint),intent(in),optional :: myrank
 
     integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
-    integer  :: count,nodeID
+    integer  :: count, ID_area
+    logical  :: slave_owner, take_master
 
     fstr_contact_init = .false.
 
     contact%cparam => cparam
+
+    slave_owner = hecmw_partcontact_get_owner( hecMESH%hecmw_flag_partcontact ) == HECMW_FLAG_PARTCONTACT_OWNER_SLAVE
+
+    ! update_surface_normal normalises vertex normals only after the cross-rank assembly, so a uniform factor cancels
+    ! but a partial one does not: a rank owning no slave must take no master surface at all, even though the
+    ! partitioner does leave master elements here to keep the communication tables symmetric
+    take_master = .true.
+    if( slave_owner ) take_master = fstr_count_internal_slaves( contact, hecMESH ) > 0
 
     !  master surface
     cgrp = contact%surf_id2
@@ -290,19 +318,22 @@ contains
     is= hecMESH%surf_group%grp_index(cgrp-1) + 1
     ie= hecMESH%surf_group%grp_index(cgrp  )
 
-    if(present(myrank)) then
-      ! PARA_CONTACT
-      count = 0
+    count = 0
+    if( take_master ) then
       do i=is,ie
         ic   = hecMESH%surf_group%grp_item(2*i-1)
-        if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+        ID_area = hecMESH%elem_ID(ic*2)
+        if( .not. slave_owner .and. ID_area /= hecMESH%my_rank ) cycle
         count = count + 1
       enddo
-      allocate( contact%master(count) )
-      count = 0
+    endif
+    allocate( contact%master(count) )
+    count = 0
+    if( take_master ) then
       do i=is,ie
         ic   = hecMESH%surf_group%grp_item(2*i-1)
-        if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+        ID_area = hecMESH%elem_ID(ic*2)
+        if( .not. slave_owner .and. ID_area /= hecMESH%my_rank ) cycle
         count = count + 1
         nsurf = hecMESH%surf_group%grp_item(2*i)
         ic_type = hecMESH%elem_type(ic)
@@ -313,22 +344,6 @@ contains
           contact%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
       enddo
-
-    else
-      ! not PARA_CONTACT
-      allocate( contact%master(ie-is+1) )
-      do i=is,ie
-        ic   = hecMESH%surf_group%grp_item(2*i-1)
-        nsurf = hecMESH%surf_group%grp_item(2*i)
-        ic_type = hecMESH%elem_type(ic)
-        call initialize_surf( ic, ic_type, nsurf, contact%master(i-is+1) )
-        iss = hecMESH%elem_node_index(ic-1)
-        do j=1, size( contact%master(i-is+1)%nodes )
-          nn = contact%master(i-is+1)%nodes(j)
-          contact%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
-        enddo
-      enddo
-
     endif
 
     call update_surface_reflen( contact%master, hecMESH%node )
@@ -339,24 +354,13 @@ contains
     ie= hecMESH%node_group%grp_index(cgrp  )
     nslave = 0
     do i=is,ie
-      nodeID = hecMESH%global_node_ID(hecMESH%node_group%grp_item(i))
-      if(present(myrank)) then
-        ! PARA_CONTACT
-        nslave = nslave + 1
-      else
-        ! not PARA_CONTACT
-        if( hecMESH%node_group%grp_item(i) <= hecMESH%nn_internal) then
-          nslave = nslave + 1
-        endif
-      endif
+      if( slave_owner .and. hecMESH%node_group%grp_item(i) > hecMESH%nn_internal ) cycle
+      nslave = nslave + 1
     enddo
     allocate( contact%slave(nslave) )
     ii = 0
     do i=is,ie
-      if(.not.present(myrank)) then
-        ! not PARA_CONTACT
-        if( hecMESH%node_group%grp_item(i) > hecMESH%nn_internal) cycle
-      endif
+      if( slave_owner .and. hecMESH%node_group%grp_item(i) > hecMESH%nn_internal ) cycle
       ii = ii + 1
       contact%slave(ii) = hecMESH%node_group%grp_item(i)
     enddo
@@ -381,18 +385,23 @@ contains
   end function
 
   !>  Initializer of tContactState for embed case
-  logical function fstr_embed_init( embed, hecMESH, cparam, myrank )
+  logical function fstr_embed_init( embed, hecMESH, cparam )
     type(tContact), intent(inout)     :: embed  !< contact definition
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
     type(tContactParam), target       :: cparam   !< contact parameter
-    integer(kint),intent(in),optional :: myrank
 
-    integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
-    integer  :: count,nodeID
+    integer  :: i, j, is, ie, cgrp, nslave, ic, ic_type, iss, nn, ii
+    integer  :: count, ID_area
+    logical  :: slave_owner, take_master
 
     fstr_embed_init = .false.
 
     embed%cparam => cparam
+
+    slave_owner = hecmw_partcontact_get_owner( hecMESH%hecmw_flag_partcontact ) == HECMW_FLAG_PARTCONTACT_OWNER_SLAVE
+
+    take_master = .true.
+    if( slave_owner ) take_master = fstr_count_internal_slaves( embed, hecMESH ) > 0
 
     !  master surface
     cgrp = embed%surf_id2
@@ -400,19 +409,22 @@ contains
     is= hecMESH%elem_group%grp_index(cgrp-1) + 1
     ie= hecMESH%elem_group%grp_index(cgrp  )
 
-    if(present(myrank)) then
-      ! PARA_CONTACT
-      count = 0
+    count = 0
+    if( take_master ) then
       do i=is,ie
         ic   = hecMESH%elem_group%grp_item(i)
-        if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+        ID_area = hecMESH%elem_ID(ic*2)
+        if( .not. slave_owner .and. ID_area /= hecMESH%my_rank ) cycle
         count = count + 1
       enddo
-      allocate( embed%master(count) )
-      count = 0
+    endif
+    allocate( embed%master(count) )
+    count = 0
+    if( take_master ) then
       do i=is,ie
         ic   = hecMESH%elem_group%grp_item(i)
-        if(hecMESH%elem_ID(ic*2) /= myrank) cycle
+        ID_area = hecMESH%elem_ID(ic*2)
+        if( .not. slave_owner .and. ID_area /= hecMESH%my_rank ) cycle
         count = count + 1
         ic_type = hecMESH%elem_type(ic)
         call initialize_surf( ic, ic_type, 0, embed%master(count) )
@@ -422,21 +434,6 @@ contains
           embed%master(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
         enddo
       enddo
-
-    else
-      ! not PARA_CONTACT
-      allocate( embed%master(ie-is+1) )
-      do i=is,ie
-        ic   = hecMESH%elem_group%grp_item(i)
-        ic_type = hecMESH%elem_type(ic)
-        call initialize_surf( ic, ic_type, 0, embed%master(i-is+1) )
-        iss = hecMESH%elem_node_index(ic-1)
-        do j=1, size( embed%master(i-is+1)%nodes )
-          nn = embed%master(i-is+1)%nodes(j)
-          embed%master(i-is+1)%nodes(j) = hecMESH%elem_node_item( iss+nn )
-        enddo
-      enddo
-
     endif
 
     ! slave surface
@@ -446,24 +443,13 @@ contains
     ie= hecMESH%node_group%grp_index(cgrp  )
     nslave = 0
     do i=is,ie
-      nodeID = hecMESH%global_node_ID(hecMESH%node_group%grp_item(i))
-      if(present(myrank)) then
-        ! PARA_CONTACT
-        nslave = nslave + 1
-      else
-        ! not PARA_CONTACT
-        if( hecMESH%node_group%grp_item(i) <= hecMESH%nn_internal) then
-          nslave = nslave + 1
-        endif
-      endif
+      if( slave_owner .and. hecMESH%node_group%grp_item(i) > hecMESH%nn_internal ) cycle
+      nslave = nslave + 1
     enddo
     allocate( embed%slave(nslave) )
     ii = 0
     do i=is,ie
-      if(.not.present(myrank)) then
-        ! not PARA_CONTACT
-        if( hecMESH%node_group%grp_item(i) > hecMESH%nn_internal) cycle
-      endif
+      if( slave_owner .and. hecMESH%node_group%grp_item(i) > hecMESH%nn_internal ) cycle
       ii = ii + 1
       embed%slave(ii) = hecMESH%node_group%grp_item(i)
     enddo
