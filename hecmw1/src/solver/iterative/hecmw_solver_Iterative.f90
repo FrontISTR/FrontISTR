@@ -19,6 +19,7 @@ contains
     use hecmw_solver_GMRESR
     use hecmw_solver_GMRESREN
     use hecmw_solver_GPBiCG
+    use hecmw_solver_CR
     use m_hecmw_solve_error
     use m_hecmw_comm_f
     use hecmw_solver_las
@@ -120,6 +121,9 @@ contains
         case (6)  !--GMRESREN
           hecMAT%symmetric = .false.
           call hecmw_solve_GMRESREN( hecMESH,hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (7)  !--CR
+          hecMAT%symmetric = .true.
+          call hecmw_solve_CR( hecMESH, hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
           error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
           call hecmw_solve_error (hecMESH, error)
@@ -361,6 +365,8 @@ contains
         endif
       case (6)  
         msg_method="GMRESR-EN"
+      case (7)  !--CR
+        msg_method="CR"
       case default
         msg_method="Unlabeled"
     end select
