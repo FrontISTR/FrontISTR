@@ -42,14 +42,6 @@ include:
         expire_in: 1week
         when: on_failure
 
-document:
-    image: ${REGISTRY}/document:latest
-    stage: document
-    needs: []
-    script:
-        - cp doc/_redirects public/_redirects
-    extends: [".artifact_public"]
-
 doxygen:
     image: ${REGISTRY}/document:latest
     stage: document
@@ -66,7 +58,6 @@ pages:
     script:
         - ls public
         - cd public
-        - echo /FrontISTR/release/ubuntu/hybrid/FrontISTR-5.4.0-Linux.deb       /FrontISTR/$(find . -name "FrontISTR_*.deb") 301 >> _redirects
         - echo /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.zip       /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.thread_openblas.zip 301 >> _redirects
         - echo /FrontISTR/release/x86_64-w64-mingw32-msmpi/FrontISTR-latest.zip /FrontISTR/release/x86_64-w64-mingw32/FrontISTR-latest.hybrid_msmpi_openblas.zip 301 >> _redirects
     extends: [".artifact_public"]

@@ -40,6 +40,6 @@ RUN apt-get -y remove libmetis-dev libmetis5 \
 
 FROM build AS document
 RUN apt-get update \
- && apt-get install -y doxygen graphviz python3 python3-pip \
+ && apt-get install -y doxygen graphviz \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
