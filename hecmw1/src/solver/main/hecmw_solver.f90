@@ -31,6 +31,8 @@ contains
     !C ERROR CHECK
     if(hecmw_solve_check_zerorhs(hecMESH, hecMAT))then
       hecMAT%X = 0.0d0
+      call hecmw_mat_set_flag_converged(hecMAT, 1)
+      call hecmw_mat_set_flag_diverged(hecMAT, 0)
       return
     endif
 
