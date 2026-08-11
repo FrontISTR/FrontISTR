@@ -93,7 +93,8 @@ OBJSF = \
 	prism6n.@f90objfilepostfix@ \
 	prism15n.@f90objfilepostfix@ \
 	quadrature.@f90objfilepostfix@ \
-	element.@f90objfilepostfix@
+	element.@f90objfilepostfix@ \
+	tying.@f90objfilepostfix@
 
 HEADERS =
 

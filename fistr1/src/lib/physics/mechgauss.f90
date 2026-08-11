@@ -6,9 +6,8 @@
 module mMechGauss
   use hecmw_util
   use mMaterial
-  use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, fe_mitc9_shell, &
-    fe_mitc3_shell361, fe_mitc4_shell361
-  use Quadrature, only: gauss1d2, gauss1d3, weight1d2, weight1d3
+  use elementInfo, only: NumOfShellThicknessQuadPoints, getShellThicknessQuadPoint, &
+    getShellThicknessWeight
   implicit none
 
   ! ----------------------------------------------------------------------------
@@ -57,6 +56,7 @@ contains
     gauss%strain_bak=0.d0; gauss%stress_bak=0.d0
     gauss%strain_out=0.d0; gauss%stress_out=0.d0
     gauss%plstrain =0.d0
+    gauss%plpotential =0.d0
     gauss%nqm =0.d0
     gauss%strain_energy =0.d0
     gauss%strain_energy_bak =0.d0
@@ -99,18 +99,12 @@ contains
     if( associated( gauss%fstatus ) ) deallocate( gauss%fstatus )
   end subroutine
 
-  !> Number of through-thickness quadrature points used by shell stiffness.
+  !> Compatibility accessor for shell history allocation.
+  !> The quadrature rule itself is defined in elementInfo.
   integer(kind=kint) function fstr_shell_num_thickness_points( etype )
     integer(kind=kint), intent(in) :: etype
 
-    select case( etype )
-    case( fe_mitc3_shell, fe_mitc4_shell, fe_mitc3_shell361, fe_mitc4_shell361 )
-      fstr_shell_num_thickness_points = 2
-    case( fe_mitc9_shell )
-      fstr_shell_num_thickness_points = 3
-    case default
-      fstr_shell_num_thickness_points = 0
-    end select
+    fstr_shell_num_thickness_points = max(0, NumOfShellThicknessQuadPoints(etype))
   end function fstr_shell_num_thickness_points
 
   !> Allocate shell history for every surface Gauss point, layer, and thickness point.
@@ -165,24 +159,13 @@ contains
     zeta = 0.0d0
     weight = 0.0d0
 
-    select case( etype )
-    case( fe_mitc3_shell, fe_mitc4_shell, fe_mitc3_shell361, fe_mitc4_shell361 )
-      if( ithick < 1 .or. ithick > 2 ) then
-        ierr = 1
-        return
-      endif
-      zeta = gauss1d2(1, ithick)
-      weight = weight1d2(ithick)
-    case( fe_mitc9_shell )
-      if( ithick < 1 .or. ithick > 3 ) then
-        ierr = 1
-        return
-      endif
-      zeta = gauss1d3(1, ithick)
-      weight = weight1d3(ithick)
-    case default
+    if( ithick < 1 .or. ithick > NumOfShellThicknessQuadPoints(etype) ) then
       ierr = 1
-    end select
+      return
+    endif
+
+    call getShellThicknessQuadPoint(etype, ithick, zeta)
+    weight = getShellThicknessWeight(etype, ithick)
   end subroutine fstr_shell_thickness_quadrature
 
   !> Layer-local shell thickness coordinate and quadrature weight.
