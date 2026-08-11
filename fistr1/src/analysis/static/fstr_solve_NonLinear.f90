@@ -135,6 +135,15 @@ contains
       call fstr_set_current_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
       call solve_LINEQ(hecMESHmpc,hecMATmpc)
       call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
+      ! ----- check matrix solver error
+      if( hecmw_mat_get_flag_converged(hecMATmpc) == kNO ) then
+        if( hecMESH%my_rank == 0) then
+          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
+        end if
+        fstrSOLID%NRstat_i(knstDRESN) = 4
+        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        return
+      end if
       call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
       ! ----- update the small displacement and the displacement for 1step
