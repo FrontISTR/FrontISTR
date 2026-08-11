@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <errno.h>
 
@@ -275,6 +276,51 @@ static int part_cont_contact(void) {
 }
 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/*  contact ownership scheme < CONTACT_OWNER={ MASTER | SLAVE } >             */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+/* Needs no rule in hecmw_partlex.l: flex takes the longest match, so {name}
+ * beats the 7-character CONTACT rule and the keyword arrives as
+ * HECMW_PARTLEX_NAME.  Compared as a string here, which is why
+ * hecmw_partlex.c stays untouched. */
+static int part_cont_contact_owner(void) {
+  int token;
+  char *p;
+
+  /* '=' */
+  token = HECMW_partlex_next_token();
+  if (token != '=') {
+    HECMW_log(HECMW_LOG_ERROR, "%s %s (%s)",
+              HECMW_strmsg(HECMW_PART_E_INVALID_TOKEN),
+              "'=' required after 'CONTACT_OWNER'",
+              HECMW_partlex_get_text());
+    HECMW_log(HECMW_LOG_DEBUG, "%s:%d:%s (%s)", __FILE__, __LINE__,
+              "part_cont_contact_owner", HECMW_partlex_get_text());
+    return -1;
+  }
+
+  /* { MASTER | SLAVE } */
+  token = HECMW_partlex_next_token();
+  if (token == HECMW_PARTLEX_NAME) {
+    p = HECMW_partlex_get_text();
+
+    if (strcmp(p, "MASTER") == 0) { /* CONTACT_OWNER=MASTER */
+      return HECMW_PART_CONTACT_OWNER_MASTER;
+    }
+    if (strcmp(p, "SLAVE") == 0) { /* CONTACT_OWNER=SLAVE */
+      return HECMW_PART_CONTACT_OWNER_SLAVE;
+    }
+  }
+
+  HECMW_log(HECMW_LOG_ERROR, "%s %s (%s)",
+            HECMW_strmsg(HECMW_PART_E_INVALID_TOKEN),
+            "'CONTACT_OWNER' must be 'MASTER' or 'SLAVE'",
+            HECMW_partlex_get_text());
+  HECMW_log(HECMW_LOG_DEBUG, "%s:%d:%s (%s)", __FILE__, __LINE__,
+            "part_cont_contact_owner", HECMW_partlex_get_text());
+  return -1;
+}
+
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /*  part file name < PART=filename >                                            */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 static int part_cont_part(char *name, size_t name_len) {
@@ -436,6 +482,7 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
   cont_data->depth        = -1;
   cont_data->is_print_ucd = -1;
   cont_data->contact      = -1;
+  cont_data->contact_owner= -1;
   cont_data->is_print_part= -1;
   cont_data->ucd_file_name[0] = '\0';
   cont_data->part_file_name[0] = '\0';
@@ -479,6 +526,14 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
                                                   sizeof(cont_data->part_file_name));
         if (cont_data->is_print_part < 0) return -1;
         break;
+
+      case HECMW_PARTLEX_NAME: /* CONTACT_OWNER (see part_cont_contact_owner) */
+        if (strcmp(HECMW_partlex_get_text(), "CONTACT_OWNER") == 0) {
+          cont_data->contact_owner = part_cont_contact_owner();
+          if (cont_data->contact_owner < 0) return -1;
+          break;
+        }
+        /* fall through: any other name is an unknown keyword */
 
       default:
         HECMW_log(HECMW_LOG_ERROR, "%s %s (%s)",
@@ -556,6 +611,22 @@ static int part_cont_partition(struct hecmw_part_cont_data *cont_data) {
     cont_data->is_print_part = 0;
   }
 
+  if (cont_data->contact_owner < 0) {
+    cont_data->contact_owner = HECMW_PART_CONTACT_OWNER_MASTER;
+  }
+
+  /* the slave-owner scheme decides the responsible domain from node ownership,
+   * which element-based partitioning does not establish */
+  if (cont_data->contact_owner == HECMW_PART_CONTACT_OWNER_SLAVE &&
+      cont_data->type != HECMW_PART_TYPE_NODE_BASED) {
+    HECMW_log(HECMW_LOG_ERROR, "%s %s",
+              HECMW_strmsg(HECMW_PART_E_INVALID_TOKEN),
+              "'CONTACT_OWNER=SLAVE' requires 'TYPE=NODE-BASED'");
+    HECMW_log(HECMW_LOG_DEBUG, "%s:%d:%s", __FILE__, __LINE__,
+              "part_cont_partition");
+    return -1;
+  }
+
   if (cont_data->method == HECMW_PART_METHOD_USER) {
     cont_data->is_print_part = 0;
   }
@@ -597,6 +668,7 @@ static int part_get_control(struct hecmw_part_cont_data *cont_data) {
     cont_data->depth        = 1;
     cont_data->is_print_ucd = 0;
     cont_data->contact      = HECMW_PART_CONTACT_DEFAULT;
+    cont_data->contact_owner= HECMW_PART_CONTACT_OWNER_MASTER;
     cont_data->is_print_part= 0;
     return 0;
   }

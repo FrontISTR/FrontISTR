@@ -396,6 +396,14 @@ module hecmw_util
   integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_DISTRIBUTE = 2
   integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_SIMPLE     = 3
 
+  !C      the mode above occupies bits 0-7, the ownership scheme bit 8.  OWNER_MASTER must stay zero so that a
+  !C      distributed mesh holding a bare mode value reads back as the master-owner scheme.  Test with
+  !C      hecmw_partcontact_get_mode()/_get_owner(), never for equality against the whole flag.
+  integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_MODE_MASK    = 255
+  integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_OWNER_MASK   = 256
+  integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_OWNER_MASTER = 0
+  integer(kind=kint),parameter :: HECMW_FLAG_PARTCONTACT_OWNER_SLAVE  = 256
+
   !C
   !C +--------+
   !C | MATRIX |
@@ -461,6 +469,46 @@ module hecmw_util
     logical :: symmetric = .true.
   end type hecmwST_matrix
 contains
+
+  !C
+  !C***
+  !C*** HECMW_PARTCONTACT_GET_MODE / HECMW_PARTCONTACT_GET_OWNER
+  !C***
+  !C
+  !C    UNPACK hecmw_flag_partcontact, so that its bit layout stays internal to HEC-MW
+  !C
+  pure integer(kind=kint) function hecmw_partcontact_get_mode( flag_partcontact )
+    integer(kind=kint), intent(in) :: flag_partcontact
+    hecmw_partcontact_get_mode = iand( flag_partcontact, HECMW_FLAG_PARTCONTACT_MODE_MASK )
+  end function hecmw_partcontact_get_mode
+
+  pure integer(kind=kint) function hecmw_partcontact_get_owner( flag_partcontact )
+    integer(kind=kint), intent(in) :: flag_partcontact
+    hecmw_partcontact_get_owner = iand( flag_partcontact, HECMW_FLAG_PARTCONTACT_OWNER_MASK )
+  end function hecmw_partcontact_get_owner
+
+  !C
+  !C***
+  !C*** HECMW_HAS_INTERNAL_NODE
+  !C***
+  !C
+  !C    TEST WHETHER AN ELEMENT TOUCHES AN INTERNAL NODE OF THIS RANK
+  !C
+  !C    Local node numbering places the internal nodes first, so a local node id
+  !C    greater than nn_internal belongs to another rank.
+  !C
+  pure logical function hecmw_has_internal_node( hecMESH, nn, nodLOCAL )
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    integer(kind=kint), intent(in)       :: nn
+    integer(kind=kint), intent(in)       :: nodLOCAL(:)
+    integer(kind=kint) :: j
+
+    hecmw_has_internal_node = .true.
+    do j = 1, nn
+      if( nodLOCAL(j) <= hecMESH%nn_internal ) return
+    enddo
+    hecmw_has_internal_node = .false.
+  end function hecmw_has_internal_node
 
   !C
   !C***

@@ -224,7 +224,12 @@ EOL
     depth=`cat $ref_dir/depth.txt`
     echo $depth
   fi
-  echo "!PARTITION,TYPE=NODE-BASED,METHOD=KMETIS,DOMAIN=$mpi_num_process,DEPTH=$depth" > hecmw_part_ctrl.dat
+  contact_owner=""
+  if [ -e $ref_dir/contact_owner.txt ]; then
+    contact_owner=",CONTACT_OWNER=`cat $ref_dir/contact_owner.txt`"
+    echo $contact_owner
+  fi
+  echo "!PARTITION,TYPE=NODE-BASED,METHOD=KMETIS,DOMAIN=$mpi_num_process,DEPTH=$depth$contact_owner" > hecmw_part_ctrl.dat
 
   ###################
   # WITHOUT RESTART #

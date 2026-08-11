@@ -26,4 +26,8 @@ extern int HECMW_dist_gid2lid_node(const struct hecmwST_local_mesh *mesh,
 extern int HECMW_dist_gid2lid_elem(const struct hecmwST_local_mesh *mesh,
                                    int gid);
 
+extern int HECMW_partcontact_get_mode(int flag_partcontact);
+
+extern int HECMW_partcontact_get_owner(int flag_partcontact);
+
 #endif

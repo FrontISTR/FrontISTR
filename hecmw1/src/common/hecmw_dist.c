@@ -153,3 +153,11 @@ int HECMW_dist_gid2lid_elem(const struct hecmwST_local_mesh *mesh, int gid) {
 
   return -1;
 }
+
+int HECMW_partcontact_get_mode(int flag_partcontact) {
+  return flag_partcontact & HECMW_FLAG_PARTCONTACT_MODE_MASK;
+}
+
+int HECMW_partcontact_get_owner(int flag_partcontact) {
+  return flag_partcontact & HECMW_FLAG_PARTCONTACT_OWNER_MASK;
+}

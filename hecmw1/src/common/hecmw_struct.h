@@ -151,6 +151,14 @@ struct hecmwST_local_mesh {
 #define HECMW_FLAG_PARTCONTACT_AGGREGATE 1  /* 1:aggregate */
 #define HECMW_FLAG_PARTCONTACT_DISTRIBUTE 2 /* 2:distribute */
 #define HECMW_FLAG_PARTCONTACT_SIMPLE 3     /* 3:simple */
+/* the mode above occupies bits 0-7, the ownership scheme bit 8.  OWNER_MASTER
+ * must stay zero so that a distributed mesh holding a bare mode value reads
+ * back as the master-owner scheme.  Test with HECMW_partcontact_get_mode() and
+ * _get_owner(), never for equality against the whole flag. */
+#define HECMW_FLAG_PARTCONTACT_MODE_MASK 0x00ff
+#define HECMW_FLAG_PARTCONTACT_OWNER_MASK 0x0100
+#define HECMW_FLAG_PARTCONTACT_OWNER_MASTER 0x0000 /* 0:master-owner */
+#define HECMW_FLAG_PARTCONTACT_OWNER_SLAVE 0x0100  /* 1:slave-owner */
 
   char gridfile[HECMW_FILENAME_LEN + 1];
   int hecmw_n_file;
