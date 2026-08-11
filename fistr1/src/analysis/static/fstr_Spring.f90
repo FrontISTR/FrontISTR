@@ -34,7 +34,8 @@ contains
         if( fval < 0.d0 ) fval = -fval*(1.d0-factor)
       else
         ctime = fstr_get_time()+fstr_get_timeinc()
-        call table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
+        factor = 1.d0
+        call fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
         if( fval < 0.d0 )then
           fval = -fval*(1.d0-factor)
         else
@@ -78,7 +79,8 @@ contains
         if( fval < 0.d0 ) fval = -fval*(1.d0-factor)
       else
         ctime = fstr_get_time()+fstr_get_timeinc()
-        call table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
+        factor = 1.d0
+        call fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, ctime, factor)
         if( fval < 0.d0 )then
           fval = -fval*(1.d0-factor)
         else

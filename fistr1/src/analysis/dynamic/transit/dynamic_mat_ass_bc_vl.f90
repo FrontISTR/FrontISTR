@@ -24,7 +24,7 @@ contains
     integer(kind=kint), optional         :: cstep
 
     integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, idof, rid, grpid, flag_u
-    real(kind=kreal)   :: RHS, f_t
+    real(kind=kreal)   :: RHS
 
     flag_u = 2
     do ig0 = 1, fstrSOLID%VELOCITY_ngrp_tot
@@ -35,8 +35,7 @@ contains
       endif
 
       RHS = fstrSOLID%VELOCITY_ngrp_val(ig0)
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-      RHS = RHS * f_t
+      call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
 
       rid = fstrSOLID%VELOCITY_ngrp_rotID(ig0)
       ig  = fstrSOLID%VELOCITY_ngrp_ID(ig0)
