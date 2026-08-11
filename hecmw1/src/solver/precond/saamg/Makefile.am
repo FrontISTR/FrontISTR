@@ -9,9 +9,9 @@ BINDIR            = @bindir@
 LIBDIR            = @libdir@
 INCLUDEDIR        = @includedir@
 
-HECMWBINDIR       = ../../../bin
-HECMWLIBDIR       = ../../../lib
-HECMWINCDIR       = ../../../include
+HECMWBINDIR       = ../../../../bin
+HECMWLIBDIR       = ../../../../lib
+HECMWINCDIR       = ../../../../include
 HECMWLIBS         = @hecmwlibs@
 
 REFINERDIR        = @refinerdir@
@@ -19,16 +19,25 @@ REFINERINCDIR     = @refinerincdir@
 REFINERLIBDIR     = @refinerlibdir@
 REFINERLIBS       = @refinerlibs@
 
+MUMPSDIR          = @mumpsdir@
+MUMPSLIBDIR       = @mumpslibdir@
+MUMPSINCDIR       = @mumpsincdir@
+MUMPSLIBS         = @mumpslibs@
+MUMPS_CFLAGS      = @mumps_cflags@
+MUMPS_LDFLAGS     = @mumps_ldflags@
+MUMPS_F90FLAGS    = @mumps_f90flags@
+MUMPS_F90LDFLAGS  = @mumps_f90ldflags@
+
 CC                = @cc@
 CFLAGS            = @cflags@
 BASE_CFLAGS       = @base_cflags@
 MPI_CFLAGS        = @mpi_cflags@
 HECMW_CFLAGS      = @hecmw_cflags@
-ALL_CFLAGS        = $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
+ALL_CFLAGS        = $(BASE_CFLAGS) $(HECMW_CFLAGS) $(MUMPS_CFLAGS) $(MPI_CFLAGS) $(CFLAGS)
 LDFLAGS           = @ldflags@
 MPI_LDFLAGS       = @mpi_ldflags@
 HECMW_LDFLAGS     = @hecmw_ldflags@
-ALL_LDFLAGS       = $(HECMW_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
+ALL_LDFLAGS       = $(HECMW_LDFLAGS) $(MUMPS_LDFLAGS) $(MPI_LDFLAGS) $(LDFLAGS)
 OPTFLAGS          = @optflags@
 
 F90               = @f90@
@@ -36,11 +45,12 @@ F90FLAGS          = @f90flags@
 BASE_F90FLAGS     = @base_f90flags@
 MPI_F90FLAGS      = @mpi_f90flags@
 HECMW_F90FLAGS    = @hecmw_f90flags@
-ALL_F90FLAGS      = $(BASE_F90FLAGS) $(HECMW_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS)
+ALL_F90FLAGS      = $(BASE_F90FLAGS) $(HECMW_F90FLAGS) $(MUMPS_F90FLAGS) $(MPI_F90FLAGS) $(F90FLAGS)
 F90LDFLAGS        = @f90ldflags@
 MPI_F90LDFLAGS    = @mpi_f90ldflags@
 HECMW_F90LDFLAGS  = @hecmw_f90ldflags@
-ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+ALL_F90LDFLAGS    = $(HECMW_F90LDFLAGS) $(MUMPS_F90LDFLAGS) $(MPI_F90LDFLAGS) $(F90LDFLAGS)
+F90FPP            = @f90fpp@
 F90OPTFLAGS       = @f90optflags@
 
 AR                = @ar@
@@ -48,7 +58,6 @@ CP                = @cp@
 RM                = @rm@
 RANLIB            = @ranlib@
 MKDIR             = @mkdir@
-MAKE = @make@
 
 #-----------------------------------------------------------------------------#
 TARGET            = @hecmwlib_targetfile@
@@ -60,13 +69,16 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 
 #-----------------------------------------------------------------------------#
 .SUFFIXES:
-.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .f
+.SUFFIXES: .@cobjfilepostfix@ @f90objfilepostfix@ .c .f90 .F90 .f
 
 .c.@cobjfilepostfix@:
 	$(CC) -c $< $(ALL_CFLAGS) $(OPTFLAGS)
 
 .f90.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
+
+.F90.@f90objfilepostfix@:
+	$(F90) -c $< $(ALL_F90FLAGS) $(F90FPP) $(F90OPTFLAGS)
 
 .f.@f90objfilepostfix@:
 	$(F90) -c $< $(ALL_F90FLAGS) $(F90OPTFLAGS)
@@ -75,33 +87,28 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_precond_rbm.@f90objfilepostfix@ \
-	hecmw_precond.@f90objfilepostfix@
+	hecmw_precond_SAAMG_util.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_param.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_comm.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_matrix.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_smoother.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_aggregate.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_prolongation.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_coarse.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_coarse_mumps.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_core.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_adapt.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_verify.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG.@f90objfilepostfix@
 
 HEADERS =
 
 #-----------------------------------------------------------------------------#
 all: @build_target@
 
-@build_target@:
-	$(MAKE) build-common-module
-	@cd ssor   && $(MAKE) @build_target@
-	@cd diag   && $(MAKE) @build_target@
-	@cd bilu   && $(MAKE) @build_target@
-	@cd sainv  && $(MAKE) @build_target@
-	@cd rif    && $(MAKE) @build_target@
-	@cd ml     && $(MAKE) @build_target@
-	@cd saamg  && $(MAKE) @build_target@
-	$(MAKE) BUILD_CURR
+build-default: $(TARGET) $(F90TARGET) install-module
 
 build-without-f: $(TARGET)
-
-# hecmw_precond_rbm (common RBM generation) is used by the ml and saamg subdirs,
-# so compile it and publish its module to the include dir before those subdirs build.
-build-common-module: hecmw_precond_rbm.@f90objfilepostfix@
-	$(CP) hecmw_precond_rbm.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
-
-BUILD_CURR: $(TARGET) $(F90TARGET) install-module
 
 $(TARGET): $(OBJS)
 	$(AR) $(HECMWLIBDIR)/$@ $(OBJS)
@@ -114,56 +121,18 @@ $(OBJS): $(HEADERS)
 $(OBJSF):
 
 install-header:
-	@cd ml     && $(MAKE) install-header
 
 install-module: $(OBJSF)
 	$(CP) *.$(F90MODULEPOSTFIX) $(HECMWINCDIR)/.
 
 install:
-	@cd ssor   && $(MAKE) install
-	@cd diag   && $(MAKE) install
-	@cd bilu   && $(MAKE) install
-	@cd sainv  && $(MAKE) install
-	@cd rif    && $(MAKE) install
-	@cd ml     && $(MAKE) install
-	@cd saamg  && $(MAKE) install
 
 clean:
 	$(RM) *.$(COBJFILEPOSTFIX) *.$(F90OBJFILEPOSTFIX) *.$(F90MODULEPOSTFIX)
-	@cd ssor   && $(MAKE) clean
-	@cd diag   && $(MAKE) clean
-	@cd bilu   && $(MAKE) clean
-	@cd sainv  && $(MAKE) clean
-	@cd rif    && $(MAKE) clean
-	@cd ml     && $(MAKE) clean
-	@cd saamg  && $(MAKE) clean
 
 distclean: clean
-	@cd ssor   && $(MAKE) distclean
-	@cd diag   && $(MAKE) distclean
-	@cd bilu   && $(MAKE) distclean
-	@cd sainv  && $(MAKE) distclean
-	@cd rif    && $(MAKE) distclean
-	@cd ml     && $(MAKE) distclean
-	@cd saamg  && $(MAKE) distclean
-
-maintainer-clean:
-	@cd ssor   && $(MAKE) maintainer-clean
-	@cd diag   && $(MAKE) maintainer-clean
-	@cd bilu   && $(MAKE) maintainer-clean
-	@cd sainv  && $(MAKE) maintainer-clean
-	@cd rif    && $(MAKE) maintainer-clean
-	@cd ml     && $(MAKE) maintainer-clean
-	@cd saamg  && $(MAKE) maintainer-clean
 
 include .dependf90
 
 depend .dependf90:
 	makedepf90 *.[fF]90 > .dependf90
-	@cd ssor   && $(MAKE) depend
-	@cd diag   && $(MAKE) depend
-	@cd bilu   && $(MAKE) depend
-	@cd sainv  && $(MAKE) depend
-	@cd rif    && $(MAKE) depend
-	@cd ml     && $(MAKE) depend
-	@cd saamg  && $(MAKE) depend

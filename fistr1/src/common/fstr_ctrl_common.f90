@@ -84,7 +84,7 @@ contains
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, contact_elim, &
-      resid, singma_diag, sigma, thresh, filter )
+      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
     integer(kind=kint) :: precond
@@ -112,6 +112,8 @@ contains
     real(kind=kreal) :: sigma
     real(kind=kreal) :: thresh
     real(kind=kreal) :: filter
+    real(kind=kreal) :: solver_ropt(10)
+    integer(kind=kint) :: loglevel
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
     character(100) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' 
@@ -135,7 +137,7 @@ contains
 
     ! JP-0
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD ',   mlist,              1,   'P',   method  ) /= 0) return
-    if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,4,5,6,7,8,9,10,11,12,20,21,30,31,32 ' ,0, 'I', precond ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'PRECOND ', '1,2,3,4,5,6,7,8,9,10,11,12,20,21,22,30,31,32 ' ,0, 'I', precond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'NSET ',    '0,-1,+1 ',          0,   'I',   nset    ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ITERLOG ', 'NO,YES ',           0,   'P',   iter ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'TIMELOG ', 'NO,YES,VERBOSE ',   0,   'P',   time ) /= 0) return
@@ -148,6 +150,11 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACT_ELIM ','# ',            0,   'I',contact_elim ) /= 0) return
+    ! diagnostic verbosity, independent of TIMELOG.  -1 = "unset": each consumer
+    ! (ML / SA-AMG) then falls back to its previous default, so behavior is
+    ! unchanged unless LOGLEVEL is given explicitly.
+    loglevel = -1
+    if( fstr_ctrl_get_param_ex( ctrl, 'LOGLEVEL ','# ',               0,   'I',loglevel ) /= 0) return
     ! JP-1
     if( method > number_number ) then  ! JP-2
       method = method - number_number
@@ -182,6 +189,32 @@ contains
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
            solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
            solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) return
+    else if( precond == 22 ) then
+      ! SA-AMG options.  Two optional data lines; trailing entries may be omitted.
+      ! 0 = use the built-in default for each.  Integer slots 1-7 mirror the ML
+      ! (PRECOND=5) layout so an ML option line carries over (hecmw_ML_wrapper.c
+      ! reads opt[0..6] = slots 1-7); slots 8-10 are SA-AMG-specific.  ML does not
+      ! read the real line at all.
+      ! (verbose has no slot here: enable diagnostics via !SOLVER LOGLEVEL>=1.)
+      !  line 3 (integers):
+      !    1 coarse_solver (0=auto/1=smoother/2=dense/3=mumps), 2 smoother (0/1=Chebyshev only),
+      !    3 cycle (0=default(W)/1=V/2=W), 4 max_level,
+      !    5 RESERVED (ML CoarsenScheme: ignored with a warning), 6 cheb_deg, 7 coarse_size,
+      !    8 max_size, 9 galerkin_lowmem (0=default(2-stage,faster),
+      !               >0=low-memory (fuse finest level only)), 10 RESERVED
+      !  line 4 (reals):    theta, cheb_alpha, safety,
+      !    taper_k (coarsening taper: 0=default(100), >0=use as K, <0=disable),
+      !    agg_order (aggregation seed ordering: 0=default(BFS), <0=natural/legacy,
+      !               1..4=explicit mode),
+      !    min_size, verify (0=off/>0=on), dump_vtk (0=off/>0=on)
+      solver_opt(1:10) = 0
+      solver_ropt(1:10) = 0.0d0
+      if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
+           solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
+           solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) solver_opt(1:10) = 0
+      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrrrrr ', &
+           solver_ropt(1), solver_ropt(2), solver_ropt(3), solver_ropt(4), solver_ropt(5), &
+           solver_ropt(6), solver_ropt(7), solver_ropt(8) )/= 0) solver_ropt(1:10) = 0.0d0
     else if( method == 101 ) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt(1) )/= 0) return
     end if

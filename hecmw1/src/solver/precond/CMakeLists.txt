@@ -7,9 +7,11 @@ add_subdirectory(bilu)
 add_subdirectory(diag)
 add_subdirectory(ml)
 add_subdirectory(rif)
+add_subdirectory(saamg)
 add_subdirectory(sainv)
 add_subdirectory(ssor)
 
 target_sources(hecmw PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond_rbm.f90
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_precond.f90
 )

@@ -1,0 +1,16 @@
+!!
+!! SA-AMG (PRECOND=22) test : NDOF=6 shell (element 761)
+!! coarsest solver forced to dense LDL^T (coarse_solver=2 (int slot1)) -> no external library dependency
+!!
+!BOUNDARY
+  FIX, 1, 3,  0.0
+!CLOAD
+  CL1, 3, -0.25
+  CL2, 3, -0.50
+  CL3, 3, -0.25
+!SOLVER,METHOD=CG,PRECOND=22,ITERLOG=NO,TIMELOG=NO
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+ 2
+!WRITE,RESULT
+!END

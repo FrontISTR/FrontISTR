@@ -438,6 +438,14 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
   /* N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_object, 0, ML_INCREASING, agg_object); */
   N_levels = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_object, 0, ML_INCREASING, agg_object);
   if (loglevel >= 1 && myrank == 0) fprintf(stderr, "INFO: ML generated num of levels is %d\n", N_levels);
+  /* A non-positive level count means hierarchy generation failed (e.g. ML built
+   * no aggregates).  Do not proceed with a corrupt hierarchy -- report and bail. */
+  if (N_levels < 1) {
+    if (myrank == 0)
+      fprintf(stderr, "ERROR: ML_Gen_MultiLevelHierarchy returned %d levels (aggregation failed)\n", N_levels);
+    *ierr = HECMW_ERROR;
+    return;
+  }
 
   /* Smoother */
   /*
@@ -522,12 +530,17 @@ void hecmw_ML_wrapper_setup(int *id, int *sym, int *Ndof, int *ierr) {
   }
 
   /* Solver */
-  ML_Gen_Solver(ml_object, mlopt->MGType, 0, N_levels - 1);
+  if (ML_Gen_Solver(ml_object, mlopt->MGType, 0, N_levels - 1) != 0) {
+    if (myrank == 0) fprintf(stderr, "ERROR: ML_Gen_Solver failed\n");
+    *ierr = HECMW_ERROR;
+    return;
+  }
 
   /* Save objects */
   MLInfo[*id - 1].ml_object  = ml_object;
   MLInfo[*id - 1].agg_object = agg_object;
   MLInfo[*id - 1].ndof = *Ndof;
+  *ierr = HECMW_SUCCESS;   /* reached only on the fully-successful path */
 }
 
 void hecmw_ML_wrapper_apply(int *id, double rhs[], int *ierr) {

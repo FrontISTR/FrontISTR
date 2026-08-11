@@ -385,6 +385,8 @@ contains
         msg_precond="SAINV"
       case (21)
         msg_precond="RIF"
+      case (22)
+        msg_precond="SAAMG"
       case default
         msg_precond="Unlabeled"
     end select

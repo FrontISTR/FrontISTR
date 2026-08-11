@@ -11,6 +11,7 @@ module hecmw_precond
   use hecmw_precond_BILU
   use hecmw_precond_SAINV
   use hecmw_precond_RIF
+  use hecmw_precond_SAAMG
   use hecmw_matrix_misc
   use hecmw_solver_las
   implicit none
@@ -47,6 +48,8 @@ contains
         call hecmw_precond_SAINV_setup(hecMAT)
       case(21)
         call hecmw_precond_RIF_setup(hecMAT)
+      case(22)
+        call hecmw_precond_SAAMG_setup(hecMAT, hecMESH, sym)
       case default
         write (*,'(/a )')'#### HEC-MW-SOLVER-E-1001'
         write (*,'( a/)')'    inconsistent solver/preconditioning'
@@ -73,6 +76,8 @@ contains
         call hecmw_precond_SAINV_clear(hecMAT%NDOF)
       case(21)
         call hecmw_precond_RIF_clear(hecMAT%NDOF)
+      case(22)
+        call hecmw_precond_SAAMG_clear(hecMAT%NDOF)
       case default
     end select
 
@@ -144,6 +149,8 @@ contains
           call hecmw_precond_SAINV_apply(R,ZP,hecMAT%NDOF)
         case(21)
           call hecmw_precond_RIF_apply(ZP,hecMAT%NDOF)
+        case(22)
+          call hecmw_precond_SAAMG_apply(ZP,hecMAT%NDOF)
         case default
       end select
 

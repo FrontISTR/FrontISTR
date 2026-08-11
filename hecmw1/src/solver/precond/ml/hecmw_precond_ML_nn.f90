@@ -45,6 +45,10 @@ contains
     endif
     call hecmw_mat_id_set(hecMAT, hecMESH, id)
     call hecmw_ML_wrapper_setup(id, sym, hecMAT%NDOF, ierr)
+    if (ierr /= 0) then   ! HECMW_SUCCESS == 0
+      write(*,'(a)') '#### hecmw_precond_ML_nn_setup: ML preconditioner setup failed'
+      call hecmw_abort(hecmw_comm_get_comm())
+    end if
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0 ! symbolic setup done
     hecMAT%Iarray(97) = 0 ! numerical setup done
