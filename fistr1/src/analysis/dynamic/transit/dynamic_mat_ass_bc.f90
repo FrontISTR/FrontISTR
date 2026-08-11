@@ -60,13 +60,14 @@ contains
           if( iter>1 ) then
             RHS=0.d0
           else
-            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr-fstrDYNAMIC%t_delta, f_t1, flag_u)
-            call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-            RHS = RHS * (f_t-f_t1)
+            f_t1 = RHS
+            call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr-fstrDYNAMIC%t_delta, f_t1, flag_u)
+            f_t = RHS
+            call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
+            RHS = f_t - f_t1
           endif
         else
-          call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-          RHS = RHS * f_t
+          call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
         endif
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
@@ -184,8 +185,7 @@ contains
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-        RHS = RHS * f_t
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
 
@@ -240,8 +240,7 @@ contains
       grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
       if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, 1 ) ) cycle
 
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-      RHS = RHS * f_t
+      call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
 
       ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
 
@@ -300,8 +299,7 @@ contains
         ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
         RHS  = fstrSOLID%BOUNDARY_ngrp_val(ig0)
 
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-        RHS = RHS * f_t
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, RHS, flag_u)
 
         ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
 
@@ -310,6 +308,23 @@ contains
         idofS = ityp/10
         idofE = ityp - idofS*10
 
+        if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then ! setup rotation information
+          rid = fstrSOLID%BOUNDARY_ngrp_rotID(ig0)
+          if( .not. rinfo%conds(rid)%active ) then
+            rinfo%conds(rid)%active = .true.
+            rinfo%conds(rid)%center_ngrp_id = fstrSOLID%BOUNDARY_ngrp_centerID(ig0)
+            rinfo%conds(rid)%torque_ngrp_id = ig
+          endif
+          do idof=idofS,idofE
+            if( idof>ndof ) then
+              rinfo%conds(rid)%vec(idof-ndof) = RHS
+            else
+              rinfo%conds(rid)%vec(idof) = RHS
+            endif
+          enddo
+          cycle
+        endif
+
         do ik = iS0, iE0
           in = hecMESH%node_group%grp_item(ik)
 
@@ -317,6 +332,38 @@ contains
             hecMAT%B(NDOF*in-(NDOF-idof)) = RHS*fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
         !    fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof)) = 1.0d0
           end do
+        enddo
+      enddo
+
+      !Apply rotational boundary condition (prescribed absolute displacement)
+      !  The explicit scheme stores the absolute prescribed displacement in hecMAT%B
+      !  (B = u*VEC1, so that X = B/VEC1 = u). The rotation factor in rinfo%vec is the
+      !  total rotation at t_curr (val*f_t), hence the original offset r0 = x0 - c is
+      !  rotated and u = (R*r0 - r0) + c_disp.
+      do rid = 1, n_rot
+        if( .not. rinfo%conds(rid)%active ) cycle
+        cdiff = 0.d0
+        cdiff0 = 0.d0
+        cdisp = 0.d0
+
+        ig = rinfo%conds(rid)%center_ngrp_id
+        do idof = 1, ndof
+          ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
+          cdisp(idof)  = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
+        enddo
+
+        ig = rinfo%conds(rid)%torque_ngrp_id
+        iS0 = hecMESH%node_group%grp_index(ig-1) + 1
+        iE0 = hecMESH%node_group%grp_index(ig  )
+        do ik = iS0, iE0
+          in = hecMESH%node_group%grp_item(ik)
+          cdiff0(1:ndof) = hecMESH%node(ndof*(in-1)+1:ndof*in) - ccoord(1:ndof)
+          cdiff(1:ndof) = cdiff0(1:ndof)
+          call rotate_3dvector_by_Rodrigues_formula(rinfo%conds(rid)%vec(1:ndof),cdiff(1:ndof))
+          do idof = 1, ndof
+            RHS = cdiff(idof) - cdiff0(idof) + cdisp(idof)
+            hecMAT%B(NDOF*in-(NDOF-idof)) = RHS*fstrDYNAMIC%VEC1(NDOF*in-(NDOF-idof))
+          enddo
         enddo
       enddo
 

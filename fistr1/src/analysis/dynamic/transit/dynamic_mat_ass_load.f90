@@ -85,8 +85,7 @@ contains
       val = fstrSOLID%CLOAD_ngrp_val(ig0)
 
       flag_u = 0
-      call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
-      val = val*f_t
+      call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, val, flag_u)
 
       iS0= hecMESH%node_group%grp_index(ig-1)+1
       iE0= hecMESH%node_group%grp_index(ig  )
@@ -237,7 +236,16 @@ contains
         !!!!!!  time history
 
         flag_u = 10
-        call table_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
+        ! params(0) is the load magnitude; passing it to the evaluator lets
+        ! VALUE=ABSOLUTE replace it with the amplitude value, while
+        ! VALUE=RELATIVE reduces the factor on vect to a(t).
+        f_t = params(0)
+        call fstr_get_amplitude_dyn(hecMESH, fstrSOLID, fstrDYNAMIC, ig0, t_curr, f_t, flag_u)
+        if (dabs(params(0)) > 1.d-30) then
+          f_t = f_t / params(0)
+        else
+          f_t = 1.0d0
+        endif
         do j=1,nsize
           vect(j) = vect(j)*f_t
         enddo

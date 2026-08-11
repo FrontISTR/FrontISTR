@@ -146,6 +146,7 @@ SGRP		{ set_flag_header(0); return HECMW_HECLEX_K_SGRP; }
 SHELL		{ set_flag_header(0); return HECMW_HECLEX_K_SHELL; }
 SOLID		{ set_flag_header(0); return HECMW_HECLEX_K_SOLID; }
 STEP" "?TIME	{ set_flag_header(0); return HECMW_HECLEX_K_STEP_TIME; }
+TOTAL" "?TIME	{ set_flag_header(0); return HECMW_HECLEX_K_TOTAL_TIME; }
 SUBITEM		{ set_flag_header(0); return HECMW_HECLEX_K_SUBITEM; }
 SURF"-"SURF	{ set_flag_header(0); return HECMW_HECLEX_K_SURF_SURF; }
 SYSTEM		{ set_flag_header(0); return HECMW_HECLEX_K_SYSTEM; }

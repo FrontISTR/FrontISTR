@@ -300,7 +300,8 @@ contains
       f_t = (time-fstrSOLID%step_ctrl(cstep)%starttime)/fstrSOLID%step_ctrl(cstep)%elapsetime
       if( f_t>1.d0 ) f_t=1.d0
     else
-      call table_amp(hecMESH, fstrSOLID, cstep, jj_n_amp, time, f_t)
+      f_t = 1.0d0
+      call fstr_get_amplitude(hecMESH, fstrSOLID, cstep, jj_n_amp, time, f_t)
     endif
 
   end subroutine table_nlsta
