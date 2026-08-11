@@ -123,7 +123,7 @@ contains
         call update_TangentForce(etype,nn,elem0,elem,contact%states(nslave))
       endif
       iSS = isInsideElement( etype, contact%states(nslave)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
-      if( iSS>0 ) &
+      if( iSS>0 .and. contact%smoothing /= kcsNAGATA ) &
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
         contact%states(nslave)%lpos(1:2), contact%states(nslave)%direction(:) )
     else if( .not. isin ) then
@@ -278,7 +278,7 @@ contains
           if (.not. is_contact_free(contact%states(i)%state)) then
             etype = contact%master(id)%etype
             iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
-            if( iSS>0 ) &
+            if( iSS>0 .and. contact%smoothing /= kcsNAGATA ) &
               call cal_node_normal( id, iSS, contact%master, currpos, &
               contact%states(i)%lpos(1:2), contact%states(i)%direction(:) )
             contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
@@ -338,7 +338,7 @@ contains
           contact%states(i)%multiplier(:) = 0.d0
           etype = contact%master(id)%etype
           iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
-          if( iSS>0 ) &
+          if( iSS>0 .and. contact%smoothing /= kcsNAGATA ) &
             call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
             contact%states(i)%direction(:) )
           contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)

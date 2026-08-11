@@ -354,7 +354,7 @@ contains
     if( isin ) then
       etype = contact%master(sid0)%etype
       iSS = isInsideElement( etype, cstate_tmp%lpos, contact%cparam%CLR_CAL_NORM )
-      if( iSS>0 ) &
+      if( iSS>0 .and. contact%smoothing /= kcsNAGATA ) &
         call cal_node_normal( cstate_tmp%surface, iSS, contact%master, currpos, &
         cstate_tmp%lpos, cstate_tmp%direction(:) )
     endif
