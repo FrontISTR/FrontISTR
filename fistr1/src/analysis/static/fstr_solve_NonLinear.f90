@@ -69,8 +69,10 @@ contains
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
     endif
 
+    ! conMAT is hecMAT itself for the contact-free callers (fstr_Newton, fstr_Quasi_Newton);
+    ! clearing it there would wipe the external load just assembled by fstr_ass_load.
+    if( associated(conMAT%B) .and. .not. associated(conMAT%B, hecMAT%B) ) call hecmw_mat_clear_b(conMAT)
     if( fstr_is_contact_active() ) then
-      call hecmw_mat_clear_b(conMAT)
       call fstr_Update_NDForce_contact(cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
       !    Consider SPC condition
       call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
@@ -220,6 +222,7 @@ contains
     logical            :: convg, ctchange
     integer(kind=kint) :: n_node_global
     integer(kind=kint) :: contact_changed_global
+    logical            :: need_prof_refresh
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
     logical            :: is_first_Stiffmatrixcall
@@ -234,6 +237,9 @@ contains
     ctAlgo = fstrPARAM%contact_algo
 
     call fstr_init_Newton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, hecLagMAT, ndof, ctAlgo, conMAT)
+
+    ! ----- BEGIN lambda transaction: clear working, restore segment state from begin -----
+    if( ctAlgo == kcaALagrange ) call fstr_begin_lambda_txn( fstrSOLID, cstep )
 
     if( cstep == 1 .and. sub_step == restart_substep_num ) then
       call fstr_save_originalMatrixStructure(hecMAT)
@@ -383,7 +389,12 @@ contains
       call fstr_scan_contact_state( cstep, sub_step, count_step, dtime, ctAlgo, hecMESH, fstrSOLID, infoCTChange )
 
       contact_changed_global = 0
-      if( fstr_is_matrixStructure_changed(infoCTChange) ) then
+      ! Mortar safety net: force a rebuild when an active pair's coupling is no longer in the
+      ! matrix profile, even if the structural-change counters stayed silent.
+      need_prof_refresh = .false.
+      if( .not. fstr_is_matrixStructure_changed(infoCTChange) ) &
+        need_prof_refresh = fstr_s2s_profile_needs_refresh( cstep, ctAlgo, fstrSOLID, conMAT )
+      if( fstr_is_matrixStructure_changed(infoCTChange) .or. need_prof_refresh ) then
         call fstr_mat_con_contact( cstep, ctAlgo, hecMAT, fstrSOLID, hecLagMAT, infoCTChange, conMAT, fstr_is_contact_active())
         contact_changed_global = 1
       endif
@@ -430,6 +441,9 @@ contains
 
     !    Update REACTION using current QFORCE
     call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )
+
+    ! ----- COMMIT lambda transaction (converged exit only; failure returns skip this) -----
+    if( ctAlgo == kcaALagrange ) call fstr_commit_lambda_txn( fstrSOLID, cstep )
 
     deallocate(coord)
     deallocate(resid_work)

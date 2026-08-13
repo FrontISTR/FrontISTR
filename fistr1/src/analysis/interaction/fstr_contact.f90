@@ -76,9 +76,13 @@ contains
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-        fstrSOLID%dunode(:), iter, hecLagMAT%Lagrange(:), conMAT, hecLagMAT)
-
+      if( fstrSOLID%contacts(i)%method == CONTACTS2S ) then
+        call calcu_contact_stiffness_SurfSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          fstrSOLID%dunode(:), conMAT )
+      else
+        call calcu_contact_stiffness_NodeSurf( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          fstrSOLID%dunode(:), iter, hecLagMAT%Lagrange(:), conMAT, hecLagMAT)
+      endif
     enddo
 
     do i = 1, fstrSOLID%n_embeds
@@ -168,9 +172,14 @@ contains
     do i = 1, fstrSOLID%n_contacts
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
-      call calcu_contact_ndforce_NodeSurf( purpose, ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-        fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
-        fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC, hecLagMAT )
+      if( fstrSOLID%contacts(i)%method == CONTACTS2S ) then
+        call calcu_contact_ndforce_SurfSurf( purpose, ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          fstrSOLID%dunode(:), conMAT, fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC )
+      else
+        call calcu_contact_ndforce_NodeSurf( purpose, ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
+          fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC, hecLagMAT )
+      endif
     enddo
 
     do i = 1, fstrSOLID%n_embeds
@@ -264,11 +273,15 @@ contains
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
         call clear_contact_state(fstrSOLID%contacts(i));  cycle
       endif
-      call scan_contact_state( fstrSOLID%contacts(i), &
-      & fstrSOLID%ddunode(:), fstrSOLID%dunode(:), infoCTChange, &
-      & hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), &
-      & is_init, iactive, hecMESH=hecMESH, &
-      & flag_ctAlgo=flag_ctAlgo, ndforce=fstrSOLID%QFORCE(:) )
+      if( fstrSOLID%contacts(i)%method == CONTACTS2S ) then
+        call scan_contact_state_ss( fstrSOLID%contacts(i), fstrSOLID%ddunode(:), infoCTChange, is_init, iactive )
+      else
+        call scan_contact_state( fstrSOLID%contacts(i), &
+        & fstrSOLID%ddunode(:), fstrSOLID%dunode(:), infoCTChange, &
+        & hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), &
+        & is_init, iactive, hecMESH=hecMESH, &
+        & flag_ctAlgo=flag_ctAlgo, ndforce=fstrSOLID%QFORCE(:) )
+      endif
       if( .not. active ) active = iactive
     enddo
 
@@ -389,8 +402,10 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
 
     fstr_is_contact_conv = .false.
-    if( infoCTChange%contact2free+infoCTChange%contact2neighbor+      &
-      infoCTChange%contact2difflpos+infoCTChange%free2contact == 0 ) &
+    ! The two SURF-SURF counters are incremented on the mortar path only, so the sum is
+    ! unchanged for a NODE-SURF analysis.
+    if( infoCTChange%contact2free + infoCTChange%contact2neighbor + infoCTChange%contact2beyond + &
+        infoCTChange%free2contact + infoCTChange%free2contact_new + infoCTChange%contact2diffLpos == 0 ) &
       fstr_is_contact_conv = .true.
 
     call hecmw_allreduce_L1(hecMESH, fstr_is_contact_conv, HECMW_LAND)
@@ -398,8 +413,12 @@ contains
 
   logical function fstr_is_matrixStructure_changed(infoCTChange)
     type (fstr_info_contactChange)   :: infoCTChange  !< fstr_contactChange
+    ! Matrix sparsity changes when a node connection appears or disappears. Each pair reports
+    ! through the counters of its sparsity_expansion mode, so a plain sum covers any mix.
+    ! contact2difflpos is excluded (no structural change).
     fstr_is_matrixStructure_changed = .false.
-    if( infoCTChange%contact2free+infoCTChange%contact2neighbor+infoCTChange%free2contact > 0 ) &
+    if( infoCTChange%contact2free + infoCTChange%contact2neighbor + infoCTChange%contact2beyond + &
+        infoCTChange%free2contact + infoCTChange%free2contact_new > 0 ) &
       fstr_is_matrixStructure_changed = .true.
   end function
 
@@ -438,6 +457,63 @@ contains
     call hecmw_allreduce_L1(hecMESH, ctchanged, HECMW_LOR)
 
     if( nc>0 ) gnt = gnt/nc
+  end subroutine
+
+  !> BEGIN lambda transaction (MORTAR=YES only): clear the working buffer and restore the
+  !> segment state from the committed begin values. Called at the start of every substep
+  !> attempt; a cutback retry does not restore slave_surf, so the failed attempt's lambda
+  !> is discarded here.
+  subroutine fstr_begin_lambda_txn( fstrSOLID, cstep )
+    type(fstr_solid), intent(inout) :: fstrSOLID
+    integer(kind=kint), intent(in)  :: cstep
+    integer(kind=kint) :: i, s, grpid
+
+    do i = 1, fstrSOLID%n_contacts
+      if( fstrSOLID%contacts(i)%method /= CONTACTS2S ) cycle
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+      if( .not. associated(fstrSOLID%contacts(i)%slave_surf) ) cycle
+      do s = 1, size(fstrSOLID%contacts(i)%slave_surf)
+        fstrSOLID%contacts(i)%slave_surf(s)%lam_work_n = 0
+        fstrSOLID%contacts(i)%slave_surf(s)%lam_work_id(:)  = 0
+        fstrSOLID%contacts(i)%slave_surf(s)%lam_work_val(:,:) = 0.d0
+        fstrSOLID%contacts(i)%slave_surf(s)%state      = fstrSOLID%contacts(i)%slave_surf(s)%state_begin
+        fstrSOLID%contacts(i)%slave_surf(s)%state_prev = fstrSOLID%contacts(i)%slave_surf(s)%state_prev_begin
+      enddo
+    enddo
+  end subroutine
+
+  !> COMMIT lambda transaction (MORTAR=YES only): keep the masters with a positive per-node
+  !> lambda and swap them into the begin buffer with the segment state. Called only on a
+  !> converged substep exit, so begin is the warm-start source of the next substep.
+  !> The discharge predicate is the complementarity condition (the assembly clamps at 0).
+  subroutine fstr_commit_lambda_txn( fstrSOLID, cstep )
+    type(fstr_solid), intent(inout) :: fstrSOLID
+    integer(kind=kint), intent(in)  :: cstep
+    integer(kind=kint) :: i, s, grpid, r, m
+
+    do i = 1, fstrSOLID%n_contacts
+      if( fstrSOLID%contacts(i)%method /= CONTACTS2S ) cycle
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+      if( .not. associated(fstrSOLID%contacts(i)%slave_surf) ) cycle
+      do s = 1, size(fstrSOLID%contacts(i)%slave_surf)
+        associate( surf => fstrSOLID%contacts(i)%slave_surf(s) )
+          m = 0
+          ! The master is kept if at least one slave node is active against it.
+          do r = 1, surf%lam_work_n
+            if( maxval(surf%lam_work_val(1:size(surf%nodes),r)) > 0.d0 ) then
+              m = m + 1
+              surf%lam_begin_id(m)  = surf%lam_work_id(r)
+              surf%lam_begin_val(1:size(surf%nodes),m) = surf%lam_work_val(1:size(surf%nodes),r)
+            endif
+          enddo
+          surf%lam_begin_n = m
+          surf%state_begin      = surf%state
+          surf%state_prev_begin = surf%state_prev
+        end associate
+      enddo
+    enddo
   end subroutine
 
   !> Update tangent force

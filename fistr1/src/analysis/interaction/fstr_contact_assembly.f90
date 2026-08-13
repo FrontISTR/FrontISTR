@@ -148,8 +148,11 @@ contains
       conMAT%B(idx:idx+2) = conMAT%B(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3) + ctTForce((i-1)*3+1:(i-1)*3+3)
     enddo
 
+    ! Accumulate: several contributions can target the same Lagrange row (the caller
+    ! zero-clears conMAT%B before the contact assembly).
     if( id_lagrange > 0 ) then
-      conMAT%B(conMAT%NP*conMAT%NDOF+id_lagrange) = ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1)
+      conMAT%B(conMAT%NP*conMAT%NDOF+id_lagrange) = &
+      conMAT%B(conMAT%NP*conMAT%NDOF+id_lagrange) + ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1)
     endif
 
   end subroutine assemble_contact_force_residual

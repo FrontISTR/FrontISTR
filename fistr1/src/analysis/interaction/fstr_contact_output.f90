@@ -302,7 +302,23 @@ contains
     real(kind=kreal), intent(inout)   :: relvel_vec(:) !< relative velocity vector
     real(kind=kreal), intent(inout)   :: state_vec(:)  !< contact state vector
 
-    integer(kind=kint)  :: i, slave
+    integer(kind=kint)  :: i, j, slave
+
+    if( contact%method == CONTACTS2S ) then
+      ! MORTAR=YES: the contact state lives per integration point in slave_surf
+      ! (contact%slave is unused). Aggregate each segment's state onto its slave nodes
+      ! for nodal output, using the same convention as the NODE-SURF path (free nodes
+      ! show CONTACTFREE, active nodes show CONTACTSTICK/SLIP; max over segments
+      ! sharing a node).
+      do i = 1, size(contact%slave_surf)
+        do j = 1, size(contact%slave_surf(i)%nodes)
+          slave = contact%slave_surf(i)%nodes(j)
+          if( state_vec(slave) < 0.1d0 .or. contact%slave_surf(i)%state > 0 ) &
+          &  state_vec(slave) = dble(contact%slave_surf(i)%state)
+        enddo
+      enddo
+      return
+    endif
 
     do i= 1, size(contact%slave)
       slave = contact%slave(i)
