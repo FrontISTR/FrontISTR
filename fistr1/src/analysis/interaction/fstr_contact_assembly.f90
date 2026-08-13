@@ -806,7 +806,7 @@ contains
   !> buffers with the rule: working hit -> working / else begin hit -> begin / else 0.
   !> lambda_cur(g) is the node sum of lambda_node(:,g).
   subroutine resolve_lambda_cur( surf, master_idxs, unique_count, nnode_s, sorted_idx, &
-                                 lambda_cur, lambda_node )
+                                 lambda_cur, lambda_node, lam_t_cur, fric_state_cur )
     type(tContactSurf), intent(in)  :: surf
     integer(kind=kint), intent(in)  :: master_idxs(:)   !< group->masterID (get_unique_map output, unsorted)
     integer(kind=kint), intent(in)  :: unique_count
@@ -814,7 +814,12 @@ contains
     integer(kind=kint), intent(out) :: sorted_idx(:)    !< ascending rank r -> original group g
     real(kind=kreal),   intent(out) :: lambda_cur(:)    !< group-order g current lambda (= sum_a lambda_node)
     real(kind=kreal),   intent(out) :: lambda_node(:,:) !< (nnode_s, unique_count) per-node current lambda_n
+    ! Optional friction warm-start: same reference rule as lambda_n (working -> begin ->
+    ! default), riding the same merge. The lambda_n logic is unchanged.
+    real(kind=kreal),   intent(out), optional :: lam_t_cur(:,:,:)    !< (2, nnode_s, unique_count) per-node tangent multiplier
+    integer(kind=kint), intent(out), optional :: fric_state_cur(:,:) !< (nnode_s, unique_count) per-node friction state
     integer(kind=kint) :: r, j, tmp, ib, iw, g, mid
+    logical            :: do_fric
 
     ! argsort master_idxs ascending (unique_count <= 27, insertion sort)
     do r = 1, unique_count
@@ -831,6 +836,8 @@ contains
       sorted_idx(j+1) = tmp
     enddo
 
+    do_fric = present(lam_t_cur) .and. present(fric_state_cur)
+
     ! 2-pointer merge over ascending masters / ascending begin / ascending working
     ib = 1; iw = 1
     do r = 1, unique_count
@@ -840,10 +847,22 @@ contains
       g = sorted_idx(r)
       if( iw <= surf%lam_work_n .and. surf%lam_work_id(iw) == mid ) then
         lambda_node(1:nnode_s,g) = surf%lam_work_val(1:nnode_s,iw)
+        if( do_fric ) then
+          lam_t_cur(1:2,1:nnode_s,g)  = surf%lam_work_t(1:2,1:nnode_s,iw)
+          fric_state_cur(1:nnode_s,g) = surf%lam_work_fstate(1:nnode_s,iw)
+        endif
       else if( ib <= surf%lam_begin_n .and. surf%lam_begin_id(ib) == mid ) then
         lambda_node(1:nnode_s,g) = surf%lam_begin_val(1:nnode_s,ib)
+        if( do_fric ) then
+          lam_t_cur(1:2,1:nnode_s,g)  = surf%lam_begin_t(1:2,1:nnode_s,ib)
+          fric_state_cur(1:nnode_s,g) = surf%lam_begin_fstate(1:nnode_s,ib)
+        endif
       else
         lambda_node(1:nnode_s,g) = 0.d0
+        if( do_fric ) then
+          lam_t_cur(1:2,1:nnode_s,g)  = 0.d0
+          fric_state_cur(1:nnode_s,g) = CONTACTSTICK
+        endif
       endif
       lambda_cur(g) = sum( lambda_node(1:nnode_s,g) )   ! group lambda_n
     enddo

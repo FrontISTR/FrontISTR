@@ -477,6 +477,10 @@ contains
         fstrSOLID%contacts(i)%slave_surf(s)%lam_work_n = 0
         fstrSOLID%contacts(i)%slave_surf(s)%lam_work_id(:)  = 0
         fstrSOLID%contacts(i)%slave_surf(s)%lam_work_val(:,:) = 0.d0
+        ! the tangential working accumulator is cleared alongside lam_work_val; the
+        ! stick/slip warm-start is read from begin at resolve time, not restored here
+        fstrSOLID%contacts(i)%slave_surf(s)%lam_work_t(:,:,:)  = 0.d0
+        fstrSOLID%contacts(i)%slave_surf(s)%lam_work_fstate(:,:) = CONTACTSTICK
         fstrSOLID%contacts(i)%slave_surf(s)%state      = fstrSOLID%contacts(i)%slave_surf(s)%state_begin
         fstrSOLID%contacts(i)%slave_surf(s)%state_prev = fstrSOLID%contacts(i)%slave_surf(s)%state_prev_begin
       enddo
@@ -506,6 +510,9 @@ contains
               m = m + 1
               surf%lam_begin_id(m)  = surf%lam_work_id(r)
               surf%lam_begin_val(1:size(surf%nodes),m) = surf%lam_work_val(1:size(surf%nodes),r)
+              ! the tangential multiplier rides along the master that passed the lambda_n filter
+              surf%lam_begin_t(:,1:size(surf%nodes),m)    = surf%lam_work_t(:,1:size(surf%nodes),r)
+              surf%lam_begin_fstate(1:size(surf%nodes),m) = surf%lam_work_fstate(1:size(surf%nodes),r)
             endif
           enddo
           surf%lam_begin_n = m

@@ -108,6 +108,14 @@ module mContactDef
     integer(kind=kint), pointer     :: lam_work_id(:)=>null()   !< working masterID list, ascending, size n_intp
     real(kind=kreal),   pointer     :: lam_work_val(:,:)=>null()  !< working lambda_n (node a, rank r) keyed by lam_work_id
     integer(kind=kint)              :: lam_work_n = 0           !< working valid count
+    ! --- tangential friction parallel arrays ---
+    ! per-node covariant tangent multiplier (2 components, node a, rank r) and per-node
+    ! stick/slip state. Rank r is keyed by lam_*_id (master), node a is the slave-surf node;
+    ! both mirror lam_*_val.
+    real(kind=kreal),   pointer     :: lam_begin_t(:,:,:)=>null()   !< begin lambda_t (2, node a, rank r) keyed by lam_begin_id
+    real(kind=kreal),   pointer     :: lam_work_t(:,:,:)=>null()    !< working lambda_t (2, node a, rank r) keyed by lam_work_id
+    integer(kind=kint), pointer     :: lam_begin_fstate(:,:)=>null()!< begin per-node friction state, (node a, rank r)
+    integer(kind=kint), pointer     :: lam_work_fstate(:,:)=>null() !< working per-node friction state, (node a, rank r)
     ! segment state carried in the same transaction (cutback does not restore slave_surf)
     integer(kind=kint)              :: state_begin = CONTACTFREE       !< committed segment state
     integer(kind=kint)              :: state_prev_begin = CONTACTFREE  !< committed previous segment state
@@ -636,6 +644,11 @@ contains
     surf%lam_begin_id(:) = 0; surf%lam_begin_val(:,:) = 0.0d0; surf%lam_begin_n = 0
     surf%lam_work_id (:) = 0; surf%lam_work_val (:,:) = 0.0d0; surf%lam_work_n  = 0
     ! state_begin / state_prev_begin keep their type default (CONTACTFREE)
+    ! tangential friction parallel arrays: (2, node a, rank r) / (node a, rank r)
+    allocate( surf%lam_begin_t(2,n,surf%n_intp), surf%lam_work_t(2,n,surf%n_intp) )
+    allocate( surf%lam_begin_fstate(n,surf%n_intp), surf%lam_work_fstate(n,surf%n_intp) )
+    surf%lam_begin_t(:,:,:) = 0.0d0; surf%lam_work_t(:,:,:) = 0.0d0
+    surf%lam_begin_fstate(:,:) = CONTACTSTICK; surf%lam_work_fstate(:,:) = CONTACTSTICK
   end subroutine
 
 
