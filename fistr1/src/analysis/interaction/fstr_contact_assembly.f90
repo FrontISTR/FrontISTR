@@ -207,6 +207,13 @@ contains
     ! per-node-within-group quantities; the per-node lambda_n drives the normal path
     real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
     real(kind=kreal)    :: mu, lambda_new
+    ! --- friction: per-node slip/normal, per-node basis, return mapping ---
+    real(kind=kreal),   allocatable :: Sigma_node(:,:,:), nacc_node(:,:,:)
+    real(kind=kreal),   allocatable :: lam_t_cur(:,:,:)
+    integer(kind=kint), allocatable :: fric_state_cur(:,:)
+    real(kind=kreal)    :: nhat(3), t1(3), t2(3), nrm, Dxi(2)
+    real(kind=kreal)    :: rho_t, alpha, that(2), lam_t_new(2)
+    integer(kind=kint)  :: fstate
 
     cnt = 0
     lgnt(:) = 0.d0
@@ -214,6 +221,7 @@ contains
     if( contact%method == CONTACTS2S ) then
       ! ===== mortar multiplier update (per slave segment) =====
       mu = contact%nPenalty * contact%refStiff
+      rho_t = contact%tPenalty * contact%refStiff   ! tangential penalty, used only if fcoeff/=0
       do i = 1, size(contact%slave_surf)
         if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
 
@@ -223,18 +231,26 @@ contains
 
         nnode_s = size(contact%slave_surf(i)%nodes)
         allocate(sorted_idx(unique_count), lambda_cur(unique_count), lambda_node(nnode_s,unique_count))
-        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
-                                lambda_cur, lambda_node)
+        if( fcoeff /= 0.d0 ) then
+          ! Resolve the tangent warm-start (working -> begin -> 0/STICK) before the working
+          ! buffer is rebuilt below. lambda_n resolution is identical to the fcoeff=0 path.
+          allocate(lam_t_cur(2,nnode_s,unique_count), fric_state_cur(nnode_s,unique_count))
+          call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                  lambda_cur, lambda_node, lam_t_cur, fric_state_cur)
+        else
+          call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                  lambda_cur, lambda_node)
+        endif
 
-        ! Per-node augmented update: lambda_node(a,g) += mu * gapwnode(g,a); clamp >=0.
-        ! gapwnode = ANnode . curr_pos (un-normalized), so mu*gapwnode is the per-node force increment
-        ! whose node-sum equals the group mu*S(g)*integrated_gaps(g).
+        ! Per-node augmented update: lambda_node(a,g) += mu*gapwnode(g,a), clamped at 0.
+        ! lambda_cur(g) (the node sum) is refreshed for the friction cone radius below.
         do g = 1, unique_count
           do a = 1, nnode_s
             lambda_new = lambda_node(a,g) + (mu * gapwnode(g,a))
             if( lambda_new < 0.d0 ) lambda_new = 0.d0
             lambda_node(a,g) = lambda_new
           enddo
+          lambda_cur(g) = sum( lambda_node(1:nnode_s,g) )
 
           ! Convergence tracking (group gap)
           lgnt(1) = lgnt(1) + integrated_gaps(g)
@@ -247,6 +263,44 @@ contains
           contact%slave_surf(i)%lam_work_val(1:nnode_s,r) = lambda_node(1:nnode_s,sorted_idx(r))
         enddo
         cnt = cnt + 1
+
+        ! --- friction tangent update: per slave node, project the mortar slip onto the
+        !     per-node tangent frame, return-map with cone radius fcoeff*lambda_node(a,g),
+        !     and write lambda_t / fric_state into the working buffer. ---
+        if( fcoeff /= 0.d0 ) then
+          allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
+          call getTangentSlip(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                              unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+          do g = 1, unique_count
+            do a = 1, nnode_s
+              nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
+              ! Project the per-node slip onto the per-node orthonormal frame, then Coulomb
+              ! return-map. rho_t*Dxi matches the per-node mu*gapwnode area weighting (both
+              ! node-tributary integrated), so the averaged back-distribution cancels the area.
+              if( nrm < 1.d-30 ) then
+                Dxi(1:2) = 0.d0
+                nhat(1:3) = 0.d0
+              else
+                nhat(1:3) = nacc_node(g,a,1:3) / nrm
+                call build_group_tangent_basis(nhat, t1, t2)
+                Dxi(1) = dot_product(t1(1:3), Sigma_node(g,a,1:3))
+                Dxi(2) = dot_product(t2(1:3), Sigma_node(g,a,1:3))
+              endif
+              fstate = fric_state_cur(a,g)
+              call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, fcoeff, lambda_node(a,g), &
+                                        fstrPR%eps_fric_band, lam_t_new, fstate, alpha, that, &
+                                        update_state=.true.)
+              lam_t_cur(1:2,a,g)  = lam_t_new(1:2)
+              fric_state_cur(a,g) = fstate
+            enddo
+          enddo
+          ! Write the tangent working buffer parallel to the rebuilt lambda_n (ascending master order).
+          do r = 1, unique_count
+            contact%slave_surf(i)%lam_work_t(1:2,1:nnode_s,r)  = lam_t_cur(1:2,1:nnode_s,sorted_idx(r))
+            contact%slave_surf(i)%lam_work_fstate(1:nnode_s,r) = fric_state_cur(1:nnode_s,sorted_idx(r))
+          enddo
+          deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
+        endif
 
         deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx, lambda_cur)
         deallocate(Snode, Nsnode, gapwnode, lambda_node)
@@ -496,6 +550,13 @@ contains
     real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
     real(kind=kreal) :: mu
     real(kind=kreal) :: stiff(24, 24), Ns(24)
+    ! --- friction consistent tangent ---
+    real(kind=kreal),   allocatable :: lam_t_cur(:,:,:), nacc_node(:,:,:), Sigma_node(:,:,:)
+    integer(kind=kint), allocatable :: fric_state_cur(:,:)
+    real(kind=kreal) :: rho_t, nhat(3), t1(3), t2(3), nrm, Dxi(2)
+    real(kind=kreal) :: alpha, that(2), lam_t_new(2), Amat(2,2), T3d(3,2), M3(3,3)
+    real(kind=kreal) :: Wb(l_max_surface_node+1), stiff_f(24,24)
+    integer(kind=kint) :: na, nb, fstate
 
     mu = contact%nPenalty * contact%refStiff
 
@@ -509,8 +570,14 @@ contains
 
       nnode_s = size(contact%slave_surf(i)%nodes)
       allocate(sorted_idx(unique_count), lambda_cur(unique_count), lambda_node(nnode_s,unique_count))
-      call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
-                              lambda_cur, lambda_node)
+      if( contact%fcoeff /= 0.d0 ) then
+        allocate(lam_t_cur(2,nnode_s,unique_count), fric_state_cur(nnode_s,unique_count))
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_cur, lambda_node, lam_t_cur, fric_state_cur)
+      else
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_cur, lambda_node)
+      endif
 
       ! ===== Normal stiffness: per-node rank-1 sum, mu*Snode(g,a)*Nsnode(g,a)(x)Nsnode(g,a) =====
       do g = 1, unique_count
@@ -528,9 +595,75 @@ contains
               stiff(j,k) = mu*Snode(g,a)*Ns(j)*Ns(k)
             enddo
           enddo
+          ! The friction consistent tangent is assembled in the fcoeff-guarded block below.
           call hecmw_mat_ass_elem(hecMAT, nnode_s+nnode_m, ndLocal, stiff)
         enddo
       enddo
+
+      ! ===== Friction consistent tangent (per slave node) =====
+      ! Linearization of the per-node friction residual at the same live slip state:
+      !   K_a(b,c) = Snode(g,a) * Wbar(a,b) * Wbar(a,c) * M3_a,  M3_a = T3d_a * A_a * T3d_a^T
+      ! with Wbar(a,b) = Nsnode(g,a,b).nhat_a, the same map as the residual back-distribution.
+      if( contact%fcoeff /= 0.d0 ) then
+        rho_t = contact%tPenalty * contact%refStiff
+        allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
+        call getTangentSlip(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                            unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+        do g = 1, unique_count
+          ctsurf = master_idxs(g)
+          nnode_m = size(contact%master(ctsurf)%nodes)
+          ndLocal(1:nnode_s) = contact%slave_surf(i)%nodes(1:nnode_s)
+          ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
+          do a = 1, nnode_s
+            if( lambda_node(a,g) <= 0.d0 ) cycle   ! no per-node normal force -> no friction
+            nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
+            if( nrm < 1.d-30 ) cycle
+            nhat(1:3) = nacc_node(g,a,1:3) / nrm
+            call build_group_tangent_basis(nhat, t1, t2)
+            ! Live per-node slip projection and read-only return mapping (writes only OUT args).
+            Dxi(1) = dot_product(t1(1:3), Sigma_node(g,a,1:3))
+            Dxi(2) = dot_product(t2(1:3), Sigma_node(g,a,1:3))
+            fstate = fric_state_cur(a,g)
+            call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, contact%fcoeff, lambda_node(a,g), &
+                                      fstrPR%eps_fric_band, lam_t_new, fstate, alpha, that)
+            ! 2D tangent operator A (same construction as getContactStiffness_Alag).
+            if( alpha <= 1.0d-20 ) then
+              Amat = 0.d0
+            else if( alpha >= 0.999d0 ) then
+              Amat = 0.d0
+              Amat(1,1) = rho_t
+              Amat(2,2) = rho_t
+            else
+              Amat(1,1) = alpha * rho_t * (1.0d0 - that(1)*that(1))
+              Amat(1,2) = alpha * rho_t * (-that(1)*that(2))
+              Amat(2,1) = alpha * rho_t * (-that(2)*that(1))
+              Amat(2,2) = alpha * rho_t * (1.0d0 - that(2)*that(2))
+            endif
+            ! M3 = T3d * A * T3d^T (3x3), T3d = [t1 t2]
+            T3d(1:3,1) = t1(1:3)
+            T3d(1:3,2) = t2(1:3)
+            M3 = matmul( matmul(T3d, Amat), transpose(T3d) )
+
+            ! Per-node averaged mortar weight of each node (= ANnode/Snode, recovered via nhat_a).
+            do na = 1, nnode_s + nnode_m
+              Wb(na) = dot_product(Nsnode(g,a,3*na-2:3*na), nhat(1:3))
+            enddo
+            ! K_a(b,c) = Snode(g,a) * Wbar(a,b) * Wbar(a,c) * M3_a
+            stiff_f = 0.d0
+            do nb = 1, nnode_s + nnode_m
+              do na = 1, nnode_s + nnode_m
+                do k = 1, 3
+                  do j = 1, 3
+                    stiff_f(3*na-3+j, 3*nb-3+k) = Snode(g,a) * Wb(na) * Wb(nb) * M3(j,k)
+                  enddo
+                enddo
+              enddo
+            enddo
+            call hecmw_mat_ass_elem(hecMAT, nnode_s+nnode_m, ndLocal, stiff_f)
+          enddo
+        enddo
+        deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
+      endif
 
       deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx, lambda_cur)
       deallocate(Snode, Nsnode, gapwnode, lambda_node)
@@ -754,6 +887,12 @@ contains
     real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
     real(kind=kreal) :: mu, nrlforce
     real(kind=kreal) :: Ns(24)
+    ! --- friction force back-distribution (live return mapping) ---
+    real(kind=kreal),   allocatable :: lam_t_cur(:,:,:), nacc_node(:,:,:), Sigma_node(:,:,:)
+    integer(kind=kint), allocatable :: fric_state_cur(:,:)
+    real(kind=kreal) :: nhat(3), t1(3), t2(3), nrm, fvec(3), Wbar, fk(3)
+    real(kind=kreal) :: rho_t, Dxi(2), alpha, that(2), lam_t_new(2)
+    integer(kind=kint) :: fstate
 
     mu = contact%nPenalty * contact%refStiff
 
@@ -767,8 +906,14 @@ contains
 
       nnode_s = size(contact%slave_surf(i)%nodes)
       allocate(sorted_idx(unique_count), lambda_cur(unique_count), lambda_node(nnode_s,unique_count))
-      call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
-                              lambda_cur, lambda_node)
+      if( contact%fcoeff /= 0.d0 ) then
+        allocate(lam_t_cur(2,nnode_s,unique_count), fric_state_cur(nnode_s,unique_count))
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_cur, lambda_node, lam_t_cur, fric_state_cur)
+      else
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_cur, lambda_node)
+      endif
 
       ! ===== Normal force: per-node back-distribution =====
       ! nrlforce_a = lambda_node(a,g) + mu*gapwnode(g,a) for the residual, lambda_node(a,g) for output.
@@ -794,6 +939,57 @@ contains
           enddo
         enddo
       enddo
+
+      ! ===== Friction force (per slave node): live return mapping, back-distributed =====
+      ! trial = lam_t_warm(a) + rho_t*Dxi_live(a), projected onto the cone of radius lambda_node(a,g).
+      ! The return mapping is read-only here (the augmentation update is the sole writer of the
+      ! lambda_t / fric_state buffers). The resulting traction is distributed through the per-node
+      ! mortar weight Wbar(a,j) = Nsnode(g,a,j).nhat_a, mirroring the normal back-distribution.
+      ! Output (kctForOutput) keeps the frozen multiplier.
+      if( contact%fcoeff /= 0.d0 ) then
+        rho_t = contact%tPenalty * contact%refStiff
+        allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
+        call getTangentSlip(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                            unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+        do g = 1, unique_count
+          ctsurf = master_idxs(g)
+          nnode_m = size(contact%master(ctsurf)%nodes)
+          ndLocal(1:nnode_s) = contact%slave_surf(i)%nodes(1:nnode_s)
+          ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
+          do a = 1, nnode_s
+            if( lambda_node(a,g) <= 0.d0 ) cycle   ! no per-node normal force -> no friction
+            nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
+            if( nrm < 1.d-30 ) cycle
+            nhat(1:3) = nacc_node(g,a,1:3) / nrm
+            call build_group_tangent_basis(nhat, t1, t2)
+            if( purpose == kctForResidual ) then
+              ! Live trial: project the live per-node mortar slip onto the per-node frame and return-map.
+              Dxi(1) = dot_product(t1(1:3), Sigma_node(g,a,1:3))
+              Dxi(2) = dot_product(t2(1:3), Sigma_node(g,a,1:3))
+              fstate = fric_state_cur(a,g)
+              call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, contact%fcoeff, lambda_node(a,g), &
+                                        fstrPR%eps_fric_band, lam_t_new, fstate, alpha, that)
+              fvec(1:3) = lam_t_new(1)*t1(1:3) + lam_t_new(2)*t2(1:3)
+            else
+              ! Output: frozen multiplier only (converges to the true friction force).
+              fvec(1:3) = lam_t_cur(1,a,g)*t1(1:3) + lam_t_cur(2,a,g)*t2(1:3)
+            end if
+
+            do j = 1, nnode_s + nnode_m
+              nd = ndLocal(j)
+              ! per-node averaged mortar weight of node j (= ANnode/Snode, recovered via nhat_a)
+              Wbar = dot_product(Nsnode(g,a,3*j-2:3*j), nhat(1:3))
+              fk(1:3) = fvec(1:3) * Wbar
+              if( purpose == kctForResidual ) then
+                conMAT%B(3*nd-2:3*nd) = conMAT%B(3*nd-2:3*nd) - fk(1:3)
+              else if( purpose == kctForOutput ) then
+                CONT_FRIC(3*nd-2:3*nd) = CONT_FRIC(3*nd-2:3*nd) - fk(1:3)
+              end if
+            enddo
+          enddo
+        enddo
+        deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
+      endif
 
       deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx, lambda_cur)
       deallocate(Snode, Nsnode, gapwnode, lambda_node)
