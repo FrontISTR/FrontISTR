@@ -288,7 +288,7 @@ contains
         lid = hecMESH%node_ID(i*2-1)
         i0 = displs(pid) + lid
         if(vec_all(i0) == -1000.d0) cycle
-        if(vec(i) < vec_all(i0)) vec(i) = vec_all(i0)
+        vec(i) = vec_all(i0)
       enddo
     end if
 

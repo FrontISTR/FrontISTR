@@ -1895,6 +1895,7 @@ contains
         if( area < 1.d-16 ) cycle
         fstrSOLID%CONT_NTRAC(3*i-2:3*i) = fstrSOLID%CONT_NFORCE(3*i-2:3*i)/area
       end do
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_NTRAC,1)
       updated(6) = .true.
     endif
 
@@ -1909,6 +1910,7 @@ contains
         if( area < 1.d-16 ) cycle
         fstrSOLID%CONT_FTRAC(3*i-2:3*i) = fstrSOLID%CONT_FRIC(3*i-2:3*i)/area
       end do
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_FTRAC,1)
       updated(7) = .true.
     endif
 
