@@ -18,6 +18,7 @@ module m_fstr_contact_elem_alag
   public :: getTiedStiffness_Alag
   public :: getTiedNodalForce_Alag
   public :: updateContactMultiplier_Alag
+  public :: get_unique_map
 
 contains
 
@@ -163,6 +164,45 @@ contains
     endif
 
   end subroutine getContactStiffness_Alag
+
+  subroutine get_unique_map(sSurf, maplist, master_idxs, unique_count)
+    type(tContactSurf)  :: sSurf !< surface element structure
+    integer(kind=kint), allocatable, intent(out)  :: maplist(:), master_idxs(:)
+    integer(kind=kint), intent(out)  :: unique_count
+    integer(kind=kint), allocatable :: tmp(:)
+    integer(kind=kint)  :: i, j, n_intp, ctsurf
+    logical :: found
+
+    n_intp = sSurf%n_intp
+    allocate(maplist(n_intp))
+    allocate(tmp(n_intp))
+    maplist = 0
+
+    unique_count = 0
+
+    do i = 1, n_intp
+      if( sSurf%states(i)%state == CONTACTFREE ) cycle
+      ctsurf = sSurf%states(i)%surface
+      found = .false.
+      ! Search existing groups by master surface index
+      do j = 1, unique_count
+        if (tmp(j) == ctsurf) then
+          maplist(i) = j
+          found = .true.
+          exit
+        endif
+      enddo
+      if (.not. found) then
+        unique_count = unique_count + 1
+        tmp(unique_count) = ctsurf
+        maplist(i) = unique_count
+      endif
+    enddo
+
+    allocate(master_idxs(unique_count))
+    master_idxs = tmp(1:unique_count)
+
+  end subroutine get_unique_map
 
   subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,symm,lagrange,ctNForce,ctTForce,cflag, &
       smoothing_type)

@@ -251,8 +251,10 @@ contains
 
     infoCTChange%contact2free = 0
     infoCTChange%contact2neighbor = 0
+    infoCTChange%contact2beyond = 0
     infoCTChange%contact2diffLpos = 0
     infoCTChange%free2contact = 0
+    infoCTChange%free2contact_new = 0
     infoCTChange%contactNode_current = 0
 
     is_init = ( cstep == 1 .and. sub_step == 1 .and. cont_step == 0 )

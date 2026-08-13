@@ -169,9 +169,11 @@ module mContactDef
   type fstr_info_contactChange
     logical            :: active
     integer(kind=kint) :: contact2free           !< counter: contact to free state change
-    integer(kind=kint) :: contact2neighbor       !< counter: contact to neighbor state change
-    integer(kind=kint) :: contact2diffLpos       !< counter: contact to different local position state change
-    integer(kind=kint) :: free2contact           !< counter: free to contact state change
+    integer(kind=kint) :: contact2neighbor       !< counter: contact to neighbor state change (within 1-hop)
+    integer(kind=kint) :: contact2beyond         !< counter: contact moved beyond neighbor elements
+    integer(kind=kint) :: contact2diffLpos       !< counter: contact to different local position state change (NODE-SURF only)
+    integer(kind=kint) :: free2contact           !< counter: free to contact state change (total)
+    integer(kind=kint) :: free2contact_new       !< counter: free to contact with a new master element (needs sparsity rebuild)
     integer(kind=kint) :: contactNode_previous   !< previous number of nodes in contact
     integer(kind=kint) :: contactNode_current    !< current number of nodes in contact
   end type fstr_info_contactChange

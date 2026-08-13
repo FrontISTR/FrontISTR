@@ -13,11 +13,43 @@ module m_fstr_contact_search
   use m_fstr_contact_element
   use m_fstr_contact_interference
   use m_fstr_contact_smoothing
+  use m_fstr_contact_elem_alag, only: get_unique_map
   implicit none
 
   integer(kind=kint), parameter :: CONTACT_LOG_LEVEL = 0  !< Set >= 1 to enable per-node contact log output (for debugging)
 
 contains
+
+  !> Update the known-master set for one slave segment and report whether
+  !> `id` is new. When the pair uses SPARSITY_NEIGHBOR, neighbors of already-known
+  !> masters are also treated as known (their sparsity is pre-registered).
+  !> If `id` is genuinely new, it is appended to `known_masters` so that subsequent
+  !> IPs in the same segment don't double-count it.
+  subroutine is_known_master_in_segment(contact, known_masters, n_known, id, is_known)
+    type(tContact), intent(in)         :: contact
+    integer(kind=kint), intent(inout)  :: known_masters(:)   !< master ids known to this slave segment
+    integer(kind=kint), intent(inout)  :: n_known            !< current length of known_masters
+    integer(kind=kint), intent(in)     :: id                 !< master id to test
+    logical, intent(out)               :: is_known
+
+    integer(kind=kint) :: k
+
+    is_known = any(known_masters(1:n_known) == id)
+    if( .not. is_known .and. contact%sparsity_expansion == SPARSITY_NEIGHBOR ) then
+      ! neighbors of known masters are pre-registered in sparsity
+      do k = 1, n_known
+        if( associated(contact%master(known_masters(k))%neighbor) ) then
+          if( any(contact%master(known_masters(k))%neighbor(:) == id) ) then
+            is_known = .true.; exit
+          endif
+        endif
+      enddo
+    endif
+    if( .not. is_known ) then
+      n_known = n_known + 1
+      known_masters(n_known) = id
+    endif
+  end subroutine is_known_master_in_segment
 
   !> This subroutine tracks down next contact position after a finite slide
   !! When flag_ctAlgo is present, implicit-specific processing
@@ -589,6 +621,239 @@ contains
     enddo
 
   end subroutine
+
+  !> Scan the contact state of every integration point of every slave segment of one
+  !> SURF-SURF (mortar) contact pair. Unlike the NODE-SURF scan there is no per-node
+  !> tensile-force release: a segment integration point is released by the gap criterion
+  !> in track_contact_position_ss, so no nodal force vector is needed here.
+  subroutine scan_contact_state_ss( contact, currpos, infoCTChange, is_init, active )
+    type( tContact ), intent(inout)                  :: contact      !< contact info
+    type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
+    real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
+    logical, intent(in)                              :: is_init      !< whether initial scan or not
+    logical, intent(out)                             :: active       !< if any in contact
+
+    real(kind=kreal)    :: distclr
+    integer(kind=kint)  :: slave, id
+    integer(kind=kint)  :: nnode_s, i, j
+    real(kind=kreal)    :: coord(3), ncoord(2)
+    real(kind=kreal)    :: surf_node_pos(3,4), sfunc(4)
+    logical             :: isin
+    !
+    integer, pointer :: indexCand(:)
+    integer   ::  idm,bktID,nCand
+    ! per-segment known-master tracking for free2contact_new
+    integer(kind=kint), allocatable :: maplist(:), master_idxs(:)
+    integer(kind=kint) :: unique_count
+    integer(kind=kint) :: known_masters(MAX_N_INTP), n_known
+    logical :: is_known
+    if( is_init ) then
+      distclr = contact%cparam%DISTCLR_INIT
+    else
+      distclr = contact%cparam%DISTCLR_FREE
+    endif
+    call update_surface_box_info( contact%master, currpos )
+    call update_surface_bucket_info( contact%master, contact%master_bktDB )
+    !$omp parallel do &
+    !$omp& default(none) &
+    !$omp& private(i,slave,id,coord,ncoord,surf_node_pos,sfunc,nnode_s, &
+    !$omp&         j,idm,isin,bktID,nCand,indexCand, &
+    !$omp&         maplist,master_idxs,unique_count,known_masters,n_known,is_known) &
+    !$omp& shared(contact,infoCTChange,currpos,distclr,is_init) &
+    !$omp& reduction(.or.:active) &
+    !$omp& schedule(dynamic,1)
+
+    ! loop element; if any node(nslave_index) in contact, call intp point projection
+    do i = 1, size(contact%slave_surf)
+      surf_node_pos(:,:) = 0.d0
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      ! Snapshot the previous-step active master set for this slave segment.
+      ! Used by is_known_master_in_segment to detect genuinely new masters
+      ! (= those that change matrix sparsity).
+      call get_unique_map(contact%slave_surf(i), maplist, master_idxs, unique_count)
+      n_known = unique_count
+      if( n_known > 0 ) known_masters(1:n_known) = master_idxs(1:n_known)
+      deallocate(maplist, master_idxs)
+
+      ! ALagrange SS only (SLAG+MORTAR rejected at fstr_setup): set all IPs as
+      ! candidates unconditionally (do not depend on NTS node-level contact state)
+      do j = 1, contact%slave_surf(i)%n_intp
+        if (contact%slave_surf(i)%states(j)%state == CONTACTFREE) then
+          contact%slave_surf(i)%states(j)%state = CANDIDATE_INTP
+        endif
+      enddo
+
+      do j = 1, nnode_s
+        slave = contact%slave_surf(i)%nodes(j)
+        surf_node_pos(:,j) = currpos(3*slave-2:3*slave)
+      enddo
+
+      ! Snapshot this segment's previous state before reset (for seg on/off detection)
+      contact%slave_surf(i)%state_prev = contact%slave_surf(i)%state
+      contact%slave_surf(i)%state = CONTACTFREE
+      do j = 1, contact%slave_surf(i)%n_intp
+        ! All FREE IPs were promoted to CANDIDATE_INTP above; no IP can be CONTACTFREE here.
+        ! CONTACT_INTERFERENCE (if_type) not supported with MORTAR=YES (rejected at check_apply_Contact_IF)
+
+        ! IP natural coord (ncoord) and physical position (coord): used by both the
+        ! already-active (track) and candidate (bucket search + projection) paths.
+        call getIntPoint4ss( contact%slave_surf(i)%etype, j, ncoord, contact%slave_surf(i)%n_intp, sfunc )
+        coord(:) = matmul( surf_node_pos(:,1:nnode_s), sfunc(1:nnode_s) )
+
+        !! already active contact
+        if( contact%slave_surf(i)%states(j)%state==CONTACTSTICK .or. contact%slave_surf(i)%states(j)%state==CONTACTSLIP ) then
+          active = .true.
+          id = contact%slave_surf(i)%states(j)%surface
+
+          ! INTERACTION=TIED not supported with MORTAR=YES (rejected at fstr_setup)
+          if( contact%algtype /= CONTACTFSLID ) cycle  ! small slide problem
+
+          call track_contact_position_ss( coord, contact%slave_surf(i)%states(j),&
+            contact%slave_surf(i), ncoord, contact, currpos, infoCTChange )
+
+          if( contact%slave_surf(i)%states(j)%state /= CONTACTFREE ) contact%slave_surf(i)%state = CONTACTSTICK
+
+        !! contact candidate integration point
+        else if( contact%slave_surf(i)%states(j)%state==CANDIDATE_INTP ) then
+          contact%slave_surf(i)%states(j)%state=CONTACTFREE
+
+          ! get master candidates from bucketDB
+          bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
+          nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
+          if (nCand == 0) cycle
+          allocate(indexCand(nCand))
+          call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+
+          do idm = 1,nCand
+            id = indexCand(idm)
+            ! OFF->ON uses is_init-dependent distclr (DISTCLR_INIT on initial scan,
+            ! DISTCLR_FREE on re-scan) to form a hysteresis band with DISTCLR_C2F.
+            ! The _ss wrapper sets direction to the slave inward normal (mortar normal).
+            call project_Point2SurfElement_ss( coord, contact%master(id), contact%slave_surf(i), &
+              ncoord, currpos, contact%slave_surf(i)%states(j), isin, distclr=distclr, &
+              localclr=contact%cparam%CLEARANCE )
+            if( .not. isin ) cycle
+            contact%slave_surf(i)%states(j)%surface = id
+            contact%slave_surf(i)%states(j)%multiplier(:) = 0.d0
+
+            contact%slave_surf(i)%states(j)%state = CONTACTSTICK
+            active = .true.
+            contact%slave_surf(i)%state = CONTACTSTICK
+            ! Always maintain the known-master set; gate which counter fires by sparsity mode.
+            call is_known_master_in_segment(contact, known_masters, n_known, id, is_known)
+            if( contact%sparsity_expansion == SPARSITY_NEIGHBOR ) then
+              ! neighbors pre-registered: only a genuinely-new master rebuilds / breaks convergence
+              if( .not. is_known ) then
+                !$omp atomic
+                infoCTChange%free2contact_new = infoCTChange%free2contact_new + 1
+              endif
+            else
+              ! current-master-only: every new contact rebuilds
+              !$omp atomic
+              infoCTChange%free2contact = infoCTChange%free2contact + 1
+            endif
+            exit
+          enddo
+          deallocate(indexCand)
+        endif
+      enddo
+
+    enddo
+
+  end subroutine scan_contact_state_ss
+
+  subroutine track_contact_position_ss( coord, state, sSurf, ncoord, contact, currpos, infoCTChange )
+    type( tContact ), intent(inout)                  :: contact      !< contact info
+    type( tContactState ), intent(inout)             :: state      !< slave intp state
+    type( tContactSurf ), intent(in)                 :: sSurf      !< slave surface (for inward normal)
+    real(kind=kreal), intent(in)                     :: ncoord(2)  !< IP natural coord on slave surface
+    type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
+    real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
+    real(kind=kreal), intent(inout)                  :: coord(:)         !< position of int point
+
+    integer(kind=kint) :: sid0, sid
+    integer(kind=kint) :: i, j
+    logical            :: isin, found_in_neighbor
+    real(kind=kreal)    :: opos(2)
+    integer(kind=kint) :: bktID, nCand, idm
+    integer(kind=kint), allocatable :: indexCand(:)
+
+    sid = 0
+    found_in_neighbor = .false.
+
+    !> checking the contact element of last step
+    sid0 = state%surface
+    opos = state%lpos(1:2)
+
+    call project_Point2SurfElement_ss( coord, contact%master(sid0), sSurf, ncoord, currpos, &
+      state, isin, contact%cparam%DISTCLR_NOCHECK, state%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
+    if( .not. isin ) then ! not contact previous master, search neighbor master surf
+      do i=1, contact%master(sid0)%n_neighbor
+        sid = contact%master(sid0)%neighbor(i)
+        call project_Point2SurfElement_ss( coord, contact%master(sid), sSurf, ncoord, currpos, &
+          state, isin, contact%cparam%DISTCLR_NOCHECK, &
+          localclr=contact%cparam%CLEARANCE )
+        if( isin ) then
+          state%surface = sid
+          found_in_neighbor = .true.
+          exit
+        endif
+      enddo
+    endif
+
+    if( .not. isin ) then   ! such case is considered to rarely or never occur
+      write(*,*) 'Warning: contact moved beyond neighbor elements'
+      ! get master candidates from bucketDB
+      bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
+      nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
+      if (nCand > 0) then
+        allocate(indexCand(nCand))
+        call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+        do idm= 1, nCand
+          sid = indexCand(idm)
+          if( sid==sid0 ) cycle
+          if( associated(contact%master(sid0)%neighbor) ) then
+            if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+          endif
+          call project_Point2SurfElement_ss( coord, contact%master(sid), sSurf, ncoord, currpos, &
+            state, isin, contact%cparam%DISTCLR_NOCHECK, &
+            localclr=contact%cparam%CLEARANCE )
+          if( isin ) then
+            state%surface = sid
+            exit
+          endif
+        enddo
+        deallocate(indexCand)
+      endif
+    endif
+
+    if( isin ) then
+      if( state%distance > contact%cparam%DISTCLR_C2F * contact%master(state%surface)%reflen ) then
+        state%state = CONTACTFREE
+        state%multiplier(:) = 0.d0
+        return
+      endif
+      ! An IP that stays on the same master is not counted: unlike NODE-SURF, its local position
+      ! never settles under sliding, so the jitter is not a state change.
+      if( state%surface /= sid0 ) then
+        if( found_in_neighbor ) then
+          ! SPARSITY_NEIGHBOR: neighbor is pre-registered, tolerated (no rebuild / no relance)
+          if( contact%sparsity_expansion == SPARSITY_NONE ) then
+            !$omp atomic
+            infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
+          endif
+        else
+          !$omp atomic
+          infoCTChange%contact2beyond = infoCTChange%contact2beyond + 1
+        endif
+      endif
+      ! direction already set to the slave inward normal by project_Point2SurfElement_ss
+    else if( .not. isin ) then
+      state%state = CONTACTFREE
+      state%multiplier(:) = 0.d0
+    endif
+
+  end subroutine track_contact_position_ss
 
 end module m_fstr_contact_search
 
