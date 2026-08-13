@@ -95,11 +95,14 @@ module mContactDef
     real(kind=kreal)              :: damp_alpha              !< damping coefficient (dimensionless, scaled by refStiff)
     real(kind=kreal)              :: damp_gact               !< damping activation distance [length] (<=0: disabled)
     
-    real(kind=kreal)    :: ctime
-    integer(kind=kint)  :: if_type
-    real(kind=kreal)    :: if_etime
-    real(kind=kreal)    :: initial_pos
-    real(kind=kreal)    :: end_pos
+    ! !CONTACT_INTERFERENCE data; default-initialized because check_apply_Contact_IF only
+    ! writes them when that card is present, while if_type is read unconditionally
+    ! (if_flag = contact%if_type /= 0) by the contact force / search paths.
+    real(kind=kreal)    :: ctime = 0.d0
+    integer(kind=kint)  :: if_type = 0
+    real(kind=kreal)    :: if_etime = 0.d0
+    real(kind=kreal)    :: initial_pos = 0.d0
+    real(kind=kreal)    :: end_pos = 0.d0
     ! following algorithm
     ! -1: not initialized
     ! 1: TIED-Just rigidly fixed the two surfaces
