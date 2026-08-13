@@ -19,6 +19,7 @@ module m_fstr_contact_elem_alag
   public :: getTiedNodalForce_Alag
   public :: updateContactMultiplier_Alag
   public :: get_unique_map
+  public :: getIntGap
 
 contains
 
@@ -203,6 +204,126 @@ contains
     master_idxs = tmp(1:unique_count)
 
   end subroutine get_unique_map
+
+  !> \brief Compute group-level normal distribution (Ns), area (S), and current gap (g)
+  !!        for one mortar slave segment.
+  !!
+  !! For each unique master surface in contact with this slave segment, accumulates
+  !!   AN_g = sum_ip (shapefunc * weight * direction)
+  !!   S_g  = sum_ip (weight)
+  !! and returns Ns_g = AN_g / S_g, gap_g = Ns_g . curr_pos.
+  !!
+  !! Caller owns the returned allocatables. It also returns the per-node-within-group
+  !! decomposition that drives the residual/stiffness/augmentation: for group g and node a,
+  !!   Snode(g,a)      = sum_{IP in g} N_s(a) * weight                       (node tributary area)
+  !!   ANnode(g,a,:)   = sum_{IP in g} N_s(a) * [N_s(b)|-N_m(k)] * weight*dir (per-node constraint accumulator)
+  !!   Nsnode(g,a,:)   = ANnode(g,a,:) / Snode(g,a)                          (per-node averaged constraint grad)
+  !!   gapwnode(g,a)   = ANnode(g,a,:) . curr_pos                            (per-node weighted gap)
+  !! Summing over a re-collapses the group totals on a flat, uniform contact; on curved geometry
+  !! they differ (one constraint per slave node). The group S / Ns_list / integrated_gaps are also returned.
+  subroutine getIntGap(slave_surf, master, coord, disp, ddisp, &
+     unique_count, maplist, master_idxs, S, Ns_list, integrated_gaps, &
+     Snode, Nsnode, gapwnode)
+    type(tContactSurf)  :: slave_surf
+    type(tSurfElement) :: master(:)
+    real(kind=kreal), intent(in)                :: coord(:), disp(:), ddisp(:)
+    integer(kind=kint), intent(out)             :: unique_count
+    integer(kind=kint), allocatable, intent(out):: maplist(:), master_idxs(:)
+    real(kind=kreal), allocatable, intent(out)  :: S(:), Ns_list(:, :), integrated_gaps(:)
+    real(kind=kreal), allocatable, intent(out)  :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:)  !< (g,a) / (g,a,24) per-node-within-group
+
+    integer(kind=kint) :: i, j, g, a, nnode_s, nnode_m, etype, slave, n_intp, ctsurf, nd
+    integer(kind=kint) :: ndLocal(l_max_surface_node+1)
+    real(kind=kreal)   :: snode_pos(3,4), weight(MAX_N_INTP)
+    real(kind=kreal)   :: ncoord(2), shapefunc_s(4), shapefunc_m(4), direction(3)
+    real(kind=kreal)   :: curr_pos(24)
+    real(kind=kreal), allocatable :: AN(:,:)
+
+    call get_unique_map(slave_surf, maplist, master_idxs, unique_count)
+
+    nnode_s = size(slave_surf%nodes)
+
+    allocate(AN(unique_count, 24))
+    allocate(S(unique_count))
+    allocate(Ns_list(unique_count, 24))
+    allocate(integrated_gaps(unique_count))
+    allocate(Snode(unique_count, nnode_s))
+    allocate(Nsnode(unique_count, nnode_s, 24))
+    allocate(gapwnode(unique_count, nnode_s))
+    AN = 0.d0
+    S = 0.d0
+    Ns_list = 0.d0
+    integrated_gaps = 0.d0
+    Snode = 0.d0
+    Nsnode = 0.d0
+    gapwnode = 0.d0
+
+    ! Slave node positions at start of substep (coord + disp), used for IP weights.
+    snode_pos = 0.d0
+    do i = 1, nnode_s
+      slave = slave_surf%nodes(i)
+      snode_pos(:,i) = coord(3*slave-2:3*slave) + disp(3*slave-2:3*slave)
+    enddo
+    n_intp = slave_surf%n_intp
+    weight = 0.d0
+    call get_intp_weights(slave_surf%etype, nnode_s, n_intp, snode_pos, weight(1:n_intp))
+
+    ! Accumulate AN and S per group, and the per-node-within-group constraint accumulator (Nsnode source).
+    do i = 1, n_intp
+      if( slave_surf%states(i)%state == CONTACTFREE ) cycle
+      ctsurf = slave_surf%states(i)%surface
+      etype = master(ctsurf)%etype
+      nnode_m = size(master(ctsurf)%nodes)
+      direction = slave_surf%states(i)%direction(1:3)
+      call getIntPoint4ss(slave_surf%etype, i, ncoord, n_intp, shapefunc_s)
+      call getShapeFunc(etype, slave_surf%states(i)%lpos(1:2), shapefunc_m)
+      g = maplist(i)
+      do j = 1, nnode_s
+        AN(g, 3*j-2:3*j) = AN(g, 3*j-2:3*j) + shapefunc_s(j)*weight(i)*direction(1:3)
+      enddo
+      do j = nnode_s+1, nnode_s+nnode_m
+        AN(g, 3*j-2:3*j) = AN(g, 3*j-2:3*j) - shapefunc_m(j-nnode_s)*weight(i)*direction(1:3)
+      enddo
+      S(g) = S(g) + weight(i)
+      ! Per-node-within-group: weight the whole IP constraint by the slave node shape function N_s(a).
+      do a = 1, nnode_s
+        Snode(g,a) = Snode(g,a) + shapefunc_s(a)*weight(i)
+        do j = 1, nnode_s
+          Nsnode(g,a,3*j-2:3*j) = Nsnode(g,a,3*j-2:3*j) &
+            + shapefunc_s(a)*shapefunc_s(j)*weight(i)*direction(1:3)
+        enddo
+        do j = nnode_s+1, nnode_s+nnode_m
+          Nsnode(g,a,3*j-2:3*j) = Nsnode(g,a,3*j-2:3*j) &
+            - shapefunc_s(a)*shapefunc_m(j-nnode_s)*weight(i)*direction(1:3)
+        enddo
+      enddo
+    enddo
+
+    ! Per-group Ns and current gap; per-node Nsnode (=ANnode/Snode) and weighted gap, all at end of substep.
+    do g = 1, unique_count
+      ctsurf = master_idxs(g)
+      nnode_m = size(master(ctsurf)%nodes)
+      ndLocal(1:nnode_s) = slave_surf%nodes(1:nnode_s)
+      ndLocal(nnode_s+1:nnode_s+nnode_m) = master(ctsurf)%nodes(1:nnode_m)
+      Ns_list(g, 1:(nnode_s+nnode_m)*3) = AN(g, 1:(nnode_s+nnode_m)*3) / S(g)
+      do j = 1, nnode_s + nnode_m
+        nd = ndLocal(j)
+        curr_pos(3*j-2:3*j) = coord(3*nd-2:3*nd) + disp(3*nd-2:3*nd) + ddisp(3*nd-2:3*nd)
+      enddo
+      integrated_gaps(g) = dot_product(Ns_list(g, 1:(nnode_s+nnode_m)*3),curr_pos(1:(nnode_s+nnode_m)*3))
+      do a = 1, nnode_s
+        ! gapwnode uses the un-normalized accumulator (= ANnode . curr_pos); the residual/aug add mu*gapwnode.
+        gapwnode(g,a) = dot_product(Nsnode(g,a,1:(nnode_s+nnode_m)*3), curr_pos(1:(nnode_s+nnode_m)*3))
+        if( Snode(g,a) > 0.d0 ) then
+          Nsnode(g,a,1:(nnode_s+nnode_m)*3) = Nsnode(g,a,1:(nnode_s+nnode_m)*3) / Snode(g,a)
+        else
+          Nsnode(g,a,1:(nnode_s+nnode_m)*3) = 0.d0
+        endif
+      enddo
+    enddo
+
+    deallocate(AN)
+  end subroutine getIntGap
 
   subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,symm,lagrange,ctNForce,ctTForce,cflag, &
       smoothing_type)

@@ -26,15 +26,20 @@ contains
     integer(kind=kint), intent(in)       :: ndof      !< degrees of freedom
     type(hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh
     
-    integer(kind=kint) :: j, slave_node, master_node, nnode, ctsurf
-    integer(kind=kint) :: idx_start, idx_end
+    integer(kind=kint) :: j, k, slave_node, master_node, nnode, ctsurf
+    integer(kind=kint) :: idx_start, idx_end, n_slave
     real(kind=kreal)   :: maxv
-    
+    real(kind=kreal)   :: A_rep, slave_reflen_sum
+    real(kind=kreal)   :: elem(3, l_max_surface_node), r0(2)
+
     maxv = 0.0d0
-    
+
     ! Loop over slave nodes
     do j = 1, size(contact%slave)
       slave_node = contact%slave(j)
+      ! The mortar refStiff must be partition-invariant: skip GHOST(external) rows so the
+      ! rank-local max uses only fully-assembled diagonals; allreduce-MAX then equals serial.
+      if( contact%method == CONTACTS2S .and. slave_node > hecMESH%nn_internal ) cycle
       idx_start = ndof * (slave_node - 1) + 1
       idx_end = ndof * slave_node
       maxv = max(maxv, maxval(diag(idx_start:idx_end)))
@@ -45,6 +50,7 @@ contains
       nnode = size(contact%master(ctsurf)%nodes)
       do j = 1, nnode
         master_node = contact%master(ctsurf)%nodes(j)
+        if( contact%method == CONTACTS2S .and. master_node > hecMESH%nn_internal ) cycle
         idx_start = ndof * (master_node - 1) + 1
         idx_end = ndof * master_node
         maxv = max(maxv, maxval(diag(idx_start:idx_end)))
@@ -56,6 +62,38 @@ contains
     
     ! Set reference stiffness for this contact pair
     contact%refStiff = maxv
+
+    ! Mortar dimensional correction: the mortar penalty multiplies refStiff by the contact
+    ! area, so refStiff is divided by a representative tributary area A_rep = (slave reflen)^2
+    ! to make mu = nPenalty*refStiff a pressure density. The same nPenalty then gives the same
+    ! effective stiffness as the NODE-SURF per-node form. reflen is taken from the slave element
+    ! (the constraint is integrated on the slave surface). NODE-SURF pairs are left untouched.
+    if( contact%method == CONTACTS2S ) then
+      ! Local slave reference-length sum and slave-face count (0 if this rank owns none).
+      slave_reflen_sum = 0.0d0
+      n_slave = 0
+      if( associated(contact%slave_surf) ) n_slave = size(contact%slave_surf)
+      do j = 1, n_slave
+        nnode = size(contact%slave_surf(j)%nodes)
+        do k = 1, nnode
+          ctsurf = contact%slave_surf(j)%nodes(k)
+          elem(1:3,k) = hecMESH%node(3*ctsurf-2:3*ctsurf)
+        enddo
+        call getElementCenter( contact%slave_surf(j)%etype, r0 )
+        slave_reflen_sum = slave_reflen_sum + &
+          getReferenceLength( contact%slave_surf(j)%etype, nnode, r0, elem )
+      enddo
+      ! Reduced outside the slave_surf>0 gate (ranks owning no slave face must still join the
+      ! collective) but inside the method gate. Slave faces are owned by exactly one rank, so the
+      ! SUM reproduces the serial value on every rank.
+      call hecmw_allREDUCE_R1(hecMESH, slave_reflen_sum, hecmw_sum)
+      call hecmw_allreduce_I1(hecMESH, n_slave, hecmw_sum)
+      A_rep = 0.0d0
+      if( n_slave > 0 ) then
+        A_rep = ( slave_reflen_sum / dble(n_slave) ) ** 2
+        if( A_rep > 0.0d0 ) contact%refStiff = contact%refStiff / A_rep
+      endif
+    endif
 
     ! Report penalty settings
     if (hecmw_comm_get_rank() == 0) then
@@ -126,40 +164,89 @@ contains
     logical, intent(inout)               :: ctchanged      !< if contact state changes
 
     integer(kind=kint)  :: slave, etype, master
-    integer(kind=kint)  :: nn, i, cnt
+    integer(kind=kint)  :: nn, i, g, cnt
     real(kind=kreal)    :: lgnt(2)
     integer(kind=kint)  :: ndLocal(l_max_elem_node+1)
     real(kind=kreal)    :: ctNForce(l_max_elem_node*3+3)
     real(kind=kreal)    :: ctTForce(l_max_elem_node*3+3)
     real(kind=kreal)    :: max_jump_ratio, jump_ratio_local
     real(kind=kreal)    :: mut_old, mut_new, threthold
+    ! --- mortar (SURF-SURF) locals ---
+    integer(kind=kint)  :: unique_count, r, a, nnode_s
+    integer(kind=kint), allocatable :: maplist(:), master_idxs(:), sorted_idx(:)
+    real(kind=kreal),   allocatable :: S(:), Ns_list(:,:), integrated_gaps(:), lambda_cur(:)
+    ! per-node-within-group quantities; the per-node lambda_n drives the normal path
+    real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
+    real(kind=kreal)    :: mu, lambda_new
 
     cnt = 0
     lgnt(:) = 0.d0
     max_jump_ratio = 0.0d0
-    
-    do i = 1, size(contact%slave)
-      if(.not. is_contact_active(contact%states(i)%state)) cycle   ! only STICK/SLIP
-      
-      slave = contact%slave(i)
-      master = contact%states(i)%surface
-      nn = size(contact%master(master)%nodes)
-      etype = contact%master(master)%etype
+    if( contact%method == CONTACTS2S ) then
+      ! ===== mortar multiplier update (per slave segment) =====
+      mu = contact%nPenalty * contact%refStiff
+      do i = 1, size(contact%slave_surf)
+        if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
 
-      ndLocal(1) = slave
-      ndLocal(2:nn+1) = contact%master(master)%nodes(1:nn)
+        call getIntGap(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                       unique_count, maplist, master_idxs, S, Ns_list, integrated_gaps, &
+                       Snode, Nsnode, gapwnode)
 
-      ! Update multiplier and calculate forces
-      call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
-        contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
-        fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
-      
-      ! Track maximum jump ratio
-      max_jump_ratio = max(max_jump_ratio, jump_ratio_local)
-      
-      cnt = cnt + 1
-    enddo
-    
+        nnode_s = size(contact%slave_surf(i)%nodes)
+        allocate(sorted_idx(unique_count), lambda_cur(unique_count), lambda_node(nnode_s,unique_count))
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_cur, lambda_node)
+
+        ! Per-node augmented update: lambda_node(a,g) += mu * gapwnode(g,a); clamp >=0.
+        ! gapwnode = ANnode . curr_pos (un-normalized), so mu*gapwnode is the per-node force increment
+        ! whose node-sum equals the group mu*S(g)*integrated_gaps(g).
+        do g = 1, unique_count
+          do a = 1, nnode_s
+            lambda_new = lambda_node(a,g) + (mu * gapwnode(g,a))
+            if( lambda_new < 0.d0 ) lambda_new = 0.d0
+            lambda_node(a,g) = lambda_new
+          enddo
+
+          ! Convergence tracking (group gap)
+          lgnt(1) = lgnt(1) + integrated_gaps(g)
+        enddo
+
+        ! Rebuild the working buffer from the active master set (ascending); BEGIN left it empty.
+        contact%slave_surf(i)%lam_work_n = unique_count
+        do r = 1, unique_count
+          contact%slave_surf(i)%lam_work_id(r)  = master_idxs(sorted_idx(r))
+          contact%slave_surf(i)%lam_work_val(1:nnode_s,r) = lambda_node(1:nnode_s,sorted_idx(r))
+        enddo
+        cnt = cnt + 1
+
+        deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx, lambda_cur)
+        deallocate(Snode, Nsnode, gapwnode, lambda_node)
+      enddo
+    else
+      ! ===== NODE-SURF multiplier update (per slave node) =====
+      do i = 1, size(contact%slave)
+        if(.not. is_contact_active(contact%states(i)%state)) cycle   ! only STICK/SLIP
+
+        slave = contact%slave(i)
+        master = contact%states(i)%surface
+        nn = size(contact%master(master)%nodes)
+        etype = contact%master(master)%etype
+
+        ndLocal(1) = slave
+        ndLocal(2:nn+1) = contact%master(master)%nodes(1:nn)
+
+        ! Update multiplier and calculate forces
+        call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
+          fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
+
+        ! Track maximum jump ratio
+        max_jump_ratio = max(max_jump_ratio, jump_ratio_local)
+
+        cnt = cnt + 1
+      enddo
+    endif
+
     if(cnt > 0) lgnt(:) = lgnt(:) / cnt
     gnt = gnt + lgnt
     
@@ -365,6 +452,63 @@ contains
 
   end subroutine calcu_contact_stiffness_NodeSurf
 
+  subroutine calcu_contact_stiffness_SurfSurf( ctAlgo, contact, coord, disp, ddisp, hecMAT )
+    integer(kind=kint), intent(in)             :: ctAlgo          !< contact analysis algorithm
+    type(tContact), intent(inout)              :: contact         !< contact info
+    real(kind=kreal), intent(in)               :: coord(:)        !< mesh coordinate
+    real(kind=kreal), intent(in)               :: disp(:)         !< displacement
+    real(kind=kreal), intent(in)               :: ddisp(:)        !< displacement increment (NR)
+    type(hecmwST_matrix), intent(inout)        :: hecMAT          !< global stiffness matrix
+
+    integer(kind=kint) :: i, g, a, j, k, nnode_m, nnode_s, unique_count, ctsurf
+    integer(kind=kint) :: ndLocal(l_max_surface_node+1)
+    integer(kind=kint), allocatable :: maplist(:), master_idxs(:), sorted_idx(:)
+    real(kind=kreal),   allocatable :: S(:), Ns_list(:,:), integrated_gaps(:), lambda_cur(:)
+    real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
+    real(kind=kreal) :: mu
+    real(kind=kreal) :: stiff(24, 24), Ns(24)
+
+    mu = contact%nPenalty * contact%refStiff
+
+    do i = 1, size(contact%slave_surf)
+      if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
+      if( ctAlgo /= kcaALagrange ) cycle
+
+      call getIntGap(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                     unique_count, maplist, master_idxs, S, Ns_list, integrated_gaps, &
+                     Snode, Nsnode, gapwnode)
+
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(sorted_idx(unique_count), lambda_cur(unique_count), lambda_node(nnode_s,unique_count))
+      call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                              lambda_cur, lambda_node)
+
+      ! ===== Normal stiffness: per-node rank-1 sum, mu*Snode(g,a)*Nsnode(g,a)(x)Nsnode(g,a) =====
+      do g = 1, unique_count
+        ctsurf = master_idxs(g)
+        nnode_m = size(contact%master(ctsurf)%nodes)
+        ndLocal(1:nnode_s) = contact%slave_surf(i)%nodes(1:nnode_s)
+        ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
+        do a = 1, nnode_s
+          ! ALag contact condition per node: augmented force must be positive
+          if( lambda_node(a,g)+mu*gapwnode(g,a) < 0.d0 ) cycle
+          Ns = 0.d0
+          Ns(1:(nnode_s+nnode_m)*3) = Nsnode(g, a, 1:(nnode_s+nnode_m)*3)
+          do j = 1, (nnode_s+nnode_m)*3
+            do k = 1, (nnode_s+nnode_m)*3
+              stiff(j,k) = mu*Snode(g,a)*Ns(j)*Ns(k)
+            enddo
+          enddo
+          call hecmw_mat_ass_elem(hecMAT, nnode_s+nnode_m, ndLocal, stiff)
+        enddo
+      enddo
+
+      deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx, lambda_cur)
+      deallocate(Snode, Nsnode, gapwnode, lambda_node)
+    enddo
+
+  end subroutine calcu_contact_stiffness_SurfSurf
+
   !>\brief This subroutine calculates contact nodal force for each contact pair
   !! and assembles it into contact matrix and/or force arrays.
   !! When purpose == kctForResidual, forces are assembled into conMAT%B.
@@ -561,5 +705,119 @@ contains
     enddo
 
   end subroutine calcu_contact_ndforce_exp
+
+  subroutine calcu_contact_ndforce_SurfSurf( purpose, ctAlgo, contact, coord, disp, ddisp, &
+    conMAT, CONT_NFORCE, CONT_FRIC )
+    integer(kind=kint), intent(in)       :: purpose         !< kctForResidual or kctForOutput
+    integer(kind=kint), intent(in)       :: ctAlgo          !< contact analysis algorithm
+    type( tContact ), intent(inout)      :: contact         !< contact info
+    real(kind=kreal), intent(in)         :: coord(:)        !< mesh coordinate
+    real(kind=kreal), intent(in)         :: disp(:)         !< disp till current step
+    real(kind=kreal), intent(in)         :: ddisp(:)        !< disp till current substep
+    type(hecmwST_matrix), intent(inout)  :: conMAT          !< contact matrix
+    real(kind=kreal), pointer            :: CONT_NFORCE(:)  !< contact normal force
+    real(kind=kreal), pointer            :: CONT_FRIC(:)    !< contact friction force
+
+    integer(kind=kint) :: i, g, a, j, nd, nnode_m, nnode_s, unique_count, ctsurf
+    integer(kind=kint) :: ndLocal(l_max_surface_node+1)
+    integer(kind=kint), allocatable :: maplist(:), master_idxs(:), sorted_idx(:)
+    real(kind=kreal),   allocatable :: S(:), Ns_list(:,:), integrated_gaps(:), lambda_cur(:)
+    real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
+    real(kind=kreal) :: mu, nrlforce
+    real(kind=kreal) :: Ns(24)
+
+    mu = contact%nPenalty * contact%refStiff
+
+    do i = 1, size(contact%slave_surf)
+      if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
+      if( ctAlgo /= kcaALagrange ) cycle
+
+      call getIntGap(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                     unique_count, maplist, master_idxs, S, Ns_list, integrated_gaps, &
+                     Snode, Nsnode, gapwnode)
+
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(sorted_idx(unique_count), lambda_cur(unique_count), lambda_node(nnode_s,unique_count))
+      call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                              lambda_cur, lambda_node)
+
+      ! ===== Normal force: per-node back-distribution =====
+      ! nrlforce_a = lambda_node(a,g) + mu*gapwnode(g,a) for the residual, lambda_node(a,g) for output.
+      do g = 1, unique_count
+        ctsurf = master_idxs(g)
+        nnode_m = size(contact%master(ctsurf)%nodes)
+        ndLocal(1:nnode_s) = contact%slave_surf(i)%nodes(1:nnode_s)
+        ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
+        do a = 1, nnode_s
+          nrlforce = lambda_node(a,g) + mu*gapwnode(g,a)
+          ! ALag contact condition per node: augmented force must be positive
+          if( nrlforce < 0.d0 ) cycle
+          Ns = 0.d0
+          Ns(1:(nnode_s+nnode_m)*3) = Nsnode(g, a, 1:(nnode_s+nnode_m)*3)
+          do j = 1, nnode_s + nnode_m
+            nd = ndLocal(j)
+            if( purpose == kctForResidual ) then
+              conMAT%B(3*nd-2:3*nd) = conMAT%B(3*nd-2:3*nd) - nrlforce*Ns(3*j-2:3*j)
+            else if ( purpose == kctForOutput ) then
+              ! Output: multiplier only (converges to true contact force)
+              CONT_NFORCE(3*nd-2:3*nd) = CONT_NFORCE(3*nd-2:3*nd) - lambda_node(a,g)*Ns(3*j-2:3*j)
+            end if
+          enddo
+        enddo
+      enddo
+
+      deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx, lambda_cur)
+      deallocate(Snode, Nsnode, gapwnode, lambda_node)
+    enddo
+
+  end subroutine calcu_contact_ndforce_SurfSurf
+
+  !> Mortar: resolve the current per-node lambda of each active group of one slave surf.
+  !> master_idxs is sorted ascending and merged against the ascending begin/working
+  !> buffers with the rule: working hit -> working / else begin hit -> begin / else 0.
+  !> lambda_cur(g) is the node sum of lambda_node(:,g).
+  subroutine resolve_lambda_cur( surf, master_idxs, unique_count, nnode_s, sorted_idx, &
+                                 lambda_cur, lambda_node )
+    type(tContactSurf), intent(in)  :: surf
+    integer(kind=kint), intent(in)  :: master_idxs(:)   !< group->masterID (get_unique_map output, unsorted)
+    integer(kind=kint), intent(in)  :: unique_count
+    integer(kind=kint), intent(in)  :: nnode_s          !< number of slave-surf nodes
+    integer(kind=kint), intent(out) :: sorted_idx(:)    !< ascending rank r -> original group g
+    real(kind=kreal),   intent(out) :: lambda_cur(:)    !< group-order g current lambda (= sum_a lambda_node)
+    real(kind=kreal),   intent(out) :: lambda_node(:,:) !< (nnode_s, unique_count) per-node current lambda_n
+    integer(kind=kint) :: r, j, tmp, ib, iw, g, mid
+
+    ! argsort master_idxs ascending (unique_count <= 27, insertion sort)
+    do r = 1, unique_count
+      sorted_idx(r) = r
+    enddo
+    do r = 2, unique_count
+      tmp = sorted_idx(r)
+      j = r - 1
+      do while( j >= 1 )
+        if( master_idxs(sorted_idx(j)) <= master_idxs(tmp) ) exit
+        sorted_idx(j+1) = sorted_idx(j)
+        j = j - 1
+      enddo
+      sorted_idx(j+1) = tmp
+    enddo
+
+    ! 2-pointer merge over ascending masters / ascending begin / ascending working
+    ib = 1; iw = 1
+    do r = 1, unique_count
+      mid = master_idxs(sorted_idx(r))
+      do while( ib <= surf%lam_begin_n .and. surf%lam_begin_id(ib) < mid ); ib = ib + 1; enddo
+      do while( iw <= surf%lam_work_n  .and. surf%lam_work_id(iw)  < mid ); iw = iw + 1; enddo
+      g = sorted_idx(r)
+      if( iw <= surf%lam_work_n .and. surf%lam_work_id(iw) == mid ) then
+        lambda_node(1:nnode_s,g) = surf%lam_work_val(1:nnode_s,iw)
+      else if( ib <= surf%lam_begin_n .and. surf%lam_begin_id(ib) == mid ) then
+        lambda_node(1:nnode_s,g) = surf%lam_begin_val(1:nnode_s,ib)
+      else
+        lambda_node(1:nnode_s,g) = 0.d0
+      endif
+      lambda_cur(g) = sum( lambda_node(1:nnode_s,g) )   ! group lambda_n
+    enddo
+  end subroutine resolve_lambda_cur
 
 end module m_fstr_contact_assembly
