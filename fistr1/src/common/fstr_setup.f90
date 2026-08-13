@@ -563,11 +563,6 @@ contains
               write(ILOG,*) '           Specify INTERACTION=FSLID on !CONTACT (the default is SSLID).'
               stop HECMW_EXIT_MODEL
             endif
-            if( fstrSOLID%contacts(c_contact+i)%fcoeff /= 0.d0 ) then
-              write(*,*)    '### Error: MORTAR=YES is not supported with a non-zero friction coefficient : ', i+c_contact
-              write(ILOG,*) '### Error: MORTAR=YES is not supported with a non-zero friction coefficient : ', i+c_contact
-              stop HECMW_EXIT_MODEL
-            endif
             if( fstrSOLID%contacts(c_contact+i)%smoothing /= kcsNONE ) then
               write(*,*)    '### Error: MORTAR=YES is not supported with SMOOTHING= : ', i+c_contact
               write(ILOG,*) '### Error: MORTAR=YES is not supported with SMOOTHING= : ', i+c_contact
