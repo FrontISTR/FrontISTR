@@ -119,6 +119,7 @@ target=.
 fistr1=fistr1
 hecmw_part1=hecmw_part1
 rmerge=rmerge
+mpicc=$(which mpicc)
 mpirun=$(which mpirun)
 mpirun_options=not_set
 always_mpirun=false
@@ -157,15 +158,28 @@ compare_res=$FRONTISTR_HOME/tests/compare_res.pl
 check_executable $fistr1
 check_executable $hecmw_part1
 check_executable $rmerge
+check_executable $mpicc
 check_executable $mpirun
 check_executable $compare_res
 
+if [ "$($mpicc --showme:version 2> /dev/null | grep -i 'open[ -]mpi')" != "" ]; then
+  is_openmpi=true
+else
+  is_openmpi=false
+fi
+
 if [ "$mpirun_options" = "not_set" ]; then
-  if [ "$($mpirun --version 2> /dev/null | grep 'open-mpi')" != "" ]; then
+  if [ "$is_openmpi" = "true" ]; then
     mpirun_options="--oversubscribe --allow-run-as-root"
   else
     mpirun_options=""
   fi
+fi
+
+if [ "$is_openmpi" = "true" ]; then
+  # /dev/shm, the default backing store of the shared memory BTL on Linux,
+  # is limited to 64MiB in containers and can be exhausted by the tests
+  export OMPI_MCA_btl_sm_backing_directory=${OMPI_MCA_btl_sm_backing_directory:-/tmp}
 fi
 
 test_dir=$FRONTISTR_HOME/run_test/$CTEST_TEST_NAME/$(date +"%Y%m%d%H%M")

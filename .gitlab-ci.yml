@@ -28,6 +28,7 @@ trigger_release_builder:
 include: 
     - '.ubuntu2204.yml'
     - '.ubuntu2404.yml'
+    - '.ubuntu2604.yml'
 
 .build:
     stage: build
