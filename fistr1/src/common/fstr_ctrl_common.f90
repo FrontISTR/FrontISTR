@@ -580,11 +580,12 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter, conefollow )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter, conefollow, eps_fric_band )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
     integer(kind=kint) :: augiter
     logical            :: conefollow
+    real(kind=kreal)   :: eps_fric_band
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
     integer(kind=kint) :: rcode, icone
@@ -606,6 +607,17 @@ contains
     endif
     conefollow = ( icone == 2 )
     rcode = fstr_ctrl_get_param_ex( ctrl, 'AUGITER ', '# ', 0, 'I', augiter )
+    ! Hysteresis half-band of the stick/slip state switch (0 = no band = legacy behavior).
+    ! Read here, at the same level as AUGITER, because it controls the augmentation loop's
+    ! state machine rather than the geometric tolerances of !CONTACT_PARAM.
+    ! Currently consumed by the MORTAR=YES friction path only.
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'EPS_FRIC_BAND ', '# ', 0, 'R', eps_fric_band )
+    if( eps_fric_band<0.d0 .or. 1.d0<=eps_fric_band ) then
+      write(*,*) 'fstr control file error : !CONTACT_ALGO : EPS_FRIC_BAND must be 0 <= EPS_FRIC_BAND < 1.'
+      write(ILOG,*) 'fstr control file error : !CONTACT_ALGO : EPS_FRIC_BAND must be 0 <= EPS_FRIC_BAND < 1.'
+      fstr_ctrl_get_CONTACTALGO = -1
+      return
+    endif
     fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO
 

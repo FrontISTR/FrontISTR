@@ -20,6 +20,9 @@ module m_fstr_contact_elem_alag
   public :: updateContactMultiplier_Alag
   public :: get_unique_map
   public :: getIntGap
+  public :: build_group_tangent_basis
+  public :: getTangentSlip
+  public :: group_return_mapping
 
 contains
 
@@ -324,6 +327,194 @@ contains
 
     deallocate(AN)
   end subroutine getIntGap
+
+  !> \brief Build an orthonormal tangent basis (t1,t2) as the orthogonal complement
+  !!        of a group-representative slave inward normal n_hat (Householder / I - n(x)n).
+  !!        The master geometry is NOT used.
+  !!
+  !! Picks the smallest-magnitude Cartesian axis e_k, removes its normal part to form
+  !! a seed, normalizes to t1, then t2 = n_hat x t1. The result is orthonormal so the
+  !! tangent metric is the identity (no metric inverse machinery needed).
+  subroutine build_group_tangent_basis(n_hat, t1, t2)
+    real(kind=kreal), intent(in)  :: n_hat(3)   !< unit slave inward normal (already normalized)
+    real(kind=kreal), intent(out) :: t1(3), t2(3)
+
+    integer(kind=kint) :: k
+    real(kind=kreal)   :: v(3), vn, dotk
+
+    ! choose the axis least aligned with n_hat for numerical stability
+    k = 1
+    if( abs(n_hat(2)) < abs(n_hat(k)) ) k = 2
+    if( abs(n_hat(3)) < abs(n_hat(k)) ) k = 3
+
+    ! v = e_k - (e_k . n_hat) n_hat  (projection of e_k onto the tangent plane)
+    dotk = n_hat(k)
+    v(1:3) = -dotk * n_hat(1:3)
+    v(k)   = v(k) + 1.0d0
+
+    vn = sqrt( v(1)*v(1) + v(2)*v(2) + v(3)*v(3) )
+    t1(1:3) = v(1:3) / vn
+
+    ! t2 = n_hat x t1  (completes the right-handed orthonormal frame)
+    t2(1) = n_hat(2)*t1(3) - n_hat(3)*t1(2)
+    t2(2) = n_hat(3)*t1(1) - n_hat(1)*t1(3)
+    t2(3) = n_hat(1)*t1(2) - n_hat(2)*t1(1)
+  end subroutine build_group_tangent_basis
+
+  !> \brief Aggregate, per master group g and slave-surf node a of one mortar slave segment,
+  !!        the mortar-weighted 3D relative displacement and the slave-normal accumulator.
+  !!
+  !! Mirrors getIntGap's per-IP loop (same weights, shape functions and direction field) but
+  !! accumulates the mortar relative displacement du_rel(IP) = N_s . (slave ddisp) - N_m . (master ddisp).
+  !! The caller passes the maplist/master_idxs/unique_count from getIntGap so the group->IP
+  !! mapping matches. Each IP slip/normal is distributed to slave node a via shapefunc_s(a),
+  !! so the caller can build a per-node frame, Dxi and cone radius. Outputs per group g and node a:
+  !!   Sigma_node(g,a,:) = sum_IP N_s(a) * weight * du_rel(IP)   (per-node mortar slip)
+  !!   nacc_node(g,a,:)  = sum_IP N_s(a) * weight * direction    (per-node slave normal)
+  subroutine getTangentSlip(slave_surf, master, coord, disp, ddisp, &
+     unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+    type(tContactSurf)  :: slave_surf
+    type(tSurfElement) :: master(:)
+    real(kind=kreal), intent(in)                :: coord(:), disp(:), ddisp(:)
+    integer(kind=kint), intent(in)              :: unique_count
+    integer(kind=kint), intent(in)              :: maplist(:), master_idxs(:)
+    real(kind=kreal), intent(out)               :: Sigma_node(:,:,:)  !< (unique_count,nnode_s,3) per-node weighted 3D relative disp
+    real(kind=kreal), intent(out)               :: nacc_node(:,:,:)   !< (unique_count,nnode_s,3) per-node weighted slave normal
+
+    integer(kind=kint) :: i, j, g, a, nnode_s, nnode_m, etype, slave, n_intp, ctsurf, nd
+    real(kind=kreal)   :: snode_pos(3,4), weight(MAX_N_INTP)
+    real(kind=kreal)   :: ncoord(2), shapefunc_s(4), shapefunc_m(4), direction(3)
+    real(kind=kreal)   :: du_rel(3), du_master(3)
+
+    nnode_s = size(slave_surf%nodes)
+    Sigma_node = 0.d0
+    nacc_node  = 0.d0
+
+    ! Slave node positions at start of substep (coord + disp), used for IP weights
+    ! (identical to getIntGap so the weights match the normal aggregation exactly).
+    snode_pos = 0.d0
+    do i = 1, nnode_s
+      slave = slave_surf%nodes(i)
+      snode_pos(:,i) = coord(3*slave-2:3*slave) + disp(3*slave-2:3*slave)
+    enddo
+    n_intp = slave_surf%n_intp
+    weight = 0.d0
+    call get_intp_weights(slave_surf%etype, nnode_s, n_intp, snode_pos, weight(1:n_intp))
+
+    do i = 1, n_intp
+      if( slave_surf%states(i)%state == CONTACTFREE ) cycle
+      ctsurf = slave_surf%states(i)%surface
+      etype = master(ctsurf)%etype
+      nnode_m = size(master(ctsurf)%nodes)
+      direction = slave_surf%states(i)%direction(1:3)
+      call getIntPoint4ss(slave_surf%etype, i, ncoord, n_intp, shapefunc_s)
+      call getShapeFunc(etype, slave_surf%states(i)%lpos(1:2), shapefunc_m)
+      g = maplist(i)
+
+      ! Mortar relative displacement = Tm_mortar . edisp (edisp = ddisp).
+      ! slave block: + N_s(j) * ddisp(slave_j) ; master block: - N_m(j) * ddisp(master_j).
+      du_rel(1:3) = 0.d0
+      do j = 1, nnode_s
+        nd = slave_surf%nodes(j)
+        du_rel(1:3) = du_rel(1:3) + shapefunc_s(j) * ddisp(3*nd-2:3*nd)
+      enddo
+      du_master(1:3) = 0.d0
+      do j = 1, nnode_m
+        nd = master(ctsurf)%nodes(j)
+        du_master(1:3) = du_master(1:3) + shapefunc_m(j) * ddisp(3*nd-2:3*nd)
+      enddo
+      du_rel(1:3) = du_rel(1:3) - du_master(1:3)
+
+      ! Per-node: weight the IP slip/normal by the slave node shape function N_s(a).
+      do a = 1, nnode_s
+        Sigma_node(g, a, 1:3) = Sigma_node(g, a, 1:3) + shapefunc_s(a) * weight(i) * du_rel(1:3)
+        nacc_node(g, a, 1:3)  = nacc_node(g, a, 1:3)  + shapefunc_s(a) * weight(i) * direction(1:3)
+      enddo
+    enddo
+  end subroutine getTangentSlip
+
+  !> \brief Group-level Coulomb return mapping for the tangent multiplier (metric = I).
+  !!
+  !! Same 2D return mapping as computeFrictionForce_ALag, on the orthonormal basis (metric = I):
+  !!   trial = lam_t_in + rho_t*Dxi, radius = fcoeff*lam_n
+  !!   ||trial|| <= radius -> STICK (lam_t_out = trial), else SLIP (projected onto the cone).
+  !!   lam_n <= 0 gives lam_t_out = 0 with the state kept.
+  !! that(2) (= trial/||trial||) is returned for the slip-tangent stiffness.
+  subroutine group_return_mapping(lam_t_in, rho_t, Dxi, fcoeff, lam_n, eps_fric_band, &
+                                  lam_t_out, fric_state, alpha, that, update_state)
+    real(kind=kreal),   intent(in)    :: lam_t_in(2)  !< incoming (warm-start) tangent multiplier, group frame
+    real(kind=kreal),   intent(in)    :: rho_t        !< tangential penalty rho_t = tPenalty*refStiff
+    real(kind=kreal),   intent(in)    :: Dxi(2)       !< group-frame slip increment (area-integrated)
+    real(kind=kreal),   intent(in)    :: fcoeff       !< friction coefficient
+    real(kind=kreal),   intent(in)    :: lam_n        !< group normal multiplier (area-integrated)
+    real(kind=kreal),   intent(in)    :: eps_fric_band !< hysteresis half-band (0 = no band = legacy behavior)
+    real(kind=kreal),   intent(out)   :: lam_t_out(2) !< updated tangent multiplier, group frame
+    integer(kind=kint), intent(inout) :: fric_state   !< CONTACTSTICK/CONTACTSLIP (updated only when update_state)
+    real(kind=kreal),   intent(out)   :: alpha        !< projection ratio (for the tangent stiffness)
+    real(kind=kreal),   intent(out)   :: that(2)      !< trial/||trial|| (for the tangent stiffness)
+    logical, optional,  intent(in)    :: update_state !< .true. at the augmentation commits the state; .false. (default) reads it
+
+    real(kind=kreal) :: trial(2), norm_trial, radius
+    logical          :: is_stick, do_update
+
+    do_update = .false.
+    if( present(update_state) ) do_update = update_state
+
+    trial(1:2) = lam_t_in(1:2) + rho_t * Dxi(1:2)
+    norm_trial = sqrt( trial(1)*trial(1) + trial(2)*trial(2) )   ! metric = I
+    radius     = fcoeff * lam_n
+
+    if( norm_trial > 1.0d-20 ) then
+      that(1:2) = trial(1:2) / norm_trial
+    else
+      that(1:2) = 0.0d0
+    endif
+
+    if( lam_n <= 0.0d0 ) then
+      ! No normal force: cone collapses, no friction. Leave fric_state as-is.
+      lam_t_out(1:2) = 0.0d0
+      alpha = 0.0d0
+    else if( do_update ) then
+      ! Augmentation: this is the only place where the stick/slip state is (re)decided.
+      ! Hysteresis band: read the warm-start (previous) state and switch only when
+      ! ||trial|| crosses the asymmetric thresholds. Inside the band the previous
+      ! branch is kept, so marginal flips at the cone boundary cannot drive a limit
+      ! cycle across augmentations.
+      is_stick = ( fric_state == CONTACTSTICK )
+      if( is_stick ) then
+        if( norm_trial > (1.0d0 + eps_fric_band) * radius ) is_stick = .false.   ! genuine slip onset
+      else
+        if( norm_trial <= (1.0d0 - eps_fric_band) * radius ) is_stick = .true.    ! genuine stick recovery
+      endif
+
+      if( is_stick ) then
+        ! Stick branch: keep full trial multiplier.
+        lam_t_out(1:2) = trial(1:2)
+        fric_state = CONTACTSTICK
+        alpha = 1.0d0
+      else
+        ! Slip branch: project onto cone surface.
+        alpha = radius / norm_trial
+        lam_t_out(1:2) = alpha * trial(1:2)
+        fric_state = CONTACTSLIP
+      endif
+    else
+      ! Inner Newton-Raphson (read-only): pin the state frozen at the previous
+      ! augmentation, skipping the band re-judgement. fric_state is not written.
+      ! Same isolation as NTS-ALAG (update_multiplier=.false.): the stick/slip
+      ! branch cannot flip on the live trial inside the inner NR, so the residual
+      ! stays smooth and the per-iteration branch-flip limit cycle is broken.
+      if( fric_state == CONTACTSTICK ) then
+        ! Frozen STICK: keep full trial multiplier (no cone projection).
+        lam_t_out(1:2) = trial(1:2)
+        alpha = 1.0d0
+      else
+        ! Frozen SLIP: project onto the live cone surface.
+        alpha = radius / norm_trial
+        lam_t_out(1:2) = alpha * trial(1:2)
+      endif
+    endif
+  end subroutine group_return_mapping
 
   subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,symm,lagrange,ctNForce,ctTForce,cflag, &
       smoothing_type)
