@@ -137,7 +137,10 @@ contains
       call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
       ! ----- check matrix solver error
       call fstr_check_linear_solver(hecMESH, hecMATmpc, fstrSOLID, cstep, sub_step, iterStatus)
-      if( iterStatus /= kitrContinue ) return
+      if( iterStatus /= kitrContinue ) then
+        call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+        return
+      endif
       call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
       ! ----- update the small displacement and the displacement for 1step
@@ -153,7 +156,10 @@ contains
       call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
           hecMAT%B, 0, res, res, 0, iterStatus)
       if (iterStatus == kitrConverged) exit
-      if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
+      if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then
+        call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+        return
+      endif
     enddo
     ! ----- end of inner loop
 
