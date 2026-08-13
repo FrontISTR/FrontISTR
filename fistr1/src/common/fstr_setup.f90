@@ -87,6 +87,7 @@ contains
     integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints
     integer(kind=kint) :: c_output, islog
     integer(kind=kint) :: k
+    integer(kind=kint) :: ss_nslav, ss_nmas_vis, ss_nmas_glob, ss_bad   ! MORTAR=YES visibility guard scratch
     integer(kind=kint) :: cache = 1
 
     write( logfileNAME, '(i5,''.log'')' ) myrank
@@ -510,6 +511,68 @@ contains
             ! !CONTACT_ALGO, FRICTION_CONE=FOLLOW gives up the symmetry of the ALagrange
             ! friction terms; see getContactStiffness_Alag
             fstrSOLID%contacts(c_contact+i)%symmetric = .not. P%PARAM%fric_cone_follow
+          endif
+          if( fstrSOLID%contacts(c_contact+i)%method == CONTACTS2S ) then
+            if( P%PARAM%contact_algo == kcaSLagrange ) then
+              write(*,*)    '### Error: MORTAR=YES is not supported with !CONTACT_ALGO TYPE=SLAGRANGE : ', i+c_contact
+              write(ILOG,*) '### Error: MORTAR=YES is not supported with !CONTACT_ALGO TYPE=SLAGRANGE : ', i+c_contact
+              stop HECMW_EXIT_MODEL
+            endif
+            if( fstrSOLID%contacts(c_contact+i)%surf_id1_sgrp <= 0 ) then
+              write(*,*)    '### Error: MORTAR=YES requires !CONTACT_PAIR TYPE=SURF-SURF : ', i+c_contact
+              write(ILOG,*) '### Error: MORTAR=YES requires !CONTACT_PAIR TYPE=SURF-SURF : ', i+c_contact
+              stop HECMW_EXIT_MODEL
+            endif
+            ! Only finite sliding is implemented. With any other INTERACTION the per-integration
+            ! point tracking is skipped, and with it the activation of the slave segment, so the
+            ! assembly sees every segment as free and no contact force is produced at all
+            ! (a silent no-op). INTERACTION defaults to SSLID, so this must be an error.
+            if( fstrSOLID%contacts(c_contact+i)%algtype /= CONTACTFSLID ) then
+              write(*,*)    '### Error: MORTAR=YES is supported only with INTERACTION=FSLID : ', i+c_contact
+              write(ILOG,*) '### Error: MORTAR=YES is supported only with INTERACTION=FSLID : ', i+c_contact
+              write(*,*)    '           Specify INTERACTION=FSLID on !CONTACT (the default is SSLID).'
+              write(ILOG,*) '           Specify INTERACTION=FSLID on !CONTACT (the default is SSLID).'
+              stop HECMW_EXIT_MODEL
+            endif
+            if( fstrSOLID%contacts(c_contact+i)%fcoeff /= 0.d0 ) then
+              write(*,*)    '### Error: MORTAR=YES is not supported with a non-zero friction coefficient : ', i+c_contact
+              write(ILOG,*) '### Error: MORTAR=YES is not supported with a non-zero friction coefficient : ', i+c_contact
+              stop HECMW_EXIT_MODEL
+            endif
+            if( fstrSOLID%contacts(c_contact+i)%smoothing /= kcsNONE ) then
+              write(*,*)    '### Error: MORTAR=YES is not supported with SMOOTHING= : ', i+c_contact
+              write(ILOG,*) '### Error: MORTAR=YES is not supported with SMOOTHING= : ', i+c_contact
+              stop HECMW_EXIT_MODEL
+            endif
+            ! Visibility guard: the mortar integral of a slave segment needs every master face
+            ! it can project onto, so a rank owning slave faces must see the entire master
+            ! surface (owned + ghost), which !PARTITION, CONTACT_OWNER=SLAVE provides. Verified
+            ! by comparing the visible master count with the global owned-only count.
+            ! Serial (np=1) skips the block, so the numerical path is unchanged.
+            if( hecmw_comm_get_size() > 1 ) then
+              ss_nslav     = size( fstrSOLID%contacts(c_contact+i)%slave_surf )
+              ss_nmas_vis  = size( fstrSOLID%contacts(c_contact+i)%master )
+              ss_nmas_glob = fstrSOLID%contacts(c_contact+i)%n_master_owned
+              call hecmw_allreduce_I1( P%MESH, ss_nmas_glob, hecmw_sum )
+              ! a slave-owning rank must see every master face; flag incomplete ghost
+              if( ss_nslav > 0 .and. ss_nmas_vis /= ss_nmas_glob ) then
+                ss_bad = 1
+              else
+                ss_bad = 0
+              endif
+              call hecmw_allreduce_I1( P%MESH, ss_bad, hecmw_max )
+              if( ss_bad /= 0 ) then
+                write(*,*)    '### Error: MORTAR=YES contact pair has incomplete master ghost : ', i+c_contact
+                write(ILOG,*) '### Error: MORTAR=YES contact pair has incomplete master ghost : ', i+c_contact
+                write(*,*)    '           A rank owning slave faces cannot see the full master surface.'
+                write(ILOG,*) '           A rank owning slave faces cannot see the full master surface.'
+                write(*,*)    '           Re-partition the mesh with !PARTITION, CONTACT_OWNER=SLAVE,'
+                write(ILOG,*) '           Re-partition the mesh with !PARTITION, CONTACT_OWNER=SLAVE,'
+                write(*,*)    '           or run serial (np=1).'
+                write(ILOG,*) '           or run serial (np=1).'
+                stop HECMW_EXIT_MODEL
+              endif
+            endif
           endif
         enddo
         c_contact = c_contact+n

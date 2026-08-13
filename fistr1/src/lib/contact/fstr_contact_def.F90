@@ -34,6 +34,7 @@ module mContactDef
   integer, parameter :: CONTACTNEAR = 0    !< near contact: projection info available, no LM constraint
   integer, parameter :: CONTACTSTICK = 1
   integer, parameter :: CONTACTSLIP = 2
+  integer, parameter :: CANDIDATE_INTP = 3  !< SURF-SURF: integration point to be re-projected in this scan
 
   !> contact type or algorithm definition
   integer, parameter :: CONTACTTIED = 1
@@ -44,6 +45,17 @@ module mContactDef
   !> contact smoothing type
   integer, parameter :: kcsNONE   = 0
   integer, parameter :: kcsNAGATA = 1
+
+  !> contact method
+  integer, parameter :: CONTACTN2S = 1
+  integer, parameter :: CONTACTS2S = 2
+
+  !> sparsity expansion mode (per contact pair, set by !CONTACT EXPANSION=)
+  integer, parameter :: SPARSITY_NONE     = 0  !< register current master only
+  integer, parameter :: SPARSITY_NEIGHBOR = 1  !< register current master + neighbors (fewer matrix rebuilds)
+
+  !> upper bound of integration points per SURF-SURF slave segment
+  integer, parameter :: MAX_N_INTP = 128
 
   !> contact interference type
   integer, parameter :: C_IF_SLAVE = 1
@@ -77,6 +89,30 @@ module mContactDef
     integer             :: interference_flag
   end type
 
+  !> Structure to define a slave surface segment of a SURF-SURF (mortar) contact pair
+  type tContactSurf
+    integer(kind=kint)              :: eid                  !< elemental index(global)
+    integer(kind=kint)              :: etype                !< type of surface element
+    integer(kind=kint), pointer     :: nodes(:)=>null()     !< nodes index(global)
+    integer(kind=kint)              :: state = CONTACTFREE       !< segment contact state (CONTACTFREE until first scan)
+    integer(kind=kint)              :: state_prev = CONTACTFREE  !< previous scan's segment state (for seg on/off detection)
+    integer(kind=kint)              :: n_intp               !< num of surface integral point
+    type(tContactState), pointer    :: states(:)=>null()    !< contact states of slave surf
+    integer(kind=kint), pointer     :: nslave_index(:)=>null() !< mapping from surface node to slave node index (surf-surf)
+    ! --- lambda transaction buffers ---
+    ! begin: previous substep's COMMIT product, immutable during a substep (warm-start source)
+    ! working: current substep's accumulator, cleared at BEGIN, written by the augmentation update
+    integer(kind=kint), pointer     :: lam_begin_id(:)=>null()  !< begin masterID list, ascending, size n_intp
+    real(kind=kreal),   pointer     :: lam_begin_val(:,:)=>null() !< begin lambda_n (node a, rank r) keyed by lam_begin_id
+    integer(kind=kint)              :: lam_begin_n = 0          !< begin valid count
+    integer(kind=kint), pointer     :: lam_work_id(:)=>null()   !< working masterID list, ascending, size n_intp
+    real(kind=kreal),   pointer     :: lam_work_val(:,:)=>null()  !< working lambda_n (node a, rank r) keyed by lam_work_id
+    integer(kind=kint)              :: lam_work_n = 0           !< working valid count
+    ! segment state carried in the same transaction (cutback does not restore slave_surf)
+    integer(kind=kint)              :: state_begin = CONTACTFREE       !< committed segment state
+    integer(kind=kint)              :: state_prev_begin = CONTACTFREE  !< committed previous segment state
+  end type tContactSurf
+
   !> Structure to includes all info needed by contact calculation
   type tContact
     ! following contact definition
@@ -87,6 +123,7 @@ module mContactDef
     integer                       :: surf_id1, surf_id2      !< slave surface, master surface
     integer                       :: surf_id1_sgrp           !< surface group id of slave surface
     type(tSurfElement), pointer   :: master(:)=>null()       !< master surface (element )
+    integer                       :: n_master_owned = 0      !< owned-only master face count (SURF-SURF visibility guard)
     integer, pointer              :: slave(:)=>null()        !< slave surface (node)
     real(kind=kreal)              :: fcoeff                  !< coeeficient of friction
     real(kind=kreal)              :: nPenalty                !< normal penalty coefficient
@@ -94,7 +131,9 @@ module mContactDef
     real(kind=kreal)              :: refStiff                !< reference stiffness for penalty calculation
     real(kind=kreal)              :: damp_alpha              !< damping coefficient (dimensionless, scaled by refStiff)
     real(kind=kreal)              :: damp_gact               !< damping activation distance [length] (<=0: disabled)
-    
+
+    type(tContactSurf), pointer   :: slave_surf(:)=>null()   !< slave surface segments (MORTAR=YES only)
+
     ! !CONTACT_INTERFERENCE data; default-initialized because check_apply_Contact_IF only
     ! writes them when that card is present, while if_type is read unconditionally
     ! (if_flag = contact%if_type /= 0) by the contact force / search paths.
@@ -111,6 +150,9 @@ module mContactDef
     ! 4: FSLID-Finite sliding contact (both changes in contact state and position possible)
     integer                       :: algtype                 !< algorithm flag
     integer                       :: smoothing               !< kcsNONE or kcsNAGATA
+    integer                       :: method = CONTACTN2S     !< CONTACTN2S (NODE-SURF) or CONTACTS2S (SURF-SURF mortar).
+                                                             !< !EMBED has no MORTAR option, so it keeps this default.
+    integer                       :: sparsity_expansion = SPARSITY_NONE  !< SPARSITY_NONE / SPARSITY_NEIGHBOR (!CONTACT EXPANSION=)
 
     logical                       :: mpced                   !< if turns into mpc condition
     logical                       :: symmetric               !< true for FRICTION_CONE=FROZEN: cone radius kept at the multiplier
@@ -254,6 +296,7 @@ contains
     integer  :: i, j, is, ie, cgrp, nsurf, nslave, ic, ic_type, iss, nn, ii
     integer  :: count, ID_area
     logical  :: slave_owner, take_master
+    integer, allocatable  :: slave_index(:)  !< global node -> slave index (SURF-SURF only)
 
     fstr_contact_init = .false.
 
@@ -272,6 +315,14 @@ contains
     if( cgrp<=0 ) return
     is= hecMESH%surf_group%grp_index(cgrp-1) + 1
     ie= hecMESH%surf_group%grp_index(cgrp  )
+
+    ! Owned-only master face count, independent of take_master: the SURF-SURF visibility
+    ! guard in fstr_setup sums it over ranks to get the global unique master face count.
+    contact%n_master_owned = 0
+    do i=is,ie
+      ic   = hecMESH%surf_group%grp_item(2*i-1)
+      if( hecMESH%elem_ID(ic*2) == hecMESH%my_rank ) contact%n_master_owned = contact%n_master_owned + 1
+    enddo
 
     count = 0
     if( take_master ) then
@@ -313,11 +364,14 @@ contains
       nslave = nslave + 1
     enddo
     allocate( contact%slave(nslave) )
+    allocate( slave_index(hecMESH%n_node) )
+    slave_index(:) = 0
     ii = 0
     do i=is,ie
       if( slave_owner .and. hecMESH%node_group%grp_item(i) > hecMESH%nn_internal ) cycle
       ii = ii + 1
       contact%slave(ii) = hecMESH%node_group%grp_item(i)
+      slave_index(contact%slave(ii)) = ii
     enddo
 
     ! contact state
@@ -331,6 +385,58 @@ contains
     call bucketDB_init( contact%master_bktDB )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
     call find_surface_neighbor( contact%master, contact%master_bktDB )
+
+    if(contact%method == CONTACTS2S) then
+      !  slave surface
+      cgrp = contact%surf_id1_sgrp
+      if( cgrp<=0 ) return
+      is= hecMESH%surf_group%grp_index(cgrp-1) + 1
+      ie= hecMESH%surf_group%grp_index(cgrp  )
+
+      ! Slave segments are taken owned-only (a serial mesh owns every element, so this is
+      ! the full slave surface there). The master surface must be visible in full on every
+      ! slave-owning rank; that is what !PARTITION, CONTACT_OWNER=SLAVE gives and what the
+      ! visibility guard in fstr_setup checks.
+      count = 0
+      do i=is,ie
+        ic   = hecMESH%surf_group%grp_item(2*i-1)
+        if( hecMESH%elem_ID(ic*2) /= hecMESH%my_rank ) cycle
+        count = count + 1
+      enddo
+      allocate( contact%slave_surf(count) )
+      count = 0
+      do i=is,ie
+        ic   = hecMESH%surf_group%grp_item(2*i-1)
+        if( hecMESH%elem_ID(ic*2) /= hecMESH%my_rank ) cycle
+        count = count + 1
+        nsurf = hecMESH%surf_group%grp_item(2*i)
+        ic_type = hecMESH%elem_type(ic)
+        call initialize_csurf( ic, ic_type, nsurf, contact%slave_surf(count) )
+        iss = hecMESH%elem_node_index(ic-1)
+        do j=1, size( contact%slave_surf(count)%nodes )
+          nn = contact%slave_surf(count)%nodes(j)
+          contact%slave_surf(count)%nodes(j) = hecMESH%elem_node_item( iss+nn )
+          contact%slave_surf(count)%nslave_index(j) = slave_index(hecMESH%elem_node_item( iss+nn ))
+        enddo
+      enddo
+
+      ! state for each integration points
+      do i=1, size( contact%slave_surf )
+        nn = contact%slave_surf(i)%n_intp
+        allocate( contact%slave_surf(i)%states(nn) )
+        do j = 1, contact%slave_surf(i)%n_intp
+          contact%slave_surf(i)%states(j)%state = -1
+          contact%slave_surf(i)%states(j)%multiplier(:) = 0.d0
+          contact%slave_surf(i)%states(j)%tangentForce(:) = 0.d0
+          contact%slave_surf(i)%states(j)%tangentForce1(:) = 0.d0
+          contact%slave_surf(i)%states(j)%tangentForce_trial(:) = 0.d0
+          contact%slave_surf(i)%states(j)%tangentForce_final(:) = 0.d0
+          contact%slave_surf(i)%states(j)%reldisp(:) = 0.d0
+          contact%slave_surf(i)%states(j)%time_factor = 0.d0
+          contact%slave_surf(i)%states(j)%interference_flag = 0
+        enddo
+      enddo
+    endif
 
     ! initialize contact communication table
     call hecmw_contact_comm_init( contact%comm, hecMESH, 1, nslave, contact%slave )
@@ -448,6 +554,11 @@ contains
     isfind = .false.
     do i = 1, size(contacts)
       if( contacts(i)%pair_name == contact_if%cp_name ) then
+        ! !CONTACT_INTERFERENCE is not implemented for the SURF-SURF mortar path
+        if( contacts(i)%method == CONTACTS2S ) then
+          write(*,*) '### Error: CONTACT_INTERFERENCE is not supported with MORTAR=YES'
+          stop HECMW_EXIT_MODEL
+        endif
         contacts(i)%if_type     = contact_if%if_type
         contacts(i)%if_etime    = contact_if%etime
         contacts(i)%initial_pos = contact_if%initial_pos
@@ -491,5 +602,39 @@ contains
       is_active_contact = .false.
     endif
   end function
+
+  !> Initializer of a slave surface segment (SURF-SURF mortar)
+  subroutine initialize_csurf( eid, etype, nsurf, surf )
+    use elementInfo
+    integer(kind=kint), intent(in)    :: eid    !< element ID
+    integer(kind=kint), intent(in)    :: etype  !< element type
+    integer(kind=kint), intent(in)    :: nsurf  !< surface ID
+    type(tContactSurf), intent(inout) :: surf   !< surface element
+    integer(kind=kint) :: n, outtype, nodes(100)
+    surf%eid = eid
+
+    call getSubFace( etype, nsurf, outtype, nodes )
+    surf%etype = outtype
+    n=getNumberOfNodes( outtype )
+    if(surf%etype == fe_quad4n )then
+      surf%n_intp = 16
+    else if(surf%etype == fe_tri3n )then
+      surf%n_intp = 27
+    else
+      write(*,*) '### Error: MORTAR=YES supports first-order surfaces only (quad4/tri3) : etype=', surf%etype
+      stop HECMW_EXIT_MODEL
+    end if
+    allocate( surf%nodes(n) )
+    allocate( surf%nslave_index(n) )
+    surf%nodes(1:n)=nodes(1:n)
+    surf%nslave_index(:)= 0
+    ! lam_*_val: dim1 = slave-surf node a (size n), dim2 = rank r (master, size n_intp)
+    allocate( surf%lam_begin_id(surf%n_intp), surf%lam_begin_val(n,surf%n_intp) )
+    allocate( surf%lam_work_id (surf%n_intp), surf%lam_work_val (n,surf%n_intp) )
+    surf%lam_begin_id(:) = 0; surf%lam_begin_val(:,:) = 0.0d0; surf%lam_begin_n = 0
+    surf%lam_work_id (:) = 0; surf%lam_work_val (:,:) = 0.0d0; surf%lam_work_n  = 0
+    ! state_begin / state_prev_begin keep their type default (CONTACTFREE)
+  end subroutine
+
 
 end module mContactDef
