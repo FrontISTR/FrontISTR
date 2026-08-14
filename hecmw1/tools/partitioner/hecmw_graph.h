@@ -15,6 +15,8 @@
 
 #include <stdio.h>
 
+#include "hecmw_varray_idx.h"
+
 struct hecmw_varray_int;
 
 /** Graph data structure.
@@ -22,10 +24,10 @@ struct hecmw_varray_int;
  */
 struct hecmw_graph {
   int m_num_vertex; /**< number of vertices */
-  int m_num_edge;   /**< number of edges (double in both ways) */
-  struct hecmw_varray_int
+  idx_t m_num_edge; /**< number of edges (double in both ways) */
+  struct hecmw_varray_idx
       *m_edge_index; /**< edge index array (length is m_num_vertex+1) */
-  struct hecmw_varray_int *m_edge_item; /**< edge item array (length is
+  struct hecmw_varray_idx *m_edge_item; /**< edge item array (length is
                                            m_edge_index[m_num_vertex]) */
   struct hecmw_varray_int
       *m_vertex_weight; /**< vertex weight array (length is m_num_vertex) */
@@ -48,8 +50,8 @@ extern int HECMW_graph_init(struct hecmw_graph *graph /**< [inout] graph */
 extern int HECMW_graph_init_with_arrays(
     struct hecmw_graph *graph, /**< [inout] graph */
     int num_vertex,            /**< [in] number of vertices */
-    int *edge_index,           /**< [in] edge index array */
-    int *edge_item             /**< [in] edge item array */
+    idx_t *edge_index,         /**< [in] edge index array */
+    idx_t *edge_item           /**< [in] edge item array */
     );
 
 /** Finalize.
@@ -94,7 +96,7 @@ extern int HECMW_graph_getNumVertex(
  *
  * @return number of edges
  */
-extern int HECMW_graph_getNumEdge(
+extern idx_t HECMW_graph_getNumEdge(
     const struct hecmw_graph *graph /**< [in] graph */
     );
 
@@ -102,7 +104,7 @@ extern int HECMW_graph_getNumEdge(
  *
  * @return head pointer of the edge index array
  */
-extern const int *HECMW_graph_getEdgeIndex(
+extern const idx_t *HECMW_graph_getEdgeIndex(
     const struct hecmw_graph *graph /**< [in] graph */
     );
 
@@ -110,7 +112,7 @@ extern const int *HECMW_graph_getEdgeIndex(
  *
  * @return head pointer of the edge item array
  */
-extern const int *HECMW_graph_getEdgeItem(
+extern const idx_t *HECMW_graph_getEdgeItem(
     const struct hecmw_graph *graph /**< [in] graph */
     );
 

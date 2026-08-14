@@ -35,7 +35,7 @@ static void clear(struct hecmw_graph *graph /**< [inout] graph */
 static int find_edge(const struct hecmw_graph *graph, /**< [in] graph */
                      int vert1, /**< [in] starting vertex id */
                      int vert2, /**< [in] end vertex id */
-                     int *idx   /**< [out] edge id (set only when found) */
+                     idx_t *idx /**< [out] edge id (set only when found) */
                      );
 
 /** Add edge (one-way only); do nothing when already exists.
@@ -56,28 +56,28 @@ int HECMW_graph_init(struct hecmw_graph *graph) {
   graph->m_num_vertex = 0;
   graph->m_num_edge   = 0;
   graph->m_edge_index =
-      (struct hecmw_varray_int *)HECMW_malloc(sizeof(struct hecmw_varray_int));
+      (struct hecmw_varray_idx *)HECMW_malloc(sizeof(struct hecmw_varray_idx));
   graph->m_edge_item =
-      (struct hecmw_varray_int *)HECMW_malloc(sizeof(struct hecmw_varray_int));
+      (struct hecmw_varray_idx *)HECMW_malloc(sizeof(struct hecmw_varray_idx));
   if (graph->m_edge_index == NULL || graph->m_edge_item == NULL) {
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
   }
-  if (HECMW_varray_int_init(graph->m_edge_index) == HECMW_SUCCESS &&
-      HECMW_varray_int_init(graph->m_edge_item) == HECMW_SUCCESS)
+  if (HECMW_varray_idx_init(graph->m_edge_index) == HECMW_SUCCESS &&
+      HECMW_varray_idx_init(graph->m_edge_item) == HECMW_SUCCESS)
     return HECMW_SUCCESS;
   graph->is_ref = 0;
   return HECMW_ERROR;
 }
 
 int HECMW_graph_init_with_arrays(struct hecmw_graph *graph, int num_vertex,
-                                 int *edge_index, int *edge_item) {
+                                 idx_t *edge_index, idx_t *edge_item) {
   graph->m_num_vertex = num_vertex;
   graph->m_num_edge   = edge_index[num_vertex];
   graph->m_edge_index =
-      (struct hecmw_varray_int *)HECMW_malloc(sizeof(struct hecmw_varray_int));
+      (struct hecmw_varray_idx *)HECMW_malloc(sizeof(struct hecmw_varray_idx));
   graph->m_edge_item =
-      (struct hecmw_varray_int *)HECMW_malloc(sizeof(struct hecmw_varray_int));
+      (struct hecmw_varray_idx *)HECMW_malloc(sizeof(struct hecmw_varray_idx));
   if (graph->m_edge_index == NULL || graph->m_edge_item == NULL) {
     HECMW_set_error(errno, "");
     return HECMW_ERROR;
@@ -96,8 +96,8 @@ int HECMW_graph_init_with_arrays(struct hecmw_graph *graph, int num_vertex,
 
 void HECMW_graph_finalize(struct hecmw_graph *graph) {
   if (!graph->is_ref) {
-    HECMW_varray_int_finalize(graph->m_edge_index);
-    HECMW_varray_int_finalize(graph->m_edge_item);
+    HECMW_varray_idx_finalize(graph->m_edge_index);
+    HECMW_varray_idx_finalize(graph->m_edge_item);
   }
   HECMW_free(graph->m_edge_index);
   HECMW_free(graph->m_edge_item);
@@ -107,8 +107,8 @@ void HECMW_graph_setNumVertex(struct hecmw_graph *graph, int num_vertex) {
   HECMW_assert(!graph->is_ref);
 
   graph->m_num_vertex = num_vertex;
-  HECMW_varray_int_resize(graph->m_edge_index, num_vertex + 1);
-  HECMW_varray_int_assign(graph->m_edge_index, 0, num_vertex + 1, 0);
+  HECMW_varray_idx_resize(graph->m_edge_index, num_vertex + 1);
+  HECMW_varray_idx_assign(graph->m_edge_index, 0, num_vertex + 1, 0);
 }
 
 int HECMW_graph_addEdge(struct hecmw_graph *graph, int vert1, int vert2) {
@@ -121,13 +121,14 @@ int HECMW_graph_addEdge(struct hecmw_graph *graph, int vert1, int vert2) {
 }
 
 void HECMW_graph_print(const struct hecmw_graph *graph, FILE *fp) {
-  const int *edge_index = HECMW_varray_int_get_cv(graph->m_edge_index);
-  const int *edge_item  = HECMW_varray_int_get_cv(graph->m_edge_item);
-  int i, j;
-  int idx_start, idx_end;
+  const idx_t *edge_index = HECMW_varray_idx_get_cv(graph->m_edge_index);
+  const idx_t *edge_item  = HECMW_varray_idx_get_cv(graph->m_edge_item);
+  int i;
+  idx_t j;
+  idx_t idx_start, idx_end;
 
   fprintf(fp, "num_vertex = %d\n", graph->m_num_vertex);
-  fprintf(fp, "num_edge = %d\n", graph->m_num_edge);
+  fprintf(fp, "num_edge = %lld\n", (long long)graph->m_num_edge);
 
   for (i = 0; i < graph->m_num_vertex; i++) {
     fprintf(fp, "%d: ", i);
@@ -135,7 +136,7 @@ void HECMW_graph_print(const struct hecmw_graph *graph, FILE *fp) {
     idx_start = edge_index[i];
     idx_end   = edge_index[i + 1];
     for (j = idx_start; j < idx_end; j++) {
-      fprintf(fp, " %d", edge_item[j]);
+      fprintf(fp, " %lld", (long long)edge_item[j]);
     }
     fprintf(fp, "\n");
   }
@@ -145,32 +146,33 @@ int HECMW_graph_getNumVertex(const struct hecmw_graph *graph) {
   return graph->m_num_vertex;
 }
 
-int HECMW_graph_getNumEdge(const struct hecmw_graph *graph) {
+idx_t HECMW_graph_getNumEdge(const struct hecmw_graph *graph) {
   return graph->m_num_edge;
 }
 
-const int *HECMW_graph_getEdgeIndex(const struct hecmw_graph *graph) {
-  return HECMW_varray_int_get_cv(graph->m_edge_index);
+const idx_t *HECMW_graph_getEdgeIndex(const struct hecmw_graph *graph) {
+  return HECMW_varray_idx_get_cv(graph->m_edge_index);
 }
 
-const int *HECMW_graph_getEdgeItem(const struct hecmw_graph *graph) {
-  return HECMW_varray_int_get_cv(graph->m_edge_item);
+const idx_t *HECMW_graph_getEdgeItem(const struct hecmw_graph *graph) {
+  return HECMW_varray_idx_get_cv(graph->m_edge_item);
 }
 
 int HECMW_graph_degeneGraph(struct hecmw_graph *graph,
                             const struct hecmw_graph *refgraph, int num_part,
                             const int *parttab) {
-  const int *ref_edge_index = HECMW_varray_int_get_cv(refgraph->m_edge_index);
-  const int *ref_edge_item  = HECMW_varray_int_get_cv(refgraph->m_edge_item);
-  int i, j, jj;
+  const idx_t *ref_edge_index = HECMW_varray_idx_get_cv(refgraph->m_edge_index);
+  const idx_t *ref_edge_item  = HECMW_varray_idx_get_cv(refgraph->m_edge_item);
+  int i, jj;
+  idx_t j;
   int i_part, j_part;
-  int start, end;
+  idx_t start, end;
   int retval;
 
   struct hecmw_varray_int *lists;
   size_t n_edge;
-  int *edge_index;
-  int *edge_item;
+  idx_t *edge_index;
+  idx_t *edge_item;
 
   lists = (struct hecmw_varray_int *)HECMW_malloc(
       sizeof(struct hecmw_varray_int) * num_part);
@@ -200,7 +202,7 @@ int HECMW_graph_degeneGraph(struct hecmw_graph *graph,
 
   clear(graph);
   HECMW_graph_setNumVertex(graph, num_part);
-  edge_index = HECMW_varray_int_get_v(graph->m_edge_index);
+  edge_index = HECMW_varray_idx_get_v(graph->m_edge_index);
 
   edge_index[0] = 0;
   for (i = 0; i < num_part; i++) {
@@ -210,8 +212,8 @@ int HECMW_graph_degeneGraph(struct hecmw_graph *graph,
     edge_index[i + 1] = edge_index[i] + n_edge;
   }
   graph->m_num_edge = edge_index[num_part];
-  HECMW_varray_int_resize(graph->m_edge_item, graph->m_num_edge);
-  edge_item = HECMW_varray_int_get_v(graph->m_edge_item);
+  HECMW_varray_idx_resize(graph->m_edge_item, graph->m_num_edge);
+  edge_item = HECMW_varray_idx_get_v(graph->m_edge_item);
   for (i = 0; i < num_part; i++) {
     start  = edge_index[i];
     n_edge = HECMW_varray_int_nval(lists + i);
@@ -243,16 +245,17 @@ error:
 void clear(struct hecmw_graph *graph) {
   graph->m_num_vertex = 0;
   graph->m_num_edge   = 0;
-  HECMW_varray_int_resize(graph->m_edge_index, 0);
-  HECMW_varray_int_resize(graph->m_edge_item, 0);
+  HECMW_varray_idx_resize(graph->m_edge_index, 0);
+  HECMW_varray_idx_resize(graph->m_edge_item, 0);
   graph->is_ref = 0;
 }
 
-int find_edge(const struct hecmw_graph *graph, int vert1, int vert2, int *idx) {
-  const int *edge_index = HECMW_varray_int_get_cv(graph->m_edge_index);
-  const int *edge_item  = HECMW_varray_int_get_cv(graph->m_edge_item);
-  int idx_start, idx_end;
-  int i;
+int find_edge(const struct hecmw_graph *graph, int vert1, int vert2,
+              idx_t *idx) {
+  const idx_t *edge_index = HECMW_varray_idx_get_cv(graph->m_edge_index);
+  const idx_t *edge_item  = HECMW_varray_idx_get_cv(graph->m_edge_item);
+  idx_t idx_start, idx_end;
+  idx_t i;
 
   idx_start = edge_index[vert1];
   idx_end   = edge_index[vert1 + 1];
@@ -266,8 +269,8 @@ int find_edge(const struct hecmw_graph *graph, int vert1, int vert2, int *idx) {
 }
 
 int add_edge_one_way(struct hecmw_graph *graph, int vert1, int vert2) {
-  int *edge_index = HECMW_varray_int_get_v(graph->m_edge_index);
-  int idx;
+  idx_t *edge_index = HECMW_varray_idx_get_v(graph->m_edge_index);
+  idx_t idx;
   int i;
   int retval;
 
@@ -279,7 +282,7 @@ int add_edge_one_way(struct hecmw_graph *graph, int vert1, int vert2) {
   /* insert vert2 into m_edge_item */
   /* place to insert: m_edge_inidex[vert1 + 1] */
   retval =
-      HECMW_varray_int_insert(graph->m_edge_item, edge_index[vert1 + 1], vert2);
+      HECMW_varray_idx_insert(graph->m_edge_item, edge_index[vert1 + 1], vert2);
   if (retval != HECMW_SUCCESS) {
     return HECMW_ERROR;
   }

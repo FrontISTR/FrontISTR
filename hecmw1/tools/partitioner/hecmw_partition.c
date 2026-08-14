@@ -2607,8 +2607,8 @@ static int metis_partition_nb_contact_agg(
   int *mark;
   int agg_id, agg_dup, gid;
   int n_node2;
-  const int *node_graph_index2;
-  const int *node_graph_item2;
+  const idx_t *node_graph_index2;
+  const idx_t *node_graph_item2;
   int *node_weight2;
   struct hecmw_graph graph1, graph2;
   const int ncon = 1;
