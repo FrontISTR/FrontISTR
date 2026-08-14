@@ -243,6 +243,11 @@ contains
     if( fstrSOLID%is_smoothing_active ) call fstr_NodalStress3D_C3D4_SESNS( &
       &  hecMESH, fstrSOLID, nnumber, fstrSOLID%STRAIN, fstrSOLID%STRESS, fstrSOLID%ESTRAIN, fstrSOLID%ESTRESS )
 
+    ! copy owner nodal stress/strain to external(ghost) slots so DD boundary MISES/principal match serial
+    call hecmw_update_R( hecMESH, fstrSOLID%STRESS, hecMESH%n_node, 6 )
+    call hecmw_update_R( hecMESH, fstrSOLID%STRAIN, hecMESH%n_node, 6 )
+    if( associated(tnstrain) ) call hecmw_update_R( hecMESH, tnstrain, hecMESH%n_node, 6 )
+
     if( flag33 == 1 )then
       do nlyr = 1, ntot_lyr
         do i = 1, hecMESH%n_node
