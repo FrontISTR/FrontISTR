@@ -24,14 +24,9 @@
 #include "hecmw_part_get_control.h"
 #include "hecmw_partition.h"
 #include "hecmw_ucd_print.h"
+#include "hecmw_varray_idx.h"
 #include "hecmw_graph.h"
 #include "hecmw_common_define.h"
-
-#ifdef HECMW_PART_WITH_METIS
-#include "metis.h"
-#else
-typedef long long idx_t;
-#endif
 
 #ifdef _OPENMP
 #include <omp.h>
