@@ -1963,13 +1963,13 @@ error:
   return RTC_ERROR;
 }
 
-static int create_elem_graph_link_list(
+static long long create_elem_graph_link_list(
     const struct hecmwST_local_mesh *global_mesh,
     const struct hecmw_part_node_data *node_data, struct link_list **graph) {
   char *elem_flag = NULL;
   int elem, node;
   int size;
-  int counter;
+  long long counter;
   int i;
   long long j, k;
 
@@ -2023,9 +2023,9 @@ error:
 
 static int create_elem_graph_compress(
     const struct hecmwST_local_mesh *global_mesh, struct link_list **graph,
-    int *elem_graph_index, int *elem_graph_item) {
+    idx_t *elem_graph_index, idx_t *elem_graph_item) {
   struct link_unit *p;
-  int counter;
+  long long int counter;
   int i, j;
 
   for (counter = 0, i = 0; i < global_mesh->n_elem; i++) {
@@ -2041,12 +2041,12 @@ static int create_elem_graph_compress(
   return RTC_NORMAL;
 }
 
-static int *create_elem_graph(const struct hecmwST_local_mesh *global_mesh,
-                              int *elem_graph_index) {
+static idx_t *create_elem_graph(const struct hecmwST_local_mesh *global_mesh,
+                                idx_t *elem_graph_index) {
   struct hecmw_part_node_data *node_data = NULL;
   struct link_list **graph               = NULL;
-  int *elem_graph_item                   = NULL;
-  int n_graph;
+  idx_t *elem_graph_item                 = NULL;
+  long long n_graph;
   int rtc;
   int i;
 
@@ -2097,7 +2097,7 @@ static int *create_elem_graph(const struct hecmwST_local_mesh *global_mesh,
   n_graph = create_elem_graph_link_list(global_mesh, node_data, graph);
   if (n_graph < 0) goto error;
 
-  elem_graph_item = (int *)HECMW_malloc(sizeof(int) * n_graph);
+  elem_graph_item = (idx_t *)HECMW_malloc(sizeof(idx_t) * (size_t)n_graph);
   if (elem_graph_item == NULL) {
     HECMW_set_error(errno, "");
     goto error;
@@ -2988,12 +2988,12 @@ static int metis_partition_nb(struct hecmwST_local_mesh *global_mesh,
 
 static int metis_partition_eb(struct hecmwST_local_mesh *global_mesh,
                               const struct hecmw_part_cont_data *cont_data,
-                              int *elem_graph_index, int *elem_graph_item) {
+                              idx_t *elem_graph_index, idx_t *elem_graph_item) {
   int n_edgecut;
-  int *belong_domain = NULL;
+  idx_t *belong_domain = NULL;
   int i;
 
-  belong_domain = (int *)HECMW_calloc(global_mesh->n_elem, sizeof(int));
+  belong_domain = (idx_t *)HECMW_calloc(global_mesh->n_elem, sizeof(idx_t));
   if (belong_domain == NULL) {
     HECMW_set_error(errno, "");
     goto error;
@@ -3020,7 +3020,7 @@ static int metis_partition_eb(struct hecmwST_local_mesh *global_mesh,
   }
 
   for (i = 0; i < global_mesh->n_elem; i++) {
-    global_mesh->elem_ID[2 * i + 1] = belong_domain[i];
+    global_mesh->elem_ID[2 * i + 1] = (int)belong_domain[i];
   }
 
   HECMW_free(belong_domain);
@@ -3425,10 +3425,11 @@ static int set_elem_belong_domain_nb(struct hecmwST_local_mesh *global_mesh) {
 
 static int count_edge_for_eb(const struct hecmwST_local_mesh *global_mesh,
                              struct hecmw_part_edge_data *elem_data,
-                             int *elem_graph_index, int *elem_graph_item) {
+                             idx_t *elem_graph_index, idx_t *elem_graph_item) {
   int rtc;
   long long int eid;
-  int i, j;
+  int i;
+  idx_t j;
 
   rtc = HECMW_mesh_hsort_edge_init(global_mesh->n_node, global_mesh->n_elem);
   if (rtc != RTC_NORMAL) goto error;
@@ -3460,13 +3461,14 @@ static int set_elem_belong_domain_eb(
     struct hecmwST_local_mesh *global_mesh,
     const struct hecmw_part_cont_data *cont_data) {
   int n_edgecut                          = 0;
-  int *elem_graph_index                  = NULL;
-  int *elem_graph_item                   = NULL;
+  idx_t *elem_graph_index                = NULL;
+  idx_t *elem_graph_item                 = NULL;
   struct hecmw_part_edge_data *elem_data = NULL;
   int rtc;
   long long int i;
 
-  elem_graph_index = (int *)HECMW_calloc(global_mesh->n_elem + 1, sizeof(int));
+  elem_graph_index =
+      (idx_t *)HECMW_calloc(global_mesh->n_elem + 1, sizeof(idx_t));
   if (elem_graph_index == NULL) {
     HECMW_set_error(errno, "");
     goto error;
