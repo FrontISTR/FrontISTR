@@ -55,6 +55,7 @@ static int add_edge_one_way(struct hecmw_graph *graph, /**< [inout] graph */
 int HECMW_graph_init(struct hecmw_graph *graph) {
   graph->m_num_vertex = 0;
   graph->m_num_edge   = 0;
+  graph->is_ref       = 0;
   graph->m_edge_index =
       (struct hecmw_varray_idx *)HECMW_malloc(sizeof(struct hecmw_varray_idx));
   graph->m_edge_item =
@@ -66,7 +67,6 @@ int HECMW_graph_init(struct hecmw_graph *graph) {
   if (HECMW_varray_idx_init(graph->m_edge_index) == HECMW_SUCCESS &&
       HECMW_varray_idx_init(graph->m_edge_item) == HECMW_SUCCESS)
     return HECMW_SUCCESS;
-  graph->is_ref = 0;
   return HECMW_ERROR;
 }
 
