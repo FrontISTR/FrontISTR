@@ -10,6 +10,7 @@ target_sources(hecmw_part1 PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mesh_edge_info.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_part_get_control.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_init_for_partition.c
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_varray_idx.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_graph.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_partition.c
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_partitioner.c

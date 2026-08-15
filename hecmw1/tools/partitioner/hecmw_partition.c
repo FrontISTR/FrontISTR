@@ -24,14 +24,9 @@
 #include "hecmw_part_get_control.h"
 #include "hecmw_partition.h"
 #include "hecmw_ucd_print.h"
+#include "hecmw_varray_idx.h"
 #include "hecmw_graph.h"
 #include "hecmw_common_define.h"
-
-#ifdef HECMW_PART_WITH_METIS
-#include "metis.h"
-#else
-typedef long long idx_t;
-#endif
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -1968,13 +1963,13 @@ error:
   return RTC_ERROR;
 }
 
-static int create_elem_graph_link_list(
+static long long create_elem_graph_link_list(
     const struct hecmwST_local_mesh *global_mesh,
     const struct hecmw_part_node_data *node_data, struct link_list **graph) {
   char *elem_flag = NULL;
   int elem, node;
   int size;
-  int counter;
+  long long counter;
   int i;
   long long j, k;
 
@@ -2028,9 +2023,9 @@ error:
 
 static int create_elem_graph_compress(
     const struct hecmwST_local_mesh *global_mesh, struct link_list **graph,
-    int *elem_graph_index, int *elem_graph_item) {
+    idx_t *elem_graph_index, idx_t *elem_graph_item) {
   struct link_unit *p;
-  int counter;
+  long long int counter;
   int i, j;
 
   for (counter = 0, i = 0; i < global_mesh->n_elem; i++) {
@@ -2046,12 +2041,12 @@ static int create_elem_graph_compress(
   return RTC_NORMAL;
 }
 
-static int *create_elem_graph(const struct hecmwST_local_mesh *global_mesh,
-                              int *elem_graph_index) {
+static idx_t *create_elem_graph(const struct hecmwST_local_mesh *global_mesh,
+                                idx_t *elem_graph_index) {
   struct hecmw_part_node_data *node_data = NULL;
   struct link_list **graph               = NULL;
-  int *elem_graph_item                   = NULL;
-  int n_graph;
+  idx_t *elem_graph_item                 = NULL;
+  long long n_graph;
   int rtc;
   int i;
 
@@ -2102,7 +2097,7 @@ static int *create_elem_graph(const struct hecmwST_local_mesh *global_mesh,
   n_graph = create_elem_graph_link_list(global_mesh, node_data, graph);
   if (n_graph < 0) goto error;
 
-  elem_graph_item = (int *)HECMW_malloc(sizeof(int) * n_graph);
+  elem_graph_item = (idx_t *)HECMW_malloc(sizeof(idx_t) * (size_t)n_graph);
   if (elem_graph_item == NULL) {
     HECMW_set_error(errno, "");
     goto error;
@@ -2186,8 +2181,8 @@ static int kmetis_interface(const int n_vertex, const int n_domain, idx_t *xadj,
   idx_t edgecut = 0; /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
   idx_t n       = (idx_t)n_vertex; /* number of vertices */
-  int *vwgt   = NULL;     /* weight for vertices */
-  int *adjwgt = NULL;     /* weight for edges */
+  idx_t *vwgt   = NULL;     /* weight for vertices */
+  idx_t *adjwgt = NULL;     /* weight for edges */
   idx_t nparts  = (idx_t)n_domain; /* number of sub-domains */
 
 #if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
@@ -2216,9 +2211,9 @@ static int kmetis_interface(const int n_vertex, const int n_domain, idx_t *xadj,
   return (int)edgecut;
 }
 
-static int pmetis_interface_with_weight(int n_vertex, int ncon, int n_domain,
-                                        const idx_t *xadj, const idx_t *adjncy,
-                                        const int *vwgt, idx_t *part) {
+static int pmetis_interface_with_weight(int n_vertex, int n_con, int n_domain,
+                                        idx_t *xadj, idx_t *adjncy,
+                                        idx_t *vwgt, idx_t *part) {
   idx_t edgecut = 0; /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
   idx_t n       = (idx_t)n_vertex; /* number of vertices */
@@ -2226,15 +2221,15 @@ static int pmetis_interface_with_weight(int n_vertex, int ncon, int n_domain,
   idx_t nparts  = (idx_t)n_domain; /* number of sub-domains */
 
 #if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
+  idx_t ncon       = (idx_t)n_con; /* number of balancing constraints */
   idx_t *vsize     = NULL;
   real_t *tpwgts = NULL;
   real_t *ubvec  = NULL;
   idx_t *options   = NULL;
 
   HECMW_log(HECMW_LOG_DEBUG, "Entering pmetis(v5)...\n");
-  METIS_PartGraphRecursive(&n, (idx_t *)&ncon, (idx_t *)xadj, (idx_t *)adjncy, (idx_t *)vwgt,
-                           vsize, adjwgt, &nparts, tpwgts, ubvec, options,
-                           &edgecut, part);
+  METIS_PartGraphRecursive(&n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt,
+                           &nparts, tpwgts, ubvec, options, &edgecut, part);
   HECMW_log(HECMW_LOG_DEBUG, "Returned from pmetis(v5)\n");
 #else
   int wgtflag    = 0;               /* flag of weight for edges */
@@ -2244,14 +2239,12 @@ static int pmetis_interface_with_weight(int n_vertex, int ncon, int n_domain,
   if (vwgt != NULL) wgtflag = 2;
 
   HECMW_log(HECMW_LOG_DEBUG, "Entering pmetis(v4)...\n");
-  if (ncon == 1) {
-    METIS_PartGraphRecursive((int *)&n, (idx_t *)xadj, (idx_t *)adjncy, (idx_t *)vwgt,
-                             (idx_t *)adjwgt, &wgtflag, &numflag, (int *)&nparts, options,
-                             (int *)&edgecut, (idx_t *)part);
+  if (n_con == 1) {
+    METIS_PartGraphRecursive(&n, xadj, adjncy, vwgt, adjwgt, &wgtflag, &numflag,
+                             &nparts, options, &edgecut, part);
   } else {
-    METIS_mCPartGraphRecursive((int *)&n, &ncon, (idx_t *)xadj, (idx_t *)adjncy,
-                               (idx_t *)vwgt, (idx_t *)adjwgt, &wgtflag, &numflag, (int *)&nparts,
-                               options, (int *)&edgecut, (idx_t *)part);
+    METIS_mCPartGraphRecursive(&n, &n_con, xadj, adjncy, vwgt, adjwgt, &wgtflag,
+                               &numflag, &nparts, options, &edgecut, part);
   }
   HECMW_log(HECMW_LOG_DEBUG, "Returned from pmetis(v4)\n");
 #endif
@@ -2260,9 +2253,9 @@ static int pmetis_interface_with_weight(int n_vertex, int ncon, int n_domain,
   return (int)edgecut;
 }
 
-static int kmetis_interface_with_weight(int n_vertex, int ncon, int n_domain,
-                                        const idx_t *xadj, const idx_t *adjncy,
-                                        const int *vwgt, idx_t *part) {
+static int kmetis_interface_with_weight(int n_vertex, int n_con, int n_domain,
+                                        idx_t *xadj, idx_t *adjncy,
+                                        idx_t *vwgt, idx_t *part) {
   idx_t edgecut = 0; /* number of edge-cut */
 #ifdef HECMW_PART_WITH_METIS
   idx_t n       = (idx_t)n_vertex; /* number of vertices */
@@ -2270,14 +2263,15 @@ static int kmetis_interface_with_weight(int n_vertex, int ncon, int n_domain,
   idx_t nparts  = (idx_t)n_domain; /* number of sub-domains */
 
 #if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
+  idx_t ncon       = (idx_t)n_con; /* number of balancing constraints */
   idx_t *vsize     = NULL;
   real_t *tpwgts = NULL;
   real_t *ubvec  = NULL;
   idx_t *options   = NULL;
 
   HECMW_log(HECMW_LOG_DEBUG, "Entering kmetis(v5)...\n");
-  METIS_PartGraphKway(&n, (idx_t *)&ncon, (idx_t *)xadj, (idx_t *)adjncy, (idx_t *)vwgt, vsize,
-                      adjwgt, &nparts, tpwgts, ubvec, options, &edgecut, part);
+  METIS_PartGraphKway(&n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt, &nparts,
+                      tpwgts, ubvec, options, &edgecut, part);
   HECMW_log(HECMW_LOG_DEBUG, "Returned from kmetis(v5)\n");
 #else
   int wgtflag    = 0; /* flag of weight for edges */
@@ -2287,8 +2281,8 @@ static int kmetis_interface_with_weight(int n_vertex, int ncon, int n_domain,
 
   if (vwgt != NULL) wgtflag = 2;
 
-  if (ncon > 1) {
-    ubvec = (float *)HECMW_malloc(ncon * sizeof(float));
+  if (n_con > 1) {
+    ubvec = (float *)HECMW_malloc(n_con * sizeof(float));
     if (ubvec == NULL) {
       HECMW_set_error(errno, "");
       return -1;
@@ -2296,13 +2290,12 @@ static int kmetis_interface_with_weight(int n_vertex, int ncon, int n_domain,
   }
 
   HECMW_log(HECMW_LOG_DEBUG, "Entering kmetis(v4)...\n");
-  if (ncon == 1) {
-    METIS_PartGraphKway((int *)&n, (idx_t *)xadj, (idx_t *)adjncy, (idx_t *)vwgt, (idx_t *)adjwgt,
-                        &wgtflag, &numflag, (int *)&nparts, options, (int *)&edgecut, (idx_t *)part);
+  if (n_con == 1) {
+    METIS_PartGraphKway(&n, xadj, adjncy, vwgt, adjwgt, &wgtflag, &numflag,
+                        &nparts, options, &edgecut, part);
   } else {
-    METIS_mCPartGraphKway((int *)&n, &ncon, (idx_t *)xadj, (idx_t *)adjncy, (idx_t *)vwgt,
-                          (idx_t *)adjwgt, &wgtflag, &numflag, (int *)&nparts, ubvec, options,
-                          (int *)&edgecut, (idx_t *)part);
+    METIS_mCPartGraphKway(&n, &n_con, xadj, adjncy, vwgt, adjwgt, &wgtflag,
+                          &numflag, &nparts, ubvec, options, &edgecut, part);
   }
   HECMW_log(HECMW_LOG_DEBUG, "Returned from kmetis(v4)\n");
 
@@ -2612,9 +2605,9 @@ static int metis_partition_nb_contact_agg(
   int *mark;
   int agg_id, agg_dup, gid;
   int n_node2;
-  const int *node_graph_index2;
-  const int *node_graph_item2;
-  int *node_weight2;
+  const idx_t *node_graph_index2;
+  const idx_t *node_graph_item2;
+  idx_t *node_weight2;
   struct hecmw_graph graph1, graph2;
   const int ncon = 1;
 
@@ -2710,7 +2703,7 @@ static int metis_partition_nb_contact_agg(
   node_graph_index2 = HECMW_graph_getEdgeIndex(&graph2);
   node_graph_item2  = HECMW_graph_getEdgeItem(&graph2);
 
-  node_weight2 = (int *)HECMW_calloc(n_node2, sizeof(int));
+  node_weight2 = (idx_t *)HECMW_calloc(n_node2, sizeof(idx_t));
   if (node_weight2 == NULL) {
     HECMW_set_error(errno, "");
     goto error;
@@ -2781,8 +2774,8 @@ static int metis_partition_nb_contact_dist(
   int rtc;
   int i;
   int ncon;
-  int *node_weight = NULL;
-  int *mark        = NULL;
+  idx_t *node_weight = NULL;
+  int *mark          = NULL;
 
   HECMW_assert(
       HECMW_partcontact_get_mode(global_mesh->hecmw_flag_partcontact) ==
@@ -2830,7 +2823,8 @@ static int metis_partition_nb_contact_dist(
     rtc = mark_contact_master_nodes(global_mesh, mark);
     if (rtc != RTC_NORMAL) goto error;
 
-    node_weight = (int *)HECMW_calloc(global_mesh->n_node * ncon, sizeof(int));
+    node_weight =
+        (idx_t *)HECMW_calloc(global_mesh->n_node * ncon, sizeof(idx_t));
     if (node_weight == NULL) {
       HECMW_set_error(errno, "");
       goto error;
@@ -2993,12 +2987,12 @@ static int metis_partition_nb(struct hecmwST_local_mesh *global_mesh,
 
 static int metis_partition_eb(struct hecmwST_local_mesh *global_mesh,
                               const struct hecmw_part_cont_data *cont_data,
-                              int *elem_graph_index, int *elem_graph_item) {
+                              idx_t *elem_graph_index, idx_t *elem_graph_item) {
   int n_edgecut;
-  int *belong_domain = NULL;
+  idx_t *belong_domain = NULL;
   int i;
 
-  belong_domain = (int *)HECMW_calloc(global_mesh->n_elem, sizeof(int));
+  belong_domain = (idx_t *)HECMW_calloc(global_mesh->n_elem, sizeof(idx_t));
   if (belong_domain == NULL) {
     HECMW_set_error(errno, "");
     goto error;
@@ -3025,7 +3019,7 @@ static int metis_partition_eb(struct hecmwST_local_mesh *global_mesh,
   }
 
   for (i = 0; i < global_mesh->n_elem; i++) {
-    global_mesh->elem_ID[2 * i + 1] = belong_domain[i];
+    global_mesh->elem_ID[2 * i + 1] = (int)belong_domain[i];
   }
 
   HECMW_free(belong_domain);
@@ -3430,10 +3424,11 @@ static int set_elem_belong_domain_nb(struct hecmwST_local_mesh *global_mesh) {
 
 static int count_edge_for_eb(const struct hecmwST_local_mesh *global_mesh,
                              struct hecmw_part_edge_data *elem_data,
-                             int *elem_graph_index, int *elem_graph_item) {
+                             idx_t *elem_graph_index, idx_t *elem_graph_item) {
   int rtc;
   long long int eid;
-  int i, j;
+  int i;
+  idx_t j;
 
   rtc = HECMW_mesh_hsort_edge_init(global_mesh->n_node, global_mesh->n_elem);
   if (rtc != RTC_NORMAL) goto error;
@@ -3465,13 +3460,14 @@ static int set_elem_belong_domain_eb(
     struct hecmwST_local_mesh *global_mesh,
     const struct hecmw_part_cont_data *cont_data) {
   int n_edgecut                          = 0;
-  int *elem_graph_index                  = NULL;
-  int *elem_graph_item                   = NULL;
+  idx_t *elem_graph_index                = NULL;
+  idx_t *elem_graph_item                 = NULL;
   struct hecmw_part_edge_data *elem_data = NULL;
   int rtc;
   long long int i;
 
-  elem_graph_index = (int *)HECMW_calloc(global_mesh->n_elem + 1, sizeof(int));
+  elem_graph_index =
+      (idx_t *)HECMW_calloc(global_mesh->n_elem + 1, sizeof(idx_t));
   if (elem_graph_index == NULL) {
     HECMW_set_error(errno, "");
     goto error;
