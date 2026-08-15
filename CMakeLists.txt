@@ -156,6 +156,7 @@ endif()
 # -DWITH_DOC         : generate API documents
 # -DOLD_RES_FORMAT   : use old style result file( comment and global output disabled)
 # -DWITH_NETCDF      : compile with NetCDF (for Exodus II output)
+# -DARCH             : target architecture (GENERIC/FX64/SXAT)
 
 ###################
 # Find external packages
@@ -376,6 +377,25 @@ if(OLD_RES_FORMAT)
 endif()
 
 ###################
+# -DARCH
+###################
+# Picks the default value of the runtime implementation selectors, which the cnt
+# file overrides per run.  Every implementation is always compiled, so this never
+# decides what goes into the binary.  It is not guessed from the environment or
+# from compiler-defined macros, which would be wrong when cross compiling.
+set(ARCH "GENERIC" CACHE STRING "target architecture for tuned implementations (GENERIC/FX64/SXAT)")
+set_property(CACHE ARCH PROPERTY STRINGS GENERIC FX64 SXAT)
+set(ARCH_VALUES GENERIC FX64 SXAT)
+if(NOT ARCH IN_LIST ARCH_VALUES)
+  string(REPLACE ";" ", " ARCH_VALUES_TEXT "${ARCH_VALUES}")
+  message(FATAL_ERROR "Unknown -DARCH=${ARCH}. Valid values are: ${ARCH_VALUES_TEXT}")
+endif()
+# The macros name the Fortran constants of hecmw_matrix_misc, so the numbering
+# stays defined in one place.
+list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_MATVEC_IMPL=HECMW_MATVEC_IMPL_${ARCH}")
+list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_PRECOND_IMPL=HECMW_PRECOND_IMPL_${ARCH}")
+
+###################
 # -DWITH_MPI
 ###################
 if(WITH_MPI AND MPI_Fortran_FOUND AND MPI_CXX_FOUND AND MPI_C_FOUND)
@@ -444,6 +464,18 @@ message(STATUS "C compiler\t\t: ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler\t\t: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
 message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Target architecture\t: ${ARCH}")
+
+if(NOT ARCH STREQUAL "GENERIC")
+  message(STATUS "")
+  message(STATUS "==========================================")
+  message(STATUS " Architecture-tuned defaults are ENABLED")
+  message(STATUS "   ARCH = ${ARCH}")
+  message(STATUS " Runtime defaults only; no code is")
+  message(STATUS " compiled in or out by this setting.")
+  message(STATUS " !SOLVER, ARCH= overrides it per run.")
+  message(STATUS "==========================================")
+endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   message(STATUS "Defines\t\t: ${FrontISTR_DEFINITIONS}")
