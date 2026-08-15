@@ -64,8 +64,8 @@ void bi_part_directive(int *neqns, int *nttbr, int *irow, int *jcol,
 
     METIS_SetDefaultOptions(options);
     options[METIS_OPTION_COMPRESS] = 0;
-    METIS_NodeND(&nvtxs_metis, xadj_metis, adjncy_metis, NULL, NULL, perm_metis,
-                 iperm_metis);
+    METIS_NodeND(&nvtxs_metis, xadj_metis, adjncy_metis, NULL, options,
+                 perm_metis, iperm_metis);
 
     for (i = 0; i < num_of_col; i++) {
       perm[i]  = (int)perm_metis[i];
@@ -101,6 +101,12 @@ void bi_part_directive(int *neqns, int *nttbr, int *irow, int *jcol,
   *num_graph1    = separator->num_of_lgraph;
   *num_graph2    = separator->num_of_rgraph;
   *num_separator = separator->num_of_separator;
+
+  free(perm);
+  free(iperm);
+  free(graph->xadj);
+  free(graph->adjncy);
+  free(graph);
 
 #else
   fprintf(
