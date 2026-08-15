@@ -111,6 +111,7 @@ contains
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       call hecmw_JAD_INIT(hecMAT)
     endif
+    call hecmw_matvec_setup(hecMESH, hecMAT)
 
     !C===
     !C +----------------------+
@@ -333,6 +334,7 @@ contains
     deallocate (WW)
     !call hecmw_precond_clear(hecMAT)
 
+    call hecmw_matvec_teardown(hecMAT)
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       call hecmw_JAD_FINALIZE(hecMAT)
     endif
