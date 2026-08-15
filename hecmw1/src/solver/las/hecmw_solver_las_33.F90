@@ -32,6 +32,10 @@ module hecmw_solver_las_33
   ! GENERIC here, which is the only implementation that needs no data of its own.
   integer(kind=kint), save :: matvec_impl = HECMW_MATVEC_IMPL_GENERIC
 
+  ! an architecture may be selected on a build that carries no tuned matvec for it;
+  ! saying so once per run keeps the fallback from looking like the tuning took effect
+  logical, save :: matvec_impl_missing_reported = .false.
+
   ! added for tuning >>>
   integer, parameter :: numOfBlockPerThread = 100
   logical, save :: isFirst = .true.
@@ -165,6 +169,7 @@ contains
   subroutine hecmw_matvec_33_inner (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_jad_type
+    use m_hecmw_comm_f
 
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -186,6 +191,14 @@ contains
     else
       select case (matvec_impl)
         case (HECMW_MATVEC_IMPL_GENERIC)
+          call hecmw_matvec_33_generic(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+        case default
+          if (.not. matvec_impl_missing_reported) then
+            matvec_impl_missing_reported = .true.
+            if (hecmw_comm_get_rank() == 0) write(*,'(a)') &
+              '#### ARCH: this build has no tuned matvec for the selected architecture '// &
+              '-- running the generic implementation'
+          endif
           call hecmw_matvec_33_generic(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
       end select
     endif

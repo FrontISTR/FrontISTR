@@ -42,6 +42,10 @@ module hecmw_precond_SSOR_33
   ! taken from hecMAT at setup: _apply receives only ZP and cannot read it back
   integer(kind=kint) :: precond_impl = HECMW_PRECOND_IMPL_GENERIC
 
+  ! an architecture may be selected on a build that carries no tuned SSOR for it;
+  ! saying so once per run keeps the fallback from looking like the tuning took effect
+  logical, save :: precond_impl_missing_reported = .false.
+
   logical, save :: isFirst = .true.
 
   logical, save :: INITIALIZED = .false.
@@ -275,11 +279,20 @@ contains
   end subroutine setup_tuning_parameters
 
   subroutine hecmw_precond_SSOR_33_apply(ZP)
+    use m_hecmw_comm_f
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
 
     select case (precond_impl)
       case (HECMW_PRECOND_IMPL_GENERIC)
+        call hecmw_precond_SSOR_33_apply_generic(ZP)
+      case default
+        if (.not. precond_impl_missing_reported) then
+          precond_impl_missing_reported = .true.
+          if (hecmw_comm_get_rank() == 0) write(*,'(a)') &
+            '#### ARCH: this build has no tuned SSOR preconditioner for the selected '// &
+            'architecture -- running the generic implementation'
+        endif
         call hecmw_precond_SSOR_33_apply_generic(ZP)
     end select
   end subroutine hecmw_precond_SSOR_33_apply
