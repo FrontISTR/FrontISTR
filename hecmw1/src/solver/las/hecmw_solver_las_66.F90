@@ -59,7 +59,7 @@ contains
     real(kind=kreal) :: numOfElementPerBlock
     ! <<< added for tuning
 
-    if (hecmw_mat_get_usejad(hecMAT).ne.0) then
+    if (hecmw_JAD_IS_INITIALIZED().ne.0) then
       Tcomm = 0.d0
       START_TIME = hecmw_Wtime()
       call hecmw_JAD_MATVEC(hecMESH, hecMAT, X, Y, Tcomm)
