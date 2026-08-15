@@ -44,11 +44,38 @@ void bi_part_directive(int *neqns, int *nttbr, int *irow, int *jcol,
 
 #if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
   {
-    int options[METIS_NOPTIONS];
+    /* The graph and the permutation are sized by the number of equations, so
+     * they stay int; idx_t copies are needed only because METIS 5 takes them */
+    idx_t options[METIS_NOPTIONS];
+    idx_t nvtxs_metis = graph->nvtxs;
+    idx_t *xadj_metis, *adjncy_metis, *perm_metis, *iperm_metis;
+    int i;
+
+    xadj_metis   = (idx_t *)calloc(num_of_col + 1, sizeof(idx_t));
+    adjncy_metis = (idx_t *)calloc(graph->nedges, sizeof(idx_t));
+    perm_metis   = (idx_t *)calloc(num_of_col, sizeof(idx_t));
+    iperm_metis  = (idx_t *)calloc(num_of_col, sizeof(idx_t));
+    if ((xadj_metis == NULL) || (adjncy_metis == NULL) ||
+        (perm_metis == NULL) || (iperm_metis == NULL))
+      separator_memory_exit("matrix_repart: metis arrays");
+
+    for (i = 0; i <= num_of_col; i++) xadj_metis[i] = graph->xadj[i];
+    for (i = 0; i < graph->nedges; i++) adjncy_metis[i] = graph->adjncy[i];
+
     METIS_SetDefaultOptions(options);
     options[METIS_OPTION_COMPRESS] = 0;
-    METIS_NodeND(&graph->nvtxs, graph->xadj, graph->adjncy, NULL, NULL, perm,
-                 iperm);
+    METIS_NodeND(&nvtxs_metis, xadj_metis, adjncy_metis, NULL, NULL, perm_metis,
+                 iperm_metis);
+
+    for (i = 0; i < num_of_col; i++) {
+      perm[i]  = (int)perm_metis[i];
+      iperm[i] = (int)iperm_metis[i];
+    }
+
+    free(xadj_metis);
+    free(adjncy_metis);
+    free(perm_metis);
+    free(iperm_metis);
   }
 #else
   {
