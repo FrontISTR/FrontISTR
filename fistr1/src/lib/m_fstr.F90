@@ -878,6 +878,8 @@ contains
     hecMAT%Iarray(13)=    0    ! = mpc_method
     hecMAT%Iarray(14)=    0    ! = estcond
     hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
+    hecMAT%Iarray(36)= HECMW_MATVEC_IMPL_DEFAULT   ! = matvec_impl
+    hecMAT%Iarray(37)= HECMW_PRECOND_IMPL_DEFAULT  ! = precond_impl
     hecMAT%Iarray(41)=    0    ! = solver_opt1
     hecMAT%Iarray(42)=    0    ! = solver_opt2
     hecMAT%Iarray(43)=    0    ! = solver_opt3

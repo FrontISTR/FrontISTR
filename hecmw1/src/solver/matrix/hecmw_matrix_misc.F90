@@ -103,7 +103,13 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_penalty_alpha
 
   public :: HECMW_MATVEC_IMPL_GENERIC
+  public :: HECMW_MATVEC_IMPL_FX64
+  public :: HECMW_MATVEC_IMPL_SXAT
   public :: HECMW_PRECOND_IMPL_GENERIC
+  public :: HECMW_PRECOND_IMPL_FX64
+  public :: HECMW_PRECOND_IMPL_SXAT
+  public :: HECMW_MATVEC_IMPL_DEFAULT
+  public :: HECMW_PRECOND_IMPL_DEFAULT
 
   public :: hecmw_mat_diag_max
   public :: hecmw_mat_diag
@@ -159,9 +165,26 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_R_SOLVER_OPT_E  = 50
 
   ! architecture-tuned implementations selected by IDX_I_MATVEC_IMPL / IDX_I_PRECOND_IMPL.
-  ! GENERIC is the implementation that runs on every platform.
+  ! GENERIC is the implementation that runs on every platform.  The names match the
+  ! ARCH values accepted by the cnt file and by cmake -DARCH=, and the dispatchers fall
+  ! back to GENERIC for any value they have no implementation for.
   integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_GENERIC  = 0
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_FX64     = 1
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_SXAT     = 2
   integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_GENERIC = 0
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_FX64    = 1
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_SXAT    = 2
+
+  ! cmake -DARCH= names the constants above; without it the build defaults to GENERIC.
+  ! Both initializers of hecmwST_matrix read these, so the fallback stays in one place.
+#ifndef HECMW_ARCH_DEFAULT_MATVEC_IMPL
+#define HECMW_ARCH_DEFAULT_MATVEC_IMPL HECMW_MATVEC_IMPL_GENERIC
+#endif
+#ifndef HECMW_ARCH_DEFAULT_PRECOND_IMPL
+#define HECMW_ARCH_DEFAULT_PRECOND_IMPL HECMW_PRECOND_IMPL_GENERIC
+#endif
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_DEFAULT  = HECMW_ARCH_DEFAULT_MATVEC_IMPL
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_DEFAULT = HECMW_ARCH_DEFAULT_PRECOND_IMPL
 
 contains
 
@@ -204,8 +227,8 @@ contains
     call hecmw_mat_set_dump( hecMAT, 0 )
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
-    call hecmw_mat_set_matvec_impl( hecMAT, HECMW_MATVEC_IMPL_GENERIC )
-    call hecmw_mat_set_precond_impl( hecMAT, HECMW_PRECOND_IMPL_GENERIC )
+    call hecmw_mat_set_matvec_impl( hecMAT, HECMW_MATVEC_IMPL_DEFAULT )
+    call hecmw_mat_set_precond_impl( hecMAT, HECMW_PRECOND_IMPL_DEFAULT )
     call hecmw_mat_set_ncolor_in( hecMAT, 10 )
     call hecmw_mat_set_estcond( hecMAT, 0 )
     call hecmw_mat_set_maxrecycle_precond( hecMAT, 3 )
