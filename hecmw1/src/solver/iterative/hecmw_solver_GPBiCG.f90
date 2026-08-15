@@ -26,6 +26,7 @@ contains
     use hecmw_solver_las
     use hecmw_solver_scaling
     use hecmw_precond
+    use hecmw_jad_type
 
     implicit none
 
@@ -106,6 +107,10 @@ contains
     !C   Combine hecMAT%AL, D, and AU into a single matrix for GPU execution.
     !C   This is a no-op for CPU builds.
     call hecmw_mat_integrate(hecMAT)
+
+    if (hecmw_mat_get_usejad(hecMAT).ne.0) then
+      call hecmw_JAD_INIT(hecMAT)
+    endif
 
     !C===
     !C +----------------------+
@@ -327,6 +332,10 @@ contains
 
     deallocate (WW)
     !call hecmw_precond_clear(hecMAT)
+
+    if (hecmw_mat_get_usejad(hecMAT).ne.0) then
+      call hecmw_JAD_FINALIZE(hecMAT)
+    endif
 
     E1_TIME= HECMW_WTIME()
     if (TIMElog.eq.2) then
