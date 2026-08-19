@@ -1,6 +1,7 @@
 module hecmw_local_mesh_api
   use iso_c_binding
   use hecmw_util, only : hecmwST_local_mesh, hecmw_nullify_mesh
+  use hecmw_dist_free_f, only : hecmw_dist_free
   implicit none
 
 contains
@@ -11,6 +12,7 @@ contains
     implicit none
     type(c_ptr) :: hecmw_api_mesh_new
     type(hecmwST_local_mesh), target, save :: hecMESH
+    call hecmw_nullify_mesh(hecMESH)
     hecmw_api_mesh_new = c_loc(hecMESH)
   end function
 
@@ -21,7 +23,7 @@ contains
     type(c_ptr), value :: mesh
     type(hecmwST_local_mesh), pointer :: hecMESH
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
-    call hecmw_nullify_mesh(hecMESH)
+    call hecmw_dist_free(hecMESH)
   end subroutine
 
   !> @brief 節点配列の設定
