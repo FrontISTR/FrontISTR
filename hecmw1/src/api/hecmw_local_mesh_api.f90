@@ -86,4 +86,22 @@ contains
     hecmw_api_mesh_get_node = c_loc(hecMESH%node)
   end function
 
+  subroutine hecmw_api_mesh_set_n_dof(mesh,ndof) bind(C,name='hecmw_api_mesh_set_n_dof')
+    implicit none
+    type(c_ptr), value :: mesh
+    integer(c_int), value, intent(in) :: ndof
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    call c_f_pointer(cptr=mesh, fptr=hecMESH)
+    hecMESH%n_dof = ndof
+  end subroutine
+
+  function hecmw_api_mesh_get_n_dof(mesh) bind(C,name='hecmw_api_mesh_get_n_dof')
+    implicit none
+    type(c_ptr), value :: mesh
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    integer(c_int) :: hecmw_api_mesh_get_n_dof
+    call c_f_pointer(cptr=mesh, fptr=hecMESH)
+    hecmw_api_mesh_get_n_dof = hecMESH%n_dof
+  end function
+
 end module
