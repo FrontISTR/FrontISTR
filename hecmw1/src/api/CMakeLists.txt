@@ -1,12 +1,13 @@
 ###############################################################################
-# Copyright (c) 2019 FrontISTR Commons
+# Copyright (c) 2026 FrontISTR Commons
 # This software is released under the MIT License, see License.txt
 ###############################################################################
 
-add_subdirectory(common)
-add_subdirectory(solver)
-add_subdirectory(hecmw)
-add_subdirectory(visualizer)
-add_subdirectory(operations/element_smoothing)
-add_subdirectory(api)
+target_sources(hecmw PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_local_mesh_api.f90
+)
+
+target_include_directories(hecmw PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}
+)
 
