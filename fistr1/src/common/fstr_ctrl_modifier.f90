@@ -13,6 +13,10 @@ contains
 
   !> Append new equation condition at end of existing mpc conditions
   subroutine fstr_append_mpc( np, nodes, dofs, values, mpcs )
+    use hecmw_setup_util, only &
+      : hecmw_expand_index_array &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     integer, intent(in)                :: np           !< number of equation items
     integer, intent(in)                :: nodes(np)    !< number of nodes mpc related
     integer, intent(in)                :: dofs(np)     !< dofs of mpc related
@@ -23,13 +27,13 @@ contains
     n_mpc = mpcs%n_mpc
     new_size= n_mpc+1
     mpcs%n_mpc = new_size
-    call fstr_expand_index_array( mpcs%mpc_index, n_mpc+1, new_size+1 )
-    call fstr_expand_real_array( mpcs%mpc_const, n_mpc, n_mpc+1 )
+    call hecmw_expand_index_array( mpcs%mpc_index, n_mpc+1, new_size+1 )
+    call hecmw_expand_real_array( mpcs%mpc_const, n_mpc, n_mpc+1 )
     old_size = mpcs%mpc_index( n_mpc )
     new_size = old_size+np
-    call fstr_expand_integer_array( mpcs%mpc_item, old_size, new_size )
-    call fstr_expand_integer_array( mpcs%mpc_dof, old_size, new_size )
-    call fstr_expand_real_array( mpcs%mpc_val, old_size, new_size )
+    call hecmw_expand_integer_array( mpcs%mpc_item, old_size, new_size )
+    call hecmw_expand_integer_array( mpcs%mpc_dof, old_size, new_size )
+    call hecmw_expand_real_array( mpcs%mpc_val, old_size, new_size )
 
     mpcs%mpc_index(mpcs%n_mpc) = mpcs%mpc_index(mpcs%n_mpc-1)+np
     mpcs%mpc_const(mpcs%n_mpc) = values(np+1)
@@ -42,6 +46,11 @@ contains
 
   !> Delete last n equation conditions from current mpc condition
   subroutine fstr_delete_mpc( np, mpcs )
+    use hecmw_setup_util, only &
+      : hecmw_delete_real_array &
+      , hecmw_delete_integer_array &
+      , hecmw_delete_index_array
+    implicit none
     integer, intent(in)                :: np     !< number of equations to be deleted
     type( hecmwST_mpc ), intent(inout) :: mpcs   !< from who mpcs to be deleted
 
@@ -49,12 +58,12 @@ contains
     n_mpc = mpcs%n_mpc
     old_size = mpcs%mpc_index( n_mpc )
     nitem = old_size- mpcs%mpc_index( n_mpc-np )
-    call fstr_delete_real_array( mpcs%mpc_val, old_size, nitem )
-    call fstr_delete_integer_array( mpcs%mpc_dof, old_size, nitem )
-    call fstr_delete_integer_array( mpcs%mpc_item, old_size, nitem )
+    call hecmw_delete_real_array( mpcs%mpc_val, old_size, nitem )
+    call hecmw_delete_integer_array( mpcs%mpc_dof, old_size, nitem )
+    call hecmw_delete_integer_array( mpcs%mpc_item, old_size, nitem )
 
-    call fstr_delete_real_array( mpcs%mpc_const, n_mpc, np )
-    call fstr_delete_index_array( mpcs%mpc_index, n_mpc, np )
+    call hecmw_delete_real_array( mpcs%mpc_const, n_mpc, np )
+    call hecmw_delete_index_array( mpcs%mpc_index, n_mpc, np )
     mpcs%n_mpc = n_mpc-np
   end subroutine
 
