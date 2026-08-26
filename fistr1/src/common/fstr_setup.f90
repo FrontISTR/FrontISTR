@@ -9,7 +9,8 @@ module m_fstr_setup
   use hecmw_setup_util, only &
     : node_grp_name_to_id_ex &
     , elem_grp_name_to_id_ex &
-    , surf_grp_name_to_id_ex
+    , surf_grp_name_to_id_ex &
+    , hecmw_streqr
   use fstr_setup_util
   use fstr_ctrl_common
   use fstr_ctrl_static
@@ -488,7 +489,7 @@ contains
         endif
         cparam_id = 0
         do i=1,size(fstrPARAM%contactparam)-1
-          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+          if( hecmw_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
             cparam_id = i; exit
           endif
         enddo
@@ -518,7 +519,7 @@ contains
         endif
         cparam_id = 0
         do i=1,size(fstrPARAM%contactparam)-1
-          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+          if( hecmw_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
             cparam_id = i; exit
           endif
         enddo
@@ -543,14 +544,14 @@ contains
         endif
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
-            if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+            if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
               fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
             endif
           enddo
         endif
         if( associated(fstrPARAM%ainc) ) then
           do i=1,size(fstrPARAM%ainc)
-            if( fstr_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+            if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
               fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
             endif
           enddo
@@ -573,14 +574,14 @@ contains
         endif
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
-            if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+            if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
               fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
             endif
           enddo
         endif
         if( associated(fstrPARAM%ainc) ) then
           do i=1,size(fstrPARAM%ainc)-1
-            if( fstr_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+            if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
               fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
             endif
           enddo
@@ -632,14 +633,14 @@ contains
         endif
         cid = 0
         if(cache < hecMESH%material%n_mat) then
-          if(fstr_streqr( hecMESH%material%mat_name(cache), mName ))then
+          if(hecmw_streqr( hecMESH%material%mat_name(cache), mName ))then
             cid = cache
             cache = cache + 1
           endif
         endif
         if(cid == 0)then
           do i=1,hecMESH%material%n_mat
-            if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
+            if( hecmw_streqr( hecMESH%material%mat_name(i), mName ) ) then
               cid = i
               cache = i + 1
               exit
@@ -3249,7 +3250,7 @@ end function fstr_setup_INITIAL
 
     if( associated(P%PARAM%timepoints) ) then
       do i=1,size(P%PARAM%timepoints)
-        if( fstr_streqr( P%PARAM%timepoints(i)%name, mName ) ) then
+        if( hecmw_streqr( P%PARAM%timepoints(i)%name, mName ) ) then
           P%PARAM%timepoint_id = i; exit
         endif
       enddo

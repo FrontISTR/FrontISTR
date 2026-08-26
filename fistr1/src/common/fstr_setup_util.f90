@@ -12,31 +12,6 @@ module fstr_setup_util
 contains
   !------------------------------------------------------------------------------
 
-  function fstr_str2index( s, x )
-    implicit none
-    logical fstr_str2index
-    character(*) :: s
-    integer :: i, n, a, i0,i9, m, x, b
-    logical :: fg
-
-    fstr_str2index = .false.
-    i0 = iachar('0')
-    i9 = iachar('9')
-    n = len_trim(s)
-    x = 0
-    b = 1
-    fg = .true.
-    do i=n,1,-1
-      fg = .false.
-      a = iachar(s(i:i))
-      if( a < i0 .or. a > i9 ) return
-      m = a-i0
-      x = x + b * m
-      b = b*10
-    end do
-    fstr_str2index = .true.
-  end function fstr_str2index
-
   subroutine fstr_strupr( s )
     implicit none
     character(*) :: s
@@ -50,27 +25,6 @@ contains
       end if
     end do
   end subroutine fstr_strupr
-
-  function fstr_streqr( s1, s2 )
-    implicit none
-    character(*) :: s1, s2
-    logical :: fstr_streqr
-    integer :: i, n, a1, a2
-
-    fstr_streqr = .false.
-    n = len_trim(s1)
-    if( n /= len_trim(s2)) return
-    call fstr_strupr(s1)
-    call fstr_strupr(s2)
-    do i = 1, n
-      a1 = iachar(s1(i:i))
-      a2 = iachar(s2(i:i))
-      if( a1 /= a2 ) then
-        return
-      end if
-    end do
-    fstr_streqr = .true.
-  end function fstr_streqr
 
   !------------------------------------------------------------------------------
 
@@ -97,11 +51,12 @@ contains
 
   subroutine append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id )
     use hecmw_setup_util, only : append_new_group
+    use hecmw_array_util, only : hecmw_qsort_int_array, hecmw_uniq_int_array
     implicit none
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
     integer(kind=kint), intent(in) :: sgrp_id
     integer(kind=kint), intent(out) :: ngrp_id
-    integer(kind=kint) :: is, ie, nnode, i, ic, isurf, ic_type, stype, nn, j0, j, new_nnode
+    integer(kind=kint) :: is, ie, nnode, i, ic, isurf, ic_type, stype, nn, j0, j, ndup, new_nnode
     integer(kind=kint) :: snode(20)
     integer(kind=kint), allocatable :: node(:)
     character(len=HECMW_NAME_LEN) :: grp_name
@@ -132,8 +87,9 @@ contains
       nnode = nnode + nn
     enddo
     ! sort and uniq node list
-    call qsort_int_array(node, 1, nnode)
-    call uniq_int_array(node, nnode, new_nnode)
+    call hecmw_qsort_int_array(node, 1, nnode)
+    call hecmw_uniq_int_array(node, 1, nnode, ndup)
+    new_nnode = nnode - ndup
     ! append node group
     write( grp_name, '(a,a)') 'FSTR_S2N_',trim(hecMESH%surf_group%grp_name(sgrp_id))
     call append_new_group(hecMESH, 'node_grp', grp_name, new_nnode, node, ngrp_id)
@@ -142,6 +98,7 @@ contains
 
   subroutine append_intersection_node_grp( hecMESH, ngrp_id1, ngrp_id2 )
     use hecmw_setup_util, only : append_new_group
+    use hecmw_array_util, only : hecmw_qsort_int_array
     implicit none
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
     integer(kind=kint), intent(in) :: ngrp_id1, ngrp_id2
@@ -160,7 +117,7 @@ contains
     do i=1,nnode2
       node(nnode1+i) = hecMESH%node_group%grp_item(is+i)
     enddo
-    call qsort_int_array(node, 1, nnode)
+    call hecmw_qsort_int_array(node, 1, nnode)
     allocate( isect(nnode) )
     nisect = 0
     do i=1,nnode-1
@@ -187,6 +144,7 @@ contains
   !          >0 if name is a number and a node with ID=name is in myrank
 
   function get_local_member_index( hecMESH, type_name, name, local_id )
+    use hecmw_setup_util, only: hecmw_str2index
     implicit none
     integer(kind=kint) :: get_local_member_index
     type (hecmwST_local_mesh),target :: hecMESH
@@ -196,7 +154,7 @@ contains
     integer(kind=kint) :: i, n, no, fg
     integer(kind=kint),pointer :: global_item(:)
 
-    if( .not. fstr_str2index(name, no) ) then
+    if( .not. hecmw_str2index(name, no) ) then
       get_local_member_index = -1
       return
     end if
@@ -229,6 +187,8 @@ contains
   !
 
   function get_sorted_local_member_index( hecMESH, hecPARAM, type_name, name, local_id )
+    use hecmw_setup_util, only: hecmw_str2index
+    use hecmw_array_util, only: hecmw_bsearch_int_array
     implicit none
     integer(kind=kint) :: get_sorted_local_member_index
     type (hecmwST_local_mesh),target :: hecMESH
@@ -238,7 +198,7 @@ contains
     integer(kind=kint) :: local_id, idx
     integer(kind=kint) :: n, no, fg
 
-    if( .not. fstr_str2index(name, no) ) then
+    if( .not. hecmw_str2index(name, no) ) then
       get_sorted_local_member_index = -1
       return
     end if
@@ -255,7 +215,7 @@ contains
       stop 'assert in get_sorted_local_member_index: unknown type_name'
     end if
 
-    call bsearch_int_array(hecPARAM%global_local_ID(1,:), 1, n, no, idx)
+    call hecmw_bsearch_int_array(hecPARAM%global_local_ID(1,:), 1, n, no, idx)
     if(idx > 0)then
       get_sorted_local_member_index = hecPARAM%global_local_ID(2,idx)
       local_id = get_sorted_local_member_index
@@ -267,90 +227,10 @@ contains
   end function get_sorted_local_member_index
   !-----------------------------------------------------------------------------!
 
-  !-----------------------------------------------------------------------------!
-  !~/FrontISTR/hecmw1/src/solver/matrix/hecmw_matrix_reorder.f90
-
-  subroutine bsearch_int_array(array, istart, iend, val, idx)
-    implicit none
-    integer(kind=kint), intent(in) :: array(:)
-    integer(kind=kint), intent(in) :: istart, iend
-    integer(kind=kint), intent(in) :: val
-    integer(kind=kint), intent(out) :: idx
-    integer(kind=kint) :: center, left, right, pivot
-    left = istart
-    right = iend
-    do
-      if (left > right) then
-        idx = -1
-        exit
-      end if
-      center = (left + right) / 2
-      pivot = array(center)
-      if (val < pivot) then
-        right = center - 1
-        cycle
-      else if (pivot < val) then
-        left = center + 1
-        cycle
-      else ! if (pivot == val) then
-        idx = center
-        exit
-      end if
-    end do
-  end subroutine bsearch_int_array
-
-  recursive subroutine qsort_int_array(array, istart, iend)
-    implicit none
-    integer(kind=kint), intent(inout) :: array(:)
-    integer(kind=kint), intent(in) :: istart, iend
-    integer(kind=kint) :: pivot, center, left, right, tmp
-    if (istart >= iend) return
-    center = (istart + iend) / 2
-    pivot = array(center)
-    left = istart
-    right = iend
-    do
-      do while (array(left) < pivot)
-        left = left + 1
-      end do
-      do while (pivot < array(right))
-        right = right - 1
-      end do
-      if (left >= right) exit
-      tmp = array(left)
-      array(left) = array(right)
-      array(right) = tmp
-      left = left + 1
-      right = right - 1
-    end do
-    if (istart < left-1) call qsort_int_array(array, istart, left-1)
-    if (right+1 < iend) call qsort_int_array(array, right+1, iend)
-    return
-  end subroutine qsort_int_array
-
-  subroutine uniq_int_array(array, len, newlen)
-    implicit none
-    integer(kind=kint), intent(inout) :: array(:)
-    integer(kind=kint), intent(in) :: len
-    integer(kind=kint), intent(out) :: newlen
-    integer(kind=kint) :: i, ndup
-    ndup = 0
-    do i=2,len
-      if (array(i) == array(i - 1 - ndup)) then
-        ndup = ndup + 1
-      else if (ndup > 0) then
-        array(i - ndup) = array(i)
-      endif
-    end do
-    newlen = len - ndup
-  end subroutine uniq_int_array
-
-  !------------------------------------------------------------------------------
-
   !Find node/surf group from name or nodeid
 
   subroutine nodesurf_grp_name_to_id_ex(hecMESH, header_name, n, grp_id_name, grp_ID, grp_TYPE)
-    use hecmw_setup_util, only : append_single_group
+    use hecmw_setup_util, only : append_single_group, hecmw_str2index, hecmw_streqr
     use m_fstr
     implicit none
     type (hecmwST_local_mesh),target :: hecMESH
@@ -369,7 +249,7 @@ contains
     allocate( no_list( n ))
     no_count = 0
     do i = 1, n
-      if( fstr_str2index( grp_id_name(i), no )) then
+      if( hecmw_str2index( grp_id_name(i), no )) then
         no_count = no_count + 1
         no_list(no_count) = no
         grp_ID(i)  = hecMESH%node_group%n_grp + no_count
@@ -378,7 +258,7 @@ contains
         !Find node group
         grp_ID(i) = -1
         do id = 1, hecMESH%node_group%n_grp
-          if (fstr_streqr(hecMESH%node_group%grp_name(id), grp_id_name(i))) then
+          if (hecmw_streqr(hecMESH%node_group%grp_name(id), grp_id_name(i))) then
             grp_ID(i)   = id
             grp_TYPE(i) = kFLOADTYPE_NODE
             exit
@@ -387,7 +267,7 @@ contains
         !Find surf group
         if (grp_ID(i) == -1) then
           do id = 1, hecMESH%surf_group%n_grp
-            if (fstr_streqr(hecMESH%surf_group%grp_name(id), grp_id_name(i))) then
+            if (hecmw_streqr(hecMESH%surf_group%grp_name(id), grp_id_name(i))) then
               grp_ID(i)   = id
               grp_TYPE(i) = kFLOADTYPE_SURF
               exit
@@ -414,7 +294,7 @@ contains
   !------------------------------------------------------------------------------
 
   subroutine dload_grp_name_to_id_ex( hecMESH, n, grp_id_name, fg_surface, grp_ID )
-    use hecmw_setup_util, only : append_single_group
+    use hecmw_setup_util, only : append_single_group, hecmw_str2index, hecmw_streqr
     implicit none
     type (hecmwST_local_mesh),target :: hecMESH
     integer(kind=kint) :: n
@@ -434,14 +314,14 @@ contains
       if( fg_surface(i) ) then
         grp_ID(i) = -1
         if(casha < hecMESH%surf_group%n_grp)then
-          if(fstr_streqr(hecMESH%surf_group%grp_name(casha), grp_id_name(i))) then
+          if(hecmw_streqr(hecMESH%surf_group%grp_name(casha), grp_id_name(i))) then
             grp_ID(i) = casha
             casha = casha + 1
             cycle
           end if
         endif
         do id = 1, hecMESH%surf_group%n_grp
-          if(fstr_streqr(hecMESH%surf_group%grp_name(id), grp_id_name(i))) then
+          if(hecmw_streqr(hecMESH%surf_group%grp_name(id), grp_id_name(i))) then
             grp_ID(i) = id
             casha = id + 1
             exit
@@ -453,21 +333,21 @@ contains
           call fstr_setup_util_err_stop(msg)
         end if
       else
-        if( fstr_str2index( grp_id_name(i), no )) then
+        if( hecmw_str2index( grp_id_name(i), no )) then
           no_count = no_count + 1
           no_list(no_count) = no
           grp_ID(i) = hecMESH%elem_group%n_grp + no_count
         else
           grp_ID(i) = -1
           if(cashb < hecMESH%surf_group%n_grp)then
-            if(fstr_streqr(hecMESH%surf_group%grp_name(cashb), grp_id_name(i))) then
+            if(hecmw_streqr(hecMESH%surf_group%grp_name(cashb), grp_id_name(i))) then
               grp_ID(i) = cashb
               cashb = cashb + 1
               cycle
             end if
           endif
           do id = 1, hecMESH%elem_group%n_grp
-            if(fstr_streqr(hecMESH%elem_group%grp_name(id), grp_id_name(i))) then
+            if(hecmw_streqr(hecMESH%elem_group%grp_name(id), grp_id_name(i))) then
               grp_ID(i) = id
               cashb = cashb + 1
               exit
@@ -513,7 +393,8 @@ contains
       : hecmw_expand_index_array &
       , hecmw_expand_char_array &
       , hecmw_expand_integer_array &
-      , hecmw_expand_real_array
+      , hecmw_expand_real_array &
+      , hecmw_streqr
     type( hecmwST_amplitude ),     intent(inout) :: amp       !< amplitude table structure
     character(len=HECMW_NAME_LEN), intent(in)    :: name      !< name of amplitude table
     integer(kind=kint),            intent(in)    :: type_def  !< HECMW_AMP_TYPEDEF_TABULAR
@@ -527,7 +408,7 @@ contains
     integer(kind=kint) :: n_amp, new_size, old_size, i
 
     do i=1,amp%n_amp
-      if( fstr_streqr(amp%amp_name(i), name) ) then
+      if( hecmw_streqr(amp%amp_name(i), name) ) then
         write(*,*) 'Error: AMPLITUDE with NAME=',trim(name),' already exists'
         call fstr_ctrl_err_stop
       endif
@@ -583,6 +464,7 @@ contains
   !GET AMPLITUDE INDEX
 
   subroutine get_amp_id( hecMESH, aname, id )
+    use hecmw_setup_util, only: hecmw_streqr
     implicit none
     type (hecmwST_local_mesh) :: hecMESH
     character(len=HECMW_NAME_LEN)::aname
@@ -594,7 +476,7 @@ contains
     if(  aname .eq. ' ' )  return
 
     do i = 1, hecMESH%amp%n_amp
-      if( fstr_streqr(hecMESH%amp%amp_name(i), aname)) then
+      if( hecmw_streqr(hecMESH%amp%amp_name(i), aname)) then
         id = i
         return
       end if
