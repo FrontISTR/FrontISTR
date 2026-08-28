@@ -98,6 +98,7 @@ contains
 
     integer(kind=kint) :: i, j, in, jS, jE, ftype, n, ndof, nnz, fio
     real(kind=kreal) :: rnum, dens, cond
+    integer(kind=kint), pointer :: pIndexL(:), pItemL(:)
     character :: fileid*3
 
     fio = 70 + hecMESH%my_rank
@@ -106,19 +107,21 @@ contains
     ftype = 4
 
     n = hecmw_mat_get_N(hecMAT)
+    pIndexL => hecmw_mat_get_indexL(hecMAT)
+    pItemL  => hecmw_mat_get_itemL(hecMAT)
     ndof = 3*n
-    nnz = 9*n + 9*2*hecmw_mat_get_indexL_i(hecMAT, n)
+    nnz = 9*n + 9*2*pIndexL(n)
     dens = 100*dble(nnz)/dble(9*n*n)
     rnum = (7.21d0+0.01*dlog10(dble(hecmw_mat_get_N(hecMAT))))*10.0d0/dble(hecmw_mat_get_N(hecMAT))
     cond = 1.0d0
 
     open(fio,file='nonzero.dat.'//fileid, status='replace')
     do i= 1, n
-      jS= hecmw_mat_get_indexL_i(hecMAT, i-1) + 1
-      jE= hecmw_mat_get_indexL_i(hecMAT, i)
+      jS= pIndexL(i-1) + 1
+      jE= pIndexL(i)
       write(fio,"(i0,a,i0)")i,"  ",i
       do j= jS, jE
-        in = hecmw_mat_get_itemL_i(hecMAT, j)
+        in = pItemL(j)
         write(fio,"(i0,a,i0)")i, "  ",in
         write(fio,"(i0,a,i0)")in,"  ",i
       enddo

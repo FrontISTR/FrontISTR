@@ -482,16 +482,22 @@ contains
     real(kind=kreal)   :: AL(ndof*ndof*hecmw_mat_get_NPL(hecMAT))
     real(kind=kreal)   :: x(ndof*hecmw_mat_get_NP(hecMAT))
     real(kind=kreal)   :: y(ndof*hecmw_mat_get_NP(hecMAT))
+    integer(kind=kint), pointer :: pIndexL(:), pIndexU(:), pItemL(:), pItemU(:)
 
     nn=ndof*ndof
 
     y=0.0d0
 
+    pIndexU => hecmw_mat_get_indexU(hecMAT)
+    pItemU  => hecmw_mat_get_itemU(hecMAT)
+    pIndexL => hecmw_mat_get_indexL(hecMAT)
+    pItemL  => hecmw_mat_get_itemL(hecMAT)
+
     do i=1,hecmw_mat_get_NP(hecMAT)
-      is=hecmw_mat_get_indexU_i(hecMAT, i-1)+1
-      ie=hecmw_mat_get_indexU_i(hecMAT, i)
+      is=pIndexU(i-1)+1
+      ie=pIndexU(i)
       do j=is,ie
-        icol=hecmw_mat_get_itemU_i(hecMAT, j)
+        icol=pItemU(j)
         do ki=1,ndof
           iy=ndof*(i-1)+ki
           do kj=1,ndof
@@ -504,10 +510,10 @@ contains
     enddo
 
     do i=1,hecmw_mat_get_NP(hecMAT)
-      is=hecmw_mat_get_indexL_i(hecMAT, i-1)+1
-      ie=hecmw_mat_get_indexL_i(hecMAT, i)
+      is=pIndexL(i-1)+1
+      ie=pIndexL(i)
       do j=is,ie
-        icol=hecmw_mat_get_itemL_i(hecMAT, j)
+        icol=pItemL(j)
         do ki=1,ndof
           iy=ndof*(i-1)+ki
           do kj=1,ndof

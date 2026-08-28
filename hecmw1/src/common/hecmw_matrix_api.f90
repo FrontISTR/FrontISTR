@@ -53,19 +53,9 @@ module hecmw_matrix_api
   public :: hecmw_mat_dealloc_D,  hecmw_mat_dealloc_B,  hecmw_mat_dealloc_X
   public :: hecmw_mat_dealloc_A
 
-  ! --- per-element get/set for pointer arrays (avoid f()(idx) syntax)
-  public :: hecmw_mat_get_D_i,  hecmw_mat_set_D_i
+  ! --- per-element get/set for the vectors B and X
   public :: hecmw_mat_get_B_i,  hecmw_mat_set_B_i
   public :: hecmw_mat_get_X_i,  hecmw_mat_set_X_i
-  public :: hecmw_mat_get_AL_i, hecmw_mat_set_AL_i
-  public :: hecmw_mat_get_AU_i, hecmw_mat_set_AU_i
-  public :: hecmw_mat_get_A_i,  hecmw_mat_set_A_i
-  public :: hecmw_mat_get_indexL_i, hecmw_mat_set_indexL_i
-  public :: hecmw_mat_get_indexU_i, hecmw_mat_set_indexU_i
-  public :: hecmw_mat_get_indexA_i, hecmw_mat_set_indexA_i
-  public :: hecmw_mat_get_itemL_i,  hecmw_mat_set_itemL_i
-  public :: hecmw_mat_get_itemU_i,  hecmw_mat_set_itemU_i
-  public :: hecmw_mat_get_itemA_i,  hecmw_mat_set_itemA_i
 
   ! --- Iarray / Rarray (size 100, fixed)
   public :: hecmw_mat_get_Iarray,     hecmw_mat_set_Iarray
@@ -494,23 +484,13 @@ contains
     hecMAT%Rarray = v
   end subroutine
 
-  ! ===== element-wise accessors for pointer arrays ====================
+  ! ===== element-wise accessors for the vectors B and X ==============
   ! Provided to avoid the non-portable `func()(idx)` syntax on the LHS
   ! / RHS in client code; gfortran does not accept chained subscripting
   ! of a function reference even when the function returns a pointer.
-
-  function hecmw_mat_get_D_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    real(kind=kreal) :: v
-    v = hecMAT%D(i)
-  end function
-  subroutine hecmw_mat_set_D_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    real(kind=kreal), intent(in) :: v
-    hecMAT%D(i) = v
-  end subroutine
+  ! Element-wise accessors for storage-format dependent arrays
+  ! (D/AL/AU/A/index*/item*) are intentionally NOT provided: such
+  ! access should use the whole-array pointer getters instead.
 
   function hecmw_mat_get_B_i(hecMAT, i) result(v)
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -536,123 +516,6 @@ contains
     integer(kind=kint), intent(in) :: i
     real(kind=kreal), intent(in) :: v
     hecMAT%X(i) = v
-  end subroutine
-
-  function hecmw_mat_get_AL_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    real(kind=kreal) :: v
-    v = hecMAT%AL(i)
-  end function
-  subroutine hecmw_mat_set_AL_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    real(kind=kreal), intent(in) :: v
-    hecMAT%AL(i) = v
-  end subroutine
-
-  function hecmw_mat_get_AU_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    real(kind=kreal) :: v
-    v = hecMAT%AU(i)
-  end function
-  subroutine hecmw_mat_set_AU_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    real(kind=kreal), intent(in) :: v
-    hecMAT%AU(i) = v
-  end subroutine
-
-  function hecmw_mat_get_A_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    real(kind=kreal) :: v
-    v = hecMAT%A(i)
-  end function
-  subroutine hecmw_mat_set_A_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    real(kind=kreal), intent(in) :: v
-    hecMAT%A(i) = v
-  end subroutine
-
-  function hecmw_mat_get_indexL_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint) :: v
-    v = hecMAT%indexL(i)
-  end function
-  subroutine hecmw_mat_set_indexL_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint), intent(in) :: v
-    hecMAT%indexL(i) = v
-  end subroutine
-
-  function hecmw_mat_get_indexU_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint) :: v
-    v = hecMAT%indexU(i)
-  end function
-  subroutine hecmw_mat_set_indexU_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint), intent(in) :: v
-    hecMAT%indexU(i) = v
-  end subroutine
-
-  function hecmw_mat_get_indexA_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint) :: v
-    v = hecMAT%indexA(i)
-  end function
-  subroutine hecmw_mat_set_indexA_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint), intent(in) :: v
-    hecMAT%indexA(i) = v
-  end subroutine
-
-  function hecmw_mat_get_itemL_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint) :: v
-    v = hecMAT%itemL(i)
-  end function
-  subroutine hecmw_mat_set_itemL_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint), intent(in) :: v
-    hecMAT%itemL(i) = v
-  end subroutine
-
-  function hecmw_mat_get_itemU_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint) :: v
-    v = hecMAT%itemU(i)
-  end function
-  subroutine hecmw_mat_set_itemU_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint), intent(in) :: v
-    hecMAT%itemU(i) = v
-  end subroutine
-
-  function hecmw_mat_get_itemA_i(hecMAT, i) result(v)
-    type(hecmwST_matrix), intent(in) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint) :: v
-    v = hecMAT%itemA(i)
-  end function
-  subroutine hecmw_mat_set_itemA_i(hecMAT, i, v)
-    type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: i
-    integer(kind=kint), intent(in) :: v
-    hecMAT%itemA(i) = v
   end subroutine
 
 end module hecmw_matrix_api

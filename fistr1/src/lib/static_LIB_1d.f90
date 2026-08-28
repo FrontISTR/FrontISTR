@@ -248,7 +248,9 @@ contains
     type (hecmwST_matrix)     :: hecMAT
     type (hecmwST_local_mesh) :: hecMESH
     integer(kind=kint) :: itype, is, iE, ic_type, icel, jS, j, n
+    real(kind=kreal), pointer :: pD(:)
 
+    pD => hecmw_mat_get_D(hecMAT)
     do itype = 1, hecMESH%n_elem_type
       ic_type = hecMESH%elem_type_item(itype)
       if(ic_type == 301)then
@@ -258,16 +260,16 @@ contains
           jS = hecMESH%elem_node_index(icel-1)
           do j=1,2
             n = hecMESH%elem_node_item(jS+j)
-            if( hecmw_mat_get_D_i(hecMAT, 9*n-8) == 0.0d0)then
-              call hecmw_mat_set_D_i(hecMAT, 9*n-8, 1.0d0)
+            if( pD(9*n-8) == 0.0d0)then
+              pD(9*n-8) = 1.0d0
               !call search_diag_modify(n,1,hecMAT,hecMESH)
             endif
-            if( hecmw_mat_get_D_i(hecMAT, 9*n-4) == 0.0d0)then
-              call hecmw_mat_set_D_i(hecMAT, 9*n-4, 1.0d0)
+            if( pD(9*n-4) == 0.0d0)then
+              pD(9*n-4) = 1.0d0
               !call search_diag_modify(n,2,hecMAT,hecMESH)
             endif
-            if( hecmw_mat_get_D_i(hecMAT, 9*n) == 0.0d0)then
-              call hecmw_mat_set_D_i(hecMAT, 9*n, 1.0d0)
+            if( pD(9*n) == 0.0d0)then
+              pD(9*n) = 1.0d0
               !call search_diag_modify(n,3,hecMAT,hecMESH)
             endif
           enddo
@@ -285,73 +287,81 @@ contains
     type (hecmwST_matrix)     :: hecMAT
     type (hecmwST_local_mesh) :: hecMESH
     integer :: n, nn, is, iE, i, a
+    real(kind=kreal), pointer :: pD(:), pAL(:), pAU(:)
+    integer(kind=kint), pointer :: pIndexL(:), pIndexU(:)
+
+    pD  => hecmw_mat_get_D(hecMAT)
+    pAL => hecmw_mat_get_AL(hecMAT)
+    pAU => hecmw_mat_get_AU(hecMAT)
+    pIndexL => hecmw_mat_get_indexL(hecMAT)
+    pIndexU => hecmw_mat_get_indexU(hecMAT)
 
     if(nn == 1)then
       a = 0
-      is = hecmw_mat_get_indexL_i(hecMAT, n-1)+1
-      iE = hecmw_mat_get_indexL_i(hecMAT, n)
+      is = pIndexL(n-1)+1
+      iE = pIndexL(n)
       do i=is,iE
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i-8) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i-7) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i-6) /= 0.0d0) a = 1
+        if(pAL(9*i-8) /= 0.0d0) a = 1
+        if(pAL(9*i-7) /= 0.0d0) a = 1
+        if(pAL(9*i-6) /= 0.0d0) a = 1
       enddo
-      is = hecmw_mat_get_indexU_i(hecMAT, n-1)+1
-      iE = hecmw_mat_get_indexU_i(hecMAT, n)
+      is = pIndexU(n-1)+1
+      iE = pIndexU(n)
       do i=is,iE
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i-8) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i-7) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i-6) /= 0.0d0) a = 1
+        if(pAU(9*i-8) /= 0.0d0) a = 1
+        if(pAU(9*i-7) /= 0.0d0) a = 1
+        if(pAU(9*i-6) /= 0.0d0) a = 1
       enddo
-      if(hecmw_mat_get_D_i(hecMAT, 9*n-7) /= 0.0d0) a = 1
-      if(hecmw_mat_get_D_i(hecMAT, 9*n-6) /= 0.0d0) a = 1
+      if(pD(9*n-7) /= 0.0d0) a = 1
+      if(pD(9*n-6) /= 0.0d0) a = 1
       if(a == 0)then
-        call hecmw_mat_set_D_i(hecMAT, 9*n-8, 1.0d0)
+        pD(9*n-8) = 1.0d0
         !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:1"
       endif
     endif
     if(nn == 2)then
       a = 0
-      is = hecmw_mat_get_indexL_i(hecMAT, n-1)+1
-      iE = hecmw_mat_get_indexL_i(hecMAT, n)
+      is = pIndexL(n-1)+1
+      iE = pIndexL(n)
       do i=is,iE
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i-5) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i-4) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i-3) /= 0.0d0) a = 1
+        if(pAL(9*i-5) /= 0.0d0) a = 1
+        if(pAL(9*i-4) /= 0.0d0) a = 1
+        if(pAL(9*i-3) /= 0.0d0) a = 1
       enddo
-      is = hecmw_mat_get_indexU_i(hecMAT, n-1)+1
-      iE = hecmw_mat_get_indexU_i(hecMAT, n)
+      is = pIndexU(n-1)+1
+      iE = pIndexU(n)
       do i=is,iE
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i-5) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i-4) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i-3) /= 0.0d0) a = 1
+        if(pAU(9*i-5) /= 0.0d0) a = 1
+        if(pAU(9*i-4) /= 0.0d0) a = 1
+        if(pAU(9*i-3) /= 0.0d0) a = 1
       enddo
-      if(hecmw_mat_get_D_i(hecMAT, 9*n-5) /= 0.0d0) a = 1
-      if(hecmw_mat_get_D_i(hecMAT, 9*n-3) /= 0.0d0) a = 1
+      if(pD(9*n-5) /= 0.0d0) a = 1
+      if(pD(9*n-3) /= 0.0d0) a = 1
       if(a == 0)then
-        call hecmw_mat_set_D_i(hecMAT, 9*n-4, 1.0d0)
+        pD(9*n-4) = 1.0d0
         !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:2"
       endif
     endif
     if(nn == 3)then
       a = 0
-      is = hecmw_mat_get_indexL_i(hecMAT, n-1)+1
-      iE = hecmw_mat_get_indexL_i(hecMAT, n)
+      is = pIndexL(n-1)+1
+      iE = pIndexL(n)
       do i=is,iE
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i-2) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i-1) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AL_i(hecMAT, 9*i) /= 0.0d0) a = 1
+        if(pAL(9*i-2) /= 0.0d0) a = 1
+        if(pAL(9*i-1) /= 0.0d0) a = 1
+        if(pAL(9*i) /= 0.0d0) a = 1
       enddo
-      is = hecmw_mat_get_indexU_i(hecMAT, n-1)+1
-      iE = hecmw_mat_get_indexU_i(hecMAT, n)
+      is = pIndexU(n-1)+1
+      iE = pIndexU(n)
       do i=is,iE
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i-2) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i-1) /= 0.0d0) a = 1
-        if(hecmw_mat_get_AU_i(hecMAT, 9*i) /= 0.0d0) a = 1
+        if(pAU(9*i-2) /= 0.0d0) a = 1
+        if(pAU(9*i-1) /= 0.0d0) a = 1
+        if(pAU(9*i) /= 0.0d0) a = 1
       enddo
-      if(hecmw_mat_get_D_i(hecMAT, 9*n-2) /= 0.0d0) a = 1
-      if(hecmw_mat_get_D_i(hecMAT, 9*n-1) /= 0.0d0) a = 1
+      if(pD(9*n-2) /= 0.0d0) a = 1
+      if(pD(9*n-1) /= 0.0d0) a = 1
       if(a == 0)then
-        call hecmw_mat_set_D_i(hecMAT, 9*n, 1.0d0)
+        pD(9*n) = 1.0d0
         !write(*,"(a,i,a,i,a)")"### FIX DIAGONAL n:",n,", ID:",hecMESH%global_node_ID(n),", dof:3"
       endif
     endif

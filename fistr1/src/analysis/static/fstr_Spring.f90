@@ -19,10 +19,12 @@ contains
 
     integer(kind=kint) :: grpid, ndof, ig0, ig, ityp, iS0, iE0, ik, in, idx, num
     real(kind=kreal) :: fval, factor
+    real(kind=kreal), pointer :: pD(:)
 
     factor = fstrSOLID%factor(2)
 
     ndof = hecmw_mat_get_NDOF(hecMAT)
+    pD => hecmw_mat_get_D(hecMAT)
     do ig0= 1, fstrSOLID%SPRING_ngrp_tot
       grpid = fstrSOLID%SPRING_ngrp_GRPID(ig0)
       if( .not. fstr_isLoadActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -36,7 +38,7 @@ contains
       do ik= iS0, iE0
         in = hecMESH%node_group%grp_item(ik)
         idx = ndof**2 * (in - 1) + ndof * (ityp - 1) + ityp
-        call hecmw_mat_set_D_i(hecMAT, idx, hecmw_mat_get_D_i(hecMAT, idx) + fval)
+        pD(idx) = pD(idx) + fval
       enddo
     enddo
 

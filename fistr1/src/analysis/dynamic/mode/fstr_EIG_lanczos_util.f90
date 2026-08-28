@@ -19,6 +19,7 @@ contains
     real(kind=kreal)   :: eigvec(:, :), p(:), beta, chk, sigma
     real(kind=kreal), allocatable :: temp(:)
     real(kind=kreal), pointer     :: q(:), mass(:), filter(:)
+    real(kind=kreal), pointer     :: pD(:)
     logical :: is_free
 
     N      = hecmw_mat_get_N(hecMAT)
@@ -37,10 +38,11 @@ contains
 
     !> shifting
     if(fstrEIG%is_free)then
+      pD => hecmw_mat_get_D(hecMAT)
       do i = 1, NP
         do j = 1, NDOF
-          call hecmw_mat_set_D_i(hecMAT, NDOF2*(i-1) + (NDOF+1)*(j-1) + 1, &
-            hecmw_mat_get_D_i(hecMAT, NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) + sigma * mass(NDOF*(i-1) + j))
+          pD(NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) = &
+            pD(NDOF2*(i-1) + (NDOF+1)*(j-1) + 1) + sigma * mass(NDOF*(i-1) + j)
         enddo
       enddo
     endif
