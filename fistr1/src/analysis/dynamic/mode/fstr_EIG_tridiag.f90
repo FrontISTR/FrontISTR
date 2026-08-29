@@ -37,7 +37,7 @@ contains
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
     integer(kind=kint) :: iter2, ierr, maxiter
-    real(kind=kreal)   :: resid, chk, sigma, tolerance, max_eigval
+    real(kind=kreal)   :: resid, chk, sigma, tolerance
     real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)
 
@@ -83,7 +83,6 @@ contains
 
     is_converge = .true.
     chk = 0.0d0
-    max_eigval = maxval(alpha)
     do i = 1, min(nget, iter)
       if (dabs(alpha(i)) > 0.0d0) then
         ! Divide by the eigenvalue of the mode itself.
