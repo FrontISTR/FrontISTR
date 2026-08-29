@@ -183,15 +183,10 @@ contains
   !on output
   !
   !d
-  !contains the eigenvalues in ascending order.  if an
-  !error exit is made, the eigenvalues are correct but
-  !unordered for indices 1,2,...,ierror-1.
-  !-----------------------------------------------------
-  !GP
-  !du
-  !contains the unordered eigenvalues.  if an
-  !error exit is made, the eigenvalues are correct and
-  !unordered for indices 1,2,...,ierror-1.
+  !contains the eigenvalues in the order produced by the ql sweeps,
+  !which is not sorted.  ordering is left to the caller.  if an
+  !error exit is made, the eigenvalues are correct for indices
+  !1,2,...,ierror-1.
   !-----------------------------------------------------
   !e
   !has been destroyed.
@@ -201,9 +196,6 @@ contains
   !tridiagonal (or full) matrix.  if an error exit is made,
   !z contains the eigenvectors associated with the stored
   !eigenvalues.
-  !-----------------------------------------------------
-  !zu
-  !contains unordered eigenvectors of the symm. tridiag. matrix
   !-----------------------------------------------------
   !ierror is set to
   !  zero       for normal return,
@@ -304,37 +296,11 @@ contains
       220    d(l) = d(l) + f
       240 continue
 
-      !     .......... order eigenvalues and eigenvectors ..........
-      !GP: Get unordered eigenvalues and eigenvectors----------------
-
-      do 300 ii = 2, n
-        i = ii - 1
-        k = i
-        p = d(i)
-
-        aa:do j = ii, n
-          if (d(j) .ge. p) exit aa
-          k = j
-          p = d(j)
-        enddo aa
-
-        if (k .eq. i) go to 300
-        d(k) = d(i)
-        d(i) = p
-
-        do j = 1, n
-          p = z(j,i)
-          z(j,i) = z(j,k)
-          z(j,k) = p
-        enddo
-
-        300 continue
-
-        go to 1001
-        !     .......... set error -- no convergence to an
-        !                eigenvalue after 30 iterations ..........
-        1000 ierror = l
-        1001 return
+      go to 1001
+      !     .......... set error -- no convergence to an
+      !                eigenvalue after 30 iterations ..........
+      1000 ierror = l
+      1001 return
   end subroutine QL_decomposition
 
   function a2b2(a,b)
