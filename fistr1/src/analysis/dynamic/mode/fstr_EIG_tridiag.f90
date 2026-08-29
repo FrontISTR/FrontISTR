@@ -81,18 +81,35 @@ contains
 
     call QL_decomposition(iter, iter, alpha, beta, L, ierr)
 
+    sigma = 0.0d0
+    if(fstrEIG%is_free) sigma = fstrEIG%sigma
+    do i = 1, iter
+      if(alpha(i) /= 0.0d0)then
+        eigval(i) = 1.0d0/alpha(i) - sigma
+      else
+        ! A zero Ritz value stands for an infinite eigenvalue. evsort orders by
+        ! magnitude, so the sentinel keeps such a mode out of the requested set.
+        eigval(i) = huge(0.0d0)
+      endif
+    enddo
+
+    ! The lowest modes are the largest Ritz values, so the convergence check has to
+    ! pick them through iparm rather than take the leading entries of alpha.
+    call evsort(eigval, iparm, iter)
+
     is_converge = .true.
     chk = 0.0d0
-    do i = 1, min(nget, iter)
-      if (dabs(alpha(i)) > 0.0d0) then
+    ! Two extra modes absorb the reordering of modes sitting on the boundary of the requested set.
+    do i = 1, min(nget+2, iter)
+      in = iparm(i)
+      if (dabs(alpha(in)) > 0.0d0) then
         ! Divide by the eigenvalue of the mode itself.
-        resid = dabs(Tri%beta(iter+1)*L(iter,i))/dabs(alpha(i))
+        resid = dabs(Tri%beta(iter+1)*L(iter,in))/dabs(alpha(in))
+        chk = max(chk, resid)
+        if(tolerance < resid) is_converge = .false.
       else
-        ! An eigenvalue of zero indicates a numerical crash and the system stops.
-        call hecmw_abort( hecmw_comm_get_comm() )
+        is_converge = .false.
       endif
-      chk = max(chk, resid)
-      if(tolerance < resid) is_converge = .false.
     enddo
     if(myrank == 0) write(*,"(i8,1pe12.5)")iter, chk
 
@@ -100,16 +117,6 @@ contains
     if(iter == maxiter-1) is_converge = .true.
 
     if(is_converge)then
-      sigma = 0.0d0
-      if(fstrEIG%is_free) sigma = fstrEIG%sigma
-      do i = 1, iter
-        if(alpha(i) /= 0.0d0)then
-          eigval(i) = 1.0d0/alpha(i) - sigma
-        endif
-      enddo
-
-      call evsort(eigval, iparm, iter)
-
       temp = eigval
 
       eigvec = 0.0d0
