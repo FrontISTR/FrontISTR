@@ -114,7 +114,17 @@ contains
     if(myrank == 0) write(*,"(i8,1pe12.5)")iter, chk
 
     if(iter < nget) is_converge = .false.
-    if(iter == maxiter-1) is_converge = .true.
+
+    if(iter == maxiter-1 .and. .not. is_converge)then
+      if(myrank == 0)then
+        write(*,*)    '### WARNING: eigen analysis stopped at maxiter without convergence.'
+        write(ILOG,*) '### WARNING: eigen analysis stopped at maxiter without convergence.'
+      endif
+      ! Only iter Ritz pairs exist. Reporting more would print entries of eigval and
+      ! eigvec that no iteration has ever written.
+      if(iter < nget) fstrEIG%nget = iter
+      is_converge = .true.
+    endif
 
     if(is_converge)then
       temp = eigval
