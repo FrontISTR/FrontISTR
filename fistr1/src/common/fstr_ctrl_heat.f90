@@ -398,7 +398,8 @@ contains
   !* ----------------------------------------------------------------------------------------------- *!
 
   function fstr_ctrl_get_WELDLINE( ctrl, hecMESH, grp_name_len, weldline )
-    use fstr_setup_util
+    use hecmw_setup_util, only: elem_grp_name_to_id
+!    use fstr_setup_util
     implicit none
     integer(kind=kint), intent(in)       :: ctrl
     type(hecmwST_local_mesh), intent(in) :: hecMESH
