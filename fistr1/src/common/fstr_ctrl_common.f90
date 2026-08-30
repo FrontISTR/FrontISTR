@@ -505,6 +505,7 @@ contains
 
   !> Read in !OUTPUT_RES & !OUTPUT_VIS
   logical function fstr_ctrl_get_outitem( ctrl, hecMESH, outinfo )
+    use hecmw_setup_util, only: hecmw_str2index
     use fstr_setup_util
     use m_out
     integer(kind=kint), intent(in)        :: ctrl      !< readed data
@@ -541,7 +542,7 @@ contains
           outinfo%on(j) = .true.
           if( trim(onoff(i)) == 'OFF' ) outinfo%on(j) = .false.
           if( len( trim(vtype(i)) )>0 ) then
-            if( fstr_str2index( vtype(i), ipos ) ) then
+            if( hecmw_str2index( vtype(i), ipos ) ) then
               outinfo%vtype(j) = ipos
             else if( trim(vtype(i)) == "SCALER" ) then
               outinfo%vtype(j) = -1

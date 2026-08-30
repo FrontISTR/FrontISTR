@@ -6,6 +6,11 @@
 !! and do necessary preparation for following calculation
 module m_fstr_setup
   use m_fstr
+  use hecmw_setup_util, only &
+    : node_grp_name_to_id_ex &
+    , elem_grp_name_to_id_ex &
+    , surf_grp_name_to_id_ex &
+    , hecmw_streqr
   use fstr_setup_util
   use fstr_ctrl_common
   use fstr_ctrl_static
@@ -484,7 +489,7 @@ contains
         endif
         cparam_id = 0
         do i=1,size(fstrPARAM%contactparam)-1
-          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+          if( hecmw_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
             cparam_id = i; exit
           endif
         enddo
@@ -514,7 +519,7 @@ contains
         endif
         cparam_id = 0
         do i=1,size(fstrPARAM%contactparam)-1
-          if( fstr_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
+          if( hecmw_streqr( fstrPARAM%contactparam(i)%name, mName ) ) then
             cparam_id = i; exit
           endif
         enddo
@@ -539,14 +544,14 @@ contains
         endif
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
-            if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+            if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
               fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
             endif
           enddo
         endif
         if( associated(fstrPARAM%ainc) ) then
           do i=1,size(fstrPARAM%ainc)
-            if( fstr_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+            if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
               fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
             endif
           enddo
@@ -569,14 +574,14 @@ contains
         endif
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
-            if( fstr_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
+            if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
               fstrSOLID%step_ctrl(c_istep)%timepoint_id = i; exit
             endif
           enddo
         endif
         if( associated(fstrPARAM%ainc) ) then
           do i=1,size(fstrPARAM%ainc)-1
-            if( fstr_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
+            if( hecmw_streqr( fstrPARAM%ainc(i)%name, mName2 ) ) then
               fstrSOLID%step_ctrl(c_istep)%AincParam_id = i; exit
             endif
           enddo
@@ -628,14 +633,14 @@ contains
         endif
         cid = 0
         if(cache < hecMESH%material%n_mat) then
-          if(fstr_streqr( hecMESH%material%mat_name(cache), mName ))then
+          if(hecmw_streqr( hecMESH%material%mat_name(cache), mName ))then
             cid = cache
             cache = cache + 1
           endif
         endif
         if(cid == 0)then
           do i=1,hecMESH%material%n_mat
-            if( fstr_streqr( hecMESH%material%mat_name(i), mName ) ) then
+            if( hecmw_streqr( hecMESH%material%mat_name(i), mName ) ) then
               cid = i
               cache = i + 1
               exit
@@ -2172,6 +2177,7 @@ contains
   !* ----------------------------------------------------------------------------------------------- *!
 
   integer function fstr_setup_ORIENTATION( ctrl, hecMESH, cnt, coordsys )
+    use hecmw_setup_util, only: node_global_to_local
     implicit none
     integer(kind=kint)         :: ctrl
     type( hecmwST_local_mesh ) :: hecMESH
@@ -2423,6 +2429,8 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_COUPLE( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2439,7 +2447,7 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%COUPLE_ngrp_tot = new_size
 
-    call fstr_expand_integer_array ( P%SOLID%COUPLE_ngrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%COUPLE_ngrp_ID,  old_size, new_size )
 
     allocate( grp_id_name(n))
     rcode = fstr_ctrl_get_COUPLE( ctrl,           &
@@ -2486,6 +2494,9 @@ end function fstr_setup_INITIAL
 
   !> Read in !ELEMENT_ACTIVATION
   subroutine fstr_setup_ELEMENT_ACTIVATION( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2509,14 +2520,14 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%elemact%ELEMACT_egrp_tot = new_size
 
-    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_ID,  old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_amp, old_size, new_size )
-    call fstr_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_eps, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_depends, old_size, new_size )
-    call fstr_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_ts_lower, old_size, new_size )
-    call fstr_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_ts_upper, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_state, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_amp, old_size, new_size )
+    call hecmw_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_eps, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_depends, old_size, new_size )
+    call hecmw_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_ts_lower, old_size, new_size )
+    call hecmw_expand_real_array ( P%SOLID%elemact%ELEMACT_egrp_ts_upper, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%elemact%ELEMACT_egrp_state, old_size, new_size )
 
     allocate( grp_id_name(n), thlow(n), thup(n) )
     amp = ' '
@@ -2593,6 +2604,9 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_BOUNDARY( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2648,14 +2662,14 @@ end function fstr_setup_INITIAL
     old_size = P%SOLID%BOUNDARY_ngrp_tot
     new_size = old_size + n
     P%SOLID%BOUNDARY_ngrp_tot = new_size
-    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_ID,    old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_type,  old_size, new_size )
-    call fstr_expand_real_array    (P%SOLID%BOUNDARY_ngrp_val,   old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_amp,   old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_istot, old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_rotID, old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%BOUNDARY_ngrp_centerID, old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_ID,    old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_type,  old_size, new_size )
+    call hecmw_expand_real_array    (P%SOLID%BOUNDARY_ngrp_val,   old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_amp,   old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_istot, old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_rotID, old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%BOUNDARY_ngrp_centerID, old_size, new_size )
 
     allocate( grp_id_name(n) )
     allocate( dof_ids (n) )
@@ -2709,6 +2723,9 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_CLOAD( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2746,13 +2763,13 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%CLOAD_ngrp_tot = new_size
     ! Keiji Suemitsu (20140624) <
-    call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_ID,  old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_DOF, old_size, new_size )
-    call fstr_expand_real_array    ( P%SOLID%CLOAD_ngrp_val, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_amp, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_rotID, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%CLOAD_ngrp_centerID, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_DOF, old_size, new_size )
+    call hecmw_expand_real_array    ( P%SOLID%CLOAD_ngrp_val, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_amp, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_rotID, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%CLOAD_ngrp_centerID, old_size, new_size )
     ! > Keiji Suemitsu (20140624)
 
     allocate( grp_id_name(n))
@@ -2800,6 +2817,10 @@ end function fstr_setup_INITIAL
   !> Read in !FLOAD                                                             !
   !-----------------------------------------------------------------------------!
   subroutine fstr_setup_FLOAD( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array &
+      , hecmw_expand_real_array
+    implicit none
   !---- args
     integer(kind=kint)   :: ctrl
     integer(kind=kint)   :: counter
@@ -2834,12 +2855,12 @@ end function fstr_setup_INITIAL
 
     !expand data array
     P%FREQ%FLOAD_ngrp_tot = new_size
-    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_ID,    old_size, new_size )
-    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_TYPE,  old_size, new_size )
-    call fstr_expand_integer_array( P%FREQ%FLOAD_ngrp_DOF,   old_size, new_size )
-    call fstr_expand_real_array   ( P%FREQ%FLOAD_ngrp_valre, old_size, new_size )
-    call fstr_expand_real_array   ( P%FREQ%FLOAD_ngrp_valim, old_size, new_size )
+    call hecmw_expand_integer_array( P%FREQ%FLOAD_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array( P%FREQ%FLOAD_ngrp_ID,    old_size, new_size )
+    call hecmw_expand_integer_array( P%FREQ%FLOAD_ngrp_TYPE,  old_size, new_size )
+    call hecmw_expand_integer_array( P%FREQ%FLOAD_ngrp_DOF,   old_size, new_size )
+    call hecmw_expand_real_array   ( P%FREQ%FLOAD_ngrp_valre, old_size, new_size )
+    call hecmw_expand_real_array   ( P%FREQ%FLOAD_ngrp_valim, old_size, new_size )
 
     !fill bc data
     allocate( grp_id_name(n) )
@@ -2954,6 +2975,8 @@ end function fstr_setup_INITIAL
 
   !> Read in !DLOAD
   subroutine fstr_setup_DLOAD( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -2981,10 +3004,10 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%DLOAD_ngrp_tot = new_size
     ! Keiji Suemitsu (20140624) <
-    call fstr_expand_integer_array ( P%SOLID%DLOAD_ngrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%DLOAD_ngrp_ID,  old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%DLOAD_ngrp_LID, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%DLOAD_ngrp_amp, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%DLOAD_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%DLOAD_ngrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%DLOAD_ngrp_LID, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%DLOAD_ngrp_amp, old_size, new_size )
     call fstr_expand_dload_array ( P%SOLID%DLOAD_ngrp_params, old_size, new_size )
     ! > Keiji Suemitsu (20140624)
 
@@ -3028,6 +3051,9 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_TEMPERATURE( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3050,9 +3076,9 @@ end function fstr_setup_INITIAL
     else
       new_size = old_size + 1
     endif
-    call fstr_expand_integer_array ( P%SOLID%TEMP_ngrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%TEMP_ngrp_ID, old_size, new_size )
-    call fstr_expand_real_array    ( P%SOLID%TEMP_ngrp_val,old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%TEMP_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%TEMP_ngrp_ID, old_size, new_size )
+    call hecmw_expand_real_array    ( P%SOLID%TEMP_ngrp_val,old_size, new_size )
 
     allocate( grp_id_name(n))
     allocate( val_ptr(n) )
@@ -3090,6 +3116,9 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_SPRING( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3112,12 +3141,12 @@ end function fstr_setup_INITIAL
     old_size = P%SOLID%SPRING_ngrp_tot
     new_size = old_size + n
     P%SOLID%SPRING_ngrp_tot = new_size
-    call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_ID,  old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_DOF, old_size, new_size )
-    call fstr_expand_real_array    ( P%SOLID%SPRING_ngrp_val, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%SPRING_ngrp_amp, old_size, new_size )
-    call fstr_expand_integer_array ( P%SOLID%SPRING_incremental, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%SPRING_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%SPRING_ngrp_ID,  old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%SPRING_ngrp_DOF, old_size, new_size )
+    call hecmw_expand_real_array    ( P%SOLID%SPRING_ngrp_val, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%SPRING_ngrp_amp, old_size, new_size )
+    call hecmw_expand_integer_array ( P%SOLID%SPRING_incremental, old_size, new_size )
 
     allocate( grp_id_name(n))
     allocate( id_ptr(n) )
@@ -3221,7 +3250,7 @@ end function fstr_setup_INITIAL
 
     if( associated(P%PARAM%timepoints) ) then
       do i=1,size(P%PARAM%timepoints)
-        if( fstr_streqr( P%PARAM%timepoints(i)%name, mName ) ) then
+        if( hecmw_streqr( P%PARAM%timepoints(i)%name, mName ) ) then
           P%PARAM%timepoint_id = i; exit
         endif
       enddo
@@ -3246,6 +3275,11 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_FIXTEMP( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : get_grp_member &
+      , get_grp_member_n &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3294,9 +3328,9 @@ end function fstr_setup_INITIAL
     ! JP-8
     old_size = P%HEAT%T_FIX_tot
     new_size = old_size + m
-    call fstr_expand_integer_array( P%HEAT%T_FIX_node, old_size, new_size )
-    call fstr_expand_integer_array( P%HEAT%T_FIX_ampl, old_size, new_size )
-    call fstr_expand_real_array(    P%HEAT%T_FIX_val,  old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%T_FIX_node, old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%T_FIX_ampl, old_size, new_size )
+    call hecmw_expand_real_array(    P%HEAT%T_FIX_val,  old_size, new_size )
     P%HEAT%T_FIX_tot = new_size
 
     head = old_size + 1
@@ -3333,6 +3367,11 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_CFLUX( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : get_grp_member &
+      , get_grp_member_n &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3381,9 +3420,9 @@ end function fstr_setup_INITIAL
     ! JP-9
     old_size = P%HEAT%Q_NOD_tot
     new_size = old_size + m
-    call fstr_expand_integer_array( P%HEAT%Q_NOD_node, old_size, new_size )
-    call fstr_expand_integer_array( P%HEAT%Q_NOD_ampl, old_size, new_size )
-    call fstr_expand_real_array(    P%HEAT%Q_NOD_val,  old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%Q_NOD_node, old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%Q_NOD_ampl, old_size, new_size )
+    call hecmw_expand_real_array(    P%HEAT%Q_NOD_val,  old_size, new_size )
     P%HEAT%Q_NOD_tot = new_size
 
     head = old_size + 1
@@ -3418,6 +3457,11 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_DFLUX( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : get_grp_member &
+      , get_grp_member_n &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3468,10 +3512,10 @@ end function fstr_setup_INITIAL
     ! JP-10
     old_size = P%HEAT%Q_SUF_tot
     new_size = old_size + m
-    call fstr_expand_integer_array( P%HEAT%Q_SUF_elem, old_size, new_size )
-    call fstr_expand_integer_array( P%HEAT%Q_SUF_ampl, old_size, new_size )
-    call fstr_expand_integer_array( P%HEAT%Q_SUF_surf, old_size, new_size )
-    call fstr_expand_real_array(    P%HEAT%Q_SUF_val,  old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%Q_SUF_elem, old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%Q_SUF_ampl, old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%Q_SUF_surf, old_size, new_size )
+    call hecmw_expand_real_array(    P%HEAT%Q_SUF_val,  old_size, new_size )
     P%HEAT%Q_SUF_tot = new_size
 
     head = old_size + 1
@@ -3508,6 +3552,11 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_SFLUX( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : get_grp_member &
+      , get_grp_member_n &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3549,10 +3598,10 @@ end function fstr_setup_INITIAL
     ! JP-11
     old_size = P%HEAT%Q_SUF_tot
     new_size = old_size + m
-    call fstr_expand_integer_array( P%HEAT%Q_SUF_elem, old_size, new_size )
-    call fstr_expand_integer_array( P%HEAT%Q_SUF_ampl, old_size, new_size )
-    call fstr_expand_integer_array( P%HEAT%Q_SUF_surf, old_size, new_size )
-    call fstr_expand_real_array(    P%HEAT%Q_SUF_val,  old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%Q_SUF_elem, old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%Q_SUF_ampl, old_size, new_size )
+    call hecmw_expand_integer_array( P%HEAT%Q_SUF_surf, old_size, new_size )
+    call hecmw_expand_real_array(    P%HEAT%Q_SUF_val,  old_size, new_size )
     P%HEAT%Q_SUF_tot = new_size
 
     head = old_size + 1
@@ -3583,6 +3632,12 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_FILM( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : get_grp_member &
+      , get_grp_member_n &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_integer_array2 &
+      , hecmw_expand_real_array2
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3639,10 +3694,10 @@ end function fstr_setup_INITIAL
     ! JP-12
     old_size = P%HEAT%H_SUF_tot
     new_size = old_size + m
-    call fstr_expand_integer_array(  P%HEAT%H_SUF_elem,    old_size, new_size )
-    call fstr_expand_integer_array2( P%HEAT%H_SUF_ampl, 2, old_size, new_size )
-    call fstr_expand_integer_array(  P%HEAT%H_SUF_surf,    old_size, new_size )
-    call fstr_expand_real_array2(    P%HEAT%H_SUF_val,  2, old_size, new_size )
+    call hecmw_expand_integer_array(  P%HEAT%H_SUF_elem,    old_size, new_size )
+    call hecmw_expand_integer_array2( P%HEAT%H_SUF_ampl, 2, old_size, new_size )
+    call hecmw_expand_integer_array(  P%HEAT%H_SUF_surf,    old_size, new_size )
+    call hecmw_expand_real_array2(    P%HEAT%H_SUF_val,  2, old_size, new_size )
     P%HEAT%H_SUF_tot = new_size
 
     head = old_size + 1
@@ -3682,6 +3737,12 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_SFILM( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : get_grp_member &
+      , get_grp_member_n &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_integer_array2 &
+      , hecmw_expand_real_array2
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3728,10 +3789,10 @@ end function fstr_setup_INITIAL
     ! JP-13
     old_size = P%HEAT%H_SUF_tot
     new_size = old_size + m
-    call fstr_expand_integer_array(  P%HEAT%H_SUF_elem,    old_size, new_size )
-    call fstr_expand_integer_array2( P%HEAT%H_SUF_ampl, 2, old_size, new_size )
-    call fstr_expand_integer_array(  P%HEAT%H_SUF_surf,    old_size, new_size )
-    call fstr_expand_real_array2(    P%HEAT%H_SUF_val,  2, old_size, new_size )
+    call hecmw_expand_integer_array(  P%HEAT%H_SUF_elem,    old_size, new_size )
+    call hecmw_expand_integer_array2( P%HEAT%H_SUF_ampl, 2, old_size, new_size )
+    call hecmw_expand_integer_array(  P%HEAT%H_SUF_surf,    old_size, new_size )
+    call hecmw_expand_real_array2(    P%HEAT%H_SUF_val,  2, old_size, new_size )
     P%HEAT%H_SUF_tot = new_size
 
     head = old_size + 1
@@ -3765,6 +3826,12 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_RADIATE( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : get_grp_member &
+      , get_grp_member_n &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_integer_array2 &
+      , hecmw_expand_real_array2
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3820,10 +3887,10 @@ end function fstr_setup_INITIAL
     ! JP-14
     old_size = P%HEAT%R_SUF_tot
     new_size = old_size + m
-    call fstr_expand_integer_array(  P%HEAT%R_SUF_elem,    old_size, new_size )
-    call fstr_expand_integer_array2( P%HEAT%R_SUF_ampl, 2, old_size, new_size )
-    call fstr_expand_integer_array(  P%HEAT%R_SUF_surf,    old_size, new_size )
-    call fstr_expand_real_array2(    P%HEAT%R_SUF_val,  2, old_size, new_size )
+    call hecmw_expand_integer_array(  P%HEAT%R_SUF_elem,    old_size, new_size )
+    call hecmw_expand_integer_array2( P%HEAT%R_SUF_ampl, 2, old_size, new_size )
+    call hecmw_expand_integer_array(  P%HEAT%R_SUF_surf,    old_size, new_size )
+    call hecmw_expand_real_array2(    P%HEAT%R_SUF_val,  2, old_size, new_size )
     P%HEAT%R_SUF_tot = new_size
 
     head = old_size + 1
@@ -3863,6 +3930,12 @@ end function fstr_setup_INITIAL
 
 
   subroutine fstr_setup_SRADIATE( ctrl, counter, P )
+    use hecmw_setup_util, only &
+      : get_grp_member &
+      , get_grp_member_n &
+      , hecmw_expand_integer_array &
+      , hecmw_expand_integer_array2 &
+      , hecmw_expand_real_array2
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -3908,10 +3981,10 @@ end function fstr_setup_INITIAL
     ! JP-15
     old_size = P%HEAT%R_SUF_tot
     new_size = old_size + m
-    call fstr_expand_integer_array(  P%HEAT%R_SUF_elem,    old_size, new_size )
-    call fstr_expand_integer_array2( P%HEAT%R_SUF_ampl, 2, old_size, new_size )
-    call fstr_expand_integer_array(  P%HEAT%R_SUF_surf,    old_size, new_size )
-    call fstr_expand_real_array2(    P%HEAT%R_SUF_val,  2, old_size, new_size )
+    call hecmw_expand_integer_array(  P%HEAT%R_SUF_elem,    old_size, new_size )
+    call hecmw_expand_integer_array2( P%HEAT%R_SUF_ampl, 2, old_size, new_size )
+    call hecmw_expand_integer_array(  P%HEAT%R_SUF_surf,    old_size, new_size )
+    call hecmw_expand_real_array2(    P%HEAT%R_SUF_val,  2, old_size, new_size )
     P%HEAT%R_SUF_tot = new_size
 
     head = old_size + 1
@@ -4014,6 +4087,7 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_VELOCITY( ctrl, counter, P )
+    use hecmw_setup_util, only: hecmw_expand_integer_array, hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -4051,13 +4125,13 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%VELOCITY_ngrp_tot = new_size
 
-    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_ID  , old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_type, old_size, new_size )
-    call fstr_expand_real_array    (P%SOLID%VELOCITY_ngrp_val , old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_amp , old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_rotID, old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%VELOCITY_ngrp_centerID, old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_ID  , old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_type, old_size, new_size )
+    call hecmw_expand_real_array    (P%SOLID%VELOCITY_ngrp_val , old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_amp , old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_rotID, old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%VELOCITY_ngrp_centerID, old_size, new_size )
 
     allocate( grp_id_name(n))
     allocate( dof_ids (n))
@@ -4110,6 +4184,7 @@ end function fstr_setup_INITIAL
   !-----------------------------------------------------------------------------!
 
   subroutine fstr_setup_ACCELERATION( ctrl, counter, P )
+    use hecmw_setup_util, only: hecmw_expand_integer_array, hecmw_expand_real_array
     implicit none
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: counter
@@ -4135,11 +4210,11 @@ end function fstr_setup_INITIAL
     new_size = old_size + n
     P%SOLID%ACCELERATION_ngrp_tot = new_size
 
-    call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_GRPID, old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_ID  , old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_type, old_size, new_size )
-    call fstr_expand_real_array    (P%SOLID%ACCELERATION_ngrp_val , old_size, new_size )
-    call fstr_expand_integer_array (P%SOLID%ACCELERATION_ngrp_amp , old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%ACCELERATION_ngrp_GRPID, old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%ACCELERATION_ngrp_ID  , old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%ACCELERATION_ngrp_type, old_size, new_size )
+    call hecmw_expand_real_array    (P%SOLID%ACCELERATION_ngrp_val , old_size, new_size )
+    call hecmw_expand_integer_array (P%SOLID%ACCELERATION_ngrp_amp , old_size, new_size )
 
     allocate( grp_id_name(n))
     allocate( dof_ids (n))
@@ -4212,9 +4287,9 @@ end function fstr_setup_INITIAL
     !        new_size = old_size + n
     !        P%MPC_RD%nmpc = new_size
     !
-    !        call fstr_expand_integer_array ( P%MPC_RD%node1,  old_size, new_size )
-    !        call fstr_expand_integer_array ( P%MPC_RD%node2,  old_size, new_size )
-    !        call fstr_expand_integer_array ( P%MPC_RD%dof,    old_size, new_size )
+    !        call hecmw_expand_integer_array ( P%MPC_RD%node1,  old_size, new_size )
+    !        call hecmw_expand_integer_array ( P%MPC_RD%node2,  old_size, new_size )
+    !        call hecmw_expand_integer_array ( P%MPC_RD%dof,    old_size, new_size )
     !
     !        node1_ptr => P%MPC_RD%node1(old_size+1:)
     !        node2_ptr => P%MPC_RD%node2(old_size+1:)
