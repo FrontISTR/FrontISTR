@@ -406,7 +406,7 @@ contains
         do j=1, numdof
           a = (ind-1)*nallcomp + j  !src vector index
           b = (ind-1)*numdof   + j
-          eigenvector(b,imode) = eigenres%node_val_item(a)
+          eigenvector(b,idx) = eigenres%node_val_item(a)
         end do
       end do
       call free_result_data(eigenres)
