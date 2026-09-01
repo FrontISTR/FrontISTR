@@ -60,6 +60,7 @@ module fstr_frequency_analysis
   use m_fstr_EIG_setMASS
   use fstr_frequency_visout
   use m_hecmw2fstr_mesh_conv
+  use hecmw_setup_util, only: node_global_to_local
 
   implicit none
 
@@ -87,7 +88,7 @@ contains
     !C-- local variable
     !C
     integer(kind=kint)            :: numnode, numelm, startmode, endmode, nummode, ndof, im, in, ntotal, vistype
-    integer(kind=kint)            :: numfreq, idnode, numdisp
+    integer(kind=kint)            :: numfreq, idnode, numdisp, imonit, nmonit, monitnode(1)
     integer(kind=kint)            :: freqiout(3)
     integer(kind=kint)            :: ierr
     integer(kind=kint), parameter :: ilogin = 9056
@@ -98,7 +99,7 @@ contains
     real(kind=kreal)              :: t_start, t_end, time, dxi, dyi, dzi
     type(fstr_freqanalysis_data)  :: freqData
 
-    numnode   = hecMESH%nn_internal
+    numnode   = hecMESH%n_node
     numelm    = hecMESH%n_elem
     ndof      = hecMESH%n_dof
     startmode = fstrFREQ%start_mode
@@ -111,10 +112,29 @@ contains
     allocate(freqData%eigVector(numnode*ndof, nummode))
 
     call setupFREQParam(fstrDYNAMIC, f_start, f_end, numfreq, freqData%rayAlpha, freqData%rayBeta, idnode, vistype, freqiout)
-    write(*,*) "Rayleigh alpha:", freqData%rayAlpha
-    write(*,*) "Rayleigh beta:", freqData%rayBeta
-    write(ilog,*) "Rayleigh alpha:", freqData%rayAlpha
-    write(ilog,*) "Rayleigh beta:", freqData%rayBeta
+
+    monitnode(1) = idnode
+    imonit       = 0
+    if( node_global_to_local(hecMESH, monitnode, 1) == 1 ) then
+      if( monitnode(1) <= hecMESH%nn_internal ) imonit = monitnode(1)  !monitor is reported by the rank owning it
+    end if
+    nmonit = 0
+    if( imonit > 0 ) nmonit = 1
+    call hecmw_allreduce_I1(hecMESH, nmonit, hecmw_sum)
+    if( nmonit == 0 ) then
+      if( myrank == 0 ) then
+        write(*,   *) "Error: monitor node not found:", idnode
+        write(ilog,*) "Error: monitor node not found:", idnode
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+    end if
+
+    if( myrank == 0 ) then
+      write(*,*) "Rayleigh alpha:", freqData%rayAlpha
+      write(*,*) "Rayleigh beta:", freqData%rayBeta
+      write(ilog,*) "Rayleigh alpha:", freqData%rayAlpha
+      write(ilog,*) "Rayleigh beta:", freqData%rayBeta
+    end if
 
 
     allocate(eigenvalue(nummode))
@@ -137,16 +157,18 @@ contains
     loadvecRe(:) = 0.0D0
     loadvecIm(:) = 0.0D0
 
-    write(*,*) "--frequency analysis--"
-    write(*,   *) "read from=", trim(fstrFREQ%eigenlog_filename)
-    write(ilog,*) "read from=", trim(fstrFREQ%eigenlog_filename)
-    write(*,   *) "start mode=", startmode
-    write(ilog,*) "start mode=", startmode
-    write(*,   *) "end mode=", endmode
-    write(ilog,*) "end mode=", endmode
+    if( myrank == 0 ) then
+      write(*,*) "--frequency analysis--"
+      write(*,   *) "read from=", trim(fstrFREQ%eigenlog_filename)
+      write(ilog,*) "read from=", trim(fstrFREQ%eigenlog_filename)
+      write(*,   *) "start mode=", startmode
+      write(ilog,*) "start mode=", startmode
+      write(*,   *) "end mode=", endmode
+      write(ilog,*) "end mode=", endmode
+    end if
     open(unit=ilogin, file=trim(fstrFREQ%eigenlog_filename), status="OLD", action="READ", iostat=ierr)
     if( ierr /= 0 ) then
-      write(*,*) "Error: cannot open eigenlog file: ", trim(fstrFREQ%eigenlog_filename)
+      if( myrank == 0 ) write(*,*) "Error: cannot open eigenlog file: ", trim(fstrFREQ%eigenlog_filename)
       call hecmw_abort( hecmw_comm_get_comm() )
     endif
     call read_eigen_values(ilogin, startmode, endmode, eigenvalue, freqData%eigOmega)
@@ -158,33 +180,37 @@ contains
     call extract_surf2node(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
     call assemble_nodeload(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
 
-    write(*,*) "calc mass matrix"
+    if( myrank == 0 ) write(*,*) "calc mass matrix"
     call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
-    write(*,*) "scale eigenvector"
-    call scaleEigenVector(fstrEIG, ndof*numnode, nummode, freqData%eigVector)
+    if( myrank == 0 ) write(*,*) "scale eigenvector"
+    call scaleEigenVector(hecMESH, fstrEIG, ndof*numnode, nummode, freqData%eigVector)
 
-    write(*,   *) "start frequency:", f_start
-    write(ilog,*) "start frequency:", f_start
-    write(*,   *) "end frequency:", f_end
-    write(ilog,*) "end frequency:", f_end
-    write(*   ,*) "number of the sampling points", numfreq
-    write(ilog,*) "number of the sampling points", numfreq
-    write(*   ,*) "monitor nodeid=", idnode
-    write(ilog,*) "monitor nodeid=", idnode
+    if( myrank == 0 ) then
+      write(*,   *) "start frequency:", f_start
+      write(ilog,*) "start frequency:", f_start
+      write(*,   *) "end frequency:", f_end
+      write(ilog,*) "end frequency:", f_end
+      write(*   ,*) "number of the sampling points", numfreq
+      write(ilog,*) "number of the sampling points", numfreq
+      write(*   ,*) "monitor nodeid=", idnode
+      write(ilog,*) "monitor nodeid=", idnode
+    end if
 
     do im=1, numfreq
       freq = (f_end-f_start)/dble(numfreq)*dble(im) + f_start
       omega = 2.0D0 * 3.14159265358979D0 * freq
 
-      call calcFreqCoeff(freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
+      call calcFreqCoeff(hecMESH, freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
       call calcDispVector(freqData, bjRe, bjIm, dvaRe, dvaIm)
 
-      dx  = sqrt(dvaRe(3*(idnode-1)+1)**2 + dvaIm(3*(idnode-1)+1)**2)
-      dy  = sqrt(dvaRe(3*(idnode-1)+2)**2 + dvaIm(3*(idnode-1)+2)**2)
-      dz  = sqrt(dvaRe(3*(idnode-1)+3)**2 + dvaIm(3*(idnode-1)+3)**2)
-      val = sqrt(dx**2 + dy**2 + dz**2)
-      write(*,    *) freq, "[Hz] : ", val
-      write(ilog, *) freq, "[Hz] : ", val
+      if( imonit > 0 ) then
+        dx  = sqrt(dvaRe(3*(imonit-1)+1)**2 + dvaIm(3*(imonit-1)+1)**2)
+        dy  = sqrt(dvaRe(3*(imonit-1)+2)**2 + dvaIm(3*(imonit-1)+2)**2)
+        dz  = sqrt(dvaRe(3*(imonit-1)+3)**2 + dvaIm(3*(imonit-1)+3)**2)
+        val = sqrt(dx**2 + dy**2 + dz**2)
+        write(*,    *) freq, "[Hz] : ", val
+        write(ilog, *) freq, "[Hz] : ", val
+      end if
       disp(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
 
       call calcVelVector(freqData, omega, bjRe, bjIm, dvaRe, dvaIm)
@@ -194,53 +220,65 @@ contains
       acc(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
 
       if(IRESULT==1) then
-        write(*,   *) freq, "[Hz] : ", im, ".res"
-        write(ilog,*) freq, "[Hz] : ", im, ".res"
+        if( myrank == 0 ) then
+          write(*,   *) freq, "[Hz] : ", im, ".res"
+          write(ilog,*) freq, "[Hz] : ", im, ".res"
+        end if
         call output_resfile(hecMESH, freq, im, disp, vel, acc, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==1) then
-        write(*,   *) freq, "[Hz] : ", im, ".vis"
-        write(ilog,*) freq, "[Hz] : ", im, ".vis"
+        if( myrank == 0 ) then
+          write(*,   *) freq, "[Hz] : ", im, ".vis"
+          write(ilog,*) freq, "[Hz] : ", im, ".vis"
+        end if
         call output_visfile(hecMESH, im, disp, vel, acc, freqiout)
       end if
     end do
 
     call setupDYNAParam(fstrDYNAMIC, t_start, t_end, freq, numdisp)
-    write(*,   *) "start time:", t_start
-    write(ilog,*) "start time:", t_start
-    write(*,   *) "end time:", t_end
-    write(ilog,*) "end time:", t_end
-    write(*,   *) "frequency:", freq
-    write(ilog,*) "frequency:", freq
-    write(*,   *) "node id:", idnode
-    write(ilog,*) "node id:", idnode
-    write(*,   *) "num disp:", numdisp
-    write(ilog,*) "num disp:", numdisp
+    if( myrank == 0 ) then
+      write(*,   *) "start time:", t_start
+      write(ilog,*) "start time:", t_start
+      write(*,   *) "end time:", t_end
+      write(ilog,*) "end time:", t_end
+      write(*,   *) "frequency:", freq
+      write(ilog,*) "frequency:", freq
+      write(*,   *) "node id:", idnode
+      write(ilog,*) "node id:", idnode
+      write(*,   *) "num disp:", numdisp
+      write(ilog,*) "num disp:", numdisp
+    end if
 
     omega = 2.0D0 * 3.14159265358979D0 * freq
-    call calcFreqCoeff(freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
+    call calcFreqCoeff(hecMESH, freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
     call calcDispVector(freqData, bjRe, bjIm, dvaRe, dvaIm)
 
     do im=1, numdisp
       time = (t_end-t_start)/dble(numdisp)*dble(im-1) + t_start
       call calcDispVectorTime(freqData, time, omega, bjRe, bjIm, dvaRe, dvaIm)
-      dx  = dvaRe(3*(idnode-1)+1)
-      dy  = dvaRe(3*(idnode-1)+2)
-      dz  = dvaRe(3*(idnode-1)+3)
-      dxi = dvaIm(3*(idnode-1)+1)
-      dyi = dvaIm(3*(idnode-1)+2)
-      dzi = dvaIm(3*(idnode-1)+3)
+      if( imonit > 0 ) then
+        dx  = dvaRe(3*(imonit-1)+1)
+        dy  = dvaRe(3*(imonit-1)+2)
+        dz  = dvaRe(3*(imonit-1)+3)
+        dxi = dvaIm(3*(imonit-1)+1)
+        dyi = dvaIm(3*(imonit-1)+2)
+        dzi = dvaIm(3*(imonit-1)+3)
+      end if
 
       call calcVelVectorTime(freqData, time, omega, bjRe, bjIm, velRe, velIm)
       call calcAccVectorTime(freqData, time, omega, bjRe, bjIm, accRe, accIm)
       if(IRESULT==1) then
-        write(*,   *) "time=", time, " : ", im, ".res"
-        write(ilog,*) "time=", time, " : ", im, ".res"
+        if( myrank == 0 ) then
+          write(*,   *) "time=", time, " : ", im, ".res"
+          write(ilog,*) "time=", time, " : ", im, ".res"
+        end if
         call outputdyna_resfile(hecMESH, time, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
       end if
       if(IVISUAL==1 .and. vistype==2) then
-        write(*,   *) "time=", time, " : ", im, ".vis"
-        write(ilog,*) "time=", time, " : ", im, ".vis"
+        if( myrank == 0 ) then
+          write(*,   *) "time=", time, " : ", im, ".vis"
+          write(ilog,*) "time=", time, " : ", im, ".vis"
+        end if
         call outputdyna_visfile(hecMESH, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
       end if
     end do
@@ -683,22 +721,26 @@ contains
 
   end subroutine
 
-  subroutine scaleEigenVector(fstrEIG, ntotaldof, nmode, eigenvector)
+  subroutine scaleEigenVector(hecMESH, fstrEIG, ntotaldof, nmode, eigenvector)
     !---- args
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_eigen), intent(in)    :: fstrEIG
     integer(kind=kint), intent(in)  :: ntotaldof
     integer(kind=kint), intent(in)  :: nmode
     real(kind=kreal), intent(inout) :: eigenvector(:, :)
     !---- vals
-    integer(kind=kint) :: imode, idof
+    integer(kind=kint) :: imode, idof, nintdof
     real(kind=kreal)   :: mas
     !---- body
 
+    nintdof = hecMESH%nn_internal*hecMESH%n_dof
+
     do imode=1,nmode
       mas = 0.0D0
-      do idof=1,ntotaldof
+      do idof=1,nintdof
         mas = mas + fstrEIG%mass(idof)*eigenvector(idof,imode)**2
       end do
+      call hecmw_allreduce_R1(hecMESH, mas, hecmw_sum)
       do idof=1,ntotaldof
         eigenvector(idof,imode) =  eigenvector(idof,imode) / sqrt(mas)
       end do
@@ -745,20 +787,24 @@ contains
     return
   end subroutine
 
-  subroutine calcDotProduct(a, b, c)
+  subroutine calcDotProduct(hecMESH, a, b, c)
     !---- args
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
     real(kind=kreal), intent(in)    :: a(:)
     real(kind=kreal), intent(in)    :: b(:)
     real(kind=kreal), intent(inout) :: c
     !---- vals
+    integer(kind=kint) :: nintdof
     !---- body
-    c = dot_product(a, b)
-    !Next, we need allreduce operation to implement distribute mesh.
+    nintdof = hecMESH%nn_internal*hecMESH%n_dof  !external nodes are owned by another rank
+    c = dot_product(a(1:nintdof), b(1:nintdof))
+    call hecmw_allreduce_R1(hecMESH, c, hecmw_sum)
     return
   end subroutine
 
-  subroutine calcFreqCoeff(freqData, loadRe, loadIm, inpOmega, bjRe, bjIm)
+  subroutine calcFreqCoeff(hecMESH, freqData, loadRe, loadIm, inpOmega, bjRe, bjIm)
     !---- args
+    type(hecmwST_local_mesh), intent(in)     :: hecMESH
     type(fstr_freqanalysis_data), intent(in) :: freqData
     real(kind=kreal), intent(in)             :: loadRe(:) !intend (numNodeDOF)
     real(kind=kreal), intent(in)             :: loadIm(:) !intend (numNodeDOF)
@@ -774,8 +820,8 @@ contains
     beta = freqData%rayBeta
 
     do imode=1, freqData%numMode
-      call calcDotProduct(freqData%eigVector(:,imode), loadRe, ujfr)
-      call calcDotProduct(freqData%eigVector(:,imode), loadIm, ujfi)
+      call calcDotProduct(hecMESH, freqData%eigVector(:,imode), loadRe, ujfr)
+      call calcDotProduct(hecMESH, freqData%eigVector(:,imode), loadIm, ujfi)
 
       a = ujfr*(freqData%eigOmega(imode)**2 - inpOmega**2) + ujfi*(alp + beta*freqData%eigOmega(imode)**2)*inpOmega
       b = (freqData%eigOmega(imode)**2 - inpOmega**2)**2 + ((alp + beta*freqData%eigOmega(imode)**2)*inpOmega)**2

@@ -225,11 +225,9 @@ contains
         call hecmw_abort( hecmw_comm_get_comm())
       end if
 
-      if( hecMESH%my_rank .eq. 0 ) then
-        call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, &
-          fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, hecLagMAT, &
-          restart_substep_num)
-      end if
+      call fstr_solve_frequency_analysis(hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, &
+        fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, hecLagMAT, &
+        restart_substep_num)
     end if
 
     !C-- file close for local use
