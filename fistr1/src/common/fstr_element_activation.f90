@@ -21,7 +21,9 @@ contains
     
     real(kind=kreal)   :: amp_val
     integer(kind=kint) :: amp_state
-    
+
+    ! RELATIVE amplitude (the default) scales the value given on entry, so the nominal value must be set first
+    amp_val = 1.d0
     call hecmw_get_amplitude_value(hecMESH%amp, amp_id, ctime, amp_val)
     
     ! Simple rule: amp_val > 0.5 -> ACTIVE, otherwise INACTIVE
