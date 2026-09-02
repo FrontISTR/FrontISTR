@@ -211,13 +211,13 @@ contains
         write(*,    *) freq, "[Hz] : ", val
         write(ilog, *) freq, "[Hz] : ", val
       end if
-      disp(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
+      disp(:) = abs(dcmplx(dvaRe(:), dvaIm(:)))
 
       call calcVelVector(freqData, omega, bjRe, bjIm, dvaRe, dvaIm)
-      vel(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
+      vel(:) = abs(dcmplx(dvaRe(:), dvaIm(:)))
 
       call calcAccVector(freqData, omega, bjRe, bjIm, dvaRe, dvaIm)
-      acc(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
+      acc(:) = abs(dcmplx(dvaRe(:), dvaIm(:)))
 
       if(IRESULT==1) then
         if( myrank == 0 ) then
@@ -939,13 +939,13 @@ contains
 
     dispRe(:) = 0.0D0
     dispIm(:) = 0.0D0
-    a = exp(cmplx(0.0D0, omega*time))
+    a = exp(dcmplx(0.0D0, omega*time))
 
     do imode=1, freqData%numMode
       s = size(freqData%eigvector(:,imode))
-      b = cmplx(bjRe(imode), bjIm(imode)) * a
+      b = dcmplx(bjRe(imode), bjIm(imode)) * a
       do idf=1, s
-        c = b*cmplx(freqData%eigVector(idf,imode), 0.0D0)
+        c = b*dcmplx(freqData%eigVector(idf,imode), 0.0D0)
         dispRe(idf) = dispRe(idf) + dble(c)
         dispIm(idf) = dispIm(idf) + imag(c)
       end do
@@ -969,13 +969,13 @@ contains
 
     velRe(:) = 0.0D0
     velIm(:) = 0.0D0
-    a = cmplx(0.0D0, 1.0D0)*cmplx(omega, 0.0D0)*exp(cmplx(0.0D0, omega*time))
+    a = dcmplx(0.0D0, 1.0D0)*dcmplx(omega, 0.0D0)*exp(dcmplx(0.0D0, omega*time))
 
     do imode=1, freqData%numMode
       s = size(freqData%eigvector(:,imode))
-      b = cmplx(bjRe(imode), bjIm(imode)) * a
+      b = dcmplx(bjRe(imode), bjIm(imode)) * a
       do idf=1, s
-        c = b*cmplx(freqData%eigVector(idf,imode), 0.0D0)
+        c = b*dcmplx(freqData%eigVector(idf,imode), 0.0D0)
         velRe(idf) = velRe(idf) + dble(c)
         velIm(idf) = velIm(idf) + imag(c)
       end do
@@ -999,13 +999,13 @@ contains
 
     accRe(:) = 0.0D0
     accIm(:) = 0.0D0
-    a = cmplx(-1.0D0, 0.0D0)*cmplx(omega**2, 0.0D0)*exp(cmplx(0.0D0, omega*time))
+    a = dcmplx(-1.0D0, 0.0D0)*dcmplx(omega**2, 0.0D0)*exp(dcmplx(0.0D0, omega*time))
 
     do imode=1, freqData%numMode
       s = size(freqData%eigvector(:,imode))
-      b = cmplx(bjRe(imode), bjIm(imode)) * a
+      b = dcmplx(bjRe(imode), bjIm(imode)) * a
       do idf=1, s
-        c = b*cmplx(freqData%eigVector(idf,imode), 0.0D0)
+        c = b*dcmplx(freqData%eigVector(idf,imode), 0.0D0)
         accRe(idf) = accRe(idf) + dble(c)
         accIm(idf) = accIm(idf) + imag(c)
       end do
@@ -1068,7 +1068,7 @@ contains
       label='displacement_imag'
       call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, dispim)
       label='displacement_abs'
-      absval(:) = abs(cmplx(dispre(:), dispim(:)))
+      absval(:) = abs(dcmplx(dispre(:), dispim(:)))
       call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
@@ -1078,7 +1078,7 @@ contains
       label='velocity_imag'
       call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, velim)
       label='velocity_abs'
-      absval(:) = abs(cmplx(velre(:), velim(:)))
+      absval(:) = abs(dcmplx(velre(:), velim(:)))
       call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
@@ -1088,7 +1088,7 @@ contains
       label='acceleration_imag'
       call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, accim)
       label='acceleration_abs'
-      absval(:) = abs(cmplx(velre(:), velim(:)))
+      absval(:) = abs(dcmplx(accre(:), accim(:)))
       call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
     end if
 
@@ -1141,7 +1141,7 @@ contains
       ncomp = ncomp + 1
 
       label = 'displace_abs'
-      absval(:) = abs(cmplx(dispre(:), dispim(:)))
+      absval(:) = abs(dcmplx(dispre(:), dispim(:)))
       call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, absval)
       ncomp = ncomp + 1
     end if
@@ -1156,7 +1156,7 @@ contains
       ncomp = ncomp + 1
 
       label = 'velocity_abs'
-      absval(:) = abs(cmplx(velre(:), velim(:)))
+      absval(:) = abs(dcmplx(velre(:), velim(:)))
       call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, absval)
       ncomp = ncomp + 1
     end if
@@ -1171,7 +1171,7 @@ contains
       ncomp = ncomp + 1
 
       label = 'acceleration_abs'
-      absval(:) = abs(cmplx(accre(:), accim(:)))
+      absval(:) = abs(dcmplx(accre(:), accim(:)))
       call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, absval)
       ncomp = ncomp + 1
     end if
