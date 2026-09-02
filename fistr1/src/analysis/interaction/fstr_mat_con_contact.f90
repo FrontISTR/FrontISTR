@@ -85,12 +85,8 @@ contains
     enddo
     count_n2s = count_n2s + fstrSOLID%n_embeds
 
-    ! Lagrange rows are reserved for the standard-Lagrange algorithm and, additionally, for
-    ! SURF-SURF mortar pairs: their sparsity reservation is keyed on one Lagrange row per
-    ! active slave node (get_lag_node_list / register_pair_to_sparsity). A pure NODE-SURF
-    ! augmented-Lagrange analysis keeps num_lagrange = 0, exactly as before.
     num_lagrange = 0
-    if( contact_algo == kcaSLagrange .or. count_s2s > 0 ) then
+    if( contact_algo == kcaSLagrange ) then
       do i = 1, fstrSOLID%n_contacts
         grpid = fstrSOLID%contacts(i)%group
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -114,7 +110,6 @@ contains
 
     ! Get original list of related nodes
     call hecmw_init_nodeRelated_from_org(hecMAT%NP,num_lagrange,is_contact_active_flag,list_nodeRelated_org,list_nodeRelated)
-    if( count_s2s > 0 ) call get_lag_node_list(fstrSOLID, hecLagMAT, hecMAT%NP)
 
     ! Construct new list of related nodes and Lagrange multipliers
     countNon0LU_node = NPL_org + NPU_org
@@ -125,7 +120,7 @@ contains
         &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
       if( count_s2s > 0 ) &
         call getNewListOFrelatednodesANDLagrangeMultipliers_ss(cstep,contact_algo, &
-        &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated,hecLagMAT%lag_node_table)
+        &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
     endif
 
     ! Construct new matrix structure(hecMAT&hecLagMAT)
@@ -144,44 +139,6 @@ contains
       call fstr_copy_lagrange_contact(fstrSOLID,hecLagMAT)
 
   end subroutine fstr_mat_con_contact
-
-  subroutine get_lag_node_list(fstrSOLID, hecLagMAT, np)
-    type(fstr_solid)                        :: fstrSOLID                !< type fstr_solid
-    type(hecmwST_matrix_lagrange)          :: hecLagMAT            !< hecmwST_matrix_lagrange
-    integer (kind=kint)                    :: np                      !< total number of nodes
-    integer (kind=kint)                    :: id_lagrange, algtype, i, j, nlag, slave_node, ierr
-
-    ! init lag_node_table
-    if( associated(hecLagMAT%lag_node_table) ) deallocate(hecLagMAT%lag_node_table)
-    allocate(hecLagMAT%lag_node_table(np), stat=ierr)
-    if ( ierr /= 0) stop " Allocation error, hecLagMAT%lag_node_table "
-    hecLagMAT%lag_node_table = 0
-    id_lagrange = 0
-
-    do i = 1, fstrSOLID%n_contacts
-
-      algtype = fstrSOLID%contacts(i)%algtype
-      nlag = fstr_get_num_lagrange_pernode(algtype)
-
-      do j = 1, size(fstrSOLID%contacts(i)%slave)
-        if( fstrSOLID%contacts(i)%states(j)%state == CONTACTFREE ) cycle
-        slave_node = fstrSOLID%contacts(i)%slave(j)
-        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
-        id_lagrange = id_lagrange + nlag
-      enddo
-    enddo
-
-    do i = 1, fstrSOLID%n_embeds
-      nlag = 3
-      do j = 1, size(fstrSOLID%embeds(i)%slave)
-        if( fstrSOLID%embeds(i)%states(j)%state == CONTACTFREE ) cycle
-        slave_node = fstrSOLID%embeds(i)%slave(j)
-        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
-        id_lagrange = id_lagrange + nlag
-      enddo
-    enddo
-
-  end subroutine get_lag_node_list
 
   !> Construct new list of related nodes and Lagrange multipliers. Here, a procedure similar to HEC_MW is used.
   subroutine getNewListOFrelatednodesANDLagrangeMultipliers( &
@@ -439,14 +396,13 @@ contains
 
 
   subroutine getNewListOFrelatednodesANDLagrangeMultipliers_ss( &
-      & cstep, contact_algo, np, fstrSOLID, countNon0LU_node, countNon0LU_lagrange, list_nodeRelated, lag_node_table )
+      & cstep, contact_algo, np, fstrSOLID, countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
     integer(kind=kint),intent(in)             :: cstep !< current loading step
     integer(kind=kint),intent(in)             :: contact_algo !< contact algo
     integer(kind=kint),intent(in)             :: np !< total number of nodes
     type(fstr_solid),intent(in)               :: fstrSOLID !< type fstr_solid
     integer(kind=kint), intent(inout)         :: countNon0LU_node, countNon0LU_lagrange !< counters of node-based non-zero items
     type(nodeRelated), pointer, intent(inout) :: list_nodeRelated(:) !< nodeRelated structure of matrix
-    integer(kind=kint), intent(in)         :: lag_node_table(:) !< table of Lagrange multipliers
     integer(kind=kint)            :: grpid !< contact pairs group ID
     integer(kind=kint)            :: ctsurf, nsurf !< contents of type tContact
     integer(kind=kint)            :: i, j, m
@@ -454,7 +410,6 @@ contains
     integer(kind=kint), allocatable :: maplist(:), master_idxs(:) !< unique master mapping from get_unique_map
     real(kind=kreal)              :: fcoeff !< friction coefficient
     logical                       :: necessary_to_insert_node
-    permission = .true.
 
     do i = 1, fstrSOLID%n_contacts
       if( fstrSOLID%contacts(i)%method /= CONTACTS2S ) cycle
@@ -476,7 +431,7 @@ contains
             ctsurf = master_idxs(g)
             ! Register current master element
             call register_pair_to_sparsity( np, fstrSOLID%contacts(i)%slave_surf(j)%nodes, &
-              fstrSOLID%contacts(i)%master(ctsurf), lag_node_table, necessary_to_insert_node, &
+              fstrSOLID%contacts(i)%master(ctsurf), necessary_to_insert_node, &
               countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
 
             ! SPARSITY_NEIGHBOR: also register neighbor master elements
@@ -484,7 +439,7 @@ contains
               do m = 1, fstrSOLID%contacts(i)%master(ctsurf)%n_neighbor
                 nsurf = fstrSOLID%contacts(i)%master(ctsurf)%neighbor(m)
                 call register_pair_to_sparsity( np, fstrSOLID%contacts(i)%slave_surf(j)%nodes, &
-                  fstrSOLID%contacts(i)%master(nsurf), lag_node_table, necessary_to_insert_node, &
+                  fstrSOLID%contacts(i)%master(nsurf), necessary_to_insert_node, &
                   countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
               enddo
             endif
@@ -499,17 +454,16 @@ contains
   !> \brief Register sparsity coupling of one (slave_surf, master) pair.
   !> For each slave node, register coupling with the other slave nodes AND the master
   !> nodes. Slave-slave cross terms are required for consistent mortar tangent stiffness.
-  subroutine register_pair_to_sparsity( np, slave_nodes, master_surf, lag_node_table, &
+  subroutine register_pair_to_sparsity( np, slave_nodes, master_surf, &
       & necessary_to_insert_node, countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
     integer(kind=kint), intent(in)            :: np !< total number of nodes
     integer(kind=kint), intent(in)            :: slave_nodes(:)  !< slave surface node ids
     type(tSurfElement), intent(in)            :: master_surf !< master surface id
-    integer(kind=kint), intent(in)            :: lag_node_table(:) !< table of Lagrange multipliers
     logical, intent(in)                       :: necessary_to_insert_node
     integer(kind=kint), intent(inout)         :: countNon0LU_node, countNon0LU_lagrange
     type(nodeRelated), pointer, intent(inout) :: list_nodeRelated(:)
 
-    integer(kind=kint) :: nnode_s, nnode_m, l, m, idx, id_lag, nnode_pair, etype
+    integer(kind=kint) :: nnode_s, nnode_m, l, m, idx, nnode_pair, etype
     integer(kind=kint) :: ndLocal(2*l_max_surface_node + 1)
 
     etype = master_surf%etype
@@ -518,7 +472,6 @@ contains
     nnode_m = size(master_surf%nodes)
     do l = 1, nnode_s
       ndLocal(1) = slave_nodes(l)
-      id_lag = lag_node_table( ndLocal(1) ) - 1
       ! ndLocal: slave_l + other_slave_nodes + master_nodes
       idx = 1
       do m = 1, nnode_s
@@ -528,7 +481,8 @@ contains
       enddo
       ndLocal(idx+1:idx+nnode_m) = master_surf%nodes(:)
       nnode_pair = nnode_s - 1 + nnode_m
-      call hecmw_ass_nodeRelated_from_contact_pair( np, nnode_pair, ndLocal, id_lag, permission, &
+      ! mortar pairs have no Lagrange row: 0 keeps insert_lagrange out of the reservation
+      call hecmw_ass_nodeRelated_from_contact_pair( np, nnode_pair, ndLocal, 0, permission, &
         & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
     enddo
   end subroutine register_pair_to_sparsity
