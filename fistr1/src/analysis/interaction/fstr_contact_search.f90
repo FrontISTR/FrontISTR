@@ -654,6 +654,8 @@ contains
     endif
     call update_surface_box_info( contact%master, currpos )
     call update_surface_bucket_info( contact%master, contact%master_bktDB )
+    ! the reduction below starts from the value active has on entry, so it must be defined
+    active = .false.
     !$omp parallel do &
     !$omp& default(none) &
     !$omp& private(i,slave,id,coord,ncoord,surf_node_pos,sfunc,nnode_s, &
