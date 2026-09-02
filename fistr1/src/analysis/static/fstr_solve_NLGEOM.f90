@@ -44,7 +44,7 @@ contains
     real(kind=kreal)   :: ctime, dtime, endtime, factor
     real(kind=kreal)   :: time_1, time_2
     logical            :: ctchanged, is_OutPoint, is_interaction_active
-    logical            :: contact_active_bak = .true.   ! last scan-set contact_active, retained across cutback restore
+    logical            :: contact_active_bak   ! last scan-set contact_active, retained across cutback restore
 
     if(hecMESH%my_rank==0) call fstr_TimeInc_PrintSTATUS_init
 
@@ -109,6 +109,7 @@ contains
     call fstr_begin_nodal_kinematics_step( hecMESH, fstrSOLID, hecMAT%NDOF )
     call fstr_cutback_init( hecMESH, fstrSOLID, fstrPARAM )
     call fstr_cutback_save( fstrSOLID, infoCTChange, infoCTChange_bak )
+    contact_active_bak = .true.
 
     do tot_step=1, fstrSOLID%nstep_tot
       tot_step_print = tot_step+restart_step_num-1
