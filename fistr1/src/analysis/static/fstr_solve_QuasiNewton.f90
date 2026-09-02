@@ -128,14 +128,14 @@ contains
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
  
       ! ----- check convergence
-      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
-          ndof, iter, sub_step, cstep, &
-          hecMAT%B, 0, &
-          res, res, &
-          0, &
-          iterStatus)
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
+          hecMAT%B, 0, res, res, 0, iterStatus)
       if (iterStatus == kitrConverged) exit
-      if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
+      if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then
+        call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+        fstrSOLID%step_ctrl(cstep)%max_iter = max_iter_bak
+        return
+      endif
       ! if (iterStatus == kitrDiverged) exit
       ! if (iterStatus==kitrFloatingError) return
 

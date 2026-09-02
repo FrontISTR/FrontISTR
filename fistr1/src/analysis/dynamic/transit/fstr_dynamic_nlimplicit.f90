@@ -426,13 +426,8 @@ contains
         endif
         call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
 
-        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
-            ndof, iter, istep, cstep, &
-            resid_work, nresid, &
-            res0, res, &
-            n_node_global, &
-            iterStatus, &
-            maxDLag, converg_dlag)
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, istep, cstep, &
+            resid_work, nresid, res0, res, n_node_global, iterStatus, maxDLag, converg_dlag)
         if (iterStatus == kitrConverged) exit
         if (iterStatus == kitrDiverged .or. iterStatus == kitrFloatingError) then
           fstrSOLID%NRstat_i(knstCITER) = count_step
@@ -445,14 +440,11 @@ contains
         call solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,1.0D0,fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
         ! ----- check matrix solver error
-        if( istat /= 0 ) then
-          if( hecMESH%my_rank == 0) then
-            write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', istep
-          end if
-          fstrSOLID%NRstat_i(knstDRESN) = 4
-          fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, istep, iterStatus, istat)
+        if( iterStatus /= kitrContinue ) then
+          fstrSOLID%NRstat_i(knstCITER) = count_step
           return
-        end if
+        endif
 
         ! ----- update external nodal displacement increments
         call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
