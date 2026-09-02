@@ -513,6 +513,23 @@ contains
             fstrSOLID%contacts(c_contact+i)%symmetric = .not. P%PARAM%fric_cone_follow
           endif
           if( fstrSOLID%contacts(c_contact+i)%method == CONTACTS2S ) then
+            ! Only the static path is wired for MORTAR=YES. The implicit dynamic solver calls
+            ! the shared scan / matrix connectivity / stiffness routines, so the pair would be
+            ! dispatched to the mortar code, but it never calls fstr_begin_lambda_txn /
+            ! fstr_commit_lambda_txn and the multipliers would not advance over the substeps.
+            ! The explicit solver applies the NODE-SURF scan to every pair regardless of the
+            ! method. Both would be silent, so this must be an error.
+            ! ELEMCHECK and NZPROF run no analysis at all (fstr_input_precheck returns before
+            ! the solver dispatch and never touches the contact pairs), so they are let through.
+            if( P%PARAM%solution_type /= kstSTATIC .and. &
+              & P%PARAM%solution_type /= kstPRECHECK .and. &
+              & P%PARAM%solution_type /= kstNZPROF ) then
+              write(*,*)    '### Error: MORTAR=YES is supported only in static analysis : ', i+c_contact
+              write(ILOG,*) '### Error: MORTAR=YES is supported only in static analysis : ', i+c_contact
+              write(*,*)    '           Specify !SOLUTION, TYPE=STATIC or TYPE=NLSTATIC.'
+              write(ILOG,*) '           Specify !SOLUTION, TYPE=STATIC or TYPE=NLSTATIC.'
+              stop HECMW_EXIT_MODEL
+            endif
             if( P%PARAM%contact_algo == kcaSLagrange ) then
               write(*,*)    '### Error: MORTAR=YES is not supported with !CONTACT_ALGO TYPE=SLAGRANGE : ', i+c_contact
               write(ILOG,*) '### Error: MORTAR=YES is not supported with !CONTACT_ALGO TYPE=SLAGRANGE : ', i+c_contact
