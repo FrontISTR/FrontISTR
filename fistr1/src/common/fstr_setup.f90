@@ -530,6 +530,18 @@ contains
               write(ILOG,*) '           Specify !SOLUTION, TYPE=STATIC or TYPE=NLSTATIC.'
               stop HECMW_EXIT_MODEL
             endif
+            ! Restart is not supported. The restart file keeps the node-level contact state
+            ! only (contacts(i)%states over contacts(i)%slave), so the segment states in
+            ! slave_surf and the converged multipliers are not saved. A resumed run would
+            ! start with every segment free and without the warm start, and the initial scan
+            ! is skipped on restart, so the difference would be silent.
+            if( fstrSOLID%restart_nout < 0 ) then
+              write(*,*)    '### Error: MORTAR=YES does not support restart : ', i+c_contact
+              write(ILOG,*) '### Error: MORTAR=YES does not support restart : ', i+c_contact
+              write(*,*)    '           The contact state of mortar pairs is not saved in the restart file.'
+              write(ILOG,*) '           The contact state of mortar pairs is not saved in the restart file.'
+              stop HECMW_EXIT_MODEL
+            endif
             if( P%PARAM%contact_algo == kcaSLagrange ) then
               write(*,*)    '### Error: MORTAR=YES is not supported with !CONTACT_ALGO TYPE=SLAGRANGE : ', i+c_contact
               write(ILOG,*) '### Error: MORTAR=YES is not supported with !CONTACT_ALGO TYPE=SLAGRANGE : ', i+c_contact
