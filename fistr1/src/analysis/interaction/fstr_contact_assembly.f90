@@ -26,8 +26,9 @@ contains
     integer(kind=kint), intent(in)       :: ndof      !< degrees of freedom
     type(hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh
     
-    integer(kind=kint) :: j, k, slave_node, master_node, nnode, ctsurf
+    integer(kind=kint) :: i, j, k, slave_node, master_node, nnode, ctsurf
     integer(kind=kint) :: idx_start, idx_end, n_slave
+    integer(kind=kint) :: cgrp, ic, iss, outtype, fnodes(100)
     real(kind=kreal)   :: maxv
     real(kind=kreal)   :: A_rep, slave_reflen_sum
     real(kind=kreal)   :: elem(3, l_max_surface_node), r0(2)
@@ -37,8 +38,9 @@ contains
     ! Loop over slave nodes
     do j = 1, size(contact%slave)
       slave_node = contact%slave(j)
-      ! The mortar refStiff must be partition-invariant: skip GHOST(external) rows so the
-      ! rank-local max uses only fully-assembled diagonals; allreduce-MAX then equals serial.
+      ! The mortar refStiff must be partition-invariant: skip GHOST(external) rows, whose
+      ! diagonal is not fully assembled here. Every slave node is internal on exactly one
+      ! rank, so the allreduce-MAX below still sees every fully-assembled diagonal.
       if( contact%method == CONTACTS2S .and. slave_node > hecMESH%nn_internal ) cycle
       idx_start = ndof * (slave_node - 1) + 1
       idx_end = ndof * slave_node
@@ -46,16 +48,40 @@ contains
     enddo
     
     ! Loop over master surfaces and nodes
-    do ctsurf = 1, size(contact%master)
-      nnode = size(contact%master(ctsurf)%nodes)
-      do j = 1, nnode
-        master_node = contact%master(ctsurf)%nodes(j)
-        if( contact%method == CONTACTS2S .and. master_node > hecMESH%nn_internal ) cycle
-        idx_start = ndof * (master_node - 1) + 1
-        idx_end = ndof * master_node
-        maxv = max(maxv, maxval(diag(idx_start:idx_end)))
+    if( contact%method == CONTACTS2S ) then
+      ! Enumerate the master faces from the surface group instead of contact%master: with
+      ! !PARTITION, CONTACT_OWNER=SLAVE a rank that owns no slave node takes no master surface
+      ! at all (fstr_contact_init), so the diagonals of the master nodes it owns would never
+      ! enter the max and refStiff would depend on the partition. The surface group items are
+      ! present wherever the element is, so taking internal rows only on every rank lets the
+      ! allreduce-MAX reproduce the serial value.
+      cgrp = contact%surf_id2
+      if( cgrp > 0 ) then
+        do i = hecMESH%surf_group%grp_index(cgrp-1)+1, hecMESH%surf_group%grp_index(cgrp)
+          ic = hecMESH%surf_group%grp_item(2*i-1)
+          call getSubFace( hecMESH%elem_type(ic), hecMESH%surf_group%grp_item(2*i), outtype, fnodes )
+          nnode = getNumberOfNodes( outtype )
+          iss = hecMESH%elem_node_index(ic-1)
+          do j = 1, nnode
+            master_node = hecMESH%elem_node_item( iss + fnodes(j) )
+            if( master_node > hecMESH%nn_internal ) cycle
+            idx_start = ndof * (master_node - 1) + 1
+            idx_end = ndof * master_node
+            maxv = max(maxv, maxval(diag(idx_start:idx_end)))
+          enddo
+        enddo
+      endif
+    else
+      do ctsurf = 1, size(contact%master)
+        nnode = size(contact%master(ctsurf)%nodes)
+        do j = 1, nnode
+          master_node = contact%master(ctsurf)%nodes(j)
+          idx_start = ndof * (master_node - 1) + 1
+          idx_end = ndof * master_node
+          maxv = max(maxv, maxval(diag(idx_start:idx_end)))
+        enddo
       enddo
-    enddo
+    endif
     
     ! Parallel reduction
     call hecmw_allREDUCE_R1(hecMESH, maxv, hecmw_max)
