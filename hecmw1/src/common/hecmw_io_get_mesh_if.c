@@ -10,6 +10,7 @@
 #include "hecmw_dist_free.h"
 #include "hecmw_io_get_mesh.h"
 #include "hecmw_dist_copy_c2f.h"
+#include "hecmw_io_hec.h"
 
 static struct hecmwST_local_mesh *mesh;
 
@@ -45,6 +46,30 @@ void hecmw_get_mesh_init_if__(char *name_ID, int *err, int len) {
 
 void HECMW_GET_MESH_INIT_IF(char *name_ID, int *err, int len) {
   hecmw_get_mesh_init_if(name_ID, err, len);
+}
+
+/*----------------------------------------------------------------------------*/
+
+void hecmw_get_entire_mesh_init_if(char *filename, int *err, int len) {
+  char cname[HECMW_FILENAME_LEN + 1];
+
+  if (HECMW_strcpy_f2c_r(filename, len, cname, sizeof(cname)) == NULL) {
+    *err = 1;
+    return;
+  }
+
+  mesh = HECMW_get_entire_mesh(cname);
+  if (mesh == NULL) {
+    *err = 1;
+    return;
+  }
+
+  if (HECMW_dist_copy_c2f_init(mesh)) {
+    *err = 1;
+    return;
+  }
+
+  *err = 0;
 }
 
 /*----------------------------------------------------------------------------*/
