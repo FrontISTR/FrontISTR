@@ -86,7 +86,6 @@ contains
           if( associated(contact%master(sid0)%neighbor) ) then
             if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           endif
-          if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
             contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
             localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
@@ -164,8 +163,8 @@ contains
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     real(kind=kreal)    :: effective_near_dist, distclr_use
     !
-    integer, pointer :: indexMaster(:),indexCand(:)
-    integer   ::  nMaster,idm,nMasterMax,bktID,nCand
+    integer, pointer :: indexCand(:)
+    integer   ::  idm,bktID,nCand
     logical :: is_implicit
 
     is_implicit = present(flag_ctAlgo)
@@ -209,9 +208,9 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,id,nlforce,coord,indexMaster,nMaster,iSS,idm,etype,isin, &
+    !$omp& private(i,slave,id,nlforce,coord,iSS,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand,distclr_use) &
-    !$omp& firstprivate(nMasterMax,is_implicit,effective_near_dist) &
+    !$omp& firstprivate(is_implicit,effective_near_dist) &
     !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,distclr,contact_surf,is_init) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
@@ -300,26 +299,8 @@ contains
         allocate(indexCand(nCand))
         call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
 
-        nMasterMax = nCand
-        allocate(indexMaster(nMasterMax))
-        nMaster = 0
-
-        ! narrow down candidates
-        do idm= 1, nCand
+        do idm = 1,nCand
           id = indexCand(idm)
-          if (.not. is_in_surface_box( contact%master(id), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
-          nMaster = nMaster + 1
-          indexMaster(nMaster) = id
-        enddo
-        deallocate(indexCand)
-
-        if(nMaster == 0) then
-          deallocate(indexMaster)
-          cycle
-        endif
-
-        do idm = 1,nMaster
-          id = indexMaster(idm)
           ! Expand distclr for NEAR detection
           if (effective_near_dist > 0.0d0) then
             distclr_use = max(distclr, effective_near_dist / contact%master(id)%reflen)
@@ -356,7 +337,7 @@ contains
           end if
           exit
         enddo
-        deallocate(indexMaster)
+        deallocate(indexCand)
       endif
     enddo
     !$omp end parallel do
@@ -417,8 +398,8 @@ contains
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
-    integer, pointer :: indexMaster(:),indexCand(:)
-    integer   ::  nMaster,idm,nMasterMax,bktID,nCand
+    integer, pointer :: indexCand(:)
+    integer   ::  idm,bktID,nCand
     logical :: is_present_B
     real(kind=kreal), pointer :: Bp(:)
 
@@ -452,9 +433,9 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,id,coord,indexMaster,nMaster,nn,j,iSS,elem,idm,etype,isin, &
+    !$omp& private(i,slave,id,coord,nn,j,iSS,elem,idm,etype,isin, &
     !$omp&         bktID,nCand,indexCand) &
-    !$omp& firstprivate(nMasterMax,is_present_B) &
+    !$omp& firstprivate(is_present_B) &
     !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,Bp,distclr,contact_surf) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
@@ -470,26 +451,8 @@ contains
         allocate(indexCand(nCand))
         call bucketDB_getCand(embed%master_bktDB, bktID, nCand, indexCand)
 
-        nMasterMax = nCand
-        allocate(indexMaster(nMasterMax))
-        nMaster = 0
-
-        ! narrow down candidates
-        do idm= 1, nCand
+        do idm = 1,nCand
           id = indexCand(idm)
-          if (.not. is_in_surface_box( embed%master(id), coord(1:3), embed%cparam%BOX_EXP_RATE )) cycle
-          nMaster = nMaster + 1
-          indexMaster(nMaster) = id
-        enddo
-        deallocate(indexCand)
-
-        if(nMaster == 0) then
-          deallocate(indexMaster)
-          cycle
-        endif
-
-        do idm = 1,nMaster
-          id = indexMaster(idm)
           etype = embed%master(id)%etype
           if( mod(etype,10) == 2 ) etype = etype - 1 !search by 1st-order shape function
           nn = getNumberOfNodes(etype)
@@ -507,7 +470,7 @@ contains
             elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
           exit
         enddo
-        deallocate(indexMaster)
+        deallocate(indexCand)
       endif
     enddo
     !$omp end parallel do

@@ -264,21 +264,6 @@ contains
     !$omp end parallel do
   end subroutine update_surface_box_info
 
-  !> Check if given point is within cubic box including surface element
-  logical function is_in_surface_box(surf, x0, exp_rate)
-    type(tSurfElement), intent(inout) :: surf  !< current surface element
-    real(kind=kreal), intent(in) :: x0(3)      !< coordinate of slave node
-    real(kind=kreal), intent(in) :: exp_rate   !< expansion rate (>1.0)
-    real(kind=kreal) :: dist(3), er
-    er = max(exp_rate, 1.d0)
-    dist(:) = abs(x0(:) - surf%xavg(:))
-    if ( maxval(dist(:)) < surf%dmax * er ) then
-      is_in_surface_box = .true.
-    else
-      is_in_surface_box = .false.
-    endif
-  end function is_in_surface_box
-
   !> Update bucket info for searching surface elements
   subroutine update_surface_bucket_info(surf, bktDB)
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements

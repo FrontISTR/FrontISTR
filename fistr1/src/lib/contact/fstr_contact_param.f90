@@ -27,7 +27,6 @@ module mContactParam
     real(kind=kreal) :: DISTCLR_NOCHECK  !< dist clearance for skipping distance check for nodes already in contact
                                          !< (big value to keep contact because contact-to-free is judged by tensile force)
     real(kind=kreal) :: TENSILE_FORCE    !< tensile force to be judged as free node
-    real(kind=kreal) :: BOX_EXP_RATE     !< recommended: (1.0..2.0] (the smaller the faster, the bigger the safer)
     real(kind=kreal) :: NEAR_DIST        !< distance threshold for CONTACTNEAR detection [length] (<=0: disabled)
   end type tContactParam
 
@@ -52,7 +51,6 @@ contains
     cparam%DISTCLR_FREE    =-1.d-6
     cparam%DISTCLR_NOCHECK = 1.d0
     cparam%TENSILE_FORCE   =-1.d-2
-    cparam%BOX_EXP_RATE    = 1.05d0
     cparam%NEAR_DIST       = 0.0d0
   end subroutine init_ContactParam
 
