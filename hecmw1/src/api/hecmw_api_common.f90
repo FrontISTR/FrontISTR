@@ -1,3 +1,8 @@
+!-------------------------------------------------------------------------------
+! Copyright (c) 2026 FrontISTR Commons
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
 module hecmw_api_common
   use iso_c_binding
   implicit none

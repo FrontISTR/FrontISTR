@@ -1,3 +1,8 @@
+!-------------------------------------------------------------------------------
+! Copyright (c) 2026 FrontISTR Commons
+! This software is released under the MIT License, see LICENSE.txt
+!-------------------------------------------------------------------------------
+
 module hecmw_api_local_mesh
   use iso_c_binding
   use hecmw_util, only : hecmwST_local_mesh
@@ -121,8 +126,8 @@ contains
   !> @param[in] mesh メッシュ構造体のハンドラ
   !> @param[in] nelem 要素数
   !> @param[in] elemtype 要素型の配列
-  !> @param[in] element 節点テーブルの配列
-  !> @param[in] sectionID セクション番号の配列
+  !> @param[in] element 節点テーブルの配列 (1始まり)
+  !> @param[in] sectionID セクション番号の配列 (1始まり)
   subroutine hecmw_api_mesh_set_element(mesh,nelem,elemtype,element,sectionID) bind(C,name='hecmw_api_mesh_set_element')
     use hecmw_etype, only : hecmw_get_max_node
     implicit none
@@ -133,48 +138,100 @@ contains
     integer(c_int), intent(in)        :: sectionID(nelem)
 
     type(hecmwST_local_mesh), pointer :: hecMESH
-    integer :: i, j, ncon, n, start
+    integer :: i, j, ncon, n, ii, jj, off
+    integer, parameter :: etypes(35) = [ &
+      111, 112, &
+      231, 232, 2322, 241, 242, &
+      301, 341, 3414, 342, 3422, 351, 352, 361, 362, 363, &
+      511, &
+      611, 612, 641, &
+      732, 733, 731, 741, 742, 743, 761, 781, &
+      881, 891, &
+      1031, 1032, 1041, 1042 &
+    ]
+    integer :: etype_counter(35)
 
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
 
     hecMESH%n_elem = nelem
     hecMESH%n_elem_gross = nelem
     hecMESH%ne_internal = nelem
-    hecMESH%n_elem_type = nelem
-    hecMESH%section%n_sect = 0
     allocate(hecMESH%elem_internal_list(nelem))
     allocate(hecMESH%elem_ID(2*nelem))
     allocate(hecMESH%global_elem_ID(nelem))
-    allocate(hecMESH%elem_type(nelem))
     allocate(hecMESH%elem_node_index(0:nelem))
-    allocate(hecMESH%elem_type_index(0:nelem))
-    allocate(hecMESH%elem_type_item(nelem))
+    allocate(hecMESH%elem_type(nelem))
     allocate(hecMESH%section_ID(nelem))
 
+    ! 要素の型ごとの個数を調べる
+    etype_counter(:) = 0
+    do i=1, nelem
+      do j=1, 35
+        if (elemtype(i) == etypes(j)) then
+          etype_counter(j) = etype_counter(j) + 1
+        end if
+      end do
+    end do
+    ! 存在する型は何種類あるか
+    n = 0
+    do j=1, 35
+      if (etype_counter(j) > 0) then
+        n = n + 1
+      end if
+    end do
+
+    hecMESH%n_elem_type = n
+    allocate(hecMESH%elem_type_index(0:n))
+    allocate(hecMESH%elem_type_item(n))
+
+    ! 型ごとに要素がいくつかるかを記録
+    i = 1
+    n = 0
+    do j=1, 35
+      if (etype_counter(j) > 0) then
+        n = n + etype_counter(j)
+        hecMESH%elem_type_item(i) = n
+        hecMESH%elem_type_index(i) = etypes(j)
+        i = i + 1
+      end if
+    end do
+
+    ! elem_node_item の個数を調べる
     ncon = 0
-    hecMESH%elem_node_index(0) = ncon
-    hecMESH%elem_type_index(0) = 0
     do i=1, nelem
       n = HECMW_get_max_node(elemtype(i))
       ncon = ncon + n
-      hecMESH%elem_node_index(i) = ncon
-      hecMESH%elem_type_index(i) = i
+    end do
+    allocate(hecMESH%elem_node_item(ncon))
+
+    ! 要素の型ごとに並び替えて代入
+    ncon = 0 ! elem_node_item　のオフセット
+    hecMESH%elem_node_index(0) = ncon
+    ii = 0
+    do j=1, 35
+      if (etype_counter(j) == 0) continue
+      n = HECMW_get_max_node(etypes(j))
+      off = 0 ! 入力配列のオフセット
+      do i=1, nelem
+        if (elemtype(i)==etypes(j)) then
+          hecMESH%elem_node_item(ncon+1:ncon+n) = element(off+1:off+n)
+          ncon = ncon + n
+          ii = ii + 1
+          hecMESH%elem_node_index(ii)    = ncon
+          hecMESH%elem_ID(2*ii-1)        = i
+          hecMESH%elem_ID(2*ii)          = 0
+          hecMESH%global_elem_ID(ii)     = i
+          hecMESH%elem_internal_list(ii) = i
+          hecMESH%elem_type(ii)          = elemtype(i)
+          hecMESH%section_ID(ii)         = sectionID(i)
+        end if
+        off = off + HECMW_get_max_node(elemtype(i))
+      end do
     end do
 
-    allocate(hecMESH%elem_node_item(ncon))
+    ! n_sect を調べる
+    hecMESH%section%n_sect = 0
     do i=1, nelem
-      n = hecMESH%elem_node_index(i) - hecMESH%elem_node_index(i-1)
-      start = hecMESH%elem_node_index(i-1)
-      do j=1, n
-        hecMESH%elem_node_item(start+j) = element(start+j) + 1
-      end do
-      hecMESH%elem_ID(2*i)          = i
-      hecMESH%elem_ID(2*i+1)        = 0
-      hecMESH%global_elem_ID(i)     = i
-      hecMESH%elem_internal_list(i) = i
-      hecMESH%elem_type(i)          = elemtype(i)
-      hecMESH%elem_type_item(i)     = elemtype(i)
-      hecMESH%section_ID(i)         = sectionID(i)+1
       if (hecMESH%section%n_sect < hecMESH%section_ID(i)) then
         hecMESH%section%n_sect = hecMESH%section_ID(i)
       end if
@@ -283,16 +340,19 @@ contains
   !> @brief 節点グループの名前
   !> @param[in] mesh メッシュ構造体のハンドラ
   !> @param[in] i 節点グループのインデックス（追加順）
-  !> @return 名前
-  function hecmw_api_mesh_get_ngrp_name(mesh,i) bind(C,name='hecmw_api_mesh_get_ngrp_name')
+  !> @param[out] buf 節点グループの名前
+  !> @param[in] buflen 確保済みの buf の大きさ
+  subroutine hecmw_api_mesh_get_ngrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_ngrp_name')
+    use hecmw_api_common, only : f_c_str_copy
     implicit none
     type(c_ptr), value :: mesh
     type(hecmwST_local_mesh), pointer :: hecMESH
     integer(c_int), value, intent(in) :: i
-    type(c_ptr) :: hecmw_api_mesh_get_ngrp_name
+    character(kind=c_char), intent(inout) :: buf(*)
+    integer(c_int), value, intent(in) :: buflen
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
-    hecmw_api_mesh_get_ngrp_name = c_loc(hecMESH%node_group%grp_name(i))
-  end function
+    call f_c_str_copy(hecMESH%node_group%grp_name(i),buf,buflen)
+  end subroutine
 
   !> @brief 節点グループの節点番号の配列
   !> @param[in] mesh メッシュ構造体のハンドラ
@@ -357,16 +417,20 @@ contains
   !> @brief 面グループの名前
   !> @param[in] mesh メッシュ構造体のハンドラ
   !> @param[in] i 面グループのインデックス（追加順）
-  !> @return 名前
-  function hecmw_api_mesh_get_sgrp_name(mesh,i) bind(C,name='hecmw_api_mesh_get_sgrp_name')
+  !> @param[out] buf 節点グループの名前
+  !> @param[in] buflen 確保済みの buf の大きさ
+  subroutine hecmw_api_mesh_get_sgrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_sgrp_name')
+    use hecmw_api_common, only : f_c_str_copy
     implicit none
     type(c_ptr), value :: mesh
     type(hecmwST_local_mesh), pointer :: hecMESH
     integer(c_int), value, intent(in) :: i
-    type(c_ptr) :: hecmw_api_mesh_get_sgrp_name
+    character(kind=c_char), intent(inout) :: buf(*)
+    integer(c_int), value, intent(in) :: buflen
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
-    hecmw_api_mesh_get_sgrp_name = c_loc(hecMESH%surf_group%grp_name(i))
-  end function
+    call c_f_pointer(cptr=mesh, fptr=hecMESH)
+    call f_c_str_copy(hecMESH%surf_group%grp_name(i),buf,buflen)
+  end subroutine
 
   !> @brief 面グループの要素番号、面番号の配列
   !> @param[in] mesh メッシュ構造体のハンドラ
@@ -431,17 +495,20 @@ contains
   !> @brief 要素グループの名前
   !> @param[in] mesh メッシュ構造体のハンドラ
   !> @param[in] i 要素グループのインデックス（追加順）
-  !> @return 名前
-  function hecmw_api_mesh_get_egrp_name(mesh,i) bind(C,name='hecmw_api_mesh_get_egrp_name')
+  !> @param[out] buf 節点グループの名前
+  !> @param[in] buflen 確保済みの buf の大きさ
+  subroutine hecmw_api_mesh_get_egrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_egrp_name')
+    use hecmw_api_common, only : f_c_str_copy
     implicit none
     type(c_ptr), value :: mesh
     type(hecmwST_local_mesh), pointer :: hecMESH
     integer(c_int), value, intent(in) :: i
-    type(c_ptr) :: hecmw_api_mesh_get_egrp_name
+    character(kind=c_char), intent(inout) :: buf(*)
+    integer(c_int), value, intent(in) :: buflen
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
-    hecmw_api_mesh_get_egrp_name = c_loc(hecMESH%elem_group%grp_name(i))
-  end function
-
+    call f_c_str_copy(hecMESH%elem_group%grp_name(i),buf,buflen)
+  end subroutine
+  
   !> @brief 要素グループの要素番号の配列
   !> @param[in] mesh メッシュ構造体のハンドラ
   !> @param[in] i 要素グループのインデックス（追加順）
