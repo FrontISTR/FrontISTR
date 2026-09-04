@@ -742,7 +742,6 @@ contains
     character(len=128) :: msg
     real(kind=kreal) :: CLEARANCE, CLR_SAME_ELEM, CLR_DIFFLPOS, CLR_CAL_NORM
     real(kind=kreal) :: DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE
-    real(kind=kreal) :: BOX_EXP_RATE
 
     fstr_ctrl_get_CONTACTPARAM = -1
 
@@ -761,15 +760,14 @@ contains
     contactparam%CLR_CAL_NORM  = CLR_CAL_NORM
 
     !read second line
-    data_fmt = 'rrrrr '
+    data_fmt = 'rrrr '
     rcode = fstr_ctrl_get_data_ex( ctrl, 2, data_fmt, &
-      &  DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE, BOX_EXP_RATE )
+      &  DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE )
     if( rcode /= 0 ) return
     contactparam%DISTCLR_INIT = DISTCLR_INIT
     contactparam%DISTCLR_FREE = DISTCLR_FREE
     contactparam%DISTCLR_NOCHECK = DISTCLR_NOCHECK
     contactparam%TENSILE_FORCE = TENSILE_FORCE
-    contactparam%BOX_EXP_RATE = BOX_EXP_RATE
 
     !input check
     rcode = 1
@@ -789,8 +787,6 @@ contains
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_NOCHECK must be >= 0.5.'
     else if( TENSILE_FORCE>=0.d0 ) then
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : TENSILE_FORCE must be < 0.'
-    else if( BOX_EXP_RATE<=1.d0 .or. 2.0<BOX_EXP_RATE ) then
-      write(msg,*) 'fstr control file error : !CONTACT_PARAM : BOX_EXP_RATE must be 1 < BOX_EXP_RATE <= 2.'
     else
       rcode =0
     end if
