@@ -125,13 +125,16 @@ ctest --output-on-failure
 | ディレクトリ | 変化させる条件 | ケース |
 |:-------------|:---------------|:-------|
 | `element`  | 要素タイプ | `FQ341` `FQ342` `FQ351` `FQ352` `FQ361` `FQ362` |
-| `load`     | `!FLOAD`   | `FQL01` 実部、`FQL02` 虚部、`FQL03` 複数群・複数自由度の複素荷重、`FQL04` 面群 |
+| `load`     | `!FLOAD`   | `FQL01` 実部、`FQL02` 虚部、`FQL03` 複数群・複数自由度の複素荷重、`FQL04` 面群への面荷重 |
 | `boundary` | `!BOUNDARY`| `FQB01` 片持ち、`FQB02` すべり支持を追加、`FQB03` 両端拘束 |
 | `modal`    | 減衰とモード範囲 | `FQM01` 質量比例減衰、`FQM02` 質量+剛性比例減衰、`FQM03` `!EIGENREAD` を2次モードから |
+| `output`   | `!OUTPUT_RES` | `FQO01` 節点ひずみと主値、`FQO02` 要素値 |
 
 基準構成は、361要素の 1.0 x 0.2 x 0.1 の片持ちはりを `FIX` で固定し、
 `LOADP` にz方向の荷重を与え、5モード、レイリー減衰 alpha=0・beta=1.0E-4、
 250Hzまでを5点で掃引するものです。
+
+応答は複素数なので、結果ファイルの各項目はラベルに `_real`・`_imag` を付けて2組出力されます。
 
 
 [cmake]: https://cmake.org/cmake/help/latest/manual/cmake.1.html
