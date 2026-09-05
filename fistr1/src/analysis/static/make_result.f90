@@ -7,7 +7,9 @@ module m_make_result
   private
 
   public:: fstr_write_result
+  public:: fstr_write_result_add
   public:: fstr_make_result
+  public:: fstr_merge_result
   public:: fstr_reorder_node_shell
   public:: fstr_reorder_rot_shell
   public:: fstr_reorder_node_beam
@@ -20,9 +22,6 @@ contains
   !C***
   subroutine fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, time, flag, fstrDYNAMIC)
     use m_fstr
-    use m_out
-    use m_static_lib
-    use mMaterial
     use hecmw_util
 
     implicit none
@@ -32,14 +31,70 @@ contains
     integer(kind=kint)        :: istep, flag
     type (fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
     real(kind=kreal)          :: time        !< current time
+    integer(kind=kint) :: id
+    real(kind=kreal)   :: work(1)
+    character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
+    character(len=HECMW_NAME_LEN)   :: label, nameID, addfname
+
+    ! --- INITIALIZE
+    header = '*fstrresult'
+    if( present(fstrDYNAMIC) ) then
+      comment = 'dynamic_result'
+    else
+      comment = 'static_result'
+    endif
+    call hecmw_result_init( hecMESH, istep, header, comment )
+
+    ! --- TIME
+    id = HECMW_RESULT_DTYPE_GLOBAL
+    label = 'TOTALTIME'
+    work(1) = time
+    call hecmw_result_add( id, 1, label, work )
+
+    if( present(fstrDYNAMIC) ) then
+      call fstr_write_result_add( hecMESH, fstrSOLID, istep, "", fstrDYNAMIC )
+    else
+      call fstr_write_result_add( hecMESH, fstrSOLID, istep, "" )
+    endif
+
+    ! --- WRITE
+    nameID = 'fstrRES'
+    if( flag==0 ) then
+      call hecmw_result_write_by_name( nameID )
+    else
+      addfname = '_dif'
+      call hecmw_result_write_by_addfname( nameID, addfname )
+    endif
+
+    ! --- FINALIZE
+    call hecmw_result_finalize
+  end subroutine fstr_write_result
+
+  !C***
+  !>  ADD result items of static and dynamic analysis to the result file being written.
+  !>  label_suffix is appended to every label, so that plural sets of the same items
+  !>  can be held in one result file.
+  !C***
+  subroutine fstr_write_result_add( hecMESH, fstrSOLID, istep, label_suffix, fstrDYNAMIC)
+    use m_fstr
+    use m_out
+    use m_static_lib
+    use mMaterial
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type (fstr_solid)         :: fstrSOLID
+    integer(kind=kint)        :: istep
+    character(len=*)          :: label_suffix
+    type (fstr_dynamic), intent(in), optional  :: fstrDYNAMIC
     integer(kind=kint) :: n_lyr, ntot_lyr, tmp, is_33shell, is_33beam, cid
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
     real(kind=kreal), pointer :: tnstrain(:), testrain(:), yield_ratio(:)
     integer(kind=kint) :: idx
     real(kind=kreal), allocatable   :: work(:), unode(:), rnode(:)
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_MSG_LEN)    :: comment
-    character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname, cnum
+    character(len=HECMW_NAME_LEN)   :: s, label, cnum
     character(len=16), allocatable   :: clyr(:)
     logical :: is_dynamic
 
@@ -69,21 +124,6 @@ contains
     nn = mm * mdof
     allocate( work(nn) )
 
-    ! --- INITIALIZE
-    header = '*fstrresult'
-    if( present(fstrDYNAMIC) ) then
-      comment = 'dynamic_result'
-    else
-    comment = 'static_result'
-    endif
-    call hecmw_result_init( hecMESH, istep, header, comment )
-
-    ! --- TIME
-    id = HECMW_RESULT_DTYPE_GLOBAL
-    label = 'TOTALTIME'
-    work(1) = time
-    call hecmw_result_add( id, 1, label, work )
-
     ! --- DISPLACEMENT
     if( fstrSOLID%output_ctrl(3)%outinfo%on(1) ) then
       if(ndof == 4) then
@@ -98,7 +138,7 @@ contains
           enddo
         enddo
         label = 'VELOCITY'
-        call hecmw_result_add( id, nitem, label, unode )
+        call result_add( id, nitem, label, label_suffix, unode )
         deallocate( unode )
         ! for PRESSURE
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(1), 1 )
@@ -108,7 +148,7 @@ contains
           unode(i) = fstrDYNAMIC%DISP(i*4, idx)
         enddo
         label = 'PRESSURE'
-        call hecmw_result_add( id, nitem, label, unode )
+        call result_add( id, nitem, label, label_suffix, unode )
         deallocate( unode )
       else if(ndof == 6) then
         id = HECMW_RESULT_DTYPE_NODE
@@ -125,7 +165,7 @@ contains
           enddo
         endif
         label = 'DISPLACEMENT'
-        call hecmw_result_add( id, nitem, label, unode )
+        call result_add( id, nitem, label, label_suffix, unode )
         deallocate( unode )
       else
         id = HECMW_RESULT_DTYPE_NODE
@@ -144,7 +184,7 @@ contains
         if(is_33shell == 1)then
           call fstr_reorder_node_shell(fstrSOLID, hecMESH, unode)
         endif
-        call hecmw_result_add( id, nitem, label, unode )
+        call result_add( id, nitem, label, label_suffix, unode )
         deallocate( unode )
       endif
     endif
@@ -166,7 +206,7 @@ contains
             rnode((i-1)*3+1:(i-1)*3+3) = fstrSOLID%unode((i-1)*ndof+4:(i-1)*ndof+6)
           enddo
         endif
-        call hecmw_result_add( id, nitem, label, rnode )
+        call result_add( id, nitem, label, label_suffix, rnode )
         deallocate( rnode )
       else
         if ( is_33shell == 1) then
@@ -176,7 +216,7 @@ contains
           allocate( rnode(hecMESH%n_node*ndof) )
           rnode = 0.0d0
           call fstr_reorder_rot_shell(fstrSOLID, hecMESH, rnode)
-          call hecmw_result_add( id, nitem, label, rnode )
+          call result_add( id, nitem, label, label_suffix, rnode )
           deallocate( rnode )
         end if
       end if
@@ -187,7 +227,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(15), ndof )
       label = 'VELOCITY'
-      call hecmw_result_add( id, nitem, label, fstrDYNAMIC%VEL(:,idx) )
+      call result_add( id, nitem, label, label_suffix, fstrDYNAMIC%VEL(:,idx) )
     endif
 
     ! --- ACCELERATION
@@ -195,7 +235,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(16), ndof )
       label = 'ACCELERATION'
-      call hecmw_result_add( id, nitem, label, fstrDYNAMIC%ACC(:,idx) )
+      call result_add( id, nitem, label, label_suffix, fstrDYNAMIC%ACC(:,idx) )
     endif
 
     ! --- REACTION FORCE
@@ -203,15 +243,15 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(2), ndof )
       label = 'REACTION_FORCE'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%REACTION )
+      call result_add( id, nitem, label, label_suffix, fstrSOLID%REACTION )
     endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if(is_33shell == 1 .or. ndof == 6)then
-      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "                " )
+      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL, "                ", label_suffix )
     else
-      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "                " )
+      call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SOLID, "                ", label_suffix )
     endif
 
     !laminated shell
@@ -223,8 +263,8 @@ contains
         clyr(2*i  )="_L"//trim(cnum)//"-"
       enddo
       do i=1,ntot_lyr
-        call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%PLUS,  clyr(2*i-1) )
-        call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%MINUS, clyr(2*i  ) )
+        call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%PLUS,  clyr(2*i-1), label_suffix )
+        call fstr_write_result_main( hecMESH, fstrSOLID, fstrSOLID%SHELL%LAYER(i)%MINUS, clyr(2*i  ), label_suffix )
       enddo
       deallocate(clyr)
     endif
@@ -249,7 +289,7 @@ contains
             endif
           end if
         enddo
-        call hecmw_result_add( id, nitem, label, work )
+        call result_add( id, nitem, label, label_suffix, work )
       enddo
     endif
 
@@ -272,7 +312,7 @@ contains
             endif
           end if
         enddo
-        call hecmw_result_add( id, nitem, label, work )
+        call result_add( id, nitem, label, label_suffix, work )
       enddo
     endif
 
@@ -293,7 +333,7 @@ contains
           endif
           endif
         enddo
-        call hecmw_result_add( id, nitem, label, work )
+        call result_add( id, nitem, label, label_suffix, work )
       enddo
     endif
 
@@ -302,7 +342,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(12), ndof )
       label = 'THERMAL_NodalSTRAIN'
-      call hecmw_result_add( id, nitem, label, tnstrain )
+      call result_add( id, nitem, label, label_suffix, tnstrain )
     endif
 
     ! --- THERMAL STRAIN @element
@@ -310,7 +350,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(13), ndof )
       label = 'THERMAL_ElementalSTRAIN'
-      call hecmw_result_add( id, nitem, label, testrain )
+      call result_add( id, nitem, label, label_suffix, testrain )
     endif
 
     ! --- THERMAL STRAIN @gauss
@@ -333,7 +373,7 @@ contains
             enddo
           end if
         enddo
-        call hecmw_result_add( id, nitem, label, work )
+        call result_add( id, nitem, label, label_suffix, work )
       enddo
     endif
 
@@ -342,7 +382,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(29), ndof )
       label = "YIELD_RATIO"
-      call hecmw_result_add( id, nitem, label, yield_ratio )
+      call result_add( id, nitem, label, label_suffix, yield_ratio )
     endif
 
     ! --- CONTACT NORMAL FORCE @node
@@ -350,7 +390,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(30), ndof )
       label = 'CONTACT_NFORCE'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_NFORCE )
+      call result_add( id, nitem, label, label_suffix, fstrSOLID%CONT_NFORCE )
     endif
 
     ! --- CONTACT FRICTION FORCE @node
@@ -358,7 +398,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(31), ndof )
       label = 'CONTACT_FRICTION'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_FRIC )
+      call result_add( id, nitem, label, label_suffix, fstrSOLID%CONT_FRIC )
     endif
 
     ! --- CONTACT RELATIVE VELOCITY @node
@@ -366,7 +406,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(32), ndof )
       label = 'CONTACT_RELVEL'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_RELVEL )
+      call result_add( id, nitem, label, label_suffix, fstrSOLID%CONT_RELVEL )
     endif
 
     ! --- CONTACT STATE @node
@@ -374,7 +414,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(33), ndof )
       label = 'CONTACT_STATE'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_STATE )
+      call result_add( id, nitem, label, label_suffix, fstrSOLID%CONT_STATE )
     endif
 
     ! --- CONTACT NORMAL TRACTION @node
@@ -382,7 +422,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(36), ndof )
       label = 'CONTACT_NTRACTION'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_NTRAC )
+      call result_add( id, nitem, label, label_suffix, fstrSOLID%CONT_NTRAC )
     endif
 
     ! --- CONTACT FRICTION TRACTION @node
@@ -390,7 +430,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(37), ndof )
       label = 'CONTACT_FTRACTION'
-      call hecmw_result_add( id, nitem, label, fstrSOLID%CONT_FTRAC )
+      call result_add( id, nitem, label, label_suffix, fstrSOLID%CONT_FTRAC )
     endif
 
     ! --- TEMPERATURE @node
@@ -418,25 +458,29 @@ contains
       do i = 1, hecMESH%n_elem
         if( fstrSOLID%elements(i)%elemact_flag /= kELACT_INACTIVE ) work(i) = 1.d0
       enddo
-      call hecmw_result_add( id, nitem, label, work )
+      call result_add( id, nitem, label, label_suffix, work )
     endif
-
-    ! --- WRITE
-    nameID = 'fstrRES'
-    if( flag==0 ) then
-      call hecmw_result_write_by_name( nameID )
-    else
-      addfname = '_dif'
-      call hecmw_result_write_by_addfname( nameID, addfname )
-    endif
-
-    ! --- FINALIZE
-    call hecmw_result_finalize
 
     deallocate( work )
-  end subroutine fstr_write_result
+  end subroutine fstr_write_result_add
 
-  subroutine fstr_write_result_main( hecMESH, fstrSOLID, RES, clyr )
+  subroutine result_add( dtype, n_dof, label, label_suffix, data )
+    use m_fstr
+    use hecmw_util
+
+    implicit none
+    integer(kind=kint), intent(in) :: dtype
+    integer(kind=kint), intent(in) :: n_dof
+    character(len=*), intent(in)   :: label
+    character(len=*), intent(in)   :: label_suffix
+    real(kind=kreal)               :: data(:)
+    character(len=HECMW_NAME_LEN)  :: name
+
+    name = trim(label)//trim(label_suffix)
+    call hecmw_result_add( dtype, n_dof, name, data )
+  end subroutine result_add
+
+  subroutine fstr_write_result_main( hecMESH, fstrSOLID, RES, clyr, label_suffix )
     use m_fstr
     use m_out
     use m_static_lib
@@ -453,6 +497,7 @@ contains
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_NAME_LEN)   :: s, label, nameID, addfname
     character(len=16)                :: clyr
+    character(len=*)                 :: label_suffix
     character(len=12)                :: cnum
     integer(kind=kint) :: i, j, k, ndof, mdof, id, nitem, nn, mm, ngauss, it
     real(kind=kreal), allocatable   :: work(:)
@@ -465,7 +510,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(3), ndof )
       label = 'NodalSTRAIN'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%STRAIN )
+      call result_add( id, nitem, label, label_suffix, RES%STRAIN )
     endif
 
     ! --- STRESS @node
@@ -473,7 +518,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(4), ndof )
       label = 'NodalSTRESS'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%STRESS )
+      call result_add( id, nitem, label, label_suffix, RES%STRESS )
     endif
 
     ! --- MISES @node
@@ -481,7 +526,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(5), ndof )
       label = 'NodalMISES'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%MISES )
+      call result_add( id, nitem, label, label_suffix, RES%MISES )
     endif
 
     ! --- NODAL PRINC STRESS
@@ -489,7 +534,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(19), ndof )
       label = 'NodalPrincipalSTRESS'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%PSTRESS )
+      call result_add( id, nitem, label, label_suffix, RES%PSTRESS )
     endif
 
     ! --- NODAL PRINC STRAIN
@@ -497,7 +542,7 @@ contains
       id = HECMW_RESULT_DTYPE_NODE
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(21), ndof )
       label = 'NodalPrincipalSTRAIN'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%PSTRAIN )
+      call result_add( id, nitem, label, label_suffix, RES%PSTRAIN )
     endif
 
     ! --- NODAL PRINC STRESS VECTOR
@@ -507,7 +552,7 @@ contains
         write(cnum,'(i0)')k
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(23), ndof )
         label = 'NodalPrincipalSTRESSVector'//trim(cnum)//trim(clyr)
-        call hecmw_result_add( id, nitem, label, RES%PSTRESS_VECT(:,k) )
+        call result_add( id, nitem, label, label_suffix, RES%PSTRESS_VECT(:,k) )
       end do
     endif
 
@@ -518,7 +563,7 @@ contains
         write(cnum,'(i0)')k
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(25), ndof )
         label = 'NodalPrincipalSTRAINVector'//trim(cnum)//trim(clyr)
-        call hecmw_result_add( id, nitem, label, RES%PSTRAIN_VECT(:,k) )
+        call result_add( id, nitem, label, label_suffix, RES%PSTRAIN_VECT(:,k) )
       end do
     endif
 
@@ -528,7 +573,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(6), ndof )
       label = 'ElementalSTRAIN'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%ESTRAIN )
+      call result_add( id, nitem, label, label_suffix, RES%ESTRAIN )
     endif
 
     ! --- STRESS @element
@@ -536,7 +581,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(7), ndof )
       label = 'ElementalSTRESS'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%ESTRESS )
+      call result_add( id, nitem, label, label_suffix, RES%ESTRESS )
     endif
 
     ! --- NQM @element
@@ -544,7 +589,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(35), ndof )
       label = 'ElementalNQM'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%ENQM )
+      call result_add( id, nitem, label, label_suffix, RES%ENQM )
     endif
 
     ! --- MISES @element
@@ -552,7 +597,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(8), ndof )
       label = 'ElementalMISES'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%EMISES )
+      call result_add( id, nitem, label, label_suffix, RES%EMISES )
     endif
 
     ! --- Principal_STRESS @element
@@ -560,7 +605,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(20), ndof )
       label = 'ElementalPrincipalSTRESS'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%EPSTRESS )
+      call result_add( id, nitem, label, label_suffix, RES%EPSTRESS )
     endif
 
     ! --- Principal_STRAIN @element
@@ -568,7 +613,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(22), ndof )
       label = 'ElementalPrincipalSTRAIN'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%EPSTRAIN )
+      call result_add( id, nitem, label, label_suffix, RES%EPSTRAIN )
     endif
 
     ! --- ELEM PRINC STRESS VECTOR
@@ -578,7 +623,7 @@ contains
         write(cnum,'(i0)')k
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(24), ndof )
         label = 'ElementalPrincipalSTRESSVector'//trim(cnum)//trim(clyr)
-        call hecmw_result_add( id, nitem, label, RES%EPSTRESS_VECT(:,k) )
+        call result_add( id, nitem, label, label_suffix, RES%EPSTRESS_VECT(:,k) )
       end do
     endif
 
@@ -589,7 +634,7 @@ contains
         write(cnum,'(i0)')k
         nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(26), ndof )
         label = 'ElementalPrincipalSTRAINVector'//trim(cnum)//trim(clyr)
-        call hecmw_result_add( id, nitem, label, RES%EPSTRAIN_VECT(:,k) )
+        call result_add( id, nitem, label, label_suffix, RES%EPSTRAIN_VECT(:,k) )
       end do
     endif
 
@@ -598,7 +643,7 @@ contains
       id = HECMW_RESULT_DTYPE_ELEM
       nitem = n_comp_valtype( fstrSOLID%output_ctrl(3)%outinfo%vtype(43), ndof )
       label = 'ElementalPLSTRAIN'//trim(clyr)
-      call hecmw_result_add( id, nitem, label, RES%EPLSTRAIN )
+      call result_add( id, nitem, label, label_suffix, RES%EPLSTRAIN )
     endif
     deallocate( work )
   
@@ -607,11 +652,12 @@ contains
   !C***
   !>  MAKE RESULT for static and dynamic analysis (WITHOUT ELEMENTAL RESULTS) --------------------------------------------------------------
   !C***
-  subroutine fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time, fstrDYNAMIC )
+  subroutine fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, time, fstrDYNAMIC, label_suffix )
     use m_fstr
     use hecmw_util
 
     implicit none
+    character(len=*), intent(in), optional  :: label_suffix
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid)         :: fstrSOLID
     type(hecmwST_result_data) :: fstrRESULT
@@ -1263,7 +1309,84 @@ contains
       jitem = jitem + nn
     endif
 
+    if( present(label_suffix) ) then
+      do i = 1, fstrRESULT%nn_component
+        fstrRESULT%node_label(i) = trim(fstrRESULT%node_label(i))//trim(label_suffix)
+      enddo
+      do i = 1, fstrRESULT%ne_component
+        fstrRESULT%elem_label(i) = trim(fstrRESULT%elem_label(i))//trim(label_suffix)
+      enddo
+    endif
+
   end subroutine fstr_make_result
+
+  !C***
+  !>  MERGE the node and the element components of two result data into one, so that
+  !>  plural sets of the same items can be visualized at once. Both hold the global
+  !>  values of the same step, so those of fstrRESULT are kept.
+  !C***
+  subroutine fstr_merge_result( hecMESH, fstrRESULT, fstrRESULT_add )
+    use m_fstr
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh) :: hecMESH
+    type (hecmwST_result_data) :: fstrRESULT      !< merged here
+    type (hecmwST_result_data) :: fstrRESULT_add  !< appended to fstrRESULT
+
+    type (hecmwST_result_data) :: res
+    integer(kind=kint) :: i, j, gitem, nitem, eitem, nitem_a, eitem_a
+
+    gitem   = sum( fstrRESULT%ng_dof(1:fstrRESULT%ng_component) )
+    nitem   = sum( fstrRESULT%nn_dof(1:fstrRESULT%nn_component) )
+    eitem   = sum( fstrRESULT%ne_dof(1:fstrRESULT%ne_component) )
+    nitem_a = sum( fstrRESULT_add%nn_dof(1:fstrRESULT_add%nn_component) )
+    eitem_a = sum( fstrRESULT_add%ne_dof(1:fstrRESULT_add%ne_component) )
+
+    call hecmw_nullify_result_data( res )
+    res%ng_component = fstrRESULT%ng_component
+    res%nn_component = fstrRESULT%nn_component + fstrRESULT_add%nn_component
+    res%ne_component = fstrRESULT%ne_component + fstrRESULT_add%ne_component
+    allocate( res%ng_dof(res%ng_component), res%global_label(res%ng_component) )
+    allocate( res%nn_dof(res%nn_component), res%node_label(res%nn_component) )
+    allocate( res%ne_dof(res%ne_component), res%elem_label(res%ne_component) )
+    allocate( res%global_val_item(gitem) )
+    allocate( res%node_val_item((nitem+nitem_a)*hecMESH%n_node) )
+    allocate( res%elem_val_item((eitem+eitem_a)*hecMESH%n_elem) )
+
+    res%ng_dof(1:res%ng_component) = fstrRESULT%ng_dof(1:res%ng_component)
+    res%global_label(1:res%ng_component) = fstrRESULT%global_label(1:res%ng_component)
+    res%global_val_item(1:gitem) = fstrRESULT%global_val_item(1:gitem)
+
+    res%nn_dof(1:fstrRESULT%nn_component) = fstrRESULT%nn_dof(1:fstrRESULT%nn_component)
+    res%nn_dof(fstrRESULT%nn_component+1:) = fstrRESULT_add%nn_dof(1:fstrRESULT_add%nn_component)
+    res%node_label(1:fstrRESULT%nn_component) = fstrRESULT%node_label(1:fstrRESULT%nn_component)
+    res%node_label(fstrRESULT%nn_component+1:) = fstrRESULT_add%node_label(1:fstrRESULT_add%nn_component)
+    do i = 1, hecMESH%n_node
+      do j = 1, nitem
+        res%node_val_item((nitem+nitem_a)*(i-1)+j) = fstrRESULT%node_val_item(nitem*(i-1)+j)
+      enddo
+      do j = 1, nitem_a
+        res%node_val_item((nitem+nitem_a)*(i-1)+nitem+j) = fstrRESULT_add%node_val_item(nitem_a*(i-1)+j)
+      enddo
+    enddo
+
+    res%ne_dof(1:fstrRESULT%ne_component) = fstrRESULT%ne_dof(1:fstrRESULT%ne_component)
+    res%ne_dof(fstrRESULT%ne_component+1:) = fstrRESULT_add%ne_dof(1:fstrRESULT_add%ne_component)
+    res%elem_label(1:fstrRESULT%ne_component) = fstrRESULT%elem_label(1:fstrRESULT%ne_component)
+    res%elem_label(fstrRESULT%ne_component+1:) = fstrRESULT_add%elem_label(1:fstrRESULT_add%ne_component)
+    do i = 1, hecMESH%n_elem
+      do j = 1, eitem
+        res%elem_val_item((eitem+eitem_a)*(i-1)+j) = fstrRESULT%elem_val_item(eitem*(i-1)+j)
+      enddo
+      do j = 1, eitem_a
+        res%elem_val_item((eitem+eitem_a)*(i-1)+eitem+j) = fstrRESULT_add%elem_val_item(eitem_a*(i-1)+j)
+      enddo
+    enddo
+
+    call hecmw_result_free( fstrRESULT )
+    fstrRESULT = res
+  end subroutine fstr_merge_result
 
   subroutine fstr_make_result_main( hecMESH, fstrSOLID, fstrRESULT, RES, nitem, &
       &                              iitem, ncomp, eitem, jitem, ecomp, nlyr, clyr )
