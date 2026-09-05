@@ -77,7 +77,7 @@ OBJSF = \
 	hecmw_Jacob_231.@f90objfilepostfix@ \
 	hecmw_Jacob_241.@f90objfilepostfix@ \
 	hecmw_Jacob_341.@f90objfilepostfix@ \
-	hecmw_Jacob_361.@f90objfilepostfix
+	hecmw_Jacob_361.@f90objfilepostfix@
 
 HEADERS =
 

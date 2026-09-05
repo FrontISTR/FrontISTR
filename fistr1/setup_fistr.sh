@@ -38,6 +38,8 @@ LIBSRCDIRS="\
     src/lib/contact \
     src/lib/user \
     src/analysis \
+    src/analysis/interaction \
+    src/analysis/precheck \
     src/analysis/static \
     src/analysis/heat \
     src/analysis/dynamic \
