@@ -4011,7 +4011,7 @@ int HECMW_io_init(void) {
   HECMW_log(HECMW_LOG_DEBUG, "Initializing IO process...");
 
   if (HECMW_hash_init()) {
-    printf("ERROE:HECMW_HASHTABLE INIT \n");
+    printf("ERROR:HECMW_HASHTABLE INIT \n");
     return -1;
   }
   if (clear()) {
@@ -4025,7 +4025,7 @@ int HECMW_io_finalize(void) {
   HECMW_log(HECMW_LOG_DEBUG, "Finalizing IO process...");
 
   if (HECMW_hash_finalize()) {
-    printf("ERROE:HECMW_HASHTABLE FINALIZE \n");
+    printf("ERROR:HECMW_HASHTABLE FINALIZE \n");
     return -1;
   }
   if (clear()) {
