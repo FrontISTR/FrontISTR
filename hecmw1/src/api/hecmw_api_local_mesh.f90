@@ -187,11 +187,12 @@ contains
     ! 型ごとに要素がいくつかるかを記録
     i = 1
     n = 0
+    hecMESH%elem_type_index(0) = n
     do j=1, 35
       if (etype_counter(j) > 0) then
         n = n + etype_counter(j)
-        hecMESH%elem_type_item(i) = n
-        hecMESH%elem_type_index(i) = etypes(j)
+        hecMESH%elem_type_item(i) = etypes(j)
+        hecMESH%elem_type_index(i) = n
         i = i + 1
       end if
     end do
