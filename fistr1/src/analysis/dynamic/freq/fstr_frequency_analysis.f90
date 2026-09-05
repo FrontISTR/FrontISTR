@@ -619,9 +619,9 @@ contains
     integer(kind=kint), intent(inout) :: nsize
     !---- vals
     integer(kind=kint), parameter :: NDOF = 3
-    real(kind=kreal)              :: WG
+    real(kind=kreal)              :: WG, AREA
     integer(kind=kint)            :: NOD(NN)
-    real(kind=kreal)              :: elecoord(3, NN), localcoord(3)
+    real(kind=kreal)              :: elecoord(3, NN), localcoord(3), normal(3)
     real(kind=kreal)              :: H(NN)
     integer(kind=kint)            :: I, IG2, NSUR, SURTYPE
     !---- body
@@ -641,10 +641,12 @@ contains
       call getShapeFunc( SURTYPE, localcoord(1:2), H(1:NSUR) )
 
       WG=getWeight( SURTYPE, IG2 )
+      normal=SurfaceNormal( SURTYPE, NSUR, localcoord(1:2), elecoord(:,1:NSUR) )
+      AREA=dsqrt( dot_product(normal, normal) )
       do I=1,NSUR
-        VECT(3*NOD(I)-2)=VECT(3*NOD(I)-2)+WG*H(I)*force(1)
-        VECT(3*NOD(I)-1)=VECT(3*NOD(I)-1)+WG*H(I)*force(2)
-        VECT(3*NOD(I)  )=VECT(3*NOD(I)  )+WG*H(I)*force(3)
+        VECT(3*NOD(I)-2)=VECT(3*NOD(I)-2)+AREA*WG*H(I)*force(1)
+        VECT(3*NOD(I)-1)=VECT(3*NOD(I)-1)+AREA*WG*H(I)*force(2)
+        VECT(3*NOD(I)  )=VECT(3*NOD(I)  )+AREA*WG*H(I)*force(3)
       end do
     end do
   end subroutine
