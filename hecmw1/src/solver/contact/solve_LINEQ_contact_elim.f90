@@ -260,6 +260,11 @@ contains
     ! system's structure differs from the previous call (see PREV_SIG)
     call notify_structure_change(hecMESH, hecTKT)
 
+    ! the converted system inherits the asymmetry of the contact terms (friction);
+    ! direct solvers choose their factorization mode from this flag, which
+    ! hecmw_mat_init defaulted to .true.
+    hecTKT%symmetric = (SymType == 1)
+
     t1 = t2
     call solve_with_MPC(hecMESHtmp, hecTKT)
     ! the eliminated system hecTKT is what the solver actually saw; carry its
