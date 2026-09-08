@@ -260,8 +260,17 @@ contains
     ! system's structure differs from the previous call (see PREV_SIG)
     call notify_structure_change(hecMESH, hecTKT)
 
+    ! the converted system inherits the asymmetry of the contact terms (friction);
+    ! direct solvers choose their factorization mode from this flag, which
+    ! hecmw_mat_init defaulted to .true.
+    hecTKT%symmetric = (SymType == 1)
+
     t1 = t2
     call solve_with_MPC(hecMESHtmp, hecTKT)
+    ! the eliminated system hecTKT is what the solver actually saw; carry its
+    ! verdict back to hecMAT so callers can read it without knowing about hecTKT
+    call hecmw_mat_set_flag_converged(hecMAT, hecmw_mat_get_flag_converged(hecTKT))
+    call hecmw_mat_set_flag_diverged(hecMAT, hecmw_mat_get_flag_diverged(hecTKT))
     if (DEBUG_VECTOR) call debug_write_vector(hecTKT%X, 'Solution(converted)', 'hecTKT%X', ndof, hecTKT%N)
     t2 = hecmw_wtime()
     if ((DEBUG >= 1 .and. myrank==0) .or. DEBUG >= 2) write(0,*) 'DEBUG: linear solver done ', t2-t1

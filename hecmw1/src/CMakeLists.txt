@@ -8,4 +8,5 @@ add_subdirectory(solver)
 add_subdirectory(hecmw)
 add_subdirectory(visualizer)
 add_subdirectory(operations/element_smoothing)
+add_subdirectory(api)
 

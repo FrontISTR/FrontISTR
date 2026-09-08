@@ -136,14 +136,11 @@ contains
       call solve_LINEQ(hecMESHmpc,hecMATmpc)
       call fstr_recover_initial_config_to_mesh(hecMESHmpc,fstrSOLID,coord)
       ! ----- check matrix solver error
-      if( hecmw_mat_get_flag_converged(hecMATmpc) == kNO ) then
-        if( hecMESH%my_rank == 0) then
-          write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-        end if
-        fstrSOLID%NRstat_i(knstDRESN) = 4
-        fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+      call fstr_check_linear_solver(hecMESH, hecMATmpc, fstrSOLID, cstep, sub_step, iterStatus)
+      if( iterStatus /= kitrContinue ) then
+        call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
         return
-      end if
+      endif
       call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)
 
       ! ----- update the small displacement and the displacement for 1step
@@ -156,14 +153,13 @@ contains
       if( isLinear ) exit
 
       ! ----- check convergence
-      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
-          ndof, iter, sub_step, cstep, &
-          hecMAT%B, 0, &
-          res, res, &
-          0, &
-          iterStatus)
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
+          hecMAT%B, 0, res, res, 0, iterStatus)
       if (iterStatus == kitrConverged) exit
-      if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) return
+      if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then
+        call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
+        return
+      endif
     enddo
     ! ----- end of inner loop
 
@@ -298,6 +294,12 @@ contains
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
           call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+          ! ----- check matrix solver error
+          call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, sub_step, iterStatus, istat)
+          if( iterStatus /= kitrContinue ) then
+            fstrSOLID%NRstat_i(knstCITER) = count_step
+            return
+          endif
 
           call hecmw_update_R (hecMESH, hecMAT%X, hecMAT%NP, hecMESH%n_dof)
 
@@ -327,15 +329,11 @@ contains
 
           !res = fstr_get_residual(hecMAT%B, hecMESH)
           call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
-          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
-              ndof, iter, sub_step, cstep, &
-              resid_work, nresid, &
-              res0, res1, &
-              n_node_global, &
-              iterStatus)
+          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
+              resid_work, nresid, res0, res1, n_node_global, iterStatus)
           if (iterStatus == kitrConverged) exit
           if (iterStatus == kitrDiverged .or. iterStatus == kitrFloatingError) then
-            fstrSOLID%NRstat_i(knstCITER) = al_step
+            fstrSOLID%NRstat_i(knstCITER) = count_step
             return
           endif
 
@@ -533,14 +531,11 @@ contains
         call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
         ! ----- check matrix solver error
-        if( istat /= 0 ) then
-          if( hecMESH%my_rank == 0) then
-            write(   *,'(a,i5,a,i5)') '     ### Fail to Converge  : at total_step=', cstep, '  sub_step=', sub_step
-          end if
-          fstrSOLID%NRstat_i(knstDRESN) = 4
-          fstrSOLID%CutBack_stat = fstrSOLID%CutBack_stat + 1
+        call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, sub_step, iterStatus, istat)
+        if( iterStatus /= kitrContinue ) then
+          fstrSOLID%NRstat_i(knstCITER) = count_step
           return
-        end if
+        endif
 
         x_residual = fstr_get_x_norm_contact(hecMAT,hecLagMAT,hecMESH)
 
@@ -587,12 +582,8 @@ contains
         res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
 
         call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
-        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
-            ndof, iter, sub_step, cstep, &
-            resid_work, nresid, &
-            res0, res1, &
-            n_node_global, &
-            iterStatus)
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
+            resid_work, nresid, res0, res1, n_node_global, iterStatus)
         if (iterStatus == kitrConverged) then
           exit
         endif

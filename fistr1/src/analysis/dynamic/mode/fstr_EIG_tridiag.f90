@@ -37,7 +37,7 @@ contains
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
     integer(kind=kint) :: iter2, ierr, maxiter
-    real(kind=kreal)   :: resid, chk, sigma, tolerance, max_eigval
+    real(kind=kreal)   :: resid, chk, sigma, tolerance
     real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)
 
@@ -81,36 +81,52 @@ contains
 
     call QL_decomposition(iter, iter, alpha, beta, L, ierr)
 
+    sigma = 0.0d0
+    if(fstrEIG%is_free) sigma = fstrEIG%sigma
+    do i = 1, iter
+      if(alpha(i) /= 0.0d0)then
+        eigval(i) = 1.0d0/alpha(i) - sigma
+      else
+        ! A zero Ritz value stands for an infinite eigenvalue. evsort orders by
+        ! magnitude, so the sentinel keeps such a mode out of the requested set.
+        eigval(i) = huge(0.0d0)
+      endif
+    enddo
+
+    ! The lowest modes are the largest Ritz values, so the convergence check has to
+    ! pick them through iparm rather than take the leading entries of alpha.
+    call evsort(eigval, iparm, iter)
+
     is_converge = .true.
     chk = 0.0d0
-    max_eigval = maxval(alpha)
-    do i = 1, min(nget, iter)
-      if (dabs(alpha(i)) > 0.0d0) then
+    ! Two extra modes absorb the reordering of modes sitting on the boundary of the requested set.
+    do i = 1, min(nget+2, iter)
+      in = iparm(i)
+      if (dabs(alpha(in)) > 0.0d0) then
         ! Divide by the eigenvalue of the mode itself.
-        resid = dabs(Tri%beta(iter+1)*L(iter,i))/dabs(alpha(i))
+        resid = dabs(Tri%beta(iter+1)*L(iter,in))/dabs(alpha(in))
+        chk = max(chk, resid)
+        if(tolerance < resid) is_converge = .false.
       else
-        ! An eigenvalue of zero indicates a numerical crash and the system stops.
-        call hecmw_abort( hecmw_comm_get_comm() )
+        is_converge = .false.
       endif
-      chk = max(chk, resid)
-      if(tolerance < resid) is_converge = .false.
     enddo
     if(myrank == 0) write(*,"(i8,1pe12.5)")iter, chk
 
     if(iter < nget) is_converge = .false.
-    if(iter == maxiter-1) is_converge = .true.
+
+    if(iter == maxiter-1 .and. .not. is_converge)then
+      if(myrank == 0)then
+        write(*,*)    '### WARNING: eigen analysis stopped at maxiter without convergence.'
+        write(ILOG,*) '### WARNING: eigen analysis stopped at maxiter without convergence.'
+      endif
+      ! Only iter Ritz pairs exist. Reporting more would print entries of eigval and
+      ! eigvec that no iteration has ever written.
+      if(iter < nget) fstrEIG%nget = iter
+      is_converge = .true.
+    endif
 
     if(is_converge)then
-      sigma = 0.0d0
-      if(fstrEIG%is_free) sigma = fstrEIG%sigma
-      do i = 1, iter
-        if(alpha(i) /= 0.0d0)then
-          eigval(i) = 1.0d0/alpha(i) - sigma
-        endif
-      enddo
-
-      call evsort(eigval, iparm, iter)
-
       temp = eigval
 
       eigvec = 0.0d0
@@ -177,15 +193,10 @@ contains
   !on output
   !
   !d
-  !contains the eigenvalues in ascending order.  if an
-  !error exit is made, the eigenvalues are correct but
-  !unordered for indices 1,2,...,ierror-1.
-  !-----------------------------------------------------
-  !GP
-  !du
-  !contains the unordered eigenvalues.  if an
-  !error exit is made, the eigenvalues are correct and
-  !unordered for indices 1,2,...,ierror-1.
+  !contains the eigenvalues in the order produced by the ql sweeps,
+  !which is not sorted.  ordering is left to the caller.  if an
+  !error exit is made, the eigenvalues are correct for indices
+  !1,2,...,ierror-1.
   !-----------------------------------------------------
   !e
   !has been destroyed.
@@ -195,9 +206,6 @@ contains
   !tridiagonal (or full) matrix.  if an error exit is made,
   !z contains the eigenvectors associated with the stored
   !eigenvalues.
-  !-----------------------------------------------------
-  !zu
-  !contains unordered eigenvectors of the symm. tridiag. matrix
   !-----------------------------------------------------
   !ierror is set to
   !  zero       for normal return,
@@ -298,37 +306,11 @@ contains
       220    d(l) = d(l) + f
       240 continue
 
-      !     .......... order eigenvalues and eigenvectors ..........
-      !GP: Get unordered eigenvalues and eigenvectors----------------
-
-      do 300 ii = 2, n
-        i = ii - 1
-        k = i
-        p = d(i)
-
-        aa:do j = ii, n
-          if (d(j) .ge. p) exit aa
-          k = j
-          p = d(j)
-        enddo aa
-
-        if (k .eq. i) go to 300
-        d(k) = d(i)
-        d(i) = p
-
-        do j = 1, n
-          p = z(j,i)
-          z(j,i) = z(j,k)
-          z(j,k) = p
-        enddo
-
-        300 continue
-
-        go to 1001
-        !     .......... set error -- no convergence to an
-        !                eigenvalue after 30 iterations ..........
-        1000 ierror = l
-        1001 return
+      go to 1001
+      !     .......... set error -- no convergence to an
+      !                eigenvalue after 30 iterations ..........
+      1000 ierror = l
+      1001 return
   end subroutine QL_decomposition
 
   function a2b2(a,b)

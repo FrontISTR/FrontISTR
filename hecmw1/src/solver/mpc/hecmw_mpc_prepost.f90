@@ -311,6 +311,9 @@ contains
       call hecmw_trans_b(hecMESH, hecMAT, hecMAT%B, hecMATmpc%B, time_dumm)
       hecMATmpc%Iarray=hecMAT%Iarray
       hecMATmpc%Rarray=hecMAT%Rarray
+      ! the elimination T^t A T preserves symmetry; direct solvers read this flag,
+      ! which hecmw_mpc_mat_init defaulted to .true. on the newly created hecMATmpc
+      hecMATmpc%symmetric=hecMAT%symmetric
     end select
 
   end subroutine hecmw_mpc_trans_rhs

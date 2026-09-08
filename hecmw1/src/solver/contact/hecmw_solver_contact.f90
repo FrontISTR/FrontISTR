@@ -94,6 +94,11 @@ contains
     t1 = hecmw_wtime()
 
     istat = 0
+    ! the direct-solver branches below report failure through istat only and never
+    ! touch these flags; clear them so a stale verdict from an earlier solve is not
+    ! mistaken for this one's. The elimination branch overwrites them with the real result.
+    call hecmw_mat_set_flag_converged(hecMAT, 1)
+    call hecmw_mat_set_flag_diverged(hecMAT, 0)
     if( contact_elim==1 )then
       call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
     else
