@@ -11,7 +11,7 @@ module hecmw_api_local_mesh
 contains
 
   !> @brief メッシュハンドラの生成
-  !> @return メッシュ構造体のハンドラ type(c_ptr)
+  !! @return メッシュ構造体のハンドラ type(c_ptr)
   function hecmw_api_mesh_new() bind(C,name='hecmw_api_mesh_new')
     use hecmw_util, only : hecmw_nullify_mesh
     implicit none
@@ -28,7 +28,7 @@ contains
   end function
 
   !> @brief メッシュハンドラの破棄
-  !> @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] mesh メッシュ構造体のハンドラ
   subroutine hecmw_api_mesh_delete(mesh) bind(C,name='hecmw_api_mesh_delete')
     use hecmw_dist_free_f, only : hecmw_dist_free
     implicit none
@@ -39,9 +39,9 @@ contains
   end subroutine
 
   !> @brief 節点配列の設定
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] nnode 節点数
-  !> @param[in] node 節点配列
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] nnode 節点数
+  !! @param[in] node 節点配列
   subroutine hecmw_api_mesh_set_node(mesh,nnode,node) bind(C,name='hecmw_api_mesh_set_node')
     implicit none
     type(c_ptr), value :: mesh
@@ -74,8 +74,8 @@ contains
   end subroutine
 
   !> @brief 節点数の取得
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return 節点数
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return 節点数
   function hecmw_api_mesh_n_node(mesh) bind(C,name='hecmw_api_mesh_n_node')
     implicit none
     type(c_ptr), value :: mesh
@@ -86,9 +86,9 @@ contains
   end function
 
   !> @brief 節点座標配列の取得
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return 節点配列のポインタ
-  !> @details この関数で得られたポインタを受取側は解放してはならない
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return 節点配列のポインタ
+  !! @remark この関数で得られたポインタを受取側は解放してはならない
   function hecmw_api_mesh_get_node(mesh) bind(C,name='hecmw_api_mesh_get_node')
     implicit none
     type(c_ptr), value :: mesh
@@ -99,8 +99,8 @@ contains
   end function
 
   !> @brief 節点自由度の設定
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] ndof 節点自由度
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] ndof 節点自由度
   subroutine hecmw_api_mesh_set_n_dof(mesh,ndof) bind(C,name='hecmw_api_mesh_set_n_dof')
     implicit none
     type(c_ptr), value :: mesh
@@ -111,8 +111,8 @@ contains
   end subroutine
 
   !> @brief 節点自由度の取得
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return 節点自由度
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return 節点自由度
   function hecmw_api_mesh_get_n_dof(mesh) bind(C,name='hecmw_api_mesh_get_n_dof')
     implicit none
     type(c_ptr), value :: mesh
@@ -123,11 +123,11 @@ contains
   end function
 
   !> @brief 要素の設定
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] nelem 要素数
-  !> @param[in] elemtype 要素型の配列
-  !> @param[in] element 節点テーブルの配列 (1始まり)
-  !> @param[in] sectionID セクション番号の配列 (1始まり)
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] nelem 要素数
+  !! @param[in] elemtype 要素型の配列
+  !! @param[in] element 節点テーブルの配列 (1始まり)
+  !! @param[in] sectionID セクション番号の配列 (1始まり)
   subroutine hecmw_api_mesh_set_element(mesh,nelem,elemtype,element,sectionID) bind(C,name='hecmw_api_mesh_set_element')
     use hecmw_etype, only : hecmw_get_max_node
     implicit none
@@ -184,7 +184,7 @@ contains
     allocate(hecMESH%elem_type_index(0:n))
     allocate(hecMESH%elem_type_item(n))
 
-    ! 型ごとに要素がいくつかるかを記録
+    ! 型ごとに要素がいくつあるかを記録
     i = 1
     n = 0
     hecMESH%elem_type_index(0) = n
@@ -241,8 +241,8 @@ contains
   end subroutine
 
   !> @brief 要素型の取得
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return 要素型の配列のポインタ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return 要素型の配列のポインタ
   function hecmw_api_mesh_get_elem_type(mesh) bind(C,name='hecmw_api_mesh_get_elem_type')
     implicit none
     type(c_ptr), value :: mesh
@@ -253,8 +253,8 @@ contains
   end function
 
   !> @brief 節点テーブルの取得
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return 節点テーブル配列のポインタ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return 節点テーブル配列のポインタ
   function hecmw_api_mesh_get_elem_node_item(mesh) bind(C,name='hecmw_api_mesh_get_elem_node_item')
     implicit none
     type(c_ptr), value :: mesh
@@ -265,8 +265,8 @@ contains
   end function
 
   !> @brief セクション番号配列の取得
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return セクション番号配列のポインタ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return セクション番号配列のポインタ
   function hecmw_api_mesh_get_section_ID(mesh) bind(C,name='hecmw_api_mesh_get_section_id')
     implicit none
     type(c_ptr), value :: mesh
@@ -277,8 +277,8 @@ contains
   end function
 
   !> @brief 要素数の取得
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return 要素数
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return 要素数
   function hecmw_api_mesh_n_elem(mesh) bind(C,name='hecmw_api_mesh_n_elem')
     implicit none
     type(c_ptr), value :: mesh
@@ -289,8 +289,8 @@ contains
   end function
 
   !> @brief 要素節点配列の大きさの取得
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return 要素節点配列の大きさ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return 要素節点配列の大きさ
   function hecmw_api_mesh_n_elem_node_item(mesh) bind(C,name='hecmw_api_mesh_n_elem_node_item')
     implicit none
     type(c_ptr), value :: mesh
@@ -301,8 +301,9 @@ contains
   end function
 
   !> @brief 節点グループのグループ数
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return グループの個数
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return グループの個数
+  !! @remark 全節点の NALL は明示的に追加しない限り含まれていない
   function hecmw_api_mesh_n_ngrp(mesh) bind(C,name='hecmw_api_mesh_n_ngrp')
     implicit none
     type(c_ptr), value :: mesh
@@ -313,10 +314,10 @@ contains
   end function
 
   !> @brief 節点グループを追加
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] grp_name 節点グループの名前
-  !> @param[in] count 節点の個数
-  !> @param[in] list 節点番号の配列
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] grp_name 節点グループの名前
+  !! @param[in] count 節点の個数
+  !! @param[in] list 節点番号の配列
   subroutine hecmw_api_mesh_append_ngrp(mesh,grp_name,count,list) bind(C,name='hecmw_api_mesh_append_ngrp')
     use hecmw_api_common, only : c_f_str_copy
     use hecmw_util, only : HECMW_NAME_LEN
@@ -339,10 +340,10 @@ contains
   end subroutine
 
   !> @brief 節点グループの名前
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] i 節点グループのインデックス（追加順）
-  !> @param[out] buf 節点グループの名前
-  !> @param[in] buflen 確保済みの buf の大きさ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] i 節点グループのインデックス（追加順）
+  !! @param[out] buf 節点グループの名前
+  !! @param[in] buflen 確保済みの buf の大きさ
   subroutine hecmw_api_mesh_get_ngrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_ngrp_name')
     use hecmw_api_common, only : f_c_str_copy
     implicit none
@@ -356,10 +357,10 @@ contains
   end subroutine
 
   !> @brief 節点グループの節点番号の配列
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] i 節点グループのインデックス（追加順）
-  !> @param[out] array 節点番号配列
-  !> @param[out] count 配列の大きさ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] i 節点グループのインデックス（追加順）
+  !! @param[out] array 節点番号配列
+  !! @param[out] count 配列の大きさ
   subroutine hecmw_api_mesh_get_ngrp(mesh,i,array,count) bind(C,name='hecmw_api_mesh_get_ngrp')
     implicit none
     type(c_ptr), value :: mesh
@@ -377,8 +378,8 @@ contains
   end subroutine
 
   !> @brief 面グループのグループ数
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return グループの個数
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return グループの個数
   function hecmw_api_mesh_n_sgrp(mesh) bind(C,name='hecmw_api_mesh_n_sgrp')
     implicit none
     type(c_ptr), value :: mesh
@@ -389,10 +390,10 @@ contains
   end function
 
   !> @brief 面グループを追加
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] grp_name 面グループの名前
-  !> @param[in] count 面の個数
-  !> @param[in] list 面番号の配列
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] grp_name 面グループの名前
+  !! @param[in] count 面の個数
+  !! @param[in] list 面番号の配列
   subroutine hecmw_api_mesh_append_sgrp(mesh,grp_name,count,list) bind(C,name='hecmw_api_mesh_append_sgrp')
     use hecmw_api_common, only : c_f_str_copy
     use hecmw_util, only : HECMW_NAME_LEN
@@ -416,10 +417,10 @@ contains
   end subroutine
 
   !> @brief 面グループの名前
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] i 面グループのインデックス（追加順）
-  !> @param[out] buf 節点グループの名前
-  !> @param[in] buflen 確保済みの buf の大きさ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] i 面グループのインデックス（追加順）
+  !! @param[out] buf 節点グループの名前
+  !! @param[in] buflen 確保済みの buf の大きさ
   subroutine hecmw_api_mesh_get_sgrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_sgrp_name')
     use hecmw_api_common, only : f_c_str_copy
     implicit none
@@ -434,10 +435,10 @@ contains
   end subroutine
 
   !> @brief 面グループの要素番号、面番号の配列
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] i 面グループのインデックス（追加順）
-  !> @param[out] array 要素番号、面番号配列
-  !> @param[out] count 配列の大きさ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] i 面グループのインデックス（追加順）
+  !! @param[out] array 要素番号、面番号配列
+  !! @param[out] count 配列の大きさ
   subroutine hecmw_api_mesh_get_sgrp(mesh,i,array,count) bind(C,name='hecmw_api_mesh_get_sgrp')
     implicit none
     type(c_ptr), value :: mesh
@@ -455,8 +456,9 @@ contains
   end subroutine
 
   !> @brief 要素グループのグループ数
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @return グループの個数
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @return グループの個数
+  !! @remark 全要素の EALL は明示的に追加しない限り含まれていない
   function hecmw_api_mesh_n_egrp(mesh) bind(C,name='hecmw_api_mesh_n_egrp')
     implicit none
     type(c_ptr), value :: mesh
@@ -467,10 +469,10 @@ contains
   end function
 
   !> @brief 要素グループを追加
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] grp_name 要素グループの名前
-  !> @param[in] count 要素の個数
-  !> @param[in] list 要素番号の配列
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] grp_name 要素グループの名前
+  !! @param[in] count 要素の個数
+  !! @param[in] list 要素番号の配列
   subroutine hecmw_api_mesh_append_egrp(mesh,grp_name,count,list) bind(C,name='hecmw_api_mesh_append_egrp')
     use hecmw_api_common, only : c_f_str_copy
     use hecmw_util, only : HECMW_NAME_LEN
@@ -494,10 +496,10 @@ contains
   end subroutine
 
   !> @brief 要素グループの名前
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] i 要素グループのインデックス（追加順）
-  !> @param[out] buf 節点グループの名前
-  !> @param[in] buflen 確保済みの buf の大きさ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] i 要素グループのインデックス（追加順）
+  !! @param[out] buf 節点グループの名前
+  !! @param[in] buflen 確保済みの buf の大きさ
   subroutine hecmw_api_mesh_get_egrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_egrp_name')
     use hecmw_api_common, only : f_c_str_copy
     implicit none
@@ -511,10 +513,10 @@ contains
   end subroutine
   
   !> @brief 要素グループの要素番号の配列
-  !> @param[in] mesh メッシュ構造体のハンドラ
-  !> @param[in] i 要素グループのインデックス（追加順）
-  !> @param[out] array 要素番号配列
-  !> @param[out] count 配列の大きさ
+  !! @param[in] mesh メッシュ構造体のハンドラ
+  !! @param[in] i 要素グループのインデックス（追加順）
+  !! @param[out] array 要素番号配列
+  !! @param[out] count 配列の大きさ
   subroutine hecmw_api_mesh_get_egrp(mesh,i,array,count) bind(C,name='hecmw_api_mesh_get_egrp')
     implicit none
     type(c_ptr), value :: mesh
