@@ -3,8 +3,8 @@
  * This software is released under the MIT License, see LICENSE.txt
  *****************************************************************************/
 
-#ifndef hecmw_local_mesh_apiH
-#define hecmw_local_mesh_apiH
+#ifndef hecmw_api_local_meshH
+#define hecmw_api_local_meshH
 
 void* hecmw_api_mesh_new();
 void hecmw_api_mesh_delete(void* mesh);
