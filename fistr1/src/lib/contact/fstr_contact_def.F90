@@ -17,7 +17,6 @@ module mContactDef
   use m_hecmw_contact_comm
   use bucket_search
   use mContactParam
-  use m_fstr_contact_smoothing
 
   implicit none
 

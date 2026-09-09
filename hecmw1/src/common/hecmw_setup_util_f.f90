@@ -5,7 +5,7 @@
 !> \brief This module contains auxiliary functions in calculation setup
 
 module hecmw_setup_util
-  use hecmw
+  use hecmw_util
 
   !> container of character array pointer, because of gfortran's bug
   type hecmw_str_arr

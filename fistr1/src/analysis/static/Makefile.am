@@ -98,6 +98,7 @@ OBJSF = \
         static_output.@f90objfilepostfix@ \
         fstr_Residual.@f90objfilepostfix@ \
         fstr_AddBC.@f90objfilepostfix@ \
+        fstr_CheckConvergence.@f90objfilepostfix@ \
         fstr_solve_NonLinear.@f90objfilepostfix@ \
         fstr_solve_QuasiNewton.@f90objfilepostfix@ \
         fstr_solve_NLGEOM.@f90objfilepostfix@
