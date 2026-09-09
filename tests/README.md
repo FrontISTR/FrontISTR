@@ -113,13 +113,17 @@ as the base configuration so that the effect of the varied condition stays isola
 | directory  | varied condition | cases |
 |:-----------|:-----------------|:------|
 | `element`  | element type     | `FQ341` `FQ342` `FQ351` `FQ352` `FQ361` `FQ362` |
-| `load`     | `!FLOAD`         | `FQL01` real, `FQL02` imaginary, `FQL03` complex on several groups and DOFs, `FQL04` surface group |
+| `load`     | `!FLOAD`         | `FQL01` real, `FQL02` imaginary, `FQL03` complex on several groups and DOFs, `FQL04` traction on a surface group |
 | `boundary` | `!BOUNDARY`      | `FQB01` cantilever, `FQB02` additional sliding support, `FQB03` both ends fixed |
 | `modal`    | damping and mode range | `FQM01` mass proportional, `FQM02` mass and stiffness proportional, `FQM03` `!EIGENREAD` starting from the 2nd mode |
+| `output`   | `!OUTPUT_RES`    | `FQO01` nodal strain and principal values, `FQO02` elemental values |
 
 The base configuration is a 1.0 x 0.2 x 0.1 cantilever of 361 elements fixed at `FIX`,
 loaded at `LOADP` in the z direction, 5 modes, Rayleigh damping of alpha=0 and beta=1.0E-4,
 and a frequency sweep of 5 points up to 250 Hz.
+
+The response is complex, so every item of the result file is written twice, with the
+label suffixed by `_real` and `_imag`.
 
 [cmake]: https://cmake.org/cmake/help/latest/manual/cmake.1.html
 [ctest]: https://cmake.org/cmake/help/latest/manual/ctest.1.html
