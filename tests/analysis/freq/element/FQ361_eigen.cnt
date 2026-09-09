@@ -1,0 +1,11 @@
+# Eigen analysis providing the modes for FQ361.cnt
+!SOLUTION, TYPE=EIGEN
+!EIGEN
+ 5, 1.0E-8, 60
+!BOUNDARY
+ FIX, 1, 3, 0.0
+!SOLVER, METHOD=CG, PRECOND=1, ITERLOG=NO, TIMELOG=NO
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+!WRITE, RESULT
+!END
