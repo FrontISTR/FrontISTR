@@ -1034,7 +1034,7 @@ contains
     n = 0
     do i = 1, nline
       r(:)=huge(0.0d0); t(:)=huge(0.0d0)
-      if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
+      if( fstr_ctrl_get_data_ex( ctrl, i, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
       n = n+1
       val(n) = r(1)
       table(n) = t(1)
