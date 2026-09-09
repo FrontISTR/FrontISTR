@@ -228,10 +228,20 @@ contains
         endif
 
         if( nlforce < contact%cparam%TENSILE_FORCE ) then
-          contact%states(i)%state = CONTACTFREE
           contact%states(i)%multiplier(:) = 0.d0
-          if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
-            elemID(contact%master(id)%eid), " with tensile force ", nlforce
+          if( effective_near_dist > 0.0d0 ) then
+            ! keep the projection so that the NEAR branch re-projects on the next scan and
+            ! decides between NEAR and FREE with an up-to-date distance
+            contact%states(i)%state = CONTACTNEAR
+            contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+            if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave), &
+              " released to near contact with element", &
+              elemID(contact%master(id)%eid), " with tensile force ", nlforce
+          else
+            contact%states(i)%state = CONTACTFREE
+            if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
+              elemID(contact%master(id)%eid), " with tensile force ", nlforce
+          endif
           cycle
         endif
         if( contact%algtype /= CONTACTFSLID ) then   ! small slide problem
