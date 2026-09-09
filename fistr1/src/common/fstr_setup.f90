@@ -652,7 +652,7 @@ contains
           write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
           stop
         endif
-        fstrSOLID%materials(cid)%name = mName
+        fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
         if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
 
       else if( header_name == '!ELASTIC' ) then

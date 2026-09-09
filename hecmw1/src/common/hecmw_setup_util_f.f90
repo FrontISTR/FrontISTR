@@ -66,18 +66,18 @@ contains
 
   function hecmw_streqr( s1, s2 )
     implicit none
-    character(*) :: s1, s2
+    character(*), intent(in) :: s1, s2
     logical :: hecmw_streqr
     integer :: i, n, a1, a2
 
     hecmw_streqr = .false.
     n = len_trim(s1)
     if( n /= len_trim(s2)) return
-    call hecmw_strupr(s1)
-    call hecmw_strupr(s2)
     do i = 1, n
       a1 = iachar(s1(i:i))
       a2 = iachar(s2(i:i))
+      if( a1 >= iachar('a') .and. a1 <= iachar('z')) a1 = a1 - 32
+      if( a2 >= iachar('a') .and. a2 <= iachar('z')) a2 = a2 - 32
       if( a1 /= a2 ) then
         return
       end if
