@@ -156,7 +156,7 @@ contains
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: i, iSS, nactive
+    integer(kind=kint)  :: i, iSS, nactive, icat_prev, icat_curr
     real(kind=kreal)    :: coord(3)
     real(kind=kreal)    :: nlforce
     logical             :: isin
@@ -363,11 +363,10 @@ contains
           nactive = nactive + 1
         endif
       endif
-      if (is_contact_free(states_prev(i)) .and. .not. is_contact_free(contact%states(i)%state)) then
-        infoCTChange%free2contact = infoCTChange%free2contact + 1
-      elseif (.not. is_contact_free(states_prev(i)) .and. is_contact_free(contact%states(i)%state)) then
-        infoCTChange%contact2free = infoCTChange%contact2free + 1
-      endif
+      icat_prev = contact_state_category(states_prev(i))
+      icat_curr = contact_state_category(contact%states(i)%state)
+      if (icat_prev /= icat_curr) infoCTChange%n_statechange(icat_prev,icat_curr) = &
+        infoCTChange%n_statechange(icat_prev,icat_curr) + 1
     enddo
     active = (nactive > 0)
     deallocate(contact_surf)
@@ -393,7 +392,7 @@ contains
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    integer(kind=kint)  :: nn, i, j, iSS, nactive, icat_prev, icat_curr
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
@@ -488,11 +487,10 @@ contains
           nactive = nactive + 1
         endif
       endif
-      if (states_prev(i) == CONTACTFREE .and. embed%states(i)%state /= CONTACTFREE) then
-        infoCTChange%free2contact = infoCTChange%free2contact + 1
-      elseif (states_prev(i) /= CONTACTFREE .and. embed%states(i)%state == CONTACTFREE) then
-        infoCTChange%contact2free = infoCTChange%contact2free + 1
-      endif
+      icat_prev = contact_state_category(states_prev(i))
+      icat_curr = contact_state_category(embed%states(i)%state)
+      if (icat_prev /= icat_curr) infoCTChange%n_statechange(icat_prev,icat_curr) = &
+        infoCTChange%n_statechange(icat_prev,icat_curr) + 1
     enddo
     active = (nactive > 0)
     deallocate(contact_surf)
@@ -507,7 +505,7 @@ contains
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
 
     integer(kind=kint) :: i, j, grpid, slave
-    integer(kind=kint) :: k, id, iSS
+    integer(kind=kint) :: k, id, iSS, icat
     integer(kind=kint) :: ig0, ig, iS0, iE0
     integer(kind=kint), allocatable :: states(:)
 
@@ -543,8 +541,9 @@ contains
             states(iSS) = fstrSOLID%contacts(i)%states(j)%state
           enddo
         else !found duplicate tied contact slave node
+          icat = contact_state_category(fstrSOLID%contacts(i)%states(j)%state)
           fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
-          infoCTChange%free2contact = infoCTChange%free2contact - 1
+          infoCTChange%n_statechange(kcatFREE,icat) = infoCTChange%n_statechange(kcatFREE,icat) - 1
           if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i6,A,i6,A)') "Node",hecMESH%global_node_ID(slave), &
             " in rank",hecmw_comm_get_rank()," freed due to duplication"
         endif

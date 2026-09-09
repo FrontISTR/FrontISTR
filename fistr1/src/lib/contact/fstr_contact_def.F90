@@ -35,6 +35,11 @@ module mContactDef
   integer, parameter :: CONTACTSTICK = 1
   integer, parameter :: CONTACTSLIP = 2
 
+  !> contact state category: states sharing a category contribute to the matrix in the same way
+  integer, parameter :: kcatFREE = 1  !< no projection
+  integer, parameter :: kcatNEAR = 2  !< projection only, no Lagrange multiplier
+  integer, parameter :: kcatCONT = 3  !< Lagrange multiplier held (STICK or SLIP)
+
   !> contact type or algorithm definition
   integer, parameter :: CONTACTTIED = 1
   integer, parameter :: CONTACTGLUED = 2
@@ -123,10 +128,9 @@ module mContactDef
 
   type fstr_info_contactChange
     logical            :: active
-    integer(kind=kint) :: contact2free           !< counter: contact to free state change
+    integer(kind=kint) :: n_statechange(3,3)     !< counter: slave nodes moved from a state category to another
     integer(kind=kint) :: contact2neighbor       !< counter: contact to neighbor state change
     integer(kind=kint) :: contact2diffLpos       !< counter: contact to different local position state change
-    integer(kind=kint) :: free2contact           !< counter: free to contact state change
     integer(kind=kint) :: contactNode_previous   !< previous number of nodes in contact
     integer(kind=kint) :: contactNode_current    !< current number of nodes in contact
   end type fstr_info_contactChange
@@ -182,6 +186,18 @@ contains
   pure logical function is_contact_free(state)
     integer, intent(in) :: state
     is_contact_free = (state == CONTACTFREE)
+  end function
+
+  !> Which of the three categories the contact state belongs to
+  pure integer function contact_state_category(state)
+    integer, intent(in) :: state
+    if( is_contact_free(state) ) then
+      contact_state_category = kcatFREE
+    else if( is_contact_active(state) ) then
+      contact_state_category = kcatCONT
+    else
+      contact_state_category = kcatNEAR
+    endif
   end function
 
   !> Print out contact state

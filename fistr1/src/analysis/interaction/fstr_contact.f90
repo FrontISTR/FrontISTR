@@ -203,7 +203,7 @@ contains
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
     character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag
     integer(kind=kint) :: i, grpid
-    integer(kind=kint) :: s_f2c, s_c2f, s_emov, s_islid, s_act
+    integer(kind=kint) :: s_chg(3,3), s_emov, s_islid, s_act
     logical :: iactive, is_init
 
     if( associated( fstrSOLID%CONT_RELVEL ) ) fstrSOLID%CONT_RELVEL(:) = 0.d0
@@ -222,10 +222,9 @@ contains
     enddo
     active = .false.
 
-    infoCTChange%contact2free = 0
+    infoCTChange%n_statechange = 0
     infoCTChange%contact2neighbor = 0
     infoCTChange%contact2diffLpos = 0
-    infoCTChange%free2contact = 0
     infoCTChange%contactNode_current = 0
 
     is_init = ( cstep == 1 .and. sub_step == 1 .and. cont_step == 0 )
@@ -256,24 +255,28 @@ contains
     if( is_init .and. ctAlgo == kcaSLAGRANGE .and. fstrSOLID%n_contacts > 0 ) &
     &  call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
 
-    infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
+    infoCTChange%contactNode_current = infoCTChange%contactNode_previous &
+      + sum(infoCTChange%n_statechange(:,kcatCONT)) - sum(infoCTChange%n_statechange(kcatCONT,:))
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
 
     ! Output summary of contact state changes (always on; per-node detail requires CONTACT_LOG_LEVEL>=1)
     ! allreduce must be called by all ranks regardless of local counts
-    s_f2c   = infoCTChange%free2contact
-    s_c2f   = infoCTChange%contact2free
+    s_chg   = infoCTChange%n_statechange
     s_emov  = infoCTChange%contact2neighbor
     s_islid = infoCTChange%contact2diffLpos
     s_act   = infoCTChange%contactNode_current
-    call hecmw_allreduce_I1(hecMESH, s_f2c,   HECMW_SUM)
-    call hecmw_allreduce_I1(hecMESH, s_c2f,   HECMW_SUM)
+    call hecmw_allreduce_I(hecMESH, s_chg, 9, HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_emov,  HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_islid, HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_act,   HECMW_SUM)
     if (hecmw_comm_get_rank() == 0) then
-      write(*,'(A,i0,A,i0,A,i0,A,i0,A,i0)') ' Contact change: Free2Cont=', s_f2c, ', Cont2Free=', s_c2f, &
+      write(*,'(A,i0,A,i0,A,i0,A,i0,A,i0)') ' Contact change: Free2Cont=', s_chg(kcatFREE,kcatCONT), &
+        ', Cont2Free=', s_chg(kcatCONT,kcatFREE), &
         ', ElemMoved=', s_emov, ', InElemSlid=', s_islid, ', ActiveNodes=', s_act
+      if( sum(s_chg(kcatNEAR,:)) + sum(s_chg(:,kcatNEAR)) > 0 ) &
+        write(*,'(A,i0,A,i0,A,i0,A,i0)') '   near state change: Free2Near=', s_chg(kcatFREE,kcatNEAR), &
+        ', Near2Free=', s_chg(kcatNEAR,kcatFREE), &
+        ', Near2Cont=', s_chg(kcatNEAR,kcatCONT), ', Cont2Near=', s_chg(kcatCONT,kcatNEAR)
     end if
 
     if( .not. active ) then
@@ -291,7 +294,7 @@ contains
     type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
     integer(kind=kint) :: i
-    integer(kind=kint) :: s_f2c, s_c2f, s_emov, s_islid, s_act
+    integer(kind=kint) :: s_chg(3,3), s_emov, s_islid, s_act
     logical :: iactive, is_init
 
 
@@ -302,10 +305,9 @@ contains
     enddo
     infoCTChange%active = .false.
 
-    infoCTChange%contact2free = 0
+    infoCTChange%n_statechange = 0
     infoCTChange%contact2neighbor = 0
     infoCTChange%contact2diffLpos = 0
-    infoCTChange%free2contact = 0
     infoCTChange%contactNode_current = 0
 
     is_init = ( cstep == 1 )
@@ -322,24 +324,28 @@ contains
       infoCTChange%active = infoCTChange%active .or. iactive
     enddo
 
-    infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
+    infoCTChange%contactNode_current = infoCTChange%contactNode_previous &
+      + sum(infoCTChange%n_statechange(:,kcatCONT)) - sum(infoCTChange%n_statechange(kcatCONT,:))
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current
 
     ! Output summary of contact state changes (always on; per-node detail requires CONTACT_LOG_LEVEL>=1)
     ! allreduce must be called by all ranks regardless of local counts
-    s_f2c   = infoCTChange%free2contact
-    s_c2f   = infoCTChange%contact2free
+    s_chg   = infoCTChange%n_statechange
     s_emov  = infoCTChange%contact2neighbor
     s_islid = infoCTChange%contact2diffLpos
     s_act   = infoCTChange%contactNode_current
-    call hecmw_allreduce_I1(hecMESH, s_f2c,   HECMW_SUM)
-    call hecmw_allreduce_I1(hecMESH, s_c2f,   HECMW_SUM)
+    call hecmw_allreduce_I(hecMESH, s_chg, 9, HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_emov,  HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_islid, HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_act,   HECMW_SUM)
     if (hecmw_comm_get_rank() == 0) then
-      write(*,'(A,i0,A,i0,A,i0,A,i0,A,i0)') ' Contact change: Free2Cont=', s_f2c, ', Cont2Free=', s_c2f, &
+      write(*,'(A,i0,A,i0,A,i0,A,i0,A,i0)') ' Contact change: Free2Cont=', s_chg(kcatFREE,kcatCONT), &
+        ', Cont2Free=', s_chg(kcatCONT,kcatFREE), &
         ', ElemMoved=', s_emov, ', InElemSlid=', s_islid, ', ActiveNodes=', s_act
+      if( sum(s_chg(kcatNEAR,:)) + sum(s_chg(:,kcatNEAR)) > 0 ) &
+        write(*,'(A,i0,A,i0,A,i0,A,i0)') '   near state change: Free2Near=', s_chg(kcatFREE,kcatNEAR), &
+        ', Near2Free=', s_chg(kcatNEAR,kcatFREE), &
+        ', Near2Cont=', s_chg(kcatNEAR,kcatCONT), ', Cont2Near=', s_chg(kcatCONT,kcatNEAR)
     end if
 
     fstrSOLID%ddunode = 0.d0
@@ -360,17 +366,18 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
 
     fstr_is_contact_conv = .false.
-    if( infoCTChange%contact2free+infoCTChange%contact2neighbor+      &
-      infoCTChange%contact2difflpos+infoCTChange%free2contact == 0 ) &
+    if( sum(infoCTChange%n_statechange)+infoCTChange%contact2neighbor+ &
+      infoCTChange%contact2difflpos == 0 ) &
       fstr_is_contact_conv = .true.
 
     call hecmw_allreduce_L1(hecMESH, fstr_is_contact_conv, HECMW_LAND)
   end function
 
+  !> Any state category change moves a Lagrange multiplier row or a slave-master coupling
   logical function fstr_is_matrixStructure_changed(infoCTChange)
     type (fstr_info_contactChange)   :: infoCTChange  !< fstr_contactChange
     fstr_is_matrixStructure_changed = .false.
-    if( infoCTChange%contact2free+infoCTChange%contact2neighbor+infoCTChange%free2contact > 0 ) &
+    if( sum(infoCTChange%n_statechange)+infoCTChange%contact2neighbor > 0 ) &
       fstr_is_matrixStructure_changed = .true.
   end function
 
