@@ -40,11 +40,11 @@ ctest -L mpi
 
 In addition to these parallelization labels, there are labels for "target".
 As described below, [cmake][cmake] seeks tests in this directory,
-and put a label `analysis/eigen/exK` to tests for `${FRONTISTR_HOME}/tests/analysis/eigen/exK` for example.
+and put a label `analysis/eigen/exJ` to tests for `${FRONTISTR_HOME}/tests/analysis/eigen/exJ` for example.
 To run tests on this directory, please use this label:
 
 ```
-ctest -L analysis/eigen/exK
+ctest -L analysis/eigen/exJ
 ```
 
 Because `-L` flag can select by partial match, 

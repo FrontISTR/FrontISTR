@@ -44,12 +44,12 @@ ctest -L mpi
 
 テストには並列化に関するものの他に以下に説明するように `target` によるものがあります。
 テストは下記の節で説明されているように [cmake][cmake] によって自動的に追加されますが、
-例えば `${FRONTISTR_HOME}/tests/analysis/eigen/exK/` ディレクトリにあるテストには
-`${FRONTISTR_HOME}/tests/` からの相対パスをそのまま文字列として用いて `analysis/eigen/exK` というラベルを付けます
+例えば `${FRONTISTR_HOME}/tests/analysis/eigen/exJ/` ディレクトリにあるテストには
+`${FRONTISTR_HOME}/tests/` からの相対パスをそのまま文字列として用いて `analysis/eigen/exJ` というラベルを付けます
 このディレクトリにあるテストだけを実行するには次の様にします
 
 ```
-ctest -L analysis/eigen/exK
+ctest -L analysis/eigen/exJ
 ```
 
 また `-L` は部分マッチで選択出きるので、
