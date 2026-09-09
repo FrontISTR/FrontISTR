@@ -37,6 +37,7 @@ contains
 
   ! i 番目の大域データのラベルと値を取得
   subroutine hecmw_api_result_global_val(result,i,label,label_len,value) bind(C,name='hecmw_api_result_global_val')
+    use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
     implicit none
     type(c_ptr), value :: result
@@ -68,6 +69,7 @@ contains
   ! nv(1:dim,1:n_node) に reshape して nv(index:index+dof,:) で取り出す
   ! 
   subroutine hecmw_api_result_node_val(result,i,dim,index,dof,label,label_len,value) bind(C,name='hecmw_api_result_node_val')
+    use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
     implicit none
     type(c_ptr), value :: result
@@ -114,6 +116,7 @@ contains
   ! ev(1:dim,1:n_elem) に reshape して ev(index:index+dof,:) で取り出す
   ! 
   subroutine hecmw_api_result_elem_val(result,i,dim,index,dof,label,label_len,value) bind(C,name='hecmw_api_result_elem_val')
+    use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
     implicit none
     type(c_ptr), value :: result
