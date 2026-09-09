@@ -824,6 +824,7 @@ contains
       contact_if(i)%if_type     = contact_if(1)%if_type
       contact_if(i)%etime       = contact_if(1)%etime
 
+      call fstr_strupr(cp_name(i))
       contact_if(i)%cp_name     = cp_name(i)
       contact_if(i)%initial_pos = - init_pos(i)
       contact_if(i)%end_pos     = - end_pos(i)
