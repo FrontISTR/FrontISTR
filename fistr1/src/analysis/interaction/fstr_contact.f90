@@ -351,6 +351,8 @@ contains
     fstrSOLID%ddunode = 0.d0
   end subroutine
 
+  !> Whether contact stiffness and residual have to be assembled. Broader than
+  !! is_contact_active(state): a NEAR node with damping requires assembly as well.
   logical function fstr_is_contact_active()
     fstr_is_contact_active = active
   end function

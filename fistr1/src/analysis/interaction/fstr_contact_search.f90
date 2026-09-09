@@ -13,6 +13,7 @@ module m_fstr_contact_search
   use m_fstr_contact_element
   use m_fstr_contact_interference
   use m_fstr_contact_smoothing
+  use m_fstr_contact_damping, only: is_damping_enabled
   implicit none
 
   integer(kind=kint), parameter :: CONTACT_LOG_LEVEL = 0  !< Set >= 1 to enable per-node contact log output (for debugging)
@@ -369,8 +370,8 @@ contains
           &  write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i)), &
           &  " contact with element",elemID(contact%master(id)%eid), &
           &  " in rank",hecmw_comm_get_rank()," freed due to duplication"
-        else if (is_contact_active(contact%states(i)%state)) then
-          nactive = nactive + 1
+        else if (is_contact_active(contact%states(i)%state) .or. is_damping_enabled(contact)) then
+          nactive = nactive + 1   ! a NEAR node with damping also contributes stiffness and residual
         endif
       endif
       icat_prev = contact_state_category(states_prev(i))
