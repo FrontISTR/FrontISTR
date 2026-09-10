@@ -1,0 +1,88 @@
+!! Non-associated Drucker-Prager plasticity (psi = 10 deg /= phi = 30 deg) on a 4x4x4 cube
+!! under triaxial compression. The consistent tangent stiffness is unsymmetric once the
+!! elements yield, so this test checks that the material-induced asymmetry is propagated to
+!! hecMAT%symmetric and PARDISO factorizes in unsymmetric mode (mtype=11); without the
+!! propagation the symmetric-mode linear solutions make the Newton iteration diverge.
+!! The reference is the result of BiCGSTAB (tol 1e-10), which is independent of the
+!! factorization mode of the direct solvers.
+!VERSION
+    3
+!SOLUTION, TYPE = NLSTATIC
+# symmetry on x=0, y=0, z=0 surfaces
+!BOUNDARY, GRPID = 1
+ X0, 1, 1, 0.0
+ Y0, 2, 2, 0.0
+ Z0, 3, 3, 0.0
+# isotropic compression
+!DLOAD, GRPID = 1
+ 4, P4, 100.0
+ 8, P4, 100.0
+ 12, P4, 100.0
+ 16, P4, 100.0
+ 20, P4, 100.0
+ 24, P4, 100.0
+ 28, P4, 100.0
+ 32, P4, 100.0
+ 36, P4, 100.0
+ 40, P4, 100.0
+ 44, P4, 100.0
+ 48, P4, 100.0
+ 52, P4, 100.0
+ 56, P4, 100.0
+ 60, P4, 100.0
+ 64, P4, 100.0
+ 13, P5, 100.0
+ 14, P5, 100.0
+ 15, P5, 100.0
+ 16, P5, 100.0
+ 29, P5, 100.0
+ 30, P5, 100.0
+ 31, P5, 100.0
+ 32, P5, 100.0
+ 45, P5, 100.0
+ 46, P5, 100.0
+ 47, P5, 100.0
+ 48, P5, 100.0
+ 61, P5, 100.0
+ 62, P5, 100.0
+ 63, P5, 100.0
+ 64, P5, 100.0
+ 49, P2, 100.0
+ 50, P2, 100.0
+ 51, P2, 100.0
+ 52, P2, 100.0
+ 53, P2, 100.0
+ 54, P2, 100.0
+ 55, P2, 100.0
+ 56, P2, 100.0
+ 57, P2, 100.0
+ 58, P2, 100.0
+ 59, P2, 100.0
+ 60, P2, 100.0
+ 61, P2, 100.0
+ 62, P2, 100.0
+ 63, P2, 100.0
+ 64, P2, 100.0
+# triaxial shear; eps_z = -10%
+!BOUNDARY, GRPID = 2
+ Z1, 3, 3, -0.1
+!STEP, SUBSTEPS = 1
+  BOUNDARY,    1
+  LOAD,        1
+!STEP, MAXITER=100
+ 1, 100
+  BOUNDARY,    1
+  BOUNDARY,    2
+  LOAD,        1
+!MATERIAL, NAME=M1
+!ELASTIC
+  10.0E+04,   0.33
+!PLASTIC, YIELD=DRUCKER-PRAGER
+  10., 30., 0.0, 10
+!WRITE,RESULT,FREQUENCY=100
+!OUTPUT_RES
+   ESTRAIN, ON
+   ESTRESS, ON
+   PL_ISTRAIN, ON
+!SOLVER, METHOD = DIRECTmkl, ITERLOG = NO, TIMELOG = NO
+!END

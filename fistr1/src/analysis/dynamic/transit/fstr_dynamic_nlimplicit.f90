@@ -153,6 +153,9 @@ contains
       call  hecmw_abort(hecmw_comm_get_comm())
     endif
     is_mat_symmetric = fstr_is_matrixStruct_symmetric(fstrSOLID,hecMESH)
+    ! the contact-inactive phase of the elimination path solves hecMAT itself, whose
+    ! symmetric flag (default .true.) is read by the direct solvers
+    hecMAT%symmetric = fstr_is_material_symmetric(fstrSOLID,hecMESH)
     call solve_LINEQ_contact_init(hecMESH,hecMAT,hecLagMAT,is_mat_symmetric)
 
     fstrSOLID%FACTOR = 0.0d0
