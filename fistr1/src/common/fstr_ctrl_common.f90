@@ -7,7 +7,6 @@
 module fstr_ctrl_common
   use m_fstr
   use hecmw
-  use mContact
   use m_timepoint
   use fstr_ctrl_util_f
 
@@ -742,7 +741,6 @@ contains
     character(len=128) :: msg
     real(kind=kreal) :: CLEARANCE, CLR_SAME_ELEM, CLR_DIFFLPOS, CLR_CAL_NORM
     real(kind=kreal) :: DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE
-    real(kind=kreal) :: BOX_EXP_RATE
 
     fstr_ctrl_get_CONTACTPARAM = -1
 
@@ -761,15 +759,14 @@ contains
     contactparam%CLR_CAL_NORM  = CLR_CAL_NORM
 
     !read second line
-    data_fmt = 'rrrrr '
+    data_fmt = 'rrrr '
     rcode = fstr_ctrl_get_data_ex( ctrl, 2, data_fmt, &
-      &  DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE, BOX_EXP_RATE )
+      &  DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE )
     if( rcode /= 0 ) return
     contactparam%DISTCLR_INIT = DISTCLR_INIT
     contactparam%DISTCLR_FREE = DISTCLR_FREE
     contactparam%DISTCLR_NOCHECK = DISTCLR_NOCHECK
     contactparam%TENSILE_FORCE = TENSILE_FORCE
-    contactparam%BOX_EXP_RATE = BOX_EXP_RATE
 
     !input check
     rcode = 1
@@ -789,8 +786,6 @@ contains
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_NOCHECK must be >= 0.5.'
     else if( TENSILE_FORCE>=0.d0 ) then
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : TENSILE_FORCE must be < 0.'
-    else if( BOX_EXP_RATE<=1.d0 .or. 2.0<BOX_EXP_RATE ) then
-      write(msg,*) 'fstr control file error : !CONTACT_PARAM : BOX_EXP_RATE must be 1 < BOX_EXP_RATE <= 2.'
     else
       rcode =0
     end if
@@ -829,6 +824,7 @@ contains
       contact_if(i)%if_type     = contact_if(1)%if_type
       contact_if(i)%etime       = contact_if(1)%etime
 
+      call fstr_strupr(cp_name(i))
       contact_if(i)%cp_name     = cp_name(i)
       contact_if(i)%initial_pos = - init_pos(i)
       contact_if(i)%end_pos     = - end_pos(i)
@@ -1034,7 +1030,7 @@ contains
     n = 0
     do i = 1, nline
       r(:)=huge(0.0d0); t(:)=huge(0.0d0)
-      if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
+      if( fstr_ctrl_get_data_ex( ctrl, i, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
       n = n+1
       val(n) = r(1)
       table(n) = t(1)

@@ -50,6 +50,11 @@ contains
     hecMAT%NDOF = hecMESH%n_dof
     ndof = hecMAT%ndof
 
+    ! direct solvers choose their factorization mode from this flag (default .true.),
+    ! which nothing on the non-contact path would otherwise set; iterative solvers
+    ! overwrite it from the solution method
+    hecMAT%symmetric = fstr_is_material_symmetric(fstrSOLID, hecMESH)
+
     tincr = dtime
     if( fstrSOLID%step_ctrl(cstep)%solution == stepStatic ) tincr = 0.d0
 
@@ -239,7 +244,9 @@ contains
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
         call hecmw_abort(hecmw_comm_get_comm())
       endif
-      call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, .true.)
+      ! the ALag contact terms are treated as symmetric here as before; only
+      ! material-induced asymmetry is propagated
+      call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_material_symmetric(fstrSOLID, hecMESH))
     endif
 
     hecMAT%X = 0.0d0
@@ -312,7 +319,7 @@ contains
           call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
           if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
-            call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
+            call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime+dtime )
           endif
 
           ! ----- Set residual
@@ -373,7 +380,7 @@ contains
       if (contact_changed_global > 0) then
         call hecmw_mat_clear_b( hecMAT )
         call hecmw_mat_clear_b( conMAT )
-        call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, .true.)
+        call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_material_symmetric(fstrSOLID, hecMESH))
       endif
 
       if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) .and. .not. ctchange ) exit loopFORcontactAnalysis
@@ -562,7 +569,7 @@ contains
         call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
 
         if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
-          call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
+          call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime+dtime )
         endif
 
         ! ----- Set residual

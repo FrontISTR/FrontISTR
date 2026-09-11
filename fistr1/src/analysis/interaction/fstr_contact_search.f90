@@ -86,7 +86,6 @@ contains
           if( associated(contact%master(sid0)%neighbor) ) then
             if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           endif
-          if (.not. is_in_surface_box( contact%master(sid), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
             contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
             localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
@@ -164,8 +163,9 @@ contains
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     real(kind=kreal)    :: effective_near_dist, distclr_use
     !
-    integer, pointer :: indexMaster(:),indexCand(:)
-    integer   ::  nMaster,idm,nMasterMax,bktID,nCand
+    integer, pointer :: indexCand(:)
+    integer   ::  idm,bktID,nCand,id_best
+    type(tContactState) :: cstate_free, cstate_try, cstate_best
     logical :: is_implicit
 
     is_implicit = present(flag_ctAlgo)
@@ -209,9 +209,9 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,id,nlforce,coord,indexMaster,nMaster,iSS,idm,etype,isin, &
-    !$omp&         bktID,nCand,indexCand,distclr_use) &
-    !$omp& firstprivate(nMasterMax,is_implicit,effective_near_dist) &
+    !$omp& private(i,slave,id,nlforce,coord,iSS,idm,etype,isin, &
+    !$omp&         bktID,nCand,indexCand,distclr_use,id_best,cstate_free,cstate_try,cstate_best) &
+    !$omp& firstprivate(is_implicit,effective_near_dist) &
     !$omp& shared(contact,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,distclr,contact_surf,is_init) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
@@ -300,63 +300,61 @@ contains
         allocate(indexCand(nCand))
         call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
 
-        nMasterMax = nCand
-        allocate(indexMaster(nMasterMax))
-        nMaster = 0
-
-        ! narrow down candidates
-        do idm= 1, nCand
+        ! The bucket collects candidates in scan order, not in distance order, so every
+        ! candidate is projected on a trial state and the closest one is adopted. Equal
+        ! distances are settled by the master index so that the choice never depends on
+        ! the order the bucket happened to return.
+        id_best = 0
+        cstate_free = contact%states(i)
+        do idm = 1,nCand
           id = indexCand(idm)
-          if (.not. is_in_surface_box( contact%master(id), coord(1:3), contact%cparam%BOX_EXP_RATE )) cycle
-          nMaster = nMaster + 1
-          indexMaster(nMaster) = id
-        enddo
-        deallocate(indexCand)
-
-        if(nMaster == 0) then
-          deallocate(indexMaster)
-          cycle
-        endif
-
-        do idm = 1,nMaster
-          id = indexMaster(idm)
           ! Expand distclr for NEAR detection
           if (effective_near_dist > 0.0d0) then
             distclr_use = max(distclr, effective_near_dist / contact%master(id)%reflen)
           else
             distclr_use = distclr
           end if
+          cstate_try = cstate_free
           call project_Point2SurfElement( coord, contact%master(id), currpos, &
-            contact%states(i), isin, distclr_use, localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
+            cstate_try, isin, distclr_use, localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( .not. isin ) cycle
-          ! Classify: STICK or NEAR
-          if (effective_near_dist > 0.0d0 .and. &
-              contact%states(i)%distance > distclr * contact%master(id)%reflen) then
-            contact%states(i)%state = CONTACTNEAR
-          end if
-          contact%states(i)%surface = id
-          contact%states(i)%multiplier(:) = 0.d0
-          etype = contact%master(id)%etype
-          iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
-          if( iSS>0 .and. contact%smoothing /= kcsNAGATA ) &
-            call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
-            contact%states(i)%direction(:) )
-          contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
-          if (CONTACT_LOG_LEVEL >= 1) then
-            if (contact%states(i)%state == CONTACTNEAR) then
-              write(*,'(A,i10,A,i10,A,f7.3,A,i6)') "Node",nodeID(slave)," near element", &
-                elemID(contact%master(id)%eid), &
-                " with distance ", contact%states(i)%distance," rank=",hecmw_comm_get_rank()
-            else
-              write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
-                elemID(contact%master(id)%eid),       &
-                " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
-                " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
-            end if
-          end if
-          exit
+          if( id_best /= 0 ) then
+            if( dabs(cstate_try%distance) > dabs(cstate_best%distance) ) cycle
+            if( dabs(cstate_try%distance) == dabs(cstate_best%distance) .and. id > id_best ) cycle
+          endif
+          id_best = id
+          cstate_best = cstate_try
         enddo
-        deallocate(indexMaster)
+        deallocate(indexCand)
+        if( id_best == 0 ) cycle
+
+        id = id_best
+        contact%states(i) = cstate_best
+        ! Classify: STICK or NEAR
+        if (effective_near_dist > 0.0d0 .and. &
+            contact%states(i)%distance > distclr * contact%master(id)%reflen) then
+          contact%states(i)%state = CONTACTNEAR
+        end if
+        contact%states(i)%surface = id
+        contact%states(i)%multiplier(:) = 0.d0
+        etype = contact%master(id)%etype
+        iSS = isInsideElement( etype, contact%states(i)%lpos(1:2), contact%cparam%CLR_CAL_NORM )
+        if( iSS>0 .and. contact%smoothing /= kcsNAGATA ) &
+          call cal_node_normal( id, iSS, contact%master, currpos, contact%states(i)%lpos(1:2), &
+          contact%states(i)%direction(:) )
+        contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+        if (CONTACT_LOG_LEVEL >= 1) then
+          if (contact%states(i)%state == CONTACTNEAR) then
+            write(*,'(A,i10,A,i10,A,f7.3,A,i6)') "Node",nodeID(slave)," near element", &
+              elemID(contact%master(id)%eid), &
+              " with distance ", contact%states(i)%distance," rank=",hecmw_comm_get_rank()
+          else
+            write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3,A,3f7.3,A,i6)') "Node",nodeID(slave)," contact with element", &
+              elemID(contact%master(id)%eid),       &
+              " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
+              " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
+          end if
+        end if
       endif
     enddo
     !$omp end parallel do
@@ -417,8 +415,9 @@ contains
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
     !
-    integer, pointer :: indexMaster(:),indexCand(:)
-    integer   ::  nMaster,idm,nMasterMax,bktID,nCand
+    integer, pointer :: indexCand(:)
+    integer   ::  idm,bktID,nCand,id_best
+    type(tContactState) :: cstate_free, cstate_try, cstate_best
     logical :: is_present_B
     real(kind=kreal), pointer :: Bp(:)
 
@@ -452,9 +451,9 @@ contains
 
     !$omp parallel do &
     !$omp& default(none) &
-    !$omp& private(i,slave,id,coord,indexMaster,nMaster,nn,j,iSS,elem,idm,etype,isin, &
-    !$omp&         bktID,nCand,indexCand) &
-    !$omp& firstprivate(nMasterMax,is_present_B) &
+    !$omp& private(i,slave,id,coord,nn,j,iSS,elem,idm,etype,isin, &
+    !$omp&         bktID,nCand,indexCand,id_best,cstate_free,cstate_try,cstate_best) &
+    !$omp& firstprivate(is_present_B) &
     !$omp& shared(embed,ndforce,flag_ctAlgo,infoCTChange,currpos,currdisp,nodeID,elemID,Bp,distclr,contact_surf) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
@@ -470,26 +469,12 @@ contains
         allocate(indexCand(nCand))
         call bucketDB_getCand(embed%master_bktDB, bktID, nCand, indexCand)
 
-        nMasterMax = nCand
-        allocate(indexMaster(nMasterMax))
-        nMaster = 0
-
-        ! narrow down candidates
-        do idm= 1, nCand
+        ! As in scan_contact_state, the bucket order is not a distance order, so every
+        ! candidate is evaluated on a trial state and the closest element is adopted.
+        id_best = 0
+        cstate_free = embed%states(i)
+        do idm = 1,nCand
           id = indexCand(idm)
-          if (.not. is_in_surface_box( embed%master(id), coord(1:3), embed%cparam%BOX_EXP_RATE )) cycle
-          nMaster = nMaster + 1
-          indexMaster(nMaster) = id
-        enddo
-        deallocate(indexCand)
-
-        if(nMaster == 0) then
-          deallocate(indexMaster)
-          cycle
-        endif
-
-        do idm = 1,nMaster
-          id = indexMaster(idm)
           etype = embed%master(id)%etype
           if( mod(etype,10) == 2 ) etype = etype - 1 !search by 1st-order shape function
           nn = getNumberOfNodes(etype)
@@ -497,17 +482,27 @@ contains
             iSS = embed%master(id)%nodes(j)
             elem(1:3,j)=currpos(3*iSS-2:3*iSS)
           enddo
-          call project_Point2SolidElement( coord,etype,nn,elem,embed%master(id)%reflen,embed%states(i), &
+          cstate_try = cstate_free
+          call project_Point2SolidElement( coord,etype,nn,elem,embed%master(id)%reflen,cstate_try, &
             isin,distclr,localclr=embed%cparam%CLEARANCE )
           if( .not. isin ) cycle
-          embed%states(i)%surface = id
-          embed%states(i)%multiplier(:) = 0.d0
-          contact_surf(embed%slave(i)) = elemID(embed%master(id)%eid)
-          if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
-            elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
-          exit
+          if( id_best /= 0 ) then
+            if( cstate_try%distance > cstate_best%distance ) cycle
+            if( cstate_try%distance == cstate_best%distance .and. id > id_best ) cycle
+          endif
+          id_best = id
+          cstate_best = cstate_try
         enddo
-        deallocate(indexMaster)
+        deallocate(indexCand)
+        if( id_best == 0 ) cycle
+
+        id = id_best
+        embed%states(i) = cstate_best
+        embed%states(i)%surface = id
+        embed%states(i)%multiplier(:) = 0.d0
+        contact_surf(embed%slave(i)) = elemID(embed%master(id)%eid)
+        if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
+          elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
       endif
     enddo
     !$omp end parallel do

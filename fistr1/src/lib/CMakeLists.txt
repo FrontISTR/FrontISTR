@@ -12,6 +12,7 @@ add_subdirectory(utilities)
 target_sources(fistr PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/dynamic_mass.f90
   ${CMAKE_CURRENT_LIST_DIR}/eigen_LIB.f90
+  ${CMAKE_CURRENT_LIST_DIR}/fstr_FiniteRotationKinematics.f90
   ${CMAKE_CURRENT_LIST_DIR}/heat_LIB.f90
   ${CMAKE_CURRENT_LIST_DIR}/heat_LIB_CAPACITY.f90
   ${CMAKE_CURRENT_LIST_DIR}/heat_LIB_CONDUCTIVITY.f90

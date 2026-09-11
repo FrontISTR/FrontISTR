@@ -18,7 +18,6 @@ module m_fstr_setup
   use fstr_ctrl_eigen
   use fstr_ctrl_dynamic
   use fstr_ctrl_material
-  use mContact
   use mContactParam
   use m_static_get_prop
   use m_out
@@ -652,7 +651,7 @@ contains
           write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
           stop
         endif
-        fstrSOLID%materials(cid)%name = mName
+        fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
         if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
 
       else if( header_name == '!ELASTIC' ) then

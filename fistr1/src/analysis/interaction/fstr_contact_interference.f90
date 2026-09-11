@@ -26,7 +26,6 @@ contains
   end subroutine set_shrink_factor
 
   subroutine get_shrink_elemact_surf(cstate, coords, nnode)
-    use m_fstr_TimeInc
     integer(kind=kint)              :: nnode, i
     type(tContactState)             :: cstate
     real(kind=kreal)                :: coords(:)

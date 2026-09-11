@@ -19,6 +19,7 @@ module fstr_matrix_con_contact
   public :: fstr_save_originalMatrixStructure
   public :: fstr_mat_con_contact
   public :: fstr_is_matrixStruct_symmetric
+  public :: fstr_is_material_symmetric
   public :: fstr_set_lagrange_diagonal
   public :: fstr_get_lagrange_diagonal
 
@@ -274,13 +275,41 @@ contains
       if( any(fstrSOLID%contacts(:)%fcoeff /= 0.0d0) )  is_in_contact = 1
     endif
     call hecmw_allreduce_I1(hecMESH, is_in_contact, HECMW_MAX)
-    if( is_in_contact == 0 .and. hecMESH%n_dof /= 4 ) then
+    if( is_in_contact == 0 .and. hecMESH%n_dof /= 4 .and. fstr_is_material_symmetric(fstrSOLID,hecMESH) ) then
       fstr_is_matrixStruct_symmetric = .true.
     else
       fstr_is_matrixStruct_symmetric = .false.
     endif
 
   end function fstr_is_matrixStruct_symmetric
+
+  !> \brief this function judges whether all materials yield a symmetric tangent stiffness
+  logical function fstr_is_material_symmetric(fstrSOLID,hecMESH)
+
+    type(fstr_solid )        :: fstrSOLID
+    type(hecmwST_local_mesh) :: hecMESH
+    integer (kind=kint)      :: is_unsymmetric, i, ytype
+
+    ! non-associated flow (dilatancy angle psi /= friction angle phi) makes the consistent
+    ! tangent unsymmetric; when psi is omitted the parser stores psi=phi, so the exact
+    ! comparison below classifies that case as associated (symmetric)
+    is_unsymmetric = 0
+    if( associated(fstrSOLID%materials) ) then
+      do i = 1, size(fstrSOLID%materials)
+        ytype = getYieldFunction( fstrSOLID%materials(i)%mtype )
+        if( ytype == 1 ) then      ! Mohr-Coulomb: PLCONST3=phi, PLCONST4=psi
+          if( fstrSOLID%materials(i)%variables(M_PLCONST3) /= fstrSOLID%materials(i)%variables(M_PLCONST4) ) &
+            is_unsymmetric = 1
+        elseif( ytype == 2 ) then  ! Drucker-Prager: PLCONST3=eta(phi), PLCONST5=etabar(psi)
+          if( fstrSOLID%materials(i)%variables(M_PLCONST3) /= fstrSOLID%materials(i)%variables(M_PLCONST5) ) &
+            is_unsymmetric = 1
+        endif
+      enddo
+    endif
+    call hecmw_allreduce_I1(hecMESH, is_unsymmetric, HECMW_MAX)
+    fstr_is_material_symmetric = (is_unsymmetric == 0)
+
+  end function fstr_is_material_symmetric
 
   !> \brief Set diagonal component value for specified Lagrange multiplier
   subroutine fstr_set_lagrange_diagonal(hecLagMAT, ilag, value)
