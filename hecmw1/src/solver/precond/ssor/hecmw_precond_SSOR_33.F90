@@ -42,8 +42,8 @@ module hecmw_precond_SSOR_33
   ! taken from hecMAT at setup: _apply receives only ZP and cannot read it back
   integer(kind=kint) :: precond_impl = HECMW_PRECOND_IMPL_BSR
 
-  ! an architecture may be selected on a build that carries no tuned SSOR for it;
-  ! saying so once per run keeps the fallback from looking like the tuning took effect
+  ! a format may be selected on a build that carries no SSOR for it; saying so once
+  ! per run keeps the fallback from looking like the requested format took effect
   logical, save :: precond_impl_missing_reported = .false.
 
   logical, save :: isFirst = .true.
@@ -290,8 +290,8 @@ contains
         if (.not. precond_impl_missing_reported) then
           precond_impl_missing_reported = .true.
           if (hecmw_comm_get_rank() == 0) write(*,'(a)') &
-            '#### ARCH: this build has no tuned SSOR preconditioner for the selected '// &
-            'architecture -- running the generic implementation'
+            '#### MATRIXFORMAT: this build has no SSOR preconditioner for the selected '// &
+            'format -- running the BSR implementation'
         endif
         call hecmw_precond_SSOR_33_apply_generic(ZP)
     end select

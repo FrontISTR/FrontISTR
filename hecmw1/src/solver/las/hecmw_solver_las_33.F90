@@ -32,8 +32,8 @@ module hecmw_solver_las_33
   ! BSR here, which is the only implementation that needs no data of its own.
   integer(kind=kint), save :: matvec_impl = HECMW_MATVEC_IMPL_BSR
 
-  ! an architecture may be selected on a build that carries no tuned matvec for it;
-  ! saying so once per run keeps the fallback from looking like the tuning took effect
+  ! a format may be selected on a build that carries no matvec for it; saying so once
+  ! per run keeps the fallback from looking like the requested format took effect
   logical, save :: matvec_impl_missing_reported = .false.
 
   ! added for tuning >>>
@@ -196,8 +196,8 @@ contains
           if (.not. matvec_impl_missing_reported) then
             matvec_impl_missing_reported = .true.
             if (hecmw_comm_get_rank() == 0) write(*,'(a)') &
-              '#### ARCH: this build has no tuned matvec for the selected architecture '// &
-              '-- running the generic implementation'
+              '#### MATRIXFORMAT: this build has no matvec for the selected format '// &
+              '-- running the BSR implementation'
           endif
           call hecmw_matvec_33_generic(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
       end select
