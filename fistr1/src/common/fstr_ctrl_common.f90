@@ -125,7 +125,7 @@ contains
 
     integer(kind=kint) :: number_number = 5
     integer(kind=kint) :: indirect_number = 8
-    integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step, arch
+    integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step, mtxfmt
 
     fstr_ctrl_get_SOLVER = -1
 
@@ -136,8 +136,8 @@ contains
     dmpt = dumptype+1
     dmpx = dumpexit+1
     usjd = usejad+1
-    ! 0 = ARCH absent, leaving the compile-time default chosen by cmake -DARCH= in effect
-    arch = 0
+    ! 0 = MATRIXFORMAT absent, leaving USEJAD and the build-time default in effect
+    mtxfmt = 0
     !* parameter in header line -----------------------------------------------------------------*!
 
     ! JP-0
@@ -151,7 +151,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'DUMPTYPE ', dlist,              0,   'P',   dmpt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'DUMPEXIT ','NO,YES ',           0,   'P',   dmpx ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'USEJAD '  ,'NO,YES ',           0,   'P',   usjd ) /= 0) return
-    if( fstr_ctrl_get_param_ex( ctrl, 'ARCH '    ,'GENERIC,FX64,SXAT ',0,   'P',   arch ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'MATRIXFORMAT ','BSR,JAD,CSR,SBLAS ', 0, 'P', mtxfmt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
@@ -232,15 +232,25 @@ contains
     dumpexit = dmpx -1
     usejad = usjd -1
 
-    ! ARCH names an architecture rather than a single kernel, so it sets both selectors
-    select case (arch)
+    ! MATRIXFORMAT names one storage format for the whole linear solve, so it sets the
+    ! matvec and the preconditioner together.  JAD is one of the formats, which makes
+    ! USEJAD the older spelling of MATRIXFORMAT=JAD; giving both lets MATRIXFORMAT win.
+    ! JAD replaces the matvec only, so the preconditioner keeps the BSR implementation.
+    select case (mtxfmt)
       case (1)
+        usejad = kNO
         matvec_impl  = HECMW_MATVEC_IMPL_BSR
         precond_impl = HECMW_PRECOND_IMPL_BSR
       case (2)
+        usejad = kYES
+        matvec_impl  = HECMW_MATVEC_IMPL_BSR
+        precond_impl = HECMW_PRECOND_IMPL_BSR
+      case (3)
+        usejad = kNO
         matvec_impl  = HECMW_MATVEC_IMPL_CSR
         precond_impl = HECMW_PRECOND_IMPL_CSR
-      case (3)
+      case (4)
+        usejad = kNO
         matvec_impl  = HECMW_MATVEC_IMPL_SBLAS
         precond_impl = HECMW_PRECOND_IMPL_SBLAS
     end select
