@@ -55,7 +55,12 @@ contains
 
     call fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
 
-    call fstr_eigen_make_result(hecMESH, hecMAT, fstrEIG, fstrRESULT)
+    if( IRESULT.eq.1 ) then
+      call fstr_eigen_output_result(hecMESH, fstrEIG)
+    end if
+    if( IVISUAL.eq.1 ) then
+      call fstr_eigen_output_visual(hecMESH, fstrEIG, fstrRESULT)
+    end if
 
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 

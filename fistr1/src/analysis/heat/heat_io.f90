@@ -86,6 +86,52 @@ contains
 
   end subroutine heat_output_log
 
+  subroutine fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, tstep, ctime)
+    use m_fstr
+    use m_fstr_elemact
+    implicit none
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(fstr_heat)           :: fstrHEAT
+    type(fstr_solid)          :: fstrSOLID
+    type(hecmwST_result_data) :: fstrRESULT
+    integer(kind=kint) :: tstep
+    real(kind=kreal)   :: ctime
+
+    real(kind=kreal), pointer  :: work(:)
+
+    fstrRESULT%ng_component = 1
+    fstrRESULT%nn_component = 1
+    fstrRESULT%ne_component = 0
+    allocate(fstrRESULT%ng_dof(1))
+    allocate(fstrRESULT%global_label(1))
+    allocate(fstrRESULT%global_val_item(1))
+    fstrRESULT%ng_dof(1) = 1
+    fstrRESULT%global_label(1) = 'TOTALTIME'
+    fstrRESULT%global_val_item(1) = ctime
+    allocate(fstrRESULT%nn_dof(1))
+    allocate(fstrRESULT%node_label(1))
+    allocate(fstrRESULT%node_val_item(hecMESH%n_node))
+    fstrRESULT%nn_dof(1) = 1
+    fstrRESULT%node_label(1) = 'TEMPERATURE'
+    fstrRESULT%node_val_item = fstrHEAT%TEMP
+
+    !elemact state
+    if( fstrHEAT%elemact%ELEMACT_egrp_tot > 0 ) then
+      fstrRESULT%ne_component = 1
+      allocate(fstrRESULT%ne_dof(1))
+      allocate(fstrRESULT%elem_label(1))
+      allocate(fstrRESULT%elem_val_item(hecMESH%n_elem))
+      allocate(work(hecMESH%n_elem))
+      call output_elemact_flag( hecMESH, fstrSOLID%elements, work )
+
+      fstrRESULT%ne_dof(1) = 1
+      fstrRESULT%elem_label(1) = 'ELEMACT'
+      fstrRESULT%elem_val_item = work
+      deallocate(work)
+    end if
+
+  end subroutine
+
   subroutine heat_output_result(hecMESH, fstrHEAT, fstrSOLID, tstep, ctime, outflag)
     use m_fstr
     use m_fstr_elemact
@@ -145,37 +191,7 @@ contains
 
     if(IVISUAL == 1 .and. (mod(tstep, IWRES) == 0 .or. outflag))then
       call hecmw_nullify_result_data(fstrRESULT)
-      fstrRESULT%ng_component = 1
-      fstrRESULT%nn_component = 1
-      fstrRESULT%ne_component = 0
-      allocate(fstrRESULT%ng_dof(1))
-      allocate(fstrRESULT%global_label(1))
-      allocate(fstrRESULT%global_val_item(1))
-      fstrRESULT%ng_dof(1) = 1
-      fstrRESULT%global_label(1) = 'TOTALTIME'
-      fstrRESULT%global_val_item(1) = ctime
-      allocate(fstrRESULT%nn_dof(1))
-      allocate(fstrRESULT%node_label(1))
-      allocate(fstrRESULT%node_val_item(hecMESH%n_node))
-      fstrRESULT%nn_dof(1) = 1
-      fstrRESULT%node_label(1) = 'TEMPERATURE'
-      fstrRESULT%node_val_item = fstrHEAT%TEMP
-
-      !elemact state
-      if( fstrHEAT%elemact%ELEMACT_egrp_tot > 0 ) then
-        fstrRESULT%ne_component = 1
-        allocate(fstrRESULT%ne_dof(1))
-        allocate(fstrRESULT%elem_label(1))
-        allocate(fstrRESULT%elem_val_item(hecMESH%n_elem))
-        allocate(work(hecMESH%n_elem))
-        call output_elemact_flag( hecMESH, fstrSOLID%elements, work )
-
-        fstrRESULT%ne_dof(1) = 1
-        fstrRESULT%elem_label(1) = 'ELEMACT'
-        fstrRESULT%elem_val_item = work
-        deallocate(work)
-      end if
-
+      call fstr_heat_make_result_step(hecMESH, fstrHEAT, fstrSOLID, fstrRESULT, tstep, ctime)
       call fstr2hecmw_mesh_conv(hecMESH)
       call hecmw_visualize_init
       call hecmw_visualize( hecMESH, fstrRESULT, tstep )

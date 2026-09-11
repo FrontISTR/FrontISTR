@@ -109,35 +109,114 @@ contains
     deallocate(r)
   end subroutine fstr_eigen_output
 
-  subroutine fstr_eigen_make_result(hecMESH, hecMAT, fstrEIG, fstrRESULT)
+  subroutine fstr_eigen_make_result_step(hecMESH, fstrEIG, fstrRESULT, istep)
     use m_fstr
     use m_hecmw2fstr_mesh_conv
     use hecmw_util
     implicit none
     type(hecmwST_local_mesh)  :: hecMESH
-    type(hecmwST_matrix)      :: hecMAT
     type(fstr_eigen)          :: fstrEIG
     type(hecmwST_result_data) :: fstrRESULT
+    integer(kind=kint) :: istep, i
 
-    integer(kind=kint) :: i, istep, nget, NP, NDOF, NPNDOF, totalmpc, MPC_METHOD
-    real(kind=kreal)   :: t1
+    integer(kind=kint) :: NP, NDOF, NPNDOF
     real(kind=kreal), pointer :: eigvec(:,:)
-    real(kind=kreal), allocatable :: X(:), egval(:)
-    real(kind=kreal), allocatable :: disp3(:), rot3(:)
+    real(kind=kreal), allocatable :: X(:)
+
+    NP     = hecMESH%n_node
+    NDOF   = hecMESH%n_dof
+    NPNDOF = NP * NDOF
+
+    eigvec => fstrEIG%eigvec
+    allocate(X(NPNDOF))
+    X = 0.0d0
+
+    do i=1,NPNDOF
+      X(i) = eigvec(i,istep)
+    enddo
+    call hecmw_update_R(hecMESH, X, NP, NDOF)
+
+    fstrRESULT%ng_component = 1
+    fstrRESULT%ne_component = 0
+    allocate(fstrRESULT%ng_dof(1))
+    allocate(fstrRESULT%global_label(1))
+    allocate(fstrRESULT%global_val_item(1))
+    fstrRESULT%ng_dof(1) = 1
+    fstrRESULT%global_label(1) = 'EIGENVALUE'
+    fstrRESULT%global_val_item(1) = fstrEIG%eigval(istep)
+
+    if( NDOF == 6 ) then
+      fstrRESULT%nn_component = 2
+      allocate(fstrRESULT%nn_dof(2))
+      allocate(fstrRESULT%node_label(2))
+      allocate(fstrRESULT%node_val_item(6*NP))
+      fstrRESULT%nn_dof(1) = 3
+      fstrRESULT%nn_dof(2) = 3
+      fstrRESULT%node_label(1) = 'DISPLACEMENT'
+      fstrRESULT%node_label(2) = 'ROTATION'
+      do i = 1, NP
+        fstrRESULT%node_val_item((i-1)*6+1:(i-1)*6+3) = X((i-1)*NDOF+1:(i-1)*NDOF+3)
+        fstrRESULT%node_val_item((i-1)*6+4:(i-1)*6+6) = X((i-1)*NDOF+4:(i-1)*NDOF+6)
+      enddo
+    else
+      fstrRESULT%nn_component = 1
+      allocate(fstrRESULT%nn_dof(1))
+      allocate(fstrRESULT%node_label(1))
+      allocate(fstrRESULT%node_val_item(NDOF*NP))
+      fstrRESULT%nn_dof(1) = NDOF
+      fstrRESULT%node_label(1) = 'DISPLACEMENT'
+      fstrRESULT%node_val_item = X
+    endif
+
+    deallocate(X)
+  end subroutine
+
+  subroutine fstr_eigen_output_visual(hecMESH, fstrEIG, fstrRESULT)
+    use m_fstr
+    use m_hecmw2fstr_mesh_conv
+    use hecmw_util
+    implicit none
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(fstr_eigen)          :: fstrEIG
+    type(hecmwST_result_data) :: fstrRESULT
+    integer(kind=kint) :: istep, nget
+    nget = fstrEIG%nget
+    do istep = 1, nget
+      call hecmw_nullify_result_data(fstrRESULT)
+      call fstr_eigen_make_result_step(hecMESH, fstrEIG, fstrRESULT, istep)
+      call fstr2hecmw_mesh_conv(hecMESH)
+      call hecmw_visualize_init
+      call hecmw_visualize( hecMESH, fstrRESULT, istep )
+      call hecmw_visualize_finalize
+      call hecmw2fstr_mesh_conv(hecMESH)
+      call hecmw_result_free(fstrRESULT)
+    end do
+  end subroutine
+
+  subroutine fstr_eigen_output_result(hecMESH, fstrEIG)
+    use m_fstr
+    use m_hecmw2fstr_mesh_conv
+    use hecmw_util
+    implicit none
+    type(hecmwST_local_mesh)  :: hecMESH
+    type(fstr_eigen)          :: fstrEIG
+
+    integer(kind=kint) :: NP, NDOF, NPNDOF, istep, nget, i
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN)    :: comment
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
 
+    real(kind=kreal), pointer :: eigvec(:,:)
+    real(kind=kreal), allocatable :: X(:), egval(:)
+    real(kind=kreal), allocatable :: disp3(:), rot3(:)
+
     nget   = fstrEIG%nget
-    NP     = hecMAT%NP
-    NDOF   = hecMAT%NDOF
-    NPNDOF = hecMAT%NP*hecMAT%NDOF
-    !totalmpc = hecMESH%mpc%n_mpc
-    !call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
+    NP     = hecMESH%n_node
+    NDOF   = hecMESH%n_dof
+    NPNDOF = NP * NDOF
 
     eigvec => fstrEIG%eigvec
-
     allocate(X(NPNDOF))
     X = 0.0d0
     allocate(egval(1))
@@ -147,26 +226,13 @@ contains
       do i=1,NPNDOF
         X(i) = eigvec(i,istep)
       enddo
+      call hecmw_update_R(hecMESH, X, NP, NDOF)
 
-      !if (totalmpc > 0) then
-      !  MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
-      !  if (MPC_METHOD < 1 .or. 3 < MPC_METHOD) MPC_METHOD = 3
-      !  if (MPC_METHOD == 3) then  ! elimination
-      !    call hecmw_tback_x_33(hecMESH, X, t1)
-      !  else
-      !    if (hecMESH%my_rank.eq.0) write(0,*) "### ERROR: MPC_METHOD must set to 3"
-      !    stop
-      !  endif
-      !endif
-
-      call hecmw_update_R(hecMESH, X, hecMAT%NP, NDOF)
-
-      ! For 6-DOF elements (e.g. shells 731/741), the eigenvector holds 3
-      ! translational + 3 rotational components per node. Writing all 6 as
-      ! DISPLACEMENT makes VTK/ParaView interpret it as a symmetric tensor
-      ! (NumberOfComponents=6), breaking Warp By Vector. Mirror the static
-      ! solver (make_result.f90, ndof==6) and split DISPLACEMENT (1:3) from
-      ! ROTATION (4:6). Other NDOF (e.g. solid 3) keep the pass-through.
+      header = "*fstrresult"
+      comment = "eigen_result"
+      call hecmw_result_init(hecMESH,istep,header,comment)
+      label = "EIGENVALUE"
+      call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL,1,label,egval)
       if( NDOF == 6 ) then
         allocate(disp3(NP*3))
         allocate(rot3(NP*3))
@@ -176,77 +242,23 @@ contains
           disp3((i-1)*3+1:(i-1)*3+3) = X((i-1)*NDOF+1:(i-1)*NDOF+3)
           rot3 ((i-1)*3+1:(i-1)*3+3) = X((i-1)*NDOF+4:(i-1)*NDOF+6)
         enddo
-      endif
-
-      if( IRESULT.eq.1 ) then
-        header = "*fstrresult"
-        comment = "eigen_result"
-        call hecmw_result_init(hecMESH,istep,header,comment)
-        label = "EIGENVALUE"
-        call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL,1,label,egval)
-        if( NDOF == 6 ) then
-          label = "DISPLACEMENT"
-          call hecmw_result_add(HECMW_RESULT_DTYPE_NODE,3,label,disp3)
-          label = "ROTATION"
-          call hecmw_result_add(HECMW_RESULT_DTYPE_NODE,3,label,rot3)
-        else
-          label = "DISPLACEMENT"
-          call hecmw_result_add(HECMW_RESULT_DTYPE_NODE,NDOF,label,X)
-        endif
-        nameID = "fstrRES"
-        call hecmw_result_write_by_name(nameID)
-        call hecmw_result_finalize
-      endif
-
-      if( IVISUAL.eq.1 ) then
-        call hecmw_nullify_result_data(fstrRESULT)
-        fstrRESULT%ng_component = 1
-        fstrRESULT%ne_component = 0
-        allocate(fstrRESULT%ng_dof(1))
-        allocate(fstrRESULT%global_label(1))
-        allocate(fstrRESULT%global_val_item(1))
-        fstrRESULT%ng_dof(1) = 1
-        fstrRESULT%global_label(1) = 'EIGENVALUE'
-        fstrRESULT%global_val_item(1) = egval(1)
-        if( NDOF == 6 ) then
-          fstrRESULT%nn_component = 2
-          allocate(fstrRESULT%nn_dof(2))
-          allocate(fstrRESULT%node_label(2))
-          allocate(fstrRESULT%node_val_item(6*NP))
-          fstrRESULT%nn_dof(1) = 3
-          fstrRESULT%nn_dof(2) = 3
-          fstrRESULT%node_label(1) = 'DISPLACEMENT'
-          fstrRESULT%node_label(2) = 'ROTATION'
-          do i = 1, NP
-            fstrRESULT%node_val_item((i-1)*6+1:(i-1)*6+3) = disp3((i-1)*3+1:(i-1)*3+3)
-            fstrRESULT%node_val_item((i-1)*6+4:(i-1)*6+6) = rot3 ((i-1)*3+1:(i-1)*3+3)
-          enddo
-        else
-          fstrRESULT%nn_component = 1
-          allocate(fstrRESULT%nn_dof(1))
-          allocate(fstrRESULT%node_label(1))
-          allocate(fstrRESULT%node_val_item(NDOF*NP))
-          fstrRESULT%nn_dof(1) = NDOF
-          fstrRESULT%node_label(1) = 'DISPLACEMENT'
-          fstrRESULT%node_val_item = X
-        endif
-        call fstr2hecmw_mesh_conv(hecMESH)
-        call hecmw_visualize_init
-        call hecmw_visualize( hecMESH, fstrRESULT, istep )
-        call hecmw_visualize_finalize
-        call hecmw2fstr_mesh_conv(hecMESH)
-        call hecmw_result_free(fstrRESULT)
-      endif
-
-      if( NDOF == 6 ) then
+        label = "DISPLACEMENT"
+        call hecmw_result_add(HECMW_RESULT_DTYPE_NODE,3,label,disp3)
+        label = "ROTATION"
+        call hecmw_result_add(HECMW_RESULT_DTYPE_NODE,3,label,rot3)
         deallocate(disp3)
         deallocate(rot3)
+      else
+        label = "DISPLACEMENT"
+        call hecmw_result_add(HECMW_RESULT_DTYPE_NODE,NDOF,label,X)
       endif
-    enddo
-
+      nameID = "fstrRES"
+      call hecmw_result_write_by_name(nameID)
+      call hecmw_result_finalize
+    end do
+    deallocate(egval)
     deallocate(X)
-
-  end subroutine fstr_eigen_make_result
+  end subroutine
 
   !> Output eigenvalues and vectors
   subroutine EGLIST(hecMESH, hecMAT, fstrEIG)
