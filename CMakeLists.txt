@@ -379,10 +379,11 @@ endif()
 ###################
 # -DARCH
 ###################
-# Picks the default value of the runtime implementation selectors, which the cnt
-# file overrides per run.  Every implementation is always compiled, so this never
-# decides what goes into the binary.  It is not guessed from the environment or
-# from compiler-defined macros, which would be wrong when cross compiling.
+# Names the machine this build targets.  It decides which architecture-tuned
+# implementations are compiled in -- code written for one machine need not build on
+# another -- and which matrix storage format the solver uses unless !SOLVER,
+# MATRIXFORMAT= asks for another of the formats this build carries.  It is not guessed
+# from the environment or from compiler-defined macros, which cross compilation breaks.
 set(ARCH "GENERIC" CACHE STRING "target architecture for tuned implementations (GENERIC/FX64/SXAT)")
 set_property(CACHE ARCH PROPERTY STRINGS GENERIC FX64 SXAT)
 set(ARCH_VALUES GENERIC FX64 SXAT)
@@ -390,10 +391,19 @@ if(NOT ARCH IN_LIST ARCH_VALUES)
   string(REPLACE ";" ", " ARCH_VALUES_TEXT "${ARCH_VALUES}")
   message(FATAL_ERROR "Unknown -DARCH=${ARCH}. Valid values are: ${ARCH_VALUES_TEXT}")
 endif()
+# Storage format each machine defaults to.  BSR is hecmwST_matrix's own format and is
+# what every build falls back to.
+if(ARCH STREQUAL "FX64")
+  set(ARCH_DEFAULT_FORMAT CSR)
+elseif(ARCH STREQUAL "SXAT")
+  set(ARCH_DEFAULT_FORMAT SBLAS)
+else()
+  set(ARCH_DEFAULT_FORMAT BSR)
+endif()
 # The macros name the Fortran constants of hecmw_matrix_misc, so the numbering
 # stays defined in one place.
-list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_MATVEC_IMPL=HECMW_MATVEC_IMPL_${ARCH}")
-list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_PRECOND_IMPL=HECMW_PRECOND_IMPL_${ARCH}")
+list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_MATVEC_IMPL=HECMW_MATVEC_IMPL_${ARCH_DEFAULT_FORMAT}")
+list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_PRECOND_IMPL=HECMW_PRECOND_IMPL_${ARCH_DEFAULT_FORMAT}")
 
 ###################
 # -DWITH_MPI
@@ -469,11 +479,13 @@ message(STATUS "Target architecture\t: ${ARCH}")
 if(NOT ARCH STREQUAL "GENERIC")
   message(STATUS "")
   message(STATUS "==========================================")
-  message(STATUS " Architecture-tuned defaults are ENABLED")
+  message(STATUS " Architecture-tuned build is ENABLED")
   message(STATUS "   ARCH = ${ARCH}")
-  message(STATUS " Runtime defaults only; no code is")
-  message(STATUS " compiled in or out by this setting.")
-  message(STATUS " !SOLVER, ARCH= overrides it per run.")
+  message(STATUS "   default MATRIXFORMAT = ${ARCH_DEFAULT_FORMAT}")
+  message(STATUS " Implementations tuned for other")
+  message(STATUS " architectures are not built in.")
+  message(STATUS " !SOLVER, MATRIXFORMAT= picks among")
+  message(STATUS " the formats this build carries.")
   message(STATUS "==========================================")
 endif()
 
