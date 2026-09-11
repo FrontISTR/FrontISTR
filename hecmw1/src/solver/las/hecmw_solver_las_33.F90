@@ -29,8 +29,8 @@ module hecmw_solver_las_33
 
   ! Implementation in use between hecmw_matvec_33_setup and hecmw_matvec_33_teardown.
   ! Callers outside that interval (eigenvalue analysis, contact, heat conduction) find
-  ! GENERIC here, which is the only implementation that needs no data of its own.
-  integer(kind=kint), save :: matvec_impl = HECMW_MATVEC_IMPL_GENERIC
+  ! BSR here, which is the only implementation that needs no data of its own.
+  integer(kind=kint), save :: matvec_impl = HECMW_MATVEC_IMPL_BSR
 
   ! an architecture may be selected on a build that carries no tuned matvec for it;
   ! saying so once per run keeps the fallback from looking like the tuning took effect
@@ -72,7 +72,7 @@ contains
   subroutine hecmw_matvec_33_teardown
     implicit none
 
-    matvec_impl = HECMW_MATVEC_IMPL_GENERIC
+    matvec_impl = HECMW_MATVEC_IMPL_BSR
   end subroutine hecmw_matvec_33_teardown
 
   !C
@@ -190,7 +190,7 @@ contains
       if (present(COMMtime)) COMMtime = COMMtime + Tcomm
     else
       select case (matvec_impl)
-        case (HECMW_MATVEC_IMPL_GENERIC)
+        case (HECMW_MATVEC_IMPL_BSR)
           call hecmw_matvec_33_generic(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
         case default
           if (.not. matvec_impl_missing_reported) then

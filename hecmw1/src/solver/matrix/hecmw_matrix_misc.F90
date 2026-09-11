@@ -102,12 +102,12 @@ module hecmw_matrix_misc
   public :: hecmw_mat_set_penalty_alpha
   public :: hecmw_mat_get_penalty_alpha
 
-  public :: HECMW_MATVEC_IMPL_GENERIC
-  public :: HECMW_MATVEC_IMPL_FX64
-  public :: HECMW_MATVEC_IMPL_SXAT
-  public :: HECMW_PRECOND_IMPL_GENERIC
-  public :: HECMW_PRECOND_IMPL_FX64
-  public :: HECMW_PRECOND_IMPL_SXAT
+  public :: HECMW_MATVEC_IMPL_BSR
+  public :: HECMW_MATVEC_IMPL_CSR
+  public :: HECMW_MATVEC_IMPL_SBLAS
+  public :: HECMW_PRECOND_IMPL_BSR
+  public :: HECMW_PRECOND_IMPL_CSR
+  public :: HECMW_PRECOND_IMPL_SBLAS
   public :: HECMW_MATVEC_IMPL_DEFAULT
   public :: HECMW_PRECOND_IMPL_DEFAULT
 
@@ -164,24 +164,27 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_R_SOLVER_OPT_S  = 41
   integer, parameter :: IDX_R_SOLVER_OPT_E  = 50
 
-  ! architecture-tuned implementations selected by IDX_I_MATVEC_IMPL / IDX_I_PRECOND_IMPL.
-  ! GENERIC is the implementation that runs on every platform.  The names match the
-  ! ARCH values accepted by the cnt file and by cmake -DARCH=, and the dispatchers fall
-  ! back to GENERIC for any value they have no implementation for.
-  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_GENERIC  = 0
-  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_FX64     = 1
-  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_SXAT     = 2
-  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_GENERIC = 0
-  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_FX64    = 1
-  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_SXAT    = 2
+  ! storage format the matvec and the preconditioner work in, selected by
+  ! IDX_I_MATVEC_IMPL / IDX_I_PRECOND_IMPL.  BSR is hecmwST_matrix's own format and is
+  ! the only one every build carries; the others keep a private copy in their own layout
+  ! and are built only for the architecture cmake -DARCH= names, so the dispatchers fall
+  ! back to BSR for a format this build does not have.  The names match the MATRIXFORMAT
+  ! values accepted by the cnt file.
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_BSR    = 0
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_CSR    = 1
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_SBLAS  = 2
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_BSR   = 0
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_CSR   = 1
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_SBLAS = 2
 
-  ! cmake -DARCH= names the constants above; without it the build defaults to GENERIC.
-  ! Both initializers of hecmwST_matrix read these, so the fallback stays in one place.
+  ! cmake -DARCH= names the constants above through the format it defaults to; without
+  ! it the build defaults to BSR.  Both initializers of hecmwST_matrix read these, so
+  ! the fallback stays in one place.
 #ifndef HECMW_ARCH_DEFAULT_MATVEC_IMPL
-#define HECMW_ARCH_DEFAULT_MATVEC_IMPL HECMW_MATVEC_IMPL_GENERIC
+#define HECMW_ARCH_DEFAULT_MATVEC_IMPL HECMW_MATVEC_IMPL_BSR
 #endif
 #ifndef HECMW_ARCH_DEFAULT_PRECOND_IMPL
-#define HECMW_ARCH_DEFAULT_PRECOND_IMPL HECMW_PRECOND_IMPL_GENERIC
+#define HECMW_ARCH_DEFAULT_PRECOND_IMPL HECMW_PRECOND_IMPL_BSR
 #endif
   integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_DEFAULT  = HECMW_ARCH_DEFAULT_MATVEC_IMPL
   integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_DEFAULT = HECMW_ARCH_DEFAULT_PRECOND_IMPL

@@ -235,14 +235,14 @@ contains
     ! ARCH names an architecture rather than a single kernel, so it sets both selectors
     select case (arch)
       case (1)
-        matvec_impl  = HECMW_MATVEC_IMPL_GENERIC
-        precond_impl = HECMW_PRECOND_IMPL_GENERIC
+        matvec_impl  = HECMW_MATVEC_IMPL_BSR
+        precond_impl = HECMW_PRECOND_IMPL_BSR
       case (2)
-        matvec_impl  = HECMW_MATVEC_IMPL_FX64
-        precond_impl = HECMW_PRECOND_IMPL_FX64
+        matvec_impl  = HECMW_MATVEC_IMPL_CSR
+        precond_impl = HECMW_PRECOND_IMPL_CSR
       case (3)
-        matvec_impl  = HECMW_MATVEC_IMPL_SXAT
-        precond_impl = HECMW_PRECOND_IMPL_SXAT
+        matvec_impl  = HECMW_MATVEC_IMPL_SBLAS
+        precond_impl = HECMW_PRECOND_IMPL_SBLAS
     end select
 
     fstr_ctrl_get_SOLVER = 0

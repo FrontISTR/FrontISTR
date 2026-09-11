@@ -40,7 +40,7 @@ module hecmw_precond_SSOR_33
   integer(kind=kint), pointer :: iperm(:) => null()
 
   ! taken from hecMAT at setup: _apply receives only ZP and cannot read it back
-  integer(kind=kint) :: precond_impl = HECMW_PRECOND_IMPL_GENERIC
+  integer(kind=kint) :: precond_impl = HECMW_PRECOND_IMPL_BSR
 
   ! an architecture may be selected on a build that carries no tuned SSOR for it;
   ! saying so once per run keeps the fallback from looking like the tuning took effect
@@ -284,7 +284,7 @@ contains
     real(kind=kreal), intent(inout) :: ZP(:)
 
     select case (precond_impl)
-      case (HECMW_PRECOND_IMPL_GENERIC)
+      case (HECMW_PRECOND_IMPL_BSR)
         call hecmw_precond_SSOR_33_apply_generic(ZP)
       case default
         if (.not. precond_impl_missing_reported) then
