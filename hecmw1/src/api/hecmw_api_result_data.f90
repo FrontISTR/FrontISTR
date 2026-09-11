@@ -36,21 +36,29 @@ contains
   end function
 
   ! i 番目の大域データのラベルと値を取得
-  subroutine hecmw_api_result_global_val(result,i,label,label_len,value) bind(C,name='hecmw_api_result_global_val')
+  subroutine hecmw_api_result_global_val(result,i,dof,label,label_len,value) bind(C,name='hecmw_api_result_global_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
     implicit none
     type(c_ptr), value :: result
     integer(c_int), value :: i
+    integer(c_int), intent(out) :: dof
     character(kind=c_char), intent(out) :: label(*)
     integer(c_int), value, intent(in) :: label_len
-    real(c_double), intent(out) :: value
+    type(c_ptr), intent(out) :: value
 
     type(hecmwST_result_data), pointer :: hecRESULT
+    integer :: index, j
 
     call c_f_pointer(cptr=result, fptr=hecRESULT)
     call f_c_str_copy(hecRESULT%global_label(i), label, label_len)
-    value = hecRESULT%global_val_item(i)
+    index = 1
+    do j=1, i-1
+      index = index + hecRESULT%ng_dof(j)
+    end do
+    
+    dof = hecRESULT%ng_dof(i)
+    value = c_loc(hecRESULT%global_val_item(index))
   end subroutine
 
   ! result に格納されている節点データの個数
