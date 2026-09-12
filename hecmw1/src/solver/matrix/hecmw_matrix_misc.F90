@@ -54,6 +54,10 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_dump_exit
   public :: hecmw_mat_set_usejad
   public :: hecmw_mat_get_usejad
+  public :: hecmw_mat_set_matvec_impl
+  public :: hecmw_mat_get_matvec_impl
+  public :: hecmw_mat_set_precond_impl
+  public :: hecmw_mat_get_precond_impl
   public :: hecmw_mat_set_ncolor_in
   public :: hecmw_mat_get_ncolor_in
   public :: hecmw_mat_set_maxrecycle_precond
@@ -98,6 +102,9 @@ module hecmw_matrix_misc
   public :: hecmw_mat_set_penalty_alpha
   public :: hecmw_mat_get_penalty_alpha
 
+  public :: HECMW_MATVEC_IMPL_GENERIC
+  public :: HECMW_PRECOND_IMPL_GENERIC
+
   public :: hecmw_mat_diag_max
   public :: hecmw_mat_diag
   public :: hecmw_mat_recycle_precond_setting
@@ -125,6 +132,8 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_USEJAD             = 33
   integer, parameter :: IDX_I_NCOLOR_IN          = 34
   integer, parameter :: IDX_I_MAXRECYCLE_PRECOND = 35
+  integer, parameter :: IDX_I_MATVEC_IMPL        = 36
+  integer, parameter :: IDX_I_PRECOND_IMPL       = 37
   integer, parameter :: IDX_I_NRECYCLE_PRECOND   = 96
   integer, parameter :: IDX_I_FLAG_NUMFACT       = 97
   integer, parameter :: IDX_I_FLAG_SYMBFACT      = 98
@@ -148,6 +157,11 @@ module hecmw_matrix_misc
   ! real-valued solver options, mirroring the integer SOLVER_OPT block (41:50)
   integer, parameter :: IDX_R_SOLVER_OPT_S  = 41
   integer, parameter :: IDX_R_SOLVER_OPT_E  = 50
+
+  ! architecture-tuned implementations selected by IDX_I_MATVEC_IMPL / IDX_I_PRECOND_IMPL.
+  ! GENERIC is the implementation that runs on every platform.
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_GENERIC  = 0
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_GENERIC = 0
 
 contains
 
@@ -190,6 +204,8 @@ contains
     call hecmw_mat_set_dump( hecMAT, 0 )
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
+    call hecmw_mat_set_matvec_impl( hecMAT, HECMW_MATVEC_IMPL_GENERIC )
+    call hecmw_mat_set_precond_impl( hecMAT, HECMW_PRECOND_IMPL_GENERIC )
     call hecmw_mat_set_ncolor_in( hecMAT, 10 )
     call hecmw_mat_set_estcond( hecMAT, 0 )
     call hecmw_mat_set_maxrecycle_precond( hecMAT, 3 )
@@ -558,6 +574,30 @@ contains
     integer(kind=kint) :: usejad
     hecMAT%Iarray(IDX_I_USEJAD) = usejad
   end subroutine hecmw_mat_set_usejad
+
+  function hecmw_mat_get_matvec_impl( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_matvec_impl
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_matvec_impl = hecMAT%Iarray(IDX_I_MATVEC_IMPL)
+  end function hecmw_mat_get_matvec_impl
+
+  subroutine hecmw_mat_set_matvec_impl( hecMAT, matvec_impl )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: matvec_impl
+    hecMAT%Iarray(IDX_I_MATVEC_IMPL) = matvec_impl
+  end subroutine hecmw_mat_set_matvec_impl
+
+  function hecmw_mat_get_precond_impl( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_precond_impl
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_precond_impl = hecMAT%Iarray(IDX_I_PRECOND_IMPL)
+  end function hecmw_mat_get_precond_impl
+
+  subroutine hecmw_mat_set_precond_impl( hecMAT, precond_impl )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: precond_impl
+    hecMAT%Iarray(IDX_I_PRECOND_IMPL) = precond_impl
+  end subroutine hecmw_mat_set_precond_impl
 
   function hecmw_mat_get_ncolor_in( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_ncolor_in
