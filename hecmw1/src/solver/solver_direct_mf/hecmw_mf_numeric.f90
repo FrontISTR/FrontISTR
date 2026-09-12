@@ -501,35 +501,6 @@ contains
     enddo
   end subroutine mf_partition
 
-  !> The fully summed part of a front as a grid of its own: same tile columns, rows cut at
-  !> ncol. The sequential position helpers then work unchanged on the master part of a row
-  !> distributed front.
-  subroutine mf_fs_grid(g, gm)
-    implicit none
-    type(mf_grid), intent(in) :: g
-    type(mf_grid), intent(inout) :: gm
-    integer(kind=kint) :: j
-
-    gm%nt = g%ntc
-    gm%ntc = g%ntc
-    gm%ncol = g%ncol
-    gm%nrow = g%ncol
-    if (allocated(gm%tb)) then
-      if (size(gm%tb) < gm%nt + 1) deallocate(gm%tb, gm%coloff)
-    endif
-    if (.not. allocated(gm%tb)) allocate(gm%tb(0:gm%nt), gm%coloff(gm%nt+1))
-    if (allocated(gm%dtile)) then
-      if (size(gm%dtile) < gm%nrow) deallocate(gm%dtile)
-    endif
-    if (.not. allocated(gm%dtile)) allocate(gm%dtile(0:max(gm%nrow, 1)-1))
-    gm%tb(0:gm%nt) = g%tb(0:g%ntc)
-    gm%coloff(1) = 0
-    do j = 1, gm%nt
-      gm%coloff(j+1) = gm%coloff(j) + int(gm%nrow - gm%tb(j-1), 8)*(gm%tb(j) - gm%tb(j-1))
-      gm%dtile(gm%tb(j-1):gm%tb(j)-1) = j
-    enddo
-  end subroutine mf_fs_grid
-
   !> Word offset (0-based) of tile (i,j), i >= j.
   function mf_off(g, i, j) result(off)
     implicit none
@@ -1189,7 +1160,7 @@ contains
     do iu = 1, map%nupper
       s = map%uplist(iu)
       if (map%myrank >= map%rbeg(s) .and. map%myrank < map%rbeg(s) + map%rcnt(s)) then
-        call mf_super_factor_1d(hecMAT, sym, map, fct, s, zero, gierr)
+        call mf_super_factor_dist(hecMAT, sym, map, fct, s, zero, gierr)
       endif
     enddo
     iw(1) = gierr
@@ -1200,19 +1171,24 @@ contains
     fct%factored = .true.
   end subroutine hecmw_mf_numeric_factor_mpi
 
-  !> One upper front under the 1D row distribution, executed by every rank of its rank set
-  !> in lockstep: the fully summed part of the front lives on the master (the owner) as a
-  !> grid of its own, the contribution row tiles live on their owning ranks as row bands
-  !> (rows of a tile by all columns up to its diagonal), and a rank assembles, updates and
-  !> stores what it holds. The extend-add routes every child contribution entry directly to
-  !> the rank holding its front row, both sides deriving the partition from the symbolic
-  !> structure and the child headers. The pivot sequence stays identical to the sequential
-  !> factorization: the panel of a tile column is attempted without pivoting (the master
-  !> factoring the fully summed rows, the tile owners solving and checking their rows, one
-  !> max reduction), and on a rejection the whole panel is gathered to the master, which
-  !> runs the sequential pivoting kernel and scatters the result. Every message of a front
-  !> is consumed within its phase, keeping the ascending walk deadlock free.
-  subroutine mf_super_factor_1d(hecMAT, sym, map, fct, s, zero, gierr)
+  !> One upper front under the distributed factorization, executed by every rank of its
+  !> rank set in lockstep: the fully summed tiles are block cyclic on the 2D process grid
+  !> of the front (a 1 x 1 grid keeping them on the master), the contribution row tiles
+  !> live on their owning ranks as row bands (rows of a tile by all columns up to its
+  !> diagonal), and a rank assembles, updates and stores what it holds. The extend-add
+  !> routes every child contribution entry directly to the rank holding its front
+  !> position, both sides deriving the partition from the symbolic structure and the
+  !> child headers. The pivot sequence stays identical to the sequential factorization:
+  !> the diagonal tile owner factors its rows of a panel without pivoting and hands out
+  !> the update vectors and the factored block, every other holder of panel rows solves
+  !> and checks them, and one flag collection at the master decides the acceptance; on a
+  !> rejection the whole panel is gathered to the master, which runs the sequential
+  !> pivoting kernel and scatters the result, and an exchange with a delayed column
+  !> crossing tile columns is routed through the master pair by pair. A root front (no
+  !> contribution rows) runs the same protocol, the master closing it with the sequential
+  !> final panel over the remaining columns. Every message of a front is consumed within
+  !> its phase, keeping the ascending walk deadlock free.
+  subroutine mf_super_factor_dist(hecMAT, sym, map, fct, s, zero, gierr)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_mf_symbolic), intent(in) :: sym
@@ -1223,34 +1199,41 @@ contains
     integer(kind=kint), intent(inout) :: gierr
 
     type(mf_pool) :: pool
-    type(mf_grid) :: g, gm
+    type(mf_grid) :: g
     integer(kind=kint), allocatable :: ctb(:), towner(:), wrank(:), crow2t(:), tprow(:)
     integer(kind=8), allocatable :: boff(:)
-    real(kind=kreal), allocatable, target :: band(:), bandu(:), fvm(:), fvmu(:)
+    real(kind=kreal), allocatable, target :: band(:), bandu(:), fsv(:), fsvu(:)
+    integer(kind=8), allocatable :: f2of(:)
     integer(kind=kint), allocatable :: rowoff(:), pos(:), blk(:), blkr(:), mdel(:)
     integer(kind=kint), allocatable :: perm(:), permr(:), itmp(:), swaps(:)
     integer(kind=kint), allocatable :: cctb(:), cown(:), pmap(:), pair_i(:), pair_j(:)
     integer(kind=kint), allocatable :: cctb2(:), cown2(:), ptv(:)
+    integer(kind=kint), allocatable :: plist(:), chk(:)
+    logical, allocatable :: pmem(:)
     real(kind=kreal), allocatable :: pv(:), pvu(:), wk(:), tmat(:), tmatu(:), dgb(:), dgbu(:)
     real(kind=kreal), allocatable :: pfull(:), pfullu(:), cmax(:), pband(:), pbandu(:)
-    real(kind=kreal), allocatable, target :: fsl(:), fslu(:), wscm(:), wscb(:), dum(:)
+    real(kind=kreal), allocatable :: pfs(:), pfsu(:)
+    real(kind=kreal), allocatable, target :: wscb(:), wfs(:), dum(:)
     real(kind=kreal), allocatable :: tvec(:), tvecu(:), dsv(:), dgv(:), dd(:)
+    real(kind=kreal), allocatable :: sw1(:), sw2(:), swb(:)
+    integer(kind=kint), allocatable :: spr(:), spc(:), spf(:), sqr(:), sqc(:), sqf(:)
     real(kind=kreal), allocatable, target :: bval(:), bvalu(:)
-    integer(kind=8), allocatable :: bslot(:), bslotu(:)
-    integer(kind=kint), allocatable :: brk(:), brku(:), xrk(:), xrku(:), xw(:)
+    integer(kind=8), allocatable :: bslot(:), bslotu(:), wfo(:), fxoff(:)
+    integer(kind=kint), allocatable :: brk(:), brku(:), xrk(:), xrku(:), xw(:), fxs(:)
     integer(kind=8), allocatable :: xoff(:), xoffu(:)
     type rbuf_t
       real(kind=kreal), allocatable :: v(:)
     end type rbuf_t
-    type(rbuf_t), allocatable, target :: xbuf(:)
+    type(rbuf_t), allocatable, target :: xbuf(:), fxbuf(:)
     integer(kind=kint) :: ctli(8), stat(HECMW_STATUS_SIZE)
     integer(kind=kint) :: nd, ncol0, ndel, ncol, nrow, ncb, ncbt, nwk, nmine, myrows
     integer(kind=kint) :: master, me, i, j, k, c, t, m, nkc
     integer(kind=kint) :: npiv, nfs, p0, pa, pb, w, np, pk, pk0, mfs, info, nsw, n22, cndel
     integer(kind=kint) :: nown, nrow_nodes, hi, npair, req, cnb, kbegc, cnrow, wme, ferr
-    integer(kind=8) :: bandw, fw, btop, btopu
+    integer(kind=kint) :: pr2, pc2, nfst, npl, nchk, rd, myfsr, kend
+    integer(kind=8) :: bandw, fw, btop, btopu, fsw
     real(kind=kreal) :: uinv
-    logical :: ismaster, hasband, fsok, acc
+    logical :: ismaster, hasband, hasfs, fsok, acc, isroot
     integer(kind=kint) :: nswap_f, n2x2_f, npos_f, nneg_f, ntl_f, nlr_f, rmax_f
     integer(kind=8) :: rsum_f
 
@@ -1319,7 +1302,6 @@ contains
     nrow = g%nrow
     ncb = nrow - ncol
     call hecmw_mf_dist_rowtiles(sym, map, fct%tile, s, ndel, ncbt, ctb, towner)
-    call mf_fs_grid(g, gm)
     allocate(crow2t(max(ncb, 1)))
     do t = 1, ncbt
       crow2t(ctb(t-1)+1:ctb(t)) = t
@@ -1351,6 +1333,42 @@ contains
       endif
     enddo
     hasband = (nmine > 0)
+    isroot = (ncbt == 0)
+    ! the 2D grid of the fully summed tiles and my slots in it
+    call hecmw_mf_dist_fsgrid(map, s, g%ntc, pr2, pc2)
+    nfst = mf_bidx(g%ntc, g%ntc, g%ntc)
+    allocate(f2of(nfst))
+    fsw = 0
+    do j = 1, g%ntc
+      do i = j, g%ntc
+        if (fso(i, j) == me) then
+          f2of(mf_bidx(g%ntc, j, i)) = fsw
+          fsw = fsw + int(g%tb(i) - g%tb(i-1), 8)*(g%tb(j) - g%tb(j-1))
+        endif
+      enddo
+    enddo
+    hasfs = (fsw > 0)
+    ! the participant ranks of the factorization phases, ascending: the master, every
+    ! rank owning a fully summed tile (the block cyclic triangle can leave a grid
+    ! position without tiles) and the band workers
+    allocate(plist(map%rcnt(s)), chk(map%rcnt(s)), pmem(map%rcnt(s)))
+    pmem(1:map%rcnt(s)) = .false.
+    pmem(master - map%rbeg(s) + 1) = .true.
+    do j = 1, g%ntc
+      do i = j, g%ntc
+        pmem(fso(i, j) - map%rbeg(s) + 1) = .true.
+      enddo
+    enddo
+    do i = 1, nwk
+      pmem(wrank(i) - map%rbeg(s) + 1) = .true.
+    enddo
+    npl = 0
+    do i = map%rbeg(s), map%rbeg(s) + map%rcnt(s) - 1
+      if (pmem(i - map%rbeg(s) + 1)) then
+        npl = npl + 1
+        plist(npl) = i
+      endif
+    enddo
     allocate(rowoff(nrow_nodes + 1), pos(sym%nnode))
     rowoff(1) = 0
     do i = 1, nrow_nodes
@@ -1360,28 +1378,27 @@ contains
       pos(k) = i
     enddo
 
-    ! (3) held storage: the master grid and my band, zeroed
-    fw = 0
-    if (ismaster) then
-      allocate(fvm(gm%coloff(gm%nt+1)))
-      if (fct%lu) allocate(fvmu(gm%coloff(gm%nt+1)))
-      fw = fw + gm%coloff(gm%nt+1)
+    ! (3) held storage: my fully summed tiles and my band, zeroed
+    fw = fsw
+    if (hasband) fw = fw + bandw
+    if (fct%lu) fw = 2*fw
+    if (hasfs) then
+      allocate(fsv(fsw))
+      if (fct%lu) allocate(fsvu(fsw))
     endif
     if (hasband) then
       allocate(band(bandw))
       if (fct%lu) allocate(bandu(bandw))
-      fw = fw + bandw
     endif
-    if (fct%lu) fw = 2*fw
     fct%front_words_act = max(fct%front_words_act, fw)
     fct%live_front = fct%live_front + fw
     fct%front_peak = max(fct%front_peak, fct%live_front)
     !$omp parallel default(shared)
     !$omp sections
     !$omp section
-    if (ismaster) fvm(:) = 0.0d0
+    if (hasfs) fsv(:) = 0.0d0
     !$omp section
-    if (ismaster .and. fct%lu) fvmu(:) = 0.0d0
+    if (hasfs .and. fct%lu) fsvu(:) = 0.0d0
     !$omp section
     if (hasband) band(:) = 0.0d0
     !$omp section
@@ -1422,14 +1439,10 @@ contains
     rsum_f = 0
     rmax_f = 0
     npiv = 0
-    if (ncbt == 0) then
-      ! no contribution rows (a root front): the master factors the whole front with the
-      ! sequential code; all tiles are fully summed, so no tile is ever compressed
-      if (ismaster) call factor_root()
-    else if (ismaster .or. hasband) then
-      call factor_1d()
+    if (ismaster .or. hasband .or. hasfs) then
+      call factor_dist()
+      if (gierr == 0) call store_dist()
     endif
-    if (gierr == 0 .and. (ismaster .or. hasband)) call store_1d()
     if (ismaster .and. gierr == 0) then
       fct%n_swap = fct%n_swap + nswap_f
       fct%n_2x2 = fct%n_2x2 + n2x2_f
@@ -1454,6 +1467,40 @@ contains
     fct%live_front = fct%live_front - fw
 
   contains
+
+    !> owning rank of fully summed tile (i0, j0), j0 <= i0
+    function fso(i0, j0) result(r)
+      integer(kind=kint), intent(in) :: i0, j0
+      integer(kind=kint) :: r
+      r = hecmw_mf_dist_fsrank(map, s, pr2, pc2, i0, j0)
+    end function fso
+
+    !> index of rank r0 in plist (0 when absent)
+    function pslot(r0) result(is0)
+      integer(kind=kint), intent(in) :: r0
+      integer(kind=kint) :: is0, i0
+      is0 = 0
+      do i0 = 1, npl
+        if (plist(i0) == r0) is0 = i0
+      enddo
+    end function pslot
+
+    !> word offset (0-based) of my fully summed tile (i0, j0)
+    function fsbase(i0, j0) result(off)
+      integer(kind=kint), intent(in) :: i0, j0
+      integer(kind=8) :: off
+      off = f2of(mf_bidx(g%ntc, j0, i0))
+    end function fsbase
+
+    !> word index (1-based) of the fully summed entry (r, c), r >= c, in my tile store
+    function fsx(r, c) result(ix)
+      integer(kind=kint), intent(in) :: r, c
+      integer(kind=8) :: ix
+      integer(kind=kint) :: ti, tj
+      ti = g%dtile(r-1)
+      tj = g%dtile(c-1)
+      ix = f2of(mf_bidx(g%ntc, tj, ti)) + int(c - 1 - g%tb(tj-1), 8)*(g%tb(ti) - g%tb(ti-1)) + (r - g%tb(ti-1))
+    end function fsx
 
     !> multicast the header of child c (which I hold) to the other ranks of the set
     subroutine send_hdr(c0)
@@ -1515,8 +1562,10 @@ contains
       deallocate(tl)
     end subroutine recv_hdr
 
-    !> fully summed position metadata on the master (positions, DOFs, node blocks), as the
-    !> sequential assembly initializes them; every rank builds blk for the root fallback
+    !> fully summed position metadata (positions, DOFs, node blocks), as the sequential
+    !> assembly initializes them, on every rank of the set; the master maintains the DOF
+    !> permutations through the pivoting, the pivot types and 2x2 couplings are kept
+    !> replicated (each diagonal tile owner reads them for its own columns)
     subroutine fct_sn_meta()
       integer(kind=kint) :: mm, kk, ii, cc, jj0
 
@@ -1530,6 +1579,12 @@ contains
       call mf_grow_i(fct%sn(s)%frow, max(ncol, 1))
       call mf_grow_i(fct%sn(s)%ptype, max(ncol, 1))
       call mf_grow_r(fct%sn(s)%dsub, int(max(ncol, 1), 8))
+      if (fct%lu) then
+        fct%sn(s)%ptype(1:ncol) = 1
+      else
+        fct%sn(s)%ptype(1:ncol) = 0
+      endif
+      fct%sn(s)%dsub(1:ncol) = 0.0d0
       mm = 0
       do kk = sym%sptr(s), sym%sptr(s+1) - 1
         do ii = fct%cdofptr(kk), fct%cdofptr(kk+1) - 1
@@ -1552,16 +1607,31 @@ contains
       blkr(1:ncol) = blk(1:ncol)
     end subroutine fct_sn_meta
 
-    !> owning rank of a front grid row
-    function drank(row) result(dr)
-      integer(kind=kint), intent(in) :: row
-      integer(kind=kint) :: dr
-      if (row <= ncol) then
-        dr = master
+    !> rank holding the front entry at positions (pr, pc), either order: a fully summed
+    !> entry by its tile pair on the 2D grid, a contribution row entry by its row tile.
+    !> Called per entry by the extend-add and the pair engine, so the grid arithmetic is
+    !> kept local and a 1 x 1 grid short-circuits to the master
+    function edest(pr, pc) result(dr)
+      integer(kind=kint), intent(in) :: pr, pc
+      integer(kind=kint) :: dr, rr, cc, gp
+      rr = max(pr, pc)
+      cc = min(pr, pc)
+      if (rr <= ncol) then
+        if (pr2*pc2 == 1) then
+          dr = master
+        else
+          gp = mod(g%dtile(rr-1) - 1, pr2)*pc2 + mod(g%dtile(cc-1) - 1, pc2)
+          if (gp == 0) then
+            dr = master
+          else
+            dr = map%rbeg(s) + gp - 1
+            if (dr >= master) dr = dr + 1
+          endif
+        endif
       else
-        dr = towner(crow2t(row - ncol))
+        dr = towner(crow2t(rr - ncol))
       endif
-    end function drank
+    end function edest
 
     !> word index of the entry (row, col) of my band, row in my tile t0
     function bandix(t0, row, col) result(ix)
@@ -1652,12 +1722,12 @@ contains
       cc = min(pr, pc)
       up = fct%lu .and. (upface .neqv. (pr < pc))
       if (rr <= ncol) then
-        if (.not. ismaster) return
-        ix = mf_idx(gm, rr, cc)
+        if (edest(rr, cc) /= me) return
+        ix = fsx(rr, cc)
         if (up) then
-          fvmu(ix) = fvmu(ix) + v0
+          fsvu(ix) = fsvu(ix) + v0
         else
-          fvm(ix) = fvm(ix) + v0
+          fsv(ix) = fsv(ix) + v0
         endif
       else
         t0 = crow2t(rr - ncol)
@@ -1785,8 +1855,8 @@ contains
           if (cown(ii0) /= src) cycle
           do cc = cctb(jj0-1) + 1, cctb(jj0)
             do rr = max(cc, cctb(ii0-1) + 1), cctb(ii0)
-              hr = max(pmap(rr), pmap(cc))
-              if (drank(hr) /= dst) cycle
+              hr = edest(pmap(rr), pmap(cc))
+              if (hr /= dst) cycle
               nlo = nlo + 1
               if (fct%lu .and. rr > cc) nup = nup + 1
             enddo
@@ -1813,8 +1883,8 @@ contains
           hh = cctb(ii0) - cctb(ii0-1)
           do cc = cctb(jj0-1) + 1, cctb(jj0)
             do rr = max(cc, cctb(ii0-1) + 1), cctb(ii0)
-              hr = max(pmap(rr), pmap(cc))
-              if (drank(hr) /= dst) cycle
+              hr = edest(pmap(rr), pmap(cc))
+              if (hr /= dst) cycle
               off = sb + int(cc - cctb(jj0-1) - 1, 8)*hh + (rr - cctb(ii0-1))
               il = il + 1
               buf(il) = fct%sn(c0)%cval(off)
@@ -1842,8 +1912,8 @@ contains
           if (cown(ii0) /= src) cycle
           do cc = cctb(jj0-1) + 1, cctb(jj0)
             do rr = max(cc, cctb(ii0-1) + 1), cctb(ii0)
-              hr = max(pmap(rr), pmap(cc))
-              if (drank(hr) /= me) cycle
+              hr = edest(pmap(rr), pmap(cc))
+              if (hr /= me) cycle
               il = il + 1
               call put1(pmap(rr), pmap(cc), buf(il), .false.)
               if (fct%lu .and. rr > cc) then
@@ -1870,8 +1940,8 @@ contains
           hh = cctb(ii0) - cctb(ii0-1)
           do cc = cctb(jj0-1) + 1, cctb(jj0)
             do rr = max(cc, cctb(ii0-1) + 1), cctb(ii0)
-              hr = max(pmap(rr), pmap(cc))
-              if (drank(hr) /= me) cycle
+              hr = edest(pmap(rr), pmap(cc))
+              if (hr /= me) cycle
               off = sb + int(cc - cctb(jj0-1) - 1, 8)*hh + (rr - cctb(ii0-1))
               call put1(pmap(rr), pmap(cc), fct%sn(c0)%cval(off), .false.)
               if (fct%lu .and. rr > cc) call put1(pmap(cc), pmap(rr), fct%sn(c0)%cval(halfc + off), .false.)
@@ -1897,37 +1967,9 @@ contains
       enddo
     end function ea_src_words
 
-    !> a root front has no contribution rows: the master factors it whole with the
-    !> sequential code (the fully summed grid is the full grid there)
-    subroutine factor_root()
-      type(mf_work) :: lw
-      integer(kind=kint) :: ie
-
-      call mf_grow_i(lw%blk, max(ncol, 1))
-      call mf_grow_i(lw%blkr, max(ncol, 1))
-      lw%blk(1:ncol) = blk(1:ncol)
-      lw%blkr(1:ncol) = blkr(1:ncol)
-      ie = 0
-      !$omp parallel default(shared)
-      !$omp single
-      if (fct%lu) then
-        call mf_factor_front_lu(fct%sn(s), gm, fvm, fvmu, lw%pval, lw%pvalu, lw%wk, lw%blk, lw%blkr, &
-          sym%sparent(s) == 0, fct%pivot_u, zero, fct%blr, fct%eps, lw%bval, lw%boff, lw%brk, &
-          lw%bvalu, lw%boffu, lw%brku, nswap_f, ntl_f, nlr_f, rsum_f, rmax_f, ie)
-      else
-        call mf_factor_front(fct%sn(s), gm, fvm, lw%pval, lw%wval, lw%wk, lw%blk, &
-          sym%sparent(s) == 0, fct%pivot_u, zero, fct%blr, fct%eps, lw%bval, lw%boff, lw%brk, &
-          nswap_f, n2x2_f, npos_f, nneg_f, ntl_f, nlr_f, rsum_f, rmax_f, ie)
-        fct%sn(s)%frow(1:ncol) = fct%sn(s)%fsdof(1:ncol)
-      endif
-      !$omp end single
-      !$omp end parallel
-      if (ie /= 0) gierr = ie
-      npiv = fct%sn(s)%npiv
-    end subroutine factor_root
-
-    !> the tile column protocol of the distributed fully summed factorization
-    subroutine factor_1d()
+    !> the tile column protocol of the distributed fully summed factorization; a root
+    !> front (no contribution rows) closes with the sequential final panel on the master
+    subroutine factor_dist()
       integer(kind=kint) :: kk, iw2, mm
 
       wme = 0
@@ -1945,45 +1987,42 @@ contains
       endif
       btop = 0
       btopu = 0
-      allocate(perm(max(ncol, 1)), permr(max(ncol, 1)), itmp(4*max(ncol, 1)), swaps(2*max(ncol, 1)))
+      allocate(perm(max(ncol, 1)), permr(max(ncol, 1)), itmp(5*max(ncol, 1)), swaps(2*max(ncol, 1)))
       allocate(cmax(max(ncol, 1)), ptv(max(ncol, 1)), dsv(max(ncol, 1)), dgv(max(ncol, 1)), dum(1))
       allocate(pair_i(g%nt*(g%nt+1)/2), pair_j(g%nt*(g%nt+1)/2))
+      allocate(fxs(max(g%ntc, 1)), fxoff(max(g%ntc, 1)), wfo(max(g%ntc, 1)), fxbuf(max(npl, 1)))
       call mf_grow_r(wk, int(2*nrow, 8))
       call mf_grow_r(pv, int(max(ncol, 1), 8))
       if (.not. fct%lu) then
         ! the upper grid buffers stay tiny but allocated, so they can pass as arguments
         call mf_grow_r(pvu, 1_8)
         call mf_grow_r(pbandu, 1_8)
+        call mf_grow_r(pfsu, 1_8)
         call mf_grow_r(pfullu, 1_8)
         call mf_grow_r(tmatu, 1_8)
         call mf_grow_r(dgbu, 1_8)
-        call mf_grow_r(fslu, 1_8)
         call mf_grow_r(tvecu, 1_8)
-      endif
-      if (ismaster) then
-        if (fct%lu) then
-          fct%sn(s)%ptype(1:ncol) = 1
-        else
-          fct%sn(s)%ptype(1:ncol) = 0
-        endif
-        fct%sn(s)%dsub(1:ncol) = 0.0d0
       endif
       npiv = 0
       nfs = ncol
       do kk = 1, g%ntc
         p0 = g%tb(kk-1)
         if (p0 >= nfs) exit
+        rd = fso(kk, kk)
+        myfsr = fsrows_col(me, kk)
+        call chk_build(kk)
         pa = p0 + 1
         do while (pa <= min(g%tb(kk), nfs))
           pb = min(g%tb(kk), nfs)
           w = pb - pa + 1
           pk0 = npiv - p0
-          call panel_attempt()
+          call panel_attempt(kk)
           if (acc) then
+            if (.not. fct%lu) fct%sn(s)%ptype(pa:pb) = 1
             npiv = npiv + w
             pa = pb + 1
           else
-            call panel_piv_1d()
+            call panel_piv_dist(kk)
             npiv = npiv + np
             pa = pa + np
           endif
@@ -1992,17 +2031,67 @@ contains
         call postcol(kk)
         if (nfs <= g%tb(kk)) exit
       enddo
-      if (ismaster) then
-        if (.not. fct%lu) then
-          fct%sn(s)%frow(1:ncol) = fct%sn(s)%fsdof(1:ncol)
-          call inertia_1d()
-        endif
+      if (isroot .and. gierr == 0 .and. npiv < ncol) call root_final()
+      if (.not. fct%lu) then
+        if (ismaster) fct%sn(s)%frow(1:ncol) = fct%sn(s)%fsdof(1:ncol)
+        if (gierr == 0) call inertia_dist()
       endif
       fct%sn(s)%npiv = npiv
-    end subroutine factor_1d
+    end subroutine factor_dist
+
+    !> rows of the tiles of column kk0 below the diagonal tile owned by rank r0
+    function fsrows_col(r0, kk0) result(nr0)
+      integer(kind=kint), intent(in) :: r0, kk0
+      integer(kind=kint) :: nr0, i0
+
+      nr0 = 0
+      do i0 = kk0 + 1, g%ntc
+        if (fso(i0, kk0) == r0) nr0 = nr0 + g%tb(i0) - g%tb(i0-1)
+      enddo
+    end function fsrows_col
+
+    !> whether rank r0 is a band worker
+    function isworker(r0) result(yes)
+      integer(kind=kint), intent(in) :: r0
+      logical :: yes
+      integer(kind=kint) :: iw0
+
+      yes = .false.
+      do iw0 = 1, nwk
+        if (wrank(iw0) == r0) yes = .true.
+      enddo
+    end function isworker
+
+    !> the checker ranks of tile column kk (the holders of panel rows below the diagonal
+    !> tile): the owners of the column tiles below it and the band workers, ascending
+    subroutine chk_build(kk)
+      integer(kind=kint), intent(in) :: kk
+      integer(kind=kint) :: i0
+
+      nchk = 0
+      do i0 = 1, npl
+        if (fsrows_col(plist(i0), kk) > 0 .or. isworker(plist(i0))) then
+          nchk = nchk + 1
+          chk(nchk) = plist(i0)
+        endif
+      enddo
+    end subroutine chk_build
+
+    !> whether rank r0 is a checker of the current tile column
+    function in_chk(r0) result(yes)
+      integer(kind=kint), intent(in) :: r0
+      logical :: yes
+      integer(kind=kint) :: ic0
+
+      yes = .false.
+      do ic0 = 1, nchk
+        if (chk(ic0) == r0) yes = .true.
+      enddo
+    end function in_chk
 
     !> update vectors of the pivots already eliminated in this tile column, for the panel
-    !> columns pa..pb (what the sequential fill_panel computes on the fly)
+    !> columns pa..pb, read from the diagonal tile (what the sequential fill_panel
+    !> computes on the fly)
     subroutine build_tmat()
       integer(kind=kint) :: jj2, xx, q
       real(kind=kreal) :: l1, l2, d11, d21, d22
@@ -2016,43 +2105,135 @@ contains
           q = p0 + 1
           do while (q <= npiv)
             if (fct%sn(s)%ptype(q) == 1) then
-              tmat((jj2-1)*pk0 + (q-p0)) = fvm(mf_idx(gm, xx, q)) * fvm(mf_idx(gm, q, q))
+              tmat((jj2-1)*pk0 + (q-p0)) = fsv(fsx(xx, q)) * fsv(fsx(q, q))
               q = q + 1
             else
-              l1 = fvm(mf_idx(gm, xx, q))
-              l2 = fvm(mf_idx(gm, xx, q+1))
-              d11 = fvm(mf_idx(gm, q, q))
+              l1 = fsv(fsx(xx, q))
+              l2 = fsv(fsx(xx, q+1))
+              d11 = fsv(fsx(q, q))
               d21 = fct%sn(s)%dsub(q)
-              d22 = fvm(mf_idx(gm, q+1, q+1))
+              d22 = fsv(fsx(q+1, q+1))
               tmat((jj2-1)*pk0 + (q-p0)) = l1*d11 + l2*d21
               tmat((jj2-1)*pk0 + (q-p0+1)) = l1*d21 + l2*d22
               q = q + 2
             endif
           enddo
         else
-          call mf_row_get(gm, fvmu, xx, p0+1, npiv, tmat((jj2-1)*pk0+1))
-          call mf_row_get(gm, fvm, xx, p0+1, npiv, tmatu((jj2-1)*pk0+1))
+          do q = p0 + 1, npiv
+            tmat((jj2-1)*pk0 + (q-p0)) = fsvu(fsx(xx, q))
+            tmatu((jj2-1)*pk0 + (q-p0)) = fsv(fsx(xx, q))
+          enddo
         endif
       enddo
     end subroutine build_tmat
 
-    !> the fully summed rows of the panel columns pa..pb into pv (and pvu)
-    subroutine fill_master_panel()
-      integer(kind=kint) :: jj2, xx
+    !> the diagonal tile rows of the panel columns pa..pb into pv (and pvu), with the
+    !> tile column updates (the fully summed part of the sequential fill_panel restricted
+    !> to the rows of the diagonal tile owner)
+    subroutine fill_rd_panel(kk)
+      integer(kind=kint), intent(in) :: kk
+      integer(kind=kint) :: jj2, xx, q, h2
+      integer(kind=8) :: px, bx
 
+      h2 = g%tb(kk) - g%tb(kk-1)
       call mf_grow_r(pv, int(mfs, 8)*w)
       if (fct%lu) call mf_grow_r(pvu, int(mfs, 8)*w)
       do jj2 = 1, w
         xx = pa + jj2 - 1
-        call mf_col_copy(gm, fvm, xx, xx, pv(int(jj2-1, 8)*mfs + jj2), .false.)
-        if (pk0 > 0) call mf_col_axpy(gm, fvm, xx, p0+1, npiv, tmat((jj2-1)*pk0+1), pv(int(jj2-1, 8)*mfs + jj2))
-        if (fct%lu .and. xx < ncol) then
-          call mf_col_copy(gm, fvmu, xx, xx+1, pvu(int(jj2-1, 8)*mfs + jj2 + 1), .false.)
-          if (pk0 > 0) &
-            call mf_col_axpy(gm, fvmu, xx+1, p0+1, npiv, tmatu((jj2-1)*pk0+1), pvu(int(jj2-1, 8)*mfs + jj2 + 1))
+        px = int(jj2-1, 8)*mfs + jj2 - 1
+        pv(px+1:px+mfs-jj2+1) = fsv(fsx(xx, xx):fsx(g%tb(kk), xx))
+        do q = p0 + 1, npiv
+          bx = fsx(xx, q) - 1
+          pv(px+1:px+mfs-jj2+1) = pv(px+1:px+mfs-jj2+1) - fsv(bx+1:bx+mfs-jj2+1) * tmat((jj2-1)*pk0 + (q-p0))
+        enddo
+        if (fct%lu .and. xx < g%tb(kk)) then
+          pvu(px+2:px+mfs-jj2+1) = fsvu(fsx(xx+1, xx):fsx(g%tb(kk), xx))
+          do q = p0 + 1, npiv
+            bx = fsx(xx+1, q) - 1
+            pvu(px+2:px+mfs-jj2+1) = pvu(px+2:px+mfs-jj2+1) - fsvu(bx+1:bx+mfs-jj2) * tmatu((jj2-1)*pk0 + (q-p0))
+          enddo
         endif
       enddo
-    end subroutine fill_master_panel
+    end subroutine fill_rd_panel
+
+    !> the factored panel columns back into the diagonal tile column
+    subroutine rd_writeback(nc0)
+      integer(kind=kint), intent(in) :: nc0
+      integer(kind=kint) :: jj2, xx
+      integer(kind=8) :: px
+
+      do jj2 = 1, nc0
+        xx = pa + jj2 - 1
+        px = int(jj2-1, 8)*mfs + jj2 - 1
+        fsv(fsx(xx, xx):fsx(g%tb(g%dtile(xx-1)), xx)) = pv(px+1:px+mfs-jj2+1)
+        if (fct%lu .and. xx < g%tb(g%dtile(xx-1))) &
+          fsvu(fsx(xx+1, xx):fsx(g%tb(g%dtile(xx-1)), xx)) = pvu(px+2:px+mfs-jj2+1)
+      enddo
+    end subroutine rd_writeback
+
+    !> my rows of the panel columns pa..pb below the diagonal tile into pfs (and pfsu),
+    !> with the tile column updates; solveit applies the panel solve and flags the
+    !> columns whose threshold fails, as the sequential check does over these rows
+    subroutine fill_fs_panel(kk, solveit)
+      integer(kind=kint), intent(in) :: kk
+      logical, intent(in) :: solveit
+      integer(kind=kint) :: jj2, t2, h2, r0, i2
+      integer(kind=8) :: bx, px, ex
+
+      call mf_grow_r(pfs, int(myfsr, 8)*w)
+      if (fct%lu) call mf_grow_r(pfsu, int(myfsr, 8)*w)
+      do jj2 = 1, w
+        r0 = 0
+        do t2 = kk + 1, g%ntc
+          if (fso(t2, kk) /= me) cycle
+          h2 = g%tb(t2) - g%tb(t2-1)
+          bx = fsbase(t2, kk) + int(pa + jj2 - 2 - g%tb(kk-1), 8)*h2
+          ex = fsbase(t2, kk) + int(p0 - g%tb(kk-1), 8)*h2
+          px = int(jj2-1, 8)*myfsr + r0
+          pfs(px+1:px+h2) = fsv(bx+1:bx+h2)
+          if (fct%lu) pfsu(px+1:px+h2) = fsvu(bx+1:bx+h2)
+          if (pk0 > 0) then
+            call hecmw_mf_kernel_gemv(h2, pk0, h2, fsv(ex+1), tmat((jj2-1)*pk0+1), pfs(px+1))
+            if (fct%lu) call hecmw_mf_kernel_gemv(h2, pk0, h2, fsvu(ex+1), tmatu((jj2-1)*pk0+1), pfsu(px+1))
+          endif
+          r0 = r0 + h2
+        enddo
+      enddo
+      if (solveit) then
+        if (.not. fct%lu) then
+          call hecmw_mf_kernel_trsm(myfsr, w, w, dgb, myfsr, pfs)
+        else
+          call hecmw_mf_kernel_trsm_rt(myfsr, w, w, dgbu, .false., myfsr, pfs)
+          call hecmw_mf_kernel_trsm_rt(myfsr, w, w, dgb, .true., myfsr, pfsu)
+        endif
+        do jj2 = 1, w
+          px = int(jj2-1, 8)*myfsr
+          do i2 = 1, myfsr
+            if (.not. (abs(pfs(px+i2)) <= uinv)) cmax(jj2) = 1.0d0
+          enddo
+        enddo
+      endif
+    end subroutine fill_fs_panel
+
+    !> the solved panel columns back into my tiles below the diagonal one
+    subroutine fs_panel_writeback(kk, nc0)
+      integer(kind=kint), intent(in) :: kk, nc0
+      integer(kind=kint) :: jj2, t2, h2, r0
+      integer(kind=8) :: bx, px
+
+      do jj2 = 1, nc0
+        r0 = 0
+        do t2 = kk + 1, g%ntc
+          if (fso(t2, kk) /= me) cycle
+          h2 = g%tb(t2) - g%tb(t2-1)
+          bx = fsbase(t2, kk) + int(pa + jj2 - 2 - g%tb(kk-1), 8)*h2
+          px = int(jj2-1, 8)*myfsr + r0
+          fsv(bx+1:bx+h2) = pfs(px+1:px+h2)
+          if (fct%lu) fsvu(bx+1:bx+h2) = pfsu(px+1:px+h2)
+          r0 = r0 + h2
+        enddo
+      enddo
+    end subroutine fs_panel_writeback
 
     !> my band rows of the panel columns pa..pb into pband (and pbandu), with the tile
     !> column updates; solveit applies the panel solve and flags the columns whose
@@ -2089,7 +2270,6 @@ contains
           call hecmw_mf_kernel_trsm_rt(myrows, w, w, dgb, .true., myrows, pbandu)
         endif
         do jj2 = 1, w
-          cmax(jj2) = 0.0d0
           px = int(jj2-1, 8)*myrows
           do i2 = 1, myrows
             if (.not. (abs(pband(px+i2)) <= uinv)) cmax(jj2) = 1.0d0
@@ -2116,83 +2296,72 @@ contains
       enddo
     end subroutine band_writeback
 
-    !> exchange the columns x0 and y0 of my band (bandu when ub)
-    subroutine band_swap_cols(x0, y0, ub)
-      integer(kind=kint), intent(in) :: x0, y0
-      logical, intent(in) :: ub
-      integer(kind=kint) :: t2, h2, i2
-      integer(kind=8) :: ax, bx
-      real(kind=kreal) :: v0
-
-      do t2 = 1, ncbt
-        if (towner(t2) /= me) cycle
-        h2 = ctb(t2) - ctb(t2-1)
-        ax = boff(t2) + int(x0-1, 8)*h2
-        bx = boff(t2) + int(y0-1, 8)*h2
-        if (.not. ub) then
-          do i2 = 1, h2
-            v0 = band(ax+i2)
-            band(ax+i2) = band(bx+i2)
-            band(bx+i2) = v0
-          enddo
-        else
-          do i2 = 1, h2
-            v0 = bandu(ax+i2)
-            bandu(ax+i2) = bandu(bx+i2)
-            bandu(bx+i2) = v0
-          enddo
-        endif
-      enddo
-    end subroutine band_swap_cols
-
-    !> isend n0 control ints to every worker except me
+    !> isend n0 control ints from the master to every other participant
     subroutine ctl_send_i(vals, n0)
       integer(kind=kint), intent(in) :: vals(:)
       integer(kind=kint), intent(in) :: n0
-      integer(kind=kint) :: ib, iw2
+      integer(kind=kint) :: ib, i0
 
       ib = mf_pool_slot(pool)
       allocate(pool%box(ib)%hdr(n0))
       pool%box(ib)%hdr(1:n0) = vals(1:n0)
-      do iw2 = 1, nwk
-        if (wrank(iw2) == me) cycle
+      do i0 = 1, npl
+        if (plist(i0) == me) cycle
         req = 0
-        call hecmw_isend_int(pool%box(ib)%hdr, n0, wrank(iw2), 16*s+3, map%comm, req)
+        call hecmw_isend_int(pool%box(ib)%hdr, n0, plist(i0), 16*s+3, map%comm, req)
         call mf_pool_req(pool, req)
       enddo
     end subroutine ctl_send_i
 
-    !> isend the boxed reals of slot ib to every worker except me
-    subroutine ctl_send_box(ib, n0)
-      integer(kind=kint), intent(in) :: ib, n0
-      integer(kind=kint) :: iw2
+    !> isend n0 control ints from the diagonal tile owner to every other participant
+    subroutine rd_send_i(vals, n0)
+      integer(kind=kint), intent(in) :: vals(:)
+      integer(kind=kint), intent(in) :: n0
+      integer(kind=kint) :: ib, i0
 
-      do iw2 = 1, nwk
-        if (wrank(iw2) == me) cycle
+      ib = mf_pool_slot(pool)
+      allocate(pool%box(ib)%hdr(n0))
+      pool%box(ib)%hdr(1:n0) = vals(1:n0)
+      do i0 = 1, npl
+        if (plist(i0) == me) cycle
         req = 0
-        call hecmw_isend_r(pool%box(ib)%rv, n0, wrank(iw2), 16*s+4, map%comm, req)
+        call hecmw_isend_int(pool%box(ib)%hdr, n0, plist(i0), 16*s+13, map%comm, req)
         call mf_pool_req(pool, req)
       enddo
-    end subroutine ctl_send_box
+    end subroutine rd_send_i
 
-    !> panel of the positions pa..pb attempted without pivoting: the master factors the
-    !> fully summed rows and broadcasts the update vectors and the factored diagonal
-    !> blocks, every tile owner solves and checks its rows, and one flag reduction over
-    !> the rank set decides the acceptance, reproducing the sequential accept/reject
-    subroutine panel_attempt()
+    !> isend the boxed reals of slot ib from the diagonal tile owner to the checkers
+    subroutine rd_send_box(ib, n0)
+      integer(kind=kint), intent(in) :: ib, n0
+      integer(kind=kint) :: ic0
+
+      do ic0 = 1, nchk
+        if (chk(ic0) == me) cycle
+        req = 0
+        call hecmw_isend_r(pool%box(ib)%rv, n0, chk(ic0), 16*s+14, map%comm, req)
+        call mf_pool_req(pool, req)
+      enddo
+    end subroutine rd_send_box
+
+    !> panel of the positions pa..pb attempted without pivoting: the diagonal tile owner
+    !> factors its rows and hands the checkers the update vectors and the factored
+    !> block, every holder of rows below solves and checks them, and one flag collection
+    !> at the master decides the acceptance, reproducing the sequential accept/reject
+    subroutine panel_attempt(kk)
+      integer(kind=kint), intent(in) :: kk
       real(kind=kreal), allocatable :: rcm(:)
-      integer(kind=kint) :: jj2, iw2, mm, ib, fac
+      integer(kind=kint) :: jj2, ic2, mm, ib, fac
       integer(kind=8) :: ox
 
       fac = 1
       if (fct%lu) fac = 2
-      mfs = ncol - pa + 1
+      mfs = g%tb(kk) - pa + 1
       fsok = .false.
       call mf_grow_r(dgb, int(w, 8)*w)
       if (fct%lu) call mf_grow_r(dgbu, int(w, 8)*w)
-      if (ismaster) then
+      if (rd == me) then
         call build_tmat()
-        call fill_master_panel()
+        call fill_rd_panel(kk)
         if (.not. fct%lu) then
           call hecmw_mf_kernel_panel_nopiv(mfs, w, mfs, pv, fct%pivot_u, zero, info)
         else
@@ -2216,10 +2385,10 @@ contains
         ctli(3) = pb
         ctli(4) = npiv
         ctli(5) = merge(1, 0, fsok)
-        call ctl_send_i(ctli, 8)
+        call rd_send_i(ctli, 8)
         mm = fac*w*pk0
         if (fsok) mm = mm + fac*w*w
-        if (mm > 0 .and. nwk > merge(1, 0, wme > 0)) then
+        if (mm > 0 .and. nchk > merge(1, 0, in_chk(me))) then
           ib = mf_pool_slot(pool)
           allocate(pool%box(ib)%rv(mm))
           ox = 0
@@ -2238,56 +2407,60 @@ contains
               pool%box(ib)%rv(ox+1:ox+int(w, 8)*w) = dgbu(1:int(w, 8)*w)
             endif
           endif
-          call ctl_send_box(ib, mm)
+          call rd_send_box(ib, mm)
         endif
       else
-        call hecmw_recv_int(ctli, 8, master, 16*s+3, map%comm, stat)
+        call hecmw_recv_int(ctli, 8, rd, 16*s+13, map%comm, stat)
         pa = ctli(2)
         pb = ctli(3)
         w = pb - pa + 1
         pk0 = npiv - p0
         fsok = (ctli(5) == 1)
-        mm = fac*w*pk0
-        if (fsok) mm = mm + fac*w*w
-        if (mm > 0) then
-          allocate(rcm(mm))
-          call hecmw_recv_r(rcm, mm, master, 16*s+4, map%comm, stat)
-          ox = 0
-          if (pk0 > 0) then
-            call mf_grow_r(tmat, int(w, 8)*pk0)
-            tmat(1:int(w, 8)*pk0) = rcm(ox+1:ox+int(w, 8)*pk0)
-            ox = ox + int(w, 8)*pk0
-            if (fct%lu) then
-              call mf_grow_r(tmatu, int(w, 8)*pk0)
-              tmatu(1:int(w, 8)*pk0) = rcm(ox+1:ox+int(w, 8)*pk0)
+        if (in_chk(me)) then
+          mm = fac*w*pk0
+          if (fsok) mm = mm + fac*w*w
+          if (mm > 0) then
+            allocate(rcm(mm))
+            call hecmw_recv_r(rcm, mm, rd, 16*s+14, map%comm, stat)
+            ox = 0
+            if (pk0 > 0) then
+              call mf_grow_r(tmat, int(w, 8)*pk0)
+              tmat(1:int(w, 8)*pk0) = rcm(ox+1:ox+int(w, 8)*pk0)
               ox = ox + int(w, 8)*pk0
+              if (fct%lu) then
+                call mf_grow_r(tmatu, int(w, 8)*pk0)
+                tmatu(1:int(w, 8)*pk0) = rcm(ox+1:ox+int(w, 8)*pk0)
+                ox = ox + int(w, 8)*pk0
+              endif
             endif
+            if (fsok) then
+              dgb(1:int(w, 8)*w) = rcm(ox+1:ox+int(w, 8)*w)
+              ox = ox + int(w, 8)*w
+              if (fct%lu) dgbu(1:int(w, 8)*w) = rcm(ox+1:ox+int(w, 8)*w)
+            endif
+            deallocate(rcm)
           endif
-          if (fsok) then
-            dgb(1:int(w, 8)*w) = rcm(ox+1:ox+int(w, 8)*w)
-            ox = ox + int(w, 8)*w
-            if (fct%lu) dgbu(1:int(w, 8)*w) = rcm(ox+1:ox+int(w, 8)*w)
-          endif
-          deallocate(rcm)
         endif
       endif
-      ! the threshold over the distributed rows: fail flags of my rows, one reduction
+      ! the threshold over the distributed rows: fail flags of my rows, one collection
       acc = .false.
       if (fsok) then
-        if (hasband) then
-          call fill_band_panel(.true.)
-        else
+        if (in_chk(me)) then
           cmax(1:w) = 0.0d0
+          if (myfsr > 0) call fill_fs_panel(kk, .true.)
+          if (hasband) call fill_band_panel(.true.)
         endif
         if (ismaster) then
           acc = .true.
-          do jj2 = 1, w
-            if (cmax(jj2) /= 0.0d0) acc = .false.
-          enddo
+          if (in_chk(me)) then
+            do jj2 = 1, w
+              if (cmax(jj2) /= 0.0d0) acc = .false.
+            enddo
+          endif
           allocate(rcm(w))
-          do iw2 = 1, nwk
-            if (wrank(iw2) == me) cycle
-            call hecmw_recv_r(rcm, w, wrank(iw2), 16*s+5, map%comm, stat)
+          do ic2 = 1, nchk
+            if (chk(ic2) == me) cycle
+            call hecmw_recv_r(rcm, w, chk(ic2), 16*s+5, map%comm, stat)
             do jj2 = 1, w
               if (rcm(jj2) /= 0.0d0) acc = .false.
             enddo
@@ -2298,58 +2471,58 @@ contains
           ctli(2) = merge(1, 0, acc)
           call ctl_send_i(ctli, 8)
         else
-          ib = mf_pool_slot(pool)
-          allocate(pool%box(ib)%rv(w))
-          pool%box(ib)%rv(1:w) = cmax(1:w)
-          req = 0
-          call hecmw_isend_r(pool%box(ib)%rv, w, master, 16*s+5, map%comm, req)
-          call mf_pool_req(pool, req)
+          if (in_chk(me)) then
+            ib = mf_pool_slot(pool)
+            allocate(pool%box(ib)%rv(w))
+            pool%box(ib)%rv(1:w) = cmax(1:w)
+            req = 0
+            call hecmw_isend_r(pool%box(ib)%rv, w, master, 16*s+5, map%comm, req)
+            call mf_pool_req(pool, req)
+          endif
           call hecmw_recv_int(ctli, 8, master, 16*s+3, map%comm, stat)
           acc = (ctli(2) == 1)
         endif
       endif
       if (acc) then
-        if (ismaster) then
-          do jj2 = 1, w
-            call mf_col_copy(gm, fvm, pa+jj2-1, pa+jj2-1, pv(int(jj2-1, 8)*mfs + jj2), .true.)
-            if (fct%lu .and. pa+jj2-1 < ncol) &
-              call mf_col_copy(gm, fvmu, pa+jj2-1, pa+jj2, pvu(int(jj2-1, 8)*mfs + jj2 + 1), .true.)
-          enddo
-          if (.not. fct%lu) fct%sn(s)%ptype(pa:pb) = 1
-        endif
+        if (rd == me) call rd_writeback(w)
+        if (myfsr > 0) call fs_panel_writeback(kk, w)
         if (hasband) call band_writeback()
       endif
     end subroutine panel_attempt
 
-    !> the rejected panel gathered whole to the master, which runs the sequential pivoting
-    !> kernel, permutes its fully summed grid and scatters the eliminated columns and the
-    !> exchanges back to the tile owners
-    subroutine panel_piv_1d()
+    !> the rejected panel gathered whole to the master, which runs the sequential
+    !> pivoting kernel and broadcasts the permutations, the exchanges and the pivot
+    !> types; every rank applies the exchanges to what it holds through the pair engine,
+    !> and the eliminated columns are scattered back to their holders
+    subroutine panel_piv_dist(kk)
+      integer(kind=kint), intent(in) :: kk
       real(kind=kreal), allocatable :: rw(:)
-      integer(kind=kint) :: jj2, iw2, t2, h2, x2, q2, mm, ib, mrows, fs1
-      integer(kind=8) :: px, qx
+      integer(kind=kint) :: jj2, ic2, x2, q2, mm, ib, mrows, fs1, i2, r0, nfs2
+      integer(kind=8) :: ww
 
       mrows = nrow - pa + 1
       fs1 = ncol - pa + 1
+      ! refill the raw panel rows with the tile column updates
+      if (rd == me) call fill_rd_panel(kk)
+      if (myfsr > 0) call fill_fs_panel(kk, .false.)
       if (hasband) call fill_band_panel(.false.)
       if (ismaster) then
         call mf_grow_r(pfull, int(mrows, 8)*w)
         if (fct%lu) call mf_grow_r(pfullu, int(mrows, 8)*w)
-        call fill_master_panel()
-        do jj2 = 1, w
-          px = int(jj2-1, 8)*mrows
-          pfull(px+jj2:px+fs1) = pv(int(jj2-1, 8)*mfs + jj2 : int(jj2-1, 8)*mfs + fs1)
-          if (fct%lu) then
-            if (pa+jj2-1 < ncol) pfullu(px+jj2+1:px+fs1) = pvu(int(jj2-1, 8)*mfs + jj2 + 1 : int(jj2-1, 8)*mfs + fs1)
-          endif
-        enddo
-        if (hasband) call gather_rows(pband, pbandu, me)
-        do iw2 = 1, nwk
-          if (wrank(iw2) == me) cycle
-          mm = wrows(wrank(iw2))
-          allocate(rw(merge(2, 1, fct%lu)*mm*w))
-          call hecmw_recv_r(rw, merge(2, 1, fct%lu)*mm*w, wrank(iw2), 16*s+5, map%comm, stat)
-          call gather_rows_buf(rw, mm, wrank(iw2))
+        ww = pmsg_words(kk, me, w)
+        if (ww > 0) then
+          call mf_grow_r(swb, ww)
+          call ppack_rows(kk, w, swb)
+          call masterside(kk, w, me, swb, .true.)
+        endif
+        do ic2 = 1, npl
+          r0 = plist(ic2)
+          if (r0 == me) cycle
+          ww = pmsg_words(kk, r0, w)
+          if (ww == 0) cycle
+          allocate(rw(ww))
+          call hecmw_recv_r(rw, int(ww, kind=kint), r0, 16*s+5, map%comm, stat)
+          call masterside(kk, w, r0, rw, .true.)
           deallocate(rw)
         enddo
         if (.not. fct%lu) then
@@ -2361,40 +2534,31 @@ contains
             fct%pivot_u, zero, .true., np, perm, permr, nsw, info)
         endif
         nswap_f = nswap_f + nsw
-        call master_perm_dance()
-        do jj2 = 1, np
-          px = int(jj2-1, 8)*mrows
-          call mf_col_copy(gm, fvm, pa+jj2-1, pa+jj2-1, pfull(px + jj2), .true.)
-          if (fct%lu .and. pa+jj2-1 < ncol) &
-            call mf_col_copy(gm, fvmu, pa+jj2-1, pa+jj2, pfullu(px + jj2 + 1), .true.)
-        enddo
+        ! the exchanges with the trailing fully summed columns planned here, applied by
+        ! every rank after the broadcast
         npair = 0
+        nfs2 = nfs
         x2 = pa + np
         do while (x2 <= pb)
-          if (nfs > pb) then
-            if (.not. fct%lu) then
-              call mf_swap(gm, fvm, x2, nfs)
-            else
-              call mf_swap_lu(gm, fvm, fvmu, x2, nfs)
-            endif
-            call swap_meta(x2, nfs)
+          if (nfs2 > pb) then
             npair = npair + 1
             swaps(2*npair-1) = x2
-            swaps(2*npair) = nfs
-            nfs = nfs - 1
+            swaps(2*npair) = nfs2
+            nfs2 = nfs2 - 1
             x2 = x2 + 1
           else
-            nfs = x2 - 1
+            nfs2 = x2 - 1
             exit
           endif
         enddo
+        nfs = nfs2
         ctli(1:8) = 0
         ctli(1) = 4
         ctli(2) = np
         ctli(3) = npair
         ctli(4) = nfs
         call ctl_send_i(ctli, 8)
-        mm = merge(2, 1, fct%lu)*w + 2*npair
+        mm = merge(2, 1, fct%lu)*w + 2*npair + w
         ib = mf_pool_slot(pool)
         allocate(pool%box(ib)%hdr(mm))
         pool%box(ib)%hdr(1:w) = perm(1:w)
@@ -2404,54 +2568,39 @@ contains
           q2 = q2 + w
         endif
         pool%box(ib)%hdr(q2+1:q2+2*npair) = swaps(1:2*npair)
-        do iw2 = 1, nwk
-          if (wrank(iw2) == me) cycle
+        q2 = q2 + 2*npair
+        pool%box(ib)%hdr(q2+1:q2+w) = fct%sn(s)%ptype(pa:pb)
+        do ic2 = 1, npl
+          if (plist(ic2) == me) cycle
           req = 0
-          call hecmw_isend_int(pool%box(ib)%hdr, mm, wrank(iw2), 16*s+3, map%comm, req)
+          call hecmw_isend_int(pool%box(ib)%hdr, mm, plist(ic2), 16*s+3, map%comm, req)
           call mf_pool_req(pool, req)
         enddo
-        if (np > 0) then
-          do iw2 = 1, nwk
-            if (wrank(iw2) == me) cycle
-            mm = wrows(wrank(iw2))
-            if (mm == 0) cycle
-            ib = mf_pool_slot(pool)
-            allocate(pool%box(ib)%rv(merge(2, 1, fct%lu)*int(mm, 8)*np))
-            call scatter_rows_buf(pool%box(ib)%rv, mm, wrank(iw2))
-            req = 0
-            call hecmw_isend_r(pool%box(ib)%rv, merge(2, 1, fct%lu)*mm*np, wrank(iw2), 16*s+4, map%comm, req)
-            call mf_pool_req(pool, req)
-          enddo
-        endif
-        if (hasband) then
-          call mf_grow_r(pband, int(myrows, 8)*max(np, 1))
-          if (fct%lu) call mf_grow_r(pbandu, int(myrows, 8)*max(np, 1))
-          do jj2 = 1, np
-            do t2 = 1, ncbt
-              if (towner(t2) /= me) cycle
-              h2 = ctb(t2) - ctb(t2-1)
-              px = int(jj2-1, 8)*myrows + tprow(t2)
-              qx = int(jj2-1, 8)*mrows + fs1 + ctb(t2-1)
-              pband(px+1:px+h2) = pfull(qx+1:qx+h2)
-              if (fct%lu) pbandu(px+1:px+h2) = pfullu(qx+1:qx+h2)
-            enddo
-          enddo
-          call band_apply_piv()
+        ! the diagonal tile owner reads the 2x2 couplings of the new pivots on the later
+        ! panels of the column and at the solve
+        if (.not. fct%lu .and. np > 0 .and. rd /= me) then
+          ib = mf_pool_slot(pool)
+          allocate(pool%box(ib)%rv(np))
+          pool%box(ib)%rv(1:np) = fct%sn(s)%dsub(pa:pa+np-1)
+          req = 0
+          call hecmw_isend_r(pool%box(ib)%rv, np, rd, 16*s+4, map%comm, req)
+          call mf_pool_req(pool, req)
         endif
       else
-        ! send my raw rows, then apply the master's result to my band
-        ib = mf_pool_slot(pool)
-        mm = merge(2, 1, fct%lu)*myrows*w
-        allocate(pool%box(ib)%rv(mm))
-        pool%box(ib)%rv(1:int(myrows, 8)*w) = pband(1:int(myrows, 8)*w)
-        if (fct%lu) pool%box(ib)%rv(int(myrows, 8)*w+1:mm) = pbandu(1:int(myrows, 8)*w)
-        req = 0
-        call hecmw_isend_r(pool%box(ib)%rv, mm, master, 16*s+5, map%comm, req)
-        call mf_pool_req(pool, req)
+        ! my raw rows to the master, then its permutations
+        ww = pmsg_words(kk, me, w)
+        if (ww > 0) then
+          ib = mf_pool_slot(pool)
+          allocate(pool%box(ib)%rv(ww))
+          call ppack_rows(kk, w, pool%box(ib)%rv)
+          req = 0
+          call hecmw_isend_r(pool%box(ib)%rv, int(ww, kind=kint), master, 16*s+5, map%comm, req)
+          call mf_pool_req(pool, req)
+        endif
         call hecmw_recv_int(ctli, 8, master, 16*s+3, map%comm, stat)
         np = ctli(2)
         npair = ctli(3)
-        mm = merge(2, 1, fct%lu)*w + 2*npair
+        mm = merge(2, 1, fct%lu)*w + 2*npair + w
         call hecmw_recv_int(itmp, mm, master, 16*s+3, map%comm, stat)
         perm(1:w) = itmp(1:w)
         q2 = w
@@ -2460,91 +2609,210 @@ contains
           q2 = q2 + w
         endif
         swaps(1:2*npair) = itmp(q2+1:q2+2*npair)
-        if (np > 0 .and. myrows > 0) then
-          mm = merge(2, 1, fct%lu)*myrows*np
-          allocate(rw(mm))
-          call hecmw_recv_r(rw, mm, master, 16*s+4, map%comm, stat)
-          call mf_grow_r(pband, int(myrows, 8)*max(np, 1))
-          pband(1:int(myrows, 8)*np) = rw(1:int(myrows, 8)*np)
-          if (fct%lu) then
-            call mf_grow_r(pbandu, int(myrows, 8)*max(np, 1))
-            pbandu(1:int(myrows, 8)*np) = rw(int(myrows, 8)*np+1:mm)
-          endif
-          deallocate(rw)
+        q2 = q2 + 2*npair
+        fct%sn(s)%ptype(pa:pb) = itmp(q2+1:q2+w)
+        if (.not. fct%lu .and. np > 0 .and. rd == me) then
+          call hecmw_recv_r(fct%sn(s)%dsub(pa:pa+np-1), np, master, 16*s+4, map%comm, stat)
         endif
-        call band_apply_piv()
-        nfs = ctli(4)
       endif
-    end subroutine panel_piv_1d
-
-    !> rows of my band from pband into the gathered panel (the master's own part)
-    subroutine gather_rows(pb0, pb0u, rk)
-      real(kind=kreal), intent(in) :: pb0(:), pb0u(:)
-      integer(kind=kint), intent(in) :: rk
-      integer(kind=kint) :: jj2, t2, h2, r0, mrows, fs1
-      integer(kind=8) :: px, qx
-
-      mrows = nrow - pa + 1
-      fs1 = ncol - pa + 1
-      r0 = 0
-      do t2 = 1, ncbt
-        if (towner(t2) /= rk) cycle
-        h2 = ctb(t2) - ctb(t2-1)
-        do jj2 = 1, w
-          px = int(jj2-1, 8)*myrows + r0
-          qx = int(jj2-1, 8)*mrows + fs1 + ctb(t2-1)
-          pfull(qx+1:qx+h2) = pb0(px+1:px+h2)
-          if (fct%lu) pfullu(qx+1:qx+h2) = pb0u(px+1:px+h2)
-        enddo
-        r0 = r0 + h2
+      ! the panel permutation on the front values (and the master's metadata)
+      call perm_dance_apply()
+      ! the eliminated columns to their holders
+      if (np > 0) then
+        if (ismaster) then
+          do ic2 = 1, npl
+            r0 = plist(ic2)
+            if (r0 == me) cycle
+            ww = pmsg_words(kk, r0, np)
+            if (ww == 0) cycle
+            ib = mf_pool_slot(pool)
+            allocate(pool%box(ib)%rv(ww))
+            call masterside(kk, np, r0, pool%box(ib)%rv, .false.)
+            req = 0
+            call hecmw_isend_r(pool%box(ib)%rv, int(ww, kind=kint), r0, 16*s+4, map%comm, req)
+            call mf_pool_req(pool, req)
+          enddo
+          ww = pmsg_words(kk, me, np)
+          if (ww > 0) then
+            call mf_grow_r(swb, ww)
+            call masterside(kk, np, me, swb, .false.)
+            call punpack_rows(kk, np, swb)
+          endif
+        else
+          ww = pmsg_words(kk, me, np)
+          if (ww > 0) then
+            allocate(rw(ww))
+            call hecmw_recv_r(rw, int(ww, kind=kint), master, 16*s+4, map%comm, stat)
+            call punpack_rows(kk, np, rw)
+            deallocate(rw)
+          endif
+        endif
+        if (rd == me) call rd_writeback(np)
+        if (myfsr > 0) call fs_panel_writeback(kk, np)
+        if (hasband) call band_scatter_writeback(np)
+      endif
+      ! the exchanges of the columns left delayed with the trailing fully summed columns
+      do i2 = 1, npair
+        x2 = swaps(2*i2-1)
+        q2 = swaps(2*i2)
+        if (.not. fct%lu) then
+          call dswap(1, x2, q2)
+        else
+          call dswap(2, x2, q2)
+        endif
+        if (ismaster) call swap_meta(x2, q2)
       enddo
-    end subroutine gather_rows
+      if (.not. ismaster) nfs = ctli(4)
+    end subroutine panel_piv_dist
 
-    !> rows of the worker rk from its message into the gathered panel
-    subroutine gather_rows_buf(rw, nr0, rk)
-      real(kind=kreal), intent(in) :: rw(:)
-      integer(kind=kint), intent(in) :: nr0, rk
-      integer(kind=kint) :: jj2, t2, h2, r0, mrows, fs1
-      integer(kind=8) :: px, qx
+    !> words of the panel message of rank r0: its diagonal tile rows (triangular), its
+    !> column tile rows and its band rows over nc0 columns, both faces in LU
+    function pmsg_words(kk, r0, nc0) result(ww)
+      integer(kind=kint), intent(in) :: kk, r0, nc0
+      integer(kind=8) :: ww
+      integer(kind=kint) :: nr0
 
-      mrows = nrow - pa + 1
-      fs1 = ncol - pa + 1
-      r0 = 0
-      do t2 = 1, ncbt
-        if (towner(t2) /= rk) cycle
-        h2 = ctb(t2) - ctb(t2-1)
-        do jj2 = 1, w
-          px = int(jj2-1, 8)*nr0 + r0
-          qx = int(jj2-1, 8)*mrows + fs1 + ctb(t2-1)
-          pfull(qx+1:qx+h2) = rw(px+1:px+h2)
-          if (fct%lu) pfullu(qx+1:qx+h2) = rw(int(nr0, 8)*w + px + 1 : int(nr0, 8)*w + px + h2)
-        enddo
-        r0 = r0 + h2
+      nr0 = fsrows_col(r0, kk) + wrows(r0)
+      ww = int(nr0, 8)*nc0
+      if (r0 == rd) ww = ww + int(mfs, 8)*nc0 - int(nc0, 8)*(nc0-1)/2
+      if (fct%lu) then
+        ww = 2*ww
+        if (r0 == rd) ww = ww - nc0
+      endif
+    end function pmsg_words
+
+    !> my panel rows into buf: per column the diagonal tile rows (from the diagonal
+    !> down), my column tile rows and my band rows, the lower face then the upper (LU)
+    subroutine ppack_rows(kk, nc0, buf)
+      integer(kind=kint), intent(in) :: kk, nc0
+      real(kind=kreal), intent(inout) :: buf(:)
+      integer(kind=8) :: ox
+
+      ox = 0
+      call pface_rows(kk, nc0, pv, pfs, pband, buf, ox, .true., .false.)
+      if (fct%lu) call pface_rows(kk, nc0, pvu, pfsu, pbandu, buf, ox, .true., .true.)
+    end subroutine ppack_rows
+
+    !> buf into my panel rows (the reverse of ppack_rows)
+    subroutine punpack_rows(kk, nc0, buf)
+      integer(kind=kint), intent(in) :: kk, nc0
+      real(kind=kreal), intent(inout) :: buf(:)
+      integer(kind=8) :: ox
+
+      ox = 0
+      call pface_rows(kk, nc0, pv, pfs, pband, buf, ox, .false., .false.)
+      if (fct%lu) call pface_rows(kk, nc0, pvu, pfsu, pbandu, buf, ox, .false., .true.)
+    end subroutine punpack_rows
+
+    !> one face of my panel rows moved between the panel buffers and buf
+    subroutine pface_rows(kk, nc0, pva, pfsa, pbda, buf, ox, topack, uface)
+      integer(kind=kint), intent(in) :: kk, nc0
+      real(kind=kreal), intent(inout) :: pva(:), pfsa(:), pbda(:), buf(:)
+      integer(kind=8), intent(inout) :: ox
+      logical, intent(in) :: topack, uface
+      integer(kind=kint) :: jj2, j0, ln
+      integer(kind=8) :: px
+
+      do jj2 = 1, nc0
+        if (rd == me) then
+          j0 = jj2
+          if (uface) j0 = jj2 + 1
+          ln = mfs - j0 + 1
+          if (ln > 0) then
+            px = int(jj2-1, 8)*mfs + j0 - 1
+            if (topack) then
+              buf(ox+1:ox+ln) = pva(px+1:px+ln)
+            else
+              pva(px+1:px+ln) = buf(ox+1:ox+ln)
+            endif
+            ox = ox + ln
+          endif
+        endif
+        if (myfsr > 0) then
+          px = int(jj2-1, 8)*myfsr
+          if (topack) then
+            buf(ox+1:ox+myfsr) = pfsa(px+1:px+myfsr)
+          else
+            pfsa(px+1:px+myfsr) = buf(ox+1:ox+myfsr)
+          endif
+          ox = ox + myfsr
+        endif
+        if (hasband) then
+          px = int(jj2-1, 8)*myrows
+          if (topack) then
+            buf(ox+1:ox+myrows) = pbda(px+1:px+myrows)
+          else
+            pbda(px+1:px+myrows) = buf(ox+1:ox+myrows)
+          endif
+          ox = ox + myrows
+        endif
       enddo
-    end subroutine gather_rows_buf
+    end subroutine pface_rows
 
-    !> rows of the worker rk of the eliminated panel columns into its scatter message
-    subroutine scatter_rows_buf(rw, nr0, rk)
-      real(kind=kreal), intent(inout) :: rw(:)
-      integer(kind=kint), intent(in) :: nr0, rk
-      integer(kind=kint) :: jj2, t2, h2, r0, mrows, fs1
-      integer(kind=8) :: px, qx
+    !> the panel rows of rank r0 moved between its message and the master's assembled
+    !> panel: tofull unpacks buf into pfull (the gather), else pfull fills buf (the
+    !> scatter of the eliminated columns)
+    subroutine masterside(kk, nc0, r0, buf, tofull)
+      integer(kind=kint), intent(in) :: kk, nc0, r0
+      real(kind=kreal), intent(inout) :: buf(:)
+      logical, intent(in) :: tofull
+      integer(kind=8) :: ox
 
-      mrows = nrow - pa + 1
-      fs1 = ncol - pa + 1
-      r0 = 0
-      do t2 = 1, ncbt
-        if (towner(t2) /= rk) cycle
-        h2 = ctb(t2) - ctb(t2-1)
-        do jj2 = 1, np
-          px = int(jj2-1, 8)*nr0 + r0
-          qx = int(jj2-1, 8)*mrows + fs1 + ctb(t2-1)
-          rw(px+1:px+h2) = pfull(qx+1:qx+h2)
-          if (fct%lu) rw(int(nr0, 8)*np + px + 1 : int(nr0, 8)*np + px + h2) = pfullu(qx+1:qx+h2)
+      ox = 0
+      call pface_master(kk, nc0, r0, pfull, buf, ox, tofull, .false.)
+      if (fct%lu) call pface_master(kk, nc0, r0, pfullu, buf, ox, tofull, .true.)
+    end subroutine masterside
+
+    !> one face of the panel rows of rank r0 moved between buf and the assembled panel
+    subroutine pface_master(kk, nc0, r0, pf, buf, ox, tofull, uface)
+      integer(kind=kint), intent(in) :: kk, nc0, r0
+      real(kind=kreal), intent(inout) :: pf(:), buf(:)
+      integer(kind=8), intent(inout) :: ox
+      logical, intent(in) :: tofull, uface
+      integer(kind=kint) :: jj2, j0, ln, t2, h2, r1, mrows2, fs2
+      integer(kind=8) :: qx
+
+      mrows2 = nrow - pa + 1
+      fs2 = ncol - pa + 1
+      do jj2 = 1, nc0
+        qx = int(jj2-1, 8)*mrows2
+        if (r0 == rd) then
+          j0 = jj2
+          if (uface) j0 = jj2 + 1
+          ln = mfs - j0 + 1
+          if (ln > 0) then
+            if (tofull) then
+              pf(qx+j0:qx+j0+ln-1) = buf(ox+1:ox+ln)
+            else
+              buf(ox+1:ox+ln) = pf(qx+j0:qx+j0+ln-1)
+            endif
+            ox = ox + ln
+          endif
+        endif
+        do t2 = kk + 1, g%ntc
+          if (fso(t2, kk) /= r0) cycle
+          h2 = g%tb(t2) - g%tb(t2-1)
+          r1 = g%tb(t2-1) - pa + 2
+          if (tofull) then
+            pf(qx+r1:qx+r1+h2-1) = buf(ox+1:ox+h2)
+          else
+            buf(ox+1:ox+h2) = pf(qx+r1:qx+r1+h2-1)
+          endif
+          ox = ox + h2
         enddo
-        r0 = r0 + h2
+        do t2 = 1, ncbt
+          if (towner(t2) /= r0) cycle
+          h2 = ctb(t2) - ctb(t2-1)
+          r1 = fs2 + ctb(t2-1) + 1
+          if (tofull) then
+            pf(qx+r1:qx+r1+h2-1) = buf(ox+1:ox+h2)
+          else
+            buf(ox+1:ox+h2) = pf(qx+r1:qx+r1+h2-1)
+          endif
+          ox = ox + h2
+        enddo
       enddo
-    end subroutine scatter_rows_buf
+    end subroutine pface_master
 
     !> rows of the band held by rank rk
     function wrows(rk) result(nr0)
@@ -2557,9 +2825,10 @@ contains
       enddo
     end function wrows
 
-    !> the panel permutation applied to the master's fully summed grid and the position
-    !> metadata, as the sequential permute_rows / permute_front do
-    subroutine master_perm_dance()
+    !> the panel permutation applied to the front values through the pair engine on
+    !> every rank, the master permuting the position metadata alongside (the exchanges
+    !> of the sequential permute_rows / permute_front)
+    subroutine perm_dance_apply()
       integer(kind=kint) :: jj2, t2, q2
 
       do jj2 = 1, w
@@ -2571,13 +2840,15 @@ contains
           if (itmp(t2) == perm(jj2)) exit
         enddo
         if (.not. fct%lu) then
-          call mf_swap(gm, fvm, pa+jj2-1, pa+t2-1)
-          q2 = fct%sn(s)%fsdof(pa+jj2-1)
-          fct%sn(s)%fsdof(pa+jj2-1) = fct%sn(s)%fsdof(pa+t2-1)
-          fct%sn(s)%fsdof(pa+t2-1) = q2
+          call dswap(1, pa+jj2-1, pa+t2-1)
+          if (ismaster) then
+            q2 = fct%sn(s)%fsdof(pa+jj2-1)
+            fct%sn(s)%fsdof(pa+jj2-1) = fct%sn(s)%fsdof(pa+t2-1)
+            fct%sn(s)%fsdof(pa+t2-1) = q2
+          endif
         else
-          call mf_swap_lu(gm, fvm, fvmu, pa+jj2-1, pa+t2-1)
-          call swap_meta(pa+jj2-1, pa+t2-1)
+          call dswap(2, pa+jj2-1, pa+t2-1)
+          if (ismaster) call swap_meta(pa+jj2-1, pa+t2-1)
         endif
         itmp(t2) = itmp(jj2)
         itmp(jj2) = perm(jj2)
@@ -2589,18 +2860,20 @@ contains
           do t2 = jj2 + 1, w
             if (itmp(t2) == permr(jj2)) exit
           enddo
-          call mf_swap_row(gm, fvm, fvmu, pa+jj2-1, pa+t2-1)
-          q2 = fct%sn(s)%frow(pa+jj2-1)
-          fct%sn(s)%frow(pa+jj2-1) = fct%sn(s)%frow(pa+t2-1)
-          fct%sn(s)%frow(pa+t2-1) = q2
-          q2 = blkr(pa+jj2-1)
-          blkr(pa+jj2-1) = blkr(pa+t2-1)
-          blkr(pa+t2-1) = q2
+          call dswap(3, pa+jj2-1, pa+t2-1)
+          if (ismaster) then
+            q2 = fct%sn(s)%frow(pa+jj2-1)
+            fct%sn(s)%frow(pa+jj2-1) = fct%sn(s)%frow(pa+t2-1)
+            fct%sn(s)%frow(pa+t2-1) = q2
+            q2 = blkr(pa+jj2-1)
+            blkr(pa+jj2-1) = blkr(pa+t2-1)
+            blkr(pa+t2-1) = q2
+          endif
           itmp(t2) = itmp(jj2)
           itmp(jj2) = permr(jj2)
         enddo
       endif
-    end subroutine master_perm_dance
+    end subroutine perm_dance_apply
 
     !> exchange of the position metadata x0 <-> y0 (fsdof and blk; frow and blkr in LU)
     subroutine swap_meta(x0, y0)
@@ -2623,38 +2896,13 @@ contains
       endif
     end subroutine swap_meta
 
-    !> the panel permutation and the delayed exchanges applied to my band columns, then
-    !> the eliminated columns overwritten with the scattered rows
-    subroutine band_apply_piv()
-      integer(kind=kint) :: jj2, t2, h2, i2
+    !> the scattered eliminated columns overwritten into my band
+    subroutine band_scatter_writeback(nc0)
+      integer(kind=kint), intent(in) :: nc0
+      integer(kind=kint) :: jj2, t2, h2
       integer(kind=8) :: px, bx
 
-      do jj2 = 1, w
-        itmp(jj2) = jj2
-      enddo
-      do jj2 = 1, w
-        if (itmp(jj2) == perm(jj2)) cycle
-        do t2 = jj2 + 1, w
-          if (itmp(t2) == perm(jj2)) exit
-        enddo
-        call band_swap_cols(pa+jj2-1, pa+t2-1, .false.)
-        if (fct%lu) call band_swap_cols(pa+jj2-1, pa+t2-1, .true.)
-        itmp(t2) = itmp(jj2)
-        itmp(jj2) = perm(jj2)
-      enddo
-      if (fct%lu) then
-        itmp(1:w) = perm(1:w)
-        do jj2 = 1, w
-          if (itmp(jj2) == permr(jj2)) cycle
-          do t2 = jj2 + 1, w
-            if (itmp(t2) == permr(jj2)) exit
-          enddo
-          call band_swap_cols(pa+jj2-1, pa+t2-1, .true.)
-          itmp(t2) = itmp(jj2)
-          itmp(jj2) = permr(jj2)
-        enddo
-      endif
-      do jj2 = 1, np
+      do jj2 = 1, nc0
         do t2 = 1, ncbt
           if (towner(t2) /= me) cycle
           h2 = ctb(t2) - ctb(t2-1)
@@ -2664,135 +2912,478 @@ contains
           if (fct%lu) bandu(bx+1:bx+h2) = pbandu(px+1:px+h2)
         enddo
       enddo
-      do i2 = 1, npair
-        call band_swap_cols(swaps(2*i2-1), swaps(2*i2), .false.)
-        if (fct%lu) call band_swap_cols(swaps(2*i2-1), swaps(2*i2), .true.)
-      enddo
-    end subroutine band_apply_piv
+    end subroutine band_scatter_writeback
 
-    !> after the pivots of tile column kk: the master hands the tile owners the pivot
-    !> scaling data, its fully summed rows of the eliminated columns and the update
-    !> vectors of the columns left delayed in the column; then every rank compresses,
-    !> exchanges and updates what it owns, in the arithmetic of the sequential trailing
-    !> update
+    !> pair engine of a distributed exchange of the fully summed positions x0 < y0: the
+    !> element pairs of a symmetric exchange (kindx 1 LDLt, 2 LU) or a row exchange
+    !> (kindx 3, LU). A pair held whole by one rank is swapped in place (every exchange
+    !> within a panel); the pairs split between two ranks (an exchange crossing tile
+    !> columns) are routed through the master, which collects the split elements,
+    !> exchanges them and returns them
+    subroutine dswap(kindx, x0, y0)
+      integer(kind=kint), intent(in) :: kindx, x0, y0
+      integer(kind=kint) :: npr, p2, o1, o2, nsp, i0, r0, cnt, ib
+      real(kind=kreal) :: v0
+
+      call dswap_pairs(kindx, x0, y0, npr)
+      nsp = 0
+      do p2 = 1, npr
+        o1 = edest(spr(p2), spc(p2))
+        o2 = edest(sqr(p2), sqc(p2))
+        if (o1 == o2) then
+          if (o1 == me) then
+            v0 = pget(spr(p2), spc(p2), spf(p2))
+            call pput(spr(p2), spc(p2), spf(p2), pget(sqr(p2), sqc(p2), sqf(p2)))
+            call pput(sqr(p2), sqc(p2), sqf(p2), v0)
+          endif
+        else
+          nsp = nsp + 1
+        endif
+      enddo
+      if (nsp == 0) return
+      if (ismaster) then
+        call mf_grow_r(sw1, int(npr, 8))
+        call mf_grow_r(sw2, int(npr, 8))
+        do p2 = 1, npr
+          o1 = edest(spr(p2), spc(p2))
+          o2 = edest(sqr(p2), sqc(p2))
+          if (o1 == o2) cycle
+          if (o1 == me) sw1(p2) = pget(spr(p2), spc(p2), spf(p2))
+          if (o2 == me) sw2(p2) = pget(sqr(p2), sqc(p2), sqf(p2))
+        enddo
+        do i0 = 1, npl
+          r0 = plist(i0)
+          if (r0 == me) cycle
+          cnt = split_count(npr, r0)
+          if (cnt == 0) cycle
+          call mf_grow_r(swb, int(cnt, 8))
+          call hecmw_recv_r(swb, cnt, r0, 16*s+15, map%comm, stat)
+          cnt = 0
+          do p2 = 1, npr
+            o1 = edest(spr(p2), spc(p2))
+            o2 = edest(sqr(p2), sqc(p2))
+            if (o1 == o2) cycle
+            if (o1 == r0) then
+              cnt = cnt + 1
+              sw1(p2) = swb(cnt)
+            endif
+            if (o2 == r0) then
+              cnt = cnt + 1
+              sw2(p2) = swb(cnt)
+            endif
+          enddo
+        enddo
+        do p2 = 1, npr
+          o1 = edest(spr(p2), spc(p2))
+          o2 = edest(sqr(p2), sqc(p2))
+          if (o1 == o2) cycle
+          v0 = sw1(p2)
+          sw1(p2) = sw2(p2)
+          sw2(p2) = v0
+          if (o1 == me) call pput(spr(p2), spc(p2), spf(p2), sw1(p2))
+          if (o2 == me) call pput(sqr(p2), sqc(p2), sqf(p2), sw2(p2))
+        enddo
+        do i0 = 1, npl
+          r0 = plist(i0)
+          if (r0 == me) cycle
+          cnt = split_count(npr, r0)
+          if (cnt == 0) cycle
+          ib = mf_pool_slot(pool)
+          allocate(pool%box(ib)%rv(cnt))
+          cnt = 0
+          do p2 = 1, npr
+            o1 = edest(spr(p2), spc(p2))
+            o2 = edest(sqr(p2), sqc(p2))
+            if (o1 == o2) cycle
+            if (o1 == r0) then
+              cnt = cnt + 1
+              pool%box(ib)%rv(cnt) = sw1(p2)
+            endif
+            if (o2 == r0) then
+              cnt = cnt + 1
+              pool%box(ib)%rv(cnt) = sw2(p2)
+            endif
+          enddo
+          req = 0
+          call hecmw_isend_r(pool%box(ib)%rv, cnt, r0, 16*s+15, map%comm, req)
+          call mf_pool_req(pool, req)
+        enddo
+      else
+        cnt = split_count(npr, me)
+        if (cnt > 0) then
+          ib = mf_pool_slot(pool)
+          allocate(pool%box(ib)%rv(cnt))
+          cnt = 0
+          do p2 = 1, npr
+            o1 = edest(spr(p2), spc(p2))
+            o2 = edest(sqr(p2), sqc(p2))
+            if (o1 == o2) cycle
+            if (o1 == me) then
+              cnt = cnt + 1
+              pool%box(ib)%rv(cnt) = pget(spr(p2), spc(p2), spf(p2))
+            endif
+            if (o2 == me) then
+              cnt = cnt + 1
+              pool%box(ib)%rv(cnt) = pget(sqr(p2), sqc(p2), sqf(p2))
+            endif
+          enddo
+          req = 0
+          call hecmw_isend_r(pool%box(ib)%rv, cnt, master, 16*s+15, map%comm, req)
+          call mf_pool_req(pool, req)
+          call mf_grow_r(swb, int(cnt, 8))
+          call hecmw_recv_r(swb, cnt, master, 16*s+15, map%comm, stat)
+          cnt = 0
+          do p2 = 1, npr
+            o1 = edest(spr(p2), spc(p2))
+            o2 = edest(sqr(p2), sqc(p2))
+            if (o1 == o2) cycle
+            if (o1 == me) then
+              cnt = cnt + 1
+              call pput(spr(p2), spc(p2), spf(p2), swb(cnt))
+            endif
+            if (o2 == me) then
+              cnt = cnt + 1
+              call pput(sqr(p2), sqc(p2), sqf(p2), swb(cnt))
+            endif
+          enddo
+        endif
+      endif
+    end subroutine dswap
+
+    !> the element pairs of the exchange, in stored coordinates (row >= column, face 1
+    !> the transposed upper grid of the LU mode), reproducing mf_swap, mf_swap_lu and
+    !> mf_swap_row element by element
+    subroutine dswap_pairs(kindx, x0, y0, npr)
+      integer(kind=kint), intent(in) :: kindx, x0, y0
+      integer(kind=kint), intent(out) :: npr
+      integer(kind=kint) :: i0
+
+      call mf_grow_i(spr, 2*nrow + 4)
+      call mf_grow_i(spc, 2*nrow + 4)
+      call mf_grow_i(spf, 2*nrow + 4)
+      call mf_grow_i(sqr, 2*nrow + 4)
+      call mf_grow_i(sqc, 2*nrow + 4)
+      call mf_grow_i(sqf, 2*nrow + 4)
+      npr = 0
+      if (kindx == 1) then
+        call addpair(npr, x0, x0, 0, y0, y0, 0)
+        do i0 = 1, x0-1
+          call addpair(npr, x0, i0, 0, y0, i0, 0)
+        enddo
+        do i0 = x0+1, y0-1
+          call addpair(npr, i0, x0, 0, y0, i0, 0)
+        enddo
+        do i0 = y0+1, nrow
+          call addpair(npr, i0, x0, 0, i0, y0, 0)
+        enddo
+      else if (kindx == 2) then
+        call addpair(npr, x0, x0, 0, y0, y0, 0)
+        do i0 = 1, x0-1
+          call addpair(npr, x0, i0, 0, y0, i0, 0)
+          call addpair(npr, x0, i0, 1, y0, i0, 1)
+        enddo
+        do i0 = x0+1, y0-1
+          call addpair(npr, i0, x0, 0, y0, i0, 1)
+          call addpair(npr, y0, i0, 0, i0, x0, 1)
+        enddo
+        call addpair(npr, y0, x0, 0, y0, x0, 1)
+        do i0 = y0+1, nrow
+          call addpair(npr, i0, x0, 0, i0, y0, 0)
+          call addpair(npr, i0, x0, 1, i0, y0, 1)
+        enddo
+      else
+        do i0 = 1, x0
+          call addpair(npr, x0, i0, 0, y0, i0, 0)
+        enddo
+        do i0 = x0+1, y0-1
+          call addpair(npr, i0, x0, 1, y0, i0, 0)
+        enddo
+        call addpair(npr, y0, x0, 1, y0, y0, 0)
+        do i0 = y0+1, nrow
+          call addpair(npr, i0, x0, 1, i0, y0, 1)
+        enddo
+      endif
+    end subroutine dswap_pairs
+
+    subroutine addpair(npr, r1, c1, f1, r2, c2, f2)
+      integer(kind=kint), intent(inout) :: npr
+      integer(kind=kint), intent(in) :: r1, c1, f1, r2, c2, f2
+
+      npr = npr + 1
+      spr(npr) = r1
+      spc(npr) = c1
+      spf(npr) = f1
+      sqr(npr) = r2
+      sqc(npr) = c2
+      sqf(npr) = f2
+    end subroutine addpair
+
+    !> elements of the split pairs held by rank r0
+    function split_count(npr, r0) result(cnt)
+      integer(kind=kint), intent(in) :: npr, r0
+      integer(kind=kint) :: cnt, p2, o1, o2
+
+      cnt = 0
+      do p2 = 1, npr
+        o1 = edest(spr(p2), spc(p2))
+        o2 = edest(sqr(p2), sqc(p2))
+        if (o1 == o2) cycle
+        if (o1 == r0) cnt = cnt + 1
+        if (o2 == r0) cnt = cnt + 1
+      enddo
+    end function split_count
+
+    !> value of my stored front entry at (r, c), r >= c; face 1 is the upper LU grid
+    function pget(r, c, f0) result(v0)
+      integer(kind=kint), intent(in) :: r, c, f0
+      real(kind=kreal) :: v0
+      integer(kind=kint) :: t0
+      integer(kind=8) :: ix
+
+      if (r <= ncol) then
+        ix = fsx(r, c)
+        if (f0 == 1) then
+          v0 = fsvu(ix)
+        else
+          v0 = fsv(ix)
+        endif
+      else
+        t0 = crow2t(r - ncol)
+        ix = bandix(t0, r, c)
+        if (f0 == 1) then
+          v0 = bandu(ix)
+        else
+          v0 = band(ix)
+        endif
+      endif
+    end function pget
+
+    subroutine pput(r, c, f0, v0)
+      integer(kind=kint), intent(in) :: r, c, f0
+      real(kind=kreal), intent(in) :: v0
+      integer(kind=kint) :: t0
+      integer(kind=8) :: ix
+
+      if (r <= ncol) then
+        ix = fsx(r, c)
+        if (f0 == 1) then
+          fsvu(ix) = v0
+        else
+          fsv(ix) = v0
+        endif
+      else
+        t0 = crow2t(r - ncol)
+        ix = bandix(t0, r, c)
+        if (f0 == 1) then
+          bandu(ix) = v0
+        else
+          band(ix) = v0
+        endif
+      endif
+    end subroutine pput
+
+    !> after the pivots of tile column kk: the diagonal tile owner hands out the pivot
+    !> scaling data and the update vectors of the columns left delayed in the column,
+    !> the owners of the eliminated column tiles multicast them to the ranks whose
+    !> trailing updates read them, and every rank compresses, exchanges and updates what
+    !> it owns, in the arithmetic of the sequential trailing update
     subroutine postcol(kk)
       integer(kind=kint), intent(in) :: kk
       real(kind=kreal), allocatable :: rcm(:)
-      integer(kind=kint) :: q2, x2, mm, ib, nfsr, ndl, fac
+      integer(kind=kint) :: q2, x2, mm, ib, ndl, fac
       integer(kind=8) :: ox
 
       fac = 1
       if (fct%lu) fac = 2
-      nfsr = ncol - g%tb(kk)
       ndl = g%tb(kk) - npiv
-      if (ismaster) then
-        ctli(1:8) = 0
-        ctli(1) = 5
-        ctli(2) = npiv
-        ctli(3) = nfs
-        call ctl_send_i(ctli, 8)
-        if (pk > 0) then
+      if (pk <= 0) return
+      if (rd == me) then
+        if (.not. fct%lu) then
+          do q2 = p0 + 1, npiv
+            ptv(q2-p0) = fct%sn(s)%ptype(q2)
+            dsv(q2-p0) = fct%sn(s)%dsub(q2)
+            dgv(q2-p0) = fsv(fsx(q2, q2))
+          enddo
+        endif
+        call mf_grow_r(tvec, max(int(ndl, 8)*pk, 1_8))
+        if (fct%lu) call mf_grow_r(tvecu, max(int(ndl, 8)*pk, 1_8))
+        do x2 = npiv + 1, g%tb(kk)
           if (.not. fct%lu) then
+            call build_tcol(x2, tvec(int(x2-npiv-1, 8)*pk + 1))
+          else
             do q2 = p0 + 1, npiv
-              ptv(q2-p0) = fct%sn(s)%ptype(q2)
-              dsv(q2-p0) = fct%sn(s)%dsub(q2)
-              dgv(q2-p0) = fvm(mf_idx(gm, q2, q2))
+              tvec(int(x2-npiv-1, 8)*pk + (q2-p0)) = fsvu(fsx(x2, q2))
+              tvecu(int(x2-npiv-1, 8)*pk + (q2-p0)) = fsv(fsx(x2, q2))
             enddo
           endif
-          ! the fully summed rows of the eliminated columns, tile block by tile block, so
-          !  a tile is a contiguous block on both sides
-          call mf_grow_r(fsl, max(int(nfsr, 8)*pk, 1_8))
-          if (fct%lu) call mf_grow_r(fslu, max(int(nfsr, 8)*pk, 1_8))
-          do q2 = kk + 1, g%ntc
-            x2 = g%tb(q2) - g%tb(q2-1)
-            fsl(fsl_off(q2, kk)+1:fsl_off(q2, kk)+int(x2, 8)*pk) = &
-              fvm(mf_off(gm, q2, kk)+1:mf_off(gm, q2, kk)+int(x2, 8)*pk)
-            if (fct%lu) fslu(fsl_off(q2, kk)+1:fsl_off(q2, kk)+int(x2, 8)*pk) = &
-              fvmu(mf_off(gm, q2, kk)+1:mf_off(gm, q2, kk)+int(x2, 8)*pk)
-          enddo
-          call mf_grow_r(tvec, max(int(ndl, 8)*pk, 1_8))
-          if (fct%lu) call mf_grow_r(tvecu, max(int(ndl, 8)*pk, 1_8))
-          do x2 = npiv + 1, g%tb(kk)
-            if (.not. fct%lu) then
-              call build_tcol(x2, tvec(int(x2-npiv-1, 8)*pk + 1))
-            else
-              call mf_row_get(gm, fvmu, x2, p0+1, npiv, tvec(int(x2-npiv-1, 8)*pk + 1))
-              call mf_row_get(gm, fvm, x2, p0+1, npiv, tvecu(int(x2-npiv-1, 8)*pk + 1))
-            endif
-          enddo
-          if (.not. fct%lu) call ctl_send_i(ptv, pk)
-          mm = merge(0, 2*pk, fct%lu) + fac*nfsr*pk + fac*ndl*pk
-          if (mm > 0 .and. nwk > merge(1, 0, wme > 0)) then
-            ib = mf_pool_slot(pool)
-            allocate(pool%box(ib)%rv(mm))
-            ox = 0
-            if (.not. fct%lu) then
-              pool%box(ib)%rv(1:pk) = dsv(1:pk)
-              pool%box(ib)%rv(pk+1:2*pk) = dgv(1:pk)
-              ox = 2*pk
-            endif
-            pool%box(ib)%rv(ox+1:ox+int(nfsr, 8)*pk) = fsl(1:int(nfsr, 8)*pk)
-            ox = ox + int(nfsr, 8)*pk
-            if (fct%lu) then
-              pool%box(ib)%rv(ox+1:ox+int(nfsr, 8)*pk) = fslu(1:int(nfsr, 8)*pk)
-              ox = ox + int(nfsr, 8)*pk
-            endif
-            pool%box(ib)%rv(ox+1:ox+int(ndl, 8)*pk) = tvec(1:int(ndl, 8)*pk)
-            ox = ox + int(ndl, 8)*pk
-            if (fct%lu) pool%box(ib)%rv(ox+1:ox+int(ndl, 8)*pk) = tvecu(1:int(ndl, 8)*pk)
-            call ctl_send_box(ib, mm)
+        enddo
+        if (.not. fct%lu) call rd_send_i(ptv, pk)
+        mm = merge(0, 2*pk, fct%lu) + fac*ndl*pk
+        if (mm > 0 .and. npl > 1) then
+          ib = mf_pool_slot(pool)
+          allocate(pool%box(ib)%rv(mm))
+          ox = 0
+          if (.not. fct%lu) then
+            pool%box(ib)%rv(1:pk) = dsv(1:pk)
+            pool%box(ib)%rv(pk+1:2*pk) = dgv(1:pk)
+            ox = 2*pk
           endif
+          pool%box(ib)%rv(ox+1:ox+int(ndl, 8)*pk) = tvec(1:int(ndl, 8)*pk)
+          ox = ox + int(ndl, 8)*pk
+          if (fct%lu) pool%box(ib)%rv(ox+1:ox+int(ndl, 8)*pk) = tvecu(1:int(ndl, 8)*pk)
+          call rd_send_box_all(ib, mm)
         endif
       else
-        call hecmw_recv_int(ctli, 8, master, 16*s+3, map%comm, stat)
-        nfs = ctli(3)
-        if (pk > 0) then
-          if (.not. fct%lu) call hecmw_recv_int(ptv, pk, master, 16*s+3, map%comm, stat)
-          mm = merge(0, 2*pk, fct%lu) + fac*nfsr*pk + fac*ndl*pk
-          if (mm > 0) then
-            allocate(rcm(mm))
-            call hecmw_recv_r(rcm, mm, master, 16*s+4, map%comm, stat)
-            ox = 0
-            if (.not. fct%lu) then
-              dsv(1:pk) = rcm(1:pk)
-              dgv(1:pk) = rcm(pk+1:2*pk)
-              ox = 2*pk
-            endif
-            call mf_grow_r(fsl, max(int(nfsr, 8)*pk, 1_8))
-            fsl(1:int(nfsr, 8)*pk) = rcm(ox+1:ox+int(nfsr, 8)*pk)
-            ox = ox + int(nfsr, 8)*pk
-            if (fct%lu) then
-              call mf_grow_r(fslu, max(int(nfsr, 8)*pk, 1_8))
-              fslu(1:int(nfsr, 8)*pk) = rcm(ox+1:ox+int(nfsr, 8)*pk)
-              ox = ox + int(nfsr, 8)*pk
-            endif
-            call mf_grow_r(tvec, max(int(ndl, 8)*pk, 1_8))
-            tvec(1:int(ndl, 8)*pk) = rcm(ox+1:ox+int(ndl, 8)*pk)
-            ox = ox + int(ndl, 8)*pk
-            if (fct%lu) then
-              call mf_grow_r(tvecu, max(int(ndl, 8)*pk, 1_8))
-              tvecu(1:int(ndl, 8)*pk) = rcm(ox+1:ox+int(ndl, 8)*pk)
-            endif
-            deallocate(rcm)
+        if (.not. fct%lu) call hecmw_recv_int(ptv, pk, rd, 16*s+13, map%comm, stat)
+        mm = merge(0, 2*pk, fct%lu) + fac*ndl*pk
+        if (mm > 0) then
+          allocate(rcm(mm))
+          call hecmw_recv_r(rcm, mm, rd, 16*s+14, map%comm, stat)
+          ox = 0
+          if (.not. fct%lu) then
+            dsv(1:pk) = rcm(1:pk)
+            dgv(1:pk) = rcm(pk+1:2*pk)
+            ox = 2*pk
           endif
+          call mf_grow_r(tvec, max(int(ndl, 8)*pk, 1_8))
+          tvec(1:int(ndl, 8)*pk) = rcm(ox+1:ox+int(ndl, 8)*pk)
+          ox = ox + int(ndl, 8)*pk
+          if (fct%lu) then
+            call mf_grow_r(tvecu, max(int(ndl, 8)*pk, 1_8))
+            tvecu(1:int(ndl, 8)*pk) = rcm(ox+1:ox+int(ndl, 8)*pk)
+          endif
+          deallocate(rcm)
         endif
       endif
-      if (pk <= 0) return
       if (fct%blr .and. hasband) call compress_band(kk)
       if (hasband) call exchange_band(kk)
+      call fs_elim_exchange(kk)
       call update_col(kk)
     end subroutine postcol
 
-    !> word offset of the fully summed tile j2 in the tile blocked fsl buffer of column kk
-    function fsl_off(j2, kk) result(ox)
-      integer(kind=kint), intent(in) :: j2, kk
-      integer(kind=8) :: ox
+    !> isend the boxed reals of slot ib from the diagonal tile owner to every other
+    !> participant
+    subroutine rd_send_box_all(ib, n0)
+      integer(kind=kint), intent(in) :: ib, n0
+      integer(kind=kint) :: i0
 
-      ox = int(g%tb(j2-1) - g%tb(kk), 8)*pk
-    end function fsl_off
+      do i0 = 1, npl
+        if (plist(i0) == me) cycle
+        req = 0
+        call hecmw_isend_r(pool%box(ib)%rv, n0, plist(i0), 16*s+14, map%comm, req)
+        call mf_pool_req(pool, req)
+      enddo
+    end subroutine rd_send_box_all
 
-    !> update vector of the delayed or panel column x2 for the pivots p0+1..npiv (the t of
-    !> the sequential mf_col_update)
+    !> whether rank r0 reads the eliminated columns of fully summed tile (i0, kk0): it
+    !> owns a trailing pair with the tile on either side, or band rows (every fully
+    !> summed tile is a B side of their updates)
+    function fs_needs(r0, i0, kk0) result(yes)
+      integer(kind=kint), intent(in) :: r0, i0, kk0
+      logical :: yes
+      integer(kind=kint) :: j0
+
+      yes = isworker(r0)
+      if (yes) return
+      do j0 = kk0 + 1, i0
+        if (fso(i0, j0) == r0) yes = .true.
+      enddo
+      if (yes) return
+      do j0 = i0, g%ntc
+        if (fso(j0, i0) == r0) yes = .true.
+      enddo
+    end function fs_needs
+
+    !> exchange the eliminated column tiles of tile column kk among their readers: the
+    !> owner of a tile packs it (both faces in LU) for every rank whose trailing pairs
+    !> or band updates read it, one message per destination with the tiles ascending
+    subroutine fs_elim_exchange(kk)
+      integer(kind=kint), intent(in) :: kk
+      integer(kind=kint) :: i0, i2, t2, h2, dst, ib, is2
+      integer(kind=8) :: sz, ox, bx
+
+      do i0 = 1, npl
+        dst = plist(i0)
+        if (dst == me) cycle
+        sz = 0
+        do t2 = kk + 1, g%ntc
+          if (fso(t2, kk) /= me) cycle
+          if (.not. fs_needs(dst, t2, kk)) cycle
+          sz = sz + merge(2, 1, fct%lu)*int(g%tb(t2) - g%tb(t2-1), 8)*pk
+        enddo
+        if (sz == 0) cycle
+        ib = mf_pool_slot(pool)
+        allocate(pool%box(ib)%rv(sz))
+        ox = 0
+        do t2 = kk + 1, g%ntc
+          if (fso(t2, kk) /= me) cycle
+          if (.not. fs_needs(dst, t2, kk)) cycle
+          h2 = g%tb(t2) - g%tb(t2-1)
+          bx = fsbase(t2, kk) + int(p0 - g%tb(kk-1), 8)*h2
+          pool%box(ib)%rv(ox+1:ox+int(h2, 8)*pk) = fsv(bx+1:bx+int(h2, 8)*pk)
+          ox = ox + int(h2, 8)*pk
+          if (fct%lu) then
+            pool%box(ib)%rv(ox+1:ox+int(h2, 8)*pk) = fsvu(bx+1:bx+int(h2, 8)*pk)
+            ox = ox + int(h2, 8)*pk
+          endif
+        enddo
+        req = 0
+        call hecmw_isend_r(pool%box(ib)%rv, int(sz, kind=kint), dst, 16*s+14, map%comm, req)
+        call mf_pool_req(pool, req)
+      enddo
+      ! receive from each owner once, walking its tiles I read in ascending order
+      fxs(1:g%ntc) = -1
+      do i2 = kk + 1, g%ntc
+        if (fso(i2, kk) == me) then
+          fxs(i2) = 0
+          cycle
+        endif
+        if (.not. fs_needs(me, i2, kk)) cycle
+        if (fxs(i2) >= 0) cycle
+        is2 = pslot(fso(i2, kk))
+        sz = 0
+        do t2 = kk + 1, g%ntc
+          if (fso(t2, kk) /= fso(i2, kk)) cycle
+          if (.not. fs_needs(me, t2, kk)) cycle
+          h2 = g%tb(t2) - g%tb(t2-1)
+          fxs(t2) = is2
+          fxoff(t2) = sz
+          sz = sz + merge(2, 1, fct%lu)*int(h2, 8)*pk
+        enddo
+        if (allocated(fxbuf(is2)%v)) then
+          if (size(fxbuf(is2)%v, kind=8) < sz) deallocate(fxbuf(is2)%v)
+        endif
+        if (.not. allocated(fxbuf(is2)%v)) allocate(fxbuf(is2)%v(max(sz, 1_8)))
+        call hecmw_recv_r(fxbuf(is2)%v, int(sz, kind=kint), fso(i2, kk), 16*s+14, map%comm, stat)
+      enddo
+    end subroutine fs_elim_exchange
+
+    !> pointer to the raw eliminated block (rows of the tile by the pk pivot columns) of
+    !> fully summed tile (t2, kk), from my store or the exchanged buffer of its owner
+    subroutine fs_elim_blk(t2, kk, uface, fb)
+      integer(kind=kint), intent(in) :: t2, kk
+      logical, intent(in) :: uface
+      real(kind=kreal), pointer, contiguous, intent(out) :: fb(:)
+      integer(kind=kint) :: h2
+      integer(kind=8) :: bx
+
+      h2 = g%tb(t2) - g%tb(t2-1)
+      if (fso(t2, kk) == me) then
+        bx = fsbase(t2, kk) + int(p0 - g%tb(kk-1), 8)*h2
+        if (uface) then
+          fb => fsvu(bx+1 : bx+int(h2, 8)*pk)
+        else
+          fb => fsv(bx+1 : bx+int(h2, 8)*pk)
+        endif
+      else
+        bx = fxoff(t2)
+        if (uface) bx = bx + int(h2, 8)*pk
+        fb => fxbuf(fxs(t2))%v(bx+1 : bx+int(h2, 8)*pk)
+      endif
+    end subroutine fs_elim_blk
+
+    !> update vector of the delayed column x2 for the pivots p0+1..npiv, read from the
+    !> diagonal tile (the t of the sequential mf_col_update)
     subroutine build_tcol(x2, tv)
       integer(kind=kint), intent(in) :: x2
       real(kind=kreal), intent(out) :: tv(*)
@@ -2802,14 +3393,14 @@ contains
       q2 = p0 + 1
       do while (q2 <= npiv)
         if (fct%sn(s)%ptype(q2) == 1) then
-          tv(q2-p0) = fvm(mf_idx(gm, x2, q2)) * fvm(mf_idx(gm, q2, q2))
+          tv(q2-p0) = fsv(fsx(x2, q2)) * fsv(fsx(q2, q2))
           q2 = q2 + 1
         else
-          l1 = fvm(mf_idx(gm, x2, q2))
-          l2 = fvm(mf_idx(gm, x2, q2+1))
-          d11 = fvm(mf_idx(gm, q2, q2))
+          l1 = fsv(fsx(x2, q2))
+          l2 = fsv(fsx(x2, q2+1))
+          d11 = fsv(fsx(q2, q2))
           d21 = fct%sn(s)%dsub(q2)
-          d22 = fvm(mf_idx(gm, q2+1, q2+1))
+          d22 = fsv(fsx(q2+1, q2+1))
           tv(q2-p0) = l1*d11 + l2*d21
           tv(q2-p0+1) = l1*d21 + l2*d22
           q2 = q2 + 2
@@ -3041,34 +3632,45 @@ contains
       endif
     end subroutine xtile_pack
 
-    !> the trailing updates of tile column kk on what I hold: the master updates its fully
-    !> summed tile pairs, every tile owner updates its band tiles and the delayed columns,
-    !> with the operand kinds and per tile arithmetic of the sequential trailing update
+    !> the trailing updates of tile column kk on what I hold: every rank updates its
+    !> fully summed pairs and band tiles and its rows of the delayed columns, with the
+    !> operand kinds and per tile arithmetic of the sequential trailing update
     subroutine update_col(kk)
       integer(kind=kint), intent(in) :: kk
       integer(kind=kint) :: t2, h2, i2, j2, l2, q2, x2, mn2, r2
-      integer(kind=8) :: okk2, ox
+      integer(kind=8) :: ox
+      real(kind=kreal), pointer, contiguous :: fb(:)
 
-      ! scaled panels of the tiles I own (LDLt)
+      ! scaled copies of the eliminated tiles I read as an A side (LDLt): the fully
+      ! summed tiles of my trailing pairs, and my band tiles as before
       if (.not. fct%lu) then
-        if (ismaster .and. g%ntc > kk) then
-          call mf_grow_r(wscm, max(int(ncol - g%tb(kk), 8)*pk, 1_8))
-          okk2 = mf_off(gm, kk, kk)
-          !$omp parallel do default(shared) private(i2, h2) schedule(dynamic, 1)
-          do i2 = kk + 1, g%ntc
-            h2 = g%tb(i2) - g%tb(i2-1)
-            call hecmw_mf_kernel_scale(h2, pk, g%tb(kk) - g%tb(kk-1), fvm(okk2+1), &
-              fct%sn(s)%ptype(p0+1:npiv), fct%sn(s)%dsub(p0+1:npiv), h2, fvm(mf_off(gm, i2, kk)+1), &
-              wscm(int(g%tb(i2-1) - g%tb(kk), 8)*pk + 1))
+        call mf_grow_r(dd, int(pk, 8)*pk)
+        dd(1:int(pk, 8)*pk) = 0.0d0
+        do q2 = 1, pk
+          dd(int(q2-1, 8)*pk + q2) = dgv(q2)
+        enddo
+        wfo(1:g%ntc) = -1
+        ox = 0
+        do i2 = kk + 1, g%ntc
+          do j2 = kk + 1, i2
+            if (fso(i2, j2) == me) then
+              if (wfo(i2) < 0) then
+                wfo(i2) = ox
+                ox = ox + int(g%tb(i2) - g%tb(i2-1), 8)*pk
+              endif
+            endif
           enddo
-          !$omp end parallel do
-        endif
+        enddo
+        call mf_grow_r(wfs, max(ox, 1_8))
+        !$omp parallel do default(shared) private(i2, h2, fb) schedule(dynamic, 1)
+        do i2 = kk + 1, g%ntc
+          if (wfo(i2) < 0) cycle
+          h2 = g%tb(i2) - g%tb(i2-1)
+          call fs_elim_blk(i2, kk, .false., fb)
+          call hecmw_mf_kernel_scale(h2, pk, pk, dd, ptv, dsv, h2, fb, wfs(wfo(i2)+1))
+        enddo
+        !$omp end parallel do
         if (hasband) then
-          call mf_grow_r(dd, int(pk, 8)*pk)
-          dd(1:int(pk, 8)*pk) = 0.0d0
-          do q2 = 1, pk
-            dd(int(q2-1, 8)*pk + q2) = dgv(q2)
-          enddo
           call mf_grow_r(wscb, max(int(myrows, 8)*pk, 1_8))
           !$omp parallel do default(shared) private(t2, h2, r2, mn2, ox) schedule(dynamic, 1)
           do t2 = 1, ncbt
@@ -3090,15 +3692,14 @@ contains
       endif
       ! the tile pairs I update
       npair = 0
-      if (ismaster) then
-        do i2 = kk + 1, g%ntc
-          do j2 = kk + 1, i2
-            npair = npair + 1
-            pair_i(npair) = i2
-            pair_j(npair) = j2
-          enddo
+      do i2 = kk + 1, g%ntc
+        do j2 = kk + 1, i2
+          if (fso(i2, j2) /= me) cycle
+          npair = npair + 1
+          pair_i(npair) = i2
+          pair_j(npair) = j2
         enddo
-      endif
+      enddo
       do t2 = 1, ncbt
         if (towner(t2) /= me) cycle
         do j2 = kk + 1, g%ntc + t2
@@ -3112,27 +3713,34 @@ contains
         call update_pair(kk, pair_i(l2), pair_j(l2))
       enddo
       !$omp end parallel do
-      ! the columns left delayed in the tile column receive the pivots as vector updates
-      if (ismaster) then
+      ! the columns left delayed in the tile column receive the pivots as vector
+      ! updates: the diagonal tile owner on its rows, every column tile owner and band
+      ! worker on its own
+      if (rd == me) then
+        h2 = g%tb(kk) - g%tb(kk-1)
         do x2 = npiv + 1, g%tb(kk)
-          if (.not. fct%lu) then
-            call mf_col_copy(gm, fvm, x2, x2, pv, .false.)
-            call mf_col_update(gm, fvm, fct%sn(s)%ptype, fct%sn(s)%dsub, x2, p0+1, npiv, pv, wk)
-            call mf_col_copy(gm, fvm, x2, x2, pv, .true.)
-          else
-            call mf_col_copy(gm, fvm, x2, x2, pv, .false.)
-            call mf_row_get(gm, fvmu, x2, p0+1, npiv, wk)
-            call mf_col_axpy(gm, fvm, x2, p0+1, npiv, wk, pv)
-            call mf_col_copy(gm, fvm, x2, x2, pv, .true.)
-            if (x2 < ncol) then
-              call mf_col_copy(gm, fvmu, x2, x2+1, pv, .false.)
-              call mf_row_get(gm, fvm, x2, p0+1, npiv, wk)
-              call mf_col_axpy(gm, fvmu, x2+1, p0+1, npiv, wk, pv)
-              call mf_col_copy(gm, fvmu, x2, x2+1, pv, .true.)
-            endif
+          ox = fsbase(kk, kk) + int(p0 - g%tb(kk-1), 8)*h2 + (x2 - 1 - g%tb(kk-1))
+          call hecmw_mf_kernel_gemv(g%tb(kk) - x2 + 1, pk, h2, fsv(ox+1), &
+            tvec(int(x2-npiv-1, 8)*pk + 1), fsv(fsx(x2, x2)))
+          if (fct%lu) then
+            if (x2 < g%tb(kk)) call hecmw_mf_kernel_gemv(g%tb(kk) - x2, pk, h2, fsvu(ox+2), &
+              tvecu(int(x2-npiv-1, 8)*pk + 1), fsvu(fsx(x2+1, x2)))
           endif
         enddo
       endif
+      !$omp parallel do default(shared) private(t2, h2, x2, ox) schedule(dynamic, 1)
+      do t2 = kk + 1, g%ntc
+        if (fso(t2, kk) /= me) cycle
+        h2 = g%tb(t2) - g%tb(t2-1)
+        ox = fsbase(t2, kk)
+        do x2 = npiv + 1, g%tb(kk)
+          call hecmw_mf_kernel_gemv(h2, pk, h2, fsv(ox + int(p0 - g%tb(kk-1), 8)*h2 + 1), &
+            tvec(int(x2-npiv-1, 8)*pk + 1), fsv(ox + int(x2 - 1 - g%tb(kk-1), 8)*h2 + 1))
+          if (fct%lu) call hecmw_mf_kernel_gemv(h2, pk, h2, fsvu(ox + int(p0 - g%tb(kk-1), 8)*h2 + 1), &
+            tvecu(int(x2-npiv-1, 8)*pk + 1), fsvu(ox + int(x2 - 1 - g%tb(kk-1), 8)*h2 + 1))
+        enddo
+      enddo
+      !$omp end parallel do
       if (hasband) then
         !$omp parallel do default(shared) private(t2, h2, x2) schedule(dynamic, 1)
         do t2 = 1, ncbt
@@ -3149,8 +3757,10 @@ contains
       endif
     end subroutine update_col
 
-    !> one trailing tile update (i2, j2) of tile column kk, in the operand combination of
-    !> the sequential mf_update_ab
+    !> one trailing tile update (i2, j2) of tile column kk, in the operand combination
+    !> of the sequential mf_update_ab; a fully summed pair reads the exchanged raw
+    !> eliminated tiles (the A side scaled for LDLt), a band pair reads them as its B
+    !> side
     subroutine update_pair(kk, i2, j2)
       integer(kind=kint), intent(in) :: kk, i2, j2
       real(kind=kreal), pointer, contiguous :: fa(:), ua(:), va(:), fb(:), ub(:), vb(:)
@@ -3160,15 +3770,17 @@ contains
       hi2 = g%tb(i2) - g%tb(i2-1)
       wj2 = g%tb(j2) - g%tb(j2-1)
       if (i2 <= g%ntc) then
-        ! a fully summed pair of the master: both sides full rank
+        oc = fsbase(i2, j2)
         if (.not. fct%lu) then
-          call hecmw_mf_kernel_gemm(hi2, wj2, pk, hi2, wscm(int(g%tb(i2-1) - g%tb(kk), 8)*pk + 1), &
-            wj2, fvm(mf_off(gm, j2, kk)+1), hi2, fvm(mf_off(gm, i2, j2)+1))
+          call fs_elim_blk(j2, kk, .false., fb)
+          call hecmw_mf_kernel_gemm(hi2, wj2, pk, hi2, wfs(wfo(i2)+1), wj2, fb, hi2, fsv(oc+1))
         else
-          call hecmw_mf_kernel_gemm(hi2, wj2, pk, hi2, fvm(mf_off(gm, i2, kk)+1), &
-            wj2, fvmu(mf_off(gm, j2, kk)+1), hi2, fvm(mf_off(gm, i2, j2)+1))
-          call hecmw_mf_kernel_gemm(hi2, wj2, pk, hi2, fvmu(mf_off(gm, i2, kk)+1), &
-            wj2, fvm(mf_off(gm, j2, kk)+1), hi2, fvmu(mf_off(gm, i2, j2)+1))
+          call fs_elim_blk(i2, kk, .false., fa)
+          call fs_elim_blk(j2, kk, .true., fb)
+          call hecmw_mf_kernel_gemm(hi2, wj2, pk, hi2, fa, wj2, fb, hi2, fsv(oc+1))
+          call fs_elim_blk(i2, kk, .true., fa)
+          call fs_elim_blk(j2, kk, .false., fb)
+          call hecmw_mf_kernel_gemm(hi2, wj2, pk, hi2, fa, wj2, fb, hi2, fsvu(oc+1))
         endif
         return
       endif
@@ -3231,8 +3843,9 @@ contains
       endif
     end subroutine aside_lu
 
-    !> B side operands of tile j2 of column kk: the master's fully summed rows, my own
-    !> tile, or the exchanged data of another owner; uface selects the upper grid data
+    !> B side operands of tile j2 of column kk: an exchanged fully summed tile, my own
+    !> band tile, or the exchanged data of another band owner; uface selects the upper
+    !> grid data
     subroutine bside(kk, j2, uface, rb2, fb, ub, vb)
       integer(kind=kint), intent(in) :: kk, j2
       logical, intent(in) :: uface
@@ -3247,19 +3860,7 @@ contains
       ub => dum(1:1)
       vb => dum(1:1)
       if (j2 <= g%ntc) then
-        if (ismaster) then
-          if (uface) then
-            fb => fvmu(mf_off(gm, j2, kk)+1 : mf_off(gm, j2, kk)+int(hj2, 8)*pk)
-          else
-            fb => fvm(mf_off(gm, j2, kk)+1 : mf_off(gm, j2, kk)+int(hj2, 8)*pk)
-          endif
-        else
-          if (uface) then
-            fb => fslu(fsl_off(j2, kk)+1 : fsl_off(j2, kk)+int(hj2, 8)*pk)
-          else
-            fb => fsl(fsl_off(j2, kk)+1 : fsl_off(j2, kk)+int(hj2, 8)*pk)
-          endif
-        endif
+        call fs_elim_blk(j2, kk, uface, fb)
         return
       endif
       tj2 = j2 - g%ntc
@@ -3279,11 +3880,7 @@ contains
           else
             ox = bslot(mf_bidx(g%nt, kk, j2))
             ub => bval(ox+1 : ox+int(hj2, 8)*max(rb2, 1))
-            if (fct%lu) then
-              vb => bval(ox + int(hj2, 8)*pk + 1 : ox + int(hj2, 8)*pk + int(pk, 8)*max(rb2, 1))
-            else
-              vb => bval(ox + int(hj2, 8)*pk + 1 : ox + int(hj2, 8)*pk + int(pk, 8)*max(rb2, 1))
-            endif
+            vb => bval(ox + int(hj2, 8)*pk + 1 : ox + int(hj2, 8)*pk + int(pk, 8)*max(rb2, 1))
           endif
         endif
       else
@@ -3304,46 +3901,279 @@ contains
       endif
     end subroutine bside
 
-    !> inertia of the eliminated pivots from the master grid, as the sequential count
-    subroutine inertia_1d()
-      integer(kind=kint) :: x2
+    !> inertia of the eliminated pivots, each diagonal tile owner counting its columns
+    !> (the ranges partition 1..npiv, so the reduced totals match the sequential count)
+    subroutine inertia_dist()
+      integer(kind=kint) :: kk2, x2
       real(kind=kreal) :: d11, d21, d22, det
 
-      x2 = 1
-      do while (x2 <= npiv)
-        if (fct%sn(s)%ptype(x2) == 1) then
-          if (fvm(mf_idx(gm, x2, x2)) > 0.0d0) then
-            npos_f = npos_f + 1
+      do kk2 = 1, g%ntc
+        if (fso(kk2, kk2) /= me) cycle
+        x2 = g%tb(kk2-1) + 1
+        do while (x2 <= min(g%tb(kk2), npiv))
+          if (fct%sn(s)%ptype(x2) == 1) then
+            if (fsv(fsx(x2, x2)) > 0.0d0) then
+              npos_f = npos_f + 1
+            else
+              nneg_f = nneg_f + 1
+            endif
+            x2 = x2 + 1
           else
-            nneg_f = nneg_f + 1
+            d11 = fsv(fsx(x2, x2))
+            d21 = fct%sn(s)%dsub(x2)
+            d22 = fsv(fsx(x2+1, x2+1))
+            det = d11*d22 - d21*d21
+            if (det < 0.0d0) then
+              npos_f = npos_f + 1
+              nneg_f = nneg_f + 1
+            else if (d11 + d22 > 0.0d0) then
+              npos_f = npos_f + 2
+            else
+              nneg_f = nneg_f + 2
+            endif
+            x2 = x2 + 2
           endif
-          x2 = x2 + 1
-        else
-          d11 = fvm(mf_idx(gm, x2, x2))
-          d21 = fct%sn(s)%dsub(x2)
-          d22 = fvm(mf_idx(gm, x2+1, x2+1))
-          det = d11*d22 - d21*d21
-          if (det < 0.0d0) then
-            npos_f = npos_f + 1
-            nneg_f = nneg_f + 1
-          else if (d11 + d22 > 0.0d0) then
-            npos_f = npos_f + 2
+        enddo
+      enddo
+    end subroutine inertia_dist
+
+    !> elements of the columns pa..ncol of the fully summed square held by rank r0 (a
+    !> root final panel walk: per column the lower rows from the diagonal down, then the
+    !> upper rows in LU)
+    function rfp_count(r0) result(cnt)
+      integer(kind=kint), intent(in) :: r0
+      integer(kind=kint) :: cnt, c0, r1
+
+      cnt = 0
+      do c0 = pa, ncol
+        do r1 = c0, ncol
+          if (fso(g%dtile(r1-1), g%dtile(c0-1)) == r0) then
+            cnt = cnt + merge(2, 1, fct%lu)
+            if (fct%lu .and. r1 == c0) cnt = cnt - 1
+          endif
+        enddo
+      enddo
+    end function rfp_count
+
+    !> the elements of rank r0 of the root final panel moved between a message and the
+    !> master's panel pair pval, pvalu (topanel), or between my tiles and the message
+    subroutine rfp_move(r0, buf, topanel)
+      integer(kind=kint), intent(in) :: r0
+      real(kind=kreal), intent(inout) :: buf(:)
+      logical, intent(in) :: topanel
+      integer(kind=kint) :: c0, r1, jj2, m0, cnt
+      integer(kind=8) :: px
+
+      m0 = ncol - pa + 1
+      cnt = 0
+      do c0 = pa, ncol
+        jj2 = c0 - pa + 1
+        px = int(jj2-1, 8)*m0
+        do r1 = c0, ncol
+          if (fso(g%dtile(r1-1), g%dtile(c0-1)) /= r0) cycle
+          cnt = cnt + 1
+          if (topanel) then
+            pv(px + (r1 - pa + 1)) = buf(cnt)
           else
-            nneg_f = nneg_f + 2
+            buf(cnt) = pv(px + (r1 - pa + 1))
           endif
-          x2 = x2 + 2
+        enddo
+        if (fct%lu) then
+          do r1 = c0 + 1, ncol
+            if (fso(g%dtile(r1-1), g%dtile(c0-1)) /= r0) cycle
+            cnt = cnt + 1
+            if (topanel) then
+              pvu(px + (r1 - pa + 1)) = buf(cnt)
+            else
+              buf(cnt) = pvu(px + (r1 - pa + 1))
+            endif
+          enddo
         endif
       enddo
-    end subroutine inertia_1d
+    end subroutine rfp_move
 
-    !> store what I hold: the master its fully summed panel tiles, every tile owner its
-    !> band tiles (full rank or compressed), all addressed through bptr; then the owned
-    !> blocks of the contribution block in the canonical block order the extend-add of
-    !> the parent traverses
-    subroutine store_1d()
+    !> my elements of the root final panel packed into buf (topack) or written back from
+    !> it into my tiles
+    subroutine rfp_mine(buf, topack)
+      real(kind=kreal), intent(inout) :: buf(:)
+      logical, intent(in) :: topack
+      integer(kind=kint) :: c0, r1, cnt
+
+      cnt = 0
+      do c0 = pa, ncol
+        do r1 = c0, ncol
+          if (fso(g%dtile(r1-1), g%dtile(c0-1)) /= me) cycle
+          cnt = cnt + 1
+          if (topack) then
+            buf(cnt) = fsv(fsx(r1, c0))
+          else
+            fsv(fsx(r1, c0)) = buf(cnt)
+          endif
+        enddo
+        if (fct%lu) then
+          do r1 = c0 + 1, ncol
+            if (fso(g%dtile(r1-1), g%dtile(c0-1)) /= me) cycle
+            cnt = cnt + 1
+            if (topack) then
+              buf(cnt) = fsvu(fsx(r1, c0))
+            else
+              fsvu(fsx(r1, c0)) = buf(cnt)
+            endif
+          enddo
+        endif
+      enddo
+    end subroutine rfp_mine
+
+    !> the remaining delayed columns of a root front, factored on the master in the
+    !> sequential final panel (any column may serve as partner): the trailing square is
+    !> gathered from the tile owners, the exchanges travel through the pair engine and
+    !> the factored columns are scattered back; a failure raises the front error on
+    !> every rank uniformly
+    subroutine root_final()
+      real(kind=kreal), allocatable :: rw(:)
+      integer(kind=kint) :: jj2, ic2, t2, q2, mm, ib, r0, cnt, m0
+
+      pa = npiv + 1
+      pb = ncol
+      w = pb - pa + 1
+      m0 = ncol - pa + 1
+      info = 0
+      if (ismaster) then
+        call mf_grow_r(pv, int(m0, 8)*w)
+        if (fct%lu) call mf_grow_r(pvu, int(m0, 8)*w)
+        call mf_grow_r(wk, int(2*m0, 8))
+        cnt = rfp_count(me)
+        if (cnt > 0) then
+          call mf_grow_r(swb, int(cnt, 8))
+          call rfp_mine(swb, .true.)
+          call rfp_move(me, swb, .true.)
+        endif
+        do ic2 = 1, npl
+          r0 = plist(ic2)
+          if (r0 == me) cycle
+          cnt = rfp_count(r0)
+          if (cnt == 0) cycle
+          allocate(rw(cnt))
+          call hecmw_recv_r(rw, cnt, r0, 16*s+5, map%comm, stat)
+          call rfp_move(r0, rw, .true.)
+          deallocate(rw)
+        enddo
+        if (.not. fct%lu) then
+          call hecmw_mf_kernel_panel_piv(m0, w, m0, pv, blk(pa:pb), fct%pivot_u, MF_PIVOT_ALPHA, &
+            zero, .false., wk, np, perm, fct%sn(s)%ptype(pa:pb), fct%sn(s)%dsub(pa:pb), nsw, n22, info)
+          n2x2_f = n2x2_f + n22
+        else
+          call hecmw_mf_kernel_panel_lu_piv(m0, w, m0, pv, m0, pvu, blk(pa:pb), blkr(pa:pb), &
+            fct%pivot_u, zero, .false., np, perm, permr, nsw, info)
+        endif
+        nswap_f = nswap_f + nsw
+        ctli(1:8) = 0
+        ctli(1) = 6
+        if (info /= 0) ctli(2) = fct%sn(s)%fsdof(pa + info - 1)
+        call ctl_send_i(ctli, 8)
+        if (info == 0) then
+          mm = merge(2, 1, fct%lu)*w + w
+          ib = mf_pool_slot(pool)
+          allocate(pool%box(ib)%hdr(mm))
+          pool%box(ib)%hdr(1:w) = perm(1:w)
+          q2 = w
+          if (fct%lu) then
+            pool%box(ib)%hdr(q2+1:q2+w) = permr(1:w)
+            q2 = q2 + w
+          endif
+          pool%box(ib)%hdr(q2+1:q2+w) = fct%sn(s)%ptype(pa:pb)
+          do ic2 = 1, npl
+            if (plist(ic2) == me) cycle
+            req = 0
+            call hecmw_isend_int(pool%box(ib)%hdr, mm, plist(ic2), 16*s+3, map%comm, req)
+            call mf_pool_req(pool, req)
+          enddo
+          if (.not. fct%lu) then
+            ib = mf_pool_slot(pool)
+            allocate(pool%box(ib)%rv(w))
+            pool%box(ib)%rv(1:w) = fct%sn(s)%dsub(pa:pb)
+            do ic2 = 1, npl
+              if (plist(ic2) == me) cycle
+              req = 0
+              call hecmw_isend_r(pool%box(ib)%rv, w, plist(ic2), 16*s+4, map%comm, req)
+              call mf_pool_req(pool, req)
+            enddo
+          endif
+        endif
+      else
+        cnt = rfp_count(me)
+        if (cnt > 0) then
+          ib = mf_pool_slot(pool)
+          allocate(pool%box(ib)%rv(cnt))
+          call rfp_mine(pool%box(ib)%rv, .true.)
+          req = 0
+          call hecmw_isend_r(pool%box(ib)%rv, cnt, master, 16*s+5, map%comm, req)
+          call mf_pool_req(pool, req)
+        endif
+        call hecmw_recv_int(ctli, 8, master, 16*s+3, map%comm, stat)
+        if (ctli(2) /= 0) info = 1
+        if (info == 0) then
+          mm = merge(2, 1, fct%lu)*w + w
+          call hecmw_recv_int(itmp, mm, master, 16*s+3, map%comm, stat)
+          perm(1:w) = itmp(1:w)
+          q2 = w
+          if (fct%lu) then
+            permr(1:w) = itmp(q2+1:q2+w)
+            q2 = q2 + w
+          endif
+          fct%sn(s)%ptype(pa:pb) = itmp(q2+1:q2+w)
+          if (.not. fct%lu) call hecmw_recv_r(fct%sn(s)%dsub(pa:pb), w, master, 16*s+4, map%comm, stat)
+        endif
+      endif
+      if (info /= 0) then
+        if (gierr == 0) gierr = ctli(2)
+        return
+      endif
+      ! the exchanges of the final panel on the front values (metadata on the master),
+      ! then the factored columns back to their holders
+      call perm_dance_apply()
+      if (ismaster) then
+        do ic2 = 1, npl
+          r0 = plist(ic2)
+          if (r0 == me) cycle
+          cnt = rfp_count(r0)
+          if (cnt == 0) cycle
+          ib = mf_pool_slot(pool)
+          allocate(pool%box(ib)%rv(cnt))
+          call rfp_move(r0, pool%box(ib)%rv, .false.)
+          req = 0
+          call hecmw_isend_r(pool%box(ib)%rv, cnt, r0, 16*s+4, map%comm, req)
+          call mf_pool_req(pool, req)
+        enddo
+        cnt = rfp_count(me)
+        if (cnt > 0) then
+          call mf_grow_r(swb, int(cnt, 8))
+          call rfp_move(me, swb, .false.)
+          call rfp_mine(swb, .false.)
+        endif
+      else
+        cnt = rfp_count(me)
+        if (cnt > 0) then
+          allocate(rw(cnt))
+          call hecmw_recv_r(rw, cnt, master, 16*s+4, map%comm, stat)
+          call rfp_mine(rw, .false.)
+          deallocate(rw)
+        endif
+      endif
+      npiv = ncol
+    end subroutine root_final
+
+    !> store what I hold: every fully summed tile owner its panel tiles, every band
+    !> owner its band tiles (full rank or compressed), all addressed through bptr; then
+    !> the owned blocks of the contribution block in the canonical block order the
+    !> extend-add of the parent traverses, the delayed square gathered to the master so
+    !> the parent side stays unchanged
+    subroutine store_dist()
       integer(kind=kint) :: kk, t2, h2, mw, idx2, r2, i2, j2, cc2, rr2, colx, cnbP, kbegP, cndelP
+      integer(kind=kint) :: ic2, r0, cnt
       integer(kind=8) :: off, offu, pw0, bx, sb, halfP
       integer(kind=kint), allocatable :: ctbP(:)
+      real(kind=kreal), allocatable :: dsq(:), rw(:)
 
       nkc = 0
       do kk = 1, g%ntc
@@ -3365,7 +4195,7 @@ contains
       do kk = 1, nkc
         mw = min(g%tb(kk), npiv) - g%tb(kk-1)
         do i2 = kk, g%nt
-          if (.not. tile_is_mine(i2)) cycle
+          if (.not. tile_is_mine(kk, i2)) cycle
           h2 = g%tb(i2) - g%tb(i2-1)
           idx2 = mf_bidx(g%nt, kk, i2)
           pw0 = pw0 + int(h2, 8)*mw
@@ -3396,7 +4226,7 @@ contains
       do kk = 1, nkc
         mw = min(g%tb(kk), npiv) - g%tb(kk-1)
         do i2 = kk, g%nt
-          if (.not. tile_is_mine(i2)) cycle
+          if (.not. tile_is_mine(kk, i2)) cycle
           call store_tile(kk, i2, mw)
         enddo
       enddo
@@ -3409,8 +4239,37 @@ contains
         fct%blr_words_fr = fct%blr_words_fr + merge(2, 1, fct%lu)*pw0
       endif
 
-      ! the contribution block, canonical block order (see the extend-add traversal)
+      ! the delayed square gathered to the master, the walk column major over the lower
+      ! rows (both faces interleaved per element in LU)
       cndelP = ncol - npiv
+      if (cndelP > 0) then
+        allocate(dsq(merge(2, 1, fct%lu)*int(cndelP, 8)*cndelP))
+        if (ismaster) then
+          call dsq_mine(dsq, cndelP)
+          do ic2 = 1, npl
+            r0 = plist(ic2)
+            if (r0 == me) cycle
+            cnt = dsq_count(r0, cndelP)
+            if (cnt == 0) cycle
+            allocate(rw(cnt))
+            call hecmw_recv_r(rw, cnt, r0, 16*s+15, map%comm, stat)
+            call dsq_unpack(r0, cndelP, rw, dsq)
+            deallocate(rw)
+          enddo
+        else
+          cnt = dsq_count(me, cndelP)
+          if (cnt > 0) then
+            i2 = mf_pool_slot(pool)
+            allocate(pool%box(i2)%rv(cnt))
+            call dsq_pack(cndelP, pool%box(i2)%rv)
+            req = 0
+            call hecmw_isend_r(pool%box(i2)%rv, cnt, master, 16*s+15, map%comm, req)
+            call mf_pool_req(pool, req)
+          endif
+        endif
+      endif
+
+      ! the contribution block, canonical block order (see the extend-add traversal)
       allocate(ctbP(0:g%nt - g%ntc + 2))
       cnbP = 0
       ctbP(0) = 0
@@ -3445,9 +4304,9 @@ contains
                 ! the delayed square of the master, rows on or below the diagonal
                 do rr2 = max(cc2, ctbP(i2-1) + 1), ctbP(i2)
                   fct%sn(s)%cval(sb + int(cc2 - ctbP(j2-1) - 1, 8)*h2 + (rr2 - ctbP(i2-1))) = &
-                    fvm(mf_idx(gm, npiv + rr2, npiv + cc2))
+                    dsq(int(cc2-1, 8)*cndelP + rr2)
                   if (fct%lu) fct%sn(s)%cval(halfP + sb + int(cc2 - ctbP(j2-1) - 1, 8)*h2 + (rr2 - ctbP(i2-1))) = &
-                    fvmu(mf_idx(gm, npiv + rr2, npiv + cc2))
+                    dsq(int(cndelP, 8)*cndelP + int(cc2-1, 8)*cndelP + rr2)
                 enddo
               else
                 t2 = i2 - kbegP
@@ -3465,15 +4324,86 @@ contains
         fct%stack_peak_act = max(fct%stack_peak_act, fct%live_cb)
       endif
       deallocate(ctbP)
-    end subroutine store_1d
+      if (allocated(dsq)) deallocate(dsq)
+    end subroutine store_dist
 
-    !> whether front tile i2 is stored on this rank
-    function tile_is_mine(i2) result(mine0)
-      integer(kind=kint), intent(in) :: i2
+    !> elements of the delayed square held by rank r0
+    function dsq_count(r0, cndelP) result(cnt)
+      integer(kind=kint), intent(in) :: r0, cndelP
+      integer(kind=kint) :: cnt, cc2, rr2
+
+      cnt = 0
+      do cc2 = 1, cndelP
+        do rr2 = cc2, cndelP
+          if (fso(g%dtile(npiv+rr2-1), g%dtile(npiv+cc2-1)) == r0) cnt = cnt + merge(2, 1, fct%lu)
+        enddo
+      enddo
+    end function dsq_count
+
+    !> my elements of the delayed square packed for the master
+    subroutine dsq_pack(cndelP, buf)
+      integer(kind=kint), intent(in) :: cndelP
+      real(kind=kreal), intent(inout) :: buf(:)
+      integer(kind=kint) :: cc2, rr2, cnt
+
+      cnt = 0
+      do cc2 = 1, cndelP
+        do rr2 = cc2, cndelP
+          if (fso(g%dtile(npiv+rr2-1), g%dtile(npiv+cc2-1)) /= me) cycle
+          cnt = cnt + 1
+          buf(cnt) = fsv(fsx(npiv+rr2, npiv+cc2))
+          if (fct%lu) then
+            cnt = cnt + 1
+            buf(cnt) = fsvu(fsx(npiv+rr2, npiv+cc2))
+          endif
+        enddo
+      enddo
+    end subroutine dsq_pack
+
+    !> the received elements of rank r0 into the delayed square (upper face after the
+    !> lower one)
+    subroutine dsq_unpack(r0, cndelP, buf, dsq)
+      integer(kind=kint), intent(in) :: r0, cndelP
+      real(kind=kreal), intent(in) :: buf(:)
+      real(kind=kreal), intent(inout) :: dsq(:)
+      integer(kind=kint) :: cc2, rr2, cnt
+
+      cnt = 0
+      do cc2 = 1, cndelP
+        do rr2 = cc2, cndelP
+          if (fso(g%dtile(npiv+rr2-1), g%dtile(npiv+cc2-1)) /= r0) cycle
+          cnt = cnt + 1
+          dsq(int(cc2-1, 8)*cndelP + rr2) = buf(cnt)
+          if (fct%lu) then
+            cnt = cnt + 1
+            dsq(int(cndelP, 8)*cndelP + int(cc2-1, 8)*cndelP + rr2) = buf(cnt)
+          endif
+        enddo
+      enddo
+    end subroutine dsq_unpack
+
+    !> the master's own elements straight into the delayed square
+    subroutine dsq_mine(dsq, cndelP)
+      real(kind=kreal), intent(inout) :: dsq(:)
+      integer(kind=kint), intent(in) :: cndelP
+      integer(kind=kint) :: cc2, rr2
+
+      do cc2 = 1, cndelP
+        do rr2 = cc2, cndelP
+          if (fso(g%dtile(npiv+rr2-1), g%dtile(npiv+cc2-1)) /= me) cycle
+          dsq(int(cc2-1, 8)*cndelP + rr2) = fsv(fsx(npiv+rr2, npiv+cc2))
+          if (fct%lu) dsq(int(cndelP, 8)*cndelP + int(cc2-1, 8)*cndelP + rr2) = fsvu(fsx(npiv+rr2, npiv+cc2))
+        enddo
+      enddo
+    end subroutine dsq_mine
+
+    !> whether the stored panel tile (i2, kk) of the front is held on this rank
+    function tile_is_mine(kk, i2) result(mine0)
+      integer(kind=kint), intent(in) :: kk, i2
       logical :: mine0
 
       if (i2 <= g%ntc) then
-        mine0 = ismaster
+        mine0 = (fso(i2, kk) == me)
       else
         mine0 = (towner(i2 - g%ntc) == me)
       endif
@@ -3514,11 +4444,11 @@ contains
       idx2 = mf_bidx(g%nt, kk, i2)
       dx = fct%sn(s)%bptr(idx2)
       if (i2 <= g%ntc) then
-        bx = mf_off(gm, i2, kk)
-        fct%sn(s)%lval(dx+1:dx+int(h2, 8)*mw) = fvm(bx+1:bx+int(h2, 8)*mw)
+        bx = fsbase(i2, kk)
+        fct%sn(s)%lval(dx+1:dx+int(h2, 8)*mw) = fsv(bx+1:bx+int(h2, 8)*mw)
         if (fct%lu) then
           dx = fct%sn(s)%bptru(idx2)
-          fct%sn(s)%uval(dx+1:dx+int(h2, 8)*mw) = fvmu(bx+1:bx+int(h2, 8)*mw)
+          fct%sn(s)%uval(dx+1:dx+int(h2, 8)*mw) = fsvu(bx+1:bx+int(h2, 8)*mw)
         endif
         return
       endif
@@ -3548,7 +4478,7 @@ contains
       endif
     end subroutine store_tile
 
-  end subroutine mf_super_factor_1d
+  end subroutine mf_super_factor_dist
 
   !> mf_super_task limited to the subtrees of the executing rank: the climb stops below an
   !> upper front, which the sequential fan-in stage factors.
@@ -4922,13 +5852,16 @@ contains
     real(kind=kreal), intent(out) :: x(:)
     type(mf_pool) :: pool, gpool
     real(kind=kreal), allocatable :: z(:), xx(:)
-    real(kind=kreal), allocatable :: v(:), vb(:), tok(:), pivs(:), tbuf(:)
+    real(kind=kreal), allocatable :: v(:), vb(:), tok(:), tbuf(:), vsg(:), xv(:)
     integer(kind=kint), allocatable :: dmap(:), left(:)
     integer(kind=kint), allocatable :: ctb(:), towner(:), crow2t(:), tprow(:), wrank(:), rdof(:), rowoff(:)
     integer(kind=kint), allocatable :: cctb2(:), cown2(:), pmapr(:), pdofm(:), crown(:), mdel(:)
+    integer(kind=kint), allocatable :: cur5(:), stw(:), sta(:), stb(:)
+    logical, allocatable :: held(:)
     integer(kind=kint) :: ns, s, i, iu, j, c, p, stat(HECMW_STATUS_SIZE), req
     integer(kind=kint) :: ncol, npv, ntc0, nt0, nrow0, ncb0, ncbt, nwk, wme, myrows, master, ndel0
     integer(kind=kint) :: cnrow0, cndel0, cncbt
+    integer(kind=kint) :: pr2, pc2, kend, sg, myfst
     logical :: ismaster, hasband
 
     ns = fct%nsuper
@@ -4956,12 +5889,12 @@ contains
 
     do iu = 1, map%nupper
       s = map%uplist(iu)
-      if (map%myrank >= map%rbeg(s) .and. map%myrank < map%rbeg(s) + map%rcnt(s)) call fwd_1d(s)
+      if (map%myrank >= map%rbeg(s) .and. map%myrank < map%rbeg(s) + map%rcnt(s)) call fwd_dist(s)
     enddo
 
     do iu = map%nupper, 1, -1
       s = map%uplist(iu)
-      if (map%myrank >= map%rbeg(s) .and. map%myrank < map%rbeg(s) + map%rcnt(s)) call bwd_1d(s)
+      if (map%myrank >= map%rbeg(s) .and. map%myrank < map%rbeg(s) + map%rcnt(s)) call bwd_dist(s)
     enddo
     do s = 1, ns
       if (map%owner(s) /= map%myrank .or. map%upper(s) .or. sym%sparent(s) == 0) cycle
@@ -5076,7 +6009,46 @@ contains
         d2 = d2 + fct%sn(c)%ncol - fct%sn(c)%npiv
         c = fct%cnext(c)
       enddo
+      ! the 2D grid of the fully summed tiles, my part of it and the last pivot column
+      sg = s0
+      call hecmw_mf_dist_fsgrid(map, s0, ntc0, pr2, pc2)
+      kend = 0
+      do t2 = 1, ntc0
+        if (min(fct%sn(s0)%tbnd(t2+1), npv) - fct%sn(s0)%tbnd(t2) > 0) kend = t2
+      enddo
+      myfst = 0
+      do t2 = 1, ntc0
+        do i2 = t2, ntc0
+          if (fso_s(i2, t2) == map%myrank) myfst = myfst + 1
+        enddo
+      enddo
+      if (allocated(vsg)) then
+        if (size(vsg) < ncol) deallocate(vsg)
+      endif
+      if (.not. allocated(vsg)) allocate(vsg(max(ncol, 1)))
+      if (allocated(held)) then
+        if (size(held) < ntc0) deallocate(held)
+      endif
+      if (.not. allocated(held)) allocate(held(max(ntc0, 1)))
+      held(1:ntc0) = .false.
+      if (allocated(cur5)) then
+        if (size(cur5) < map%rcnt(s0)) deallocate(cur5)
+      endif
+      if (.not. allocated(cur5)) allocate(cur5(max(map%rcnt(s0), 1)))
+      if (allocated(stw)) then
+        if (size(stw) < ntc0 + nwk + 2) deallocate(stw, sta, stb)
+      endif
+      if (.not. allocated(stw)) allocate(stw(ntc0 + nwk + 2), sta(ntc0 + nwk + 2), stb(ntc0 + nwk + 2))
+      call mf_grow_r(xv, int(max(fct%tile, ncol, 1), 8))
     end subroutine geo_1d
+
+    !> owning rank of fully summed tile (i0, j0) of the current upper front
+    function fso_s(i0, j0) result(r)
+      integer(kind=kint), intent(in) :: i0, j0
+      integer(kind=kint) :: r
+
+      r = hecmw_mf_dist_fsrank(map, sg, pr2, pc2, i0, j0)
+    end function fso_s
 
     !> owning rank of a front row of the current front
     function drank_s(row) result(dr)
@@ -5253,12 +6225,18 @@ contains
     end subroutine dv_add
 
     !> forward solve of the upper front s0: the children's contributions arrive as row
-    !> slices, the master runs the fully summed sweep and hands the tile owners the post
-    !> substitution pivot values, and every owner applies its stored rows to its band rows
-    subroutine fwd_1d(s0)
+    !> slices at the master and the band owners, the master hands the initial right hand
+    !> side segments to their first holders, and the fully summed sweep runs column by
+    !> column: the diagonal tile owner eliminates its tile and multicasts the pivot
+    !> values, every column tile owner applies them to the running segment it holds and
+    !> passes the segment to the next pivot column's owner, so every segment folds in
+    !> the sequential order; the final segments return to the master
+    subroutine fwd_dist(s0)
       integer(kind=kint), intent(in) :: s0
-      integer(kind=kint) :: d2, d0, d1, kk, tw2, hk2, t2, h2, r2, i2, iw2, ofs, idx2, jc, ib, ndv
+      integer(kind=kint) :: d2, d0, d1, kk, tw2, hk2, t2, h2, r2, i2, iw2, idx2, jc, ib, ndv, ofs
+      integer(kind=kint) :: rdk, nxt, dst
       integer(kind=8) :: okk2, oik2
+      logical :: partic
 
       call geo_1d(s0)
       call mf_grow_r(v, int(max(ncol, 1), 8))
@@ -5292,66 +6270,126 @@ contains
         call dv_apply(s0, c)
         c = fct%cnext(c)
       enddo
-      call mf_grow_r(pivs, int(max(npv, 1), 8))
+      partic = ismaster .or. hasband .or. myfst > 0
+      ! the initial segments to their first holders
       if (ismaster) then
-        ofs = 0
-        do kk = 1, ntc0
+        do i2 = 1, ntc0
+          dst = fwd_fh(i2)
+          if (dst == me()) then
+            vsg(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1)) = v(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1))
+            held(i2) = .true.
+          else
+            ib = mf_pool_slot(pool)
+            h2 = fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2)
+            allocate(pool%box(ib)%rv(h2))
+            pool%box(ib)%rv(1:h2) = v(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1))
+            req = 0
+            call hecmw_isend_r(pool%box(ib)%rv, h2, dst, 16*s0+14, map%comm, req)
+            call mf_pool_req(pool, req)
+          endif
+        enddo
+      else if (partic) then
+        do i2 = 1, ntc0
+          if (fwd_fh(i2) /= me()) cycle
+          h2 = fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2)
+          call hecmw_recv_r(vsg(fct%sn(s0)%tbnd(i2)+1:), h2, master, 16*s0+14, map%comm, stat)
+          held(i2) = .true.
+        enddo
+      endif
+      ! the sweep over the pivot columns
+      if (partic) then
+        do kk = 1, kend
           tw2 = min(fct%sn(s0)%tbnd(kk+1), npv) - fct%sn(s0)%tbnd(kk)
-          if (tw2 <= 0) exit
           hk2 = fct%sn(s0)%tbnd(kk+1) - fct%sn(s0)%tbnd(kk)
-          okk2 = 1 + fct%sn(s0)%bptr(mf_bidx(nt0, kk, kk))
-          call hecmw_mf_kernel_trsv(tw2, hk2, fct%sn(s0)%lval(okk2), v(fct%sn(s0)%tbnd(kk)+1))
-          if (hk2 > tw2) call hecmw_mf_kernel_gemv(hk2 - tw2, tw2, hk2, fct%sn(s0)%lval(okk2 + tw2), &
-            v(fct%sn(s0)%tbnd(kk)+1), v(fct%sn(s0)%tbnd(kk)+tw2+1))
-          pivs(ofs+1:ofs+tw2) = v(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk)+tw2)
-          ofs = ofs + tw2
+          rdk = fso_s(kk, kk)
+          if (rdk == me()) then
+            if (.not. held(kk)) then
+              call hecmw_recv_r(vsg(fct%sn(s0)%tbnd(kk)+1:), hk2, fwd_ph(kk, kk), 16*s0+13, map%comm, stat)
+              held(kk) = .true.
+            endif
+            okk2 = 1 + fct%sn(s0)%bptr(mf_bidx(nt0, kk, kk))
+            call hecmw_mf_kernel_trsv(tw2, hk2, fct%sn(s0)%lval(okk2), vsg(fct%sn(s0)%tbnd(kk)+1))
+            if (hk2 > tw2) call hecmw_mf_kernel_gemv(hk2 - tw2, tw2, hk2, fct%sn(s0)%lval(okk2 + tw2), &
+              vsg(fct%sn(s0)%tbnd(kk)+1), vsg(fct%sn(s0)%tbnd(kk)+tw2+1))
+            xv(1:tw2) = vsg(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk)+tw2)
+            ! the pivot values to the owners below and the band workers
+            ib = mf_pool_slot(pool)
+            allocate(pool%box(ib)%rv(tw2))
+            pool%box(ib)%rv(1:tw2) = xv(1:tw2)
+            do dst = map%rbeg(s0), map%rbeg(s0) + map%rcnt(s0) - 1
+              if (dst == me()) cycle
+              if (.not. fwd_xdest(dst, kk)) cycle
+              req = 0
+              call hecmw_isend_r(pool%box(ib)%rv, tw2, dst, 16*s0+9, map%comm, req)
+              call mf_pool_req(pool, req)
+            enddo
+            if (.not. fct%lu) call hecmw_mf_kernel_dsolve(tw2, hk2, fct%sn(s0)%lval(okk2), &
+              fct%sn(s0)%ptype(fct%sn(s0)%tbnd(kk)+1:), fct%sn(s0)%dsub(fct%sn(s0)%tbnd(kk)+1:), &
+              vsg(fct%sn(s0)%tbnd(kk)+1))
+            ! the segment of a pivot tile is final here
+            call fwd_fin(s0, kk)
+          else if (fwd_xdest(me(), kk)) then
+            call hecmw_recv_r(xv, tw2, rdk, 16*s0+9, map%comm, stat)
+          endif
+          ! contributions of the column on the segments I hold below it
           do i2 = kk + 1, ntc0
+            if (fso_s(i2, kk) /= me()) cycle
+            if (.not. held(i2)) then
+              call hecmw_recv_r(vsg(fct%sn(s0)%tbnd(i2)+1:), fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2), &
+                fwd_ph(i2, kk), 16*s0+13, map%comm, stat)
+              held(i2) = .true.
+            endif
             h2 = fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2)
             oik2 = 1 + fct%sn(s0)%bptr(mf_bidx(nt0, kk, i2))
-            call hecmw_mf_kernel_gemv(h2, tw2, h2, fct%sn(s0)%lval(oik2), v(fct%sn(s0)%tbnd(kk)+1), &
-              v(fct%sn(s0)%tbnd(i2)+1))
+            call hecmw_mf_kernel_gemv(h2, tw2, h2, fct%sn(s0)%lval(oik2), xv, vsg(fct%sn(s0)%tbnd(i2)+1))
+            ! the segment moves on to the next pivot column's owner
+            nxt = -1
+            if (kk < kend .and. kk + 1 < i2) then
+              nxt = fso_s(i2, kk+1)
+            else if (i2 <= kend) then
+              nxt = fso_s(i2, i2)
+            endif
+            if (nxt >= 0 .and. nxt /= me()) then
+              ib = mf_pool_slot(pool)
+              allocate(pool%box(ib)%rv(h2))
+              pool%box(ib)%rv(1:h2) = vsg(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1))
+              req = 0
+              call hecmw_isend_r(pool%box(ib)%rv, h2, nxt, 16*s0+13, map%comm, req)
+              call mf_pool_req(pool, req)
+              held(i2) = .false.
+            endif
           enddo
-          if (.not. fct%lu) call hecmw_mf_kernel_dsolve(tw2, hk2, fct%sn(s0)%lval(okk2), &
-            fct%sn(s0)%ptype(fct%sn(s0)%tbnd(kk)+1:), fct%sn(s0)%dsub(fct%sn(s0)%tbnd(kk)+1:), &
-            v(fct%sn(s0)%tbnd(kk)+1))
+          ! contributions of the column on my band rows
+          if (hasband) then
+            do t2 = 1, ncbt
+              if (towner(t2) /= me()) cycle
+              h2 = ctb(t2) - ctb(t2-1)
+              idx2 = mf_bidx(nt0, kk, ntc0 + t2)
+              r2 = fct%sn(s0)%brank(idx2)
+              oik2 = 1 + fct%sn(s0)%bptr(idx2)
+              if (r2 == 0) cycle
+              if (r2 < 0) then
+                call hecmw_mf_kernel_gemv(h2, tw2, h2, fct%sn(s0)%lval(oik2), xv, vb(tprow(t2)+1))
+              else
+                call hecmw_mf_kernel_mult_tv(tw2, r2, tw2, fct%sn(s0)%lval(oik2 + int(h2, 8)*r2), xv, tbuf)
+                call hecmw_mf_kernel_gemv(h2, r2, h2, fct%sn(s0)%lval(oik2), tbuf, vb(tprow(t2)+1))
+              endif
+            enddo
+          endif
+        enddo
+        ! the delayed segments still in hand are final
+        do i2 = kend + 1, ntc0
+          if (held(i2)) call fwd_fin(s0, i2)
+        enddo
+      endif
+      if (ismaster) then
+        do i2 = 1, ntc0
+          if (fwd_lh(i2) == me()) cycle
+          call hecmw_recv_r(v(fct%sn(s0)%tbnd(i2)+1:), fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2), &
+            fwd_lh(i2), 16*s0+7, map%comm, stat)
         enddo
         do d2 = 1, npv
           z(fct%sn(s0)%frow(d2)) = v(d2)
-        enddo
-        if (npv > 0) then
-          ib = mf_pool_slot(pool)
-          allocate(pool%box(ib)%rv(npv))
-          pool%box(ib)%rv(1:npv) = pivs(1:npv)
-          do iw2 = 1, nwk
-            if (wrank(iw2) == map%myrank) cycle
-            req = 0
-            call hecmw_isend_r(pool%box(ib)%rv, npv, wrank(iw2), 16*s0+9, map%comm, req)
-            call mf_pool_req(pool, req)
-          enddo
-        endif
-      else if (hasband .and. npv > 0) then
-        call hecmw_recv_r(pivs, npv, master, 16*s0+9, map%comm, stat)
-      endif
-      if (hasband) then
-        ofs = 0
-        do kk = 1, ntc0
-          tw2 = min(fct%sn(s0)%tbnd(kk+1), npv) - fct%sn(s0)%tbnd(kk)
-          if (tw2 <= 0) exit
-          do t2 = 1, ncbt
-            if (towner(t2) /= map%myrank) cycle
-            h2 = ctb(t2) - ctb(t2-1)
-            idx2 = mf_bidx(nt0, kk, ntc0 + t2)
-            r2 = fct%sn(s0)%brank(idx2)
-            oik2 = 1 + fct%sn(s0)%bptr(idx2)
-            if (r2 == 0) cycle
-            if (r2 < 0) then
-              call hecmw_mf_kernel_gemv(h2, tw2, h2, fct%sn(s0)%lval(oik2), pivs(ofs+1), vb(tprow(t2)+1))
-            else
-              call hecmw_mf_kernel_mult_tv(tw2, r2, tw2, fct%sn(s0)%lval(oik2 + int(h2, 8)*r2), pivs(ofs+1), tbuf)
-              call hecmw_mf_kernel_gemv(h2, r2, h2, fct%sn(s0)%lval(oik2), tbuf, vb(tprow(t2)+1))
-            endif
-          enddo
-          ofs = ofs + tw2
         enddo
       endif
       ! keep my rows of the forward contribution: the delayed rows on the master, the
@@ -5373,31 +6411,119 @@ contains
         c = fct%clist(j)
         if (allocated(fct%sn(c)%dval)) deallocate(fct%sn(c)%dval)
       enddo
-    end subroutine fwd_1d
+    end subroutine fwd_dist
+
+    !> shorthand for the executing rank
+    function me() result(r)
+      integer(kind=kint) :: r
+      r = map%myrank
+    end function me
+
+    !> first holder of the forward segment of tile i2: the owner of its first pivot
+    !> column tile, its diagonal owner when no pivot column precedes it, the master when
+    !> there are no pivots
+    function fwd_fh(i2) result(r)
+      integer(kind=kint), intent(in) :: i2
+      integer(kind=kint) :: r
+
+      if (kend >= 1 .and. i2 > 1) then
+        r = fso_s(i2, 1)
+      else if (i2 <= kend) then
+        r = fso_s(i2, i2)
+      else
+        r = master
+      endif
+    end function fwd_fh
+
+    !> previous holder of the forward segment of tile i2 when it is used at column kk
+    function fwd_ph(i2, kk) result(r)
+      integer(kind=kint), intent(in) :: i2, kk
+      integer(kind=kint) :: r
+
+      if (kk == 1) then
+        r = master
+      else
+        r = fso_s(i2, kk-1)
+      endif
+    end function fwd_ph
+
+    !> final holder of the forward segment of tile i2
+    function fwd_lh(i2) result(r)
+      integer(kind=kint), intent(in) :: i2
+      integer(kind=kint) :: r
+
+      if (i2 <= kend) then
+        r = fso_s(i2, i2)
+      else if (kend >= 1) then
+        r = fso_s(i2, kend)
+      else
+        r = master
+      endif
+    end function fwd_lh
+
+    !> whether rank r0 reads the pivot values of column kk (it owns column tiles below
+    !> the diagonal one, or band rows)
+    function fwd_xdest(r0, kk) result(yes)
+      integer(kind=kint), intent(in) :: r0, kk
+      logical :: yes
+      integer(kind=kint) :: i0
+
+      yes = .false.
+      do i0 = kk + 1, ntc0
+        if (fso_s(i0, kk) == r0) yes = .true.
+      enddo
+      if (yes) return
+      do i0 = 1, nwk
+        if (wrank(i0) == r0) yes = .true.
+      enddo
+    end function fwd_xdest
+
+    !> hand the finished forward segment of tile i2 to the master
+    subroutine fwd_fin(s0, i2)
+      integer(kind=kint), intent(in) :: s0, i2
+      integer(kind=kint) :: h2, ib
+
+      h2 = fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2)
+      if (ismaster) then
+        v(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1)) = vsg(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1))
+      else
+        ib = mf_pool_slot(pool)
+        allocate(pool%box(ib)%rv(h2))
+        pool%box(ib)%rv(1:h2) = vsg(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1))
+        req = 0
+        call hecmw_isend_r(pool%box(ib)%rv, h2, master, 16*s0+7, map%comm, req)
+        call mf_pool_req(pool, req)
+      endif
+      held(i2) = .false.
+    end subroutine fwd_fin
 
     !> backward solve of the upper front s0: the master receives the referenced solution
-    !> values from the parent and hands every tile owner the values of its rows; the
-    !> right hand side of a tile column then travels along the tile owners in ascending
-    !> order, each subtracting its stored rows, which keeps the sequential fold order
-    subroutine bwd_1d(s0)
+    !> values from the parent, hands every band owner the values of its rows and every
+    !> tile owner the initial segments it reads; the right hand side of a pivot column
+    !> then travels the column tile owners in ascending order and the band owners, each
+    !> subtracting its stored rows, and the diagonal tile owner closes the column and
+    !> multicasts the solved segment, keeping the sequential fold order
+    subroutine bwd_dist(s0)
       integer(kind=kint), intent(in) :: s0
-      integer(kind=kint) :: d2, kk, tw2, hk2, t2, h2, i2, iw2, ib, nr2, il
+      integer(kind=kint) :: d2, kk, tw2, hk2, t2, h2, i2, j2, iw2, ib, nr2, il, r0
+      integer(kind=kint) :: rdk, nst, st, holder, dst
       integer(kind=8) :: okk2, okku2, oik2
+      logical :: sent
 
       call geo_1d(s0)
-      ! a rank without the master role or tiles has no part in the backward solve
-      if (.not. (ismaster .or. hasband)) return
+      if (.not. (ismaster .or. hasband .or. myfst > 0)) return
       call mf_grow_r(v, int(max(ncol, 1), 8))
       call mf_grow_r(vb, int(max(myrows, 1), 8))
       call mf_grow_r(tok, int(max(ncol, 1), 8))
       call mf_grow_r(tbuf, int(max(ncol, nrow0 - ncol, 1), 8))
+      cur5(1:map%rcnt(s0)) = ntc0
       if (ismaster) then
         p = sym%sparent(s0)
         if (p /= 0) then
-          if (map%owner(p) /= map%myrank) call recv_xx(s0)
+          if (map%owner(p) /= me()) call recv_xx(s0)
         endif
         do iw2 = 1, nwk
-          if (wrank(iw2) == map%myrank) cycle
+          if (wrank(iw2) == me()) cycle
           nr2 = 0
           do t2 = 1, ncbt
             if (towner(t2) == wrank(iw2)) nr2 = nr2 + ctb(t2) - ctb(t2-1)
@@ -5423,11 +6549,37 @@ contains
         do d2 = npv + 1, ncol
           v(d2) = xx(fct%sn(s0)%fsdof(d2))
         enddo
+        ! the initial segments: a pivot tile to its diagonal owner, a delayed tile to
+        ! every rank whose column tiles read its values
+        do i2 = 1, ntc0
+          h2 = fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2)
+          do dst = map%rbeg(s0), map%rbeg(s0) + map%rcnt(s0) - 1
+            if (.not. bwd_ides(dst, i2)) cycle
+            if (dst == me()) then
+              vsg(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1)) = v(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1))
+              held(i2) = .true.
+            else
+              ib = mf_pool_slot(pool)
+              allocate(pool%box(ib)%rv(h2))
+              pool%box(ib)%rv(1:h2) = v(fct%sn(s0)%tbnd(i2)+1:fct%sn(s0)%tbnd(i2+1))
+              req = 0
+              call hecmw_isend_r(pool%box(ib)%rv, h2, dst, 16*s0+6, map%comm, req)
+              call mf_pool_req(pool, req)
+            endif
+          enddo
+        enddo
+      else
+        do i2 = 1, ntc0
+          if (.not. bwd_ides(me(), i2)) cycle
+          call hecmw_recv_r(vsg(fct%sn(s0)%tbnd(i2)+1:), fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2), &
+            master, 16*s0+6, map%comm, stat)
+          held(i2) = .true.
+        enddo
       endif
       if (hasband) then
         if (ismaster) then
           do t2 = 1, ncbt
-            if (towner(t2) /= map%myrank) cycle
+            if (towner(t2) /= me()) cycle
             do d2 = ctb(t2-1) + 1, ctb(t2)
               vb(tprow(t2) + (d2 - ctb(t2-1))) = xx(rdof(d2))
             enddo
@@ -5436,101 +6588,184 @@ contains
           call hecmw_recv_r(vb, myrows, master, 16*s0+10, map%comm, stat)
         endif
       endif
-      do kk = ntc0, 1, -1
+      ! the sweep over the pivot columns, descending
+      do kk = kend, 1, -1
         tw2 = min(fct%sn(s0)%tbnd(kk+1), npv) - fct%sn(s0)%tbnd(kk)
-        if (tw2 <= 0) cycle
         hk2 = fct%sn(s0)%tbnd(kk+1) - fct%sn(s0)%tbnd(kk)
-        if (ismaster) then
-          tok(1:tw2) = v(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk)+tw2)
-          do i2 = kk + 1, ntc0
-            h2 = fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2)
-            if (fct%lu) then
-              oik2 = 1 + fct%sn(s0)%bptru(mf_bidx(nt0, kk, i2))
-              call hecmw_mf_kernel_gemv_t(h2, tw2, h2, fct%sn(s0)%uval(oik2), v(fct%sn(s0)%tbnd(i2)+1), tok)
-            else
-              oik2 = 1 + fct%sn(s0)%bptr(mf_bidx(nt0, kk, i2))
-              call hecmw_mf_kernel_gemv_t(h2, tw2, h2, fct%sn(s0)%lval(oik2), v(fct%sn(s0)%tbnd(i2)+1), tok)
-            endif
+        rdk = fso_s(kk, kk)
+        if (.not. (rdk == me() .or. hasband .or. fwd_xdest(me(), kk))) cycle
+        ! the stations of the token: the runs of column tile owners, then the band
+        nst = 0
+        i2 = kk + 1
+        do while (i2 <= ntc0)
+          r0 = fso_s(i2, kk)
+          j2 = i2
+          do while (j2 + 1 <= ntc0)
+            if (fso_s(j2+1, kk) /= r0) exit
+            j2 = j2 + 1
           enddo
-        endif
-        call token_chain(s0, kk, tw2)
-        if (ismaster) then
+          nst = nst + 1
+          stw(nst) = r0
+          sta(nst) = i2
+          stb(nst) = j2
+          i2 = j2 + 1
+        enddo
+        do iw2 = 1, nwk
+          nst = nst + 1
+          stw(nst) = wrank(iw2)
+          sta(nst) = 0
+          stb(nst) = 0
+        enddo
+        holder = rdk
+        if (rdk == me()) tok(1:tw2) = vsg(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk)+tw2)
+        do st = 1, nst
+          if (stw(st) == me()) then
+            if (holder /= me()) call hecmw_recv_r(tok, tw2, holder, 16*s0+11, map%comm, stat)
+            if (sta(st) > 0) then
+              do i2 = sta(st), stb(st)
+                if (.not. held(i2)) call bwd_drain(s0, fso_s(i2, i2), i2)
+                h2 = fct%sn(s0)%tbnd(i2+1) - fct%sn(s0)%tbnd(i2)
+                if (fct%lu) then
+                  oik2 = 1 + fct%sn(s0)%bptru(mf_bidx(nt0, kk, i2))
+                  call hecmw_mf_kernel_gemv_t(h2, tw2, h2, fct%sn(s0)%uval(oik2), &
+                    vsg(fct%sn(s0)%tbnd(i2)+1), tok)
+                else
+                  oik2 = 1 + fct%sn(s0)%bptr(mf_bidx(nt0, kk, i2))
+                  call hecmw_mf_kernel_gemv_t(h2, tw2, h2, fct%sn(s0)%lval(oik2), &
+                    vsg(fct%sn(s0)%tbnd(i2)+1), tok)
+                endif
+              enddo
+            else
+              call chain_apply(s0, kk, tw2)
+            endif
+            holder = me()
+          else
+            if (holder == me()) then
+              ib = mf_pool_slot(pool)
+              allocate(pool%box(ib)%rv(tw2))
+              pool%box(ib)%rv(1:tw2) = tok(1:tw2)
+              req = 0
+              call hecmw_isend_r(pool%box(ib)%rv, tw2, stw(st), 16*s0+11, map%comm, req)
+              call mf_pool_req(pool, req)
+            endif
+            holder = stw(st)
+          endif
+        enddo
+        if (rdk /= me()) then
+          ! the last holder returns the token to the diagonal owner
+          if (holder == me()) then
+            ib = mf_pool_slot(pool)
+            allocate(pool%box(ib)%rv(tw2))
+            pool%box(ib)%rv(1:tw2) = tok(1:tw2)
+            req = 0
+            call hecmw_isend_r(pool%box(ib)%rv, tw2, rdk, 16*s0+11, map%comm, req)
+            call mf_pool_req(pool, req)
+          endif
+        else
+          if (holder /= me()) call hecmw_recv_r(tok, tw2, holder, 16*s0+11, map%comm, stat)
           okk2 = 1 + fct%sn(s0)%bptr(mf_bidx(nt0, kk, kk))
           if (fct%lu) then
             okku2 = 1 + fct%sn(s0)%bptru(mf_bidx(nt0, kk, kk))
             if (hk2 > tw2) call hecmw_mf_kernel_gemv_t(hk2 - tw2, tw2, hk2, fct%sn(s0)%uval(okku2 + tw2), &
-              v(fct%sn(s0)%tbnd(kk)+tw2+1), tok)
+              vsg(fct%sn(s0)%tbnd(kk)+tw2+1), tok)
             call hecmw_mf_kernel_usolve(tw2, hk2, fct%sn(s0)%lval(okk2), hk2, fct%sn(s0)%uval(okku2), tok)
           else
             if (hk2 > tw2) call hecmw_mf_kernel_gemv_t(hk2 - tw2, tw2, hk2, fct%sn(s0)%lval(okk2 + tw2), &
-              v(fct%sn(s0)%tbnd(kk)+tw2+1), tok)
+              vsg(fct%sn(s0)%tbnd(kk)+tw2+1), tok)
             call hecmw_mf_kernel_trsv_t(tw2, hk2, fct%sn(s0)%lval(okk2), tok)
           endif
-          v(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk)+tw2) = tok(1:tw2)
+          vsg(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk)+tw2) = tok(1:tw2)
+          ! the solved segment to the owners that read it, then to the master
+          ib = 0
+          do dst = map%rbeg(s0), map%rbeg(s0) + map%rcnt(s0) - 1
+            if (dst == me()) cycle
+            sent = .false.
+            do j2 = 1, kk - 1
+              if (fso_s(kk, j2) == dst) sent = .true.
+            enddo
+            if (.not. sent) cycle
+            if (ib == 0) then
+              ib = mf_pool_slot(pool)
+              allocate(pool%box(ib)%rv(hk2))
+              pool%box(ib)%rv(1:hk2) = vsg(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk+1))
+            endif
+            req = 0
+            call hecmw_isend_r(pool%box(ib)%rv, hk2, dst, 16*s0+5, map%comm, req)
+            call mf_pool_req(pool, req)
+          enddo
+          if (ismaster) then
+            v(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk+1)) = vsg(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk+1))
+          else
+            ib = mf_pool_slot(pool)
+            allocate(pool%box(ib)%rv(hk2))
+            pool%box(ib)%rv(1:hk2) = vsg(fct%sn(s0)%tbnd(kk)+1:fct%sn(s0)%tbnd(kk+1))
+            req = 0
+            call hecmw_isend_r(pool%box(ib)%rv, hk2, master, 16*s0+7, map%comm, req)
+            call mf_pool_req(pool, req)
+          endif
         endif
       enddo
       if (ismaster) then
+        do kk = kend, 1, -1
+          if (fso_s(kk, kk) == me()) cycle
+          call hecmw_recv_r(v(fct%sn(s0)%tbnd(kk)+1:), fct%sn(s0)%tbnd(kk+1) - fct%sn(s0)%tbnd(kk), &
+            fso_s(kk, kk), 16*s0+7, map%comm, stat)
+        enddo
         do d2 = 1, npv
           xx(fct%sn(s0)%fsdof(d2)) = v(d2)
         enddo
         do j = fct%cptr(s0), fct%cptr(s0+1) - 1
           c = fct%clist(j)
-          if (map%owner(c) /= map%myrank) call send_xx(c)
+          if (map%owner(c) /= me()) call send_xx(c)
         enddo
       endif
       call mf_pool_wait(pool)
-    end subroutine bwd_1d
+    end subroutine bwd_dist
 
-    !> the running right hand side of tile column kk along the tile owners in ascending
-    !> order; each owner subtracts its stored rows in place, keeping the sequential fold
-    subroutine token_chain(s0, kk, tw2)
-      integer(kind=kint), intent(in) :: s0, kk, tw2
-      integer(kind=kint) :: iw2, prv, nxt, ib
+    !> whether rank r0 receives the initial backward segment of tile i2: it is the
+    !> diagonal owner of a pivot tile, or it owns column tiles reading a delayed tile
+    function bwd_ides(r0, i2) result(yes)
+      integer(kind=kint), intent(in) :: r0, i2
+      logical :: yes
+      integer(kind=kint) :: kk2
 
-      if (nwk == 0) return
-      if (ismaster) then
-        prv = -1
-        do iw2 = 1, nwk
-          if (wrank(iw2) == map%myrank) then
-            if (prv >= 0) then
-              call hecmw_recv_r(tok, tw2, prv, 16*s0+11, map%comm, stat)
-              prv = -1
-            endif
-            call chain_apply(s0, kk, tw2)
-          else
-            if (prv < 0) then
-              ib = mf_pool_slot(pool)
-              allocate(pool%box(ib)%rv(tw2))
-              pool%box(ib)%rv(1:tw2) = tok(1:tw2)
-              req = 0
-              call hecmw_isend_r(pool%box(ib)%rv, tw2, wrank(iw2), 16*s0+11, map%comm, req)
-              call mf_pool_req(pool, req)
-            endif
-            prv = wrank(iw2)
-          endif
-        enddo
-        if (prv >= 0) call hecmw_recv_r(tok, tw2, prv, 16*s0+11, map%comm, stat)
+      if (i2 <= kend) then
+        yes = (fso_s(i2, i2) == r0)
       else
-        if (wme == 1) then
-          prv = master
-        else
-          prv = wrank(wme-1)
-        endif
-        call hecmw_recv_r(tok, tw2, prv, 16*s0+11, map%comm, stat)
-        call chain_apply(s0, kk, tw2)
-        if (wme == nwk) then
-          nxt = master
-        else
-          nxt = wrank(wme+1)
-        endif
-        ib = mf_pool_slot(pool)
-        allocate(pool%box(ib)%rv(tw2))
-        pool%box(ib)%rv(1:tw2) = tok(1:tw2)
-        req = 0
-        call hecmw_isend_r(pool%box(ib)%rv, tw2, nxt, 16*s0+11, map%comm, req)
-        call mf_pool_req(pool, req)
+        yes = .false.
+        do kk2 = 1, min(kend, i2 - 1)
+          if (fso_s(i2, kk2) == r0) yes = .true.
+        enddo
       endif
-    end subroutine token_chain
+    end function bwd_ides
+
+    !> receive the solved segments multicast by the diagonal owner src, in its send
+    !> order (descending columns), until segment ineed arrives
+    subroutine bwd_drain(s0, src, ineed)
+      integer(kind=kint), intent(in) :: s0, src, ineed
+      integer(kind=kint) :: slot, i0, kk2
+      logical :: mine
+
+      slot = src - map%rbeg(s0) + 1
+      do
+        i0 = cur5(slot)
+        do
+          mine = .false.
+          if (i0 <= kend .and. fso_s(i0, i0) == src .and. src /= me()) then
+            do kk2 = 1, i0 - 1
+              if (fso_s(i0, kk2) == me()) mine = .true.
+            enddo
+          endif
+          if (mine) exit
+          i0 = i0 - 1
+        enddo
+        call hecmw_recv_r(vsg(fct%sn(s0)%tbnd(i0)+1:), fct%sn(s0)%tbnd(i0+1) - fct%sn(s0)%tbnd(i0), &
+          src, 16*s0+5, map%comm, stat)
+        held(i0) = .true.
+        cur5(slot) = i0 - 1
+        if (i0 == ineed) exit
+      enddo
+    end subroutine bwd_drain
 
     !> subtract my stored rows of tile column kk from the running right hand side
     subroutine chain_apply(s0, kk, tw2)

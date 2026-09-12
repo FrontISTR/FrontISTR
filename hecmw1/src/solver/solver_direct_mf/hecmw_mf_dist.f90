@@ -16,6 +16,8 @@ module hecmw_mf_dist
   public :: hecmw_mf_dist_map_build
   public :: hecmw_mf_dist_map_finalize
   public :: hecmw_mf_dist_rowtiles
+  public :: hecmw_mf_dist_fsgrid
+  public :: hecmw_mf_dist_fsrank
   public :: hecmw_mf_dist_symbolic_bcast
   public :: hecmwST_mf_gmat
   public :: hecmw_mf_dist_gmat_build
@@ -24,9 +26,10 @@ module hecmw_mf_dist
   public :: hecmw_mf_dist_gather_vec
 
   !> Subtree-to-subcube mapping over the supernodal tree: every supernode carries the rank
-  !> set rbeg/rcnt that processes it; a supernode whose rank set
-  !> spans more than one rank is an upper front, whose fully summed part the owner (master)
-  !> factors while the contribution row tiles are distributed over the rank set (1D row
+  !> set rbeg/rcnt that processes it; a supernode whose rank set spans more than one rank
+  !> is an upper front, whose fully summed tiles are block cyclic on the 2D process grid of
+  !> the front (hecmw_mf_dist_fsgrid, the master coordinating and holding the metadata)
+  !> while the contribution row tiles are distributed over the rank set (1D row
   !> distribution). Below a single-rank supernode the whole subtree belongs to that rank.
   type hecmwST_mf_map
     integer(kind=kint) :: nprocs = 1
@@ -64,6 +67,11 @@ module hecmw_mf_dist
   !> flops charged per factor panel word in the subtree weights (the memory-bound cost of
   !> assembling and storing a word, relative to one flop of elimination)
   integer(kind=8), parameter :: MF_MAP_WPF = 2500_8
+
+  !> fully summed tiles per rank of the 2D process grid of a front: the grid takes one rank
+  !> per this many tiles, so a small fully summed part stays on few ranks (a 1 x 1 grid
+  !> keeps it on the master) and the protocol overhead of spreading it is gated by size
+  integer(kind=kint), parameter :: MF_2D_FSTPR = 8
 
 contains
 
@@ -434,6 +442,46 @@ contains
       c = c + w
     enddo
   end subroutine hecmw_mf_dist_rowtiles
+
+  !> 2D process grid pr x pc of the fully summed part of upper front s, from its fully
+  !> summed tile count ntc (known to every rank of s after the child headers). The grid
+  !> grows with the tile count at MF_2D_FSTPR tiles per rank up to the rank set of s and
+  !> stays near square with pr >= pc; a 1 x 1 grid keeps the fully summed part on the
+  !> master, reproducing the undistributed layout.
+  subroutine hecmw_mf_dist_fsgrid(map, s, ntc, pr, pc)
+    implicit none
+    type(hecmwST_mf_map), intent(in) :: map
+    integer(kind=kint), intent(in) :: s, ntc
+    integer(kind=kint), intent(out) :: pr, pc
+    integer(kind=kint) :: ng
+
+    ng = (ntc*(ntc+1)/2) / MF_2D_FSTPR
+    if (ng > map%rcnt(s)) ng = map%rcnt(s)
+    if (ng < 1) ng = 1
+    pc = 1
+    do while ((pc+1)*(pc+1) <= ng)
+      pc = pc + 1
+    enddo
+    pr = ng / pc
+  end subroutine hecmw_mf_dist_fsgrid
+
+  !> Owning rank of fully summed tile (i, j), j <= i, of upper front s on its pr x pc
+  !> grid: block cyclic over the tile coordinates, the grid ranks being the ranks of s in
+  !> ascending order with the master moved to the front (so grid position 0 is the master).
+  function hecmw_mf_dist_fsrank(map, s, pr, pc, i, j) result(r)
+    implicit none
+    type(hecmwST_mf_map), intent(in) :: map
+    integer(kind=kint), intent(in) :: s, pr, pc, i, j
+    integer(kind=kint) :: r, gp
+
+    gp = mod(i-1, pr)*pc + mod(j-1, pc)
+    if (gp == 0) then
+      r = map%owner(s)
+    else
+      r = map%rbeg(s) + gp - 1
+      if (r >= map%owner(s)) r = r + 1
+    endif
+  end function hecmw_mf_dist_fsrank
 
   !> Broadcast the symbolic structure built on the root rank to all ranks. The int8
   !> estimates (factor_nnz, flops) are not transferred: nothing reads them off the root.
