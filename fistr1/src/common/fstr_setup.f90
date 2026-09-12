@@ -421,7 +421,6 @@ contains
         fstrSOLID%materials(cid)%variables(M_POISSON)=pp
         fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
         fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
-        fstrSOLID%materials(cid)%variables(M_THICK)=thick
         fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
         fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
         fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
