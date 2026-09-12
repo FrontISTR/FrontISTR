@@ -19,6 +19,7 @@ module hecmw_mf_symbolic
   private
   public :: hecmwST_mf_symbolic
   public :: hecmw_mf_symbolic_build
+  public :: hecmw_mf_symbolic_cluster
   public :: hecmw_mf_symbolic_check
   public :: hecmw_mf_symbolic_print
   public :: hecmw_mf_symbolic_finalize
@@ -842,5 +843,68 @@ contains
     write(*,'(a,i0,a,f12.3,a)') '[DIRECTmf]: factorization flops = ', sym%flops, &
       ' (', real(sym%flops, kind=kreal)/1.0d9, ' GFLOP)'
   end subroutine hecmw_mf_symbolic_print
+
+  !> Refined permutation for the BLR compression: the own nodes of every supernode are
+  !> reordered by a BFS on the induced subgraph, restarted per connected component from an
+  !> unvisited node of least internal degree, so that geometrically close separator nodes
+  !> stay in neighboring columns and the panel tiles keep low ranks. The order across
+  !> supernodes is unchanged (any order within a supernode is a valid elimination order);
+  !> the caller rebuilds the symbolic structure with the returned permutation.
+  subroutine hecmw_mf_symbolic_cluster(graph, sym, perm)
+    implicit none
+    type(hecmwST_mf_graph), intent(in) :: graph
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    integer(kind=kint), intent(out) :: perm(:)
+    integer(kind=kint), allocatable :: own(:), deg(:), queue(:)
+    integer(kind=kint) :: s, k, i, j, p, pos, head, tail, seed, mindeg
+
+    allocate(own(graph%nnode), deg(graph%nnode), queue(graph%nnode))
+    do s = 1, sym%nsuper
+      do k = sym%sptr(s), sym%sptr(s+1) - 1
+        own(sym%perm(k)) = s
+      enddo
+    enddo
+    pos = 0
+    do s = 1, sym%nsuper
+      do k = sym%sptr(s), sym%sptr(s+1) - 1
+        i = sym%perm(k)
+        deg(i) = 0
+        do p = graph%xadj(i), graph%xadj(i+1) - 1
+          if (own(graph%adjncy(p)) == s) deg(i) = deg(i) + 1
+        enddo
+      enddo
+      do
+        seed = 0
+        mindeg = huge(seed)
+        do k = sym%sptr(s), sym%sptr(s+1) - 1
+          i = sym%perm(k)
+          if (own(i) == s .and. deg(i) < mindeg) then
+            mindeg = deg(i)
+            seed = i
+          endif
+        enddo
+        if (seed == 0) exit
+        own(seed) = -s
+        queue(1) = seed
+        head = 1
+        tail = 1
+        do while (head <= tail)
+          i = queue(head)
+          head = head + 1
+          pos = pos + 1
+          perm(pos) = i
+          do p = graph%xadj(i), graph%xadj(i+1) - 1
+            j = graph%adjncy(p)
+            if (own(j) == s) then
+              own(j) = -s
+              tail = tail + 1
+              queue(tail) = j
+            endif
+          enddo
+        enddo
+      enddo
+    enddo
+    deallocate(own, deg, queue)
+  end subroutine hecmw_mf_symbolic_cluster
 
 end module hecmw_mf_symbolic

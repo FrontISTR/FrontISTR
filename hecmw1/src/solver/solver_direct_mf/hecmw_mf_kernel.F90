@@ -35,6 +35,12 @@ module hecmw_mf_kernel
   public :: hecmw_mf_kernel_panel_lu_nopiv
   public :: hecmw_mf_kernel_panel_lu_piv
   public :: hecmw_mf_kernel_usolve
+  public :: hecmw_mf_kernel_blr_available
+  public :: hecmw_mf_kernel_compress
+  public :: hecmw_mf_kernel_mult_nn
+  public :: hecmw_mf_kernel_mult_tn
+  public :: hecmw_mf_kernel_mult_tv
+  public :: hecmw_mf_kernel_scale_rows
 
 contains
 
@@ -87,12 +93,15 @@ contains
 #else
     integer(kind=kint) :: k
 
+    ! the updates need the unit solve of the earlier columns, so D is divided out afterwards
     do j = 1, n
       do k = 1, j-1
         do i = 1, m
           a(i,j) = a(i,j) - a(i,k)*l(j,k)
         enddo
       enddo
+    enddo
+    do j = 1, n
       do i = 1, m
         a(i,j) = a(i,j) / l(j,j)
       enddo
@@ -764,5 +773,264 @@ contains
       x(j) = x(j) / l(j,j)
     enddo
   end subroutine hecmw_mf_kernel_usolve
+
+  !> Whether the BLR compression is available (LAPACK build).
+  function hecmw_mf_kernel_blr_available() result(avail)
+    implicit none
+    logical :: avail
+
+#ifdef HECMW_WITH_LAPACK
+    avail = .true.
+#else
+    avail = .false.
+#endif
+  end function hecmw_mf_kernel_blr_available
+
+  !> Truncated rank revealing QR of a(m,n) with the truncation |R(k,k)| <= eps |R(1,1)|:
+  !> on success the leading rank columns of a hold U and v(n,rank) holds V with a ~ U V^T.
+  !> rank is -1, with a destroyed, when the low rank form would not take fewer than m*n words
+  !> (the caller keeps its full rank copy) or without LAPACK.
+  !> The column pivoted Householder QR stops right at the truncation or at the word bound, so
+  !> the cost is O(m*n*rank) where dgeqp3 pays the full decomposition. The pivot column is
+  !> selected by downdated norms with the dgeqp3 recomputation guard, but the truncation is
+  !> decided on the freshly computed norm so a stale estimate cannot end the sweep early.
+  !> The pivoted sweep with the downdated column norms is adapted from LAPACK's dlaqp2 (with
+  !> the norm recomputation guard of LAPACK Working Note 176) and the explicit formation of
+  !> the Q columns follows dorg2r. LAPACK is distributed under the modified BSD license:
+  !>
+  !> Copyright (c) 1992-2025 The University of Tennessee and The University of Tennessee
+  !>                         Research Foundation. All rights reserved.
+  !> Copyright (c) 2000-2025 The University of California Berkeley. All rights reserved.
+  !> Copyright (c) 2006-2025 The University of Colorado Denver. All rights reserved.
+  !>
+  !> Redistribution and use in source and binary forms, with or without modification, are
+  !> permitted provided that the following conditions are met:
+  !> - Redistributions of source code must retain the above copyright notice, this list of
+  !>   conditions and the following disclaimer.
+  !> - Redistributions in binary form must reproduce the above copyright notice, this list of
+  !>   conditions and the following disclaimer listed in this license in the documentation
+  !>   and/or other materials provided with the distribution.
+  !> - Neither the name of the copyright holders nor the names of its contributors may be used
+  !>   to endorse or promote products derived from this software without specific prior
+  !>   written permission.
+  !> The copyright holders provide no reassurances that the source code provided does not
+  !> infringe any patent, copyright, or any other intellectual property rights of third
+  !> parties. The copyright holders disclaim any liability to any recipient for claims brought
+  !> against recipient by any third party for infringement of that parties intellectual
+  !> property rights.
+  !> THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+  !> EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+  !> MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+  !> THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  !> SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+  !> OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  !> INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+  !> LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  !> OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  subroutine hecmw_mf_kernel_compress(m, n, lda, a, eps, ldv, v, rank)
+    implicit none
+    integer(kind=kint), intent(in) :: m, n, lda, ldv
+    real(kind=kreal), intent(inout) :: a(lda,*)
+    real(kind=kreal), intent(in) :: eps
+    real(kind=kreal), intent(out) :: v(ldv,*)
+    integer(kind=kint), intent(out) :: rank
+#ifdef HECMW_WITH_LAPACK
+    integer(kind=kint), allocatable :: jpvt(:)
+    real(kind=kreal), allocatable :: tau(:), vn1(:), vn2(:), wk(:)
+    integer(kind=kint) :: i, j, k, p, r, rlim, itmp
+    real(kind=kreal) :: r11, rkk, akk, tol3z, tmp, tmp2, dtmp
+    real(kind=kreal), external :: dnrm2, dlamch
+    external :: dlarfg, dgemv, dger
+
+    rank = -1
+    ! largest rank whose low rank form takes fewer than m*n words; always below min(m,n)
+    rlim = int((int(m, 8)*n - 1)/(int(m, 8) + n), kind=kint)
+    tol3z = sqrt(dlamch('Epsilon'))
+    allocate(jpvt(n), tau(rlim + 1), vn1(n), vn2(n), wk(n))
+    do j = 1, n
+      jpvt(j) = j
+      vn1(j) = dnrm2(m, a(1,j), 1)
+      vn2(j) = vn1(j)
+    enddo
+    r11 = 0.0d0
+    r = 0
+    do k = 1, rlim + 1
+      p = k
+      do j = k + 1, n
+        if (vn1(j) > vn1(p)) p = j
+      enddo
+      if (p /= k) then
+        do i = 1, m
+          dtmp = a(i,k)
+          a(i,k) = a(i,p)
+          a(i,p) = dtmp
+        enddo
+        itmp = jpvt(k)
+        jpvt(k) = jpvt(p)
+        jpvt(p) = itmp
+        dtmp = vn1(k)
+        vn1(k) = vn1(p)
+        vn1(p) = dtmp
+        dtmp = vn2(k)
+        vn2(k) = vn2(p)
+        vn2(p) = dtmp
+      endif
+      rkk = dnrm2(m - k + 1, a(k,k), 1)
+      if (k == 1) r11 = rkk
+      if (.not. (rkk > eps*r11)) then
+        r = k - 1
+        exit
+      endif
+      if (k > rlim) then
+        deallocate(jpvt, tau, vn1, vn2, wk)
+        return
+      endif
+      call dlarfg(m - k + 1, a(k,k), a(k+1,k), 1, tau(k))
+      akk = a(k,k)
+      a(k,k) = 1.0d0
+      call dgemv('T', m - k + 1, n - k, 1.0d0, a(k,k+1), lda, a(k,k), 1, 0.0d0, wk, 1)
+      call dger(m - k + 1, n - k, -tau(k), a(k,k), 1, wk, 1, a(k,k+1), lda)
+      a(k,k) = akk
+      do j = k + 1, n
+        if (vn1(j) /= 0.0d0) then
+          tmp = max(1.0d0 - (abs(a(k,j))/vn1(j))**2, 0.0d0)
+          tmp2 = tmp*(vn1(j)/vn2(j))**2
+          if (tmp2 <= tol3z) then
+            vn1(j) = dnrm2(m - k, a(k+1,j), 1)
+            vn2(j) = vn1(j)
+          else
+            vn1(j) = vn1(j)*sqrt(tmp)
+          endif
+        endif
+      enddo
+    enddo
+    do j = 1, n
+      do k = 1, r
+        if (k <= j) then
+          v(jpvt(j), k) = a(k, j)
+        else
+          v(jpvt(j), k) = 0.0d0
+        endif
+      enddo
+    enddo
+    do k = r, 1, -1
+      if (k < r) then
+        a(k,k) = 1.0d0
+        call dgemv('T', m - k + 1, r - k, 1.0d0, a(k,k+1), lda, a(k,k), 1, 0.0d0, wk, 1)
+        call dger(m - k + 1, r - k, -tau(k), a(k,k), 1, wk, 1, a(k,k+1), lda)
+      endif
+      do i = k + 1, m
+        a(i,k) = -tau(k)*a(i,k)
+      enddo
+      a(k,k) = 1.0d0 - tau(k)
+      do i = 1, k - 1
+        a(i,k) = 0.0d0
+      enddo
+    enddo
+    rank = r
+    deallocate(jpvt, tau, vn1, vn2, wk)
+#else
+    rank = -1
+#endif
+  end subroutine hecmw_mf_kernel_compress
+
+  !> c(m,n) <- a(m,k) * b(k,n)
+  subroutine hecmw_mf_kernel_mult_nn(m, n, k, lda, a, ldb, b, ldc, c)
+    implicit none
+    integer(kind=kint), intent(in) :: m, n, k, lda, ldb, ldc
+    real(kind=kreal), intent(in) :: a(lda,*), b(ldb,*)
+    real(kind=kreal), intent(out) :: c(ldc,*)
+#ifdef HECMW_WITH_LAPACK
+    external :: dgemm
+
+    call dgemm('N', 'N', m, n, k, 1.0d0, a, lda, b, ldb, 0.0d0, c, ldc)
+#else
+    integer(kind=kint) :: i, j, p
+
+    do j = 1, n
+      do i = 1, m
+        c(i,j) = 0.0d0
+      enddo
+      do p = 1, k
+        do i = 1, m
+          c(i,j) = c(i,j) + a(i,p)*b(p,j)
+        enddo
+      enddo
+    enddo
+#endif
+  end subroutine hecmw_mf_kernel_mult_nn
+
+  !> c(m,n) <- a(k,m)^T * b(k,n)
+  subroutine hecmw_mf_kernel_mult_tn(m, n, k, lda, a, ldb, b, ldc, c)
+    implicit none
+    integer(kind=kint), intent(in) :: m, n, k, lda, ldb, ldc
+    real(kind=kreal), intent(in) :: a(lda,*), b(ldb,*)
+    real(kind=kreal), intent(out) :: c(ldc,*)
+#ifdef HECMW_WITH_LAPACK
+    external :: dgemm
+
+    call dgemm('T', 'N', m, n, k, 1.0d0, a, lda, b, ldb, 0.0d0, c, ldc)
+#else
+    integer(kind=kint) :: i, j, p
+
+    do j = 1, n
+      do i = 1, m
+        c(i,j) = 0.0d0
+        do p = 1, k
+          c(i,j) = c(i,j) + a(p,i)*b(p,j)
+        enddo
+      enddo
+    enddo
+#endif
+  end subroutine hecmw_mf_kernel_mult_tn
+
+  !> y(n) <- a(m,n)^T * x(m)
+  subroutine hecmw_mf_kernel_mult_tv(m, n, lda, a, x, y)
+    implicit none
+    integer(kind=kint), intent(in) :: m, n, lda
+    real(kind=kreal), intent(in) :: a(lda,*)
+    real(kind=kreal), intent(in) :: x(m)
+    real(kind=kreal), intent(out) :: y(n)
+    integer(kind=kint) :: i, j
+
+    do j = 1, n
+      y(j) = 0.0d0
+      do i = 1, m
+        y(j) = y(j) + a(i,j)*x(i)
+      enddo
+    enddo
+  end subroutine hecmw_mf_kernel_mult_tv
+
+  !> w(n,r) <- D * v(n,r) with the block diagonal D of the factored tile l(n,n).
+  subroutine hecmw_mf_kernel_scale_rows(n, r, ldl, l, ptype, dsub, ldv, v, ldw, w)
+    implicit none
+    integer(kind=kint), intent(in) :: n, r, ldl, ldv, ldw
+    real(kind=kreal), intent(in) :: l(ldl,*)
+    integer(kind=kint), intent(in) :: ptype(n)
+    real(kind=kreal), intent(in) :: dsub(n)
+    real(kind=kreal), intent(in) :: v(ldv,*)
+    real(kind=kreal), intent(out) :: w(ldw,*)
+    integer(kind=kint) :: q, c
+    real(kind=kreal) :: d11, d21, d22
+
+    q = 1
+    do while (q <= n)
+      if (ptype(q) == 1) then
+        do c = 1, r
+          w(q,c) = v(q,c) * l(q,q)
+        enddo
+        q = q + 1
+      else
+        d11 = l(q,q)
+        d21 = dsub(q)
+        d22 = l(q+1,q+1)
+        do c = 1, r
+          w(q,c) = v(q,c)*d11 + v(q+1,c)*d21
+          w(q+1,c) = v(q,c)*d21 + v(q+1,c)*d22
+        enddo
+        q = q + 2
+      endif
+    enddo
+  end subroutine hecmw_mf_kernel_scale_rows
 
 end module hecmw_mf_kernel

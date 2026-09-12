@@ -37,12 +37,14 @@ module hecmw_mf_numeric
   public :: hecmw_mf_numeric_print
   public :: hecmw_mf_numeric_finalize
 
-  !> pivot threshold: entries of L are bounded by 1/MF_PIVOT_U
+  !> default pivot threshold: entries of L are bounded by 1/u
   real(kind=kreal), parameter :: MF_PIVOT_U = 0.01d0
   !> Bunch-Kaufman constant
   real(kind=kreal), parameter :: MF_PIVOT_ALPHA = (1.0d0 + sqrt(17.0d0)) / 8.0d0
-  !> a pivot is treated as zero below this fraction of the largest entry of the matrix
+  !> default zero pivot fraction of the largest entry of the matrix
   real(kind=kreal), parameter :: MF_PIVOT_ZERO = 1.0d-14
+  !> default BLR truncation threshold
+  real(kind=kreal), parameter :: MF_BLR_EPS = 1.0d-8
   !> the matrix is factored in LU mode above this asymmetry, max|A_ij - A_ji| / max|A_ij|
   real(kind=kreal), parameter :: MF_ASYM_TOL = 1.0d-12
   !> a front with at least this many rows parallelizes its tiles across the team
@@ -50,7 +52,10 @@ module hecmw_mf_numeric
 
   !> per-supernode part of the factorization; cval holds the contribution block from the
   !> factorization of the supernode until the extend-add of the parent frees it, dval holds
-  !> the forward-solve contribution the same way
+  !> the forward-solve contribution the same way.
+  !> With BLR a stored panel tile may be low rank: lval then holds U (hi x r) followed by
+  !> V (tw x r) at bptr with the tile ~ U V^T, a full rank tile keeps the plain hi x tw
+  !> layout, and brank(-1 = full rank) tells them apart; uval has its own bptru/branku
   type mf_snode
     integer(kind=kint) :: ncol = 0                  !< fully summed positions
     integer(kind=kint) :: npiv = 0                  !< pivots eliminated (positions 1:npiv)
@@ -62,6 +67,11 @@ module hecmw_mf_numeric
     integer(kind=kint), allocatable :: frow(:)      !< permuted DOF of the row at a position
     integer(kind=kint), allocatable :: ptype(:)     !< pivot type at a position (see hecmw_mf_kernel)
     real(kind=kreal), allocatable :: dsub(:)        !< off-diagonal entry of a 2x2 pivot at its first position
+    integer(kind=8), allocatable :: bptr(:)         !< BLR: word offset of panel tile (i,k) in lval at
+                                                    !< mf_bidx(nt,k,i), bptr(ntile+1) the total words
+    integer(kind=kint), allocatable :: brank(:)     !< BLR: rank of a panel tile, -1 = full rank
+    integer(kind=8), allocatable :: bptru(:)        !< BLR: the same for uval (LU mode)
+    integer(kind=kint), allocatable :: branku(:)
     real(kind=kreal), allocatable :: lval(:)        !< factor panel, the leading npiv tile grid columns
     real(kind=kreal), allocatable :: uval(:)        !< U panel of LU mode, same layout as lval
     real(kind=kreal), allocatable :: cval(:)        !< contribution block (lower face, then upper in LU mode)
@@ -81,6 +91,14 @@ module hecmw_mf_numeric
     integer(kind=kint), allocatable :: clist(:)     !< clist(cptr(s):cptr(s+1)-1), for the task dependences
     integer(kind=kint), allocatable :: mirror(:)    !< AU entry holding the transpose of AL entry k
     integer(kind=kint), allocatable :: mirroru(:)   !< AL entry holding the transpose of AU entry k
+    ! numeric options; the driver sets them from the solver option lines before every
+    ! factorization, 0 (or below) selecting the built-in default, and the factorization
+    ! writes the effective values back
+    integer(kind=kint) :: mode = 0                  !< 0 auto, 1 force LDLt, 2 force LU
+    logical :: blr = .false.                        !< compress the factor panels (BLR)
+    real(kind=kreal) :: eps = 0.0d0                 !< BLR truncation threshold
+    real(kind=kreal) :: pivot_u = 0.0d0             !< pivot threshold: entries of L bounded by 1/u
+    real(kind=kreal) :: pivot_zero = 0.0d0          !< zero pivot fraction of max|A|
     ! layout of the last factorization
     logical :: lu = .false.                         !< LU mode (else LDLt)
     real(kind=kreal) :: asym = 0.0d0                !< max|A_ij - A_ji| / max|A_ij| of the last matrix
@@ -106,6 +124,11 @@ module hecmw_mf_numeric
     integer(kind=kint) :: n_swap = 0
     integer(kind=kint) :: n_delay = 0               !< delay events (a DOF delayed twice counts twice)
     integer(kind=kint) :: max_growth = 0            !< largest number of delayed DOFs received by a front
+    integer(kind=8) :: blr_words_fr = 0             !< words the stored panels would take full rank
+    integer(kind=8) :: blr_tiles = 0                !< panel tiles offered to the compression
+    integer(kind=8) :: blr_tiles_lr = 0             !< panel tiles kept low rank
+    integer(kind=8) :: blr_rank_sum = 0
+    integer(kind=kint) :: blr_rank_max = 0
     logical :: factored = .false.
   end type hecmwST_mf_factor
 
@@ -137,6 +160,12 @@ module hecmw_mf_numeric
     integer(kind=kint), allocatable :: cmapdof(:)
     integer(kind=kint), allocatable :: ctb(:)
     integer(kind=8), allocatable :: ccoloff(:)
+    real(kind=kreal), allocatable :: bval(:)        !< BLR: U, V (and D*V in LDLt mode) of the
+    integer(kind=8), allocatable :: boff(:)         !< compressed panel tiles, their slot offsets
+    integer(kind=kint), allocatable :: brk(:)       !< and ranks (-1 = kept full rank)
+    real(kind=kreal), allocatable :: bvalu(:)       !< BLR: the same for the upper grid (LU mode)
+    integer(kind=8), allocatable :: boffu(:)
+    integer(kind=kint), allocatable :: brku(:)
   end type mf_work
 
 contains
@@ -299,6 +328,24 @@ contains
     endif
   end subroutine mf_grow_i
 
+  subroutine mf_grow_i8(a, need)
+    implicit none
+    integer(kind=8), allocatable, intent(inout) :: a(:)
+    integer(kind=kint), intent(in) :: need
+    integer(kind=8), allocatable :: t(:)
+    integer(kind=kint) :: n
+
+    if (allocated(a)) then
+      if (size(a) >= need) return
+      n = max(need, size(a) + size(a)/2)
+      allocate(t(n))
+      t(1:size(a)) = a(:)
+      call move_alloc(t, a)
+    else
+      allocate(a(max(need, 1)))
+    endif
+  end subroutine mf_grow_i8
+
   !> Tile grid of supernode s whose fully summed part holds ndel delayed DOFs after the own
   !> DOFs: a tile ends at the last node boundary that keeps it within the target size, the own
   !> DOFs and the fully summed part end on tile boundaries, delayed DOFs are cut in tile sized
@@ -399,6 +446,48 @@ contains
     tj = g%dtile(c-1)
     idx = mf_off(g, ti, tj) + int(c - 1 - g%tb(tj-1), 8)*(g%tb(ti) - g%tb(ti-1)) + (r - 1 - g%tb(ti-1)) + 1
   end function mf_idx
+
+  !> Index of the stored panel tile (i,k), i >= k, in the per column enumeration of a front
+  !> with nt tiles (every tile of a column, then the next column).
+  function mf_bidx(nt, k, i) result(idx)
+    implicit none
+    integer(kind=kint), intent(in) :: nt, k, i
+    integer(kind=kint) :: idx
+
+    idx = (k-1)*(nt+1) - (k-1)*k/2 + (i - k + 1)
+  end function mf_bidx
+
+  !> c(m,n) <- c - A * B^T where A (m x k) is fa or the low rank ua(m,ra) va(k,ra)^T and
+  !> B (n x k) is fb or ub(n,rb) vb(k,rb)^T. A rank of -1 selects the full rank operand,
+  !> a rank of 0 makes the product zero.
+  subroutine mf_update_ab(m, n, k, ra, fa, ua, va, rb, fb, ub, vb, c)
+    implicit none
+    integer(kind=kint), intent(in) :: m, n, k, ra, rb
+    real(kind=kreal), intent(in) :: fa(*), ua(*), va(*), fb(*), ub(*), vb(*)
+    real(kind=kreal), intent(inout) :: c(*)
+    real(kind=kreal), allocatable :: s(:), t(:)
+
+    if (ra == 0 .or. rb == 0) return
+    if (ra < 0 .and. rb < 0) then
+      call hecmw_mf_kernel_gemm(m, n, k, m, fa, n, fb, m, c)
+    else if (ra >= 0 .and. rb < 0) then
+      allocate(t(int(n, 8)*ra))
+      call hecmw_mf_kernel_mult_nn(n, ra, k, n, fb, k, va, n, t)
+      call hecmw_mf_kernel_gemm(m, n, ra, m, ua, n, t, m, c)
+      deallocate(t)
+    else if (ra < 0) then
+      allocate(t(int(m, 8)*rb))
+      call hecmw_mf_kernel_mult_nn(m, rb, k, m, fa, k, vb, m, t)
+      call hecmw_mf_kernel_gemm(m, n, rb, m, t, n, ub, m, c)
+      deallocate(t)
+    else
+      allocate(s(int(ra, 8)*rb), t(int(m, 8)*rb))
+      call hecmw_mf_kernel_mult_tn(ra, rb, k, k, va, k, vb, ra, s)
+      call hecmw_mf_kernel_mult_nn(m, rb, ra, m, ua, ra, s, m, t)
+      call hecmw_mf_kernel_gemm(m, n, rb, m, t, n, ub, m, c)
+      deallocate(s, t)
+    endif
+  end subroutine mf_update_ab
 
   !> vec(1:nrow-i0+1) <- entries (i,x) of the front for i = i0..nrow (get) or the reverse (put).
   subroutine mf_col_copy(g, fval, x, i0, vec, put)
@@ -711,6 +800,8 @@ contains
     fct%asym = 0.0d0
     if (amax > 0.0d0) fct%asym = asym / amax
     fct%lu = (.not. hecMAT%symmetric) .or. (fct%asym > MF_ASYM_TOL)
+    if (fct%mode == 1) fct%lu = .false.
+    if (fct%mode == 2) fct%lu = .true.
   end subroutine mf_asymmetry
 
   !> Push the contribution block of the grid gval (positions beyond npiv) at sval(top+1:): the
@@ -785,7 +876,13 @@ contains
     amax = maxval(abs(hecMAT%D(1:hecMAT%NP*nd*nd)))
     if (hecMAT%NPL > 0) amax = max(amax, maxval(abs(hecMAT%AL(1:hecMAT%NPL*nd*nd))))
     if (hecMAT%NPU > 0) amax = max(amax, maxval(abs(hecMAT%AU(1:hecMAT%NPU*nd*nd))))
-    zero = MF_PIVOT_ZERO * amax
+    if (.not. (fct%pivot_u > 0.0d0)) fct%pivot_u = MF_PIVOT_U
+    if (.not. (fct%pivot_zero > 0.0d0)) fct%pivot_zero = MF_PIVOT_ZERO
+    if (fct%blr) then
+      if (.not. hecmw_mf_kernel_blr_available()) fct%blr = .false.
+      if (.not. (fct%eps > 0.0d0)) fct%eps = MF_BLR_EPS
+    endif
+    zero = fct%pivot_zero * amax
     call mf_mirror(hecMAT, fct, ierr)
     if (ierr /= 0) return
     call mf_asymmetry(hecMAT, fct, amax)
@@ -802,6 +899,11 @@ contains
     fct%live_cb = 0
     fct%live_front = 0
     fct%front_peak = 0
+    fct%blr_words_fr = 0
+    fct%blr_tiles = 0
+    fct%blr_tiles_lr = 0
+    fct%blr_rank_sum = 0
+    fct%blr_rank_max = 0
 
     nthr = 1
     !$ nthr = omp_get_max_threads()
@@ -906,8 +1008,8 @@ contains
     integer(kind=kint), intent(out) :: ierr
     integer(kind=kint) :: nown, nrow_nodes, ncol0, ndel, c, i, j, k, l, nd, a, b, m, r, cc
     integer(kind=kint) :: j0, ki, kk, coff, roff, cnown, cnb, cndel, cnrow, hi, cnt, cntc, kbeg, nkc
-    integer(kind=kint) :: nswap, n2x2, npos, nneg
-    integer(kind=8) :: o, base, base2, half, pw, fw
+    integer(kind=kint) :: nswap, n2x2, npos, nneg, ntl, nlr, rmax
+    integer(kind=8) :: o, base, base2, half, pw, fw, rsum, pwa, pwu
     integer(kind=8), allocatable :: pcb(:)
     real(kind=kreal) :: v
     logical :: par
@@ -1137,12 +1239,18 @@ contains
     n2x2 = 0
     npos = 0
     nneg = 0
+    ntl = 0
+    nlr = 0
+    rsum = 0
+    rmax = 0
     if (fct%lu) then
       call mf_factor_front_lu(sn, wrk%g, wrk%fval, wrk%fvalu, wrk%pval, wrk%pvalu, wrk%wk, wrk%blk, wrk%blkr, &
-        sym%sparent(s) == 0, zero, nswap, ierr)
+        sym%sparent(s) == 0, fct%pivot_u, zero, fct%blr, fct%eps, wrk%bval, wrk%boff, wrk%brk, &
+        wrk%bvalu, wrk%boffu, wrk%brku, nswap, ntl, nlr, rsum, rmax, ierr)
     else
       call mf_factor_front(sn, wrk%g, wrk%fval, wrk%pval, wrk%wval, wrk%wk, wrk%blk, &
-        sym%sparent(s) == 0, zero, nswap, n2x2, npos, nneg, ierr)
+        sym%sparent(s) == 0, fct%pivot_u, zero, fct%blr, fct%eps, wrk%bval, wrk%boff, wrk%brk, &
+        nswap, n2x2, npos, nneg, ntl, nlr, rsum, rmax, ierr)
       sn%frow(1:wrk%g%ncol) = sn%fsdof(1:wrk%g%ncol)
     endif
     if (ierr /= 0) then
@@ -1157,6 +1265,10 @@ contains
     fct%n_pos = fct%n_pos + npos
     fct%n_neg = fct%n_neg + nneg
     fct%n_delay = fct%n_delay + wrk%g%ncol - sn%npiv
+    fct%blr_tiles = fct%blr_tiles + ntl
+    fct%blr_tiles_lr = fct%blr_tiles_lr + nlr
+    fct%blr_rank_sum = fct%blr_rank_sum + rsum
+    fct%blr_rank_max = max(fct%blr_rank_max, rmax)
     !$omp end critical (mf_stats)
 
     ! the factor panel: the leading npiv columns of the tile grid, tile by tile
@@ -1166,8 +1278,6 @@ contains
       if (m <= 0) exit
       pw = pw + int(wrk%g%nrow - wrk%g%tb(k-1), 8)*m
     enddo
-    call mf_grow_r(sn%lval, pw)
-    if (fct%lu) call mf_grow_r(sn%uval, pw)
     allocate(pcb(0:wrk%g%ntc))
     nkc = 0
     pcb(0) = 1
@@ -1177,22 +1287,39 @@ contains
       nkc = k
       pcb(k) = pcb(k-1) + int(wrk%g%nrow - wrk%g%tb(k-1), 8)*m
     enddo
-    !$omp taskloop default(shared) private(m, i, hi, o, base) grainsize(1) if(par)
-    do k = 1, nkc
-      m = min(wrk%g%tb(k), sn%npiv) - wrk%g%tb(k-1)
-      base = pcb(k-1)
-      do i = k, wrk%g%nt
-        hi = wrk%g%tb(i) - wrk%g%tb(i-1)
-        o = mf_off(wrk%g, i, k)
-        sn%lval(base:base+int(hi, 8)*m-1) = wrk%fval(o+1:o+int(hi, 8)*m)
-        if (fct%lu) sn%uval(base:base+int(hi, 8)*m-1) = wrk%fvalu(o+1:o+int(hi, 8)*m)
-        base = base + int(hi, 8)*m
+    if (.not. fct%blr) then
+      call mf_grow_r(sn%lval, pw)
+      if (fct%lu) call mf_grow_r(sn%uval, pw)
+      !$omp taskloop default(shared) private(m, i, hi, o, base) grainsize(1) if(par)
+      do k = 1, nkc
+        m = min(wrk%g%tb(k), sn%npiv) - wrk%g%tb(k-1)
+        base = pcb(k-1)
+        do i = k, wrk%g%nt
+          hi = wrk%g%tb(i) - wrk%g%tb(i-1)
+          o = mf_off(wrk%g, i, k)
+          sn%lval(base:base+int(hi, 8)*m-1) = wrk%fval(o+1:o+int(hi, 8)*m)
+          if (fct%lu) sn%uval(base:base+int(hi, 8)*m-1) = wrk%fvalu(o+1:o+int(hi, 8)*m)
+          base = base + int(hi, 8)*m
+        enddo
       enddo
-    enddo
-    !$omp end taskloop
-    !$omp critical (mf_stats)
-    fct%factor_words_act = fct%factor_words_act + pw
-    !$omp end critical (mf_stats)
+      !$omp end taskloop
+      !$omp critical (mf_stats)
+      fct%factor_words_act = fct%factor_words_act + pw
+      !$omp end critical (mf_stats)
+    else
+      call mf_store_blr(wrk%g, sn%npiv, nkc, wrk%fval, wrk%bval, wrk%boff, wrk%brk, &
+        sn%brank, sn%bptr, sn%lval, pwa, par)
+      if (fct%lu) then
+        call mf_store_blr(wrk%g, sn%npiv, nkc, wrk%fvalu, wrk%bvalu, wrk%boffu, wrk%brku, &
+          sn%branku, sn%bptru, sn%uval, pwu, par)
+        pwa = pwa + pwu
+      endif
+      !$omp critical (mf_stats)
+      fct%factor_words_act = fct%factor_words_act + pwa
+      fct%blr_words_fr = fct%blr_words_fr + pw
+      if (fct%lu) fct%blr_words_fr = fct%blr_words_fr + pw
+      !$omp end critical (mf_stats)
+    endif
 
     ! the contribution block: the delayed DOFs as one tile followed by the contribution tiles;
     ! in LU mode the upper grid follows the lower one
@@ -1249,6 +1376,72 @@ contains
 
   end subroutine mf_super_factor
 
+  !> BLR panel store of one grid: build the tile offsets and ranks of the stored panel from
+  !> the compression results, pack the full rank tiles from the grid and U, V of the
+  !> compressed tiles from the compression slots; pwa returns the stored words.
+  subroutine mf_store_blr(g, npiv, nkc, gval, bval, boff, brk, brank, bptr, dst, pwa, par)
+    implicit none
+    type(mf_grid), intent(in) :: g
+    integer(kind=kint), intent(in) :: npiv, nkc
+    real(kind=kreal), intent(in) :: gval(:), bval(:)
+    integer(kind=8), intent(in) :: boff(:)
+    integer(kind=kint), intent(in) :: brk(:)
+    integer(kind=kint), allocatable, intent(inout) :: brank(:)
+    integer(kind=8), allocatable, intent(inout) :: bptr(:)
+    real(kind=kreal), allocatable, intent(inout) :: dst(:)
+    integer(kind=8), intent(out) :: pwa
+    logical, intent(in) :: par
+    integer(kind=kint) :: ntile, k, i, m, hi, r, idx
+    integer(kind=8) :: off, base, ob, o
+
+    ntile = 0
+    do k = 1, nkc
+      ntile = ntile + g%nt - k + 1
+    enddo
+    call mf_grow_i(brank, ntile)
+    call mf_grow_i8(bptr, ntile + 1)
+    off = 0
+    do k = 1, nkc
+      m = min(g%tb(k), npiv) - g%tb(k-1)
+      do i = k, g%nt
+        idx = mf_bidx(g%nt, k, i)
+        hi = g%tb(i) - g%tb(i-1)
+        r = -1
+        if (i > g%ntc) r = brk(idx)
+        brank(idx) = r
+        bptr(idx) = off
+        if (r < 0) then
+          off = off + int(hi, 8)*m
+        else
+          off = off + int(r, 8)*(hi + m)
+        endif
+      enddo
+    enddo
+    bptr(ntile+1) = off
+    pwa = off
+    call mf_grow_r(dst, pwa)
+    !$omp taskloop default(shared) private(m, i, idx, hi, r, base, ob, o) grainsize(1) if(par)
+    do k = 1, nkc
+      m = min(g%tb(k), npiv) - g%tb(k-1)
+      do i = k, g%nt
+        idx = mf_bidx(g%nt, k, i)
+        hi = g%tb(i) - g%tb(i-1)
+        r = brank(idx)
+        base = bptr(idx)
+        if (r < 0) then
+          o = mf_off(g, i, k)
+          dst(base+1:base+int(hi, 8)*m) = gval(o+1:o+int(hi, 8)*m)
+        else if (r > 0) then
+          ob = boff(idx)
+          dst(base+1:base+int(hi, 8)*r) = bval(ob+1:ob+int(hi, 8)*r)
+          dst(base+int(hi, 8)*r+1:base+int(hi, 8)*r+int(m, 8)*r) = &
+            bval(ob+int(hi, 8)*m+1:ob+int(hi, 8)*m+int(m, 8)*r)
+        endif
+      enddo
+    enddo
+    !$omp end taskloop
+  end subroutine mf_store_blr
+
   !> Factor the fully summed part of the assembled front of supernode s, tile column by tile
   !> column. A tile column is first factored without pivoting in the dense work panel and
   !> accepted when the threshold holds; otherwise the panel is refilled and factored with
@@ -1256,20 +1449,25 @@ contains
   !> columns and the tile column is refilled until it is complete or no column is left. The
   !> pivots of a tile column then update the trailing tiles. At a root the remaining delayed
   !> columns are factored in a final panel where any column may serve as partner.
-  subroutine mf_factor_front(sn, g, fval, pval, wval, wk, blk, isroot, zero, nswap, n2x2, npos, nneg, ierr)
+  subroutine mf_factor_front(sn, g, fval, pval, wval, wk, blk, isroot, u, zero, blr, eps, &
+      bval, boff, brk, nswap, n2x2, npos, nneg, ntl, nlr, rsum, rmax, ierr)
     implicit none
     type(mf_snode), intent(inout) :: sn
     type(mf_grid), intent(in) :: g
     real(kind=kreal), allocatable, intent(inout) :: fval(:)
     real(kind=kreal), allocatable, intent(inout) :: pval(:), wval(:), wk(:)
     integer(kind=kint), intent(inout) :: blk(:)
-    logical, intent(in) :: isroot
-    real(kind=kreal), intent(in) :: zero
-    integer(kind=kint), intent(out) :: nswap, n2x2, npos, nneg, ierr
+    logical, intent(in) :: isroot, blr
+    real(kind=kreal), intent(in) :: u, zero, eps
+    real(kind=kreal), allocatable, intent(inout) :: bval(:)
+    integer(kind=8), allocatable, intent(inout) :: boff(:)
+    integer(kind=kint), allocatable, intent(inout) :: brk(:)
+    integer(kind=kint), intent(out) :: nswap, n2x2, npos, nneg, ntl, nlr, rmax, ierr
+    integer(kind=8), intent(out) :: rsum
     integer(kind=kint), allocatable :: perm(:), itmp(:), ip(:), jp(:)
     integer(kind=kint) :: npiv, nfs, k, p0, pa, pb, w, m, jj, np, nsw, n22, info, x, i, j, hi, wj, pk, pt
-    integer(kind=kint) :: np2, l2
-    integer(kind=8) :: oik, ojk, oij, okk
+    integer(kind=kint) :: np2, l2, mn, r, ra, rb
+    integer(kind=8) :: oik, ojk, oij, okk, btop, ob, oa, oav, ob2, obv, iw
     real(kind=kreal) :: d11, d21, d22, det
     logical :: par
 
@@ -1278,6 +1476,17 @@ contains
     n2x2 = 0
     npos = 0
     nneg = 0
+    ntl = 0
+    nlr = 0
+    rsum = 0
+    rmax = 0
+    btop = 0
+    if (blr) then
+      call mf_grow_i(brk, mf_bidx(g%nt, g%ntc, g%nt))
+      call mf_grow_i8(boff, mf_bidx(g%nt, g%ntc, g%nt))
+      call mf_grow_r(bval, 1_8)
+      brk(1:mf_bidx(g%nt, g%ntc, g%nt)) = -1
+    endif
     par = .false.
     !$ par = g%nrow >= MF_PAR_ROWS .and. omp_get_num_threads() > 1
     sn%ptype(1:g%ncol) = 0
@@ -1298,7 +1507,7 @@ contains
         call mf_grow_r(pval, int(m, 8)*w)
         call mf_grow_r(wk, int(2*m, 8))
         call fill_panel(npiv > p0)
-        call hecmw_mf_kernel_panel_nopiv(m, w, m, pval, MF_PIVOT_U, zero, info)
+        call hecmw_mf_kernel_panel_nopiv(m, w, m, pval, u, zero, info)
         if (info == 0) then
           sn%ptype(pa:pb) = 1
           do jj = 1, w
@@ -1309,7 +1518,7 @@ contains
           cycle
         endif
         call fill_panel(npiv > p0)
-        call hecmw_mf_kernel_panel_piv(m, w, m, pval, blk(pa:pb), MF_PIVOT_U, MF_PIVOT_ALPHA, zero, &
+        call hecmw_mf_kernel_panel_piv(m, w, m, pval, blk(pa:pb), u, MF_PIVOT_ALPHA, zero, &
           .true., wk, np, perm, sn%ptype(pa:pb), sn%dsub(pa:pb), nsw, n22, info)
         call permute_rows(pa, w)
         do jj = 1, np
@@ -1337,9 +1546,98 @@ contains
       ! tile column k; a parallel front builds the scaled panel L*D for all trailing row tiles
       ! first so that the tile updates are independent
       pk = npiv - p0
+      if (blr .and. pk > 0) then
+        ! compress the contribution-row tiles of the column before the updates use them; the
+        ! fully summed rows stay full rank because later pivot exchanges still permute them.
+        ! The grid keeps the full rank values (the delayed column updates read them) and the
+        ! slots are reserved up front so that the layout is schedule independent
+        do i = g%ntc+1, g%nt
+          hi = g%tb(i) - g%tb(i-1)
+          boff(mf_bidx(g%nt, k, i)) = btop
+          btop = btop + int(hi, 8)*pk + 2_8*int(pk, 8)*min(hi, pk)
+        enddo
+        call mf_grow_r(bval, btop)
+        !$omp taskloop default(shared) private(hi, ob, oik, r) grainsize(1) if(par)
+        do i = g%ntc+1, g%nt
+          hi = g%tb(i) - g%tb(i-1)
+          ob = boff(mf_bidx(g%nt, k, i))
+          oik = mf_off(g, i, k)
+          bval(ob+1:ob+int(hi, 8)*pk) = fval(oik+1:oik+int(hi, 8)*pk)
+          call hecmw_mf_kernel_compress(hi, pk, hi, bval(ob+1), eps, pk, bval(ob+int(hi, 8)*pk+1), r)
+          brk(mf_bidx(g%nt, k, i)) = r
+        enddo
+        !$omp end taskloop
+        do i = g%ntc+1, g%nt
+          ntl = ntl + 1
+          r = brk(mf_bidx(g%nt, k, i))
+          if (r >= 0) then
+            nlr = nlr + 1
+            rsum = rsum + r
+            rmax = max(rmax, r)
+          endif
+        enddo
+      endif
       if (pk > 0) then
         okk = mf_off(g, k, k)
-        if (par) then
+        if (blr) then
+          ! scaled panels: L*D of the full rank row tiles into wval, D*V of the compressed
+          ! ones into their slot, then the (i,j) tile updates in full/low rank combinations
+          call mf_grow_r(wval, int(g%nrow - g%tb(k), 8)*pk)
+          !$omp taskloop default(shared) private(hi, mn, ob, oik, r) grainsize(1) if(par)
+          do i = k+1, g%nt
+            hi = g%tb(i) - g%tb(i-1)
+            oik = mf_off(g, i, k)
+            r = -1
+            if (i > g%ntc) r = brk(mf_bidx(g%nt, k, i))
+            if (r < 0) then
+              call hecmw_mf_kernel_scale(hi, pk, g%tb(k) - g%tb(k-1), fval(okk+1), sn%ptype(p0+1:npiv), &
+                sn%dsub(p0+1:npiv), hi, fval(oik+1), wval(int(g%tb(i-1) - g%tb(k), 8)*pk + 1))
+            else if (r > 0) then
+              mn = min(hi, pk)
+              ob = boff(mf_bidx(g%nt, k, i))
+              call hecmw_mf_kernel_scale_rows(pk, r, g%tb(k) - g%tb(k-1), fval(okk+1), sn%ptype(p0+1:npiv), &
+                sn%dsub(p0+1:npiv), pk, bval(ob+int(hi, 8)*pk+1), pk, bval(ob+int(hi, 8)*pk+int(pk, 8)*mn+1))
+            endif
+          enddo
+          !$omp end taskloop
+          np2 = 0
+          do i = k+1, g%nt
+            do j = k+1, i
+              np2 = np2 + 1
+              ip(np2) = i
+              jp(np2) = j
+            enddo
+          enddo
+          !$omp taskloop default(shared) private(i, j, hi, wj, ra, rb, oa, oav, ob2, obv, oij, iw) &
+          !$omp&  grainsize(1) if(par)
+          do l2 = 1, np2
+            i = ip(l2)
+            j = jp(l2)
+            hi = g%tb(i) - g%tb(i-1)
+            wj = g%tb(j) - g%tb(j-1)
+            oij = mf_off(g, i, j)
+            iw = int(g%tb(i-1) - g%tb(k), 8)*pk
+            ra = -1
+            oa = 0
+            oav = 0
+            if (i > g%ntc) ra = brk(mf_bidx(g%nt, k, i))
+            if (ra >= 0) then
+              oa = boff(mf_bidx(g%nt, k, i))
+              oav = oa + int(hi, 8)*pk + int(pk, 8)*min(hi, pk)
+            endif
+            rb = -1
+            ob2 = 0
+            obv = 0
+            if (j > g%ntc) rb = brk(mf_bidx(g%nt, k, j))
+            if (rb >= 0) then
+              ob2 = boff(mf_bidx(g%nt, k, j))
+              obv = ob2 + int(wj, 8)*pk
+            endif
+            call mf_update_ab(hi, wj, pk, ra, wval(iw+1), bval(oa+1), bval(oav+1), &
+              rb, fval(mf_off(g, j, k)+1), bval(ob2+1), bval(obv+1), fval(oij+1))
+          enddo
+          !$omp end taskloop
+        else if (par) then
           call mf_grow_r(wval, int(g%nrow - g%tb(k), 8)*pk)
           !$omp taskloop default(shared) private(hi, oik) grainsize(1)
           do i = k+1, g%nt
@@ -1401,7 +1699,7 @@ contains
       call mf_grow_r(pval, int(m, 8)*w)
       call mf_grow_r(wk, int(2*m, 8))
       call fill_panel(.false.)
-      call hecmw_mf_kernel_panel_piv(m, w, m, pval, blk(pa:pb), MF_PIVOT_U, MF_PIVOT_ALPHA, zero, &
+      call hecmw_mf_kernel_panel_piv(m, w, m, pval, blk(pa:pb), u, MF_PIVOT_ALPHA, zero, &
         .false., wk, np, perm, sn%ptype(pa:pb), sn%dsub(pa:pb), nsw, n22, info)
       call permute_rows(pa, w)
       nswap = nswap + nsw
@@ -1504,24 +1802,45 @@ contains
   !> exchanges are applied to the front and to frow, and the row of U of a pivot (a column of
   !> fvalu) is complete at write back, so that a column left behind receives the update of the
   !> tile column's pivots as two vector operations, one on each grid.
-  subroutine mf_factor_front_lu(sn, g, fval, fvalu, pval, pvalu, wk, blk, blkr, isroot, zero, nswap, ierr)
+  subroutine mf_factor_front_lu(sn, g, fval, fvalu, pval, pvalu, wk, blk, blkr, isroot, u, zero, &
+      blr, eps, bval, boff, brk, bvalu, boffu, brku, nswap, ntl, nlr, rsum, rmax, ierr)
     implicit none
     type(mf_snode), intent(inout) :: sn
     type(mf_grid), intent(in) :: g
     real(kind=kreal), allocatable, intent(inout) :: fval(:), fvalu(:)
     real(kind=kreal), allocatable, intent(inout) :: pval(:), pvalu(:), wk(:)
     integer(kind=kint), intent(inout) :: blk(:), blkr(:)
-    logical, intent(in) :: isroot
-    real(kind=kreal), intent(in) :: zero
-    integer(kind=kint), intent(out) :: nswap, ierr
+    logical, intent(in) :: isroot, blr
+    real(kind=kreal), intent(in) :: u, zero, eps
+    real(kind=kreal), allocatable, intent(inout) :: bval(:), bvalu(:)
+    integer(kind=8), allocatable, intent(inout) :: boff(:), boffu(:)
+    integer(kind=kint), allocatable, intent(inout) :: brk(:), brku(:)
+    integer(kind=kint), intent(out) :: nswap, ntl, nlr, rmax, ierr
+    integer(kind=8), intent(out) :: rsum
     integer(kind=kint), allocatable :: permc(:), permr(:), itmp(:), ip(:), jp(:)
     integer(kind=kint) :: npiv, nfs, k, p0, pa, pb, w, m, np, nsw, info, x, i, j, hi, wj, pk
-    integer(kind=kint) :: np2, l2
-    integer(kind=8) :: oik, ojk, oij
+    integer(kind=kint) :: np2, l2, r, rla, rlb, rua, rub
+    integer(kind=8) :: oik, ojk, oij, btop, btopu, ob, ola, olav, olb, olbv, oua, ouav, oub, oubv
     logical :: par
 
     ierr = 0
     nswap = 0
+    ntl = 0
+    nlr = 0
+    rsum = 0
+    rmax = 0
+    btop = 0
+    btopu = 0
+    if (blr) then
+      call mf_grow_i(brk, mf_bidx(g%nt, g%ntc, g%nt))
+      call mf_grow_i(brku, mf_bidx(g%nt, g%ntc, g%nt))
+      call mf_grow_i8(boff, mf_bidx(g%nt, g%ntc, g%nt))
+      call mf_grow_i8(boffu, mf_bidx(g%nt, g%ntc, g%nt))
+      call mf_grow_r(bval, 1_8)
+      call mf_grow_r(bvalu, 1_8)
+      brk(1:mf_bidx(g%nt, g%ntc, g%nt)) = -1
+      brku(1:mf_bidx(g%nt, g%ntc, g%nt)) = -1
+    endif
     par = .false.
     !$ par = g%nrow >= MF_PAR_ROWS .and. omp_get_num_threads() > 1
     sn%ptype(1:g%ncol) = 1
@@ -1543,7 +1862,7 @@ contains
         call mf_grow_r(pval, int(m, 8)*w)
         call mf_grow_r(pvalu, int(m, 8)*w)
         call fill_panel(npiv > p0)
-        call hecmw_mf_kernel_panel_lu_nopiv(m, w, m, pval, m, pvalu, MF_PIVOT_U, zero, info)
+        call hecmw_mf_kernel_panel_lu_nopiv(m, w, m, pval, m, pvalu, u, zero, info)
         if (info == 0) then
           call write_back(w)
           npiv = npiv + w
@@ -1551,7 +1870,7 @@ contains
           cycle
         endif
         call fill_panel(npiv > p0)
-        call hecmw_mf_kernel_panel_lu_piv(m, w, m, pval, m, pvalu, blk(pa:pb), blkr(pa:pb), MF_PIVOT_U, &
+        call hecmw_mf_kernel_panel_lu_piv(m, w, m, pval, m, pvalu, blk(pa:pb), blkr(pa:pb), u, &
           zero, .true., np, permc, permr, nsw, info)
         call permute_front(pa, w)
         call write_back(np)
@@ -1575,6 +1894,47 @@ contains
       ! the pivots of tile column k update the trailing tiles of both grids and the delayed
       ! columns left in tile column k
       pk = npiv - p0
+      if (blr .and. pk > 0) then
+        ! compress the contribution-row tiles of both grids, as in the LDLt mode
+        do i = g%ntc+1, g%nt
+          hi = g%tb(i) - g%tb(i-1)
+          boff(mf_bidx(g%nt, k, i)) = btop
+          btop = btop + int(hi, 8)*pk + int(pk, 8)*min(hi, pk)
+          boffu(mf_bidx(g%nt, k, i)) = btopu
+          btopu = btopu + int(hi, 8)*pk + int(pk, 8)*min(hi, pk)
+        enddo
+        call mf_grow_r(bval, btop)
+        call mf_grow_r(bvalu, btopu)
+        !$omp taskloop default(shared) private(hi, ob, oik, r) grainsize(1) if(par)
+        do i = g%ntc+1, g%nt
+          hi = g%tb(i) - g%tb(i-1)
+          oik = mf_off(g, i, k)
+          ob = boff(mf_bidx(g%nt, k, i))
+          bval(ob+1:ob+int(hi, 8)*pk) = fval(oik+1:oik+int(hi, 8)*pk)
+          call hecmw_mf_kernel_compress(hi, pk, hi, bval(ob+1), eps, pk, bval(ob+int(hi, 8)*pk+1), r)
+          brk(mf_bidx(g%nt, k, i)) = r
+          ob = boffu(mf_bidx(g%nt, k, i))
+          bvalu(ob+1:ob+int(hi, 8)*pk) = fvalu(oik+1:oik+int(hi, 8)*pk)
+          call hecmw_mf_kernel_compress(hi, pk, hi, bvalu(ob+1), eps, pk, bvalu(ob+int(hi, 8)*pk+1), r)
+          brku(mf_bidx(g%nt, k, i)) = r
+        enddo
+        !$omp end taskloop
+        do i = g%ntc+1, g%nt
+          ntl = ntl + 2
+          r = brk(mf_bidx(g%nt, k, i))
+          if (r >= 0) then
+            nlr = nlr + 1
+            rsum = rsum + r
+            rmax = max(rmax, r)
+          endif
+          r = brku(mf_bidx(g%nt, k, i))
+          if (r >= 0) then
+            nlr = nlr + 1
+            rsum = rsum + r
+            rmax = max(rmax, r)
+          endif
+        enddo
+      endif
       if (pk > 0) then
         np2 = 0
         do i = k+1, g%nt
@@ -1584,19 +1944,74 @@ contains
             jp(np2) = j
           enddo
         enddo
-        !$omp taskloop default(shared) private(i, j, hi, wj, oik, ojk, oij) grainsize(1) if(par)
-        do l2 = 1, np2
-          i = ip(l2)
-          j = jp(l2)
-          hi = g%tb(i) - g%tb(i-1)
-          wj = g%tb(j) - g%tb(j-1)
-          oik = mf_off(g, i, k)
-          ojk = mf_off(g, j, k)
-          oij = mf_off(g, i, j)
-          call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fval(oik+1), wj, fvalu(ojk+1), hi, fval(oij+1))
-          call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fvalu(oik+1), wj, fval(ojk+1), hi, fvalu(oij+1))
-        enddo
-        !$omp end taskloop
+        if (blr) then
+          !$omp taskloop default(shared) private(i, j, hi, wj, oik, ojk, oij, rla, rlb, rua, rub, &
+          !$omp&  ola, olav, olb, olbv, oua, ouav, oub, oubv) grainsize(1) if(par)
+          do l2 = 1, np2
+            i = ip(l2)
+            j = jp(l2)
+            hi = g%tb(i) - g%tb(i-1)
+            wj = g%tb(j) - g%tb(j-1)
+            oik = mf_off(g, i, k)
+            ojk = mf_off(g, j, k)
+            oij = mf_off(g, i, j)
+            rla = -1
+            ola = 0
+            olav = 0
+            rua = -1
+            oua = 0
+            ouav = 0
+            if (i > g%ntc) then
+              rla = brk(mf_bidx(g%nt, k, i))
+              rua = brku(mf_bidx(g%nt, k, i))
+              if (rla >= 0) then
+                ola = boff(mf_bidx(g%nt, k, i))
+                olav = ola + int(hi, 8)*pk
+              endif
+              if (rua >= 0) then
+                oua = boffu(mf_bidx(g%nt, k, i))
+                ouav = oua + int(hi, 8)*pk
+              endif
+            endif
+            rlb = -1
+            olb = 0
+            olbv = 0
+            rub = -1
+            oub = 0
+            oubv = 0
+            if (j > g%ntc) then
+              rlb = brk(mf_bidx(g%nt, k, j))
+              rub = brku(mf_bidx(g%nt, k, j))
+              if (rlb >= 0) then
+                olb = boff(mf_bidx(g%nt, k, j))
+                olbv = olb + int(wj, 8)*pk
+              endif
+              if (rub >= 0) then
+                oub = boffu(mf_bidx(g%nt, k, j))
+                oubv = oub + int(wj, 8)*pk
+              endif
+            endif
+            call mf_update_ab(hi, wj, pk, rla, fval(oik+1), bval(ola+1), bval(olav+1), &
+              rub, fvalu(ojk+1), bvalu(oub+1), bvalu(oubv+1), fval(oij+1))
+            call mf_update_ab(hi, wj, pk, rua, fvalu(oik+1), bvalu(oua+1), bvalu(ouav+1), &
+              rlb, fval(ojk+1), bval(olb+1), bval(olbv+1), fvalu(oij+1))
+          enddo
+          !$omp end taskloop
+        else
+          !$omp taskloop default(shared) private(i, j, hi, wj, oik, ojk, oij) grainsize(1) if(par)
+          do l2 = 1, np2
+            i = ip(l2)
+            j = jp(l2)
+            hi = g%tb(i) - g%tb(i-1)
+            wj = g%tb(j) - g%tb(j-1)
+            oik = mf_off(g, i, k)
+            ojk = mf_off(g, j, k)
+            oij = mf_off(g, i, j)
+            call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fval(oik+1), wj, fvalu(ojk+1), hi, fval(oij+1))
+            call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fvalu(oik+1), wj, fval(ojk+1), hi, fvalu(oij+1))
+          enddo
+          !$omp end taskloop
+        endif
         do x = npiv + 1, g%tb(k)
           call update_pos(x, p0 + 1, npiv)
         enddo
@@ -1612,7 +2027,7 @@ contains
       call mf_grow_r(pval, int(m, 8)*w)
       call mf_grow_r(pvalu, int(m, 8)*w)
       call fill_panel(.false.)
-      call hecmw_mf_kernel_panel_lu_piv(m, w, m, pval, m, pvalu, blk(pa:pb), blkr(pa:pb), MF_PIVOT_U, &
+      call hecmw_mf_kernel_panel_lu_piv(m, w, m, pval, m, pvalu, blk(pa:pb), blkr(pa:pb), u, &
         zero, .false., np, permc, permr, nsw, info)
       call permute_front(pa, w)
       nswap = nswap + nsw
@@ -1882,9 +2297,9 @@ contains
     real(kind=kreal), intent(inout) :: z(:)
     integer(kind=kint), intent(inout) :: map(:)
     type(mf_grid) :: g
-    real(kind=kreal), allocatable :: v(:)
+    real(kind=kreal), allocatable :: v(:), t(:)
     integer(kind=kint), allocatable :: tw(:), rowoff(:)
-    integer(kind=kint) :: nown, nrow_nodes, ncol0, ndel, d0, d1, d, c, i, j, k, l, a, r
+    integer(kind=kint) :: nown, nrow_nodes, ncol0, ndel, d0, d1, d, c, i, j, k, l, a, r, rr
     integer(kind=kint) :: cnown, cndel, hk, hi
     integer(kind=8) :: okk, oik
 
@@ -1940,21 +2355,36 @@ contains
     enddo
     deallocate(rowoff)
 
+    if (fct%blr) allocate(t(maxval(g%tb(1:g%nt) - g%tb(0:g%nt-1))))
     do k = 1, g%ntc
       if (tw(k) == 0) exit
       hk = g%tb(k) - g%tb(k-1)
       okk = 1 + g%coloff(k)
+      if (fct%blr) okk = 1 + sn%bptr(mf_bidx(g%nt, k, k))
       call hecmw_mf_kernel_trsv(tw(k), hk, sn%lval(okk), v(g%tb(k-1)+1))
       if (hk > tw(k)) call hecmw_mf_kernel_gemv(hk - tw(k), tw(k), hk, sn%lval(okk + tw(k)), v(g%tb(k-1)+1), &
         v(g%tb(k-1)+tw(k)+1))
       do i = k+1, g%nt
         hi = g%tb(i) - g%tb(i-1)
-        oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
-        call hecmw_mf_kernel_gemv(hi, tw(k), hi, sn%lval(oik), v(g%tb(k-1)+1), v(g%tb(i-1)+1))
+        rr = -1
+        if (fct%blr) then
+          rr = sn%brank(mf_bidx(g%nt, k, i))
+          oik = 1 + sn%bptr(mf_bidx(g%nt, k, i))
+        else
+          oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
+        endif
+        if (rr == 0) cycle
+        if (rr < 0) then
+          call hecmw_mf_kernel_gemv(hi, tw(k), hi, sn%lval(oik), v(g%tb(k-1)+1), v(g%tb(i-1)+1))
+        else
+          call hecmw_mf_kernel_mult_tv(tw(k), rr, tw(k), sn%lval(oik + int(hi, 8)*rr), v(g%tb(k-1)+1), t)
+          call hecmw_mf_kernel_gemv(hi, rr, hi, sn%lval(oik), t, v(g%tb(i-1)+1))
+        endif
       enddo
       if (.not. fct%lu) call hecmw_mf_kernel_dsolve(tw(k), hk, sn%lval(okk), sn%ptype(g%tb(k-1)+1:), &
         sn%dsub(g%tb(k-1)+1:), v(g%tb(k-1)+1))
     enddo
+    if (allocated(t)) deallocate(t)
 
     do d = 1, sn%npiv
       z(sn%frow(d)) = v(d)
@@ -1977,10 +2407,10 @@ contains
     real(kind=kreal), intent(in) :: z(:)
     real(kind=kreal), intent(inout) :: xx(:)
     type(mf_grid) :: g
-    real(kind=kreal), allocatable :: v(:)
+    real(kind=kreal), allocatable :: v(:), t(:)
     integer(kind=kint), allocatable :: tw(:)
-    integer(kind=kint) :: nown, d, i, k, l, m, hk, hi
-    integer(kind=8) :: okk, oik
+    integer(kind=kint) :: nown, d, i, k, l, m, hk, hi, rr
+    integer(kind=8) :: okk, okku, oik
 
     allocate(tw(sn%nt))
     call mf_stored_grid(sn, g, tw)
@@ -2001,30 +2431,61 @@ contains
       enddo
     enddo
 
+    if (fct%blr) allocate(t(maxval(g%tb(1:g%nt) - g%tb(0:g%nt-1))))
     do k = g%ntc, 1, -1
       if (tw(k) == 0) cycle
       hk = g%tb(k) - g%tb(k-1)
       okk = 1 + g%coloff(k)
+      okku = okk
+      if (fct%blr) then
+        okk = 1 + sn%bptr(mf_bidx(g%nt, k, k))
+        if (fct%lu) okku = 1 + sn%bptru(mf_bidx(g%nt, k, k))
+      endif
       if (fct%lu) then
         do i = k+1, g%nt
           hi = g%tb(i) - g%tb(i-1)
-          oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
-          call hecmw_mf_kernel_gemv_t(hi, tw(k), hi, sn%uval(oik), v(g%tb(i-1)+1), v(g%tb(k-1)+1))
+          rr = -1
+          if (fct%blr) then
+            rr = sn%branku(mf_bidx(g%nt, k, i))
+            oik = 1 + sn%bptru(mf_bidx(g%nt, k, i))
+          else
+            oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
+          endif
+          if (rr == 0) cycle
+          if (rr < 0) then
+            call hecmw_mf_kernel_gemv_t(hi, tw(k), hi, sn%uval(oik), v(g%tb(i-1)+1), v(g%tb(k-1)+1))
+          else
+            call hecmw_mf_kernel_mult_tv(hi, rr, hi, sn%uval(oik), v(g%tb(i-1)+1), t)
+            call hecmw_mf_kernel_gemv(tw(k), rr, tw(k), sn%uval(oik + int(hi, 8)*rr), t, v(g%tb(k-1)+1))
+          endif
         enddo
-        if (hk > tw(k)) call hecmw_mf_kernel_gemv_t(hk - tw(k), tw(k), hk, sn%uval(okk + tw(k)), &
+        if (hk > tw(k)) call hecmw_mf_kernel_gemv_t(hk - tw(k), tw(k), hk, sn%uval(okku + tw(k)), &
           v(g%tb(k-1)+tw(k)+1), v(g%tb(k-1)+1))
-        call hecmw_mf_kernel_usolve(tw(k), hk, sn%lval(okk), hk, sn%uval(okk), v(g%tb(k-1)+1))
+        call hecmw_mf_kernel_usolve(tw(k), hk, sn%lval(okk), hk, sn%uval(okku), v(g%tb(k-1)+1))
       else
         do i = k+1, g%nt
           hi = g%tb(i) - g%tb(i-1)
-          oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
-          call hecmw_mf_kernel_gemv_t(hi, tw(k), hi, sn%lval(oik), v(g%tb(i-1)+1), v(g%tb(k-1)+1))
+          rr = -1
+          if (fct%blr) then
+            rr = sn%brank(mf_bidx(g%nt, k, i))
+            oik = 1 + sn%bptr(mf_bidx(g%nt, k, i))
+          else
+            oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
+          endif
+          if (rr == 0) cycle
+          if (rr < 0) then
+            call hecmw_mf_kernel_gemv_t(hi, tw(k), hi, sn%lval(oik), v(g%tb(i-1)+1), v(g%tb(k-1)+1))
+          else
+            call hecmw_mf_kernel_mult_tv(hi, rr, hi, sn%lval(oik), v(g%tb(i-1)+1), t)
+            call hecmw_mf_kernel_gemv(tw(k), rr, tw(k), sn%lval(oik + int(hi, 8)*rr), t, v(g%tb(k-1)+1))
+          endif
         enddo
         if (hk > tw(k)) call hecmw_mf_kernel_gemv_t(hk - tw(k), tw(k), hk, sn%lval(okk + tw(k)), &
           v(g%tb(k-1)+tw(k)+1), v(g%tb(k-1)+1))
         call hecmw_mf_kernel_trsv_t(tw(k), hk, sn%lval(okk), v(g%tb(k-1)+1))
       endif
     enddo
+    if (allocated(t)) deallocate(t)
 
     do d = 1, sn%npiv
       xx(sn%fsdof(d)) = v(d)
