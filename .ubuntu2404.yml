@@ -1,50 +1,55 @@
 .ubuntu2404:
     image: ${REGISTRY}/build:ubuntu2404
-build/ubuntu2404/serial:
+build/ubuntu2404:
     extends: [".build",".ubuntu2404"]
-build/ubuntu2404/openmp:
-    extends: [".build",".ubuntu2404"]
-build/ubuntu2404/mpi:
-    extends: [".build",".ubuntu2404"]
-build/ubuntu2404/hybrid:
-    extends: [".build",".ubuntu2404"]
-test/ubuntu2404/serial/serial:
+    parallel:
+        matrix:
+            - BUILD_TYPE: [serial, openmp, mpi, hybrid]
+test/ubuntu2404:
     extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/serial"]
-test/ubuntu2404/openmp/serial:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/openmp"]
-test/ubuntu2404/openmp/openmp:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/openmp"]
-test/ubuntu2404/mpi/serial:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/mpi"]
-test/ubuntu2404/mpi/mpi:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/mpi"]
-test/ubuntu2404/hybrid/serial:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/hybrid"]
-test/ubuntu2404/hybrid/openmp:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/hybrid"]
-test/ubuntu2404/hybrid/mpi:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/hybrid"]
-test/ubuntu2404/hybrid/hybrid:
-    extends: [".test",".ubuntu2404"]
-    needs: ["build/ubuntu2404/hybrid"]
-    tags: ["saas-linux-medium-amd64"]
-deb/ubuntu2404/hybrid:
-    needs: ["build/ubuntu2404/hybrid"]
+    parallel:
+        matrix: &test-matrix
+            - {BUILD_TYPE: serial, RUN_TYPE: serial, RUNNER: small}
+            - {BUILD_TYPE: openmp, RUN_TYPE: [serial, openmp], RUNNER: small}
+            - {BUILD_TYPE: mpi, RUN_TYPE: [serial, mpi], RUNNER: small}
+            - {BUILD_TYPE: hybrid, RUN_TYPE: [serial, openmp, mpi], RUNNER: small}
+            - {BUILD_TYPE: hybrid, RUN_TYPE: hybrid, RUNNER: medium}
+    needs:
+        - job: build/ubuntu2404
+          parallel:
+              matrix:
+                  - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']
+    tags: ["saas-linux-${RUNNER}-amd64"]
+
+deb/ubuntu2404:
     extends: [".deb",".ubuntu2404"]
-deb/ubuntu2404/mpi:
-    needs: ["build/ubuntu2404/mpi"]
-    extends: [".deb",".ubuntu2404"]
-deb/ubuntu2404/openmp:
-    needs: ["build/ubuntu2404/openmp"]
-    extends: [".deb",".ubuntu2404"]
-deb/ubuntu2404/serial:
-    needs: ["build/ubuntu2404/serial"]
-    extends: [".deb",".ubuntu2404"]
+    variables: {DISTRO: ubuntu2404}
+    parallel:
+        matrix:
+            - BUILD_TYPE: [serial, openmp, mpi, hybrid]
+    needs:
+        - job: build/ubuntu2404
+          parallel:
+              matrix:
+                  - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']
+
+benchmark-build/ubuntu2404:
+    extends: [".benchmark-build",".ubuntu2404"]
+    parallel:
+        matrix:
+            - BUILD_TYPE: [serial, openmp, mpi, hybrid]
+
+benchmark/ubuntu2404:
+    extends: [".benchmark-test",".ubuntu2404"]
+    parallel:
+        matrix: *test-matrix
+    needs:
+        - job: build/ubuntu2404
+          parallel:
+              matrix:
+                  - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']
+        - job: benchmark-build/ubuntu2404
+          parallel:
+              matrix:
+                  - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']
+    tags: ["saas-linux-${RUNNER}-amd64"]

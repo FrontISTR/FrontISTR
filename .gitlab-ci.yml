@@ -34,7 +34,7 @@ include:
     stage: build
     needs: []
     script:
-        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - TYPE=${BUILD_TYPE:-$(echo $CI_JOB_NAME|cut -d/ -f3)}
         - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
         - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
         - cmake -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI -H.
@@ -46,7 +46,8 @@ include:
 .test:
     stage: test
     script:
-        - cd build && ctest -L $(echo $CI_JOB_NAME|cut -d/ -f4) --output-on-failure
+        - RUN_TYPE=${RUN_TYPE:-$(echo $CI_JOB_NAME|cut -d/ -f4)}
+        - cd build && ctest -L $RUN_TYPE --output-on-failure
     artifacts:
         paths:
             - run_test
@@ -59,9 +60,8 @@ include:
     variables:
         GIT_DEPTH: "0"
     script:
-        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
-        - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
-        - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
+        - MPI=$([[ $BUILD_TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
+        - OMP=$([[ $BUILD_TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
         - cmake -S. -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI
         - |
           if [ -z "${BENCHMARK_REF:-}" ]; then
@@ -74,8 +74,8 @@ include:
             fi
           fi
           BENCHMARK_REF=$BENCHMARK_REF \
-          BENCHMARK_BUILD_MODE=$TYPE \
-          BENCHMARK_PREPARE_DIR=benchmark-baseline/$TYPE \
+          BENCHMARK_BUILD_MODE=$BUILD_TYPE \
+          BENCHMARK_PREPARE_DIR=benchmark-baseline/$BUILD_TYPE \
             cmake --build build --target benchmark
     artifacts:
         paths: ["benchmark-baseline/"]
@@ -84,8 +84,6 @@ include:
 .benchmark-test:
     stage: test
     script:
-        - BUILD_TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
-        - RUN_TYPE=$(echo $CI_JOB_NAME|cut -d/ -f4)
         - BENCHMARK_BASELINE_DIR=benchmark-baseline/$BUILD_TYPE BENCHMARK_BUILD_MODE=$BUILD_TYPE BENCHMARK_MODE=$RUN_TYPE cmake --build build --target benchmark
     artifacts:
         paths: ["build/benchmark-results/"]
@@ -208,8 +206,8 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
 .deb:
     stage: package
     script:
-        - OS=$(echo $CI_JOB_NAME|cut -d/ -f2)
-        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - OS=${DISTRO:-$(echo $CI_JOB_NAME|cut -d/ -f2)}
+        - TYPE=${BUILD_TYPE:-$(echo $CI_JOB_NAME|cut -d/ -f3)}
         - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
         - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
         - DEPENDS=()

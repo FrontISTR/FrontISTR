@@ -108,7 +108,7 @@ Large regressions are highlighted but do not fail the target by default. Set
 `BENCHMARK_FAIL_ON_REGRESSION=1` to make critical regressions fail it. Test
 failures always make the target fail.
 
-GitLab CI reuses the existing Ubuntu 26.04 build artifacts for the current
+GitLab CI reuses the existing Ubuntu 24.04 build artifacts for the current
 revision and builds the four baseline configurations in parallel. It then
 measures the nine valid build and execution-mode combinations in separate jobs.
 Each job runs the baseline and current binaries serially on the same runner.
