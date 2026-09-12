@@ -190,13 +190,13 @@ sub configure_and_build {
   return read_cache(File::Spec->catfile($build, 'CMakeCache.txt'));
 }
 
-sub install_current_test_suite {
-  my ($target_source) = @_;
-  my $current_tests = File::Spec->catdir($source_dir, 'tests');
-  my $target_tests = File::Spec->catdir($target_source, 'tests');
-  remove_tree($target_tests);
-  my @command = ($cmake, '-E', 'copy_directory', $current_tests, $target_tests);
-  require_success(run_command($source_dir, @command), @command);
+sub committed_test_suite {
+  my ($commit) = @_;
+  return {
+    commit       => $commit,
+    working_tree => JSON::PP::false,
+    fingerprint  => "git:$commit",
+  };
 }
 
 sub parse_ctest_log {
@@ -456,9 +456,9 @@ sub load_cached_run {
 
 sub prepare_baseline {
   my ($directory, $baseline_commit, $reference, $current_commit, $selected,
-      $generator, $environment, $test_suite, $build_mode) = @_;
+      $generator, $environment, $current_test_suite, $build_mode) = @_;
   die "baseline preparation requires a clean working tree\n"
-    if $test_suite->{working_tree};
+    if $current_test_suite->{working_tree};
   my $root = File::Spec->rel2abs($directory, $source_dir);
   die "baseline output already exists: $root\n" if -e $root;
   make_path($root);
@@ -468,7 +468,6 @@ sub prepare_baseline {
   my @command = ('git', 'worktree', 'add', '--detach', $worktree, $baseline_commit);
   require_success(run_command($repository, @command), @command);
   push @worktrees, $worktree;
-  install_current_test_suite($worktree);
 
   my $source = File::Spec->catdir($root, 'source');
   my $build = File::Spec->catdir($root, 'build');
@@ -476,13 +475,14 @@ sub prepare_baseline {
   require_success(run_command($source_dir, @command), @command);
   configure_and_build($source, $build, $selected, $generator);
   write_json(File::Spec->catfile($root, 'metadata.json'), {
-    schema_version  => 1,
-    build_mode      => $build_mode,
-    current_commit  => $current_commit,
-    baseline_commit => $baseline_commit,
-    requested_ref   => $reference,
-    environment     => $environment,
-    test_suite      => $test_suite,
+    schema_version      => 2,
+    build_mode          => $build_mode,
+    current_commit      => $current_commit,
+    baseline_commit     => $baseline_commit,
+    requested_ref       => $reference,
+    environment         => $environment,
+    current_test_suite  => $current_test_suite,
+    baseline_test_suite => committed_test_suite($baseline_commit),
   });
   print "\nBaseline build: $root\n";
   return 0;
@@ -496,10 +496,12 @@ sub compare_prebuilt {
   my $root = abs_path(File::Spec->rel2abs($directory, $source_dir))
     or die "baseline build not found: $directory\n";
   my $metadata = read_json(File::Spec->catfile($root, 'metadata.json'));
+  die "unsupported baseline build metadata\n"
+    unless ($metadata->{schema_version} // 0) == 2;
   die "baseline build belongs to a different current commit\n"
     unless ($metadata->{current_commit} // '') eq $current_commit;
   die "baseline build uses a different test suite\n"
-    unless ($metadata->{test_suite}{fingerprint} // '')
+    unless ($metadata->{current_test_suite}{fingerprint} // '')
       eq $test_suite->{fingerprint};
   die "baseline build mode does not match $build_mode\n"
     unless ($metadata->{build_mode} // '') eq $build_mode;
@@ -509,7 +511,7 @@ sub compare_prebuilt {
     File::Spec->catdir($root, 'build'), $selected, $generator, $run_mode
   );
   $baseline->{environment} = $environment;
-  $baseline->{test_suite} = $metadata->{test_suite};
+  $baseline->{test_suite} = $metadata->{baseline_test_suite};
 
   my ($current, $current_status) = measure_existing(
     'current', $current_commit, 'HEAD', $build_dir, $selected, $generator, $run_mode
@@ -589,6 +591,7 @@ sub benchmark {
   my $baseline_commit = capture_command(
     $repository, 'git', 'rev-parse', '--verify', $reference . '^{commit}'
   );
+  my $baseline_test_suite = committed_test_suite($baseline_commit);
   die "current and baseline resolve to the same commit\n"
     if $current_commit eq $baseline_commit;
   if (defined $ENV{BENCHMARK_PREPARE_DIR}) {
@@ -606,7 +609,9 @@ sub benchmark {
       $ENV{BENCHMARK_BASELINE_JSON}, $source_dir
     ))
       or die "baseline JSON not found: $ENV{BENCHMARK_BASELINE_JSON}\n";
-    $baseline = load_cached_run($path, $baseline_commit, $test_suite->{fingerprint});
+    $baseline = load_cached_run(
+      $path, $baseline_commit, $baseline_test_suite->{fingerprint}
+    );
     die "saved baseline was measured in a different environment\n"
       unless ($baseline->{environment}{fingerprint} // '') eq $environment->{fingerprint};
     print "Using saved baseline from $path\n";
@@ -617,12 +622,11 @@ sub benchmark {
     my @command = ('git', 'worktree', 'add', '--detach', $source, $baseline_commit);
     require_success(run_command($repository, @command), @command);
     push @worktrees, $source;
-    install_current_test_suite($source);
     ($baseline, $baseline_status) = measure(
       'baseline', $baseline_commit, $reference, $source, $build, $selected, $generator
     );
     $baseline->{environment} = $environment;
-    $baseline->{test_suite} = { %$test_suite };
+    $baseline->{test_suite} = $baseline_test_suite;
   }
 
   my $current_build  = File::Spec->catdir($temporary_root, 'current-build');

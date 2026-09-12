@@ -78,9 +78,10 @@ The `benchmark` build target builds the current source and another revision in
 separate build directories, runs every CTest test serially, and writes a JSON
 comparison under `build/benchmark-results/`. Revisions use temporary worktrees;
 uncommitted changes are benchmarked from the current working tree and identified
-as such in the JSON. Both binaries are tested with the current CTest suite so
-that scripts and input data are identical. It uses CTest's standard timing log
-without raising the project's CMake version requirement.
+as such in the JSON. Each revision uses its own CTest suite, and timings are
+compared only for test names present in both revisions. Added and removed tests
+are recorded but are not part of the performance comparison. It uses CTest's
+standard timing log without raising the project's CMake version requirement.
 The runner uses only Perl core modules; the test suite already requires Perl
 for `compare_res.pl`.
 
