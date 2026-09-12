@@ -8,6 +8,26 @@
 ###############################################################
 cmake_minimum_required(VERSION 3.13.4)
 
+if(CMAKE_HOST_APPLE AND NOT CMAKE_OSX_SYSROOT)
+  if(DEFINED ENV{SDKROOT} AND IS_DIRECTORY "$ENV{SDKROOT}")
+    set(CMAKE_OSX_SYSROOT "$ENV{SDKROOT}")
+  else()
+    execute_process(
+      COMMAND xcrun --sdk macosx --show-sdk-path
+      OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
+      RESULT_VARIABLE FRONTISTR_XCRUN_STATUS
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+    )
+  endif()
+  if(IS_DIRECTORY "${CMAKE_OSX_SYSROOT}")
+    set(CMAKE_OSX_SYSROOT "${CMAKE_OSX_SYSROOT}" CACHE PATH "macOS SDK" FORCE)
+  endif()
+endif()
+if(CMAKE_HOST_APPLE AND CMAKE_OSX_SYSROOT)
+  set(ENV{SDKROOT} "${CMAKE_OSX_SYSROOT}")
+endif()
+
 ###############################################################
 # Check building mode whether out-of-source builds
 ###############################################################
@@ -347,7 +367,16 @@ endif()
 if(WITH_LAPACK)
   if(LAPACK_FOUND AND BLAS_FOUND)
     list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_LAPACK")
-    list(APPEND FrontISTR_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+    set(FrontISTR_LAPACK_LIBRARIES)
+    foreach(LIBRARY ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+      if(APPLE AND LIBRARY MATCHES "([^/]+)\\.framework$")
+        list(APPEND FrontISTR_LAPACK_LIBRARIES "-framework ${CMAKE_MATCH_1}")
+      else()
+        list(APPEND FrontISTR_LAPACK_LIBRARIES "${LIBRARY}")
+      endif()
+    endforeach()
+    list(REMOVE_DUPLICATES FrontISTR_LAPACK_LIBRARIES)
+    list(APPEND FrontISTR_LIBRARIES ${FrontISTR_LAPACK_LIBRARIES})
   else()
     set(WITH_LAPACK OFF)
   endif()
@@ -523,6 +552,38 @@ add_subdirectory(fistr1)
 enable_testing()
 add_subdirectory(tests)
 
+find_package(Perl QUIET)
+set(FRONTISTR_BENCHMARK_PERL_MODULES_FOUND 1)
+if(PERL_FOUND)
+  execute_process(
+    COMMAND ${PERL_EXECUTABLE} -MJSON::PP -MDigest::SHA -MFile::Temp -e 1
+    RESULT_VARIABLE FRONTISTR_BENCHMARK_PERL_MODULES_FOUND
+  )
+endif()
+include(ProcessorCount)
+ProcessorCount(FRONTISTR_BENCHMARK_BUILD_JOBS)
+if(NOT FRONTISTR_BENCHMARK_BUILD_JOBS)
+  set(FRONTISTR_BENCHMARK_BUILD_JOBS 1)
+endif()
+if(PERL_FOUND AND FRONTISTR_BENCHMARK_PERL_MODULES_FOUND EQUAL 0)
+  add_custom_target(benchmark
+    COMMAND
+      ${PERL_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/tests/benchmark.pl
+        --source-dir ${CMAKE_SOURCE_DIR}
+        --build-dir ${CMAKE_BINARY_DIR}
+        --cmake ${CMAKE_COMMAND}
+        --ctest ${CMAKE_CTEST_COMMAND}
+        --build-jobs ${FRONTISTR_BENCHMARK_BUILD_JOBS}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Benchmark all CTest tests against another revision"
+    USES_TERMINAL
+    VERBATIM
+  )
+else()
+  message(STATUS "Perl or required Perl core modules not found: benchmark target is unavailable")
+endif()
+
 ###############################################################################
 # Package generator (deb, rpm, exe etc.)
 ###############################################################################
@@ -547,6 +608,3 @@ else()
   set(CPACK_STRIP_FILES ON)
 endif()
 include(CPack)
-
-
-

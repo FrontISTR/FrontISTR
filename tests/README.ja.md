@@ -75,6 +75,43 @@ ctest --output-on-failure
 ```
 
 は失敗したテストの結果のみ出力を表示します。詳しくは `ctest -h` を確認してください。
+
+ベンチマーク
+------------
+
+`benchmark` ビルドターゲットは、現在のソースと比較対象を別々のビルド
+ディレクトリでビルドし、全CTestを直列実行して、比較結果を
+`build/benchmark-results/` 以下のJSONへ保存します。各リビジョンには一時
+worktreeを使い、未コミットの変更があれば現在の作業ツリーを測定して、その
+状態をJSONに記録します。スクリプトと入力データを揃えるため、両バイナリを
+現在のCTest一式でテストします。CTestの標準ログを利用するため、プロジェクト
+のCMake最低バージョンを引き上げません。
+管理スクリプトはPerlのコアモジュールだけを使用します。Perlは既存テストの
+`compare_res.pl` でも使用されています。
+
+```
+make -C build benchmark
+BENCHMARK_REF=v5.5.0 make -C build benchmark
+BENCHMARK_REF=master make -C build benchmark
+```
+
+比較対象のデフォルトは `HEAD^` です。両コミットには、起動元ビルドのCMake
+キャッシュにある内部変数以外の全項目（コンパイラ、フラグ、依存ライブラリの
+パス、プロジェクトオプションなど）を同じように適用します。追加のconfigure
+引数は `BENCHMARK_CMAKE_ARGS` で指定できます。
+
+コミットと環境フィンガープリントが一致すれば、以前の結果をbaselineとして
+利用できます。
+
+```
+BENCHMARK_REF=v5.5.0 \
+BENCHMARK_BASELINE_JSON=build/benchmark-results/previous.json \
+make -C build benchmark
+```
+
+大きな性能劣化は強調表示しますが、デフォルトではターゲットを失敗させません。
+重大な劣化を失敗にするには `BENCHMARK_FAIL_ON_REGRESSION=1` を指定します。
+CTest自体の失敗は常にターゲットを失敗させます。
 　
 テストの追加方法
 -----------------

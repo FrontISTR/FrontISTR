@@ -71,6 +71,43 @@ ctest --output-on-failure
 
 displays the output of failed tests. See `ctest -h` for detail.
 
+Benchmark
+---------
+
+The `benchmark` build target builds the current source and another revision in
+separate build directories, runs every CTest test serially, and writes a JSON
+comparison under `build/benchmark-results/`. Revisions use temporary worktrees;
+uncommitted changes are benchmarked from the current working tree and identified
+as such in the JSON. Both binaries are tested with the current CTest suite so
+that scripts and input data are identical. It uses CTest's standard timing log
+without raising the project's CMake version requirement.
+The runner uses only Perl core modules; the test suite already requires Perl
+for `compare_res.pl`.
+
+```
+make -C build benchmark
+BENCHMARK_REF=v5.5.0 make -C build benchmark
+BENCHMARK_REF=master make -C build benchmark
+```
+
+`HEAD^` is the default comparison revision. Both revisions use every
+non-internal entry from the invoking build's CMake cache, including compilers,
+flags, dependency paths, and project options. Extra configure arguments can be
+supplied with `BENCHMARK_CMAKE_ARGS`.
+
+A previous report can supply the baseline measurement when its commit and
+environment fingerprint match:
+
+```
+BENCHMARK_REF=v5.5.0 \
+BENCHMARK_BASELINE_JSON=build/benchmark-results/previous.json \
+make -C build benchmark
+```
+
+Large regressions are highlighted but do not fail the target by default. Set
+`BENCHMARK_FAIL_ON_REGRESSION=1` to make critical regressions fail it. Test
+failures always make the target fail.
+
 Add test
 ---------
 

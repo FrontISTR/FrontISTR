@@ -170,8 +170,7 @@ target=.
 fistr1=fistr1
 hecmw_part1=hecmw_part1
 rmerge=rmerge
-mpicc=$(which mpicc)
-mpirun=$(which mpirun)
+mpirun=$(command -v mpirun || true)
 mpirun_options=not_set
 always_mpirun=false
 mpi_num_process=1
@@ -209,14 +208,16 @@ compare_res=$FRONTISTR_HOME/tests/compare_res.pl
 check_executable $fistr1
 check_executable $hecmw_part1
 check_executable $rmerge
-check_executable $mpicc
-check_executable $mpirun
 check_executable $compare_res
 
-if [ "$($mpicc --showme:version 2> /dev/null | grep -i 'open[ -]mpi')" != "" ]; then
-  is_openmpi=true
-else
-  is_openmpi=false
+is_openmpi=false
+if [ $mpi_num_process -gt 1 ] || [ "$always_mpirun" = "true" ]; then
+  mpicc=$(command -v mpicc || true)
+  check_executable $mpicc
+  check_executable $mpirun
+  if [ "$($mpicc --showme:version 2> /dev/null | grep -i 'open[ -]mpi')" != "" ]; then
+    is_openmpi=true
+  fi
 fi
 
 if [ "$mpirun_options" = "not_set" ]; then
