@@ -10,10 +10,6 @@
 
 #ifdef HECMW_PART_WITH_METIS
 #include "metis.h"
-#ifndef METIS_VER_MAJOR
-/* METIS 4 names its index type idxtype and has no idx_t */
-typedef idxtype idx_t;
-#endif
 #else
 typedef long long idx_t;
 #endif
