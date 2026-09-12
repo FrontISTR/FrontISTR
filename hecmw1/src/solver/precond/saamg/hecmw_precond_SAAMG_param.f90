@@ -63,7 +63,7 @@ module hecmw_precond_SAAMG_param
     real(kind=kreal)   :: safety     = 1.1d0  !< eigenvalue safety factor
     integer(kind=kint) :: max_level  = 20     !< hierarchy depth cap
     integer(kind=kint) :: coarse_size = 100   !< coarsest size threshold (stop coarsening)
-    integer(kind=kint) :: coarsest_solver = 0 !< 0=auto (MUMPS if built else dense), 1=smoother sweeps, 2=dense, 3=MUMPS (same encoding as !SOLVER slot1, ML CoarseSolver-compatible)
+    integer(kind=kint) :: coarsest_solver = 0 !< 0=auto (MUMPS if built else dense), 1=smoother sweeps, 2=dense, 3=MUMPS, 4=DIRECTmf redundant sparse (same encoding as !SOLVER slot1, ML CoarseSolver-compatible; 4 is an SA-AMG extension)
     integer(kind=kint) :: ncycle     = 2      !< multigrid cycle order gamma per level (1=V, 2=W); default W (never slower than V; far fewer iters on deep hierarchies). nlevel=2 -> W==V (is_coarsest guard)
     real(kind=kreal)   :: stagn      = 0.7d0  !< coarsening stagnation guard (n_c/n_f)
     logical            :: symmetric  = .true. !< matrix assumed symmetric (CG); .false. => non-sym coarsest (SYM=0/LU)

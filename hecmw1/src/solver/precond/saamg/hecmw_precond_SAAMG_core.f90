@@ -34,6 +34,8 @@ module hecmw_precond_SAAMG_core
   use hecmw_precond_SAAMG_coarse_mumps, only: hecmwST_saamg_cmumps, hecmw_saamg_cmumps_available, &
        hecmw_saamg_cmumps_setup, hecmw_saamg_cmumps_refresh, hecmw_saamg_cmumps_solve, &
        hecmw_saamg_cmumps_free
+  use hecmw_precond_SAAMG_coarse_mf, only: hecmwST_saamg_cmf, hecmw_saamg_cmf_setup, &
+       hecmw_saamg_cmf_refresh, hecmw_saamg_cmf_solve, hecmw_saamg_cmf_free
   use hecmw_precond_SAAMG_param,     only: hecmwST_saamg_params
   implicit none
 
@@ -71,8 +73,8 @@ module hecmw_precond_SAAMG_core
   !! distributed rectangular operator + comm table + Chebyshev smoother, and each
   !! coarse operator is assembled distributed via row-owner routing (hecmw_saamg_galerkin).
   !! Only the tiny COARSEST level is solved globally -- by distributed MUMPS (no
-  !! gather) or, for the dense fallback, gathered redundantly and factored on every
-  !! rank.
+  !! gather) or gathered redundantly and factored on every rank (dense LDL^T, or
+  !! sparse by DIRECTmf).
   !> Cached routing for numeric-only Galerkin refresh (S4).  The coarse operator's
   !! SPARSITY is fixed across a Newton refresh (aggregation / P-hat / A pattern all
   !! reused), so only the values move.  This records the structural maps so a refresh
@@ -114,7 +116,9 @@ module hecmw_precond_SAAMG_core
     type(hecmwST_saamg_dlevel), allocatable :: lev(:)
     type(hecmwST_saamg_coarse) :: coarse                !< coarsest dense LDL^T (fallback)
     type(hecmwST_saamg_cmumps) :: cmumps                !< coarsest distributed MUMPS (F7)
+    type(hecmwST_saamg_cmf)    :: cmf                   !< coarsest redundant sparse DIRECTmf
     logical :: coarse_is_mumps = .false.              !< which coarsest backend is in use
+    logical :: coarse_is_mf = .false.                 !< coarsest = redundant sparse DIRECTmf
     logical :: coarse_is_smoother = .false.           !< coarsest = Chebyshev smoother sweeps (no direct solve)
     logical :: symmetric = .true.                     !< F8: non-sym => SYM=0/LU coarsest
     real(kind=kreal), allocatable :: rcg(:), zcg(:)   !< coarsest gather work (dense path)
@@ -1230,6 +1234,9 @@ contains
         else if (dh%coarse_is_mumps) then
           write(*,'(a,a,a,i0,a)') '####   coarsest solver: distributed MUMPS ', &
                merge('SYM=2', 'SYM=0', dh%symmetric), ' (', dh%nc_coarsest, ' dof)'
+        else if (dh%coarse_is_mf) then
+          write(*,'(a,a,a,i0,a)') '####   coarsest solver: redundant sparse DIRECTmf ', &
+               merge('LDL^T', 'LU   ', dh%symmetric), ' (', dh%nc_coarsest, ' dof)'
         else
           write(*,'(a,a,a,i0,a)') '####   coarsest solver: dense ', &
                merge('LDL^T', 'LU   ', dh%symmetric), ' (', dh%nc_coarsest, ' dof)'
@@ -1359,6 +1366,7 @@ contains
     select case (dh%prm%coarsest_solver)
     case (2);    use_mumps = .false.                        ! force dense LDL^T
     case (3);    use_mumps = .true.                         ! force MUMPS (aborts if not built)
+    case (4);    use_mumps = .false.                        ! redundant sparse DIRECTmf
     case default; use_mumps = hecmw_saamg_cmumps_available() ! auto: MUMPS if available
     end select
     if (use_mumps) then
@@ -1369,6 +1377,15 @@ contains
       dh%nc_coarsest = hecmw_saamg_nc_global(dh%lev(l)%cmt, nown) * dh%m
       call hecmw_saamg_cmumps_setup(dh%lev(l)%cmt, dh%lev(l)%A, dh%lev(l)%my_off, dh%m, &
            nown, dh%symmetric, dh%cmumps)
+    else if (dh%prm%coarsest_solver == 4) then
+      ! redundant sparse: the dense backend's gather, factored by DIRECTmf instead
+      dh%coarse_is_mumps = .false.
+      dh%coarse_is_mf = .true.
+      call gather_level_operator(dh%lev(l), Ac, nglob_dof)
+      dh%nc_coarsest = nglob_dof
+      call hecmw_saamg_cmf_setup(Ac, dh%symmetric, dh%cmf)
+      call hecmw_saamg_bcsr_free(Ac)
+      allocate(dh%rcg(nglob_dof), dh%zcg(nglob_dof))
     else
       dh%coarse_is_mumps = .false.
       call gather_level_operator(dh%lev(l), Ac, nglob_dof)
@@ -1437,6 +1454,10 @@ contains
         else if (dh%coarse_is_mumps) then
           call hecmw_saamg_cmumps_refresh(dh%lev(l)%cmt, dh%lev(l)%A, dh%lev(l)%my_off, &
                dh%m, dh%lev(l)%A%n / dh%m, dh%cmumps)
+        else if (dh%coarse_is_mf) then
+          call gather_level_operator(dh%lev(l), Ac, nglob_dof)
+          call hecmw_saamg_cmf_refresh(Ac, dh%cmf)
+          call hecmw_saamg_bcsr_free(Ac)
         else
           call gather_level_operator(dh%lev(l), Ac, nglob_dof)
           call hecmw_saamg_coarse_setup(Ac, dh%symmetric, dh%coarse)
@@ -1466,6 +1487,7 @@ contains
     if (dh%coarse_is_smoother) return   ! no factorization -> no inertia to inspect
     nneg = dh%coarse%n_neg
     if (dh%coarse_is_mumps) nneg = dh%cmumps%n_neg
+    if (dh%coarse_is_mf)    nneg = dh%cmf%n_neg
     if (dh%lev(1)%cmt%my_rank /= 0 .or. nneg <= 0) return
     write(*,'(a,i0,a)') ' #### SA-AMG WARNING: coarse operator has ', &
          nneg, ' negative eigenvalue(s) -- the matrix appears non-SPD.'
@@ -1516,6 +1538,15 @@ contains
       else if (dh%coarse_is_mumps) then
         ! distributed sparse direct: gather RHS to host, solve, scatter owned slice
         call hecmw_saamg_cmumps_solve(dh%lev(l)%cmt, dh%lev(l)%rhs, ni, dh%cmumps, dh%lev(l)%x)
+      else if (dh%coarse_is_mf) then
+        ! redundant sparse: gather full RHS, DIRECTmf solve, take this rank's owned slice
+        call hecmw_saamg_comm_allgatherv_real(dh%lev(l)%cmt, ni, dh%lev(l)%rhs, ntot, gv)
+        dh%rcg(1:dh%nc_coarsest) = gv(1:dh%nc_coarsest); deallocate(gv)
+        call hecmw_saamg_cmf_solve(dh%cmf, dh%rcg, dh%zcg)
+        do i = 1, ni
+          rn = (i-1)/nbl + 1; rdof = mod(i-1, nbl) + 1
+          dh%lev(l)%x(i) = dh%zcg((dh%lev(l)%cmt%gnode(rn)-1)*nbl + rdof)
+        end do
       else
         ! redundant dense: gather full RHS, dense LDL^T, take this rank's owned slice
         call hecmw_saamg_comm_allgatherv_real(dh%lev(l)%cmt, ni, dh%lev(l)%rhs, ntot, gv)
@@ -1610,7 +1641,9 @@ contains
     end if
     call hecmw_saamg_coarse_free(dh%coarse)
     call hecmw_saamg_cmumps_free(dh%cmumps)
+    call hecmw_saamg_cmf_free(dh%cmf)
     dh%coarse_is_mumps = .false.
+    dh%coarse_is_mf = .false.
     if (allocated(dh%rcg)) deallocate(dh%rcg)
     if (allocated(dh%zcg)) deallocate(dh%zcg)
     if (allocated(dh%aggr_fine)) deallocate(dh%aggr_fine)

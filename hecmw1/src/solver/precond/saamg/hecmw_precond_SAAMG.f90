@@ -130,7 +130,8 @@ contains
     ! outside what ML reads and hold SA-AMG-specific knobs.  The real line is not
     ! read by ML at all, so it carries the remaining knobs (including a few integer
     ! ones, rounded on read).
-    !   1 = coarsest solver  (ML CoarseSolver: 0=auto, 1=Smoother, 2=dense, 3=MUMPS)
+    !   1 = coarsest solver  (ML CoarseSolver: 0=auto, 1=Smoother, 2=dense, 3=MUMPS;
+    !                         SA-AMG extension: 4=DIRECTmf (redundant sparse))
     !   2 = smoother type     (ML SmootherType: 0/1=Chebyshev; 2/3 N/A -> Chebyshev)
     !   3 = cycle             (ML MGType: 0=default(=W)/1=V, 2=W; 3=FullV N/A -> W)
     !   4 = max levels        (ML MaxLevels)
@@ -155,11 +156,12 @@ contains
     !            7 = verify (0 = off, > 0 = on) / 8 = dump_vtk (0 = off, > 0 = on)
     call hecmw_mat_get_solver_opt(hecMAT, iopt)
     myrank = hecmw_comm_get_rank()
-    ! slot 1: coarsest solver.  The external encoding (ML CoarseSolver-compatible)
-    ! and the internal prm%coarsest_solver share the SAME numbering, so no
-    ! translation is needed: 0=auto, 1=smoother, 2=dense, 3=MUMPS.
+    ! slot 1: coarsest solver.  The external encoding (ML CoarseSolver-compatible;
+    ! 4 is an SA-AMG extension beyond ML) and the internal prm%coarsest_solver share
+    ! the SAME numbering, so no translation is needed: 0=auto, 1=smoother, 2=dense,
+    ! 3=MUMPS, 4=DIRECTmf (redundant sparse).
     select case (iopt(1))
-    case (0, 1, 2, 3) ; prm%coarsest_solver = iopt(1)
+    case (0, 1, 2, 3, 4) ; prm%coarsest_solver = iopt(1)
     case default ; if (myrank == 0) write(*,'(a,i0,a)') &
         '#### SA-AMG: invalid coarse solver ', iopt(1), ' (ignored) -- using auto'
     end select
@@ -226,13 +228,14 @@ contains
     prm%symmetric = (sym == 1)
 
     ! coarse_size auto-default by coarsest solver (only when the user left it unset):
-    ! dense LDL^T is O(N^3) so keep the coarsest small (100 dof); a distributed sparse
-    ! MUMPS coarsest is cheap at tens of thousands of dof -> use a much larger default
-    ! so the hierarchy stays shallow (matches the ML+MUMPS convention of 50000).
+    ! dense LDL^T is O(N^3) so keep the coarsest small (100 dof); a sparse direct
+    ! coarsest (distributed MUMPS, or redundant DIRECTmf) is cheap at tens of
+    ! thousands of dof -> use a much larger default so the hierarchy stays shallow
+    ! (matches the ML+MUMPS convention of 50000).
     if (iopt(7) == 0) then
       will_use_mumps = (prm%coarsest_solver == 3) .or. &
            (prm%coarsest_solver == 0 .and. hecmw_saamg_cmumps_available())
-      if (will_use_mumps) prm%coarse_size = 50000
+      if (will_use_mumps .or. prm%coarsest_solver == 4) prm%coarse_size = 50000
     end if
 
     ! finest-level communication table (empty on 1 rank -> sequential behavior)
