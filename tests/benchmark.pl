@@ -387,7 +387,7 @@ sub benchmark {
     $ENV{SDKROOT} = $selected->{CMAKE_OSX_SYSROOT}{value};
   }
   my $generator = $cache->{CMAKE_GENERATOR}{value};
-  my $reference = $ENV{BENCHMARK_REF} // 'HEAD^';
+  my $reference = $ENV{BENCHMARK_REF};
   my $output_dir = $ENV{BENCHMARK_OUTPUT_DIR}
     // File::Spec->catdir($build_dir, 'benchmark-results');
   my $thresholds = {
@@ -399,6 +399,9 @@ sub benchmark {
   };
 
   $repository = capture_command($source_dir, 'git', 'rev-parse', '--show-toplevel');
+  $reference = capture_command(
+    $repository, 'git', 'describe', '--tags', '--abbrev=0', 'HEAD'
+  ) unless defined $reference && length $reference;
   my $current_commit = capture_command(
     $repository, 'git', 'rev-parse', '--verify', 'HEAD^{commit}'
   );

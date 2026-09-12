@@ -66,12 +66,14 @@ benchmark:
         - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
         - cmake -S. -Bbuild_benchmark -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI
         - |
-          if [ -n "${CI_COMMIT_TAG:-}" ]; then
-            BENCHMARK_REF=$(git describe --tags --abbrev=0 HEAD^)
-          elif [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
-            BENCHMARK_REF="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-          else
-            BENCHMARK_REF=HEAD^
+          if [ -z "${BENCHMARK_REF:-}" ]; then
+            if [ -n "${CI_COMMIT_TAG:-}" ]; then
+              BENCHMARK_REF=$(git describe --tags --abbrev=0 HEAD^)
+            elif [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
+              BENCHMARK_REF="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+            else
+              BENCHMARK_REF=$(git describe --tags --abbrev=0 HEAD)
+            fi
           fi
           BENCHMARK_REF=$BENCHMARK_REF cmake --build build_benchmark --target benchmark
     artifacts:

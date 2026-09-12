@@ -95,10 +95,10 @@ BENCHMARK_REF=v5.5.0 make -C build benchmark
 BENCHMARK_REF=master make -C build benchmark
 ```
 
-比較対象のデフォルトは `HEAD^` です。両コミットには、起動元ビルドのCMake
-キャッシュにある内部変数以外の全項目（コンパイラ、フラグ、依存ライブラリの
-パス、プロジェクトオプションなど）を同じように適用します。追加のconfigure
-引数は `BENCHMARK_CMAKE_ARGS` で指定できます。
+比較対象のデフォルトは、現在のHEADから到達可能な最新タグです。両コミット
+には、起動元ビルドのCMakeキャッシュにある内部変数以外の全項目（コンパイラ、
+フラグ、依存ライブラリのパス、プロジェクトオプションなど）を同じように適用
+します。追加のconfigure引数は `BENCHMARK_CMAKE_ARGS` で指定できます。
 
 コミットと環境フィンガープリントが一致すれば、以前の結果をbaselineとして
 利用できます。

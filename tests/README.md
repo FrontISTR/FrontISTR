@@ -90,10 +90,10 @@ BENCHMARK_REF=v5.5.0 make -C build benchmark
 BENCHMARK_REF=master make -C build benchmark
 ```
 
-`HEAD^` is the default comparison revision. Both revisions use every
-non-internal entry from the invoking build's CMake cache, including compilers,
-flags, dependency paths, and project options. Extra configure arguments can be
-supplied with `BENCHMARK_CMAKE_ARGS`.
+The latest tag reachable from `HEAD` is the default comparison revision. Both
+revisions use every non-internal entry from the invoking build's CMake cache,
+including compilers, flags, dependency paths, and project options. Extra
+configure arguments can be supplied with `BENCHMARK_CMAKE_ARGS`.
 
 A previous report can supply the baseline measurement when its commit and
 environment fingerprint match:
