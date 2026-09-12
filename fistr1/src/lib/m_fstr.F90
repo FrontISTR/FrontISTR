@@ -50,6 +50,7 @@ module m_fstr
   integer(kind=kint), parameter :: ksmGPBiCG   = 4
   integer(kind=kint), parameter :: ksmGMRESR   = 5
   integer(kind=kint), parameter :: ksmGMRESREN = 6
+  integer(kind=kint), parameter :: ksmPipeCG   = 8
   integer(kind=kint), parameter :: ksmDIRECT   = 101
 
   !> nonlinear solver method (nsm)
