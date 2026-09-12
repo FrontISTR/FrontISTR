@@ -1377,6 +1377,9 @@ contains
     if( associated(fstrSOLID%shell_ddrill) )    fstrSOLID%shell_ddrill(:)    = 0.d0
     fstrSOLID%QFORCE(:)     = 0.d0
     fstrSOLID%QFORCE_bak(:) = 0.d0
+    ! DFORCE is assembled only by implicit dynamic analysis, but the convergence
+    ! check reads it in every analysis type.
+    fstrSOLID%DFORCE(:)     = 0.d0
     fstrSOLID%FACTOR( 1:2 ) = 0.d0
 
     ! for MPC
