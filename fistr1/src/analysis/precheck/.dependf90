@@ -1,0 +1,4 @@
+fstr_precheck.o : fstr_precheck.f90 precheck_make_result.o precheck_mesh_quality.o
+precheck_LIB_elements.o : precheck_LIB_elements.f90
+precheck_make_result.o : precheck_make_result.f90
+precheck_mesh_quality.o : precheck_mesh_quality.f90 precheck_LIB_elements.o

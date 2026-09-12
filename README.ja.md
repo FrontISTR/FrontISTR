@@ -1,6 +1,6 @@
 # FrontISTR
 
-![Logo](./doc/FrontISTR_logo.svg)
+![Logo](./doc/images/FrontISTR_logo.svg)
 
 [![CI Status](https://gitlab.com/frontistr-commons/frontistr/badges/master/pipeline.svg)](https://gitlab.com/frontistr-commons/frontistr/-/pipelines)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://frontistr-commons.gitlab.io/frontistr_documents/en/)
@@ -23,7 +23,7 @@ FrontISTRはオープンソースの**大規模並列有限要素法構造解析
   * 固有値解析
   * 周波数応答解析
   * 熱伝導解析（定常・非定常）
-* **ソルバ**: CG / BiCGSTAB / GMRES / GPBiCG / 直接法（MUMPS / MKL PARDISO）
+* **ソルバ**: CG / PipeCG / BiCGSTAB / GMRES / GPBiCG / 直接法（MUMPS / MKL PARDISO）
 * **前処理**: SSOR / ILU(0) / AMG（Trilinos-ML） 等
 * **要素ライブラリ**: 1次/2次のソリッド（TET/PRISM/HEX）、平面（三角/四角）、はり、シェル、トラス要素 等
 * **可視化**: ParaView等で表示可能

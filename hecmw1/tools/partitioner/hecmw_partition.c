@@ -2147,10 +2147,8 @@ static int pmetis_interface(const int n_vertex, const int n_domain, idx_t *xadj,
 #ifdef HECMW_PART_WITH_METIS
   idx_t n       = (idx_t)n_vertex; /* number of vertices */
   idx_t *vwgt   = NULL;     /* weight for vertices */
-  idx_t *adjwgt = NULL;     /* weight for edges */
   idx_t nparts  = (idx_t)n_domain; /* number of sub-domains */
 
-#if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
   idx_t ncon       = 1; /* number of balancing constraints */
   idx_t *vsize     = NULL;
   real_t *tpwgts = NULL;
@@ -2161,16 +2159,6 @@ static int pmetis_interface(const int n_vertex, const int n_domain, idx_t *xadj,
   METIS_PartGraphRecursive(&n, &ncon, xadj, adjncy, vwgt, vsize, NULL,
                            &nparts, tpwgts, ubvec, options, &edgecut, part);
   HECMW_log(HECMW_LOG_DEBUG, "Returned from pmetis(v5)\n");
-#else
-  int wgtflag    = 0;               /* flag of weight for edges */
-  int numflag    = 0;               /* flag of stating number of index */
-  int options[5] = {0, 0, 0, 0, 0}; /* options for pMETIS */
-
-  HECMW_log(HECMW_LOG_DEBUG, "Entering pmetis(v4)...\n");
-  METIS_PartGraphRecursive(&n, xadj, adjncy, vwgt, adjwgt, &wgtflag, &numflag,
-                           &nparts, options, &edgecut, part);
-  HECMW_log(HECMW_LOG_DEBUG, "Returned from pmetis(v4)\n");
-#endif
 #endif
 
   return (int)edgecut;
@@ -2182,10 +2170,8 @@ static int kmetis_interface(const int n_vertex, const int n_domain, idx_t *xadj,
 #ifdef HECMW_PART_WITH_METIS
   idx_t n       = (idx_t)n_vertex; /* number of vertices */
   idx_t *vwgt   = NULL;     /* weight for vertices */
-  idx_t *adjwgt = NULL;     /* weight for edges */
   idx_t nparts  = (idx_t)n_domain; /* number of sub-domains */
 
-#if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
   idx_t ncon       = 1; /* number of balancing constraints */
   idx_t *vsize     = NULL;
   real_t *tpwgts = NULL;
@@ -2196,16 +2182,6 @@ static int kmetis_interface(const int n_vertex, const int n_domain, idx_t *xadj,
   METIS_PartGraphKway(&n, &ncon, xadj, adjncy, vwgt, vsize, NULL, &nparts,
                       tpwgts, ubvec, options, &edgecut, part);
   HECMW_log(HECMW_LOG_DEBUG, "Returned from kmetis(v5)\n");
-#else
-  int wgtflag    = 0;               /* flag of weight for edges */
-  int numflag    = 0;               /* flag of stating number of index */
-  int options[5] = {0, 0, 0, 0, 0}; /* options for kMETIS */
-
-  HECMW_log(HECMW_LOG_DEBUG, "Entering kmetis(v4)...\n");
-  METIS_PartGraphKway(&n, xadj, adjncy, vwgt, adjwgt, &wgtflag, &numflag,
-                      &nparts, options, &edgecut, part);
-  HECMW_log(HECMW_LOG_DEBUG, "Returned from kmetis(v4)\n");
-#endif
 #endif
 
   return (int)edgecut;
@@ -2220,7 +2196,6 @@ static int pmetis_interface_with_weight(int n_vertex, int n_con, int n_domain,
   idx_t *adjwgt = NULL;     /* weight for edges */
   idx_t nparts  = (idx_t)n_domain; /* number of sub-domains */
 
-#if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
   idx_t ncon       = (idx_t)n_con; /* number of balancing constraints */
   idx_t *vsize     = NULL;
   real_t *tpwgts = NULL;
@@ -2231,23 +2206,6 @@ static int pmetis_interface_with_weight(int n_vertex, int n_con, int n_domain,
   METIS_PartGraphRecursive(&n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt,
                            &nparts, tpwgts, ubvec, options, &edgecut, part);
   HECMW_log(HECMW_LOG_DEBUG, "Returned from pmetis(v5)\n");
-#else
-  int wgtflag    = 0;               /* flag of weight for edges */
-  int numflag    = 0;               /* flag of stating number of index */
-  int options[5] = {0, 0, 0, 0, 0}; /* options for pMETIS */
-
-  if (vwgt != NULL) wgtflag = 2;
-
-  HECMW_log(HECMW_LOG_DEBUG, "Entering pmetis(v4)...\n");
-  if (n_con == 1) {
-    METIS_PartGraphRecursive(&n, xadj, adjncy, vwgt, adjwgt, &wgtflag, &numflag,
-                             &nparts, options, &edgecut, part);
-  } else {
-    METIS_mCPartGraphRecursive(&n, &n_con, xadj, adjncy, vwgt, adjwgt, &wgtflag,
-                               &numflag, &nparts, options, &edgecut, part);
-  }
-  HECMW_log(HECMW_LOG_DEBUG, "Returned from pmetis(v4)\n");
-#endif
 #endif
 
   return (int)edgecut;
@@ -2262,7 +2220,6 @@ static int kmetis_interface_with_weight(int n_vertex, int n_con, int n_domain,
   idx_t *adjwgt = NULL;     /* weight for edges */
   idx_t nparts  = (idx_t)n_domain; /* number of sub-domains */
 
-#if defined(METIS_VER_MAJOR) && (METIS_VER_MAJOR == 5)
   idx_t ncon       = (idx_t)n_con; /* number of balancing constraints */
   idx_t *vsize     = NULL;
   real_t *tpwgts = NULL;
@@ -2273,34 +2230,6 @@ static int kmetis_interface_with_weight(int n_vertex, int n_con, int n_domain,
   METIS_PartGraphKway(&n, &ncon, xadj, adjncy, vwgt, vsize, adjwgt, &nparts,
                       tpwgts, ubvec, options, &edgecut, part);
   HECMW_log(HECMW_LOG_DEBUG, "Returned from kmetis(v5)\n");
-#else
-  int wgtflag    = 0; /* flag of weight for edges */
-  int numflag    = 0; /* flag of stating number of index */
-  float *ubvec   = NULL;
-  int options[5] = {0, 0, 0, 0, 0}; /* options for kMETIS */
-
-  if (vwgt != NULL) wgtflag = 2;
-
-  if (n_con > 1) {
-    ubvec = (float *)HECMW_malloc(n_con * sizeof(float));
-    if (ubvec == NULL) {
-      HECMW_set_error(errno, "");
-      return -1;
-    }
-  }
-
-  HECMW_log(HECMW_LOG_DEBUG, "Entering kmetis(v4)...\n");
-  if (n_con == 1) {
-    METIS_PartGraphKway(&n, xadj, adjncy, vwgt, adjwgt, &wgtflag, &numflag,
-                        &nparts, options, &edgecut, part);
-  } else {
-    METIS_mCPartGraphKway(&n, &n_con, xadj, adjncy, vwgt, adjwgt, &wgtflag,
-                          &numflag, &nparts, ubvec, options, &edgecut, part);
-  }
-  HECMW_log(HECMW_LOG_DEBUG, "Returned from kmetis(v4)\n");
-
-  HECMW_free(ubvec);
-#endif
 #endif
 
   return (int)edgecut;

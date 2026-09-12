@@ -118,56 +118,6 @@ contains
 
   end subroutine update_surface_normal
 
-  !> Compute Cab correction matrices for edge (a,b)
-  !! Kab = (Aab^T*Aab + eps*I)^-1 * Aab^T * D * Aab
-  !! Cab_a = 0.5*I - Kab, Cab_b = 0.5*I + Kab
-  subroutine compute_Cab_old(na_vec, nb_vec, Cab_a, Cab_b)
-    implicit none
-    real(kind=kreal), intent(in)  :: na_vec(3)   ! unit normal at vertex a
-    real(kind=kreal), intent(in)  :: nb_vec(3)   ! unit normal at vertex b
-    real(kind=kreal), intent(out) :: Cab_a(3,3)  ! correction matrix for vertex a
-    real(kind=kreal), intent(out) :: Cab_b(3,3)  ! correction matrix for vertex b
-
-    real(kind=kreal) :: Aab(2,3), AtA(3,3), AtA_orig(3,3), AtA_inv(3,3)
-    real(kind=kreal) :: P(3,3)
-    real(kind=kreal) :: epsilon
-    integer(kind=kint) :: i
-
-    ! Build Aab = [na^T; nb^T]
-    Aab(1,:) = na_vec(:)
-    Aab(2,:) = nb_vec(:)
-
-    ! Compute AtA = Aab^T * Aab
-    AtA = matmul(transpose(Aab), Aab)
-    AtA_orig = AtA
-
-    ! Regularize: AtA_reg = AtA + eps*I
-    epsilon = (AtA(1,1)+AtA(2,2)+AtA(3,3)) * NAGATA_EPSILON
-    do i = 1, 3
-      AtA(i,i) = AtA(i,i) + epsilon
-    enddo
-
-    ! Invert AtA_reg using calInverse
-    AtA_inv = AtA
-    call calInverse(3, AtA_inv)
-
-    ! Compute P = AtA_inv * AtA_orig
-    P = matmul(AtA_inv, AtA_orig)
-
-    ! Cab_a = 0.5*I + 0.25*P
-    Cab_a = 0.25d0 * P
-    do i = 1, 3
-      Cab_a(i,i) = Cab_a(i,i) + 0.5d0
-    enddo
-
-    ! Cab_b = 0.5*I - 0.25*P
-    Cab_b = -0.25d0 * P
-    do i = 1, 3
-      Cab_b(i,i) = Cab_b(i,i) + 0.5d0
-    enddo
-
-  end subroutine compute_Cab_old
-
   subroutine compute_Cab(na_vec, nb_vec, Cab_a, Cab_b)
     implicit none
     real(kind=kreal), intent(in)  :: na_vec(3)   ! unit normal at vertex a (n1)

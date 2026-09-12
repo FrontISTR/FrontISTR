@@ -3,63 +3,19 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> \brief This module contains steady state frequency analysis
-module fstr_frequency_visout
-  use m_fstr
-
-  implicit none
-contains
-  subroutine fstr_freq_result_init(hecMESH, numcomp, fstrRESULT)
-    !---- args
-    type(hecmwST_local_mesh), intent(in)     :: hecMESH
-    integer(kind=kint), intent(in)           :: numcomp
-    type(hecmwST_result_data), intent(inout) :: fstrRESULT
-    !---- vals
-    !---- body
-
-    call hecmw_nullify_result_data(fstrRESULT)
-    fstrRESULT%ng_component = 0
-    fstrRESULT%nn_component = numcomp
-    fstrRESULT%ne_component = 0
-    allocate( fstrRESULT%nn_dof(numcomp) )
-    allocate( fstrRESULT%node_label(numcomp) )
-    allocate( fstrRESULT%node_val_item(numcomp*hecMESH%n_dof*hecMESH%n_node))  ! Should we use nn_internal?
-  end subroutine
-
-  subroutine fstr_freq_result_add(fstrRESULT, hecMESH, comp_index, ndof, label, vect)
-    !---- args
-    type(hecmwST_result_data), intent(inout)  :: fstrRESULT
-    type(hecmwST_local_mesh), intent(in)      :: hecMESH
-    integer(kind=kint), intent(in)            :: comp_index
-    integer(kind=kint), intent(in)            :: ndof
-    character(len=HECMW_NAME_LEN), intent(in) :: label
-    real(kind=kreal), intent(in)              :: vect(:)
-    !---- vals
-    integer(kind=kint) :: i, k, alldof, offset
-    !---- body
-
-    fstrRESULT%nn_dof(comp_index)     = ndof
-    fstrRESULT%node_label(comp_index) = label
-    alldof = fstrRESULT%nn_component*ndof
-    offset = ndof*(comp_index-1)
-    do i=1, hecMESH%n_node
-      do k=1, ndof
-        fstrRESULT%node_val_item(alldof*(i-1) + k + offset) = vect(ndof*(i-1) + k)
-      end do
-    end do
-
-  end subroutine
-
-end module
-
-
 module fstr_frequency_analysis
 
   use m_fstr
   use m_fstr_CreateMatrix_and_DampingForce
   use m_fstr_AddBC
   use m_fstr_EIG_setMASS
-  use fstr_frequency_visout
+  use m_fstr_NodalKinematics
+  use m_fstr_Update
+  use m_fstr_Residual, only: fstr_Update_REACTION_SPC
+  use m_fstr_NodalStress
+  use m_make_result
   use m_hecmw2fstr_mesh_conv
+  use hecmw_setup_util, only: node_global_to_local
 
   implicit none
 
@@ -87,18 +43,18 @@ contains
     !C-- local variable
     !C
     integer(kind=kint)            :: numnode, numelm, startmode, endmode, nummode, ndof, im, in, ntotal, vistype
-    integer(kind=kint)            :: numfreq, idnode, numdisp
+    integer(kind=kint)            :: numfreq, idnode, numdisp, imonit, nmonit, monitnode(1)
     integer(kind=kint)            :: freqiout(3)
     integer(kind=kint)            :: ierr
     integer(kind=kint), parameter :: ilogin = 9056
     real(kind=kreal), allocatable :: eigenvalue(:), loadvecRe(:), loadvecIm(:)
-    real(kind=kreal), allocatable :: bjre(:), bjim(:), dvaRe(:), dvaIm(:), disp(:), vel(:), acc(:)
+    real(kind=kreal), allocatable :: bjre(:), bjim(:)
     real(kind=kreal), allocatable :: dispRe(:), dispIm(:), velRe(:), velIm(:), accRe(:), accIm(:)
     real(kind=kreal)              :: freq, omega, val, dx, dy, dz, f_start, f_end
     real(kind=kreal)              :: t_start, t_end, time, dxi, dyi, dzi
     type(fstr_freqanalysis_data)  :: freqData
 
-    numnode   = hecMESH%nn_internal
+    numnode   = hecMESH%n_node
     numelm    = hecMESH%n_elem
     ndof      = hecMESH%n_dof
     startmode = fstrFREQ%start_mode
@@ -111,10 +67,30 @@ contains
     allocate(freqData%eigVector(numnode*ndof, nummode))
 
     call setupFREQParam(fstrDYNAMIC, f_start, f_end, numfreq, freqData%rayAlpha, freqData%rayBeta, idnode, vistype, freqiout)
-    write(*,*) "Rayleigh alpha:", freqData%rayAlpha
-    write(*,*) "Rayleigh beta:", freqData%rayBeta
-    write(ilog,*) "Rayleigh alpha:", freqData%rayAlpha
-    write(ilog,*) "Rayleigh beta:", freqData%rayBeta
+    call setupOutputItem(fstrSOLID, freqiout)
+
+    monitnode(1) = idnode
+    imonit       = 0
+    if( node_global_to_local(hecMESH, monitnode, 1) == 1 ) then
+      if( monitnode(1) <= hecMESH%nn_internal ) imonit = monitnode(1)  !monitor is reported by the rank owning it
+    end if
+    nmonit = 0
+    if( imonit > 0 ) nmonit = 1
+    call hecmw_allreduce_I1(hecMESH, nmonit, hecmw_sum)
+    if( nmonit == 0 ) then
+      if( myrank == 0 ) then
+        write(*,   *) "Error: monitor node not found:", idnode
+        write(ilog,*) "Error: monitor node not found:", idnode
+      end if
+      call hecmw_abort( hecmw_comm_get_comm() )
+    end if
+
+    if( myrank == 0 ) then
+      write(*,*) "Rayleigh alpha:", freqData%rayAlpha
+      write(*,*) "Rayleigh beta:", freqData%rayBeta
+      write(ilog,*) "Rayleigh alpha:", freqData%rayAlpha
+      write(ilog,*) "Rayleigh beta:", freqData%rayBeta
+    end if
 
 
     allocate(eigenvalue(nummode))
@@ -122,11 +98,6 @@ contains
     allocate(loadvecIm(numnode*ndof))
     allocate(bjre(nummode))
     allocate(bjim(nummode))
-    allocate(dvaRe(numnode*ndof))
-    allocate(dvaIm(numnode*ndof))
-    allocate(disp(numnode*ndof))
-    allocate(vel(numnode*ndof))
-    allocate(acc(numnode*ndof))
     allocate(dispRe(numnode*ndof))
     allocate(dispIm(numnode*ndof))
     allocate(velRe(numnode*ndof))
@@ -137,16 +108,18 @@ contains
     loadvecRe(:) = 0.0D0
     loadvecIm(:) = 0.0D0
 
-    write(*,*) "--frequency analysis--"
-    write(*,   *) "read from=", trim(fstrFREQ%eigenlog_filename)
-    write(ilog,*) "read from=", trim(fstrFREQ%eigenlog_filename)
-    write(*,   *) "start mode=", startmode
-    write(ilog,*) "start mode=", startmode
-    write(*,   *) "end mode=", endmode
-    write(ilog,*) "end mode=", endmode
+    if( myrank == 0 ) then
+      write(*,*) "--frequency analysis--"
+      write(*,   *) "read from=", trim(fstrFREQ%eigenlog_filename)
+      write(ilog,*) "read from=", trim(fstrFREQ%eigenlog_filename)
+      write(*,   *) "start mode=", startmode
+      write(ilog,*) "start mode=", startmode
+      write(*,   *) "end mode=", endmode
+      write(ilog,*) "end mode=", endmode
+    end if
     open(unit=ilogin, file=trim(fstrFREQ%eigenlog_filename), status="OLD", action="READ", iostat=ierr)
     if( ierr /= 0 ) then
-      write(*,*) "Error: cannot open eigenlog file: ", trim(fstrFREQ%eigenlog_filename)
+      if( myrank == 0 ) write(*,*) "Error: cannot open eigenlog file: ", trim(fstrFREQ%eigenlog_filename)
       call hecmw_abort( hecmw_comm_get_comm() )
     endif
     call read_eigen_values(ilogin, startmode, endmode, eigenvalue, freqData%eigOmega)
@@ -158,91 +131,97 @@ contains
     call extract_surf2node(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
     call assemble_nodeload(hecMESH, fstrFREQ, ndof, loadvecRe, loadvecIm)
 
-    write(*,*) "calc mass matrix"
+    if( myrank == 0 ) write(*,*) "calc mass matrix"
     call calcMassMatrix(fstrPARAM, hecMESH, hecMAT, fstrSOLID, fstrEIG, hecLagMAT)
-    write(*,*) "scale eigenvector"
-    call scaleEigenVector(fstrEIG, ndof*numnode, nummode, freqData%eigVector)
+    if( myrank == 0 ) write(*,*) "scale eigenvector"
+    call scaleEigenVector(hecMESH, fstrEIG, ndof*numnode, nummode, freqData%eigVector)
 
-    write(*,   *) "start frequency:", f_start
-    write(ilog,*) "start frequency:", f_start
-    write(*,   *) "end frequency:", f_end
-    write(ilog,*) "end frequency:", f_end
-    write(*   ,*) "number of the sampling points", numfreq
-    write(ilog,*) "number of the sampling points", numfreq
-    write(*   ,*) "monitor nodeid=", idnode
-    write(ilog,*) "monitor nodeid=", idnode
+    if( myrank == 0 ) then
+      write(*,   *) "start frequency:", f_start
+      write(ilog,*) "start frequency:", f_start
+      write(*,   *) "end frequency:", f_end
+      write(ilog,*) "end frequency:", f_end
+      write(*   ,*) "number of the sampling points", numfreq
+      write(ilog,*) "number of the sampling points", numfreq
+      write(*   ,*) "monitor nodeid=", idnode
+      write(ilog,*) "monitor nodeid=", idnode
+    end if
 
     do im=1, numfreq
       freq = (f_end-f_start)/dble(numfreq)*dble(im) + f_start
       omega = 2.0D0 * 3.14159265358979D0 * freq
 
-      call calcFreqCoeff(freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
-      call calcDispVector(freqData, bjRe, bjIm, dvaRe, dvaIm)
+      call calcFreqCoeff(hecMESH, freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
+      call calcDispVector(freqData, bjRe, bjIm, dispRe, dispIm)
+      call calcVelVector(freqData, omega, bjRe, bjIm, velRe, velIm)
+      call calcAccVector(freqData, omega, bjRe, bjIm, accRe, accIm)
 
-      dx  = sqrt(dvaRe(3*(idnode-1)+1)**2 + dvaIm(3*(idnode-1)+1)**2)
-      dy  = sqrt(dvaRe(3*(idnode-1)+2)**2 + dvaIm(3*(idnode-1)+2)**2)
-      dz  = sqrt(dvaRe(3*(idnode-1)+3)**2 + dvaIm(3*(idnode-1)+3)**2)
-      val = sqrt(dx**2 + dy**2 + dz**2)
-      write(*,    *) freq, "[Hz] : ", val
-      write(ilog, *) freq, "[Hz] : ", val
-      disp(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
-
-      call calcVelVector(freqData, omega, bjRe, bjIm, dvaRe, dvaIm)
-      vel(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
-
-      call calcAccVector(freqData, omega, bjRe, bjIm, dvaRe, dvaIm)
-      acc(:) = abs(cmplx(dvaRe(:), dvaIm(:)))
-
-      if(IRESULT==1) then
-        write(*,   *) freq, "[Hz] : ", im, ".res"
-        write(ilog,*) freq, "[Hz] : ", im, ".res"
-        call output_resfile(hecMESH, freq, im, disp, vel, acc, freqiout)
+      if( imonit > 0 ) then
+        dx  = sqrt(dispRe(3*(imonit-1)+1)**2 + dispIm(3*(imonit-1)+1)**2)
+        dy  = sqrt(dispRe(3*(imonit-1)+2)**2 + dispIm(3*(imonit-1)+2)**2)
+        dz  = sqrt(dispRe(3*(imonit-1)+3)**2 + dispIm(3*(imonit-1)+3)**2)
+        val = sqrt(dx**2 + dy**2 + dz**2)
+        write(*,    *) freq, "[Hz] : ", val
+        write(ilog, *) freq, "[Hz] : ", val
       end if
-      if(IVISUAL==1 .and. vistype==1) then
-        write(*,   *) freq, "[Hz] : ", im, ".vis"
-        write(ilog,*) freq, "[Hz] : ", im, ".vis"
-        call output_visfile(hecMESH, im, disp, vel, acc, freqiout)
+
+      if( myrank == 0 ) then
+        if(IRESULT==1) then
+          write(*,   *) freq, "[Hz] : ", im, ".res"
+          write(ilog,*) freq, "[Hz] : ", im, ".res"
+        end if
+        if(IVISUAL==1 .and. vistype==1) then
+          write(*,   *) freq, "[Hz] : ", im, ".vis"
+          write(ilog,*) freq, "[Hz] : ", im, ".vis"
+        end if
       end if
+      call output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, 'fstrRES', 'frequency', freq, im, &
+        IRESULT==1, IVISUAL==1 .and. vistype==1, dispRe, dispIm, velRe, velIm, accRe, accIm)
     end do
 
     call setupDYNAParam(fstrDYNAMIC, t_start, t_end, freq, numdisp)
-    write(*,   *) "start time:", t_start
-    write(ilog,*) "start time:", t_start
-    write(*,   *) "end time:", t_end
-    write(ilog,*) "end time:", t_end
-    write(*,   *) "frequency:", freq
-    write(ilog,*) "frequency:", freq
-    write(*,   *) "node id:", idnode
-    write(ilog,*) "node id:", idnode
-    write(*,   *) "num disp:", numdisp
-    write(ilog,*) "num disp:", numdisp
+    if( myrank == 0 ) then
+      write(*,   *) "start time:", t_start
+      write(ilog,*) "start time:", t_start
+      write(*,   *) "end time:", t_end
+      write(ilog,*) "end time:", t_end
+      write(*,   *) "frequency:", freq
+      write(ilog,*) "frequency:", freq
+      write(*,   *) "node id:", idnode
+      write(ilog,*) "node id:", idnode
+      write(*,   *) "num disp:", numdisp
+      write(ilog,*) "num disp:", numdisp
+    end if
 
     omega = 2.0D0 * 3.14159265358979D0 * freq
-    call calcFreqCoeff(freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
-    call calcDispVector(freqData, bjRe, bjIm, dvaRe, dvaIm)
+    call calcFreqCoeff(hecMESH, freqData, loadvecRe, loadvecIm, omega, bjRe, bjIm)
 
     do im=1, numdisp
       time = (t_end-t_start)/dble(numdisp)*dble(im-1) + t_start
-      call calcDispVectorTime(freqData, time, omega, bjRe, bjIm, dvaRe, dvaIm)
-      dx  = dvaRe(3*(idnode-1)+1)
-      dy  = dvaRe(3*(idnode-1)+2)
-      dz  = dvaRe(3*(idnode-1)+3)
-      dxi = dvaIm(3*(idnode-1)+1)
-      dyi = dvaIm(3*(idnode-1)+2)
-      dzi = dvaIm(3*(idnode-1)+3)
-
+      call calcDispVectorTime(freqData, time, omega, bjRe, bjIm, dispRe, dispIm)
       call calcVelVectorTime(freqData, time, omega, bjRe, bjIm, velRe, velIm)
       call calcAccVectorTime(freqData, time, omega, bjRe, bjIm, accRe, accIm)
-      if(IRESULT==1) then
-        write(*,   *) "time=", time, " : ", im, ".res"
-        write(ilog,*) "time=", time, " : ", im, ".res"
-        call outputdyna_resfile(hecMESH, time, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
+      if( imonit > 0 ) then
+        dx  = dispRe(3*(imonit-1)+1)
+        dy  = dispRe(3*(imonit-1)+2)
+        dz  = dispRe(3*(imonit-1)+3)
+        dxi = dispIm(3*(imonit-1)+1)
+        dyi = dispIm(3*(imonit-1)+2)
+        dzi = dispIm(3*(imonit-1)+3)
       end if
-      if(IVISUAL==1 .and. vistype==2) then
-        write(*,   *) "time=", time, " : ", im, ".vis"
-        write(ilog,*) "time=", time, " : ", im, ".vis"
-        call outputdyna_visfile(hecMESH, im, dvaRe, dvaIm, velRe, velIm, accRe, accIm, freqiout)
+
+      if( myrank == 0 ) then
+        if(IRESULT==1) then
+          write(*,   *) "time=", time, " : ", im, ".res"
+          write(ilog,*) "time=", time, " : ", im, ".res"
+        end if
+        if(IVISUAL==1 .and. vistype==2) then
+          write(*,   *) "time=", time, " : ", im, ".vis"
+          write(ilog,*) "time=", time, " : ", im, ".vis"
+        end if
       end if
+      call output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, 'fstrDYNA', 'TOTALTIME', time, im, &
+        IRESULT==1, IVISUAL==1 .and. vistype==2, dispRe, dispIm, velRe, velIm, accRe, accIm)
     end do
 
     deallocate(freqData%eigOmega)
@@ -252,11 +231,6 @@ contains
     deallocate(loadvecIm)
     deallocate(bjre)
     deallocate(bjim)
-    deallocate(dvaRe)
-    deallocate(dvaIm)
-    deallocate(disp)
-    deallocate(vel)
-    deallocate(acc)
     deallocate(dispRe)
     deallocate(dispIm)
     deallocate(velRe)
@@ -406,7 +380,7 @@ contains
         do j=1, numdof
           a = (ind-1)*nallcomp + j  !src vector index
           b = (ind-1)*numdof   + j
-          eigenvector(b,imode) = eigenres%node_val_item(a)
+          eigenvector(b,idx) = eigenres%node_val_item(a)
         end do
       end do
       call free_result_data(eigenres)
@@ -443,92 +417,133 @@ contains
 
   end subroutine
 
-  subroutine output_resfile(hecMESH, freq, ifreq, disp, vel, acc, iout)
+  !
+  ! The displacement, the velocity and the acceleration of the frequency response
+  ! analysis are selected by iout_list of !DYNAMIC, and the other items follow
+  ! !OUTPUT_RES as in the static and the transient dynamic analysis
+  !
+  subroutine setupOutputItem(fstrSOLID, iout)
     !---- args
-    type(hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(in)         :: freq
-    integer(kind=kint), intent(in)       :: ifreq
-    real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)         :: acc(:) !intend (numnodeDOF)
-    integer(kind=kint), intent(in)       :: iout(3)
+    type(fstr_solid), intent(inout) :: fstrSOLID
+    integer(kind=kint), intent(in)  :: iout(3)
     !---- vals
-    integer(kind=kint)              :: im
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_MSG_LEN)    :: comment
-    character(len=HECMW_NAME_LEN)   :: label, nameid
-    real(kind=kreal)                :: freqval(1)
+    integer(kind=kint) :: i
     !---- body
 
-    nameid='fstrRES'
-    header='*fstrresult'
-    comment='frequency_result'
-    call hecmw_result_init(hecMESH, ifreq, header, comment)
-
-    label = "frequency"
-    freqval(1) = freq
-    call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, freqval)
-
-    if(iout(1) == 1) then
-      label='displacement'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, disp) !mode=node, ndof=3
-    end if
-    if(iout(2) == 1) then
-      label='velocity'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, vel) !mode=node, ndof=3
-    end if
-    if(iout(3) == 1) then
-      label='acceleration'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, acc) !mode=node, ndof=3
-    end if
-    call hecmw_result_write_by_name(nameid)
-    call hecmw_result_finalize()
-    return
+    do i=3, 4
+      fstrSOLID%output_ctrl(i)%outinfo%on(1)  = (iout(1) == 1)
+      fstrSOLID%output_ctrl(i)%outinfo%on(15) = (iout(2) == 1)
+      fstrSOLID%output_ctrl(i)%outinfo%on(16) = (iout(3) == 1)
+    end do
   end subroutine
 
-  subroutine output_visfile(hecMESH, ifreq, disp, vel, acc, iout)
+  !
+  ! Set one phase of the response to fstrSOLID and fstrDYNAMIC, and recover the
+  ! strain and the stress of it with the routines of the static analysis.
+  ! The incremental form keeps the incompatible mode of the 361 element consistent
+  ! with the displacement, as the material is linear elastic here.
+  !
+  subroutine updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, istp, disp, vel, acc)
     !---- args
-    type(hecmwST_local_mesh), intent(in) :: hecMESH
-    integer(kind=kint), intent(in)       :: ifreq
-    real(kind=kreal), intent(in)         :: disp(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)         :: vel(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)         :: acc(:) !intend (numnodeDOF)
-    integer(kind=kint), intent(in)       :: iout(3)
+    type(hecmwST_local_mesh)       :: hecMESH
+    type(hecmwST_matrix)           :: hecMAT
+    type(fstr_solid)               :: fstrSOLID
+    type(fstr_dynamic)             :: fstrDYNAMIC
+    integer(kind=kint), intent(in) :: istp
+    real(kind=kreal), intent(in)   :: disp(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: vel(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: acc(:) !intend (numnodeDOF)
     !---- vals
-    type(hecmwST_result_data)      :: fstrRESULT
-    character(len=HECMW_NAME_LEN)  :: label
-    integer(kind=kint)             :: ncomp, i
+    integer(kind=kint) :: ndof, ntotal, idx
     !---- body
-    ncomp = 0
-    do i=1, 3
-      if(iout(i) == 1) then
-        ncomp = ncomp + 1
-      end if
-    end do
 
-    call fstr_freq_result_init(hecMESH, ncomp, fstrRESULT)
-    ncomp=1
-    if(iout(1) == 1) then
-      label = 'displace_abs'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, disp)
-      ncomp = ncomp + 1
+    ndof   = hecMESH%n_dof
+    ntotal = ndof*hecMESH%n_node
+
+    idx = 1
+    if( fstrDYNAMIC%idx_eqa == 1 .and. istp > 0 ) idx = 2
+    fstrDYNAMIC%DISP(1:ntotal,idx) = disp(1:ntotal)
+    fstrDYNAMIC%VEL (1:ntotal,idx) = vel(1:ntotal)
+    fstrDYNAMIC%ACC (1:ntotal,idx) = acc(1:ntotal)
+
+    hecMAT%X(1:ntotal) = disp(1:ntotal) - fstrSOLID%unode(1:ntotal) - fstrSOLID%dunode(1:ntotal)
+    call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
+    call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, 0.0D0, 0.0D0, 1 )
+    call fstr_Update_REACTION_SPC( 1, hecMESH, fstrSOLID )
+
+    if( ndof == 2 ) then
+      call fstr_NodalStress2D( hecMESH, fstrSOLID )
+    else if( ndof == 6 ) then
+      call fstr_NodalStress6D( hecMESH, fstrSOLID )
+    else
+      call fstr_NodalStress3D( hecMESH, fstrSOLID )
     end if
-    if(iout(2) == 1) then
-      label = 'velocity_abs'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, vel)
-      ncomp = ncomp + 1
-    end if
-    if(iout(3) == 1) then
-      label = 'acceleration_abs'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, acc)
-      ncomp = ncomp + 1
+  end subroutine
+
+  !
+  ! The response is complex, so the real part and the imaginary part are written as
+  ! two sets of the same items, distinguished by the label suffix. Both are recovered
+  ! once and shared by the result file and the visualization data.
+  !
+  subroutine output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, nameid, glabel, gvalue, istp, &
+      wres, wvis, dispRe, dispIm, velRe, velIm, accRe, accIm)
+    !---- args
+    type(hecmwST_local_mesh)       :: hecMESH
+    type(hecmwST_matrix)           :: hecMAT
+    type(fstr_solid)               :: fstrSOLID
+    type(fstr_dynamic)             :: fstrDYNAMIC
+    character(len=*), intent(in)   :: nameid
+    character(len=*), intent(in)   :: glabel
+    real(kind=kreal), intent(in)   :: gvalue
+    integer(kind=kint), intent(in) :: istp
+    logical, intent(in)            :: wres, wvis
+    real(kind=kreal), intent(in)   :: dispRe(:), dispIm(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: velRe(:), velIm(:) !intend (numnodeDOF)
+    real(kind=kreal), intent(in)   :: accRe(:), accIm(:) !intend (numnodeDOF)
+    !---- vals
+    type(hecmwST_result_data)       :: visRe, visIm
+    character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN)    :: comment
+    character(len=HECMW_NAME_LEN)   :: label, resid
+    real(kind=kreal)                :: gval(1)
+    !---- body
+
+    if( .not. (wres .or. wvis) ) return
+
+    if( wres ) then
+      header='*fstrresult'
+      comment='frequency_result'
+      call hecmw_result_init(hecMESH, istp, header, comment)
+
+      label   = glabel
+      gval(1) = gvalue
+      call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, gval)
     end if
 
-    call fstr2hecmw_mesh_conv(hecMESH)
-    call hecmw_visualize_init
-    call hecmw_visualize( hecMESH, fstrRESULT, ifreq )
-    call hecmw2fstr_mesh_conv(hecMESH)
-    call hecmw_result_free(fstrRESULT)
+    call updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, istp, dispRe, velRe, accRe)
+    if( wres ) call fstr_write_result_add(hecMESH, fstrSOLID, istp, '_real', fstrDYNAMIC)
+    if( wvis ) call fstr_make_result(hecMESH, fstrSOLID, visRe, istp, gvalue, fstrDYNAMIC, '_real')
+
+    call updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, istp, dispIm, velIm, accIm)
+    if( wres ) call fstr_write_result_add(hecMESH, fstrSOLID, istp, '_imag', fstrDYNAMIC)
+    if( wvis ) call fstr_make_result(hecMESH, fstrSOLID, visIm, istp, gvalue, fstrDYNAMIC, '_imag')
+
+    if( wres ) then
+      resid = nameid
+      call hecmw_result_write_by_name(resid)
+      call hecmw_result_finalize()
+    end if
+
+    if( wvis ) then
+      call fstr_merge_result(hecMESH, visRe, visIm)
+      call hecmw_result_free(visIm)
+      call fstr2hecmw_mesh_conv(hecMESH)
+      call hecmw_visualize_init
+      call hecmw_visualize( hecMESH, visRe, istp )
+      call hecmw2fstr_mesh_conv(hecMESH)
+      call hecmw_result_free(visRe)
+    end if
+    return
   end subroutine
 
   subroutine extract_surf2node(hecMESH, freqData, numdof, loadvecRe, loadvecIm)
@@ -604,9 +619,9 @@ contains
     integer(kind=kint), intent(inout) :: nsize
     !---- vals
     integer(kind=kint), parameter :: NDOF = 3
-    real(kind=kreal)              :: WG
+    real(kind=kreal)              :: WG, AREA
     integer(kind=kint)            :: NOD(NN)
-    real(kind=kreal)              :: elecoord(3, NN), localcoord(3)
+    real(kind=kreal)              :: elecoord(3, NN), localcoord(3), normal(3)
     real(kind=kreal)              :: H(NN)
     integer(kind=kint)            :: I, IG2, NSUR, SURTYPE
     !---- body
@@ -626,10 +641,12 @@ contains
       call getShapeFunc( SURTYPE, localcoord(1:2), H(1:NSUR) )
 
       WG=getWeight( SURTYPE, IG2 )
+      normal=SurfaceNormal( SURTYPE, NSUR, localcoord(1:2), elecoord(:,1:NSUR) )
+      AREA=dsqrt( dot_product(normal, normal) )
       do I=1,NSUR
-        VECT(3*NOD(I)-2)=VECT(3*NOD(I)-2)+WG*H(I)*force(1)
-        VECT(3*NOD(I)-1)=VECT(3*NOD(I)-1)+WG*H(I)*force(2)
-        VECT(3*NOD(I)  )=VECT(3*NOD(I)  )+WG*H(I)*force(3)
+        VECT(3*NOD(I)-2)=VECT(3*NOD(I)-2)+AREA*WG*H(I)*force(1)
+        VECT(3*NOD(I)-1)=VECT(3*NOD(I)-1)+AREA*WG*H(I)*force(2)
+        VECT(3*NOD(I)  )=VECT(3*NOD(I)  )+AREA*WG*H(I)*force(3)
       end do
     end do
   end subroutine
@@ -683,22 +700,26 @@ contains
 
   end subroutine
 
-  subroutine scaleEigenVector(fstrEIG, ntotaldof, nmode, eigenvector)
+  subroutine scaleEigenVector(hecMESH, fstrEIG, ntotaldof, nmode, eigenvector)
     !---- args
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_eigen), intent(in)    :: fstrEIG
     integer(kind=kint), intent(in)  :: ntotaldof
     integer(kind=kint), intent(in)  :: nmode
     real(kind=kreal), intent(inout) :: eigenvector(:, :)
     !---- vals
-    integer(kind=kint) :: imode, idof
+    integer(kind=kint) :: imode, idof, nintdof
     real(kind=kreal)   :: mas
     !---- body
 
+    nintdof = hecMESH%nn_internal*hecMESH%n_dof
+
     do imode=1,nmode
       mas = 0.0D0
-      do idof=1,ntotaldof
+      do idof=1,nintdof
         mas = mas + fstrEIG%mass(idof)*eigenvector(idof,imode)**2
       end do
+      call hecmw_allreduce_R1(hecMESH, mas, hecmw_sum)
       do idof=1,ntotaldof
         eigenvector(idof,imode) =  eigenvector(idof,imode) / sqrt(mas)
       end do
@@ -745,20 +766,24 @@ contains
     return
   end subroutine
 
-  subroutine calcDotProduct(a, b, c)
+  subroutine calcDotProduct(hecMESH, a, b, c)
     !---- args
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
     real(kind=kreal), intent(in)    :: a(:)
     real(kind=kreal), intent(in)    :: b(:)
     real(kind=kreal), intent(inout) :: c
     !---- vals
+    integer(kind=kint) :: nintdof
     !---- body
-    c = dot_product(a, b)
-    !Next, we need allreduce operation to implement distribute mesh.
+    nintdof = hecMESH%nn_internal*hecMESH%n_dof  !external nodes are owned by another rank
+    c = dot_product(a(1:nintdof), b(1:nintdof))
+    call hecmw_allreduce_R1(hecMESH, c, hecmw_sum)
     return
   end subroutine
 
-  subroutine calcFreqCoeff(freqData, loadRe, loadIm, inpOmega, bjRe, bjIm)
+  subroutine calcFreqCoeff(hecMESH, freqData, loadRe, loadIm, inpOmega, bjRe, bjIm)
     !---- args
+    type(hecmwST_local_mesh), intent(in)     :: hecMESH
     type(fstr_freqanalysis_data), intent(in) :: freqData
     real(kind=kreal), intent(in)             :: loadRe(:) !intend (numNodeDOF)
     real(kind=kreal), intent(in)             :: loadIm(:) !intend (numNodeDOF)
@@ -774,8 +799,8 @@ contains
     beta = freqData%rayBeta
 
     do imode=1, freqData%numMode
-      call calcDotProduct(freqData%eigVector(:,imode), loadRe, ujfr)
-      call calcDotProduct(freqData%eigVector(:,imode), loadIm, ujfi)
+      call calcDotProduct(hecMESH, freqData%eigVector(:,imode), loadRe, ujfr)
+      call calcDotProduct(hecMESH, freqData%eigVector(:,imode), loadIm, ujfi)
 
       a = ujfr*(freqData%eigOmega(imode)**2 - inpOmega**2) + ujfi*(alp + beta*freqData%eigOmega(imode)**2)*inpOmega
       b = (freqData%eigOmega(imode)**2 - inpOmega**2)**2 + ((alp + beta*freqData%eigOmega(imode)**2)*inpOmega)**2
@@ -893,13 +918,13 @@ contains
 
     dispRe(:) = 0.0D0
     dispIm(:) = 0.0D0
-    a = exp(cmplx(0.0D0, omega*time))
+    a = exp(dcmplx(0.0D0, omega*time))
 
     do imode=1, freqData%numMode
       s = size(freqData%eigvector(:,imode))
-      b = cmplx(bjRe(imode), bjIm(imode)) * a
+      b = dcmplx(bjRe(imode), bjIm(imode)) * a
       do idf=1, s
-        c = b*cmplx(freqData%eigVector(idf,imode), 0.0D0)
+        c = b*dcmplx(freqData%eigVector(idf,imode), 0.0D0)
         dispRe(idf) = dispRe(idf) + dble(c)
         dispIm(idf) = dispIm(idf) + imag(c)
       end do
@@ -923,13 +948,13 @@ contains
 
     velRe(:) = 0.0D0
     velIm(:) = 0.0D0
-    a = cmplx(0.0D0, 1.0D0)*cmplx(omega, 0.0D0)*exp(cmplx(0.0D0, omega*time))
+    a = dcmplx(0.0D0, 1.0D0)*dcmplx(omega, 0.0D0)*exp(dcmplx(0.0D0, omega*time))
 
     do imode=1, freqData%numMode
       s = size(freqData%eigvector(:,imode))
-      b = cmplx(bjRe(imode), bjIm(imode)) * a
+      b = dcmplx(bjRe(imode), bjIm(imode)) * a
       do idf=1, s
-        c = b*cmplx(freqData%eigVector(idf,imode), 0.0D0)
+        c = b*dcmplx(freqData%eigVector(idf,imode), 0.0D0)
         velRe(idf) = velRe(idf) + dble(c)
         velIm(idf) = velIm(idf) + imag(c)
       end do
@@ -953,13 +978,13 @@ contains
 
     accRe(:) = 0.0D0
     accIm(:) = 0.0D0
-    a = cmplx(-1.0D0, 0.0D0)*cmplx(omega**2, 0.0D0)*exp(cmplx(0.0D0, omega*time))
+    a = dcmplx(-1.0D0, 0.0D0)*dcmplx(omega**2, 0.0D0)*exp(dcmplx(0.0D0, omega*time))
 
     do imode=1, freqData%numMode
       s = size(freqData%eigvector(:,imode))
-      b = cmplx(bjRe(imode), bjIm(imode)) * a
+      b = dcmplx(bjRe(imode), bjIm(imode)) * a
       do idf=1, s
-        c = b*cmplx(freqData%eigVector(idf,imode), 0.0D0)
+        c = b*dcmplx(freqData%eigVector(idf,imode), 0.0D0)
         accRe(idf) = accRe(idf) + dble(c)
         accIm(idf) = accIm(idf) + imag(c)
       end do
@@ -981,162 +1006,6 @@ contains
     dynafreq = fstrDYNAMIC%t_delta
     numdisp  = fstrDYNAMIC%nout
     return
-  end subroutine
-
-  subroutine outputdyna_resfile(hecMESH, time, istp, dispre, dispim, velre, velim, accre, accim, iout)
-    !---- args
-    type(hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(in)   :: time
-    integer(kind=kint), intent(in) :: istp
-    real(kind=kreal), intent(in)   :: dispre(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)   :: dispim(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)   :: velre(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)   :: velim(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)   :: accre(:) !intend (numnodeDOF)
-    real(kind=kreal), intent(in)   :: accim(:) !intend (numnodeDOF)
-    integer(kind=kint), intent(in) :: iout(3)
-    !---- vals
-    integer(kind=kint)              :: im, s
-    character(len=HECMW_HEADER_LEN) :: header
-    character(len=HECMW_MSG_LEN)    :: comment
-    character(len=HECMW_NAME_LEN)   :: label, nameid
-    real(kind=kreal), allocatable   :: absval(:)
-    !---- body
-
-    s = size(dispre)
-    allocate(absval(s))
-
-    nameid='fstrDYNA'
-    header='*fstrresult'
-    comment='frequency_result'
-
-    call hecmw_result_init(hecMESH, istp, header, comment)
-
-    label = "time"
-    absval(1) = time
-    call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, absval)
-
-    if(iout(1) == 1) then
-      label='displacement_real'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, dispre) !mode=node, ndof=3
-      label='displacement_imag'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, dispim)
-      label='displacement_abs'
-      absval(:) = abs(cmplx(dispre(:), dispim(:)))
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
-    end if
-
-    if(iout(2) == 1) then
-      label='velocity_real'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, velre) !mode=node, ndof=3
-      label='velocity_imag'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, velim)
-      label='velocity_abs'
-      absval(:) = abs(cmplx(velre(:), velim(:)))
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
-    end if
-
-    if(iout(3) == 1) then
-      label='acceleration_real'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, accre) !mode=node, ndof=3
-      label='acceleration_imag'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, accim)
-      label='acceleration_abs'
-      absval(:) = abs(cmplx(velre(:), velim(:)))
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 3, label, absval)
-    end if
-
-    call hecmw_result_write_by_name(nameid)
-    call hecmw_result_finalize()
-
-    deallocate(absval)
-    return
-  end subroutine
-
-  subroutine outputdyna_visfile(hecMESH, istp, dispre, dispim, velre, velim, accre, accim, iout)
-    !---- args
-    type(hecmwST_local_mesh), intent(inout) :: hecMESH
-    integer(kind=kint), intent(in)          :: istp
-    real(kind=kreal), intent(in)            :: dispre(:)
-    real(kind=kreal), intent(in)            :: dispim(:)
-    real(kind=kreal), intent(in)            :: velre(:)
-    real(kind=kreal), intent(in)            :: velim(:)
-    real(kind=kreal), intent(in)            :: accre(:)
-    real(kind=kreal), intent(in)            :: accim(:)
-    integer(kind=kint), intent(in)          :: iout(3)
-    !---- vals
-    type(hecmwST_result_data)     :: fstrRESULT
-    character(len=HECMW_NAME_LEN) :: label
-    integer(kind=kint)            :: s, ncomp, i
-    real(kind=kreal), allocatable :: absval(:)
-    !---- body
-
-    s = size(dispre)
-    allocate(absval(s))
-
-    ncomp = 0
-    do i=1, 3
-      if(iout(i) == 1) then
-        ncomp = ncomp + 3  !re, im, abs
-      end if
-    end do
-
-    call fstr_freq_result_init(hecMESH, ncomp, fstrRESULT)  !disp, vel, acc
-
-    ncomp = 1
-
-    if(iout(1) == 1) then
-      label = 'displace_real'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, dispre)
-      ncomp = ncomp + 1
-
-      label = 'displace_imag'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, dispim)
-      ncomp = ncomp + 1
-
-      label = 'displace_abs'
-      absval(:) = abs(cmplx(dispre(:), dispim(:)))
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, absval)
-      ncomp = ncomp + 1
-    end if
-
-    if(iout(2) == 1) then
-      label = 'velocity_real'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, velre)
-      ncomp = ncomp + 1
-
-      label = 'velocity_imag'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, velim)
-      ncomp = ncomp + 1
-
-      label = 'velocity_abs'
-      absval(:) = abs(cmplx(velre(:), velim(:)))
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, absval)
-      ncomp = ncomp + 1
-    end if
-
-    if(iout(3) == 1) then
-      label = 'acceleration_real'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, accre)
-      ncomp = ncomp + 1
-
-      label = 'acceleration_imag'
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, accim)
-      ncomp = ncomp + 1
-
-      label = 'acceleration_abs'
-      absval(:) = abs(cmplx(accre(:), accim(:)))
-      call fstr_freq_result_add(fstrRESULT, hecMESH, ncomp, 3, label, absval)
-      ncomp = ncomp + 1
-    end if
-
-    call fstr2hecmw_mesh_conv(hecMESH)
-    call hecmw_visualize_init
-    call hecmw_visualize( hecMESH, fstrRESULT, istp )
-    call hecmw2fstr_mesh_conv(hecMESH)
-    call hecmw_result_free(fstrRESULT)
-
-    deallocate(absval)
   end subroutine
 
 end module

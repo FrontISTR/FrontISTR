@@ -24,7 +24,7 @@ contains
     real(kind=kreal)   :: start_time, end_time
 
     call heat_init(hecMESH, fstrHEAT)
-    call heat_init_log(hecMESH)
+    call heat_init_log(hecMESH, fstrHEAT)
 
     if(fstrHEAT%restart_nout < 0) then
       call heat_input_restart(fstrHEAT, hecMESH, restart_step_num, total_step, start_time)

@@ -7,32 +7,12 @@
 module fstr_ctrl_common
   use m_fstr
   use hecmw
-  use mContact
   use m_timepoint
   use fstr_ctrl_util_f
 
   implicit none
 
-  private :: pc_strupr
-
 contains
-
-  subroutine pc_strupr( s )
-    implicit none
-    character(*) :: s
-    integer :: i, n, a, da
-
-    n = len_trim(s)
-    da = iachar('a') - iachar('A')
-    do i = 1, n
-      a = iachar(s(i:i))
-      if( a > iachar('Z')) then
-        a = a - da
-        s(i:i) = achar(a)
-      end if
-    end do
-  end subroutine pc_strupr
-
 
   !> Read in !SOLUTION
   function fstr_ctrl_get_SOLUTION( ctrl, type, nlgeom )
@@ -84,7 +64,8 @@ contains
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, contact_elim, &
-      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel )
+      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel, &
+      matvec_impl, precond_impl )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
     integer(kind=kint) :: precond
@@ -114,15 +95,18 @@ contains
     real(kind=kreal) :: filter
     real(kind=kreal) :: solver_ropt(10)
     integer(kind=kint) :: loglevel
+    integer(kind=kint) :: matvec_impl
+    integer(kind=kint) :: precond_impl
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-    character(100) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' 
+    character(120) :: mlist = &
+      '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,PipeCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
     integer(kind=kint) :: number_number = 5
-    integer(kind=kint) :: indirect_number = 7 ! GMRESR, GMRESREN and CR need to be added
-    integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step
+    integer(kind=kint) :: indirect_number = 8
+    integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step, mtxfmt
 
     fstr_ctrl_get_SOLVER = -1
 
@@ -133,6 +117,8 @@ contains
     dmpt = dumptype+1
     dmpx = dumpexit+1
     usjd = usejad+1
+    ! 0 = MATRIXFORMAT absent, leaving USEJAD and the build-time default in effect
+    mtxfmt = 0
     !* parameter in header line -----------------------------------------------------------------*!
 
     ! JP-0
@@ -146,6 +132,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'DUMPTYPE ', dlist,              0,   'P',   dmpt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'DUMPEXIT ','NO,YES ',           0,   'P',   dmpx ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'USEJAD '  ,'NO,YES ',           0,   'P',   usjd ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'MATRIXFORMAT ','BSR,JAD,CSR,SBLAS ', 0, 'P', mtxfmt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
@@ -225,6 +212,29 @@ contains
     scaling = sclg -1
     dumpexit = dmpx -1
     usejad = usjd -1
+
+    ! MATRIXFORMAT names one storage format for the whole linear solve, so it sets the
+    ! matvec and the preconditioner together.  JAD is one of the formats, which makes
+    ! USEJAD the older spelling of MATRIXFORMAT=JAD; giving both lets MATRIXFORMAT win.
+    ! JAD replaces the matvec only, so the preconditioner keeps the BSR implementation.
+    select case (mtxfmt)
+      case (1)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_BSR
+        precond_impl = HECMW_PRECOND_IMPL_BSR
+      case (2)
+        usejad = kYES
+        matvec_impl  = HECMW_MATVEC_IMPL_BSR
+        precond_impl = HECMW_PRECOND_IMPL_BSR
+      case (3)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_CSR
+        precond_impl = HECMW_PRECOND_IMPL_CSR
+      case (4)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_SBLAS
+        precond_impl = HECMW_PRECOND_IMPL_SBLAS
+    end select
 
     fstr_ctrl_get_SOLVER = 0
 
@@ -564,13 +574,14 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter, conefollow )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
     integer(kind=kint) :: augiter
+    logical            :: conefollow
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
-    integer(kind=kint) :: rcode
+    integer(kind=kint) :: rcode, icone
     character(len=80) :: s
     s = 'SLAGRANGE,ALAGRANGE '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )
@@ -578,6 +589,16 @@ contains
       fstr_ctrl_get_CONTACTALGO = rcode
       return
     endif
+    ! FROZEN keeps the ALagrange friction cone at the multiplier of the last augmentation,
+    ! FOLLOW lets it follow the normal force the contact element applies
+    icone = 1
+    s = 'FROZEN,FOLLOW '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'FRICTION_CONE ', s, 0, 'P', icone )
+    if( rcode /= 0 ) then
+      fstr_ctrl_get_CONTACTALGO = rcode
+      return
+    endif
+    conefollow = ( icone == 2 )
     rcode = fstr_ctrl_get_param_ex( ctrl, 'AUGITER ', '# ', 0, 'I', augiter )
     fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO
@@ -742,7 +763,6 @@ contains
     character(len=128) :: msg
     real(kind=kreal) :: CLEARANCE, CLR_SAME_ELEM, CLR_DIFFLPOS, CLR_CAL_NORM
     real(kind=kreal) :: DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE
-    real(kind=kreal) :: BOX_EXP_RATE
 
     fstr_ctrl_get_CONTACTPARAM = -1
 
@@ -761,15 +781,14 @@ contains
     contactparam%CLR_CAL_NORM  = CLR_CAL_NORM
 
     !read second line
-    data_fmt = 'rrrrr '
+    data_fmt = 'rrrr '
     rcode = fstr_ctrl_get_data_ex( ctrl, 2, data_fmt, &
-      &  DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE, BOX_EXP_RATE )
+      &  DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE )
     if( rcode /= 0 ) return
     contactparam%DISTCLR_INIT = DISTCLR_INIT
     contactparam%DISTCLR_FREE = DISTCLR_FREE
     contactparam%DISTCLR_NOCHECK = DISTCLR_NOCHECK
     contactparam%TENSILE_FORCE = TENSILE_FORCE
-    contactparam%BOX_EXP_RATE = BOX_EXP_RATE
 
     !input check
     rcode = 1
@@ -789,8 +808,6 @@ contains
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_NOCHECK must be >= 0.5.'
     else if( TENSILE_FORCE>=0.d0 ) then
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : TENSILE_FORCE must be < 0.'
-    else if( BOX_EXP_RATE<=1.d0 .or. 2.0<BOX_EXP_RATE ) then
-      write(msg,*) 'fstr control file error : !CONTACT_PARAM : BOX_EXP_RATE must be 1 < BOX_EXP_RATE <= 2.'
     else
       rcode =0
     end if
@@ -829,6 +846,7 @@ contains
       contact_if(i)%if_type     = contact_if(1)%if_type
       contact_if(i)%etime       = contact_if(1)%etime
 
+      call fstr_strupr(cp_name(i))
       contact_if(i)%cp_name     = cp_name(i)
       contact_if(i)%initial_pos = - init_pos(i)
       contact_if(i)%end_pos     = - end_pos(i)
@@ -1034,7 +1052,7 @@ contains
     n = 0
     do i = 1, nline
       r(:)=huge(0.0d0); t(:)=huge(0.0d0)
-      if( fstr_ctrl_get_data_ex( ctrl, 1, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
+      if( fstr_ctrl_get_data_ex( ctrl, i, 'RRrrrrrr ', r(1), t(1), r(2), t(2), r(3), t(3), r(4), t(4) ) /= 0) return
       n = n+1
       val(n) = r(1)
       table(n) = t(1)

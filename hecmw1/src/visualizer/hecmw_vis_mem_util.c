@@ -15,13 +15,13 @@ void HECMW_vis_memory_exit(char *var) {
           "variable %s\n",
           var);
   HECMW_finalize();
-  exit(0);
+  exit(HECMW_EXIT_INTERNAL);
 }
 
 void HECMW_vis_print_exit(char *var) {
   fprintf(stderr, "%s\n", var);
   HECMW_finalize();
-  exit(0);
+  exit(HECMW_EXIT_INTERNAL);
 }
 
 void mfree(void *pointer) {

@@ -65,7 +65,7 @@ void HECMW_assert_(int cond, char *cond_str, char *file, int line) {
 #ifdef HECMW_SERIAL
     abort();
 #else
-    MPI_Abort(MPI_COMM_WORLD, HECMW_EXIT_ERROR);
+    MPI_Abort(MPI_COMM_WORLD, HECMW_EXIT_INTERNAL);
 #endif
   }
 }
@@ -79,7 +79,7 @@ int HECMW_check_condition_(int cond, char *cond_str, int isabort, char *file,
 #ifdef HECMW_SERIAL
     abort();
 #else
-    MPI_Abort(MPI_COMM_WORLD, HECMW_EXIT_ERROR);
+    MPI_Abort(MPI_COMM_WORLD, HECMW_EXIT_INTERNAL);
 #endif
   }
   return 1;
@@ -92,7 +92,7 @@ void HECMW_abort(HECMW_Comm comm) {
   /*	HECMW_comm_is_initialized() ? MPI_Abort(comm, HECMW_EXIT_ERROR) :
    * abort(); */
   if (HECMW_comm_is_initialized()) {
-    MPI_Abort(comm, HECMW_EXIT_ERROR);
+    MPI_Abort(comm, HECMW_EXIT_INTERNAL);
   } else {
     abort();
   }

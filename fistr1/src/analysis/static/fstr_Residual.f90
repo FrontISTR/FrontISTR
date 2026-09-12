@@ -240,7 +240,7 @@ contains
 
 
     if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
-      call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime )
+      call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime+dtime )
     endif
     
     call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)

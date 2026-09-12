@@ -58,10 +58,7 @@ private :: list_destroy
 private :: list_count
 private :: list_next
 private :: list_insert
-private :: list_insert_head
 private :: list_delete_element
-private :: list_get_data
-private :: list_put_data
 private :: dict_get_elem
 private :: dict_hashkey
 

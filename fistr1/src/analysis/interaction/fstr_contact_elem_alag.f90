@@ -21,7 +21,8 @@ module m_fstr_contact_elem_alag
 
 contains
 
-  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force, smoothing_type, edisp, iter)
+  subroutine getContactStiffness_Alag(cstate, tSurf, ele, mu, mut, fcoeff, symm, stiff, force, smoothing_type, edisp, iter, &
+      slvpos)
 
     type(tContactState), intent(inout) :: cstate       !< contact state (inout for projection info)
     type(tSurfElement), intent(in)  :: tSurf           !< surface element structure
@@ -34,6 +35,7 @@ contains
     integer(kind=kint), optional, intent(in) :: smoothing_type  !< kcsNONE or kcsNAGATA
     real(kind=kreal), optional, intent(in) :: edisp(:)  !< displacement increment for friction evaluation
     integer(kind=kint), intent(in) :: iter    !< NR iteration number (for tangent switching)
+    real(kind=kreal), intent(in)    :: slvpos(3)       !< slave node position (coord+disp)
 
     integer          :: i, j, nnode
     real(kind=kreal) :: Bn(size(tSurf%nodes)*3+3), Ht(2,size(tSurf%nodes)*3+3), Gt(2,size(tSurf%nodes)*3+3)
@@ -44,6 +46,11 @@ contains
     real(kind=kreal) :: tmp_vec(2)
     real(kind=kreal) :: dummy_force(size(tSurf%nodes)*3+3)  !< dummy for computeFrictionForce_ALag
     real(kind=kreal) :: eval_disp(size(tSurf%nodes)*3+3)   !< displacement for trial friction evaluation
+    real(kind=kreal) :: curpos(size(tSurf%nodes)*3+3)      !< current positions (coord+disp+ddisp)
+    real(kind=kreal) :: lam_cone     !< normal force the friction cone radius is built on
+    real(kind=kreal) :: Htt(size(tSurf%nodes)*3+3)  !< Ht^T * tdir: direction of the slip force
+    real(kind=kreal) :: tdir(2)      !< slip direction the coupling block is linearised about
+    real(kind=kreal) :: invmetric(2,2), det, norm_lamt
 
     nnode = size(tSurf%nodes)
 
@@ -66,12 +73,28 @@ contains
       else
         eval_disp = 0.0d0
       endif
-      call computeFrictionForce_ALag(cstate, fcoeff, cstate%multiplier(1), metric, &
+      ! Radius of the friction cone.  By default (symm) it stays at the multiplier of the
+      ! last augmentation, which keeps the friction terms symmetric and leaves the Coulomb
+      ! condition to the augmentation loop.  With !CONTACT_ALGO, FRICTION_CONE=FOLLOW the
+      ! radius follows the normal force this element actually applies, lambda_n + mu*g_n
+      ! clipped at 0, which is the value getContactNodalForce_Alag distributes; the
+      ! multiplier alone lags that force by the penalty term within a substep.
+      if( symm ) then
+        lam_cone = cstate%multiplier(1)
+      else
+        curpos(1:3) = slvpos(1:3) + eval_disp(1:3)
+        do j = 1, nnode
+          curpos(j*3+1:j*3+3) = ele(1:3,j) + eval_disp(j*3+1:j*3+3)
+        enddo
+        lam_cone = max( 0.d0, cstate%multiplier(1) + mu*dot_product( Bn(1:nnode*3+3), curpos(1:nnode*3+3) ) )
+      endif
+
+      call computeFrictionForce_ALag(cstate, fcoeff, lam_cone, metric, &
                                       Ht, Gt, eval_disp, nnode*3+3, dummy_force, &
                                       mut, alpha=alpha_proj, that=that_dir)
 
       ! Friction tangent operator A in 2D metric space:  K_fric = Ht^T * A * Ht
-      if( cstate%multiplier(1) <= 0.0d0 .or. alpha_proj <= 1.0d-20 ) then
+      if( lam_cone <= 0.0d0 .or. alpha_proj <= 1.0d-20 ) then
         ! No normal contact force: no friction contribution
         A = 0.0d0
       else if( alpha_proj >= 0.999d0 ) then
@@ -106,12 +129,46 @@ contains
         enddo
       enddo
 
+      ! Coupling block from the radius following the normal force.  On the slip branch the
+      ! friction force is f_t = R*tdir with R = fcoeff*lam_cone, and R varies with u through
+      ! g_n, so d(Ht^T f_t)/du gains  Ht^T tdir * dR/du = fcoeff*mu * (Ht^T tdir) (x) Bn.
+      ! A stuck node does not use the radius (f_t is the full trial), so the block belongs to
+      ! the slip branch only, and it vanishes where the clip at 0 is active (lam_cone = 0).
+      ! Rows are a slip direction and columns a normal map, so the block is unsymmetric: the
+      ! caller has to set the linear solver up for a general matrix (see fstr_Newton_contactALag).
+      if( .not.symm .and. lam_cone > 0.0d0 .and. alpha_proj > 1.0d-20 .and. alpha_proj < 0.999d0 ) then
+        ! The direction is frozen at the tangential multiplier of the last augmentation
+        ! instead of the trial direction that_dir.  Linearising about a quantity held fixed
+        ! inside the augmentation step is the same idea as the algorithmic symmetrization of
+        ! the rest of these terms, applied to the direction only: that_dir turns with every
+        ! Newton iterate, and this rank-1 block feeds those turns back into the tangent, which
+        ! leaves the inner Newton alternating between two states instead of converging.
+        tdir(1:2) = that_dir(1:2)
+        det = metric(1,1)*metric(2,2) - metric(1,2)*metric(2,1)
+        if( abs(det) > 1.0d-20 ) then
+          invmetric(1,1) =  metric(2,2)/det
+          invmetric(2,2) =  metric(1,1)/det
+          invmetric(1,2) = -metric(1,2)/det
+          invmetric(2,1) = -metric(2,1)/det
+          tmp_vec(1:2) = matmul( invmetric(1:2,1:2), cstate%multiplier(2:3) )
+          norm_lamt = dsqrt( dot_product( cstate%multiplier(2:3), tmp_vec(1:2) ) )
+          if( norm_lamt > 1.0d-20 ) tdir(1:2) = cstate%multiplier(2:3) / norm_lamt
+        endif
+        Htt(1:nnode*3+3) = matmul( transpose(Ht(1:2,1:nnode*3+3)), tdir(1:2) )
+        do j = 1, nnode*3+3
+          do i = 1, nnode*3+3
+            K_fric(i,j) = K_fric(i,j) + fcoeff * mu * Htt(i) * Bn(j)
+          enddo
+        enddo
+      endif
+
       stiff(1:nnode*3+3,1:nnode*3+3) = stiff(1:nnode*3+3,1:nnode*3+3) + K_fric(1:nnode*3+3,1:nnode*3+3)
     endif
 
   end subroutine getContactStiffness_Alag
 
-  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,lagrange,ctNForce,ctTForce,cflag,smoothing_type)
+  subroutine getContactNodalForce_Alag(ctState,tSurf,ndCoord,ndDu,mu,mut,fcoeff,symm,lagrange,ctNForce,ctTForce,cflag, &
+      smoothing_type)
 
     use mSurfElement
     type(tContactState) :: ctState !< type tContactState
@@ -120,6 +177,7 @@ contains
     integer(kind=kint) :: j
     real(kind=kreal), intent(in) :: mu, mut !< penalty parameters
     real(kind=kreal)   :: fcoeff !< friction coefficient
+    logical, intent(in) :: symm  !< symmetricalize
     real(kind=kreal)   :: lagrange !< not used for ALagrange (kept for interface compatibility)
     real(kind=kreal)   :: ndCoord(:), ndDu(:) !< nodal coordinates (coord+disp+ddisp); nodal displacement increment (ddisp)
     real(kind=kreal)   :: ctNForce(:) !< contact normal force vector
@@ -133,6 +191,7 @@ contains
     real(kind=kreal)   :: elemcrd(3, l_max_elem_node) !< master node coords (coord+disp, for computeContactMaps_ALag)
     real(kind=kreal)   :: edisp(3*l_max_elem_node+3) !< displacement increment
     real(kind=kreal)   :: dgn, nrlforce !< normal gap; normal force
+    real(kind=kreal)   :: lam_cone !< normal force the friction cone radius is built on
     real(kind=kreal)   :: metric(2,2)
     integer(kind=kint) :: edof  !< element vector size (nnode*3+3)
 
@@ -175,8 +234,15 @@ contains
       edisp(j*3+1:j*3+3) = ndDu(j*3+1:j*3+3)  ! master nodes
     enddo
 
-    ! Compute friction force using common routine
-    call computeFrictionForce_ALag(ctState, fcoeff, ctState%multiplier(1), metric, &
+    ! Compute friction force using common routine.  With FRICTION_CONE=FOLLOW the cone radius
+    ! is bounded by the normal force just distributed above rather than by the multiplier
+    ! alone, the same radius the tangent uses (see getContactStiffness_Alag).
+    if( symm ) then
+      lam_cone = ctState%multiplier(1)
+    else
+      lam_cone = max( 0.d0, nrlforce )
+    endif
+    call computeFrictionForce_ALag(ctState, fcoeff, lam_cone, metric, &
                                     Ht, Gt, edisp, edof, ctTForce, &
                                     mut)
 
@@ -254,7 +320,10 @@ contains
 
     ! --- Tangent component ---
 
-    ! Compute friction force with multiplier update and state check
+    ! Compute friction force with multiplier update and state check.  The multiplier has just
+    ! absorbed mu*g_n above, so it already is the normal force of this configuration and needs
+    ! no further correction; the clip at 0 is a no-op here because computeFrictionForce_ALag
+    ! only uses lambda_n through "lambda_n > 0" and "fcoeff*lambda_n" inside that branch.
     call computeFrictionForce_ALag(ctState, fcoeff, ctState%multiplier(1), metric, &
                                     Ht, Gt, edisp, edof, ctTForce, &
                                     mut, &

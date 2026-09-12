@@ -99,7 +99,7 @@ contains
 
       if(delta_time_base < DELMIN .and. (.not. is_end))then
         if(hecMESH%my_rank == 0) write(IMSG,*) ' !!! DELTA TIME EXCEEDED TOLERANCE OF TIME INCREMENT'
-        call hecmw_abort(hecmw_comm_get_comm())
+        call fstr_abort( HECMW_EXIT_NOCONV )
       endif
 
       call heat_solve_main(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, &
@@ -132,7 +132,7 @@ contains
 
         if(iterALL <= miniter) delta_time_base = delta_time_base*1.5d0
       else
-        if(fstrHEAT%is_iter_max_limit) call hecmw_abort( hecmw_comm_get_comm() )
+        if(fstrHEAT%is_iter_max_limit) call fstr_abort( HECMW_EXIT_NOCONV )
       endif
 
       do i = 1, hecMESH%n_node

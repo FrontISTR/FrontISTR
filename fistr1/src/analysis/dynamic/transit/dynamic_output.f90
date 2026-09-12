@@ -26,8 +26,10 @@ contains
 
     type(hecmwST_result_data) :: fstrRESULT
     integer(kind=kint) :: i, j, ndof, fnum, is, iE, gid
+    logical :: expflag   !< true for explicit (central-difference) dynamic analysis
 
     ndof = hecMESH%n_dof
+    expflag = ( fstrDYNAMIC%idx_eqa == 11 )
 
     if( fstrSOLID%TEMP_ngrp_tot>0 .or. fstrSOLID%TEMP_irres>0 ) then
       if( ndof==3 ) then
@@ -72,7 +74,7 @@ contains
     if( IRESULT==1 .and. &
         (mod(istep,fstrSOLID%output_ctrl(3)%frequency)==0 .or. outflag) ) then
       if( associated( fstrSOLID%contacts ) ) &
-        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3, fstrDYNAMIC%t_delta )
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 3, fstrDYNAMIC%t_delta, expflag )
       call fstr_write_result( hecMESH, fstrSOLID, fstrPARAM, istep, t_curr, 0, fstrDYNAMIC )
     endif
 
@@ -80,7 +82,7 @@ contains
         (mod(istep,fstrSOLID%output_ctrl(4)%frequency)==0 .or. outflag) ) then
 
       if( associated( fstrSOLID%contacts ) ) &
-        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4, fstrDYNAMIC%t_delta )
+        &  call setup_contact_output_variables( hecMESH, fstrSOLID, 4, fstrDYNAMIC%t_delta, expflag )
       call fstr_make_result( hecMESH, fstrSOLID, fstrRESULT, istep, t_curr, fstrDYNAMIC )
       call fstr2hecmw_mesh_conv( hecMESH )
       call hecmw_visualize_init

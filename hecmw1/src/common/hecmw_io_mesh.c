@@ -1560,9 +1560,15 @@ static int setup_header(struct hecmwST_local_mesh *mesh) {
 static int setup_zero(struct hecmwST_local_mesh *mesh) {
   HECMW_assert(mesh);
 
-  mesh->zero_temp = 0.0; /* default value */
+  mesh->zero_temp = -273.15; /* default value (input temperature in Celsius) */
   if (_zero) {
     mesh->zero_temp = _zero->zero;
+  } else {
+    HECMW_log(HECMW_LOG_WARN,
+              "!ZERO is not defined; using %E as absolute zero, assuming "
+              "input temperatures are in Celsius. Define !ZERO as 0.0 if "
+              "they are in Kelvin\n",
+              mesh->zero_temp);
   }
 
   return 0;

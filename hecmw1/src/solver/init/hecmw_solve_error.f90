@@ -39,7 +39,7 @@ contains
         write (*,'( a/)')'    inconsistent solver/preconditioning'
       endif
       !        call MPI_ABORT (hecMESH%MPI_COMM, ierr)
-      call hecmw_abort( hecmw_comm_get_comm())
+      call hecmw_abort( hecmw_comm_get_comm(), HECMW_EXIT_SOLVER_SETUP)
     endif
 
     if (IFLAG.eq.HECMW_SOLVER_ERROR_ZERO_DIAG) then
@@ -48,7 +48,7 @@ contains
         write (*,'( a/)')'    ZERO component in diagonal block'
       endif
       !        call MPI_ABORT (hecMESH%MPI_COMM, ierr)
-      call hecmw_abort( hecmw_comm_get_comm())
+      call hecmw_abort( hecmw_comm_get_comm(), HECMW_EXIT_SOLVER_SETUP)
     endif
 
     if (IFLAG.eq.HECMW_SOLVER_ERROR_ZERO_RHS) then

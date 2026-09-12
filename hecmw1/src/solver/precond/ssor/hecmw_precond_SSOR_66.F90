@@ -78,7 +78,6 @@ contains
     !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
     deallocate(perm_tmp)
 
-    !call write_debug_info
 
     NPL = hecMAT%indexL(N)
     NPU = hecMAT%indexU(N)
@@ -128,7 +127,6 @@ contains
       !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
       deallocate(perm_tmp)
 
-      !call write_debug_info
 
       NPL = hecMAT%indexL(N)
       NPU = hecMAT%indexU(N)
@@ -540,30 +538,6 @@ contains
     nullify(itemU)
   end subroutine hecmw_precond_SSOR_66_clear
 
-  subroutine write_debug_info
-    implicit none
-    integer(kind=kint) :: my_rank, ic, in
-    my_rank = hecmw_comm_get_rank()
-    !--------------------> debug: shizawa
-    if (my_rank.eq.0) then
-      write(*,*) 'DEBUG: Output fort.19000+myrank and fort.29000+myrank for coloring information'
-    endif
-    write(19000+my_rank,'(a)') '#NCOLORTot'
-    write(19000+my_rank,*) NColor
-    write(19000+my_rank,'(a)') '#ic  COLORindex(ic-1)+1  COLORindex(ic)'
-    do ic=1,NColor
-      write(19000+my_rank,*) ic, COLORindex(ic-1)+1,COLORindex(ic)
-    enddo ! ic
-    write(29000+my_rank,'(a)') '#n_node'
-    write(29000+my_rank,*) N
-    write(29000+my_rank,'(a)') '#in  OLDtoNEW(in)  NEWtoOLD(in)'
-    do in=1,N
-      write(29000+my_rank,*) in, iperm(in), perm(in)
-      if (perm(iperm(in)) .ne. in) then
-        write(29000+my_rank,*) '** WARNING **: NEWtoOLD and OLDtoNEW: ',in
-      endif
-    enddo
-  end subroutine write_debug_info
 
   subroutine check_ordering
     implicit none

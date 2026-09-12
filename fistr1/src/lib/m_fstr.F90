@@ -21,7 +21,6 @@ module m_fstr
   use m_elemact
   use mMechGauss
   use mContactDef
-  use m_fstr_contact_smoothing
 
   implicit none
 
@@ -51,6 +50,7 @@ module m_fstr
   integer(kind=kint), parameter :: ksmGPBiCG   = 4
   integer(kind=kint), parameter :: ksmGMRESR   = 5
   integer(kind=kint), parameter :: ksmGMRESREN = 6
+  integer(kind=kint), parameter :: ksmPipeCG   = 8
   integer(kind=kint), parameter :: ksmDIRECT   = 101
 
   !> nonlinear solver method (nsm)
@@ -201,6 +201,7 @@ module m_fstr
     !> for contact analysis
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
     integer( kind=kint ) :: augiter            !< augmentation iteration for ALagrange algorithm
+    logical              :: fric_cone_follow   !< if the ALagrange friction cone follows the applied normal force
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
     type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
 
@@ -672,7 +673,7 @@ module m_fstr
     !integer              :: mat_ID
     !integer              :: iset
     !integer              :: orien_ID
-    !real(kind=kreal)     :: thickness
+    real(kind=kreal)     :: thickness
     integer              :: elemopt341
     !integer              :: elemopt342
     !integer              :: elemopt351
@@ -682,6 +683,21 @@ module m_fstr
   end type tSection
 
 contains
+
+  !> Terminate the analysis with a classified exit status.
+  !> MPI_ABORT does not perform the Fortran I/O finalization, so the log
+  !> units opened by FrontISTR itself are flushed here before the abort.
+  subroutine fstr_abort( code )
+    integer(kind=kint), intent(in) :: code
+    integer(kind=kint) :: ios
+
+    flush( ILOG, iostat=ios )
+    if( myrank == 0 ) then
+      flush( ISTA, iostat=ios )
+      flush( IMSG, iostat=ios )
+    endif
+    call hecmw_abort( hecmw_comm_get_comm(), code )
+  end subroutine fstr_abort
 
   !> NULL POINTER SETTING TO AVOID RUNTIME ERROR
   subroutine fstr_nullify_fstr_param( P )
@@ -878,6 +894,8 @@ contains
     hecMAT%Iarray(13)=    0    ! = mpc_method
     hecMAT%Iarray(14)=    0    ! = estcond
     hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
+    hecMAT%Iarray(36)= HECMW_MATVEC_IMPL_DEFAULT   ! = matvec_impl
+    hecMAT%Iarray(37)= HECMW_PRECOND_IMPL_DEFAULT  ! = precond_impl
     hecMAT%Iarray(41)=    0    ! = solver_opt1
     hecMAT%Iarray(42)=    0    ! = solver_opt2
     hecMAT%Iarray(43)=    0    ! = solver_opt3
@@ -1044,6 +1062,7 @@ contains
     ! for contact analysis
     fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange
     fstrPARAM%augiter = 2                  ! default augmentation iteration for ALagrange
+    fstrPARAM%fric_cone_follow = .false.   ! default: cone radius frozen within the augmentation step
 
     ! index table for global node ID sorting
 

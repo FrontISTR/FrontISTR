@@ -20,7 +20,6 @@
 #cmakedefine WITH_REFINER
 #cmakedefine WITH_REVOCAP
 #cmakedefine WITH_METIS
-#cmakedefine WITH_METIS_VER_4
 #cmakedefine WITH_MUMPS
 #cmakedefine WITH_LAPACK
 #cmakedefine WITH_ML
@@ -32,7 +31,6 @@
 #cmakedefine HECMW_WITH_REFINER
 #cmakedefine HECMW_WITH_METIS
 #cmakedefine HECMW_PART_WITH_METIS
-#cmakedefine HECMW_METIS_VER @HECMW_METIS_VER@
 #cmakedefine HECMW_WITH_ML
 
 #endif /* _FRONTISTRCONFIG_H_ */

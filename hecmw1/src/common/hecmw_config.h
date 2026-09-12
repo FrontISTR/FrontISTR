@@ -63,6 +63,19 @@ typedef MPI_Fint HECMW_Fint;
 
 #define HECMW_EXIT_ERROR 1
 
+/* exit status returned to the OS (keep the values below 256) */
+#define HECMW_EXIT_USAGE 1
+
+#define HECMW_EXIT_INPUT 2
+
+#define HECMW_EXIT_MODEL 3
+
+#define HECMW_EXIT_SOLVER_SETUP 4
+
+#define HECMW_EXIT_NOCONV 10
+
+#define HECMW_EXIT_INTERNAL 20
+
 #define HECMW_SUCCESS 0
 
 #define HECMW_ERROR (-1)

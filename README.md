@@ -1,6 +1,6 @@
 # FrontISTR
 
-![Logo](./doc/FrontISTR_logo.svg)
+![Logo](./doc/images/FrontISTR_logo.svg)
 
 [![CI Status](https://gitlab.com/frontistr-commons/frontistr/badges/master/pipeline.svg)](https://gitlab.com/frontistr-commons/frontistr/-/pipelines)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://frontistr-commons.gitlab.io/frontistr_documents/en/)
@@ -23,7 +23,7 @@ FrontISTR is an open-source **large-scale parallel finite element method structu
   * Eigenvalue analysis
   * Frequency response analysis
   * Heat conduction analysis (steady-state/transient)
-* **Solvers**: CG / BiCGSTAB / GMRES / GPBiCG / Direct methods (MUMPS / MKL PARDISO)
+* **Solvers**: CG / PipeCG / BiCGSTAB / GMRES / GPBiCG / Direct methods (MUMPS / MKL PARDISO)
 * **Preconditioners**: SSOR / ILU(0) / AMG (Trilinos-ML), etc.
 * **Element Library**: 1st/2nd order solid (TET/PRISM/HEX), plane (triangular/quadrilateral), beam, shell, truss elements, etc.
 * **Visualization**: Compatible with ParaView and other tools
