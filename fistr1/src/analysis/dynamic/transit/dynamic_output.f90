@@ -353,8 +353,9 @@ contains
   !C================================================================C
   !C-- subroutine dynamic_output_monit
   !C================================================================C
-  subroutine dynamic_output_monit(cstep, istep, t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+  subroutine dynamic_output_monit(cstep, istep, t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID, mass_matrix)
     use m_fstr
+    use m_dynamic_mass, only: calc_kinetic_energy
     integer, intent(in)      :: cstep       !< current step number
     integer, intent(in)      :: istep       !< current substep number
     real(kind=kreal), intent(in) :: t_curr      !< current time
@@ -363,12 +364,19 @@ contains
     type(fstr_dynamic)       :: fstrDYNAMIC
     type(fstr_eigen)         :: fstrEIG
     type(fstr_solid)         :: fstrSOLID
+    type(hecmwST_matrix), pointer, optional :: mass_matrix
 
     integer(kind=kint) :: idx, ii, jj, ierr, ncmp
     integer(kind=kint) :: num_monit, ig, is, iE, ik, iunitS, iunit
-    logical :: yes
+    logical :: yes, use_consistent_mass
 
     if( mod(istep,fstrDYNAMIC%nout_monit)/=0 ) return
+
+    use_consistent_mass = .false.
+    if( present(mass_matrix) ) use_consistent_mass = associated(mass_matrix)
+    if( istep == 0 .and. use_consistent_mass ) then
+      call calc_kinetic_energy(hecMESH, mass_matrix, fstrDYNAMIC%VEL(:,1), fstrDYNAMIC%kineticEnergy)
+    endif
 
     if( fstrDYNAMIC%idx_eqa==1 .and. istep>0 ) then
       idx = 2
@@ -453,7 +461,7 @@ contains
           write( fstrDYNAMIC%dynamic_IW10, * ) &
             ' time step', '     time    ', '  kinetic energy', '   strain energy', '   total energy'
         endif
-        if(istep==0) then
+        if(istep==0 .and. .not.use_consistent_mass) then
           fstrDYNAMIC%kineticEnergy = 0.0d0
           do ii = 1, hecMESH%n_node*hecMESH%n_dof
             fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy &

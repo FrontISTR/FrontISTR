@@ -1820,7 +1820,7 @@ contains
     fstrDYNAMIC%t_delta  = 1.0
     fstrDYNAMIC%gamma    = 0.5
     fstrDYNAMIC%beta     = 0.25
-    fstrDYNAMIC%idx_mas  = 1
+    fstrDYNAMIC%idx_mas  = kMassLumped
     fstrDYNAMIC%idx_dmp  = 1
     fstrDYNAMIC%ray_m    = 0.0
     fstrDYNAMIC%ray_k    = 0.0
@@ -4070,6 +4070,22 @@ end function fstr_setup_INITIAL
       P%DYN%iout_list )
 
     if( rcode /= 0) call fstr_ctrl_err_stop
+
+    if( P%DYN%idx_mas /= kMassLumped .and. P%DYN%idx_mas /= kMassConsistent ) then
+      write(*,*) '### Error: !DYNAMIC mass matrix type must be 1 (lumped) or 2 (consistent)'
+      write(ILOG,*) '### Error: !DYNAMIC mass matrix type must be 1 (lumped) or 2 (consistent)'
+      call flush(6)
+      call flush(ILOG)
+      call fstr_ctrl_err_stop
+    endif
+    if( P%DYN%idx_mas == kMassConsistent .and. &
+        (P%DYN%idx_eqa /= 1 .or. P%DYN%idx_resp /= 1) ) then
+      write(*,*) '### Error: consistent mass matrix is available only for implicit transient analysis'
+      write(ILOG,*) '### Error: consistent mass matrix is available only for implicit transient analysis'
+      call flush(6)
+      call flush(ILOG)
+      call fstr_ctrl_err_stop
+    endif
 
     if (P%DYN%idx_resp == 1) then
       call node_grp_name_to_id_ex( P%MESH, '!DYNAMIC', 1, grp_id_name, grp_id)

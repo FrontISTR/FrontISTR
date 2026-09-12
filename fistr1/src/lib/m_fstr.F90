@@ -67,6 +67,10 @@ module m_fstr
   integer(kind=kint), parameter :: kbcInitial   =  1
   integer(kind=kint), parameter :: kbcTransit   =  2
 
+  !> mass matrix type
+  integer(kind=kint), parameter :: kMassLumped     = 1
+  integer(kind=kint), parameter :: kMassConsistent = 2
+
   !> restart type
   integer(kind=kint), parameter :: restart_outLast = 1
   integer(kind=kint), parameter :: restart_outAll  = 2
@@ -552,7 +556,7 @@ module m_fstr
     real(kind=kreal)   :: beta          ! Newmark-beta parameter beta
 
     !> mass matrix control
-    integer(kind=kint) :: idx_mas       ! mass matrix type
+    integer(kind=kint) :: idx_mas       ! kMassLumped or kMassConsistent
 
     !> damping control
     integer(kind=kint) :: idx_dmp      ! damping type

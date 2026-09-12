@@ -102,7 +102,8 @@ contains
     real(kind=kreal)   :: gamma
     real(kind=kreal)   :: beta
 
-    ! mass matrix control
+    ! mass matrix control: 1=lumped, 2=consistent
+    ! Consistent mass is supported only for implicit transient analysis.
     integer(kind=kint) :: idx_mas
 
     ! damping control
