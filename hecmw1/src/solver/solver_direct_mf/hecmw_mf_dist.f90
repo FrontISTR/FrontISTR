@@ -23,8 +23,8 @@ module hecmw_mf_dist
   public :: hecmw_mf_dist_gmat_finalize
   public :: hecmw_mf_dist_gather_vec
 
-  !> Subtree-to-subcube mapping over the supernodal tree (proportional mapping): every
-  !> supernode carries the rank set rbeg/rcnt that processes it; a supernode whose rank set
+  !> Subtree-to-subcube mapping over the supernodal tree: every supernode carries the rank
+  !> set rbeg/rcnt that processes it; a supernode whose rank set
   !> spans more than one rank is an upper front, whose fully summed part the owner (master)
   !> factors while the contribution row tiles are distributed over the rank set (1D row
   !> distribution). Below a single-rank supernode the whole subtree belongs to that rank.
@@ -56,13 +56,25 @@ module hecmw_mf_dist
     integer(kind=kint), allocatable :: dst(:)     !< block slot: 1..NPL in AL, then NPU in AU, then N in D
   end type hecmwST_mf_gmat
 
+  !> A subtree heavier than this multiple of the mean rank load of its front's range is
+  !> promoted to an upper front instead of packed onto a single rank. Lowering it refines
+  !> the packing granularity at the cost of more upper fronts (protocol overhead).
+  real(kind=kreal), parameter :: MF_MAP_PROMOTE = 1.2d0
+
+  !> flops charged per factor panel word in the subtree weights (the memory-bound cost of
+  !> assembling and storing a word, relative to one flop of elimination)
+  integer(kind=8), parameter :: MF_MAP_WPF = 2500_8
+
 contains
 
-  !> Build the mapping from the symbolic structure. The rank set of the virtual root is all
-  !> ranks; the set of an upper front is split among its children in ascending child order,
-  !> proportionally to the subtree weights (factor word estimates), so the result is
-  !> deterministic and identical on every rank. The owner of an upper front is the owner of
-  !> its heaviest child subtree, keeping the fan-in communication local to the subcube.
+  !> Build the mapping from the symbolic structure. The roots share all ranks (several
+  !> roots split them proportionally to the subtree weights, factorization flops
+  !> estimates); an upper front assigns the subtrees below it by promotion and packing: a
+  !> subtree heavier than the promotion threshold becomes an upper front on the same rank
+  !> range and hands its children down to the pool, and the remaining subtrees are packed
+  !> greedily onto the least loaded rank of the range (LPT). The result is deterministic
+  !> and identical on every rank. The owner of an upper front is the owner of its heaviest
+  !> child subtree, keeping the fan-in communication local to the subcube.
   subroutine hecmw_mf_dist_map_build(sym, map)
     implicit none
     type(hecmwST_mf_symbolic), intent(in) :: sym
@@ -70,7 +82,7 @@ contains
     integer(kind=8), allocatable :: wt(:)
     integer(kind=kint), allocatable :: cptr(:), clist(:), wptr(:)
     integer(kind=kint) :: ns, s, p, c, i, nroot, nup, cbest
-    integer(kind=8) :: w, wbest
+    integer(kind=8) :: w, wbest, b
 
     ns = sym%nsuper
     map%nprocs = hecmw_comm_get_size()
@@ -78,15 +90,19 @@ contains
     map%comm = hecmw_comm_get_comm()
     allocate(map%owner(ns), map%upper(ns))
 
-    ! subtree weights: factor panel words of the supernode, accumulated bottom-up (the
-    ! ascending numbering places children before parents)
+    ! subtree weights: the factorization flops estimate of the supernode (the formula of
+    ! mf_estimate) plus the factor panel words scaled by MF_MAP_WPF, accumulated bottom-up
+    ! (the ascending numbering places children before parents); the words term charges the
+    ! memory-bound assembly and store work of the many small fronts, which the flops alone
+    ! underrate
     allocate(wt(ns))
     do s = 1, ns
       w = 0
       do i = sym%rptr(s), sym%rptr(s+1) - 1
         w = w + sym%ndof(sym%rlist(i))
       enddo
-      wt(s) = w * int(sym_cdofcount(s), 8)
+      b = w - sym_cdofcount(s)
+      wt(s) = (w*(w+1)*(2*w+1) - b*(b+1)*(2*b+1))/6 + MF_MAP_WPF*w*sym_cdofcount(s)
     enddo
     do s = 1, ns
       p = sym%sparent(s)
@@ -113,9 +129,10 @@ contains
       endif
     enddo
 
-    ! rank ranges: the roots share all ranks, an upper front splits its range among its
-    ! children; parents carry larger indices, so a descending sweep sets every range
-    ! before it is read
+    ! rank ranges: the roots share all ranks, an upper front promotes and packs the
+    ! subtrees below it within its range; parents carry larger indices, so a descending
+    ! sweep sets every range before it is read, and a front promoted higher up finds its
+    ! children already assigned
     allocate(map%rbeg(ns), map%rcnt(ns))
     map%rcnt(1:ns) = -1
     nroot = 0
@@ -136,7 +153,7 @@ contains
         map%rbeg(s) = map%rbeg(p)
         map%rcnt(s) = 1
       endif
-      if (map%rcnt(s) > 1) call mf_map_split(wt, clist(cptr(s):cptr(s+1)-1), map%rbeg(s), map%rcnt(s), map%rbeg, map%rcnt)
+      if (map%rcnt(s) > 1) call mf_map_pack(s)
     enddo
 
     ! owners bottom-up: a single-rank supernode is owned by its rank, an upper front by the
@@ -187,6 +204,120 @@ contains
         nc = nc + sym%ndof(k)
       enddo
     end function sym_cdofcount
+
+    !> Assign the yet unassigned subtrees under upper front s0 to the ranks of its range.
+    !> A pooled subtree heavier than MF_MAP_PROMOTE times the mean rank load of the pool
+    !> is promoted to an upper front on the same range and replaced by its children; its
+    !> own front work leaves the pool as the 1D distribution spreads it over the whole
+    !> range, so the threshold shrinks and the sweep repeats until stable. The remaining
+    !> subtrees go heaviest first onto the least loaded rank (LPT).
+    subroutine mf_map_pack(s0)
+      integer(kind=kint), intent(in) :: s0
+      integer(kind=kint), allocatable :: pool(:)
+      integer(kind=8), allocatable :: load(:)
+      integer(kind=kint) :: npool, i0, j0, c0, r0, nr0, rmin
+      integer(kind=8) :: tot
+      logical :: grew
+
+      r0 = map%rbeg(s0)
+      nr0 = map%rcnt(s0)
+      allocate(pool(ns), load(0:nr0-1))
+      npool = 0
+      tot = 0
+      do i0 = cptr(s0), cptr(s0+1) - 1
+        c0 = clist(i0)
+        if (map%rcnt(c0) < 0) then
+          npool = npool + 1
+          pool(npool) = c0
+          tot = tot + wt(c0)
+        endif
+      enddo
+      grew = .true.
+      do while (grew)
+        grew = .false.
+        i0 = 1
+        do while (i0 <= npool)
+          c0 = pool(i0)
+          if (real(wt(c0), kind=kreal)*nr0 > MF_MAP_PROMOTE*real(tot, kind=kreal)) then
+            map%rbeg(c0) = r0
+            map%rcnt(c0) = nr0
+            tot = tot - wt(c0)
+            pool(i0) = pool(npool)
+            npool = npool - 1
+            do j0 = cptr(c0), cptr(c0+1) - 1
+              npool = npool + 1
+              pool(npool) = clist(j0)
+              tot = tot + wt(clist(j0))
+            enddo
+            grew = .true.
+          else
+            i0 = i0 + 1
+          endif
+        enddo
+      enddo
+      call mf_sort_lpt(pool, npool)
+      load(0:nr0-1) = 0
+      do i0 = 1, npool
+        rmin = 0
+        do j0 = 1, nr0 - 1
+          if (load(j0) < load(rmin)) rmin = j0
+        enddo
+        c0 = pool(i0)
+        map%rbeg(c0) = r0 + rmin
+        map%rcnt(c0) = 1
+        ! a zero weight still loads its rank one unit, so tiny subtrees spread out
+        load(rmin) = load(rmin) + max(wt(c0), 1_8)
+      enddo
+      deallocate(pool, load)
+    end subroutine mf_map_pack
+
+    !> heapsort of list(1:n0) into the LPT order: descending subtree weight, ties by
+    !> ascending supernode index
+    subroutine mf_sort_lpt(list, n0)
+      integer(kind=kint), intent(inout) :: list(:)
+      integer(kind=kint), intent(in) :: n0
+      integer(kind=kint) :: i0, j0, k0, t0
+
+      do i0 = n0/2, 1, -1
+        j0 = i0
+        do
+          k0 = 2*j0
+          if (k0 > n0) exit
+          if (k0 < n0) then
+            if (lpt_after(list(k0+1), list(k0))) k0 = k0 + 1
+          endif
+          if (.not. lpt_after(list(k0), list(j0))) exit
+          t0 = list(j0)
+          list(j0) = list(k0)
+          list(k0) = t0
+          j0 = k0
+        enddo
+      enddo
+      do i0 = n0, 2, -1
+        t0 = list(1)
+        list(1) = list(i0)
+        list(i0) = t0
+        j0 = 1
+        do
+          k0 = 2*j0
+          if (k0 > i0 - 1) exit
+          if (k0 < i0 - 1) then
+            if (lpt_after(list(k0+1), list(k0))) k0 = k0 + 1
+          endif
+          if (.not. lpt_after(list(k0), list(j0))) exit
+          t0 = list(j0)
+          list(j0) = list(k0)
+          list(k0) = t0
+          j0 = k0
+        enddo
+      enddo
+    end subroutine mf_sort_lpt
+
+    !> supernode a0 follows b0 in the LPT order (lighter subtree, larger index on ties)
+    logical function lpt_after(a0, b0)
+      integer(kind=kint), intent(in) :: a0, b0
+      lpt_after = (wt(a0) < wt(b0)) .or. (wt(a0) == wt(b0) .and. a0 > b0)
+    end function lpt_after
 
   end subroutine hecmw_mf_dist_map_build
 

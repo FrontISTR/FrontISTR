@@ -39,6 +39,7 @@ module hecmw_mf_numeric
   public :: hecmw_mf_numeric_solve
   public :: hecmw_mf_numeric_solve_mpi
   public :: hecmw_mf_numeric_print
+  public :: hecmw_mf_numeric_front_words
   public :: hecmw_mf_numeric_finalize
 
   !> default pivot threshold: entries of L are bounded by 1/u
@@ -66,6 +67,7 @@ module hecmw_mf_numeric
     integer(kind=kint) :: nt = 0                    !< tiles of the front
     integer(kind=kint) :: ntc = 0                   !< tiles covering the fully summed positions
     integer(kind=8) :: cbsize = 0                   !< words of the contribution block
+    integer(kind=8) :: pwords = 0                   !< stored panel words held on this rank
     integer(kind=kint), allocatable :: tbnd(:)      !< tile boundaries, tbnd(1:nt+1) from 0 to nrow
     integer(kind=kint), allocatable :: fsdof(:)     !< permuted DOF of the column at a position
     integer(kind=kint), allocatable :: frow(:)      !< permuted DOF of the row at a position
@@ -1181,14 +1183,10 @@ contains
     !$omp end single
     !$omp end parallel
     deallocate(wrks, left)
-    iw(1) = gierr
-    call hecmw_allreduce_I_comm(iw, 1, hecmw_max, map%comm)
-    gierr = iw(1)
-    if (gierr /= 0) then
-      ierr = gierr
-      return
-    endif
 
+    ! no barrier between the stages: a rank done with its subtrees walks straight into the
+    ! upper fronts, and a subtree error travels in the child headers, uniformly skipping
+    ! every front above it until the final allreduce settles ierr
     do iu = 1, map%nupper
       s = map%uplist(iu)
       if (map%myrank >= map%rbeg(s) .and. map%myrank < map%rbeg(s) + map%rcnt(s)) then
@@ -1250,7 +1248,7 @@ contains
     integer(kind=kint) :: nd, ncol0, ndel, ncol, nrow, ncb, ncbt, nwk, nmine, myrows
     integer(kind=kint) :: master, me, i, j, k, c, t, m, nkc
     integer(kind=kint) :: npiv, nfs, p0, pa, pb, w, np, pk, pk0, mfs, info, nsw, n22, cndel
-    integer(kind=kint) :: nown, nrow_nodes, hi, npair, req, cnb, kbegc, cnrow, wme
+    integer(kind=kint) :: nown, nrow_nodes, hi, npair, req, cnb, kbegc, cnrow, wme, ferr
     integer(kind=8) :: bandw, fw, btop, btopu
     real(kind=kreal) :: uinv
     logical :: ismaster, hasband, fsok, acc
@@ -1268,6 +1266,7 @@ contains
 
     ! (1) headers of the children: the rank holding a child multicasts, everyone else
     ! receives, so that all ranks know the delayed growth and the front geometry
+    ferr = 0
     do j = fct%cptr(s), fct%cptr(s+1) - 1
       c = fct%clist(j)
       if (map%owner(c) == me) call send_hdr(c)
@@ -1276,8 +1275,28 @@ contains
       c = fct%clist(j)
       if (map%owner(c) /= me) call recv_hdr(c)
     enddo
-    if (gierr /= 0) then
+    if (ferr /= 0) then
+      ! a child header carries an error: the whole rank set saw the same headers, so it
+      ! skips the front uniformly (no value traffic follows, the message skeleton stays
+      ! deterministic), leaving a flagged minimal header for the owner to forward to the
+      ! parent front
+      if (gierr == 0) gierr = ferr
+      fct%sn(s)%ncol = 0
+      fct%sn(s)%npiv = 0
+      fct%sn(s)%nt = 0
+      fct%sn(s)%ntc = 0
+      call mf_grow_i(fct%sn(s)%tbnd, 1)
+      call mf_grow_i(fct%sn(s)%fsdof, 1)
+      call mf_grow_i(fct%sn(s)%frow, 1)
+      fct%sn(s)%tbnd(1) = 0
       call mf_pool_wait(pool)
+      do j = fct%cptr(s), fct%cptr(s+1) - 1
+        c = fct%clist(j)
+        if (allocated(fct%sn(c)%cval)) then
+          fct%live_cb = fct%live_cb - fct%sn(c)%cbsize
+          deallocate(fct%sn(c)%cval)
+        endif
+      enddo
       return
     endif
 
@@ -1447,7 +1466,10 @@ contains
       mm = nt1 + 2*cnd
       ib = mf_pool_slot(pool)
       allocate(pool%box(ib)%hdr(5), pool%box(ib)%tl(mm))
+      ! my local error rides in the header slot: the receivers and I then skip the front
+      ! by the same rule, off the headers alone
       pool%box(ib)%hdr(1) = gierr
+      if (gierr /= 0) ferr = gierr
       pool%box(ib)%hdr(2) = fct%sn(c0)%ncol
       pool%box(ib)%hdr(3) = fct%sn(c0)%npiv
       pool%box(ib)%hdr(4) = fct%sn(c0)%nt
@@ -1474,6 +1496,7 @@ contains
       call hecmw_recv_int(hdr, 5, map%owner(c0), 16*c0, map%comm, stat)
       if (hdr(1) /= 0) then
         gierr = hdr(1)
+        ferr = hdr(1)
       endif
       fct%sn(c0)%ncol = hdr(2)
       fct%sn(c0)%npiv = hdr(3)
@@ -3378,6 +3401,7 @@ contains
           call store_tile(kk, i2, mw)
         enddo
       enddo
+      fct%sn(s)%pwords = off + offu
       ! the sequential accounting counts the U panel only with BLR, where its stored
       ! words differ from the L panel
       fct%factor_words_act = fct%factor_words_act + off
@@ -3899,6 +3923,8 @@ contains
         enddo
       enddo
       !$omp end taskloop
+      sn%pwords = pw
+      if (fct%lu) sn%pwords = 2*pw
       !$omp critical (mf_stats)
       fct%factor_words_act = fct%factor_words_act + pw
       !$omp end critical (mf_stats)
@@ -3910,6 +3936,7 @@ contains
           sn%branku, sn%bptru, sn%uval, pwu, par)
         pwa = pwa + pwu
       endif
+      sn%pwords = pwa
       !$omp critical (mf_stats)
       fct%factor_words_act = fct%factor_words_act + pwa
       fct%blr_words_fr = fct%blr_words_fr + pw
@@ -5862,6 +5889,16 @@ contains
     enddo
     deallocate(v, tw)
   end subroutine mf_super_bwd
+
+  !> Stored panel words of supernode s held on this rank (test support).
+  function hecmw_mf_numeric_front_words(fct, s) result(w)
+    implicit none
+    type(hecmwST_mf_factor), intent(in) :: fct
+    integer(kind=kint), intent(in) :: s
+    integer(kind=8) :: w
+
+    w = fct%sn(s)%pwords
+  end function hecmw_mf_numeric_front_words
 
   subroutine hecmw_mf_numeric_print(fct)
     implicit none
