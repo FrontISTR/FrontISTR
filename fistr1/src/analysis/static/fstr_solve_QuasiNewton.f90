@@ -46,9 +46,10 @@ contains
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
-    real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm
+    real(kind=kreal)   :: tincr
     logical :: isLinear = .false.
     integer(kind=kint) :: iterStatus
+    type(fstr_convergence_state) :: cnvstat
 
     real(kind=kreal), allocatable :: z_k(:), s_k(:,:), y_k(:,:), g_prev(:), rho_k(:)
     real(kind=kreal) :: sdoty
@@ -134,7 +135,7 @@ contains
  
       ! ----- check convergence
       call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
-          hecMAT%B, 0, res, res, 0, iterStatus)
+          hecMAT%B, cnvstat, iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then
         call hecmw_ebc_finalize(hecEBC)

@@ -322,28 +322,23 @@ contains
     integer(kind=kint) :: iter
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
     real(kind=kreal) :: coef(6)
-    real(kind=kreal) :: res, res1, res0, relres
     integer(kind=kint) :: count_step, stepcnt
-    real(kind=kreal) :: maxDLag
     integer(kind=kint) :: contact_changed_global
     logical :: is_mat_symmetric
     integer :: istat
     logical :: is_cycle
     integer(kind=kint) :: ctAlgo, max_iter_contact
     integer(kind=kint) :: nnod, ndof, nn
-    real(kind=kreal) :: converg_dlag
     real(kind=kreal), allocatable :: coord(:)
-    integer(kind=kint) :: iterStatus, nresid, n_node_global
+    integer(kind=kint) :: iterStatus, nresid
     real(kind=kreal), allocatable :: resid_work(:)
+    type(fstr_convergence_state) :: cnvstat
 
     fstrSOLID%NRstat_i(:) = 0 ! logging newton iteration(init)
 
     !C-- initialize local variables
-    n_node_global = hecMESH%nn_internal
-    call hecmw_allreduce_I1(hecMESH, n_node_global, HECMW_SUM)
     ctAlgo = fstrPARAM%contact_algo
     max_iter_contact = fstrSOLID%step_ctrl(cstep)%max_contiter
-    converg_dlag = fstrSOLID%step_ctrl(cstep)%converg_lag
     nnod = hecMESH%n_node
     ndof = hecMAT%NDOF
     nn = ndof*ndof
@@ -385,10 +380,6 @@ contains
     count_step = count_step + 1
 
       ! ----- Inner Iteration
-      res0   = 0.d0
-      res1   = 0.d0
-      relres = 1.d0
-
       do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
         stepcnt=stepcnt+1
         call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, t_curr, t_delta, fstrDYNAMIC, coef )
@@ -437,15 +428,9 @@ contains
         ! ----- check convergence
         call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
 
-        if( .not.fstr_is_contact_active() ) then
-          maxDLag = 0.0d0
-        elseif( abs(maxDLag) < 1.0d-15) then
-          maxDLag = 1.0D0
-        endif
-        call hecmw_allreduce_R1(hecMESH, maxDlag, HECMW_MAX)
-
-        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, istep, cstep, &
-            resid_work, nresid, res0, res, n_node_global, iterStatus, maxDLag, converg_dlag)
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+            ndof, iter, istep, cstep, &
+            resid_work, cnvstat, iterStatus, hecLagMAT)
         if (iterStatus == kitrConverged) exit
         if (iterStatus == kitrDiverged .or. iterStatus == kitrFloatingError) then
           fstrSOLID%NRstat_i(knstCITER) = count_step
@@ -486,10 +471,8 @@ contains
         ! even though contact is enforced. Matches the unconditional update in
         ! the static path (fstr_solve_NonLinear).
         if( fstr_is_contact_active() ) then
-          maxDLag = 0.0d0
           do j=1,hecLagMAT%num_lagrange
             hecLagMAT%lagrange(j) = hecLagMAT%lagrange(j) + hecMAT%X(hecMESH%n_node*ndof+j)
-            if(dabs(hecMAT%X(hecMESH%n_node*ndof+j))>maxDLag) maxDLag=dabs(hecMAT%X(hecMESH%n_node*ndof+j))
           enddo
         endif
 

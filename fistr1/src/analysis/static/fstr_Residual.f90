@@ -14,8 +14,6 @@ module m_fstr_Residual
   public :: fstr_Update_NDForce_SPC
   public :: fstr_Update_REACTION_SPC
   public :: fstr_assemble_residual_contact
-  public :: fstr_get_norm_para_contact
-  public :: fstr_get_x_norm_contact
   public :: fstr_get_potential
 
 contains
@@ -301,9 +299,8 @@ contains
 
   !> \brief Assemble contact residual vector (hecMAT%B + conMAT%B + Lagrange) into a single vector.
   !>
-  !> This is the assembly part extracted from fstr_get_norm_para_contact so that
-  !> the assembled vector can be reused (e.g. by convergence check routines)
-  !> without recomputing it.
+  !> conMAT holds the contact contribution on its own partition boundary, so it
+  !> has to be summed across subdomains before being added to hecMAT%B.
   subroutine fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_vec, nresid)
     use m_fstr
     implicit none
@@ -339,65 +336,6 @@ contains
     enddo
 
   end subroutine fstr_assemble_residual_contact
-
-  !
-  function fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH) result(rhsB)
-    use m_fstr
-    implicit none
-    type(hecmwST_matrix), intent(in)                 :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
-    type(hecmwST_matrix), intent(in)                 :: conMAT
-    type(hecmwST_local_mesh), intent(in)             :: hecMESH
-    !
-    real(kind=kreal) ::  rhsB
-    integer(kind=kint) ::  i,ndof,nndof,npndof,num_lagrange
-    real(kind=kreal), allocatable   :: rhs_con(:)
-    real(kind=kreal), pointer :: rhs_lag(:)
-
-    ndof = conMAT%ndof
-    nndof = conMAT%N * ndof
-    npndof = conMAT%NP * ndof
-    num_lagrange = hecLagMAT%num_lagrange
-
-    allocate(rhs_con(npndof))
-    do i=1,npndof
-      rhs_con(i) = conMAT%B(i)
-    enddo
-    call hecmw_assemble_R(hecMESH, rhs_con, conMAT%NP, conMAT%NDOF)
-
-    do i=1,nndof
-      rhs_con(i) = rhs_con(i) + hecMAT%B(i)
-    enddo
-
-    rhs_lag => conMAT%B(npndof+1:npndof+num_lagrange)
-
-    rhsB = dot_product(rhs_con(1:nndof), rhs_con(1:nndof)) + dot_product(rhs_lag(:), rhs_lag(:))
-    call hecmw_allreduce_R1(hecMESH, rhsB, hecmw_sum)
-    deallocate(rhs_con)
-
-  end function fstr_get_norm_para_contact
-
-  function fstr_get_x_norm_contact(hecMAT,hecLagMAT,hecMESH) result(rhsX)
-    use m_fstr
-    implicit none
-    type(hecmwST_matrix), intent(in)                 :: hecMAT
-    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
-    type(hecmwST_local_mesh), intent(in)             :: hecMESH
-    real(kind=kreal)   ::  rhsX
-    integer(kind=kint) :: nndof, npndof, i
-
-    nndof = hecMAT%N * hecMAT%NDOF
-    npndof = hecMAT%NP * hecMAT%NDOF
-    rhsX = 0.d0
-    do i=1,nndof
-      rhsX = rhsX + hecMAT%X(i) ** 2
-    end do
-    do i=1,hecLagMAT%num_lagrange
-      rhsX = rhsX + hecMAT%X(npndof+i) ** 2
-    end do
-    call hecmw_allreduce_R1(hecMESH, rhsX, hecmw_sum)
-
-  end function fstr_get_x_norm_contact
 
   !C---------------------------------------------------------------------*
   function fstr_get_potential(cstep,hecMESH,hecMAT,fstrSOLID,ptype) result(potential)
