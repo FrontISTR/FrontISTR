@@ -135,12 +135,6 @@ end function list_count
 
 ! list_next
 !     Return the next element (if any)
-! Arguments:
-!     elem       Element in the linked list
-! Result:
-!
-function list_next( elem ) result(next)
-    type(LINKED_LIST), pointer :: elem
     type(LINKED_LIST), pointer :: next
 
     next => elem%next
@@ -173,29 +167,6 @@ end subroutine list_insert
 !     list       Start of the list
 !     data       The data for the new element
 !
-subroutine list_insert_head( list, data )
-    type(LINKED_LIST), pointer  :: list
-    type(LIST_DATA), intent(in) :: data
-
-    type(LINKED_LIST), pointer :: elem
-
-    allocate(elem)
-    elem%data =  data
-
-    elem%next => list
-    list      => elem
-end subroutine list_insert_head
-
-! list_delete_element
-!     Delete an element from the list
-! Arguments:
-!     list       Header of the list
-!     elem       Element in the linked list to be
-!                removed
-!
-subroutine list_delete_element( list, elem )
-    type(LINKED_LIST), pointer  :: list
-    type(LINKED_LIST), pointer  :: elem
 
     type(LINKED_LIST), pointer  :: current
     type(LINKED_LIST), pointer  :: prev
@@ -228,13 +199,6 @@ end subroutine list_delete_element
 ! Arguments:
 !     elem       Element in the linked list
 !
-function list_get_data( elem ) result(data)
-    type(LINKED_LIST), pointer :: elem
-
-    type(LIST_DATA)            :: data
-
-    data = elem%data
-end function list_get_data
 
 ! list_put_data
 !     Store new data with a list element
@@ -242,11 +206,5 @@ end function list_get_data
 !     elem       Element in the linked list
 !     data       The data to be stored
 !
-subroutine list_put_data( elem, data )
-    type(LINKED_LIST), pointer  :: elem
-    type(LIST_DATA), intent(in) :: data
-
-    elem%data = data
-end subroutine list_put_data
 
 
