@@ -380,6 +380,29 @@ contains
     do i = 1, n
       call initMaterial(fstrSOLID%materials(i))
     enddo
+
+    ! for section control
+    allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
+    do i=1,hecMESH%section%n_sect
+      ! set default 361 element formulation
+      if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
+        if( p%PARAM%nlgeom ) then
+          fstrSOLID%sections(i)%elemopt361 = kel361FBAR
+        else
+          fstrSOLID%sections(i)%elemopt361 = kel361IC
+        end if
+      else if( p%PARAM%solution_type==kstEIGEN ) then
+        fstrSOLID%sections(i)%elemopt361 = kel361IC
+      else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
+        fstrSOLID%sections(i)%elemopt361 = kel361FBAR
+      else
+        fstrSOLID%sections(i)%elemopt361 = kel361FI
+      end if
+      fstrSOLID%sections(i)%elemopt341 = kel341FI
+      ! INTERFACE sections are skipped in the loop below and keep this thickness
+      fstrSOLID%sections(i)%thickness = 1.0d0
+    enddo
+
     if( hecMESH%section%n_sect >0 ) then
       do i=1,hecMESH%section%n_sect
         if( hecMESH%section%sect_type(i) == 4 ) cycle
@@ -392,6 +415,7 @@ contains
           n_totlyr,alpha_over_mu, &
           beam_radius,beam_angle1,beam_angle2,beam_angle3, &
           beam_angle4,beam_angle5,beam_angle6)
+        fstrSOLID%sections(i)%thickness = thick
         fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
         fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
         fstrSOLID%materials(cid)%variables(M_POISSON)=pp
@@ -413,26 +437,6 @@ contains
         endif
       enddo
     endif
-
-    ! for section control
-    allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
-    do i=1,hecMESH%section%n_sect
-      ! set default 361 element formulation
-      if( p%PARAM%solution_type==kstSTATIC .or. p%PARAM%solution_type==kstDYNAMIC ) then
-        if( p%PARAM%nlgeom ) then
-          fstrSOLID%sections(i)%elemopt361 = kel361FBAR
-        else
-          fstrSOLID%sections(i)%elemopt361 = kel361IC
-        end if
-      else if( p%PARAM%solution_type==kstEIGEN ) then
-        fstrSOLID%sections(i)%elemopt361 = kel361IC
-      else if( p%PARAM%solution_type==kstSTATICEIGEN ) then
-        fstrSOLID%sections(i)%elemopt361 = kel361FBAR
-      else
-        fstrSOLID%sections(i)%elemopt361 = kel361FI
-      end if
-      fstrSOLID%sections(i)%elemopt341 = kel341FI
-    enddo
 
     allocate( fstrSOLID%output_ctrl( 4 ) )
     call fstr_init_outctrl(fstrSOLID%output_ctrl(1))
