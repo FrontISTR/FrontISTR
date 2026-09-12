@@ -9,6 +9,7 @@ module m_fstr_contact_assembly
   use m_fstr
   use mContactDef
   use m_fstr_contact_element
+  use m_fstr_contact_elem_common, only: computeTm_Tt
   use m_fstr_contact_interference
   use m_fstr_contact_elem_alag
   use m_fstr_contact_damping
@@ -517,18 +518,21 @@ contains
   !! is taken directly from the contact state instead of hecLagMAT%Lagrange. The same
   !! element routine (getContactNodalForce_Slag) and assembly (assemble_contact_force_output)
   !! as the implicit/static output path are reused, so CONT_NFORCE is produced identically.
-  !! Friction is intentionally not produced (fcoeff = 0): the explicit corrector applies
-  !! only the normal contact force to the motion update.
-  subroutine calcu_contact_ndforce_exp( contact, coord, disp, ddisp, CONT_NFORCE )
+  !! The explicit corrector stores the converged tangential force in
+  !! states(:)%tangentForce_final; distribute it with the same relative-displacement
+  !! mapping used by the implicit formulation.
+  subroutine calcu_contact_ndforce_exp( contact, coord, disp, ddisp, CONT_NFORCE, CONT_FRIC )
     type( tContact ), intent(inout)      :: contact         !< contact info
     real(kind=kreal), intent(in)         :: coord(:)        !< mesh coordinate
     real(kind=kreal), intent(in)         :: disp(:)         !< disp till current step
     real(kind=kreal), intent(in)         :: ddisp(:)        !< disp increment of current substep
     real(kind=kreal), pointer            :: CONT_NFORCE(:)  !< contact normal force (output)
+    real(kind=kreal), pointer            :: CONT_FRIC(:)    !< contact friction force (output)
 
     integer(kind=kint) :: ctsurf, nnode, ndLocal(21), j, k
     real(kind=kreal)   :: ndCoord(21*3), ndu(21*3), ndDu(21*3)
     real(kind=kreal)   :: ctNForce(21*3+1), ctTForce(21*3+1)
+    real(kind=kreal)   :: Tm(3,3*(l_max_surface_node+1)), Tt(3,3*(l_max_surface_node+1))
 
     do j = 1, size(contact%slave)
       if( .not. is_contact_active(contact%states(j)%state) ) cycle
@@ -546,7 +550,13 @@ contains
       call getContactNodalForce_Slag( contact%states(j), contact%master(ctsurf), ndCoord, ndDu, &
         0.d0, 0.d0, contact%states(j)%multiplier(1), ctNForce, ctTForce, .false., contact%smoothing )
 
-      call assemble_contact_force_output( nnode, ndLocal, ctNForce, ctTForce, CONT_NFORCE )
+      call computeTm_Tt( contact%states(j), contact%master(ctsurf), contact%fcoeff, &
+        Tm, Tt, contact%smoothing )
+      ctTForce(:) = 0.d0
+      ctTForce(1:3*(nnode+1)) = -matmul(transpose(Tm(1:3,1:3*(nnode+1))), &
+        contact%states(j)%tangentForce_final)
+
+      call assemble_contact_force_output( nnode, ndLocal, ctNForce, ctTForce, CONT_NFORCE, CONT_FRIC )
     enddo
 
   end subroutine calcu_contact_ndforce_exp
