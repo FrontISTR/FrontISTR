@@ -508,4 +508,47 @@ contains
 
   end subroutine calcu_contact_ndforce_NodeSurf
 
+  !> \brief Compute contact nodal normal force for output from the stored contact
+  !! multiplier, for the explicit dynamic method.
+  !!
+  !! Explicit counterpart of the kctForOutput path of calcu_contact_ndforce_NodeSurf.
+  !! The forward-increment Lagrange corrector stores the converged contact normal
+  !! force in states(:)%multiplier(1) but has no Lagrange matrix, so the multiplier
+  !! is taken directly from the contact state instead of hecLagMAT%Lagrange. The same
+  !! element routine (getContactNodalForce_Slag) and assembly (assemble_contact_force_output)
+  !! as the implicit/static output path are reused, so CONT_NFORCE is produced identically.
+  !! Friction is intentionally not produced (fcoeff = 0): the explicit corrector applies
+  !! only the normal contact force to the motion update.
+  subroutine calcu_contact_ndforce_exp( contact, coord, disp, ddisp, CONT_NFORCE )
+    type( tContact ), intent(inout)      :: contact         !< contact info
+    real(kind=kreal), intent(in)         :: coord(:)        !< mesh coordinate
+    real(kind=kreal), intent(in)         :: disp(:)         !< disp till current step
+    real(kind=kreal), intent(in)         :: ddisp(:)        !< disp increment of current substep
+    real(kind=kreal), pointer            :: CONT_NFORCE(:)  !< contact normal force (output)
+
+    integer(kind=kint) :: ctsurf, nnode, ndLocal(21), j, k
+    real(kind=kreal)   :: ndCoord(21*3), ndu(21*3), ndDu(21*3)
+    real(kind=kreal)   :: ctNForce(21*3+1), ctTForce(21*3+1)
+
+    do j = 1, size(contact%slave)
+      if( .not. is_contact_active(contact%states(j)%state) ) cycle
+
+      ctsurf = contact%states(j)%surface
+      nnode = size(contact%master(ctsurf)%nodes)
+      ndLocal(1) = contact%slave(j)
+      ndLocal(2:nnode+1) = contact%master(ctsurf)%nodes(1:nnode)
+      do k = 1, nnode+1
+        ndDu((k-1)*3+1:(k-1)*3+3) = ddisp((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3)
+        ndu((k-1)*3+1:(k-1)*3+3) = disp((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndDu((k-1)*3+1:(k-1)*3+3)
+        ndCoord((k-1)*3+1:(k-1)*3+3) = coord((ndLocal(k)-1)*3+1:(ndLocal(k)-1)*3+3) + ndu((k-1)*3+1:(k-1)*3+3)
+      enddo
+
+      call getContactNodalForce_Slag( contact%states(j), contact%master(ctsurf), ndCoord, ndDu, &
+        0.d0, 0.d0, contact%states(j)%multiplier(1), ctNForce, ctTForce, .false., contact%smoothing )
+
+      call assemble_contact_force_output( nnode, ndLocal, ctNForce, ctTForce, CONT_NFORCE )
+    enddo
+
+  end subroutine calcu_contact_ndforce_exp
+
 end module m_fstr_contact_assembly

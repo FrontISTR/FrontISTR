@@ -1789,7 +1789,7 @@ contains
 
   end subroutine fstr_reorder_node_beam
 
-  subroutine setup_contact_output_variables( hecMESH, fstrSOLID, phase, dtime )
+  subroutine setup_contact_output_variables( hecMESH, fstrSOLID, phase, dtime, expflag )
     use m_fstr
     use hecmw_util
     use mContact
@@ -1798,6 +1798,7 @@ contains
     type (fstr_solid), intent(inout)      :: fstrSOLID
     integer(kind=kint), intent(in)        :: phase !< -1:clear,3:result,4:vis
     real(kind=kreal), optional, intent(in) :: dtime   !< time increment for CONT_RELVEL calculation
+    logical, optional, intent(in) :: expflag !< explicit dynamic: build CONT_NFORCE from stored contact multipliers
 
     integer(kind=kint), parameter :: nval = 10
     logical, save :: updated(nval) = .false.
@@ -1825,8 +1826,17 @@ contains
 
     ! --- CONTACT NORMAL FORCE @node
     if( fstrSOLID%output_ctrl(phase)%outinfo%on(30) .and. associated(fstrSOLID%CONT_NFORCE) ) then
-      if( paraContactFlag .and. .not. updated(1)) then
-        call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_NFORCE,1)
+      if( .not. updated(1) ) then
+        ! Explicit dynamic has no Lagrange matrix, so the solver cannot fill CONT_NFORCE
+        ! via fstr_calc_contact_output_force. Build it here from the stored contact
+        ! multipliers before the parallel aggregation. Implicit/static keep the value
+        ! already computed inside the solver (flag absent), so this is a no-op for them.
+        if( present(expflag) .and. expflag ) then
+          call fstr_calc_contact_output_force_exp( hecMESH, fstrSOLID )
+        end if
+        if( paraContactFlag ) then
+          call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_NFORCE,1)
+        end if
       end if
       updated(1) = .true.
     endif

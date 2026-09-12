@@ -53,6 +53,7 @@ module mContact
   public :: fstr_setup_parancon_contactvalue
   public :: update_contact_state_vectors
   public :: fstr_update_contact_state_vectors
+  public :: fstr_calc_contact_output_force_exp
 
 contains
 
@@ -117,6 +118,31 @@ contains
     call fstr_contact_ndforce_core(kctForOutput,cstep,ctAlgo,hecMESH,hecLagMAT,fstrSOLID,conMAT)
 
   end subroutine fstr_calc_contact_output_force
+
+  !> \brief Explicit-dynamic counterpart of fstr_calc_contact_output_force.
+  !!
+  !! The explicit (central-difference) solver enforces contact through the
+  !! forward-increment Lagrange corrector, which stores the contact normal force
+  !! in states(:)%multiplier(1) but builds no Lagrange matrix. Hence
+  !! fstr_calc_contact_output_force (which reads hecLagMAT%Lagrange) cannot be used,
+  !! and CONT_NFORCE was left at zero for result/visualization output. This routine
+  !! fills CONT_NFORCE from the stored multipliers, reusing the same element force
+  !! routine as the implicit path. It needs neither hecLagMAT nor conMAT.
+  subroutine fstr_calc_contact_output_force_exp( hecMESH, fstrSOLID )
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_solid), intent(inout)      :: fstrSOLID
+
+    integer(kind=kint) :: i
+
+    if( .not. associated(fstrSOLID%CONT_NFORCE) ) return
+    fstrSOLID%CONT_NFORCE(:) = 0.d0
+
+    do i = 1, fstrSOLID%n_contacts
+      call calcu_contact_ndforce_exp( fstrSOLID%contacts(i), hecMESH%node(:), &
+        fstrSOLID%unode(:), fstrSOLID%dunode(:), fstrSOLID%CONT_NFORCE )
+    enddo
+
+  end subroutine fstr_calc_contact_output_force_exp
 
   !> \brief Core routine: compute contact nodal forces for all contact/embed pairs.
   !! purpose == kctForResidual: assemble into conMAT%B
