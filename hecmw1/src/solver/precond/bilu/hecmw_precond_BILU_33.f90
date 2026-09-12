@@ -1328,19 +1328,19 @@ contains
       icou= 0
       do k= INU(i-1)+1, INU(i)
         icou = icou + 1
-        IW1(icou)= perm(IAU(k))
+        IW1(icou)= iperm(IAU(k))
       enddo
 
       icou= 0
       do k= inumFI2U(i-1)+1, inumFI2U(i)
         icou        = icou + 1
-        IW1(icou+icouU1)= perm(FI2U(k))
+        IW1(icou+icouU1)= iperm(FI2U(k))
       enddo
 
       icou= 0
       do k= inumFI1U(i-1)+1, inumFI1U(i)
         icou        = icou + 1
-        IW1(icou+icouU2)= perm(FI1U(icou+icouU2+iSU))
+        IW1(icou+icouU2)= iperm(FI1U(icou+icouU2+iSU))
       enddo
 
       do k= 1, icouU3
@@ -1349,7 +1349,7 @@ contains
       call fill_in_S33_SORT (IW1, IW2, icouU3, NP)
 
       do k= 1, icouU3
-        FI1U (k+isU)= iperm(IW1(k))
+        FI1U (k+isU)= perm(IW1(k))
         ik= IW2(k)
         if (ik.le.INU(i)-INU(i-1)) then
           kk1= 9*( k+isU)
