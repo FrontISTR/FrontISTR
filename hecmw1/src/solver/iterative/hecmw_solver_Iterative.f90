@@ -22,7 +22,6 @@ contains
     use hecmw_solver_GPBiCG
     use hecmw_solver_CR
     use m_hecmw_solve_error
-    use m_hecmw_comm_f
     use hecmw_solver_las
     use hecmw_precond
     use hecmw_matrix_misc
@@ -45,7 +44,6 @@ contains
     integer(kind=kint) :: NREST
     real(kind=kreal)   :: SIGMA
 
-    integer(kind=kint) :: totalmpc, MPC_METHOD
     integer(kind=kint) :: auto_sigma_diag
 
     !C PARAMETERs
@@ -75,14 +73,6 @@ contains
 
     !C ERROR CHECK
     call hecmw_solve_check_zerodiag(hecMESH, hecMAT) !C-- ZERO DIAGONAL component
-
-    !C-- IN CASE OF MPC-CG
-    totalmpc = hecMESH%mpc%n_mpc
-    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-    MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
-    if (totalmpc > 0 .and. MPC_METHOD == 2) then
-      call hecmw_mat_set_flag_mpcmatvec(hecMAT, 1)
-    endif
 
     !C-- RECYCLE SETTING OF PRECONDITIONER
     call hecmw_mat_recycle_precond_setting(hecMAT)
@@ -163,11 +153,6 @@ contains
 
     call hecmw_mat_dump_solution(hecMAT)
     call hecmw_matvec_unset_async
-
-    !C-- IN CASE OF MPC-CG
-    if (totalmpc > 0 .and. MPC_METHOD == 2) then
-      call hecmw_mat_set_flag_mpcmatvec(hecMAT, 0)
-    endif
 
     time_Ax = hecmw_matvec_get_timer()
     time_precond = hecmw_precond_get_timer()

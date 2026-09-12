@@ -25,7 +25,6 @@ module hecmw_solver_las
   public :: hecmw_rel_resid_L2
   public :: hecmw_Tvec
   public :: hecmw_Ttvec
-  public :: hecmw_TtmatTvec
   public :: hecmw_matvec_clear_timer
   public :: hecmw_matvec_get_timer
   public :: hecmw_mat_diag_sr
@@ -234,32 +233,6 @@ contains
     end select
 
   end subroutine hecmw_Ttvec
-
-  !C
-  !C***
-  !C*** hecmw_TtmatTvec
-  !C***
-  !C
-  subroutine hecmw_TtmatTvec (hecMESH, hecMAT, X, Y, W, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:), W(:)
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    !    call hecmw_Tvec(hecMESH, X, Y, COMMtime)
-    !    call hecmw_matvec(hecMESH, hecMAT, Y, W, COMMtime)
-    !    call hecmw_Ttvec(hecMESH, W, Y, COMMtime)
-    select case(hecMESH%n_dof)
-      case (3)
-        call hecmw_TtmatTvec_33 (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
-      case default
-        call hecmw_TtmatTvec_nn (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
-    end select
-
-  end subroutine hecmw_TtmatTvec
 
   !C
   !C***
