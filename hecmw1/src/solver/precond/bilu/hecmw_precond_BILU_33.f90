@@ -12,6 +12,12 @@ module hecmw_precond_BILU_33
   use hecmw_util
   use hecmw_matrix_misc
 
+  use m_hecmw_matrix_ordering_CM
+  use m_hecmw_matrix_ordering_MC
+  use hecmw_matrix_reorder
+  use hecmw_matrix_contact
+  !$ use omp_lib
+
   private
 
   public:: hecmw_precond_BILU_33_setup
@@ -29,6 +35,37 @@ module hecmw_precond_BILU_33
 
   logical, save :: INITIALIZED = .false.
 
+  !C for coloring
+  real(kind=kreal), pointer :: D(:) => null()
+  real(kind=kreal), pointer :: AL(:) => null()
+  real(kind=kreal), pointer :: AU(:) => null()
+  integer(kind=kint), pointer :: indexL(:) => null()
+  integer(kind=kint), pointer :: indexU(:) => null()
+  integer(kind=kint), pointer :: itemL(:) => null()
+  integer(kind=kint), pointer :: itemU(:) => null()
+
+  integer(kind=kint) :: NContact = 0
+  real(kind=kreal), pointer :: CAL(:) => null()
+  real(kind=kreal), pointer :: CAU(:) => null()
+  integer(kind=kint), pointer :: indexCL(:) => null()
+  integer(kind=kint), pointer :: indexCU(:) => null()
+  integer(kind=kint), pointer :: itemCL(:) => null()
+  integer(kind=kint), pointer :: itemCU(:) => null()
+
+  integer(kind=kint) :: NColor
+  integer(kind=kint), pointer :: COLORindex(:) => null()
+  integer(kind=kint), pointer :: perm(:) => null()
+  integer(kind=kint), pointer :: iperm(:) => null()
+
+  ! for tuning
+  logical, save :: isFirst = .true.
+  integer(kind=kint), parameter :: numOfBlockPerThread = 100
+  integer(kind=kint), save :: numOfThread = 1, numOfBlock
+  integer(kind=kint), save, allocatable :: icToBlockIndex(:)
+  integer(kind=kint), save, allocatable :: blockIndexToColorIndex(:)
+  integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
+  integer(kind=kint), parameter :: DEBUG = 0
+
 contains
 
   subroutine hecmw_precond_BILU_33_setup(hecMAT)
@@ -37,14 +74,21 @@ contains
     integer(kind=kint ) :: NP, NPU, NPL
     integer(kind=kint ) :: PRECOND
     real   (kind=kreal) :: SIGMA, SIGMA_DIAG
+!    real(kind=kreal), pointer :: D(:)
+!    real(kind=kreal), pointer :: AL(:)
+!    real(kind=kreal), pointer :: AU(:)
+!    integer(kind=kint ), pointer :: INL(:), INU(:)
+!    integer(kind=kint ), pointer :: IAL(:)
+!    integer(kind=kint ), pointer :: IAU(:)
 
-    real(kind=kreal), pointer :: D(:)
-    real(kind=kreal), pointer :: AL(:)
-    real(kind=kreal), pointer :: AU(:)
-
-    integer(kind=kint ), pointer :: INL(:), INU(:)
-    integer(kind=kint ), pointer :: IAL(:)
-    integer(kind=kint ), pointer :: IAU(:)
+    !for coloring
+    integer(kind=kint ) :: NPCL, NPCU
+    real   (kind=kreal), allocatable :: CD(:)
+    integer(kind=kint ) :: NCOLOR_IN
+    integer(kind=kint ) :: ii, i, j, k
+    integer(kind=kint ) :: nthreads = 1
+    integer(kind=kint ), allocatable :: perm_tmp(:)
+    real   (kind=kreal) :: t0
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
@@ -60,25 +104,109 @@ contains
     NP = hecMAT%NP
     NPL = hecMAT%NPL
     NPU = hecMAT%NPU
-    D => hecMAT%D
-    AL => hecMAT%AL
-    AU => hecMAT%AU
-    INL => hecMAT%indexL
-    INU => hecMAT%indexU
-    IAL => hecMAT%itemL
-    IAU => hecMAT%itemU
+!    D => hecMAT%D
+!    AL => hecMAT%AL
+!    AU => hecMAT%AU
+!    INL => hecMAT%indexL
+!    INU => hecMAT%indexU
+!    IAL => hecMAT%itemL
+!    IAU => hecMAT%itemU
     PRECOND = hecmw_mat_get_precond(hecMAT)
     SIGMA = hecmw_mat_get_sigma(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
 
+    !for coloring
+    NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
+    NContact = hecMAT%cmat%n_val
+    !$ nthreads = omp_get_max_threads()
+
+    if (NContact.gt.0) then
+      call hecmw_cmat_LU( hecMAT )
+    endif
+    if (nthreads == 1) then
+      NColor = 1
+      allocate(COLORindex(0:1), perm(N), iperm(N))
+      COLORindex(0) = 0
+      COLORindex(1) = N
+      do i=1,N
+        perm(i) = i
+        iperm(i) = i
+      end do
+    else
+      allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
+      call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
+        hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
+      if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+      if (PRECOND.eq.10) then
+        print *, 'just before callin MC'
+        call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
+          hecMAT%indexU, hecMAT%itemU, perm_tmp, &
+          NCOLOR_IN, NColor, COLORindex, perm, iperm)
+      elseif (PRECOND.eq.11) then
+        print *, 'just before callin MC'
+        call hecmw_matrix_ordering_MC_L1(N, hecMAT%indexL, hecMAT%itemL, &
+          hecMAT%indexU, hecMAT%itemU, perm_tmp, &
+          NCOLOR_IN, NColor, COLORindex, perm, iperm)
+      elseif (PRECOND.eq.12) then
+        print *, 'just before callin MC'
+        call hecmw_matrix_ordering_MC_L2(N, hecMAT%indexL, hecMAT%itemL, &
+          hecMAT%indexU, hecMAT%itemU, perm_tmp, &
+          NCOLOR_IN, NColor, COLORindex, perm, iperm)
+      endif
+    endif
+
+    NPL = 0
+    do i=1,N
+      do j=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
+        if( hecMAT%itemU(j) > N ) exit
+        NPL = NPL + 1
+      enddo
+    enddo
+    NPL = max(hecMAT%indexL(N),NPL)
+    NPU = hecMAT%indexU(N)
+    allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
+    call hecmw_matrix_reorder_profile(N, perm, iperm, &
+      hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+      indexL, indexU, itemL, itemU)
+    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+
+    allocate(D(9*N), AL(9*NPL), AU(9*NPU))
+    call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
+      hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
+      hecMAT%AL, hecMAT%AU, hecMAT%D, &
+      indexL, indexU, itemL, itemU, AL, AU, D)
+    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+
+    call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
+    call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
+
+    if (NContact.gt.0) then
+      NPCL = hecMAT%indexCL(N)
+      NPCU = hecMAT%indexCU(N)
+      allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
+      call hecmw_matrix_reorder_profile(N, perm, iperm, &
+        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
+        indexCL, indexCU, itemCL, itemCU)
+
+      allocate(CD(9*N), CAL(9*NPCL), CAU(9*NPCU))
+      call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
+        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
+        hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
+        indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
+      deallocate(CD)
+      call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
+      call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
+    endif
+
     if (PRECOND.eq.10) call FORM_ILU0_33 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (N, NP, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA, SIGMA_DIAG)
+    
     if (PRECOND.eq.11) call FORM_ILU1_33 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (N, NP, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA, SIGMA_DIAG)
     if (PRECOND.eq.12) call FORM_ILU2_33 &
-      &   (N, NP, NPL, NPU, D, AL, INL, IAL, AU, INU, IAU, &
+      &   (N, NP, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA, SIGMA_DIAG)
 
     INITIALIZED = .true.
@@ -87,18 +215,90 @@ contains
 
   end subroutine hecmw_precond_BILU_33_setup
 
+  subroutine setup_tuning_parameters
+    use hecmw_tuning_fx
+    implicit none
+    integer(kind=kint) :: blockIndex, elementCount, numOfElement, ii
+    real(kind=kreal) :: numOfElementPerBlock
+    integer(kind=kint) :: my_rank
+    integer(kind=kint) :: ic, i
+
+    if (DEBUG >= 1) write(*,*) 'DEBUG: setting up tuning parameters for SSOR'
+    !$ numOfThread = omp_get_max_threads()
+    numOfBlock = numOfThread * numOfBlockPerThread
+    if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
+    if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
+    allocate (icToBlockIndex(0:NColor), &
+         blockIndexToColorIndex(0:numOfBlock + NColor))
+    numOfElement = N + indexL(N) + indexU(N)
+    numOfElementPerBlock = dble(numOfElement) / numOfBlock
+    blockIndex = 0
+    icToBlockIndex = -1
+    icToBlockIndex(0) = 0
+    blockIndexToColorIndex = -1
+    blockIndexToColorIndex(0) = 0
+    my_rank = hecmw_comm_get_rank()
+    ! write(9000+my_rank,*) &
+    !      '# numOfElementPerBlock =', numOfElementPerBlock
+    ! write(9000+my_rank,*) &
+    !      '# ic, blockIndex, colorIndex, elementCount'
+    do ic = 1, NColor
+      elementCount = 0
+      ii = 1
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+        elementCount = elementCount + 1
+        elementCount = elementCount + (indexL(i) - indexL(i-1))
+        elementCount = elementCount + (indexU(i) - indexU(i-1))
+        if (elementCount > ii * numOfElementPerBlock &
+             .or. i == COLORindex(ic)) then
+          ii = ii + 1
+          blockIndex = blockIndex + 1
+          blockIndexToColorIndex(blockIndex) = i
+          ! write(9000+my_rank,*) ic, blockIndex, &
+          !      blockIndexToColorIndex(blockIndex), elementCount
+        endif
+      enddo
+      icToBlockIndex(ic) = blockIndex
+    enddo
+    numOfBlock = blockIndex
+
+    call hecmw_tuning_fx_calc_sector_cache( N, 3, &
+         sectorCacheSize0, sectorCacheSize1 )
+  end subroutine setup_tuning_parameters
+
   subroutine hecmw_precond_BILU_33_apply(WW)
     implicit none
     real(kind=kreal), intent(inout) :: WW(:)
     integer(kind=kint) :: i, j, isL, ieL, isU, ieU, k
     real(kind=kreal) :: SW1, SW2, SW3, X1, X2, X3
+    ! for coloring
+    integer(kind=kint) :: ic, iold
+
+    ! added for turning >>>
+    integer(kind=kint) :: blockIndex
+
+    if (isFirst) then
+      call setup_tuning_parameters
+      isFirst = .false.
+    endif
+    ! <<< added for turning
+
     !C
     !C-- FORWARD
-
-    do i= 1, N
-      SW1= WW(3*i-2)
-      SW2= WW(3*i-1)
-      SW3= WW(3*i  )
+    !$omp parallel default(none) &
+      !$omp&shared(NColor,inumFI1L,FI1L,inumFI1U,FI1U,ALlu0,AUlu0,Dlu0,perm,&
+      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
+      !$omp&       WW,icToBlockIndex,blockIndexToColorIndex) &
+      !$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
+    do ic =1, NColor
+      !$omp do schedule (static, 1)
+        do blockIndex = icToBlockIndex(ic-1)+1, icToBlockIndex(ic)
+        do i = blockIndexToColorIndex(blockIndex-1)+1, &
+               blockIndexToColorIndex(blockIndex)
+            iold=perm(i)
+      SW1= WW(3*iold-2)
+      SW2= WW(3*iold-1)
+      SW3= WW(3*iold  )
       isL= inumFI1L(i-1)+1
       ieL= inumFI1L(i)
       do j= isL, ieL
@@ -119,15 +319,22 @@ contains
       X3= Dlu0(9*i  )*  X3
       X2= Dlu0(9*i-4)*( X2 - Dlu0(9*i-3)*X3 )
       X1= Dlu0(9*i-8)*( X1 - Dlu0(9*i-6)*X3 - Dlu0(9*i-7)*X2)
-      WW(3*i-2)= X1
-      WW(3*i-1)= X2
-      WW(3*i  )= X3
+      WW(3*iold-2)= X1
+      WW(3*iold-1)= X2
+      WW(3*iold  )= X3
+    enddo
+    enddo
+     !$omp end do
     enddo
 
     !C
     !C-- BACKWARD
 
-    do i= N, 1, -1
+    do ic = NColor, 1, -1
+      !$omp do schedule (static, 1)
+      do blockIndex = icToBlockIndex(ic), icToBlockIndex(ic-1)+1, -1
+        do i = blockIndexToColorIndex(blockIndex), &
+            blockIndexToColorIndex(blockIndex-1)+1, -1
       isU= inumFI1U(i-1) + 1
       ieU= inumFI1U(i)
       SW1= 0.d0
@@ -150,10 +357,15 @@ contains
       X3= Dlu0(9*i  )*  X3
       X2= Dlu0(9*i-4)*( X2 - Dlu0(9*i-3)*X3 )
       X1= Dlu0(9*i-8)*( X1 - Dlu0(9*i-6)*X3 - Dlu0(9*i-7)*X2)
-      WW(3*i-2)=  WW(3*i-2) - X1
-      WW(3*i-1)=  WW(3*i-1) - X2
-      WW(3*i  )=  WW(3*i  ) - X3
+      iold=perm(i)
+      WW(3*iold-2)=  WW(3*iold-2) - X1
+      WW(3*iold-1)=  WW(3*iold-1) - X2
+      WW(3*iold  )=  WW(3*iold  ) - X3
     enddo
+    enddo
+       !$omp end do
+    enddo
+    !$omp end parallel
   end subroutine hecmw_precond_BILU_33_apply
 
   subroutine hecmw_precond_BILU_33_clear()
@@ -200,7 +412,7 @@ contains
     integer(kind=kint), dimension(:), allocatable :: IW1, IW2
     real (kind=kreal),  dimension(3,3) :: RHS_Aij, DkINV, Aik, Akj
     integer(kind=kint) :: i,jj,ij0,kk
-    integer(kind=kint) :: j,k
+    integer(kind=kint) :: j,k, j_old, k_old
     allocate (IW1(NP) , IW2(NP))
     allocate(Dlu0(9*NP), ALlu0(9*NPL), AUlu0(9*NPU))
     allocate(inumFI1L(0:NP), inumFI1U(0:NP), FI1L(NPL), FI1U(NPU))
@@ -264,7 +476,8 @@ contains
       enddo
 
       do kk= INL(i-1)+1, INL(i)
-        k= IAL(kk)
+        k_old= IAL(kk)
+        k    = iperm(k_old)
 
         DkINV(1,1)= Dlu0(9*k-8)
         DkINV(1,2)= Dlu0(9*k-7)
@@ -287,8 +500,9 @@ contains
         Aik(3,3)= ALlu0(9*kk  )
 
         do jj= INU(k-1)+1, INU(k)
-          j= IAU(jj)
-          if (IW1(j).eq.0.and.IW2(j).eq.0) cycle
+          j_old = IAU(jj)
+          j     = iperm(j_old)
+          if (IW1(j_old).eq.0.and.IW2(j_old).eq.0) cycle
 
           Akj(1,1)= AUlu0(9*jj-8)
           Akj(1,2)= AUlu0(9*jj-7)
@@ -315,7 +529,7 @@ contains
           endif
 
           if (j.lt.i) then
-            ij0= IW1(j)
+            ij0= IW1(j_old)
             ALlu0(9*ij0-8)= ALlu0(9*ij0-8) - RHS_Aij(1,1)
             ALlu0(9*ij0-7)= ALlu0(9*ij0-7) - RHS_Aij(1,2)
             ALlu0(9*ij0-6)= ALlu0(9*ij0-6) - RHS_Aij(1,3)
@@ -328,7 +542,7 @@ contains
           endif
 
           if (j.gt.i) then
-            ij0= IW2(j)
+            ij0= IW2(j_old)
             AUlu0(9*ij0-8)= AUlu0(9*ij0-8) - RHS_Aij(1,1)
             AUlu0(9*ij0-7)= AUlu0(9*ij0-7) - RHS_Aij(1,2)
             AUlu0(9*ij0-6)= AUlu0(9*ij0-6) - RHS_Aij(1,3)
@@ -390,6 +604,7 @@ contains
     integer(kind=kint) :: i,jj,jj1,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icou0,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
     integer(kind=kint) :: j,k,iSL,iSU
+    integer(kind=kint) :: kk_old, k_old, j_old, jj_old
     !C
     !C +--------------+
     !C | find fill-in |
@@ -411,20 +626,23 @@ contains
       IW1= 0
       IW1(i)= 1
       do L= INL(i-1)+1, INL(i)
-        IW1(IAL(L))= 1
+        IW1(iperm(IAL(L)))= 1
       enddo
       do L= INU(i-1)+1, INU(i)
-        IW1(IAU(L))= 1
+        IW1(iperm(IAU(L)))= 1
       enddo
 
       iSk= INL(i-1) + 1
       iEk= INL(i)
       do k= iSk, iEk
-        kk= IAL(k)
+        kk_old= IAL(k)
+        kk    = iperm(kk_old)
         iSj= INU(kk-1) + 1
         iEj= INU(kk  )
         do j= iSj, iEj
-          jj= IAU(j)
+          jj_old  = IAU(j)
+          jj      = iperm(jj_old)
+
           if (IW1(jj).eq.0 .and. jj.lt.i) then
             inumFI1L(i)= inumFI1L(i)+1
             IW1(jj)= 1
@@ -464,28 +682,30 @@ contains
       IW1= 0
       IW1(i)= 1
       do L= INL(i-1)+1, INL(i)
-        IW1(IAL(L))= 1
+        IW1(iperm(IAL(L)))= 1
       enddo
       do L= INU(i-1)+1, INU(i)
-        IW1(IAU(L))= 1
+        IW1(iperm(IAU(L)))= 1
       enddo
 
       iSk= INL(i-1) + 1
       iEk= INL(i)
       do k= iSk, iEk
-        kk= IAL(k)
+        kk_old= IAL(k)
+        kk    = iperm(kk_old)
         iSj= INU(kk-1) + 1
         iEj= INU(kk  )
         do j= iSj, iEj
-          jj= IAU(j)
+          jj_old = IAU(j)
+          jj     = iperm(jj_old)
           if (IW1(jj).eq.0 .and. jj.lt.i) then
             icouL           = icouL + 1
-            FI1L(icouL+IWsL(i-1)+INL(i)-INL(i-1))= jj
+            FI1L(icouL+IWsL(i-1)+INL(i)-INL(i-1))= jj_old
             IW1(jj)          = 1
           endif
           if (IW1(jj).eq.0 .and. jj.gt.i) then
             icouU           = icouU + 1
-            FI1U(icouU+IWsU(i-1)+INU(i)-INU(i-1))= jj
+            FI1U(icouU+IWsU(i-1)+INU(i)-INU(i-1))= jj_old
             IW1(jj)          = 1
           endif
         enddo
@@ -509,17 +729,19 @@ contains
       icouU1=      INU(i) -      INU(i-1)
       icouU2= inumFI1U(i) - inumFI1U(i-1)
       icouU3= icouU1 + icouU2
+      IW1 =0
+      IW2 =0 
       !C
       !C-- LOWER part
       icou0= 0
       do k= INL(i-1)+1, INL(i)
         icou0 = icou0 + 1
-        IW1(icou0)= IAL(k)
+        IW1(icou0)= iperm(IAL(k))
       enddo
 
       do k= inumFI1L(i-1)+1, inumFI1L(i)
         icou0 = icou0 + 1
-        IW1(icou0)= FI1L(icou0+IWsL(i-1))
+        IW1(icou0)= iperm(FI1L(icou0+IWsL(i-1)))
       enddo
 
       do k= 1, icouL3
@@ -528,7 +750,7 @@ contains
       call fill_in_S33_SORT (IW1, IW2, icouL3, NP)
 
       do k= 1, icouL3
-        FI1L (k+isL)= IW1(k)
+        FI1L (k+isL)= perm(IW1(k))
         ik= IW2(k)
         if (ik.le.INL(i)-INL(i-1)) then
           kk1= 9*( k+isL)
@@ -549,12 +771,12 @@ contains
       icou0= 0
       do k= INU(i-1)+1, INU(i)
         icou0 = icou0 + 1
-        IW1(icou0)= IAU(k)
+        IW1(icou0)= iperm(IAU(k))
       enddo
 
       do k= inumFI1U(i-1)+1, inumFI1U(i)
         icou0 = icou0 + 1
-        IW1(icou0)= FI1U(icou0+IWsU(i-1))
+        IW1(icou0)= iperm(FI1U(icou0+IWsU(i-1)))
       enddo
 
       do k= 1, icouU3
@@ -563,7 +785,7 @@ contains
       call fill_in_S33_SORT (IW1, IW2, icouU3, NP)
 
       do k= 1, icouU3
-        FI1U (k+isU)= IW1(k)
+        FI1U (k+isU)= perm(IW1(k))
         ik= IW2(k)
         if (ik.le.INU(i)-INU(i-1)) then
           kk1= 9*( k+isU)
@@ -632,7 +854,8 @@ contains
       enddo
 
       do kk= INL(i-1)+1, INL(i)
-        k= IAL(kk)
+        k_old = IAL(kk)
+        k     = iperm(k_old)
 
         DkINV(1,1)= Dlu0(9*k-8)
         DkINV(1,2)= Dlu0(9*k-7)
@@ -645,7 +868,7 @@ contains
         DkINV(3,3)= Dlu0(9*k  )
 
         do kk1= inumFI1L(i-1)+1, inumFI1L(i)
-          if (k.eq.FI1L(kk1)) then
+          if (k_old.eq.FI1L(kk1)) then
             Aik(1,1)= ALlu0(9*kk1-8)
             Aik(1,2)= ALlu0(9*kk1-7)
             Aik(1,3)= ALlu0(9*kk1-6)
@@ -660,9 +883,10 @@ contains
         enddo
 
         do jj= INU(k-1)+1, INU(k)
-          j= IAU(jj)
+          j_old= IAU(jj)
+          j    = iperm(j_old) 
           do jj1= inumFI1U(k-1)+1, inumFI1U(k)
-            if (j.eq.FI1U(jj1)) then
+            if (j_old.eq.FI1U(jj1)) then
               Akj(1,1)= AUlu0(9*jj1-8)
               Akj(1,2)= AUlu0(9*jj1-7)
               Akj(1,3)= AUlu0(9*jj1-6)
@@ -691,7 +915,7 @@ contains
           endif
 
           if (j.lt.i) then
-            ij0= IW1(j)
+            ij0= IW1(j_old)
             ALlu0(9*ij0-8)= ALlu0(9*ij0-8) - RHS_Aij(1,1)
             ALlu0(9*ij0-7)= ALlu0(9*ij0-7) - RHS_Aij(1,2)
             ALlu0(9*ij0-6)= ALlu0(9*ij0-6) - RHS_Aij(1,3)
@@ -704,7 +928,7 @@ contains
           endif
 
           if (j.gt.i) then
-            ij0= IW2(j)
+            ij0= IW2(j_old)
             AUlu0(9*ij0-8)= AUlu0(9*ij0-8) - RHS_Aij(1,1)
             AUlu0(9*ij0-7)= AUlu0(9*ij0-7) - RHS_Aij(1,2)
             AUlu0(9*ij0-6)= AUlu0(9*ij0-6) - RHS_Aij(1,3)
@@ -770,6 +994,8 @@ contains
     integer(kind=kint) :: i,jj,ij0,kk,ik,kk1,kk2,L,iSk,iEk,iSj,iEj
     integer(kind=kint) :: icou,icouU,icouU1,icouU2,icouU3,icouL,icouL1,icouL2,icouL3
     integer(kind=kint) :: j,k,iSL,iSU
+    integer(kind=kint) :: j_old, jj_old, k_old, kk_old, l_old, ll_old
+    integer(kind=kint) :: jj1
 
     !C
     !C +------------------+
@@ -792,20 +1018,22 @@ contains
       IW1= 0
       IW1(i)= 1
       do L= INL(i-1)+1, INL(i)
-        IW1(IAL(L))= 1
+        IW1(iperm(IAL(L)))= 1
       enddo
       do L= INU(i-1)+1, INU(i)
-        IW1(IAU(L))= 1
+        IW1(iperm(IAU(L)))= 1
       enddo
 
       iSk= INL(i-1) + 1
       iEk= INL(i)
       do k= iSk, iEk
-        kk= IAL(k)
+        kk_old = IAL(k)
+        kk     = iperm(kk_old)
         iSj= INU(kk-1) + 1
         iEj= INU(kk  )
         do j= iSj, iEj
-          jj= IAU(j)
+          jj_old = IAU(j)
+          jj     = iperm(jj_old)
           if (IW1(jj).eq.0 .and. jj.lt.i) then
             inumFI2L(i)= inumFI2L(i)+1
             IW1(jj)= 1
@@ -837,28 +1065,30 @@ contains
       IW1= 0
       IW1(i)= 1
       do L= INL(i-1)+1, INL(i)
-        IW1(IAL(L))= 1
+        IW1(iperm(IAL(L)))= 1
       enddo
       do L= INU(i-1)+1, INU(i)
-        IW1(IAU(L))= 1
+        IW1(iperm(IAU(L)))= 1
       enddo
 
       iSk= INL(i-1) + 1
       iEk= INL(i)
       do k= iSk, iEk
-        kk= IAL(k)
+        kk_old= IAL(k)
+        kk    = iperm(kk_old)
         iSj= INU(kk-1) + 1
         iEj= INU(kk  )
         do j= iSj, iEj
-          jj= IAU(j)
+          jj_old= IAU(j)
+          jj    = iperm(jj_old)
           if (IW1(jj).eq.0 .and. jj.lt.i) then
             icouL = icouL + 1
-            FI2L(icouL+inumFI2L(i-1))= jj
+            FI2L(icouL+inumFI2L(i-1))= jj_old
             IW1(jj)= 1
           endif
           if (IW1(jj).eq.0 .and. jj.gt.i) then
             icouU = icouU + 1
-            FI2U(icouU+inumFI2U(i-1))= jj
+            FI2U(icouU+inumFI2U(i-1))= jj_old
             IW1(jj)= 1
           endif
         enddo
@@ -883,28 +1113,30 @@ contains
       IW1= 0
       IW1(i)= 1
       do L= INL(i-1)+1, INL(i)
-        IW1(IAL(L))= 2
+        IW1(iperm(IAL(L)))= 2
       enddo
       do L= INU(i-1)+1, INU(i)
-        IW1(IAU(L))= 2
+        IW1(iperm(IAU(L)))= 2
       enddo
 
       do L= inumFI2L(i-1)+1, inumFI2L(i)
-        IW1(FI2L(L))= 1
+        IW1(iperm(FI2L(L)))= 1
       enddo
 
       do L= inumFI2U(i-1)+1, inumFI2U(i)
-        IW1(FI2U(L))= 1
+        IW1(iperm(FI2U(L)))= 1
       enddo
 
       iSk= INL(i-1) + 1
       iEk= INL(i)
       do k= iSk, iEk
-        kk= IAL(k)
+        kk_old= IAL(k)
+        kk    = iperm(kk_old)
         iSj= inumFI2U(kk-1) + 1
         iEj= inumFI2U(kk)
         do j= iSj, iEj
-          jj= FI2U(j)
+          jj_old= FI2U(j)
+          jj    = iperm(jj_old)
           if (IW1(jj).eq.0 .and. jj.lt.i) then
             inumFI1L(i)= inumFI1L(i) + 1
             IW1(jj)= 1
@@ -919,11 +1151,13 @@ contains
       iSk= inumFI2L(i-1)+1
       iEk= inumFI2L(i)
       do k= iSk, iEk
-        kk= FI2L(k)
+        kk_old= FI2L(k)
+        kk    = iperm(kk_old)
         iSj= INU(kk-1) + 1
         iEj= INU(kk  )
         do j= iSj, iEj
-          jj= IAU(j)
+          jj_old= IAU(j)
+          jj    = iperm(jj_old)
           if (IW1(jj).eq.0 .and. jj.lt.i) then
             inumFI1L(i)= inumFI1L(i) + 1
             IW1(jj)= 1
@@ -964,38 +1198,40 @@ contains
       IW1= 0
       IW1(i)= 1
       do L= INL(i-1)+1, INL(i)
-        IW1(IAL(L))= 1
+        IW1(iperm(IAL(L)))= 1
       enddo
       do L= INU(i-1)+1, INU(i)
-        IW1(IAU(L))= 1
+        IW1(iperm(IAU(L)))= 1
       enddo
 
       do L= inumFI2L(i-1)+1, inumFI2L(i)
-        IW1(FI2L(L))= 1
+        IW1(iperm(FI2L(L)))= 1
       enddo
 
       do L= inumFI2U(i-1)+1, inumFI2U(i)
-        IW1(FI2U(L))= 1
+        IW1(iperm(FI2U(L)))= 1
       enddo
 
       iSk= INL(i-1) + 1
       iEk= INL(i)
       do k= iSk, iEk
-        kk= IAL(k)
+        kk_old= IAL(k)
+        kk    = iperm(kk_old)
         iSj= inumFI2U(kk-1) + 1
         iEj= inumFI2U(kk  )
         do j= iSj, iEj
-          jj= FI2U(j)
+          jj_old = FI2U(j)
+          jj     = iperm(jj_old)
           if (IW1(jj).eq.0 .and. jj.lt.i) then
             iAS= INL(i)-INL(i-1)+inumFI2L(i)-inumFI2L(i-1)+IWsL(i-1)
             icouL     = icouL + 1
-            FI1L(icouL+iAS)= jj
+            FI1L(icouL+iAS)= jj_old
             IW1(jj)    = 1
           endif
           if (IW1(jj).eq.0 .and. jj.gt.i) then
             iAS= INU(i)-INU(i-1)+inumFI2U(i)-inumFI2U(i-1)+IWsU(i-1)
             icouU     = icouU + 1
-            FI1U(icouU+iAS)= jj
+            FI1U(icouU+iAS)= jj_old
             IW1(jj)    = 1
           endif
         enddo
@@ -1004,21 +1240,23 @@ contains
       iSk= inumFI2L(i-1) + 1
       iEk= inumFI2L(i)
       do k= iSk, iEk
-        kk= FI2L(k)
+        kk_old= FI2L(k)
+        kk    = iperm(kk_old)
         iSj= INU(kk-1) + 1
         iEj= INU(kk  )
         do j= iSj, iEj
-          jj= IAU(j)
+          jj_old= IAU(j)
+          jj    = iperm(jj_old)
           if (IW1(jj).eq.0 .and. jj.lt.i) then
             iAS= INL(i)-INL(i-1)+inumFI2L(i)-inumFI2L(i-1)+IWsL(i-1)
             icouL     = icouL + 1
-            FI1L(icouL+iAS)= jj
+            FI1L(icouL+iAS)= jj_old
             IW1(jj)    = 1
           endif
           if (IW1(jj).eq.0 .and. jj.gt.i) then
             iAS= INU(i)-INU(i-1)+inumFI2U(i)-inumFI2U(i-1)+IWsU(i-1)
             icouU     = icouU + 1
-            FI1U(icouU+iAS)= jj
+            FI1U(icouU+iAS)= jj_old
             IW1(jj)    = 1
           endif
         enddo
@@ -1043,6 +1281,7 @@ contains
     iconFI1U= 0
 
     do i= 1, NP
+
       icouL1=      INL(i) -      INL(i-1)
       icouL2= inumFI2L(i) - inumFI2L(i-1) + icouL1
       icouL3= inumFI1L(i) - inumFI1L(i-1) + icouL2
@@ -1050,25 +1289,27 @@ contains
       icouU1=      INU(i) -      INU(i-1)
       icouU2= inumFI2U(i) - inumFI2U(i-1) + icouU1
       icouU3= inumFI1U(i) - inumFI1U(i-1) + icouU2
+      IW1 =0
+      IW2 =0
 
       !C
       !C-- LOWER part
       icou= 0
       do k= INL(i-1)+1, INL(i)
         icou = icou + 1
-        IW1(icou)= IAL(k)
+        IW1(icou)= iperm(IAL(k))
       enddo
 
       icou= 0
       do k= inumFI2L(i-1)+1, inumFI2L(i)
         icou        = icou + 1
-        IW1(icou+icouL1)= FI2L(k)
+        IW1(icou+icouL1)= iperm(FI2L(k))
       enddo
 
       icou= 0
       do k= inumFI1L(i-1)+1, inumFI1L(i)
         icou        = icou + 1
-        IW1(icou+icouL2)= FI1L(icou+icouL2+iSL)
+        IW1(icou+icouL2)= iperm(FI1L(icou+icouL2+iSL))
       enddo
 
       do k= 1, icouL3
@@ -1078,7 +1319,7 @@ contains
       call fill_in_S33_SORT (IW1, IW2, icouL3, NP)
 
       do k= 1, icouL3
-        FI1L (k+isL)= IW1(k)
+        FI1L (k+isL)= perm(IW1(k))
         ik= IW2(k)
         if (ik.le.INL(i)-INL(i-1)) then
           kk1= 9*( k+isL)
@@ -1121,19 +1362,19 @@ contains
       icou= 0
       do k= INU(i-1)+1, INU(i)
         icou = icou + 1
-        IW1(icou)= IAU(k)
+        IW1(icou)= perm(IAU(k))
       enddo
 
       icou= 0
       do k= inumFI2U(i-1)+1, inumFI2U(i)
         icou        = icou + 1
-        IW1(icou+icouU1)= FI2U(k)
+        IW1(icou+icouU1)= perm(FI2U(k))
       enddo
 
       icou= 0
       do k= inumFI1U(i-1)+1, inumFI1U(i)
         icou        = icou + 1
-        IW1(icou+icouU2)= FI1U(icou+icouU2+iSU)
+        IW1(icou+icouU2)= perm(FI1U(icou+icouU2+iSU))
       enddo
 
       do k= 1, icouU3
@@ -1142,7 +1383,7 @@ contains
       call fill_in_S33_SORT (IW1, IW2, icouU3, NP)
 
       do k= 1, icouU3
-        FI1U (k+isU)= IW1(k)
+        FI1U (k+isU)= iperm(IW1(k))
         ik= IW2(k)
         if (ik.le.INU(i)-INU(i-1)) then
           kk1= 9*( k+isU)
@@ -1235,7 +1476,8 @@ contains
       enddo
 
       do kk= inumFI1L(i-1)+1, inumFI1L(i)
-        k= FI1L(kk)
+        k_old= FI1L(kk)
+        k    = iperm(k_old)
         iconIK= iconFI1L(kk)
 
         DkINV(1,1)= Dlu0(9*k-8)
@@ -1259,19 +1501,20 @@ contains
         Aik(3,3)= ALlu0(9*kk  )
 
         do jj= inumFI1U(k-1)+1, inumFI1U(k)
-          j= FI1U(jj)
+          j_old= FI1U(jj)
+          j    = iperm(j_old)
           iconKJ= iconFI1U(jj)
 
           if ((iconIK+iconKJ).lt.2) then
-            Akj(1,1)= AUlu0(9*jj-8)
-            Akj(1,2)= AUlu0(9*jj-7)
-            Akj(1,3)= AUlu0(9*jj-6)
-            Akj(2,1)= AUlu0(9*jj-5)
-            Akj(2,2)= AUlu0(9*jj-4)
-            Akj(2,3)= AUlu0(9*jj-3)
-            Akj(3,1)= AUlu0(9*jj-2)
-            Akj(3,2)= AUlu0(9*jj-1)
-            Akj(3,3)= AUlu0(9*jj  )
+              Akj(1,1)= AUlu0(9*jj-8)
+              Akj(1,2)= AUlu0(9*jj-7)
+              Akj(1,3)= AUlu0(9*jj-6)
+              Akj(2,1)= AUlu0(9*jj-5)
+              Akj(2,2)= AUlu0(9*jj-4)
+              Akj(2,3)= AUlu0(9*jj-3)
+              Akj(3,1)= AUlu0(9*jj-2)
+              Akj(3,2)= AUlu0(9*jj-1)
+              Akj(3,3)= AUlu0(9*jj  )
 
             call ILU1b33 (RHS_Aij, DkINV, Aik, Akj)
 
@@ -1288,7 +1531,7 @@ contains
             endif
 
             if (j.lt.i) then
-              ij0= IW1(j)
+              ij0= IW1(j_old)
               ALlu0(9*ij0-8)= ALlu0(9*ij0-8) - RHS_Aij(1,1)
               ALlu0(9*ij0-7)= ALlu0(9*ij0-7) - RHS_Aij(1,2)
               ALlu0(9*ij0-6)= ALlu0(9*ij0-6) - RHS_Aij(1,3)
@@ -1301,7 +1544,7 @@ contains
             endif
 
             if (j.gt.i) then
-              ij0= IW2(j)
+              ij0= IW2(j_old)
               AUlu0(9*ij0-8)= AUlu0(9*ij0-8) - RHS_Aij(1,1)
               AUlu0(9*ij0-7)= AUlu0(9*ij0-7) - RHS_Aij(1,2)
               AUlu0(9*ij0-6)= AUlu0(9*ij0-6) - RHS_Aij(1,3)
