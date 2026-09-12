@@ -135,6 +135,12 @@ end function list_count
 
 ! list_next
 !     Return the next element (if any)
+! Arguments:
+!     elem       Element in the linked list
+! Result:
+!
+function list_next( elem ) result(next)
+    type(LINKED_LIST), pointer :: elem
     type(LINKED_LIST), pointer :: next
 
     next => elem%next
@@ -161,12 +167,16 @@ subroutine list_insert( elem, data )
     next%data =  data
 end subroutine list_insert
 
-! list_insert_head
-!     Insert a new element before the first element
+! list_delete_element
+!     Delete an element from the list
 ! Arguments:
-!     list       Start of the list
-!     data       The data for the new element
+!     list       Header of the list
+!     elem       Element in the linked list to be
+!                removed
 !
+subroutine list_delete_element( list, elem )
+    type(LINKED_LIST), pointer  :: list
+    type(LINKED_LIST), pointer  :: elem
 
     type(LINKED_LIST), pointer  :: current
     type(LINKED_LIST), pointer  :: prev
@@ -193,18 +203,5 @@ end subroutine list_insert
 !    elem%next => next
 !    next%data =  data
 end subroutine list_delete_element
-
-! list_get_data
-!     Get the data stored with a list element
-! Arguments:
-!     elem       Element in the linked list
-!
-
-! list_put_data
-!     Store new data with a list element
-! Arguments:
-!     elem       Element in the linked list
-!     data       The data to be stored
-!
 
 
