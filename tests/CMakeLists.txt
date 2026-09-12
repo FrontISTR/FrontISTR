@@ -68,6 +68,10 @@ foreach(parallel IN LISTS parallels)
   if(WITH_ML)
     AppendListTests("with_ml/*" "${TEST_TARGETS}" TEST_TARGETS)
   endif()
+  # the no-elimination contact path of DIRECTmf runs on a single process only
+  if((parallel STREQUAL "mpi") OR (parallel STREQUAL "hybrid"))
+    list(REMOVE_ITEM TEST_TARGETS "solver/DIRECTmf/contact_noelim")
+  endif()
 
   foreach(target ${TEST_TARGETS})
     get_filename_component(LAST_TEST_NAME ${target} NAME)

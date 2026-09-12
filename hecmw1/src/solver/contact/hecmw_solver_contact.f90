@@ -12,6 +12,7 @@ module m_solve_LINEQ_contact
   use m_solve_LINEQ_MKL_contact
   use m_solve_LINEQ_direct_serial_lag
   use m_solve_LINEQ_MUMPS_contact
+  use m_solve_LINEQ_mf_contact
   use m_solve_LINEQ_contact_elim
   use hecmw_matrix_misc
   use m_hecmw_comm_f
@@ -64,6 +65,17 @@ contains
         call solve_LINEQ_MKL_contact_init(hecMESH,is_sym)
       elseif( solver_type==5 ) then
         call solve_LINEQ_mumps_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+      elseif( solver_type==7 ) then
+        if( hecmw_comm_get_size() > 1) then
+          write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
+              ' without elimination; please use MUMPS or DIRECTmkl instead'
+          call hecmw_abort(hecmw_comm_get_comm())
+        endif
+        call solve_LINEQ_mf_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
+      else
+        write(*,*) 'ERROR: specified solver not available in contact analysis without elimination;',&
+            ' please use MUMPS or DIRECTmkl instead'
+        call hecmw_abort(hecmw_comm_get_comm())
       endif
     endif
   end subroutine solve_LINEQ_contact_init
@@ -124,6 +136,19 @@ contains
         endif
       elseif( solver_type==5 ) then
         call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
+      elseif( solver_type==7 ) then
+        if( hecmw_comm_get_size() > 1) then
+          write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
+              ' without elimination; please use MUMPS or DIRECTmkl instead'
+          call hecmw_abort(hecmw_comm_get_comm())
+        else
+          call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
+          call solve_LINEQ_mf_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat)
+        endif
+      else
+        write(*,*) 'ERROR: specified solver not available in contact analysis without elimination;',&
+            ' please use MUMPS or DIRECTmkl instead'
+        call hecmw_abort(hecmw_comm_get_comm())
       endif
     endif
 
