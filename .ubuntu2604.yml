@@ -1,50 +1,34 @@
 .ubuntu2604:
     image: ${REGISTRY}/build:ubuntu2604
-build/ubuntu2604/serial:
+build/ubuntu2604:
     extends: [".build",".ubuntu2604"]
-build/ubuntu2604/openmp:
-    extends: [".build",".ubuntu2604"]
-build/ubuntu2604/mpi:
-    extends: [".build",".ubuntu2604"]
-build/ubuntu2604/hybrid:
-    extends: [".build",".ubuntu2604"]
-test/ubuntu2604/serial/serial:
+    parallel:
+        matrix:
+            - BUILD_TYPE: [serial, openmp, mpi, hybrid]
+test/ubuntu2604:
     extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/serial"]
-test/ubuntu2604/openmp/serial:
-    extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/openmp"]
-test/ubuntu2604/openmp/openmp:
-    extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/openmp"]
-test/ubuntu2604/mpi/serial:
-    extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/mpi"]
-test/ubuntu2604/mpi/mpi:
-    extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/mpi"]
-test/ubuntu2604/hybrid/serial:
-    extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/hybrid"]
-test/ubuntu2604/hybrid/openmp:
-    extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/hybrid"]
-test/ubuntu2604/hybrid/mpi:
-    extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/hybrid"]
-test/ubuntu2604/hybrid/hybrid:
-    extends: [".test",".ubuntu2604"]
-    needs: ["build/ubuntu2604/hybrid"]
-    tags: ["saas-linux-medium-amd64"]
-deb/ubuntu2604/hybrid:
-    needs: ["build/ubuntu2604/hybrid"]
+    parallel:
+        matrix:
+            - {BUILD_TYPE: serial, RUN_TYPE: serial, RUNNER: small}
+            - {BUILD_TYPE: openmp, RUN_TYPE: [serial, openmp], RUNNER: small}
+            - {BUILD_TYPE: mpi, RUN_TYPE: [serial, mpi], RUNNER: small}
+            - {BUILD_TYPE: hybrid, RUN_TYPE: [serial, openmp, mpi], RUNNER: small}
+            - {BUILD_TYPE: hybrid, RUN_TYPE: hybrid, RUNNER: medium}
+    needs:
+        - job: build/ubuntu2604
+          parallel:
+              matrix:
+                  - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']
+    tags: ["saas-linux-${RUNNER}-amd64"]
+
+deb/ubuntu2604:
     extends: [".deb",".ubuntu2604"]
-deb/ubuntu2604/mpi:
-    needs: ["build/ubuntu2604/mpi"]
-    extends: [".deb",".ubuntu2604"]
-deb/ubuntu2604/openmp:
-    needs: ["build/ubuntu2604/openmp"]
-    extends: [".deb",".ubuntu2604"]
-deb/ubuntu2604/serial:
-    needs: ["build/ubuntu2604/serial"]
-    extends: [".deb",".ubuntu2604"]
+    variables: {DISTRO: ubuntu2604}
+    parallel:
+        matrix:
+            - BUILD_TYPE: [serial, openmp, mpi, hybrid]
+    needs:
+        - job: build/ubuntu2604
+          parallel:
+              matrix:
+                  - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']
