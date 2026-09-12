@@ -15,7 +15,6 @@ module hecmw_precond_BILU_33
   use m_hecmw_matrix_ordering_CM
   use m_hecmw_matrix_ordering_MC
   use hecmw_matrix_reorder
-  use hecmw_matrix_contact
   !$ use omp_lib
 
   private
@@ -43,14 +42,6 @@ module hecmw_precond_BILU_33
   integer(kind=kint), pointer :: indexU(:) => null()
   integer(kind=kint), pointer :: itemL(:) => null()
   integer(kind=kint), pointer :: itemU(:) => null()
-
-  integer(kind=kint) :: NContact = 0
-  real(kind=kreal), pointer :: CAL(:) => null()
-  real(kind=kreal), pointer :: CAU(:) => null()
-  integer(kind=kint), pointer :: indexCL(:) => null()
-  integer(kind=kint), pointer :: indexCU(:) => null()
-  integer(kind=kint), pointer :: itemCL(:) => null()
-  integer(kind=kint), pointer :: itemCU(:) => null()
 
   integer(kind=kint) :: NColor
   integer(kind=kint), pointer :: COLORindex(:) => null()
@@ -82,8 +73,6 @@ contains
 !    integer(kind=kint ), pointer :: IAU(:)
 
     !for coloring
-    integer(kind=kint ) :: NPCL, NPCU
-    real   (kind=kreal), allocatable :: CD(:)
     integer(kind=kint ) :: NCOLOR_IN
     integer(kind=kint ) :: ii, i, j, k
     integer(kind=kint ) :: nthreads = 1
@@ -117,12 +106,8 @@ contains
 
     !for coloring
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
-    NContact = hecMAT%cmat%n_val
     !$ nthreads = omp_get_max_threads()
 
-    if (NContact.gt.0) then
-      call hecmw_cmat_LU( hecMAT )
-    endif
     if (nthreads == 1) then
       NColor = 1
       allocate(COLORindex(0:1), perm(N), iperm(N))
@@ -179,24 +164,6 @@ contains
 
     call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
-
-    if (NContact.gt.0) then
-      NPCL = hecMAT%indexCL(N)
-      NPCU = hecMAT%indexCU(N)
-      allocate(indexCL(0:N), indexCU(0:N), itemCL(NPCL), itemCU(NPCU))
-      call hecmw_matrix_reorder_profile(N, perm, iperm, &
-        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-        indexCL, indexCU, itemCL, itemCU)
-
-      allocate(CD(9*N), CAL(9*NPCL), CAU(9*NPCU))
-      call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
-        hecMAT%indexCL, hecMAT%indexCU, hecMAT%itemCL, hecMAT%itemCU, &
-        hecMAT%CAL, hecMAT%CAU, hecMAT%D, &
-        indexCL, indexCU, itemCL, itemCU, CAL, CAU, CD)
-      deallocate(CD)
-      call hecmw_matrix_reorder_renum_item(N, perm, indexCL, itemCL)
-      call hecmw_matrix_reorder_renum_item(N, perm, indexCU, itemCU)
-    endif
 
     if (PRECOND.eq.10) call FORM_ILU0_33 &
       &   (N, NP, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
@@ -287,7 +254,6 @@ contains
     !C-- FORWARD
     !$omp parallel default(none) &
       !$omp&shared(NColor,inumFI1L,FI1L,inumFI1U,FI1U,ALlu0,AUlu0,Dlu0,perm,&
-      !$omp&       NContact,indexCL,itemCL,indexCU,itemCU,CAL,CAU,&
       !$omp&       WW,icToBlockIndex,blockIndexToColorIndex) &
       !$omp&private(SW1,SW2,SW3,X1,X2,X3,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
     do ic =1, NColor
