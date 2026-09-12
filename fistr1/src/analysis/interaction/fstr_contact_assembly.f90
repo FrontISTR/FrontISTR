@@ -556,6 +556,7 @@ contains
     real(kind=kreal) :: rho_t, nhat(3), t1(3), t2(3), nrm, Dxi(2)
     real(kind=kreal) :: alpha, that(2), lam_t_new(2), Amat(2,2), T3d(3,2), M3(3,3)
     real(kind=kreal) :: Wb(l_max_surface_node+1), stiff_f(24,24)
+    real(kind=kreal) :: lam_cone, that3d(3)
     integer(kind=kint) :: na, nb, fstate
 
     mu = contact%nPenalty * contact%refStiff
@@ -616,6 +617,16 @@ contains
           ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
           do a = 1, nnode_s
             if( lambda_node(a,g) <= 0.d0 ) cycle   ! no per-node normal force -> no friction
+            ! Radius of the friction cone.  With FRICTION_CONE=FROZEN it stays at the multiplier
+            ! of the last augmentation, which keeps the friction terms symmetric and leaves the
+            ! Coulomb condition to the augmentation loop; with !CONTACT_ALGO, FRICTION_CONE=FOLLOW it
+            ! follows the normal force this node actually applies, lambda_node + rho_n*gapwnode,
+            ! the same expression the residual distributes as nrlforce.
+            if( contact%symmetric ) then
+              lam_cone = lambda_node(a,g)
+            else
+              lam_cone = lambda_node(a,g) + mu*gapwnode(g,a)
+            endif
             nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
             if( nrm < 1.d-30 ) cycle
             nhat(1:3) = nacc_node(g,a,1:3) / nrm
@@ -624,7 +635,7 @@ contains
             Dxi(1) = dot_product(t1(1:3), Sigma_node(g,a,1:3))
             Dxi(2) = dot_product(t2(1:3), Sigma_node(g,a,1:3))
             fstate = fric_state_cur(a,g)
-            call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, contact%fcoeff, lambda_node(a,g), &
+            call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, contact%fcoeff, lam_cone, &
                                       fstrPR%eps_fric_band, lam_t_new, fstate, alpha, that)
             ! 2D tangent operator A (same construction as getContactStiffness_Alag).
             if( alpha <= 1.0d-20 ) then
@@ -659,6 +670,28 @@ contains
                 enddo
               enddo
             enddo
+            ! Coupling block of a cone radius that follows the normal force.  On the slip branch
+            ! the friction force is f_t = R*that3d with R = fcoeff*lam_cone, and R varies with u
+            ! through gapwnode:  d(gapwnode(g,a))/du = Snode(g,a)*Nsnode(g,a,:), the map the normal
+            ! stiffness uses, so the residual -Wbar(a,b)*f_t gains
+            !   K_a(b,c) += fcoeff*rho_n*Snode(g,a) * Wbar(a,b)*that3d (x) Nsnode(g,a,c).
+            ! Rows are a slip direction and columns a normal map, so the block is unsymmetric and
+            ! the solver is set up for a general matrix (fstr_is_contactALag_symmetric).  A stuck
+            ! node does not use the radius (f_t is the full trial), hence the slip-branch window,
+            ! the same one the consistent tangent above uses.
+            if( .not.contact%symmetric .and. alpha > 1.0d-20 .and. alpha < 0.999d0 ) then
+              that3d(1:3) = that(1)*t1(1:3) + that(2)*t2(1:3)
+              do nb = 1, nnode_s + nnode_m
+                do na = 1, nnode_s + nnode_m
+                  do k = 1, 3
+                    do j = 1, 3
+                      stiff_f(3*na-3+j, 3*nb-3+k) = stiff_f(3*na-3+j, 3*nb-3+k) &
+                        + contact%fcoeff * mu * Snode(g,a) * Wb(na) * that3d(j) * Nsnode(g,a,3*nb-3+k)
+                    enddo
+                  enddo
+                enddo
+              enddo
+            endif
             call hecmw_mat_ass_elem(hecMAT, nnode_s+nnode_m, ndLocal, stiff_f)
           enddo
         enddo
@@ -891,7 +924,7 @@ contains
     real(kind=kreal),   allocatable :: lam_t_cur(:,:,:), nacc_node(:,:,:), Sigma_node(:,:,:)
     integer(kind=kint), allocatable :: fric_state_cur(:,:)
     real(kind=kreal) :: nhat(3), t1(3), t2(3), nrm, fvec(3), Wbar, fk(3)
-    real(kind=kreal) :: rho_t, Dxi(2), alpha, that(2), lam_t_new(2)
+    real(kind=kreal) :: rho_t, Dxi(2), alpha, that(2), lam_t_new(2), lam_cone
     integer(kind=kint) :: fstate
 
     mu = contact%nPenalty * contact%refStiff
@@ -958,6 +991,16 @@ contains
           ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
           do a = 1, nnode_s
             if( lambda_node(a,g) <= 0.d0 ) cycle   ! no per-node normal force -> no friction
+            ! Cone radius: the frozen multiplier with FRICTION_CONE=FROZEN, the normal force this
+            ! node just applied above (nrlforce = lambda_node + rho_n*gapwnode) with FRICTION_CONE=FOLLOW,
+            ! the same radius the tangent uses (see calcu_contact_stiffness_SurfSurf).  A negative
+            ! lam_cone reaches group_return_mapping as lam_n <= 0 and gives zero friction, which is
+            ! what the normal back-distribution above does with a negative nrlforce too.
+            if( contact%symmetric ) then
+              lam_cone = lambda_node(a,g)
+            else
+              lam_cone = lambda_node(a,g) + mu*gapwnode(g,a)
+            endif
             nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
             if( nrm < 1.d-30 ) cycle
             nhat(1:3) = nacc_node(g,a,1:3) / nrm
@@ -967,7 +1010,7 @@ contains
               Dxi(1) = dot_product(t1(1:3), Sigma_node(g,a,1:3))
               Dxi(2) = dot_product(t2(1:3), Sigma_node(g,a,1:3))
               fstate = fric_state_cur(a,g)
-              call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, contact%fcoeff, lambda_node(a,g), &
+              call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, contact%fcoeff, lam_cone, &
                                         fstrPR%eps_fric_band, lam_t_new, fstate, alpha, that)
               fvec(1:3) = lam_t_new(1)*t1(1:3) + lam_t_new(2)*t2(1:3)
             else
