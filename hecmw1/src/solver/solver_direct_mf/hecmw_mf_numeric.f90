@@ -22,6 +22,10 @@
 !> same layout (fvalu, and uval for the stored U panels), pivots are chosen by threshold partial
 !> pivoting among the fully summed rows, and the row DOF of a position (frow) may then differ
 !> from its column DOF (fsdof). Delayed positions carry both to the parent.
+!>
+!> Loop parallelism is written as explicit tasks in a taskgroup, never as a taskloop construct:
+!> nvfortran rejects taskloop outright, and ifx (2026.1) miscompiles the reference-argument
+!> temporaries of procedure calls in the outlined body of a taskloop.
 module hecmw_mf_numeric
   use hecmw_util
   use m_hecmw_comm_f
@@ -1086,8 +1090,9 @@ contains
         enddo
       enddo
     enddo
-    !$omp taskloop default(shared) private(i, hi, m, base, o) grainsize(1) if(par)
+    !$omp taskgroup
     do j = g%ntc + 1, g%nt
+      !$omp task default(shared) firstprivate(j) private(i, hi, m, base, o) if(par)
       do i = j, g%nt
         hi = g%tb(i) - g%tb(i-1)
         m = g%tb(j) - g%tb(j-1)
@@ -1095,8 +1100,9 @@ contains
         o = mf_off(g, i, j)
         sval(base+1:base+int(hi, 8)*m) = gval(o+1:o+int(hi, 8)*m)
       enddo
+      !$omp end task
     enddo
-    !$omp end taskloop
+    !$omp end taskgroup
   end subroutine mf_store_cb
 
   !> Factor the matrix of hecMAT in the order of sym, in LDLt mode (lower part referenced) or
@@ -4808,10 +4814,10 @@ contains
     integer(kind=kint), intent(in) :: s
     real(kind=kreal), intent(in) :: zero
     integer(kind=kint), intent(out) :: ierr
-    integer(kind=kint) :: nown, nrow_nodes, ncol0, ndel, c, i, j, k, l, nd, a, b, m, r, cc
+    integer(kind=kint) :: nown, nrow_nodes, ncol0, ndel, c, i, i0, j, k, l, nd, a, b, m, r, cc, pr, pc
     integer(kind=kint) :: j0, ki, kk, coff, roff, cnown, cnb, cndel, cnrow, hi, cnt, cntc, kbeg, nkc
     integer(kind=kint) :: nswap, n2x2, npos, nneg, ntl, nlr, nsk, rmax
-    integer(kind=8) :: o, base, base2, half, pw, fw, rsum, pwa, pwu
+    integer(kind=8) :: o, o2, base, base2, half, pw, fw, rsum, pwa, pwu
     integer(kind=8), allocatable :: pcb(:)
     real(kind=kreal) :: v
     logical :: par, ruse
@@ -4899,83 +4905,88 @@ contains
     fct%front_peak = max(fct%front_peak, fct%live_front)
     !$omp end critical (mf_stats)
     if (fct%lu) call mf_grow_r(wrk%fvalu, wrk%g%coloff(wrk%g%nt+1))
-    !$omp taskloop default(shared) if(par)
+    !$omp taskgroup
     do j = 1, wrk%g%nt
+      !$omp task default(shared) firstprivate(j) if(par)
       wrk%fval(wrk%g%coloff(j)+1:wrk%g%coloff(j+1)) = 0.0d0
       if (fct%lu) wrk%fvalu(wrk%g%coloff(j)+1:wrk%g%coloff(j+1)) = 0.0d0
+      !$omp end task
     enddo
-    !$omp end taskloop
+    !$omp end taskgroup
 
     ! scatter the permuted matrix. LDLt: the lower part, every neighbor above the diagonal in
     ! the original numbering supplying the transposed block. LU: both parts, the block of a
     ! neighbor and its mirror going to the upper and the lower grid
-    !$omp taskloop default(shared) private(k, j0, coff, base, base2, o, a, b, kk, ki, roff) &
-    !$omp&  grainsize(8) if(par)
-    do i = 1, nown
-      k = sym%sptr(s) + i - 1
-      j0 = sym%perm(k)
-      coff = wrk%rowoff(i)
-      base = int(j0-1, 8)*nd*nd
-      do b = 1, nd
-        do a = b, nd
-          o = mf_idx(wrk%g, coff+a, coff+b)
-          wrk%fval(o) = wrk%fval(o) + hecMAT%D(base + (a-1)*nd + b)
+    !$omp taskgroup
+    do i0 = 1, nown, 8
+      !$omp task default(shared) firstprivate(i0) private(i, k, j0, coff, base, base2, o, a, b, kk, ki, roff) if(par)
+      do i = i0, min(i0+7, nown)
+        k = sym%sptr(s) + i - 1
+        j0 = sym%perm(k)
+        coff = wrk%rowoff(i)
+        base = int(j0-1, 8)*nd*nd
+        do b = 1, nd
+          do a = b, nd
+            o = mf_idx(wrk%g, coff+a, coff+b)
+            wrk%fval(o) = wrk%fval(o) + hecMAT%D(base + (a-1)*nd + b)
+          enddo
+          if (fct%lu) then
+            do a = 1, b-1
+              o = mf_idx(wrk%g, coff+b, coff+a)
+              wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%D(base + (a-1)*nd + b)
+            enddo
+          endif
         enddo
-        if (fct%lu) then
-          do a = 1, b-1
-            o = mf_idx(wrk%g, coff+b, coff+a)
-            wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%D(base + (a-1)*nd + b)
-          enddo
-        endif
-      enddo
-      do kk = hecMAT%indexL(j0-1)+1, hecMAT%indexL(j0)
-        ki = sym%invp(hecMAT%itemL(kk))
-        if (ki <= k) cycle
-        roff = wrk%rowoff(wrk%pos(ki))
-        base = int(kk-1, 8)*nd*nd
-        if (.not. fct%lu) then
-          do b = 1, nd
-            do a = 1, nd
-              o = mf_idx(wrk%g, roff+a, coff+b)
-              wrk%fval(o) = wrk%fval(o) + hecMAT%AL(base + (b-1)*nd + a)
-            enddo
-          enddo
-        else
-          base2 = int(fct%mirror(kk)-1, 8)*nd*nd
-          do a = 1, nd
+        do kk = hecMAT%indexL(j0-1)+1, hecMAT%indexL(j0)
+          ki = sym%invp(hecMAT%itemL(kk))
+          if (ki <= k) cycle
+          roff = wrk%rowoff(wrk%pos(ki))
+          base = int(kk-1, 8)*nd*nd
+          if (.not. fct%lu) then
             do b = 1, nd
-              o = mf_idx(wrk%g, roff+b, coff+a)
-              wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%AL(base + (a-1)*nd + b)
-              wrk%fval(o) = wrk%fval(o) + hecMAT%AU(base2 + (b-1)*nd + a)
+              do a = 1, nd
+                o = mf_idx(wrk%g, roff+a, coff+b)
+                wrk%fval(o) = wrk%fval(o) + hecMAT%AL(base + (b-1)*nd + a)
+              enddo
             enddo
-          enddo
-        endif
-      enddo
-      do kk = hecMAT%indexU(j0-1)+1, hecMAT%indexU(j0)
-        ki = sym%invp(hecMAT%itemU(kk))
-        if (ki <= k) cycle
-        roff = wrk%rowoff(wrk%pos(ki))
-        base = int(kk-1, 8)*nd*nd
-        if (.not. fct%lu) then
-          do b = 1, nd
+          else
+            base2 = int(fct%mirror(kk)-1, 8)*nd*nd
             do a = 1, nd
-              o = mf_idx(wrk%g, roff+a, coff+b)
-              wrk%fval(o) = wrk%fval(o) + hecMAT%AU(base + (b-1)*nd + a)
+              do b = 1, nd
+                o = mf_idx(wrk%g, roff+b, coff+a)
+                wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%AL(base + (a-1)*nd + b)
+                wrk%fval(o) = wrk%fval(o) + hecMAT%AU(base2 + (b-1)*nd + a)
+              enddo
             enddo
-          enddo
-        else
-          base2 = int(fct%mirroru(kk)-1, 8)*nd*nd
-          do a = 1, nd
+          endif
+        enddo
+        do kk = hecMAT%indexU(j0-1)+1, hecMAT%indexU(j0)
+          ki = sym%invp(hecMAT%itemU(kk))
+          if (ki <= k) cycle
+          roff = wrk%rowoff(wrk%pos(ki))
+          base = int(kk-1, 8)*nd*nd
+          if (.not. fct%lu) then
             do b = 1, nd
-              o = mf_idx(wrk%g, roff+b, coff+a)
-              wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%AU(base + (a-1)*nd + b)
-              wrk%fval(o) = wrk%fval(o) + hecMAT%AL(base2 + (b-1)*nd + a)
+              do a = 1, nd
+                o = mf_idx(wrk%g, roff+a, coff+b)
+                wrk%fval(o) = wrk%fval(o) + hecMAT%AU(base + (b-1)*nd + a)
+              enddo
             enddo
-          enddo
-        endif
+          else
+            base2 = int(fct%mirroru(kk)-1, 8)*nd*nd
+            do a = 1, nd
+              do b = 1, nd
+                o = mf_idx(wrk%g, roff+b, coff+a)
+                wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%AU(base + (a-1)*nd + b)
+                wrk%fval(o) = wrk%fval(o) + hecMAT%AL(base2 + (b-1)*nd + a)
+              enddo
+            enddo
+          endif
+        enddo
       enddo
+      !$omp end task
     enddo
-    !$omp end taskloop
+    !$omp end taskgroup
 
     ! extend-add of the children; the rows of a child's contribution block are its delayed
     ! DOFs followed by its contribution rows, and the block is freed once consumed
@@ -5019,8 +5030,11 @@ contains
           wrk%cmapdof(r) = wrk%rowoff(k) + a
         enddo
       enddo
-      !$omp taskloop default(shared) private(i, base, hi, cc, r, o, v) grainsize(1) if(par)
+      ! the LU update is written out in place: ifx (2024.2) miscompiles the host association of an
+      ! internal procedure called inside a task body
+      !$omp taskgroup
       do j = 1, cnb
+        !$omp task default(shared) firstprivate(j) private(i, base, hi, cc, r, o, o2, v, pr, pc) if(par)
         do i = j, cnb
           base = wrk%ccoloff(j) + int(wrk%ctb(i-1) - wrk%ctb(j-1), 8)*(wrk%ctb(j) - wrk%ctb(j-1))
           hi = wrk%ctb(i) - wrk%ctb(i-1)
@@ -5032,14 +5046,31 @@ contains
                 o = mf_idx(wrk%g, max(wrk%cmapdof(r), wrk%cmapdof(cc)), min(wrk%cmapdof(r), wrk%cmapdof(cc)))
                 wrk%fval(o) = wrk%fval(o) + v
               else
-                call add_lu(v, wrk%cmapdof(r), wrk%cmapdof(cc))
-                if (r > cc) call add_lu(fct%sn(c)%cval(o + half), wrk%cmapdof(cc), wrk%cmapdof(r))
+                pr = wrk%cmapdof(r)
+                pc = wrk%cmapdof(cc)
+                if (pr >= pc) then
+                  o2 = mf_idx(wrk%g, pr, pc)
+                  wrk%fval(o2) = wrk%fval(o2) + v
+                else
+                  o2 = mf_idx(wrk%g, pc, pr)
+                  wrk%fvalu(o2) = wrk%fvalu(o2) + v
+                endif
+                if (r > cc) then
+                  if (pc >= pr) then
+                    o2 = mf_idx(wrk%g, pc, pr)
+                    wrk%fval(o2) = wrk%fval(o2) + fct%sn(c)%cval(o + half)
+                  else
+                    o2 = mf_idx(wrk%g, pr, pc)
+                    wrk%fvalu(o2) = wrk%fvalu(o2) + fct%sn(c)%cval(o + half)
+                  endif
+                endif
               endif
             enddo
           enddo
         enddo
+        !$omp end task
       enddo
-      !$omp end taskloop
+      !$omp end taskgroup
       !$omp critical (mf_stats)
       fct%live_cb = fct%live_cb - fct%sn(c)%cbsize
       !$omp end critical (mf_stats)
@@ -5104,8 +5135,9 @@ contains
     if (.not. fct%blr) then
       call mf_grow_r(sn%lval, pw)
       if (fct%lu) call mf_grow_r(sn%uval, pw)
-      !$omp taskloop default(shared) private(m, i, hi, o, base) grainsize(1) if(par)
+      !$omp taskgroup
       do k = 1, nkc
+        !$omp task default(shared) firstprivate(k) private(m, i, hi, o, base) if(par)
         m = min(wrk%g%tb(k), sn%npiv) - wrk%g%tb(k-1)
         base = pcb(k-1)
         do i = k, wrk%g%nt
@@ -5115,8 +5147,9 @@ contains
           if (fct%lu) sn%uval(base:base+int(hi, 8)*m-1) = wrk%fvalu(o+1:o+int(hi, 8)*m)
           base = base + int(hi, 8)*m
         enddo
+        !$omp end task
       enddo
-      !$omp end taskloop
+      !$omp end taskgroup
       sn%pwords = pw
       if (fct%lu) sn%pwords = 2*pw
       !$omp critical (mf_stats)
@@ -5174,23 +5207,6 @@ contains
     fct%live_front = fct%live_front - fw
     !$omp end critical (mf_stats)
 
-  contains
-
-    !> add v to the entry (pr,pc) of the LU front
-    subroutine add_lu(v, pr, pc)
-      real(kind=kreal), intent(in) :: v
-      integer(kind=kint), intent(in) :: pr, pc
-      integer(kind=8) :: o
-
-      if (pr >= pc) then
-        o = mf_idx(wrk%g, pr, pc)
-        wrk%fval(o) = wrk%fval(o) + v
-      else
-        o = mf_idx(wrk%g, pc, pr)
-        wrk%fvalu(o) = wrk%fvalu(o) + v
-      endif
-    end subroutine add_lu
-
   end subroutine mf_super_factor
 
   !> BLR panel store of one grid: build the tile offsets and ranks of the stored panel from
@@ -5237,8 +5253,9 @@ contains
     bptr(ntile+1) = off
     pwa = off
     call mf_grow_r(dst, pwa)
-    !$omp taskloop default(shared) private(m, i, idx, hi, r, base, ob, o) grainsize(1) if(par)
+    !$omp taskgroup
     do k = 1, nkc
+      !$omp task default(shared) firstprivate(k) private(m, i, idx, hi, r, base, ob, o) if(par)
       m = min(g%tb(k), npiv) - g%tb(k-1)
       do i = k, g%nt
         idx = mf_bidx(g%nt, k, i)
@@ -5255,8 +5272,9 @@ contains
             bval(ob+int(hi, 8)*m+1:ob+int(hi, 8)*m+int(m, 8)*r)
         endif
       enddo
+      !$omp end task
     enddo
-    !$omp end taskloop
+    !$omp end taskgroup
   end subroutine mf_store_blr
 
   !> Factor the fully summed part of the assembled front of supernode s, tile column by tile
@@ -5394,9 +5412,10 @@ contains
           btop = btop + int(hi, 8)*pk + 2_8*int(pk, 8)*min(hi, pk)
         enddo
         call mf_grow_r(bval, btop)
-        !$omp taskloop default(shared) private(hi, ob, oik, r, rcp) grainsize(1) if(par)
+        !$omp taskgroup
         do i = g%ntc+1, g%nt
           if (skp(i)) cycle
+          !$omp task default(shared) firstprivate(i) private(hi, ob, oik, r, rcp) if(par)
           hi = g%tb(i) - g%tb(i-1)
           ob = boff(mf_bidx(g%nt, k, i))
           oik = mf_off(g, i, k)
@@ -5405,8 +5424,9 @@ contains
           call hecmw_mf_kernel_compress(hi, pk, hi, bval(ob+1), eps, pk, bval(ob+int(hi, 8)*pk+1), &
             r, rcp)
           brk(mf_bidx(g%nt, k, i)) = r
+          !$omp end task
         enddo
-        !$omp end taskloop
+        !$omp end taskgroup
         do i = g%ntc+1, g%nt
           if (skp(i)) then
             nsk = nsk + 1
@@ -5427,8 +5447,9 @@ contains
           ! scaled panels: L*D of the full rank row tiles into wval, D*V of the compressed
           ! ones into their slot, then the (i,j) tile updates in full/low rank combinations
           call mf_grow_r(wval, int(g%nrow - g%tb(k), 8)*pk)
-          !$omp taskloop default(shared) private(hi, mn, ob, oik, r) grainsize(1) if(par)
+          !$omp taskgroup
           do i = k+1, g%nt
+            !$omp task default(shared) firstprivate(i) private(hi, mn, ob, oik, r) if(par)
             hi = g%tb(i) - g%tb(i-1)
             oik = mf_off(g, i, k)
             r = -1
@@ -5442,8 +5463,9 @@ contains
               call hecmw_mf_kernel_scale_rows(pk, r, g%tb(k) - g%tb(k-1), fval(okk+1), sn%ptype(p0+1:npiv), &
                 sn%dsub(p0+1:npiv), pk, bval(ob+int(hi, 8)*pk+1), pk, bval(ob+int(hi, 8)*pk+int(pk, 8)*mn+1))
             endif
+            !$omp end task
           enddo
-          !$omp end taskloop
+          !$omp end taskgroup
           np2 = 0
           do i = k+1, g%nt
             do j = k+1, i
@@ -5452,9 +5474,9 @@ contains
               jp(np2) = j
             enddo
           enddo
-          !$omp taskloop default(shared) private(i, j, hi, wj, ra, rb, oa, oav, ob2, obv, oij, iw) &
-          !$omp&  grainsize(1) if(par)
+          !$omp taskgroup
           do l2 = 1, np2
+            !$omp task default(shared) firstprivate(l2) private(i, j, hi, wj, ra, rb, oa, oav, ob2, obv, oij, iw) if(par)
             i = ip(l2)
             j = jp(l2)
             hi = g%tb(i) - g%tb(i-1)
@@ -5479,18 +5501,21 @@ contains
             endif
             call mf_update_ab(hi, wj, pk, ra, wval(iw+1), bval(oa+1), bval(oav+1), &
               rb, fval(mf_off(g, j, k)+1), bval(ob2+1), bval(obv+1), fval(oij+1))
+            !$omp end task
           enddo
-          !$omp end taskloop
+          !$omp end taskgroup
         else if (par) then
           call mf_grow_r(wval, int(g%nrow - g%tb(k), 8)*pk)
-          !$omp taskloop default(shared) private(hi, oik) grainsize(1)
+          !$omp taskgroup
           do i = k+1, g%nt
+            !$omp task default(shared) firstprivate(i) private(hi, oik)
             hi = g%tb(i) - g%tb(i-1)
             oik = mf_off(g, i, k)
             call hecmw_mf_kernel_scale(hi, pk, g%tb(k) - g%tb(k-1), fval(okk+1), sn%ptype(p0+1:npiv), &
               sn%dsub(p0+1:npiv), hi, fval(oik+1), wval(int(g%tb(i-1) - g%tb(k), 8)*pk + 1))
+            !$omp end task
           enddo
-          !$omp end taskloop
+          !$omp end taskgroup
           np2 = 0
           do i = k+1, g%nt
             do j = k+1, i
@@ -5499,8 +5524,9 @@ contains
               jp(np2) = j
             enddo
           enddo
-          !$omp taskloop default(shared) private(i, j, hi, wj, ojk, oij) grainsize(1)
+          !$omp taskgroup
           do l2 = 1, np2
+            !$omp task default(shared) firstprivate(l2) private(i, j, hi, wj, ojk, oij)
             i = ip(l2)
             j = jp(l2)
             hi = g%tb(i) - g%tb(i-1)
@@ -5509,8 +5535,9 @@ contains
             oij = mf_off(g, i, j)
             call hecmw_mf_kernel_gemm(hi, wj, pk, hi, wval(int(g%tb(i-1) - g%tb(k), 8)*pk + 1), wj, &
               fval(ojk+1), hi, fval(oij+1))
+            !$omp end task
           enddo
-          !$omp end taskloop
+          !$omp end taskgroup
         else
           do i = k+1, g%nt
             hi = g%tb(i) - g%tb(i-1)
@@ -5777,9 +5804,10 @@ contains
         enddo
         call mf_grow_r(bval, btop)
         call mf_grow_r(bvalu, btopu)
-        !$omp taskloop default(shared) private(hi, ob, oik, r, rcp) grainsize(1) if(par)
+        !$omp taskgroup
         do i = g%ntc+1, g%nt
           if (skpl(i) .and. skpu(i)) cycle
+          !$omp task default(shared) firstprivate(i) private(hi, ob, oik, r, rcp) if(par)
           hi = g%tb(i) - g%tb(i-1)
           oik = mf_off(g, i, k)
           rcp = int(fct%blr_beta*real((hi*pk - 1)/(hi + pk), kind=kreal))
@@ -5797,8 +5825,9 @@ contains
               r, rcp)
             brku(mf_bidx(g%nt, k, i)) = r
           endif
+          !$omp end task
         enddo
-        !$omp end taskloop
+        !$omp end taskgroup
         do i = g%ntc+1, g%nt
           if (skpl(i)) then
             nsk = nsk + 1
@@ -5834,9 +5863,10 @@ contains
           enddo
         enddo
         if (blr) then
-          !$omp taskloop default(shared) private(i, j, hi, wj, oik, ojk, oij, rla, rlb, rua, rub, &
-          !$omp&  ola, olav, olb, olbv, oua, ouav, oub, oubv) grainsize(1) if(par)
+          !$omp taskgroup
           do l2 = 1, np2
+            !$omp task default(shared) firstprivate(l2) private(i, j, hi, wj, oik, ojk, oij, rla, rlb, rua, rub, &
+            !$omp&  ola, olav, olb, olbv, oua, ouav, oub, oubv) if(par)
             i = ip(l2)
             j = jp(l2)
             hi = g%tb(i) - g%tb(i-1)
@@ -5884,11 +5914,13 @@ contains
               rub, fvalu(ojk+1), bvalu(oub+1), bvalu(oubv+1), fval(oij+1))
             call mf_update_ab(hi, wj, pk, rua, fvalu(oik+1), bvalu(oua+1), bvalu(ouav+1), &
               rlb, fval(ojk+1), bval(olb+1), bval(olbv+1), fvalu(oij+1))
+            !$omp end task
           enddo
-          !$omp end taskloop
+          !$omp end taskgroup
         else
-          !$omp taskloop default(shared) private(i, j, hi, wj, oik, ojk, oij) grainsize(1) if(par)
+          !$omp taskgroup
           do l2 = 1, np2
+            !$omp task default(shared) firstprivate(l2) private(i, j, hi, wj, oik, ojk, oij) if(par)
             i = ip(l2)
             j = jp(l2)
             hi = g%tb(i) - g%tb(i-1)
@@ -5898,8 +5930,9 @@ contains
             oij = mf_off(g, i, j)
             call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fval(oik+1), wj, fvalu(ojk+1), hi, fval(oij+1))
             call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fvalu(oik+1), wj, fval(ojk+1), hi, fvalu(oij+1))
+            !$omp end task
           enddo
-          !$omp end taskloop
+          !$omp end taskgroup
         endif
         do x = npiv + 1, g%tb(k)
           call update_pos(x, p0 + 1, npiv)
