@@ -111,17 +111,7 @@ contains
       call hecmw_abort( hecmw_comm_get_comm())
     endif
 
-    !C-- matrix [M] lumped mass matrix
-    if(fstrDYNAMIC%idx_mas == 1) then
-      call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
-
-    !C-- consistent mass matrix
-    else if(fstrDYNAMIC%idx_mas == 2) then
-      if( hecMESH%my_rank .eq. 0 ) then
-        write(imsg,*) 'stop: consistent mass matrix is not yet available !'
-      endif
-      call hecmw_abort( hecmw_comm_get_comm())
-    endif
+    call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
 
     hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
@@ -132,6 +122,8 @@ contains
 
     !C-- output of initial state
     if( restart_step_num == 1 ) then
+      fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
+        hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,1), .true.)
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, .true.)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
@@ -179,7 +171,7 @@ contains
         fstrDYNAMIC%t_curr = fstr_get_time()
         fstrDYNAMIC%t_delta = fstr_get_timeinc()
 
-        call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+        call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, &
             fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
             restart_step_num, hecMAT0, sub_step, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta)
 
@@ -297,7 +289,7 @@ contains
 
   end subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG
 
-  subroutine fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+  subroutine fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, &
       fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
       restart_step_num, hecMAT0, istep, t_curr, t_delta)
     implicit none
@@ -308,7 +300,6 @@ contains
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_matrix), pointer        :: hecMAT0
     type(fstr_solid)                     :: fstrSOLID
-    type(fstr_eigen)                     :: fstrEIG
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM
     type(fstr_couple)                    :: fstrCPL
@@ -546,10 +537,9 @@ contains
 
       fstrSOLID%unode(j)  = fstrSOLID%unode(j)+fstrSOLID%dunode(j)
       fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
-
-      fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
-        0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
     enddo
+    fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
+      hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,2))
 
     call fstr_UpdateState( hecMESH, fstrSOLID, t_delta )
     call fstr_update_contact_TangentForce( cstep, fstrSOLID )
