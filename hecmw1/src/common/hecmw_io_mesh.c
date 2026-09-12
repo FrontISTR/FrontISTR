@@ -1187,6 +1187,147 @@ int HECMW_io_add_ngrp(const char *name, int nnode, int *node) {
   return nnode;
 }
 
+static int compare_node_id(const void *a, const void *b) {
+  const int node_a = *(const int *)a;
+  const int node_b = *(const int *)b;
+
+  return (node_a > node_b) - (node_a < node_b);
+}
+
+static int find_node_id(const int *node_ids, int n_node, int node_id) {
+  int left = 0;
+  int right = n_node - 1;
+
+  while (left <= right) {
+    int center = left + (right - left) / 2;
+
+    if (node_ids[center] < node_id) {
+      left = center + 1;
+    } else if (node_ids[center] > node_id) {
+      right = center - 1;
+    } else {
+      return center;
+    }
+  }
+  return -1;
+}
+
+int HECMW_io_check_shell_input(void) {
+  int elem_id;
+  struct hecmw_io_element *elem;
+
+  HECMW_assert(_elem);
+
+  HECMW_map_int_iter_init(_elem);
+  while (HECMW_map_int_iter_next(_elem, &elem_id, (void **)&elem)) {
+    if (elem->type == HECMW_ETYPE_SHT6 || elem->type == HECMW_ETYPE_SHQ8) {
+      set_err(HECMW_ALL_E0101,
+              "Element type 761/781 is not accepted in an entire mesh");
+      return -1;
+    }
+  }
+  return 0;
+}
+
+int HECMW_io_create_shell_dummy_nodes(void) {
+  int elem_id, i, j, n_shell_node = 0, n_unique_node = 0;
+  int max_shell_node;
+  int *shell_node = NULL;
+  struct hecmw_io_element *elem;
+
+  HECMW_assert(_elem);
+  HECMW_assert(_node);
+
+  HECMW_map_int_iter_init(_elem);
+  while (HECMW_map_int_iter_next(_elem, &elem_id, (void **)&elem)) {
+    if (elem->type == HECMW_ETYPE_SHT1) {
+      n_shell_node += 3;
+    } else if (elem->type == HECMW_ETYPE_SHQ1) {
+      n_shell_node += 4;
+    }
+  }
+  if (n_shell_node == 0) return 0;
+
+  shell_node = HECMW_malloc(sizeof(*shell_node) * n_shell_node);
+  if (shell_node == NULL) {
+    set_err(errno, "");
+    return -1;
+  }
+
+  HECMW_map_int_iter_init(_elem);
+  for (i = 0; HECMW_map_int_iter_next(_elem, &elem_id, (void **)&elem);) {
+    int nnode = 0;
+
+    if (elem->type == HECMW_ETYPE_SHT1) {
+      nnode = 3;
+    } else if (elem->type == HECMW_ETYPE_SHQ1) {
+      nnode = 4;
+    }
+    for (j = 0; j < nnode; j++) shell_node[i++] = elem->node[j];
+  }
+  HECMW_assert(i == n_shell_node);
+
+  qsort(shell_node, n_shell_node, sizeof(*shell_node), compare_node_id);
+  for (i = 0; i < n_shell_node; i++) {
+    if (i == 0 || shell_node[i] != shell_node[i - 1]) {
+      shell_node[n_unique_node++] = shell_node[i];
+    }
+  }
+
+  max_shell_node = global_node_ID_max;
+  for (i = 0; i < n_unique_node; i++) {
+    struct hecmw_io_node *node = HECMW_io_get_node(shell_node[i]);
+    int dummy_node_id = max_shell_node + i + 1;
+
+    HECMW_assert(node);
+    if (HECMW_io_add_node(dummy_node_id, node->x, node->y, node->z) == NULL) {
+      HECMW_free(shell_node);
+      return -1;
+    }
+    if (HECMW_io_add_ngrp("ALL", 1, &dummy_node_id) < 0) {
+      HECMW_free(shell_node);
+      return -1;
+    }
+  }
+
+  HECMW_map_int_iter_init(_elem);
+  while (HECMW_map_int_iter_next(_elem, &elem_id, (void **)&elem)) {
+    int nnode = 0;
+    int new_type = 0;
+    int *new_node;
+
+    if (elem->type == HECMW_ETYPE_SHT1) {
+      nnode = 3;
+      new_type = HECMW_ETYPE_SHT6;
+    } else if (elem->type == HECMW_ETYPE_SHQ1) {
+      nnode = 4;
+      new_type = HECMW_ETYPE_SHQ8;
+    } else {
+      continue;
+    }
+
+    new_node = HECMW_malloc(sizeof(*new_node) * nnode * 2);
+    if (new_node == NULL) {
+      HECMW_free(shell_node);
+      set_err(errno, "");
+      return -1;
+    }
+    for (j = 0; j < nnode; j++) {
+      int index = find_node_id(shell_node, n_unique_node, elem->node[j]);
+
+      HECMW_assert(index >= 0);
+      new_node[j] = elem->node[j];
+      new_node[nnode + j] = max_shell_node + index + 1;
+    }
+    HECMW_free(elem->node);
+    elem->node = new_node;
+    elem->type = new_type;
+  }
+
+  HECMW_free(shell_node);
+  return 0;
+}
+
 static int HECMW_io_remove_node_in_ngrp(int node) {
   struct hecmw_io_ngrp *p, *q, *next;
 
