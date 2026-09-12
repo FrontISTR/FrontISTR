@@ -30,8 +30,6 @@ contains
     !------
 #ifdef HECMW_WITH_METIS
 
-#  if HECMW_METIS_VER == 5
-
     integer(kind=kint), allocatable:: vwght(:)
     integer(kind=kint):: options(40)
     integer(kind=kint):: ierror
@@ -48,20 +46,6 @@ contains
     call METIS_NodeND(Neqns,Xadj,Adj0,vwght,options,Perm,Invp)
 
     deallocate(vwght)
-
-#  elif HECMW_METIS_VER == 4
-
-    integer(kind=kint):: numflag
-    integer(kind=kint):: options(8)
-
-    numflag=1
-    options(:)=0
-
-    call METIS_NodeND(Neqns,Xadj,Adj0,numflag,options,Perm,Invp)
-
-#  else
-#    error unknown HECMW_METIS_VER
-#  endif
 
 #else
     stop "METIS not available"

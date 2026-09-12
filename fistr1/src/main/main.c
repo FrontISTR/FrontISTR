@@ -185,9 +185,6 @@ void print_buildinfo(int log_level) {
 #endif
   printf("\"");
   printf("\n");
-#ifdef HECMW_METIS_VER
-  printf("  HECMW_METIS_VER: %d\n", HECMW_METIS_VER);
-#endif
 }
 
 /**
