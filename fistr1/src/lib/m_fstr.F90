@@ -82,6 +82,9 @@ module m_fstr
   integer(kind=kint), parameter :: kel361FBAR   =  4
   integer(kind=kint), parameter :: kel361UP     =  5
 
+  integer(kind=kint), parameter :: kel611EULER      =  1
+  integer(kind=kint), parameter :: kel611TIMOSHENKO =  2
+
   integer(kind=kint), parameter :: kFLOADTYPE_NODE = 1
   integer(kind=kint), parameter :: kFLOADTYPE_SURF = 2
 
@@ -680,6 +683,7 @@ module m_fstr
     !integer              :: elemopt352
     integer              :: elemopt361
     !integer              :: elemopt362
+    integer              :: elemopt611
   end type tSection
 
 contains
