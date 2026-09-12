@@ -380,39 +380,6 @@ contains
     do i = 1, n
       call initMaterial(fstrSOLID%materials(i))
     enddo
-    if( hecMESH%section%n_sect >0 ) then
-      do i=1,hecMESH%section%n_sect
-        if( hecMESH%section%sect_type(i) == 4 ) cycle
-        cid = hecMESH%section%sect_mat_ID_item(i)
-        if( cid>n ) stop "Error in material property definition!"
-        if( fstrPARAM%nlgeom .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
-          fstrSOLID%materials(cid)%nlgeom_flag = 1
-        nullify(shmat)
-        call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
-          n_totlyr,alpha_over_mu, &
-          beam_radius,beam_angle1,beam_angle2,beam_angle3, &
-          beam_angle4,beam_angle5,beam_angle6)
-        fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
-        fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
-        fstrSOLID%materials(cid)%variables(M_POISSON)=pp
-        fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
-        fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
-        fstrSOLID%materials(cid)%variables(M_THICK)=thick
-        fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
-        fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE2)=beam_angle2
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE3)=beam_angle3
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE4)=beam_angle4
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
-        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
-        fstrSOLID%materials(cid)%mtype = ELASTIC
-        if( hecMESH%section%sect_type(i) == 2 ) then
-          fstrSOLID%materials(cid)%totallyr = n_totlyr
-          fstrSOLID%materials(cid)%shell_var => shmat
-        endif
-      enddo
-    endif
 
     ! for section control
     allocate( fstrSOLID%sections(hecMESH%section%n_sect) )
@@ -432,7 +399,43 @@ contains
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
       fstrSOLID%sections(i)%elemopt341 = kel341FI
+      ! INTERFACE sections are skipped in the loop below and keep this thickness
+      fstrSOLID%sections(i)%thickness = 1.0d0
     enddo
+
+    if( hecMESH%section%n_sect >0 ) then
+      do i=1,hecMESH%section%n_sect
+        if( hecMESH%section%sect_type(i) == 4 ) cycle
+        cid = hecMESH%section%sect_mat_ID_item(i)
+        if( cid>n ) stop "Error in material property definition!"
+        if( fstrPARAM%nlgeom .or. fstrPARAM%solution_type==kstSTATICEIGEN ) &
+          fstrSOLID%materials(cid)%nlgeom_flag = 1
+        nullify(shmat)
+        call fstr_get_prop(hecMESH,shmat,i,ee,pp,rho,alpha,thick,&
+          n_totlyr,alpha_over_mu, &
+          beam_radius,beam_angle1,beam_angle2,beam_angle3, &
+          beam_angle4,beam_angle5,beam_angle6)
+        fstrSOLID%sections(i)%thickness = thick
+        fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
+        fstrSOLID%materials(cid)%variables(M_YOUNGS)=ee
+        fstrSOLID%materials(cid)%variables(M_POISSON)=pp
+        fstrSOLID%materials(cid)%variables(M_DENSITY)=rho
+        fstrSOLID%materials(cid)%variables(M_EXAPNSION)=alpha
+        fstrSOLID%materials(cid)%variables(M_ALPHA_OVER_MU)= alpha_over_mu
+        fstrSOLID%materials(cid)%variables(M_BEAM_RADIUS)=beam_radius
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE1)=beam_angle1
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE2)=beam_angle2
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE3)=beam_angle3
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE4)=beam_angle4
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE5)=beam_angle5
+        fstrSOLID%materials(cid)%variables(M_BEAM_ANGLE6)=beam_angle6
+        fstrSOLID%materials(cid)%mtype = ELASTIC
+        if( hecMESH%section%sect_type(i) == 2 ) then
+          fstrSOLID%materials(cid)%totallyr = n_totlyr
+          fstrSOLID%materials(cid)%shell_var => shmat
+        endif
+      enddo
+    endif
 
     allocate( fstrSOLID%output_ctrl( 4 ) )
     call fstr_init_outctrl(fstrSOLID%output_ctrl(1))

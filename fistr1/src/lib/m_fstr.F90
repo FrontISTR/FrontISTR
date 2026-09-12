@@ -672,7 +672,7 @@ module m_fstr
     !integer              :: mat_ID
     !integer              :: iset
     !integer              :: orien_ID
-    !real(kind=kreal)     :: thickness
+    real(kind=kreal)     :: thickness
     integer              :: elemopt341
     !integer              :: elemopt342
     !integer              :: elemopt351
