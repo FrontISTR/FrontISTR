@@ -2,14 +2,16 @@
 ! Copyright (c) 2026 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> @brief Multifrontal direct solver (METHOD=DIRECTmf). Only the symbolic stage exists so far;
-!>        the numeric factorization and the solve are delegated to the built-in direct solver.
+!> @brief Multifrontal direct solver (METHOD=DIRECTmf): sequential LDLt without pivoting for
+!>        symmetric positive definite matrices. Multi-process runs are still delegated to the
+!>        built-in parallel direct solver.
 module hecmw_solver_direct_mf
   use hecmw_util
   use hecmw_matrix_misc
   use hecmw_ordering
   use hecmw_mf_graph
   use hecmw_mf_symbolic
+  use hecmw_mf_numeric
   use hecmw_solver_direct
   use hecmw_solver_direct_parallel
   implicit none
@@ -20,8 +22,11 @@ module hecmw_solver_direct_mf
 
   !> relaxed amalgamation target in columns (DOFs); converted to nodes with the block size
   integer(kind=kint), parameter :: MF_RELAX_COLS = 16
+  !> target tile size in DOFs
+  integer(kind=kint), parameter :: MF_TILE = 256
 
   type(hecmwST_mf_symbolic), save :: SYM
+  type(hecmwST_mf_factor), save :: FCT
 
 contains
 
@@ -32,12 +37,18 @@ contains
     integer(kind=kint), intent(in) :: imsg
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
-    integer(kind=kint) :: loglevel, ordering, n, nerr, relax
+    integer(kind=kint) :: loglevel, ordering, n, nerr, relax, ierr, idof
     real(kind=kreal) :: t1, t2
 
     loglevel = hecmw_mat_get_loglevel(hecMAT)
     if (loglevel < 0) loglevel = max(hecmw_mat_get_timelog(hecMAT), hecmw_mat_get_iterlog(hecMAT))
     if (hecmw_comm_get_rank() /= 0) loglevel = 0
+
+    if (.not. hecMAT%symmetric) then
+      write(imsg,*) 'ERROR: METHOD=DIRECTmf supports symmetric matrices only'
+      write(*,*) 'ERROR: METHOD=DIRECTmf supports symmetric matrices only'
+      call hecmw_abort(hecmw_comm_get_comm())
+    endif
 
     if (hecMAT%Iarray(98) == 1) then
       t1 = hecmw_wtime()
@@ -49,10 +60,13 @@ contains
       relax = max(1, MF_RELAX_COLS / hecMAT%NDOF)
       call hecmw_mf_symbolic_finalize(SYM)
       call hecmw_mf_symbolic_build(graph, perm, relax, SYM)
+      call hecmw_mf_numeric_finalize(FCT)
+      call hecmw_mf_numeric_init(SYM, MF_TILE, FCT)
       t2 = hecmw_wtime()
       if (loglevel > 0) then
         write(*,'(a,f10.3,a)') '[DIRECTmf]: symbolic fct done (', t2 - t1, ' sec)'
         call hecmw_mf_symbolic_print(SYM)
+        call hecmw_mf_numeric_print(FCT)
       endif
       if (loglevel > 1) then
         call hecmw_mf_symbolic_check(graph, SYM, nerr)
@@ -66,9 +80,40 @@ contains
 
     if (hecMESH%PETOT > 1) then
       call hecmw_solve_direct_parallel(hecMESH, hecMAT, imsg)
-    else
-      call hecmw_solve_direct(hecMESH, hecMAT, imsg)
+      return
     endif
+    hecMAT%Iarray(98) = 0
+
+    if (hecMAT%Iarray(97) == 1) then
+      t1 = hecmw_wtime()
+      call hecmw_mf_numeric_factor(hecMAT, SYM, FCT, ierr)
+      t2 = hecmw_wtime()
+      if (ierr /= 0) then
+        if (ierr > 0) then
+          idof = FCT%pdof(ierr)
+          write(imsg,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: nonpositive pivot at node ', (idof-1)/hecMAT%NDOF + 1, &
+            ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (matrix is not positive definite)'
+          write(*,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: nonpositive pivot at node ', (idof-1)/hecMAT%NDOF + 1, &
+            ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (matrix is not positive definite)'
+        else
+          write(imsg,*) 'ERROR: DIRECTmf: block size of the matrix does not match the symbolic structure'
+          write(*,*) 'ERROR: DIRECTmf: block size of the matrix does not match the symbolic structure'
+        endif
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      hecMAT%Iarray(97) = 0
+      if (loglevel > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: numeric fct done (', t2 - t1, ' sec)'
+    endif
+
+    if (.not. FCT%factored) then
+      write(imsg,*) 'ERROR: DIRECTmf: numeric factorization not performed'
+      write(*,*) 'ERROR: DIRECTmf: numeric factorization not performed'
+      call hecmw_abort(hecmw_comm_get_comm())
+    endif
+    t1 = hecmw_wtime()
+    call hecmw_mf_numeric_solve(SYM, FCT, hecMAT%B, hecMAT%X)
+    t2 = hecmw_wtime()
+    if (loglevel > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: solve done (', t2 - t1, ' sec)'
   end subroutine hecmw_solve_direct_mf
 
   !> Compare the elimination tree and the column counts with the symbolic stage of the built-in

@@ -80,6 +80,8 @@ OBJS =
 OBJSF = \
 	hecmw_mf_graph.@f90objfilepostfix@ \
 	hecmw_mf_symbolic.@f90objfilepostfix@ \
+	hecmw_mf_kernel.@f90objfilepostfix@ \
+	hecmw_mf_numeric.@f90objfilepostfix@ \
 	hecmw_solver_direct_mf.@f90objfilepostfix@
 
 HEADERS =
