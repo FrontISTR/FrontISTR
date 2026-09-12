@@ -2212,7 +2212,6 @@ contains
 
     if( fstr_ctrl_get_param_ex( ctrl, 'NAME ',  '# ',  1, 'S', grp_id_name(1) )/= 0) return
     coordsys%sys_name = grp_id_name(1)
-    call fstr_strupr( coordsys%sys_name )
 
     if( dtype==0 ) then
       data_fmt = "RRRRRRrrr "
