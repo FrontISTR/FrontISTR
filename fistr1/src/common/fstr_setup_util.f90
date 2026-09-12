@@ -133,6 +133,71 @@ contains
     deallocate(isect)
   end subroutine append_intersection_node_grp
 
+  subroutine append_shell_rotation_node_grps( hecMESH, source_id, boundary_id, line_id, rot_id, other_id )
+    use hecmw_setup_util, only : append_new_group
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH
+    integer(kind=kint), intent(in) :: source_id, boundary_id, line_id
+    integer(kind=kint), intent(out) :: rot_id, other_id
+    integer(kind=kint) :: elem, elem_type, index, i, j, nnode, dof_grp
+    integer(kind=kint) :: source_start, source_end, nrot, nother, node_id
+    integer(kind=kint), allocatable :: rotation_node(:), node_dof(:)
+    integer(kind=kint), allocatable :: rot_list(:), other_list(:)
+    character(len=HECMW_NAME_LEN) :: rot_name, other_name
+
+    allocate(rotation_node(hecMESH%n_node))
+    allocate(node_dof(hecMESH%n_node))
+    rotation_node = 0
+    node_dof = 0
+    do dof_grp = 1, hecMESH%n_dof_grp
+      do i = hecMESH%node_dof_index(dof_grp-1)+1, hecMESH%node_dof_index(dof_grp)
+        node_dof(i) = hecMESH%node_dof_item(dof_grp)
+      enddo
+    enddo
+    do elem = 1, hecMESH%n_elem
+      elem_type = hecMESH%elem_type(elem)
+      if( elem_type == 761 ) then
+        nnode = 3
+      else if( elem_type == 781 ) then
+        nnode = 4
+      else
+        cycle
+      endif
+      index = hecMESH%elem_node_index(elem-1)
+      do j = 1, nnode
+        rotation_node(hecMESH%elem_node_item(index+j)) = &
+          hecMESH%elem_node_item(index+nnode+j)
+      enddo
+    enddo
+
+    source_start = hecMESH%node_group%grp_index(source_id-1) + 1
+    source_end = hecMESH%node_group%grp_index(source_id)
+    allocate(rot_list(source_end-source_start+1))
+    allocate(other_list(source_end-source_start+1))
+    nrot = 0
+    nother = 0
+    do i = source_start, source_end
+      node_id = hecMESH%node_group%grp_item(i)
+      if( rotation_node(node_id) > 0 ) then
+        nrot = nrot + 1
+        rot_list(nrot) = rotation_node(node_id)
+      else if( node_dof(node_id) == 6 ) then
+        nother = nother + 1
+        other_list(nother) = node_id
+      endif
+    enddo
+
+    write(rot_name, '(a,i0,a,i0)') 'FSTR_ROT_', boundary_id, '_', line_id
+    write(other_name, '(a,i0,a,i0)') 'FSTR_NON_SHELL_', boundary_id, '_', line_id
+    call append_new_group(hecMESH, 'node_grp', rot_name, nrot, rot_list, rot_id)
+    call append_new_group(hecMESH, 'node_grp', other_name, nother, other_list, other_id)
+
+    deallocate(rotation_node)
+    deallocate(node_dof)
+    deallocate(rot_list)
+    deallocate(other_list)
+  end subroutine append_shell_rotation_node_grps
+
   !------------------------------------------------------------------------------
   ! JP-3
   ! JP-4

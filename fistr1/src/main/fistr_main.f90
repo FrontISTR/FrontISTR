@@ -18,6 +18,9 @@ module m_fstr_main
   use m_fstr_rcap_io
   use fstr_solver_dynamic
   use fstr_debug_dump
+  use fstr_ctrl_util_f, only : fstr_ctrl_open, fstr_ctrl_close, &
+    fstr_ctrl_get_c_h_name, fstr_ctrl_seek_next_header
+  use fstr_ctrl_common, only : fstr_ctrl_get_SOLUTION
 
   type(hecmwST_local_mesh), save             :: hecMESH
   type(hecmwST_matrix), save                 :: hecMAT
@@ -49,7 +52,11 @@ contains
     T1 = hecmw_Wtime()
 
     name_ID = 'fstrMSH'
-    call hecmw_get_mesh( name_ID , hecMESH )
+    if( fstr_is_heat_analysis() ) then
+      call hecmw_get_mesh_without_shell_dummy( name_ID , hecMESH )
+    else
+      call hecmw_get_mesh( name_ID , hecMESH )
+    endif
 
     if( hecMESH%contact_pair%n_pair > 0 ) then
       paraContactFlag = .true.
@@ -107,6 +114,32 @@ contains
     if(hecMESH%my_rank==0) write(*,*) 'FrontISTR Completed !!'
 
   end subroutine fstr_main
+
+  logical function fstr_is_heat_analysis()
+    implicit none
+    character(len=HECMW_FILENAME_LEN) :: cntfile_name
+    character(len=HECMW_NAME_LEN) :: control_name, header_name
+    integer(kind=kint) :: ctrl, rcode, solution_type
+    logical :: nlgeom
+
+    fstr_is_heat_analysis = .false.
+    control_name = 'fstrCNT'
+    call hecmw_ctrl_get_control_file( control_name, cntfile_name )
+    ctrl = fstr_ctrl_open( cntfile_name )
+    if( ctrl < 0 ) return
+
+    do
+      rcode = fstr_ctrl_get_c_h_name( ctrl, header_name, HECMW_NAME_LEN )
+      if( header_name == '!SOLUTION' ) then
+        nlgeom = .false.
+        rcode = fstr_ctrl_get_SOLUTION( ctrl, solution_type, nlgeom )
+        if( rcode == 0 ) fstr_is_heat_analysis = solution_type == kstHEAT
+        exit
+      endif
+      if( fstr_ctrl_seek_next_header(ctrl) == 0 ) exit
+    enddo
+    rcode = fstr_ctrl_close( ctrl )
+  end function fstr_is_heat_analysis
 
   !=============================================================================!
   !> Initializer                                                                !
