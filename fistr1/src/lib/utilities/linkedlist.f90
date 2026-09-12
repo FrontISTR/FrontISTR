@@ -167,25 +167,6 @@ subroutine list_insert( elem, data )
     next%data =  data
 end subroutine list_insert
 
-! list_insert_head
-!     Insert a new element before the first element
-! Arguments:
-!     list       Start of the list
-!     data       The data for the new element
-!
-subroutine list_insert_head( list, data )
-    type(LINKED_LIST), pointer  :: list
-    type(LIST_DATA), intent(in) :: data
-
-    type(LINKED_LIST), pointer :: elem
-
-    allocate(elem)
-    elem%data =  data
-
-    elem%next => list
-    list      => elem
-end subroutine list_insert_head
-
 ! list_delete_element
 !     Delete an element from the list
 ! Arguments:
@@ -222,31 +203,5 @@ subroutine list_delete_element( list, elem )
 !    elem%next => next
 !    next%data =  data
 end subroutine list_delete_element
-
-! list_get_data
-!     Get the data stored with a list element
-! Arguments:
-!     elem       Element in the linked list
-!
-function list_get_data( elem ) result(data)
-    type(LINKED_LIST), pointer :: elem
-
-    type(LIST_DATA)            :: data
-
-    data = elem%data
-end function list_get_data
-
-! list_put_data
-!     Store new data with a list element
-! Arguments:
-!     elem       Element in the linked list
-!     data       The data to be stored
-!
-subroutine list_put_data( elem, data )
-    type(LINKED_LIST), pointer  :: elem
-    type(LIST_DATA), intent(in) :: data
-
-    elem%data = data
-end subroutine list_put_data
 
 

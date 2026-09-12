@@ -85,38 +85,6 @@ contains
 
   end subroutine hecmw_precond_SAINV_33_setup
 
-  subroutine hecmw_sainv_lu_33()
-    implicit none
-    integer(kind=kint) :: i,j,js,je,in
-    real(kind=kreal) :: X1, X2, X3
-
-    do i=1, N
-      SAINVD(9*i-5) = SAINVD(9*i-5)*SAINVD(9*i-4)
-      SAINVD(9*i-2) = SAINVD(9*i-2)*SAINVD(9*i  )
-      SAINVD(9*i-1) = SAINVD(9*i-1)*SAINVD(9*i  )
-    enddo
-
-    do i=1, N
-      js = inumFI1L(i-1)+1
-      je = inumFI1L(i)
-      do j= js,je
-        in= FI1L(j)
-        X1= SAINVD(9*i-8)
-        X2= SAINVD(9*i-4)
-        X3= SAINVD(9*i  )
-        SAINVL(9*j-8) = SAINVL(9*j-8)*X1
-        SAINVL(9*j-7) = SAINVL(9*j-7)*X1
-        SAINVL(9*j-6) = SAINVL(9*j-6)*X1
-        SAINVL(9*j-5) = SAINVL(9*j-5)*X2
-        SAINVL(9*j-4) = SAINVL(9*j-4)*X2
-        SAINVL(9*j-3) = SAINVL(9*j-3)*X2
-        SAINVL(9*j-2) = SAINVL(9*j-2)*X3
-        SAINVL(9*j-1) = SAINVL(9*j-1)*X3
-        SAINVL(9*j  ) = SAINVL(9*j  )*X3
-      enddo
-    enddo
-
-  end subroutine hecmw_sainv_lu_33
 
   subroutine hecmw_precond_SAINV_33_apply(R, ZP)
     implicit none
@@ -737,27 +705,6 @@ contains
   !C***
   !C*** FORM_ILU1_33
   !C*** form ILU(1) matrix
-  subroutine FORM_ILU0_SAINV_33(hecMAT)
-    implicit none
-    type(hecmwST_matrix) :: hecMAT
-
-    allocate (inumFI1L(0:hecMAT%NP), inumFI1U(0:hecMAT%NP))
-    allocate (FI1L (hecMAT%NPL), FI1U (hecMAT%NPU))
-
-    inumFI1L = 0
-    inumFI1U = 0
-    FI1L = 0
-    FI1U = 0
-
-    inumFI1L = hecMAT%indexL
-    inumFI1U = hecMAT%indexU
-    FI1L = hecMAT%itemL
-    FI1U = hecMAT%itemU
-
-    NPFIU = hecMAT%NPU
-    NPFIL = hecMAT%NPL
-
-  end subroutine FORM_ILU0_SAINV_33
 
   !C***
   !C*** FORM_ILU1_33

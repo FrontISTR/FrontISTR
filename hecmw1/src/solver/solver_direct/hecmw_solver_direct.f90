@@ -4453,39 +4453,6 @@ contains
   end subroutine S3PDOT
 
   !======================================================================!
-  !> @brief S6PDOT  performs inner product of sparse vectors
-  !======================================================================!
-  subroutine S6PDOT(Bi,B,Zln,Colno,Ks,Ke)
-    implicit none
-    !------
-    integer(kind=kint), intent(in):: Ke
-    integer(kind=kint), intent(in):: Ks
-    integer(kind=kint), intent(in):: Colno(:)
-    real(kind=kreal), intent(in):: Zln(36,*)
-    real(kind=kreal), intent(in):: B(6,*)
-    real(kind=kreal), intent(inout):: Bi(6)
-    !------
-    integer(kind=kint):: j
-    integer(kind=kint):: jj
-
-    do jj = Ks, Ke
-      j = Colno(jj)
-      Bi(1) = Bi(1) - Zln(1,jj)*B(1,j) - Zln(7,jj)*B(2,j) - Zln(13,jj)*B(3,j)&
-        - Zln(19,jj)*B(4,j) - Zln(25,jj)*B(5,j) - Zln(31,jj)*B(6,j)
-      Bi(2) = Bi(2) - Zln(2,jj)*B(1,j) - Zln(8,jj)*B(2,j) - Zln(14,jj)*B(3,j)&
-        - Zln(20,jj)*B(4,j) - Zln(26,jj)*B(5,j) - Zln(32,jj)*B(6,j)
-      Bi(3) = Bi(3) - Zln(3,jj)*B(1,j) - Zln(9,jj)*B(2,j) - Zln(15,jj)*B(3,j)&
-        - Zln(21,jj)*B(4,j) - Zln(27,jj)*B(5,j) - Zln(33,jj)*B(6,j)
-      Bi(4) = Bi(4) - Zln(4,jj)*B(1,j) - Zln(10,jj)*B(2,j) - Zln(16,jj)*B(3,j)&
-        - Zln(22,jj)*B(4,j) - Zln(28,jj)*B(5,j) - Zln(34,jj)*B(6,j)
-      Bi(5) = Bi(5) - Zln(5,jj)*B(1,j) - Zln(11,jj)*B(2,j) - Zln(17,jj)*B(3,j)&
-        - Zln(23,jj)*B(4,j) - Zln(29,jj)*B(5,j) - Zln(35,jj)*B(6,j)
-      Bi(6) = Bi(6) - Zln(6,jj)*B(1,j) - Zln(12,jj)*B(2,j) - Zln(18,jj)*B(3,j)&
-        - Zln(25,jj)*B(4,j) - Zln(30,jj)*B(5,j) - Zln(36,jj)*B(6,j)
-    enddo
-  end subroutine S6PDOT
-
-  !======================================================================!
   !> @brief SXPDOT performs inner product of sparse vectors
   !======================================================================!
   subroutine SXPDOT(Ndeg,Bi,B,Zln,Colno,Ks,Ke)
