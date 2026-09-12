@@ -291,7 +291,7 @@ contains
       else if( header_name == '!INCLUDE' ) then
         ctrl_list(ictrl) = ctrl
         input_filename   = ""
-        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'F', input_filename )
         ctrl   = fstr_ctrl_open( input_filename )
         if( ctrl < 0 ) then
           write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
@@ -935,7 +935,7 @@ contains
       else if( header_name == '!INCLUDE' ) then
         ctrl_list(ictrl) = ctrl
         input_filename   = ""
-        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'F', input_filename )
         ctrl   = fstr_ctrl_open( input_filename )
         if( ctrl < 0 ) then
           write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
@@ -2940,7 +2940,7 @@ end function fstr_setup_INITIAL
 
     filename_len = HECMW_FILENAME_LEN
     write(ss,*) filename_len
-    write(datafmt, '(a,a,a)') 'S', trim(adjustl(ss)), ' '
+    write(datafmt, '(a,a,a)') 'F', trim(adjustl(ss)), ' '
 
     if( fstr_ctrl_get_data_ex( ctrl, 1, datafmt, P%FREQ%eigenlog_filename ) /= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2, 'ii ', P%FREQ%start_mode, P%FREQ%end_mode ) /= 0) return
