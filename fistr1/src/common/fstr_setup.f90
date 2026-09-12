@@ -123,7 +123,7 @@ contains
     if( ctrl < 0 ) then
       write(*,*) '### Error: Cannot open FSTR control file : ', cntl_filename
       write(ILOG,*) '### Error: Cannot open FSTR control file : ', cntl_filename
-      stop
+      stop HECMW_EXIT_INPUT
     end if
 
     version =0
@@ -296,7 +296,7 @@ contains
         if( ctrl < 0 ) then
           write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
           write(ILOG,*) '### Error: Cannot open FSTR control file : ', input_filename
-          stop
+          stop HECMW_EXIT_INPUT
         end if
         ictrl = ictrl + 1
         cycle
@@ -477,7 +477,7 @@ contains
         if( fstr_setup_ORIENTATION( ctrl, hecMESH, c_localcoord, g_LocalCoordSys(c_localcoord) )/=0 ) then
           write(*,*) '### Error: Fail in read in ORIENTATION definition : ', c_localcoord
           write(ILOG,*) '### Error: Fail in read in ORIENTATION definition : ', c_localcoord
-          stop
+          stop HECMW_EXIT_INPUT
         endif
 
         ! ----- CONTACT condition setting
@@ -487,7 +487,7 @@ contains
             ,ee, pp, rho, alpha, P%PARAM%contact_algo, mName, k ) ) then
           write(*,*) '### Error: Fail in read in contact condition : ', c_contact
           write(ILOG,*) '### Error: Fail in read in contact condition : ', c_contact
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         cparam_id = 0
         do i=1,size(fstrPARAM%contactparam)-1
@@ -503,7 +503,7 @@ contains
           if( .not. fstr_contact_check( fstrSOLID%contacts(c_contact+i), P%MESH ) ) then
             write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_contact
             write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_contact
-            stop
+            stop HECMW_EXIT_MODEL
           else
             isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id))
             !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
@@ -517,7 +517,7 @@ contains
         if( .not. fstr_ctrl_get_EMBED( ctrl, n, fstrSOLID%embeds(c_embed+1:c_embed+n), mName, k ) ) then
           write(*,*) '### Error: Fail in read in embed condition : ', c_embed
           write(ILOG,*) '### Error: Fail in read in embed condition : ', c_embed
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         cparam_id = 0
         do i=1,size(fstrPARAM%contactparam)-1
@@ -530,7 +530,7 @@ contains
           if( .not. fstr_contact_check( fstrSOLID%embeds(c_embed+i), P%MESH ) ) then
             write(*,*) '### Error: Inconsistence in contact and surface definition : ' , i+c_embed
             write(ILOG,*) '### Error: Inconsistence in contact and surface definition : ', i+c_embed
-            stop
+            stop HECMW_EXIT_MODEL
           else
             isOK = fstr_embed_init( fstrSOLID%embeds(c_embed+i), P%MESH, fstrPARAM%contactparam(cparam_id))
           endif
@@ -542,7 +542,7 @@ contains
         if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2 ) ) then
           write(*,*) '### Error: Fail in read in step definition : ' , c_istep
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
@@ -563,7 +563,7 @@ contains
         if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2 ) ) then
           write(*,*) '### Error: Fail in read in step definition : ' , c_istep
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         ! For DYNAMIC fixed-increment: keep the !DYNAMIC time increment while preserving !STEP duration.
         ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
@@ -598,7 +598,7 @@ contains
         if( fstr_ctrl_get_WELDLINE( ctrl, hecMESH, HECMW_NAME_LEN, fstrHEAT%weldline(fstrHEAT%WL_tot) )/=0 ) then
           write(*,*) '### Error: Fail in read in Weld Line definition : ' , fstrHEAT%WL_tot
           write(ILOG,*) '### Error: Fail in read in Weld Line definition : ', fstrHEAT%WL_tot
-          stop
+          stop HECMW_EXIT_INPUT
         endif
 
       else if( header_name == '!INITIAL_CONDITION' .or. header_name == '!INITIAL CONDITION' ) then
@@ -606,7 +606,7 @@ contains
         if( fstr_setup_INITIAL( ctrl, g_InitialCnd(c_initial), P%MESH )/=0 ) then
            write(*,*) '### Error: Fail in read in INITIAL CONDITION definition : ' ,c_initial
            write(ILOG,*) '### Error: Fail in read in INITIAL CONDITION definition : ', c_initial
-           stop
+           stop HECMW_EXIT_INPUT
         endif
 
       else if( header_name == '!SECTION'  ) then
@@ -614,7 +614,7 @@ contains
         if( fstr_ctrl_get_SECTION( ctrl, hecMESH, fstrSOLID%sections )/=0 ) then
           write(*,*) '### Error: Fail in read in SECTION definition : ' , c_section
           write(ILOG,*) '### Error: Fail in read in SECTION definition : ', c_section
-          stop
+          stop HECMW_EXIT_INPUT
         endif
 
       else if( header_name == '!ELEMOPT'  ) then
@@ -622,7 +622,7 @@ contains
         if( fstr_ctrl_get_ELEMOPT( ctrl, fstrSOLID%elemopt361 )/=0 ) then
           write(*,*) '### Error: Fail in read in ELEMOPT definition : ' , c_elemopt
           write(ILOG,*) '### Error: Fail in read in ELEMOPT definition : ', c_elemopt
-          stop
+          stop HECMW_EXIT_INPUT
         endif
 
         !== following material properties ==
@@ -631,7 +631,7 @@ contains
         if( fstr_ctrl_get_MATERIAL( ctrl, mName )/=0 ) then
           write(*,*) '### Error: Fail in read in material definition : ' , c_material
           write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         cid = 0
         if(cache < hecMESH%material%n_mat) then
@@ -652,7 +652,7 @@ contains
         if(cid == 0)then
           write(*,*) '### Error: Fail in read in material definition : ' , c_material
           write(ILOG,*) '### Error: Fail in read in material definition : ', c_material
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         fstrSOLID%materials(cid)%name = hecMESH%material%mat_name(cid)
         if(c_material>hecMESH%material%n_mat) call initMaterial( fstrSOLID%materials(cid) )
@@ -666,7 +666,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in elasticity definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in elasticity definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!PLASTIC' ) then
@@ -679,7 +679,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in plasticity definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in plasticity definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!HYPERELASTIC' ) then
@@ -690,7 +690,7 @@ contains
               fstrSOLID%materials(cid)%variables )/=0 ) then
             write(*,*) '### Error: Fail in read in elasticity definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in elasticity definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!VISCOELASTIC' ) then
@@ -701,7 +701,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in plasticity definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in plasticity definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!TRS' ) then
@@ -713,7 +713,7 @@ contains
             if( fstr_ctrl_get_TRS( ctrl, fstrSOLID%materials(cid)%mtype, fstrSOLID%materials(cid)%variables)/=0 ) then
               write(*,*) '### Error: Fail in read in TRS definition : ' , cid
               write(ILOG,*) '### Error: Fail in read in TRS definition : ', cid
-              stop
+              stop HECMW_EXIT_INPUT
             endif
           endif
         endif
@@ -725,7 +725,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in plasticity definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in plasticity definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!DENSITY' ) then
@@ -733,7 +733,7 @@ contains
           if( fstr_ctrl_get_DENSITY( ctrl, fstrSOLID%materials(cid)%variables )/=0 ) then
             write(*,*) '### Error: Fail in read in density definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in density definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!EXPANSION_COEF' .or. header_name == '!EXPANSION_COEFF' .or. &
@@ -743,7 +743,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 )  then
             write(*,*) '### Error: Fail in read in expansion coefficient definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in expansion coefficient definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!DAMPING') then
@@ -752,7 +752,7 @@ contains
               fstrSOLID%materials(cid)%is_elem_Rayleigh_damping)/=0 )  then
             write(*,*) '### Error: Fail in read in damping definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in damping definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!FLUID' ) then
@@ -764,7 +764,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in fluid definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in fluid definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!SPRING_D' ) then
@@ -776,7 +776,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in spring_d definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in spring_d definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!SPRING_A' ) then
@@ -788,7 +788,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in spring_a definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in spring_a definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!DASHPOT_D' ) then
@@ -800,7 +800,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in spring_d definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in spring_d definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!DASHPOT_A' ) then
@@ -812,7 +812,7 @@ contains
               fstrSOLID%materials(cid)%dict)/=0 ) then
             write(*,*) '### Error: Fail in read in spring_a definition : ' , cid
             write(ILOG,*) '### Error: Fail in read in spring_a definition : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
       else if( header_name == '!USER_MATERIAL' ) then
@@ -822,7 +822,7 @@ contains
               fstrSOLID%materials(cid)%variables(101:) )/=0 ) then
             write(*,*) '### Error: Fail in read in user defined material : ' , cid
             write(ILOG,*) '### Error: Fail in read in user defined material : ', cid
-            stop
+            stop HECMW_EXIT_INPUT
           endif
         endif
 
@@ -861,7 +861,7 @@ contains
         if( .not. fstr_ctrl_get_outitem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
           write(*,*) '### Error: Fail in read in node output definition : ' , c_output
           write(ILOG,*) '### Error: Fail in read in node output definition : ', c_output
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
           c_output=2
@@ -876,7 +876,7 @@ contains
         if( .not. fstr_ctrl_get_outitem( ctrl, hecMESH, fstrSOLID%output_ctrl(c_output)%outinfo ) ) then
           write(*,*) '### Error: Fail in read in element output definition : ' , c_output
           write(ILOG,*) '### Error: Fail in read in element output definition : ', c_output
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         if( fstrSOLID%output_ctrl(c_output)%outinfo%grp_id_name /= 'ALL' ) then
           c_output=2
@@ -891,34 +891,34 @@ contains
         if( fstr_get_AUTOINC( ctrl, fstrPARAM%ainc(c_aincparam) ) /=0 ) then
           write(*,*) '### Error: Fail in read in AUTOINC_PARAM definition : ' , c_aincparam
           write(ILOG,*) '### Error: Fail in read in AUTOINC_PARAM definition : ', c_aincparam
-          stop
+          stop HECMW_EXIT_INPUT
         endif
       else if( header_name == '!TIME_POINTS'  ) then
         c_timepoints = c_timepoints + 1
         if( fstr_ctrl_get_TIMEPOINTS( ctrl, fstrPARAM%timepoints(c_timepoints) )/=0 ) then
           write(*,*) '### Error: Fail in read in TIME_POINTS definition : ' , c_timepoints
           write(ILOG,*) '### Error: Fail in read in TIME_POINTS definition : ', c_timepoints
-          stop
+          stop HECMW_EXIT_INPUT
         endif
       else if( header_name == '!CONTACT_PARAM' ) then
         c_contactparam = c_contactparam + 1
         if( fstr_ctrl_get_CONTACTPARAM( ctrl, fstrPARAM%contactparam(c_contactparam) ) /=0 ) then
           write(*,*) '### Error: Fail in read in CONTACT_PARAM definition : ' , c_contactparam
           write(ILOG,*) '### Error: Fail in read in CONTACT_PARAM definition : ', c_contactparam
-          stop
+          stop HECMW_EXIT_INPUT
         endif
       else if( header_name == '!CONTACT_INTERFERENCE' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
         if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(c_contact_if+1:n+1) ) /= 0 ) then
           write(*,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ' , c_contact_if
           write(ILOG,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ', c_contact_if
-          stop
+          stop HECMW_EXIT_INPUT
         endif
         do i=1, n
           if( check_apply_Contact_IF(fstrPARAM%contact_if(c_contact_if+i), fstrSOLID%contacts) /= 0) then
             write(*,*) '### Error:(INTERFERENCE) Inconsistence of contact_pair in CONTACTS: ' , i+c_contact_if
             write(ILOG,*) '### Error:(INTERFERENCE)  Inconsistence of contact_pair in CONTACTS: ', i+c_contact_if
-            stop
+            stop HECMW_EXIT_MODEL
           end if
         end do
         c_contact_if = c_contact_if + n
@@ -926,7 +926,7 @@ contains
         if( fstr_ctrl_get_USERLOAD( ctrl )/=0 ) then
           write(*,*) '### Error: Fail in read in ULOAD definition : '
           write(ILOG,*) '### Error: Fail in read in ULOAD definition : '
-          stop
+          stop HECMW_EXIT_INPUT
         endif
 
       else if( header_name == '!INCLUDE' ) then
@@ -937,7 +937,7 @@ contains
         if( ctrl < 0 ) then
           write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
           write(ILOG,*) '### Error: Cannot open FSTR control file : ', input_filename
-          stop
+          stop HECMW_EXIT_INPUT
         end if
         ictrl = ictrl + 1
         cycle
@@ -1003,7 +1003,7 @@ contains
         write( *,* ) " ERROR: STEP not defined!"
         write( idbg,* ) "ERROR: STEP not defined!"
         call flush(idbg)
-        call hecmw_abort( hecmw_comm_get_comm())
+        call fstr_abort( HECMW_EXIT_MODEL )
       endif
 
       if( myrank==0 ) write(*,*)"Step control not defined! Using default step=1"
@@ -2124,7 +2124,7 @@ contains
 
     if( counter >= 2 ) then
       write(ILOG,*) '### Error : !SOLVER exists twice in FSTR control file.'
-      stop
+      stop HECMW_EXIT_INPUT
     endif
 
     !   nier       => svIarray(1)
@@ -2886,7 +2886,7 @@ end function fstr_setup_INITIAL
       !error
       write(*,*)    "Error this load set is not defined!"
       write(ilog,*) "Error this load set is not defined!"
-      stop
+      stop HECMW_EXIT_MODEL
     end if
     P%FREQ%FLOAD_ngrp_GRPID(old_size+1:new_size) = gid
     call nodesurf_grp_name_to_id_ex( P%MESH, '!FLOAD', n, grp_id_name, &
@@ -4161,7 +4161,7 @@ end function fstr_setup_INITIAL
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
         write(ILOG,*) 'fstr control file error : !VELOCITY : range of dof_ids and dof_ide is from 1 to 6'
-        stop
+        stop HECMW_EXIT_INPUT
       end if
       P%SOLID%VELOCITY_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
       P%SOLID%VELOCITY_ngrp_amp(j) = amp_id
@@ -4240,7 +4240,7 @@ end function fstr_setup_INITIAL
     do i = 1, n
       if( (dof_ids(i) < 1).or.(6 < dof_ids(i)).or.(dof_ide(i) < 1).or.(6 < dof_ide(i)) ) then
         write(ILOG,*) 'fstr control file error : !ACCELERATION : range of dof_ids and dof_ide is from 1 to 6'
-        stop
+        stop HECMW_EXIT_INPUT
       end if
       P%SOLID%ACCELERATION_ngrp_type(j) = 10 * dof_ids(i) + dof_ide(i)
       P%SOLID%ACCELERATION_ngrp_amp(j) = amp_id
@@ -4323,7 +4323,7 @@ end function fstr_setup_INITIAL
     type (hecmwST_local_mesh) :: hecMESH
     type (fstr_solid        ) :: fstrSOLID
     write(ILOG,*) '### Error : In !BOUNDARY, TYPE=NASTRAN is not supported.'
-    call hecmw_abort( hecmw_comm_get_comm())
+    call fstr_abort( HECMW_EXIT_MODEL )
   end subroutine fstr_setup_solid_nastran
 
   !-----------------------------------------------------------------------------!
