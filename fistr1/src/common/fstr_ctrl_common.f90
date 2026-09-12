@@ -65,7 +65,7 @@ contains
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, contact_elim, &
       resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel, &
-      matvec_impl, precond_impl )
+      matvec_impl, precond_impl, recompute_residual )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
     integer(kind=kint) :: precond
@@ -97,6 +97,7 @@ contains
     integer(kind=kint) :: loglevel
     integer(kind=kint) :: matvec_impl
     integer(kind=kint) :: precond_impl
+    integer(kind=kint) :: recompute_residual
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
     character(120) :: mlist = &
@@ -135,6 +136,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'MATRIXFORMAT ','BSR,JAD,CSR,SBLAS ', 0, 'P', mtxfmt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'RECOMPUTE_RESIDUAL ','# ',      0,   'I',recompute_residual ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACT_ELIM ','# ',            0,   'I',contact_elim ) /= 0) return
     ! diagnostic verbosity, independent of TIMELOG.  -1 = "unset": each consumer

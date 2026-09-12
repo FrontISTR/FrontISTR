@@ -2148,6 +2148,7 @@ contains
     !   mpc_method => svIarray(13)
     !   estcond    => svIarray(14)
     !   contact_elim=> svIarray(15)
+    !   recompute_residual => svIarray(16)
     !   method2    => svIarray(8)
     !   recyclepre => svIarray(35)
     !   matvec_impl=> svIarray(36)
@@ -2169,7 +2170,7 @@ contains
       svIarray(35), svIarray(41:50), svIarray(15), &
       svRarray(1), svRarray(2), svRarray(3),                &
       svRarray(4), svRarray(5), svRarray(41:50), svIarray(24), &
-      svIarray(36), svIarray(37) )
+      svIarray(36), svIarray(37), svIarray(16) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     if( svIarray(2) <= 100 ) then
