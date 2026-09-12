@@ -79,6 +79,11 @@ contains
     integer(kind=kint ), allocatable :: perm_tmp(:)
     real   (kind=kreal) :: t0
 
+    if (DEBUG >= 1) then
+      t0 = hecmw_Wtime()
+      write(*,*) 'DEBUG: BILU start setup', hecmw_Wtime()-t0
+    endif
+
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
         call hecmw_precond_BILU_33_clear
@@ -123,17 +128,14 @@ contains
         hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
       if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
       if (PRECOND.eq.10) then
-        print *, 'just before callin MC'
         call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
           hecMAT%indexU, hecMAT%itemU, perm_tmp, &
           NCOLOR_IN, NColor, COLORindex, perm, iperm)
       elseif (PRECOND.eq.11) then
-        print *, 'just before callin MC'
         call hecmw_matrix_ordering_MC_L1(N, hecMAT%indexL, hecMAT%itemL, &
           hecMAT%indexU, hecMAT%itemU, perm_tmp, &
           NCOLOR_IN, NColor, COLORindex, perm, iperm)
       elseif (PRECOND.eq.12) then
-        print *, 'just before callin MC'
         call hecmw_matrix_ordering_MC_L2(N, hecMAT%indexL, hecMAT%itemL, &
           hecMAT%indexU, hecMAT%itemU, perm_tmp, &
           NCOLOR_IN, NColor, COLORindex, perm, iperm)
@@ -176,9 +178,13 @@ contains
       &   (N, N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA, SIGMA_DIAG)
 
+    isFirst = .true.
+
     INITIALIZED = .true.
     hecMAT%Iarray(98) = 0 ! symbolic setup done
     hecMAT%Iarray(97) = 0 ! numerical setup done
+
+    if (DEBUG >= 1) write(*,*) 'DEBUG: BILU setup done', hecmw_Wtime()-t0
 
   end subroutine hecmw_precond_BILU_33_setup
 
