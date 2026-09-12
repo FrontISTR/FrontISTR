@@ -16,6 +16,7 @@ all: @build_target@
 	@cd solver_direct && $(MAKE) @build_target@
 	@cd solver_direct_parallel && $(MAKE) @build_target@
 	@cd solver_direct_lag && $(MAKE) @build_target@
+	@cd solver_direct_mf && $(MAKE) @build_target@
 	@cd mpc           && $(MAKE) @build_target@
 	@cd main          && $(MAKE) @build_target@
 	@cd contact       && $(MAKE) @build_target@
@@ -37,6 +38,7 @@ install:
 	@cd solver_direct && $(MAKE) install
 	@cd solver_direct_parallel && $(MAKE) install
 	@cd solver_direct_lag && $(MAKE) install
+	@cd solver_direct_mf && $(MAKE) install
 	@cd mpc           && $(MAKE) install
 	@cd main          && $(MAKE) install
 	@cd contact       && $(MAKE) install
@@ -55,6 +57,7 @@ clean:
 	@cd solver_direct && $(MAKE) clean
 	@cd solver_direct_parallel && $(MAKE) clean
 	@cd solver_direct_lag && $(MAKE) clean
+	@cd solver_direct_mf && $(MAKE) clean
 	@cd mpc           && $(MAKE) clean
 	@cd main          && $(MAKE) clean
 	@cd contact       && $(MAKE) clean
@@ -73,6 +76,7 @@ distclean: clean
 	@cd solver_direct && $(MAKE) distclean
 	@cd solver_direct_parallel && $(MAKE) distclean
 	@cd solver_direct_lag && $(MAKE) distclean
+	@cd solver_direct_mf && $(MAKE) distclean
 	@cd mpc           && $(MAKE) distclean
 	@cd main          && $(MAKE) distclean
 	@cd contact       && $(MAKE) distclean
@@ -91,6 +95,7 @@ maintainer-clean:
 	@cd solver_direct && $(MAKE) maintainer-clean
 	@cd solver_direct_parallel && $(MAKE) maintainer-clean
 	@cd solver_direct_lag && $(MAKE) maintainer-clean
+	@cd solver_direct_mf && $(MAKE) maintainer-clean
 	@cd mpc           && $(MAKE) maintainer-clean
 	@cd main          && $(MAKE) maintainer-clean
 	@cd contact       && $(MAKE) maintainer-clean
@@ -109,6 +114,7 @@ depend:
 	@cd solver_direct && $(MAKE) depend
 	@cd solver_direct_parallel && $(MAKE) depend
 	@cd solver_direct_lag && $(MAKE) depend
+	@cd solver_direct_mf && $(MAKE) depend
 	@cd mpc           && $(MAKE) depend
 	@cd main          && $(MAKE) depend
 	@cd contact       && $(MAKE) depend
