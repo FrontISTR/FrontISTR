@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "hecmw_config.h"
 #include "separator.h"
 void separator_memory_exit(char *var) {
   fprintf(stderr,
@@ -12,11 +13,11 @@ void separator_memory_exit(char *var) {
           "variable %s\n",
           var);
   /*  MPI_Finalize(); */
-  exit(0);
+  exit(HECMW_EXIT_INTERNAL);
 }
 
 void separator_print_exit(char *var) {
   fprintf(stderr, "%s\n", var);
   /* MPI_Finalize(); */
-  exit(0);
+  exit(HECMW_EXIT_INTERNAL);
 }

@@ -6,6 +6,7 @@
 #define fstr_ctrl_util_MAIN
 
 #include "fstr_ctrl_util.h"
+#include "hecmw_config.h"
 #include "hecmw_malloc.h"
 
 #ifndef TRUE
@@ -186,7 +187,7 @@ static int set_fstr_ctrl_data(const char *fname, fstr_ctrl_data *ctrl) {
 
     if (ctrl->rec[rec_count].line == NULL) {
       printf("Not enough memory\n");
-      exit(-1);
+      exit(HECMW_EXIT_INTERNAL);
     }
 
     /* Strupr( buff ); */
