@@ -64,6 +64,13 @@ module hecmw_mf_dist
   !> the packing granularity at the cost of more upper fronts (protocol overhead).
   real(kind=kreal), parameter :: MF_MAP_PROMOTE = 1.2d0
 
+  !> the promotion threshold of a subtree at least MF_MAP_PROMOTE_ABS heavy (in the weight
+  !> units of wt, flops plus MF_MAP_WPF per factor word): the parallelism gained by
+  !> refining such a subtree outweighs the per-front protocol cost, so the packing is
+  !> refined more aggressively there, while light subtrees keep the conservative threshold
+  real(kind=kreal), parameter :: MF_MAP_PROMOTE_HEAVY = 0.5d0
+  integer(kind=8), parameter :: MF_MAP_PROMOTE_ABS = 500000000000_8
+
   !> flops charged per factor panel word in the subtree weights (the memory-bound cost of
   !> assembling and storing a word, relative to one flop of elimination)
   integer(kind=8), parameter :: MF_MAP_WPF = 2500_8
@@ -214,17 +221,20 @@ contains
     end function sym_cdofcount
 
     !> Assign the yet unassigned subtrees under upper front s0 to the ranks of its range.
-    !> A pooled subtree heavier than MF_MAP_PROMOTE times the mean rank load of the pool
-    !> is promoted to an upper front on the same range and replaced by its children; its
-    !> own front work leaves the pool as the 1D distribution spreads it over the whole
-    !> range, so the threshold shrinks and the sweep repeats until stable. The remaining
-    !> subtrees go heaviest first onto the least loaded rank (LPT).
+    !> A pooled subtree heavier than the promotion threshold times the mean rank load of
+    !> the pool (MF_MAP_PROMOTE, or MF_MAP_PROMOTE_HEAVY for a subtree at least
+    !> MF_MAP_PROMOTE_ABS heavy) is promoted to an upper front on the same range and
+    !> replaced by its children; its own front work leaves the pool as the distribution
+    !> spreads it over the whole range, so the threshold shrinks and the sweep repeats
+    !> until stable. The remaining subtrees go heaviest first onto the least loaded rank
+    !> (LPT).
     subroutine mf_map_pack(s0)
       integer(kind=kint), intent(in) :: s0
       integer(kind=kint), allocatable :: pool(:)
       integer(kind=8), allocatable :: load(:)
       integer(kind=kint) :: npool, i0, j0, c0, r0, nr0, rmin
       integer(kind=8) :: tot
+      real(kind=kreal) :: th
       logical :: grew
 
       r0 = map%rbeg(s0)
@@ -246,7 +256,9 @@ contains
         i0 = 1
         do while (i0 <= npool)
           c0 = pool(i0)
-          if (real(wt(c0), kind=kreal)*nr0 > MF_MAP_PROMOTE*real(tot, kind=kreal)) then
+          th = MF_MAP_PROMOTE
+          if (wt(c0) >= MF_MAP_PROMOTE_ABS) th = MF_MAP_PROMOTE_HEAVY
+          if (real(wt(c0), kind=kreal)*nr0 > th*real(tot, kind=kreal)) then
             map%rbeg(c0) = r0
             map%rcnt(c0) = nr0
             tot = tot - wt(c0)
