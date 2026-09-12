@@ -1168,7 +1168,7 @@ contains
           ndstress = 0.0d0
           call NodalStress_Beam( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, &
             &     hecMESH%section%sect_R_item(ihead+1:), edisp(1:6,1:nn),                 &
-            &     ndstrain(1:nn,1:6), ndstress(1:nn,1:6) )
+            &     ndstrain(1:nn,1:6), ndstress(1:nn,1:6), fstrSOLID%sections(isect)%elemopt611 )
           call ElementalStress_Beam( fstrSOLID%elements(icel)%gausses, estrain, estress, enqm )
           fstrSOLID%ENQM(icel*12-11:icel*12) = enqm(1:12)
         else if( ic_type == 731 .or. ic_type == 741 .or. ic_type == 743 ) then

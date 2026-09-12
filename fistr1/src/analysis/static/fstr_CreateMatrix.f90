@@ -298,7 +298,8 @@ contains
     else if( ic_type == 611 ) then
       if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
       call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
-        &   material%variables(M_YOUNGS), material%variables(M_POISSON), stiff_mat(1:nn*ndof,1:nn*ndof))
+        material%variables(M_YOUNGS), material%variables(M_POISSON), stiff_mat(1:nn*ndof,1:nn*ndof), &
+        fstrSOLID%sections(isect)%elemopt611)
 
       if( is_dynamic ) then
         surf = hecMESH%section%sect_R_item(ihead+4)

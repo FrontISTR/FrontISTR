@@ -399,6 +399,7 @@ contains
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
       fstrSOLID%sections(i)%elemopt341 = kel341FI
+      fstrSOLID%sections(i)%elemopt611 = kel611EULER
       ! INTERFACE sections are skipped in the loop below and keep this thickness
       fstrSOLID%sections(i)%thickness = 1.0d0
     enddo
