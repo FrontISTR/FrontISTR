@@ -794,6 +794,7 @@ contains
   !> the cost is O(m*n*rank) where dgeqp3 pays the full decomposition. The pivot column is
   !> selected by downdated norms with the dgeqp3 recomputation guard, but the truncation is
   !> decided on the freshly computed norm so a stale estimate cannot end the sweep early.
+  !> rcap tightens the word bound: the sweep gives up (rank = -1) beyond min(rlim, rcap).
   !> The pivoted sweep with the downdated column norms is adapted from LAPACK's dlaqp2 (with
   !> the norm recomputation guard of LAPACK Working Note 176) and the explicit formation of
   !> the Q columns follows dorg2r. LAPACK is distributed under the modified BSD license:
@@ -827,13 +828,14 @@ contains
   !> INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
   !> LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   !> OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  subroutine hecmw_mf_kernel_compress(m, n, lda, a, eps, ldv, v, rank)
+  subroutine hecmw_mf_kernel_compress(m, n, lda, a, eps, ldv, v, rank, rcap)
     implicit none
     integer(kind=kint), intent(in) :: m, n, lda, ldv
     real(kind=kreal), intent(inout) :: a(lda,*)
     real(kind=kreal), intent(in) :: eps
     real(kind=kreal), intent(out) :: v(ldv,*)
     integer(kind=kint), intent(out) :: rank
+    integer(kind=kint), intent(in), optional :: rcap
 #ifdef HECMW_WITH_LAPACK
     integer(kind=kint), allocatable :: jpvt(:)
     real(kind=kreal), allocatable :: tau(:), vn1(:), vn2(:), wk(:)
@@ -845,6 +847,7 @@ contains
     rank = -1
     ! largest rank whose low rank form takes fewer than m*n words; always below min(m,n)
     rlim = int((int(m, 8)*n - 1)/(int(m, 8) + n), kind=kint)
+    if (present(rcap)) rlim = min(rlim, max(rcap, 0))
     tol3z = sqrt(dlamch('Epsilon'))
     allocate(jpvt(n), tau(rlim + 1), vn1(n), vn2(n), wk(n))
     do j = 1, n

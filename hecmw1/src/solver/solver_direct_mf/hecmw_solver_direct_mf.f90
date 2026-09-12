@@ -50,7 +50,7 @@ contains
     integer(kind=kint), intent(in) :: imsg
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
-    integer(kind=kint) :: loglevel, ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it
+    integer(kind=kint) :: loglevel, ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, eta
     real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, tcomm
     real(kind=kreal), allocatable :: rr(:), dd(:)
     logical :: clustered
@@ -84,8 +84,11 @@ contains
       endif
       tile = hecMAT%Iarray(45)
       if (tile <= 0) tile = MF_TILE
+      eta = hecMAT%Iarray(47)
+      if (eta == 0) eta = MF_BLR_ETA
+      if (eta < 0) eta = 0
       call hecmw_mf_numeric_finalize(FCT)
-      call hecmw_mf_numeric_init(SYM, tile, FCT)
+      call hecmw_mf_numeric_init(graph, SYM, tile, clustered, eta, FCT)
       t2 = hecmw_wtime()
       if (loglevel > 0) then
         write(*,'(a,f10.3,a)') '[DIRECTmf]: symbolic fct done (', t2 - t1, ' sec)'
@@ -114,6 +117,9 @@ contains
       FCT%eps = hecMAT%Rarray(41)
       FCT%pivot_u = hecMAT%Rarray(43)
       FCT%pivot_zero = hecMAT%Rarray(44)
+      FCT%blr_beta = hecMAT%Rarray(45)
+      if (FCT%blr_beta <= 0.0d0) FCT%blr_beta = 1.0d0
+      FCT%blr_reuse = hecMAT%Iarray(48) /= 0
       if (FCT%blr .and. .not. hecmw_mf_kernel_blr_available()) then
         FCT%blr = .false.
         if (loglevel > 0) write(*,'(a)') '[DIRECTmf]: BLR disabled (built without LAPACK)'
@@ -173,8 +179,10 @@ contains
             ', factor words full rank = ', FCT%blr_words_fr, ' (', &
             100.0d0*(1.0d0 - real(FCT%factor_words_act, kind=kreal)/max(real(FCT%blr_words_fr, kind=kreal), 1.0d0)), &
             '% saved)'
-          write(*,'(a,i0,a,i0,a,i0,a,f8.1)') '[DIRECTmf]: BLR: tiles compressed = ', FCT%blr_tiles_lr, ' of ', &
-            FCT%blr_tiles, ', rank max = ', FCT%blr_rank_max, ', rank avg = ', &
+          write(*,'(a,i0,a,f5.2,a,l1)') '[DIRECTmf]: BLR: skip eta = ', FCT%blr_eta, &
+            ', gain cap beta = ', FCT%blr_beta, ', rank reuse = ', FCT%blr_reuse
+          write(*,'(a,i0,a,i0,a,i0,a,i0,a,f8.1)') '[DIRECTmf]: BLR: tiles compressed = ', FCT%blr_tiles_lr, ' of ', &
+            FCT%blr_tiles, ', skipped = ', FCT%blr_tiles_skip, ', rank max = ', FCT%blr_rank_max, ', rank avg = ', &
             real(FCT%blr_rank_sum, kind=kreal)/max(real(FCT%blr_tiles_lr, kind=kreal), 1.0d0)
         endif
         write(*,'(a,i0,a,f10.3,a)') '[DIRECTmf]: front words held concurrently (peak) = ', FCT%front_peak, ' (', &
@@ -233,7 +241,7 @@ contains
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
     real(kind=kreal), allocatable :: gb(:), gx(:), rr(:), wpr(:), wmr(:)
-    integer(kind=kint) :: ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, i, ofs
+    integer(kind=kint) :: ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, i, ofs, eta
     integer(kind=8) :: wrepl
     real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, tcomm
     logical :: clustered
@@ -246,6 +254,7 @@ contains
       relax = hecMAT%Iarray(46)
       if (relax <= 0) relax = MF_RELAX_COLS
       relax = max(1, relax / hecMAT%NDOF)
+      clustered = hecMAT%Iarray(43) /= 0 .and. hecmw_mf_kernel_blr_available()
       if (hecmw_comm_get_rank() == 0) then
         call hecmw_mf_graph_from_hecmat(GMAT%mat, graph)
         n = graph%nnode
@@ -253,7 +262,6 @@ contains
         ordering = hecMAT%Iarray(41)
         call hecmw_ordering_gen(n, n + (graph%xadj(n+1)-1)/2, graph%xadj, graph%adjncy, perm, invp, ordering, loglevel)
         call hecmw_mf_symbolic_build(graph, perm, relax, SYM)
-        clustered = hecMAT%Iarray(43) /= 0 .and. hecmw_mf_kernel_blr_available()
         if (clustered) then
           call hecmw_mf_symbolic_cluster(graph, SYM, perm)
           call hecmw_mf_symbolic_finalize(SYM)
@@ -264,7 +272,6 @@ contains
           write(*,'(a,i0)') '[DIRECTmf]: self check violations = ', nerr
         endif
         deallocate(perm, invp)
-        call hecmw_mf_graph_finalize(graph)
       endif
       call hecmw_mf_dist_symbolic_bcast(SYM, 0)
       call hecmw_mf_dist_map_finalize(MAP)
@@ -274,8 +281,13 @@ contains
       call mf_gather_matwords(GMAT, wmr, wrepl)
       tile = hecMAT%Iarray(45)
       if (tile <= 0) tile = MF_TILE
+      eta = hecMAT%Iarray(47)
+      if (eta == 0) eta = MF_BLR_ETA
+      if (eta < 0) eta = 0
       call hecmw_mf_numeric_finalize(FCT)
-      call hecmw_mf_numeric_init(SYM, tile, FCT)
+      call hecmw_mf_numeric_init(graph, SYM, tile, clustered, eta, FCT)
+      call hecmw_mf_graph_finalize(graph)
+      if (clustered .and. eta > 0) call hecmw_mf_numeric_admis_bcast(FCT, 0)
       t2 = hecmw_wtime()
       if (loglevel > 0) then
         write(*,'(a,f10.3,a)') '[DIRECTmf]: symbolic fct done (', t2 - t1, ' sec)'
@@ -297,6 +309,9 @@ contains
       FCT%eps = hecMAT%Rarray(41)
       FCT%pivot_u = hecMAT%Rarray(43)
       FCT%pivot_zero = hecMAT%Rarray(44)
+      FCT%blr_beta = hecMAT%Rarray(45)
+      if (FCT%blr_beta <= 0.0d0) FCT%blr_beta = 1.0d0
+      FCT%blr_reuse = hecMAT%Iarray(48) /= 0
       if (FCT%blr .and. .not. hecmw_mf_kernel_blr_available()) then
         FCT%blr = .false.
         if (loglevel > 0) write(*,'(a)') '[DIRECTmf]: BLR disabled (built without LAPACK)'
@@ -362,8 +377,10 @@ contains
             ', factor words full rank = ', FCT%blr_words_fr, ' (', &
             100.0d0*(1.0d0 - real(FCT%factor_words_act, kind=kreal)/max(real(FCT%blr_words_fr, kind=kreal), 1.0d0)), &
             '% saved)'
-          write(*,'(a,i0,a,i0,a,i0,a,f8.1)') '[DIRECTmf]: BLR: tiles compressed = ', FCT%blr_tiles_lr, ' of ', &
-            FCT%blr_tiles, ', rank max = ', FCT%blr_rank_max, ', rank avg = ', &
+          write(*,'(a,i0,a,f5.2,a,l1)') '[DIRECTmf]: BLR: skip eta = ', FCT%blr_eta, &
+            ', gain cap beta = ', FCT%blr_beta, ', rank reuse = ', FCT%blr_reuse
+          write(*,'(a,i0,a,i0,a,i0,a,i0,a,f8.1)') '[DIRECTmf]: BLR: tiles compressed = ', FCT%blr_tiles_lr, ' of ', &
+            FCT%blr_tiles, ', skipped = ', FCT%blr_tiles_skip, ', rank max = ', FCT%blr_rank_max, ', rank avg = ', &
             real(FCT%blr_rank_sum, kind=kreal)/max(real(FCT%blr_tiles_lr, kind=kreal), 1.0d0)
         endif
         write(*,'(a,i0,a,f10.3,a)') '[DIRECTmf]: front words held concurrently (peak) = ', FCT%front_peak, ' (', &
@@ -453,7 +470,7 @@ contains
     implicit none
     type(hecmwST_mf_factor), intent(inout) :: fct
     real(kind=kreal), intent(out) :: wpr(:)
-    real(kind=kreal) :: rs(12), rm(3), w1(1)
+    real(kind=kreal) :: rs(13), rm(3), w1(1)
     integer(kind=kint), allocatable :: rcs(:), disp(:)
     integer(kind=kint) :: comm, np, r
 
@@ -479,7 +496,8 @@ contains
     rs(10) = real(fct%blr_tiles, kind=kreal)
     rs(11) = real(fct%blr_tiles_lr, kind=kreal)
     rs(12) = real(fct%blr_rank_sum, kind=kreal)
-    call hecmw_allreduce_R_comm(rs, 12, hecmw_sum, comm)
+    rs(13) = real(fct%blr_tiles_skip, kind=kreal)
+    call hecmw_allreduce_R_comm(rs, 13, hecmw_sum, comm)
     rm(1) = real(fct%max_growth, kind=kreal)
     rm(2) = real(fct%front_words_act, kind=kreal)
     rm(3) = real(fct%blr_rank_max, kind=kreal)
@@ -496,6 +514,7 @@ contains
     fct%blr_tiles = nint(rs(10), kind=8)
     fct%blr_tiles_lr = nint(rs(11), kind=8)
     fct%blr_rank_sum = nint(rs(12), kind=8)
+    fct%blr_tiles_skip = nint(rs(13), kind=8)
     fct%max_growth = nint(rm(1), kind=kint)
     fct%front_words_act = nint(rm(2), kind=8)
     fct%blr_rank_max = nint(rm(3), kind=kint)
