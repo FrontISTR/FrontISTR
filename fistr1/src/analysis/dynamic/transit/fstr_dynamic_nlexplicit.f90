@@ -145,7 +145,7 @@ contains
             write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
               & tot_step, '  time=', fstr_get_time()
           endif
-          call hecmw_abort( hecmw_comm_get_comm())
+          call fstr_abort( HECMW_EXIT_NOCONV )
         endif
 
         sub_step = sub_step + 1
@@ -336,7 +336,7 @@ contains
             print *, 'Displacement increment too large, please adjust your step size!',istep,hecMATmpc%X(j)
             write(imsg,*) 'Displacement increment too large, please adjust your step size!',istep,hecMATmpc%B(j),fstrDYN%VEC1(j)
           end if
-          call hecmw_abort( hecmw_comm_get_comm())
+          call fstr_abort( HECMW_EXIT_NOCONV )
         end if
       end do
       call hecmw_mpc_tback_sol(hecMESH, hecMAT, hecMATmpc)

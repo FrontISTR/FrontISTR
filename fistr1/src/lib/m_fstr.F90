@@ -682,6 +682,21 @@ module m_fstr
 
 contains
 
+  !> Terminate the analysis with a classified exit status.
+  !> MPI_ABORT does not perform the Fortran I/O finalization, so the log
+  !> units opened by FrontISTR itself are flushed here before the abort.
+  subroutine fstr_abort( code )
+    integer(kind=kint), intent(in) :: code
+    integer(kind=kint) :: ios
+
+    flush( ILOG, iostat=ios )
+    if( myrank == 0 ) then
+      flush( ISTA, iostat=ios )
+      flush( IMSG, iostat=ios )
+    endif
+    call hecmw_abort( hecmw_comm_get_comm(), code )
+  end subroutine fstr_abort
+
   !> NULL POINTER SETTING TO AVOID RUNTIME ERROR
   subroutine fstr_nullify_fstr_param( P )
     implicit none

@@ -190,7 +190,7 @@ contains
                 write(*,*) 'Number of successive cutback reached max number: ',CBbound
                 call fstr_TimeInc_PrintSTATUS_final(.false.)
               endif
-              call hecmw_abort( hecmw_comm_get_comm() )
+              call fstr_abort( HECMW_EXIT_NOCONV )
             endif
             call fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )  ! load analysis state
             call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
@@ -210,7 +210,7 @@ contains
                 write(*,'(a,i5,a,f6.3)') '### Number of substeps reached max number: at total_step=', &
                   & tot_step_print, '  time=', fstr_get_time()
               endif
-              call hecmw_abort( hecmw_comm_get_comm())
+              call fstr_abort( HECMW_EXIT_NOCONV )
             endif
 
             ! output time
@@ -220,7 +220,10 @@ contains
             cycle
           endif
         else
-          if( fstrSOLID%CutBack_stat > 0 ) stop
+          if( fstrSOLID%CutBack_stat > 0 ) then
+            if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS_final(.false.)
+            stop HECMW_EXIT_NOCONV
+          endif
           call fstr_proceed_time() ! current time += time increment
         endif
 
@@ -255,7 +258,7 @@ contains
               & tot_step_print, '  time=', fstr_get_time()
           endif
           if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS_final(.false.)
-          stop !stop if # of substeps reached upper bound.
+          stop HECMW_EXIT_NOCONV !stop if # of substeps reached upper bound.
         endif
 
         sub_step = sub_step + 1
