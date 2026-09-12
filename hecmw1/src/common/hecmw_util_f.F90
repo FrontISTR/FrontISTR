@@ -572,7 +572,7 @@ contains
 
     call hecmw_ctrl_init_ex_if(ctrlfile, ierr)
     if(ierr /= 0) then
-      call  hecmw_abort( hecmw_comm_get_comm( ) )
+      call  hecmw_abort( hecmw_comm_get_comm( ), HECMW_EXIT_INPUT )
     endif
     !      call hecmw_couple_comm_init_if(ierr)
     !      if(ierr /= 0) then
