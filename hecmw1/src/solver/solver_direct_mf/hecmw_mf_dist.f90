@@ -21,7 +21,10 @@ module hecmw_mf_dist
   public :: hecmw_mf_dist_symbolic_bcast
   public :: hecmwST_mf_gmat
   public :: hecmw_mf_dist_gmat_build
+  public :: hecmw_mf_dist_gmat_part
   public :: hecmw_mf_dist_gmat_vals
+  public :: hecmw_mf_dist_gmat_extract
+  public :: hecmw_mf_dist_gmat_words
   public :: hecmw_mf_dist_gmat_finalize
   public :: hecmw_mf_dist_gather_vec
 
@@ -43,20 +46,27 @@ module hecmw_mf_dist
     integer(kind=kint), allocatable :: rcnt(:)    !< ranks in the rank set of s
   end type hecmwST_mf_map
 
-  !> The global matrix replicated on every rank, assembled from the internal rows of the
-  !> distributed matrix (complete in the overlapped HEC-MW assembly). The global node
+  !> The part of the global matrix this rank holds, assembled from the internal rows of
+  !> the distributed matrix (complete in the overlapped HEC-MW assembly). The global node
   !> numbering concatenates the internal nodes rank by rank, the way the sparse matrix
-  !> interface of the external direct solvers numbers them. The structure is gathered once;
-  !> the values are regathered by hecmw_mf_dist_gmat_vals before every factorization, the
-  !> gathered block stream landing in its slots through the dst map built alongside the
-  !> structure.
+  !> interface of the external direct solvers numbers them. The structure is gathered once
+  !> (hecmw_mf_dist_gmat_build), the full profile living on rank 0 only until the ordering
+  !> has read it; the partial profile and the value routing are then derived from the
+  !> mapping (hecmw_mf_dist_gmat_part), and the values move to their holding ranks before
+  !> every factorization (hecmw_mf_dist_gmat_vals). The block stream of a rank lists, row
+  !> by row, the diagonal block followed by the lower then upper neighbor blocks in the
+  !> local item order, and both the send and the receive lists enumerate it in that order.
   type hecmwST_mf_gmat
-    type(hecmwST_matrix) :: mat
-    integer(kind=kint) :: nblk = 0                !< gathered value stream length in nd*nd blocks
+    type(hecmwST_matrix) :: mat                   !< the partial matrix (full index arrays, retained blocks)
+    integer(kind=kint) :: nblk = 0                !< global structure stream length in nd*nd blocks
     integer(kind=kint), allocatable :: nn(:)      !< internal nodes of rank r at nn(r+1)
     integer(kind=kint), allocatable :: ndisp(:)   !< global node offset of rank r at ndisp(r+1)
-    integer(kind=kint), allocatable :: vblk(:)    !< value stream blocks per rank
-    integer(kind=kint), allocatable :: dst(:)     !< block slot: 1..NPL in AL, then NPU in AU, then N in D
+    integer(kind=kint), allocatable :: vblk(:)    !< structure stream blocks per rank
+    integer(kind=kint), allocatable :: stream(:)  !< gathered structure stream, freed by gmat_part
+    integer(kind=kint), allocatable :: scnt(:)    !< blocks sent to rank r at scnt(r+1)
+    integer(kind=kint), allocatable :: ssel(:)    !< sent blocks as local stream indices, grouped by destination
+    integer(kind=kint), allocatable :: rcnt(:)    !< blocks received from rank r at rcnt(r+1)
+    integer(kind=kint), allocatable :: rdst(:)    !< received block slot: 1..NPL in AL, then NPU in AU, then row in D
   end type hecmwST_mf_gmat
 
   !> A subtree heavier than this multiple of the mean rank load of its front's range is
@@ -542,19 +552,19 @@ contains
     if (ncm > 0) call hecmw_bcast_I_comm(sym%cmap, ncm, root, comm)
   end subroutine hecmw_mf_dist_symbolic_bcast
 
-  !> Gather the nonzero structure of the internal rows of every rank and build the global
-  !> matrix profile with the dst slot map of the value stream. The stream carries, row by
-  !> row, the diagonal block followed by the lower then upper neighbor blocks in the local
-  !> item order; a block lands in the global lower or upper part by comparing the global
-  !> ids, the columns of a row sorted ascending.
+  !> Gather the nonzero structure of the internal rows of every rank. The stream carries,
+  !> per row, the neighbor count and the global column ids, and is kept in gmat until
+  !> hecmw_mf_dist_gmat_part derives the partial profile and the value routing from it;
+  !> only rank 0 builds the full matrix profile (structure only, the columns of a row
+  !> sorted ascending), which the ordering and the symbolic stage read.
   subroutine hecmw_mf_dist_gmat_build(hecMESH, hecMAT, gmat)
     implicit none
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_mf_gmat), intent(inout) :: gmat
-    integer(kind=kint), allocatable :: ibuf(:), irbuf(:), ilen(:), idisp(:), gc(:), bb(:)
-    integer(kind=kint) :: np, me, comm, nd, n, ng, i, j, k, l, m, r, b, ptr, ncols, grow, maxcols
-    integer(kind=kint) :: nl, nu, g, pos
+    integer(kind=kint), allocatable :: ibuf(:), ilen(:), idisp(:), gc(:)
+    integer(kind=kint) :: np, me, comm, nd, n, ng, i, j, k, l, m, r, ptr, ncols, grow, maxcols
+    integer(kind=kint) :: nl, nu, g
 
     np = hecmw_comm_get_size()
     me = hecmw_comm_get_rank()
@@ -591,18 +601,24 @@ contains
     do r = 2, np
       idisp(r) = idisp(r-1) + ilen(r-1)
     enddo
-    allocate(irbuf(idisp(np) + ilen(np)))
-    call hecmw_allgatherv_int(ibuf, m, irbuf, ilen, idisp, comm)
+    allocate(gmat%stream(idisp(np) + ilen(np)))
+    call hecmw_allgatherv_int(ibuf, m, gmat%stream, ilen, idisp, comm)
     deallocate(ibuf)
     ! per row one diagonal block plus the neighbor blocks, so the block count of a rank
     ! equals its int stream length
     gmat%vblk(1:np) = ilen(1:np)
     gmat%nblk = idisp(np) + ilen(np)
-
-    ! count the lower/upper split per global row
     gmat%mat%N = ng
     gmat%mat%NP = ng
     gmat%mat%NDOF = nd
+    nullify(gmat%mat%indexL, gmat%mat%indexU, gmat%mat%itemL, gmat%mat%itemU)
+    nullify(gmat%mat%D, gmat%mat%AL, gmat%mat%AU)
+    nullify(gmat%mat%B, gmat%mat%X, gmat%mat%A, gmat%mat%indexA, gmat%mat%itemA)
+    deallocate(ilen, idisp)
+    if (me /= 0) return
+
+    ! the full profile of rank 0: count the lower/upper split per global row, then sort
+    ! the columns of a row ascending
     allocate(gmat%mat%indexL(0:ng), gmat%mat%indexU(0:ng))
     gmat%mat%indexL(0:ng) = 0
     gmat%mat%indexU(0:ng) = 0
@@ -611,10 +627,10 @@ contains
     do r = 1, np
       do i = 1, gmat%nn(r)
         grow = gmat%ndisp(r) + i
-        ncols = irbuf(ptr+1)
+        ncols = gmat%stream(ptr+1)
         maxcols = max(maxcols, ncols)
         do j = 1, ncols
-          g = irbuf(ptr+1+j)
+          g = gmat%stream(ptr+1+j)
           if (g < grow) then
             gmat%mat%indexL(grow) = gmat%mat%indexL(grow) + 1
           else
@@ -631,59 +647,41 @@ contains
     gmat%mat%NPL = gmat%mat%indexL(ng)
     gmat%mat%NPU = gmat%mat%indexU(ng)
     allocate(gmat%mat%itemL(max(gmat%mat%NPL, 1)), gmat%mat%itemU(max(gmat%mat%NPU, 1)))
-    allocate(gmat%mat%D(int(ng, 8)*nd*nd))
-    allocate(gmat%mat%AL(max(int(gmat%mat%NPL, 8)*nd*nd, 1_8)))
-    allocate(gmat%mat%AU(max(int(gmat%mat%NPU, 8)*nd*nd, 1_8)))
-    nullify(gmat%mat%B, gmat%mat%X, gmat%mat%A, gmat%mat%indexA, gmat%mat%itemA)
-
-    ! second sweep: sort the columns of a row ascending and record the slot of every block
-    allocate(gmat%dst(gmat%nblk), gc(max(maxcols, 1)), bb(max(maxcols, 1)))
+    allocate(gc(max(maxcols, 1)))
     ptr = 0
-    b = 0
     do r = 1, np
       do i = 1, gmat%nn(r)
         grow = gmat%ndisp(r) + i
-        ncols = irbuf(ptr+1)
-        b = b + 1
-        gmat%dst(b) = gmat%mat%NPL + gmat%mat%NPU + grow
+        ncols = gmat%stream(ptr+1)
         do j = 1, ncols
-          gc(j) = irbuf(ptr+1+j)
-          bb(j) = b + j
+          gc(j) = gmat%stream(ptr+1+j)
         enddo
-        b = b + ncols
         ptr = ptr + 1 + ncols
         ! insertion sort by the global column id (unique within a row)
         do j = 2, ncols
           g = gc(j)
-          m = bb(j)
           l = j - 1
           do while (l >= 1)
             if (gc(l) <= g) exit
             gc(l+1) = gc(l)
-            bb(l+1) = bb(l)
             l = l - 1
           enddo
           gc(l+1) = g
-          bb(l+1) = m
         enddo
         nl = 0
         nu = 0
         do j = 1, ncols
           if (gc(j) < grow) then
             nl = nl + 1
-            pos = gmat%mat%indexL(grow-1) + nl
-            gmat%mat%itemL(pos) = gc(j)
-            gmat%dst(bb(j)) = pos
+            gmat%mat%itemL(gmat%mat%indexL(grow-1) + nl) = gc(j)
           else
             nu = nu + 1
-            pos = gmat%mat%indexU(grow-1) + nu
-            gmat%mat%itemU(pos) = gc(j)
-            gmat%dst(bb(j)) = gmat%mat%NPL + pos
+            gmat%mat%itemU(gmat%mat%indexU(grow-1) + nu) = gc(j)
           endif
         enddo
       enddo
     enddo
-    deallocate(irbuf, ilen, idisp, gc, bb)
+    deallocate(gc)
   end subroutine hecmw_mf_dist_gmat_build
 
   !> Global node id of a local node: internal nodes by the rank offset, external nodes
@@ -703,15 +701,218 @@ contains
     endif
   end function mf_global_node
 
-  !> Regather the values of the internal rows into the global matrix (the structure and the
-  !> dst map come from hecmw_mf_dist_gmat_build).
+  !> Derive from the mapping the partial profile of this rank and the value routing, and
+  !> drop the gathered structure stream (rank 0 also drops the full profile the ordering
+  !> has read). A block pair belongs to the supernode of its earlier column and is held by
+  !> the rank set of that supernode, a delay-proof superset of the per-entry owners; the
+  !> index arrays keep the full length, the retained columns of a row are sorted ascending
+  !> like the full profile, and D stays full length with the dropped blocks zeroed. The
+  !> send and receive lists both enumerate the blocks of a source in its stream order, so
+  !> the value transfer needs no structure traffic.
+  subroutine hecmw_mf_dist_gmat_part(sym, map, gmat)
+    implicit none
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_map), intent(in) :: map
+    type(hecmwST_mf_gmat), intent(inout) :: gmat
+    integer(kind=kint), allocatable :: c2s(:), gc(:), bb(:), sptr(:)
+    integer(kind=kint) :: np, me, ng, nd2, i, j, l, m, r, g, b, ptr, ncols, grow, maxcols
+    integer(kind=kint) :: ka, nl, nu, nkeep, nrecv, pos, r0, nr0, d
+
+    np = map%nprocs
+    me = map%myrank
+    ng = gmat%ndisp(np+1)
+    nd2 = gmat%mat%NDOF * gmat%mat%NDOF
+    if (associated(gmat%mat%indexL)) then
+      deallocate(gmat%mat%indexL, gmat%mat%indexU, gmat%mat%itemL, gmat%mat%itemU)
+    endif
+    allocate(c2s(sym%nnode))
+    call mf_gmat_c2s(sym, c2s)
+
+    ! count the retained lower/upper split per row and the received blocks per source
+    allocate(gmat%rcnt(np), gmat%mat%indexL(0:ng), gmat%mat%indexU(0:ng))
+    gmat%rcnt(1:np) = 0
+    gmat%mat%indexL(0:ng) = 0
+    gmat%mat%indexU(0:ng) = 0
+    maxcols = 0
+    ptr = 0
+    do r = 1, np
+      do i = 1, gmat%nn(r)
+        grow = gmat%ndisp(r) + i
+        ka = sym%invp(grow)
+        ncols = gmat%stream(ptr+1)
+        maxcols = max(maxcols, ncols)
+        if (mine(ka, ka)) gmat%rcnt(r) = gmat%rcnt(r) + 1
+        do j = 1, ncols
+          g = gmat%stream(ptr+1+j)
+          if (mine(ka, sym%invp(g))) then
+            gmat%rcnt(r) = gmat%rcnt(r) + 1
+            if (g < grow) then
+              gmat%mat%indexL(grow) = gmat%mat%indexL(grow) + 1
+            else
+              gmat%mat%indexU(grow) = gmat%mat%indexU(grow) + 1
+            endif
+          endif
+        enddo
+        ptr = ptr + 1 + ncols
+      enddo
+    enddo
+    do i = 1, ng
+      gmat%mat%indexL(i) = gmat%mat%indexL(i-1) + gmat%mat%indexL(i)
+      gmat%mat%indexU(i) = gmat%mat%indexU(i-1) + gmat%mat%indexU(i)
+    enddo
+    gmat%mat%NPL = gmat%mat%indexL(ng)
+    gmat%mat%NPU = gmat%mat%indexU(ng)
+    allocate(gmat%mat%itemL(max(gmat%mat%NPL, 1)), gmat%mat%itemU(max(gmat%mat%NPU, 1)))
+    allocate(gmat%mat%D(int(ng, 8)*nd2))
+    allocate(gmat%mat%AL(max(int(gmat%mat%NPL, 8)*nd2, 1_8)))
+    allocate(gmat%mat%AU(max(int(gmat%mat%NPU, 8)*nd2, 1_8)))
+    gmat%mat%D(:) = 0.0d0
+
+    ! second sweep: sort the retained columns of a row ascending and record the landing
+    ! slot of every received block, following the stream order of its source
+    nrecv = 0
+    do r = 1, np
+      nrecv = nrecv + gmat%rcnt(r)
+    enddo
+    allocate(gmat%rdst(max(nrecv, 1)), gc(max(maxcols, 1)), bb(max(maxcols, 1)))
+    ptr = 0
+    b = 0
+    do r = 1, np
+      do i = 1, gmat%nn(r)
+        grow = gmat%ndisp(r) + i
+        ka = sym%invp(grow)
+        ncols = gmat%stream(ptr+1)
+        if (mine(ka, ka)) then
+          b = b + 1
+          gmat%rdst(b) = gmat%mat%NPL + gmat%mat%NPU + grow
+        endif
+        nkeep = 0
+        do j = 1, ncols
+          g = gmat%stream(ptr+1+j)
+          if (mine(ka, sym%invp(g))) then
+            nkeep = nkeep + 1
+            b = b + 1
+            gc(nkeep) = g
+            bb(nkeep) = b
+          endif
+        enddo
+        ptr = ptr + 1 + ncols
+        ! insertion sort by the global column id (unique within a row)
+        do j = 2, nkeep
+          g = gc(j)
+          m = bb(j)
+          l = j - 1
+          do while (l >= 1)
+            if (gc(l) <= g) exit
+            gc(l+1) = gc(l)
+            bb(l+1) = bb(l)
+            l = l - 1
+          enddo
+          gc(l+1) = g
+          bb(l+1) = m
+        enddo
+        nl = 0
+        nu = 0
+        do j = 1, nkeep
+          if (gc(j) < grow) then
+            nl = nl + 1
+            pos = gmat%mat%indexL(grow-1) + nl
+            gmat%mat%itemL(pos) = gc(j)
+            gmat%rdst(bb(j)) = pos
+          else
+            nu = nu + 1
+            pos = gmat%mat%indexU(grow-1) + nu
+            gmat%mat%itemU(pos) = gc(j)
+            gmat%rdst(bb(j)) = gmat%mat%NPL + pos
+          endif
+        enddo
+      enddo
+    enddo
+
+    ! send side: the blocks of my stream segment by destination rank set, kept in the
+    ! stream order within a destination
+    allocate(gmat%scnt(np), sptr(np))
+    gmat%scnt(1:np) = 0
+    ptr = 0
+    do r = 1, me
+      ptr = ptr + gmat%vblk(r)
+    enddo
+    b = ptr
+    do i = 1, gmat%nn(me+1)
+      grow = gmat%ndisp(me+1) + i
+      ka = sym%invp(grow)
+      ncols = gmat%stream(ptr+1)
+      call destrange(ka, ka, r0, nr0)
+      gmat%scnt(r0+1:r0+nr0) = gmat%scnt(r0+1:r0+nr0) + 1
+      do j = 1, ncols
+        call destrange(ka, sym%invp(gmat%stream(ptr+1+j)), r0, nr0)
+        gmat%scnt(r0+1:r0+nr0) = gmat%scnt(r0+1:r0+nr0) + 1
+      enddo
+      ptr = ptr + 1 + ncols
+    enddo
+    sptr(1) = 0
+    do r = 2, np
+      sptr(r) = sptr(r-1) + gmat%scnt(r-1)
+    enddo
+    i = sptr(np) + gmat%scnt(np)
+    allocate(gmat%ssel(max(i, 1)))
+    ptr = b
+    b = 0
+    do i = 1, gmat%nn(me+1)
+      grow = gmat%ndisp(me+1) + i
+      ka = sym%invp(grow)
+      ncols = gmat%stream(ptr+1)
+      b = b + 1
+      call destrange(ka, ka, r0, nr0)
+      do d = r0 + 1, r0 + nr0
+        sptr(d) = sptr(d) + 1
+        gmat%ssel(sptr(d)) = b
+      enddo
+      do j = 1, ncols
+        b = b + 1
+        call destrange(ka, sym%invp(gmat%stream(ptr+1+j)), r0, nr0)
+        do d = r0 + 1, r0 + nr0
+          sptr(d) = sptr(d) + 1
+          gmat%ssel(sptr(d)) = b
+        enddo
+      enddo
+      ptr = ptr + 1 + ncols
+    enddo
+    deallocate(gmat%stream, c2s, gc, bb, sptr)
+
+  contains
+
+    !> this rank holds the pair at permuted column positions (ka0, kb0)
+    logical function mine(ka0, kb0)
+      integer(kind=kint), intent(in) :: ka0, kb0
+      integer(kind=kint) :: s0
+      s0 = c2s(min(ka0, kb0))
+      mine = me >= map%rbeg(s0) .and. me < map%rbeg(s0) + map%rcnt(s0)
+    end function mine
+
+    !> rank range holding the pair at permuted column positions (ka0, kb0)
+    subroutine destrange(ka0, kb0, r1, nr1)
+      integer(kind=kint), intent(in) :: ka0, kb0
+      integer(kind=kint), intent(out) :: r1, nr1
+      integer(kind=kint) :: s0
+      s0 = c2s(min(ka0, kb0))
+      r1 = map%rbeg(s0)
+      nr1 = map%rcnt(s0)
+    end subroutine destrange
+
+  end subroutine hecmw_mf_dist_gmat_part
+
+  !> Move the values of the internal rows to their holding ranks through the routing of
+  !> hecmw_mf_dist_gmat_part (built once per structure): the local block stream is packed
+  !> by destination, exchanged all to all and scattered into the partial arrays. Every
+  !> retained slot is written on every call.
   subroutine hecmw_mf_dist_gmat_vals(hecMAT, gmat)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_mf_gmat), intent(inout) :: gmat
-    real(kind=kreal), allocatable :: vbuf(:), vrbuf(:)
-    integer(kind=kint), allocatable :: vlen(:), vdisp(:)
-    integer(kind=kint) :: np, me, comm, nd2, n, i, k, r, t
+    real(kind=kreal), allocatable :: vbuf(:), sbuf(:), rbuf(:)
+    integer(kind=kint), allocatable :: scs(:), sdisp(:), rcs(:), rdisp(:)
+    integer(kind=kint) :: np, me, comm, nd2, n, i, k, r, t, nsend, nrecv
     integer(kind=8) :: ptr, b, base
 
     np = hecmw_comm_get_size()
@@ -720,15 +921,7 @@ contains
     gmat%mat%symmetric = hecMAT%symmetric
     nd2 = hecMAT%NDOF * hecMAT%NDOF
     n = hecMAT%N
-    allocate(vlen(np), vdisp(np))
-    do r = 1, np
-      vlen(r) = gmat%vblk(r) * nd2
-    enddo
-    vdisp(1) = 0
-    do r = 2, np
-      vdisp(r) = vdisp(r-1) + vlen(r-1)
-    enddo
-    allocate(vbuf(max(vlen(me+1), 1)), vrbuf(int(gmat%nblk, 8)*nd2))
+    allocate(vbuf(max(int(gmat%vblk(me+1), 8)*nd2, 1_8)))
     ptr = 0
     do i = 1, n
       vbuf(ptr+1:ptr+nd2) = hecMAT%D(int(i-1, 8)*nd2+1:int(i, 8)*nd2)
@@ -742,22 +935,163 @@ contains
         ptr = ptr + nd2
       enddo
     enddo
-    call hecmw_allgatherv_real(vbuf, vlen(me+1), vrbuf, vlen, vdisp, comm)
-    do b = 1, gmat%nblk
-      t = gmat%dst(b)
+    allocate(scs(np), sdisp(np), rcs(np), rdisp(np))
+    nsend = 0
+    nrecv = 0
+    do r = 1, np
+      scs(r) = gmat%scnt(r) * nd2
+      rcs(r) = gmat%rcnt(r) * nd2
+      sdisp(r) = nsend * nd2
+      rdisp(r) = nrecv * nd2
+      nsend = nsend + gmat%scnt(r)
+      nrecv = nrecv + gmat%rcnt(r)
+    enddo
+    allocate(sbuf(max(int(nsend, 8)*nd2, 1_8)), rbuf(max(int(nrecv, 8)*nd2, 1_8)))
+    do i = 1, nsend
+      b = int(gmat%ssel(i) - 1, 8)*nd2
+      base = int(i-1, 8)*nd2
+      sbuf(base+1:base+nd2) = vbuf(b+1:b+nd2)
+    enddo
+    call hecmw_alltoallv_real(sbuf, scs, sdisp, rbuf, rcs, rdisp, comm)
+    do b = 1, nrecv
+      t = gmat%rdst(b)
       base = (b-1)*nd2
       if (t <= gmat%mat%NPL) then
-        gmat%mat%AL(int(t-1, 8)*nd2+1:int(t, 8)*nd2) = vrbuf(base+1:base+nd2)
+        gmat%mat%AL(int(t-1, 8)*nd2+1:int(t, 8)*nd2) = rbuf(base+1:base+nd2)
       else if (t <= gmat%mat%NPL + gmat%mat%NPU) then
         t = t - gmat%mat%NPL
-        gmat%mat%AU(int(t-1, 8)*nd2+1:int(t, 8)*nd2) = vrbuf(base+1:base+nd2)
+        gmat%mat%AU(int(t-1, 8)*nd2+1:int(t, 8)*nd2) = rbuf(base+1:base+nd2)
       else
         t = t - gmat%mat%NPL - gmat%mat%NPU
-        gmat%mat%D(int(t-1, 8)*nd2+1:int(t, 8)*nd2) = vrbuf(base+1:base+nd2)
+        gmat%mat%D(int(t-1, 8)*nd2+1:int(t, 8)*nd2) = rbuf(base+1:base+nd2)
       endif
     enddo
-    deallocate(vbuf, vrbuf, vlen, vdisp)
+    deallocate(vbuf, sbuf, rbuf, scs, sdisp, rcs, rdisp)
   end subroutine hecmw_mf_dist_gmat_vals
+
+  !> Words this rank holds for the matrix (the values with the integer structure and
+  !> routing at two integers per word) and the words the replicated design held per rank,
+  !> for the memory log.
+  subroutine hecmw_mf_dist_gmat_words(gmat, wpart, wrepl)
+    implicit none
+    type(hecmwST_mf_gmat), intent(in) :: gmat
+    integer(kind=8), intent(out) :: wpart, wrepl
+    integer(kind=8) :: ng, ni, nd2
+
+    ng = size(gmat%mat%indexL, kind=8) - 1
+    nd2 = int(gmat%mat%NDOF, 8)**2
+    wpart = size(gmat%mat%D, kind=8) + size(gmat%mat%AL, kind=8) + size(gmat%mat%AU, kind=8)
+    ni = 2*(ng+1) + size(gmat%mat%itemL, kind=8) + size(gmat%mat%itemU, kind=8) &
+      + size(gmat%ssel, kind=8) + size(gmat%rdst, kind=8) &
+      + size(gmat%scnt, kind=8) + size(gmat%rcnt, kind=8) + 3*size(gmat%nn, kind=8) + 1
+    wpart = wpart + (ni + 1)/2
+    wrepl = int(gmat%nblk, 8)*nd2 + (int(gmat%nblk, 8) - ng + 2*(ng+1) + int(gmat%nblk, 8) + 1)/2
+  end subroutine hecmw_mf_dist_gmat_words
+
+  !> Supernode of every permuted column position, from the own column ranges of sym.
+  subroutine mf_gmat_c2s(sym, c2s)
+    implicit none
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    integer(kind=kint), intent(out) :: c2s(:)
+    integer(kind=kint) :: s, k
+
+    do s = 1, sym%nsuper
+      do k = sym%sptr(s), sym%sptr(s+1) - 1
+        c2s(k) = s
+      enddo
+    enddo
+  end subroutine mf_gmat_c2s
+
+  !> Extract from the replicated matrix the part this rank reads under the distribution:
+  !> the block pairs of the own columns of its supernodes. A pair belongs to the supernode
+  !> of its earlier column in the elimination order; a single-rank supernode keeps its
+  !> pairs on its rank, an upper front on its whole rank set, a superset of the per-entry
+  !> owners that stays valid under any delayed growth. The index arrays keep the full
+  !> length and the retained blocks keep their original order within a row, so the
+  !> factorization reads bitwise the same values; D stays full length with the dropped
+  !> blocks zeroed, an O(n) vector-class array indexed in place by the shared assembly.
+  subroutine hecmw_mf_dist_gmat_extract(full, sym, map, part)
+    implicit none
+    type(hecmwST_matrix), intent(in) :: full
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_map), intent(in) :: map
+    type(hecmwST_matrix), intent(inout) :: part
+    integer(kind=kint), allocatable :: c2s(:)
+    integer(kind=kint) :: me, nd2, ng, i, k, ka, nl, nu
+    integer(kind=8) :: bs, bd
+
+    me = map%myrank
+    nd2 = full%NDOF * full%NDOF
+    ng = full%NP
+    part%N = full%N
+    part%NP = full%NP
+    part%NDOF = full%NDOF
+    part%symmetric = full%symmetric
+    allocate(c2s(sym%nnode))
+    call mf_gmat_c2s(sym, c2s)
+    allocate(part%indexL(0:ng), part%indexU(0:ng))
+    part%indexL(0) = 0
+    part%indexU(0) = 0
+    do i = 1, ng
+      ka = sym%invp(i)
+      nl = 0
+      do k = full%indexL(i-1)+1, full%indexL(i)
+        if (mine(ka, sym%invp(full%itemL(k)))) nl = nl + 1
+      enddo
+      nu = 0
+      do k = full%indexU(i-1)+1, full%indexU(i)
+        if (mine(ka, sym%invp(full%itemU(k)))) nu = nu + 1
+      enddo
+      part%indexL(i) = part%indexL(i-1) + nl
+      part%indexU(i) = part%indexU(i-1) + nu
+    enddo
+    part%NPL = part%indexL(ng)
+    part%NPU = part%indexU(ng)
+    allocate(part%itemL(max(part%NPL, 1)), part%itemU(max(part%NPU, 1)))
+    allocate(part%D(int(ng, 8)*nd2))
+    allocate(part%AL(max(int(part%NPL, 8)*nd2, 1_8)))
+    allocate(part%AU(max(int(part%NPU, 8)*nd2, 1_8)))
+    nullify(part%B, part%X, part%A, part%indexA, part%itemA)
+    nl = 0
+    nu = 0
+    do i = 1, ng
+      ka = sym%invp(i)
+      bd = int(i-1, 8)*nd2
+      if (mine(ka, ka)) then
+        part%D(bd+1:bd+nd2) = full%D(bd+1:bd+nd2)
+      else
+        part%D(bd+1:bd+nd2) = 0.0d0
+      endif
+      do k = full%indexL(i-1)+1, full%indexL(i)
+        if (.not. mine(ka, sym%invp(full%itemL(k)))) cycle
+        nl = nl + 1
+        part%itemL(nl) = full%itemL(k)
+        bs = int(k-1, 8)*nd2
+        bd = int(nl-1, 8)*nd2
+        part%AL(bd+1:bd+nd2) = full%AL(bs+1:bs+nd2)
+      enddo
+      do k = full%indexU(i-1)+1, full%indexU(i)
+        if (.not. mine(ka, sym%invp(full%itemU(k)))) cycle
+        nu = nu + 1
+        part%itemU(nu) = full%itemU(k)
+        bs = int(k-1, 8)*nd2
+        bd = int(nu-1, 8)*nd2
+        part%AU(bd+1:bd+nd2) = full%AU(bs+1:bs+nd2)
+      enddo
+    enddo
+    deallocate(c2s)
+
+  contains
+
+    !> this rank holds the pair at permuted column positions (ka0, kb0)
+    logical function mine(ka0, kb0)
+      integer(kind=kint), intent(in) :: ka0, kb0
+      integer(kind=kint) :: s0
+      s0 = c2s(min(ka0, kb0))
+      mine = me >= map%rbeg(s0) .and. me < map%rbeg(s0) + map%rcnt(s0)
+    end function mine
+
+  end subroutine hecmw_mf_dist_gmat_extract
 
   !> Gather the internal parts of a distributed nodal vector into the replicated global
   !> vector, in the global node numbering.
@@ -788,9 +1122,15 @@ contains
 
     gmat%nblk = 0
     if (allocated(gmat%nn)) then
-      deallocate(gmat%nn, gmat%ndisp, gmat%vblk, gmat%dst)
-      deallocate(gmat%mat%indexL, gmat%mat%indexU, gmat%mat%itemL, gmat%mat%itemU)
-      deallocate(gmat%mat%D, gmat%mat%AL, gmat%mat%AU)
+      deallocate(gmat%nn, gmat%ndisp, gmat%vblk)
+      if (allocated(gmat%stream)) deallocate(gmat%stream)
+      if (allocated(gmat%scnt)) deallocate(gmat%scnt, gmat%ssel, gmat%rcnt, gmat%rdst)
+      if (associated(gmat%mat%indexL)) then
+        deallocate(gmat%mat%indexL, gmat%mat%indexU, gmat%mat%itemL, gmat%mat%itemU)
+      endif
+      if (associated(gmat%mat%D)) deallocate(gmat%mat%D, gmat%mat%AL, gmat%mat%AU)
+      nullify(gmat%mat%indexL, gmat%mat%indexU, gmat%mat%itemL, gmat%mat%itemU)
+      nullify(gmat%mat%D, gmat%mat%AL, gmat%mat%AU)
     endif
   end subroutine hecmw_mf_dist_gmat_finalize
 

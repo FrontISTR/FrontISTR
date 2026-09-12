@@ -1070,9 +1070,12 @@ contains
     enddo
   end subroutine mf_super_task
 
-  !> Factor the replicated matrix with the supernodes distributed by map: every rank first
-  !> factors its subtrees with the task-parallel code, then every rank of a rank set walks
-  !> the upper fronts in ascending order. The assembly, the factorization and the storage
+  !> Factor the matrix with the supernodes distributed by map: every rank first factors
+  !> its subtrees with the task-parallel code, then every rank of a rank set walks the
+  !> upper fronts in ascending order. hecMAT may hold the matrix partially: a rank reads
+  !> the rows of the own columns of its supernodes only, each block paired with its
+  !> transposed partner, so a matrix reduced to those pairs (with the index arrays kept
+  !> full length) factors bitwise like the replicated one. The assembly, the factorization and the storage
   !> of an upper front are distributed over its rank set by contribution row tiles (1D row
   !> distribution), the fully summed part staying with the master (the owner), which keeps
   !> the pivot sequence identical to the sequential factorization. MPI calls stay on the
@@ -1091,7 +1094,7 @@ contains
     type(mf_work), allocatable :: wrks(:)
     integer(kind=kint), allocatable :: left(:)
     integer(kind=kint) :: s, k, nd, nthr, iu, gierr, iw(1)
-    real(kind=kreal) :: amax, zero
+    real(kind=kreal) :: amax, zero, rw(1)
 
     ierr = 0
     fct%factored = .false.
@@ -1101,10 +1104,16 @@ contains
         return
       endif
     enddo
+    ! the maxima and the mirror failure are settled over the ranks because the matrix may
+    ! be held partially; the union of the parts covers every block, and max is exact, so
+    ! the pivot threshold base equals the replicated one bitwise
     nd = hecMAT%NDOF
     amax = maxval(abs(hecMAT%D(1:hecMAT%NP*nd*nd)))
     if (hecMAT%NPL > 0) amax = max(amax, maxval(abs(hecMAT%AL(1:hecMAT%NPL*nd*nd))))
     if (hecMAT%NPU > 0) amax = max(amax, maxval(abs(hecMAT%AU(1:hecMAT%NPU*nd*nd))))
+    rw(1) = amax
+    call hecmw_allreduce_R_comm(rw, 1, hecmw_max, map%comm)
+    amax = rw(1)
     if (.not. (fct%pivot_u > 0.0d0)) fct%pivot_u = MF_PIVOT_U
     if (.not. (fct%pivot_zero > 0.0d0)) fct%pivot_zero = MF_PIVOT_ZERO
     if (fct%blr) then
@@ -1113,8 +1122,19 @@ contains
     endif
     zero = fct%pivot_zero * amax
     call mf_mirror(hecMAT, fct, ierr)
+    iw(1) = ierr
+    call hecmw_allreduce_I_comm(iw, 1, hecmw_min, map%comm)
+    ierr = iw(1)
     if (ierr /= 0) return
+    ! the scan flag is raised by the driver on the printing rank only, but the partial
+    ! scans of all ranks are needed for the global measure
+    iw(1) = merge(1, 0, fct%scan)
+    call hecmw_allreduce_I_comm(iw, 1, hecmw_max, map%comm)
+    fct%scan = iw(1) /= 0
     call mf_asymmetry(hecMAT, fct, amax)
+    rw(1) = fct%asym
+    call hecmw_allreduce_R_comm(rw, 1, hecmw_max, map%comm)
+    fct%asym = rw(1)
 
     fct%n_pos = 0
     fct%n_neg = 0

@@ -4,8 +4,9 @@
 !-------------------------------------------------------------------------------
 !> @brief Multifrontal direct solver (METHOD=DIRECTmf): LDLt with threshold pivoting for
 !>        symmetric (possibly indefinite) matrices, LU for structurally symmetric matrices
-!>        with unsymmetric values. Multi-process runs replicate the global matrix, run the
-!>        symbolic stage on rank 0 and distribute the numeric stage subtree-to-subcube.
+!>        with unsymmetric values. Multi-process runs hold the global matrix partially per
+!>        rank, run the symbolic stage on rank 0 and distribute the numeric stage
+!>        subtree-to-subcube.
 module hecmw_solver_direct_mf
   use hecmw_util
   use m_hecmw_comm_f
@@ -216,8 +217,10 @@ contains
     endif
   end subroutine hecmw_solve_direct_mf
 
-  !> Multi-process solve: the global matrix is replicated by hecmw_mf_dist, rank 0 runs the
-  !> symbolic stage on it and broadcasts the structure, and the numeric stage is distributed
+  !> Multi-process solve: hecmw_mf_dist gathers the global structure (the full profile on
+  !> rank 0 only), rank 0 runs the symbolic stage on it and broadcasts the structure, each
+  !> rank keeps the partial matrix its supernodes read with the values transferred by
+  !> destination before every factorization, and the numeric stage is distributed
   !> subtree-to-subcube. The built-in comparison of loglevel > 1 is skipped (it reads the
   !> local matrix, which no longer matches the global structure). Pivot and BLR statistics
   !> are reduced over the ranks for the log; the factor stays distributed, each rank holding
@@ -229,8 +232,9 @@ contains
     integer(kind=kint), intent(in) :: imsg, loglevel
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
-    real(kind=kreal), allocatable :: gb(:), gx(:), rr(:), wpr(:)
+    real(kind=kreal), allocatable :: gb(:), gx(:), rr(:), wpr(:), wmr(:)
     integer(kind=kint) :: ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, i, ofs
+    integer(kind=8) :: wrepl
     real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, tcomm
     logical :: clustered
 
@@ -265,6 +269,9 @@ contains
       call hecmw_mf_dist_symbolic_bcast(SYM, 0)
       call hecmw_mf_dist_map_finalize(MAP)
       call hecmw_mf_dist_map_build(SYM, MAP)
+      call hecmw_mf_dist_gmat_part(SYM, MAP, GMAT)
+      allocate(wmr(MAP%nprocs))
+      call mf_gather_matwords(GMAT, wmr, wrepl)
       tile = hecMAT%Iarray(45)
       if (tile <= 0) tile = MF_TILE
       call hecmw_mf_numeric_finalize(FCT)
@@ -274,9 +281,12 @@ contains
         write(*,'(a,f10.3,a)') '[DIRECTmf]: symbolic fct done (', t2 - t1, ' sec)'
         if (clustered) write(*,'(a)') '[DIRECTmf]: separator nodes clustered for BLR'
         write(*,'(a,i0,a,i0)') '[DIRECTmf]: MPI ranks = ', MAP%nprocs, ', upper fronts = ', MAP%nupper
+        write(*,'(a,i0,a,*(i0,1x))') '[DIRECTmf]: matrix words replicated = ', wrepl, ', held per rank = ', &
+          (nint(wmr(i), kind=8), i = 1, MAP%nprocs)
         call hecmw_mf_symbolic_print(SYM)
         call hecmw_mf_numeric_print(FCT)
       endif
+      deallocate(wmr)
       hecMAT%Iarray(98) = 0
     endif
 
@@ -409,6 +419,31 @@ contains
     call hecmw_update_R(hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
     deallocate(gb, gx)
   end subroutine hecmw_solve_direct_mf_dist
+
+  !> Gather the per-rank retained matrix words for the log and return the words the
+  !> replicated design held per rank. The int8 words travel as reals, exact below 2^53.
+  subroutine mf_gather_matwords(gmat, wmr, wrepl)
+    implicit none
+    type(hecmwST_mf_gmat), intent(in) :: gmat
+    real(kind=kreal), intent(out) :: wmr(:)
+    integer(kind=8), intent(out) :: wrepl
+    real(kind=kreal) :: w1(1)
+    integer(kind=kint), allocatable :: rcs(:), disp(:)
+    integer(kind=kint) :: comm, np, r
+    integer(kind=8) :: wpart
+
+    comm = hecmw_comm_get_comm()
+    np = hecmw_comm_get_size()
+    call hecmw_mf_dist_gmat_words(gmat, wpart, wrepl)
+    allocate(rcs(np), disp(np))
+    do r = 1, np
+      rcs(r) = 1
+      disp(r) = r - 1
+    enddo
+    w1(1) = real(wpart, kind=kreal)
+    call hecmw_allgatherv_real(w1, 1, wmr, rcs, disp, comm)
+    deallocate(rcs, disp)
+  end subroutine mf_gather_matwords
 
   !> Reduce the factorization statistics over the ranks for the log: counts and words are
   !> summed (the per-rank stack and front peaks summing to a bound on the concurrent global
