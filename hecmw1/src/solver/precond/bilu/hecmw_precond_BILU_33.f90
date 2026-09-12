@@ -166,14 +166,14 @@ contains
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
 
     if (PRECOND.eq.10) call FORM_ILU0_33 &
-      &   (N, NP, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
+      &   (N, N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA, SIGMA_DIAG)
     
     if (PRECOND.eq.11) call FORM_ILU1_33 &
-      &   (N, NP, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
+      &   (N, N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA, SIGMA_DIAG)
     if (PRECOND.eq.12) call FORM_ILU2_33 &
-      &   (N, NP, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
+      &   (N, N, NPL, NPU, D, AL, indexL, itemL, AU, indexU, itemU, &
       &    SIGMA, SIGMA_DIAG)
 
     INITIALIZED = .true.
