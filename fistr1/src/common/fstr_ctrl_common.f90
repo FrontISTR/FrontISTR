@@ -83,7 +83,8 @@ contains
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, contact_elim, &
-      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel )
+      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel, &
+      matvec_impl, precond_impl )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
     integer(kind=kint) :: precond
@@ -113,6 +114,8 @@ contains
     real(kind=kreal) :: filter
     real(kind=kreal) :: solver_ropt(10)
     integer(kind=kint) :: loglevel
+    integer(kind=kint) :: matvec_impl
+    integer(kind=kint) :: precond_impl
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
     character(120) :: mlist = &
@@ -122,7 +125,7 @@ contains
 
     integer(kind=kint) :: number_number = 5
     integer(kind=kint) :: indirect_number = 8
-    integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step
+    integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step, mtxfmt
 
     fstr_ctrl_get_SOLVER = -1
 
@@ -133,6 +136,8 @@ contains
     dmpt = dumptype+1
     dmpx = dumpexit+1
     usjd = usejad+1
+    ! 0 = MATRIXFORMAT absent, leaving USEJAD and the build-time default in effect
+    mtxfmt = 0
     !* parameter in header line -----------------------------------------------------------------*!
 
     ! JP-0
@@ -146,6 +151,7 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'DUMPTYPE ', dlist,              0,   'P',   dmpt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'DUMPEXIT ','NO,YES ',           0,   'P',   dmpx ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'USEJAD '  ,'NO,YES ',           0,   'P',   usjd ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'MATRIXFORMAT ','BSR,JAD,CSR,SBLAS ', 0, 'P', mtxfmt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
@@ -225,6 +231,29 @@ contains
     scaling = sclg -1
     dumpexit = dmpx -1
     usejad = usjd -1
+
+    ! MATRIXFORMAT names one storage format for the whole linear solve, so it sets the
+    ! matvec and the preconditioner together.  JAD is one of the formats, which makes
+    ! USEJAD the older spelling of MATRIXFORMAT=JAD; giving both lets MATRIXFORMAT win.
+    ! JAD replaces the matvec only, so the preconditioner keeps the BSR implementation.
+    select case (mtxfmt)
+      case (1)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_BSR
+        precond_impl = HECMW_PRECOND_IMPL_BSR
+      case (2)
+        usejad = kYES
+        matvec_impl  = HECMW_MATVEC_IMPL_BSR
+        precond_impl = HECMW_PRECOND_IMPL_BSR
+      case (3)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_CSR
+        precond_impl = HECMW_PRECOND_IMPL_CSR
+      case (4)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_SBLAS
+        precond_impl = HECMW_PRECOND_IMPL_SBLAS
+    end select
 
     fstr_ctrl_get_SOLVER = 0
 

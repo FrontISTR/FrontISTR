@@ -29,8 +29,12 @@ module hecmw_solver_las_33
 
   ! Implementation in use between hecmw_matvec_33_setup and hecmw_matvec_33_teardown.
   ! Callers outside that interval (eigenvalue analysis, contact, heat conduction) find
-  ! GENERIC here, which is the only implementation that needs no data of its own.
-  integer(kind=kint), save :: matvec_impl = HECMW_MATVEC_IMPL_GENERIC
+  ! BSR here, which is the only implementation that needs no data of its own.
+  integer(kind=kint), save :: matvec_impl = HECMW_MATVEC_IMPL_BSR
+
+  ! a format may be selected on a build that carries no matvec for it; saying so once
+  ! per run keeps the fallback from looking like the requested format took effect
+  logical, save :: matvec_impl_missing_reported = .false.
 
   ! added for tuning >>>
   integer, parameter :: numOfBlockPerThread = 100
@@ -68,7 +72,7 @@ contains
   subroutine hecmw_matvec_33_teardown
     implicit none
 
-    matvec_impl = HECMW_MATVEC_IMPL_GENERIC
+    matvec_impl = HECMW_MATVEC_IMPL_BSR
   end subroutine hecmw_matvec_33_teardown
 
   !C
@@ -165,6 +169,7 @@ contains
   subroutine hecmw_matvec_33_inner (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_jad_type
+    use m_hecmw_comm_f
 
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -185,7 +190,15 @@ contains
       if (present(COMMtime)) COMMtime = COMMtime + Tcomm
     else
       select case (matvec_impl)
-        case (HECMW_MATVEC_IMPL_GENERIC)
+        case (HECMW_MATVEC_IMPL_BSR)
+          call hecmw_matvec_33_generic(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+        case default
+          if (.not. matvec_impl_missing_reported) then
+            matvec_impl_missing_reported = .true.
+            if (hecmw_comm_get_rank() == 0) write(*,'(a)') &
+              '#### MATRIXFORMAT: this build has no matvec for the selected format '// &
+              '-- running the BSR implementation'
+          endif
           call hecmw_matvec_33_generic(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
       end select
     endif

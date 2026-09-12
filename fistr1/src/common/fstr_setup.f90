@@ -2147,6 +2147,8 @@ contains
     !   contact_elim=> svIarray(15)
     !   method2    => svIarray(8)
     !   recyclepre => svIarray(35)
+    !   matvec_impl=> svIarray(36)
+    !   precond_impl=> svIarray(37)
     !   solver_opt => svIarray(41:50)
     !   nBFGS      => svIarray(60)
 
@@ -2163,7 +2165,8 @@ contains
       svIarray(31), svIarray(32), svIarray(33), svIarray(34), svIarray(13), svIarray(14), svIarray(8),&
       svIarray(35), svIarray(41:50), svIarray(15), &
       svRarray(1), svRarray(2), svRarray(3),                &
-      svRarray(4), svRarray(5), svRarray(41:50), svIarray(24) )
+      svRarray(4), svRarray(5), svRarray(41:50), svIarray(24), &
+      svIarray(36), svIarray(37) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     if( svIarray(2) <= 100 ) then
