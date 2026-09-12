@@ -1971,56 +1971,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine nusol2_parent(dsln, diag, b, neqns)
-    ! solve Ax=b for dens matrix with ndeg=3
-    ! require dsln, diag is already LDU decomposed.
-
-    implicit none
-
-    real(kind=kreal),   intent(in)    :: dsln(:,:) !(4, (neqns+1)*newns/2)
-    real(kind=kreal),   intent(in)    :: diag(:,:) !(3,neqns)
-    real(kind=kreal),   intent(inout) :: b(:,:) !(2,neqns)
-    integer(kind=kint), intent(in)    :: neqns
-
-    integer(kind=kint) :: i,j,k,l,loc
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !
-    ! STEP22 forward substitution
-    !
-    do i=2,neqns
-      k=(i-1)*(i-2)/2 + 1 ! first element of i'th row.
-      call d2sdot(b(:,i),b,dsln(:, k:k+i-2),i-1)
-    end do
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !
-    ! STEP23 divide Yd by diagonal element of D and get Zi=Yi/Di
-    !
-    do i=1,neqns
-      b(2,i)=b(2,i)-b(1,i)*diag(2,i)
-      b(1,i)=b(1,i)*diag(1,i)
-      b(2,i)=b(2,i)*diag(3,i)
-      b(1,i)=b(1,i)-b(2,i)*diag(2,i)
-    end do
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !
-    ! STEP24 Backward substitution.
-    ! Substitute Zi into D and get Xd results.
-    !
-    loc=(neqns-1)*neqns/2
-    do i=neqns,1,-1
-      do j=i-1,1,-1
-        b(1,j)=b(1,j)-b(1,i)*dsln(1,loc)-b(2,i)*dsln(2,loc)
-        b(2,j)=b(2,j)-b(1,i)*dsln(3,loc)-b(2,i)*dsln(4,loc)
-        loc=loc-1
-      end do
-    end do
-
-    return
-
-  end subroutine nusol2_parent
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -4749,31 +4699,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine d2sdot(wi,a,b,n)
-
-    implicit none
-
-    real(kind=kreal), intent(in)    :: a(:,:),b(:,:)!wi(2),a(2,*),b(4,*)
-    real(kind=kreal), intent(inout) :: wi(:)
-    integer(kind=kint), intent(in)  :: n
-
-    integer(kind=kint) :: jj
-    !
-    !----------------------------------------------------------------------
-    !
-    !      d2sdot performs inner product of dens vectors
-    !
-    !
-    !      #coded by t.arakawa
-    !
-    !----------------------------------------------------------------------
-    !
-    do 100 jj=1,n
-      wi(1)=wi(1)-a(1,jj)*b(1,jj)-a(2,jj)*b(3,jj)
-      wi(2)=wi(2)-a(1,jj)*b(2,jj)-a(2,jj)*b(4,jj)
-100 continue
-    return
-  end subroutine d2sdot
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

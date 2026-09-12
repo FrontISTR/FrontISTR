@@ -12,26 +12,7 @@ module fstr_ctrl_common
 
   implicit none
 
-  private :: pc_strupr
-
 contains
-
-  subroutine pc_strupr( s )
-    implicit none
-    character(*) :: s
-    integer :: i, n, a, da
-
-    n = len_trim(s)
-    da = iachar('a') - iachar('A')
-    do i = 1, n
-      a = iachar(s(i:i))
-      if( a > iachar('Z')) then
-        a = a - da
-        s(i:i) = achar(a)
-      end if
-    end do
-  end subroutine pc_strupr
-
 
   !> Read in !SOLUTION
   function fstr_ctrl_get_SOLUTION( ctrl, type, nlgeom )
