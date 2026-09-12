@@ -196,7 +196,7 @@ contains
             call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
 
             ! restore matrix structure for slagrange contact analysis
-            if( is_interaction_active .and. fstrPARAM%contact_algo == kcaSLagrange ) then
+            if( is_interaction_active ) then
               call fstr_mat_con_contact( tot_step, fstrPARAM%contact_algo, hecMAT, fstrSOLID, hecLagMAT, &
                 &  infoCTChange, conMAT, fstr_is_contact_active())
               conMAT%B(:) = 0.0d0
