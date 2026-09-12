@@ -218,16 +218,19 @@ sub parse_ctest_log {
   return \%tests;
 }
 
-sub measure {
-  my ($label, $commit, $requested_ref, $source, $build, $selected, $generator) = @_;
-  print "\n== $label: configure and build ", substr($commit, 0, 12), " ==\n";
-  my $effective_cache = configure_and_build($source, $build, $selected, $generator);
-  my $log = File::Spec->catfile($build, 'benchmark-ctest.log');
-  print "\n== $label: run all CTest tests ==\n";
-  my $ctest_status = run_command(
-    $build, $ctest, '--output-on-failure', '--output-log', $log,
+sub measure_existing {
+  my ($label, $commit, $requested_ref, $build, $selected, $generator, $mode) = @_;
+  my $effective_cache = read_cache(File::Spec->catfile($build, 'CMakeCache.txt'));
+  my $scope = defined $mode && length $mode ? " $mode" : ' all';
+  my $suffix = defined $mode && length $mode ? "-$mode" : '';
+  my $log = File::Spec->catfile($build, "benchmark-ctest${suffix}.log");
+  print "\n== $label: run$scope CTest tests ==\n";
+  my @ctest = (
+    $ctest, '--output-on-failure', '--output-log', $log,
     '--max-width', '200', '-j', '1'
   );
+  push @ctest, ('-R', "^test_${mode}_") if defined $mode && length $mode;
+  my $ctest_status = run_command($build, @ctest);
   my %effective = map {
     $_ => $effective_cache->{$_}{value}
   } grep { exists $effective_cache->{$_} } keys %$selected;
@@ -243,6 +246,15 @@ sub measure {
     ctest_exit_code => $ctest_status,
     tests           => parse_ctest_log($log),
   }, $ctest_status);
+}
+
+sub measure {
+  my ($label, $commit, $requested_ref, $source, $build, $selected, $generator, $mode) = @_;
+  print "\n== $label: configure and build ", substr($commit, 0, 12), " ==\n";
+  configure_and_build($source, $build, $selected, $generator);
+  return measure_existing(
+    $label, $commit, $requested_ref, $build, $selected, $generator, $mode
+  );
 }
 
 sub classify {
@@ -328,9 +340,10 @@ sub compare_runs {
 }
 
 sub print_report {
-  my ($comparison) = @_;
+  my ($comparison, $build_mode, $run_mode) = @_;
   my $summary = $comparison->{summary};
   print "\n== Benchmark comparison ==\n";
+  print "build $build_mode, run ", ($run_mode // 'all'), "\n";
   print "common $summary->{common}, added $summary->{added}, removed $summary->{removed}\n";
   print "WARNING: effective build configurations differ; see JSON\n"
     if keys %{$comparison->{configuration_differences}};
@@ -362,6 +375,68 @@ sub print_report {
   }
 }
 
+sub cache_enabled {
+  my ($selected, $name) = @_;
+  return ($selected->{$name}{value} // '') =~ /^(?:1|ON|TRUE|YES)$/i;
+}
+
+sub build_mode {
+  my ($selected) = @_;
+  return $ENV{BENCHMARK_BUILD_MODE}
+    if defined $ENV{BENCHMARK_BUILD_MODE} && length $ENV{BENCHMARK_BUILD_MODE};
+  my $mpi = cache_enabled($selected, 'WITH_MPI');
+  my $omp = cache_enabled($selected, 'WITH_OPENMP');
+  return $mpi && $omp ? 'hybrid' : $mpi ? 'mpi' : $omp ? 'openmp' : 'serial';
+}
+
+sub read_json {
+  my ($path) = @_;
+  open my $file, '<', $path or die "cannot read $path: $!\n";
+  local $/;
+  my $data = JSON::PP->new->decode(<$file>);
+  close $file;
+  return $data;
+}
+
+sub write_json {
+  my ($path, $data) = @_;
+  open my $file, '>', $path or die "cannot write $path: $!\n";
+  print {$file} JSON::PP->new->canonical->pretty->encode($data);
+  close $file;
+}
+
+sub finish_report {
+  my ($baseline, $current, $thresholds, $output_dir, $build_mode, $run_mode,
+      $baseline_status, $current_status) = @_;
+  my $comparison = compare_runs($baseline, $current, $thresholds);
+  my $report = {
+    schema_version => 1,
+    generated_at   => strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
+    build_mode     => $build_mode,
+    run_mode       => $run_mode,
+    thresholds     => $thresholds,
+    baseline       => $baseline,
+    current        => $current,
+    comparison     => $comparison,
+  };
+  make_path($output_dir);
+  my $stamp = strftime('%Y%m%dT%H%M%SZ', gmtime());
+  my $scope = $build_mode . '-' . ($run_mode // 'all');
+  my $filename = sprintf '%s-%s-%s-vs-%s.json',
+    $stamp, $scope, substr($current->{commit}, 0, 12),
+    substr($baseline->{commit}, 0, 12);
+  my $output = File::Spec->catfile($output_dir, $filename);
+  write_json($output, $report);
+
+  print_report($comparison, $build_mode, $run_mode);
+  print "\nJSON report: $output\n";
+  my $failed = $baseline_status || $current_status;
+  my $fail_on_regression = lc($ENV{BENCHMARK_FAIL_ON_REGRESSION} // '0');
+  $failed = 1 if $fail_on_regression =~ /^(?:1|on|true|yes)$/
+    && $comparison->{summary}{critical};
+  return $failed ? 1 : 0;
+}
+
 sub load_cached_run {
   my ($path, $commit, $test_suite_fingerprint) = @_;
   open my $file, '<', $path or die "cannot read $path: $!\n";
@@ -377,6 +452,78 @@ sub load_cached_run {
     return $data->{$key} if ($data->{$key}{commit} // '') eq $commit;
   }
   die "$path has no measurement for commit $commit\n";
+}
+
+sub prepare_baseline {
+  my ($directory, $baseline_commit, $reference, $current_commit, $selected,
+      $generator, $environment, $test_suite, $build_mode) = @_;
+  die "baseline preparation requires a clean working tree\n"
+    if $test_suite->{working_tree};
+  my $root = File::Spec->rel2abs($directory, $source_dir);
+  die "baseline output already exists: $root\n" if -e $root;
+  make_path($root);
+
+  $temporary_root = tempdir('frontistr-benchmark-XXXXXX', TMPDIR => 1, CLEANUP => 0);
+  my $worktree = File::Spec->catdir($temporary_root, 'baseline-source');
+  my @command = ('git', 'worktree', 'add', '--detach', $worktree, $baseline_commit);
+  require_success(run_command($repository, @command), @command);
+  push @worktrees, $worktree;
+  install_current_test_suite($worktree);
+
+  my $source = File::Spec->catdir($root, 'source');
+  my $build = File::Spec->catdir($root, 'build');
+  @command = ($cmake, '-E', 'copy_directory', $worktree, $source);
+  require_success(run_command($source_dir, @command), @command);
+  configure_and_build($source, $build, $selected, $generator);
+  write_json(File::Spec->catfile($root, 'metadata.json'), {
+    schema_version  => 1,
+    build_mode      => $build_mode,
+    current_commit  => $current_commit,
+    baseline_commit => $baseline_commit,
+    requested_ref   => $reference,
+    environment     => $environment,
+    test_suite      => $test_suite,
+  });
+  print "\nBaseline build: $root\n";
+  return 0;
+}
+
+sub compare_prebuilt {
+  my ($directory, $current_commit, $selected, $generator, $environment,
+      $test_suite, $thresholds, $output_dir, $build_mode, $run_mode) = @_;
+  die "BENCHMARK_MODE is required with BENCHMARK_BASELINE_DIR\n"
+    unless defined $run_mode && grep { $_ eq $run_mode } @modes;
+  my $root = abs_path($directory)
+    or die "baseline build not found: $directory\n";
+  my $metadata = read_json(File::Spec->catfile($root, 'metadata.json'));
+  die "baseline build belongs to a different current commit\n"
+    unless ($metadata->{current_commit} // '') eq $current_commit;
+  die "baseline build uses a different test suite\n"
+    unless ($metadata->{test_suite}{fingerprint} // '')
+      eq $test_suite->{fingerprint};
+  die "baseline build mode does not match $build_mode\n"
+    unless ($metadata->{build_mode} // '') eq $build_mode;
+
+  my ($baseline, $baseline_status) = measure_existing(
+    'baseline', $metadata->{baseline_commit}, $metadata->{requested_ref},
+    File::Spec->catdir($root, 'build'), $selected, $generator, $run_mode
+  );
+  $baseline->{environment} = $environment;
+  $baseline->{test_suite} = $metadata->{test_suite};
+
+  my ($current, $current_status) = measure_existing(
+    'current', $current_commit, 'HEAD', $build_dir, $selected, $generator, $run_mode
+  );
+  $current->{environment} = $environment;
+  $current->{test_suite} = $test_suite;
+  $current->{working_tree} = {
+    dirty       => JSON::PP::false,
+    fingerprint => undef,
+  };
+  return finish_report(
+    $baseline, $current, $thresholds, $output_dir, $build_mode, $run_mode,
+    $baseline_status, $current_status
+  );
 }
 
 sub benchmark {
@@ -399,34 +546,27 @@ sub benchmark {
   };
 
   $repository = capture_command($source_dir, 'git', 'rev-parse', '--show-toplevel');
-  $reference = capture_command(
-    $repository, 'git', 'describe', '--tags', '--abbrev=0', 'HEAD'
-  ) unless defined $reference && length $reference;
   my $current_commit = capture_command(
     $repository, 'git', 'rev-parse', '--verify', 'HEAD^{commit}'
   );
-  my $baseline_commit = capture_command(
-    $repository, 'git', 'rev-parse', '--verify', $reference . '^{commit}'
-  );
-  die "current and baseline resolve to the same commit\n"
-    if $current_commit eq $baseline_commit;
-  my $working_tree_status = capture_command(
-    $repository, 'git', 'status', '--short', '--untracked-files=all'
-  );
-  my $working_tree_dirty = $working_tree_status ne '';
-  my $untracked_files = capture_command(
-    $repository, 'git', 'ls-files', '--others', '--exclude-standard', '-z'
-  );
-  my @untracked_hashes = map {
-    $_ . "\0" . capture_command($repository, 'git', 'hash-object', '--', $_)
-  } grep { $_ ne '' } split /\0/, $untracked_files;
-  my $working_tree_fingerprint = $working_tree_dirty
-    ? 'sha256:' . sha256_hex(
-        $working_tree_status,
-        capture_command($repository, 'git', 'diff', '--binary', 'HEAD', '--'),
-        @untracked_hashes
-      )
-    : undef;
+  my ($working_tree_dirty, $working_tree_fingerprint) = (0, undef);
+  unless (defined $ENV{BENCHMARK_BASELINE_DIR}) {
+    my $working_tree_status = capture_command(
+      $repository, 'git', 'status', '--short', '--untracked-files=all'
+    );
+    $working_tree_dirty = $working_tree_status ne '';
+    my $untracked_files = capture_command(
+      $repository, 'git', 'ls-files', '--others', '--exclude-standard', '-z'
+    );
+    my @untracked_hashes = map {
+      $_ . "\0" . capture_command($repository, 'git', 'hash-object', '--', $_)
+    } grep { $_ ne '' } split /\0/, $untracked_files;
+    $working_tree_fingerprint = 'sha256:' . sha256_hex(
+      $working_tree_status,
+      capture_command($repository, 'git', 'diff', '--binary', 'HEAD', '--'),
+      @untracked_hashes
+    ) if $working_tree_dirty;
+  }
   my $test_suite = {
     commit      => $current_commit,
     working_tree => $working_tree_dirty ? JSON::PP::true : JSON::PP::false,
@@ -434,6 +574,31 @@ sub benchmark {
   };
 
   my $environment = environment_info($selected);
+  my $build_mode = build_mode($selected);
+  my $run_mode = $ENV{BENCHMARK_MODE};
+  if (defined $ENV{BENCHMARK_BASELINE_DIR}) {
+    return compare_prebuilt(
+      $ENV{BENCHMARK_BASELINE_DIR}, $current_commit, $selected, $generator,
+      $environment, $test_suite, $thresholds, $output_dir, $build_mode, $run_mode
+    );
+  }
+
+  $reference = capture_command(
+    $repository, 'git', 'describe', '--tags', '--abbrev=0', 'HEAD'
+  ) unless defined $reference && length $reference;
+  my $baseline_commit = capture_command(
+    $repository, 'git', 'rev-parse', '--verify', $reference . '^{commit}'
+  );
+  die "current and baseline resolve to the same commit\n"
+    if $current_commit eq $baseline_commit;
+  if (defined $ENV{BENCHMARK_PREPARE_DIR}) {
+    return prepare_baseline(
+      $ENV{BENCHMARK_PREPARE_DIR}, $baseline_commit, $reference,
+      $current_commit, $selected, $generator, $environment, $test_suite,
+      $build_mode
+    );
+  }
+
   $temporary_root = tempdir('frontistr-benchmark-XXXXXX', TMPDIR => 1, CLEANUP => 0);
   my ($baseline, $baseline_status);
   if (defined $ENV{BENCHMARK_BASELINE_JSON}) {
@@ -478,31 +643,10 @@ sub benchmark {
     fingerprint => $working_tree_fingerprint,
   };
 
-  my $comparison = compare_runs($baseline, $current, $thresholds);
-  my $report = {
-    schema_version => 1,
-    generated_at   => strftime('%Y-%m-%dT%H:%M:%SZ', gmtime()),
-    thresholds     => $thresholds,
-    baseline       => $baseline,
-    current        => $current,
-    comparison     => $comparison,
-  };
-  make_path($output_dir);
-  my $stamp = strftime('%Y%m%dT%H%M%SZ', gmtime());
-  my $filename = sprintf '%s-%s-vs-%s.json',
-    $stamp, substr($current_commit, 0, 12), substr($baseline_commit, 0, 12);
-  my $output = File::Spec->catfile($output_dir, $filename);
-  open my $file, '>', $output or die "cannot write $output: $!\n";
-  print {$file} JSON::PP->new->canonical->pretty->encode($report);
-  close $file;
-
-  print_report($comparison);
-  print "\nJSON report: $output\n";
-  my $failed = $baseline_status || $current_status;
-  my $fail_on_regression = lc($ENV{BENCHMARK_FAIL_ON_REGRESSION} // '0');
-  $failed = 1 if $fail_on_regression =~ /^(?:1|on|true|yes)$/
-    && $comparison->{summary}{critical};
-  return $failed ? 1 : 0;
+  return finish_report(
+    $baseline, $current, $thresholds, $output_dir, $build_mode, undef,
+    $baseline_status, $current_status
+  );
 }
 
 my ($status, $error);

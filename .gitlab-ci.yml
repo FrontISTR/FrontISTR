@@ -53,18 +53,16 @@ include:
         expire_in: 1week
         when: on_failure
 
-benchmark:
-    stage: test
+.benchmark-build:
+    stage: build
     needs: []
     variables:
         GIT_DEPTH: "0"
-    parallel:
-        matrix:
-            - TYPE: [serial, openmp, mpi, hybrid]
     script:
+        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
         - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
         - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
-        - cmake -S. -Bbuild_benchmark -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI
+        - cmake -S. -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI
         - |
           if [ -z "${BENCHMARK_REF:-}" ]; then
             if [ -n "${CI_COMMIT_TAG:-}" ]; then
@@ -75,9 +73,22 @@ benchmark:
               BENCHMARK_REF=$(git describe --tags --abbrev=0 HEAD)
             fi
           fi
-          BENCHMARK_REF=$BENCHMARK_REF cmake --build build_benchmark --target benchmark
+          BENCHMARK_REF=$BENCHMARK_REF \
+          BENCHMARK_BUILD_MODE=$TYPE \
+          BENCHMARK_PREPARE_DIR=benchmark-baseline/$TYPE \
+            cmake --build build --target benchmark
     artifacts:
-        paths: ["build_benchmark/benchmark-results/"]
+        paths: ["benchmark-baseline/"]
+        expire_in: 100min
+
+.benchmark-test:
+    stage: test
+    script:
+        - BUILD_TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - RUN_TYPE=$(echo $CI_JOB_NAME|cut -d/ -f4)
+        - BENCHMARK_BASELINE_DIR=benchmark-baseline/$BUILD_TYPE BENCHMARK_BUILD_MODE=$BUILD_TYPE BENCHMARK_MODE=$RUN_TYPE cmake --build build --target benchmark
+    artifacts:
+        paths: ["build/benchmark-results/"]
         expire_in: 1week
         when: always
 
