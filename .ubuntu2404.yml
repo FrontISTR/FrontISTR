@@ -33,13 +33,13 @@ deb/ubuntu2404:
               matrix:
                   - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']
 
-benchmark-build/ubuntu2404:
+baseline/2404:
     extends: [".benchmark-build",".ubuntu2404"]
     parallel:
         matrix:
             - BUILD_TYPE: [serial, openmp, mpi, hybrid]
 
-benchmark/ubuntu2404:
+benchmark/2404:
     extends: [".benchmark-test",".ubuntu2404"]
     parallel:
         matrix: *test-matrix
@@ -48,7 +48,7 @@ benchmark/ubuntu2404:
           parallel:
               matrix:
                   - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']
-        - job: benchmark-build/ubuntu2404
+        - job: baseline/2404
           parallel:
               matrix:
                   - BUILD_TYPE: ['$[[ matrix.BUILD_TYPE ]]']

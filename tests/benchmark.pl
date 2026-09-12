@@ -493,7 +493,7 @@ sub compare_prebuilt {
       $test_suite, $thresholds, $output_dir, $build_mode, $run_mode) = @_;
   die "BENCHMARK_MODE is required with BENCHMARK_BASELINE_DIR\n"
     unless defined $run_mode && grep { $_ eq $run_mode } @modes;
-  my $root = abs_path($directory)
+  my $root = abs_path(File::Spec->rel2abs($directory, $source_dir))
     or die "baseline build not found: $directory\n";
   my $metadata = read_json(File::Spec->catfile($root, 'metadata.json'));
   die "baseline build belongs to a different current commit\n"
@@ -602,7 +602,9 @@ sub benchmark {
   $temporary_root = tempdir('frontistr-benchmark-XXXXXX', TMPDIR => 1, CLEANUP => 0);
   my ($baseline, $baseline_status);
   if (defined $ENV{BENCHMARK_BASELINE_JSON}) {
-    my $path = abs_path($ENV{BENCHMARK_BASELINE_JSON})
+    my $path = abs_path(File::Spec->rel2abs(
+      $ENV{BENCHMARK_BASELINE_JSON}, $source_dir
+    ))
       or die "baseline JSON not found: $ENV{BENCHMARK_BASELINE_JSON}\n";
     $baseline = load_cached_run($path, $baseline_commit, $test_suite->{fingerprint});
     die "saved baseline was measured in a different environment\n"
