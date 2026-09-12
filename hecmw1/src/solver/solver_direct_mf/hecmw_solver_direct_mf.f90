@@ -15,6 +15,7 @@ module hecmw_solver_direct_mf
   use hecmw_mf_numeric
   use hecmw_solver_direct
   use hecmw_solver_direct_parallel
+  !$ use omp_lib
   implicit none
 
   private
@@ -38,7 +39,7 @@ contains
     integer(kind=kint), intent(in) :: imsg
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
-    integer(kind=kint) :: loglevel, ordering, n, nerr, relax, ierr, idof
+    integer(kind=kint) :: loglevel, ordering, n, nerr, relax, ierr, idof, nthreads
     real(kind=kreal) :: t1, t2
 
     loglevel = hecmw_mat_get_loglevel(hecMAT)
@@ -102,6 +103,9 @@ contains
       hecMAT%Iarray(97) = 0
       if (loglevel > 0) then
         write(*,'(a,f10.3,a)') '[DIRECTmf]: numeric fct done (', t2 - t1, ' sec)'
+        nthreads = 1
+        !$ nthreads = omp_get_max_threads()
+        write(*,'(a,i0)') '[DIRECTmf]: threads = ', nthreads
         if (FCT%lu) then
           write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LU (asymmetry = ', FCT%asym, ')'
           write(*,'(a,i0,a,i0,a,i0,a)') '[DIRECTmf]: row swaps = ', FCT%n_swap, ', delayed = ', FCT%n_delay, &
@@ -115,6 +119,8 @@ contains
         write(*,'(a,i0,a,f10.3,a,i0,a,i0)') '[DIRECTmf]: factor words = ', FCT%factor_words_act, ' (', &
           real(FCT%factor_words_act, kind=kreal)*8.0d0/1024.0d0**3, ' GB), stack peak words = ', FCT%stack_peak_act, &
           ', front words = ', FCT%front_words_act
+        write(*,'(a,i0,a,f10.3,a)') '[DIRECTmf]: front words held concurrently (peak) = ', FCT%front_peak, ' (', &
+          real(FCT%front_peak, kind=kreal)*8.0d0/1024.0d0**3, ' GB)'
       endif
     endif
 

@@ -13,6 +13,9 @@
 !> to the end of the fully summed part and joins the contribution block, so that the factor
 !> panel of a front is the leading npiv columns of its tile grid. Front sizes, tile partitions
 !> and the factor layout therefore depend on the values and are rebuilt by every factorization.
+!> The factor panel, the position metadata and the contribution block of a supernode are stored
+!> per supernode; a contribution block lives from the factorization of its supernode until the
+!> extend-add of the parent consumes it.
 !>
 !> A matrix whose values are found unsymmetric (or whose symmetric flag is off) is factored in
 !> LU mode: the part of the front above the diagonal is held transposed in a second grid of the
@@ -23,6 +26,7 @@ module hecmw_mf_numeric
   use hecmw_util
   use hecmw_mf_symbolic
   use hecmw_mf_kernel
+  !$ use omp_lib
   implicit none
 
   private
@@ -41,6 +45,28 @@ module hecmw_mf_numeric
   real(kind=kreal), parameter :: MF_PIVOT_ZERO = 1.0d-14
   !> the matrix is factored in LU mode above this asymmetry, max|A_ij - A_ji| / max|A_ij|
   real(kind=kreal), parameter :: MF_ASYM_TOL = 1.0d-12
+  !> a front with at least this many rows parallelizes its tiles across the team
+  integer(kind=kint), parameter :: MF_PAR_ROWS = 512
+
+  !> per-supernode part of the factorization; cval holds the contribution block from the
+  !> factorization of the supernode until the extend-add of the parent frees it, dval holds
+  !> the forward-solve contribution the same way
+  type mf_snode
+    integer(kind=kint) :: ncol = 0                  !< fully summed positions
+    integer(kind=kint) :: npiv = 0                  !< pivots eliminated (positions 1:npiv)
+    integer(kind=kint) :: nt = 0                    !< tiles of the front
+    integer(kind=kint) :: ntc = 0                   !< tiles covering the fully summed positions
+    integer(kind=8) :: cbsize = 0                   !< words of the contribution block
+    integer(kind=kint), allocatable :: tbnd(:)      !< tile boundaries, tbnd(1:nt+1) from 0 to nrow
+    integer(kind=kint), allocatable :: fsdof(:)     !< permuted DOF of the column at a position
+    integer(kind=kint), allocatable :: frow(:)      !< permuted DOF of the row at a position
+    integer(kind=kint), allocatable :: ptype(:)     !< pivot type at a position (see hecmw_mf_kernel)
+    real(kind=kreal), allocatable :: dsub(:)        !< off-diagonal entry of a 2x2 pivot at its first position
+    real(kind=kreal), allocatable :: lval(:)        !< factor panel, the leading npiv tile grid columns
+    real(kind=kreal), allocatable :: uval(:)        !< U panel of LU mode, same layout as lval
+    real(kind=kreal), allocatable :: cval(:)        !< contribution block (lower face, then upper in LU mode)
+    real(kind=kreal), allocatable :: dval(:)        !< forward-solve contribution of the rows beyond npiv
+  end type mf_snode
 
   type hecmwST_mf_factor
     integer(kind=kint) :: tile = 0
@@ -51,32 +77,14 @@ module hecmw_mf_numeric
     integer(kind=kint), allocatable :: pdof(:)      !< pdof(c): original DOF of permuted DOF c
     integer(kind=kint), allocatable :: chead(:)     !< children of s: chead(s), cnext(...), in decreasing
     integer(kind=kint), allocatable :: cnext(:)     !< order, which is the order they are popped
+    integer(kind=kint), allocatable :: cptr(:)      !< the same children in ascending order,
+    integer(kind=kint), allocatable :: clist(:)     !< clist(cptr(s):cptr(s+1)-1), for the task dependences
     integer(kind=kint), allocatable :: mirror(:)    !< AU entry holding the transpose of AL entry k
     integer(kind=kint), allocatable :: mirroru(:)   !< AL entry holding the transpose of AU entry k
     ! layout of the last factorization
     logical :: lu = .false.                         !< LU mode (else LDLt)
     real(kind=kreal) :: asym = 0.0d0                !< max|A_ij - A_ji| / max|A_ij| of the last matrix
-    integer(kind=kint), allocatable :: ncol(:)      !< fully summed positions of supernode s
-    integer(kind=kint), allocatable :: npiv(:)      !< pivots eliminated in supernode s (positions 1:npiv)
-    integer(kind=kint), allocatable :: fsptr(:)     !< positions 1:ncol of s are fsdof(fsptr(s):fsptr(s+1)-1)
-    integer(kind=kint), allocatable :: fsdof(:)     !< permuted DOF of the column at a fully summed position
-    integer(kind=kint), allocatable :: frow(:)      !< permuted DOF of the row at a fully summed position
-    integer(kind=kint), allocatable :: ptype(:)     !< pivot type at a position (see hecmw_mf_kernel)
-    real(kind=kreal), allocatable :: dsub(:)        !< off-diagonal entry of a 2x2 pivot at its first position
-    integer(kind=kint), allocatable :: tptr(:)      !< tile boundaries of supernode s are the position offsets
-    integer(kind=kint), allocatable :: tbnd(:)      !< tbnd(tptr(s):tptr(s+1)-1), from 0 to nrow
-    integer(kind=kint), allocatable :: ntc(:)       !< tiles covering the fully summed positions of s
-    integer(kind=8), allocatable :: lptr(:)         !< panel of supernode s is lval(lptr(s):lptr(s+1)-1)
-    integer(kind=8), allocatable :: cbsize(:)       !< words of the contribution block of supernode s
-    real(kind=kreal), allocatable :: lval(:)
-    real(kind=kreal), allocatable :: uval(:)        !< U panels of LU mode, same layout as lval
-    real(kind=kreal), allocatable :: sval(:)        !< stack of contribution blocks
-    real(kind=kreal), allocatable :: fval(:)        !< work space of the front being assembled
-    real(kind=kreal), allocatable :: fvalu(:)       !< its part above the diagonal, transposed (LU mode)
-    real(kind=kreal), allocatable :: wval(:)        !< work tile of the scaled panel L*D
-    real(kind=kreal), allocatable :: pval(:)        !< dense work panel of the pivot search
-    real(kind=kreal), allocatable :: pvalu(:)       !< its transposed upper part (LU mode)
-    real(kind=kreal), allocatable :: wk(:)
+    type(mf_snode), allocatable :: sn(:)            !< per-supernode factor storage
     ! estimates from the symbolic structure (no delayed pivots)
     integer(kind=8) :: factor_words = 0
     integer(kind=8) :: factor_nnz = 0               !< panel entries on or below the diagonal
@@ -89,6 +97,9 @@ module hecmw_mf_numeric
     integer(kind=8) :: factor_words_act = 0
     integer(kind=8) :: stack_peak_act = 0
     integer(kind=8) :: front_words_act = 0
+    integer(kind=8) :: live_cb = 0                  !< contribution block words currently held
+    integer(kind=8) :: live_front = 0               !< front work words currently held
+    integer(kind=8) :: front_peak = 0               !< peak of live_front over the factorization
     integer(kind=kint) :: n_pos = 0                 !< inertia: positive, negative eigenvalues of D
     integer(kind=kint) :: n_neg = 0
     integer(kind=kint) :: n_2x2 = 0
@@ -110,6 +121,24 @@ module hecmw_mf_numeric
     integer(kind=kint), allocatable :: dtile(:)
   end type mf_grid
 
+  !> work space of the front being processed, one instance per concurrently processed front
+  type mf_work
+    type(mf_grid) :: g
+    real(kind=kreal), allocatable :: fval(:)        !< front being assembled
+    real(kind=kreal), allocatable :: fvalu(:)       !< its part above the diagonal, transposed (LU mode)
+    real(kind=kreal), allocatable :: pval(:)        !< dense work panel of the pivot search
+    real(kind=kreal), allocatable :: pvalu(:)       !< its transposed upper part (LU mode)
+    real(kind=kreal), allocatable :: wval(:)        !< work tile of the scaled panel L*D
+    real(kind=kreal), allocatable :: wk(:)
+    integer(kind=kint), allocatable :: rowoff(:)
+    integer(kind=kint), allocatable :: pos(:)
+    integer(kind=kint), allocatable :: blk(:)
+    integer(kind=kint), allocatable :: blkr(:)
+    integer(kind=kint), allocatable :: cmapdof(:)
+    integer(kind=kint), allocatable :: ctb(:)
+    integer(kind=8), allocatable :: ccoloff(:)
+  end type mf_work
+
 contains
 
   !> Estimates of the factor and stack sizes from the symbolic structure and the work space;
@@ -121,7 +150,7 @@ contains
     type(hecmwST_mf_factor), intent(out) :: fct
     type(mf_grid) :: g
     integer(kind=8), allocatable :: cbsize(:)
-    integer(kind=kint), allocatable :: odofptr(:)
+    integer(kind=kint), allocatable :: odofptr(:), wptr(:)
     integer(kind=kint) :: n, ns, s, k, d, c, j, hj
     integer(kind=8) :: top
 
@@ -155,6 +184,26 @@ contains
       fct%cnext(s) = fct%chead(c)
       fct%chead(c) = s
     enddo
+    allocate(fct%cptr(ns+1))
+    fct%cptr(1:ns+1) = 0
+    do s = 1, ns
+      c = sym%sparent(s)
+      if (c /= 0) fct%cptr(c+1) = fct%cptr(c+1) + 1
+    enddo
+    fct%cptr(1) = 1
+    do s = 1, ns
+      fct%cptr(s+1) = fct%cptr(s) + fct%cptr(s+1)
+    enddo
+    allocate(fct%clist(max(fct%cptr(ns+1)-1, 1)), wptr(ns))
+    wptr(1:ns) = fct%cptr(1:ns)
+    do s = 1, ns
+      c = sym%sparent(s)
+      if (c /= 0) then
+        fct%clist(wptr(c)) = s
+        wptr(c) = wptr(c) + 1
+      endif
+    enddo
+    deallocate(wptr)
 
     allocate(cbsize(ns))
     fct%factor_words = 0
@@ -193,12 +242,7 @@ contains
     enddo
     deallocate(cbsize)
 
-    allocate(fct%lval(max(fct%factor_words, 1_8)))
-    allocate(fct%sval(max(fct%stack_peak, 1_8)))
-    allocate(fct%fval(max(fct%front_words, 1_8)))
-    allocate(fct%wval(int(fct%max_tile_dim, 8)*fct%max_rows))
-    allocate(fct%pval(int(fct%max_tile_dim, 8)*fct%max_rows))
-    allocate(fct%wk(2*fct%max_rows))
+    allocate(fct%sn(ns))
     fct%factored = .false.
   end subroutine hecmw_mf_numeric_init
 
@@ -212,29 +256,11 @@ contains
     if (allocated(fct%pdof)) deallocate(fct%pdof)
     if (allocated(fct%chead)) deallocate(fct%chead)
     if (allocated(fct%cnext)) deallocate(fct%cnext)
+    if (allocated(fct%cptr)) deallocate(fct%cptr)
+    if (allocated(fct%clist)) deallocate(fct%clist)
     if (allocated(fct%mirror)) deallocate(fct%mirror)
     if (allocated(fct%mirroru)) deallocate(fct%mirroru)
-    if (allocated(fct%ncol)) deallocate(fct%ncol)
-    if (allocated(fct%npiv)) deallocate(fct%npiv)
-    if (allocated(fct%fsptr)) deallocate(fct%fsptr)
-    if (allocated(fct%fsdof)) deallocate(fct%fsdof)
-    if (allocated(fct%frow)) deallocate(fct%frow)
-    if (allocated(fct%ptype)) deallocate(fct%ptype)
-    if (allocated(fct%dsub)) deallocate(fct%dsub)
-    if (allocated(fct%tptr)) deallocate(fct%tptr)
-    if (allocated(fct%tbnd)) deallocate(fct%tbnd)
-    if (allocated(fct%ntc)) deallocate(fct%ntc)
-    if (allocated(fct%lptr)) deallocate(fct%lptr)
-    if (allocated(fct%cbsize)) deallocate(fct%cbsize)
-    if (allocated(fct%lval)) deallocate(fct%lval)
-    if (allocated(fct%uval)) deallocate(fct%uval)
-    if (allocated(fct%sval)) deallocate(fct%sval)
-    if (allocated(fct%fval)) deallocate(fct%fval)
-    if (allocated(fct%fvalu)) deallocate(fct%fvalu)
-    if (allocated(fct%wval)) deallocate(fct%wval)
-    if (allocated(fct%pval)) deallocate(fct%pval)
-    if (allocated(fct%pvalu)) deallocate(fct%pvalu)
-    if (allocated(fct%wk)) deallocate(fct%wk)
+    if (allocated(fct%sn)) deallocate(fct%sn)
   end subroutine hecmw_mf_numeric_finalize
 
   subroutine mf_grow_r(a, need)
@@ -690,7 +716,7 @@ contains
   !> Push the contribution block of the grid gval (positions beyond npiv) at sval(top+1:): the
   !> cndel delayed positions as one tile followed by the contribution tiles, cnb tiles of
   !> boundaries ctb and word offsets ccoloff, kbeg being 1 when there is a delayed tile.
-  subroutine mf_store_cb(g, gval, npiv, cndel, cnb, kbeg, ctb, ccoloff, sval, top)
+  subroutine mf_store_cb(g, gval, npiv, cndel, cnb, kbeg, ctb, ccoloff, sval, top, par)
     implicit none
     type(mf_grid), intent(in) :: g
     real(kind=kreal), intent(in) :: gval(:)
@@ -699,6 +725,7 @@ contains
     integer(kind=8), intent(in) :: ccoloff(:)
     real(kind=kreal), intent(inout) :: sval(:)
     integer(kind=8), intent(in) :: top
+    logical, intent(in) :: par
     integer(kind=kint) :: i, j, hi, cc, r, m
     integer(kind=8) :: base, o
 
@@ -718,6 +745,7 @@ contains
         enddo
       enddo
     enddo
+    !$omp taskloop default(shared) private(i, hi, m, base, o) grainsize(1) if(par)
     do j = g%ntc + 1, g%nt
       do i = j, g%nt
         hi = g%tb(i) - g%tb(i-1)
@@ -727,6 +755,7 @@ contains
         sval(base+1:base+int(hi, 8)*m) = gval(o+1:o+int(hi, 8)*m)
       enddo
     enddo
+    !$omp end taskloop
   end subroutine mf_store_cb
 
   !> Factor the matrix of hecMAT in the order of sym, in LDLt mode (lower part referenced) or
@@ -739,17 +768,13 @@ contains
     type(hecmwST_mf_symbolic), intent(in) :: sym
     type(hecmwST_mf_factor), intent(inout) :: fct
     integer(kind=kint), intent(out) :: ierr
-    type(mf_grid) :: g
-    integer(kind=8), allocatable :: ccoloff(:)
-    integer(kind=kint), allocatable :: rowoff(:), pos(:), blk(:), blkr(:), cmapdof(:), ctb(:)
-    integer(kind=kint) :: ns, s, c, nown, nrow_nodes, ncol0, ndel, i, j, k, l, nd, a, b, m, r, cc
-    integer(kind=kint) :: j0, ki, kk, coff, roff, cnown, cnb, cndel, cnrow, hi, cnt, cntc, ct0, kbeg
-    integer(kind=8) :: top, base, base2, o, half
-    real(kind=kreal) :: amax, zero, v
+    type(mf_work), allocatable :: wrks(:)
+    integer(kind=kint), allocatable :: left(:)
+    integer(kind=kint) :: s, k, nd, nthr
+    real(kind=kreal) :: amax, zero
 
     ierr = 0
     fct%factored = .false.
-    ns = fct%nsuper
     do k = 1, sym%nnode
       if (sym%ndof(k) /= hecMAT%NDOF) then
         ierr = -1
@@ -764,299 +789,446 @@ contains
     call mf_mirror(hecMAT, fct, ierr)
     if (ierr /= 0) return
     call mf_asymmetry(hecMAT, fct, amax)
-    if (fct%lu) then
-      call mf_grow_r(fct%uval, size(fct%lval, kind=8))
-      call mf_grow_r(fct%fvalu, size(fct%fval, kind=8))
-      call mf_grow_r(fct%pvalu, size(fct%pval, kind=8))
-      call mf_grow_r(fct%sval, 2*fct%stack_peak)
-    endif
 
-    if (allocated(fct%ncol)) deallocate(fct%ncol, fct%npiv, fct%fsptr, fct%tptr, fct%ntc, fct%lptr, fct%cbsize)
-    allocate(fct%ncol(ns), fct%npiv(ns), fct%fsptr(ns+1), fct%tptr(ns+1), fct%ntc(ns), fct%lptr(ns+1), fct%cbsize(ns))
-    call mf_grow_i(fct%fsdof, fct%ndof_tot + ns)
-    call mf_grow_i(fct%frow, fct%ndof_tot + ns)
-    call mf_grow_i(fct%ptype, fct%ndof_tot + ns)
-    call mf_grow_r(fct%dsub, int(fct%ndof_tot + ns, 8))
-    call mf_grow_i(fct%tbnd, (fct%max_tiles + 2)*ns)
-    allocate(rowoff(1), pos(sym%nnode), ccoloff(fct%max_tiles+2), ctb(0:fct%max_tiles+1))
-    allocate(blk(1), blkr(1), cmapdof(1))
     fct%n_pos = 0
     fct%n_neg = 0
     fct%n_2x2 = 0
     fct%n_swap = 0
     fct%n_delay = 0
     fct%max_growth = 0
+    fct%factor_words_act = 0
     fct%stack_peak_act = 0
     fct%front_words_act = 0
-    fct%fsptr(1) = 1
-    fct%tptr(1) = 1
-    fct%lptr(1) = 1
-    top = 0
+    fct%live_cb = 0
+    fct%live_front = 0
+    fct%front_peak = 0
 
-    do s = 1, ns
-      nown = sym%sptr(s+1) - sym%sptr(s)
-      nrow_nodes = sym%rptr(s+1) - sym%rptr(s)
-      ncol0 = fct%cdofptr(sym%sptr(s+1)) - fct%cdofptr(sym%sptr(s))
-      ndel = 0
-      c = fct%chead(s)
-      do while (c /= 0)
-        ndel = ndel + fct%ncol(c) - fct%npiv(c)
-        c = fct%cnext(c)
-      enddo
-      fct%max_growth = max(fct%max_growth, ndel)
-      call mf_partition(sym, fct, s, ndel, g)
-      call mf_grow_i(rowoff, nrow_nodes + 1)
-      if (size(ccoloff) < g%nt + 2) then
-        deallocate(ccoloff, ctb)
-        allocate(ccoloff(g%nt+2), ctb(0:g%nt+1))
+    nthr = 1
+    !$ nthr = omp_get_max_threads()
+    allocate(wrks(0:nthr-1), left(fct%nsuper))
+    do s = 1, fct%nsuper
+      left(s) = fct%cptr(s+1) - fct%cptr(s)
+    enddo
+    !$omp parallel default(shared)
+    !$omp single
+    do s = 1, fct%nsuper
+      ! spawn the true leaves only: a climbing task may drive left(s) of an inner node to
+      ! zero while this loop is still running
+      if (fct%cptr(s+1) == fct%cptr(s)) then
+        !$omp task default(shared) firstprivate(s)
+        call mf_super_task(hecMAT, sym, fct, wrks, left, s, zero, ierr)
+        !$omp end task
       endif
-      fct%fsptr(s+1) = fct%fsptr(s) + g%ncol
-      fct%ncol(s) = g%ncol
-      call mf_grow_i(fct%fsdof, fct%fsptr(s+1) - 1)
-      call mf_grow_i(fct%frow, fct%fsptr(s+1) - 1)
-      call mf_grow_i(fct%ptype, fct%fsptr(s+1) - 1)
-      call mf_grow_r(fct%dsub, int(fct%fsptr(s+1) - 1, 8))
-      call mf_grow_i(fct%tbnd, fct%tptr(s) + g%nt)
-      fct%tbnd(fct%tptr(s):fct%tptr(s)+g%nt) = g%tb(0:g%nt)
-      fct%tptr(s+1) = fct%tptr(s) + g%nt + 1
-      fct%ntc(s) = g%ntc
-      call mf_grow_i(blk, g%ncol)
-      call mf_grow_i(blkr, g%ncol)
-      m = 0
-      do k = sym%sptr(s), sym%sptr(s+1) - 1
-        do i = fct%cdofptr(k), fct%cdofptr(k+1) - 1
-          m = m + 1
-          fct%fsdof(fct%fsptr(s)+m-1) = i
-          fct%frow(fct%fsptr(s)+m-1) = i
-          blk(m) = k
-        enddo
-      enddo
-      c = fct%chead(s)
-      do while (c /= 0)
-        do j = fct%npiv(c) + 1, fct%ncol(c)
-          m = m + 1
-          fct%fsdof(fct%fsptr(s)+m-1) = fct%fsdof(fct%fsptr(c)+j-1)
-          fct%frow(fct%fsptr(s)+m-1) = fct%frow(fct%fsptr(c)+j-1)
-          blk(m) = 0
-        enddo
-        c = fct%cnext(c)
-      enddo
-      blkr(1:g%ncol) = blk(1:g%ncol)
+    enddo
+    !$omp end single
+    !$omp end parallel
+    deallocate(wrks, left)
+    if (ierr /= 0) return
+    fct%factored = .true.
+  end subroutine hecmw_mf_numeric_factor
 
-      ! row offsets (0-based positions) of the rlist nodes: own nodes, then the contribution rows
-      ! after the delayed DOFs
-      rowoff(1) = 0
-      do i = 1, nrow_nodes
-        k = sym%rlist(sym%rptr(s)+i-1)
-        rowoff(i+1) = rowoff(i) + sym%ndof(k)
-        if (i == nown) rowoff(i+1) = rowoff(i+1) + ndel
-        pos(k) = i
-      enddo
-      call mf_grow_r(fct%fval, g%coloff(g%nt+1))
-      fct%front_words_act = max(fct%front_words_act, g%coloff(g%nt+1))
-      fct%fval(1:g%coloff(g%nt+1)) = 0.0d0
-      if (fct%lu) then
-        call mf_grow_r(fct%fvalu, g%coloff(g%nt+1))
-        fct%fvalu(1:g%coloff(g%nt+1)) = 0.0d0
-      endif
+  !> Task body starting at leaf s: factor the front (skipped once an earlier task failed),
+  !> release the parent, and continue with the parent in the same task when this was its last
+  !> unfinished child. The dependences are counted explicitly (left) because the
+  !> depend(iterator(...)) form does not order the tasks with gfortran 13, and the climb stays
+  !> within one task so that no reference outlives its scope. The work space of the executing
+  !> thread is safe to use because the task holds no task scheduling point.
+  subroutine mf_super_task(hecMAT, sym, fct, wrks, left, s, zero, gierr)
+    implicit none
+    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_factor), intent(inout) :: fct
+    type(mf_work), intent(inout) :: wrks(0:)
+    integer(kind=kint), intent(inout) :: left(:)
+    integer(kind=kint), intent(in) :: s
+    real(kind=kreal), intent(in) :: zero
+    integer(kind=kint), intent(inout) :: gierr
+    integer(kind=kint) :: ierr, cur, tid, p, n, ss, c, l, nr, nteam
 
-      ! scatter the permuted matrix. LDLt: the lower part, every neighbor above the diagonal in
-      ! the original numbering supplying the transposed block. LU: both parts, the block of a
-      ! neighbor and its mirror going to the upper and the lower grid
-      do i = 1, nown
-        k = sym%sptr(s) + i - 1
-        j0 = sym%perm(k)
-        coff = rowoff(i)
-        base = int(j0-1, 8)*nd*nd
-        do b = 1, nd
-          do a = b, nd
-            o = mf_idx(g, coff+a, coff+b)
-            fct%fval(o) = fct%fval(o) + hecMAT%D(base + (a-1)*nd + b)
-          enddo
-          if (fct%lu) then
-            do a = 1, b-1
-              o = mf_idx(g, coff+b, coff+a)
-              fct%fvalu(o) = fct%fvalu(o) + hecMAT%D(base + (a-1)*nd + b)
-            enddo
-          endif
+    tid = 0
+    nteam = 1
+    !$ tid = omp_get_thread_num()
+    !$ nteam = omp_get_num_threads()
+    ss = s
+    do
+      !$omp atomic read
+      cur = gierr
+      if (cur == 0) then
+        nr = 0
+        c = fct%chead(ss)
+        do while (c /= 0)
+          nr = nr + fct%sn(c)%ncol - fct%sn(c)%npiv
+          c = fct%cnext(c)
         enddo
-        do kk = hecMAT%indexL(j0-1)+1, hecMAT%indexL(j0)
-          ki = sym%invp(hecMAT%itemL(kk))
-          if (ki <= k) cycle
-          roff = rowoff(pos(ki))
-          base = int(kk-1, 8)*nd*nd
-          if (.not. fct%lu) then
-            do b = 1, nd
-              do a = 1, nd
-                o = mf_idx(g, roff+a, coff+b)
-                fct%fval(o) = fct%fval(o) + hecMAT%AL(base + (b-1)*nd + a)
-              enddo
-            enddo
-          else
-            base2 = int(fct%mirror(kk)-1, 8)*nd*nd
-            do a = 1, nd
-              do b = 1, nd
-                o = mf_idx(g, roff+b, coff+a)
-                fct%fvalu(o) = fct%fvalu(o) + hecMAT%AL(base + (a-1)*nd + b)
-                fct%fval(o) = fct%fval(o) + hecMAT%AU(base2 + (b-1)*nd + a)
-              enddo
-            enddo
-          endif
+        do l = sym%rptr(ss), sym%rptr(ss+1) - 1
+          nr = nr + sym%ndof(sym%rlist(l))
         enddo
-        do kk = hecMAT%indexU(j0-1)+1, hecMAT%indexU(j0)
-          ki = sym%invp(hecMAT%itemU(kk))
-          if (ki <= k) cycle
-          roff = rowoff(pos(ki))
-          base = int(kk-1, 8)*nd*nd
-          if (.not. fct%lu) then
-            do b = 1, nd
-              do a = 1, nd
-                o = mf_idx(g, roff+a, coff+b)
-                fct%fval(o) = fct%fval(o) + hecMAT%AU(base + (b-1)*nd + a)
-              enddo
-            enddo
-          else
-            base2 = int(fct%mirroru(kk)-1, 8)*nd*nd
-            do a = 1, nd
-              do b = 1, nd
-                o = mf_idx(g, roff+b, coff+a)
-                fct%fvalu(o) = fct%fvalu(o) + hecMAT%AU(base + (a-1)*nd + b)
-                fct%fval(o) = fct%fval(o) + hecMAT%AL(base2 + (b-1)*nd + a)
-              enddo
-            enddo
-          endif
-        enddo
-      enddo
-
-      ! extend-add of the children popped from the stack; the rows of a child's contribution
-      ! block are its delayed DOFs followed by its contribution rows
-      m = ncol0
-      c = fct%chead(s)
-      do while (c /= 0)
-        top = top - fct%cbsize(c)
-        cnown = sym%sptr(c+1) - sym%sptr(c)
-        cndel = fct%ncol(c) - fct%npiv(c)
-        ct0 = fct%tptr(c)
-        cnt = fct%tptr(c+1) - ct0 - 1
-        cntc = fct%ntc(c)
-        if (size(ccoloff) < cnt + 2) then
-          deallocate(ccoloff, ctb)
-          allocate(ccoloff(cnt+2), ctb(0:cnt+1))
+        if (nr >= MF_PAR_ROWS .and. nteam > 1) then
+          ! a large front suspends at its task loops, so it may not borrow the thread's work
+          ! space, which another task on this thread could then reuse
+          block
+            type(mf_work) :: lwrk
+            call mf_super_factor(hecMAT, sym, fct, fct%sn(ss), lwrk, ss, zero, ierr)
+          end block
+        else
+          call mf_super_factor(hecMAT, sym, fct, fct%sn(ss), wrks(tid), ss, zero, ierr)
         endif
-        cnb = 0
-        ctb(0) = 0
-        if (cndel > 0) then
-          cnb = 1
-          ctb(1) = cndel
+        if (ierr /= 0) then
+          !$omp atomic write
+          gierr = ierr
         endif
-        do j = cntc + 1, cnt
-          cnb = cnb + 1
-          ctb(cnb) = cndel + fct%tbnd(ct0+j) - fct%ncol(c)
+      endif
+      p = sym%sparent(ss)
+      if (p == 0) return
+      ! critical, not atomic: its flush semantics make the child's writes visible to the
+      ! thread that continues with the parent
+      !$omp critical (mf_tree)
+      left(p) = left(p) - 1
+      n = left(p)
+      !$omp end critical (mf_tree)
+      if (n /= 0) return
+      ss = p
+    enddo
+  end subroutine mf_super_task
+
+  !> Assemble and factor the front of supernode s: scatter the matrix entries, extend-add the
+  !> contribution blocks of the children (freed here), factor the fully summed part and store
+  !> the factor panel, the position metadata and the contribution block in sn.
+  subroutine mf_super_factor(hecMAT, sym, fct, sn, wrk, s, zero, ierr)
+    implicit none
+    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_factor), intent(inout) :: fct
+    type(mf_snode), intent(inout) :: sn
+    type(mf_work), intent(inout) :: wrk
+    integer(kind=kint), intent(in) :: s
+    real(kind=kreal), intent(in) :: zero
+    integer(kind=kint), intent(out) :: ierr
+    integer(kind=kint) :: nown, nrow_nodes, ncol0, ndel, c, i, j, k, l, nd, a, b, m, r, cc
+    integer(kind=kint) :: j0, ki, kk, coff, roff, cnown, cnb, cndel, cnrow, hi, cnt, cntc, kbeg, nkc
+    integer(kind=kint) :: nswap, n2x2, npos, nneg
+    integer(kind=8) :: o, base, base2, half, pw, fw
+    integer(kind=8), allocatable :: pcb(:)
+    real(kind=kreal) :: v
+    logical :: par
+
+    ierr = 0
+    nd = hecMAT%NDOF
+    nown = sym%sptr(s+1) - sym%sptr(s)
+    nrow_nodes = sym%rptr(s+1) - sym%rptr(s)
+    ncol0 = fct%cdofptr(sym%sptr(s+1)) - fct%cdofptr(sym%sptr(s))
+    ndel = 0
+    c = fct%chead(s)
+    do while (c /= 0)
+      ndel = ndel + fct%sn(c)%ncol - fct%sn(c)%npiv
+      c = fct%cnext(c)
+    enddo
+    !$omp critical (mf_stats)
+    fct%max_growth = max(fct%max_growth, ndel)
+    !$omp end critical (mf_stats)
+    call mf_partition(sym, fct, s, ndel, wrk%g)
+    call mf_grow_i(wrk%rowoff, nrow_nodes + 1)
+    call mf_grow_i(wrk%pos, sym%nnode)
+    if (allocated(wrk%ccoloff)) then
+      if (size(wrk%ccoloff) < wrk%g%nt + 2) deallocate(wrk%ccoloff, wrk%ctb)
+    endif
+    if (.not. allocated(wrk%ccoloff)) allocate(wrk%ccoloff(wrk%g%nt+2), wrk%ctb(0:wrk%g%nt+1))
+    sn%ncol = wrk%g%ncol
+    sn%nt = wrk%g%nt
+    sn%ntc = wrk%g%ntc
+    call mf_grow_i(sn%tbnd, wrk%g%nt + 1)
+    sn%tbnd(1:wrk%g%nt+1) = wrk%g%tb(0:wrk%g%nt)
+    call mf_grow_i(sn%fsdof, wrk%g%ncol)
+    call mf_grow_i(sn%frow, wrk%g%ncol)
+    call mf_grow_i(sn%ptype, wrk%g%ncol)
+    call mf_grow_r(sn%dsub, int(wrk%g%ncol, 8))
+    call mf_grow_i(wrk%blk, wrk%g%ncol)
+    call mf_grow_i(wrk%blkr, wrk%g%ncol)
+    m = 0
+    do k = sym%sptr(s), sym%sptr(s+1) - 1
+      do i = fct%cdofptr(k), fct%cdofptr(k+1) - 1
+        m = m + 1
+        sn%fsdof(m) = i
+        sn%frow(m) = i
+        wrk%blk(m) = k
+      enddo
+    enddo
+    c = fct%chead(s)
+    do while (c /= 0)
+      do j = fct%sn(c)%npiv + 1, fct%sn(c)%ncol
+        m = m + 1
+        sn%fsdof(m) = fct%sn(c)%fsdof(j)
+        sn%frow(m) = fct%sn(c)%frow(j)
+        wrk%blk(m) = 0
+      enddo
+      c = fct%cnext(c)
+    enddo
+    wrk%blkr(1:wrk%g%ncol) = wrk%blk(1:wrk%g%ncol)
+
+    ! row offsets (0-based positions) of the rlist nodes: own nodes, then the contribution rows
+    ! after the delayed DOFs
+    wrk%rowoff(1) = 0
+    do i = 1, nrow_nodes
+      k = sym%rlist(sym%rptr(s)+i-1)
+      wrk%rowoff(i+1) = wrk%rowoff(i) + sym%ndof(k)
+      if (i == nown) wrk%rowoff(i+1) = wrk%rowoff(i+1) + ndel
+      wrk%pos(k) = i
+    enddo
+    par = .false.
+    !$ par = wrk%g%nrow >= MF_PAR_ROWS .and. omp_get_num_threads() > 1
+    call mf_grow_r(wrk%fval, wrk%g%coloff(wrk%g%nt+1))
+    fw = wrk%g%coloff(wrk%g%nt+1)
+    if (fct%lu) fw = 2*fw
+    !$omp critical (mf_stats)
+    fct%front_words_act = max(fct%front_words_act, wrk%g%coloff(wrk%g%nt+1))
+    fct%live_front = fct%live_front + fw
+    fct%front_peak = max(fct%front_peak, fct%live_front)
+    !$omp end critical (mf_stats)
+    if (fct%lu) call mf_grow_r(wrk%fvalu, wrk%g%coloff(wrk%g%nt+1))
+    !$omp taskloop default(shared) if(par)
+    do j = 1, wrk%g%nt
+      wrk%fval(wrk%g%coloff(j)+1:wrk%g%coloff(j+1)) = 0.0d0
+      if (fct%lu) wrk%fvalu(wrk%g%coloff(j)+1:wrk%g%coloff(j+1)) = 0.0d0
+    enddo
+    !$omp end taskloop
+
+    ! scatter the permuted matrix. LDLt: the lower part, every neighbor above the diagonal in
+    ! the original numbering supplying the transposed block. LU: both parts, the block of a
+    ! neighbor and its mirror going to the upper and the lower grid
+    !$omp taskloop default(shared) private(k, j0, coff, base, base2, o, a, b, kk, ki, roff) &
+    !$omp&  grainsize(8) if(par)
+    do i = 1, nown
+      k = sym%sptr(s) + i - 1
+      j0 = sym%perm(k)
+      coff = wrk%rowoff(i)
+      base = int(j0-1, 8)*nd*nd
+      do b = 1, nd
+        do a = b, nd
+          o = mf_idx(wrk%g, coff+a, coff+b)
+          wrk%fval(o) = wrk%fval(o) + hecMAT%D(base + (a-1)*nd + b)
         enddo
-        cnrow = ctb(cnb)
-        ccoloff(1) = 0
-        do j = 1, cnb
-          ccoloff(j+1) = ccoloff(j) + int(cnrow - ctb(j-1), 8)*(ctb(j) - ctb(j-1))
-        enddo
-        half = ccoloff(cnb+1)
-        call mf_grow_i(cmapdof, cnrow)
-        do r = 1, cndel
-          cmapdof(r) = m + r
-        enddo
-        m = m + cndel
-        r = cndel
-        do l = sym%rptr(c) + cnown, sym%rptr(c+1) - 1
-          k = sym%cmap(sym%cmap_ptr(c) + (l - sym%rptr(c) - cnown))
-          do a = 1, sym%ndof(sym%rlist(l))
-            r = r + 1
-            cmapdof(r) = rowoff(k) + a
+        if (fct%lu) then
+          do a = 1, b-1
+            o = mf_idx(wrk%g, coff+b, coff+a)
+            wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%D(base + (a-1)*nd + b)
           enddo
-        enddo
-        do j = 1, cnb
-          do i = j, cnb
-            base = top + ccoloff(j) + int(ctb(i-1) - ctb(j-1), 8)*(ctb(j) - ctb(j-1))
-            hi = ctb(i) - ctb(i-1)
-            do cc = ctb(j-1) + 1, ctb(j)
-              do r = max(cc, ctb(i-1) + 1), ctb(i)
-                o = base + int(cc - 1 - ctb(j-1), 8)*hi + (r - 1 - ctb(i-1)) + 1
-                v = fct%sval(o)
-                if (.not. fct%lu) then
-                  o = mf_idx(g, max(cmapdof(r), cmapdof(cc)), min(cmapdof(r), cmapdof(cc)))
-                  fct%fval(o) = fct%fval(o) + v
-                else
-                  call add_lu(v, cmapdof(r), cmapdof(cc))
-                  if (r > cc) call add_lu(fct%sval(o + half), cmapdof(cc), cmapdof(r))
-                endif
-              enddo
+        endif
+      enddo
+      do kk = hecMAT%indexL(j0-1)+1, hecMAT%indexL(j0)
+        ki = sym%invp(hecMAT%itemL(kk))
+        if (ki <= k) cycle
+        roff = wrk%rowoff(wrk%pos(ki))
+        base = int(kk-1, 8)*nd*nd
+        if (.not. fct%lu) then
+          do b = 1, nd
+            do a = 1, nd
+              o = mf_idx(wrk%g, roff+a, coff+b)
+              wrk%fval(o) = wrk%fval(o) + hecMAT%AL(base + (b-1)*nd + a)
             enddo
           enddo
-        enddo
-        c = fct%cnext(c)
+        else
+          base2 = int(fct%mirror(kk)-1, 8)*nd*nd
+          do a = 1, nd
+            do b = 1, nd
+              o = mf_idx(wrk%g, roff+b, coff+a)
+              wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%AL(base + (a-1)*nd + b)
+              wrk%fval(o) = wrk%fval(o) + hecMAT%AU(base2 + (b-1)*nd + a)
+            enddo
+          enddo
+        endif
       enddo
-
-      if (fct%lu) then
-        call mf_factor_front_lu(fct, g, blk, blkr, s, sym%sparent(s) == 0, zero, ierr)
-      else
-        call mf_factor_front(fct, g, blk, s, sym%sparent(s) == 0, zero, ierr)
-        fct%frow(fct%fsptr(s):fct%fsptr(s+1)-1) = fct%fsdof(fct%fsptr(s):fct%fsptr(s+1)-1)
-      endif
-      if (ierr /= 0) then
-        deallocate(rowoff, pos, ccoloff, ctb, blk, blkr, cmapdof)
-        return
-      endif
-      fct%n_delay = fct%n_delay + g%ncol - fct%npiv(s)
-
-      ! the factor panel: the leading npiv columns of the tile grid, tile by tile
-      base = fct%lptr(s)
-      do k = 1, g%ntc
-        m = min(g%tb(k), fct%npiv(s)) - g%tb(k-1)
-        if (m <= 0) exit
-        do i = k, g%nt
-          hi = g%tb(i) - g%tb(i-1)
-          call mf_grow_r(fct%lval, base + int(hi, 8)*m - 1)
-          o = mf_off(g, i, k)
-          fct%lval(base:base+int(hi, 8)*m-1) = fct%fval(o+1:o+int(hi, 8)*m)
-          if (fct%lu) then
-            call mf_grow_r(fct%uval, base + int(hi, 8)*m - 1)
-            fct%uval(base:base+int(hi, 8)*m-1) = fct%fvalu(o+1:o+int(hi, 8)*m)
-          endif
-          base = base + int(hi, 8)*m
-        enddo
+      do kk = hecMAT%indexU(j0-1)+1, hecMAT%indexU(j0)
+        ki = sym%invp(hecMAT%itemU(kk))
+        if (ki <= k) cycle
+        roff = wrk%rowoff(wrk%pos(ki))
+        base = int(kk-1, 8)*nd*nd
+        if (.not. fct%lu) then
+          do b = 1, nd
+            do a = 1, nd
+              o = mf_idx(wrk%g, roff+a, coff+b)
+              wrk%fval(o) = wrk%fval(o) + hecMAT%AU(base + (b-1)*nd + a)
+            enddo
+          enddo
+        else
+          base2 = int(fct%mirroru(kk)-1, 8)*nd*nd
+          do a = 1, nd
+            do b = 1, nd
+              o = mf_idx(wrk%g, roff+b, coff+a)
+              wrk%fvalu(o) = wrk%fvalu(o) + hecMAT%AU(base + (a-1)*nd + b)
+              wrk%fval(o) = wrk%fval(o) + hecMAT%AL(base2 + (b-1)*nd + a)
+            enddo
+          enddo
+        endif
       enddo
-      fct%lptr(s+1) = base
+    enddo
+    !$omp end taskloop
 
-      ! the contribution block: the delayed DOFs as one tile followed by the contribution tiles;
-      ! in LU mode the upper grid follows the lower one
-      cndel = g%ncol - fct%npiv(s)
+    ! extend-add of the children; the rows of a child's contribution block are its delayed
+    ! DOFs followed by its contribution rows, and the block is freed once consumed
+    m = ncol0
+    c = fct%chead(s)
+    do while (c /= 0)
+      cnown = sym%sptr(c+1) - sym%sptr(c)
+      cndel = fct%sn(c)%ncol - fct%sn(c)%npiv
+      cnt = fct%sn(c)%nt
+      cntc = fct%sn(c)%ntc
+      if (size(wrk%ccoloff) < cnt + 2) then
+        deallocate(wrk%ccoloff, wrk%ctb)
+        allocate(wrk%ccoloff(cnt+2), wrk%ctb(0:cnt+1))
+      endif
       cnb = 0
-      ctb(0) = 0
+      wrk%ctb(0) = 0
       if (cndel > 0) then
         cnb = 1
-        ctb(1) = cndel
+        wrk%ctb(1) = cndel
       endif
-      kbeg = cnb
-      do j = g%ntc + 1, g%nt
+      do j = cntc + 1, cnt
         cnb = cnb + 1
-        ctb(cnb) = cndel + g%tb(j) - g%ncol
+        wrk%ctb(cnb) = cndel + fct%sn(c)%tbnd(j+1) - fct%sn(c)%ncol
       enddo
-      cnrow = ctb(cnb)
-      ccoloff(1) = 0
+      cnrow = wrk%ctb(cnb)
+      wrk%ccoloff(1) = 0
       do j = 1, cnb
-        ccoloff(j+1) = ccoloff(j) + int(cnrow - ctb(j-1), 8)*(ctb(j) - ctb(j-1))
+        wrk%ccoloff(j+1) = wrk%ccoloff(j) + int(cnrow - wrk%ctb(j-1), 8)*(wrk%ctb(j) - wrk%ctb(j-1))
       enddo
-      half = ccoloff(cnb+1)
-      fct%cbsize(s) = half
-      if (fct%lu) fct%cbsize(s) = 2*half
-      call mf_grow_r(fct%sval, top + fct%cbsize(s))
-      call mf_store_cb(g, fct%fval, fct%npiv(s), cndel, cnb, kbeg, ctb, ccoloff, fct%sval, top)
-      if (fct%lu) call mf_store_cb(g, fct%fvalu, fct%npiv(s), cndel, cnb, kbeg, ctb, ccoloff, fct%sval, top + half)
-      top = top + fct%cbsize(s)
-      fct%stack_peak_act = max(fct%stack_peak_act, top)
+      half = wrk%ccoloff(cnb+1)
+      call mf_grow_i(wrk%cmapdof, cnrow)
+      do r = 1, cndel
+        wrk%cmapdof(r) = m + r
+      enddo
+      m = m + cndel
+      r = cndel
+      do l = sym%rptr(c) + cnown, sym%rptr(c+1) - 1
+        k = sym%cmap(sym%cmap_ptr(c) + (l - sym%rptr(c) - cnown))
+        do a = 1, sym%ndof(sym%rlist(l))
+          r = r + 1
+          wrk%cmapdof(r) = wrk%rowoff(k) + a
+        enddo
+      enddo
+      !$omp taskloop default(shared) private(i, base, hi, cc, r, o, v) grainsize(1) if(par)
+      do j = 1, cnb
+        do i = j, cnb
+          base = wrk%ccoloff(j) + int(wrk%ctb(i-1) - wrk%ctb(j-1), 8)*(wrk%ctb(j) - wrk%ctb(j-1))
+          hi = wrk%ctb(i) - wrk%ctb(i-1)
+          do cc = wrk%ctb(j-1) + 1, wrk%ctb(j)
+            do r = max(cc, wrk%ctb(i-1) + 1), wrk%ctb(i)
+              o = base + int(cc - 1 - wrk%ctb(j-1), 8)*hi + (r - 1 - wrk%ctb(i-1)) + 1
+              v = fct%sn(c)%cval(o)
+              if (.not. fct%lu) then
+                o = mf_idx(wrk%g, max(wrk%cmapdof(r), wrk%cmapdof(cc)), min(wrk%cmapdof(r), wrk%cmapdof(cc)))
+                wrk%fval(o) = wrk%fval(o) + v
+              else
+                call add_lu(v, wrk%cmapdof(r), wrk%cmapdof(cc))
+                if (r > cc) call add_lu(fct%sn(c)%cval(o + half), wrk%cmapdof(cc), wrk%cmapdof(r))
+              endif
+            enddo
+          enddo
+        enddo
+      enddo
+      !$omp end taskloop
+      !$omp critical (mf_stats)
+      fct%live_cb = fct%live_cb - fct%sn(c)%cbsize
+      !$omp end critical (mf_stats)
+      deallocate(fct%sn(c)%cval)
+      c = fct%cnext(c)
     enddo
 
-    fct%factor_words_act = fct%lptr(ns+1) - 1
-    fct%factored = .true.
-    deallocate(rowoff, pos, ccoloff, ctb, blk, blkr, cmapdof)
+    nswap = 0
+    n2x2 = 0
+    npos = 0
+    nneg = 0
+    if (fct%lu) then
+      call mf_factor_front_lu(sn, wrk%g, wrk%fval, wrk%fvalu, wrk%pval, wrk%pvalu, wrk%wk, wrk%blk, wrk%blkr, &
+        sym%sparent(s) == 0, zero, nswap, ierr)
+    else
+      call mf_factor_front(sn, wrk%g, wrk%fval, wrk%pval, wrk%wval, wrk%wk, wrk%blk, &
+        sym%sparent(s) == 0, zero, nswap, n2x2, npos, nneg, ierr)
+      sn%frow(1:wrk%g%ncol) = sn%fsdof(1:wrk%g%ncol)
+    endif
+    if (ierr /= 0) then
+      !$omp critical (mf_stats)
+      fct%live_front = fct%live_front - fw
+      !$omp end critical (mf_stats)
+      return
+    endif
+    !$omp critical (mf_stats)
+    fct%n_swap = fct%n_swap + nswap
+    fct%n_2x2 = fct%n_2x2 + n2x2
+    fct%n_pos = fct%n_pos + npos
+    fct%n_neg = fct%n_neg + nneg
+    fct%n_delay = fct%n_delay + wrk%g%ncol - sn%npiv
+    !$omp end critical (mf_stats)
+
+    ! the factor panel: the leading npiv columns of the tile grid, tile by tile
+    pw = 0
+    do k = 1, wrk%g%ntc
+      m = min(wrk%g%tb(k), sn%npiv) - wrk%g%tb(k-1)
+      if (m <= 0) exit
+      pw = pw + int(wrk%g%nrow - wrk%g%tb(k-1), 8)*m
+    enddo
+    call mf_grow_r(sn%lval, pw)
+    if (fct%lu) call mf_grow_r(sn%uval, pw)
+    allocate(pcb(0:wrk%g%ntc))
+    nkc = 0
+    pcb(0) = 1
+    do k = 1, wrk%g%ntc
+      m = min(wrk%g%tb(k), sn%npiv) - wrk%g%tb(k-1)
+      if (m <= 0) exit
+      nkc = k
+      pcb(k) = pcb(k-1) + int(wrk%g%nrow - wrk%g%tb(k-1), 8)*m
+    enddo
+    !$omp taskloop default(shared) private(m, i, hi, o, base) grainsize(1) if(par)
+    do k = 1, nkc
+      m = min(wrk%g%tb(k), sn%npiv) - wrk%g%tb(k-1)
+      base = pcb(k-1)
+      do i = k, wrk%g%nt
+        hi = wrk%g%tb(i) - wrk%g%tb(i-1)
+        o = mf_off(wrk%g, i, k)
+        sn%lval(base:base+int(hi, 8)*m-1) = wrk%fval(o+1:o+int(hi, 8)*m)
+        if (fct%lu) sn%uval(base:base+int(hi, 8)*m-1) = wrk%fvalu(o+1:o+int(hi, 8)*m)
+        base = base + int(hi, 8)*m
+      enddo
+    enddo
+    !$omp end taskloop
+    !$omp critical (mf_stats)
+    fct%factor_words_act = fct%factor_words_act + pw
+    !$omp end critical (mf_stats)
+
+    ! the contribution block: the delayed DOFs as one tile followed by the contribution tiles;
+    ! in LU mode the upper grid follows the lower one
+    cndel = wrk%g%ncol - sn%npiv
+    cnb = 0
+    wrk%ctb(0) = 0
+    if (cndel > 0) then
+      cnb = 1
+      wrk%ctb(1) = cndel
+    endif
+    kbeg = cnb
+    do j = wrk%g%ntc + 1, wrk%g%nt
+      cnb = cnb + 1
+      wrk%ctb(cnb) = cndel + wrk%g%tb(j) - wrk%g%ncol
+    enddo
+    cnrow = wrk%ctb(cnb)
+    wrk%ccoloff(1) = 0
+    do j = 1, cnb
+      wrk%ccoloff(j+1) = wrk%ccoloff(j) + int(cnrow - wrk%ctb(j-1), 8)*(wrk%ctb(j) - wrk%ctb(j-1))
+    enddo
+    half = wrk%ccoloff(cnb+1)
+    sn%cbsize = half
+    if (fct%lu) sn%cbsize = 2*half
+    if (allocated(sn%cval)) deallocate(sn%cval)
+    if (sn%cbsize > 0) then
+      allocate(sn%cval(sn%cbsize))
+      call mf_store_cb(wrk%g, wrk%fval, sn%npiv, cndel, cnb, kbeg, wrk%ctb, wrk%ccoloff, sn%cval, 0_8, par)
+      if (fct%lu) call mf_store_cb(wrk%g, wrk%fvalu, sn%npiv, cndel, cnb, kbeg, wrk%ctb, wrk%ccoloff, sn%cval, half, par)
+      !$omp critical (mf_stats)
+      fct%live_cb = fct%live_cb + sn%cbsize
+      fct%stack_peak_act = max(fct%stack_peak_act, fct%live_cb)
+      !$omp end critical (mf_stats)
+    endif
+    !$omp critical (mf_stats)
+    fct%live_front = fct%live_front - fw
+    !$omp end critical (mf_stats)
 
   contains
 
@@ -1067,15 +1239,15 @@ contains
       integer(kind=8) :: o
 
       if (pr >= pc) then
-        o = mf_idx(g, pr, pc)
-        fct%fval(o) = fct%fval(o) + v
+        o = mf_idx(wrk%g, pr, pc)
+        wrk%fval(o) = wrk%fval(o) + v
       else
-        o = mf_idx(g, pc, pr)
-        fct%fvalu(o) = fct%fvalu(o) + v
+        o = mf_idx(wrk%g, pc, pr)
+        wrk%fvalu(o) = wrk%fvalu(o) + v
       endif
     end subroutine add_lu
 
-  end subroutine hecmw_mf_numeric_factor
+  end subroutine mf_super_factor
 
   !> Factor the fully summed part of the assembled front of supernode s, tile column by tile
   !> column. A tile column is first factored without pivoting in the dense work panel and
@@ -1084,29 +1256,37 @@ contains
   !> columns and the tile column is refilled until it is complete or no column is left. The
   !> pivots of a tile column then update the trailing tiles. At a root the remaining delayed
   !> columns are factored in a final panel where any column may serve as partner.
-  subroutine mf_factor_front(fct, g, blk, s, isroot, zero, ierr)
+  subroutine mf_factor_front(sn, g, fval, pval, wval, wk, blk, isroot, zero, nswap, n2x2, npos, nneg, ierr)
     implicit none
-    type(hecmwST_mf_factor), intent(inout) :: fct
+    type(mf_snode), intent(inout) :: sn
     type(mf_grid), intent(in) :: g
+    real(kind=kreal), allocatable, intent(inout) :: fval(:)
+    real(kind=kreal), allocatable, intent(inout) :: pval(:), wval(:), wk(:)
     integer(kind=kint), intent(inout) :: blk(:)
-    integer(kind=kint), intent(in) :: s
     logical, intent(in) :: isroot
     real(kind=kreal), intent(in) :: zero
-    integer(kind=kint), intent(out) :: ierr
-    integer(kind=kint), allocatable :: perm(:), itmp(:)
-    integer(kind=kint) :: npiv, nfs, k, p0, pa, pb, w, m, jj, np, nsw, n22, info, x, i, j, hi, wj, pk, f0, pt
+    integer(kind=kint), intent(out) :: nswap, n2x2, npos, nneg, ierr
+    integer(kind=kint), allocatable :: perm(:), itmp(:), ip(:), jp(:)
+    integer(kind=kint) :: npiv, nfs, k, p0, pa, pb, w, m, jj, np, nsw, n22, info, x, i, j, hi, wj, pk, pt
+    integer(kind=kint) :: np2, l2
     integer(kind=8) :: oik, ojk, oij, okk
     real(kind=kreal) :: d11, d21, d22, det
+    logical :: par
 
     ierr = 0
-    f0 = fct%fsptr(s) - 1
-    fct%ptype(f0+1:f0+g%ncol) = 0
-    fct%dsub(f0+1:f0+g%ncol) = 0.0d0
+    nswap = 0
+    n2x2 = 0
+    npos = 0
+    nneg = 0
+    par = .false.
+    !$ par = g%nrow >= MF_PAR_ROWS .and. omp_get_num_threads() > 1
+    sn%ptype(1:g%ncol) = 0
+    sn%dsub(1:g%ncol) = 0.0d0
     npiv = 0
     nfs = g%ncol
-    allocate(perm(g%ncol), itmp(g%ncol))
-    call mf_grow_r(fct%pval, int(g%nrow, 8))
-    call mf_grow_r(fct%wk, int(2*g%nrow, 8))
+    allocate(perm(g%ncol), itmp(g%ncol), ip(g%nt*(g%nt+1)/2), jp(g%nt*(g%nt+1)/2))
+    call mf_grow_r(pval, int(g%nrow, 8))
+    call mf_grow_r(wk, int(2*g%nrow, 8))
     do k = 1, g%ntc
       p0 = g%tb(k-1)
       if (p0 >= nfs) exit
@@ -1115,33 +1295,33 @@ contains
         pb = min(g%tb(k), nfs)
         w = pb - pa + 1
         m = g%nrow - pa + 1
-        call mf_grow_r(fct%pval, int(m, 8)*w)
-        call mf_grow_r(fct%wk, int(2*m, 8))
+        call mf_grow_r(pval, int(m, 8)*w)
+        call mf_grow_r(wk, int(2*m, 8))
         call fill_panel(npiv > p0)
-        call hecmw_mf_kernel_panel_nopiv(m, w, m, fct%pval, MF_PIVOT_U, zero, info)
+        call hecmw_mf_kernel_panel_nopiv(m, w, m, pval, MF_PIVOT_U, zero, info)
         if (info == 0) then
-          fct%ptype(f0+pa:f0+pb) = 1
+          sn%ptype(pa:pb) = 1
           do jj = 1, w
-            call mf_col_copy(g, fct%fval, pa+jj-1, pa+jj-1, fct%pval(int(jj-1, 8)*m + jj), .true.)
+            call mf_col_copy(g, fval, pa+jj-1, pa+jj-1, pval(int(jj-1, 8)*m + jj), .true.)
           enddo
           npiv = npiv + w
           pa = pb + 1
           cycle
         endif
         call fill_panel(npiv > p0)
-        call hecmw_mf_kernel_panel_piv(m, w, m, fct%pval, blk(pa:pb), MF_PIVOT_U, MF_PIVOT_ALPHA, zero, &
-          .true., fct%wk, np, perm, fct%ptype(f0+pa:f0+pb), fct%dsub(f0+pa:f0+pb), nsw, n22, info)
+        call hecmw_mf_kernel_panel_piv(m, w, m, pval, blk(pa:pb), MF_PIVOT_U, MF_PIVOT_ALPHA, zero, &
+          .true., wk, np, perm, sn%ptype(pa:pb), sn%dsub(pa:pb), nsw, n22, info)
         call permute_rows(pa, w)
         do jj = 1, np
-          call mf_col_copy(g, fct%fval, pa+jj-1, pa+jj-1, fct%pval(int(jj-1, 8)*m + jj), .true.)
+          call mf_col_copy(g, fval, pa+jj-1, pa+jj-1, pval(int(jj-1, 8)*m + jj), .true.)
         enddo
         npiv = npiv + np
-        fct%n_swap = fct%n_swap + nsw
-        fct%n_2x2 = fct%n_2x2 + n22
+        nswap = nswap + nsw
+        n2x2 = n2x2 + n22
         x = pa + np
         do while (x <= pb)
           if (nfs > pb) then
-            call mf_swap(g, fct%fval, x, nfs)
+            call mf_swap(g, fval, x, nfs)
             call swap_pos(x, nfs)
             nfs = nfs - 1
             x = x + 1
@@ -1154,26 +1334,60 @@ contains
       enddo
 
       ! the pivots of tile column k update the trailing tiles and the delayed columns left in
-      ! tile column k
+      ! tile column k; a parallel front builds the scaled panel L*D for all trailing row tiles
+      ! first so that the tile updates are independent
       pk = npiv - p0
       if (pk > 0) then
         okk = mf_off(g, k, k)
-        do i = k+1, g%nt
-          hi = g%tb(i) - g%tb(i-1)
-          oik = mf_off(g, i, k)
-          call hecmw_mf_kernel_scale(hi, pk, g%tb(k) - g%tb(k-1), fct%fval(okk+1), fct%ptype(f0+p0+1:f0+npiv), &
-            fct%dsub(f0+p0+1:f0+npiv), hi, fct%fval(oik+1), fct%wval)
-          do j = k+1, i
+        if (par) then
+          call mf_grow_r(wval, int(g%nrow - g%tb(k), 8)*pk)
+          !$omp taskloop default(shared) private(hi, oik) grainsize(1)
+          do i = k+1, g%nt
+            hi = g%tb(i) - g%tb(i-1)
+            oik = mf_off(g, i, k)
+            call hecmw_mf_kernel_scale(hi, pk, g%tb(k) - g%tb(k-1), fval(okk+1), sn%ptype(p0+1:npiv), &
+              sn%dsub(p0+1:npiv), hi, fval(oik+1), wval(int(g%tb(i-1) - g%tb(k), 8)*pk + 1))
+          enddo
+          !$omp end taskloop
+          np2 = 0
+          do i = k+1, g%nt
+            do j = k+1, i
+              np2 = np2 + 1
+              ip(np2) = i
+              jp(np2) = j
+            enddo
+          enddo
+          !$omp taskloop default(shared) private(i, j, hi, wj, ojk, oij) grainsize(1)
+          do l2 = 1, np2
+            i = ip(l2)
+            j = jp(l2)
+            hi = g%tb(i) - g%tb(i-1)
             wj = g%tb(j) - g%tb(j-1)
             ojk = mf_off(g, j, k)
             oij = mf_off(g, i, j)
-            call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fct%wval, wj, fct%fval(ojk+1), hi, fct%fval(oij+1))
+            call hecmw_mf_kernel_gemm(hi, wj, pk, hi, wval(int(g%tb(i-1) - g%tb(k), 8)*pk + 1), wj, &
+              fval(ojk+1), hi, fval(oij+1))
           enddo
-        enddo
+          !$omp end taskloop
+        else
+          do i = k+1, g%nt
+            hi = g%tb(i) - g%tb(i-1)
+            oik = mf_off(g, i, k)
+            call mf_grow_r(wval, int(hi, 8)*pk)
+            call hecmw_mf_kernel_scale(hi, pk, g%tb(k) - g%tb(k-1), fval(okk+1), sn%ptype(p0+1:npiv), &
+              sn%dsub(p0+1:npiv), hi, fval(oik+1), wval)
+            do j = k+1, i
+              wj = g%tb(j) - g%tb(j-1)
+              ojk = mf_off(g, j, k)
+              oij = mf_off(g, i, j)
+              call hecmw_mf_kernel_gemm(hi, wj, pk, hi, wval, wj, fval(ojk+1), hi, fval(oij+1))
+            enddo
+          enddo
+        endif
         do x = npiv + 1, g%tb(k)
-          call mf_col_copy(g, fct%fval, x, x, fct%pval, .false.)
-          call mf_col_update(g, fct%fval, fct%ptype(f0+1:), fct%dsub(f0+1:), x, p0+1, npiv, fct%pval, fct%wk)
-          call mf_col_copy(g, fct%fval, x, x, fct%pval, .true.)
+          call mf_col_copy(g, fval, x, x, pval, .false.)
+          call mf_col_update(g, fval, sn%ptype, sn%dsub, x, p0+1, npiv, pval, wk)
+          call mf_col_copy(g, fval, x, x, pval, .true.)
         enddo
       endif
       if (nfs <= g%tb(k)) exit
@@ -1184,53 +1398,53 @@ contains
       pb = g%ncol
       w = pb - pa + 1
       m = g%nrow - pa + 1
-      call mf_grow_r(fct%pval, int(m, 8)*w)
-      call mf_grow_r(fct%wk, int(2*m, 8))
+      call mf_grow_r(pval, int(m, 8)*w)
+      call mf_grow_r(wk, int(2*m, 8))
       call fill_panel(.false.)
-      call hecmw_mf_kernel_panel_piv(m, w, m, fct%pval, blk(pa:pb), MF_PIVOT_U, MF_PIVOT_ALPHA, zero, &
-        .false., fct%wk, np, perm, fct%ptype(f0+pa:f0+pb), fct%dsub(f0+pa:f0+pb), nsw, n22, info)
+      call hecmw_mf_kernel_panel_piv(m, w, m, pval, blk(pa:pb), MF_PIVOT_U, MF_PIVOT_ALPHA, zero, &
+        .false., wk, np, perm, sn%ptype(pa:pb), sn%dsub(pa:pb), nsw, n22, info)
       call permute_rows(pa, w)
-      fct%n_swap = fct%n_swap + nsw
-      fct%n_2x2 = fct%n_2x2 + n22
+      nswap = nswap + nsw
+      n2x2 = n2x2 + n22
       if (info /= 0) then
-        ierr = fct%fsdof(f0 + pa + info - 1)
-        deallocate(perm, itmp)
+        ierr = sn%fsdof(pa + info - 1)
+        deallocate(perm, itmp, ip, jp)
         return
       endif
       do jj = 1, w
-        call mf_col_copy(g, fct%fval, pa+jj-1, pa+jj-1, fct%pval(int(jj-1, 8)*m + jj), .true.)
+        call mf_col_copy(g, fval, pa+jj-1, pa+jj-1, pval(int(jj-1, 8)*m + jj), .true.)
       enddo
       npiv = g%ncol
     endif
-    fct%npiv(s) = npiv
+    sn%npiv = npiv
 
     x = 1
     do while (x <= npiv)
-      pt = fct%ptype(f0+x)
+      pt = sn%ptype(x)
       if (pt == 1) then
-        if (fct%fval(mf_idx(g, x, x)) > 0.0d0) then
-          fct%n_pos = fct%n_pos + 1
+        if (fval(mf_idx(g, x, x)) > 0.0d0) then
+          npos = npos + 1
         else
-          fct%n_neg = fct%n_neg + 1
+          nneg = nneg + 1
         endif
         x = x + 1
       else
-        d11 = fct%fval(mf_idx(g, x, x))
-        d21 = fct%dsub(f0+x)
-        d22 = fct%fval(mf_idx(g, x+1, x+1))
+        d11 = fval(mf_idx(g, x, x))
+        d21 = sn%dsub(x)
+        d22 = fval(mf_idx(g, x+1, x+1))
         det = d11*d22 - d21*d21
         if (det < 0.0d0) then
-          fct%n_pos = fct%n_pos + 1
-          fct%n_neg = fct%n_neg + 1
+          npos = npos + 1
+          nneg = nneg + 1
         else if (d11 + d22 > 0.0d0) then
-          fct%n_pos = fct%n_pos + 2
+          npos = npos + 2
         else
-          fct%n_neg = fct%n_neg + 2
+          nneg = nneg + 2
         endif
         x = x + 2
       endif
     enddo
-    deallocate(perm, itmp)
+    deallocate(perm, itmp, ip, jp)
 
   contains
 
@@ -1241,10 +1455,10 @@ contains
       integer(kind=kint) :: jj
 
       do jj = 1, w
-        call mf_col_copy(g, fct%fval, pa+jj-1, pa+jj-1, fct%pval(int(jj-1, 8)*m + jj), .false.)
+        call mf_col_copy(g, fval, pa+jj-1, pa+jj-1, pval(int(jj-1, 8)*m + jj), .false.)
         if (upd) &
-          call mf_col_update(g, fct%fval, fct%ptype(f0+1:), fct%dsub(f0+1:), pa+jj-1, p0+1, npiv, &
-            fct%pval(int(jj-1, 8)*m + jj), fct%wk)
+          call mf_col_update(g, fval, sn%ptype, sn%dsub, pa+jj-1, p0+1, npiv, &
+            pval(int(jj-1, 8)*m + jj), wk)
       enddo
     end subroutine fill_panel
 
@@ -1262,10 +1476,10 @@ contains
         do t = jj + 1, w
           if (itmp(t) == perm(jj)) exit
         enddo
-        call mf_swap(g, fct%fval, pa+jj-1, pa+t-1)
-        q = fct%fsdof(f0+pa+jj-1)
-        fct%fsdof(f0+pa+jj-1) = fct%fsdof(f0+pa+t-1)
-        fct%fsdof(f0+pa+t-1) = q
+        call mf_swap(g, fval, pa+jj-1, pa+t-1)
+        q = sn%fsdof(pa+jj-1)
+        sn%fsdof(pa+jj-1) = sn%fsdof(pa+t-1)
+        sn%fsdof(pa+t-1) = q
         itmp(t) = itmp(jj)
         itmp(jj) = perm(jj)
       enddo
@@ -1275,9 +1489,9 @@ contains
       integer(kind=kint), intent(in) :: x, y
       integer(kind=kint) :: t
 
-      t = fct%fsdof(f0+x)
-      fct%fsdof(f0+x) = fct%fsdof(f0+y)
-      fct%fsdof(f0+y) = t
+      t = sn%fsdof(x)
+      sn%fsdof(x) = sn%fsdof(y)
+      sn%fsdof(y) = t
       t = blk(x)
       blk(x) = blk(y)
       blk(y) = t
@@ -1290,29 +1504,34 @@ contains
   !> exchanges are applied to the front and to frow, and the row of U of a pivot (a column of
   !> fvalu) is complete at write back, so that a column left behind receives the update of the
   !> tile column's pivots as two vector operations, one on each grid.
-  subroutine mf_factor_front_lu(fct, g, blk, blkr, s, isroot, zero, ierr)
+  subroutine mf_factor_front_lu(sn, g, fval, fvalu, pval, pvalu, wk, blk, blkr, isroot, zero, nswap, ierr)
     implicit none
-    type(hecmwST_mf_factor), intent(inout) :: fct
+    type(mf_snode), intent(inout) :: sn
     type(mf_grid), intent(in) :: g
+    real(kind=kreal), allocatable, intent(inout) :: fval(:), fvalu(:)
+    real(kind=kreal), allocatable, intent(inout) :: pval(:), pvalu(:), wk(:)
     integer(kind=kint), intent(inout) :: blk(:), blkr(:)
-    integer(kind=kint), intent(in) :: s
     logical, intent(in) :: isroot
     real(kind=kreal), intent(in) :: zero
-    integer(kind=kint), intent(out) :: ierr
-    integer(kind=kint), allocatable :: permc(:), permr(:), itmp(:)
-    integer(kind=kint) :: npiv, nfs, k, p0, pa, pb, w, m, np, nsw, info, x, i, j, hi, wj, pk, f0
+    integer(kind=kint), intent(out) :: nswap, ierr
+    integer(kind=kint), allocatable :: permc(:), permr(:), itmp(:), ip(:), jp(:)
+    integer(kind=kint) :: npiv, nfs, k, p0, pa, pb, w, m, np, nsw, info, x, i, j, hi, wj, pk
+    integer(kind=kint) :: np2, l2
     integer(kind=8) :: oik, ojk, oij
+    logical :: par
 
     ierr = 0
-    f0 = fct%fsptr(s) - 1
-    fct%ptype(f0+1:f0+g%ncol) = 1
-    fct%dsub(f0+1:f0+g%ncol) = 0.0d0
+    nswap = 0
+    par = .false.
+    !$ par = g%nrow >= MF_PAR_ROWS .and. omp_get_num_threads() > 1
+    sn%ptype(1:g%ncol) = 1
+    sn%dsub(1:g%ncol) = 0.0d0
     npiv = 0
     nfs = g%ncol
-    allocate(permc(g%ncol), permr(g%ncol), itmp(g%ncol))
-    call mf_grow_r(fct%pval, int(g%nrow, 8))
-    call mf_grow_r(fct%pvalu, int(g%nrow, 8))
-    call mf_grow_r(fct%wk, int(2*g%nrow, 8))
+    allocate(permc(g%ncol), permr(g%ncol), itmp(g%ncol), ip(g%nt*(g%nt+1)/2), jp(g%nt*(g%nt+1)/2))
+    call mf_grow_r(pval, int(g%nrow, 8))
+    call mf_grow_r(pvalu, int(g%nrow, 8))
+    call mf_grow_r(wk, int(2*g%nrow, 8))
     do k = 1, g%ntc
       p0 = g%tb(k-1)
       if (p0 >= nfs) exit
@@ -1321,10 +1540,10 @@ contains
         pb = min(g%tb(k), nfs)
         w = pb - pa + 1
         m = g%nrow - pa + 1
-        call mf_grow_r(fct%pval, int(m, 8)*w)
-        call mf_grow_r(fct%pvalu, int(m, 8)*w)
+        call mf_grow_r(pval, int(m, 8)*w)
+        call mf_grow_r(pvalu, int(m, 8)*w)
         call fill_panel(npiv > p0)
-        call hecmw_mf_kernel_panel_lu_nopiv(m, w, m, fct%pval, m, fct%pvalu, MF_PIVOT_U, zero, info)
+        call hecmw_mf_kernel_panel_lu_nopiv(m, w, m, pval, m, pvalu, MF_PIVOT_U, zero, info)
         if (info == 0) then
           call write_back(w)
           npiv = npiv + w
@@ -1332,16 +1551,16 @@ contains
           cycle
         endif
         call fill_panel(npiv > p0)
-        call hecmw_mf_kernel_panel_lu_piv(m, w, m, fct%pval, m, fct%pvalu, blk(pa:pb), blkr(pa:pb), MF_PIVOT_U, &
+        call hecmw_mf_kernel_panel_lu_piv(m, w, m, pval, m, pvalu, blk(pa:pb), blkr(pa:pb), MF_PIVOT_U, &
           zero, .true., np, permc, permr, nsw, info)
         call permute_front(pa, w)
         call write_back(np)
         npiv = npiv + np
-        fct%n_swap = fct%n_swap + nsw
+        nswap = nswap + nsw
         x = pa + np
         do while (x <= pb)
           if (nfs > pb) then
-            call mf_swap_lu(g, fct%fval, fct%fvalu, x, nfs)
+            call mf_swap_lu(g, fval, fvalu, x, nfs)
             call swap_pos(x, nfs)
             nfs = nfs - 1
             x = x + 1
@@ -1357,17 +1576,27 @@ contains
       ! columns left in tile column k
       pk = npiv - p0
       if (pk > 0) then
+        np2 = 0
         do i = k+1, g%nt
-          hi = g%tb(i) - g%tb(i-1)
-          oik = mf_off(g, i, k)
           do j = k+1, i
-            wj = g%tb(j) - g%tb(j-1)
-            ojk = mf_off(g, j, k)
-            oij = mf_off(g, i, j)
-            call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fct%fval(oik+1), wj, fct%fvalu(ojk+1), hi, fct%fval(oij+1))
-            call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fct%fvalu(oik+1), wj, fct%fval(ojk+1), hi, fct%fvalu(oij+1))
+            np2 = np2 + 1
+            ip(np2) = i
+            jp(np2) = j
           enddo
         enddo
+        !$omp taskloop default(shared) private(i, j, hi, wj, oik, ojk, oij) grainsize(1) if(par)
+        do l2 = 1, np2
+          i = ip(l2)
+          j = jp(l2)
+          hi = g%tb(i) - g%tb(i-1)
+          wj = g%tb(j) - g%tb(j-1)
+          oik = mf_off(g, i, k)
+          ojk = mf_off(g, j, k)
+          oij = mf_off(g, i, j)
+          call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fval(oik+1), wj, fvalu(ojk+1), hi, fval(oij+1))
+          call hecmw_mf_kernel_gemm(hi, wj, pk, hi, fvalu(oik+1), wj, fval(ojk+1), hi, fvalu(oij+1))
+        enddo
+        !$omp end taskloop
         do x = npiv + 1, g%tb(k)
           call update_pos(x, p0 + 1, npiv)
         enddo
@@ -1380,23 +1609,23 @@ contains
       pb = g%ncol
       w = pb - pa + 1
       m = g%nrow - pa + 1
-      call mf_grow_r(fct%pval, int(m, 8)*w)
-      call mf_grow_r(fct%pvalu, int(m, 8)*w)
+      call mf_grow_r(pval, int(m, 8)*w)
+      call mf_grow_r(pvalu, int(m, 8)*w)
       call fill_panel(.false.)
-      call hecmw_mf_kernel_panel_lu_piv(m, w, m, fct%pval, m, fct%pvalu, blk(pa:pb), blkr(pa:pb), MF_PIVOT_U, &
+      call hecmw_mf_kernel_panel_lu_piv(m, w, m, pval, m, pvalu, blk(pa:pb), blkr(pa:pb), MF_PIVOT_U, &
         zero, .false., np, permc, permr, nsw, info)
       call permute_front(pa, w)
-      fct%n_swap = fct%n_swap + nsw
+      nswap = nswap + nsw
       if (info /= 0) then
-        ierr = fct%fsdof(f0 + pa + info - 1)
-        deallocate(permc, permr, itmp)
+        ierr = sn%fsdof(pa + info - 1)
+        deallocate(permc, permr, itmp, ip, jp)
         return
       endif
       call write_back(w)
       npiv = g%ncol
     endif
-    fct%npiv(s) = npiv
-    deallocate(permc, permr, itmp)
+    sn%npiv = npiv
+    deallocate(permc, permr, itmp, ip, jp)
 
   contains
 
@@ -1409,16 +1638,16 @@ contains
 
       do jj = 1, w
         xx = pa + jj - 1
-        call mf_col_copy(g, fct%fval, xx, xx, fct%pval(int(jj-1, 8)*m + jj), .false.)
+        call mf_col_copy(g, fval, xx, xx, pval(int(jj-1, 8)*m + jj), .false.)
         if (upd) then
-          call mf_row_get(g, fct%fvalu, xx, p0+1, npiv, fct%wk)
-          call mf_col_axpy(g, fct%fval, xx, p0+1, npiv, fct%wk, fct%pval(int(jj-1, 8)*m + jj))
+          call mf_row_get(g, fvalu, xx, p0+1, npiv, wk)
+          call mf_col_axpy(g, fval, xx, p0+1, npiv, wk, pval(int(jj-1, 8)*m + jj))
         endif
         if (xx < g%nrow) then
-          call mf_col_copy(g, fct%fvalu, xx, xx+1, fct%pvalu(int(jj-1, 8)*m + jj + 1), .false.)
+          call mf_col_copy(g, fvalu, xx, xx+1, pvalu(int(jj-1, 8)*m + jj + 1), .false.)
           if (upd) then
-            call mf_row_get(g, fct%fval, xx, p0+1, npiv, fct%wk)
-            call mf_col_axpy(g, fct%fvalu, xx+1, p0+1, npiv, fct%wk, fct%pvalu(int(jj-1, 8)*m + jj + 1))
+            call mf_row_get(g, fval, xx, p0+1, npiv, wk)
+            call mf_col_axpy(g, fvalu, xx+1, p0+1, npiv, wk, pvalu(int(jj-1, 8)*m + jj + 1))
           endif
         endif
       enddo
@@ -1431,8 +1660,8 @@ contains
 
       do jj = 1, n
         xx = pa + jj - 1
-        call mf_col_copy(g, fct%fval, xx, xx, fct%pval(int(jj-1, 8)*m + jj), .true.)
-        if (xx < g%nrow) call mf_col_copy(g, fct%fvalu, xx, xx+1, fct%pvalu(int(jj-1, 8)*m + jj + 1), .true.)
+        call mf_col_copy(g, fval, xx, xx, pval(int(jj-1, 8)*m + jj), .true.)
+        if (xx < g%nrow) call mf_col_copy(g, fvalu, xx, xx+1, pvalu(int(jj-1, 8)*m + jj + 1), .true.)
       enddo
     end subroutine write_back
 
@@ -1440,15 +1669,15 @@ contains
     subroutine update_pos(x, q1, q2)
       integer(kind=kint), intent(in) :: x, q1, q2
 
-      call mf_col_copy(g, fct%fval, x, x, fct%pval, .false.)
-      call mf_row_get(g, fct%fvalu, x, q1, q2, fct%wk)
-      call mf_col_axpy(g, fct%fval, x, q1, q2, fct%wk, fct%pval)
-      call mf_col_copy(g, fct%fval, x, x, fct%pval, .true.)
+      call mf_col_copy(g, fval, x, x, pval, .false.)
+      call mf_row_get(g, fvalu, x, q1, q2, wk)
+      call mf_col_axpy(g, fval, x, q1, q2, wk, pval)
+      call mf_col_copy(g, fval, x, x, pval, .true.)
       if (x < g%nrow) then
-        call mf_col_copy(g, fct%fvalu, x, x+1, fct%pvalu, .false.)
-        call mf_row_get(g, fct%fval, x, q1, q2, fct%wk)
-        call mf_col_axpy(g, fct%fvalu, x+1, q1, q2, fct%wk, fct%pvalu)
-        call mf_col_copy(g, fct%fvalu, x, x+1, fct%pvalu, .true.)
+        call mf_col_copy(g, fvalu, x, x+1, pvalu, .false.)
+        call mf_row_get(g, fval, x, q1, q2, wk)
+        call mf_col_axpy(g, fvalu, x+1, q1, q2, wk, pvalu)
+        call mf_col_copy(g, fvalu, x, x+1, pvalu, .true.)
       endif
     end subroutine update_pos
 
@@ -1466,7 +1695,7 @@ contains
         do t = jj + 1, w
           if (itmp(t) == permc(jj)) exit
         enddo
-        call mf_swap_lu(g, fct%fval, fct%fvalu, pa+jj-1, pa+t-1)
+        call mf_swap_lu(g, fval, fvalu, pa+jj-1, pa+t-1)
         call swap_pos(pa+jj-1, pa+t-1)
         itmp(t) = itmp(jj)
         itmp(jj) = permc(jj)
@@ -1477,10 +1706,10 @@ contains
         do t = jj + 1, w
           if (itmp(t) == permr(jj)) exit
         enddo
-        call mf_swap_row(g, fct%fval, fct%fvalu, pa+jj-1, pa+t-1)
-        q = fct%frow(f0+pa+jj-1)
-        fct%frow(f0+pa+jj-1) = fct%frow(f0+pa+t-1)
-        fct%frow(f0+pa+t-1) = q
+        call mf_swap_row(g, fval, fvalu, pa+jj-1, pa+t-1)
+        q = sn%frow(pa+jj-1)
+        sn%frow(pa+jj-1) = sn%frow(pa+t-1)
+        sn%frow(pa+t-1) = q
         q = blkr(pa+jj-1)
         blkr(pa+jj-1) = blkr(pa+t-1)
         blkr(pa+t-1) = q
@@ -1493,12 +1722,12 @@ contains
       integer(kind=kint), intent(in) :: x, y
       integer(kind=kint) :: t
 
-      t = fct%fsdof(f0+x)
-      fct%fsdof(f0+x) = fct%fsdof(f0+y)
-      fct%fsdof(f0+y) = t
-      t = fct%frow(f0+x)
-      fct%frow(f0+x) = fct%frow(f0+y)
-      fct%frow(f0+y) = t
+      t = sn%fsdof(x)
+      sn%fsdof(x) = sn%fsdof(y)
+      sn%fsdof(y) = t
+      t = sn%frow(x)
+      sn%frow(x) = sn%frow(y)
+      sn%frow(y) = t
       t = blk(x)
       blk(x) = blk(y)
       blk(y) = t
@@ -1509,170 +1738,299 @@ contains
 
   end subroutine mf_factor_front_lu
 
-  !> Tile grid of the stored panel of supernode s: rows as factored, tile columns cut at npiv.
-  subroutine mf_stored_grid(fct, s, g, tw)
+  !> Tile grid of the stored panel of a supernode: rows as factored, tile columns cut at npiv.
+  subroutine mf_stored_grid(sn, g, tw)
     implicit none
-    type(hecmwST_mf_factor), intent(in) :: fct
-    integer(kind=kint), intent(in) :: s
+    type(mf_snode), intent(in) :: sn
     type(mf_grid), intent(inout) :: g
     integer(kind=kint), intent(out) :: tw(:)
-    integer(kind=kint) :: t0, j
+    integer(kind=kint) :: j
 
-    t0 = fct%tptr(s)
-    g%nt = fct%tptr(s+1) - t0 - 1
-    g%ntc = fct%ntc(s)
-    g%ncol = fct%ncol(s)
+    g%nt = sn%nt
+    g%ntc = sn%ntc
+    g%ncol = sn%ncol
     if (allocated(g%tb)) then
       if (size(g%tb) < g%nt + 1) deallocate(g%tb, g%coloff)
     endif
     if (.not. allocated(g%tb)) allocate(g%tb(0:g%nt), g%coloff(g%nt+1))
-    g%tb(0:g%nt) = fct%tbnd(t0:t0+g%nt)
+    g%tb(0:g%nt) = sn%tbnd(1:g%nt+1)
     g%nrow = g%tb(g%nt)
     g%coloff(1) = 0
     do j = 1, g%ntc
-      tw(j) = max(min(g%tb(j), fct%npiv(s)) - g%tb(j-1), 0)
+      tw(j) = max(min(g%tb(j), sn%npiv) - g%tb(j-1), 0)
       g%coloff(j+1) = g%coloff(j) + int(g%nrow - g%tb(j-1), 8)*tw(j)
     enddo
   end subroutine mf_stored_grid
 
   !> x = A^-1 b with the factor; b and x are in the original DOF numbering. The forward solve
   !> works on the row DOFs (z, indexed by frow), the backward solve on the column DOFs (xx).
+  !> A front reads the b entries of its own DOFs only; the forward result of the rows beyond
+  !> its pivots is kept per supernode (dval) and added by the parent, mirroring the extend-add.
   subroutine hecmw_mf_numeric_solve(sym, fct, b, x)
     implicit none
     type(hecmwST_mf_symbolic), intent(in) :: sym
-    type(hecmwST_mf_factor), intent(in) :: fct
+    type(hecmwST_mf_factor), intent(inout) :: fct
     real(kind=kreal), intent(in) :: b(:)
     real(kind=kreal), intent(out) :: x(:)
-    type(mf_grid) :: g
-    real(kind=kreal), allocatable :: z(:), xx(:), v(:)
-    integer(kind=kint), allocatable :: tw(:)
-    integer(kind=kint) :: ns, s, i, k, hi, hk, f0, nv, mt
-    integer(kind=8) :: okk, oik
+    real(kind=kreal), allocatable :: z(:), xx(:)
+    integer(kind=kint), allocatable :: map(:), left(:)
+    integer(kind=kint) :: ns, s, i
 
     ns = fct%nsuper
-    nv = 0
-    mt = 0
-    do s = 1, ns
-      nv = max(nv, fct%tbnd(fct%tptr(s+1)-1))
-      mt = max(mt, fct%tptr(s+1) - fct%tptr(s))
-    enddo
-    allocate(z(fct%ndof_tot), xx(fct%ndof_tot), v(nv), tw(mt))
+    allocate(z(fct%ndof_tot), xx(fct%ndof_tot), map(fct%ndof_tot), left(ns))
+    !$omp parallel do
     do i = 1, fct%ndof_tot
       z(i) = b(fct%pdof(i))
     enddo
+    !$omp end parallel do
 
     do s = 1, ns
-      call mf_stored_grid(fct, s, g, tw)
-      f0 = fct%fsptr(s) - 1
-      call mf_gather(sym, fct, s, 1, g%nrow, fct%frow, z, v)
-      do k = 1, g%ntc
-        if (tw(k) == 0) exit
-        hk = g%tb(k) - g%tb(k-1)
-        okk = fct%lptr(s) + g%coloff(k)
-        call hecmw_mf_kernel_trsv(tw(k), hk, fct%lval(okk), v(g%tb(k-1)+1))
-        if (hk > tw(k)) call hecmw_mf_kernel_gemv(hk - tw(k), tw(k), hk, fct%lval(okk + tw(k)), v(g%tb(k-1)+1), &
-          v(g%tb(k-1)+tw(k)+1))
-        do i = k+1, g%nt
-          hi = g%tb(i) - g%tb(i-1)
-          oik = fct%lptr(s) + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
-          call hecmw_mf_kernel_gemv(hi, tw(k), hi, fct%lval(oik), v(g%tb(k-1)+1), v(g%tb(i-1)+1))
-        enddo
-        if (.not. fct%lu) call hecmw_mf_kernel_dsolve(tw(k), hk, fct%lval(okk), fct%ptype(f0+g%tb(k-1)+1:), &
-          fct%dsub(f0+g%tb(k-1)+1:), v(g%tb(k-1)+1))
-      enddo
-      call mf_scatter(sym, fct, s, 1, g%nrow, fct%frow, v, z)
+      left(s) = fct%cptr(s+1) - fct%cptr(s)
     enddo
-
-    do s = ns, 1, -1
-      call mf_stored_grid(fct, s, g, tw)
-      call mf_gather(sym, fct, s, 1, fct%npiv(s), fct%frow, z, v)
-      call mf_gather(sym, fct, s, fct%npiv(s) + 1, g%nrow, fct%fsdof, xx, v)
-      do k = g%ntc, 1, -1
-        if (tw(k) == 0) cycle
-        hk = g%tb(k) - g%tb(k-1)
-        okk = fct%lptr(s) + g%coloff(k)
-        if (fct%lu) then
-          do i = k+1, g%nt
-            hi = g%tb(i) - g%tb(i-1)
-            oik = fct%lptr(s) + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
-            call hecmw_mf_kernel_gemv_t(hi, tw(k), hi, fct%uval(oik), v(g%tb(i-1)+1), v(g%tb(k-1)+1))
-          enddo
-          if (hk > tw(k)) call hecmw_mf_kernel_gemv_t(hk - tw(k), tw(k), hk, fct%uval(okk + tw(k)), &
-            v(g%tb(k-1)+tw(k)+1), v(g%tb(k-1)+1))
-          call hecmw_mf_kernel_usolve(tw(k), hk, fct%lval(okk), hk, fct%uval(okk), v(g%tb(k-1)+1))
-        else
-          do i = k+1, g%nt
-            hi = g%tb(i) - g%tb(i-1)
-            oik = fct%lptr(s) + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
-            call hecmw_mf_kernel_gemv_t(hi, tw(k), hi, fct%lval(oik), v(g%tb(i-1)+1), v(g%tb(k-1)+1))
-          enddo
-          if (hk > tw(k)) call hecmw_mf_kernel_gemv_t(hk - tw(k), tw(k), hk, fct%lval(okk + tw(k)), &
-            v(g%tb(k-1)+tw(k)+1), v(g%tb(k-1)+1))
-          call hecmw_mf_kernel_trsv_t(tw(k), hk, fct%lval(okk), v(g%tb(k-1)+1))
-        endif
-      enddo
-      call mf_scatter(sym, fct, s, 1, fct%npiv(s), fct%fsdof, v, xx)
+    !$omp parallel default(shared)
+    !$omp single
+    do s = 1, ns
+      if (fct%cptr(s+1) == fct%cptr(s)) then
+        !$omp task default(shared) firstprivate(s)
+        call mf_fwd_task(sym, fct, left, s, z, map)
+        !$omp end task
+      endif
     enddo
+    !$omp end single
+    !$omp end parallel
 
+    !$omp parallel default(shared)
+    !$omp single
+    do s = 1, ns
+      if (sym%sparent(s) == 0) then
+        !$omp task default(shared) firstprivate(s)
+        call bwd_task(s)
+        !$omp end task
+      endif
+    enddo
+    !$omp end single
+    !$omp end parallel
+
+    !$omp parallel do
     do i = 1, fct%ndof_tot
       x(fct%pdof(i)) = xx(i)
     enddo
-    deallocate(z, xx, v, tw)
+    !$omp end parallel do
+    deallocate(z, xx, map, left)
+
+  contains
+
+    !> backward-solve task of one supernode: solve the front, then spawn the children, which
+    !> depend on their parent alone; host association keeps every reference alive until the
+    !> parallel region ends
+    recursive subroutine bwd_task(s0)
+      integer(kind=kint), intent(in) :: s0
+      integer(kind=kint) :: j, c
+
+      call mf_super_bwd(sym, fct, fct%sn(s0), s0, z, xx)
+      do j = fct%cptr(s0), fct%cptr(s0+1) - 1
+        c = fct%clist(j)
+        !$omp task default(shared) firstprivate(c)
+        call bwd_task(c)
+        !$omp end task
+      enddo
+    end subroutine bwd_task
+
   end subroutine hecmw_mf_numeric_solve
 
-  !> v(i1:i2) <- the positions i1..i2 of the front of supernode s taken from y (permuted DOF
-  !> numbering): the fully summed positions through dof, then the contribution rows.
-  subroutine mf_gather(sym, fct, s, i1, i2, dof, y, v)
+  !> Forward-solve task starting at leaf s, climbing to released parents the way the
+  !> factorization tasks do.
+  subroutine mf_fwd_task(sym, fct, left, s, z, map)
+    implicit none
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_factor), intent(inout) :: fct
+    integer(kind=kint), intent(inout) :: left(:)
+    integer(kind=kint), intent(in) :: s
+    real(kind=kreal), intent(inout) :: z(:)
+    integer(kind=kint), intent(inout) :: map(:)
+    integer(kind=kint) :: p, n, ss
+
+    ss = s
+    do
+      call mf_super_fwd(sym, fct, fct%sn(ss), ss, z, map)
+      p = sym%sparent(ss)
+      if (p == 0) return
+      ! critical, not atomic: its flush semantics make the child's writes visible to the
+      ! thread that continues with the parent
+      !$omp critical (mf_tree)
+      left(p) = left(p) - 1
+      n = left(p)
+      !$omp end critical (mf_tree)
+      if (n /= 0) return
+      ss = p
+    enddo
+  end subroutine mf_fwd_task
+
+  !> Forward solve of the front of supernode s: gather the b entries of the own DOFs from z,
+  !> add the forward contributions of the children (freed here), apply the panel, write the
+  !> solution of the pivot rows to z and keep the rows beyond the pivots in dval for the parent.
+  !> Pivoting permutes the fully summed positions, so a child row landing there is located
+  !> through map (row DOF to position); the map entries of concurrently processed fronts are
+  !> disjoint because their subtrees share no fully summed DOFs. The contribution rows keep
+  !> the assembly order and are located by the rlist offsets.
+  subroutine mf_super_fwd(sym, fct, sn, s, z, map)
+    implicit none
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_factor), intent(inout) :: fct
+    type(mf_snode), intent(inout) :: sn
+    integer(kind=kint), intent(in) :: s
+    real(kind=kreal), intent(inout) :: z(:)
+    integer(kind=kint), intent(inout) :: map(:)
+    type(mf_grid) :: g
+    real(kind=kreal), allocatable :: v(:)
+    integer(kind=kint), allocatable :: tw(:), rowoff(:)
+    integer(kind=kint) :: nown, nrow_nodes, ncol0, ndel, d0, d1, d, c, i, j, k, l, a, r
+    integer(kind=kint) :: cnown, cndel, hk, hi
+    integer(kind=8) :: okk, oik
+
+    allocate(tw(sn%nt))
+    call mf_stored_grid(sn, g, tw)
+    allocate(v(g%nrow))
+    d0 = fct%cdofptr(sym%sptr(s))
+    d1 = fct%cdofptr(sym%sptr(s+1)) - 1
+    do d = 1, sn%ncol
+      map(sn%frow(d)) = d
+      if (sn%frow(d) >= d0 .and. sn%frow(d) <= d1) then
+        v(d) = z(sn%frow(d))
+      else
+        v(d) = 0.0d0
+      endif
+    enddo
+    v(sn%ncol+1:g%nrow) = 0.0d0
+
+    nown = sym%sptr(s+1) - sym%sptr(s)
+    nrow_nodes = sym%rptr(s+1) - sym%rptr(s)
+    ncol0 = d1 - d0 + 1
+    ndel = sn%ncol - ncol0
+    allocate(rowoff(nrow_nodes+1))
+    rowoff(1) = 0
+    do i = 1, nrow_nodes
+      k = sym%rlist(sym%rptr(s)+i-1)
+      rowoff(i+1) = rowoff(i) + sym%ndof(k)
+      if (i == nown) rowoff(i+1) = rowoff(i+1) + ndel
+    enddo
+    c = fct%chead(s)
+    do while (c /= 0)
+      cnown = sym%sptr(c+1) - sym%sptr(c)
+      cndel = fct%sn(c)%ncol - fct%sn(c)%npiv
+      do j = 1, cndel
+        d = fct%sn(c)%frow(fct%sn(c)%npiv + j)
+        v(map(d)) = v(map(d)) + fct%sn(c)%dval(j)
+      enddo
+      r = cndel
+      do l = sym%rptr(c) + cnown, sym%rptr(c+1) - 1
+        k = sym%cmap(sym%cmap_ptr(c) + (l - sym%rptr(c) - cnown))
+        do a = 1, sym%ndof(sym%rlist(l))
+          r = r + 1
+          if (k <= nown) then
+            d = fct%cdofptr(sym%rlist(sym%rptr(s)+k-1)) + a - 1
+            v(map(d)) = v(map(d)) + fct%sn(c)%dval(r)
+          else
+            v(rowoff(k)+a) = v(rowoff(k)+a) + fct%sn(c)%dval(r)
+          endif
+        enddo
+      enddo
+      deallocate(fct%sn(c)%dval)
+      c = fct%cnext(c)
+    enddo
+    deallocate(rowoff)
+
+    do k = 1, g%ntc
+      if (tw(k) == 0) exit
+      hk = g%tb(k) - g%tb(k-1)
+      okk = 1 + g%coloff(k)
+      call hecmw_mf_kernel_trsv(tw(k), hk, sn%lval(okk), v(g%tb(k-1)+1))
+      if (hk > tw(k)) call hecmw_mf_kernel_gemv(hk - tw(k), tw(k), hk, sn%lval(okk + tw(k)), v(g%tb(k-1)+1), &
+        v(g%tb(k-1)+tw(k)+1))
+      do i = k+1, g%nt
+        hi = g%tb(i) - g%tb(i-1)
+        oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
+        call hecmw_mf_kernel_gemv(hi, tw(k), hi, sn%lval(oik), v(g%tb(k-1)+1), v(g%tb(i-1)+1))
+      enddo
+      if (.not. fct%lu) call hecmw_mf_kernel_dsolve(tw(k), hk, sn%lval(okk), sn%ptype(g%tb(k-1)+1:), &
+        sn%dsub(g%tb(k-1)+1:), v(g%tb(k-1)+1))
+    enddo
+
+    do d = 1, sn%npiv
+      z(sn%frow(d)) = v(d)
+    enddo
+    if (g%nrow > sn%npiv) then
+      allocate(sn%dval(g%nrow - sn%npiv))
+      sn%dval(1:g%nrow-sn%npiv) = v(sn%npiv+1:g%nrow)
+    endif
+    deallocate(v, tw)
+  end subroutine mf_super_fwd
+
+  !> Backward solve of the front of supernode s: the pivot rows from z, the rows beyond from
+  !> the already solved column DOFs in xx, the pivot solutions back to xx.
+  subroutine mf_super_bwd(sym, fct, sn, s, z, xx)
     implicit none
     type(hecmwST_mf_symbolic), intent(in) :: sym
     type(hecmwST_mf_factor), intent(in) :: fct
-    integer(kind=kint), intent(in) :: s, i1, i2
-    integer(kind=kint), intent(in) :: dof(:)
-    real(kind=kreal), intent(in) :: y(:)
-    real(kind=kreal), intent(inout) :: v(:)
-    integer(kind=kint) :: l, k, d, m, nown
+    type(mf_snode), intent(in) :: sn
+    integer(kind=kint), intent(in) :: s
+    real(kind=kreal), intent(in) :: z(:)
+    real(kind=kreal), intent(inout) :: xx(:)
+    type(mf_grid) :: g
+    real(kind=kreal), allocatable :: v(:)
+    integer(kind=kint), allocatable :: tw(:)
+    integer(kind=kint) :: nown, d, i, k, l, m, hk, hi
+    integer(kind=8) :: okk, oik
 
-    m = fct%ncol(s)
-    do d = i1, min(i2, m)
-      v(d) = y(dof(fct%fsptr(s)+d-1))
+    allocate(tw(sn%nt))
+    call mf_stored_grid(sn, g, tw)
+    allocate(v(g%nrow))
+    do d = 1, sn%npiv
+      v(d) = z(sn%frow(d))
     enddo
-    if (i2 <= m) return
+    do d = sn%npiv + 1, sn%ncol
+      v(d) = xx(sn%fsdof(d))
+    enddo
     nown = sym%sptr(s+1) - sym%sptr(s)
+    m = sn%ncol
     do l = sym%rptr(s) + nown, sym%rptr(s+1) - 1
       k = sym%rlist(l)
       do d = fct%cdofptr(k), fct%cdofptr(k+1) - 1
         m = m + 1
-        if (m > i2) return
-        if (m >= i1) v(m) = y(d)
+        v(m) = xx(d)
       enddo
     enddo
-  end subroutine mf_gather
 
-  subroutine mf_scatter(sym, fct, s, i1, i2, dof, v, y)
-    implicit none
-    type(hecmwST_mf_symbolic), intent(in) :: sym
-    type(hecmwST_mf_factor), intent(in) :: fct
-    integer(kind=kint), intent(in) :: s, i1, i2
-    integer(kind=kint), intent(in) :: dof(:)
-    real(kind=kreal), intent(in) :: v(:)
-    real(kind=kreal), intent(inout) :: y(:)
-    integer(kind=kint) :: l, k, d, m, nown
+    do k = g%ntc, 1, -1
+      if (tw(k) == 0) cycle
+      hk = g%tb(k) - g%tb(k-1)
+      okk = 1 + g%coloff(k)
+      if (fct%lu) then
+        do i = k+1, g%nt
+          hi = g%tb(i) - g%tb(i-1)
+          oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
+          call hecmw_mf_kernel_gemv_t(hi, tw(k), hi, sn%uval(oik), v(g%tb(i-1)+1), v(g%tb(k-1)+1))
+        enddo
+        if (hk > tw(k)) call hecmw_mf_kernel_gemv_t(hk - tw(k), tw(k), hk, sn%uval(okk + tw(k)), &
+          v(g%tb(k-1)+tw(k)+1), v(g%tb(k-1)+1))
+        call hecmw_mf_kernel_usolve(tw(k), hk, sn%lval(okk), hk, sn%uval(okk), v(g%tb(k-1)+1))
+      else
+        do i = k+1, g%nt
+          hi = g%tb(i) - g%tb(i-1)
+          oik = 1 + g%coloff(k) + int(g%tb(i-1) - g%tb(k-1), 8)*tw(k)
+          call hecmw_mf_kernel_gemv_t(hi, tw(k), hi, sn%lval(oik), v(g%tb(i-1)+1), v(g%tb(k-1)+1))
+        enddo
+        if (hk > tw(k)) call hecmw_mf_kernel_gemv_t(hk - tw(k), tw(k), hk, sn%lval(okk + tw(k)), &
+          v(g%tb(k-1)+tw(k)+1), v(g%tb(k-1)+1))
+        call hecmw_mf_kernel_trsv_t(tw(k), hk, sn%lval(okk), v(g%tb(k-1)+1))
+      endif
+    enddo
 
-    m = fct%ncol(s)
-    do d = i1, min(i2, m)
-      y(dof(fct%fsptr(s)+d-1)) = v(d)
+    do d = 1, sn%npiv
+      xx(sn%fsdof(d)) = v(d)
     enddo
-    if (i2 <= m) return
-    nown = sym%sptr(s+1) - sym%sptr(s)
-    do l = sym%rptr(s) + nown, sym%rptr(s+1) - 1
-      k = sym%rlist(l)
-      do d = fct%cdofptr(k), fct%cdofptr(k+1) - 1
-        m = m + 1
-        if (m > i2) return
-        if (m >= i1) y(d) = v(m)
-      enddo
-    enddo
-  end subroutine mf_scatter
+    deallocate(v, tw)
+  end subroutine mf_super_bwd
 
   subroutine hecmw_mf_numeric_print(fct)
     implicit none
