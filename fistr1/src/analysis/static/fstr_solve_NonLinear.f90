@@ -244,9 +244,11 @@ contains
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
         call hecmw_abort(hecmw_comm_get_comm())
       endif
-      ! the ALag contact terms are treated as symmetric here as before; only
-      ! material-induced asymmetry is propagated
-      call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_material_symmetric(fstrSOLID, hecMESH))
+      ! the ALag contact terms are treated as symmetric here as before, unless a contact pair
+      ! asks for the friction cone to follow the normal force, which adds the unsymmetric
+      ! coupling block of getContactStiffness_Alag; material-induced asymmetry is propagated
+      ! by the same predicate
+      call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_contactALag_symmetric(fstrSOLID, hecMESH))
     endif
 
     hecMAT%X = 0.0d0
@@ -380,7 +382,7 @@ contains
       if (contact_changed_global > 0) then
         call hecmw_mat_clear_b( hecMAT )
         call hecmw_mat_clear_b( conMAT )
-        call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_material_symmetric(fstrSOLID, hecMESH))
+        call solve_LINEQ_contact_init(hecMESH, hecMAT, hecLagMAT, fstr_is_contactALag_symmetric(fstrSOLID, hecMESH))
       endif
 
       if( fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH) .and. .not. ctchange ) exit loopFORcontactAnalysis

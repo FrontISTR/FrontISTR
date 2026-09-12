@@ -593,13 +593,14 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter, conefollow )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
     integer(kind=kint) :: augiter
+    logical            :: conefollow
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
-    integer(kind=kint) :: rcode
+    integer(kind=kint) :: rcode, icone
     character(len=80) :: s
     s = 'SLAGRANGE,ALAGRANGE '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )
@@ -607,6 +608,16 @@ contains
       fstr_ctrl_get_CONTACTALGO = rcode
       return
     endif
+    ! FROZEN keeps the ALagrange friction cone at the multiplier of the last augmentation,
+    ! FOLLOW lets it follow the normal force the contact element applies
+    icone = 1
+    s = 'FROZEN,FOLLOW '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'FRICTION_CONE ', s, 0, 'P', icone )
+    if( rcode /= 0 ) then
+      fstr_ctrl_get_CONTACTALGO = rcode
+      return
+    endif
+    conefollow = ( icone == 2 )
     rcode = fstr_ctrl_get_param_ex( ctrl, 'AUGITER ', '# ', 0, 'I', augiter )
     fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO

@@ -201,6 +201,7 @@ module m_fstr
     !> for contact analysis
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
     integer( kind=kint ) :: augiter            !< augmentation iteration for ALagrange algorithm
+    logical              :: fric_cone_follow   !< if the ALagrange friction cone follows the applied normal force
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
     type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
 
@@ -1061,6 +1062,7 @@ contains
     ! for contact analysis
     fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange
     fstrPARAM%augiter = 2                  ! default augmentation iteration for ALagrange
+    fstrPARAM%fric_cone_follow = .false.   ! default: cone radius frozen within the augmentation step
 
     ! index table for global node ID sorting
 
