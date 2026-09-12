@@ -269,7 +269,7 @@ void version(char *arg) {
 void load_hecmw_ctrl(char *arg) {
   fprintf(stderr, "Sorry this option cannot work yet. (-c)\n");
   fprintf(stderr, "%s\n", arg);
-  exit(0);
+  exit(1);
 }
 
 /**
