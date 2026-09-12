@@ -1,6 +1,6 @@
 # FrontISTR
 
-![Logo](./doc/FrontISTR_logo.svg)
+![Logo](./doc/images/FrontISTR_logo.svg)
 
 [![CI Status](https://gitlab.com/frontistr-commons/frontistr/badges/master/pipeline.svg)](https://gitlab.com/frontistr-commons/frontistr/-/pipelines)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue)](https://frontistr-commons.gitlab.io/frontistr_documents/en/)
