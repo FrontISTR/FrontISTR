@@ -81,9 +81,9 @@ contains
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
-        call hecmw_precond_BILU_33_clear()
+        call hecmw_precond_BILU_33_clear
       else if (hecMAT%Iarray(97) == 1) then ! need numerical setup only
-        call hecmw_precond_BILU_33_clear() ! TEMPORARY
+        call hecmw_precond_BILU_33_clear ! TEMPORARY
       else
         return
       endif
@@ -334,7 +334,7 @@ contains
     !$omp end parallel
   end subroutine hecmw_precond_BILU_33_apply
 
-  subroutine hecmw_precond_BILU_33_clear()
+  subroutine hecmw_precond_BILU_33_clear
     implicit none
     if (associated(Dlu0)) deallocate(Dlu0)
     if (associated(ALlu0)) deallocate(ALlu0)
@@ -343,6 +343,16 @@ contains
     if (associated(inumFI1U)) deallocate(inumFI1U)
     if (associated(FI1L)) deallocate(FI1L)
     if (associated(FI1U)) deallocate(FI1U)
+    if (associated(COLORindex)) deallocate(COLORindex)
+    if (associated(perm)) deallocate(perm)
+    if (associated(iperm)) deallocate(iperm)
+    if (associated(D)) deallocate(D)
+    if (associated(AL)) deallocate(AL)
+    if (associated(AU)) deallocate(AU)
+    if (associated(indexL)) deallocate(indexL)
+    if (associated(indexU)) deallocate(indexU)
+    if (associated(itemL)) deallocate(itemL)
+    if (associated(itemU)) deallocate(itemU)
     nullify(Dlu0)
     nullify(ALlu0)
     nullify(AUlu0)
@@ -350,6 +360,16 @@ contains
     nullify(inumFI1U)
     nullify(FI1L)
     nullify(FI1U)
+    nullify(COLORindex)
+    nullify(perm)
+    nullify(iperm)
+    nullify(D)
+    nullify(AL)
+    nullify(AU)
+    nullify(indexL)
+    nullify(indexU)
+    nullify(itemL)
+    nullify(itemU)
     INITIALIZED = .false.
   end subroutine hecmw_precond_BILU_33_clear
 
