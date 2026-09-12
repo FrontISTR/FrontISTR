@@ -15,6 +15,7 @@ module hecmw_mf_dist
   public :: hecmwST_mf_map
   public :: hecmw_mf_dist_map_build
   public :: hecmw_mf_dist_map_finalize
+  public :: hecmw_mf_dist_rowtiles
   public :: hecmw_mf_dist_symbolic_bcast
   public :: hecmwST_mf_gmat
   public :: hecmw_mf_dist_gmat_build
@@ -23,18 +24,20 @@ module hecmw_mf_dist
   public :: hecmw_mf_dist_gather_vec
 
   !> Subtree-to-subcube mapping over the supernodal tree (proportional mapping): every
-  !> supernode carries the rank that factors it; a supernode whose rank set spans more
-  !> than one rank is an upper front, factored by its owner alone after receiving the
-  !> contribution blocks of the children owned elsewhere (fan-in). Below a single-rank
-  !> supernode the whole subtree belongs to that rank.
+  !> supernode carries the rank set rbeg/rcnt that processes it; a supernode whose rank set
+  !> spans more than one rank is an upper front, whose fully summed part the owner (master)
+  !> factors while the contribution row tiles are distributed over the rank set (1D row
+  !> distribution). Below a single-rank supernode the whole subtree belongs to that rank.
   type hecmwST_mf_map
     integer(kind=kint) :: nprocs = 1
     integer(kind=kint) :: myrank = 0
     integer(kind=kint) :: comm = 0
     integer(kind=kint) :: nupper = 0
-    integer(kind=kint), allocatable :: owner(:)   !< owner(s): rank that factors supernode s
+    integer(kind=kint), allocatable :: owner(:)   !< owner(s): rank that factors the fully summed part of s
     logical, allocatable :: upper(:)              !< the rank set of s spans more than one rank
     integer(kind=kint), allocatable :: uplist(:)  !< upper supernodes, ascending (children first)
+    integer(kind=kint), allocatable :: rbeg(:)    !< first rank of the rank set of s
+    integer(kind=kint), allocatable :: rcnt(:)    !< ranks in the rank set of s
   end type hecmwST_mf_map
 
   !> The global matrix replicated on every rank, assembled from the internal rows of the
@@ -65,7 +68,7 @@ contains
     type(hecmwST_mf_symbolic), intent(in) :: sym
     type(hecmwST_mf_map), intent(out) :: map
     integer(kind=8), allocatable :: wt(:)
-    integer(kind=kint), allocatable :: rbeg(:), rcnt(:), cptr(:), clist(:), wptr(:)
+    integer(kind=kint), allocatable :: cptr(:), clist(:), wptr(:)
     integer(kind=kint) :: ns, s, p, c, i, nroot, nup, cbest
     integer(kind=8) :: w, wbest
 
@@ -113,8 +116,8 @@ contains
     ! rank ranges: the roots share all ranks, an upper front splits its range among its
     ! children; parents carry larger indices, so a descending sweep sets every range
     ! before it is read
-    allocate(rbeg(ns), rcnt(ns))
-    rcnt(1:ns) = -1
+    allocate(map%rbeg(ns), map%rcnt(ns))
+    map%rcnt(1:ns) = -1
     nroot = 0
     do s = 1, ns
       if (sym%sparent(s) == 0) nroot = nroot + 1
@@ -126,22 +129,22 @@ contains
         wptr(i) = s
       endif
     enddo
-    call mf_map_split(wt, wptr(1:nroot), 0, map%nprocs, rbeg, rcnt)
+    call mf_map_split(wt, wptr(1:nroot), 0, map%nprocs, map%rbeg, map%rcnt)
     do s = ns, 1, -1
-      if (rcnt(s) < 0) then
+      if (map%rcnt(s) < 0) then
         p = sym%sparent(s)
-        rbeg(s) = rbeg(p)
-        rcnt(s) = 1
+        map%rbeg(s) = map%rbeg(p)
+        map%rcnt(s) = 1
       endif
-      if (rcnt(s) > 1) call mf_map_split(wt, clist(cptr(s):cptr(s+1)-1), rbeg(s), rcnt(s), rbeg, rcnt)
+      if (map%rcnt(s) > 1) call mf_map_split(wt, clist(cptr(s):cptr(s+1)-1), map%rbeg(s), map%rcnt(s), map%rbeg, map%rcnt)
     enddo
 
     ! owners bottom-up: a single-rank supernode is owned by its rank, an upper front by the
     ! owner of its heaviest child subtree (smallest child index on ties)
     nup = 0
     do s = 1, ns
-      if (rcnt(s) <= 1) then
-        map%owner(s) = rbeg(s)
+      if (map%rcnt(s) <= 1) then
+        map%owner(s) = map%rbeg(s)
         map%upper(s) = .false.
       else
         cbest = 0
@@ -156,7 +159,7 @@ contains
         if (cbest > 0) then
           map%owner(s) = map%owner(cbest)
         else
-          map%owner(s) = rbeg(s)
+          map%owner(s) = map%rbeg(s)
         endif
         map%upper(s) = .true.
         nup = nup + 1
@@ -171,7 +174,7 @@ contains
         map%uplist(nup) = s
       endif
     enddo
-    deallocate(wt, rbeg, rcnt, cptr, clist, wptr)
+    deallocate(wt, cptr, clist, wptr)
 
   contains
 
@@ -207,9 +210,11 @@ contains
     do i = 1, size(list)
       s = list(i)
       if (ctot > 0) then
-        b0 = int(int(np, 8)*c/ctot, kind=kint)
+        ! rounded boundaries: a floor would push both halves of an even split onto the
+        ! first rank whenever the cut misses an integer
+        b0 = int((2_8*np*c + ctot)/(2_8*ctot), kind=kint)
         c = c + wt(s)
-        b1 = int(int(np, 8)*c/ctot, kind=kint)
+        b1 = int((2_8*np*c + ctot)/(2_8*ctot), kind=kint)
       else
         b0 = 0
         b1 = 0
@@ -230,7 +235,74 @@ contains
     if (allocated(map%owner)) deallocate(map%owner)
     if (allocated(map%upper)) deallocate(map%upper)
     if (allocated(map%uplist)) deallocate(map%uplist)
+    if (allocated(map%rbeg)) deallocate(map%rbeg)
+    if (allocated(map%rcnt)) deallocate(map%rcnt)
   end subroutine hecmw_mf_dist_map_finalize
+
+  !> Contribution row tiles of upper front s and their owning ranks. The boundaries ctb
+  !> (0:ncbt) are offsets from the end of the fully summed part; they reproduce the front
+  !> partition of the numeric stage, whose cuts beyond the fully summed part shift with the
+  !> delayed growth ndel without changing, so senders and receivers of a contribution slice
+  !> derive the same tiles before the front exists. Contiguous tile blocks go to the ranks
+  !> of s proportionally to the trailing update weight rows x band width of a tile:
+  !> contiguous, unlike a cyclic assignment, keeps the owner changes along an ascending
+  !> tile walk (the backward solve token chain) at one per rank.
+  subroutine hecmw_mf_dist_rowtiles(sym, map, tile, s, ndel, ncbt, ctb, towner)
+    implicit none
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_map), intent(in) :: map
+    integer(kind=kint), intent(in) :: tile, s, ndel
+    integer(kind=kint), intent(out) :: ncbt
+    integer(kind=kint), allocatable, intent(inout) :: ctb(:)
+    integer(kind=kint), allocatable, intent(inout) :: towner(:)
+    integer(kind=kint) :: nown, nrow_nodes, ncol, i, k, nd, rel, cur, nr, t, b
+    integer(kind=8) :: ctot, c, w
+
+    nown = sym%sptr(s+1) - sym%sptr(s)
+    nrow_nodes = sym%rptr(s+1) - sym%rptr(s)
+    ncol = ndel
+    do k = sym%sptr(s), sym%sptr(s+1) - 1
+      ncol = ncol + sym%ndof(k)
+    enddo
+    if (allocated(ctb)) then
+      if (size(ctb) < nrow_nodes - nown + 1) deallocate(ctb, towner)
+    endif
+    if (.not. allocated(ctb)) allocate(ctb(0:max(nrow_nodes - nown, 1)), towner(max(nrow_nodes - nown, 1)))
+    ncbt = 0
+    ctb(0) = 0
+    rel = 0
+    cur = 0
+    do i = nown + 1, nrow_nodes
+      nd = sym%ndof(sym%rlist(sym%rptr(s)+i-1))
+      if (rel > cur .and. rel + nd - cur > tile) then
+        ncbt = ncbt + 1
+        ctb(ncbt) = rel
+        cur = rel
+      endif
+      rel = rel + nd
+    enddo
+    if (rel > cur .or. ncbt == 0) then
+      if (rel > 0) then
+        ncbt = ncbt + 1
+        ctb(ncbt) = rel
+      endif
+    endif
+    if (ncbt == 0) return
+
+    nr = map%rcnt(s)
+    ctot = 0
+    do t = 1, ncbt
+      ctot = ctot + int(ctb(t) - ctb(t-1), 8)*(ncol + ctb(t))
+    enddo
+    c = 0
+    do t = 1, ncbt
+      w = int(ctb(t) - ctb(t-1), 8)*(ncol + ctb(t))
+      b = int(((2_8*c + w)*nr)/(2_8*ctot), kind=kint)
+      if (b > nr - 1) b = nr - 1
+      towner(t) = map%rbeg(s) + b
+      c = c + w
+    enddo
+  end subroutine hecmw_mf_dist_rowtiles
 
   !> Broadcast the symbolic structure built on the root rank to all ranks. The int8
   !> estimates (factor_nnz, flops) are not transferred: nothing reads them off the root.
