@@ -344,7 +344,7 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecMAT
     real(kind=kreal), intent(inout) :: mass(:)
 
-    real(kind=kreal), allocatable :: Mtmp(:)
+    real(kind=kreal), allocatable :: W(:), Mtmp(:)
     real(kind=kreal) :: time_dumm
     integer(kind=kint) :: totalmpc, MPC_METHOD, i
 
@@ -359,12 +359,22 @@ contains
     case (1)  ! penalty
       ! do nothing
     case (3) ! elimination
+      allocate(W(hecMAT%NP*hecMAT%NDOF))
       allocate(Mtmp(hecMAT%NP*hecMAT%NDOF))
-      !C-- {Mt} = [T'] {w}
-      call hecmw_Ttvec(hecMESH, hecMAT%NDOF, mass, Mtmp, time_dumm)
+      !C-- lumped mass of the reduced system = row sums of [T'][M][T]
+      !C-- {w} = [T]{1}
+      Mtmp(:) = 1.d0
+      call hecmw_Tvec(hecMESH, hecMAT%NDOF, Mtmp, W, time_dumm)
+      !C-- {w} = [M]{w}
+      do i = 1, hecMAT%NP*hecMAT%NDOF
+        W(i) = mass(i) * W(i)
+      enddo
+      !C-- {Mt} = [T']{w}
+      call hecmw_Ttvec(hecMESH, hecMAT%NDOF, W, Mtmp, time_dumm)
       do i = 1, hecMAT%NP*hecMAT%NDOF
         mass(i) = Mtmp(i)
       enddo
+      deallocate(W)
       deallocate(Mtmp)
     end select
 

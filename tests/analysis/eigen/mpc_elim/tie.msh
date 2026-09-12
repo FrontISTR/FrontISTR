@@ -1,0 +1,39 @@
+!HEADER
+ two truss chains of 5 bars tied at x=5, u_x(7) = u_x(6)
+!NODE, NGRP=NALL
+ 1, 0.0, 0.0, 0.0
+ 2, 1.0, 0.0, 0.0
+ 3, 2.0, 0.0, 0.0
+ 4, 3.0, 0.0, 0.0
+ 5, 4.0, 0.0, 0.0
+ 6, 5.0, 0.0, 0.0
+ 7, 5.0, 0.0, 0.0
+ 8, 6.0, 0.0, 0.0
+ 9, 7.0, 0.0, 0.0
+ 10, 8.0, 0.0, 0.0
+ 11, 9.0, 0.0, 0.0
+ 12, 10.0, 0.0, 0.0
+!ELEMENT, TYPE=301, EGRP=BAR
+ 1, 1, 2
+ 2, 2, 3
+ 3, 3, 4
+ 4, 4, 5
+ 5, 5, 6
+ 6, 7, 8
+ 7, 8, 9
+ 8, 9, 10
+ 9, 10, 11
+ 10, 11, 12
+!SECTION, TYPE=SOLID, EGRP=BAR, MATERIAL=M1
+ 1.0
+!MATERIAL, NAME=M1, ITEM=2
+!ITEM=1, SUBITEM=2
+ 1.0, 0.0
+!ITEM=2
+ 1.0
+!NGROUP, NGRP=FIX
+ 1
+!EQUATION
+ 2, 0.0
+ 7, 1, 1.0, 6, 1, -1.0
+!END

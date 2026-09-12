@@ -32,6 +32,7 @@ contains
 
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_matrix), pointer :: hecMATmpc
+    real(kind=kreal), allocatable :: mass_orig(:)
     real(kind=kreal) :: t1, t2
 
     t1 = hecmw_Wtime()
@@ -47,11 +48,16 @@ contains
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
+    allocate(mass_orig(size(fstrEIG%mass)))
+    mass_orig(:) = fstrEIG%mass(:)
     call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
 
     call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
 
     call hecmw_mpc_tback_eigvec(hecMESH, hecMAT, fstrEIG%iter, fstrEIG%eigvec)
+    ! the eigenvectors are back in the original space, so is the mass used by the postprocessing
+    fstrEIG%mass(:) = mass_orig(:)
+    deallocate(mass_orig)
 
     call fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
 
