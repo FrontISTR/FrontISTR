@@ -3,8 +3,9 @@
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
 !> @brief Multifrontal direct solver (METHOD=DIRECTmf): sequential LDLt with threshold pivoting
-!>        for symmetric (possibly indefinite) matrices. Multi-process runs are still delegated
-!>        to the built-in parallel direct solver.
+!>        for symmetric (possibly indefinite) matrices, LU for structurally symmetric matrices
+!>        with unsymmetric values. Multi-process runs are still delegated to the built-in
+!>        parallel direct solver.
 module hecmw_solver_direct_mf
   use hecmw_util
   use hecmw_matrix_misc
@@ -43,12 +44,6 @@ contains
     loglevel = hecmw_mat_get_loglevel(hecMAT)
     if (loglevel < 0) loglevel = max(hecmw_mat_get_timelog(hecMAT), hecmw_mat_get_iterlog(hecMAT))
     if (hecmw_comm_get_rank() /= 0) loglevel = 0
-
-    if (.not. hecMAT%symmetric) then
-      write(imsg,*) 'ERROR: METHOD=DIRECTmf supports symmetric matrices only'
-      write(*,*) 'ERROR: METHOD=DIRECTmf supports symmetric matrices only'
-      call hecmw_abort(hecmw_comm_get_comm())
-    endif
 
     if (hecMAT%Iarray(98) == 1) then
       t1 = hecmw_wtime()
@@ -95,18 +90,28 @@ contains
             ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (matrix is singular)'
           write(*,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: zero pivot at node ', (idof-1)/hecMAT%NDOF + 1, &
             ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (matrix is singular)'
-        else
+        else if (ierr == -1) then
           write(imsg,*) 'ERROR: DIRECTmf: block size of the matrix does not match the symbolic structure'
           write(*,*) 'ERROR: DIRECTmf: block size of the matrix does not match the symbolic structure'
+        else
+          write(imsg,*) 'ERROR: DIRECTmf: the nonzero structure of the matrix is not symmetric'
+          write(*,*) 'ERROR: DIRECTmf: the nonzero structure of the matrix is not symmetric'
         endif
         call hecmw_abort(hecmw_comm_get_comm())
       endif
       hecMAT%Iarray(97) = 0
       if (loglevel > 0) then
         write(*,'(a,f10.3,a)') '[DIRECTmf]: numeric fct done (', t2 - t1, ' sec)'
-        write(*,'(a,i0,a,i0,a,i0,a,i0,a,i0,a,i0,a)') '[DIRECTmf]: inertia (+,-) = (', FCT%n_pos, ',', FCT%n_neg, &
-          '), 2x2 pivots = ', FCT%n_2x2, ', swaps = ', FCT%n_swap, ', delayed = ', FCT%n_delay, &
-          ' (max front growth = ', FCT%max_growth, ' dofs)'
+        if (FCT%lu) then
+          write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LU (asymmetry = ', FCT%asym, ')'
+          write(*,'(a,i0,a,i0,a,i0,a)') '[DIRECTmf]: row swaps = ', FCT%n_swap, ', delayed = ', FCT%n_delay, &
+            ' (max front growth = ', FCT%max_growth, ' dofs)'
+        else
+          write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LDLt (asymmetry = ', FCT%asym, ')'
+          write(*,'(a,i0,a,i0,a,i0,a,i0,a,i0,a,i0,a)') '[DIRECTmf]: inertia (+,-) = (', FCT%n_pos, ',', FCT%n_neg, &
+            '), 2x2 pivots = ', FCT%n_2x2, ', swaps = ', FCT%n_swap, ', delayed = ', FCT%n_delay, &
+            ' (max front growth = ', FCT%max_growth, ' dofs)'
+        endif
         write(*,'(a,i0,a,f10.3,a,i0,a,i0)') '[DIRECTmf]: factor words = ', FCT%factor_words_act, ' (', &
           real(FCT%factor_words_act, kind=kreal)*8.0d0/1024.0d0**3, ' GB), stack peak words = ', FCT%stack_peak_act, &
           ', front words = ', FCT%front_words_act

@@ -2,7 +2,7 @@
 ! Copyright (c) 2026 FrontISTR Commons
 ! This software is released under the MIT License, see LICENSE.txt
 !-------------------------------------------------------------------------------
-!> @brief Dense kernels of the multifrontal solver, symmetric (LDLt) mode.
+!> @brief Dense kernels of the multifrontal solver, symmetric (LDLt) and unsymmetric (LU) mode.
 !>
 !> A tile or panel is a column major block a(lda,*); only the part on or below the diagonal of
 !> its leading square is referenced. Factored columns hold the unit lower triangle of L below
@@ -10,6 +10,10 @@
 !> 3 for the first and second column of a 2x2 pivot whose off-diagonal entry is dsub(j) of the
 !> first column (the L entry at that position is 0). The BLAS3 path is used when
 !> HECMW_WITH_LAPACK is defined, otherwise plain loops.
+!>
+!> In LU mode the part above the diagonal is held transposed in a second block b of the same
+!> shape, b(i,j) = A(j,i) for i > j, so that the row of U of a pivot is a column of b. Factored
+!> columns then hold L below the diagonal of a, U on the diagonal of a and in the columns of b.
 module hecmw_mf_kernel
   use hecmw_util
   implicit none
@@ -26,6 +30,11 @@ module hecmw_mf_kernel
   public :: hecmw_mf_kernel_dsolve
   public :: hecmw_mf_kernel_gemv
   public :: hecmw_mf_kernel_gemv_t
+  public :: hecmw_mf_kernel_lu
+  public :: hecmw_mf_kernel_trsm_rt
+  public :: hecmw_mf_kernel_panel_lu_nopiv
+  public :: hecmw_mf_kernel_panel_lu_piv
+  public :: hecmw_mf_kernel_usolve
 
 contains
 
@@ -462,5 +471,298 @@ contains
       enddo
     enddo
   end subroutine hecmw_mf_kernel_gemv_t
+
+  !> In place LU of the n x n block held in a (diagonal and below) and b (above, transposed)
+  !> without pivoting; info is the index of the first pivot whose magnitude is not above zero,
+  !> 0 on success.
+  subroutine hecmw_mf_kernel_lu(n, lda, a, ldb, b, zero, info)
+    implicit none
+    integer(kind=kint), intent(in) :: n, lda, ldb
+    real(kind=kreal), intent(inout) :: a(lda,*), b(ldb,*)
+    real(kind=kreal), intent(in) :: zero
+    integer(kind=kint), intent(out) :: info
+    integer(kind=kint) :: i, j, k
+    real(kind=kreal) :: d, l, u
+
+    info = 0
+    do k = 1, n
+      d = a(k,k)
+      if (.not. (abs(d) > zero)) then
+        info = k
+        return
+      endif
+      do i = k+1, n
+        a(i,k) = a(i,k) / d
+      enddo
+      do j = k+1, n
+        u = b(j,k)
+        do i = j, n
+          a(i,j) = a(i,j) - a(i,k)*u
+        enddo
+        l = a(j,k)
+        do i = j+1, n
+          b(i,j) = b(i,j) - b(i,k)*l
+        enddo
+      enddo
+    enddo
+  end subroutine hecmw_mf_kernel_lu
+
+  !> a(m,n) <- a * T^-T with the lower triangle of t(n,n), unit diagonal when unit.
+  subroutine hecmw_mf_kernel_trsm_rt(m, n, ldt, t, unit, lda, a)
+    implicit none
+    integer(kind=kint), intent(in) :: m, n, ldt, lda
+    real(kind=kreal), intent(in) :: t(ldt,*)
+    logical, intent(in) :: unit
+    real(kind=kreal), intent(inout) :: a(lda,*)
+#ifdef HECMW_WITH_LAPACK
+    external :: dtrsm
+
+    if (unit) then
+      call dtrsm('R', 'L', 'T', 'U', m, n, 1.0d0, t, ldt, a, lda)
+    else
+      call dtrsm('R', 'L', 'T', 'N', m, n, 1.0d0, t, ldt, a, lda)
+    endif
+#else
+    integer(kind=kint) :: i, j, k
+
+    do j = 1, n
+      do k = 1, j-1
+        do i = 1, m
+          a(i,j) = a(i,j) - a(i,k)*t(j,k)
+        enddo
+      enddo
+      if (.not. unit) then
+        do i = 1, m
+          a(i,j) = a(i,j) / t(j,j)
+        enddo
+      endif
+    enddo
+#endif
+  end subroutine hecmw_mf_kernel_trsm_rt
+
+  !> LU of the panel a(m,n), b(m,n) (leading n x n block, rows below by the panel solves) without
+  !> pivoting and the threshold check afterwards, as panel_nopiv. The diagonal of b receives
+  !> the diagonal of U.
+  subroutine hecmw_mf_kernel_panel_lu_nopiv(m, n, lda, a, ldb, b, u, zero, info)
+    implicit none
+    integer(kind=kint), intent(in) :: m, n, lda, ldb
+    real(kind=kreal), intent(inout) :: a(lda,*), b(ldb,*)
+    real(kind=kreal), intent(in) :: u, zero
+    integer(kind=kint), intent(out) :: info
+    integer(kind=kint) :: i, j
+    real(kind=kreal) :: uinv
+
+    call hecmw_mf_kernel_lu(n, lda, a, ldb, b, zero, info)
+    if (info /= 0) return
+    if (m > n) then
+      do j = 1, n
+        b(j,j) = a(j,j)
+      enddo
+      call hecmw_mf_kernel_trsm_rt(m-n, n, ldb, b, .false., lda, a(n+1,1))
+      call hecmw_mf_kernel_trsm_rt(m-n, n, lda, a, .true., ldb, b(n+1,1))
+    endif
+    uinv = 1.0d0 / u
+    do j = 1, n
+      do i = j+1, m
+        if (.not. (abs(a(i,j)) <= uinv)) then
+          info = j
+          return
+        endif
+      enddo
+    enddo
+  end subroutine hecmw_mf_kernel_panel_lu_nopiv
+
+  !> LU of the panel a(m,n), b(m,n) with threshold partial pivoting among its n rows: column p
+  !> takes the row of largest magnitude among the rows of the same block (blkr against blk(p)),
+  !> else among the other panel rows, when it reaches u times the largest magnitude of the whole
+  !> column. Rows are exchanged, columns are not. Columns without an acceptable pivot are moved
+  !> with their rows to the end of the panel (allow_delay) or stop the factorization (info =
+  !> column). On return the first npiv columns are factored, permc(j) and permr(j) are the
+  !> original column and row at position j, and blk, blkr are permuted alike.
+  subroutine hecmw_mf_kernel_panel_lu_piv(m, n, lda, a, ldb, b, blk, blkr, u, zero, allow_delay, &
+      npiv, permc, permr, nswap, info)
+    implicit none
+    integer(kind=kint), intent(in) :: m, n, lda, ldb
+    real(kind=kreal), intent(inout) :: a(lda,*), b(ldb,*)
+    integer(kind=kint), intent(inout) :: blk(n), blkr(n)
+    real(kind=kreal), intent(in) :: u, zero
+    logical, intent(in) :: allow_delay
+    integer(kind=kint), intent(out) :: npiv, permc(n), permr(n), nswap, info
+    integer(kind=kint) :: p, nrem, i, r, pass
+    real(kind=kreal) :: lam, best
+    logical :: same
+
+    do i = 1, n
+      permc(i) = i
+      permr(i) = i
+    enddo
+    p = 1
+    nrem = n
+    nswap = 0
+    info = 0
+    do while (p <= nrem)
+      lam = 0.0d0
+      do i = p, m
+        lam = max(lam, abs(a(i,p)))
+      enddo
+      r = 0
+      if (lam > zero) then
+        do pass = 1, 2
+          best = 0.0d0
+          do i = p, nrem
+            same = (blkr(i) == blk(p))
+            if (same .neqv. (pass == 1)) cycle
+            if (abs(a(i,p)) > best) then
+              best = abs(a(i,p))
+              r = i
+            endif
+          enddo
+          if (r /= 0) then
+            if (best >= u*lam) exit
+            r = 0
+          endif
+        enddo
+      endif
+      if (r == 0) then
+        if (.not. allow_delay) then
+          info = p
+          return
+        endif
+        if (nrem > p) call swap_sym(p, nrem)
+        nrem = nrem - 1
+        cycle
+      endif
+      if (r /= p) then
+        call swap_row(p, r)
+        nswap = nswap + 1
+      endif
+      call pivot()
+    enddo
+    npiv = p - 1
+
+  contains
+
+    !> Eliminate column p; the delayed columns and rows beyond nrem are not updated.
+    subroutine pivot()
+      integer(kind=kint) :: i, j
+      real(kind=kreal) :: d, l, uu
+
+      d = a(p,p)
+      do i = p+1, m
+        a(i,p) = a(i,p) / d
+      enddo
+      do j = p+1, nrem
+        uu = b(j,p)
+        do i = j, m
+          a(i,j) = a(i,j) - a(i,p)*uu
+        enddo
+        l = a(j,p)
+        do i = j+1, m
+          b(i,j) = b(i,j) - b(i,p)*l
+        enddo
+      enddo
+      p = p + 1
+    end subroutine pivot
+
+    !> Exchange of the rows x < y of the panel (both not yet eliminated).
+    subroutine swap_row(x, y)
+      integer(kind=kint), intent(in) :: x, y
+      integer(kind=kint) :: c, t
+      real(kind=kreal) :: v
+
+      do c = 1, x
+        v = a(x,c)
+        a(x,c) = a(y,c)
+        a(y,c) = v
+      enddo
+      do c = x+1, y-1
+        v = b(c,x)
+        b(c,x) = a(y,c)
+        a(y,c) = v
+      enddo
+      v = b(y,x)
+      b(y,x) = a(y,y)
+      a(y,y) = v
+      do c = y+1, m
+        v = b(c,x)
+        b(c,x) = b(c,y)
+        b(c,y) = v
+      enddo
+      t = permr(x)
+      permr(x) = permr(y)
+      permr(y) = t
+      t = blkr(x)
+      blkr(x) = blkr(y)
+      blkr(y) = t
+    end subroutine swap_row
+
+    !> Symmetric exchange of panel positions x < y (both not yet eliminated).
+    subroutine swap_sym(x, y)
+      integer(kind=kint), intent(in) :: x, y
+      integer(kind=kint) :: i, t
+      real(kind=kreal) :: v
+
+      v = a(x,x)
+      a(x,x) = a(y,y)
+      a(y,y) = v
+      do i = 1, x-1
+        v = a(x,i)
+        a(x,i) = a(y,i)
+        a(y,i) = v
+        v = b(x,i)
+        b(x,i) = b(y,i)
+        b(y,i) = v
+      enddo
+      do i = x+1, y-1
+        v = a(i,x)
+        a(i,x) = b(y,i)
+        b(y,i) = v
+        v = a(y,i)
+        a(y,i) = b(i,x)
+        b(i,x) = v
+      enddo
+      v = a(y,x)
+      a(y,x) = b(y,x)
+      b(y,x) = v
+      do i = y+1, m
+        v = a(i,x)
+        a(i,x) = a(i,y)
+        a(i,y) = v
+        v = b(i,x)
+        b(i,x) = b(i,y)
+        b(i,y) = v
+      enddo
+      t = permc(x)
+      permc(x) = permc(y)
+      permc(y) = t
+      t = permr(x)
+      permr(x) = permr(y)
+      permr(y) = t
+      t = blk(x)
+      blk(x) = blk(y)
+      blk(y) = t
+      t = blkr(x)
+      blkr(x) = blkr(y)
+      blkr(y) = t
+    end subroutine swap_sym
+
+  end subroutine hecmw_mf_kernel_panel_lu_piv
+
+  !> x <- U^-1 x with the diagonal of U on the diagonal of l(n,n) and its strictly upper part
+  !> transposed in the strictly lower part of ut(n,n).
+  subroutine hecmw_mf_kernel_usolve(n, ldl, l, ldu, ut, x)
+    implicit none
+    integer(kind=kint), intent(in) :: n, ldl, ldu
+    real(kind=kreal), intent(in) :: l(ldl,*), ut(ldu,*)
+    real(kind=kreal), intent(inout) :: x(n)
+    integer(kind=kint) :: i, j
+
+    do j = n, 1, -1
+      do i = j+1, n
+        x(j) = x(j) - ut(i,j)*x(i)
+      enddo
+      x(j) = x(j) / l(j,j)
+    enddo
+  end subroutine hecmw_mf_kernel_usolve
 
 end module hecmw_mf_kernel
