@@ -24,7 +24,9 @@
 !> from its column DOF (fsdof). Delayed positions carry both to the parent.
 module hecmw_mf_numeric
   use hecmw_util
+  use m_hecmw_comm_f
   use hecmw_mf_symbolic
+  use hecmw_mf_dist
   use hecmw_mf_kernel
   !$ use omp_lib
   implicit none
@@ -33,7 +35,9 @@ module hecmw_mf_numeric
   public :: hecmwST_mf_factor
   public :: hecmw_mf_numeric_init
   public :: hecmw_mf_numeric_factor
+  public :: hecmw_mf_numeric_factor_mpi
   public :: hecmw_mf_numeric_solve
+  public :: hecmw_mf_numeric_solve_mpi
   public :: hecmw_mf_numeric_print
   public :: hecmw_mf_numeric_finalize
 
@@ -167,6 +171,13 @@ module hecmw_mf_numeric
     integer(kind=8), allocatable :: boffu(:)
     integer(kind=kint), allocatable :: brku(:)
   end type mf_work
+
+  !> send buffers of one fan-in message that must outlive the isend until the waitall
+  type mf_sendbox
+    integer(kind=kint), allocatable :: hdr(:)
+    integer(kind=kint), allocatable :: tl(:)
+    real(kind=kreal), allocatable :: rv(:)
+  end type mf_sendbox
 
 contains
 
@@ -992,6 +1003,316 @@ contains
       ss = p
     enddo
   end subroutine mf_super_task
+
+  !> Factor the replicated matrix with the supernodes distributed by map: every rank first
+  !> factors its subtrees with the task-parallel code, then all ranks walk the upper fronts
+  !> in ascending order, the owner of a front receiving the contribution blocks of the
+  !> children owned elsewhere so that the extend-add consumes them exactly like local ones
+  !> (fan-in). MPI calls stay on the master thread outside the parallel regions because
+  !> hecmw initializes MPI without a threading level. Sends are isend so that a rank blocked
+  !> in a receive has already issued the sends of its earlier fronts, which makes the
+  !> ascending walk deadlock free. Tags encode 3*supernode+kind, relying on a tag space
+  !> larger than the MPI minimum of 32767, as every mainstream MPI provides.
+  subroutine hecmw_mf_numeric_factor_mpi(hecMAT, sym, map, fct, ierr)
+    implicit none
+    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_map), intent(in) :: map
+    type(hecmwST_mf_factor), intent(inout) :: fct
+    integer(kind=kint), intent(out) :: ierr
+    type(mf_work), allocatable :: wrks(:)
+    type(mf_sendbox), allocatable :: box(:)
+    integer(kind=kint), allocatable :: left(:), reqs(:), stats(:,:)
+    integer(kind=kint) :: s, k, nd, nthr, nsend, nreq, ib, iu, j, c, gierr, ierr2, iw(1)
+    real(kind=kreal) :: amax, zero
+
+    ierr = 0
+    fct%factored = .false.
+    do k = 1, sym%nnode
+      if (sym%ndof(k) /= hecMAT%NDOF) then
+        ierr = -1
+        return
+      endif
+    enddo
+    nd = hecMAT%NDOF
+    amax = maxval(abs(hecMAT%D(1:hecMAT%NP*nd*nd)))
+    if (hecMAT%NPL > 0) amax = max(amax, maxval(abs(hecMAT%AL(1:hecMAT%NPL*nd*nd))))
+    if (hecMAT%NPU > 0) amax = max(amax, maxval(abs(hecMAT%AU(1:hecMAT%NPU*nd*nd))))
+    if (.not. (fct%pivot_u > 0.0d0)) fct%pivot_u = MF_PIVOT_U
+    if (.not. (fct%pivot_zero > 0.0d0)) fct%pivot_zero = MF_PIVOT_ZERO
+    if (fct%blr) then
+      if (.not. hecmw_mf_kernel_blr_available()) fct%blr = .false.
+      if (.not. (fct%eps > 0.0d0)) fct%eps = MF_BLR_EPS
+    endif
+    zero = fct%pivot_zero * amax
+    call mf_mirror(hecMAT, fct, ierr)
+    if (ierr /= 0) return
+    call mf_asymmetry(hecMAT, fct, amax)
+
+    fct%n_pos = 0
+    fct%n_neg = 0
+    fct%n_2x2 = 0
+    fct%n_swap = 0
+    fct%n_delay = 0
+    fct%max_growth = 0
+    fct%factor_words_act = 0
+    fct%stack_peak_act = 0
+    fct%front_words_act = 0
+    fct%live_cb = 0
+    fct%live_front = 0
+    fct%front_peak = 0
+    fct%blr_words_fr = 0
+    fct%blr_tiles = 0
+    fct%blr_tiles_lr = 0
+    fct%blr_rank_sum = 0
+    fct%blr_rank_max = 0
+
+    nthr = 1
+    !$ nthr = omp_get_max_threads()
+    allocate(wrks(0:nthr-1), left(fct%nsuper))
+    do s = 1, fct%nsuper
+      left(s) = fct%cptr(s+1) - fct%cptr(s)
+    enddo
+    gierr = 0
+    !$omp parallel default(shared)
+    !$omp single
+    do s = 1, fct%nsuper
+      if (fct%cptr(s+1) == fct%cptr(s) .and. map%owner(s) == map%myrank .and. .not. map%upper(s)) then
+        !$omp task default(shared) firstprivate(s)
+        call mf_super_task_mpi(hecMAT, sym, map, fct, wrks, left, s, zero, gierr)
+        !$omp end task
+      endif
+    enddo
+    !$omp end single
+    !$omp end parallel
+    deallocate(wrks, left)
+    iw(1) = gierr
+    call hecmw_allreduce_I_comm(iw, 1, hecmw_max, map%comm)
+    gierr = iw(1)
+    if (gierr /= 0) then
+      ierr = gierr
+      return
+    endif
+
+    nsend = 0
+    do s = 1, fct%nsuper
+      if (map%owner(s) == map%myrank .and. sym%sparent(s) /= 0) then
+        if (map%owner(sym%sparent(s)) /= map%myrank) nsend = nsend + 1
+      endif
+    enddo
+    allocate(box(max(nsend, 1)), reqs(3*max(nsend, 1)), stats(HECMW_STATUS_SIZE, 3*max(nsend, 1)))
+    nreq = 0
+    ib = 0
+    ! the subtree roots feed the fan-in first, then the upper fronts as the walk factors them
+    do s = 1, fct%nsuper
+      if (map%owner(s) /= map%myrank .or. map%upper(s) .or. sym%sparent(s) == 0) cycle
+      if (map%upper(sym%sparent(s)) .and. map%owner(sym%sparent(s)) /= map%myrank) call send_cb(s)
+    enddo
+    do iu = 1, map%nupper
+      s = map%uplist(iu)
+      if (map%owner(s) /= map%myrank) cycle
+      do j = fct%cptr(s), fct%cptr(s+1) - 1
+        c = fct%clist(j)
+        if (map%owner(c) /= map%myrank) call recv_cb(c, map%owner(c))
+      enddo
+      if (gierr == 0) then
+        !$omp parallel default(shared)
+        !$omp single
+        block
+          type(mf_work) :: lwrk
+          call mf_super_factor(hecMAT, sym, fct, fct%sn(s), lwrk, s, zero, ierr2)
+        end block
+        !$omp end single
+        !$omp end parallel
+        if (ierr2 /= 0) gierr = ierr2
+      endif
+      if (sym%sparent(s) /= 0) then
+        if (map%owner(sym%sparent(s)) /= map%myrank) call send_cb(s)
+      endif
+    enddo
+    call hecmw_waitall(nreq, reqs, stats)
+    ! the sent contribution blocks were consumed remotely; free the local copies
+    do s = 1, fct%nsuper
+      if (map%owner(s) == map%myrank .and. sym%sparent(s) /= 0) then
+        if (map%owner(sym%sparent(s)) /= map%myrank .and. allocated(fct%sn(s)%cval)) then
+          fct%live_cb = fct%live_cb - fct%sn(s)%cbsize
+          deallocate(fct%sn(s)%cval)
+        endif
+      endif
+    enddo
+    deallocate(box, reqs, stats)
+    iw(1) = gierr
+    call hecmw_allreduce_I_comm(iw, 1, hecmw_max, map%comm)
+    gierr = iw(1)
+    ierr = gierr
+    if (ierr /= 0) return
+    fct%factored = .true.
+
+  contains
+
+    !> isend the contribution block of s0 to the owner of its parent: the header (with the
+    !> local error state), the tile boundaries with the delayed column and row DOFs, and the
+    !> block values; on an error only the header travels
+    subroutine send_cb(s0)
+      integer(kind=kint), intent(in) :: s0
+      integer(kind=kint) :: dst, m, nt1, cndel
+
+      dst = map%owner(sym%sparent(s0))
+      ib = ib + 1
+      allocate(box(ib)%hdr(5))
+      box(ib)%hdr(1) = gierr
+      if (gierr == 0) then
+        box(ib)%hdr(2) = fct%sn(s0)%ncol
+        box(ib)%hdr(3) = fct%sn(s0)%npiv
+        box(ib)%hdr(4) = fct%sn(s0)%nt
+        box(ib)%hdr(5) = fct%sn(s0)%ntc
+      else
+        box(ib)%hdr(2:5) = 0
+      endif
+      nreq = nreq + 1
+      call hecmw_isend_int(box(ib)%hdr, 5, dst, 3*s0, map%comm, reqs(nreq))
+      if (gierr /= 0) return
+      nt1 = fct%sn(s0)%nt + 1
+      cndel = fct%sn(s0)%ncol - fct%sn(s0)%npiv
+      m = nt1 + 2*cndel
+      allocate(box(ib)%tl(m))
+      box(ib)%tl(1:nt1) = fct%sn(s0)%tbnd(1:nt1)
+      box(ib)%tl(nt1+1:nt1+cndel) = fct%sn(s0)%fsdof(fct%sn(s0)%npiv+1:fct%sn(s0)%ncol)
+      box(ib)%tl(nt1+cndel+1:nt1+2*cndel) = fct%sn(s0)%frow(fct%sn(s0)%npiv+1:fct%sn(s0)%ncol)
+      nreq = nreq + 1
+      call hecmw_isend_int(box(ib)%tl, m, dst, 3*s0+1, map%comm, reqs(nreq))
+      if (fct%sn(s0)%cbsize > 0) then
+        nreq = nreq + 1
+        call hecmw_isend_r(fct%sn(s0)%cval, int(fct%sn(s0)%cbsize, kind=kint), dst, 3*s0+2, map%comm, reqs(nreq))
+      endif
+    end subroutine send_cb
+
+    !> receive the contribution block of child c0 into its snode, in the shape a local
+    !> factorization would have left: the extend-add and the forward solve of the parent
+    !> then consume it unchanged
+    subroutine recv_cb(c0, src)
+      integer(kind=kint), intent(in) :: c0, src
+      integer(kind=kint) :: hdr(5), stat(HECMW_STATUS_SIZE), m, nt1, cndel
+      integer(kind=kint), allocatable :: tl(:)
+
+      call hecmw_recv_int(hdr, 5, src, 3*c0, map%comm, stat)
+      if (hdr(1) /= 0) then
+        gierr = hdr(1)
+        return
+      endif
+      fct%sn(c0)%ncol = hdr(2)
+      fct%sn(c0)%npiv = hdr(3)
+      fct%sn(c0)%nt = hdr(4)
+      fct%sn(c0)%ntc = hdr(5)
+      nt1 = hdr(4) + 1
+      cndel = hdr(2) - hdr(3)
+      call mf_grow_i(fct%sn(c0)%tbnd, nt1)
+      call mf_grow_i(fct%sn(c0)%fsdof, max(hdr(2), 1))
+      call mf_grow_i(fct%sn(c0)%frow, max(hdr(2), 1))
+      m = nt1 + 2*cndel
+      allocate(tl(m))
+      call hecmw_recv_int(tl, m, src, 3*c0+1, map%comm, stat)
+      fct%sn(c0)%tbnd(1:nt1) = tl(1:nt1)
+      fct%sn(c0)%fsdof(hdr(3)+1:hdr(2)) = tl(nt1+1:nt1+cndel)
+      fct%sn(c0)%frow(hdr(3)+1:hdr(2)) = tl(nt1+cndel+1:nt1+2*cndel)
+      deallocate(tl)
+      fct%sn(c0)%cbsize = mf_cb_words(fct%sn(c0))
+      if (fct%lu) fct%sn(c0)%cbsize = 2*fct%sn(c0)%cbsize
+      if (allocated(fct%sn(c0)%cval)) deallocate(fct%sn(c0)%cval)
+      if (fct%sn(c0)%cbsize > 0) then
+        allocate(fct%sn(c0)%cval(fct%sn(c0)%cbsize))
+        call hecmw_recv_r(fct%sn(c0)%cval, int(fct%sn(c0)%cbsize, kind=kint), src, 3*c0+2, map%comm, stat)
+        fct%live_cb = fct%live_cb + fct%sn(c0)%cbsize
+        fct%stack_peak_act = max(fct%stack_peak_act, fct%live_cb)
+      endif
+    end subroutine recv_cb
+
+  end subroutine hecmw_mf_numeric_factor_mpi
+
+  !> mf_super_task limited to the subtrees of the executing rank: the climb stops below an
+  !> upper front, which the sequential fan-in stage factors.
+  subroutine mf_super_task_mpi(hecMAT, sym, map, fct, wrks, left, s, zero, gierr)
+    implicit none
+    type(hecmwST_matrix), intent(in) :: hecMAT
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_map), intent(in) :: map
+    type(hecmwST_mf_factor), intent(inout) :: fct
+    type(mf_work), intent(inout) :: wrks(0:)
+    integer(kind=kint), intent(inout) :: left(:)
+    integer(kind=kint), intent(in) :: s
+    real(kind=kreal), intent(in) :: zero
+    integer(kind=kint), intent(inout) :: gierr
+    integer(kind=kint) :: ierr, cur, tid, p, n, ss, c, l, nr, nteam
+
+    tid = 0
+    nteam = 1
+    !$ tid = omp_get_thread_num()
+    !$ nteam = omp_get_num_threads()
+    ss = s
+    do
+      !$omp atomic read
+      cur = gierr
+      if (cur == 0) then
+        nr = 0
+        c = fct%chead(ss)
+        do while (c /= 0)
+          nr = nr + fct%sn(c)%ncol - fct%sn(c)%npiv
+          c = fct%cnext(c)
+        enddo
+        do l = sym%rptr(ss), sym%rptr(ss+1) - 1
+          nr = nr + sym%ndof(sym%rlist(l))
+        enddo
+        if (nr >= MF_PAR_ROWS .and. nteam > 1) then
+          ! a large front suspends at its task loops, so it may not borrow the thread's work
+          ! space, which another task on this thread could then reuse
+          block
+            type(mf_work) :: lwrk
+            call mf_super_factor(hecMAT, sym, fct, fct%sn(ss), lwrk, ss, zero, ierr)
+          end block
+        else
+          call mf_super_factor(hecMAT, sym, fct, fct%sn(ss), wrks(tid), ss, zero, ierr)
+        endif
+        if (ierr /= 0) then
+          !$omp atomic write
+          gierr = ierr
+        endif
+      endif
+      p = sym%sparent(ss)
+      if (p == 0) return
+      if (map%upper(p)) return
+      ! critical, not atomic: its flush semantics make the child's writes visible to the
+      ! thread that continues with the parent
+      !$omp critical (mf_tree)
+      left(p) = left(p) - 1
+      n = left(p)
+      !$omp end critical (mf_tree)
+      if (n /= 0) return
+      ss = p
+    enddo
+  end subroutine mf_super_task_mpi
+
+  !> Words of one face of the stored contribution block of a supernode, from its tile
+  !> boundaries; mirrors the layout of mf_store_cb.
+  function mf_cb_words(sn) result(w)
+    implicit none
+    type(mf_snode), intent(in) :: sn
+    integer(kind=8) :: w
+    integer(kind=kint) :: cndel, cnrow, j, prev, b
+
+    cndel = sn%ncol - sn%npiv
+    cnrow = cndel + sn%tbnd(sn%nt+1) - sn%ncol
+    w = 0
+    prev = 0
+    if (cndel > 0) then
+      w = w + int(cnrow, 8)*cndel
+      prev = cndel
+    endif
+    do j = sn%ntc + 1, sn%nt
+      b = cndel + sn%tbnd(j+1) - sn%ncol
+      w = w + int(cnrow - prev, 8)*(b - prev)
+      prev = b
+    enddo
+  end function mf_cb_words
 
   !> Assemble and factor the front of supernode s: scatter the matrix entries, extend-add the
   !> contribution blocks of the children (freed here), factor the fully summed part and store
@@ -2280,6 +2601,265 @@ contains
       ss = p
     enddo
   end subroutine mf_fwd_task
+
+  !> x = A^-1 b on the supernodes distributed by map; b and x are the replicated global
+  !> vectors in the original DOF numbering. The forward solve mirrors the fan-in of the
+  !> factorization (subtree tasks, then the upper fronts ascending, the dval contributions
+  !> of remote children received in place); the backward solve descends the upper fronts and
+  !> hands every remote child the solution values its rows reference, a set both sides
+  !> derive from the symbolic structure. The solved pivot values of the owned supernodes are
+  !> summed over the ranks at the end, which is exact and order independent because every
+  !> DOF is eliminated on exactly one rank.
+  subroutine hecmw_mf_numeric_solve_mpi(sym, map, fct, b, x)
+    implicit none
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_map), intent(in) :: map
+    type(hecmwST_mf_factor), intent(inout) :: fct
+    real(kind=kreal), intent(in) :: b(:)
+    real(kind=kreal), intent(out) :: x(:)
+    type(mf_sendbox), allocatable :: box(:)
+    real(kind=kreal), allocatable :: z(:), xx(:)
+    integer(kind=kint), allocatable :: dmap(:), left(:), reqs(:), stats(:,:)
+    integer(kind=kint) :: ns, s, i, iu, j, c, p, m, nreq, ib, nsend, ndn, stat(HECMW_STATUS_SIZE)
+
+    ns = fct%nsuper
+    allocate(z(fct%ndof_tot), xx(fct%ndof_tot), dmap(fct%ndof_tot), left(ns))
+    !$omp parallel do
+    do i = 1, fct%ndof_tot
+      z(i) = b(fct%pdof(i))
+    enddo
+    !$omp end parallel do
+
+    do s = 1, ns
+      left(s) = fct%cptr(s+1) - fct%cptr(s)
+    enddo
+    !$omp parallel default(shared)
+    !$omp single
+    do s = 1, ns
+      if (fct%cptr(s+1) == fct%cptr(s) .and. map%owner(s) == map%myrank .and. .not. map%upper(s)) then
+        !$omp task default(shared) firstprivate(s)
+        call mf_fwd_task_mpi(sym, map, fct, left, s, z, dmap)
+        !$omp end task
+      endif
+    enddo
+    !$omp end single
+    !$omp end parallel
+
+    ! the forward stage sends one message per owned supernode with a remote parent, the
+    ! backward stage one per remote child of an owned upper front; the counts differ per rank
+    nsend = 0
+    do s = 1, ns
+      if (map%owner(s) == map%myrank .and. sym%sparent(s) /= 0) then
+        if (map%owner(sym%sparent(s)) /= map%myrank) nsend = nsend + 1
+      endif
+    enddo
+    ndn = 0
+    do iu = 1, map%nupper
+      s = map%uplist(iu)
+      if (map%owner(s) /= map%myrank) cycle
+      do j = fct%cptr(s), fct%cptr(s+1) - 1
+        if (map%owner(fct%clist(j)) /= map%myrank) ndn = ndn + 1
+      enddo
+    enddo
+    allocate(box(max(ndn, 1)), reqs(max(nsend, ndn, 1)), stats(HECMW_STATUS_SIZE, max(nsend, ndn, 1)))
+    nreq = 0
+    do s = 1, ns
+      if (map%owner(s) /= map%myrank .or. map%upper(s) .or. sym%sparent(s) == 0) cycle
+      if (map%upper(sym%sparent(s)) .and. map%owner(sym%sparent(s)) /= map%myrank) call send_dval(s)
+    enddo
+    do iu = 1, map%nupper
+      s = map%uplist(iu)
+      if (map%owner(s) /= map%myrank) cycle
+      do j = fct%cptr(s), fct%cptr(s+1) - 1
+        c = fct%clist(j)
+        if (map%owner(c) == map%myrank) cycle
+        m = fct%sn(c)%tbnd(fct%sn(c)%nt+1) - fct%sn(c)%npiv
+        if (m > 0) then
+          if (allocated(fct%sn(c)%dval)) deallocate(fct%sn(c)%dval)
+          allocate(fct%sn(c)%dval(m))
+          call hecmw_recv_r(fct%sn(c)%dval, m, map%owner(c), 3*c, map%comm, stat)
+        endif
+      enddo
+      call mf_super_fwd(sym, fct, fct%sn(s), s, z, dmap)
+      if (sym%sparent(s) /= 0) then
+        if (map%owner(sym%sparent(s)) /= map%myrank) call send_dval(s)
+      endif
+    enddo
+    call hecmw_waitall(nreq, reqs, stats)
+    ! the sent forward contributions were consumed remotely; free the local copies
+    do s = 1, ns
+      if (map%owner(s) == map%myrank .and. sym%sparent(s) /= 0) then
+        if (map%owner(sym%sparent(s)) /= map%myrank .and. allocated(fct%sn(s)%dval)) deallocate(fct%sn(s)%dval)
+      endif
+    enddo
+
+    nreq = 0
+    ib = 0
+    do iu = map%nupper, 1, -1
+      s = map%uplist(iu)
+      if (map%owner(s) /= map%myrank) cycle
+      p = sym%sparent(s)
+      if (p /= 0) then
+        if (map%owner(p) /= map%myrank) call recv_xx(s)
+      endif
+      call mf_super_bwd(sym, fct, fct%sn(s), s, z, xx)
+      do j = fct%cptr(s), fct%cptr(s+1) - 1
+        c = fct%clist(j)
+        if (map%owner(c) /= map%myrank) call send_xx(c)
+      enddo
+    enddo
+    do s = 1, ns
+      if (map%owner(s) /= map%myrank .or. map%upper(s) .or. sym%sparent(s) == 0) cycle
+      if (map%upper(sym%sparent(s)) .and. map%owner(sym%sparent(s)) /= map%myrank) call recv_xx(s)
+    enddo
+    !$omp parallel default(shared)
+    !$omp single
+    do s = 1, ns
+      if (map%owner(s) /= map%myrank .or. map%upper(s)) cycle
+      p = sym%sparent(s)
+      if (p /= 0) then
+        if (.not. map%upper(p)) cycle
+      endif
+      !$omp task default(shared) firstprivate(s)
+      call bwd_task_mpi(s)
+      !$omp end task
+    enddo
+    !$omp end single
+    !$omp end parallel
+    call hecmw_waitall(nreq, reqs, stats)
+
+    z(1:fct%ndof_tot) = 0.0d0
+    do s = 1, ns
+      if (map%owner(s) /= map%myrank) cycle
+      do i = 1, fct%sn(s)%npiv
+        z(fct%pdof(fct%sn(s)%fsdof(i))) = xx(fct%sn(s)%fsdof(i))
+      enddo
+    enddo
+    x(1:fct%ndof_tot) = z(1:fct%ndof_tot)
+    call hecmw_allreduce_R_comm(x, fct%ndof_tot, hecmw_sum, map%comm)
+    deallocate(z, xx, dmap, left, box, reqs, stats)
+
+  contains
+
+    !> isend the forward contribution of s0 to the owner of its parent
+    subroutine send_dval(s0)
+      integer(kind=kint), intent(in) :: s0
+      integer(kind=kint) :: mm
+
+      mm = fct%sn(s0)%tbnd(fct%sn(s0)%nt+1) - fct%sn(s0)%npiv
+      if (mm <= 0) return
+      nreq = nreq + 1
+      call hecmw_isend_r(fct%sn(s0)%dval, mm, map%owner(sym%sparent(s0)), 3*s0, map%comm, reqs(nreq))
+    end subroutine send_dval
+
+    !> permuted DOFs whose solution the rows of supernode c0 beyond its pivots reference:
+    !> the delayed column DOFs, then the column DOFs of the contribution row nodes
+    subroutine xx_dofs(c0, mm, list)
+      integer(kind=kint), intent(in) :: c0
+      integer(kind=kint), intent(out) :: mm
+      integer(kind=kint), intent(out), allocatable :: list(:)
+      integer(kind=kint) :: cnown, d, k, l, idx
+
+      cnown = sym%sptr(c0+1) - sym%sptr(c0)
+      mm = fct%sn(c0)%ncol - fct%sn(c0)%npiv
+      do l = sym%rptr(c0) + cnown, sym%rptr(c0+1) - 1
+        mm = mm + sym%ndof(sym%rlist(l))
+      enddo
+      allocate(list(max(mm, 1)))
+      idx = 0
+      do d = fct%sn(c0)%npiv + 1, fct%sn(c0)%ncol
+        idx = idx + 1
+        list(idx) = fct%sn(c0)%fsdof(d)
+      enddo
+      do l = sym%rptr(c0) + cnown, sym%rptr(c0+1) - 1
+        k = sym%rlist(l)
+        do d = fct%cdofptr(k), fct%cdofptr(k+1) - 1
+          idx = idx + 1
+          list(idx) = d
+        enddo
+      enddo
+    end subroutine xx_dofs
+
+    !> isend the referenced solution values to the owner of child c0
+    subroutine send_xx(c0)
+      integer(kind=kint), intent(in) :: c0
+      integer(kind=kint), allocatable :: list(:)
+      integer(kind=kint) :: mm, i0
+
+      call xx_dofs(c0, mm, list)
+      if (mm <= 0) return
+      ib = ib + 1
+      allocate(box(ib)%rv(mm))
+      do i0 = 1, mm
+        box(ib)%rv(i0) = xx(list(i0))
+      enddo
+      deallocate(list)
+      nreq = nreq + 1
+      call hecmw_isend_r(box(ib)%rv, mm, map%owner(c0), 3*c0+1, map%comm, reqs(nreq))
+    end subroutine send_xx
+
+    !> receive the referenced solution values of s0 from the owner of its parent
+    subroutine recv_xx(s0)
+      integer(kind=kint), intent(in) :: s0
+      integer(kind=kint), allocatable :: list(:)
+      real(kind=kreal), allocatable :: v(:)
+      integer(kind=kint) :: mm, i0
+
+      call xx_dofs(s0, mm, list)
+      if (mm <= 0) return
+      allocate(v(mm))
+      call hecmw_recv_r(v, mm, map%owner(sym%sparent(s0)), 3*s0+1, map%comm, stat)
+      do i0 = 1, mm
+        xx(list(i0)) = v(i0)
+      enddo
+      deallocate(v, list)
+    end subroutine recv_xx
+
+    !> backward-solve task over an owned subtree, every descendant local by construction
+    recursive subroutine bwd_task_mpi(s0)
+      integer(kind=kint), intent(in) :: s0
+      integer(kind=kint) :: jj, cc
+
+      call mf_super_bwd(sym, fct, fct%sn(s0), s0, z, xx)
+      do jj = fct%cptr(s0), fct%cptr(s0+1) - 1
+        cc = fct%clist(jj)
+        !$omp task default(shared) firstprivate(cc)
+        call bwd_task_mpi(cc)
+        !$omp end task
+      enddo
+    end subroutine bwd_task_mpi
+
+  end subroutine hecmw_mf_numeric_solve_mpi
+
+  !> mf_fwd_task limited to the subtrees of the executing rank, the climb stopping below an
+  !> upper front the way the factorization tasks do.
+  subroutine mf_fwd_task_mpi(sym, map, fct, left, s, z, dmap)
+    implicit none
+    type(hecmwST_mf_symbolic), intent(in) :: sym
+    type(hecmwST_mf_map), intent(in) :: map
+    type(hecmwST_mf_factor), intent(inout) :: fct
+    integer(kind=kint), intent(inout) :: left(:)
+    integer(kind=kint), intent(in) :: s
+    real(kind=kreal), intent(inout) :: z(:)
+    integer(kind=kint), intent(inout) :: dmap(:)
+    integer(kind=kint) :: p, n, ss
+
+    ss = s
+    do
+      call mf_super_fwd(sym, fct, fct%sn(ss), ss, z, dmap)
+      p = sym%sparent(ss)
+      if (p == 0) return
+      if (map%upper(p)) return
+      ! critical, not atomic: its flush semantics make the child's writes visible to the
+      ! thread that continues with the parent
+      !$omp critical (mf_tree)
+      left(p) = left(p) - 1
+      n = left(p)
+      !$omp end critical (mf_tree)
+      if (n /= 0) return
+      ss = p
+    enddo
+  end subroutine mf_fwd_task_mpi
 
   !> Forward solve of the front of supernode s: gather the b entries of the own DOFs from z,
   !> add the forward contributions of the children (freed here), apply the panel, write the

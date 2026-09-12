@@ -68,10 +68,6 @@ foreach(parallel IN LISTS parallels)
   if(WITH_ML)
     AppendListTests("with_ml/*" "${TEST_TARGETS}" TEST_TARGETS)
   endif()
-  # DIRECTmf delegates the solve to the parallel direct solver, which needs 2**n+1 processes
-  if((parallel STREQUAL "mpi") OR (parallel STREQUAL "hybrid"))
-    list(FILTER TEST_TARGETS EXCLUDE REGEX "^solver/DIRECTmf/")
-  endif()
 
   foreach(target ${TEST_TARGETS})
     get_filename_component(LAST_TEST_NAME ${target} NAME)
