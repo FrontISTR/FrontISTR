@@ -20,6 +20,15 @@ module hecmw_util
   integer(kind=kint),parameter :: HECMW_MSG_LEN      =  255
   integer(kind=kint),parameter :: HECMW_FILENAME_LEN = 1023
 
+  !> exit status returned to the OS (keep the values below 256)
+  integer(kind=kint),parameter :: HECMW_EXIT_SUCCESS      =  0
+  integer(kind=kint),parameter :: HECMW_EXIT_USAGE        =  1
+  integer(kind=kint),parameter :: HECMW_EXIT_INPUT        =  2
+  integer(kind=kint),parameter :: HECMW_EXIT_MODEL        =  3
+  integer(kind=kint),parameter :: HECMW_EXIT_SOLVER_SETUP =  4
+  integer(kind=kint),parameter :: HECMW_EXIT_NOCONV       = 10
+  integer(kind=kint),parameter :: HECMW_EXIT_INTERNAL     = 20
+
   integer(kind=kint),parameter :: hecmw_sum              = 46801
   integer(kind=kint),parameter :: hecmw_prod             = 46802
   integer(kind=kint),parameter :: hecmw_max              = 46803
@@ -598,13 +607,22 @@ contains
   !C*** HECMW_ABORT
   !C***
   !C
-  subroutine hecmw_abort(comm)
-    integer(kind=kint) :: comm, errorcode, ierror
+  subroutine hecmw_abort(comm, code)
+    integer(kind=kint) :: comm
+    integer(kind=kint), intent(in), optional :: code
+    integer(kind=kint) :: errorcode, ierror
+
+    errorcode = HECMW_EXIT_INTERNAL
+    if( present(code) ) errorcode = code
+
+    ! MPI_ABORT does not flush the Fortran unit buffers; do it here so that
+    ! the message written just before the abort survives.
+    flush(6)
 
 #ifndef HECMW_SERIAL
     call MPI_ABORT(comm, errorcode, ierror)
 #else
-    stop
+    stop errorcode
 #endif
   end subroutine hecmw_abort
 
