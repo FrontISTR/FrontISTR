@@ -50,8 +50,6 @@ module hecmw_mf_numeric
   real(kind=kreal), parameter :: MF_PIVOT_ZERO = 1.0d-14
   !> default BLR truncation threshold
   real(kind=kreal), parameter :: MF_BLR_EPS = 1.0d-8
-  !> the matrix is factored in LU mode above this asymmetry, max|A_ij - A_ji| / max|A_ij|
-  real(kind=kreal), parameter :: MF_ASYM_TOL = 1.0d-12
   !> a front with at least this many rows parallelizes its tiles across the team
   integer(kind=kint), parameter :: MF_PAR_ROWS = 512
 
@@ -100,14 +98,15 @@ module hecmw_mf_numeric
     ! numeric options; the driver sets them from the solver option lines before every
     ! factorization, 0 (or below) selecting the built-in default, and the factorization
     ! writes the effective values back
-    integer(kind=kint) :: mode = 0                  !< 0 auto, 1 force LDLt, 2 force LU
+    integer(kind=kint) :: mode = 0                  !< 0 follow the symmetric flag, 1 force LDLt, 2 force LU
+    logical :: scan = .false.                       !< scan the numerical asymmetry (log output only)
     logical :: blr = .false.                        !< compress the factor panels (BLR)
     real(kind=kreal) :: eps = 0.0d0                 !< BLR truncation threshold
     real(kind=kreal) :: pivot_u = 0.0d0             !< pivot threshold: entries of L bounded by 1/u
     real(kind=kreal) :: pivot_zero = 0.0d0          !< zero pivot fraction of max|A|
     ! layout of the last factorization
     logical :: lu = .false.                         !< LU mode (else LDLt)
-    real(kind=kreal) :: asym = 0.0d0                !< max|A_ij - A_ji| / max|A_ij| of the last matrix
+    real(kind=kreal) :: asym = 0.0d0                !< max|A_ij - A_ji| / max|A_ij| of the last matrix (0 unless scanned)
     type(mf_snode), allocatable :: sn(:)            !< per-supernode factor storage
     ! estimates from the symbolic structure (no delayed pivots)
     integer(kind=8) :: factor_words = 0
@@ -875,7 +874,8 @@ contains
     if (ierr /= 0) deallocate(fct%mirror, fct%mirroru)
   end subroutine mf_mirror
 
-  !> Asymmetry of the values, max|A_ij - A_ji| relative to amax, and the resulting mode.
+  !> The mode from the option and the symmetric flag, and, only when the scan option is on,
+  !> the asymmetry of the values, max|A_ij - A_ji| relative to amax (log output only).
   subroutine mf_asymmetry(hecMAT, fct, amax)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT
@@ -885,6 +885,9 @@ contains
     integer(kind=8) :: base, base2
     real(kind=kreal) :: asym
 
+    fct%lu = (fct%mode == 2) .or. (fct%mode == 0 .and. .not. hecMAT%symmetric)
+    fct%asym = 0.0d0
+    if (.not. fct%scan) return
     nd = hecMAT%NDOF
     asym = 0.0d0
     do i = 1, hecMAT%NP
@@ -904,11 +907,7 @@ contains
         enddo
       enddo
     enddo
-    fct%asym = 0.0d0
     if (amax > 0.0d0) fct%asym = asym / amax
-    fct%lu = (.not. hecMAT%symmetric) .or. (fct%asym > MF_ASYM_TOL)
-    if (fct%mode == 1) fct%lu = .false.
-    if (fct%mode == 2) fct%lu = .true.
   end subroutine mf_asymmetry
 
   !> Push the contribution block of the grid gval (positions beyond npiv) at sval(top+1:): the
@@ -957,9 +956,9 @@ contains
   end subroutine mf_store_cb
 
   !> Factor the matrix of hecMAT in the order of sym, in LDLt mode (lower part referenced) or
-  !> in LU mode when the values are unsymmetric or the symmetric flag is off. ierr is 0 on
-  !> success, the permuted DOF of a zero pivot (singular matrix), -1 when the block size of
-  !> hecMAT does not match the structure, or -2 when the structure is not symmetric.
+  !> in LU mode when the symmetric flag is off; the mode option overrides either way. ierr is
+  !> 0 on success, the permuted DOF of a zero pivot (singular matrix), -1 when the block size
+  !> of hecMAT does not match the structure, or -2 when the structure is not symmetric.
   subroutine hecmw_mf_numeric_factor(hecMAT, sym, fct, ierr)
     implicit none
     type(hecmwST_matrix), intent(in) :: hecMAT

@@ -657,6 +657,7 @@ contains
     np = hecmw_comm_get_size()
     me = hecmw_comm_get_rank()
     comm = hecmw_comm_get_comm()
+    gmat%mat%symmetric = hecMAT%symmetric
     nd2 = hecMAT%NDOF * hecMAT%NDOF
     n = hecMAT%N
     allocate(vlen(np), vdisp(np))

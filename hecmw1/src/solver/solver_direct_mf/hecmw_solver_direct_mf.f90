@@ -108,6 +108,7 @@ contains
 
     if (hecMAT%Iarray(97) == 1) then
       FCT%mode = hecMAT%Iarray(42)
+      FCT%scan = loglevel > 1
       FCT%blr = hecMAT%Iarray(43) /= 0
       FCT%eps = hecMAT%Rarray(41)
       FCT%pivot_u = hecMAT%Rarray(43)
@@ -145,18 +146,20 @@ contains
           ', zero pivot factor = ', FCT%pivot_zero
         if (FCT%lu) then
           if (FCT%mode == 2) then
-            write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LU (forced by option, asymmetry = ', FCT%asym, ')'
+            write(*,'(a)') '[DIRECTmf]: mode = LU (forced by option)'
           else
-            write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LU (asymmetry = ', FCT%asym, ')'
+            write(*,'(a)') '[DIRECTmf]: mode = LU (unsymmetric matrix)'
           endif
+          if (loglevel > 1) write(*,'(a,1pe9.2)') '[DIRECTmf]: asymmetry = ', FCT%asym
           write(*,'(a,i0,a,i0,a,i0,a)') '[DIRECTmf]: row swaps = ', FCT%n_swap, ', delayed = ', FCT%n_delay, &
             ' (max front growth = ', FCT%max_growth, ' dofs)'
         else
           if (FCT%mode == 1) then
-            write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LDLt (forced by option, asymmetry = ', FCT%asym, ')'
+            write(*,'(a)') '[DIRECTmf]: mode = LDLt (forced by option)'
           else
-            write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LDLt (asymmetry = ', FCT%asym, ')'
+            write(*,'(a)') '[DIRECTmf]: mode = LDLt'
           endif
+          if (loglevel > 1) write(*,'(a,1pe9.2)') '[DIRECTmf]: asymmetry = ', FCT%asym
           write(*,'(a,i0,a,i0,a,i0,a,i0,a,i0,a,i0,a)') '[DIRECTmf]: inertia (+,-) = (', FCT%n_pos, ',', FCT%n_neg, &
             '), 2x2 pivots = ', FCT%n_2x2, ', swaps = ', FCT%n_swap, ', delayed = ', FCT%n_delay, &
             ' (max front growth = ', FCT%max_growth, ' dofs)'
@@ -279,6 +282,7 @@ contains
 
     if (hecMAT%Iarray(97) == 1) then
       FCT%mode = hecMAT%Iarray(42)
+      FCT%scan = loglevel > 1
       FCT%blr = hecMAT%Iarray(43) /= 0
       FCT%eps = hecMAT%Rarray(41)
       FCT%pivot_u = hecMAT%Rarray(43)
@@ -321,18 +325,20 @@ contains
           ', zero pivot factor = ', FCT%pivot_zero
         if (FCT%lu) then
           if (FCT%mode == 2) then
-            write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LU (forced by option, asymmetry = ', FCT%asym, ')'
+            write(*,'(a)') '[DIRECTmf]: mode = LU (forced by option)'
           else
-            write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LU (asymmetry = ', FCT%asym, ')'
+            write(*,'(a)') '[DIRECTmf]: mode = LU (unsymmetric matrix)'
           endif
+          if (loglevel > 1) write(*,'(a,1pe9.2)') '[DIRECTmf]: asymmetry = ', FCT%asym
           write(*,'(a,i0,a,i0,a,i0,a)') '[DIRECTmf]: row swaps = ', FCT%n_swap, ', delayed = ', FCT%n_delay, &
             ' (max front growth = ', FCT%max_growth, ' dofs)'
         else
           if (FCT%mode == 1) then
-            write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LDLt (forced by option, asymmetry = ', FCT%asym, ')'
+            write(*,'(a)') '[DIRECTmf]: mode = LDLt (forced by option)'
           else
-            write(*,'(a,1pe9.2,a)') '[DIRECTmf]: mode = LDLt (asymmetry = ', FCT%asym, ')'
+            write(*,'(a)') '[DIRECTmf]: mode = LDLt'
           endif
+          if (loglevel > 1) write(*,'(a,1pe9.2)') '[DIRECTmf]: asymmetry = ', FCT%asym
           write(*,'(a,i0,a,i0,a,i0,a,i0,a,i0,a,i0,a)') '[DIRECTmf]: inertia (+,-) = (', FCT%n_pos, ',', FCT%n_neg, &
             '), 2x2 pivots = ', FCT%n_2x2, ', swaps = ', FCT%n_swap, ', delayed = ', FCT%n_delay, &
             ' (max front growth = ', FCT%max_growth, ' dofs)'

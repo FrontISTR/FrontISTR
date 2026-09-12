@@ -1,7 +1,7 @@
 !! Multifrontal direct solver (METHOD=DIRECTmf), unsymmetric values: frictional contact with the
-!! Lagrange multipliers eliminated by MPC (CONTACT_ELIM=1). The factorization must switch to LU
-!! mode when friction makes the matrix unsymmetric; the reference is the result of DIRECTmkl
-!! (tests/with_mkl/contact_slag_mpc_elim_mkl).
+!! Lagrange multipliers eliminated by MPC (CONTACT_ELIM=1). Friction makes the matrix
+!! unsymmetric, so the option line forces LU mode (MF_Mode=2); the reference is the result of
+!! DIRECTmkl (tests/with_mkl/contact_slag_mpc_elim_mkl).
 ###################################
 #####   SOLVER INFORMATION    #####
 ###################################
@@ -29,6 +29,9 @@ CONTACT_STATE,ON
 CONTACT_FTRACTION,ON
 CONTACT_NTRACTION,ON
 !SOLVER,METHOD=DIRECTmf,ITERLOG=YES,TIMELOG=NO,MPCMETHOD=3,CONTACT_ELIM=1,LOGLEVEL=1
+ 10000, 1
+ 1.0e-8, 1.0, 0.0
+ 0, 2
 ###################################
 #####   BOUNDARY CONDITIONS   #####
 ###################################
