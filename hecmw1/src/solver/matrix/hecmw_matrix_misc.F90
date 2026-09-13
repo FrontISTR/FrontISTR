@@ -40,6 +40,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_mpc_method
   public :: hecmw_mat_set_estcond
   public :: hecmw_mat_get_estcond
+  public :: hecmw_mat_set_recompute_residual
+  public :: hecmw_mat_get_recompute_residual
   public :: hecmw_mat_set_contact_elim
   public :: hecmw_mat_get_contact_elim
   public :: hecmw_mat_set_iterlog
@@ -79,8 +81,6 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_flag_converged
   public :: hecmw_mat_set_flag_diverged
   public :: hecmw_mat_get_flag_diverged
-  public :: hecmw_mat_set_flag_mpcmatvec
-  public :: hecmw_mat_get_flag_mpcmatvec
 
   public :: hecmw_mat_set_solver_opt
   public :: hecmw_mat_get_solver_opt
@@ -130,6 +130,7 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_MPC_METHOD         = 13
   integer, parameter :: IDX_I_ESTCOND            = 14
   integer, parameter :: IDX_I_CONTACT_ELIM       = 15
+  integer, parameter :: IDX_I_RECOMPUTE_RESIDUAL = 16
   integer, parameter :: IDX_I_ITERLOG            = 21
   integer, parameter :: IDX_I_TIMELOG            = 22
   integer, parameter :: IDX_I_LOGLEVEL           = 24   ! 23 is steplog (svIarray)
@@ -148,7 +149,6 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_METHOD2            = 8
   integer, parameter :: IDX_I_FLAG_CONVERGED     = 81
   integer, parameter :: IDX_I_FLAG_DIVERGED      = 82
-  integer, parameter :: IDX_I_FLAG_MPCMATVEC     = 83
 
   integer, parameter :: IDX_I_SOLVER_OPT_S       = 41
   integer, parameter :: IDX_I_SOLVER_OPT_E       = 50
@@ -234,6 +234,7 @@ contains
     call hecmw_mat_set_precond_impl( hecMAT, HECMW_PRECOND_IMPL_DEFAULT )
     call hecmw_mat_set_ncolor_in( hecMAT, 10 )
     call hecmw_mat_set_estcond( hecMAT, 0 )
+    call hecmw_mat_set_recompute_residual( hecMAT, 0 )   ! 0 = unset: each iterative solver falls back to its own period
     call hecmw_mat_set_maxrecycle_precond( hecMAT, 3 )
 
     call hecmw_mat_set_resid( hecMAT, 1.d-8 )
@@ -508,6 +509,18 @@ contains
     hecMAT%Iarray(IDX_I_ESTCOND) = estcond
   end subroutine hecmw_mat_set_estcond
 
+  function hecmw_mat_get_recompute_residual( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_recompute_residual
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_recompute_residual = hecMAT%Iarray(IDX_I_RECOMPUTE_RESIDUAL)
+  end function hecmw_mat_get_recompute_residual
+
+  subroutine hecmw_mat_set_recompute_residual( hecMAT, recompute_residual )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: recompute_residual
+    hecMAT%Iarray(IDX_I_RECOMPUTE_RESIDUAL) = recompute_residual
+  end subroutine hecmw_mat_set_recompute_residual
+
   function hecmw_mat_get_contact_elim( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_contact_elim
     type(hecmwST_matrix) :: hecMAT
@@ -730,18 +743,6 @@ contains
     type(hecmwST_matrix) :: hecMAT
     hecmw_mat_get_flag_diverged = hecMAT%Iarray(IDX_I_FLAG_DIVERGED)
   end function hecmw_mat_get_flag_diverged
-
-  subroutine hecmw_mat_set_flag_mpcmatvec( hecMAT, flag_mpcmatvec )
-    type(hecmwST_matrix) :: hecMAT
-    integer(kind=kint) :: flag_mpcmatvec
-    hecMAT%Iarray(IDX_I_FLAG_MPCMATVEC) = flag_mpcmatvec
-  end subroutine hecmw_mat_set_flag_mpcmatvec
-
-  function hecmw_mat_get_flag_mpcmatvec( hecMAT )
-    integer(kind=kint) :: hecmw_mat_get_flag_mpcmatvec
-    type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_flag_mpcmatvec = hecMAT%Iarray(IDX_I_FLAG_MPCMATVEC)
-  end function hecmw_mat_get_flag_mpcmatvec
 
   subroutine hecmw_mat_set_solver_opt( hecMAT, solver_opt )
     type(hecmwST_matrix) :: hecMAT

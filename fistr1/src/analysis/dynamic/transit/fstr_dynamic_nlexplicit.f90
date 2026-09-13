@@ -19,6 +19,7 @@ module fstr_dynamic_nlexplicit
   use m_dynamic_mat_ass_couple
   use m_fstr_rcap_io
   use mContact
+  use m_fstr_contact_elem_common, only: computeTm_Tt
   use m_fstr_TimeInc
 
 contains
@@ -83,17 +84,21 @@ contains
     call fstr_prepare_dynamic_explicit( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYN, &
       & ndof, nnod, restrt_step_count )
 
+    if( associated( fstrSOLID%contacts ) )  then
+      if( ndof /= 3 ) then
+        if( hecMESH%my_rank == 0 ) write(*,*) 'Explicit contact analysis requires three displacement DOFs per node'
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      call initialize_contact_output_vectors(fstrSOLID,hecMAT)
+      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
+      call forward_increment_Lagrange(1,ndof,fstrDYN%VEC1,hecMESH,fstrSOLID,infoCTChange,&
+        & fstrSOLID%ddunode,restrt_step_count == 0)
+    endif
+
     if( restrt_step_count == 0 ) then
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYN, fstrPARAM, .true.)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYN, fstrEIG, fstrSOLID)
     end if
-
-    if( associated( fstrSOLID%contacts ) )  then
-      call initialize_contact_output_vectors(fstrSOLID,hecMAT)
-      call setup_contact_elesurf_for_area( 1, hecMESH, fstrSOLID )
-      call forward_increment_Lagrange(1,ndof,fstrDYN%VEC1,hecMESH,fstrSOLID,infoCTChange,&
-        & fstrDYN%DISP(:,2),fstrSOLID%ddunode)
-    endif
 
     step_count = restrt_step_count
     do tot_step = 1, fstrSOLID%nstep_tot
@@ -423,7 +428,7 @@ contains
     if( associated( fstrSOLID%contacts ) )  then
       !call fstr_scan_contact_state( cstep, fstrDYN%t_delta, kcaSLAGRANGE, hecMESH, fstrSOLID, infoCTChange )
       call forward_increment_Lagrange(cstep,ndof,fstrDYN%VEC1,hecMESH,fstrSOLID,infoCTChange,&
-        & fstrDYN%DISP(:,2),fstrSOLID%ddunode)
+        & fstrSOLID%ddunode,.false.)
       do j = 1 ,ndof*nnod
         hecMAT%X(j)  = hecMAT%X(j) + fstrSOLID%ddunode(j)
       enddo
@@ -455,26 +460,44 @@ contains
   end subroutine fstr_advance_dynamic_explicit
 
   !< This subroutine implements Forward increment Lagrange multiplier method( NJ Carpenter et al. Int.J.Num.Meth.Eng.,32(1991),103-128 )
-  subroutine forward_increment_Lagrange(cstep,ndof,mmat,hecMESH,fstrSOLID,infoCTChange,wkarray,uc)
+  subroutine forward_increment_Lagrange(cstep,ndof,mmat,hecMESH,fstrSOLID,infoCTChange,uc,is_init)
     integer, intent(in)                    :: cstep
     integer, intent(in)                    :: ndof
     real(kind=kreal), intent(in)           :: mmat(:)
     type( hecmwST_local_mesh ), intent(in) :: hecMESH       !< type mesh
     type(fstr_solid), intent(inout)        :: fstrSOLID
     type(fstr_info_contactChange)          :: infoCTChange
-    real(kind=kreal), intent(out)          :: wkarray(:)
     real(kind=kreal), intent(out)          :: uc(:)
-    integer :: i, j, k, m, grpid, slave, nn, iSS, sid, etype, iter
-    real(kind=kreal) :: fdum, conv, dlambda, shapefunc(l_max_surface_node), lambda(3)
+    logical, intent(in)                    :: is_init
+    integer :: i, j, k, slave, nn, iSS, sid, iter, offset
+    real(kind=kreal), allocatable :: contact_force(:), friction_force(:), compliance(:)
+    real(kind=kreal) :: fdum, conv, dlambda, rel_t(3), tangent(3), friction(3)
+    real(kind=kreal) :: tangent_compliance, friction_limit, friction_norm, rel_t_norm
+    real(kind=kreal) :: element_disp(3*(l_max_surface_node+1))
+    real(kind=kreal) :: Tm(3,3*(l_max_surface_node+1)), Tt(3,3*(l_max_surface_node+1))
+    real(kind=kreal) :: Bn(3*(l_max_surface_node+1))
+    integer, parameter :: MAX_CONTACT_ITER = 1000
 
-    call fstr_scan_contact_state_exp( cstep, hecMESH, fstrSOLID, infoCTChange )
+    uc = 0.d0
+    call fstr_scan_contact_state_exp( cstep, is_init, hecMESH, fstrSOLID, infoCTChange )
     if( .not. infoCTChange%active ) return
 
-    uc = 0.0d0
+    allocate(contact_force(hecMESH%n_node*ndof), friction_force(hecMESH%n_node*ndof), &
+      compliance(hecMESH%n_node*ndof))
+    compliance = 1.d0/mmat
+    call mask_explicit_contact_constraints(ndof, hecMESH, fstrSOLID, compliance)
+
+    do i=1,fstrSOLID%n_contacts
+      do j=1,size(fstrSOLID%contacts(i)%slave)
+        if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
+        fstrSOLID%contacts(i)%states(j)%multiplier(:) = 0.d0
+        fstrSOLID%contacts(i)%states(j)%wkdist = 0.d0
+      enddo
+    enddo
 
     iter = 0
     do
-      wkarray = 0.0d0
+      contact_force = 0.d0
       do i=1,fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
@@ -482,85 +505,232 @@ contains
             fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
             cycle
           endif
-          if( iter==0 ) then
-            fstrSOLID%contacts(i)%states(j)%multiplier(:) =0.d0
-            fstrSOLID%contacts(i)%states(j)%wkdist =0.d0
-            cycle
-          endif
           slave = fstrSOLID%contacts(i)%slave(j)
-
           sid = fstrSOLID%contacts(i)%states(j)%surface
           nn = size( fstrSOLID%contacts(i)%master(sid)%nodes )
-          etype = fstrSOLID%contacts(i)%master(sid)%etype
-          call getShapeFunc( etype, fstrSOLID%contacts(i)%states(j)%lpos(:), shapefunc )
-          wkarray( slave ) = -fstrSOLID%contacts(i)%states(j)%multiplier(1)
+          if( nn > l_max_surface_node ) then
+            if( hecMESH%my_rank == 0 ) write(*,*) 'Too many nodes on explicit contact surface:', nn
+            call hecmw_abort(hecmw_comm_get_comm())
+          endif
+          call computeTm_Tt(fstrSOLID%contacts(i)%states(j), fstrSOLID%contacts(i)%master(sid), &
+            0.d0, Tm, Tt, fstrSOLID%contacts(i)%smoothing, Bn)
+          offset = (slave-1)*ndof
+          contact_force(offset+1:offset+3) = contact_force(offset+1:offset+3) &
+            + fstrSOLID%contacts(i)%states(j)%multiplier(1)*Bn(1:3)
           do k=1,nn
             iSS = fstrSOLID%contacts(i)%master(sid)%nodes(k)
-            wkarray( iSS ) = wkarray( iSS ) + shapefunc(k) * fstrSOLID%contacts(i)%states(j)%multiplier(1)
+            offset = (iSS-1)*ndof
+            contact_force(offset+1:offset+3) = contact_force(offset+1:offset+3) &
+              + fstrSOLID%contacts(i)%states(j)%multiplier(1)*Bn(3*k+1:3*k+3)
           enddo
         enddo
       enddo
 
-      if(iter > 0)then
-        do i=1,fstrSOLID%n_contacts
-          do j= 1, size(fstrSOLID%contacts(i)%slave)
-            if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
-            slave = fstrSOLID%contacts(i)%slave(j)
-            sid = fstrSOLID%contacts(i)%states(j)%surface
-            nn = size( fstrSOLID%contacts(i)%master(sid)%nodes )
-            etype = fstrSOLID%contacts(i)%master(sid)%etype
-            call getShapeFunc( etype, fstrSOLID%contacts(i)%states(j)%lpos(:), shapefunc )
-            fstrSOLID%contacts(i)%states(j)%wkdist = -wkarray( slave )/mmat( (slave-1)*ndof+1 )
-            do k=1,nn
-              iSS = fstrSOLID%contacts(i)%master(sid)%nodes(k)
-              fstrSOLID%contacts(i)%states(j)%wkdist = fstrSOLID%contacts(i)%states(j)%wkdist  &
-                   + shapefunc(k) * wkarray(iSS) / mmat( (iSS-1)*ndof+1 )
-            enddo
-          enddo
-        enddo
-      endif
+      call hecmw_assemble_R(hecMESH, contact_force, hecMESH%n_node, ndof)
+      call hecmw_update_R(hecMESH, contact_force, hecMESH%n_node, ndof)
 
       conv = 0.d0
-      wkarray = 0.d0
       do i=1,fstrSOLID%n_contacts
         do j= 1, size(fstrSOLID%contacts(i)%slave)
           if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
           slave = fstrSOLID%contacts(i)%slave(j)
           sid = fstrSOLID%contacts(i)%states(j)%surface
           nn = size( fstrSOLID%contacts(i)%master(sid)%nodes )
-          etype = fstrSOLID%contacts(i)%master(sid)%etype
-          call getShapeFunc( etype, fstrSOLID%contacts(i)%states(j)%lpos(:), shapefunc )
-          fdum = 1.d0/mmat( (slave-1)*ndof+1 )
+          call computeTm_Tt(fstrSOLID%contacts(i)%states(j), fstrSOLID%contacts(i)%master(sid), &
+            0.d0, Tm, Tt, fstrSOLID%contacts(i)%smoothing, Bn)
+          offset = (slave-1)*ndof
+          fstrSOLID%contacts(i)%states(j)%wkdist = &
+            dot_product(Bn(1:3), contact_force(offset+1:offset+3)*compliance(offset+1:offset+3))
+          fdum = dot_product(Bn(1:3), Bn(1:3)*compliance(offset+1:offset+3))
           do k=1,nn
             iSS = fstrSOLID%contacts(i)%master(sid)%nodes(k)
-            fdum = fdum + shapefunc(k)*shapefunc(k)/mmat( (iSS-1)*ndof+1 )
+            offset = (iSS-1)*ndof
+            fstrSOLID%contacts(i)%states(j)%wkdist = fstrSOLID%contacts(i)%states(j)%wkdist &
+              + dot_product(Bn(3*k+1:3*k+3), contact_force(offset+1:offset+3)*compliance(offset+1:offset+3))
+            fdum = fdum + dot_product(Bn(3*k+1:3*k+3), Bn(3*k+1:3*k+3)*compliance(offset+1:offset+3))
           enddo
-          dlambda= (fstrSOLID%contacts(i)%states(j)%distance-fstrSOLID%contacts(i)%states(j)%wkdist) /fdum
-          conv = conv + dlambda*dlambda;
+          dlambda = 0.d0
+          if( fdum > 1.d-20 ) &
+            dlambda = (fstrSOLID%contacts(i)%states(j)%distance-fstrSOLID%contacts(i)%states(j)%wkdist)/fdum
+          conv = conv + dlambda*dlambda
           fstrSOLID%contacts(i)%states(j)%multiplier(1) = fstrSOLID%contacts(i)%states(j)%multiplier(1) + dlambda
-          if( fstrSOLID%contacts(i)%fcoeff>0.d0 ) then
-            if( fstrSOLID%contacts(i)%states(j)%state == CONTACTSLIP ) then
-              fstrSOLID%contacts(i)%states(j)%multiplier(2) =             &
-              fstrSOLID%contacts(i)%fcoeff * fstrSOLID%contacts(i)%states(j)%multiplier(1)
-            else    ! stick
-              !      fstrSOLID%contacts(i)%states(j)%multiplier(2) =
-            endif
-          endif
-          lambda = fstrSOLID%contacts(i)%states(j)%multiplier(1)* fstrSOLID%contacts(i)%states(j)%direction
-          wkarray((slave-1)*ndof+1:(slave-1)*ndof+3) = lambda(:)
+        enddo
+      enddo
+      call hecmw_allreduce_R1(hecMESH, conv, HECMW_SUM)
+      iter = iter+1
+      if( dsqrt(conv)<1.d-8 ) exit
+      if( iter >= MAX_CONTACT_ITER ) then
+        if( hecMESH%my_rank == 0 ) write(*,*) 'Explicit contact correction failed to converge'
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+    enddo
+
+    contact_force = 0.d0
+    do i=1,fstrSOLID%n_contacts
+      do j=1,size(fstrSOLID%contacts(i)%slave)
+        if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
+        slave = fstrSOLID%contacts(i)%slave(j)
+        sid = fstrSOLID%contacts(i)%states(j)%surface
+        nn = size(fstrSOLID%contacts(i)%master(sid)%nodes)
+        call computeTm_Tt(fstrSOLID%contacts(i)%states(j), fstrSOLID%contacts(i)%master(sid), &
+          0.d0, Tm, Tt, fstrSOLID%contacts(i)%smoothing, Bn)
+        offset = (slave-1)*ndof
+        contact_force(offset+1:offset+3) = contact_force(offset+1:offset+3) &
+          + fstrSOLID%contacts(i)%states(j)%multiplier(1)*Bn(1:3)
+        do k=1,nn
+          iSS = fstrSOLID%contacts(i)%master(sid)%nodes(k)
+          offset = (iSS-1)*ndof
+          contact_force(offset+1:offset+3) = contact_force(offset+1:offset+3) &
+            + fstrSOLID%contacts(i)%states(j)%multiplier(1)*Bn(3*k+1:3*k+3)
+        enddo
+      enddo
+    enddo
+    call hecmw_assemble_R(hecMESH, contact_force, hecMESH%n_node, ndof)
+    call hecmw_update_R(hecMESH, contact_force, hecMESH%n_node, ndof)
+
+    do i=1,hecMESH%n_node*ndof
+      uc(i) = contact_force(i)*compliance(i)
+    enddo
+
+    friction_force = 0.d0
+    do i=1,fstrSOLID%n_contacts
+      do j=1,size(fstrSOLID%contacts(i)%slave)
+        if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
+        if( fstrSOLID%contacts(i)%fcoeff <= 0.d0 ) then
+          fstrSOLID%contacts(i)%states(j)%tangentForce_final(:) = 0.d0
+          fstrSOLID%contacts(i)%states(j)%reldisp(:) = 0.d0
+          cycle
+        endif
+
+        slave = fstrSOLID%contacts(i)%slave(j)
+        sid = fstrSOLID%contacts(i)%states(j)%surface
+        nn = size(fstrSOLID%contacts(i)%master(sid)%nodes)
+        call computeTm_Tt(fstrSOLID%contacts(i)%states(j), fstrSOLID%contacts(i)%master(sid), &
+          fstrSOLID%contacts(i)%fcoeff, Tm, Tt, fstrSOLID%contacts(i)%smoothing)
+
+        offset = (slave-1)*ndof
+        element_disp(1:3) = fstrSOLID%dunode(offset+1:offset+3) + uc(offset+1:offset+3)
+        do k=1,nn
+          iSS = fstrSOLID%contacts(i)%master(sid)%nodes(k)
+          offset = (iSS-1)*ndof
+          element_disp(3*k+1:3*k+3) = fstrSOLID%dunode(offset+1:offset+3) + uc(offset+1:offset+3)
+        enddo
+        rel_t = matmul(Tt(1:3,1:3*(nn+1)), element_disp(1:3*(nn+1)))
+        fstrSOLID%contacts(i)%states(j)%reldisp(:) = rel_t
+
+        rel_t_norm = dsqrt(dot_product(rel_t,rel_t))
+        friction = 0.d0
+        if( rel_t_norm > 1.d-20 ) then
+          tangent = rel_t/rel_t_norm
+          offset = (slave-1)*ndof
+          tangent_compliance = sum(matmul(tangent,Tt(1:3,1:3))**2*compliance(offset+1:offset+3))
           do k=1,nn
             iSS = fstrSOLID%contacts(i)%master(sid)%nodes(k)
-            wkarray((iSS-1)*ndof+1:(iSS-1)*ndof+3) = wkarray((iSS-1)*ndof+1:(iSS-1)*ndof+3) -lambda(:)*shapefunc(k)
+            offset = (iSS-1)*ndof
+            tangent_compliance = tangent_compliance &
+              + sum(matmul(tangent,Tt(1:3,3*k+1:3*k+3))**2*compliance(offset+1:offset+3))
+          enddo
+          if( tangent_compliance > 1.d-20 ) friction = rel_t/tangent_compliance
+        endif
+
+        friction_limit = fstrSOLID%contacts(i)%fcoeff &
+          * dabs(fstrSOLID%contacts(i)%states(j)%multiplier(1))
+        friction_norm = dsqrt(dot_product(friction,friction))
+        if( friction_norm > friction_limit .and. friction_norm > 1.d-20 ) then
+          friction = friction*(friction_limit/friction_norm)
+          fstrSOLID%contacts(i)%states(j)%state = CONTACTSLIP
+        else
+          fstrSOLID%contacts(i)%states(j)%state = CONTACTSTICK
+        endif
+        friction_norm = dsqrt(dot_product(friction,friction))
+        fstrSOLID%contacts(i)%states(j)%tangentForce_final(:) = friction
+        fstrSOLID%contacts(i)%states(j)%multiplier(2) = friction_norm
+        fstrSOLID%contacts(i)%states(j)%multiplier(3) = 0.d0
+
+        offset = (slave-1)*ndof
+        friction_force(offset+1:offset+3) = friction_force(offset+1:offset+3) &
+          - matmul(transpose(Tm(1:3,1:3)), friction)
+        do k=1,nn
+          iSS = fstrSOLID%contacts(i)%master(sid)%nodes(k)
+          offset = (iSS-1)*ndof
+          friction_force(offset+1:offset+3) = friction_force(offset+1:offset+3) &
+            - matmul(transpose(Tm(1:3,3*k+1:3*k+3)), friction)
+        enddo
+      enddo
+    enddo
+    call hecmw_assemble_R(hecMESH, friction_force, hecMESH%n_node, ndof)
+    call hecmw_update_R(hecMESH, friction_force, hecMESH%n_node, ndof)
+    do i=1,hecMESH%n_node*ndof
+      uc(i) = (contact_force(i)+friction_force(i))*compliance(i)
+    enddo
+
+    call fstr_update_contact_TangentForce(cstep, fstrSOLID)
+    deallocate(contact_force, friction_force, compliance)
+  end subroutine forward_increment_Lagrange
+
+  subroutine mask_explicit_contact_constraints(ndof, hecMESH, fstrSOLID, compliance)
+    integer(kind=kint), intent(in)          :: ndof
+    type(hecmwST_local_mesh), intent(in)    :: hecMESH
+    type(fstr_solid), intent(in)            :: fstrSOLID
+    real(kind=kreal), intent(inout)         :: compliance(:)
+    integer(kind=kint) :: ig0, ig, ityp, idofS, idofE, iS0, iE0, ik, node, idof
+
+    do ig0=1,fstrSOLID%BOUNDARY_ngrp_tot
+      ig = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
+      ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
+      idofS = ityp/10
+      idofE = ityp-idofS*10
+      if( fstrSOLID%BOUNDARY_ngrp_rotID(ig0) > 0 ) then
+        idofS = 1
+        idofE = ndof
+      endif
+      iS0 = hecMESH%node_group%grp_index(ig-1)+1
+      iE0 = hecMESH%node_group%grp_index(ig)
+      do ik=iS0,iE0
+        node = hecMESH%node_group%grp_item(ik)
+        do idof=idofS,min(idofE,ndof)
+          compliance((node-1)*ndof+idof) = 0.d0
+        enddo
+      enddo
+    enddo
+
+    if( fstrSOLID%VELOCITY_type /= kbcInitial ) then
+      do ig0=1,fstrSOLID%VELOCITY_ngrp_tot
+        ig = fstrSOLID%VELOCITY_ngrp_ID(ig0)
+        ityp = fstrSOLID%VELOCITY_ngrp_type(ig0)
+        idofS = ityp/10
+        idofE = ityp-idofS*10
+        if( fstrSOLID%VELOCITY_ngrp_rotID(ig0) > 0 ) then
+          idofS = 1
+          idofE = ndof
+        endif
+        iS0 = hecMESH%node_group%grp_index(ig-1)+1
+        iE0 = hecMESH%node_group%grp_index(ig)
+        do ik=iS0,iE0
+          node = hecMESH%node_group%grp_item(ik)
+          do idof=idofS,min(idofE,ndof)
+            compliance((node-1)*ndof+idof) = 0.d0
           enddo
         enddo
       enddo
-      if( dsqrt(conv)<1.d-8 ) exit
-      iter = iter+1
-    enddo
+    endif
 
-    do i=1,hecMESH%n_node*ndof
-      uc(i) = wkarray(i)/mmat(i)
-    enddo
-  end subroutine forward_increment_Lagrange
+    if( fstrSOLID%ACCELERATION_type /= kbcInitial ) then
+      do ig0=1,fstrSOLID%ACCELERATION_ngrp_tot
+        ig = fstrSOLID%ACCELERATION_ngrp_ID(ig0)
+        ityp = fstrSOLID%ACCELERATION_ngrp_type(ig0)
+        idofS = ityp/10
+        idofE = ityp-idofS*10
+        iS0 = hecMESH%node_group%grp_index(ig-1)+1
+        iE0 = hecMESH%node_group%grp_index(ig)
+        do ik=iS0,iE0
+          node = hecMESH%node_group%grp_item(ik)
+          do idof=idofS,min(idofE,ndof)
+            compliance((node-1)*ndof+idof) = 0.d0
+          enddo
+        enddo
+      enddo
+    endif
+  end subroutine mask_explicit_contact_constraints
 
 end module fstr_dynamic_nlexplicit

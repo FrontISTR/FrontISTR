@@ -71,7 +71,8 @@ contains
     integer(kind=kint), parameter ::W2=13
     integer(kind=kint), parameter ::ZQ=14
 
-    integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R= 20
+    integer(kind=kint) :: N_ITER_RECOMPUTE_R
+    integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R_DEFAULT= 20
 
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
@@ -89,6 +90,11 @@ contains
     TIMElog = hecmw_mat_get_timelog( hecMAT )
     MAXIT  = hecmw_mat_get_iter( hecMAT )
     TOL   = hecmw_mat_get_resid( hecMAT )
+
+    N_ITER_RECOMPUTE_R = hecmw_mat_get_recompute_residual( hecMAT )
+    if (N_ITER_RECOMPUTE_R == 0) N_ITER_RECOMPUTE_R = N_ITER_RECOMPUTE_R_DEFAULT
+    !C----- negative: never recompute periodically.  ITER stops at MAXIT, so mod() below is never 0
+    if (N_ITER_RECOMPUTE_R < 0) N_ITER_RECOMPUTE_R = MAXIT + 1
 
     error= 0
     BETA = 0.0d0

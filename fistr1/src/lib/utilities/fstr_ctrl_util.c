@@ -36,7 +36,7 @@ static void strcpy_c2f(char *dest, int len, const char *src);
 static char *remove_header_space(char *token);
 static int Strncmpi(const char *s1, const char *s2, int len);
 static int Strcmpi(const char *s1, const char *s2);
-/* static void Strupr( char* s ); */
+static void Strupr(char *s);
 static void remove_cr(char *s);
 static void format_conv(const char *format, char *fmt, int *array_size);
 
@@ -190,7 +190,6 @@ static int set_fstr_ctrl_data(const char *fname, fstr_ctrl_data *ctrl) {
       exit(HECMW_EXIT_INTERNAL);
     }
 
-    /* Strupr( buff ); */
     remove_cr(buff);
     snprintf(ctrl->rec[rec_count].line, line_size, "%s", buff);
     rec_count++;
@@ -538,6 +537,7 @@ static int param_value_convert(int type, char *token, void *val) {
 
     case 'C':
     case 'S':
+    case 'F':
     case (int)'P':
       fmt[fmt_i] = 's';
       fmt_i++;
@@ -559,6 +559,10 @@ static int param_value_convert(int type, char *token, void *val) {
 
   if (r != 1) {
     return FSTR_CTRL_RCODE_PARAM_TYPE_ERROR;
+  }
+
+  if ((char)type == 'S') {
+    Strupr((char *)val);
   }
 
   return FSTR_CTRL_RCODE_PARAM_SUCCESS;
@@ -889,6 +893,7 @@ int c_fstr_ctrl_get_data_v(fstr_ctrl_data *ctrl, int line_no,
         break;
 
       case 'S':
+      case 'F':
         fmt = fmt_string;
         break;
 
@@ -909,8 +914,13 @@ int c_fstr_ctrl_get_data_v(fstr_ctrl_data *ctrl, int line_no,
         return FSTR_CTRL_RCODE_DATA_TYPE_ERROR;
       }
 
-      if ((char)type == 'S') {
+      if ((char)type == 'S' || (char)type == 'F') {
         snprintf(buff, sizeof(buff), "%s", (char *)val_p);
+
+        if ((char)type == 'S') {
+          Strupr(buff);
+        }
+
         strcpy_c2f((char *)val_p, array_size[counter], buff);
       }
 
@@ -973,6 +983,7 @@ int c_fstr_ctrl_get_data_array_v(fstr_ctrl_data *ctrl, const char *format,
         break;
 
       case 'S':
+      case 'F':
         param_size[i] = sizeof(char) * array_size[i];
         break;
 
@@ -1003,7 +1014,8 @@ int c_fstr_ctrl_get_data_array_v(fstr_ctrl_data *ctrl, const char *format,
     }
 
     for (j = 0; j < column_n; j++) {
-      if (fg_fortran_get_data_array_v && toupper(fmt[j]) == 'S') {
+      if (fg_fortran_get_data_array_v &&
+          (toupper(fmt[j]) == 'S' || toupper(fmt[j]) == 'F')) {
         snprintf(buff, sizeof(buff), "%s", (char *)param[j]);
         strcpy_c2f((char *)param[j], array_size[j], buff);
       }
@@ -1585,15 +1597,13 @@ static int Strcmpi(const char *s1, const char *s2) {
 }
 
 /* JP-30 */
-#if 0
-static
-void Strupr(char *s) {
+
+static void Strupr(char *s) {
   while (*s) {
     *s = toupper(*s);
     s++;
   }
 }
-#endif
 
 /* JP-31 */
 

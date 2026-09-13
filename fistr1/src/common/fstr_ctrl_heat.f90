@@ -8,27 +8,7 @@ module fstr_ctrl_heat
   use hecmw
   use fstr_ctrl_util_f
 
-  private :: pc_strupr
-
 contains
-
-  subroutine pc_strupr( s )
-    implicit none
-    character(*) :: s
-    integer :: i, n, a, da
-
-    n = len_trim(s)
-    da = iachar('a') - iachar('A')
-    do i = 1, n
-      a = iachar(s(i:i))
-      if( a > iachar('Z')) then
-        a = a - da
-        s(i:i) = achar(a)
-      end if
-    end do
-  end subroutine pc_strupr
-
-
 
   !> Read in !HEAT
   function fstr_ctrl_get_HEAT( ctrl, dt, etime, dtmin, deltmx, itmax, eps, tpname, beta )
@@ -149,7 +129,6 @@ contains
 
       do i = 1, n
         lid = -1;
-        call pc_strupr( type_name_list(i) )
         if(      type_name_list(i)(1:2) == 'BF'  ) then; lid = 0
         else if( type_name_list(i)(1:2) == 'S0'  ) then; lid = 1
         else if( type_name_list(i)(1:2) == 'S1'  ) then; lid = 1
@@ -243,7 +222,6 @@ contains
 
       do i = 1, n
         lid = -1;
-        call pc_strupr( type_name_list(i) )
         if(      type_name_list(i)(1:2) == 'F0'  ) then; lid = 1
         else if( type_name_list(i)(1:2) == 'F1'  ) then; lid = 1
         else if( type_name_list(i)(1:2) == 'F2'  ) then; lid = 2
@@ -340,7 +318,6 @@ contains
 
       do i = 1, n
         lid = -1;
-        call pc_strupr( type_name_list(i) )
         if(      type_name_list(i)(1:2) == 'R0'  ) then; lid = 1
         else if( type_name_list(i)(1:2) == 'R1'  ) then; lid = 1
         else if( type_name_list(i)(1:2) == 'R2'  ) then; lid = 2

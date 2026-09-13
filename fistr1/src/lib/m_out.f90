@@ -252,7 +252,7 @@ contains
     character(len=HECMW_NAME_LEN), intent(out) :: ss
     integer(kind=kint) :: rcode
     ss = trim(OUTFILENAME)
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'FILENAME ', '# ', 0, 'S', ss )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'FILENAME ', '# ', 0, 'F', ss )
   end subroutine
 
   subroutine fstr_ctrl_get_output( ctrl, outctrl, islog, res, visual, femap )
@@ -269,7 +269,7 @@ contains
 
     call fstr_init_outctrl(outctrl)
     ss = ""
-    rcode = fstr_ctrl_get_param_ex( ctrl, 'FILE ', '# ', 0, 'S', ss )
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'FILE ', '# ', 0, 'F', ss )
     if( len(trim(ss))>0 ) then
       outctrl%filename = trim(ss)
     endif

@@ -214,7 +214,8 @@ contains
         else if( ic_type == 611) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
           CALL UpdateST_Beam(ic_type, nn, ecoord, total_disp(1:6,1:nn), du(1:6,1:nn), &
-                 &   hecMESH%section%sect_R_item(ihead+1:), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof))
+            hecMESH%section%sect_R_item(ihead+1:), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), &
+            fstrSOLID%sections(isect)%elemopt611)
 
         else if( ic_type == 641 ) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )

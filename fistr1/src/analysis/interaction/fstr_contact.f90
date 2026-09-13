@@ -136,10 +136,11 @@ contains
 
     if( .not. associated(fstrSOLID%CONT_NFORCE) ) return
     fstrSOLID%CONT_NFORCE(:) = 0.d0
+    if( associated(fstrSOLID%CONT_FRIC) ) fstrSOLID%CONT_FRIC(:) = 0.d0
 
     do i = 1, fstrSOLID%n_contacts
       call calcu_contact_ndforce_exp( fstrSOLID%contacts(i), hecMESH%node(:), &
-        fstrSOLID%unode(:), fstrSOLID%dunode(:), fstrSOLID%CONT_NFORCE )
+        fstrSOLID%unode(:), fstrSOLID%dunode(:), fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC )
     enddo
 
   end subroutine fstr_calc_contact_output_force_exp
@@ -310,15 +311,16 @@ contains
   end subroutine
 
   !> Scanning contact state
-  subroutine fstr_scan_contact_state_exp( cstep, hecMESH, fstrSOLID, infoCTChange )
+  subroutine fstr_scan_contact_state_exp( cstep, is_init, hecMESH, fstrSOLID, infoCTChange )
     integer(kind=kint), intent(in)               :: cstep         !< current step number
+    logical, intent(in)                          :: is_init       !< true only for the initial scan
     type( hecmwST_local_mesh ), intent(in)       :: hecMESH       !< type mesh
     type(fstr_solid), intent(inout)              :: fstrSOLID     !< type fstr_solid
     type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
-    integer(kind=kint) :: i
+    integer(kind=kint) :: i, grpid
     integer(kind=kint) :: s_f2c, s_c2f, s_emov, s_islid, s_act
-    logical :: iactive, is_init
+    logical :: iactive
 
 
     ! P.A. We redefine fstrSOLID%ddunode as current coordinate of every nodes
@@ -334,19 +336,18 @@ contains
     infoCTChange%free2contact = 0
     infoCTChange%contactNode_current = 0
 
-    is_init = ( cstep == 1 )
-
     do i=1,fstrSOLID%n_contacts
-      !   grpid = fstrSOLID%contacts(i)%group
-      !   if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
-      !     call clear_contact_state(fstrSOLID%contacts(i));  cycle
-      !   endif
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) then
+        call clear_contact_state(fstrSOLID%contacts(i));  cycle
+      endif
 
       call scan_contact_state( fstrSOLID%contacts(i), fstrSOLID%ddunode(:), fstrSOLID%dunode(:), &
       & infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive, hecMESH )
 
       infoCTChange%active = infoCTChange%active .or. iactive
     enddo
+    call hecmw_allreduce_L1(hecMESH, infoCTChange%active, HECMW_LOR)
 
     infoCTChange%contactNode_current = infoCTChange%contactNode_previous+infoCTChange%free2contact-infoCTChange%contact2free
     infoCTChange%contactNode_previous = infoCTChange%contactNode_current

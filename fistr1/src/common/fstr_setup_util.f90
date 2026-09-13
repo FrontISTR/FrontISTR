@@ -12,22 +12,6 @@ module fstr_setup_util
 contains
   !------------------------------------------------------------------------------
 
-  subroutine fstr_strupr( s )
-    implicit none
-    character(*) :: s
-    integer :: i, n, a
-
-    n = len_trim(s)
-    do i = 1, n
-      a = iachar(s(i:i))
-      if( a >= iachar('a') .and. a <= iachar('z')) then
-        s(i:i) = achar(a - 32)
-      end if
-    end do
-  end subroutine fstr_strupr
-
-  !------------------------------------------------------------------------------
-
   subroutine fstr_ctrl_err_stop
     implicit none
     character(len=256) :: msg
