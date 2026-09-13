@@ -59,7 +59,10 @@ contains
     call hecmw_mpc_scale(hecMESH)
 
     MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
-    if (MPC_METHOD < 1 .or. 3 < MPC_METHOD) then
+    if (MPC_METHOD == 2 .and. hecMESH%my_rank == 0) then
+      write(*,*) 'WARNING: MPCMETHOD=2 (MPCCG) has been removed; falling back to the default'
+    endif
+    if (MPC_METHOD /= 1 .and. MPC_METHOD /= 3) then
       SOLVER_TYPE = hecmw_mat_get_solver_type(hecMAT)
       if (SOLVER_TYPE > 1) then  ! DIRECT SOLVER
         MPC_METHOD = 1           !   default: penalty
@@ -69,18 +72,8 @@ contains
       call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
     endif
 
-    if (MPC_METHOD == 2) then
-      write(*,*) 'WARNING: MPCMETHOD=2 (MPCCG) is deprecated; may not work correctly'
-      ! MPC_METHOD = 3
-      ! call hecmw_mat_set_mpc_method(hecMAT, MPC_METHOD)
-    endif
-
     select case (MPC_METHOD)
     case (1)  ! penalty
-      hecMESHmpc => hecMESH
-      hecMATmpc => hecMAT
-      if (present(conMAT).and.present(conMATmpc)) conMATmpc => conMAT
-    case (2)  ! MPCCG
       hecMESHmpc => hecMESH
       hecMATmpc => hecMAT
       if (present(conMAT).and.present(conMATmpc)) conMATmpc => conMAT
@@ -164,10 +157,6 @@ contains
       nullify(hecMESHmpc)
       nullify(hecMATmpc)
       if (present(conMATmpc)) nullify(conMATmpc)
-    case (2) ! MPCCG
-      nullify(hecMESHmpc)
-      nullify(hecMATmpc)
-      if (present(conMATmpc)) nullify(conMATmpc)
     case (3) ! elimination
       call hecmw_mpc_mesh_free(hecMESHmpc)
       deallocate(hecMESHmpc)
@@ -209,8 +198,6 @@ contains
     select case (MPC_METHOD)
     case (1)  ! penalty
       nullify(hecMATmpc)
-    case (2) ! MPCCG
-      nullify(hecMATmpc)
     case (3) ! elimination
       call hecmw_mat_finalize(hecMATmpc)
       deallocate(hecMATmpc)
@@ -246,8 +233,6 @@ contains
     case (1)  ! penalty
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Penalty"
       call hecmw_mat_ass_equation ( hecMESH, hecMAT )
-    case (2)  ! MPCCG
-      !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: MPC-CG"
     case (3)  ! elimination
       !if (hecMESH%my_rank.eq.0) write(0,*) "MPC Method: Elimination"
       call hecmw_trimatmul_TtKT_mpc(hecMESHmpc, hecMAT, hecMATmpc)
@@ -286,9 +271,8 @@ contains
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
     type (hecmwST_matrix), pointer :: hecMATmpc
-    real(kind=kreal), allocatable :: Btmp(:)
     real(kind=kreal) :: time_dumm
-    integer(kind=kint) :: totalmpc, MPC_METHOD, i
+    integer(kind=kint) :: totalmpc, MPC_METHOD
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
@@ -300,13 +284,6 @@ contains
     select case (MPC_METHOD)
     case (1)  ! penalty
       call hecmw_mat_ass_equation_rhs ( hecMESH, hecMATmpc )
-    case (2) ! MPCCG
-      allocate(Btmp(hecMAT%NP*hecMAT%NDOF))
-      do i = 1, hecMAT%NP*hecMAT%NDOF
-        Btmp(i) = hecMAT%B(i)
-      enddo
-      call hecmw_trans_b(hecMESH, hecMAT, Btmp, hecMATmpc%B, time_dumm)
-      deallocate(Btmp)
     case (3) ! elimination
       call hecmw_trans_b(hecMESH, hecMAT, hecMAT%B, hecMATmpc%B, time_dumm)
       hecMATmpc%Iarray=hecMAT%Iarray
@@ -342,8 +319,6 @@ contains
     select case (MPC_METHOD)
     case (1)  ! penalty
       ! do nothing
-    case (2)  ! MPCCG
-      call hecmw_tback_x(hecMESH, hecMAT%NDOF, hecMAT%X, time_dumm)
     case (3)  ! elimination
       npndof = hecMAT%NP * hecMAT%NDOF
       do i = 1, npndof
@@ -385,7 +360,7 @@ contains
     select case (MPC_METHOD)
     case (1)  ! penalty
       ! do nothing
-    case (2,3) ! MPCCG or elimination
+    case (3) ! elimination
       allocate(Mtmp(hecMAT%NP*hecMAT%NDOF))
       !C-- {Mt} = [T'] {w}
       call hecmw_Ttvec(hecMESH, hecMAT%NDOF, mass, Mtmp, time_dumm)
@@ -422,7 +397,7 @@ contains
     select case (MPC_METHOD)
     case (1)  ! penalty
       ! do nothing
-    case (2,3)  ! MPCCG or elimination
+    case (3)  ! elimination
       do i = 1, neig
         call hecmw_tback_x(hecMESH, hecMAT%NDOF, eigvec(:,i), time_dumm)
         !!! need normalization???
@@ -498,7 +473,7 @@ contains
 
     real(kind=kreal), allocatable :: W(:)
     real(kind=kreal), pointer :: XG(:)
-    integer(kind=kint) :: ndof, i, j, k, kk, flg_bak
+    integer(kind=kint) :: ndof, i, j, k, kk
 
     ndof = hecMAT%NDOF
 
@@ -531,10 +506,7 @@ contains
     !$omp end parallel
 
     !C-- {w} = {b} - [A]{xg}
-    flg_bak = hecmw_mat_get_flag_mpcmatvec(hecMAT)
-    call hecmw_mat_set_flag_mpcmatvec(hecMAT, 0)
     call hecmw_matresid(hecMESH, hecMAT, XG, B, W, COMMtime)
-    call hecmw_mat_set_flag_mpcmatvec(hecMAT, flg_bak)
 
     !C-- {bt} = [T'] {w}
     call hecmw_Ttvec(hecMESH, ndof, W, BT, COMMtime)

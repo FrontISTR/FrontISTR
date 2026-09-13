@@ -12,9 +12,6 @@ module hecmw_solver_las_66
   public :: hecmw_matvec_66
   public :: hecmw_matresid_66
   public :: hecmw_rel_resid_L2_66
-  public :: hecmw_Tvec_66
-  public :: hecmw_Ttvec_66
-  public :: hecmw_TtmatTvec_66
 
 contains
 
@@ -326,103 +323,5 @@ contains
 
     deallocate(r)
   end function hecmw_rel_resid_L2_66
-
-  !C
-  !C***
-  !C*** hecmw_Tvec_66
-  !C***
-  !C
-  subroutine hecmw_Tvec_66 (hecMESH, X, Y, COMMtime)
-    use hecmw_util
-    use m_hecmw_comm_f
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    real(kind=kreal) :: START_TIME, END_TIME
-    integer(kind=kint) :: i
-
-    START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 6)
-    END_TIME= HECMW_WTIME()
-    COMMtime = COMMtime + END_TIME - START_TIME
-
-    do i= 1, hecMESH%nn_internal * hecMESH%n_dof
-      Y(i)= X(i)
-    enddo
-
-    !    do i= 1, hecMESH%mpc%n_mpc
-    !      k = hecMESH%mpc%mpc_index(i-1) + 1
-    !      kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
-    !      Y(kk) = 0.d0
-    !      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
-    !        jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
-    !        Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
-    !      enddo
-    !    enddo
-
-  end subroutine hecmw_Tvec_66
-
-  !C
-  !C***
-  !C*** hecmw_Ttvec_66
-  !C***
-  !C
-  subroutine hecmw_Ttvec_66 (hecMESH, X, Y, COMMtime)
-    use hecmw_util
-    use m_hecmw_comm_f
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    real(kind=kreal) :: START_TIME, END_TIME
-    integer(kind=kint) :: i
-
-    START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 6)
-    END_TIME= HECMW_WTIME()
-    COMMtime = COMMtime + END_TIME - START_TIME
-
-    do i= 1, hecMESH%nn_internal * hecMESH%n_dof
-      Y(i)= X(i)
-    enddo
-
-    !    do i= 1, hecMESH%mpc%n_mpc
-    !      k = hecMESH%mpc%mpc_index(i-1) + 1
-    !      kk = 3 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
-    !      Y(kk) = 0.d0
-    !      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
-    !        jj = 3 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
-    !        Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
-    !      enddo
-    !    enddo
-
-  end subroutine hecmw_Ttvec_66
-
-  !C
-  !C***
-  !C*** hecmw_TtmatTvec_66
-  !C***
-  !C
-  subroutine hecmw_TtmatTvec_66 (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:), W(:)
-    real(kind=kreal), intent(inout) :: time_Ax
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    call hecmw_Tvec_66(hecMESH, X, Y, COMMtime)
-    call hecmw_matvec_66(hecMESH, hecMAT, Y, W, time_Ax, COMMtime)
-    call hecmw_Ttvec_66(hecMESH, W, Y, COMMtime)
-
-  end subroutine hecmw_TtmatTvec_66
-
 
 end module hecmw_solver_las_66

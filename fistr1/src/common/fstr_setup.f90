@@ -291,7 +291,7 @@ contains
       else if( header_name == '!INCLUDE' ) then
         ctrl_list(ictrl) = ctrl
         input_filename   = ""
-        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'F', input_filename )
         ctrl   = fstr_ctrl_open( input_filename )
         if( ctrl < 0 ) then
           write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
@@ -399,6 +399,7 @@ contains
         fstrSOLID%sections(i)%elemopt361 = kel361FI
       end if
       fstrSOLID%sections(i)%elemopt341 = kel341FI
+      fstrSOLID%sections(i)%elemopt611 = kel611EULER
       ! INTERFACE sections are skipped in the loop below and keep this thickness
       fstrSOLID%sections(i)%thickness = 1.0d0
     enddo
@@ -506,6 +507,9 @@ contains
             stop HECMW_EXIT_MODEL
           else
             isOK = fstr_contact_init( fstrSOLID%contacts(c_contact+i), P%MESH, fstrPARAM%contactparam(cparam_id))
+            ! !CONTACT_ALGO, FRICTION_CONE=FOLLOW gives up the symmetry of the ALagrange
+            ! friction terms; see getContactStiffness_Alag
+            fstrSOLID%contacts(c_contact+i)%symmetric = .not. P%PARAM%fric_cone_follow
             !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
           endif
         enddo
@@ -932,7 +936,7 @@ contains
       else if( header_name == '!INCLUDE' ) then
         ctrl_list(ictrl) = ctrl
         input_filename   = ""
-        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'S', input_filename )
+        ierror = fstr_ctrl_get_param_ex( ctrl, 'INPUT ', '# ', 0, 'F', input_filename )
         ctrl   = fstr_ctrl_open( input_filename )
         if( ctrl < 0 ) then
           write(*,*) '### Error: Cannot open FSTR control file : ', input_filename
@@ -2145,6 +2149,7 @@ contains
     !   mpc_method => svIarray(13)
     !   estcond    => svIarray(14)
     !   contact_elim=> svIarray(15)
+    !   recompute_residual => svIarray(16)
     !   method2    => svIarray(8)
     !   recyclepre => svIarray(35)
     !   matvec_impl=> svIarray(36)
@@ -2166,7 +2171,7 @@ contains
       svIarray(35), svIarray(41:50), svIarray(15), &
       svRarray(1), svRarray(2), svRarray(3),                &
       svRarray(4), svRarray(5), svRarray(41:50), svIarray(24), &
-      svIarray(36), svIarray(37) )
+      svIarray(36), svIarray(37), svIarray(16) )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
     if( svIarray(2) <= 100 ) then
@@ -2209,7 +2214,6 @@ contains
 
     if( fstr_ctrl_get_param_ex( ctrl, 'NAME ',  '# ',  1, 'S', grp_id_name(1) )/= 0) return
     coordsys%sys_name = grp_id_name(1)
-    call fstr_strupr( coordsys%sys_name )
 
     if( dtype==0 ) then
       data_fmt = "RRRRRRrrr "
@@ -2983,7 +2987,7 @@ end function fstr_setup_INITIAL
 
     filename_len = HECMW_FILENAME_LEN
     write(ss,*) filename_len
-    write(datafmt, '(a,a,a)') 'S', trim(adjustl(ss)), ' '
+    write(datafmt, '(a,a,a)') 'F', trim(adjustl(ss)), ' '
 
     if( fstr_ctrl_get_data_ex( ctrl, 1, datafmt, P%FREQ%eigenlog_filename ) /= 0) return
     if( fstr_ctrl_get_data_ex( ctrl, 2, 'ii ', P%FREQ%start_mode, P%FREQ%end_mode ) /= 0) return
@@ -4388,7 +4392,7 @@ end function fstr_setup_INITIAL
     integer(kind=kint) :: rcode
 
 
-    rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo, P%PARAM%augiter )
+    rcode = fstr_ctrl_get_CONTACTALGO( ctrl, P%PARAM%contact_algo, P%PARAM%augiter, P%PARAM%fric_cone_follow )
     if( rcode /= 0 ) call fstr_ctrl_err_stop
 
   end subroutine fstr_setup_CONTACTALGO

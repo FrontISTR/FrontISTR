@@ -71,7 +71,8 @@ contains
     integer(kind=kint), parameter ::W2=13
     integer(kind=kint), parameter ::ZQ=14
 
-    integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R= 20
+    integer(kind=kint) :: N_ITER_RECOMPUTE_R
+    integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R_DEFAULT= 20
 
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
@@ -89,6 +90,11 @@ contains
     TIMElog = hecmw_mat_get_timelog( hecMAT )
     MAXIT  = hecmw_mat_get_iter( hecMAT )
     TOL   = hecmw_mat_get_resid( hecMAT )
+
+    N_ITER_RECOMPUTE_R = hecmw_mat_get_recompute_residual( hecMAT )
+    if (N_ITER_RECOMPUTE_R == 0) N_ITER_RECOMPUTE_R = N_ITER_RECOMPUTE_R_DEFAULT
+    !C----- negative: never recompute periodically.  ITER stops at MAXIT, so mod() below is never 0
+    if (N_ITER_RECOMPUTE_R < 0) N_ITER_RECOMPUTE_R = MAXIT + 1
 
     error= 0
     BETA = 0.0d0
@@ -243,8 +249,6 @@ contains
       !C | calc. QSI and ETA |
       !C +-------------------+
       !C===
-      !call pol_coef(iter, WW, T, TT, Y, QSI, ETA)
-      !call pol_coef_vanilla(iter, WW, T, TT, Y, QSI, ETA)
       call pol_coef_vanilla2(iter, WW, T, TT, Y, QSI, ETA)
       !C===
 
@@ -358,104 +362,7 @@ contains
   contains
 
     !C
-    !C*** pol_coef : computes QSI and ETA in original GPBiCG way
-    !C
-    subroutine pol_coef(iter, WW, T, TT, Y, QSI, ETA)
-      implicit none
-      integer(kind=kint), intent(in) :: iter
-      real(kind=kreal), intent(in) :: WW(:,:)
-      integer(kind=kint), intent(in) :: T, TT, Y
-      real(kind=kreal), intent(out) :: QSI, ETA
-
-      real(kind=kreal), dimension(5) :: CG
-      real(kind=kreal), dimension(2) :: EQ
-      real(kind=kreal) :: delta
-
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,Y ), CG(1)) ! myu1
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,T ), CG(2)) ! omega2
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,T ), CG(3)) ! omega1
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,Y ), CG(4)) ! nyu
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,TT), CG(5)) ! myu2
-      S_TIME= HECMW_WTIME()
-      call hecmw_allreduce_R(hecMESH, CG, 5, HECMW_SUM)
-      E_TIME= HECMW_WTIME()
-      Tcomm =  Tcomm + E_TIME - S_TIME
-
-      if (iter.eq.1) then
-        EQ(1)= CG(2)/CG(5) ! omega2 / myu2
-        EQ(2)= 0.d0
-      else
-        delta= (CG(5)*CG(1)-CG(4)*CG(4))         ! myu1*myu2 - nyu^2
-        EQ(1)= (CG(1)*CG(2)-CG(3)*CG(4)) / delta ! (myu1*omega2-nyu*omega1)/delta
-        EQ(2)= (CG(5)*CG(3)-CG(4)*CG(2)) / delta ! (myu2*omega1-nyu*omega2)/delta
-      endif
-
-      QSI= EQ(1)
-      ETA= EQ(2)
-    end subroutine pol_coef
-
-    !C
-    !C*** pol_coef_vanilla : computes QSI and ETA with vanilla strategy
-    !C      see Fujino, Abe, Sugihara and Nakashima(2013) ISBN978-4-621-08741-1
-    !C
-    subroutine pol_coef_vanilla(iter, WW, T, TT, Y, QSI, ETA)
-      implicit none
-      integer(kind=kint), intent(in) :: iter
-      real(kind=kreal), intent(inout) :: WW(:,:)
-      integer(kind=kint), intent(in) :: T, TT, Y
-      real(kind=kreal), intent(out) :: QSI, ETA
-
-      real(kind=kreal), dimension(3) :: CG
-      real(kind=kreal) :: gamma1, gamma2
-      real(kind=kreal) :: c, c_abs
-
-      real(kind=kreal), parameter :: OMEGA = 0.707106781d0
-
-      if (iter.eq.1) then
-        gamma1 = 0.d0
-        gamma2 = 0.d0
-      else
-        call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,Y ), CG(1)) ! myu
-        call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,TT), CG(2)) ! nyu
-        call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,Y ), WW(:,T ), CG(3)) ! omega
-        S_TIME= HECMW_WTIME()
-        call hecmw_allreduce_R(hecMESH, CG, 3, HECMW_SUM)
-        E_TIME= HECMW_WTIME()
-        Tcomm =  Tcomm + E_TIME - S_TIME
-        gamma1 = CG(3)/CG(1) ! omega / myu
-        gamma2 = CG(2)/CG(1) ! nyu / myu
-        !!! COMMENTED OUT because no convergence obtained with following updates.
-        !         do j= 1, NNDOF
-        !           WW(j,T )= WW(j,T ) - gamma1*WW(j,Y)
-        !           WW(j,TT)= WW(j,TT) - gamma2*WW(j,Y)
-        !         enddo
-      endif
-
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,T ), WW(:,T ), CG(1)) ! |r|^2
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,TT), WW(:,TT), CG(2)) ! |s|^2
-      call hecmw_InnerProduct_R_nocomm(hecMESH, NDOF, WW(:,T ), WW(:,TT), CG(3)) ! r.s
-      S_TIME= HECMW_WTIME()
-      call hecmw_allreduce_R(hecMESH, CG, 3, HECMW_SUM)
-      E_TIME= HECMW_WTIME()
-      Tcomm =  Tcomm + E_TIME - S_TIME
-
-      c = CG(3) / dsqrt(CG(1)*CG(2))
-      c_abs = dabs(c)
-      if (c_abs > OMEGA) then
-        QSI = c * dsqrt(CG(1)/CG(2))
-      else
-        ! QSI = (c / c_abs) * OMEGA * dsqrt(CG(1)/CG(2))
-        if (c >= 0.d0) then
-          QSI = OMEGA * dsqrt(CG(1)/CG(2))
-        else
-          QSI = -OMEGA * dsqrt(CG(1)/CG(2))
-        endif
-      endif
-      ETA = gamma1 - QSI*gamma2
-    end subroutine pol_coef_vanilla
-
-    !C
-    !C*** pol_coef_vanilla2 : optimized version of pol_coef_vanilla
+    !C*** pol_coef_vanilla2 : computes QSI and ETA with optimized strategy
     !C
     subroutine pol_coef_vanilla2(iter, WW, T, TT, Y, QSI, ETA)
       implicit none

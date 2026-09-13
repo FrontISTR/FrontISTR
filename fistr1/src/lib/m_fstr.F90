@@ -82,6 +82,9 @@ module m_fstr
   integer(kind=kint), parameter :: kel361FBAR   =  4
   integer(kind=kint), parameter :: kel361UP     =  5
 
+  integer(kind=kint), parameter :: kel611EULER      =  1
+  integer(kind=kint), parameter :: kel611TIMOSHENKO =  2
+
   integer(kind=kint), parameter :: kFLOADTYPE_NODE = 1
   integer(kind=kint), parameter :: kFLOADTYPE_SURF = 2
 
@@ -201,6 +204,7 @@ module m_fstr
     !> for contact analysis
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
     integer( kind=kint ) :: augiter            !< augmentation iteration for ALagrange algorithm
+    logical              :: fric_cone_follow   !< if the ALagrange friction cone follows the applied normal force
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
     type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
 
@@ -679,6 +683,7 @@ module m_fstr
     !integer              :: elemopt352
     integer              :: elemopt361
     !integer              :: elemopt362
+    integer              :: elemopt611
   end type tSection
 
 contains
@@ -892,6 +897,7 @@ contains
     hecMAT%Iarray(34)=   10    ! = ncolor_in
     hecMAT%Iarray(13)=    0    ! = mpc_method
     hecMAT%Iarray(14)=    0    ! = estcond
+    hecMAT%Iarray(16)=    0    ! = recompute_residual
     hecMAT%Iarray(35)=    3    ! = maxrecycle_precond
     hecMAT%Iarray(36)= HECMW_MATVEC_IMPL_DEFAULT   ! = matvec_impl
     hecMAT%Iarray(37)= HECMW_PRECOND_IMPL_DEFAULT  ! = precond_impl
@@ -1061,6 +1067,7 @@ contains
     ! for contact analysis
     fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange
     fstrPARAM%augiter = 2                  ! default augmentation iteration for ALagrange
+    fstrPARAM%fric_cone_follow = .false.   ! default: cone radius frozen within the augmentation step
 
     ! index table for global node ID sorting
 

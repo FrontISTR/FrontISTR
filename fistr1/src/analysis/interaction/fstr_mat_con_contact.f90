@@ -19,6 +19,7 @@ module fstr_matrix_con_contact
   public :: fstr_save_originalMatrixStructure
   public :: fstr_mat_con_contact
   public :: fstr_is_matrixStruct_symmetric
+  public :: fstr_is_contactALag_symmetric
   public :: fstr_is_material_symmetric
   public :: fstr_set_lagrange_diagonal
   public :: fstr_get_lagrange_diagonal
@@ -282,6 +283,25 @@ contains
     endif
 
   end function fstr_is_matrixStruct_symmetric
+
+  !> \brief this function judges whether the ALagrange contact tangent is symmetric or not
+  logical function fstr_is_contactALag_symmetric(fstrSOLID,hecMESH)
+
+    type(fstr_solid )        :: fstrSOLID
+    type(hecmwST_local_mesh) :: hecMESH
+    integer (kind=kint)      :: is_unsymmetric
+
+    ! the ALagrange contact terms are symmetric while the friction cone radius stays frozen
+    ! at the multiplier; !CONTACT_ALGO, FRICTION_CONE=FOLLOW clears contact%symmetric and
+    ! the tangent then carries the coupling block of getContactStiffness_Alag
+    is_unsymmetric = 0
+    if( fstrSOLID%n_contacts>0 ) then
+      if( any( fstrSOLID%contacts(:)%fcoeff /= 0.0d0 .and. .not.fstrSOLID%contacts(:)%symmetric ) ) is_unsymmetric = 1
+    endif
+    call hecmw_allreduce_I1(hecMESH, is_unsymmetric, HECMW_MAX)
+    fstr_is_contactALag_symmetric = ( is_unsymmetric == 0 ) .and. fstr_is_material_symmetric(fstrSOLID,hecMESH)
+
+  end function fstr_is_contactALag_symmetric
 
   !> \brief this function judges whether all materials yield a symmetric tangent stiffness
   logical function fstr_is_material_symmetric(fstrSOLID,hecMESH)

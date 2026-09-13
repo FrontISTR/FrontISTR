@@ -19,7 +19,6 @@ module hecmw_solver_las_33
   public :: hecmw_rel_resid_L2_33
   public :: hecmw_Tvec_33
   public :: hecmw_Ttvec_33
-  public :: hecmw_TtmatTvec_33
   public :: hecmw_mat_diag_sr_33
 
   ! ! for communication hiding in matvec
@@ -77,38 +76,6 @@ contains
 
   !C
   !C***
-  !C*** hecmw_matvec_33
-  !C***
-  !C
-  subroutine hecmw_matvec_33 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
-    use hecmw_util
-    use hecmw_matrix_misc
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in), target :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
-    real(kind=kreal), intent(inout) :: time_Ax
-    real(kind=kreal), intent(inout), optional :: COMMtime
-
-    real(kind=kreal) :: Tcomm
-    real(kind=kreal), allocatable :: WK(:)
-
-    Tcomm = 0.d0
-
-    if (hecmw_mat_get_flag_mpcmatvec(hecMAT) /= 0) then
-      allocate(WK(hecMAT%NP * hecMAT%NDOF))
-      call hecmw_TtmatTvec_33(hecMESH, hecMAT, X, Y, WK, time_Ax, Tcomm)
-      deallocate(WK)
-    else
-      call hecmw_matvec_33_inner(hecMESH, hecMAT, X, Y, time_Ax, Tcomm)
-    endif
-
-    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
-  end subroutine hecmw_matvec_33
-
-  !C
-  !C***
   !C*** hecmw_matvec_33_set_async
   !C***
   !C
@@ -163,10 +130,10 @@ contains
 
   !C
   !C***
-  !C*** hecmw_matvec_33_inner ( private subroutine )
+  !C*** hecmw_matvec_33
   !C***
   !C
-  subroutine hecmw_matvec_33_inner (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+  subroutine hecmw_matvec_33 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_jad_type
     use m_hecmw_comm_f
@@ -202,7 +169,7 @@ contains
           call hecmw_matvec_33_generic(hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
       end select
     endif
-  end subroutine hecmw_matvec_33_inner
+  end subroutine hecmw_matvec_33
 
   !C
   !C***
@@ -648,28 +615,6 @@ contains
 #endif
 
   end subroutine hecmw_Ttvec_33
-
-  !C
-  !C***
-  !C*** hecmw_TtmatTvec_33
-  !C***
-  !C
-  subroutine hecmw_TtmatTvec_33 (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:), W(:)
-    real(kind=kreal), intent(inout) :: time_Ax
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    call hecmw_Tvec_33(hecMESH, X, Y, COMMtime)
-    call hecmw_matvec_33_inner(hecMESH, hecMAT, Y, W, time_Ax, COMMtime)
-    call hecmw_Ttvec_33(hecMESH, W, Y, COMMtime)
-
-  end subroutine hecmw_TtmatTvec_33
-
 
   !C
   !C***

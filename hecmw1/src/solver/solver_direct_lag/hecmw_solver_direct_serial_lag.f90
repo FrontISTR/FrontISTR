@@ -973,29 +973,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine nusol0_parent(dsln, diag, b, neqns, ndeg)
-    ! select solvers according to ndeg
-
-    implicit none
-
-    real(kind=kreal),   intent(in)    :: dsln(:,:)
-    real(kind=kreal),   intent(in)    :: diag(:,:)
-    real(kind=kreal),   intent(inout) :: b(:,:)
-
-    integer(kind=kint), intent(in)    :: neqns, ndeg
-
-    if (ndeg .eq. 1) then
-      call nusol1_parent(dsln(1,:), diag(1,:), b(1,:), neqns)
-    else if (ndeg .eq. 3) then
-      write(idbg,*) 'ndeg=1 only'
-      stop
-    else
-      write(idbg,*) 'ndeg=1 only'
-      stop
-    end if
-
-    return
-  end subroutine nusol0_parent
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2723,17 +2700,6 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   end subroutine addr0
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine vcopy(a,c,n)
-    implicit none
-
-    integer(kind=kint) :: n
-    real(kind=kreal)   :: a(n),c(n)
-    !     do 100 i=1,n
-    !        c(i)=a(i)
-    ! 100 continue
-    c=a
-    return
-  end subroutine vcopy
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

@@ -63,7 +63,8 @@ contains
     real(kind=kreal), allocatable :: D(:), E(:)
     integer(kind=kint) :: n_indef_precond
 
-    integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R = 50
+    integer(kind=kint) :: N_ITER_RECOMPUTE_R
+    integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R_DEFAULT = 50
 
     call hecmw_barrier(hecMESH)
     S_TIME = HECMW_WTIME()
@@ -81,6 +82,11 @@ contains
     MAXIT = hecmw_mat_get_iter(hecMAT)
     TOL = hecmw_mat_get_resid(hecMAT)
     ESTCOND = hecmw_mat_get_estcond(hecMAT)
+
+    N_ITER_RECOMPUTE_R = hecmw_mat_get_recompute_residual( hecMAT )
+    if (N_ITER_RECOMPUTE_R == 0) N_ITER_RECOMPUTE_R = N_ITER_RECOMPUTE_R_DEFAULT
+    !C----- negative: never recompute periodically.  i stops at MAXIT, so mod() below is never 0
+    if (N_ITER_RECOMPUTE_R < 0) N_ITER_RECOMPUTE_R = MAXIT + 1
 
     error = 0
     ITER = 0
