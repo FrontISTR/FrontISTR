@@ -423,7 +423,6 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'ORIENTATION ',  '# ',  0, 'S', sect_orien )/= 0) return
 
     if( associated(g_LocalCoordSys) ) then
-      call fstr_strupr(sect_orien)
       k = size(g_LocalCoordSys)
 
       if(cache < k)then
@@ -654,7 +653,6 @@ contains
       write( data_fmt, '(a,a,a)') 'S', trim(adjustl(ss)),'Rr '
       if( fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name, fcoeff, tPenalty ) /= 0 ) return
       do rcode=1,n
-        call fstr_strupr(cp_name(rcode))
         contact(rcode)%pair_name = cp_name(rcode)
         contact(rcode)%fcoeff = fcoeff(rcode)
         contact(rcode)%nPenalty = 5.0d0
@@ -667,7 +665,6 @@ contains
       write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
       if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
       do rcode=1,n
-        call fstr_strupr(cp_name(rcode))
         contact(rcode)%pair_name = cp_name(rcode)
         contact(rcode)%nPenalty = 5.0d0
         contact(rcode)%fcoeff = 0.d0
@@ -749,7 +746,6 @@ contains
     write( data_fmt, '(a,a)') 'S', trim(adjustl(ss))
     if(  fstr_ctrl_get_data_array_ex( ctrl, data_fmt, cp_name ) /= 0 ) return
     do rcode=1,n
-      call fstr_strupr(cp_name(rcode))
       embed(rcode)%pair_name = cp_name(rcode)
     enddo
 
@@ -853,7 +849,6 @@ contains
       contact_if(i)%if_type     = contact_if(1)%if_type
       contact_if(i)%etime       = contact_if(1)%etime
 
-      call fstr_strupr(cp_name(i))
       contact_if(i)%cp_name     = cp_name(i)
       contact_if(i)%initial_pos = - init_pos(i)
       contact_if(i)%end_pos     = - end_pos(i)
