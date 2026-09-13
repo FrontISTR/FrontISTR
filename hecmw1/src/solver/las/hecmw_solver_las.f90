@@ -16,6 +16,8 @@ module hecmw_solver_las
 
   private
 
+  public :: hecmw_matvec_setup
+  public :: hecmw_matvec_teardown
   public :: hecmw_matvec
   public :: hecmw_matresid
   public :: hecmw_rel_resid_L2
@@ -27,6 +29,43 @@ module hecmw_solver_las
   real(kind=kreal), save :: time_Ax = 0.d0
 
 contains
+
+  !C
+  !C***
+  !C*** hecmw_matvec_setup
+  !C***
+  !C
+  subroutine hecmw_matvec_setup (hecMESH, hecMAT)
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in), target :: hecMAT
+    select case(hecMAT%NDOF)
+      case (3)
+        call hecmw_matvec_33_setup(hecMESH, hecMAT)
+      case default
+    end select
+
+  end subroutine hecmw_matvec_setup
+
+  !C
+  !C***
+  !C*** hecmw_matvec_teardown
+  !C***
+  !C
+  subroutine hecmw_matvec_teardown (hecMAT)
+    use hecmw_util
+
+    implicit none
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    select case(hecMAT%NDOF)
+      case (3)
+        call hecmw_matvec_33_teardown
+      case default
+    end select
+
+  end subroutine hecmw_matvec_teardown
 
   !C
   !C***

@@ -39,9 +39,14 @@ contains
     real(kind=kreal)    :: opos(2)
     integer(kind=kint) :: bktID, nCand, idm
     integer(kind=kint), allocatable :: indexCand(:)
-    logical            :: is_implicit
+    logical            :: is_implicit, update_tangent
 
     is_implicit = present(flag_ctAlgo)
+    if( is_implicit ) then
+      update_tangent = (flag_ctAlgo == 'SLagrange')
+    else
+      update_tangent = .true.
+    endif
 
     sid = 0
 
@@ -111,7 +116,7 @@ contains
         !$omp atomic
         infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
       endif
-      if( is_implicit .and. flag_ctAlgo=='SLagrange' ) then
+      if( update_tangent .and. contact%fcoeff /= 0.d0 ) then
         ! Setup elem array for update_TangentForce
         etype = contact%master(contact%states(nslave)%surface)%etype
         nn = size(contact%master(contact%states(nslave)%surface)%nodes)

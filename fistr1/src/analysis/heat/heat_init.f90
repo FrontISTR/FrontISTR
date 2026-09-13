@@ -44,10 +44,12 @@ contains
     endif
   end subroutine heat_init
 
-  subroutine heat_init_log(hecMESH)
+  subroutine heat_init_log(hecMESH, fstrHEAT)
     use m_fstr
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
+    type(fstr_heat) :: fstrHEAT
+    integer(kind=kint) :: nradiate
 
     if(hecMESH%my_rank == 0)then
       write(IMSG,*) '============================='
@@ -56,6 +58,12 @@ contains
       write(ISTA,*)
       write(ISTA,*)'  ISTEP    INCR    ITER     RESIDUAL     IITER   '
       write(ISTA,*)'-------------------------------------------------'
+    endif
+
+    nradiate = fstrHEAT%R_SUF_tot
+    call hecmw_allreduce_I1(hecMESH, nradiate, hecmw_sum)
+    if(nradiate > 0 .and. hecMESH%my_rank == 0)then
+      write(IMSG,"(a,f12.4)")"* Absolute zero temperature for radiation: ", hecMESH%zero_temp
     endif
   end subroutine heat_init_log
 

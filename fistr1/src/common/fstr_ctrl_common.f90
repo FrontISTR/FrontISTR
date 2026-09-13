@@ -64,7 +64,8 @@ contains
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, contact_elim, &
-      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel )
+      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel, &
+      matvec_impl, precond_impl, recompute_residual )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
     integer(kind=kint) :: precond
@@ -94,15 +95,19 @@ contains
     real(kind=kreal) :: filter
     real(kind=kreal) :: solver_ropt(10)
     integer(kind=kint) :: loglevel
+    integer(kind=kint) :: matvec_impl
+    integer(kind=kint) :: precond_impl
+    integer(kind=kint) :: recompute_residual
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
-    character(100) :: mlist = '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL ' 
+    character(120) :: mlist = &
+      '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,PipeCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
     integer(kind=kint) :: number_number = 5
-    integer(kind=kint) :: indirect_number = 7 ! GMRESR, GMRESREN and CR need to be added
-    integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step
+    integer(kind=kint) :: indirect_number = 8
+    integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step, mtxfmt
 
     fstr_ctrl_get_SOLVER = -1
 
@@ -113,6 +118,8 @@ contains
     dmpt = dumptype+1
     dmpx = dumpexit+1
     usjd = usejad+1
+    ! 0 = MATRIXFORMAT absent, leaving USEJAD and the build-time default in effect
+    mtxfmt = 0
     !* parameter in header line -----------------------------------------------------------------*!
 
     ! JP-0
@@ -126,8 +133,10 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'DUMPTYPE ', dlist,              0,   'P',   dmpt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'DUMPEXIT ','NO,YES ',           0,   'P',   dmpx ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'USEJAD '  ,'NO,YES ',           0,   'P',   usjd ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'MATRIXFORMAT ','BSR,JAD,CSR,SBLAS ', 0, 'P', mtxfmt ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'MPCMETHOD ','# ',               0, 'I',mpc_method) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'ESTCOND '  ,'# ',               0,   'I',estcond ) /= 0) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'RECOMPUTE_RESIDUAL ','# ',      0,   'I',recompute_residual ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'METHOD2 ',  mlist,              0,   'P',   method2 ) /= 0) return
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACT_ELIM ','# ',            0,   'I',contact_elim ) /= 0) return
     ! diagnostic verbosity, independent of TIMELOG.  -1 = "unset": each consumer
@@ -205,6 +214,29 @@ contains
     scaling = sclg -1
     dumpexit = dmpx -1
     usejad = usjd -1
+
+    ! MATRIXFORMAT names one storage format for the whole linear solve, so it sets the
+    ! matvec and the preconditioner together.  JAD is one of the formats, which makes
+    ! USEJAD the older spelling of MATRIXFORMAT=JAD; giving both lets MATRIXFORMAT win.
+    ! JAD replaces the matvec only, so the preconditioner keeps the BSR implementation.
+    select case (mtxfmt)
+      case (1)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_BSR
+        precond_impl = HECMW_PRECOND_IMPL_BSR
+      case (2)
+        usejad = kYES
+        matvec_impl  = HECMW_MATVEC_IMPL_BSR
+        precond_impl = HECMW_PRECOND_IMPL_BSR
+      case (3)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_CSR
+        precond_impl = HECMW_PRECOND_IMPL_CSR
+      case (4)
+        usejad = kNO
+        matvec_impl  = HECMW_MATVEC_IMPL_SBLAS
+        precond_impl = HECMW_PRECOND_IMPL_SBLAS
+    end select
 
     fstr_ctrl_get_SOLVER = 0
 
@@ -367,6 +399,7 @@ contains
     character(len=HECMW_NAME_LEN) :: sect_orien
     character(19) :: form341list = 'FI,SELECTIVE_ESNS '
     character(19) :: form361list = 'FI,BBAR,IC,FBAR,UP '
+    character(19) :: form611list = 'EULER,TIMOSHENKO '
 
     fstr_ctrl_get_SECTION = -1
 
@@ -380,6 +413,10 @@ contains
     elemopt = 0
     if( fstr_ctrl_get_param_ex( ctrl, 'FORM361 ',   form361list, 0, 'P', elemopt )/= 0) return
     if( elemopt > 0 ) sections(sect_id)%elemopt361 = elemopt
+
+    elemopt = 0
+    if( fstr_ctrl_get_param_ex( ctrl, 'FORM611 ', form611list, 0, 'P', elemopt )/= 0) return
+    if( elemopt > 0 ) sections(sect_id)%elemopt611 = elemopt
 
     ! sectional orientation ID
     hecMESH%section%sect_orien_ID(sect_id) = -1
@@ -544,13 +581,14 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter, conefollow )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
     integer(kind=kint) :: augiter
+    logical            :: conefollow
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
-    integer(kind=kint) :: rcode
+    integer(kind=kint) :: rcode, icone
     character(len=80) :: s
     s = 'SLAGRANGE,ALAGRANGE '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'TYPE ', s, 0, 'P', algo )
@@ -558,6 +596,16 @@ contains
       fstr_ctrl_get_CONTACTALGO = rcode
       return
     endif
+    ! FROZEN keeps the ALagrange friction cone at the multiplier of the last augmentation,
+    ! FOLLOW lets it follow the normal force the contact element applies
+    icone = 1
+    s = 'FROZEN,FOLLOW '
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'FRICTION_CONE ', s, 0, 'P', icone )
+    if( rcode /= 0 ) then
+      fstr_ctrl_get_CONTACTALGO = rcode
+      return
+    endif
+    conefollow = ( icone == 2 )
     rcode = fstr_ctrl_get_param_ex( ctrl, 'AUGITER ', '# ', 0, 'I', augiter )
     fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO

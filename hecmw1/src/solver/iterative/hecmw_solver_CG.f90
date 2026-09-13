@@ -64,7 +64,8 @@ contains
     real   (kind=kreal)::ALPHA1
     integer(kind=kint) :: n_indef_precond
 
-    integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R= 50
+    integer(kind=kint) :: N_ITER_RECOMPUTE_R
+    integer(kind=kint), parameter :: N_ITER_RECOMPUTE_R_DEFAULT= 50
 
     call hecmw_barrier(hecMESH)
     S_TIME= HECMW_WTIME()
@@ -87,6 +88,11 @@ contains
     MAXIT  = hecmw_mat_get_iter( hecMAT )
     TOL   = hecmw_mat_get_resid( hecMAT )
     ESTCOND = hecmw_mat_get_estcond( hecMAT )
+
+    N_ITER_RECOMPUTE_R = hecmw_mat_get_recompute_residual( hecMAT )
+    if (N_ITER_RECOMPUTE_R == 0) N_ITER_RECOMPUTE_R = N_ITER_RECOMPUTE_R_DEFAULT
+    !C----- negative: never recompute periodically.  ITER stops at MAXIT, so mod() below is never 0
+    if (N_ITER_RECOMPUTE_R < 0) N_ITER_RECOMPUTE_R = MAXIT + 1
 
     error = 0
     n_indef_precond = 0
@@ -112,6 +118,7 @@ contains
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       call hecmw_JAD_INIT(hecMAT)
     endif
+    call hecmw_matvec_setup(hecMESH, hecMAT)
 
     if (ESTCOND /= 0 .and. hecMESH%my_rank == 0) then
       allocate(D(MAXIT),E(MAXIT-1))
@@ -292,6 +299,7 @@ contains
     deallocate (WW)
     !call hecmw_precond_clear(hecMAT)
 
+    call hecmw_matvec_teardown(hecMAT)
     if (hecmw_mat_get_usejad(hecMAT).ne.0) then
       call hecmw_JAD_FINALIZE(hecMAT)
     endif

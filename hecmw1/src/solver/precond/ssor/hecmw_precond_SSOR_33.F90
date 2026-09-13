@@ -39,6 +39,13 @@ module hecmw_precond_SSOR_33
   integer(kind=kint), pointer :: perm(:) => null()
   integer(kind=kint), pointer :: iperm(:) => null()
 
+  ! taken from hecMAT at setup: _apply receives only ZP and cannot read it back
+  integer(kind=kint) :: precond_impl = HECMW_PRECOND_IMPL_BSR
+
+  ! a format may be selected on a build that carries no SSOR for it; saying so once
+  ! per run keeps the fallback from looking like the requested format took effect
+  logical, save :: precond_impl_missing_reported = .false.
+
   logical, save :: isFirst = .true.
 
   logical, save :: INITIALIZED = .false.
@@ -89,6 +96,7 @@ contains
     ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
+    precond_impl = hecmw_mat_get_precond_impl(hecMAT)
 
 #ifdef _OPENACC
     allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
@@ -268,6 +276,25 @@ contains
   end subroutine setup_tuning_parameters
 
   subroutine hecmw_precond_SSOR_33_apply(ZP)
+    use m_hecmw_comm_f
+    implicit none
+    real(kind=kreal), intent(inout) :: ZP(:)
+
+    select case (precond_impl)
+      case (HECMW_PRECOND_IMPL_BSR)
+        call hecmw_precond_SSOR_33_apply_generic(ZP)
+      case default
+        if (.not. precond_impl_missing_reported) then
+          precond_impl_missing_reported = .true.
+          if (hecmw_comm_get_rank() == 0) write(*,'(a)') &
+            '#### MATRIXFORMAT: this build has no SSOR preconditioner for the selected '// &
+            'format -- running the BSR implementation'
+        endif
+        call hecmw_precond_SSOR_33_apply_generic(ZP)
+    end select
+  end subroutine hecmw_precond_SSOR_33_apply
+
+  subroutine hecmw_precond_SSOR_33_apply_generic(ZP)
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
@@ -409,7 +436,7 @@ contains
     !call stop_collection("loopInPrecond33")
 #endif
 
-  end subroutine hecmw_precond_SSOR_33_apply
+  end subroutine hecmw_precond_SSOR_33_apply_generic
 
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)
     implicit none

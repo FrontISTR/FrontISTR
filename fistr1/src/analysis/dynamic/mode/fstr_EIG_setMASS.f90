@@ -67,7 +67,7 @@ contains
         cid   = hecMESH%section%sect_mat_ID_item(isect)
         sec_opt = hecMESH%section%sect_opt(isect)
         rho   = fstrSOLID%materials(cid)%variables(M_DENSITY)
-        thick = fstrSOLID%materials(cid)%variables(M_THICK)
+        thick = fstrSOLID%sections(isect)%thickness
 
         lumped = 0.0d0
         if(ic_type == 231 .or. ic_type == 232 .or. ic_type == 241 .or. ic_type == 242)then
@@ -79,19 +79,19 @@ contains
 
         elseif(ic_type==731 .or. ic_type==741 .or. ic_type==743) then
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
-          thick = fstrSOLID%materials(cid)%variables(M_THICK)
+          thick = fstrSOLID%sections(isect)%thickness
           call mass_shell(ic_type, nn, ecoord(1:3,1:nn), rho, thick, fstrSOLID%elements(icel)%gausses, mass, lumped)
 
         elseif(ic_type == 761)then
           surf = get_face3(ecoord(1:3,1:nn))
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
-          thick = fstrSOLID%materials(cid)%variables(M_THICK)
+          thick = fstrSOLID%sections(isect)%thickness
           val = surf*thick*rho/3.0d0
 
         elseif(ic_type == 781)then
           surf = get_face4(ecoord(1:3,1:nn))
           rho = fstrSOLID%materials(cid)%variables(M_DENSITY)
-          thick = fstrSOLID%materials(cid)%variables(M_THICK)
+          thick = fstrSOLID%sections(isect)%thickness
           val = surf*thick*rho/4.0d0
 
         elseif(ic_type == 611 .or. ic_type == 641)then

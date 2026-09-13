@@ -92,7 +92,6 @@ module mMaterial
   integer(kind=kint), parameter :: M_YOUNGS  = 1
   integer(kind=kint), parameter :: M_POISSON = 2
   integer(kind=kint), parameter :: M_DENSITY = 3
-  integer(kind=kint), parameter :: M_THICK   = 4
 
   ! following plastic constitutive parameter
   integer(kind=kint), parameter :: M_PLCONST1 = 5

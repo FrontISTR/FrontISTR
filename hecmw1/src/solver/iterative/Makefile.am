@@ -76,6 +76,7 @@ OBJS =
 OBJSF = \
 	hecmw_solver_BiCGSTAB.@f90objfilepostfix@ \
 	hecmw_solver_CG.@f90objfilepostfix@ \
+	hecmw_solver_PipeCG.@f90objfilepostfix@ \
 	hecmw_solver_GMRES.@f90objfilepostfix@ \
 	hecmw_solver_GMRESR.@f90objfilepostfix@ \
 	hecmw_solver_GMRESREN.@f90objfilepostfix@ \
