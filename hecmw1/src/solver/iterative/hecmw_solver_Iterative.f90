@@ -15,6 +15,7 @@ contains
     use hecmw_util
     use hecmw_solver_CG
     use hecmw_solver_PipeCG
+    use hecmw_solver_GropCG
     use hecmw_solver_BiCGSTAB
     use hecmw_solver_GMRES
     use hecmw_solver_GMRESR
@@ -128,6 +129,9 @@ contains
         case (8)  !--PipeCG
           hecMAT%symmetric = .true.
           call hecmw_solve_PipeCG( hecMESH, hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (9)  !--GropCG
+          hecMAT%symmetric = .true.
+          call hecmw_solve_GropCG( hecMESH, hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
           error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
           call hecmw_solve_error (hecMESH, error)
@@ -140,7 +144,7 @@ contains
           SIGMA_DIAG = SIGMA_DIAG + 0.1
           if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
           cycle
-        elseif ((METHOD==1 .or. METHOD==8) .and. METHOD2>1) then
+        elseif ((METHOD==1 .or. METHOD==8 .or. METHOD==9) .and. METHOD2>1) then
           if (auto_sigma_diag.eq.1) SIGMA_DIAG = 1.0
           METHOD = METHOD2
           cycle
@@ -373,6 +377,8 @@ contains
         msg_method="CR"
       case (8)  !--PipeCG
         msg_method="PipeCG"
+      case (9)  !--GropCG
+        msg_method="GropCG"
       case default
         msg_method="Unlabeled"
     end select

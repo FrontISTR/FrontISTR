@@ -100,12 +100,12 @@ contains
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
     character(120) :: mlist = &
-      '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,PipeCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
+      '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,PipeCG,GropCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
     integer(kind=kint) :: number_number = 5
-    integer(kind=kint) :: indirect_number = 8
+    integer(kind=kint) :: indirect_number = 9
     integer(kind=kint) :: iter, time, sclg, dmpt, dmpx, usjd, step, mtxfmt
 
     fstr_ctrl_get_SOLVER = -1
