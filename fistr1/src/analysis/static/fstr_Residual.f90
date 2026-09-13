@@ -12,8 +12,6 @@ module m_fstr_Residual
   public :: fstr_Update_NDForce
   public :: fstr_Update_NDForce_SPC
   public :: fstr_Update_REACTION_SPC
-  public :: fstr_get_residual
-  public :: fstr_get_norm_contact
   public :: fstr_assemble_residual_contact
   public :: fstr_get_norm_para_contact
   public :: fstr_get_x_norm_contact
@@ -293,16 +291,6 @@ contains
   end subroutine fstr_calc_residual_vector_with_X
 
   !> Calculate magnitude of a real vector
-  real(kind=kreal) function fstr_get_residual( force, hecMESH )
-    use m_fstr
-    real(kind=kreal), intent(in)         :: force(:)
-    type(hecmwST_local_mesh), intent(in) :: hecMESH !< mesh information
-    integer :: ndof
-    ndof = hecMESH%n_dof
-    call hecmw_innerProduct_R(hecMESH,ndof,force,force,fstr_get_residual)
-  end function
-
-  !> Calculate magnitude of a real vector
   real(kind=kreal) function fstr_get_energy( force, displacement, hecMESH )
     use m_fstr
     real(kind=kreal), intent(in)         :: force(:), displacement(:)
@@ -310,32 +298,6 @@ contains
     integer :: ndof
     ndof = hecMESH%n_dof
     call hecmw_innerProduct_R(hecMESH, ndof, force, displacement, fstr_get_energy)
-  end function
-
-  !> Calculate square norm
-  real(kind=kreal) function fstr_get_norm_contact(flag,hecMESH,hecMAT,fstrSOLID,hecLagMAT)
-    use m_fstr
-    type(hecmwST_local_mesh), intent(in)             :: hecMESH !< mesh information
-    type(hecmwST_matrix), intent(in)                 :: hecMAT
-    type(fstr_solid), intent(in)                     :: fstrSOLID
-    type(hecmwST_matrix_lagrange), intent(in)        :: hecLagMAT
-    character(len=13)                                :: flag
-    real(kind=kreal) :: tmp1, tmp2, bi
-    integer :: i, i0, ndof
-    if( flag=='residualForce' )then
-      ndof = hecMESH%n_dof
-      call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%B,hecMAT%B,tmp1)
-      tmp2 = 0.0d0
-      i0 = hecMESH%n_node*ndof
-      do i=1,hecLagMAT%num_lagrange
-        bi = hecMAT%B(i0+i)
-        tmp2 = tmp2 + bi*bi
-      enddo
-      call hecmw_allreduce_R1(hecMESH,tmp2,HECMW_SUM)
-      fstr_get_norm_contact = tmp1 + tmp2
-    elseif( flag=='        force' )then
-      call hecmw_innerProduct_R(hecMESH,ndof,fstrSOLID%QFORCE,fstrSOLID%QFORCE,fstr_get_norm_contact)
-    endif
   end function
 
   !> \brief Assemble contact residual vector (hecMAT%B + conMAT%B + Lagrange) into a single vector.

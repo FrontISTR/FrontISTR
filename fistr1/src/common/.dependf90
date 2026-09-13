@@ -5,7 +5,6 @@ fstr_ctrl_heat.o : fstr_ctrl_heat.f90 ../../include/fstr_ctrl_util_f.mod fstr_se
 fstr_ctrl_material.o : fstr_ctrl_material.f90 ../../include/fstr_ctrl_util_f.mod 
 fstr_ctrl_modifier.o : fstr_ctrl_modifier.f90 fstr_setup_util.o 
 fstr_ctrl_static.o : fstr_ctrl_static.f90 ../../include/fstr_ctrl_util_f.mod 
-fstr_debug_dump.o : fstr_debug_dump.f90
 fstr_element_activation.o : fstr_element_activation.f90
 fstr_get_prop.o : fstr_get_prop.f90
 fstr_rcap_io.o : fstr_rcap_io.F90

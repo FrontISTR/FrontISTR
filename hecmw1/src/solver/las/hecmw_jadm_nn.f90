@@ -14,7 +14,6 @@ module hecmw_JAD_TYPE_nn
 
   public :: hecmw_JAD_INIT_nn
   public :: hecmw_JAD_FINALIZE_nn
-  public :: hecmw_JAD_IS_INITIALIZED_nn
   public :: hecmw_JAD_MATVEC_nn
 
   !C---------------------- AU&AL
@@ -47,11 +46,6 @@ contains
     deallocate(WP)
     INITIALIZED = 0
   end subroutine hecmw_JAD_FINALIZE_nn
-
-  function hecmw_JAD_IS_INITIALIZED_nn()
-    integer(kind=kint) :: hecmw_JAD_IS_INITIALIZED_nn
-    hecmw_JAD_IS_INITIALIZED_nn = INITIALIZED
-  end function hecmw_JAD_IS_INITIALIZED_nn
 
   subroutine hecmw_JAD_MATVEC_nn(hecMESH, hecMAT, X, Y, COMMtime)
     type(hecmwST_local_mesh), intent(in) :: hecMESH

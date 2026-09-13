@@ -11,8 +11,6 @@ module hecmw_matrix_reorder
   private
   public :: hecmw_matrix_reorder_profile
   public :: hecmw_matrix_reorder_values
-  public :: hecmw_matrix_reorder_vector
-  public :: hecmw_matrix_reorder_back_vector
   public :: hecmw_matrix_reorder_renum_item
 
 contains
@@ -88,50 +86,6 @@ contains
       indexU, itemU, AU, &
       indexLp, indexUp, itemLp, itemUp, ALp, AUp)
   end subroutine hecmw_matrix_reorder_values
-
-  subroutine hecmw_matrix_reorder_vector(N, NDOF, perm, X, Xp)
-    implicit none
-    integer(kind=kint), intent(in) :: N, NDOF
-    integer(kind=kint), intent(in) :: perm(:)
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Xp(:)
-    integer(kind=kint) :: inew, iold, j0new, j0old, j
-    !$omp parallel default(none),private(inew,iold,j0new,j0old,j), &
-      !$omp   shared(N,perm,NDOF,Xp,X)
-    !$omp do
-    do inew=1,N
-      iold = perm(inew)
-      j0new = (inew-1)*NDOF
-      j0old = (iold-1)*NDOF
-      do j=1,NDOF
-        Xp(j0new + j) = X(j0old + j)
-      end do
-    end do
-    !$omp end do
-    !$omp end parallel
-  end subroutine hecmw_matrix_reorder_vector
-
-  subroutine hecmw_matrix_reorder_back_vector(N, NDOF, perm, Xp, X)
-    implicit none
-    integer(kind=kint), intent(in) :: N, NDOF
-    integer(kind=kint), intent(in) :: perm(:)
-    real(kind=kreal), intent(in) :: Xp(:)
-    real(kind=kreal), intent(out) :: X(:)
-    integer(kind=kint) :: inew, iold, j0new, j0old, j
-    !$omp parallel default(none),private(inew,iold,j0new,j0old,j), &
-      !$omp&  shared(N,perm,NDOF,X,Xp)
-    !$omp do
-    do inew=1,N
-      iold = perm(inew)
-      j0new = (inew-1)*NDOF
-      j0old = (iold-1)*NDOF
-      do j=1,NDOF
-        X(j0old + j) = Xp(j0new + j)
-      end do
-    end do
-    !$omp end do
-    !$omp end parallel
-  end subroutine hecmw_matrix_reorder_back_vector
 
   subroutine hecmw_matrix_reorder_renum_item(N, perm, indexXp, itemXp)
     implicit none

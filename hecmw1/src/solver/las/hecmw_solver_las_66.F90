@@ -14,7 +14,6 @@ module hecmw_solver_las_66
   public :: hecmw_rel_resid_L2_66
   public :: hecmw_Tvec_66
   public :: hecmw_Ttvec_66
-  public :: hecmw_TtmatTvec_66
 
 contains
 
@@ -402,27 +401,5 @@ contains
     !    enddo
 
   end subroutine hecmw_Ttvec_66
-
-  !C
-  !C***
-  !C*** hecmw_TtmatTvec_66
-  !C***
-  !C
-  subroutine hecmw_TtmatTvec_66 (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:), W(:)
-    real(kind=kreal), intent(inout) :: time_Ax
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    call hecmw_Tvec_66(hecMESH, X, Y, COMMtime)
-    call hecmw_matvec_66(hecMESH, hecMAT, Y, W, time_Ax, COMMtime)
-    call hecmw_Ttvec_66(hecMESH, W, Y, COMMtime)
-
-  end subroutine hecmw_TtmatTvec_66
-
 
 end module hecmw_solver_las_66

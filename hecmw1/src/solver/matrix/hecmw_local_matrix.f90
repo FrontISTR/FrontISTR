@@ -23,7 +23,6 @@ module hecmw_local_matrix
   public :: hecmw_localmat_add_hecmat
   public :: hecmw_localmat_multmat
   public :: hecmw_localmat_make_hecmat
-  public :: hecmw_localmat_shrink_comm_table
 
   type hecmwST_local_matrix
     integer :: nr, nc, nnz, ndof
@@ -3291,23 +3290,6 @@ contains
     type (hecmwST_matrix), intent(inout) :: hecTKT
     call make_new_hecmat(hecMAT, BTtKTmat, hecTKT)
   end subroutine hecmw_localmat_make_hecmat
-
-  subroutine hecmw_localmat_shrink_comm_table(BKmat, hecMESH)
-    implicit none
-    type (hecmwST_local_matrix), intent(in) :: BKmat
-    type (hecmwST_local_mesh), intent(inout) :: hecMESH
-    type (hecmwST_matrix_comm) :: hecCOMM
-    call make_comm_table(BKmat, hecMESH, hecCOMM)
-    deallocate(hecMESH%import_index)
-    deallocate(hecMESH%import_item)
-    deallocate(hecMESH%export_index)
-    deallocate(hecMESH%export_item)
-    hecMESH%import_index => hecCOMM%import_index
-    hecMESH%import_item => hecCOMM%import_item
-    hecMESH%export_index => hecCOMM%export_index
-    hecMESH%export_item => hecCOMM%export_item
-    deallocate(hecCOMM%neighbor_pe)
-  end subroutine hecmw_localmat_shrink_comm_table
 
   !> \brief Debug write matrix
   !>

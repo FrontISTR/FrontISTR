@@ -227,35 +227,6 @@ contains
     endif
   end subroutine
 
-  !> Set value of variable(m) of material n to v
-  subroutine modifyMatl( n,m,v)
-    integer, intent(in)  :: n
-    integer, intent(in)  :: m
-    real(kind=kreal), intent(in) :: v
-
-    if( n>size(materials) .OR. m>100 ) return
-    materials(n)%variables(m) = v
-  end subroutine
-
-  !> Print out the material properties
-  subroutine printMaterial( nfile, material )
-    integer, intent(in)           :: nfile
-    type( tMaterial ), intent(in) :: material
-    integer :: i, nt
-    write( nfile, *) "Material type:",material%mtype,material%nlgeom_flag
-    do i=1,100
-      if( material%variables(i) /= 0.d0 ) write( nfile, *) i,material%variables(i)
-    enddo
-    if( associated( material%table ) ) then
-      nt = size(material%table)
-      write( nfile,* ) "--table--"
-      do i=1,nt
-        write(nfile,*) i,material%table(i)
-      enddo
-    endif
-    call print_TableData( material%dict, nfile )
-  end subroutine
-
   !> Fetch material type
   integer function fetchDigit( npos, cnum )
     integer, intent(in) :: npos

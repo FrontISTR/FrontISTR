@@ -10,19 +10,11 @@ module hecmw_solver_las_44
   private
 
   public :: hecmw_matvec_44
-  public :: hecmw_matvec_44_set_async
-  public :: hecmw_matvec_44_unset_async
   public :: hecmw_matresid_44
   public :: hecmw_rel_resid_L2_44
   public :: hecmw_Tvec_44
   public :: hecmw_Ttvec_44
   public :: hecmw_TtmatTvec_44
-  public :: hecmw_mat_diag_sr_44
-
-  ! ! for communication hiding in matvec
-  ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
-  ! real(kind=kreal), save, allocatable :: A_o(:)
-  logical, save :: async_matvec_flg = .false.
 
 contains
 
@@ -57,28 +49,6 @@ contains
 
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
   end subroutine hecmw_matvec_44
-
-  !C
-  !C***
-  !C*** hecmw_matvec_44_set_async
-  !C***
-  !C
-  subroutine hecmw_matvec_44_set_async (hecMAT)
-    use hecmw_util
-    implicit none
-    type (hecmwST_matrix), intent(in) :: hecMAT
-
-  end subroutine hecmw_matvec_44_set_async
-
-  !C
-  !C***
-  !C*** hecmw_matvec_44_unset_async
-  !C***
-  !C
-  subroutine hecmw_matvec_44_unset_async
-    implicit none
-
-  end subroutine hecmw_matvec_44_unset_async
 
   !C
   !C***
@@ -242,7 +212,7 @@ contains
 
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,X1,X2,X3,X4,YV1,YV2,YV3,YV4,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
+        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -274,7 +244,6 @@ contains
           jE= indexU(i  )
           do j= jS, jE
             in  = itemU(j)
-            ! if (async_matvec_flg .and. in > N) cycle
             X1= X(4*in-3)
             X2= X(4*in-2)
             X3= X(4*in-1)
@@ -529,46 +498,5 @@ contains
     call hecmw_Ttvec_44(hecMESH, W, Y, COMMtime)
 
   end subroutine hecmw_TtmatTvec_44
-
-
-  !C
-  !C***
-  !C*** hecmw_mat_diag_sr_44
-  !C***
-  !C
-  subroutine hecmw_mat_diag_sr_44(hecMESH, hecMAT, COMMtime)
-    use hecmw_util
-    use m_hecmw_comm_f
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(inout), target :: hecMAT
-    real(kind=kreal), intent(inout), optional :: COMMtime
-    real(kind=kreal), allocatable :: W(:,:)
-    real(kind=kreal), pointer :: D(:)
-    integer(kind=kint) :: ip
-    real(kind=kreal) :: START_TIME, END_TIME
-    allocate(W(4*hecMAT%NP,4))
-    D => hecMAT%D
-    do ip= 1, hecMAT%N
-      W(4*ip-3,1)= D(16*ip-15); W(4*ip-3,2)= D(16*ip-14); W(4*ip-3,3)= D(16*ip-13); W(4*ip-3,4)= D(16*ip-12)
-      W(4*ip-2,1)= D(16*ip-11); W(4*ip-2,2)= D(16*ip-10); W(4*ip-2,3)= D(16*ip- 9); W(4*ip-2,4)= D(16*ip- 8)
-      W(4*ip-1,1)= D(16*ip- 7); W(4*ip-1,2)= D(16*ip- 6); W(4*ip-1,3)= D(16*ip- 5); W(4*ip-1,4)= D(16*ip- 4)
-      W(4*ip  ,1)= D(16*ip- 3); W(4*ip  ,2)= D(16*ip- 2); W(4*ip  ,3)= D(16*ip- 1); W(4*ip  ,4)= D(16*ip   )
-    enddo
-    START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, W(:,1), hecMAT%NP, 4)
-    call hecmw_update_R (hecMESH, W(:,2), hecMAT%NP, 4)
-    call hecmw_update_R (hecMESH, W(:,3), hecMAT%NP, 4)
-    call hecmw_update_R (hecMESH, W(:,4), hecMAT%NP, 4)
-    END_TIME= HECMW_WTIME()
-    if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
-    do ip= hecMAT%N+1, hecMAT%NP
-      D(16*ip-15)= W(4*ip-3,1); D(16*ip-14)= W(4*ip-3,2); D(16*ip-13)= W(4*ip-3,3); D(16*ip-12)= W(4*ip-3,4)
-      D(16*ip-11)= W(4*ip-2,1); D(16*ip-10)= W(4*ip-2,2); D(16*ip- 9)= W(4*ip-2,3); D(16*ip- 8)= W(4*ip-2,4)
-      D(16*ip- 7)= W(4*ip-1,1); D(16*ip- 6)= W(4*ip-1,2); D(16*ip- 5)= W(4*ip-1,3); D(16*ip- 4)= W(4*ip-1,4)
-      D(16*ip- 3)= W(4*ip  ,1); D(16*ip- 2)= W(4*ip  ,2); D(16*ip- 1)= W(4*ip  ,3); D(16*ip   )= W(4*ip  ,4)
-    enddo
-    deallocate(W)
-  end subroutine hecmw_mat_diag_sr_44
 
 end module hecmw_solver_las_44

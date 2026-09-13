@@ -8,19 +8,12 @@ module hecmw_solver_las_22
   private
 
   public :: hecmw_matvec_22
-  public :: hecmw_matvec_22_set_async
-  public :: hecmw_matvec_22_unset_async
   public :: hecmw_matresid_22
   public :: hecmw_rel_resid_L2_22
   public :: hecmw_Tvec_22
   public :: hecmw_Ttvec_22
   public :: hecmw_TtmatTvec_22
-  public :: hecmw_mat_diag_sr_22
 
-  ! ! for communication hiding in matvec
-  ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
-  ! real(kind=kreal), save, allocatable :: A_o(:)
-  logical, save :: async_matvec_flg = .false.
 contains
 
   !C
@@ -54,15 +47,6 @@ contains
 
     if (present(COMMtime)) COMMtime = COMMtime + Tcomm
   end subroutine hecmw_matvec_22
-
-  subroutine hecmw_matvec_22_set_async (hecMAT)
-    use hecmw_util
-    implicit none
-    type (hecmwST_matrix), intent(in) :: hecMAT
-  end subroutine hecmw_matvec_22_set_async
-  subroutine hecmw_matvec_22_unset_async
-    implicit none
-  end subroutine hecmw_matvec_22_unset_async
 
   !C
   !C***
@@ -207,7 +191,7 @@ contains
 
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,X1,X2,YV1,YV2,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,async_matvec_flg)
+        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -480,38 +464,4 @@ contains
 
   end subroutine hecmw_TtmatTvec_22
 
-
-  !C
-  !C***
-  !C*** hecmw_mat_diag_sr_22
-  !C***
-  !C
-  subroutine hecmw_mat_diag_sr_22(hecMESH, hecMAT, COMMtime)
-    use hecmw_util
-    use m_hecmw_comm_f
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(inout), target :: hecMAT
-    real(kind=kreal), intent(inout), optional :: COMMtime
-    real(kind=kreal), allocatable :: W(:,:)
-    real(kind=kreal), pointer :: D(:)
-    integer(kind=kint) :: ip
-    real(kind=kreal) :: START_TIME, END_TIME
-    allocate(W(2*hecMAT%NP,2))
-    D => hecMAT%D
-    do ip= 1, hecMAT%N
-      W(2*ip-1,1)= D(4*ip-3); W(2*ip-1,2)= D(4*ip-2);
-      W(2*ip-0,1)= D(4*ip-1); W(2*ip-0,2)= D(4*ip-0);
-    enddo
-    START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, W(:,1), hecMAT%NP, 2)
-    call hecmw_update_R (hecMESH, W(:,2), hecMAT%NP, 2)
-    END_TIME= HECMW_WTIME()
-    if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
-    do ip= hecMAT%N+1, hecMAT%NP
-      D(4*ip-3)= W(2*ip-1,1); D(4*ip-2)= W(2*ip-1,2);
-      D(4*ip-1)= W(2*ip-0,1); D(4*ip-0)= W(2*ip-0,2);
-    enddo
-    deallocate(W)
-  end subroutine hecmw_mat_diag_sr_22
 end module hecmw_solver_las_22

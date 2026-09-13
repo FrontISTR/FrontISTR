@@ -389,28 +389,6 @@ module Table_DICTS
 
   end subroutine
 
-
-  !> Print our the contents of a dictionary
-  subroutine print_TableData( dict, fname )
-    type(DICT_STRUCT), pointer     :: dict
-    integer, intent(in)            :: fname
-
-    type(LINKED_LIST), pointer  :: current
-    integer :: i
-    do i = 1,size(dict%table)
-      if ( associated( dict%table(i)%list ) ) then
-        current => dict%table(i)%list
-        do while ( associated(current) )
-          if( trim(current%data%key) /= 'INIT' ) then
-            write( fname, * ) trim(current%data%key)
-            call print_table( current%data%value, fname )
-          endif
-          current => current%next
-        enddo
-      endif
-    enddo
-  end subroutine
-
 end module Table_DICTS
 
 

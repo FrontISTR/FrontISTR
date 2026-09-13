@@ -334,7 +334,6 @@ contains
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, hecMAT%B)
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
 
-          !res = fstr_get_residual(hecMAT%B, hecMESH)
           call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
           call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
               resid_work, nresid, res0, res1, n_node_global, iterStatus)

@@ -18,7 +18,6 @@ module m_hecmw_contact_comm
   public :: hecmw_contact_comm_bcast_r
   public :: hecmw_contact_comm_reduce_i
   public :: hecmw_contact_comm_bcast_i
-  public :: hecmw_contact_comm_allreduce_r
   public :: hecmw_contact_comm_allreduce_i
 
   type hecmwST_contact_comm
@@ -210,15 +209,6 @@ contains
     call send_recv_contact_info_i(conComm%n_neighbor_pe, conComm%neighbor_pe, conComm%MPI_COMM, &
          conComm%int_index, conComm%int_item, conComm%ext_index, conComm%ext_item, vec, op)
   end subroutine hecmw_contact_comm_bcast_i
-
-  subroutine hecmw_contact_comm_allreduce_r(conComm, vec, op)
-    implicit none
-    type (hecmwST_contact_comm), intent(in) :: conComm
-    real(kind=kreal), intent(inout) :: vec(:)
-    integer(kind=kint), intent(in) :: op
-    call hecmw_contact_comm_reduce_r(conComm, vec, op)
-    call hecmw_contact_comm_bcast_r(conComm, vec)
-  end subroutine hecmw_contact_comm_allreduce_r
 
   subroutine hecmw_contact_comm_allreduce_i(conComm, vec, op)
     implicit none

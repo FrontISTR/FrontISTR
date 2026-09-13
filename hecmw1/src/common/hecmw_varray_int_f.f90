@@ -20,8 +20,6 @@ module hecmw_varray_int
   public :: HECMW_varray_int_insert
   public :: HECMW_varray_int_insert_if_not_exists
   public :: HECMW_varray_int_expand
-  public :: HECMW_varray_int_print
-  public :: HECMW_varray_int_print_all
   public :: HECMW_varray_int_find
   public :: HECMW_varray_int_get_nitem
   public :: HECMW_varray_int_get_item
@@ -174,24 +172,6 @@ contains
     ilist%items(ilist%nitem+1:ilist%nitem+n) = vals(1:n)
     ilist%nitem = ilist%nitem + n
   end subroutine HECMW_varray_int_expand
-
-  subroutine HECMW_varray_int_print( ilist )
-    type( hecmwST_varray_int ), intent(inout) :: ilist
-
-    write(*,*) 'n, maxn:', ilist%nitem, size(ilist%items)
-    write(*,*) 'items:', ilist%items(1:ilist%nitem)
-  end subroutine HECMW_varray_int_print
-
-  subroutine HECMW_varray_int_print_all( ilists )
-    type( hecmwST_varray_int ), allocatable, intent(inout) :: ilists(:)
-
-    integer(kind=kint) :: i
-
-    do i=1,size(ilists)
-      write(*,*) "i, n, maxn: ", i, ilists(i)%nitem, size(ilists(i)%items)
-      write(*,*) 'items:', ilists(i)%items(1:ilists(i)%nitem)
-    end do
-  end subroutine HECMW_varray_int_print_all
 
   integer(kind=kint) function HECMW_varray_int_find( ilist, ival )
     type( hecmwST_varray_int ), intent(in) :: ilist

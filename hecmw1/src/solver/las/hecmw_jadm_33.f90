@@ -14,7 +14,6 @@ module hecmw_JAD_TYPE_33
 
   public :: hecmw_JAD_INIT_33
   public :: hecmw_JAD_FINALIZE_33
-  public :: hecmw_JAD_IS_INITIALIZED_33
   public :: hecmw_JAD_MATVEC_33
 
   !C---------------------- AU&AL
@@ -47,11 +46,6 @@ contains
     deallocate(WP1,WP2,WP3)
     INITIALIZED = 0
   end subroutine hecmw_JAD_FINALIZE_33
-
-  function hecmw_JAD_IS_INITIALIZED_33()
-    integer(kind=kint) :: hecmw_JAD_IS_INITIALIZED_33
-    hecmw_JAD_IS_INITIALIZED_33 = INITIALIZED
-  end function hecmw_JAD_IS_INITIALIZED_33
 
   subroutine hecmw_JAD_MATVEC_33(hecMESH, hecMAT, X, Y, COMMtime)
     type(hecmwST_local_mesh), intent(in) :: hecMESH

@@ -88,7 +88,6 @@ contains
 
     ! exchange diagonal elements of overlap region
     call hecmw_mat_dump(hecMAT, hecMESH)
-    call hecmw_matvec_set_async(hecMAT)
 
     !C ITERATIVE solver
     error=0
@@ -158,7 +157,6 @@ contains
     if (resid2 < hecmw_mat_get_resid(hecMAT)) call hecmw_mat_set_flag_converged(hecMAT, 1)
 
     call hecmw_mat_dump_solution(hecMAT)
-    call hecmw_matvec_unset_async
 
     !C-- IN CASE OF MPC-CG
     if (totalmpc > 0 .and. MPC_METHOD == 2) then

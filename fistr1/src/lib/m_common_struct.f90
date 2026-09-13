@@ -32,31 +32,6 @@ module m_common_struct
 
 contains
 
-  !> Initializer of global data
-  subroutine fstr_localcoordsys_init()
-    integer :: i
-
-    if( .not. associated(g_LocalCoordSys) ) return
-    do i=1,size(g_LocalCoordSys)
-      g_LocalCoordSys(i)%sys_name      = ""
-      g_LocalCoordSys(i)%sys_type      = 10
-      g_LocalCoordSys(i)%node_ID(:)    = -1
-      g_LocalCoordSys(i)%CoordSys(:,:) = 0.d0
-    enddo
-  end subroutine
-
-  !> output of coordinate system
-  subroutine print_localcoordsys(nfile, coordsys)
-    integer, intent(in)              :: nfile
-    type(tLocalCoordSys), intent(in) :: coordsys
-
-    write(nfile, *) coordsys%sys_type, coordsys%sys_name
-    write(nfile, *) coordsys%node_ID(:)
-    write(nfile, *) coordsys%CoordSys(1,:)
-    write(nfile, *) coordsys%CoordSys(2,:)
-    write(nfile, *) coordsys%CoordSys(3,:)
-  end subroutine
-
   !> if need to fetch global nodes' coordinate
   logical function isCoordNeeds( coordsys )
     type(tLocalCoordSys), intent(in) :: coordsys

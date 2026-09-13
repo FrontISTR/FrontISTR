@@ -21,9 +21,4 @@ contains
     func(2,1) = 0.5d0
   end subroutine
 
-  subroutine Shape2ndDeriv_line2n(func)
-    real(kind=kreal) :: func(2,1,1)
-    func(:,:,:) = 0.d0
-  end subroutine
-
 end module

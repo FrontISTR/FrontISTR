@@ -91,7 +91,6 @@ contains
       call sparse_matrix_para_contact_set_rhs(spMAT, hecMAT, hecLagMAT, conMAT)
     else
       call sparse_matrix_contact_set_vals(spMAT, hecMAT, hecLagMAT)
-      !call sparse_matrix_dump(spMAT)
       call sparse_matrix_contact_set_rhs(spMAT, hecMAT, hecLagMAT)
     endif
 
