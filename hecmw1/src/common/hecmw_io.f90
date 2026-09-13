@@ -16,7 +16,7 @@ module hecmw_io
   implicit none
 
   public :: hecmw_get_mesh
-  public :: hecmw_get_mesh_without_shell_dummy
+  public :: hecmw_get_mesh_without_dummy_nodes
   public :: hecmw_put_mesh
 
   interface
@@ -56,14 +56,14 @@ contains
   end subroutine hecmw_get_mesh
 
 
-  subroutine hecmw_get_mesh_without_shell_dummy(name_ID, mesh)
+  subroutine hecmw_get_mesh_without_dummy_nodes(name_ID, mesh)
     integer(kind=kint) :: ierr
     character(len=HECMW_NAME_LEN) :: name_ID
     type(hecmwST_local_mesh) :: mesh
 
     call hecmw_nullify_mesh(mesh)
 
-    call hecmw_get_mesh_without_shell_dummy_init_if(name_ID,ierr)
+    call hecmw_get_mesh_without_dummy_nodes_init_if(name_ID,ierr)
     if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm(), HECMW_EXIT_INPUT)
 
     call hecmw_dist_copy_c2f(mesh, ierr)
@@ -72,7 +72,7 @@ contains
     call hecmw_get_mesh_finalize_if(ierr)
     if(ierr /=0) call hecmw_abort(hecmw_comm_get_comm(), HECMW_EXIT_INPUT)
 
-  end subroutine hecmw_get_mesh_without_shell_dummy
+  end subroutine hecmw_get_mesh_without_dummy_nodes
 
 
   !C====================================================================

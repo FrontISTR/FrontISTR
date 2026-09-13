@@ -2732,7 +2732,7 @@ end function fstr_setup_INITIAL
         rot_start = max(dof_ids(i), 4)
         rot_end = dof_ide(i)
         if( rot_start <= rot_end ) then
-          call append_shell_rotation_node_grps( &
+          call append_rotation_node_grps( &
             P%MESH, source_grp_id(i), counter, i, rot_grp_id, other_grp_id )
 
           entry = entry + 1

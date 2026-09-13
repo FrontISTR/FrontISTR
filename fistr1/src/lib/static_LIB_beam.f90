@@ -210,6 +210,57 @@ contains
 
   end subroutine UpdateST_Beam
 
+  subroutine STF_Beam_641_from_611(ecoord, gausses, section, stiff, formulation)
+    use mMechGauss
+    implicit none
+
+    real(kind=kreal), intent(in) :: ecoord(3, 4), section(:)
+    type(tGaussStatus), intent(in) :: gausses(:)
+    real(kind=kreal), intent(out) :: stiff(12, 12)
+    integer(kind=kint), intent(in) :: formulation
+
+    integer(kind=kint) :: i, j
+    integer(kind=kint), parameter :: mixed_to_natural(12) = &
+      (/ 1, 2, 3, 7, 8, 9, 4, 5, 6, 10, 11, 12 /)
+    real(kind=kreal) :: natural_stiff(12, 12), ee, pp
+
+    ee = gausses(1)%pMaterial%variables(M_YOUNGS)
+    pp = gausses(1)%pMaterial%variables(M_POISSON)
+    call STF_Beam(611, 2, ecoord(1:3,1:2), section, ee, pp, natural_stiff, formulation)
+
+    do j = 1, 12
+      do i = 1, 12
+        stiff(i,j) = natural_stiff(mixed_to_natural(i), mixed_to_natural(j))
+      enddo
+    enddo
+  end subroutine STF_Beam_641_from_611
+
+  subroutine UpdateST_Beam_641_from_611(ecoord, u, du, gausses, section, qf, formulation)
+    use mMechGauss
+    implicit none
+
+    real(kind=kreal), intent(in) :: ecoord(3, 4), u(3, 4), du(3, 4), section(:)
+    type(tGaussStatus), intent(in) :: gausses(:)
+    real(kind=kreal), intent(out) :: qf(12)
+    integer(kind=kint), intent(in) :: formulation
+
+    integer(kind=kint) :: i
+    integer(kind=kint), parameter :: mixed_to_natural(12) = &
+      (/ 1, 2, 3, 7, 8, 9, 4, 5, 6, 10, 11, 12 /)
+    real(kind=kreal) :: beam_u(6, 2), beam_du(6, 2), natural_qf(12)
+
+    beam_u(1:3,1:2) = u(1:3,1:2)
+    beam_u(4:6,1:2) = u(1:3,3:4)
+    beam_du(1:3,1:2) = du(1:3,1:2)
+    beam_du(4:6,1:2) = du(1:3,3:4)
+    call UpdateST_Beam(611, 2, ecoord(1:3,1:2), beam_u, beam_du, section, &
+      gausses, natural_qf, formulation)
+
+    do i = 1, 12
+      qf(i) = natural_qf(mixed_to_natural(i))
+    enddo
+  end subroutine UpdateST_Beam_641_from_611
+
   !> Calculate elemental section force (N, Q, M) of 611 beam elements
   subroutine NQM_Beam(nn, ecoord, gausses, section, ul, rnqm, formulation)
     use mMechGauss

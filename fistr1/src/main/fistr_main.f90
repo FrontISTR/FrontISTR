@@ -53,7 +53,7 @@ contains
 
     name_ID = 'fstrMSH'
     if( fstr_is_heat_analysis() ) then
-      call hecmw_get_mesh_without_shell_dummy( name_ID , hecMESH )
+      call hecmw_get_mesh_without_dummy_nodes( name_ID , hecMESH )
     else
       call hecmw_get_mesh( name_ID , hecMESH )
     endif

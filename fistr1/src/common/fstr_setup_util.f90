@@ -117,7 +117,7 @@ contains
     deallocate(isect)
   end subroutine append_intersection_node_grp
 
-  subroutine append_shell_rotation_node_grps( hecMESH, source_id, boundary_id, line_id, rot_id, other_id )
+  subroutine append_rotation_node_grps( hecMESH, source_id, boundary_id, line_id, rot_id, other_id )
     use hecmw_setup_util, only : append_new_group
     implicit none
     type(hecmwST_local_mesh), pointer :: hecMESH
@@ -140,7 +140,9 @@ contains
     enddo
     do elem = 1, hecMESH%n_elem
       elem_type = hecMESH%elem_type(elem)
-      if( elem_type == 761 ) then
+      if( elem_type == 641 ) then
+        nnode = 2
+      else if( elem_type == 761 ) then
         nnode = 3
       else if( elem_type == 781 ) then
         nnode = 4
@@ -180,7 +182,7 @@ contains
     deallocate(node_dof)
     deallocate(rot_list)
     deallocate(other_list)
-  end subroutine append_shell_rotation_node_grps
+  end subroutine append_rotation_node_grps
 
   !------------------------------------------------------------------------------
   ! JP-3
