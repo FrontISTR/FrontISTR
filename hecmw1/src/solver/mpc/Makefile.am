@@ -74,7 +74,8 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_mpc_prepost.@f90objfilepostfix@
+	hecmw_mpc_prepost.@f90objfilepostfix@ \
+	hecmw_ebc_defer.@f90objfilepostfix@
 
 HEADERS =
 

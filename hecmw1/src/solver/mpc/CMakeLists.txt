@@ -5,5 +5,6 @@
 
 target_sources(hecmw PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/hecmw_mpc_prepost.f90
+  ${CMAKE_CURRENT_LIST_DIR}/hecmw_ebc_defer.f90
 )
 
