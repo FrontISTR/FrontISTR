@@ -17,11 +17,6 @@ module m_fstr_contact_mpc
   public :: contact2mpcval
   public :: l_contact2mpc
   public :: l_tied2mpc
-  public :: fstr_contact2mpc
-  public :: fstr_del_contactmpc
-  public :: fstr_write_mpc
-
-  integer(kind=kint), save :: n_contact_mpc
 
 contains
 
@@ -117,52 +112,5 @@ contains
       enddo
     enddo
   end subroutine l_tied2mpc
-
-  !> Contact states to equation conditions
-  subroutine fstr_contact2mpc( contacts, mpcs )
-    type( tContact ), intent(in)       :: contacts(:)  !< current contact state
-    type( hecmwST_mpc ), intent(inout) :: mpcs         !< to who mpc be appended
-    integer(kind=kint) :: i, nmpc
-    n_contact_mpc = 0
-    do i=1,size(contacts)
-      if( contacts(i)%algtype == CONTACTUNKNOWN ) cycle     ! not initialized
-      if( contacts(i)%algtype == CONTACTFSLID ) then
-        print *, "Cannot deal with finit slip problems by MPC!"
-        cycle
-      endif
-      if( contacts(i)%algtype == CONTACTSSLID ) then
-        call l_contact2mpc( contacts(i), mpcs, nmpc )
-        n_contact_mpc = n_contact_mpc + nmpc
-      elseif( contacts(i)%algtype == CONTACTTIED ) then
-        call l_tied2mpc( contacts(i), mpcs, nmpc )
-        n_contact_mpc = n_contact_mpc + nmpc
-      endif
-    enddo
-  end subroutine
-
-  !> Delete mpcs derived from contact conditions
-  subroutine fstr_del_contactmpc( mpcs )
-    use fstr_ctrl_modifier
-    type( hecmwST_mpc ), intent(inout) :: mpcs       !<  mpcs to be modified
-    call fstr_delete_mpc( n_contact_mpc, mpcs )
-  end subroutine
-
-  !> Print out mpc conditions
-  subroutine fstr_write_mpc( file, mpcs )
-    integer(kind=kint), intent(in)  :: file       !<  file number
-    type( hecmwST_mpc ), intent(in) :: mpcs       !<  mpcs to be printed
-
-    integer(kind=kint) :: i,j,n0,n1
-    write(file, *) "Number of equation", mpcs%n_mpc
-    do i=1,mpcs%n_mpc
-      write(file,*) "--Equation",i
-      n0=mpcs%mpc_index(i-1)+1
-      n1=mpcs%mpc_index(i)
-      write(file, *) n0,n1
-      write(file,'(30i5)') (mpcs%mpc_item(j),j=n0,n1)
-      write(file,'(30i5)') (mpcs%mpc_dof(j),j=n0,n1)
-      write(file,'(30f7.2)') (mpcs%mpc_val(j),j=n0,n1),mpcs%mpc_const(i)
-    enddo
-  end subroutine
 
 end module m_fstr_contact_mpc

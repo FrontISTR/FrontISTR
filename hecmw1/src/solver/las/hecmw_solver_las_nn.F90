@@ -10,76 +10,12 @@ module hecmw_solver_las_nn
   private
 
   public :: hecmw_matvec_nn
-  public :: hecmw_matvec_nn_set_async
-  public :: hecmw_matvec_nn_unset_async
   public :: hecmw_matresid_nn
   public :: hecmw_rel_resid_L2_nn
   public :: hecmw_Tvec_nn
   public :: hecmw_Ttvec_nn
-  public :: hecmw_mat_diag_sr_nn
-  public :: hecmw_mat_add_nn
-  public :: hecmw_mat_multiple_nn
-
-  ! ! for communication hiding in matvec
-  ! integer(kind=kint), save, allocatable :: index_o(:), item_o(:)
-  ! real(kind=kreal), save, allocatable :: A_o(:)
-  logical, save :: async_matvec_flg = .false.
 
 contains
-
-  !C
-  !C***
-  !C*** hecmw_matvec_nn_set_async
-  !C***
-  !C
-  subroutine hecmw_matvec_nn_set_async (hecMAT)
-    use hecmw_util
-    implicit none
-    type (hecmwST_matrix), intent(in) :: hecMAT
-    ! integer(kind=kint) :: i, j, jS, jE, idx, in
-
-    ! allocate(index_o(0:hecMAT%N))
-    ! index_o(0) = 0
-    ! do i = 1, hecMAT%N
-    !   jS= hecMAT%indexU(i-1) + 1
-    !   jE= hecMAT%indexU(i  )
-    !   idx = index_o(i-1)
-    !   do j= jS, jE
-    !     in  = hecMAT%itemU(j)
-    !     if (in <= hecMAT%N) cycle
-    !     idx = idx + 1
-    !   enddo
-    !   index_o(i) = idx
-    ! enddo
-    ! allocate(item_o(idx))
-    ! allocate(A_o(idx*9))
-    ! do i = 1, hecMAT%N
-    !   jS= hecMAT%indexU(i-1) + 1
-    !   jE= hecMAT%indexU(i  )
-    !   idx = index_o(i-1)
-    !   do j= jS, jE
-    !     in  = hecMAT%itemU(j)
-    !     if (in <= hecMAT%N) cycle
-    !     idx = idx + 1
-    !     item_o(idx) = hecMAT%itemU(j) - hecMAT%N
-    !     A_o(9*idx-8:9*idx) = hecMAT%AU(9*j-8:9*j)
-    !   enddo
-    ! enddo
-    ! async_matvec_flg = .true.
-  end subroutine hecmw_matvec_nn_set_async
-
-  !C
-  !C***
-  !C*** hecmw_matvec_nn_unset_async
-  !C***
-  !C
-  subroutine hecmw_matvec_nn_unset_async
-    implicit none
-    ! if (allocated(index_o)) deallocate(index_o)
-    ! if (allocated(item_o)) deallocate(item_o)
-    ! if (allocated(A_o)) deallocate(A_o)
-    ! async_matvec_flg = .false.
-  end subroutine hecmw_matvec_nn_unset_async
 
   !C
   !C***
@@ -195,11 +131,7 @@ contains
       ! <<< added for tuning
 
       START_TIME= HECMW_WTIME()
-      ! if (async_matvec_flg) then
-      !   call hecmw_update_3_R_async (hecMESH, X, NP, ireq)
-      ! else
       call hecmw_update_R (hecMESH, X, NP, NDOF)
-      ! endif
       END_TIME= HECMW_WTIME()
       if (present(COMMtime)) COMMtime = COMMtime + END_TIME - START_TIME
 
@@ -240,7 +172,7 @@ contains
 
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,XV,YV,jS,jE,j,k,l,in,threadNum,blockNum,blockIndex) &
-        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,NDOF,NDOF2,async_matvec_flg)
+        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N,NDOF,NDOF2)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -272,7 +204,6 @@ contains
           jE= indexU(i  )
           do j= jS, jE
             in  = itemU(j)
-            ! if (async_matvec_flg .and. in > N) cycle
             do k=1,NDOF
               XV(k) = X(NDOF*(in-1)+k)
             end do

@@ -131,7 +131,6 @@ module mContactDef
     integer(kind=kint) :: contactNode_current    !< current number of nodes in contact
   end type fstr_info_contactChange
 
-  private :: is_MPC_available
   private :: is_active_contact
 
 contains
@@ -172,57 +171,11 @@ contains
     is_contact_active = (state >= CONTACTSTICK)
   end function
 
-  !> Whether the contact state has valid projection info (NEAR, STICK, or SLIP)
-  pure logical function has_projection(state)
-    integer, intent(in) :: state
-    has_projection = (state >= CONTACTNEAR)
-  end function
-
   !> Whether the contact state is completely free (no projection info)
   pure logical function is_contact_free(state)
     integer, intent(in) :: state
     is_contact_free = (state == CONTACTFREE)
   end function
-
-  !> Print out contact state
-  subroutine print_contact_state(fnum, cstate)
-    integer, intent(in)             :: fnum !< file number
-    type(tContactState), intent(in) :: cstate !< contact state
-    write(fnum, *) "--Contact state=",cstate%state
-    write(fnum, *) cstate%surface, cstate%distance
-    write(fnum, *) cstate%lpos
-    write(fnum, *) cstate%direction
-    write(fnum, *) cstate%multiplier
-  end subroutine
-
-  !> If contact to mpc condiitions
-  logical function is_MPC_available( contact )
-    type(tContact), intent(in)        :: contact   !< contact definition
-    is_MPC_available = .true.
-    if( contact%fcoeff/=0.d0 ) is_MPC_available = .false.
-  end function
-
-  !> Write out contact definition
-  subroutine fstr_write_contact( file, contact )
-    integer(kind=kint), intent(in)    :: file      !< file number
-    type(tContact), intent(in)        :: contact   !< contact definition
-    integer :: i
-    write(file,*) "CONTACT:", contact%ctype,contact%group,trim(contact%pair_name),contact%fcoeff
-    write(file,*) "---Slave----"
-    write(file,*) "num.slave",size(contact%slave)
-    if( associated(contact%slave) ) then
-      do i=1,size(contact%slave)
-        write(file, *) contact%slave(i)
-      enddo
-    endif
-    write(file,*) "----master---"
-    write(file,*) "num.master",size(contact%master)
-    if( associated(contact%master) ) then
-      do i=1,size(contact%master)
-        call write_surf( file, contact%master(i) )
-      enddo
-    endif
-  end subroutine
 
   !> Finalizer
   subroutine fstr_contact_finalize( contact )
@@ -535,19 +488,5 @@ contains
       is_active_contact = .false.
     endif
   end function
-
-  !> Write out the contact definition read from mesh file
-  subroutine print_contatct_pair( file, pair )
-    integer(kind=kint), intent(in)           :: file
-    type( hecmwST_contact_pair ), intent(in) :: pair
-
-    integer(kind=kint) :: i
-    write(file,*) "Number of contact pair", pair%n_pair
-    do i=1,pair%n_pair
-      write(file,*) trim(pair%name(i)), pair%type(i), pair%slave_grp_id(i)  &
-        ,pair%master_grp_id(i), pair%slave_orisgrp_id(i)
-    enddo
-  end subroutine
-
 
 end module mContactDef

@@ -279,14 +279,4 @@ contains
     if( n>0 ) outctrl%frequency = n
   end subroutine
 
-  subroutine print_output_ctrl( nfile, outctrl )
-    integer, intent(in)                :: nfile
-    type(t_output_ctrl), intent(inout) :: outctrl
-    integer :: i
-    write( nfile, *) trim(outctrl%filename),outctrl%filenum,outctrl%frequency,outctrl%outinfo%num_items
-    do i=1,outctrl%outinfo%num_items
-      write( nfile, *) trim(outctrl%outinfo%keyWord(i)),outctrl%outinfo%on(i),outctrl%outinfo%vtype(i)
-    enddo
-  end subroutine
-
 end module m_out

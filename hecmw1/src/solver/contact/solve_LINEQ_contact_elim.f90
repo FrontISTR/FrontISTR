@@ -1106,7 +1106,6 @@ contains
     call hecmw_localmat_free(TtKmat)
 
     ! shrink comm_table
-    ! call hecmw_localmat_shrink_comm_table(TtKTmat, hecMESHtmp)
 
     call place_one_on_diag_of_slave_dof(TtKTmat, slaves)
     if (DEBUG_MATRIX) call debug_write_matrix(TtKTmat, 'TtKTmat (place 1.0 on slave diag)')
