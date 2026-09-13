@@ -81,7 +81,7 @@ contains
 
     fstrSOLID%dunode(:) =0.d0
 
-    call fstr_prepare_dynamic_explicit( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYN, &
+    call fstr_prepare_dynamic_explicit( hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrEIG, fstrDYN, &
       & ndof, nnod, restrt_step_count )
 
     if( associated( fstrSOLID%contacts ) )  then
@@ -186,11 +186,12 @@ contains
   !! and the virtual past displacements DISP(:,3) = u(-dt), DISP(:,2) = u(-2*dt)
   !! used to start the central-difference scheme. All scheme-specific
   !! coefficients are local to this subroutine.
-  subroutine fstr_prepare_dynamic_explicit( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYN, &
+  subroutine fstr_prepare_dynamic_explicit( hecMESH, hecMAT, hecMATmpc, fstrSOLID, fstrEIG, fstrDYN, &
       ndof, nnod, restrt_step_count )
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type(hecmwST_matrix), intent(inout)     :: hecMAT
+    type(hecmwST_matrix), pointer, intent(inout) :: hecMATmpc
     type(fstr_solid), intent(inout)         :: fstrSOLID
     type(fstr_eigen), intent(inout)         :: fstrEIG
     type(fstr_dynamic), intent(inout)       :: fstrDYN
@@ -206,7 +207,7 @@ contains
     a2 = 1.d0/(2.d0*fstrDYN%t_delta)
 
     call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
-    call hecmw_mpc_trans_mass(hecMESH, hecMAT, fstrEIG%mass)
+    call hecmw_mpc_trans_mass(hecMESH, hecMAT, hecMATmpc, fstrEIG%mass)
 
     allocate(mark(hecMAT%NP * hecMAT%NDOF))
     call hecmw_mpc_mark_slave(hecMESH, hecMAT, mark)

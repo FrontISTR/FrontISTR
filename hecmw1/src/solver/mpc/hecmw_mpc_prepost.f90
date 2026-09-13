@@ -338,15 +338,17 @@ contains
   !C*** hecmw_mpc_trans_mass
   !C***
   !C
-  subroutine hecmw_mpc_trans_mass(hecMESH, hecMAT, mass)
+  subroutine hecmw_mpc_trans_mass(hecMESH, hecMAT, hecMATmpc, mass)
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
     type (hecmwST_matrix), intent(inout) :: hecMAT
-    real(kind=kreal), intent(inout) :: mass(:)
+    type (hecmwST_matrix), pointer :: hecMATmpc
+    real(kind=kreal), pointer :: mass(:)
 
     real(kind=kreal), allocatable :: W(:), Mtmp(:)
     real(kind=kreal) :: time_dumm
     integer(kind=kint) :: totalmpc, MPC_METHOD, i
+    integer(kind=kint) :: npndof, npndof_mpc
 
     totalmpc = hecMESH%mpc%n_mpc
     call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
@@ -359,19 +361,25 @@ contains
     case (1)  ! penalty
       ! do nothing
     case (3) ! elimination
-      allocate(W(hecMAT%NP*hecMAT%NDOF))
-      allocate(Mtmp(hecMAT%NP*hecMAT%NDOF))
+      npndof = hecMAT%NP * hecMAT%NDOF
+      npndof_mpc = hecMATmpc%NP * hecMATmpc%NDOF
+      allocate(W(npndof))
+      allocate(Mtmp(npndof))
       !C-- lumped mass of the reduced system = row sums of [T'][M][T]
       !C-- {w} = [T]{1}
       Mtmp(:) = 1.d0
       call hecmw_Tvec(hecMESH, hecMAT%NDOF, Mtmp, W, time_dumm)
       !C-- {w} = [M]{w}
-      do i = 1, hecMAT%NP*hecMAT%NDOF
+      do i = 1, npndof
         W(i) = mass(i) * W(i)
       enddo
       !C-- {Mt} = [T']{w}
       call hecmw_Ttvec(hecMESH, hecMAT%NDOF, W, Mtmp, time_dumm)
-      do i = 1, hecMAT%NP*hecMAT%NDOF
+      !C-- external nodes added by the reduction get zero mass, as the RHS does
+      deallocate(mass)
+      allocate(mass(npndof_mpc))
+      mass(:) = 0.d0
+      do i = 1, npndof
         mass(i) = Mtmp(i)
       enddo
       deallocate(W)
