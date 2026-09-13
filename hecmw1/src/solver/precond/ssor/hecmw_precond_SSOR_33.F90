@@ -39,6 +39,13 @@ module hecmw_precond_SSOR_33
   integer(kind=kint), pointer :: perm(:) => null()
   integer(kind=kint), pointer :: iperm(:) => null()
 
+  ! taken from hecMAT at setup: _apply receives only ZP and cannot read it back
+  integer(kind=kint) :: precond_impl = HECMW_PRECOND_IMPL_BSR
+
+  ! a format may be selected on a build that carries no SSOR for it; saying so once
+  ! per run keeps the fallback from looking like the requested format took effect
+  logical, save :: precond_impl_missing_reported = .false.
+
   logical, save :: isFirst = .true.
 
   logical, save :: INITIALIZED = .false.
@@ -89,6 +96,7 @@ contains
     ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
     SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
+    precond_impl = hecmw_mat_get_precond_impl(hecMAT)
 
 #ifdef _OPENACC
     allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
@@ -101,7 +109,6 @@ contains
     if (DEBUG >= 1) write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
     deallocate(perm_tmp)
 
-    !call write_debug_info
 #else
     if (nthreads == 1) then
       NColor = 1
@@ -123,7 +130,6 @@ contains
       if (DEBUG >= 1) write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
       deallocate(perm_tmp)
 
-      !call write_debug_info
     endif
 #endif
 
@@ -142,7 +148,6 @@ contains
       indexL, indexU, itemL, itemU)
     if (DEBUG >= 1) write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
-    !call check_ordering
 
     allocate(D(9*N), AL(9*NPL), AU(9*NPU))
     call hecmw_matrix_reorder_values(N, 3, perm, iperm, &
@@ -271,6 +276,25 @@ contains
   end subroutine setup_tuning_parameters
 
   subroutine hecmw_precond_SSOR_33_apply(ZP)
+    use m_hecmw_comm_f
+    implicit none
+    real(kind=kreal), intent(inout) :: ZP(:)
+
+    select case (precond_impl)
+      case (HECMW_PRECOND_IMPL_BSR)
+        call hecmw_precond_SSOR_33_apply_generic(ZP)
+      case default
+        if (.not. precond_impl_missing_reported) then
+          precond_impl_missing_reported = .true.
+          if (hecmw_comm_get_rank() == 0) write(*,'(a)') &
+            '#### MATRIXFORMAT: this build has no SSOR preconditioner for the selected '// &
+            'format -- running the BSR implementation'
+        endif
+        call hecmw_precond_SSOR_33_apply_generic(ZP)
+    end select
+  end subroutine hecmw_precond_SSOR_33_apply
+
+  subroutine hecmw_precond_SSOR_33_apply_generic(ZP)
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
@@ -412,7 +436,7 @@ contains
     !call stop_collection("loopInPrecond33")
 #endif
 
-  end subroutine hecmw_precond_SSOR_33_apply
+  end subroutine hecmw_precond_SSOR_33_apply_generic
 
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)
     implicit none
@@ -448,68 +472,6 @@ contains
     INITIALIZED = .false.
   end subroutine hecmw_precond_SSOR_33_clear
 
-  subroutine write_debug_info
-    implicit none
-    integer(kind=kint) :: my_rank, ic, in
-    my_rank = hecmw_comm_get_rank()
-    !--------------------> debug: shizawa
-    if (my_rank.eq.0) then
-      write(*,*) 'DEBUG: Output fort.19000+myrank and fort.29000+myrank for coloring information'
-    endif
-    write(19000+my_rank,'(a)') '#NCOLORTot'
-    write(19000+my_rank,*) NColor
-    write(19000+my_rank,'(a)') '#ic  COLORindex(ic-1)+1  COLORindex(ic)'
-    do ic=1,NColor
-      write(19000+my_rank,*) ic, COLORindex(ic-1)+1,COLORindex(ic)
-    enddo ! ic
-    write(29000+my_rank,'(a)') '#n_node'
-    write(29000+my_rank,*) N
-    write(29000+my_rank,'(a)') '#in  OLDtoNEW(in)  NEWtoOLD(in)'
-    do in=1,N
-      write(29000+my_rank,*) in, iperm(in), perm(in)
-      if (perm(iperm(in)) .ne. in) then
-        write(29000+my_rank,*) '** WARNING **: NEWtoOLD and OLDtoNEW: ',in
-      endif
-    enddo
-  end subroutine write_debug_info
 
-  subroutine check_ordering
-    implicit none
-    integer(kind=kint) :: ic, i, j, k
-    integer(kind=kint), allocatable :: iicolor(:)
-    ! check color dependence of neighbouring nodes
-    if (NColor.gt.1) then
-      allocate(iicolor(N))
-      do ic=1,NColor
-        do i= COLORindex(ic-1)+1, COLORindex(ic)
-          iicolor(i) = ic
-        enddo ! i
-      enddo ! ic
-      ! FORWARD: L-part
-      do ic=1,NColor
-        do i= COLORindex(ic-1)+1, COLORindex(ic)
-          do j= indexL(i-1)+1, indexL(i)
-            k= itemL(j)
-            if (iicolor(i).eq.iicolor(k)) then
-              write(*,*) '** ERROR **: L-part: iicolor(i).eq.iicolor(k)',i,k,iicolor(i)
-            endif
-          enddo ! j
-        enddo ! i
-      enddo ! ic
-      ! BACKWARD: U-part
-      do ic=NColor, 1, -1
-        do i= COLORindex(ic), COLORindex(ic-1)+1, -1
-          do j= indexU(i-1)+1, indexU(i)
-            k= itemU(j)
-            if (iicolor(i).eq.iicolor(k)) then
-              write(*,*) '** ERROR **: U-part: iicolor(i).eq.iicolor(k)',i,k,iicolor(i)
-            endif
-          enddo ! j
-        enddo ! i
-      enddo ! ic
-      deallocate(iicolor)
-    endif ! if (NColor.gt.1)
-    !--------------------< debug: shizawa
-  end subroutine check_ordering
 
 end module     hecmw_precond_SSOR_33

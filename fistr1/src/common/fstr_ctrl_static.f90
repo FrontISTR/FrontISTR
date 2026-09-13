@@ -8,24 +8,7 @@ module fstr_ctrl_static
   use hecmw
   use fstr_ctrl_util_f
 
-  private :: pc_strupr
 contains
-
-  subroutine pc_strupr( s )
-    implicit none
-    character(*) :: s
-    integer :: i, n, a, da
-
-    n = len_trim(s)
-    da = iachar('a') - iachar('A')
-    do i = 1, n
-      a = iachar(s(i:i))
-      if( a > iachar('Z')) then
-        a = a - da
-        s(i:i) = achar(a)
-      end if
-    end do
-  end subroutine pc_strupr
 
   !* ----------------------------------------------------------------------------------------------- *!
   !> Read in !STATIC
@@ -176,7 +159,6 @@ contains
       end if
 
       do i=1, n
-        call pc_strupr( type_name_list(i) )
         lid = -1;
         if(      type_name_list(i)(1:2) == 'BX'  ) then; lid = 1
         else if( type_name_list(i)(1:2) == 'BY'  ) then; lid = 2
@@ -303,7 +285,7 @@ contains
     character(len=256) :: fname
 
     fstr_ctrl_get_USERLOAD = -1
-    if( fstr_ctrl_get_param_ex( ctrl, 'FILE ', '# ',           0,   'S',   fname )/=0 ) return
+    if( fstr_ctrl_get_param_ex( ctrl, 'FILE ', '# ',           0,   'F',   fname )/=0 ) return
     if( fname=="" ) stop "You must define a file name before read in user-defined material"
     if( ureadload(fname)/=0 ) return
 

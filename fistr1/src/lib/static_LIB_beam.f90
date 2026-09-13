@@ -9,6 +9,7 @@ module m_static_LIB_beam
   use mMechGauss
   use m_utilities
   use elementinfo
+  use m_fstr, only: kel611TIMOSHENKO
 
   implicit none
 
@@ -55,87 +56,116 @@ contains
 
   end subroutine framtr
 
+  !> Calculate the local stiffness matrix of 611 beam elements
+  subroutine STF_Beam_local(le, section, E, P, formulation, stiff)
+    real(kind=kreal), intent(in)  :: le
+    real(kind=kreal), intent(in)  :: section(:)
+    real(kind=kreal), intent(in)  :: E, P
+    integer(kind=kint), intent(in), optional :: formulation
+    real(kind=kreal), intent(out) :: stiff(12,12)
+
+    real(kind=kreal) :: G, L2, L3, A, Iy, Iz, Jx, EA
+    real(kind=kreal) :: phi_y, phi_z
+    real(kind=kreal) :: kyy, kyz, kzz, kryy, kryz
+    real(kind=kreal) :: kww, kwy, krr, krz
+
+    L2 = le*le
+    L3 = L2*le
+    G = E/(2.d0*(1.d0 + P))
+
+    A = section(4); Iy = section(5); Iz = section(6); Jx = section(7)
+
+    phi_y = 0.d0
+    phi_z = 0.d0
+    if( present(formulation) ) then
+      if( formulation == kel611TIMOSHENKO ) then
+        ! The BEAM section has no independent shear areas; use A in both planes.
+        phi_y = 12.d0*E*Iz/(G*A*L2)
+        phi_z = 12.d0*E*Iy/(G*A*L2)
+      endif
+    endif
+
+    EA = E*A/le
+    kyy = 12.d0*E*Iz/(L3*(1.d0 + phi_y))
+    kyz = 6.d0*E*Iz/(L2*(1.d0 + phi_y))
+    kzz = (4.d0 + phi_y)*E*Iz/(le*(1.d0 + phi_y))
+    kryz = (2.d0 - phi_y)*E*Iz/(le*(1.d0 + phi_y))
+    kww = 12.d0*E*Iy/(L3*(1.d0 + phi_z))
+    kwy = 6.d0*E*Iy/(L2*(1.d0 + phi_z))
+    krr = (4.d0 + phi_z)*E*Iy/(le*(1.d0 + phi_z))
+    krz = (2.d0 - phi_z)*E*Iy/(le*(1.d0 + phi_z))
+
+    stiff = 0.d0
+    stiff(1,1) = EA
+    stiff(7,1) = -EA
+
+    stiff(2,2) = kyy
+    stiff(6,2) = kyz
+    stiff(8,2) = -kyy
+    stiff(12,2) = kyz
+
+    stiff(3,3) = kww
+    stiff(5,3) = -kwy
+    stiff(9,3) = -kww
+    stiff(11,3) = -kwy
+
+    stiff(4,4) = G*Jx/le
+    stiff(10,4) = -G*Jx/le
+
+    stiff(3,5) = -kwy
+    stiff(5,5) = krr
+    stiff(9,5) = kwy
+    stiff(11,5) = krz
+
+    stiff(2,6) = kyz
+    stiff(6,6) = kzz
+    stiff(8,6) = -kyz
+    stiff(12,6) = kryz
+
+    stiff(1,7) = -EA
+    stiff(7,7) = EA
+
+    stiff(2,8) = -kyy
+    stiff(6,8) = -kyz
+    stiff(8,8) = kyy
+    stiff(12,8) = -kyz
+
+    stiff(3,9) = -kww
+    stiff(5,9) = kwy
+    stiff(9,9) = kww
+    stiff(11,9) = kwy
+
+    stiff(4,10) = -G*Jx/le
+    stiff(10,10) = G*Jx/le
+
+    stiff(3,11) = -kwy
+    stiff(5,11) = krz
+    stiff(9,11) = kwy
+    stiff(11,11) = krr
+
+    stiff(2,12) = kyz
+    stiff(6,12) = kryz
+    stiff(8,12) = -kyz
+    stiff(12,12) = kzz
+  end subroutine STF_Beam_local
+
   !> Calculate stiff matrix of BEAM elements
-  subroutine STF_Beam(etype,nn,ecoord,section,E,P,STIFF)
+  subroutine STF_Beam(etype,nn,ecoord,section,E,P,STIFF,formulation)
     integer, intent(in)            :: etype        !< element's type
     integer, intent(in)            :: nn           !< number of element's nodes
     real(kind=kreal), intent(in)   :: ecoord(3,nn) !< coordinates of elemental nodes
     real(kind=kreal), intent(in)   :: section(:)   !< section parameters
     real(kind=kreal), intent(in)   :: E,P   !< status of qudrature points
     real(kind=kreal), intent(out)  :: STIFF(nn*6,nn*6)   !< elemental stiff matrix
+    integer(kind=kint), intent(in), optional :: formulation
 
     real(kind=kreal) :: le, trans(3,3), refv(3), transt(3,3)
-    real(kind=kreal) :: G
-    real(kind=kreal) :: L2, L3, A, Iy, Iz, Jx, EA, twoE, fourE, twelveE, sixE
 
     refv = section(1:3)
     call framtr(refv, ecoord, le, trans)
     transT= transpose(trans)
-    L2 = le*le
-    L3 = L2*le
 
-    G = E/(2.d0*(1.d0 + P))
-
-    A = section(4);  Iy=section(5); Iz=section(6); Jx=section(7)
-
-    EA = E*A/le
-    twoE = 2.d0*E/le
-    fourE = 4.d0*E/le
-    twelveE = 12.d0*E/L3
-    sixE = 6.d0*E/L2
-
-    stiff = 0.d0
-    stiff(1,1) = EA;
-    stiff(7,1) = -EA;
-
-    stiff(2,2) = twelveE*Iz;
-    stiff(6,2) = sixE*Iz;
-    stiff(8,2) = -twelveE*Iz;
-    stiff(12,2) = sixE*Iz;
-
-    stiff(3,3) = twelveE*Iy;
-    stiff(5,3) = -sixE*Iy;
-    stiff(9,3) = -twelveE*Iy;
-    stiff(11,3) = -sixE*Iy;
-
-    stiff(4,4) = G*Jx/le;
-    stiff(10,4) = -G*Jx/le;
-
-    stiff(3,5) = -sixE*Iy;
-    stiff(5,5) = fourE*Iy;
-    stiff(9,5) = sixE*Iy;
-    stiff(11,5) = twoE*Iy;
-
-    stiff(2,6) = sixE*Iz;
-    stiff(6,6) = fourE*Iz;
-    stiff(8,6) = -sixE*Iz;
-    stiff(12,6) = twoE*Iz;
-
-    stiff(1,7) = -EA;
-    stiff(7,7) = EA;
-
-    stiff(2,8) = -twelveE*Iz;
-    stiff(6,8) = -sixE*Iz;
-    stiff(8,8) = twelveE*Iz;
-    stiff(12,8) = -sixE*Iz;
-
-    stiff(3,9) = -twelveE*Iy;
-    stiff(5,9) = sixE*Iy;
-    stiff(9,9) = twelveE*Iy;
-    stiff(11,9) = sixE*Iy;
-
-    stiff(4,10) = -G*Jx/le;
-    stiff(10,10) = G*Jx/le;
-
-    stiff(3,11) = -sixE*Iy;
-    stiff(5,11) = twoE*Iy;
-    stiff(9,11) = sixE*Iy;
-    stiff(11,11) = fourE*Iy;
-
-    stiff(2,12) = sixE*Iz;
-    stiff(6,12) = twoE*Iz;
-    stiff(8,12) = -sixE*Iz;
-    stiff(12,12) = fourE*Iz;
+    call STF_Beam_local(le, section, E, P, formulation, stiff)
 
     stiff(1:3,:) = matmul( transT, stiff(1:3,:) )
     stiff(4:6,:) = matmul( transT, stiff(4:6,:) )
@@ -150,7 +180,7 @@ contains
   end subroutine STF_Beam
 
   !####################################################################
-  subroutine UpdateST_Beam(etype,nn,ecoord,u,du,section,gausses,QF)
+  subroutine UpdateST_Beam(etype,nn,ecoord,u,du,section,gausses,QF,formulation)
     integer, intent(in)            :: etype        !< element's type
     integer, intent(in)            :: nn           !< number of element's nodes
     real(kind=kreal), intent(in)   :: ecoord(3,nn) !< coordinates of elemental nodes
@@ -159,6 +189,7 @@ contains
     real(kind=kreal), intent(in)   :: section(:)   !< section parameters
     type(tGaussStatus), intent(in) :: gausses(:)         !< status of Gaussian qudrature points
     real(kind=kreal), intent(out)  :: QF(nn*6)     !< elemental force matrix
+    integer(kind=kint), intent(in), optional :: formulation
 
     real(kind=kreal)   :: stiff(nn*6, nn*6), totaldisp(nn*6)
     integer(kind=kint) :: i, j
@@ -167,7 +198,7 @@ contains
     E = gausses(1)%pMaterial%variables(M_YOUNGS)
     P = gausses(1)%pMaterial%variables(M_POISSON)
 
-    call STF_Beam(etype,nn,ecoord,section,E,P,STIFF)
+    call STF_Beam(etype,nn,ecoord,section,E,P,STIFF,formulation)
 
     do i=1,nn
       do j=1,6
@@ -180,7 +211,7 @@ contains
   end subroutine UpdateST_Beam
 
   !> Calculate elemental section force (N, Q, M) of 611 beam elements
-  subroutine NQM_Beam(nn, ecoord, gausses, section, ul, rnqm)
+  subroutine NQM_Beam(nn, ecoord, gausses, section, ul, rnqm, formulation)
     use mMechGauss
     integer(kind=kint), intent(in)    :: nn              !< number of element's nodes
     real(kind=kreal), intent(in)      :: ecoord(3, nn)   !< coordinates of elemental nodes
@@ -188,9 +219,9 @@ contains
     real(kind=kreal), intent(in)      :: section(:)      !< section parameters
     real(kind=kreal), intent(in)      :: ul(nn*6)        !< nodal displacement in the local frame
     real(kind=kreal), intent(out)     :: rnqm(nn*6)      !< elemental NQM (local frame)
+    integer(kind=kint), intent(in), optional :: formulation
 
-    real(kind=kreal) :: ee, pp, g, le, l2, l3, refv(3), trans(3,3), ec(3,2)
-    real(kind=kreal) :: a, iy, iz, jx, ea, twoe, foure, twelvee, sixe
+    real(kind=kreal) :: ee, pp, le, refv(3), trans(3,3), ec(3,2)
     real(kind=kreal) :: stiff(nn*6, nn*6)
 
     ee = gausses(1)%pMaterial%variables(M_YOUNGS)
@@ -200,39 +231,15 @@ contains
     ec(1:3, 1) = ecoord(1:3, 1)
     ec(1:3, 2) = ecoord(1:3, 2)
     call framtr(refv, ec, le, trans)
-    l2 = le*le
-    l3 = l2*le
 
-    g = ee/(2.d0*(1.d0 + pp))
-    a = section(4);  iy = section(5);  iz = section(6);  jx = section(7)
-
-    ea = ee*a/le
-    twoe = 2.d0*ee/le
-    foure = 4.d0*ee/le
-    twelvee = 12.d0*ee/l3
-    sixe = 6.d0*ee/l2
-
-    !< local stiffness matrix (same ordering as STF_Beam, before frame transformation)
-    stiff = 0.d0
-    stiff(1,1) = ea;     stiff(7,1) = -ea
-    stiff(2,2) = twelvee*iz;  stiff(6,2) = sixe*iz;  stiff(8,2) = -twelvee*iz;  stiff(12,2) = sixe*iz
-    stiff(3,3) = twelvee*iy;  stiff(5,3) = -sixe*iy; stiff(9,3) = -twelvee*iy;  stiff(11,3) = -sixe*iy
-    stiff(4,4) = g*jx/le;     stiff(10,4) = -g*jx/le
-    stiff(3,5) = -sixe*iy;    stiff(5,5) = foure*iy; stiff(9,5) = sixe*iy;      stiff(11,5) = twoe*iy
-    stiff(2,6) = sixe*iz;     stiff(6,6) = foure*iz; stiff(8,6) = -sixe*iz;     stiff(12,6) = twoe*iz
-    stiff(1,7) = -ea;    stiff(7,7) = ea
-    stiff(2,8) = -twelvee*iz; stiff(6,8) = -sixe*iz; stiff(8,8) = twelvee*iz;   stiff(12,8) = -sixe*iz
-    stiff(3,9) = -twelvee*iy; stiff(5,9) = sixe*iy;  stiff(9,9) = twelvee*iy;   stiff(11,9) = sixe*iy
-    stiff(4,10) = -g*jx/le;   stiff(10,10) = g*jx/le
-    stiff(3,11) = -sixe*iy;   stiff(5,11) = twoe*iy; stiff(9,11) = sixe*iy;     stiff(11,11) = foure*iy
-    stiff(2,12) = sixe*iz;    stiff(6,12) = twoe*iz; stiff(8,12) = -sixe*iz;    stiff(12,12) = foure*iz
+    call STF_Beam_local(le, section, ee, pp, formulation, stiff)
 
     rnqm = matmul(stiff, ul)
 
   end subroutine NQM_Beam
 
   !> Calculate NODAL STRESS and STRAIN of 611 beam elements
-  subroutine NodalStress_Beam(etype, nn, ecoord, gausses, section, edisp, ndstrain, ndstress)
+  subroutine NodalStress_Beam(etype, nn, ecoord, gausses, section, edisp, ndstrain, ndstress, formulation)
     use mMechGauss
     integer(kind=kint), intent(in)    :: etype           !< element type
     integer(kind=kint), intent(in)    :: nn              !< number of element's nodes
@@ -242,14 +249,15 @@ contains
     real(kind=kreal), intent(in)      :: edisp(6, nn)    !< nodal displacement (global frame)
     real(kind=kreal), intent(out)     :: ndstrain(nn, 6) !< nodal strain
     real(kind=kreal), intent(out)     :: ndstress(nn, 6) !< nodal stress
+    integer(kind=kint), intent(in), optional :: formulation
 
     integer(kind=kint) :: k
     real(kind=kreal)   :: ee, pi
     real(kind=kreal)   :: radius, angle(6)
-    real(kind=kreal)   :: refv(3), ec(3,2), trans(3,3), le, l2, l3
+    real(kind=kreal)   :: refv(3), ec(3,2), trans(3,3), le
     real(kind=kreal)   :: ul(nn*6), rnqm(nn*6)
-    real(kind=kreal)   :: uxi, uyi, uzi, ryi, rzi, uxj, uyj, uzj, ryj, rzj
-    real(kind=kreal)   :: x1_hat, x2_hat, x3_hat, eps
+    real(kind=kreal)   :: x2_hat, x3_hat, eps
+    real(kind=kreal)   :: stress_i, stress_j
 
     pi = 4.0D0*datan(1.0D0)
 
@@ -259,8 +267,6 @@ contains
     ec(1:3, 1) = ecoord(1:3, 1)
     ec(1:3, 2) = ecoord(1:3, 2)
     call framtr(refv, ec, le, trans)
-    l2 = le*le
-    l3 = l2*le
 
     radius   = gausses(1)%pMaterial%variables(M_BEAM_RADIUS)
     angle(1) = gausses(1)%pMaterial%variables(M_BEAM_ANGLE1)
@@ -276,10 +282,8 @@ contains
     ul(7:9)   = matmul(trans, edisp(1:3, 2))
     ul(10:12) = matmul(trans, edisp(4:6, 2))
 
-    uxi = ul(1); uyi = ul(2); uzi = ul(3); ryi = ul(5);  rzi = ul(6)
-    uxj = ul(7); uyj = ul(8); uzj = ul(9); ryj = ul(11); rzj = ul(12)
-
-    eps = (uxj-uxi)/le
+    eps = (ul(7)-ul(1))/le
+    call NQM_Beam(nn, ecoord, gausses, section, ul, rnqm, formulation)
 
     ndstrain = 0.0D0
     ndstress = 0.0D0
@@ -290,39 +294,26 @@ contains
       x2_hat = radius*dcos(angle(k))
       x3_hat = radius*dsin(angle(k))
 
+      stress_i = ee*eps + x2_hat*rnqm(6)/section(6) - x3_hat*rnqm(5)/section(5)
+      stress_j = ee*eps - x2_hat*rnqm(12)/section(6) + x3_hat*rnqm(11)/section(5)
+
       !< elemental value (evaluated at the element center)
-      x1_hat = 0.5D0*le
       gausses(1)%strain(k) = eps
-      gausses(1)%stress(k) = ee*eps &
-        -ee*x2_hat*( (-6.0D0/l2+12.0D0*x1_hat/l3)*uyi + (-4.0D0/le+6.0D0*x1_hat/l2)*rzi  &
-                    +( 6.0D0/l2-12.0D0*x1_hat/l3)*uyj + (-2.0D0/le+6.0D0*x1_hat/l2)*rzj ) &
-        -ee*x3_hat*( (-6.0D0/l2+12.0D0*x1_hat/l3)*uzi + ( 4.0D0/le-6.0D0*x1_hat/l2)*ryi  &
-                    +( 6.0D0/l2-12.0D0*x1_hat/l3)*uzj + ( 2.0D0/le-6.0D0*x1_hat/l2)*ryj )
+      gausses(1)%stress(k) = 0.5D0*(stress_i + stress_j)
       gausses(1)%strain_out(k) = gausses(1)%strain(k)
       gausses(1)%stress_out(k) = gausses(1)%stress(k)
 
-      !< nodal value at node i (x1_hat = 0)
-      x1_hat = 0.0D0
+      !< nodal value at node i
       ndstrain(1, k) = eps
-      ndstress(1, k) = ee*eps &
-        -ee*x2_hat*( (-6.0D0/l2+12.0D0*x1_hat/l3)*uyi + (-4.0D0/le+6.0D0*x1_hat/l2)*rzi  &
-                    +( 6.0D0/l2-12.0D0*x1_hat/l3)*uyj + (-2.0D0/le+6.0D0*x1_hat/l2)*rzj ) &
-        -ee*x3_hat*( (-6.0D0/l2+12.0D0*x1_hat/l3)*uzi + ( 4.0D0/le-6.0D0*x1_hat/l2)*ryi  &
-                    +( 6.0D0/l2-12.0D0*x1_hat/l3)*uzj + ( 2.0D0/le-6.0D0*x1_hat/l2)*ryj )
+      ndstress(1, k) = stress_i
 
-      !< nodal value at node j (x1_hat = le)
-      x1_hat = le
+      !< nodal value at node j
       ndstrain(2, k) = eps
-      ndstress(2, k) = ee*eps &
-        -ee*x2_hat*( (-6.0D0/l2+12.0D0*x1_hat/l3)*uyi + (-4.0D0/le+6.0D0*x1_hat/l2)*rzi  &
-                    +( 6.0D0/l2-12.0D0*x1_hat/l3)*uyj + (-2.0D0/le+6.0D0*x1_hat/l2)*rzj ) &
-        -ee*x3_hat*( (-6.0D0/l2+12.0D0*x1_hat/l3)*uzi + ( 4.0D0/le-6.0D0*x1_hat/l2)*ryi  &
-                    +( 6.0D0/l2-12.0D0*x1_hat/l3)*uzj + ( 2.0D0/le-6.0D0*x1_hat/l2)*ryj )
+      ndstress(2, k) = stress_j
 
     end do
 
     !< section force (N, Q, M)
-    call NQM_Beam(nn, ecoord, gausses, section, ul, rnqm)
     gausses(1)%nqm(1:nn*6) = rnqm(1:nn*6)
 
   end subroutine NodalStress_Beam

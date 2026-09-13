@@ -9,25 +9,7 @@ module fstr_ctrl_eigen
   use hecmw
   use fstr_ctrl_util_f
 
-  private :: pc_strupr
 contains
-
-  subroutine pc_strupr( s )
-    implicit none
-    character(*) :: s
-    integer :: i, n, a, da
-
-    n = len_trim(s)
-    da = iachar('a') - iachar('A')
-    do i = 1, n
-      a = iachar(s(i:i))
-      if( a > iachar('Z')) then
-        a = a - da
-        s(i:i) = achar(a)
-      end if
-    end do
-  end subroutine pc_strupr
-
 
   !> Read in !EIGEN (struct)
   function fstr_ctrl_get_EIGEN( ctrl, nget, tolerance, maxiter, sigma)

@@ -40,6 +40,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_mpc_method
   public :: hecmw_mat_set_estcond
   public :: hecmw_mat_get_estcond
+  public :: hecmw_mat_set_recompute_residual
+  public :: hecmw_mat_get_recompute_residual
   public :: hecmw_mat_set_contact_elim
   public :: hecmw_mat_get_contact_elim
   public :: hecmw_mat_set_iterlog
@@ -54,6 +56,10 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_dump_exit
   public :: hecmw_mat_set_usejad
   public :: hecmw_mat_get_usejad
+  public :: hecmw_mat_set_matvec_impl
+  public :: hecmw_mat_get_matvec_impl
+  public :: hecmw_mat_set_precond_impl
+  public :: hecmw_mat_get_precond_impl
   public :: hecmw_mat_set_ncolor_in
   public :: hecmw_mat_get_ncolor_in
   public :: hecmw_mat_set_maxrecycle_precond
@@ -75,8 +81,6 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_flag_converged
   public :: hecmw_mat_set_flag_diverged
   public :: hecmw_mat_get_flag_diverged
-  public :: hecmw_mat_set_flag_mpcmatvec
-  public :: hecmw_mat_get_flag_mpcmatvec
 
   public :: hecmw_mat_set_solver_opt
   public :: hecmw_mat_get_solver_opt
@@ -98,6 +102,15 @@ module hecmw_matrix_misc
   public :: hecmw_mat_set_penalty_alpha
   public :: hecmw_mat_get_penalty_alpha
 
+  public :: HECMW_MATVEC_IMPL_BSR
+  public :: HECMW_MATVEC_IMPL_CSR
+  public :: HECMW_MATVEC_IMPL_SBLAS
+  public :: HECMW_PRECOND_IMPL_BSR
+  public :: HECMW_PRECOND_IMPL_CSR
+  public :: HECMW_PRECOND_IMPL_SBLAS
+  public :: HECMW_MATVEC_IMPL_DEFAULT
+  public :: HECMW_PRECOND_IMPL_DEFAULT
+
   public :: hecmw_mat_diag_max
   public :: hecmw_mat_diag
   public :: hecmw_mat_recycle_precond_setting
@@ -117,6 +130,7 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_MPC_METHOD         = 13
   integer, parameter :: IDX_I_ESTCOND            = 14
   integer, parameter :: IDX_I_CONTACT_ELIM       = 15
+  integer, parameter :: IDX_I_RECOMPUTE_RESIDUAL = 16
   integer, parameter :: IDX_I_ITERLOG            = 21
   integer, parameter :: IDX_I_TIMELOG            = 22
   integer, parameter :: IDX_I_LOGLEVEL           = 24   ! 23 is steplog (svIarray)
@@ -125,6 +139,8 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_USEJAD             = 33
   integer, parameter :: IDX_I_NCOLOR_IN          = 34
   integer, parameter :: IDX_I_MAXRECYCLE_PRECOND = 35
+  integer, parameter :: IDX_I_MATVEC_IMPL        = 36
+  integer, parameter :: IDX_I_PRECOND_IMPL       = 37
   integer, parameter :: IDX_I_NRECYCLE_PRECOND   = 96
   integer, parameter :: IDX_I_FLAG_NUMFACT       = 97
   integer, parameter :: IDX_I_FLAG_SYMBFACT      = 98
@@ -133,7 +149,6 @@ module hecmw_matrix_misc
   integer, parameter :: IDX_I_METHOD2            = 8
   integer, parameter :: IDX_I_FLAG_CONVERGED     = 81
   integer, parameter :: IDX_I_FLAG_DIVERGED      = 82
-  integer, parameter :: IDX_I_FLAG_MPCMATVEC     = 83
 
   integer, parameter :: IDX_I_SOLVER_OPT_S       = 41
   integer, parameter :: IDX_I_SOLVER_OPT_E       = 50
@@ -148,6 +163,31 @@ module hecmw_matrix_misc
   ! real-valued solver options, mirroring the integer SOLVER_OPT block (41:50)
   integer, parameter :: IDX_R_SOLVER_OPT_S  = 41
   integer, parameter :: IDX_R_SOLVER_OPT_E  = 50
+
+  ! storage format the matvec and the preconditioner work in, selected by
+  ! IDX_I_MATVEC_IMPL / IDX_I_PRECOND_IMPL.  BSR is hecmwST_matrix's own format and is
+  ! the only one every build carries; the others keep a private copy in their own layout
+  ! and are built only for the architecture cmake -DARCH= names, so the dispatchers fall
+  ! back to BSR for a format this build does not have.  The names match the MATRIXFORMAT
+  ! values accepted by the cnt file.
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_BSR    = 0
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_CSR    = 1
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_SBLAS  = 2
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_BSR   = 0
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_CSR   = 1
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_SBLAS = 2
+
+  ! cmake -DARCH= names the constants above through the format it defaults to; without
+  ! it the build defaults to BSR.  Both initializers of hecmwST_matrix read these, so
+  ! the fallback stays in one place.
+#ifndef HECMW_ARCH_DEFAULT_MATVEC_IMPL
+#define HECMW_ARCH_DEFAULT_MATVEC_IMPL HECMW_MATVEC_IMPL_BSR
+#endif
+#ifndef HECMW_ARCH_DEFAULT_PRECOND_IMPL
+#define HECMW_ARCH_DEFAULT_PRECOND_IMPL HECMW_PRECOND_IMPL_BSR
+#endif
+  integer(kind=kint), parameter :: HECMW_MATVEC_IMPL_DEFAULT  = HECMW_ARCH_DEFAULT_MATVEC_IMPL
+  integer(kind=kint), parameter :: HECMW_PRECOND_IMPL_DEFAULT = HECMW_ARCH_DEFAULT_PRECOND_IMPL
 
 contains
 
@@ -190,8 +230,11 @@ contains
     call hecmw_mat_set_dump( hecMAT, 0 )
     call hecmw_mat_set_dump_exit( hecMAT, 0 )
     call hecmw_mat_set_usejad( hecMAT, 0 )
+    call hecmw_mat_set_matvec_impl( hecMAT, HECMW_MATVEC_IMPL_DEFAULT )
+    call hecmw_mat_set_precond_impl( hecMAT, HECMW_PRECOND_IMPL_DEFAULT )
     call hecmw_mat_set_ncolor_in( hecMAT, 10 )
     call hecmw_mat_set_estcond( hecMAT, 0 )
+    call hecmw_mat_set_recompute_residual( hecMAT, 0 )   ! 0 = unset: each iterative solver falls back to its own period
     call hecmw_mat_set_maxrecycle_precond( hecMAT, 3 )
 
     call hecmw_mat_set_resid( hecMAT, 1.d-8 )
@@ -466,6 +509,18 @@ contains
     hecMAT%Iarray(IDX_I_ESTCOND) = estcond
   end subroutine hecmw_mat_set_estcond
 
+  function hecmw_mat_get_recompute_residual( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_recompute_residual
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_recompute_residual = hecMAT%Iarray(IDX_I_RECOMPUTE_RESIDUAL)
+  end function hecmw_mat_get_recompute_residual
+
+  subroutine hecmw_mat_set_recompute_residual( hecMAT, recompute_residual )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: recompute_residual
+    hecMAT%Iarray(IDX_I_RECOMPUTE_RESIDUAL) = recompute_residual
+  end subroutine hecmw_mat_set_recompute_residual
+
   function hecmw_mat_get_contact_elim( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_contact_elim
     type(hecmwST_matrix) :: hecMAT
@@ -558,6 +613,30 @@ contains
     integer(kind=kint) :: usejad
     hecMAT%Iarray(IDX_I_USEJAD) = usejad
   end subroutine hecmw_mat_set_usejad
+
+  function hecmw_mat_get_matvec_impl( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_matvec_impl
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_matvec_impl = hecMAT%Iarray(IDX_I_MATVEC_IMPL)
+  end function hecmw_mat_get_matvec_impl
+
+  subroutine hecmw_mat_set_matvec_impl( hecMAT, matvec_impl )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: matvec_impl
+    hecMAT%Iarray(IDX_I_MATVEC_IMPL) = matvec_impl
+  end subroutine hecmw_mat_set_matvec_impl
+
+  function hecmw_mat_get_precond_impl( hecMAT )
+    integer(kind=kint) :: hecmw_mat_get_precond_impl
+    type(hecmwST_matrix) :: hecMAT
+    hecmw_mat_get_precond_impl = hecMAT%Iarray(IDX_I_PRECOND_IMPL)
+  end function hecmw_mat_get_precond_impl
+
+  subroutine hecmw_mat_set_precond_impl( hecMAT, precond_impl )
+    type(hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: precond_impl
+    hecMAT%Iarray(IDX_I_PRECOND_IMPL) = precond_impl
+  end subroutine hecmw_mat_set_precond_impl
 
   function hecmw_mat_get_ncolor_in( hecMAT )
     integer(kind=kint) :: hecmw_mat_get_ncolor_in
@@ -664,18 +743,6 @@ contains
     type(hecmwST_matrix) :: hecMAT
     hecmw_mat_get_flag_diverged = hecMAT%Iarray(IDX_I_FLAG_DIVERGED)
   end function hecmw_mat_get_flag_diverged
-
-  subroutine hecmw_mat_set_flag_mpcmatvec( hecMAT, flag_mpcmatvec )
-    type(hecmwST_matrix) :: hecMAT
-    integer(kind=kint) :: flag_mpcmatvec
-    hecMAT%Iarray(IDX_I_FLAG_MPCMATVEC) = flag_mpcmatvec
-  end subroutine hecmw_mat_set_flag_mpcmatvec
-
-  function hecmw_mat_get_flag_mpcmatvec( hecMAT )
-    integer(kind=kint) :: hecmw_mat_get_flag_mpcmatvec
-    type(hecmwST_matrix) :: hecMAT
-    hecmw_mat_get_flag_mpcmatvec = hecMAT%Iarray(IDX_I_FLAG_MPCMATVEC)
-  end function hecmw_mat_get_flag_mpcmatvec
 
   subroutine hecmw_mat_set_solver_opt( hecMAT, solver_opt )
     type(hecmwST_matrix) :: hecMAT

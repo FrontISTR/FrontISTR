@@ -14,9 +14,6 @@ module hecmw_solver_las_44
   public :: hecmw_matvec_44_unset_async
   public :: hecmw_matresid_44
   public :: hecmw_rel_resid_L2_44
-  public :: hecmw_Tvec_44
-  public :: hecmw_Ttvec_44
-  public :: hecmw_TtmatTvec_44
   public :: hecmw_mat_diag_sr_44
 
   ! ! for communication hiding in matvec
@@ -25,38 +22,6 @@ module hecmw_solver_las_44
   logical, save :: async_matvec_flg = .false.
 
 contains
-
-  !C
-  !C***
-  !C*** hecmw_matvec_44
-  !C***
-  !C
-  subroutine hecmw_matvec_44 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
-    use hecmw_util
-    use hecmw_matrix_misc
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in), target :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
-    real(kind=kreal), intent(inout) :: time_Ax
-    real(kind=kreal), intent(inout), optional :: COMMtime
-
-    real(kind=kreal) :: Tcomm
-    real(kind=kreal), allocatable :: WK(:)
-
-    Tcomm = 0.d0
-
-    if (hecmw_mat_get_flag_mpcmatvec(hecMAT) /= 0) then
-      allocate(WK(hecMAT%NP * hecMAT%NDOF))
-      call hecmw_TtmatTvec_44(hecMESH, hecMAT, X, Y, WK, time_Ax, Tcomm)
-      deallocate(WK)
-    else
-      call hecmw_matvec_44_inner(hecMESH, hecMAT, X, Y, time_Ax, Tcomm)
-    endif
-
-    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
-  end subroutine hecmw_matvec_44
 
   !C
   !C***
@@ -82,13 +47,12 @@ contains
 
   !C
   !C***
-  !C*** hecmw_matvec_44_inner ( private subroutine )
+  !C*** hecmw_matvec_44
   !C***
   !C
-  subroutine hecmw_matvec_44_inner (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
+  subroutine hecmw_matvec_44 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
-    use hecmw_matrix_misc
     use hecmw_jad_type
     use hecmw_tuning_fx
     !$ use omp_lib
@@ -303,7 +267,7 @@ contains
       time_Ax = time_Ax + END_TIME - START_TIME
 
     endif
-  end subroutine hecmw_matvec_44_inner
+  end subroutine hecmw_matvec_44
 
   !C
   !C***
@@ -379,157 +343,6 @@ contains
 
     deallocate(r)
   end function hecmw_rel_resid_L2_44
-
-  !C
-  !C***
-  !C*** hecmw_Tvec_44
-  !C***
-  !C
-  subroutine hecmw_Tvec_44 (hecMESH, X, Y, COMMtime)
-    use hecmw_util
-    use m_hecmw_comm_f
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    real(kind=kreal) :: START_TIME, END_TIME
-    integer(kind=kint) :: i, j, jj, k, kk
-
-    START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 4)
-    END_TIME= HECMW_WTIME()
-    COMMtime = COMMtime + END_TIME - START_TIME
-
-#ifdef _OPENACC
-    !$acc kernels
-    !$acc loop independent
-#else
-    !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
-    !$omp do
-#endif
-    do i= 1, hecMESH%nn_internal * hecMESH%n_dof
-      Y(i)= X(i)
-    enddo
-#ifndef _OPENACC
-    !$omp end do
-#endif
-
-#ifdef _OPENACC
-    !$acc loop independent
-#else
-    !$omp do
-#endif
-    OUTER: do i= 1, hecMESH%mpc%n_mpc
-      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
-        if (hecMESH%mpc%mpc_dof(j) > 4) cycle OUTER
-      enddo
-      k = hecMESH%mpc%mpc_index(i-1) + 1
-      kk = 4 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
-      Y(kk) = 0.d0
-      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
-        jj = 4 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
-        Y(kk) = Y(kk) - hecMESH%mpc%mpc_val(j) * X(jj)
-      enddo
-    enddo OUTER
-#ifdef _OPENACC
-    !$acc end kernels
-#else
-    !$omp end do
-    !$omp end parallel
-#endif
-
-  end subroutine hecmw_Tvec_44
-
-  !C
-  !C***
-  !C*** hecmw_Ttvec_44
-  !C***
-  !C
-  subroutine hecmw_Ttvec_44 (hecMESH, X, Y, COMMtime)
-    use hecmw_util
-    use m_hecmw_comm_f
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    real(kind=kreal) :: START_TIME, END_TIME
-    integer(kind=kint) :: i, j, jj, k, kk
-
-    START_TIME= HECMW_WTIME()
-    call hecmw_update_R (hecMESH, X, hecMESH%n_node, 4)
-    END_TIME= HECMW_WTIME()
-    COMMtime = COMMtime + END_TIME - START_TIME
-
-#ifdef _OPENACC
-    !$acc kernels
-    !$acc loop independent
-#else
-    !$omp parallel default(none),private(i,k,kk,j,jj),shared(hecMESH,X,Y)
-    !$omp do
-#endif
-    do i= 1, hecMESH%nn_internal * hecMESH%n_dof
-      Y(i)= X(i)
-    enddo
-#ifndef _OPENACC
-    !$omp end do
-#endif
-
-#ifdef _OPENACC
-    !$acc loop independent
-#else
-    !$omp do
-#endif
-    OUTER: do i= 1, hecMESH%mpc%n_mpc
-      do j= hecMESH%mpc%mpc_index(i-1) + 1, hecMESH%mpc%mpc_index(i)
-        if (hecMESH%mpc%mpc_dof(j) > 4) cycle OUTER
-      enddo
-      k = hecMESH%mpc%mpc_index(i-1) + 1
-      kk = 4 * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
-      Y(kk) = 0.d0
-      do j= hecMESH%mpc%mpc_index(i-1) + 2, hecMESH%mpc%mpc_index(i)
-        jj = 4 * (hecMESH%mpc%mpc_item(j) - 1) + hecMESH%mpc%mpc_dof(j)
-#ifdef _OPENACC
-        !$acc atomic update
-#else
-        !omp atomic
-#endif
-        Y(jj) = Y(jj) - hecMESH%mpc%mpc_val(j) * X(kk)
-      enddo
-    enddo OUTER
-#ifdef _OPENACC
-    !$acc end kernels
-#else
-    !$omp end do
-    !$omp end parallel
-#endif
-
-  end subroutine hecmw_Ttvec_44
-
-  !C
-  !C***
-  !C*** hecmw_TtmatTvec_44
-  !C***
-  !C
-  subroutine hecmw_TtmatTvec_44 (hecMESH, hecMAT, X, Y, W, time_Ax, COMMtime)
-    use hecmw_util
-    implicit none
-    type (hecmwST_local_mesh), intent(in) :: hecMESH
-    type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:), W(:)
-    real(kind=kreal), intent(inout) :: time_Ax
-    real(kind=kreal), intent(inout) :: COMMtime
-
-    call hecmw_Tvec_44(hecMESH, X, Y, COMMtime)
-    call hecmw_matvec_44_inner(hecMESH, hecMAT, Y, W, time_Ax, COMMtime)
-    call hecmw_Ttvec_44(hecMESH, W, Y, COMMtime)
-
-  end subroutine hecmw_TtmatTvec_44
-
 
   !C
   !C***

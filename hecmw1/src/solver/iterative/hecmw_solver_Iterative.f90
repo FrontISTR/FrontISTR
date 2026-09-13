@@ -14,6 +14,7 @@ contains
 
     use hecmw_util
     use hecmw_solver_CG
+    use hecmw_solver_PipeCG
     use hecmw_solver_BiCGSTAB
     use hecmw_solver_GMRES
     use hecmw_solver_GMRESR
@@ -21,7 +22,6 @@ contains
     use hecmw_solver_GPBiCG
     use hecmw_solver_CR
     use m_hecmw_solve_error
-    use m_hecmw_comm_f
     use hecmw_solver_las
     use hecmw_precond
     use hecmw_matrix_misc
@@ -44,7 +44,6 @@ contains
     integer(kind=kint) :: NREST
     real(kind=kreal)   :: SIGMA
 
-    integer(kind=kint) :: totalmpc, MPC_METHOD
     integer(kind=kint) :: auto_sigma_diag
 
     !C PARAMETERs
@@ -74,14 +73,6 @@ contains
 
     !C ERROR CHECK
     call hecmw_solve_check_zerodiag(hecMESH, hecMAT) !C-- ZERO DIAGONAL component
-
-    !C-- IN CASE OF MPC-CG
-    totalmpc = hecMESH%mpc%n_mpc
-    call hecmw_allreduce_I1 (hecMESH, totalmpc, hecmw_sum)
-    MPC_METHOD = hecmw_mat_get_mpc_method(hecMAT)
-    if (totalmpc > 0 .and. MPC_METHOD == 2) then
-      call hecmw_mat_set_flag_mpcmatvec(hecMAT, 1)
-    endif
 
     !C-- RECYCLE SETTING OF PRECONDITIONER
     call hecmw_mat_recycle_precond_setting(hecMAT)
@@ -124,6 +115,9 @@ contains
         case (7)  !--CR
           hecMAT%symmetric = .true.
           call hecmw_solve_CR( hecMESH, hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+        case (8)  !--PipeCG
+          hecMAT%symmetric = .true.
+          call hecmw_solve_PipeCG( hecMESH, hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
           error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
           call hecmw_solve_error (hecMESH, error)
@@ -136,7 +130,7 @@ contains
           SIGMA_DIAG = SIGMA_DIAG + 0.1
           if (hecMESH%my_rank.eq.0) write(*,*) 'Increasing SIGMA_DIAG to', SIGMA_DIAG
           cycle
-        elseif (METHOD==1 .and. METHOD2>1) then
+        elseif ((METHOD==1 .or. METHOD==8) .and. METHOD2>1) then
           if (auto_sigma_diag.eq.1) SIGMA_DIAG = 1.0
           METHOD = METHOD2
           cycle
@@ -159,11 +153,6 @@ contains
 
     call hecmw_mat_dump_solution(hecMAT)
     call hecmw_matvec_unset_async
-
-    !C-- IN CASE OF MPC-CG
-    if (totalmpc > 0 .and. MPC_METHOD == 2) then
-      call hecmw_mat_set_flag_mpcmatvec(hecMAT, 0)
-    endif
 
     time_Ax = hecmw_matvec_get_timer()
     time_precond = hecmw_precond_get_timer()
@@ -367,6 +356,8 @@ contains
         msg_method="GMRESR-EN"
       case (7)  !--CR
         msg_method="CR"
+      case (8)  !--PipeCG
+        msg_method="PipeCG"
       case default
         msg_method="Unlabeled"
     end select

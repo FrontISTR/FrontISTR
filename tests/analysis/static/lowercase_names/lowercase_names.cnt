@@ -1,0 +1,26 @@
+# Every name in this control file is written in lower case, while the mesh
+# defines them in upper case. The result must be the same as with upper case
+# names, which checks that the control file reader normalizes names.
+!VERSION
+    5
+!SOLUTION, TYPE = NLSTATIC
+!BOUNDARY, GRPID = 1
+ base, 1,3, 0.0
+ top, 1,2, 0.0
+!CLOAD, GRPID = 1, AMP=amp1
+ top, 3, 100
+!STEP, SUBSTEPS = 2, CONVERG=1.E-8
+  boundary,    1
+  load, 1
+!MATERIAL, NAME=m1
+!ELASTIC
+  10.0E+04,   0.3
+!WRITE, RESULT, FREQUENCY=1
+!OUTPUT_RES
+ disp, on
+ nstress, off
+ nmises, off
+!SOLVER, METHOD = CG, PRECOND = 3, ITERLOG = NO, TIMELOG = NO
+  10000,       1
+ 1.0E-8,     1.0,     0.0
+!END

@@ -12,22 +12,6 @@ module fstr_setup_util
 contains
   !------------------------------------------------------------------------------
 
-  subroutine fstr_strupr( s )
-    implicit none
-    character(*) :: s
-    integer :: i, n, a
-
-    n = len_trim(s)
-    do i = 1, n
-      a = iachar(s(i:i))
-      if( a >= iachar('a') .and. a <= iachar('z')) then
-        s(i:i) = achar(a - 32)
-      end if
-    end do
-  end subroutine fstr_strupr
-
-  !------------------------------------------------------------------------------
-
   subroutine fstr_ctrl_err_stop
     implicit none
     character(len=256) :: msg
@@ -35,7 +19,7 @@ contains
     call fstr_ctrl_get_err_msg( msg, 256 )
     write(*,*) msg
     write(imsg,*) msg
-    call hecmw_abort( hecmw_comm_get_comm())
+    call fstr_abort( HECMW_EXIT_INPUT )
   end subroutine fstr_ctrl_err_stop
 
   !------------------------------------------------------------------------------
@@ -46,7 +30,7 @@ contains
 
     write(*,*) msg
     write(imsg,*) msg
-    call hecmw_abort( hecmw_comm_get_comm())
+    call fstr_abort( HECMW_EXIT_INPUT )
   end subroutine fstr_setup_util_err_stop
 
   subroutine append_node_grp_from_surf_grp( hecMESH, sgrp_id, ngrp_id )

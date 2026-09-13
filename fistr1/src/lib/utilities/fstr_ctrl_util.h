@@ -165,6 +165,7 @@ int c_fstr_ctrl_get_current_header_pos(fstr_ctrl_data* ctrl);
  * @param value_list Specify value list by csv string
  * @param type Specify type of parameter's value as character
  *        'I':integer(int), 'C' or 'S':string(char*), 'R':real(double),
+ *        'F':file name(char*), which is 'S' without the upper casing
  *        'P':Pattern Input(first string in value_list is 0) (int)
  *        'E':exist or not(int, 1 or 0)
  * @param val Put pointer to store the parameter's value
@@ -187,6 +188,7 @@ int c_fstr_ctrl_get_param(fstr_ctrl_data* ctrl, const char* param_name,
  * @param necessity Necessity of parameter (1 or 0)
  * @param type Specify type of parameter's value as character
  *        'I':integer(int), 'C' or 'S':string(char*), 'R':real(double),
+ *        'F':file name(char*), which is 'S' without the upper casing
  *        'P':Pattern Input(first string in value_list is 1) (int)
  *        'E':exist or not(int, 1 or 0)
  * @param val Put pointer to store the parameter's value

@@ -148,9 +148,7 @@ endif()
 # -DWITH_REFINER     : compile with REVOCAP_Refiner
 # -DWITH_REVOCAP     : compile with REVOCAP_Coupler
 # -DWITH_METIS       : compile with METIS graph partitioning package
-#   -DMETIS_VER_4    : uses METIS-4
 ## -DWITH_PARMETIS    : compile with ParMETIS
-##   -DPARMETIS_VER_3 : uses PARMETIS-3
 # -DWITH_MKL         : compile with MKL PARDISO
 # -DWITH_MUMPS       : compile with MUMPS direct solver
 # -DWITH_LAPACK      : compile with LAPACK
@@ -158,6 +156,7 @@ endif()
 # -DWITH_DOC         : generate API documents
 # -DOLD_RES_FORMAT   : use old style result file( comment and global output disabled)
 # -DWITH_NETCDF      : compile with NetCDF (for Exodus II output)
+# -DARCH             : target architecture (GENERIC/FX64/SXAT)
 
 ###################
 # Find external packages
@@ -186,10 +185,8 @@ option(WITH_OPENMP "for multi-(core|processor) environment" ${OPENMP_FOUND})
 option(WITH_MKL "compile with MKL PARDISO" ${MKL_FOUND})
 option(WITH_LAPACK "for estimating number of condition" ${LAPACK_FOUND})
 option(WITH_METIS "compile with METIS" ${METIS_FOUND})
-option(METIS_VER_4 "uses METIS-4" OFF)
 option(WITH_MUMPS "compile with MUMPS direct solver" ${MUMPS_FOUND})
 #option(WITH_PARMETIS "compile with ParMETIS" ${PARMETIS_FOUND})
-#option(PARMETIS_VER_3 "uses METIS-3" OFF)
 option(WITH_REFINER "compile with REVOCAP_Refiner" ${REFINER_FOUND})
 option(WITH_REVOCAP "compile with REVOCAP_Coupler" ${REVOCAP_FOUND})
 option(WITH_ML "compile with Trilinos ML" ${Trilinos_FOUND})
@@ -330,14 +327,10 @@ endif()
 #if(WITH_PARMETIS AND PARMETIS_FOUND)
 #  list(APPEND FrontISTR_INCLUDE_DIRS ${PARMETIS_INCLUDE_PATH})
 #  list(APPEND FrontISTR_LIBRARIES ${PARMETIS_LIBRARIES})
-#  if(NOT PARMETIS_VER_3)
-#  else()
-#  endif()
 #endif()
 
 ###################
 # -DWITH_METIS
-# -DMETIS_VER_4
 ###################
 if(WITH_METIS AND METIS_FOUND)
   if(NOT "${METIS_INCLUDE_PATH}" STREQUAL "/usr/include")
@@ -346,11 +339,6 @@ if(WITH_METIS AND METIS_FOUND)
   list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_METIS")
   list(APPEND FrontISTR_DEFINITIONS "HECMW_PART_WITH_METIS")
   list(APPEND FrontISTR_LIBRARIES ${METIS_LIBRARIES})
-  if(NOT METIS_VER_4)
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=5")
-  else()
-    list(APPEND FrontISTR_DEFINITIONS "HECMW_METIS_VER=4")
-  endif()
 endif()
 
 ###################
@@ -387,6 +375,35 @@ endif()
 if(OLD_RES_FORMAT)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DOLD_RES_FORMAT")
 endif()
+
+###################
+# -DARCH
+###################
+# Names the machine this build targets.  It decides which architecture-tuned
+# implementations are compiled in -- code written for one machine need not build on
+# another -- and which matrix storage format the solver uses unless !SOLVER,
+# MATRIXFORMAT= asks for another of the formats this build carries.  It is not guessed
+# from the environment or from compiler-defined macros, which cross compilation breaks.
+set(ARCH "GENERIC" CACHE STRING "target architecture for tuned implementations (GENERIC/FX64/SXAT)")
+set_property(CACHE ARCH PROPERTY STRINGS GENERIC FX64 SXAT)
+set(ARCH_VALUES GENERIC FX64 SXAT)
+if(NOT ARCH IN_LIST ARCH_VALUES)
+  string(REPLACE ";" ", " ARCH_VALUES_TEXT "${ARCH_VALUES}")
+  message(FATAL_ERROR "Unknown -DARCH=${ARCH}. Valid values are: ${ARCH_VALUES_TEXT}")
+endif()
+# Storage format each machine defaults to.  BSR is hecmwST_matrix's own format and is
+# what every build falls back to.
+if(ARCH STREQUAL "FX64")
+  set(ARCH_DEFAULT_FORMAT CSR)
+elseif(ARCH STREQUAL "SXAT")
+  set(ARCH_DEFAULT_FORMAT SBLAS)
+else()
+  set(ARCH_DEFAULT_FORMAT BSR)
+endif()
+# The macros name the Fortran constants of hecmw_matrix_misc, so the numbering
+# stays defined in one place.
+list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_MATVEC_IMPL=HECMW_MATVEC_IMPL_${ARCH_DEFAULT_FORMAT}")
+list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_PRECOND_IMPL=HECMW_PRECOND_IMPL_${ARCH_DEFAULT_FORMAT}")
 
 ###################
 # -DWITH_MPI
@@ -457,6 +474,20 @@ message(STATUS "C compiler\t\t: ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler\t\t: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Fortran compiler\t: ${CMAKE_Fortran_COMPILER}")
 message(STATUS "Installation path\t: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Target architecture\t: ${ARCH}")
+
+if(NOT ARCH STREQUAL "GENERIC")
+  message(STATUS "")
+  message(STATUS "==========================================")
+  message(STATUS " Architecture-tuned build is ENABLED")
+  message(STATUS "   ARCH = ${ARCH}")
+  message(STATUS "   default MATRIXFORMAT = ${ARCH_DEFAULT_FORMAT}")
+  message(STATUS " Implementations tuned for other")
+  message(STATUS " architectures are not built in.")
+  message(STATUS " !SOLVER, MATRIXFORMAT= picks among")
+  message(STATUS " the formats this build carries.")
+  message(STATUS "==========================================")
+endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "DEBUG")
   message(STATUS "Defines\t\t: ${FrontISTR_DEFINITIONS}")
