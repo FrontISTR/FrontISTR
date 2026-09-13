@@ -509,12 +509,16 @@ contains
         lam_t_out(1:2) = trial(1:2)
         alpha = 1.0d0
       else
-        ! Frozen SLIP: project onto the live cone surface.  A node whose state was frozen SLIP
-        ! at an augmentation where it carried no normal force (the lam_n <= 0 branch leaves
-        ! fric_state untouched) can come back with a zero trial, and radius/0 would turn the whole
-        ! residual into NaN.  No trial force means no friction force, which is what alpha = 0 gives.
+        ! Frozen SLIP: project onto the live cone surface with min(1, radius/||trial||), the same
+        ! expression computeFrictionForce_ALag uses on the node-to-surface side.  The projection
+        ! never scales a trial up: a node whose trial has come back inside the cone keeps the full
+        ! trial force, which is what the alpha >= 0.999 branch of the tangent is linearised about.
+        ! A node whose state was frozen SLIP at an augmentation where it carried no normal force
+        ! (the lam_n <= 0 branch leaves fric_state untouched) can come back with a zero trial, and
+        ! radius/0 would turn the whole residual into NaN.  No trial force means no friction force,
+        ! which is what alpha = 0 gives.
         if( norm_trial > 1.0d-20 ) then
-          alpha = radius / norm_trial
+          alpha = min( 1.0d0, radius / norm_trial )
         else
           alpha = 0.0d0
         endif
