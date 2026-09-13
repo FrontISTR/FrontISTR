@@ -635,6 +635,7 @@ module m_fstr
     real   (kind=kreal) :: totalmass
     real   (kind=kreal), pointer :: eigval(:)
     real   (kind=kreal), pointer :: eigvec(:,:)
+    real   (kind=kreal), pointer :: resid(:)
     real   (kind=kreal), pointer :: filter(:)
     real   (kind=kreal), pointer :: mass(:)
     real   (kind=kreal), pointer :: effmass(:)

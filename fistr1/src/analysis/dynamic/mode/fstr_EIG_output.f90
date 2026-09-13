@@ -6,26 +6,65 @@ module m_fstr_EIG_output
 
 contains
 
-  subroutine fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
+  !> residual of the eigenproblem as solved, i.e. in the reduced space of the MPC elimination
+  subroutine fstr_eigen_residual(hecMESH, hecMAT, fstrEIG)
     use m_fstr
-    use m_fstr_EIG_lanczos_util
     use hecmw_solver_las
     implicit none
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_matrix)     :: hecMAT
     type(fstr_eigen)         :: fstrEIG
 
-    integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
-    integer(kind=kint) :: i, j, k, in, jn, nget
-    real(kind=kreal)   :: chk, gm
-    real(kind=kreal), allocatable :: s(:), t(:), u(:), r(:)
+    integer(kind=kint) :: NNDOF, NPNDOF, i, j
+    real(kind=kreal)   :: chk, shift
+    real(kind=kreal), allocatable :: t(:), u(:)
+
+    NNDOF  = hecMAT%N *hecMAT%NDOF
+    NPNDOF = hecMAT%NP*hecMAT%NDOF
+
+    allocate(fstrEIG%resid(fstrEIG%nget))
+    allocate(t(NPNDOF))
+    allocate(u(NPNDOF))
+
+    ! the free-free case works on [K] + sigma [M], see lanczos_set_initial_value
+    shift = 0.0d0
+    if(fstrEIG%is_free) shift = fstrEIG%sigma
+
+    do j = 1, fstrEIG%nget
+      u = 0.0d0
+      do i = 1, NNDOF
+        u(i) = fstrEIG%eigvec(i,j)
+      enddo
+      call hecmw_matvec(hecMESH, hecMAT, u, t)
+
+      chk = 0.0d0
+      do i = 1, NNDOF
+        chk = chk + (t(i) - (fstrEIG%eigval(j) + shift)*fstrEIG%mass(i)*u(i))**2
+      enddo
+      call hecmw_allreduce_R1(hecMESH, chk, hecmw_sum)
+      fstrEIG%resid(j) = dsqrt(chk)
+    enddo
+
+    deallocate(t)
+    deallocate(u)
+  end subroutine fstr_eigen_residual
+
+  subroutine fstr_eigen_output(hecMESH, hecMAT, fstrEIG)
+    use m_fstr
+    use m_fstr_EIG_lanczos_util
+    implicit none
+    type(hecmwST_local_mesh) :: hecMESH
+    type(hecmwST_matrix)     :: hecMAT
+    type(fstr_eigen)         :: fstrEIG
+
+    integer(kind=kint) :: N, NDOF
+    integer(kind=kint) :: i, j, k, in, nget
+    real(kind=kreal)   :: gm
+    real(kind=kreal), allocatable :: r(:)
     real(kind=kreal), pointer     :: mass(:), eigval(:), eigvec(:,:)
 
     N      = hecMAT%N
-    NP     = hecMAT%NP
     NDOF   = hecMESH%n_dof
-    NNDOF  = N *NDOF
-    NPNDOF = NP*NDOF
 
     nget   =  fstrEIG%nget
     mass   => fstrEIG%mass
@@ -34,9 +73,6 @@ contains
 
     allocate(fstrEIG%effmass(NDOF*nget))
     allocate(fstrEIG%partfactor(NDOF*nget))
-    allocate(s(NPNDOF))
-    allocate(t(NPNDOF))
-    allocate(u(NPNDOF))
     allocate(r(NDOF))
     fstrEIG%effmass    = 0.0d0
     fstrEIG%partfactor = 0.0d0
@@ -76,26 +112,9 @@ contains
     endif
 
     do j = 1, fstrEIG%nget
-      do i = 1, NNDOF
-        u(i) = eigvec(i,j)
-      enddo
-      call hecmw_matvec(hecMESH, hecMAT, u, t)
-
-      s = 0.0d0
-      do i = 1, NNDOF
-        s(i) = mass(i)*eigvec(i,j)
-      enddo
-
-      chk = 0.0d0
-      do i = 1,NNDOF
-        chk = chk + (t(i) - (eigval(j)-fstrEIG%sigma)*s(i))**2
-      enddo
-      call hecmw_allreduce_R1(hecMESH, chk, hecmw_sum)
-      chk = dsqrt(chk)
-
       if(myrank == 0)then
-        write(IMSG,'(2x,i5,2x,1p5e15.6)') j, eigval(j), chk
-        write(ILOG,'(i5,1p5e12.4)') j, eigval(j), chk
+        write(IMSG,'(2x,i5,2x,1p5e15.6)') j, eigval(j), fstrEIG%resid(j)
+        write(ILOG,'(i5,1p5e12.4)') j, eigval(j), fstrEIG%resid(j)
       endif
     enddo
 
@@ -103,9 +122,6 @@ contains
       write(IMSG,*)'*    ---END Eigenvalue listing---     *'
     endif
 
-    deallocate(s)
-    deallocate(t)
-    deallocate(u)
     deallocate(r)
   end subroutine fstr_eigen_output
 

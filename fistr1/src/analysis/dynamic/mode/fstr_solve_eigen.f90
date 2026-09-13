@@ -54,6 +54,7 @@ contains
     call hecmw_mpc_trans_mass(hecMESH, hecMAT, hecMATmpc, fstrEIG%mass)
 
     call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+    call fstr_eigen_residual(hecMESHmpc, hecMATmpc, fstrEIG)
 
     call hecmw_mpc_tback_eigvec(hecMESH, hecMAT, fstrEIG%iter, fstrEIG%eigvec)
     ! the eigenvectors are back in the original space, so is the mass used by the postprocessing
