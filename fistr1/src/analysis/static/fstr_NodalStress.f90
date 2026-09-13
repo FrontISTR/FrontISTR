@@ -28,6 +28,7 @@ contains
     real(kind=kreal)   :: enqm(12)
     real(kind=kreal)   :: ndstrain(20,6), ndstress(20,6), tdstrain(20,6)
     real(kind=kreal)   :: ecoord(3, 20), edisp(60), tt(20), t0(20)
+    real(kind=kreal)   :: beam_disp(6,2)
     real(kind=kreal)   :: triad_cur(9,4), triad_ref(9,4)
     real(kind=kreal), allocatable :: func(:,:), inv_func(:,:)
 
@@ -129,6 +130,8 @@ contains
             ecoord(1:3,j)    = hecMESH%node(3*nodLOCAL(j)-2:3*nodLOCAL(j))
             edisp(3*j-2:3*j) = fstrSOLID%unode(3*nodLOCAL(j)-2:3*nodLOCAL(j))
           end do
+          beam_disp(1:3,1:2) = reshape(edisp(1:6), (/ 3, 2 /))
+          beam_disp(4:6,1:2) = reshape(edisp(7:12), (/ 3, 2 /))
           ntemp = 0
           if( associated( fstrSOLID%temperature ) ) then
             ntemp = 1
@@ -138,10 +141,10 @@ contains
               tt(j) = fstrSOLID%temperature( nodLOCAL(j) )
             end do
           end if
-          call NodalStress_Beam_641( ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses, &
-            &     hecMESH%section%sect_R_item(ihead+1:), edisp,                               &
-            &     ndstrain(1:nn,1:6), ndstress(1:nn,1:6), tt(1:nn), t0(1:nn), ntemp )
-          call ElementalStress_Beam_641( fstrSOLID%elements(icel)%gausses, estrain, estress, enqm )
+          call NodalStress_Beam( 611, 2, ecoord(1:3,1:2), fstrSOLID%elements(icel)%gausses, &
+            hecMESH%section%sect_R_item(ihead+1:), beam_disp, &
+            ndstrain(1:2,1:6), ndstress(1:2,1:6), fstrSOLID%sections(isect)%elemopt611 )
+          call ElementalStress_Beam( fstrSOLID%elements(icel)%gausses, estrain, estress, enqm )
           fstrSOLID%ENQM(icel*12-11:icel*12) = enqm(1:12)
 
 

@@ -15,7 +15,7 @@
 static struct hecmwST_local_mesh *mesh;
 
 static void get_mesh_init_if(char *name_ID, int *err, int len,
-                             int create_shell_dummy) {
+                             int create_dummy_nodes) {
   char cname[HECMW_FILENAME_LEN + 1];
 
   if (HECMW_strcpy_f2c_r(name_ID, len, cname, sizeof(cname)) == NULL) {
@@ -23,10 +23,10 @@ static void get_mesh_init_if(char *name_ID, int *err, int len,
     return;
   }
 
-  if (create_shell_dummy) {
+  if (create_dummy_nodes) {
     mesh = HECMW_get_mesh(cname);
   } else {
-    mesh = HECMW_get_mesh_without_shell_dummy(cname);
+    mesh = HECMW_get_mesh_without_dummy_nodes(cname);
   }
   if (mesh == NULL) {
     *err = 1;
@@ -45,24 +45,24 @@ void hecmw_get_mesh_init_if(char *name_ID, int *err, int len) {
   get_mesh_init_if(name_ID, err, len, 1);
 }
 
-void hecmw_get_mesh_without_shell_dummy_init_if(char *name_ID, int *err,
+void hecmw_get_mesh_without_dummy_nodes_init_if(char *name_ID, int *err,
                                                 int len) {
   get_mesh_init_if(name_ID, err, len, 0);
 }
 
-void hecmw_get_mesh_without_shell_dummy_init_if_(char *name_ID, int *err,
+void hecmw_get_mesh_without_dummy_nodes_init_if_(char *name_ID, int *err,
                                                   int len) {
-  hecmw_get_mesh_without_shell_dummy_init_if(name_ID, err, len);
+  hecmw_get_mesh_without_dummy_nodes_init_if(name_ID, err, len);
 }
 
-void hecmw_get_mesh_without_shell_dummy_init_if__(char *name_ID, int *err,
+void hecmw_get_mesh_without_dummy_nodes_init_if__(char *name_ID, int *err,
                                                    int len) {
-  hecmw_get_mesh_without_shell_dummy_init_if(name_ID, err, len);
+  hecmw_get_mesh_without_dummy_nodes_init_if(name_ID, err, len);
 }
 
-void HECMW_GET_MESH_WITHOUT_SHELL_DUMMY_INIT_IF(char *name_ID, int *err,
+void HECMW_GET_MESH_WITHOUT_DUMMY_NODES_INIT_IF(char *name_ID, int *err,
                                                 int len) {
-  hecmw_get_mesh_without_shell_dummy_init_if(name_ID, err, len);
+  hecmw_get_mesh_without_dummy_nodes_init_if(name_ID, err, len);
 }
 
 void hecmw_get_mesh_init_if_(char *name_ID, int *err, int len) {
