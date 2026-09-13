@@ -37,7 +37,7 @@ contains
     integer(kind=kint) :: mpc_method
 
     mpc_method = hecmw_mat_get_mpc_method(hecMAT)
-    if (mpc_method < 1 .or. 3 < mpc_method) then
+    if (mpc_method /= 1 .and. mpc_method /= 3) then
       mpc_method = 1
       call hecmw_mat_set_mpc_method(hecMAT,mpc_method)
     endif
