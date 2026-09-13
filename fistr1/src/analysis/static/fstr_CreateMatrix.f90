@@ -324,8 +324,9 @@ contains
 
     else if( ic_type == 641 ) then
       if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-      call STF_Beam_641(ic_type, nn, ecoord, fstrSOLID%elements(icel)%gausses(:), &
-        &            hecMESH%section%sect_R_item(ihead+1:), stiff_mat(1:nn*ndof,1:nn*ndof))
+      call STF_Beam_641_from_611(ecoord(1:3,1:4), fstrSOLID%elements(icel)%gausses(:), &
+        hecMESH%section%sect_R_item(ihead+1:), stiff_mat(1:nn*ndof,1:nn*ndof), &
+        fstrSOLID%sections(isect)%elemopt611)
 
       if( is_dynamic ) then
         surf = hecMESH%section%sect_R_item(ihead+4)

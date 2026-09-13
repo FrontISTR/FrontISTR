@@ -96,7 +96,7 @@ extern int HECMW_io_post_process(void);
 
 extern int HECMW_io_pre_process(void);
 
-extern int HECMW_io_create_shell_dummy_nodes(void);
+extern int HECMW_io_create_dummy_nodes(void);
 
 extern int HECMW_io_check_mpc_dof(int dof);
 
