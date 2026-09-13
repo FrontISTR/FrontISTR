@@ -126,6 +126,8 @@ contains
     deallocate( tangent_sum )
     deallocate( node_mode )
     deallocate( node_count )
+
+    call fstr_update_initialized_finite_rotation_state( hecMESH, fstrSOLID )
     fstrSOLID%finite_rotation_state_ready = .true.
 
   end subroutine fstr_ensure_finite_rotation_state
@@ -375,5 +377,56 @@ contains
     fstrSOLID%shell_ddrill(node_id) = 0.0D0
 
   end subroutine fstr_store_shell_triad_node
+
+  !> Copy the synchronized reference triad into current and trial shell state.
+  subroutine fstr_reset_shell_state_from_reference( fstrSOLID )
+    implicit none
+
+    type (fstr_solid), intent(inout) :: fstrSOLID
+
+    integer(kind=kint) :: node_id, base
+
+    if( .not. fstrSOLID%has_finite_rotation_kinematics ) return
+    if( .not. associated(fstrSOLID%shell_rot_state) ) return
+    if( .not. associated(fstrSOLID%shell_ref_triad) ) return
+
+    do node_id = 1, size(fstrSOLID%shell_rot_state)
+      if( fstrSOLID%shell_rot_state(node_id) == 0 ) cycle
+      base = 9*(node_id-1)
+      if( associated(fstrSOLID%shell_triad) ) &
+        fstrSOLID%shell_triad(base+1:base+9) = fstrSOLID%shell_ref_triad(base+1:base+9)
+      if( associated(fstrSOLID%shell_triad_bak) ) &
+        fstrSOLID%shell_triad_bak(base+1:base+9) = fstrSOLID%shell_ref_triad(base+1:base+9)
+      if( associated(fstrSOLID%shell_dtriad) ) &
+        fstrSOLID%shell_dtriad(base+1:base+9) = fstrSOLID%shell_ref_triad(base+1:base+9)
+      if( associated(fstrSOLID%shell_drill) ) fstrSOLID%shell_drill(node_id) = 0.0D0
+      if( associated(fstrSOLID%shell_drill_bak) ) fstrSOLID%shell_drill_bak(node_id) = 0.0D0
+      if( associated(fstrSOLID%shell_ddrill) ) fstrSOLID%shell_ddrill(node_id) = 0.0D0
+    end do
+
+  end subroutine fstr_reset_shell_state_from_reference
+
+  !> Send only the reference shell triad to external nodes.
+  !>
+  !> The linear solver already updates the solution vector on external nodes.
+  !> The additional shell communication is limited to the reference frame because
+  !> it is formed by averaging adjacent element triads across partition
+  !> boundaries; step-dependent kinematic quantities are recomputed locally from
+  !> the synchronized reference frame and the solver-updated nodal unknowns.
+  subroutine fstr_update_initialized_finite_rotation_state( hecMESH, fstrSOLID )
+    use m_hecmw_comm_f, only: hecmw_update_R
+    implicit none
+
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (fstr_solid), intent(inout)      :: fstrSOLID
+
+    if( .not. fstrSOLID%has_finite_rotation_kinematics ) return
+
+    if( associated(fstrSOLID%shell_ref_triad) ) &
+      call hecmw_update_R( hecMESH, fstrSOLID%shell_ref_triad, hecMESH%n_node, 9 )
+
+    call fstr_reset_shell_state_from_reference( fstrSOLID )
+
+  end subroutine fstr_update_initialized_finite_rotation_state
 
 end module m_fstr_NodalKinematics
