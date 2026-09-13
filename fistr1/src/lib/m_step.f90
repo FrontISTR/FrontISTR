@@ -145,42 +145,6 @@ contains
     if( associated( step%ElemActivation ) )    deallocate( step%ElemActivation )
   end subroutine
 
-  !> Print out step control
-  subroutine fstr_print_steps( nfile, steps )
-    integer, intent(in)         :: nfile     !< file number
-    type(step_info), intent(in) :: steps(:)  !< step info
-    integer :: i, j, nstep, nbc
-    nstep = size(steps)
-
-    write( nfile, * ) "-----Information of steps:",nstep
-
-    do i=1,nstep
-      write( nfile, * ) "  -----Step:",i
-      write(nfile,*) steps(i)%solution, steps(i)%elapsetime, steps(i)%converg, &
-        steps(i)%num_substep, steps(i)%max_iter
-      if( associated( steps(i)%Boundary ) ) then
-        nbc = size( steps(i)%Boundary )
-        write(nfile,*) "  Boundary conditions"
-        write(nfile,*) ( steps(i)%Boundary(j),j=1,nbc )
-      endif
-      if( associated( steps(i)%Load ) ) then
-        nbc = size( steps(i)%Load )
-        write(nfile,*) "  External load conditions"
-        write(nfile,*) ( steps(i)%Load(j),j=1,nbc )
-      endif
-      if( associated( steps(i)%Contact ) ) then
-        nbc = size( steps(i)%Contact )
-        write(nfile,*) "  Contact conditions"
-        write(nfile,*) ( steps(i)%Contact(j),j=1,nbc )
-      endif
-      if( associated( steps(i)%ElemActivation ) ) then
-        nbc = size( steps(i)%ElemActivation )
-        write(nfile,*) "  ElemActivation conditions"
-        write(nfile,*) ( steps(i)%ElemActivation(j),j=1,nbc )
-      endif
-    enddo
-  end subroutine
-
   !> Initializer
   subroutine init_AincParam( aincparam )
     type( tParamAutoInc ), intent(out) :: aincparam !< auto increment parameter

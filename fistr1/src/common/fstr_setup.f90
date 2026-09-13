@@ -510,7 +510,6 @@ contains
             ! !CONTACT_ALGO, FRICTION_CONE=FOLLOW gives up the symmetry of the ALagrange
             ! friction terms; see getContactStiffness_Alag
             fstrSOLID%contacts(c_contact+i)%symmetric = .not. P%PARAM%fric_cone_follow
-            !       call fstr_write_contact( 6, fstrSOLID%contacts(c_contact+i) )
           endif
         enddo
         c_contact = c_contact+n
@@ -1001,7 +1000,6 @@ contains
     if( associated(fstrSOLID%step_ctrl) )  then
       fstrSOLID%nstep_tot = size(fstrSOLID%step_ctrl)
       call setup_stepInfo_starttime( fstrSOLID%step_ctrl )
-      !call fstr_print_steps( 6, fstrSOLID%step_ctrl )
     else
       if( p%PARAM%solution_type==kstSTATIC .and. P%PARAM%nlgeom ) then
         write( *,* ) " ERROR: STEP not defined!"

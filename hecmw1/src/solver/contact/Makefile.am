@@ -78,7 +78,6 @@ F90OBJFILEPOSTFIX = @f90objfilepostfix@
 OBJS =
 
 OBJSF = \
-	hecmw_mat_resid_contact.@f90objfilepostfix@ \
 	sparse_matrix_contact.@f90objfilepostfix@ \
 	solve_LINEQ_MUMPS_contact.@f90objfilepostfix@ \
 	set_arrays_DirectSolver.@f90objfilepostfix@ \

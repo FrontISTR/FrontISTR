@@ -20,27 +20,6 @@ module m_timepoint
 
 contains
 
-  subroutine init_time_points(tp)
-    type(time_points), intent(inout) :: tp
-
-    tp%name = ''
-    tp%n_points = 0
-    tp%range_type = tprSTEP
-  end subroutine
-
-  subroutine print_time_points(tp)
-    type(time_points), intent(in)    :: tp
-
-    write(*,*) 'timepoints name=',trim(tp%name)
-    write(*,*) 'n_points, range_type',tp%n_points, tp%range_type
-    write(*,*) 'points'
-    if( associated(tp%points) ) then
-      write(*,*) tp%points
-    else
-      write(*,*) ' not allocated.'
-    endif
-  end subroutine
-
   logical function is_at_timepoints(totaltime,starttime,tp)
     real(kind=kreal), intent(in)  :: totaltime  !< current time
     real(kind=kreal), intent(in)  :: starttime  !< start time of current step

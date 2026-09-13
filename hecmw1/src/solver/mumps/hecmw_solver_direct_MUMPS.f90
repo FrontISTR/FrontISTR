@@ -70,7 +70,6 @@ contains
       ! ANALYSIS and FACTORIZATION
       call sparse_matrix_hec_init_prof(spMAT, hecMAT, hecMESH)
       call sparse_matrix_hec_set_vals(spMAT, hecMAT)
-      !call sparse_matrix_dump(spMAT)
       mumps_job=4
       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
       if (istat < 0) then
@@ -85,7 +84,6 @@ contains
     if (hecMAT%Iarray(97) .eq. 1) then
       ! FACTORIZATION
       call sparse_matrix_hec_set_vals(spMAT, hecMAT)
-      !call sparse_matrix_dump(spMAT)
       mumps_job=2
       call hecmw_mumps_wrapper(spMAT, mumps_job, istat)
       if (istat < 0) then

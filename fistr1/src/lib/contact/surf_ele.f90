@@ -80,18 +80,6 @@ contains
     if( associated(surf%intermediate_points) ) deallocate( surf%intermediate_points )
   end subroutine
 
-  !> Write out elemental surface
-  subroutine write_surf( file, surf )
-    integer(kind=kint), intent(in)    :: file   !< file number
-    type(tSurfElement), intent(in)    :: surf   !< elemental surface
-    integer(kind=kint) :: i
-    write(file,*) "Element:",surf%eid,"Surface type=",surf%etype
-    if( associated( surf%nodes ) )   &
-      write(file,*) ( surf%nodes(i),i=1,size(surf%nodes) )
-    if( associated( surf%neighbor ) )   &
-      write(file,*) ( surf%neighbor(i),i=1,surf%n_neighbor )
-  end subroutine
-
   !> Find neighboring surface elements
   subroutine find_surface_neighbor( surf, bktDB )
     type(tSurfElement), intent(inout) :: surf(:)   !< surface elements
@@ -157,68 +145,6 @@ contains
 
     if (DEBUG >= 1) write(0,*) 'DEBUG: find_surface_neighbor: end'
   end subroutine
-
-  !> Tracing next contact position
-  integer(kind=kint) function next_position( surf, cpos )
-    type(tSurfElement), intent(in) :: surf      !< current surface element
-    real(kind=kreal), intent(in)   :: cpos(2)   !< current position(local coordinate)
-
-    integer(kind=kint)          :: i
-    real(kind=kreal) :: maxv(3)
-    next_position = surf%eid
-    if( .not. associated(surf%neighbor) ) return   ! do nothing when not initialized
-    maxv(:) = 0.d0
-    select case(surf%etype)
-      case( fe_tri3n, fe_tri6n )
-        if( all(cpos>0.d0) .and. all(cpos<1.d0) ) return
-        if( size(surf%neighbor)<3 )  return
-        if( all(cpos(:)>0.d0) ) return
-        do i=1,3
-          if( cpos(i)< 0.d0 ) maxv(i) = -cpos(i)
-        enddo
-        next_position = maxloc(maxv,1)
-      case( fe_quad4n, fe_quad8n )
-        if( all(cpos>-1.d0) .and. all(cpos<1.d0) ) return
-        if( size(surf%neighbor)<4 ) return
-        if( cpos(1)<-1.d0 .and. dabs(cpos(2))<1.d0 ) then
-          next_position = 1
-        elseif( cpos(1)>1.d0 .and. dabs(cpos(2))<1.d0 ) then
-          next_position = 3
-        elseif( dabs(cpos(1))<1.d0 .and. cpos(2)<-1.d0 ) then
-          next_position = 2
-        elseif( dabs(cpos(1))<1.d0 .and. cpos(2)>1.d0 ) then
-          next_position = 4
-        elseif( cpos(1)<-1.d0 .and. cpos(2)<-1.d0 ) then
-          if( cpos(1)>cpos(2) ) then
-            next_position = 2
-          else
-            next_position = 1
-          endif
-        elseif( cpos(1)<-1.d0 .and. cpos(2)>1.d0 ) then
-          if( dabs(cpos(1))>cpos(2) ) then
-            next_position = 1
-          else
-            next_position = 4
-          endif
-        elseif( cpos(1)>1.d0 .and. cpos(2)<-1.d0 ) then
-          if( cpos(1)>dabs(cpos(2)) ) then
-            next_position = 3
-          else
-            next_position = 2
-          endif
-        elseif( cpos(1)>1.d0 .and. cpos(2)>1.d0 ) then
-          if( cpos(1)>cpos(2) ) then
-            next_position =  3
-          else
-            next_position = 4
-          endif
-        endif
-      case default
-        stop "type of surface element not defined"
-    end select
-    next_position = surf%neighbor( next_position )
-
-  end function next_position
 
   !> Compute reference length of surface elements
   subroutine update_surface_reflen( surf, coord )

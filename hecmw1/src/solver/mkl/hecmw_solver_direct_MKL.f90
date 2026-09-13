@@ -61,7 +61,6 @@ contains
       ! ANALYSIS and FACTORIZATION
       call sparse_matrix_hec_init_prof(spMAT, hecMAT, hecMESH)
       call sparse_matrix_hec_set_vals(spMAT, hecMAT)
-      !call sparse_matrix_dump(spMAT)
       phase_start = 1
       hecMAT%Iarray(98) = 0
       hecMAT%Iarray(97) = 0
@@ -69,7 +68,6 @@ contains
     if (hecMAT%Iarray(97) .eq. 1) then
       ! FACTORIZATION
       call sparse_matrix_hec_set_vals(spMAT, hecMAT)
-      !call sparse_matrix_dump(spMAT)
       phase_start = 2
       hecMAT%Iarray(97) = 0
     endif

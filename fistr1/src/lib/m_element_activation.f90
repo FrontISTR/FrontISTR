@@ -36,25 +36,6 @@ module m_elemact
 
 contains
 
-  !< print elemact info
-  subroutine print_elemact_info( elact )
-    type(tElemact), intent(in) :: elact  !< elemact info
-
-    integer(kind=kint) :: i
-
-    write(*,'(A,I0)') 'ELEMACT_egrp_tot: ', elact%ELEMACT_egrp_tot
-    do i=1,elact%ELEMACT_egrp_tot
-      write(*,*) 'DUMMY : ',i
-      write(*,*) 'GRPID    : ',elact%ELEMACT_egrp_GRPID
-      write(*,*) 'EGRPID   : ',elact%ELEMACT_egrp_ID
-      write(*,*) 'AMPLITUDE: ',elact%ELEMACT_egrp_amp
-      write(*,*) 'EPSILON  : ',elact%ELEMACT_egrp_eps
-      write(*,*) 'DEPENDS  : ',elact%ELEMACT_egrp_depends
-      write(*,*) 'THLOWER  : ',elact%ELEMACT_egrp_ts_lower
-      write(*,*) 'THUPPER  : ',elact%ELEMACT_egrp_ts_upper
-    end do
-  end subroutine
-
   !< stiff matrix of a elemact element
   subroutine STF_DUMMY( ndof, nn, ecoord, u, stiff, element )
     use mMechGauss

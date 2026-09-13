@@ -24,11 +24,4 @@ contains
     func(3,1) =-2.d0*lcoord(1)
   end subroutine
 
-  subroutine Shape2ndDeriv_line3n(func)
-    real(kind=kreal) :: func(3,1,1)
-    func(1,1,1) = 1.d0
-    func(2,1,1) = 1.d0
-    func(3,1,1) = -2.d0
-  end subroutine
-
 end module
