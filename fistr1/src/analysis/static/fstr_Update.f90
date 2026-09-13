@@ -233,8 +233,9 @@ contains
 
         else if( ic_type == 641 ) then
           if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Beam_641(ic_type, nn, ecoord, total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
+          call UpdateST_Beam_641_from_611(ecoord(1:3,1:4), total_disp(1:ndof,1:4), du(1:ndof,1:4), &
+            fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), &
+            qf(1:nn*ndof), fstrSOLID%sections(isect)%elemopt611)
 
         else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
           call UPDATE_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), total_disp(1:ndof,1:nn), &
