@@ -6,7 +6,7 @@
 
 module m_fstr_FiniteRotationKinematics
   use hecmw
-  use elementInfo, only: fe_mitc4_shell
+  use elementInfo, only: fe_mitc4_shell, fe_mitc4_shell361
   use m_fstr, only: fstr_solid
   use mMaterial, only: tMaterial, TOTALLAG, UPDATELAG, isElastic
   implicit none
@@ -31,7 +31,9 @@ contains
     integer(kind=kint), intent(in) :: etype
     integer(kind=kint), intent(in) :: nn
 
-    fstr_is_finite_rotation_shell_element = etype == fe_mitc4_shell .and. nn == 4
+    fstr_is_finite_rotation_shell_element = &
+      ( etype == fe_mitc4_shell .and. nn == 4 ) .or. &
+      ( etype == fe_mitc4_shell361 .and. nn == 8 )
   end function fstr_is_finite_rotation_shell_element
 
   logical function fstr_uses_finite_rotation_kinematics( etype, nn, material )
@@ -51,14 +53,14 @@ contains
     integer(kind=kint) :: itype, is, iE, ic_type, icel, iiS, nn
 
     fstr_has_finite_rotation_kinematics = .false.
-    if( hecMESH%n_dof < 6 ) return
+    if( hecMESH%n_dof < 3 ) return
     if( .not. associated( fstrSOLID%elements ) ) return
 
     do itype = 1, hecMESH%n_elem_type
       is = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype)
       ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type /= fe_mitc4_shell ) cycle
+      if( ic_type /= fe_mitc4_shell .and. ic_type /= fe_mitc4_shell361 ) cycle
 
       do icel = is, iE
         iiS = hecMESH%elem_node_index(icel-1)
@@ -80,16 +82,27 @@ contains
     integer(kind=kint), intent(out)       :: shell_node_mode(:)
 
     integer(kind=kint) :: itype, is, iE, ic_type, icel, iiS, nn, j, node_id
+    integer(kind=kint) :: node_offset, node_mode, shell_nnode
 
     shell_node_mode(:) = 0
-    if( ndof < 6 ) return
+    if( ndof < 3 ) return
     if( .not. associated( fstrSOLID%elements ) ) return
 
     do itype = 1, hecMESH%n_elem_type
       is = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype)
       ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type /= fe_mitc4_shell ) cycle
+      if( ic_type == fe_mitc4_shell ) then
+        shell_nnode = 4
+        node_offset = 0
+        node_mode = 1
+      else if( ic_type == fe_mitc4_shell361 ) then
+        shell_nnode = 4
+        node_offset = 4
+        node_mode = 2
+      else
+        cycle
+      endif
 
       do icel = is, iE
         iiS = hecMESH%elem_node_index(icel-1)
@@ -98,9 +111,9 @@ contains
         if( .not. fstr_uses_finite_rotation_kinematics( ic_type, nn, &
             fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) cycle
 
-        do j = 1, nn
-          node_id = hecMESH%elem_node_item(iiS+j)
-          if( node_id > 0 .and. node_id <= size(shell_node_mode) ) shell_node_mode(node_id) = 1
+        do j = 1, shell_nnode
+          node_id = hecMESH%elem_node_item(iiS+node_offset+j)
+          if( node_id > 0 .and. node_id <= size(shell_node_mode) ) shell_node_mode(node_id) = node_mode
         end do
       end do
     end do

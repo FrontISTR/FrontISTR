@@ -137,6 +137,20 @@ contains
           endif
         enddo
 
+        if( ic_type == 781 ) then
+          do j = 1, 4
+            in = nodLOCAL(j+4)
+            triad_tri(1:9,j) = 0.0D0
+            triad_cur(1:9,j) = 0.0D0
+            triad_ref(1:9,j) = 0.0D0
+            shell_drill(j) = 0.0D0
+            if( associated(fstrSOLID%shell_dtriad) )    triad_tri(1:9,j) = fstrSOLID%shell_dtriad(9*(in-1)+1:9*(in-1)+9)
+            if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(9*(in-1)+1:9*(in-1)+9)
+            if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(9*(in-1)+1:9*(in-1)+9)
+            if( associated(fstrSOLID%shell_ddrill) )    shell_drill(j) = fstrSOLID%shell_ddrill(in)
+          enddo
+        endif
+
         if( ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 ) then
           material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
           if( fstr_uses_finite_rotation_kinematics(ic_type, nn, material) ) then
@@ -344,9 +358,10 @@ contains
       endif
 
     else if( ic_type == 781 ) then   ! for shell-solid mixed analysis
-      if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-      call STF_Shell_MITC(741, 4, 6, ecoord(1:3,1:4), fstrSOLID%elements(icel)%gausses(:), &
-        &              stiff_mat(1:nn*ndof,1:nn*ndof), thick, 1)
+      call STF_Shell_MITC33(741, 4, 6, ecoord(1:3,1:4), u(1:3,1:8), u_prev(1:3,1:8), &
+        fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 1, &
+        fstrSOLID%elements(icel), triad_tri(1:9,1:4), triad_ref(1:9,1:4), &
+        triad_cur(1:9,1:4), shell_drill(1:4))
 
       if( is_dynamic ) then
         surf = get_face4(ecoord(1:3,1:nn))

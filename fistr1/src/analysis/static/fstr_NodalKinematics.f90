@@ -8,8 +8,8 @@
 !> drilling scalar) needed when the Newton solution increment cannot be applied as
 !> a simple vector addition to the nodal degrees of freedom.
 !>
-!> This path is used by elastic MITC4 shell (741) under Total/Updated
-!> Lagrangian kinematics. Finite-rotation algebra lives in
+!> This path is used by elastic MITC4 shells (741 and split-layout 781) under
+!> Total/Updated Lagrangian kinematics. Finite-rotation algebra lives in
 !> m_fstr_FiniteRotationKinematics; this module stores and advances the nodal frame state.
 module m_fstr_NodalKinematics
   use m_fstr
@@ -30,7 +30,7 @@ contains
   !> at shared nodes. Already-initialized nodes are left untouched, so repeated
   !> calls are idempotent.
   subroutine fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
-    use elementInfo, only: fe_mitc4_shell
+    use elementInfo, only: fe_mitc4_shell, fe_mitc4_shell361
     implicit none
 
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -38,6 +38,7 @@ contains
     integer(kind=kint), intent(in)        :: ndof
 
     integer(kind=kint) :: itype, is, iE, ic_type, icel, iiS, nn, j, node_id
+    integer(kind=kint) :: node_offset, rotation_mode, shell_nnode
     integer(kind=kint), allocatable :: node_mode(:), node_count(:)
     real(kind=kreal), allocatable :: director_sum(:,:), tangent_sum(:,:)
     real(kind=kreal) :: ecoord(3, 8), triad(3, 3), trial(3, 3)
@@ -60,7 +61,17 @@ contains
       is = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype)
       ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type /= fe_mitc4_shell ) cycle
+      if( ic_type == fe_mitc4_shell ) then
+        shell_nnode = 4
+        node_offset = 0
+        rotation_mode = 1
+      else if( ic_type == fe_mitc4_shell361 ) then
+        shell_nnode = 4
+        node_offset = 4
+        rotation_mode = 2
+      else
+        cycle
+      endif
       do icel = is, iE
         iiS = hecMESH%elem_node_index(icel-1)
         nn = hecMESH%elem_node_index(icel) - iiS
@@ -68,22 +79,22 @@ contains
         if( .not. fstr_uses_finite_rotation_kinematics( ic_type, nn, &
             fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) cycle
 
-        do j = 1, min(nn, 8)
+        do j = 1, shell_nnode
           node_id = hecMESH%elem_node_item(iiS+j)
           ecoord(1:3, j) = hecMESH%node(3*node_id-2:3*node_id)
         end do
 
-        if( ndof >= 6 ) then
-          do j = 1, nn
-            call fstr_reference_shell_triad( nn, ecoord(1:3, 1:nn), j, triad )
-            node_id = hecMESH%elem_node_item(iiS+j)
+        if( (rotation_mode == 1 .and. ndof >= 6) .or. rotation_mode == 2 ) then
+          do j = 1, shell_nnode
+            call fstr_reference_shell_triad( shell_nnode, ecoord(1:3, 1:shell_nnode), j, triad )
+            node_id = hecMESH%elem_node_item(iiS+node_offset+j)
             if( node_id <= 0 .or. node_id > hecMESH%n_node ) cycle
             if( fstrSOLID%shell_rot_state(node_id) /= 0 ) cycle
             ! average shell triads at shared nodes
             director_sum(1:3, node_id) = director_sum(1:3, node_id) + triad(1:3, 3)
             tangent_sum(1:3, node_id) = tangent_sum(1:3, node_id) + triad(1:3, 1)
             node_count(node_id) = node_count(node_id) + 1
-            node_mode(node_id) = 1
+            node_mode(node_id) = rotation_mode
           end do
         endif
       end do
@@ -203,6 +214,20 @@ contains
         if( ndof > 6 ) then
           fstrSOLID%dunode(idx+7:idx+ndof) = fstrSOLID%dunode(idx+7:idx+ndof) + x(idx+7:idx+ndof)
         endif
+      else if( fstrSOLID%shell_node_mode(node_id) == 2 ) then
+        theta_inc(1:3) = x(idx+1:idx+3)
+        base = 9*(node_id-1)
+        triad_old(1:3, 1) = fstrSOLID%shell_dtriad(base+1:base+3)
+        triad_old(1:3, 2) = fstrSOLID%shell_dtriad(base+4:base+6)
+        triad_old(1:3, 3) = fstrSOLID%shell_dtriad(base+7:base+9)
+        call ShellUpdateTriadWithIncrement( triad_old, fstrSOLID%shell_ddrill(node_id), &
+          theta_inc, triad_new, drill_new )
+        fstrSOLID%shell_dtriad(base+1:base+3) = triad_new(1:3, 1)
+        fstrSOLID%shell_dtriad(base+4:base+6) = triad_new(1:3, 2)
+        fstrSOLID%shell_dtriad(base+7:base+9) = triad_new(1:3, 3)
+        fstrSOLID%shell_ddrill(node_id) = drill_new
+        call ShellComposeRotationVector( fstrSOLID%dunode(idx+1:idx+3), x(idx+1:idx+3), theta_compat )
+        fstrSOLID%dunode(idx+1:idx+3) = theta_compat(1:3)
       else
         fstrSOLID%dunode(idx+1:idx+ndof) = fstrSOLID%dunode(idx+1:idx+ndof) + x(idx+1:idx+ndof)
       endif
@@ -253,6 +278,12 @@ contains
         if( ndof > 6 ) then
           fstrSOLID%unode(idx+7:idx+ndof) = fstrSOLID%unode(idx+7:idx+ndof) + fstrSOLID%dunode(idx+7:idx+ndof)
         endif
+      else if( fstrSOLID%shell_node_mode(node_id) == 2 ) then
+        base = 9*(node_id-1)
+        fstrSOLID%shell_triad(base+1:base+9) = fstrSOLID%shell_dtriad(base+1:base+9)
+        fstrSOLID%shell_drill(node_id) = fstrSOLID%shell_ddrill(node_id)
+        call ShellComposeRotationVector( fstrSOLID%unode(idx+1:idx+3), fstrSOLID%dunode(idx+1:idx+3), theta_compat )
+        fstrSOLID%unode(idx+1:idx+3) = theta_compat(1:3)
       else
         fstrSOLID%unode(idx+1:idx+ndof) = fstrSOLID%unode(idx+1:idx+ndof) + fstrSOLID%dunode(idx+1:idx+ndof)
       endif

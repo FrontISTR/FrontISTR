@@ -1,6 +1,6 @@
 !!
-!! SA-AMG (PRECOND=22) test : mixed shell (761) + solid (361), NDOF=3
-!! SA-AMG operates on a uniform 3x3 block (translational DOF); the 761 shell
+!! SA-AMG (PRECOND=22) test : mixed shell (731 input, internal 761) + solid (361), NDOF=3
+!! SA-AMG operates on a uniform 3x3 block (translational DOF); the shell
 !! and 361 solid share the same 3-DOF node block.
 !! coarsest solver forced to dense LDL^T (coarse_solver=2 (int slot1)) -> no external library dependency.
 !!

@@ -25,6 +25,7 @@ module m_static_LIB_shell
 
 
   public :: STF_Shell_MITC
+  public :: STF_Shell_MITC33
   public :: ElementStress_Shell_MITC
   public :: DL_Shell
   public :: DL_Shell_33
@@ -2019,6 +2020,50 @@ contains
     call ShellApplyMixedDofOrdering(mixflag, nn, ndof, stiff=stiff)
   end subroutine STF_Shell_MITC
 
+  subroutine STF_Shell_MITC33(etype, nn, ndof, ecoord, u, u_prev, gausses, stiff, thick, mixflag, &
+      element, ndtriad, ndreftriad, ndcurtriad, nddrill)
+    use mMechGauss
+    implicit none
+
+    integer(kind=kint), intent(in) :: etype, nn, ndof, mixflag
+    real(kind=kreal), intent(in) :: ecoord(3, nn), u(3, nn*2), u_prev(3, nn*2), thick
+    type(tGaussStatus), intent(in) :: gausses(:)
+    real(kind=kreal), intent(out) :: stiff(:, :)
+    type(tElement), intent(in) :: element
+    real(kind=kreal), intent(in) :: ndtriad(9, nn), ndreftriad(9, nn), ndcurtriad(9, nn), nddrill(nn)
+
+    integer :: i, sstable(ndof*nn)
+    real(kind=kreal) :: mixed_disp(ndof*nn), mixed_prev(ndof*nn)
+    real(kind=kreal) :: natural_disp(ndof*nn), natural_prev(ndof*nn)
+    real(kind=kreal) :: shell_disp(ndof, nn), shell_prev(ndof, nn), rotation(3)
+    logical :: is_mixed
+
+    do i = 1, nn*2
+      mixed_disp(3*(i-1)+1:3*i) = u(1:3, i)
+      mixed_prev(3*(i-1)+1:3*i) = u_prev(1:3, i)
+    enddo
+    call ShellMixedDofMap(mixflag, nn, ndof, sstable, is_mixed)
+    natural_disp = mixed_disp
+    natural_prev = mixed_prev
+    if( is_mixed ) then
+      do i = 1, ndof*nn
+        natural_disp(sstable(i)) = mixed_disp(i)
+        natural_prev(sstable(i)) = mixed_prev(i)
+      enddo
+    endif
+    do i = 1, nn
+      shell_disp(:, i) = natural_disp(ndof*(i-1)+1:ndof*i)
+      shell_prev(:, i) = natural_prev(ndof*(i-1)+1:ndof*i)
+      call ShellComposeRotationVector(shell_prev(4:6, i), &
+        shell_disp(4:6, i)-shell_prev(4:6, i), rotation)
+      shell_disp(4:6, i) = rotation
+    enddo
+
+    call STF_Shell_MITC(etype, nn, ndof, ecoord, gausses, stiff, thick, mixflag, &
+      nddisp=shell_disp, element=element, ndtriad=ndtriad, ndreftriad=ndreftriad, &
+      ndcurtriad=ndcurtriad, nddrill=nddrill)
+  end subroutine STF_Shell_MITC33
+
   !--------------------------------------------------------------------
   !> Evaluate MITC shell stress and strain for result output.
   subroutine ElementStress_Shell_MITC(etype, nn, ndof, ecoord, gausses, edisp, &
@@ -2314,8 +2359,9 @@ contains
     call ShellApplyMixedDofOrdering(mixflag, nn, ndof, qf=qf(1:ndof*nn))
   end subroutine UPDATE_Shell_MITC
 
-  !> Linear shell adapter for the split translational/rotational node layout.
-  subroutine UPDATE_Shell_MITC33(etype, nn, ndof, ecoord, u, du, gausses, qf, thick, mixflag, nddisp)
+  !> Shell adapter for the split translational/rotational node layout.
+  subroutine UPDATE_Shell_MITC33(etype, nn, ndof, ecoord, u, du, gausses, qf, thick, mixflag, &
+      nddisp, element, ndtriad, ndreftriad, ndcurtriad, nddrill)
 
     use mMechGauss
     implicit none
@@ -2325,36 +2371,55 @@ contains
     type(tGaussStatus), intent(in) :: gausses(:)
     real(kind=kreal), intent(out) :: qf(:)
     real(kind=kreal), intent(in), optional :: nddisp(3, nn)
+    type(tElement), intent(inout), optional :: element
+    real(kind=kreal), intent(in), optional :: ndtriad(9, nn), ndreftriad(9, nn), ndcurtriad(9, nn), nddrill(nn)
 
     integer :: i, sstable(ndof*nn)
-    real(kind=kreal) :: mixed_disp(ndof*nn), natural_disp(ndof*nn)
+    real(kind=kreal) :: mixed_u(ndof*nn), mixed_du(ndof*nn)
+    real(kind=kreal) :: natural_u(ndof*nn), natural_du(ndof*nn)
     real(kind=kreal) :: shell_u(6, nn), shell_du(6, nn), shell_nddisp(6, nn)
     logical :: is_mixed
 
-    mixed_disp = 0.0D0
-    do i = 1, nn
-      mixed_disp(ndof*(i-1)+1:ndof*(i-1)+3) = u(1:3, 2*i-1)+du(1:3, 2*i-1)
-      mixed_disp(ndof*(i-1)+4:ndof*(i-1)+6) = u(1:3, 2*i)+du(1:3, 2*i)
-    end do
+    do i = 1, nn*2
+      mixed_u(3*(i-1)+1:3*i) = u(1:3, i)
+      mixed_du(3*(i-1)+1:3*i) = du(1:3, i)
+    enddo
 
     call ShellMixedDofMap(mixflag, nn, ndof, sstable, is_mixed)
-    natural_disp = mixed_disp
+    natural_u = mixed_u
+    natural_du = mixed_du
     if( is_mixed ) then
       do i = 1, ndof*nn
-        natural_disp(sstable(i)) = mixed_disp(i)
+        natural_u(sstable(i)) = mixed_u(i)
+        natural_du(sstable(i)) = mixed_du(i)
       end do
     endif
 
-    shell_u = 0.0D0
     do i = 1, nn
-      shell_du(:, i) = natural_disp(ndof*(i-1)+1:ndof*i)
+      shell_u(:, i) = natural_u(ndof*(i-1)+1:ndof*i)
+      shell_du(:, i) = natural_du(ndof*(i-1)+1:ndof*i)
     end do
-    if( present(nddisp) ) then
-      shell_nddisp = shell_du
-      shell_nddisp(1:3, :) = nddisp
-      call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag, nddisp=shell_nddisp)
+    if( present(element) ) then
+      if( present(nddisp) ) then
+        shell_nddisp = shell_u+shell_du
+        shell_nddisp(1:3, :) = nddisp
+        call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag, &
+          nddisp=shell_nddisp, element=element, ndtriad=ndtriad, ndreftriad=ndreftriad, &
+          ndcurtriad=ndcurtriad, nddrill=nddrill)
+      else
+        call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag, &
+          element=element, ndtriad=ndtriad, ndreftriad=ndreftriad, &
+          ndcurtriad=ndcurtriad, nddrill=nddrill)
+      endif
     else
-      call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag)
+      if( present(nddisp) ) then
+        shell_nddisp = shell_u+shell_du
+        shell_nddisp(1:3, :) = nddisp
+        call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag, &
+          nddisp=shell_nddisp)
+      else
+        call UPDATE_Shell_MITC(etype, nn, ndof, ecoord, shell_u, shell_du, gausses, qf, thick, mixflag)
+      endif
     endif
   end subroutine UPDATE_Shell_MITC33
   
