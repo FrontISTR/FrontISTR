@@ -45,32 +45,39 @@ contains
   end function fstr_uses_finite_rotation_kinematics
 
   logical function fstr_has_finite_rotation_kinematics( hecMESH, fstrSOLID )
+    use m_hecmw_comm_f, only: hecmw_allreduce_L1
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (fstr_solid), intent(in)         :: fstrSOLID
 
     integer(kind=kint) :: itype, is, iE, ic_type, icel, iiS, nn
+    logical :: local_has_finite_rotation_kinematics
 
-    fstr_has_finite_rotation_kinematics = .false.
-    if( hecMESH%n_dof < 6 ) return
-    if( .not. associated( fstrSOLID%elements ) ) return
+    local_has_finite_rotation_kinematics = .false.
+    if( hecMESH%n_dof >= 6 .and. associated( fstrSOLID%elements ) ) then
+      element_type_loop: do itype = 1, hecMESH%n_elem_type
+        is = hecMESH%elem_type_index(itype-1) + 1
+        iE = hecMESH%elem_type_index(itype)
+        ic_type = hecMESH%elem_type_item(itype)
+        if( ic_type /= fe_mitc4_shell ) cycle
 
-    do itype = 1, hecMESH%n_elem_type
-      is = hecMESH%elem_type_index(itype-1) + 1
-      iE = hecMESH%elem_type_index(itype)
-      ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type /= fe_mitc4_shell ) cycle
+        do icel = is, iE
+          iiS = hecMESH%elem_node_index(icel-1)
+          nn = hecMESH%elem_node_index(icel) - iiS
+          if( .not. associated( fstrSOLID%elements(icel)%gausses ) ) cycle
+          if( fstr_uses_finite_rotation_kinematics( ic_type, nn, &
+              fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) then
+            local_has_finite_rotation_kinematics = .true.
+            exit element_type_loop
+          endif
+        end do
+      end do element_type_loop
+    endif
 
-      do icel = is, iE
-        iiS = hecMESH%elem_node_index(icel-1)
-        nn = hecMESH%elem_node_index(icel) - iiS
-        if( .not. associated( fstrSOLID%elements(icel)%gausses ) ) cycle
-        if( fstr_uses_finite_rotation_kinematics( ic_type, nn, &
-            fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) then
-          fstr_has_finite_rotation_kinematics = .true.
-          return
-        endif
-      end do
-    end do
+    ! Keep allocation and communication paths rank-uniform. Ranks without a
+    ! local finite-rotation shell element must still participate in shell state
+    ! communication when another rank contains one.
+    call hecmw_allreduce_L1( hecMESH, local_has_finite_rotation_kinematics, HECMW_LOR )
+    fstr_has_finite_rotation_kinematics = local_has_finite_rotation_kinematics
   end function fstr_has_finite_rotation_kinematics
 
   subroutine fstr_mark_finite_rotation_nodes( hecMESH, fstrSOLID, ndof, shell_node_mode )
