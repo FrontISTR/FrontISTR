@@ -1,15 +1,15 @@
 !C
-!C*** module hecmw_solver_GropCG
+!C*** module hecmw_solver_GroppCG
 !C
-module hecmw_solver_GropCG
+module hecmw_solver_GroppCG
 
-  public :: hecmw_solve_GropCG
+  public :: hecmw_solve_GroppCG
 
 contains
   !C
-  !C*** GropCG
+  !C*** GroppCG
   !C
-  subroutine hecmw_solve_GropCG( hecMESH, hecMAT, ITER, RESID, error, &
+  subroutine hecmw_solve_GroppCG( hecMESH, hecMAT, ITER, RESID, error, &
       &                          Tset, Tsol, Tcomm )
 
     use hecmw_util
@@ -282,6 +282,6 @@ contains
       Tsol = E1_TIME-S1_TIME
     endif
 
-  end subroutine hecmw_solve_GropCG
+  end subroutine hecmw_solve_GroppCG
 
-end module hecmw_solver_GropCG
+end module hecmw_solver_GroppCG

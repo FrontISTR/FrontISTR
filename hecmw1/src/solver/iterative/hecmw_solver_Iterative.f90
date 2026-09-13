@@ -15,7 +15,7 @@ contains
     use hecmw_util
     use hecmw_solver_CG
     use hecmw_solver_PipeCG
-    use hecmw_solver_GropCG
+    use hecmw_solver_GroppCG
     use hecmw_solver_BiCGSTAB
     use hecmw_solver_GMRES
     use hecmw_solver_GMRESR
@@ -119,9 +119,9 @@ contains
         case (8)  !--PipeCG
           hecMAT%symmetric = .true.
           call hecmw_solve_PipeCG( hecMESH, hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
-        case (9)  !--GropCG
+        case (9)  !--GroppCG
           hecMAT%symmetric = .true.
-          call hecmw_solve_GropCG( hecMESH, hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
+          call hecmw_solve_GroppCG( hecMESH, hecMAT, ITER, RESID, error, TIME_setup, TIME_sol, TIME_comm )
         case default
           error = HECMW_SOLVER_ERROR_INCONS_PC  !!未定義なMETHOD!!
           call hecmw_solve_error (hecMESH, error)
@@ -362,8 +362,8 @@ contains
         msg_method="CR"
       case (8)  !--PipeCG
         msg_method="PipeCG"
-      case (9)  !--GropCG
-        msg_method="GropCG"
+      case (9)  !--GroppCG
+        msg_method="GroppCG"
       case default
         msg_method="Unlabeled"
     end select

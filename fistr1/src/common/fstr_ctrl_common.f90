@@ -101,7 +101,7 @@ contains
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
     character(120) :: mlist = &
-      '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,PipeCG,GropCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
+      '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,PipeCG,GroppCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
