@@ -10,13 +10,14 @@ contains
 
   !>  Add Essential Boundary Conditions
   !------------------------------------------------------------------------------------------*
-  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,conMAT,RHSvector)
+  subroutine fstr_AddBC(cstep,hecMESH,hecMAT,fstrSOLID,fstrPARAM,hecLagMAT,iter,hecEBC,conMAT,RHSvector)
     !------------------------------------------------------------------------------------------*
     use m_fstr
     use mContact
     use m_static_LIB_1d
     use m_utilities
     use m_fstr_TimeInc
+    use hecmw_ebc_defer
     integer, intent(in)                  :: cstep !< current step
     type(hecmwST_local_mesh)             :: hecMESH !< hecmw mesh
     type(hecmwST_matrix)                 :: hecMAT !< hecmw matrix
@@ -24,6 +25,7 @@ contains
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     integer(kind=kint)                   :: iter !< NR iterations
+    type(hecmwST_ebc)                    :: hecEBC !< prescribed displacements to be imposed after the MPC processing
     type(hecmwST_matrix), optional       :: conMAT !< hecmw matrix for contact only
     real(kind=kreal), optional           :: RHSvector(:) !< only Right Hand Side vector
 
@@ -118,11 +120,7 @@ contains
             ! write(6,*) 'BC: ', ndof*(in-1)+idof, RHS
             cycle
           endif
-          if(present(conMAT)) then
-            call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
-          else
-            call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
-          endif
+          call hecmw_ebc_set(hecEBC, in, idof, RHS)
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
             if(present(conMAT)) then
@@ -149,7 +147,7 @@ contains
         do idof = 1, ndof
           ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
           cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
-          cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMAT%B)
+          cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecEBC%val)
         enddo
         ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
       endif
@@ -171,11 +169,7 @@ contains
             ! write(6,*) 'BC(rot): ', ndof*(in-1)+idof, RHS
             cycle
           endif
-          if(present(conMAT)) then
-            call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
-          else
-            call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
-          endif
+          call hecmw_ebc_set(hecEBC, in, idof, RHS)
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
             if(present(conMAT)) then

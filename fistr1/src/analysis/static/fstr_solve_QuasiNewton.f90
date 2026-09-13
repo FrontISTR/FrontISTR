@@ -9,6 +9,7 @@ module m_fstr_QuasiNewton
   use m_fstr_NonLinearMethod
   use m_fstr_IterationControl
   use m_fstr_NodalKinematics, only: fstr_apply_solution_increment, fstr_commit_solution_increment
+  use hecmw_ebc_defer
 
   implicit none
   ! parameters for line search
@@ -40,6 +41,7 @@ contains
 
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: ndof
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
@@ -78,7 +80,8 @@ contains
     fstrSOLID%GL0(:) = fstrSOLID%GL(:) !store external load at du=0
 
     !! initialize du for non-zero Dirichlet condition
-    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
+    call hecmw_ebc_init(hecMAT, hecEBC)
+    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, hecEBC, RHSvector=fstrSOLID%dunode)
     !! update residual vector
     call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
 
@@ -132,6 +135,7 @@ contains
           hecMAT%B, 0, res, res, 0, iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then
+        call hecmw_ebc_finalize(hecEBC)
         call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
         fstrSOLID%step_ctrl(cstep)%max_iter = max_iter_bak
         return
@@ -169,6 +173,7 @@ contains
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
 
     fstrSOLID%CutBack_stat = 0
+    call hecmw_ebc_finalize(hecEBC)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     fstrSOLID%step_ctrl(cstep)%max_iter = max_iter_bak

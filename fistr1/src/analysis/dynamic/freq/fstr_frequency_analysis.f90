@@ -16,6 +16,7 @@ module fstr_frequency_analysis
   use m_make_result
   use m_hecmw2fstr_mesh_conv
   use hecmw_setup_util, only: node_global_to_local
+  use hecmw_ebc_defer
 
   implicit none
 
@@ -689,12 +690,16 @@ contains
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
     !---- vals
     integer(kind=kint) :: ntotal
+    type(hecmwST_ebc) :: hecEBC
     !---- body
 
 
     fstrSOLID%dunode = 0.d0
     call fstr_CreateMatrix_and_DampingForce( hecMESH, hecMAT, fstrSOLID, 0.d0, 0.d0 )
-    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)
+    call hecmw_ebc_init(hecMAT, hecEBC)
+    call fstr_AddBC(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2, hecEBC)
+    call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
+    call hecmw_ebc_finalize(hecEBC)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
 

@@ -7,12 +7,13 @@ module m_fstr_EIG_lanczos
 contains
 
   !> SOLVE EIGENVALUE PROBLEM
-  subroutine fstr_solve_lanczos(hecMESH, hecMAT, fstrSOLID, fstrEIG)
+  subroutine fstr_solve_lanczos(hecMESH, hecMAT, fstrSOLID, fstrEIG, hecEBC)
     use m_fstr
     use hecmw_util
     use m_eigen_lib
     use m_fstr_EIG_lanczos_util
     use m_fstr_EIG_tridiag
+    use hecmw_ebc_defer
 
     implicit none
 
@@ -20,12 +21,13 @@ contains
     type(hecmwST_matrix)     :: hecMAT
     type(fstr_solid)         :: fstrSOLID
     type(fstr_eigen)         :: fstrEIG
+    type(hecmwST_ebc)        :: hecEBC
     type(fstr_tri_diag)      :: Tri
     type(fstr_eigen_vec), pointer :: Q(:)
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: iter, maxiter, nget, ierr
-    integer(kind=kint) :: i, j, k, in, jn, kn, ik, it
-    integer(kind=kint) :: ig, ig0, is0, ie0, its0, ite0
+    integer(kind=kint) :: i, j, k, in, jn, kn, ik
+    integer(kind=kint) :: ig, ig0, is0, ie0
     real(kind=kreal)   :: t1, t2, tolerance
     real(kind=kreal)   :: alpha, beta, beta0
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
@@ -43,22 +45,10 @@ contains
     !fstrEIG%sigma = 0.01d0
 
     jn = 0
-    do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
-      ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-      iS0  = hecMESH%node_group%grp_index(ig-1) + 1
-      iE0  = hecMESH%node_group%grp_index(ig  )
-      it   = fstrSOLID%BOUNDARY_ngrp_type(ig0)
-      itS0 = (it - mod(it,10))/10
-      itE0 = mod(it,10)
-
-      do ik = iS0, iE0
-        in = hecMESH%node_group%grp_item(ik)
-        if(NDOF < itE0) itE0 = NDOF
-        do i = itS0, itE0
-          jn = jn + 1
-          fstrEIG%filter((in-1)*NDOF+i) = 0.0d0
-        enddo
-      enddo
+    do i = 1, NPNDOF
+      if(hecEBC%mark(i) == 0) cycle
+      jn = jn + 1
+      fstrEIG%filter(i) = 0.0d0
     enddo
 
     if(hecmw_mat_get_mpc_method(hecMAT) == 3)then

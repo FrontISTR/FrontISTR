@@ -19,6 +19,7 @@ contains
     use m_static_lib
     use m_hecmw2fstr_mesh_conv
     use m_fstr_spring
+    use hecmw_ebc_defer
 
     implicit none
 
@@ -32,6 +33,7 @@ contains
 
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
     type(hecmwST_matrix), pointer :: hecMATmpc
+    type(hecmwST_ebc) :: hecEBC
     real(kind=kreal), pointer :: mass_orig(:)
     real(kind=kreal) :: t1, t2
 
@@ -43,9 +45,11 @@ contains
     call fstr_CreateMatrix_and_DampingForce(hecMESH, hecMAT, fstrSOLID, 0.0d0, 0.0d0)
     call fstr_AddSPRING(1, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
-    call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2)
+    call hecmw_ebc_init(hecMAT, hecEBC)
+    call fstr_AddBC(1,  hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 2, hecEBC)
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_ebc_apply(hecMESHmpc, hecMATmpc, hecEBC)
 
     call setMASS(fstrSOLID, hecMESH, hecMAT, fstrEIG)
     mass_orig => fstrEIG%mass
@@ -53,7 +57,8 @@ contains
     fstrEIG%mass(:) = mass_orig(:)
     call hecmw_mpc_trans_mass(hecMESH, hecMAT, hecMATmpc, fstrEIG%mass)
 
-    call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG)
+    call fstr_solve_lanczos(hecMESHmpc, hecMATmpc, fstrSOLID, fstrEIG, hecEBC)
+    call hecmw_ebc_finalize(hecEBC)
     call fstr_eigen_residual(hecMESHmpc, hecMATmpc, fstrEIG)
 
     call hecmw_mpc_tback_eigvec(hecMESH, hecMAT, fstrEIG%iter, fstrEIG%eigvec)
