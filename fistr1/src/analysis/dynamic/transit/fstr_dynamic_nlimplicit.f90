@@ -24,7 +24,6 @@ module fstr_dynamic_nlimplicit
   use m_fstr_TimeInc
   use m_fstr_Cutback
   use m_fstr_spring
-  use m_dynamic_mass, only: calc_kinetic_energy
 
   !-------- for couple -------
   use m_dynamic_mat_ass_couple
@@ -54,7 +53,6 @@ contains
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type(fstr_info_contactChange)        :: infoCTChange !< fstr_info_contactChange
     type(hecmwST_matrix)                 :: conMAT
-    type(hecmwST_matrix), pointer        :: massMAT
 
     !C-- local variable
     integer(kind=kint) :: nnod, ndof, nn
@@ -77,7 +75,6 @@ contains
     is_interaction_active = ( associated( fstrSOLID%contacts ) .or. associated( fstrSOLID%embeds ) )
 
     nullify(hecMAT0)
-    nullify(massMAT)
 
     ! sum of n_node among all subdomains (to be used to calc res)
     n_node_global = hecMESH%nn_internal
@@ -114,25 +111,20 @@ contains
     endif
 
     call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
-    if(fstrDYNAMIC%idx_mas == kMassConsistent) then
-      allocate(massMAT)
-      call hecmw_mat_init(massMAT)
-      call hecmw_mat_copy_profile(hecMAT, massMAT)
-      call fstr_CreateMatrix_and_DampingForce(hecMESH, massMAT, fstrSOLID, 0.0d0, 0.0d0, &
-        fstrDYNAMIC, mass_only=.true.)
-    endif
 
     hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
 
     !C-- initialize variables
     if( restart_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. abs(fstrDYNAMIC%ray_m) > 1.0d-15 ) &
-      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM, massMAT )
+      call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
 
     !C-- output of initial state
     if( restart_step_num == 1 ) then
+      fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
+        hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,1), .true.)
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, .true.)
-      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID, massMAT)
+      call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
 
     fstrDYNAMIC%VEC3(:) =0.d0
@@ -178,9 +170,9 @@ contains
         fstrDYNAMIC%t_curr = fstr_get_time()
         fstrDYNAMIC%t_delta = fstr_get_timeinc()
 
-        call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+        call fstr_Newton_dynamic_contactSLag(tot_step, hecMESH, hecMAT, fstrSOLID, &
             fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
-          restart_step_num, hecMAT0, sub_step, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta, massMAT)
+          restart_step_num, hecMAT0, sub_step, fstrDYNAMIC%t_curr, fstrDYNAMIC%t_delta)
 
         ! Time Increment
         if( hecMESH%my_rank == 0 ) call fstr_TimeInc_PrintSTATUS( fstrSOLID%step_ctrl(tot_step), fstrPARAM, &
@@ -248,7 +240,7 @@ contains
 
         !C-- output result of monitoring node
         call dynamic_output_monit(tot_step, i, fstrDYNAMIC%t_curr, hecMESH, fstrPARAM, &
-          fstrDYNAMIC, fstrEIG, fstrSOLID, massMAT)
+          fstrDYNAMIC, fstrEIG, fstrSOLID)
 
         !---  Restart info
         if( fstrDYNAMIC%restart_nout > 0 ) then
@@ -287,11 +279,6 @@ contains
       call hecmw_mat_finalize(hecMAT0)
       deallocate(hecMAT0)
     endif
-    if (associated(massMAT)) then
-      call hecmw_mat_finalize(massMAT)
-      deallocate(massMAT)
-    endif
-
     !  message
     if( hecMESH%my_rank == 0 ) then
       call fstr_TimeInc_PrintSTATUS_final(.true.)
@@ -301,9 +288,9 @@ contains
 
   end subroutine FSTR_SOLVE_NLGEOM_DYNAMIC_IMPLICIT_CONTACTSLAG
 
-  subroutine fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, fstrEIG, &
+  subroutine fstr_Newton_dynamic_contactSLag(cstep, hecMESH, hecMAT, fstrSOLID, &
       fstrDYNAMIC, fstrPARAM, fstrCPL, hecLagMAT, infoCTChange, conMAT, &
-      restart_step_num, hecMAT0, istep, t_curr, t_delta, mass_matrix)
+      restart_step_num, hecMAT0, istep, t_curr, t_delta)
     implicit none
     !C-- arguments
     integer(kind=kint), intent(in)       :: cstep, restart_step_num, istep
@@ -312,14 +299,12 @@ contains
     type(hecmwST_matrix)                 :: hecMAT
     type(hecmwST_matrix), pointer        :: hecMAT0
     type(fstr_solid)                     :: fstrSOLID
-    type(fstr_eigen)                     :: fstrEIG
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM
     type(fstr_couple)                    :: fstrCPL
     type(hecmwST_matrix_lagrange)        :: hecLagMAT
     type(fstr_info_contactChange)        :: infoCTChange
     type(hecmwST_matrix)                 :: conMAT
-    type(hecmwST_matrix), pointer        :: mass_matrix
 
     !C-- local variables
     integer(kind=kint) :: j, kk, idm, imm
@@ -556,14 +541,9 @@ contains
 
       fstrSOLID%unode(j)  = fstrSOLID%unode(j)+fstrSOLID%dunode(j)
       fstrDYNAMIC%DISP(j,2) = fstrSOLID%unode(j)
-
-      if( .not.associated(mass_matrix) ) then
-        fstrDYNAMIC%kineticEnergy = fstrDYNAMIC%kineticEnergy + &
-          0.5d0*fstrEIG%mass(j)*fstrDYNAMIC%VEL(j,2)*fstrDYNAMIC%VEL(j,2)
-      endif
     enddo
-    if( associated(mass_matrix) ) call calc_kinetic_energy(hecMESH, mass_matrix, &
-      fstrDYNAMIC%VEL(:,2), fstrDYNAMIC%kineticEnergy)
+    fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
+      hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,2))
 
     call fstr_UpdateState( hecMESH, fstrSOLID, t_delta )
     call fstr_update_contact_TangentForce( cstep, fstrSOLID )

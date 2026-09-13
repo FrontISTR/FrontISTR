@@ -242,29 +242,6 @@ contains
     enddo
   end subroutine get_lumped_mass
 
-  subroutine calc_kinetic_energy(hecMESH, mass_matrix, velocity, kinetic_energy)
-    use hecmw_solver_las, only: hecmw_matvec
-    implicit none
-    type(hecmwST_local_mesh), intent(in) :: hecMESH
-    type(hecmwST_matrix), intent(in) :: mass_matrix
-    real(kind=kreal), intent(in) :: velocity(:)
-    real(kind=kreal), intent(out) :: kinetic_energy
-    real(kind=kreal), allocatable :: mass_velocity(:)
-    integer(kind=kint) :: i, n_internal_dof
-
-    allocate(mass_velocity(mass_matrix%NP*mass_matrix%NDOF))
-    call hecmw_matvec(hecMESH, mass_matrix, velocity, mass_velocity)
-
-    kinetic_energy = 0.0d0
-    n_internal_dof = mass_matrix%N*mass_matrix%NDOF
-    do i = 1, n_internal_dof
-      kinetic_energy = kinetic_energy + velocity(i)*mass_velocity(i)
-    enddo
-    kinetic_energy = 0.5d0*kinetic_energy
-    call hecmw_allreduce_R1(hecMESH, kinetic_energy, HECMW_SUM)
-    deallocate(mass_velocity)
-  end subroutine calc_kinetic_energy
-
   function get_length(ecoord)
     use hecmw
     implicit none
