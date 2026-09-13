@@ -14,6 +14,7 @@ module m_solve_LINEQ_MKL_contact
   use m_hecmw_ClusterMKL_wrapper
   use hecmw_matrix_ass
   use hecmw_matrix_misc
+  use hecmw_ebc_defer
 
   implicit none
 
@@ -52,12 +53,13 @@ contains
   end subroutine solve_LINEQ_MKL_contact_init
 
   !> \brief This subroutine executes the MKL solver
-  subroutine solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
+  subroutine solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
+    type (hecmwST_ebc), intent(inout) :: hecEBC !< prescribed displacements imposed after the MPC processing
     integer(kind=kint), intent(out) :: istat
-    type (hecmwST_matrix), intent(in),optional :: conMAT
+    type (hecmwST_matrix), intent(inout),optional :: conMAT
 
     integer(kind=kint)  :: phase_start
     real(kind=kreal)    :: t1,t2
@@ -77,6 +79,11 @@ contains
     endif
     call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
+    if(present(conMAT)) then
+      call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC, conMAT)
+    else
+      call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
+    endif
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 

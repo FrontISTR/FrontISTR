@@ -10,11 +10,13 @@ contains
 
 
   !>  This subroutine setup disp bundary condition
-  subroutine DYNAMIC_MAT_ASS_BC(cstep, hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, t_curr, iter, conMAT)
+  subroutine DYNAMIC_MAT_ASS_BC(cstep, hecMESH, hecMAT, fstrSOLID ,fstrDYNAMIC, fstrPARAM, hecLagMAT, hecEBC, &
+      t_curr, iter, conMAT)
     use m_fstr
     use m_table_dyn
     use mContact
     use m_utilities
+    use hecmw_ebc_defer
 
     implicit none
     integer, intent(in)                  :: cstep !< current step
@@ -24,6 +26,7 @@ contains
     type(fstr_dynamic)                   :: fstrDYNAMIC
     type(fstr_param)                     :: fstrPARAM !< analysis control parameters
     type(hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
+    type(hecmwST_ebc)                    :: hecEBC !< prescribed displacements to be imposed after the MPC processing
     real(kind=kreal)                     :: t_curr
     integer, optional                    :: iter
     type(hecmwST_matrix), optional       :: conMAT
@@ -98,11 +101,7 @@ contains
           in = hecMESH%node_group%grp_item(ik)
 
           do idof = idofS, idofE
-            if(present(conMAT)) then
-              call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
-            else
-              call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
-            endif
+            call hecmw_ebc_set(hecEBC, in, idof, RHS)
             if( fstr_is_contact_active() .and. fstrPARAM%contact_algo == kcaSLagrange  &
                 .and. fstrPARAM%nlgeom .and. fstrDYNAMIC%idx_resp == 1 )  then
               if(present(conMAT)) then
@@ -138,7 +137,7 @@ contains
           do idof = 1, ndof
             ccoord(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMESH%node)
             cdisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, fstrSOLID%unode)
-            cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecMAT%B)
+            cddisp(idof) = hecmw_ngrp_get_totalvalue(hecMESH, ig, ndof, idof, hecEBC%val)
           enddo
           ccoord(1:ndof) = ccoord(1:ndof) + cdisp(1:ndof)
         endif
@@ -155,11 +154,7 @@ contains
           endif
           do idof = 1, ndof
             RHS = cdiff(idof)-cdiff0(idof)+cddisp(idof)
-            if(present(conMAT)) then
-              call hecmw_mat_ass_bc(hecMAT, in, idof, RHS, conMAT)
-            else
-              call hecmw_mat_ass_bc(hecMAT, in, idof, RHS)
-            endif
+            call hecmw_ebc_set(hecEBC, in, idof, RHS)
             if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
                 .and. fstrPARAM%contact_algo == kcaSLagrange ) then
               if(present(conMAT)) then

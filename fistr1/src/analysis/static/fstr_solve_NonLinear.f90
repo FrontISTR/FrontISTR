@@ -305,15 +305,14 @@ contains
           ! ----- Set Boundary condition
           call hecmw_ebc_init(hecMAT, hecEBC)
           call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, hecEBC, conMAT)
-          call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC, conMAT)
-          call hecmw_ebc_finalize(hecEBC)
 
           !----- SOLVE [Kt]{du}={R}
           ! ----  For Parallel Contact with Multi-Partition Domains
           hecMAT%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-          call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
+          call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, hecEBC, istat, 1.0D0, fstr_is_contact_active())
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+          call hecmw_ebc_finalize(hecEBC)
           ! ----- check matrix solver error
           call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, sub_step, iterStatus, istat)
           if( iterStatus /= kitrContinue ) then
@@ -541,8 +540,6 @@ contains
         ! ----- Set Boundary condition
         call hecmw_ebc_init(hecMAT, hecEBC)
         call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, hecEBC, conMAT)
-        call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC, conMAT)
-        call hecmw_ebc_finalize(hecEBC)
 
         nndof = hecMAT%N*hecMAT%ndof
 
@@ -551,8 +548,9 @@ contains
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         q_residual = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
-        call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
+        call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, hecEBC, istat, 1.0D0, fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call hecmw_ebc_finalize(hecEBC)
         ! ----- check matrix solver error
         call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, sub_step, iterStatus, istat)
         if( iterStatus /= kitrContinue ) then

@@ -20,6 +20,7 @@ module fstr_dynamic_nlimplicit
   use m_fstr_IterationControl
   use mContact
   use m_solve_LINEQ_contact
+  use hecmw_ebc_defer
   use m_dynamic_init_variables
   use m_fstr_TimeInc
   use m_fstr_Cutback
@@ -316,6 +317,7 @@ contains
     type(hecmwST_matrix)                 :: conMAT
 
     !C-- local variables
+    type(hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: j, kk, idm, imm
     integer(kind=kint) :: iter
     real(kind=kreal) :: a1, a2, a3, b1, b2, b3, c1, c2
@@ -415,12 +417,20 @@ contains
         endif
 
         !C-- geometrical boundary condition
+        call hecmw_ebc_init(hecMAT, hecEBC)
         call dynamic_mat_ass_bc   (cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
-          &  fstrPARAM, hecLagMAT, t_curr+t_delta, stepcnt, conMAT=conMAT)
+          &  fstrPARAM, hecLagMAT, hecEBC, t_curr+t_delta, stepcnt, conMAT=conMAT)
         call dynamic_mat_ass_bc_vl(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
-          &  fstrPARAM, hecLagMAT, t_curr+t_delta, stepcnt, conMAT=conMAT)
+          &  fstrPARAM, hecLagMAT, hecEBC, t_curr+t_delta, stepcnt, conMAT=conMAT)
         call dynamic_mat_ass_bc_ac(cstep, hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, &
-          &  fstrPARAM, hecLagMAT, t_curr+t_delta, stepcnt, conMAT=conMAT)
+          &  fstrPARAM, hecLagMAT, hecEBC, t_curr+t_delta, stepcnt, conMAT=conMAT)
+        ! the residual at the constrained DOFs is the reaction; the solver call below
+        ! overwrites these entries anyway, so put the prescribed values there for the check
+        do j = 1, hecMAT%NP*ndof
+          if( hecEBC%mark(j) == 0 ) cycle
+          hecMAT%B(j) = hecEBC%val(j)
+          conMAT%B(j) = 0.0d0
+        enddo
 
         ! ----- check convergence
         call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
@@ -443,8 +453,9 @@ contains
         !   ----  For Parallel Contact with Multi-Partition Domains
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-        call solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,1.0D0,fstr_is_contact_active())
+        call solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,hecEBC,istat,1.0D0,fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call hecmw_ebc_finalize(hecEBC)
         ! ----- check matrix solver error
         call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, istep, iterStatus, istat)
         if( iterStatus /= kitrContinue ) then
