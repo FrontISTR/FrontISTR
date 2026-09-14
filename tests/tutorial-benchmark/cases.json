@@ -22,7 +22,6 @@
     { "name": "03_hyperelastic_cylinder" },
     { "name": "07_viscoelastic_cylinder" },
     { "name": "08_creep_cylinder" },
-    { "name": "09_contact_hertz" },
     { "name": "16_heat_block" },
     {
       "name": "11_contact_2beam",
