@@ -29,6 +29,7 @@ contains
     real(kind=kreal)   :: t1, t2, tolerance
     real(kind=kreal)   :: alpha, beta, beta0
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
+    integer(kind=kint), allocatable :: mark(:)
     logical :: is_converge
 
     N      = hecMAT%N
@@ -60,6 +61,15 @@ contains
       enddo
     enddo
 
+    if(hecmw_mat_get_mpc_method(hecMAT) == 3)then
+      allocate(mark(NPNDOF))
+      call hecmw_mpc_mark_slave(hecMESH, hecMAT, mark)
+      do i = 1, NPNDOF
+        if(mark(i) == 1) fstrEIG%filter(i) = 0.0d0
+      enddo
+      deallocate(mark)
+    endif
+
     do ig0 = 1, fstrSOLID%SPRING_ngrp_tot
       ig = fstrSOLID%SPRING_ngrp_ID(ig0)
       iS0 = hecMESH%node_group%grp_index(ig-1) + 1
@@ -90,7 +100,7 @@ contains
       if(myrank == 0)then
         write(IMSG,*) '** changed maxiter to system matrix size.'
       endif
-      fstrEIG%maxiter = in
+      fstrEIG%maxiter = in + 1
     endif
 
     if(in < fstrEIG%nget)then

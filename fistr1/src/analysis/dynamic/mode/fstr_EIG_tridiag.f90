@@ -37,7 +37,7 @@ contains
     integer(kind=kint) :: N, NP, NDOF, NNDOF, NPNDOF
     integer(kind=kint) :: i, j, k, in, jn, kn, nget
     integer(kind=kint) :: iter2, ierr, maxiter
-    real(kind=kreal)   :: resid, chk, sigma, tolerance
+    real(kind=kreal)   :: resid, chk, vmax, sigma, tolerance
     real(kind=kreal), allocatable :: alpha(:), beta(:), temp(:)
     real(kind=kreal), allocatable :: L(:,:)
 
@@ -141,9 +141,18 @@ contains
       enddo
 
       do j=1, iter
-        chk = maxval(eigvec(:,j))
+        chk  = 0.0d0
+        vmax = 0.0d0
+        do i = 1, NNDOF
+          chk  = max(chk,  dabs(eigvec(i,j)))
+          vmax = max(vmax, eigvec(i,j))
+        enddo
         call hecmw_allreduce_R1(hecMESH, chk, hecmw_max)
+        call hecmw_allreduce_R1(hecMESH, vmax, hecmw_max)
         if(chk /= 0.0d0)then
+          ! The largest component becomes +1. A tie between +a and -a goes to the
+          ! positive one so that serial and parallel runs pick the same sign.
+          if(vmax /= chk) chk = -chk
           chk = 1.0d0/chk
           do i = 1, NNDOF
             eigvec(i,j) = eigvec(i,j) * chk
