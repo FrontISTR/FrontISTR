@@ -115,12 +115,12 @@ contains
           else
             RHS = (RHS0 - fstrSOLID%unode_bak(ndof*(in-1)+idof))*factor
           endif
+          call hecmw_ebc_set(hecEBC, in, idof, RHS)
           if(present(RHSvector)) then
             RHSvector(ndof*(in-1)+idof) = RHS
             ! write(6,*) 'BC: ', ndof*(in-1)+idof, RHS
             cycle
           endif
-          call hecmw_ebc_set(hecEBC, in, idof, RHS)
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
             if(present(conMAT)) then
@@ -164,12 +164,12 @@ contains
         endif
         do idof = 1, ndof
           RHS = cdiff(idof)-cdiff0(idof)+cddisp(idof)
+          call hecmw_ebc_set(hecEBC, in, idof, RHS)
           if(present(RHSvector)) then
             RHSvector(ndof*(in-1)+idof) = RHS
             ! write(6,*) 'BC(rot): ', ndof*(in-1)+idof, RHS
             cycle
           endif
-          call hecmw_ebc_set(hecEBC, in, idof, RHS)
           if( fstr_is_contact_active() .and. fstrPARAM%solution_type == kstSTATIC   &
               .and. fstrPARAM%contact_algo == kcaSLagrange ) then
             if(present(conMAT)) then

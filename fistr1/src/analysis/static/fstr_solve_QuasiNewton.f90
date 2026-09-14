@@ -116,7 +116,9 @@ contains
       call fstr_calc_direction_LBFGS(hecMesh, g_prev, s_k, y_k, rho_k, z_k, n_mem)
 
       ! ! ----- Set Boundary condition
-      call fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
+      do i = 1, len_vector
+        if( hecEBC%mark(i) /= 0 ) z_k(i) = 0.0d0
+      enddo
 
       !----- line search of step length
       call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
@@ -234,38 +236,6 @@ contains
     enddo
     deallocate(q)
   end subroutine fstr_calc_direction_LBFGS
-
-  subroutine fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
-    implicit none
-    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-    integer(kind=kint) :: cstep
-    real(kind=kreal) :: z_k(:)
-
-    integer(kind=kint) :: ig0, grpid, ig, ityp, idofS, idofE, iS0, iE0, ik, in, idof, ndof
-
-    ndof = hecMesh%n_dof
-    !   ----- Prescibed displacement Boundary Conditions
-    do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
-      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
-      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
-      ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-      ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
-      idofS = ityp/10
-      idofE = ityp - idofS*10
-      !
-      iS0 = hecMESH%node_group%grp_index(ig-1) + 1
-      iE0 = hecMESH%node_group%grp_index(ig  )
-      !
-      do ik = iS0, iE0
-        in = hecMESH%node_group%grp_item(ik)
-        !
-        do idof = idofS, idofE
-            z_k(ndof*(in-1)+idof) = 0.0d0
-        enddo
-      enddo
-    enddo
-  end subroutine fstr_AddBC_to_direction_vector
 
   subroutine fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime, pot)
     implicit none

@@ -15,6 +15,7 @@ contains
     use m_heat_mat_ass_bc_FIXT
     use m_heat_mat_ass_bc_FILM
     use m_heat_mat_ass_bc_RADIATE
+    use hecmw_ebc_defer
     implicit none
     type(fstr_solid) :: fstrSOLID
     type(fstr_heat) :: fstrHEAT
@@ -22,6 +23,7 @@ contains
     type(hecmwST_matrix), pointer :: hecMATmpc
     type(hecmwST_local_mesh) :: hecMESH
     type(hecmwST_local_mesh), pointer :: hecMESHmpc
+    type(hecmwST_ebc) :: hecEBC
     real(kind=kreal) :: next_time, delta_time, beta
 
     beta = fstrHEAT%beta
@@ -39,11 +41,14 @@ contains
     call heat_mat_ass_bc_RADIATE(hecMESH, hecMAT, fstrHEAT, next_time, delta_time, beta)
 
     !> !BOUNDARY
-    call heat_mat_ass_bc_FIXT(hecMAT, fstrHEAT, next_time, delta_time, beta)
+    call hecmw_ebc_init(hecMAT, hecEBC)
+    call heat_mat_ass_bc_FIXT(hecMAT, hecEBC, fstrHEAT, next_time, delta_time, beta)
 
     !> MPC
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_ebc_apply(hecMESHmpc, hecMATmpc, hecEBC)
+    call hecmw_ebc_finalize(hecEBC)
 
   end subroutine heat_mat_ass_boundary
 end module m_heat_mat_ass_boundary
