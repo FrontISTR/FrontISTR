@@ -164,6 +164,7 @@ module mContactDef
 
     logical                       :: mpced                   !< if turns into mpc condition
     logical                       :: symmetric               !< true for FRICTION_CONE=FROZEN: cone radius kept at the multiplier
+    real(kind=kreal)              :: eps_fric_band = 0.d0    !< hysteresis half-band of the stick/slip switch (0 = no band)
 
     ! following contact state
     type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes

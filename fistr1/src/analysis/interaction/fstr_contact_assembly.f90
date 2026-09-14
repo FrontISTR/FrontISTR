@@ -336,7 +336,7 @@ contains
             endif
             fstate = fric_state_cur(a,g)
             call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, fcoeff, lambda_node(a,g), &
-                                      fstrPR%eps_fric_band, lam_t_new, fstate, alpha, that, &
+                                      contact%eps_fric_band, lam_t_new, fstate, alpha, that, &
                                       update_state=.true.)
             lam_t_cur(1:2,a,g)  = lam_t_new(1:2)
             fric_state_cur(a,g) = fstate
@@ -563,7 +563,7 @@ contains
       ! Element level: one stiffness block per (slave-surf node a, master group g) constraint.
       call getContactStiffness_Alag_SurfSurf( contact%slave_surf(i), contact%master, coord, disp, ddisp, &
         contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
-        contact%symmetric, fstrPR%eps_fric_band, unique_count, master_idxs, &
+        contact%symmetric, contact%eps_fric_band, unique_count, master_idxs, &
         stiff_n, active_n, stiff_t, active_t )
 
       nnode_s = size(contact%slave_surf(i)%nodes)
@@ -823,7 +823,7 @@ contains
       ! already signed as the residual contribution.
       call getContactNodalForce_Alag_SurfSurf( purpose, contact%slave_surf(i), contact%master, coord, disp, ddisp, &
         contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
-        contact%symmetric, fstrPR%eps_fric_band, unique_count, master_idxs, &
+        contact%symmetric, contact%eps_fric_band, unique_count, master_idxs, &
         ctNForce, active_n, ctTForce, active_t )
 
       nnode_s = size(contact%slave_surf(i)%nodes)

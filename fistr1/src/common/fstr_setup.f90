@@ -511,6 +511,7 @@ contains
             ! !CONTACT_ALGO, FRICTION_CONE=FOLLOW gives up the symmetry of the ALagrange
             ! friction terms; see getContactStiffness_Alag
             fstrSOLID%contacts(c_contact+i)%symmetric = .not. P%PARAM%fric_cone_follow
+            fstrSOLID%contacts(c_contact+i)%eps_fric_band = P%PARAM%eps_fric_band
           endif
           if( fstrSOLID%contacts(c_contact+i)%method == CONTACTS2S ) then
             ! Only the static path is wired for MORTAR=YES. The implicit dynamic solver calls
