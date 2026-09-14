@@ -260,7 +260,8 @@ contains
     real(kind=kreal), intent(in)         :: fcoeff         !< frictional coeff
 
     integer(kind=kint)  :: i, g, r, a, nnode_s, unique_count
-    integer(kind=kint), allocatable :: maplist(:), master_idxs(:), sorted_idx(:)
+    integer(kind=kint)  :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
+    integer(kind=kint), allocatable :: sorted_idx(:)
     ! per-node-within-group quantities; the per-node lambda_n drives the normal path
     real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
     real(kind=kreal)    :: mu, lambda_new
@@ -278,11 +279,13 @@ contains
     do i = 1, size(contact%slave_surf)
       if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
 
+      call get_unique_map(contact%slave_surf(i), maplist, master_idxs, unique_count)
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(Snode(unique_count,nnode_s), Nsnode(unique_count,nnode_s,24), gapwnode(unique_count,nnode_s))
       call getIntGap(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
                      unique_count, maplist, master_idxs, &
                      Snode, Nsnode, gapwnode)
 
-      nnode_s = size(contact%slave_surf(i)%nodes)
       allocate(sorted_idx(unique_count), lambda_node(nnode_s,unique_count))
       if( fcoeff /= 0.d0 ) then
         ! Resolve the tangent warm-start (working -> begin -> 0/STICK) before the working
@@ -349,7 +352,7 @@ contains
         deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
       endif
 
-      deallocate(maplist, master_idxs, sorted_idx)
+      deallocate(sorted_idx)
       deallocate(Snode, Nsnode, gapwnode, lambda_node)
     enddo
 
@@ -551,7 +554,7 @@ contains
 
     integer(kind=kint) :: i, g, a, nnode_m, nnode_s, unique_count, ctsurf
     integer(kind=kint) :: ndLocal(l_max_surface_node+1)
-    integer(kind=kint), allocatable :: master_idxs(:)
+    integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
     real(kind=kreal),   allocatable :: stiff_n(:,:,:,:), stiff_t(:,:,:,:)
     logical,            allocatable :: active_n(:,:), active_t(:,:)
 
@@ -559,13 +562,23 @@ contains
       if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
       if( ctAlgo /= kcaALagrange ) cycle
 
-      ! Element level: one stiffness block per (slave-surf node a, master group g) constraint.
-      call getContactStiffness_Alag_SurfSurf( contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-        contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
-        contact%symmetric, contact%eps_fric_band, unique_count, master_idxs, &
-        stiff_n, active_n, stiff_t, active_t )
-
+      call get_unique_map( contact%slave_surf(i), maplist, master_idxs, unique_count )
       nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(stiff_n(24,24,nnode_s,unique_count), active_n(nnode_s,unique_count))
+
+      ! Element level: one stiffness block per (slave-surf node a, master group g) constraint.
+      if( contact%fcoeff /= 0.d0 ) then
+        allocate(stiff_t(24,24,nnode_s,unique_count), active_t(nnode_s,unique_count))
+        call getContactStiffness_Alag_SurfSurf( contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
+          stiff_n, active_n, stiff_t, active_t )
+      else
+        call getContactStiffness_Alag_SurfSurf( contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
+          stiff_n, active_n )
+      endif
 
       ! ===== Normal stiffness =====
       do g = 1, unique_count
@@ -594,7 +607,7 @@ contains
         deallocate(stiff_t, active_t)
       endif
 
-      deallocate(master_idxs, stiff_n, active_n)
+      deallocate(stiff_n, active_n)
     enddo
 
   end subroutine calcu_contact_stiffness_SurfSurf
@@ -810,7 +823,7 @@ contains
 
     integer(kind=kint) :: i, g, a, j, nd, nnode_m, nnode_s, unique_count, ctsurf
     integer(kind=kint) :: ndLocal(l_max_surface_node+1)
-    integer(kind=kint), allocatable :: master_idxs(:)
+    integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
     real(kind=kreal),   allocatable :: ctNForce(:,:,:), ctTForce(:,:,:)
     logical,            allocatable :: active_n(:,:), active_t(:,:)
 
@@ -818,14 +831,24 @@ contains
       if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
       if( ctAlgo /= kcaALagrange ) cycle
 
+      call get_unique_map( contact%slave_surf(i), maplist, master_idxs, unique_count )
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(ctNForce(24,nnode_s,unique_count), active_n(nnode_s,unique_count))
+
       ! Element level: one force vector per (slave-surf node a, master group g) constraint,
       ! already signed as the residual contribution.
-      call getContactNodalForce_Alag_SurfSurf( purpose, contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-        contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
-        contact%symmetric, contact%eps_fric_band, unique_count, master_idxs, &
-        ctNForce, active_n, ctTForce, active_t )
-
-      nnode_s = size(contact%slave_surf(i)%nodes)
+      if( contact%fcoeff /= 0.d0 ) then
+        allocate(ctTForce(24,nnode_s,unique_count), active_t(nnode_s,unique_count))
+        call getContactNodalForce_Alag_SurfSurf( purpose, contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
+          ctNForce, active_n, ctTForce, active_t )
+      else
+        call getContactNodalForce_Alag_SurfSurf( purpose, contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
+          ctNForce, active_n )
+      endif
 
       ! ===== Normal force =====
       do g = 1, unique_count
@@ -868,7 +891,7 @@ contains
         deallocate(ctTForce, active_t)
       endif
 
-      deallocate(master_idxs, ctNForce, active_n)
+      deallocate(ctNForce, active_n)
     enddo
 
   end subroutine calcu_contact_ndforce_SurfSurf

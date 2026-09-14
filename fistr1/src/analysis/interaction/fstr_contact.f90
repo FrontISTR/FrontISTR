@@ -500,6 +500,7 @@ contains
     type(fstr_solid), intent(inout) :: fstrSOLID
     integer(kind=kint), intent(in)  :: cstep
     integer(kind=kint) :: i, s, grpid, r, m
+    type(tContactSurf), pointer :: surf
 
     do i = 1, fstrSOLID%n_contacts
       if( fstrSOLID%contacts(i)%method /= CONTACTS2S ) cycle
@@ -507,23 +508,22 @@ contains
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
       if( .not. associated(fstrSOLID%contacts(i)%slave_surf) ) cycle
       do s = 1, size(fstrSOLID%contacts(i)%slave_surf)
-        associate( surf => fstrSOLID%contacts(i)%slave_surf(s) )
-          m = 0
-          ! The master is kept if at least one slave node is active against it.
-          do r = 1, surf%lam_work_n
-            if( maxval(surf%lam_work_val(1:size(surf%nodes),r)) > 0.d0 ) then
-              m = m + 1
-              surf%lam_begin_id(m)  = surf%lam_work_id(r)
-              surf%lam_begin_val(1:size(surf%nodes),m) = surf%lam_work_val(1:size(surf%nodes),r)
-              ! the tangential multiplier rides along the master that passed the lambda_n filter
-              surf%lam_begin_t(:,1:size(surf%nodes),m)    = surf%lam_work_t(:,1:size(surf%nodes),r)
-              surf%lam_begin_fstate(1:size(surf%nodes),m) = surf%lam_work_fstate(1:size(surf%nodes),r)
-            endif
-          enddo
-          surf%lam_begin_n = m
-          surf%state_begin      = surf%state
-          surf%state_prev_begin = surf%state_prev
-        end associate
+        surf => fstrSOLID%contacts(i)%slave_surf(s)
+        m = 0
+        ! The master is kept if at least one slave node is active against it.
+        do r = 1, surf%lam_work_n
+          if( maxval(surf%lam_work_val(1:size(surf%nodes),r)) > 0.d0 ) then
+            m = m + 1
+            surf%lam_begin_id(m)  = surf%lam_work_id(r)
+            surf%lam_begin_val(1:size(surf%nodes),m) = surf%lam_work_val(1:size(surf%nodes),r)
+            ! the tangential multiplier rides along the master that passed the lambda_n filter
+            surf%lam_begin_t(:,1:size(surf%nodes),m)    = surf%lam_work_t(:,1:size(surf%nodes),r)
+            surf%lam_begin_fstate(1:size(surf%nodes),m) = surf%lam_work_fstate(1:size(surf%nodes),r)
+          endif
+        enddo
+        surf%lam_begin_n = m
+        surf%state_begin      = surf%state
+        surf%state_prev_begin = surf%state_prev
       enddo
     enddo
   end subroutine

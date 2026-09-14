@@ -174,15 +174,13 @@ contains
 
   subroutine get_unique_map(sSurf, maplist, master_idxs, unique_count)
     type(tContactSurf)  :: sSurf !< surface element structure
-    integer(kind=kint), allocatable, intent(out)  :: maplist(:), master_idxs(:)
+    integer(kind=kint), intent(out)  :: maplist(:), master_idxs(:)  !< IP->group / group->masterID, sized by the caller
     integer(kind=kint), intent(out)  :: unique_count
-    integer(kind=kint), allocatable :: tmp(:)
+    integer(kind=kint)  :: tmp(MAX_N_INTP)
     integer(kind=kint)  :: i, j, n_intp, ctsurf
     logical :: found
 
     n_intp = sSurf%n_intp
-    allocate(maplist(n_intp))
-    allocate(tmp(n_intp))
     maplist = 0
 
     unique_count = 0
@@ -206,16 +204,15 @@ contains
       endif
     enddo
 
-    allocate(master_idxs(unique_count))
-    master_idxs = tmp(1:unique_count)
+    master_idxs(1:unique_count) = tmp(1:unique_count)
 
   end subroutine get_unique_map
 
   !> \brief Compute the per-node mortar constraint quantities of one slave segment.
   !!
-  !! Caller owns the returned allocatables. For each unique master surface in contact with
-  !! this slave segment (group g) and each slave-surf node a, it returns the decomposition
-  !! that drives the residual/stiffness/augmentation:
+  !! The caller passes the unique_count/maplist/master_idxs of get_unique_map and sizes the
+  !! outputs with them. For each group g and each slave-surf node a, it returns the
+  !! decomposition that drives the residual/stiffness/augmentation:
   !!   Snode(g,a)      = sum_{IP in g} N_s(a) * weight                       (node tributary area)
   !!   ANnode(g,a,:)   = sum_{IP in g} N_s(a) * [N_s(b)|-N_m(k)] * weight*dir (per-node constraint accumulator)
   !!   Nsnode(g,a,:)   = ANnode(g,a,:) / Snode(g,a)                          (per-node averaged constraint grad)
@@ -228,9 +225,9 @@ contains
     type(tContactSurf)  :: slave_surf
     type(tSurfElement) :: master(:)
     real(kind=kreal), intent(in)                :: coord(:), disp(:), ddisp(:)
-    integer(kind=kint), intent(out)             :: unique_count
-    integer(kind=kint), allocatable, intent(out):: maplist(:), master_idxs(:)
-    real(kind=kreal), allocatable, intent(out)  :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:)  !< (g,a) / (g,a,24) per-node-within-group
+    integer(kind=kint), intent(in)              :: unique_count
+    integer(kind=kint), intent(in)              :: maplist(:), master_idxs(:)
+    real(kind=kreal), intent(out)               :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:)  !< (g,a) / (g,a,24) per node in group
 
     integer(kind=kint) :: i, j, g, a, nnode_s, nnode_m, etype, slave, n_intp, ctsurf, nd
     integer(kind=kint) :: ndLocal(l_max_surface_node+1)
@@ -238,13 +235,8 @@ contains
     real(kind=kreal)   :: ncoord(2), shapefunc_s(4), shapefunc_m(4), direction(3)
     real(kind=kreal)   :: curr_pos(24)
 
-    call get_unique_map(slave_surf, maplist, master_idxs, unique_count)
-
     nnode_s = size(slave_surf%nodes)
 
-    allocate(Snode(unique_count, nnode_s))
-    allocate(Nsnode(unique_count, nnode_s, 24))
-    allocate(gapwnode(unique_count, nnode_s))
     Snode = 0.d0
     Nsnode = 0.d0
     gapwnode = 0.d0
@@ -580,9 +572,10 @@ contains
   !! stays zero. A block is ordered like the element vector [slave-surf nodes | master nodes of
   !! group g], so the caller builds ndLocal from master_idxs(g) and assembles the block as it
   !! stands. Normal and friction are kept apart because the caller assembles them in two passes.
-  !! stiff_t / active_t are left unallocated when fcoeff == 0. The caller owns the allocatables.
+  !! The caller sizes the blocks with the unique_count of get_unique_map and passes the friction
+  !! pair only when fcoeff /= 0.
   subroutine getContactStiffness_Alag_SurfSurf( slave_surf, master, coord, disp, ddisp, &
-      mu, mut, fcoeff, symm, eps_fric_band, unique_count, master_idxs, &
+      mu, mut, fcoeff, symm, eps_fric_band, unique_count, maplist, master_idxs, &
       stiff_n, active_n, stiff_t, active_t )
     type(tContactSurf), intent(in)  :: slave_surf       !< slave segment
     type(tSurfElement), intent(in)  :: master(:)        !< master surface elements
@@ -593,15 +586,16 @@ contains
     real(kind=kreal), intent(in)    :: fcoeff           !< friction coefficient
     logical, intent(in)             :: symm             !< symmetricalize (cone radius frozen at the multiplier)
     real(kind=kreal), intent(in)    :: eps_fric_band    !< hysteresis half-band of the return mapping
-    integer(kind=kint), intent(out) :: unique_count     !< number of master groups of this segment
-    integer(kind=kint), allocatable, intent(out) :: master_idxs(:)   !< group -> master surface index
-    real(kind=kreal),   allocatable, intent(out) :: stiff_n(:,:,:,:) !< (24,24,node,group) normal stiffness
-    logical,            allocatable, intent(out) :: active_n(:,:)    !< (node,group) block to assemble
-    real(kind=kreal),   allocatable, intent(out) :: stiff_t(:,:,:,:) !< (24,24,node,group) friction stiffness
-    logical,            allocatable, intent(out) :: active_t(:,:)    !< (node,group) block to assemble
+    integer(kind=kint), intent(in)  :: unique_count     !< number of master groups of this segment
+    integer(kind=kint), intent(in)  :: maplist(:)       !< integration point -> group
+    integer(kind=kint), intent(in)  :: master_idxs(:)   !< group -> master surface index
+    real(kind=kreal),   intent(out) :: stiff_n(:,:,:,:) !< (24,24,node,group) normal stiffness
+    logical,            intent(out) :: active_n(:,:)    !< (node,group) block to assemble
+    real(kind=kreal),   intent(out), optional :: stiff_t(:,:,:,:) !< (24,24,node,group) friction stiffness
+    logical,            intent(out), optional :: active_t(:,:)    !< (node,group) block to assemble
 
     integer(kind=kint) :: g, a, j, k, nnode_m, nnode_s
-    integer(kind=kint), allocatable :: maplist(:), sorted_idx(:)
+    integer(kind=kint), allocatable :: sorted_idx(:)
     real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
     real(kind=kreal) :: Ns(24)
     ! --- friction consistent tangent ---
@@ -613,13 +607,13 @@ contains
     real(kind=kreal) :: lam_cone, that3d(3)
     integer(kind=kint) :: na, nb, fstate
 
+    nnode_s = size(slave_surf%nodes)
+    allocate(Snode(unique_count,nnode_s), Nsnode(unique_count,nnode_s,24), gapwnode(unique_count,nnode_s))
     call getIntGap(slave_surf, master, coord, disp, ddisp, &
                    unique_count, maplist, master_idxs, &
                    Snode, Nsnode, gapwnode)
 
-    nnode_s = size(slave_surf%nodes)
     allocate(sorted_idx(unique_count), lambda_node(nnode_s,unique_count))
-    allocate(stiff_n(24,24,nnode_s,unique_count), active_n(nnode_s,unique_count))
     stiff_n = 0.d0
     active_n = .false.
     if( fcoeff /= 0.d0 ) then
@@ -653,7 +647,6 @@ contains
       ! Linearization of the per-node friction residual at the same live slip state:
       !   K_a(b,c) = Snode(g,a) * Wbar(a,b) * Wbar(a,c) * M3_a,  M3_a = T3d_a * A_a * T3d_a^T
       ! with Wbar(a,b) = Nsnode(g,a,b).nhat_a, the same map as the residual back-distribution.
-      allocate(stiff_t(24,24,nnode_s,unique_count), active_t(nnode_s,unique_count))
       stiff_t = 0.d0
       active_t = .false.
       allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
@@ -744,7 +737,7 @@ contains
       deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
     endif
 
-    deallocate(maplist, sorted_idx)
+    deallocate(sorted_idx)
     deallocate(Snode, Nsnode, gapwnode, lambda_node)
   end subroutine getContactStiffness_Alag_SurfSurf
 
@@ -758,10 +751,10 @@ contains
   !!                     through the per-node mortar weight Wbar(a,j) = Nsnode(g,a,j).nhat_a
   !!                     (kctForOutput keeps the frozen multiplier instead of the live trial)
   !! The force is signed as the residual contribution, so the caller only adds it up.
-  !! active_n / active_t, the block ordering and the ownership of the allocatables are as in
+  !! active_n / active_t, the block ordering and the sizing of the outputs are as in
   !! getContactStiffness_Alag_SurfSurf.
   subroutine getContactNodalForce_Alag_SurfSurf( purpose, slave_surf, master, coord, disp, ddisp, &
-      mu, mut, fcoeff, symm, eps_fric_band, unique_count, master_idxs, &
+      mu, mut, fcoeff, symm, eps_fric_band, unique_count, maplist, master_idxs, &
       ctNForce, active_n, ctTForce, active_t )
     integer(kind=kint), intent(in)  :: purpose          !< kctForResidual or kctForOutput
     type(tContactSurf), intent(in)  :: slave_surf       !< slave segment
@@ -773,15 +766,16 @@ contains
     real(kind=kreal), intent(in)    :: fcoeff           !< friction coefficient
     logical, intent(in)             :: symm             !< symmetricalize (cone radius frozen at the multiplier)
     real(kind=kreal), intent(in)    :: eps_fric_band    !< hysteresis half-band of the return mapping
-    integer(kind=kint), intent(out) :: unique_count     !< number of master groups of this segment
-    integer(kind=kint), allocatable, intent(out) :: master_idxs(:) !< group -> master surface index
-    real(kind=kreal),   allocatable, intent(out) :: ctNForce(:,:,:)!< (24,node,group) normal force vector
-    logical,            allocatable, intent(out) :: active_n(:,:)  !< (node,group) vector to assemble
-    real(kind=kreal),   allocatable, intent(out) :: ctTForce(:,:,:)!< (24,node,group) friction force vector
-    logical,            allocatable, intent(out) :: active_t(:,:)  !< (node,group) vector to assemble
+    integer(kind=kint), intent(in)  :: unique_count     !< number of master groups of this segment
+    integer(kind=kint), intent(in)  :: maplist(:)       !< integration point -> group
+    integer(kind=kint), intent(in)  :: master_idxs(:)   !< group -> master surface index
+    real(kind=kreal),   intent(out) :: ctNForce(:,:,:)  !< (24,node,group) normal force vector
+    logical,            intent(out) :: active_n(:,:)    !< (node,group) vector to assemble
+    real(kind=kreal),   intent(out), optional :: ctTForce(:,:,:) !< (24,node,group) friction force vector
+    logical,            intent(out), optional :: active_t(:,:)   !< (node,group) vector to assemble
 
     integer(kind=kint) :: g, a, j, nnode_m, nnode_s
-    integer(kind=kint), allocatable :: maplist(:), sorted_idx(:)
+    integer(kind=kint), allocatable :: sorted_idx(:)
     real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
     real(kind=kreal) :: nrlforce
     real(kind=kreal) :: Ns(24)
@@ -792,13 +786,13 @@ contains
     real(kind=kreal) :: Dxi(2), alpha, that(2), lam_t_new(2), lam_cone
     integer(kind=kint) :: fstate
 
+    nnode_s = size(slave_surf%nodes)
+    allocate(Snode(unique_count,nnode_s), Nsnode(unique_count,nnode_s,24), gapwnode(unique_count,nnode_s))
     call getIntGap(slave_surf, master, coord, disp, ddisp, &
                    unique_count, maplist, master_idxs, &
                    Snode, Nsnode, gapwnode)
 
-    nnode_s = size(slave_surf%nodes)
     allocate(sorted_idx(unique_count), lambda_node(nnode_s,unique_count))
-    allocate(ctNForce(24,nnode_s,unique_count), active_n(nnode_s,unique_count))
     ctNForce = 0.d0
     active_n = .false.
     if( fcoeff /= 0.d0 ) then
@@ -839,7 +833,6 @@ contains
       ! lambda_t / fric_state buffers). The resulting traction is distributed through the per-node
       ! mortar weight Wbar(a,j) = Nsnode(g,a,j).nhat_a, mirroring the normal back-distribution.
       ! Output (kctForOutput) keeps the frozen multiplier.
-      allocate(ctTForce(24,nnode_s,unique_count), active_t(nnode_s,unique_count))
       ctTForce = 0.d0
       active_t = .false.
       allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
@@ -888,7 +881,7 @@ contains
       deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
     endif
 
-    deallocate(maplist, sorted_idx)
+    deallocate(sorted_idx)
     deallocate(Snode, Nsnode, gapwnode, lambda_node)
   end subroutine getContactNodalForce_Alag_SurfSurf
 

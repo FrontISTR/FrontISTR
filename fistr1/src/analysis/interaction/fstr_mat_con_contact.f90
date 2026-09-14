@@ -407,7 +407,7 @@ contains
     integer(kind=kint)            :: ctsurf, nsurf !< contents of type tContact
     integer(kind=kint)            :: i, j, m
     integer(kind=kint)            :: g, unique_count !< unique (slave_surf, master) pair iteration
-    integer(kind=kint), allocatable :: maplist(:), master_idxs(:) !< unique master mapping from get_unique_map
+    integer(kind=kint)            :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP) !< unique master mapping from get_unique_map
     real(kind=kreal)              :: fcoeff !< friction coefficient
     logical                       :: necessary_to_insert_node
 
@@ -444,7 +444,6 @@ contains
               enddo
             endif
           enddo
-          deallocate( maplist, master_idxs )
         endif
       enddo
     enddo
@@ -517,7 +516,7 @@ contains
     type(hecmwST_matrix), intent(in) :: conMAT        !< contact matrix (S2S stiffness assembly target)
 
     integer(kind=kint) :: i, j, g, ctsurf, grpid, unique_count
-    integer(kind=kint), allocatable :: maplist(:), master_idxs(:)
+    integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
 
     fstr_s2s_profile_needs_refresh = .false.
     if( contact_algo /= kcaALagrange ) return
@@ -536,11 +535,9 @@ contains
           if( .not. pair_cross_profile_complete( fstrSOLID%contacts(i)%slave_surf(j)%nodes, &
               &  fstrSOLID%contacts(i)%master(ctsurf), conMAT ) ) then
             fstr_s2s_profile_needs_refresh = .true.
-            deallocate( maplist, master_idxs )
             return
           endif
         enddo
-        deallocate( maplist, master_idxs )
       enddo
     enddo
   end function fstr_s2s_profile_needs_refresh

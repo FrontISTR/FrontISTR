@@ -643,7 +643,7 @@ contains
     integer, pointer :: indexCand(:)
     integer   ::  idm,bktID,nCand
     ! per-segment known-master tracking for free2contact_new
-    integer(kind=kint), allocatable :: maplist(:), master_idxs(:)
+    integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
     integer(kind=kint) :: unique_count
     integer(kind=kint) :: known_masters(MAX_N_INTP), n_known
     logical :: is_known
@@ -675,7 +675,6 @@ contains
       call get_unique_map(contact%slave_surf(i), maplist, master_idxs, unique_count)
       n_known = unique_count
       if( n_known > 0 ) known_masters(1:n_known) = master_idxs(1:n_known)
-      deallocate(maplist, master_idxs)
 
       ! ALagrange SS only (SLAG+MORTAR rejected at fstr_setup): set all IPs as
       ! candidates unconditionally (do not depend on NTS node-level contact state)

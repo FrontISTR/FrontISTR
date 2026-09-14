@@ -1857,13 +1857,12 @@ contains
             slave = fstrSOLID%contacts(ic)%slave_surf(is)%nodes(jn)
             if( dot_product( fstrSOLID%CONT_NFORCE(3*slave-2:3*slave), &
               &              fstrSOLID%CONT_NFORCE(3*slave-2:3*slave) ) > cont_force_eps2 ) then
-              associate( surf => fstrSOLID%contacts(ic)%slave_surf(is) )
-                if( any( surf%lam_work_fstate(jn,1:surf%lam_work_n) == CONTACTSLIP ) ) then
-                  fstrSOLID%CONT_STATE(slave) = dble(CONTACTSLIP)
-                else
-                  fstrSOLID%CONT_STATE(slave) = dble(CONTACTSTICK)
-                endif
-              end associate
+              if( any( fstrSOLID%contacts(ic)%slave_surf(is)%lam_work_fstate(jn, &
+                &        1:fstrSOLID%contacts(ic)%slave_surf(is)%lam_work_n) == CONTACTSLIP ) ) then
+                fstrSOLID%CONT_STATE(slave) = dble(CONTACTSLIP)
+              else
+                fstrSOLID%CONT_STATE(slave) = dble(CONTACTSTICK)
+              endif
             endif
           enddo
         enddo
