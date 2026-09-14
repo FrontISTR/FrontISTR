@@ -10,8 +10,8 @@
     },
     {
       "name": "15_eigen_spring",
-      "requires": "WITH_MKL",
-      "solver": "MKL"
+      "requires": "WITH_MUMPS",
+      "solver": "MUMPS"
     },
     {
       "name": "10_contact_2tubes",
@@ -25,8 +25,8 @@
     { "name": "16_heat_block" },
     {
       "name": "11_contact_2beam",
-      "requires": "WITH_MUMPS",
-      "solver": "MUMPS"
+      "requires": "WITH_MKL",
+      "solver": "MKL"
     }
   ]
 }
