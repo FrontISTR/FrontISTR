@@ -32,13 +32,16 @@ Compare medians and retain every sample and its logs. Any failed sample makes
 that case fail and excludes the pair from timing totals.
 
 Single-run comparisons keep the configured thresholds (by default warning:
-15% and 1s; critical: 10% and 5s). Three-run comparisons use warning: 5% and
-0.5s; critical: 10% and 1s. Both percentage and absolute limits must be met.
+15% and 1s; critical: 10% and 5s). Three-run comparisons use warning: 15% and
+0.5s, and keep the same critical pair. A change of 50% or more is always
+critical, even when the absolute delta is under 1s, so a 1.5s case that
+becomes 2.25s is flagged. Both percentage and absolute limits must be met
+for the other levels. A 10% wiggle on a ~15s case stays within threshold.
 Changes below the thresholds are labeled `WITHIN THRESHOLD`; improvements
 use the same magnitude thresholds. Critical regressions fail the job only
 when `BENCHMARK_FAIL_ON_REGRESSION` is enabled.
 
 `UNSTABLE` means the sample range is at least 10% of the median and at least
 0.5s. This is a separate annotation, not a reason to suppress regression checks.
-Cached baselines cannot be interleaved with new measurements; tighter thresholds
-apply only when both revisions have three samples.
+Cached baselines cannot be interleaved with new measurements; the three-run
+thresholds apply only when both revisions have three samples.
