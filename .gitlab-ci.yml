@@ -62,7 +62,12 @@ include:
     script:
         - MPI=$([[ $BUILD_TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
         - OMP=$([[ $BUILD_TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
-        - cmake -S. -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP
+        - |
+          # Older releases do not link the BLACS wrapper needed by Cluster PARDISO.
+          set --
+          [ "$MPI" != ON ] || set -- "-DCMAKE_EXE_LINKER_FLAGS=-Wl,--push-state,--no-as-needed -lmkl_blacs_openmpi_lp64 -Wl,--pop-state"
+          cmake -S. -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP \
+            "$@"
         - |
           if [ -z "${BENCHMARK_REF:-}" ]; then
             if [ -n "${CI_COMMIT_TAG:-}" ]; then
