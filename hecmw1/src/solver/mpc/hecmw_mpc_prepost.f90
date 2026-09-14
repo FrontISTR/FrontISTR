@@ -638,6 +638,9 @@ contains
     dst%node_group%bc_grp_val => src%node_group%bc_grp_val
     !
     dst%node      => src%node
+    dst%elem_type_index => src%elem_type_index
+    dst%elem_node_index => src%elem_node_index
+    dst%elem_node_item  => src%elem_node_item
   end subroutine hecmw_mpc_mesh_copy
 
   subroutine hecmw_mpc_mesh_free(hecMESH)
