@@ -438,19 +438,19 @@ contains
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
 
-      algtype = fstrSOLID%contacts(i)%algtype
-      if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
-        if( fstrSOLID%contacts(i)%method == CONTACTS2S ) then
-          call update_contact_multiplier_SurfSurf( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
-            fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff )
-        else
+      if( fstrSOLID%contacts(i)%method == CONTACTS2S ) then
+        call update_contact_multiplier_SurfSurf( fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
+          fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff )
+      else
+        algtype = fstrSOLID%contacts(i)%algtype
+        if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
           call update_contact_multiplier( ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
             fstrSOLID%dunode(:), fstrSOLID%contacts(i)%fcoeff, &
             hecMESH, hecLagMAT, gnt, ctchanged )
+        else if( algtype == CONTACTTIED ) then
+          call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
+          &  ctchanged )
         endif
-      else if( algtype == CONTACTTIED ) then
-        call update_tied_multiplier( fstrSOLID%contacts(i), fstrSOLID%unode(:), fstrSOLID%dunode(:), &
-        &  ctchanged )
       endif
     enddo
 
