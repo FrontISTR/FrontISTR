@@ -92,8 +92,8 @@ include:
     artifacts:
         paths:
             - build/benchmark-results/
-            - build/tutorial-benchmark-*/*/*.log
-            - benchmark-baseline/*/build/tutorial-benchmark-*/*/*.log
+            - build/tutorial-benchmark-*/**/*.log
+            - benchmark-baseline/*/build/tutorial-benchmark-*/**/*.log
         expire_in: 1week
         when: always
 

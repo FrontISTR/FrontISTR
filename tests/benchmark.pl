@@ -190,7 +190,7 @@ sub configure_and_build {
 }
 
 sub measure_existing {
-  my ($label, $commit, $requested_ref, $build, $selected, $generator, $mode) = @_;
+  my ($label, $commit, $requested_ref, $build, $selected, $generator, $mode, $only_case, $sample) = @_;
   my $effective_cache = read_cache(File::Spec->catfile($build, 'CMakeCache.txt'));
   $mode //= build_mode($selected);
   die "invalid BENCHMARK_MODE: $mode\n" unless grep { $_ eq $mode } @modes;
@@ -203,6 +203,7 @@ sub measure_existing {
   my @cases = map { $_->{name} } @{$config->{cases}};
   die "invalid BENCHMARK_CASE: $case\n" if $case && !grep { $_ eq $case } @cases;
   @cases = ($case) if $case;
+  @cases = ($only_case) if defined $only_case;
   my $mpi_build = cache_enabled($selected, 'WITH_MPI') ? 1 : 0;
   my %settings = map {
     $_->{name} => { %$_, %{$_->{$mpi_build ? 'mpi' : 'serial'} // {}} }
@@ -223,7 +224,7 @@ sub measure_existing {
     my $solver = $setting->{solver} // '';
     my $parameters = join("\n", @{$setting->{solver_parameters} // []});
     my @command = ($cmake, "-DINPUT=$source_dir/tutorial/$item",
-      "-DWORK=$test_build/$item", "-DSOLVER=$build/fistr1/fistr1",
+      "-DWORK=$test_build/$item" . ($sample ? "/sample-$sample" : ''), "-DSOLVER=$build/fistr1/fistr1",
       "-DPARTITIONER=$build/hecmw1/tools/hecmw_part1", "-DNP=$np", "-DNT=$nt",
       "-DSOLVER_OVERRIDE=$solver", "-DSOLVER_PARAMETERS=$parameters",
       "-DOUTPUT_TYPE=$config->{output_type}",
@@ -239,7 +240,8 @@ sub measure_existing {
     $tests{$item}{solver_override} = $note if $solver ne '';
     $tests{$item}{output_type} = $config->{output_type};
     if ($status) {
-      my $path = "$test_build/$item/failure.log";
+      my $log_directory = "$test_build/$item" . ($sample ? "/sample-$sample" : '');
+      my $path = "$log_directory/failure.log";
       my @lines;
       if (open my $log, '<', $path) {
         @lines = <$log>;
@@ -249,7 +251,7 @@ sub measure_existing {
       $tests{$item}{error} = @lines > 60
         ? $stage . "[last 60 log lines]\n" . join('', @lines[-60..-1])
         : @lines ? join('', @lines) : $stage;
-      $tests{$item}{log_directory} = "$test_build/$item";
+      $tests{$item}{log_directory} = $log_directory;
     }
     printf "%s %s %s: %.3fs (exit %d)\n", $status ? 'FAILED' : 'PASSED',
       $label, $item, $seconds, $status;
@@ -273,31 +275,70 @@ sub measure_existing {
   }, $run_status // 0);
 }
 
-sub measure {
-  my ($label, $commit, $requested_ref, $source, $build, $selected, $generator, $mode) = @_;
-  print "\n== $label: configure and build ", substr($commit, 0, 12), " ==\n";
-  configure_and_build($source, $build, $selected, $generator);
-  return measure_existing(
-    $label, $commit, $requested_ref, $build, $selected, $generator, $mode
-  );
+sub measure_pair {
+  my ($baseline_args, $current_args, $cached) = @_;
+  my $config = read_json("$source_dir/tests/tutorial-benchmark/cases.json");
+  my @cases = map { $_->{name} } @{$config->{cases}};
+  @cases = ($ENV{BENCHMARK_CASE}) if $ENV{BENCHMARK_CASE};
+  my ($baseline, $current) = ($cached, undef);
+  for my $name (@cases) {
+    my @runs;
+    my $count = 1;
+    for my $sample (1..3) {
+      last if $sample > $count;
+      for my $side (0, 1) {
+        next if $side == 0 && $cached;
+        my $args = $side ? $current_args : $baseline_args;
+        my ($run) = measure_existing(@$args, $name, $sample);
+        $runs[$side] //= { %$run, tests => {} };
+        my $test = $run->{tests}{$name};
+        my $aggregate = $runs[$side]{tests}{$name} //= { %$test, samples => [] };
+        push @{$aggregate->{samples}}, { %$test };
+        if ($test->{exit_code}) {
+          @{$aggregate}{qw(exit_code error log_directory)} = @{$test}{qw(exit_code error log_directory)};
+        }
+        if ($side == 0 && $sample == 1) {
+          $count = !$test->{exit_code} && $test->{duration_seconds} <= 15 ? 3 : 1;
+        }
+      }
+      if ($cached && $sample == 1) {
+        my $test = $cached->{tests}{$name};
+        $count = $test && !$test->{exit_code} &&
+          (($test->{samples}[0]{duration_seconds} // $test->{duration_seconds}) <= 15) ? 3 : 1;
+      }
+    }
+    for my $side (0, 1) {
+      next if $side == 0 && $cached;
+      my $test = $runs[$side]{tests}{$name};
+      my @times = sort { $a <=> $b } map { $_->{duration_seconds} } @{$test->{samples}};
+      $test->{duration_seconds} = $times[int(@times / 2)];
+      $test->{unstable} = @times == 3 && $times[-1] - $times[0] >= 0.5
+        && $times[-1] - $times[0] >= 0.1 * $test->{duration_seconds} ? JSON::PP::true : JSON::PP::false;
+      my $target = $side ? \$current : \$baseline;
+      $$target //= { %{$runs[$side]}, tests => {}, exit_code => 0 };
+      $$target->{tests}{$name} = $test;
+      $$target->{exit_code} ||= $test->{exit_code};
+    }
+  }
+  return ($baseline, $baseline->{exit_code} // 0, $current, $current->{exit_code} // 0);
 }
 
 sub classify {
-  my ($before, $after, $thresholds) = @_;
+  my ($before, $after, $thresholds, $repeated) = @_;
+  $thresholds = { %$thresholds, %{$thresholds->{repeated}} } if $repeated;
   my $seconds = $after - $before;
   my $percent = $before > 0 ? $seconds / $before * 100 : 0;
   my $level = 'unchanged';
-  if ($seconds >= $thresholds->{critical_seconds}
-      && $percent >= $thresholds->{critical_percent}) {
+  if (abs($seconds) >= $thresholds->{critical_seconds}
+      && abs($percent) >= $thresholds->{critical_percent}) {
     $level = 'critical';
-  } elsif ($seconds >= $thresholds->{warning_seconds}
-           && $percent >= $thresholds->{warning_percent}) {
+  } elsif (abs($seconds) >= $thresholds->{warning_seconds}
+           && abs($percent) >= $thresholds->{warning_percent}) {
     $level = 'warning';
-  } elsif ($seconds > 0 && $percent >= $thresholds->{note_percent}) {
+  } elsif (abs($seconds) > 0 && abs($percent) >= $thresholds->{note_percent}) {
     $level = 'note';
-  } elsif ($seconds < 0) {
-    $level = 'improvement';
   }
+  $level = 'improvement' if $seconds < 0 && $level ne 'unchanged';
   return ($level, $seconds, $percent);
 }
 
@@ -321,7 +362,8 @@ sub compare_runs {
   my %comparisons;
   for my $name (@comparable) {
     my ($level, $seconds, $percent) = classify(
-      $before->{$name}{duration_seconds}, $after->{$name}{duration_seconds}, $thresholds
+      $before->{$name}{duration_seconds}, $after->{$name}{duration_seconds}, $thresholds,
+      @{$before->{$name}{samples} // []} == 3 && @{$after->{$name}{samples} // []} == 3
     );
     $counts{$level}++;
     $comparisons{$name} = {
@@ -488,7 +530,7 @@ sub finish_report {
   print "build $build_mode / run ", ($run_mode // 'all'), "\n";
   printf "baseline %s / current %s\n", substr($baseline->{commit}, 0, 12),
     substr($current->{commit}, 0, 12);
-  printf "%-24s %12s %12s %9s  %s\n", 'Case', 'Baseline', 'Current', 'Change', 'Result';
+  printf "%-24s %12s %12s %9s %7s  %s\n", 'Case', 'Baseline', 'Current', 'Change', 'Runs', 'Result';
   my %names = map { $_ => 1 } (keys %{$baseline->{tests}}, keys %{$current->{tests}});
   for my $name (sort keys %names) {
     my ($old, $new) = ($baseline->{tests}{$name}, $current->{tests}{$name});
@@ -499,8 +541,11 @@ sub finish_report {
     my $result = $item ? uc($item->{severity})
       : ($old && $old->{exit_code}) || ($new && $new->{exit_code}) ? 'EXECUTION FAILED'
       : 'NOT COMPARED';
-    printf "%-24s %12s %12s %9s  %s\n", $name, @times,
-      ($item ? sprintf('%+.1f%%', $item->{change_percent}) : '-'), $result;
+    $result = 'WITHIN THRESHOLD' if $result eq 'UNCHANGED';
+    $result .= ' [UNSTABLE]' if ($old && $old->{unstable}) || ($new && $new->{unstable});
+    my $counts = join('/', map { !defined $_ ? 0 : scalar(@{$_->{samples} // [1]}) } ($old, $new));
+    printf "%-24s %12s %12s %9s %7s  %s\n", $name, @times,
+      ($item ? sprintf('%+.1f%%', $item->{change_percent}) : '-'), $counts, $result;
   }
   for my $mode (@modes) {
     my $item = $comparison->{modes}{$mode};
@@ -511,6 +556,7 @@ sub finish_report {
   printf "Compared %d cases; failed runs %d; critical %d; warnings %d; notes %d\n",
     @{$comparison->{summary}}{qw(compared failed_runs critical warning note)};
   print "Totals include only cases successful in both revisions.\n";
+  print "Times are medians; Runs = baseline/current. UNSTABLE: range >= 10% and >= 0.5s.\n";
   my %output_types;
   for my $run ($baseline, $current) {
     for my $test (values %{$run->{tests}}) {
@@ -607,16 +653,14 @@ sub compare_prebuilt {
   die "baseline build mode does not match $build_mode\n"
     unless ($metadata->{build_mode} // '') eq $build_mode;
 
-  my ($baseline, $baseline_status) = measure_existing(
-    'baseline', $metadata->{baseline_commit}, $metadata->{requested_ref},
-    File::Spec->catdir($root, 'build'), $selected, $generator, $run_mode
+  my ($baseline, $baseline_status, $current, $current_status) = measure_pair(
+    ['baseline', $metadata->{baseline_commit}, $metadata->{requested_ref},
+    File::Spec->catdir($root, 'build'), $selected, $generator, $run_mode],
+    ['current', $current_commit, 'HEAD', $build_dir, $selected, $generator, $run_mode]
   );
   $baseline->{environment} = $environment;
   $baseline->{test_suite} = $test_suite;
 
-  my ($current, $current_status) = measure_existing(
-    'current', $current_commit, 'HEAD', $build_dir, $selected, $generator, $run_mode
-  );
   $current->{environment} = $environment;
   $current->{test_suite} = $test_suite;
   $current->{working_tree} = {
@@ -646,6 +690,8 @@ sub benchmark {
     warning_seconds  => 0 + ($ENV{BENCHMARK_WARNING_SECONDS} // 1),
     critical_percent => 0 + ($ENV{BENCHMARK_CRITICAL_PERCENT} // 10),
     critical_seconds => 0 + ($ENV{BENCHMARK_CRITICAL_SECONDS} // 5),
+    repeated => { warning_percent => 5, warning_seconds => 0.5,
+      critical_percent => 10, critical_seconds => 1 },
   };
 
   $repository = capture_command($source_dir, 'git', 'rev-parse', '--show-toplevel');
@@ -704,7 +750,7 @@ sub benchmark {
   }
 
   $temporary_root = tempdir('frontistr-benchmark-XXXXXX', TMPDIR => 1, CLEANUP => 0);
-  my ($baseline, $baseline_status);
+  my ($baseline, $baseline_status, $baseline_args);
   if (defined $ENV{BENCHMARK_BASELINE_JSON}) {
     my $path = abs_path(File::Spec->rel2abs(
       $ENV{BENCHMARK_BASELINE_JSON}, $source_dir
@@ -723,11 +769,8 @@ sub benchmark {
     my @command = ('git', 'worktree', 'add', '--detach', $source, $baseline_commit);
     require_success(run_command($repository, @command), @command);
     push @worktrees, $source;
-    ($baseline, $baseline_status) = measure(
-      'baseline', $baseline_commit, $reference, $source, $build, $selected, $generator, $run_mode
-    );
-    $baseline->{environment} = $environment;
-    $baseline->{test_suite} = $baseline_test_suite;
+    configure_and_build($source, $build, $selected, $generator);
+    $baseline_args = ['baseline', $baseline_commit, $reference, $build, $selected, $generator, $run_mode];
   }
 
   my $current_build  = File::Spec->catdir($temporary_root, 'current-build');
@@ -740,9 +783,14 @@ sub benchmark {
     push @worktrees, $current_source;
     $current_ref = 'HEAD';
   }
-  my ($current, $current_status) = measure(
-    'current', $current_commit, $current_ref, $current_source, $current_build, $selected, $generator, $run_mode
+  configure_and_build($current_source, $current_build, $selected, $generator);
+  my ($current, $current_status);
+  ($baseline, $baseline_status, $current, $current_status) = measure_pair(
+    $baseline_args,
+    ['current', $current_commit, $current_ref, $current_build, $selected, $generator, $run_mode], $baseline
   );
+  $baseline->{environment} = $environment;
+  $baseline->{test_suite} = $baseline_test_suite;
   $current->{environment} = $environment;
   $current->{test_suite} = { %$test_suite };
   $current->{working_tree} = {
