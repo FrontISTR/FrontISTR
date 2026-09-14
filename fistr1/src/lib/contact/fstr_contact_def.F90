@@ -397,6 +397,17 @@ contains
     call find_surface_neighbor( contact%master, contact%master_bktDB )
 
     if(contact%method == CONTACTS2S) then
+      ! The mortar integral passes the master shape functions through a length-4 array and
+      ! sizes its element vectors for a first-order pair, so a second-order master face
+      ! overruns them. initialize_csurf rejects the slave side for the same reason.
+      do i=1, size( contact%master )
+        if( contact%master(i)%etype /= fe_quad4n .and. contact%master(i)%etype /= fe_tri3n ) then
+          write(*,*) '### Error: MORTAR=YES supports first-order surfaces only (quad4/tri3) : etype=', &
+            contact%master(i)%etype
+          stop HECMW_EXIT_MODEL
+        endif
+      enddo
+
       !  slave surface
       cgrp = contact%surf_id1_sgrp
       if( cgrp<=0 ) return
