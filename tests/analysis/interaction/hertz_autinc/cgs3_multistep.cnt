@@ -1,43 +1,50 @@
+# Regression test for a cutback in ALagrange contact analysis.
+# A cutback restores the contact state of the last converged increment, so the
+# contact matrix structure has to be rebuilt from the restored state as well.
+# The y displacement of UPPER is -1.0 in STEP1 (pressing) and +1.5 in STEP2
+# (separating).  In STEP2 some slave nodes separate (Cont2Free), the matrix
+# structure is rebuilt without them, and the Newton iteration then reaches
+# MAXITER=10, so the increment is cut back.  Without the rebuild, the restored
+# contact nodes are missing from the matrix structure and the analysis stops with
+# "cannot find connectivity".
+# A cutback while only pressing does not detect this, because the restored contact
+# nodes are then a subset of the rebuilt structure.
+# Whether a cutback follows a separation depends on the displacements, MAXITER and
+# the initial time increments, so recheck the failure without the rebuild when
+# changing them.  STEP2 ends with all nodes separated, so the result does not
+# depend on the frictional history and agrees between the parallel settings.
 #  Control File for FISTR
 ## Analysis Control
 !VERSION
  3
 !SOLUTION, TYPE=NLSTATIC
 !WRITE,RESULT
-!WRITE,VISUAL
-!OUTPUT_VIS
- CONTACT_STATE,ON
 ## Solver Control
 ### Boundary Condition
 !BOUNDARY, GRPID=1
  ALL, 3, 3, 0.0
  BOTTOM, 2, 2, 0.0
  CENTER, 1, 1, 0.0
- UPPER,  2, 2, -3.5
+ UPPER,  2, 2, -1.0
 !BOUNDARY, GRPID=2
  ALL, 3, 3, 0.0
  BOTTOM, 2, 2, 0.0
  CENTER, 1, 1, 0.0
- UPPER,  2, 2, 3.5
-!CONTACT_ALGO, TYPE=ALAGRANGE, AUGITER=20
+ UPPER,  2, 2, 1.5
+!CONTACT_ALGO, TYPE=ALAGRANGE
 !CONTACT, GRPID=1,NPENALTY=100,TPENALTY=100
  CP1, 0.3, 1000
 !AUTOINC_PARAM, NAME=AP1
  0.5, 20, 100, 10, 2
  1.75, 10,  50,  5, 2
  0.25,  5
-!TIME_POINTS, TIME=STEP, GENERATE, NAME=TP1
- 0.0, 1.0, 0.1
-!TIME_POINTS, TIME=STEP, GENERATE, NAME=TP2
- 1.0, 2.0, 0.1
- 
 ### STEP
-!STEP, SUBSTEPS=9999, CONVERG=1.0e-5, INC_TYPE=AUTO,AUTOINCPARAM=AP1,MAXRES=100,TIMEPOINTS=TP1
- 0.1, 1.0, 1E-5, 1.0
+!STEP, SUBSTEPS=9999, CONVERG=1.0e-5, MAXITER=10, INC_TYPE=AUTO,AUTOINCPARAM=AP1,MAXRES=100
+ 1.0, 1.0, 1E-5, 1.0
  BOUNDARY, 1
  CONTACT,  1
-!STEP, SUBSTEPS=9999, CONVERG=1.0e-5, INC_TYPE=AUTO,AUTOINCPARAM=AP1,MAXRES=100,TIMEPOINTS=TP2
- 0.1, 1.0, 1E-5, 1.0
+!STEP, SUBSTEPS=9999, CONVERG=1.0e-5, MAXITER=10, INC_TYPE=AUTO,AUTOINCPARAM=AP1,MAXRES=100
+ 1.0, 1.0, 1E-5, 1.0
  BOUNDARY, 2
  CONTACT,  1
 ### Material
@@ -48,9 +55,4 @@
 !SOLVER,METHOD=CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES
  1000, 1
  1.0e-10, 1.0, 0.0
-## Post Control
-!VISUAL,method=PSR
-!surface_num=1
-!surface 1
-!output_type=VTK
 !END
