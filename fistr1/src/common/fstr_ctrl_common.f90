@@ -610,7 +610,6 @@ contains
     ! Hysteresis half-band of the stick/slip state switch (0 = no band = legacy behavior).
     ! Read here, at the same level as AUGITER, because it controls the augmentation loop's
     ! state machine rather than the geometric tolerances of !CONTACT_PARAM.
-    ! Currently consumed by the MORTAR=YES friction path only.
     rcode = fstr_ctrl_get_param_ex( ctrl, 'EPS_FRIC_BAND ', '# ', 0, 'R', eps_fric_band )
     if( eps_fric_band<0.d0 .or. 1.d0<=eps_fric_band ) then
       write(*,*) 'fstr control file error : !CONTACT_ALGO : EPS_FRIC_BAND must be 0 <= EPS_FRIC_BAND < 1.'

@@ -509,7 +509,7 @@ contains
     integer(kind=kint), intent(out) :: sorted_idx(:)    !< ascending rank r -> original group g
     real(kind=kreal),   intent(out) :: lambda_node(:,:) !< (nnode_s, unique_count) per-node current lambda_n
     ! Optional friction warm-start: same reference rule as lambda_n (working -> begin ->
-    ! default), riding the same merge. The lambda_n logic is unchanged.
+    ! default), riding the same merge.
     real(kind=kreal),   intent(out), optional :: lam_t_cur(:,:,:)    !< (2, nnode_s, unique_count) per-node tangent multiplier
     integer(kind=kint), intent(out), optional :: fric_state_cur(:,:) !< (nnode_s, unique_count) per-node friction state
     integer(kind=kint) :: r, j, tmp, ib, iw, g, mid
@@ -625,7 +625,7 @@ contains
                               lambda_node)
     endif
 
-    ! ===== Normal stiffness: per-node rank-1 sum, mu*Snode(g,a)*Nsnode(g,a)(x)Nsnode(g,a) =====
+    ! ===== Normal stiffness =====
     do g = 1, unique_count
       nnode_m = size(master(master_idxs(g))%nodes)
       do a = 1, nnode_s
@@ -689,7 +689,6 @@ contains
             Amat(2,1) = alpha * mut * (-that(2)*that(1))
             Amat(2,2) = alpha * mut * (1.0d0 - that(2)*that(2))
           endif
-          ! M3 = T3d * A * T3d^T (3x3), T3d = [t1 t2]
           T3d(1:3,1) = t1(1:3)
           T3d(1:3,2) = t2(1:3)
           M3 = matmul( matmul(T3d, Amat), transpose(T3d) )
@@ -698,7 +697,6 @@ contains
           do na = 1, nnode_s + nnode_m
             Wb(na) = dot_product(Nsnode(g,a,3*na-2:3*na), nhat(1:3))
           enddo
-          ! K_a(b,c) = Snode(g,a) * Wbar(a,b) * Wbar(a,c) * M3_a
           active_t(a,g) = .true.
           do nb = 1, nnode_s + nnode_m
             do na = 1, nnode_s + nnode_m
