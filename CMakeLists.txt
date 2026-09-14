@@ -551,7 +551,7 @@ if(PERL_FOUND AND FRONTISTR_BENCHMARK_PERL_MODULES_FOUND EQUAL 0)
         --cmake ${CMAKE_COMMAND}
         --build-jobs ${FRONTISTR_BENCHMARK_BUILD_JOBS}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "Benchmark four tutorial cases against another revision"
+    COMMENT "Benchmark configured tutorial cases against another revision"
     USES_TERMINAL
     VERBATIM
   )
