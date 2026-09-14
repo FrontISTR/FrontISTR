@@ -336,8 +336,9 @@ sub classify {
   my $seconds = $after - $before;
   my $percent = $before > 0 ? $seconds / $before * 100 : 0;
   my $level = 'unchanged';
-  if (abs($seconds) >= $thresholds->{critical_seconds}
-      && abs($percent) >= $thresholds->{critical_percent}) {
+  if (abs($percent) >= $thresholds->{ratio_critical_percent}
+      || (abs($seconds) >= $thresholds->{critical_seconds}
+          && abs($percent) >= $thresholds->{critical_percent})) {
     $level = 'critical';
   } elsif (abs($seconds) >= $thresholds->{warning_seconds}
            && abs($percent) >= $thresholds->{warning_percent}) {
@@ -699,8 +700,8 @@ sub benchmark {
     warning_seconds  => 0 + ($ENV{BENCHMARK_WARNING_SECONDS} // 1),
     critical_percent => 0 + ($ENV{BENCHMARK_CRITICAL_PERCENT} // 10),
     critical_seconds => 0 + ($ENV{BENCHMARK_CRITICAL_SECONDS} // 5),
-    repeated => { warning_percent => 5, warning_seconds => 0.5,
-      critical_percent => 10, critical_seconds => 1 },
+    ratio_critical_percent => 0 + ($ENV{BENCHMARK_RATIO_CRITICAL_PERCENT} // 50),
+    repeated => { warning_percent => 15, warning_seconds => 0.5 },
   };
 
   $repository = capture_command($source_dir, 'git', 'rev-parse', '--show-toplevel');
