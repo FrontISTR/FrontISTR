@@ -26,8 +26,8 @@
     { "name": "16_heat_block" },
     {
       "name": "11_contact_2beam",
-      "requires": "WITH_MKL",
-      "solver": "MKL"
+      "serial": { "requires": "WITH_MKL", "solver": "MKL" },
+      "mpi": { "requires": "WITH_MUMPS" }
     }
   ]
 }
