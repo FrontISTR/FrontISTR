@@ -33,6 +33,7 @@ include:
 .build:
     stage: build
     needs: []
+    tags: ["saas-linux-medium-amd64"]
     script:
         - TYPE=${BUILD_TYPE:-$(echo $CI_JOB_NAME|cut -d/ -f3)}
         - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
@@ -59,6 +60,7 @@ include:
 .benchmark-build:
     stage: build
     needs: []
+    tags: ["saas-linux-medium-amd64"]
     variables:
         GIT_DEPTH: "0"
     script:
