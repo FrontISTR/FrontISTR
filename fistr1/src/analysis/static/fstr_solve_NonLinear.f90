@@ -24,6 +24,7 @@ module m_fstr_NonLinearMethod
   use mContact
   use m_fstr_contact_assembly
   use m_solve_LINEQ_contact
+  use hecmw_ebc_defer
 
   implicit none
 
@@ -95,6 +96,7 @@ contains
 
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: ndof
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
@@ -125,9 +127,11 @@ contains
       call fstr_AddSPRING(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
       ! ----- Set Boundary condition
-      call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt)
+      call hecmw_ebc_init(hecMAT, hecEBC)
+      call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, hecEBC)
       call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
       call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+      call hecmw_ebc_apply(hecMESHmpc, hecMATmpc, hecEBC)
 
       !----- SOLVE [Kt]{du}={R}
       if( sub_step == restrt_step_num .and. iter == 1 ) hecMATmpc%Iarray(98) = 1
@@ -143,6 +147,7 @@ contains
       ! ----- check matrix solver error
       call fstr_check_linear_solver(hecMESH, hecMATmpc, fstrSOLID, cstep, sub_step, iterStatus)
       if( iterStatus /= kitrContinue ) then
+        call hecmw_ebc_finalize(hecEBC)
         call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
         return
       endif
@@ -162,6 +167,7 @@ contains
           hecMAT%B, 0, res, res, 0, iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then
+        call hecmw_ebc_finalize(hecEBC)
         call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
         return
       endif
@@ -182,6 +188,7 @@ contains
     fstrSOLID%CutBack_stat = 0
     deallocate(coord)
     deallocate(P)
+    call hecmw_ebc_finalize(hecEBC)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
   end subroutine fstr_Newton
 
@@ -203,6 +210,7 @@ contains
     type (hecmwST_matrix_lagrange)        :: hecLagMAT !< type hecmwST_matrix_lagrange
     type (hecmwST_matrix)                 :: conMAT
 
+    type (hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter
@@ -295,14 +303,16 @@ contains
           endif
 
           ! ----- Set Boundary condition
-          call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, conMAT)
+          call hecmw_ebc_init(hecMAT, hecEBC)
+          call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, hecEBC, conMAT)
 
           !----- SOLVE [Kt]{du}={R}
           ! ----  For Parallel Contact with Multi-Partition Domains
           hecMAT%X = 0.0d0
           call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-          call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
+          call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, hecEBC, istat, 1.0D0, fstr_is_contact_active())
           call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+          call hecmw_ebc_finalize(hecEBC)
           ! ----- check matrix solver error
           call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, sub_step, iterStatus, istat)
           if( iterStatus /= kitrContinue ) then
@@ -443,6 +453,7 @@ contains
     type (hecmwST_matrix_lagrange)         :: hecLagMAT      !< type hecmwST_matrix_lagrange
     type (hecmwST_matrix)                  :: conMAT
 
+    type (hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: ndof
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter, max_iter_contact
@@ -527,7 +538,8 @@ contains
         endif
 
         ! ----- Set Boundary condition
-        call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, conMAT)
+        call hecmw_ebc_init(hecMAT, hecEBC)
+        call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, hecEBC, conMAT)
 
         nndof = hecMAT%N*hecMAT%ndof
 
@@ -536,8 +548,9 @@ contains
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
         q_residual = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
-        call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, istat, 1.0D0, fstr_is_contact_active())
+        call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, hecEBC, istat, 1.0D0, fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
+        call hecmw_ebc_finalize(hecEBC)
         ! ----- check matrix solver error
         call fstr_check_linear_solver(hecMESH, hecMAT, fstrSOLID, cstep, sub_step, iterStatus, istat)
         if( iterStatus /= kitrContinue ) then

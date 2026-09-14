@@ -10,6 +10,7 @@ module m_solve_LINEQ_direct_serial_lag
   use hecmw_matrix_dump
   use hecmw_matrix_ass
   use hecmw_matrix_misc
+  use hecmw_ebc_defer
 
 contains
 
@@ -24,11 +25,12 @@ contains
   end subroutine solve_LINEQ_serial_lag_hecmw_init
 
 
-  subroutine solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
+  subroutine solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT,hecEBC)
     implicit none
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange
+    type (hecmwST_ebc)                       :: hecEBC         !< prescribed displacements imposed after the MPC processing
     integer (kind=4)                         :: ntdf, ilag_sta
     integer (kind=4)                         :: numNon0
     integer (kind=4)                         :: ierr, nprocs, myrank
@@ -48,6 +50,7 @@ contains
     endif
     call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
+    call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC)
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 

@@ -7,12 +7,14 @@
 module m_heat_mat_ass_bc_FIXT
 contains
 
-  subroutine heat_mat_ass_bc_FIXT(hecMAT, fstrHEAT, CTIME, DTIME, beta)
+  subroutine heat_mat_ass_bc_FIXT(hecMAT, hecEBC, fstrHEAT, CTIME, DTIME, beta)
     use m_fstr
     use m_heat_get_amplitude
+    use hecmw_ebc_defer
     implicit none
     type(fstr_heat)      :: fstrHEAT
     type(hecmwST_matrix) :: hecMAT
+    type(hecmwST_ebc)    :: hecEBC
     integer(kind=kint) :: ib, ii, id
     real(kind=kreal)   :: CTIME, DTIME, QQ, beta
     logical :: OutOfRange
@@ -24,7 +26,7 @@ contains
 
       if(OutOfRange) cycle
 
-      call hecmw_mat_ass_bc(hecMAT, ii, 1, fstrHEAT%T_FIX_VAL(ib)*QQ)
+      call hecmw_ebc_set(hecEBC, ii, 1, fstrHEAT%T_FIX_VAL(ib)*QQ)
     enddo
   end subroutine heat_mat_ass_bc_FIXT
 end module m_heat_mat_ass_bc_FIXT

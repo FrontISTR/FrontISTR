@@ -15,6 +15,7 @@ module m_solve_LINEQ_contact
   use m_solve_LINEQ_contact_elim
   use hecmw_matrix_misc
   use m_hecmw_comm_f
+  use hecmw_ebc_defer
 
   implicit none
 
@@ -69,12 +70,13 @@ contains
 
 
   !> \brief This subroutine
-  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,istat,rf,is_contact_active)
+  subroutine solve_LINEQ_contact(hecMESH,hecMAT,hecLagMAT,conMAT,hecEBC,istat,rf,is_contact_active)
 
     type (hecmwST_local_mesh)                :: hecMESH        !< hecmw mesh
     type (hecmwST_matrix)                    :: hecMAT         !< type hecmwST_matrix
     type (hecmwST_matrix_lagrange)           :: hecLagMAT        !< type hecmwST_matrix_lagrange)
     type (hecmwST_matrix)                    :: conMAT
+    type (hecmwST_ebc)                       :: hecEBC         !< prescribed displacements imposed after the MPC processing
     integer(kind=kint), intent(out)          :: istat
     real(kind=kreal), optional               :: rf
     logical                                  :: is_contact_active
@@ -99,7 +101,7 @@ contains
     call hecmw_mat_set_flag_converged(hecMAT, 1)
     call hecmw_mat_set_flag_diverged(hecMAT, 0)
     if( contact_elim==1 )then
-      call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecLagMAT,istat,conMAT,is_contact_active)
+      call solve_LINEQ_contact_elim(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT,is_contact_active)
     else
       if( solver_type==1 )then
         write(*,*) 'ERROR: iterative solver without elimination not available in contact analysis'
@@ -111,17 +113,17 @@ contains
           call hecmw_abort(hecmw_comm_get_comm())
         else
           call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
-          call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT)
+          call solve_LINEQ_serial_lag_hecmw(hecMESH,hecMAT,hecLagMAT,hecEBC)
         endif
       elseif( solver_type==3 )then
         if( hecmw_comm_get_size() > 1) then
-          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
+          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
         else
           call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
-          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,istat)
+          call solve_LINEQ_MKL_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat)
         endif
       elseif( solver_type==5 ) then
-        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
+        call solve_LINEQ_mumps_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
       endif
     endif
 

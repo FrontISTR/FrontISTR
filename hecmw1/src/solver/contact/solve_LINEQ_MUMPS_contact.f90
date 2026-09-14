@@ -12,6 +12,7 @@ module m_solve_LINEQ_MUMPS_contact
   use hecmw_matrix_dump
   use hecmw_matrix_ass
   use hecmw_matrix_misc
+  use hecmw_ebc_defer
 
   private
   public :: solve_LINEQ_MUMPS_contact_init
@@ -64,13 +65,14 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_MUMPS_contact_init
 
-  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,hecLagMAT,istat,conMAT)
+  subroutine solve_LINEQ_MUMPS_contact(hecMESH,hecMAT,hecLagMAT,hecEBC,istat,conMAT)
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix    ), intent(inout) :: hecMAT
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< type hecmwST_matrix_lagrange
+    type (hecmwST_ebc), intent(inout) :: hecEBC !< prescribed displacements imposed after the MPC processing
     integer(kind=kint), intent(out) :: istat
-    type (hecmwST_matrix), intent(in) :: conMAT
+    type (hecmwST_matrix), intent(inout) :: conMAT
 
     integer(kind=kint) :: mumps_job, mpc_method
 
@@ -86,6 +88,7 @@ contains
     endif
     call hecmw_mat_ass_equation(hecMESH, hecMAT)
     call hecmw_mat_ass_equation_rhs(hecMESH, hecMAT)
+    call hecmw_ebc_apply(hecMESH, hecMAT, hecEBC, conMAT)
 
     call hecmw_mat_dump(hecMAT, hecMESH)
 

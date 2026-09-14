@@ -9,6 +9,7 @@ module m_fstr_QuasiNewton
   use m_fstr_NonLinearMethod
   use m_fstr_IterationControl
   use m_fstr_NodalKinematics, only: fstr_apply_solution_increment, fstr_commit_solution_increment
+  use hecmw_ebc_defer
 
   implicit none
   ! parameters for line search
@@ -40,6 +41,7 @@ contains
 
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
+    type (hecmwST_ebc) :: hecEBC
     integer(kind=kint) :: ndof
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
@@ -78,7 +80,8 @@ contains
     fstrSOLID%GL0(:) = fstrSOLID%GL(:) !store external load at du=0
 
     !! initialize du for non-zero Dirichlet condition
-    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, RHSvector=fstrSOLID%dunode)
+    call hecmw_ebc_init(hecMAT, hecEBC)
+    call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, 1, hecEBC, RHSvector=fstrSOLID%dunode)
     !! update residual vector
     call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
 
@@ -113,7 +116,9 @@ contains
       call fstr_calc_direction_LBFGS(hecMesh, g_prev, s_k, y_k, rho_k, z_k, n_mem)
 
       ! ! ----- Set Boundary condition
-      call fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
+      do i = 1, len_vector
+        if( hecEBC%mark(i) /= 0 ) z_k(i) = 0.0d0
+      enddo
 
       !----- line search of step length
       call fstr_line_search_along_direction(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k)
@@ -132,6 +137,7 @@ contains
           hecMAT%B, 0, res, res, 0, iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then
+        call hecmw_ebc_finalize(hecEBC)
         call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
         fstrSOLID%step_ctrl(cstep)%max_iter = max_iter_bak
         return
@@ -169,6 +175,7 @@ contains
     call fstr_UpdateState( hecMESH, fstrSOLID, tincr )
 
     fstrSOLID%CutBack_stat = 0
+    call hecmw_ebc_finalize(hecEBC)
     call hecmw_mpc_mat_finalize(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
     fstrSOLID%step_ctrl(cstep)%max_iter = max_iter_bak
@@ -229,38 +236,6 @@ contains
     enddo
     deallocate(q)
   end subroutine fstr_calc_direction_LBFGS
-
-  subroutine fstr_AddBC_to_direction_vector(z_k, hecMESH,fstrSOLID, cstep)
-    implicit none
-    type (hecmwST_local_mesh)             :: hecMESH   !< hecmw mesh
-    type (fstr_solid)                     :: fstrSOLID !< fstr_solid
-    integer(kind=kint) :: cstep
-    real(kind=kreal) :: z_k(:)
-
-    integer(kind=kint) :: ig0, grpid, ig, ityp, idofS, idofE, iS0, iE0, ik, in, idof, ndof
-
-    ndof = hecMesh%n_dof
-    !   ----- Prescibed displacement Boundary Conditions
-    do ig0 = 1, fstrSOLID%BOUNDARY_ngrp_tot
-      grpid = fstrSOLID%BOUNDARY_ngrp_GRPID(ig0)
-      if( .not. fstr_isBoundaryActive( fstrSOLID, grpid, cstep ) ) cycle
-      ig   = fstrSOLID%BOUNDARY_ngrp_ID(ig0)
-      ityp = fstrSOLID%BOUNDARY_ngrp_type(ig0)
-      idofS = ityp/10
-      idofE = ityp - idofS*10
-      !
-      iS0 = hecMESH%node_group%grp_index(ig-1) + 1
-      iE0 = hecMESH%node_group%grp_index(ig  )
-      !
-      do ik = iS0, iE0
-        in = hecMESH%node_group%grp_item(ik)
-        !
-        do idof = idofS, idofE
-            z_k(ndof*(in-1)+idof) = 0.0d0
-        enddo
-      enddo
-    enddo
-  end subroutine fstr_AddBC_to_direction_vector
 
   subroutine fstr_apply_alpha0(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM, z_k, h_prime, pot)
     implicit none

@@ -14,6 +14,7 @@ module m_solve_LINEQ_contact_elim
   use hecmw_solver_misc
   use hecmw_solver_las
   use hecmw_mpc_prepost
+  use hecmw_ebc_defer
 
   implicit none
 
@@ -70,10 +71,11 @@ contains
     INITIALIZED = .true.
   end subroutine solve_LINEQ_contact_elim_init
 
-  subroutine solve_LINEQ_contact_elim(hecMESH, hecMAT, hecLagMAT, istat, conMAT, is_contact_active)
+  subroutine solve_LINEQ_contact_elim(hecMESH, hecMAT, hecLagMAT, hecEBC, istat, conMAT, is_contact_active)
     type(hecmwST_local_mesh),      intent(inout) :: hecMESH           !< mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT            !< matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT         !< matrix for lagrange multipliers
+    type(hecmwST_ebc),             intent(inout) :: hecEBC            !< prescribed displacements imposed after the MPC processing
     integer(kind=kint),            intent(out)   :: istat             !< status
     type(hecmwST_matrix),          intent(in)    :: conMAT            !< matrix for contact
     logical,                       intent(in)    :: is_contact_active !< if contact is active or not
@@ -104,7 +106,7 @@ contains
         call hecmw_mat_set_method(hecMAT, 1)
       endif
       ! solve
-      call solve_with_MPC(hecMESH, hecMAT)
+      call solve_with_MPC(hecMESH, hecMAT, hecEBC)
       if (solver_type == 1 .and. SymType == 1) then
         ! restore solver setting
         call hecmw_mat_set_method(hecMAT, method_org)
@@ -115,15 +117,16 @@ contains
       ! first converted system after the switch reports a structure change
       if (PREV_BRANCH /= 2) then; PREV_SIG = -1; PREV_HASH = 0; end if
       PREV_BRANCH = 2
-      call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT)
+      call solve_eliminate(hecMESH, hecMAT, hecLagMAT, conMAT, hecEBC)
     endif
 
     istat = hecmw_mat_get_flag_diverged(hecMAT)
   end subroutine solve_LINEQ_contact_elim
 
-  subroutine solve_with_MPC(hecMESH, hecMAT)
+  subroutine solve_with_MPC(hecMESH, hecMAT, hecEBC)
     type(hecmwST_local_mesh),      intent(inout) :: hecMESH           !< mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT            !< matrix excl. contact
+    type(hecmwST_ebc),             intent(inout) :: hecEBC            !< prescribed displacements imposed after the MPC processing
     !
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
@@ -136,6 +139,7 @@ contains
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_mat_ass(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
     call hecmw_mpc_trans_rhs(hecMESH, hecMAT, hecMATmpc)
+    call hecmw_ebc_apply(hecMESHmpc, hecMATmpc, hecEBC)
     call hecmw_solve(hecMESHmpc,hecMATmpc)
     if (fg_cg .and. fg_amg .and. hecmw_mat_get_flag_diverged(hecMATmpc) /= 0) then
       ! avoid ML and retry when diverged
@@ -188,11 +192,12 @@ contains
 
   !> \brief Solve with elimination of Lagrange-multipliers
   !>
-  subroutine solve_eliminate(hecMESH,hecMAT,hecLagMAT,conMAT)
+  subroutine solve_eliminate(hecMESH,hecMAT,hecLagMAT,conMAT,hecEBC)
     type(hecmwST_local_mesh),      intent(inout) :: hecMESH   !< original mesh
     type(hecmwST_matrix),          intent(inout) :: hecMAT    !< original matrix excl. contact
     type(hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT !< original matrix for lagrange multipliers
     type(hecmwST_matrix),          intent(in)    :: conMAT    !< original matrix for contact
+    type(hecmwST_ebc),             intent(inout) :: hecEBC    !< prescribed displacements imposed after the MPC processing
     !
     type(hecmwST_local_mesh)        :: hecMESHtmp     !< temoprary copy of mesh for migrating nodes
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
@@ -266,7 +271,7 @@ contains
     hecTKT%symmetric = (SymType == 1)
 
     t1 = t2
-    call solve_with_MPC(hecMESHtmp, hecTKT)
+    call solve_with_MPC(hecMESHtmp, hecTKT, hecEBC)
     ! the eliminated system hecTKT is what the solver actually saw; carry its
     ! verdict back to hecMAT so callers can read it without knowing about hecTKT
     call hecmw_mat_set_flag_converged(hecMAT, hecmw_mat_get_flag_converged(hecTKT))
