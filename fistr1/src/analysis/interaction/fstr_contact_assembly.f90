@@ -261,7 +261,6 @@ contains
 
     integer(kind=kint)  :: i, g, r, a, nnode_s, unique_count
     integer(kind=kint), allocatable :: maplist(:), master_idxs(:), sorted_idx(:)
-    real(kind=kreal),   allocatable :: S(:), Ns_list(:,:), integrated_gaps(:)
     ! per-node-within-group quantities; the per-node lambda_n drives the normal path
     real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
     real(kind=kreal)    :: mu, lambda_new
@@ -280,7 +279,7 @@ contains
       if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
 
       call getIntGap(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-                     unique_count, maplist, master_idxs, S, Ns_list, integrated_gaps, &
+                     unique_count, maplist, master_idxs, &
                      Snode, Nsnode, gapwnode)
 
       nnode_s = size(contact%slave_surf(i)%nodes)
@@ -350,7 +349,7 @@ contains
         deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
       endif
 
-      deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx)
+      deallocate(maplist, master_idxs, sorted_idx)
       deallocate(Snode, Nsnode, gapwnode, lambda_node)
     enddo
 
