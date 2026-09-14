@@ -71,6 +71,65 @@ ctest --output-on-failure
 
 displays the output of failed tests. See `ctest -h` for detail.
 
+Benchmark
+---------
+
+The `benchmark` build target builds the current source and another revision in
+separate build directories, runs four tutorial benchmarks, and writes a JSON
+comparison under `build/benchmark-results/`. Revisions use temporary worktrees;
+uncommitted changes are benchmarked from the current working tree and identified
+as such in the JSON. Both binaries use the current tutorial inputs, with the
+same solver settings. Regression CTest tests are not run by this target.
+Elapsed time includes input preparation, partitioning (for MPI), solving and
+output. Successful completion is checked; reference results are not compared.
+The runner uses only Perl core modules; the test suite already requires Perl
+for `compare_res.pl`.
+
+```
+make -C build benchmark
+BENCHMARK_REF=v5.5.0 make -C build benchmark
+BENCHMARK_REF=master make -C build benchmark
+BENCHMARK_CASE=10_contact_2tubes BENCHMARK_MODE=serial make -C build benchmark
+```
+
+The latest tag reachable from `HEAD` is the default comparison revision. Both
+revisions use every non-internal entry from the invoking build's CMake cache,
+including compilers, flags, dependency paths, and project options. Extra
+configure arguments can be supplied with `BENCHMARK_CMAKE_ARGS`.
+
+A previous report can supply the baseline measurement when its commit and
+environment fingerprint match:
+
+```
+BENCHMARK_REF=v5.5.0 \
+BENCHMARK_BASELINE_JSON=build/benchmark-results/previous.json \
+make -C build benchmark
+```
+
+Large regressions are highlighted but do not fail the target by default. Set
+`BENCHMARK_FAIL_ON_REGRESSION=1` to make critical regressions fail it. Test
+failures always make the target fail.
+
+The cases are `19_conrod` (CG/ML), `15_eigen_spring` (MUMPS),
+`10_contact_2tubes` (CG/SSOR), and `05_plastic_cylinder` (unchanged CG/SSOR).
+Solver overrides are applied to disposable input copies. ML and MUMPS must be
+enabled to run all four cases; otherwise dependent cases are skipped with a
+message. `BENCHMARK_CASE` explicitly selects one case and fails if its dependency
+is disabled;
+`BENCHMARK_MODE` selects serial, openmp, mpi or hybrid execution (default: the
+build mode), using one or two processes and threads. Each solver and partitioner
+invocation has a 180-second timeout; failures always fail the benchmark.
+
+GitLab CI reuses the four Ubuntu 24.04 builds and builds four matching baselines.
+It covers all nine valid build/execution-mode combinations, with one job per
+combination. Serial/openmp builds run 2tubes and plastic cylinder; mpi/hybrid builds
+also run conrod and eigen spring because ML and MUMPS are enabled in those builds.
+The nine benchmark jobs each measure their two or four cases sequentially.
+MPI execution partitions each tutorial mesh
+into two domains; OpenMP execution uses two threads. Each job runs baseline then
+current on the same runner and saves JSON and execution logs.
+Normal regression tests retain their existing build matrix.
+
 Add test
 ---------
 

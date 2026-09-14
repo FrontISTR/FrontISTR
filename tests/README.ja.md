@@ -75,6 +75,62 @@ ctest --output-on-failure
 ```
 
 は失敗したテストの結果のみ出力を表示します。詳しくは `ctest -h` を確認してください。
+
+ベンチマーク
+------------
+
+`benchmark` ビルドターゲットは、現在のソースと比較対象を別々のビルド
+ディレクトリでビルドし、4つのtutorialを実行して、比較結果を
+`build/benchmark-results/` 以下のJSONへ保存します。各リビジョンには一時
+worktreeを使い、未コミットの変更があれば現在の作業ツリーを測定して、その
+状態をJSONに記録します。両バイナリには同じ現行tutorial入力とソルバ設定を
+使用します。回帰CTestは実行しません。計測は入力準備、MPI領域分割、求解、
+出力を含む実時間です。正常完了を確認しますが、参照解との比較は行いません。
+管理スクリプトはPerlのコアモジュールだけを使用します。Perlは既存テストの
+`compare_res.pl` でも使用されています。
+
+```
+make -C build benchmark
+BENCHMARK_REF=v5.5.0 make -C build benchmark
+BENCHMARK_REF=master make -C build benchmark
+BENCHMARK_CASE=10_contact_2tubes BENCHMARK_MODE=serial make -C build benchmark
+```
+
+比較対象のデフォルトは、現在のHEADから到達可能な最新タグです。両コミット
+には、起動元ビルドのCMakeキャッシュにある内部変数以外の全項目（コンパイラ、
+フラグ、依存ライブラリのパス、プロジェクトオプションなど）を同じように適用
+します。追加のconfigure引数は `BENCHMARK_CMAKE_ARGS` で指定できます。
+
+コミットと環境フィンガープリントが一致すれば、以前の結果をbaselineとして
+利用できます。
+
+```
+BENCHMARK_REF=v5.5.0 \
+BENCHMARK_BASELINE_JSON=build/benchmark-results/previous.json \
+make -C build benchmark
+```
+
+大きな性能劣化は強調表示しますが、デフォルトではターゲットを失敗させません。
+重大な劣化を失敗にするには `BENCHMARK_FAIL_ON_REGRESSION=1` を指定します。
+実行失敗は常にターゲットを失敗させます。
+
+対象は `19_conrod`（CG/ML）、`15_eigen_spring`（MUMPS）、
+`10_contact_2tubes`（CG/SSOR）、`05_plastic_cylinder`（既存のCG/SSOR）です。
+ソルバ設定の変更は作業用コピーだけに適用します。全4件にはMLとMUMPSが必要です。
+無効なライブラリを必要とするケースは理由を表示して省略します。
+`BENCHMARK_CASE` で1件を明示選択した場合は、必要なライブラリが無効なら失敗します。
+`BENCHMARK_MODE` はserial/openmp/mpi/hybrid
+を指定でき、省略時はビルドモードに従います。プロセス数・スレッド数は各1または2です。
+ソルバと領域分割にはそれぞれ180秒のタイムアウトを設けます。
+
+GitLab CIではUbuntu 24.04の4ビルド成果物を再利用し、比較元も同じ4構成でビルドします。
+有効な9通りのビルド×実行モードを各1ジョブに展開します。serial/openmpビルドは
+2tubesと塑性円柱、ML・MUMPSが有効なmpi/hybridビルドは4ケースすべてを実行し、
+計測は合計9ジョブで、各ジョブ内の2〜4ケースは順に測定します。
+MPI実行では各tutorialのメッシュを2領域に分割し、
+OpenMP実行では2スレッドを使います。
+各ジョブ内では旧版→新版を同じRunner上で順に測定し、JSONと実行ログを保存します。
+通常の回帰テストのビルドマトリクスは従来通りです。
 　
 テストの追加方法
 -----------------
