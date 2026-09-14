@@ -56,9 +56,8 @@ CONTACT_NTRACTION,ON
 ###################################
 !CONTACT_PARAM, NAME=CPARAM1
  1.0e-2, 5.0e-3, 1.0e-2, 1.0e-4
- 1.0e-2, -1.0e-6, 1.0, -1.0e-2, 1.05
+ 1.0e-2, -1.0e-6, 1.0, -1.0e-2
  1.0e-2
- 0.0
 !CONTACT, INTERACTION=FSLID, GRPID=1, MORTAR=YES, EXPANSION=NEIGHBOR, CONTACTPARAM=CPARAM1
 CP1,0.0
 ###################################
