@@ -193,140 +193,39 @@ contains
     logical, intent(inout)               :: ctchanged      !< if contact state changes
 
     integer(kind=kint)  :: slave, etype, master
-    integer(kind=kint)  :: nn, i, g, cnt
+    integer(kind=kint)  :: nn, i, cnt
     real(kind=kreal)    :: lgnt(2)
     integer(kind=kint)  :: ndLocal(l_max_elem_node+1)
     real(kind=kreal)    :: ctNForce(l_max_elem_node*3+3)
     real(kind=kreal)    :: ctTForce(l_max_elem_node*3+3)
     real(kind=kreal)    :: max_jump_ratio, jump_ratio_local
     real(kind=kreal)    :: mut_old, mut_new, threthold
-    ! --- mortar (SURF-SURF) locals ---
-    integer(kind=kint)  :: unique_count, r, a, nnode_s
-    integer(kind=kint), allocatable :: maplist(:), master_idxs(:), sorted_idx(:)
-    real(kind=kreal),   allocatable :: S(:), Ns_list(:,:), integrated_gaps(:)
-    ! per-node-within-group quantities; the per-node lambda_n drives the normal path
-    real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
-    real(kind=kreal)    :: mu, lambda_new
-    ! --- friction: per-node slip/normal, per-node basis, return mapping ---
-    real(kind=kreal),   allocatable :: Sigma_node(:,:,:), nacc_node(:,:,:)
-    real(kind=kreal),   allocatable :: lam_t_cur(:,:,:)
-    integer(kind=kint), allocatable :: fric_state_cur(:,:)
-    real(kind=kreal)    :: nhat(3), t1(3), t2(3), nrm, Dxi(2)
-    real(kind=kreal)    :: rho_t, alpha, that(2), lam_t_new(2)
-    integer(kind=kint)  :: fstate
 
     cnt = 0
     lgnt(:) = 0.d0
     max_jump_ratio = 0.0d0
-    if( contact%method == CONTACTS2S ) then
-      ! ===== mortar multiplier update (per slave segment) =====
-      mu = contact%nPenalty * contact%refStiff
-      rho_t = contact%tPenalty * contact%refStiff   ! tangential penalty, used only if fcoeff/=0
-      do i = 1, size(contact%slave_surf)
-        if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
+    ! ===== NODE-SURF multiplier update (per slave node) =====
+    do i = 1, size(contact%slave)
+      if(.not. is_contact_active(contact%states(i)%state)) cycle   ! only STICK/SLIP
 
-        call getIntGap(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-                       unique_count, maplist, master_idxs, S, Ns_list, integrated_gaps, &
-                       Snode, Nsnode, gapwnode)
+      slave = contact%slave(i)
+      master = contact%states(i)%surface
+      nn = size(contact%master(master)%nodes)
+      etype = contact%master(master)%etype
 
-        nnode_s = size(contact%slave_surf(i)%nodes)
-        allocate(sorted_idx(unique_count), lambda_node(nnode_s,unique_count))
-        if( fcoeff /= 0.d0 ) then
-          ! Resolve the tangent warm-start (working -> begin -> 0/STICK) before the working
-          ! buffer is rebuilt below. lambda_n resolution is identical to the fcoeff=0 path.
-          allocate(lam_t_cur(2,nnode_s,unique_count), fric_state_cur(nnode_s,unique_count))
-          call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
-                                  lambda_node, lam_t_cur, fric_state_cur)
-        else
-          call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
-                                  lambda_node)
-        endif
+      ndLocal(1) = slave
+      ndLocal(2:nn+1) = contact%master(master)%nodes(1:nn)
 
-        ! Per-node augmented update: lambda_node(a,g) += mu*gapwnode(g,a), clamped at 0.
-        do g = 1, unique_count
-          do a = 1, nnode_s
-            lambda_new = lambda_node(a,g) + (mu * gapwnode(g,a))
-            if( lambda_new < 0.d0 ) lambda_new = 0.d0
-            lambda_node(a,g) = lambda_new
-          enddo
+      ! Update multiplier and calculate forces
+      call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
+        contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
+        fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
 
-          ! Convergence tracking (group gap)
-          lgnt(1) = lgnt(1) + integrated_gaps(g)
-        enddo
+      ! Track maximum jump ratio
+      max_jump_ratio = max(max_jump_ratio, jump_ratio_local)
 
-        ! Rebuild the working buffer from the active master set (ascending); BEGIN left it empty.
-        contact%slave_surf(i)%lam_work_n = unique_count
-        do r = 1, unique_count
-          contact%slave_surf(i)%lam_work_id(r)  = master_idxs(sorted_idx(r))
-          contact%slave_surf(i)%lam_work_val(1:nnode_s,r) = lambda_node(1:nnode_s,sorted_idx(r))
-        enddo
-        cnt = cnt + 1
-
-        ! --- friction tangent update: per slave node, project the mortar slip onto the
-        !     per-node tangent frame, return-map with cone radius fcoeff*lambda_node(a,g),
-        !     and write lambda_t / fric_state into the working buffer. ---
-        if( fcoeff /= 0.d0 ) then
-          allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
-          call getTangentSlip(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
-                              unique_count, maplist, master_idxs, Sigma_node, nacc_node)
-          do g = 1, unique_count
-            do a = 1, nnode_s
-              nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
-              ! Project the per-node slip onto the per-node orthonormal frame, then Coulomb
-              ! return-map. rho_t*Dxi matches the per-node mu*gapwnode area weighting (both
-              ! node-tributary integrated), so the averaged back-distribution cancels the area.
-              if( nrm < 1.d-30 ) then
-                Dxi(1:2) = 0.d0
-                nhat(1:3) = 0.d0
-              else
-                nhat(1:3) = nacc_node(g,a,1:3) / nrm
-                call build_group_tangent_basis(nhat, t1, t2)
-                Dxi(1) = dot_product(t1(1:3), Sigma_node(g,a,1:3))
-                Dxi(2) = dot_product(t2(1:3), Sigma_node(g,a,1:3))
-              endif
-              fstate = fric_state_cur(a,g)
-              call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, fcoeff, lambda_node(a,g), &
-                                        fstrPR%eps_fric_band, lam_t_new, fstate, alpha, that, &
-                                        update_state=.true.)
-              lam_t_cur(1:2,a,g)  = lam_t_new(1:2)
-              fric_state_cur(a,g) = fstate
-            enddo
-          enddo
-          ! Write the tangent working buffer parallel to the rebuilt lambda_n (ascending master order).
-          do r = 1, unique_count
-            contact%slave_surf(i)%lam_work_t(1:2,1:nnode_s,r)  = lam_t_cur(1:2,1:nnode_s,sorted_idx(r))
-            contact%slave_surf(i)%lam_work_fstate(1:nnode_s,r) = fric_state_cur(1:nnode_s,sorted_idx(r))
-          enddo
-          deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
-        endif
-
-        deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx)
-        deallocate(Snode, Nsnode, gapwnode, lambda_node)
-      enddo
-    else
-      ! ===== NODE-SURF multiplier update (per slave node) =====
-      do i = 1, size(contact%slave)
-        if(.not. is_contact_active(contact%states(i)%state)) cycle   ! only STICK/SLIP
-
-        slave = contact%slave(i)
-        master = contact%states(i)%surface
-        nn = size(contact%master(master)%nodes)
-        etype = contact%master(master)%etype
-
-        ndLocal(1) = slave
-        ndLocal(2:nn+1) = contact%master(master)%nodes(1:nn)
-
-        ! Update multiplier and calculate forces
-        call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
-          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
-          fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
-
-        ! Track maximum jump ratio
-        max_jump_ratio = max(max_jump_ratio, jump_ratio_local)
-
-        cnt = cnt + 1
-      enddo
-    endif
+      cnt = cnt + 1
+    enddo
 
     if(cnt > 0) lgnt(:) = lgnt(:) / cnt
     gnt = gnt + lgnt
@@ -346,6 +245,116 @@ contains
     endif
       
   end subroutine update_contact_multiplier
+
+  !> This subroutine updates the lagrangian multiplier of a mortar (MORTAR=YES) contact
+  !> pair. The augmented per-node multiplier is clamped at zero, so the normal constraint of
+  !> a slave node against a master group is dropped by the same complementarity condition the
+  !> assembly applies, and the tangent multiplier of every node is return-mapped onto the cone
+  !> of its own normal multiplier. Both are written into the working buffer of the segment,
+  !> which fstr_commit_lambda_txn promotes to the warm start of the next substep.
+  subroutine update_contact_multiplier_SurfSurf( contact, coord, disp, ddisp, fcoeff )
+    type( tContact ), intent(inout)      :: contact        !< contact info
+    real(kind=kreal), intent(in)         :: coord(:)       !< mesh coordinate
+    real(kind=kreal), intent(in)         :: disp(:)        !< disp till current step
+    real(kind=kreal), intent(in)         :: ddisp(:)       !< disp till current substep
+    real(kind=kreal), intent(in)         :: fcoeff         !< frictional coeff
+
+    integer(kind=kint)  :: i, g, r, a, nnode_s, unique_count
+    integer(kind=kint), allocatable :: maplist(:), master_idxs(:), sorted_idx(:)
+    real(kind=kreal),   allocatable :: S(:), Ns_list(:,:), integrated_gaps(:)
+    ! per-node-within-group quantities; the per-node lambda_n drives the normal path
+    real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
+    real(kind=kreal)    :: mu, lambda_new
+    ! --- friction: per-node slip/normal, per-node basis, return mapping ---
+    real(kind=kreal),   allocatable :: Sigma_node(:,:,:), nacc_node(:,:,:)
+    real(kind=kreal),   allocatable :: lam_t_cur(:,:,:)
+    integer(kind=kint), allocatable :: fric_state_cur(:,:)
+    real(kind=kreal)    :: nhat(3), t1(3), t2(3), nrm, Dxi(2)
+    real(kind=kreal)    :: rho_t, alpha, that(2), lam_t_new(2)
+    integer(kind=kint)  :: fstate
+
+    ! ===== mortar multiplier update (per slave segment) =====
+    mu = contact%nPenalty * contact%refStiff
+    rho_t = contact%tPenalty * contact%refStiff   ! tangential penalty, used only if fcoeff/=0
+    do i = 1, size(contact%slave_surf)
+      if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
+
+      call getIntGap(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                     unique_count, maplist, master_idxs, S, Ns_list, integrated_gaps, &
+                     Snode, Nsnode, gapwnode)
+
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(sorted_idx(unique_count), lambda_node(nnode_s,unique_count))
+      if( fcoeff /= 0.d0 ) then
+        ! Resolve the tangent warm-start (working -> begin -> 0/STICK) before the working
+        ! buffer is rebuilt below. lambda_n resolution is identical to the fcoeff=0 path.
+        allocate(lam_t_cur(2,nnode_s,unique_count), fric_state_cur(nnode_s,unique_count))
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_node, lam_t_cur, fric_state_cur)
+      else
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_node)
+      endif
+
+      ! Per-node augmented update: lambda_node(a,g) += mu*gapwnode(g,a), clamped at 0.
+      do g = 1, unique_count
+        do a = 1, nnode_s
+          lambda_new = lambda_node(a,g) + (mu * gapwnode(g,a))
+          if( lambda_new < 0.d0 ) lambda_new = 0.d0
+          lambda_node(a,g) = lambda_new
+        enddo
+      enddo
+
+      ! Rebuild the working buffer from the active master set (ascending); BEGIN left it empty.
+      contact%slave_surf(i)%lam_work_n = unique_count
+      do r = 1, unique_count
+        contact%slave_surf(i)%lam_work_id(r)  = master_idxs(sorted_idx(r))
+        contact%slave_surf(i)%lam_work_val(1:nnode_s,r) = lambda_node(1:nnode_s,sorted_idx(r))
+      enddo
+
+      ! --- friction tangent update: per slave node, project the mortar slip onto the
+      !     per-node tangent frame, return-map with cone radius fcoeff*lambda_node(a,g),
+      !     and write lambda_t / fric_state into the working buffer. ---
+      if( fcoeff /= 0.d0 ) then
+        allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
+        call getTangentSlip(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                            unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+        do g = 1, unique_count
+          do a = 1, nnode_s
+            nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
+            ! Project the per-node slip onto the per-node orthonormal frame, then Coulomb
+            ! return-map. rho_t*Dxi matches the per-node mu*gapwnode area weighting (both
+            ! node-tributary integrated), so the averaged back-distribution cancels the area.
+            if( nrm < 1.d-30 ) then
+              Dxi(1:2) = 0.d0
+              nhat(1:3) = 0.d0
+            else
+              nhat(1:3) = nacc_node(g,a,1:3) / nrm
+              call build_group_tangent_basis(nhat, t1, t2)
+              Dxi(1) = dot_product(t1(1:3), Sigma_node(g,a,1:3))
+              Dxi(2) = dot_product(t2(1:3), Sigma_node(g,a,1:3))
+            endif
+            fstate = fric_state_cur(a,g)
+            call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, fcoeff, lambda_node(a,g), &
+                                      fstrPR%eps_fric_band, lam_t_new, fstate, alpha, that, &
+                                      update_state=.true.)
+            lam_t_cur(1:2,a,g)  = lam_t_new(1:2)
+            fric_state_cur(a,g) = fstate
+          enddo
+        enddo
+        ! Write the tangent working buffer parallel to the rebuilt lambda_n (ascending master order).
+        do r = 1, unique_count
+          contact%slave_surf(i)%lam_work_t(1:2,1:nnode_s,r)  = lam_t_cur(1:2,1:nnode_s,sorted_idx(r))
+          contact%slave_surf(i)%lam_work_fstate(1:nnode_s,r) = fric_state_cur(1:nnode_s,sorted_idx(r))
+        enddo
+        deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
+      endif
+
+      deallocate(maplist, master_idxs, S, Ns_list, integrated_gaps, sorted_idx)
+      deallocate(Snode, Nsnode, gapwnode, lambda_node)
+    enddo
+
+  end subroutine update_contact_multiplier_SurfSurf
 
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
