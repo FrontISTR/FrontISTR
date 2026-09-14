@@ -646,7 +646,7 @@ contains
   subroutine hecmw_mpc_mesh_free(hecMESH)
     implicit none
     type (hecmwST_local_mesh), intent(inout) :: hecMESH
-    if (hecMESH%n_neighbor_pe > 1) then
+    if (hecMESH%n_neighbor_pe > 0) then
       deallocate(hecMESH%neighbor_pe)
       deallocate(hecMESH%import_index)
       deallocate(hecMESH%export_index)
