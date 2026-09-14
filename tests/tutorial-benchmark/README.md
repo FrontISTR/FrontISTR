@@ -19,6 +19,13 @@ than maintained separately in the runner.
 
 ## Measurements
 
+Input preparation and partitioning are excluded from timing. Each revision
+prepares its own mesh once per case and execution mode; repeated samples reuse
+that mesh, with separate output directories. Timing covers the solver process
+(including MPI launch, visualization and result output), not the CMake runner.
+Preparation failures still fail the case. Saved reports using the former timing
+scope cannot be reused as baselines.
+
 For each case, measure baseline then current. If the first successful baseline
 measurement takes at most 15 seconds, repeat that pair twice (three runs each).
 Compare medians and retain every sample and its logs. Any failed sample makes

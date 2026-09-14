@@ -226,13 +226,20 @@ sub measure_existing {
     my @command = ($cmake, "-DINPUT=$source_dir/tutorial/$item",
       "-DWORK=$test_build/$item" . ($sample ? "/sample-$sample" : ''), "-DSOLVER=$build/fistr1/fistr1",
       "-DPARTITIONER=$build/hecmw1/tools/hecmw_part1", "-DNP=$np", "-DNT=$nt",
+      "-DPREPARED=$test_build/$item/prepared", '-DSAMPLE=' . ($sample // 1), "-DPERL=$^X",
       "-DSOLVER_OVERRIDE=$solver", "-DSOLVER_PARAMETERS=$parameters",
       "-DOUTPUT_TYPE=$config->{output_type}",
       '-DMPIEXEC=' . ($selected->{MPIEXEC_EXECUTABLE}{value} // 'mpiexec'),
       '-P', "$source_dir/tests/tutorial-benchmark/run.cmake");
-    my $start = time();
     my $status = run_command($source_dir, @command);
-    my $seconds = time() - $start;
+    my $log_directory = "$test_build/$item" . ($sample ? "/sample-$sample" : '');
+    my $seconds = 0;
+    if (open my $duration, '<', "$log_directory/duration.log") {
+      $seconds = 0 + <$duration>;
+      close $duration;
+    } elsif (!$status) {
+      die "missing solver duration: $log_directory\n";
+    }
     $run_status ||= $status;
     $tests{$item} = { duration_seconds => $seconds, mode => $mode, exit_code => $status };
     my $note = $solver;
@@ -240,7 +247,6 @@ sub measure_existing {
     $tests{$item}{solver_override} = $note if $solver ne '';
     $tests{$item}{output_type} = $config->{output_type};
     if ($status) {
-      my $log_directory = "$test_build/$item" . ($sample ? "/sample-$sample" : '');
       my $path = "$log_directory/failure.log";
       my @lines;
       if (open my $log, '<', $path) {
@@ -270,6 +276,7 @@ sub measure_existing {
     },
     exit_code       => $run_status // 0,
     benchmark_case  => $case,
+    timing_scope    => 'solver-only',
     run_mode        => $mode,
     tests           => \%tests,
   }, $run_status // 0);
@@ -557,6 +564,7 @@ sub finish_report {
     @{$comparison->{summary}}{qw(compared failed_runs critical warning note)};
   print "Totals include only cases successful in both revisions.\n";
   print "Times are medians; Runs = baseline/current. UNSTABLE: range >= 10% and >= 0.5s.\n";
+  print "Timing: solver execution including MPI launch and output; input preparation and partitioning excluded.\n";
   my %output_types;
   for my $run ($baseline, $current) {
     for my $test (values %{$run->{tests}}) {
@@ -596,6 +604,7 @@ sub load_cached_run {
       eq $test_suite_fingerprint;
     next unless ($data->{$key}{benchmark_case} // '') eq ($ENV{BENCHMARK_CASE} // '');
     next unless ($data->{$key}{run_mode} // '') eq $mode;
+    next unless ($data->{$key}{timing_scope} // '') eq 'solver-only';
     return $data->{$key} if ($data->{$key}{commit} // '') eq $commit;
   }
   die "$path has no measurement for commit $commit\n";
