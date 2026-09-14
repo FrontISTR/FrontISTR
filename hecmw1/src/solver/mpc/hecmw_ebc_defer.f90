@@ -80,6 +80,7 @@ contains
     type (hecmwST_matrix), intent(inout), optional :: conMAT
 
     call hecmw_ebc_extend(hecMESH, hecMAT, hecEBC)
+    call hecmw_ebc_convert_slave(hecMESH, hecMAT, hecEBC)
     call hecmw_ebc_impose(hecMAT, hecEBC, 1.d0)
     if (present(conMAT)) call hecmw_ebc_impose(conMAT, hecEBC, 0.d0)
   end subroutine hecmw_ebc_apply
@@ -132,6 +133,88 @@ contains
       hecEBC%mark(i) = 1
     enddo
   end subroutine hecmw_ebc_extend
+
+  !C
+  !C***
+  !C*** hecmw_ebc_convert_slave
+  !C***
+  !C
+  !> A condition on the slave DOF of a single-master constraint a_s u_s + a_m u_m = c
+  !> is imposed as u_m = (c - a_s u_s) / a_m, since the slave DOF is eliminated.
+  !> A constraint with several masters cannot be expressed as a Dirichlet condition.
+  !> The change is summed onto the owner rank because the constraint is held only
+  !> by the ranks that have all of its nodes.
+  subroutine hecmw_ebc_convert_slave(hecMESH, hecMAT, hecEBC)
+    implicit none
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in) :: hecMAT
+    type (hecmwST_ebc), intent(inout) :: hecEBC
+    integer(kind=kint), allocatable :: dmark(:)
+    real(kind=kreal), allocatable :: dval(:)
+    integer(kind=kint) :: ndof, npndof, i, j, k, km, ks, kk, nchange
+    real(kind=kreal) :: um, tol
+
+    ndof = hecMAT%NDOF
+    npndof = hecMAT%NP * ndof
+    allocate(dmark(npndof))
+    allocate(dval(npndof))
+    dmark(:) = 0
+    dval(:) = 0.d0
+    nchange = 0
+
+    OUTER: do i = 1, hecMESH%mpc%n_mpc
+      do j = hecMESH%mpc%mpc_index(i-1)+1, hecMESH%mpc%mpc_index(i)
+        if (hecMESH%mpc%mpc_dof(j) > ndof) cycle OUTER
+      enddo
+      k = hecMESH%mpc%mpc_index(i-1) + 1
+      ks = ndof * (hecMESH%mpc%mpc_item(k) - 1) + hecMESH%mpc%mpc_dof(k)
+      if (hecEBC%mark(ks) == 0) cycle
+      if (hecMESH%mpc%mpc_index(i) - hecMESH%mpc%mpc_index(i-1) /= 2) then
+        write(*,'(a,i0,a,i0,a)') 'ERROR: a boundary condition is given to node ', &
+            hecMESH%global_node_ID(hecMESH%mpc%mpc_item(k)), ' dof ', hecMESH%mpc%mpc_dof(k), &
+            ', the slave of an !EQUATION with more than one master; it cannot be imposed as a boundary condition'
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      km = k + 1
+      kk = ndof * (hecMESH%mpc%mpc_item(km) - 1) + hecMESH%mpc%mpc_dof(km)
+      um = (hecMESH%mpc%mpc_const(i) - hecMESH%mpc%mpc_val(k) * hecEBC%val(ks)) / hecMESH%mpc%mpc_val(km)
+      tol = 1.d-10 * max(1.d0, abs(um))
+      if ((hecEBC%mark(kk) /= 0 .and. abs(hecEBC%val(kk) - um) > tol) .or. &
+          (dmark(kk) /= 0 .and. abs(dval(kk) - um) > tol)) then
+        write(*,'(a,i0,a,i0,a,i0,a,i0,a)') 'ERROR: the boundary condition on node ', &
+            hecMESH%global_node_ID(hecMESH%mpc%mpc_item(k)), ' dof ', hecMESH%mpc%mpc_dof(k), &
+            ', the slave of an !EQUATION, conflicts with the one on its master node ', &
+            hecMESH%global_node_ID(hecMESH%mpc%mpc_item(km)), ' dof ', hecMESH%mpc%mpc_dof(km), ''
+        call hecmw_abort(hecmw_comm_get_comm())
+      endif
+      if (hecEBC%mark(kk) == 0) then
+        dmark(kk) = 1
+        dval(kk) = um
+      endif
+      dmark(ks) = -1
+      nchange = nchange + 1
+    enddo OUTER
+
+    call hecmw_allreduce_I1(hecMESH, nchange, hecmw_sum)
+    if (nchange > 0) then
+      call hecmw_assemble_I(hecMESH, dmark, hecMAT%NP, ndof)
+      call hecmw_assemble_R(hecMESH, dval, hecMAT%NP, ndof)
+      do i = 1, npndof
+        if (dmark(i) > 0) then
+          hecEBC%mark(i) = 1
+          hecEBC%val(i) = dval(i) / dmark(i)
+        else if (dmark(i) < 0) then
+          hecEBC%mark(i) = 0
+          hecEBC%val(i) = 0.d0
+        endif
+      enddo
+      call hecmw_update_I(hecMESH, hecEBC%mark, hecMAT%NP, ndof)
+      call hecmw_update_R(hecMESH, hecEBC%val, hecMAT%NP, ndof)
+    endif
+
+    deallocate(dmark)
+    deallocate(dval)
+  end subroutine hecmw_ebc_convert_slave
 
   !C
   !C***
