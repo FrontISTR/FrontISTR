@@ -221,17 +221,6 @@ endif()
 # -DWITH_MKL
 ###################
 if(WITH_MKL)
-  if(WITH_MPI)
-    find_package(MKLBLACS)
-    # MKL looks up its MPI wrapper dynamically, so retain and export it.
-    if(MKLBLACS_FOUND AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-      list(APPEND FrontISTR_LIBRARIES
-        "-Wl,--push-state,--no-as-needed" "-Wl,--undefined=MKLMPI_Get_wrappers"
-        "-Wl,--export-dynamic" ${MKLBLACS_LIBRARY} "-Wl,--pop-state")
-    elseif(MKLBLACS_FOUND)
-      list(APPEND FrontISTR_LIBRARIES ${MKLBLACS_LIBRARY})
-    endif()
-  endif()
   set(BLA_VENDOR "Intel10_64lp")
   if(NOT "${MKL_INCLUDE_PATH}" STREQUAL "/usr/include")
     list(APPEND FrontISTR_INCLUDE_DIRS ${MKL_INCLUDE_PATH})
