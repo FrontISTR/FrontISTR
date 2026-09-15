@@ -452,23 +452,17 @@ contains
   subroutine hecmw_precond_SSOR_33_clear(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint ) :: nthreads = 1
-#ifndef _OPENACC
-    !$ nthreads = omp_get_max_threads()
-#endif
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
     if (associated(ALU)) deallocate(ALU)
-    if (nthreads >= 1) then
-      if (associated(D)) deallocate(D)
-      if (associated(AL)) deallocate(AL)
-      if (associated(AU)) deallocate(AU)
-      if (associated(indexL)) deallocate(indexL)
-      if (associated(indexU)) deallocate(indexU)
-      if (associated(itemL)) deallocate(itemL)
-      if (associated(itemU)) deallocate(itemU)
-    end if
+    if (associated(D)) deallocate(D)
+    if (associated(AL)) deallocate(AL)
+    if (associated(AU)) deallocate(AU)
+    if (associated(indexL)) deallocate(indexL)
+    if (associated(indexU)) deallocate(indexU)
+    if (associated(itemL)) deallocate(itemL)
+    if (associated(itemU)) deallocate(itemU)
     nullify(COLORindex)
     nullify(perm)
     nullify(iperm)
@@ -482,7 +476,5 @@ contains
     nullify(itemU)
     INITIALIZED = .false.
   end subroutine hecmw_precond_SSOR_33_clear
-
-
 
 end module     hecmw_precond_SSOR_33
