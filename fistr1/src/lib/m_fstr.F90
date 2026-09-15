@@ -1069,7 +1069,7 @@ contains
     ! for contact analysis
     fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange
     fstrPARAM%augiter = 2                  ! default augmentation iteration for ALagrange
-    fstrPARAM%fric_cone_follow = .false.   ! default: cone radius frozen within the augmentation step
+    fstrPARAM%fric_cone_follow = .true.    ! default: cone radius follows the applied normal force
 
     ! index table for global node ID sorting
 

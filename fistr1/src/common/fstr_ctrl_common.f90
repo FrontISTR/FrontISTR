@@ -597,7 +597,7 @@ contains
     endif
     ! FROZEN keeps the ALagrange friction cone at the multiplier of the last augmentation,
     ! FOLLOW lets it follow the normal force the contact element applies
-    icone = 1
+    icone = 2   ! default value
     s = 'FROZEN,FOLLOW '
     rcode = fstr_ctrl_get_param_ex( ctrl, 'FRICTION_CONE ', s, 0, 'P', icone )
     if( rcode /= 0 ) then

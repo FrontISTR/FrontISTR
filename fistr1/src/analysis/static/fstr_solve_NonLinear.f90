@@ -252,7 +252,7 @@ contains
         write(*, *) ' Please change the solver type to intel MKL direct solver !'
         call hecmw_abort(hecmw_comm_get_comm())
       endif
-      ! the ALag contact terms are treated as symmetric here as before, unless a contact pair
+      ! the ALag contact terms are treated as symmetric here, unless a contact pair
       ! asks for the friction cone to follow the normal force, which adds the unsymmetric
       ! coupling block of getContactStiffness_Alag; material-induced asymmetry is propagated
       ! by the same predicate
