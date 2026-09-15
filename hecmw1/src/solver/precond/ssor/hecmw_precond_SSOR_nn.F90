@@ -43,6 +43,15 @@ module hecmw_precond_SSOR_nn
 
   logical, save :: INITIALIZED = .false.
 
+  ! for tuning
+  integer(kind=kint), parameter :: numOfBlockPerThread = 100
+  integer(kind=kint), save :: numOfThread = 1, numOfBlock
+  integer(kind=kint), save, allocatable :: icToBlockIndex(:)
+  integer(kind=kint), save, allocatable :: blockIndexToColorIndex(:)
+  integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
+
+  integer(kind=kint), parameter :: DEBUG = 0
+
 contains
 
   subroutine hecmw_precond_SSOR_nn_setup(hecMAT)
@@ -55,10 +64,12 @@ contains
     integer(kind=kint ) :: ii, i, j, k, NDOF, NDOF2
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
-    !real   (kind=kreal) :: t0
+    real   (kind=kreal) :: t0
 
-    !t0 = hecmw_Wtime()
-    !write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
+    if (DEBUG >= 1) then
+      t0 = hecmw_Wtime()
+      write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
+    endif
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
@@ -85,11 +96,11 @@ contains
     allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
     call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
       hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
-    !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
     call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
       hecMAT%indexU, hecMAT%itemU, perm_tmp, &
       NCOLOR_IN, NColor, COLORindex, perm, iperm)
-    !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
     deallocate(perm_tmp)
 
 #else
@@ -106,23 +117,30 @@ contains
       allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
         hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
-      !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+      if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
       call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
         hecMAT%indexU, hecMAT%itemU, perm_tmp, &
         NCOLOR_IN, NColor, COLORindex, perm, iperm)
-      !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+      if (DEBUG >= 1) write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
       deallocate(perm_tmp)
 
     endif
 #endif
 
-    NPL = hecMAT%indexL(N)
+    NPL = 0
+    do i=1,N
+      do j=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
+        if( hecMAT%itemU(j) > N ) exit
+        NPL = NPL + 1
+      enddo
+    enddo
+    NPL = max(hecMAT%indexL(N),NPL)
     NPU = hecMAT%indexU(N)
     allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
     call hecmw_matrix_reorder_profile(N, perm, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       indexL, indexU, itemL, itemU)
-    !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
 
     allocate(D(NDOF2*N), AL(NDOF2*NPL), AU(NDOF2*NPU))
@@ -130,7 +148,7 @@ contains
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       hecMAT%AL, hecMAT%AU, hecMAT%D, &
       indexL, indexU, itemL, itemU, AL, AU, D)
-    !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
     call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
@@ -187,71 +205,69 @@ contains
     hecMAT%Iarray(98) = 0 ! symbolic setup done
     hecMAT%Iarray(97) = 0 ! numerical setup done
 
-    !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
   end subroutine hecmw_precond_SSOR_nn_setup
 
-  subroutine hecmw_precond_SSOR_nn_apply(ZP, NDOF)
+  subroutine setup_tuning_parameters(NDOF)
     use hecmw_tuning_fx
+    implicit none
+    integer(kind=kint), intent(in) :: NDOF
+    integer(kind=kint) :: blockIndex, elementCount, numOfElement, ii
+    real(kind=kreal) :: numOfElementPerBlock
+    integer(kind=kint) :: ic, i
+    if (DEBUG >= 1) write(*,*) 'DEBUG: setting up tuning parameters for SSOR'
+#ifndef _OPENACC
+    !$ numOfThread = omp_get_max_threads()
+#endif
+
+    numOfBlock = numOfThread * numOfBlockPerThread
+    if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
+    if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
+    allocate (icToBlockIndex(0:NColor), &
+         blockIndexToColorIndex(0:numOfBlock + NColor))
+    numOfElement = N + indexL(N) + indexU(N)
+    numOfElementPerBlock = dble(numOfElement) / numOfBlock
+    blockIndex = 0
+    icToBlockIndex = -1
+    icToBlockIndex(0) = 0
+    blockIndexToColorIndex = -1
+    blockIndexToColorIndex(0) = 0
+    do ic = 1, NColor
+      elementCount = 0
+      ii = 1
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+        elementCount = elementCount + 1
+        elementCount = elementCount + (indexL(i) - indexL(i-1))
+        elementCount = elementCount + (indexU(i) - indexU(i-1))
+        if (elementCount > ii * numOfElementPerBlock &
+             .or. i == COLORindex(ic)) then
+          ii = ii + 1
+          blockIndex = blockIndex + 1
+          blockIndexToColorIndex(blockIndex) = i
+        endif
+      enddo
+      icToBlockIndex(ic) = blockIndex
+    enddo
+    numOfBlock = blockIndex
+
+    call hecmw_tuning_fx_calc_sector_cache( N, NDOF, &
+         sectorCacheSize0, sectorCacheSize1 )
+  end subroutine setup_tuning_parameters
+
+  subroutine hecmw_precond_SSOR_nn_apply(ZP, NDOF)
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k, NDOF, NDOF2, idof,jdof
     real(kind=kreal) :: SW(NDOF), X(NDOF)
 
     ! added for tuning >>>
-    integer(kind=kint), parameter :: numOfBlockPerThread = 100
-    integer(kind=kint), save :: numOfThread = 1, numOfBlock
-    integer(kind=kint), save, allocatable :: icToBlockIndex(:)
-    integer(kind=kint), save, allocatable :: blockIndexToColorIndex(:)
-    integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
-    integer(kind=kint) :: blockIndex, elementCount, numOfElement, ii
-    real(kind=kreal) :: numOfElementPerBlock
-    integer(kind=kint) :: my_rank
+    integer(kind=kint) :: blockIndex
 
     NDOF2=NDOF*NDOF
 #ifndef _OPENACC
     if (isFirst) then
-      !$ numOfThread = omp_get_max_threads()
-      numOfBlock = numOfThread * numOfBlockPerThread
-      if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
-      if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
-      allocate (icToBlockIndex(0:NColor), &
-        blockIndexToColorIndex(0:numOfBlock + NColor))
-      numOfElement = N + indexL(N) + indexU(N)
-      numOfElementPerBlock = dble(numOfElement) / numOfBlock
-      blockIndex = 0
-      icToBlockIndex = -1
-      icToBlockIndex(0) = 0
-      blockIndexToColorIndex = -1
-      blockIndexToColorIndex(0) = 0
-      my_rank = hecmw_comm_get_rank()
-      ! write(9000+my_rank,*) &
-        !      '# numOfElementPerBlock =', numOfElementPerBlock
-      ! write(9000+my_rank,*) &
-        !      '# ic, blockIndex, colorIndex, elementCount'
-      do ic = 1, NColor
-        elementCount = 0
-        ii = 1
-        do i = COLORindex(ic-1)+1, COLORindex(ic)
-          elementCount = elementCount + 1
-          elementCount = elementCount + (indexL(i) - indexL(i-1))
-          elementCount = elementCount + (indexU(i) - indexU(i-1))
-          if (elementCount > ii * numOfElementPerBlock &
-              .or. i == COLORindex(ic)) then
-            ii = ii + 1
-            blockIndex = blockIndex + 1
-            blockIndexToColorIndex(blockIndex) = i
-            ! write(9000+my_rank,*) ic, blockIndex, &
-              !      blockIndexToColorIndex(blockIndex), elementCount
-          endif
-        enddo
-        icToBlockIndex(ic) = blockIndex
-      enddo
-      numOfBlock = blockIndex
-
-      call hecmw_tuning_fx_calc_sector_cache( N, NDOF, &
-        sectorCacheSize0, sectorCacheSize1 )
-
+      call setup_tuning_parameters(NDOF)
       isFirst = .false.
     endif
 #endif
