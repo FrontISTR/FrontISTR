@@ -164,8 +164,8 @@ contains
       enddo
       !$acc end kernels
 #else
-      !call fapp_start("loopInMatvec33", 1, 0)
-      !call start_collection("loopInMatvec33")
+      !call fapp_start("loopInMatvecnn", 1, 0)
+      !call start_collection("loopInMatvecnn")
 
       !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
       !OCL CACHE_SUBSECTOR_ASSIGN(X)
@@ -223,8 +223,8 @@ contains
       !OCL END_CACHE_SUBSECTOR
       !OCL END_CACHE_SECTOR_SIZE
 
-      !call stop_collection("loopInMatvec33")
-      !call fapp_stop("loopInMatvec33", 1, 0)
+      !call stop_collection("loopInMatvecnn")
+      !call fapp_stop("loopInMatvecnn", 1, 0)
 #endif
 
       END_TIME = hecmw_Wtime()

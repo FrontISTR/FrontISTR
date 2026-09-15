@@ -149,8 +149,8 @@ contains
       enddo
       !$acc end kernels
 #else
-      !call fapp_start("loopInMatvec33", 1, 0)
-      !call start_collection("loopInMatvec33")
+      !call fapp_start("loopInMatvec22", 1, 0)
+      !call start_collection("loopInMatvec22")
 
       !OCL CACHE_SECTOR_SIZE(sectorCacheSize0,sectorCacheSize1)
       !OCL CACHE_SUBSECTOR_ASSIGN(X)
@@ -195,6 +195,9 @@ contains
 
       !OCL END_CACHE_SUBSECTOR
       !OCL END_CACHE_SECTOR_SIZE
+
+      !call stop_collection("loopInMatvec22")
+      !call fapp_stop("loopInMatvec22", 1, 0)
 #endif
 
 
