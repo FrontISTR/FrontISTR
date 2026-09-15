@@ -4,6 +4,8 @@
 !-------------------------------------------------------------------------------
 
 module hecmw_solver_las_22
+  use hecmw_util
+  implicit none
 
   private
 
@@ -214,13 +216,13 @@ contains
   !C
   subroutine hecmw_matresid_22 (hecMESH, hecMAT, X, B, R, time_Ax, COMMtime)
     use hecmw_util
-
     implicit none
-    real(kind=kreal) :: X(:), B(:), R(:)
-    type (hecmwST_matrix)     :: hecMAT
-    type (hecmwST_local_mesh) :: hecMESH
-    real(kind=kreal) :: time_Ax
-    real(kind=kreal), optional :: COMMtime
+    type (hecmwST_local_mesh), intent(in) :: hecMESH
+    type (hecmwST_matrix), intent(in)     :: hecMAT
+    real(kind=kreal), intent(in) :: X(:), B(:)
+    real(kind=kreal), intent(out) :: R(:)
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
 
     integer(kind=kint) :: i
     real(kind=kreal) :: Tcomm
@@ -254,29 +256,32 @@ contains
   function hecmw_rel_resid_L2_22 (hecMESH, hecMAT, time_Ax, COMMtime)
     use hecmw_util
     use hecmw_solver_misc
-
     implicit none
     real(kind=kreal) :: hecmw_rel_resid_L2_22
     type ( hecmwST_local_mesh ), intent(in) :: hecMESH
     type ( hecmwST_matrix     ), intent(in) :: hecMAT
-    real(kind=kreal) :: time_Ax
-    real(kind=kreal), optional :: COMMtime
+    real(kind=kreal), intent(inout) :: time_Ax
+    real(kind=kreal), intent(inout), optional :: COMMtime
 
-    real(kind=kreal) :: r(hecMAT%NDOF*hecMAT%NP)
+    real(kind=kreal), allocatable :: r(:)
     real(kind=kreal) :: bnorm2, rnorm2
     real(kind=kreal) :: Tcomm
 
+    allocate(r(hecMAT%NDOF*hecMAT%NP))
+
     Tcomm = 0.d0
-    call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnorm2, Tcomm)
+    call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, &
+      hecMAT%B, hecMAT%B, bnorm2, Tcomm)
     if (bnorm2 == 0.d0) then
       bnorm2 = 1.d0
     endif
     call hecmw_matresid_22(hecMESH, hecMAT, hecMAT%X, hecMAT%B, r, time_Ax, Tcomm)
     call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, r, r, rnorm2, Tcomm)
-    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
-
     hecmw_rel_resid_L2_22 = sqrt(rnorm2 / bnorm2)
 
+    if (present(COMMtime)) COMMtime = COMMtime + Tcomm
+
+    deallocate(r)
   end function hecmw_rel_resid_L2_22
 
 end module hecmw_solver_las_22
