@@ -73,12 +73,12 @@ contains
       else
         eval_disp = 0.0d0
       endif
-      ! Radius of the friction cone.  By default (symm) it stays at the multiplier of the
-      ! last augmentation, which keeps the friction terms symmetric and leaves the Coulomb
-      ! condition to the augmentation loop.  With !CONTACT_ALGO, FRICTION_CONE=FOLLOW the
-      ! radius follows the normal force this element actually applies, lambda_n + mu*g_n
-      ! clipped at 0, which is the value getContactNodalForce_Alag distributes; the
-      ! multiplier alone lags that force by the penalty term within a substep.
+      ! Radius of the friction cone.  By default it follows the normal force this element
+      ! actually applies, lambda_n + mu*g_n clipped at 0, which is the value
+      ! getContactNodalForce_Alag distributes; the multiplier alone lags that force by the
+      ! penalty term within a substep.  With !CONTACT_ALGO, FRICTION_CONE=FROZEN (symm) the
+      ! radius stays at the multiplier of the last augmentation, which keeps the friction
+      ! terms symmetric and leaves the Coulomb condition to the augmentation loop.
       if( symm ) then
         lam_cone = cstate%multiplier(1)
       else

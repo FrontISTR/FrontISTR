@@ -11,8 +11,11 @@
 # nodes are then a subset of the rebuilt structure.
 # Whether a cutback follows a separation depends on the displacements, MAXITER and
 # the initial time increments, so recheck the failure without the rebuild when
-# changing them.  STEP2 ends with all nodes separated, so the result does not
-# depend on the frictional history and agrees between the parallel settings.
+# changing them.  FRICTION_CONE=FROZEN for the same reason: with the cone following
+# the normal force STEP2 converges in four increments and the only cutback left
+# happens before any contact state change, which does not exercise the rebuild.
+# STEP2 ends with all nodes separated, so the result does not depend on the
+# frictional history and agrees between the parallel settings.
 #  Control File for FISTR
 ## Analysis Control
 !VERSION
@@ -31,7 +34,7 @@
  BOTTOM, 2, 2, 0.0
  CENTER, 1, 1, 0.0
  UPPER,  2, 2, 1.5
-!CONTACT_ALGO, TYPE=ALAGRANGE
+!CONTACT_ALGO, TYPE=ALAGRANGE, FRICTION_CONE=FROZEN
 !CONTACT, GRPID=1,NPENALTY=100,TPENALTY=100
  CP1, 0.3, 1000
 !AUTOINC_PARAM, NAME=AP1
