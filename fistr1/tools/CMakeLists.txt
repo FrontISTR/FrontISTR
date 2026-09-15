@@ -8,13 +8,7 @@
 #
 add_executable(neu2fstr)
 
-#
-# Inherit definitions and link with libraries
-#
-target_include_directories(neu2fstr PUBLIC ${FrontISTR_INCLUDE_DIRS})
-target_compile_definitions(neu2fstr PUBLIC ${FrontISTR_DEFINITIONS})
-target_link_libraries(neu2fstr PRIVATE fistr hecmw ${FrontISTR_LIBRARIES})
-
+# Converter only: do not link solver libraries such as MKL or Trilinos.
 #
 # Add subdirectories that will contribute sources to the neu2fstr target
 # Use second parameter to avoid directory-target name conflict
