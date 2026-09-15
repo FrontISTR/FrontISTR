@@ -54,6 +54,41 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
     dl
     CACHE STRING "MKL for GCC")
 endif()
+# Cluster PARDISO needs the BLACS wrapper matching the MPI implementation.
+# MKLBLACS_LIBRARY can be supplied explicitly when MPI cannot be identified.
+if(WITH_MPI AND MKL_LIBRARIES)
+  set(_mkl_mpi_version "${MPI_C_LIBRARY_VERSION_STRING};${MPI_Fortran_LIBRARY_VERSION_STRING}")
+  if(_mkl_mpi_version MATCHES "Open MPI")
+    set(_mkl_blacs_name mkl_blacs_openmpi_lp64)
+  elseif(_mkl_mpi_version MATCHES "Intel.*MPI|MPICH")
+    set(_mkl_blacs_name mkl_blacs_intelmpi_lp64)
+  endif()
+  if(_mkl_blacs_name)
+    get_filename_component(_mkl_library_dir "${_MKL_CORE}" DIRECTORY)
+    find_library(MKLBLACS_LIBRARY NAMES ${_mkl_blacs_name}
+      HINTS "${_mkl_library_dir}" $ENV{MKLROOT}/lib/intel64 $ENV{MKLROOT}/lib
+      /opt/intel/mkl/lib/intel64 /usr/lib/x86_64-linux-gnu)
+  endif()
+  if(MKLBLACS_LIBRARY)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      # Shared wrappers must survive --as-needed; static wrappers also need
+      # extraction and export so MKL can find MKLMPI_Get_wrappers via dlsym.
+      list(APPEND MKL_LIBRARIES "-Wl,--push-state,--no-as-needed")
+      if(MKLBLACS_LIBRARY MATCHES "\\.a$")
+        list(APPEND MKL_LIBRARIES "-Wl,--undefined=MKLMPI_Get_wrappers" "-Wl,--export-dynamic")
+      endif()
+      list(APPEND MKL_LIBRARIES ${MKLBLACS_LIBRARY} "-Wl,--pop-state")
+    else()
+      list(APPEND MKL_LIBRARIES ${MKLBLACS_LIBRARY})
+    endif()
+    set(MKL_LIBRARIES "${MKL_LIBRARIES}" CACHE STRING "MKL libraries including MPI BLACS" FORCE)
+  endif()
+  mark_as_advanced(MKLBLACS_LIBRARY)
+  unset(_mkl_mpi_version)
+  unset(_mkl_blacs_name)
+  unset(_mkl_library_dir)
+endif()
+
 if(MKL_INCLUDE_PATH AND MKL_LIBRARIES)
   set(MKL_FOUND TRUE)
 endif()
@@ -62,4 +97,3 @@ mark_as_advanced(MKL_INCLUDE_PATH MKL_LIBRARIES)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(MKL DEFAULT_MSG MKL_LIBRARIES MKL_INCLUDE_PATH)
-

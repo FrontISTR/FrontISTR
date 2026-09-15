@@ -1,0 +1,32 @@
+{
+  "output_type": "VTK",
+  "cases": [
+    {
+      "name": "19_conrod",
+      "mpi": {
+        "requires": "WITH_ML",
+        "solver": "CG,PRECOND=5,ITERLOG=YES,TIMELOG=YES"
+      }
+    },
+    {
+      "name": "15_eigen_spring",
+      "requires": "WITH_MUMPS",
+      "solver": "MUMPS"
+    },
+    {
+      "name": "10_contact_2tubes",
+      "solver": "CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES",
+      "solver_parameters": ["10000, 1", "1.0e-8, 1.0, 0.0"]
+    },
+    { "name": "05_plastic_cylinder" },
+    { "name": "03_hyperelastic_cylinder" },
+    { "name": "07_viscoelastic_cylinder" },
+    { "name": "08_creep_cylinder" },
+    { "name": "16_heat_block" },
+    {
+      "name": "11_contact_2beam",
+      "requires": "WITH_MKL",
+      "solver": "MKL"
+    }
+  ]
+}

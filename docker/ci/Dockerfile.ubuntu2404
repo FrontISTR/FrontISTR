@@ -16,7 +16,7 @@ ENTRYPOINT ["tini", "--"]
 FROM runtime AS build
 RUN apt-get update \
  && apt-get -y install build-essential ccache cmake curl gfortran git \
- && apt-get -y install libmetis-dev libmumps-dev libopenmpi-dev libptscotch-dev trilinos-all-dev \
+ && apt-get -y install libmetis-dev libmumps-dev libmumps-seq-dev libopenmpi-dev libptscotch-dev trilinos-all-dev \
  && [ $(uname -m) = x86_64 ] \
       && apt-get -y install libmkl-dev \
       || apt-get -y install libopenblas64-openmp-dev libscalapack-openmpi-dev \

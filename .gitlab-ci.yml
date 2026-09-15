@@ -33,11 +33,14 @@ include:
 .build:
     stage: build
     needs: []
+    tags: ["saas-linux-medium-amd64"]
     script:
-        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - TYPE=${BUILD_TYPE:-$(echo $CI_JOB_NAME|cut -d/ -f3)}
         - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
         - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
-        - cmake -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP -DWITH_ML=$MPI -DWITH_MUMPS=$MPI -H.
+        - >-
+          cmake -S. -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP
+          -DSCALAPACK_LIBRARIES="mkl_scalapack_lp64;mkl_blacs_openmpi_lp64"
         - cmake --build build -- -j $(nproc)
     artifacts:
         paths: ["build/"]
@@ -46,12 +49,59 @@ include:
 .test:
     stage: test
     script:
-        - cd build && ctest -L $(echo $CI_JOB_NAME|cut -d/ -f4) --output-on-failure
+        - RUN_TYPE=${RUN_TYPE:-$(echo $CI_JOB_NAME|cut -d/ -f4)}
+        - cd build && ctest -L $RUN_TYPE --output-on-failure
     artifacts:
         paths:
             - run_test
         expire_in: 1week
         when: on_failure
+
+.benchmark-build:
+    stage: build
+    needs: []
+    tags: ["saas-linux-medium-amd64"]
+    variables:
+        GIT_DEPTH: "0"
+    script:
+        - MPI=$([[ $BUILD_TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
+        - OMP=$([[ $BUILD_TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
+        - >-
+          cmake -S. -Bbuild -DWITH_MPI=$MPI -DWITH_OPENMP=$OMP
+          -DSCALAPACK_LIBRARIES="mkl_scalapack_lp64;mkl_blacs_openmpi_lp64"
+        - |
+          if [ -z "${BENCHMARK_REF:-}" ]; then
+            if [ -n "${CI_COMMIT_TAG:-}" ]; then
+              BENCHMARK_REF=$(git describe --tags --abbrev=0 HEAD^)
+            elif [ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]; then
+              BENCHMARK_REF="origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+            else
+              BENCHMARK_REF=$(git describe --tags --abbrev=0 HEAD)
+            fi
+          fi
+          BENCHMARK_REF=$BENCHMARK_REF \
+          BENCHMARK_BUILD_MODE=$BUILD_TYPE \
+          BENCHMARK_PREPARE_DIR=benchmark-baseline/$BUILD_TYPE \
+            cmake --build build --target benchmark
+    artifacts:
+        paths: ["benchmark-baseline/"]
+        expire_in: 100min
+
+.benchmark-test:
+    stage: test
+    variables:
+        # Open MPI 4: count hardware threads as slots (--use-hwthread-cpus).
+        OMPI_MCA_hwloc_base_use_hwthreads_as_cpus: "1"
+    script:
+        - lscpu
+        - BENCHMARK_BASELINE_DIR=benchmark-baseline/$BUILD_TYPE BENCHMARK_BUILD_MODE=$BUILD_TYPE BENCHMARK_MODE=$RUN_TYPE cmake --build build --target benchmark
+    artifacts:
+        paths:
+            - build/benchmark-results/
+            - build/tutorial-benchmark-*/**/*.log
+            - benchmark-baseline/*/build/tutorial-benchmark-*/**/*.log
+        expire_in: 1week
+        when: always
 
 doxygen:
     image: ${REGISTRY}/document:latest
@@ -169,8 +219,8 @@ x86_64-w64-mingw32/hybrid-impi-mkl_intelthread:
 .deb:
     stage: package
     script:
-        - OS=$(echo $CI_JOB_NAME|cut -d/ -f2)
-        - TYPE=$(echo $CI_JOB_NAME|cut -d/ -f3)
+        - OS=${DISTRO:-$(echo $CI_JOB_NAME|cut -d/ -f2)}
+        - TYPE=${BUILD_TYPE:-$(echo $CI_JOB_NAME|cut -d/ -f3)}
         - MPI=$([[ $TYPE =~ (mpi|hybrid) ]] && echo ON || echo OFF)
         - OMP=$([[ $TYPE =~ (openmp|hybrid) ]] && echo ON || echo OFF)
         - DEPENDS=()

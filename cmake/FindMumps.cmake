@@ -55,22 +55,30 @@ if(NOT WITH_MPI)
   set(LIB_SEARCH_PATH ${LIB_SEARCH_PATH} ${CMAKE_SOURCE_DIR}/../MUMPS_5.0.1/libseq)
 endif()
 
+# Debian/Ubuntu provide sequential MUMPS with a _seq suffix. Keep the
+# unsuffixed names as a fallback for upstream/source installations.
+set(_MUMPS_SEQ_SUFFIX "")
+if(NOT WITH_MPI)
+  set(_MUMPS_SEQ_SUFFIX "_seq")
+endif()
+
 find_library(MUMPS_D_LIB
-  NAMES dmumps
+  NAMES dmumps${_MUMPS_SEQ_SUFFIX} dmumps
   HINTS ${LIB_SEARCH_PATH}
 )
 find_library(MUMPS_COMMON_LIB
-  NAMES mumps_common
+  NAMES mumps_common${_MUMPS_SEQ_SUFFIX} mumps_common
   HINTS ${LIB_SEARCH_PATH}
 )
 find_library(MUMPS_PORD_LIB
-  NAMES pord
+  NAMES pord${_MUMPS_SEQ_SUFFIX} pord
   HINTS ${LIB_SEARCH_PATH}
 )
+unset(_MUMPS_SEQ_SUFFIX)
 
 if(NOT WITH_MPI)
   find_library(MUMPS_MPISEQ_LIB
-    NAMES mpiseq
+    NAMES mpiseq_seq mpiseq
     HINTS ${LIB_SEARCH_PATH}
   )
 endif()

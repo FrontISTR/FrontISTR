@@ -163,6 +163,11 @@ endif()
 ###################
 option(WITH_MPI "for parallel environment with MPI" ON)
 if(WITH_MPI)
+  if(CMAKE_CROSSCOMPILING)
+    set(MPI_DETERMINE_LIBRARY_VERSION FALSE)
+  else()
+    set(MPI_DETERMINE_LIBRARY_VERSION TRUE)
+  endif()
   find_package(MPI)
   set(WITH_MPI "${MPI_FOUND}")
   #find_package(Parmetis)
@@ -523,6 +528,37 @@ add_subdirectory(fistr1)
 enable_testing()
 add_subdirectory(tests)
 
+find_package(Perl QUIET)
+set(FRONTISTR_BENCHMARK_PERL_MODULES_FOUND 1)
+if(PERL_FOUND)
+  execute_process(
+    COMMAND ${PERL_EXECUTABLE} -MJSON::PP -MDigest::SHA -MFile::Temp -MTime::HiRes -e 1
+    RESULT_VARIABLE FRONTISTR_BENCHMARK_PERL_MODULES_FOUND
+  )
+endif()
+include(ProcessorCount)
+ProcessorCount(FRONTISTR_BENCHMARK_BUILD_JOBS)
+if(NOT FRONTISTR_BENCHMARK_BUILD_JOBS)
+  set(FRONTISTR_BENCHMARK_BUILD_JOBS 1)
+endif()
+if(PERL_FOUND AND FRONTISTR_BENCHMARK_PERL_MODULES_FOUND EQUAL 0)
+  add_custom_target(benchmark
+    COMMAND
+      ${PERL_EXECUTABLE}
+        ${CMAKE_SOURCE_DIR}/tests/benchmark.pl
+        --source-dir ${CMAKE_SOURCE_DIR}
+        --build-dir ${CMAKE_BINARY_DIR}
+        --cmake ${CMAKE_COMMAND}
+        --build-jobs ${FRONTISTR_BENCHMARK_BUILD_JOBS}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Benchmark configured tutorial cases against another revision"
+    USES_TERMINAL
+    VERBATIM
+  )
+else()
+  message(STATUS "Perl or required Perl core modules not found: benchmark target is unavailable")
+endif()
+
 ###############################################################################
 # Package generator (deb, rpm, exe etc.)
 ###############################################################################
@@ -547,6 +583,3 @@ else()
   set(CPACK_STRIP_FILES ON)
 endif()
 include(CPack)
-
-
-
