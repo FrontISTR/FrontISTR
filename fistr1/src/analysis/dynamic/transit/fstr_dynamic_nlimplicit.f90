@@ -407,6 +407,8 @@ contains
         call fstr_solve_dynamic_nlimplicit_couple_pre(hecMESH, hecMAT, fstrSOLID, &
           & fstrPARAM, fstrDYNAMIC, fstrCPL, restart_step_num, istep)
 
+        call fstr_Update_NDForce_MPC( hecMESH, hecMAT%B )
+
         call hecmw_mat_clear( conMAT )
         call hecmw_mat_clear_b( conMAT )
         conMAT%X = 0.0d0
