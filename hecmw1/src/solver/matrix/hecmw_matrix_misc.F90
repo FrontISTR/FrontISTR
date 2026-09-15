@@ -91,8 +91,8 @@ module hecmw_matrix_misc
   public :: hecmw_mat_get_resid
   public :: hecmw_mat_set_sigma_diag
   public :: hecmw_mat_get_sigma_diag
-  public :: hecmw_mat_set_sigma
-  public :: hecmw_mat_get_sigma
+  public :: hecmw_mat_set_omega
+  public :: hecmw_mat_get_omega
   public :: hecmw_mat_set_thresh
   public :: hecmw_mat_get_thresh
   public :: hecmw_mat_set_filter
@@ -155,7 +155,7 @@ module hecmw_matrix_misc
 
   integer, parameter :: IDX_R_RESID         = 1
   integer, parameter :: IDX_R_SIGMA_DIAG    = 2
-  integer, parameter :: IDX_R_SIGMA         = 3
+  integer, parameter :: IDX_R_OMEGA         = 3
   integer, parameter :: IDX_R_THRESH        = 4
   integer, parameter :: IDX_R_FILTER        = 5
   integer, parameter :: IDX_R_PENALTY       = 11
@@ -239,7 +239,7 @@ contains
 
     call hecmw_mat_set_resid( hecMAT, 1.d-8 )
     call hecmw_mat_set_sigma_diag( hecMAT, 1.d0 )
-    call hecmw_mat_set_sigma( hecMAT, 0.d0 )
+    call hecmw_mat_set_omega( hecMAT, 1.d0 )
     call hecmw_mat_set_thresh( hecMAT, 0.10d0 )
     call hecmw_mat_set_filter( hecMAT, 0.10d0 )
 
@@ -812,25 +812,26 @@ contains
     hecmw_mat_get_sigma_diag = hecMAT%Rarray(IDX_R_SIGMA_DIAG)
   end function hecmw_mat_get_sigma_diag
 
-  subroutine hecmw_mat_set_sigma( hecMAT, sigma )
+  subroutine hecmw_mat_set_omega( hecMAT, omega )
     type(hecmwST_matrix) :: hecMAT
-    real(kind=kreal) :: sigma
+    real(kind=kreal) :: omega
 
-    if (sigma < 0.d0) then
-      hecMAT%Rarray(IDX_R_SIGMA) = 0.d0
-    elseif (sigma > 1.d0) then
-      hecMAT%Rarray(IDX_R_SIGMA) = 1.d0
+    ! the preconditioner is defined only for 0 < omega < 2; anything else, including
+    ! values within machine epsilon of 0 or 2, falls back to plain SSOR
+    if (omega < 0.d0 .or. omega > 2.d0 .or. abs(omega) < epsilon(1.d0) &
+        .or. abs(omega - 2.d0) < epsilon(1.d0)) then
+      hecMAT%Rarray(IDX_R_OMEGA) = 1.d0
     else
-      hecMAT%Rarray(IDX_R_SIGMA) = sigma
+      hecMAT%Rarray(IDX_R_OMEGA) = omega
     endif
-  end subroutine hecmw_mat_set_sigma
+  end subroutine hecmw_mat_set_omega
 
-  function hecmw_mat_get_sigma( hecMAT )
-    real(kind=kreal) :: hecmw_mat_get_sigma
+  function hecmw_mat_get_omega( hecMAT )
+    real(kind=kreal) :: hecmw_mat_get_omega
     type(hecmwST_matrix) :: hecMAT
 
-    hecmw_mat_get_sigma = hecMAT%Rarray(IDX_R_SIGMA)
-  end function hecmw_mat_get_sigma
+    hecmw_mat_get_omega = hecMAT%Rarray(IDX_R_OMEGA)
+  end function hecmw_mat_get_omega
 
   subroutine hecmw_mat_set_thresh( hecMAT, thresh )
     type(hecmwST_matrix) :: hecMAT

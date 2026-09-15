@@ -43,6 +43,12 @@ module hecmw_precond_SSOR_nn
 
   logical, save :: INITIALIZED = .false.
 
+  ! relaxation parameter of
+  !   M = 1/(2-OMEGA) (D/OMEGA + L) (D/OMEGA)^-1 (D/OMEGA + U)
+  ! OMEGA = 1 is the classic (D+L) D^-1 (D+U).  _apply is handed only ZP, so setup
+  ! leaves the value here for it.
+  real(kind=kreal), save :: OMEGA = 1.d0
+
   ! for tuning
   integer(kind=kint), parameter :: numOfBlockPerThread = 100
   integer(kind=kint), save :: numOfThread = 1, numOfBlock
@@ -59,7 +65,7 @@ contains
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NPL, NPU
     integer(kind=kint ) :: NCOLOR_IN
-    real   (kind=kreal) :: SIGMA_DIAG
+    real   (kind=kreal) :: OMEGA_INV
     real   (kind=kreal) :: ALUtmp(hecMAT%NDOF,hecMAT%NDOF), PW(hecMAT%NDOF)
     integer(kind=kint ) :: ii, i, j, k, NDOF, NDOF2
     integer(kind=kint ) :: nthreads = 1
@@ -90,7 +96,8 @@ contains
     NDOF2=NDOF*NDOF
 
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
-    SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
+    OMEGA = hecmw_mat_get_omega(hecMAT)
+    OMEGA_INV = 1.d0 / OMEGA
 
 #ifdef _OPENACC
     allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
@@ -164,14 +171,13 @@ contains
     !$acc kernels
     !$acc loop independent private(ALUtmp,PW)
 #else
-    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,SIGMA_DIAG)
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,NDOF,NDOF2,ALU,OMEGA_INV)
     !$omp do
 #endif
     do ii= 1, N
       do i = 1, NDOF
         do j =  1, NDOF
-          ALUtmp(i,j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j)
-          if (i==j) ALUtmp(i,j)=ALUtmp(i,j)*SIGMA_DIAG
+          ALUtmp(i,j) = ALU(NDOF2*(ii-1)+(i-1)*NDOF+j) * OMEGA_INV
         end do
       end do
       do k= 1, NDOF
@@ -261,6 +267,8 @@ contains
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k, NDOF, NDOF2, idof,jdof
     real(kind=kreal) :: SW(NDOF), X(NDOF)
 
+    real(kind=kreal) :: OMEGA_FAC
+
     ! added for tuning >>>
     integer(kind=kint) :: blockIndex
 
@@ -273,6 +281,8 @@ contains
 #endif
     ! <<< added for tuning
 
+    OMEGA_FAC = 2.d0 - OMEGA
+
 #ifndef _OPENACC
     !call start_collection("loopInPrecond33")
 
@@ -281,7 +291,7 @@ contains
 
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,NDOF,NDOF2) &
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,NDOF,NDOF2,OMEGA_FAC) &
       !$omp&private(SW,X,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex,idof,jdof)
 #endif
 
@@ -299,7 +309,7 @@ contains
 #endif
           iold = perm(i)
           do idof = 1, NDOF
-            SW(idof) = ZP(NDOF*(iold-1)+idof)
+            SW(idof) = OMEGA_FAC * ZP(NDOF*(iold-1)+idof)
           end do
           isL= indexL(i-1)+1
           ieL= indexL(i)

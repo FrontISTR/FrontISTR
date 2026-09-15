@@ -64,7 +64,7 @@ contains
       iterpremax, nrest, nBFGS, scaling, &
       dumptype, dumpexit, usejad, ncolor_in, mpc_method, estcond, method2, recyclepre, &
       solver_opt, contact_elim, &
-      resid, singma_diag, sigma, thresh, filter, solver_ropt, loglevel, &
+      resid, singma_diag, omega, thresh, filter, solver_ropt, loglevel, &
       matvec_impl, precond_impl, recompute_residual )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: method
@@ -90,7 +90,7 @@ contains
     integer(kind=kint) :: contact_elim
     real(kind=kreal) :: resid
     real(kind=kreal) :: singma_diag
-    real(kind=kreal) :: sigma
+    real(kind=kreal) :: omega
     real(kind=kreal) :: thresh
     real(kind=kreal) :: filter
     real(kind=kreal) :: solver_ropt(10)
@@ -170,7 +170,7 @@ contains
     !* data --------------------------------------------------------------------------------------- *!
     ! JP-4
     if( fstr_ctrl_get_data_ex( ctrl, 1,   'iiiiii ', nier, iterpremax, nrest, ncolor_in, recyclepre, nBFGS )/= 0) return
-    if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, sigma )/= 0) return
+    if( fstr_ctrl_get_data_ex( ctrl, 2,   'rrr ', resid, singma_diag, omega )/= 0) return
 
     if( precond == 20 .or. precond == 21) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'rr ', thresh, filter)/= 0) return

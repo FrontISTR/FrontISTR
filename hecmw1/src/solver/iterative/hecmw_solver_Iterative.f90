@@ -43,7 +43,7 @@ contains
     real(kind=kreal)   :: time_Ax, time_precond
 
     integer(kind=kint) :: NREST
-    real(kind=kreal)   :: SIGMA
+    real(kind=kreal)   :: OMEGA
 
     integer(kind=kint) :: auto_sigma_diag
 
@@ -62,7 +62,6 @@ contains
     TIME_sol  = 0.d0
     RESID     = hecmw_mat_get_resid(hecMAT)
     SIGMA_DIAG= hecmw_mat_get_sigma_diag(hecMAT)
-    SIGMA     = hecmw_mat_get_sigma(hecMAT)
     THRESH    = hecmw_mat_get_thresh(hecMAT)
     FILTER    = hecmw_mat_get_filter(hecMAT)
     if (SIGMA_DIAG.lt.0.d0) then
@@ -71,6 +70,11 @@ contains
     else
       auto_sigma_diag= 0
     endif
+
+    ! the control file reaches Rarray without passing through the setter, so the
+    ! range that hecmw_mat_set_omega enforces has to be applied here as well
+    OMEGA     = hecmw_mat_get_omega(hecMAT)
+    call hecmw_mat_set_omega(hecMAT, OMEGA)
 
     !C ERROR CHECK
     call hecmw_solve_check_zerodiag(hecMESH, hecMAT) !C-- ZERO DIAGONAL component

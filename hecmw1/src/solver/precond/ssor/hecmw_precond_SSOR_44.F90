@@ -43,6 +43,12 @@ module hecmw_precond_SSOR_44
 
   logical, save :: INITIALIZED = .false.
 
+  ! relaxation parameter of
+  !   M = 1/(2-OMEGA) (D/OMEGA + L) (D/OMEGA)^-1 (D/OMEGA + U)
+  ! OMEGA = 1 is the classic (D+L) D^-1 (D+U).  _apply is handed only ZP, so setup
+  ! leaves the value here for it.
+  real(kind=kreal), save :: OMEGA = 1.d0
+
   ! for tuning
   integer(kind=kint), parameter :: numOfBlockPerThread = 100
   integer(kind=kint), save :: numOfThread = 1, numOfBlock
@@ -59,7 +65,7 @@ contains
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NPL, NPU
     integer(kind=kint ) :: NCOLOR_IN
-    real   (kind=kreal) :: SIGMA_DIAG
+    real   (kind=kreal) :: OMEGA_INV
     real   (kind=kreal) :: ALUtmp(4,4), PW(4)
     integer(kind=kint ) :: ii, i, j, k
     integer(kind=kint ) :: nthreads = 1
@@ -88,7 +94,8 @@ contains
     N = hecMAT%N
     ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
-    SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
+    OMEGA = hecmw_mat_get_omega(hecMAT)
+    OMEGA_INV = 1.d0 / OMEGA
 
 #ifdef _OPENACC
     allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
@@ -162,26 +169,26 @@ contains
     !$acc kernels
     !$acc loop independent private(ALUtmp,PW)
 #else
-    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,OMEGA_INV)
     !$omp do
 #endif
     do ii= 1, N
-      ALUtmp(1,1)= ALU(16*ii-15) * SIGMA_DIAG
-      ALUtmp(1,2)= ALU(16*ii-14)
-      ALUtmp(1,3)= ALU(16*ii-13)
-      ALUtmp(1,4)= ALU(16*ii-12)
-      ALUtmp(2,1)= ALU(16*ii-11)
-      ALUtmp(2,2)= ALU(16*ii-10) * SIGMA_DIAG
-      ALUtmp(2,3)= ALU(16*ii- 9)
-      ALUtmp(2,4)= ALU(16*ii- 8)
-      ALUtmp(3,1)= ALU(16*ii- 7)
-      ALUtmp(3,2)= ALU(16*ii- 6)
-      ALUtmp(3,3)= ALU(16*ii- 5) * SIGMA_DIAG
-      ALUtmp(3,4)= ALU(16*ii- 4)
-      ALUtmp(4,1)= ALU(16*ii- 3)
-      ALUtmp(4,2)= ALU(16*ii- 2)
-      ALUtmp(4,3)= ALU(16*ii- 1)
-      ALUtmp(4,4)= ALU(16*ii   ) * SIGMA_DIAG
+      ALUtmp(1,1)= ALU(16*ii-15) * OMEGA_INV
+      ALUtmp(1,2)= ALU(16*ii-14) * OMEGA_INV
+      ALUtmp(1,3)= ALU(16*ii-13) * OMEGA_INV
+      ALUtmp(1,4)= ALU(16*ii-12) * OMEGA_INV
+      ALUtmp(2,1)= ALU(16*ii-11) * OMEGA_INV
+      ALUtmp(2,2)= ALU(16*ii-10) * OMEGA_INV
+      ALUtmp(2,3)= ALU(16*ii- 9) * OMEGA_INV
+      ALUtmp(2,4)= ALU(16*ii- 8) * OMEGA_INV
+      ALUtmp(3,1)= ALU(16*ii- 7) * OMEGA_INV
+      ALUtmp(3,2)= ALU(16*ii- 6) * OMEGA_INV
+      ALUtmp(3,3)= ALU(16*ii- 5) * OMEGA_INV
+      ALUtmp(3,4)= ALU(16*ii- 4) * OMEGA_INV
+      ALUtmp(4,1)= ALU(16*ii- 3) * OMEGA_INV
+      ALUtmp(4,2)= ALU(16*ii- 2) * OMEGA_INV
+      ALUtmp(4,3)= ALU(16*ii- 1) * OMEGA_INV
+      ALUtmp(4,4)= ALU(16*ii   ) * OMEGA_INV
 
       do k= 1, 4
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
@@ -281,6 +288,8 @@ contains
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
     real(kind=kreal) :: SW1, SW2, SW3, SW4, X1, X2, X3, X4
 
+    real(kind=kreal) :: OMEGA_FAC
+
     ! added for tuning >>>
     integer(kind=kint) :: blockIndex
 
@@ -292,6 +301,8 @@ contains
 #endif
     ! <<< added for tuning
 
+    OMEGA_FAC = 2.d0 - OMEGA
+
 #ifndef _OPENACC
     !call start_collection("loopInPrecond44")
 
@@ -300,7 +311,7 @@ contains
 
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,OMEGA_FAC) &
       !$omp&private(SW1,SW2,SW3,SW4,X1,X2,X3,X4,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 #endif
 
@@ -318,10 +329,10 @@ contains
 #endif
           ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
           iold = perm(i)
-          SW1= ZP(4*iold-3)
-          SW2= ZP(4*iold-2)
-          SW3= ZP(4*iold-1)
-          SW4= ZP(4*iold  )
+          SW1= OMEGA_FAC * ZP(4*iold-3)
+          SW2= OMEGA_FAC * ZP(4*iold-2)
+          SW3= OMEGA_FAC * ZP(4*iold-1)
+          SW4= OMEGA_FAC * ZP(4*iold  )
           isL= indexL(i-1)+1
           ieL= indexL(i)
           do j= isL, ieL

@@ -912,7 +912,7 @@ contains
 
     hecMAT%Rarray(1) =  1.0e-8 ! = resid
     hecMAT%Rarray(2) =  1.0    ! = sigma_diag
-    hecMAT%Rarray(3) =  0.0    ! = sigma
+    hecMAT%Rarray(3) =  1.0    ! = omega
     hecMAT%Rarray(4) =  0.1    ! = thresh
     hecMAT%Rarray(5) =  0.1    ! = filter
     hecMAT%Rarray(11)=  1.0e+4 ! = penalty
