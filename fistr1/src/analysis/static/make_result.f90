@@ -1262,9 +1262,15 @@ contains
       nn = n_comp_valtype( fstrSOLID%output_ctrl(4)%outinfo%vtype(34), ndof )
       fstrRESULT%ne_dof(ecomp) = nn
       fstrRESULT%elem_label(ecomp) = 'MATERIAL_ID'
+      ! hecMESH%section_ID holds the MPC or contact pair index for the pseudo
+      ! elements of HEC-MW, not a section ID
       do i = 1, hecMESH%n_elem
         j = hecMESH%section_ID(i)
-        fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = hecMESH%section%sect_mat_ID_item(j)
+        if( j >= 1 .and. j <= hecMESH%section%n_sect ) then
+          fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = hecMESH%section%sect_mat_ID_item(j)
+        else
+          fstrRESULT%elem_val_item(eitem*(i-1)+1+jitem) = 0.d0
+        endif
       enddo
       jitem = jitem + nn
     endif
@@ -1644,9 +1650,15 @@ contains
         fstrRESULT%ne_dof(ecomp) = nn
         fstrRESULT%elem_label(ecomp) = 'ORIENTATION'//trim(cnum)
       enddo
+      ! hecMESH%section_ID holds the MPC or contact pair index for the pseudo
+      ! elements of HEC-MW, not a section ID
       do i = 1, hecMESH%n_elem
         isect = hecMESH%section_ID(i)
-        cdsys_ID = hecMESH%section%sect_orien_ID(isect)
+        if( isect >= 1 .and. isect <= hecMESH%section%n_sect ) then
+          cdsys_ID = hecMESH%section%sect_orien_ID(isect)
+        else
+          cdsys_ID = -1
+        endif
         if(cdsys_ID == -1) then
           coordsys(:,:) = 0.0d0
         else
