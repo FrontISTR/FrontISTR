@@ -364,6 +364,9 @@ contains
     dst%node_group%bc_grp_val => src%node_group%bc_grp_val
     !
     dst%node => src%node
+    dst%elem_type_index => src%elem_type_index
+    dst%elem_node_index => src%elem_node_index
+    dst%elem_node_item  => src%elem_node_item
   end subroutine copy_mesh
 
   !> \brief Free mesh
@@ -377,8 +380,8 @@ contains
       deallocate(hecMESH%export_index)
       deallocate(hecMESH%import_item)
       deallocate(hecMESH%export_item)
-      deallocate(hecMESH%global_node_ID)
     endif
+    deallocate(hecMESH%global_node_ID)
     deallocate(hecMESH%node_ID)
     deallocate(hecMESH%elem_type_item)
     !hecMESH%node => null()
