@@ -110,7 +110,7 @@ module mContactDef
     integer                       :: smoothing               !< kcsNONE or kcsNAGATA
 
     logical                       :: mpced                   !< if turns into mpc condition
-    logical                       :: symmetric               !< if symmetrizalized in friction calculation
+    logical                       :: symmetric               !< true for FRICTION_CONE=FROZEN: cone radius kept at the multiplier
 
     ! following contact state
     type(tContactState), pointer  :: states(:)=>null()       !< contact states of each slave nodes

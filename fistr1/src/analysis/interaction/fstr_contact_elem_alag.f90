@@ -29,7 +29,7 @@ contains
     real(kind=kreal), intent(in)    :: ele(:,:)        !< coord of surface element
     real(kind=kreal), intent(in)    :: mu, mut         !< penalty parameters
     real(kind=kreal), intent(in)    :: fcoeff          !< friction coefficient
-    logical, intent(in)             :: symm            !< symmetricalize
+    logical, intent(in)             :: symm            !< freeze the friction cone radius at the multiplier
     real(kind=kreal), intent(out)   :: stiff(:,:)      !< contact stiffness
     real(kind=kreal), intent(out)   :: force(:)        !< contact force direction
     integer(kind=kint), optional, intent(in) :: smoothing_type  !< kcsNONE or kcsNAGATA
@@ -137,12 +137,9 @@ contains
       ! Rows are a slip direction and columns a normal map, so the block is unsymmetric: the
       ! caller has to set the linear solver up for a general matrix (see fstr_Newton_contactALag).
       if( .not.symm .and. lam_cone > 0.0d0 .and. alpha_proj > 1.0d-20 .and. alpha_proj < 0.999d0 ) then
-        ! The direction is frozen at the tangential multiplier of the last augmentation
-        ! instead of the trial direction that_dir.  Linearising about a quantity held fixed
-        ! inside the augmentation step is the same idea as the algorithmic symmetrization of
-        ! the rest of these terms, applied to the direction only: that_dir turns with every
-        ! Newton iterate, and this rank-1 block feeds those turns back into the tangent, which
-        ! leaves the inner Newton alternating between two states instead of converging.
+        ! The direction is the tangential multiplier, not the trial direction that_dir, so
+        ! that it stays fixed inside the augmentation step; at the fixed point of the
+        ! augmentation the two coincide and the tangent is still the consistent one.
         tdir(1:2) = that_dir(1:2)
         det = metric(1,1)*metric(2,2) - metric(1,2)*metric(2,1)
         if( abs(det) > 1.0d-20 ) then
@@ -177,7 +174,7 @@ contains
     integer(kind=kint) :: j
     real(kind=kreal), intent(in) :: mu, mut !< penalty parameters
     real(kind=kreal)   :: fcoeff !< friction coefficient
-    logical, intent(in) :: symm  !< symmetricalize
+    logical, intent(in) :: symm  !< freeze the friction cone radius at the multiplier
     real(kind=kreal)   :: lagrange !< not used for ALagrange (kept for interface compatibility)
     real(kind=kreal)   :: ndCoord(:), ndDu(:) !< nodal coordinates (coord+disp+ddisp); nodal displacement increment (ddisp)
     real(kind=kreal)   :: ctNForce(:) !< contact normal force vector
@@ -320,10 +317,8 @@ contains
 
     ! --- Tangent component ---
 
-    ! Compute friction force with multiplier update and state check.  The multiplier has just
-    ! absorbed mu*g_n above, so it already is the normal force of this configuration and needs
-    ! no further correction; the clip at 0 is a no-op here because computeFrictionForce_ALag
-    ! only uses lambda_n through "lambda_n > 0" and "fcoeff*lambda_n" inside that branch.
+    ! The multiplier has just absorbed mu*g_n above, so it already is the normal force this
+    ! configuration applies and serves as the cone radius for either FRICTION_CONE setting.
     call computeFrictionForce_ALag(ctState, fcoeff, ctState%multiplier(1), metric, &
                                     Ht, Gt, edisp, edof, ctTForce, &
                                     mut, &

@@ -1,25 +1,10 @@
 ###################################################################################
-##### Force-controlled wedge for !CONTACT_ALGO, FRICTION_CONE=FOLLOW
-#####
-##### A block rests on a master ramp of slope s = 0.115 and is pushed along the
-##### ramp by a horizontal load of 880 N (20 nodes x 44 N, ramped by TIMC1).  The
-##### only thing that holds it is the contact, so at full load the equilibrium of
-##### the whole block gives the total contact normal force in closed form,
-#####   2*F/(c*(s+mu)) = 5624.1 N ,   c = 1/sqrt(1+s^2),  mu = 0.2
-##### the factor 2 because CONTACT_NFORCE is written on the slave and on the master
-##### side.  This deck ends at 5625.1 N, 0.018% away from it, in 10 substeps.
-#####
-##### With the default FRICTION_CONE=FROZEN the same deck does not get there: the
-##### frozen cone lags the normal force by the penalty term, and on a load path of
-##### slope s the augmentation loop maps the error of the multiplier to -(mu/s) =
-##### -1.74 times itself, so it alternates between two states instead of
-##### converging.  The run then exhausts AUGITER at nearly every contact iteration
-##### and stops in the second substep, at t = 0.1.
-#####
-##### The springs are the decaying kind (negative stiffness, so they vanish as the
-##### load factor reaches 1): before the contact carries any load the block has no
-##### stiffness along the ramp.  BiCGSTAB because the tangent of FRICTION_CONE=
-##### FOLLOW is unsymmetric.
+##### Force-controlled wedge: a block on a ramp of slope s = 0.115 held there only
+##### by the friction of the contact (mu = 0.2).  The equilibrium of the whole block
+##### at full load gives the total contact normal force 2*F/(c*(s+mu)) = 5624.1 N,
+##### c = 1/sqrt(1+s^2), the factor 2 because it is written on both sides of a pair.
+##### With FRICTION_CONE=FROZEN the augmentation loop does not converge on this load
+##### path and the run stops at t = 0.1.
 ###################################################################################
 !VERSION
  5
