@@ -1,0 +1,140 @@
+# Valgrind suppressions for Open MPI and the libraries it pulls in.  What it
+# sets up at MPI_Init is kept until the process exits, so without these a
+# parallel run reports hundreds of blocks that FrontISTR never allocated.
+#
+# Each entry matches any allocation made inside the library, wherever it was
+# called from; blocks that FrontISTR allocates itself are never matched, since
+# their allocation stack stays in fistr1.
+#
+# Another MPI implementation names its libraries differently, so these entries
+# do not apply to it.
+
+#
+# Open MPI: the MCA framework registers components and parameters at MPI_Init
+# and releases only part of them at MPI_Finalize
+#
+{
+   openmpi-libmpi
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libmpi.so*
+   ...
+}
+{
+   openmpi-libmpi-mpifh
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libmpi_mpifh.so*
+   ...
+}
+{
+   openmpi-libopen-pal
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libopen-pal.so*
+   ...
+}
+{
+   openmpi-libopen-rte
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libopen-rte.so*
+   ...
+}
+{
+   openmpi-libpmix
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libpmix.so*
+   ...
+}
+
+# PMIx packs its messages into a buffer it extends in place, so the padding it
+# writes out has never been initialised.  The system call argument is matched
+# literally, as valgrind accepts no wildcard on that line.
+{
+   openmpi-libpmix-writev
+   Memcheck:Param
+   writev(vector[1])
+   ...
+   obj:*/libpmix.so*
+   ...
+}
+
+#
+# libevent: the event loop Open MPI runs its out-of-band communication on
+#
+{
+   libevent
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libevent*.so*
+   ...
+}
+
+#
+# hwloc and the libraries its plugins pull in: the topology discovered at
+# MPI_Init is kept until the process exits
+#
+{
+   hwloc
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libhwloc.so*
+   ...
+}
+{
+   hwloc-plugins
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/hwloc/hwloc_*.so*
+   ...
+}
+{
+   hwloc-libpciaccess
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libpciaccess.so*
+   ...
+}
+{
+   hwloc-libudev
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libudev.so*
+   ...
+}
+{
+   hwloc-libOpenCL
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libOpenCL.so*
+   ...
+}
+
+#
+# The dynamic loader, while Open MPI and hwloc bring in their plugins.  These
+# allocations are made in ld-linux rather than in the plugin, and the stack is
+# deep enough that the frames naming the library fall outside what valgrind
+# records by default.  FrontISTR opens no shared object of its own, so nothing
+# of ours is allocated this way
+#
+{
+   dynamic-loader-dlopen
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   fun:_dl_open
+   ...
+}

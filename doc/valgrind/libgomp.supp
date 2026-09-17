@@ -1,0 +1,19 @@
+# Valgrind suppressions for the OpenMP runtime of GCC.  The thread pool and the
+# per-thread data it allocates on the first parallel region live until the
+# process exits.
+#
+# The entry matches any allocation made inside the library, wherever it was
+# called from; blocks that FrontISTR allocates itself are never matched, since
+# their allocation stack stays in fistr1.
+#
+# Another compiler ships a different OpenMP runtime (libiomp5 for Intel, for
+# instance), so this entry does not apply to it.
+
+{
+   libgomp
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   obj:*/libgomp.so*
+   ...
+}
