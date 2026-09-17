@@ -95,7 +95,7 @@ contains
   !! @param[inout] label 節点データの名前（呼び出し側で確保済み）
   !! @param[in] label_len 確保済みの label の大きさ
   !! @param[out] value 節点データの先頭ポインタ
-  !! @remark (1:dim,1:n_node) に reshape して value(index:index+dof,:) に格納されている
+  !! @remark value を (1:dim,1:n_node) に reshape した (index:index+dof,:) に格納されている
   subroutine hecmw_api_result_node_val(result,i,dim,index,dof,label,label_len,value) bind(C,name='hecmw_api_result_node_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
@@ -149,7 +149,7 @@ contains
   !! @param[inout] label 要素データの名前（呼び出し側で確保済み）
   !! @param[in] label_len 確保済みの label の大きさ
   !! @param[out] value 要素データの先頭ポインタ
-  !! @remark (1:dim,1:n_elem) に reshape して value(index:index+dof,:) に格納されている
+  !! @remark value を (1:dim,1:n_elem) に reshape した (index:index+dof,:) に格納されている
   subroutine hecmw_api_result_elem_val(result,i,dim,index,dof,label,label_len,value) bind(C,name='hecmw_api_result_elem_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
