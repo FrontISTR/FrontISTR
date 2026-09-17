@@ -2157,7 +2157,7 @@ contains
 
     !   resid      => svRarray(1)
     !   sigma_diag => svRarray(2)
-    !   sigma      => svRarray(3)
+    !   omega      => svRarray(3)
     !   thresh     => svRarray(4)
     !   filter     => svRarray(5)
     !   solver_ropt=> svRarray(41:50)

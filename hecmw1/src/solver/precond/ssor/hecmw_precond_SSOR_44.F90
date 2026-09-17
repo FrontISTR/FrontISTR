@@ -43,6 +43,21 @@ module hecmw_precond_SSOR_44
 
   logical, save :: INITIALIZED = .false.
 
+  ! relaxation parameter of
+  !   M = 1/(2-OMEGA) (D/OMEGA + L) (D/OMEGA)^-1 (D/OMEGA + U)
+  ! OMEGA = 1 is the classic (D+L) D^-1 (D+U).  _apply is handed only ZP, so setup
+  ! leaves the value here for it.
+  real(kind=kreal), save :: OMEGA = 1.d0
+
+  ! for tuning
+  integer(kind=kint), parameter :: numOfBlockPerThread = 100
+  integer(kind=kint), save :: numOfThread = 1, numOfBlock
+  integer(kind=kint), save, allocatable :: icToBlockIndex(:)
+  integer(kind=kint), save, allocatable :: blockIndexToColorIndex(:)
+  integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
+
+  integer(kind=kint), parameter :: DEBUG = 0
+
 contains
 
   subroutine hecmw_precond_SSOR_44_setup(hecMAT)
@@ -50,15 +65,17 @@ contains
     type(hecmwST_matrix), intent(inout) :: hecMAT
     integer(kind=kint ) :: NPL, NPU
     integer(kind=kint ) :: NCOLOR_IN
-    real   (kind=kreal) :: SIGMA_DIAG
+    real   (kind=kreal) :: OMEGA_INV
     real   (kind=kreal) :: ALUtmp(4,4), PW(4)
     integer(kind=kint ) :: ii, i, j, k
     integer(kind=kint ) :: nthreads = 1
     integer(kind=kint ), allocatable :: perm_tmp(:)
-    !real   (kind=kreal) :: t0
+    real   (kind=kreal) :: t0
 
-    !t0 = hecmw_Wtime()
-    !write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
+    if (DEBUG >= 1) then
+      t0 = hecmw_Wtime()
+      write(*,*) 'DEBUG: SSOR setup start', hecmw_Wtime()-t0
+    endif
 
     if (INITIALIZED) then
       if (hecMAT%Iarray(98) == 1) then ! need symbolic and numerical setup
@@ -77,17 +94,18 @@ contains
     N = hecMAT%N
     ! N = hecMAT%NP
     NCOLOR_IN = hecmw_mat_get_ncolor_in(hecMAT)
-    SIGMA_DIAG = hecmw_mat_get_sigma_diag(hecMAT)
+    OMEGA = hecmw_mat_get_omega(hecMAT)
+    OMEGA_INV = 1.d0 / OMEGA
 
 #ifdef _OPENACC
     allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
     call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
       hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
-    !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
     call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
       hecMAT%indexU, hecMAT%itemU, perm_tmp, &
       NCOLOR_IN, NColor, COLORindex, perm, iperm)
-    !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
     deallocate(perm_tmp)
 
 #else
@@ -104,23 +122,30 @@ contains
       allocate(COLORindex(0:N), perm_tmp(N), perm(N), iperm(N))
       call hecmw_matrix_ordering_RCM(N, hecMAT%indexL, hecMAT%itemL, &
         hecMAT%indexU, hecMAT%itemU, perm_tmp, iperm)
-      !write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
+      if (DEBUG >= 1) write(*,*) 'DEBUG: RCM ordering done', hecmw_Wtime()-t0
       call hecmw_matrix_ordering_MC(N, hecMAT%indexL, hecMAT%itemL, &
         hecMAT%indexU, hecMAT%itemU, perm_tmp, &
         NCOLOR_IN, NColor, COLORindex, perm, iperm)
-      !write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
+      if (DEBUG >= 1) write(*,*) 'DEBUG: MC ordering done', hecmw_Wtime()-t0
       deallocate(perm_tmp)
 
     endif
 #endif
 
-    NPL = hecMAT%indexL(N)
+    NPL = 0
+    do i=1,N
+      do j=hecMAT%indexU(i-1)+1,hecMAT%indexU(i)
+        if( hecMAT%itemU(j) > N ) exit
+        NPL = NPL + 1
+      enddo
+    enddo
+    NPL = max(hecMAT%indexL(N),NPL)
     NPU = hecMAT%indexU(N)
     allocate(indexL(0:N), indexU(0:N), itemL(NPL), itemU(NPU))
     call hecmw_matrix_reorder_profile(N, perm, iperm, &
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       indexL, indexU, itemL, itemU)
-    !write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering profile done', hecmw_Wtime()-t0
 
 
     allocate(D(16*N), AL(16*NPL), AU(16*NPU))
@@ -128,7 +153,7 @@ contains
       hecMAT%indexL, hecMAT%indexU, hecMAT%itemL, hecMAT%itemU, &
       hecMAT%AL, hecMAT%AU, hecMAT%D, &
       indexL, indexU, itemL, itemU, AL, AU, D)
-    !write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: reordering values done', hecmw_Wtime()-t0
 
     call hecmw_matrix_reorder_renum_item(N, perm, indexL, itemL)
     call hecmw_matrix_reorder_renum_item(N, perm, indexU, itemU)
@@ -144,26 +169,26 @@ contains
     !$acc kernels
     !$acc loop independent private(ALUtmp,PW)
 #else
-    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,SIGMA_DIAG)
+    !$omp parallel default(none),private(ii,ALUtmp,k,i,j,PW),shared(N,ALU,OMEGA_INV)
     !$omp do
 #endif
     do ii= 1, N
-      ALUtmp(1,1)= ALU(16*ii-15) * SIGMA_DIAG
-      ALUtmp(1,2)= ALU(16*ii-14)
-      ALUtmp(1,3)= ALU(16*ii-13)
-      ALUtmp(1,4)= ALU(16*ii-12)
-      ALUtmp(2,1)= ALU(16*ii-11)
-      ALUtmp(2,2)= ALU(16*ii-10) * SIGMA_DIAG
-      ALUtmp(2,3)= ALU(16*ii- 9)
-      ALUtmp(2,4)= ALU(16*ii- 8)
-      ALUtmp(3,1)= ALU(16*ii- 7)
-      ALUtmp(3,2)= ALU(16*ii- 6)
-      ALUtmp(3,3)= ALU(16*ii- 5) * SIGMA_DIAG
-      ALUtmp(3,4)= ALU(16*ii- 4)
-      ALUtmp(4,1)= ALU(16*ii- 3)
-      ALUtmp(4,2)= ALU(16*ii- 2)
-      ALUtmp(4,3)= ALU(16*ii- 1)
-      ALUtmp(4,4)= ALU(16*ii   ) * SIGMA_DIAG
+      ALUtmp(1,1)= ALU(16*ii-15) * OMEGA_INV
+      ALUtmp(1,2)= ALU(16*ii-14) * OMEGA_INV
+      ALUtmp(1,3)= ALU(16*ii-13) * OMEGA_INV
+      ALUtmp(1,4)= ALU(16*ii-12) * OMEGA_INV
+      ALUtmp(2,1)= ALU(16*ii-11) * OMEGA_INV
+      ALUtmp(2,2)= ALU(16*ii-10) * OMEGA_INV
+      ALUtmp(2,3)= ALU(16*ii- 9) * OMEGA_INV
+      ALUtmp(2,4)= ALU(16*ii- 8) * OMEGA_INV
+      ALUtmp(3,1)= ALU(16*ii- 7) * OMEGA_INV
+      ALUtmp(3,2)= ALU(16*ii- 6) * OMEGA_INV
+      ALUtmp(3,3)= ALU(16*ii- 5) * OMEGA_INV
+      ALUtmp(3,4)= ALU(16*ii- 4) * OMEGA_INV
+      ALUtmp(4,1)= ALU(16*ii- 3) * OMEGA_INV
+      ALUtmp(4,2)= ALU(16*ii- 2) * OMEGA_INV
+      ALUtmp(4,3)= ALU(16*ii- 1) * OMEGA_INV
+      ALUtmp(4,4)= ALU(16*ii   ) * OMEGA_INV
 
       do k= 1, 4
         ALUtmp(k,k)= 1.d0/ALUtmp(k,k)
@@ -208,74 +233,75 @@ contains
     hecMAT%Iarray(98) = 0 ! symbolic setup done
     hecMAT%Iarray(97) = 0 ! numerical setup done
 
-    !write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
+    if (DEBUG >= 1) write(*,*) 'DEBUG: SSOR setup done', hecmw_Wtime()-t0
 
   end subroutine hecmw_precond_SSOR_44_setup
 
-  subroutine hecmw_precond_SSOR_44_apply(ZP)
+  subroutine setup_tuning_parameters
     use hecmw_tuning_fx
+    implicit none
+    integer(kind=kint) :: blockIndex, elementCount, numOfElement, ii
+    real(kind=kreal) :: numOfElementPerBlock
+    integer(kind=kint) :: ic, i
+    if (DEBUG >= 1) write(*,*) 'DEBUG: setting up tuning parameters for SSOR'
+#ifndef _OPENACC
+    !$ numOfThread = omp_get_max_threads()
+#endif
+
+    numOfBlock = numOfThread * numOfBlockPerThread
+    if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
+    if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
+    allocate (icToBlockIndex(0:NColor), &
+         blockIndexToColorIndex(0:numOfBlock + NColor))
+    numOfElement = N + indexL(N) + indexU(N)
+    numOfElementPerBlock = dble(numOfElement) / numOfBlock
+    blockIndex = 0
+    icToBlockIndex = -1
+    icToBlockIndex(0) = 0
+    blockIndexToColorIndex = -1
+    blockIndexToColorIndex(0) = 0
+    do ic = 1, NColor
+      elementCount = 0
+      ii = 1
+      do i = COLORindex(ic-1)+1, COLORindex(ic)
+        elementCount = elementCount + 1
+        elementCount = elementCount + (indexL(i) - indexL(i-1))
+        elementCount = elementCount + (indexU(i) - indexU(i-1))
+        if (elementCount > ii * numOfElementPerBlock &
+             .or. i == COLORindex(ic)) then
+          ii = ii + 1
+          blockIndex = blockIndex + 1
+          blockIndexToColorIndex(blockIndex) = i
+        endif
+      enddo
+      icToBlockIndex(ic) = blockIndex
+    enddo
+    numOfBlock = blockIndex
+
+    call hecmw_tuning_fx_calc_sector_cache( N, 4, &
+         sectorCacheSize0, sectorCacheSize1 )
+  end subroutine setup_tuning_parameters
+
+  subroutine hecmw_precond_SSOR_44_apply(ZP)
     implicit none
     real(kind=kreal), intent(inout) :: ZP(:)
     integer(kind=kint) :: ic, i, iold, j, isL, ieL, isU, ieU, k
     real(kind=kreal) :: SW1, SW2, SW3, SW4, X1, X2, X3, X4
 
+    real(kind=kreal) :: OMEGA_FAC
+
     ! added for tuning >>>
-    integer(kind=kint), parameter :: numOfBlockPerThread = 100
-    integer(kind=kint), save :: numOfThread = 1, numOfBlock
-    integer(kind=kint), save, allocatable :: icToBlockIndex(:)
-    integer(kind=kint), save, allocatable :: blockIndexToColorIndex(:)
-    integer(kind=kint), save :: sectorCacheSize0, sectorCacheSize1
-    integer(kind=kint) :: blockIndex, elementCount, numOfElement, ii
-    real(kind=kreal) :: numOfElementPerBlock
-    integer(kind=kint) :: my_rank
+    integer(kind=kint) :: blockIndex
 
 #ifndef _OPENACC
     if (isFirst) then
-      !$ numOfThread = omp_get_max_threads()
-      numOfBlock = numOfThread * numOfBlockPerThread
-      if (allocated(icToBlockIndex)) deallocate(icToBlockIndex)
-      if (allocated(blockIndexToColorIndex)) deallocate(blockIndexToColorIndex)
-      allocate (icToBlockIndex(0:NColor), &
-        blockIndexToColorIndex(0:numOfBlock + NColor))
-      numOfElement = N + indexL(N) + indexU(N)
-      numOfElementPerBlock = dble(numOfElement) / numOfBlock
-      blockIndex = 0
-      icToBlockIndex = -1
-      icToBlockIndex(0) = 0
-      blockIndexToColorIndex = -1
-      blockIndexToColorIndex(0) = 0
-      my_rank = hecmw_comm_get_rank()
-      ! write(9000+my_rank,*) &
-        !      '# numOfElementPerBlock =', numOfElementPerBlock
-      ! write(9000+my_rank,*) &
-        !      '# ic, blockIndex, colorIndex, elementCount'
-      do ic = 1, NColor
-        elementCount = 0
-        ii = 1
-        do i = COLORindex(ic-1)+1, COLORindex(ic)
-          elementCount = elementCount + 1
-          elementCount = elementCount + (indexL(i) - indexL(i-1))
-          elementCount = elementCount + (indexU(i) - indexU(i-1))
-          if (elementCount > ii * numOfElementPerBlock &
-              .or. i == COLORindex(ic)) then
-            ii = ii + 1
-            blockIndex = blockIndex + 1
-            blockIndexToColorIndex(blockIndex) = i
-            ! write(9000+my_rank,*) ic, blockIndex, &
-              !      blockIndexToColorIndex(blockIndex), elementCount
-          endif
-        enddo
-        icToBlockIndex(ic) = blockIndex
-      enddo
-      numOfBlock = blockIndex
-
-      call hecmw_tuning_fx_calc_sector_cache( N, 4, &
-        sectorCacheSize0, sectorCacheSize1 )
-
+      call setup_tuning_parameters
       isFirst = .false.
     endif
 #endif
     ! <<< added for tuning
+
+    OMEGA_FAC = 2.d0 - OMEGA
 
 #ifndef _OPENACC
     !call start_collection("loopInPrecond44")
@@ -285,7 +311,7 @@ contains
 
     !$omp parallel default(none) &
       !$omp&shared(NColor,indexL,itemL,indexU,itemU,AL,AU,D,ALU,perm,&
-      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex) &
+      !$omp&       ZP,icToBlockIndex,blockIndexToColorIndex,OMEGA_FAC) &
       !$omp&private(SW1,SW2,SW3,SW4,X1,X2,X3,X4,ic,i,iold,isL,ieL,isU,ieU,j,k,blockIndex)
 #endif
 
@@ -303,10 +329,10 @@ contains
 #endif
           ! do i = startPos(threadNum, ic), endPos(threadNum, ic)
           iold = perm(i)
-          SW1= ZP(4*iold-3)
-          SW2= ZP(4*iold-2)
-          SW3= ZP(4*iold-1)
-          SW4= ZP(4*iold  )
+          SW1= OMEGA_FAC * ZP(4*iold-3)
+          SW2= OMEGA_FAC * ZP(4*iold-2)
+          SW3= OMEGA_FAC * ZP(4*iold-1)
+          SW4= OMEGA_FAC * ZP(4*iold  )
           isL= indexL(i-1)+1
           ieL= indexL(i)
           do j= isL, ieL
@@ -424,23 +450,17 @@ contains
   subroutine hecmw_precond_SSOR_44_clear(hecMAT)
     implicit none
     type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint ) :: nthreads = 1
-#ifndef _OPENACC
-    !$ nthreads = omp_get_max_threads()
-#endif
     if (associated(COLORindex)) deallocate(COLORindex)
     if (associated(perm)) deallocate(perm)
     if (associated(iperm)) deallocate(iperm)
     if (associated(ALU)) deallocate(ALU)
-    if (nthreads >= 1) then
-      if (associated(D)) deallocate(D)
-      if (associated(AL)) deallocate(AL)
-      if (associated(AU)) deallocate(AU)
-      if (associated(indexL)) deallocate(indexL)
-      if (associated(indexU)) deallocate(indexU)
-      if (associated(itemL)) deallocate(itemL)
-      if (associated(itemU)) deallocate(itemU)
-    end if
+    if (associated(D)) deallocate(D)
+    if (associated(AL)) deallocate(AL)
+    if (associated(AU)) deallocate(AU)
+    if (associated(indexL)) deallocate(indexL)
+    if (associated(indexU)) deallocate(indexU)
+    if (associated(itemL)) deallocate(itemL)
+    if (associated(itemU)) deallocate(itemU)
     nullify(COLORindex)
     nullify(perm)
     nullify(iperm)
@@ -452,8 +472,7 @@ contains
     nullify(indexU)
     nullify(itemL)
     nullify(itemU)
+    INITIALIZED = .false.
   end subroutine hecmw_precond_SSOR_44_clear
-
-
 
 end module     hecmw_precond_SSOR_44

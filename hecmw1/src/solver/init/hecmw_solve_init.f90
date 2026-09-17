@@ -26,7 +26,7 @@ contains
 
     hecMAT%Rarray(1)= 1.d-8
     hecMAT%Rarray(2)= 1.d0
-    hecMAT%Rarray(3)= 0.d0
+    hecMAT%Rarray(3)= 1.d0
     hecMAT%Rarray(4)= 0.10d0
     hecMAT%Rarray(5)= 0.10d0
 

@@ -23,7 +23,6 @@ contains
   subroutine hecmw_matvec_66 (hecMESH, hecMAT, X, Y, time_Ax, COMMtime)
     use hecmw_util
     use m_hecmw_comm_f
-    use hecmw_matrix_misc
     use hecmw_jad_type
     use hecmw_tuning_fx
     !$ use omp_lib
@@ -80,7 +79,14 @@ contains
 
       ! added for tuning >>>
 #ifndef _OPENACC
-      if (isFirst .eqv. .true.) then
+      if (.not. isFirst) then
+        numOfBlock = numOfThread * numOfBlockPerThread
+        if (endPos(numOfBlock-1) .ne. N-1) then
+          deallocate(startPos, endPos)
+          isFirst = .true.
+        endif
+      endif
+      if (isFirst) then
         !$ numOfThread = omp_get_max_threads()
         numOfBlock = numOfThread * numOfBlockPerThread
         allocate (startPos(0 : numOfBlock - 1), endPos(0 : numOfBlock - 1))
@@ -178,7 +184,7 @@ contains
 
       !$OMP PARALLEL DEFAULT(NONE) &
         !$OMP&PRIVATE(i,X1,X2,X3,X4,X5,X6,YV1,YV2,YV3,YV4,YV5,YV6,jS,jE,j,in,threadNum,blockNum,blockIndex) &
-        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread)
+        !$OMP&SHARED(D,AL,AU,indexL,itemL,indexU,itemU,X,Y,startPos,endPos,numOfThread,N)
       threadNum = 0
       !$ threadNum = omp_get_thread_num()
       do blockNum = 0 , numOfBlockPerThread - 1
@@ -278,14 +284,19 @@ contains
 #ifdef _OPENACC
     !$acc kernels
     !$acc loop independent
+#else
+    !$omp parallel default(none),private(i),shared(hecMAT,R,B)
+    !$omp do
 #endif
     do i = 1, hecMAT%N * 6
       R(i) = B(i) - R(i)
     enddo
 #ifdef _OPENACC
     !$acc end kernels
+#else
+    !$omp end do
+    !$omp end parallel
 #endif
-
   end subroutine hecmw_matresid_66
 
   !C
