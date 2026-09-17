@@ -10,6 +10,8 @@ module hecmw_api_result_data
 
 contains
 
+  !> @brief 計算結果ハンドラの生成
+  !! @return 計算結果構造体のハンドラ type(c_ptr)
   function hecmw_api_result_new() bind(C,name='hecmw_api_result_new')
     implicit none
     type(c_ptr) :: hecmw_api_result_new
@@ -17,6 +19,8 @@ contains
     hecmw_api_result_new = c_loc(hecRESULT)
   end function
 
+  !> @brief 計算結果ハンドラの破棄
+  !! @param[in] result 計算結果構造体のハンドラ
   subroutine hecmw_api_result_delete(result) bind(C,name='hecmw_api_result_delete')
     implicit none
     type(c_ptr), value :: result
@@ -25,7 +29,9 @@ contains
     call hecmw_result_free(hecRESULT)
   end subroutine
 
-  ! result に格納されている大域データの個数
+  !> @brief 計算結果に含まれる大域データの個数の取得
+  !! @param[in] result 計算結果構造体のハンドラ
+  !! @return 大域データの個数
   function hecmw_api_result_ng_component(result) bind(C,name='hecmw_api_result_ng_component')
     implicit none
     type(c_ptr), value :: result
@@ -35,7 +41,14 @@ contains
     hecmw_api_result_ng_component = hecRESULT%ng_component
   end function
 
-  ! i 番目の大域データのラベルと値を取得
+  !> @brief 計算結果に含まれる大域データのラベルと値を取得
+  !! @param[in] result 計算結果構造体のハンドラ
+  !! @param[in] i 格納されている大域データのインデックス
+  !! @param[out] dof 大域データの自由度
+  !! @param[inout] label 大域データの名前（呼び出し側で確保済み）
+  !! @param[in] label_len 確保済みの label の大きさ
+  !! @param[out] value 大域データの先頭ポインタ
+  !! @remark value(1:dof) に格納されている
   subroutine hecmw_api_result_global_val(result,i,dof,label,label_len,value) bind(C,name='hecmw_api_result_global_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
@@ -43,7 +56,7 @@ contains
     type(c_ptr), value :: result
     integer(c_int), value :: i
     integer(c_int), intent(out) :: dof
-    character(kind=c_char), intent(out) :: label(*)
+    character(kind=c_char), intent(inout) :: label(*)
     integer(c_int), value, intent(in) :: label_len
     type(c_ptr), intent(out) :: value
 
@@ -61,7 +74,9 @@ contains
     value = c_loc(hecRESULT%global_val_item(index))
   end subroutine
 
-  ! result に格納されている節点データの個数
+  !> @brief 計算結果に含まれる節点データの個数の取得
+  !! @param[in] result 計算結果構造体のハンドラ
+  !! @return 節点データの個数
   function hecmw_api_result_nn_component(result) bind(C,name='hecmw_api_result_nn_component')
     implicit none
     type(c_ptr), value :: result
@@ -71,11 +86,16 @@ contains
     hecmw_api_result_nn_component = hecRESULT%nn_component
   end function
 
-  !
-  ! i 番目の節点データを取得 
-  ! 節点ごとに dim 個の値が並んでいる index から始まって dof 個
-  ! nv(1:dim,1:n_node) に reshape して nv(index:index+dof,:) で取り出す
-  ! 
+  !> @brief 計算結果に含まれる節点データのラベルと値を取得
+  !! @param[in] result 計算結果構造体のハンドラ
+  !! @param[in] i 格納されている節点データのインデックス
+  !! @param[out] dim 節点ごとに格納されている全データの自由度
+  !! @param[out] index 節点ごとにデータが格納されているインデックス
+  !! @param[out] dof 節点データの自由度
+  !! @param[inout] label 節点データの名前（呼び出し側で確保済み）
+  !! @param[in] label_len 確保済みの label の大きさ
+  !! @param[out] value 節点データの先頭ポインタ
+  !! @remark (1:dim,1:n_node) に reshape して value(index:index+dof,:) に格納されている
   subroutine hecmw_api_result_node_val(result,i,dim,index,dof,label,label_len,value) bind(C,name='hecmw_api_result_node_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
@@ -85,7 +105,7 @@ contains
     integer(c_int), intent(out) :: dim
     integer(c_int), intent(out) :: index
     integer(c_int), intent(out) :: dof
-    character(kind=c_char), intent(out) :: label(*)
+    character(kind=c_char), intent(inout) :: label(*)
     integer(c_int), value, intent(in) :: label_len
     type(c_ptr), intent(out) :: value
 
@@ -108,7 +128,9 @@ contains
     value = c_loc(hecRESULT%node_val_item)
   end subroutine
 
-  ! result に格納されている要素データの個数
+  !> @brief 計算結果に含まれる要素データの個数の取得
+  !! @param[in] result 計算結果構造体のハンドラ
+  !! @return 要素データの個数
   function hecmw_api_result_ne_component(result) bind(C,name='hecmw_api_result_ne_component')
     implicit none
     type(c_ptr), value :: result
@@ -118,11 +140,16 @@ contains
     hecmw_api_result_ne_component = hecRESULT%ne_component
   end function
 
-  !
-  ! i 番目の要素データを取得 
-  ! 要素ごとに dim 個の値が並んでいる index から始まって dof 個
-  ! ev(1:dim,1:n_elem) に reshape して ev(index:index+dof,:) で取り出す
-  ! 
+  !> @brief 計算結果に含まれる要素データのラベルと値を取得
+  !! @param[in] result 計算結果構造体のハンドラ
+  !! @param[in] i 格納されている要素データのインデックス
+  !! @param[out] dim 要素ごとに格納されている全データの自由度
+  !! @param[out] index 要素ごとにデータが格納されているインデックス
+  !! @param[out] dof 要素データの自由度
+  !! @param[inout] label 要素データの名前（呼び出し側で確保済み）
+  !! @param[in] label_len 確保済みの label の大きさ
+  !! @param[out] value 要素データの先頭ポインタ
+  !! @remark (1:dim,1:n_elem) に reshape して value(index:index+dof,:) に格納されている
   subroutine hecmw_api_result_elem_val(result,i,dim,index,dof,label,label_len,value) bind(C,name='hecmw_api_result_elem_val')
     use hecmw_api_common, only : f_c_str_copy
     use hecmw_result
@@ -132,7 +159,7 @@ contains
     integer(c_int), intent(out) :: dim
     integer(c_int), intent(out) :: index
     integer(c_int), intent(out) :: dof
-    character(kind=c_char), intent(out) :: label(*)
+    character(kind=c_char), intent(inout) :: label(*)
     integer(c_int), value, intent(in) :: label_len
     type(c_ptr), intent(out) :: value
 
