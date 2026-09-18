@@ -72,7 +72,7 @@ contains
     logical          :: isOK
     type(t_output_ctrl) :: outctrl
     type(tshellmat),pointer :: shmat(:)
-    character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2
+    character(len=HECMW_FILENAME_LEN) :: logfileNAME, mName, mName2, mName3
 
     ! counters
     integer(kind=kint) :: c_solution, c_solver, c_nlsolver, c_step, c_write, c_echo, c_amplitude
@@ -84,7 +84,7 @@ contains
     integer(kind=kint) :: c_couple, c_material
     integer(kind=kint) :: c_mpc, c_weldline, c_initial
     integer(kind=kint) :: c_istep, c_localcoord, c_section
-    integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints
+    integer(kind=kint) :: c_elemopt, c_aincparam, c_timepoints, c_cnvparam
     integer(kind=kint) :: c_output, islog
     integer(kind=kint) :: k
     integer(kind=kint) :: ss_nslav, ss_nmas_vis, ss_nmas_glob, ss_bad   ! MORTAR=YES visibility guard scratch
@@ -116,7 +116,7 @@ contains
     c_istep    = 0; c_localcoord = 0
     c_fload    = 0; c_eigenread = 0
     c_elemopt  = 0;
-    c_aincparam= 0; c_timepoints = 0
+    c_aincparam= 0; c_timepoints = 0; c_cnvparam = 0
 
     ctrl_list = 0
     ictrl = 1
@@ -167,6 +167,8 @@ contains
         c_localcoord = c_localcoord + 1
       else if( header_name == '!AUTOINC_PARAM' ) then
         c_aincparam = c_aincparam + 1
+      else if( header_name == '!CONVERG_PARAM' ) then
+        c_cnvparam = c_cnvparam + 1
       else if( header_name == '!TIME_POINTS' ) then
         c_timepoints = c_timepoints + 1
       else if( header_name == '!OUTPUT_SSTYPE' ) then
@@ -350,6 +352,10 @@ contains
     do i=0,c_aincparam
       call init_AincParam( fstrPARAM%ainc(i) )
     end do
+    allocate( fstrPARAM%cnvparam(0:c_cnvparam) )
+    do i=0,c_cnvparam
+      call init_ConvergParam( fstrPARAM%cnvparam(i) )
+    end do
     if( c_timepoints>0 ) allocate( fstrPARAM%timepoints(c_timepoints) )
     allocate( fstrPARAM%contactparam(0:c_contactparam) )
     do i=0,c_contactparam
@@ -465,6 +471,7 @@ contains
     c_elemopt = 0
     c_aincparam = 0
     c_timepoints = 0
+    c_cnvparam = 0
     fstrSOLID%elemopt361 = 0
     fstrSOLID%AutoINC_stat = 0
     fstrSOLID%CutBack_stat = 0
@@ -630,12 +637,12 @@ contains
 
       else if( header_name == '!ISTEP'  ) then
         c_istep = c_istep+1
-        if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2 ) ) then
+        if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2, mName3 ) ) then
           write(*,*) '### Error: Fail in read in step definition : ' , c_istep
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
           stop HECMW_EXIT_INPUT
         endif
-        call setup_stepInfo_converg( fstrSOLID%step_ctrl(c_istep) )
+        call fstr_setup_step_convergence( fstrSOLID%step_ctrl(c_istep), mName3, fstrPARAM%cnvparam, c_istep )
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
             if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
@@ -652,12 +659,12 @@ contains
         endif
       else if( header_name == '!STEP' .and. version>=1 ) then
         c_istep = c_istep+1
-        if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2 ) ) then
+        if( .not. fstr_ctrl_get_ISTEP( ctrl, hecMESH, fstrSOLID%step_ctrl(c_istep), mName, mName2, mName3 ) ) then
           write(*,*) '### Error: Fail in read in step definition : ' , c_istep
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
           stop HECMW_EXIT_INPUT
         endif
-        call setup_stepInfo_converg( fstrSOLID%step_ctrl(c_istep) )
+        call fstr_setup_step_convergence( fstrSOLID%step_ctrl(c_istep), mName3, fstrPARAM%cnvparam, c_istep )
         ! For DYNAMIC fixed-increment: keep the !DYNAMIC time increment while preserving !STEP duration.
         ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
         ! Only override initdt/mindt/maxdt; keep elapsetime and num_substep as-is.
@@ -984,6 +991,13 @@ contains
         if( fstr_get_AUTOINC( ctrl, fstrPARAM%ainc(c_aincparam) ) /=0 ) then
           write(*,*) '### Error: Fail in read in AUTOINC_PARAM definition : ' , c_aincparam
           write(ILOG,*) '### Error: Fail in read in AUTOINC_PARAM definition : ', c_aincparam
+          stop HECMW_EXIT_INPUT
+        endif
+      else if( header_name == '!CONVERG_PARAM' ) then
+        c_cnvparam = c_cnvparam + 1
+        if( fstr_ctrl_get_CONVERGPARAM( ctrl, fstrPARAM%cnvparam(c_cnvparam) ) /=0 ) then
+          write(*,*) '### Error: Fail in read in CONVERG_PARAM definition : ' , c_cnvparam
+          write(ILOG,*) '### Error: Fail in read in CONVERG_PARAM definition : ', c_cnvparam
           stop HECMW_EXIT_INPUT
         endif
       else if( header_name == '!TIME_POINTS'  ) then
@@ -2389,6 +2403,40 @@ contains
     !    P%SOLID%NLSTATIC_ngrp_amp = amp_id;
 
   end subroutine fstr_setup_STEP
+
+  !> Fix the convergence criteria of a step from !STEP and the !CONVERG_PARAM it refers to
+  subroutine fstr_setup_step_convergence( stepinfo, cpname, cnvparam, istep )
+    implicit none
+    type( step_info ), intent(inout)  :: stepinfo       !< step info
+    character(len=*), intent(in)      :: cpname         !< CONVERGPARAM of !STEP
+    type( tParamConverg ), intent(in) :: cnvparam(0:)   !< !CONVERG_PARAM read so far; 0 gives none
+    integer(kind=kint), intent(in)    :: istep          !< step number
+
+    integer(kind=kint) :: i, id
+
+    id = 0
+    if( len_trim(cpname) > 0 ) then
+      do i=1,ubound(cnvparam,1)
+        if( hecmw_streqr( cnvparam(i)%name, cpname ) ) then
+          id = i; exit
+        endif
+      enddo
+      if( id == 0 ) then
+        write(*,*) '### Error: CONVERG_PARAM referred to by STEP is not defined before it : ', trim(cpname)
+        write(ILOG,*) '### Error: CONVERG_PARAM referred to by STEP is not defined before it : ', trim(cpname)
+        stop HECMW_EXIT_INPUT
+      endif
+    endif
+
+    call setup_stepInfo_converg( stepinfo, cnvparam(id) )
+
+    if( .not. any( stepinfo%cnv_check(kcnvResidual:kcnvCorrection, kcnvTranslation:kcnvRotation, :) ) ) then
+      write(*,*) '### Error: RESIDUAL and CORRECTION are all SKIP in step : ', istep
+      write(ILOG,*) '### Error: RESIDUAL and CORRECTION are all SKIP in step : ', istep
+      stop HECMW_EXIT_INPUT
+    endif
+
+  end subroutine fstr_setup_step_convergence
 
   integer(kind=kint) function fstr_setup_INITIAL( ctrl, cond, hecMESH )
     implicit none

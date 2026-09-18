@@ -266,7 +266,7 @@ contains
   end function fstr_ctrl_get_STEP
 
   !> Read in !STEP and !ISTEP
-  logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps, tpname, apname )
+  logical function fstr_ctrl_get_ISTEP( ctrl, hecMESH, steps, tpname, apname, cpname )
     use fstr_setup_util
     use m_step
     integer(kind=kint), intent(in)        :: ctrl      !< ctrl file
@@ -274,6 +274,7 @@ contains
     type(step_info), intent(inout)        :: steps     !< step control info
     character(len=*), intent(out)         :: tpname    !< name of timepoints
     character(len=*), intent(out)         :: apname    !< name of auto increment parameter
+    character(len=*), intent(out)         :: cpname    !< name of convergence criteria
 
     character(len=HECMW_NAME_LEN) :: data_fmt,ss, data_fmt1
     character(len=HECMW_NAME_LEN) :: amp
@@ -316,6 +317,8 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'TIMEPOINTS ',  '# ',  0, 'S', tpname )/= 0) return
     apname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'AUTOINCPARAM ',  '# ',  0, 'S', apname )/= 0) return
+    cpname=""
+    if( fstr_ctrl_get_param_ex( ctrl, 'CONVERGPARAM ',  '# ',  0, 'S', cpname )/= 0) return
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     if( n == 0 ) then
@@ -994,6 +997,100 @@ contains
 
     fstr_get_AUTOINC = 0
   end function fstr_get_AUTOINC
+
+  !> Read in !CONVERG_PARAM
+  function fstr_ctrl_get_CONVERGPARAM( ctrl, cnvparam )
+    implicit none
+    integer(kind=kint)    :: ctrl
+    type( tParamConverg ) :: cnvparam !< convergence criteria
+    integer(kind=kint) :: fstr_ctrl_get_CONVERGPARAM
+
+    integer(kind=kint) :: rcode, i, n, iq, ig1, ig2, inorm
+    character(len=HECMW_NAME_LEN) :: data_fmt, data_fmt_tol, ss
+    character(len=HECMW_NAME_LEN) :: quantity, norm, action
+    character(len=256) :: msg
+    real(kind=kreal) :: tol
+
+    fstr_ctrl_get_CONVERGPARAM = -1
+
+    !parameters
+    cnvparam%name = ''
+    if( fstr_ctrl_get_param_ex( ctrl, 'NAME ', '# ', 1, 'S', cnvparam%name ) /=0 ) return
+
+    write( ss, * ) HECMW_NAME_LEN
+    write( data_fmt, '(a,a,a,a,a,a,a)' ) 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss)), 'S', trim(adjustl(ss)), ' '
+    write( data_fmt_tol, '(a,a)' ) trim(data_fmt), 'R '
+
+    n = fstr_ctrl_get_data_line_n( ctrl )
+    do i = 1, n
+      if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt, quantity, norm, action ) /= 0 ) return
+      ! the threshold is required for CHECK only, so it is read in a second pass over the line
+      tol = 0.d0
+      if( action == 'CHECK' ) then
+        if( fstr_ctrl_get_data_ex( ctrl, i, data_fmt_tol, quantity, norm, action, tol ) /= 0 ) then
+          write(msg,*) 'fstr control file error : !CONVERG_PARAM : threshold of CHECK must be given : ', &
+            & trim(quantity), ', ', trim(norm)
+          write(*,*) trim(msg)
+          write(ILOG,*) trim(msg)
+          return
+        endif
+      endif
+
+      ! a quantity of the input covers the translational and rotational DOF groups together
+      iq = 0
+      ig1 = 0
+      ig2 = 0
+      if( quantity == 'RESIDUAL' ) then
+        iq = kcnvResidual
+        ig1 = kcnvTranslation
+        ig2 = kcnvRotation
+      else if( quantity == 'CORRECTION' ) then
+        iq = kcnvCorrection
+        ig1 = kcnvTranslation
+        ig2 = kcnvRotation
+      else if( quantity == 'LAGRANGE' ) then
+        iq = kcnvCorrection
+        ig1 = kcnvLagrange
+        ig2 = kcnvLagrange
+      endif
+      inorm = 0
+      if( norm == 'L2' ) then
+        inorm = kcnvL2
+      else if( norm == 'MAX' ) then
+        inorm = kcnvMax
+      endif
+
+      !input check
+      rcode = 1
+      if( iq == 0 ) then
+        write(msg,*) 'fstr control file error : !CONVERG_PARAM : quantity must be RESIDUAL, CORRECTION or LAGRANGE : ', &
+          & trim(quantity)
+      else if( inorm == 0 ) then
+        write(msg,*) 'fstr control file error : !CONVERG_PARAM : norm must be L2 or MAX : ', trim(norm)
+      else if( action /= 'CHECK' .and. action /= 'SKIP' ) then
+        write(msg,*) 'fstr control file error : !CONVERG_PARAM : CHECK or SKIP must be given : ', trim(action)
+      else if( cnvparam%given(iq,ig1,inorm) ) then
+        write(msg,*) 'fstr control file error : !CONVERG_PARAM : ', trim(quantity), ', ', trim(norm), &
+          & ' is given more than once.'
+      else if( action == 'CHECK' .and. tol <= 0.d0 ) then
+        write(msg,*) 'fstr control file error : !CONVERG_PARAM : threshold of CHECK must be > 0 : ', &
+          & trim(quantity), ', ', trim(norm)
+      else
+        rcode = 0
+      end if
+      if( rcode /= 0 ) then
+        write(*,*) trim(msg)
+        write(ILOG,*) trim(msg)
+        return
+      endif
+
+      cnvparam%given(iq,ig1:ig2,inorm) = .true.
+      cnvparam%check(iq,ig1:ig2,inorm) = ( action == 'CHECK' )
+      if( action == 'CHECK' ) cnvparam%tol(iq,ig1:ig2,inorm) = tol
+    end do
+
+    fstr_ctrl_get_CONVERGPARAM = 0
+  end function fstr_ctrl_get_CONVERGPARAM
 
   !> Read in !TIME_POINTS
   function fstr_ctrl_get_TIMEPOINTS( ctrl, tp )

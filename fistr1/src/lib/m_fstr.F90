@@ -213,6 +213,9 @@ module m_fstr
     !> for auto increment and cutback
     type(tParamAutoInc), pointer :: ainc(:)        !< auto increment control
     type(time_points), pointer :: timepoints(:)  !< time points data
+
+    !> for convergence check
+    type(tParamConverg), pointer :: cnvparam(:)    !< convergence criteria
   end type fstr_param
 
   !> GLOBAL VARIABLE INITIALIZED IN FSTR_SETUP
