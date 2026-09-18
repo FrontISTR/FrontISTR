@@ -163,6 +163,17 @@ static int is_material_zone(void) { return flag_material_zone; }
 
 static void set_material_zone(int flag) { flag_material_zone = flag ? 1 : 0; }
 
+static void free_mat_item(struct hecmw_io_matitem *item) {
+  struct hecmw_io_matsubitem *p, *q;
+
+  for (p = item->subitem; p; p = q) {
+    q = p->next;
+    HECMW_free(p->val);
+    HECMW_free(p);
+  }
+  HECMW_free(item);
+}
+
 static int add_mat_data(int keyword, struct hecmw_io_matitem *matitem) {
   int i;
   struct material_data *p, *q, *mdata;
@@ -171,16 +182,10 @@ static int add_mat_data(int keyword, struct hecmw_io_matitem *matitem) {
     if (p->keyword == keyword) break;
   }
   if (p) {
-    struct hecmw_io_matsubitem *sip, *siq;
     struct hecmw_io_matitem *item = p->matitem;
     p->matitem                    = matitem; /* update */
     matitem->item                 = item->item;
-    for (sip = item->subitem; sip; sip = siq) {
-      siq = sip->next;
-      HECMW_free(sip->val);
-      HECMW_free(sip);
-    }
-    HECMW_free(item);
+    free_mat_item(item);
     log_warn(HECMW_IO_INP_W0095, "%s updated for *MATERIAL %s",
              get_material_string(keyword), matname);
     return 0;
@@ -218,13 +223,38 @@ static int count_mat_item(void) {
   return n;
 }
 
+static int has_mat_data(int keyword) {
+  struct material_data *p;
+
+  for (p = matdata; p; p = p->next) {
+    if (p->keyword == keyword) return 1;
+  }
+  return 0;
+}
+
 static int regist_material(void) {
   int i, n;
   struct hecmw_io_material *mat = NULL;
   struct material_data *p, *q;
 
+  if (!has_mat_data(HECMW_INPLEX_H_ELASTIC) &&
+      !has_mat_data(HECMW_INPLEX_H_SPECIFIC_HEAT) &&
+      !has_mat_data(HECMW_INPLEX_H_CONDUCTIVITY)) {
+    HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099,
+                    "*MATERIAL %s without *ELASTIC, *SPECIFIC HEAT or "
+                    "*CONDUCTIVITY",
+                    matname);
+    for (p = matdata; p; p = q) {
+      q = p->next;
+      free_mat_item(p->matitem);
+      HECMW_free(p);
+    }
+    matname[0] = '\0';
+    matdata    = NULL;
+    return 0;
+  }
+
   n = count_mat_item();
-  if (n == 0) return 0;
 
   mat = HECMW_calloc(1, sizeof(*mat) * n);
   if (mat == NULL) {
