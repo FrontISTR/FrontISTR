@@ -3853,9 +3853,10 @@ static int read_boundary_keyword(void) {
     return -1;
   }
   token = HECMW_inplex_next_token();
+  if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
     set_err_token(token, HECMW_IO_INP_E1700,
-                  "',' is not required after *BOUNDARY SECTION");
+                  "',' or NL required after *BOUNDARY");
     return -1;
   }
   /* if(isFirst == 0) { */
@@ -4038,9 +4039,10 @@ static int read_cload_keyword(void) {
     return -1;
   }
   token = HECMW_inplex_next_token();
+  if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
     set_err_token(token, HECMW_IO_INP_E1700,
-                  "',' is not required after *CLOAD SECTION");
+                  "',' or NL required after *CLOAD");
     return -1;
   }
   /*if(isFirst == 0) {*/
@@ -4085,7 +4087,7 @@ static int read_cload(void) {
 
       /* check next state */
       token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT) {
+      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
         state = ST_FINISHED;
       } else {
         state = ST_DATA_LINE;
@@ -4116,9 +4118,10 @@ static int read_dload_keyword(void) {
     return -1;
   }
   token = HECMW_inplex_next_token();
+  if (token == ',') token = HECMW_inplex_skip_line();
   if (token != HECMW_INPLEX_NL) {
     set_err_token(token, HECMW_IO_INP_E1700,
-                  "',' is not required after *DLOAD SECTION");
+                  "',' or NL required after *DLOAD");
     return -1;
   }
   /*if(isFirst == 0) {*/
@@ -4162,7 +4165,7 @@ static int read_dload(void) {
 
       /* check next state */
       token = HECMW_inplex_next_token();
-      if (token != HECMW_INPLEX_INT) {
+      if (token != HECMW_INPLEX_INT && token != HECMW_INPLEX_NAME) {
         state = ST_FINISHED;
       } else {
         state = ST_DATA_LINE;
