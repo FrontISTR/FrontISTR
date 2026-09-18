@@ -118,6 +118,8 @@ file		([a-zA-Z]:)*[\\/._a-zA-Z0-9-]+
 "*"TRS		{ return flag_header ? HECMW_INPLEX_H_TRS : ' '; }
 ^"*"VISCOELASTIC	{ set_flag_header(1); return HECMW_INPLEX_H_VISCOELASTIC; }
 "*"VISCOELASTIC		{ return flag_header ? HECMW_INPLEX_H_VISCOELASTIC : ' '; }
+^"*"{name}({ws}{name})*	{ set_flag_header(1); return HECMW_INPLEX_H_UNKNOWN; }
+"*"{name}({ws}{name})*		{ return flag_header ? HECMW_INPLEX_H_UNKNOWN : ' '; }
 
 ABSOLUTE	{ set_flag_header(0); return HECMW_INPLEX_K_ABSOLUTE; }
 ANISOTROPIC	{ set_flag_header(0); return HECMW_INPLEX_K_ANISOTROPIC; }

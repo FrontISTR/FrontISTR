@@ -88,6 +88,21 @@ static void log_warn(int msgno, const char *fmt, ...) {
 
 /*----------------------------------------------------------------------------*/
 
+/* returns 0 at EOF */
+static int skip_to_next_keyword(void) {
+  int token;
+  char *p;
+
+  while ((token = HECMW_inplex_next_token())) {
+    p = HECMW_inplex_get_text();
+    if (p[0] == '*') break;
+  }
+  if (token) HECMW_inplex_unput_token(); /* unput *XXXX */
+  return token;
+}
+
+/*----------------------------------------------------------------------------*/
+
 typedef struct { int i; } Integer;
 
 static struct hecmw_map_int *elem_secopt;
@@ -4232,16 +4247,15 @@ static int parse(void) {
         return -1;
       }
       /* skip unsupported keyword */
-      token = HECMW_inplex_next_token();
-      p     = token ? HECMW_inplex_get_text() : "";
-      HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "*%s", p);
-      if (!token) break;
-      while ((token = HECMW_inplex_next_token())) {
-        p = HECMW_inplex_get_text();
-        if (p[0] == '*') break;
+      if (p[1] == '\0') {
+        token = HECMW_inplex_next_token();
+        p     = token ? HECMW_inplex_get_text() : "";
+        HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "*%s", p);
+        if (!token) break;
+      } else {
+        HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099, "%s", p);
       }
-      if (!token) break;
-      HECMW_inplex_unput_token(); /* unput *XXXX */
+      if (!skip_to_next_keyword()) break;
       continue;
     }
     if (is_material_keyword(token) && !is_material_zone()) {
