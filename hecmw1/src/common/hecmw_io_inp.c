@@ -1754,8 +1754,10 @@ static int read_initial_param_type(int *type) {
   }
   token = HECMW_inplex_next_token();
   if (token != HECMW_INPLEX_K_TEMPERATURE) {
-    set_err_token(token, HECMW_IO_INP_E1000, "TEMPERATURE required");
-    return -1;
+    log_warn(HECMW_IO_INP_W0099, "*INITIAL CONDITIONS, TYPE=%s",
+             HECMW_inplex_get_text());
+    *type = -1;
+    return 0;
   }
   *type = HECMW_INITIAL_TYPE_TEMPERATURE;
   return 0;
@@ -1857,6 +1859,10 @@ static int read_initial(void) {
       if (token == HECMW_INPLEX_K_TYPE) {
         /* must */
         if (read_initial_param_type(&type)) return -1;
+        if (type == -1) {
+          skip_to_next_keyword();
+          return 0;
+        }
         flag_type = 1;
       } else if (token == HECMW_INPLEX_K_INPUT) {
         /* oprtional */
