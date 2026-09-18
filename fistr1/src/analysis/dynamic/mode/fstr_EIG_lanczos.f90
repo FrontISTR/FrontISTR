@@ -14,6 +14,7 @@ contains
     use m_fstr_EIG_lanczos_util
     use m_fstr_EIG_tridiag
     use hecmw_ebc_defer
+    use hecmw_solver_las
 
     implicit none
 
@@ -29,10 +30,15 @@ contains
     integer(kind=kint) :: i, j, k, in, jn, kn, ik
     integer(kind=kint) :: ig, ig0, is0, ie0
     real(kind=kreal)   :: t1, t2, tolerance
-    real(kind=kreal)   :: alpha, beta, beta0
+    real(kind=kreal)   :: alpha, beta, beta0, resid
     real(kind=kreal), allocatable :: s(:), t(:), p(:)
     integer(kind=kint), allocatable :: mark(:)
-    logical :: is_converge
+    character(len=HECMW_MSG_LEN) :: msg(2), noconv
+    logical :: is_converge, unusable
+    ! a linear solution whose relative residual reaches this carries an error of about one percent, and
+    ! the eigenvalues computed from it inherit that error; falling short of the tolerance by less than
+    ! this is common and leaves the eigenvalues usable
+    real(kind=kreal), parameter :: RESID_UNUSABLE = 1.0d-2
 
     N      = hecMAT%N
     NP     = hecMAT%NP
@@ -138,6 +144,27 @@ contains
       enddo
 
       call solve_LINEQ(hecMESH, hecMAT)
+
+      ! the Lanczos vectors are built from this solution, so a solver that fell short of its tolerance is
+      ! tolerated only while the solution stays usable
+      if(hecmw_mat_get_flag_diverged(hecMAT) /= kNO .or. hecmw_mat_get_flag_converged(hecMAT) == kNO)then
+        resid = hecmw_rel_resid_L2(hecMESH, hecMAT)
+        unusable = (resid >= RESID_UNUSABLE .or. resid /= resid)  ! the second test catches NaN
+        write(noconv,'(a,i0,a,1pe12.5)') ' the linear solver did not converge at Lanczos iteration ', &
+          & iter, '; relative residual =', resid
+        if(unusable)then
+          msg(1) = '### ERROR:'//trim(noconv)
+          msg(2) = '   the eigenvalues cannot be computed from it; loosen the residual tolerance given in !SOLVER'
+        else
+          msg(1) = '### WARNING:'//trim(noconv)
+          msg(2) = '   the eigenvalues may carry an error of a comparable order'
+        endif
+        if(myrank == 0)then
+          write(*,'(a/a)')    trim(msg(1)), trim(msg(2))
+          write(ILOG,'(a/a)') trim(msg(1)), trim(msg(2))
+        endif
+        if(unusable) call fstr_abort( HECMW_EXIT_NOCONV )
+      endif
 
       allocate(Q(iter+1)%q(NPNDOF))
 
