@@ -2745,7 +2745,8 @@ end function fstr_setup_INITIAL
     real(kind=kreal),pointer :: val_ptr(:)
     integer(kind=kint),pointer :: id_ptr(:)
     integer(kind=kint) :: i, n, old_size, new_size
-    integer(kind=kint) :: gid
+    integer(kind=kint) :: gid, ngrp_id, nnode_grp
+    character(len=HECMW_MSG_LEN) :: msg(2)
 
     if( P%SOLID%file_type /= kbcfFSTR ) return
     gid = 1
@@ -2808,12 +2809,18 @@ end function fstr_setup_INITIAL
     nullify( id_ptr )
     nullify( val_ptr )
 
+    ! the refinement adds nodes to the group, so the load given to each node of the group
+    ! sums up to more than intended before the refinement
     if( P%MESH%n_refine > 0 ) then
       do i=1,n
-        if( hecmw_ngrp_get_number(P%MESH, P%SOLID%CLOAD_NGRP_ID(old_size+i)) > 1 ) then
-          write(*,*) 'fstr control file error : !CLOAD : cannot be used with NGRP when mesh is refined'
-          write(ILOG,*) 'fstr control file error : !CLOAD : cannot be used with NGRP when mesh is refined'
-          call fstr_ctrl_err_stop
+        ngrp_id = P%SOLID%CLOAD_ngrp_ID(old_size+i)
+        nnode_grp = hecmw_ngrp_get_number(P%MESH, ngrp_id)
+        if( nnode_grp > 1 .and. P%MESH%my_rank == 0 ) then
+          msg(1) = ' ### Warning: !CLOAD on a refined mesh'
+          write(msg(2),'(a,a,a,i0,a)') '   node group "', trim(P%MESH%node_group%grp_name(ngrp_id)), &
+            '" now has ', nnode_grp, ' nodes; the same load is applied to each of them'
+          write(*,'(/a/a/)') trim(msg(1)), trim(msg(2))
+          write(ILOG,'(/a/a/)') trim(msg(1)), trim(msg(2))
         endif
       enddo
     endif
