@@ -133,7 +133,7 @@ Normal regression tests retain their existing build matrix.
 Add test
 ---------
 
-[cmake][cmake] seeks mesh data (`*.msh`) from `${FRONTISTR_HOME}/tests/`, and then registers it as a test target.
+[cmake][cmake] seeks mesh data (`*.msh`, or `*.inp` read with `TYPE=INP`) from `${FRONTISTR_HOME}/tests/`, and then registers it as a test target.
 This target compares the result of `fistr1` of current build with reference build,
 and tests the difference is enough small.
 In order to append a new test, you should
@@ -142,7 +142,7 @@ In order to append a new test, you should
     - Directories created in analysis, lib and solver are always included in the test run.
     - Directories created in with_[mkl|mumps|ml] are included in the test run when the cmake option -DWITH_[MKL|MUMPS|ML] is ON.
     - Directories created in _archive are not included in the test run.
-2. Put `*.msh` and `*.cnt` files
+2. Put `*.msh` (or `*.inp`) and `*.cnt` files
 3. Generate reference result by `${FRONTISTR_HOME}/tests/create_reference.sh`
 4. and Confirm this result is correct by your eye
 

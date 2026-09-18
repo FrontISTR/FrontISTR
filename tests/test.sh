@@ -44,7 +44,7 @@ ${ctrl_res}
 ${mesh}
 !RESTART,NAME=restart,IO=INOUT
 ${rst}
-!MESH, NAME=part_in,TYPE=HECMW-ENTIRE
+!MESH, NAME=part_in,TYPE=$ENTIRETYPE
 ${mesh}
 !MESH, NAME=part_out,TYPE=HECMW-DIST
 ${mesh}
@@ -237,19 +237,19 @@ fi
 test_dir=$FRONTISTR_HOME/run_test/$CTEST_TEST_NAME/$(date +"%Y%m%d%H%M")
 mkdir -p $test_dir
 
-for mesh_path in $(find $target -type f -name "*.msh"); do
+for mesh_path in $(find $target -type f \( -name "*.msh" -o -name "*.inp" \)); do
 
   SECONDS=0
   ref_dir=$(cd $(dirname $mesh_path);pwd)
   mesh=$(basename $mesh_path)
-  cnt=${mesh%.msh}.cnt
-  cnt_half=${mesh%.msh}_half.cnt
-  cnt_rst=${mesh%.msh}_restart.cnt
-  cnt_eig=${mesh%.msh}_eigen.cnt
-  res=${mesh%.msh}.res
-  eres=${mesh%.msh}_eigen.res
-  dres=${mesh%.msh}_dyna.res
-  rst=${mesh%.msh}.restart
+  cnt=${mesh%.*}.cnt
+  cnt_half=${mesh%.*}_half.cnt
+  cnt_rst=${mesh%.*}_restart.cnt
+  cnt_eig=${mesh%.*}_eigen.cnt
+  res=${mesh%.*}.res
+  eres=${mesh%.*}_eigen.res
+  dres=${mesh%.*}_dyna.res
+  rst=${mesh%.*}.restart
 
   if [ ! -e $ref_dir/$cnt ]; then
     echo_err "*.cnt file for $mesh_path is not found. Skip this mesh file."
@@ -268,7 +268,8 @@ for mesh_path in $(find $target -type f -name "*.msh"); do
   if [ -e $ref_dir/istrain.dat ]; then
     cp -r $ref_dir/istrain.dat $test_dir
   fi
-  [ $mpi_num_process -gt 1 ] && MESHTYPE=HECMW-DIST || MESHTYPE=HECMW-ENTIRE
+  [ "${mesh##*.}" = "inp" ] && ENTIRETYPE=INP || ENTIRETYPE=HECMW-ENTIRE
+  [ $mpi_num_process -gt 1 ] && MESHTYPE=HECMW-DIST || MESHTYPE=$ENTIRETYPE
   if [ -e $ref_dir/$cnt_eig ]; then
     cp -r $ref_dir/$cnt_eig $test_dir
     write_hecmw_ctrl $cnt_eig $eres
