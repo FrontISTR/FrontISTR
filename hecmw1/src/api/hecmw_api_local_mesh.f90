@@ -342,7 +342,7 @@ contains
   !> @brief 節点グループの名前
   !! @param[in] mesh メッシュ構造体のハンドラ
   !! @param[in] i 節点グループのインデックス（追加順）
-  !! @param[out] buf 節点グループの名前
+  !! @param[inout] buf 節点グループの名前
   !! @param[in] buflen 確保済みの buf の大きさ
   subroutine hecmw_api_mesh_get_ngrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_ngrp_name')
     use hecmw_api_common, only : f_c_str_copy
@@ -359,7 +359,7 @@ contains
   !> @brief 節点グループの節点番号の配列
   !! @param[in] mesh メッシュ構造体のハンドラ
   !! @param[in] i 節点グループのインデックス（追加順）
-  !! @param[out] array 節点番号配列
+  !! @param[out] array 節点番号配列のポインタ
   !! @param[out] count 配列の大きさ
   subroutine hecmw_api_mesh_get_ngrp(mesh,i,array,count) bind(C,name='hecmw_api_mesh_get_ngrp')
     implicit none
@@ -419,7 +419,7 @@ contains
   !> @brief 面グループの名前
   !! @param[in] mesh メッシュ構造体のハンドラ
   !! @param[in] i 面グループのインデックス（追加順）
-  !! @param[out] buf 節点グループの名前
+  !! @param[inout] buf 節点グループの名前
   !! @param[in] buflen 確保済みの buf の大きさ
   subroutine hecmw_api_mesh_get_sgrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_sgrp_name')
     use hecmw_api_common, only : f_c_str_copy
@@ -437,7 +437,7 @@ contains
   !> @brief 面グループの要素番号、面番号の配列
   !! @param[in] mesh メッシュ構造体のハンドラ
   !! @param[in] i 面グループのインデックス（追加順）
-  !! @param[out] array 要素番号、面番号配列
+  !! @param[out] array 要素番号、面番号配列のポインタ
   !! @param[out] count 配列の大きさ
   subroutine hecmw_api_mesh_get_sgrp(mesh,i,array,count) bind(C,name='hecmw_api_mesh_get_sgrp')
     implicit none
@@ -498,7 +498,7 @@ contains
   !> @brief 要素グループの名前
   !! @param[in] mesh メッシュ構造体のハンドラ
   !! @param[in] i 要素グループのインデックス（追加順）
-  !! @param[out] buf 節点グループの名前
+  !! @param[inout] buf 節点グループの名前
   !! @param[in] buflen 確保済みの buf の大きさ
   subroutine hecmw_api_mesh_get_egrp_name(mesh,i,buf,buflen) bind(C,name='hecmw_api_mesh_get_egrp_name')
     use hecmw_api_common, only : f_c_str_copy
