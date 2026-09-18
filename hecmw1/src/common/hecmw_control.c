@@ -2210,6 +2210,21 @@ struct hecmw_ctrl_meshfiles *HECMW_ctrl_get_meshfiles_header_sub(char *name_ID,
   return get_meshfiles(name_ID, n_rank, i_rank, 1);
 }
 
+int HECMW_ctrl_get_entire_mesh(char* filename,int len){
+  struct hecmw_ctrl_meshfiles *files;
+  files = HECMW_ctrl_get_meshfiles("fstrMSH");
+  if (files == NULL) return 0;
+
+  if (files->n_mesh == 1 &&
+      files->meshfiles[0].type == HECMW_CTRL_FTYPE_HECMW_ENTIRE) {
+    snprintf(filename, len, "%s", files->meshfiles[0].filename);
+    HECMW_ctrl_free_meshfiles(files);
+    return 1;
+  }
+  HECMW_ctrl_free_meshfiles(files);
+  return 0;
+}
+
 static char *get_result_file(char *name_ID, int istep, int n_rank,
                              int i_rank, int *fg_text, int flag_rank_none) {
   int nrank, myrank, irank;
