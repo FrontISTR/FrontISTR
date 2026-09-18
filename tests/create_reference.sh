@@ -42,7 +42,7 @@ write_hecmw_ctrl () {
   ctrl_cnt=$1
   ctrl_res=$2
 cat <<EOL > hecmw_ctrl.dat
-!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+!MESH, NAME=fstrMSH,TYPE=$MESHTYPE
 ${mesh}
 !CONTROL,NAME=fstrCNT
 ${ctrl_cnt}
@@ -62,14 +62,15 @@ EOL
   fi
 }
 
-for path in $(find . -not -path "./_archive/*" -type f -name "*.msh" ); do
+for path in $(find . -not -path "./_archive/*" -type f \( -name "*.msh" -o -name "*.inp" \) ); do
   dir=$(dirname $path)
   mesh=$(basename $path)
-  cnt=${mesh%.msh}.cnt
-  cnt_eig=${mesh%.msh}_eigen.cnt
-  res=${mesh%.msh}.res
-  eres=${mesh%.msh}_eigen.res
-  dres=${mesh%.msh}_dyna.res
+  cnt=${mesh%.*}.cnt
+  cnt_eig=${mesh%.*}_eigen.cnt
+  res=${mesh%.*}.res
+  eres=${mesh%.*}_eigen.res
+  dres=${mesh%.*}_dyna.res
+  [ "${mesh##*.}" = "inp" ] && MESHTYPE=INP || MESHTYPE=HECMW-ENTIRE
 
   if ls $dir/${res}.* > /dev/null 2>&1; then
     echo_err ${res}" exists. Skip this mesh file."
