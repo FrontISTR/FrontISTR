@@ -28,11 +28,13 @@ module m_fstr_IterationControl
 
   !> One convergence criterion: a normalized value compared with its threshold.
   type fstr_convergence_measure
-    real(kind=kreal) :: value = 0.0d0      !< normalized value
-    real(kind=kreal) :: tol   = 0.0d0      !< threshold
-    logical          :: check = .false.    !< the criterion takes part in the decision (CHECK) or not (SKIP)
-    logical          :: ok    = .false.    !< check .and. value < tol
-    logical          :: absolute = .false. !< the reference fell back to the floor, value is not normalized
+    real(kind=kreal)   :: value = 0.0d0      !< normalized value
+    real(kind=kreal)   :: tol   = 0.0d0      !< threshold
+    logical            :: check = .false.    !< the criterion takes part in the decision (CHECK) or not (SKIP)
+    logical            :: ok    = .false.    !< check .and. value < tol
+    logical            :: absolute = .false. !< the reference fell back to the floor, value is not normalized
+    integer(kind=kint) :: node  = 0          !< global node ID where a max norm occurs, 0 if not located
+    integer(kind=kint) :: dof   = 0          !< DOF where a max norm occurs
   end type fstr_convergence_measure
 
   !> Criteria evaluated by the latest convergence check, indexed by (quantity, DOF group, norm) with the kcnv*
@@ -117,7 +119,8 @@ contains
   !>   correction, translation, L2:  ||du_t|| / ||Du_t||
   !>   correction, rotation,    L2:  ||du_r|| / ||Du_r||               (ndof=6 only)
   !>   correction, Lagrange,    L2:  ||dlambda|| / ||lambda||          (Lagrange rows only)
-  !> Each is compared with the threshold fixed for the step, and fstr_decide_convergence combines them.
+  !> and the same ratios in the max norm, the largest absolute DOF component over the nodes. Each is compared with the
+  !> threshold fixed for the step, and fstr_decide_convergence combines them.
   !>
   !> Q is the internal force and D the inertia plus viscous force, so that the reference force stays finite for a body
   !> in free vibration, where the vector sum Q+D vanishes at equilibrium while neither norm does. Pressure DOFs of
@@ -306,8 +309,14 @@ contains
       if( has_lag ) cnvstat%m(kcnvCorrection,kcnvLagrange,kcnvL2)%value = dx_l
     endif
 
-    ! A NaN component fails every comparison above: it never passes the test on a denominator, so a ratio would keep
-    ! its default. The sums are the only place it survives, and every criterion takes it over.
+    ! The flags are the same on every subdomain, so the collectives of the max norms are skipped consistently.
+    if( any( cnvstat%m(:,:,kcnvMax)%check ) ) then
+      call fstr_evaluate_convergence_max( hecMESH, hecMAT, fstrSOLID, ndof, has_dx, residual_vec, cnvstat, &
+          hecLagMAT )
+    endif
+
+    ! A NaN component fails every comparison above: it never wins a maximum and never passes the test on a denominator,
+    ! so a ratio would keep its default. The sums are the only place it survives, and every criterion takes it over.
     do i = 1, NSUM-1
       if( sq(i) /= sq(i) ) cnvstat%m(:,:,:)%value = sq(i)
     enddo
@@ -315,6 +324,98 @@ contains
     cnvstat%m(:,:,:)%ok = cnvstat%m(:,:,:)%check .and. ( cnvstat%m(:,:,:)%value < cnvstat%m(:,:,:)%tol )
 
   end subroutine fstr_evaluate_convergence
+
+  !> \brief Evaluate the max-norm criteria and locate the largest residual and correction components.
+  !>
+  !> The max norm of a DOF group is the largest absolute DOF component over the internal nodes, and each criterion is
+  !> the same ratio as its L2 counterpart with the norms replaced. Where several nodes hold the same maximum, the
+  !> largest node ID is reported, with the DOF taken from the subdomain owning that node.
+  subroutine fstr_evaluate_convergence_max( hecMESH, hecMAT, fstrSOLID, ndof, has_dx, residual_vec, cnvstat, &
+      hecLagMAT )
+    implicit none
+
+    type(hecmwST_local_mesh), intent(in)        :: hecMESH
+    type(hecmwST_matrix), intent(in)            :: hecMAT           !< X=solution increment
+    type(fstr_solid), intent(in)                :: fstrSOLID
+    integer(kind=kint), intent(in)              :: ndof
+    logical, intent(in)                         :: has_dx           !< the correction belongs to this iteration
+    real(kind=kreal), intent(in)                :: residual_vec(:)
+    type(fstr_convergence_state), intent(inout) :: cnvstat
+    type(hecmwST_matrix_lagrange), intent(in), optional :: hecLagMAT
+
+    integer(kind=kint), parameter :: NMAX = 12
+    ! entries of vmax located, and the criteria they belong to
+    integer(kind=kint), parameter :: NLOC = 4
+    integer(kind=kint), parameter :: IMAX_LOC(NLOC) = [ 1, 2, 7, 8 ]
+    integer(kind=kint), parameter :: IQ_LOC(NLOC) = [ kcnvResidual, kcnvResidual, kcnvCorrection, kcnvCorrection ]
+    integer(kind=kint), parameter :: IG_LOC(NLOC) = [ kcnvTranslation, kcnvRotation, kcnvTranslation, kcnvRotation ]
+    real(kind=kreal)   :: vmax(NMAX), gmax(NMAX)
+    integer(kind=kint) :: loc(2,NLOC), gnode(NLOC), gdof(NLOC)
+    integer(kind=kint) :: i, k, npndof, num_lagrange
+    real(kind=kreal)   :: dx_t, dx_r, dx_l
+
+    num_lagrange = 0
+    if( present(hecLagMAT) ) num_lagrange = hecLagMAT%num_lagrange
+    npndof = hecMAT%NP*ndof
+
+    vmax(:) = 0.0d0
+    loc(:,:) = 0
+    call fstr_get_maxabs_dofgroup( hecMESH, ndof, residual_vec,      vmax(1), vmax(2), loc(:,1), loc(:,2) )
+    call fstr_get_maxabs_dofgroup( hecMESH, ndof, fstrSOLID%QFORCE,  vmax(3), vmax(4) )
+    call fstr_get_maxabs_dofgroup( hecMESH, ndof, fstrSOLID%DFORCE,  vmax(5), vmax(6) )
+    if( has_dx ) then
+      call fstr_get_maxabs_dofgroup( hecMESH, ndof, hecMAT%X,         vmax(7), vmax(8), loc(:,3), loc(:,4) )
+      call fstr_get_maxabs_dofgroup( hecMESH, ndof, fstrSOLID%dunode, vmax(9), vmax(10) )
+      do i = 1, num_lagrange
+        vmax(11) = max( vmax(11), abs(hecMAT%X(npndof+i)) )
+        vmax(12) = max( vmax(12), abs(hecLagMAT%Lagrange(i)) )
+      enddo
+    endif
+    gmax(:) = vmax(:)
+    call hecmw_allreduce_R( hecMESH, gmax, NMAX, hecmw_max )
+
+    do k = 1, NLOC
+      if( gmax(IMAX_LOC(k)) > vmax(IMAX_LOC(k)) ) loc(1,k) = 0
+    enddo
+    gnode(:) = loc(1,:)
+    call hecmw_allreduce_I( hecMESH, gnode, NLOC, hecmw_max )
+    do k = 1, NLOC
+      gdof(k) = 0
+      if( loc(1,k) == gnode(k) ) gdof(k) = loc(2,k)
+    enddo
+    call hecmw_allreduce_I( hecMESH, gdof, NLOC, hecmw_max )
+
+    ! --- residual relative to the reference force ---
+    call fstr_set_residual_measure( cnvstat%m(kcnvResidual,kcnvTranslation,kcnvMax), &
+        gmax(1), max( gmax(3), gmax(5) ) )
+    if( ndof == 6 ) then
+      call fstr_set_residual_measure( cnvstat%m(kcnvResidual,kcnvRotation,kcnvMax), &
+          gmax(2), max( gmax(4), gmax(6) ) )
+    endif
+
+    ! --- correction relative to the accumulated increment, with the same rules as the L2 norms ---
+    if( has_dx ) then
+      dx_t = 1.0d0
+      if( gmax(9) > 0.0d0 ) dx_t = gmax(7) / gmax(9)
+      dx_r = 1.0d0
+      if( gmax(10) > 0.0d0 ) dx_r = gmax(8) / gmax(10)
+      dx_l = 0.0d0
+      if( gmax(12) > 0.0d0 ) then
+        dx_l = gmax(11) / gmax(12)
+      else if( gmax(11) > 0.0d0 ) then
+        dx_l = 1.0d0
+      endif
+      cnvstat%m(kcnvCorrection,kcnvTranslation,kcnvMax)%value = dx_t
+      if( ndof == 6 ) cnvstat%m(kcnvCorrection,kcnvRotation,kcnvMax)%value = dx_r
+      cnvstat%m(kcnvCorrection,kcnvLagrange,kcnvMax)%value = dx_l
+    endif
+
+    do k = 1, NLOC
+      cnvstat%m(IQ_LOC(k),IG_LOC(k),kcnvMax)%node = gnode(k)
+      cnvstat%m(IQ_LOC(k),IG_LOC(k),kcnvMax)%dof = gdof(k)
+    enddo
+
+  end subroutine fstr_evaluate_convergence_max
 
   !> \brief Residual norm relative to its reference, or the norm itself when the reference is below FREF_FLOOR.
   subroutine fstr_set_residual_measure( ms, res, fref )
@@ -362,7 +463,60 @@ contains
 
   end subroutine fstr_get_sqnorm_dofgroup
 
+  !> \brief Largest absolute component of a nodal vector over the internal nodes, split into translational (DOF 1-3)
+  !>        and rotational (DOF 4-6) components, with the global node ID and the DOF where it occurs.
+  !>
+  !> As in fstr_get_sqnorm_dofgroup, the result is not reduced across subdomains.
+  subroutine fstr_get_maxabs_dofgroup( hecMESH, ndof, vec, vmax_t, vmax_r, loc_t, loc_r )
+    implicit none
+    type(hecmwST_local_mesh), intent(in)      :: hecMESH
+    integer(kind=kint), intent(in)            :: ndof
+    real(kind=kreal), intent(in)              :: vec(:)
+    real(kind=kreal), intent(out)             :: vmax_t
+    real(kind=kreal), intent(out)             :: vmax_r
+    integer(kind=kint), intent(out), optional :: loc_t(2)  !< (global node ID, DOF) of vmax_t, 0 if vec vanishes
+    integer(kind=kint), intent(out), optional :: loc_r(2)  !< (global node ID, DOF) of vmax_r, 0 if vec vanishes
+
+    integer(kind=kint) :: i, idof, idx, gid
+    integer(kind=kint) :: lt(2), lr(2)
+    real(kind=kreal)   :: a
+
+    vmax_t = 0.0d0
+    vmax_r = 0.0d0
+    lt(:) = 0
+    lr(:) = 0
+    ! Ties between nodes go to the largest node ID, as in the reduction across subdomains, so that the location does
+    ! not depend on the partitioning.
+    do i = 1, hecMESH%nn_internal
+      idx = ndof*(i-1)
+      gid = hecMESH%global_node_ID(i)
+      do idof = 1, min(ndof,3)
+        a = abs(vec(idx+idof))
+        if( a > vmax_t .or. ( a >= vmax_t .and. a > 0.0d0 .and. gid > lt(1) ) ) then
+          vmax_t = a
+          lt(1) = gid
+          lt(2) = idof
+        endif
+      enddo
+      if( ndof /= 6 ) cycle
+      do idof = 4, 6
+        a = abs(vec(idx+idof))
+        if( a > vmax_r .or. ( a >= vmax_r .and. a > 0.0d0 .and. gid > lr(1) ) ) then
+          vmax_r = a
+          lr(1) = gid
+          lr(2) = idof
+        endif
+      enddo
+    enddo
+    if( present(loc_t) ) loc_t(:) = lt(:)
+    if( present(loc_r) ) loc_r(:) = lr(:)
+
+  end subroutine fstr_get_maxabs_dofgroup
+
   !> \brief Print the checked criteria of one Newton iteration.
+  !>
+  !> The L2 norms make up the line of the iteration; the max norms, if any is checked, follow on a line of their own
+  !> aligned with the first criterion.
   subroutine fstr_print_convergence_state( iter, cnvstat )
     implicit none
     integer(kind=kint), intent(in)           :: iter
@@ -376,19 +530,36 @@ contains
       do ig = kcnvTranslation, kcnvLagrange
         if( .not. cnvstat%m(iq,ig,kcnvL2)%check ) cycle
         write(line(len_trim(line)+1:),'(a,a,a,1pe11.4)') ", ", &
-            trim(fstr_convergence_label( iq, ig, cnvstat%m(iq,ig,kcnvL2)%absolute )), ":", &
+            trim(fstr_convergence_label( iq, ig, kcnvL2, cnvstat%m(iq,ig,kcnvL2)%absolute )), ":", &
             cnvstat%m(iq,ig,kcnvL2)%value
       enddo
     enddo
     write(*,'(a)') trim(line)
 
+    line = ""
+    do iq = kcnvResidual, kcnvCorrection
+      do ig = kcnvTranslation, kcnvLagrange
+        if( .not. cnvstat%m(iq,ig,kcnvMax)%check ) cycle
+        if( len_trim(line) > 0 ) line = trim(line) // ","
+        write(line(len_trim(line)+1:),'(a,a,a,1pe11.4)') " ", &
+            trim(fstr_convergence_label( iq, ig, kcnvMax, cnvstat%m(iq,ig,kcnvMax)%absolute )), ":", &
+            cnvstat%m(iq,ig,kcnvMax)%value
+        if( cnvstat%m(iq,ig,kcnvMax)%node > 0 ) then
+          write(line(len_trim(line)+1:),'(a,i0,a,i0,a)') " (node ", cnvstat%m(iq,ig,kcnvMax)%node, &
+              ", dof ", cnvstat%m(iq,ig,kcnvMax)%dof, ")"
+        endif
+      enddo
+    enddo
+    if( len_trim(line) > 0 ) write(*,'(a,a)') repeat(" ", 15), trim(line)
+
   end subroutine fstr_print_convergence_state
 
   !> \brief Label of a criterion in the iteration log.
-  function fstr_convergence_label( iq, ig, absolute ) result( label )
+  function fstr_convergence_label( iq, ig, inorm, absolute ) result( label )
     implicit none
     integer(kind=kint), intent(in) :: iq        !< quantity
     integer(kind=kint), intent(in) :: ig        !< DOF group
+    integer(kind=kint), intent(in) :: inorm     !< norm
     logical, intent(in)            :: absolute  !< the value is not normalized
     character(len=32)              :: label
 
@@ -397,10 +568,12 @@ contains
 
     if( iq == kcnvResidual ) then
       label = 'res(' // trim(RES_NAME(ig))
+      if( inorm == kcnvMax ) label = trim(label) // ',max'
       if( absolute ) label = trim(label) // ',abs'
       label = trim(label) // ')'
     else
       label = CORR_NAME(ig)
+      if( inorm == kcnvMax ) label = trim(label) // '(max)'
     endif
 
   end function fstr_convergence_label
