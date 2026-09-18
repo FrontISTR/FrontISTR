@@ -27,7 +27,7 @@ endfunction(GetProcThreads)
 function(AppendListTests rootdir list_in TEST_TARGETS)
 
   set(TMPLIST "${list_in}")
-  file(GLOB_RECURSE TEST_ANALYSIS_MESH_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${rootdir}/*.msh")
+  file(GLOB_RECURSE TEST_ANALYSIS_MESH_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${rootdir}/*.msh" "${rootdir}/*.inp")
   foreach(MESH_FILE ${TEST_ANALYSIS_MESH_FILES})
     get_filename_component(DIR_NAME ${MESH_FILE} DIRECTORY)
     list(APPEND TMPLIST ${DIR_NAME})

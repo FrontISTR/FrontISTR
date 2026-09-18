@@ -18,11 +18,12 @@ echo_err () {
   echo "${ESC}[31m$1${ESC}[m" >&2
 }
 
-for path in $(find . -not -path "./_archive/*" -type f -name "*.msh" ); do
+for path in $(find . -not -path "./_archive/*" -type f \( -name "*.msh" -o -name "*.inp" \) ); do
   dir=$(dirname $path)
   mesh=$(basename $path)
-  cnt=${mesh%.msh}.cnt
-  res=${mesh%.msh}.res
+  cnt=${mesh%.*}.cnt
+  res=${mesh%.*}.res
+  [ "${mesh##*.}" = "inp" ] && MESHTYPE=INP || MESHTYPE=HECMW-ENTIRE
 
   if ls $dir/${res}.* > /dev/null 2>&1; then
     echo_err ${res}" exists. Skip this mesh file."
@@ -39,7 +40,7 @@ for path in $(find . -not -path "./_archive/*" -type f -name "*.msh" ); do
 
   pushd $dir
 cat <<EOL > hecmw_ctrl.dat
-!MESH, NAME=fstrMSH,TYPE=HECMW-ENTIRE
+!MESH, NAME=fstrMSH,TYPE=$MESHTYPE
 ${mesh}
 !CONTROL,NAME=fstrCNT
 ${cnt}
