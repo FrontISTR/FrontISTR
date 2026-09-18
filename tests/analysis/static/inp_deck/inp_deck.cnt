@@ -1,7 +1,8 @@
 # The mesh is a whole inp deck: besides the mesh it carries output and step
 # keywords, *BOUNDARY/*CLOAD/*DLOAD with parameters and set-name lines,
-# *INITIAL CONDITIONS other than TEMPERATURE and a material with only
-# unsupported keywords, all of which the inp reader must skip.
+# *INITIAL CONDITIONS other than TEMPERATURE, a material with only unsupported
+# keywords, and *CONDUCTIVITY in a structural material, all of which the inp
+# reader must skip. *DENSITY is written before *ELASTIC.
 # With nu=0 the top of the column moves by -rho*g*L^2/(2E) = -1.8335E-04.
 !VERSION
  3
