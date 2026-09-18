@@ -232,6 +232,34 @@ static int has_mat_data(int keyword) {
   return 0;
 }
 
+/* fstr_get_prop takes item 1 as *ELASTIC and item 2 as *DENSITY */
+static void order_structural_mat_data(void) {
+  struct material_data *p, *q, *prev;
+
+  for (prev = NULL, p = matdata; p; p = q) {
+    q = p->next;
+    if (p->keyword == HECMW_INPLEX_H_SPECIFIC_HEAT ||
+        p->keyword == HECMW_INPLEX_H_CONDUCTIVITY) {
+      HECMW_print_msg(HECMW_LOG_WARN, HECMW_IO_INP_W0099,
+                      "%s in *MATERIAL %s with *ELASTIC",
+                      get_material_string(p->keyword), matname);
+      if (prev) {
+        prev->next = q;
+      } else {
+        matdata = q;
+      }
+      free_mat_item(p->matitem);
+      HECMW_free(p);
+    } else if (p->keyword == HECMW_INPLEX_H_ELASTIC && prev) {
+      prev->next = q;
+      p->next    = matdata;
+      matdata    = p;
+    } else {
+      prev = p;
+    }
+  }
+}
+
 static int regist_material(void) {
   int i, n;
   struct hecmw_io_material *mat = NULL;
@@ -254,6 +282,7 @@ static int regist_material(void) {
     return 0;
   }
 
+  if (has_mat_data(HECMW_INPLEX_H_ELASTIC)) order_structural_mat_data();
   n = count_mat_item();
 
   mat = HECMW_calloc(1, sizeof(*mat) * n);
@@ -274,9 +303,9 @@ static int regist_material(void) {
   }
 
   for (i = 0, p = matdata; p; p = q, i++) {
-    q = p->next;
-    HECMW_assert(p->matitem->item == i + 1);
-    mat->item[i] = *p->matitem;
+    q                = p->next;
+    p->matitem->item = i + 1;
+    mat->item[i]     = *p->matitem;
     HECMW_free(p->matitem);
     HECMW_free(p);
   }
