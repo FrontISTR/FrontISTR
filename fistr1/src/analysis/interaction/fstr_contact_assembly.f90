@@ -26,36 +26,100 @@ contains
     integer(kind=kint), intent(in)       :: ndof      !< degrees of freedom
     type(hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh
     
-    integer(kind=kint) :: j, slave_node, master_node, nnode, ctsurf
-    integer(kind=kint) :: idx_start, idx_end
+    integer(kind=kint) :: i, j, k, slave_node, master_node, nnode, ctsurf
+    integer(kind=kint) :: idx_start, idx_end, n_slave
+    integer(kind=kint) :: cgrp, ic, iss, outtype, fnodes(100)
     real(kind=kreal)   :: maxv
-    
+    real(kind=kreal)   :: A_rep, slave_reflen_sum
+    real(kind=kreal)   :: elem(3, l_max_surface_node), r0(2)
+
     maxv = 0.0d0
-    
+
     ! Loop over slave nodes
     do j = 1, size(contact%slave)
       slave_node = contact%slave(j)
+      ! The mortar refStiff must be partition-invariant: skip GHOST(external) rows, whose
+      ! diagonal is not fully assembled here. Every slave node is internal on exactly one
+      ! rank, so the allreduce-MAX below still sees every fully-assembled diagonal.
+      if( contact%method == CONTACTS2S .and. slave_node > hecMESH%nn_internal ) cycle
       idx_start = ndof * (slave_node - 1) + 1
       idx_end = ndof * slave_node
       maxv = max(maxv, maxval(diag(idx_start:idx_end)))
     enddo
     
     ! Loop over master surfaces and nodes
-    do ctsurf = 1, size(contact%master)
-      nnode = size(contact%master(ctsurf)%nodes)
-      do j = 1, nnode
-        master_node = contact%master(ctsurf)%nodes(j)
-        idx_start = ndof * (master_node - 1) + 1
-        idx_end = ndof * master_node
-        maxv = max(maxv, maxval(diag(idx_start:idx_end)))
+    if( contact%method == CONTACTS2S ) then
+      ! Enumerate the master faces from the surface group instead of contact%master: with
+      ! !PARTITION, CONTACT_OWNER=SLAVE a rank that owns no slave node takes no master surface
+      ! at all (fstr_contact_init), so the diagonals of the master nodes it owns would never
+      ! enter the max and refStiff would depend on the partition. The surface group items are
+      ! present wherever the element is, so taking internal rows only on every rank lets the
+      ! allreduce-MAX reproduce the serial value.
+      cgrp = contact%surf_id2
+      if( cgrp > 0 ) then
+        do i = hecMESH%surf_group%grp_index(cgrp-1)+1, hecMESH%surf_group%grp_index(cgrp)
+          ic = hecMESH%surf_group%grp_item(2*i-1)
+          call getSubFace( hecMESH%elem_type(ic), hecMESH%surf_group%grp_item(2*i), outtype, fnodes )
+          nnode = getNumberOfNodes( outtype )
+          iss = hecMESH%elem_node_index(ic-1)
+          do j = 1, nnode
+            master_node = hecMESH%elem_node_item( iss + fnodes(j) )
+            if( master_node > hecMESH%nn_internal ) cycle
+            idx_start = ndof * (master_node - 1) + 1
+            idx_end = ndof * master_node
+            maxv = max(maxv, maxval(diag(idx_start:idx_end)))
+          enddo
+        enddo
+      endif
+    else
+      do ctsurf = 1, size(contact%master)
+        nnode = size(contact%master(ctsurf)%nodes)
+        do j = 1, nnode
+          master_node = contact%master(ctsurf)%nodes(j)
+          idx_start = ndof * (master_node - 1) + 1
+          idx_end = ndof * master_node
+          maxv = max(maxv, maxval(diag(idx_start:idx_end)))
+        enddo
       enddo
-    enddo
+    endif
     
     ! Parallel reduction
     call hecmw_allREDUCE_R1(hecMESH, maxv, hecmw_max)
     
     ! Set reference stiffness for this contact pair
     contact%refStiff = maxv
+
+    ! Mortar dimensional correction: the mortar penalty multiplies refStiff by the contact
+    ! area, so refStiff is divided by a representative tributary area A_rep = (slave reflen)^2
+    ! to make mu = nPenalty*refStiff a pressure density. The same nPenalty then gives the same
+    ! effective stiffness as the NODE-SURF per-node form. reflen is taken from the slave element
+    ! (the constraint is integrated on the slave surface). NODE-SURF pairs are left untouched.
+    if( contact%method == CONTACTS2S ) then
+      ! Local slave reference-length sum and slave-face count (0 if this rank owns none).
+      slave_reflen_sum = 0.0d0
+      n_slave = 0
+      if( associated(contact%slave_surf) ) n_slave = size(contact%slave_surf)
+      do j = 1, n_slave
+        nnode = size(contact%slave_surf(j)%nodes)
+        do k = 1, nnode
+          ctsurf = contact%slave_surf(j)%nodes(k)
+          elem(1:3,k) = hecMESH%node(3*ctsurf-2:3*ctsurf)
+        enddo
+        call getElementCenter( contact%slave_surf(j)%etype, r0 )
+        slave_reflen_sum = slave_reflen_sum + &
+          getReferenceLength( contact%slave_surf(j)%etype, nnode, r0, elem )
+      enddo
+      ! Reduced outside the slave_surf>0 gate (ranks owning no slave face must still join the
+      ! collective) but inside the method gate. Slave faces are owned by exactly one rank, so the
+      ! SUM reproduces the serial value on every rank.
+      call hecmw_allREDUCE_R1(hecMESH, slave_reflen_sum, hecmw_sum)
+      call hecmw_allreduce_I1(hecMESH, n_slave, hecmw_sum)
+      A_rep = 0.0d0
+      if( n_slave > 0 ) then
+        A_rep = ( slave_reflen_sum / dble(n_slave) ) ** 2
+        if( A_rep > 0.0d0 ) contact%refStiff = contact%refStiff / A_rep
+      endif
+    endif
 
     ! Report penalty settings
     if (hecmw_comm_get_rank() == 0) then
@@ -84,8 +148,11 @@ contains
       conMAT%B(idx:idx+2) = conMAT%B(idx:idx+2) + ctNForce((i-1)*3+1:(i-1)*3+3) + ctTForce((i-1)*3+1:(i-1)*3+3)
     enddo
 
+    ! Accumulate: several contributions can target the same Lagrange row (the caller
+    ! zero-clears conMAT%B before the contact assembly).
     if( id_lagrange > 0 ) then
-      conMAT%B(conMAT%NP*conMAT%NDOF+id_lagrange) = ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1)
+      conMAT%B(conMAT%NP*conMAT%NDOF+id_lagrange) = &
+      conMAT%B(conMAT%NP*conMAT%NDOF+id_lagrange) + ctNForce((nnode+1)*3+1) + ctTForce((nnode+1)*3+1)
     endif
 
   end subroutine assemble_contact_force_residual
@@ -137,10 +204,10 @@ contains
     cnt = 0
     lgnt(:) = 0.d0
     max_jump_ratio = 0.0d0
-    
+    ! ===== NODE-SURF multiplier update (per slave node) =====
     do i = 1, size(contact%slave)
       if(.not. is_contact_active(contact%states(i)%state)) cycle   ! only STICK/SLIP
-      
+
       slave = contact%slave(i)
       master = contact%states(i)%surface
       nn = size(contact%master(master)%nodes)
@@ -153,13 +220,13 @@ contains
       call updateContactMultiplier_Alag(contact%states(i), ndLocal(1:nn+1), coord, disp, ddisp, &
         contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, &
         fcoeff, contact%master(master), lgnt, ctchanged, ctNForce, ctTForce, jump_ratio_local, contact%smoothing)
-      
+
       ! Track maximum jump ratio
       max_jump_ratio = max(max_jump_ratio, jump_ratio_local)
-      
+
       cnt = cnt + 1
     enddo
-    
+
     if(cnt > 0) lgnt(:) = lgnt(:) / cnt
     gnt = gnt + lgnt
     
@@ -178,6 +245,118 @@ contains
     endif
       
   end subroutine update_contact_multiplier
+
+  !> This subroutine updates the lagrangian multiplier of a mortar (MORTAR=YES) contact
+  !> pair. The augmented per-node multiplier is clamped at zero, so the normal constraint of
+  !> a slave node against a master group is dropped by the same complementarity condition the
+  !> assembly applies, and the tangent multiplier of every node is return-mapped onto the cone
+  !> of its own normal multiplier. Both are written into the working buffer of the segment,
+  !> which fstr_commit_lambda_txn promotes to the warm start of the next substep.
+  subroutine update_contact_multiplier_SurfSurf( contact, coord, disp, ddisp, fcoeff )
+    type( tContact ), intent(inout)      :: contact        !< contact info
+    real(kind=kreal), intent(in)         :: coord(:)       !< mesh coordinate
+    real(kind=kreal), intent(in)         :: disp(:)        !< disp till current step
+    real(kind=kreal), intent(in)         :: ddisp(:)       !< disp till current substep
+    real(kind=kreal), intent(in)         :: fcoeff         !< frictional coeff
+
+    integer(kind=kint)  :: i, g, r, a, nnode_s, unique_count
+    integer(kind=kint)  :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
+    integer(kind=kint), allocatable :: sorted_idx(:)
+    ! per-node-within-group quantities; the per-node lambda_n drives the normal path
+    real(kind=kreal),   allocatable :: Snode(:,:), Nsnode(:,:,:), gapwnode(:,:), lambda_node(:,:)
+    real(kind=kreal)    :: mu, lambda_new
+    ! --- friction: per-node slip/normal, per-node basis, return mapping ---
+    real(kind=kreal),   allocatable :: Sigma_node(:,:,:), nacc_node(:,:,:)
+    real(kind=kreal),   allocatable :: lam_t_cur(:,:,:)
+    integer(kind=kint), allocatable :: fric_state_cur(:,:)
+    real(kind=kreal)    :: nhat(3), t1(3), t2(3), nrm, Dxi(2)
+    real(kind=kreal)    :: rho_t, alpha, that(2), lam_t_new(2)
+    integer(kind=kint)  :: fstate
+
+    ! ===== mortar multiplier update (per slave segment) =====
+    mu = contact%nPenalty * contact%refStiff
+    rho_t = contact%tPenalty * contact%refStiff   ! tangential penalty, used only if fcoeff/=0
+    do i = 1, size(contact%slave_surf)
+      if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
+
+      call get_unique_map(contact%slave_surf(i), maplist, master_idxs, unique_count)
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(Snode(unique_count,nnode_s), Nsnode(unique_count,nnode_s,24), gapwnode(unique_count,nnode_s))
+      call getIntGap(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                     unique_count, maplist, master_idxs, &
+                     Snode, Nsnode, gapwnode)
+
+      allocate(sorted_idx(unique_count), lambda_node(nnode_s,unique_count))
+      if( fcoeff /= 0.d0 ) then
+        ! Resolve the tangent warm-start (working -> begin -> 0/STICK) before the working
+        ! buffer is rebuilt below. lambda_n resolution is identical to the fcoeff=0 path.
+        allocate(lam_t_cur(2,nnode_s,unique_count), fric_state_cur(nnode_s,unique_count))
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_node, lam_t_cur, fric_state_cur)
+      else
+        call resolve_lambda_cur(contact%slave_surf(i), master_idxs, unique_count, nnode_s, sorted_idx, &
+                                lambda_node)
+      endif
+
+      ! Per-node augmented update: lambda_node(a,g) += mu*gapwnode(g,a), clamped at 0.
+      do g = 1, unique_count
+        do a = 1, nnode_s
+          lambda_new = lambda_node(a,g) + (mu * gapwnode(g,a))
+          if( lambda_new < 0.d0 ) lambda_new = 0.d0
+          lambda_node(a,g) = lambda_new
+        enddo
+      enddo
+
+      ! Rebuild the working buffer from the active master set (ascending); BEGIN left it empty.
+      contact%slave_surf(i)%lam_work_n = unique_count
+      do r = 1, unique_count
+        contact%slave_surf(i)%lam_work_id(r)  = master_idxs(sorted_idx(r))
+        contact%slave_surf(i)%lam_work_val(1:nnode_s,r) = lambda_node(1:nnode_s,sorted_idx(r))
+      enddo
+
+      ! --- friction tangent update: per slave node, project the mortar slip onto the
+      !     per-node tangent frame, return-map with cone radius fcoeff*lambda_node(a,g),
+      !     and write lambda_t / fric_state into the working buffer. ---
+      if( fcoeff /= 0.d0 ) then
+        allocate(Sigma_node(unique_count,nnode_s,3), nacc_node(unique_count,nnode_s,3))
+        call getTangentSlip(contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+                            unique_count, maplist, master_idxs, Sigma_node, nacc_node)
+        do g = 1, unique_count
+          do a = 1, nnode_s
+            nrm = sqrt( nacc_node(g,a,1)**2 + nacc_node(g,a,2)**2 + nacc_node(g,a,3)**2 )
+            ! Project the per-node slip onto the per-node orthonormal frame, then Coulomb
+            ! return-map. rho_t*Dxi matches the per-node mu*gapwnode area weighting (both
+            ! node-tributary integrated), so the averaged back-distribution cancels the area.
+            if( nrm < 1.d-30 ) then
+              Dxi(1:2) = 0.d0
+              nhat(1:3) = 0.d0
+            else
+              nhat(1:3) = nacc_node(g,a,1:3) / nrm
+              call build_group_tangent_basis(nhat, t1, t2)
+              Dxi(1) = dot_product(t1(1:3), Sigma_node(g,a,1:3))
+              Dxi(2) = dot_product(t2(1:3), Sigma_node(g,a,1:3))
+            endif
+            fstate = fric_state_cur(a,g)
+            call group_return_mapping(lam_t_cur(1:2,a,g), rho_t, Dxi, fcoeff, lambda_node(a,g), &
+                                      contact%eps_fric_band, lam_t_new, fstate, alpha, that, &
+                                      update_state=.true.)
+            lam_t_cur(1:2,a,g)  = lam_t_new(1:2)
+            fric_state_cur(a,g) = fstate
+          enddo
+        enddo
+        ! Write the tangent working buffer parallel to the rebuilt lambda_n (ascending master order).
+        do r = 1, unique_count
+          contact%slave_surf(i)%lam_work_t(1:2,1:nnode_s,r)  = lam_t_cur(1:2,1:nnode_s,sorted_idx(r))
+          contact%slave_surf(i)%lam_work_fstate(1:nnode_s,r) = fric_state_cur(1:nnode_s,sorted_idx(r))
+        enddo
+        deallocate(Sigma_node, nacc_node, lam_t_cur, fric_state_cur)
+      endif
+
+      deallocate(sorted_idx)
+      deallocate(Snode, Nsnode, gapwnode, lambda_node)
+    enddo
+
+  end subroutine update_contact_multiplier_SurfSurf
 
   !> This subroutine update lagrangian multiplier and the
   !> distance between contacting nodes
@@ -364,6 +543,74 @@ contains
     enddo
 
   end subroutine calcu_contact_stiffness_NodeSurf
+
+  subroutine calcu_contact_stiffness_SurfSurf( ctAlgo, contact, coord, disp, ddisp, hecMAT )
+    integer(kind=kint), intent(in)             :: ctAlgo          !< contact analysis algorithm
+    type(tContact), intent(inout)              :: contact         !< contact info
+    real(kind=kreal), intent(in)               :: coord(:)        !< mesh coordinate
+    real(kind=kreal), intent(in)               :: disp(:)         !< displacement
+    real(kind=kreal), intent(in)               :: ddisp(:)        !< displacement increment (NR)
+    type(hecmwST_matrix), intent(inout)        :: hecMAT          !< global stiffness matrix
+
+    integer(kind=kint) :: i, g, a, nnode_m, nnode_s, unique_count, ctsurf
+    integer(kind=kint) :: ndLocal(l_max_surface_node+1)
+    integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
+    real(kind=kreal),   allocatable :: stiff_n(:,:,:,:), stiff_t(:,:,:,:)
+    logical,            allocatable :: active_n(:,:), active_t(:,:)
+
+    do i = 1, size(contact%slave_surf)
+      if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
+      if( ctAlgo /= kcaALagrange ) cycle
+
+      call get_unique_map( contact%slave_surf(i), maplist, master_idxs, unique_count )
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(stiff_n(24,24,nnode_s,unique_count), active_n(nnode_s,unique_count))
+
+      ! Element level: one stiffness block per (slave-surf node a, master group g) constraint.
+      if( contact%fcoeff /= 0.d0 ) then
+        allocate(stiff_t(24,24,nnode_s,unique_count), active_t(nnode_s,unique_count))
+        call getContactStiffness_Alag_SurfSurf( contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
+          stiff_n, active_n, stiff_t, active_t )
+      else
+        call getContactStiffness_Alag_SurfSurf( contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
+          stiff_n, active_n )
+      endif
+
+      ! ===== Normal stiffness =====
+      do g = 1, unique_count
+        ctsurf = master_idxs(g)
+        nnode_m = size(contact%master(ctsurf)%nodes)
+        ndLocal(1:nnode_s) = contact%slave_surf(i)%nodes(1:nnode_s)
+        ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
+        do a = 1, nnode_s
+          if( .not. active_n(a,g) ) cycle
+          call hecmw_mat_ass_elem(hecMAT, nnode_s+nnode_m, ndLocal, stiff_n(:,:,a,g))
+        enddo
+      enddo
+
+      ! ===== Friction consistent tangent, assembled in a second pass =====
+      if( contact%fcoeff /= 0.d0 ) then
+        do g = 1, unique_count
+          ctsurf = master_idxs(g)
+          nnode_m = size(contact%master(ctsurf)%nodes)
+          ndLocal(1:nnode_s) = contact%slave_surf(i)%nodes(1:nnode_s)
+          ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
+          do a = 1, nnode_s
+            if( .not. active_t(a,g) ) cycle
+            call hecmw_mat_ass_elem(hecMAT, nnode_s+nnode_m, ndLocal, stiff_t(:,:,a,g))
+          enddo
+        enddo
+        deallocate(stiff_t, active_t)
+      endif
+
+      deallocate(stiff_n, active_n)
+    enddo
+
+  end subroutine calcu_contact_stiffness_SurfSurf
 
   !>\brief This subroutine calculates contact nodal force for each contact pair
   !! and assembles it into contact matrix and/or force arrays.
@@ -561,5 +808,92 @@ contains
     enddo
 
   end subroutine calcu_contact_ndforce_exp
+
+  subroutine calcu_contact_ndforce_SurfSurf( purpose, ctAlgo, contact, coord, disp, ddisp, &
+    conMAT, CONT_NFORCE, CONT_FRIC )
+    integer(kind=kint), intent(in)       :: purpose         !< kctForResidual or kctForOutput
+    integer(kind=kint), intent(in)       :: ctAlgo          !< contact analysis algorithm
+    type( tContact ), intent(inout)      :: contact         !< contact info
+    real(kind=kreal), intent(in)         :: coord(:)        !< mesh coordinate
+    real(kind=kreal), intent(in)         :: disp(:)         !< disp till current step
+    real(kind=kreal), intent(in)         :: ddisp(:)        !< disp till current substep
+    type(hecmwST_matrix), intent(inout)  :: conMAT          !< contact matrix
+    real(kind=kreal), pointer            :: CONT_NFORCE(:)  !< contact normal force
+    real(kind=kreal), pointer            :: CONT_FRIC(:)    !< contact friction force
+
+    integer(kind=kint) :: i, g, a, j, nd, nnode_m, nnode_s, unique_count, ctsurf
+    integer(kind=kint) :: ndLocal(l_max_surface_node+1)
+    integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
+    real(kind=kreal),   allocatable :: ctNForce(:,:,:), ctTForce(:,:,:)
+    logical,            allocatable :: active_n(:,:), active_t(:,:)
+
+    do i = 1, size(contact%slave_surf)
+      if( contact%slave_surf(i)%state == CONTACTFREE ) cycle
+      if( ctAlgo /= kcaALagrange ) cycle
+
+      call get_unique_map( contact%slave_surf(i), maplist, master_idxs, unique_count )
+      nnode_s = size(contact%slave_surf(i)%nodes)
+      allocate(ctNForce(24,nnode_s,unique_count), active_n(nnode_s,unique_count))
+
+      ! Element level: one force vector per (slave-surf node a, master group g) constraint,
+      ! already signed as the residual contribution.
+      if( contact%fcoeff /= 0.d0 ) then
+        allocate(ctTForce(24,nnode_s,unique_count), active_t(nnode_s,unique_count))
+        call getContactNodalForce_Alag_SurfSurf( purpose, contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
+          ctNForce, active_n, ctTForce, active_t )
+      else
+        call getContactNodalForce_Alag_SurfSurf( purpose, contact%slave_surf(i), contact%master, coord, disp, ddisp, &
+          contact%nPenalty * contact%refStiff, contact%tPenalty * contact%refStiff, contact%fcoeff, &
+          contact%symmetric, contact%eps_fric_band, unique_count, maplist, master_idxs, &
+          ctNForce, active_n )
+      endif
+
+      ! ===== Normal force =====
+      do g = 1, unique_count
+        ctsurf = master_idxs(g)
+        nnode_m = size(contact%master(ctsurf)%nodes)
+        ndLocal(1:nnode_s) = contact%slave_surf(i)%nodes(1:nnode_s)
+        ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
+        do a = 1, nnode_s
+          if( .not. active_n(a,g) ) cycle
+          do j = 1, nnode_s + nnode_m
+            nd = ndLocal(j)
+            if( purpose == kctForResidual ) then
+              conMAT%B(3*nd-2:3*nd) = conMAT%B(3*nd-2:3*nd) + ctNForce(3*j-2:3*j,a,g)
+            else if ( purpose == kctForOutput ) then
+              CONT_NFORCE(3*nd-2:3*nd) = CONT_NFORCE(3*nd-2:3*nd) + ctNForce(3*j-2:3*j,a,g)
+            end if
+          enddo
+        enddo
+      enddo
+
+      ! ===== Friction force, assembled in a second pass =====
+      if( contact%fcoeff /= 0.d0 ) then
+        do g = 1, unique_count
+          ctsurf = master_idxs(g)
+          nnode_m = size(contact%master(ctsurf)%nodes)
+          ndLocal(1:nnode_s) = contact%slave_surf(i)%nodes(1:nnode_s)
+          ndLocal(nnode_s+1:nnode_s+nnode_m) = contact%master(ctsurf)%nodes(1:nnode_m)
+          do a = 1, nnode_s
+            if( .not. active_t(a,g) ) cycle
+            do j = 1, nnode_s + nnode_m
+              nd = ndLocal(j)
+              if( purpose == kctForResidual ) then
+                conMAT%B(3*nd-2:3*nd) = conMAT%B(3*nd-2:3*nd) + ctTForce(3*j-2:3*j,a,g)
+              else if( purpose == kctForOutput ) then
+                CONT_FRIC(3*nd-2:3*nd) = CONT_FRIC(3*nd-2:3*nd) + ctTForce(3*j-2:3*j,a,g)
+              end if
+            enddo
+          enddo
+        enddo
+        deallocate(ctTForce, active_t)
+      endif
+
+      deallocate(ctNForce, active_n)
+    enddo
+
+  end subroutine calcu_contact_ndforce_SurfSurf
 
 end module m_fstr_contact_assembly

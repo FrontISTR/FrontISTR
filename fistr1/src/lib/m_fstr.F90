@@ -206,6 +206,7 @@ module m_fstr
     integer( kind=kint ) :: contact_algo       !< contact analysis algorithm number(SLagrange or Alagrange)
     integer( kind=kint ) :: augiter            !< augmentation iteration for ALagrange algorithm
     logical              :: fric_cone_follow   !< if the ALagrange friction cone follows the applied normal force
+    real( kind=kreal )   :: eps_fric_band      !< hysteresis half-band of the stick/slip switch (0 = no band)
     type(tContactParam), pointer :: contactparam(:)  !< parameter sets for contact scan
     type(tContactInterference), pointer :: contact_if(:)  !< parameter sets for contact scan
 
@@ -1070,6 +1071,7 @@ contains
     fstrPARAM%contact_algo = kcaSLagrange  ! default: Standard Lagrange
     fstrPARAM%augiter = 2                  ! default augmentation iteration for ALagrange
     fstrPARAM%fric_cone_follow = .true.    ! default: cone radius follows the applied normal force
+    fstrPARAM%eps_fric_band = 0.d0         ! default: no stick/slip hysteresis band
 
     ! index table for global node ID sorting
 

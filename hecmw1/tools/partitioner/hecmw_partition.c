@@ -9325,6 +9325,17 @@ static int init_partition(struct hecmwST_local_mesh *global_mesh,
     }
   }
 
+  /* ELEMENT-BASED partitioning has no contact masking, so a mesh with contact
+   * pairs would be split with zero contact overlap (silently broken = false
+   * completion). Stop loudly instead. */
+  if (global_mesh->contact_pair->n_pair > 0 &&
+      global_mesh->hecmw_flag_parttype == HECMW_FLAG_PARTTYPE_ELEMBASED) {
+    HECMW_set_error(HECMW_PART_E_INVALID_PTYPE,
+                    "ELEMENT-BASED partitioning is not supported with contact "
+                    "pairs; use TYPE=NODE-BASED");
+    goto error;
+  }
+
   HECMW_log(HECMW_LOG_DEBUG, "Initialization for partitioner done");
 
   return RTC_NORMAL;
@@ -9352,8 +9363,10 @@ extern struct hecmwST_local_mesh *HECMW_partition_inner(
   int *node_global2local                = NULL;
   int *elem_global2local                = NULL;
   char ofname[HECMW_FILENAME_LEN + 1];
-  int *num_elem, *num_node, *num_ielem, *num_inode, *num_nbpe;
-  int *sum_elem, *sum_node, *sum_ielem, *sum_inode, *sum_nbpe;
+  int *num_elem = NULL, *num_node = NULL, *num_ielem = NULL, *num_inode = NULL,
+      *num_nbpe = NULL;
+  int *sum_elem = NULL, *sum_node = NULL, *sum_ielem = NULL, *sum_inode = NULL,
+      *sum_nbpe = NULL;
   int current_domain, nrank, iS, iE;
   int rtc;
   int i;

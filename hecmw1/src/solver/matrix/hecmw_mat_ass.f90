@@ -13,6 +13,7 @@ module hecmw_matrix_ass
 
   public :: hecmw_mat_ass_elem
   public :: hecmw_mat_add_node
+  public :: hecmw_mat_profile_has_node
   public :: hecmw_array_search_i
   public :: hecmw_mat_ass_equation
   public :: hecmw_mat_ass_equation_rhs
@@ -133,6 +134,34 @@ contains
       enddo
     endif
   end subroutine hecmw_mat_add_node
+
+
+  !> \brief Read-only companion to hecmw_mat_add_node: report whether the (inod, jnod)
+  !> block exists in the matrix connectivity (profile) WITHOUT aborting. Uses the same
+  !> indexU/itemU (inod<jnod) / indexL/itemL (inod>jnod) binary search; the diagonal
+  !> (inod==jnod) always exists (D block). Lets callers detect a would-be out-of-profile
+  !> add and rebuild first instead of hitting the abort in hecmw_mat_add_node.
+  function hecmw_mat_profile_has_node(hecMAT, inod, jnod)
+    logical :: hecmw_mat_profile_has_node
+    type (hecmwST_matrix) :: hecMAT
+    integer(kind=kint) :: inod, jnod
+    !** Local variables
+    integer(kind=kint) :: is, iE, k
+
+    if (inod < jnod) then
+      is = hecMAT%indexU(inod-1)+1
+      iE = hecMAT%indexU(inod)
+      k = hecmw_array_search_i(hecMAT%itemU, is, iE, jnod)
+      hecmw_mat_profile_has_node = ( is <= k .and. k <= iE )
+    else if (inod > jnod) then
+      is = hecMAT%indexL(inod-1)+1
+      iE = hecMAT%indexL(inod)
+      k = hecmw_array_search_i(hecMAT%itemL, is, iE, jnod)
+      hecmw_mat_profile_has_node = ( is <= k .and. k <= iE )
+    else
+      hecmw_mat_profile_has_node = .true.
+    endif
+  end function hecmw_mat_profile_has_node
 
 
   function hecmw_array_search_i(array, is, iE, ival)

@@ -261,6 +261,43 @@ contains
 
   end subroutine project_Point2SurfElement
 
+  !> Mortar projection wrapper. Projects a slave integration point onto a master
+  !> surface (project_Point2SurfElement), then on contact overrides the contact
+  !> direction with the SLAVE inward normal. The mortar gap integration
+  !> (getIntGap/computeContactMaps_ALag) uses states%direction as its normal, so it
+  !> must be the slave normal, not the master normal that project_Point2Element sets.
+  !> Used for both initial activation (CANDIDATE) and tracking, so the direction stays
+  !> consistent across iterations.
+  subroutine project_Point2SurfElement_ss( coord, master_surf, sSurf, ncoord, currpos, &
+      cstate, isin, distclr, ctpos, localclr )
+    real(kind=kreal), intent(in)              :: coord(3)      !< slave IP position
+    type(tSurfElement), intent(in)            :: master_surf   !< master surface element
+    type(tContactSurf), intent(in)            :: sSurf         !< slave surface (for inward normal)
+    real(kind=kreal), intent(in)              :: ncoord(2)     !< IP natural coord on slave surface
+    real(kind=kreal), intent(in)              :: currpos(:)    !< current coordinate of all nodes
+    type(tContactState), intent(inout)        :: cstate        !< contact state
+    logical, intent(out)                      :: isin          !< in contact or not
+    real(kind=kreal), intent(in)              :: distclr       !< clearance of contact distance
+    real(kind=kreal), optional, intent(in)    :: ctpos(2)      !< current contact position (natural coord)
+    real(kind=kreal), optional, intent(in)    :: localclr      !< clearance of contact local coord
+
+    integer(kind=kint) :: nnode_s, j, islave
+    real(kind=kreal)   :: slave_pos(3, l_max_elem_node), normal(3)
+
+    ! kcsNONE: the mortar integral is built on the flat master facets. SMOOTHING= is a
+    ! NODE-SURF feature and is not combined with MORTAR=YES.
+    call project_Point2SurfElement( coord, master_surf, currpos, cstate, isin, distclr, ctpos, localclr, kcsNONE )
+    if( .not. isin ) return
+
+    nnode_s = size(sSurf%nodes)
+    do j = 1, nnode_s
+      islave = sSurf%nodes(j)
+      slave_pos(:,j) = currpos(3*islave-2:3*islave)
+    enddo
+    normal(:) = - SurfaceNormal( sSurf%etype, nnode_s, ncoord, slave_pos )
+    cstate%direction(:) = normal(:) / dsqrt( dot_product(normal, normal) )
+  end subroutine project_Point2SurfElement_ss
+
   !> This subroutine calculate the metric tensor of a elemental surface
   subroutine getMetricTensor( pos, etype, ele, tensor )
     real(kind=kreal), intent(in)  :: pos(2)        !< current position(local coordinate)

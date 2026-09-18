@@ -1813,8 +1813,10 @@ contains
     logical, optional, intent(in) :: expflag !< explicit dynamic: build CONT_NFORCE from stored contact multipliers
 
     integer(kind=kint), parameter :: nval = 10
+    ! Force threshold (|F|^2) below which an output contact force counts as zero.
+    real(kind=kreal), parameter :: cont_force_eps2 = 1.d-40
     logical, save :: updated(nval) = .false.
-    integer(kind=kint) :: ndof, i
+    integer(kind=kint) :: ndof, i, ic, is, jn, slave
     real(kind=kreal) :: area, dt_use
 
     ndof = hecMESH%n_dof
@@ -1834,6 +1836,37 @@ contains
     endif
     if( .not. updated(3) .and. .not. updated(4) ) then
       call fstr_update_contact_state_vectors( fstrSOLID, dt_use )
+    endif
+
+    ! MORTAR=YES: make the displayed contact state consistent with the displayed force.
+    ! The state vector above aggregates each segment's state onto its slave nodes, so a node
+    ! whose multiplier has already relaxed can still be shown as in contact, and the segment
+    ! state cannot distinguish stick from slip. For every mortar slave node that carries a
+    ! nonzero output force, take the state from that node's converged friction state
+    ! (slip if any master rank slipped, else stick); nodes with round-off-zero force keep the
+    ! scanned state (FREE right after separation). Limited to mortar slave nodes: CONT_NFORCE
+    ! is also written on master nodes and by the NODE-SURF path. Runs before the parallel
+    ! contact-value assembly so that rank-local force and state are compared in the same index
+    ! space; the existing max-assembly of CONT_STATE then heals boundary nodes.
+    if( associated(fstrSOLID%CONT_STATE) .and. associated(fstrSOLID%CONT_NFORCE) ) then
+      do ic = 1, fstrSOLID%n_contacts
+        if( fstrSOLID%contacts(ic)%method /= CONTACTS2S ) cycle
+        if( .not. associated(fstrSOLID%contacts(ic)%slave_surf) ) cycle
+        do is = 1, size(fstrSOLID%contacts(ic)%slave_surf)
+          do jn = 1, size(fstrSOLID%contacts(ic)%slave_surf(is)%nodes)
+            slave = fstrSOLID%contacts(ic)%slave_surf(is)%nodes(jn)
+            if( dot_product( fstrSOLID%CONT_NFORCE(3*slave-2:3*slave), &
+              &              fstrSOLID%CONT_NFORCE(3*slave-2:3*slave) ) > cont_force_eps2 ) then
+              if( any( fstrSOLID%contacts(ic)%slave_surf(is)%lam_work_fstate(jn, &
+                &        1:fstrSOLID%contacts(ic)%slave_surf(is)%lam_work_n) == CONTACTSLIP ) ) then
+                fstrSOLID%CONT_STATE(slave) = dble(CONTACTSLIP)
+              else
+                fstrSOLID%CONT_STATE(slave) = dble(CONTACTSTICK)
+              endif
+            endif
+          enddo
+        enddo
+      enddo
     endif
 
     ! --- CONTACT NORMAL FORCE @node
@@ -1895,6 +1928,7 @@ contains
         if( area < 1.d-16 ) cycle
         fstrSOLID%CONT_NTRAC(3*i-2:3*i) = fstrSOLID%CONT_NFORCE(3*i-2:3*i)/area
       end do
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_NTRAC,1)
       updated(6) = .true.
     endif
 
@@ -1909,6 +1943,7 @@ contains
         if( area < 1.d-16 ) cycle
         fstrSOLID%CONT_FTRAC(3*i-2:3*i) = fstrSOLID%CONT_FRIC(3*i-2:3*i)/area
       end do
+      if( paraContactFlag ) call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_FTRAC,1)
       updated(7) = .true.
     endif
 

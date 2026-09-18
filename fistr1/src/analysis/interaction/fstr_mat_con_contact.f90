@@ -11,6 +11,8 @@ module fstr_matrix_con_contact
   use m_fstr
   use elementInfo
   use m_fstr_contact_damping, only: is_damping_enabled
+  use m_fstr_contact_elem_alag, only: get_unique_map
+  use hecmw_matrix_ass, only: hecmw_mat_profile_has_node
 
   implicit none
   private
@@ -18,6 +20,7 @@ module fstr_matrix_con_contact
   public :: hecmwST_matrix_lagrange
   public :: fstr_save_originalMatrixStructure
   public :: fstr_mat_con_contact
+  public :: fstr_s2s_profile_needs_refresh
   public :: fstr_is_matrixStruct_symmetric
   public :: fstr_is_contactALag_symmetric
   public :: fstr_is_material_symmetric
@@ -71,7 +74,16 @@ contains
     logical, intent(in)                  :: is_contact_active_flag
 
     integer(kind=kint)                   :: i, j, grpid
+    integer(kind=kint)                   :: count_n2s, count_s2s
     integer(kind=kint)                   :: nlag !< number of Lagrange multipliers per node
+
+    count_n2s = 0
+    count_s2s = 0
+    do i = 1, fstrSOLID%n_contacts
+      if( fstrSOLID%contacts(i)%method == CONTACTN2S ) count_n2s = count_n2s + 1
+      if( fstrSOLID%contacts(i)%method == CONTACTS2S ) count_s2s = count_s2s + 1
+    enddo
+    count_n2s = count_n2s + fstrSOLID%n_embeds
 
     num_lagrange = 0
     if( contact_algo == kcaSLagrange ) then
@@ -102,8 +114,14 @@ contains
     ! Construct new list of related nodes and Lagrange multipliers
     countNon0LU_node = NPL_org + NPU_org
     countNon0LU_lagrange = 0
-    if( is_contact_active_flag ) call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,contact_algo, &
-    &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
+    if( is_contact_active_flag )then
+      if( count_n2s > 0 ) &
+        call getNewListOFrelatednodesANDLagrangeMultipliers(cstep,contact_algo, &
+        &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
+      if( count_s2s > 0 ) &
+        call getNewListOFrelatednodesANDLagrangeMultipliers_ss(cstep,contact_algo, &
+        &  hecMAT%NP,fstrSOLID,countNon0LU_node,countNon0LU_lagrange,list_nodeRelated)
+    endif
 
     ! Construct new matrix structure(hecMAT&hecLagMAT)
     numNon0_node = countNon0LU_node/2
@@ -142,6 +160,10 @@ contains
 
     count_lagrange = 0
     do i = 1, fstrSOLID%n_contacts
+      ! Process only NODE-SURF pairs here (mortar pairs are handled by getNewListOF..._ss).
+      ! For a mortar pair states(j)%surface is -1, so master(ctsurf)%etype below would be an
+      ! out-of-bounds read on a mixed deck.
+      if( fstrSOLID%contacts(i)%method /= CONTACTN2S ) cycle
 
       grpid = fstrSOLID%contacts(i)%group
       if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
@@ -372,5 +394,173 @@ contains
 
   end function fstr_get_lagrange_diagonal
 
+
+  subroutine getNewListOFrelatednodesANDLagrangeMultipliers_ss( &
+      & cstep, contact_algo, np, fstrSOLID, countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
+    integer(kind=kint),intent(in)             :: cstep !< current loading step
+    integer(kind=kint),intent(in)             :: contact_algo !< contact algo
+    integer(kind=kint),intent(in)             :: np !< total number of nodes
+    type(fstr_solid),intent(in)               :: fstrSOLID !< type fstr_solid
+    integer(kind=kint), intent(inout)         :: countNon0LU_node, countNon0LU_lagrange !< counters of node-based non-zero items
+    type(nodeRelated), pointer, intent(inout) :: list_nodeRelated(:) !< nodeRelated structure of matrix
+    integer(kind=kint)            :: grpid !< contact pairs group ID
+    integer(kind=kint)            :: ctsurf, nsurf !< contents of type tContact
+    integer(kind=kint)            :: i, j, m
+    integer(kind=kint)            :: g, unique_count !< unique (slave_surf, master) pair iteration
+    integer(kind=kint)            :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP) !< unique master mapping from get_unique_map
+    real(kind=kreal)              :: fcoeff !< friction coefficient
+    logical                       :: necessary_to_insert_node
+
+    do i = 1, fstrSOLID%n_contacts
+      if( fstrSOLID%contacts(i)%method /= CONTACTS2S ) cycle
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      fcoeff = fstrSOLID%contacts(i)%fcoeff
+      necessary_to_insert_node = ( fcoeff /= 0.0d0 .or. contact_algo == kcaALagrange )
+
+      do j = 1, size(fstrSOLID%contacts(i)%slave_surf)
+        if( fstrSOLID%contacts(i)%slave_surf(j)%state == CONTACTFREE ) cycle
+
+        if( contact_algo == kcaALagrange ) then
+          ! ALagrange SS: register sparsity once per unique (slave_surf, master) pair.
+          ! sparsity_expansion == SPARSITY_NONE:     current master element only (matrix rebuilt on contact2neighbor)
+          ! sparsity_expansion == SPARSITY_NEIGHBOR: current + neighbor master elements (matrix rebuilt only on contact2beyond)
+          call get_unique_map( fstrSOLID%contacts(i)%slave_surf(j), maplist, master_idxs, unique_count )
+          do g = 1, unique_count
+            ctsurf = master_idxs(g)
+            ! Register current master element
+            call register_pair_to_sparsity( np, fstrSOLID%contacts(i)%slave_surf(j)%nodes, &
+              fstrSOLID%contacts(i)%master(ctsurf), necessary_to_insert_node, &
+              countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
+
+            ! SPARSITY_NEIGHBOR: also register neighbor master elements
+            if( fstrSOLID%contacts(i)%sparsity_expansion == SPARSITY_NEIGHBOR ) then
+              do m = 1, fstrSOLID%contacts(i)%master(ctsurf)%n_neighbor
+                nsurf = fstrSOLID%contacts(i)%master(ctsurf)%neighbor(m)
+                call register_pair_to_sparsity( np, fstrSOLID%contacts(i)%slave_surf(j)%nodes, &
+                  fstrSOLID%contacts(i)%master(nsurf), necessary_to_insert_node, &
+                  countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
+              enddo
+            endif
+          enddo
+        endif
+      enddo
+    enddo
+
+  end subroutine getNewListOFrelatednodesANDLagrangeMultipliers_ss
+
+  !> \brief Register sparsity coupling of one (slave_surf, master) pair.
+  !> For each slave node, register coupling with the other slave nodes AND the master
+  !> nodes. Slave-slave cross terms are required for consistent mortar tangent stiffness.
+  subroutine register_pair_to_sparsity( np, slave_nodes, master_surf, &
+      & necessary_to_insert_node, countNon0LU_node, countNon0LU_lagrange, list_nodeRelated )
+    integer(kind=kint), intent(in)            :: np !< total number of nodes
+    integer(kind=kint), intent(in)            :: slave_nodes(:)  !< slave surface node ids
+    type(tSurfElement), intent(in)            :: master_surf !< master surface id
+    logical, intent(in)                       :: necessary_to_insert_node
+    integer(kind=kint), intent(inout)         :: countNon0LU_node, countNon0LU_lagrange
+    type(nodeRelated), pointer, intent(inout) :: list_nodeRelated(:)
+
+    integer(kind=kint) :: nnode_s, nnode_m, l, m, idx, nnode_pair, etype
+    integer(kind=kint) :: ndLocal(2*l_max_surface_node + 1)
+
+    etype = master_surf%etype
+    if( etype/=fe_tri3n .and. etype/=fe_quad4n ) stop " ##Error: This element type is not supported in contact analysis !!! "
+    nnode_s = size(slave_nodes)
+    nnode_m = size(master_surf%nodes)
+    do l = 1, nnode_s
+      ndLocal(1) = slave_nodes(l)
+      ! ndLocal: slave_l + other_slave_nodes + master_nodes
+      idx = 1
+      do m = 1, nnode_s
+        if( m == l ) cycle
+        idx = idx + 1
+        ndLocal(idx) = slave_nodes(m)
+      enddo
+      ndLocal(idx+1:idx+nnode_m) = master_surf%nodes(:)
+      nnode_pair = nnode_s - 1 + nnode_m
+      ! mortar pairs have no Lagrange row: 0 keeps insert_lagrange out of the reservation
+      call hecmw_ass_nodeRelated_from_contact_pair( np, nnode_pair, ndLocal, 0, permission, &
+        & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
+    enddo
+  end subroutine register_pair_to_sparsity
+
+  !> \brief S2S mortar profile-invariant check (read-only companion to the reservation in
+  !> getNewListOFrelatednodesANDLagrangeMultipliers_ss / register_pair_to_sparsity).
+  !>
+  !> Returns .true. if any currently-active (slave_surf, master) mortar pair has a
+  !> slave-node x master-node coupling that is NOT present in the matrix profile of conMAT.
+  !> Such a missing coupling means the active master has drifted beyond the reserved 1-ring
+  !> via a silent facet-hop / re-association (one that does not increment the structural
+  !> change counters, so fstr_is_matrixStructure_changed stays false), and the next contact
+  !> stiffness assembly (calcu_contact_stiffness_SurfSurf -> hecmw_mat_ass_elem) would hit
+  !> an out-of-profile connectivity and abort in hecmw_mat_add_node. Reporting it here lets
+  !> the caller force a matrix rebuild first, restoring the invariant.
+  !>
+  !> Only slave x master CROSS couplings are checked: slave-slave and master-master
+  !> couplings are base FE element couplings (a contact surface element is a face of one
+  !> solid element, so its nodes are mutually coupled in list_nodeRelated_org and can never
+  !> drift), whereas the cross terms are exactly what register_pair_to_sparsity adds and the
+  !> only ones that can be missing. This is necessary and sufficient and avoids any spurious
+  !> every-iteration refresh. The active master set is obtained from get_unique_map, the same
+  !> enumeration getIntGap uses inside the assembly, so the checked footprint matches exactly.
+  !>
+  !> method-gated to CONTACTS2S + ALag (N2S and SLagrange paths untouched). Per-rank (local)
+  !> decision, mirroring the existing per-rank fstr_is_matrixStructure_changed gate; the
+  !> collective solver re-init rides the existing contact_changed_global allreduce.
+  logical function fstr_s2s_profile_needs_refresh( cstep, contact_algo, fstrSOLID, conMAT )
+    integer(kind=kint), intent(in)   :: cstep         !< current loading step
+    integer(kind=kint), intent(in)   :: contact_algo  !< contact algorithm (kcaALagrange/kcaSLagrange)
+    type(fstr_solid), intent(in)     :: fstrSOLID     !< type fstr_solid
+    type(hecmwST_matrix), intent(in) :: conMAT        !< contact matrix (S2S stiffness assembly target)
+
+    integer(kind=kint) :: i, j, g, ctsurf, grpid, unique_count
+    integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
+
+    fstr_s2s_profile_needs_refresh = .false.
+    if( contact_algo /= kcaALagrange ) return
+
+    do i = 1, fstrSOLID%n_contacts
+      if( fstrSOLID%contacts(i)%method /= CONTACTS2S ) cycle
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+
+      do j = 1, size(fstrSOLID%contacts(i)%slave_surf)
+        if( fstrSOLID%contacts(i)%slave_surf(j)%state == CONTACTFREE ) cycle
+
+        call get_unique_map( fstrSOLID%contacts(i)%slave_surf(j), maplist, master_idxs, unique_count )
+        do g = 1, unique_count
+          ctsurf = master_idxs(g)
+          if( .not. pair_cross_profile_complete( fstrSOLID%contacts(i)%slave_surf(j)%nodes, &
+              &  fstrSOLID%contacts(i)%master(ctsurf), conMAT ) ) then
+            fstr_s2s_profile_needs_refresh = .true.
+            return
+          endif
+        enddo
+      enddo
+    enddo
+  end function fstr_s2s_profile_needs_refresh
+
+  !> \brief True if every slave-node x master-node coupling of one (slave_surf, master)
+  !> mortar pair is present in the conMAT profile. See fstr_s2s_profile_needs_refresh for
+  !> why only cross couplings are checked (slave-slave / master-master are base FE terms).
+  logical function pair_cross_profile_complete( slave_nodes, master_surf, conMAT )
+    integer(kind=kint), intent(in)   :: slave_nodes(:)  !< slave surface node ids
+    type(tSurfElement), intent(in)   :: master_surf     !< master surface element
+    type(hecmwST_matrix), intent(in) :: conMAT          !< contact matrix
+
+    integer(kind=kint) :: s, m
+
+    pair_cross_profile_complete = .true.
+    do s = 1, size(slave_nodes)
+      do m = 1, size(master_surf%nodes)
+        if( .not. hecmw_mat_profile_has_node( conMAT, slave_nodes(s), master_surf%nodes(m) ) ) then
+          pair_cross_profile_complete = .false.
+          return
+        endif
+      enddo
+    enddo
+  end function pair_cross_profile_complete
 
 end module fstr_matrix_con_contact

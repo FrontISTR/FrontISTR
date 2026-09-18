@@ -580,11 +580,12 @@ contains
   end function fstr_ctrl_get_outitem
 
   !> Read in !CONTACT
-  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter, conefollow )
+  function fstr_ctrl_get_CONTACTALGO( ctrl, algo, augiter, conefollow, eps_fric_band )
     integer(kind=kint) :: ctrl
     integer(kind=kint) :: algo
     integer(kind=kint) :: augiter
     logical            :: conefollow
+    real(kind=kreal)   :: eps_fric_band
     integer(kind=kint) :: fstr_ctrl_get_CONTACTALGO
 
     integer(kind=kint) :: rcode, icone
@@ -606,6 +607,16 @@ contains
     endif
     conefollow = ( icone == 2 )
     rcode = fstr_ctrl_get_param_ex( ctrl, 'AUGITER ', '# ', 0, 'I', augiter )
+    ! Hysteresis half-band of the stick/slip state switch (0 = no band = legacy behavior).
+    ! Read here, at the same level as AUGITER, because it controls the augmentation loop's
+    ! state machine rather than the geometric tolerances of !CONTACT_PARAM.
+    rcode = fstr_ctrl_get_param_ex( ctrl, 'EPS_FRIC_BAND ', '# ', 0, 'R', eps_fric_band )
+    if( eps_fric_band<0.d0 .or. 1.d0<=eps_fric_band ) then
+      write(*,*) 'fstr control file error : !CONTACT_ALGO : EPS_FRIC_BAND must be 0 <= EPS_FRIC_BAND < 1.'
+      write(ILOG,*) 'fstr control file error : !CONTACT_ALGO : EPS_FRIC_BAND must be 0 <= EPS_FRIC_BAND < 1.'
+      fstr_ctrl_get_CONTACTALGO = -1
+      return
+    endif
     fstr_ctrl_get_CONTACTALGO = 0
   end function fstr_ctrl_get_CONTACTALGO
 
@@ -623,7 +634,7 @@ contains
     character(len=*), intent(out)      :: cpname         !< name of contact parameter
     integer(kind=kint), intent(out)    :: smoothing     !< kcsNONE or kcsNAGATA
 
-    integer           :: rcode, ipt
+    integer           :: rcode, ipt, mortar, expansion
     character(len=30) :: s1 = 'TIED,GLUED,SSLID,FSLID '
     character(len=HECMW_NAME_LEN) :: data_fmt,ss
     character(len=HECMW_NAME_LEN) :: cp_name(n)
@@ -685,7 +696,17 @@ contains
     if( fstr_ctrl_get_param_ex( ctrl, 'DAMP_GACT ',  '# ', 0, 'R', damp_gact  ) /= 0 ) return
     cpname=""
     if( fstr_ctrl_get_param_ex( ctrl, 'CONTACTPARAM ',  '# ',  0, 'S', cpname )/= 0) return
-    
+
+    ! MORTAR = NO / YES -> 1 / 2 = CONTACTN2S / CONTACTS2S
+    mortar = 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'MORTAR ','NO,YES ', 0, 'P', mortar ) /= 0) return
+    contact%method = mortar
+
+    ! EXPANSION = NONE / NEIGHBOR -> 1 / 2 ; mapped to SPARSITY_NONE(0) / SPARSITY_NEIGHBOR(1)
+    expansion = 1
+    if( fstr_ctrl_get_param_ex( ctrl, 'EXPANSION ','NONE,NEIGHBOR ', 0, 'P', expansion ) /= 0) return
+    contact%sparsity_expansion = expansion - 1
+
     ! Set penalty coefficients to contact structure if specified (for ALagrange method)
     if( np > 0.d0 ) then
       do rcode=1,n
@@ -761,11 +782,12 @@ contains
     type( tContactParam ) :: contactparam !< contact parameter
     integer(kind=kint) :: fstr_ctrl_get_CONTACTPARAM
 
-    integer(kind=kint) :: rcode
+    integer(kind=kint) :: rcode, nline
     character(len=HECMW_NAME_LEN) :: data_fmt
     character(len=128) :: msg
     real(kind=kreal) :: CLEARANCE, CLR_SAME_ELEM, CLR_DIFFLPOS, CLR_CAL_NORM
     real(kind=kreal) :: DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE
+    real(kind=kreal) :: DISTCLR_C2F
 
     fstr_ctrl_get_CONTACTPARAM = -1
 
@@ -793,6 +815,17 @@ contains
     contactparam%DISTCLR_NOCHECK = DISTCLR_NOCHECK
     contactparam%TENSILE_FORCE = TENSILE_FORCE
 
+    !read third line (optional): DISTCLR_C2F
+    !  If the 3rd line does not exist, keep the default set in init_ContactParam.
+    DISTCLR_C2F = contactparam%DISTCLR_C2F
+    nline = fstr_ctrl_get_data_line_n( ctrl )
+    if( nline >= 3 ) then
+      data_fmt = 'r '
+      rcode = fstr_ctrl_get_data_ex( ctrl, 3, data_fmt, DISTCLR_C2F )
+      if( rcode /= 0 ) return
+      contactparam%DISTCLR_C2F = DISTCLR_C2F
+    endif
+
     !input check
     rcode = 1
     if( CLEARANCE<0.d0 .OR. 1.d0<CLEARANCE ) THEN
@@ -811,6 +844,8 @@ contains
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_NOCHECK must be >= 0.5.'
     else if( TENSILE_FORCE>=0.d0 ) then
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : TENSILE_FORCE must be < 0.'
+    else if( contactparam%DISTCLR_C2F<=0.d0 .or. 1.d0<=contactparam%DISTCLR_C2F ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_C2F must be 0 < DISTCLR_C2F < 1.'
     else
       rcode =0
     end if
