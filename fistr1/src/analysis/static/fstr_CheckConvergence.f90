@@ -9,34 +9,39 @@
 !> moment, Lagrange multiplier) are evaluated separately instead of being accumulated into a single norm.
 !> fstr_check_linear_solver does the same for the linear solver result, replacing the per-driver inline checks that
 !> followed solve_LINEQ / solve_LINEQ_contact.
+!>
+!> Whether an iteration has converged is decided in fstr_decide_convergence and nowhere else. The other routines only
+!> prepare the table of criteria it reads: setup_stepInfo_converg of m_step fixes, when the step is read, which
+!> criteria are checked against which thresholds, and fstr_evaluate_convergence fills in their values and unchecks
+!> the criteria that do not apply to the analysis or to the iteration.
 
 module m_fstr_IterationControl
   use m_fstr
   implicit none
 
   private
+  public :: fstr_convergence_measure
   public :: fstr_convergence_state
   public :: fstr_check_convergence
   public :: fstr_check_convergence_main
   public :: fstr_check_linear_solver
 
-  !> Norms evaluated by the latest convergence check.
+  !> One convergence criterion: a normalized value compared with its threshold.
+  type fstr_convergence_measure
+    real(kind=kreal) :: value = 0.0d0      !< normalized value
+    real(kind=kreal) :: tol   = 0.0d0      !< threshold
+    logical          :: check = .false.    !< the criterion takes part in the decision (CHECK) or not (SKIP)
+    logical          :: ok    = .false.    !< check .and. value < tol
+    logical          :: absolute = .false. !< the reference fell back to the floor, value is not normalized
+  end type fstr_convergence_measure
+
+  !> Criteria evaluated by the latest convergence check, indexed by (quantity, DOF group, norm) with the kcnv*
+  !> constants. A criterion that does not apply to the analysis or to the iteration is left unchecked.
   !>
   !> The variable is held by the Newton driver so that the quantities the decision was made from remain available to
   !> the caller after the check returns.
   type fstr_convergence_state
-    real(kind=kreal)   :: fref_t   !< reference force of translational DOFs
-    real(kind=kreal)   :: fref_r   !< reference moment of rotational DOFs
-    real(kind=kreal)   :: res_t    !< translational residual norm / fref_t
-    real(kind=kreal)   :: res_r    !< rotational residual norm / fref_r
-    real(kind=kreal)   :: dx_t     !< translational correction norm / increment norm
-    real(kind=kreal)   :: dx_r     !< rotational correction norm / increment norm
-    real(kind=kreal)   :: dx_l     !< Lagrange correction norm / multiplier norm
-    logical            :: has_rot  !< rotational DOFs are evaluated
-    logical            :: has_lag  !< Lagrange rows exist in the model
-    logical            :: has_dx   !< correction norms are evaluated
-    logical            :: abs_t    !< fref_t fell back to the floor, res_t is an absolute value
-    logical            :: abs_r    !< fref_r fell back to the floor, res_r is an absolute value
+    type(fstr_convergence_measure) :: m(2,3,2)
   end type fstr_convergence_state
 
   !> Lower bound of the reference force. Below it the residual criterion degenerates into an absolute one.
@@ -106,20 +111,18 @@ contains
 
   !> \brief Core convergence check.
   !>
-  !> Residual criterion (evaluated per dimension):
-  !>   res_t = ||R_t|| / max(||Q_t||, ||D_t||)  <  CONVERG
-  !>   res_r = ||R_r|| / max(||Q_r||, ||D_r||)  <  CONVERG        (ndof=6 only)
-  !> Correction criterion:
-  !>   dx_t  = ||du_t|| / ||Du_t||              <  CONVERG_DDISP
-  !>   dx_r  = ||du_r|| / ||Du_r||              <  CONVERG_DDISP  (ndof=6 only)
-  !>   dx_l  = ||dlambda|| / ||lambda||         <  CONVERG_LAG    (Lagrange rows only)
-  !> and the decision is
-  !>   converged = dx_l .and. ( all dx .or. all res )
+  !> The criteria, indexed by (quantity, DOF group, norm), are
+  !>   residual,   translation, L2:  ||R_t|| / max(||Q_t||, ||D_t||)
+  !>   residual,   rotation,    L2:  ||R_r|| / max(||Q_r||, ||D_r||)   (ndof=6 only)
+  !>   correction, translation, L2:  ||du_t|| / ||Du_t||
+  !>   correction, rotation,    L2:  ||du_r|| / ||Du_r||               (ndof=6 only)
+  !>   correction, Lagrange,    L2:  ||dlambda|| / ||lambda||          (Lagrange rows only)
+  !> Each is compared with the threshold fixed for the step, and fstr_decide_convergence combines them.
   !>
   !> Q is the internal force and D the inertia plus viscous force, so that the reference force stays finite for a body
   !> in free vibration, where the vector sum Q+D vanishes at equilibrium while neither norm does. Pressure DOFs of
-  !> ndof=4 and the Lagrange rows of the residual carry a dimension of their own and are represented by dx_l instead of
-  !> entering the residual norms.
+  !> ndof=4 and the Lagrange rows of the residual carry a dimension of their own and are represented by the Lagrange
+  !> correction instead of entering the residual norms.
   !>
   !> In dynamic analysis the check precedes the linear solve, so at iter=1 the correction vector belongs to no
   !> iteration yet and the state is the one before any correction has been applied; nothing is decided there.
@@ -132,7 +135,7 @@ contains
   !> \param[in]    iter          current Newton iteration number
   !> \param[in]    cstep         current loading step number
   !> \param[in]    residual_vec  assembled residual vector
-  !> \param[out]   cnvstat       norms the decision was made from
+  !> \param[out]   cnvstat       criteria the decision was made from
   !> \param[out]   iterStatus    kitrConverged or kitrContinue (failure paths handled by caller)
   !> \param[out]   do_failure_check  true if caller should run divergence/NaN check
   !> \param[out]   res_for_check     residual value the caller should use for divergence check
@@ -155,34 +158,108 @@ contains
     real(kind=kreal), intent(out)             :: res_for_check
     type(hecmwST_matrix_lagrange), intent(in), optional :: hecLagMAT
 
-    integer(kind=kint), parameter :: NSUM = 13
-    real(kind=kreal)   :: sq(NSUM)
-    integer(kind=kint) :: i, npndof, num_lagrange
-    real(kind=kreal)   :: converg, converg_ddisp, converg_lag
-    logical            :: is_dynamic, ok_res, ok_dx, ok_lag
+    logical :: has_dx
 
     iterStatus = kitrContinue
     do_failure_check = .false.
     res_for_check = 0.0d0
 
-    is_dynamic = (fstrPR%solution_type == kstDYNAMIC)
-    converg = fstrSOLID%step_ctrl(cstep)%converg
-    converg_ddisp = fstrSOLID%step_ctrl(cstep)%converg_ddisp
-    converg_lag = fstrSOLID%step_ctrl(cstep)%converg_lag
+    has_dx = .not. ( fstrPR%solution_type == kstDYNAMIC .and. iter == 1 )
+
+    call fstr_evaluate_convergence( hecMESH, hecMAT, fstrSOLID, ndof, cstep, has_dx, residual_vec, cnvstat, hecLagMAT )
+
+    if( hecMESH%my_rank == 0 ) call fstr_print_convergence_state( iter, cnvstat )
+
+    if( .not. has_dx ) return
+
+    if( fstr_decide_convergence( cnvstat ) ) then
+      iterStatus = kitrConverged
+      return
+    endif
+
+    do_failure_check = .true.
+    res_for_check = max( cnvstat%m(kcnvResidual, kcnvTranslation, kcnvL2)%value, &
+                         cnvstat%m(kcnvResidual, kcnvRotation, kcnvL2)%value )
+
+  end subroutine fstr_check_convergence_main
+
+  !> \brief Combine the criteria into the convergence decision.
+  !>
+  !> This is the only place where the criteria are combined. A group of criteria is judged by
+  !>   cnv_all_ok(ms)     every checked criterion is satisfied; true when none is checked
+  !>   cnv_any_check(ms)  at least one criterion is checked
+  !> which follow ALL and ANY of an empty group. A group joined by .or. has to be guarded by cnv_any_check, since a
+  !> group without a checked criterion would pass otherwise. The norms of one quantity are all required.
+  logical function fstr_decide_convergence( cnvstat )
+    implicit none
+    type(fstr_convergence_state), intent(in) :: cnvstat
+
+    type(fstr_convergence_measure) :: lag(2), dx(4), res(4)
+
+    lag = [ cnvstat%m(kcnvCorrection, kcnvLagrange, :) ]
+    dx  = [ cnvstat%m(kcnvCorrection, kcnvTranslation:kcnvRotation, :) ]
+    res = [ cnvstat%m(kcnvResidual,   kcnvTranslation:kcnvRotation, :) ]
+
+    fstr_decide_convergence = cnv_all_ok(lag) .and. &
+      ( ( cnv_any_check(dx)  .and. cnv_all_ok(dx)  ) .or. &
+        ( cnv_any_check(res) .and. cnv_all_ok(res) ) )
+
+  end function fstr_decide_convergence
+
+  !> \brief Every checked criterion of the group is satisfied. True when none is checked.
+  logical function cnv_all_ok( ms )
+    implicit none
+    type(fstr_convergence_measure), intent(in) :: ms(:)
+
+    cnv_all_ok = all( ms%ok .or. .not. ms%check )
+
+  end function cnv_all_ok
+
+  !> \brief At least one criterion of the group is checked.
+  logical function cnv_any_check( ms )
+    implicit none
+    type(fstr_convergence_measure), intent(in) :: ms(:)
+
+    cnv_any_check = any( ms%check )
+
+  end function cnv_any_check
+
+  !> \brief Evaluate the criteria of one Newton iteration and select those that take part in the decision.
+  !>
+  !> A criterion is checked when the step asks for it and it applies to the analysis and to the iteration: rotation
+  !> for ndof=6, Lagrange for a model with Lagrange rows, correction when has_dx.
+  subroutine fstr_evaluate_convergence( hecMESH, hecMAT, fstrSOLID, ndof, cstep, has_dx, residual_vec, cnvstat, &
+      hecLagMAT )
+    implicit none
+
+    type(hecmwST_local_mesh), intent(in)      :: hecMESH
+    type(hecmwST_matrix), intent(in)          :: hecMAT           !< X=solution increment
+    type(fstr_solid), intent(in)              :: fstrSOLID
+    integer(kind=kint), intent(in)            :: ndof
+    integer(kind=kint), intent(in)            :: cstep
+    logical, intent(in)                       :: has_dx           !< the correction belongs to this iteration
+    real(kind=kreal), intent(in)              :: residual_vec(:)
+    type(fstr_convergence_state), intent(out) :: cnvstat
+    type(hecmwST_matrix_lagrange), intent(in), optional :: hecLagMAT
+
+    integer(kind=kint), parameter :: NSUM = 13
+    real(kind=kreal)   :: sq(NSUM)
+    integer(kind=kint) :: i, npndof, num_lagrange
+    real(kind=kreal)   :: dx_t, dx_r, dx_l
+    logical            :: has_rot, has_lag
 
     num_lagrange = 0
     if( present(hecLagMAT) ) num_lagrange = hecLagMAT%num_lagrange
     npndof = hecMAT%NP*ndof
 
-    cnvstat%has_rot = ( ndof == 6 )
-    cnvstat%has_dx = .not. ( is_dynamic .and. iter == 1 )
+    has_rot = ( ndof == 6 )
 
     ! --- squares of the norms, reduced in a single collective ---
     sq(:) = 0.0d0
     call fstr_get_sqnorm_dofgroup( hecMESH, ndof, residual_vec,      sq(1), sq(2) )
     call fstr_get_sqnorm_dofgroup( hecMESH, ndof, fstrSOLID%QFORCE,  sq(3), sq(4) )
     call fstr_get_sqnorm_dofgroup( hecMESH, ndof, fstrSOLID%DFORCE,  sq(5), sq(6) )
-    if( cnvstat%has_dx ) then
+    if( has_dx ) then
       call fstr_get_sqnorm_dofgroup( hecMESH, ndof, hecMAT%X,         sq(7), sq(8) )
       call fstr_get_sqnorm_dofgroup( hecMESH, ndof, fstrSOLID%dunode, sq(9), sq(10) )
       do i = 1, num_lagrange
@@ -195,78 +272,65 @@ contains
 
     ! Lagrange rows may be absent from a subdomain while present in the model, so the criteria must be selected from
     ! the reduced count.
-    cnvstat%has_lag = ( sq(13) > 0.5d0 )
+    has_lag = ( sq(13) > 0.5d0 )
+
+    cnvstat%m(:,:,:)%tol = fstrSOLID%step_ctrl(cstep)%cnv_tol(:,:,:)
+    cnvstat%m(:,:,:)%check = fstrSOLID%step_ctrl(cstep)%cnv_check(:,:,:)
+    if( .not. has_rot ) cnvstat%m(:,kcnvRotation,:)%check = .false.
+    if( .not. has_lag ) cnvstat%m(:,kcnvLagrange,:)%check = .false.
+    if( .not. has_dx ) cnvstat%m(kcnvCorrection,:,:)%check = .false.
 
     ! --- residual relative to the reference force ---
-    cnvstat%fref_t = max( sqrt(sq(3)), sqrt(sq(5)) )
-    cnvstat%abs_t = ( cnvstat%fref_t < FREF_FLOOR )
-    if( cnvstat%abs_t ) cnvstat%fref_t = 1.0d0
-    cnvstat%res_t = sqrt(sq(1)) / cnvstat%fref_t
-
-    cnvstat%fref_r = 1.0d0
-    cnvstat%abs_r = .false.
-    cnvstat%res_r = 0.0d0
-    if( cnvstat%has_rot ) then
-      cnvstat%fref_r = max( sqrt(sq(4)), sqrt(sq(6)) )
-      cnvstat%abs_r = ( cnvstat%fref_r < FREF_FLOOR )
-      if( cnvstat%abs_r ) cnvstat%fref_r = 1.0d0
-      cnvstat%res_r = sqrt(sq(2)) / cnvstat%fref_r
+    call fstr_set_residual_measure( cnvstat%m(kcnvResidual,kcnvTranslation,kcnvL2), &
+        sqrt(sq(1)), max( sqrt(sq(3)), sqrt(sq(5)) ) )
+    if( has_rot ) then
+      call fstr_set_residual_measure( cnvstat%m(kcnvResidual,kcnvRotation,kcnvL2), &
+          sqrt(sq(2)), max( sqrt(sq(4)), sqrt(sq(6)) ) )
     endif
 
     ! --- correction relative to the accumulated increment ---
     ! A vanishing denominator leaves the ratio at 1, i.e. not converged.
-    cnvstat%dx_t = 1.0d0
-    cnvstat%dx_r = 0.0d0
-    cnvstat%dx_l = 0.0d0
-    if( cnvstat%has_dx ) then
-      if( sq(9) > 0.0d0 ) cnvstat%dx_t = sqrt( sq(7)/sq(9) )
-      if( cnvstat%has_rot ) then
-        cnvstat%dx_r = 1.0d0
-        if( sq(10) > 0.0d0 ) cnvstat%dx_r = sqrt( sq(8)/sq(10) )
+    if( has_dx ) then
+      dx_t = 1.0d0
+      if( sq(9) > 0.0d0 ) dx_t = sqrt( sq(7)/sq(9) )
+      dx_r = 1.0d0
+      if( sq(10) > 0.0d0 ) dx_r = sqrt( sq(8)/sq(10) )
+      dx_l = 0.0d0
+      if( sq(12) > 0.0d0 ) then
+        dx_l = sqrt( sq(11)/sq(12) )
+      else if( sq(11) > 0.0d0 ) then
+        dx_l = 1.0d0
       endif
-      if( cnvstat%has_lag ) then
-        if( sq(12) > 0.0d0 ) then
-          cnvstat%dx_l = sqrt( sq(11)/sq(12) )
-        else if( sq(11) > 0.0d0 ) then
-          cnvstat%dx_l = 1.0d0
-        endif
-      endif
+      cnvstat%m(kcnvCorrection,kcnvTranslation,kcnvL2)%value = dx_t
+      if( has_rot ) cnvstat%m(kcnvCorrection,kcnvRotation,kcnvL2)%value = dx_r
+      if( has_lag ) cnvstat%m(kcnvCorrection,kcnvLagrange,kcnvL2)%value = dx_l
     endif
 
     ! A NaN component fails every comparison above: it never passes the test on a denominator, so a ratio would keep
-    ! its default. The sums are the only place it survives, and every norm takes it over.
+    ! its default. The sums are the only place it survives, and every criterion takes it over.
     do i = 1, NSUM-1
-      if( sq(i) /= sq(i) ) then
-        cnvstat%res_t = sq(i)
-        cnvstat%res_r = sq(i)
-        cnvstat%dx_t = sq(i)
-        cnvstat%dx_r = sq(i)
-        cnvstat%dx_l = sq(i)
-      endif
+      if( sq(i) /= sq(i) ) cnvstat%m(:,:,:)%value = sq(i)
     enddo
 
-    if( hecMESH%my_rank == 0 ) call fstr_print_convergence_state( iter, cnvstat )
+    cnvstat%m(:,:,:)%ok = cnvstat%m(:,:,:)%check .and. ( cnvstat%m(:,:,:)%value < cnvstat%m(:,:,:)%tol )
 
-    if( .not. cnvstat%has_dx ) return
+  end subroutine fstr_evaluate_convergence
 
-    ok_res = ( cnvstat%res_t < converg )
-    ok_dx = ( cnvstat%dx_t < converg_ddisp )
-    if( cnvstat%has_rot ) then
-      ok_res = ok_res .and. ( cnvstat%res_r < converg )
-      ok_dx = ok_dx .and. ( cnvstat%dx_r < converg_ddisp )
+  !> \brief Residual norm relative to its reference, or the norm itself when the reference is below FREF_FLOOR.
+  subroutine fstr_set_residual_measure( ms, res, fref )
+    implicit none
+    type(fstr_convergence_measure), intent(inout) :: ms
+    real(kind=kreal), intent(in)                  :: res   !< residual norm
+    real(kind=kreal), intent(in)                  :: fref  !< reference force norm
+
+    ms%absolute = ( fref < FREF_FLOOR )
+    if( ms%absolute ) then
+      ms%value = res
+    else
+      ms%value = res / fref
     endif
-    ok_lag = .true.
-    if( cnvstat%has_lag ) ok_lag = ( cnvstat%dx_l < converg_lag )
 
-    if( ok_lag .and. ( ok_dx .or. ok_res ) ) then
-      iterStatus = kitrConverged
-      return
-    endif
-
-    do_failure_check = .true.
-    res_for_check = max( cnvstat%res_t, cnvstat%res_r )
-
-  end subroutine fstr_check_convergence_main
+  end subroutine fstr_set_residual_measure
 
   !> \brief Sum of squares of a nodal vector over the internal nodes, split into translational (DOF 1-3) and
   !>        rotational (DOF 4-6) components.
@@ -298,39 +362,48 @@ contains
 
   end subroutine fstr_get_sqnorm_dofgroup
 
-  !> \brief Print the criteria of one Newton iteration, omitting those that do not apply to the analysis.
+  !> \brief Print the checked criteria of one Newton iteration.
   subroutine fstr_print_convergence_state( iter, cnvstat )
     implicit none
     integer(kind=kint), intent(in)           :: iter
     type(fstr_convergence_state), intent(in) :: cnvstat
 
-    character(len=256) :: line
+    character(len=512) :: line
+    integer(kind=kint) :: iq, ig
 
     write(line,'(a,i8)') " iter:", iter
-    if( cnvstat%abs_t ) then
-      write(line(len_trim(line)+1:),'(a,1pe11.4)') ", res(force,abs):", cnvstat%res_t
-    else
-      write(line(len_trim(line)+1:),'(a,1pe11.4)') ", res(force):", cnvstat%res_t
-    endif
-    if( cnvstat%has_rot ) then
-      if( cnvstat%abs_r ) then
-        write(line(len_trim(line)+1:),'(a,1pe11.4)') ", res(mom,abs):", cnvstat%res_r
-      else
-        write(line(len_trim(line)+1:),'(a,1pe11.4)') ", res(mom):", cnvstat%res_r
-      endif
-    endif
-    if( cnvstat%has_dx ) then
-      write(line(len_trim(line)+1:),'(a,1pe11.4)') ", disp.corr.:", cnvstat%dx_t
-      if( cnvstat%has_rot ) then
-        write(line(len_trim(line)+1:),'(a,1pe11.4)') ", rot.corr.:", cnvstat%dx_r
-      endif
-      if( cnvstat%has_lag ) then
-        write(line(len_trim(line)+1:),'(a,1pe11.4)') ", lag.corr.:", cnvstat%dx_l
-      endif
-    endif
+    do iq = kcnvResidual, kcnvCorrection
+      do ig = kcnvTranslation, kcnvLagrange
+        if( .not. cnvstat%m(iq,ig,kcnvL2)%check ) cycle
+        write(line(len_trim(line)+1:),'(a,a,a,1pe11.4)') ", ", &
+            trim(fstr_convergence_label( iq, ig, cnvstat%m(iq,ig,kcnvL2)%absolute )), ":", &
+            cnvstat%m(iq,ig,kcnvL2)%value
+      enddo
+    enddo
     write(*,'(a)') trim(line)
 
   end subroutine fstr_print_convergence_state
+
+  !> \brief Label of a criterion in the iteration log.
+  function fstr_convergence_label( iq, ig, absolute ) result( label )
+    implicit none
+    integer(kind=kint), intent(in) :: iq        !< quantity
+    integer(kind=kint), intent(in) :: ig        !< DOF group
+    logical, intent(in)            :: absolute  !< the value is not normalized
+    character(len=32)              :: label
+
+    character(len=5), parameter  :: RES_NAME(3)  = [ 'force', 'mom  ', 'lag  ' ]
+    character(len=10), parameter :: CORR_NAME(3) = [ 'disp.corr.', 'rot.corr. ', 'lag.corr. ' ]
+
+    if( iq == kcnvResidual ) then
+      label = 'res(' // trim(RES_NAME(ig))
+      if( absolute ) label = trim(label) // ',abs'
+      label = trim(label) // ')'
+    else
+      label = CORR_NAME(ig)
+    endif
+
+  end function fstr_convergence_label
 
   !> \brief Classify the linear solver result and record why the solve failed.
   !>

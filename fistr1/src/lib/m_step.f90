@@ -22,6 +22,15 @@ module m_step
   integer(kind=kint),parameter :: knstCITER  = 3 ! number of contact iteration
   integer(kind=kint),parameter :: knstDRESN  = 4 ! reason of not to converged
 
+  ! indices of the convergence criteria: (quantity, DOF group, norm)
+  integer(kind=kint),parameter :: kcnvResidual    = 1
+  integer(kind=kint),parameter :: kcnvCorrection  = 2
+  integer(kind=kint),parameter :: kcnvTranslation = 1
+  integer(kind=kint),parameter :: kcnvRotation    = 2
+  integer(kind=kint),parameter :: kcnvLagrange    = 3
+  integer(kind=kint),parameter :: kcnvL2          = 1
+  integer(kind=kint),parameter :: kcnvMax         = 2
+
   !> Step control such as active boundary condition, convergent condition etc.
   type step_info
     integer             :: solution           !< solution type; 1: static;  2:visco
@@ -33,6 +42,8 @@ module m_step
     real(kind=kreal)    :: converg_lag        !< value of convergent judgement (Lagrange)
     real(kind=kreal)    :: converg_ddisp      !< value of convergent judgement (disp increment)
     real(kind=kreal)    :: maxres             !< upper bound of NR residual
+    logical             :: cnv_check(2,3,2)   !< criterion is checked (CHECK) or not (SKIP); (quantity, DOF group, norm)
+    real(kind=kreal)    :: cnv_tol(2,3,2)     !< threshold of the criterion
 
     integer :: num_substep                    !< substeps user given
     integer :: max_iter                       !< max number of iteration
@@ -87,6 +98,21 @@ contains
     stepinfo%maxres = 1.d+10
     stepinfo%timepoint_id = 0
     stepinfo%AincParam_id = 0
+    call setup_stepInfo_converg( stepinfo )
+  end subroutine
+
+  !> Fix the convergence criteria of a step from CONVERG, CONVERG_DDISP and CONVERG_LAG
+  subroutine setup_stepInfo_converg( stepinfo )
+    type( step_info ), intent(inout) :: stepinfo !< step info
+
+    stepinfo%cnv_check(:,:,:) = .false.
+    stepinfo%cnv_tol(:,:,:) = 0.d0
+    stepinfo%cnv_check(kcnvResidual, kcnvTranslation:kcnvRotation, kcnvL2) = .true.
+    stepinfo%cnv_tol(kcnvResidual, kcnvTranslation:kcnvRotation, kcnvL2) = stepinfo%converg
+    stepinfo%cnv_check(kcnvCorrection, kcnvTranslation:kcnvRotation, kcnvL2) = .true.
+    stepinfo%cnv_tol(kcnvCorrection, kcnvTranslation:kcnvRotation, kcnvL2) = stepinfo%converg_ddisp
+    stepinfo%cnv_check(kcnvCorrection, kcnvLagrange, kcnvL2) = .true.
+    stepinfo%cnv_tol(kcnvCorrection, kcnvLagrange, kcnvL2) = stepinfo%converg_lag
   end subroutine
 
   subroutine setup_stepInfo_starttime( stepinfos )

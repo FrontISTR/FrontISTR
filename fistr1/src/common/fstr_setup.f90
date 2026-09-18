@@ -635,6 +635,7 @@ contains
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
           stop HECMW_EXIT_INPUT
         endif
+        call setup_stepInfo_converg( fstrSOLID%step_ctrl(c_istep) )
         if( associated(fstrPARAM%timepoints) ) then
           do i=1,size(fstrPARAM%timepoints)
             if( hecmw_streqr( fstrPARAM%timepoints(i)%name, mName ) ) then
@@ -656,6 +657,7 @@ contains
           write(ILOG,*) '### Error: Fail in read in step definition : ', c_istep
           stop HECMW_EXIT_INPUT
         endif
+        call setup_stepInfo_converg( fstrSOLID%step_ctrl(c_istep) )
         ! For DYNAMIC fixed-increment: keep the !DYNAMIC time increment while preserving !STEP duration.
         ! fstr_ctrl_get_ISTEP unconditionally sets initdt=1/num_substep which is wrong for DYNAMIC.
         ! Only override initdt/mindt/maxdt; keep elapsetime and num_substep as-is.
