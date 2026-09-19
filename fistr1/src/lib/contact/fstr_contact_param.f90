@@ -28,6 +28,9 @@ module mContactParam
                                          !< (big value to keep contact because contact-to-free is judged by tensile force)
     real(kind=kreal) :: DISTCLR_C2F      !< dist clearance for the contact-to-free judgment of MORTAR=YES
                                          !< (scaled by master reflen; forms hysteresis band with DISTCLR_INIT/FREE on OFF->ON side)
+    real(kind=kreal) :: PENCLR_FREE      !< penetration clearance for free nodes (deeper nodes are not judged as contact)
+    real(kind=kreal) :: PENCLR_NOCHECK   !< penetration clearance for nodes already in contact
+                                         !< (big value to keep contact because contact-to-free is not judged by depth)
     real(kind=kreal) :: TENSILE_FORCE    !< tensile force to be judged as free node
     real(kind=kreal) :: NEAR_DIST        !< distance threshold for CONTACTNEAR detection [length] (<=0: disabled)
   end type tContactParam
@@ -53,6 +56,8 @@ contains
     cparam%DISTCLR_FREE    =-1.d-6
     cparam%DISTCLR_NOCHECK = 1.d0
     cparam%DISTCLR_C2F     = 1.d-3
+    cparam%PENCLR_FREE     = 5.d-1
+    cparam%PENCLR_NOCHECK  = 5.d-1
     cparam%TENSILE_FORCE   =-1.d-2
     cparam%NEAR_DIST       = 0.0d0
   end subroutine init_ContactParam

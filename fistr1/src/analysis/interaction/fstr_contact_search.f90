@@ -95,13 +95,13 @@ contains
       elem0(1:3,j)=currpos(3*iSS-2:3*iSS)-currdisp(3*iSS-2:3*iSS)
     enddo
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
-      contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+      contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
       contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM, smoothing=contact%smoothing )
     if( .not. isin ) then
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
         call project_Point2SurfElement( coord, contact%master(sid), currpos, &
-          contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+          contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
           localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
         if( isin ) then
           contact%states(nslave)%surface = sid
@@ -125,7 +125,7 @@ contains
             if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           endif
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
-            contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, &
+            contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_FREE, &
             localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( isin ) then
             contact%states(nslave)%surface = sid
@@ -308,7 +308,7 @@ contains
           distclr_use = distclr
         end if
         call project_Point2SurfElement( coord, contact%master(id), currpos, &
-          contact%states(i), isin, distclr_use, &
+          contact%states(i), isin, distclr_use, contact%cparam%PENCLR_FREE, &
           contact%states(i)%lpos(1:2), contact%cparam%CLR_SAME_ELEM, smoothing=contact%smoothing )
         if (isin) then
           if (contact%states(i)%distance <= distclr * contact%master(id)%reflen) then
@@ -364,7 +364,8 @@ contains
           end if
           cstate_try = cstate_free
           call project_Point2SurfElement( coord, contact%master(id), currpos, &
-            cstate_try, isin, distclr_use, localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
+            cstate_try, isin, distclr_use, contact%cparam%PENCLR_FREE, &
+            localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
           if( .not. isin ) cycle
           if( id_best /= 0 ) then
             if( dabs(cstate_try%distance) > dabs(cstate_best%distance) ) cycle
@@ -742,7 +743,7 @@ contains
             ! The _ss wrapper sets direction to the slave inward normal (mortar normal).
             call project_Point2SurfElement_ss( coord, contact%master(id), contact%slave_surf(i), &
               ncoord, currpos, contact%slave_surf(i)%states(j), isin, distclr=distclr, &
-              localclr=contact%cparam%CLEARANCE )
+              penclr=contact%cparam%PENCLR_FREE, localclr=contact%cparam%CLEARANCE )
             if( .not. isin ) cycle
             contact%slave_surf(i)%states(j)%surface = id
             contact%slave_surf(i)%states(j)%multiplier(:) = 0.d0
@@ -797,12 +798,13 @@ contains
     opos = state%lpos(1:2)
 
     call project_Point2SurfElement_ss( coord, contact%master(sid0), sSurf, ncoord, currpos, &
-      state, isin, contact%cparam%DISTCLR_NOCHECK, state%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
+      state, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
+      state%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
     if( .not. isin ) then ! not contact previous master, search neighbor master surf
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
         call project_Point2SurfElement_ss( coord, contact%master(sid), sSurf, ncoord, currpos, &
-          state, isin, contact%cparam%DISTCLR_NOCHECK, &
+          state, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
           localclr=contact%cparam%CLEARANCE )
         if( isin ) then
           state%surface = sid
@@ -827,7 +829,7 @@ contains
             if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           endif
           call project_Point2SurfElement_ss( coord, contact%master(sid), sSurf, ncoord, currpos, &
-            state, isin, contact%cparam%DISTCLR_NOCHECK, &
+            state, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_FREE, &
             localclr=contact%cparam%CLEARANCE )
           if( isin ) then
             state%surface = sid

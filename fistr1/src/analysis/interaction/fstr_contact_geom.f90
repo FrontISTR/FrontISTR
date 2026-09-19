@@ -16,7 +16,7 @@ contains
 
   ! TODO: Move from fstr_contact_lib.f90
   !> This subroutine find the projection of a slave point onto master surface
-  subroutine project_Point2Element(xyz,etype,nn,elemt,reflen,cstate,isin,distclr,ctpos,localclr)
+  subroutine project_Point2Element(xyz,etype,nn,elemt,reflen,cstate,isin,distclr,penclr,ctpos,localclr)
     real(kind=kreal),intent(in)       :: xyz(3)        !< Coordinates of a spacial point, whose projecting point is to be computed
     integer, intent(in)               :: etype         !< surface element type
     integer, intent(in)               :: nn            !< number of elemental nodes
@@ -25,6 +25,7 @@ contains
     type(tContactState),intent(inout) :: cstate        !< Recorde of contact information
     logical, intent(out)              :: isin          !< in contact or not
     real(kind=kreal), intent(in)      :: distclr       !< clearance of contact distance
+    real(kind=kreal), intent(in)      :: penclr        !< clearance of penetration depth
     real(kind=kreal), optional        :: ctpos(2)      !< curr contact position( natural coord )
     real(kind=kreal), optional        :: localclr      !< clearance of contact local coord
 
@@ -117,7 +118,7 @@ contains
       end if
 
       if( cstate%interference_flag == 0)then ! not shrink-node
-        if( cstate%distance < distclr*reflen .and. cstate%distance > -5.0d-01*reflen ) isin = .true.
+        if( cstate%distance < distclr*reflen .and. cstate%distance > -penclr*reflen ) isin = .true.
       else
         if( cstate%distance < cstate%shrink_factor + distclr*reflen ) isin = .true.
       end if
@@ -213,13 +214,14 @@ contains
 
   !> Wrapper for project_Point2Element that takes tSurfElement structure
   !! This subroutine handles element coordinate extraction from tSurfElement
-  subroutine project_Point2SurfElement(xyz, surf, currpos, cstate, isin, distclr, ctpos, localclr, smoothing)
+  subroutine project_Point2SurfElement(xyz, surf, currpos, cstate, isin, distclr, penclr, ctpos, localclr, smoothing)
     real(kind=kreal), intent(in)              :: xyz(3)        !< coordinates of slave point
     type(tSurfElement), intent(in)            :: surf          !< surface element structure
     real(kind=kreal), intent(in)              :: currpos(:)    !< current coordinate of all nodes
     type(tContactState), intent(inout)        :: cstate        !< contact state
     logical, intent(out)                      :: isin          !< in contact or not
     real(kind=kreal), intent(in)              :: distclr       !< clearance of contact distance
+    real(kind=kreal), intent(in)              :: penclr        !< clearance of penetration depth
     real(kind=kreal), optional, intent(in)    :: ctpos(2)      !< current contact position (natural coord)
     real(kind=kreal), optional, intent(in)    :: localclr      !< clearance of contact local coord
     integer(kind=kint), intent(in)            :: smoothing     !< kcsNONE or kcsNAGATA
@@ -257,7 +259,7 @@ contains
     endif
 
     call project_Point2Element(xyz, etype_use, nn_use, elem, surf%reflen, cstate, &
-      isin, distclr, ctpos, localclr)
+      isin, distclr, penclr, ctpos, localclr)
 
   end subroutine project_Point2SurfElement
 
@@ -269,7 +271,7 @@ contains
   !> Used for both initial activation (CANDIDATE) and tracking, so the direction stays
   !> consistent across iterations.
   subroutine project_Point2SurfElement_ss( coord, master_surf, sSurf, ncoord, currpos, &
-      cstate, isin, distclr, ctpos, localclr )
+      cstate, isin, distclr, penclr, ctpos, localclr )
     real(kind=kreal), intent(in)              :: coord(3)      !< slave IP position
     type(tSurfElement), intent(in)            :: master_surf   !< master surface element
     type(tContactSurf), intent(in)            :: sSurf         !< slave surface (for inward normal)
@@ -278,6 +280,7 @@ contains
     type(tContactState), intent(inout)        :: cstate        !< contact state
     logical, intent(out)                      :: isin          !< in contact or not
     real(kind=kreal), intent(in)              :: distclr       !< clearance of contact distance
+    real(kind=kreal), intent(in)              :: penclr        !< clearance of penetration depth
     real(kind=kreal), optional, intent(in)    :: ctpos(2)      !< current contact position (natural coord)
     real(kind=kreal), optional, intent(in)    :: localclr      !< clearance of contact local coord
 
@@ -286,7 +289,7 @@ contains
 
     ! kcsNONE: the mortar integral is built on the flat master facets. SMOOTHING= is a
     ! NODE-SURF feature and is not combined with MORTAR=YES.
-    call project_Point2SurfElement( coord, master_surf, currpos, cstate, isin, distclr, ctpos, localclr, kcsNONE )
+    call project_Point2SurfElement( coord, master_surf, currpos, cstate, isin, distclr, penclr, ctpos, localclr, kcsNONE )
     if( .not. isin ) return
 
     nnode_s = size(sSurf%nodes)
@@ -375,7 +378,7 @@ contains
 
     cstate_tmp = contact%states(nslave)
     call project_Point2SurfElement( coord, contact%master(sid0), currpos, &
-      cstate_tmp, isin, contact%cparam%DISTCLR_NOCHECK, &
+      cstate_tmp, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
       contact%states(nslave)%lpos, contact%cparam%CLR_SAME_ELEM, &
       smoothing=contact%smoothing )
 
