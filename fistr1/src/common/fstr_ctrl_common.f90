@@ -791,6 +791,7 @@ contains
     real(kind=kreal) :: CLEARANCE, CLR_SAME_ELEM, CLR_DIFFLPOS, CLR_CAL_NORM
     real(kind=kreal) :: DISTCLR_INIT, DISTCLR_FREE, DISTCLR_NOCHECK, TENSILE_FORCE
     real(kind=kreal) :: DISTCLR_C2F
+    real(kind=kreal) :: PENCLR_FREE, PENCLR_NOCHECK
 
     fstr_ctrl_get_CONTACTPARAM = -1
 
@@ -829,6 +830,17 @@ contains
       contactparam%DISTCLR_C2F = DISTCLR_C2F
     endif
 
+    !read fourth line (optional): PENCLR_FREE, PENCLR_NOCHECK
+    PENCLR_FREE = contactparam%PENCLR_FREE
+    PENCLR_NOCHECK = contactparam%PENCLR_NOCHECK
+    if( nline >= 4 ) then
+      data_fmt = 'rr '
+      rcode = fstr_ctrl_get_data_ex( ctrl, 4, data_fmt, PENCLR_FREE, PENCLR_NOCHECK )
+      if( rcode /= 0 ) return
+      contactparam%PENCLR_FREE = PENCLR_FREE
+      contactparam%PENCLR_NOCHECK = PENCLR_NOCHECK
+    endif
+
     !input check
     rcode = 1
     if( CLEARANCE<0.d0 .OR. 1.d0<CLEARANCE ) THEN
@@ -849,6 +861,10 @@ contains
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : TENSILE_FORCE must be < 0.'
     else if( contactparam%DISTCLR_C2F<=0.d0 .or. 1.d0<=contactparam%DISTCLR_C2F ) then
       write(msg,*) 'fstr control file error : !CONTACT_PARAM : DISTCLR_C2F must be 0 < DISTCLR_C2F < 1.'
+    else if( PENCLR_FREE<=0.d0 ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : PENCLR_FREE must be > 0.'
+    else if( PENCLR_NOCHECK<PENCLR_FREE ) then
+      write(msg,*) 'fstr control file error : !CONTACT_PARAM : PENCLR_NOCHECK must be >= PENCLR_FREE.'
     else
       rcode =0
     end if
