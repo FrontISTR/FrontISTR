@@ -56,8 +56,8 @@ contains
     cparam%DISTCLR_FREE    =-1.d-6
     cparam%DISTCLR_NOCHECK = 1.d0
     cparam%DISTCLR_C2F     = 1.d-3
-    cparam%PENCLR_FREE     = 5.d-1
-    cparam%PENCLR_NOCHECK  = 5.d-1
+    cparam%PENCLR_FREE     = 1.d0
+    cparam%PENCLR_NOCHECK  = 1.d10
     cparam%TENSILE_FORCE   =-1.d-2
     cparam%NEAR_DIST       = 0.0d0
   end subroutine init_ContactParam

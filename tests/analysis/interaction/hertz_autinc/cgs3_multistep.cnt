@@ -2,18 +2,17 @@
 # A cutback restores the contact state of the last converged increment, so the
 # contact matrix structure has to be rebuilt from the restored state as well.
 # The y displacement of UPPER is -1.0 in STEP1 (pressing) and +1.5 in STEP2
-# (separating).  In STEP2 some slave nodes separate (Cont2Free), the matrix
-# structure is rebuilt without them, and the Newton iteration then reaches
-# MAXITER=10, so the increment is cut back.  Without the rebuild, the restored
-# contact nodes are missing from the matrix structure and the analysis stops with
-# "cannot find connectivity".
+# (separating).  In STEP2 slave nodes separate (Cont2Free) in one contact iteration
+# after another, the matrix structure is rebuilt without them each time, and the
+# increment is cut back when the contact iterations reach MAXCONTITER=3.  Without
+# the rebuild, the restored contact nodes are missing from the matrix structure and
+# the analysis stops with "cannot find connectivity".
 # A cutback while only pressing does not detect this, because the restored contact
 # nodes are then a subset of the rebuilt structure.
-# Whether a cutback follows a separation depends on the displacements, MAXITER and
-# the initial time increments, so recheck the failure without the rebuild when
-# changing them.  FRICTION_CONE=FROZEN for the same reason: with the cone following
-# the normal force STEP2 converges in four increments and the only cutback left
-# happens before any contact state change, which does not exercise the rebuild.
+# Whether a cutback follows a separation depends on the displacements, MAXCONTITER
+# and the initial time increments, so recheck the failure without the rebuild when
+# changing them.  FRICTION_CONE=FROZEN because with the cone following the normal
+# force STEP2 stops at the limit of successive cutbacks.
 # STEP2 ends with all nodes separated, so the result does not depend on the
 # frictional history and agrees between the parallel settings.
 #  Control File for FISTR
@@ -46,7 +45,7 @@
  1.0, 1.0, 1E-5, 1.0
  BOUNDARY, 1
  CONTACT,  1
-!STEP, SUBSTEPS=9999, CONVERG=1.0e-5, MAXITER=10, INC_TYPE=AUTO,AUTOINCPARAM=AP1,MAXRES=100
+!STEP, SUBSTEPS=9999, CONVERG=1.0e-5, MAXITER=10, INC_TYPE=AUTO,AUTOINCPARAM=AP1,MAXRES=100,MAXCONTITER=3
  1.0, 1.0, 1E-5, 1.0
  BOUNDARY, 2
  CONTACT,  1
