@@ -118,7 +118,7 @@ contains
   !>   residual,   rotation,    L2:  ||R_r|| / max(||Q_r||, ||D_r||)   (ndof=6 only)
   !>   correction, translation, L2:  ||du_t|| / ||Du_t||
   !>   correction, rotation,    L2:  ||du_r|| / ||Du_r||               (ndof=6 only)
-  !>   correction, Lagrange,    L2:  ||dlambda|| / ||lambda||          (Lagrange rows only)
+  !>   correction, Lagrange,    L2:  ||dlambda|| / max(||lambda||, Fref_t)   (Lagrange rows only)
   !> and the same ratios in the max norm, the largest absolute DOF component over the nodes. Each is compared with the
   !> threshold fixed for the step, and fstr_decide_convergence combines them.
   !>
@@ -126,6 +126,11 @@ contains
   !> in free vibration, where the vector sum Q+D vanishes at equilibrium while neither norm does. Pressure DOFs of
   !> ndof=4 and the Lagrange rows of the residual carry a dimension of their own and are represented by the Lagrange
   !> correction instead of entering the residual norms.
+  !>
+  !> The multiplier of a contact constraint is a contact force, so the translational reference force Fref_t bounds
+  !> ||lambda|| from below in its criterion. Normalizing by ||lambda|| alone makes the criterion arbitrarily strict
+  !> where the contact carries little of the load, and unsatisfiable at a node entering contact, where lambda is
+  !> still zero while dlambda is not.
   !>
   !> In dynamic analysis the check precedes the linear solve, so at iter=1 the correction vector belongs to no
   !> iteration yet and the state is the one before any correction has been applied; nothing is decided there.
@@ -248,7 +253,7 @@ contains
     integer(kind=kint), parameter :: NSUM = 13
     real(kind=kreal)   :: sq(NSUM)
     integer(kind=kint) :: i, npndof, num_lagrange
-    real(kind=kreal)   :: dx_t, dx_r, dx_l
+    real(kind=kreal)   :: dx_t, dx_r, fref_t
     logical            :: has_rot, has_lag
 
     num_lagrange = 0
@@ -284,10 +289,11 @@ contains
     if( .not. has_dx ) cnvstat%m(kcnvCorrection,:,:)%check = .false.
 
     ! --- residual relative to the reference force ---
-    call fstr_set_residual_measure( cnvstat%m(kcnvResidual,kcnvTranslation,kcnvL2), &
-        sqrt(sq(1)), max( sqrt(sq(3)), sqrt(sq(5)) ) )
+    fref_t = max( sqrt(sq(3)), sqrt(sq(5)) )
+    call fstr_set_relative_measure( cnvstat%m(kcnvResidual,kcnvTranslation,kcnvL2), &
+        sqrt(sq(1)), fref_t )
     if( has_rot ) then
-      call fstr_set_residual_measure( cnvstat%m(kcnvResidual,kcnvRotation,kcnvL2), &
+      call fstr_set_relative_measure( cnvstat%m(kcnvResidual,kcnvRotation,kcnvL2), &
           sqrt(sq(2)), max( sqrt(sq(4)), sqrt(sq(6)) ) )
     endif
 
@@ -298,15 +304,13 @@ contains
       if( sq(9) > 0.0d0 ) dx_t = sqrt( sq(7)/sq(9) )
       dx_r = 1.0d0
       if( sq(10) > 0.0d0 ) dx_r = sqrt( sq(8)/sq(10) )
-      dx_l = 0.0d0
-      if( sq(12) > 0.0d0 ) then
-        dx_l = sqrt( sq(11)/sq(12) )
-      else if( sq(11) > 0.0d0 ) then
-        dx_l = 1.0d0
-      endif
       cnvstat%m(kcnvCorrection,kcnvTranslation,kcnvL2)%value = dx_t
       if( has_rot ) cnvstat%m(kcnvCorrection,kcnvRotation,kcnvL2)%value = dx_r
-      if( has_lag ) cnvstat%m(kcnvCorrection,kcnvLagrange,kcnvL2)%value = dx_l
+      ! The multiplier is a contact force, so the reference force bounds its norm from below.
+      if( has_lag ) then
+        call fstr_set_relative_measure( cnvstat%m(kcnvCorrection,kcnvLagrange,kcnvL2), &
+            sqrt(sq(11)), max( sqrt(sq(12)), fref_t ) )
+      endif
     endif
 
     ! The flags are the same on every subdomain, so the collectives of the max norms are skipped consistently.
@@ -352,7 +356,7 @@ contains
     real(kind=kreal)   :: vmax(NMAX), gmax(NMAX)
     integer(kind=kint) :: loc(2,NLOC), gnode(NLOC), gdof(NLOC)
     integer(kind=kint) :: i, k, npndof, num_lagrange
-    real(kind=kreal)   :: dx_t, dx_r, dx_l
+    real(kind=kreal)   :: dx_t, dx_r, fref_t
 
     num_lagrange = 0
     if( present(hecLagMAT) ) num_lagrange = hecLagMAT%num_lagrange
@@ -386,10 +390,11 @@ contains
     call hecmw_allreduce_I( hecMESH, gdof, NLOC, hecmw_max )
 
     ! --- residual relative to the reference force ---
-    call fstr_set_residual_measure( cnvstat%m(kcnvResidual,kcnvTranslation,kcnvMax), &
-        gmax(1), max( gmax(3), gmax(5) ) )
+    fref_t = max( gmax(3), gmax(5) )
+    call fstr_set_relative_measure( cnvstat%m(kcnvResidual,kcnvTranslation,kcnvMax), &
+        gmax(1), fref_t )
     if( ndof == 6 ) then
-      call fstr_set_residual_measure( cnvstat%m(kcnvResidual,kcnvRotation,kcnvMax), &
+      call fstr_set_relative_measure( cnvstat%m(kcnvResidual,kcnvRotation,kcnvMax), &
           gmax(2), max( gmax(4), gmax(6) ) )
     endif
 
@@ -399,15 +404,10 @@ contains
       if( gmax(9) > 0.0d0 ) dx_t = gmax(7) / gmax(9)
       dx_r = 1.0d0
       if( gmax(10) > 0.0d0 ) dx_r = gmax(8) / gmax(10)
-      dx_l = 0.0d0
-      if( gmax(12) > 0.0d0 ) then
-        dx_l = gmax(11) / gmax(12)
-      else if( gmax(11) > 0.0d0 ) then
-        dx_l = 1.0d0
-      endif
       cnvstat%m(kcnvCorrection,kcnvTranslation,kcnvMax)%value = dx_t
       if( ndof == 6 ) cnvstat%m(kcnvCorrection,kcnvRotation,kcnvMax)%value = dx_r
-      cnvstat%m(kcnvCorrection,kcnvLagrange,kcnvMax)%value = dx_l
+      call fstr_set_relative_measure( cnvstat%m(kcnvCorrection,kcnvLagrange,kcnvMax), &
+          gmax(11), max( gmax(12), fref_t ) )
     endif
 
     do k = 1, NLOC
@@ -417,21 +417,21 @@ contains
 
   end subroutine fstr_evaluate_convergence_max
 
-  !> \brief Residual norm relative to its reference, or the norm itself when the reference is below FREF_FLOOR.
-  subroutine fstr_set_residual_measure( ms, res, fref )
+  !> \brief A norm relative to its reference, or the norm itself when the reference is below FREF_FLOOR.
+  subroutine fstr_set_relative_measure( ms, val, fref )
     implicit none
     type(fstr_convergence_measure), intent(inout) :: ms
-    real(kind=kreal), intent(in)                  :: res   !< residual norm
-    real(kind=kreal), intent(in)                  :: fref  !< reference force norm
+    real(kind=kreal), intent(in)                  :: val   !< norm to measure
+    real(kind=kreal), intent(in)                  :: fref  !< reference norm
 
     ms%absolute = ( fref < FREF_FLOOR )
     if( ms%absolute ) then
-      ms%value = res
+      ms%value = val
     else
-      ms%value = res / fref
+      ms%value = val / fref
     endif
 
-  end subroutine fstr_set_residual_measure
+  end subroutine fstr_set_relative_measure
 
   !> \brief Sum of squares of a nodal vector over the internal nodes, split into translational (DOF 1-3) and
   !>        rotational (DOF 4-6) components.
