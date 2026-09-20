@@ -59,6 +59,20 @@ make -j$(nproc)
 >
 > - GPUビルドの場合は、NVIDIAコンパイラを指定してください。
 
+MPIビルドでは、CMakeが小さなプログラムを実行してMPI実装を判定し、
+Cluster PARDISO用のMKL BLACSを選択します。HPCのログインノードなど、
+MPIプログラムを直接実行できない環境では、判定を無効にして使用するMPIに
+対応したLP64版BLACSを指定してください。
+
+```bash
+cmake .. -DMPI_DETERMINE_LIBRARY_VERSION=OFF \
+  -DMKLBLACS_LIBRARY=/path/to/libmkl_blacs_openmpi_lp64.so
+```
+
+クロスコンパイル時は実行判定を無効にします。明示した `MKL_LIBRARIES` は
+そのまま使用するため、必要なBLACSのリンク指定も含めてください。
+既にキャッシュされたMKL設定を更新する場合は、新しいビルドディレクトリを使用してください。
+
 ---
 
 ## 実行

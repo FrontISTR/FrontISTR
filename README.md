@@ -59,6 +59,20 @@ make -j$(nproc)
 >
 > - For a GPU build, make sure to specify the NVIDIA compilers.
 
+For MPI builds, CMake runs a small program to identify the MPI implementation
+and select MKL BLACS for Cluster PARDISO. On systems where MPI programs cannot
+run directly (for example, HPC login nodes), disable this probe and specify the
+matching LP64 BLACS library:
+
+```bash
+cmake .. -DMPI_DETERMINE_LIBRARY_VERSION=OFF \
+  -DMKLBLACS_LIBRARY=/path/to/libmkl_blacs_openmpi_lp64.so
+```
+
+The probe is disabled when cross-compiling. Explicit `MKL_LIBRARIES` settings
+are preserved and must include any required BLACS link options. Use a fresh
+build directory when updating previously cached MKL library settings.
+
 ---
 
 ## Execution
