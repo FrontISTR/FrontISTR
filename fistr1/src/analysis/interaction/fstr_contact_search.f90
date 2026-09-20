@@ -70,9 +70,10 @@ contains
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node), elem0(3, l_max_elem_node)
     logical            :: isin
     real(kind=kreal)    :: opos(2)
-    integer(kind=kint) :: bktID, nCand, idm
+    integer(kind=kint) :: bktID, nCand, idm, id_best
     integer(kind=kint), allocatable :: indexCand(:)
     logical            :: is_implicit, update_tangent
+    type(tContactState) :: cstate_free, cstate_try, cstate_best
 
     is_implicit = present(flag_ctAlgo)
     if( is_implicit ) then
@@ -98,41 +99,68 @@ contains
       contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
       contact%states(nslave)%lpos(1:2), contact%cparam%CLR_SAME_ELEM, smoothing=contact%smoothing )
     if( .not. isin ) then
+      ! The neighbors include the faces across a convex edge, which the loose checks of
+      ! DISTCLR_NOCHECK and PENCLR_NOCHECK accept at a large depth, so the nearest surface
+      ! is taken here as well as in the search of free nodes.
+      cstate_free = contact%states(nslave)
+      id_best = 0
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
+        cstate_try = cstate_free
         call project_Point2SurfElement( coord, contact%master(sid), currpos, &
-          contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
+          cstate_try, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
           localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
-        if( isin ) then
-          contact%states(nslave)%surface = sid
-          exit
+        if( .not. isin ) cycle
+        if( id_best /= 0 ) then
+          if( dabs(cstate_try%distance) > dabs(cstate_best%distance) ) cycle
+          if( dabs(cstate_try%distance) == dabs(cstate_best%distance) .and. sid > id_best ) cycle
         endif
+        id_best = sid
+        cstate_best = cstate_try
       enddo
+      isin = ( id_best /= 0 )
+      if( isin ) then
+        sid = id_best
+        contact%states(nslave) = cstate_best
+        contact%states(nslave)%surface = sid
+      endif
     endif
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
       write(*,*) 'Warning: contact moved beyond neighbor elements'
+      cstate_free = contact%states(nslave)
       ! get master candidates from bucketDB
       bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
       nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
       if (nCand > 0) then
         allocate(indexCand(nCand))
         call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+        id_best = 0
         do idm= 1, nCand
           sid = indexCand(idm)
           if( sid==sid0 ) cycle
           if( associated(contact%master(sid0)%neighbor) ) then
             if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           endif
+          cstate_try = cstate_free
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
-            contact%states(nslave), isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_FREE, &
+            cstate_try, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_FREE, &
             localclr=contact%cparam%CLEARANCE, smoothing=contact%smoothing )
-          if( isin ) then
-            contact%states(nslave)%surface = sid
-            exit
+          if( .not. isin ) cycle
+          if( id_best /= 0 ) then
+            if( dabs(cstate_try%distance) > dabs(cstate_best%distance) ) cycle
+            if( dabs(cstate_try%distance) == dabs(cstate_best%distance) .and. sid > id_best ) cycle
           endif
+          id_best = sid
+          cstate_best = cstate_try
         enddo
         deallocate(indexCand)
+        isin = ( id_best /= 0 )
+        if( isin ) then
+          sid = id_best
+          contact%states(nslave) = cstate_best
+          contact%states(nslave)%surface = sid
+        endif
       endif
     endif
 
@@ -652,7 +680,8 @@ contains
     logical             :: isin
     !
     integer, pointer :: indexCand(:)
-    integer   ::  idm,bktID,nCand
+    integer   ::  idm,bktID,nCand,id_best
+    type(tContactState) :: state_free, state_try, state_best
     ! per-segment known-master tracking for free2contact_new
     integer(kind=kint) :: maplist(MAX_N_INTP), master_idxs(MAX_N_INTP)
     integer(kind=kint) :: unique_count
@@ -670,7 +699,7 @@ contains
     !$omp parallel do &
     !$omp& default(none) &
     !$omp& private(i,slave,id,coord,ncoord,surf_node_pos,sfunc,nnode_s, &
-    !$omp&         j,idm,isin,bktID,nCand,indexCand, &
+    !$omp&         j,idm,isin,bktID,nCand,indexCand,id_best,state_free,state_try,state_best, &
     !$omp&         maplist,master_idxs,unique_count,known_masters,n_known,is_known) &
     !$omp& shared(contact,infoCTChange,currpos,distclr,is_init) &
     !$omp& reduction(.or.:active) &
@@ -736,15 +765,32 @@ contains
           allocate(indexCand(nCand))
           call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
 
+          ! The bucket returns the candidates in scan order, so every candidate is
+          ! projected on a trial state and the nearest one is adopted, as in the
+          ! NODE-SURF scan. A surface across a convex edge is accepted as well and
+          ! would otherwise bind the integration point at a large depth.
+          state_free = contact%slave_surf(i)%states(j)
+          id_best = 0
           do idm = 1,nCand
             id = indexCand(idm)
             ! OFF->ON uses is_init-dependent distclr (DISTCLR_INIT on initial scan,
             ! DISTCLR_FREE on re-scan) to form a hysteresis band with DISTCLR_C2F.
             ! The _ss wrapper sets direction to the slave inward normal (mortar normal).
+            state_try = state_free
             call project_Point2SurfElement_ss( coord, contact%master(id), contact%slave_surf(i), &
-              ncoord, currpos, contact%slave_surf(i)%states(j), isin, distclr=distclr, &
+              ncoord, currpos, state_try, isin, distclr=distclr, &
               penclr=contact%cparam%PENCLR_FREE, localclr=contact%cparam%CLEARANCE )
             if( .not. isin ) cycle
+            if( id_best /= 0 ) then
+              if( dabs(state_try%distance) > dabs(state_best%distance) ) cycle
+              if( dabs(state_try%distance) == dabs(state_best%distance) .and. id > id_best ) cycle
+            endif
+            id_best = id
+            state_best = state_try
+          enddo
+          if( id_best /= 0 ) then
+            id = id_best
+            contact%slave_surf(i)%states(j) = state_best
             contact%slave_surf(i)%states(j)%surface = id
             contact%slave_surf(i)%states(j)%multiplier(:) = 0.d0
 
@@ -764,8 +810,7 @@ contains
               !$omp atomic
               infoCTChange%n_statechange(kcatFREE,kcatCONT) = infoCTChange%n_statechange(kcatFREE,kcatCONT) + 1
             endif
-            exit
-          enddo
+          endif
           deallocate(indexCand)
         endif
       enddo
@@ -787,8 +832,9 @@ contains
     integer(kind=kint) :: i, j
     logical            :: isin, found_in_neighbor
     real(kind=kreal)    :: opos(2)
-    integer(kind=kint) :: bktID, nCand, idm
+    integer(kind=kint) :: bktID, nCand, idm, id_best
     integer(kind=kint), allocatable :: indexCand(:)
+    type(tContactState) :: state_free, state_try, state_best
 
     sid = 0
     found_in_neighbor = .false.
@@ -801,42 +847,68 @@ contains
       state, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
       state%lpos(1:2), contact%cparam%CLR_SAME_ELEM )
     if( .not. isin ) then ! not contact previous master, search neighbor master surf
+      ! A neighbor across a convex edge is accepted at a large depth, so the nearest
+      ! surface is taken instead of the first accepted one.
+      state_free = state
+      id_best = 0
       do i=1, contact%master(sid0)%n_neighbor
         sid = contact%master(sid0)%neighbor(i)
+        state_try = state_free
         call project_Point2SurfElement_ss( coord, contact%master(sid), sSurf, ncoord, currpos, &
-          state, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
+          state_try, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_NOCHECK, &
           localclr=contact%cparam%CLEARANCE )
-        if( isin ) then
-          state%surface = sid
-          found_in_neighbor = .true.
-          exit
+        if( .not. isin ) cycle
+        if( id_best /= 0 ) then
+          if( dabs(state_try%distance) > dabs(state_best%distance) ) cycle
+          if( dabs(state_try%distance) == dabs(state_best%distance) .and. sid > id_best ) cycle
         endif
+        id_best = sid
+        state_best = state_try
       enddo
+      isin = ( id_best /= 0 )
+      if( isin ) then
+        sid = id_best
+        state = state_best
+        state%surface = sid
+        found_in_neighbor = .true.
+      endif
     endif
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
       write(*,*) 'Warning: contact moved beyond neighbor elements'
+      state_free = state
       ! get master candidates from bucketDB
       bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
       nCand = bucketDB_getNumCand(contact%master_bktDB, bktID)
       if (nCand > 0) then
         allocate(indexCand(nCand))
         call bucketDB_getCand(contact%master_bktDB, bktID, nCand, indexCand)
+        id_best = 0
         do idm= 1, nCand
           sid = indexCand(idm)
           if( sid==sid0 ) cycle
           if( associated(contact%master(sid0)%neighbor) ) then
             if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
           endif
+          state_try = state_free
           call project_Point2SurfElement_ss( coord, contact%master(sid), sSurf, ncoord, currpos, &
-            state, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_FREE, &
+            state_try, isin, contact%cparam%DISTCLR_NOCHECK, contact%cparam%PENCLR_FREE, &
             localclr=contact%cparam%CLEARANCE )
-          if( isin ) then
-            state%surface = sid
-            exit
+          if( .not. isin ) cycle
+          if( id_best /= 0 ) then
+            if( dabs(state_try%distance) > dabs(state_best%distance) ) cycle
+            if( dabs(state_try%distance) == dabs(state_best%distance) .and. sid > id_best ) cycle
           endif
+          id_best = sid
+          state_best = state_try
         enddo
         deallocate(indexCand)
+        isin = ( id_best /= 0 )
+        if( isin ) then
+          sid = id_best
+          state = state_best
+          state%surface = sid
+        endif
       endif
     endif
 
