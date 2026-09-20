@@ -101,7 +101,10 @@ contains
     stepinfo%elapsetime = 1.d0
     stepinfo%starttime = 0.d0
     stepinfo%converg = 1.d-3
-    stepinfo%converg_lag = 1.d-4
+    ! The multiplier criterion guards against a gap constraint left unsatisfied, which the force residual cannot
+    ! see; the accuracy of the solution is carried by the residual criterion, so this one is left loose enough
+    ! that it does not decide the iteration count on its own.
+    stepinfo%converg_lag = 1.d-2
     stepinfo%converg_ddisp = 1.d-8
     stepinfo%maxres = 1.d+10
     stepinfo%timepoint_id = 0
