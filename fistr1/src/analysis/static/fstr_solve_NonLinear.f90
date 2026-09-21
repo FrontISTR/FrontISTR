@@ -103,10 +103,11 @@ contains
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: stepcnt
     integer(kind=kint) :: restrt_step_num
-    real(kind=kreal)   :: tt0, tt, res, qnrm, rres, tincr, xnrm, dunrm, rxnrm
+    real(kind=kreal)   :: tincr
     real(kind=kreal), allocatable :: coord(:), P(:)
     logical :: isLinear = .false.
     integer(kind=kint) :: iterStatus
+    type(fstr_convergence_state) :: cnvstat
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
@@ -165,8 +166,9 @@ contains
       if( isLinear ) exit
 
       ! ----- check convergence
-      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
-          hecMAT%B, 0, res, res, 0, iterStatus)
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+          ndof, iter, sub_step, cstep, &
+          hecMAT%B, cnvstat, iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then
         call hecmw_ebc_finalize(hecEBC)
@@ -217,10 +219,9 @@ contains
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter
     integer(kind=kint) :: al_step, n_al_step, stepcnt, count_step
-    real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr
+    real(kind=kreal)   :: tincr
     integer(kind=kint) :: restart_step_num, restart_substep_num
     logical            :: convg, ctchange
-    integer(kind=kint) :: n_node_global
     integer(kind=kint) :: contact_changed_global
     logical            :: need_prof_refresh
     real(kind=kreal), allocatable :: coord(:)
@@ -228,11 +229,7 @@ contains
     logical            :: is_first_Stiffmatrixcall
     integer(kind=kint)  :: iterStatus, nresid
     real(kind=kreal), allocatable :: resid_work(:)
-
-
-    ! sum of n_node among all subdomains (to be used to calc res)
-    n_node_global = hecMESH%nn_internal
-    call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
+    type(fstr_convergence_state) :: cnvstat
 
     ctAlgo = fstrPARAM%contact_algo
 
@@ -286,10 +283,6 @@ contains
         end if
 
         ! ----- Inner Iteration, lagrange multiplier constant
-        res0   = 0.0d0
-        res1   = 0.0d0
-        relres = 1.0d0
-
         do iter = 1,fstrSOLID%step_ctrl(cstep)%max_iter
           stepcnt = stepcnt+1
 
@@ -353,8 +346,9 @@ contains
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
 
           call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
-          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
-              resid_work, nresid, res0, res1, n_node_global, iterStatus)
+          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+              ndof, iter, sub_step, cstep, &
+              resid_work, cnvstat, iterStatus, hecLagMAT)
           if (iterStatus == kitrConverged) exit
           if (iterStatus == kitrDiverged .or. iterStatus == kitrFloatingError) then
             fstrSOLID%NRstat_i(knstCITER) = count_step
@@ -472,23 +466,17 @@ contains
     integer(kind=kint) :: ctAlgo
     integer(kind=kint) :: i, iter, max_iter_contact
     integer(kind=kint) :: stepcnt, count_step
-    real(kind=kreal)   :: tt0, tt, res, res0, res1, relres, tincr, resX
+    real(kind=kreal)   :: tincr
     integer(kind=kint) :: restart_step_num, restart_substep_num
     logical            :: is_mat_symmetric
-    integer(kind=kint) :: n_node_global
     integer(kind=kint) :: contact_changed_global
-    integer(kint)      :: nndof
-    real(kreal)        :: q_residual,x_residual
     real(kind=kreal), allocatable :: coord(:)
     integer(kind=kint)  :: istat
     integer(kind=kint)  :: iterStatus, nresid
     real(kind=kreal), allocatable :: resid_work(:)
+    type(fstr_convergence_state) :: cnvstat
 
     ctAlgo = fstrPARAM%contact_algo
-
-    ! sum of n_node among all subdomains (to be used to calc res)
-    n_node_global = hecMESH%nn_internal
-    call hecmw_allreduce_I1(hecMESH,n_node_global,HECMW_SUM)
 
     if( hecMAT%Iarray(99) == 4 .and. .not. fstr_is_matrixStruct_symmetric(fstrSOLID, hecMESH) ) then
       write(*, *) ' This type of direct solver is not yet available in such case ! '
@@ -531,10 +519,6 @@ contains
       count_step = count_step+1
 
       ! ----- Inner Iteration
-      res0   = 0.d0
-      res1   = 0.d0
-      relres = 1.d0
-
       do iter = 1, fstrSOLID%step_ctrl(cstep)%max_iter
         call hecmw_BARRIER(hecMESH)
         if( myrank == 0 ) print *,'-------------------------------------------------'
@@ -555,13 +539,10 @@ contains
         call hecmw_ebc_init(hecMAT, hecEBC)
         call fstr_AddBC(cstep, hecMESH, hecMAT, fstrSOLID, fstrPARAM, hecLagMAT, stepcnt, hecEBC, conMAT)
 
-        nndof = hecMAT%N*hecMAT%ndof
-
         !----- SOLVE [Kt]{du}={R}
         ! ----  For Parallel Contact with Multi-Partition Domains
         hecMAT%X = 0.0d0
         call fstr_set_current_config_to_mesh(hecMESH,fstrSOLID,coord)
-        q_residual = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
         call solve_LINEQ_contact(hecMESH, hecMAT, hecLagMAT, conMAT, hecEBC, istat, 1.0D0, fstr_is_contact_active())
         call fstr_recover_initial_config_to_mesh(hecMESH,fstrSOLID,coord)
         call hecmw_ebc_finalize(hecEBC)
@@ -570,17 +551,6 @@ contains
         if( iterStatus /= kitrContinue ) then
           fstrSOLID%NRstat_i(knstCITER) = count_step
           return
-        endif
-
-        x_residual = fstr_get_x_norm_contact(hecMAT,hecLagMAT,hecMESH)
-
-        call hecmw_innerProduct_R(hecMESH,ndof,hecMAT%X,hecMAT%X,resX)
-        resX = sqrt(resX)/n_node_global
-
-        if( hecMESH%my_rank==0 ) then
-          write(*,'(a,i3,a,e15.7)') ' - ResidualX    (',iter,') =',resX
-          write(*,'(a,i3,a,e15.7)') ' - ResidualX+LAG(',iter,') =',sqrt(x_residual)/n_node_global
-          write(*,'(a,i3,a,e15.7)') ' - ResidualQ    (',iter,') =',sqrt(q_residual)/n_node_global
         endif
 
         ! ----- update the small displacement and the displacement for 1step
@@ -614,11 +584,10 @@ contains
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
         endif
 
-        res = fstr_get_norm_para_contact(hecMAT,hecLagMAT,conMAT,hecMESH)
-
         call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
-        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
-            resid_work, nresid, res0, res1, n_node_global, iterStatus)
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+            ndof, iter, sub_step, cstep, &
+            resid_work, cnvstat, iterStatus, hecLagMAT)
         if (iterStatus == kitrConverged) then
           exit
         endif

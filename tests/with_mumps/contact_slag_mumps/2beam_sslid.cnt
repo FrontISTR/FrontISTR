@@ -50,7 +50,7 @@ CP1, 0.2, 50.0
 ###################################
 #####       STEP CONTROL      #####
 ###################################
-!STEP, INC_TYPE=AUTO, SUBSTEPS=200
+!STEP, INC_TYPE=AUTO, SUBSTEPS=200, CONVERG=1.0e-6
 0.2, 1.0, 1E-5, 0.2
 BOUNDARY,1
 BOUNDARY,2

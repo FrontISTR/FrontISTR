@@ -65,7 +65,7 @@ CP1,0.0,5.0E+2
 ###################################
 #####       STEP CONTROL      #####
 ###################################
-!STEP, SUBSTEPS=1
+!STEP, SUBSTEPS=1, CONVERG=1.0e-6
 BOUNDARY,1
 BOUNDARY,2
 BOUNDARY,3

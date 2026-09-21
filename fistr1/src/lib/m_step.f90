@@ -22,6 +22,15 @@ module m_step
   integer(kind=kint),parameter :: knstCITER  = 3 ! number of contact iteration
   integer(kind=kint),parameter :: knstDRESN  = 4 ! reason of not to converged
 
+  ! indices of the convergence criteria: (quantity, DOF group, norm)
+  integer(kind=kint),parameter :: kcnvResidual    = 1
+  integer(kind=kint),parameter :: kcnvCorrection  = 2
+  integer(kind=kint),parameter :: kcnvTranslation = 1
+  integer(kind=kint),parameter :: kcnvRotation    = 2
+  integer(kind=kint),parameter :: kcnvLagrange    = 3
+  integer(kind=kint),parameter :: kcnvL2          = 1
+  integer(kind=kint),parameter :: kcnvMax         = 2
+
   !> Step control such as active boundary condition, convergent condition etc.
   type step_info
     integer             :: solution           !< solution type; 1: static;  2:visco
@@ -33,6 +42,8 @@ module m_step
     real(kind=kreal)    :: converg_lag        !< value of convergent judgement (Lagrange)
     real(kind=kreal)    :: converg_ddisp      !< value of convergent judgement (disp increment)
     real(kind=kreal)    :: maxres             !< upper bound of NR residual
+    logical             :: cnv_check(2,3,2)   !< criterion is checked (CHECK) or not (SKIP); (quantity, DOF group, norm)
+    real(kind=kreal)    :: cnv_tol(2,3,2)     !< threshold of the criterion
 
     integer :: num_substep                    !< substeps user given
     integer :: max_iter                       !< max number of iteration
@@ -64,6 +75,14 @@ module m_step
     integer( kind=kint ) :: CBbound            !< maximum # of successive cutback
   end type
 
+  !> Convergence criteria of !CONVERG_PARAM, indexed like step_info%cnv_check
+  type tParamConverg
+    character(HECMW_NAME_LEN) :: name
+    logical              :: given(2,3,2)      !< the criterion is given in the card
+    logical              :: check(2,3,2)      !< CHECK or SKIP
+    real(kind=kreal)     :: tol(2,3,2)        !< threshold
+  end type
+
 contains
 
   !> Initializer
@@ -82,11 +101,43 @@ contains
     stepinfo%elapsetime = 1.d0
     stepinfo%starttime = 0.d0
     stepinfo%converg = 1.d-3
-    stepinfo%converg_lag = 1.d-4
+    ! The multiplier criterion guards against a gap constraint left unsatisfied, which the force residual cannot
+    ! see; the accuracy of the solution is carried by the residual criterion, so this one is left loose enough
+    ! that it does not decide the iteration count on its own.
+    stepinfo%converg_lag = 1.d-2
     stepinfo%converg_ddisp = 1.d-8
     stepinfo%maxres = 1.d+10
     stepinfo%timepoint_id = 0
     stepinfo%AincParam_id = 0
+    call setup_stepInfo_converg( stepinfo )
+  end subroutine
+
+  !> Fix the convergence criteria of a step. For each criterion the built-in default is overridden by CONVERG,
+  !> CONVERG_DDISP and CONVERG_LAG of !STEP, which are in turn overridden by the lines given in !CONVERG_PARAM.
+  subroutine setup_stepInfo_converg( stepinfo, cnvparam )
+    type( step_info ), intent(inout)            :: stepinfo !< step info
+    type( tParamConverg ), intent(in), optional :: cnvparam !< criteria referred to by the step
+
+    integer :: iq, ig, inorm
+
+    stepinfo%cnv_check(:,:,:) = .false.
+    stepinfo%cnv_tol(:,:,:) = 0.d0
+    stepinfo%cnv_check(kcnvResidual, kcnvTranslation:kcnvRotation, kcnvL2) = .true.
+    stepinfo%cnv_tol(kcnvResidual, kcnvTranslation:kcnvRotation, kcnvL2) = stepinfo%converg
+    stepinfo%cnv_check(kcnvCorrection, kcnvTranslation:kcnvRotation, kcnvL2) = .true.
+    stepinfo%cnv_tol(kcnvCorrection, kcnvTranslation:kcnvRotation, kcnvL2) = stepinfo%converg_ddisp
+    stepinfo%cnv_check(kcnvCorrection, kcnvLagrange, kcnvL2) = .true.
+    stepinfo%cnv_tol(kcnvCorrection, kcnvLagrange, kcnvL2) = stepinfo%converg_lag
+    if( .not. present(cnvparam) ) return
+    do inorm = kcnvL2, kcnvMax
+      do ig = kcnvTranslation, kcnvLagrange
+        do iq = kcnvResidual, kcnvCorrection
+          if( .not. cnvparam%given(iq,ig,inorm) ) cycle
+          stepinfo%cnv_check(iq,ig,inorm) = cnvparam%check(iq,ig,inorm)
+          stepinfo%cnv_tol(iq,ig,inorm) = cnvparam%tol(iq,ig,inorm)
+        end do
+      end do
+    end do
   end subroutine
 
   subroutine setup_stepInfo_starttime( stepinfos )
@@ -164,6 +215,16 @@ contains
     aincparam%NRtimes_l = 2
     aincparam%ainc_Rc   = 0.25d0
     aincparam%CBbound   = 5
+  end subroutine
+
+  !> Initializer
+  subroutine init_ConvergParam( cnvparam )
+    type( tParamConverg ), intent(out) :: cnvparam !< convergence criteria
+
+    cnvparam%name  = ''
+    cnvparam%given = .false.
+    cnvparam%check = .false.
+    cnvparam%tol   = 0.d0
   end subroutine
 
 end module

@@ -1,0 +1,72 @@
+###################################
+# Convergence criteria given by !CONVERG_PARAM, decided by the max norms alone: the L2 criteria are skipped by lines
+# without a threshold (SLAGRANGE contact of two boxes)
+###################################
+#####   SOLVER INFORMATION    #####
+###################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO,TYPE=SLAGRANGE
+!WRITE,RESULT,FREQUENCY=10
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRAIN,OFF
+NSTRESS,ON
+NMISES,ON
+ESTRAIN,OFF
+ESTRESS,ON
+EMISES,ON
+ISTRAIN,ON
+ISTRESS,ON
+CONTACT_NFORCE,ON
+CONTACT_FRICTION,ON
+CONTACT_RELVEL,ON
+CONTACT_STATE,ON
+CONTACT_FTRACTION,ON
+CONTACT_NTRACTION,ON
+!WRITE,LOG
+!SOLVER,METHOD=GMRES,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-06, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+!BOUNDARY, GRPID=2
+ SET_2,2,2
+!BOUNDARY, GRPID=3
+ SET_3,3,3
+!BOUNDARY, GRPID=4
+ SET_4,3,3,-0.1
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1
+CP1,0.3,5.0E+2
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!CONVERG_PARAM, NAME=CP_MAXONLY
+ RESIDUAL,   L2,  SKIP
+ RESIDUAL,   MAX, CHECK, 1.0e-6
+ CORRECTION, L2,  SKIP
+ CORRECTION, MAX, CHECK, 1.0e-8
+ LAGRANGE,   L2,  SKIP
+ LAGRANGE,   MAX, CHECK, 1.0e-4
+!STEP, SUBSTEPS=1, CONVERGPARAM=CP_MAXONLY
+BOUNDARY,1
+BOUNDARY,2
+BOUNDARY,3
+BOUNDARY,4
+CONTACT,1
+!END
