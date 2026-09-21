@@ -529,7 +529,7 @@ contains
     use m_out
     integer(kind=kint), intent(in)        :: ctrl      !< readed data
     type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
-    type( output_info ), intent(out)      :: outinfo   !< output information
+    type( output_info ), intent(inout)    :: outinfo   !< output information; num_items and keyWord are supplied by the caller
 
     integer(kind=kint) :: rcode, ipos
     integer(kind=kint) :: n, i, j
