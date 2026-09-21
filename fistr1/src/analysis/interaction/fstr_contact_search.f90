@@ -127,7 +127,9 @@ contains
     endif
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
+      !$omp critical
       write(*,*) 'Warning: contact moved beyond neighbor elements'
+      !$omp end critical
       cstate_free = contact%states(nslave)
       ! get master candidates from bucketDB
       bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
@@ -171,9 +173,13 @@ contains
           infoCTChange%contact2difflpos = infoCTChange%contact2difflpos + 1
         endif
       else
-        if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
-          elemID(contact%master(sid)%eid), " with distance ",      &
-          contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(1:2)
+        if (CONTACT_LOG_LEVEL >= 1) then
+          !$omp critical
+          write(*,'(A,i10,A,i10,A,f7.3,A,2f7.3)') "Node",nodeID(slave)," move to contact with", &
+            elemID(contact%master(sid)%eid), " with distance ",      &
+            contact%states(nslave)%distance," at ",contact%states(nslave)%lpos(1:2)
+          !$omp end critical
+        endif
         !$omp atomic
         infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
       endif
@@ -192,7 +198,11 @@ contains
         call cal_node_normal( contact%states(nslave)%surface, iSS, contact%master, currpos, &
         contact%states(nslave)%lpos(1:2), contact%states(nslave)%direction(:) )
     else if( .not. isin ) then
-      if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
+      if (CONTACT_LOG_LEVEL >= 1) then
+        !$omp critical
+        write(*,'(A,i10,A)') "Node",nodeID(slave)," move out of contact"
+        !$omp end critical
+      endif
       contact%states(nslave)%state = CONTACTFREE
       contact%states(nslave)%multiplier(:) = 0.d0
     endif
@@ -301,13 +311,21 @@ contains
             ! decides between NEAR and FREE with an up-to-date distance
             contact%states(i)%state = CONTACTNEAR
             contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
-            if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave), &
-              " released to near contact with element", &
-              elemID(contact%master(id)%eid), " with tensile force ", nlforce
+            if (CONTACT_LOG_LEVEL >= 1) then
+              !$omp critical
+              write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave), &
+                " released to near contact with element", &
+                elemID(contact%master(id)%eid), " with tensile force ", nlforce
+              !$omp end critical
+            endif
           else
             contact%states(i)%state = CONTACTFREE
-            if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
-              elemID(contact%master(id)%eid), " with tensile force ", nlforce
+            if (CONTACT_LOG_LEVEL >= 1) then
+              !$omp critical
+              write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
+                elemID(contact%master(id)%eid), " with tensile force ", nlforce
+              !$omp end critical
+            endif
           endif
           cycle
         endif
@@ -343,8 +361,12 @@ contains
             ! Within contact threshold -> upgrade to STICK
             contact%states(i)%state = CONTACTSTICK
             contact%states(i)%multiplier(:) = 0.d0
-            if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,i6)') "Node",nodeID(slave)," upgraded NEAR->STICK on element", &
-              elemID(contact%master(id)%eid)," rank=",hecmw_comm_get_rank()
+            if (CONTACT_LOG_LEVEL >= 1) then
+              !$omp critical
+              write(*,'(A,i10,A,i10,A,i6)') "Node",nodeID(slave)," upgraded NEAR->STICK on element", &
+                elemID(contact%master(id)%eid)," rank=",hecmw_comm_get_rank()
+              !$omp end critical
+            endif
           else if (contact%states(i)%distance > effective_near_dist) then
             ! Beyond NEAR range -> free
             contact%states(i)%state = CONTACTFREE
@@ -421,6 +443,7 @@ contains
           contact%states(i)%direction(:) )
         contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
         if (CONTACT_LOG_LEVEL >= 1) then
+          !$omp critical
           if (contact%states(i)%state == CONTACTNEAR) then
             write(*,'(A,i10,A,i10,A,f7.3,A,i6)') "Node",nodeID(slave)," near element", &
               elemID(contact%master(id)%eid), &
@@ -431,6 +454,7 @@ contains
               " with distance ", contact%states(i)%distance," at ",contact%states(i)%lpos(1:2), &
               " along direction ", contact%states(i)%direction," rank=",hecmw_comm_get_rank()
           end if
+          !$omp end critical
         end if
       endif
     enddo
@@ -577,8 +601,12 @@ contains
         embed%states(i)%surface = id
         embed%states(i)%multiplier(:) = 0.d0
         contact_surf(embed%slave(i)) = elemID(embed%master(id)%eid)
-        if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
-          elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
+        if (CONTACT_LOG_LEVEL >= 1) then
+          !$omp critical
+          write(*,'(A,i10,A,i10,A,3f7.3,A,i6)') "Node",nodeID(slave)," embeded to element", &
+            elemID(embed%master(id)%eid), " at ",embed%states(i)%lpos(:)," rank=",hecmw_comm_get_rank()
+          !$omp end critical
+        endif
       endif
     enddo
     !$omp end parallel do
