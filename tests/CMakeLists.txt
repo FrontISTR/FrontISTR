@@ -60,7 +60,9 @@ foreach(parallel IN LISTS parallels)
   if(WITH_MUMPS)
     AppendListTests("with_mumps/*" "${TEST_TARGETS}" TEST_TARGETS)
   endif()
-  if(WITH_MKL AND ( (parallel STREQUAL "serial") OR (parallel STREQUAL "openmp") ) )
+  # Register against the configured build capabilities. MPI modes exercise
+  # Cluster PARDISO; single-process modes exercise PARDISO.
+  if(WITH_MKL)
     AppendListTests("with_mkl/*" "${TEST_TARGETS}" TEST_TARGETS)
   endif()
   if(WITH_ML)

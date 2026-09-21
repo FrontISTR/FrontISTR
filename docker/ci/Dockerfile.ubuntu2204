@@ -1,7 +1,7 @@
 FROM ubuntu:22.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
- && apt-get -y install tini libmumps-5.4 libgomp1 libtrilinos-ml-13.2 libopenmpi3 libmetis5 openssh-client time \
+ && apt-get -y install tini libmumps-5.4 libmumps-seq-5.4 libgomp1 libtrilinos-ml-13.2 libopenmpi3 libmetis5 openssh-client time \
  && [ $(uname -m) = x86_64 ] \
       && apt-get -y install libmkl-core libmkl-intel-lp64 libmkl-gnu-thread libmkl-scalapack-lp64 libmkl-blacs-openmpi-lp64 \
       || apt-get -y install libopenblas64-0-openmp libscalapack-openmpi2.1 \
