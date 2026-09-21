@@ -14,6 +14,7 @@ module m_fstr_contact_search
   use m_fstr_contact_interference
   use m_fstr_contact_smoothing
   use m_fstr_contact_elem_alag, only: get_unique_map
+  use m_fstr_contact_damping, only: is_damping_enabled
   implicit none
 
   integer(kind=kint), parameter :: CONTACT_LOG_LEVEL = 0  !< Set >= 1 to enable per-node contact log output (for debugging)
@@ -193,7 +194,7 @@ contains
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: i, iSS, nactive
+    integer(kind=kint)  :: i, iSS, nactive, icat_prev, icat_curr
     real(kind=kreal)    :: coord(3)
     real(kind=kreal)    :: nlforce
     logical             :: isin
@@ -266,10 +267,20 @@ contains
         endif
 
         if( nlforce < contact%cparam%TENSILE_FORCE ) then
-          contact%states(i)%state = CONTACTFREE
           contact%states(i)%multiplier(:) = 0.d0
-          if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
-            elemID(contact%master(id)%eid), " with tensile force ", nlforce
+          if( effective_near_dist > 0.0d0 ) then
+            ! keep the projection so that the NEAR branch re-projects on the next scan and
+            ! decides between NEAR and FREE with an up-to-date distance
+            contact%states(i)%state = CONTACTNEAR
+            contact_surf(contact%slave(i)) = elemID(contact%master(id)%eid)
+            if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave), &
+              " released to near contact with element", &
+              elemID(contact%master(id)%eid), " with tensile force ", nlforce
+          else
+            contact%states(i)%state = CONTACTFREE
+            if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i10,A,e12.3)') "Node",nodeID(slave)," free from contact with element", &
+              elemID(contact%master(id)%eid), " with tensile force ", nlforce
+          endif
           cycle
         endif
         if( contact%algtype /= CONTACTFSLID ) then   ! small slide problem
@@ -413,15 +424,14 @@ contains
           &  write(*,'(A,i10,A,i10,A,i6,A,i6,A)') "Node",nodeID(contact%slave(i)), &
           &  " contact with element",elemID(contact%master(id)%eid), &
           &  " in rank",hecmw_comm_get_rank()," freed due to duplication"
-        else if (is_contact_active(contact%states(i)%state)) then
-          nactive = nactive + 1
+        else if (is_contact_active(contact%states(i)%state) .or. is_damping_enabled(contact)) then
+          nactive = nactive + 1   ! a NEAR node with damping also contributes stiffness and residual
         endif
       endif
-      if (is_contact_free(states_prev(i)) .and. .not. is_contact_free(contact%states(i)%state)) then
-        infoCTChange%free2contact = infoCTChange%free2contact + 1
-      elseif (.not. is_contact_free(states_prev(i)) .and. is_contact_free(contact%states(i)%state)) then
-        infoCTChange%contact2free = infoCTChange%contact2free + 1
-      endif
+      icat_prev = contact_state_category(states_prev(i))
+      icat_curr = contact_state_category(contact%states(i)%state)
+      if (icat_prev /= icat_curr) infoCTChange%n_statechange(icat_prev,icat_curr) = &
+        infoCTChange%n_statechange(icat_prev,icat_curr) + 1
     enddo
     active = (nactive > 0)
     deallocate(contact_surf)
@@ -447,7 +457,7 @@ contains
 
     real(kind=kreal)    :: distclr
     integer(kind=kint)  :: slave, id, etype
-    integer(kind=kint)  :: nn, i, j, iSS, nactive
+    integer(kind=kint)  :: nn, i, j, iSS, nactive, icat_prev, icat_curr
     real(kind=kreal)    :: coord(3), elem(3, l_max_elem_node )
     logical             :: isin
     integer(kind=kint), allocatable :: contact_surf(:), states_prev(:)
@@ -557,11 +567,10 @@ contains
           nactive = nactive + 1
         endif
       endif
-      if (states_prev(i) == CONTACTFREE .and. embed%states(i)%state /= CONTACTFREE) then
-        infoCTChange%free2contact = infoCTChange%free2contact + 1
-      elseif (states_prev(i) /= CONTACTFREE .and. embed%states(i)%state == CONTACTFREE) then
-        infoCTChange%contact2free = infoCTChange%contact2free + 1
-      endif
+      icat_prev = contact_state_category(states_prev(i))
+      icat_curr = contact_state_category(embed%states(i)%state)
+      if (icat_prev /= icat_curr) infoCTChange%n_statechange(icat_prev,icat_curr) = &
+        infoCTChange%n_statechange(icat_prev,icat_curr) + 1
     enddo
     active = (nactive > 0)
     deallocate(contact_surf)
@@ -576,7 +585,7 @@ contains
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
 
     integer(kind=kint) :: i, j, grpid, slave
-    integer(kind=kint) :: k, id, iSS
+    integer(kind=kint) :: k, id, iSS, icat
     integer(kind=kint) :: ig0, ig, iS0, iE0
     integer(kind=kint), allocatable :: states(:)
 
@@ -612,8 +621,9 @@ contains
             states(iSS) = fstrSOLID%contacts(i)%states(j)%state
           enddo
         else !found duplicate tied contact slave node
+          icat = contact_state_category(fstrSOLID%contacts(i)%states(j)%state)
           fstrSOLID%contacts(i)%states(j)%state = CONTACTFREE
-          infoCTChange%free2contact = infoCTChange%free2contact - 1
+          infoCTChange%n_statechange(kcatFREE,icat) = infoCTChange%n_statechange(kcatFREE,icat) - 1
           if (CONTACT_LOG_LEVEL >= 1) write(*,'(A,i10,A,i6,A,i6,A)') "Node",hecMESH%global_node_ID(slave), &
             " in rank",hecmw_comm_get_rank()," freed due to duplication"
         endif
@@ -751,7 +761,7 @@ contains
             else
               ! current-master-only: every new contact rebuilds
               !$omp atomic
-              infoCTChange%free2contact = infoCTChange%free2contact + 1
+              infoCTChange%n_statechange(kcatFREE,kcatCONT) = infoCTChange%n_statechange(kcatFREE,kcatCONT) + 1
             endif
             exit
           enddo
