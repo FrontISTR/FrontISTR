@@ -88,11 +88,23 @@ contains
     num_lagrange = 0
     if( contact_algo == kcaSLagrange ) then
       do i = 1, fstrSOLID%n_contacts
+        do j = 1, size(fstrSOLID%contacts(i)%slave)
+          fstrSOLID%contacts(i)%states(j)%id_lagrange = 0
+        enddo
+      enddo
+      do i = 1, fstrSOLID%n_embeds
+        do j = 1, size(fstrSOLID%embeds(i)%slave)
+          fstrSOLID%embeds(i)%states(j)%id_lagrange = 0
+        enddo
+      enddo
+
+      do i = 1, fstrSOLID%n_contacts
         grpid = fstrSOLID%contacts(i)%group
         if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
         nlag = fstr_get_num_lagrange_pernode(fstrSOLID%contacts(i)%algtype)
         do j = 1, size(fstrSOLID%contacts(i)%slave)
           if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
+          fstrSOLID%contacts(i)%states(j)%id_lagrange = num_lagrange + 1
           num_lagrange = num_lagrange + nlag
         enddo
       enddo
@@ -103,6 +115,7 @@ contains
         nlag = 3
         do j = 1, size(fstrSOLID%embeds(i)%slave)
           if( .not. is_contact_active(fstrSOLID%embeds(i)%states(j)%state) ) cycle
+          fstrSOLID%embeds(i)%states(j)%id_lagrange = num_lagrange + 1
           num_lagrange = num_lagrange + nlag
         enddo
       enddo
@@ -199,7 +212,8 @@ contains
 
           if( is_contact_active_flag ) then
             do k=1,nlag
-              if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
+              if( contact_algo == kcaSLagrange ) &
+                count_lagrange = fstrSOLID%contacts(i)%states(j)%id_lagrange + k - 1
               call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
               & necessary_to_insert_node_pair, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
             enddo
@@ -236,7 +250,8 @@ contains
         ndLocal(2:nnode+1) = fstrSOLID%embeds(i)%master(ctsurf)%nodes(1:nnode)
 
         do k=1,nlag
-          if( contact_algo == kcaSLagrange ) count_lagrange = count_lagrange + 1
+          if( contact_algo == kcaSLagrange ) &
+            count_lagrange = fstrSOLID%embeds(i)%states(j)%id_lagrange + k - 1
           call hecmw_ass_nodeRelated_from_contact_pair(np, nnode, ndLocal, count_lagrange, permission, &
           & necessary_to_insert_node, list_nodeRelated_org, list_nodeRelated, countNon0LU_node, countNon0LU_lagrange )
         enddo
@@ -251,9 +266,7 @@ contains
 
     type(fstr_solid)                        :: fstrSOLID                !< type fstr_solid
     type(hecmwST_matrix_lagrange)          :: hecLagMAT            !< hecmwST_matrix_lagrange
-    integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag, slave_node
-
-    id_lagrange = 0
+    integer (kind=kint)                    :: id_lagrange, algtype, i, j, k, nlag
 
     do i = 1, fstrSOLID%n_contacts
 
@@ -261,12 +274,10 @@ contains
       nlag = fstr_get_num_lagrange_pernode(algtype)
 
       do j = 1, size(fstrSOLID%contacts(i)%slave)
-        if( .not. is_contact_active(fstrSOLID%contacts(i)%states(j)%state) ) cycle
-        slave_node = fstrSOLID%contacts(i)%slave(j)
-        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
+        id_lagrange = fstrSOLID%contacts(i)%states(j)%id_lagrange
+        if( id_lagrange == 0 ) cycle
         do k=1,nlag
-          id_lagrange = id_lagrange + 1
-          hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
+          hecLagMAT%Lagrange(id_lagrange+k-1)=fstrSOLID%contacts(i)%states(j)%multiplier(k)
         enddo
       enddo
     enddo
@@ -274,12 +285,10 @@ contains
     do i = 1, fstrSOLID%n_embeds
       nlag = 3
       do j = 1, size(fstrSOLID%embeds(i)%slave)
-        if( .not. is_contact_active(fstrSOLID%embeds(i)%states(j)%state) ) cycle
-        slave_node = fstrSOLID%embeds(i)%slave(j)
-        hecLagMAT%lag_node_table(slave_node) = id_lagrange + 1
+        id_lagrange = fstrSOLID%embeds(i)%states(j)%id_lagrange
+        if( id_lagrange == 0 ) cycle
         do k=1,nlag
-          id_lagrange = id_lagrange + 1
-          hecLagMAT%Lagrange(id_lagrange)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
+          hecLagMAT%Lagrange(id_lagrange+k-1)=fstrSOLID%embeds(i)%states(j)%multiplier(k)
         enddo
       enddo
     enddo
