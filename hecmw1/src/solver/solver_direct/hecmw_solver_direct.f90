@@ -1802,7 +1802,7 @@ contains
     integer(kind=kint), intent(in):: Xlnzr(:)
     integer(kind=kint), intent(in):: Colno(:)
     integer(kind=kint), intent(in):: Parent(:)
-    integer(kind=kint), intent(out):: Ir
+    integer(kind=kint), intent(inout):: Ir
     integer(kind=kint), intent(out):: Indx(:)
     integer(kind=kint), intent(inout):: Nch(:)
     real(kind=kreal), intent(inout):: Zln(:)
@@ -1941,7 +1941,7 @@ contains
     integer(kind=kint), intent(in):: Xlnzr(:)
     integer(kind=kint), intent(in):: Colno(:)
     integer(kind=kint), intent(in):: Parent(:)
-    integer(kind=kint), intent(out):: Ir
+    integer(kind=kint), intent(inout):: Ir
     integer(kind=kint), intent(out):: Indx(:)
     integer(kind=kint), intent(inout):: Nch(:)
     real(kind=kreal), intent(inout):: Zln(9,*)

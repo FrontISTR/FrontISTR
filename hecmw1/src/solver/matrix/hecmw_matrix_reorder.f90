@@ -139,7 +139,7 @@ contains
     real(kind=kreal), intent(in) :: AX(:)
     integer(kind=kint), intent(in) :: indexLp(0:), indexUp(0:)
     integer(kind=kint), intent(in) :: itemLp(:), itemUp(:)
-    real(kind=kreal), intent(out) :: ALp(:), AUp(:)
+    real(kind=kreal), intent(inout) :: ALp(:), AUp(:)
     integer(kind=kint) :: NDOF2, iold, inew
     integer(kind=kint) :: jsnewL, jenewL, jsnewU, jenewU
     integer(kind=kint) :: jold, kold, knew, jnew, l0old, l0new, l

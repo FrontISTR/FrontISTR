@@ -32,7 +32,7 @@ contains
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
     integer(kind=kint), intent(out)   :: nstatus
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
 
     integer(kind=kint) :: ipt
     character(len=HECMW_NAME_LEN) :: data_fmt
@@ -55,7 +55,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
@@ -224,7 +224,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
 
     integer(kind=kint) :: i,j, rcode, depends, ipt
     real(kind=kreal), allocatable :: fval(:,:)
@@ -465,7 +465,7 @@ contains
   integer function fstr_ctrl_get_TRS( ctrl, mattype, matval )
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
 
     integer :: ipt
     character(len=256) :: s
@@ -488,7 +488,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
     real(kind=kreal), pointer         :: mattable(:)
     type(DICT_STRUCT), pointer        :: dict
 
@@ -800,7 +800,7 @@ contains
   !> Read in !DENSITY
   integer function fstr_ctrl_get_DENSITY( ctrl, matval )
     integer(kind=kint), intent(in) :: ctrl
-    real(kind=kreal),intent(out)   :: matval(:)
+    real(kind=kreal),intent(inout) :: matval(:)
 
     integer(kind=kint) :: i, rcode, depends
     real(kind=kreal), allocatable :: fval(:,:)
@@ -836,7 +836,7 @@ contains
   !> Read in !EXPANSION_COEFF
   integer function fstr_ctrl_get_EXPANSION_COEFF( ctrl, matval, dict )
     integer(kind=kint), intent(in) :: ctrl
-    real(kind=kreal),intent(out)   :: matval(:)
+    real(kind=kreal),intent(inout) :: matval(:)
     type(DICT_STRUCT), pointer     :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt
@@ -942,7 +942,7 @@ contains
   !! (beta) are read from the following data line.
   integer function fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, matval, is_RD )
     integer(kind=kint), intent(in) :: ctrl
-    real(kind=kreal), intent(out)  :: matval(:)
+    real(kind=kreal), intent(inout)  :: matval(:)
     logical, intent(out)           :: is_RD
     integer(kind=kint) :: ipt
     real(kind=kreal) :: RM, RK
@@ -969,7 +969,7 @@ contains
 
   integer function read_user_matl( ctrl, matval )
     integer(kind=kint), intent(in)    :: ctrl
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
 
     integer(kind=kint) :: n, i, j
     real(kind=kreal)   :: fval(10,10)
@@ -1020,7 +1020,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
@@ -1090,7 +1090,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    integer(kind=kint), intent(out)   :: matval_i(:)
+    integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
@@ -1151,7 +1151,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    integer(kind=kint), intent(out)   :: matval_i(:)
+    integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
@@ -1201,7 +1201,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    integer(kind=kint), intent(out)   :: matval_i(:)
+    integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
@@ -1262,7 +1262,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    integer(kind=kint), intent(out)   :: matval_i(:)
+    integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2

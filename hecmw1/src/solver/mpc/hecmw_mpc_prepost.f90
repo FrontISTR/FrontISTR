@@ -37,7 +37,7 @@ contains
   subroutine hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc, conMAT, conMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(inout), target :: hecMESH
-    type (hecmwST_matrix), intent(in), target :: hecMAT
+    type (hecmwST_matrix), intent(inout), target :: hecMAT
     type (hecmwST_local_mesh), pointer :: hecMESHmpc
     type (hecmwST_matrix), pointer :: hecMATmpc
     type (hecmwST_matrix), intent(in), target, optional :: conMAT
@@ -96,7 +96,7 @@ contains
   subroutine hecmw_mpc_mat_init_explicit(hecMESH, hecMAT, hecMATmpc)
     implicit none
     type (hecmwST_local_mesh), intent(inout), target :: hecMESH
-    type (hecmwST_matrix), intent(in), target :: hecMAT
+    type (hecmwST_matrix), intent(inout), target :: hecMAT
     type (hecmwST_matrix), pointer :: hecMATmpc
     integer(kind=kint) :: totalmpc, MPC_METHOD
 

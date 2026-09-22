@@ -50,7 +50,7 @@ contains
   subroutine hecmw_JAD_MATVEC_33(hecMESH, hecMAT, X, Y, COMMtime)
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(hecmwST_matrix), intent(in), target :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
     real(kind=kreal) :: START_TIME, END_TIME

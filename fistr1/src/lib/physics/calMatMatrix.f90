@@ -103,7 +103,7 @@ contains
     type( tGaussStatus ), intent(inout) :: gauss      !> status of qudrature point
     integer, intent(in)                 :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(in)        :: strain(6)  !> strain
-    real(kind=kreal), intent(out)       :: stress(6)  !> stress
+    real(kind=kreal), intent(inout)     :: stress(6)  !> stress
     real(kind=kreal), intent(in)        :: cdsys(3,3) !> material coordinate system
     real(kind=kreal), intent(in), optional  :: time   !> current time
     real(kind=kreal), intent(in), optional  :: dtime  !> time increment

@@ -1502,7 +1502,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: len
-    integer(kind=kint), intent(out) :: exp_rows_item(:,:)
+    integer(kind=kint), intent(inout) :: exp_rows_item(:,:)
     integer(kind=kint) :: i
     do i = 1, len
       exp_rows_item(1,i) = hecMESH%node_ID(2 * exp_rows_item(1,i) - 1)

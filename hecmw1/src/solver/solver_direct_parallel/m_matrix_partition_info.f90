@@ -332,7 +332,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in) :: part_g(:), iperm_g(:)
 
     type(child_matrix), intent(out), target :: dm(:)
-    real(kind=kreal), intent(out) :: dsln(:,:), diag(:,:) ! for dens D
+    real(kind=kreal), intent(inout) :: dsln(:,:), diag(:,:) ! for dens D
 
     integer(kind=kint), intent(in) :: neqns_d
 

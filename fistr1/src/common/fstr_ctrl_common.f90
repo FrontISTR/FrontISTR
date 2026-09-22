@@ -509,7 +509,7 @@ contains
   !> Read in !MPC
   function fstr_ctrl_get_MPC( ctrl, penalty )
     integer(kind=kint), intent(in) :: ctrl      !< readed data
-    real(kind=kreal), intent(out)  :: penalty   !< penalty
+    real(kind=kreal), intent(inout)  :: penalty   !< penalty
     integer(kind=kint) :: fstr_ctrl_get_MPC
 
     fstr_ctrl_get_MPC = fstr_ctrl_get_data_ex( ctrl, 1,   'r ', penalty )

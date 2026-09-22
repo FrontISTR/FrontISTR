@@ -79,7 +79,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout), optional :: COMMtime
@@ -122,7 +122,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout), optional :: COMMtime
@@ -321,7 +321,8 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: X(:), B(:)
+    real(kind=kreal), intent(in) :: B(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: R(:)
     real(kind=kreal), intent(inout) :: time_Ax
     real(kind=kreal), intent(inout), optional :: COMMtime
@@ -396,7 +397,7 @@ contains
     use m_hecmw_comm_f
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
@@ -458,7 +459,7 @@ contains
     use m_hecmw_comm_f
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
-    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
 

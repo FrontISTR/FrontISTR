@@ -189,7 +189,7 @@ contains
     real(kind=kreal), intent(in)         :: fcoeff         !< frictional coeff
     type(hecmwST_local_mesh), intent(in) :: hecMESH        !< mesh for allreduce
     type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< Lagrange matrix
-    real(kind=kreal), intent(out)        :: gnt(2)         !< convergency information
+    real(kind=kreal), intent(inout)      :: gnt(2)         !< convergency information
     logical, intent(inout)               :: ctchanged      !< if contact state changes
 
     integer(kind=kint)  :: slave, etype, master
