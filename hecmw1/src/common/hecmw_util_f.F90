@@ -460,8 +460,6 @@ module hecmw_util
     real(kind=kreal),    pointer  :: D_lagrange(:) => null() !< values of diagonal components for Lagrange multipliers
 
     real(kind=kreal),    pointer  :: Lagrange(:) => null() !< values of Lagrange multipliers
-
-    integer(kind=kint), pointer  :: lag_node_table(:) => null() !< node_ID to lag_ID mapping table (size: total nodes)
   end type hecmwST_matrix_lagrange
 
   type hecmwST_matrix
