@@ -282,15 +282,13 @@ contains
     integer(kind=kint) :: val(*)
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
-    ! VALM is an automatic (host) array on purpose: an allocatable would land in
-    ! managed memory under -gpu=mem:managed, making MPI_allreduce src=host/dst=managed
-    ! -- CUDA-aware MPI (HPC-X UCC) rejects asymmetric src/dst memory types.
-    integer(kind=kint) :: VALM(n)
-    VALM = 0
-    if (ntag .eq. hecmw_sum) call MPI_allreduce(val, VALM, n, MPI_INTEGER, MPI_SUM, comm, ierr)
-    if (ntag .eq. hecmw_max) call MPI_allreduce(val, VALM, n, MPI_INTEGER, MPI_MAX, comm, ierr)
-    if (ntag .eq. hecmw_min) call MPI_allreduce(val, VALM, n, MPI_INTEGER, MPI_MIN, comm, ierr)
-    val(1:n) = VALM(1:n)
+    ! MPI_IN_PLACE on the caller's buffer, no temporary: a result buffer would either land in
+    ! managed memory as an allocatable under -gpu=mem:managed -- CUDA-aware MPI (HPC-X UCC)
+    ! rejects asymmetric src/dst memory types -- or overflow the stack as an automatic array
+    ! where automatics are stack allocated (ifx, -Mstack_arrays) and n is a full vector length.
+    if (ntag .eq. hecmw_sum) call MPI_allreduce(MPI_IN_PLACE, val, n, MPI_INTEGER, MPI_SUM, comm, ierr)
+    if (ntag .eq. hecmw_max) call MPI_allreduce(MPI_IN_PLACE, val, n, MPI_INTEGER, MPI_MAX, comm, ierr)
+    if (ntag .eq. hecmw_min) call MPI_allreduce(MPI_IN_PLACE, val, n, MPI_INTEGER, MPI_MIN, comm, ierr)
 #endif
   end subroutine hecmw_allreduce_I_comm
 
@@ -301,14 +299,11 @@ contains
     real(kind=kreal) :: val(*)
 #ifndef HECMW_SERIAL
     integer(kind=kint) :: ierr
-    ! VALM automatic (host) -- see hecmw_allreduce_I_comm: an allocatable would be
-    ! managed under -gpu=mem:managed and trip the CUDA-aware MPI asymmetric-memtype error.
-    real(kind=kreal) :: VALM(n)
-    VALM = 0.d0
-    if (ntag .eq. hecmw_sum) call MPI_allreduce(val, VALM, n, MPI_DOUBLE_PRECISION, MPI_SUM, comm, ierr)
-    if (ntag .eq. hecmw_max) call MPI_allreduce(val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MAX, comm, ierr)
-    if (ntag .eq. hecmw_min) call MPI_allreduce(val, VALM, n, MPI_DOUBLE_PRECISION, MPI_MIN, comm, ierr)
-    val(1:n) = VALM(1:n)
+    ! MPI_IN_PLACE, no temporary -- see hecmw_allreduce_I_comm: an allocatable would trip the
+    ! CUDA-aware MPI asymmetric-memtype error, an automatic would overflow stacks.
+    if (ntag .eq. hecmw_sum) call MPI_allreduce(MPI_IN_PLACE, val, n, MPI_DOUBLE_PRECISION, MPI_SUM, comm, ierr)
+    if (ntag .eq. hecmw_max) call MPI_allreduce(MPI_IN_PLACE, val, n, MPI_DOUBLE_PRECISION, MPI_MAX, comm, ierr)
+    if (ntag .eq. hecmw_min) call MPI_allreduce(MPI_IN_PLACE, val, n, MPI_DOUBLE_PRECISION, MPI_MIN, comm, ierr)
 #endif
   end subroutine hecmw_allreduce_R_comm
 
