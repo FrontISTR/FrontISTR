@@ -17,7 +17,7 @@
 #include "hecmw_dist_free.h"
 
 static struct hecmwST_local_mesh *get_entire_mesh(
-  struct hecmw_ctrl_meshfiles *files, int create_dummy_nodes) {
+    struct hecmw_ctrl_meshfiles *files) {
   int i;
   struct hecmwST_local_mesh *mesh;
 
@@ -49,10 +49,8 @@ static struct hecmwST_local_mesh *get_entire_mesh(
   if (HECMW_io_post_process()) return NULL;
   HECMW_log(HECMW_LOG_DEBUG, "post_process done\n");
 
-  if (create_dummy_nodes) {
-    if (HECMW_io_create_dummy_nodes()) return NULL;
-    HECMW_log(HECMW_LOG_DEBUG, "creating rotational dummy nodes done\n");
-  }
+  if (HECMW_io_create_dummy_nodes()) return NULL;
+  HECMW_log(HECMW_LOG_DEBUG, "creating rotational dummy nodes done\n");
 
   mesh = HECMW_io_make_local_mesh();
   if (mesh == NULL) return NULL;
@@ -64,8 +62,7 @@ static struct hecmwST_local_mesh *get_entire_mesh(
   return mesh;
 }
 
-static struct hecmwST_local_mesh *get_mesh(char *name_ID,
-                                           int create_dummy_nodes) {
+struct hecmwST_local_mesh *HECMW_get_mesh(char *name_ID) {
   struct hecmw_ctrl_meshfiles *files;
   struct hecmwST_local_mesh *mesh;
   char filename[HECMW_FILENAME_LEN + 1];
@@ -80,7 +77,7 @@ static struct hecmwST_local_mesh *get_mesh(char *name_ID,
     snprintf(filename, sizeof(filename), "%s", files->meshfiles[0].filename);
     mesh = HECMW_get_dist_mesh(filename);
   } else {
-    mesh = get_entire_mesh(files, create_dummy_nodes);
+    mesh = get_entire_mesh(files);
   }
 
   char *dot;
@@ -104,12 +101,4 @@ static struct hecmwST_local_mesh *get_mesh(char *name_ID,
   HECMW_ctrl_free_meshfiles(files);
 
   return mesh;
-}
-
-struct hecmwST_local_mesh *HECMW_get_mesh(char *name_ID) {
-  return get_mesh(name_ID, 1);
-}
-
-struct hecmwST_local_mesh *HECMW_get_mesh_without_dummy_nodes(char *name_ID) {
-  return get_mesh(name_ID, 0);
 }

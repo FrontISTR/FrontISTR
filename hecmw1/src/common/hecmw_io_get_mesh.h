@@ -10,7 +10,4 @@
 
 extern struct hecmwST_local_mesh *HECMW_get_mesh(char *name_ID);
 
-extern struct hecmwST_local_mesh *HECMW_get_mesh_without_dummy_nodes(
-	char *name_ID);
-
 #endif

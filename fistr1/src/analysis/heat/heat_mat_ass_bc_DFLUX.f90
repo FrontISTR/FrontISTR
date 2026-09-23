@@ -38,6 +38,8 @@ contains
 
       icel    = fstrHEAT%Q_SUF_elem(k)
       ic_type = hecMESH%elem_type(icel)
+      if( ic_type == 761 ) ic_type = 731
+      if( ic_type == 781 ) ic_type = 741
       isect   = hecMESH%section_ID(icel)
       isuf    = fstrHEAT%Q_SUF_surf(k)
       iamp    = fstrHEAT%Q_SUF_ampl(k)

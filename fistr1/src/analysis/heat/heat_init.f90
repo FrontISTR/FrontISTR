@@ -42,7 +42,56 @@ contains
         enddo
         write(ILOG,*) ' Initial condition of temperatures: OK'
     endif
+
+    call heat_fix_dummy_nodes(hecMESH, fstrHEAT)
   end subroutine heat_init
+
+  !> Mark the rotational dummy nodes of 641/761/781 elements and fix them to zero
+  !! temperature. The elements are assembled on their translational nodes only, so
+  !! the rows of the dummy nodes would otherwise stay empty.
+  subroutine heat_fix_dummy_nodes(hecMESH, fstrHEAT)
+    use m_fstr
+    use hecmw_etype, only : hecmw_is_etype_33struct, hecmw_get_max_node
+    use hecmw_setup_util, only : hecmw_expand_integer_array, hecmw_expand_real_array
+    implicit none
+    type(fstr_heat) :: fstrHEAT
+    type(hecmwST_local_mesh) :: hecMESH
+    integer(kind=kint) :: icel, i, j, in0, nn, n_dummy, old_size, new_size
+
+    allocate(fstrHEAT%is_dummy_node(hecMESH%n_node))
+    fstrHEAT%is_dummy_node = .false.
+
+    do icel = 1, hecMESH%n_elem
+      if( .not. hecmw_is_etype_33struct(hecMESH%elem_type(icel)) ) cycle
+      nn = hecmw_get_max_node(hecMESH%elem_type(icel))/2
+      in0 = hecMESH%elem_node_index(icel-1)
+      do i = 1, nn
+        fstrHEAT%is_dummy_node(hecMESH%elem_node_item(in0+nn+i)) = .true.
+      enddo
+    enddo
+
+    n_dummy = count(fstrHEAT%is_dummy_node)
+    if( n_dummy == 0 ) return
+
+    old_size = fstrHEAT%T_FIX_tot
+    new_size = old_size + n_dummy
+    call hecmw_expand_integer_array( fstrHEAT%T_FIX_node, old_size, new_size )
+    call hecmw_expand_integer_array( fstrHEAT%T_FIX_ampl, old_size, new_size )
+    call hecmw_expand_real_array(    fstrHEAT%T_FIX_val,  old_size, new_size )
+    fstrHEAT%T_FIX_tot = new_size
+
+    j = old_size
+    do i = 1, hecMESH%n_node
+      if( .not. fstrHEAT%is_dummy_node(i) ) cycle
+      fstrHEAT%TEMP0(i) = 0.0d0
+      fstrHEAT%TEMPC(i) = 0.0d0
+      fstrHEAT%TEMP (i) = 0.0d0
+      j = j + 1
+      fstrHEAT%T_FIX_node(j) = i
+      fstrHEAT%T_FIX_ampl(j) = 0
+      fstrHEAT%T_FIX_val(j)  = 0.0d0
+    enddo
+  end subroutine heat_fix_dummy_nodes
 
   subroutine heat_init_log(hecMESH, fstrHEAT)
     use m_fstr
@@ -74,6 +123,7 @@ contains
     deallocate(fstrHEAT%TEMP0)
     deallocate(fstrHEAT%TEMPC)
     deallocate(fstrHEAT%TEMP )
+    deallocate(fstrHEAT%is_dummy_node)
   end subroutine heat_finalize
 
   !C***

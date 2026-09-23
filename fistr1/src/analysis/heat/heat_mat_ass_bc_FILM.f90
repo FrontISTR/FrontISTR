@@ -49,6 +49,8 @@ contains
       call heat_get_amplitude ( fstrHEAT, iam2, CTIME, QQ )
       SINK    = fstrHEAT%H_SUF_val (k,2) * QQ
       ic_type = hecMESH%elem_type(icel)
+      if( ic_type == 761 ) ic_type = 731
+      if( ic_type == 781 ) ic_type = 741
       isect   = hecMESH%section_ID(icel)
       !C**
       nn = hecmw_get_max_node(ic_type)

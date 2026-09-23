@@ -33,6 +33,10 @@ contains
       iS = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
+      ! 761/781 hold the rotational dummy nodes after the translational ones,
+      ! and heat analysis uses the translational part only
+      if( ic_type == 761 ) ic_type = 731
+      if( ic_type == 781 ) ic_type = 741
       if (hecmw_is_etype_link(ic_type)) cycle
       if (hecmw_is_etype_patch(ic_type)) cycle
 
