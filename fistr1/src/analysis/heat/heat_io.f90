@@ -59,6 +59,7 @@ contains
     do i = 1, hecMESH%nn_internal
       inod = fstrPARAM%global_local_id(1,i)
       in = fstrPARAM%global_local_id(2,i)
+      if( fstrHEAT%is_dummy_node(in) ) cycle
       temp = fstrHEAT%TEMP(in)
       if(tmax < temp)then
         tmax = temp
