@@ -1212,24 +1212,6 @@ static int find_node_id(const int *node_ids, int n_node, int node_id) {
   return -1;
 }
 
-int HECMW_io_check_dummy_node_input(void) {
-  int elem_id;
-  struct hecmw_io_element *elem;
-
-  HECMW_assert(_elem);
-
-  HECMW_map_int_iter_init(_elem);
-  while (HECMW_map_int_iter_next(_elem, &elem_id, (void **)&elem)) {
-    if (elem->type == HECMW_ETYPE_BEM3 || elem->type == HECMW_ETYPE_SHT6 ||
-        elem->type == HECMW_ETYPE_SHQ8) {
-      set_err(HECMW_ALL_E0101,
-              "Element type 641/761/781 is not accepted in an entire mesh");
-      return -1;
-    }
-  }
-  return 0;
-}
-
 int HECMW_io_create_dummy_nodes(void) {
   int elem_id, i, j, n_source_node = 0, n_unique_node = 0;
   int max_source_node;

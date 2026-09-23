@@ -49,7 +49,6 @@ static struct hecmwST_local_mesh *get_entire_mesh(
   if (HECMW_io_post_process()) return NULL;
   HECMW_log(HECMW_LOG_DEBUG, "post_process done\n");
 
-  if (HECMW_io_check_dummy_node_input()) return NULL;
   if (create_dummy_nodes) {
     if (HECMW_io_create_dummy_nodes()) return NULL;
     HECMW_log(HECMW_LOG_DEBUG, "creating rotational dummy nodes done\n");
