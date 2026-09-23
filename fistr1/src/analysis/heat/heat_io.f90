@@ -150,16 +150,29 @@ contains
     character(len=HECMW_NAME_LEN)   :: label
     character(len=HECMW_NAME_LEN)   :: nameID
     real(kind=kreal), pointer  :: work(:)
+    integer(kind=kint) :: n_res_node, j
+    integer(kind=kint), allocatable :: res_node_ID(:)
+    real(kind=kreal), allocatable   :: res_temp(:)
 
     if(IRESULT == 1 .and. (mod(tstep, IRRES) == 0 .or. outflag))then
       header = '*fstrresult'
       comment = 'nonsteady_heat_result'
-      call hecmw_result_init(hecMESH, tstep, header, comment)
+      n_res_node = count(.not. fstrHEAT%is_dummy_node)
+      allocate(res_node_ID(n_res_node))
+      allocate(res_temp(n_res_node))
+      j = 0
+      do i = 1, hecMESH%n_node
+        if( fstrHEAT%is_dummy_node(i) ) cycle
+        j = j + 1
+        res_node_ID(j) = hecMESH%global_node_ID(i)
+        res_temp(j) = fstrHEAT%TEMP(i)
+      enddo
+      call hecmw_result_init_with_nodes(hecMESH, n_res_node, res_node_ID, tstep, header, comment)
       work_time(1) = ctime
       label = 'TOTALTIME'
       call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, work_time)
       label = 'TEMPERATURE'
-      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 1, label, fstrHEAT%TEMP)
+      call hecmw_result_add(HECMW_RESULT_DTYPE_NODE, 1, label, res_temp)
 
       !elemact state
       if( fstrHEAT%elemact%ELEMACT_egrp_tot > 0 ) then
@@ -173,6 +186,8 @@ contains
       nameID = 'fstrRES'
       call hecmw_result_write_by_name(nameID)
       call hecmw_result_finalize
+      deallocate(res_node_ID)
+      deallocate(res_temp)
     endif
   end subroutine heat_output_result
 

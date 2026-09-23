@@ -18,6 +18,7 @@ module hecmw_result
   public :: hecmw_result_copy_c2f
   public :: hecmw_result_copy_f2c
   public :: hecmw_result_init
+  public :: hecmw_result_init_with_nodes
   public :: hecmw_result_add
   public :: hecmw_result_write_by_name
   public :: hecmw_result_write_st_by_name
@@ -158,19 +159,31 @@ contains
 
   subroutine hecmw_result_init(hecMESH, i_step, header, comment)
     type(hecmwST_local_mesh):: hecMESH
-    integer(kind=kint) :: nnode, nelem, i_step, ierr
+    integer(kind=kint) :: i_step
     character(len=HECMW_HEADER_LEN) :: header
     character(len=HECMW_MSG_LEN) :: comment
 
-    nnode = hecMESH%n_node
+    call hecmw_result_init_with_nodes(hecMESH, hecMESH%n_node, hecMESH%global_node_ID, &
+        i_step, header, comment)
+  end subroutine hecmw_result_init
+
+
+  !> Write the result of the given nodes only, keeping the whole element data
+  subroutine hecmw_result_init_with_nodes(hecMESH, nnode, node_ID, i_step, header, comment)
+    type(hecmwST_local_mesh):: hecMESH
+    integer(kind=kint) :: nnode, i_step, nelem, ierr
+    integer(kind=kint) :: node_ID(:)
+    character(len=HECMW_HEADER_LEN) :: header
+    character(len=HECMW_MSG_LEN) :: comment
+
     nelem = hecMESH%n_elem
 
-    call hecmw_result_init_if(nnode, nelem, hecMESH%global_node_ID, hecMESH%global_elem_ID, &
+    call hecmw_result_init_if(nnode, nelem, node_ID, hecMESH%global_elem_ID, &
         hecMESH%n_elem_type, hecMESH%elem_type_index, hecMESH%elem_type_item, &
         i_step, header, comment, ierr)
 
     if(ierr /= 0) call hecmw_abort(hecmw_comm_get_comm())
-  end subroutine hecmw_result_init
+  end subroutine hecmw_result_init_with_nodes
 
 
   subroutine hecmw_result_add(dtype, n_dof, label, data)

@@ -93,6 +93,12 @@ void fstr_free_result(fstr_res_info** res, int area_n);
 fstr_glt* fstr_create_glt(struct hecmwST_local_mesh** mesh, int area_n);
 
 /**
+ * @brief Point the node records of fstr_glt at the result records of the same
+ *        global ID, and drop the nodes that the result files do not hold
+ */
+int fstr_map_glt_to_result(fstr_glt* glt, fstr_res_info** res, int area_n);
+
+/**
  * @brief Delete fstr_glt
  */
 void fstr_free_glt(fstr_glt* glt);
