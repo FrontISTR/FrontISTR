@@ -1,7 +1,7 @@
 !! Multifrontal direct solver (METHOD=DIRECTmf), unsymmetric values: non-associated
 !! Drucker-Prager (psi = 10 deg, phi = 30 deg) on a 4x4x4 cube under triaxial compression. The
-!! tangent matrix is unsymmetric once the elements yield, so the option line forces LU mode
-!! (MF_Mode=2); the reference is the result of BiCGSTAB.
+!! tangent matrix is unsymmetric once the elements yield; the asymmetry is propagated to the
+!! solver and the LU mode is selected automatically. The reference is the result of BiCGSTAB.
 !VERSION
     3
 !SOLUTION, TYPE = NLSTATIC
@@ -84,5 +84,4 @@
 !SOLVER, METHOD = DIRECTmf, ITERLOG = YES, TIMELOG = NO, LOGLEVEL = 1
  10000, 1
  1.0e-8, 1.0, 0.0
- 0, 2
 !END
