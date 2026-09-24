@@ -1272,11 +1272,8 @@ int HECMW_io_create_dummy_nodes(void) {
     int dummy_node_id = max_source_node + i + 1;
 
     HECMW_assert(node);
+    /* not added to the node group "ALL", which holds the nodes of the input */
     if (HECMW_io_add_node(dummy_node_id, node->x, node->y, node->z) == NULL) {
-      HECMW_free(source_node);
-      return -1;
-    }
-    if (HECMW_io_add_ngrp("ALL", 1, &dummy_node_id) < 0) {
       HECMW_free(source_node);
       return -1;
     }
