@@ -18,9 +18,13 @@ contains
   !C*** MAT_CON for solver
   !C***
   !C
-  subroutine hecmw_mat_con ( hecMESH, hecMAT )
+  subroutine hecmw_mat_con ( hecMESH, hecMAT, skip_33struct_dummy )
     type (hecmwST_matrix)     :: hecMAT
     type (hecmwST_local_mesh) :: hecMESH
+    !> connect only the first half (translational) nodes of 641/761/781, for a problem
+    !> that has no rotational dof such as heat conduction
+    logical, optional         :: skip_33struct_dummy
+    logical :: skip_dummy
 
     type (hecmwST_varray_int), allocatable :: CLU(:), CLL(:)
     integer(kind=kint)  :: itype, iS, iE, iSS, iSE, ic_type, icel
@@ -32,6 +36,8 @@ contains
     !C | INIT. |
     !C +-------+
     !C===
+    skip_dummy = .false.
+    if( present(skip_33struct_dummy) ) skip_dummy = skip_33struct_dummy
     hecMAT%NP= hecMESH%n_node
     hecMAT%N = hecMESH%nn_internal
 
@@ -53,6 +59,7 @@ contains
         iSS = hecMESH%elem_node_index(icel-1)
         iSE = hecMESH%elem_node_index(icel  )
         nn = iSE-iSS
+        if( skip_dummy .and. hecmw_is_etype_33struct(ic_type) ) nn = nn/2
         do j=1,nn
           nid(j) = hecMESH%elem_node_item (iSS+j)
         enddo
