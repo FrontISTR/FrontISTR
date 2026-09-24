@@ -702,6 +702,7 @@ contains
         enddo
       enddo
     else
+      dydx(:,:) = 0.d0
       do k=1,3
         select case(k)
         case(1)
