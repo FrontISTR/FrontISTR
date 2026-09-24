@@ -1619,8 +1619,10 @@ contains
   subroutine ShellMITC_AbortNonlinearUnsupported(etype)
     integer(kind=kint), intent(in) :: etype
 
+    !$omp critical
     write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
     write(*,*) ' ic_type = ', etype
+    !$omp end critical
     call hecmw_abort(hecmw_comm_get_comm())
   end subroutine ShellMITC_AbortNonlinearUnsupported
 

@@ -422,7 +422,9 @@ contains
       !--------------------------------------------------------
 
     else
+      !$omp critical
       write(*,*) 'shell matl type isnot collect'
+      !$omp end critical
       stop
     endif
 

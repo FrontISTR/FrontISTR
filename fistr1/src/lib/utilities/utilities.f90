@@ -290,7 +290,9 @@ contains
       PIVOT=A(LR,K)
       API=abs(PIVOT)
       if(API.LE.EPS) then
+        !$omp critical
         write(*,'(''PIVOT ERROR AT'',I5)') K
+        !$omp end critical
         stop
       end if
       DET=DET*PIVOT

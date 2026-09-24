@@ -126,7 +126,9 @@ contains
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         if( serr == -1 ) stop "Fail to setup local coordinate"
         if( serr == -2 ) then
+          !$omp critical
           write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+          !$omp end critical
         end if
       end if
 
@@ -460,7 +462,9 @@ contains
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         if( serr == -1 ) stop "Fail to setup local coordinate"
         if( serr == -2 ) then
+          !$omp critical
           write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+          !$omp end critical
         end if
       end if
 

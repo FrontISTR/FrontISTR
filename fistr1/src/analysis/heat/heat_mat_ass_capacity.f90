@@ -87,7 +87,9 @@ contains
             fstrHEAT%RHOtab(IMAT), fstrHEAT%RHOtemp(IMAT,:), fstrHEAT%RHOfuncA(IMAT,:), fstrHEAT%RHOfuncB(IMAT,:))
 
         else
+          !$omp critical
           write(*,*)"** error setMASS"
+          !$omp end critical
         endif
 
         do ip = 1, nn

@@ -343,7 +343,9 @@ contains
       surf%intermediate_points(:,4) = matmul(Cab_41_4(1:3,1:3), elem(1:3,4)) + matmul(Cab_41_1(1:3,1:3), elem(1:3,1))
 
     case default
+      !$omp critical
       write(*,*) "Error: create_intermediate_points - Unsupported element type for Nagata patch.",etype
+      !$omp end critical
       stop 
     end select
 

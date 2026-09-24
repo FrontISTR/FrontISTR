@@ -102,7 +102,9 @@ contains
       end do
       call block_inverse(nb, D%dblk(off+1:off+nb*nb), D%inv(off+1:off+nb*nb), info)
       if (info /= 0) then
+        !$omp critical
         write(*,'(a,i0)') 'hecmw_saamg_blockdiag_setup: singular diagonal block at node ', inode
+        !$omp end critical
         call hecmw_saamg_abort('blockdiag_setup: singular diagonal block')
       end if
     end do

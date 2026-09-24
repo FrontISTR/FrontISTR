@@ -252,8 +252,10 @@ contains
             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
 
         else
+          !$omp critical
           write(*, *) '###ERROR### : Element type not supported for nonlinear static analysis'
           write(*, *) ' ic_type = ', ic_type
+          !$omp end critical
           call hecmw_abort(hecmw_comm_get_comm())
 
         endif
@@ -375,6 +377,7 @@ contains
     integer(kind=kint), intent(in) :: flag
     integer(kind=kint), intent(in), optional :: mtype
 
+    !$omp critical
     if( flag == 1 ) then
       write(*,*) '###ERROR### : Element type not supported for static analysis'
     else if( flag == 2 ) then
@@ -384,6 +387,7 @@ contains
     endif
     write(*,*) ' ic_type = ', ic_type
     if( present(mtype) ) write(*,*) ' mtype = ', mtype
+    !$omp end critical
     call hecmw_abort(hecmw_comm_get_comm())
   end subroutine
 

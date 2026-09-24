@@ -162,7 +162,9 @@ contains
         if (knew < inew) then
           call hecmw_bsearch_int_array(itemLp, jsnewL, jenewL, knew, jnew)
           if (jnew < 0) then
+            !$omp critical
             write(0,*) 'ERROR:: jnew < 0 in reorder_off_diag2'
+            !$omp end critical
             call hecmw_abort( hecmw_comm_get_comm() )
           end if
           l0old = (jold-1)*NDOF2
@@ -173,7 +175,9 @@ contains
         else
           call hecmw_bsearch_int_array(itemUp, jsnewU, jenewU, knew, jnew)
           if (jnew < 0) then
+            !$omp critical
             write(0,*) 'ERROR:: jnew < 0 in reorder_off_diag2'
+            !$omp end critical
             call hecmw_abort( hecmw_comm_get_comm() )
           end if
           l0old = (jold-1)*NDOF2
