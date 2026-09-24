@@ -883,7 +883,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
     !
-    type(tContactInterference), intent(out) :: contact_if(n)    !< contact definition
+    type(tContactInterference), intent(inout) :: contact_if(n)    !< contact definition
     
     integer           :: rcode, i
     character(len=30) :: s1 = 'SLAVE,MASTER '

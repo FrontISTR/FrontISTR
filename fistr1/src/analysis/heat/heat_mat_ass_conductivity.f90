@@ -143,7 +143,7 @@ contains
     hecMAT%D  = beta*hecMAT%D
     hecMAT%AU = beta*hecMAT%AU
     hecMAT%AL = beta*hecMAT%AL
-    hecMAT%B  = hecMAT%B - ALPHA*S
+    hecMAT%B(1:hecMAT%N) = hecMAT%B(1:hecMAT%N) - ALPHA*S(1:hecMAT%N)
 
     deallocate(S)
 

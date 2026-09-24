@@ -386,7 +386,7 @@ contains
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: ndof
     real(kind=kreal), intent(inout) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME

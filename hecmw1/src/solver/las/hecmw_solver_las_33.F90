@@ -460,7 +460,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     real(kind=kreal), intent(inout) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
     real(kind=kreal) :: START_TIME, END_TIME
