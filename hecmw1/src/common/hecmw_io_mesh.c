@@ -1215,6 +1215,7 @@ static int find_node_id(const int *node_ids, int n_node, int node_id) {
 int HECMW_io_create_dummy_nodes(void) {
   int elem_id, i, j, n_source_node = 0, n_unique_node = 0;
   int max_source_node;
+  int has_3dof_elem = 0;
   int *source_node = NULL;
   struct hecmw_io_element *elem;
 
@@ -1229,9 +1230,13 @@ int HECMW_io_create_dummy_nodes(void) {
       n_source_node += 3;
     } else if (elem->type == HECMW_ETYPE_SHQ1) {
       n_source_node += 4;
+    } else if (HECMW_is_etype_solid(elem->type) ||
+               HECMW_is_etype_33struct(elem->type)) {
+      has_3dof_elem = 1;
     }
   }
-  if (n_source_node == 0) return 0;
+  /* a mesh of 6-dof elements only keeps them as they are */
+  if (n_source_node == 0 || !has_3dof_elem) return 0;
 
   source_node = HECMW_malloc(sizeof(*source_node) * n_source_node);
   if (source_node == NULL) {
