@@ -878,7 +878,6 @@ contains
     endif
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
-      write(*,*) 'Warning: contact moved beyond neighbor elements'
       state_free = state
       ! get master candidates from bucketDB
       bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
