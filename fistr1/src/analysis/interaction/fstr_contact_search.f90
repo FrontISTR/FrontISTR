@@ -687,6 +687,8 @@ contains
     integer(kind=kint) :: unique_count
     integer(kind=kint) :: known_masters(MAX_N_INTP), n_known
     logical :: is_known
+    ! each kind of change is counted once per slave segment; the convergence and rebuild checks only test for zero
+    logical :: counted_f2c, counted_nbr, counted_byd
     if( is_init ) then
       distclr = contact%cparam%DISTCLR_INIT
     else
@@ -700,7 +702,8 @@ contains
     !$omp& default(none) &
     !$omp& private(i,slave,id,coord,ncoord,surf_node_pos,sfunc,nnode_s, &
     !$omp&         j,idm,isin,bktID,nCand,indexCand,id_best,state_free,state_try,state_best, &
-    !$omp&         maplist,master_idxs,unique_count,known_masters,n_known,is_known) &
+    !$omp&         maplist,master_idxs,unique_count,known_masters,n_known,is_known, &
+    !$omp&         counted_f2c,counted_nbr,counted_byd) &
     !$omp& shared(contact,infoCTChange,currpos,distclr,is_init) &
     !$omp& reduction(.or.:active) &
     !$omp& schedule(dynamic,1)
@@ -715,6 +718,9 @@ contains
       call get_unique_map(contact%slave_surf(i), maplist, master_idxs, unique_count)
       n_known = unique_count
       if( n_known > 0 ) known_masters(1:n_known) = master_idxs(1:n_known)
+      counted_f2c = .false.
+      counted_nbr = .false.
+      counted_byd = .false.
 
       ! ALagrange SS only (SLAG+MORTAR rejected at fstr_setup): set all IPs as
       ! candidates unconditionally (do not depend on NTS node-level contact state)
@@ -750,7 +756,7 @@ contains
           if( contact%algtype /= CONTACTFSLID ) cycle  ! small slide problem
 
           call track_contact_position_ss( coord, contact%slave_surf(i)%states(j),&
-            contact%slave_surf(i), ncoord, contact, currpos, infoCTChange )
+            contact%slave_surf(i), ncoord, contact, currpos, infoCTChange, counted_nbr, counted_byd )
 
           if( contact%slave_surf(i)%states(j)%state /= CONTACTFREE ) contact%slave_surf(i)%state = CONTACTSTICK
 
@@ -797,18 +803,13 @@ contains
             contact%slave_surf(i)%states(j)%state = CONTACTSTICK
             active = .true.
             contact%slave_surf(i)%state = CONTACTSTICK
-            ! Always maintain the known-master set; gate which counter fires by sparsity mode.
+            ! Always maintain the known-master set. SPARSITY_NEIGHBOR pre-registers the neighbors, so only a
+            ! genuinely-new master rebuilds / breaks convergence; current-master-only: every new contact rebuilds.
             call is_known_master_in_segment(contact, known_masters, n_known, id, is_known)
-            if( contact%sparsity_expansion == SPARSITY_NEIGHBOR ) then
-              ! neighbors pre-registered: only a genuinely-new master rebuilds / breaks convergence
-              if( .not. is_known ) then
-                !$omp atomic
-                infoCTChange%free2contact_new = infoCTChange%free2contact_new + 1
-              endif
-            else
-              ! current-master-only: every new contact rebuilds
+            if( (contact%sparsity_expansion == SPARSITY_NONE .or. .not. is_known) .and. .not. counted_f2c ) then
               !$omp atomic
-              infoCTChange%n_statechange(kcatFREE,kcatCONT) = infoCTChange%n_statechange(kcatFREE,kcatCONT) + 1
+              infoCTChange%free2contact_new = infoCTChange%free2contact_new + 1
+              counted_f2c = .true.
             endif
           endif
           deallocate(indexCand)
@@ -819,12 +820,14 @@ contains
 
   end subroutine scan_contact_state_ss
 
-  subroutine track_contact_position_ss( coord, state, sSurf, ncoord, contact, currpos, infoCTChange )
+  subroutine track_contact_position_ss( coord, state, sSurf, ncoord, contact, currpos, infoCTChange, counted_nbr, counted_byd )
     type( tContact ), intent(inout)                  :: contact      !< contact info
     type( tContactState ), intent(inout)             :: state      !< slave intp state
     type( tContactSurf ), intent(in)                 :: sSurf      !< slave surface (for inward normal)
     real(kind=kreal), intent(in)                     :: ncoord(2)  !< IP natural coord on slave surface
     type( fstr_info_contactChange ), intent(inout)   :: infoCTChange !< contact change info
+    logical, intent(inout)                           :: counted_nbr  !< contact2neighbor counted for this slave segment
+    logical, intent(inout)                           :: counted_byd  !< contact2beyond counted for this slave segment
     real(kind=kreal), intent(in)                     :: currpos(:)   !< current coordinate of each nodes
     real(kind=kreal), intent(inout)                  :: coord(:)         !< position of int point
 
@@ -875,7 +878,6 @@ contains
     endif
 
     if( .not. isin ) then   ! such case is considered to rarely or never occur
-      write(*,*) 'Warning: contact moved beyond neighbor elements'
       state_free = state
       ! get master candidates from bucketDB
       bktID = bucketDB_getBucketID(contact%master_bktDB, coord)
@@ -923,13 +925,15 @@ contains
       if( state%surface /= sid0 ) then
         if( found_in_neighbor ) then
           ! SPARSITY_NEIGHBOR: neighbor is pre-registered, tolerated (no rebuild / no relance)
-          if( contact%sparsity_expansion == SPARSITY_NONE ) then
+          if( contact%sparsity_expansion == SPARSITY_NONE .and. .not. counted_nbr ) then
             !$omp atomic
             infoCTChange%contact2neighbor = infoCTChange%contact2neighbor + 1
+            counted_nbr = .true.
           endif
-        else
+        else if( .not. counted_byd ) then
           !$omp atomic
           infoCTChange%contact2beyond = infoCTChange%contact2beyond + 1
+          counted_byd = .true.
         endif
       endif
       ! direction already set to the slave inward normal by project_Point2SurfElement_ss

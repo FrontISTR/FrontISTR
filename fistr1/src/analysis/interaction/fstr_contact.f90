@@ -238,8 +238,9 @@ contains
     type(fstr_solid), intent(inout)        :: fstrSOLID   !< type fstr_solid
     type(fstr_info_contactChange), intent(inout):: infoCTChange   !<
     character(len=9)                       :: flag_ctAlgo !< contact analysis algorithm flag
-    integer(kind=kint) :: i, grpid
-    integer(kind=kint) :: s_chg(3,3), s_emov, s_islid, s_act
+    integer(kind=kint) :: i, j, k, grpid
+    integer(kind=kint) :: s_chg(3,3), s_emov, s_ebey, s_islid, s_act
+    integer(kind=kint), allocatable :: in_contact(:)
     logical :: iactive, is_init
 
     if( associated( fstrSOLID%CONT_RELVEL ) ) fstrSOLID%CONT_RELVEL(:) = 0.d0
@@ -304,21 +305,42 @@ contains
     ! Output summary of contact state changes (always on; per-node detail requires CONTACT_LOG_LEVEL>=1)
     ! allreduce must be called by all ranks regardless of local counts
     s_chg   = infoCTChange%n_statechange
+    s_chg(kcatFREE,kcatCONT) = s_chg(kcatFREE,kcatCONT) + infoCTChange%free2contact_new
     s_emov  = infoCTChange%contact2neighbor
+    s_ebey  = infoCTChange%contact2beyond
     s_islid = infoCTChange%contact2diffLpos
     s_act   = infoCTChange%contactNode_current
+    ! SURF-SURF pairs add the slave nodes of their segments in contact, as update_contact_state_vectors marks them.
+    ! A slave segment is kept by one rank only, so the marks are summed onto the owner of each node and counted there.
+    allocate( in_contact(hecMESH%n_node) )
+    in_contact(:) = 0
+    do i = 1, fstrSOLID%n_contacts
+      if( fstrSOLID%contacts(i)%method /= CONTACTS2S ) cycle
+      do j = 1, size(fstrSOLID%contacts(i)%slave_surf)
+        if( fstrSOLID%contacts(i)%slave_surf(j)%state <= 0 ) cycle
+        do k = 1, size(fstrSOLID%contacts(i)%slave_surf(j)%nodes)
+          in_contact(fstrSOLID%contacts(i)%slave_surf(j)%nodes(k)) = 1
+        enddo
+      enddo
+    enddo
+    call hecmw_assemble_I(hecMESH, in_contact, hecMESH%n_node, 1)
+    do i = 1, hecMESH%nn_internal
+      if( in_contact(i) /= 0 ) s_act = s_act + 1
+    enddo
+    deallocate( in_contact )
     call hecmw_allreduce_I(hecMESH, s_chg, 9, HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_emov,  HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_ebey,  HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_islid, HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_act,   HECMW_SUM)
     if (hecmw_comm_get_rank() == 0) then
-      write(*,'(A,i0,A,i0,A,i0,A,i0,A,i0)') ' Contact change: Free2Cont=', s_chg(kcatFREE,kcatCONT), &
-        ', Cont2Free=', s_chg(kcatCONT,kcatFREE), &
-        ', ElemMoved=', s_emov, ', InElemSlid=', s_islid, ', ActiveNodes=', s_act
+      write(*,'(A,i7,A,i7,A,i7,A,i7,A,i7,A,i7)') ' Contact change: Free2Cont=', s_chg(kcatFREE,kcatCONT), &
+        ' Cont2Free=', s_chg(kcatCONT,kcatFREE), &
+        ' InnerSlid=', s_islid, ' MoveNeibr=', s_emov, ' MoveBynd=', s_ebey, ' ActiveNodes=', s_act
       if( sum(s_chg(kcatNEAR,:)) + sum(s_chg(:,kcatNEAR)) > 0 ) &
-        write(*,'(A,i0,A,i0,A,i0,A,i0)') '   near state change: Free2Near=', s_chg(kcatFREE,kcatNEAR), &
-        ', Near2Free=', s_chg(kcatNEAR,kcatFREE), &
-        ', Near2Cont=', s_chg(kcatNEAR,kcatCONT), ', Cont2Near=', s_chg(kcatCONT,kcatNEAR)
+        write(*,'(A,i7,A,i7,A,i7,A,i7)') '   near state change: Free2Near=', s_chg(kcatFREE,kcatNEAR), &
+        ' Near2Free=', s_chg(kcatNEAR,kcatFREE), &
+        ' Near2Cont=', s_chg(kcatNEAR,kcatCONT), ' Cont2Near=', s_chg(kcatCONT,kcatNEAR)
     end if
 
     if( .not. active ) then
@@ -337,7 +359,7 @@ contains
     type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
 
     integer(kind=kint) :: i, grpid
-    integer(kind=kint) :: s_chg(3,3), s_emov, s_islid, s_act
+    integer(kind=kint) :: s_chg(3,3), s_emov, s_ebey, s_islid, s_act
     logical :: iactive
 
 
@@ -350,7 +372,9 @@ contains
 
     infoCTChange%n_statechange = 0
     infoCTChange%contact2neighbor = 0
+    infoCTChange%contact2beyond = 0
     infoCTChange%contact2diffLpos = 0
+    infoCTChange%free2contact_new = 0
     infoCTChange%contactNode_current = 0
 
     do i=1,fstrSOLID%n_contacts
@@ -373,21 +397,24 @@ contains
     ! Output summary of contact state changes (always on; per-node detail requires CONTACT_LOG_LEVEL>=1)
     ! allreduce must be called by all ranks regardless of local counts
     s_chg   = infoCTChange%n_statechange
+    s_chg(kcatFREE,kcatCONT) = s_chg(kcatFREE,kcatCONT) + infoCTChange%free2contact_new
     s_emov  = infoCTChange%contact2neighbor
+    s_ebey  = infoCTChange%contact2beyond
     s_islid = infoCTChange%contact2diffLpos
     s_act   = infoCTChange%contactNode_current
     call hecmw_allreduce_I(hecMESH, s_chg, 9, HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_emov,  HECMW_SUM)
+    call hecmw_allreduce_I1(hecMESH, s_ebey,  HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_islid, HECMW_SUM)
     call hecmw_allreduce_I1(hecMESH, s_act,   HECMW_SUM)
     if (hecmw_comm_get_rank() == 0) then
-      write(*,'(A,i0,A,i0,A,i0,A,i0,A,i0)') ' Contact change: Free2Cont=', s_chg(kcatFREE,kcatCONT), &
-        ', Cont2Free=', s_chg(kcatCONT,kcatFREE), &
-        ', ElemMoved=', s_emov, ', InElemSlid=', s_islid, ', ActiveNodes=', s_act
+      write(*,'(A,i7,A,i7,A,i7,A,i7,A,i7,A,i7)') ' Contact change: Free2Cont=', s_chg(kcatFREE,kcatCONT), &
+        ' Cont2Free=', s_chg(kcatCONT,kcatFREE), &
+        ' InnerSlid=', s_islid, ' MoveNeibr=', s_emov, ' MoveBynd=', s_ebey, ' ActiveNodes=', s_act
       if( sum(s_chg(kcatNEAR,:)) + sum(s_chg(:,kcatNEAR)) > 0 ) &
-        write(*,'(A,i0,A,i0,A,i0,A,i0)') '   near state change: Free2Near=', s_chg(kcatFREE,kcatNEAR), &
-        ', Near2Free=', s_chg(kcatNEAR,kcatFREE), &
-        ', Near2Cont=', s_chg(kcatNEAR,kcatCONT), ', Cont2Near=', s_chg(kcatCONT,kcatNEAR)
+        write(*,'(A,i7,A,i7,A,i7,A,i7)') '   near state change: Free2Near=', s_chg(kcatFREE,kcatNEAR), &
+        ' Near2Free=', s_chg(kcatNEAR,kcatFREE), &
+        ' Near2Cont=', s_chg(kcatNEAR,kcatCONT), ' Cont2Near=', s_chg(kcatCONT,kcatNEAR)
     end if
 
     fstrSOLID%ddunode = 0.d0
