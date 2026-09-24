@@ -513,7 +513,7 @@ contains
     real(kind=kreal),   intent(out), optional :: lam_t_cur(:,:,:)    !< (2, nnode_s, unique_count) per-node tangent multiplier
     integer(kind=kint), intent(out), optional :: fric_state_cur(:,:) !< (nnode_s, unique_count) per-node friction state
     integer(kind=kint) :: r, j, tmp, ib, iw, g, mid
-    logical            :: do_fric
+    logical            :: do_fric, hit_work, hit_begin
 
     ! argsort master_idxs ascending (unique_count <= 27, insertion sort)
     do r = 1, unique_count
@@ -536,16 +536,26 @@ contains
     ib = 1; iw = 1
     do r = 1, unique_count
       mid = master_idxs(sorted_idx(r))
-      do while( ib <= surf%lam_begin_n .and. surf%lam_begin_id(ib) < mid ); ib = ib + 1; enddo
-      do while( iw <= surf%lam_work_n  .and. surf%lam_work_id(iw)  < mid ); iw = iw + 1; enddo
+      do while( ib <= surf%lam_begin_n )
+        if( surf%lam_begin_id(ib) >= mid ) exit
+        ib = ib + 1
+      enddo
+      do while( iw <= surf%lam_work_n )
+        if( surf%lam_work_id(iw) >= mid ) exit
+        iw = iw + 1
+      enddo
       g = sorted_idx(r)
-      if( iw <= surf%lam_work_n .and. surf%lam_work_id(iw) == mid ) then
+      hit_work = .false.
+      if( iw <= surf%lam_work_n ) hit_work = surf%lam_work_id(iw) == mid
+      hit_begin = .false.
+      if( ib <= surf%lam_begin_n ) hit_begin = surf%lam_begin_id(ib) == mid
+      if( hit_work ) then
         lambda_node(1:nnode_s,g) = surf%lam_work_val(1:nnode_s,iw)
         if( do_fric ) then
           lam_t_cur(1:2,1:nnode_s,g)  = surf%lam_work_t(1:2,1:nnode_s,iw)
           fric_state_cur(1:nnode_s,g) = surf%lam_work_fstate(1:nnode_s,iw)
         endif
-      else if( ib <= surf%lam_begin_n .and. surf%lam_begin_id(ib) == mid ) then
+      else if( hit_begin ) then
         lambda_node(1:nnode_s,g) = surf%lam_begin_val(1:nnode_s,ib)
         if( do_fric ) then
           lam_t_cur(1:2,1:nnode_s,g)  = surf%lam_begin_t(1:2,1:nnode_s,ib)

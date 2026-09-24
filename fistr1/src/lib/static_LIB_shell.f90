@@ -2044,7 +2044,7 @@ contains
     integer :: lx, npoints
     integer(kind=kint) :: ierr_quad, kinematics, ndof_shell
     logical :: finite_rotation, use_director_tangent, use_green_lagrange
-    logical :: add_geometric_stiffness, update_state, use_surface_gauss
+    logical :: add_geometric_stiffness, update_state, use_surface_gauss, use_override
     type(tGaussStatus), target :: gauss_work
     real(kind=kreal) :: elem(3, nn), naturalcoord(2), nncoord(nn, 2), zeta_ly
     real(kind=kreal) :: director(3, nn), director_increment(3, nn)
@@ -2097,8 +2097,11 @@ contains
         strain_tensor, covariant_basis, reciprocal_basis, material_local_basis, &
         material_reciprocal_basis, reference_basis, current_basis, reference_jacobian, current_jacobian)
 
-      if( present(local_stress_override) .and. lx <= size(local_stress_override, 1) &
-          .and. size(local_stress_override, 2) >= 6 ) then
+      use_override = .false.
+      if( present(local_stress_override) ) then
+        use_override = lx <= size(local_stress_override, 1) .and. size(local_stress_override, 2) >= 6
+      endif
+      if( use_override ) then
         point_stress = (/ local_stress_override(lx, 1), local_stress_override(lx, 2), 0.0D0, local_stress_override(lx, 4), &
           local_stress_override(lx, 5), local_stress_override(lx, 6) /)
       else
