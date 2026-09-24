@@ -1016,7 +1016,7 @@ contains
         endif
       else if( header_name == '!CONTACT_INTERFERENCE' ) then
         n = fstr_ctrl_get_data_line_n( ctrl )
-        if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(c_contact_if+1:n+1) ) /= 0 ) then
+        if( fstr_ctrl_get_CONTACT_IF( ctrl, n, fstrPARAM%contact_if(c_contact_if+1:c_contact_if+n) ) /= 0 ) then
           write(*,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ' , c_contact_if
           write(ILOG,*) '### Error: Fail in read in CONTACT_INTERFERENCE definition : ', c_contact_if
           stop HECMW_EXIT_INPUT
