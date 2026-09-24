@@ -194,7 +194,7 @@ contains
     data XG/-0.5773502691896D0,0.5773502691896D0/
     data WGT/1.0D0,1.0D0/
 
-    do I = 1, NN
+    do I = 1, NN-1
       COD(1,I) = ecoord(1,i)
       COD(2,I) = ecoord(2,i)
       COD(3,I) = ecoord(3,i)

@@ -1300,7 +1300,7 @@ contains
     integer(kind=kint) :: i, flag
     real(kind=kreal)   :: tmat(3, 3), tvec(3), strain(6)
 
-    flag=ieor(flag,flag)
+    flag=0
     if( fstrSOLID%output_ctrl(3)%outinfo%on(19) .or. fstrSOLID%output_ctrl(4)%outinfo%on(19) ) then
       if ( .not. associated(RES%PSTRESS) ) then
         allocate(RES%PSTRESS( 3*hecMESH%n_node ))

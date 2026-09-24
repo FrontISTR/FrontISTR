@@ -1013,6 +1013,7 @@ contains
 
     ctNForce = 0.0d0
     ctTForce = 0.0d0
+    jump_ratio = 0.0d0
 
     ! Prepare elemcrd (coord+disp) and current positions (coord+disp+ddisp)
     curpos(1:3) = coord(3*slave-2:3*slave) + disp(3*slave-2:3*slave) + ddisp(3*slave-2:3*slave)

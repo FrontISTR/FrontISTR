@@ -283,6 +283,7 @@ contains
     case (1)  ! penalty
       call hecmw_mat_ass_equation_rhs ( hecMESH, hecMATmpc )
     case (3) ! elimination
+      time_dumm = 0.d0
       call hecmw_trans_b(hecMESH, hecMAT, hecMAT%B, hecMATmpc%B, time_dumm)
       hecMATmpc%Iarray=hecMAT%Iarray
       hecMATmpc%Rarray=hecMAT%Rarray
@@ -322,6 +323,7 @@ contains
       do i = 1, npndof
         hecMAT%X(i) = hecMATmpc%X(i)
       enddo
+      time_dumm = 0.d0
       call hecmw_tback_x(hecMESH, hecMAT%NDOF, hecMAT%X, time_dumm)
       num_lagrange = size(hecMAT%X) - npndof
       npndof_mpc = hecMATmpc%NP * hecMATmpc%NDOF
@@ -368,6 +370,7 @@ contains
       !C-- lumped mass of the reduced system = row sums of [T'][M][T]
       !C-- {w} = [T]{1}
       Mtmp(:) = 1.d0
+      time_dumm = 0.d0
       call hecmw_Tvec(hecMESH, hecMAT%NDOF, Mtmp, W, time_dumm)
       !C-- {w} = [M]{w}
       do i = 1, npndof
@@ -414,6 +417,7 @@ contains
     case (1)  ! penalty
       ! do nothing
     case (3)  ! elimination
+      time_dumm = 0.d0
       do i = 1, neig
         call hecmw_tback_x(hecMESH, hecMAT%NDOF, eigvec(:,i), time_dumm)
         !!! need normalization???

@@ -93,6 +93,7 @@ contains
     ! ISOTROPIC
     if( ipt==1 ) then
       allocate( fval(2+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RR "
         block
@@ -131,6 +132,7 @@ contains
       ! ORTHOTROPIC
     else if( ipt==2 ) then
       allocate( fval(9+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRRRRRRRR "
         block
@@ -417,6 +419,7 @@ contains
     if( ipt==1 ) then
       n = fstr_ctrl_get_data_line_n( ctrl )
       allocate( fval(2+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RR "
         block
@@ -548,6 +551,7 @@ contains
         select case (hipt)
           case (1,5)  ! linear hardening, kinematic hardening
             allocate( fval(2,n) )
+            fval =0.0d0
             data_fmt = "RR "
             block
               real(kind=kreal) :: fval1(n), fval2(n)
@@ -569,6 +573,7 @@ contains
             endif
           case (2)  ! multilinear approximation
             allocate( fval(depends+2,n) )
+            fval =0.0d0
             if( depends==0 ) then
               data_fmt = "RR "
               block
@@ -613,6 +618,7 @@ contains
             endif
           case (3, 4, 6)  ! swift, Ramberg-Osgood, Combined
             allocate( fval(3,1) )
+            fval =0.0d0
             data_fmt = "RRR "
             block
               real(kind=kreal) :: fval1(1), fval2(1), fval3(1)
@@ -638,6 +644,7 @@ contains
         select case (hipt)
         case (1)  ! linear hardening
           allocate( fval(4,n) )
+          fval =0.0d0
           data_fmt = "RRrr "
           fval(4,:) = -1.d0
           block
@@ -668,6 +675,7 @@ contains
             stop "Mohr-Coulomb and Drucker-Prager do not support temperature dependency"
           endif
           allocate( fval(2,n) )
+          fval =0.0d0
           data_fmt = "Rr "
           fval(2,:) = -1.d0
           block
@@ -750,6 +758,7 @@ contains
     if( ipt==1 ) then
       n = fstr_ctrl_get_data_line_n( ctrl )
       allocate( fval(3+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRR "
         block
@@ -815,6 +824,7 @@ contains
     if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
 
     allocate( fval(1,depends+1) )
+    fval =0.0d0
     do i=2,1+depends
       data_fmt = data_fmt //"R "
     enddo
@@ -860,6 +870,7 @@ contains
 
     if( ipt==1 ) then
       allocate( fval(depends+1, n) )
+      fval =0.0d0
       do i=2,1+depends
         data_fmt = data_fmt //"R "
       enddo
@@ -889,6 +900,7 @@ contains
       endif
     else
       allocate( fval(3+depends,n) )
+      fval =0.0d0
       do i=2,3+depends
         data_fmt = trim(data_fmt) //"R "
       enddo
@@ -1045,6 +1057,7 @@ contains
     ! ISOTROPIC
     if( ipt==1 ) then
       allocate( fval(1+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "R "
         block
@@ -1109,6 +1122,8 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     allocate( fval(1+depends,n), ival(2,n) )
+    fval =0.0d0
+    ival =0
     if( depends==0 ) then
       data_fmt = "IIR "
       block
@@ -1167,6 +1182,7 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     allocate( fval(1+depends,n) )
+    fval =0.0d0
     if( depends==0 ) then
       data_fmt = "R "
       block
@@ -1220,6 +1236,8 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     allocate( fval(1+depends,n), ival(2,n) )
+    fval =0.0d0
+    ival =0
     if( depends==0 ) then
       data_fmt = "IIR "
       block
@@ -1278,6 +1296,7 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     allocate( fval(1+depends,n) )
+    fval =0.0d0
     if( depends==0 ) then
       data_fmt = "R "
       block
