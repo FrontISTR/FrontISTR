@@ -171,9 +171,15 @@ int main(int argc, char** argv) {
     exit(-1);
   }
 
-  fstr_free_mesh(mesh, area_n);
+  glmesh = fstr_create_glmesh(glt);
+  if (!glmesh) {
+    fprintf(stderr, "ERROR : Cannot create global table.\n");
+    fstr_free_mesh(mesh, area_n);
+    fstr_free_glt(glt);
+    exit(-1);
+  }
 
-  glmesh = NULL;
+  fstr_free_mesh(mesh, area_n);
 
   step_n = (endid > -1) ? endid : fstr_get_step_n("fstrRES", nrank);
 
@@ -187,22 +193,6 @@ int main(int argc, char** argv) {
       continue;
     }
     fstr_out_log("end\n");
-
-    if (glmesh == NULL) {
-      if (fstr_map_glt_to_result(glt, res, area_n)) {
-        fprintf(stderr, "ERROR : Cannot map global_local table to results.\n");
-        fstr_free_glt(glt);
-        fstr_free_result(res, area_n);
-        exit(-1);
-      }
-      glmesh = fstr_create_glmesh(glt);
-      if (!glmesh) {
-        fprintf(stderr, "ERROR : Cannot create global table.\n");
-        fstr_free_glt(glt);
-        fstr_free_result(res, area_n);
-        exit(-1);
-      }
-    }
 
     fstr_out_log("step:%d .. combining .. ", step);
     data = fstr_all_result(glt, res, refine);
