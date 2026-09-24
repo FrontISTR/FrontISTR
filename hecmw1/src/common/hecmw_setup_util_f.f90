@@ -301,6 +301,37 @@ contains
     call backset_group_pointers( hecMESH, grp_type_name )
   end subroutine append_new_group
 
+  !> Append n groups at once; group i holds list(index(i-1)+1:index(i)).
+  !> The names are not checked against the existing groups.
+  subroutine append_new_groups(hecMESH, grp_type_name, n, names, index, list, first_id)
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    character(len=*), intent(in) :: grp_type_name
+    integer(kind=kint), intent(in) :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: names(:)
+    integer(kind=kint), intent(in) :: index(0:)
+    integer(kind=kint), intent(in) :: list(:)
+    integer(kind=kint), intent(out) :: first_id
+    integer(kind=kint) :: old_grp_number, old_item_number, i
+
+    call set_group_pointers( hecMESH, grp_type_name )
+    old_grp_number = n_grp
+    old_item_number = grp_index(n_grp)
+
+    call hecmw_expand_name_array( grp_name, old_grp_number, old_grp_number + n )
+    call hecmw_expand_index_array( grp_index, old_grp_number + 1, old_grp_number + n + 1 )
+    call hecmw_expand_integer_array( grp_item, old_item_number, old_item_number + index(n) )
+
+    n_grp = old_grp_number + n
+    first_id = old_grp_number + 1
+    do i = 1, n
+      grp_name%s(old_grp_number + i) = names(i)
+      grp_index(old_grp_number + i) = old_item_number + index(i)
+    enddo
+    grp_item(old_item_number + 1:old_item_number + index(n)) = list(1:index(n))
+    call backset_group_pointers( hecMESH, grp_type_name )
+  end subroutine append_new_groups
+
   !------------------------------------------------------------------------------
   ! JP-0
   ! grp_type_name : 'node_grp', 'elem_grp' or 'surf_grp'
