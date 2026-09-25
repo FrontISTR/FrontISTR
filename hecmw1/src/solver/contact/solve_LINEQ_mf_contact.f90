@@ -56,8 +56,8 @@ contains
     type (hecmwST_matrix_lagrange), intent(inout) :: hecLagMAT
     type (hecmwST_ebc), intent(inout) :: hecEBC
     integer(kind=kint), intent(out) :: istat
-    integer(kind=kint) :: ntdf, mpc_method, loglevel, irmax, it
-    real(kind=kreal) :: bnrm, rnrm, irtol
+    integer(kind=kint) :: ntdf, mpc_method, iterlog, timelog, irmax, it
+    real(kind=kreal) :: bnrm, rnrm, irtol, t1, t2
     real(kind=kreal), allocatable :: bb(:), xx(:), rr(:)
     ! the unit hecmw_solve passes to the direct solvers for error messages
     integer(kind=kint), parameter :: imsg = 51
@@ -98,23 +98,26 @@ contains
     irmax = hecMAT%Iarray(44)
     if (irmax == 0) irmax = MFC_IR_STEPS
     if (irmax > 0) then
-      loglevel = hecmw_mat_get_loglevel(hecMAT)
-      if (loglevel < 0) loglevel = max(hecmw_mat_get_timelog(hecMAT), hecmw_mat_get_iterlog(hecMAT))
+      iterlog = hecmw_mat_get_iterlog(hecMAT)
+      timelog = hecmw_mat_get_timelog(hecMAT)
       irtol = hecMAT%Rarray(42)
       if (.not. (irtol > 0.0d0)) irtol = MFC_IR_TOL
       allocate(bb(ntdf), xx(ntdf), rr(ntdf))
       bb(1:ntdf) = mfMAT%B(1:ntdf)
       xx(1:ntdf) = mfMAT%X(1:ntdf)
       bnrm = sqrt(dot_product(bb(1:ntdf), bb(1:ntdf)))
+      t1 = hecmw_wtime()
       do it = 1, irmax
         call mf_contact_resid(ntdf, xx, bb, rr)
         rnrm = sqrt(dot_product(rr(1:ntdf), rr(1:ntdf))) / max(bnrm, tiny(bnrm))
-        if (loglevel > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
+        if (iterlog > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
         if (rnrm <= irtol) exit
         mfMAT%B(1:ntdf) = rr(1:ntdf)
         call hecmw_solve_direct_mf(hecMESH, mfMAT, imsg)
         xx(1:ntdf) = xx(1:ntdf) + mfMAT%X(1:ntdf)
       enddo
+      t2 = hecmw_wtime()
+      if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
       mfMAT%X(1:ntdf) = xx(1:ntdf)
       deallocate(bb, xx, rr)
     endif
@@ -207,7 +210,7 @@ contains
     mfMAT%Iarray = hecMAT%Iarray
     mfMAT%Rarray = hecMAT%Rarray
     if (mfMAT%Iarray(43) /= 0) then
-      if (hecmw_comm_get_rank() == 0) write(*,*) &
+      if (hecmw_comm_get_rank() == 0 .and. hecmw_mat_get_loglevel(hecMAT) > 0) write(*,*) &
         '[DIRECTmf]: BLR is not available in contact analysis without elimination; disabled'
     endif
     ! the refinement stays with the caller (mf_contact_resid); the driver would measure it

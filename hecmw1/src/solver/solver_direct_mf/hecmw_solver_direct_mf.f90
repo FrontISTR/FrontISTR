@@ -50,17 +50,26 @@ contains
     integer(kind=kint), intent(in) :: imsg
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
-    integer(kind=kint) :: loglevel, ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, eta
+    integer(kind=kint) :: loglevel, iterlog, timelog, ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, eta
     real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, tcomm
     real(kind=kreal), allocatable :: rr(:), dd(:)
     logical :: clustered
 
+    ! TIMELOG holds the stage times, ITERLOG the refinement residuals, LOGLEVEL the
+    ! diagnostics; an unset LOGLEVEL (-1) means no diagnostics here, with no fallback
+    ! to the other two flags
     loglevel = hecmw_mat_get_loglevel(hecMAT)
-    if (loglevel < 0) loglevel = max(hecmw_mat_get_timelog(hecMAT), hecmw_mat_get_iterlog(hecMAT))
-    if (hecmw_comm_get_rank() /= 0) loglevel = 0
+    if (loglevel < 0) loglevel = 0
+    iterlog = hecmw_mat_get_iterlog(hecMAT)
+    timelog = hecmw_mat_get_timelog(hecMAT)
+    if (hecmw_comm_get_rank() /= 0) then
+      loglevel = 0
+      iterlog = 0
+      timelog = 0
+    endif
 
     if (hecMESH%PETOT > 1) then
-      call hecmw_solve_direct_mf_dist(hecMESH, hecMAT, imsg, loglevel)
+      call hecmw_solve_direct_mf_dist(hecMESH, hecMAT, imsg, loglevel, iterlog, timelog)
       return
     endif
 
@@ -90,8 +99,8 @@ contains
       call hecmw_mf_numeric_finalize(FCT)
       call hecmw_mf_numeric_init(graph, SYM, tile, clustered, eta, FCT)
       t2 = hecmw_wtime()
+      if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: symbolic fct done (', t2 - t1, ' sec)'
       if (loglevel > 0) then
-        write(*,'(a,f10.3,a)') '[DIRECTmf]: symbolic fct done (', t2 - t1, ' sec)'
         if (clustered) write(*,'(a)') '[DIRECTmf]: separator nodes clustered for BLR'
         call hecmw_mf_symbolic_print(SYM)
         call hecmw_mf_numeric_print(FCT)
@@ -144,8 +153,8 @@ contains
         call hecmw_abort(hecmw_comm_get_comm())
       endif
       hecMAT%Iarray(97) = 0
+      if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: numeric fct done (', t2 - t1, ' sec)'
       if (loglevel > 0) then
-        write(*,'(a,f10.3,a)') '[DIRECTmf]: numeric fct done (', t2 - t1, ' sec)'
         nthreads = 1
         !$ nthreads = omp_get_max_threads()
         write(*,'(a,i0)') '[DIRECTmf]: threads = ', nthreads
@@ -198,7 +207,7 @@ contains
     t1 = hecmw_wtime()
     call hecmw_mf_numeric_solve(SYM, FCT, hecMAT%B, hecMAT%X)
     t2 = hecmw_wtime()
-    if (loglevel > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: solve done (', t2 - t1, ' sec)'
+    if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: solve done (', t2 - t1, ' sec)'
 
     irmax = hecMAT%Iarray(44)
     if (FCT%blr .and. irmax == 0) irmax = MF_IR_STEPS
@@ -214,14 +223,26 @@ contains
         call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, rr, tcomm)
         call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, rr, rr, rnrm, tcomm)
         rnrm = sqrt(rnrm / max(bnrm, tiny(bnrm)))
-        if (loglevel > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
+        if (iterlog > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
         if (rnrm <= irtol) exit
         call hecmw_mf_numeric_solve(SYM, FCT, rr, dd)
         hecMAT%X(1:n) = hecMAT%X(1:n) + dd(1:n)
       enddo
       t2 = hecmw_wtime()
-      if (loglevel > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
+      if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
       deallocate(rr, dd)
+    else if (irmax == 0 .and. iterlog > 0) then
+      ! a negative irmax asks for no residual work at all (the contact wrapper measures
+      ! its saddle-point system itself and disables this path with -1)
+      n = hecMAT%NP * hecMAT%NDOF
+      allocate(rr(n))
+      tcomm = 0.0d0
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnrm, tcomm)
+      call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, rr, tcomm)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, rr, rr, rnrm, tcomm)
+      rnrm = sqrt(rnrm / max(bnrm, tiny(bnrm)))
+      write(*,'(a,1pe11.4)') '[DIRECTmf]: residual = ', rnrm
+      deallocate(rr)
     endif
   end subroutine hecmw_solve_direct_mf
 
@@ -233,11 +254,11 @@ contains
   !> local matrix, which no longer matches the global structure). Pivot and BLR statistics
   !> are reduced over the ranks for the log; the factor stays distributed, each rank holding
   !> the panels of its own supernodes only.
-  subroutine hecmw_solve_direct_mf_dist(hecMESH, hecMAT, imsg, loglevel)
+  subroutine hecmw_solve_direct_mf_dist(hecMESH, hecMAT, imsg, loglevel, iterlog, timelog)
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type(hecmwST_matrix), intent(inout) :: hecMAT
-    integer(kind=kint), intent(in) :: imsg, loglevel
+    integer(kind=kint), intent(in) :: imsg, loglevel, iterlog, timelog
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
     real(kind=kreal), allocatable :: gb(:), gx(:), rr(:), wpr(:), wmr(:)
@@ -289,8 +310,8 @@ contains
       call hecmw_mf_graph_finalize(graph)
       if (clustered .and. eta > 0) call hecmw_mf_numeric_admis_bcast(FCT, 0)
       t2 = hecmw_wtime()
+      if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: symbolic fct done (', t2 - t1, ' sec)'
       if (loglevel > 0) then
-        write(*,'(a,f10.3,a)') '[DIRECTmf]: symbolic fct done (', t2 - t1, ' sec)'
         if (clustered) write(*,'(a)') '[DIRECTmf]: separator nodes clustered for BLR'
         write(*,'(a,i0,a,i0)') '[DIRECTmf]: MPI ranks = ', MAP%nprocs, ', upper fronts = ', MAP%nupper
         write(*,'(a,i0,a,*(i0,1x))') '[DIRECTmf]: matrix words replicated = ', wrepl, ', held per rank = ', &
@@ -341,8 +362,8 @@ contains
       hecMAT%Iarray(97) = 0
       allocate(wpr(MAP%nprocs))
       call mf_reduce_stats(FCT, wpr)
+      if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: numeric fct done (', t2 - t1, ' sec)'
       if (loglevel > 0) then
-        write(*,'(a,f10.3,a)') '[DIRECTmf]: numeric fct done (', t2 - t1, ' sec)'
         nthreads = 1
         !$ nthreads = omp_get_max_threads()
         write(*,'(a,i0,a,i0)') '[DIRECTmf]: ranks = ', MAP%nprocs, ', threads per rank = ', nthreads
@@ -402,7 +423,7 @@ contains
     t1 = hecmw_wtime()
     call hecmw_mf_numeric_solve_mpi(SYM, MAP, FCT, gb, gx)
     t2 = hecmw_wtime()
-    if (loglevel > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: solve done (', t2 - t1, ' sec)'
+    if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: solve done (', t2 - t1, ' sec)'
     do i = 1, hecMAT%N * hecMAT%NDOF
       hecMAT%X(i) = gx(ofs + i)
     enddo
@@ -421,7 +442,7 @@ contains
         call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, rr, tcomm)
         call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, rr, rr, rnrm, tcomm)
         rnrm = sqrt(rnrm / max(bnrm, tiny(bnrm)))
-        if (loglevel > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
+        if (iterlog > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
         if (rnrm <= irtol) exit
         call hecmw_mf_dist_gather_vec(GMAT, rr, gb)
         call hecmw_mf_numeric_solve_mpi(SYM, MAP, FCT, gb, gx)
@@ -430,7 +451,19 @@ contains
         enddo
       enddo
       t2 = hecmw_wtime()
-      if (loglevel > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
+      if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
+      deallocate(rr)
+    else if (irmax == 0 .and. hecmw_mat_get_iterlog(hecMAT) > 0) then
+      ! every rank enters the residual evaluation (it is collective); the passed iterlog
+      ! is zeroed off rank 0 and only gates the print
+      n = hecMAT%NP * hecMAT%NDOF
+      allocate(rr(n))
+      tcomm = 0.0d0
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnrm, tcomm)
+      call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, rr, tcomm)
+      call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, rr, rr, rnrm, tcomm)
+      rnrm = sqrt(rnrm / max(bnrm, tiny(bnrm)))
+      if (iterlog > 0) write(*,'(a,1pe11.4)') '[DIRECTmf]: residual = ', rnrm
       deallocate(rr)
     endif
     call hecmw_update_R(hecMESH, hecMAT%X, hecMAT%NP, hecMAT%NDOF)
