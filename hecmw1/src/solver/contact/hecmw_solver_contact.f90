@@ -68,7 +68,7 @@ contains
       elseif( solver_type==7 ) then
         if( hecmw_comm_get_size() > 1) then
           write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
-              ' without elimination; please use MUMPS or DIRECTmkl instead'
+              ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         endif
         call solve_LINEQ_mf_contact_init(hecMESH,hecMAT,hecLagMAT,is_sym)
@@ -139,7 +139,7 @@ contains
       elseif( solver_type==7 ) then
         if( hecmw_comm_get_size() > 1) then
           write(*,*) 'ERROR: !SOLVER,METHOD=DIRECTmf not available in parallel contact analysis',&
-              ' without elimination; please use MUMPS or DIRECTmkl instead'
+              ' without elimination; specify CONTACT_ELIM=1 or use MUMPS or DIRECTmkl instead'
           call hecmw_abort(hecmw_comm_get_comm())
         else
           call add_conMAT_to_hecMAT(hecMAT,conMAT,hecLagMat)
