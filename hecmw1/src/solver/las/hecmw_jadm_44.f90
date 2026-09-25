@@ -65,7 +65,7 @@ contains
 
     D => hecMAT%D
 
-    !$OMP PARALLEL PRIVATE(i)
+    !$OMP PARALLEL PRIVATE(i,X1,X2,X3,X4)
     !$OMP DO
     do i= 1, hecMAT%N
       X1= X(4*i-3)
