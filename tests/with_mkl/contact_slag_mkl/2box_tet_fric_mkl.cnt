@@ -52,7 +52,7 @@ CONTACT_NTRACTION,ON
 #####   CONTACT DEFINITIONS   #####
 ###################################
 !CONTACT, INTERACTION=FSLID, GRPID=1
-CP1,0.0,5.0E+2
+CP1,0.3,5.0E+2
 ###################################
 #####         MATERIAL        #####
 ###################################
