@@ -2145,6 +2145,7 @@ contains
       P%SOLID%ENQM    => phys%ENQM
       allocate( P%SOLID%REACTION( P%MESH%n_dof*P%MESH%n_node ), stat=i )
       if( i /= 0 ) stop "Allocation error: REACTION"
+      P%SOLID%REACTION = 0.d0
     end if
 
     if( P%PARAM%fg_visual == kON )then
