@@ -40,7 +40,7 @@ contains
       ! neighbors of known masters are pre-registered in sparsity
       do k = 1, n_known
         if( associated(contact%master(known_masters(k))%neighbor) ) then
-          if( any(contact%master(known_masters(k))%neighbor(:) == id) ) then
+          if( any(contact%master(known_masters(k))%neighbor(1:contact%master(known_masters(k))%n_neighbor) == id) ) then
             is_known = .true.; exit
           endif
         endif
@@ -142,7 +142,7 @@ contains
           sid = indexCand(idm)
           if( sid==sid0 ) cycle
           if( associated(contact%master(sid0)%neighbor) ) then
-            if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+            if( any(sid==contact%master(sid0)%neighbor(1:contact%master(sid0)%n_neighbor)) ) cycle
           endif
           cstate_try = cstate_free
           call project_Point2SurfElement( coord, contact%master(sid), currpos, &
@@ -918,7 +918,7 @@ contains
           sid = indexCand(idm)
           if( sid==sid0 ) cycle
           if( associated(contact%master(sid0)%neighbor) ) then
-            if( any(sid==contact%master(sid0)%neighbor(:)) ) cycle
+            if( any(sid==contact%master(sid0)%neighbor(1:contact%master(sid0)%n_neighbor)) ) cycle
           endif
           state_try = state_free
           call project_Point2SurfElement_ss( coord, contact%master(sid), sSurf, ncoord, currpos, &
