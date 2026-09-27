@@ -409,6 +409,13 @@ endif()
 # stays defined in one place.
 list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_MATVEC_IMPL=HECMW_MATVEC_IMPL_${ARCH_DEFAULT_FORMAT}")
 list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_DEFAULT_PRECOND_IMPL=HECMW_PRECOND_IMPL_${ARCH_DEFAULT_FORMAT}")
+# The tuned implementations of a machine are compiled in under #ifdef HECMW_ARCH_<ARCH>.
+# GENERIC names no machine, so it defines nothing and builds the sources unchanged.
+if(NOT ARCH STREQUAL "GENERIC")
+  list(APPEND FrontISTR_DEFINITIONS "HECMW_ARCH_${ARCH}")
+endif()
+# What the #ifdef above brings in, one line each for the summary
+set(ARCH_TUNED_ITEMS "")
 
 ###################
 # -DWITH_MPI
@@ -487,6 +494,12 @@ if(NOT ARCH STREQUAL "GENERIC")
   message(STATUS " Architecture-tuned build is ENABLED")
   message(STATUS "   ARCH = ${ARCH}")
   message(STATUS "   default MATRIXFORMAT = ${ARCH_DEFAULT_FORMAT}")
+  if(ARCH_TUNED_ITEMS)
+    message(STATUS " Compiled in for ${ARCH}:")
+    foreach(item IN LISTS ARCH_TUNED_ITEMS)
+      message(STATUS "   ${item}")
+    endforeach()
+  endif()
   message(STATUS " Implementations tuned for other")
   message(STATUS " architectures are not built in.")
   message(STATUS " !SOLVER, MATRIXFORMAT= picks among")
