@@ -418,6 +418,7 @@ endif()
 set(ARCH_TUNED_ITEMS "")
 if(ARCH STREQUAL "FX64")
   list(APPEND ARCH_TUNED_ITEMS "CSR matvec (NDOF=3)")
+  list(APPEND ARCH_TUNED_ITEMS "CSR SSOR preconditioner (NDOF=3)")
 endif()
 
 ###################
