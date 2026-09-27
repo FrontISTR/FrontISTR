@@ -10,6 +10,11 @@
 #include "hecmw_part_struct.h"
 
 extern int HECMW_mesh_edge_info(struct hecmwST_local_mesh *mesh,
+#ifdef HECMW_ARCH_FX64
+                                struct hecmw_part_edge_data *edge_data,
+                                const int edge_create_type);
+#else
                                 struct hecmw_part_edge_data *edge_data);
+#endif
 
 #endif /* INC_HECMW_MESH_EDGE_INFO */

@@ -420,6 +420,7 @@ if(ARCH STREQUAL "FX64")
   list(APPEND ARCH_TUNED_ITEMS "CSR matvec (NDOF=3)")
   list(APPEND ARCH_TUNED_ITEMS "CSR SSOR preconditioner (NDOF=3)")
   list(APPEND ARCH_TUNED_ITEMS "explicit-shape vectors in hecmw_precond_apply")
+  list(APPEND ARCH_TUNED_ITEMS "node-weighted METIS partitioning in hecmw_part1")
 endif()
 
 ###################
