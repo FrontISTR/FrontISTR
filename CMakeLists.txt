@@ -416,6 +416,9 @@ if(NOT ARCH STREQUAL "GENERIC")
 endif()
 # What the #ifdef above brings in, one line each for the summary
 set(ARCH_TUNED_ITEMS "")
+if(ARCH STREQUAL "FX64")
+  list(APPEND ARCH_TUNED_ITEMS "CSR matvec (NDOF=3)")
+endif()
 
 ###################
 # -DWITH_MPI
