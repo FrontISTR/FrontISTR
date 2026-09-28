@@ -112,7 +112,9 @@ contains
             fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         else
+          !$omp critical
           write(*,*)"** error setMASS"
+          !$omp end critical
         endif
 
         if(ic_type == 541 .or. ic_type == 731 .or. ic_type == 741)then
@@ -141,7 +143,7 @@ contains
     hecMAT%D  = beta*hecMAT%D
     hecMAT%AU = beta*hecMAT%AU
     hecMAT%AL = beta*hecMAT%AL
-    hecMAT%B  = hecMAT%B - ALPHA*S
+    hecMAT%B(1:hecMAT%N) = hecMAT%B(1:hecMAT%N) - ALPHA*S(1:hecMAT%N)
 
     deallocate(S)
 

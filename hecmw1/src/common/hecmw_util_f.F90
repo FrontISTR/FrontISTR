@@ -617,7 +617,9 @@ contains
 
     ! MPI_ABORT does not flush the Fortran unit buffers; do it here so that
     ! the message written just before the abort survives.
+    !$omp critical
     flush(6)
+    !$omp end critical
 
 #ifndef HECMW_SERIAL
     call MPI_ABORT(comm, errorcode, ierror)

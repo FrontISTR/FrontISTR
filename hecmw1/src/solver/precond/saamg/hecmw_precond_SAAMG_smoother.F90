@@ -72,9 +72,12 @@ contains
     type(hecmwST_saamg_bcsr),      intent(in)  :: A
     type(hecmwST_saamg_blockdiag), intent(out) :: D
     integer(kind=kint) :: nb, nnode, inode, off, t, info, astat
+    logical :: square_blocked
 
     nb = A%nb
-    if (nb <= 0 .or. A%mb /= nb .or. mod(A%n, nb) /= 0) then
+    square_blocked = nb > 0 .and. A%mb == nb
+    if (square_blocked) square_blocked = mod(A%n, nb) == 0
+    if (.not. square_blocked) then
       write(*,*) 'hecmw_saamg_blockdiag_setup: A not square-blocked (nb,mb)=', nb, A%mb
       call hecmw_saamg_abort('blockdiag_setup: operator not square-blocked')
     end if
@@ -99,7 +102,9 @@ contains
       end do
       call block_inverse(nb, D%dblk(off+1:off+nb*nb), D%inv(off+1:off+nb*nb), info)
       if (info /= 0) then
+        !$omp critical
         write(*,'(a,i0)') 'hecmw_saamg_blockdiag_setup: singular diagonal block at node ', inode
+        !$omp end critical
         call hecmw_saamg_abort('blockdiag_setup: singular diagonal block')
       end if
     end do

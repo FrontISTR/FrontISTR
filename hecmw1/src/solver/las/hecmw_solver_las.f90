@@ -78,7 +78,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in), target :: hecMAT
-    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout), optional :: COMMtime
     select case(hecMAT%NDOF)
@@ -108,7 +108,8 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     type (hecmwST_matrix), intent(in)     :: hecMAT
-    real(kind=kreal), intent(in) :: X(:), B(:)
+    real(kind=kreal), intent(in) :: B(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: R(:)
     real(kind=kreal), intent(inout), optional :: COMMtime
 
@@ -170,7 +171,7 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: ndof
-    real(kind=kreal), intent(in) :: X(:)
+    real(kind=kreal), intent(inout) :: X(:)
     real(kind=kreal), intent(out) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
@@ -195,8 +196,8 @@ contains
     implicit none
     type (hecmwST_local_mesh), intent(in) :: hecMESH
     integer(kind=kint), intent(in) :: ndof
-    real(kind=kreal), intent(in) :: X(:)
-    real(kind=kreal), intent(out) :: Y(:)
+    real(kind=kreal), intent(inout) :: X(:)
+    real(kind=kreal), intent(inout) :: Y(:)
     real(kind=kreal), intent(inout) :: COMMtime
 
     select case(ndof)

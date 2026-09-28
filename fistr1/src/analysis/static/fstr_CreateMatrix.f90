@@ -447,6 +447,7 @@ contains
     integer(kind=kint), intent(in)           :: flag
     integer(kind=kint), intent(in), optional :: mtype
 
+    !$omp critical
     if( flag == 1 ) then
       write(*,*) '###ERROR### : Element type not supported for static analysis'
     else if( flag == 2 ) then
@@ -456,6 +457,7 @@ contains
     endif
     write(*,*) ' ic_type = ', ic_type
     if( present(mtype) ) write(*,*) ' mtype = ', mtype
+    !$omp end critical
     call hecmw_abort(hecmw_comm_get_comm())
   end subroutine CreateMat_abort
 

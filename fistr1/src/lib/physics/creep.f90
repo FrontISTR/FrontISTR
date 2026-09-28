@@ -124,7 +124,7 @@ contains
     real(kind=kreal), intent(in)     :: strain(6) !< strain
     real(kind=kreal), intent(inout)  :: stress(6) !< Piola-Kirchhoff stress
     real(kind=kreal), intent(inout)  :: extval(:) !< plastic strain
-    real(kind=kreal), intent(out)    :: plstrain  !< plastic strain increment
+    real(kind=kreal), intent(inout)  :: plstrain  !< plastic strain increment
     real(kind=kreal), intent(in)     :: ttime     !< total time at the start of the current increment
     real(kind=kreal), intent(in)     :: dtime     !< time length of the increment
     real(kind=kreal), intent(in)     :: temp      !> temperature

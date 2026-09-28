@@ -57,7 +57,7 @@ contains
 
     !C-- local variable
     integer(kind=kint) :: nnod, ndof, nn
-    integer(kind=kint) :: i, tot_step_print, CBbound
+    integer(kind=kint) :: tot_step_print, CBbound
     real(kind=kreal) :: time_1, time_2, factor
     integer(kind=kint) :: sub_step
 
@@ -248,7 +248,7 @@ contains
         call fstr_dynamic_Output(tot_step, step_count, fstrDYNAMIC%t_curr, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, is_OutPoint)
 
         !C-- output result of monitoring node
-        call dynamic_output_monit(tot_step, i, fstrDYNAMIC%t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
+        call dynamic_output_monit(tot_step, sub_step, fstrDYNAMIC%t_curr, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
 
         !---  Restart info
         if( fstrDYNAMIC%restart_nout > 0 ) then

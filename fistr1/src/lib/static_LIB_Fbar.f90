@@ -86,6 +86,7 @@ contains
       wg = getWeight(etype, LX)*det
       if( flag == INFINITESIMAL ) then
         jacob = 1.d0
+        Jratio(LX) = 1.d0
         gderiv1_ave(1:nn,1:ndof) = gderiv1_ave(1:nn,1:ndof) + jacob*wg*gderiv(1:nn, 1:ndof)
       else
         gdispderiv(1:3, 1:3) = matmul( u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
@@ -126,7 +127,9 @@ contains
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         if( serr == -1 ) stop "Fail to setup local coordinate"
         if( serr == -2 ) then
+          !$omp critical
           write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+          !$omp end critical
         end if
       end if
 
@@ -423,6 +426,7 @@ contains
       wg = getWeight(etype, LX)*det
       if( flag == INFINITESIMAL ) then
         jacob = 1.d0
+        Jratio(LX) = 1.d0
         gderiv1(1:nn, 1:ndof) = gderiv(1:nn, 1:ndof)
       else
         gdispderiv(1:3, 1:3) = matmul( du(1:ndof, 1:nn)+u(1:ndof, 1:nn), gderiv(1:nn, 1:ndof) )
@@ -460,7 +464,9 @@ contains
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         if( serr == -1 ) stop "Fail to setup local coordinate"
         if( serr == -2 ) then
+          !$omp critical
           write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+          !$omp end critical
         end if
       end if
 

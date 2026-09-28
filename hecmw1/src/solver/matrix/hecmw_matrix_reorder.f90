@@ -139,7 +139,7 @@ contains
     real(kind=kreal), intent(in) :: AX(:)
     integer(kind=kint), intent(in) :: indexLp(0:), indexUp(0:)
     integer(kind=kint), intent(in) :: itemLp(:), itemUp(:)
-    real(kind=kreal), intent(out) :: ALp(:), AUp(:)
+    real(kind=kreal), intent(inout) :: ALp(:), AUp(:)
     integer(kind=kint) :: NDOF2, iold, inew
     integer(kind=kint) :: jsnewL, jenewL, jsnewU, jenewU
     integer(kind=kint) :: jold, kold, knew, jnew, l0old, l0new, l
@@ -162,7 +162,9 @@ contains
         if (knew < inew) then
           call hecmw_bsearch_int_array(itemLp, jsnewL, jenewL, knew, jnew)
           if (jnew < 0) then
+            !$omp critical
             write(0,*) 'ERROR:: jnew < 0 in reorder_off_diag2'
+            !$omp end critical
             call hecmw_abort( hecmw_comm_get_comm() )
           end if
           l0old = (jold-1)*NDOF2
@@ -173,7 +175,9 @@ contains
         else
           call hecmw_bsearch_int_array(itemUp, jsnewU, jenewU, knew, jnew)
           if (jnew < 0) then
+            !$omp critical
             write(0,*) 'ERROR:: jnew < 0 in reorder_off_diag2'
+            !$omp end critical
             call hecmw_abort( hecmw_comm_get_comm() )
           end if
           l0old = (jold-1)*NDOF2

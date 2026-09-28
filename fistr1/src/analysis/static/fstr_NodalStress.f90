@@ -67,6 +67,7 @@ contains
       nn = hecmw_get_max_node( ic_type )
       ni = NumOfQuadPoints( ic_type )
       allocate( func(ni,nn), inv_func(nn,ni) )
+      tdstrain = 0.0d0
       if( ic_type == fe_tet10n ) then
         ic = hecmw_get_max_node( fe_tet4n )
         do i = 1, ni
@@ -877,6 +878,8 @@ contains
     nnumber = 0
     fstrSOLID%is_rot = 0
 
+    if( associated(tnstrain) ) tnstrain = 0.0d0
+
     !C +-------------------------------+
     !C | according to ELEMENT TYPE     |
     !C +-------------------------------+
@@ -889,6 +892,7 @@ contains
       nn = hecmw_get_max_node( ic_type )
       ni = NumOfQuadPoints( ic_type )
       allocate( func(ni,nn), inv_func(nn,ni) )
+      tdstrain = 0.0d0
       if( ic_type == fe_tri6n ) then
         ic = hecmw_get_max_node( fe_tri3n )
         do i = 1, ni
@@ -1300,7 +1304,7 @@ contains
     integer(kind=kint) :: i, flag
     real(kind=kreal)   :: tmat(3, 3), tvec(3), strain(6)
 
-    flag=ieor(flag,flag)
+    flag=0
     if( fstrSOLID%output_ctrl(3)%outinfo%on(19) .or. fstrSOLID%output_ctrl(4)%outinfo%on(19) ) then
       if ( .not. associated(RES%PSTRESS) ) then
         allocate(RES%PSTRESS( 3*hecMESH%n_node ))

@@ -250,9 +250,9 @@ contains
     write(ILOG,1009) '//SMS '           ,EMmax(1),IEMmax(1),EMmin(1),IEMmin(1)
 
     !C*** Show Summary
-    GUmax  = Umax; GUmin  = Umin;
-    GEmax  = Emax; GEmin  = Emin; GEEmax = EEmax; GEEmin = EEmin;
-    GSmax  = Smax; GSmin  = Smin; GESmax = ESmax; GESmin = ESmin;
+    GUmax(1:ndof) = Umax(1:ndof); GUmin(1:ndof) = Umin(1:ndof)
+    GEmax(1:mdof) = Emax(1:mdof); GEmin(1:mdof) = Emin(1:mdof); GEEmax(1:mdof) = EEmax(1:mdof); GEEmin(1:mdof) = EEmin(1:mdof)
+    GSmax(1:mdof) = Smax(1:mdof); GSmin(1:mdof) = Smin(1:mdof); GESmax(1:mdof) = ESmax(1:mdof); GESmin(1:mdof) = ESmin(1:mdof)
     GMmax  = Mmax; GMmin  = Mmin; GEMmax = EMmax; GEMmin = EMmin;
 
     call hecmw_allREDUCE_R(hecMESH,GUmax,ndof,hecmw_max)

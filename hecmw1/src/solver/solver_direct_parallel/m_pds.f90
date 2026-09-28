@@ -1114,7 +1114,7 @@ integer, intent(in) :: ndeg   ! degree of freedom of each element in sparse matr
 
 type (irjc_matrix), intent(out) :: a1, a2
 type (ccls_matrix), intent(out) :: c1, c2
-real(8), dimension(:,:), intent(out) :: d
+real(8), dimension(:,:), intent(inout) :: d
 
 ! internal !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 integer, allocatable :: jstat1(:), irpt1(:), irowno1(:)

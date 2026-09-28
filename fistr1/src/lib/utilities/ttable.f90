@@ -183,7 +183,7 @@ module Table_DICTS
     character(len=*), intent(in)   :: key     !< parameter key
     real(kind=kreal), intent(in)   :: a(:)    !< automatic variables
     type(DICT_STRUCT), pointer     :: dict    !< data table
-    real(kind=kreal), intent(out)  :: outa    !< gradient
+    real(kind=kreal), intent(inout) :: outa    !< gradient
     logical, intent(out)           :: ierr
 
     type(DICT_DATA), pointer       :: dicval
