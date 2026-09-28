@@ -1130,6 +1130,8 @@ contains
         do m = 1, 3
           isize = ndof*(nb-1)+3+m
           Cv_deriv = -0.5D0*Cv_w_second(m, n, nb)
+          ! Cv_disp takes the drilling angle from nddrill, so the drill-axis rotation below enters only Cv.
+          Cv_deriv_disp = Cv_deriv_disp+Cv_deriv*displacement(isize)
           if( finite_rotation_director .and. present(nddrill) ) then
             drill_axis = director(:, nb)
             axis_norm = sqrt(dot_product(drill_axis, drill_axis))
@@ -1139,7 +1141,6 @@ contains
               Cv_deriv = Cv_deriv+shapefunc(nb) *(director_deriv(m, n, nb)-drill_axis(m)*drill_coeff)/axis_norm
             endif
           endif
-          Cv_deriv_disp = Cv_deriv_disp+Cv_deriv*displacement(isize)
           stiff(isize, jsize) = stiff(isize, jsize)+scale*Cv_deriv*Cv_disp
         end do
         stiff(:, jsize) = stiff(:, jsize)+scale*Cv*Cv_deriv_disp
