@@ -1,0 +1,60 @@
+###################################################################
+# Three blocks meet at a corner: the loaded block S has its face at
+# y=0 as the slave surface of CP_FLOOR and its face at x=0 as the
+# slave surface of CP_WALL, so the two nodes on the edge between them
+# are slave nodes of both pairs. CP_FLOOR is tied and takes three
+# rows per slave node, CP_WALL slides and takes one, so the shared
+# nodes hold four Lagrange rows and the row of a slave cannot be
+# addressed by its node number. The wall pair is frictionless and its
+# normal is along x, so the whole load along y goes to the floor.
+###################################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=NLSTATIC
+!CONTACT_ALGO, TYPE=SLAGRANGE
+!WRITE,RESULT,FREQUENCY=1
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRAIN,OFF
+NSTRESS,OFF
+NMISES,OFF
+ESTRAIN,OFF
+ESTRESS,OFF
+EMISES,OFF
+CONTACT_NFORCE,ON
+CONTACT_STATE,ON
+!WRITE,LOG
+!SOLVER,METHOD=MUMPS,ITERLOG=NO,TIMELOG=NO
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ FIX_F, 1, 3, 0.0
+ FIX_W, 1, 3, 0.0
+ ZFIX, 3, 3, 0.0
+!CLOAD, GRPID=1
+ LOAD_TOP, 2, -0.25
+ LOAD_RIGHT, 1, -0.25
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=TIED, GRPID=1
+ CP_FLOOR
+!CONTACT, INTERACTION=FSLID, GRPID=2
+ CP_WALL, 0.0
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MAT1
+!ELASTIC, INFINITESIMAL
+ 1.00000000E+03, 3.00000000E-01
+###################################
+#####       STEP CONTROL      #####
+###################################
+!STEP, SUBSTEPS=1, CONVERG=1.0E-08
+ BOUNDARY, 1
+ LOAD, 1
+ CONTACT, 1
+ CONTACT, 2
+!END
