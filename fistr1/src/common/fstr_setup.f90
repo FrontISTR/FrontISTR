@@ -4554,37 +4554,51 @@ end function fstr_setup_INITIAL
 
   !> A translational node of 641/761/781 has dof 1-3 only, and its rotation is dof 1-3
   !> of the paired dummy node. Dof 4-6 of !BOUNDARY and !CLOAD given to the translational
-  !> nodes are moved to the dummy nodes; the other conditions cannot give dof 4-6 to them.
+  !> nodes are moved to the dummy nodes generated from 611/731/741; the other conditions
+  !> cannot give dof 4-6 to them. With explicit dummy nodes in the mesh, the rotation is
+  !> given only as dof 1-3 of the dummy nodes.
   subroutine fstr_convert_rotation_dof( P )
-    use hecmw_setup_util, only : append_new_groups
+    use hecmw_setup_util, only : append_new_groups, get_grp_id
     implicit none
     type(fstr_param_pack) :: P
     type(hecmwST_local_mesh), pointer :: hecMESH
-    integer(kind=kint), allocatable :: rot_node(:), n_rot(:), rot_grp(:), src(:)
+    integer(kind=kint), allocatable :: rot_node(:), n_rot(:), n_explicit(:), rot_grp(:), src(:)
     integer(kind=kint), allocatable :: new_index(:), new_list(:)
     character(len=HECMW_NAME_LEN), allocatable :: new_name(:)
-    logical, allocatable :: is_rot(:)
+    logical, allocatable :: is_rot(:), in_all(:), is_explicit(:)
     integer(kind=kint) :: icel, is, nn, i, j, k, m, n, ig, n_new, first_id, ids, ide
 
     hecMESH => P%MESH
     if( hecMESH%n_dof /= 3 ) return
 
-    allocate( rot_node(hecMESH%n_node) )
+    ! explicit dummy nodes are in ALL, and the generated ones are not
+    allocate( in_all(hecMESH%n_node) )
+    in_all = .false.
+    ig = get_grp_id( hecMESH, 'node_grp', 'ALL' )
+    if( ig > 0 ) then
+      is = hecMESH%node_group%grp_index(ig-1)
+      in_all(hecMESH%node_group%grp_item(is+1:hecMESH%node_group%grp_index(ig))) = .true.
+    endif
+
+    allocate( rot_node(hecMESH%n_node), is_explicit(hecMESH%n_node) )
     rot_node = 0
+    is_explicit = .false.
     do icel = 1, hecMESH%n_elem
       if( .not. hecmw_is_etype_33struct(hecMESH%elem_type(icel)) ) cycle
       nn = hecmw_get_max_node(hecMESH%elem_type(icel))/2
       is = hecMESH%elem_node_index(icel-1)
       do j = 1, nn
         rot_node(hecMESH%elem_node_item(is+j)) = hecMESH%elem_node_item(is+nn+j)
+        if( in_all(hecMESH%elem_node_item(is+nn+j)) ) is_explicit(hecMESH%elem_node_item(is+j)) = .true.
       enddo
     enddo
     if( all(rot_node == 0) ) return
 
-    allocate( n_rot(hecMESH%node_group%n_grp) )
+    allocate( n_rot(hecMESH%node_group%n_grp), n_explicit(hecMESH%node_group%n_grp) )
     do ig = 1, hecMESH%node_group%n_grp
       is = hecMESH%node_group%grp_index(ig-1)
       n_rot(ig) = count( rot_node(hecMESH%node_group%grp_item(is+1:hecMESH%node_group%grp_index(ig))) > 0 )
+      n_explicit(ig) = count( is_explicit(hecMESH%node_group%grp_item(is+1:hecMESH%node_group%grp_index(ig))) )
     enddo
 
     do i = 1, P%SOLID%SPRING_ngrp_tot
@@ -4618,7 +4632,9 @@ end function fstr_setup_INITIAL
     do i = 1, P%SOLID%BOUNDARY_ngrp_tot
       if( P%SOLID%BOUNDARY_ngrp_rotID(i) > 0 ) cycle
       ig = P%SOLID%BOUNDARY_ngrp_ID(i)
-      if( mod(P%SOLID%BOUNDARY_ngrp_type(i), 10) > 3 .and. n_rot(ig) > 0 ) rot_grp(ig) = -1
+      if( mod(P%SOLID%BOUNDARY_ngrp_type(i), 10) <= 3 .or. n_rot(ig) == 0 ) cycle
+      if( n_explicit(ig) > 0 ) call explicit_dummy_node_err_stop( '!BOUNDARY' )
+      rot_grp(ig) = -1
     enddo
     do i = 1, P%SOLID%CLOAD_ngrp_tot
       if( P%SOLID%CLOAD_ngrp_rotID(i) > 0 .or. P%SOLID%CLOAD_ngrp_DOF(i) <= 3 ) cycle
@@ -4626,6 +4642,7 @@ end function fstr_setup_INITIAL
       n = hecMESH%node_group%grp_index(ig) - hecMESH%node_group%grp_index(ig-1)
       if( n_rot(ig) < n ) call fstr_setup_util_err_stop( &
         '### Error: !CLOAD : dof 4-6 is given to nodes without rotational dof' )
+      if( n_explicit(ig) > 0 ) call explicit_dummy_node_err_stop( '!CLOAD' )
       rot_grp(ig) = -1
     enddo
 
@@ -4710,6 +4727,14 @@ end function fstr_setup_INITIAL
     call fstr_setup_util_err_stop( '### Error: '//header_name// &
       ' : dof 4-6 of beam/shell nodes in a mesh with solid elements is not supported' )
   end subroutine rotation_dof_err_stop
+
+  subroutine explicit_dummy_node_err_stop( header_name )
+    implicit none
+    character(len=*) :: header_name
+
+    call fstr_setup_util_err_stop( '### Error: '//header_name// &
+      ' : dof 4-6 is given to beam/shell nodes with explicit dummy nodes; give it as dof 1-3 of the dummy nodes' )
+  end subroutine explicit_dummy_node_err_stop
 
   subroutine remap_integer_array( array, src, n )
     implicit none
