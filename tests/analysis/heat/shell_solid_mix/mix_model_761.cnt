@@ -1,0 +1,18 @@
+!!
+!! heat conduction of a solid-shell model with hand-written dummy nodes:
+!! 761 is assembled as 731 on its translational nodes, and the dummy nodes
+!! are fixed to zero temperature
+!!
+!SOLUTION,TYPE=HEAT
+!HEAT
+!FIXTEMP
+ FIX,   0.0
+ HOT, 100.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES
+ 100,  1, 10, 10
+ 1.0e-8,1.0,0.0
+!WRITE,RESULT
+!END
