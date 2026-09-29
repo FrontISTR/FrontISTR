@@ -4562,11 +4562,11 @@ end function fstr_setup_INITIAL
     implicit none
     type(fstr_param_pack) :: P
     type(hecmwST_local_mesh), pointer :: hecMESH
-    integer(kind=kint), allocatable :: rot_node(:), n_rot(:), n_explicit(:), rot_grp(:), src(:)
+    integer(kind=kint), allocatable :: rot_node(:), n_rot(:), n_rot_all(:), n_explicit(:), rot_grp(:), src(:)
     integer(kind=kint), allocatable :: new_index(:), new_list(:)
     character(len=HECMW_NAME_LEN), allocatable :: new_name(:)
     logical, allocatable :: is_rot(:), in_all(:), is_explicit(:)
-    integer(kind=kint) :: icel, is, nn, i, j, k, m, n, ig, n_new, first_id, ids, ide
+    integer(kind=kint) :: icel, is, ie, nn, i, j, k, m, n, ig, n_new, first_id, ids, ide
 
     hecMESH => P%MESH
     if( hecMESH%n_dof /= 3 ) return
@@ -4592,31 +4592,38 @@ end function fstr_setup_INITIAL
         if( in_all(hecMESH%elem_node_item(is+nn+j)) ) is_explicit(hecMESH%elem_node_item(is+j)) = .true.
       enddo
     enddo
-    if( all(rot_node == 0) ) return
+    ! a rank may hold an external translational node without its 641/761/781 element,
+    ! so the conditions are converted on every rank by the counts over all the ranks
+    n = count( rot_node > 0 )
+    call hecmw_allreduce_I1( hecMESH, n, hecmw_max )
+    if( n == 0 ) return
 
-    allocate( n_rot(hecMESH%node_group%n_grp), n_explicit(hecMESH%node_group%n_grp) )
+    allocate( n_rot(hecMESH%node_group%n_grp), n_rot_all(hecMESH%node_group%n_grp) )
+    allocate( n_explicit(hecMESH%node_group%n_grp) )
     do ig = 1, hecMESH%node_group%n_grp
       is = hecMESH%node_group%grp_index(ig-1)
       n_rot(ig) = count( rot_node(hecMESH%node_group%grp_item(is+1:hecMESH%node_group%grp_index(ig))) > 0 )
       n_explicit(ig) = count( is_explicit(hecMESH%node_group%grp_item(is+1:hecMESH%node_group%grp_index(ig))) )
     enddo
+    n_rot_all = n_rot
+    call hecmw_allreduce_I( hecMESH, n_rot_all, hecMESH%node_group%n_grp, hecmw_max )
 
     do i = 1, P%SOLID%SPRING_ngrp_tot
-      if( P%SOLID%SPRING_ngrp_DOF(i) > 3 .and. n_rot(P%SOLID%SPRING_ngrp_ID(i)) > 0 ) &
+      if( P%SOLID%SPRING_ngrp_DOF(i) > 3 .and. n_rot_all(P%SOLID%SPRING_ngrp_ID(i)) > 0 ) &
         call rotation_dof_err_stop( '!SPRING' )
     enddo
     do i = 1, P%SOLID%VELOCITY_ngrp_tot
       if( P%SOLID%VELOCITY_ngrp_rotID(i) > 0 ) cycle
-      if( mod(P%SOLID%VELOCITY_ngrp_type(i), 10) > 3 .and. n_rot(P%SOLID%VELOCITY_ngrp_ID(i)) > 0 ) &
+      if( mod(P%SOLID%VELOCITY_ngrp_type(i), 10) > 3 .and. n_rot_all(P%SOLID%VELOCITY_ngrp_ID(i)) > 0 ) &
         call rotation_dof_err_stop( '!VELOCITY' )
     enddo
     do i = 1, P%SOLID%ACCELERATION_ngrp_tot
-      if( mod(P%SOLID%ACCELERATION_ngrp_type(i), 10) > 3 .and. n_rot(P%SOLID%ACCELERATION_ngrp_ID(i)) > 0 ) &
+      if( mod(P%SOLID%ACCELERATION_ngrp_type(i), 10) > 3 .and. n_rot_all(P%SOLID%ACCELERATION_ngrp_ID(i)) > 0 ) &
         call rotation_dof_err_stop( '!ACCELERATION' )
     enddo
     do i = 1, P%FREQ%FLOAD_ngrp_tot
       if( P%FREQ%FLOAD_ngrp_TYPE(i) /= kFLOADTYPE_NODE ) cycle
-      if( P%FREQ%FLOAD_ngrp_DOF(i) > 3 .and. n_rot(P%FREQ%FLOAD_ngrp_ID(i)) > 0 ) &
+      if( P%FREQ%FLOAD_ngrp_DOF(i) > 3 .and. n_rot_all(P%FREQ%FLOAD_ngrp_ID(i)) > 0 ) &
         call rotation_dof_err_stop( '!FLOAD' )
     enddo
     do i = 1, hecMESH%mpc%n_mpc
@@ -4632,15 +4639,17 @@ end function fstr_setup_INITIAL
     do i = 1, P%SOLID%BOUNDARY_ngrp_tot
       if( P%SOLID%BOUNDARY_ngrp_rotID(i) > 0 ) cycle
       ig = P%SOLID%BOUNDARY_ngrp_ID(i)
-      if( mod(P%SOLID%BOUNDARY_ngrp_type(i), 10) <= 3 .or. n_rot(ig) == 0 ) cycle
+      if( mod(P%SOLID%BOUNDARY_ngrp_type(i), 10) <= 3 .or. n_rot_all(ig) == 0 ) cycle
       if( n_explicit(ig) > 0 ) call explicit_dummy_node_err_stop( '!BOUNDARY' )
       rot_grp(ig) = -1
     enddo
     do i = 1, P%SOLID%CLOAD_ngrp_tot
       if( P%SOLID%CLOAD_ngrp_rotID(i) > 0 .or. P%SOLID%CLOAD_ngrp_DOF(i) <= 3 ) cycle
       ig = P%SOLID%CLOAD_ngrp_ID(i)
-      n = hecMESH%node_group%grp_index(ig) - hecMESH%node_group%grp_index(ig-1)
-      if( n_rot(ig) < n ) call fstr_setup_util_err_stop( &
+      is = hecMESH%node_group%grp_index(ig-1)
+      ie = hecMESH%node_group%grp_index(ig)
+      if( any( rot_node(hecMESH%node_group%grp_item(is+1:ie)) == 0 .and. &
+        hecMESH%node_group%grp_item(is+1:ie) <= hecMESH%nn_internal ) ) call fstr_setup_util_err_stop( &
         '### Error: !CLOAD : dof 4-6 is given to nodes without rotational dof' )
       if( n_explicit(ig) > 0 ) call explicit_dummy_node_err_stop( '!CLOAD' )
       rot_grp(ig) = -1
