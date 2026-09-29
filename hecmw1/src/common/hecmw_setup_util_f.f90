@@ -302,7 +302,6 @@ contains
   end subroutine append_new_group
 
   !> Append n groups at once; group i holds list(index(i-1)+1:index(i)).
-  !> The names are not checked against the existing groups.
   subroutine append_new_groups(hecMESH, grp_type_name, n, names, index, list, first_id)
     implicit none
     type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
@@ -312,9 +311,24 @@ contains
     integer(kind=kint), intent(in) :: index(0:)
     integer(kind=kint), intent(in) :: list(:)
     integer(kind=kint), intent(out) :: first_id
-    integer(kind=kint) :: old_grp_number, old_item_number, i
+    integer(kind=kint) :: old_grp_number, old_item_number, i, id
 
     call set_group_pointers( hecMESH, grp_type_name )
+    do i = 1, n
+      do id = 1, n_grp
+        if( hecmw_streqr(grp_name%s(id), names(i)) ) then
+          write(*,*) '### Error: Group already exists: ', names(i)
+          stop
+        endif
+      enddo
+      do id = 1, i - 1
+        if( hecmw_streqr(names(id), names(i)) ) then
+          write(*,*) '### Error: Group already exists: ', names(i)
+          stop
+        endif
+      enddo
+    enddo
+
     old_grp_number = n_grp
     old_item_number = grp_index(n_grp)
 
