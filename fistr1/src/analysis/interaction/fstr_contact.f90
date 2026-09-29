@@ -178,7 +178,7 @@ contains
       else
         call calcu_contact_ndforce_NodeSurf( purpose, ctAlgo, fstrSOLID%contacts(i), hecMESH%node(:), fstrSOLID%unode(:), &
           fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
-          fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC, hecLagMAT )
+          fstrSOLID%CONT_NFORCE, fstrSOLID%CONT_FRIC )
       endif
     enddo
 
@@ -187,7 +187,7 @@ contains
       if( .not. fstr_isEmbedActive( fstrSOLID, grpid, cstep ) ) cycle
       call calcu_contact_ndforce_NodeSurf( purpose, ctAlgo, fstrSOLID%embeds(i), hecMESH%node(:), fstrSOLID%unode(:), &
         fstrSOLID%dunode(:), hecLagMAT%Lagrange(:), conMAT, &
-        fstrSOLID%EMBED_NFORCE, fstrSOLID%EMBED_NFORCE, hecLagMAT )
+        fstrSOLID%EMBED_NFORCE, fstrSOLID%EMBED_NFORCE )
     enddo
 
   end subroutine fstr_contact_ndforce_core

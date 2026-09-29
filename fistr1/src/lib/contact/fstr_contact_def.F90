@@ -74,6 +74,7 @@ module mContactDef
   type tContactState
     integer          :: state !< -1:free, 1:in contact, or other needed
     integer          :: surface !< contacting surface number
+    integer          :: id_lagrange !< first Lagrange row of this occurrence, 0 if it holds none
     real(kind=kreal) :: distance !< penetration value
     real(kind=kreal) :: wkdist !< copy of penetration value
     real(kind=kreal) :: lpos(3) !< contact position(local coordinate)
@@ -200,6 +201,7 @@ contains
     type(tContactState), intent(inout) :: cstate !< contact state
     cstate%state = -1
     cstate%surface = -1
+    cstate%id_lagrange = 0
     cstate%distance = 0.0d0
     cstate%wkdist = 0.0d0
     cstate%lpos(:) = 0.0d0
