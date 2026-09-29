@@ -8,13 +8,14 @@
 !> drilling scalar) needed when the Newton solution increment cannot be applied as
 !> a simple vector addition to the nodal degrees of freedom.
 !>
-!> This path is used by elastic MITC4 shells (741 and split-layout 781) under
-!> Total/Updated Lagrangian kinematics. Finite-rotation algebra lives in
+!> This path is used by elastic MITC3/MITC4 shells (731/741 and split-layout 781)
+!> under Total/Updated Lagrangian kinematics. Finite-rotation algebra lives in
 !> m_fstr_FiniteRotationKinematics; this module stores and advances the nodal frame state.
 module m_fstr_NodalKinematics
   use m_fstr
   use m_fstr_FiniteRotationKinematics, only: fstr_uses_finite_rotation_kinematics, &
-    ShellOrthonormalizeTriad, ShellUpdateTriadWithIncrement, ShellComposeRotationVector
+    fstr_is_finite_rotation_shell_element, ShellOrthonormalizeTriad, &
+    ShellUpdateTriadWithIncrement, ShellComposeRotationVector
   implicit none
 
   private
@@ -26,11 +27,11 @@ module m_fstr_NodalKinematics
 
 contains
 
-  !> Build the per-node reference frames once, by averaging element shell triads
-  !> at shared nodes. Already-initialized nodes are left untouched, so repeated
-  !> calls are idempotent.
+  !> Build the per-node reference frames once, by averaging the triads contributed
+  !> by adjacent local shell elements. Already-initialized nodes are left untouched,
+  !> so repeated calls are idempotent.
   subroutine fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
-    use elementInfo, only: fe_mitc4_shell, fe_mitc4_shell361
+    use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, fe_mitc4_shell361
     implicit none
 
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -38,7 +39,7 @@ contains
     integer(kind=kint), intent(in)        :: ndof
 
     integer(kind=kint) :: itype, is, iE, ic_type, icel, iiS, nn, j, node_id
-    integer(kind=kint) :: node_offset, rotation_mode, shell_nnode
+    integer(kind=kint) :: node_offset, rotation_mode, shell_nnode, triad_etype
     integer(kind=kint), allocatable :: node_mode(:), node_count(:)
     real(kind=kreal), allocatable :: director_sum(:,:), tangent_sum(:,:)
     real(kind=kreal) :: ecoord(3, 8), triad(3, 3), trial(3, 3)
@@ -61,20 +62,28 @@ contains
       is = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype)
       ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type == fe_mitc4_shell ) then
+      if( ic_type == fe_mitc3_shell ) then
+        shell_nnode = 3
+        node_offset = 0
+        rotation_mode = 1
+        triad_etype = fe_mitc3_shell
+      else if( ic_type == fe_mitc4_shell ) then
         shell_nnode = 4
         node_offset = 0
         rotation_mode = 1
+        triad_etype = fe_mitc4_shell
       else if( ic_type == fe_mitc4_shell361 ) then
         shell_nnode = 4
         node_offset = 4
         rotation_mode = 2
+        triad_etype = fe_mitc4_shell
       else
         cycle
       endif
       do icel = is, iE
         iiS = hecMESH%elem_node_index(icel-1)
         nn = hecMESH%elem_node_index(icel) - iiS
+        if( .not. fstr_is_finite_rotation_shell_element(ic_type, nn) ) cycle
         if( .not. associated( fstrSOLID%elements(icel)%gausses ) ) cycle
         if( .not. fstr_uses_finite_rotation_kinematics( ic_type, nn, &
             fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) cycle
@@ -86,11 +95,11 @@ contains
 
         if( (rotation_mode == 1 .and. ndof >= 6) .or. rotation_mode == 2 ) then
           do j = 1, shell_nnode
-            call fstr_reference_shell_triad( shell_nnode, ecoord(1:3, 1:shell_nnode), j, triad )
+            call fstr_reference_shell_triad( triad_etype, shell_nnode, ecoord(1:3, 1:shell_nnode), j, triad )
             node_id = hecMESH%elem_node_item(iiS+node_offset+j)
             if( node_id <= 0 .or. node_id > hecMESH%n_node ) cycle
             if( fstrSOLID%shell_rot_state(node_id) /= 0 ) cycle
-            ! average shell triads at shared nodes
+            ! Accumulate contributions from adjacent local shell elements.
             director_sum(1:3, node_id) = director_sum(1:3, node_id) + triad(1:3, 3)
             tangent_sum(1:3, node_id) = tangent_sum(1:3, node_id) + triad(1:3, 1)
             node_count(node_id) = node_count(node_id) + 1
@@ -240,7 +249,7 @@ contains
   !> Commit the converged step increment dunode into the total displacement unode.
   !>
   !> For finite-rotation shell nodes the converged trial frame (dtriad) and
-  !> drilling scalar become the new reference state.
+  !> drilling scalar become the converged state used to start the next load step.
   subroutine fstr_commit_solution_increment( hecMESH, fstrSOLID, ndof )
     implicit none
 
@@ -309,53 +318,43 @@ contains
 
   end subroutine fstr_set_identity_triad
 
-  !> Reference nodal frame at corner inode of a MITC4 element: e3 from the surface
+  !> Reference nodal frame at a MITC3/MITC4 corner: e3 from the surface
   !> normal (g1 x g2), e2 = e3 x e0, e1 = e2 x e3, then orthonormalized.
-  subroutine fstr_reference_shell_triad( nn, ecoord, inode, triad )
-    use elementInfo, only: fe_mitc4_shell, getShapeDeriv
+  subroutine fstr_reference_shell_triad( etype, nn, ecoord, inode, triad )
+    use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, getShapeDeriv, getNodalNaturalCoord
     implicit none
 
+    integer(kind=kint), intent(in) :: etype
     integer(kind=kint), intent(in) :: nn
     integer(kind=kint), intent(in) :: inode
     real(kind=kreal), intent(in)  :: ecoord(3, nn)
     real(kind=kreal), intent(out) :: triad(3, 3)
 
-    real(kind=kreal) :: xi, eta
-    real(kind=kreal) :: shapederiv(4, 2)
+    real(kind=kreal) :: center(2), nncoord(nn, 2), shapederiv(nn, 2)
     real(kind=kreal) :: g1(3), g2(3), e0(3), trial(3, 3), normv
     integer(kind=kint) :: i
 
     call fstr_set_identity_triad( trial )
-    if( nn /= 4 ) then
+    if( .not. ((etype == fe_mitc3_shell .and. nn == 3) .or. &
+        (etype == fe_mitc4_shell .and. nn == 4)) .or. &
+        inode < 1 .or. inode > nn ) then
       triad(1:3, 1:3) = trial(1:3, 1:3)
       return
     endif
 
-    call getShapeDeriv( fe_mitc4_shell, (/ 0.0D0, 0.0D0 /), shapederiv )
+    center = 0.0D0
+    if( etype == fe_mitc3_shell ) center = 1.0D0/3.0D0
+    call getShapeDeriv( etype, center, shapederiv )
     e0(1:3) = 0.0D0
-    do i = 1, 4
+    do i = 1, nn
       e0(1:3) = e0(1:3) + shapederiv(i, 1)*ecoord(1:3, i)
     end do
 
-    select case( inode )
-    case( 1 )
-      xi = -1.0D0
-      eta = -1.0D0
-    case( 2 )
-      xi =  1.0D0
-      eta = -1.0D0
-    case( 3 )
-      xi =  1.0D0
-      eta =  1.0D0
-    case default
-      xi = -1.0D0
-      eta =  1.0D0
-    end select
-
-    call getShapeDeriv( fe_mitc4_shell, (/ xi, eta /), shapederiv )
+    call getNodalNaturalCoord( etype, nncoord )
+    call getShapeDeriv( etype, nncoord(inode, 1:2), shapederiv )
     g1(1:3) = 0.0D0
     g2(1:3) = 0.0D0
-    do i = 1, 4
+    do i = 1, nn
       g1(1:3) = g1(1:3) + shapederiv(i, 1)*ecoord(1:3, i)
       g2(1:3) = g2(1:3) + shapederiv(i, 2)*ecoord(1:3, i)
     end do
@@ -437,13 +436,12 @@ contains
 
   end subroutine fstr_reset_shell_state_from_reference
 
-  !> Send only the reference shell triad to external nodes.
+  !> Send each internal node's reference shell triad to the corresponding external nodes.
   !>
   !> The linear solver already updates the solution vector on external nodes.
-  !> The additional shell communication is limited to the reference frame because
-  !> it is formed by averaging adjacent element triads across partition
-  !> boundaries; step-dependent kinematic quantities are recomputed locally from
-  !> the synchronized reference frame and the solver-updated nodal unknowns.
+  !> The additional shell communication is limited to the reference frame;
+  !> step-dependent kinematic quantities are recomputed locally from the
+  !> synchronized reference frame and the solver-updated nodal unknowns.
   subroutine fstr_update_initialized_finite_rotation_state( hecMESH, fstrSOLID )
     use m_hecmw_comm_f, only: hecmw_update_R
     implicit none

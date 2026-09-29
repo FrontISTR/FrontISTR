@@ -6,7 +6,7 @@
 
 module m_fstr_FiniteRotationKinematics
   use hecmw
-  use elementInfo, only: fe_mitc4_shell, fe_mitc4_shell361
+  use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, fe_mitc4_shell361
   use m_fstr, only: fstr_solid
   use mMaterial, only: tMaterial, TOTALLAG, UPDATELAG, isElastic
   implicit none
@@ -32,6 +32,7 @@ contains
     integer(kind=kint), intent(in) :: nn
 
     fstr_is_finite_rotation_shell_element = &
+      ( etype == fe_mitc3_shell .and. nn == 3 ) .or. &
       ( etype == fe_mitc4_shell .and. nn == 4 ) .or. &
       ( etype == fe_mitc4_shell361 .and. nn == 8 )
   end function fstr_is_finite_rotation_shell_element
@@ -60,11 +61,10 @@ contains
         is = hecMESH%elem_type_index(itype-1) + 1
         iE = hecMESH%elem_type_index(itype)
         ic_type = hecMESH%elem_type_item(itype)
-        if( ic_type /= fe_mitc4_shell .and. ic_type /= fe_mitc4_shell361 ) cycle
-
         do icel = is, iE
           iiS = hecMESH%elem_node_index(icel-1)
           nn = hecMESH%elem_node_index(icel) - iiS
+          if( .not. fstr_is_finite_rotation_shell_element(ic_type, nn) ) cycle
           if( .not. associated( fstrSOLID%elements(icel)%gausses ) ) cycle
           if( fstr_uses_finite_rotation_kinematics( ic_type, nn, &
               fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) then
@@ -99,7 +99,11 @@ contains
       is = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype)
       ic_type = hecMESH%elem_type_item(itype)
-      if( ic_type == fe_mitc4_shell ) then
+      if( ic_type == fe_mitc3_shell ) then
+        shell_nnode = 3
+        node_offset = 0
+        node_mode = 1
+      else if( ic_type == fe_mitc4_shell ) then
         shell_nnode = 4
         node_offset = 0
         node_mode = 1
@@ -110,10 +114,11 @@ contains
       else
         cycle
       endif
-
+      if( node_mode == 1 .and. ndof < 6 ) cycle
       do icel = is, iE
         iiS = hecMESH%elem_node_index(icel-1)
         nn = hecMESH%elem_node_index(icel) - iiS
+        if( .not. fstr_is_finite_rotation_shell_element(ic_type, nn) ) cycle
         if( .not. associated( fstrSOLID%elements(icel)%gausses ) ) cycle
         if( .not. fstr_uses_finite_rotation_kinematics( ic_type, nn, &
             fstrSOLID%elements(icel)%gausses(1)%pMaterial ) ) cycle
