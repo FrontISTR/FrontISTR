@@ -65,7 +65,7 @@ contains
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
-      call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, 0)
+      call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, fstrPARAM, ctime, tincr, 0)
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
     endif
 
@@ -327,7 +327,7 @@ contains
           call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
 
           ! ----- update the strain, stress, and internal force
-          call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+          call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, fstrPARAM, ctime, tincr, iter)
 
           if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
             call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime+dtime )
@@ -564,7 +564,7 @@ contains
         endif
 
         ! ----- update the strain, stress, and internal force (only QFORCE)
-        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, fstrPARAM, ctime, tincr, iter)
 
         if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
           call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime+dtime )

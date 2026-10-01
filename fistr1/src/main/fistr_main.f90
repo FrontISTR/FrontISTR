@@ -271,7 +271,7 @@ contains
     hecMAT%Rarray(:) = svRarray(:)
     hecMAT%Iarray(:) = svIarray(:)
 
-    call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID )
+    call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID, fstrPR )
 
     if( myrank == 0) write(*,*) 'fstr_setup: OK'
     write(ILOG,*) 'fstr_setup: OK'

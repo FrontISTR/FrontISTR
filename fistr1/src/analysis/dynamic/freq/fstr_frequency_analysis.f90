@@ -469,7 +469,7 @@ contains
 
     hecMAT%X(1:ntotal) = disp(1:ntotal) - fstrSOLID%unode(1:ntotal) - fstrSOLID%dunode(1:ntotal)
     call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
-    call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, 0.0D0, 0.0D0, 1 )
+    call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrPR, 0.0D0, 0.0D0, 1 )
     call fstr_Update_REACTION_SPC( 1, hecMESH, fstrSOLID )
 
     if( ndof == 2 ) then
