@@ -137,9 +137,9 @@ contains
           endif
         enddo
 
-        if( ic_type == 781 ) then
-          do j = 1, 4
-            in = nodLOCAL(j+4)
+        if( ic_type == 761 .or. ic_type == 781 ) then
+          do j = 1, nn/2
+            in = nodLOCAL(j+nn/2)
             triad_tri(1:9,j) = 0.0D0
             triad_cur(1:9,j) = 0.0D0
             triad_ref(1:9,j) = 0.0D0
@@ -348,9 +348,15 @@ contains
       endif
 
     else if( ic_type == 761 ) then   ! for shell-solid mixed analysis
-      if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-      call STF_Shell_MITC(731, 3, 6, ecoord(1:3,1:3), fstrSOLID%elements(icel)%gausses(:), &
-        &              stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2)
+      if( material%nlgeom_flag == INFINITESIMAL ) then
+        call STF_Shell_MITC(731, 3, 6, ecoord(1:3,1:3), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2)
+      else
+        call STF_Shell_MITC33(731, 3, 6, ecoord(1:3,1:3), u(1:3,1:6), u_prev(1:3,1:6), &
+          fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2, &
+          fstrSOLID%elements(icel), triad_tri(1:9,1:3), triad_ref(1:9,1:3), &
+          triad_cur(1:9,1:3), shell_drill(1:3))
+      endif
 
       if( is_dynamic ) then
         surf = get_face3(ecoord(1:3,1:nn))

@@ -8,7 +8,7 @@
 !> drilling scalar) needed when the Newton solution increment cannot be applied as
 !> a simple vector addition to the nodal degrees of freedom.
 !>
-!> This path is used by elastic MITC3/MITC4 shells (731/741 and split-layout 781)
+!> This path is used by elastic MITC3/MITC4 shells (731/741 and split-layout 761/781)
 !> under Total/Updated Lagrangian kinematics. Finite-rotation algebra lives in
 !> m_fstr_FiniteRotationKinematics; this module stores and advances the nodal frame state.
 module m_fstr_NodalKinematics
@@ -31,7 +31,7 @@ contains
   !> by adjacent local shell elements. Already-initialized nodes are left untouched,
   !> so repeated calls are idempotent.
   subroutine fstr_ensure_finite_rotation_state( hecMESH, fstrSOLID, ndof )
-    use elementInfo, only: fe_mitc3_shell, fe_mitc4_shell, fe_mitc4_shell361
+    use elementInfo, only: fe_mitc3_shell, fe_mitc3_shell361, fe_mitc4_shell, fe_mitc4_shell361
     implicit none
 
     type (hecmwST_local_mesh), intent(in) :: hecMESH
@@ -66,6 +66,11 @@ contains
         shell_nnode = 3
         node_offset = 0
         rotation_mode = 1
+        triad_etype = fe_mitc3_shell
+      else if( ic_type == fe_mitc3_shell361 ) then
+        shell_nnode = 3
+        node_offset = 3
+        rotation_mode = 2
         triad_etype = fe_mitc3_shell
       else if( ic_type == fe_mitc4_shell ) then
         shell_nnode = 4
