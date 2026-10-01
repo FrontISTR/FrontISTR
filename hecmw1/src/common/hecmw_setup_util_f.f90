@@ -301,6 +301,51 @@ contains
     call backset_group_pointers( hecMESH, grp_type_name )
   end subroutine append_new_group
 
+  !> Append n groups at once; group i holds list(index(i-1)+1:index(i)).
+  subroutine append_new_groups(hecMESH, grp_type_name, n, names, index, list, first_id)
+    implicit none
+    type(hecmwST_local_mesh), pointer :: hecMESH  !< mesh definition
+    character(len=*), intent(in) :: grp_type_name
+    integer(kind=kint), intent(in) :: n
+    character(len=HECMW_NAME_LEN), intent(in) :: names(:)
+    integer(kind=kint), intent(in) :: index(0:)
+    integer(kind=kint), intent(in) :: list(:)
+    integer(kind=kint), intent(out) :: first_id
+    integer(kind=kint) :: old_grp_number, old_item_number, i, id
+
+    call set_group_pointers( hecMESH, grp_type_name )
+    do i = 1, n
+      do id = 1, n_grp
+        if( hecmw_streqr(grp_name%s(id), names(i)) ) then
+          write(*,*) '### Error: Group already exists: ', names(i)
+          stop
+        endif
+      enddo
+      do id = 1, i - 1
+        if( hecmw_streqr(names(id), names(i)) ) then
+          write(*,*) '### Error: Group already exists: ', names(i)
+          stop
+        endif
+      enddo
+    enddo
+
+    old_grp_number = n_grp
+    old_item_number = grp_index(n_grp)
+
+    call hecmw_expand_name_array( grp_name, old_grp_number, old_grp_number + n )
+    call hecmw_expand_index_array( grp_index, old_grp_number + 1, old_grp_number + n + 1 )
+    call hecmw_expand_integer_array( grp_item, old_item_number, old_item_number + index(n) )
+
+    n_grp = old_grp_number + n
+    first_id = old_grp_number + 1
+    do i = 1, n
+      grp_name%s(old_grp_number + i) = names(i)
+      grp_index(old_grp_number + i) = old_item_number + index(i)
+    enddo
+    grp_item(old_item_number + 1:old_item_number + index(n)) = list(1:index(n))
+    call backset_group_pointers( hecMESH, grp_type_name )
+  end subroutine append_new_groups
+
   !------------------------------------------------------------------------------
   ! JP-0
   ! grp_type_name : 'node_grp', 'elem_grp' or 'surf_grp'
