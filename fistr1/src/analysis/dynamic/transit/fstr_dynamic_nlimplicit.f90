@@ -428,7 +428,7 @@ contains
         ! ----- check convergence
         call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
 
-        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
             ndof, iter, istep, cstep, &
             resid_work, cnvstat, iterStatus, hecLagMAT)
         if (iterStatus == kitrConverged) exit

@@ -111,7 +111,7 @@ contains
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
-    if(.not. fstrPR%nlgeom)then
+    if(.not. fstrPARAM%nlgeom)then
       isLinear = .true.
     endif
 
@@ -166,7 +166,7 @@ contains
       if( isLinear ) exit
 
       ! ----- check convergence
-      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
           ndof, iter, sub_step, cstep, &
           hecMAT%B, cnvstat, iterStatus)
       if (iterStatus == kitrConverged) exit
@@ -346,7 +346,7 @@ contains
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
 
           call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
-          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
               ndof, iter, sub_step, cstep, &
               resid_work, cnvstat, iterStatus, hecLagMAT)
           if (iterStatus == kitrConverged) exit
@@ -585,7 +585,7 @@ contains
         endif
 
         call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
-        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
             ndof, iter, sub_step, cstep, &
             resid_work, cnvstat, iterStatus, hecLagMAT)
         if (iterStatus == kitrConverged) then
