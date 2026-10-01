@@ -100,7 +100,7 @@ contains
         !$omp&  shell_drill, &
         !$omp&  cdsys_ID,coords,thick,qf,isect,ihead,tmp,ndim,ddaux,thick0, &
         !$omp&  lambda,ddlambda), &
-        !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPR, &
+        !$omp&  shared(iS,iE,hecMESH,fstrSOLID,ndof,hecMAT,ic_type,fstrPARAM, &
         !$omp&         strainEnergy,iter,time,tincr,initt,g_InitialCnd), &
         !$omp&  firstprivate(tt0,ttn,tt)
       !$omp do
@@ -213,13 +213,13 @@ contains
             qf(1:nn*ndof),fstrSOLID%elements(icel)%gausses(:) )
   
         else if( ic_type == 611) then
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+          if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
           CALL UpdateST_Beam(ic_type, nn, ecoord, total_disp(1:6,1:nn), du(1:6,1:nn), &
             hecMESH%section%sect_R_item(ihead+1:), fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), &
             fstrSOLID%sections(isect)%elemopt611)
 
         else if( ic_type == 641 ) then
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+          if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
           call UpdateST_Beam_641(ic_type, nn, ecoord, total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
             &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
 
@@ -231,12 +231,12 @@ contains
             ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+          if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
           call UPDATE_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2)
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
-          if( fstrPR%nlgeom ) call Update_abort( ic_type, 2 )
+          if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
           call UPDATE_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 1)
 
