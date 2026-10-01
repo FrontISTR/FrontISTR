@@ -67,7 +67,9 @@ contains
       elseif(  i==1 ) then
         call calElasticMatrix_ortho( gauss%pMaterial, sectTYPE, cdsys, matrix, temperature, hdflag=hdflag_in )
       else
+        !$omp critical
         print *, "Elasticity type", matl%mtype, "not supported"
+        !$omp end critical
         stop
       endif
 
@@ -103,7 +105,7 @@ contains
     type( tGaussStatus ), intent(inout) :: gauss      !> status of qudrature point
     integer, intent(in)                 :: sectType   !> plane strain/stress or 3D
     real(kind=kreal), intent(in)        :: strain(6)  !> strain
-    real(kind=kreal), intent(out)       :: stress(6)  !> stress
+    real(kind=kreal), intent(inout)     :: stress(6)  !> stress
     real(kind=kreal), intent(in)        :: cdsys(3,3) !> material coordinate system
     real(kind=kreal), intent(in), optional  :: time   !> current time
     real(kind=kreal), intent(in), optional  :: dtime  !> time increment
@@ -351,17 +353,25 @@ contains
     iparams(:) = 0
 
     if( ctype == M_SPRING_DOF ) then ! Dof Spring
+      !$omp critical
       write(cnkey,'(A,I0)') trim(MC_SPRING),dofid
+      !$omp end critical
       iparams(1) = gauss%pMaterial%variables_i(M_SPRING_D_NDOFFSET+2*dofid  )
       iparams(2) = gauss%pMaterial%variables_i(M_SPRING_D_NDOFFSET+2*dofid+1)
     else if( ctype == M_SPRING_AXIAL ) then ! Dof Spring
+      !$omp critical
       write(cnkey,'(A,A)') trim(MC_SPRING),'_A'
+      !$omp end critical
     else if( ctype == M_DASHPOT_DOF ) then ! Dof Dashpot
+      !$omp critical
       write(cnkey,'(A,I0)') trim(MC_DASHPOT),dofid
+      !$omp end critical
       iparams(1) = gauss%pMaterial%variables_i(M_DASHPOT_D_NDOFFSET+2*dofid  )
       iparams(2) = gauss%pMaterial%variables_i(M_DASHPOT_D_NDOFFSET+2*dofid+1)
     else if( ctype == M_DASHPOT_AXIAL ) then ! Dof Dashpot
+      !$omp critical
       write(cnkey,'(A,A)') trim(MC_DASHPOT),'_A'
+      !$omp end critical
     else
       stop "CONNECTOR ctype is not defined"
     endif

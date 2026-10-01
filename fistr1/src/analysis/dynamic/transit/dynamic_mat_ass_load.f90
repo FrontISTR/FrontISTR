@@ -466,7 +466,8 @@ contains
               ( ic_type, nn, xx(1:nn), yy(1:nn), zz(1:nn), tt(1:nn), tt0(1:nn),       &
               fstrSOLID%elements(icel)%gausses, vect(1:nn*ndof), cdsys_ID, coords )
 
-          elseif ( ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 ) then
+          elseif ( ic_type == 741 .or. ic_type == 743 .or. ic_type == 731 .or.            &
+              ic_type == 641 .or. ic_type == 761 .or. ic_type == 781 ) then
             if( myrank == 0 ) then
               write(IMSG,*) '*------------------------', &
                 '-------------------*'

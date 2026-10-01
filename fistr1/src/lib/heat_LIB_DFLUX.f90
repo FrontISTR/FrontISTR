@@ -1314,9 +1314,6 @@ contains
             G2X=G2X+HS(I)*XX(NOD(I))
             G2Y=G2Y+HS(I)*YY(NOD(I))
             G2Z=G2Z+HS(I)*ZZ(NOD(I))
-            G3X=G3X+HT(I)*XX(NOD(I))
-            G3Y=G3Y+HT(I)*YY(NOD(I))
-            G3Z=G3Z+HT(I)*ZZ(NOD(I))
           enddo
           G3X=G1Y*G2Z-G1Z*G2Y
           G3Y=G1Z*G2X-G1X*G2Z
@@ -1370,9 +1367,6 @@ contains
             G2X=G2X+HS(I)*XX(NOD(I))
             G2Y=G2Y+HS(I)*YY(NOD(I))
             G2Z=G2Z+HS(I)*ZZ(NOD(I))
-            G3X=G3X+HT(I)*XX(NOD(I))
-            G3Y=G3Y+HT(I)*YY(NOD(I))
-            G3Z=G3Z+HT(I)*ZZ(NOD(I))
           enddo
           G3X=G1Y*G2Z-G1Z*G2Y
           G3Y=G1Z*G2X-G1X*G2Z

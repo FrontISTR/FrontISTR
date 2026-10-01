@@ -874,8 +874,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
     integer(kind=kint), intent(in)  :: xlnzr(:),colno(:),parent(:)
     integer(kind=kint), intent(in)  :: neqns, nstop, ir
-    integer(kind=kint), intent(out) :: nch(:)
-    real(kind=kreal),   intent(out) :: zln(:,:),diag(:,:) !zln(1,:), diag(1,:)
+    integer(kind=kint), intent(inout) :: nch(:)
+    real(kind=kreal),   intent(inout) :: zln(:,:),diag(:,:) !zln(1,:), diag(1,:)
 
     integer(kind=kint) :: neqns_c
     integer(kind=kint) :: i,j,k,l, ic,ierr,imp
@@ -1387,7 +1387,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
     integer(kind=kint), intent(in)  :: xadj(:),adjncy(:),parent(:),btree(:,:)
-    integer(kind=kint), intent(out) :: anc(:),adjt(:),invp(:),iperm(:)
+    integer(kind=kint), intent(out) :: anc(:),adjt(:)
+    integer(kind=kint), intent(inout) :: invp(:), iperm(:)
     integer(kind=kint), intent(in)  :: neqns,izz
     integer(kind=kint), intent(out) :: irr
 
@@ -1533,7 +1534,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
     integer(kind=kint), intent(in)  :: zpiv(:),parent(:)
-    integer(kind=kint), intent(out) :: iperm(:),invp(:)
+    integer(kind=kint), intent(inout) :: iperm(:),invp(:)
     integer(kind=kint), intent(in)  :: neqns,izz
     integer(kind=kint), intent(out) :: irr
 
@@ -1589,7 +1590,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
     integer(kind=kint), intent(in)  :: btree(:,:),qarent(:)
-    integer(kind=kint), intent(out) :: pordr(:),invp(:),iperm(:),nch(:),iw(:),parent(:),mch(0:neqns+1)
+    integer(kind=kint), intent(out) :: pordr(:),iperm(:),nch(:),iw(:),parent(:),mch(0:neqns+1)
+    integer(kind=kint), intent(inout) :: invp(:)
     integer(kind=kint), intent(in)  :: neqns
 
     integer(kind=kint) :: i,j,k,l,locc,loc,locp,invpos,ipinv,ii
@@ -1829,7 +1831,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
     integer(kind=kint), intent(in)  :: deg(:),xadj(:),adjncy(:)
-    integer(kind=kint), intent(out) :: rchset(:),marker(:),nbrhd(:)
+    integer(kind=kint), intent(out) :: rchset(:),nbrhd(:)
+    integer(kind=kint), intent(inout) :: marker(:)
     integer(kind=kint), intent(in)  :: root
     integer(kind=kint), intent(out) :: nhdsze,rchsze
 
@@ -1879,7 +1882,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
     integer(kind=kint), intent(in)  :: adjncy(:),list(:),xadj(:)
-    integer(kind=kint), intent(out) :: marker(:),nbrhd(:),rchset(:),deg(:),qsize(:),qlink(:)
+    integer(kind=kint), intent(out) :: nbrhd(:),rchset(:)
+    integer(kind=kint), intent(inout) :: marker(:),deg(:),qsize(:),qlink(:)
     integer(kind=kint), intent(in)  :: nlist
 
     integer(kind=kint) :: i,j,k,l, deg0,deg1,il,inhd,inode,irch,jstrt,jstop,mark,nabor,nhdsze,node,rchsze
@@ -1932,7 +1936,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
     integer(kind=kint), intent(in)  :: marker(:),rchset(:),nbrhd(:),xadj(:)
-    integer(kind=kint), intent(out) :: adjncy(:)
+    integer(kind=kint), intent(inout) :: adjncy(:)
     integer(kind=kint), intent(in)  :: rchsze,root
 
     integer(kind=kint) :: i,j,k,l,irch,inhd,node,jstrt,jstop,link,nabor
@@ -1978,7 +1982,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
     integer(kind=kint), intent(in)  :: adjncy(:),nbrhd(:),xadj(:)
-    integer(kind=kint), intent(out) :: deg(:),marker(:),rchset(:),ovrlp(:),qsize(:),qlink(:)
+    integer(kind=kint), intent(out) :: rchset(:),ovrlp(:)
+    integer(kind=kint), intent(inout) :: deg(:),marker(:),qsize(:), qlink(:)
     integer(kind=kint), intent(in)  :: nhdsze
 
     integer(kind=kint) :: i,j,k,l, deg0,deg1,head,inhd,iov,irch,jstrt,jstop,link,lnode,mark,mrgsze,nabor,node,novrlp,rchsze,root
@@ -2173,7 +2178,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     implicit none
 
-    integer(kind=kint), intent(out) :: iw(:)
+    integer(kind=kint), intent(inout) :: iw(:)
     integer(kind=kint), intent(in)  :: ik
 
     integer(kind=kint) :: l,m,itemp
@@ -2227,7 +2232,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !----------------------------------------------------------------------
     !
     type(dsinfo) :: dsi
-    real(kind=kreal),   intent(out)  :: aij(:) ! ndeg*ndeg
+    real(kind=kreal),   intent(in)     :: aij(:) ! ndeg*ndeg
     integer(kind=kint), intent(in)   :: isw, i, j
     integer(kind=kint), intent(out)  :: ir
 
@@ -2298,7 +2303,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer(kind=kint), intent(in)    :: xlnzr(:),colno(:),par(:)
     integer(kind=kint), intent(in)    :: ic, neqns
     real(kind=kreal),   intent(inout) :: zln(:),diag(:)
-    integer(kind=kint), intent(out)   :: nch(:)
+    integer(kind=kint), intent(inout) :: nch(:)
 
     real(kind=kreal) :: s, t, zz, piv
     integer(kind=kint) :: ks, ke, kk, k, jc, jj, j, ierr
@@ -2596,7 +2601,8 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     integer(kind=kint), intent(in) :: isw ! 0: renew diag, dsln, zln  other: add to diag, dsln, zln
     integer(kind=kint), intent(in) :: i,j,nstop, ndeg, invp(:),xlnzr(:),colno(:)
-    real(kind=kreal),   intent(inout) :: zln(:,:),diag(:,:),dsln(:,:),aij(:)
+    real(kind=kreal),   intent(inout) :: zln(:,:),diag(:,:),dsln(:,:)
+    real(kind=kreal),   intent(in) :: aij(:)
     integer(kind=kint), intent(out) :: ir
 
     integer(kind=kint) :: ndeg2, ii, jj, itrans, k, i0, j0, l, ks, ke
@@ -2717,7 +2723,7 @@ contains !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(kind=kreal),   intent(in) :: val_l(:,:)
 
     real(kind=kreal),   intent(in) :: x(:,:)
-    real(kind=kreal),   intent(out) :: rhs(:,:)
+    real(kind=kreal),   intent(inout) :: rhs(:,:)
 
     integer(kind=kint) :: i,j,k,l,m
     real(kind=kreal) :: rel,err

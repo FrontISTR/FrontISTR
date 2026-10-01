@@ -168,7 +168,7 @@ contains
     implicit none
     type(hecmwST_saamg_bcsr),   intent(in)  :: A
     real(kind=kreal), intent(in)  :: x(:)
-    real(kind=kreal), intent(out) :: y(:)
+    real(kind=kreal), intent(inout) :: y(:)
     call hecmw_saamg_matvec_blk(A, x, y)
   end subroutine hecmw_saamg_matvec
 
@@ -449,7 +449,7 @@ contains
     implicit none
     type(hecmwST_saamg_bcsr), intent(in)  :: A
     real(kind=kreal),      intent(in)  :: x(:)
-    real(kind=kreal),      intent(out) :: y(:)
+    real(kind=kreal),      intent(inout) :: y(:)
     integer(kind=kint) :: i, t, j, ii, jj, rbase, cbase, boff, nb, mb
     real(kind=kreal) :: xj
     nb = A%nb; mb = A%mb

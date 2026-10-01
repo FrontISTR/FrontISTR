@@ -1829,10 +1829,10 @@ contains
     end if
 
     ! Update contact state vectors if dtime is provided
-    if( present(dtime) .and. dtime > 0.d0 ) then
-      dt_use = dtime
-    else
-      dt_use = 1.d0  ! default value if dtime not available
+    ! present() is tested on its own: .and. does not short-circuit, so an absent dtime would be referenced
+    dt_use = 1.d0  ! default value if dtime not available
+    if( present(dtime) ) then
+      if( dtime > 0.d0 ) dt_use = dtime
     endif
     if( .not. updated(3) .and. .not. updated(4) ) then
       call fstr_update_contact_state_vectors( fstrSOLID, dt_use )
@@ -1876,8 +1876,9 @@ contains
         ! via fstr_calc_contact_output_force. Build it here from the stored contact
         ! multipliers before the parallel aggregation. Implicit/static keep the value
         ! already computed inside the solver (flag absent), so this is a no-op for them.
-        if( present(expflag) .and. expflag ) then
-          call fstr_calc_contact_output_force_exp( hecMESH, fstrSOLID )
+        ! present() is tested on its own, as for dtime above
+        if( present(expflag) ) then
+          if( expflag ) call fstr_calc_contact_output_force_exp( hecMESH, fstrSOLID )
         end if
         if( paraContactFlag ) then
           call fstr_setup_parancon_contactvalue(hecMESH,ndof,fstrSOLID%CONT_NFORCE,1)

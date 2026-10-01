@@ -168,6 +168,20 @@ contains
           enddo
         endif
 
+        if( ic_type == 781 ) then
+          do j = 1, 4
+            nbase = 9*(nodLOCAL(j+4)-1)
+            triad_tri(1:9,j) = 0.0D0
+            triad_cur(1:9,j) = 0.0D0
+            triad_ref(1:9,j) = 0.0D0
+            shell_drill(j) = 0.0D0
+            if( associated(fstrSOLID%shell_dtriad) )    triad_tri(1:9,j) = fstrSOLID%shell_dtriad(nbase+1:nbase+9)
+            if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(nbase+1:nbase+9)
+            if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(nbase+1:nbase+9)
+            if( associated(fstrSOLID%shell_ddrill) )    shell_drill(j) = fstrSOLID%shell_ddrill(nodLOCAL(j+4))
+          enddo
+        endif
+
         ! ===== calculate the Internal Force
         if( ic_type == 241 .or. ic_type == 242 .or. ic_type == 231 .or. ic_type == 232 .or. ic_type == 2322 ) then
           call UPDATE_C2( ic_type,nn,ecoord(1:3,1:nn),fstrSOLID%elements(icel)%gausses(:), &
@@ -220,8 +234,9 @@ contains
 
         else if( ic_type == 641 ) then
           if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
-          call UpdateST_Beam_641(ic_type, nn, ecoord, total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &    fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), qf(1:nn*ndof))
+          call UpdateST_Beam_641_from_611(ecoord(1:3,1:4), total_disp(1:ndof,1:4), du(1:ndof,1:4), &
+            fstrSOLID%elements(icel)%gausses(:), hecMESH%section%sect_R_item(ihead+1:), &
+            qf(1:nn*ndof), fstrSOLID%sections(isect)%elemopt611)
 
         else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
           call UPDATE_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), total_disp(1:ndof,1:nn), &
@@ -236,9 +251,10 @@ contains
             &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2)
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
-          if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
           call UPDATE_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 1)
+            fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 1, &
+            element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:4), &
+            ndreftriad=triad_ref(1:9,1:4), ndcurtriad=triad_cur(1:9,1:4), nddrill=shell_drill(1:4))
 
         else if ( ic_type == 3414 ) then
           if(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype /= INCOMP_NEWTONIAN) &
@@ -253,8 +269,10 @@ contains
             qf(1:nn*ndof), fstrSOLID%elements(icel)%gausses(:), time, tincr, tt(1:nn), tt0(1:nn), ttn(1:nn)  )
 
         else
+          !$omp critical
           write(*, *) '###ERROR### : Element type not supported for nonlinear static analysis'
           write(*, *) ' ic_type = ', ic_type
+          !$omp end critical
           call hecmw_abort(hecmw_comm_get_comm())
 
         endif
@@ -376,6 +394,7 @@ contains
     integer(kind=kint), intent(in) :: flag
     integer(kind=kint), intent(in), optional :: mtype
 
+    !$omp critical
     if( flag == 1 ) then
       write(*,*) '###ERROR### : Element type not supported for static analysis'
     else if( flag == 2 ) then
@@ -385,6 +404,7 @@ contains
     endif
     write(*,*) ' ic_type = ', ic_type
     if( present(mtype) ) write(*,*) ' mtype = ', mtype
+    !$omp end critical
     call hecmw_abort(hecmw_comm_get_comm())
   end subroutine
 

@@ -41,6 +41,7 @@ contains
 
     outinfo%grp_id_name = "ALL"
     outinfo%grp_id      = -1
+    outinfo%actn        = 0
     outinfo%on(:)       = .false.
     outinfo%num_items   = 44
 
@@ -232,8 +233,9 @@ contains
     call initOutInfo( outctrl%outinfo )
   end subroutine
 
+  !> Copy output control except outinfo, which may already hold !OUTPUT_RES / !OUTPUT_VIS settings
   subroutine fstr_copy_outctrl(outctrl1, outctrl2)
-    type(t_output_ctrl), intent(out) :: outctrl1
+    type(t_output_ctrl), intent(inout) :: outctrl1
     type(t_output_ctrl), intent(in)  :: outctrl2
     outctrl1%filename = outctrl2%filename
     outctrl1%filenum  = outctrl2%filenum

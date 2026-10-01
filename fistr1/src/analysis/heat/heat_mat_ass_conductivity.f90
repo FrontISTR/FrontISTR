@@ -33,6 +33,10 @@ contains
       iS = hecMESH%elem_type_index(itype-1) + 1
       iE = hecMESH%elem_type_index(itype  )
       ic_type= hecMESH%elem_type_item(itype)
+      ! 761/781 hold the rotational dummy nodes after the translational ones,
+      ! and heat analysis uses the translational part only
+      if( ic_type == 761 ) ic_type = 731
+      if( ic_type == 781 ) ic_type = 741
       if (hecmw_is_etype_link(ic_type)) cycle
       if (hecmw_is_etype_patch(ic_type)) cycle
 
@@ -112,7 +116,9 @@ contains
             fstrHEAT%CONDtab(IMAT), fstrHEAT%CONDtemp(IMAT,:), fstrHEAT%CONDfuncA(IMAT,:) ,fstrHEAT%CONDfuncB(IMAT,:))
 
         else
+          !$omp critical
           write(*,*)"** error setMASS"
+          !$omp end critical
         endif
 
         if(ic_type == 541 .or. ic_type == 731 .or. ic_type == 741)then
@@ -141,7 +147,7 @@ contains
     hecMAT%D  = beta*hecMAT%D
     hecMAT%AU = beta*hecMAT%AU
     hecMAT%AL = beta*hecMAT%AL
-    hecMAT%B  = hecMAT%B - ALPHA*S
+    hecMAT%B(1:hecMAT%N) = hecMAT%B(1:hecMAT%N) - ALPHA*S(1:hecMAT%N)
 
     deallocate(S)
 

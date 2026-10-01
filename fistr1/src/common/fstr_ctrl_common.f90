@@ -509,7 +509,7 @@ contains
   !> Read in !MPC
   function fstr_ctrl_get_MPC( ctrl, penalty )
     integer(kind=kint), intent(in) :: ctrl      !< readed data
-    real(kind=kreal), intent(out)  :: penalty   !< penalty
+    real(kind=kreal), intent(inout)  :: penalty   !< penalty
     integer(kind=kint) :: fstr_ctrl_get_MPC
 
     fstr_ctrl_get_MPC = fstr_ctrl_get_data_ex( ctrl, 1,   'r ', penalty )
@@ -529,7 +529,7 @@ contains
     use m_out
     integer(kind=kint), intent(in)        :: ctrl      !< readed data
     type (hecmwST_local_mesh), intent(in) :: hecMESH   !< mesh information
-    type( output_info ), intent(out)      :: outinfo   !< output information
+    type( output_info ), intent(inout)    :: outinfo   !< output information; num_items and keyWord are supplied by the caller
 
     integer(kind=kint) :: rcode, ipos
     integer(kind=kint) :: n, i, j
@@ -883,7 +883,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl          !< ctrl file
     integer(kind=kint), intent(in)    :: n             !< number of item defined in this section
     !
-    type(tContactInterference), intent(out) :: contact_if(n)    !< contact definition
+    type(tContactInterference), intent(inout) :: contact_if(n)    !< contact definition
     
     integer           :: rcode, i
     character(len=30) :: s1 = 'SLAVE,MASTER '

@@ -494,6 +494,9 @@ module m_fstr
     real(kind=kreal), pointer :: TEMPC(:)
     real(kind=kreal), pointer :: TEMP (:)
 
+    !> ROTATIONAL DUMMY NODE OF 641/761/781, which carries no temperature
+    logical, pointer :: is_dummy_node(:)
+
     !> FIXTEMP
     integer(kind=kint) :: T_FIX_tot
     integer(kind=kint), pointer :: T_FIX_node(:)
@@ -818,6 +821,7 @@ contains
     nullify( H%TEMP0 )
     nullify( H%TEMPC )
     nullify( H%TEMP  )
+    nullify( H%is_dummy_node )
     nullify( H%T_FIX_node )
     nullify( H%T_FIX_ampl )
     nullify( H%T_FIX_val )

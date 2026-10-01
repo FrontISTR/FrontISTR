@@ -61,7 +61,9 @@ contains
       if( .not. present(u) ) flag=INFINITESIMAL    ! enforce to infinitesimal deformation analysis
 
       if( flag==1 .and. ISET == 2 ) then
+        !$omp critical
         write(*,'(a)') '    PROGRAM STOP : non-TL element for axisymmetric element'
+        !$omp end critical
         stop
       endif
 

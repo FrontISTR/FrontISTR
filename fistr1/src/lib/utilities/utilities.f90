@@ -19,31 +19,6 @@ contains
   end subroutine memget
 
 
-  !> Insert an integer at end of a file name
-  subroutine append_int2name( n, fname, n1 )
-    integer, intent(in)             :: n
-    integer, intent(in), optional  ::  n1
-    character(len=*), intent(inout) :: fname
-    integer            :: npos, nlen
-    character(len=128) :: tmpname, tmp
-
-    npos = scan( fname, '.')
-    nlen = len_trim( fname )
-    if( nlen>128 ) stop "String too long(>128) in append_int2name"
-    if( n>100000 ) stop "Integer too big>100000 in append_int2name"
-    tmpname = fname
-    if( npos==0 ) then
-      write( fname, '(a,i6)') fname(1:nlen),n
-    else
-      write( tmp, '(i6,a)') n,tmpname(npos:nlen)
-      fname = tmpname(1:npos-1) // adjustl(tmp)
-    endif
-    if(present(n1).and.n1/=0)then
-      write(tmp,'(i8)')n1
-      fname = fname(1:len_trim(fname))//'.'//adjustl(tmp)
-    endif
-  end subroutine
-
   !> Insert an integer into a integer array
   subroutine insert_int2array( iin, carray )
     integer, intent(in) :: iin
@@ -315,7 +290,9 @@ contains
       PIVOT=A(LR,K)
       API=abs(PIVOT)
       if(API.LE.EPS) then
+        !$omp critical
         write(*,'(''PIVOT ERROR AT'',I5)') K
+        !$omp end critical
         stop
       end if
       DET=DET*PIVOT
@@ -725,6 +702,7 @@ contains
         enddo
       enddo
     else
+      dydx(:,:) = 0.d0
       do k=1,3
         select case(k)
         case(1)

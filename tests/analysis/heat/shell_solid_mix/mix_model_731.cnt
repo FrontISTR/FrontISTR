@@ -1,0 +1,17 @@
+!!
+!! 731 input of mix_model_761: the rotational dummy nodes are generated,
+!! and the temperatures are the same as mix_model_761
+!!
+!SOLUTION,TYPE=HEAT
+!HEAT
+!FIXTEMP
+ FIX,   0.0
+ HOT, 100.0
+!!
+!! SOLVER CONTROL
+!!
+!SOLVER,METHOD=CG,PRECOND=1,ITERLOG=YES,TIMELOG=YES
+ 100,  1, 10, 10
+ 1.0e-8,1.0,0.0
+!WRITE,RESULT
+!END

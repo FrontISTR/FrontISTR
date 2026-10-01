@@ -85,7 +85,11 @@ contains
       if( cdsys_ID > 0 ) then
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         if( serr == -1 ) stop "Fail to setup local coordinate"
-        if( serr == -2 ) write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        if( serr == -2 ) then
+          !$omp critical
+          write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+          !$omp end critical
+        endif
       end if
 
       ! Displacement gradient (B1 nonlinear term : Total Lagrangian only)
@@ -255,7 +259,9 @@ contains
     if( nn_p == 1 ) then
       stiff_pp_inv(1, 1) = 1.0D0/stiff_pp(1, 1)
     else
+      !$omp critical
       write(6, *) 'Error: nn_p should be equal to 1.'
+      !$omp end critical
       return
     end if
 
@@ -364,7 +370,11 @@ contains
       if( cdsys_ID > 0 ) then
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         if( serr == -1 ) stop "Fail to setup local coordinate"
-        if( serr == -2 ) write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        if( serr == -2 ) then
+          !$omp critical
+          write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+          !$omp end critical
+        endif
       end if
 
       ! Displacement gradient (B1 nonlinear term : Total Lagrangian only)
@@ -479,7 +489,9 @@ contains
     if( nn_p == 1 ) then
       stiff_pp_inv(1, 1) = 1.0D0/stiff_pp(1, 1)
     else
+      !$omp critical
       write(6, *) 'Error: nn_p should be equal to 1.'
+      !$omp end critical
       return
     end if
 
@@ -525,7 +537,11 @@ contains
       if( cdsys_ID > 0 ) then
         call set_localcoordsys( coords, g_LocalCoordSys(cdsys_ID), coordsys(:, :), serr )
         if( serr == -1 ) stop "Fail to setup local coordinate"
-        if( serr == -2 ) write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+        if( serr == -2 ) then
+          !$omp critical
+          write(*, *) "WARNING! Cannot setup local coordinate, it is modified automatically"
+          !$omp end critical
+        endif
       end if
 
       ! displacement gradient : step increment (UPDATELAG) or total (others)
@@ -708,7 +724,9 @@ contains
     if( nn_p == 1 ) then
       stiff_pp_inv(1, 1) = 1.0D0/stiff_pp(1, 1)
     else
+      !$omp critical
       write(6, *) 'Error: nn_p should be equal to 1.'
+      !$omp end critical
       return
     end if
 

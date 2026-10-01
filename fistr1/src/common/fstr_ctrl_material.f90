@@ -32,7 +32,7 @@ contains
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
     integer(kind=kint), intent(out)   :: nstatus
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
 
     integer(kind=kint) :: ipt
     character(len=HECMW_NAME_LEN) :: data_fmt
@@ -55,7 +55,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
@@ -93,6 +93,7 @@ contains
     ! ISOTROPIC
     if( ipt==1 ) then
       allocate( fval(2+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RR "
         block
@@ -131,6 +132,7 @@ contains
       ! ORTHOTROPIC
     else if( ipt==2 ) then
       allocate( fval(9+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRRRRRRRR "
         block
@@ -224,7 +226,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
 
     integer(kind=kint) :: i,j, rcode, depends, ipt
     real(kind=kreal), allocatable :: fval(:,:)
@@ -417,6 +419,7 @@ contains
     if( ipt==1 ) then
       n = fstr_ctrl_get_data_line_n( ctrl )
       allocate( fval(2+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RR "
         block
@@ -465,7 +468,7 @@ contains
   integer function fstr_ctrl_get_TRS( ctrl, mattype, matval )
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
 
     integer :: ipt
     character(len=256) :: s
@@ -488,7 +491,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
     real(kind=kreal), pointer         :: mattable(:)
     type(DICT_STRUCT), pointer        :: dict
 
@@ -548,6 +551,7 @@ contains
         select case (hipt)
           case (1,5)  ! linear hardening, kinematic hardening
             allocate( fval(2,n) )
+            fval =0.0d0
             data_fmt = "RR "
             block
               real(kind=kreal) :: fval1(n), fval2(n)
@@ -569,6 +573,7 @@ contains
             endif
           case (2)  ! multilinear approximation
             allocate( fval(depends+2,n) )
+            fval =0.0d0
             if( depends==0 ) then
               data_fmt = "RR "
               block
@@ -613,6 +618,7 @@ contains
             endif
           case (3, 4, 6)  ! swift, Ramberg-Osgood, Combined
             allocate( fval(3,1) )
+            fval =0.0d0
             data_fmt = "RRR "
             block
               real(kind=kreal) :: fval1(1), fval2(1), fval3(1)
@@ -638,6 +644,7 @@ contains
         select case (hipt)
         case (1)  ! linear hardening
           allocate( fval(4,n) )
+          fval =0.0d0
           data_fmt = "RRrr "
           fval(4,:) = -1.d0
           block
@@ -668,6 +675,7 @@ contains
             stop "Mohr-Coulomb and Drucker-Prager do not support temperature dependency"
           endif
           allocate( fval(2,n) )
+          fval =0.0d0
           data_fmt = "Rr "
           fval(2,:) = -1.d0
           block
@@ -750,6 +758,7 @@ contains
     if( ipt==1 ) then
       n = fstr_ctrl_get_data_line_n( ctrl )
       allocate( fval(3+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "RRR "
         block
@@ -800,7 +809,7 @@ contains
   !> Read in !DENSITY
   integer function fstr_ctrl_get_DENSITY( ctrl, matval )
     integer(kind=kint), intent(in) :: ctrl
-    real(kind=kreal),intent(out)   :: matval(:)
+    real(kind=kreal),intent(inout) :: matval(:)
 
     integer(kind=kint) :: i, rcode, depends
     real(kind=kreal), allocatable :: fval(:,:)
@@ -815,6 +824,7 @@ contains
     if( depends>1 ) depends = 1 ! we consider temperature dependence only currently
 
     allocate( fval(1,depends+1) )
+    fval =0.0d0
     do i=2,1+depends
       data_fmt = data_fmt //"R "
     enddo
@@ -836,7 +846,7 @@ contains
   !> Read in !EXPANSION_COEFF
   integer function fstr_ctrl_get_EXPANSION_COEFF( ctrl, matval, dict )
     integer(kind=kint), intent(in) :: ctrl
-    real(kind=kreal),intent(out)   :: matval(:)
+    real(kind=kreal),intent(inout) :: matval(:)
     type(DICT_STRUCT), pointer     :: dict
 
     integer(kind=kint) :: i, n, rcode, depends, ipt
@@ -860,6 +870,7 @@ contains
 
     if( ipt==1 ) then
       allocate( fval(depends+1, n) )
+      fval =0.0d0
       do i=2,1+depends
         data_fmt = data_fmt //"R "
       enddo
@@ -889,6 +900,7 @@ contains
       endif
     else
       allocate( fval(3+depends,n) )
+      fval =0.0d0
       do i=2,3+depends
         data_fmt = trim(data_fmt) //"R "
       enddo
@@ -942,7 +954,7 @@ contains
   !! (beta) are read from the following data line.
   integer function fstr_ctrl_get_RAYLEIGH_DAMPING( ctrl, matval, is_RD )
     integer(kind=kint), intent(in) :: ctrl
-    real(kind=kreal), intent(out)  :: matval(:)
+    real(kind=kreal), intent(inout)  :: matval(:)
     logical, intent(out)           :: is_RD
     integer(kind=kint) :: ipt
     real(kind=kreal) :: RM, RK
@@ -969,7 +981,7 @@ contains
 
   integer function read_user_matl( ctrl, matval )
     integer(kind=kint), intent(in)    :: ctrl
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
 
     integer(kind=kint) :: n, i, j
     real(kind=kreal)   :: fval(10,10)
@@ -1020,7 +1032,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    real(kind=kreal),intent(out)      :: matval(:)
+    real(kind=kreal),intent(inout)    :: matval(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n
@@ -1045,6 +1057,7 @@ contains
     ! ISOTROPIC
     if( ipt==1 ) then
       allocate( fval(1+depends,n) )
+      fval =0.0d0
       if( depends==0 ) then
         data_fmt = "R "
         block
@@ -1090,7 +1103,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    integer(kind=kint), intent(out)   :: matval_i(:)
+    integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
@@ -1109,6 +1122,8 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     allocate( fval(1+depends,n), ival(2,n) )
+    fval =0.0d0
+    ival =0
     if( depends==0 ) then
       data_fmt = "IIR "
       block
@@ -1151,7 +1166,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    integer(kind=kint), intent(out)   :: matval_i(:)
+    integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
@@ -1167,6 +1182,7 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     allocate( fval(1+depends,n) )
+    fval =0.0d0
     if( depends==0 ) then
       data_fmt = "R "
       block
@@ -1201,7 +1217,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    integer(kind=kint), intent(out)   :: matval_i(:)
+    integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
@@ -1220,6 +1236,8 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     allocate( fval(1+depends,n), ival(2,n) )
+    fval =0.0d0
+    ival =0
     if( depends==0 ) then
       data_fmt = "IIR "
       block
@@ -1262,7 +1280,7 @@ contains
     integer(kind=kint), intent(in)    :: ctrl
     integer(kind=kint), intent(inout) :: mattype
     integer(kind=kint), intent(out)   :: nlgeom
-    integer(kind=kint), intent(out)   :: matval_i(:)
+    integer(kind=kint), intent(inout) :: matval_i(:)
     type(DICT_STRUCT), pointer        :: dict
 
     integer(kind=kint) :: i,j, rcode, depends, ipt, n, dof1, dof2
@@ -1278,6 +1296,7 @@ contains
 
     n = fstr_ctrl_get_data_line_n( ctrl )
     allocate( fval(1+depends,n) )
+    fval =0.0d0
     if( depends==0 ) then
       data_fmt = "R "
       block

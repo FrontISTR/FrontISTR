@@ -41,7 +41,7 @@ contains
     integer(kind=kint), intent(in) :: nn !< number of elemental nodes
     real(kind=kreal), intent(in) :: temperature(nn) !< temperature
     real(kind=kreal), intent(out) :: mass(:,:) !< mass matrix
-    real(kind=kreal), intent(out) :: lumped(:) !< mass matrix
+    real(kind=kreal), intent(inout) :: lumped(:) !< mass matrix
     integer(kind=kint), parameter :: ndof = 1
     integer(kind=kint) :: i, j, IMAT
     integer(kind=kint) :: ntab1, ntab2

@@ -86,8 +86,10 @@ contains
       k = hecmw_array_search_i(hecMAT%itemU, is, iE, jnod)
 
       if (k < is .or. iE < k) then
+        !$omp critical
         write(*,*) '###ERROR### : cannot find connectivity (1)'
         write(*,*) ' myrank = ', hecmw_comm_get_rank(), ', inod = ', inod, ', jnod = ', jnod
+        !$omp end critical
         call hecmw_abort(hecmw_comm_get_comm())
       endif
 
@@ -107,8 +109,10 @@ contains
       k = hecmw_array_search_i(hecMAT%itemL, is, iE, jnod)
 
       if (k < is .or. iE < k) then
+        !$omp critical
         write(*,*) '###ERROR### : cannot find connectivity (2)'
         write(*,*) ' myrank = ', hecmw_comm_get_rank(), ', inod = ', inod, ', jnod = ', jnod
+        !$omp end critical
         call hecmw_abort(hecmw_comm_get_comm())
       endif
 

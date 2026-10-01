@@ -88,7 +88,9 @@ contains
   !! stop.  Used by the SA-AMG core in place of bare `stop` on unrecoverable errors.
   subroutine hecmw_saamg_abort(msg)
     character(len=*), intent(in) :: msg
+    !$omp critical
     write(*,'(a)') '#### SA-AMG fatal error: '//trim(msg)
+    !$omp end critical
 #ifndef HECMW_SERIAL
     call hecmw_abort(hecmw_comm_get_comm())
 #else

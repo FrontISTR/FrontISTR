@@ -457,7 +457,7 @@ contains
 
   subroutine STF_SPRING_D( gausses, stiff )
     type(tGaussStatus), intent(in)  :: gausses(:)          !< status of qudrature points
-    real(kind=kreal),   intent(out) :: stiff(:,:)          !< stiff matrix
+    real(kind=kreal),   intent(inout) :: stiff(:,:)          !< stiff matrix
 
     real(kind=kreal) :: params(1)
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
@@ -481,7 +481,7 @@ contains
     real(kind=kreal),   intent(in)     :: ecoord(:,:)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   intent(in)     :: u(:,:)         !< \param [in] nodal dislplacements
     real(kind=kreal),   intent(in)     :: du(:,:)        !< \param [in] nodal displacement ( solutions of solver )
-    real(kind=kreal),   intent(out)    :: qf(:)        !< \param [out] Internal Force
+    real(kind=kreal),   intent(inout)  :: qf(:)        !< \param [out] Internal Force
 
     ! LOCAL VARIABLES
     real(kind=kreal) :: params(1)
@@ -513,7 +513,7 @@ contains
     type(tGaussStatus), intent(in)  :: gausses(:)          !< Status of quadrature points
     real(kind=kreal),   intent(in)  :: ecoord(:,:)        !< Coordinates of elemental nodes
     real(kind=kreal),   intent(in)  :: u(:,:)              !< Nodal displacement
-    real(kind=kreal),   intent(out) :: stiff(:,:)          !< Stiffness matrix
+    real(kind=kreal),   intent(inout) :: stiff(:,:)          !< Stiffness matrix
 
     real(kind=kreal) :: params(1)                             !< Array to store parameters from GetConnectorProperty
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
@@ -564,7 +564,7 @@ contains
     real(kind=kreal),   intent(in)     :: ecoord(:,:)    !< \param [in] coordinates of elemental nodes
     real(kind=kreal),   intent(in)     :: u(:,:)         !< \param [in] nodal displacements
     real(kind=kreal),   intent(in)     :: du(:,:)        !< \param [in] additional nodal displacements (solutions of solver)
-    real(kind=kreal),   intent(out)    :: qf(:)          !< \param [out] Internal Force vector
+    real(kind=kreal),   intent(inout)  :: qf(:)          !< \param [out] Internal Force vector
 
     ! LOCAL VARIABLES
     real(kind=kreal) :: params(1)                      !< Array to store parameters from GetConnectorProperty
@@ -604,7 +604,7 @@ contains
 
   subroutine STF_DASHPOT_D( gausses, stiff )
     type(tGaussStatus), intent(in)  :: gausses(:)      !< status of qudrature points
-    real(kind=kreal),   intent(out) :: stiff(:,:)      !< stiff matrix
+    real(kind=kreal),   intent(inout) :: stiff(:,:)      !< stiff matrix
 
     real(kind=kreal)   :: params(1)
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty
@@ -627,7 +627,7 @@ contains
     type(tGaussStatus), intent(in)  :: gausses(:)       !< Status of quadrature points
     real(kind=kreal),   intent(in)  :: ecoord(:,:)      !< Coordinates of elemental nodes
     real(kind=kreal),   intent(in)  :: u(:,:)           !< Nodal displacement
-    real(kind=kreal),   intent(out) :: stiff(:,:)       !< Stiffness matrix
+    real(kind=kreal),   intent(inout) :: stiff(:,:)       !< Stiffness matrix
 
     real(kind=kreal) :: params(1)                             !< Array to store parameters from GetConnectorProperty
     integer(kind=kint) :: iparams(2)                   !< Array to store parameters from GetConnectorProperty

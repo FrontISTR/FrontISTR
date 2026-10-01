@@ -189,7 +189,7 @@ contains
     real(kind=kreal), intent(in)         :: fcoeff         !< frictional coeff
     type(hecmwST_local_mesh), intent(in) :: hecMESH        !< mesh for allreduce
     type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT !< Lagrange matrix
-    real(kind=kreal), intent(out)        :: gnt(2)         !< convergency information
+    real(kind=kreal), intent(inout)      :: gnt(2)         !< convergency information
     logical, intent(inout)               :: ctchanged      !< if contact state changes
 
     integer(kind=kint)  :: slave, etype, master
@@ -479,8 +479,7 @@ contains
         if( algtype == CONTACTSSLID .or. algtype == CONTACTFSLID ) then
 
           if( ctAlgo == kcaSLagrange ) then
-            id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
-            id_lagrange = id_lagrange + 1
+            id_lagrange = contact%states(j)%id_lagrange
             lagrange = lagrange_array(id_lagrange)
             call getContactStiffness_Slag(contact%states(j), contact%master(ctsurf), iter, &
               contact%tPenalty, contact%fcoeff, lagrange, stiffness, smoothing_type=contact%smoothing)
@@ -508,9 +507,8 @@ contains
         else if( algtype == CONTACTTIED ) then
 
           if( ctAlgo == kcaSLagrange ) then
-            id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
             do k = 1, 3
-              id_lagrange = id_lagrange + 1
+              id_lagrange = contact%states(j)%id_lagrange + k - 1
               lagrange = lagrange_array(id_lagrange)
 
               call getTiedStiffness_Slag(contact%states(j), contact%master(ctsurf), k, stiffness, &
@@ -617,7 +615,7 @@ contains
   !! When purpose == kctForResidual, forces are assembled into conMAT%B.
   !! When purpose == kctForOutput, forces are stored in CONT_NFORCE/CONT_FRIC using multiplier only (no penalty).
   subroutine calcu_contact_ndforce_NodeSurf( purpose, ctAlgo, contact, coord, disp, ddisp, lagrange_array, &
-    conMAT, CONT_NFORCE, CONT_FRIC, hecLagMAT )
+    conMAT, CONT_NFORCE, CONT_FRIC )
     integer(kind=kint), intent(in)       :: purpose         !< kctForResidual or kctForOutput
     integer(kind=kint), intent(in)       :: ctAlgo          !< contact analysis algorithm
     type( tContact ), intent(inout)      :: contact         !< contact info
@@ -628,7 +626,6 @@ contains
     type(hecmwST_matrix), intent(inout)  :: conMAT          !< contact matrix
     real(kind=kreal), pointer            :: CONT_NFORCE(:)  !< contact normal force
     real(kind=kreal), pointer            :: CONT_FRIC(:)    !< contact friction force
-    type(hecmwST_matrix_lagrange), intent(in) :: hecLagMAT  !< Lagrange matrix
 
     integer(kind=kint) :: ctsurf, nnode, ndLocal(21)
     integer(kind=kint) :: j, k, algtype, id_lagrange
@@ -689,8 +686,7 @@ contains
           if(if_flag) call get_shrink_elemact_surf(contact%states(j),ndCoord, nnode)
 
           if( ctAlgo == kcaSLagrange ) then
-            id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
-            id_lagrange = id_lagrange + 1
+            id_lagrange = contact%states(j)%id_lagrange
             lagrange = lagrange_array(id_lagrange)
             call getContactNodalForce_Slag(contact%states(j),contact%master(ctsurf),ndCoord,ndDu,    &
               contact%tPenalty,contact%fcoeff,lagrange,ctNForce,ctTForce,.true.,contact%smoothing)
@@ -713,9 +709,8 @@ contains
         else if( algtype == CONTACTTIED ) then
 
           if( ctAlgo == kcaSLagrange ) then
-            id_lagrange = hecLagMAT%lag_node_table(ndLocal(1)) - 1
             do k=1,3
-              id_lagrange = id_lagrange + 1
+              id_lagrange = contact%states(j)%id_lagrange + k - 1
               lagrange = lagrange_array(id_lagrange)
               contact%states(j)%multiplier(k) = lagrange
 
