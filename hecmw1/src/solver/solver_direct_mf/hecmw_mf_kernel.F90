@@ -199,6 +199,15 @@ contains
       endif
       if (accepted) cycle
       if (.not. allow_delay) then
+        ! the two best-coupled candidates can both fail the growth test on a regular
+        ! indefinite panel; with no parent to delay to, every remaining partner is tried
+        ! before the panel is declared unsolvable (the accepting runs never reach here,
+        ! so the pivot sequence of a succeeding factorization is unchanged)
+        do r = p+1, nrem
+          call try_partner(r, accepted)
+          if (accepted) exit
+        enddo
+        if (accepted) cycle
         info = p
         return
       endif
