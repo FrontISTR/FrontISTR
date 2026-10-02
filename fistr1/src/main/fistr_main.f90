@@ -21,6 +21,7 @@ module m_fstr_main
   type(hecmwST_local_mesh), save             :: hecMESH
   type(hecmwST_matrix), save                 :: hecMAT
   type(hecmwST_matrix), save                 :: conMAT
+  type(fstr_param), target, save             :: fstrPARAM
   type(fstr_solid), save                     :: fstrSOLID
   type(hecmwST_matrix_lagrange), save        :: hecLagMAT
   type(fstr_heat), save                      :: fstrHEAT
@@ -61,13 +62,13 @@ contains
 
     call fstr_init
 
-    call fstr_rcap_initialize( hecMESH, fstrPR, fstrCPL )
+    call fstr_rcap_initialize( hecMESH, fstrPARAM, fstrCPL )
 
     T2 = hecmw_Wtime()
 
     ! =============== ANALYSIS =====================
 
-    select case( fstrPR%solution_type )
+    select case( fstrPARAM%solution_type )
       case( kstSTATIC )
         call fstr_static_analysis
       case( kstDYNAMIC )
@@ -99,7 +100,7 @@ contains
 
     ! =============== FINALIZE =====================
 
-    call fstr_rcap_finalize( fstrPR, fstrCPL )
+    call fstr_rcap_finalize( fstrPARAM, fstrCPL )
     call fstr_finalize()
     call hecmw_dist_free(hecMESH)
     call hecmw_finalize
@@ -118,7 +119,7 @@ contains
     call hecmw_nullify_matrix     ( hecMAT      )
     call hecmw_nullify_matrix     ( conMAT      )
     call hecmw_nullify_result_data( fstrRESULT  )
-    call fstr_nullify_fstr_param  ( fstrPR      )
+    call fstr_nullify_fstr_param  ( fstrPARAM   )
     call fstr_nullify_fstr_solid  ( fstrSOLID   )
     call fstr_nullify_fstr_heat   ( fstrHEAT    )
     call fstr_nullify_fstr_eigen  ( fstrEIG     )
@@ -132,23 +133,23 @@ contains
     ITMAX = 20
     EPS   = 1.0d-6
 
-    ! -------  global pointer setting ----------
-    REF_TEMP => fstrPR%ref_temp
-    IECHO    => fstrPR%fg_echo
-    IRESULT  => fstrPR%fg_result
-    IVISUAL  => fstrPR%fg_visual
+    ! -------  pointer setting ----------
+    REF_TEMP => fstrPARAM%ref_temp
+    IECHO    => fstrPARAM%fg_echo
+    IRESULT  => fstrPARAM%fg_result
+    IVISUAL  => fstrPARAM%fg_visual
 
     ! for heat ...
-    INEUTRAL => fstrPR%fg_neutral
-    IRRES    => fstrPR%fg_irres
-    IWRES    => fstrPR%fg_iwres
-    NRRES    => fstrPR%nrres
-    NPRINT   => fstrPR%nprint
+    INEUTRAL => fstrPARAM%fg_neutral
+    IRRES    => fstrPARAM%fg_irres
+    IWRES    => fstrPARAM%fg_iwres
+    NRRES    => fstrPARAM%nrres
+    NPRINT   => fstrPARAM%nprint
 
 
     ! ------- initial value setting -------------
     call fstr_mat_init  ( hecMAT   )
-    call fstr_param_init( fstrPR, hecMESH )
+    call fstr_param_init( fstrPARAM, hecMESH )
 
     call fstr_solid_init( hecMESH, fstrSOLID )
     call fstr_eigen_init( fstrEIG )
@@ -159,9 +160,9 @@ contains
     call fstr_init_condition
 
     ! ------- hecMAT setting -------------
-    call hecmw_mat_con(hecMESH, hecMAT, kstHEAT == fstrPR%solution_type)
+    call hecmw_mat_con(hecMESH, hecMAT, kstHEAT == fstrPARAM%solution_type)
     hecMAT%NDOF = hecMESH%n_dof
-    if( kstHEAT == fstrPR%solution_type ) then
+    if( kstHEAT == fstrPARAM%solution_type ) then
       call heat_init_material (hecMESH,fstrHEAT)
       call heat_init_amplitude(hecMESH,fstrHEAT)
       hecMAT%NDOF = 1
@@ -266,12 +267,12 @@ contains
     svRarray(:) = hecMAT%Rarray(:)
     svIarray(:) = hecMAT%Iarray(:)
 
-    call fstr_setup( cntfileNAME, hecMESH, fstrPR, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
+    call fstr_setup( cntfileNAME, hecMESH, fstrPARAM, fstrSOLID, fstrEIG, fstrHEAT, fstrDYNAMIC, fstrCPL, fstrFREQ )
 
     hecMAT%Rarray(:) = svRarray(:)
     hecMAT%Iarray(:) = svIarray(:)
 
-    call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID )
+    call fstr_input_precheck( hecMESH, hecMAT, fstrSOLID, fstrPARAM )
 
     if( myrank == 0) write(*,*) 'fstr_setup: OK'
     write(ILOG,*) 'fstr_setup: OK'
@@ -294,13 +295,13 @@ contains
       write(IMSG,*)
     endif
 
-    if( fstrPR%nlgeom ) then
+    if( fstrPARAM%nlgeom ) then
       if( myrank == 0)  write(IMSG,*) ' ***   STAGE Non Linear static analysis   **'
     else
       if( myrank == 0 ) write(IMSG,*) ' ***   STAGE Linear static analysis   **'
     endif
 
-    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, hecLagMAT, fstrPR, conMAT )
+    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, hecLagMAT, fstrPARAM, conMAT )
 
     call fstr_solid_finalize( fstrSOLID )
 
@@ -323,7 +324,7 @@ contains
       write(IMSG,*) ' ***   STAGE Eigenvalue analysis     **'
     endif
 
-    call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, hecLagMAT )
+    call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPARAM, hecLagMAT )
 
   end subroutine fstr_eigen_analysis
 
@@ -334,7 +335,7 @@ contains
   subroutine fstr_heat_analysis
     implicit none
 
-    if( IECHO.eq.1 ) call heat_echo(fstrPR,hecMESH,fstrHEAT)
+    if( IECHO.eq.1 ) call heat_echo(fstrPARAM,hecMESH,fstrHEAT)
     if(myrank .EQ. 0) then
       write(IMSG,*)
       write(IMSG,*)
@@ -342,7 +343,7 @@ contains
       write(IMSG,*) ' ***   STAGE Heat analysis    **'
     endif
 
-    call fstr_solve_HEAT( hecMESH, hecMAT, fstrSOLID, fstrRESULT, fstrPR, fstrHEAT )
+    call fstr_solve_HEAT( hecMESH, hecMAT, fstrSOLID, fstrRESULT, fstrPARAM, fstrHEAT )
 
   end subroutine fstr_heat_analysis
 
@@ -359,7 +360,7 @@ contains
       write(IMSG,*)
       write(IMSG,*)
       write(IMSG,*)
-      if( fstrPR%nlgeom ) then
+      if( fstrPARAM%nlgeom ) then
         write(IMSG,*) ' ***   STAGE Nonlinear dynamic analysis   **'
       else
         write(IMSG,*) ' ***   STAGE Linear dynamic analysis   **'
@@ -367,7 +368,7 @@ contains
     endif
 
     call fstr_solve_dynamic( hecMESH, hecMAT, fstrSOLID, fstrEIG, &
-      fstrDYNAMIC, fstrRESULT, fstrPR, fstrCPL, fstrFREQ, hecLagMAT, &
+      fstrDYNAMIC, fstrRESULT, fstrPARAM, fstrCPL, fstrFREQ, hecLagMAT, &
       conMAT )
 
   end subroutine fstr_dynamic_analysis
@@ -392,7 +393,7 @@ contains
       write(*,*) ' ***   Stage 1: Nonlinear static analysis   **'
     endif
 
-    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, hecLagMAT, fstrPR, conMAT )
+    call fstr_solve_NLGEOM( hecMESH, hecMAT, fstrSOLID, hecLagMAT, fstrPARAM, conMAT )
 
     if(myrank == 0) then
       write(IMSG,*)
@@ -401,7 +402,7 @@ contains
       write(*,*) ' ***   Stage 2: Eigenvalue analysis   **'
     endif
 
-    call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPR, hecLagMAT )
+    call fstr_solve_EIGEN( hecMESH, hecMAT, fstrEIG, fstrSOLID, fstrRESULT, fstrPARAM, hecLagMAT )
 
     call fstr_solid_finalize( fstrSOLID )
 

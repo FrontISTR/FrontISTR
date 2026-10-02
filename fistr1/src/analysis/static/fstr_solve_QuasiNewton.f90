@@ -66,7 +66,7 @@ contains
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
-    if(.not. fstrPR%nlgeom)then
+    if(.not. fstrPARAM%nlgeom)then
       isLinear = .true.
     endif
 
@@ -134,7 +134,7 @@ contains
       call fstr_calc_residual_vector(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter, cstep, dtime, fstrPARAM)
  
       ! ----- check convergence
-      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, ndof, iter, sub_step, cstep, &
           hecMAT%B, cnvstat, iterStatus)
       if (iterStatus == kitrConverged) exit
       if (iterStatus == kitrDiverged .or. iterStatus==kitrFloatingError) then

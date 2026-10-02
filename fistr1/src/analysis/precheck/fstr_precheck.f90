@@ -16,20 +16,21 @@ module m_fstr_precheck
 contains
 
   !> Main entry point (called from fistr_main)
-  subroutine fstr_input_precheck(hecMESH, hecMAT, fstrSOLID)
+  subroutine fstr_input_precheck(hecMESH, hecMAT, fstrSOLID, fstrPARAM)
     implicit none
     type(hecmwST_local_mesh), intent(inout) :: hecMESH
     type(hecmwST_matrix), intent(in)        :: hecMAT
     type(fstr_solid), intent(in)            :: fstrSOLID
+    type(fstr_param), intent(in)            :: fstrPARAM
 
     integer(kind=kint) :: i, cid
     real(kind=kreal), allocatable :: elem_vol(:), elem_asp(:)
     type(hecmwST_result_data) :: fstrRESULT
 
     ! Density check for eigen/dynamic analysis
-    if(fstrPR%solution_type == kstEIGEN .or. &
-       fstrPR%solution_type == kstSTATICEIGEN .or. &
-       fstrPR%solution_type == kstDYNAMIC) then
+    if(fstrPARAM%solution_type == kstEIGEN .or. &
+       fstrPARAM%solution_type == kstSTATICEIGEN .or. &
+       fstrPARAM%solution_type == kstDYNAMIC) then
       do i = 1, hecMESH%section%n_sect
         if(hecMESH%section%sect_type(i) == 4) cycle
         cid = hecMESH%section%sect_mat_ID_item(i)
@@ -40,7 +41,7 @@ contains
       enddo
     endif
 
-    if(fstrPR%solution_type == kstPRECHECK) then
+    if(fstrPARAM%solution_type == kstPRECHECK) then
       if(myrank == 0) write(*,*) ' ****   Start Precheck   ****'
 
       ! Allocate element quality arrays
@@ -72,7 +73,7 @@ contains
       if(myrank == 0) write(*,*) ' ****   End Precheck   ****'
     endif
 
-    if(fstrPR%solution_type == kstNZPROF) then
+    if(fstrPARAM%solution_type == kstNZPROF) then
       call hecmw_nonzero_profile(hecMESH, hecMAT)
     endif
   end subroutine fstr_input_precheck

@@ -65,7 +65,7 @@ contains
     call fstr_ass_load(cstep, ctime+dtime, hecMESH, hecMAT, fstrSOLID, fstrPARAM)
 
     if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
-      call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, 0)
+      call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, fstrPARAM, ctime, tincr, 0)
       call fstr_Update_NDForce(cstep, hecMESH, hecMAT, fstrSOLID)
     endif
 
@@ -111,7 +111,7 @@ contains
 
     call hecmw_mpc_mat_init(hecMESH, hecMAT, hecMESHmpc, hecMATmpc)
 
-    if(.not. fstrPR%nlgeom)then
+    if(.not. fstrPARAM%nlgeom)then
       isLinear = .true.
     endif
 
@@ -166,7 +166,7 @@ contains
       if( isLinear ) exit
 
       ! ----- check convergence
-      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+      call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
           ndof, iter, sub_step, cstep, &
           hecMAT%B, cnvstat, iterStatus)
       if (iterStatus == kitrConverged) exit
@@ -327,7 +327,7 @@ contains
           call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
 
           ! ----- update the strain, stress, and internal force
-          call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+          call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, fstrPARAM, ctime, tincr, iter)
 
           if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
             call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime+dtime )
@@ -346,7 +346,7 @@ contains
           call fstr_Update_NDForce_SPC(cstep, hecMESH, fstrSOLID, conMAT%B)
 
           call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
-          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+          call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
               ndof, iter, sub_step, cstep, &
               resid_work, cnvstat, iterStatus, hecLagMAT)
           if (iterStatus == kitrConverged) exit
@@ -564,7 +564,7 @@ contains
         endif
 
         ! ----- update the strain, stress, and internal force (only QFORCE)
-        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+        call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, fstrPARAM, ctime, tincr, iter)
 
         if( fstrSOLID%elemact%ELEMACT_egrp_tot > 0 ) then
           call fstr_update_elemact_solid_by_value( hecMESH, fstrSOLID, cstep, ctime+dtime )
@@ -585,7 +585,7 @@ contains
         endif
 
         call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
-        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
             ndof, iter, sub_step, cstep, &
             resid_work, cnvstat, iterStatus, hecLagMAT)
         if (iterStatus == kitrConverged) then
