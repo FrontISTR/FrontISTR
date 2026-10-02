@@ -218,9 +218,6 @@ module m_fstr
     type(tParamConverg), pointer :: cnvparam(:)    !< convergence criteria
   end type fstr_param
 
-  !> GLOBAL VARIABLE INITIALIZED IN FSTR_SETUP
-  type( fstr_param ),target :: fstrPR
-
   !> Data for STATIC ANSLYSIS  (fstrSOLID)
   type fstr_solid_physic_val
     real(kind=kreal), pointer :: STRESS(:) => null()   !< nodal stress

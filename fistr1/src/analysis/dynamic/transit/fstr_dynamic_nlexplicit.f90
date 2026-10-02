@@ -448,7 +448,7 @@ contains
     end do
 
     ! ----- update strain, stress, and internal force
-    call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrDYN%t_curr, fstrDYN%t_delta, 0, fstrDYN%strainEnergy )
+    call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrPARAM, fstrDYN%t_curr, fstrDYN%t_delta, 0, fstrDYN%strainEnergy )
 
     ! ----- update reaction force at constrained DOFs using converged QFORCE
     call fstr_Update_REACTION_SPC( cstep, hecMESH, fstrSOLID )

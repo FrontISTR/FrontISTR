@@ -428,7 +428,7 @@ contains
         ! ----- check convergence
         call fstr_assemble_residual_contact(hecMAT, hecLagMAT, conMAT, hecMESH, resid_work, nresid)
 
-        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPR, &
+        call fstr_check_convergence(hecMESH, hecMAT, fstrSOLID, fstrPARAM, &
             ndof, iter, istep, cstep, &
             resid_work, cnvstat, iterStatus, hecLagMAT)
         if (iterStatus == kitrConverged) exit
@@ -457,7 +457,7 @@ contains
         do j=1,hecMESH%n_node*ndof
           fstrSOLID%dunode(j)  = fstrSOLID%dunode(j)+hecMAT%X(j)
         enddo
-        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, t_curr, &
+        call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrPARAM, t_curr, &
           &   t_delta,iter, fstrDYNAMIC%strainEnergy )
 
         ! ----- update reaction force at constrained DOFs using converged QFORCE
