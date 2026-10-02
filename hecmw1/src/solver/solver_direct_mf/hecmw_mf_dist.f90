@@ -66,6 +66,7 @@ module hecmw_mf_dist
     integer(kind=kint), allocatable :: xptr(:)    !< per global row the missing transposed columns (0:ng), freed by gmat_part
     integer(kind=kint), allocatable :: xcol(:)    !< their column ids, ascending within a row
     integer(kind=kint), allocatable :: gid(:)     !< user node id of every global row, for messages
+    integer(kind=kint), allocatable :: g2s(:)     !< gathered (rank, local) index to the gid-ascending row numbering
     integer(kind=kint), allocatable :: scnt(:)    !< blocks sent to rank r at scnt(r+1)
     integer(kind=kint), allocatable :: ssel(:)    !< sent blocks as local stream indices, grouped by destination
     integer(kind=kint), allocatable :: rcnt(:)    !< blocks received from rank r at rcnt(r+1)
@@ -565,7 +566,7 @@ contains
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(hecmwST_matrix), intent(in) :: hecMAT
     type(hecmwST_mf_gmat), intent(inout) :: gmat
-    integer(kind=kint), allocatable :: ibuf(:), ilen(:), idisp(:), gc(:)
+    integer(kind=kint), allocatable :: ibuf(:), ilen(:), idisp(:), gc(:), sidx(:), itmp(:)
     integer(kind=kint) :: np, me, comm, nd, n, ng, i, j, k, l, m, r, ptr, ncols, grow, maxcols
     integer(kind=kint) :: nl, nu, g
 
@@ -584,6 +585,19 @@ contains
     ng = gmat%ndisp(np+1)
     allocate(gmat%gid(ng))
     call hecmw_allgatherv_int(hecMESH%global_node_ID, n, gmat%gid, gmat%nn, gmat%ndisp, comm)
+    ! the global rows are numbered by ascending user node id, not by rank concatenation,
+    ! so the ordering input does not depend on the process count or the partitioning
+    allocate(gmat%g2s(ng), sidx(ng), itmp(ng))
+    do i = 1, ng
+      sidx(i) = i
+    enddo
+    call sort_by_gid(sidx, ng)
+    do k = 1, ng
+      gmat%g2s(sidx(k)) = k
+      itmp(k) = gmat%gid(sidx(k))
+    enddo
+    gmat%gid(1:ng) = itmp(1:ng)
+    deallocate(sidx, itmp)
 
     ! the int stream: per internal row its column count and the global column ids
     m = n + (hecMAT%indexL(n) - hecMAT%indexL(0)) + (hecMAT%indexU(n) - hecMAT%indexU(0))
@@ -613,6 +627,16 @@ contains
     ! equals its int stream length
     gmat%vblk(1:np) = ilen(1:np)
     gmat%nblk = idisp(np) + ilen(np)
+    ! translate the stream columns into the gid numbering (the row segments keep the
+    ! gathered order; the row id of the k-th segment is g2s(k))
+    ptr = 0
+    do i = 1, ng
+      ncols = gmat%stream(ptr+1)
+      do j = 1, ncols
+        gmat%stream(ptr+1+j) = gmat%g2s(gmat%stream(ptr+1+j))
+      enddo
+      ptr = ptr + 1 + ncols
+    enddo
     call mf_gmat_closure(gmat, ng)
     gmat%mat%N = ng
     gmat%mat%NP = ng
@@ -632,7 +656,7 @@ contains
     ptr = 0
     do r = 1, np
       do i = 1, gmat%nn(r)
-        grow = gmat%ndisp(r) + i
+        grow = gmat%g2s(gmat%ndisp(r) + i)
         ncols = gmat%stream(ptr+1)
         maxcols = max(maxcols, ncols + gmat%xptr(grow) - gmat%xptr(grow-1))
         do j = 1, ncols
@@ -664,7 +688,7 @@ contains
     ptr = 0
     do r = 1, np
       do i = 1, gmat%nn(r)
-        grow = gmat%ndisp(r) + i
+        grow = gmat%g2s(gmat%ndisp(r) + i)
         ncols = gmat%stream(ptr+1)
         do j = 1, ncols
           gc(j) = gmat%stream(ptr+1+j)
@@ -699,6 +723,44 @@ contains
       enddo
     enddo
     deallocate(gc)
+
+  contains
+
+    !> heapsort of idx by ascending user node id
+    subroutine sort_by_gid(idx, n0)
+      integer(kind=kint), intent(inout) :: idx(:)
+      integer(kind=kint), intent(in) :: n0
+      integer(kind=kint) :: i0, t0
+      do i0 = n0/2, 1, -1
+        call sift_by_gid(idx, i0, n0)
+      enddo
+      do i0 = n0, 2, -1
+        t0 = idx(1)
+        idx(1) = idx(i0)
+        idx(i0) = t0
+        call sift_by_gid(idx, 1, i0-1)
+      enddo
+    end subroutine sort_by_gid
+
+    subroutine sift_by_gid(idx, s0, e0)
+      integer(kind=kint), intent(inout) :: idx(:)
+      integer(kind=kint), intent(in) :: s0, e0
+      integer(kind=kint) :: p0, c0, t0
+      p0 = s0
+      do
+        c0 = 2*p0
+        if (c0 > e0) exit
+        if (c0 < e0) then
+          if (gmat%gid(idx(c0+1)) > gmat%gid(idx(c0))) c0 = c0 + 1
+        endif
+        if (gmat%gid(idx(c0)) <= gmat%gid(idx(p0))) exit
+        t0 = idx(p0)
+        idx(p0) = idx(c0)
+        idx(c0) = t0
+        p0 = c0
+      enddo
+    end subroutine sift_by_gid
+
   end subroutine hecmw_mf_dist_gmat_build
 
   !> Transposed positions absent from the gathered structure, per global row (xptr/xcol).
@@ -711,23 +773,28 @@ contains
     type(hecmwST_mf_gmat), intent(inout) :: gmat
     integer(kind=kint), intent(in) :: ng
     integer(kind=kint), allocatable :: rp(:), cols(:), fil(:)
-    integer(kind=kint) :: ptr, i, j, k, g, ncols, nmiss
+    integer(kind=kint) :: ptr, i, j, k, g, grow, ncols, nmiss
 
-    ! the stream lists the rows in global order, so the CSR copy is two straight walks
+    ! the k-th row segment of the stream belongs to row g2s(k) of the gid numbering
     allocate(rp(0:ng), fil(ng))
-    rp(0:ng) = 0
+    fil(1:ng) = 0
     ptr = 0
+    do k = 1, ng
+      grow = gmat%g2s(k)
+      fil(grow) = gmat%stream(ptr+1)
+      ptr = ptr + 1 + gmat%stream(ptr+1)
+    enddo
+    rp(0) = 0
     do i = 1, ng
-      ncols = gmat%stream(ptr+1)
-      rp(i) = rp(i-1) + ncols
-      ptr = ptr + 1 + ncols
+      rp(i) = rp(i-1) + fil(i)
     enddo
     allocate(cols(max(rp(ng), 1)))
     ptr = 0
-    do i = 1, ng
+    do k = 1, ng
+      grow = gmat%g2s(k)
       ncols = gmat%stream(ptr+1)
       do j = 1, ncols
-        cols(rp(i-1)+j) = gmat%stream(ptr+1+j)
+        cols(rp(grow-1)+j) = gmat%stream(ptr+1+j)
       enddo
       ptr = ptr + 1 + ncols
     enddo
@@ -849,7 +916,7 @@ contains
     ptr = 0
     do r = 1, np
       do i = 1, gmat%nn(r)
-        grow = gmat%ndisp(r) + i
+        grow = gmat%g2s(gmat%ndisp(r) + i)
         ka = sym%invp(grow)
         ncols = gmat%stream(ptr+1)
         maxcols = max(maxcols, ncols + gmat%xptr(grow) - gmat%xptr(grow-1))
@@ -905,7 +972,7 @@ contains
     b = 0
     do r = 1, np
       do i = 1, gmat%nn(r)
-        grow = gmat%ndisp(r) + i
+        grow = gmat%g2s(gmat%ndisp(r) + i)
         ka = sym%invp(grow)
         ncols = gmat%stream(ptr+1)
         if (mine(ka, ka)) then
@@ -974,7 +1041,7 @@ contains
     enddo
     b = ptr
     do i = 1, gmat%nn(me+1)
-      grow = gmat%ndisp(me+1) + i
+      grow = gmat%g2s(gmat%ndisp(me+1) + i)
       ka = sym%invp(grow)
       ncols = gmat%stream(ptr+1)
       call destrange(ka, ka, r0, nr0)
@@ -994,7 +1061,7 @@ contains
     ptr = b
     b = 0
     do i = 1, gmat%nn(me+1)
-      grow = gmat%ndisp(me+1) + i
+      grow = gmat%g2s(gmat%ndisp(me+1) + i)
       ka = sym%invp(grow)
       ncols = gmat%stream(ptr+1)
       b = b + 1
@@ -1235,20 +1302,28 @@ contains
     type(hecmwST_mf_gmat), intent(in) :: gmat
     real(kind=kreal), intent(in) :: v(:)
     real(kind=kreal), intent(out) :: gv(:)
+    real(kind=kreal), allocatable :: vg(:)
     integer(kind=kint), allocatable :: vlen(:), vdisp(:)
-    integer(kind=kint) :: np, me, comm, nd, r
+    integer(kind=kint) :: np, me, comm, nd, r, k, d, g
 
     np = hecmw_comm_get_size()
     me = hecmw_comm_get_rank()
     comm = hecmw_comm_get_comm()
     nd = gmat%mat%NDOF
-    allocate(vlen(np), vdisp(np))
+    allocate(vlen(np), vdisp(np), vg(gmat%ndisp(np+1)*nd))
     do r = 1, np
       vlen(r) = gmat%nn(r) * nd
       vdisp(r) = gmat%ndisp(r) * nd
     enddo
-    call hecmw_allgatherv_real(v, vlen(me+1), gv, vlen, vdisp, comm)
-    deallocate(vlen, vdisp)
+    call hecmw_allgatherv_real(v, vlen(me+1), vg, vlen, vdisp, comm)
+    ! scatter the gathered layout into the gid row numbering of the matrix
+    do k = 1, gmat%ndisp(np+1)
+      g = gmat%g2s(k)
+      do d = 1, nd
+        gv((g-1)*nd + d) = vg((k-1)*nd + d)
+      enddo
+    enddo
+    deallocate(vlen, vdisp, vg)
   end subroutine hecmw_mf_dist_gather_vec
 
   subroutine hecmw_mf_dist_gmat_finalize(gmat)
@@ -1261,6 +1336,7 @@ contains
       if (allocated(gmat%stream)) deallocate(gmat%stream)
       if (allocated(gmat%xptr)) deallocate(gmat%xptr, gmat%xcol)
       if (allocated(gmat%gid)) deallocate(gmat%gid)
+      if (allocated(gmat%g2s)) deallocate(gmat%g2s)
       if (allocated(gmat%scnt)) deallocate(gmat%scnt, gmat%ssel, gmat%rcnt, gmat%rdst)
       if (associated(gmat%mat%indexL)) then
         deallocate(gmat%mat%indexL, gmat%mat%indexU, gmat%mat%itemL, gmat%mat%itemU)

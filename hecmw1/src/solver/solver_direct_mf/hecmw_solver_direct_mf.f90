@@ -289,7 +289,7 @@ contains
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
     real(kind=kreal), allocatable :: gb(:), gx(:), rr(:), wpr(:), wmr(:), xp(:)
-    integer(kind=kint) :: ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, i, ofs, eta
+    integer(kind=kint) :: ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, i, ofs, eta, gnode, d
     integer(kind=8) :: wrepl
     real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, rprev, tcomm
     logical :: clustered
@@ -460,14 +460,18 @@ contains
       call hecmw_abort(hecmw_comm_get_comm())
     endif
     allocate(gb(FCT%ndof_tot), gx(FCT%ndof_tot))
-    ofs = GMAT%ndisp(hecmw_comm_get_rank()+1) * hecMAT%NDOF
+    ! the global rows follow the gid numbering; ofs locates my nodes in the gathered order
+    ofs = GMAT%ndisp(hecmw_comm_get_rank()+1)
     call hecmw_mf_dist_gather_vec(GMAT, hecMAT%B, gb)
     t1 = hecmw_wtime()
     call hecmw_mf_numeric_solve_mpi(SYM, MAP, FCT, gb, gx)
     t2 = hecmw_wtime()
     if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: solve done (', t2 - t1, ' sec)'
-    do i = 1, hecMAT%N * hecMAT%NDOF
-      hecMAT%X(i) = gx(ofs + i)
+    do i = 1, hecMAT%N
+      gnode = GMAT%g2s(ofs + i)
+      do d = 1, hecMAT%NDOF
+        hecMAT%X((i-1)*hecMAT%NDOF + d) = gx((gnode-1)*hecMAT%NDOF + d)
+      enddo
     enddo
 
     irmax = hecMAT%Iarray(44)
@@ -499,8 +503,11 @@ contains
         xp(1:hecMAT%N * hecMAT%NDOF) = hecMAT%X(1:hecMAT%N * hecMAT%NDOF)
         call hecmw_mf_dist_gather_vec(GMAT, rr, gb)
         call hecmw_mf_numeric_solve_mpi(SYM, MAP, FCT, gb, gx)
-        do i = 1, hecMAT%N * hecMAT%NDOF
-          hecMAT%X(i) = hecMAT%X(i) + gx(ofs + i)
+        do i = 1, hecMAT%N
+          gnode = GMAT%g2s(ofs + i)
+          do d = 1, hecMAT%NDOF
+            hecMAT%X((i-1)*hecMAT%NDOF + d) = hecMAT%X((i-1)*hecMAT%NDOF + d) + gx((gnode-1)*hecMAT%NDOF + d)
+          enddo
         enddo
       enddo
       t2 = hecmw_wtime()
