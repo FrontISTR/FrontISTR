@@ -49,6 +49,7 @@ contains
   subroutine fstr_api_param_init(param,mesh) bind(C,name='fstr_api_param_init')
     use m_fstr, only : fstr_param_init
     use hecmw, only : hecmwST_local_mesh
+    use fstr_setup_util, only : reallocate_real, reallocate_integer
     implicit none
     type(c_ptr), value :: param
     type(c_ptr), value :: mesh
@@ -57,15 +58,75 @@ contains
     call c_f_pointer(cptr=param, fptr=fstrPARAM)
     call c_f_pointer(cptr=mesh, fptr=hecMESH)
     call fstr_param_init(fstrPARAM,hecMESH)
+
+    ! setup なしでも動作させるため
+    call reallocate_real( fstrPARAM%dtime, 1 )
+    call reallocate_real( fstrPARAM%etime, 1 )
+    call reallocate_real( fstrPARAM%dtmin, 1 )
+    call reallocate_real( fstrPARAM%delmax, 1 )
+    call reallocate_integer( fstrPARAM%itmax, 1 )
+    call reallocate_real( fstrPARAM%eps, 1 )
+    fstrPARAM%dtime = 0.0d0
+    fstrPARAM%etime = 0.0d0
+    fstrPARAM%dtmin = 0.0d0
+    fstrPARAM%delmax = 0.0d0
+    fstrPARAM%itmax = 20
+    fstrPARAM%eps = 1.0e-6
+
   end subroutine
 
-  function fstr_api_param_solutuin_type(param) bind(C,name='fstr_api_param_solution_type')
+  function fstr_api_param_solution_type(param) bind(C,name='fstr_api_param_solution_type')
     implicit none
-    integer(c_int) :: fstr_api_param_solutuin_type
+    integer(c_int) :: fstr_api_param_solution_type
     type(c_ptr), value :: param
     type(fstr_param), pointer :: fstrPARAM
     call c_f_pointer(cptr=param, fptr=fstrPARAM)
-    fstr_api_param_solutuin_type = fstrPARAM%solution_type
+    fstr_api_param_solution_type = fstrPARAM%solution_type
+  end function
+
+  function fstr_api_param_solver_method(param) bind(C,name='fstr_api_param_solver_method')
+    implicit none
+    integer(c_int) :: fstr_api_param_solver_method
+    type(c_ptr), value :: param
+    type(fstr_param), pointer :: fstrPARAM
+    call c_f_pointer(cptr=param, fptr=fstrPARAM)
+    fstr_api_param_solver_method = fstrPARAM%solver_method
+  end function
+
+  function fstr_api_param_nlgeom(param) bind(C,name='fstr_api_param_nlgeom')
+    implicit none
+    logical(c_bool) :: fstr_api_param_nlgeom
+    type(c_ptr), value :: param
+    type(fstr_param), pointer :: fstrPARAM
+    call c_f_pointer(cptr=param, fptr=fstrPARAM)
+    fstr_api_param_nlgeom = fstrPARAM%nlgeom
+  end function
+
+  function fstr_api_param_nlsolver_method(param) bind(C,name='fstr_api_param_nlsolver_method')
+    implicit none
+    integer(c_int) :: fstr_api_param_nlsolver_method
+    type(c_ptr), value :: param
+    type(fstr_param), pointer :: fstrPARAM
+    call c_f_pointer(cptr=param, fptr=fstrPARAM)
+    fstr_api_param_nlsolver_method = fstrPARAM%nlsolver_method
+  end function
+
+  function fstr_api_param_fg_result(param) bind(C,name='fstr_api_param_fg_result')
+    implicit none
+    integer(c_int) :: fstr_api_param_fg_result
+    type(c_ptr), value :: param
+    type(fstr_param), pointer :: fstrPARAM
+    call c_f_pointer(cptr=param, fptr=fstrPARAM)
+    fstr_api_param_fg_result = fstrPARAM%fg_result
+  end function
+
+  function fstr_api_param_fg_visual(param) bind(C,name='fstr_api_param_fg_visual')
+    implicit none
+    integer(c_int) :: fstr_api_param_fg_visual
+    type(c_ptr), value :: param
+    type(fstr_param), pointer :: fstrPARAM
+    call c_f_pointer(cptr=param, fptr=fstrPARAM)
+    fstr_api_param_fg_visual = fstrPARAM%fg_visual
   end function
 
 end module
