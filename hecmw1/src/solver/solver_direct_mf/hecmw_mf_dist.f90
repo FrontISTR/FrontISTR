@@ -63,6 +63,8 @@ module hecmw_mf_dist
     integer(kind=kint), allocatable :: ndisp(:)   !< global node offset of rank r at ndisp(r+1)
     integer(kind=kint), allocatable :: vblk(:)    !< structure stream blocks per rank
     integer(kind=kint), allocatable :: stream(:)  !< gathered structure stream, freed by gmat_part
+    integer(kind=kint), allocatable :: xptr(:)    !< per global row the missing transposed columns (0:ng), freed by gmat_part
+    integer(kind=kint), allocatable :: xcol(:)    !< their column ids, ascending within a row
     integer(kind=kint), allocatable :: scnt(:)    !< blocks sent to rank r at scnt(r+1)
     integer(kind=kint), allocatable :: ssel(:)    !< sent blocks as local stream indices, grouped by destination
     integer(kind=kint), allocatable :: rcnt(:)    !< blocks received from rank r at rcnt(r+1)
@@ -608,6 +610,7 @@ contains
     ! equals its int stream length
     gmat%vblk(1:np) = ilen(1:np)
     gmat%nblk = idisp(np) + ilen(np)
+    call mf_gmat_closure(gmat, ng)
     gmat%mat%N = ng
     gmat%mat%NP = ng
     gmat%mat%NDOF = nd
@@ -628,10 +631,17 @@ contains
       do i = 1, gmat%nn(r)
         grow = gmat%ndisp(r) + i
         ncols = gmat%stream(ptr+1)
-        maxcols = max(maxcols, ncols)
+        maxcols = max(maxcols, ncols + gmat%xptr(grow) - gmat%xptr(grow-1))
         do j = 1, ncols
           g = gmat%stream(ptr+1+j)
           if (g < grow) then
+            gmat%mat%indexL(grow) = gmat%mat%indexL(grow) + 1
+          else
+            gmat%mat%indexU(grow) = gmat%mat%indexU(grow) + 1
+          endif
+        enddo
+        do k = gmat%xptr(grow-1)+1, gmat%xptr(grow)
+          if (gmat%xcol(k) < grow) then
             gmat%mat%indexL(grow) = gmat%mat%indexL(grow) + 1
           else
             gmat%mat%indexU(grow) = gmat%mat%indexU(grow) + 1
@@ -657,6 +667,10 @@ contains
           gc(j) = gmat%stream(ptr+1+j)
         enddo
         ptr = ptr + 1 + ncols
+        do k = gmat%xptr(grow-1)+1, gmat%xptr(grow)
+          ncols = ncols + 1
+          gc(ncols) = gmat%xcol(k)
+        enddo
         ! insertion sort by the global column id (unique within a row)
         do j = 2, ncols
           g = gc(j)
@@ -683,6 +697,101 @@ contains
     enddo
     deallocate(gc)
   end subroutine hecmw_mf_dist_gmat_build
+
+  !> Transposed positions absent from the gathered structure, per global row (xptr/xcol).
+  !> An assembly can touch the row of a node another rank owns only one-sidedly (the fill
+  !> of the contact elimination does), so the union of the internal rows is not always
+  !> structurally symmetric. The profile builders add these positions to keep the factored
+  !> structure symmetric; the value exchange never routes a block there, so they stay zero.
+  subroutine mf_gmat_closure(gmat, ng)
+    implicit none
+    type(hecmwST_mf_gmat), intent(inout) :: gmat
+    integer(kind=kint), intent(in) :: ng
+    integer(kind=kint), allocatable :: rp(:), cols(:), fil(:)
+    integer(kind=kint) :: ptr, i, j, k, g, ncols, nmiss
+
+    ! the stream lists the rows in global order, so the CSR copy is two straight walks
+    allocate(rp(0:ng), fil(ng))
+    rp(0:ng) = 0
+    ptr = 0
+    do i = 1, ng
+      ncols = gmat%stream(ptr+1)
+      rp(i) = rp(i-1) + ncols
+      ptr = ptr + 1 + ncols
+    enddo
+    allocate(cols(max(rp(ng), 1)))
+    ptr = 0
+    do i = 1, ng
+      ncols = gmat%stream(ptr+1)
+      do j = 1, ncols
+        cols(rp(i-1)+j) = gmat%stream(ptr+1+j)
+      enddo
+      ptr = ptr + 1 + ncols
+    enddo
+    ! insertion sort within a row (the rows are short)
+    do i = 1, ng
+      do j = rp(i-1)+2, rp(i)
+        g = cols(j)
+        k = j - 1
+        do while (k >= rp(i-1)+1)
+          if (cols(k) <= g) exit
+          cols(k+1) = cols(k)
+          k = k - 1
+        enddo
+        cols(k+1) = g
+      enddo
+    enddo
+    allocate(gmat%xptr(0:ng))
+    gmat%xptr(0:ng) = 0
+    do i = 1, ng
+      do j = rp(i-1)+1, rp(i)
+        g = cols(j)
+        if (.not. found(g, i)) gmat%xptr(g) = gmat%xptr(g) + 1
+      enddo
+    enddo
+    do i = 1, ng
+      gmat%xptr(i) = gmat%xptr(i-1) + gmat%xptr(i)
+    enddo
+    nmiss = gmat%xptr(ng)
+    allocate(gmat%xcol(max(nmiss, 1)))
+    if (nmiss > 0) then
+      ! the outer row ascends, so every xcol row collects its columns ascending
+      fil(1:ng) = 0
+      do i = 1, ng
+        do j = rp(i-1)+1, rp(i)
+          g = cols(j)
+          if (.not. found(g, i)) then
+            fil(g) = fil(g) + 1
+            gmat%xcol(gmat%xptr(g-1) + fil(g)) = i
+          endif
+        enddo
+      enddo
+    endif
+    deallocate(rp, cols, fil)
+
+  contains
+
+    !> row r0 of the sorted structure contains column c0
+    logical function found(r0, c0)
+      integer(kind=kint), intent(in) :: r0, c0
+      integer(kind=kint) :: lo0, hi0, mid0
+      found = .false.
+      lo0 = rp(r0-1) + 1
+      hi0 = rp(r0)
+      do while (lo0 <= hi0)
+        mid0 = (lo0 + hi0) / 2
+        if (cols(mid0) == c0) then
+          found = .true.
+          return
+        else if (cols(mid0) < c0) then
+          lo0 = mid0 + 1
+        else
+          hi0 = mid0 - 1
+        endif
+      enddo
+    end function found
+
+  end subroutine mf_gmat_closure
 
   !> Global node id of a local node: internal nodes by the rank offset, external nodes
   !> through the (owner rank, local id) pair of node_ID, as the sparse matrix interface
@@ -740,12 +849,23 @@ contains
         grow = gmat%ndisp(r) + i
         ka = sym%invp(grow)
         ncols = gmat%stream(ptr+1)
-        maxcols = max(maxcols, ncols)
+        maxcols = max(maxcols, ncols + gmat%xptr(grow) - gmat%xptr(grow-1))
         if (mine(ka, ka)) gmat%rcnt(r) = gmat%rcnt(r) + 1
         do j = 1, ncols
           g = gmat%stream(ptr+1+j)
           if (mine(ka, sym%invp(g))) then
             gmat%rcnt(r) = gmat%rcnt(r) + 1
+            if (g < grow) then
+              gmat%mat%indexL(grow) = gmat%mat%indexL(grow) + 1
+            else
+              gmat%mat%indexU(grow) = gmat%mat%indexU(grow) + 1
+            endif
+          endif
+        enddo
+        ! the closure positions are retained like their mirrored partners but receive no block
+        do j = gmat%xptr(grow-1)+1, gmat%xptr(grow)
+          g = gmat%xcol(j)
+          if (mine(ka, sym%invp(g))) then
             if (g < grow) then
               gmat%mat%indexL(grow) = gmat%mat%indexL(grow) + 1
             else
@@ -766,7 +886,10 @@ contains
     allocate(gmat%mat%D(int(ng, 8)*nd2))
     allocate(gmat%mat%AL(max(int(gmat%mat%NPL, 8)*nd2, 1_8)))
     allocate(gmat%mat%AU(max(int(gmat%mat%NPU, 8)*nd2, 1_8)))
+    ! the closure positions are never overwritten by the value exchange, so they must be zero
     gmat%mat%D(:) = 0.0d0
+    gmat%mat%AL(:) = 0.0d0
+    gmat%mat%AU(:) = 0.0d0
 
     ! second sweep: sort the retained columns of a row ascending and record the landing
     ! slot of every received block, following the stream order of its source
@@ -796,6 +919,15 @@ contains
             bb(nkeep) = b
           endif
         enddo
+        ! retained closure positions take an item slot but no landing slot (bb = 0)
+        do j = gmat%xptr(grow-1)+1, gmat%xptr(grow)
+          g = gmat%xcol(j)
+          if (mine(ka, sym%invp(g))) then
+            nkeep = nkeep + 1
+            gc(nkeep) = g
+            bb(nkeep) = 0
+          endif
+        enddo
         ptr = ptr + 1 + ncols
         ! insertion sort by the global column id (unique within a row)
         do j = 2, nkeep
@@ -818,12 +950,12 @@ contains
             nl = nl + 1
             pos = gmat%mat%indexL(grow-1) + nl
             gmat%mat%itemL(pos) = gc(j)
-            gmat%rdst(bb(j)) = pos
+            if (bb(j) > 0) gmat%rdst(bb(j)) = pos
           else
             nu = nu + 1
             pos = gmat%mat%indexU(grow-1) + nu
             gmat%mat%itemU(pos) = gc(j)
-            gmat%rdst(bb(j)) = gmat%mat%NPL + pos
+            if (bb(j) > 0) gmat%rdst(bb(j)) = gmat%mat%NPL + pos
           endif
         enddo
       enddo
@@ -878,7 +1010,7 @@ contains
       enddo
       ptr = ptr + 1 + ncols
     enddo
-    deallocate(gmat%stream, c2s, gc, bb, sptr)
+    deallocate(gmat%stream, gmat%xptr, gmat%xcol, c2s, gc, bb, sptr)
 
   contains
 
@@ -1124,6 +1256,7 @@ contains
     if (allocated(gmat%nn)) then
       deallocate(gmat%nn, gmat%ndisp, gmat%vblk)
       if (allocated(gmat%stream)) deallocate(gmat%stream)
+      if (allocated(gmat%xptr)) deallocate(gmat%xptr, gmat%xcol)
       if (allocated(gmat%scnt)) deallocate(gmat%scnt, gmat%ssel, gmat%rcnt, gmat%rdst)
       if (associated(gmat%mat%indexL)) then
         deallocate(gmat%mat%indexL, gmat%mat%indexU, gmat%mat%itemL, gmat%mat%itemU)
