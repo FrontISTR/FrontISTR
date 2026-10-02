@@ -1355,9 +1355,17 @@ contains
     !$omp end parallel
     deallocate(wrks, left)
 
-    ! no barrier between the stages: a rank done with its subtrees walks straight into the
-    ! upper fronts, and a subtree error travels in the child headers, uniformly skipping
-    ! every front above it until the final allreduce settles ierr
+    ! settle the subtree stage before the upper front protocol: a rank that hit an error
+    ! skipped the rest of its subtrees, so their fronts have no stored panels or tile
+    ! bounds and the rank must not join the collective exchanges above them (an error
+    ! inside the upper stage still travels in the child headers until the final allreduce)
+    iw(1) = gierr
+    call hecmw_allreduce_I_comm(iw, 1, hecmw_max, map%comm)
+    gierr = iw(1)
+    if (gierr /= 0) then
+      ierr = gierr
+      return
+    endif
     do iu = 1, map%nupper
       s = map%uplist(iu)
       if (map%myrank >= map%rbeg(s) .and. map%myrank < map%rbeg(s) + map%rcnt(s)) then
