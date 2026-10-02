@@ -210,7 +210,8 @@ contains
     mfMAT%Iarray = hecMAT%Iarray
     mfMAT%Rarray = hecMAT%Rarray
     if (mfMAT%Iarray(43) /= 0) then
-      if (hecmw_comm_get_rank() == 0 .and. hecmw_mat_get_loglevel(hecMAT) > 0) write(*,*) &
+      ! the user asked for BLR, so the fallback is reported regardless of LOGLEVEL
+      if (hecmw_comm_get_rank() == 0) write(*,*) &
         '[DIRECTmf]: BLR is not available in contact analysis without elimination; disabled'
     endif
     ! the refinement stays with the caller (mf_contact_resid); the driver would measure it

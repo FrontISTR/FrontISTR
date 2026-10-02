@@ -131,7 +131,8 @@ contains
       FCT%blr_reuse = hecMAT%Iarray(48) /= 0
       if (FCT%blr .and. .not. hecmw_mf_kernel_blr_available()) then
         FCT%blr = .false.
-        if (loglevel > 0) write(*,'(a)') '[DIRECTmf]: BLR disabled (built without LAPACK)'
+        ! the user asked for BLR, so the fallback is reported regardless of LOGLEVEL
+        if (hecmw_comm_get_rank() == 0) write(*,'(a)') '[DIRECTmf]: BLR disabled (built without LAPACK)'
       endif
       t1 = hecmw_wtime()
       call hecmw_mf_numeric_factor(hecMAT, SYM, FCT, ierr)
@@ -335,7 +336,8 @@ contains
       FCT%blr_reuse = hecMAT%Iarray(48) /= 0
       if (FCT%blr .and. .not. hecmw_mf_kernel_blr_available()) then
         FCT%blr = .false.
-        if (loglevel > 0) write(*,'(a)') '[DIRECTmf]: BLR disabled (built without LAPACK)'
+        ! the user asked for BLR, so the fallback is reported regardless of LOGLEVEL
+        if (hecmw_comm_get_rank() == 0) write(*,'(a)') '[DIRECTmf]: BLR disabled (built without LAPACK)'
       endif
       call hecmw_mf_dist_gmat_vals(hecMAT, GMAT)
       t1 = hecmw_wtime()

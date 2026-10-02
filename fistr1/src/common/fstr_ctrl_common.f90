@@ -213,10 +213,11 @@ contains
       !  line 3 (integers):
       !    1 ordering (as DIRECT), 2 mode (0=auto/1=force LDLt/2=force LU),
       !    3 BLR (0=off/1=on), 4 max refinement steps, 5 tile size (DOFs),
-      !    6 amalgamation width (columns), 7-10 RESERVED
+      !    6 amalgamation width (columns), 7 BLR skip distance eta (-1=off),
+      !    8 BLR rank reuse (0=off/1=on), 9-10 RESERVED
       !  line 4 (reals):
       !    1 BLR epsilon, 2 refinement stopping residual, 3 pivot threshold u,
-      !    4 zero pivot factor, 5-8 RESERVED
+      !    4 zero pivot factor, 5 BLR gain cap beta, 6-8 RESERVED
       solver_opt(1:10) = 0
       solver_ropt(1:10) = 0.0d0
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &

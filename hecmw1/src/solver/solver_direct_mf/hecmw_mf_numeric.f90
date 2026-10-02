@@ -17,8 +17,8 @@
 !> per supernode; a contribution block lives from the factorization of its supernode until the
 !> extend-add of the parent consumes it.
 !>
-!> A matrix whose values are found unsymmetric (or whose symmetric flag is off) is factored in
-!> LU mode: the part of the front above the diagonal is held transposed in a second grid of the
+!> A matrix whose symmetric flag is off (the assembly clears it for numerically unsymmetric
+!> problems) is factored in LU mode: the part of the front above the diagonal is held transposed in a second grid of the
 !> same layout (fvalu, and uval for the stored U panels), pivots are chosen by threshold partial
 !> pivoting among the fully summed rows, and the row DOF of a position (frow) may then differ
 !> from its column DOF (fsdof). Delayed positions carry both to the parent.
@@ -4900,7 +4900,7 @@ contains
     fw = wrk%g%coloff(wrk%g%nt+1)
     if (fct%lu) fw = 2*fw
     !$omp critical (mf_stats)
-    fct%front_words_act = max(fct%front_words_act, wrk%g%coloff(wrk%g%nt+1))
+    fct%front_words_act = max(fct%front_words_act, fw)
     fct%live_front = fct%live_front + fw
     fct%front_peak = max(fct%front_peak, fct%live_front)
     !$omp end critical (mf_stats)
@@ -5153,7 +5153,7 @@ contains
       sn%pwords = pw
       if (fct%lu) sn%pwords = 2*pw
       !$omp critical (mf_stats)
-      fct%factor_words_act = fct%factor_words_act + pw
+      fct%factor_words_act = fct%factor_words_act + sn%pwords
       !$omp end critical (mf_stats)
     else
       call mf_store_blr(wrk%g, sn%npiv, nkc, wrk%fval, wrk%bval, wrk%boff, wrk%brk, &
