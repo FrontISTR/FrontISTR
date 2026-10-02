@@ -136,7 +136,8 @@ contains
 
           if( fstrSOLID%TEMP_ngrp_tot > 0 .or. fstrSOLID%TEMP_irres > 0 ) then
             if( isElastoplastic(fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype) .or. &
-                fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON ) then
+                fstrSOLID%elements(icel)%gausses(1)%pMaterial%mtype == NORTON .or. &
+                fstrSOLID%elements(icel)%gausses(1)%pMaterial%nlgeom_flag == UPDATELAG ) then
               tt0(j)=fstrSOLID%last_temp( nodLOCAL(j) )
             else
               tt0(j) = 0.d0

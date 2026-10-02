@@ -626,15 +626,19 @@ contains
 
     if( flag == INFINITESIMAL ) then
 
-      dstress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6)-gauss%strain_bak(1:6) )
-      gauss%stress(1:6) = gauss%stress_bak(1:6) + dstress(1:6)
+      if( isEp == 1 ) then
+        dstress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6)-gauss%strain_bak(1:6) )
+        gauss%stress(1:6) = gauss%stress_bak(1:6) + dstress(1:6)
+        gauss%strain_energy = gauss%strain_energy_bak+dot_product(gauss%stress_bak(1:6),dstrain(1:6)-gauss%strain_bak(1:6))
+        gauss%strain_energy = gauss%strain_energy+0.5d0*dot_product(dstress,dstrain(1:6)-gauss%strain_bak(1:6))
+      else
+        gauss%stress(1:6) = matmul( D(1:6, 1:6), dstrain(1:6) )
+        gauss%strain_energy = 0.5d0*dot_product(gauss%stress(1:6),dstrain(1:6))
+      end if
       if( isViscoelastic(mtype) .AND. tincr /= 0.0D0 ) then
         call StressUpdate( gauss, D3, dstrain, gauss%stress, coordsys, time, tincr, ttc, ttn, hdflag=hdflag_in )
         gauss%stress = real(gauss%stress)
       end if
-      gauss%strain_energy = gauss%strain_energy_bak+dot_product(gauss%stress_bak(1:6),dstrain(1:6)-gauss%strain_bak(1:6))
-      gauss%strain_energy = gauss%strain_energy+0.5d0*dot_product(dstress,dstrain(1:6)-gauss%strain_bak(1:6))
-
       
     else if( flag == TOTALLAG ) then
 
