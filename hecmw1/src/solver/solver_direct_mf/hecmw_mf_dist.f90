@@ -65,6 +65,7 @@ module hecmw_mf_dist
     integer(kind=kint), allocatable :: stream(:)  !< gathered structure stream, freed by gmat_part
     integer(kind=kint), allocatable :: xptr(:)    !< per global row the missing transposed columns (0:ng), freed by gmat_part
     integer(kind=kint), allocatable :: xcol(:)    !< their column ids, ascending within a row
+    integer(kind=kint), allocatable :: gid(:)     !< user node id of every global row, for messages
     integer(kind=kint), allocatable :: scnt(:)    !< blocks sent to rank r at scnt(r+1)
     integer(kind=kint), allocatable :: ssel(:)    !< sent blocks as local stream indices, grouped by destination
     integer(kind=kint), allocatable :: rcnt(:)    !< blocks received from rank r at rcnt(r+1)
@@ -581,6 +582,8 @@ contains
       gmat%ndisp(r+1) = gmat%ndisp(r) + gmat%nn(r)
     enddo
     ng = gmat%ndisp(np+1)
+    allocate(gmat%gid(ng))
+    call hecmw_allgatherv_int(hecMESH%global_node_ID, n, gmat%gid, gmat%nn, gmat%ndisp, comm)
 
     ! the int stream: per internal row its column count and the global column ids
     m = n + (hecMAT%indexL(n) - hecMAT%indexL(0)) + (hecMAT%indexU(n) - hecMAT%indexU(0))
@@ -1257,6 +1260,7 @@ contains
       deallocate(gmat%nn, gmat%ndisp, gmat%vblk)
       if (allocated(gmat%stream)) deallocate(gmat%stream)
       if (allocated(gmat%xptr)) deallocate(gmat%xptr, gmat%xcol)
+      if (allocated(gmat%gid)) deallocate(gmat%gid)
       if (allocated(gmat%scnt)) deallocate(gmat%scnt, gmat%ssel, gmat%rcnt, gmat%rdst)
       if (associated(gmat%mat%indexL)) then
         deallocate(gmat%mat%indexL, gmat%mat%indexU, gmat%mat%itemL, gmat%mat%itemU)

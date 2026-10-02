@@ -50,9 +50,9 @@ contains
     integer(kind=kint), intent(in) :: imsg
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
-    integer(kind=kint) :: loglevel, iterlog, timelog, ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, eta
-    real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, tcomm
-    real(kind=kreal), allocatable :: rr(:), dd(:)
+    integer(kind=kint) :: loglevel, iterlog, timelog, ordering, n, nerr, relax, tile, ierr, idof, node, nthreads, irmax, it, eta
+    real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, rprev, tcomm
+    real(kind=kreal), allocatable :: rr(:), dd(:), xp(:)
     logical :: clustered
 
     ! TIMELOG holds the stage times, ITERLOG the refinement residuals, LOGLEVEL the
@@ -121,10 +121,21 @@ contains
 
     if (hecMAT%Iarray(97) == 1) then
       FCT%mode = hecMAT%Iarray(42)
+      if (FCT%mode < 0 .or. FCT%mode > 2) then
+        if (hecmw_comm_get_rank() == 0) write(*,'(a,i0,a)') &
+          '[DIRECTmf]: WARNING: MF_Mode ', FCT%mode, ' is outside 0-2; using the automatic mode'
+        FCT%mode = 0
+      endif
       FCT%scan = loglevel > 1
       FCT%blr = hecMAT%Iarray(43) /= 0
       FCT%eps = hecMAT%Rarray(41)
       FCT%pivot_u = hecMAT%Rarray(43)
+      ! threshold partial pivoting is defined for u in (0, 0.5]
+      if (FCT%pivot_u > 0.5d0) then
+        if (hecmw_comm_get_rank() == 0) write(*,'(a,1pe9.2,a)') &
+          '[DIRECTmf]: WARNING: MF_PivotThreshold ', FCT%pivot_u, ' is above 0.5; using 0.5'
+        FCT%pivot_u = 0.5d0
+      endif
       FCT%pivot_zero = hecMAT%Rarray(44)
       FCT%blr_beta = hecMAT%Rarray(45)
       if (FCT%blr_beta <= 0.0d0) FCT%blr_beta = 1.0d0
@@ -140,10 +151,14 @@ contains
       if (ierr /= 0) then
         if (ierr > 0) then
           idof = FCT%pdof(ierr)
-          write(imsg,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: zero pivot at node ', (idof-1)/hecMAT%NDOF + 1, &
-            ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (matrix is singular)'
-          write(*,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: zero pivot at node ', (idof-1)/hecMAT%NDOF + 1, &
-            ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (matrix is singular)'
+          ! the node prints as the user's id where the matrix rows are the mesh nodes
+          ! (not the expanded saddle-point or coarse-grid systems)
+          node = (idof-1)/hecMAT%NDOF + 1
+          if (hecMAT%NP == hecMESH%n_node) node = hecMESH%global_node_ID(node)
+          write(imsg,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: no acceptable pivot at node ', node, &
+            ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (the matrix may be singular)'
+          write(*,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: no acceptable pivot at node ', node, &
+            ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (the matrix may be singular)'
         else if (ierr == -1) then
           write(imsg,*) 'ERROR: DIRECTmf: block size of the matrix does not match the symbolic structure'
           write(*,*) 'ERROR: DIRECTmf: block size of the matrix does not match the symbolic structure'
@@ -216,22 +231,33 @@ contains
       irtol = hecMAT%Rarray(42)
       if (.not. (irtol > 0.0d0)) irtol = MF_IR_TOL
       n = hecMAT%NP * hecMAT%NDOF
-      allocate(rr(n), dd(n))
+      allocate(rr(n), dd(n), xp(n))
       tcomm = 0.0d0
       call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnrm, tcomm)
       t1 = hecmw_wtime()
+      rprev = huge(rprev)
       do it = 1, irmax
         call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, rr, tcomm)
         call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, rr, rr, rnrm, tcomm)
         rnrm = sqrt(rnrm / max(bnrm, tiny(bnrm)))
         if (iterlog > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
         if (rnrm <= irtol) exit
+        ! a step that grew the residual would hand back a worse solution than it got,
+        ! so the step is undone and the sweep stops with a warning
+        if (rnrm > rprev) then
+          hecMAT%X(1:n) = xp(1:n)
+          if (hecmw_comm_get_rank() == 0) write(*,'(a,1pe11.4)') &
+            '[DIRECTmf]: WARNING: refinement diverged, reverted to residual = ', rprev
+          exit
+        endif
+        rprev = rnrm
+        xp(1:n) = hecMAT%X(1:n)
         call hecmw_mf_numeric_solve(SYM, FCT, rr, dd)
         hecMAT%X(1:n) = hecMAT%X(1:n) + dd(1:n)
       enddo
       t2 = hecmw_wtime()
       if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
-      deallocate(rr, dd)
+      deallocate(rr, dd, xp)
     else if (irmax == 0 .and. iterlog > 0) then
       ! a negative irmax asks for no residual work at all (the contact wrapper measures
       ! its saddle-point system itself and disables this path with -1)
@@ -262,10 +288,10 @@ contains
     integer(kind=kint), intent(in) :: imsg, loglevel, iterlog, timelog
     type(hecmwST_mf_graph) :: graph
     integer(kind=kint), allocatable :: perm(:), invp(:)
-    real(kind=kreal), allocatable :: gb(:), gx(:), rr(:), wpr(:), wmr(:)
+    real(kind=kreal), allocatable :: gb(:), gx(:), rr(:), wpr(:), wmr(:), xp(:)
     integer(kind=kint) :: ordering, n, nerr, relax, tile, ierr, idof, nthreads, irmax, it, i, ofs, eta
     integer(kind=8) :: wrepl
-    real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, tcomm
+    real(kind=kreal) :: t1, t2, irtol, bnrm, rnrm, rprev, tcomm
     logical :: clustered
 
     clustered = .false.
@@ -326,10 +352,21 @@ contains
 
     if (hecMAT%Iarray(97) == 1) then
       FCT%mode = hecMAT%Iarray(42)
+      if (FCT%mode < 0 .or. FCT%mode > 2) then
+        if (hecmw_comm_get_rank() == 0) write(*,'(a,i0,a)') &
+          '[DIRECTmf]: WARNING: MF_Mode ', FCT%mode, ' is outside 0-2; using the automatic mode'
+        FCT%mode = 0
+      endif
       FCT%scan = loglevel > 1
       FCT%blr = hecMAT%Iarray(43) /= 0
       FCT%eps = hecMAT%Rarray(41)
       FCT%pivot_u = hecMAT%Rarray(43)
+      ! threshold partial pivoting is defined for u in (0, 0.5]
+      if (FCT%pivot_u > 0.5d0) then
+        if (hecmw_comm_get_rank() == 0) write(*,'(a,1pe9.2,a)') &
+          '[DIRECTmf]: WARNING: MF_PivotThreshold ', FCT%pivot_u, ' is above 0.5; using 0.5'
+        FCT%pivot_u = 0.5d0
+      endif
       FCT%pivot_zero = hecMAT%Rarray(44)
       FCT%blr_beta = hecMAT%Rarray(45)
       if (FCT%blr_beta <= 0.0d0) FCT%blr_beta = 1.0d0
@@ -347,10 +384,13 @@ contains
         if (hecmw_comm_get_rank() == 0) then
           if (ierr > 0) then
             idof = FCT%pdof(ierr)
-            write(imsg,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: zero pivot at node ', (idof-1)/hecMAT%NDOF + 1, &
-              ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (matrix is singular)'
-            write(*,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: zero pivot at node ', (idof-1)/hecMAT%NDOF + 1, &
-              ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (matrix is singular)'
+            ! the row is in the gathered numbering; gid maps it back to the user's node id
+            write(imsg,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: no acceptable pivot at node ', &
+              GMAT%gid((idof-1)/hecMAT%NDOF + 1), &
+              ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (the matrix may be singular)'
+            write(*,'(a,i0,a,i0,a)') 'ERROR: DIRECTmf: no acceptable pivot at node ', &
+              GMAT%gid((idof-1)/hecMAT%NDOF + 1), &
+              ' dof ', mod(idof-1, hecMAT%NDOF) + 1, ' (the matrix may be singular)'
           else if (ierr == -1) then
             write(imsg,*) 'ERROR: DIRECTmf: block size of the matrix does not match the symbolic structure'
             write(*,*) 'ERROR: DIRECTmf: block size of the matrix does not match the symbolic structure'
@@ -436,16 +476,27 @@ contains
       irtol = hecMAT%Rarray(42)
       if (.not. (irtol > 0.0d0)) irtol = MF_IR_TOL
       n = hecMAT%NP * hecMAT%NDOF
-      allocate(rr(n))
+      allocate(rr(n), xp(hecMAT%N * hecMAT%NDOF))
       tcomm = 0.0d0
       call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, hecMAT%B, hecMAT%B, bnrm, tcomm)
       t1 = hecmw_wtime()
+      rprev = huge(rprev)
       do it = 1, irmax
         call hecmw_matresid(hecMESH, hecMAT, hecMAT%X, hecMAT%B, rr, tcomm)
         call hecmw_InnerProduct_R(hecMESH, hecMAT%NDOF, rr, rr, rnrm, tcomm)
         rnrm = sqrt(rnrm / max(bnrm, tiny(bnrm)))
         if (iterlog > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
         if (rnrm <= irtol) exit
+        ! a step that grew the residual would hand back a worse solution than it got, so
+        ! the step is undone and the sweep stops (rnrm is collective, every rank agrees)
+        if (rnrm > rprev) then
+          hecMAT%X(1:hecMAT%N * hecMAT%NDOF) = xp(1:hecMAT%N * hecMAT%NDOF)
+          if (hecmw_comm_get_rank() == 0) write(*,'(a,1pe11.4)') &
+            '[DIRECTmf]: WARNING: refinement diverged, reverted to residual = ', rprev
+          exit
+        endif
+        rprev = rnrm
+        xp(1:hecMAT%N * hecMAT%NDOF) = hecMAT%X(1:hecMAT%N * hecMAT%NDOF)
         call hecmw_mf_dist_gather_vec(GMAT, rr, gb)
         call hecmw_mf_numeric_solve_mpi(SYM, MAP, FCT, gb, gx)
         do i = 1, hecMAT%N * hecMAT%NDOF
@@ -454,7 +505,7 @@ contains
       enddo
       t2 = hecmw_wtime()
       if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
-      deallocate(rr)
+      deallocate(rr, xp)
     else if (irmax == 0 .and. hecmw_mat_get_iterlog(hecMAT) > 0) then
       ! every rank enters the residual evaluation (it is collective); the passed iterlog
       ! is zeroed off rank 0 and only gates the print

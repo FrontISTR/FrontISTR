@@ -57,8 +57,8 @@ contains
     type (hecmwST_ebc), intent(inout) :: hecEBC
     integer(kind=kint), intent(out) :: istat
     integer(kind=kint) :: ntdf, mpc_method, iterlog, timelog, irmax, it
-    real(kind=kreal) :: bnrm, rnrm, irtol, t1, t2
-    real(kind=kreal), allocatable :: bb(:), xx(:), rr(:)
+    real(kind=kreal) :: bnrm, rnrm, rprev, irtol, t1, t2
+    real(kind=kreal), allocatable :: bb(:), xx(:), rr(:), xp(:)
     ! the unit hecmw_solve passes to the direct solvers for error messages
     integer(kind=kint), parameter :: imsg = 51
 
@@ -102,16 +102,26 @@ contains
       timelog = hecmw_mat_get_timelog(hecMAT)
       irtol = hecMAT%Rarray(42)
       if (.not. (irtol > 0.0d0)) irtol = MFC_IR_TOL
-      allocate(bb(ntdf), xx(ntdf), rr(ntdf))
+      allocate(bb(ntdf), xx(ntdf), rr(ntdf), xp(ntdf))
       bb(1:ntdf) = mfMAT%B(1:ntdf)
       xx(1:ntdf) = mfMAT%X(1:ntdf)
       bnrm = sqrt(dot_product(bb(1:ntdf), bb(1:ntdf)))
       t1 = hecmw_wtime()
+      rprev = huge(rprev)
       do it = 1, irmax
         call mf_contact_resid(ntdf, xx, bb, rr)
         rnrm = sqrt(dot_product(rr(1:ntdf), rr(1:ntdf))) / max(bnrm, tiny(bnrm))
         if (iterlog > 0) write(*,'(a,i0,a,1pe11.4)') '[DIRECTmf]: refinement ', it - 1, ': residual = ', rnrm
         if (rnrm <= irtol) exit
+        ! a step that grew the residual would hand back a worse solution than it got,
+        ! so the step is undone and the sweep stops with a warning
+        if (rnrm > rprev) then
+          xx(1:ntdf) = xp(1:ntdf)
+          write(*,'(a,1pe11.4)') '[DIRECTmf]: WARNING: refinement diverged, reverted to residual = ', rprev
+          exit
+        endif
+        rprev = rnrm
+        xp(1:ntdf) = xx(1:ntdf)
         mfMAT%B(1:ntdf) = rr(1:ntdf)
         call hecmw_solve_direct_mf(hecMESH, mfMAT, imsg)
         xx(1:ntdf) = xx(1:ntdf) + mfMAT%X(1:ntdf)
@@ -119,7 +129,7 @@ contains
       t2 = hecmw_wtime()
       if (timelog > 0) write(*,'(a,f10.3,a)') '[DIRECTmf]: refinement done (', t2 - t1, ' sec)'
       mfMAT%X(1:ntdf) = xx(1:ntdf)
-      deallocate(bb, xx, rr)
+      deallocate(bb, xx, rr, xp)
     endif
 
     hecMAT%X(1:ntdf) = mfMAT%X(1:ntdf)
