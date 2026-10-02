@@ -176,8 +176,9 @@ contains
           write(ilog,*) freq, "[Hz] : ", im, ".vis"
         end if
       end if
-      call output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, 'fstrRES', 'frequency', freq, im, &
-        IRESULT==1, IVISUAL==1 .and. vistype==1, dispRe, dispIm, velRe, velIm, accRe, accIm)
+      call output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, &
+        'fstrRES', 'frequency', freq, im, IRESULT==1, IVISUAL==1 .and. vistype==1, &
+        dispRe, dispIm, velRe, velIm, accRe, accIm)
     end do
 
     call setupDYNAParam(fstrDYNAMIC, t_start, t_end, freq, numdisp)
@@ -221,8 +222,9 @@ contains
           write(ilog,*) "time=", time, " : ", im, ".vis"
         end if
       end if
-      call output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, 'fstrDYNA', 'TOTALTIME', time, im, &
-        IRESULT==1, IVISUAL==1 .and. vistype==2, dispRe, dispIm, velRe, velIm, accRe, accIm)
+      call output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, &
+        'fstrDYNA', 'TOTALTIME', time, im, IRESULT==1, IVISUAL==1 .and. vistype==2, &
+        dispRe, dispIm, velRe, velIm, accRe, accIm)
     end do
 
     deallocate(freqData%eigOmega)
@@ -444,12 +446,13 @@ contains
   ! The incremental form keeps the incompatible mode of the 361 element consistent
   ! with the displacement, as the material is linear elastic here.
   !
-  subroutine updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, istp, disp, vel, acc)
+  subroutine updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, istp, disp, vel, acc)
     !---- args
     type(hecmwST_local_mesh)       :: hecMESH
     type(hecmwST_matrix)           :: hecMAT
     type(fstr_solid)               :: fstrSOLID
     type(fstr_dynamic)             :: fstrDYNAMIC
+    type(fstr_param)               :: fstrPARAM
     integer(kind=kint), intent(in) :: istp
     real(kind=kreal), intent(in)   :: disp(:) !intend (numnodeDOF)
     real(kind=kreal), intent(in)   :: vel(:) !intend (numnodeDOF)
@@ -469,7 +472,7 @@ contains
 
     hecMAT%X(1:ntotal) = disp(1:ntotal) - fstrSOLID%unode(1:ntotal) - fstrSOLID%dunode(1:ntotal)
     call fstr_apply_solution_increment( hecMESH, fstrSOLID, ndof, hecMAT%X )
-    call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, 0.0D0, 0.0D0, 1 )
+    call fstr_UpdateNewton( hecMESH, hecMAT, fstrSOLID, fstrPARAM, 0.0D0, 0.0D0, 1 )
     call fstr_Update_REACTION_SPC( 1, hecMESH, fstrSOLID )
 
     if( ndof == 2 ) then
@@ -486,13 +489,14 @@ contains
   ! two sets of the same items, distinguished by the label suffix. Both are recovered
   ! once and shared by the result file and the visualization data.
   !
-  subroutine output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, nameid, glabel, gvalue, istp, &
-      wres, wvis, dispRe, dispIm, velRe, velIm, accRe, accIm)
+  subroutine output_result(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, nameid, glabel, gvalue, &
+      istp, wres, wvis, dispRe, dispIm, velRe, velIm, accRe, accIm)
     !---- args
     type(hecmwST_local_mesh)       :: hecMESH
     type(hecmwST_matrix)           :: hecMAT
     type(fstr_solid)               :: fstrSOLID
     type(fstr_dynamic)             :: fstrDYNAMIC
+    type(fstr_param)               :: fstrPARAM
     character(len=*), intent(in)   :: nameid
     character(len=*), intent(in)   :: glabel
     real(kind=kreal), intent(in)   :: gvalue
@@ -521,11 +525,11 @@ contains
       call hecmw_result_add(HECMW_RESULT_DTYPE_GLOBAL, 1, label, gval)
     end if
 
-    call updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, istp, dispRe, velRe, accRe)
+    call updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, istp, dispRe, velRe, accRe)
     if( wres ) call fstr_write_result_add(hecMESH, fstrSOLID, istp, '_real', fstrDYNAMIC)
     if( wvis ) call fstr_make_result(hecMESH, fstrSOLID, visRe, istp, gvalue, fstrDYNAMIC, '_real')
 
-    call updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, istp, dispIm, velIm, accIm)
+    call updateSolidResult(hecMESH, hecMAT, fstrSOLID, fstrDYNAMIC, fstrPARAM, istp, dispIm, velIm, accIm)
     if( wres ) call fstr_write_result_add(hecMESH, fstrSOLID, istp, '_imag', fstrDYNAMIC)
     if( wvis ) call fstr_make_result(hecMESH, fstrSOLID, visIm, istp, gvalue, fstrDYNAMIC, '_imag')
 

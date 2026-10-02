@@ -227,7 +227,7 @@ contains
     integer(kind=kint) :: iter
 
     ! ----- update the strain, stress, and internal force
-    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, ctime, tincr, iter)
+    call fstr_UpdateNewton(hecMESH, hecMAT, fstrSOLID, fstrPARAM, ctime, tincr, iter)
 
     ! ----- Set residual
     if( fstrSOLID%DLOAD_follow /= 0 .or. fstrSOLID%CLOAD_ngrp_rot /= 0 ) &

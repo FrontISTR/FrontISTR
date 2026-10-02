@@ -56,14 +56,14 @@ contains
   !>
   !> The body is kept separate so that customized convergence criteria can be implemented by swapping or extending
   !> fstr_check_convergence_main without touching the failure-handling boilerplate here.
-  subroutine fstr_check_convergence( hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, sub_step, cstep, &
+  subroutine fstr_check_convergence( hecMESH, hecMAT, fstrSOLID, fstrPARAM, ndof, iter, sub_step, cstep, &
       residual_vec, cnvstat, iterStatus, hecLagMAT )
     implicit none
 
     type(hecmwST_local_mesh), intent(in)      :: hecMESH
     type(hecmwST_matrix), intent(in)          :: hecMAT
     type(fstr_solid), intent(inout)           :: fstrSOLID
-    type(fstr_param), intent(in)              :: fstrPR
+    type(fstr_param), intent(in)              :: fstrPARAM
     integer(kind=kint), intent(in)            :: ndof
     integer(kind=kint), intent(in)            :: iter
     integer(kind=kint), intent(in)            :: sub_step
@@ -77,7 +77,7 @@ contains
     logical             :: do_failure_check
 
     ! --- core convergence check (customizable) ---
-    call fstr_check_convergence_main( hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, cstep, &
+    call fstr_check_convergence_main( hecMESH, hecMAT, fstrSOLID, fstrPARAM, ndof, iter, cstep, &
         residual_vec, cnvstat, iterStatus, do_failure_check, res_for_check, hecLagMAT )
 
     if( iterStatus == kitrConverged ) return
@@ -138,7 +138,7 @@ contains
   !> \param[in]    hecMESH       mesh
   !> \param[in]    hecMAT        matrix (X=solution increment)
   !> \param[inout] fstrSOLID     solid data (QFORCE, DFORCE, dunode)
-  !> \param[in]    fstrPR        global parameters (solution_type)
+  !> \param[in]    fstrPARAM     global parameters (solution_type)
   !> \param[in]    ndof          degrees of freedom per node
   !> \param[in]    iter          current Newton iteration number
   !> \param[in]    cstep         current loading step number
@@ -148,14 +148,14 @@ contains
   !> \param[out]   do_failure_check  true if caller should run divergence/NaN check
   !> \param[out]   res_for_check     residual value the caller should use for divergence check
   !> \param[in]    hecLagMAT     (optional) Lagrange multipliers of contact analysis
-  subroutine fstr_check_convergence_main( hecMESH, hecMAT, fstrSOLID, fstrPR, ndof, iter, cstep, &
+  subroutine fstr_check_convergence_main( hecMESH, hecMAT, fstrSOLID, fstrPARAM, ndof, iter, cstep, &
       residual_vec, cnvstat, iterStatus, do_failure_check, res_for_check, hecLagMAT )
     implicit none
 
     type(hecmwST_local_mesh), intent(in)      :: hecMESH
     type(hecmwST_matrix), intent(in)          :: hecMAT           !< X=solution increment
     type(fstr_solid), intent(inout)           :: fstrSOLID
-    type(fstr_param), intent(in)              :: fstrPR
+    type(fstr_param), intent(in)              :: fstrPARAM
     integer(kind=kint), intent(in)            :: ndof
     integer(kind=kint), intent(in)            :: iter
     integer(kind=kint), intent(in)            :: cstep
@@ -172,7 +172,7 @@ contains
     do_failure_check = .false.
     res_for_check = 0.0d0
 
-    has_dx = .not. ( fstrPR%solution_type == kstDYNAMIC .and. iter == 1 )
+    has_dx = .not. ( fstrPARAM%solution_type == kstDYNAMIC .and. iter == 1 )
 
     call fstr_evaluate_convergence( hecMESH, hecMAT, fstrSOLID, ndof, cstep, has_dx, residual_vec, cnvstat, hecLagMAT )
 
