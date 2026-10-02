@@ -415,7 +415,7 @@ module m_fstr
     logical :: has_finite_rotation_kinematics
     logical :: finite_rotation_state_ready
     integer(kind=kint), pointer :: shell_node_mode(:) => null() !< 0:inactive, 1:finite-rotation shell node
-    integer(kind=kint), pointer :: shell_rot_state(:) => null() !< 0:inactive, 1:MITC4
+    integer(kind=kint), pointer :: shell_rot_state(:) => null() !< 0:inactive, 1:initialized finite-rotation shell node
     real(kind=kreal), pointer :: shell_ref_triad(:) => null()   !< reference shell nodal triads, fixed after initialization
     real(kind=kreal), pointer :: shell_triad(:)     => null()   !< converged shell nodal triads, 9 values/node
     real(kind=kreal), pointer :: shell_triad_bak(:) => null()   !< shell nodal triads at the beginning of curr step

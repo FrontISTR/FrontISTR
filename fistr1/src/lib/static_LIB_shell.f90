@@ -298,10 +298,10 @@ contains
     call ShellMITC_BasisFromCovariant(reference_basis, material_local_basis, material_reciprocal_basis, material_jacobian)
     integration_jacobian = ShellMITC_CovariantJacobian(reference_basis)
 
-    ! Preserve the existing element-specific tangent basis construction.
+    ! Finite-rotation MITC3/MITC4 use the current covariant tangent basis built above.
     if( etype == fe_mitc9_shell ) then
       tangent_basis = tangent_basis + translation_gradient
-    else if( etype /= fe_mitc4_shell ) then
+    else if( .not. fstr_is_finite_rotation_shell_element(etype, nn) ) then
       covariant_basis(:, SHELL_XI:SHELL_ETA) = covariant_basis(:, SHELL_XI:SHELL_ETA) + translation_gradient
       tangent_basis = covariant_basis(:, SHELL_XI:SHELL_ETA)
     endif
@@ -364,7 +364,7 @@ contains
     ShellPlaneStressTraceCoeff = 1.0D0
     if( .not. associated( gauss%pMaterial ) ) return
     if( getElasticType( gauss%pMaterial%mtype ) == 1 ) then
-      stop "MITC4 shell UL orthotropic trace correction is not supported"
+      stop "MITC shell UL orthotropic trace correction is not supported"
     endif
     nu = gauss%pMaterial%variables(M_POISSON)
     call fetch_TableData(MC_ISOELASTIC, gauss%pMaterial%dict, outa, ierr)
@@ -377,7 +377,7 @@ contains
             nu = outa(2)
           endif
         else
-          stop "MITC4 shell UL orthotropic trace correction is not supported"
+          stop "MITC shell UL orthotropic trace correction is not supported"
         endif
       else if( .not. ierr ) then
         nu = outa(2)
@@ -1762,7 +1762,7 @@ contains
         endif
 
         DB = matmul(D, B)
-        if( kinematics == UPDATELAG .and. etype == fe_mitc4_shell .and. nn == 4 ) then
+        if( kinematics == UPDATELAG .and. fstr_is_finite_rotation_shell_element(etype, nn) ) then
           if( ishell > 0 ) then
             stress_old_vec = element%shell_layer_gausses(ishell)%stress_bak(1:6)
             trace_coeff = ShellPlaneStressTraceCoeff(element%shell_layer_gausses(ishell), ilayer)

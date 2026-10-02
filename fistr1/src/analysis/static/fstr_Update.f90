@@ -169,9 +169,9 @@ contains
           enddo
         endif
 
-        if( ic_type == 781 ) then
-          do j = 1, 4
-            nbase = 9*(nodLOCAL(j+4)-1)
+        if( ic_type == 761 .or. ic_type == 781 ) then
+          do j = 1, nn/2
+            nbase = 9*(nodLOCAL(j+nn/2)-1)
             triad_tri(1:9,j) = 0.0D0
             triad_cur(1:9,j) = 0.0D0
             triad_ref(1:9,j) = 0.0D0
@@ -179,7 +179,7 @@ contains
             if( associated(fstrSOLID%shell_dtriad) )    triad_tri(1:9,j) = fstrSOLID%shell_dtriad(nbase+1:nbase+9)
             if( associated(fstrSOLID%shell_triad) )     triad_cur(1:9,j) = fstrSOLID%shell_triad(nbase+1:nbase+9)
             if( associated(fstrSOLID%shell_ref_triad) ) triad_ref(1:9,j) = fstrSOLID%shell_ref_triad(nbase+1:nbase+9)
-            if( associated(fstrSOLID%shell_ddrill) )    shell_drill(j) = fstrSOLID%shell_ddrill(nodLOCAL(j+4))
+            if( associated(fstrSOLID%shell_ddrill) )    shell_drill(j) = fstrSOLID%shell_ddrill(nodLOCAL(j+nn/2))
           enddo
         endif
 
@@ -247,9 +247,15 @@ contains
             ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
 
         else if( ic_type == 761 ) then   !for shell-solid mixed analysis
-          if( fstrPARAM%nlgeom ) call Update_abort( ic_type, 2 )
-          call UPDATE_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
-            &              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2)
+          if( fstrPARAM%nlgeom ) then
+            call UPDATE_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2, &
+              element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:3), &
+              ndreftriad=triad_ref(1:9,1:3), ndcurtriad=triad_cur(1:9,1:3), nddrill=shell_drill(1:3))
+          else
+            call UPDATE_Shell_MITC33(731, 3, 6, ecoord(1:3, 1:3), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
+              fstrSOLID%elements(icel)%gausses(:), qf(1:nn*ndof), thick, 2)
+          endif
 
         else if( ic_type == 781 ) then   !for shell-solid mixed analysis
           call UPDATE_Shell_MITC33(741, 4, 6, ecoord(1:3, 1:4), total_disp(1:ndof,1:nn), du(1:ndof,1:nn), &
