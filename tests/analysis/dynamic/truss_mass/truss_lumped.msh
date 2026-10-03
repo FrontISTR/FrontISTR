@@ -1,0 +1,27 @@
+!HEADER
+ TEST MODEL TRUSS 301 BAR (DYNAMIC IMPLICIT)
+!NODE
+      1,           0.,           0.,           0.
+      2,           1.,           0.,           0.
+      3,           2.,           0.,           0.
+      4,           3.,           0.,           0.
+      5,           4.,           0.,           0.
+!ELEMENT, TYPE=301, EGRP=BAR
+      1,  1,  2
+      2,  2,  3
+      3,  3,  4
+      4,  4,  5
+!NGROUP, NGRP=FIX
+  1
+!NGROUP, NGRP=LINE, GENERATE
+  1,   5,   1
+!NGROUP, NGRP=TIP
+  5
+!MATERIAL, NAME=M1, ITEM=2
+!ITEM=1, SUBITEM=2
+ 1.00000000E+00, 0.00000000E+00
+!ITEM=2, SUBITEM=1
+ 1.00000000E+00
+!SECTION, TYPE=SOLID, EGRP=BAR, MATERIAL=M1
+1.0
+!END
