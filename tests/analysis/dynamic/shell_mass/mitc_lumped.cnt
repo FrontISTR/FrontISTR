@@ -1,0 +1,33 @@
+###############################################
+## Dynamic implicit analysis: MITC shells with lumped mass (idx_mas=1)
+## Cantilever plates of 741 and 731 elements under a tip step load.
+## The shell mass is lumped, so the result differs from mitc_consistent.
+###############################################
+!SOLUTION, TYPE=DYNAMIC
+!DYNAMIC
+ 1, 1
+ 0.0, 0.4, 10, 0.04
+ 0.5, 0.25
+ 1, 1, 0.0, 0.0
+ 100, MON, 1
+ 1, 1, 1, 1, 0, 0
+!BOUNDARY
+ FIX, 1, 6, 0.0
+!CLOAD
+ TIP4, 3, -5.0E-03
+ TIP3, 3, -5.0E-03
+!MATERIAL, NAME=M1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+!DENSITY
+ 1.00000000E-03
+!SOLVER,METHOD=CG,PRECOND=3,ITERLOG=NO,TIMELOG=NO
+ 10000, 1
+ 1.00e-10, 1.00, 0.0
+!STEP
+!WRITE,RESULT,FREQUENCY=5
+!OUTPUT_RES
+ DISP,ON
+ VEL,ON
+ ACC,ON
+!END
