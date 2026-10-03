@@ -14,6 +14,10 @@ module m_fstr_CreateMatrix_and_DampingForce
   private
   public :: fstr_CreateMatrix_and_DampingForce
   public :: fstr_calc_kinetic_energy
+  public :: fstr_report_lumped_mass_fallback
+
+  !> element types without a consistent mass formulation; calc_mass_elem returns their lumped mass
+  integer(kind=kint), parameter :: kLumpedMassFallbackTypes(5) = (/ 301, 611, 641, 761, 781 /)
 
 contains
 
@@ -218,26 +222,23 @@ contains
   !> Recompute each element mass matrix and evaluate 0.5*v^T*M*v.
   !! Only rows owned by this rank are accumulated before the global reduction.
   real(kind=kreal) function fstr_calc_kinetic_energy( &
-      hecMESH, fstrSOLID, fstrDYNAMIC, velocity, report_fallback) result(kinetic_energy)
+      hecMESH, fstrSOLID, fstrDYNAMIC, velocity) result(kinetic_energy)
     use m_elemact
 
     type(hecmwST_local_mesh), intent(in) :: hecMESH
     type(fstr_solid), intent(in) :: fstrSOLID
     type(fstr_dynamic), intent(in) :: fstrDYNAMIC
     real(kind=kreal), intent(in) :: velocity(:)
-    logical, intent(in), optional :: report_fallback
 
     integer(kind=kint) :: ndof, itype, iS, iE, ic_type, icel, iiS, nn
     integer(kind=kint) :: i, j, row, in, nsize
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
     real(kind=kreal) :: ecoord(3,fstrSOLID%max_ncon)
     real(kind=kreal) :: mass_mat(20*6,20*6), lumped(20*6), elem_velocity(20*6)
-    logical :: use_lumped_mass, write_fallback
+    logical :: use_lumped_mass
 
     ndof = hecMESH%n_dof
     use_lumped_mass = (fstrDYNAMIC%idx_mas == kMassLumped)
-    write_fallback = .false.
-    if( present(report_fallback) ) write_fallback = report_fallback
     kinetic_energy = 0.0d0
 
     do itype = 1, hecMESH%n_elem_type
@@ -247,14 +248,6 @@ contains
 
       if( hecmw_is_etype_link(ic_type) ) cycle
       if( hecmw_is_etype_patch(ic_type) ) cycle
-
-      if( write_fallback .and. .not.use_lumped_mass .and. hecMESH%my_rank == 0 ) then
-        select case( ic_type )
-        case( 301, 611, 641, 761, 781 )
-          write(IMSG,'(a,i0,a)') 'INFO: consistent mass is unavailable for element type ', &
-            ic_type, '; lumped mass is used'
-        end select
-      endif
 
       !$omp parallel default(none), &
         !$omp& private(icel,iiS,nn,i,j,row,in,nsize,nodLOCAL,ecoord,mass_mat,lumped,elem_velocity), &
@@ -298,6 +291,35 @@ contains
     call hecmw_allreduce_R1(hecMESH, kinetic_energy, HECMW_SUM)
     kinetic_energy = 0.5d0*kinetic_energy
   end function fstr_calc_kinetic_energy
+
+  !> Report the element types that use the lumped mass although the consistent mass is selected.
+  !! The element types are gathered from all ranks.
+  subroutine fstr_report_lumped_mass_fallback( hecMESH, fstrDYNAMIC )
+    type(hecmwST_local_mesh), intent(in) :: hecMESH
+    type(fstr_dynamic), intent(in) :: fstrDYNAMIC
+
+    integer(kind=kint) :: itype, i
+    integer(kind=kint) :: found(size(kLumpedMassFallbackTypes))
+
+    if( fstrDYNAMIC%idx_mas /= kMassConsistent ) return
+
+    found = 0
+    do itype = 1, hecMESH%n_elem_type
+      ! a distributed mesh may list element types that have no element in this subdomain
+      if( hecMESH%elem_type_index(itype) == hecMESH%elem_type_index(itype-1) ) cycle
+      do i = 1, size(kLumpedMassFallbackTypes)
+        if( hecMESH%elem_type_item(itype) == kLumpedMassFallbackTypes(i) ) found(i) = 1
+      enddo
+    enddo
+    call hecmw_allreduce_I(hecMESH, found, size(found), HECMW_MAX)
+
+    if( hecMESH%my_rank /= 0 ) return
+    do i = 1, size(kLumpedMassFallbackTypes)
+      if( found(i) == 0 ) cycle
+      write(IMSG,'(a,i0,a)') 'INFO: consistent mass is unavailable for element type ', &
+        kLumpedMassFallbackTypes(i), '; lumped mass is used'
+    enddo
+  end subroutine fstr_report_lumped_mass_fallback
 
   !---------------------------------------------------------------------*
   !> Compute the element tangent stiffness (and, in the dynamic case, the
@@ -447,8 +469,8 @@ contains
   !> Compute the element mass matrix for the given element type.
   !!
   !! use_lumped_mass selects the lumped or the consistent mass. Element types
-  !! without a consistent mass formulation return their lumped mass in either
-  !! case, and element types without inertia return mass_mat unchanged.
+  !! in kLumpedMassFallbackTypes return their lumped mass in either case, and
+  !! element types without inertia return mass_mat unchanged.
   !! Every element type accepted by calc_stiff_and_mass_elem must be listed
   !! here, otherwise the dynamic analysis aborts.
   subroutine calc_mass_elem( ic_type, nn, ndof, ecoord, fstrSOLID, hecMESH, icel, &

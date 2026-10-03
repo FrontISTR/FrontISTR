@@ -112,6 +112,7 @@ contains
     endif
 
     call setMASS(fstrSOLID,hecMESH,hecMAT,fstrEIG)
+    call fstr_report_lumped_mass_fallback( hecMESH, fstrDYNAMIC )
 
     hecMAT%Iarray(98) = 1   !Assembly complete
     hecMAT%Iarray(97) = 1   !Need numerical factorization
@@ -132,7 +133,7 @@ contains
     !C-- output of initial state
     if( restart_step_num == 1 ) then
       fstrDYNAMIC%kineticEnergy = fstr_calc_kinetic_energy( &
-        hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,1), .true.)
+        hecMESH, fstrSOLID, fstrDYNAMIC, fstrDYNAMIC%VEL(:,1))
       call fstr_dynamic_Output(1, 0, 0.d0, hecMESH, fstrSOLID, fstrDYNAMIC, fstrPARAM, .true.)
       call dynamic_output_monit(1, 0, 0.d0, hecMESH, fstrPARAM, fstrDYNAMIC, fstrEIG, fstrSOLID)
     endif
