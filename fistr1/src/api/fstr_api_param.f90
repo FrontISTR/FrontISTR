@@ -129,4 +129,13 @@ contains
     fstr_api_param_fg_visual = fstrPARAM%fg_visual
   end function
 
+  function fstr_api_param_contact_algo(param) bind(C,name='fstr_api_param_contact_algo')
+    implicit none
+    integer(c_int) :: fstr_api_param_contact_algo
+    type(c_ptr), value :: param
+    type(fstr_param), pointer :: fstrPARAM
+    call c_f_pointer(cptr=param, fptr=fstrPARAM)
+    fstr_api_param_contact_algo = fstrPARAM%contact_algo
+  end function
+
 end module
