@@ -30,13 +30,25 @@ typedef enum {
   ksmDIRECT   = 101,
 } fstr_solver_method;
 
+typedef enum {
+  knsmNEWTON      = 1,
+  knsmQUASINEWTON = 2,
+} fstr_nlsolver_method;
+
+typedef enum{
+  kcaSLagrange = 1,
+  kcaALagrange = 2,
+} fstr_contact_algorithm;
+
 void* fstr_api_param_new();
 void fstr_api_param_delete(void* param);
 void fstr_api_param_init(void* param,void* mesh);
-fstr_solution_type fstr_api_param_solution_type(void* param);
-fstr_solver_method fstr_api_param_solver_method(void* param);
-bool fstr_api_param_nlgeom(void* param);
-int fstr_api_param_fg_result(void* param);
-int fstr_api_param_fg_visual(void* param);
+fstr_solution_type fstr_api_param_solution_type(const void* param);
+fstr_solver_method fstr_api_param_solver_method(const void* param);
+bool fstr_api_param_nlgeom(const void* param);
+fstr_nlsolver_method fstr_api_param_nlsolver_method(const void* param);
+int fstr_api_param_fg_result(const void* param);
+int fstr_api_param_fg_visual(const void* param);
+fstr_contact_algorithm fstr_api_param_contact_algo(const void* param);
 
 #endif
