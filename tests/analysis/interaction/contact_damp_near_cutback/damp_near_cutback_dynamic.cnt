@@ -1,0 +1,85 @@
+##############################################################
+## Nonlinear implicit dynamic analysis: cutback during the
+## approach of a damped contact pair (issue #843).
+## Step 1 (t=0-0.5): the top box approaches; every slave node is
+##         CONTACTNEAR (gap 0.012 -> 0.009, DAMP_GACT=0.02).
+## Step 2 (t=0.5-1): the approach continues (gap -> 0.006) while
+##         BLOCK, a cube not involved in the contact, is stretched
+##         by half its length. The geometric nonlinearity raises
+##         the residual of the initial increment above MAXRES, so
+##         the step is cut back from the end of step 1, where no
+##         slave node holds a Lagrange multiplier.
+## CONTACT_STATE is not written: a parallel run writes a NEAR node
+## as FREE, so the results would differ from the serial ones.
+##############################################################
+!VERSION
+ 3
+!SOLUTION, TYPE=DYNAMIC, NONLINEAR
+!CONTACT_ALGO,TYPE=SLAGRANGE
+!DYNAMIC, TYPE=NONLINEAR
+ 1, 1
+ 0.0, 1.0, 4, 0.25
+ 0.5, 0.25
+ 1, 1, 0.0, 0.0
+ 1, 1, 1
+ 1, 1, 1, 1, 1, 1
+!WRITE,RESULT,FREQUENCY=1
+!OUTPUT_RES
+DISP,ON
+REACTION,ON
+NSTRESS,ON
+CONTACT_NFORCE,ON
+!WRITE,LOG
+!SOLVER,METHOD=CG,PRECOND=1,NSET=0,ITERLOG=NO,TIMELOG=NO
+ 5000, 1
+ 1.0e-08, 1.00, 0.0
+ 0.100, 0.100
+###################################
+#####   BOUNDARY CONDITIONS   #####
+###################################
+!BOUNDARY, GRPID=1
+ SET_1,1,1
+ SET_2,2,2
+ SET_3,3,3
+ BLOCK_FIX,1,1
+ 38,2,3
+ 37,2,2
+ 39,3,3
+!BOUNDARY, GRPID=1, AMP=APPROACH
+ SET_4,3,3,-0.006
+!BOUNDARY, GRPID=1, AMP=STRETCH
+ BLOCK_PULL,1,1,0.5
+###################################
+#####   CONTACT DEFINITIONS   #####
+###################################
+!CONTACT, INTERACTION=FSLID, GRPID=1, DAMP_ALPHA=1.0E-2, DAMP_GACT=2.0E-2
+CP1,0.0,5.0E+2
+###################################
+#####         MATERIAL        #####
+###################################
+!MATERIAL, NAME=MATERIAL_1
+!ELASTIC
+ 1.00000000E+03, 3.00000000E-01
+!DENSITY
+ 1.00000000E-06
+!MATERIAL, NAME=MATERIAL_2
+!ELASTIC
+ 1.00000000E+00, 3.00000000E-01
+!DENSITY
+ 1.00000000E-06
+###################################
+#####       STEP CONTROL      #####
+###################################
+!AUTOINC_PARAM, NAME=AP1
+ 0.5, 10, 50, 10, 2
+ 1.75, 10, 50, 5, 2
+ 0.25, 5
+!STEP, SUBSTEPS=2, CONVERG=1.0e-6
+ 0.25, 0.5
+BOUNDARY,1
+CONTACT,1
+!STEP, SUBSTEPS=100, CONVERG=1.0e-6, MAXITER=10, MAXRES=0.07, INC_TYPE=AUTO, AUTOINCPARAM=AP1
+ 0.5, 0.5, 1.0e-3, 0.5
+BOUNDARY,1
+CONTACT,1
+!END
