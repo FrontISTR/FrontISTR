@@ -180,7 +180,7 @@ contains
         call calc_stiff_and_mass_elem( ic_type, nn, ndof, ecoord, u, u_prev, tt, &
           time, tincr, is_dynamic, fstrSOLID, hecMESH, icel, nodLOCAL, &
           triad_tri, triad_cur, triad_ref, shell_drill, &
-          stiff_mat, mass_mat, damp_mat, lumped, use_lumped_mass, .false. )
+          stiff_mat, mass_mat, damp_mat, lumped, use_lumped_mass )
 
         ! ----- assemble system matrix (and the dynamic damping force)
         if( is_dynamic ) then
@@ -222,7 +222,7 @@ contains
     use m_elemact
 
     type(hecmwST_local_mesh), intent(in) :: hecMESH
-    type(fstr_solid), intent(inout) :: fstrSOLID
+    type(fstr_solid), intent(in) :: fstrSOLID
     type(fstr_dynamic), intent(in) :: fstrDYNAMIC
     real(kind=kreal), intent(in) :: velocity(:)
     logical, intent(in), optional :: report_fallback
@@ -230,11 +230,8 @@ contains
     integer(kind=kint) :: ndof, itype, iS, iE, ic_type, icel, iiS, nn
     integer(kind=kint) :: i, j, row, in, nsize
     integer(kind=kint) :: nodLOCAL(fstrSOLID%max_ncon)
-    real(kind=kreal) :: ecoord(3,fstrSOLID%max_ncon), tt(fstrSOLID%max_ncon)
-    real(kind=kreal) :: u(6,fstrSOLID%max_ncon), u_prev(6,fstrSOLID%max_ncon)
-    real(kind=kreal) :: triad(9,fstrSOLID%max_ncon), shell_drill(fstrSOLID%max_ncon)
-    real(kind=kreal) :: stiff_mat(20*6,20*6), mass_mat(20*6,20*6), damp_mat(20*6,20*6)
-    real(kind=kreal) :: lumped(20*6), elem_velocity(20*6)
+    real(kind=kreal) :: ecoord(3,fstrSOLID%max_ncon)
+    real(kind=kreal) :: mass_mat(20*6,20*6), lumped(20*6), elem_velocity(20*6)
     logical :: use_lumped_mass, write_fallback
 
     ndof = hecMESH%n_dof
@@ -260,8 +257,7 @@ contains
       endif
 
       !$omp parallel default(none), &
-        !$omp& private(icel,iiS,nn,i,j,row,in,nsize,nodLOCAL,ecoord,tt,u,u_prev,triad, &
-        !$omp&         shell_drill,stiff_mat,mass_mat,damp_mat,lumped,elem_velocity), &
+        !$omp& private(icel,iiS,nn,i,j,row,in,nsize,nodLOCAL,ecoord,mass_mat,lumped,elem_velocity), &
         !$omp& shared(iS,iE,ic_type,ndof,hecMESH,fstrSOLID,velocity,use_lumped_mass) &
         !$omp& reduction(+:kinetic_energy)
       !$omp do
@@ -272,11 +268,6 @@ contains
         if( fstrSOLID%elements(icel)%elemact_flag == kELACT_INACTIVE ) cycle
 
         ecoord = 0.0d0
-        tt = 0.0d0
-        u = 0.0d0
-        u_prev = 0.0d0
-        triad = 0.0d0
-        shell_drill = 0.0d0
         elem_velocity = 0.0d0
         do j = 1, nn
           in = hecMESH%elem_node_item(iiS+j)
@@ -285,14 +276,10 @@ contains
           elem_velocity(ndof*(j-1)+1:ndof*j) = velocity(ndof*(in-1)+1:ndof*in)
         enddo
 
-        stiff_mat = 0.0d0
         mass_mat = 0.0d0
-        damp_mat = 0.0d0
         lumped = 0.0d0
-        call calc_stiff_and_mass_elem(ic_type, nn, ndof, ecoord, u, u_prev, tt, &
-          0.0d0, 0.0d0, .true., fstrSOLID, hecMESH, icel, nodLOCAL, &
-          triad, triad, triad, shell_drill, stiff_mat, mass_mat, damp_mat, lumped, &
-          use_lumped_mass, .true.)
+        call calc_mass_elem(ic_type, nn, ndof, ecoord, fstrSOLID, hecMESH, icel, &
+          use_lumped_mass, mass_mat, lumped)
 
         nsize = nn*ndof
         do j = 1, nn
@@ -324,11 +311,10 @@ contains
   subroutine calc_stiff_and_mass_elem( ic_type, nn, ndof, ecoord, u, u_prev, tt, &
       time, tincr, is_dynamic, fstrSOLID, hecMESH, icel, nodLOCAL, &
       triad_tri, triad_cur, triad_ref, shell_drill, &
-      stiff_mat, mass_mat, damp_mat, lumped, use_lumped_mass, mass_only )
+      stiff_mat, mass_mat, damp_mat, lumped, use_lumped_mass )
   !---------------------------------------------------------------------*
     use m_static_LIB
     use mMechGauss
-    use m_dynamic_mass
 
     integer(kind=kint), intent(in)    :: ic_type, ndof
     integer(kind=kint), intent(inout) :: nn  ! some legacy STF_* routines mutate this
@@ -343,18 +329,16 @@ contains
     real(kind=kreal),   intent(in)    :: triad_ref(:,:), shell_drill(:)
     real(kind=kreal),   intent(inout) :: stiff_mat(:,:), mass_mat(:,:), damp_mat(:,:)
     real(kind=kreal),   intent(inout) :: lumped(:)
-    logical,            intent(in)    :: use_lumped_mass, mass_only
+    logical,            intent(in)    :: use_lumped_mass
 
     type(tMaterial), pointer :: material
-    integer(kind=kint) :: i, isect, ihead, cdsys_ID, sec_opt
+    integer(kind=kint) :: isect, ihead, cdsys_ID
     real(kind=kreal) :: coords(3,3), thick
-    real(kind=kreal) :: rho, length, surf
 
     ! ----- section / material context
     isect = hecMESH%section_ID(icel)
     ihead = hecMESH%section%sect_R_index(isect-1)
     cdsys_ID = hecMESH%section%sect_orien_ID(isect)
-    sec_opt = hecMESH%section%sect_opt(isect)
     coords = 0.0d0
     if( cdsys_ID > 0 ) call get_coordsys(cdsys_ID, hecMESH, fstrSOLID, coords, icel)
 
@@ -362,170 +346,189 @@ contains
     thick = hecMESH%section%sect_R_item(ihead+1)
 
     if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
-      if( .not.mass_only ) then
-        if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-        call STF_C2( ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses(:), thick, &
-          stiff_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn) )
-      endif
-
-      if( is_dynamic ) call mass_C2(ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses, &
-        sec_opt, thick, mass_mat, lumped, is_lumped=use_lumped_mass)
+      if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
+      call STF_C2( ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses(:), thick, &
+        stiff_mat(1:nn*ndof,1:nn*ndof), fstrSOLID%elements(icel)%iset, u(1:2,1:nn) )
 
     elseif( ic_type==301 ) then
-      if( .not.mass_only ) call STF_C1( ic_type, nn, ecoord(:,1:nn), thick, &
-        fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
-
-      if( is_dynamic ) then
-        surf = hecMESH%section%sect_R_item(ihead+1)
-        length = get_length(ecoord(1:3,1:nn))
-        rho = material%variables(M_DENSITY)
-        mass_mat = 0.0d0
-        do i = 1, nn*ndof
-          mass_mat(i,i) = 0.5d0*surf*length*rho
-        enddo
-      endif
+      call STF_C1( ic_type, nn, ecoord(:,1:nn), thick, fstrSOLID%elements(icel)%gausses(:), &
+        stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn) )
 
     elseif( ic_type==361 ) then
-      if( .not.mass_only ) then
-        if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
-          call STF_C3( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-            stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
-        else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
-          call STF_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-            stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
-        else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
-          call STF_C3D8IC( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-            stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
-            fstrSOLID%elements(icel)%aux, tt(1:nn) )
-        else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
-          call STF_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-            stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
-        else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then ! UP (u-p mixed) element
-          call STF_C3_up( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-            stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, &
-            1, fstrSOLID%elements(icel)%p, u(1:3,1:nn), tt(1:nn) )
-        endif
+      if( fstrSOLID%sections(isect)%elemopt361 == kel361FI ) then ! full integration element
+        call STF_C3( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
+      else if( fstrSOLID%sections(isect)%elemopt361 == kel361BBAR ) then ! B-bar element
+        call STF_C3D8Bbar( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
+      else if( fstrSOLID%sections(isect)%elemopt361 == kel361IC ) then ! incompatible element
+        call STF_C3D8IC( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), &
+          fstrSOLID%elements(icel)%aux, tt(1:nn) )
+      else if( fstrSOLID%sections(isect)%elemopt361 == kel361FBAR ) then ! F-bar element
+        call STF_C3D8Fbar( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
+      else if( fstrSOLID%sections(isect)%elemopt361 == kel361UP ) then ! UP (u-p mixed) element
+        call STF_C3_up( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, &
+          1, fstrSOLID%elements(icel)%p, u(1:3,1:nn), tt(1:nn) )
       endif
-
-      if( is_dynamic ) call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
-        mass_mat, lumped, is_lumped=use_lumped_mass)
 
     elseif( ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 .or. ic_type==362 ) then
       ! SESNS option: stiffness is assembled separately via ic_type==881/891;
       ! return stiff_mat = 0 here and still compute the element mass below.
-      if( .not.mass_only .and. &
-          .not. (ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS) ) then
+      if( .not. (ic_type==341 .and. fstrSOLID%sections(isect)%elemopt341 == kel341SESNS) ) then
         call STF_C3( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
           stiff_mat(1:nn*ndof,1:nn*ndof), cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
       endif
 
-      if( is_dynamic ) call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
-        mass_mat, lumped, is_lumped=use_lumped_mass)
-
     else if( ic_type == 511 ) then
-      if( .not.mass_only ) then
-        call STF_CONNECTOR( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-          stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
+      call STF_CONNECTOR( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        stiff_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
 
-        if( is_dynamic ) call DMP_CONNECTOR( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-          damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
-      endif
+      if( is_dynamic ) call DMP_CONNECTOR( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        damp_mat(1:nn*ndof,1:nn*ndof), u(1:3,1:nn), tt(1:nn))
 
     else if( ic_type == 611 ) then
-      if( .not.mass_only ) then
-        if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-        call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
-          material%variables(M_YOUNGS), material%variables(M_POISSON), stiff_mat(1:nn*ndof,1:nn*ndof), &
-          fstrSOLID%sections(isect)%elemopt611)
-      endif
-
-      if( is_dynamic ) then
-        surf = hecMESH%section%sect_R_item(ihead+4)
-        length = get_length(ecoord(1:3,1:nn))
-        rho = material%variables(M_DENSITY)
-        call mass_Beam(surf, length, rho, mass_mat)
-      endif
+      if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
+      call STF_Beam(ic_type, nn, ecoord, hecMESH%section%sect_R_item(ihead+1:), &
+        material%variables(M_YOUNGS), material%variables(M_POISSON), stiff_mat(1:nn*ndof,1:nn*ndof), &
+        fstrSOLID%sections(isect)%elemopt611)
 
     else if( ic_type == 641 ) then
-      if( .not.mass_only ) then
-        if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
-        call STF_Beam_641_from_611(ecoord(1:3,1:4), fstrSOLID%elements(icel)%gausses(:), &
-          hecMESH%section%sect_R_item(ihead+1:), stiff_mat(1:nn*ndof,1:nn*ndof), &
-          fstrSOLID%sections(isect)%elemopt611)
-      endif
-
-      if( is_dynamic ) then
-        surf = hecMESH%section%sect_R_item(ihead+4)
-        length = get_length(ecoord(1:3,1:nn))
-        rho = material%variables(M_DENSITY)
-        call mass_Beam_33(surf, length, rho, mass_mat)
-      endif
+      if( material%nlgeom_flag /= INFINITESIMAL ) call CreateMat_abort( ic_type, 2 )
+      call STF_Beam_641_from_611(ecoord(1:3,1:4), fstrSOLID%elements(icel)%gausses(:), &
+        hecMESH%section%sect_R_item(ihead+1:), stiff_mat(1:nn*ndof,1:nn*ndof), &
+        fstrSOLID%sections(isect)%elemopt611)
 
     else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
-      if( .not.mass_only ) then
-        call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-          stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0, nddisp=u(1:ndof,1:nn), &
-          element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:nn), &
-          ndreftriad=triad_ref(1:9,1:nn), &
-          ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
-      endif
-
-      if( is_dynamic ) then
-        rho = material%variables(M_DENSITY)
-        call mass_shell(ic_type, nn, ecoord(1:3,1:nn), rho, thick, fstrSOLID%elements(icel)%gausses, mass_mat, lumped)
-        if( use_lumped_mass ) call set_diagonal_mass(nn*ndof, lumped, mass_mat)
-      endif
+      call STF_Shell_MITC(ic_type, nn, ndof, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        stiff_mat(1:nn*ndof,1:nn*ndof), thick, 0, nddisp=u(1:ndof,1:nn), &
+        element=fstrSOLID%elements(icel), ndtriad=triad_tri(1:9,1:nn), &
+        ndreftriad=triad_ref(1:9,1:nn), &
+        ndcurtriad=triad_cur(1:9,1:nn), nddrill=shell_drill(1:nn))
 
     else if( ic_type == 761 ) then   ! for shell-solid mixed analysis
-      if( .not.mass_only ) then
-        if( material%nlgeom_flag == INFINITESIMAL ) then
-          call STF_Shell_MITC(731, 3, 6, ecoord(1:3,1:3), fstrSOLID%elements(icel)%gausses(:), &
-            stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2)
-        else
-          call STF_Shell_MITC33(731, 3, 6, ecoord(1:3,1:3), u(1:3,1:6), u_prev(1:3,1:6), &
-            fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2, &
-            fstrSOLID%elements(icel), triad_tri(1:9,1:3), triad_ref(1:9,1:3), &
-            triad_cur(1:9,1:3), shell_drill(1:3))
-        endif
-      endif
-
-      if( is_dynamic ) then
-        surf = get_face3(ecoord(1:3,1:nn))
-        rho = material%variables(M_DENSITY)
-        call mass_S3(surf, thick, rho, mass_mat)
+      if( material%nlgeom_flag == INFINITESIMAL ) then
+        call STF_Shell_MITC(731, 3, 6, ecoord(1:3,1:3), fstrSOLID%elements(icel)%gausses(:), &
+          stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2)
+      else
+        call STF_Shell_MITC33(731, 3, 6, ecoord(1:3,1:3), u(1:3,1:6), u_prev(1:3,1:6), &
+          fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 2, &
+          fstrSOLID%elements(icel), triad_tri(1:9,1:3), triad_ref(1:9,1:3), &
+          triad_cur(1:9,1:3), shell_drill(1:3))
       endif
 
     else if( ic_type == 781 ) then   ! for shell-solid mixed analysis
-      if( .not.mass_only ) then
-        call STF_Shell_MITC33(741, 4, 6, ecoord(1:3,1:4), u(1:3,1:8), u_prev(1:3,1:8), &
-          fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 1, &
-          fstrSOLID%elements(icel), triad_tri(1:9,1:4), triad_ref(1:9,1:4), &
-          triad_cur(1:9,1:4), shell_drill(1:4))
-      endif
-
-      if( is_dynamic ) then
-        surf = get_face4(ecoord(1:3,1:nn))
-        rho = material%variables(M_DENSITY)
-        call mass_S4(surf, thick, rho, mass_mat)
-      endif
+      call STF_Shell_MITC33(741, 4, 6, ecoord(1:3,1:4), u(1:3,1:8), u_prev(1:3,1:8), &
+        fstrSOLID%elements(icel)%gausses(:), stiff_mat(1:nn*ndof,1:nn*ndof), thick, 1, &
+        fstrSOLID%elements(icel), triad_tri(1:9,1:4), triad_ref(1:9,1:4), &
+        triad_cur(1:9,1:4), shell_drill(1:4))
 
     elseif( ic_type==3414 ) then
-      if( .not.mass_only ) then
-        if( material%mtype /= INCOMP_NEWTONIAN ) call CreateMat_abort( ic_type, 3, material%mtype )
-        call STF_C3_vp( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
-          stiff_mat(1:nn*ndof,1:nn*ndof), tincr, u_prev(1:4,1:nn) )
-      endif
+      if( material%mtype /= INCOMP_NEWTONIAN ) call CreateMat_abort( ic_type, 3, material%mtype )
+      call STF_C3_vp( ic_type, nn, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        stiff_mat(1:nn*ndof,1:nn*ndof), tincr, u_prev(1:4,1:nn) )
 
     else if( ic_type == 881 .or. ic_type == 891 ) then  ! for selective es/ns smoothed fem
-      if( .not.mass_only ) call STF_C3D4_SESNS( ic_type, nn, nodLOCAL, ecoord(:,1:nn), &
-        fstrSOLID%elements(icel)%gausses(:), stiff_mat, cdsys_ID, coords, time, tincr, &
-        u(1:3,1:nn), tt(1:nn) )
+      call STF_C3D4_SESNS( ic_type, nn, nodLOCAL, ecoord(:,1:nn), fstrSOLID%elements(icel)%gausses(:), &
+        stiff_mat, cdsys_ID, coords, time, tincr, u(1:3,1:nn), tt(1:nn) )
 
     else
       call CreateMat_abort( ic_type, 1 )
     endif
 
+    if( is_dynamic ) call calc_mass_elem( ic_type, nn, ndof, ecoord, fstrSOLID, hecMESH, icel, &
+      use_lumped_mass, mass_mat, lumped )
+
   end subroutine calc_stiff_and_mass_elem
+
+  !---------------------------------------------------------------------*
+  !> Compute the element mass matrix for the given element type.
+  !!
+  !! use_lumped_mass selects the lumped or the consistent mass. Element types
+  !! without a consistent mass formulation return their lumped mass in either
+  !! case, and element types without inertia return mass_mat unchanged.
+  !! Every element type accepted by calc_stiff_and_mass_elem must be listed
+  !! here, otherwise the dynamic analysis aborts.
+  subroutine calc_mass_elem( ic_type, nn, ndof, ecoord, fstrSOLID, hecMESH, icel, &
+      use_lumped_mass, mass_mat, lumped )
+  !---------------------------------------------------------------------*
+    use m_static_LIB
+    use mMechGauss
+    use m_dynamic_mass
+
+    integer(kind=kint), intent(in)    :: ic_type, nn, ndof, icel
+    real(kind=kreal),   intent(in)    :: ecoord(:,:)
+    type(fstr_solid),               intent(in)    :: fstrSOLID
+    type(hecmwST_local_mesh),       intent(in)    :: hecMESH
+    logical,            intent(in)    :: use_lumped_mass
+    real(kind=kreal),   intent(inout) :: mass_mat(:,:), lumped(:)
+
+    type(tMaterial), pointer :: material
+    integer(kind=kint) :: i, isect, ihead, sec_opt
+    real(kind=kreal) :: thick, rho, length, surf
+
+    isect = hecMESH%section_ID(icel)
+    ihead = hecMESH%section%sect_R_index(isect-1)
+    sec_opt = hecMESH%section%sect_opt(isect)
+
+    material => fstrSOLID%elements(icel)%gausses(1)%pMaterial
+    thick = hecMESH%section%sect_R_item(ihead+1)
+
+    if( ic_type==241 .or. ic_type==242 .or. ic_type==231 .or. ic_type==232 .or. ic_type==2322) then
+      call mass_C2(ic_type, nn, ecoord(1:2,1:nn), fstrSOLID%elements(icel)%gausses, &
+        sec_opt, thick, mass_mat, lumped, is_lumped=use_lumped_mass)
+
+    elseif( ic_type==361 .or. ic_type==341 .or. ic_type==351 .or. ic_type==342 .or. ic_type==352 &
+        .or. ic_type==362 ) then
+      call mass_C3(ic_type, nn, ecoord(1:3,1:nn), fstrSOLID%elements(icel)%gausses, &
+        mass_mat, lumped, is_lumped=use_lumped_mass)
+
+    else if( ( ic_type == 741 ) .or. ( ic_type == 743 ) .or. ( ic_type == 731 ) ) then
+      rho = material%variables(M_DENSITY)
+      call mass_shell(ic_type, nn, ecoord(1:3,1:nn), rho, thick, fstrSOLID%elements(icel)%gausses, mass_mat, lumped)
+      if( use_lumped_mass ) call set_diagonal_mass(nn*ndof, lumped, mass_mat)
+
+    elseif( ic_type==301 ) then
+      surf = hecMESH%section%sect_R_item(ihead+1)
+      length = get_length(ecoord(1:3,1:nn))
+      rho = material%variables(M_DENSITY)
+      mass_mat = 0.0d0
+      do i = 1, nn*ndof
+        mass_mat(i,i) = 0.5d0*surf*length*rho
+      enddo
+
+    else if( ic_type == 611 ) then
+      surf = hecMESH%section%sect_R_item(ihead+4)
+      length = get_length(ecoord(1:3,1:nn))
+      rho = material%variables(M_DENSITY)
+      call mass_Beam(surf, length, rho, mass_mat)
+
+    else if( ic_type == 641 ) then
+      surf = hecMESH%section%sect_R_item(ihead+4)
+      length = get_length(ecoord(1:3,1:nn))
+      rho = material%variables(M_DENSITY)
+      call mass_Beam_33(surf, length, rho, mass_mat)
+
+    else if( ic_type == 761 ) then   ! for shell-solid mixed analysis
+      surf = get_face3(ecoord(1:3,1:nn))
+      rho = material%variables(M_DENSITY)
+      call mass_S3(surf, thick, rho, mass_mat)
+
+    else if( ic_type == 781 ) then   ! for shell-solid mixed analysis
+      surf = get_face4(ecoord(1:3,1:nn))
+      rho = material%variables(M_DENSITY)
+      call mass_S4(surf, thick, rho, mass_mat)
+
+    else if( ic_type == 511 .or. ic_type == 3414 .or. ic_type == 881 .or. ic_type == 891 ) then
+      ! no element mass
+
+    else
+      call CreateMat_abort( ic_type, 4 )
+    endif
+
+  end subroutine calc_mass_elem
 
   subroutine set_diagonal_mass(nsize, lumped, mass)
     integer(kind=kint), intent(in) :: nsize
@@ -624,6 +627,8 @@ contains
       write(*,*) '###ERROR### : Element type not supported for nonlinear static analysis'
     else if( flag == 3 ) then
       write(*,*) '###ERROR### : This element is not supported for this material'
+    else if( flag == 4 ) then
+      write(*,*) '###ERROR### : Element type not supported for dynamic analysis'
     endif
     write(*,*) ' ic_type = ', ic_type
     if( present(mtype) ) write(*,*) ' mtype = ', mtype
