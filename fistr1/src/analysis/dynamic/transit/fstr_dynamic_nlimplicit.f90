@@ -117,8 +117,17 @@ contains
     hecMAT%Iarray(97) = 1   !Need numerical factorization
 
     !C-- initialize variables
-    if( restart_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. abs(fstrDYNAMIC%ray_m) > 1.0d-15 ) &
+    if( restart_step_num == 1 .and. fstrDYNAMIC%VarInitialize .and. abs(fstrDYNAMIC%ray_m) > 1.0d-15 ) then
+      ! dynamic_init_varibles solves for the initial values with the lumped mass only
+      if( fstrDYNAMIC%idx_mas == kMassConsistent ) then
+        if( hecMESH%my_rank == 0 ) then
+          write(imsg,*) 'stop: initial velocity or acceleration with mass-proportional damping'// &
+            ' is not available for consistent mass matrix !'
+        endif
+        call hecmw_abort( hecmw_comm_get_comm())
+      endif
       call dynamic_init_varibles( hecMESH, hecMAT, fstrSOLID, fstrEIG, fstrDYNAMIC, fstrPARAM )
+    endif
 
     !C-- output of initial state
     if( restart_step_num == 1 ) then
