@@ -320,8 +320,8 @@ contains
       D(2,1) = pp2 * ee / (1.0D0- pp * pp2)
       D(2,2) = ee2 / (1.0D0 - pp * pp2)
       D(3,3) = g12
-      D(4,4) = g23
-      D(5,5) = g31
+      D(4,4) = k_correction * g23
+      D(5,5) = k_correction * g31
 
       T(1,1) = cos(theta) * cos(theta)
       T(1,2) = sin(theta) * sin(theta)
