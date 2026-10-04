@@ -1221,8 +1221,50 @@ error:
   return -1;
 }
 
+static int edge_info_nn(struct hecmwST_local_mesh *local_mesh, const int is,
+                          const int ie) {
+#ifdef HECMW_ARCH_FX64
+  int node[27];
+  long long node_index0, node_index1;
+  long long int edge[351];
+  int i, j, k, l, count;
+  int nn;
+
+  node_index0 = local_mesh->elem_node_index[is];
+  for (i = is; i < ie; i++) {
+    node_index1 = local_mesh->elem_node_index[i+1];
+    nn = node_index1 - node_index0;
+    for (j = 0; j < nn; j++) {
+      node[j] = local_mesh->elem_node_item[node_index0 + j];
+    }
+
+    count = 0;
+    for (k = 0; k < nn; k++) {
+      for (l = k+1; l < nn; l++) {
+        edge[count] = HECMW_mesh_hsort_edge(node[k], node[l]);
+        if (edge[count] < 0) goto error;
+        count++;
+      }
+    }
+    node_index0 = node_index1;
+  }
+
+  return 0;
+
+error:
+  return -1;
+#else
+  return 0;
+#endif
+}
+
 extern int HECMW_mesh_edge_info(struct hecmwST_local_mesh *local_mesh,
+#ifdef HECMW_ARCH_FX64
+                                struct hecmw_part_edge_data *edge_data,
+                                const int edge_create_type) {
+#else
                                 struct hecmw_part_edge_data *edge_data) {
+#endif
   int rtc;
   int i, is, ie;
 
@@ -1238,6 +1280,9 @@ extern int HECMW_mesh_edge_info(struct hecmwST_local_mesh *local_mesh,
   rtc = HECMW_mesh_hsort_edge_init(local_mesh->n_node, local_mesh->n_elem);
   if (rtc != 0) goto error;
 
+#ifdef HECMW_ARCH_FX64
+  if ( edge_create_type == 0 ) { //element edge based creation
+#endif
   for (i = 0; i < local_mesh->n_elem_type; i++) {
     is = local_mesh->elem_type_index[i];
     ie = local_mesh->elem_type_index[i + 1];
@@ -1401,6 +1446,12 @@ extern int HECMW_mesh_edge_info(struct hecmwST_local_mesh *local_mesh,
         goto error;
     }
   }
+#ifdef HECMW_ARCH_FX64
+
+  } else if ( edge_create_type == 1 ) { //element volume based creation
+    if (edge_info_nn(local_mesh, 0, local_mesh->n_elem)) goto error;
+  }
+#endif
 
   edge_data->n_edge = HECMW_mesh_hsort_edge_get_n();
   if (edge_data->n_edge < 0) goto error;
