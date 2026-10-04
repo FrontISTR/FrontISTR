@@ -1,6 +1,7 @@
 #!ECHO
 !SOLUTION,TYPE=HEAT
 !HEAT
+,,,,,1.0e-3
 !FIXTEMP
  XMIN,   0.0
 !FILM
