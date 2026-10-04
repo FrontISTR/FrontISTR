@@ -10,6 +10,8 @@ module fstr_api_param
 
 contains
 
+  !> @brief パラメータハンドラの生成
+  !! @return パラメータ構造体のハンドラ type(c_ptr)
   function fstr_api_param_new() bind(C,name='fstr_api_param_new')
     implicit none
     type(c_ptr) :: fstr_api_param_new
@@ -18,6 +20,8 @@ contains
     fstr_api_param_new = c_loc(fstrPARAM)
   end function
 
+  !> @brief パラメータハンドラの破棄
+  !! @param[in] param パラメータ構造体のハンドラ
   subroutine fstr_api_param_delete(param) bind(C,name='fstr_api_param_delete')
     use m_timepoint, only : time_points
     implicit none
@@ -46,6 +50,9 @@ contains
     deallocate(fstrPARAM)
   end subroutine
 
+  !> @brief パラメータ構造体の初期化
+  !! @param[in] param パラメータ構造体のハンドラ
+  !! @param[in] mesh メッシュ構造体のハンドラ
   subroutine fstr_api_param_init(param,mesh) bind(C,name='fstr_api_param_init')
     use m_fstr, only : fstr_param_init
     use hecmw, only : hecmwST_local_mesh
@@ -75,6 +82,9 @@ contains
 
   end subroutine
 
+  !> @brief 解析の種別の取得
+  !! @param[in] param パラメータ構造体のハンドラ
+  !! @return 解析の種別
   function fstr_api_param_solution_type(param) bind(C,name='fstr_api_param_solution_type')
     implicit none
     integer(c_int) :: fstr_api_param_solution_type
@@ -84,6 +94,9 @@ contains
     fstr_api_param_solution_type = fstrPARAM%solution_type
   end function
 
+  !> @brief ソルバーの解法の取得
+  !! @param[in] param パラメータ構造体のハンドラ
+  !! @return ソルバーの解法
   function fstr_api_param_solver_method(param) bind(C,name='fstr_api_param_solver_method')
     implicit none
     integer(c_int) :: fstr_api_param_solver_method
@@ -93,6 +106,9 @@ contains
     fstr_api_param_solver_method = fstrPARAM%solver_method
   end function
 
+  !> @brief 非線形を考慮するかのフラグの取得
+  !! @param[in] param パラメータ構造体のハンドラ
+  !! @return 非線形を考慮するか
   function fstr_api_param_nlgeom(param) bind(C,name='fstr_api_param_nlgeom')
     implicit none
     logical(c_bool) :: fstr_api_param_nlgeom
@@ -102,6 +118,9 @@ contains
     fstr_api_param_nlgeom = fstrPARAM%nlgeom
   end function
 
+  !> @brief 非線形ソルバーの解法の取得
+  !! @param[in] param パラメータ構造体のハンドラ
+  !! @return 非線形ソルバーの解法
   function fstr_api_param_nlsolver_method(param) bind(C,name='fstr_api_param_nlsolver_method')
     implicit none
     integer(c_int) :: fstr_api_param_nlsolver_method
@@ -111,6 +130,9 @@ contains
     fstr_api_param_nlsolver_method = fstrPARAM%nlsolver_method
   end function
 
+  !> @brief 結果を出力するかのフラグの取得
+  !! @param[in] param パラメータ構造体のハンドラ
+  !! @return 結果を出力するかのフラグ
   function fstr_api_param_fg_result(param) bind(C,name='fstr_api_param_fg_result')
     implicit none
     integer(c_int) :: fstr_api_param_fg_result
@@ -120,6 +142,9 @@ contains
     fstr_api_param_fg_result = fstrPARAM%fg_result
   end function
 
+  !> @brief 可視化出力するかのフラグの取得
+  !! @param[in] param パラメータ構造体のハンドラ
+  !! @return 可視化出力するかのフラグ
   function fstr_api_param_fg_visual(param) bind(C,name='fstr_api_param_fg_visual')
     implicit none
     integer(c_int) :: fstr_api_param_fg_visual
@@ -129,6 +154,9 @@ contains
     fstr_api_param_fg_visual = fstrPARAM%fg_visual
   end function
 
+  !> @brief 接触解析アルゴリズムの取得
+  !! @param[in] param パラメータ構造体のハンドラ
+  !! @return 接触解析アルゴリズム
   function fstr_api_param_contact_algo(param) bind(C,name='fstr_api_param_contact_algo')
     implicit none
     integer(c_int) :: fstr_api_param_contact_algo
