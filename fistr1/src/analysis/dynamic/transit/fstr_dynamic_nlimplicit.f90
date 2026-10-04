@@ -206,7 +206,7 @@ contains
               call fstr_abort( HECMW_EXIT_NOCONV )
             endif
             call fstr_cutback_load( fstrSOLID, infoCTChange, infoCTChange_bak )  ! load analysis state
-            call fstr_set_contact_active( infoCTChange%contactNode_current > 0 )
+            call fstr_set_contact_active( infoCTChange%active )
 
             ! restore matrix structure for slagrange contact analysis
             if( is_interaction_active ) then

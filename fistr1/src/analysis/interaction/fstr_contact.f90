@@ -39,6 +39,7 @@ module mContact
   use m_fstr_contact_element
   use m_fstr_contact_geom
   use m_fstr_contact_search
+  use m_fstr_contact_damping, only: is_damping_enabled
   use m_fstr_contact_mpc
   use m_fstr_contact_output
   implicit none
@@ -294,6 +295,8 @@ contains
       & fstrSOLID%QFORCE(:), infoCTChange, hecMESH%global_node_ID(:), hecMESH%global_elem_ID(:), is_init, iactive )
       if( .not. active ) active = iactive
     enddo
+    ! kept in infoCTChange as well, so that a cutback restores it together with the contact state
+    infoCTChange%active = active
 
     if( is_init .and. ctAlgo == kcaSLAGRANGE .and. fstrSOLID%n_contacts > 0 ) &
     &  call remove_duplication_tiedcontact( cstep, hecMESH, fstrSOLID, infoCTChange )
@@ -429,6 +432,26 @@ contains
   subroutine fstr_set_contact_active( a )
     logical, intent(in) :: a
     active = a
+  end subroutine
+
+  !> Assembly flag on restart. The restart file holds the number of nodes in contact and the slave
+  !! states of NODE-SURF pairs, from which a NEAR node with damping is detected as well.
+  subroutine fstr_set_contact_active_restart( cstep, fstrSOLID, infoCTChange )
+    integer(kind=kint), intent(in)               :: cstep         !< current step number
+    type(fstr_solid), intent(in)                 :: fstrSOLID     !< type fstr_solid
+    type(fstr_info_contactChange), intent(inout) :: infoCTChange  !<
+    integer(kind=kint) :: i, grpid
+
+    active = infoCTChange%contactNode_previous > 0
+    do i = 1, fstrSOLID%n_contacts
+      if( active ) exit
+      if( fstrSOLID%contacts(i)%method /= CONTACTN2S ) cycle
+      if( .not. is_damping_enabled(fstrSOLID%contacts(i)) ) cycle
+      grpid = fstrSOLID%contacts(i)%group
+      if( .not. fstr_isContactActive( fstrSOLID, grpid, cstep ) ) cycle
+      active = any( fstrSOLID%contacts(i)%states(:)%state == CONTACTNEAR )
+    enddo
+    infoCTChange%active = active
   end subroutine
 
   logical function fstr_is_contact_conv(ctAlgo,infoCTChange,hecMESH)
