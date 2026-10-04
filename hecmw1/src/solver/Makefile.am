@@ -11,9 +11,10 @@ all: @build_target@
 	@cd mumps         && $(MAKE) @build_target@
 	@cd mkl           && $(MAKE) @build_target@
 	@cd clustermkl    && $(MAKE) @build_target@
+	@cd solver_direct && $(MAKE) @build_target@
+	@cd solver_direct_mf && $(MAKE) @build_target@
 	@cd precond       && $(MAKE) @build_target@
 	@cd iterative     && $(MAKE) @build_target@
-	@cd solver_direct && $(MAKE) @build_target@
 	@cd solver_direct_parallel && $(MAKE) @build_target@
 	@cd solver_direct_lag && $(MAKE) @build_target@
 	@cd mpc           && $(MAKE) @build_target@
@@ -32,9 +33,10 @@ install:
 	@cd mumps         && $(MAKE) install
 	@cd mkl           && $(MAKE) install
 	@cd clustermkl    && $(MAKE) install
+	@cd solver_direct && $(MAKE) install
+	@cd solver_direct_mf && $(MAKE) install
 	@cd precond       && $(MAKE) install
 	@cd iterative     && $(MAKE) install
-	@cd solver_direct && $(MAKE) install
 	@cd solver_direct_parallel && $(MAKE) install
 	@cd solver_direct_lag && $(MAKE) install
 	@cd mpc           && $(MAKE) install
@@ -50,9 +52,10 @@ clean:
 	@cd mumps         && $(MAKE) clean
 	@cd mkl           && $(MAKE) clean
 	@cd clustermkl    && $(MAKE) clean
+	@cd solver_direct && $(MAKE) clean
+	@cd solver_direct_mf && $(MAKE) clean
 	@cd precond       && $(MAKE) clean
 	@cd iterative     && $(MAKE) clean
-	@cd solver_direct && $(MAKE) clean
 	@cd solver_direct_parallel && $(MAKE) clean
 	@cd solver_direct_lag && $(MAKE) clean
 	@cd mpc           && $(MAKE) clean
@@ -68,9 +71,10 @@ distclean: clean
 	@cd mumps         && $(MAKE) distclean
 	@cd mkl           && $(MAKE) distclean
 	@cd clustermkl    && $(MAKE) distclean
+	@cd solver_direct && $(MAKE) distclean
+	@cd solver_direct_mf && $(MAKE) distclean
 	@cd precond       && $(MAKE) distclean
 	@cd iterative     && $(MAKE) distclean
-	@cd solver_direct && $(MAKE) distclean
 	@cd solver_direct_parallel && $(MAKE) distclean
 	@cd solver_direct_lag && $(MAKE) distclean
 	@cd mpc           && $(MAKE) distclean
@@ -86,9 +90,10 @@ maintainer-clean:
 	@cd mumps         && $(MAKE) maintainer_clean
 	@cd mkl           && $(MAKE) maintainer_clean
 	@cd clustermkl    && $(MAKE) maintainer_clean
+	@cd solver_direct && $(MAKE) maintainer-clean
+	@cd solver_direct_mf && $(MAKE) maintainer-clean
 	@cd precond       && $(MAKE) maintainer-clean
 	@cd iterative     && $(MAKE) maintainer-clean
-	@cd solver_direct && $(MAKE) maintainer-clean
 	@cd solver_direct_parallel && $(MAKE) maintainer-clean
 	@cd solver_direct_lag && $(MAKE) maintainer-clean
 	@cd mpc           && $(MAKE) maintainer-clean
@@ -104,9 +109,10 @@ depend:
 	@cd mumps         && $(MAKE) depend
 	@cd mkl           && $(MAKE) depend
 	@cd clustermkl    && $(MAKE) depend
+	@cd solver_direct && $(MAKE) depend
+	@cd solver_direct_mf && $(MAKE) depend
 	@cd precond       && $(MAKE) depend
 	@cd iterative     && $(MAKE) depend
-	@cd solver_direct && $(MAKE) depend
 	@cd solver_direct_parallel && $(MAKE) depend
 	@cd solver_direct_lag && $(MAKE) depend
 	@cd mpc           && $(MAKE) depend

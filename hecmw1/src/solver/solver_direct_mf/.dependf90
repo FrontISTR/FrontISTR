@@ -1,0 +1,6 @@
+hecmw_mf_dist.o : hecmw_mf_dist.f90 hecmw_mf_symbolic.o 
+hecmw_mf_graph.o : hecmw_mf_graph.f90 
+hecmw_mf_kernel.o : hecmw_mf_kernel.F90 
+hecmw_mf_numeric.o : hecmw_mf_numeric.f90 hecmw_mf_kernel.o hecmw_mf_dist.o hecmw_mf_symbolic.o hecmw_mf_graph.o 
+hecmw_mf_symbolic.o : hecmw_mf_symbolic.f90 hecmw_mf_graph.o 
+hecmw_solver_direct_mf.o : hecmw_solver_direct_mf.f90 hecmw_mf_kernel.o hecmw_mf_numeric.o hecmw_mf_dist.o hecmw_mf_symbolic.o hecmw_mf_graph.o 

@@ -13,6 +13,7 @@ module HECMW_SOLVER_DIRECT
 
   private
   public :: HECMW_SOLVE_DIRECT
+  public :: cholesky_factor, SETIJ, MATINI
 
   real(kind=kreal), parameter :: RMIn = 4.941D-300
 

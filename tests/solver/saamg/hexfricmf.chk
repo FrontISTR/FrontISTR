@@ -1,0 +1,2 @@
+# SA_CoarseSolver=4 must select the DIRECTmf coarse solver
+coarsest solver: redundant sparse DIRECTmf

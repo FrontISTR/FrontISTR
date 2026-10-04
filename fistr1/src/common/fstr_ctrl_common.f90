@@ -101,7 +101,7 @@ contains
     integer(kind=kint) :: fstr_ctrl_get_SOLVER
 
     character(120) :: mlist = &
-      '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,PipeCG,GroppCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
+      '1,2,3,4,101,CG,BiCGSTAB,GMRES,GPBiCG,GMRESR,GMRESREN,CR,PipeCG,GroppCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL,DIRECTmf '
     !character(92) :: mlist = '1,2,3,4,5,101,CG,BiCGSTAB,GMRES,GPBiCG,DIRECT,DIRECTmkl,DIRECTlag,MUMPS,MKL '
     character(24) :: dlist = '0,1,2,3,NONE,MM,CSR,BSR '
 
@@ -206,6 +206,26 @@ contains
            solver_ropt(6), solver_ropt(7), solver_ropt(8) )/= 0) solver_ropt(1:10) = 0.0d0
     else if( method == 101 ) then
       if( fstr_ctrl_get_data_ex( ctrl, 3, 'i ', solver_opt(1) )/= 0) return
+    else if( method == 106 ) then
+      ! DIRECTmf options.  Two optional data lines; trailing entries may be omitted.
+      ! 0 = use the built-in default for each.  Integer slot 1 is the ordering, the
+      ! same as the single integer of the DIRECT (method=101) data line.
+      !  line 3 (integers):
+      !    1 ordering (as DIRECT), 2 mode (0=auto/1=force LDLt/2=force LU),
+      !    3 BLR (0=off/1=on), 4 max refinement steps, 5 tile size (DOFs),
+      !    6 amalgamation width (columns), 7 BLR skip distance eta (-1=off),
+      !    8 BLR rank reuse (0=off/1=on), 9-10 RESERVED
+      !  line 4 (reals):
+      !    1 BLR epsilon, 2 refinement stopping residual, 3 pivot threshold u,
+      !    4 zero pivot factor, 5 BLR gain cap beta, 6-8 RESERVED
+      solver_opt(1:10) = 0
+      solver_ropt(1:10) = 0.0d0
+      if( fstr_ctrl_get_data_ex( ctrl, 3, 'iiiiiiiiii ', &
+           solver_opt(1), solver_opt(2), solver_opt(3), solver_opt(4), solver_opt(5), &
+           solver_opt(6), solver_opt(7), solver_opt(8), solver_opt(9), solver_opt(10) )/= 0) solver_opt(1:10) = 0
+      if( fstr_ctrl_get_data_ex( ctrl, 4, 'rrrrrrrr ', &
+           solver_ropt(1), solver_ropt(2), solver_ropt(3), solver_ropt(4), solver_ropt(5), &
+           solver_ropt(6), solver_ropt(7), solver_ropt(8) )/= 0) solver_ropt(1:10) = 0.0d0
     end if
 
     iterlog = iter -1

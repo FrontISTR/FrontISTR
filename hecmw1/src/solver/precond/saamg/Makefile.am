@@ -96,6 +96,7 @@ OBJSF = \
 	hecmw_precond_SAAMG_prolongation.@f90objfilepostfix@ \
 	hecmw_precond_SAAMG_coarse.@f90objfilepostfix@ \
 	hecmw_precond_SAAMG_coarse_mumps.@f90objfilepostfix@ \
+	hecmw_precond_SAAMG_coarse_mf.@f90objfilepostfix@ \
 	hecmw_precond_SAAMG_core.@f90objfilepostfix@ \
 	hecmw_precond_SAAMG_adapt.@f90objfilepostfix@ \
 	hecmw_precond_SAAMG_verify.@f90objfilepostfix@ \

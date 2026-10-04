@@ -136,6 +136,28 @@ check_result () {
   done
 }
 
+check_log () {
+  chk=$ref_dir/${mesh%.msh}.chk
+  if [ ! -e $chk ]; then
+    return 0
+  fi
+  while IFS= read -r pat; do
+    case "$pat" in
+      ''|'#'*) continue;;
+      'np1:'*)
+        # the pattern applies to single-process runs only
+        [ $mpi_num_process -ne 1 ] && continue
+        pat=${pat#np1:};;
+    esac
+    if grep -E -q "$pat" fistr1.log; then
+      echo_success "    log: '$pat' found"
+    else
+      echo_err     "    log: '$pat' not found"
+      : $((errors++))
+    fi
+  done < $chk
+}
+
 check_all_results () {
   check_result $res
 
@@ -320,6 +342,9 @@ for mesh_path in $(find $target -type f -name "*.msh"); do
     continue
   fi
 
+  # the pattern file beside the model asserts lines of fistr1.log, so a test can
+  # also check that the intended solver path actually ran
+  check_log
   check_all_results
 
   ###################
