@@ -269,6 +269,10 @@ if(WITH_ML)
         list(APPEND FrontISTR_INCLUDE_DIRS ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
         list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_ML")
         list(APPEND FrontISTR_LIBRARIES ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
+        set(Trilinos_GENERIC_BLAS_LIBRARIES ${Trilinos_TPL_LIBRARIES})
+        list(FILTER Trilinos_GENERIC_BLAS_LIBRARIES INCLUDE REGEX
+          "^(.*/)?(-l)?(lib)?(blas|lapack)(\\..*)?$")
+        list(REMOVE_DUPLICATES Trilinos_GENERIC_BLAS_LIBRARIES)
       endif()
     else()
       if((NOT ML_ENABLE_MPI AND WITH_MPI) OR (ML_ENABLE_MPI AND NOT WITH_MPI))
@@ -353,6 +357,12 @@ if(WITH_LAPACK)
   if(LAPACK_FOUND AND BLAS_FOUND)
     list(APPEND FrontISTR_DEFINITIONS "HECMW_WITH_LAPACK")
     list(APPEND FrontISTR_LIBRARIES ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+    # Trilinos brings the generic libblas/liblapack in front of the BLAS/LAPACK
+    # selected here, which binds every library to the generic ones at run time.
+    # CMake keeps the last of repeated libraries, so listing them again moves them behind.
+    if(Trilinos_GENERIC_BLAS_LIBRARIES)
+      list(APPEND FrontISTR_LIBRARIES ${Trilinos_GENERIC_BLAS_LIBRARIES})
+    endif()
   else()
     set(WITH_LAPACK OFF)
   endif()
